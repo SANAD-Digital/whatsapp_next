@@ -38,13 +38,13 @@
    "label": "Event"
   },
   {
-   "description": "`X-SND-Event-ID`; dedupe key",
+   "description": "`X-SND-Event-ID`. The platform reuses one id across the status events of a message, so the dedupe key is (event_name, event_id) — composite unique in patches/v0_1/add_indexes.py (D-047).",
    "fieldname": "event_id",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Event ID",
    "reqd": 1,
-   "unique": 1
+   "search_index": 1
   },
   {
    "description": "`X-SND-Event`; Data not Select so unknown/future events are storable as `Ignored`",
@@ -76,7 +76,7 @@
   },
   {
    "default": "0",
-   "description": "Invalid \u2192 row still stored with `Ignored` for forensics, payload blanked",
+   "description": "Invalid → row still stored with `Ignored` for forensics, payload blanked",
    "fieldname": "signature_valid",
    "fieldtype": "Check",
    "in_standard_filter": 1,
@@ -84,7 +84,7 @@
   },
   {
    "default": "0",
-   "description": "Within \u00b15 min",
+   "description": "Within ±5 min",
    "fieldname": "timestamp_fresh",
    "fieldtype": "Check",
    "in_standard_filter": 1,
@@ -103,7 +103,7 @@
    "label": "Routing"
   },
   {
-   "description": "Resolved from `platform_device`; unknown \u2192 `Ignored`",
+   "description": "Resolved from `platform_device`; unknown → `Ignored`",
    "fieldname": "device",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -153,7 +153,7 @@
    "label": "Payload"
   },
   {
-   "description": "Raw body; PII \u2192 purged after `webhook_event_retention_days`, blanked after processing for terminal `message.*` events",
+   "description": "Raw body; PII → purged after `webhook_event_retention_days`, blanked after processing for terminal `message.*` events",
    "fieldname": "payload",
    "fieldtype": "JSON",
    "label": "Payload"

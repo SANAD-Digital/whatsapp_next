@@ -27,6 +27,8 @@ COMPOSITE_INDEXES: tuple[tuple[str, tuple[str, ...]], ...] = (
 # (doctype, fields) — composite UNIQUE constraints (fields.md OQ-B, decided D-029).
 COMPOSITE_UNIQUE: tuple[tuple[str, tuple[str, ...]], ...] = (
 	("WhatsApp Inbound Message", ("device", "provider_message_id")),
+	# The platform reuses one event id across message.sent/delivered/read (D-029 OQ-P3, D-047).
+	("WhatsApp Webhook Event", ("event_name", "event_id")),
 )
 
 

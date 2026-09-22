@@ -300,7 +300,6 @@ UNIQUE: dict[str, tuple[str, ...]] = {
 	"WhatsApp Template": ("template_name",),
 	"WhatsApp Queue Item": ("outbound_message",),
 	"WhatsApp Number": ("phone_e164",),
-	"WhatsApp Webhook Event": ("event_id",),
 }
 SEARCH_INDEX: dict[str, tuple[str, ...]] = {
 	"WhatsApp Device": ("phone_e164", "status"),
@@ -309,7 +308,7 @@ SEARCH_INDEX: dict[str, tuple[str, ...]] = {
 	"WhatsApp Queue Item": ("next_attempt_at", "batch_id"),
 	"WhatsApp Template": ("disabled", "category"),
 	"WhatsApp Number": ("link_status", "last_seen", "number_type"),
-	"WhatsApp Webhook Event": ("event_name", "received_at", "status", "client_ref"),
+	"WhatsApp Webhook Event": ("event_id", "event_name", "received_at", "status", "client_ref"),
 }
 NAMING: dict[str, tuple[str, str | None]] = {
 	"WhatsApp Device": ("WA-DEV-.###", "device_name"),
