@@ -635,7 +635,7 @@ Idempotency proof:
 |---|---|---|---|
 | WhatsApp Webhook Event | `webhook_event_retention_days` (30) | `received_at` | 1st; also blanks `payload` on `Processed` `message.*` rows older than 1 day |
 | WhatsApp Queue Item | `queue_retention_days` (7) | `completed_at`/`deleted_at`/`modified` for terminal states | 2nd |
-| WhatsApp Outbound Message | `outbound_retention_days` (365, 0 = never) | `creation` | 3rd; `ignore_links` for Inbound `reply_outbound`, Campaign Recipient `outbound_message`; attachments (private Files attached to the row) deleted with it |
+| WhatsApp Log | `outbound_retention_days` (365, 0 = never) | `creation` | 3rd; `ignore_links` for Inbound `reply_outbound`, Campaign Recipient `outbound_message`; attachments (private Files attached to the row) deleted with it |
 | WhatsApp Inbound Message | `inbound_retention_days` (365) | `received_at` | 4th |
 | WhatsApp Audit Log | `audit_retention_days` (365) | `timestamp` | last |
 | pairing cache, `wa:rate:*`, `wa:commands:map` | TTL | — | cache only |
@@ -648,7 +648,7 @@ Batches of 1 000 deletes (`frappe.db.delete` with `name in (…)`), commit per b
 |---|---|
 | `whatsapp_providers` | `{"snd_platform": "…SndPlatformProvider", "meta_cloud": "…MetaCloudProvider"}` |
 | `whatsapp_function_catalogs` | `["whatsapp_next.functions.catalog"]` (other apps may append) |
-| `doc_events` | `"*"`: 6 events → `services.notifications.on_doc_event`; `"Contact"`: `validate` → `services.phone.sync_contact_phones` (fills `Contact Phone.wa_phone_e164`, OQ-5); `"WhatsApp Outbound Message"`/`"WhatsApp Inbound Message"`: `after_insert` → enqueue `numbers_materializer.upsert_from_message` |
+| `doc_events` | `"*"`: 6 events → `services.notifications.on_doc_event`; `"Contact"`: `validate` → `services.phone.sync_contact_phones` (fills `Contact Phone.wa_phone_e164`, OQ-5); `"WhatsApp Log"`/`"WhatsApp Inbound Message"`: `after_insert` → enqueue `numbers_materializer.upsert_from_message` |
 | `scheduler_events` | §5.2 |
 | `after_install` / `after_migrate` | `install.after_install` / `install.after_migrate` (indexes, fixtures sanity) |
 | `fixtures` | `Role` (4), `Custom Field` (`Contact Phone-wa_phone_e164`), `Workspace` |

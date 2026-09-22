@@ -139,7 +139,7 @@ Status machine: `Pending QR → Connected` (connection.connected / verify) · `C
 Prototype card stats «أُرسل (30ي) / فشل / نسبة الفشل / الصادر / الوارد» are computed by the read layer from Outbound/Inbound via index `(device, creation)`; not stored.
 Indexes: `platform_device` (unique), `phone_e164`, `status`.
 
-### 4. `WhatsApp Outbound Message` — `autoname hash` · `title_field display_name` · `track_changes 0`
+### 4. `WhatsApp Log` — `autoname hash` · `title_field display_name` · `track_changes 0`
 
 No role holds C/W/D (gap §6). `status` written only by `services/dispatch.py` (queue transitions + webhooks + reconcile).
 Tabs: Message · Delivery · Source · Provider.
@@ -245,7 +245,7 @@ No role holds C/W/D. Written by `services/inbound.py` from `message.received` / 
 | command_args | Command Arguments | JSON | | | | | | | eval:doc.command | | Parsed `#tokens` (Function inputs) | Functions: inputs |
 | command_error | Command Error | Small Text | | | | | | | eval:doc.command_status=="Failed" | | No PII | Inbound detail |
 | block_reason | Block Reason | Select | / Blacklist / Not Allowed / Party Type / Not Linked / Commands Disabled / Function Inactive | | | | | ✓ | eval:doc.command_status=="Blocked" | | | Commands: «يشترط ربط الجهة» |
-| reply_outbound | Reply Outbound | Link | WhatsApp Outbound Message | | | | | | | | First reply produced (command or receipt) | Inbound: «الردّ المُرسَل» / «فارق الرد» |
+| reply_outbound | Reply Outbound | Link | WhatsApp Log | | | | | | | | First reply produced (command or receipt) | Inbound: «الردّ المُرسَل» / «فارق الرد» |
 | replied_at | Replied At | Datetime | | | | | | | | | read_only | Inbound detail |
 | is_simulated | Simulated | Check | | | | 0 | | ✓ | | | Simulator "message on behalf" (gap F-06) | Simulator |
 
@@ -258,7 +258,7 @@ No role holds C/W/D. Pause / resume / delete are whitelisted actions (MGR + audi
 
 | fieldname | label | type | options | reqd | uniq | default | list | filter | depends_on | pl | description | serves |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| outbound_message | Outbound Message | Link | WhatsApp Outbound Message | ✓ | ✓ | | | | | | 1:1 | §5.1 |
+| outbound_message | Outbound Message | Link | WhatsApp Log | ✓ | ✓ | | | | | | 1:1 | §5.1 |
 | client_ref | Client Ref | Data | | ✓ | | | | | | | = `outbound_message` name; sent to platform (D-024, RC-05) | D-024 |
 | device | Device | Link | WhatsApp Device | ✓ | | | ✓ | ✓ | | | Denormalized for claim query + User Permissions | Queue: «الجهاز» |
 | phone_e164 | Phone (E.164) | Data | | | | | | | | | Denormalized | Queue: «الجهة» sub |
@@ -364,7 +364,7 @@ Bulk-inserted by the ContactPicker via `frappe.db.bulk_insert` (gap F9/R-01). Un
 | source_doctype | Source DocType | Link | DocType | | | | | | eval:doc.source_type=="DocType" | | | §3.2 source 3 |
 | source_name | Source Document | Dynamic Link | source_doctype | | | | | | eval:doc.source_type=="DocType" | | Print-format context for Document messages | §3.2 source 3 |
 | status | Status | Select | Pending / Queued / Sent / Delivered / Read / Failed / Cancelled / Removed | ✓ | | Pending | ✓ | | | | read_only; aggregate of this recipient's Outbound rows (worst-of when multi-message) | Campaigns progress |
-| outbound_message | Last Outbound | Link | WhatsApp Outbound Message | | | | | | | | read_only; last Outbound created for the row; all rows found via `Outbound.campaign_recipient` | — |
+| outbound_message | Last Outbound | Link | WhatsApp Log | | | | | | | | read_only; last Outbound created for the row; all rows found via `Outbound.campaign_recipient` | — |
 | error_code | Error Code | Data | | | | | | | eval:doc.status=="Failed" | | read_only | Campaign failures |
 | added_by | Added By | Link | User | | | | | | | | read_only | gap G-04 |
 | added_at | Added At | Datetime | | | | | | | | | read_only | gap G-04 |
@@ -692,7 +692,7 @@ No export (payload is PII); SM/MGR read only. Inserted by `api.webhook.receive` 
 | processed_at | Processed At | Datetime | | | | | | | | | | ops |
 | processing_ms | Processing (ms) | Int | | | | | | | | | | ops |
 | inbound_message | Inbound Message | Link | WhatsApp Inbound Message | | | | | | | | Created from `message.received`/`reaction` | Inbound |
-| outbound_message | Outbound Message | Link | WhatsApp Outbound Message | | | | | | | | Resolved via `client_ref` / `provider_message_id` | Outbound status |
+| outbound_message | Outbound Message | Link | WhatsApp Log | | | | | | | | Resolved via `client_ref` / `provider_message_id` | Outbound status |
 
 Status machine: `Received →(job) Processed` | `Ignored` (unknown event, unknown device, invalid signature, stale timestamp, plan-disallowed) | `Failed` (exception; reprocess job retries `Failed` up to 3×, then stays `Failed` + Error Log). Terminal: `Processed`, `Ignored`.
 Indexes (JSON): `event_id` (unique), `event_name`, `received_at`, `status`, `client_ref`. Composite (patch): `(event_name, received_at)`.
@@ -715,7 +715,7 @@ No other DocType stores a secret. Device token / QR / pair code are cache-only (
 | DocType | pair | e164 indexed |
 |---|---|---|
 | WhatsApp Device | phone / phone_e164 | ✓ |
-| WhatsApp Outbound Message | phone / phone_e164 (+ `jid`) | ✓ |
+| WhatsApp Log | phone / phone_e164 (+ `jid`) | ✓ |
 | WhatsApp Inbound Message | phone / phone_e164 (+ `jid`, `sender_jid`) | ✓ |
 | WhatsApp Queue Item | phone_e164 only (denormalized copy) | — |
 | WhatsApp Campaign Recipient | phone / phone_e164 (+ `jid`) | ✓ (child) |
