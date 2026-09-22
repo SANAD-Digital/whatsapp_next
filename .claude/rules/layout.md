@@ -6,7 +6,7 @@ The Claude project root is `apps/whatsapp_next` (this repo), **not** the bench.
 |---|---|---|
 | This app (whatsapp_next) | `.` | `whatsapp.dev.sanad.digital` |
 | Legacy app (read-only, reference) | `../snd_whatsapp` | `acc.dev.sanad.digital` |
-| Platform (additive changes only) | `../snd_whatsapp_platform` | `w-platform.dev.sanad.digital` |
+| Platform (compatible changes, fix debt; branch `whatsapp-next-integration`) | `../snd_whatsapp_platform` | `w-platform.dev.sanad.digital` |
 | Bench root (`bench` commands) | `../..` | — |
 | Design prototype (read-only input) | `docs/` — `screen/`, `component/`, `shared/` | — |
 | Binding screen spec | `plan/00-screens-spec.md` | — |

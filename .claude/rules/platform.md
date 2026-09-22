@@ -4,11 +4,17 @@ paths:
   - "plan/*platform*.md"
 ---
 
-# snd_whatsapp_platform — additive changes only
+# snd_whatsapp_platform — compatible changes; fix debt (D-018, D-022)
 
-- New DocTypes, new fields, new whitelisted methods only.
+- Work only on branch `whatsapp-next-integration` (off `feat/link-webhook-secret`, which is `main` + 8 commits).
+- New DocTypes, fields and whitelisted methods are free. Security gaps and technical debt listed in
+  `plan/05-platform-summary.md` are **fixed**, not preserved.
 - **No renames, no removals, no breaking changes** to existing API contracts or payload shapes
   without raising them at a gate first. Existing consumers must keep working untouched.
+  Exception decided by the owner: webhook endpoint states may be changed to match the spec
+  (`Active / Disabled / Locked`, plus `Revoked`) — D-018.
+- The platform is **not** the system of record for message data; the client stores it (D-021).
+  Do not add retention or history features on the platform for the client's sake.
 - Every new external endpoint is versioned, permission-checked, and documented as you build it.
 
 ## Documentation audience

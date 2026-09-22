@@ -9,6 +9,6 @@ Prerequisite: Gate 1 approved.
    `plan/06-doctypes-gap-platform.md` and `plan/fields-platform.md` — as JSON in the repository,
    never through the UI — with permissions, roles (including the contextual role), naming rules,
    indexes and translations.
-4. Platform changes are additive only.
+4. Platform changes are compatible (no breaking changes to existing contracts) and fix known debt — see `.claude/rules/platform.md`, D-018/D-022.
 
 Exit criterion: `bench --site <site> migrate` passes clean.
