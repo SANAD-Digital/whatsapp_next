@@ -19,7 +19,7 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 ## Phase 3 — Scaffold & schema (exit: `bench migrate` clean on both sites)
 
 ### 3.P Platform first deploy (branch `whatsapp-next-integration`) — unblocks client screens 1, 15 and the provider error layer
-- [ ] P-1 Foundations: `services/errors.py`, `api_auth.resolve_link`, `settings.py`, `audit.py`, `WhatsApp Platform Settings`, `WhatsApp API Audit Log`, hooks `ignore_links_on_delete` (**before any new Link column**, PFD-01), `api/v1.py` aliases; C-01, C-02, C-05, C-06, C-07, C-29, C-30 + tests
+- [ ] P-1 Foundations (all new endpoints under `…api.v1.*`, existing names aliased there, D-031): `services/errors.py`, `api_auth.resolve_link`, `settings.py`, `audit.py`, `WhatsApp Platform Settings`, `WhatsApp API Audit Log`, hooks `ignore_links_on_delete` (**before any new Link column**, PFD-01), `api/v1.py` aliases; C-01, C-02, C-05, C-06, C-07, C-29, C-30 + tests
 - [ ] P-2 Schema batch A (D-018): Webhook Endpoint `Locked` + counter/lock fields, Webhook Event `message.held`, Delivery Log `device`/`dispatched_at`/indexes; patch P-1 (`Failed`→`Locked`); C-08..C-12, C-14 + lock/dispatch tests (P-1)
 - [ ] P-3 `update_webhook_endpoint_api`, endpoint list/create changes, `rotate_integration_webhook_secret_api`, link secret at insert, patch P-3 (P-2)
 - [ ] P-4 Schema batch B: Message Log `client_ref`/`device`/indexes, Message Queue indexes, Usage Ledger `device`/`integration_link`; Integration Link `require_api_secret`, `allow_device_fallback`, `strict_client_ref`; patch P-2 flags; C-15..C-17, C-27 (P-1)
@@ -33,7 +33,7 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [ ] B-2 `providers/exceptions.py`, `services/errors.py`, `api/_common.py` (`api_endpoint` decorator; test forbids bare `@frappe.whitelist` in `api/`) (B-1)
 - [ ] B-3 `services/phone.py` E.164 (+ JID pass-through; strips `+` at the provider boundary) + table-driven tests (B-1)
 - [ ] B-4 DocTypes as JSON in RC-01 order: Settings (+ Picker Source, incl. `filters_json` G-1) → Device → Template → WhatsApp Log → Inbound → Webhook Event → Queue Item → Number → Audit Log → Contact Group (+Member) → Campaign (+Message, +Recipient) → Function (+Setting, +Output) → Command (+Party Type) → Notification (+Recipient) → Notification Alert (+Recipient); thin controllers; status-writer guard; `patches/v0_1/add_indexes.py` (+ `after_migrate`); fixtures: 4 roles, `Contact Phone.wa_phone_e164` (D-028), Contact `validate` hook; `translations/ar.csv`; per-DocType `test_<dt>.py` + `test_fields.py` + `test_indexes.py` (B-3)
-- [ ] Fix the receiver URL description in Settings (`whatsapp_next.webhooks.receiver.receive`, backend F-02) — inside B-4
+- [ ] Fix the receiver URL description in Settings (`whatsapp_next.webhooks.v1.receiver.receive`, backend F-02, D-031) — inside B-4
 - [ ] B-5 `services/audit.py` (real user, masking) (B-4)
 - [ ] B-6 `providers/`: schemas, base, registry, `snd_platform`, `meta_cloud` skeleton, `tests/fake_provider.py`, webhook fixtures `tests/fixtures/webhooks/*.json` (B-2, B-4, platform docs)
 - [ ] Exit: `bench --site whatsapp.dev.sanad.digital migrate` and `bench --site w-platform.dev.sanad.digital migrate` clean; both test suites green
@@ -66,7 +66,7 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 
 > Phase file says "Portable component kit"; the API layer (`backend-plan.md` B-18..B-27) has to exist first, so it opens this phase.
 
-### 5.A API (`api/<area>.py`, thin, `api_endpoint`-decorated)
+### 5.A API (`api/v1/<area>.py`, dotted `whatsapp_next.api.v1.<area>.<fn>`, thin, `api_endpoint`-decorated — D-031)
 - [ ] B-18 `api/settings.py`, `api/onboarding.py`, `api/home.py` (B-17)
 - [ ] B-19 `api/devices.py` (B-11)
 - [ ] B-20 `api/quick_send.py`, `api/messages.py`, `api/simulator.py` (B-10, B-14)

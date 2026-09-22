@@ -32,8 +32,8 @@ whatsapp_providers = {"snd_platform": "whatsapp_next.providers.snd_platform.SndP
 DocType controllers → thin: validation + lifecycle only
 services/           → business logic (dispatch, campaign runner, command router, read layer, ...)
 providers/          → outbound I/O only
-api/                → @frappe.whitelist endpoints; thin, permission-checked, schema-validated
-webhooks/           → inbound endpoint, signature verify, idempotency, enqueue
+api/v<N>/           → @frappe.whitelist endpoints, versioned package per API version (D-031); thin, permission-checked, schema-validated
+webhooks/v<N>/      → inbound endpoint, signature verify, idempotency, enqueue
 public/js/ui/       → portable component kit (see ui.md)
 ```
 - No business logic in `api/`. No HTTP calls in controllers.

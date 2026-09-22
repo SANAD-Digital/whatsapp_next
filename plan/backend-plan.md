@@ -48,8 +48,9 @@ whatsapp_next/
     registry.py            # FUNCTION_HANDLERS: {function_key: callable}  (D-012 allow-list)
     handlers/*.py          # one module per function key
     catalog/v1/catalog.json
-  api/                     # @frappe.whitelist only; one module per area (§4)
-    _common.py             # api_endpoint decorator: roles, typed args, error mapping (not whitelisted)
+  api/                     # @frappe.whitelist only (§4); versioned packages (D-031)
+    _common.py             # api_endpoint decorator: roles, typed args, error mapping (not whitelisted, version-neutral)
+    v1/                    # one module per area: settings.py onboarding.py home.py devices.py quick_send.py messages.py simulator.py queue.py numbers.py contacts.py picker.py campaigns.py templates.py notifications.py alerts.py functions.py commands.py
     home.py onboarding.py settings.py devices.py quick_send.py messages.py queue.py numbers.py contacts.py
     picker.py campaigns.py templates.py notifications.py alerts.py functions.py commands.py simulator.py
   webhooks/
@@ -241,6 +242,8 @@ Pairing methods raise `NotSupportedError` (Cloud API has no QR/pair-code); the c
 
 ### 4. API surface
 
+> **Versioning (D-031):** every whitelisted method below lives in `whatsapp_next/api/v1/<area>.py` and is called as `whatsapp_next.api.v1.<area>.<fn>` (`/api/method/…`). Short names in the tables (`contacts.list_contacts`) are relative to `api.v1`. A breaking change ships as `api/v2/` with `v1` left intact. The receiver is `whatsapp_next.webhooks.v1.receiver.receive`.
+
 #### 4.0 Conventions and error codes
 
 `api/_common.py` provides `@api_endpoint(roles: tuple[str, ...] | None, schema: dict | None)`: checks `frappe.only_for(roles)` (or `has_permission` inside the function when document-scoped), coerces/validates arguments (`int`, `bool`, `list[str]`, `datetime`, enum), rejects unknown fieldnames, converts `providers.exceptions.*` to `WANextError` subclasses. Every endpoint is `allow_guest=False` (default) except `webhooks.receiver.receive`. Responses are plain dicts; lists paginate with `page`, `page_length ≤ 200`, return `{rows, total}`.
@@ -430,7 +433,7 @@ Targets: `WhatsApp Campaign` (`recipients`) and `WhatsApp Contact Group` (`membe
 
 | Item | Value |
 |---|---|
-| URL | `POST /api/method/whatsapp_next.webhooks.receiver.receive` (architecture rule places it in `webhooks/`; fields.md's description string `api.webhook.receive` is corrected at build — Findings F-02) |
+| URL | `POST /api/method/whatsapp_next.webhooks.v1.receiver.receive` (architecture rule places it in `webhooks/`; fields.md's description string `api.webhook.receive` is corrected at build — Findings F-02) |
 | Decorators | `@frappe.whitelist(allow_guest=True, methods=["POST"])`, `@frappe.rate_limiter.rate_limit(limit=600, seconds=60)` keyed by IP, plus a site-wide cache counter 3 000/min → 429 |
 | Returns | `{ok: true}` 200 · `{ok: true, duplicate: true}` 200 · `{ok: false, error: "signature"}` 401 · `{ok:false, error:"stale"}` 401 · `{ok:false, error:"unconfigured"}` 503 · `{ok:false, error:"bad_json"}` 400 |
 | Never | creates a Device, logs a payload to Error Log, returns platform data, blocks on processing |
@@ -504,7 +507,7 @@ Frappe realtime cannot filter by role (Findings F-09); payloads carry names/coun
 
 ### 7. Webhook flow
 
-#### 7.1 Receiver steps (`webhooks/receiver.py`, `verify.py`, `idempotency.py`)
+#### 7.1 Receiver steps (`webhooks/v1/receiver.py`, `webhooks/verify.py`, `webhooks/idempotency.py`)
 
 | # | Step | On failure |
 |---|---|---|

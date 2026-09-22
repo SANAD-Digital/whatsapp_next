@@ -31,9 +31,14 @@ disagree, the rules win; this file only pins the details the rules leave open.
 - **Python:** modules/functions `snake_case`; classes `PascalCase`; provider classes end in
   `Provider`; service modules are verbs or nouns of the job (`dispatch.py`, `campaign_runner.py`,
   `read_layer.py`, `phone.py`).
-- **Whitelisted API:** `whatsapp_next.api.<area>.<verb_noun>` — e.g.
-  `whatsapp_next.api.contacts.list_contacts`, `whatsapp_next.api.devices.pair_device`. One
-  module per screen/area; no business logic inside.
+- **Whitelisted API (versioned, D-031):** `whatsapp_next.api.v<N>.<area>.<verb_noun>` — e.g.
+  `whatsapp_next.api.v1.contacts.list_contacts`, `whatsapp_next.api.v1.devices.pair_device`,
+  reachable at `/api/method/whatsapp_next.api.v1.contacts.list_contacts`. One package per API
+  version (`api/v1/`, later `api/v2/`), one module per screen/area inside it; no business logic.
+  A new version is a new package; older versions are never edited except for security fixes and
+  are removed only after a documented deprecation period. `api/_common.py` (decorator, error
+  mapping) is version-neutral. The inbound webhook receiver follows the same rule:
+  `whatsapp_next.webhooks.v1.receiver.receive`. Platform side: `…api.v1.<fn>` (backend-plan-platform §E).
 - **Pages:** folder `whatsapp_next/whatsapp_next/page/<slug>/` with slug `wa-<name>`:
   `wa-onboarding`, `wa-home`, `wa-devices`, `wa-functions-center`, `wa-simulator`,
   `wa-contacts`, `wa-settings`.
