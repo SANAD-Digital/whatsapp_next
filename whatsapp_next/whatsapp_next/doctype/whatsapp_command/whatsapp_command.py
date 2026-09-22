@@ -51,6 +51,18 @@ class WhatsAppCommand(Document):
 		if self.is_new() and not self.get("outputs"):
 			self.copy_outputs_from_function()
 
+	def on_update(self) -> None:
+		"""Invalidate the router's word map (`wa:commands:map`)."""
+		from whatsapp_next.services.command_router import clear_map
+
+		clear_map()
+
+	def on_trash(self) -> None:
+		"""Invalidate the router's word map."""
+		from whatsapp_next.services.command_router import clear_map
+
+		clear_map()
+
 	def normalize_words(self) -> None:
 		"""`code` casefolded + stripped; `title` defaults to `code`; synonyms one per line, deduped."""
 		self.code = (self.code or "").strip().casefold()

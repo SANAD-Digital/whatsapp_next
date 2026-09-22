@@ -1,4 +1,79 @@
 {
  "catalog_version": "v1",
- "functions": []
+ "functions": [
+  {
+   "function_key": "ping",
+   "function_name": "Ping",
+   "category": "Diagnostics",
+   "description": "Replies with an echo of the text you sent. Use it to verify that commands reach the site and replies go out.",
+   "when_to_use": "First function to install on a new site; safe for any sender.",
+   "party_types": [],
+   "versions": {
+    "1.0.0": {
+     "released": "2026-09-22",
+     "changelog": "Initial release.",
+     "inputs": [
+      {"key": "text", "label": "Text", "type": "str", "required": false, "position": 1, "rest": true}
+     ],
+     "settings": [],
+     "outputs": [
+      {
+       "output_key": "reply",
+       "label": "Reply",
+       "output_type": "Text",
+       "default_template": "pong: {{ data.echo }} ({{ data.at }})",
+       "variables": "data.echo, data.at, data.sender_known, data.display_name",
+       "condition": ""
+      }
+     ],
+     "example": "#ping hello",
+     "suggested_commands": ["ping", "بنق"]
+    }
+   }
+  },
+  {
+   "function_key": "document_info",
+   "function_name": "Document Status",
+   "category": "Documents",
+   "description": "Returns the status, date and amount of one document (Sales Invoice by default) that belongs to the sender's linked party.",
+   "when_to_use": "Customers or suppliers asking about the state of an invoice or order by its number.",
+   "party_types": ["Customer", "Supplier"],
+   "versions": {
+    "1.0.0": {
+     "released": "2026-09-22",
+     "changelog": "Initial release.",
+     "inputs": [
+      {"key": "name", "label": "Document name", "type": "str", "required": true, "position": 1}
+     ],
+     "settings": [
+      {"key": "document_type", "label": "Document Type", "fieldtype": "Data", "default_value": "Sales Invoice", "notes": "DocType to look up."},
+      {"key": "party_field", "label": "Party field", "fieldtype": "Data", "default_value": "customer", "notes": "Field on the DocType that must equal the sender's party."},
+      {"key": "require_party", "label": "Require linked party", "fieldtype": "Check", "default_value": "1", "notes": "Refuse senders whose number is not linked to a party."}
+     ],
+     "outputs": [
+      {
+       "output_key": "summary",
+       "label": "Summary",
+       "output_type": "Text",
+       "default_template": "{{ data.doctype }} {{ data.name }}\nStatus: {{ data.status }}\n{% if data.amount is not none %}Amount: {{ data.amount }}\n{% endif %}Date: {{ data.date }}",
+       "variables": "data.doctype, data.name, data.status, data.amount, data.date, data.party",
+       "condition": ""
+      },
+      {
+       "output_key": "document",
+       "label": "Document PDF",
+       "output_type": "Document",
+       "default_template": "",
+       "print_format": "",
+       "file_name_template": "{{ data.name }}",
+       "variables": "data.doctype, data.name",
+       "condition": "data.get('status') != 'Draft'"
+      }
+     ],
+     "example": "#doc SINV-0001",
+     "suggested_commands": ["doc", "فاتورة"]
+    }
+   }
+  }
+ ]
 }
