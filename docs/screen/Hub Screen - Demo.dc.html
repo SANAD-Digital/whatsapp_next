@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--skel-a:#EEF2F0;--skel-b:#E3E8E6;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--skel-a:#1E2C31;--skel-b:#28373C;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+</style>
+</helmet>
+<div data-screen-label="وضع العرض التجريبي" dir="rtl" style="flex:1;min-height:0;height:100%;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="display:flex;flex-direction:column;gap:12px;padding:16px;width:100%">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;flex:none">
+      <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+        <h1 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em">وضع العرض التجريبي</h1>
+        <span style="font-size:12px;color:var(--ink-3)">بدّل حالة أي شاشة لتراجع ما يراه المستخدم: تحميل، فارغ، خطأ، أو عدم اتصال.</span>
+      </div>
+      <span style="display:inline-flex;align-items:center;gap:8px;padding:0 11px;min-height:36px;border-radius:8px;background:var(--nf-s);border:1px solid var(--nf-sb);color:var(--nf-i);font-size:11px;font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:var(--nf)"></span>للعرض والمراجعة فقط — لا يؤثر على البيانات</span>
+    </div>
+
+    <dc-import name="Cards" meta="{{ cardsMeta }}" handlers="{{ handlers }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,220px"></dc-import>
+
+    <div style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:8px;background:var(--surface);border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:700;color:var(--ink-3);letter-spacing:.02em">معاينة الحالة على شاشة السجل</span>
+        <span style="font-size:10px;color:var(--ink-4)">بدّل الحالة من الشرائط أعلى المعاينة</span>
+      </div>
+      <dc-import name="States" meta="{{ statesMeta }}" handlers="{{ handlers }}" state="{{ state }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,520px"></dc-import>
+    </div>
+  </div>
+
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:900},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+const ROUTE = '/demo';
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, state: 'ok', fire: null };
+  componentDidMount() { const w = () => { if (window.HubData && window.HubShared && window.UIKit) this.setState({ ready: true }); else this.t = setTimeout(w, 40); }; w(); }
+  componentWillUnmount() { clearTimeout(this.t); }
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    const empty = { theme, handlers: {}, cardsMeta: { sections: [] }, statesMeta: { rows: [] }, state: 'ok', toastsMeta: { types: [] }, toastFire: null };
+    if (!D || !H || !S.ready) return empty;
+
+    const f = D.fmt, k = D.kpis('week', null);
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+
+    const handlers = {
+      pick: (st) => { this.setState({ state: st }); this.toast({ key: 'state', title: 'الحالة المعروضة: ' + ({ ok: 'عادي', loading: 'تحميل', empty: 'فارغ', error: 'خطأ', offline: 'عدم اتصال' }[st] || st) }); },
+      refresh: () => this.toast({ key: 'state', title: 'أُعيد تحميل البيانات' }),
+      compose: () => go('/sandbox'),
+      retry: () => { this.setState({ state: 'loading' }); setTimeout(() => this.setState({ state: 'ok' }), 900); },
+      linkDevice: () => go('/devices'),
+      openDocs: () => go('/settings'),
+      openStatus: () => this.toast({ key: 'state', title: 'خدمة التجميع: تعمل بتباطؤ' }),
+      copyError: () => this.toast({ key: 'state', title: 'نُسخت تفاصيل الخطأ' }),
+      openHome: () => go('/'),
+    };
+
+    /* ——— شرح الحالات (Cards: mini قابلة للنقر) ——— */
+    const states = [
+      { v: 'ok', label: 'عادي', note: 'بيانات وإجراءات كاملة', tone: 'ok', icon: 'check' },
+      { v: 'loading', label: 'تحميل', note: 'هيكل بشكل المحتوى', tone: 'info', icon: 'clock' },
+      { v: 'empty', label: 'فارغ', note: 'خطوات أول استخدام', tone: 'muted', icon: 'card' },
+      { v: 'error', label: 'خطأ', note: 'خطأ خام وإعادة محاولة', tone: 'danger', icon: 'fail' },
+      { v: 'offline', label: 'عدم اتصال', note: 'أرقام آخر مزامنة', tone: 'warn', icon: 'hook' },
+    ];
+    const cardsMeta = { handlers, sections: [{ min: 210, mobileColumns: 2, cards: states.map((s) => ({
+      kind: 'mini', label: s.label, value: s.note, icon: s.icon, tone: s.tone,
+      badge: S.state === s.v ? 'معروضة' : null, badgeTone: 'primary',
+      valueMono: false, action: 'pick', args: s.v, key: 'state-' + s.v,
+    })) }] };
+
+    /* ——— معاينة الحالة على شاشة السجل (States) ——— */
+    const rows = D.messages.filter((m) => m.direction === 'out').slice(0, 5).map((m) => {
+      const c = D.contactById(m.contactId) || { name: 'بلا اسم', phone: '' };
+      const tone = { read: 'info', delivered: 'ok', sent: 'muted', warn: 'warn', danger: 'danger', muted: 'muted' }[D.STATUS[m.status].tone] || 'muted';
+      return { title: c.name, sub: c.phone, status: D.STATUS[m.status].ar, tone };
+    });
+    const statesMeta = {
+      title: 'الرسائل الصادرة', sub: 'آخر تحديث قبل دقيقتين',
+      showSwitcher: false,
+      actions: [
+        { key: 'refresh', label: 'تحديث', variant: 'secondary', action: 'refresh' },
+        { key: 'compose', label: 'رسالة اختبار', variant: 'primary', action: 'compose', needsOnline: true },
+      ],
+      kpis: [
+        { label: 'أُرسلت هذا الأسبوع', value: f.n(k.total) },
+        { label: 'في الطابور', value: f.n(D.pendingQueueCount()), tone: 'warn' },
+        { label: 'فشلت', value: f.n(k.failed), tone: 'danger' },
+        { label: 'نسبة التسليم', value: k.deliveredRate.toFixed(1) + '%', tone: 'ok' },
+      ],
+      rows,
+      loading: { rows: 5, note: 'يجري تحميل آخر ٥٠ رسالة…' },
+      empty: {
+        icon: 'send', title: 'لا رسائل بعد',
+        text: 'لم تُرسل أي رسالة من هذا الحساب. اربط جهازاً وفعّل نموذج إشعار لتبدأ الرسائل بالخروج تلقائياً.',
+        hints: [
+          { text: 'اربط جهازاً من شاشة الأجهزة (مسح QR).' },
+          { text: 'فعّل نموذج إشعار لنوع مستند واحد على الأقل.' },
+          { text: 'اعتمد مستنداً تجريبياً وراقب الطابور.' },
+        ],
+        actions: [
+          { key: 'link', label: 'ربط جهاز', variant: 'primary', action: 'linkDevice' },
+          { key: 'docs', label: 'دليل البدء', variant: 'secondary', action: 'openDocs' },
+        ],
+      },
+      error: {
+        title: 'تعذّر تحميل الرسائل',
+        text: 'البيانات نفسها سليمة؛ خدمة التجميع فقط لم تستجب. أعد المحاولة أو افتح السجل مباشرة.',
+        raw: 'GET /api/v1/messages?range=week → 503 Service Unavailable\nrequest_id: req_8f21ac04 · upstream: agg-svc-3 · elapsed: 30.2s',
+        meta: 'retry 3/3 · last attempt ' + f.time(Date.now()),
+        actions: [
+          { key: 'retry', label: 'إعادة المحاولة', variant: 'primary', action: 'retry' },
+          { key: 'status', label: 'حالة الخدمة', variant: 'secondary', action: 'openStatus' },
+          { key: 'copy', label: 'نسخ تفاصيل الخطأ', variant: 'ghost', action: 'copyError' },
+        ],
+      },
+      offline: {
+        title: 'لا يوجد اتصال بالإنترنت',
+        text: 'الأرقام المعروضة من آخر مزامنة. الإجراءات معطّلة حتى يعود الاتصال، والرسائل الجديدة تبقى في الطابور.',
+        cta: 'إعادة المحاولة', action: 'retry', stale: 'آخر مزامنة ' + f.time(Date.now() - 900000),
+      },
+    };
+
+    return {
+      theme, handlers, cardsMeta, statesMeta, state: S.state,
+      toastsMeta: { position: 'bottom-start', duration: 2600, types: [{ key: 'state', tone: 'info', icon: 'check' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

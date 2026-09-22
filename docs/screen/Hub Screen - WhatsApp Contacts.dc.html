@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--c-sent:#8FC0E4;--c-deliv:#2E7FD1;--c-read:#22A7C9;--c-queued:#EDA93E;--c-failed:#E0615A;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--c-sent:#6FA6D8;--c-deliv:#3E82CC;--c-read:#37A9C9;--c-queued:#D9A33A;--c-failed:#DE6F68;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+  .lv-host > .sc-host{flex:1 1 0%;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .lv-host > .sc-host > *{flex:1 1 0%;min-height:0;min-width:0}
+</style>
+</helmet>
+<div data-screen-label="جهات اتصال الواتس" dir="rtl" style="flex:1;min-height:0;height:100%;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;flex:none">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <h1 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em">جهات اتصال الواتس</h1>
+        <span style="font-size:12px;color:var(--ink-3)">الأرقام التي بيننا وبينها رسالة واحدة على الأقل: مسجّلة كجهة اتصال في النظام، أو مجهولة يُقترح إنشاؤها.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <sc-if value="{{ hasScope }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:8px;min-height:32px;padding:0 10px;border-radius:8px;background:var(--pri-s);color:var(--pri-d);font-size:12px;font-weight:600">{{ scopeLabel }}<span onClick="{{ clearScope }}" title="إزالة" style="cursor:pointer;font-size:14px;line-height:1">×</span></span></sc-if>
+        <button type="button" onClick="{{ create }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">فتح جهات الاتصال</button>
+      </div>
+    </div>
+
+    <dc-import name="Cards" meta="{{ cardsMeta }}" handlers="{{ handlers }}" loading="{{ loading }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,72px"></dc-import>
+
+    <div class="lv-host" style="flex:1;min-height:340px;display:flex;overflow:hidden">
+      <dc-import name="List View" loading="{{ loading }}" columns="{{ columns }}" rows="{{ rows }}" detail="{{ detail }}" bulk="{{ bulk }}" unit="محادثة" search-placeholder="اسم في الواتساب أو رقم…" search-keys="{{ searchKeys }}" export-name="wa-contacts" default-sort="{{ defaultSort }}" page-size="{{ 50 }}" density="compact" theme="{{ theme }}" hint-size="100%,100%"></dc-import>
+    </div>
+  </div>
+
+  <dc-import name="Overlay Panel" panel="{{ panel }}" on-action="{{ onPanelAction }}" on-close="{{ onPanelClose }}" theme="{{ theme }}" embed="{{ true }}" hint-size="0,0"></dc-import>
+  <sc-if value="{{ sendOpen }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="Send Message Dialog" prefill="{{ sendPrefill }}" on-close="{{ onSendClose }}" theme="{{ theme }}" hint-size="0,0"></dc-import>
+  </sc-if>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:860},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;]},&quot;filter&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;{kind:'contact'|'match'|'group', value} | null&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+const ROUTE = '/wa-contacts';
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, scope: null, sendTo: null, panel: null, addId: null, draftAccs: null, fire: null, rev: 0, loading: true };
+  componentDidMount() {
+    const w = () => { if (window.HubData && window.HubShared && window.UIKit) { const filter = this.props.filter || window.HubShared.takeFilter(ROUTE); this.setState({ ready: true, scope: filter || null }); setTimeout(() => this.setState({ loading: false }), 220); } else this.t = setTimeout(w, 40); };
+    w();
+  }
+  componentWillUnmount() { clearTimeout(this.t); }
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+
+  initials(name) { if (!name) return '؟'; const w = String(name).replace(/^(شركة|مؤسسة|مصنع|مجموعة)\s+/, '').trim().split(/\s+/); const a = w[0] || '؟'; return w[1] ? a[0] + w[1][0] : a.slice(0, 2); }
+
+  addPanel(t, D, draft) {
+    const accs = draft || [];
+    const setAccs = (next) => this.setState({ draftAccs: next, panel: this.addPanel(t, D, next) });
+    return {
+      type: 'modal', width: '44%', title: 'جهة اتصال جديدة من محادثة واتساب',
+      subtitle: t.phone, subtitleMono: true, badge: { text: 'مجهول', tone: 'warn' },
+      content: { sections: [{ title: 'بيانات الجهة', cols: 2, fields: [
+        { key: 'name', label: 'الاسم', type: 'text', value: t.waName || '', span: 2, required: true, placeholder: 'اسم الشركة أو الشخص', hint: 'الاسم الظاهر في الواتساب — عدّله كما يُسجّل في النظام.' },
+        { key: 'phone', label: 'رقم الواتساب', type: 'text', value: t.phone, mono: true, required: true, placeholder: '+966…', hint: 'بالصيغة الدولية' },
+        { key: 'accountsList', label: 'الحسابات المرتبطة', type: 'list', span: 2, maxH: '200px',
+          rowCols: '0 minmax(0,1fr) 0 100px 24px', head: ['', 'الجهة', '', 'نوع الجهة', ''],
+          rowsData: accs.map((a, i) => ({ text: '', sub: a.name, tag: (D.PARTY_TYPES[a.type] || {}).ar || '—', tone: 'info', onRemove: () => setAccs(accs.filter((_, ix) => ix !== i)) })),
+          add: { placeholder: 'اسم الجهة في الأستاذ المساعد…', label: '+ إضافة', options: Object.keys(D.PARTY_TYPES).map((k) => ({ v: k, l: D.PARTY_TYPES[k].ar })), onAdd: (txt, ty) => setAccs(accs.concat([{ name: txt, type: ty }])) },
+          emptyText: 'لا حسابات مرتبطة بهذا الرقم.', hint: 'أضف الجهة ونوعها، ورقم واحد قد يخدم أكثر من جهة.' },
+        { key: 'active', label: 'الحالة', type: 'readonly', span: 2, value: 'مفعّل', hint: 'تُعدّل من زر «تفعيل/تعطيل» في صفحة جهات الاتصال، وتُسجّل مع الملاحظات.' },
+        { key: 'chat', label: 'محادثة قائمة', type: 'readonly', span: 2, value: 'وارد مسجّل في الواتساب', hint: 'يوجد وارد فعلي من هذا الرقم، فلا حاجة لتأكيد يدوي.' },
+      ] }] },
+      actions: [
+        { key: 'cancel', label: 'إلغاء', variant: 'secondary', close: true },
+        { key: 'add', label: 'أضف جهة الاتصال', variant: 'primary', close: true },
+      ],
+    };
+  }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    if (!D || !H || !S.ready) return { theme, loading: true, sendOpen: false, sendPrefill: null, onSendClose: () => {}, create: () => {}, hasScope: false, scopeLabel: '', clearScope: () => {}, cardsMeta: { sections: [] }, handlers: {}, columns: [], rows: [], detail: null, bulk: [], searchKeys: [], defaultSort: null, panel: null, onPanelAction: () => {}, onPanelClose: () => {}, toastsMeta: { types: [] }, toastFire: null };
+    const f = D.fmt;
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+
+    /* محادثات الواتساب: كل رقم بيننا وبينه رسالة واحدة على الأقل */
+    const inC = {}, outC = {}, lastT = {};
+    D.messages.forEach((m) => {
+      const k = m.contactId; if (!k) return;
+      if (m.direction === 'in') inC[k] = (inC[k] || 0) + 1; else outC[k] = (outC[k] || 0) + 1;
+      if (!lastT[k] || m.ts > lastT[k]) lastT[k] = m.ts;
+    });
+    const regThreads = D.contacts
+      .filter((c) => (inC[c.id] || 0) + (outC[c.id] || 0) > 0)
+      .map((c) => ({ key: 'c:' + c.id, phone: c.phone, waName: c.name || 'بلا اسم', contact: c, inN: inC[c.id] || 0, outN: outC[c.id] || 0, last: lastT[c.id] || 0, wa: null }));
+    const unregThreads = (D.waUnregistered || []).map((w) => ({ key: 'w:' + w.id, phone: w.phone, waName: w.waName, contact: w.contactId ? D.contactById(w.contactId) : null, inN: w.inCount, outN: w.outCount, last: w.lastTs, wa: w }));
+    let threads = regThreads.concat(unregThreads);
+
+    let scopeLabel = '';
+    const sc = S.scope;
+    if (sc && sc.kind === 'link') { const want = sc.value === 'linked'; threads = threads.filter((t) => !!t.contact === want); scopeLabel = want ? 'مسجّل فقط' : 'المجهول فقط'; }
+    if (sc && sc.kind === 'search') { const q = String(sc.value); threads = threads.filter((t) => t.phone.includes(q) || String(t.waName).includes(q)); scopeLabel = 'بحث: ' + q; }
+
+    const total = regThreads.length + unregThreads.length;
+    const linked = regThreads.length + unregThreads.filter((t) => t.contact).length;
+    const unlinked = total - linked;
+    const handlers = {
+      showLinked: () => this.setState({ scope: { kind: 'link', value: 'linked' } }),
+      showUnlinked: () => this.setState({ scope: { kind: 'link', value: 'unlinked' } }),
+      clearScope: () => this.setState({ scope: null }),
+    };
+    const cardsMeta = { handlers, sections: [{ min: 150, mobileColumns: 2, cards: [
+      { kind: 'stat', icon: 'chat', label: 'محادثات الواتساب', value: f.n(total), valueMono: true, note: 'أرقام بيننا وبينها رسالة واحدة على الأقل', action: 'clearScope' },
+      { kind: 'stat', icon: 'check', tone: 'ok', label: 'مسجّل في النظام', value: f.n(linked), valueMono: true, note: 'الرقم له جهة اتصال', action: 'showLinked' },
+      { kind: 'stat', icon: 'warn', tone: unlinked ? 'warn' : undefined, label: 'مجهول', value: f.n(unlinked), valueMono: true, note: 'يُقترح إنشاء جهة اتصال له', action: 'showUnlinked' },
+      { kind: 'stat', icon: 'chart', tone: 'info', label: 'نسبة التسجيل', value: Math.round((linked / Math.max(1, total)) * 100) + '%', valueMono: true, note: 'من محادثات الواتساب', action: 'clearScope' },
+    ] }] };
+
+    const columns = [
+      { key: 'wa', label: 'الاسم في الواتساب', w: 220, kind: 'avatar' },
+      { key: 'phone', label: 'الرقم', w: 150, kind: 'mono' },
+      { key: 'state', label: 'حالة التسجيل', w: 150, kind: 'badge', group: true, filter: true },
+      { key: 'contact', label: 'جهة الاتصال في النظام', w: 230 },
+      { key: 'last', label: 'آخر رسالة', w: 140, kind: 'time' },
+      { key: 'since', label: 'منذ', w: 110 },
+    ];
+    const rows = threads.map((t) => ({
+      id: t.key,
+      wa: { text: t.waName || (t.phone.includes('@g.us') ? 'مجموعة واتساب' : 'بلا اسم في الواتساب'), initials: this.initials(t.waName || t.phone.slice(-2)), avBg: t.contact ? 'var(--pri-s)' : 'var(--sunken)', avFg: t.contact ? 'var(--pri-d)' : 'var(--ink-3)', sort: t.waName },
+      phone: t.phone,
+      state: t.contact
+        ? { text: 'مسجّل', bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', sort: 'a' }
+        : { text: 'مجهول', bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', sort: 'b' },
+      contact: t.contact ? (t.contact.name || t.contact.phone) : 'يُقترح إضافته',
+      last: t.last ? t.last : { text: '—', color: 'var(--ink-4)', sort: -1 }, since: { text: t.last ? f.ago(t.last) : '—', sort: t.last ? -t.last : 0, color: 'var(--ink-3)' },
+      _t: t,
+    }));
+
+    const detail = (r) => {
+      const t = r._t, c = t.contact;
+      return {
+        title: t.waName || (t.phone.includes('@g.us') ? 'مجموعة واتساب' : 'بلا اسم في الواتساب'), sub: t.phone,
+        badge: c ? { text: 'مسجّل', tone: 'ok' } : { text: 'مجهول', tone: 'warn' },
+        alert: c ? null : { tone: 'warn', title: 'رقم مجهول', lines: ['بيننا وبينه محادثة، ولا توجد جهة اتصال في النظام بنفس الرقم. يُقترح إنشاء جهة اتصال له.'] },
+        fields: [
+          { k: 'آخر رسالة', v: t.last ? f.date(t.last) + ' ' + f.time(t.last) + ' · ' + f.ago(t.last) : '—', mono: true },
+          { k: 'جهة الاتصال', v: c ? (c.name || c.phone) : 'مجهول — يُقترح إنشاؤها', color: c ? undefined : 'var(--wn-i)' },
+        ],
+        blocks: c && (c.accounts || []).length ? [{ label: 'الحسابات المرتبطة', list: c.accounts.map((a, i) => ({ text: a, badge: (D.PARTY_TYPES[(c.accountTypes || [])[i] || c.type] || {}).ar || '—', badgeTone: 'info' })) }] : [],
+        actions: [
+          ...(c
+            ? [{ label: 'فتح جهة الاتصال', tone: 'primary', onClick: () => go('/contacts', { kind: 'contact', value: c.id }) }]
+            : [{ label: 'أضفه كجهة اتصال', tone: 'primary', closes: false, onClick: () => this.setState({ addId: t.key, draftAccs: [], panel: this.addPanel(t, D, []) }) }]),
+          { label: 'محاكي الواتساب', onClick: () => go('/send', c ? { kind: 'contact', value: c.id } : { kind: 'search', value: t.phone }) },
+          { label: 'سجل الرسائل', onClick: () => go('/messages/all', { kind: 'search', value: t.phone }) },
+        ],
+      };
+    };
+
+    const bulk = [{ label: 'إنشاء جهات اتصال للمجهول', onClick: (sel) => {
+      let n = 0;
+      sel.forEach((r) => { const t = r._t; if (t.contact || !t.wa) return; const id = 'c-' + t.wa.id; D.contacts.unshift({ id, name: t.waName, phone: t.phone, type: 'customer', accounts: [], accountTypes: [], linked: false, active: true, inDevice: true, chatManual: true }); t.wa.contactId = id; n++; });
+      if (n) { D.logActivity('أُضيفت ' + f.n(n) + ' جهة اتصال من محادثات الواتساب', 'primary'); this.toast({ key: 'saved', title: 'أُضيفت ' + f.n(n) + ' جهة اتصال' }); this.bump(); }
+      else this.toast({ key: 'warn', title: 'لا أرقام مجهولة في التحديد' });
+    } }];
+
+    const addTarget = threads.find((t) => t.key === S.addId) || null;
+    return {
+      theme, loading: S.loading,
+      sendOpen: !!S.sendTo, sendPrefill: S.sendTo, onSendClose: () => this.setState({ sendTo: null }),
+      create: () => go('/contacts'),
+      hasScope: !!scopeLabel, scopeLabel, clearScope: () => this.setState({ scope: null }),
+      cardsMeta, handlers, columns, rows, detail, bulk,
+      searchKeys: ['wa', 'phone', 'contact'], defaultSort: { key: 'last', dir: 'desc' },
+      panel: S.panel,
+      onPanelAction: (key, v) => {
+        if (key === 'add' && addTarget) {
+          const name = String(v.name || '').trim();
+          if (!name) return this.toast({ key: 'warn', title: 'الاسم مطلوب' });
+          const dacc = S.draftAccs || [];
+          const accounts = dacc.map((a) => a.name), accountTypes = dacc.map((a) => a.type);
+          const phone = String(v.phone || addTarget.phone).trim();
+          const id = 'c-' + (addTarget.wa ? addTarget.wa.id : Date.now());
+          D.contacts.unshift({ id, name, phone, type: accountTypes[0] || 'customer', accounts, accountTypes, linked: accounts.length > 0, active: true, inDevice: true, chatManual: true });
+          if (addTarget.wa) addTarget.wa.contactId = id;
+          D.logActivity('أُضيف الرقم ' + addTarget.phone + ' كجهة اتصال «' + name + '»', 'primary');
+          this.toast({ key: 'saved', title: 'أُضيفت جهة الاتصال', text: accounts.length ? 'ومربوطة بـ ' + accounts.length + ' حساب.' : 'بلا ربط بحساب بعد.' });
+          this.setState({ panel: null, addId: null, draftAccs: null }); this.bump();
+        }
+      },
+      onPanelClose: () => this.setState({ panel: null, addId: null, draftAccs: null }),
+      toastsMeta: { types: [
+        { key: 'saved', tone: 'success', title: 'تم الحفظ' },
+        { key: 'warn', tone: 'warning', title: 'تنبيه' },
+      ] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

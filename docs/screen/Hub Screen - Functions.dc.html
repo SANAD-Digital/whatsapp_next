@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+  .lv-host > .sc-host{flex:1 1 0%;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .lv-host > .sc-host > *{flex:1 1 0%;min-height:0;min-width:0}
+</style>
+</helmet>
+<div data-screen-label="مركز الدوال" dir="rtl" style="flex:1;min-height:0;height:100%;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px;width:100%">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;flex:none">
+      <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+        <h1 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em">مركز الدوال</h1>
+        <span style="font-size:12px;color:var(--ink-3)">الدالة هي المنطق المنفَّذ خلف الأمر. من هنا تُراجع إصداراتها وتُحدَّث.</span>
+      </div>
+      <span onClick="{{ openCommands }}" style="display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink-2);font-size:12px;font-weight:600;cursor:pointer" style-hover="background:var(--pri-s);border-color:var(--pri-sb);color:var(--pri-d)">الأوامر<span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-4)">{{ cmdCount }}</span></span>
+    </div>
+
+    <dc-import name="Cards" meta="{{ cardsMeta }}" handlers="{{ handlers }}" loading="{{ loading }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,72px"></dc-import>
+
+    <div class="lv-host" style="flex:1;min-height:340px;display:flex;overflow:hidden">
+      <dc-import name="List View" loading="{{ loading }}" columns="{{ columns }}" rows="{{ rows }}" detail="{{ detail }}" on-open="{{ onOpenFn }}" bulk="{{ bulk }}" unit="دالة" search-placeholder="اسم الدالة، مجموعتها، أو وصفها…" search-keys="{{ searchKeys }}" export-name="functions" default-sort="{{ defaultSort }}" pinned="{{ pinned }}" page-size="{{ 50 }}" density="compact" theme="{{ theme }}" hint-size="100%,100%"></dc-import>
+    </div>
+  </div>
+
+  <sc-if value="{{ detailOpen }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="Function Detail" fn="{{ detailFn }}" on-update="{{ onFnUpdate }}" on-toggle-install="{{ onFnInstall }}" on-open-commands="{{ onFnCommands }}" on-close="{{ onDetailClose }}" theme="{{ theme }}" hint-size="0,0"></dc-import>
+  </sc-if>
+  <dc-import name="Confirm Dialog" meta="{{ confirmMeta }}" handlers="{{ handlers }}" open-key="{{ confirmKey }}" on-close="{{ onConfirmClose }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:900},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+const ROUTE = '/functions';
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, sel: null, confirmKey: null, pendingIds: [], fire: null, rev: 0, loading: true, filter: null };
+  componentDidMount() {
+    const w = () => { if (window.HubData && window.HubShared && window.UIKit) { this.setState({ ready: true, filter: window.HubShared.takeFilter(ROUTE) }); setTimeout(() => this.setState({ loading: false }), 220); } else this.t = setTimeout(w, 40); };
+    w();
+  }
+  componentWillUnmount() { clearTimeout(this.t); }
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    const empty = { theme, loading: true, handlers: {}, cmdCount: '—', openCommands: () => {}, cardsMeta: { sections: [] }, columns: [], rows: [], detail: null, bulk: [], searchKeys: [], defaultSort: null, pinned: [], detailOpen: false, detailFn: null, onOpenFn: () => {}, onDetailClose: () => {}, onFnUpdate: () => {}, onFnInstall: () => {}, onFnCommands: () => {}, confirmMeta: { dialogs: [] }, confirmKey: null, onConfirmClose: () => {}, toastsMeta: { types: [] }, toastFire: null };
+    if (!D || !H || !S.ready) return empty;
+
+    const f = D.fmt, all = D.functions || [], cmds = D.commands || [];
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+    const needsUp = (x) => x.latestVersion && x.latestVersion !== x.currentVersion;
+    const outdated = all.filter(needsUp);
+    const active = all.filter((x) => x.status === 'active');
+    const calls = all.reduce((n, x) => n + (x.calls30d || 0), 0);
+    const cmdsOf = (name) => cmds.filter((c) => c.fn === name);
+
+    const handlers = {
+      openCommands: () => go('/commands'),
+      update: () => {
+        const ids = S.pendingIds;
+        ids.forEach((id) => { const x = all.find((y) => y.id === id); if (x) { x.currentVersion = x.latestVersion; x.version = x.latestVersion; (x.changelog || []).forEach((l) => { l.current = l.version === x.latestVersion; }); } });
+        this.setState({ pendingIds: [] });
+        this.toast({ key: 'updated', title: 'حُدِّثت ' + f.n(ids.length) + ' دالة', text: 'الأوامر المرتبطة تستخدم الإصدار الجديد من الاستدعاء القادم.' });
+        this.bump();
+      },
+      setStatus: (status) => {
+        const ids = S.pendingIds;
+        ids.forEach((id) => { const x = all.find((y) => y.id === id); if (x) x.status = status; });
+        this.setState({ pendingIds: [] });
+        this.toast({ key: status === 'active' ? 'activated' : 'paused', title: (status === 'active' ? 'فُعّلت ' : 'أُوقفت ') + f.n(ids.length) + ' دالة', text: status === 'active' ? '' : 'الأوامر المرتبطة ستطابق النص لكن لن تُنفّذ.' });
+        this.bump();
+      },
+    };
+
+    /* ——— المؤشرات (Cards) ——— */
+    const cardsMeta = { handlers, sections: [{ min: 200, mobileColumns: 2, cards: [
+      { kind: 'stat', icon: 'sigma', label: 'عدد الدوال', value: f.n(all.length), valueMono: true, note: [...new Set(all.map((x) => x.category))].length + ' مجموعة' },
+      { kind: 'stat', icon: 'check', tone: 'ok', label: 'المفعّلة', value: f.n(active.length), valueMono: true, note: f.n(all.length - active.length) + ' موقوفة' },
+      { kind: 'stat', icon: 'chart', tone: 'info', label: 'الاستدعاءات (30ي)', value: f.n(calls), valueMono: true, note: 'عبر ' + f.n(cmds.length) + ' أمر مرتبط', action: 'openCommands' },
+      { kind: 'stat', icon: 'warn', tone: outdated.length ? 'warn' : undefined, label: 'تحديثات متاحة', value: f.n(outdated.length), valueMono: true, note: outdated.length ? 'إصدارات أحدث جاهزة للتنزيل' : 'كل الدوال على أحدث إصدار' },
+    ] }] };
+
+    /* ——— القائمة (List View) ——— */
+    const verCell = (x) => needsUp(x)
+      ? { text: 'يحتاج تحديث', bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', sort: 'a' }
+      : { text: 'محدث', bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', sort: 'b' };
+    const stCell = (x) => x.status === 'active'
+      ? { text: 'مفعّلة', bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', sort: 'a' }
+      : { text: 'موقوفة', bg: 'var(--sunken)', fg: 'var(--ink-3)', dot: 'var(--ink-4)', sort: 'b' };
+    const instCell = (x) => x.installed
+      ? { text: 'منزل', bg: 'var(--pri-s)', fg: 'var(--pri-d)', dot: 'var(--pri)', sort: 'a' }
+      : { text: 'غير منزل', bg: 'var(--sunken)', fg: 'var(--ink-3)', dot: 'var(--ink-4)', sort: 'b' };
+    const columns = [
+      { key: 'name', label: 'الدالة', w: 220, weight: 600, group: true },
+      { key: 'category', label: 'المجموعة', w: 150, group: true, filter: true },
+      { key: 'version', label: 'الإصدار', w: 100, kind: 'mono' },
+      { key: 'update', label: 'التحديث', w: 130, kind: 'badge', group: true, filter: true },
+      { key: 'cmds', label: 'أوامر مرتبطة', w: 120, kind: 'num', align: 'end' },
+      { key: 'calls30d', label: 'الاستدعاءات (30ي)', w: 140, kind: 'num', align: 'end' },
+      { key: 'avgMs', label: 'متوسط التنفيذ', w: 120, kind: 'num', align: 'end' },
+      { key: 'status', label: 'الحالة', w: 110, kind: 'badge', group: true, filter: true },
+      { key: 'installed', label: 'التنزيل', w: 110, kind: 'badge', group: true, filter: true },
+    ];
+    const rows = all.map((x) => ({
+      id: x.id, name: x.name, category: x.category, version: x.currentVersion || x.version,
+      update: verCell(x), cmds: cmdsOf(x.name).length, calls30d: x.calls30d || 0, avgMs: x.avgMs || 0, status: stCell(x), installed: instCell(x), _x: x,
+    }));
+
+    const detail = (r) => {
+      const x = r._x, linked = cmdsOf(x.name);
+      const log = (x.changelog || []).slice(0, 4)
+        .map((l) => l.version + (l.latest ? ' — الأحدث' : l.current ? ' — الحالي' : '') + ' · ' + f.date(l.date) + '\n' + (l.changes || []).map((c) => '— ' + c).join('\n'))
+        .join('\n\n');
+      return {
+        alert: needsUp(x)
+          ? { tone: 'warn', title: 'إصدار أحدث متاح: ' + x.latestVersion, lines: ['الإصدار الحالي ' + x.currentVersion + '. التحديث لا يغيّر الأوامر المرتبطة.'] }
+          : (x.status !== 'active' ? { tone: 'warn', title: 'الدالة موقوفة', lines: [linked.length ? f.n(linked.length) + ' أمر مرتبط لن يُنفَّذ حتى تُفعَّل.' : 'لا أوامر مرتبطة بها حالياً.'] } : null),
+        fields: [
+          { k: 'المجموعة', v: x.category }, { k: 'نوع الجهة', v: x.partyType },
+          { k: 'الإصدار الحالي', v: x.currentVersion || x.version, mono: true }, { k: 'أحدث إصدار', v: x.latestVersion || x.version, mono: true },
+          { k: 'الاستدعاءات (30ي)', v: f.n(x.calls30d || 0), mono: true }, { k: 'متوسط زمن التنفيذ', v: (x.avgMs || 0) + ' ms', mono: true },
+          { k: 'أوامر مرتبطة', v: linked.length ? linked.map((c) => c.code).join('، ') : 'لا شيء' },
+        ],
+        blocks: [
+          { label: 'ماذا تفعل', text: x.description || '—' },
+          { label: 'متى تُستخدم', text: x.whenToUse || '—' },
+          { label: 'المتغيرات المطلوبة', text: (x.inputs || []).map((i) => i.token + ' — ' + i.label + (i.example ? ' (مثال ' + i.example + ')' : '')).join('\n') || 'لا متغيرات' },
+          { label: 'المخرجات', text: (x.outputs || []).map((o) => o.token + ' — ' + o.label).join('\n') || 'لا مخرجات' },
+          { label: 'سجل الإصدارات', text: log || '—' },
+        ],
+        actions: [].concat(
+          needsUp(x) ? [{ label: 'تحديث إلى ' + x.latestVersion, onClick: () => this.setState({ pendingIds: [x.id], confirmKey: 'update' }) }] : [],
+          [{ label: linked.length ? 'الأوامر المرتبطة' : 'اربط أمراً بها', onClick: () => go('/commands', { kind: 'search', value: x.name }) }],
+          [{ label: x.status === 'active' ? 'إيقاف الدالة' : 'تفعيل الدالة', tone: x.status === 'active' ? 'danger' : undefined, onClick: () => { this.setState({ pendingIds: [x.id] }); handlers.setStatus(x.status === 'active' ? 'inactive' : 'active'); } }]
+        ),
+      };
+    };
+
+    const bulk = [
+      { label: 'تحديث المحددة', onClick: (s) => this.setState({ pendingIds: s.filter((r) => needsUp(r._x)).map((r) => r.id), confirmKey: 'update' }) },
+      { label: 'تفعيل المحددة', onClick: (s) => { this.setState({ pendingIds: s.map((r) => r.id) }); handlers.setStatus('active'); } },
+      { label: 'إيقاف المحددة', onClick: (s) => { this.setState({ pendingIds: s.map((r) => r.id) }); handlers.setStatus('inactive'); } },
+    ];
+
+    const nPending = S.pendingIds.length;
+    const pendingCmds = S.pendingIds.reduce((n, id) => { const x = all.find((y) => y.id === id); return n + (x ? cmdsOf(x.name).length : 0); }, 0);
+    const confirmMeta = { handlers, dialogs: [
+      { key: 'update', tone: 'info', icon: 'send', title: 'تحديث ' + f.n(nPending) + ' دالة؟',
+        text: 'التحديث يستبدل منطق الدالة بأحدث إصدار. الأوامر ومرادفاتها وصلاحياتها تبقى كما هي.',
+        facts: [
+          { label: 'دوال ستُحدَّث', value: f.n(nPending), mono: true },
+          { label: 'أوامر ستستفيد', value: f.n(pendingCmds), mono: true, tone: 'ok' },
+          { label: 'تبقى بلا تحديث', value: f.n(Math.max(0, outdated.length - nPending)), mono: true },
+        ],
+        confirmLabel: 'حدّث الآن', action: 'update' },
+    ] };
+
+    return {
+      theme, loading: S.loading, handlers, cmdCount: f.n(cmds.length),
+      openCommands: () => go('/commands'),
+      cardsMeta, columns, rows, detail, bulk,
+      onOpenFn: (r) => this.setState({ sel: r.id }),
+      detailOpen: !!S.sel, detailFn: all.find((x) => x.id === S.sel) || null,
+      onDetailClose: () => this.setState({ sel: null }),
+      onFnUpdate: (x) => { this.setState({ pendingIds: [x.id] }); handlers.update(); },
+      onFnInstall: (x) => { x.installed = !x.installed; this.toast({ key: x.installed ? 'activated' : 'paused', title: x.installed ? 'نُزّلت الدالة «' + x.name + '»' : 'أُلغي تنزيل «' + x.name + '»' }); this.bump(); },
+      onFnCommands: (x) => { this.setState({ sel: null }); go('/commands', { kind: 'search', value: x.name }); },
+      searchKeys: ['name', 'category', 'description'],
+      defaultSort: { key: 'calls30d', dir: 'desc' }, pinned: ['name'],
+      confirmMeta, confirmKey: S.confirmKey, onConfirmClose: () => this.setState({ confirmKey: null }),
+      toastsMeta: { position: 'bottom-start', duration: 3800, types: [{ key: 'updated', tone: 'ok', icon: 'check' }, { key: 'activated', tone: 'ok', icon: 'check' }, { key: 'paused', tone: 'warn', icon: 'alert' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--wn-s:#FBF1DC;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg-i:#A93A34;--dg-sb:#F2CBC7;--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--wn-s:#37290E;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg-i:#F0A49E;--dg-sb:#562A27;--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  input,button,select,textarea{font-family:inherit;}
+  .te-sb::-webkit-scrollbar{width:8px;height:8px}
+  .te-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:999px}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<sc-if value="{{ open }}" hint-placeholder-val="{{ true }}">
+<div dir="rtl" data-theme="{{ theme }}" role="dialog" aria-modal="true" style="position:{{ shell.pos }};inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:{{ shell.pad }};background:{{ shell.backdrop }};font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:var(--ink)">
+  <div onClick="{{ close }}" style="position:absolute;inset:0"></div>
+  <div style="position:relative;z-index:1;width:min(1180px,100%);max-height:100%;height:{{ shell.h }};display:flex;flex-direction:column;border-radius:{{ shell.radius }};background:var(--bg);border:1px solid var(--border);box-shadow:var(--shadow-lg);overflow:hidden;animation:fadeUp .18s ease-out">
+
+    <!-- الرأس: الاسم + حالة الحفظ + إغلاق -->
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex:none">
+      <span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:1;min-width:0">
+        <input type="text" value="{{ name }}" onInput="{{ onName }}" placeholder="{{ namePlaceholder }}" style="min-height:36px;padding:0 11px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--ink);font-size:16px;font-weight:700;outline:none;cursor:text;min-width:0;flex:1;max-width:420px" style-hover="border-color:var(--border-2);background:var(--bg)" style-focus="border-color:var(--pri);background:var(--bg)" />
+        <sc-if value="{{ dirty }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;background:var(--wn-s);border:1px solid var(--wn-sb);color:var(--wn-ix);font-size:11px;font-weight:700;white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:var(--wn-ix)"></span>لم يتم الحفظ</span></sc-if>
+      </span>
+      <span onClick="{{ close }}" title="إغلاق (Esc)" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--ink-3);flex:none" style-hover="background:var(--sunken)">×</span>
+    </div>
+
+    <!-- تبويبات الموبايل -->
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:2px;padding:6px 10px;background:var(--surface);border-bottom:1px solid var(--border);flex:none">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3"><span onClick="{{ t.onPick }}" style="flex:1;min-height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;background:{{ t.bg }};color:{{ t.fg }}">{{ t.label }}</span></sc-for>
+      </div>
+    </sc-if>
+
+    <div style="flex:1;min-height:0;display:grid;grid-template-rows:minmax(0,1fr);grid-template-columns:{{ cols }}">
+      <!-- المحرّر -->
+      <sc-if value="{{ show.editor }}" hint-placeholder-val="{{ true }}">
+        <div class="te-sb" style="min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;padding:16px;display:flex;flex-direction:column;gap:12px;border-inline-end:1px solid var(--border)">
+          <sc-for list="{{ fields }}" as="fl" hint-placeholder-count="1">
+            <label style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;font-weight:600;color:var(--ink-2)">{{ fl.label }}</span>
+              <sc-if value="{{ fl.isSelect }}" hint-placeholder-val="{{ true }}"><select value="{{ fl.value }}" onChange="{{ fl.onChange }}" style="min-height:36px;padding:0 11px;border-radius:6px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:13px;outline:none"><sc-for list="{{ fl.options }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></sc-if>
+              <sc-if value="{{ fl.isText }}" hint-placeholder-val="{{ false }}"><input type="text" value="{{ fl.value }}" onInput="{{ fl.onChange }}" placeholder="{{ fl.placeholder }}" style="min-height:36px;padding:0 11px;border-radius:6px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:13px;outline:none" style-focus="border-color:var(--pri)" /></sc-if>
+            </label>
+          </sc-for>
+          <label style="display:flex;flex-direction:column;gap:6px;flex:1"><span style="font-size:11px;font-weight:600;color:var(--ink-2)">{{ bodyLabel }}</span>
+            <textarea value="{{ body }}" onInput="{{ onBody }}" rows="{{ rowsN }}" placeholder="{{ bodyPlaceholder }}" style="padding:10px 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:13px;line-height:1.9;resize:vertical;outline:none;flex:1;min-height:160px" style-focus="border-color:var(--pri)"></textarea>
+          </label>
+          <span style="font-size:11px;color:var(--ink-4);line-height:1.8">{{ hint }}</span>
+        </div>
+      </sc-if>
+
+      <!-- المعاينة -->
+      <sc-if value="{{ show.preview }}" hint-placeholder-val="{{ true }}">
+        <div class="te-sb" style="min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;padding:16px;display:flex;flex-direction:column;gap:8px;border-inline-end:1px solid var(--border);background:var(--bg)">
+          <span style="font-size:12px;font-weight:600;color:var(--pri-d)">{{ previewLabel }}</span>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:14px 12px;border-radius:12px;background:var(--pri-s);border:1px solid var(--pri-sb)">
+            <div style="align-self:flex-end;max-width:96%;padding:8px 12px;border-radius:12px 12px 4px 12px;background:var(--surface);border:1px solid var(--pri-sb);font-size:13px;line-height:1.95;white-space:pre-wrap;word-break:break-word" dangerouslySetInnerHTML="{{ renderedHtml }}"></div>
+          </div>
+          <sc-if value="{{ hasSampleNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--ink-4)">{{ sampleNote }}</span></sc-if>
+        </div>
+      </sc-if>
+
+      <!-- المتغيرات -->
+      <sc-if value="{{ show.vars }}" hint-placeholder-val="{{ true }}">
+        <div class="te-sb" style="min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--surface)">
+          <span style="font-size:11px;font-weight:600;color:var(--ink-2)">{{ varsLabel }}</span>
+          <sc-for list="{{ vars }}" as="v" hint-placeholder-count="6">
+            <span onClick="{{ v.onInsert }}" style="display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;min-height:44px" style-hover="border-color:var(--pri-sb);background:var(--pri-s)">
+              <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--pri-d);text-align:right">{{ v.token }}</span>
+              <span style="font-size:11px;color:var(--ink-4)">{{ v.label }}<sc-if value="{{ v.hasSample }}" hint-placeholder-val="{{ true }}"> — {{ v.sample }}</sc-if></span>
+            </span>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- الأزرار -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px;border-top:1px solid var(--border);background:var(--surface);flex:none">
+      <button type="button" onClick="{{ save }}" disabled="{{ saveDisabled }}" style="min-height:40px;padding:0 16px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer;opacity:{{ saveOp }}">{{ saveLabel }}</button>
+      <button type="button" onClick="{{ close }}" style="min-height:40px;padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:transparent;color:var(--ink-2);font-size:13px;font-weight:600;cursor:pointer">إلغاء</button>
+      <sc-for list="{{ extraActions }}" as="a" hint-placeholder-count="0"><button type="button" onClick="{{ a.onClick }}" style="min-height:40px;padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:transparent;color:var(--ink-2);font-size:13px;font-weight:600;cursor:pointer">{{ a.label }}</button></sc-for>
+      <sc-if value="{{ hasRemove }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ remove }}" style="margin-inline-start:auto;min-height:40px;padding:0 12px;border-radius:8px;border:1px solid var(--dg-sb);background:transparent;color:var(--dg-i);font-size:13px;font-weight:600;cursor:pointer">{{ removeLabel }}</button></sc-if>
+    </div>
+  </div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:760},&quot;meta&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;TemplateEditorMeta&quot;},&quot;open&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;embed&quot;:{&quot;editor&quot;:null,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;]},&quot;handlers&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, Function&gt;&quot;},&quot;onSave&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(values) =&gt; void&quot;},&quot;onRemove&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(values) =&gt; void&quot;},&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(values) =&gt; void&quot;},&quot;onChange&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(values) =&gt; void&quot;}}">
+// ── Template Editor: محرّر نموذج رسالة بمعاينة مرندَرة ولوحة متغيرات
+// meta: { name, body, fields:[{key,label,type:'select'|'text',value,options,placeholder}], vars:[{token,label,sample}], sample:{ctx}, syntax:'jinja'|'braces',
+//         hint, bodyLabel, previewLabel, varsLabel, saveLabel, removeLabel, namePlaceholder, bodyPlaceholder, sampleNote, actions:[{label,action}] }
+// props: open, embed (modal داخل صفحة), onSave(values), onRemove(values), onClose(values), onChange(values), handlers
+const DEMO_META = {
+  name: 'تذكير بمستحق', body: 'مرحباً {{ customer_name }}،\nنذكّرك بأن رصيدك لدى *{{ company }}* هو {{ balance }} حتى {{ to_date }}.\n{% if overdue_days > 0 %}متأخر منذ {{ overdue_days }} يوماً.{% else %}شكراً لالتزامك.{% endif %}',
+  fields: [{ key: 'category', label: 'التصنيف', type: 'select', value: 'مستحقات', options: ['مستحقات', 'مالية', 'مبيعات', 'عام'].map((c) => ({ v: c, l: c })) }],
+  vars: [{ token: '{{ customer_name }}', label: 'اسم العميل', sample: 'شركة الأفق' }, { token: '{{ company }}', label: 'الشركة', sample: 'شركة سند الرقمية' }, { token: '{{ balance }}', label: 'الرصيد', sample: 'مدين 10,000 ر.س' }, { token: '{{ to_date }}', label: 'حتى تاريخ', sample: '2026-09-15' }, { token: '{{ overdue_days }}', label: 'أيام التأخير', sample: '12' }],
+  sample: { customer_name: 'شركة الأفق', company: 'شركة سند الرقمية', balance: 'مدين 10,000 ر.س', to_date: '2026-09-15', overdue_days: 12 },
+};
+
+class Component extends DCLogic {
+  state = { v: null, dirty: false, tab: 'editor', width: typeof window !== 'undefined' ? window.innerWidth : 1280 };
+
+  componentDidMount() {
+    this.onR = () => this.setState({ width: window.innerWidth });
+    this.onKey = (e) => { if (e.key === 'Escape' && this.isOpen() && !window.__hubDropOpen) { e.preventDefault(); this.close(); } };
+    window.addEventListener('resize', this.onR); document.addEventListener('keydown', this.onKey);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onR); document.removeEventListener('keydown', this.onKey); }
+  componentDidUpdate(pp) { if (pp.meta !== this.props.meta || pp.open !== this.props.open) this.setState({ v: null, dirty: false, tab: 'editor' }); }
+
+  meta() { return this.props.meta || DEMO_META; }
+  isOpen() { return this.props.open !== false && !!this.meta(); }
+  initial() { const M = this.meta(); const o = { name: M.name || '', body: M.body || '' }; (M.fields || []).forEach((f) => { o[f.key] = f.value == null ? '' : f.value; }); return o; }
+  vals() { return this.state.v || this.initial(); }
+  set(k, val) { const v = { ...this.vals(), [k]: val }; this.setState({ v, dirty: true }); if (this.props.onChange) this.props.onChange(v); }
+  run(name, args) { const H = this.props.handlers || this.meta().handlers || {}; if (typeof H[name] === 'function') return H[name].apply(null, args || []); }
+  close() { const v = this.vals(); this.run('close', [v]); if (this.props.onClose) this.props.onClose(v); }
+
+  renderVals() {
+    const P = this.props, S = this.state, M = this.meta(), H = window.HubShared, v = this.vals();
+    const isMobile = S.width < 720;
+    const embed = P.embed !== false;
+    const ctx = M.sample || {};
+    const rendered = M.syntax === 'braces' ? String(v.body || '').replace(/\{(\w+)\}/g, (_, k) => (ctx[k] != null ? String(ctx[k]) : '{' + k + '}')) : (H ? H.renderJinja(v.body, ctx) : String(v.body || ''));
+    const renderedHtml = { __html: H ? H.waFormatHtml(rendered) : String(rendered).replace(/</g, '&lt;') };
+    const tab = S.tab;
+    const tabs = [['editor', 'المحرّر'], ['preview', 'المعاينة'], ['vars', 'المتغيرات']].map(([k, l]) => ({ label: l, onPick: () => this.setState({ tab: k }), bg: tab === k ? 'var(--pri-s)' : 'transparent', fg: tab === k ? 'var(--pri-d)' : 'var(--ink-3)' }));
+    return {
+      open: this.isOpen(), theme: P.theme || null, isMobile,
+      shell: { pos: embed ? 'fixed' : 'relative', pad: isMobile ? '0' : '28px', backdrop: embed ? 'rgba(15,20,19,.45)' : 'transparent', h: isMobile ? '100%' : 'auto', radius: isMobile ? '0' : '8px' },
+      cols: isMobile ? 'minmax(0,1fr)' : 'minmax(0,1fr) minmax(0,1fr) minmax(0,300px)',
+      show: { editor: !isMobile || tab === 'editor', preview: !isMobile || tab === 'preview', vars: !isMobile || tab === 'vars' },
+      tabs,
+      name: v.name, onName: (e) => this.set('name', e.target.value), namePlaceholder: M.namePlaceholder || 'اسم النموذج',
+      dirty: S.dirty,
+      fields: (M.fields || []).map((f) => ({ label: f.label, isSelect: (f.type || 'select') === 'select', isText: f.type === 'text', value: v[f.key], options: f.options || [], placeholder: f.placeholder || '', onChange: (e) => this.set(f.key, e.target.value) })),
+      bodyLabel: M.bodyLabel || 'نص النموذج — يدعم Jinja', body: v.body, onBody: (e) => this.set('body', e.target.value), bodyPlaceholder: M.bodyPlaceholder || '',
+      rowsN: Math.max(6, Math.min(18, String(v.body || '').split('\n').length + 1)),
+      hint: M.hint || 'المتغيرات بصيغة {{ name }} والشروط بـ {% if %} … {% else %} … {% endif %}. تنسيقات واتساب (*عريض* _مائل_) مدعومة.',
+      previewLabel: M.previewLabel || 'المعاينة بعد الرندرة — ببيانات تجريبية', renderedHtml,
+      hasSampleNote: !!M.sampleNote, sampleNote: M.sampleNote || '',
+      varsLabel: M.varsLabel || 'المتغيرات المتاحة — اضغط للإدراج',
+      vars: (M.vars || []).map((x) => ({ token: x.token, label: x.label || '', sample: x.sample == null ? '' : String(x.sample), hasSample: x.sample != null, onInsert: () => this.set('body', (v.body || '') + (v.body && !/\s$/.test(v.body) ? ' ' : '') + x.token) })),
+      saveLabel: M.saveLabel || 'حفظ النموذج', saveDisabled: !S.dirty && M.requireDirty !== false, saveOp: (!S.dirty && M.requireDirty !== false) ? .6 : 1,
+      save: () => { this.run('save', [v]); if (P.onSave) P.onSave(v); this.setState({ dirty: false }); },
+      close: () => this.close(),
+      hasRemove: !!(P.onRemove || (M.handlers && M.handlers.remove) || (P.handlers && P.handlers.remove)), removeLabel: M.removeLabel || 'حذف',
+      remove: () => { this.run('remove', [v]); if (P.onRemove) P.onRemove(v); },
+      extraActions: (M.actions || []).map((a) => ({ label: a.label, onClick: () => this.run(a.action, [v]) })),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=1"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F6; --surface:#FFFFFF; --sunken:#EEF2F0; --border:#E3E8E6; --border-2:#C9D2CF;
+    --ink:#0F1A18; --ink-2:#33423F; --ink-3:#55645F; --ink-4:#62716D;
+    --pri:#0F7A63; --pri-d:#0A6250; --pri-s:#DFF1EC; --pri-sb:#B6DDD2; --on-pri:#FFFFFF;
+    --ok:#1A8B50; --ok-s:#E1F3E8; --ok-i:#16713F; --ok-sb:#B9E2CA;
+    --wn:#9A6C14; --wn-s:#FBF1DC; --wn-i:#8A6116; --wn-sb:#EFDCB4;
+    --dg:#C9524B; --dg-s:#FBEAE8; --dg-i:#A93A34; --dg-sb:#F2CBC7;
+    --nf:#2568AF; --nf-s:#E4EFFA; --nf-i:#1F5A97; --nf-sb:#C2DCF2;
+    --shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);
+  }
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button,select,textarea{font-family:inherit;}
+  .op-sb::-webkit-scrollbar{width:8px;height:8px}
+  .op-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:999px}
+  .op-html p{margin:0 0 10px;font-size:13px;line-height:1.9}
+  .op-html h4{margin:0 0 8px;font-size:13px;font-weight:700}
+  .op-html table{width:100%;border-collapse:collapse;font-size:13px}
+  .op-html td,.op-html th{padding:8px 10px;border-bottom:1px solid var(--border);text-align:start}
+  .op-html th{background:var(--sunken);font-size:12px;font-weight:600;color:var(--ink-2)}
+  .op-html code{font-family:'IBM Plex Mono',monospace;font-size:12px;direction:ltr;unicode-bidi:embed}
+  .op-field:focus{border-color:var(--pri) !important;box-shadow:0 0 0 3px var(--pri-s)}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @keyframes slideIn{from{opacity:0;transform:translateX(var(--sx))}to{opacity:1;transform:none}}
+  @keyframes popIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" style="direction:rtl;min-height:{{ rootMinH }};padding:{{ rootPad }};background:{{ rootBg }};color:var(--ink);display:{{ rootDisplay }};flex-direction:column;gap:16px">
+  <sc-if value="{{ showPage }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;flex-direction:column;gap:4px">
+    <h1 style="margin:0;font-size:20px;font-weight:700;line-height:1.2">لوحة منبثقة (Drawer / Modal) مدفوعة بالميتا</h1>
+    <span style="font-size:12px;color:var(--ink-3)">نفس لغة الجدول. النوع والعرض والارتفاع والمحتوى والإجراءات كلها من كائن واحد.</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+    <sc-for list="{{ demos }}" as="d" hint-placeholder-count="4">
+      <div style="display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px">
+        <span style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <span style="font-size:14px;font-weight:700">{{ d.title }}</span>
+          <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border-radius:999px;background:var(--sunken);color:var(--ink-2)">{{ d.tag }}</span>
+        </span>
+        <pre dir="ltr" class="op-sb" style="margin:0;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:var(--ink-2);overflow:auto;max-height:200px;text-align:left">{{ d.json }}</pre>
+        <button type="button" onClick="{{ d.open }}" style="align-self:flex-start;min-height:36px;padding:0 14px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer" style-hover="background:var(--pri-d)">فتح</button>
+      </div>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{ hasLog }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
+      <span style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;font-weight:600;color:var(--ink-2)">سجل الإجراءات</span><span onClick="{{ clearLog }}" style="font-size:12px;color:var(--dg-i);cursor:pointer;font-weight:600">مسح</span></span>
+      <sc-for list="{{ log }}" as="l" hint-placeholder-count="2">
+        <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);text-align:left;white-space:pre-wrap;word-break:break-all">{{ l }}</span>
+      </sc-for>
+    </div>
+  </sc-if>
+  </sc-if>
+
+  <sc-if value="{{ p.open }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ p.backdrop }}" style="position:fixed;inset:0;z-index:60;background:rgba(15,20,19,.35);display:flex;align-items:center;justify-content:center">
+      <section data-op-panel="1" role="dialog" onClick="{{ stop }}" style="position:{{ p.pos }};top:{{ p.top }};bottom:{{ p.bottom }};inset-inline-start:{{ p.start }};inset-inline-end:{{ p.end }};width:{{ p.width }};max-width:100%;height:{{ p.height }};max-height:100%;background:var(--surface);border:1px solid var(--border);border-radius:{{ p.radius }};box-shadow:var(--shadow-lg);display:flex;flex-direction:row;overflow:hidden;--sx:{{ p.sx }};animation:{{ p.anim }}">
+
+        <sc-if value="{{ p.sideTabs }}" hint-placeholder-val="{{ false }}">
+          <div class="op-sb" style="width:224px;flex:none;border-inline-end:1px solid var(--border);background:var(--bg);padding:14px 12px;display:flex;flex-direction:column;gap:4px;overflow:auto">
+            <label style="position:relative;display:flex;align-items:center;margin-bottom:10px">
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="none" style="position:absolute;inset-inline-start:11px;pointer-events:none"><circle cx="9" cy="9" r="5.5" stroke="var(--ink-3)" stroke-width="1.6"></circle><path d="M13 13l3.5 3.5" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round"></path></svg>
+              <input class="op-field" type="text" value="{{ p.tabQuery }}" onInput="{{ p.onTabQuery }}" placeholder="بحث" style="width:100%;min-height:36px;padding:0 34px 0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-size:13px;color:var(--ink);outline:none" />
+            </label>
+            <sc-for list="{{ p.tabGroups }}" as="g" hint-placeholder-count="2">
+              <span style="font-size:12px;color:var(--ink-3);padding:8px 10px 4px">{{ g.label }}</span>
+              <sc-for list="{{ g.tabs }}" as="t" hint-placeholder-count="3">
+                <span onClick="{{ t.onPick }}" style="display:flex;align-items:center;gap:10px;min-height:{{ p.tabH }};padding:0 10px;border-radius:8px;font-size:14px;font-weight:{{ t.weight }};cursor:pointer;color:{{ t.fg }};background:{{ t.bg }}" style-hover="background:var(--sunken)">
+                  <span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-3);flex:none" dangerouslySetInnerHTML="{{ t.icon }}"></span>
+                  <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ t.label }}</span>
+                  <sc-if value="{{ t.hasCount }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:{{ t.cBg }};color:{{ t.cFg }};display:inline-flex;align-items:center;justify-content:center">{{ t.count }}</span></sc-if>
+                </span>
+              </sc-for>
+            </sc-for>
+          </div>
+        </sc-if>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:{{ p.headPad }};border-bottom:{{ p.headBorder }};flex:none">
+          <span style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:0;display:{{ p.headDisplay }}">
+            <span style="font-size:16px;font-weight:700;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.title }}</span>
+            <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <sc-if value="{{ p.hasSubtitle }}" hint-placeholder-val="{{ false }}"><span dir="{{ p.subDir }}" style="font-family:{{ p.subFont }};font-size:12px;color:var(--ink-3)">{{ p.subtitle }}</span></sc-if>
+              <sc-if value="{{ p.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:{{ p.badgeBg }};color:{{ p.badgeFg }};font-size:11px;font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:{{ p.badgeDot }}"></span>{{ p.badge }}</span></sc-if>
+              <sc-if value="{{ p.dirty }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--wn-i);background:var(--wn-s);padding:3px 9px;border-radius:999px;font-weight:600">تغييرات غير محفوظة</span></sc-if>
+            </span>
+          </span>
+          <span onClick="{{ p.close }}" title="إغلاق (Esc)" style="margin-inline-start:auto;width:32px;height:32px;border-radius:8px;border:{{ p.closeBorder }};display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;font-size:18px;color:var(--ink-3)" style-hover="background:var(--sunken)">×</span>
+        </div>
+
+        <sc-if value="{{ p.navTabs }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:2px;padding:0 18px;border-bottom:1px solid var(--border);flex:none;overflow-x:auto">
+            <sc-for list="{{ p.tabs }}" as="t" hint-placeholder-count="3">
+              <span onClick="{{ t.onPick }}" style="display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;color:{{ t.fg }};border-bottom:2px solid {{ t.line }};margin-bottom:-1px" style-hover="color:var(--pri-d)">{{ t.label }}<sc-if value="{{ t.hasCount }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:{{ t.cBg }};color:{{ t.cFg }};display:inline-flex;align-items:center;justify-content:center">{{ t.count }}</span></sc-if></span>
+            </sc-for>
+          </div>
+        </sc-if>
+        <div class="op-sb" style="flex:1;min-width:0;min-height:0;overflow:auto;padding:{{ p.bodyPad }};display:flex;flex-direction:column;gap:{{ p.sectionGap }}">
+          <sc-if value="{{ p.isHtml }}" hint-placeholder-val="{{ false }}">
+            <div class="op-html" dangerouslySetInnerHTML="{{ p.html }}"></div>
+          </sc-if>
+          <sc-if value="{{ p.isMeta }}" hint-placeholder-val="{{ true }}">
+            <sc-for list="{{ p.sections }}" as="s" hint-placeholder-count="2">
+              <div style="display:flex;flex-direction:column;gap:{{ s.gap }}">
+                <sc-if value="{{ s.hasTitle }}" hint-placeholder-val="{{ true }}">
+                  <sc-if value="{{ s.isRows }}" hint-placeholder-val="{{ false }}"><span style="font-size:{{ s.hTitle }};font-weight:700;color:var(--ink);padding-bottom:6px">{{ s.title }}</span></sc-if>
+                  <sc-if value="{{ s.isGrid }}" hint-placeholder-val="{{ true }}"><span style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;font-weight:700;color:var(--ink-2);white-space:nowrap">{{ s.title }}</span><span style="flex:1;height:1px;background:var(--border)"></span></span></sc-if>
+                </sc-if>
+                <sc-if value="{{ s.isRows }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column">
+                    <sc-for list="{{ s.fields }}" as="x" hint-placeholder-count="4">
+                      <div style="display:flex;flex-direction:{{ x.rowDir }};align-items:{{ x.rowAlign }};justify-content:space-between;gap:12px 24px;padding:{{ s.rowPad }};border-bottom:1px solid var(--border)">
+                        <span style="display:flex;flex-direction:column;gap:4px;min-width:0;flex:{{ x.labelFlex }}">
+                          <span style="display:flex;align-items:center;gap:4px;font-size:{{ s.fs }};color:var(--ink)">{{ x.label }}<sc-if value="{{ x.required }}" hint-placeholder-val="{{ false }}"><span style="color:var(--dg)">*</span></sc-if></span>
+                          <sc-if value="{{ x.hasHint }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;color:var(--ink-3);line-height:1.7">{{ x.hint }}</span></sc-if>
+                        </span>
+                        <span style="display:flex;justify-content:flex-end;min-width:0;width:{{ x.ctlWidth }};flex:none">
+                          <sc-if value="{{ x.isReadonly }}" hint-placeholder-val="{{ false }}"><span dir="{{ x.dir }}" style="min-height:36px;display:flex;align-items:center;font-size:{{ s.fs }};font-family:{{ x.font }};color:var(--ink);overflow:hidden;text-overflow:ellipsis">{{ x.value }}</span></sc-if>
+                          <sc-if value="{{ x.isAvatar }}" hint-placeholder-val="{{ false }}"><span style="width:48px;height:48px;border-radius:50%;background:var(--sunken);display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:var(--ink)">{{ x.value }}</span></sc-if>
+                          <sc-if value="{{ x.isAddonInput }}" hint-placeholder-val="{{ false }}">
+<span style="display:flex;align-items:stretch;width:100%;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);overflow:hidden;min-height:{{ s.ctlH }}" style-focus-within="border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-s)">
+<sc-for list="{{ x.ad.attStart }}" as="a" hint-placeholder-count="1"><button type="button" onClick="{{ a.onClick }}" title="{{ a.title }}" style="display:inline-flex;align-items:center;gap:6px;padding:0 {{ a.px }};border:none;border-inline-end:1px solid var(--border-2);background:{{ a.bg }};color:{{ a.fg }};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex:none" style-hover="filter:brightness(.96)"><span style="display:inline-flex" dangerouslySetInnerHTML="{{ a.svg }}"></span><sc-if value="{{ a.hasLabel }}" hint-placeholder-val="{{ false }}"><span>{{ a.label }}</span></sc-if></button></sc-for>
+<span style="position:relative;display:flex;align-items:center;flex:1;min-width:0">
+<span style="position:absolute;inset-inline-start:6px;top:0;bottom:0;display:flex;align-items:center;gap:2px;pointer-events:none"><sc-for list="{{ x.ad.inStart }}" as="a" hint-placeholder-count="1"><span onClick="{{ a.onClick }}" title="{{ a.title }}" style="pointer-events:auto;width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:{{ a.cursor }};color:{{ a.fg }}" style-hover="background:var(--sunken)" dangerouslySetInnerHTML="{{ a.svg }}"></span></sc-for></span>
+<input type="{{ x.inputType }}" dir="{{ x.dir }}" value="{{ x.value }}" onInput="{{ x.onChange }}" placeholder="{{ x.placeholder }}" style="width:100%;min-height:calc({{ s.ctlH }} - 2px);padding:0;padding-right:{{ x.ad.padStart }};padding-left:{{ x.ad.padEnd }};border:none;background:transparent;font-size:{{ s.fs }};font-family:{{ x.font }};color:var(--ink);outline:none;text-align:{{ x.align }}" />
+<span style="position:absolute;inset-inline-end:6px;top:0;bottom:0;display:flex;align-items:center;gap:2px;pointer-events:none"><sc-for list="{{ x.ad.inEnd }}" as="a" hint-placeholder-count="1"><span onClick="{{ a.onClick }}" title="{{ a.title }}" style="pointer-events:auto;width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:{{ a.cursor }};color:{{ a.fg }}" style-hover="background:var(--sunken)" dangerouslySetInnerHTML="{{ a.svg }}"></span></sc-for></span>
+</span>
+<sc-for list="{{ x.ad.attEnd }}" as="a" hint-placeholder-count="1"><button type="button" onClick="{{ a.onClick }}" title="{{ a.title }}" style="display:inline-flex;align-items:center;gap:6px;padding:0 {{ a.px }};border:none;border-inline-start:1px solid var(--border-2);background:{{ a.bg }};color:{{ a.fg }};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex:none" style-hover="filter:brightness(.96)"><span style="display:inline-flex" dangerouslySetInnerHTML="{{ a.svg }}"></span><sc-if value="{{ a.hasLabel }}" hint-placeholder-val="{{ false }}"><span>{{ a.label }}</span></sc-if></button></sc-for>
+</span>
+</sc-if>
+<sc-if value="{{ x.isInput }}" hint-placeholder-val="{{ true }}"><input class="op-field" type="{{ x.inputType }}" dir="{{ x.dir }}" value="{{ x.value }}" onInput="{{ x.onChange }}" placeholder="{{ x.placeholder }}" style="width:100%;min-height:{{ s.ctlH }};padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-size:{{ s.fs }};font-family:{{ x.font }};color:var(--ink);outline:none;text-align:{{ x.align }}" /></sc-if>
+                          <sc-if value="{{ x.isTextarea }}" hint-placeholder-val="{{ false }}"><textarea class="op-field" value="{{ x.value }}" onInput="{{ x.onChange }}" placeholder="{{ x.placeholder }}" rows="{{ x.rows }}" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-size:{{ s.fs }};line-height:1.8;color:var(--ink);outline:none;resize:vertical"></textarea></sc-if>
+                          <sc-if value="{{ x.isSelect }}" hint-placeholder-val="{{ false }}">
+                            <span style="position:relative;display:flex;width:100%">
+                              <select class="op-field" value="{{ x.value }}" onChange="{{ x.onChange }}" style="appearance:none;width:100%;min-height:{{ s.ctlH }};padding:0 30px 0 12px;border-radius:8px;border:1px solid {{ x.selBd }};background:{{ x.selBg }};color:{{ x.selFg }};font-size:{{ s.fs }};cursor:pointer;outline:none">
+                                <sc-for list="{{ x.options }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+                              </select>
+                              <svg width="12" height="12" viewBox="0 0 20 20" fill="none" style="position:absolute;inset-inline-end:11px;top:50%;transform:translateY(-50%);pointer-events:none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                            </span>
+                          </sc-if>
+                          <sc-if value="{{ x.isSegment }}" hint-placeholder-val="{{ false }}">
+                            <span style="display:inline-flex;border:1px solid var(--border-2);border-radius:8px;overflow:hidden;background:var(--surface)">
+                              <sc-for list="{{ x.segs }}" as="o" hint-placeholder-count="3"><span onClick="{{ o.onPick }}" style="min-height:34px;padding:0 12px;display:inline-flex;align-items:center;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;background:{{ o.bg }};color:{{ o.fg }};border-inline-start:1px solid {{ o.bd }}">{{ o.l }}</span></sc-for>
+                            </span>
+                          </sc-if>
+                          <sc-if value="{{ x.isToggle }}" hint-placeholder-val="{{ false }}">
+                            <span onClick="{{ x.onToggle }}" style="display:inline-flex;align-items:center;min-height:36px;cursor:pointer;user-select:none">
+                              <span style="width:36px;height:20px;border-radius:999px;background:{{ x.trackBg }};position:relative;transition:background .15s;flex:none"><span style="position:absolute;top:2px;inset-inline-start:{{ x.knob }};width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:inset-inline-start .15s"></span></span>
+                            </span>
+                          </sc-if>
+                        </span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ s.isGrid }}" hint-placeholder-val="{{ true }}">
+                <sc-if value="{{ s.hasNote }}" hint-placeholder-val="{{ false }}">
+                  <span style="padding:10px 12px;border-radius:8px;background:{{ s.noteBg }};border:1px solid {{ s.noteBd }};color:{{ s.noteFg }};font-size:12px;line-height:1.7">{{ s.note }}</span>
+                </sc-if>
+                <div style="display:grid;grid-template-columns:{{ s.gridCols }};gap:{{ s.gridGap }}">
+                  <sc-for list="{{ s.fields }}" as="x" hint-placeholder-count="4">
+                    <label style="display:flex;flex-direction:column;gap:5px;min-width:0;grid-column:{{ x.span }}">
+                      <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-3)">{{ x.label }}<sc-if value="{{ x.required }}" hint-placeholder-val="{{ false }}"><span style="color:var(--dg)">*</span></sc-if></span>
+                      <sc-if value="{{ x.isReadonly }}" hint-placeholder-val="{{ false }}"><span dir="{{ x.dir }}" style="min-height:{{ s.ctlH }};display:flex;align-items:center;font-size:13px;font-weight:600;font-family:{{ x.font }};color:var(--ink);text-align:right;overflow:hidden;text-overflow:ellipsis">{{ x.value }}</span></sc-if>
+                      <sc-if value="{{ x.isAddonInput }}" hint-placeholder-val="{{ false }}">
+<span style="display:flex;align-items:stretch;width:100%;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);overflow:hidden;min-height:{{ s.ctlH }}" style-focus-within="border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-s)">
+<sc-for list="{{ x.ad.attStart }}" as="a" hint-placeholder-count="1"><button type="button" onClick="{{ a.onClick }}" title="{{ a.title }}" style="display:inline-flex;align-items:center;gap:6px;padding:0 {{ a.px }};border:none;border-inline-end:1px solid var(--border-2);background:{{ a.bg }};color:{{ a.fg }};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex:none" style-hover="filter:brightness(.96)"><span style="display:inline-flex" dangerouslySetInnerHTML="{{ a.svg }}"></span><sc-if value="{{ a.hasLabel }}" hint-placeholder-val="{{ false }}"><span>{{ a.label }}</span></sc-if></button></sc-for>
+<span style="position:relative;display:flex;align-items:center;flex:1;min-width:0">
+<span style="position:absolute;inset-inline-start:6px;top:0;bottom:0;display:flex;align-items:center;gap:2px;pointer-events:none"><sc-for list="{{ x.ad.inStart }}" as="a" hint-placeholder-count="1"><span onClick="{{ a.onClick }}" title="{{ a.title }}" style="pointer-events:auto;width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:{{ a.cursor }};color:{{ a.fg }}" style-hover="background:var(--sunken)" dangerouslySetInnerHTML="{{ a.svg }}"></span></sc-for></span>
+<input type="{{ x.inputType }}" dir="{{ x.dir }}" value="{{ x.value }}" onInput="{{ x.onChange }}" placeholder="{{ x.placeholder }}" style="width:100%;min-height:calc({{ s.ctlH }} - 2px);padding:0;padding-right:{{ x.ad.padStart }};padding-left:{{ x.ad.padEnd }};border:none;background:transparent;font-size:13px;font-family:{{ x.font }};color:var(--ink);outline:none;text-align:{{ x.align }}" />
+<span style="position:absolute;inset-inline-end:6px;top:0;bottom:0;display:flex;align-items:center;gap:2px;pointer-events:none"><sc-for list="{{ x.ad.inEnd }}" as="a" hint-placeholder-count="1"><span onClick="{{ a.onClick }}" title="{{ a.title }}" style="pointer-events:auto;width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:{{ a.cursor }};color:{{ a.fg }}" style-hover="background:var(--sunken)" dangerouslySetInnerHTML="{{ a.svg }}"></span></sc-for></span>
+</span>
+<sc-for list="{{ x.ad.attEnd }}" as="a" hint-placeholder-count="1"><button type="button" onClick="{{ a.onClick }}" title="{{ a.title }}" style="display:inline-flex;align-items:center;gap:6px;padding:0 {{ a.px }};border:none;border-inline-start:1px solid var(--border-2);background:{{ a.bg }};color:{{ a.fg }};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex:none" style-hover="filter:brightness(.96)"><span style="display:inline-flex" dangerouslySetInnerHTML="{{ a.svg }}"></span><sc-if value="{{ a.hasLabel }}" hint-placeholder-val="{{ false }}"><span>{{ a.label }}</span></sc-if></button></sc-for>
+</span>
+</sc-if>
+<sc-if value="{{ x.hasPresets }}" hint-placeholder-val="{{ false }}">
+<span style="display:flex;flex-wrap:wrap;gap:6px">
+<sc-for list="{{ x.presets }}" as="o" hint-placeholder-count="3"><span onClick="{{ o.onPick }}" style="padding:4px 10px;border-radius:999px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }};font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap" style-hover="border-color:var(--pri-sb)">{{ o.l }}</span></sc-for>
+</span>
+</sc-if>
+<sc-if value="{{ x.isInput }}" hint-placeholder-val="{{ true }}"><input class="op-field" type="{{ x.inputType }}" dir="{{ x.dir }}" value="{{ x.value }}" onInput="{{ x.onChange }}" placeholder="{{ x.placeholder }}" style="width:100%;min-height:{{ s.ctlH }};padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-size:13px;font-family:{{ x.font }};color:var(--ink);outline:none;text-align:{{ x.align }}" /></sc-if>
+                      <sc-if value="{{ x.isTextarea }}" hint-placeholder-val="{{ false }}"><textarea class="op-field" value="{{ x.value }}" onInput="{{ x.onChange }}" placeholder="{{ x.placeholder }}" rows="{{ x.rows }}" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-size:13px;line-height:1.8;color:var(--ink);outline:none;resize:vertical"></textarea></sc-if>
+                      <sc-if value="{{ x.isSelect }}" hint-placeholder-val="{{ false }}">
+                        <span style="position:relative;display:flex">
+                          <select class="op-field" value="{{ x.value }}" onChange="{{ x.onChange }}" style="appearance:none;width:100%;min-height:{{ s.ctlH }};padding:0 30px 0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:13px;cursor:pointer;outline:none">
+                            <sc-for list="{{ x.options }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+                          </select>
+                          <svg width="12" height="12" viewBox="0 0 20 20" fill="none" style="position:absolute;inset-inline-end:11px;top:50%;transform:translateY(-50%);pointer-events:none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                        </span>
+                      </sc-if>
+                      <sc-if value="{{ x.isChoice }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:flex;flex-direction:column;gap:7px">
+                          <sc-if value="{{ x.hasSearch }}" hint-placeholder-val="{{ false }}">
+                            <span style="display:flex;align-items:center;gap:7px;min-height:34px;padding:0 10px;border-radius:8px;background:var(--surface);border:1px solid var(--border-2)">
+                              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" style="flex:none"><circle cx="9" cy="9" r="5.5" stroke="var(--ink-4)" stroke-width="1.6"></circle><path d="M13.5 13.5L17 17" stroke="var(--ink-4)" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                              <input type="text" value="{{ x.query }}" onInput="{{ x.onQuery }}" placeholder="{{ x.searchPlaceholder }}" style="flex:1;min-width:0;border:none;background:transparent;font-size:12px;color:var(--ink);outline:none" />
+                            </span>
+                          </sc-if>
+                          <sc-if value="{{ x.hasFilters }}" hint-placeholder-val="{{ false }}">
+                            <span style="display:flex;flex-wrap:wrap;gap:6px">
+                              <sc-for list="{{ x.filterChips }}" as="o" hint-placeholder-count="3"><span onClick="{{ o.onPick }}" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }};font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap" style-hover="border-color:var(--pri-sb)">{{ o.l }}<sc-if value="{{ o.hasCount }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:.75">{{ o.count }}</span></sc-if></span></sc-for>
+                            </span>
+                          </sc-if>
+                          <span style="display:grid;grid-template-columns:{{ x.choiceCols }};gap:7px">
+                            <sc-for list="{{ x.choices }}" as="o" hint-placeholder-count="4">
+                              <span onClick="{{ o.onPick }}" style="display:flex;flex-direction:column;gap:3px;padding:9px 11px;border-radius:10px;background:{{ o.bg }};border:1px solid {{ o.bd }};cursor:pointer;min-width:0" style-hover="border-color:var(--pri-sb)">
+                                <span dir="{{ o.dir }}" style="text-align:start;font-family:{{ o.font }};font-size:12px;font-weight:600;color:{{ o.fg }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.label }}</span>
+                                <sc-if value="{{ o.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;color:var(--ink-4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.note }}</span></sc-if>
+                              </span>
+                            </sc-for>
+                          </span>
+                          <sc-if value="{{ x.noChoices }}" hint-placeholder-val="{{ false }}"><span style="padding:11px;border-radius:8px;background:var(--surface);border:1px dashed var(--border-2);font-size:12px;color:var(--ink-4)">{{ x.emptyText }}</span></sc-if>
+                        </span>
+                      </sc-if>
+                      <sc-if value="{{ x.isSegment }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:inline-flex;align-self:flex-start;border:1px solid var(--border-2);border-radius:8px;overflow:hidden;background:var(--surface)">
+                          <sc-for list="{{ x.segs }}" as="o" hint-placeholder-count="2"><span onClick="{{ o.onPick }}" style="min-height:{{ s.ctlH }};padding:0 14px;display:inline-flex;align-items:center;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;background:{{ o.bg }};color:{{ o.fg }};border-inline-start:1px solid {{ o.bd }}">{{ o.l }}</span></sc-for>
+                        </span>
+                      </sc-if>
+                      <sc-if value="{{ x.isMulti }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:flex;flex-direction:column;gap:7px">
+                          <span style="display:flex;align-items:center;gap:7px">
+                            <sc-if value="{{ x.hasSearch }}" hint-placeholder-val="{{ false }}">
+                              <span style="display:flex;align-items:center;gap:7px;flex:1;min-width:0;min-height:34px;padding:0 10px;border-radius:8px;background:var(--surface);border:1px solid var(--border-2)">
+                                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" style="flex:none"><circle cx="9" cy="9" r="5.5" stroke="var(--ink-4)" stroke-width="1.6"></circle><path d="M13.5 13.5L17 17" stroke="var(--ink-4)" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                                <input type="text" value="{{ x.query }}" onInput="{{ x.onQuery }}" placeholder="{{ x.searchPlaceholder }}" style="flex:1;min-width:0;border:none;background:transparent;font-size:12px;color:var(--ink);outline:none" />
+                              </span>
+                            </sc-if>
+                            <span onClick="{{ x.onSelectAll }}" style="padding:4px 9px;border-radius:7px;background:var(--sunken);color:var(--ink-2);font-size:11px;font-weight:600;cursor:pointer;flex:none;white-space:nowrap" style-hover="color:var(--pri-d)">تحديد الكل</span>
+                            <span onClick="{{ x.onClearAll }}" style="padding:4px 9px;border-radius:7px;background:var(--sunken);color:var(--ink-2);font-size:11px;font-weight:600;cursor:pointer;flex:none;white-space:nowrap" style-hover="color:var(--dg-i)">مسح</span>
+                          </span>
+                          <span class="op-sb" style="display:grid;grid-template-columns:{{ x.choiceCols }};gap:7px;max-height:{{ x.maxH }};overflow-y:auto;overflow-x:hidden">
+                            <sc-for list="{{ x.mchoices }}" as="o" hint-placeholder-count="4">
+                              <span onClick="{{ o.onPick }}" style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;background:{{ o.bg }};border:1px solid {{ o.bd }};cursor:pointer;min-width:0" style-hover="border-color:var(--pri-sb)">
+                                <span style="width:17px;height:17px;border-radius:5px;border:1.5px solid {{ o.boxBd }};background:{{ o.boxBg }};color:#fff;font-size:11px;display:inline-flex;align-items:center;justify-content:center;flex:none">{{ o.tick }}</span>
+                                <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                                  <span dir="{{ o.dir }}" style="text-align:start;font-family:{{ o.font }};font-size:12px;font-weight:600;color:{{ o.fg }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.label }}</span>
+                                  <sc-if value="{{ o.hasNote }}" hint-placeholder-val="{{ false }}"><span dir="{{ o.noteDir }}" style="text-align:start;font-family:{{ o.noteFont }};font-size:10px;color:var(--ink-4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.note }}</span></sc-if>
+                                </span>
+                              </span>
+                            </sc-for>
+                          </span>
+                          <sc-if value="{{ x.noChoices }}" hint-placeholder-val="{{ false }}"><span style="padding:11px;border-radius:8px;background:var(--surface);border:1px dashed var(--border-2);font-size:12px;color:var(--ink-4)">{{ x.emptyText }}</span></sc-if>
+                        </span>
+                      </sc-if>
+                      <sc-if value="{{ x.isTags }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:flex;flex-direction:column;gap:7px">
+                          <span style="display:flex;gap:6px">
+                            <input class="op-field" type="text" dir="ltr" value="{{ x.draft }}" onInput="{{ x.onDraft }}" onKeyDown="{{ x.onDraftKey }}" placeholder="{{ x.placeholder }}" style="flex:1;min-width:0;min-height:{{ s.ctlH }};padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);outline:none;text-align:left" />
+                            <button type="button" onClick="{{ x.onAdd }}" style="min-height:{{ s.ctlH }};padding:0 13px;border-radius:8px;border:1px solid var(--pri-sb);background:var(--pri-s);color:var(--pri-d);font-size:12px;font-weight:600;cursor:pointer;flex:none" style-hover="filter:brightness(.97)">إضافة</button>
+                          </span>
+                          <sc-if value="{{ x.hasTags }}" hint-placeholder-val="{{ false }}">
+                            <span style="display:flex;flex-wrap:wrap;gap:6px">
+                              <sc-for list="{{ x.tags }}" as="t" hint-placeholder-count="2">
+                                <span style="display:inline-flex;align-items:center;gap:7px;padding:4px 9px;border-radius:999px;background:var(--sunken);border:1px solid var(--border)">
+                                  <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-2)">{{ t.text }}</span>
+                                  <span onClick="{{ t.onRemove }}" title="حذف" style="cursor:pointer;color:var(--ink-4);font-size:13px;line-height:1" style-hover="color:var(--dg-i)">×</span>
+                                </span>
+                              </sc-for>
+                            </span>
+                          </sc-if>
+                        </span>
+                      </sc-if>
+                      <sc-if value="{{ x.isList }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:flex;flex-direction:column;gap:6px">
+                          <sc-if value="{{ x.hasSearch }}" hint-placeholder-val="{{ false }}">
+                            <span style="display:flex;align-items:center;gap:7px;min-height:34px;padding:0 10px;border-radius:8px;background:var(--surface);border:1px solid var(--border-2)">
+                              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" style="flex:none"><circle cx="9" cy="9" r="5.5" stroke="var(--ink-4)" stroke-width="1.6"></circle><path d="M13.5 13.5L17 17" stroke="var(--ink-4)" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                              <input type="text" value="{{ x.query }}" onInput="{{ x.onQuery }}" placeholder="{{ x.searchPlaceholder }}" style="flex:1;min-width:0;border:none;background:transparent;font-size:12px;color:var(--ink);outline:none" />
+                            </span>
+                          </sc-if>
+                          <sc-if value="{{ x.hasFilters }}" hint-placeholder-val="{{ false }}">
+                            <span style="display:flex;flex-wrap:wrap;gap:6px">
+                              <sc-for list="{{ x.filterChips }}" as="o" hint-placeholder-count="3"><span onClick="{{ o.onPick }}" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:999px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }};font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap" style-hover="border-color:var(--pri-sb)">{{ o.l }}<sc-if value="{{ o.hasCount }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:.75">{{ o.count }}</span></sc-if></span></sc-for>
+                            </span>
+                          </sc-if>
+                          <span class="op-sb" style="display:flex;flex-direction:column;border:1px solid var(--border);border-radius:10px;background:var(--surface);overflow:hidden;max-height:{{ x.maxH }};overflow-y:auto">
+                            <sc-if value="{{ x.hasHead }}" hint-placeholder-val="{{ false }}">
+                              <span style="display:grid;grid-template-columns:{{ x.rowCols }};align-items:center;gap:10px;padding:6px 11px;border-bottom:1px solid var(--border-2);background:var(--sunken);position:sticky;top:0;z-index:1">
+                                <sc-for list="{{ x.head }}" as="h" hint-placeholder-count="4"><span style="font-size:10px;font-weight:700;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:{{ h.align }}">{{ h.l }}</span></sc-for>
+                              </span>
+                            </sc-if>
+                            <sc-for list="{{ x.listRows }}" as="o" hint-placeholder-count="3">
+                              <span style="display:grid;grid-template-columns:{{ x.rowCols }};align-items:center;gap:10px;padding:7px 11px;border-bottom:1px solid var(--border)">
+                                <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink);text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.text }}</span>
+                                <span style="min-width:0;font-size:11px;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.sub }}</span>
+                                <span dir="{{ o.metaDir }}" style="font-family:{{ o.metaFont }};font-size:11px;color:var(--ink-4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.meta }}</span>
+                                <span style="display:inline-flex;justify-content:flex-start"><sc-if value="{{ o.hasTag }}" hint-placeholder-val="{{ false }}"><span style="padding:2px 8px;border-radius:999px;background:{{ o.tagBg }};color:{{ o.tagFg }};font-size:10px;font-weight:600;white-space:nowrap">{{ o.tag }}</span></sc-if></span>
+                                <span style="display:inline-flex;justify-content:center"><sc-if value="{{ o.hasRemove }}" hint-placeholder-val="{{ false }}"><span onClick="{{ o.onRemove }}" title="استثناء الرقم" style="width:22px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-4);font-size:14px" style-hover="background:var(--sunken);color:var(--dg-i)">×</span></sc-if></span>
+                              </span>
+                            </sc-for>
+                            <sc-if value="{{ x.noRows }}" hint-placeholder-val="{{ true }}"><span style="padding:14px;font-size:12px;color:var(--ink-4)">{{ x.emptyText }}</span></sc-if>
+                            <sc-if value="{{ x.hasAdd }}" hint-placeholder-val="{{ false }}">
+                              <span style="display:flex;align-items:center;gap:7px;padding:7px 11px;background:var(--sunken)">
+                                <input type="text" value="{{ x.addText }}" onInput="{{ x.onAddText }}" placeholder="{{ x.addPlaceholder }}" style="flex:1;min-width:0;height:30px;padding:0 9px;border-radius:7px;border:1px solid var(--border-2);background:var(--surface);font-size:12px;color:var(--ink);outline:none" />
+                                <select value="{{ x.addType }}" onChange="{{ x.onAddType }}" style="flex:none;height:30px;padding:0 7px;border-radius:7px;border:1px solid var(--border-2);background:var(--surface);font-size:11px;color:var(--ink);outline:none">
+                                  <sc-for list="{{ x.addOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+                                </select>
+                                <span onClick="{{ x.onAdd }}" style="flex:none;height:30px;padding:0 12px;border-radius:7px;background:var(--pri);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;cursor:pointer">{{ x.addLabel }}</span>
+                              </span>
+                            </sc-if>
+                          </span>
+                          <sc-if value="{{ x.hasListMore }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:11px;color:var(--ink-4)">{{ x.listMore }}</span><sc-if value="{{ x.hasReset }}" hint-placeholder-val="{{ false }}"><span onClick="{{ x.onReset }}" style="font-size:11px;font-weight:600;color:var(--pri-d);cursor:pointer">استعادة المستثنى</span></sc-if></span></sc-if>
+                        </span>
+                      </sc-if>
+                      <sc-if value="{{ x.isToggle }}" hint-placeholder-val="{{ false }}">
+                        <span onClick="{{ x.onToggle }}" style="display:inline-flex;align-items:center;gap:10px;min-height:{{ s.ctlH }};cursor:pointer;user-select:none">
+                          <span style="width:36px;height:20px;border-radius:999px;background:{{ x.trackBg }};position:relative;transition:background .15s;flex:none"><span style="position:absolute;top:2px;inset-inline-start:{{ x.knob }};width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:inset-inline-start .15s"></span></span>
+                          <span style="font-size:13px;color:var(--ink)">{{ x.toggleLabel }}</span>
+                        </span>
+                      </sc-if>
+                      <sc-if value="{{ x.hasHint }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--ink-4)">{{ x.hint }}</span></sc-if>
+                    </label>
+                  </sc-for>
+                </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ p.hasActions }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;gap:8px;padding:12px {{ p.sidePad }};border-top:1px solid var(--border);flex:none;flex-wrap:wrap">
+            <sc-for list="{{ p.startActions }}" as="a" hint-placeholder-count="1">
+              <button type="button" onClick="{{ a.onClick }}" disabled="{{ a.disabled }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:{{ a.bd }};background:{{ a.bg }};color:{{ a.fg }};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;opacity:{{ a.op }}" style-hover="filter:brightness(.96)">{{ a.label }}</button>
+            </sc-for>
+            <span style="flex:1"></span>
+            <sc-for list="{{ p.endActions }}" as="a" hint-placeholder-count="2">
+              <button type="button" onClick="{{ a.onClick }}" disabled="{{ a.disabled }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:{{ a.bd }};background:{{ a.bg }};color:{{ a.fg }};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;opacity:{{ a.op }}" style-hover="filter:brightness(.96)">{{ a.label }}</button>
+            </sc-for>
+          </div>
+        </sc-if>
+        </div>
+      </section>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;forceType&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;auto&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;drawer&quot;,&quot;modal&quot;],&quot;tsType&quot;:&quot;'auto'|'drawer'|'modal'&quot;,&quot;section&quot;:&quot;اللوحة&quot;},&quot;widthOverride&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:90,&quot;step&quot;:2,&quot;unit&quot;:&quot;%&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;اللوحة&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;'comfortable'|'compact'&quot;,&quot;section&quot;:&quot;اللوحة&quot;},&quot;embed&quot;:{&quot;editor&quot;:null,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;الدمج&quot;},&quot;panel&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;PanelMeta | null&quot;,&quot;section&quot;:&quot;الدمج&quot;},&quot;theme&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;'light' | 'dark' | null&quot;,&quot;section&quot;:&quot;الدمج&quot;},&quot;onAction&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(key: string, values, changed: string[]) =&gt; void&quot;,&quot;section&quot;:&quot;الدمج&quot;},&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(values) =&gt; void&quot;,&quot;section&quot;:&quot;الدمج&quot;}}">
+// ── الميتا: شكل الكائن المُرسل للّوحة
+// { type:'drawer'|'modal', width:'40%', height:'70%' (modal), side:'start'|'end' (drawer),
+//   title, subtitle, subtitleMono, badge:{text,tone}, closeOnBackdrop,
+//   content: { html:'…' } | { sections:[{ title, note, noteTone, cols, fields:[{ key,label,type,value,options,span,mono,required,placeholder,hint,rows }] }] },
+//   type:'choice' — شبكة خيارات بقيمة واحدة: options:[{v,l,note,mono}] مع choiceCols وsearchable وsearchPlaceholder وemptyText؛ النقر على المحدد يلغيه
+//   actions:[{ key,label,variant:'primary'|'secondary'|'danger'|'ghost', align:'start'|'end', requiresDirty, close }] }
+// الألوان والأنماط من ui-kit.js (مصدر واحد مع UI Kit.dc.html) مع احتياطي محلي
+const FALLBACK_TONE = {
+  ok: { bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', bd: 'var(--ok-sb)' },
+  warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', bd: 'var(--wn-sb)' },
+  danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--dg)', bd: 'var(--dg-sb)' },
+  info: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)', bd: 'var(--nf-sb)' },
+  muted: { bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--ink-4)', bd: 'var(--border)' },
+};
+const FALLBACK_VARIANT = {
+  primary: { bg: 'var(--pri)', fg: 'var(--on-pri)', bd: 'none' },
+  secondary: { bg: 'var(--surface)', fg: 'var(--ink)', bd: '1px solid var(--border-2)' },
+  danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', bd: '1px solid var(--dg-sb)' },
+  ghost: { bg: 'transparent', fg: 'var(--ink-2)', bd: 'none' },
+  tonal: { bg: 'var(--pri-s)', fg: 'var(--pri-d)', bd: '1px solid var(--pri-sb)' },
+};
+const TONE = new Proxy({}, { get: (_, k) => (window.UIKit ? window.UIKit.TONE : FALLBACK_TONE)[k] });
+const VARIANT = new Proxy({}, { get: (_, k) => (window.UIKit ? window.UIKit.BUTTON : FALLBACK_VARIANT)[k] });
+const MONO = "'IBM Plex Mono',monospace";
+
+const ICONS = {
+  user: '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="7.5" r="3"/><path d="M4 16.5c1.2-2.6 3.4-3.8 6-3.8s4.8 1.2 6 3.8" stroke-linecap="round"/></svg>',
+  pin: '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 17.5s-5.5-4.6-5.5-9a5.5 5.5 0 0111 0c0 4.4-5.5 9-5.5 9z"/><circle cx="10" cy="8.5" r="1.8"/></svg>',
+  chat: '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3.5 4.5h13v8.5h-8L5 16v-3H3.5z" stroke-linejoin="round"/></svg>',
+  card: '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="14" height="10" rx="1.5"/><path d="M3 8.5h14" /></svg>',
+  note: '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 3.5h7l3 3v10H5z" stroke-linejoin="round"/><path d="M7.5 10h5M7.5 13h5" stroke-linecap="round"/></svg>',
+  gear: '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="2.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5 5l1.4 1.4M13.6 13.6L15 15M5 15l1.4-1.4M13.6 6.4L15 5" stroke-linecap="round"/></svg>',
+};
+
+// content.tabs بديل عن content.sections: [{ key, label, icon, group, count, sections:[{ title, layout:'rows'|'grid', fields }] }] مع tabsStyle:'nav'|'side'
+function contactMeta(tabsStyle) {
+  const side = tabsStyle === 'side';
+  const layout = side ? 'rows' : 'grid';
+  return {
+    type: 'modal', width: side ? '72%' : '48%', height: side ? '84%' : '64%', tabsStyle, compactHeader: side,
+    title: 'جهة اتصال جديدة', subtitle: 'ستُضاف إلى دفتر العناوين مباشرة',
+    content: { tabs: [
+      { key: 'basic', label: 'البيانات الأساسية', icon: 'user', group: 'جهة الاتصال', sections: [
+        { title: 'الملف', layout, cols: 2, fields: [
+          { key: 'avatar', label: 'الصورة', type: 'avatar', value: 'س د', hideIn: 'grid' },
+          { key: 'name', label: 'الاسم', type: 'text', value: 'سند ديجيتال', required: true, span: 2, placeholder: 'اسم الشركة أو الشخص' },
+          { key: 'phone', label: 'رقم الهاتف', type: 'text', value: '+966551234567', mono: true, required: true, placeholder: '+966…', addons: [{ icon: 'clear', mode: 'inside', side: 'end', action: 'clear', title: 'مسح' }, { icon: 'scan', label: 'تحقق', mode: 'attached', side: 'end', tone: 'tonal', action: 'verifyPhone' }] },
+          { key: 'tag', label: 'التصنيف', type: 'select', value: '', placeholder: 'اختر', options: [{ v: '', l: 'اختر' }, { v: 'customer', l: 'عميل' }, { v: 'supplier', l: 'مورد' }, { v: 'other', l: 'أخرى' }] },
+          { key: 'notes', label: 'ملاحظات داخلية', type: 'textarea', rows: 3, value: '', span: 2, stacked: true, placeholder: 'مثال: يفضّل التواصل صباحاً', hint: 'تظهر للفريق فقط ولا تُرسل للعميل.' },
+        ] },
+        { title: 'التفضيلات', layout, cols: 2, fields: [
+          { key: 'theme', label: 'المظهر', type: 'segment', value: 'system', options: [{ v: 'system', l: 'النظام' }, { v: 'light', l: 'فاتح' }, { v: 'dark', l: 'داكن' }] },
+          { key: 'lang', label: 'لغة الرسائل', type: 'select', value: 'ar', options: [{ v: 'ar', l: 'العربية' }, { v: 'en', l: 'English' }] },
+          { key: 'optin', label: 'موافقة على استلام الرسائل', type: 'toggle', value: true, hint: 'مطلوبة قبل إرسال أي رسالة تسويقية.' },
+        ] },
+      ] },
+      { key: 'address', label: 'العنوان', icon: 'pin', group: 'جهة الاتصال', sections: [{ title: 'العنوان الوطني', layout, cols: 2, fields: [
+        { key: 'city', label: 'المدينة', type: 'text', value: '' },
+        { key: 'district', label: 'الحي', type: 'text', value: '' },
+        { key: 'street', label: 'الشارع', type: 'text', value: '', span: 2 },
+        { key: 'zip', label: 'الرمز البريدي', type: 'text', value: '', mono: true },
+      ] }] },
+      { key: 'billing', label: 'الفواتير', icon: 'card', group: 'جهة الاتصال', sections: [{ title: 'البيانات الضريبية', layout, cols: 2, fields: [
+        { key: 'vat', label: 'الرقم الضريبي', type: 'text', value: '', mono: true, hint: '15 رقماً يبدأ بـ 3' },
+        { key: 'cr', label: 'السجل التجاري', type: 'text', value: '', mono: true },
+        { key: 'terms', label: 'شروط الدفع', type: 'select', value: 'net30', options: [{ v: 'now', l: 'فوري' }, { v: 'net15', l: '15 يوم' }, { v: 'net30', l: '30 يوم' }] },
+      ] }] },
+      { key: 'messages', label: 'الرسائل', icon: 'chat', group: 'التخصيص', count: 3, sections: [{ title: 'قنوات الإرسال', layout, cols: 2, fields: [
+        { key: 'chInvoice', label: 'إرسال الفواتير', type: 'toggle', value: true },
+        { key: 'chReminder', label: 'تذكير الدفع', type: 'toggle', value: true, hint: 'قبل تاريخ الاستحقاق بثلاثة أيام.' },
+        { key: 'chPromo', label: 'العروض', type: 'toggle', value: false },
+      ] }] },
+      { key: 'advanced', label: 'متقدم', icon: 'gear', group: 'التخصيص', sections: [{ title: 'متقدم', layout, cols: 2, fields: [
+        { key: 'extId', label: 'معرّف خارجي', type: 'text', value: '', mono: true, hint: 'رقم العميل في نظام المحاسبة.' },
+        { key: 'device', label: 'الجهاز الافتراضي', type: 'select', value: 'd1', options: [{ v: 'd1', l: 'جهاز المبيعات 1' }, { v: 'd2', l: 'جهاز المبيعات 2' }] },
+      ] }] },
+    ] },
+    actions: [
+      { key: 'cancel', label: 'إلغاء', variant: 'secondary', close: true },
+      { key: 'createMore', label: 'إنشاء وإضافة آخر', variant: 'secondary' },
+      { key: 'create', label: 'إنشاء', variant: 'primary', close: true },
+    ],
+  };
+}
+
+const DEMOS = [
+  { title: 'تعديل رسالة', tag: 'drawer · 40%', meta: {
+    type: 'drawer', width: '40%', side: 'start',
+    title: 'شركة النخيل للتجارة', subtitle: '+966 55 123 4567', subtitleMono: true, badge: { text: 'فشل الإرسال', tone: 'danger' },
+    content: { sections: [
+      { title: 'بيانات المستند', cols: 2, fields: [
+        { key: 'docType', label: 'نوع المستند', type: 'select', value: 'invoice', options: [{ v: 'invoice', l: 'فاتورة' }, { v: 'quote', l: 'عرض سعر' }, { v: 'receipt', l: 'سند قبض' }] },
+        { key: 'docNo', label: 'رقم المستند', type: 'text', value: 'INV-2026-0418', mono: true, required: true },
+        { key: 'amount', label: 'المبلغ (ر.س)', type: 'number', value: 12450, mono: true },
+        { key: 'device', label: 'الجهاز', type: 'readonly', value: 'جهاز المبيعات 1' },
+      ] },
+      { title: 'الرسالة', note: 'الخطأ: الرقم غير مسجّل في واتساب. تحقق من الرقم ثم أعد الإرسال.', noteTone: 'danger', cols: 1, fields: [
+        { key: 'phone', label: 'رقم الهاتف', type: 'text', value: '+966551234567', mono: true, required: true, hint: 'بالصيغة الدولية', addons: [{ icon: 'copy', mode: 'inside', side: 'end', action: 'copy', title: 'نسخ' }, { icon: 'whatsapp', label: 'واتساب', mode: 'attached', side: 'end', tone: 'primary', action: 'openChat' }] },
+        { key: 'body', label: 'نص الرسالة', type: 'textarea', rows: 4, value: 'مرحباً، نرفق لكم فاتورة رقم INV-2026-0418 بمبلغ 12,450 ر.س.' },
+        { key: 'retry', label: 'إعادة المحاولة تلقائياً', type: 'toggle', value: true },
+      ] },
+    ] },
+    actions: [
+      { key: 'delete', label: 'حذف', variant: 'danger', align: 'start' },
+      { key: 'cancel', label: 'إلغاء', variant: 'secondary', close: true },
+      { key: 'save', label: 'حفظ', variant: 'primary', requiresDirty: true, close: true },
+    ],
+  } },
+  { title: 'إنشاء جهة اتصال — tabs: nav', tag: 'modal · 48% × 64% · tabs:nav', meta: contactMeta('nav') },
+  { title: 'إنشاء جهة اتصال — tabs: side', tag: 'modal · 72% × 84% · tabs:side · rows', meta: contactMeta('side') },
+  { title: 'محتوى HTML', tag: 'drawer · 34% · end', meta: {
+    type: 'drawer', width: '34%', side: 'end',
+    title: 'سجل التسليم', subtitle: 'INV-2026-0418', subtitleMono: true, badge: { text: 'تم القراءة', tone: 'info' },
+    content: { html: '<h4>المحاولات</h4><table><tr><th>الوقت</th><th>الحالة</th></tr><tr><td><code>09:12</code></td><td>أُرسلت</td></tr><tr><td><code>09:12</code></td><td>تم التسليم</td></tr><tr><td><code>10:40</code></td><td>تم القراءة</td></tr></table><p style="margin-top:14px">المعرّف: <code>wamid.HBgLNTY2…</code></p>' },
+    actions: [{ key: 'close', label: 'إغلاق', variant: 'primary', close: true }],
+  } },
+  { title: 'اختيار أمر — choice', tag: 'modal · 44% · choice + textarea', meta: {
+    type: 'modal', width: '44%', height: '70%',
+    title: 'رسالة بالنيابة', subtitle: 'محاكاة رسالة واردة من الجهة — بلا إرسال فعلي', badge: { text: 'بلا إرسال فعلي', tone: 'info' },
+    content: { sections: [
+      { title: 'أمر من الأوامر المتاحة', cols: 1, fields: [
+        { key: 'cmd', label: 'الأمر', type: 'choice', value: '', searchable: true, searchPlaceholder: 'ابحث في الأوامر…', choiceCols: 2, emptyText: 'لا أمر مطابق للبحث.', options: [
+          { v: 'stmt', l: '#كشف', note: 'كشف حساب العميل', mono: true },
+          { v: 'bal', l: '#رصيد', note: 'رصيد الصناديق', mono: true },
+          { v: 'inv', l: '#فاتورة', note: 'آخر فاتورة بيع', mono: true },
+          { v: 'sales', l: '#مبيعات', note: 'مبيعات اليوم', mono: true },
+        ] },
+      ] },
+      { title: 'أو رسالة عادية ليست أمراً', cols: 1, fields: [
+        { key: 'body', label: 'نص الرسالة', type: 'textarea', rows: 3, value: '', stacked: true, placeholder: 'اكتب الرسالة كما يكتبها العميل…', hint: 'الكتابة هنا تُلغي تحديد الأمر.' },
+      ] },
+    ] },
+    actions: [
+      { key: 'cancel', label: 'إلغاء', variant: 'secondary', close: true },
+      { key: 'send', label: 'إرسال بالنيابة', variant: 'primary', close: true },
+    ],
+  } },
+  { title: 'تأكيد حذف', tag: 'modal · 28% · auto', meta: {
+    type: 'modal', width: '28%',
+    title: 'حذف 3 رسائل؟', closeOnBackdrop: false,
+    content: { html: '<p>سيتم حذف الرسائل المحددة من السجل. لا يمكن التراجع عن هذا الإجراء.</p>' },
+    actions: [
+      { key: 'cancel', label: 'إلغاء', variant: 'secondary', close: true },
+      { key: 'confirm', label: 'حذف', variant: 'danger', close: true },
+    ],
+  } },
+];
+
+class Component extends DCLogic {
+  // ميتا addons على أي حقل نصي: [{ icon, label, mode:'inside'|'attached', side:'start'|'end', tone, action:'clear'|'copy', onClick, title, decorative }]
+  buildAddons(addons, ctx) {
+    const K = window.UIKit, icons = K ? K.ADDON_ICONS : {}, BTN = K ? K.BUTTON : FALLBACK_VARIANT;
+    const mk = (a) => {
+      const v = BTN[a.tone] || { bg: 'var(--sunken)', fg: 'var(--ink-2)' };
+      const run = a.action === 'clear' ? () => ctx.set('') : a.action === 'copy' ? () => { if (navigator.clipboard) navigator.clipboard.writeText(String(ctx.value ?? '')); } : (a.onClick || (() => this.emit({ key: a.action || a.icon || a.label })));
+      return { svg: { __html: a.icon ? icons[a.icon] || '' : '' }, hasLabel: !!a.label, label: a.label || '', title: a.title || a.label || '', bg: a.tone ? v.bg : 'var(--sunken)', fg: a.tone ? v.fg : (a.decorative ? 'var(--ink-3)' : 'var(--ink-2)'), px: a.label ? '12px' : '10px', cursor: a.decorative ? 'default' : 'pointer', onClick: a.decorative ? undefined : (e) => { e.stopPropagation(); run(); } };
+    };
+    const pick = (mode, side) => (addons || []).filter((a) => (a.mode || 'inside') === mode && (a.side || 'end') === side).map(mk);
+    const inStart = pick('inside', 'start'), inEnd = pick('inside', 'end');
+    return { attStart: pick('attached', 'start'), attEnd: pick('attached', 'end'), inStart, inEnd, padStart: inStart.length ? (8 + inStart.length * 28) + 'px' : '12px', padEnd: inEnd.length ? (8 + inEnd.length * 28) + 'px' : '12px' };
+  }
+  state = { meta: null, values: {}, initial: {}, log: [], tab: '', query: {}, draft: {} };
+  allSections(meta) { return meta.content.tabs ? meta.content.tabs.flatMap((t) => t.sections || []) : (meta.content.sections || []); }
+
+  componentDidMount() {
+    this.onKey = (e) => { if (e.key === 'Escape' && this.state.meta && !window.__hubDropOpen) { e.preventDefault(); this.close(); } };
+    window.addEventListener('keydown', this.onKey);
+    if (this.props.panel) this.open(this.applyDefaults(this.props.panel, this.props.defaultType ?? 'meta'));
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); }
+  // ── فتح من الخارج: panel (ميتا اللوحة) — كل كائن جديد يفتحها، null يغلقها؛ onAction(key, values, changed) وonClose(values)
+  componentDidUpdate(pp) {
+    const p = this.props.panel;
+    if (p !== pp.panel) { if (p) this.open(this.applyDefaults(p, this.props.defaultType ?? 'meta')); else if (this.state.meta) this.setState({ meta: null }); }
+  }
+
+  open(meta) {
+    const values = {};
+    const ARR = { multiChoice: 1, tags: 1 };
+    this.allSections(meta).forEach((s) => s.fields.forEach((f) => { values[f.key] = f.value !== undefined ? f.value : (ARR[f.type] ? [] : undefined); }));
+    this.setState({ meta, values, initial: { ...values }, tab: meta.content.tabs ? meta.content.tabs[0].key : '', tabQuery: '', query: {}, draft: {} });
+  }
+  close() { const was = this.state.meta; this.setState({ meta: null }); if (was && this.props.onClose) this.props.onClose(this.state.values); }
+  emit(action) {
+    const S = this.state, changed = Object.keys(S.values).filter((k) => S.values[k] !== S.initial[k]);
+    const entry = JSON.stringify({ action: action.key, values: S.values, changed });
+    this.setState((st) => ({ log: [entry, ...st.log].slice(0, 6) }));
+    if (typeof action.onClick === 'function') action.onClick(S.values, changed);
+    if (this.props.onAction) this.props.onAction(action.key, S.values, changed);
+    if (action.close) this.close();
+  }
+
+  renderVals() {
+    const S = this.state, m = S.meta, stop = (e) => e.stopPropagation();
+    const defType = this.props.defaultType ?? 'meta';
+    const demos = DEMOS.map((d) => ({ title: d.title, tag: d.tag, json: JSON.stringify(this.summary(d.meta), null, 2), open: () => this.open(this.applyDefaults(d.meta, defType)) }));
+    const embed = !!this.props.embed;
+    const base = { stop, demos, log: S.log, hasLog: S.log.length > 0, clearLog: () => this.setState({ log: [] }), p: { open: false, sections: [], startActions: [], endActions: [] }, theme: this.props.theme || null, showPage: !embed, rootMinH: embed ? '0' : '100vh', rootPad: embed ? '0' : '24px', rootBg: embed ? 'transparent' : 'var(--bg)', rootDisplay: embed ? 'contents' : 'flex' };
+    if (!m) return base;
+
+    const dirty = Object.keys(S.values).some((k) => S.values[k] !== S.initial[k]);
+    const isDrawer = m.type === 'drawer', side = m.side || 'start';
+    const width = m.width || (isDrawer ? '40%' : '50%');
+    const geo = isDrawer
+      ? { pos: 'fixed', top: '0', bottom: '0', start: side === 'start' ? '0' : 'auto', end: side === 'end' ? '0' : 'auto', width, height: 'auto', radius: '0', anim: 'slideIn .2s ease-out', sx: side === 'start' ? '24px' : '-24px' }
+      : { pos: 'relative', top: 'auto', bottom: 'auto', start: 'auto', end: 'auto', width, height: m.height || 'auto', radius: '12px', anim: 'popIn .16s ease-out', sx: '0' };
+    const backdrop = () => { if (m.closeOnBackdrop !== false) this.close(); };
+
+    const badge = m.badge ? TONE[m.badge.tone] || TONE.muted : null;
+    const set = (k, v) => this.setState((st) => ({ values: { ...st.values, [k]: v } }));
+    const setAll = (patch) => this.setState((st) => ({ values: { ...st.values, ...patch } }));
+    /* api للحقول المحسوبة وخطّاف onChange: get يقرأ القيمة اللحظية */
+    const api = { set, setAll, get: (k) => this.state.values[k], values: S.values };
+    /* showIf على القسم أو الحقل: { key: value } أو { key: [v1,v2] } */
+    const vis = (o) => !o.showIf || Object.keys(o.showIf).every((k) => { const w = o.showIf[k], g = S.values[k]; return Array.isArray(w) ? w.indexOf(g) >= 0 : w === g; });
+    const tabsSrc = m.content.tabs || [];
+    const activeTab = tabsSrc.find((t) => t.key === S.tab) || tabsSrc[0];
+    const isSide = tabsSrc.length > 0 && m.tabsStyle === 'side';
+    const compact = (m.density || this.props.density || 'comfortable') === 'compact';
+    const dn = { rowPad: compact ? '8px 0' : '14px 0', ctlH: compact ? '32px' : '38px', fs: compact ? '13px' : '14px', gridGap: compact ? '8px 12px' : '12px 16px', secGap: compact ? (isSide ? '20px' : '14px') : (isSide ? '32px' : '20px'), bodyPad: compact ? (isSide ? '8px 24px 16px' : '12px 18px') : (isSide ? '12px 32px 24px' : '16px 18px'), tabH: compact ? '32px' : '38px', hTitle: compact ? '15px' : '17px' };
+    const tq = (S.tabQuery || '').trim();
+    const tabOf = (t) => { const on = activeTab && t.key === activeTab.key; return {
+      label: t.label, hasCount: t.count != null, count: t.count, onPick: () => this.setState({ tab: t.key }), icon: { __html: ICONS[t.icon] || ICONS.note },
+      weight: on ? 600 : 400, fg: on ? 'var(--ink)' : 'var(--ink-2)', line: on ? 'var(--pri)' : 'transparent', bg: on ? 'var(--sunken)' : 'transparent',
+      cBg: on ? 'var(--pri)' : 'var(--sunken)', cFg: on ? 'var(--on-pri)' : 'var(--ink-2)',
+    }; };
+    const tabs = tabsSrc.map(tabOf);
+    const tabGroups = [];
+    tabsSrc.filter((t) => !tq || t.label.includes(tq)).forEach((t) => { const g = t.group || ''; let grp = tabGroups.find((x) => x.label === g); if (!grp) { grp = { label: g, tabs: [] }; tabGroups.push(grp); } grp.tabs.push(tabOf(t)); });
+    const srcSections = tabsSrc.length ? (activeTab.sections || []) : (m.content.sections || []);
+    const sections = srcSections.filter(vis).map((s) => {
+      const nt = TONE[s.noteTone] || TONE.info, rows = s.layout === 'rows';
+      return {
+        hasTitle: !!s.title, title: s.title || '', hasNote: !!s.note, note: s.note || '', noteBg: nt.bg, noteFg: nt.fg, noteBd: nt.bd,
+        isRows: rows, isGrid: !rows, gap: rows ? '4px' : (compact ? '8px' : '12px'), rowPad: dn.rowPad, ctlH: dn.ctlH, fs: dn.fs, gridGap: dn.gridGap, hTitle: dn.hTitle,
+        gridCols: 'repeat(' + (s.cols || 2) + ',minmax(0,1fr))',
+        fields: s.fields.filter(vis).filter((f) => !f.hideIn || f.hideIn !== (rows ? 'rows' : 'grid')).map((f0) => {
+          /* compute(values, api): يدمج خصائص محسوبة على تعريف الحقل (label, rowsData, options, hint…) */
+          const f = f0.compute ? Object.assign({}, f0, f0.compute(S.values, api) || {}) : f0;
+          const v = S.values[f.key], t = f.type || 'text', mono = !!f.mono;
+          const setV = (nv) => { set(f.key, nv); if (f.onChange) f.onChange(nv, api); };
+          const stacked = !!f.stacked || t === 'textarea';
+          const segs = (f.options || []).map((o, i) => ({ l: o.l, onPick: () => setV(o.v), bg: v === o.v ? 'var(--sunken)' : 'transparent', fg: v === o.v ? 'var(--ink)' : 'var(--ink-3)', bd: i ? 'var(--border-2)' : 'transparent' }));
+          const qOf = (k) => String(S.query[k] || '').trim();
+          const onQueryOf = (k) => (e) => { const nv = e.target.value; this.setState((st) => ({ query: { ...st.query, [k]: nv } })); };
+          const match = (o, q) => !q || String(o.l ?? o.label ?? '').includes(q) || String(o.note || '').includes(q) || String(o.v).includes(q);
+          /* presets: شرائح اختيار سريعة فوق حقل نصي/تاريخ/وقت — النقر على المحدد يلغيه */
+          const presets = (f.presets || []).map((o) => { const on = v === o.v; return { l: o.l, onPick: () => setV(on ? '' : o.v), bg: on ? 'var(--pri-s)' : 'var(--surface)', bd: on ? 'var(--pri)' : 'var(--border-2)', fg: on ? 'var(--pri-d)' : 'var(--ink-2)' }; });
+          /* multiChoice: شبكة اختيار متعدد (القيمة مصفوفة) */
+          let multiVals = { isMulti: false, mchoices: [], onSelectAll: () => {}, onClearAll: () => {} };
+          if (t === 'multiChoice') {
+            const arr = Array.isArray(v) ? v : [], q = qOf(f.key);
+            const opts = (f.options || []).filter((o) => match(o, q));
+            multiVals = {
+              isMulti: true, noChoices: opts.length === 0, onSelectAll: () => setV((f.options || []).map((o) => o.v)), onClearAll: () => setV([]),
+              mchoices: opts.map((o) => { const on = arr.indexOf(o.v) >= 0; return {
+                label: o.l ?? o.label ?? o.v, hasNote: !!o.note, note: o.note || '', dir: o.mono ? 'ltr' : 'rtl', font: o.mono ? MONO : 'inherit',
+                noteDir: o.noteMono ? 'ltr' : 'rtl', noteFont: o.noteMono ? MONO : 'inherit', tick: on ? '✓' : '',
+                boxBg: on ? 'var(--pri)' : 'var(--surface)', boxBd: on ? 'var(--pri)' : 'var(--border-2)',
+                bg: on ? 'var(--pri-s)' : 'var(--surface)', bd: on ? 'var(--pri)' : 'var(--border)', fg: on ? 'var(--pri-d)' : 'var(--ink)',
+                onPick: () => setV(on ? arr.filter((x) => x !== o.v) : arr.concat([o.v])),
+              }; }),
+            };
+          }
+          /* tags: أرقام/كلمات حرة — Enter أو فاصلة تضيف، والقيمة مصفوفة */
+          let tagVals = { isTags: false, tags: [], draft: '', onDraft: () => {}, onDraftKey: () => {}, onAdd: () => {}, hasTags: false };
+          if (t === 'tags') {
+            const arr = Array.isArray(v) ? v : [], draft = S.draft[f.key] || '';
+            const add = (text) => {
+              const parts = String(text).split(/[\s,،؛;\n\r]+/).map((x) => x.trim()).filter(Boolean);
+              setV(arr.concat(parts.filter((p) => arr.indexOf(p) < 0)));
+              this.setState((st) => ({ draft: { ...st.draft, [f.key]: '' } }));
+            };
+            tagVals = {
+              isTags: true, draft, hasTags: arr.length > 0,
+              onDraft: (e) => { const nv = e.target.value; this.setState((st) => ({ draft: { ...st.draft, [f.key]: nv } })); },
+              onDraftKey: (e) => { if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); if (draft.trim()) add(draft); } },
+              onAdd: () => { if (draft.trim()) add(draft); },
+              tags: arr.map((tg, i) => ({ text: tg, onRemove: () => setV(arr.filter((_, j) => j !== i)) })),
+            };
+          }
+          /* list: قائمة صفوف للعرض (عادةً من compute) مع استثناء لكل صف */
+          let listVals = { isList: false, hasAdd: false, addOptions: [], listRows: [], noRows: false, hasListMore: false, listMore: '', hasReset: false, onReset: () => {} };
+          if (t === 'list') {
+            /* filters: [{v,l,count}] تُطابق row.filter — قيمة واحدة، والنقر على المحدد يلغيه */
+            const fkey = f.key + '::flt', fv = String(S.query[fkey] || '');
+            const lq = qOf(f.key), src0 = f.rowsData || [];
+            const src = fv ? src0.filter((r) => String(r.filter) === fv) : src0;
+            const rws = lq ? src.filter((r) => String(r.text || '').includes(lq) || String(r.sub || '').includes(lq) || String(r.meta || '').includes(lq) || String(r.tag || '').includes(lq)) : src;
+            const lmore = [f.more || '', fv ? 'مفلتر: ' + rws.length + ' من ' + src0.length : (lq ? 'المطابق للبحث ' + rws.length + ' من ' + src0.length : '')].filter(Boolean).join(' · ');
+            listVals = {
+              isList: true, noRows: rws.length === 0, hasListMore: !!lmore, listMore: lmore,
+              emptyText: lq && src.length ? 'لا رقم مطابق للبحث.' : (f.emptyText || 'لا صفوف.'),
+              hasReset: !!f.onReset, onReset: f.onReset || (() => {}),
+              searchPlaceholder: f.searchPlaceholder || 'ابحث في القائمة…',
+              /* جدول: أعمدة ثابتة لكل الصفوف — rowCols وhead اختياريان */
+              rowCols: f.rowCols || '150px minmax(0,1fr) auto 86px 24px',
+              hasHead: Array.isArray(f.head) && f.head.length > 0,
+              head: (f.head || []).map((h) => (typeof h === 'string' ? { l: h, align: 'start' } : { l: h.l, align: h.align || 'start' })),
+              hasFilters: (f.filters || []).length > 0,
+              filterChips: (f.filters || []).map((o) => { const on = fv === String(o.v); return {
+                l: o.l, hasCount: o.count != null, count: o.count,
+                bg: on ? 'var(--pri-s)' : 'var(--surface)', bd: on ? 'var(--pri)' : 'var(--border-2)', fg: on ? 'var(--pri-d)' : 'var(--ink-2)',
+                onPick: () => this.setState((st) => ({ query: { ...st.query, [fkey]: on ? '' : String(o.v) } })),
+              }; }),
+              /* add: { placeholder, label, options:[{v,l}], onAdd(text, type) } — سطر إضافة أسفل الجدول */
+              hasAdd: !!(f.add && f.add.onAdd),
+              addText: String(S.query[f.key + '::addN'] || ''),
+              onAddText: (e) => { const nv = e.target.value; this.setState((st) => ({ query: { ...st.query, [f.key + '::addN']: nv } })); },
+              addPlaceholder: (f.add && f.add.placeholder) || 'سطر جديد…',
+              addLabel: (f.add && f.add.label) || 'إضافة',
+              addOptions: ((f.add && f.add.options) || []).map((o) => ({ v: o.v, l: o.l })),
+              addType: String(S.query[f.key + '::addT'] || ((f.add && f.add.options && f.add.options[0]) ? f.add.options[0].v : '')),
+              onAddType: (e) => { const nv = e.target.value; this.setState((st) => ({ query: { ...st.query, [f.key + '::addT']: nv } })); },
+              onAdd: () => {
+                const txt = String(S.query[f.key + '::addN'] || '').trim();
+                if (!txt) return;
+                const ty = String(S.query[f.key + '::addT'] || ((f.add.options && f.add.options[0]) ? f.add.options[0].v : ''));
+                this.setState((st) => ({ query: { ...st.query, [f.key + '::addN']: '' } }));
+                f.add.onAdd(txt, ty);
+              },
+              listRows: rws.map((r) => { const tn = TONE[r.tone] || TONE.muted; return {
+                text: r.text, sub: r.sub || '', meta: r.meta || '', metaDir: r.metaMono === false ? 'rtl' : 'ltr', metaFont: r.metaMono === false ? 'inherit' : MONO,
+                hasTag: !!r.tag, tag: r.tag || '', tagBg: tn.bg, tagFg: tn.fg,
+                hasRemove: !!r.onRemove, onRemove: r.onRemove || (() => {}),
+              }; }),
+            };
+          }
+          /* choice: شبكة خيارات بقيمة واحدة — النقر على المحدد يلغيه؛ searchable يضيف بحثاً */
+          let choiceVals = { isChoice: false, choices: [] };
+          if (t === 'choice') {
+            const cq = String(S.query[f.key] || '').trim();
+            const opts = (f.options || []).filter((o) => !cq || String(o.l ?? o.label ?? '').includes(cq) || String(o.note || '').includes(cq) || String(o.v).includes(cq));
+            choiceVals = {
+              isChoice: true, noChoices: opts.length === 0,
+              hasSearch: !!f.searchable, query: S.query[f.key] || '',
+              onQuery: (e) => { const nv = e.target.value; this.setState((st) => ({ query: { ...st.query, [f.key]: nv } })); },
+              searchPlaceholder: f.searchPlaceholder || 'ابحث…',
+              choiceCols: 'repeat(' + (f.choiceCols || 2) + ',minmax(0,1fr))',
+              emptyText: f.emptyText || 'لا خيار مطابق.',
+              choices: opts.map((o) => {
+                const on = v === o.v;
+                return {
+                  label: o.l ?? o.label ?? o.v, hasNote: !!o.note, note: o.note || '',
+                  dir: o.mono ? 'ltr' : 'rtl', font: o.mono ? MONO : 'inherit',
+                  bg: on ? 'var(--pri-s)' : 'var(--surface)', bd: on ? 'var(--pri)' : 'var(--border)',
+                  fg: on ? 'var(--pri-d)' : 'var(--ink)',
+                  onPick: () => setV(on ? '' : o.v),
+                };
+              }),
+            };
+          }
+          return {
+            label: f.label, required: !!f.required, span: 'span ' + (f.span || 1), hasHint: !!f.hint, hint: f.hint || '',
+            isAddonInput: (t === 'text' || t === 'number') && Array.isArray(f.addons) && f.addons.length > 0,
+            ad: Array.isArray(f.addons) && f.addons.length ? this.buildAddons(f.addons, { value: v, set: (nv) => setV(nv) }) : { attStart: [], attEnd: [], inStart: [], inEnd: [], padStart: '12px', padEnd: '12px' },
+            isReadonly: t === 'readonly', isAvatar: t === 'avatar', isInput: (t === 'text' || t === 'number' || t === 'date' || t === 'time') && !(Array.isArray(f.addons) && f.addons.length), isTextarea: t === 'textarea', isSelect: t === 'select', isToggle: t === 'toggle', isSegment: t === 'segment', isChoice: t === 'choice',
+            hasPresets: presets.length > 0, presets, maxH: f.maxH || '240px',
+            hasSearch: !!f.searchable, query: S.query[f.key] || '', onQuery: onQueryOf(f.key), searchPlaceholder: f.searchPlaceholder || 'ابحث…',
+            noChoices: false, emptyText: f.emptyText || 'لا خيار مطابق.', choiceCols: 'repeat(' + (f.choiceCols || 2) + ',minmax(0,1fr))',
+            ...choiceVals, ...multiVals, ...tagVals, ...listVals,
+            inputType: t === 'number' ? 'number' : t === 'date' ? 'date' : t === 'time' ? 'time' : 'text', dir: mono || t === 'number' ? 'ltr' : 'rtl', align: mono || t === 'number' ? 'left' : 'right', font: mono ? MONO : 'inherit',
+            value: v ?? '', placeholder: f.placeholder || '', rows: f.rows || 3, options: f.options || [], segs,
+            rowDir: stacked ? 'column' : 'row', rowAlign: stacked ? 'stretch' : 'center', labelFlex: stacked ? 'none' : '1', ctlWidth: stacked ? '100%' : (t === 'toggle' || t === 'avatar' || t === 'segment' ? 'auto' : 'min(280px,45%)'),
+            selBd: v === '' ? 'transparent' : 'var(--border-2)', selBg: v === '' ? 'transparent' : 'var(--surface)', selFg: v === '' ? 'var(--ink-3)' : 'var(--ink)',
+            onChange: (e) => setV(t === 'number' ? Number(e.target.value) : e.target.value),
+            onToggle: () => setV(!v), trackBg: v ? 'var(--pri)' : 'var(--border-2)', knob: v ? '18px' : '2px', toggleLabel: v ? 'مفعّل' : 'غير مفعّل',
+          };
+        }),
+      };
+    });
+    const act = (a) => { const vs = VARIANT[a.variant] || VARIANT.secondary, dis = !!a.requiresDirty && !dirty; return { label: a.label, bg: vs.bg, fg: vs.fg, bd: vs.bd, disabled: dis, op: dis ? .45 : 1, onClick: () => this.emit(a) }; };
+    const actions = m.actions || [];
+    return { ...base, p: {
+      ...geo, open: true, close: () => this.close(), backdrop, dirty,
+      title: m.title || '', hasSubtitle: !!m.subtitle, subtitle: m.subtitle || '', subDir: m.subtitleMono ? 'ltr' : 'rtl', subFont: m.subtitleMono ? MONO : 'inherit',
+      hasBadge: !!badge, badge: m.badge ? m.badge.text : '', badgeBg: badge ? badge.bg : '', badgeFg: badge ? badge.fg : '', badgeDot: badge ? badge.dot : '',
+      isHtml: !!m.content.html, isMeta: !m.content.html, html: { __html: m.content.html || '' }, sections,
+      tabs, tabGroups, navTabs: tabsSrc.length > 0 && !isSide, sideTabs: isSide,
+      tabQuery: S.tabQuery || '', onTabQuery: (e) => this.setState({ tabQuery: e.target.value }),
+      headPad: m.compactHeader ? '12px 18px 0' : '18px 18px 14px', headBorder: m.compactHeader ? 'none' : '1px solid var(--border)', headDisplay: m.compactHeader ? 'none' : 'flex', closeBorder: m.compactHeader ? 'none' : '1px solid var(--border)',
+      bodyPad: dn.bodyPad, sectionGap: dn.secGap, sidePad: isSide ? (compact ? '24px' : '32px') : '18px', tabH: dn.tabH,
+      hasActions: actions.length > 0, startActions: actions.filter((a) => a.align === 'start').map(act), endActions: actions.filter((a) => a.align !== 'start').map(act),
+    } };
+  }
+
+  applyDefaults(meta, defType) {
+    const out = { ...meta };
+    if (this.props.forceType && this.props.forceType !== 'auto') out.type = this.props.forceType;
+    if (this.props.widthOverride) out.width = this.props.widthOverride + '%';
+    return out;
+  }
+  summary(m) {
+    const o = { type: m.type, width: m.width };
+    if (m.height) o.height = m.height; if (m.side) o.side = m.side;
+    o.title = m.title;
+    if (m.tabsStyle) o.tabsStyle = m.tabsStyle;
+    const sec = (s) => ({ title: s.title, layout: s.layout, cols: s.cols, fields: s.fields.map((f) => f.key + ':' + (f.type || 'text')) });
+    o.content = m.content.html ? { html: '…' } : m.content.tabs ? { tabs: m.content.tabs.map((t) => ({ key: t.key, label: t.label, sections: t.sections.map(sec) })) } : { sections: m.content.sections.map(sec) };
+    o.actions = (m.actions || []).map((a) => a.key + (a.variant ? '/' + a.variant : ''));
+    return o;
+  }
+}
+</script>
+</body>
+</html>

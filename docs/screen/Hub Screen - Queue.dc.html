@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--c-sent:#8FC0E4;--c-deliv:#2E7FD1;--c-read:#22A7C9;--c-queued:#EDA93E;--c-failed:#E0615A;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--c-sent:#6FA6D8;--c-deliv:#3E82CC;--c-read:#37A9C9;--c-queued:#D9A33A;--c-failed:#DE6F68;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+  .lv-host > .sc-host{flex:1 1 0%;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .lv-host > .sc-host > *{flex:1 1 0%;min-height:0;min-width:0}
+  @keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
+</style>
+</helmet>
+<div data-screen-label="الطابور" dir="rtl" style="flex:1;min-height:0;height:100%;overflow:auto;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="min-height:100%;display:flex;flex-direction:column;gap:12px;padding:16px;width:100%">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <h1 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em">الطابور</h1>
+        <span style="font-size:12px;color:var(--ink-3)">الرسائل المعلّقة بترتيب الإرسال. الترتيب يتغيّر مباشرة أثناء التشغيل.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <sc-if value="{{ paused }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ askResume }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:none;background:var(--wn);color:#fff;font-size:13px;font-weight:600;cursor:pointer">استئناف الإرسال</button></sc-if>
+        <sc-if value="{{ running }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ askPause }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer" style-hover="background:var(--sunken)">إيقاف مؤقت</button></sc-if>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;background:{{ banner.bg }};border:1px solid {{ banner.bd }};flex-wrap:wrap">
+      <span style="width:9px;height:9px;border-radius:50%;background:{{ banner.dot }};flex:none;animation:{{ banner.anim }}"></span>
+      <span style="font-size:14px;color:{{ banner.fg }};line-height:1.7;flex:1;min-width:240px">{{ banner.text }}</span>
+    </div>
+
+    <dc-import name="Cards" meta="{{ cardsMeta }}" handlers="{{ handlers }}" loading="{{ loading }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,72px"></dc-import>
+
+    <div style="display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:8px;background:var(--surface);border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <span style="font-size:14px;font-weight:600">معدّل الإرسال</span>
+        <span style="font-size:12px;color:var(--ink-3)">المعدّل الأعلى يزيد خطر الحظر من المنصة. الموصى به <span dir="ltr" style="font-family:'IBM Plex Mono',monospace">20–30</span> رسالة/دقيقة.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <input type="range" min="5" max="60" step="1" value="{{ rate }}" onInput="{{ onRate }}" style="flex:1;min-width:200px;accent-color:var(--pri);min-height:44px" />
+        <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;min-width:96px;text-align:left">{{ rate }}/دقيقة</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:{{ rateBg }};color:{{ rateFg }};font-size:12px;font-weight:600">{{ rateLabel }}</span>
+      </div>
+      <span style="font-size:13px;color:var(--ink-3);line-height:1.8">بهذا المعدّل، تفريغ الطابور الحالي يستغرق <strong style="color:var(--ink-2)">{{ eta }}</strong>.</span>
+    </div>
+
+    <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ true }}">
+      <div class="lv-host" style="display:flex;overflow:hidden;height:520px;flex:none">
+        <dc-import name="List View" column-borders="{{ true }}" loading="{{ loading }}" columns="{{ columns }}" rows="{{ rows }}" detail="{{ detail }}" bulk="{{ bulk }}" sum-key="amount" sum-label="مجموع المبالغ" unit="رسالة معلّقة" search-placeholder="اسم، رقم، أو رقم مستند…" search-keys="{{ searchKeys }}" export-name="queue" default-sort="{{ defaultSort }}" pinned="{{ pinned }}" page-size="{{ 50 }}" density="compact" theme="{{ theme }}" hint-size="100%,100%"></dc-import>
+      </div>
+    </sc-if>
+  </div>
+
+  <dc-import name="Confirm Dialog" meta="{{ confirmMeta }}" handlers="{{ handlers }}" open-key="{{ confirmKey }}" on-close="{{ onConfirmClose }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:900},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;]},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;},&quot;onChange&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(e: {type: 'pause'|'resume'}) =&gt; void&quot;}}">
+const ROUTE = '/messages/queue';
+const USER = 'عبدالله الفهد';
+const STATUS_TONE = {
+  read: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--c-read)' }, delivered: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--c-deliv)' },
+  sent: { bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--c-sent)' }, warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--c-queued)' },
+  danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--c-failed)' }, muted: { bg: 'var(--sunken)', fg: 'var(--ink-3)', dot: 'var(--ink-4)' },
+};
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, confirmKey: null, pendingCancel: [], fire: null, rev: 0, loading: true };
+
+  componentDidMount() {
+    const w = () => { if (window.HubData && window.HubShared && window.UIKit) { this.setState({ ready: true }); setTimeout(() => this.setState({ loading: false }), 260); } else this.t = setTimeout(w, 40); };
+    w();
+    this.timer = setInterval(() => { if (document.hidden) return; const D = window.HubData; if (D && D.advanceQueue) D.advanceQueue(2); this.bump(); }, 5000);
+  }
+  componentWillUnmount() { clearTimeout(this.t); clearInterval(this.timer); }
+
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  emit(name, payload) { if (typeof this.props[name] === 'function') this.props[name](payload); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    const empty = { theme, loading: true, paused: false, running: false, askResume: () => {}, askPause: () => {}, banner: { bg: 'var(--sunken)', bd: 'var(--border)', fg: 'var(--ink-3)', dot: 'var(--ink-4)', anim: 'none', text: 'جارٍ التحميل…' }, cardsMeta: { sections: [] }, handlers: {}, rate: 20, onRate: () => {}, rateLabel: '', rateBg: 'var(--sunken)', rateFg: 'var(--ink-2)', eta: '—', hasRows: false, columns: [], rows: [], detail: null, bulk: [], searchKeys: [], defaultSort: null, pinned: [], confirmMeta: { dialogs: [] }, confirmKey: null, onConfirmClose: () => {}, toastsMeta: { types: [] }, toastFire: null };
+    if (!D || !H || !S.ready) return empty;
+    const f = D.fmt, sub = D.subscription || { quota: 0, used: 0 };
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+
+    const pending = D.messages.filter((m) => m.direction === 'out' && (m.status === 'queued' || m.status === 'unsent')).sort((a, b) => a.ts - b.ts);
+    const rate = D.queue.rate, paused = !!D.queue.paused;
+    const totalMin = pending.length / rate;
+    const eta = pending.length === 0 ? 'لا شيء' : totalMin < 1 ? 'أقل من دقيقة' : totalMin < 60 ? Math.round(totalMin) + ' دقيقة' : Math.floor(totalMin / 60) + ' ساعة و' + Math.round(totalMin % 60) + ' دقيقة';
+
+    /* ——— المعالجات ——— */
+    const handlers = {
+      pause: () => { D.setQueuePaused(true, USER); D.logActivity('أوقف ' + USER + ' الطابور', 'warn'); this.toast({ key: 'paused', title: 'أُوقف الطابور', text: f.n(pending.length) + ' رسالة تنتظر.' }); this.emit('onChange', { type: 'pause' }); this.bump(); },
+      resume: () => { D.setQueuePaused(false, USER); D.logActivity('استأنف ' + USER + ' الطابور — ' + f.n(pending.length) + ' رسالة معلّقة', 'primary'); this.toast({ key: 'resumed', title: 'استُئنف الطابور', text: f.n(pending.length) + ' رسالة تنتقل إلى «قيد الإرسال» تدريجياً.' }); this.emit('onChange', { type: 'resume' }); this.bump(); },
+      cancel: () => { const ids = S.pendingCancel; ids.forEach((id) => { const m = D.messages.find((x) => x.id === id); if (m) m.status = 'cancelled'; }); D.logActivity('أُلغيت ' + ids.length + ' رسالة يدوياً من الطابور', 'muted'); this.toast({ key: 'cancelled', title: 'أُلغيت ' + f.n(ids.length) + ' رسالة' }); this.setState({ pendingCancel: [] }); this.bump(); },
+      openCampaigns: () => go('/campaigns'),
+      openBilling: () => go('/billing'),
+    };
+
+    /* ——— البطاقات (Cards: stat) ——— */
+    const cardsMeta = { handlers, sections: [].concat(
+      pending.length === 0 ? [{ min: 420, cards: [{ kind: 'alert', tone: 'ok', label: 'الطابور فارغ', note: 'كل ما جُدول للإرسال خرج فعلاً. الرسائل الجديدة تظهر هنا لحظة إنشائها من نموذج أو حملة.', cta: 'اذهب إلى الحملات', ctaStyle: 'solid', action: 'openCampaigns' }] }] : [],
+      [{ min: 200, mobileColumns: 1, cards: [
+        { kind: 'stat', icon: 'clock', label: 'في الطابور الآن', value: f.n(pending.length), valueMono: true, note: 'معلّقة بانتظار الإرسال' },
+        { kind: 'stat', icon: 'clock', tone: 'info', label: 'الوقت المتوقّع للتفريغ', value: eta, note: 'بالمعدّل الحالي' },
+        { kind: 'stat', icon: 'send', tone: pending.length ? 'warn' : undefined, label: 'يُخصم من الباقة', value: f.n(pending.length), valueMono: true, note: 'رصيد بعدها ' + f.n(Math.max(0, sub.quota - sub.used - pending.length)), action: 'openBilling' },
+      ] }]
+    ) };
+
+    /* ——— القائمة ——— */
+    const chipOf = (m) => { const t = STATUS_TONE[D.STATUS[m.status].tone] || STATUS_TONE.muted; return { text: D.STATUS[m.status].ar, bg: t.bg, fg: t.fg, dot: t.dot, sort: m.status }; };
+    const devCell = (id) => { const d = D.deviceById(id) || { name: '—', initials: '—', color: 'var(--ink-4)' }; return { text: d.name, initials: d.initials, avBg: d.color, avFg: '#fff', sort: d.name }; };
+    const ctCell = (id) => { const c = D.contactById(id) || { name: '', phone: '' }; return { text: c.name || 'بلا اسم — من دليل الجهاز', sub: c.phone, sort: c.name || 'ي' }; };
+    const bodyOf = (m) => (m.body || '').replace('{no}', m.docNo || '').replace('{amt}', f.money(m.amount || 0));
+    const columns = [
+      { key: 'idx', label: '#', w: 64, kind: 'num' },
+      { key: 'contact', label: 'الجهة', w: 210, kind: 'two', group: true },
+      { key: 'docType', label: 'نوع المستند', w: 130, group: true, filter: true },
+      { key: 'docNo', label: 'رقم المستند', w: 110, kind: 'mono' },
+      { key: 'status', label: 'الحالة', w: 120, kind: 'badge', group: true, filter: true },
+      { key: 'device', label: 'الجهاز', w: 150, kind: 'avatar', group: true, filter: true },
+      { key: 'eta', label: 'الإرسال المتوقّع', w: 140, kind: 'mono' },
+      { key: 'amount', label: 'المبلغ', w: 120, kind: 'money', align: 'end' },
+    ];
+    const rows = pending.map((m, i) => {
+      const dvc = D.deviceById(m.deviceId) || { status: 'disconnected' }; const mins = (i + 1) / rate; const off = dvc.status !== 'connected';
+      return { id: m.id, idx: i + 1, contact: ctCell(m.contactId), docType: m.docType, docNo: m.docNo, status: chipOf(m), device: devCell(m.deviceId), amount: m.amount, eta: { text: paused ? 'موقوف' : off ? 'جهاز مفصول' : mins < 1 ? 'خلال ثوانٍ' : Math.ceil(mins) + ' دقيقة', color: paused || off ? 'var(--dg-i)' : 'var(--ink-2)', sort: i }, _m: m };
+    });
+    const detail = (r) => { const m = r._m; return {
+      fields: [{ k: 'نوع المستند', v: m.docType }, { k: 'رقم المستند', v: m.docNo, mono: true }, { k: 'المبلغ', v: f.money(m.amount) + ' SAR', mono: true }, { k: 'الجهاز', v: devCell(m.deviceId).text }, { k: 'أُنشئت', v: f.date(m.ts) + ' ' + f.time(m.ts), mono: true }, { k: 'الترتيب', v: f.n(r.idx), mono: true }],
+      blocks: [{ label: 'النص الذي سيُرسَل', text: bodyOf(m) }],
+      actions: [{ label: 'إلغاء هذه الرسالة', tone: 'danger', onClick: () => this.setState({ pendingCancel: [m.id], confirmKey: 'cancel' }) }],
+    }; };
+    const bulk = [{ label: 'إلغاء المحددة', onClick: (sel) => this.setState({ pendingCancel: sel.map((r) => r.id), confirmKey: 'cancel' }) }];
+
+    /* ——— التأكيدات ——— */
+    const nCancel = S.pendingCancel.length;
+    const confirmMeta = { handlers, dialogs: [
+      { key: 'pause', tone: 'warn', icon: 'pause', title: 'إيقاف الطابور مؤقتاً؟', text: 'الإيقاف لا يحذف شيئاً. الرسائل تبقى بترتيبها وتُستأنف من نفس النقطة.',
+        facts: [{ label: 'رسائل ستتوقف فوراً', value: f.n(pending.length), mono: true, tone: 'warn' }, { label: 'المعدّل الحالي', value: rate + ' / دقيقة', mono: true }, { label: 'الوقت المتبقي للتفريغ', value: eta }],
+        reason: { label: 'سبب الإيقاف (يظهر في سجل التدقيق)', placeholder: 'مثال: تجنّب الحظر أثناء اختبار الحملة' }, confirmLabel: 'أوقف الطابور', action: 'pause' },
+      { key: 'resume', tone: 'info', icon: 'send', title: 'استئناف الطابور؟', text: 'الاستئناف يبدأ الإرسال من أقدم رسالة معلّقة. يمكنك الإيقاف مرة أخرى في أي لحظة.',
+        facts: [{ label: 'رسائل ستُرسل فوراً', value: f.n(pending.length), mono: true }, { label: 'معدّل الإرسال', value: rate + ' / دقيقة', mono: true }, { label: 'يُخصم من رصيد الباقة', value: f.n(pending.length), mono: true, tone: 'warn' }, { label: 'الرصيد بعد الإرسال', value: f.n(Math.max(0, sub.quota - sub.used - pending.length)), mono: true }],
+        confirmLabel: 'استأنف الإرسال', action: 'resume' },
+      { key: 'cancel', tone: 'danger', icon: 'trash', title: 'إلغاء ' + f.n(nCancel) + ' رسالة؟', text: 'الإلغاء نهائي: الرسائل تنتقل إلى حالة «ملغي» في السجل ولا تُرسل. المستندات المرتبطة تبقى كما هي.',
+        facts: [{ label: 'رسائل ستُلغى', value: f.n(nCancel), mono: true, tone: 'danger' }, { label: 'تبقى في الطابور', value: f.n(Math.max(0, pending.length - nCancel)), mono: true }, { label: 'رصيد يُوفَّر', value: f.n(nCancel), mono: true, tone: 'ok' }],
+        checks: nCancel > 20 ? [{ key: 'sure', label: 'أفهم أن ' + f.n(nCancel) + ' رسالة لن تُرسل ولن يمكن استرجاعها', required: true }] : [],
+        confirmLabel: 'ألغِ المحدد', action: 'cancel' },
+    ] };
+
+    return {
+      theme, loading: S.loading,
+      paused, running: !paused,
+      askResume: () => this.setState({ confirmKey: 'resume' }), askPause: () => this.setState({ confirmKey: 'pause' }),
+      banner: paused
+        ? { bg: 'var(--wn-s)', bd: 'var(--wn-sb)', fg: 'var(--wn-ix)', dot: 'var(--wn)', anim: 'none', text: 'الطابور موقوف منذ ' + Math.max(1, Math.round((Date.now() - D.queue.pausedSince) / 60000)) + ' دقيقة بيد ' + D.queue.pausedBy + '. السبب المسجَّل: «' + D.queue.reason + '». لا شيء يُرسل حتى الاستئناف.' }
+        : { bg: 'var(--ok-s)', bd: 'var(--ok-sb)', fg: 'var(--ok-i)', dot: 'var(--ok)', anim: 'livePulse 1.8s ease-in-out infinite', text: 'الطابور يعمل بمعدّل ' + rate + ' رسالة/دقيقة. الحالات أدناه تتقدّم تلقائياً من «قيد الإرسال» إلى «مرسل» فـ«مستلم».' },
+      cardsMeta, handlers,
+      rate, onRate: (e) => { D.queue.rate = Number(e.target.value); this.bump(); },
+      rateLabel: rate > 35 ? 'خطر حظر مرتفع' : rate < 12 ? 'بطيء وآمن' : 'ضمن الموصى به',
+      rateBg: rate > 35 ? 'var(--dg-s)' : rate < 12 ? 'var(--sunken)' : 'var(--ok-s)', rateFg: rate > 35 ? 'var(--dg-i)' : rate < 12 ? 'var(--ink-2)' : 'var(--ok-i)',
+      eta,
+      hasRows: pending.length > 0, columns, rows, detail, bulk, searchKeys: ['contact', 'docNo', 'docType'], defaultSort: { key: 'idx', dir: 'asc' }, pinned: ['idx', 'contact'],
+      confirmMeta, confirmKey: S.confirmKey, onConfirmClose: () => this.setState({ confirmKey: null }),
+      toastsMeta: { position: 'bottom-start', duration: 4000, types: [{ key: 'paused', tone: 'warn', icon: 'alert' }, { key: 'resumed', tone: 'ok', icon: 'check' }, { key: 'cancelled', tone: 'danger', icon: 'x' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

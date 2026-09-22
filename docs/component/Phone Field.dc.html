@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<div dir="rtl" style="display:flex;flex-direction:column;gap:6px;min-width:0;font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <sc-if value="{{ hasLabel }}" hint-placeholder-val="{{ true }}">
+    <span style="display:flex;align-items:center;gap:6px;position:relative">
+      <span style="font-size:12px;font-weight:600;color:var(--ink-2)">{{ label }}</span>
+      <sc-if value="{{ hasTip }}" hint-placeholder-val="{{ false }}">
+        <span onMouseEnter="{{ tipOn }}" onMouseLeave="{{ tipOff }}" onClick="{{ tipToggle }}" style="width:{{ tipSize }};height:{{ tipSize }};flex:none;border-radius:50%;background:{{ tipBg }};color:{{ tipFg }};border:1px solid {{ tipBd }};box-shadow:{{ tipRing }};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;cursor:pointer;line-height:1">!</span>
+      </sc-if>
+      <sc-if value="{{ tipOpen }}" hint-placeholder-val="{{ false }}">
+        <span style="position:absolute;top:22px;inset-inline-start:0;z-index:50;width:290px;max-width:78vw;padding:10px 12px;border-radius:10px;background:var(--ink);color:var(--bg);font-size:11.5px;font-weight:400;line-height:1.9;box-shadow:0 14px 30px -18px rgba(0,0,0,.6)">{{ tip }}</span>
+      </sc-if>
+    </span>
+  </sc-if>
+
+  <div data-ph-root="1" style="position:relative;display:flex;align-items:stretch;height:40px;border-radius:9px;border:1px solid {{ bd }};background:var(--bg);box-shadow:{{ ring }};overflow:visible">
+    <span tabIndex="0" role="combobox" aria-expanded="{{ open }}" onKeyDown="{{ onTriggerKey }}" onClick="{{ toggle }}" style="outline-offset:2px;display:flex;align-items:center;gap:7px;padding:0 10px;cursor:pointer;border-inline-end:1px solid var(--border);color:var(--ink-2);flex:none;border-start-start-radius:8px;border-end-start-radius:8px" style-hover="background:var(--sunken)">
+      <span style="font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--ink-3)">{{ iso }}</span>
+      <span dir="ltr" style="font-size:13px;font-weight:600;font-family:'IBM Plex Mono',monospace">{{ dial }}</span>
+      <svg width="11" height="11" viewBox="0 0 20 20" fill="none" style="color:var(--ink-4);transform:{{ caret }}"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </span>
+
+    <input dir="ltr" type="tel" inputmode="numeric" value="{{ masked }}" onInput="{{ onInput }}" onFocus="{{ onFocus }}" onBlur="{{ onBlur }}" placeholder="{{ placeholder }}" style="flex:1;min-width:0;border:none;background:transparent;outline:none;padding:0 12px;font-size:13.5px;letter-spacing:.6px;font-family:'IBM Plex Mono',monospace;color:var(--ink)" />
+
+    <sc-if value="{{ showCheck }}" hint-placeholder-val="{{ false }}">
+      <span style="display:flex;align-items:center;padding-inline-end:10px;color:var(--ok-i)">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </span>
+    </sc-if>
+
+    <sc-if value="{{ open }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;top:44px;inset-inline-start:0;z-index:40;width:268px;display:flex;flex-direction:column;padding:6px;border-radius:10px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-lg,0 18px 40px -26px rgba(23,33,31,.5))">
+        <span style="display:flex;align-items:center;gap:7px;height:32px;padding:0 9px;margin-bottom:5px;border-radius:8px;background:var(--bg);border:1px solid var(--border)">
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" style="color:var(--ink-4);flex:none"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.7"></circle><path d="M13.2 13.2 17 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg>
+          <input ref="{{ searchRef }}" type="text" value="{{ q }}" onInput="{{ onSearch }}" placeholder="ابحث عن دولة أو مفتاح" style="flex:1;min-width:0;border:none;background:transparent;outline:none;font-size:12px;color:var(--ink);font-family:inherit" />
+        </span>
+        <div style="max-height:210px;overflow:auto;display:flex;flex-direction:column">
+        <sc-if value="{{ noMatch }}" hint-placeholder-val="{{ false }}">
+          <span style="padding:10px;font-size:12px;color:var(--ink-4)">لا توجد نتائج مطابقة</span>
+        </sc-if>
+        <sc-for list="{{ countries }}" as="c" hint-placeholder-count="6">
+          <span onClick="{{ c.onPick }}" style="display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;cursor:pointer;background:{{ c.bg }};font-size:12.5px;color:var(--ink)" style-hover="background:var(--sunken)">
+            <span style="font-size:11px;font-weight:700;color:var(--ink-3);width:24px">{{ c.iso }}</span>
+            <span style="flex:1;min-width:0">{{ c.name }}</span>
+            <span dir="ltr" style="font-size:12px;font-family:'IBM Plex Mono',monospace;color:var(--ink-3)">{{ c.dial }}</span>
+          </span>
+        </sc-for>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+
+  <span style="font-size:11px;color:{{ msgFg }};line-height:1.7">{{ msg }}</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:420,&quot;height&quot;:140},&quot;label&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;رقم الجوال (واتساب)&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;tip&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;value&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;iso&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;SA&quot;,&quot;options&quot;:[&quot;SA&quot;,&quot;AE&quot;,&quot;KW&quot;,&quot;QA&quot;,&quot;BH&quot;,&quot;OM&quot;,&quot;YE&quot;,&quot;JO&quot;,&quot;EG&quot;,&quot;IQ&quot;,&quot;MA&quot;,&quot;US&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;hint&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;invalid&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onChange&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(v:{dial:string;iso:string;national:string;e164:string;valid:boolean})=&gt;void&quot;}}">
+const PRIMARY = [
+  { iso: 'SA', name: 'السعودية', dial: '966', len: 9, starts: '5' },
+  { iso: 'AE', name: 'الإمارات', dial: '971', len: 9, starts: '5' },
+  { iso: 'KW', name: 'الكويت', dial: '965', len: 8, starts: '569' },
+  { iso: 'QA', name: 'قطر', dial: '974', len: 8, starts: '3567' },
+  { iso: 'BH', name: 'البحرين', dial: '973', len: 8, starts: '3' },
+  { iso: 'OM', name: 'عُمان', dial: '968', len: 8, starts: '79' },
+  { iso: 'YE', name: 'اليمن', dial: '967', len: 9, starts: '7' },
+  { iso: 'JO', name: 'الأردن', dial: '962', len: 9, starts: '7' },
+  { iso: 'EG', name: 'مصر', dial: '20', len: 10, starts: '1' },
+  { iso: 'IQ', name: 'العراق', dial: '964', len: 10, starts: '7' },
+  { iso: 'SY', name: 'سوريا', dial: '963', len: 9, starts: '9' },
+  { iso: 'LB', name: 'لبنان', dial: '961', len: 8, starts: '' },
+  { iso: 'PS', name: 'فلسطين', dial: '970', len: 9, starts: '5' },
+  { iso: 'SD', name: 'السودان', dial: '249', len: 9, starts: '9' },
+  { iso: 'LY', name: 'ليبيا', dial: '218', len: 9, starts: '9' },
+  { iso: 'TN', name: 'تونس', dial: '216', len: 8, starts: '' },
+  { iso: 'DZ', name: 'الجزائر', dial: '213', len: 9, starts: '5679' },
+  { iso: 'MA', name: 'المغرب', dial: '212', len: 9, starts: '67' },
+  { iso: 'MR', name: 'موريتانيا', dial: '222', len: 8, starts: '' },
+  { iso: 'SO', name: 'الصومال', dial: '252', len: 0, starts: '' },
+  { iso: 'DJ', name: 'جيبوتي', dial: '253', len: 8, starts: '' },
+  { iso: 'KM', name: 'جزر القمر', dial: '269', len: 7, starts: '' },
+  { iso: 'TR', name: 'تركيا', dial: '90', len: 10, starts: '5' },
+  { iso: 'US', name: 'الولايات المتحدة', dial: '1', len: 10, starts: '' },
+  { iso: 'GB', name: 'المملكة المتحدة', dial: '44', len: 10, starts: '' },
+  { iso: 'IN', name: 'الهند', dial: '91', len: 10, starts: '' },
+  { iso: 'PK', name: 'باكستان', dial: '92', len: 10, starts: '3' },
+];
+const REST = 'AF أفغانستان 93|AL ألبانيا 355|AO أنغولا 244|AR الأرجنتين 54|AM أرمينيا 374|AU أستراليا 61|AT النمسا 43|AZ أذربيجان 994|BS الباهاما 1242|BD بنغلاديش 880|BB بربادوس 1246|BY بيلاروسيا 375|BE بلجيكا 32|BZ بليز 501|BJ بنين 229|BT بوتان 975|BO بوليفيا 591|BA البوسنة والهرسك 387|BW بوتسوانا 267|BR البرازيل 55|BN بروناي 673|BG بلغاريا 359|BF بوركينا فاسو 226|BI بوروندي 257|KH كمبوديا 855|CM الكاميرون 237|CA كندا 1|CV الرأس الأخضر 238|CF أفريقيا الوسطى 236|TD تشاد 235|CL تشيلي 56|CN الصين 86|CO كولومبيا 57|CG الكونغو 242|CD الكونغو الديمقراطية 243|CR كوستاريكا 506|CI ساحل العاج 225|HR كرواتيا 385|CU كوبا 53|CY قبرص 357|CZ التشيك 420|DK الدنمارك 45|DM دومينيكا 1767|DO الدومينيكان 1809|EC الإكوادور 593|SV السلفادور 503|GQ غينيا الاستوائية 240|ER إريتريا 291|EE إستونيا 372|ET إثيوبيا 251|FJ فيجي 679|FI فنلندا 358|FR فرنسا 33|GA الغابون 241|GM غامبيا 220|GE جورجيا 995|DE ألمانيا 49|GH غانا 233|GR اليونان 30|GT غواتيمالا 502|GN غينيا 224|GY غيانا 592|HT هايتي 509|HN هندوراس 504|HK هونغ كونغ 852|HU المجر 36|IS آيسلندا 354|ID إندونيسيا 62|IR إيران 98|IE أيرلندا 353|IL إسرائيل 972|IT إيطاليا 39|JM جامايكا 1876|JP اليابان 81|KZ كازاخستان 7|KE كينيا 254|KG قيرغيزستان 996|LA لاوس 856|LV لاتفيا 371|LS ليسوتو 266|LR ليبيريا 231|LI ليختنشتاين 423|LT ليتوانيا 370|LU لوكسمبورغ 352|MK مقدونيا الشمالية 389|MG مدغشقر 261|MW مالاوي 265|MY ماليزيا 60|MV المالديف 960|ML مالي 223|MT مالطا 356|MU موريشيوس 230|MX المكسيك 52|MD مولدوفا 373|MC موناكو 377|MN منغوليا 976|ME الجبل الأسود 382|MZ موزمبيق 258|MM ميانمار 95|NA ناميبيا 264|NP نيبال 977|NL هولندا 31|NZ نيوزيلندا 64|NI نيكاراغوا 505|NE النيجر 227|NG نيجيريا 234|KP كوريا الشمالية 850|NO النرويج 47|PA بنما 507|PG بابوا غينيا الجديدة 675|PY باراغواي 595|PE بيرو 51|PH الفلبين 63|PL بولندا 48|PT البرتغال 351|PR بورتوريكو 1787|RO رومانيا 40|RU روسيا 7|RW رواندا 250|WS ساموا 685|SM سان مارينو 378|SN السنغال 221|RS صربيا 381|SC سيشل 248|SL سيراليون 232|SG سنغافورة 65|SK سلوفاكيا 421|SI سلوفينيا 386|ZA جنوب أفريقيا 27|KR كوريا الجنوبية 82|SS جنوب السودان 211|ES إسبانيا 34|LK سريلانكا 94|SR سورينام 597|SZ إسواتيني 268|SE السويد 46|CH سويسرا 41|TW تايوان 886|TJ طاجيكستان 992|TZ تنزانيا 255|TH تايلاند 66|TL تيمور الشرقية 670|TG توغو 228|TO تونغا 676|TT ترينيداد وتوباغو 1868|TM تركمانستان 993|UG أوغندا 256|UA أوكرانيا 380|UY أوروغواي 598|UZ أوزبكستان 998|VU فانواتو 678|VE فنزويلا 58|VN فيتنام 84|ZM زامبيا 260|ZW زيمبابوي 263';
+const COUNTRIES = PRIMARY.concat(REST.split('|').map((row) => {
+  const p = row.split(' ');
+  const iso = p[0], dial = p[p.length - 1], name = p.slice(1, -1).join(' ');
+  return { iso, name, dial, len: 0, starts: '' };
+})).map((c) => ({
+  iso: c.iso, name: c.name, dial: '+' + c.dial, len: c.len,
+  starts: c.starts ? c.starts.split('') : [],
+  groups: c.len === 8 ? [4, 4] : c.len === 9 ? [3, 3, 3] : c.len === 10 ? [3, 3, 4] : [3, 3, 3, 3],
+}));
+
+class Component extends DCLogic {
+  state = { open: false, iso: null, digits: null, touched: false, focus: false, q: '' };
+
+  componentDidMount() {
+    this.onDoc = (e) => { if (this.state.open && !e.target.closest('[data-ph-root]')) this.setState({ open: false }); };
+    this.onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      if (this.state.open) { e.stopPropagation(); this.setState({ open: false, q: '' }); }
+      else if (this.state.tip) { e.stopPropagation(); this.setState({ tip: false }); }
+    };
+    document.addEventListener('mousedown', this.onDoc);
+    document.addEventListener('keydown', this.onKey, true);
+  }
+  componentWillUnmount() { document.removeEventListener('mousedown', this.onDoc); document.removeEventListener('keydown', this.onKey, true); }
+
+  country() {
+    const iso = this.state.iso || this.props.iso || 'SA';
+    return COUNTRIES.find((c) => c.iso === iso) || COUNTRIES[0];
+  }
+  digits() {
+    if (this.state.digits != null) return this.state.digits;
+    return String(this.props.value || '').replace(/\D/g, '');
+  }
+  mask(d, c) {
+    const out = []; let i = 0;
+    c.groups.forEach((g) => { if (i < d.length) { out.push(d.slice(i, i + g)); i += g; } });
+    return out.join(' ');
+  }
+  emit(d, c) {
+    const valid = (c.len ? d.length === c.len : d.length >= 6) && (!c.starts.length || c.starts.indexOf(d[0]) >= 0);
+    if (this.props.onChange) this.props.onChange({ dial: c.dial, iso: c.iso, national: d, e164: c.dial + d, valid });
+  }
+
+  renderVals() {
+    const S = this.state, P = this.props, c = this.country(), max = c.len || 14, d = this.digits().slice(0, max);
+    const full = c.len ? d.length === c.len : d.length >= 6;
+    const startOk = !d.length || !c.starts.length || c.starts.indexOf(d[0]) >= 0;
+    const valid = full && startOk;
+    const showErr = (S.touched && !S.focus && d.length > 0 && !valid) || !!P.invalid;
+    const qq = (S.q || '').trim().replace(/^\+/, '');
+    const filtered = !qq ? COUNTRIES : COUNTRIES.filter((x) =>
+      x.name.indexOf(qq) >= 0 || x.iso.toLowerCase().indexOf(qq.toLowerCase()) === 0 || x.dial.replace('+', '').indexOf(qq) === 0);
+    const msg = showErr
+      ? (!startOk ? 'رقم الجوال في ' + c.name + ' يبدأ بـ ' + c.starts.join(' أو ') : 'الرقم يجب أن يكون ' + c.len + ' أرقام بعد ' + c.dial)
+      : (P.hint || (c.len ? 'رقم جوال يعمل عليه واتساب — ' + c.len + ' أرقام بعد ' + c.dial : 'رقم جوال يعمل عليه واتساب في ' + c.name + ' — بدون الصفر الأول'));
+
+    return {
+      label: P.label || 'رقم الجوال (واتساب)', hasLabel: P.label !== '',
+      tip: P.tip || '', hasTip: !!P.tip, tipOpen: !!S.tip,
+      tipOn: () => this.setState({ tip: true }),
+      tipOff: () => this.setState({ tip: false }),
+      tipToggle: () => this.setState({ tip: !S.tip, tipSeen: true }),
+      tipBg: S.tip || !S.tipSeen ? 'var(--pri)' : 'var(--pri-s)',
+      tipFg: S.tip || !S.tipSeen ? 'var(--on-pri)' : 'var(--pri-d)',
+      tipBd: S.tip || !S.tipSeen ? 'var(--pri)' : 'var(--pri-sb)',
+      tipSize: S.tipSeen ? '15px' : '17px',
+      tipRing: S.tipSeen ? 'none' : '0 0 0 3px var(--pri-s)',
+      iso: c.iso, dial: c.dial, countryName: c.name,
+      masked: this.mask(d, c),
+      placeholder: this.mask((c.starts[0] || 'X') + 'X'.repeat((c.len || 9) - 1), c),
+      open: S.open, caret: S.open ? 'rotate(180deg)' : 'none',
+      toggle: () => { const nx = !S.open; this.setState({ open: nx, q: '' }); if (nx) setTimeout(() => { if (this.sRef) this.sRef.focus(); }, 30); },
+      onTriggerKey: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); const nx = !S.open; this.setState({ open: nx, q: '' }); if (nx) setTimeout(() => { if (this.sRef) this.sRef.focus(); }, 30); } },
+      q: S.q,
+      searchRef: (el) => { this.sRef = el; },
+      onSearch: (e) => this.setState({ q: e.target.value }),
+      noMatch: filtered.length === 0,
+      bd: showErr ? 'var(--dg)' : S.focus ? 'var(--pri)' : 'var(--border-2)',
+      ring: showErr ? '0 0 0 3px var(--dg-s)' : S.focus ? '0 0 0 3px var(--pri-s)' : 'none',
+      msg, msgFg: showErr ? 'var(--dg-i)' : 'var(--ink-4)',
+      showCheck: valid,
+      onFocus: () => this.setState({ focus: true }),
+      onBlur: () => this.setState({ focus: false, touched: true }),
+      onInput: (e) => {
+        const nd = String(e.target.value || '').replace(/\D/g, '').slice(0, max);
+        this.setState({ digits: nd, touched: true });
+        this.emit(nd, c);
+      },
+      countries: filtered.map((x) => ({
+        iso: x.iso, name: x.name, dial: x.dial,
+        bg: x.iso === c.iso ? 'var(--pri-s)' : 'transparent',
+        onPick: () => { const nd = d.slice(0, x.len || 14); this.setState({ iso: x.iso, digits: nd, open: false, q: '' }); this.emit(nd, x); },
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

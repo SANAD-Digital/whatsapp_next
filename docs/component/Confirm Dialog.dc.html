@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F6; --surface:#FFFFFF; --sunken:#EEF2F0; --border:#E3E8E6; --border-2:#C9D2CF;
+    --ink:#0F1A18; --ink-2:#33423F; --ink-3:#55645F; --ink-4:#62716D;
+    --pri:#0F7A63; --pri-d:#0A6250; --pri-s:#DFF1EC; --pri-sb:#B6DDD2; --on-pri:#FFFFFF;
+    --ok:#1A8B50; --ok-s:#E1F3E8; --ok-i:#16713F; --ok-sb:#B9E2CA;
+    --wn:#9A6C14; --wn-s:#FBF1DC; --wn-i:#8A6116; --wn-sb:#EFDCB4;
+    --dg:#C9524B; --dg-s:#FBEAE8; --dg-i:#A93A34; --dg-sb:#F2CBC7;
+    --nf:#2568AF; --nf-s:#E4EFFA; --nf-i:#1F5A97; --nf-sb:#C2DCF2;
+    --shadow-sm:0 1px 2px rgba(23,33,31,.06); --shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);
+  }
+  [data-theme="dark"]{
+    --bg:#0E1513; --surface:#14201D; --sunken:#1B2926; --border:#243531; --border-2:#334742;
+    --ink:#EAF2F0; --ink-2:#C4D2CE; --ink-3:#9AAAA6; --ink-4:#7E8F8B;
+    --pri:#2FA98C; --pri-d:#49C3A5; --pri-s:#16302A; --pri-sb:#23493F; --on-pri:#04150F;
+    --ok:#35A96A; --ok-s:#132A1E; --ok-i:#7FD3A3; --ok-sb:#1E4531;
+    --wn:#C79436; --wn-s:#2C2314; --wn-i:#E0BC78; --wn-sb:#4A3A1B;
+    --dg:#D9736C; --dg-s:#2E1A19; --dg-i:#F0A8A2; --dg-sb:#4C2A28;
+    --nf:#4A8ED0; --nf-s:#141F2C; --nf-i:#9CC5EC; --nf-sb:#25405C;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-lg:0 18px 40px -22px rgba(0,0,0,.7);
+    color-scheme:dark;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,select,button,textarea{font-family:inherit;}
+  .cd-i:focus{border-color:var(--pri) !important;box-shadow:0 0 0 3px var(--pri-s);}
+  .cd-sb{scrollbar-width:thin;scrollbar-color:var(--border-2) transparent;}
+  .cd-sb::-webkit-scrollbar{width:8px;height:8px;}
+  .cd-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:999px;}
+  [data-cd-tap]{transition:background .16s ease,border-color .16s ease,color .16s ease,transform .12s ease;}
+  [data-cd-tap]:active{transform:translateY(1px);}
+  @keyframes cdIn{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+  @keyframes cdFade{from{opacity:0}to{opacity:1}}
+  @keyframes cdSpin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important;}}
+</style>
+</helmet>
+
+<div dir="{{ dir }}" data-theme="{{ theme }}" style="min-height:{{ rootMinH }};background:{{ rootBg }};color:var(--ink);font-family:{{ font }};padding:{{ dn.pagePad }};display:{{ rootDisplay }};justify-content:center">
+  <sc-if value="{{ showPage }}" hint-placeholder-val="{{ true }}">
+  <div style="width:100%;max-width:{{ maxW }};display:flex;flex-direction:column;gap:14px">
+
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <span style="font-size:{{ dn.h1 }};font-weight:700;line-height:1.3">{{ head.title }}</span>
+      <span style="font-size:13px;color:var(--ink-3);line-height:1.7;text-wrap:pretty;max-width:68ch">{{ head.sub }}</span>
+    </div>
+
+    <section style="display:flex;flex-direction:column;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:6px;box-shadow:var(--shadow-sm)">
+      <sc-for list="{{ triggers }}" as="t" hint-placeholder-count="4">
+        <div data-cd-tap="1" onClick="{{ t.onOpen }}" style="display:flex;align-items:center;gap:12px;min-height:{{ dn.rowH }};padding:10px 12px;border-radius:10px;cursor:pointer;border-bottom:1px solid {{ t.sep }}" style-hover="background:var(--sunken)">
+          <span style="width:32px;height:32px;border-radius:9px;background:{{ t.iconBg }};color:{{ t.iconFg }};display:inline-flex;align-items:center;justify-content:center;flex:none" dangerouslySetInnerHTML="{{ t.icon }}"></span>
+          <span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+            <span style="font-size:13.5px;font-weight:600">{{ t.label }}</span>
+            <span style="font-size:12px;color:var(--ink-3);line-height:1.6;text-wrap:pretty">{{ t.note }}</span>
+          </span>
+          <span style="display:inline-flex;color:var(--ink-4);flex:none;transform:{{ chev }}"><svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M8 5l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+        </div>
+      </sc-for>
+    </section>
+
+    <sc-if value="{{ logList.show }}" hint-placeholder-val="{{ false }}">
+      <section style="display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
+        <span style="font-size:12px;font-weight:600;color:var(--ink-2)">{{ T.log }}</span>
+        <sc-for list="{{ logList.items }}" as="l" hint-placeholder-count="2"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);text-align:left">{{ l }}</span></sc-for>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ showDocs }}" hint-placeholder-val="{{ true }}">
+      <section style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
+        <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:700">{{ T.metaTitle }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border-radius:999px;background:var(--sunken);color:var(--ink-2)">Confirm meta</span></span>
+        <span style="font-size:12px;color:var(--ink-3);line-height:1.8;text-wrap:pretty">{{ T.metaHint }}</span>
+        <pre dir="ltr" class="cd-sb" style="margin:0;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:var(--ink-2);overflow:auto;max-height:280px;text-align:left">{{ docJson }}</pre>
+      </section>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ d.open }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ d.backdropClose }}" style="position:fixed;inset:0;z-index:70;background:rgba(15,20,19,.5);backdrop-filter:blur(2px);display:flex;align-items:{{ d.align }};justify-content:center;padding:{{ d.padding }};animation:cdFade .16s ease-out">
+      <div onClick="{{ stop }}" class="cd-sb" role="dialog" style="width:100%;max-width:{{ d.maxW }};max-height:92vh;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:{{ d.radius }};box-shadow:var(--shadow-lg);display:flex;flex-direction:column;animation:cdIn .22s cubic-bezier(.22,.61,.36,1)">
+
+        <div style="display:flex;align-items:flex-start;gap:12px;padding:{{ dn.dlgPad }};padding-bottom:12px">
+          <span style="width:38px;height:38px;border-radius:11px;background:{{ d.iconBg }};color:{{ d.iconFg }};border:1px solid {{ d.iconBd }};display:inline-flex;align-items:center;justify-content:center;flex:none" dangerouslySetInnerHTML="{{ d.icon }}"></span>
+          <span style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0">
+            <span style="font-size:{{ dn.h2 }};font-weight:700;line-height:1.35">{{ d.title }}</span>
+            <span style="font-size:13px;color:var(--ink-3);line-height:1.75;text-wrap:pretty">{{ d.text }}</span>
+          </span>
+          <span data-cd-tap="1" onClick="{{ d.close }}" title="{{ T.close }}" style="width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3);flex:none;font-size:17px;line-height:1" style-hover="background:var(--sunken);color:var(--ink)">×</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;padding:0 {{ dn.dlgPadX }} {{ dn.dlgPadX }}">
+
+          <sc-if value="{{ d.hasFacts }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:4px 12px">
+              <sc-for list="{{ d.facts }}" as="r" hint-placeholder-count="3">
+                <span style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid {{ r.sep }}">
+                  <span style="font-size:12px;color:var(--ink-3);flex:none">{{ r.label }}</span>
+                  <span dir="{{ r.dir }}" style="font-size:12.5px;font-weight:600;color:{{ r.fg }};font-family:{{ r.font }};min-width:0;text-align:{{ r.align }};text-wrap:pretty">{{ r.value }}</span>
+                </span>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ d.hasWarn }}" hint-placeholder-val="{{ false }}">
+            <span style="display:flex;align-items:flex-start;gap:9px;padding:11px 13px;border-radius:11px;background:{{ d.warnBg }};border:1px solid {{ d.warnBd }}">
+              <span style="width:18px;height:18px;border-radius:50%;background:{{ d.warnDot }};color:#fff;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:none">!</span>
+              <span style="font-size:12px;color:{{ d.warnFg }};line-height:1.75;text-wrap:pretty">{{ d.warn }}</span>
+            </span>
+          </sc-if>
+
+          <sc-if value="{{ d.hasChecks }}" hint-placeholder-val="{{ false }}">
+            <span style="display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ d.checks }}" as="c" hint-placeholder-count="1">
+                <label style="display:flex;align-items:flex-start;gap:9px;cursor:pointer;font-size:13px;color:var(--ink-2);line-height:1.7"><input type="checkbox" checked="{{ c.on }}" onChange="{{ c.onToggle }}" style="width:16px;height:16px;margin-top:3px;accent-color:var(--pri);flex:none" /><span style="min-width:0;text-wrap:pretty">{{ c.label }}</span></label>
+              </sc-for>
+            </span>
+          </sc-if>
+
+          <sc-if value="{{ d.hasType }}" hint-placeholder-val="{{ false }}">
+            <span style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:12px;color:var(--ink-3);line-height:1.7">{{ d.typeHint }}</span>
+              <input class="cd-i" type="text" dir="ltr" value="{{ d.typed }}" onInput="{{ d.onType }}" placeholder="{{ d.typeWord }}" autoFocus="{{ true }}" style="width:100%;min-height:{{ dn.h }};padding:0 12px;border-radius:9px;border:1px solid {{ d.typeBd }};background:var(--surface);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:left;outline:none" />
+            </span>
+          </sc-if>
+
+          <sc-if value="{{ d.hasReason }}" hint-placeholder-val="{{ false }}">
+            <span style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:12px;font-weight:600;color:var(--ink-2)">{{ d.reasonLabel }}</span>
+              <textarea class="cd-i" value="{{ d.reason }}" onInput="{{ d.onReason }}" placeholder="{{ d.reasonPh }}" rows="2" style="width:100%;padding:9px 12px;border-radius:9px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:13px;line-height:1.7;resize:vertical;outline:none"></textarea>
+            </span>
+          </sc-if>
+
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--border);margin-top:2px;padding-top:14px">
+            <sc-if value="{{ d.hasSecondary }}" hint-placeholder-val="{{ false }}">
+              <button type="button" onClick="{{ d.onSecondary }}" style="min-height:{{ dn.btnH }};padding:0 14px;border-radius:9px;background:transparent;color:var(--ink-3);border:none;font-size:13px;font-weight:600;cursor:pointer;flex:none">{{ d.secondaryLabel }}</button>
+            </sc-if>
+            <span style="flex:{{ d.spacer }};min-width:0"></span>
+            <button type="button" onClick="{{ d.close }}" style="min-height:{{ dn.btnH }};padding:0 16px;border-radius:9px;background:var(--surface);color:var(--ink);border:1px solid var(--border-2);font-size:13px;font-weight:600;cursor:pointer;flex:{{ dn.btnFlex }}">{{ d.cancelLabel }}</button>
+            <button type="button" disabled="{{ d.blocked }}" onClick="{{ d.onConfirm }}" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:{{ dn.btnH }};padding:0 18px;border-radius:9px;background:{{ d.okBg }};color:{{ d.okFg }};border:none;font-size:13px;font-weight:600;cursor:{{ d.okCursor }};flex:{{ dn.btnFlex }};box-shadow:var(--shadow-sm)">
+              <sc-if value="{{ d.busy }}" hint-placeholder-val="{{ false }}"><span style="width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;animation:cdSpin .8s linear infinite;flex:none"></span></sc-if>
+              {{ d.okLabel }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;,&quot;auto&quot;],&quot;tsType&quot;:&quot;'light'|'dark'|'auto'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ar&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;],&quot;tsType&quot;:&quot;'ar'|'en'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;'comfortable'|'compact'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;maxWidth&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:780,&quot;min&quot;:600,&quot;max&quot;:1100,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;breakpoint&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:700,&quot;min&quot;:560,&quot;max&quot;:1000,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;showDocs&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;meta&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;ConfirmMeta&quot;},&quot;handlers&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, Function&gt;&quot;},&quot;embed&quot;:{&quot;editor&quot;:null,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;الدمج&quot;},&quot;openKey&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;string | null&quot;,&quot;section&quot;:&quot;الدمج&quot;},&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(key: string) =&gt; void&quot;,&quot;section&quot;:&quot;الدمج&quot;}}">
+// ── ميتا نوافذ التأكيد: كل نوع سطر { key, tone, title, text, warn, facts, checks, typeToConfirm, reason, confirmLabel, action }
+// tone: danger | warn | info | ok — يحدد الأيقونة ولون زر التأكيد
+const CONFIRM_META = {
+  title: { ar: 'نوافذ تأكيد الإجراء', en: 'Confirmation dialogs' },
+  sub: { ar: 'أربع درجات من التأكيد بحسب خطورة الإجراء: تأكيد بسيط، تأكيد بحقائق، تأكيد بموافقة صريحة، وتأكيد بكتابة اسم العنصر. كل نافذة فيها زر إغلاق وESC يغلقها.', en: 'Four levels of confirmation by risk: plain, with facts, with explicit consent, and type-the-name. Every dialog has a close button and ESC dismisses it.' },
+  dialogs: [
+    {
+      key: 'pauseQueue', tone: 'warn', icon: 'pause',
+      label: { ar: 'إيقاف الطابور', en: 'Pause the queue' },
+      note: { ar: 'تأكيد بسيط بسبب اختياري.', en: 'Plain confirmation with an optional reason.' },
+      title: { ar: 'إيقاف طابور الإرسال؟', en: 'Pause the sending queue?' },
+      text: { ar: 'تتوقف كل الرسائل الصادرة حتى تشغيله يدوياً. الرسائل المجدولة تبقى في مكانها.', en: 'All outbound messages stop until you resume manually. Scheduled messages stay in place.' },
+      facts: [
+        { label: { ar: 'في الطابور الآن', en: 'Currently queued' }, value: '312', mono: true },
+        { label: { ar: 'المعدل', en: 'Rate' }, value: '24 / min', mono: true },
+      ],
+      reason: { label: { ar: 'سبب الإيقاف (يظهر في سجل التدقيق)', en: 'Reason (shown in the audit log)' }, placeholder: { ar: 'مثال: تجنّب الحظر أثناء اختبار الحملة', en: 'e.g. avoid a ban while testing the campaign' } },
+      confirmLabel: { ar: 'إيقاف الطابور', en: 'Pause queue' }, action: 'pauseQueue',
+    },
+    {
+      key: 'sendCampaign', tone: 'info', icon: 'send',
+      label: { ar: 'إطلاق حملة', en: 'Launch a campaign' },
+      note: { ar: 'تأكيد بحقائق: العدد والتكلفة والمدة قبل الإرسال.', en: 'Facts-first: recipients, cost and duration before sending.' },
+      title: { ar: 'إطلاق حملة «تذكير مستحقات سبتمبر»؟', en: 'Launch “September dues reminder”?' },
+      text: { ar: 'تبدأ الرسائل بالخروج فوراً على جهاز المبيعات بالمعدل المحدد.', en: 'Messages start going out immediately on the sales device at the set rate.' },
+      facts: [
+        { label: { ar: 'المستلمون', en: 'Recipients' }, value: '1,412', mono: true },
+        { label: { ar: 'التكلفة التقديرية', en: 'Estimated cost' }, value: '155.32 SAR', mono: true },
+        { label: { ar: 'المدة المتوقعة', en: 'Estimated duration' }, value: '58 min', mono: true },
+        { label: { ar: 'الرصيد بعد الإطلاق', en: 'Wallet after launch' }, value: '587.18 SAR', mono: true, tone: 'warn' },
+      ],
+      checks: [{ key: 'reviewed', label: { ar: 'راجعت نص الرسالة والمعاينة على رقم تجريبي', en: 'I reviewed the message body and previewed it on a test number' }, required: true }],
+      confirmLabel: { ar: 'إطلاق الحملة', en: 'Launch campaign' }, action: 'sendCampaign', secondary: { label: { ar: 'إرسال تجريبي لي', en: 'Send a test to me' }, action: 'sendTest' },
+    },
+    {
+      key: 'unlinkDevice', tone: 'danger', icon: 'unlink',
+      label: { ar: 'فصل جهاز', en: 'Unlink a device' },
+      note: { ar: 'إجراء مؤثر: موافقة صريحة قبل التنفيذ.', en: 'High impact: explicit consent required.' },
+      title: { ar: 'فصل جهاز «فرع جدة»؟', en: 'Unlink “Jeddah branch”?' },
+      text: { ar: 'تُغلق الجلسة على الهاتف وتتوقف كل الرسائل الموجّهة لهذا الجهاز.', en: 'The phone session closes and all messages routed to this device stop.' },
+      warn: { ar: '146 رسالة في طابور هذا الجهاز ستُعاد توجيهها إلى جهاز المبيعات، وقد يتأخر تسليمها.', en: '146 messages queued on this device will be rerouted to the sales device and may be delayed.' },
+      facts: [
+        { label: { ar: 'الرقم', en: 'Number' }, value: '+966 55 902 8814', mono: true },
+        { label: { ar: 'نماذج مرتبطة', en: 'Linked templates' }, value: '3', mono: true },
+      ],
+      checks: [{ key: 'understand', label: { ar: 'أفهم أن إعادة الربط تتطلب مسح رمز QR من الهاتف مرة أخرى', en: 'I understand re-linking requires scanning the QR code from the phone again' }, required: true }],
+      confirmLabel: { ar: 'فصل الجهاز', en: 'Unlink device' }, action: 'unlinkDevice',
+    },
+    {
+      key: 'deleteGroup', tone: 'danger', icon: 'trash',
+      label: { ar: 'حذف مجموعة جهات اتصال', en: 'Delete a contact group' },
+      note: { ar: 'حذف لا يُعكس: يتطلب كتابة اسم العنصر.', en: 'Irreversible: requires typing the item name.' },
+      title: { ar: 'حذف مجموعة «عملاء محتملين»؟', en: 'Delete group “Prospects”?' },
+      text: { ar: 'تُحذف المجموعة وارتباطها بالحملات. أرقام جهات الاتصال نفسها لا تُحذف.', en: 'The group and its campaign links are deleted. The contact numbers themselves are kept.' },
+      warn: { ar: 'حملتان مجدولتان تستهدفان هذه المجموعة وستصبحان بلا مستلمين.', en: 'Two scheduled campaigns target this group and will end up with no recipients.' },
+      facts: [
+        { label: { ar: 'عدد الأرقام', en: 'Numbers' }, value: '184', mono: true },
+        { label: { ar: 'آخر استخدام', en: 'Last used' }, value: '2026-09-11', mono: true },
+      ],
+      typeToConfirm: { word: 'عملاء محتملين', hint: { ar: 'اكتب اسم المجموعة للتأكيد:', en: 'Type the group name to confirm:' } },
+      confirmLabel: { ar: 'حذف نهائي', en: 'Delete permanently' }, action: 'deleteGroup',
+    },
+  ],
+  handlers: {
+    pauseQueue: (p) => 'أُوقف الطابور · السبب: ' + (p.reason || '—'),
+    sendCampaign: () => 'أُطلقت الحملة',
+    sendTest: () => 'أُرسلت رسالة تجريبية',
+    unlinkDevice: () => 'فُصل الجهاز',
+    deleteGroup: () => 'حُذفت المجموعة',
+  },
+};
+
+const ICONS_EXTRA = {
+  pause: '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M7.5 5v10M12.5 5v10"/></svg>',
+  send: '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 10l14-6-4 14-3-6z"/><path d="M10 12l7-8"/></svg>',
+  unlink: '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 12l-1 1a2.6 2.6 0 01-3.7-3.7l1.4-1.4"/><path d="M12 8l1-1a2.6 2.6 0 013.7 3.7l-1.4 1.4"/><path d="M4 4l12 12" opacity=".5"/></svg>',
+  trash: '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6.5h12M8 6.5V4.5h4v2M6 6.5l.7 9h6.6l.7-9"/></svg>',
+};
+const FALLBACK = {
+  FONT: { ar: "'IBM Plex Sans Arabic',system-ui,sans-serif", en: "'IBM Plex Sans','IBM Plex Sans Arabic',system-ui,sans-serif" },
+  DENSITY: { comfortable: { h: '38px', hSm: '32px', fs: '14px', fsSm: '13px', px: '12px' }, compact: { h: '32px', hSm: '28px', fs: '13px', fsSm: '12px', px: '10px' } },
+  TONE: { ok: { bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', bd: 'var(--ok-sb)' }, warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', bd: 'var(--wn-sb)' }, danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--dg)', bd: 'var(--dg-sb)' }, info: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)', bd: 'var(--nf-sb)' }, muted: { bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--ink-4)', bd: 'var(--border)' } },
+  ADDON_ICONS: {},
+};
+const EXTRA = {
+  ar: { close: 'إغلاق', cancel: 'إلغاء', log: 'سجل الإجراءات', metaTitle: 'الميتا المستخدمة لهذه النوافذ', metaHint: 'كل نافذة سطر في dialogs: tone وtitle وtext وwarn وfacts (حقائق قبل التنفيذ) وchecks (موافقة إلزامية) وtypeToConfirm (كتابة اسم العنصر) وreason (سبب يُسجّل) وconfirmLabel وaction. زر التأكيد يبقى معطّلاً حتى تُستوفى الشروط.' },
+  en: { close: 'Close', cancel: 'Cancel', log: 'Action log', metaTitle: 'Meta driving these dialogs', metaHint: 'Each dialog is one line in dialogs: tone, title, text, warn, facts (pre-flight numbers), checks (required consent), typeToConfirm (type the item name), reason (logged), confirmLabel and action. The confirm button stays disabled until the conditions are met.' },
+};
+
+class Component extends DCLogic {
+  state = { theme: null, lang: null, open: null, checks: {}, typed: '', reason: '', busy: false, log: [], width: 1280 };
+
+  componentDidMount() {
+    this.onResize = () => this.setState({ width: window.innerWidth });
+    // ESC: يغلق النافذة (لا منسدلات هنا)
+    this.onKey = (e) => { if (e.key === 'Escape' && this.state.open) { e.stopPropagation(); this.close(); } };
+    window.addEventListener('resize', this.onResize); window.addEventListener('keydown', this.onKey);
+    this.onResize();
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); window.removeEventListener('keydown', this.onKey); clearTimeout(this.t); }
+
+  // ── فتح من الخارج: openKey (مفتاح من meta.dialogs) — كل تغيير فيه يفتح النافذة؛ onClose يُبلّغ الأب عند الإغلاق
+  componentDidUpdate(pp) {
+    const k = this.props.openKey;
+    if (k !== pp.openKey && k && k !== this.state.open) this.open(k);
+  }
+  meta() { return this.props.meta || CONFIRM_META; }
+  open(key) { this.setState({ open: key, checks: {}, typed: '', reason: '', busy: false }); }
+  close() { clearTimeout(this.t); const was = this.state.open; this.setState({ open: null, busy: false }); if (was && this.props.onClose) this.props.onClose(was); }
+  run(spec, args) {
+    const H = this.props.handlers || this.meta().handlers || {};
+    const fn = typeof spec === 'function' ? spec : H[spec];
+    let ret;
+    if (fn) { try { ret = fn.apply(null, args || []); } catch (e) { ret = String(e && e.message); } }
+    this.setState((s) => ({ log: [JSON.stringify({ action: typeof spec === 'string' ? spec : 'fn', returned: ret }), ...s.log].slice(0, 5) }));
+    return ret;
+  }
+
+  renderVals() {
+    const K = window.UIKit || FALLBACK, S = this.state, P = this.props, M = this.meta();
+    const lang = S.lang ?? P.lang ?? M.lang ?? 'ar', rtl = lang !== 'en', dir = rtl ? 'rtl' : 'ltr';
+    const L = (x) => K.L ? K.L(lang, x) : ((x && x[lang]) || x || '');
+    const pref = S.theme ?? P.theme ?? M.theme ?? 'light';
+    let sysDark = false; try { sysDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) {}
+    const theme = pref === 'auto' ? (sysDark ? 'dark' : 'light') : pref;
+    const isMobile = S.width < (P.breakpoint ?? 700);
+    const dkey = (P.density ?? M.density ?? 'comfortable') === 'compact' ? 'compact' : 'comfortable';
+    const D = (K.DENSITY || FALLBACK.DENSITY)[dkey];
+    const TONE = K.TONE || FALLBACK.TONE;
+    const ICONS = Object.assign({}, K.ADDON_ICONS || {}, ICONS_EXTRA);
+    const tone = (k) => TONE[k] || TONE.muted;
+    const icon = (n) => ({ __html: ICONS[n] || '' });
+    const T = { ...EXTRA[lang] };
+    const MONO = "'IBM Plex Mono',monospace";
+    const dn = {
+      pagePad: P.embed ? '0' : (isMobile ? '14px' : '24px'), h1: isMobile ? '18px' : '20px', h2: isMobile ? '16px' : '17px',
+      rowH: isMobile ? '62px' : '58px', h: isMobile ? '46px' : D.h,
+      dlgPad: isMobile ? '16px' : '20px 22px', dlgPadX: isMobile ? '16px' : '22px',
+      btnH: isMobile ? '46px' : '40px', btnFlex: isMobile ? '1 1 120px' : 'none',
+    };
+
+    const list = M.dialogs || [];
+    const cur = list.find((x) => x.key === S.open);
+    let d = { open: false, facts: [], checks: [], actions: [] };
+    if (cur) {
+      const tn = tone(cur.tone || 'info');
+      const checks = cur.checks || [];
+      const needChecks = checks.filter((c) => c.required !== false);
+      const checksOk = needChecks.every((c) => !!S.checks[c.key]);
+      const tw = cur.typeToConfirm;
+      const typedOk = !tw || S.typed.trim() === String(tw.word).trim();
+      const danger = (cur.tone || 'info') === 'danger';
+      const blocked = !(checksOk && typedOk) || S.busy;
+      d = {
+        open: true, align: isMobile ? 'flex-end' : 'center', padding: isMobile ? '0' : '24px',
+        maxW: isMobile ? '100%' : '520px', radius: isMobile ? '16px 16px 0 0' : '16px',
+        title: L(cur.title), text: L(cur.text), icon: icon(cur.icon), iconBg: tn.bg, iconFg: tn.fg, iconBd: tn.bd,
+        hasFacts: (cur.facts || []).length > 0,
+        facts: (cur.facts || []).map((r, idx) => ({ label: L(r.label), value: L(r.value), dir: r.mono ? 'ltr' : dir, font: r.mono ? MONO : 'inherit', align: r.mono ? 'left' : 'end', fg: r.tone ? tone(r.tone).fg : 'var(--ink)', sep: idx === cur.facts.length - 1 ? 'transparent' : 'var(--border)' })),
+        hasWarn: !!cur.warn, warn: L(cur.warn), warnBg: tone(danger ? 'danger' : 'warn').bg, warnBd: tone(danger ? 'danger' : 'warn').bd, warnFg: tone(danger ? 'danger' : 'warn').fg, warnDot: tone(danger ? 'danger' : 'warn').dot,
+        hasChecks: checks.length > 0,
+        checks: checks.map((c) => ({ label: L(c.label), on: !!S.checks[c.key], onToggle: () => this.setState((s) => ({ checks: { ...s.checks, [c.key]: !s.checks[c.key] } })) })),
+        hasType: !!tw, typeWord: tw ? tw.word : '', typeHint: tw ? L(tw.hint) : '', typed: S.typed,
+        typeBd: !tw ? 'var(--border-2)' : (S.typed ? (typedOk ? 'var(--ok-sb)' : 'var(--dg-sb)') : 'var(--border-2)'),
+        onType: (e) => this.setState({ typed: e.target.value }),
+        hasReason: !!cur.reason, reasonLabel: cur.reason ? L(cur.reason.label) : '', reasonPh: cur.reason ? L(cur.reason.placeholder) : '', reason: S.reason,
+        onReason: (e) => this.setState({ reason: e.target.value }),
+        hasSecondary: !!cur.secondary, secondaryLabel: cur.secondary ? L(cur.secondary.label) : '', onSecondary: cur.secondary ? () => this.run(cur.secondary.action, []) : undefined,
+        spacer: isMobile ? '0 0 0' : '1 1 auto',
+        cancelLabel: L(cur.cancelLabel) || T.cancel, okLabel: L(cur.confirmLabel) || T.cancel,
+        okBg: blocked ? 'var(--border-2)' : (danger ? 'var(--dg)' : 'var(--pri)'), okFg: blocked ? 'var(--ink-4)' : '#fff',
+        okCursor: blocked ? 'not-allowed' : 'pointer', blocked, busy: S.busy,
+        onConfirm: blocked ? undefined : () => {
+          this.setState({ busy: true });
+          this.t = setTimeout(() => { this.run(cur.action, [{ reason: S.reason, checks: S.checks }]); this.close(); }, 450);
+        },
+        close: () => this.close(), backdropClose: () => this.close(),
+      };
+    }
+
+    const embed = !!P.embed; // مُدمَج: لا صفحة عرض، النافذة فقط
+    if (embed && !this.state.open && P.openKey && !this._seeded) { this._seeded = true; setTimeout(() => this.open(P.openKey), 0); }
+    return {
+      dir, theme, font: (K.FONT || FALLBACK.FONT)[lang], dn, T, maxW: (P.maxWidth ?? M.maxWidth ?? 780) + 'px',
+      showPage: !embed, rootMinH: embed ? '0' : '100vh', rootBg: embed ? 'transparent' : 'var(--bg)', rootDisplay: embed ? 'contents' : 'flex',
+      chev: rtl ? 'rotate(180deg)' : 'none', stop: (e) => e.stopPropagation(),
+      head: { title: L(M.title), sub: L(M.sub) },
+      triggers: list.map((x, idx) => { const tn = tone(x.tone || 'info'); return { label: L(x.label), note: L(x.note), icon: icon(x.icon), iconBg: tn.bg, iconFg: tn.fg, sep: idx === list.length - 1 ? 'transparent' : 'var(--border)', onOpen: () => this.open(x.key) }; }),
+      d,
+      logList: { show: S.log.length > 0, items: S.log },
+      showDocs: (P.showDocs ?? M.showDocs) !== false,
+      docJson: JSON.stringify({ dialogs: list.map((x) => ({ key: x.key, tone: x.tone, facts: (x.facts || []).length, checks: (x.checks || []).map((c) => c.key), typeToConfirm: x.typeToConfirm ? x.typeToConfirm.word : undefined, reason: !!x.reason, secondary: x.secondary ? x.secondary.action : undefined, action: x.action })) }, null, 2),
+    };
+  }
+}
+</script>
+</body>
+</html>

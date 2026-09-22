@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--shadow-lg:0 24px 60px rgba(15,23,32,.28);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--shadow-lg:0 24px 60px rgba(0,0,0,.6);color-scheme:dark;}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button,select,textarea{font-family:inherit;}
+  .ge-sb{scrollbar-width:thin;}
+  .ge-sb::-webkit-scrollbar{width:9px;height:9px;}
+  .ge-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:9px;border:2px solid transparent;background-clip:content-box;}
+  @keyframes geIn{from{opacity:0;transform:translateY(8px) scale(.995)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<sc-if value="{{ open }}" hint-placeholder-val="{{ true }}">
+<div dir="rtl" data-theme="{{ theme }}" style="position:fixed;inset:0;z-index:74;display:flex;align-items:center;justify-content:center;padding:{{ pad }};background:rgba(15,20,19,.45);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:var(--ink)">
+  <div onClick="{{ onClose }}" style="position:absolute;inset:0"></div>
+  <div style="position:relative;z-index:1;width:min(1080px,100%);height:100%;max-height:100%;display:flex;flex-direction:column;border-radius:10px;background:var(--bg);border:1px solid var(--border);box-shadow:var(--shadow-lg);overflow:hidden;animation:geIn .18s ease-out">
+
+    <div style="flex:none;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:13px 16px;background:var(--surface);border-bottom:1px solid var(--border)">
+      <span style="display:flex;flex-direction:column;gap:3px;min-width:0">
+        <span style="font-size:15px;font-weight:700">{{ title }}</span>
+        <span style="font-size:11px;color:var(--ink-3);line-height:1.7">أضف الجهات من جهات الاتصال، أو من أرقام الواتساب المجهولة، أو بإدخال رقم مباشرة.</span>
+      </span>
+      <span onClick="{{ onClose }}" title="إغلاق (Esc)" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;line-height:1;color:var(--ink-3);flex:none" style-hover="background:var(--sunken);color:var(--ink)">×</span>
+    </div>
+
+    <div style="flex:1;min-height:0;display:grid;grid-template-columns:{{ cols }};overflow:{{ gridOverflow }}">
+
+      <div class="ge-sb" style="min-height:0;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:14px;background:var(--surface);border-inline-end:1px solid var(--border)">
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:11px;font-weight:600;color:var(--ink-2)">اسم المجموعة</span>
+          <input type="text" value="{{ name }}" onInput="{{ onName }}" placeholder="مثال: عملاء الرياض" style="min-height:36px;padding:0 11px;border-radius:8px;border:1px solid {{ nameBd }};background:var(--bg);font-size:13px;color:var(--ink);outline:none" style-focus="border-color:var(--pri);background:var(--surface)" />
+          <sc-if value="{{ nameError }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--dg-i)">اكتب اسماً للمجموعة.</span></sc-if>
+        </label>
+
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:11px;font-weight:600;color:var(--ink-2)">نوع المجموعة</span>
+          <span data-ge-kind="1" style="position:relative;display:flex;flex-direction:column;gap:6px">
+            <input type="text" value="{{ kindQuery }}" onInput="{{ onKindInput }}" onFocus="{{ onKindFocus }}" placeholder="اكتب أو اختر نوعاً…" style="min-height:36px;padding:0 11px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);font-size:13px;color:var(--ink);outline:none" style-focus="border-color:var(--pri);background:var(--surface)" />
+            <sc-if value="{{ kindOpen }}" hint-placeholder-val="{{ false }}">
+              <span class="ge-sb" style="position:absolute;top:calc(100% + 4px);inset-inline:0;z-index:6;display:flex;flex-direction:column;gap:3px;max-height:220px;overflow:auto;padding:5px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);box-shadow:0 12px 28px rgba(15,23,32,.16)">
+                <sc-for list="{{ kindResults }}" as="k" hint-placeholder-count="5">
+                  <span onMouseDown="{{ k.onPick }}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:7px;background:{{ k.bg }};font-size:12px;font-weight:600;color:{{ k.fg }};cursor:pointer" style-hover="background:var(--sunken)">{{ k.label }}<span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;color:var(--ink-4)">{{ k.count }}</span></span>
+                </sc-for>
+                <sc-if value="{{ kindIsNew }}" hint-placeholder-val="{{ false }}">
+                  <span onMouseDown="{{ onKindCreate }}" style="display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:7px;background:var(--pri-s);font-size:12px;font-weight:600;color:var(--pri-d);cursor:pointer">استخدام نوع جديد: «{{ kindQuery }}»</span>
+                </sc-if>
+              </span>
+            </sc-if>
+          </span>
+          <sc-if value="{{ isBlack }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--wn-ix);line-height:1.75">القائمة السوداء تحجب أعضاءها من كل الأوامر والحملات.</span></sc-if>
+        </label>
+
+        <label style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:11px;font-weight:600;color:var(--ink-2)">ملاحظة (اختياري)</span>
+          <textarea value="{{ note }}" onInput="{{ onNote }}" rows="3" placeholder="لماذا أُنشئت هذه المجموعة ومتى تُستخدم." style="padding:9px 11px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);font-size:12px;line-height:1.9;color:var(--ink);resize:vertical;outline:none" style-focus="border-color:var(--pri);background:var(--surface)"></textarea>
+        </label>
+
+        <div style="display:flex;flex-direction:column;gap:7px;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border)">
+          <span style="font-size:11px;font-weight:600;color:var(--ink-2)">ملخّص الأعضاء</span>
+          <sc-for list="{{ summary }}" as="s" hint-placeholder-count="3">
+            <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:11px;color:var(--ink-3)">{{ s.k }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:{{ s.color }}">{{ s.v }}</span></span>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="min-height:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden">
+        <div style="flex:none;display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--border);flex-wrap:wrap">
+          <span style="display:flex;padding:3px;border-radius:8px;background:var(--sunken);border:1px solid var(--border);gap:2px">
+            <sc-for list="{{ sources }}" as="s" hint-placeholder-count="3">
+              <span onClick="{{ s.onPick }}" style="display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 12px;border-radius:7px;background:{{ s.bg }};color:{{ s.fg }};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">{{ s.label }}<sc-if value="{{ s.hasCount }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-4)">{{ s.count }}</span></sc-if></span>
+            </sc-for>
+          </span>
+          <span style="margin-inline-start:auto;font-size:11px;color:var(--ink-4);flex:none">{{ srcNote }}</span>
+        </div>
+
+        <sc-if value="{{ isManual }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:none;display:flex;flex-direction:column;gap:8px;padding:14px;border-bottom:1px solid var(--border)">
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <input type="text" value="{{ mName }}" onInput="{{ onMName }}" placeholder="الاسم (اختياري)" style="flex:1;min-width:130px;min-height:36px;padding:0 11px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-size:13px;color:var(--ink);outline:none" style-focus="border-color:var(--pri)" />
+              <input type="text" value="{{ mPhone }}" onInput="{{ onMPhone }}" onKeyDown="{{ onMKey }}" dir="ltr" placeholder="+966 5X XXX XXXX" style="flex:1;min-width:160px;min-height:36px;padding:0 11px;border-radius:8px;border:1px solid {{ mBd }};background:var(--surface);font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);text-align:right;outline:none" style-focus="border-color:var(--pri)" />
+              <button type="button" onClick="{{ onAddManual }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer;flex:none">إضافة</button>
+            </div>
+            <span style="font-size:11px;color:{{ mHintColor }};line-height:1.75">{{ mHint }}</span>
+            <textarea value="{{ bulk }}" onInput="{{ onBulk }}" rows="3" placeholder="أو الصق أرقاماً متعددة — رقم في كل سطر، أو مفصولة بفاصلة." style="padding:9px 11px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.9;color:var(--ink);resize:vertical;outline:none;text-align:right" dir="ltr" style-focus="border-color:var(--pri)"></textarea>
+            <span style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <button type="button" onClick="{{ onAddBulk }}" style="min-height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink-2);font-size:12px;font-weight:600;cursor:pointer" style-hover="background:var(--sunken)">إضافة الأرقام الملصقة</button>
+              <label style="min-height:32px;display:inline-flex;align-items:center;gap:7px;padding:0 12px;border-radius:8px;border:1px dashed var(--border-2);background:var(--surface);color:var(--pri-d);font-size:12px;font-weight:600;cursor:pointer" style-hover="background:var(--sunken)">
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><path d="M10 13V4m0 0L6.5 7.5M10 4l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path><path d="M4 14v1.5A1.5 1.5 0 0 0 5.5 17h9a1.5 1.5 0 0 0 1.5-1.5V14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                رفع من Excel أو CSV
+                <input type="file" accept=".csv,.txt,.xlsx,.xls" onChange="{{ onUpload }}" style="display:none" />
+              </label>
+              <sc-if value="{{ hasUpNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:600;color:{{ upNoteFg }}">{{ upNote }}</span></sc-if>
+            </span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isPicker }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:none;display:flex;align-items:center;gap:8px;padding:14px 14px 10px;flex-wrap:wrap">
+            <input type="text" value="{{ query }}" onInput="{{ onQuery }}" placeholder="{{ searchPlaceholder }}" style="flex:1;min-width:180px;min-height:36px;padding:0 11px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-size:13px;color:var(--ink);outline:none" style-focus="border-color:var(--pri)" />
+            <sc-if value="{{ hasTypeFilter }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;gap:5px;flex-wrap:wrap">
+                <sc-for list="{{ typeFilters }}" as="t" hint-placeholder-count="4">
+                  <span onClick="{{ t.onPick }}" style="display:inline-flex;align-items:center;min-height:32px;padding:0 10px;border-radius:999px;border:1px solid {{ t.bd }};background:{{ t.bg }};color:{{ t.fg }};font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">{{ t.label }}</span>
+                </sc-for>
+              </span>
+            </sc-if>
+            <sc-if value="{{ showAddAll }}" hint-placeholder-val="{{ true }}"><span onClick="{{ onAddAll }}" style="font-size:11px;font-weight:600;color:var(--pri-d);cursor:pointer;flex:none">إضافة كل الظاهر ({{ visibleCount }})</span></sc-if>
+            <sc-if value="{{ showRemoveAll }}" hint-placeholder-val="{{ false }}"><span onClick="{{ onRemoveAll }}" style="font-size:11px;font-weight:600;color:var(--dg-i);cursor:pointer;flex:none">إزالة تحديد الظاهر ({{ visibleSelectedCount }})</span></sc-if>
+          </div>
+          <div class="ge-sb" style="flex:1;min-height:140px;overflow:auto;padding:0 14px 14px;display:flex;flex-direction:column;gap:5px">
+            <sc-for list="{{ candidates }}" as="c" hint-placeholder-count="7">
+              <span onClick="{{ c.onToggle }}" style="display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:8px;background:{{ c.bg }};border:1px solid {{ c.bd }};cursor:pointer" style-hover="border-color:var(--pri-sb)">
+                <span style="width:28px;height:28px;border-radius:7px;background:{{ c.avBg }};color:{{ c.avFg }};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none">{{ c.initials }}</span>
+                <span style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1">
+                  <span style="font-size:12px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.name }}</span>
+                  <span dir="ltr" style="text-align:start;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-4)">{{ c.phone }}</span>
+                  <sc-if value="{{ c.hasLast }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--ink-4)"><span style="font-weight:600;color:{{ c.lastFg }}">{{ c.lastKind }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace">{{ c.lastDate }}</span></span></sc-if>
+                </span>
+                <sc-if value="{{ c.hasTag }}" hint-placeholder-val="{{ false }}"><span style="padding:2px 8px;border-radius:999px;background:{{ c.tagBg }};color:{{ c.tagFg }};font-size:10px;font-weight:600;flex:none;white-space:nowrap">{{ c.tag }}</span></sc-if>
+                <span style="font-size:14px;color:{{ c.markColor }};flex:none;width:16px;text-align:center">{{ c.mark }}</span>
+              </span>
+            </sc-for>
+            <sc-if value="{{ noCandidates }}" hint-placeholder-val="{{ false }}"><span style="padding:16px;border-radius:8px;background:var(--surface);border:1px dashed var(--border-2);font-size:12px;color:var(--ink-4);line-height:1.9">{{ emptyText }}</span></sc-if>
+          </div>
+        </sc-if>
+
+        <div style="flex:none;display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border-top:1px solid var(--border);flex-wrap:wrap">
+          <span style="font-size:11px;font-weight:700;color:var(--ink-2)">الأعضاء المحددون <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;color:var(--pri-d)">{{ memberCount }}</span></span>
+          <span style="font-size:11px;color:var(--ink-4)">{{ memberBreakdown }}</span>
+          <span style="margin-inline-start:auto;display:flex;align-items:center;gap:8px;flex:none">
+            <sc-if value="{{ hasMembers }}" hint-placeholder-val="{{ false }}"><span onClick="{{ onShowSelected }}" style="display:inline-flex;align-items:center;min-height:28px;padding:0 11px;border-radius:999px;border:1px solid {{ selBd }};background:{{ selBg }};color:{{ selFg }};font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">{{ selLabel }}</span></sc-if>
+            <sc-if value="{{ hasMembers }}" hint-placeholder-val="{{ false }}"><span onClick="{{ onClear }}" style="font-size:11px;font-weight:600;color:var(--dg-i);cursor:pointer">إزالة الكل</span></sc-if>
+            <sc-if value="{{ noMembers }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;color:var(--ink-4)">لا أعضاء بعد — اختر من القائمة أعلاه.</span></sc-if>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div style="flex:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:var(--surface);border-top:1px solid var(--border)">
+      <button type="button" onClick="{{ onSave }}" style="min-height:36px;padding:0 16px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer">{{ saveLabel }}</button>
+      <button type="button" onClick="{{ onClose }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink-2);font-size:13px;font-weight:600;cursor:pointer" style-hover="background:var(--sunken)">إلغاء</button>
+      <span style="flex:1;min-width:80px;font-size:11px;color:var(--ink-4);line-height:1.7">{{ footHint }}</span>
+    </div>
+  </div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1080,&quot;height&quot;:760},&quot;open&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;group&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Group | null&quot;},&quot;onSave&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(draft) =&gt; void&quot;},&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;'light' | 'dark'&quot;}}">
+// ── Group Editor: إنشاء أو تعديل مجموعة جهات، بأعضاء من جهات الاتصال أو دليل الجهاز أو رقم يدوي
+// props: open, group (null = جديدة), onSave(draft), onClose(), theme
+const KINDS = ['قائمة يدوية', 'تسويقي', 'قائمة بريدية', 'مهني', 'قائمة سوداء'];
+const norm = (p) => String(p || '').replace(/[\s\-()]/g, '');
+const valid = (p) => /^\+?\d{9,15}$/.test(norm(p));
+
+class Component extends DCLogic {
+  state = {
+    upNote: '', upBad: false, draft: null, forId: null, src: 'contacts', q: '', type: 'all', mName: '', mPhone: '', bulk: '', touched: false, width: 1280, kindQ: null, kindOpen: false };
+  componentDidMount() {
+    this.onR = () => this.setState({ width: window.innerWidth });
+    window.addEventListener('resize', this.onR); this.onR();
+    this.onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      if (this.state.kindOpen) { e.preventDefault(); this.setState({ kindOpen: false }); return; }
+      if (this.props.open !== false) { e.preventDefault(); this.close(); }
+    };
+    this.onDoc = (e) => { if (this.state.kindOpen && !e.target.closest('[data-ge-kind]')) this.setState({ kindOpen: false }); };
+    document.addEventListener('keydown', this.onKey); document.addEventListener('mousedown', this.onDoc);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onR); document.removeEventListener('keydown', this.onKey); document.removeEventListener('mousedown', this.onDoc); }
+
+  seed(g) {
+    return {
+      name: g ? g.name : '', kind: g ? g.kind : 'قائمة يدوية', note: g ? (g.note || '') : '',
+      contactIds: g ? (g.memberIds || g.members || []).slice() : [],
+      manual: g ? (g.manual || []).slice() : [],
+    };
+  }
+  draft() {
+    const g = this.props.group || null, id = g ? g.id : '__new';
+    const S = this.state;
+    if (!S.draft || S.forId !== id) { const d = this.seed(g); this.state.draft = d; this.state.forId = id; return d; }
+    return S.draft;
+  }
+  patch(p) { this.setState({ draft: { ...this.draft(), ...p } }); }
+  close() { this.setState({ draft: null, forId: null, src: 'contacts', q: '', mName: '', mPhone: '', bulk: '', touched: false, kindQ: null, kindOpen: false }); if (this.props.onClose) this.props.onClose(); }
+  initials(name) {
+    const w = String(name || '؟').replace(/^(شركة|مؤسسة|مصنع|مجموعة)\s+/, '').trim().split(/\s+/);
+    const strip = (x) => (x.length > 3 && x.slice(0, 2) === 'ال' ? x.slice(2) : x);
+    const a = strip(w[0]) || w[0] || '؟';
+    return w[1] ? a[0] + strip(w[1])[0] : a.slice(0, 2);
+  }
+
+  renderVals() {
+    const S = this.state, P = this.props, D = window.HubData, d = this.draft();
+    const fmt = (D && D.fmt) || { n: (x) => String(x) };
+    const theme = P.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light';
+    const mobile = S.width < 860;
+    const editing = !!P.group;
+    const all = (D && D.contacts ? D.contacts : []).filter((x) => x.phone && !String(x.phone).includes('@g.us'));
+    const linked = all.filter((x) => x.linked !== false && (x.accounts || []).length);
+    /* جهات اتصال الواتس: أرقام جرت معها محادثة ولا جهة اتصال لها في النظام (مجهولة) */
+    const waUnknown = ((D && D.waUnregistered) || [])
+      .filter((w) => !w.contactId && !String(w.phone).includes('@g.us') && !all.some((x) => norm(x.phone) === norm(w.phone)))
+      .map((w) => ({ id: 'wa:' + w.id, name: w.waName || (String(w.phone).includes('@g.us') ? 'مجموعة واتساب' : 'بلا اسم في الواتساب'), phone: w.phone, isWa: true }));
+    const PT = (D && D.PARTY_TYPES) || {};
+
+    const src = S.src;
+    const isManual = src === 'manual';
+    const pool = src === 'device' ? waUnknown : linked;
+    const q = S.q.trim();
+    const typeOk = (x) => S.type === 'all' || x.type === S.type;
+    const isSelected = src === 'selected';
+    const selectedRows = d.contactIds.map((id) => all.find((x) => x.id === id) || { id, name: id, phone: '' })
+      .concat(d.manual.map((m, i) => ({ id: '__m' + i, name: m.name, phone: m.phone, manualIndex: i })));
+    const visible = isManual ? []
+      : (isSelected
+        ? selectedRows.filter((x) => !q || (x.name || '').includes(q) || norm(x.phone).includes(norm(q)))
+        : pool.filter((x) => typeOk(x) && (!q || (x.name || '').includes(q) || norm(x.phone).includes(norm(q)))).slice(0, 120));
+
+    const has = (id) => d.contactIds.includes(id);
+    const toggle = (id) => this.patch({ contactIds: has(id) ? d.contactIds.filter((x) => x !== id) : [...d.contactIds, id] });
+    const addManual = (name, phone) => {
+      if (!valid(phone)) return false;
+      const p = norm(phone);
+      if (d.manual.some((m) => norm(m.phone) === p) || all.some((x) => norm(x.phone) === p)) return false;
+      this.patch({ manual: [...d.manual, { name: String(name || '').trim() || 'رقم مضاف يدوياً', phone: p }] });
+      return true;
+    };
+
+    const groups = (D && D.contactGroups) || [];
+    const allKinds = [...new Set(groups.map((g) => g.kind).filter(Boolean).concat(KINDS))];
+    const kq = (S.kindQ === null ? '' : S.kindQ).trim();
+    const kindMatches = allKinds.filter((k) => !kq || k.includes(kq));
+
+    const nameError = S.touched && !String(d.name).trim();
+    const total = d.contactIds.length + d.manual.length;
+    const fromContacts = d.contactIds.filter((id) => linked.some((x) => x.id === id)).length;
+    const fromDevice = 0;
+
+    return {
+      open: P.open !== false, theme, pad: mobile ? '0' : '22px',
+      title: editing ? 'تعديل المجموعة' : 'مجموعة جهات جديدة',
+      cols: mobile ? 'minmax(0,1fr)' : 'minmax(0,300px) minmax(0,1fr)',
+      gridOverflow: mobile ? 'auto' : 'hidden',
+      onClose: () => this.close(),
+
+      name: d.name, nameBd: nameError ? 'var(--dg-sb)' : 'var(--border-2)', nameError,
+      onName: (e) => this.patch({ name: e.target.value }),
+      kindQuery: S.kindQ === null ? d.kind : S.kindQ,
+      onKindInput: (e) => this.setState({ kindQ: e.target.value, kindOpen: true }),
+      onKindFocus: () => this.setState({ kindOpen: true, kindQ: '' }),
+      kindOpen: S.kindOpen,
+      kindResults: kindMatches.map((k) => ({
+        label: k, count: fmt.n(groups.filter((g) => g.kind === k).length),
+        bg: d.kind === k ? 'var(--pri-s)' : 'transparent', fg: d.kind === k ? 'var(--pri-d)' : 'var(--ink)',
+        onPick: () => { this.setState({ kindOpen: false, kindQ: null }); this.patch({ kind: k }); },
+      })),
+      kindIsNew: !!kq && !allKinds.some((k) => k === kq),
+      onKindCreate: () => { this.setState({ kindOpen: false, kindQ: null }); this.patch({ kind: kq }); },
+      isBlack: d.kind === 'قائمة سوداء',
+      note: d.note, onNote: (e) => this.patch({ note: e.target.value }),
+      summary: [
+        { k: 'من جهات الاتصال', v: fmt.n(fromContacts), color: 'var(--ink)' },
+        { k: 'أرقام يدوية', v: fmt.n(d.manual.length), color: 'var(--ink)' },
+        { k: 'الإجمالي', v: fmt.n(total), color: 'var(--pri-d)' },
+      ],
+
+      sources: [
+        { key: 'contacts', label: 'جهات الاتصال', count: fmt.n(linked.length) },
+        { key: 'device', label: 'جهات اتصال الواتس', count: fmt.n(waUnknown.length) },
+        { key: 'manual', label: 'رقم يدوي', count: '' },
+      ].map((s) => ({
+        label: s.label, hasCount: !!s.count, count: s.count,
+        bg: src === s.key ? 'var(--surface)' : 'transparent', fg: src === s.key ? 'var(--pri-d)' : 'var(--ink-3)',
+        onPick: () => this.setState({ src: s.key, q: '' }),
+      })),
+      srcNote: isSelected ? 'اضغط أي صف لإزالته من المجموعة' : (src === 'contacts' ? 'جهات مربوطة بحسابات في النظام' : (src === 'device' ? 'أرقام واتساب مجهولة — تُضاف كأرقام يدوية' : 'أدخل رقماً واحداً أو الصق قائمة')),
+
+      isManual, isPicker: !isManual,
+      searchPlaceholder: isSelected ? 'ابحث في الأعضاء المحددين…' : (src === 'device' ? 'ابحث في أرقام الواتساب المجهولة…' : 'ابحث بالاسم أو الرقم…'),
+      query: S.q, onQuery: (e) => this.setState({ q: e.target.value }),
+      hasTypeFilter: src === 'contacts', showAddAll: !isSelected,
+      typeFilters: [{ key: 'all', label: 'الكل' }].concat(Object.keys(PT).map((k) => ({ key: k, label: PT[k].ar }))).map((t) => {
+        const sel = S.type === t.key;
+        return { label: t.label, bd: sel ? 'var(--pri-sb)' : 'var(--border-2)', bg: sel ? 'var(--pri-s)' : 'var(--surface)', fg: sel ? 'var(--pri-d)' : 'var(--ink-3)', onPick: () => this.setState({ type: t.key }) };
+      }),
+      visibleCount: fmt.n(src === 'device'
+        ? visible.filter((x) => valid(norm(x.phone)) && !d.manual.some((m) => norm(m.phone) === norm(x.phone))).length
+        : visible.filter((x) => !d.contactIds.includes(x.id)).length),
+      onAddAll: () => {
+        if (src === 'device') { const add = visible.filter((x) => valid(norm(x.phone)) && !d.manual.some((m) => norm(m.phone) === norm(x.phone))).map((x) => ({ name: x.name, phone: norm(x.phone) })); return this.patch({ manual: [...d.manual, ...add] }); }
+        this.patch({ contactIds: [...new Set([...d.contactIds, ...visible.map((x) => x.id)])] });
+      },
+      showRemoveAll: src === 'device'
+        ? visible.some((x) => d.manual.some((m) => norm(m.phone) === norm(x.phone)))
+        : visible.some((x) => d.contactIds.includes(x.id)),
+      visibleSelectedCount: fmt.n(src === 'device'
+        ? visible.filter((x) => d.manual.some((m) => norm(m.phone) === norm(x.phone))).length
+        : visible.filter((x) => d.contactIds.includes(x.id)).length),
+      onRemoveAll: () => {
+        if (src === 'device') { const drop = new Set(visible.map((x) => norm(x.phone))); return this.patch({ manual: d.manual.filter((m) => !drop.has(norm(m.phone))) }); }
+        const drop = new Set(visible.map((x) => x.id)); this.patch({ contactIds: d.contactIds.filter((id) => !drop.has(id)) });
+      },
+      candidates: visible.map((x) => {
+        const lm = x.isWa
+          ? { ts: (((D && D.waUnregistered) || []).find((w) => 'wa:' + w.id === x.id) || {}).lastTs, direction: 'in' }
+          : ((D && D.messages) || []).find((m) => m.contactId === x.id) || {};
+        const manual = x.manualIndex !== undefined;
+        const on = manual ? true : (x.isWa ? d.manual.some((m) => norm(m.phone) === norm(x.phone)) : has(x.id)), t = PT[x.type];
+        const tag = manual ? 'رقم يدوي' : (x.isWa ? 'مجهول' : (t ? t.ar : ''));
+        return {
+          hasLast: !!lm.ts, lastDate: lm.ts ? fmt.date(lm.ts) + ' ' + fmt.time(lm.ts) : '', lastKind: lm.direction === 'in' ? 'وارد' : 'صادر', lastFg: lm.direction === 'in' ? 'var(--nf-i)' : 'var(--pri-d)',
+          name: x.name || 'بلا اسم', phone: x.phone, initials: manual ? '#' : this.initials(x.name),
+          bg: on ? 'var(--pri-s)' : 'var(--surface)', bd: on ? 'var(--pri-sb)' : 'var(--border)',
+          avBg: manual ? 'var(--nf)' : (on ? 'var(--pri)' : 'var(--sunken)'), avFg: on || manual ? '#fff' : 'var(--ink-3)',
+          hasTag: !!tag, tag, tagBg: manual ? 'var(--nf-s)' : (x.isWa ? 'var(--wn-s)' : 'var(--sunken)'), tagFg: manual ? 'var(--nf-i)' : (x.isWa ? 'var(--wn-i)' : 'var(--ink-3)'),
+          mark: isSelected ? '×' : (on ? '✓' : '+'), markColor: isSelected ? 'var(--dg-i)' : (on ? 'var(--pri-d)' : 'var(--ink-4)'),
+          onToggle: () => {
+            if (manual) return this.patch({ manual: d.manual.filter((_, j) => j !== x.manualIndex) });
+            if (x.isWa) {
+              const on2 = d.manual.some((m) => norm(m.phone) === norm(x.phone));
+              if (on2) return this.patch({ manual: d.manual.filter((m) => norm(m.phone) !== norm(x.phone)) });
+              addManual(x.name, x.phone); return;
+            }
+            toggle(x.id);
+          },
+        };
+      }),
+      noCandidates: !isManual && visible.length === 0,
+      emptyText: isSelected ? 'لا أعضاء مطابقون للبحث.' : (src === 'device' ? 'لا أرقام مجهولة تطابق البحث.' : 'لا جهات تطابق البحث أو الفلتر.'),
+
+      mName: S.mName, onMName: (e) => this.setState({ mName: e.target.value }),
+      mPhone: S.mPhone, onMPhone: (e) => this.setState({ mPhone: e.target.value }),
+      mBd: S.mPhone && !valid(S.mPhone) ? 'var(--dg-sb)' : 'var(--border-2)',
+      mHint: S.mPhone && !valid(S.mPhone) ? 'الرقم غير صالح — استخدم الصيغة الدولية، مثال +966555060606.' : 'اضغط Enter للإضافة السريعة. الأرقام المكرّرة تُتجاهل.',
+      mHintColor: S.mPhone && !valid(S.mPhone) ? 'var(--dg-i)' : 'var(--ink-4)',
+      onMKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); if (addManual(S.mName, S.mPhone)) this.setState({ mName: '', mPhone: '' }); } },
+      onAddManual: () => { if (addManual(S.mName, S.mPhone)) this.setState({ mName: '', mPhone: '' }); },
+      bulk: S.bulk, onBulk: (e) => this.setState({ bulk: e.target.value }),
+      hasUpNote: !!S.upNote, upNote: S.upNote || '', upNoteFg: S.upBad ? 'var(--dg-i)' : 'var(--pri-d)',
+      onUpload: (e) => {
+        const file = e.target.files && e.target.files[0];
+        e.target.value = '';
+        if (!file) return;
+        if (/\.(xlsx|xls)$/i.test(file.name)) return this.setState({ upNote: 'ملفات Excel: احفظ الورقة كـ CSV ثم ارفعها.', upBad: true });
+        const rd = new FileReader();
+        rd.onload = () => {
+          const rows = String(rd.result || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+          const seen = new Set(d.manual.map((m) => norm(m.phone)).concat(all.map((x) => norm(x.phone))));
+          const add = [];
+          let skipped = 0;
+          rows.forEach((line, i) => {
+            const cells = line.split(/[,;\t]/).map((c) => c.trim().replace(/^"|"$/g, ''));
+            const phoneCell = cells.find((c) => valid(norm(c)));
+            if (!phoneCell) { if (i > 0 || cells.length < 2) skipped++; return; }
+            const n = norm(phoneCell);
+            const nameCell = cells.find((c) => c !== phoneCell && c && !valid(norm(c)));
+            if (seen.has(n)) { skipped++; return; }
+            seen.add(n);
+            add.push({ name: nameCell || 'رقم من ملف مرفوع', phone: n });
+          });
+          if (add.length) this.patch({ manual: [...d.manual, ...add] });
+          this.setState({ upNote: add.length ? 'أُضيف ' + fmt.n(add.length) + ' رقماً' + (skipped ? ' · تُجوهل ' + fmt.n(skipped) : '') : 'لا أرقام صالحة في الملف', upBad: !add.length });
+        };
+        rd.readAsText(file, 'utf-8');
+      },
+      onAddBulk: () => {
+        const parts = String(S.bulk).split(/[\n,،;]+/).map((x) => x.trim()).filter(Boolean);
+        const seen = new Set(d.manual.map((m) => norm(m.phone)).concat(all.map((x) => norm(x.phone))));
+        const add = [];
+        parts.forEach((p) => { const n = norm(p); if (valid(n) && !seen.has(n)) { seen.add(n); add.push({ name: 'رقم مضاف يدوياً', phone: n }); } });
+        if (add.length) this.patch({ manual: [...d.manual, ...add] });
+        this.setState({ bulk: '' });
+      },
+
+      memberCount: fmt.n(total), hasMembers: total > 0, noMembers: total === 0,
+      memberBreakdown: total
+        ? [fromContacts ? fmt.n(fromContacts) + ' من جهات الاتصال' : '', d.manual.length ? fmt.n(d.manual.length) + ' رقماً يدوياً' : ''].filter(Boolean).join(' · ')
+        : '',
+      selLabel: src === 'selected' ? 'رجوع إلى الاختيار' : 'عرض المحددين',
+      selBd: src === 'selected' ? 'var(--pri-sb)' : 'var(--border-2)', selBg: src === 'selected' ? 'var(--pri-s)' : 'var(--surface)', selFg: src === 'selected' ? 'var(--pri-d)' : 'var(--ink-2)',
+      onShowSelected: () => this.setState({ src: src === 'selected' ? 'contacts' : 'selected', q: '' }),
+      onClear: () => { this.patch({ contactIds: [], manual: [] }); if (src === 'selected') this.setState({ src: 'contacts' }); },
+
+      saveLabel: editing ? 'حفظ التعديلات' : 'إنشاء المجموعة',
+      footHint: total === 0
+        ? 'يمكن إنشاء المجموعة فارغة وإضافة الجهات إليها لاحقاً.'
+        : fmt.n(total) + ' جهة ستُضاف للمجموعة، ويمكن استهدافها من الحملات فوراً.',
+      onSave: () => {
+        if (!String(d.name).trim()) { this.setState({ touched: true }); return; }
+        if (P.onSave) P.onSave({ ...d, name: String(d.name).trim(), size: total });
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

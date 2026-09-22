@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button,select,textarea{font-family:inherit;}
+  .sm-sb{scrollbar-width:thin;}
+  .sm-sb::-webkit-scrollbar{width:9px;height:9px;}
+  .sm-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:9px;border:2px solid transparent;background-clip:content-box;}
+  .ct-host{min-height:0;min-width:0;display:flex;overflow:hidden}
+  .ct-host > .sc-host{flex:1 1 0%;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .ct-host > .sc-host > *{flex:1 1 0%;min-height:0;min-width:0}
+</style>
+</helmet>
+<div data-screen-label="إرسال جماعي" dir="rtl" style="flex:1;min-height:0;height:100%;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;overflow:hidden">
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:{{ cols }};overflow:hidden">
+
+    <div style="min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--surface);border-inline-end:1px solid var(--border);overflow:hidden">
+      <div style="flex:none;display:flex;flex-direction:column;gap:8px;padding:12px 12px 10px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <span style="font-size:14px;font-weight:700">المستلمون</span>
+        </div>
+        <div style="display:flex;padding:3px;border-radius:999px;background:var(--sunken);border:1px solid var(--border);gap:2px">
+          <sc-for list="{{ sources }}" as="s" hint-placeholder-count="3">
+            <span onClick="{{ s.onPick }}" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:30px;padding:0 8px;border-radius:999px;background:{{ s.bg }};color:{{ s.fg }};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">{{ s.label }}<sc-if value="{{ s.hasCount }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-4)">{{ s.count }}</span></sc-if></span>
+          </sc-for>
+        </div>
+        <sc-if value="{{ hasSearch }}" hint-placeholder-val="{{ true }}">
+          <span style="display:flex;align-items:center;gap:8px;min-height:36px;padding:0 11px;border-radius:999px;background:var(--bg);border:1px solid var(--border)">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none"><circle cx="9" cy="9" r="5.5" stroke="var(--ink-4)" stroke-width="1.6"></circle><path d="M13.5 13.5L17 17" stroke="var(--ink-4)" stroke-width="1.6" stroke-linecap="round"></path></svg>
+            <input type="text" value="{{ query }}" onInput="{{ onQuery }}" placeholder="{{ searchPlaceholder }}" style="flex:1;min-width:0;border:none;background:transparent;font-size:13px;color:var(--ink);outline:none" />
+          </span>
+        </sc-if>
+      </div>
+
+      <div class="sm-sb" style="flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column">
+        <sc-if value="{{ isManual }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:8px;padding:12px">
+            <textarea value="{{ bulk }}" onInput="{{ onBulk }}" rows="6" dir="ltr" placeholder="رقم في كل سطر، أو مفصولة بفاصلة." style="padding:10px 11px;border-radius:10px;border:1px solid var(--border-2);background:var(--bg);font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.9;color:var(--ink);resize:vertical;outline:none;text-align:right" style-focus="border-color:var(--pri);background:var(--surface)"></textarea>
+            <button type="button" onClick="{{ onAddBulk }}" style="min-height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink-2);font-size:12px;font-weight:600;cursor:pointer" style-hover="background:var(--sunken)">إضافة الأرقام</button>
+            <span style="font-size:11px;color:var(--ink-4);line-height:1.8">الأرقام غير الصالحة والمكرّرة تُتجاهل. المضافة تظهر في «المحددون».</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isList }}" hint-placeholder-val="{{ true }}">
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+            <span onClick="{{ r.onToggle }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);background:{{ r.bg }};cursor:pointer" style-hover="background:var(--sunken)">
+              <span style="width:38px;height:38px;border-radius:50%;background:{{ r.avBg }};color:{{ r.avFg }};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:none">{{ r.initials }}</span>
+              <span style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1">
+                <span style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span>
+                <span dir="{{ r.subDir }}" style="text-align:start;font-family:{{ r.subFont }};font-size:11px;color:var(--ink-4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.sub }}</span>
+              </span>
+              <sc-if value="{{ r.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="padding:2px 8px;border-radius:999px;background:{{ r.badgeBg }};color:{{ r.badgeFg }};font-size:10px;font-weight:600;flex:none;white-space:nowrap">{{ r.badge }}</span></sc-if>
+              <span style="width:20px;height:20px;border-radius:50%;border:1.5px solid {{ r.markBd }};background:{{ r.markBg }};color:{{ r.markFg }};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none">{{ r.mark }}</span>
+            </span>
+          </sc-for>
+          <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}"><span style="margin:14px;padding:14px;border-radius:10px;background:var(--bg);border:1px dashed var(--border-2);font-size:12px;color:var(--ink-4)">{{ emptyText }}</span></sc-if>
+        </sc-if>
+      </div>
+
+      <div style="flex:none;display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid var(--border);background:var(--surface);flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:700;color:var(--ink-2)">المحددون <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;color:var(--pri-d)">{{ totalText }}</span></span>
+        <sc-if value="{{ hasRecipients }}" hint-placeholder-val="{{ false }}">
+          <span onClick="{{ onShowSelected }}" style="display:inline-flex;align-items:center;min-height:26px;padding:0 10px;border-radius:999px;border:1px solid {{ selBd }};background:{{ selBg }};color:{{ selFg }};font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">{{ selLabel }}</span>
+        </sc-if>
+        <sc-if value="{{ hasRecipients }}" hint-placeholder-val="{{ false }}"><span onClick="{{ onClear }}" style="margin-inline-start:auto;font-size:11px;font-weight:600;color:var(--dg-i);cursor:pointer;flex:none">إزالة الكل</span></sc-if>
+      </div>
+    </div>
+
+    <div style="min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden">
+      <div style="flex:none;display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--pri);color:var(--on-pri);flex-wrap:wrap">
+        <span style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3 10.5l13-6-5 13-2-5-6-2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path></svg></span>
+        <span style="display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1 1 170px">
+          <span style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ head.title }}</span>
+          <span style="font-size:11px;opacity:.88;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ head.sub }}</span>
+        </span>
+        <span onClick="{{ toggleSettings }}" title="إعدادات الإرسال" style="display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;border-radius:999px;background:rgba(255,255,255,.16);color:var(--on-pri);font-size:11px;font-weight:600;cursor:pointer;flex:none;white-space:nowrap" style-hover="background:rgba(255,255,255,.26)"><svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2.4" stroke="currentColor" stroke-width="1.6"></circle><path d="M10 3.6v2M10 14.4v2M3.6 10h2M14.4 10h2M5.5 5.5l1.4 1.4M13.1 13.1l1.4 1.4M14.5 5.5l-1.4 1.4M6.9 13.1L5.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>{{ settingsLabel }}</span>
+      </div>
+
+      <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
+        <div class="sm-sb" style="flex:none;max-height:42%;overflow:auto;padding:12px 14px;background:var(--surface);border-bottom:1px solid var(--border)">
+          <dc-import name="Form" meta="{{ formMeta }}" handlers="{{ handlers }}" on-change="{{ onField }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" max-width="{{ 900 }}" hint-size="100%,220px"></dc-import>
+        </div>
+      </sc-if>
+
+      <div class="ct-host" style="flex:1;min-height:0">
+        <dc-import name="Chat Thread" meta="{{ threadMeta }}" handlers="{{ chatHandlers }}" value="{{ draft }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,100%"></dc-import>
+      </div>
+
+      <div style="flex:none;display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border-top:1px solid var(--border);flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:1;min-width:0">
+          <sc-for list="{{ estimate }}" as="e" hint-placeholder-count="3">
+            <span style="display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap"><span style="font-size:10px;color:var(--ink-4)">{{ e.k }}</span><span dir="{{ e.dir }}" style="font-family:{{ e.font }};font-size:12px;font-weight:600;color:{{ e.color }}">{{ e.v }}</span></span>
+          </sc-for>
+        </span>
+        <button type="button" onClick="{{ askSend }}" style="min-height:38px;padding:0 18px;border-radius:999px;border:1px solid {{ sendBd }};background:{{ sendBg }};color:{{ sendFg }};font-size:13px;font-weight:600;cursor:pointer;flex:none">{{ sendLabel }}</button>
+      </div>
+    </div>
+  </div>
+
+  <dc-import name="Confirm Dialog" meta="{{ confirmMeta }}" handlers="{{ handlers }}" open-key="{{ confirmKey }}" on-close="{{ onConfirmClose }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1300,&quot;height&quot;:900},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;prefill&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;{kind:'group'|'contact', value: string|string[]} | null&quot;},&quot;onSent&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(count: number) =&gt; void&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+// ── Bulk Send: لوحة الإرسال الجماعي (اختيار المجموعات والجهات والأرقام + نص الرسالة + الإعدادات)
+// props: prefill {kind:'group'|'contact', value}, onSent(count), onNavigate(route, filter), theme
+const ROUTE = '/send';
+const norm = (p) => String(p || '').replace(/[\s\-()]/g, '');
+const valid = (p) => /^\+?\d{9,15}$/.test(norm(p));
+const KIND_PREFIX = { image: '🖼️ صورة مرفقة', video: '🎬 فيديو مرفق', document: '📄 مستند مرفق', audio: '🎙️ رسالة صوتية', location: '📍 موقع', contact: '👤 بطاقة جهة اتصال' };
+const KIND_AR = { image: 'صورة', video: 'فيديو', document: 'مستند', audio: 'رسالة صوتية', location: 'موقع', contact: 'جهة اتصال' };
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, src: 'groups', q: '', bulk: '', groupIds: [], contactIds: [], manual: [], draft: null, kind: null, v: {}, settings: false, confirmKey: null, fire: null, rev: 0, width: 1280 };
+  componentDidMount() {
+    const w = () => {
+      if (window.HubData && window.HubShared && window.UIKit) {
+        const flt = this.props.prefill || window.HubShared.takeFilter(ROUTE);
+        if (flt && flt.kind === 'group') this.setState({ ready: true, groupIds: [].concat(flt.value), src: 'selected' });
+        else if (flt && flt.kind === 'contact') this.setState({ ready: true, contactIds: [].concat(flt.value), src: 'selected' });
+        else this.setState({ ready: true });
+      } else this.t = setTimeout(w, 40);
+    };
+    w();
+    this.onR = () => this.setState({ width: window.innerWidth });
+    window.addEventListener('resize', this.onR); this.onR();
+  }
+  componentWillUnmount() { clearTimeout(this.t); window.removeEventListener('resize', this.onR); }
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+  initials(name) {
+    const w = String(name || '؟').replace(/^(شركة|مؤسسة|مصنع|مجموعة)\s+/, '').trim().split(/\s+/);
+    const strip = (x) => (x.length > 3 && x.slice(0, 2) === 'ال' ? x.slice(2) : x);
+    const a = strip(w[0]) || w[0] || '؟';
+    return w[1] ? a[0] + strip(w[1])[0] : a.slice(0, 2);
+  }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    const empty = { theme, handlers: {}, chatHandlers: {}, cols: 'minmax(0,1fr)', quota: { text: '—', bg: 'var(--sunken)', bd: 'var(--border)', fg: 'var(--ink-3)', dot: 'var(--ink-4)' }, sources: [], hasSearch: false, searchPlaceholder: '', query: '', onQuery: () => {}, isManual: false, isList: true, rows: [], noRows: false, emptyText: '', bulk: '', onBulk: () => {}, onAddBulk: () => {}, totalText: '0', hasRecipients: false, onClear: () => {}, selLabel: '', selBd: '', selBg: '', selFg: '', onShowSelected: () => {}, head: { title: 'إرسال رسالة', sub: 'اختر المستلمين' }, settingsOpen: false, settingsLabel: 'إعدادات', toggleSettings: () => {}, formMeta: { sections: [] }, onField: () => {}, threadMeta: { bubbles: [] }, draft: '', estimate: [], askSend: () => {}, sendLabel: 'إرسال', sendBg: 'var(--border-2)', confirmMeta: { dialogs: [] }, confirmKey: null, onConfirmClose: () => {}, toastsMeta: { types: [] }, toastFire: null };
+    if (!D || !H || !S.ready) return empty;
+
+    const f = D.fmt, sub = D.subscription, V = S.v;
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+    const groups = D.contactGroups || [];
+    const allContacts = D.contacts.filter((x) => x.phone && !String(x.phone).includes('@g.us'));
+    const isBlack = (g) => String(g.kind || '').includes('سوداء');
+
+    const gSel = S.groupIds, cSel = S.contactIds;
+    const groupMembers = (g) => {
+      const ids = g.memberIds || g.members || [];
+      if (ids.length) return allContacts.filter((c) => ids.includes(c.id));
+      return allContacts.filter(() => !isBlack(g)).slice(0, Math.min(g.size || 0, 40));
+    };
+    const fromGroups = [...new Set(gSel.flatMap((id) => { const g = groups.find((x) => x.id === id); return g ? groupMembers(g).map((c) => c.id) : []; }))];
+    const blocked = [...new Set(groups.filter((g) => isBlack(g) && gSel.indexOf(g.id) < 0).flatMap((g) => (g.memberIds || g.members || [])))];
+    const pool = [...new Set([...fromGroups, ...cSel])].filter((id) => blocked.indexOf(id) < 0);
+    const total = pool.length + S.manual.length;
+    const first = allContacts.find((c) => c.id === pool[0]) || (S.manual[0] ? { name: S.manual[0].name, phone: S.manual[0].phone } : null);
+
+    /* الرسالة */
+    const tpls = D.msgTemplates || [];
+    const tplId = V.templateId || '';
+    const tpl = tpls.find((t) => t.id === tplId);
+    const body = S.draft !== null ? S.draft : (tpl ? tpl.body : '');
+    const devId = V.deviceId || (D.devices.find((d) => d.status === 'connected') || D.devices[0] || {}).id;
+    const dev = D.deviceById(devId) || { name: '—', status: 'disconnected' };
+    const rate = Number(V.rate) || D.queue.rate || 20;
+    const when = V.when || 'now';
+    const left = Math.max(0, sub.quota - sub.used);
+    const overflow = Math.max(0, total - left);
+    const mins = total / Math.max(1, rate);
+    const ready = total > 0 && (String(body).trim() !== '' || !!S.kind) && dev.status === 'connected';
+
+    const handlers = {
+      askSend: () => {
+        if (!total) { this.toast({ key: 'invalid', title: 'لا مستلمين', text: 'اختر مجموعة أو جهات أو أدخل أرقاماً.' }); return; }
+        if (!String(body).trim() && !S.kind) { this.toast({ key: 'invalid', title: 'الرسالة فارغة', text: 'اكتب نص الرسالة، أو اختر نوع رسالة من زر الإرفاق.' }); return; }
+        if (dev.status !== 'connected') { this.toast({ key: 'invalid', title: 'الجهاز غير متصل', text: 'اختر جهازاً متصلاً من إعدادات الإرسال.' }); return; }
+        this.setState({ confirmKey: 'send' });
+      },
+      send: () => {
+        const now = Date.now(), st = when === 'now' ? 'queued' : 'scheduled';
+        pool.forEach((id, i) => {
+          const c = allContacts.find((x) => x.id === id);
+          D.messages.unshift({ id: 'sm-' + now + '-' + i, direction: 'out', contactId: id, deviceId: devId, templateId: tpl ? tpl.id : null, docType: S.kind ? KIND_AR[S.kind] : 'رسالة مباشرة', docNo: 'MSG-' + String(now + i).slice(-6), amount: 0, status: st, error: null, ts: now + i, body: String(body) });
+        });
+        S.manual.forEach((m, i) => {
+          D.messages.unshift({ id: 'sm-' + now + '-m' + i, direction: 'out', contactId: null, deviceId: devId, templateId: tpl ? tpl.id : null, docType: S.kind ? KIND_AR[S.kind] : 'رسالة مباشرة', docNo: 'MSG-' + String(now + 900 + i).slice(-6), amount: 0, status: st, error: null, ts: now + i, body: String(body) });
+        });
+        if (tpl) tpl.uses = (tpl.uses || 0) + total;
+        D.logActivity('أُرسلت رسالة مباشرة إلى ' + f.n(total) + ' مستلم من ' + dev.name, 'primary');
+        if (this.props.onSent) this.props.onSent(total);
+        this.setState({ groupIds: [], contactIds: [], manual: [], bulk: '', draft: null, kind: null });
+        this.toast({ key: 'sent', title: 'أُضيفت ' + f.n(total) + ' رسالة إلى الطابور', text: when === 'now' ? 'تُرسل بمعدّل ' + rate + ' رسالة/دقيقة — تابعها من الطابور.' : 'مجدولة للإرسال في الموعد المحدد.' });
+        this.bump();
+      },
+      openQueue: () => go('/messages/queue'),
+      pickTemplate: () => go('/msg-templates'),
+    };
+
+    /* قائمة المستلمين */
+    const src = S.src;
+    const q = S.q.trim();
+    const isManual = src === 'manual';
+    const isSelected = src === 'selected';
+    let rows = [];
+    if (src === 'groups') {
+      rows = groups.filter((g) => !q || g.name.includes(q)).map((g) => {
+        const on = gSel.includes(g.id), bl = isBlack(g);
+        return {
+          name: g.name, sub: g.note || g.source || '', subDir: 'rtl', subFont: 'inherit',
+          initials: this.initials(g.name), avBg: on ? 'var(--pri)' : 'var(--sunken)', avFg: on ? '#fff' : 'var(--ink-3)',
+          hasBadge: true, badge: bl ? g.kind : f.n(g.size || 0) + ' جهة', badgeBg: bl ? 'var(--wn-s)' : 'var(--sunken)', badgeFg: bl ? 'var(--wn-ix)' : 'var(--ink-3)',
+          bg: on ? 'var(--pri-s)' : 'transparent',
+          mark: on ? '✓' : '', markBd: on ? 'var(--pri)' : 'var(--border-2)', markBg: on ? 'var(--pri)' : 'transparent', markFg: '#fff',
+          onToggle: () => this.setState({ groupIds: on ? gSel.filter((x) => x !== g.id) : [...gSel, g.id] }),
+        };
+      });
+    } else if (src === 'contacts') {
+      rows = allContacts.filter((x) => !q || (x.name || '').includes(q) || norm(x.phone).includes(norm(q))).slice(0, 100).map((x) => {
+        const on = cSel.includes(x.id), t = D.PARTY_TYPES[x.type];
+        return {
+          name: x.name || 'بلا اسم — من دليل الجهاز', sub: x.phone, subDir: 'ltr', subFont: "'IBM Plex Mono',monospace",
+          initials: this.initials(x.name), avBg: on ? 'var(--pri)' : 'var(--sunken)', avFg: on ? '#fff' : 'var(--ink-3)',
+          hasBadge: !!t, badge: t ? t.ar : '', badgeBg: 'var(--sunken)', badgeFg: 'var(--ink-3)',
+          bg: on ? 'var(--pri-s)' : 'transparent',
+          mark: on ? '✓' : '', markBd: on ? 'var(--pri)' : 'var(--border-2)', markBg: on ? 'var(--pri)' : 'transparent', markFg: '#fff',
+          onToggle: () => this.setState({ contactIds: on ? cSel.filter((y) => y !== x.id) : [...cSel, x.id] }),
+        };
+      });
+    } else if (isSelected) {
+      rows = pool.map((id) => allContacts.find((x) => x.id === id) || { id, name: id, phone: '' })
+        .concat(S.manual.map((m, i) => ({ id: '__m' + i, name: m.name, phone: m.phone, manualIndex: i })))
+        .filter((x) => !q || (x.name || '').includes(q) || norm(x.phone).includes(norm(q)))
+        .map((x) => {
+          const man = x.manualIndex !== undefined;
+          const inGroup = man ? false : (fromGroups.includes(x.id) && !cSel.includes(x.id));
+          return {
+            name: x.name || 'بلا اسم', sub: x.phone, subDir: 'ltr', subFont: "'IBM Plex Mono',monospace",
+            initials: man ? '#' : this.initials(x.name), avBg: man ? 'var(--nf)' : 'var(--pri)', avFg: '#fff',
+            hasBadge: true, badge: man ? 'رقم يدوي' : (inGroup ? 'من مجموعة' : 'جهة محددة'),
+            badgeBg: man ? 'var(--nf-s)' : 'var(--pri-s)', badgeFg: man ? 'var(--nf-i)' : 'var(--pri-d)',
+            bg: 'transparent',
+            mark: '×', markBd: 'var(--dg-sb)', markBg: 'var(--dg-s)', markFg: 'var(--dg-i)',
+            onToggle: () => {
+              if (man) this.setState({ manual: S.manual.filter((_, j) => j !== x.manualIndex) });
+              else if (inGroup) this.toast({ key: 'invalid', title: 'هذه الجهة من مجموعة محددة', text: 'أزل المجموعة من تبويب المجموعات لاستثنائها.' });
+              else this.setState({ contactIds: cSel.filter((y) => y !== x.id) });
+            },
+          };
+        });
+    }
+
+    /* إعدادات الإرسال (Form) */
+    const formMeta = {
+      title: 'إعدادات الإرسال', sub: 'النموذج يعبّئ نص الرسالة، ويمكن تعديله في صندوق الكتابة.',
+      handlers,
+      sections: [
+        { cols: 2, fields: [
+          { key: 'templateId', type: 'select', label: 'نموذج رسالة', value: tplId, options: [{ v: '', l: 'بلا نموذج — نص حر' }].concat(tpls.map((t) => ({ v: t.id, l: t.name + ' · ' + t.category }))) },
+          { key: 'deviceId', type: 'select', label: 'جهاز الإرسال', value: devId, options: D.devices.map((d) => ({ v: d.id, l: d.name + (d.status === 'connected' ? '' : ' — غير متصل') })), help: dev.status === 'connected' ? '' : 'الجهاز غير متصل.' },
+          { key: 'rate', type: 'number', label: 'المعدّل (رسالة/دقيقة)', value: rate, help: rate > 30 ? 'معدّل مرتفع — يزيد خطر الحظر.' : 'الموصى به 20–30.' },
+          { key: 'when', type: 'segment', label: 'التوقيت', value: when, options: [{ v: 'now', l: 'الآن' }, { v: 'later', l: 'في موعد' }] },
+          { key: 'startDate', type: 'date', label: 'موعد البدء', value: V.startDate || '', showIf: { when: 'later' } },
+        ] },
+      ],
+      actions: [{ key: 'tpl', label: 'إدارة نماذج الرسائل', variant: 'secondary', action: 'pickTemplate' }],
+    };
+
+    const stamp = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    return {
+      theme, handlers,
+      cols: S.width < 900 ? 'minmax(0,1fr)' : 'minmax(0,330px) minmax(0,1fr)',
+      quota: overflow
+        ? { text: f.n(overflow) + ' زائدة على الباقة', bg: 'var(--wn-s)', bd: 'var(--wn-sb)', fg: 'var(--wn-ix)', dot: 'var(--wn)' }
+        : { text: 'الرصيد ' + f.n(left), bg: 'var(--pri-s)', bd: 'var(--pri-sb)', fg: 'var(--pri-d)', dot: 'var(--pri)' },
+
+      sources: [
+        { key: 'groups', label: 'المجموعات', count: f.n(gSel.length) },
+        { key: 'contacts', label: 'جهات', count: f.n(cSel.length) },
+        { key: 'manual', label: 'أرقام', count: f.n(S.manual.length) },
+      ].map((s) => ({
+        label: s.label, hasCount: s.count !== '0', count: s.count,
+        bg: src === s.key ? 'var(--surface)' : 'transparent', fg: src === s.key ? 'var(--pri-d)' : 'var(--ink-3)',
+        onPick: () => this.setState({ src: s.key, q: '' }),
+      })),
+      hasSearch: !isManual,
+      searchPlaceholder: src === 'groups' ? 'ابحث في المجموعات…' : (isSelected ? 'ابحث في المحددين…' : 'ابحث بالاسم أو الرقم…'),
+      query: S.q, onQuery: (e) => this.setState({ q: e.target.value }),
+      isManual, isList: !isManual,
+      rows, noRows: !isManual && rows.length === 0,
+      emptyText: isSelected ? 'لا مستلمين محددين بعد.' : 'لا نتائج مطابقة للبحث.',
+      bulk: S.bulk, onBulk: (e) => this.setState({ bulk: e.target.value }),
+      onAddBulk: () => {
+        const parts = String(S.bulk).split(/[\n,،;]+/).map((x) => x.trim()).filter(Boolean);
+        const seen = new Set(S.manual.map((m) => norm(m.phone)).concat(allContacts.map((x) => norm(x.phone))));
+        const add = [];
+        parts.forEach((p) => { const n = norm(p); if (valid(n) && !seen.has(n)) { seen.add(n); add.push({ name: 'رقم مضاف يدوياً', phone: n }); } });
+        this.setState({ manual: [...S.manual, ...add], bulk: '' });
+        this.toast(add.length ? { key: 'sent', title: 'أُضيف ' + f.n(add.length) + ' رقماً' } : { key: 'invalid', title: 'لا أرقام صالحة جديدة' });
+      },
+
+      totalText: f.n(total), hasRecipients: total > 0,
+      selLabel: isSelected ? 'رجوع للاختيار' : 'عرض المحددين',
+      selBd: isSelected ? 'var(--pri-sb)' : 'var(--border-2)', selBg: isSelected ? 'var(--pri-s)' : 'var(--bg)', selFg: isSelected ? 'var(--pri-d)' : 'var(--ink-2)',
+      onShowSelected: () => this.setState({ src: isSelected ? 'groups' : 'selected', q: '' }),
+      onClear: () => this.setState({ groupIds: [], contactIds: [], manual: [], src: 'groups' }),
+
+      head: {
+        title: total ? 'بثّ إلى ' + f.n(total) + ' مستلم' : 'إرسال رسالة',
+        sub: total
+          ? [gSel.length ? f.n(gSel.length) + ' مجموعة' : '', cSel.length ? f.n(cSel.length) + ' جهة' : '', S.manual.length ? f.n(S.manual.length) + ' رقماً' : '', blocked.length ? f.n(blocked.length) + ' مستثنى' : ''].filter(Boolean).join(' · ') + ' · ' + dev.name
+          : 'اختر المستلمين من القائمة، ثم اكتب الرسالة',
+      },
+      settingsOpen: S.settings, settingsLabel: S.settings ? 'إخفاء الإعدادات' : (tpl ? tpl.name : 'إعدادات الإرسال'),
+      toggleSettings: () => this.setState({ settings: !S.settings }),
+      formMeta,
+      onField: (key, val) => this.setState({ v: { ...V, [key]: val }, ...(key === 'templateId' ? { draft: null } : {}) }),
+
+      draft: body,
+      chatHandlers: {
+        onDraft: (t) => this.setState({ draft: t }),
+        send: () => handlers.askSend(),
+        onAttach: (k) => this.setState({ kind: k }),
+        reset: () => this.setState({ draft: '' }),
+      },
+      threadMeta: {
+        frame: 'plain',
+        header: first
+          ? { name: first.name || 'أول مستلم', sub: first.phone, subMono: true, initials: this.initials(first.name), badge: 'معاينة أول مستلم', badgeTone: 'muted' }
+          : { name: 'لا مستلم بعد', sub: 'المعاينة تظهر بعد اختيار مستلم', initials: '؟', badge: 'بلا مستلمين', badgeTone: 'warn' },
+        note: { text: 'الإرسال فعلي — النص يُرسل كما هو لكل مستلم.', tone: 'muted' },
+        dayLabel: String(body).trim() ? 'اليوم' : null,
+        bubbles: (String(body).trim() || S.kind)
+          ? [{ dir: 'out', text: (S.kind ? KIND_PREFIX[S.kind] + '\n' : '') + String(body), at: stamp, tick: '🕓', tone: S.kind ? 'primary' : undefined }]
+          : [],
+        empty: { title: 'اكتب الرسالة', text: 'اكتب في صندوق الكتابة أدناه أو اختر نموذجاً من إعدادات الإرسال — تظهر هنا كما تصل المستلم.' },
+        composer: {
+          multiline: true, rows: 2, placeholder: 'اكتب رسالتك…', sendTitle: 'إرسال', resetLabel: 'مسح النص',
+          attachTitle: 'نوع الرسالة',
+          attach: [
+            { key: 'image', label: 'صورة', tone: 'primary' },
+            { key: 'video', label: 'فيديو', tone: 'info' },
+            { key: 'document', label: 'مستند', tone: 'warn' },
+            { key: 'audio', label: 'رسالة صوتية', tone: 'ok' },
+            { key: 'location', label: 'موقع', tone: 'danger' },
+            { key: 'contact', label: 'جهة اتصال', tone: 'muted' },
+          ],
+        },
+      },
+
+      estimate: [
+        { k: 'المستلمون', v: f.n(total), dir: 'ltr', font: "'IBM Plex Mono',monospace", color: 'var(--ink)' },
+        { k: 'الزمن المتوقع', v: !total ? '—' : (mins < 1 ? 'أقل من دقيقة' : (mins < 60 ? Math.round(mins) + ' دقيقة' : Math.round(mins / 60) + ' ساعة')), dir: 'rtl', font: 'inherit', color: 'var(--ink)' },
+        { k: 'من الباقة', v: f.n(Math.min(total, left)), dir: 'ltr', font: "'IBM Plex Mono',monospace", color: 'var(--ink)' },
+        ...(overflow ? [{ k: 'من المحفظة', v: f.money(overflow * sub.pricePerMessage) + ' ر.س', dir: 'ltr', font: "'IBM Plex Mono',monospace", color: 'var(--wn-ix)' }] : []),
+      ],
+      askSend: handlers.askSend,
+      sendLabel: when === 'now' ? (total ? 'إرسال إلى ' + f.n(total) : 'إرسال') : 'جدولة الإرسال',
+      sendBg: ready ? 'var(--pri)' : 'var(--sunken)',
+      sendFg: ready ? 'var(--on-pri)' : 'var(--ink-3)',
+      sendBd: ready ? 'var(--pri)' : 'var(--border-2)',
+
+      confirmMeta: { handlers, dialogs: [
+        { key: 'send', tone: overflow ? 'warn' : 'info', icon: 'send',
+          title: (when === 'now' ? 'إرسال ' : 'جدولة ') + f.n(total) + ' رسالة؟',
+          text: when === 'now'
+            ? 'الرسائل تدخل الطابور فوراً وتُرسل بمعدّل ' + rate + ' رسالة/دقيقة. لا يمكن سحب ما أُرسل.'
+            : 'الرسائل تُجدول للإرسال في الموعد المحدد، ويمكن إلغاؤها من الطابور قبل بدئها.',
+          facts: [
+            { label: 'المستلمون', value: f.n(total), mono: true },
+            { label: 'الجهاز', value: dev.name },
+            { label: 'يُخصم من الباقة', value: f.n(Math.min(total, left)), mono: true },
+            ...(overflow ? [{ label: 'زائد على الباقة', value: f.n(overflow) + ' · ' + f.money(overflow * sub.pricePerMessage) + ' ر.س', mono: true, tone: 'warn' }] : []),
+            ...(blocked.length ? [{ label: 'مستثنى (قائمة سوداء)', value: f.n(blocked.length), mono: true }] : []),
+          ],
+          checks: total > 200 ? [{ key: 'sure', label: 'أفهم أن ' + f.n(total) + ' رسالة ستُرسل فعلياً وتُخصم من الرصيد', required: true }] : [],
+          confirmLabel: when === 'now' ? 'أرسل الآن' : 'جدول الإرسال', action: 'send' },
+      ] },
+      confirmKey: S.confirmKey, onConfirmClose: () => this.setState({ confirmKey: null }),
+      toastsMeta: { position: 'bottom-start', duration: 4000, types: [{ key: 'sent', tone: 'ok', icon: 'check' }, { key: 'invalid', tone: 'warn', icon: 'alert' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--c-sent:#8FC0E4;--c-deliv:#2E7FD1;--c-read:#22A7C9;--c-queued:#EDA93E;--c-failed:#E0615A;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--c-sent:#6FA6D8;--c-deliv:#3E82CC;--c-read:#37A9C9;--c-queued:#D9A33A;--c-failed:#DE6F68;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+  .lv-host > .sc-host{flex:1 1 0%;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .lv-host > .sc-host > *{flex:1 1 0%;min-height:0;min-width:0}
+</style>
+</helmet>
+<div data-screen-label="كل الرسائل" dir="rtl" style="flex:1;min-height:0;height:100%;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px;width:100%">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;flex:none">
+      <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+        <h1 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em">كل الرسائل</h1>
+        <span style="font-size:12px;color:var(--ink-3)">عرض موحّد للصادر والوارد في جدول واحد — الاتجاه عمود قابل للتصفية.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="display:flex;flex-direction:column;gap:4px">
+          <span style="display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 10px;border-radius:8px;border:1px solid {{ whoBd }};background:var(--surface)">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none"><circle cx="9" cy="9" r="5.5" stroke="var(--ink-4)" stroke-width="1.6"></circle><path d="M13.5 13.5L17 17" stroke="var(--ink-4)" stroke-width="1.6" stroke-linecap="round"></path></svg>
+            <input type="text" value="{{ who }}" onInput="{{ onWho }}" placeholder="جهة الاتصال أو الرقم — إلزامي" style="width:240px;border:none;background:transparent;font-size:12px;color:var(--ink);outline:none" />
+            <sc-if value="{{ hasWho }}" hint-placeholder-val="{{ false }}"><span onClick="{{ clearWho }}" title="مسح" style="cursor:pointer;font-size:14px;line-height:1;color:var(--ink-4)">×</span></sc-if>
+          </span>
+          <span style="font-size:11px;color:{{ whoFg }}">{{ whoNote }}</span>
+        </span>
+        <span style="display:flex;flex-direction:column;gap:4px">
+          <select value="{{ cmdVal }}" onChange="{{ onCmd }}" style="min-height:36px;padding:0 10px;border-radius:8px;border:1px solid {{ whoBd }};background:var(--surface);font-size:12px;color:var(--ink);outline:none">
+            <sc-for list="{{ cmdOpts }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+          </select>
+          <span style="font-size:11px;color:var(--ink-4)">أو اختر أمراً</span>
+        </span>
+      </div>
+    </div>
+
+    <dc-import name="Cards" meta="{{ cardsMeta }}" handlers="{{ handlers }}" loading="{{ loading }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,72px"></dc-import>
+
+    <div class="lv-host" style="flex:1;min-height:340px;display:flex;overflow:hidden">
+      <dc-import name="List View" loading="{{ loading }}" columns="{{ columns }}" rows="{{ rows }}" detail="{{ detail }}" range-key="ts" sum-key="amount" sum-label="مجموع المبالغ" unit="رسالة" search-placeholder="اسم الجهة، رقم، رقم مستند، أو نص…" search-keys="{{ searchKeys }}" export-name="all-messages" default-sort="{{ defaultSort }}" pinned="{{ pinned }}" page-size="{{ 50 }}" density="compact" theme="{{ theme }}" hint-size="100%,100%"></dc-import>
+    </div>
+  </div>
+
+  <sc-if value="{{ sendOpen }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="Send Message Dialog" prefill="{{ sendPrefill }}" on-close="{{ onSendClose }}" theme="{{ theme }}" hint-size="0,0"></dc-import>
+  </sc-if>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1300,&quot;height&quot;:900},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+const ROUTE = '/messages/all';
+const STATUS_TONE = {
+  read: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--c-read)' }, delivered: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--c-deliv)' },
+  sent: { bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--c-sent)' }, warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--c-queued)' },
+  danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--c-failed)' }, muted: { bg: 'var(--sunken)', fg: 'var(--ink-3)', dot: 'var(--ink-4)' },
+};
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, who: '', cmdVal: '', loading: true, sendTo: null, scope: null, fire: null, rev: 0 };
+  componentDidMount() {
+    const w = () => { if (window.HubData && window.HubShared && window.UIKit) { this.setState({ ready: true, scope: window.HubShared.takeFilter(ROUTE) }); setTimeout(() => this.setState({ loading: false }), 240); } else this.t = setTimeout(w, 40); };
+    w();
+    this.timer = setInterval(() => { if (document.hidden) return; const D = window.HubData; if (D && D.advanceQueue) D.advanceQueue(2); this.setState((s) => ({ rev: s.rev + 1 })); }, 6000);
+  }
+  componentWillUnmount() { clearTimeout(this.t); clearInterval(this.timer); }
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    const empty = { theme, loading: true, sendTo: null, who: '', hasWho: false, onWho: () => {}, clearWho: () => {}, whoBd: 'var(--wn-sb)', whoFg: 'var(--wn-i)', whoNote: 'جهة الاتصال أو الرقم أو الأمر — أحدها إلزامي', cmdVal: '', onCmd: () => {}, cmdOpts: [], handlers: {}, goOutbound: () => {}, goInbound: () => {}, cardsMeta: { sections: [] }, columns: [], rows: [], detail: null, searchKeys: [], defaultSort: null, pinned: [], toastsMeta: { types: [] }, toastFire: null };
+    if (!D || !H || !S.ready) return empty;
+
+    const f = D.fmt;
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+    const inMap = {};
+    (D.incoming || []).forEach((m) => { inMap[m.id] = m; });
+
+    const who = String(S.who || '').trim();
+    const norm = (x) => String(x || '').replace(/[^0-9+a-z@]/gi, '');
+    const cmdVal = S.cmdVal || '';
+    let msgs = (who || cmdVal)
+      ? D.messages.filter((m) => {
+        if (who) { const c = D.contactById(m.contactId) || {}; if (!(String(c.name || '').includes(who) || norm(c.phone).includes(norm(who)))) return false; }
+        if (cmdVal) { const inc = (D.incoming || []).find((x) => x.id === m.id); const mc = m.direction === 'in' ? (inc ? inc.matchedCommand : null) : m.commandId; if (mc !== cmdVal) return false; }
+        return true;
+      }).slice(0, 4000)
+      : [];
+    const sc = S.scope;
+    if (sc && sc.kind === 'status') msgs = msgs.filter((m) => m.status === sc.value);
+    if (sc && sc.kind === 'device') msgs = msgs.filter((m) => m.deviceId === sc.value);
+    if (sc && sc.kind === 'docType') msgs = msgs.filter((m) => m.docType === sc.value);
+
+    const out = msgs.filter((m) => m.direction === 'out');
+    const inb = msgs.filter((m) => m.direction === 'in');
+    const failed = out.filter((m) => m.status === 'failed');
+    const unmatched = (D.incoming || []).filter((m) => !m.matchedCommand).length;
+
+    const handlers = {
+      openOutbound: () => go('/messages/outbound'),
+      openInbound: () => go('/messages/inbound'),
+      openFailed: () => go('/messages/outbound', { kind: 'status', value: 'failed' }),
+      openCommands: () => go('/commands'),
+    };
+
+    const cardsMeta = { handlers, sections: [{ min: 200, mobileColumns: 2, cards: [
+      { kind: 'stat', icon: 'sigma', label: 'إجمالي الرسائل', value: f.n(msgs.length), valueMono: true, note: 'صادر ووارد في الفترة المحفوظة' },
+      { kind: 'stat', icon: 'send', tone: 'info', label: 'الصادر', value: f.n(out.length), valueMono: true, note: 'من الأجهزة المربوطة', action: 'openOutbound' },
+      { kind: 'stat', icon: 'read', tone: 'ok', label: 'الوارد', value: f.n(inb.length), valueMono: true, note: unmatched ? f.n(unmatched) + ' بلا أمر مطابق' : 'كله مطابق لأوامر', action: 'openInbound' },
+      { kind: 'stat', icon: 'fail', tone: failed.length ? 'danger' : undefined, label: 'الفاشل', value: f.n(failed.length), valueMono: true, note: out.length ? ((failed.length / out.length) * 100).toFixed(1) + '% من الصادر' : 'لا فشل', action: 'openFailed' },
+    ] }] };
+
+    /* ——— الخلايا ——— */
+    const chipOf = (m) => { const t = STATUS_TONE[D.STATUS[m.status].tone] || STATUS_TONE.muted; return { text: D.STATUS[m.status].ar, bg: t.bg, fg: t.fg, dot: t.dot, sort: m.status }; };
+    const dirOf = (m) => m.direction === 'in'
+      ? { text: 'وارد', bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)', sort: 'in' }
+      : { text: 'صادر', bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--ink-4)', sort: 'out' };
+    const devCell = (id) => { const d = D.deviceById(id) || { name: '—', initials: '—', color: 'var(--ink-4)' }; return { text: d.name, initials: d.initials, avBg: d.color, avFg: '#fff', sort: d.name }; };
+    const ctCell = (id) => { const c = D.contactById(id) || { name: '', phone: '' }; return { text: c.name || 'بلا اسم — من دليل الجهاز', sub: c.phone, sort: c.name || 'ي' }; };
+    const textOf = (m) => m.direction === 'in'
+      ? ((inMap[m.id] && inMap[m.id].text) || '—')
+      : (m.body || '').replace('{no}', m.docNo || '').replace('{amt}', f.money(m.amount || 0));
+
+    const columns = [
+      { key: 'dir', label: 'الاتجاه', w: 100, kind: 'badge', group: true, filter: true },
+      { key: 'contact', label: 'الجهة', w: 210, kind: 'two', group: true },
+      { key: 'status', label: 'الحالة', w: 120, kind: 'badge', group: true, filter: true },
+      { key: 'text', label: 'النص', w: 260, color: 'var(--ink-3)' },
+      { key: 'docType', label: 'نوع المستند', w: 130, group: true, filter: true },
+      { key: 'docNo', label: 'رقم المستند', w: 110, kind: 'mono' },
+      { key: 'amount', label: 'المبلغ', w: 120, kind: 'money', align: 'end' },
+      { key: 'device', label: 'الجهاز', w: 150, kind: 'avatar', group: true, filter: true },
+      { key: 'ts', label: 'التاريخ والوقت', w: 150, kind: 'time', group: true, groupLabel: 'اليوم' },
+    ];
+    const rows = msgs.map((m) => ({
+      id: m.id, dir: dirOf(m), contact: ctCell(m.contactId), status: chipOf(m),
+      text: String(textOf(m)).split('\n')[0].slice(0, 70),
+      docType: m.direction === 'in' ? '—' : m.docType, docNo: m.direction === 'in' ? '—' : m.docNo,
+      amount: m.direction === 'in' ? 0 : m.amount, device: devCell(m.deviceId), ts: m.ts, _m: m,
+    }));
+
+    const detail = (r) => {
+      const m = r._m, isIn = m.direction === 'in';
+      const err = m.error ? D.ERRORS[m.error] : null;
+      const inc = inMap[m.id];
+      const cmd = isIn && inc && inc.matchedCommand ? (D.commands || []).find((c) => c.id === inc.matchedCommand) : null;
+      const tpl = !isIn && m.templateId ? (D.templates || []).find((t) => t.id === m.templateId) : null;
+      const camp = m.campaignId ? (D.campaigns || []).find((c) => c.id === m.campaignId) : null;
+      const outCmd = !isIn && m.commandId ? (D.commands || []).find((c) => c.id === m.commandId) : null;
+      const reply = isIn ? D.messages.find((x) => x.direction === 'out' && x.contactId === m.contactId && x.ts > m.ts) : null;
+      const gapSec = isIn
+        ? (reply ? Math.max(0, (reply.ts - m.ts) / 1000) : null)
+        : (m.triggerTs ? Math.max(0, (m.ts - m.triggerTs) / 1000) : null);
+      return {
+        alert: err
+          ? { tone: 'danger', title: err.ar, lines: [{ text: err.raw.replace('{n}', ctCell(m.contactId).sub), mono: true }, 'الإجراء المقترح: ' + err.fix] }
+          : (isIn && !cmd ? { tone: 'warn', title: 'لا أمر يطابق هذا النص', lines: ['النظام ردّ بقائمة الأوامر المتاحة. أضف النص كمرادف لأمر ليُطابق تلقائياً.'] } : null),
+        badge: isIn
+          ? (cmd ? { text: 'مطابقة لأمر', tone: 'ok' } : { text: 'بلا مطابقة', tone: 'warn' })
+          : { text: D.STATUS[m.status].ar, tone: m.status === 'failed' ? 'danger' : m.status === 'read' || m.status === 'delivered' ? 'ok' : 'muted' },
+        fields: [].concat(
+          [{ k: 'معرّف الرسالة', v: String(m.id).toUpperCase(), mono: true }, { k: 'الاتجاه', v: isIn ? 'وارد' : 'صادر' }],
+          isIn
+            ? [
+              { k: 'نوع الجهة', v: (D.PARTY_TYPES[(D.contactById(m.contactId) || {}).type] || {}).ar || '—' },
+              { k: 'مربوط بحساب', v: (D.contactById(m.contactId) || {}).linked ? 'نعم' : 'لا' },
+              { k: 'الأمر المطابق', v: cmd ? cmd.code : '—', mono: true },
+              { k: 'الدالة', v: cmd ? cmd.fn : '—' },
+              { k: 'الجهاز المستقبل', v: devCell(m.deviceId).text },
+              { k: 'وقت الاستلام', v: f.date(m.ts) + ' ' + f.time(m.ts), mono: true },
+            ]
+            : [
+              { k: 'نوع المستند', v: m.docType },
+              { k: 'رقم المستند', v: m.docNo, mono: true },
+              { k: 'الجهاز المرسل', v: devCell(m.deviceId).text },
+              { k: 'النموذج', v: tpl ? tpl.name : (camp ? camp.name : 'إرسال يدوي') },
+            ].concat(outCmd ? [{ k: 'الأمر', v: outCmd.code, mono: true }, { k: 'الدالة', v: outCmd.fn || '—' }] : [],
+              m.printTpl ? [{ k: 'قالب الطباعة', v: m.printTpl }] : [],
+              [{ k: 'وقت الإرسال', v: f.date(m.ts) + ' ' + f.time(m.ts), mono: true }])
+        ),
+        blocks: [].concat(
+          isIn ? [{ label: cmd ? 'النص الوارد · أمر معرّف' : 'النص الوارد · نص غير مطابق', text: textOf(m), tone: 'warn' }] : [],
+          !isIn && m.triggerText ? [{ label: outCmd ? 'النص الوارد · أمر من العميل' : 'النص الوارد', text: m.triggerText, tone: 'warn' }] : [],
+          !isIn ? [{ label: 'النص المُرسَل', text: textOf(m), tone: 'ok' }] : (reply ? [{ label: 'الردّ المُرسَل', text: textOf(reply), tone: 'ok' }] : []),
+          gapSec != null ? [{ label: 'فارق الرد', text: (gapSec < 60 ? (Math.round(gapSec * 10) / 10) + ' ثانية' : f.n(Math.round(gapSec / 60)) + ' دقيقة') + ' بين استلام الوارد وإرسال الصادر' }] : [],
+          !isIn ? [{ label: 'سجل المحاولات', list: (() => {
+            const n = m.attempts || 1, out = [];
+            for (let i = n; i >= 1; i--) {
+              const last = i === n, failed = last && m.status === 'failed';
+              out.push({
+                text: 'المحاولة ' + f.n(i) + ' — ' + (failed ? 'فشلت: ' + (err ? err.ar : 'خطأ غير محدد') : last ? D.STATUS[m.status].ar : 'فشلت وأُعيدت'),
+                sub: f.date(m.ts) + ' ' + f.time(m.ts),
+                badge: failed ? 'فشل' : last ? D.STATUS[m.status].ar : 'إعادة',
+                badgeTone: failed ? 'danger' : last && (m.status === 'read' || m.status === 'delivered') ? 'ok' : 'muted',
+              });
+            }
+            out.push({ text: tpl ? 'أُنشئت الرسالة من نموذج «' + tpl.name + '»' : camp ? 'أُنشئت الرسالة من حملة «' + camp.name + '»' : outCmd ? 'أُنشئت الرسالة رداً على الأمر «' + outCmd.code + '»' : 'أُنشئت الرسالة من إرسال يدوي', sub: f.date(m.ts) + ' ' + f.time(m.ts), subMono: false });
+            return out;
+          })() }] : []
+        ),
+        actions: [].concat(
+          m.contactId ? [{ label: isIn ? 'ردّ برسالة' : 'إرسال رسالة', closes: false, onClick: () => this.setState({ sendTo: { kind: 'contact', value: m.contactId } }) }] : [],
+          isIn
+            ? [{ label: cmd ? 'افتح الأمر' : 'أضف أمراً لهذا النص', onClick: () => go('/commands', cmd ? { kind: 'search', value: cmd.code } : null) }]
+            : [{ label: 'افتح في سجل الصادر', onClick: () => go('/messages/outbound', { kind: 'search', value: m.docNo }) }],
+          !isIn && m.status === 'failed'
+            ? [{ label: 'إعادة الإرسال', tone: 'primary', onClick: () => { m.status = 'queued'; m.error = null; m.attempts = (m.attempts || 1) + 1; if (D.logActivity) D.logActivity('أُعيد إرسال رسالة ' + m.docNo, 'primary'); this.toast({ key: 'requeued', title: 'أُعيدت الرسالة إلى الطابور' }); } }]
+            : []
+        ),
+      };
+    };
+
+    return {
+      sendOpen: !!S.sendTo, sendPrefill: S.sendTo, onSendClose: () => this.setState({ sendTo: null }),
+      who: S.who || '', hasWho: !!who,
+      onWho: (e) => this.setState({ who: e.target.value }),
+      clearWho: () => this.setState({ who: '' }),
+      whoBd: (who || cmdVal) ? 'var(--pri-sb)' : 'var(--wn-sb)',
+      whoFg: (who || cmdVal) ? 'var(--ink-4)' : 'var(--wn-i)',
+      whoNote: (who || cmdVal) ? f.n(msgs.length) + ' رسالة مطابقة' : 'جهة الاتصال أو الرقم أو الأمر — أحدها إلزامي',
+      cmdVal, onCmd: (e) => this.setState({ cmdVal: e.target.value }),
+      cmdOpts: [{ v: '', l: 'كل الأوامر' }].concat((D.commands || []).map((c) => ({ v: c.id, l: c.code + ' — ' + c.fn }))),
+      theme, loading: S.loading, handlers,
+      goOutbound: () => go('/messages/outbound'), goInbound: () => go('/messages/inbound'),
+      cardsMeta, columns, rows, detail,
+      searchKeys: ['contact', 'docNo', 'docType', 'text'], defaultSort: { key: 'ts', dir: 'desc' }, pinned: ['dir', 'contact'],
+      toastsMeta: { position: 'bottom-start', duration: 3200, types: [{ key: 'requeued', tone: 'ok', icon: 'check' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

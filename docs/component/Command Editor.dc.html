@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--shadow-lg:0 24px 60px rgba(15,23,32,.28);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--shadow-lg:0 24px 60px rgba(0,0,0,.6);color-scheme:dark;}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button,select,textarea{font-family:inherit;}
+  .ce-sb{scrollbar-width:thin;}
+  .ce-sb::-webkit-scrollbar{width:9px;height:9px;}
+  .ce-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:9px;border:2px solid transparent;background-clip:content-box;}
+  @keyframes ceIn{from{opacity:0;transform:translateY(8px) scale(.995)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<sc-if value="{{ open }}" hint-placeholder-val="{{ true }}">
+<div dir="rtl" data-theme="{{ theme }}" style="position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:{{ pad }};background:rgba(15,20,19,.45);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:var(--ink)">
+  <div onClick="{{ onClose }}" style="position:absolute;inset:0"></div>
+
+  <div style="position:relative;z-index:1;width:min(1320px,100%);height:100%;max-height:100%;display:flex;flex-direction:column;border-radius:10px;background:var(--bg);border:1px solid var(--border);box-shadow:var(--shadow-lg);overflow:hidden;animation:ceIn .18s ease-out">
+
+    <div style="flex:none;display:flex;flex-direction:column;background:var(--surface);border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px 8px">
+        <span style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--ink-4);flex:none">الأمر</span>
+          <input type="text" value="{{ code }}" onInput="{{ onCode }}" dir="ltr" placeholder="كلمة الأمر" style="min-height:38px;min-width:120px;max-width:260px;padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;text-align:right;outline:none" style-focus="border-color:var(--pri);background:var(--surface)" />
+          <sc-if value="{{ dirty }}" hint-placeholder-val="{{ false }}">
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--wn-s);border:1px solid var(--wn-sb);color:var(--wn-ix);font-size:11px;font-weight:700;flex:none;white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:var(--wn-ix)"></span>لم يُحفظ بعد</span>
+          </sc-if>
+        </span>
+        <span style="display:flex;align-items:center;gap:10px;flex:none">
+          <span onClick="{{ onToggleStatus }}" title="تفعيل الأمر أو إيقافه" style="display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:0 11px;border-radius:8px;border:1px solid {{ st.bd }};background:{{ st.bg }};color:{{ st.fg }};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">{{ st.label }}<span style="width:34px;height:19px;border-radius:999px;background:{{ st.track }};position:relative;flex:none"><span style="position:absolute;top:3px;inset-inline-end:{{ st.knob }};width:13px;height:13px;border-radius:50%;background:#F7FAF9;box-shadow:0 1px 3px rgba(0,0,0,.28);transition:inset-inline-end .18s ease-out"></span></span></span>
+          <span onClick="{{ onClose }}" title="إغلاق (Esc)" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;line-height:1;color:var(--ink-3);flex:none" style-hover="background:var(--sunken);color:var(--ink)">×</span>
+        </span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:0 14px;flex-wrap:wrap">
+        <span style="display:flex;gap:2px;overflow-x:auto">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="3">
+            <span onClick="{{ t.onPick }}" style="display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 12px;cursor:pointer;white-space:nowrap;color:{{ t.fg }};font-size:12px;font-weight:{{ t.fw }};box-shadow:inset 0 -2px 0 {{ t.underline }}">{{ t.label }}<sc-if value="{{ t.hasCount }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;min-width:17px;height:17px;padding:0 5px;border-radius:999px;background:{{ t.cBg }};color:{{ t.cFg }};display:inline-flex;align-items:center;justify-content:center">{{ t.count }}</span></sc-if></span>
+          </sc-for>
+        </span>
+        <span style="margin-inline-start:auto;display:flex;align-items:center;gap:10px;padding-bottom:6px;white-space:nowrap;overflow:hidden">
+          <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-4);flex:none"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--ink-2)">{{ runs }}</span>تنفيذ خلال ٣٠ يوماً</span>
+          <span onClick="{{ onOpenFn }}" title="تغيير الدالة" style="display:inline-flex;align-items:center;min-height:26px;max-width:210px;padding:0 10px;border-radius:999px;background:var(--pri-s);border:1px solid var(--pri-sb);color:var(--pri-d);font-size:11px;font-weight:600;cursor:pointer;overflow:hidden;text-overflow:ellipsis" style-hover="background:var(--pri-sb)">{{ fnName }}</span>
+        </span>
+      </div>
+    </div>
+
+    <sc-if value="{{ isSetup }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;min-height:0;display:grid;grid-template-columns:{{ cols }};grid-template-rows:{{ rows }};overflow:{{ gridOverflow }}">
+
+        <div class="ce-sb" style="grid-row:{{ c1Row }};min-height:0;overflow:auto;background:var(--surface);border-inline-end:1px solid var(--border);display:flex;flex-direction:column">
+          <span style="position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--ink-2);letter-spacing:.02em">التعريف</span>
+          <div style="padding:14px;display:flex;flex-direction:column;gap:14px">
+            <label style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-size:11px;font-weight:600;color:var(--ink-2)">الدالة المنفَّذة</span>
+              <span data-ce-fn="1" style="position:relative;display:flex;flex-direction:column;gap:6px">
+                <input type="text" value="{{ fnSearch }}" onInput="{{ onFnSearch }}" onFocus="{{ onFnFocus }}" placeholder="ابحث باسم الدالة أو المجموعة…" style="min-height:36px;padding:0 11px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);font-size:13px;color:var(--ink);outline:none" style-focus="border-color:var(--pri);background:var(--surface)" />
+                <sc-if value="{{ fnOpen }}" hint-placeholder-val="{{ false }}">
+                  <span class="ce-sb" style="position:absolute;top:calc(100% + 4px);inset-inline:0;z-index:6;display:flex;flex-direction:column;gap:3px;max-height:250px;overflow:auto;padding:5px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);box-shadow:0 12px 28px rgba(15,23,32,.16)">
+                    <sc-for list="{{ fnResults }}" as="r" hint-placeholder-count="5">
+                      <span onMouseDown="{{ r.onPick }}" style="display:flex;flex-direction:column;gap:2px;padding:7px 10px;border-radius:7px;background:{{ r.bg }};font-size:12px;font-weight:600;color:{{ r.fg }};cursor:pointer" style-hover="background:var(--sunken)">{{ r.name }}<span style="font-size:11px;font-weight:500;color:var(--ink-4)">{{ r.category }}</span></span>
+                    </sc-for>
+                    <sc-if value="{{ fnNoResults }}" hint-placeholder-val="{{ false }}"><span style="padding:9px;font-size:12px;color:var(--ink-4)">لا دوال مطابقة.</span></sc-if>
+                  </span>
+                </sc-if>
+              </span>
+              <sc-if value="{{ hasFnNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--ink-4);line-height:1.75">{{ fnNote }}</span></sc-if>
+            </label>
+
+            <sc-if value="{{ fnPaused }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;border-radius:8px;background:var(--wn-s);border:1px solid var(--wn-sb)"><span style="font-size:12px;font-weight:700;color:var(--wn-ix)">الدالة موقوفة في مركز الدوال</span><span style="font-size:11px;color:var(--wn-i);line-height:1.75">الأمر سيطابق النص لكن لن يُنفَّذ حتى تُفعَّل الدالة.</span></span>
+            </sc-if>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-size:11px;font-weight:600;color:var(--ink-2)">المرادفات</span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <sc-for list="{{ synonyms }}" as="s" hint-placeholder-count="2">
+                  <span style="display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:0 11px;border-radius:999px;background:var(--pri-s);border:1px solid var(--pri-sb);font-size:12px;font-weight:600;color:var(--pri-d);white-space:nowrap">{{ s.label }}<span onClick="{{ s.onRemove }}" title="إزالة" style="cursor:pointer;font-size:14px;line-height:1">×</span></span>
+                </sc-for>
+                <input type="text" value="{{ synDraft }}" onInput="{{ onSynInput }}" onKeyDown="{{ onSynKey }}" placeholder="أضف مرادفاً ثم Enter" style="min-height:30px;min-width:170px;padding:0 12px;border-radius:999px;border:1px dashed var(--border-2);background:transparent;font-size:12px;color:var(--ink);outline:none" style-focus="border-style:solid;border-color:var(--pri)" />
+              </div>
+              <span style="font-size:11px;color:var(--ink-3);line-height:1.75">أي نص وارد يطابق الأمر أو أحد مرادفاته ينفّذ الدالة مباشرة.</span>
+            </div>
+
+            <sc-if value="{{ hasCodeSuggestions }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-size:11px;color:var(--ink-4)">أوامر مقترحة من الدالة — اضغط للاستخدام:</span>
+                <span style="display:flex;gap:6px;flex-wrap:wrap">
+                  <sc-for list="{{ codeSuggestions }}" as="s" hint-placeholder-count="2">
+                    <span onClick="{{ s.onPick }}" style="display:inline-flex;align-items:center;min-height:30px;padding:0 12px;border-radius:999px;background:var(--sunken);border:1px solid var(--border-2);color:var(--ink-2);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap" style-hover="background:var(--pri-s);border-color:var(--pri-sb);color:var(--pri-d)">{{ s.label }}</span>
+                  </sc-for>
+                </span>
+              </div>
+            </sc-if>
+
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font-size:11px;font-weight:600;color:var(--ink-2)">أنواع الجهات المسموح لها</span>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <sc-for list="{{ partyTypes }}" as="p" hint-placeholder-count="4">
+                  <span onClick="{{ p.onToggle }}" style="display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:0 11px;border-radius:8px;border:1px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">{{ p.label }}<span style="font-size:13px;line-height:1">{{ p.mark }}</span></span>
+                </sc-for>
+              </div>
+              <sc-if value="{{ noParty }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--dg-i);line-height:1.75">لا نوع مسموح — الأمر لن ينفّذ لأي جهة.</span></sc-if>
+              <span style="font-size:11px;color:var(--ink-4);line-height:1.7">القوائم البيضاء والسوداء لكل نوع في تبويب «الصلاحيات».</span>
+            </div>
+
+            <label style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);cursor:pointer">
+              <span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:12px;font-weight:600;color:var(--ink)">يشترط ربط الجهة بحساب</span><span style="font-size:11px;color:var(--ink-4);line-height:1.7">الرسائل من أرقام غير مربوطة تُرفض بردّ توضيحي.</span></span>
+              <input type="checkbox" checked="{{ requiresLink }}" onChange="{{ onToggleLink }}" style="width:17px;height:17px;accent-color:var(--pri);cursor:pointer;margin:0;flex:none" />
+            </label>
+          </div>
+        </div>
+
+        <div class="ce-sb" style="min-height:0;overflow:auto;background:var(--surface);border-inline-end:1px solid var(--border);display:flex;flex-direction:column">
+          <span style="position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border)">
+            <span style="font-size:11px;font-weight:700;color:var(--ink-2);letter-spacing:.02em">المتغيرات والخيارات</span>
+            <span onClick="{{ onResetFn }}" style="font-size:11px;font-weight:600;color:var(--pri-d);cursor:pointer;flex:none">استعادة افتراضيات الدالة</span>
+          </span>
+          <div style="padding:14px;display:flex;flex-direction:column;gap:14px">
+            <sc-if value="{{ hasVars }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-size:11px;font-weight:600;color:var(--ink-2)">المتغيرات الممكن تمريرها في نص الأمر</span>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <sc-for list="{{ vars }}" as="v" hint-placeholder-count="3">
+                    <div style="display:flex;flex-direction:column;gap:5px;padding:10px 12px;border-radius:8px;background:var(--bg);border:1px solid {{ v.bd }}">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                        <span style="display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap">
+                          <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--ink)">{{ v.token }}</span>
+                          <span style="font-size:11px;color:var(--ink-3)">{{ v.label }}</span>
+                          <span dir="ltr" style="padding:2px 8px;border-radius:999px;background:var(--sunken);border:1px solid var(--border);color:var(--ink-3);font-size:10px;font-weight:600;font-family:'IBM Plex Mono',monospace">{{ v.typeTag }}</span>
+                          <sc-if value="{{ v.required }}" hint-placeholder-val="{{ false }}"><span style="padding:2px 8px;border-radius:999px;background:var(--wn-s);border:1px solid var(--wn-sb);color:var(--wn-ix);font-size:10px;font-weight:700;white-space:nowrap">إلزامي {{ v.requiredFor }}</span></sc-if>
+                        </span>
+                        <input type="checkbox" checked="{{ v.on }}" onChange="{{ v.onToggle }}" title="تمكين المتغير في هذا الأمر" style="width:16px;height:16px;accent-color:var(--pri);cursor:pointer;margin:0;flex:none" />
+                      </div>
+                      <sc-if value="{{ v.hasDetails }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--ink-4);line-height:1.8">{{ v.details }}</span></sc-if>
+                      <sc-if value="{{ v.hasExample }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--pri-d)">{{ v.example }}</span></sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ hasSettings }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <span style="font-size:11px;font-weight:600;color:var(--ink-2)">خيارات الدالة في هذا الأمر</span>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <sc-for list="{{ settings }}" as="g" hint-placeholder-count="3">
+                    <div style="display:flex;flex-direction:column;gap:5px;padding:10px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border)">
+                      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                        <span style="display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap"><span style="font-size:12px;font-weight:600;color:var(--ink)">{{ g.label }}</span><span style="padding:2px 8px;border-radius:999px;background:var(--sunken);border:1px solid var(--border);color:var(--ink-3);font-size:10px;font-weight:600">{{ g.typeLabel }}</span></span>
+                        <span style="flex:none;display:flex;align-items:center;gap:8px">
+                          <sc-if value="{{ g.isCheck }}" hint-placeholder-val="{{ true }}">
+                            <input type="checkbox" checked="{{ g.checked }}" onChange="{{ g.onToggle }}" style="width:17px;height:17px;accent-color:var(--pri);cursor:pointer;margin:0" />
+                          </sc-if>
+                          <sc-if value="{{ g.isNumber }}" hint-placeholder-val="{{ false }}">
+                            <input type="number" value="{{ g.value }}" onInput="{{ g.onInput }}" style="width:82px;min-height:34px;padding:0 9px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:12px" />
+                          </sc-if>
+                          <sc-if value="{{ g.isSelect }}" hint-placeholder-val="{{ false }}">
+                            <select value="{{ g.value }}" onChange="{{ g.onInput }}" style="min-height:34px;padding-inline-start:9px;padding-inline-end:26px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:12px">
+                              <sc-for list="{{ g.choices }}" as="c" hint-placeholder-count="3"><option value="{{ c.v }}">{{ c.l }}</option></sc-for>
+                            </select>
+                          </sc-if>
+                          <sc-if value="{{ g.isText }}" hint-placeholder-val="{{ false }}">
+                            <input type="text" value="{{ g.value }}" onInput="{{ g.onInput }}" style="width:150px;min-height:34px;padding:0 9px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:12px" />
+                          </sc-if>
+                        </span>
+                      </div>
+                      <span style="font-size:11px;color:var(--ink-4);line-height:1.8">{{ g.note }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ fnEmpty }}" hint-placeholder-val="{{ false }}">
+              <span style="padding:14px;border-radius:8px;background:var(--bg);border:1px dashed var(--border-2);font-size:12px;color:var(--ink-4);line-height:1.9">اختر دالة من عمود التعريف لتظهر متغيراتها وخياراتها ومخرجاتها.</span>
+            </sc-if>
+          </div>
+        </div>
+
+        <div class="ce-sb" style="min-height:0;overflow:auto;background:var(--bg);display:flex;flex-direction:column">
+          <span style="position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--border)">
+            <span style="font-size:11px;font-weight:700;color:var(--ink-2);letter-spacing:.02em">مخرجات هذا الأمر</span>
+            <span onClick="{{ onResetOuts }}" style="font-size:11px;font-weight:600;color:var(--pri-d);cursor:pointer;flex:none">استعادة النصوص الافتراضية</span>
+          </span>
+          <div style="padding:14px;display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ outs }}" as="o" hint-placeholder-count="2">
+              <div style="display:flex;flex-direction:column;gap:7px;padding:12px;border-radius:8px;background:var(--surface);border:1px solid var(--border)">
+                <span style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+                  <span style="font-size:12px;font-weight:700;color:var(--ink)">{{ o.name }}</span>
+                  <span style="padding:2px 8px;border-radius:999px;background:var(--sunken);border:1px solid var(--border);color:var(--ink-3);font-size:10px;font-weight:600">{{ o.typeLabel }}</span>
+                </span>
+                <sc-if value="{{ o.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--ink-4);line-height:1.8">{{ o.note }}</span></sc-if>
+                <sc-if value="{{ o.isText }}" hint-placeholder-val="{{ true }}">
+                  <textarea value="{{ o.text }}" onChange="{{ o.onText }}" onInput="{{ o.onText }}" rows="{{ o.rows }}" style="padding:10px 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);color:var(--ink);font-size:12px;line-height:1.95;resize:vertical;outline:none" style-focus="border-color:var(--pri);background:var(--surface)"></textarea>
+                </sc-if>
+                <sc-if value="{{ o.isDoc }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:flex;flex-direction:column;gap:6px">
+                    <span style="font-size:11px;color:var(--ink-3)">قالب الطباعة</span>
+                    <input type="text" value="{{ o.text }}" onInput="{{ o.onText }}" dir="ltr" style="min-height:34px;padding:0 10px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);color:var(--ink-2);font-family:'IBM Plex Mono',monospace;font-size:11px;outline:none" />
+                    <span style="font-size:11px;color:var(--ink-3)">اسم الملف المرفق</span>
+                    <input type="text" value="{{ o.fileName }}" onInput="{{ o.onFileName }}" style="min-height:34px;padding:0 10px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);color:var(--ink);font-size:12px;outline:none" />
+                  </span>
+                </sc-if>
+                <sc-if value="{{ o.hasFields }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:flex;gap:5px;flex-wrap:wrap">
+                    <sc-for list="{{ o.fields }}" as="tk" hint-placeholder-count="3">
+                      <span onClick="{{ tk.onInsert }}" title="إضافة إلى النص" dir="ltr" style="padding:3px 8px;border-radius:6px;background:var(--pri-s);border:1px solid var(--pri-sb);color:var(--pri-d);font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer">{{ tk.label }}</span>
+                    </sc-for>
+                  </span>
+                </sc-if>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noOuts }}" hint-placeholder-val="{{ false }}">
+              <span style="padding:14px;border-radius:8px;background:var(--surface);border:1px dashed var(--border-2);font-size:12px;color:var(--ink-4);line-height:1.9">لا مخرجات معرّفة لهذه الدالة.</span>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPerms }}" hint-placeholder-val="{{ false }}">
+      <div class="ce-sb" style="flex:1;min-height:0;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:12px">
+        <sc-if value="{{ noParty }}" hint-placeholder-val="{{ false }}">
+          <span style="padding:14px;border-radius:8px;background:var(--surface);border:1px dashed var(--border-2);font-size:12px;color:var(--ink-4);line-height:1.9">لم تُسمح أي جهة بعد. اختر أنواع الجهات من تبويب «الإعداد» لتتحكّم في قوائمها هنا.</span>
+        </sc-if>
+        <sc-if value="{{ hasPermTabs }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <span style="display:flex;padding:3px;border-radius:8px;background:var(--sunken);border:1px solid var(--border);align-self:flex-start;gap:2px;flex-wrap:wrap">
+              <sc-for list="{{ permTabs }}" as="p" hint-placeholder-count="2">
+                <span onClick="{{ p.onTab }}" style="min-height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 12px;border-radius:7px;background:{{ p.tabBg }};color:{{ p.tabFg }};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">{{ p.label }}<span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-4)">{{ p.count }}</span></span>
+              </sc-for>
+            </span>
+
+            <div style="display:flex;flex-direction:column;gap:10px;padding:13px;border-radius:8px;background:var(--surface);border:1px solid var(--border)">
+              <span style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                <span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font-size:13px;font-weight:700;color:var(--ink)">{{ perm.title }}</span><span style="font-size:11px;color:var(--ink-4);line-height:1.7">{{ perm.note }}</span></span>
+                <label style="display:inline-flex;align-items:center;gap:8px;flex:none;cursor:pointer;font-size:11px;font-weight:600;color:var(--ink-2)">يشترط الربط<input type="checkbox" checked="{{ requiresLink }}" onChange="{{ onToggleLink }}" style="width:16px;height:16px;accent-color:var(--pri);cursor:pointer;margin:0" /></label>
+              </span>
+
+              <span style="display:flex;gap:6px;flex-wrap:wrap">
+                <sc-for list="{{ perm.modes }}" as="m" hint-placeholder-count="2">
+                  <span onClick="{{ m.onPick }}" style="display:inline-flex;align-items:center;min-height:34px;padding:0 12px;border-radius:8px;border:1px solid {{ m.bd }};background:{{ m.bg }};color:{{ m.fg }};font-size:12px;font-weight:600;cursor:pointer">{{ m.label }}</span>
+                </sc-for>
+              </span>
+
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;align-items:start">
+                <div data-ce-pick="g" style="display:flex;flex-direction:column;gap:7px;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border)">
+                  <span style="font-size:11px;font-weight:600;color:var(--ink-2)">{{ perm.groupsLabel }}</span>
+                  <span style="position:relative;display:flex;gap:6px;flex-wrap:wrap">
+                    <input type="text" value="{{ perm.gQuery }}" onInput="{{ perm.onGSearch }}" onFocus="{{ perm.onGFocus }}" placeholder="ابحث في مجموعات جهات الاتصال…" style="flex:1;min-width:170px;min-height:34px;padding:0 11px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:12px;outline:none" style-focus="border-color:var(--pri)" />
+                    <sc-if value="{{ perm.gOpen }}" hint-placeholder-val="{{ false }}">
+                      <span class="ce-sb" style="position:absolute;top:calc(100% + 4px);inset-inline:0;z-index:6;display:flex;flex-direction:column;gap:3px;max-height:190px;overflow:auto;padding:5px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);box-shadow:0 12px 28px rgba(15,23,32,.16)">
+                        <sc-for list="{{ perm.gResults }}" as="r" hint-placeholder-count="3">
+                          <span onMouseDown="{{ r.onPick }}" style="display:flex;align-items:center;min-height:32px;padding:0 9px;border-radius:7px;background:{{ r.bg }};font-size:12px;font-weight:600;color:var(--ink);cursor:pointer" style-hover="background:var(--sunken)">{{ r.label }}</span>
+                        </sc-for>
+                        <sc-if value="{{ perm.gNoResults }}" hint-placeholder-val="{{ false }}"><span style="padding:8px;font-size:11px;color:var(--ink-4)">لا مجموعات مطابقة.</span></sc-if>
+                      </span>
+                    </sc-if>
+                  </span>
+                  <span style="display:flex;gap:6px;flex-wrap:wrap">
+                    <sc-for list="{{ perm.groups }}" as="a" hint-placeholder-count="1">
+                      <span style="display:inline-flex;align-items:center;gap:7px;min-height:28px;padding:0 11px;border-radius:999px;background:{{ perm.chipBg }};border:1px solid {{ perm.chipBd }};color:{{ perm.chipFg }};font-size:11px;font-weight:600;white-space:nowrap">{{ a.label }}<span onClick="{{ a.onRemove }}" style="cursor:pointer;font-size:13px;line-height:1">×</span></span>
+                    </sc-for>
+                    <sc-if value="{{ perm.noGroups }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;color:var(--ink-4)">لا مجموعات مضافة.</span></sc-if>
+                  </span>
+                </div>
+
+                <div data-ce-pick="c" style="display:flex;flex-direction:column;gap:7px;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border)">
+                  <span style="font-size:11px;font-weight:600;color:var(--ink-2)">{{ perm.contactsLabel }}</span>
+                  <span style="position:relative;display:flex;gap:6px;flex-wrap:wrap">
+                    <input type="text" value="{{ perm.cQuery }}" onInput="{{ perm.onCSearch }}" onFocus="{{ perm.onCFocus }}" placeholder="ابحث بالاسم أو الرقم…" style="flex:1;min-width:170px;min-height:34px;padding:0 11px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:12px;outline:none" style-focus="border-color:var(--pri)" />
+                    <sc-if value="{{ perm.cOpen }}" hint-placeholder-val="{{ false }}">
+                      <span class="ce-sb" style="position:absolute;top:calc(100% + 4px);inset-inline:0;z-index:6;display:flex;flex-direction:column;gap:3px;max-height:190px;overflow:auto;padding:5px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);box-shadow:0 12px 28px rgba(15,23,32,.16)">
+                        <sc-for list="{{ perm.cResults }}" as="r" hint-placeholder-count="3">
+                          <span onMouseDown="{{ r.onPick }}" style="display:flex;flex-direction:column;gap:1px;padding:6px 9px;border-radius:7px;background:{{ r.bg }};font-size:12px;font-weight:600;color:var(--ink);cursor:pointer" style-hover="background:var(--sunken)">{{ r.label }}<span dir="ltr" style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;color:var(--ink-4)">{{ r.phone }}</span></span>
+                        </sc-for>
+                        <sc-if value="{{ perm.cNoResults }}" hint-placeholder-val="{{ false }}"><span style="padding:8px;font-size:11px;color:var(--ink-4)">لا جهات مطابقة.</span></sc-if>
+                      </span>
+                    </sc-if>
+                  </span>
+                  <span style="display:flex;gap:6px;flex-wrap:wrap">
+                    <sc-for list="{{ perm.contacts }}" as="a" hint-placeholder-count="1">
+                      <span style="display:inline-flex;align-items:center;gap:7px;min-height:28px;padding:0 11px;border-radius:999px;background:{{ perm.chipBg }};border:1px solid {{ perm.chipBd }};color:{{ perm.chipFg }};font-size:11px;font-weight:600;white-space:nowrap">{{ a.label }}<span onClick="{{ a.onRemove }}" style="cursor:pointer;font-size:13px;line-height:1">×</span></span>
+                    </sc-for>
+                    <sc-if value="{{ perm.noContacts }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;color:var(--ink-4)">لا جهات مضافة.</span></sc-if>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isPreview }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:grid;grid-template-columns:{{ pvCols }};overflow:{{ gridOverflow }}">
+        <div class="ce-sb" style="min-height:0;overflow:auto;background:var(--surface);border-inline-end:1px solid var(--border);display:flex;flex-direction:column">
+          <span style="position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--ink-2);letter-spacing:.02em">فرضيات المعاينة</span>
+          <div style="padding:14px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <span style="font-size:11px;font-weight:600;color:var(--ink-2)">نوع الجهة المرسِلة</span>
+              <span style="display:flex;gap:6px;flex-wrap:wrap">
+                <sc-for list="{{ pvTypes }}" as="p" hint-placeholder-count="3">
+                  <span onClick="{{ p.onPick }}" style="display:inline-flex;align-items:center;min-height:32px;padding:0 11px;border-radius:8px;border:1px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">{{ p.label }}</span>
+                </sc-for>
+              </span>
+              <sc-if value="{{ pvBlocked }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--wn-ix);line-height:1.75">هذا النوع غير مسموح له بالأمر — المعاينة تُظهر ردّ المنع.</span></sc-if>
+            </div>
+
+            <label style="display:flex;flex-direction:column;gap:6px">
+              <span style="font-size:11px;font-weight:600;color:var(--ink-2)">الجهة المرسِلة</span>
+              <span data-ce-pv="1" style="position:relative;display:flex;flex-direction:column;gap:6px">
+                <input type="text" value="{{ pvSearch }}" onInput="{{ onPvSearch }}" onFocus="{{ onPvFocus }}" placeholder="ابحث بالاسم أو الرقم…" style="min-height:36px;padding:0 11px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);font-size:13px;color:var(--ink);outline:none" style-focus="border-color:var(--pri);background:var(--surface)" />
+                <sc-if value="{{ pvOpen }}" hint-placeholder-val="{{ false }}">
+                  <span class="ce-sb" style="position:absolute;top:calc(100% + 4px);inset-inline:0;z-index:6;display:flex;flex-direction:column;gap:3px;max-height:230px;overflow:auto;padding:5px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);box-shadow:0 12px 28px rgba(15,23,32,.16)">
+                    <sc-for list="{{ pvContacts }}" as="c" hint-placeholder-count="4">
+                      <span onMouseDown="{{ c.onPick }}" style="display:flex;flex-direction:column;gap:2px;padding:7px 10px;border-radius:7px;background:{{ c.bg }};font-size:12px;font-weight:600;color:var(--ink);cursor:pointer" style-hover="background:var(--sunken)">{{ c.name }}<span dir="ltr" style="text-align:right;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:var(--ink-4)">{{ c.phone }}</span></span>
+                    </sc-for>
+                    <sc-if value="{{ pvNoContacts }}" hint-placeholder-val="{{ false }}"><span style="padding:9px;font-size:12px;color:var(--ink-4)">لا جهات مطابقة.</span></sc-if>
+                  </span>
+                </sc-if>
+                <sc-if value="{{ pvUnlinked }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--wn-ix);line-height:1.75">هذه الجهة غير مربوطة بحساب، والأمر يشترط الربط — المعاينة تُظهر ردّ الرفض.</span></sc-if>
+              </span>
+            </label>
+
+            <sc-if value="{{ pvHasAccounts }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:7px;padding:11px;border-radius:8px;background:var(--bg);border:1px solid var(--border)">
+                <span style="font-size:11px;color:var(--ink-4)">الحسابات المرتبطة بجهة الاتصال</span>
+                <span style="display:flex;gap:6px;flex-wrap:wrap">
+                  <sc-for list="{{ pvAccounts }}" as="a" hint-placeholder-count="2">
+                    <span onClick="{{ a.onPick }}" style="display:inline-flex;align-items:center;min-height:32px;padding:0 11px;border-radius:8px;border:1px solid {{ a.bd }};background:{{ a.bg }};color:{{ a.fg }};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">{{ a.label }}</span>
+                  </sc-for>
+                </span>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ hasPvVars }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <span style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <span style="font-size:11px;font-weight:600;color:var(--ink-2)">المتغيرات الممرَّرة في نص الأمر</span>
+                  <span onClick="{{ onPvFill }}" style="font-size:11px;font-weight:600;color:var(--pri-d);cursor:pointer;flex:none">تعبئة بالأمثلة</span>
+                </span>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <sc-for list="{{ pvVars }}" as="v" hint-placeholder-count="3">
+                    <span style="display:flex;flex-direction:column;gap:5px;padding:10px 12px;border-radius:8px;background:var(--bg);border:1px solid {{ v.bd }}">
+                      <span style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                        <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--ink)">{{ v.token }}</span>
+                        <sc-if value="{{ v.required }}" hint-placeholder-val="{{ false }}"><span style="padding:2px 8px;border-radius:999px;background:var(--wn-s);border:1px solid var(--wn-sb);color:var(--wn-ix);font-size:10px;font-weight:700;flex:none">إلزامي</span></sc-if>
+                      </span>
+                      <sc-if value="{{ v.isLink }}" hint-placeholder-val="{{ false }}">
+                        <select value="{{ v.value }}" onChange="{{ v.onInput }}" style="min-height:34px;padding-inline-start:9px;padding-inline-end:26px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:12px">
+                          <option value="">— اختر —</option>
+                          <sc-for list="{{ v.options }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+                        </select>
+                      </sc-if>
+                      <sc-if value="{{ v.isText }}" hint-placeholder-val="{{ true }}">
+                        <input type="text" value="{{ v.value }}" onInput="{{ v.onInput }}" placeholder="{{ v.placeholder }}" dir="ltr" style="min-height:34px;padding:0 10px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:12px;text-align:right;outline:none" style-focus="border-color:var(--pri)" />
+                      </sc-if>
+                      <span style="font-size:11px;color:var(--ink-4)">{{ v.label }}</span>
+                    </span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+
+        <div class="ce-sb" style="min-height:0;overflow:auto;background:var(--bg);border-inline-end:1px solid var(--border);display:flex;flex-direction:column">
+          <span style="position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--border)">
+            <span style="font-size:11px;font-weight:700;color:var(--ink-2);letter-spacing:.02em">خيارات ومخرجات الدالة</span>
+            <span onClick="{{ onResetAll }}" style="font-size:11px;font-weight:600;color:var(--pri-d);cursor:pointer;flex:none">استعادة الافتراضيات</span>
+          </span>
+          <div style="padding:14px;display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:11px;color:var(--ink-4);line-height:1.8">التعديل هنا يعدّل إعدادات الأمر نفسها — احفظ ليسري على الرسائل الواردة.</span>
+            <sc-for list="{{ settings }}" as="g" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:8px;background:var(--surface);border:1px solid var(--border)">
+                <span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:12px;font-weight:600;color:var(--ink)">{{ g.label }}</span><span style="font-size:11px;color:var(--ink-4);line-height:1.7">{{ g.note }}</span></span>
+                <span style="flex:none;display:flex;align-items:center;gap:8px">
+                  <sc-if value="{{ g.isCheck }}" hint-placeholder-val="{{ true }}">
+                    <input type="checkbox" checked="{{ g.checked }}" onChange="{{ g.onToggle }}" style="width:17px;height:17px;accent-color:var(--pri);cursor:pointer;margin:0" />
+                  </sc-if>
+                  <sc-if value="{{ g.isNumber }}" hint-placeholder-val="{{ false }}">
+                    <input type="number" value="{{ g.value }}" onInput="{{ g.onInput }}" style="width:82px;min-height:34px;padding:0 9px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:12px" />
+                  </sc-if>
+                  <sc-if value="{{ g.isSelect }}" hint-placeholder-val="{{ false }}">
+                    <select value="{{ g.value }}" onChange="{{ g.onInput }}" style="min-height:34px;padding-inline-start:9px;padding-inline-end:26px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);color:var(--ink);font-size:12px">
+                      <sc-for list="{{ g.choices }}" as="c" hint-placeholder-count="3"><option value="{{ c.v }}">{{ c.l }}</option></sc-for>
+                    </select>
+                  </sc-if>
+                  <sc-if value="{{ g.isText }}" hint-placeholder-val="{{ false }}">
+                    <input type="text" value="{{ g.value }}" onInput="{{ g.onInput }}" style="width:140px;min-height:34px;padding:0 9px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);color:var(--ink);font-size:12px" />
+                  </sc-if>
+                </span>
+              </div>
+            </sc-for>
+            <sc-for list="{{ outs }}" as="o" hint-placeholder-count="2">
+              <div style="display:flex;flex-direction:column;gap:7px;padding:12px;border-radius:8px;background:var(--surface);border:1px solid var(--border)">
+                <span style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+                  <span style="font-size:12px;font-weight:700;color:var(--ink)">{{ o.name }}</span>
+                  <span style="padding:2px 8px;border-radius:999px;background:var(--sunken);border:1px solid var(--border);color:var(--ink-3);font-size:10px;font-weight:600">{{ o.typeLabel }}</span>
+                </span>
+                <sc-if value="{{ o.isText }}" hint-placeholder-val="{{ true }}">
+                  <textarea value="{{ o.text }}" onChange="{{ o.onText }}" onInput="{{ o.onText }}" rows="{{ o.rows }}" style="padding:10px 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);color:var(--ink);font-size:12px;line-height:1.95;resize:vertical;outline:none" style-focus="border-color:var(--pri);background:var(--surface)"></textarea>
+                </sc-if>
+                <sc-if value="{{ o.isDoc }}" hint-placeholder-val="{{ false }}">
+                  <input type="text" value="{{ o.fileName }}" onInput="{{ o.onFileName }}" style="min-height:34px;padding:0 10px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);color:var(--ink);font-size:12px;outline:none" />
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div class="ce-sb" style="min-height:0;overflow:auto;background:var(--bg);display:flex;flex-direction:column">
+          <span style="position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--border)">
+            <span style="font-size:11px;font-weight:700;color:var(--ink-2);letter-spacing:.02em">النتيجة كما تصل العميل</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:var(--wn-s);border:1px solid var(--wn-sb);color:var(--wn-ix);font-size:10px;font-weight:600;flex:none;white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:var(--wn)"></span>محاكاة — بلا إرسال</span>
+          </span>
+          <div style="flex:1;min-height:320px;display:flex;padding:14px">
+            <dc-import name="Chat Thread" meta="{{ pvThread }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,100%"></dc-import>
+          </div>
+          <sc-if value="{{ pvHasMissing }}" hint-placeholder-val="{{ false }}">
+            <div style="margin:0 14px 14px;display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:8px;background:var(--wn-s);border:1px solid var(--wn-sb)">
+              <span style="font-size:12px;font-weight:700;color:var(--wn-ix)">لا توجد بيانات كافية لتنفيذ الدالة</span>
+              <span style="font-size:11px;color:var(--wn-i);line-height:1.85">يجب أن يحتوي نص الرسالة على: {{ pvMissing }}</span>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <div style="flex:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:var(--surface);border-top:1px solid var(--border)">
+      <button type="button" onClick="{{ onSave }}" style="min-height:36px;padding:0 16px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer">حفظ الأمر</button>
+      <button type="button" onClick="{{ onClose }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink-2);font-size:13px;font-weight:600;cursor:pointer" style-hover="background:var(--sunken)">إلغاء</button>
+      <span style="flex:1;min-width:80px;font-size:11px;color:var(--ink-4);line-height:1.7">{{ footHint }}</span>
+      <button type="button" onClick="{{ onDelete }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--dg-sb);background:var(--dg-s);color:var(--dg-i);font-size:13px;font-weight:600;cursor:pointer" style-hover="background:var(--dg-sb)">حذف الأمر</button>
+    </div>
+  </div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1300,&quot;height&quot;:820},&quot;open&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;command&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Command&quot;},&quot;functions&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Fn[]&quot;},&quot;partyTypes&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;{key:string,label:string}[]&quot;},&quot;onSave&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(draft) =&gt; void&quot;},&quot;onDelete&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;embed&quot;:{&quot;editor&quot;:null,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+// ── Command Editor: محرّر أمر كامل — الإعداد · الصلاحيات · المعاينة
+// props: open, command, functions, partyTypes:[{key,label}], onSave(draft), onDelete(), onClose(), theme
+const DEMO_CMD = { id: 'demo', code: 'كشف', synonyms: ['كشف حسابي', 'رصيدي'], fn: 'كشف حساب عميل', status: 'active', runs30d: 412, allowedTypes: ['customer'], requiresLink: true };
+
+class Component extends DCLogic {
+  state = { draft: null, forId: null, tab: 'setup', fnSearch: null, fnOpen: false, synDraft: '', width: 1280,
+    permTab: null, pick: {}, pvType: null, pvId: null, pvAcc: null, pvSearch: null, pvOpen: false, pvVals: {} };
+  componentDidMount() {
+    this.onR = () => this.setState({ width: window.innerWidth });
+    window.addEventListener('resize', this.onR); this.onR();
+    this.onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      const S = this.state, anyPick = Object.keys(S.pick).some((k) => S.pick[k] && S.pick[k].open);
+      if (S.pvOpen) { e.preventDefault(); this.setState({ pvOpen: false }); return; }
+      if (S.fnOpen) { e.preventDefault(); this.setState({ fnOpen: false }); return; }
+      if (anyPick) { e.preventDefault(); this.setState({ pick: {} }); return; }
+      if (this.props.open !== false) { e.preventDefault(); this.close(); }
+    };
+    this.onDoc = (e) => {
+      const S = this.state;
+      if (S.fnOpen && !e.target.closest('[data-ce-fn]')) this.setState({ fnOpen: false });
+      if (S.pvOpen && !e.target.closest('[data-ce-pv]')) this.setState({ pvOpen: false });
+      if (!e.target.closest('[data-ce-pick]') && Object.keys(S.pick).some((k) => S.pick[k] && S.pick[k].open)) this.setState({ pick: {} });
+    };
+    document.addEventListener('keydown', this.onKey); document.addEventListener('mousedown', this.onDoc);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onR); document.removeEventListener('keydown', this.onKey); document.removeEventListener('mousedown', this.onDoc); }
+
+  cmd() { return this.props.command || DEMO_CMD; }
+  fns() { return this.props.functions || (window.HubData ? window.HubData.functions : []) || []; }
+  seed(c) {
+    return {
+      code: c.code || '', synonyms: (c.synonyms || []).slice(), fn: c.fn || '', status: c.status || 'inactive',
+      allowedTypes: (c.allowedTypes || []).slice(), requiresLink: !!c.requiresLink,
+      varsOff: { ...(c.varsOff || {}) }, opts: { ...(c.opts || {}) }, outs: { ...(c.outs || {}) }, files: { ...(c.files || {}) },
+      access: JSON.parse(JSON.stringify(c.access || {})),
+    };
+  }
+  draft() {
+    const c = this.cmd(), S = this.state;
+    if (!S.draft || S.forId !== c.id) { const d = this.seed(c); this.clean = JSON.stringify(d); this.state.draft = d; this.state.forId = c.id; return d; }
+    return S.draft;
+  }
+  patch(p) { this.setState({ draft: { ...this.draft(), ...p } }); }
+  pickState(k) { return this.state.pick[k] || { q: '', open: false }; }
+  setPick(k, v) { this.setState({ pick: { ...this.state.pick, [k]: { ...this.pickState(k), ...v } } }); }
+  close() { this.setState({ draft: null, forId: null, tab: 'setup', fnOpen: false, pvOpen: false, synDraft: '', pick: {} }); if (this.props.onClose) this.props.onClose(); }
+
+  renderVals() {
+    const S = this.state, P = this.props, c = this.cmd(), d = this.draft();
+    const D = window.HubData, fns = this.fns();
+    const fmt = (D && D.fmt) || { n: (x) => String(x), money: (x) => String(x), date: () => '' };
+    const theme = P.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light';
+    const narrow = S.width < 1080, mobile = S.width < 760;
+    const fn = fns.find((x) => x.name === d.fn) || null;
+    const PT = P.partyTypes || Object.keys((D && D.PARTY_TYPES) || {}).map((k) => ({ key: k, label: D.PARTY_TYPES[k].ar }));
+    const allowed = (k) => d.allowedTypes.includes(k);
+    const allContacts = (D && D.contacts ? D.contacts : []).filter((x) => x.phone && !String(x.phone).includes('@g.us'));
+    const groups = (D && D.contactGroups) || [];
+
+    /* ——— الدالة ——— */
+    const q = (S.fnSearch === null ? (d.fn || '') : S.fnSearch).trim();
+    const matches = fns.filter((x) => !q || x.name.includes(q) || (x.category || '').includes(q)).slice(0, 40);
+
+    /* ——— المتغيرات والخيارات والمخرجات (مشتركة بين الإعداد والمعاينة) ——— */
+    const vars = (fn ? fn.inputs || [] : []).map((v) => {
+      const enabled = !d.varsOff[v.token];
+      return {
+        token: v.token, label: v.label || '', typeTag: v.fieldType || (v.linkTo ? 'link' : 'text'),
+        required: !!v.requiredFor, requiredFor: v.requiredFor || '',
+        hasDetails: !!v.details, details: v.details || '', hasExample: !!v.example, example: v.example || '',
+        on: enabled, bd: enabled ? 'var(--border)' : 'var(--border-2)',
+        onToggle: () => this.patch({ varsOff: { ...d.varsOff, [v.token]: enabled } }),
+      };
+    });
+    const settings = (fn ? fn.settings || [] : []).map((g) => {
+      const raw = d.opts[g.key] !== undefined ? d.opts[g.key] : g.defaultValue;
+      const isCheck = g.fieldType === 'check';
+      return {
+        label: g.label, typeLabel: g.typeLabel || '', note: 'الافتراضي: ' + g.defaultValue + (g.notes ? ' — ' + g.notes : ''),
+        isCheck, isNumber: g.fieldType === 'number', isSelect: g.fieldType === 'select', isText: g.fieldType === 'text',
+        checked: isCheck ? (raw === true || raw === 'نعم') : false, value: isCheck ? '' : String(raw === undefined ? '' : raw),
+        choices: (g.choices || []).map((x) => ({ v: x, l: x })),
+        onToggle: () => this.patch({ opts: { ...d.opts, [g.key]: (raw === true || raw === 'نعم') ? 'لا' : 'نعم' } }),
+        onInput: (e) => this.patch({ opts: { ...d.opts, [g.key]: e.target.value } }),
+      };
+    });
+    const outs = (fn ? fn.options || [] : []).map((o) => {
+      const name = o.name || o.label || '—', isDoc = o.typeKey === 'document';
+      const base = o.defaultValue !== undefined ? o.defaultValue : (o.template || '');
+      const text = d.outs[name] !== undefined ? d.outs[name] : base;
+      const fileName = d.files[name] !== undefined ? d.files[name] : (o.fileName || '');
+      return {
+        name, typeLabel: o.type || (isDoc ? 'مستند' : 'نص'), hasNote: !!o.notes, note: o.notes || '',
+        isText: !isDoc, isDoc, text, fileName, rows: Math.min(7, Math.max(3, Math.ceil(String(text).length / 52))),
+        onText: (e) => this.patch({ outs: { ...d.outs, [name]: e.target.value } }),
+        onFileName: (e) => this.patch({ files: { ...d.files, [name]: e.target.value } }),
+        hasFields: !isDoc && (o.fields || []).length > 0,
+        fields: (o.fields || []).map((tk) => ({ label: tk, onInsert: () => this.patch({ outs: { ...d.outs, [name]: String(text) + ' ' + tk } }) })),
+      };
+    });
+
+    /* ——— الصلاحيات ——— */
+    const permKeys = PT.filter((p) => allowed(p.key)).map((p) => p.key);
+    const permKey = permKeys.includes(S.permTab) ? S.permTab : permKeys[0];
+    const accOf = (k) => Object.assign({ mode: 'allowAll', groups: [], contacts: [] }, d.access[k] || {});
+    const setAcc = (k, patch) => this.patch({ access: { ...d.access, [k]: { ...accOf(k), ...patch } } });
+    const pAcc = permKey ? accOf(permKey) : { mode: 'allowAll', groups: [], contacts: [] };
+    const denyAll = pAcc.mode === 'denyAll';
+    const listLabel = denyAll ? 'القائمة البيضاء' : 'القائمة السوداء';
+    const gKey = permKey + '-g', cKey = permKey + '-c';
+    const gPick = this.pickState(gKey), cPick = this.pickState(cKey);
+    const gMatches = groups.filter((g) => !pAcc.groups.includes(g.id) && (!gPick.q.trim() || g.name.includes(gPick.q.trim()))).slice(0, 20);
+    const cPool = allContacts.filter((x) => !x.type || x.type === permKey);
+    const cMatches = (cPool.length ? cPool : allContacts).filter((x) => !pAcc.contacts.includes(x.id) && (!cPick.q.trim() || (x.name || '').includes(cPick.q.trim()) || String(x.phone).includes(cPick.q.trim()))).slice(0, 20);
+    const permLabel = (PT.find((p) => p.key === permKey) || {}).label || '';
+    const perm = {
+      title: permLabel + ' — ' + listLabel,
+      note: denyAll ? 'الكل ممنوع؛ يُسمح فقط لمن في القائمة البيضاء أدناه.' : 'الكل مسموح؛ يُمنع فقط من في القائمة السوداء أدناه.',
+      modes: [
+        { key: 'allowAll', label: 'الكل مسموح — حدّد القائمة السوداء' },
+        { key: 'denyAll', label: 'الكل ممنوع — حدّد القائمة البيضاء' },
+      ].map((m) => {
+        const sel = pAcc.mode === m.key;
+        return { label: m.label, bd: sel ? 'var(--pri-sb)' : 'var(--border-2)', bg: sel ? 'var(--pri-s)' : 'var(--surface)', fg: sel ? 'var(--pri-d)' : 'var(--ink-3)',
+          onPick: () => setAcc(permKey, { mode: m.key }) };
+      }),
+      chipBg: denyAll ? 'var(--pri-s)' : 'var(--dg-s)', chipBd: denyAll ? 'var(--pri-sb)' : 'var(--dg-sb)', chipFg: denyAll ? 'var(--pri-d)' : 'var(--dg-i)',
+      groupsLabel: 'مجموعات جهات الاتصال — ' + listLabel,
+      contactsLabel: 'جهات اتصال محددة — ' + listLabel,
+      gQuery: gPick.q, gOpen: !!gPick.open, gNoResults: gMatches.length === 0,
+      onGSearch: (e) => this.setPick(gKey, { q: e.target.value, open: true }),
+      onGFocus: () => this.setPick(gKey, { open: true }),
+      gResults: gMatches.map((g) => ({ label: g.name, bg: 'transparent', onPick: () => { this.setPick(gKey, { q: '', open: false }); setAcc(permKey, { groups: [...pAcc.groups, g.id] }); } })),
+      groups: pAcc.groups.map((id) => ({ label: (groups.find((g) => g.id === id) || { name: id }).name, onRemove: () => setAcc(permKey, { groups: pAcc.groups.filter((x) => x !== id) }) })),
+      noGroups: pAcc.groups.length === 0,
+      cQuery: cPick.q, cOpen: !!cPick.open, cNoResults: cMatches.length === 0,
+      onCSearch: (e) => this.setPick(cKey, { q: e.target.value, open: true }),
+      onCFocus: () => this.setPick(cKey, { open: true }),
+      cResults: cMatches.map((x) => ({ label: x.name || 'بلا اسم', phone: x.phone, bg: 'transparent', onPick: () => { this.setPick(cKey, { q: '', open: false }); setAcc(permKey, { contacts: [...pAcc.contacts, x.id] }); } })),
+      contacts: pAcc.contacts.map((id) => ({ label: ((D && D.contactById ? D.contactById(id) : null) || { name: id }).name || id, onRemove: () => setAcc(permKey, { contacts: pAcc.contacts.filter((x) => x !== id) }) })),
+      noContacts: pAcc.contacts.length === 0,
+    };
+
+    /* ——— المعاينة ——— */
+    const pvType = S.pvType || d.allowedTypes[0] || (PT[0] || {}).key;
+    const typed = allContacts.filter((x) => !x.type || x.type === pvType);
+    const pvPool = typed.length ? typed : allContacts;
+    const pvC = pvPool.find((x) => x.id === S.pvId) || pvPool[0] || { name: 'جهة تجريبية', phone: '+966500000000', linked: true, balance: 10420, accounts: [] };
+    const pvAccList = pvC.accounts || [];
+    const pvAcc = pvAccList.includes(S.pvAcc) ? S.pvAcc : pvAccList[0];
+    const pvQ = (S.pvSearch === null ? '' : S.pvSearch).trim();
+    const pvMatches = pvPool.filter((x) => !pvQ || (x.name || '').includes(pvQ) || String(x.phone).includes(pvQ)).slice(0, 30);
+    const pvInputs = (fn ? fn.inputs || [] : []).filter((v) => !d.varsOff[v.token]);
+    const valOf = (v) => (S.pvVals[v.token] !== undefined ? S.pvVals[v.token] : '');
+    const missing = pvInputs.filter((v) => v.requiredFor && !String(valOf(v)).trim());
+    const blocked = !allowed(pvType);
+    const unlinked = !!d.requiresLink && pvC.linked === false;
+    const acc = accOf(pvType);
+    const listed = acc.contacts.includes(pvC.id);
+    const denied = blocked || (acc.mode === 'denyAll' ? !listed : listed);
+    const today = fmt.date(Date.now());
+    const nameForType = pvAcc || pvC.name;
+    const map = {
+      customer_name: nameForType, supplier_name: nameForType, employee_name: nameForType, contact_name: pvC.name, name: pvC.name,
+      company: (D && D.company ? D.company.name : ''), from_date: '01/01/2026', to_date: today, as_of_date: today, date: today,
+      balance: fmt.money(Math.abs(pvC.balance || 10420)) + ' ر.س', balance_in_words: 'عشرة آلاف وأربعمئة وعشرون ريالاً',
+      amount: fmt.money(4250) + ' ر.س', total_due: fmt.money(186400) + ' ر.س', total_debit: fmt.money(612000) + ' ر.س', total_credit: fmt.money(34200) + ' ر.س',
+      invoice_no: 'INV-2026-0912', doc_no: 'INV-2026-0912', quote_no: '771', order_no: '2291', qty: '84', count: '12', total: fmt.money(38900) + ' ر.س',
+      item_name: 'شاشة 24 بوصة', status: 'قيد التجهيز', expected_date: '20/09/2026', valid_until: '30/09/2026',
+      cashboxes: 'الرئيسي ' + fmt.money(184320) + ' · الفرع ' + fmt.money(41870),
+      banks: 'الأهلي ' + fmt.money(96500) + ' · الراجحي ' + fmt.money(58230),
+      buckets: '٣٠ي ' + fmt.money(48200) + ' · ٦٠ي ' + fmt.money(31500) + ' · ٩٠ي+ ' + fmt.money(106700),
+    };
+    pvInputs.forEach((v) => { const raw = String(valOf(v)).replace(/^#/, ''); if (raw) map[String(v.token).replace(/^#/, '')] = raw; });
+    const fill = (t) => String(t || '').replace(/\{\{\s*([\w.]+)\s*\}\}/g, (m, p) => { const k = p.split('.').pop(); return map[k] !== undefined ? map[k] : m; });
+    const cmdText = [d.code].concat(pvInputs.map((v) => String(valOf(v)).trim()).filter(Boolean)).join(' ');
+    const stamp = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const textOuts = outs.filter((o) => o.isText), docOuts = outs.filter((o) => o.isDoc);
+    let replies;
+    if (denied) replies = [{ dir: 'out', text: 'هذا الأمر غير متاح لكم. للاستفسار تواصلوا مع قسم الحسابات.', at: stamp, tick: '✓✓', tone: 'warn' }];
+    else if (unlinked) replies = [{ dir: 'out', text: 'رقمكم غير مربوط بحساب لدينا. تواصلوا مع قسم المحاسبة لربط الرقم ثم أعيدوا المحاولة.', at: stamp, tick: '✓✓', tone: 'warn' }];
+    else if (missing.length) replies = [{ dir: 'out', text: 'لتنفيذ الأمر أرسلوه مع: ' + missing.map((v) => v.token).join(' و') + '\nمثال: ' + d.code + ' ' + missing.map((v) => v.example || v.token).join(' '), at: stamp, tick: '✓✓', tone: 'warn' }];
+    else replies = textOuts.slice(0, 3).map((o) => ({ dir: 'out', text: fill(o.text), at: stamp, tick: '✓✓' }))
+      .concat(docOuts.length ? [{ dir: 'out', text: '📎 ' + fill(docOuts[0].fileName || docOuts[0].name) + '.pdf', at: stamp, tick: '✓✓', tone: 'primary' }] : []);
+
+    const activeStatus = d.status === 'active';
+    const dirty = this.clean !== JSON.stringify(d);
+    const noParty = d.allowedTypes.length === 0;
+
+    return {
+      open: P.open !== false, theme, pad: mobile ? '0' : '22px',
+      code: d.code, onCode: (e) => this.patch({ code: e.target.value }),
+      dirty, runs: fmt.n(c.runs30d || 0), fnName: d.fn || 'بلا دالة',
+      onOpenFn: () => this.setState({ tab: 'setup', fnOpen: true, fnSearch: '' }),
+      st: activeStatus
+        ? { label: 'مفعّل', bd: 'var(--ok-sb)', bg: 'var(--ok-s)', fg: 'var(--ok-i)', track: 'var(--ok)', knob: '18px' }
+        : { label: 'موقوف', bd: 'var(--border-2)', bg: 'var(--surface)', fg: 'var(--ink-3)', track: 'var(--border-2)', knob: '3px' },
+      onToggleStatus: () => this.patch({ status: activeStatus ? 'inactive' : 'active' }),
+      onClose: () => this.close(),
+      tabs: [
+        { key: 'setup', label: 'الإعداد', hasCount: false },
+        { key: 'perms', label: 'الصلاحيات', hasCount: true, count: fmt.n(d.allowedTypes.length) },
+        { key: 'preview', label: 'المعاينة', hasCount: false },
+      ].map((t) => {
+        const sel = S.tab === t.key;
+        return { ...t, fg: sel ? 'var(--pri-d)' : 'var(--ink-3)', fw: sel ? 700 : 500, underline: sel ? 'var(--pri)' : 'transparent',
+          cBg: sel ? 'var(--pri-s)' : 'var(--sunken)', cFg: sel ? 'var(--pri-d)' : 'var(--ink-3)',
+          onPick: () => this.setState({ tab: t.key, fnOpen: false, pvOpen: false, pick: {} }) };
+      }),
+      isSetup: S.tab === 'setup', isPerms: S.tab === 'perms', isPreview: S.tab === 'preview',
+      cols: mobile ? 'minmax(0,1fr)' : (narrow ? 'minmax(0,340px) minmax(0,1fr)' : 'minmax(0,340px) minmax(0,1fr) minmax(0,1fr)'),
+      rows: mobile ? 'auto auto auto' : (narrow ? 'minmax(0,1fr) minmax(0,1fr)' : 'minmax(0,1fr)'),
+      gridOverflow: mobile ? 'auto' : 'hidden',
+      c1Row: narrow && !mobile ? 'span 2' : 'auto',
+      pvCols: mobile ? 'minmax(0,1fr)' : (narrow ? 'minmax(0,320px) minmax(0,1fr)' : 'minmax(0,320px) minmax(0,1fr) minmax(0,420px)'),
+
+      fnSearch: S.fnSearch === null ? d.fn : S.fnSearch,
+      onFnSearch: (e) => this.setState({ fnSearch: e.target.value, fnOpen: true }),
+      onFnFocus: () => this.setState({ fnOpen: true, fnSearch: '' }),
+      fnOpen: S.fnOpen, fnNoResults: matches.length === 0,
+      fnResults: matches.map((x) => ({
+        name: x.name, category: (x.category || '') + (x.status === 'active' ? '' : ' · موقوفة'),
+        bg: x.name === d.fn ? 'var(--pri-s)' : 'transparent', fg: x.name === d.fn ? 'var(--pri-d)' : 'var(--ink)',
+        onPick: () => { this.setState({ fnOpen: false, fnSearch: null, pvVals: {} }); this.patch({ fn: x.name, varsOff: {}, opts: {}, outs: {}, files: {} }); },
+      })),
+      hasFnNote: !!(fn && fn.whenToUse), fnNote: fn ? fn.whenToUse : '', fnPaused: !!(fn && fn.status !== 'active'),
+
+      synonyms: d.synonyms.map((s, i) => ({ label: s, onRemove: () => this.patch({ synonyms: d.synonyms.filter((_, j) => j !== i) }) })),
+      synDraft: S.synDraft,
+      onSynInput: (e) => this.setState({ synDraft: e.target.value }),
+      onSynKey: (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const v = String(S.synDraft || '').trim();
+        this.setState({ synDraft: '' });
+        if (v && !d.synonyms.includes(v)) this.patch({ synonyms: [...d.synonyms, v] });
+      },
+      hasCodeSuggestions: !!(fn && (fn.suggestedCommands || []).length),
+      codeSuggestions: (fn ? fn.suggestedCommands || [] : []).map((s) => ({ label: s, onPick: () => this.patch({ code: s }) })),
+      partyTypes: PT.map((p) => ({
+        label: p.label, mark: allowed(p.key) ? '✓' : '',
+        bd: allowed(p.key) ? 'var(--pri-sb)' : 'var(--border-2)', bg: allowed(p.key) ? 'var(--pri-s)' : 'var(--surface)', fg: allowed(p.key) ? 'var(--pri-d)' : 'var(--ink-3)',
+        onToggle: () => this.patch({ allowedTypes: allowed(p.key) ? d.allowedTypes.filter((k) => k !== p.key) : [...d.allowedTypes, p.key] }),
+      })),
+      noParty, requiresLink: d.requiresLink, onToggleLink: () => this.patch({ requiresLink: !d.requiresLink }),
+
+      hasVars: vars.length > 0, vars, hasSettings: settings.length > 0, settings,
+      fnEmpty: !fn, onResetFn: () => this.patch({ varsOff: {}, opts: {} }),
+      outs, noOuts: outs.length === 0, onResetOuts: () => this.patch({ outs: {}, files: {} }),
+      onResetAll: () => this.patch({ varsOff: {}, opts: {}, outs: {}, files: {} }),
+
+      hasPermTabs: permKeys.length > 0,
+      permTabs: PT.filter((p) => allowed(p.key)).map((p) => {
+        const a = accOf(p.key), sel = p.key === permKey;
+        return { label: p.label, count: fmt.n(a.groups.length + a.contacts.length),
+          tabBg: sel ? 'var(--surface)' : 'transparent', tabFg: sel ? 'var(--pri-d)' : 'var(--ink-3)',
+          onTab: () => this.setState({ permTab: p.key, pick: {} }) };
+      }),
+      perm,
+
+      pvTypes: PT.map((p) => {
+        const sel = p.key === pvType;
+        return { label: p.label + (allowed(p.key) ? '' : ' (غير مسموح)'),
+          bd: sel ? 'var(--pri-sb)' : 'var(--border-2)', bg: sel ? 'var(--pri-s)' : 'var(--surface)', fg: sel ? 'var(--pri-d)' : 'var(--ink-3)',
+          onPick: () => this.setState({ pvType: p.key, pvId: null, pvAcc: null, pvSearch: null }) };
+      }),
+      pvBlocked: blocked, pvUnlinked: unlinked,
+      pvSearch: S.pvSearch === null ? (pvC.name || pvC.phone) : S.pvSearch,
+      onPvSearch: (e) => this.setState({ pvSearch: e.target.value, pvOpen: true }),
+      onPvFocus: () => this.setState({ pvOpen: true, pvSearch: '' }),
+      pvOpen: S.pvOpen, pvNoContacts: pvMatches.length === 0,
+      pvContacts: pvMatches.map((x) => ({ name: x.name || 'بلا اسم', phone: x.phone, bg: x.id === pvC.id ? 'var(--pri-s)' : 'transparent', onPick: () => this.setState({ pvId: x.id, pvAcc: null, pvOpen: false, pvSearch: null }) })),
+      pvHasAccounts: pvAccList.length > 0,
+      pvAccounts: pvAccList.map((a) => {
+        const sel = a === pvAcc;
+        return { label: a, bd: sel ? 'var(--pri-sb)' : 'var(--border-2)', bg: sel ? 'var(--pri-s)' : 'var(--surface)', fg: sel ? 'var(--pri-d)' : 'var(--ink-3)', onPick: () => this.setState({ pvAcc: a }) };
+      }),
+      hasPvVars: pvInputs.length > 0,
+      pvVars: pvInputs.map((v) => {
+        const isLink = v.fieldType === 'link' || !!v.linkTo;
+        const opts = isLink
+          ? (pvAccList.length ? pvAccList : pvPool.slice(0, 15).map((x) => x.name || x.phone)).map((x) => ({ v: '#' + String(x).split(' — ')[0], l: x }))
+          : [];
+        return {
+          token: v.token, label: v.label || '', required: !!v.requiredFor, placeholder: v.example || v.token,
+          value: valOf(v), isLink, isText: !isLink, options: opts,
+          bd: v.requiredFor && !String(valOf(v)).trim() ? 'var(--wn-sb)' : 'var(--border)',
+          onInput: (e) => this.setState({ pvVals: { ...S.pvVals, [v.token]: e.target.value } }),
+        };
+      }),
+      onPvFill: () => {
+        const next = { ...S.pvVals };
+        pvInputs.forEach((v) => { if (v.example) next[v.token] = v.example; else if (v.linkTo && pvAcc) next[v.token] = '#' + String(pvAcc).split(' — ')[0]; });
+        this.setState({ pvVals: next });
+      },
+      pvHasMissing: missing.length > 0 && !denied && !unlinked,
+      pvMissing: missing.map((v) => v.token + (v.label ? ' (' + v.label + ')' : '')).join('، '),
+      pvThread: {
+        frame: 'plain',
+        header: { name: pvC.name || 'بلا اسم', sub: pvC.phone, subMono: true, initials: String(pvC.name || '؟').trim().slice(0, 2), badge: pvC.linked === false ? 'غير مربوط' : 'مربوط بحساب', badgeTone: pvC.linked === false ? 'warn' : 'ok' },
+        note: { text: 'الردّ مبني على نصوص المخرجات وخيارات الدالة، بقيم تجريبية.', tone: 'muted' },
+        dayLabel: 'اليوم',
+        bubbles: [{ dir: 'in', text: cmdText || d.code, at: stamp }].concat(replies),
+        composer: { show: false },
+      },
+
+      footHint: noParty
+        ? 'حدّد نوع جهة واحداً على الأقل قبل الحفظ.'
+        : (activeStatus
+          ? 'بعد الحفظ يعمل الأمر فوراً على الرسائل الواردة من: ' + PT.filter((p) => allowed(p.key)).map((p) => p.label).join('، ')
+          : 'الأمر موقوف؛ فعّله ليبدأ العمل على الرسائل الواردة.'),
+      onSave: () => {
+        const out = { ...d, code: String(d.code || '').trim() || c.code, synonyms: d.synonyms.slice() };
+        this.clean = JSON.stringify(d);
+        if (P.onSave) P.onSave(out);
+      },
+      onDelete: () => { if (P.onDelete) P.onDelete(); },
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+  .lv-host > .sc-host{flex:1 1 0%;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .lv-host > .sc-host > *{flex:1 1 0%;min-height:0;min-width:0}
+</style>
+</helmet>
+<div data-screen-label="نماذج الإشعارات" dir="rtl" style="flex:1;min-height:0;height:100%;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px;width:100%">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;flex:none">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <h1 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em">نماذج الإشعارات</h1>
+        <span style="font-size:12px;color:var(--ink-3)">كل نموذج يربط حدثاً في النظام برسالة تُرسل تلقائياً من جهاز محدد.</span>
+      </div>
+      <button type="button" onClick="{{ create }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer">+ نموذج جديد</button>
+    </div>
+
+    <dc-import name="Cards" meta="{{ cardsMeta }}" handlers="{{ handlers }}" loading="{{ loading }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,72px"></dc-import>
+
+    <div class="lv-host" style="flex:1;min-height:340px;display:flex;overflow:hidden">
+      <dc-import name="List View" loading="{{ loading }}" columns="{{ columns }}" rows="{{ rows }}" detail="{{ detail }}" on-open="{{ onOpen }}" bulk="{{ bulk }}" unit="نموذج إشعار" search-placeholder="اسم النموذج، نوع المستند، أو نصه…" search-keys="{{ searchKeys }}" export-name="notification-templates" default-sort="{{ defaultSort }}" pinned="{{ pinned }}" page-size="{{ 50 }}" density="compact" theme="{{ theme }}" hint-size="100%,100%"></dc-import>
+    </div>
+  </div>
+
+  <sc-if value="{{ editorOpen }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="Template Editor" meta="{{ editorMeta }}" on-save="{{ onSave }}" on-remove="{{ askRemove }}" on-close="{{ onClose }}" theme="{{ theme }}" hint-size="0,0"></dc-import>
+  </sc-if>
+  <dc-import name="Confirm Dialog" meta="{{ confirmMeta }}" handlers="{{ handlers }}" open-key="{{ confirmKey }}" on-close="{{ onConfirmClose }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:900},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+const ROUTE = '/templates';
+const CONDITIONS = [
+  { v: 'always', l: 'عند كل مستند', note: 'ترسل الرسالة لكل مستند من هذا النوع بمجرد اعتماده.' },
+  { v: 'approved', l: 'عند الاعتماد فقط', note: 'لا ترسل للمسودات؛ تنتظر اعتماد المستند.' },
+  { v: 'overdue', l: 'عند التأخر عن السداد', note: 'ترسل بعد تجاوز تاريخ الاستحقاق دون سداد.' },
+  { v: 'amount', l: 'عند تجاوز مبلغ معيّن', note: 'ترسل فقط إذا تجاوز مبلغ المستند الحد المحدد في الإعدادات.' },
+];
+const VARS = [
+  { token: '{no}', label: 'رقم المستند', sample: 'INV-2026-0912' },
+  { token: '{amt}', label: 'المبلغ', sample: '4,250.00' },
+  { token: '{name}', label: 'اسم الجهة', sample: 'مؤسسة المطلق للتجارة' },
+  { token: '{date}', label: 'تاريخ المستند', sample: '2026-09-16' },
+  { token: '{due}', label: 'تاريخ الاستحقاق', sample: '2026-09-30' },
+];
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, sel: null, confirmKey: null, pendingIds: [], fire: null, rev: 0, loading: true };
+  componentDidMount() { const w = () => { if (window.HubData && window.HubShared && window.UIKit) { this.setState({ ready: true }); setTimeout(() => this.setState({ loading: false }), 220); } else this.t = setTimeout(w, 40); }; w(); }
+  componentWillUnmount() { clearTimeout(this.t); }
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    const empty = { theme, loading: true, create: () => {}, handlers: {}, cardsMeta: { sections: [] }, columns: [], rows: [], detail: null, bulk: [], searchKeys: [], defaultSort: null, pinned: [], editorOpen: false, editorMeta: null, onSave: () => {}, askRemove: () => {}, onClose: () => {}, confirmMeta: { dialogs: [] }, confirmKey: null, onConfirmClose: () => {}, toastsMeta: { types: [] }, toastFire: null };
+    if (!D || !H || !S.ready) return empty;
+
+    const f = D.fmt, all = D.templates || [];
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+    const active = all.filter((t) => t.status === 'active');
+    const devOff = all.filter((t) => { const d = D.deviceById(t.deviceId); return d && d.status !== 'connected'; });
+    const usage = all.reduce((n, t) => n + (t.usage30d || 0), 0);
+    const sel = S.sel ? all.find((t) => t.id === S.sel) : null;
+    const sample = VARS.reduce((o, v) => { o[v.token.replace(/[{}]/g, '')] = v.sample; return o; }, {});
+
+    const handlers = {
+      openList: (docType) => go('/messages/outbound', docType ? { kind: 'docType', value: docType } : null),
+      openDevices: () => go('/devices'),
+      remove: () => {
+        const ids = S.pendingIds;
+        ids.forEach((id) => { const i = all.findIndex((t) => t.id === id); if (i !== -1) all.splice(i, 1); });
+        this.setState({ pendingIds: [], sel: null });
+        this.toast({ key: 'removed', title: 'حُذف ' + f.n(ids.length) + ' نموذج', text: 'لن تُرسل رسائل تلقائية لهذه الأحداث بعد الآن.' });
+      },
+      setStatus: (status) => {
+        const ids = S.pendingIds;
+        ids.forEach((id) => { const t = all.find((x) => x.id === id); if (t) { t.status = status; t.updatedAt = Date.now(); } });
+        this.setState({ pendingIds: [] });
+        this.toast({ key: status === 'active' ? 'activated' : 'paused', title: (status === 'active' ? 'فُعّل ' : 'أُوقف ') + f.n(ids.length) + ' نموذج' });
+        this.bump();
+      },
+    };
+
+    /* ——— المؤشرات (Cards) ——— */
+    const cardsMeta = { handlers, sections: [{ min: 200, mobileColumns: 2, cards: [
+      { kind: 'stat', icon: 'card', label: 'عدد النماذج', value: f.n(all.length), valueMono: true, note: [...new Set(all.map((t) => t.docType))].length + ' نوع مستند' },
+      { kind: 'stat', icon: 'check', tone: 'ok', label: 'المفعّلة', value: f.n(active.length), valueMono: true, note: f.n(all.length - active.length) + ' موقوفة' },
+      { kind: 'stat', icon: 'send', tone: 'info', label: 'الاستخدام (30ي)', value: f.n(usage), valueMono: true, note: 'رسالة أُرسلت عبر نموذج', action: 'openList' },
+      { kind: 'stat', icon: 'device', tone: devOff.length ? 'warn' : undefined, label: 'نماذج على جهاز غير متصل', value: f.n(devOff.length), valueMono: true, note: devOff.length ? 'رسائلها تبقى في الطابور' : 'كل الأجهزة المرتبطة متصلة', action: 'openDevices' },
+    ] }] };
+
+    /* ——— القائمة (List View) ——— */
+    const devCell = (id) => { const d = D.deviceById(id) || { name: '—', initials: '—', color: 'var(--ink-4)' }; return { text: d.name, initials: d.initials, avBg: d.color, avFg: '#fff', sort: d.name }; };
+    const stCell = (t) => t.status === 'active'
+      ? { text: 'مفعّل', bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', sort: 'a' }
+      : { text: 'موقوف', bg: 'var(--sunken)', fg: 'var(--ink-3)', dot: 'var(--ink-4)', sort: 'b' };
+    const columns = [
+      { key: 'name', label: 'النموذج', w: 230, weight: 600, group: true },
+      { key: 'docType', label: 'نوع المستند', w: 130, group: true, filter: true },
+      { key: 'status', label: 'الحالة', w: 110, kind: 'badge', group: true, filter: true },
+      { key: 'device', label: 'جهاز الإرسال', w: 160, kind: 'avatar', group: true, filter: true },
+      { key: 'vars', label: 'المتغيرات', w: 100, kind: 'num', align: 'end' },
+      { key: 'usage30d', label: 'الاستخدام (30ي)', w: 130, kind: 'num', align: 'end' },
+      { key: 'updatedAt', label: 'آخر تحديث', w: 120, kind: 'date' },
+    ];
+    const rows = all.map((t) => ({ id: t.id, name: t.name, docType: t.docType, status: stCell(t), device: devCell(t.deviceId), vars: t.vars || 0, usage30d: t.usage30d || 0, updatedAt: t.updatedAt || 0, _t: t }));
+
+    const detail = (r) => {
+      const t = r._t, d = D.deviceById(t.deviceId);
+      const cond = CONDITIONS.find((c) => c.v === (t.condition || 'approved')) || CONDITIONS[1];
+      return {
+        alert: d && d.status !== 'connected' ? { tone: 'warn', title: 'جهاز الإرسال «' + d.name + '» غير متصل', lines: ['الرسائل الناتجة عن هذا النموذج تبقى في الطابور حتى يعود الجهاز.'] } : null,
+        fields: [
+          { k: 'نوع المستند', v: t.docType }, { k: 'الحالة', v: t.status === 'active' ? 'مفعّل' : 'موقوف' },
+          { k: 'جهاز الإرسال', v: d ? d.name : '—' }, { k: 'شرط الإرسال', v: cond.l },
+          { k: 'عدد المتغيرات', v: f.n(t.vars || 0), mono: true }, { k: 'الاستخدام (30ي)', v: f.n(t.usage30d || 0), mono: true },
+          { k: 'آخر تحديث', v: f.date(t.updatedAt), mono: true },
+        ],
+        blocks: [{ label: 'نص الرسالة', text: t.body || '' }, { label: 'المعاينة بقيم مستند حقيقي', text: H.renderJinja(String(t.body || '').replace(/\{(\w+)\}/g, (m, k) => (sample[k] !== undefined ? sample[k] : m)), sample) }],
+        actions: [
+          { label: 'تحرير النموذج', onClick: () => this.setState({ sel: t.id }) },
+          { label: t.status === 'active' ? 'إيقاف النموذج' : 'تفعيل النموذج', onClick: () => { this.setState({ pendingIds: [t.id] }); handlers.setStatus(t.status === 'active' ? 'inactive' : 'active'); } },
+          { label: 'حذف النموذج', tone: 'danger', onClick: () => this.setState({ pendingIds: [t.id], confirmKey: 'remove' }) },
+        ],
+      };
+    };
+
+    const bulk = [
+      { label: 'تفعيل المحددة', onClick: (s) => { this.setState({ pendingIds: s.map((r) => r.id) }); handlers.setStatus('active'); } },
+      { label: 'إيقاف المحددة', onClick: (s) => { this.setState({ pendingIds: s.map((r) => r.id) }); handlers.setStatus('inactive'); } },
+      { label: 'حذف المحددة', onClick: (s) => this.setState({ pendingIds: s.map((r) => r.id), confirmKey: 'remove' }) },
+    ];
+
+    /* ——— المحرّر (Template Editor) ——— */
+    const editorMeta = sel ? {
+      name: sel.name, body: sel.body || '', syntax: 'braces',
+      hint: 'النص يُرسل تلقائياً عند تحقّق شرط الإرسال على مستند من النوع المحدد.',
+      fields: [
+        { key: 'docType', label: 'نوع المستند', type: 'select', value: sel.docType, options: (D.DOC_TYPES || []).map((v) => ({ v, l: v })) },
+        { key: 'deviceId', label: 'جهاز الإرسال', type: 'select', value: sel.deviceId, options: D.devices.map((d) => ({ v: d.id, l: d.name + (d.status === 'connected' ? '' : ' — غير متصل') })) },
+        { key: 'condition', label: 'شرط الإرسال', type: 'select', value: sel.condition || 'approved', options: CONDITIONS.map((c) => ({ v: c.v, l: c.l })) },
+        { key: 'status', label: 'الحالة', type: 'select', value: sel.status, options: [{ v: 'active', l: 'مفعّل' }, { v: 'inactive', l: 'موقوف' }] },
+      ],
+      vars: VARS, sample, saveLabel: 'حفظ النموذج', removeLabel: 'حذف',
+    } : null;
+
+    const nPending = S.pendingIds.length;
+    const pendingActive = S.pendingIds.map((id) => all.find((t) => t.id === id)).filter((t) => t && t.status === 'active').length;
+    const confirmMeta = { handlers, dialogs: [
+      { key: 'remove', tone: 'danger', icon: 'trash', title: 'حذف ' + f.n(nPending) + ' نموذج إشعار؟',
+        text: 'الحذف نهائي. الأحداث المرتبطة لن تُنتج رسائل بعد الآن، والرسائل المرسلة سابقاً تبقى في السجل كما هي.',
+        facts: [
+          { label: 'نماذج ستُحذف', value: f.n(nPending), mono: true, tone: 'danger' },
+          { label: 'منها مفعّلة الآن', value: f.n(pendingActive), mono: true, tone: pendingActive ? 'warn' : undefined },
+          { label: 'تبقى نماذج', value: f.n(Math.max(0, all.length - nPending)), mono: true },
+        ],
+        checks: pendingActive > 0 ? [{ key: 'sure', label: 'أفهم أن ' + f.n(pendingActive) + ' نموذجاً مفعّلاً سيتوقف عن الإرسال فوراً', required: true }] : [],
+        confirmLabel: 'احذف النماذج', action: 'remove' },
+    ] };
+
+    return {
+      theme, loading: S.loading, handlers,
+      create: () => {
+        const id = 'tpl-' + Date.now();
+        all.unshift({ id, name: 'نموذج إشعار جديد', docType: (D.DOC_TYPES || ['فاتورة بيع'])[0], status: 'inactive', deviceId: (D.devices[0] || {}).id, condition: 'approved', vars: 2, usage30d: 0, updatedAt: Date.now(), body: 'عميلنا العزيز {name}، صدرت {no} بمبلغ {amt} ر.س.' });
+        this.setState({ sel: id });
+      },
+      cardsMeta, columns, rows, detail, bulk,
+      searchKeys: ['name', 'docType', 'body'], defaultSort: { key: 'usage30d', dir: 'desc' }, pinned: ['name'],
+      onOpen: (r) => this.setState({ sel: r.id }),
+      editorOpen: !!sel, editorMeta,
+      onSave: (v) => {
+        if (!sel) return;
+        Object.assign(sel, { name: v.name, body: v.body, docType: v.docType, deviceId: v.deviceId, condition: v.condition, status: v.status, vars: (String(v.body || '').match(/\{\w+\}/g) || []).length, updatedAt: Date.now() });
+        this.toast({ key: 'saved', title: 'حُفظ النموذج «' + v.name + '»', text: v.status === 'active' ? 'سيعمل على كل ' + v.docType + ' يحقّق الشرط.' : 'النموذج موقوف؛ فعّله ليبدأ الإرسال.' });
+        this.bump();
+      },
+      askRemove: () => { if (sel) this.setState({ pendingIds: [sel.id], confirmKey: 'remove' }); },
+      onClose: () => this.setState({ sel: null }),
+      confirmMeta, confirmKey: S.confirmKey, onConfirmClose: () => this.setState({ confirmKey: null }),
+      toastsMeta: { position: 'bottom-start', duration: 3800, types: [{ key: 'saved', tone: 'ok', icon: 'check' }, { key: 'activated', tone: 'ok', icon: 'check' }, { key: 'paused', tone: 'warn', icon: 'alert' }, { key: 'removed', tone: 'danger', icon: 'x' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

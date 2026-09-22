@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--c-sent:#8FC0E4;--c-deliv:#2E7FD1;--c-read:#22A7C9;--c-queued:#EDA93E;--c-failed:#E0615A;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--c-sent:#6FA6D8;--c-deliv:#3E82CC;--c-read:#37A9C9;--c-queued:#D9A33A;--c-failed:#DE6F68;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+  .lv-host > .sc-host{flex:1 1 0%;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .lv-host > .sc-host > *{flex:1 1 0%;min-height:0;min-width:0}
+</style>
+</helmet>
+<div data-screen-label="جهات الاتصال" dir="rtl" style="flex:1;min-height:0;height:100%;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;flex:none">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <h1 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em">جهات الاتصال</h1>
+        <span style="font-size:12px;color:var(--ink-3)">ربط أرقام الواتساب بحسابات الأستاذ المساعد. غير المربوط لا يستقبل إشعارات آلية.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <sc-if value="{{ hasScope }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:8px;min-height:32px;padding:0 10px;border-radius:8px;background:var(--pri-s);color:var(--pri-d);font-size:12px;font-weight:600">{{ scopeLabel }}<span onClick="{{ clearScope }}" title="إزالة" style="cursor:pointer;font-size:14px;line-height:1">×</span></span></sc-if>
+        <button type="button" onClick="{{ create }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">+ جهة جديدة</button>
+      </div>
+    </div>
+
+    <dc-import name="Cards" meta="{{ cardsMeta }}" handlers="{{ handlers }}" loading="{{ loading }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,72px"></dc-import>
+
+    <div class="lv-host" style="flex:1;min-height:340px;display:flex;overflow:hidden">
+      <dc-import name="List View" loading="{{ loading }}" columns="{{ columns }}" rows="{{ rows }}" detail="{{ detail }}" bulk="{{ bulk }}" unit="جهة" search-placeholder="اسم أو رقم أو حساب…" search-keys="{{ searchKeys }}" export-name="contacts" default-sort="{{ defaultSort }}" page-size="{{ 50 }}" density="compact" theme="{{ theme }}" hint-size="100%,100%"></dc-import>
+    </div>
+  </div>
+
+  <dc-import name="Overlay Panel" panel="{{ panel }}" on-action="{{ onPanelAction }}" on-close="{{ onPanelClose }}" theme="{{ theme }}" embed="{{ true }}" hint-size="0,0"></dc-import>
+  <sc-if value="{{ sendOpen }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="Send Message Dialog" prefill="{{ sendPrefill }}" on-close="{{ onSendClose }}" theme="{{ theme }}" hint-size="0,0"></dc-import>
+  </sc-if>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:860},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;]},&quot;filter&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;{kind:'contact'|'match'|'group', value} | null&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+const ROUTE = '/contacts';
+const STATUS_TONE = { read: { bg: 'var(--nf-s)', fg: 'var(--nf-i)' }, delivered: { bg: 'var(--nf-s)', fg: 'var(--nf-i)' }, sent: { bg: 'var(--sunken)', fg: 'var(--ink-2)' }, warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)' }, danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)' }, muted: { bg: 'var(--sunken)', fg: 'var(--ink-3)' } };
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, tab: 'system', scope: null, sendTo: null, panel: null, editId: null, fire: null, rev: 0, loading: true };
+  componentDidMount() {
+    const w = () => { if (window.HubData && window.HubShared && window.UIKit) { const filter = this.props.filter || window.HubShared.takeFilter(ROUTE); this.setState({ ready: true, scope: filter || null }); setTimeout(() => this.setState({ loading: false }), 220); } else this.t = setTimeout(w, 40); };
+    w();
+  }
+  componentWillUnmount() { clearTimeout(this.t); }
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+
+  initials(c) { if (!c.name) return '؟'; const words = c.name.replace(/^(شركة|مؤسسة|مصنع|مجموعة)\s+/, '').trim().split(/\s+/); const strip = (w) => (w.length > 3 && w.slice(0, 2) === 'ال' ? w.slice(2) : w); const a = strip(words[0]) || words[0]; const b = words[1] ? strip(words[1]) : ''; return b ? a[0] + b[0] : a.slice(0, 2); }
+  matchOf(c) { return c.linked ? { text: 'مربوط', bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', sort: 'a' } : { text: 'غير مربوط', bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', sort: 'b' }; }
+
+  editPanel(c, D, draft) {
+    const isNew = !c.id;
+    const hasIn = !!(D.messages || []).find((m) => m.contactId === c.id && m.direction === 'in');
+    const accs = draft || (c.linked ? (c.accounts || []).map((a, i) => ({ name: a, type: (c.accountTypes || [])[i] || c.type })) : []);
+    const setAccs = (next) => this.setState({ draftAccs: next, panel: this.editPanel(c, D, next) });
+    return {
+      type: 'modal', width: '44%', title: isNew ? 'جهة اتصال جديدة' : 'تحرير «' + (c.name || c.phone) + '»', subtitle: isNew ? 'ستُضاف إلى جهات النظام مباشرة' : c.id.toUpperCase(), subtitleMono: !isNew,
+      badge: isNew ? undefined : { text: this.matchOf(c).text, tone: c.linked ? 'ok' : 'warn' },
+      content: { sections: [{ title: 'بيانات الجهة', cols: 2, fields: [
+        { key: 'name', label: 'الاسم', type: 'text', value: c.name || '', span: 2, placeholder: 'اسم الشركة أو الشخص' },
+        { key: 'phone', label: 'رقم الواتساب', type: 'text', value: c.phone || '', mono: true, required: true, placeholder: '+966…', hint: 'بالصيغة الدولية' },
+        { key: 'accountsList', label: 'الحسابات المرتبطة', type: 'list', span: 2, maxH: '200px',
+          rowCols: '0 minmax(0,1fr) 0 100px 24px', head: ['', 'الجهة', '', 'نوع الجهة', ''],
+          rowsData: accs.map((a, i) => ({ text: '', sub: a.name, tag: (D.PARTY_TYPES[a.type] || {}).ar || '—', tone: 'info', onRemove: () => setAccs(accs.filter((_, ix) => ix !== i)) })),
+          add: { placeholder: 'اسم الجهة في الأستاذ المساعد…', label: '+ إضافة', options: Object.keys(D.PARTY_TYPES).map((k) => ({ v: k, l: D.PARTY_TYPES[k].ar })), onAdd: (txt, ty) => setAccs(accs.concat([{ name: txt, type: ty }])) },
+          emptyText: 'لا حسابات مرتبطة بهذا الرقم.', hint: 'أضف الجهة ونوعها، ورقم واحد قد يخدم أكثر من جهة.' },
+        { key: 'active', label: 'الحالة', type: 'readonly', span: 2, value: c.active === false ? 'معطّل' : 'مفعّل', hint: 'تُعدّل من زر «تفعيل/تعطيل» في بطاقة الجهة، وتُسجّل مع الملاحظات. المعطّل لا تُرسل له أي رسالة.' },
+        { key: 'chat', label: 'محادثة قائمة', type: 'readonly', span: 2,
+          value: hasIn ? 'وارد مسجّل في النظام' : c.chatManual === true ? 'مؤكد يدوياً' : 'لا محادثة',
+          hint: hasIn ? 'لا يمكن تعديلها: يوجد وارد فعلي من هذا الرقم.' : 'تُعدّل من زر «تغيير حالة» في بطاقة الجهة، وتُسجّل مع الملاحظات.' },
+      ] }] },
+      actions: [
+        ...(isNew ? [] : [{ key: 'delete', label: 'حذف', variant: 'danger', align: 'start' }]),
+        { key: 'cancel', label: 'إلغاء', variant: 'secondary', close: true },
+        { key: 'save', label: isNew ? 'إضافة' : 'حفظ', variant: 'primary', requiresDirty: !isNew, close: true },
+      ],
+    };
+  }
+
+  chatPanel(c, D) {
+    const hasIn = !!(D.messages || []).find((m) => m.contactId === c.id && m.direction === 'in');
+    const cur = hasIn ? 'وارد مسجّل في النظام' : c.chatManual === true ? 'مؤكد يدوياً' : 'لا محادثة';
+    return {
+      type: 'modal', width: '40%', title: 'تغيير حالة المحادثة', subtitle: (c.name || c.phone) + ' · ' + c.phone,
+      badge: { text: cur, tone: hasIn ? 'ok' : c.chatManual ? 'info' : 'muted' },
+      content: { sections: [{ title: 'الحالة', cols: 1, fields: [
+        { key: 'cur', label: 'الحالة الحالية', type: 'readonly', value: cur },
+        { key: 'chat', label: 'الحالة الجديدة', type: 'segment', value: c.chatManual === true ? 'yes' : 'no', options: [{ v: 'yes', l: 'يوجد محادثة' }, { v: 'no', l: 'لا يوجد' }], hint: 'أكّد وجود محادثة إذا جرت قبل ربط النظام ولم تُسجّل فيه.' },
+        { key: 'note', label: 'الملاحظات', type: 'textarea', rows: 3, value: '', required: true, stacked: true, placeholder: 'سبب التغيير — مثال: محادثة سابقة مع العميل على جهاز المبيعات قبل الربط.', hint: 'إلزامية، وتُحفظ في سجل التغييرات مع اسم من قام بالتغيير.' },
+      ] }] },
+      actions: [
+        { key: 'cancel', label: 'إلغاء', variant: 'secondary', close: true },
+        { key: 'chatSave', label: 'حفظ التغيير', variant: 'primary', close: true },
+      ],
+    };
+  }
+
+  statusPanel(c) {
+    const on = c.active !== false;
+    return {
+      type: 'modal', width: '40%', title: on ? 'تعطيل الجهة' : 'تفعيل الجهة', subtitle: (c.name || c.phone) + ' · ' + c.phone,
+      badge: { text: on ? 'مفعّل' : 'معطّل', tone: on ? 'ok' : 'danger' },
+      content: { sections: [{ title: 'الحالة', cols: 1, fields: [
+        { key: 'cur', label: 'الحالة الحالية', type: 'readonly', value: on ? 'مفعّل' : 'معطّل' },
+        { key: 'active', label: 'الحالة الجديدة', type: 'readonly', value: on ? 'معطّل' : 'مفعّل', hint: on ? 'بعد الحفظ: لا تُرسل له أي رسالة — لا إشعارات آلية ولا حملات ولا إرسال يدوي.' : 'بعد الحفظ: يستقبل الإشعارات الآلية ويُستهدف في الحملات.' },
+        { key: 'note', label: 'الملاحظات', type: 'textarea', rows: 3, value: '', required: true, stacked: true, placeholder: 'سبب التفعيل أو التعطيل — مثال: طلب العميل إيقاف الإشعارات.', hint: 'إلزامية، وتُحفظ في سجل التغييرات مع اسم من قام بالتغيير.' },
+      ] }] },
+      actions: [
+        { key: 'cancel', label: 'إلغاء', variant: 'secondary', close: true },
+        { key: 'statusSave', label: 'حفظ التغيير', variant: 'primary', close: true },
+      ],
+    };
+  }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    if (!D || !H || !S.ready) return { theme, loading: true, sendOpen: false, sendPrefill: null, onSendClose: () => {}, openSend: () => {}, tabs: [], create: () => {}, hasScope: false, scopeLabel: '', clearScope: () => {}, cardsMeta: { sections: [] }, handlers: {}, columns: [], rows: [], detail: null, bulk: [], searchKeys: [], defaultSort: null, panel: null, onPanelAction: () => {}, onPanelClose: () => {}, toastsMeta: { types: [] }, toastFire: null };
+    const f = D.fmt;
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+    const all = D.contacts;
+    let base = all;
+    let scopeLabel = '';
+    const sc = S.scope;
+    if (sc && sc.kind === 'contact') { base = base.filter((c) => c.id === sc.value); const c = D.contactById(sc.value); scopeLabel = 'الجهة: ' + (c ? (c.name || c.phone) : sc.value); }
+    if (sc && sc.kind === 'match') { base = base.filter((c) => (sc.value === 'linked') === !!c.linked); scopeLabel = sc.value === 'linked' ? 'مربوط فقط' : 'غير مربوط فقط'; }
+    if (sc && sc.kind === 'group') { const g = (D.contactGroups || []).find((x) => x.id === sc.value); scopeLabel = 'المجموعة: ' + (g ? g.name : sc.value); }
+
+    const linked = all.filter((c) => c.linked).length, unlinkedAll = all.filter((c) => !c.linked).length;
+    const multi = all.filter((c) => c.linked && (c.accounts || []).length > 1).length;
+    const handlers = {
+      showLinked: () => this.setState({ scope: { kind: 'match', value: 'linked' } }),
+      showUnlinked: () => this.setState({ scope: { kind: 'match', value: 'unlinked' } }),
+      clearScope: () => this.setState({ scope: null }),
+    };
+    const cardsMeta = { handlers, sections: [{ min: 150, mobileColumns: 2, cards: [
+      { kind: 'stat', icon: 'check', tone: 'ok', label: 'مربوط', value: f.n(linked), valueMono: true, note: 'مربوط بحساب ويستقبل الإشعارات', action: 'showLinked' },
+      { kind: 'stat', icon: 'warn', tone: unlinkedAll ? 'warn' : undefined, label: 'غير مربوط', value: f.n(unlinkedAll), valueMono: true, note: 'بلا حساب في الأستاذ المساعد', action: 'showUnlinked' },
+      { kind: 'stat', icon: 'user', label: 'مرتبط بأكثر من حساب', value: f.n(multi), valueMono: true, note: 'رقم واحد يخدم عميلين أو أكثر', action: 'clearScope' },
+      { kind: 'stat', icon: 'chart', tone: 'info', label: 'نسبة التغطية', value: Math.round((linked / Math.max(1, all.length)) * 100) + '%', valueMono: true, note: 'من الجهات جاهزة للإشعارات', action: 'clearScope' },
+    ] }] };
+
+    const columns = [
+      { key: 'contact', label: 'الجهة', w: 230, kind: 'avatar' },
+      { key: 'phone', label: 'الرقم', w: 140, kind: 'mono' },
+      { key: 'type', label: 'النوع', w: 110, group: true, filter: true },
+      { key: 'match', label: 'حالة الربط', w: 130, kind: 'badge', group: true, filter: true },
+      { key: 'nAccounts', label: 'عدد الحسابات المرتبطة', w: 150, kind: 'num', align: 'end' },
+      { key: 'accounts', label: 'الحسابات المرتبطة', w: 240 },
+      { key: 'active', label: 'الحالة', w: 110, kind: 'badge', group: true, filter: true },
+      { key: 'chat', label: 'محادثة قائمة', w: 140, kind: 'badge', group: true, filter: true },
+      { key: 'last', label: 'آخر رسالة', w: 140, kind: 'time' },
+      { key: 'since', label: 'منذ', w: 110 },
+    ];
+    const inSet = new Set(D.messages.filter((m) => m.direction === 'in').map((m) => m.contactId));
+    const rows = base.map((c) => { const mm = this.matchOf(c); const chatOn = inSet.has(c.id) || c.chatManual === true; const nAcc = c.linked ? (c.accounts || []).length : 0; const lm = D.messages.find((x) => x.contactId === c.id); const pt = D.PARTY_TYPES[c.type] || { ar: '—', color: 'var(--ink-4)' }; return { id: c.id, contact: { text: c.name || 'بلا اسم — من دليل الجهاز', initials: this.initials(c), avBg: c.linked ? 'var(--pri-s)' : 'var(--sunken)', avFg: c.linked ? 'var(--pri-d)' : 'var(--ink-3)', sort: c.name || 'ي' }, phone: c.phone, type: { text: pt.ar, color: pt.color, weight: 600 }, match: mm, chat: inSet.has(c.id) ? { text: 'وارد مسجّل', bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', sort: 'a' } : c.chatManual === true ? { text: 'مؤكد يدوياً', bg: 'var(--pri-s)', fg: 'var(--pri-d)', dot: 'var(--pri)', sort: 'b' } : { text: 'لا محادثة', bg: 'var(--sunken)', fg: 'var(--ink-3)', dot: 'var(--ink-4)', sort: 'c' }, active: c.active === false ? { text: 'معطّل', bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--dg)', sort: 'b' } : { text: 'مفعّل', bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', sort: 'a' }, nAccounts: { value: nAcc, text: nAcc ? f.n(nAcc) : '0', color: nAcc > 1 ? 'var(--pri-d)' : nAcc ? undefined : 'var(--ink-4)', weight: nAcc > 1 ? 600 : 400 }, accounts: nAcc ? c.accounts.join(' · ') : '—', last: lm ? lm.ts : { text: '—', color: 'var(--ink-4)', sort: -1 }, since: { text: lm ? f.ago(lm.ts) : '—', sort: lm ? -lm.ts : 0, color: 'var(--ink-3)' }, _c: c }; });
+
+    const detail = (r) => {
+      const c = r._c, allM = D.messages.filter((m) => m.contactId === c.id);
+      const msgs = allM.filter((m) => m.direction !== 'in'), inMsgs = allM.filter((m) => m.direction === 'in');
+      const accTypes = c.accountTypes || [], accs = c.linked ? (c.accounts || []) : [];
+      return {
+        title: c.name || 'بلا اسم — من دليل الجهاز', sub: c.phone,
+        alert: c.active === false
+          ? { tone: 'danger', title: 'الجهة معطّلة', lines: ['لا تُرسل لها أي رسالة: لا إشعارات آلية ولا حملات ولا إرسال يدوي. فعّلها من زر «تفعيل» مع ملاحظة السبب.'] }
+          : c.linked ? null : { tone: 'warn', title: 'الرقم غير مربوط بحساب', lines: ['الإشعارات الآلية لا تُرسل، والأوامر التي تتطلب ربطاً تُرفض. اربطه بحساب في الأستاذ المساعد ليعمل كل شيء.'] },
+        fields: [
+          { k: 'عدد الحسابات المرتبطة', v: f.n(accs.length), mono: true },
+          { k: 'رسائل مرسلة', v: f.n(msgs.length) + (msgs.length ? ' · آخرها ' + f.ago(msgs[0].ts) : ''), mono: true },
+          { k: 'رسائل واردة', v: f.n(inMsgs.length) + (inMsgs.length ? ' · آخرها ' + f.ago(inMsgs[0].ts) : ''), mono: true },
+          { k: 'الحالة', v: c.active === false ? 'معطّل' : 'مفعّل', color: c.active === false ? 'var(--dg-i)' : 'var(--ok-i)' },
+        ],
+        blocks: [...(accs.length ? [{ label: 'الحسابات المرتبطة', list: accs.map((a, i) => ({ text: a, badge: (D.PARTY_TYPES[accTypes[i] || c.type] || {}).ar || '—', badgeTone: 'info' })) }] : []), ...((c.activeLog || []).length ? [{ label: 'سجل التفعيل والتعطيل', list: c.activeLog.map((L) => ({ text: L.to ? 'تفعيل' : 'تعطيل', sub: L.note, subMono: false, badge: L.by, badgeTone: 'muted' })) }] : []), ...((c.chatLog || []).length ? [{ label: 'سجل حالة المحادثة', list: c.chatLog.map((L) => ({ text: L.to ? 'يوجد محادثة' : 'لا يوجد', sub: L.note, subMono: false, badge: L.by, badgeTone: 'muted' })) }] : []), ...(msgs.length ? [{ label: 'آخر الرسائل', text: msgs.slice(0, 4).map((m) => m.docType + ' · ' + m.docNo + ' — ' + D.STATUS[m.status].ar + ' · ' + f.date(m.ts) + ' ' + f.time(m.ts)).join('\n') }] : [])],
+        actions: [
+          ...(c.linked ? [] : [{ label: 'اربطه بحساب', tone: 'primary', onClick: () => { c.linked = true; D.logActivity('رُبط رقم ' + c.phone + ' بحساب «' + (c.name || c.phone) + '»', 'primary'); this.toast({ key: 'linked', title: 'رُبط الرقم', text: 'الإشعارات الآلية ستصله من الآن.' }); this.bump(); } }]),
+          ...(c.active === false ? [] : [{ label: 'إرسال رسالة', tone: 'primary', closes: false, onClick: () => this.setState({ sendTo: { kind: 'contact', value: c.id } }) }]),
+          { label: 'تحرير', onClick: () => this.setState({ editId: c.id, draftAccs: null, panel: this.editPanel(c, D) }) },
+          { label: c.active === false ? 'تفعيل' : 'تعطيل', onClick: () => this.setState({ statusId: c.id, panel: this.statusPanel(c) }) },
+          ...(inMsgs.length ? [] : [{ label: 'تغيير حالة', onClick: () => this.setState({ chatId: c.id, panel: this.chatPanel(c, D) }) }]),
+          { label: 'محاكي الواتساب', onClick: () => go('/send', { kind: 'contact', value: c.id }) },
+          { label: 'سجل الرسائل', onClick: () => go('/messages/outbound', { kind: 'search', value: c.phone }) },
+        ],
+      };
+    };
+    const bulk = [{ label: 'إرسال رسالة للمحددة', onClick: (sel) => this.setState({ sendTo: { kind: 'contact', value: sel.map((r) => r.id) } }) }, { label: 'ربط المحددة', onClick: (sel) => { let n = 0; sel.forEach((r) => { if (!r._c.linked) { r._c.linked = true; n++; } }); this.toast({ key: 'linked', title: 'رُبطت ' + f.n(n) + ' جهة' }); this.bump(); } }];
+
+    const editing = S.editId === 'new' ? { } : (S.editId ? D.contactById(S.editId) : null);
+    return {
+      sendOpen: !!S.sendTo || !!S.sendBlank, sendPrefill: S.sendTo, onSendClose: () => this.setState({ sendTo: null, sendBlank: false }),
+      openSend: () => this.setState({ sendBlank: true }),
+      theme, loading: S.loading,
+      tabs: [],
+      create: () => this.setState({ editId: 'new', draftAccs: [], panel: this.editPanel({}, D, []) }),
+      hasScope: !!scopeLabel, scopeLabel, clearScope: () => this.setState({ scope: null }),
+      cardsMeta, handlers, columns, rows, detail, bulk, searchKeys: ['contact', 'phone', 'accounts'], defaultSort: { key: 'last', dir: 'desc' },
+      panel: S.panel,
+      onPanelAction: (key, v) => {
+        if (key === 'statusSave') {
+          const target = D.contactById(S.statusId);
+          const note = String(v.note || '').trim();
+          if (!note) return this.toast({ key: 'warn', title: 'الملاحظات إلزامية', text: 'اكتب سبب التغيير قبل الحفظ.' });
+          if (target) {
+            const to = target.active === false;
+            target.active = to;
+            target.activeLog = [{ ts: Date.now(), by: 'سند ديجيتال', to, note }].concat(target.activeLog || []);
+            D.logActivity((to ? 'تفعيل' : 'تعطيل') + ' الجهة «' + (target.name || target.phone) + '»', to ? 'primary' : 'warn');
+            this.toast({ key: 'saved', title: to ? 'فُعّلت الجهة' : 'عُطّلت الجهة', text: 'سُجّلت الملاحظة في سجل التغييرات.' });
+          }
+          this.setState({ panel: null, statusId: null }); this.bump();
+          return;
+        }
+        if (key === 'chatSave') {
+          const target = D.contactById(S.chatId);
+          const note = String(v.note || '').trim();
+          if (!note) return this.toast({ key: 'warn', title: 'الملاحظات إلزامية', text: 'اكتب سبب التغيير قبل الحفظ.' });
+          if (target) {
+            const to = v.chat === 'yes';
+            target.chatManual = to;
+            target.chatLog = [{ ts: Date.now(), by: 'سند ديجيتال', to, note }].concat(target.chatLog || []);
+            D.logActivity('تغيير حالة المحادثة لـ «' + (target.name || target.phone) + '» إلى ' + (to ? 'يوجد محادثة' : 'لا يوجد'), 'info');
+            this.toast({ key: 'saved', title: 'حُدّثت حالة المحادثة', text: 'سُجّلت الملاحظة في سجل التغييرات.' });
+          }
+          this.setState({ panel: null, chatId: null }); this.bump();
+          return;
+        }
+        if (key === 'save') {
+          if (!String(v.phone || '').trim()) return this.toast({ key: 'warn', title: 'الرقم مطلوب' });
+          const active = editing ? editing.active !== false : true;
+          const hadIn = !!D.messages.find((m) => editing && m.contactId === editing.id && m.direction === 'in');
+          const chatManual = hadIn ? undefined : v.chat === 'yes';
+          const dacc = S.draftAccs || (editing && editing.linked ? (editing.accounts || []).map((a, i) => ({ name: a, type: (editing.accountTypes || [])[i] || editing.type })) : []);
+          const accounts = dacc.map((a) => a.name), accountTypes = dacc.map((a) => a.type);
+          if (S.editId === 'new') { const id = 'c-' + Date.now(); all.unshift({ id, name: String(v.name || '').trim(), phone: String(v.phone).trim(), type: accountTypes[0] || 'customer', accounts, accountTypes, linked: accounts.length > 0, active, inDevice: false }); this.toast({ key: 'saved', title: 'أُضيفت الجهة «' + (v.name || v.phone) + '»' }); }
+          else if (editing) { Object.assign(editing, { name: String(v.name || '').trim(), phone: String(v.phone).trim(), active, ...(hadIn ? {} : { chatManual }), accounts, accountTypes, linked: accounts.length > 0, type: accountTypes[0] || editing.type }); D.logActivity('حُدّثت بيانات «' + (editing.name || editing.phone) + '»', 'info'); this.toast({ key: 'saved', title: 'حُفظت بيانات الجهة' }); }
+          this.setState({ panel: null, editId: null, draftAccs: null }); this.bump();
+        }
+        if (key === 'delete' && editing) { const i = all.indexOf(editing); if (i > -1) all.splice(i, 1); this.toast({ key: 'deleted', title: 'حُذفت «' + (editing.name || editing.phone) + '»' }); this.setState({ panel: null, editId: null, draftAccs: null }); this.bump(); }
+      },
+      onPanelClose: () => this.setState({ panel: null, editId: null, chatId: null, statusId: null, draftAccs: null }),
+      toastsMeta: { position: 'bottom-start', duration: 3500, types: [{ key: 'saved', tone: 'ok', icon: 'check' }, { key: 'linked', tone: 'ok', icon: 'check' }, { key: 'queued', tone: 'info', icon: 'send' }, { key: 'deleted', tone: 'danger', icon: 'x' }, { key: 'warn', tone: 'warn', icon: 'alert' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

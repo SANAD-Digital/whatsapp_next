@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F6; --surface:#FFFFFF; --sunken:#EEF2F0; --border:#E3E8E6; --border-2:#C9D2CF;
+    --ink:#0F1A18; --ink-2:#33423F; --ink-3:#55645F; --ink-4:#62716D;
+    --pri:#0F7A63; --pri-d:#0A6250; --pri-s:#DFF1EC; --pri-sb:#B6DDD2; --on-pri:#FFFFFF;
+    --ok:#1A8B50; --ok-s:#E1F3E8; --ok-i:#16713F; --ok-sb:#B9E2CA;
+    --wn:#9A6C14; --wn-s:#FBF1DC; --wn-i:#8A6116; --wn-sb:#EFDCB4;
+    --dg:#C9524B; --dg-s:#FBEAE8; --dg-i:#A93A34; --dg-sb:#F2CBC7;
+    --nf:#2568AF; --nf-s:#E4EFFA; --nf-i:#1F5A97; --nf-sb:#C2DCF2;
+    --skel-a:#E4EAE8; --skel-b:#EFF3F2;
+    --shadow-sm:0 1px 2px rgba(23,33,31,.06); --shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);
+  }
+  [data-theme="dark"]{
+    --bg:#0E1513; --surface:#14201D; --sunken:#1B2926; --border:#243531; --border-2:#334742;
+    --ink:#EAF2F0; --ink-2:#C4D2CE; --ink-3:#9AAAA6; --ink-4:#7E8F8B;
+    --pri:#2FA98C; --pri-d:#49C3A5; --pri-s:#16302A; --pri-sb:#23493F; --on-pri:#04150F;
+    --ok:#35A96A; --ok-s:#132A1E; --ok-i:#7FD3A3; --ok-sb:#1E4531;
+    --wn:#C79436; --wn-s:#2C2314; --wn-i:#E0BC78; --wn-sb:#4A3A1B;
+    --dg:#D9736C; --dg-s:#2E1A19; --dg-i:#F0A8A2; --dg-sb:#4C2A28;
+    --nf:#4A8ED0; --nf-s:#141F2C; --nf-i:#9CC5EC; --nf-sb:#25405C;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-lg:0 18px 40px -22px rgba(0,0,0,.7);
+    --skel-a:#1E2C31; --skel-b:#28373C;
+    color-scheme:dark;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,select,button,textarea{font-family:inherit;}
+  .tb-f:focus-within{border-color:var(--pri) !important;box-shadow:0 0 0 3px var(--pri-s);}
+  .tb-sb{scrollbar-width:thin;scrollbar-color:var(--border-2) transparent;}
+  .tb-sb::-webkit-scrollbar{width:8px;height:8px;}
+  .tb-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:999px;}
+  [data-tb-tap]{transition:background .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .12s ease;}
+  [data-tb-tap]:active{transform:translateY(1px);}
+  @keyframes tbPop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  @keyframes tbBar{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important;}}
+  .tb-sk{background:linear-gradient(90deg,var(--skel-a) 25%,var(--skel-b) 50%,var(--skel-a) 75%);background-size:200% 100%;animation:tbSk 1.4s linear infinite;border-radius:6px;}
+  @keyframes tbSk{to{background-position:-200% 0}}
+</style>
+</helmet>
+
+<div dir="{{ dir }}" data-theme="{{ theme }}" style="min-height:{{ rootMinH }};background:{{ rootBg }};color:var(--ink);font-family:{{ font }};padding:{{ dn.pagePad }};display:flex;justify-content:center">
+  <div style="width:100%;max-width:{{ maxW }};display:flex;flex-direction:column;gap:{{ dn.gap }}">
+
+    <div style="display:flex;flex-direction:column;gap:{{ dn.barGap }};background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:{{ dn.barPad }};box-shadow:var(--shadow-sm)">
+
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <sc-if value="{{ head.hasTitle }}" hint-placeholder-val="{{ true }}">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0">
+            <span style="font-size:{{ dn.h1 }};font-weight:700;line-height:1.3;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ head.title }}</span>
+            <sc-if value="{{ head.hasCount }}" hint-placeholder-val="{{ true }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--ink-2);background:var(--sunken);border-radius:999px;padding:3px 9px;flex:none">{{ head.count }}</span></sc-if>
+          </span>
+        </sc-if>
+        <span style="flex:1;min-width:0"></span>
+        <sc-if value="{{ views.show }}" hint-placeholder-val="{{ false }}">
+          <span style="display:flex;align-items:center;gap:2px;padding:2px;border-radius:8px;background:var(--sunken);border:1px solid var(--border);flex:none">
+            <sc-for list="{{ views.items }}" as="v" hint-placeholder-count="2">
+              <span data-tb-tap="1" onClick="{{ v.onPick }}" title="{{ v.title }}" style="width:{{ dn.ctl }};height:{{ dn.hSm }};display:inline-flex;align-items:center;justify-content:center;border-radius:6px;background:{{ v.bg }};color:{{ v.fg }};box-shadow:{{ v.shadow }};cursor:pointer" dangerouslySetInnerHTML="{{ v.icon }}"></span>
+            </sc-for>
+          </span>
+        </sc-if>
+        <sc-for list="{{ actions }}" as="a" hint-placeholder-count="2">
+          <button type="button" onClick="{{ a.onClick }}" title="{{ a.title }}" style="display:inline-flex;align-items:center;gap:7px;min-height:{{ dn.h }};padding:0 {{ dn.px }};border-radius:8px;background:{{ a.bg }};color:{{ a.fg }};border:{{ a.bd }};font-size:{{ dn.fsSm }};font-weight:600;cursor:pointer;flex:none;box-shadow:{{ a.shadow }}">
+            <sc-if value="{{ a.hasIcon }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex" dangerouslySetInnerHTML="{{ a.icon }}"></span></sc-if>
+            <sc-if value="{{ a.hasLabel }}" hint-placeholder-val="{{ true }}">{{ a.label }}</sc-if>
+          </button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ tabs.show }}" hint-placeholder-val="{{ false }}">
+        <div class="tb-sb" style="display:flex;align-items:stretch;gap:2px;margin:0 {{ dn.negPad }};padding:0 {{ dn.barPadX }};border-bottom:1px solid var(--border);overflow-x:auto">
+          <sc-for list="{{ tabs.items }}" as="t" hint-placeholder-count="3">
+            <span data-tb-tap="1" onClick="{{ t.onPick }}" style="display:flex;align-items:center;gap:7px;min-height:{{ dn.tabH }};padding:0 12px;border-bottom:2px solid {{ t.underline }};color:{{ t.fg }};font-size:{{ dn.fsSm }};font-weight:{{ t.weight }};cursor:pointer;white-space:nowrap" style-hover="color:var(--ink)">
+              {{ t.label }}
+              <sc-if value="{{ t.hasCount }}" hint-placeholder-val="{{ true }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:{{ t.countFg }};background:{{ t.countBg }};border-radius:999px;padding:1px 6px">{{ t.count }}</span></sc-if>
+            </span>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <sc-if value="{{ search.show }}" hint-placeholder-val="{{ true }}">
+          <label class="tb-f" style="display:flex;align-items:center;gap:8px;min-height:{{ dn.h }};padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);flex:1 1 {{ search.basis }};min-width:180px">
+            <svg width="15" height="15" viewBox="0 0 20 20" fill="none" style="flex:none"><circle cx="9" cy="9" r="5.5" stroke="var(--ink-4)" stroke-width="1.6"></circle><path d="M13 13l3.5 3.5" stroke="var(--ink-4)" stroke-width="1.6" stroke-linecap="round"></path></svg>
+            <input type="search" value="{{ search.q }}" onInput="{{ search.onQ }}" placeholder="{{ search.placeholder }}" style="flex:1;min-width:0;border:none;background:transparent;font-size:{{ dn.fs }};color:var(--ink);outline:none" />
+            <sc-if value="{{ search.hasQ }}" hint-placeholder-val="{{ false }}"><span data-tb-tap="1" onClick="{{ search.onClear }}" title="{{ T.clear }}" style="width:20px;height:20px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-3);cursor:pointer;flex:none">×</span></sc-if>
+          </label>
+        </sc-if>
+
+        <sc-for list="{{ filters }}" as="f" hint-placeholder-count="2">
+          <div data-tb-pop="{{ f.key }}" style="position:relative;flex:none">
+            <span data-tb-tap="1" onClick="{{ f.onOpen }}" style="display:inline-flex;align-items:center;gap:7px;min-height:{{ dn.h }};padding:0 11px;border-radius:8px;border:1px solid {{ f.bd }};background:{{ f.bg }};color:{{ f.fg }};font-size:{{ dn.fsSm }};font-weight:{{ f.weight }};cursor:pointer;white-space:nowrap">
+              <span style="color:{{ f.labelFg }}">{{ f.label }}</span>
+              <span style="min-width:0;max-width:150px;overflow:hidden;text-overflow:ellipsis">{{ f.valueText }}</span>
+              <sc-if value="{{ f.hasCount }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:var(--on-pri);background:var(--pri);border-radius:999px;padding:1px 6px">{{ f.count }}</span></sc-if>
+              <span style="display:inline-flex;color:var(--ink-3);transform:{{ f.chev }};transition:transform .15s"><svg width="11" height="11" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+            </span>
+            <sc-if value="{{ f.open }}" hint-placeholder-val="{{ false }}">
+              <div class="tb-sb" style="position:absolute;top:calc(100% + 5px);inset-inline-start:0;z-index:40;min-width:220px;max-height:280px;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:9px;box-shadow:var(--shadow-lg);padding:4px;display:flex;flex-direction:column;gap:2px;animation:tbPop .14s ease-out">
+                <sc-if value="{{ f.hasSearch }}" hint-placeholder-val="{{ false }}">
+                  <input type="text" value="{{ f.q }}" onInput="{{ f.onQ }}" placeholder="{{ T.search }}" autoFocus="{{ true }}" style="width:100%;min-height:{{ dn.hSm }};margin-bottom:2px;padding:0 10px;border-radius:6px;border:1px solid var(--border-2);background:var(--bg);color:var(--ink);font-size:{{ dn.fsSm }};outline:none" />
+                </sc-if>
+                <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
+                  <span onClick="{{ o.onPick }}" style="display:flex;align-items:center;gap:9px;min-height:{{ dn.h }};padding:0 9px;border-radius:6px;cursor:pointer;background:{{ o.bg }}" style-hover="background:var(--sunken)">
+                    <sc-if value="{{ o.hasCheck }}" hint-placeholder-val="{{ false }}"><input type="checkbox" checked="{{ o.on }}" readOnly="{{ true }}" style="width:15px;height:15px;accent-color:var(--pri);flex:none;pointer-events:none" /></sc-if>
+                    <sc-if value="{{ o.hasDot }}" hint-placeholder-val="{{ false }}"><span style="width:8px;height:8px;border-radius:50%;background:{{ o.dot }};flex:none"></span></sc-if>
+                    <span style="flex:1;min-width:0;font-size:{{ dn.fsSm }};color:{{ o.fg }};font-weight:{{ o.weight }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.label }}</span>
+                    <sc-if value="{{ o.hasCount }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-4);flex:none">{{ o.count }}</span></sc-if>
+                  </span>
+                </sc-for>
+                <sc-if value="{{ f.hasFooter }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:flex;gap:6px;padding-top:5px;margin-top:3px;border-top:1px solid var(--border)">
+                    <span data-tb-tap="1" onClick="{{ f.onClear }}" style="display:inline-flex;align-items:center;min-height:{{ dn.hSm }};padding:0 10px;border-radius:6px;background:var(--sunken);color:var(--ink-2);font-size:{{ dn.fsSm }};font-weight:600;cursor:pointer">{{ T.clearAll }}</span>
+                    <span data-tb-tap="1" onClick="{{ f.onDone }}" style="display:inline-flex;align-items:center;min-height:{{ dn.hSm }};padding:0 10px;border-radius:6px;background:var(--pri);color:var(--on-pri);font-size:{{ dn.fsSm }};font-weight:600;cursor:pointer">{{ T.done }}</span>
+                  </span>
+                </sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ chips.show }}" hint-placeholder-val="{{ false }}">
+          <sc-for list="{{ chips.items }}" as="c" hint-placeholder-count="3">
+            <span data-tb-tap="1" onClick="{{ c.onPick }}" style="display:inline-flex;align-items:center;gap:6px;min-height:{{ dn.hSm }};padding:0 11px;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }};border:1px solid {{ c.bd }};font-size:{{ dn.fsSm }};font-weight:{{ c.weight }};cursor:pointer;white-space:nowrap;flex:none">{{ c.label }}<sc-if value="{{ c.hasCount }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;opacity:.85">{{ c.count }}</span></sc-if></span>
+          </sc-for>
+        </sc-if>
+
+        <sc-if value="{{ hasReset }}" hint-placeholder-val="{{ false }}">
+          <span data-tb-tap="1" onClick="{{ onReset }}" style="display:inline-flex;align-items:center;gap:6px;min-height:{{ dn.hSm }};padding:0 10px;border-radius:8px;color:var(--dg-i);font-size:{{ dn.fsSm }};font-weight:600;cursor:pointer;flex:none">{{ T.resetFilters }}</span>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ applied.show }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding-top:2px">
+          <span style="font-size:11px;color:var(--ink-4);flex:none">{{ T.applied }}</span>
+          <sc-for list="{{ applied.items }}" as="p" hint-placeholder-count="2">
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 4px 3px 10px;border-radius:999px;background:var(--pri-s);color:var(--pri-d);border:1px solid var(--pri-sb);font-size:11px;font-weight:600;flex:none">{{ p.label }}<span data-tb-tap="1" onClick="{{ p.onRemove }}" style="width:17px;height:17px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;background:var(--surface)">×</span></span>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ bulk.show }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;bottom:12px;z-index:30;padding:{{ dn.bulkPad }};border-radius:12px;background:var(--ink);color:var(--surface);box-shadow:var(--shadow-lg);animation:tbBar .2s ease-out">
+        <span style="display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;padding:0 8px;border-radius:999px;background:var(--pri);color:var(--on-pri);font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;flex:none">{{ bulk.count }}</span>
+        <span style="font-size:{{ dn.fsSm }};font-weight:600;flex:1;min-width:0">{{ bulk.label }}</span>
+        <sc-for list="{{ bulk.actions }}" as="a" hint-placeholder-count="2">
+          <button type="button" onClick="{{ a.onClick }}" style="min-height:{{ dn.hSm }};padding:0 12px;border-radius:7px;background:{{ a.bg }};color:{{ a.fg }};border:{{ a.bd }};font-size:{{ dn.fsSm }};font-weight:600;cursor:pointer;flex:none">{{ a.label }}</button>
+        </sc-for>
+        <span data-tb-tap="1" onClick="{{ bulk.onClear }}" title="{{ T.close }}" style="width:26px;height:26px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--surface);flex:none;font-size:16px">×</span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ preview.show }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:6px;box-shadow:var(--shadow-sm)">
+        <sc-for list="{{ preview.skel }}" as="w" hint-placeholder-count="0">
+          <span style="display:flex;align-items:center;gap:11px;min-height:{{ dn.rowH }};padding:0 10px;border-bottom:1px solid var(--border)">
+            <span class="tb-sk" style="width:16px;height:16px;border-radius:4px;flex:none"></span>
+            <span class="tb-sk" style="width:30px;height:30px;border-radius:50%;flex:none"></span>
+            <span style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:0"><span class="tb-sk" style="height:11px;width:{{ w }}"></span><span class="tb-sk" style="height:10px;width:38%"></span></span>
+            <span class="tb-sk" style="width:74px;height:20px;border-radius:999px;flex:none"></span>
+          </span>
+        </sc-for>
+        <sc-for list="{{ preview.rows }}" as="r" hint-placeholder-count="5">
+          <span style="display:flex;align-items:center;gap:11px;min-height:{{ dn.rowH }};padding:0 10px;border-radius:8px;border-bottom:1px solid {{ r.sep }}">
+            <input type="checkbox" checked="{{ r.on }}" onChange="{{ r.onPick }}" style="width:16px;height:16px;accent-color:var(--pri);flex:none" />
+            <span style="width:30px;height:30px;border-radius:50%;background:var(--sunken);color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex:none">{{ r.initials }}</span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+              <span style="font-size:{{ dn.fsSm }};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.title }}</span>
+              <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);text-align:start">{{ r.sub }}</span>
+            </span>
+            <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;background:{{ r.badgeBg }};color:{{ r.badgeFg }};font-size:11px;font-weight:600;flex:none"><span style="width:6px;height:6px;border-radius:50%;background:{{ r.dot }}"></span>{{ r.status }}</span>
+          </span>
+        </sc-for>
+        <sc-if value="{{ preview.empty }}" hint-placeholder-val="{{ false }}"><span style="padding:24px;text-align:center;font-size:{{ dn.fsSm }};color:var(--ink-4)">{{ T.noRows }}</span></sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showDocs }}" hint-placeholder-val="{{ true }}">
+      <section style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
+        <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:700">{{ T.metaTitle }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border-radius:999px;background:var(--sunken);color:var(--ink-2)">Toolbar meta</span></span>
+        <span style="font-size:12px;color:var(--ink-3);line-height:1.8;text-wrap:pretty">{{ T.metaHint }}</span>
+        <pre dir="ltr" class="tb-sb" style="margin:0;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:var(--ink-2);overflow:auto;max-height:260px;text-align:left">{{ docJson }}</pre>
+        <span style="font-size:12px;font-weight:600;color:var(--ink-2)">{{ T.stateTitle }}</span>
+        <pre dir="ltr" class="tb-sb" style="margin:0;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:var(--ink-2);overflow:auto;max-height:180px;text-align:left">{{ stateJson }}</pre>
+      </section>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;,&quot;auto&quot;],&quot;tsType&quot;:&quot;'light'|'dark'|'auto'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ar&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;],&quot;tsType&quot;:&quot;'ar'|'en'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;'comfortable'|'compact'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;maxWidth&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1000,&quot;min&quot;:600,&quot;max&quot;:1280,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;breakpoint&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:760,&quot;min&quot;:560,&quot;max&quot;:1000,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;showPreview&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;showDocs&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;meta&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;ToolbarMeta&quot;},&quot;handlers&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, Function&gt;&quot;},&quot;onChange&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(state: any) =&gt; void&quot;},&quot;onTab&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(tabKey: string) =&gt; void&quot;},&quot;embed&quot;:{&quot;editor&quot;:null,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+// ── ميتا شريط الأدوات: عنوان + عدد، تبويبات، بحث، فلاتر منسدلة (أحادية/متعددة)، شرائح، إجراءات، تبديل عرض، شريط تحديد جماعي
+// filter: { key, label, mode:'single'|'multi', value, options:[{v,l,count,tone}], search:true }
+const TOOLBAR_META = {
+  title: { ar: 'الرسائل', en: 'Messages' }, count: 22418,
+  search: { placeholder: { ar: 'ابحث برقم الجهة أو رقم المستند أو نص الرسالة…', en: 'Search by number, document no. or message text…' }, basis: '320px' },
+  tabs: [
+    { key: 'all', label: { ar: 'الكل', en: 'All' }, count: 22418 },
+    { key: 'out', label: { ar: 'صادر', en: 'Outbound' }, count: 19260 },
+    { key: 'in', label: { ar: 'وارد', en: 'Inbound' }, count: 3158 },
+    { key: 'failed', label: { ar: 'فشل', en: 'Failed' }, count: 96, tone: 'danger' },
+  ],
+  filters: [
+    { key: 'status', label: { ar: 'الحالة', en: 'Status' }, mode: 'multi', value: ['failed'], options: [
+      { v: 'queued', l: { ar: 'قيد الإرسال', en: 'Queued' }, tone: 'warn', count: 312 },
+      { v: 'sent', l: { ar: 'مرسل', en: 'Sent' }, tone: 'info', count: 8140 },
+      { v: 'delivered', l: { ar: 'مستلم', en: 'Delivered' }, tone: 'ok', count: 7602 },
+      { v: 'read', l: { ar: 'مقروء', en: 'Read' }, tone: 'info', count: 3110 },
+      { v: 'failed', l: { ar: 'فشل', en: 'Failed' }, tone: 'danger', count: 96 },
+    ] },
+    { key: 'device', label: { ar: 'الجهاز', en: 'Device' }, mode: 'single', value: '', search: true, options: [
+      { v: '', l: { ar: 'كل الأجهزة', en: 'All devices' } },
+      { v: 'd1', l: { ar: 'جهاز المبيعات', en: 'Sales device' }, count: 9820 },
+      { v: 'd2', l: { ar: 'فرع جدة', en: 'Jeddah branch' }, count: 5140 },
+      { v: 'd3', l: { ar: 'جهاز الدعم', en: 'Support device' }, count: 4300 },
+      { v: 'd4', l: { ar: 'جهاز المحاسبة', en: 'Accounting device' }, count: 3158 },
+    ] },
+    { key: 'range', label: { ar: 'الفترة', en: 'Period' }, mode: 'single', value: 'month', options: [
+      { v: 'today', l: { ar: 'اليوم', en: 'Today' } }, { v: 'week', l: { ar: 'الأسبوع', en: 'This week' } },
+      { v: 'month', l: { ar: 'الشهر', en: 'This month' } }, { v: 'year', l: { ar: 'السنة', en: 'This year' } },
+    ] },
+  ],
+  chips: [
+    { key: 'linkedOnly', label: { ar: 'المربوطة فقط', en: 'Linked only' } },
+    { key: 'withDoc', label: { ar: 'بمستند', en: 'With document' }, count: 18240 },
+    { key: 'campaign', label: { ar: 'من حملة', en: 'From campaign' }, count: 4102 },
+  ],
+  views: [
+    { key: 'table', icon: 'table', title: { ar: 'جدول', en: 'Table' } },
+    { key: 'cards', icon: 'cards', title: { ar: 'بطاقات', en: 'Cards' } },
+  ],
+  actions: [
+    { key: 'export', label: { ar: 'تصدير', en: 'Export' }, icon: 'doc', variant: 'secondary', action: 'export' },
+    { key: 'columns', label: { ar: 'الأعمدة', en: 'Columns' }, icon: 'gear', variant: 'secondary', action: 'columns' },
+    { key: 'new', label: { ar: 'رسالة جديدة', en: 'New message' }, icon: 'plus', variant: 'primary', action: 'compose' },
+  ],
+  bulk: { label: { ar: 'رسالة محددة', en: 'selected' }, actions: [
+    { key: 'retry', label: { ar: 'إعادة المحاولة', en: 'Retry' }, variant: 'primary', action: 'retry' },
+    { key: 'cancel', label: { ar: 'إلغاء', en: 'Cancel' }, variant: 'secondary', action: 'cancelRows' },
+    { key: 'delete', label: { ar: 'حذف', en: 'Delete' }, variant: 'danger', action: 'removeRows' },
+  ] },
+  rows: [
+    { id: 'r1', title: { ar: 'مؤسسة المطلق للتجارة', en: 'Al-Mutlaq Trading' }, sub: '+966 50 123 4567', status: 'failed' },
+    { id: 'r2', title: { ar: 'شركة الرياض للمقاولات', en: 'Riyadh Contracting' }, sub: '+966 55 902 8814', status: 'delivered' },
+    { id: 'r3', title: { ar: 'مجموعة الخليج الغذائية', en: 'Gulf Foods Group' }, sub: '+966 53 222 1100', status: 'queued' },
+    { id: 'r4', title: { ar: 'مصنع النخبة للبلاستيك', en: 'Elite Plastics' }, sub: '+966 56 400 9080', status: 'read' },
+    { id: 'r5', title: { ar: 'صيدلية الحياة', en: 'Al Hayat Pharmacy' }, sub: '+966 55 606 0606', status: 'sent' },
+  ],
+  statuses: {
+    queued: { ar: 'قيد الإرسال', en: 'Queued', tone: 'warn' }, sent: { ar: 'مرسل', en: 'Sent', tone: 'info' },
+    delivered: { ar: 'مستلم', en: 'Delivered', tone: 'ok' }, read: { ar: 'مقروء', en: 'Read', tone: 'info' },
+    failed: { ar: 'فشل', en: 'Failed', tone: 'danger' },
+  },
+  handlers: {
+    export: () => 'تصدير CSV',
+    columns: () => 'فتح إعداد الأعمدة',
+    compose: () => 'فتح نموذج رسالة',
+    retry: (ids) => 'إعادة محاولة ' + ids.length,
+    cancelRows: (ids) => 'إلغاء ' + ids.length,
+    removeRows: (ids) => 'حذف ' + ids.length,
+  },
+};
+
+const ICONS_EXTRA = {
+  table: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="14" height="12" rx="2"/><path d="M3 8.5h14M8.5 8.5V16"/></svg>',
+  cards: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3.5" width="6" height="6" rx="1.5"/><rect x="11" y="3.5" width="6" height="6" rx="1.5"/><rect x="3" y="10.5" width="6" height="6" rx="1.5"/><rect x="11" y="10.5" width="6" height="6" rx="1.5"/></svg>',
+};
+const FALLBACK = {
+  MONO: "'IBM Plex Mono',monospace",
+  FONT: { ar: "'IBM Plex Sans Arabic',system-ui,sans-serif", en: "'IBM Plex Sans','IBM Plex Sans Arabic',system-ui,sans-serif" },
+  DENSITY: { comfortable: { h: '38px', hSm: '32px', fs: '14px', fsSm: '13px', px: '12px' }, compact: { h: '32px', hSm: '28px', fs: '13px', fsSm: '12px', px: '10px' } },
+  TONE: { ok: { bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', bd: 'var(--ok-sb)' }, warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', bd: 'var(--wn-sb)' }, danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--dg)', bd: 'var(--dg-sb)' }, info: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)', bd: 'var(--nf-sb)' }, muted: { bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--ink-4)', bd: 'var(--border)' } },
+  BUTTON: { primary: { bg: 'var(--pri)', fg: 'var(--on-pri)', bd: 'none' }, secondary: { bg: 'var(--surface)', fg: 'var(--ink)', bd: '1px solid var(--border-2)' }, danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', bd: '1px solid var(--dg-sb)' }, ghost: { bg: 'transparent', fg: 'var(--ink-2)', bd: 'none' }, tonal: { bg: 'var(--pri-s)', fg: 'var(--pri-d)', bd: '1px solid var(--pri-sb)' } },
+  ADDON_ICONS: {},
+};
+const EXTRA = {
+  ar: { applied: 'الفلاتر المطبّقة:', resetFilters: 'مسح الفلاتر', noRows: 'لا صفوف مطابقة', metaTitle: 'الميتا المستخدمة لهذا الشريط', metaHint: 'الشريط ميتا كامل: title/count، tabs، search، filters (single أو multi مع بحث وعدّادات)، chips، views، actions، وشريط التحديد الجماعي bulk مع handlers.', stateTitle: 'حالة الشريط الحالية', clearAll: 'مسح الكل', done: 'تم', close: 'إغلاق', search: 'بحث…', clear: 'مسح' },
+  en: { applied: 'Applied filters:', resetFilters: 'Clear filters', noRows: 'No matching rows', metaTitle: 'Meta driving this toolbar', metaHint: 'Fully meta-driven: title/count, tabs, search, filters (single or multi with search and counts), chips, views, actions, and a bulk selection bar with handlers.', stateTitle: 'Current toolbar state', clearAll: 'Clear all', done: 'Done', close: 'Close', search: 'Search…', clear: 'Clear' },
+};
+
+class Component extends DCLogic {
+  state = { theme: null, lang: null, q: '', tab: null, view: null, filters: null, chips: {}, fq: {}, open: null, sel: {}, width: 1280 };
+
+  componentDidMount() {
+    this.onResize = () => this.setState({ width: window.innerWidth });
+    this.onKey = (e) => { if (e.key === 'Escape' && this.state.open) { e.stopPropagation(); this.setState({ open: null }); } };
+    this.onDoc = (e) => { const o = this.state.open; if (o && !e.target.closest('[data-tb-pop="' + o + '"]')) this.setState({ open: null }); };
+    window.addEventListener('resize', this.onResize); window.addEventListener('keydown', this.onKey); document.addEventListener('mousedown', this.onDoc);
+    this.onResize();
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); window.removeEventListener('keydown', this.onKey); document.removeEventListener('mousedown', this.onDoc); }
+
+  meta() { return this.props.meta || TOOLBAR_META; }
+  fvals() {
+    if (this.state.filters) return this.state.filters;
+    const o = {};
+    (this.meta().filters || []).forEach((f) => { o[f.key] = f.value !== undefined ? f.value : (f.mode === 'multi' ? [] : ''); });
+    return o;
+  }
+  setF(key, val) {
+    const next = { ...this.fvals(), [key]: val };
+    this.setState({ filters: next });
+    if (this.props.onChange) this.props.onChange({ q: this.state.q, filters: next, chips: this.state.chips });
+  }
+  run(spec, args) {
+    const H = this.props.handlers || this.meta().handlers || {};
+    const fn = typeof spec === 'function' ? spec : H[spec];
+    if (fn) { try { return fn.apply(null, args || []); } catch (e) { return String(e && e.message); } }
+    return undefined;
+  }
+
+  renderVals() {
+    const K = window.UIKit || FALLBACK, S = this.state, P = this.props, M = this.meta();
+    const lang = S.lang ?? P.lang ?? M.lang ?? 'ar', rtl = lang !== 'en', dir = rtl ? 'rtl' : 'ltr';
+    const L = (x) => K.L ? K.L(lang, x) : ((x && x[lang]) || x || '');
+    const pref = S.theme ?? P.theme ?? M.theme ?? 'light';
+    let sysDark = false; try { sysDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) {}
+    const theme = pref === 'auto' ? (sysDark ? 'dark' : 'light') : pref;
+    const isMobile = S.width < (P.breakpoint ?? 760);
+    const dkey = (P.density ?? M.density ?? 'comfortable') === 'compact' ? 'compact' : 'comfortable';
+    const D = (K.DENSITY || FALLBACK.DENSITY)[dkey];
+    const TONE = K.TONE || FALLBACK.TONE, BTN = K.BUTTON || FALLBACK.BUTTON;
+    const ICONS = Object.assign({}, K.ADDON_ICONS || {}, ICONS_EXTRA);
+    const tone = (k) => TONE[k] || TONE.muted;
+    const icon = (n) => ({ __html: ICONS[n] || '' });
+    const T = { ...EXTRA[lang] };
+    const f = (v) => (v == null ? '—' : Number(v).toLocaleString('en-US'));
+    const dn = {
+      pagePad: P.embed ? '0' : (isMobile ? '14px' : '24px'), gap: '14px', barGap: dkey === 'compact' ? '10px' : '12px',
+      barPad: isMobile ? '12px' : (dkey === 'compact' ? '12px 14px' : '14px 16px'), barPadX: isMobile ? '12px' : '16px', negPad: isMobile ? '-12px' : '-16px',
+      h: isMobile ? '44px' : D.h, hSm: isMobile ? '38px' : D.hSm, fs: isMobile ? '16px' : D.fs, fsSm: isMobile ? '14px' : D.fsSm, px: D.px,
+      ctl: isMobile ? '40px' : '34px', tabH: dkey === 'compact' ? '36px' : '40px', h1: isMobile ? '17px' : '18px',
+      rowH: isMobile ? '56px' : '48px', bulkPad: isMobile ? '10px 12px' : '10px 14px',
+    };
+
+    const fv = this.fvals();
+    const tabs = M.tabs || [];
+    const tab = S.tab ?? (tabs[0] && tabs[0].key) ?? null;
+    const views = M.views || [];
+    const view = S.view ?? (views[0] && views[0].key) ?? null;
+    const q = S.q.trim().toLowerCase();
+
+    const filters = (M.filters || []).map((fl) => {
+      const multi = fl.mode === 'multi', val = fv[fl.key], arr = multi ? (Array.isArray(val) ? val : []) : [];
+      const open = S.open === fl.key;
+      const fq = (S.fq[fl.key] || '').trim().toLowerCase();
+      const opts = (fl.options || []).map((o) => ({ ...o, label: L(o.l ?? o.label) }));
+      const sel = multi ? null : opts.find((o) => o.v === val);
+      const active = multi ? arr.length > 0 : !!val;
+      return {
+        key: fl.key, label: L(fl.label) + (multi || !sel ? ':' : ':'), labelFg: 'var(--ink-4)',
+        valueText: multi ? (arr.length ? (arr.length === 1 ? (opts.find((o) => o.v === arr[0]) || {}).label : arr.length + ' ' + (rtl ? 'مختارة' : 'selected')) : (rtl ? 'الكل' : 'All')) : (sel ? sel.label : (rtl ? 'الكل' : 'All')),
+        bg: active ? 'var(--pri-s)' : 'var(--surface)', fg: active ? 'var(--pri-d)' : 'var(--ink-2)', bd: active ? 'var(--pri-sb)' : 'var(--border-2)', weight: active ? 600 : 500,
+        hasCount: multi && arr.length > 1, count: String(arr.length),
+        open, chev: open ? 'rotate(180deg)' : 'rotate(0deg)',
+        onOpen: () => this.setState({ open: open ? null : fl.key }),
+        hasSearch: !!fl.search && opts.length > 5, q: S.fq[fl.key] || '', onQ: (e) => this.setState((st) => ({ fq: { ...st.fq, [fl.key]: e.target.value } })),
+        hasFooter: multi, onClear: () => this.setF(fl.key, []), onDone: () => this.setState({ open: null }),
+        options: opts.filter((o) => !fq || o.label.toLowerCase().includes(fq)).map((o) => {
+          const on = multi ? arr.includes(o.v) : o.v === val;
+          return {
+            label: o.label, hasCheck: multi, on, hasDot: !!o.tone, dot: tone(o.tone).dot,
+            hasCount: o.count != null, count: f(o.count),
+            bg: (!multi && on) ? 'var(--pri-s)' : 'transparent', fg: on ? (multi ? 'var(--ink)' : 'var(--pri-d)') : 'var(--ink-2)', weight: on ? 600 : 400,
+            onPick: () => { if (multi) this.setF(fl.key, arr.includes(o.v) ? arr.filter((x) => x !== o.v) : arr.concat([o.v])); else { this.setF(fl.key, o.v); this.setState({ open: null }); } },
+          };
+        }),
+      };
+    });
+
+    const appliedItems = [];
+    (M.filters || []).forEach((fl) => {
+      const multi = fl.mode === 'multi', val = fv[fl.key];
+      const opts = (fl.options || []).map((o) => ({ ...o, label: L(o.l ?? o.label) }));
+      if (multi) (Array.isArray(val) ? val : []).forEach((x) => { const o = opts.find((oo) => oo.v === x); appliedItems.push({ label: L(fl.label) + ': ' + (o ? o.label : x), onRemove: () => this.setF(fl.key, val.filter((y) => y !== x)) }); });
+      else if (val) { const o = opts.find((oo) => oo.v === val); appliedItems.push({ label: L(fl.label) + ': ' + (o ? o.label : val), onRemove: () => this.setF(fl.key, '') }); }
+    });
+    Object.keys(S.chips).filter((k) => S.chips[k]).forEach((k) => {
+      const c = (M.chips || []).find((x) => x.key === k);
+      if (c) appliedItems.push({ label: L(c.label), onRemove: () => this.setState((st) => ({ chips: { ...st.chips, [k]: false } })) });
+    });
+
+    const STAT = M.statuses || {};
+    const rows = (M.rows || []).filter((r) => !q || L(r.title).toLowerCase().includes(q) || String(r.sub).includes(q)).filter((r) => {
+      const st = fv.status;
+      if (Array.isArray(st) && st.length && !st.includes(r.status)) return false;
+      if (tab === 'failed' && r.status !== 'failed') return false;
+      return true;
+    });
+    // الأحرف الأولى: تُسقط كلمات الشكل (شركة/مؤسسة…) وأدوات التعريف قبل أخذ الحرف الأول
+    const STOP = ['شركة', 'مؤسسة', 'مصنع', 'مجموعة', 'صيدلية', 'مكتب', 'مطاعم', 'al', 'the'];
+    const strip = (w) => w.replace(/^(لل|ال|بال|وال)/, '') || w;
+    const ini = (name) => {
+      const all = String(name).trim().split(/\s+/);
+      const kept = all.filter((x) => !STOP.includes(x.toLowerCase()));
+      const use = (kept.length ? kept : all).map(strip).filter(Boolean);
+      const out = use.slice(0, 2).map((x) => x[0]).join('');
+      return out.length > 1 ? out : (use[0] || String(name)).slice(0, 2);
+    };
+    const selIds = Object.keys(S.sel).filter((k) => S.sel[k]);
+
+    return {
+      dir, theme, font: (K.FONT || FALLBACK.FONT)[lang], dn, T, rootMinH: P.embed ? 'auto' : '100vh', rootBg: P.embed ? 'transparent' : 'var(--bg)', maxW: P.embed ? '100%' : (P.maxWidth ?? M.maxWidth ?? 1000) + 'px',
+      head: { hasTitle: !!M.title, title: L(M.title), hasCount: M.count != null, count: f(M.count) },
+      search: M.search ? { show: true, placeholder: L(M.search.placeholder), basis: M.search.basis || '280px', q: S.q, hasQ: !!S.q, onQ: (e) => this.setState({ q: e.target.value }), onClear: () => this.setState({ q: '' }) } : { show: false },
+      tabs: {
+        show: tabs.length > 0,
+        items: tabs.map((t) => {
+          const on = t.key === tab, tn = tone(t.tone || 'muted');
+          return { label: L(t.label), hasCount: t.count != null, count: f(t.count), countBg: on ? 'var(--pri-s)' : tn.bg, countFg: on ? 'var(--pri-d)' : tn.fg, fg: on ? 'var(--pri-d)' : 'var(--ink-3)', weight: on ? 600 : 400, underline: on ? 'var(--pri)' : 'transparent', onPick: () => { this.setState({ tab: t.key, open: null }); if (this.props.onTab) this.props.onTab(t.key); this.run(t.action, [t.key]); } };
+        }),
+      },
+      filters,
+      chips: {
+        show: (M.chips || []).length > 0,
+        items: (M.chips || []).map((c) => {
+          const on = !!S.chips[c.key];
+          return { label: L(c.label), hasCount: c.count != null, count: f(c.count), bg: on ? 'var(--pri)' : 'var(--surface)', fg: on ? 'var(--on-pri)' : 'var(--ink-2)', bd: on ? 'var(--pri)' : 'var(--border-2)', weight: on ? 600 : 500, onPick: () => this.setState((st) => ({ chips: { ...st.chips, [c.key]: !on } })) };
+        }),
+      },
+      views: {
+        show: views.length > 1 && !isMobile,
+        items: views.map((vw) => { const on = vw.key === view; return { icon: icon(vw.icon), title: L(vw.title), bg: on ? 'var(--surface)' : 'transparent', fg: on ? 'var(--ink)' : 'var(--ink-3)', shadow: on ? 'var(--shadow-sm)' : 'none', onPick: () => this.setState({ view: vw.key }) }; }),
+      },
+      actions: (M.actions || []).filter((a) => !isMobile || a.variant === 'primary').map((a) => {
+        const b = BTN[a.variant || 'secondary'] || BTN.secondary;
+        return { label: L(a.label), hasLabel: !!a.label, title: L(a.title ?? a.label), hasIcon: !!a.icon, icon: icon(a.icon), bg: b.bg, fg: b.fg, bd: b.bd, shadow: a.variant === 'primary' ? 'var(--shadow-sm)' : 'none', onClick: () => this.run(a.onClick || a.action, [selIds]) };
+      }),
+      hasReset: appliedItems.length > 0, onReset: () => this.setState({ filters: {}, chips: {}, q: '' }),
+      applied: { show: appliedItems.length > 0 && !isMobile, items: appliedItems },
+      bulk: M.bulk ? {
+        show: selIds.length > 0, count: f(selIds.length), label: (rtl ? '' : '') + (selIds.length + ' ' + L(M.bulk.label)),
+        actions: (M.bulk.actions || []).map((a) => { const b = BTN[a.variant || 'secondary'] || BTN.secondary; return { label: L(a.label), bg: a.variant === 'primary' ? 'var(--pri)' : a.variant === 'danger' ? 'var(--dg)' : 'var(--surface)', fg: a.variant === 'secondary' ? 'var(--ink)' : '#fff', bd: 'none', onClick: () => { this.run(a.onClick || a.action, [selIds]); this.setState({ sel: {} }); } }; }),
+        onClear: () => this.setState({ sel: {} }),
+      } : { show: false, actions: [] },
+      preview: {
+        show: (P.showPreview ?? M.showPreview) !== false, empty: !P.loading && rows.length === 0,
+        skel: P.loading ? ['62%', '48%', '70%', '54%', '66%'] : [],
+        rows: (P.loading ? [] : rows).map((r, idx) => { const st = STAT[r.status] || {}, tn = tone(st.tone); return { initials: ini(L(r.title)), title: L(r.title), sub: r.sub, on: !!S.sel[r.id], status: L(st), badgeBg: tn.bg, badgeFg: tn.fg, dot: tn.dot, sep: idx === rows.length - 1 ? 'transparent' : 'var(--border)', onPick: () => this.setState((s2) => ({ sel: { ...s2.sel, [r.id]: !s2.sel[r.id] } })) }; }),
+      },
+      showDocs: (P.showDocs ?? M.showDocs) !== false,
+      docJson: JSON.stringify({ title: M.title, count: M.count, tabs: (M.tabs || []).map((t) => t.key), search: !!M.search, filters: (M.filters || []).map((x) => ({ key: x.key, mode: x.mode, options: (x.options || []).length })), chips: (M.chips || []).map((c) => c.key), views: (M.views || []).map((x) => x.key), actions: (M.actions || []).map((a) => a.key), bulk: (M.bulk && (M.bulk.actions || []).map((a) => a.key)) || null }, null, 2),
+      stateJson: JSON.stringify({ q: S.q, tab, view, filters: fv, chips: Object.keys(S.chips).filter((k) => S.chips[k]), selected: selIds }, null, 2),
+    };
+  }
+}
+</script>
+</body>
+</html>

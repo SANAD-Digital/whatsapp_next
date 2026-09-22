@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+  .lv-host > .sc-host{flex:1 1 0%;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .lv-host > .sc-host > *{flex:1 1 0%;min-height:0;min-width:0}
+</style>
+</helmet>
+<div data-screen-label="نماذج الرسائل" dir="rtl" style="flex:1;min-height:0;height:100%;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px;width:100%">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;flex:none">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <h1 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em">نماذج الرسائل</h1>
+        <span style="font-size:12px;color:var(--ink-3)">صيغ جاهزة تُختار عند الإرسال، تدعم متغيرات وشروط Jinja وتُعرض مُرندَرة فور اختيارها.</span>
+      </div>
+      <button type="button" onClick="{{ create }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer">+ نموذج جديد</button>
+    </div>
+
+    <dc-import name="Cards" meta="{{ cardsMeta }}" loading="{{ loading }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,72px"></dc-import>
+
+    <div class="lv-host" style="flex:1;min-height:340px;display:flex;overflow:hidden">
+      <dc-import name="List View" loading="{{ loading }}" columns="{{ columns }}" rows="{{ rows }}" on-open="{{ onOpen }}" unit="نموذج" search-placeholder="اسم النموذج أو نصه…" export-name="message-templates" default-sort="{{ defaultSort }}" page-size="{{ 50 }}" density="compact" theme="{{ theme }}" hint-size="100%,100%"></dc-import>
+    </div>
+  </div>
+
+  <sc-if value="{{ editorOpen }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="Template Editor" meta="{{ editorMeta }}" on-save="{{ onSave }}" on-remove="{{ onRemove }}" on-close="{{ onClose }}" theme="{{ theme }}" hint-size="0,0"></dc-import>
+  </sc-if>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:860},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;]},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+const ROUTE = '/msg-templates';
+const CATS = ['مستحقات', 'مالية', 'مبيعات', 'عام'];
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, sel: null, fire: null, rev: 0, loading: true };
+  componentDidMount() { const w = () => { if (window.HubData && window.HubShared && window.UIKit) { this.setState({ ready: true }); setTimeout(() => this.setState({ loading: false }), 220); } else this.t = setTimeout(w, 40); }; w(); }
+  componentWillUnmount() { clearTimeout(this.t); }
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, theme = this.theme();
+    if (!D || !S.ready) return { theme, loading: true, create: () => {}, cardsMeta: { sections: [] }, columns: [], rows: [], onOpen: () => {}, defaultSort: null, editorOpen: false, editorMeta: null, onSave: () => {}, onRemove: () => {}, onClose: () => {}, toastsMeta: { types: [] }, toastFire: null };
+    const f = D.fmt, all = D.msgTemplates || [];
+    const sampleCt = D.contacts.find((c) => c.name && c.type === 'customer');
+    const ctx = { customer_name: sampleCt ? sampleCt.name : 'عميل تجريبي', company: 'شركة سند الرقمية', balance: 'مدين 10,000 ر.س', to_date: f.date(Date.now()), date: f.date(Date.now()), overdue_days: 12, amount: '4,250.00 ر.س', doc_no: 'INV-2026-0912', tracking: 'SMSA-4471920', eta: f.date(Date.now() + 2 * 86400000) };
+    const VAR_LABELS = { customer_name: 'اسم العميل', company: 'الشركة', balance: 'الرصيد', to_date: 'حتى تاريخ', date: 'التاريخ', overdue_days: 'أيام التأخير', amount: 'المبلغ', doc_no: 'رقم المستند', tracking: 'رقم التتبع', eta: 'موعد الوصول' };
+
+    const cardsMeta = { sections: [{ min: 180, mobileColumns: 1, cards: [
+      { kind: 'stat', icon: 'chat', label: 'عدد النماذج', value: f.n(all.length), valueMono: true, note: 'نماذج جاهزة للاختيار عند الإرسال' },
+      { kind: 'stat', icon: 'send', tone: 'info', label: 'مرات الاستخدام (30ي)', value: f.n(all.reduce((n, t) => n + (t.uses || 0), 0)), valueMono: true, note: 'إجمالي الرسائل المرسلة عبر نموذج' },
+      { kind: 'stat', icon: 'doc', label: 'التصنيفات', value: f.n([...new Set(all.map((t) => t.category))].length), valueMono: true, note: CATS.join('، ') },
+    ] }] };
+
+    const columns = [
+      { key: 'name', label: 'النموذج', w: 220, weight: 600 },
+      { key: 'excerpt', label: 'بداية النص', w: 300, color: 'var(--ink-3)' },
+      { key: 'category', label: 'التصنيف', w: 120, kind: 'badge', group: true, filter: true },
+      { key: 'uses', label: 'الاستخدام', w: 110, kind: 'num', align: 'end' },
+      { key: 'updated', label: 'آخر تحديث', w: 120, kind: 'date' },
+    ];
+    const rows = all.map((t) => ({ id: t.id, name: t.name, excerpt: String(t.body || '').split('\n')[0].slice(0, 80), category: { text: t.category, bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--ink-4)' }, uses: t.uses || 0, updated: t.updated || 0 }));
+
+    const sel = S.sel ? all.find((t) => t.id === S.sel) : null;
+    const editorMeta = sel ? {
+      name: sel.name, body: sel.body,
+      fields: [{ key: 'category', label: 'التصنيف', type: 'select', value: sel.category, options: CATS.map((c) => ({ v: c, l: c })) }],
+      vars: Object.keys(ctx).map((k) => ({ token: '{{ ' + k + ' }}', label: VAR_LABELS[k] || k, sample: ctx[k] })),
+      sample: ctx, saveLabel: 'حفظ النموذج', removeLabel: 'حذف',
+    } : null;
+
+    return {
+      theme, loading: S.loading,
+      create: () => { const id = 'mt-' + Date.now(); D.msgTemplates.unshift({ id, name: 'نموذج جديد', category: 'عام', updated: Date.now(), uses: 0, body: 'مرحباً {{ customer_name }}،\n' }); this.setState({ sel: id }); },
+      cardsMeta, columns, rows, onOpen: (r) => this.setState({ sel: r.id }), defaultSort: { key: 'uses', dir: 'desc' },
+      editorOpen: !!sel, editorMeta,
+      onSave: (v) => { if (!sel) return; Object.assign(sel, { name: v.name, category: v.category, body: v.body, updated: Date.now() }); this.toast({ key: 'saved', title: 'حُفظ النموذج «' + v.name + '»' }); this.bump(); },
+      onRemove: () => { if (!sel) return; const i = all.indexOf(sel); if (i !== -1) all.splice(i, 1); this.setState({ sel: null }); this.toast({ key: 'removed', title: 'حُذف النموذج «' + sel.name + '»' }); },
+      onClose: () => this.setState({ sel: null }),
+      toastsMeta: { position: 'bottom-start', duration: 3500, types: [{ key: 'saved', tone: 'ok', icon: 'check' }, { key: 'removed', tone: 'danger', icon: 'x' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+</style>
+</helmet>
+<div data-screen-label="الاشتراك والباقة" dir="rtl" style="flex:1;min-height:0;height:100%;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="display:flex;flex-direction:column;gap:12px;padding:16px;width:100%">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;flex:none">
+      <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+        <h1 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em">الاشتراك والباقة</h1>
+        <span style="font-size:12px;color:var(--ink-3)">الرسائل تُخصم من الباقة أولاً، وما زاد يُخصم من المحفظة بسعر الرسالة.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button type="button" onClick="{{ askTopUp }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer" style-hover="background:var(--sunken)">شحن المحفظة</button>
+        <button type="button" onClick="{{ askUpgrade }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer">ترقية الباقة</button>
+      </div>
+    </div>
+
+    <dc-import name="Cards" meta="{{ cardsMeta }}" handlers="{{ handlers }}" loading="{{ loading }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,420px"></dc-import>
+
+    <dc-import name="Form" meta="{{ formMeta }}" handlers="{{ handlers }}" on-change="{{ onField }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" max-width="{{ 2400 }}" hint-size="100%,220px"></dc-import>
+  </div>
+
+  <dc-import name="Overlay Panel" panel="{{ panel }}" on-action="{{ onPanelAction }}" on-close="{{ onPanelClose }}" theme="{{ theme }}" embed="{{ true }}" hint-size="0,0"></dc-import>
+  <dc-import name="Confirm Dialog" meta="{{ confirmMeta }}" handlers="{{ handlers }}" open-key="{{ confirmKey }}" on-close="{{ onConfirmClose }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:900},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+const ROUTE = '/billing';
+const PLANS = [
+  { key: 'الأعمال 6K', quota: 6000, price: 660, per: 0.11 },
+  { key: 'الأعمال 15K', quota: 15000, price: 1450, per: 0.097 },
+  { key: 'الأعمال 50K', quota: 50000, price: 4500, per: 0.09 },
+];
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, loading: true, v: {}, topUpOpen: false, confirmKey: null, fire: null, rev: 0 };
+  componentDidMount() { const w = () => { if (window.HubData && window.HubShared && window.UIKit) { this.setState({ ready: true }); setTimeout(() => this.setState({ loading: false }), 220); } else this.t = setTimeout(w, 40); }; w(); }
+  componentWillUnmount() { clearTimeout(this.t); }
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    const empty = { theme, loading: true, handlers: {}, askTopUp: () => {}, askUpgrade: () => {}, cardsMeta: { sections: [] }, formMeta: { sections: [] }, onField: () => {}, panel: null, onPanelAction: () => {}, onPanelClose: () => {}, confirmMeta: { dialogs: [] }, confirmKey: null, onConfirmClose: () => {}, toastsMeta: { types: [] }, toastFire: null };
+    if (!D || !H || !S.ready) return empty;
+
+    const f = D.fmt, sub = D.subscription, V = S.v;
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+    const left = Math.max(0, sub.quota - sub.used);
+    const usedPct = Math.min(100, Math.round((sub.used / sub.quota) * 100));
+    const days = Math.max(0, Math.round((sub.renewAt - Date.now()) / 86400000));
+
+    /* الاستهلاك اليومي: آخر 14 يوماً + توقّع لما بقي من الدورة */
+    const daily = [];
+    for (let i = 13; i >= 0; i--) {
+      const from = Date.now() - (i + 1) * 86400000, to = Date.now() - i * 86400000;
+      const n = D.messages.filter((m) => m.direction === 'out' && m.ts >= from && m.ts < to && ['sent', 'delivered', 'read', 'failed'].includes(m.status)).length;
+      daily.push({ label: new Date(to - 43200000).getDate() + '', value: n });
+    }
+    const avgDaily = Math.round(daily.reduce((n, d) => n + d.value, 0) / Math.max(1, daily.length));
+    const daysLeftByQuota = avgDaily ? Math.floor(left / avgDaily) : 999;
+    const forecastTotal = sub.used + avgDaily * days;
+    const runOut = forecastTotal > sub.quota;
+    const overflow = Math.max(0, forecastTotal - sub.quota);
+    const nextPlan = PLANS.find((p) => p.quota > sub.quota) || PLANS[PLANS.length - 1];
+
+    const handlers = {
+      openList: () => go('/messages/outbound'),
+      openQueue: () => go('/messages/queue'),
+      topUp: () => this.setState({ topUpOpen: true }),
+      upgrade: () => {
+        sub.plan = nextPlan.key; sub.quota = nextPlan.quota; sub.pricePerMessage = nextPlan.per; sub.renewAmount = nextPlan.price;
+        D.logActivity('تمت ترقية الباقة إلى ' + nextPlan.key, 'primary');
+        this.toast({ key: 'upgraded', title: 'تمت الترقية إلى ' + nextPlan.key, text: 'الحد الشهري الآن ' + f.n(nextPlan.quota) + ' رسالة وسعر الرسالة ' + nextPlan.per + ' ر.س.' });
+        this.bump();
+      },
+      editSettings: () => this.setState({ editForm: true }),
+      cancelSettings: () => this.setState({ editForm: false, v: {} }),
+      saveSettings: (vals) => {
+        sub.autoRenew = vals.autoRenew !== false;
+        this.setState({ editForm: false });
+        this.toast({ key: 'saved', title: 'حُفظت إعدادات الفاتورة', text: sub.autoRenew ? 'التجديد الآلي مفعّل؛ لن يتوقف الإرسال عند انتهاء الدورة.' : 'التجديد الآلي موقوف؛ سيتوقف الإرسال عند انتهاء الدورة.' });
+        this.bump();
+      },
+    };
+
+    /* ——— البطاقات والرسم (Cards) ——— */
+    const cardsMeta = { handlers, sections: [].concat(
+      [{ min: 420, cards: [].concat(
+        runOut ? [{ kind: 'alert', tone: 'warn', label: 'الباقة لن تكفي حتى موعد التجديد', note: 'بمعدّل ' + f.n(avgDaily) + ' رسالة/يوم ستتجاوز الحد بـ' + f.n(overflow) + ' رسالة قبل ' + f.date(sub.renewAt) + '. الزائد يُخصم من المحفظة بسعر ' + sub.pricePerMessage + ' ر.س للرسالة.', cta: 'شحن المحفظة', ctaStyle: 'solid', action: 'topUp' }] : [],
+        [{ kind: 'alert', tone: 'info', label: 'ترقية الباقة إلى ' + nextPlan.key, note: 'ترفع الحد الشهري إلى ' + f.n(nextPlan.quota) + ' رسالة وتخفض سعر الرسالة الزائدة إلى ' + nextPlan.per + ' ر.س — تسري فوراً ويُحتسب الفرق بالتناسب.', cta: 'ترقية الباقة', action: 'upgrade' }]
+      ) }],
+      [{ min: 220, mobileColumns: 2, cards: [
+        { kind: 'kpi', label: 'استهلاك الباقة', value: usedPct + '%', note: f.n(sub.used) + ' من ' + f.n(sub.quota) + ' رسالة', tone: usedPct > 80 ? 'warn' : 'primary', icon: 'card', action: 'openList' },
+        { kind: 'kpi', label: 'الرصيد المتبقي', value: f.n(left), note: avgDaily ? 'يكفي ' + f.n(daysLeftByQuota) + ' يوماً بالمعدّل الحالي' : 'لا استهلاك يومي مسجّل', tone: left < avgDaily * days ? 'warn' : 'ok', icon: 'sigma' },
+        { kind: 'kpi', label: 'رصيد المحفظة', value: f.money(sub.wallet), note: 'يغطي ' + f.n(Math.floor(sub.wallet / sub.pricePerMessage)) + ' رسالة زائدة', icon: 'card', tone: 'info', action: 'topUp' },
+        { kind: 'kpi', label: 'التجديد القادم', value: 'بعد ' + f.n(days) + ' يوم', note: f.date(sub.renewAt) + ' · ' + f.money(sub.renewAmount) + ' ر.س', icon: 'clock', tone: days < 5 ? 'warn' : undefined },
+      ] }],
+      [{ min: 340, cards: [
+        { kind: 'chart', chartType: 'bars', span: 2, label: 'الاستهلاك اليومي', note: 'آخر 14 يوماً · المتوسط ' + f.n(avgDaily) + ' رسالة/يوم', value: f.n(daily.reduce((n, d) => n + d.value, 0)), tone: 'primary',
+          series: daily.map((d) => ({ label: d.label, value: d.value, tone: d.value > avgDaily * 1.6 ? 'warn' : undefined })), action: 'openList' },
+        { kind: 'panel', label: 'تفاصيل الباقة', note: sub.plan, rows: [
+          { label: 'الحد الشهري', value: f.n(sub.quota) },
+          { label: 'سعر الرسالة الزائدة', value: sub.pricePerMessage + ' ر.س' },
+          { label: 'قيمة التجديد', value: f.money(sub.renewAmount) + ' ر.س' },
+          { label: 'بداية الدورة', value: f.date(sub.cycleStart) },
+          { label: 'التجديد الآلي', value: sub.autoRenew ? 'مفعّل' : 'موقوف', tone: sub.autoRenew ? 'ok' : 'warn' },
+          { label: 'تكلفة الفترة الحالية', value: f.money(sub.used * sub.pricePerMessage) + ' ر.س' },
+        ] },
+      ] }]
+    ) };
+
+    /* ——— إعدادات الفاتورة (Form) ——— */
+    const formMeta = {
+      title: 'إعدادات الفاتورة', sub: 'تحكم في التجديد والتنبيهات قبل نفاد الرصيد.',
+      handlers,
+      sections: [{ cols: 3, fields: [
+        { key: 'autoRenew', type: 'toggle', label: 'التجديد الآلي', value: sub.autoRenew, disabled: !S.editForm, help: 'يجدّد الباقة تلقائياً يوم ' + f.date(sub.renewAt) + ' بمبلغ ' + f.money(sub.renewAmount) + ' ر.س.' },
+        { key: 'alertAt', type: 'select', label: 'تنبيه عند استهلاك', value: V.alertAt || '80', disabled: !S.editForm, options: [{ v: '60', l: '60% من الباقة' }, { v: '80', l: '80% من الباقة' }, { v: '95', l: '95% من الباقة' }], help: 'يُرسل تنبيهاً لمدير الحساب.' },
+        { key: 'invoiceEmail', type: 'text', label: 'بريد استلام الفواتير', value: V.invoiceEmail !== undefined ? V.invoiceEmail : 'accounting@masar.sa', mono: true, disabled: !S.editForm },
+      ] }],
+      actions: S.editForm
+        ? [{ key: 'save', label: 'حفظ الإعدادات', variant: 'primary', action: 'saveSettings' }, { key: 'cancel', label: 'إلغاء', variant: 'secondary', action: 'cancelSettings' }]
+        : [{ key: 'edit', label: 'تعديل', variant: 'primary', action: 'editSettings' }],
+    };
+
+    /* ——— شحن المحفظة (Overlay Panel) ——— */
+    const panel = S.topUpOpen ? {
+      type: 'modal', width: '42%',
+      title: 'شحن المحفظة', subtitle: 'الرصيد الحالي ' + f.money(sub.wallet) + ' ر.س',
+      badge: { text: sub.pricePerMessage + ' ر.س / رسالة زائدة', tone: 'info' },
+      content: { sections: [{ title: 'المبلغ وطريقة الدفع', cols: 2, fields: [
+        { key: 'amount', type: 'number', label: 'المبلغ (ر.س)', value: 500, required: true, mono: true, hint: 'يغطي نحو ' + f.n(Math.floor(500 / sub.pricePerMessage)) + ' رسالة زائدة.' },
+        { key: 'method', type: 'select', label: 'طريقة الدفع', value: 'card', options: [{ v: 'card', l: 'بطاقة مدى/فيزا المسجّلة' }, { v: 'transfer', l: 'تحويل بنكي' }, { v: 'invoice', l: 'إضافة على الفاتورة القادمة' }] },
+        { key: 'note', type: 'textarea', label: 'ملاحظة داخلية (اختياري)', rows: 2, span: 2, stacked: true },
+      ] }] },
+      actions: [
+        { key: 'pay', label: 'اشحن الآن', variant: 'primary' },
+        { key: 'cancel', label: 'إلغاء', variant: 'ghost', close: true },
+      ],
+    } : null;
+
+    const confirmMeta = { handlers, dialogs: [
+      { key: 'upgrade', tone: 'info', icon: 'send', title: 'ترقية الباقة إلى ' + nextPlan.key + '؟',
+        text: 'الترقية تسري فوراً. يُحتسب فرق السعر بالتناسب مع ما بقي من الدورة الحالية.',
+        facts: [
+          { label: 'الحد الشهري الجديد', value: f.n(nextPlan.quota), mono: true, tone: 'ok' },
+          { label: 'سعر الرسالة الزائدة', value: nextPlan.per + ' ر.س', mono: true },
+          { label: 'قيمة التجديد الشهري', value: f.money(nextPlan.price) + ' ر.س', mono: true },
+          { label: 'فرق يُحتسب اليوم', value: f.money(Math.max(0, (nextPlan.price - sub.renewAmount) * (days / 30))) + ' ر.س', mono: true, tone: 'warn' },
+        ],
+        confirmLabel: 'ترقية الآن', action: 'upgrade' },
+    ] };
+
+    return {
+      theme, loading: S.loading, handlers,
+      askTopUp: () => this.setState({ topUpOpen: true }),
+      askUpgrade: () => this.setState({ confirmKey: 'upgrade' }),
+      cardsMeta, formMeta,
+      onField: (key, val) => { if (!S.editForm) return; this.setState({ v: { ...V, [key]: val } }); },
+      panel,
+      onPanelAction: (key, v) => {
+        if (key !== 'pay') return;
+        const amt = Number(v.amount) || 0;
+        if (amt <= 0) { this.toast({ key: 'invalid', title: 'أدخل مبلغاً صحيحاً' }); return; }
+        sub.wallet += amt;
+        D.logActivity('شُحنت المحفظة بمبلغ ' + f.money(amt) + ' ر.س', 'primary');
+        this.setState({ topUpOpen: false });
+        this.toast({ key: 'topped', title: 'شُحنت المحفظة', text: 'الرصيد الآن ' + f.money(sub.wallet) + ' ر.س — يغطي ' + f.n(Math.floor(sub.wallet / sub.pricePerMessage)) + ' رسالة زائدة.' });
+        this.bump();
+      },
+      onPanelClose: () => this.setState({ topUpOpen: false }),
+      confirmMeta, confirmKey: S.confirmKey, onConfirmClose: () => this.setState({ confirmKey: null }),
+      toastsMeta: { position: 'bottom-start', duration: 4000, types: [{ key: 'topped', tone: 'ok', icon: 'check' }, { key: 'upgraded', tone: 'ok', icon: 'check' }, { key: 'saved', tone: 'ok', icon: 'check' }, { key: 'invalid', tone: 'warn', icon: 'alert' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

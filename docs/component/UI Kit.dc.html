@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F6; --surface:#FFFFFF; --sunken:#EEF2F0; --border:#E3E8E6; --border-2:#C9D2CF;
+    --ink:#0F1A18; --ink-2:#33423F; --ink-3:#55645F; --ink-4:#62716D;
+    --pri:#0F7A63; --pri-d:#0A6250; --pri-s:#DFF1EC; --pri-sb:#B6DDD2; --on-pri:#FFFFFF;
+    --ok:#1A8B50; --ok-s:#E1F3E8; --ok-i:#16713F; --ok-sb:#B9E2CA;
+    --wn:#9A6C14; --wn-s:#FBF1DC; --wn-i:#8A6116; --wn-sb:#EFDCB4;
+    --dg:#C9524B; --dg-s:#FBEAE8; --dg-i:#A93A34; --dg-sb:#F2CBC7;
+    --nf:#2568AF; --nf-s:#E4EFFA; --nf-i:#1F5A97; --nf-sb:#C2DCF2;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button,select,textarea{font-family:inherit;}
+  .uk-field:focus{border-color:var(--pri) !important;box-shadow:0 0 0 3px var(--pri-s)}
+  .uk-field:disabled{background:var(--sunken) !important;color:var(--ink-4) !important;cursor:not-allowed}
+  .uk-field[aria-invalid="true"]{border-color:var(--dg) !important;box-shadow:0 0 0 3px var(--dg-s)}
+</style>
+</helmet>
+
+<div dir="{{ dir }}" style="min-height:100vh;padding:24px;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;gap:24px;max-width:1100px;margin:0 auto;font-family:{{ font }}">
+
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+    <span style="display:flex;flex-direction:column;gap:4px">
+      <h1 style="margin:0;font-size:20px;font-weight:700;line-height:1.2">{{ T.title }}</h1>
+      <span style="font-size:12px;color:var(--ink-3)">{{ T.subtitle }}</span>
+    </span>
+    <span style="display:flex;gap:8px;align-items:center">
+    <span style="display:inline-flex;border:1px solid var(--border-2);border-radius:8px;overflow:hidden;background:var(--surface)">
+      <sc-for list="{{ langs }}" as="d" hint-placeholder-count="2">
+        <span onClick="{{ d.onPick }}" style="min-height:34px;padding:0 14px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;cursor:pointer;background:{{ d.bg }};color:{{ d.fg }};border-inline-start:1px solid {{ d.bd }}">{{ d.label }}</span>
+      </sc-for>
+    </span>
+    <span style="display:inline-flex;border:1px solid var(--border-2);border-radius:8px;overflow:hidden;background:var(--surface)">
+      <sc-for list="{{ densities }}" as="d" hint-placeholder-count="2">
+        <span onClick="{{ d.onPick }}" style="min-height:34px;padding:0 14px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;cursor:pointer;background:{{ d.bg }};color:{{ d.fg }};border-inline-start:1px solid {{ d.bd }}">{{ d.label }}</span>
+      </sc-for>
+    </span>
+    </span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <span style="font-size:14px;font-weight:700">{{ T.rules }}</span>
+      <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3)">{{ rulesMono }}</span>
+    </div>
+    <div style="padding:16px 18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px 24px">
+      <sc-for list="{{ rules }}" as="r" hint-placeholder-count="6">
+        <span style="display:flex;flex-direction:column;gap:3px"><span style="font-size:13px;font-weight:600">{{ r.k }}</span><span style="font-size:12px;color:var(--ink-3);line-height:1.7">{{ r.v }}</span></span>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-size:14px;font-weight:700">{{ T.fields }}</div>
+    <div style="display:flex;flex-direction:column">
+      <sc-for list="{{ fields }}" as="x" hint-placeholder-count="10">
+        <div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1.4fr) minmax(0,1fr);gap:16px 24px;align-items:center;padding:{{ rowPad }};padding-inline:18px;border-bottom:1px solid var(--border)">
+          <span style="display:flex;flex-direction:column;gap:4px;min-width:0">
+            <span style="display:flex;align-items:center;gap:8px"><span style="font-size:{{ fs }};font-weight:600">{{ x.label }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 7px;border-radius:999px;background:var(--sunken);color:var(--ink-2)">{{ x.type }}</span></span>
+            <span style="font-size:12px;color:var(--ink-3);line-height:1.7">{{ x.desc }}</span>
+          </span>
+          <span style="display:flex;flex-direction:column;gap:5px;min-width:0">
+            <span style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-3)">{{ x.fieldLabel }}<span style="color:var(--dg)">*</span></span>
+            <sc-if value="{{ x.isInput }}" hint-placeholder-val="{{ true }}"><input class="uk-field" type="{{ x.inputType }}" dir="{{ x.dir }}" value="{{ x.value }}" onInput="{{ x.onChange }}" placeholder="{{ x.placeholder }}" style="width:100%;min-height:{{ h }};padding:0 {{ px }};border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-size:{{ fs }};font-family:{{ x.font }};color:var(--ink);outline:none;text-align:{{ x.align }}" /></sc-if>
+            <sc-if value="{{ x.isTextarea }}" hint-placeholder-val="{{ false }}"><textarea class="uk-field" value="{{ x.value }}" onInput="{{ x.onChange }}" placeholder="{{ x.placeholder }}" rows="3" style="width:100%;padding:10px {{ px }};border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-size:{{ fs }};line-height:1.8;color:var(--ink);outline:none;resize:vertical"></textarea></sc-if>
+            <sc-if value="{{ x.isSelect }}" hint-placeholder-val="{{ false }}">
+              <span style="position:relative;display:flex;width:100%">
+                <select class="uk-field" value="{{ x.value }}" onChange="{{ x.onChange }}" style="appearance:none;width:100%;min-height:{{ h }};padding:0;padding-inline-start:{{ px }};padding-inline-end:30px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:{{ fs }};cursor:pointer;outline:none">
+                  <sc-for list="{{ x.options }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+                </select>
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="none" style="position:absolute;inset-inline-end:11px;top:50%;transform:translateY(-50%);pointer-events:none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </span>
+            </sc-if>
+            <sc-if value="{{ x.isDropdown }}" hint-placeholder-val="{{ false }}">
+              <span data-uk-dd="{{ x.type }}" style="position:relative;display:flex;width:100%">
+                <span onClick="{{ x.onToggleDd }}" class="uk-field" tabIndex="0" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;width:100%;min-height:{{ h }};padding:4px;padding-inline-start:{{ px }};padding-inline-end:30px;border-radius:8px;border:1px solid {{ x.ddBd }};background:var(--surface);font-size:{{ fs }};cursor:pointer;outline:none;box-shadow:{{ x.ddRing }}">
+                  <sc-if value="{{ x.ddEmpty }}" hint-placeholder-val="{{ true }}"><span style="color:var(--ink-3)">{{ x.placeholder }}</span></sc-if>
+                  <sc-if value="{{ x.ddSingle }}" hint-placeholder-val="{{ false }}"><span style="color:var(--ink)">{{ x.ddText }}</span></sc-if>
+                  <sc-for list="{{ x.chips }}" as="c" hint-placeholder-count="2">
+                    <span style="display:inline-flex;align-items:center;gap:6px;min-height:22px;padding:0 4px 0 8px;border-radius:6px;background:var(--pri-s);color:var(--pri-d);font-size:12px;font-weight:600">{{ c.l }}<span onClick="{{ c.onRemove }}" style="width:16px;height:16px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;line-height:1;cursor:pointer" style-hover="background:var(--pri-sb)">×</span></span>
+                  </sc-for>
+                  <svg width="12" height="12" viewBox="0 0 20 20" fill="none" style="position:absolute;inset-inline-end:11px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--ink-3)"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </span>
+                <sc-if value="{{ x.ddOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;top:calc(100% + 4px);inset-inline:0;z-index:40;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 18px 40px -26px rgba(23,33,31,.5);padding:6px;display:flex;flex-direction:column;gap:2px;max-height:240px">
+                    <label style="position:relative;display:flex;align-items:center;margin-bottom:4px">
+                      <svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="position:absolute;inset-inline-start:10px;pointer-events:none"><circle cx="9" cy="9" r="5.5" stroke="var(--ink-3)" stroke-width="1.6"></circle><path d="M13 13l3.5 3.5" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                      <input type="text" value="{{ x.ddQuery }}" onInput="{{ x.onDdQuery }}" placeholder="{{ T.search }}" autoFocus="{{ true }}" style="width:100%;min-height:{{ hSm }};padding:0;padding-inline-start:30px;padding-inline-end:10px;border-radius:6px;border:1px solid var(--border);background:var(--bg);font-size:{{ fsSm }};color:var(--ink);outline:none" />
+                    </label>
+                    <div style="overflow:auto;display:flex;flex-direction:column;gap:2px">
+                      <sc-for list="{{ x.ddItems }}" as="o" hint-placeholder-count="3">
+                        <span onClick="{{ o.onPick }}" style="display:flex;align-items:center;gap:10px;min-height:{{ hSm }};padding:0 10px;border-radius:6px;font-size:{{ fs }};cursor:pointer;color:var(--ink);background:{{ o.bg }}" style-hover="background:var(--sunken)">
+                          <sc-if value="{{ x.ddMulti }}" hint-placeholder-val="{{ false }}"><input type="checkbox" checked="{{ o.on }}" readOnly="{{ true }}" style="width:15px;height:15px;accent-color:var(--pri);margin:0;pointer-events:none" /></sc-if>
+                          <span style="flex:1">{{ o.l }}</span>
+                          <sc-if value="{{ o.onSingle }}" hint-placeholder-val="{{ false }}"><svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4 8-8" stroke="var(--pri)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+                        </span>
+                      </sc-for>
+                      <sc-if value="{{ x.ddNone }}" hint-placeholder-val="{{ false }}"><span style="padding:8px 10px;font-size:12px;color:var(--ink-4)">{{ T.none }}</span></sc-if>
+                    </div>
+                    <sc-if value="{{ x.ddMulti }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:flex;justify-content:space-between;gap:8px;padding:6px 4px 2px;border-top:1px solid var(--border);margin-top:4px">
+                        <span onClick="{{ x.onDdClear }}" style="font-size:12px;color:var(--dg-i);font-weight:600;cursor:pointer;padding:4px 6px;border-radius:6px" style-hover="background:var(--dg-s)">{{ T.clearAll }}</span>
+                        <span onClick="{{ x.onToggleDd }}" style="font-size:12px;color:var(--pri-d);font-weight:600;cursor:pointer;padding:4px 6px;border-radius:6px" style-hover="background:var(--pri-s)">{{ T.done }}</span>
+                      </span>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </span>
+            </sc-if>
+            <sc-if value="{{ x.isAddons }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;flex-direction:column;gap:10px">
+                <sc-for list="{{ x.examples }}" as="ex" hint-placeholder-count="3">
+                  <span style="display:flex;flex-direction:column;gap:4px">
+                    <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-4);text-align:{{ codeAlign }}">{{ ex.code }}</span>
+                    <span style="display:flex;align-items:stretch;width:100%;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);overflow:hidden;min-height:{{ h }}" style-focus-within="border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-s)">
+                      <sc-for list="{{ ex.attStart }}" as="a" hint-placeholder-count="1">
+                        <button type="button" onClick="{{ a.onClick }}" title="{{ a.title }}" style="display:inline-flex;align-items:center;gap:6px;padding:0 {{ a.px }};border:none;border-inline-end:1px solid var(--border-2);background:{{ a.bg }};color:{{ a.fg }};font-size:{{ fsSm }};font-weight:600;cursor:pointer;white-space:nowrap;flex:none" style-hover="filter:brightness(.96)"><span style="display:inline-flex" dangerouslySetInnerHTML="{{ a.svg }}"></span><sc-if value="{{ a.hasLabel }}" hint-placeholder-val="{{ false }}"><span>{{ a.label }}</span></sc-if></button>
+                      </sc-for>
+                      <span style="position:relative;display:flex;align-items:center;flex:1;min-width:0">
+                        <span style="position:absolute;inset-inline-start:6px;top:0;bottom:0;display:flex;align-items:center;gap:2px;pointer-events:none">
+                          <sc-for list="{{ ex.inStart }}" as="a" hint-placeholder-count="1">
+                            <span onClick="{{ a.onClick }}" title="{{ a.title }}" style="pointer-events:auto;width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:{{ a.cursor }};color:{{ a.fg }}" style-hover="background:var(--sunken)" dangerouslySetInnerHTML="{{ a.svg }}"></span>
+                          </sc-for>
+                        </span>
+                        <input class="uk-field-plain" type="text" dir="{{ ex.dir }}" value="{{ ex.value }}" onInput="{{ ex.onChange }}" placeholder="{{ ex.placeholder }}" style="width:100%;min-height:calc({{ h }} - 2px);padding:0;padding-right:{{ ex.padR }};padding-left:{{ ex.padL }};border:none;background:transparent;font-size:{{ fs }};font-family:{{ ex.font }};color:var(--ink);outline:none;text-align:{{ ex.align }}" />
+                        <span style="position:absolute;inset-inline-end:6px;top:0;bottom:0;display:flex;align-items:center;gap:2px;pointer-events:none">
+                          <sc-for list="{{ ex.inEnd }}" as="a" hint-placeholder-count="1">
+                            <span onClick="{{ a.onClick }}" title="{{ a.title }}" style="pointer-events:auto;width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:{{ a.cursor }};color:{{ a.fg }}" style-hover="background:var(--sunken)" dangerouslySetInnerHTML="{{ a.svg }}"></span>
+                          </sc-for>
+                        </span>
+                      </span>
+                      <sc-for list="{{ ex.attEnd }}" as="a" hint-placeholder-count="1">
+                        <button type="button" onClick="{{ a.onClick }}" title="{{ a.title }}" style="display:inline-flex;align-items:center;gap:6px;padding:0 {{ a.px }};border:none;border-inline-start:1px solid var(--border-2);background:{{ a.bg }};color:{{ a.fg }};font-size:{{ fsSm }};font-weight:600;cursor:pointer;white-space:nowrap;flex:none" style-hover="filter:brightness(.96)"><span style="display:inline-flex" dangerouslySetInnerHTML="{{ a.svg }}"></span><sc-if value="{{ a.hasLabel }}" hint-placeholder-val="{{ false }}"><span>{{ a.label }}</span></sc-if></button>
+                      </sc-for>
+                    </span>
+                  </span>
+                </sc-for>
+              </span>
+            </sc-if>
+            <sc-if value="{{ x.isAuto }}" hint-placeholder-val="{{ false }}">
+              <span data-uk-dd="{{ x.type }}" style="position:relative;display:flex;width:100%">
+                <svg width="15" height="15" viewBox="0 0 20 20" fill="none" style="position:absolute;inset-inline-start:11px;top:50%;transform:translateY(-50%);pointer-events:none"><circle cx="9" cy="9" r="5.5" stroke="var(--ink-3)" stroke-width="1.6"></circle><path d="M13 13l3.5 3.5" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round"></path></svg>
+                <input class="uk-field" type="text" value="{{ x.value }}" onInput="{{ x.onAcInput }}" onFocus="{{ x.onAcFocus }}" onKeyDown="{{ x.onAcKey }}" placeholder="{{ x.placeholder }}" style="width:100%;min-height:{{ h }};padding:0;padding-inline-start:34px;padding-inline-end:34px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-size:{{ fs }};color:var(--ink);outline:none" />
+                <sc-if value="{{ x.acHasValue }}" hint-placeholder-val="{{ false }}"><span onClick="{{ x.onAcClear }}" title="{{ T.clear }}" style="position:absolute;inset-inline-end:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3);font-size:14px;line-height:1" style-hover="background:var(--sunken)">×</span></sc-if>
+                <sc-if value="{{ x.ddOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;top:calc(100% + 4px);inset-inline:0;z-index:40;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 18px 40px -26px rgba(23,33,31,.5);padding:6px;display:flex;flex-direction:column;gap:2px;max-height:300px">
+                    <div style="overflow:auto;display:flex;flex-direction:column;gap:2px;min-height:0">
+                    <sc-for list="{{ x.ddItems }}" as="o" hint-placeholder-count="3">
+                      <span onMouseDown="{{ o.onPick }}" style="display:flex;align-items:center;gap:10px;min-height:{{ hSm }};padding:4px 10px;flex:none;border-radius:6px;font-size:{{ fs }};cursor:pointer;color:var(--ink);background:{{ o.bg }}" style-hover="background:var(--sunken)">
+                        <sc-if value="{{ o.hasAvatar }}" hint-placeholder-val="{{ false }}"><span style="width:26px;height:26px;border-radius:50%;background:var(--sunken);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--ink-2);flex:none">{{ o.avatar }}</span></sc-if>
+                        <span style="flex:1 1 60%;min-width:0;display:flex;flex-direction:column;gap:1px">
+                          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0"><span>{{ o.pre }}</span><span style="font-weight:700;color:var(--pri-d)">{{ o.hit }}</span><span>{{ o.post }}</span></span>
+                          <sc-if value="{{ o.hasSecondary }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.secondary }}</span></sc-if>
+                        </span>
+                        <sc-if value="{{ o.hasMeta }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:40%">{{ o.meta }}</span></sc-if>
+                      </span>
+                    </sc-for>
+                    <sc-if value="{{ x.ddNone }}" hint-placeholder-val="{{ false }}"><span style="padding:8px 10px;font-size:12px;color:var(--ink-4)">{{ T.noneFree }}</span></sc-if>
+                    </div>
+                    <sc-if value="{{ x.hasFooter }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:flex;gap:4px;padding:6px 2px 0;border-top:1px solid var(--border);margin-top:4px;flex-wrap:wrap;flex:none">
+                        <sc-for list="{{ x.footer }}" as="a" hint-placeholder-count="2">
+                          <span onMouseDown="{{ a.onClick }}" style="display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;color:{{ a.fg }};background:{{ a.bg }};margin-inline-start:{{ a.ms }}" style-hover="filter:brightness(.96)"><sc-if value="{{ a.hasIcon }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex" dangerouslySetInnerHTML="{{ a.svg }}"></span></sc-if>{{ a.label }}</span>
+                        </sc-for>
+                      </span>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </span>
+            </sc-if>
+            <sc-if value="{{ x.isMultiList }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;flex-direction:column;gap:2px;padding:6px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface)">
+                <sc-for list="{{ x.ddItems }}" as="o" hint-placeholder-count="4">
+                  <label style="display:flex;align-items:center;gap:10px;min-height:{{ hSm }};padding:0 8px;border-radius:6px;cursor:pointer;font-size:{{ fs }};background:{{ o.bg }}" style-hover="background:var(--sunken)"><input type="checkbox" checked="{{ o.on }}" onChange="{{ o.onPick }}" style="width:15px;height:15px;accent-color:var(--pri);cursor:pointer;margin:0" /><span style="flex:1">{{ o.l }}</span></label>
+                </sc-for>
+                <span style="display:flex;justify-content:space-between;padding:6px 8px 2px;border-top:1px solid var(--border);margin-top:4px;font-size:12px;color:var(--ink-3)"><span>{{ x.countText }}</span><span onClick="{{ x.onDdClear }}" style="color:var(--dg-i);font-weight:600;cursor:pointer">{{ T.clear }}</span></span>
+              </span>
+            </sc-if>
+            <sc-if value="{{ x.isSegment }}" hint-placeholder-val="{{ false }}">
+              <span style="display:inline-flex;align-self:flex-start;border:1px solid var(--border-2);border-radius:8px;overflow:hidden;background:var(--surface)">
+                <sc-for list="{{ x.segs }}" as="o" hint-placeholder-count="3"><span onClick="{{ o.onPick }}" style="min-height:{{ hSm }};padding:0 12px;display:inline-flex;align-items:center;font-size:{{ fsSm }};font-weight:600;cursor:pointer;white-space:nowrap;background:{{ o.bg }};color:{{ o.fg }};border-inline-start:1px solid {{ o.bd }}">{{ o.l }}</span></sc-for>
+              </span>
+            </sc-if>
+            <sc-if value="{{ x.isToggle }}" hint-placeholder-val="{{ false }}">
+              <span onClick="{{ x.onToggle }}" style="display:inline-flex;align-items:center;gap:10px;min-height:{{ h }};cursor:pointer;user-select:none">
+                <span style="width:36px;height:20px;border-radius:999px;background:{{ x.trackBg }};position:relative;transition:background .15s;flex:none"><span style="position:absolute;top:2px;inset-inline-start:{{ x.knob }};width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:inset-inline-start .15s"></span></span>
+                <span style="font-size:{{ fs }};color:var(--ink)">{{ x.toggleLabel }}</span>
+              </span>
+            </sc-if>
+            <sc-if value="{{ x.isCheckbox }}" hint-placeholder-val="{{ false }}">
+              <label style="display:inline-flex;align-items:center;gap:10px;min-height:{{ h }};cursor:pointer;font-size:{{ fs }}"><input type="checkbox" checked="{{ x.value }}" onChange="{{ x.onCheck }}" style="width:15px;height:15px;accent-color:var(--pri);cursor:pointer;margin:0" />{{ x.placeholder }}</label>
+            </sc-if>
+            <sc-if value="{{ x.isRadio }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;flex-direction:column;gap:6px">
+                <sc-for list="{{ x.radios }}" as="o" hint-placeholder-count="3"><label style="display:inline-flex;align-items:center;gap:10px;min-height:28px;cursor:pointer;font-size:{{ fs }}"><input type="radio" checked="{{ o.on }}" onChange="{{ o.onPick }}" style="width:15px;height:15px;accent-color:var(--pri);cursor:pointer;margin:0" />{{ o.l }}</label></sc-for>
+              </span>
+            </sc-if>
+            <sc-if value="{{ x.isReadonly }}" hint-placeholder-val="{{ false }}"><span dir="{{ x.dir }}" style="min-height:{{ h }};display:flex;align-items:center;font-size:{{ fs }};font-weight:600;font-family:{{ x.font }};color:var(--ink)">{{ x.value }}</span></sc-if>
+            <sc-if value="{{ x.isAvatar }}" hint-placeholder-val="{{ false }}"><span style="width:48px;height:48px;border-radius:50%;background:var(--sunken);display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;color:var(--ink)">{{ x.value }}</span></sc-if>
+            <sc-if value="{{ x.isBadge }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;gap:6px;flex-wrap:wrap">
+                <sc-for list="{{ tones }}" as="t" hint-placeholder-count="5"><span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:{{ t.bg }};color:{{ t.fg }};font-size:11px;font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:{{ t.dot }}"></span>{{ t.label }}</span></sc-for>
+              </span>
+            </sc-if>
+            <span style="font-size:11px;color:var(--ink-4)">{{ T.helper }}</span>
+          </span>
+          <span style="display:flex;flex-direction:column;gap:5px;min-width:0">
+            <span style="font-size:11px;color:var(--ink-3)">{{ T.states }}</span>
+            <sc-if value="{{ x.isInput }}" hint-placeholder-val="{{ true }}">
+              <input class="uk-field" type="text" value="{{ T.invalid }}" aria-invalid="true" readOnly="{{ true }}" style="width:100%;min-height:{{ h }};padding:0 {{ px }};border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-size:{{ fs }};color:var(--ink);outline:none" />
+              <span style="font-size:11px;color:var(--dg-i)">{{ T.errorMsg }}</span>
+              <input class="uk-field" type="text" value="{{ T.disabled }}" disabled="{{ true }}" style="width:100%;min-height:{{ h }};padding:0 {{ px }};border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-size:{{ fs }};color:var(--ink);outline:none" />
+            </sc-if>
+            <sc-if value="{{ x.noStates }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--ink-4)">—</span></sc-if>
+          </span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-size:14px;font-weight:700">{{ T.buttons }}</div>
+    <div style="display:flex;flex-direction:column">
+      <sc-for list="{{ buttons }}" as="b" hint-placeholder-count="5">
+        <div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,2.4fr);gap:16px 24px;align-items:center;padding:{{ rowPad }};padding-inline:18px;border-bottom:1px solid var(--border)">
+          <span style="display:flex;flex-direction:column;gap:4px;min-width:0">
+            <span style="display:flex;align-items:center;gap:8px"><span style="font-size:{{ fs }};font-weight:600">{{ b.label }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:2px 7px;border-radius:999px;background:var(--sunken);color:var(--ink-2)">{{ b.key }}</span></span>
+            <span style="font-size:12px;color:var(--ink-3);line-height:1.7">{{ b.use }}</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <sc-for list="{{ b.sizes }}" as="s" hint-placeholder-count="3">
+              <button type="button" style="min-height:{{ s.h }};padding:0 {{ s.px }};border-radius:8px;border:{{ b.bd }};background:{{ b.bg }};color:{{ b.fg }};font-size:{{ s.fs }};font-weight:600;cursor:pointer;white-space:nowrap" style-hover="background:{{ b.hover }}">{{ s.text }}</button>
+            </sc-for>
+            <button type="button" style="min-height:36px;padding:0 14px;border-radius:8px;border:{{ b.bd }};background:{{ b.bg }};color:{{ b.fg }};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px" style-hover="background:{{ b.hover }}"><svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 3v10M6 9l4 4 4-4M4 16h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>{{ T.withIcon }}</button>
+            <button type="button" disabled="{{ true }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:{{ b.bd }};background:{{ b.bg }};color:{{ b.fg }};font-size:13px;font-weight:600;cursor:not-allowed;white-space:nowrap;opacity:.45">{{ T.disabled }}</button>
+            <button type="button" style="width:36px;height:36px;border-radius:8px;border:{{ b.bd }};background:{{ b.bg }};color:{{ b.fg }};cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0" style-hover="background:{{ b.hover }}" title="{{ T.iconOnly }}"><svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h9M3 15h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></button>
+          </span>
+        </div>
+      </sc-for>
+      <div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,2.4fr);gap:16px 24px;align-items:center;padding:{{ rowPad }};padding-inline:18px">
+        <span style="display:flex;flex-direction:column;gap:4px"><span style="font-size:{{ fs }};font-weight:600">{{ T.actionBar }}</span><span style="font-size:12px;color:var(--ink-3);line-height:1.7">{{ T.actionBarDesc }}</span></span>
+        <span style="display:flex;gap:8px;padding:12px 18px;border:1px solid var(--border);border-radius:8px;background:var(--bg);flex-wrap:wrap">
+          <button type="button" style="min-height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--dg-sb);background:var(--dg-s);color:var(--dg-i);font-size:13px;font-weight:600;cursor:pointer">{{ T.delete }}</button>
+          <span style="flex:1"></span>
+          <button type="button" style="min-height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer">{{ T.cancel }}</button>
+          <button type="button" style="min-height:36px;padding:0 14px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer">{{ T.save }}</button>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ar&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;],&quot;tsType&quot;:&quot;'ar'|'en'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;'comfortable'|'compact'&quot;,&quot;section&quot;:&quot;العرض&quot;}}">
+// عيّنات ثنائية اللغة — كل نص { ar, en }
+const SAMPLE = {
+  opts: [{ v: 'invoice', l: { ar: 'فاتورة', en: 'Invoice' } }, { v: 'quote', l: { ar: 'عرض سعر', en: 'Quote' } }, { v: 'receipt', l: { ar: 'سند قبض', en: 'Receipt' } }, { v: 'credit', l: { ar: 'إشعار دائن', en: 'Credit note' } }],
+  devices: [{ v: 'd1', l: { ar: 'جهاز المبيعات 1', en: 'Sales device 1' } }, { v: 'd2', l: { ar: 'جهاز المبيعات 2', en: 'Sales device 2' } }, { v: 'd3', l: { ar: 'جهاز الدعم', en: 'Support device' } }, { v: 'd4', l: { ar: 'جهاز المحاسبة', en: 'Accounting device' } }, { v: 'd5', l: { ar: 'جهاز الفرع الشرقي', en: 'East branch device' } }],
+  contacts: [{ l: { ar: 'شركة النخيل للتجارة', en: 'Al Nakheel Trading Co.' }, sub: '+966 55 123 4567' }, { l: { ar: 'مؤسسة الرياض للمقاولات', en: 'Riyadh Contracting Est.' }, sub: '+966 50 987 6543' }, { l: { ar: 'مصنع الشرق للبلاستيك', en: 'East Plastics Factory' }, sub: '+966 53 222 1100' }, { l: { ar: 'مكتب النور للاستشارات', en: 'Al Noor Consulting' }, sub: '+966 56 444 8899' }, { l: { ar: 'شركة الأفق الرقمي', en: 'Digital Horizon Co.' }, sub: '+966 54 777 3322' }, { l: { ar: 'مطاعم البيت الشامي', en: 'Shami House Restaurants' }, sub: '+966 59 111 2244' }, { l: { ar: 'صيدلية الحياة', en: 'Al Hayat Pharmacy' }, sub: '+966 55 606 0606' }],
+  segs: [{ v: 'system', l: { ar: 'النظام', en: 'System' } }, { v: 'light', l: { ar: 'فاتح', en: 'Light' } }, { v: 'dark', l: { ar: 'داكن', en: 'Dark' } }],
+  radios: [{ v: 'ar', l: { ar: 'العربية', en: 'Arabic' } }, { v: 'en', l: { ar: 'English', en: 'English' } }],
+  text: { ar: 'شركة النخيل', en: 'Al Nakheel Co.' }, avatar: { ar: 'س د', en: 'SD' },
+};
+// أمثلة ميتا الأزرار داخل الحقل
+const ADDON_EXAMPLES = [
+  { code: "addons:[{icon:'search',mode:'inside',side:'start'},{icon:'clear',mode:'inside',side:'end',action:'clear'}]", value: SAMPLE.text, phKey: 'search',
+    addons: [{ icon: 'search', mode: 'inside', side: 'start', decorative: true }, { icon: 'clear', mode: 'inside', side: 'end', action: 'clear', title: { ar: 'مسح', en: 'Clear' } }] },
+  { code: "addons:[{icon:'copy',mode:'inside',side:'end',action:'copy'},{icon:'whatsapp',label:{ar:'واتساب',en:'WhatsApp'},mode:'attached',side:'end',tone:'primary'}]", value: '+966551234567', mono: true,
+    addons: [{ icon: 'copy', mode: 'inside', side: 'end', action: 'copy', title: { ar: 'نسخ', en: 'Copy' } }, { icon: 'whatsapp', label: { ar: 'واتساب', en: 'WhatsApp' }, mode: 'attached', side: 'end', tone: 'primary', title: { ar: 'فتح محادثة', en: 'Open chat' } }] },
+  { code: "addons:[{label:{ar:'ر.س',en:'SAR'},mode:'attached',side:'start'},{icon:'calendar',mode:'attached',side:'end'},{icon:'plus',label:{ar:'جديد',en:'New'},mode:'attached',side:'end',tone:'tonal'}]", value: '12450', mono: true,
+    addons: [{ label: { ar: 'ر.س', en: 'SAR' }, mode: 'attached', side: 'start' }, { icon: 'calendar', mode: 'attached', side: 'end', title: { ar: 'التاريخ', en: 'Date' } }, { icon: 'plus', label: { ar: 'جديد', en: 'New' }, mode: 'attached', side: 'end', tone: 'tonal' }] },
+];
+const RULES = {
+  ar: (h) => [
+    { k: 'الأبعاد', v: 'ارتفاع الحقل ' + h + '، الزر 36px، الصغير 28px. زوايا 8px في كل شيء عدا الشارات (دائرية).' },
+    { k: 'الحدود', v: 'حد 1px بلون border-2 على الحقول. التركيز: حد pri + هالة 3px بلون pri-s.' },
+    { k: 'الاتجاه', v: 'الأرقام والمعرّفات والهواتف LTR بخط IBM Plex Mono دائماً. النص يتبع لغة الواجهة (RTL/LTR) وكل الحشو والمحاذاة منطقية (start/end).' },
+    { k: 'التسميات', v: 'فوق الحقل بحجم 11px بلون ink-3. النجمة الحمراء للحقل المطلوب. المساعد 11px ink-4.' },
+    { k: 'الأخطاء', v: 'حد dg + هالة dg-s، والرسالة تحت الحقل بلون dg-i. لا تُستخدم أيقونات.' },
+    { k: 'الأزرار', v: 'أساسي واحد لكل شاشة. الخطِر يُسند للبداية. المعطّل بشفافية .45.' },
+    { k: 'اللغة', v: 'كل نص في الميتا يقبل سلسلة أو { ar, en }. الخط: IBM Plex Sans Arabic للعربية وIBM Plex Sans للإنجليزية.' },
+  ],
+  en: (h) => [
+    { k: 'Sizing', v: 'Field height ' + h + ', button 36px, small 28px. 8px radius everywhere except badges (pill).' },
+    { k: 'Borders', v: '1px border-2 on fields. Focus: pri border + 3px pri-s ring.' },
+    { k: 'Direction', v: 'Numbers, IDs and phones are always LTR in IBM Plex Mono. Text follows UI language (RTL/LTR); padding and alignment are logical (start/end).' },
+    { k: 'Labels', v: 'Above the field, 11px ink-3. Red asterisk for required. Helper 11px ink-4.' },
+    { k: 'Errors', v: 'dg border + dg-s ring, message under the field in dg-i. No icons.' },
+    { k: 'Buttons', v: 'One primary per screen. Danger anchored to the start. Disabled at .45 opacity.' },
+    { k: 'Language', v: 'Any meta text accepts a string or { ar, en }. Font: IBM Plex Sans Arabic for Arabic, IBM Plex Sans for English.' },
+  ],
+};
+
+// ميتا حقل الإكمال التلقائي — تُمرَّر عند التهيئة
+// items: مصفوفة كائنات أو dict { id: {...} } · itemFormat: { primary, secondary, meta, avatar, value } قوالب '{field}' أو دوال
+// footerActions: [{ key, label, icon, tone, onClick }] أزرار في آخر القائمة · allowFree: قبول نص حر
+const AC_META = {
+  items: {
+    c1: { name: { ar: 'شركة النخيل للتجارة', en: 'Al Nakheel Trading Co.' }, phone: '+966 55 123 4567', city: { ar: 'الرياض', en: 'Riyadh' }, tag: { ar: 'عميل', en: 'Customer' } },
+    c2: { name: { ar: 'مؤسسة الرياض للمقاولات', en: 'Riyadh Contracting Est.' }, phone: '+966 50 987 6543', city: { ar: 'الرياض', en: 'Riyadh' }, tag: { ar: 'مورد', en: 'Supplier' } },
+    c3: { name: { ar: 'مصنع الشرق للبلاستيك', en: 'East Plastics Factory' }, phone: '+966 53 222 1100', city: { ar: 'الدمام', en: 'Dammam' }, tag: { ar: 'عميل', en: 'Customer' } },
+    c4: { name: { ar: 'مكتب النور للاستشارات', en: 'Al Noor Consulting' }, phone: '+966 56 444 8899', city: { ar: 'جدة', en: 'Jeddah' }, tag: { ar: 'عميل', en: 'Customer' } },
+    c5: { name: { ar: 'شركة الأفق الرقمي', en: 'Digital Horizon Co.' }, phone: '+966 54 777 3322', city: { ar: 'جدة', en: 'Jeddah' }, tag: { ar: 'شريك', en: 'Partner' } },
+    c6: { name: { ar: 'مطاعم البيت الشامي', en: 'Shami House Restaurants' }, phone: '+966 59 111 2244', city: { ar: 'الرياض', en: 'Riyadh' }, tag: { ar: 'عميل', en: 'Customer' } },
+    c7: { name: { ar: 'صيدلية الحياة', en: 'Al Hayat Pharmacy' }, phone: '+966 55 606 0606', city: { ar: 'مكة', en: 'Makkah' }, tag: { ar: 'عميل', en: 'Customer' } },
+  },
+  searchFields: ['name', 'phone', 'city'],
+  itemFormat: { primary: '{name}', secondary: '{tag} · {city}', meta: '{phone}', avatar: (it) => String(it.name).trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join(' '), value: '{name}' },
+  allowFree: true, limit: 6,
+  footerActions: [
+    { key: 'createContact', label: { ar: 'إنشاء جهة اتصال جديدة', en: 'Create new contact' }, icon: 'plus', tone: 'tonal' },
+    { key: 'browseAll', label: { ar: 'تصفح الكل', en: 'Browse all' }, icon: 'search', tone: 'ghost', align: 'end' },
+  ],
+};
+// يطبّق قالب '{field}' أو دالة على عنصر (بعد ترجمة حقوله)
+function fmt(tpl, item) {
+  if (tpl == null) return '';
+  if (typeof tpl === 'function') return String(tpl(item) ?? '');
+  return String(tpl).replace(/\{(\w+)\}/g, (_, k) => item[k] ?? '');
+}
+// يحوّل dict أو مصفوفة إلى مصفوفة { id, ...fields } مع ترجمة النصوص الثنائية
+function normalizeItems(items, L) {
+  const arr = Array.isArray(items) ? items.map((it, i) => ({ id: it.id ?? i, ...it })) : Object.keys(items || {}).map((id) => ({ id, ...items[id] }));
+  return arr.map((it) => { const o = {}; Object.keys(it).forEach((k) => { o[k] = L(it[k]); }); return o; });
+}
+
+class Component extends DCLogic {
+  // يحوّل ميتا addons إلى قيم القالب. الحشو فيزيائي ويُحسب من اتجاه الواجهة
+  buildAddons(addons, ctx) {
+    const K = window.UIKit, icons = K ? K.ADDON_ICONS : {}, BTN = K ? K.BUTTON : {}, L = (v) => K ? K.L(ctx.lang, v) : v;
+    const mk = (a) => {
+      const v = BTN[a.tone] || { bg: 'var(--sunken)', fg: 'var(--ink-2)' };
+      const run = a.action === 'clear' ? () => ctx.set('') : a.action === 'copy' ? () => { if (navigator.clipboard) navigator.clipboard.writeText(String(ctx.value)); } : a.onClick || (() => {});
+      return { svg: { __html: a.icon ? icons[a.icon] || '' : '' }, hasLabel: !!a.label, label: L(a.label), title: L(a.title || a.label), bg: a.tone ? v.bg : 'var(--sunken)', fg: a.tone ? v.fg : (a.decorative ? 'var(--ink-3)' : 'var(--ink-2)'), px: a.label ? '12px' : '10px', cursor: a.decorative ? 'default' : 'pointer', onClick: a.decorative ? undefined : (e) => { e.stopPropagation(); run(); } };
+    };
+    const pick = (mode, side) => (addons || []).filter((a) => (a.mode || 'inside') === mode && (a.side || 'end') === side).map(mk);
+    const inStart = pick('inside', 'start'), inEnd = pick('inside', 'end');
+    const padStart = inStart.length ? (8 + inStart.length * 28) + 'px' : '12px', padEnd = inEnd.length ? (8 + inEnd.length * 28) + 'px' : '12px';
+    const rtl = ctx.lang !== 'en';
+    return { attStart: pick('attached', 'start'), attEnd: pick('attached', 'end'), inStart, inEnd, padStart, padEnd, padR: rtl ? padStart : padEnd, padL: rtl ? padEnd : padStart };
+  }
+  state = { density: null, lang: null, dd: null, q: '', acIdx: -1, v: { text: null, number: 12450, date: '2026-09-14', textarea: '', select: 'invoice', dropdown: '', autocomplete: '', 'multiselect-dropdown': ['d1', 'd3'], multiselect: ['invoice'], segment: 'system', toggle: true, checkbox: true, radio: 'ar' } };
+  componentDidMount() {
+    const w = () => { if (window.UIKit) this.forceUpdate(); else setTimeout(w, 60); }; w();
+    this.onKey = (e) => { if (e.key === 'Escape' && this.state.dd) this.setState({ dd: null, q: '' }); };
+    this.onDoc = (e) => { if (this.state.dd && !e.target.closest('[data-uk-dd="' + this.state.dd + '"]')) this.setState({ dd: null, q: '' }); };
+    window.addEventListener('keydown', this.onKey); document.addEventListener('mousedown', this.onDoc);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); document.removeEventListener('mousedown', this.onDoc); }
+  componentDidUpdate(prev) {
+    const patch = {};
+    if (prev.lang !== this.props.lang && this.state.lang != null) patch.lang = null;
+    if (prev.density !== this.props.density && this.state.density != null) patch.density = null;
+    if (Object.keys(patch).length) this.setState(patch);
+  }
+  renderVals() {
+    const K = window.UIKit, S = this.state;
+    // تفاعل المستخدم في الصفحة يتقدم على قيمة الـ prop
+    const lang = S.lang ?? this.props.lang ?? 'ar', rtl = lang !== 'en', dir = rtl ? 'rtl' : 'ltr';
+    const dKey = S.density ?? this.props.density ?? 'comfortable';
+    const D = (K ? K.DENSITY : { comfortable: { h: '38px', hSm: '32px', fs: '14px', fsSm: '13px', px: '12px', rowPad: '14px 0' } })[dKey] || (K && K.DENSITY.comfortable);
+    const set = (k, val) => this.setState((st) => ({ v: { ...st.v, [k]: val } }));
+    const MONO = "'IBM Plex Mono',monospace";
+    const L = (v) => K ? K.L(lang, v) : (v && v.ar) || v, tt = (k) => K ? K.t(lang, k) : k;
+    const T = {
+      title: rtl ? 'الحقول والأزرار — التصميم الموحد' : 'Fields & Buttons — Unified design',
+      subtitle: rtl ? 'مصدر واحد ui-kit.js يستخدمه الجدول واللوحات المنبثقة.' : 'One source, ui-kit.js, shared by the table and overlay panels.',
+      rules: rtl ? 'قواعد عامة' : 'General rules', fields: rtl ? 'الحقول' : 'Fields', buttons: rtl ? 'الأزرار' : 'Buttons',
+      actionBar: rtl ? 'شريط الإجراءات' : 'Action bar', actionBarDesc: rtl ? 'الخطِر في البداية، الأساسي في النهاية، ثانوي بجانبه. الأساسي واحد فقط.' : 'Danger at the start, primary at the end with a secondary beside it. Only one primary.',
+      search: tt('search'), none: tt('none'), noneFree: tt('noneFree'), clearAll: tt('clearAll'), clear: tt('clear'), done: tt('done'), helper: tt('helper'), states: tt('states'), invalid: tt('invalid'), errorMsg: tt('errorMsg'), disabled: tt('disabled'), withIcon: tt('withIcon'), iconOnly: tt('iconOnly'), delete: tt('delete'), cancel: tt('cancel'), save: tt('save'),
+    };
+    const base = { dir, font: K ? K.FONT[lang] : 'inherit', codeAlign: rtl ? 'right' : 'left', T, h: D.h, hSm: D.hSm, fs: D.fs, fsSm: D.fsSm, px: D.px, rowPad: D.rowPad, rulesMono: 'radius 8 · border 1 · focus ring 3px pri-s', fields: [], buttons: [], tones: [], densities: [], langs: [], rules: [] };
+    if (!K) return base;
+    const opt = (o) => ({ v: o.v, l: L(o.l) });
+    const OPTS = SAMPLE.opts.map(opt), DEVICES = SAMPLE.devices.map(opt);
+    const fields = K.FIELD_TYPES.map((f) => {
+      const t = f.type, v = t === 'text' && S.v.text == null ? L(SAMPLE.text) : S.v[t], mono = t === 'number';
+      const isInput = t === 'text' || t === 'number' || t === 'date';
+      const segs = SAMPLE.segs.map((o, i) => ({ l: L(o.l), onPick: () => set('segment', o.v), bg: S.v.segment === o.v ? 'var(--sunken)' : 'transparent', fg: S.v.segment === o.v ? 'var(--ink)' : 'var(--ink-3)', bd: i ? 'var(--border-2)' : 'transparent' }));
+      const radios = SAMPLE.radios.map((o) => ({ l: L(o.l), on: S.v.radio === o.v, onPick: () => set('radio', o.v) }));
+      const isDd = t === 'dropdown' || t === 'multiselect-dropdown', isML = t === 'multiselect', multi = t !== 'dropdown';
+      const src = t === 'dropdown' ? OPTS : t === 'multiselect' ? OPTS : DEVICES;
+      const open = S.dd === t, q = open ? S.q.trim().toLowerCase() : '';
+      const arr = multi ? (Array.isArray(v) ? v : []) : null;
+      const toggleMulti = (val) => set(t, arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
+      const ddItems = src.filter((o) => !q || o.l.toLowerCase().includes(q)).map((o) => { const on = multi ? arr.includes(o.v) : v === o.v; return { l: o.l, on, onSingle: !multi && on, bg: on && !multi ? 'var(--pri-s)' : 'transparent', onPick: () => { if (multi) toggleMulti(o.v); else this.setState((st) => ({ v: { ...st.v, [t]: o.v }, dd: null, q: '' })); } }; });
+      const chips = multi && isDd ? arr.map((val) => { const o = src.find((x) => x.v === val); return { l: o ? o.l : val, onRemove: (e) => { e.stopPropagation(); toggleMulti(val); } }; }) : [];
+      const ddSel = !multi ? src.find((o) => o.v === v) : null;
+      const isAuto = t === 'autocomplete';
+      let acItems = [], footer = [];
+      if (isAuto) {
+        const M = AC_META, F = M.itemFormat || {}, items = normalizeItems(M.items, L);
+        const lq = String(v || '').trim(), lql = lq.toLowerCase(), lqd = lq.replace(/\s/g, '');
+        const hay = (it) => (M.searchFields || Object.keys(it)).map((k) => String(it[k] ?? ''));
+        const matches = items.filter((it) => !lq || hay(it).some((s) => s.toLowerCase().includes(lql) || s.replace(/\s/g, '').includes(lqd))).slice(0, M.limit || 6);
+        acItems = matches.map((it, i) => {
+          const primary = fmt(F.primary || '{name}', it), at = lq ? primary.toLowerCase().indexOf(lql) : -1;
+          const secondary = fmt(F.secondary, it), meta = fmt(F.meta, it), avatar = fmt(F.avatar, it), value = fmt(F.value || F.primary || '{name}', it);
+          return {
+            pre: at >= 0 ? primary.slice(0, at) : primary, hit: at >= 0 ? primary.slice(at, at + lq.length) : '', post: at >= 0 ? primary.slice(at + lq.length) : '',
+            hasSecondary: !!secondary, secondary, hasMeta: !!meta, meta, hasAvatar: !!avatar, avatar,
+            bg: S.acIdx === i ? 'var(--sunken)' : 'transparent',
+            onPick: (e) => { e.preventDefault(); this.setState((st) => ({ v: { ...st.v, autocomplete: value, autocompleteId: it.id }, dd: null, acIdx: -1 })); },
+          };
+        });
+        const BTN = K.BUTTON;
+        footer = (M.footerActions || []).map((a) => { const vs = BTN[a.tone] || BTN.ghost; return {
+          label: L(a.label), hasIcon: !!a.icon, svg: { __html: a.icon ? K.ADDON_ICONS[a.icon] || '' : '' }, bg: vs.bg, fg: vs.fg, ms: a.align === 'end' ? 'auto' : '0',
+          onClick: (e) => { e.preventDefault(); this.setState({ dd: null, acIdx: -1 }); if (a.onClick) a.onClick(String(v || '')); },
+        }; });
+      }
+      const acOpen = isAuto && S.dd === t;
+      const isAddons = t === 'addons';
+      const examples = isAddons ? ADDON_EXAMPLES.map((ex, i) => {
+        const key = 'addons' + i, val = S.v[key] ?? L(ex.value);
+        const built = this.buildAddons(ex.addons, { value: val, lang, set: (nv) => set(key, nv) });
+        return { ...built, code: ex.code, value: val, placeholder: ex.phKey ? tt(ex.phKey) : '', onChange: (e) => set(key, e.target.value), dir: ex.mono ? 'ltr' : dir, align: ex.mono ? 'left' : 'start', font: ex.mono ? MONO : 'inherit' };
+      }) : [];
+      return {
+        isAddons, examples,
+        type: t, label: L(f.label), desc: L(f.desc), fieldLabel: L(f.label),
+        isAuto, acHasValue: isAuto && !!v, hasFooter: isAuto && footer.length > 0, footer,
+        onAcInput: (e) => this.setState((st) => ({ v: { ...st.v, autocomplete: e.target.value }, dd: t, acIdx: -1 })),
+        onAcFocus: () => this.setState({ dd: t, acIdx: -1 }),
+        onAcClear: () => this.setState((st) => ({ v: { ...st.v, autocomplete: '' }, dd: t, acIdx: -1 })),
+        onAcKey: (e) => {
+          if (!acOpen && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) { this.setState({ dd: t, acIdx: 0 }); e.preventDefault(); return; }
+          if (e.key === 'ArrowDown') { e.preventDefault(); this.setState({ acIdx: Math.min(acItems.length - 1, S.acIdx + 1) }); }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); this.setState({ acIdx: Math.max(0, S.acIdx - 1) }); }
+          else if (e.key === 'Enter' && acOpen) { e.preventDefault(); if (S.acIdx >= 0 && acItems[S.acIdx]) acItems[S.acIdx].onPick(e); else this.setState({ dd: null }); }
+        },
+        isDropdown: isDd, isMultiList: isML, ddMulti: multi, ddOpen: isAuto ? acOpen : open, ddQuery: S.q, ddItems: isAuto ? acItems : ddItems, chips, ddNone: (isAuto ? acItems : ddItems).length === 0,
+        ddEmpty: multi ? arr.length === 0 : !ddSel, ddSingle: !multi && !!ddSel, ddText: ddSel ? ddSel.l : '',
+        ddBd: open ? 'var(--pri)' : 'var(--border-2)', ddRing: open ? '0 0 0 3px var(--pri-s)' : 'none',
+        countText: multi ? tt('selected') + ': ' + arr.length + ' ' + tt('of') + ' ' + src.length : '',
+        onToggleDd: (e) => { e.stopPropagation(); this.setState({ dd: open ? null : t, q: '' }); },
+        onDdQuery: (e) => this.setState({ q: e.target.value }),
+        onDdClear: (e) => { e.stopPropagation(); set(t, []); },
+        isInput, isTextarea: t === 'textarea', isSelect: t === 'select', isSegment: t === 'segment', isToggle: t === 'toggle', isCheckbox: t === 'checkbox', isRadio: t === 'radio', isReadonly: t === 'readonly', isAvatar: t === 'avatar', isBadge: t === 'badge',
+        noStates: !isInput,
+        inputType: t === 'number' ? 'number' : t === 'date' ? 'date' : 'text', dir: mono || t === 'date' ? 'ltr' : dir, align: mono ? 'left' : 'start', font: mono ? MONO : 'inherit',
+        value: t === 'readonly' ? 'INV-2026-0418' : t === 'avatar' ? L(SAMPLE.avatar) : (v ?? ''), placeholder: t === 'checkbox' ? tt('enable') : isDd ? tt('pick') : isAuto ? tt('acPh') : tt('typeHere'), options: OPTS, segs, radios,
+        onChange: (e) => set(t, mono ? Number(e.target.value) : e.target.value), onCheck: (e) => set('checkbox', e.target.checked),
+        onToggle: () => set('toggle', !S.v.toggle), trackBg: S.v.toggle ? 'var(--pri)' : 'var(--border-2)', knob: S.v.toggle ? '18px' : '2px', toggleLabel: S.v.toggle ? tt('on') : tt('off'),
+      };
+    });
+    const buttons = Object.keys(K.BUTTON).map((k) => { const b = K.BUTTON[k]; return { key: k, bg: b.bg, fg: b.fg, bd: b.bd, hover: b.hover, label: L(b.label), use: L(b.use), sizes: ['sm', 'md', 'lg'].map((s) => ({ ...K.BUTTON_SIZES[s], text: tt(s) })) }; });
+    const seg = (items, cur, onPick) => items.map(([k, l], i) => ({ label: l, onPick: () => onPick(k), bg: cur === k ? 'var(--pri)' : 'transparent', fg: cur === k ? 'var(--on-pri)' : 'var(--ink-2)', bd: i ? 'var(--border-2)' : 'transparent' }));
+    return {
+      ...base, fields, buttons,
+      tones: Object.keys(K.TONE).map((k) => ({ ...K.TONE[k], label: L(K.TONE[k].label) })),
+      densities: seg([['comfortable', tt('comfortable')], ['compact', tt('compact')]], dKey, (k) => this.setState({ density: k })),
+      langs: seg([['ar', 'العربية'], ['en', 'English']], lang, (k) => this.setState({ lang: k, dd: null })),
+      rules: RULES[lang](D.h),
+    };
+  }
+}
+</script>
+</body>
+</html>

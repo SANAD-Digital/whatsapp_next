@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F6; --surface:#FFFFFF; --sunken:#EEF2F0; --border:#E3E8E6; --border-2:#C9D2CF;
+    --ink:#0F1A18; --ink-2:#33423F; --ink-3:#55645F; --ink-4:#62716D;
+    --pri:#0F7A63; --pri-d:#0A6250; --pri-s:#DFF1EC; --pri-sb:#B6DDD2; --on-pri:#FFFFFF;
+    --ok:#1A8B50; --ok-s:#E1F3E8; --ok-i:#16713F; --ok-sb:#B9E2CA;
+    --wn:#9A6C14; --wn-s:#FBF1DC; --wn-i:#8A6116; --wn-sb:#EFDCB4;
+    --dg:#C9524B; --dg-s:#FBEAE8; --dg-i:#A93A34; --dg-sb:#F2CBC7;
+    --nf:#2568AF; --nf-s:#E4EFFA; --nf-i:#1F5A97; --nf-sb:#C2DCF2;
+    --shadow-sm:0 1px 2px rgba(23,33,31,.06); --shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);
+  }
+  [data-theme="dark"]{
+    --bg:#0E1513; --surface:#14201D; --sunken:#1B2926; --border:#243531; --border-2:#334742;
+    --ink:#EAF2F0; --ink-2:#C4D2CE; --ink-3:#9AAAA6; --ink-4:#7E8F8B;
+    --pri:#2FA98C; --pri-d:#49C3A5; --pri-s:#16302A; --pri-sb:#23493F; --on-pri:#04150F;
+    --ok:#35A96A; --ok-s:#132A1E; --ok-i:#7FD3A3; --ok-sb:#1E4531;
+    --wn:#C79436; --wn-s:#2C2314; --wn-i:#E0BC78; --wn-sb:#4A3A1B;
+    --dg:#D9736C; --dg-s:#2E1A19; --dg-i:#F0A8A2; --dg-sb:#4C2A28;
+    --nf:#4A8ED0; --nf-s:#141F2C; --nf-i:#9CC5EC; --nf-sb:#25405C;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-lg:0 18px 40px -22px rgba(0,0,0,.7);
+    color-scheme:dark;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,select,button,textarea{font-family:inherit;}
+  .ts-sb{scrollbar-width:thin;scrollbar-color:var(--border-2) transparent;}
+  .ts-sb::-webkit-scrollbar{width:8px;height:8px;}
+  .ts-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:999px;}
+  [data-ts-tap]{transition:background .16s ease,border-color .16s ease,color .16s ease,transform .12s ease;}
+  [data-ts-tap]:active{transform:translateY(1px);}
+  @keyframes tsInTop{from{opacity:0;transform:translateY(-14px) scale(.98)}to{opacity:1;transform:none}}
+  @keyframes tsInBottom{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+  @keyframes tsOut{from{opacity:1;transform:none}to{opacity:0;transform:scale(.97)}}
+  @keyframes tsSpin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important;}}
+</style>
+</helmet>
+
+<div dir="{{ dir }}" data-theme="{{ theme }}" style="min-height:{{ rootMinH }};background:{{ rootBg }};color:var(--ink);font-family:{{ font }};padding:{{ dn.pagePad }};display:{{ rootDisplay }};justify-content:center">
+  <sc-if value="{{ showPage }}" hint-placeholder-val="{{ true }}">
+  <div style="width:100%;max-width:{{ maxW }};display:flex;flex-direction:column;gap:14px">
+
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <span style="font-size:{{ dn.h1 }};font-weight:700;line-height:1.3">{{ head.title }}</span>
+      <span style="font-size:13px;color:var(--ink-3);line-height:1.7;text-wrap:pretty;max-width:68ch">{{ head.sub }}</span>
+    </div>
+
+    <section style="display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:{{ dn.cardPad }};box-shadow:var(--shadow-sm)">
+      <span style="font-size:13px;font-weight:700">{{ T.fire }}</span>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <sc-for list="{{ triggers }}" as="t" hint-placeholder-count="5">
+          <button type="button" onClick="{{ t.onFire }}" style="display:inline-flex;align-items:center;gap:8px;min-height:{{ dn.h }};padding:0 13px;border-radius:9px;background:{{ t.bg }};color:{{ t.fg }};border:1px solid {{ t.bd }};font-size:{{ dn.fsSm }};font-weight:600;cursor:pointer"><span style="width:8px;height:8px;border-radius:50%;background:{{ t.dot }}"></span>{{ t.label }}</button>
+        </sc-for>
+      </div>
+
+      <span style="height:1px;background:var(--border);margin:2px 0"></span>
+
+      <div style="display:grid;grid-template-columns:{{ dn.optCols }};gap:12px">
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <span style="font-size:12px;font-weight:600;color:var(--ink-2)">{{ T.position }}</span>
+          <div style="display:flex;align-items:center;gap:2px;padding:2px;border-radius:8px;background:var(--sunken);border:1px solid var(--border);width:fit-content;max-width:100%;overflow-x:auto">
+            <sc-for list="{{ posOptions }}" as="o" hint-placeholder-count="4">
+              <span data-ts-tap="1" onClick="{{ o.onPick }}" style="min-height:{{ dn.hSm }};padding:0 11px;display:inline-flex;align-items:center;border-radius:6px;font-size:{{ dn.fsSm }};font-weight:{{ o.weight }};color:{{ o.fg }};background:{{ o.bg }};box-shadow:{{ o.shadow }};cursor:pointer;white-space:nowrap">{{ o.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <span style="font-size:12px;font-weight:600;color:var(--ink-2)">{{ T.duration }}</span>
+          <div style="display:flex;align-items:center;gap:2px;padding:2px;border-radius:8px;background:var(--sunken);border:1px solid var(--border);width:fit-content;max-width:100%;overflow-x:auto">
+            <sc-for list="{{ durOptions }}" as="o" hint-placeholder-count="3">
+              <span data-ts-tap="1" onClick="{{ o.onPick }}" style="min-height:{{ dn.hSm }};padding:0 11px;display:inline-flex;align-items:center;border-radius:6px;font-size:{{ dn.fsSm }};font-weight:{{ o.weight }};color:{{ o.fg }};background:{{ o.bg }};box-shadow:{{ o.shadow }};cursor:pointer;white-space:nowrap">{{ o.label }}</span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:4px">
+        <span style="font-size:12px;color:var(--ink-3);flex:1;min-width:0">{{ T.hint }}</span>
+        <sc-if value="{{ hasAny }}" hint-placeholder-val="{{ false }}">
+          <button type="button" onClick="{{ clearAll }}" style="min-height:{{ dn.hSm }};padding:0 12px;border-radius:8px;background:var(--surface);color:var(--ink);border:1px solid var(--border-2);font-size:{{ dn.fsSm }};font-weight:600;cursor:pointer;flex:none">{{ T.clearAll }}</button>
+        </sc-if>
+      </div>
+    </section>
+
+    <sc-if value="{{ logList.show }}" hint-placeholder-val="{{ false }}">
+      <section style="display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
+        <span style="font-size:12px;font-weight:600;color:var(--ink-2)">{{ T.log }}</span>
+        <sc-for list="{{ logList.items }}" as="l" hint-placeholder-count="2">
+          <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);text-align:left">{{ l }}</span>
+        </sc-for>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ showDocs }}" hint-placeholder-val="{{ true }}">
+      <section style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
+        <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:700">{{ T.metaTitle }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border-radius:999px;background:var(--sunken);color:var(--ink-2)">Toasts meta</span></span>
+        <span style="font-size:12px;color:var(--ink-3);line-height:1.8;text-wrap:pretty">{{ T.metaHint }}</span>
+        <pre dir="ltr" class="ts-sb" style="margin:0;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:var(--ink-2);overflow:auto;max-height:280px;text-align:left">{{ docJson }}</pre>
+      </section>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <div style="position:fixed;top:{{ stack.top }};bottom:{{ stack.bottom }};inset-inline-start:{{ stack.iStart }};inset-inline-end:{{ stack.iEnd }};z-index:80;display:flex;flex-direction:{{ stack.dir }};align-items:{{ stack.align }};gap:10px;pointer-events:none;max-width:min(94vw,420px)">
+    <sc-for list="{{ toasts }}" as="t" hint-placeholder-count="0">
+      <div onMouseEnter="{{ t.onHover }}" onMouseLeave="{{ t.onLeave }}" style="pointer-events:auto;width:100%;min-width:{{ stack.minW }};display:flex;flex-direction:column;background:var(--surface);border:1px solid {{ t.bd }};border-radius:12px;box-shadow:var(--shadow-lg);overflow:hidden;animation:{{ t.anim }}">
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 13px">
+          <span style="width:26px;height:26px;border-radius:8px;background:{{ t.iconBg }};color:{{ t.iconFg }};display:inline-flex;align-items:center;justify-content:center;flex:none" dangerouslySetInnerHTML="{{ t.icon }}"></span>
+          <span style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0">
+            <span style="font-size:13px;font-weight:700;color:var(--ink)">{{ t.title }}</span>
+            <sc-if value="{{ t.hasText }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;color:var(--ink-3);line-height:1.65;text-wrap:pretty">{{ t.text }}</span></sc-if>
+            <sc-if value="{{ t.hasMeta }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-4);text-align:start">{{ t.meta }}</span></sc-if>
+            <sc-if value="{{ t.hasActions }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;align-items:center;gap:8px;padding-top:5px">
+                <sc-for list="{{ t.actions }}" as="a" hint-placeholder-count="1">
+                  <span data-ts-tap="1" onClick="{{ a.onClick }}" style="display:inline-flex;align-items:center;min-height:28px;padding:0 10px;border-radius:7px;background:{{ a.bg }};color:{{ a.fg }};border:{{ a.bd }};font-size:12px;font-weight:600;cursor:pointer">{{ a.label }}</span>
+                </sc-for>
+              </span>
+            </sc-if>
+          </span>
+          <sc-if value="{{ t.spinner }}" hint-placeholder-val="{{ false }}"><span style="width:15px;height:15px;border-radius:50%;border:2px solid var(--border-2);border-top-color:var(--pri);animation:tsSpin .8s linear infinite;flex:none;margin-top:5px"></span></sc-if>
+          <sc-if value="{{ t.closable }}" hint-placeholder-val="{{ true }}"><span data-ts-tap="1" onClick="{{ t.onClose }}" title="{{ T.close }}" style="width:24px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3);flex:none;font-size:15px" style-hover="background:var(--sunken);color:var(--ink)">×</span></sc-if>
+        </div>
+        <sc-if value="{{ t.hasBar }}" hint-placeholder-val="{{ false }}">
+          <span style="height:3px;background:var(--border);flex:none"><span style="display:block;height:100%;background:{{ t.barBg }};width:{{ t.pct }};transition:width .1s linear"></span></span>
+        </sc-if>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;position&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;bottom-end&quot;,&quot;options&quot;:[&quot;top-start&quot;,&quot;top-end&quot;,&quot;bottom-start&quot;,&quot;bottom-end&quot;],&quot;tsType&quot;:&quot;'top-start'|'top-end'|'bottom-start'|'bottom-end'&quot;,&quot;section&quot;:&quot;السلوك&quot;},&quot;duration&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:5000,&quot;options&quot;:[3000,5000,0],&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;السلوك&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;,&quot;auto&quot;],&quot;tsType&quot;:&quot;'light'|'dark'|'auto'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ar&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;],&quot;tsType&quot;:&quot;'ar'|'en'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;'comfortable'|'compact'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;maxWidth&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:880,&quot;min&quot;:600,&quot;max&quot;:1200,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;breakpoint&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:700,&quot;min&quot;:560,&quot;max&quot;:1000,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;showDocs&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;meta&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;ToastsMeta&quot;},&quot;handlers&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, Function&gt;&quot;},&quot;embed&quot;:{&quot;editor&quot;:null,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;الدمج&quot;},&quot;fire&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;{key?:string,n:number,title?,text?,tone?,duration?,actions?}&quot;,&quot;section&quot;:&quot;الدمج&quot;},&quot;onDismiss&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(id: string) =&gt; void&quot;,&quot;section&quot;:&quot;الدمج&quot;}}">
+// ── ميتا التنبيهات: كل نوع سطر واحد { key, tone, title, text, meta, actions, duration, spinner, closable }
+// tone: ok | warn | danger | info | muted · duration: ms (0 = يبقى حتى الإغلاق)
+const TOASTS_META = {
+  title: { ar: 'التنبيهات العائمة', en: 'Toasts' },
+  sub: { ar: 'تنبيه قصير يظهر بعد كل إجراء: نجاح، تحذير، فشل مع إعادة محاولة، أو عملية جارية. يختفي تلقائياً، ويتوقف العد عند تمرير الماوس، وESC يغلق الأحدث.', en: 'A short notice after each action: success, warning, failure with retry, or an in-flight task. Auto-dismisses, pauses on hover, and ESC closes the newest.' },
+  position: 'bottom-end', duration: 5000,
+  types: [
+    { key: 'saved', tone: 'ok', icon: 'check', label: { ar: 'نجاح', en: 'Success' },
+      title: { ar: 'حُفظ النموذج', en: 'Template saved' }, text: { ar: 'نموذج «فاتورة بيع عند الاعتماد» صار مفعّلاً على جهاز المبيعات.', en: '“Sales invoice on approval” is now active on the sales device.' },
+      actions: [{ key: 'undo', label: { ar: 'تراجع', en: 'Undo' }, variant: 'tonal', action: 'undo' }] },
+    { key: 'queued', tone: 'info', icon: 'send', label: { ar: 'معلومة', en: 'Info' },
+      title: { ar: 'أُضيفت 312 رسالة للطابور', en: '312 messages queued' }, text: { ar: 'المعدل الحالي 24 رسالة/دقيقة — الاكتمال المتوقع 13 دقيقة.', en: 'Current rate 24 msg/min — estimated completion in 13 minutes.' },
+      meta: 'batch_id: bt_7741ac', actions: [{ key: 'view', label: { ar: 'عرض الطابور', en: 'View queue' }, variant: 'secondary', action: 'openQueue' }] },
+    { key: 'disconnected', tone: 'warn', icon: 'alert', label: { ar: 'تحذير', en: 'Warning' },
+      title: { ar: 'فُصل جهاز «فرع جدة»', en: '“Jeddah branch” disconnected' }, text: { ar: 'انتهت الجلسة من الهاتف. الرسائل الموجّهة للجهاز ستبقى في الطابور.', en: 'The phone ended the session. Messages routed to it stay queued.' },
+      duration: 0, actions: [{ key: 'relink', label: { ar: 'إعادة الاقتران', en: 'Re-link' }, variant: 'primary', action: 'relink' }] },
+    { key: 'failed', tone: 'danger', icon: 'x', label: { ar: 'فشل', en: 'Error' },
+      title: { ar: 'فشل إرسال 4 رسائل', en: '4 messages failed' }, text: { ar: 'رقم غير مسجّل بواتساب — راجع أرقام الجهات المحددة.', en: 'Recipient not registered on WhatsApp — check the selected numbers.' },
+      meta: 'recipient_not_registered', duration: 0,
+      actions: [{ key: 'retry', label: { ar: 'إعادة المحاولة', en: 'Retry' }, variant: 'primary', action: 'retry' }, { key: 'details', label: { ar: 'التفاصيل', en: 'Details' }, variant: 'ghost', action: 'details' }] },
+    { key: 'sending', tone: 'muted', icon: 'clock', label: { ar: 'جارٍ', en: 'In progress' },
+      title: { ar: 'يجري تصدير 22,418 صفاً', en: 'Exporting 22,418 rows' }, text: { ar: 'سيُنزّل الملف تلقائياً عند الانتهاء.', en: 'The file downloads automatically when ready.' },
+      spinner: true, duration: 0, closable: false },
+  ],
+  handlers: {
+    undo: () => 'تراجع عن الحفظ',
+    openQueue: () => 'فتح شاشة الطابور',
+    relink: () => 'فتح ويزرد الاقتران',
+    retry: () => 'إعادة محاولة الإرسال',
+    details: () => 'فتح تفاصيل الفشل',
+  },
+};
+
+const ICONS_EXTRA = {
+  check: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M5 10.5l3.5 3.5L15 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  x: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l8 8M14 6l-8 8"/></svg>',
+  alert: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 6v5"/><circle cx="10" cy="14" r="1" fill="currentColor" stroke="none"/></svg>',
+  clock: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6.5"/><path d="M10 6.5V10l2.5 1.5" stroke-linecap="round"/></svg>',
+  send: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 10l14-6-4 14-3-6z"/><path d="M10 12l7-8"/></svg>',
+};
+const FALLBACK = {
+  FONT: { ar: "'IBM Plex Sans Arabic',system-ui,sans-serif", en: "'IBM Plex Sans','IBM Plex Sans Arabic',system-ui,sans-serif" },
+  DENSITY: { comfortable: { h: '38px', hSm: '32px', fs: '14px', fsSm: '13px', px: '12px' }, compact: { h: '32px', hSm: '28px', fs: '13px', fsSm: '12px', px: '10px' } },
+  TONE: { ok: { bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', bd: 'var(--ok-sb)' }, warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', bd: 'var(--wn-sb)' }, danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--dg)', bd: 'var(--dg-sb)' }, info: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)', bd: 'var(--nf-sb)' }, muted: { bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--ink-4)', bd: 'var(--border)' } },
+  BUTTON: { primary: { bg: 'var(--pri)', fg: 'var(--on-pri)', bd: 'none' }, secondary: { bg: 'var(--surface)', fg: 'var(--ink)', bd: '1px solid var(--border-2)' }, danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', bd: '1px solid var(--dg-sb)' }, ghost: { bg: 'transparent', fg: 'var(--ink-2)', bd: 'none' }, tonal: { bg: 'var(--pri-s)', fg: 'var(--pri-d)', bd: '1px solid var(--pri-sb)' } },
+  ADDON_ICONS: {},
+};
+const POSITIONS = [
+  { v: 'top-start', ar: 'أعلى البداية', en: 'Top start' },
+  { v: 'top-end', ar: 'أعلى النهاية', en: 'Top end' },
+  { v: 'bottom-start', ar: 'أسفل البداية', en: 'Bottom start' },
+  { v: 'bottom-end', ar: 'أسفل النهاية', en: 'Bottom end' },
+];
+const DURATIONS = [{ v: 3000, ar: '3 ثوانٍ', en: '3s' }, { v: 5000, ar: '5 ثوانٍ', en: '5s' }, { v: 0, ar: 'بلا اختفاء', en: 'Sticky' }];
+const EXTRA = {
+  ar: { fire: 'أطلق تنبيهاً', position: 'الموضع', duration: 'مدة الاختفاء', hint: 'مرّر الماوس على التنبيه ليتوقف العد · ESC يغلق الأحدث · الحد الأعلى 4 تنبيهات معروضة.', clearAll: 'إغلاق الكل', close: 'إغلاق', log: 'سجل الإجراءات', metaTitle: 'الميتا المستخدمة لهذه التنبيهات', metaHint: 'كل نوع تنبيه سطر واحد في types: tone وicon وtitle وtext وmeta وactions وduration (صفر = يبقى) وspinner وclosable. الموضع والمدة العامة من position وduration.' },
+  en: { fire: 'Fire a toast', position: 'Position', duration: 'Auto-dismiss', hint: 'Hover a toast to pause its timer · ESC closes the newest · up to 4 visible at once.', clearAll: 'Dismiss all', close: 'Close', log: 'Action log', metaTitle: 'Meta driving these toasts', metaHint: 'Each toast type is one line in types: tone, icon, title, text, meta, actions, duration (0 = sticky), spinner, closable. Global placement from position and duration.' },
+};
+
+class Component extends DCLogic {
+  state = { theme: null, lang: null, pos: null, dur: null, items: [], log: [], width: 1280 };
+
+  componentDidMount() {
+    this.seq = 0; this.timers = {};
+    this.onResize = () => this.setState({ width: window.innerWidth });
+    // ESC: يغلق أحدث تنبيه (قاعدة المشروع)
+    this.onKey = (e) => { if (e.key !== 'Escape') return; const it = this.state.items; if (!it.length) return; e.stopPropagation(); this.dismiss(it[it.length - 1].id); };
+    window.addEventListener('resize', this.onResize); window.addEventListener('keydown', this.onKey);
+    this.onResize();
+    this.tick = setInterval(() => {
+      const now = Date.now();
+      const items = this.state.items;
+      if (!items.length) return;
+      let changed = false;
+      const next = items.filter((t) => {
+        if (!t.duration || t.paused) return true;
+        if (now >= t.endsAt) { changed = true; return false; }
+        return true;
+      });
+      if (changed) this.setState({ items: next }); else this.forceUpdate();
+    }, 100);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); window.removeEventListener('keydown', this.onKey); clearInterval(this.tick); }
+
+  meta() { return this.props.meta || TOASTS_META; }
+  // ── إطلاق من الخارج: fire = { key, n } أو { key, n, title, text, tone } — كل قيمة n جديدة تُطلق تنبيهاً واحداً
+  componentDidUpdate(pp) {
+    const f = this.props.fire;
+    if (f && f !== pp.fire && (f.n === undefined || f.n !== (pp.fire || {}).n)) this.fire(f);
+  }
+  fire(f) {
+    const types = this.meta().types || [];
+    const base = types.find((t) => t.key === f.key) || {};
+    const t = { ...base, ...f, key: f.key || ('adhoc-' + Date.now()) };
+    this.push(t, t);
+  }
+  run(spec, args) {
+    const H = this.props.handlers || this.meta().handlers || {};
+    const fn = typeof spec === 'function' ? spec : H[spec];
+    let ret;
+    if (fn) { try { ret = fn.apply(null, args || []); } catch (e) { ret = String(e && e.message); } }
+    this.setState((s) => ({ log: [JSON.stringify({ action: typeof spec === 'string' ? spec : 'fn', returned: ret }), ...s.log].slice(0, 5) }));
+    return ret;
+  }
+  push(type, override) {
+    const dur = type.duration != null ? type.duration : (this.state.dur ?? this.meta().duration ?? 5000);
+    const id = 'tst-' + (++this.seq);
+    const item = { id, key: type.key, duration: dur, endsAt: Date.now() + dur, total: dur, paused: false, def: override || null };
+    this.setState((s) => ({ items: s.items.concat([item]).slice(-4) }));
+  }
+  dismiss(id) { this.setState((s) => ({ items: s.items.filter((t) => t.id !== id) })); if (this.props.onDismiss) this.props.onDismiss(id); }
+  pause(id, on) {
+    this.setState((s) => ({ items: s.items.map((t) => {
+      if (t.id !== id || !t.duration) return t;
+      if (on) return { ...t, paused: true, left: Math.max(0, t.endsAt - Date.now()) };
+      return { ...t, paused: false, endsAt: Date.now() + (t.left != null ? t.left : t.total) };
+    }) }));
+  }
+
+  renderVals() {
+    const K = window.UIKit || FALLBACK, S = this.state, P = this.props, M = this.meta();
+    const lang = S.lang ?? P.lang ?? M.lang ?? 'ar', rtl = lang !== 'en', dir = rtl ? 'rtl' : 'ltr';
+    const L = (x) => K.L ? K.L(lang, x) : ((x && x[lang]) || x || '');
+    const pref = S.theme ?? P.theme ?? M.theme ?? 'light';
+    let sysDark = false; try { sysDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) {}
+    const theme = pref === 'auto' ? (sysDark ? 'dark' : 'light') : pref;
+    const isMobile = S.width < (P.breakpoint ?? 700);
+    const dkey = (P.density ?? M.density ?? 'comfortable') === 'compact' ? 'compact' : 'comfortable';
+    const D = (K.DENSITY || FALLBACK.DENSITY)[dkey];
+    const TONE = K.TONE || FALLBACK.TONE, BTN = K.BUTTON || FALLBACK.BUTTON;
+    const ICONS = Object.assign({}, K.ADDON_ICONS || {}, ICONS_EXTRA);
+    const tone = (k) => TONE[k] || TONE.muted;
+    const icon = (n) => ({ __html: ICONS[n] || '' });
+    const T = { ...EXTRA[lang] };
+    const dn = {
+      pagePad: P.embed ? '0' : (isMobile ? '14px' : '24px'), cardPad: isMobile ? '16px' : '20px', h1: isMobile ? '18px' : '20px',
+      h: isMobile ? '44px' : D.h, hSm: isMobile ? '38px' : D.hSm, fsSm: isMobile ? '14px' : D.fsSm,
+      optCols: isMobile ? 'minmax(0,1fr)' : 'repeat(2,minmax(0,1fr))',
+    };
+
+    const types = M.types || [];
+    const pos = S.pos ?? P.position ?? M.position ?? 'bottom-end';
+    const dur = S.dur ?? P.duration ?? M.duration ?? 5000;
+    const [vSide, hSide] = pos.split('-');
+    const top = vSide === 'top';
+
+    const byKey = {};
+    types.forEach((t) => { byKey[t.key] = t; });
+    const embed = !!P.embed;
+
+    return {
+      dir, theme, font: (K.FONT || FALLBACK.FONT)[lang], dn, T, maxW: (P.maxWidth ?? M.maxWidth ?? 880) + 'px',
+      showPage: !embed, rootMinH: embed ? '0' : '100vh', rootBg: embed ? 'transparent' : 'var(--bg)', rootDisplay: embed ? 'contents' : 'flex',
+      head: { title: L(M.title), sub: L(M.sub) },
+      triggers: types.map((t) => {
+        const tn = tone(t.tone);
+        return { label: L(t.label) || L(t.title), bg: 'var(--surface)', fg: 'var(--ink-2)', bd: 'var(--border-2)', dot: tn.dot, onFire: () => this.push(t) };
+      }),
+      posOptions: POSITIONS.map((o) => {
+        const on = o.v === pos;
+        return { label: o[lang], weight: on ? 600 : 400, fg: on ? 'var(--ink)' : 'var(--ink-3)', bg: on ? 'var(--surface)' : 'transparent', shadow: on ? 'var(--shadow-sm)' : 'none', onPick: () => this.setState({ pos: o.v }) };
+      }),
+      durOptions: DURATIONS.map((o) => {
+        const on = o.v === dur;
+        return { label: o[lang], weight: on ? 600 : 400, fg: on ? 'var(--ink)' : 'var(--ink-3)', bg: on ? 'var(--surface)' : 'transparent', shadow: on ? 'var(--shadow-sm)' : 'none', onPick: () => this.setState({ dur: o.v }) };
+      }),
+      hasAny: S.items.length > 0, clearAll: () => this.setState({ items: [] }),
+      stack: {
+        top: top ? (isMobile ? '12px' : '20px') : 'auto', bottom: top ? 'auto' : (isMobile ? '12px' : '20px'),
+        iStart: hSide === 'start' ? (isMobile ? '12px' : '20px') : 'auto', iEnd: hSide === 'end' ? (isMobile ? '12px' : '20px') : 'auto',
+        dir: top ? 'column' : 'column-reverse', align: 'stretch', minW: isMobile ? '0' : '320px',
+      },
+      toasts: S.items.map((it) => {
+        const t = it.def || byKey[it.key] || {}, tn = tone(t.tone);
+        const left = it.paused ? (it.left != null ? it.left : it.total) : Math.max(0, it.endsAt - Date.now());
+        const pct = it.duration ? Math.max(0, Math.min(100, (left / it.total) * 100)) : 0;
+        return {
+          title: L(t.title), text: L(t.text), hasText: !!t.text, meta: t.meta || '', hasMeta: !!t.meta,
+          icon: icon(t.icon), iconBg: tn.bg, iconFg: tn.fg, bd: tn.bd, barBg: tn.dot,
+          hasBar: !!it.duration, pct: pct + '%', spinner: !!t.spinner, closable: t.closable !== false,
+          anim: (top ? 'tsInTop' : 'tsInBottom') + ' .22s cubic-bezier(.22,.61,.36,1)',
+          hasActions: (t.actions || []).length > 0,
+          actions: (t.actions || []).map((a) => { const b = BTN[a.variant || 'secondary'] || BTN.secondary; return { label: L(a.label), bg: b.bg, fg: b.fg, bd: b.bd, onClick: () => { this.run(a.onClick || a.action, []); this.dismiss(it.id); } }; }),
+          onClose: () => this.dismiss(it.id), onHover: () => this.pause(it.id, true), onLeave: () => this.pause(it.id, false),
+        };
+      }),
+      logList: { show: S.log.length > 0, items: S.log },
+      showDocs: (P.showDocs ?? M.showDocs) !== false,
+      docJson: JSON.stringify({ position: pos, duration: dur, types: types.map((t) => ({ key: t.key, tone: t.tone, duration: t.duration != null ? t.duration : 'inherit', actions: (t.actions || []).map((a) => a.key), spinner: t.spinner || undefined, closable: t.closable })) }, null, 2),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F6; --surface:#FFFFFF; --sunken:#EEF2F0; --border:#E3E8E6; --border-2:#C9D2CF;
+    --ink:#0F1A18; --ink-2:#33423F; --ink-3:#55645F; --ink-4:#62716D;
+    --pri:#0F7A63; --pri-d:#0A6250; --pri-s:#DFF1EC; --pri-sb:#B6DDD2; --on-pri:#FFFFFF;
+    --ok:#1A8B50; --ok-s:#E1F3E8; --ok-i:#16713F; --ok-sb:#B9E2CA;
+    --wn:#9A6C14; --wn-s:#FBF1DC; --wn-i:#8A6116; --wn-sb:#EFDCB4;
+    --dg:#C9524B; --dg-s:#FBEAE8; --dg-i:#A93A34; --dg-sb:#F2CBC7;
+    --nf:#2568AF; --nf-s:#E4EFFA; --nf-i:#1F5A97; --nf-sb:#C2DCF2;
+    --c-sent:#8FC0E4; --c-deliv:#2E7FD1; --c-read:#22A7C9; --c-queued:#EDA93E; --c-failed:#E0615A;
+  }
+  [data-theme="dark"]{
+    --bg:#0E1513; --surface:#14201D; --sunken:#1B2926; --border:#243531; --border-2:#334742;
+    --ink:#EAF2F0; --ink-2:#C4D2CE; --ink-3:#9AAAA6; --ink-4:#7E8F8B;
+    --pri:#2FA98C; --pri-d:#49C3A5; --pri-s:#16302A; --pri-sb:#23493F; --on-pri:#04150F;
+    --ok:#35A96A; --ok-s:#132A1E; --ok-i:#7FD3A3; --ok-sb:#1E4531;
+    --wn:#C79436; --wn-s:#2C2314; --wn-i:#E0BC78; --wn-sb:#4A3A1B;
+    --dg:#D9736C; --dg-s:#2E1A19; --dg-i:#F0A8A2; --dg-sb:#4C2A28;
+    --nf:#4A8ED0; --nf-s:#141F2C; --nf-i:#9CC5EC; --nf-sb:#25405C;
+    --c-sent:#6FA6D8; --c-deliv:#3E82CC; --c-read:#37A9C9; --c-queued:#D9A33A; --c-failed:#DE6F68;
+    --skel-a:#1E2C31; --skel-b:#28373C;
+    color-scheme:dark;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  .cards-seg{scrollbar-width:none;-ms-overflow-style:none;}
+  .cards-seg::-webkit-scrollbar{display:none;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  .cd-sk{background:linear-gradient(90deg,var(--skel-a) 25%,var(--skel-b) 50%,var(--skel-a) 75%);background-size:200% 100%;animation:cdSk 1.4s linear infinite;border-radius:6px;}
+  @keyframes cdSk{to{background-position:-200% 0}}
+  @keyframes cardsPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.82)}}
+  @keyframes cardsPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.82)}}
+</style>
+</helmet>
+
+<div dir="{{ dir }}" data-theme="{{ theme }}" style="min-height:{{ rootMinH }};background:{{ rootBg }};color:var(--ink);font-family:{{ font }};padding:{{ dn.pagePad }};display:flex;flex-direction:column;gap:{{ dn.secGap }}">
+
+  <sc-for list="{{ sections }}" as="s" hint-placeholder-count="4">
+    <section style="display:flex;flex-direction:column;gap:{{ dn.headGap }}">
+
+      <sc-if value="{{ s.hasHead }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+            <span style="font-size:{{ dn.titleFs }};font-weight:700;line-height:1.25">{{ s.title }}</span>
+            <sc-if value="{{ s.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--ink-3);line-height:1.6">{{ s.sub }}</span></sc-if>
+          </span>
+          <sc-if value="{{ s.hasSeg }}" hint-placeholder-val="{{ false }}">
+            <div class="cards-seg" style="display:flex;align-items:center;gap:2px;padding:2px;border-radius:8px;background:var(--sunken);border:1px solid var(--border);flex:{{ dn.segFlex }};max-width:100%;overflow-x:auto">
+              <sc-for list="{{ s.seg }}" as="o" hint-placeholder-count="4">
+                <span onClick="{{ o.onClick }}" style="min-height:{{ dn.segH }};padding:0 12px;display:flex;align-items:center;justify-content:center;flex:{{ dn.segItemFlex }};white-space:nowrap;border-radius:6px;font-size:12px;font-weight:{{ o.weight }};cursor:pointer;background:{{ o.bg }};color:{{ o.fg }};box-shadow:{{ o.shadow }}">{{ o.label }}</span>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <div style="display:grid;grid-template-columns:{{ s.cols }};gap:{{ dn.gap }};align-items:stretch">
+        <sc-for list="{{ s.cards }}" as="c" hint-placeholder-count="3">
+
+          <sc-if value="{{ c.isSkel }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:{{ dn.cardPad }};min-width:0;height:{{ c.skelH }};border-radius:8px;background:var(--surface);border:1px solid var(--border);grid-column:{{ c.span }}">
+              <span class="cd-sk" style="height:11px;width:52%;flex:none"></span>
+              <span class="cd-sk" style="height:20px;width:38%;flex:none"></span>
+              <sc-if value="{{ c.skelTall }}" hint-placeholder-val="{{ false }}"><span class="cd-sk" style="flex:1;min-height:56px;width:100%"></span></sc-if>
+              <span class="cd-sk" style="height:10px;width:66%;flex:none"></span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ c.isStat }}" hint-placeholder-val="{{ true }}">
+            <div onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:12px;padding:{{ dn.cardPad }};min-width:0;border-radius:8px;background:var(--surface);border:1px solid {{ c.bd }};cursor:{{ c.cursor }};grid-column:{{ c.span }}" style-hover="border-color:{{ c.hoverBd }}">
+              <span style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0">
+                <span style="display:flex;align-items:center;gap:6px;min-width:0">
+                  <sc-if value="{{ c.hasDot }}" hint-placeholder-val="{{ true }}"><span style="width:7px;height:7px;border-radius:50%;background:{{ c.dot }};flex:none"></span></sc-if>
+                  <span style="font-size:12px;font-weight:600;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.label }}</span>
+                </span>
+                <span dir="{{ c.valDir }}" style="font-family:{{ c.valFont }};font-size:{{ dn.statFs }};font-weight:700;line-height:1.2;color:{{ c.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:start">{{ c.value }}</span>
+                <sc-if value="{{ c.hasNote }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.note }}</span></sc-if>
+              </span>
+              <sc-if value="{{ c.hasIcon }}" hint-placeholder-val="{{ true }}"><span style="width:{{ dn.tile }};height:{{ dn.tile }};border-radius:8px;background:{{ c.tint }};color:{{ c.iconFg }};display:flex;align-items:center;justify-content:center;flex:none" dangerouslySetInnerHTML="{{ c.icon }}"></span></sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ c.isKpi }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ c.onClick }}" style="display:flex;flex-direction:column;gap:8px;padding:{{ dn.cardPad }};min-width:0;border-radius:8px;background:var(--surface);border:1px solid {{ c.bd }};cursor:{{ c.cursor }};grid-column:{{ c.span }}" style-hover="border-color:{{ c.hoverBd }}">
+              <span style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+                <span style="font-size:12px;font-weight:600;color:var(--ink-3);min-width:0;overflow:hidden;text-overflow:ellipsis">{{ c.label }}</span>
+                <sc-if value="{{ c.hasIcon }}" hint-placeholder-val="{{ true }}"><span style="width:28px;height:28px;border-radius:6px;background:{{ c.tint }};color:{{ c.iconFg }};display:flex;align-items:center;justify-content:center;flex:none" dangerouslySetInnerHTML="{{ c.icon }}"></span></sc-if>
+              </span>
+              <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:{{ dn.kpiFs }};font-weight:700;letter-spacing:-.02em;line-height:1.1;color:{{ c.fg }};text-align:start">{{ c.value }}</span>
+              <span style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px">
+                <span style="font-size:11px;color:{{ c.noteFg }};min-width:0">{{ c.note }}</span>
+                <sc-if value="{{ c.hasSpark }}" hint-placeholder-val="{{ true }}"><svg width="56" height="18" viewBox="0 0 60 18" fill="none" style="flex:none"><polyline points="{{ c.pts }}" fill="none" stroke="{{ c.sparkFg }}" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"></polyline></svg></sc-if>
+              </span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ c.isAlert }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:{{ dn.alertAlign }};gap:{{ dn.alertGap }};padding:{{ dn.alertPad }};min-height:56px;min-width:0;border-radius:8px;background:{{ c.tint }};border:1px solid {{ c.bd }};grid-column:{{ c.span }};flex-wrap:{{ dn.alertWrap }}">
+              <span style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:{{ c.dot }};flex:none;margin-top:{{ dn.alertIconTop }}" dangerouslySetInnerHTML="{{ c.icon }}"></span>
+              <span style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:{{ dn.alertTextMin }}">
+                <span style="font-size:{{ dn.alertTitleFs }};font-weight:700;color:{{ c.fg }};line-height:1.5;text-wrap:pretty">{{ c.label }}</span>
+                <sc-if value="{{ c.hasNote }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;color:{{ c.fg }};line-height:1.6;text-wrap:pretty">{{ c.note }}</span></sc-if>
+              </span>
+              <sc-if value="{{ c.hasCta }}" hint-placeholder-val="{{ true }}">
+                <button type="button" onClick="{{ c.onClick }}" style="min-height:{{ dn.ctaH }};padding:0 14px;border-radius:6px;border:{{ c.ctaBd }};background:{{ c.ctaBg }};color:{{ c.ctaFg }};font-family:inherit;font-size:{{ dn.ctaFs }};font-weight:600;cursor:pointer;flex:none;width:{{ dn.ctaW }}">{{ c.cta }}</button>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ c.isMini }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ c.onClick }}" style="display:flex;align-items:center;gap:10px;padding:9px 11px;min-width:0;border-radius:8px;background:var(--surface);border:1px solid {{ c.bd }};cursor:{{ c.cursor }};grid-column:{{ c.span }}" style-hover="border-color:{{ c.hoverBd }}">
+              <sc-if value="{{ c.hasIcon }}" hint-placeholder-val="{{ true }}"><span style="width:30px;height:30px;border-radius:7px;background:{{ c.tint }};color:{{ c.iconFg }};display:flex;align-items:center;justify-content:center;flex:none" dangerouslySetInnerHTML="{{ c.icon }}"></span></sc-if>
+              <span style="display:flex;flex-direction:column;gap:1px;min-width:0;flex:1">
+                <span style="font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.label }}</span>
+                <span dir="{{ c.valDir }}" style="font-family:{{ c.valFont }};font-size:13px;font-weight:600;color:{{ c.fg }};text-align:start;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.value }}</span>
+              </span>
+              <sc-if value="{{ c.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:600;color:{{ c.badgeFg }};background:{{ c.badgeBg }};border-radius:6px;padding:2px 7px;flex:none">{{ c.badge }}</span></sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ c.isLive }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:6px;grid-column:{{ c.span }};min-width:0">
+              <div style="display:flex;align-items:center;gap:14px;padding:9px 12px;border-radius:8px;background:var(--surface);border:1px solid {{ c.liveBd }};box-shadow:inset 3px 0 0 {{ c.liveAccent }};flex-wrap:wrap;min-width:0">
+                <span style="display:flex;align-items:center;gap:8px;min-width:0">
+                  <span style="width:8px;height:8px;border-radius:50%;background:{{ c.liveAccent }};animation:cardsPulse 1.8s ease-in-out infinite;flex:none"></span>
+                  <span style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.label }}</span>
+                  <sc-if value="{{ c.hasBadge }}" hint-placeholder-val="{{ true }}"><span style="padding:3px 8px;border-radius:999px;background:{{ c.badgeBg }};color:{{ c.badgeFg }};font-size:11px;font-weight:600;flex:none;white-space:nowrap">{{ c.badge }}</span></sc-if>
+                </span>
+                <span style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px">
+                  <span style="flex:1;min-width:80px;height:6px;border-radius:999px;background:var(--sunken);overflow:hidden;display:flex">
+                    <sc-for list="{{ c.segments }}" as="s" hint-placeholder-count="3"><span title="{{ s.title }}" style="width:{{ s.w }};background:{{ s.fill }}"></span></sc-for>
+                  </span>
+                  <sc-if value="{{ c.hasProgressText }}" hint-placeholder-val="{{ true }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-2);white-space:nowrap;flex:none">{{ c.progressText }}</span></sc-if>
+                </span>
+                <sc-if value="{{ c.hasLiveStats }}" hint-placeholder-val="{{ true }}">
+                  <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                    <sc-for list="{{ c.liveStats }}" as="s" hint-placeholder-count="4">
+                      <span style="display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap"><span style="font-size:10px;color:var(--ink-4)">{{ s.label }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:{{ s.fg }}">{{ s.value }}</span></span>
+                    </sc-for>
+                  </span>
+                </sc-if>
+                <sc-if value="{{ c.hasActions }}" hint-placeholder-val="{{ true }}">
+                  <span style="display:flex;gap:6px;flex:none;flex-wrap:wrap">
+                    <sc-for list="{{ c.actions }}" as="a" hint-placeholder-count="2">
+                      <button type="button" onClick="{{ a.onClick }}" style="min-height:32px;padding:0 11px;border-radius:6px;border:{{ a.bd }};background:{{ a.bg }};color:{{ a.fg }};font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap" style-hover="background:{{ a.hover }}">{{ a.label }}</button>
+                    </sc-for>
+                  </span>
+                </sc-if>
+              </div>
+              <sc-if value="{{ c.hasFoot }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--ink-4);line-height:1.6">{{ c.foot }}</span></sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ c.isEntity }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:14px;padding:16px;min-width:0;border-radius:12px;background:{{ c.entBg }};border:1px solid {{ c.entBd }};grid-column:{{ c.span }}">
+              <div style="display:flex;align-items:flex-start;gap:12px">
+                <span style="width:44px;height:44px;border-radius:10px;background:{{ c.avBg }};color:{{ c.avFg }};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex:none" dangerouslySetInnerHTML="{{ c.avHtml }}"></span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:4px;min-width:0">
+                  <span style="font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3">{{ c.label }}</span>
+                  <sc-if value="{{ c.hasNote }}" hint-placeholder-val="{{ true }}"><span dir="{{ c.noteDir }}" style="font-family:{{ c.noteFont }};font-size:12px;color:var(--ink-3);text-align:start;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.note }}</span></sc-if>
+                </span>
+                <sc-if value="{{ c.hasBadge }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:{{ c.badgeBg }};color:{{ c.badgeFg }};font-size:12px;font-weight:600;white-space:nowrap;flex:none"><span style="width:7px;height:7px;border-radius:50%;background:{{ c.badgeDot }}"></span>{{ c.badge }}</span></sc-if>
+              </div>
+              <sc-if value="{{ c.hasTiles }}" hint-placeholder-val="{{ true }}">
+                <div style="display:grid;grid-template-columns:{{ c.tileCols }};gap:8px">
+                  <sc-for list="{{ c.tiles }}" as="t" hint-placeholder-count="3">
+                    <span onClick="{{ t.onClick }}" style="display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:8px;background:var(--bg);cursor:{{ t.cursor }};min-width:0" style-hover="background:var(--sunken)">
+                      <span style="font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.label }}</span>
+                      <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:{{ t.fg }};text-align:start">{{ t.value }}</span>
+                    </span>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ c.hasMeta }}" hint-placeholder-val="{{ false }}">
+                <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px;padding:0 4px">
+                  <sc-for list="{{ c.metaRows }}" as="m" hint-placeholder-count="2">
+                    <span style="display:flex;flex-direction:column;gap:5px;min-width:0">
+                      <span style="font-size:12px;color:var(--ink-3);white-space:nowrap">{{ m.label }}</span>
+                      <span dir="{{ m.dir }}" style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:{{ m.fg }};font-family:{{ m.font }};text-align:start"><sc-if value="{{ m.hasDot }}" hint-placeholder-val="{{ false }}"><span style="width:8px;height:8px;border-radius:50%;background:{{ m.dot }};flex:none"></span></sc-if>{{ m.value }}</span>
+                    </span>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ c.hasNotice }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;background:{{ c.noticeBg }};border:1px solid {{ c.noticeBd }}">
+                  <span style="width:36px;height:36px;border-radius:9px;background:var(--surface);color:{{ c.noticeFg }};display:inline-flex;align-items:center;justify-content:center;flex:none" dangerouslySetInnerHTML="{{ c.noticeIcon }}"></span>
+                  <span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:13px;font-weight:700;color:{{ c.noticeFg }}">{{ c.noticeTitle }}</span><span style="font-size:12px;color:var(--ink-3);line-height:1.6;text-wrap:pretty">{{ c.noticeText }}</span></span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ c.hasActions }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;gap:6px;margin-top:auto;padding-top:14px;border-top:1px solid var(--border);flex-wrap:wrap">
+                  <sc-for list="{{ c.actions }}" as="a" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ a.onClick }}" title="{{ a.label }}" style="min-height:38px;padding:0 10px;flex:{{ a.flex }};min-width:0;border-radius:8px;border:{{ a.bd }};background:{{ a.bg }};color:{{ a.fg }};font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" style-hover="background:{{ a.hover }}">{{ a.label }}</button>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ c.isChart }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:12px;padding:{{ dn.panelPad }};min-width:0;border-radius:12px;background:var(--surface);border:1px solid var(--border);grid-column:{{ c.span }}">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <span style="font-size:13px;font-weight:700;line-height:1.4">{{ c.label }}</span>
+                  <sc-if value="{{ c.hasNote }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;color:var(--ink-3)">{{ c.note }}</span></sc-if>
+                </span>
+                <sc-if value="{{ c.hasValue }}" hint-placeholder-val="{{ true }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:{{ dn.chartValFs }};font-weight:700;letter-spacing:-.02em;line-height:1.1;color:{{ c.fg }};flex:none">{{ c.value }}</span></sc-if>
+              </div>
+
+              <sc-if value="{{ c.ch.isLine }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <svg viewBox="0 0 300 {{ c.ch.h }}" preserveAspectRatio="none" style="width:100%;height:{{ c.ch.hPx }};overflow:visible">
+                    <sc-for list="{{ c.ch.grid }}" as="g" hint-placeholder-count="3"><line x1="0" x2="300" y1="{{ g.y }}" y2="{{ g.y }}" stroke="var(--border)" stroke-width="1" vector-effect="non-scaling-stroke"></line></sc-for>
+                    <sc-if value="{{ c.ch.isArea }}" hint-placeholder-val="{{ true }}"><polygon points="{{ c.ch.area }}" fill="{{ c.ch.fill }}" stroke="none"></polygon></sc-if>
+                    <polyline points="{{ c.ch.pts }}" fill="none" stroke="{{ c.ch.stroke }}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>
+                    <sc-for list="{{ c.ch.dots }}" as="d" hint-placeholder-count="0"><circle cx="{{ d.x }}" cy="{{ d.y }}" r="2.5" fill="var(--surface)" stroke="{{ c.ch.stroke }}" stroke-width="2" vector-effect="non-scaling-stroke"></circle></sc-for>
+                  </svg>
+                  <sc-if value="{{ c.ch.hasLabels }}" hint-placeholder-val="{{ true }}">
+                    <span style="display:flex;justify-content:space-between;gap:4px">
+                      <sc-for list="{{ c.ch.labels }}" as="t" hint-placeholder-count="7"><span style="font-size:10px;color:var(--ink-4);white-space:nowrap">{{ t }}</span></sc-for>
+                    </span>
+                  </sc-if>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ c.ch.isBars }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:flex-end;gap:{{ c.ch.barGap }};height:{{ c.ch.hPx }}">
+                  <sc-for list="{{ c.ch.bars }}" as="b" hint-placeholder-count="7">
+                    <span title="{{ b.title }}" style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:stretch;gap:5px;height:100%">
+                      <span style="height:{{ b.pct }};min-height:3px;border-radius:4px 4px 2px 2px;background:{{ b.fill }};display:block"></span>
+                      <span style="font-size:10px;color:var(--ink-4);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.label }}</span>
+                    </span>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ c.ch.isDonut }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+                  <span style="position:relative;width:{{ c.ch.donutSize }};height:{{ c.ch.donutSize }};flex:none">
+                    <svg viewBox="0 0 42 42" style="width:100%;height:100%;transform:rotate(-90deg)">
+                      <circle cx="21" cy="21" r="15.9" fill="none" stroke="var(--sunken)" stroke-width="6"></circle>
+                      <sc-for list="{{ c.ch.arcs }}" as="a" hint-placeholder-count="3"><circle cx="21" cy="21" r="15.9" fill="none" stroke="{{ a.fill }}" stroke-width="6" stroke-dasharray="{{ a.dash }}" stroke-dashoffset="{{ a.offset }}" stroke-linecap="butt"></circle></sc-for>
+                    </svg>
+                    <span style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">
+                      <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--ink)">{{ c.ch.centerValue }}</span>
+                      <span style="font-size:9px;color:var(--ink-4)">{{ c.ch.centerLabel }}</span>
+                    </span>
+                  </span>
+                  <span style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:120px">
+                    <sc-for list="{{ c.ch.legend }}" as="g" hint-placeholder-count="3">
+                      <span style="display:flex;align-items:center;gap:8px;min-width:0">
+                        <span style="width:8px;height:8px;border-radius:2px;background:{{ g.fill }};flex:none"></span>
+                        <span style="font-size:12px;color:var(--ink-2);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.label }}</span>
+                        <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--ink-3);flex:none">{{ g.value }}</span>
+                      </span>
+                    </sc-for>
+                  </span>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ c.ch.hasLegend }}" hint-placeholder-val="{{ false }}">
+                <span style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:2px;border-top:1px solid var(--border)">
+                  <sc-for list="{{ c.ch.legend }}" as="g" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:{{ g.fill }}"></span><span style="font-size:11px;color:var(--ink-3)">{{ g.label }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--ink-2)">{{ g.value }}</span></span></sc-for>
+                </span>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ c.isHtml }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ c.onClick }}" style="{{ c.htmlStyle }}" dangerouslySetInnerHTML="{{ c.htmlBody }}"></div>
+          </sc-if>
+
+          <sc-if value="{{ c.isPanel }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:{{ dn.panelPad }};min-width:0;border-radius:12px;background:var(--surface);border:1px solid var(--border);grid-column:{{ c.span }}">
+              <span style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+                <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <span style="font-size:14px;font-weight:700;line-height:1.4">{{ c.label }}</span>
+                  <sc-if value="{{ c.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--ink-3)">{{ c.note }}</span></sc-if>
+                </span>
+                <sc-if value="{{ c.hasCta }}" hint-placeholder-val="{{ false }}"><span onClick="{{ c.onClick }}" style="font-size:12px;font-weight:600;color:var(--pri);cursor:pointer;flex:none">{{ c.cta }}</span></sc-if>
+              </span>
+              <sc-if value="{{ c.hasRows }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column">
+                  <sc-for list="{{ c.rows }}" as="r" hint-placeholder-count="3">
+                    <span onClick="{{ r.onClick }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:{{ r.minH }};border-bottom:1px solid var(--border);cursor:{{ r.cursor }}" style-hover="background:{{ r.hoverBg }}">
+                      <span style="display:flex;align-items:center;gap:8px;min-width:0;flex:1">
+                        <sc-if value="{{ r.hasDot }}" hint-placeholder-val="{{ false }}"><span style="width:7px;height:7px;border-radius:50%;background:{{ r.dot }};flex:none"></span></sc-if>
+                        <sc-if value="{{ r.hasAvatar }}" hint-placeholder-val="{{ false }}"><span style="width:28px;height:28px;border-radius:7px;background:{{ r.avBg }};color:{{ r.avFg }};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none">{{ r.avText }}</span></sc-if>
+                        <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                          <span style="font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.label }}</span>
+                          <sc-if value="{{ r.hasSub }}" hint-placeholder-val="{{ false }}"><span dir="{{ r.subDir }}" style="font-family:{{ r.subFont }};font-size:11px;color:var(--ink-4);text-align:start;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.sub }}</span></sc-if>
+                        </span>
+                      </span>
+                      <sc-if value="{{ r.hasValue }}" hint-placeholder-val="{{ true }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:{{ r.fg }};flex:none">{{ r.value }}</span></sc-if>
+                      <sc-if value="{{ r.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;background:{{ r.badgeBg }};color:{{ r.badgeFg }};font-size:11px;font-weight:600;white-space:nowrap;flex:none"><span style="width:6px;height:6px;border-radius:50%;background:{{ r.badgeDot }}"></span>{{ r.badge }}</span></sc-if>
+                    </span>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ c.hasBars }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:9px">
+                  <sc-for list="{{ c.bars }}" as="b" hint-placeholder-count="3">
+                    <span style="display:flex;flex-direction:column;gap:5px">
+                      <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;color:var(--ink-2);min-width:0;overflow:hidden;text-overflow:ellipsis">{{ b.label }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--ink-3);flex:none">{{ b.value }}</span></span>
+                      <span style="height:6px;border-radius:999px;background:var(--sunken);overflow:hidden;display:block"><span style="display:block;width:{{ b.pct }};height:100%;background:{{ b.fill }}"></span></span>
+                    </span>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+        </sc-for>
+      </div>
+    </section>
+  </sc-for>
+
+  <sc-if value="{{ showDocs }}" hint-placeholder-val="{{ true }}">
+    <section style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
+      <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:700">{{ T.metaTitle }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border-radius:999px;background:var(--sunken);color:var(--ink-2)">Cards meta</span></span>
+      <span style="font-size:12px;color:var(--ink-3);line-height:1.8">{{ T.metaHint }}</span>
+      <pre dir="ltr" style="margin:0;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:var(--ink-2);overflow:auto;max-height:340px;text-align:left">{{ docJson }}</pre>
+      <sc-if value="{{ hasLog }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:5px;padding-top:8px;border-top:1px solid var(--border)">
+          <span style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;font-weight:600;color:var(--ink-2)">{{ T.log }}</span><span onClick="{{ clearLog }}" style="font-size:12px;font-weight:600;color:var(--dg-i);cursor:pointer">{{ T.clear }}</span></span>
+          <sc-for list="{{ log }}" as="l" hint-placeholder-count="2"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);text-align:left">{{ l }}</span></sc-for>
+        </div>
+      </sc-if>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;,&quot;auto&quot;],&quot;tsType&quot;:&quot;'light'|'dark'|'auto'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ar&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;],&quot;tsType&quot;:&quot;'ar'|'en'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;'comfortable'|'compact'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;breakpoint&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:640,&quot;min&quot;:420,&quot;max&quot;:900,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;showDocs&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;meta&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;CardsMeta&quot;},&quot;handlers&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, Function&gt;&quot;},&quot;onCard&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(key: string, extra?: object) =&gt; void&quot;}}">
+// ── أيقونات البطاقات (المفتاح يُذكر في الميتا: icon:'send')
+const ICONS = {
+  send: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M3 10.5l13-6-5 13-2-5-6-2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  check: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M6.8 10.2l2.2 2.2 4.2-4.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  read: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M2.5 10.6l3 3 6-6.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 13.6l1 1 7.5-8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  fail: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M7.6 7.6l4.8 4.8M12.4 7.6l-4.8 4.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  queue: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M6 3.5h8M6 16.5h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M7 3.5c0 4 6 5 6 6.5s-6 2.5-6 6.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+  clock: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M10 6.2V10l2.6 1.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  device: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><rect x="6" y="2.5" width="8" height="15" rx="2.2" stroke="currentColor" stroke-width="1.6"/><path d="M8.8 15h2.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  card: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="5" width="15" height="10" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M2.5 9h15" stroke="currentColor" stroke-width="1.6"/></svg>',
+  code: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M7 6l-3.5 4L7 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 6l3.5 4L13 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  hook: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M7 5.5a2.5 2.5 0 115 0v6a2.5 2.5 0 105 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  sigma: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M14 4.5H6l4.4 5.4L6 15.5h8" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>',
+  chart: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M4 16V9M8.6 16V4.5M13.2 16v-4.5M17 16h-14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  user: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="7" r="3" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 16.5c.8-2.7 2.9-4 5.5-4s4.7 1.3 5.5 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
+  warn: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3.5l7 12H3l7-12z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 8v3.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="13.6" r=".9" fill="currentColor"/></svg>',
+  error: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M10 6.2v4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="13.4" r=".9" fill="currentColor"/></svg>',
+  info: '<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.6"/><path d="M10 9.4v4.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="6.6" r=".9" fill="currentColor"/></svg>',
+};
+
+// ── الميتا: sections[] فيها كل التوزيع. كل نص يقبل سلسلة أو { ar, en }
+// section: { title, sub, min, columns, segment:{options,value,onPick}, cards:[…] }
+// card.kind: stat | kpi | alert | mini | panel ·  tone: ok|warn|danger|info|muted
+const CARDS_META = {
+  // handlers: دوال بالاسم — البطاقة تشير إليها بـ action:'resumeQueue'
+  handlers: {
+    resumeQueue: () => 'تم استئناف الطابور (محاكاة)',
+    diagnose: (deviceId) => 'فتح تشخيص الجهاز ' + deviceId,
+    openList: (filter) => 'فتح السجل بمرشّح: ' + filter,
+    setRange: (r) => 'الفترة: ' + r,
+  },
+  sections: [
+    {
+      min: 260, mobileColumns: 2,
+      cards: [
+        { kind: 'stat', label: { ar: 'الأجهزة المتصلة', en: 'Connected devices' }, value: { ar: '2 من 4', en: '2 of 4' }, note: { ar: '1 جهاز مفصول', en: '1 device offline' }, tone: 'ok', icon: 'device', key: 'devices' },
+        { kind: 'stat', label: { ar: 'الطابور', en: 'Queue' }, value: { ar: 'متوقف مؤقتاً', en: 'Paused' }, note: { ar: '417 رسالة معلّقة', en: '417 messages held' }, tone: 'warn', icon: 'clock', key: 'queue' },
+        { kind: 'stat', label: { ar: 'آخر إرسال', en: 'Last send' }, value: { ar: '11 دقيقة', en: '11 min ago' }, note: { ar: 'ضمن المعدل الطبيعي', en: 'Within normal range' }, tone: 'info', icon: 'send', key: 'lastSend' },
+        { kind: 'stat', label: { ar: 'واجهة برمجة التطبيقات', en: 'API' }, value: { ar: 'سليم', en: 'Healthy' }, note: { ar: 'زمن الاستجابة 320ms', en: 'Response time 320ms' }, tone: 'ok', icon: 'code', key: 'api' },
+        { kind: 'stat', label: { ar: 'ويب هوك', en: 'Webhook' }, value: { ar: 'غير مفعل', en: 'Disabled' }, note: { ar: 'لا تصل تحديثات الحالة', en: 'No status updates' }, tone: 'danger', icon: 'hook', key: 'hook' },
+        { kind: 'stat', label: { ar: 'استخدام الباقة', en: 'Plan usage' }, value: '32%', valueMono: true, note: { ar: '1,924 من 6,000 رسالة', en: '1,924 of 6,000 messages' }, tone: 'info', icon: 'card', key: 'quota' },
+      ],
+    },
+    {
+      title: { ar: 'لوحة المراقبة', en: 'Monitoring' },
+      sub: { ar: 'شركة مسار للتجارة والتوزيع · الفرع الرئيسي — الرياض', en: 'Masar Trading · Main branch — Riyadh' },
+      segment: { value: 'week', action: 'setRange', options: [{ v: 'day', label: { ar: 'اليوم', en: 'Day' } }, { v: 'week', label: { ar: 'الأسبوع', en: 'Week' } }, { v: 'month', label: { ar: 'الشهر', en: 'Month' } }, { v: 'year', label: { ar: 'السنة', en: 'Year' } }] },
+      min: 420,
+      cards: [
+        { kind: 'alert', tone: 'warn', label: { ar: 'الطابور متوقف مؤقتاً — 417 رسالة معلّقة', en: 'Queue paused — 417 messages held' }, note: { ar: 'أوقفه عبدالله الفهد قبل 12 دقيقة — «تجنّب الحظر أثناء اختبار الحملة»', en: 'Paused by Abdullah Al-Fahd 12 min ago — "avoid a block during the campaign test"' }, cta: { ar: 'استئناف الطابور', en: 'Resume queue' }, ctaStyle: 'solid', action: 'resumeQueue' },
+        { kind: 'alert', tone: 'danger', label: { ar: 'جهاز «فرع جدة» غير متصل منذ 42 دقيقة', en: 'Device "Jeddah branch" offline for 42 min' }, note: { ar: 'نسبة الفشل في هذه الفترة 9.6% — أغلبها من هذا الجهاز', en: 'Failure rate this period 9.6% — mostly from this device' }, cta: { ar: 'تشخيص الجهاز', en: 'Diagnose device' }, action: 'diagnose', args: 'd3' },
+      ],
+    },
+    {
+      min: 200, mobileColumns: 2,
+      cards: [
+        { kind: 'kpi', label: { ar: 'الرسائل المرسلة', en: 'Messages sent' }, value: '993', note: { ar: '+6.9% عن الفترة السابقة', en: '+6.9% vs previous period' }, noteTone: 'ok', icon: 'send', tone: 'ok', series: [12, 18, 15, 24, 22, 30, 28], action: 'openList', args: 'sent' },
+        { kind: 'kpi', label: { ar: 'نسبة التسليم', en: 'Delivery rate' }, value: '77.9%', note: { ar: '774 رسالة مستلمة', en: '774 delivered' }, icon: 'check', series: [20, 22, 21, 24, 23, 25, 24], key: 'delivered' },
+        { kind: 'kpi', label: { ar: 'نسبة القراءة', en: 'Read rate' }, value: '52.1%', note: { ar: '517 رسالة مقروءة', en: '517 read' }, icon: 'read', tone: 'info', series: [14, 13, 16, 15, 18, 17, 19], key: 'read' },
+        { kind: 'kpi', label: { ar: 'نسبة الفشل', en: 'Failure rate' }, value: '9.6%', valueTone: 'danger', note: { ar: '95 من 993', en: '95 of 993' }, icon: 'fail', tone: 'danger', series: [4, 6, 5, 9, 8, 12, 11], key: 'failed' },
+        { kind: 'kpi', label: { ar: 'قيد المعالجة', en: 'In progress' }, value: '417', note: { ar: 'الطابور متوقف مؤقتاً', en: 'Queue is paused' }, noteTone: 'warn', icon: 'sigma', tone: 'muted', series: [8, 9, 12, 14, 19, 26, 31], key: 'queued' },
+      ],
+    },
+    {
+      // قالب HTML حر: القيم تُعبّأ من {value} {label} {note} {tone.fg} و data
+      title: { ar: 'قالب HTML حر', en: 'Custom HTML format' },
+      sub: { ar: 'نفس الميتا، لكن التصميم من قالبك — cardHtml للمقطع أو html لبطاقة واحدة.', en: 'Same meta, your own markup — cardHtml per section or html per card.' },
+      min: 260,
+      cardHtml: '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font-size:12px;font-weight:600;color:var(--ink-3)">{label}</span><span style="width:26px;height:26px;border-radius:50%;background:{tone.bg};color:{tone.dot};display:flex;align-items:center;justify-content:center">{icon}</span></div><div dir="ltr" style="font-family:{mono};font-size:24px;font-weight:700;color:{tone.fg};text-align:start">{value}</div><div style="font-size:11px;color:var(--ink-3);line-height:1.6">{note} · <b style="color:{tone.fg}">{extra}</b></div>',
+      cards: [
+        { label: { ar: 'تكلفة الفترة', en: 'Period cost' }, value: '1,284 ﷼', note: { ar: 'فاتورة سبتمبر', en: 'September invoice' }, tone: 'primary', icon: 'card', data: { extra: { ar: 'متوقع 1,510 ﷼', en: 'forecast 1,510' } }, key: 'cost' },
+        { label: { ar: 'ردود تلقائية', en: 'Auto replies' }, value: '316', note: { ar: 'عبر 4 أوامر', en: 'across 4 commands' }, tone: 'ok', icon: 'chart', data: { extra: { ar: '86% دقة', en: '86% accuracy' } }, key: 'auto' },
+        { label: { ar: 'طلبات API مرفوضة', en: 'Rejected API calls' }, value: '23', note: { ar: 'مفاتيح منتهية', en: 'expired keys' }, tone: 'danger', icon: 'code', data: { extra: { ar: 'راجع المفاتيح', en: 'review keys' } }, key: 'apiRejected' },
+      ],
+    },
+    {
+      title: { ar: 'الرسوم البيانية', en: 'Charts' },
+      sub: { ar: 'chartType: line · area · bars · donut — البيانات series أرقام أو [{label,value,tone}].', en: 'chartType: line · area · bars · donut — series is numbers or [{label,value,tone}].' },
+      min: 340,
+      cards: [
+        { kind: 'chart', chartType: 'area', label: { ar: 'الرسائل المرسلة يومياً', en: 'Daily messages sent' }, note: { ar: 'آخر 7 أيام', en: 'Last 7 days' }, value: '993', tone: 'primary',
+          labels: { ar: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'], en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] },
+          series: [96, 142, 118, 176, 154, 131, 176], legend: [{ label: { ar: 'مرسلة', en: 'Sent' }, value: '993', tone: 'primary' }, { label: { ar: 'متوسط يومي', en: 'Daily avg' }, value: '142' }], action: 'openList', args: 'sent' },
+        { kind: 'chart', chartType: 'bars', label: { ar: 'الفشل بحسب الجهاز', en: 'Failures by device' }, note: { ar: 'عدد الرسائل الفاشلة', en: 'Failed message count' }, value: '95', tone: 'danger',
+          series: [{ label: { ar: 'جدة', en: 'Jeddah' }, value: 61, tone: 'danger' }, { label: { ar: 'مبيعات 1', en: 'Sales 1' }, value: 14 }, { label: { ar: 'مبيعات 2', en: 'Sales 2' }, value: 11 }, { label: { ar: 'الدعم', en: 'Support' }, value: 9 }], action: 'openList', args: 'failed' },
+        { kind: 'chart', chartType: 'donut', label: { ar: 'توزيع الحالات', en: 'Status split' }, note: { ar: 'نسبة من 993 رسالة', en: 'Share of 993 messages' }, percent: true,
+          centerValue: '993', centerLabel: { ar: 'رسالة', en: 'messages' },
+          series: [{ label: { ar: 'مقروءة', en: 'Read' }, value: 517, tone: 'info' }, { label: { ar: 'مستلمة غير مقروءة', en: 'Delivered, unread' }, value: 257, tone: 'ok' }, { label: { ar: 'فاشلة', en: 'Failed' }, value: 95, tone: 'danger' }, { label: { ar: 'قيد الإرسال', en: 'Sending' }, value: 124, tone: 'warn' }] },
+      ],
+    },
+    {
+      min: 320,
+      cards: [
+        { kind: 'panel', label: { ar: 'توزيع الحالات', en: 'Status breakdown' }, note: { ar: 'آخر 7 أيام', en: 'Last 7 days' }, cta: { ar: 'عرض السجل', en: 'View log' }, key: 'openLog', bars: [
+          { label: { ar: 'مستلمة', en: 'Delivered' }, value: '774', pct: 78, tone: 'ok' },
+          { label: { ar: 'مقروءة', en: 'Read' }, value: '517', pct: 52, tone: 'info' },
+          { label: { ar: 'فاشلة', en: 'Failed' }, value: '95', pct: 10, tone: 'danger' },
+        ] },
+        { kind: 'panel', label: { ar: 'أعلى الأجهزة إرسالاً', en: 'Top devices' }, rows: [
+          { label: { ar: 'جهاز المبيعات 1', en: 'Sales device 1' }, value: '412', tone: 'ok' },
+          { label: { ar: 'جهاز المبيعات 2', en: 'Sales device 2' }, value: '338', tone: 'ok' },
+          { label: { ar: 'فرع جدة', en: 'Jeddah branch' }, value: '148', tone: 'danger' },
+          { label: { ar: 'جهاز الدعم', en: 'Support device' }, value: '95', tone: 'muted' },
+        ] },
+        { kind: 'mini', label: { ar: 'متوسط زمن التسليم', en: 'Avg delivery time' }, value: '4.2s', icon: 'clock', tone: 'info', key: 'avgDelivery' },
+        { kind: 'mini', label: { ar: 'جهات الاتصال النشطة', en: 'Active contacts' }, value: '1,284', icon: 'user', tone: 'ok', badge: { ar: '+38', en: '+38' }, badgeTone: 'ok', key: 'contacts' },
+      ],
+    },
+  ],
+};
+
+const TONES = {
+  ok: { bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', bd: 'var(--ok-sb)', solid: 'var(--ok-i)' },
+  warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', bd: 'var(--wn-sb)', solid: 'var(--wn-i)' },
+  danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--dg)', bd: 'var(--dg-sb)', solid: 'var(--dg-i)' },
+  info: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)', bd: 'var(--nf-sb)', solid: 'var(--nf-i)' },
+  primary: { bg: 'var(--pri-s)', fg: 'var(--pri-d)', dot: 'var(--pri)', bd: 'var(--pri-sb)', solid: 'var(--pri)' },
+  muted: { bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--ink-4)', bd: 'var(--border)', solid: 'var(--ink-2)' },
+};
+const MONO = "'IBM Plex Mono',monospace";
+const FONTS = { ar: "'IBM Plex Sans Arabic',system-ui,sans-serif", en: "'IBM Plex Sans','IBM Plex Sans Arabic',system-ui,sans-serif" };
+const I18N = {
+  ar: { metaTitle: 'الميتا المستخدمة لهذه البطاقات', metaHint: 'كل بطاقة سطر واحد في الميتا: kind + label + value + tone + icon. المكوّن يتولى الألوان والشبكة والاتجاه والوضع الداكن.', log: 'سجل الأحداث', clear: 'مسح' },
+  en: { metaTitle: 'Meta driving these cards', metaHint: 'Each card is one line of meta: kind + label + value + tone + icon. The component handles color, grid, direction and dark mode.', log: 'Event log', clear: 'Clear' },
+};
+
+class Component extends DCLogic {
+  state = { theme: null, lang: null, seg: {}, log: [], width: 1280 };
+  componentDidMount() {
+    this.onResize = () => this.setState({ width: window.innerWidth });
+    window.addEventListener('resize', this.onResize);
+    this.onResize();
+    try { const t = localStorage.getItem('cards.theme'); if (t) this.setState({ theme: t }); } catch (e) {}
+    try { this.mq = window.matchMedia('(prefers-color-scheme: dark)'); this.onMq = () => this.forceUpdate(); this.mq.addEventListener('change', this.onMq); } catch (e) {}
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); if (this.mq && this.onMq) this.mq.removeEventListener('change', this.onMq); }
+  emit(key, extra) {
+    const entry = JSON.stringify({ card: key, ...extra });
+    this.setState((s) => ({ log: [entry, ...s.log].slice(0, 6) }));
+    if (this.props.onCard) this.props.onCard(key, extra);
+  }
+  // النقر ينفّذ دالة: onClick دالة مباشرة، أو action اسم دالة في handlers، ثم onCard(key)
+  run(c, kind, ev) {
+    const H = this.props.handlers || (this.props.meta || CARDS_META).handlers || {};
+    const args = c.args === undefined ? [] : (Array.isArray(c.args) ? c.args : [c.args]);
+    let fn = null, name = null;
+    if (typeof c.onClick === 'function') { fn = c.onClick; name = c.onClick.name || 'onClick'; }
+    else if (typeof c.action === 'function') { fn = c.action; name = c.action.name || 'action'; }
+    else if (typeof c.action === 'string') { name = c.action; fn = H[c.action]; }
+    let ret, error = null;
+    if (fn) { try { ret = fn.apply(null, args.concat([{ card: c, kind, event: ev }])); } catch (e) { error = String(e && e.message || e); } }
+    else if (name) error = 'handler "' + name + '" غير معرّف';
+    if (c.key || name) this.emit(c.key || name, { action: name || undefined, args: args.length ? args : undefined, returned: ret === undefined ? undefined : ret, error: error || undefined });
+    return ret;
+  }
+  // يعبّئ {path} داخل قالب HTML من بيانات البطاقة — {value} {label} {note} {tone.fg} {data.x}
+  fill(tpl, ctx) {
+    return String(tpl).replace(/\{([\w.$-]+)\}/g, (m, path) => {
+      const v = path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), ctx);
+      return v == null ? '' : String(v);
+    });
+  }
+  // chart: line | area | bars | donut — من series أرقام أو [{label,value,tone}]
+  chart(c, L, tone, isMobile) {
+    const type = c.chartType || 'line';
+    const raw = c.series || [];
+    const labArr = Array.isArray(c.labels) ? c.labels : (L(c.labels) || []);
+    const pts = raw.map((v, i) => (typeof v === 'object' && v !== null) ? { label: L(v.label ?? v.l ?? ''), value: Number(v.value ?? v.v ?? 0), tone: v.tone } : { label: L(labArr[i] ?? ''), value: Number(v), tone: undefined });
+    const H = 100, hPx = (c.height || (isMobile ? 120 : 140)) + 'px';
+    const tn = tone(c.tone || 'primary');
+    const base = { isLine: type === 'line' || type === 'area', isArea: type === 'area', isBars: type === 'bars', isDonut: type === 'donut', h: H, hPx, stroke: tn.dot, fill: tn.bg, grid: [0.25, 0.5, 0.75].map((f) => ({ y: (H * f).toFixed(0) })), labels: [], bars: [], dots: [], arcs: [], legend: [], hasLegend: false, barGap: isMobile ? '4px' : '7px', donutSize: isMobile ? '104px' : '124px', centerValue: '', centerLabel: '' };
+    if (base.isLine) {
+      const vals = pts.map((p) => p.value), mx = Math.max(...vals, 1), mn = Math.min(...vals, 0), rng = Math.max(1e-6, mx - mn);
+      const xy = pts.map((p, i) => ({ x: (i * (300 / Math.max(1, pts.length - 1))).toFixed(1), y: (H - 6 - ((p.value - mn) / rng) * (H - 14)).toFixed(1) }));
+      base.pts = xy.map((p) => p.x + ',' + p.y).join(' ');
+      base.area = base.pts + ' 300,' + H + ' 0,' + H;
+      base.dots = pts.length <= 8 && !isMobile ? xy : [];
+      const labs = pts.map((p) => p.label).filter(Boolean);
+      base.labels = labs.length ? (isMobile && labs.length > 4 ? labs.filter((_, i) => i % 2 === 0) : labs) : [];
+      base.hasLabels = base.labels.length > 0;
+    } else if (base.isBars) {
+      const mx = Math.max(...pts.map((p) => p.value), 1);
+      base.bars = pts.map((p) => ({ label: p.label, pct: Math.max(2, (p.value / mx) * 100).toFixed(1) + '%', fill: p.tone ? tone(p.tone).dot : tn.dot, title: p.label + ': ' + p.value }));
+    } else if (base.isDonut) {
+      const total = pts.reduce((n, p) => n + p.value, 0) || 1;
+      const PAL = ['primary', 'info', 'warn', 'danger', 'ok', 'muted'];
+      let acc = 0;
+      base.arcs = pts.map((p, i) => { const len = (p.value / total) * 100; const a = { fill: tone(p.tone || PAL[i % PAL.length]).dot, dash: len.toFixed(2) + ' ' + (100 - len).toFixed(2), offset: (-acc).toFixed(2) }; acc += len; return a; });
+      base.legend = pts.map((p, i) => ({ label: p.label, value: c.percent ? ((p.value / total) * 100).toFixed(1) + '%' : String(p.value), fill: tone(p.tone || PAL[i % PAL.length]).dot }));
+      base.centerValue = L(c.centerValue) || String(total);
+      base.centerLabel = L(c.centerLabel) || '';
+    }
+    if (c.legend && !base.isDonut) {
+      base.hasLegend = true;
+      base.legend = (c.legend || []).map((g, i) => ({ label: L(g.label), value: L(g.value), fill: tone(g.tone || (i === 0 ? c.tone || 'primary' : 'muted')).dot }));
+    }
+    return base;
+  }
+  spark(series) {
+    const a = (series || []).map(Number).filter((v) => !isNaN(v));
+    if (a.length < 2) return '';
+    const mx = Math.max(1, ...a), mn = Math.min(...a), rng = Math.max(1e-6, mx - mn);
+    return a.map((v, i) => (i * (60 / (a.length - 1))).toFixed(1) + ',' + (16 - ((v - mn) / rng) * 14).toFixed(1)).join(' ');
+  }
+  renderVals() {
+    const S = this.state, P = this.props, M = P.meta || CARDS_META;
+    const lang = S.lang ?? P.lang ?? M.lang ?? 'ar', rtl = lang !== 'en', dir = rtl ? 'rtl' : 'ltr';
+    const L = (v) => (v && typeof v === 'object' && !Array.isArray(v)) ? (v[lang] ?? v.ar ?? v.en ?? '') : (v == null ? '' : String(v));
+    const pref = S.theme ?? P.theme ?? M.theme ?? 'light';
+    let sysDark = false; try { sysDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) {}
+    const theme = pref === 'auto' ? (sysDark ? 'dark' : 'light') : pref;
+    const bp = P.breakpoint ?? M.breakpoint ?? 640;
+    const isMobile = S.width < bp;
+    const compact = isMobile || (P.density ?? M.density ?? 'comfortable') === 'compact';
+    const dn = compact
+      ? { pagePad: isMobile ? '12px' : '16px', secGap: '14px', headGap: '8px', gap: '10px', cardPad: '10px 12px', panelPad: '12px', tile: '30px', statFs: '17px', kpiFs: '22px', titleFs: '16px', segH: isMobile ? '34px' : '28px' }
+      : { pagePad: '24px', secGap: '18px', headGap: '12px', gap: '16px', cardPad: '12px 16px', panelPad: '16px', tile: '34px', statFs: '19px', kpiFs: '26px', titleFs: '18px', segH: '32px' };
+    dn.chartValFs = compact ? '20px' : '24px';
+    const loading = !!P.loading; // هيكل تحميل بنفس شبكة البطاقات
+    const embed = !!P.embed; // مُدمَج داخل صفحة أخرى: بلا حشو صفحة ولا ارتفاع كامل
+    if (embed) dn.pagePad = '0';
+    // الجوال: التنبيه يتكدّس ويصبح زره بعرض كامل، والمقسّم يمتد على السطر
+    Object.assign(dn, isMobile
+      ? { alertAlign: 'flex-start', alertGap: '10px', alertPad: '12px', alertWrap: 'wrap', alertIconTop: '2px', alertTextMin: '140px', alertTitleFs: '13px', ctaH: '40px', ctaFs: '13px', ctaW: '100%', segFlex: '1 1 100%', segItemFlex: '1 1 0' }
+      : { alertAlign: 'center', alertGap: '12px', alertPad: '10px 12px', alertWrap: 'nowrap', alertIconTop: '0', alertTextMin: '0', alertTitleFs: '14px', ctaH: '32px', ctaFs: '12px', ctaW: 'auto', segFlex: 'none', segItemFlex: 'none' });
+    const tone = (k) => TONES[k] || TONES.muted;
+    const T = I18N[lang];
+
+    const sections = (M.sections || []).map((sec, si) => {
+      const seg = sec.segment;
+      const segVal = seg ? (S.seg[si] ?? seg.value ?? (seg.options && seg.options[0] && seg.options[0].v)) : null;
+      const min = sec.min || 240;
+      // على الجوال: عمود واحد، إلا المصغّرة (mini/stat قصيرة) فعمودان عند توفّر العرض
+      const mobileTwo = isMobile && sec.mobileColumns === 2;
+      const cols = isMobile
+        ? (mobileTwo ? 'repeat(2,minmax(0,1fr))' : 'minmax(0,1fr)')
+        : 'repeat(auto-fit,minmax(min(100%,' + (sec.columns ? Math.round(min * 0.8) : min) + 'px),1fr))';
+      return {
+        hasHead: !!(sec.title || seg), title: L(sec.title), hasSub: !!sec.sub, sub: L(sec.sub), cols,
+        hasSeg: !!seg,
+        seg: seg ? (seg.options || []).map((o) => {
+          const on = o.v === segVal;
+          return { label: L(o.label ?? o.l ?? o.v), bg: on ? 'var(--surface)' : 'transparent', fg: on ? 'var(--ink)' : 'var(--ink-3)', weight: on ? 600 : 400, shadow: on ? '0 1px 2px rgba(0,0,0,.08)' : 'none', onClick: (ev) => { this.setState((st) => ({ seg: { ...st.seg, [si]: o.v } })); this.run({ onClick: seg.onPick, action: seg.action, args: [o.v], key: seg.key || sec.key || 'segment' }, 'segment', ev); } };
+        }) : [],
+        cards: (sec.cards || []).map((c) => {
+          // html/format: قالب HTML حر من الميتا — يتقدّم على النوع الجاهز. sec.cardHtml يطبّق قالباً واحداً على كل بطاقات المقطع
+          if (loading) {
+            const kk = c.kind || 'stat';
+            const tall = kk === 'chart' || kk === 'panel' || kk === 'entity';
+            return { isSkel: true, isStat: false, isKpi: false, isAlert: false, isMini: false, isPanel: false, isHtml: false, isChart: false, isEntity: false,
+              span: (c.span && !isMobile) ? 'span ' + c.span : 'auto', skelH: tall ? (kk === 'chart' ? '280px' : '230px') : 'auto', skelTall: tall,
+              ch: { isLine: false, isBars: false, isDonut: false, grid: [], labels: [], bars: [], dots: [], arcs: [], legend: [] }, rows: [], bars: [], tiles: [], metaRows: [], actions: [] };
+          }
+          const tpl = c.html ?? c.format ?? sec.cardHtml ?? sec.cardFormat;
+          const kind = tpl ? 'html' : (c.kind || 'stat'), tn = tone(c.tone), clickable = !!(c.key || c.onClick || c.action);
+          const iconKey = c.icon || (kind === 'alert' ? (c.tone === 'danger' ? 'error' : c.tone === 'info' ? 'info' : 'warn') : null);
+          const valTn = c.valueTone ? tone(c.valueTone) : null;
+          const noteTn = c.noteTone ? tone(c.noteTone) : null;
+          const onClick = (ev) => this.run(c, kind, ev);
+          const base = {
+            isStat: kind === 'stat', isKpi: kind === 'kpi', isAlert: kind === 'alert', isMini: kind === 'mini', isPanel: kind === 'panel', isHtml: kind === 'html', isChart: kind === 'chart', isEntity: kind === 'entity', isLive: kind === 'live',
+            liveAccent: tn.dot, liveBd: c.tone ? tn.bd : 'var(--pri-sb)',
+            hasProgressText: c.progressText != null, progressText: L(c.progressText),
+            hasFoot: c.foot != null, foot: L(c.foot),
+            segments: (c.segments || []).map((s) => ({ w: Math.max(0, Math.min(100, s.pct || 0)) + '%', fill: s.color || (s.tone ? tone(s.tone).dot : tn.dot), title: L(s.label) })),
+            hasLiveStats: !!(c.stats && c.stats.length),
+            liveStats: (c.stats || []).map((s) => ({ label: L(s.label), value: L(s.value), fg: s.tone ? tone(s.tone).fg : 'var(--ink)' })),
+            hasValue: c.value != null, ch: kind === 'chart' ? this.chart(c, L, tone, isMobile) : { isLine: false, isBars: false, isDonut: false, grid: [], labels: [], bars: [], dots: [], arcs: [], legend: [] },
+            label: L(c.label), value: L(c.value), note: L(c.note), hasNote: c.note != null, span: (c.span && !isMobile) ? 'span ' + c.span : 'auto',
+            hasIcon: !!iconKey, icon: { __html: ICONS[iconKey] || ICONS.info }, tint: kind === 'alert' ? tn.bg : (c.tone ? tn.bg : 'var(--sunken)'),
+            iconFg: c.tone ? tn.dot : 'var(--ink-3)', dot: tn.dot, hasDot: c.tone != null || c.dot === true,
+            bd: kind === 'alert' ? tn.bd : 'var(--border)', hoverBd: clickable ? 'var(--pri)' : 'var(--border)', cursor: clickable ? 'pointer' : 'default',
+            fg: valTn ? valTn.fg : (kind === 'alert' ? tn.fg : 'var(--ink)'),
+            noteFg: noteTn ? noteTn.fg : 'var(--ink-3)',
+            valDir: c.valueMono ? 'ltr' : dir, valFont: c.valueMono ? MONO : 'inherit',
+            hasCta: !!c.cta, cta: L(c.cta), onClick,
+            // solid: نص فاتح/غامق يتبع الوضع — لا #fff ثابت
+            ctaBg: c.ctaStyle === 'solid' ? tn.solid : 'var(--surface)', ctaFg: c.ctaStyle === 'solid' ? (theme === 'dark' ? 'var(--bg)' : '#fff') : tn.fg, ctaBd: c.ctaStyle === 'solid' ? 'none' : '1px solid ' + tn.bd,
+            hasBadge: c.badge != null, badge: L(c.badge), badgeBg: tone(c.badgeTone).bg, badgeFg: tone(c.badgeTone).fg,
+            hasSpark: !!(c.series && c.series.length > 1), pts: this.spark(c.series), sparkFg: c.tone ? tn.dot : 'var(--ink-4)',
+            // panel rows: label + value، ويقبل sub (سطر ثانٍ) و badge (شريحة حالة) و avatar (أحرف أولى) و action (صف قابل للنقر)
+            hasRows: !!(c.rows && c.rows.length), rows: (c.rows || []).map((r) => {
+              const rt = tone(r.tone), bt = tone(r.badgeTone || r.tone);
+              const clickable = !!(r.action || r.onClick);
+              const avText = r.avatar === true
+                ? String(L(r.label) || '').trim().split(/\s+/).slice(0, 2).map((w) => w.replace(/^(لل|ال|بال|وال)/, '')[0] || '').join('')
+                : (r.avatar ? L(r.avatar) : '');
+              return {
+                label: L(r.label), hasValue: r.value != null, value: L(r.value), fg: r.tone ? rt.fg : 'var(--ink)',
+                hasDot: r.dot === false ? false : (!!r.tone && r.badge == null), dot: rt.dot,
+                hasSub: r.sub != null, sub: L(r.sub), subDir: r.subMono ? 'ltr' : dir, subFont: r.subMono ? MONO : 'inherit',
+                hasAvatar: !!avText, avText, avBg: r.avatarColor || 'var(--sunken)', avFg: r.avatarColor ? '#fff' : 'var(--ink-2)',
+                hasBadge: r.badge != null, badge: L(r.badge), badgeBg: bt.bg, badgeFg: bt.fg, badgeDot: bt.dot,
+                minH: r.sub != null ? '46px' : '34px',
+                cursor: clickable ? 'pointer' : 'default', hoverBg: clickable ? 'var(--sunken)' : 'transparent',
+                onClick: clickable ? (ev) => this.run({ ...r, key: r.key || c.key }, 'panel', ev) : undefined,
+              };
+            }),
+            hasBars: !!(c.bars && c.bars.length), bars: (c.bars || []).map((b) => ({ label: L(b.label), value: L(b.value), pct: Math.max(0, Math.min(100, b.pct || 0)) + '%', fill: b.tone ? tone(b.tone).dot : 'var(--pri)' })),
+          };
+          if (kind === 'kpi' || kind === 'mini') base.valFont = c.valueMono === false ? 'inherit' : MONO;
+          if (kind === 'live') {
+            const BTNS = (window.UIKit && window.UIKit.BUTTON) || {};
+            base.hasActions = !!(c.actions && c.actions.length);
+            base.actions = (c.actions || []).map((a) => {
+              const b = BTNS[a.variant || 'secondary'] || { bg: 'var(--surface)', fg: 'var(--ink)', bd: '1px solid var(--border-2)', hover: 'var(--sunken)' };
+              return { label: L(a.label), bg: b.bg, fg: b.fg, bd: b.bd, hover: b.hover || b.bg, onClick: (ev) => this.run({ ...a, key: a.key || c.key }, 'live', ev) };
+            });
+          }
+          if (kind === 'entity') {
+            // entity: { label, note, noteMono, avatar|icon, avatarTone, badge, badgeTone, tiles:[{label,value,tone,action,args}], meta:[{label,value,mono,tone}], notice:{tone,icon,title,text}, actions:[{label,variant,action,args,onClick}] }
+            const BTNS = (window.UIKit && window.UIKit.BUTTON) || {};
+            const avTn = c.avatarTone ? tone(c.avatarTone) : null;
+            const avText = L(c.avatar) || String(L(c.label) || '').trim().split(/\s+/).slice(0, 2).map((w) => w.replace(/^(لل|ال|بال|وال)/, '')[0] || '').join('');
+            const badgeTn = tone(c.badgeTone || c.tone);
+            const nt = c.notice ? tone(c.notice.tone || 'warn') : null;
+            Object.assign(base, {
+              entBg: c.tone && c.toneCard ? tn.bg : 'var(--surface)', entBd: c.tone && c.toneCard ? tn.bd : 'var(--border)',
+              avBg: c.icon ? (avTn ? avTn.bg : 'var(--pri-s)') : (avTn ? avTn.dot : 'var(--ink-3)'), avFg: c.icon ? (avTn ? avTn.fg : 'var(--pri-d)') : '#fff',
+              avHtml: { __html: c.icon ? (ICONS[c.icon] || '') : '<span>' + avText + '</span>' },
+              noteDir: c.noteMono ? 'ltr' : dir, noteFont: c.noteMono ? MONO : 'inherit',
+              badgeBg: badgeTn.bg, badgeFg: badgeTn.fg, badgeDot: badgeTn.dot,
+              hasTiles: !!(c.tiles && c.tiles.length), tileCols: 'repeat(' + Math.max(1, (c.tiles || []).length) + ',minmax(0,1fr))',
+              tiles: (c.tiles || []).map((t) => ({ label: L(t.label), value: L(t.value), fg: t.tone ? tone(t.tone).fg : 'var(--ink)', cursor: (t.action || t.onClick) ? 'pointer' : 'default', onClick: (t.action || t.onClick) ? (ev) => this.run({ ...t, key: t.key || c.key }, 'entity', ev) : undefined })),
+              hasMeta: !!(c.meta && c.meta.length), metaRows: (c.meta || []).map((m) => ({ label: L(m.label), value: L(m.value), dir: m.mono ? 'ltr' : dir, font: m.mono ? MONO : 'inherit', fg: m.tone ? tone(m.tone).fg : 'var(--ink)', hasDot: !!m.dot, dot: tone(m.dot).dot })),
+              hasNotice: !!c.notice, noticeBg: nt ? nt.bg : '', noticeBd: nt ? nt.bd : '', noticeFg: nt ? nt.fg : '', noticeIcon: { __html: c.notice ? (ICONS[c.notice.icon] || ICONS.warn || '') : '' }, noticeTitle: c.notice ? L(c.notice.title) : '', noticeText: c.notice ? L(c.notice.text) : '',
+              hasActions: !!(c.actions && c.actions.length),
+              actions: (c.actions || []).map((a) => {
+                const v = a.variant || 'secondary';
+                const b = BTNS[v] || { bg: 'var(--surface)', fg: 'var(--ink)', bd: '1px solid var(--border-2)', hover: 'var(--sunken)' };
+                return { label: L(a.label), bg: b.bg, fg: b.fg, bd: b.bd, hover: b.hover || b.bg, flex: a.grow === false ? 'none' : '1 1 0', onClick: (ev) => this.run({ ...a, key: a.key || c.key }, 'entity', ev) };
+              }),
+            });
+          }
+          if (kind === 'html') {
+            const ctx = {
+              label: L(c.label), value: L(c.value), note: L(c.note), cta: L(c.cta), badge: L(c.badge),
+              icon: ICONS[c.icon] || '', pts: this.spark(c.series), lang, dir, theme, span: base.span,
+              tone: { ...tn, name: c.tone || 'muted' }, dn, mono: MONO,
+              ...(c.data ? Object.keys(c.data).reduce((o, k) => { o[k] = L(c.data[k]); return o; }, {}) : {}),
+            };
+            base.htmlBody = { __html: this.fill(L(tpl), ctx) };
+            base.ch = { isLine: false, isBars: false, isDonut: false, grid: [], labels: [], bars: [], dots: [], arcs: [], legend: [] };
+            // bare:true يلغي إطار البطاقة ويترك التنسيق كاملاً للقالب
+            base.htmlStyle = c.bare
+              ? 'min-width:0;grid-column:' + base.span + ';cursor:' + base.cursor + ';' + (c.style ? this.fill(c.style, ctx) : '')
+              : 'display:flex;flex-direction:column;gap:6px;padding:' + dn.cardPad + ';min-width:0;border-radius:8px;background:' + (c.tone ? tn.bg : 'var(--surface)') + ';border:1px solid ' + (c.tone ? tn.bd : 'var(--border)') + ';color:' + (c.tone ? tn.fg : 'var(--ink)') + ';grid-column:' + base.span + ';cursor:' + base.cursor + ';' + (c.style ? this.fill(c.style, ctx) : '');
+          }
+          return base;
+        }),
+      };
+    });
+
+    return {
+      dir, theme, font: FONTS[lang], dn, T, sections,
+      rootMinH: embed ? 'auto' : '100vh', rootBg: embed ? 'transparent' : 'var(--bg)',
+      showDocs: (P.showDocs ?? M.showDocs) !== false, T2: null,
+      docJson: JSON.stringify({ sections: (M.sections || []).map((s) => ({ title: s.title, min: s.min, segment: s.segment ? (s.segment.options || []).map((o) => o.v) : undefined, cardHtml: s.cardHtml ? '(html format)' : undefined, cards: (s.cards || []).map((c) => ({ kind: (c.html || c.format || s.cardHtml) ? 'html' : (c.kind || 'stat'), label: c.label, value: c.value, tone: c.tone, icon: c.icon, key: c.key })) })) }, null, 2),
+      log: S.log, hasLog: S.log.length > 0, clearLog: () => this.setState({ log: [] }),
+    };
+  }
+}
+</script>
+</body>
+</html>

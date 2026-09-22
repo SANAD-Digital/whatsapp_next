@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-md:0 8px 24px -12px rgba(23,33,31,.35);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-md:0 8px 24px -12px rgba(0,0,0,.6);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+</style>
+</helmet>
+<div data-screen-label="الأجهزة" dir="rtl" style="flex:1;min-height:0;height:100%;overflow:auto;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="padding:24px 24px 32px;display:flex;flex-direction:column;gap:16px;width:100%">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="width:36px;height:36px;border-radius:8px;background:var(--pri-s);display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="5.5" y="2.5" width="9" height="15" rx="2.5" stroke="var(--pri)" stroke-width="1.6"></rect><path d="M8.5 15h3" stroke="var(--pri)" stroke-width="1.6" stroke-linecap="round"></path></svg></span>
+        <span style="display:flex;flex-direction:column;gap:2px">
+          <h1 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em;line-height:1.25">الأجهزة</h1>
+          <span style="font-size:12px;color:var(--ink-3)">كل جهاز رقم واتساب مستقل. الرسائل تُوزَّع عليها حسب النموذج أو الحملة.</span>
+        </span>
+      </div>
+      <button type="button" onClick="{{ startPair }}" style="min-height:44px;padding:0 20px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px"><svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>إضافة جهاز</button>
+    </div>
+
+    <dc-import name="Cards" meta="{{ cardsMeta }}" handlers="{{ handlers }}" loading="{{ loading }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,420px"></dc-import>
+  </div>
+
+  <sc-if value="{{ wizOpen }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="Wizard" meta="{{ wizardMeta }}" handlers="{{ wizHandlers }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" variant="modal" show-variant-bar="{{ false }}" hint-size="0,0"></dc-import>
+  </sc-if>
+
+  <dc-import name="Confirm Dialog" meta="{{ confirmMeta }}" handlers="{{ handlers }}" open-key="{{ confirmKey }}" on-close="{{ onConfirmClose }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" handlers="{{ handlers }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:860},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;]},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;},&quot;onChange&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(e: {type: string, id?: string}) =&gt; void&quot;}}">
+const ROUTE = '/devices';
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, confirmKey: null, confirmFor: null, wiz: null, fire: null, rev: 0 };
+
+  componentDidMount() {
+    const w = () => { if (window.HubData && window.HubShared && window.UIKit) this.setState({ ready: true }); else this.t = setTimeout(w, 40); };
+    w();
+    this.clock = setInterval(() => { if (!document.hidden) this.setState((s) => ({ rev: s.rev + 1 })); }, 30000); // يحدّث «آخر ظهور»
+  }
+  componentWillUnmount() { clearInterval(this.clock); clearTimeout(this.t); }
+
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  emit(name, payload) { if (typeof this.props[name] === 'function') this.props[name](payload); }
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared;
+    const theme = this.theme();
+    if (!D || !H || !S.ready) return { theme, loading: true, cardsMeta: { sections: [] }, handlers: {}, wizOpen: false, wizardMeta: null, wizHandlers: {}, confirmMeta: { dialogs: [] }, confirmKey: null, onConfirmClose: () => {}, toastsMeta: { types: [] }, toastFire: null, startPair: () => {} };
+    const f = D.fmt;
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+    const byId = (id) => D.devices.find((d) => d.id === id);
+    const stats = (id) => { const k = D.kpis('month', id); return { sent: k.total, failed: k.failed, rate: k.failRate }; };
+    const count = (list, id) => f.n(list.filter((x) => x.deviceId === id).length);
+    const disconnected = D.devices.find((d) => d.status === 'disconnected');
+
+    /* ——— المعالجات: البطاقات والنوافذ تشير إليها بالاسم ——— */
+    const handlers = {
+      openOutbound: (id) => go('/messages/outbound', { kind: 'device', value: id }),
+      openInbound: (id) => go('/messages/inbound', { kind: 'device', value: id }),
+      openFailed: (id) => go('/messages/outbound', { kind: 'status', value: 'failed', device: id }),
+      startPair: (id) => this.setState({ wiz: { existing: id || null } }),
+      askDisconnect: (id) => this.setState({ confirmKey: 'disconnect', confirmFor: id }),
+      askDelete: (id) => this.setState({ confirmKey: 'delete', confirmFor: id }),
+      disconnect: () => {
+        const d = byId(S.confirmFor); if (!d) return;
+        d.status = 'disconnected'; d.lastSeen = Date.now();
+        D.logActivity('فُصل جهاز «' + d.name + '» يدوياً', 'danger');
+        this.toast({ key: 'disconnected', title: 'فُصل «' + d.name + '»', text: 'الرسائل الموجّهة إليه تنتظر في الطابور حتى تعيد الاقتران.', actions: [{ label: 'إعادة الاقتران', variant: 'primary', onClick: () => handlers.startPair(d.id) }] });
+        this.emit('onChange', { type: 'disconnect', id: d.id }); this.bump();
+      },
+      delete: () => {
+        const d = byId(S.confirmFor); if (!d) return;
+        const i = D.devices.indexOf(d); if (i > -1) D.devices.splice(i, 1);
+        D.logActivity('حُذف جهاز «' + d.name + '»', 'danger');
+        this.toast({ key: 'deleted', title: 'حُذف «' + d.name + '»', text: 'سجل الرسائل بقي للتدقيق.' });
+        this.emit('onChange', { type: 'delete', id: d.id }); this.bump();
+      },
+    };
+
+    /* ——— البطاقات (Cards) ——— */
+    const cardsMeta = { handlers, sections: [].concat(
+      disconnected ? [{ min: 420, cards: [{ kind: 'alert', tone: 'danger', label: 'جهاز «' + disconnected.name + '» غير متصل منذ ' + Math.round((Date.now() - disconnected.lastSeen) / 60000) + ' دقيقة.', note: 'الرسائل الموجّهة إليه تبقى في الطابور ولا تُرسل حتى تعيد الاقتران.', cta: 'إعادة الاقتران', ctaStyle: 'solid', action: 'startPair', args: disconnected.id }] }] : [],
+      D.devices.length === 0 ? [{ min: 420, cards: [{ kind: 'alert', tone: 'info', label: 'لا توجد أجهزة مربوطة', note: 'أضف أول جهاز لتبدأ الإرسال. الاقتران يستغرق أقل من دقيقة.', cta: 'إضافة جهاز', ctaStyle: 'solid', action: 'startPair' }] }] : [],
+      [{ min: 300, cards: D.devices.map((d) => {
+        const s = stats(d.id), t = H.statusTone(d.status);
+        const connected = d.status === 'connected', pendingQr = d.status === 'pending';
+        const lastMsg = D.messages.find((m) => m.deviceId === d.id);
+        const toneKey = connected ? 'ok' : pendingQr ? 'warn' : 'danger';
+        return {
+          kind: 'entity', key: d.id, label: d.name, note: d.phone, noteMono: true,
+          avatar: d.initials, avatarTone: toneKey, badge: t.text, badgeTone: toneKey,
+          tone: pendingQr ? undefined : (connected ? undefined : 'danger'),
+          tiles: [
+            { label: 'أُرسل (30ي)', value: f.n(s.sent), action: 'openOutbound', args: d.id },
+            { label: 'فشل', value: f.n(s.failed), tone: s.rate > 8 ? 'danger' : undefined, action: 'openFailed', args: d.id },
+            { label: 'نسبة الفشل', value: s.rate.toFixed(1) + '%', tone: s.rate > 8 ? 'danger' : undefined },
+          ],
+          meta: pendingQr ? [] : [
+            { label: connected ? 'آخر ظهور' : 'انقطع منذ', value: f.ago(d.lastSeen), tone: connected ? undefined : 'danger' },
+            { label: 'آخر رسالة', value: lastMsg ? f.ago(lastMsg.ts) : 'لا رسائل', tone: connected ? undefined : 'danger' },
+          ],
+          notice: pendingQr ? { tone: 'warn', icon: 'scan', title: 'لم يُمسح الرمز بعد', text: 'يُرجى إعادة اقتران الجهاز لمسح الرمز.' } : undefined,
+          actions: [
+            connected ? { label: 'فصل', variant: 'secondary', action: 'askDisconnect', args: d.id } : { label: pendingQr ? 'عرض الرمز' : 'إعادة الاقتران', variant: 'primary', action: 'startPair', args: d.id },
+            { label: 'الصادر', variant: 'secondary', action: 'openOutbound', args: d.id },
+            { label: 'الوارد', variant: 'secondary', action: 'openInbound', args: d.id },
+            { label: 'حذف', variant: 'danger', action: 'askDelete', args: d.id },
+          ],
+        };
+      }) }]
+    ) };
+
+    /* ——— نوافذ التأكيد (Confirm Dialog) ——— */
+    const cd = byId(S.confirmFor) || {};
+    const confirmMeta = { handlers, dialogs: [
+      { key: 'disconnect', tone: 'warn', icon: 'unlink', title: 'فصل «' + (cd.name || '') + '»؟',
+        text: 'الفصل يوقف الإرسال من هذا الرقم فوراً. الرسائل المعلّقة تبقى في الطابور حتى تعيد الاقتران، ولا تُحذف.',
+        facts: cd.id ? [
+          { label: 'رسائل ستتوقف عن الإرسال', value: f.n(D.messages.filter((m) => m.deviceId === cd.id && (m.status === 'queued' || m.status === 'unsent')).length), mono: true, tone: 'warn' },
+          { label: 'نماذج مرتبطة بالجهاز', value: count(D.templates, cd.id), mono: true },
+          { label: 'حملات مرتبطة', value: count(D.campaigns, cd.id), mono: true },
+        ] : [],
+        confirmLabel: 'افصل الجهاز', action: 'disconnect' },
+      { key: 'delete', tone: 'danger', icon: 'trash', title: 'حذف «' + (cd.name || '') + '» نهائياً؟',
+        text: 'الحذف لا يمكن التراجع عنه. سجل الرسائل يبقى للتدقيق، لكن النماذج والحملات المرتبطة تحتاج إعادة توجيه إلى جهاز آخر قبل أن تعمل.',
+        facts: cd.id ? [
+          { label: 'رسائل مرتبطة في السجل', value: count(D.messages, cd.id), mono: true },
+          { label: 'نماذج ستفقد جهازها', value: count(D.templates, cd.id), mono: true, tone: 'danger' },
+          { label: 'حملات ستتعطل', value: count(D.campaigns, cd.id), mono: true, tone: 'danger' },
+        ] : [],
+        typeToConfirm: cd.name ? { word: cd.name, hint: 'اكتب اسم الجهاز للتأكيد:' } : undefined,
+        confirmLabel: 'احذف الجهاز', action: 'delete' },
+    ] };
+
+    /* ——— معالج الاقتران (Wizard) ——— */
+    const W = S.wiz, pairDev = W && W.existing ? byId(W.existing) : null;
+    const wizHandlers = {
+      finish: (v) => {
+        const name = (v && v.devName || '').trim() || (pairDev ? pairDev.name : 'جهاز جديد');
+        const phone = '+966 58 224 7719';
+        if (pairDev) { pairDev.status = 'connected'; pairDev.lastSeen = Date.now(); pairDev.battery = 91; pairDev.name = name; D.logActivity('أُعيد اقتران جهاز «' + name + '» بنجاح', 'primary'); }
+        else { D.devices.push({ id: 'd' + (D.devices.length + 1) + '-' + Date.now(), name, phone, status: 'connected', initials: name.slice(0, 2), color: '#2F6FA8', lastSeen: Date.now(), battery: 91 }); D.logActivity('أُضيف جهاز «' + name + '» واقترن بنجاح', 'primary'); }
+        this.emit('onChange', { type: pairDev ? 'repair' : 'add' }); this.bump();
+        return 'paired';
+      },
+      close: () => { this.setState({ wiz: null }); this.toast({ key: 'paired', title: 'الجهاز جاهز', text: 'يمكنك اختياره من منتقي الأجهزة أعلى الشاشة.' }); },
+      cancel: () => this.setState({ wiz: null }),
+    };
+    const wizardMeta = W ? {
+      title: pairDev ? 'إعادة اقتران «' + pairDev.name + '»' : 'إضافة جهاز جديد',
+      sub: 'ثلاث خطوات: سمِّ الجهاز، امسح الرمز من واتساب، ثم ابدأ الإرسال.',
+      variant: 'modal', allowJump: false,
+      steps: [
+        { key: 'name', type: 'form', icon: 'user', title: 'اسم الجهاز', sub: 'الاسم يظهر في سجلات الرسائل وفي منتقي الجهاز أعلى الشاشة. رقم الواتساب يُقرأ تلقائياً بعد الاقتران.',
+          fields: [{ key: 'devName', type: 'text', label: 'اسم الجهاز', required: true, value: pairDev ? pairDev.name : '', placeholder: 'مثال: جهاز المبيعات', requiredError: 'اكتب اسماً للجهاز أولاً.' }] },
+        { key: 'scan', type: 'html', icon: 'scan', title: 'مسح الرمز', sub: 'افتح واتساب على الهاتف ← الإعدادات ← الأجهزة المرتبطة ← ربط جهاز، ثم امسح الرمز.',
+          html: '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start"><span style="width:180px;height:180px;border-radius:12px;background:repeating-linear-gradient(45deg,var(--sunken) 0 6px,var(--surface) 6px 12px);border:1px solid var(--border-2);display:inline-flex;align-items:center;justify-content:center;font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--ink-4)">رمز QR</span><span style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:8px"><span style="display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border)"><span style="font-size:11px;color:var(--ink-3)">أو أدخل رمز الاقتران على الهاتف</span><span dir="ltr" style="font-family:\'IBM Plex Mono\',monospace;font-size:18px;font-weight:600;letter-spacing:.14em">K7QM-3XD9</span></span><span style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--wn-i)"><span style="width:7px;height:7px;border-radius:50%;background:var(--wn)"></span>بانتظار المسح · ينتهي الرمز بعد <b dir="ltr">42</b> ثانية</span></span></div>',
+          fields: [{ key: 'scanned', type: 'checkbox', required: true, text: 'ظهر الجهاز في «الأجهزة المرتبطة» على الهاتف', requiredError: 'أكّد المسح قبل المتابعة' }] },
+      ],
+      done: { title: 'اقترن الجهاز بنجاح', sub: 'الجهاز متاح الآن في منتقي الأجهزة أعلى الشاشة وفي النماذج والحملات.',
+        rows: [{ label: 'الاسم', key: 'devName' }, { label: 'الرقم المقروء', value: '+966 58 224 7719' }],
+        actions: [{ label: 'إغلاق', variant: 'primary', action: 'close' }] },
+    } : null;
+
+    /* ——— التنبيهات (Toasts) ——— */
+    const toastsMeta = { position: 'bottom-start', duration: 4000, handlers, types: [
+      { key: 'disconnected', tone: 'warn', icon: 'alert', duration: 6000 },
+      { key: 'deleted', tone: 'danger', icon: 'x' },
+      { key: 'paired', tone: 'ok', icon: 'check' },
+    ] };
+
+    return {
+      theme, loading: false, handlers, cardsMeta,
+      startPair: () => handlers.startPair(null),
+      wizOpen: !!W, wizardMeta, wizHandlers,
+      confirmMeta, confirmKey: S.confirmKey, onConfirmClose: () => this.setState({ confirmKey: null, confirmFor: null }),
+      toastsMeta, toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

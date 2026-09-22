@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--shadow-lg:0 24px 60px rgba(15,23,32,.28);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--shadow-lg:0 24px 60px rgba(0,0,0,.6);color-scheme:dark;}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  .smd-fill{flex:1;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .smd-fill > .sc-host{flex:1 1 0%;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .smd-fill > .sc-host > *{flex:1 1 0%;min-height:0;min-width:0}
+  @keyframes smdIn{from{opacity:0;transform:translateY(10px) scale(.995)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<sc-if value="{{ open }}" hint-placeholder-val="{{ true }}">
+<div dir="rtl" data-theme="{{ theme }}" style="position:fixed;inset:0;z-index:76;display:flex;align-items:center;justify-content:center;padding:{{ pad }};background:rgba(15,20,19,.45);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;color:var(--ink)">
+  <div onClick="{{ onClose }}" style="position:absolute;inset:0"></div>
+  <div style="position:relative;z-index:1;width:min(1180px,100%);height:100%;max-height:100%;display:flex;flex-direction:column;border-radius:10px;background:var(--bg);border:1px solid var(--border);box-shadow:var(--shadow-lg);overflow:hidden;animation:smdIn .18s ease-out">
+    <div style="flex:none;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border)">
+      <span style="display:flex;flex-direction:column;gap:3px;min-width:0">
+        <span style="font-size:15px;font-weight:700">{{ title }}</span>
+        <span style="font-size:11px;color:var(--ink-3);line-height:1.7">{{ subtitle }}</span>
+      </span>
+      <span onClick="{{ onClose }}" title="إغلاق (Esc)" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;line-height:1;color:var(--ink-3);flex:none" style-hover="background:var(--sunken);color:var(--ink)">×</span>
+    </div>
+    <div class="smd-fill">
+      <dc-import name="Bulk Send" prefill="{{ prefill }}" on-sent="{{ onSent }}" theme="{{ theme }}" hint-size="100%,100%"></dc-import>
+    </div>
+  </div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:800},&quot;open&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;prefill&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;{kind:'group'|'contact', value: string|string[]} | null&quot;},&quot;title&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;إرسال رسالة&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;subtitle&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;onSent&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(count: number) =&gt; void&quot;},&quot;onClose&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;'light' | 'dark'&quot;}}">
+// ── Send Message Dialog: نافذة إرسال رسالة (تغلّف Bulk Send)
+// props: open, prefill {kind:'group'|'contact', value}, title, subtitle, onSent(count), onClose(), theme
+class Component extends DCLogic {
+  state = { width: 1280 };
+  componentDidMount() {
+    this.onR = () => this.setState({ width: window.innerWidth });
+    window.addEventListener('resize', this.onR); this.onR();
+    this.onKey = (e) => { if (e.key === 'Escape' && this.props.open !== false && !window.__hubDropOpen) { e.preventDefault(); if (this.props.onClose) this.props.onClose(); } };
+    document.addEventListener('keydown', this.onKey);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onR); document.removeEventListener('keydown', this.onKey); }
+
+  renderVals() {
+    const P = this.props, D = window.HubData;
+    const pf = P.prefill || null;
+    let sub = P.subtitle;
+    if (sub === undefined && pf && D) {
+      if (pf.kind === 'group') {
+        const ids = [].concat(pf.value);
+        const g = (D.contactGroups || []).find((x) => x.id === ids[0]);
+        sub = g ? 'إلى «' + g.name + '» — ' + D.fmt.n(g.size || 0) + ' جهة' : 'إلى مجموعة محددة';
+      } else if (pf.kind === 'contact') {
+        const ids = [].concat(pf.value);
+        const c = D.contactById ? D.contactById(ids[0]) : null;
+        sub = ids.length > 1 ? 'إلى ' + D.fmt.n(ids.length) + ' جهة محددة' : (c ? 'إلى ' + (c.name || c.phone) : 'إلى جهة محددة');
+      }
+    }
+    return {
+      open: P.open !== false,
+      theme: P.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light',
+      pad: this.state.width < 760 ? '0' : '22px',
+      title: P.title || 'إرسال رسالة',
+      subtitle: sub || 'اختر المستلمين، اكتب الرسالة، ثم أرسل. الإرسال فعلي ويُخصم من الباقة.',
+      prefill: pf,
+      onSent: (n) => { if (P.onSent) P.onSent(n); if (P.onClose) P.onClose(); },
+      onClose: () => { if (P.onClose) P.onClose(); },
+    };
+  }
+}
+</script>
+</body>
+</html>

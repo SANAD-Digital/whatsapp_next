@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F6; --surface:#FFFFFF; --sunken:#EEF2F0; --border:#E3E8E6; --border-2:#C9D2CF;
+    --ink:#0F1A18; --ink-2:#33423F; --ink-3:#55645F; --ink-4:#62716D;
+    --pri:#0F7A63; --pri-d:#0A6250; --pri-s:#DFF1EC; --pri-sb:#B6DDD2; --on-pri:#FFFFFF;
+    --ok:#1A8B50; --ok-s:#E1F3E8; --ok-i:#16713F; --ok-sb:#B9E2CA;
+    --wn:#9A6C14; --wn-s:#FBF1DC; --wn-i:#8A6116; --wn-sb:#EFDCB4;
+    --dg:#C9524B; --dg-s:#FBEAE8; --dg-i:#A93A34; --dg-sb:#F2CBC7;
+    --nf:#2568AF; --nf-s:#E4EFFA; --nf-i:#1F5A97; --nf-sb:#C2DCF2;
+    --shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);
+  }
+  [data-theme="dark"]{
+    --bg:#0E1513; --surface:#14201D; --sunken:#1B2926; --border:#243531; --border-2:#334742;
+    --ink:#EAF2F0; --ink-2:#C4D2CE; --ink-3:#9AAAA6; --ink-4:#7E8F8B;
+    --pri:#2FA98C; --pri-d:#49C3A5; --pri-s:#16302A; --pri-sb:#23493F; --on-pri:#04150F;
+    --ok:#35A96A; --ok-s:#132A1E; --ok-i:#7FD3A3; --ok-sb:#1E4531;
+    --wn:#C79436; --wn-s:#2C2314; --wn-i:#E0BC78; --wn-sb:#4A3A1B;
+    --dg:#D9736C; --dg-s:#2E1A19; --dg-i:#F0A8A2; --dg-sb:#4C2A28;
+    --nf:#4A8ED0; --nf-s:#141F2C; --nf-i:#9CC5EC; --nf-sb:#25405C;
+    --shadow-lg:0 18px 40px -22px rgba(0,0,0,.7);
+    color-scheme:dark;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,select,textarea,button{font-family:inherit;}
+  .fm-f:focus-within{border-color:var(--pri) !important;box-shadow:0 0 0 3px var(--pri-s);}
+  .fm-i:focus{border-color:var(--pri) !important;box-shadow:0 0 0 3px var(--pri-s);}
+  .fm-sb{scrollbar-width:thin;scrollbar-color:var(--border-2) transparent;}
+  .fm-sb::-webkit-scrollbar{width:8px;height:8px;}
+  .fm-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:999px;}
+  @keyframes fmPop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<div dir="{{ dir }}" data-theme="{{ theme }}" style="min-height:{{ rootMinH }};background:{{ rootBg }};color:var(--ink);font-family:{{ font }};padding:{{ dn.pagePad }};display:flex;justify-content:center">
+  <div style="width:100%;max-width:{{ maxW }};display:flex;flex-direction:column;gap:{{ dn.secGap }}">
+
+    <sc-if value="{{ hasHead }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <span style="display:flex;flex-direction:column;gap:3px;min-width:0">
+          <span style="font-size:{{ dn.h1 }};font-weight:700;line-height:1.25">{{ head.title }}</span>
+          <sc-if value="{{ head.hasSub }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;color:var(--ink-3);line-height:1.6;text-wrap:pretty">{{ head.sub }}</span></sc-if>
+        </span>
+        <sc-if value="{{ head.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;font-weight:600;color:{{ head.badgeFg }};background:{{ head.badgeBg }};border:1px solid {{ head.badgeBd }};border-radius:999px;padding:4px 10px;flex:none">{{ head.badge }}</span></sc-if>
+      </div>
+    </sc-if>
+
+    <div style="display:flex;flex-direction:column;gap:{{ shell.gap }};background:{{ shell.bg }};border:{{ shell.bd }};border-radius:{{ shell.radius }};padding:{{ shell.pad }}">
+    <sc-if value="{{ tabs.show }}" hint-placeholder-val="{{ false }}">
+      <div class="fm-sb" style="display:flex;align-items:stretch;gap:{{ tabs.gap }};padding:{{ tabs.pad }};margin:{{ tabs.margin }};background:{{ tabs.barBg }};border-bottom:{{ tabs.barBd }};border-radius:{{ tabs.barRadius }};overflow-x:auto;flex:none">
+        <sc-for list="{{ tabs.items }}" as="t" hint-placeholder-count="3">
+          <span onClick="{{ t.onPick }}" style="display:flex;align-items:center;gap:7px;min-height:{{ tabs.h }};padding:0 14px;border-radius:{{ t.radius }};background:{{ t.bg }};color:{{ t.fg }};border-bottom:{{ t.underline }};box-shadow:{{ t.shadow }};font-size:{{ dn.fs }};font-weight:{{ t.weight }};cursor:pointer;white-space:nowrap;flex:{{ tabs.itemFlex }};justify-content:center" style-hover="color:var(--ink)">
+            <sc-if value="{{ t.hasIcon }}" hint-placeholder-val="{{ false }}"><span style="width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;flex:none" dangerouslySetInnerHTML="{{ t.icon }}"></span></sc-if>
+            <span style="min-width:0;overflow:hidden;text-overflow:ellipsis">{{ t.label }}</span>
+            <sc-if value="{{ t.hasCount }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--dg);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:none">{{ t.count }}</span></sc-if>
+          </span>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-for list="{{ sections }}" as="s" hint-placeholder-count="2">
+      <section style="display:{{ s.display }};flex-direction:column;gap:{{ dn.headGap }};background:{{ s.bg }};border:{{ s.bd }};border-radius:12px;padding:{{ s.pad }}">
+        <sc-if value="{{ s.hasHead }}" hint-placeholder-val="{{ true }}">
+          <div onClick="{{ s.onToggle }}" style="display:flex;align-items:center;gap:10px;cursor:{{ s.cursor }}">
+            <span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+              <span style="font-size:{{ dn.h2 }};font-weight:700;line-height:1.4">{{ s.title }}</span>
+              <sc-if value="{{ s.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--ink-3);line-height:1.6;text-wrap:pretty">{{ s.sub }}</span></sc-if>
+            </span>
+            <sc-if value="{{ s.collapsible }}" hint-placeholder-val="{{ false }}"><span style="width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-3);transform:{{ s.chev }};transition:transform .15s;flex:none"><svg width="13" height="13" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ s.open }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid;grid-template-columns:{{ s.cols }};gap:{{ dn.gap }};align-items:start">
+            <sc-for list="{{ s.fields }}" as="f" hint-placeholder-count="4">
+
+              <sc-if value="{{ f.isDivider }}" hint-placeholder-val="{{ false }}">
+                <span style="grid-column:1/-1;display:flex;align-items:center;gap:10px;padding-top:4px"><sc-if value="{{ f.hasLabel }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:600;color:var(--ink-4);white-space:nowrap">{{ f.label }}</span></sc-if><span style="flex:1;height:1px;background:var(--border)"></span></span>
+              </sc-if>
+
+              <sc-if value="{{ f.isField }}" hint-placeholder-val="{{ true }}">
+                <div data-fm-pop="{{ f.key }}" style="grid-column:{{ f.span }};min-width:0;display:flex;flex-direction:{{ f.rowDir }};align-items:{{ f.rowAlign }};gap:{{ f.rowGap }};position:relative">
+
+                  <sc-if value="{{ f.hasLabel }}" hint-placeholder-val="{{ true }}">
+                    <span style="display:flex;align-items:center;gap:5px;width:{{ f.labelW }};flex:{{ f.labelFlex }};padding-top:{{ f.labelPad }}">
+                      <span style="font-size:{{ dn.labelFs }};font-weight:600;color:var(--ink-2);line-height:1.5">{{ f.label }}</span>
+                      <sc-if value="{{ f.required }}" hint-placeholder-val="{{ false }}"><span style="color:var(--dg-i);font-size:13px;line-height:1">*</span></sc-if>
+                      <sc-if value="{{ f.hasHint }}" hint-placeholder-val="{{ false }}"><span title="{{ f.hint }}" style="width:15px;height:15px;border-radius:50%;background:var(--sunken);color:var(--ink-3);font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help">i</span></sc-if>
+                    </span>
+                  </sc-if>
+
+                  <span style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:0">
+
+                    <sc-if value="{{ f.isInput }}" hint-placeholder-val="{{ true }}">
+                      <input class="fm-i" type="{{ f.inputType }}" dir="{{ f.vdir }}" value="{{ f.value }}" onInput="{{ f.onInput }}" placeholder="{{ f.placeholder }}" disabled="{{ f.disabled }}" style="width:100%;min-height:{{ dn.h }};padding:0 {{ dn.px }};border-radius:8px;border:1px solid {{ f.bd }};background:{{ f.inputBg }};color:var(--ink);font-size:{{ dn.fs }};font-family:{{ f.vfont }};text-align:{{ f.align }};outline:none" />
+                    </sc-if>
+
+                    <sc-if value="{{ f.isAddons }}" hint-placeholder-val="{{ false }}">
+                      <span class="fm-f" style="display:flex;align-items:stretch;width:100%;border-radius:8px;border:1px solid {{ f.bd }};background:{{ f.inputBg }};overflow:hidden">
+                        <sc-for list="{{ f.attStart }}" as="a" hint-placeholder-count="0"><span onClick="{{ a.onClick }}" title="{{ a.title }}" style="display:inline-flex;align-items:center;gap:6px;padding:0 10px;min-height:{{ dn.h }};background:{{ a.bg }};color:{{ a.fg }};border-inline-end:1px solid {{ f.bd }};font-size:{{ dn.fsSm }};font-weight:600;cursor:pointer;white-space:nowrap;flex:none"><sc-if value="{{ a.hasIcon }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex" dangerouslySetInnerHTML="{{ a.icon }}"></span></sc-if><sc-if value="{{ a.hasLabel }}" hint-placeholder-val="{{ false }}">{{ a.label }}</sc-if></span></sc-for>
+                        <sc-for list="{{ f.inStart }}" as="a" hint-placeholder-count="0"><span onClick="{{ a.onClick }}" title="{{ a.title }}" style="display:inline-flex;align-items:center;justify-content:center;width:30px;min-height:{{ dn.h }};color:{{ a.fg }};cursor:{{ a.cursor }};flex:none" dangerouslySetInnerHTML="{{ a.icon }}"></span></sc-for>
+                        <input class="fm-bare" type="{{ f.inputType }}" dir="{{ f.vdir }}" value="{{ f.value }}" onInput="{{ f.onInput }}" placeholder="{{ f.placeholder }}" disabled="{{ f.disabled }}" style="flex:1;min-width:0;min-height:{{ dn.h }};padding:0 {{ f.barePad }};border:none;background:transparent;color:var(--ink);font-size:{{ dn.fs }};font-family:{{ f.vfont }};text-align:{{ f.align }};outline:none" />
+                        <sc-for list="{{ f.inEnd }}" as="a" hint-placeholder-count="0"><span onClick="{{ a.onClick }}" title="{{ a.title }}" style="display:inline-flex;align-items:center;justify-content:center;width:30px;min-height:{{ dn.h }};color:{{ a.fg }};cursor:{{ a.cursor }};flex:none" dangerouslySetInnerHTML="{{ a.icon }}"></span></sc-for>
+                        <sc-for list="{{ f.attEnd }}" as="a" hint-placeholder-count="0"><span onClick="{{ a.onClick }}" title="{{ a.title }}" style="display:inline-flex;align-items:center;gap:6px;padding:0 10px;min-height:{{ dn.h }};background:{{ a.bg }};color:{{ a.fg }};border-inline-start:1px solid {{ f.bd }};font-size:{{ dn.fsSm }};font-weight:600;cursor:pointer;white-space:nowrap;flex:none"><sc-if value="{{ a.hasIcon }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex" dangerouslySetInnerHTML="{{ a.icon }}"></span></sc-if><sc-if value="{{ a.hasLabel }}" hint-placeholder-val="{{ false }}">{{ a.label }}</sc-if></span></sc-for>
+                      </span>
+                    </sc-if>
+
+                    <sc-if value="{{ f.isTextarea }}" hint-placeholder-val="{{ false }}">
+                      <textarea class="fm-i" value="{{ f.value }}" onInput="{{ f.onInput }}" placeholder="{{ f.placeholder }}" rows="{{ f.rows }}" disabled="{{ f.disabled }}" style="width:100%;padding:9px {{ dn.px }};border-radius:8px;border:1px solid {{ f.bd }};background:{{ f.inputBg }};color:var(--ink);font-size:{{ dn.fs }};line-height:1.7;resize:vertical;outline:none"></textarea>
+                    </sc-if>
+
+                    <sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}">
+                      <span style="position:relative;display:flex;width:100%">
+                        <select class="fm-i" value="{{ f.value }}" onChange="{{ f.onInput }}" disabled="{{ f.disabled }}" style="appearance:none;width:100%;min-height:{{ dn.h }};padding-inline-start:{{ dn.px }};padding-inline-end:30px;border-radius:8px;border:1px solid {{ f.bd }};background:{{ f.inputBg }};color:{{ f.selFg }};font-size:{{ dn.fs }};outline:none;cursor:pointer">
+                          <sc-for list="{{ f.opts }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.label }}</option></sc-for>
+                        </select>
+                        <span style="position:absolute;inset-inline-end:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--ink-3);display:inline-flex"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                      </span>
+                    </sc-if>
+
+                    <sc-if value="{{ f.isPicker }}" hint-placeholder-val="{{ false }}">
+                      <span onClick="{{ f.onOpen }}" style="display:flex;align-items:center;gap:8px;width:100%;min-height:{{ dn.h }};padding:4px {{ dn.px }};border-radius:8px;border:1px solid {{ f.pickBd }};background:{{ f.inputBg }};cursor:pointer;flex-wrap:wrap">
+                        <sc-if value="{{ f.hasChips }}" hint-placeholder-val="{{ false }}">
+                          <sc-for list="{{ f.chips }}" as="c" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:5px;padding:2px 4px 2px 8px;border-radius:6px;background:var(--pri-s);color:var(--pri-d);font-size:{{ dn.fsSm }};font-weight:600;flex:none">{{ c.label }}<span onClick="{{ c.onRemove }}" style="width:16px;height:16px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer">×</span></span></sc-for>
+                        </sc-if>
+                        <sc-if value="{{ f.hasText }}" hint-placeholder-val="{{ true }}"><span style="flex:1;min-width:0;font-size:{{ dn.fs }};color:{{ f.pickFg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:{{ f.vfont }}">{{ f.pickText }}</span></sc-if>
+                        <span style="color:var(--ink-3);display:inline-flex;flex:none;transform:{{ f.chev }};transition:transform .15s"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                      </span>
+                    </sc-if>
+
+                    <sc-if value="{{ f.isAuto }}" hint-placeholder-val="{{ false }}">
+                      <span class="fm-f" style="display:flex;align-items:center;width:100%;border-radius:8px;border:1px solid {{ f.bd }};background:{{ f.inputBg }}">
+                        <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;color:var(--ink-3);flex:none" dangerouslySetInnerHTML="{{ f.searchIcon }}"></span>
+                        <input type="text" value="{{ f.acText }}" onInput="{{ f.onAcInput }}" onFocus="{{ f.onOpen }}" onKeyDown="{{ f.onAcKey }}" placeholder="{{ f.placeholder }}" disabled="{{ f.disabled }}" style="flex:1;min-width:0;min-height:{{ dn.h }};padding:0;padding-inline-end:10px;border:none;background:transparent;color:var(--ink);font-size:{{ dn.fs }};outline:none" />
+                        <sc-if value="{{ f.hasValue }}" hint-placeholder-val="{{ false }}"><span onClick="{{ f.onClear }}" title="{{ T.clear }}" style="display:inline-flex;align-items:center;justify-content:center;width:30px;min-height:{{ dn.h }};color:var(--ink-3);cursor:pointer;flex:none" dangerouslySetInnerHTML="{{ f.clearIcon }}"></span></sc-if>
+                      </span>
+                    </sc-if>
+
+                    <sc-if value="{{ f.isSegment }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:flex;align-items:center;gap:2px;padding:2px;border-radius:8px;background:var(--sunken);border:1px solid var(--border);width:fit-content;max-width:100%;overflow-x:auto">
+                        <sc-for list="{{ f.opts }}" as="o" hint-placeholder-count="3"><span onClick="{{ o.onPick }}" style="min-height:{{ dn.hSm }};padding:0 12px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:{{ dn.fsSm }};font-weight:{{ o.weight }};color:{{ o.fg }};background:{{ o.bg }};box-shadow:{{ o.shadow }};cursor:pointer;white-space:nowrap">{{ o.label }}</span></sc-for>
+                      </span>
+                    </sc-if>
+
+                    <sc-if value="{{ f.isToggle }}" hint-placeholder-val="{{ false }}">
+                      <span onClick="{{ f.onToggle }}" style="display:inline-flex;align-items:center;gap:10px;min-height:{{ dn.h }};cursor:pointer;user-select:none;width:fit-content">
+                        <span style="width:36px;height:20px;border-radius:999px;background:{{ f.trackBg }};position:relative;transition:background .15s;flex:none"><span style="position:absolute;top:2px;inset-inline-start:{{ f.knob }};width:16px;height:16px;border-radius:50%;background:#fff;transition:inset-inline-start .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)"></span></span>
+                        <span style="font-size:{{ dn.fs }};color:var(--ink-2)">{{ f.toggleText }}</span>
+                      </span>
+                    </sc-if>
+
+                    <sc-if value="{{ f.isChecks }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:flex;flex-direction:column;gap:6px">
+                        <sc-for list="{{ f.opts }}" as="o" hint-placeholder-count="3">
+                          <label style="display:flex;align-items:center;gap:8px;min-height:{{ dn.hSm }};cursor:pointer;font-size:{{ dn.fs }};color:var(--ink-2)"><input type="{{ f.checkType }}" checked="{{ o.on }}" onChange="{{ o.onPick }}" style="width:16px;height:16px;accent-color:var(--pri);flex:none" />{{ o.label }}</label>
+                        </sc-for>
+                      </span>
+                    </sc-if>
+
+                    <sc-if value="{{ f.isFile }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:flex;flex-direction:column;gap:7px">
+                        <label style="display:flex;align-items:center;gap:9px;min-height:{{ dn.h }};padding:8px 12px;border-radius:8px;border:1px dashed {{ f.bd }};background:{{ f.inputBg }};cursor:pointer" style-hover="border-color:var(--pri)">
+                          <span style="width:26px;height:26px;border-radius:7px;background:var(--pri-s);color:var(--pri-d);display:inline-flex;align-items:center;justify-content:center;flex:none" dangerouslySetInnerHTML="{{ f.fileIcon }}"></span>
+                          <span style="display:flex;flex-direction:column;gap:1px;flex:1;min-width:0">
+                            <span style="font-size:{{ dn.fsSm }};font-weight:600;color:var(--ink-2)">{{ f.fileCta }}</span>
+                            <span style="font-size:11px;color:var(--ink-4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.fileHint }}</span>
+                          </span>
+                          <input type="file" accept="{{ f.accept }}" multiple="{{ f.multiple }}" onChange="{{ f.onFiles }}" disabled="{{ f.disabled }}" style="display:none" />
+                        </label>
+                        <sc-if value="{{ f.hasFiles }}" hint-placeholder-val="{{ false }}">
+                          <span style="display:flex;flex-direction:column;gap:5px">
+                            <sc-for list="{{ f.files }}" as="x" hint-placeholder-count="1">
+                              <span style="display:flex;align-items:center;gap:8px;min-height:{{ dn.hSm }};padding:0 8px;border-radius:7px;background:var(--sunken);border:1px solid var(--border)">
+                                <span style="font-size:{{ dn.fsSm }};color:var(--ink-2);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ x.name }}</span>
+                                <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-4);flex:none">{{ x.size }}</span>
+                                <span onClick="{{ x.onRemove }}" title="{{ T.clear }}" style="width:20px;height:20px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-3);cursor:pointer;flex:none">×</span>
+                              </span>
+                            </sc-for>
+                          </span>
+                        </sc-if>
+                      </span>
+                    </sc-if>
+
+                    <sc-if value="{{ f.isReadonly }}" hint-placeholder-val="{{ false }}">
+                      <span dir="{{ f.vdir }}" style="display:flex;align-items:center;min-height:{{ dn.h }};padding:0 {{ dn.px }};border-radius:8px;background:var(--sunken);border:1px solid var(--border);color:var(--ink-2);font-size:{{ dn.fs }};font-family:{{ f.vfont }};text-align:start">{{ f.value }}</span>
+                    </sc-if>
+
+                    <sc-if value="{{ f.isBadge }}" hint-placeholder-val="{{ false }}">
+                      <span style="display:inline-flex;align-items:center;gap:6px;width:fit-content;padding:4px 10px;border-radius:999px;background:{{ f.badgeBg }};border:1px solid {{ f.badgeBd }};color:{{ f.badgeFg }};font-size:{{ dn.fsSm }};font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:{{ f.badgeDot }}"></span>{{ f.value }}</span>
+                    </sc-if>
+
+                    <sc-if value="{{ f.isHtml }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size:{{ dn.fs }};color:var(--ink-2);line-height:1.7" dangerouslySetInnerHTML="{{ f.html }}"></span>
+                    </sc-if>
+
+                    <sc-if value="{{ f.hasMsg }}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size:11px;color:{{ f.msgFg }};line-height:1.6;text-wrap:pretty">{{ f.msg }}</span>
+                    </sc-if>
+                  </span>
+
+                  <sc-if value="{{ f.popOpen }}" hint-placeholder-val="{{ false }}">
+                    <div class="fm-sb" style="position:absolute;top:calc(100% + 4px);inset-inline-start:{{ f.popStart }};inset-inline-end:{{ f.popEnd }};z-index:40;max-height:{{ dn.popMaxH }};overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-lg);padding:4px;display:flex;flex-direction:column;gap:2px;animation:fmPop .14s ease-out">
+                      <sc-if value="{{ f.hasSearch }}" hint-placeholder-val="{{ false }}">
+                        <input type="text" value="{{ f.q }}" onInput="{{ f.onQ }}" placeholder="{{ T.search }}" autoFocus="{{ true }}" style="width:100%;min-height:{{ dn.hSm }};margin-bottom:2px;padding:0 10px;border-radius:6px;border:1px solid var(--border-2);background:var(--bg);color:var(--ink);font-size:{{ dn.fsSm }};outline:none" />
+                      </sc-if>
+                      <sc-for list="{{ f.popItems }}" as="o" hint-placeholder-count="4">
+                        <span onClick="{{ o.onPick }}" style="display:flex;align-items:center;gap:9px;min-height:{{ dn.h }};padding:4px 9px;border-radius:6px;cursor:pointer;background:{{ o.bg }}" style-hover="background:var(--sunken)">
+                          <sc-if value="{{ o.hasCheck }}" hint-placeholder-val="{{ false }}"><input type="checkbox" checked="{{ o.on }}" readOnly="{{ true }}" style="width:15px;height:15px;accent-color:var(--pri);flex:none;pointer-events:none" /></sc-if>
+                          <sc-if value="{{ o.hasAvatar }}" hint-placeholder-val="{{ false }}"><span style="width:28px;height:28px;border-radius:50%;background:var(--pri-s);color:var(--pri-d);font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:none">{{ o.avatar }}</span></sc-if>
+                          <span style="display:flex;flex-direction:column;gap:1px;flex:1;min-width:0">
+                            <span style="font-size:{{ dn.fs }};color:{{ o.fg }};font-weight:{{ o.weight }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.label }}</span>
+                            <sc-if value="{{ o.hasSecondary }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.secondary }}</span></sc-if>
+                          </span>
+                          <sc-if value="{{ o.hasMeta }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);flex:none">{{ o.meta }}</span></sc-if>
+                        </span>
+                      </sc-for>
+                      <sc-if value="{{ f.popEmpty }}" hint-placeholder-val="{{ false }}"><span style="padding:9px;font-size:{{ dn.fsSm }};color:var(--ink-4)">{{ f.emptyText }}</span></sc-if>
+                      <sc-if value="{{ f.hasFooter }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:flex;gap:6px;padding-top:4px;margin-top:2px;border-top:1px solid var(--border)">
+                          <sc-for list="{{ f.footerActions }}" as="a" hint-placeholder-count="1"><span onClick="{{ a.onClick }}" style="display:inline-flex;align-items:center;gap:6px;min-height:{{ dn.hSm }};padding:0 10px;border-radius:6px;background:{{ a.bg }};color:{{ a.fg }};border:{{ a.bd }};font-size:{{ dn.fsSm }};font-weight:600;cursor:pointer">{{ a.label }}</span></sc-for>
+                        </span>
+                      </sc-if>
+                    </div>
+                  </sc-if>
+                </div>
+              </sc-if>
+
+            </sc-for>
+          </div>
+        </sc-if>
+      </section>
+    </sc-for>
+    </div>
+
+    <sc-if value="{{ hasBar }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;position:{{ bar.pos }};bottom:0;z-index:30;margin:{{ bar.margin }};padding:{{ bar.pad }};background:{{ bar.bg }};border-top:1px solid var(--border)">
+        <sc-for list="{{ barStart }}" as="b" hint-placeholder-count="1"><button type="button" onClick="{{ b.onClick }}" style="min-height:{{ dn.btnH }};padding:0 {{ dn.btnPx }};border-radius:8px;background:{{ b.bg }};color:{{ b.fg }};border:{{ b.bd }};font-size:{{ dn.btnFs }};font-weight:600;cursor:pointer;flex:{{ dn.btnFlex }}">{{ b.label }}</button></sc-for>
+        <span style="flex:{{ bar.spacer }};min-width:0"></span>
+        <sc-if value="{{ hasDirty }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--wn-i);white-space:nowrap">{{ T.unsaved }}</span></sc-if>
+        <sc-for list="{{ barEnd }}" as="b" hint-placeholder-count="2"><button type="button" onClick="{{ b.onClick }}" style="min-height:{{ dn.btnH }};padding:0 {{ dn.btnPx }};border-radius:8px;background:{{ b.bg }};color:{{ b.fg }};border:{{ b.bd }};font-size:{{ dn.btnFs }};font-weight:600;cursor:pointer;flex:{{ dn.btnFlex }}">{{ b.label }}</button></sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showDocs }}" hint-placeholder-val="{{ true }}">
+      <section style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
+        <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:700">{{ T.metaTitle }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border-radius:999px;background:var(--sunken);color:var(--ink-2)">Form meta</span></span>
+        <span style="font-size:12px;color:var(--ink-3);line-height:1.8;text-wrap:pretty">{{ T.metaHint }}</span>
+        <pre dir="ltr" class="fm-sb" style="margin:0;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:var(--ink-2);overflow:auto;max-height:300px;text-align:left">{{ docJson }}</pre>
+        <span style="font-size:12px;font-weight:600;color:var(--ink-2)">{{ T.valuesTitle }}</span>
+        <pre dir="ltr" class="fm-sb" style="margin:0;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:var(--ink-2);overflow:auto;max-height:220px;text-align:left">{{ valuesJson }}</pre>
+        <sc-if value="{{ hasLog }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:5px;padding-top:8px;border-top:1px solid var(--border)">
+            <span style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;font-weight:600;color:var(--ink-2)">{{ T.log }}</span><span onClick="{{ clearLog }}" style="font-size:12px;font-weight:600;color:var(--dg-i);cursor:pointer">{{ T.clearLog }}</span></span>
+            <sc-for list="{{ log }}" as="l" hint-placeholder-count="2"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);text-align:left">{{ l }}</span></sc-for>
+          </div>
+        </sc-if>
+      </section>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;,&quot;auto&quot;],&quot;tsType&quot;:&quot;'light'|'dark'|'auto'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ar&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;],&quot;tsType&quot;:&quot;'ar'|'en'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;layout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;meta&quot;,&quot;options&quot;:[&quot;meta&quot;,&quot;stack&quot;,&quot;tabs&quot;],&quot;tsType&quot;:&quot;'meta'|'stack'|'tabs'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;'comfortable'|'compact'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;maxWidth&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:880,&quot;min&quot;:520,&quot;max&quot;:1280,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;breakpoint&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:700,&quot;min&quot;:480,&quot;max&quot;:1000,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;showDocs&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;meta&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;FormMeta&quot;},&quot;values&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, any&gt;&quot;},&quot;handlers&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, Function&gt;&quot;},&quot;onChange&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(key: string, value: any, values: object) =&gt; void&quot;},&quot;onSubmit&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(values: object) =&gt; void&quot;}}">
+// ── ميتا النموذج: sections + cols + fields (أنواع الحقول من ui-kit.js)
+// section: { title, sub, cols, span, collapsible, open, card:false, labelPosition:'top'|'side', fields:[…] }
+// field:   { key, type, label, value, placeholder, help, hint, required, span, mono, options, items, addons, … }
+const FORM_META = {
+  title: { ar: 'إضافة جهة اتصال', en: 'Add contact' },
+  sub: { ar: 'الحقول المميزة بعلامة * إلزامية. تُحفظ البيانات في مجموعة جهات الاتصال المختارة.', en: 'Fields marked * are required. Data is saved to the selected contact group.' },
+  badge: { ar: 'مسودة', en: 'Draft' }, badgeTone: 'muted',
+  // layout:'tabs' — التبويبات داخل بطاقة النموذج · tabsStyle:'underline' | 'pill' · أيقونة لكل تبويب من section.icon
+  cols: 2, labelPosition: 'top', layout: 'tabs', tabsStyle: 'underline',
+  handlers: {
+    save: (values) => 'حُفظت ' + Object.keys(values).length + ' قيمة',
+    cancel: () => 'أُلغي النموذج',
+    remove: () => 'حُذفت جهة الاتصال',
+    scanQr: () => 'فتح ماسح QR',
+    newGroup: () => 'إنشاء مجموعة جديدة',
+  },
+  sections: [
+    {
+      title: { ar: 'البيانات الأساسية', en: 'Basic details' }, icon: 'user', cols: 2,
+      fields: [
+        { key: 'name', type: 'text', label: { ar: 'الاسم', en: 'Name' }, required: true, placeholder: { ar: 'مثال: مؤسسة النخبة التجارية', en: 'e.g. Elite Trading Est.' }, span: 2 },
+        { key: 'phone', type: 'addons', label: { ar: 'رقم الواتساب', en: 'WhatsApp number' }, required: true, mono: true, value: '+966 55 123 4567', pattern: '^\\+?[0-9 ]{9,}$', error: { ar: 'أدخل رقماً دولياً صحيحاً', en: 'Enter a valid international number' },
+          addons: [{ icon: 'whatsapp', mode: 'attached', side: 'start', label: { ar: 'واتساب', en: 'WhatsApp' }, tone: 'ok' }, { icon: 'copy', mode: 'inside', side: 'end', action: 'copy' }] },
+        { key: 'email', type: 'text', label: { ar: 'البريد الإلكتروني', en: 'Email' }, mono: true, placeholder: 'name@company.com', help: { ar: 'اختياري — يُستخدم لإشعارات الفواتير فقط.', en: 'Optional — used for invoice notifications only.' } },
+        { key: 'type', type: 'segment', label: { ar: 'النوع', en: 'Type' }, value: 'customer', options: [{ v: 'customer', l: { ar: 'عميل', en: 'Customer' } }, { v: 'supplier', l: { ar: 'مورّد', en: 'Supplier' } }, { v: 'internal', l: { ar: 'داخلي', en: 'Internal' } }] },
+        { key: 'city', type: 'select', label: { ar: 'المدينة', en: 'City' }, value: '', options: [{ v: '', l: { ar: 'اختر…', en: 'Select…' } }, { v: 'ryd', l: { ar: 'الرياض', en: 'Riyadh' } }, { v: 'jed', l: { ar: 'جدة', en: 'Jeddah' } }, { v: 'dmm', l: { ar: 'الدمام', en: 'Dammam' } }, { v: 'mkh', l: { ar: 'مكة', en: 'Makkah' } }] },
+      ],
+    },
+    {
+      title: { ar: 'التصنيف والربط', en: 'Classification & linking' }, icon: 'link', sub: { ar: 'يحدد أي حملة وأي جهاز يخدم جهة الاتصال.', en: 'Controls which campaign and device serve this contact.' }, cols: 2,
+      fields: [
+        { key: 'group', type: 'dropdown', label: { ar: 'المجموعة', en: 'Group' }, required: true, placeholder: { ar: 'اختر مجموعة…', en: 'Pick a group…' },
+          options: [{ v: 'g1', l: { ar: 'عملاء الرياض', en: 'Riyadh customers' } }, { v: 'g2', l: { ar: 'عملاء جدة', en: 'Jeddah customers' } }, { v: 'g3', l: { ar: 'موردون', en: 'Suppliers' } }, { v: 'g4', l: { ar: 'قائمة الحملة الشتوية', en: 'Winter campaign list' } }],
+          footerActions: [{ label: { ar: '+ مجموعة جديدة', en: '+ New group' }, action: 'newGroup', variant: 'tonal' }] },
+        { key: 'tags', type: 'multiselect-dropdown', label: { ar: 'الوسوم', en: 'Tags' }, value: ['vip'], placeholder: { ar: 'اختر وسوماً…', en: 'Pick tags…' },
+          options: [{ v: 'vip', l: { ar: 'مميز', en: 'VIP' } }, { v: 'new', l: { ar: 'جديد', en: 'New' } }, { v: 'late', l: { ar: 'متأخر سداد', en: 'Late payer' } }, { v: 'wholesale', l: { ar: 'جملة', en: 'Wholesale' } }] },
+        { key: 'device', type: 'autocomplete', label: { ar: 'الجهاز المسؤول', en: 'Assigned device' }, placeholder: { ar: 'ابحث باسم الجهاز أو رقمه…', en: 'Search device name or number…' },
+          items: [
+            { id: 'd1', name: { ar: 'جهاز المبيعات 1', en: 'Sales device 1' }, phone: '+966 55 123 4567', city: { ar: 'الرياض', en: 'Riyadh' }, state: { ar: 'متصل', en: 'Online' } },
+            { id: 'd2', name: { ar: 'جهاز المبيعات 2', en: 'Sales device 2' }, phone: '+966 50 987 6543', city: { ar: 'الرياض', en: 'Riyadh' }, state: { ar: 'متصل', en: 'Online' } },
+            { id: 'd3', name: { ar: 'فرع جدة', en: 'Jeddah branch' }, phone: '+966 53 222 1100', city: { ar: 'جدة', en: 'Jeddah' }, state: { ar: 'غير متصل', en: 'Offline' } },
+            { id: 'd4', name: { ar: 'جهاز الدعم', en: 'Support device' }, phone: '+966 56 400 9080', city: { ar: 'الدمام', en: 'Dammam' }, state: { ar: 'متصل', en: 'Online' } },
+          ],
+          searchFields: ['name', 'phone', 'city'],
+          itemFormat: { primary: '{name}', secondary: '{state} · {city}', meta: '{phone}', value: '{name}' },
+          footerActions: [{ label: { ar: 'مسح QR لربط جهاز', en: 'Scan QR to link device' }, action: 'scanQr' }] },
+        { key: 'channels', type: 'multiselect', label: { ar: 'قنوات التواصل', en: 'Channels' }, value: ['wa'], options: [{ v: 'wa', l: { ar: 'واتساب', en: 'WhatsApp' } }, { v: 'sms', l: { ar: 'رسائل نصية', en: 'SMS' } }, { v: 'email', l: { ar: 'بريد', en: 'Email' } }] },
+      ],
+    },
+    {
+      title: { ar: 'الإعدادات', en: 'Settings' }, icon: 'gear', cols: 2, collapsible: true, open: true,
+      fields: [
+        { key: 'optIn', type: 'toggle', label: { ar: 'موافقة استقبال الحملات', en: 'Campaign opt-in' }, value: true, help: { ar: 'إيقافه يستثني جهة الاتصال من كل الحملات.', en: 'Turning it off excludes the contact from all campaigns.' } },
+        { key: 'priority', type: 'radio', label: { ar: 'الأولوية', en: 'Priority' }, value: 'normal', options: [{ v: 'high', l: { ar: 'عالية', en: 'High' } }, { v: 'normal', l: { ar: 'عادية', en: 'Normal' } }, { v: 'low', l: { ar: 'منخفضة', en: 'Low' } }] },
+        { key: 'followUp', type: 'date', label: { ar: 'تاريخ المتابعة', en: 'Follow-up date' }, value: '2026-10-05' },
+        { key: 'limit', type: 'number', label: { ar: 'حد الرسائل الشهري', en: 'Monthly message cap' }, value: 120, min: 0, max: 5000 },
+        { type: 'divider', label: { ar: 'ملاحظات داخلية', en: 'Internal notes' } },
+        { key: 'notes', type: 'textarea', label: { ar: 'ملاحظات', en: 'Notes' }, rows: 3, span: 2, placeholder: { ar: 'لا تظهر للعميل.', en: 'Not visible to the customer.' }, maxLength: 400 },
+        // showIf: يظهر فقط عند تفعيل الموافقة
+        { key: 'contract', type: 'file', label: { ar: 'نسخة العقد', en: 'Contract copy' }, span: 2, accept: '.pdf,.png,.jpg', showIf: { optIn: true }, help: { ar: 'يظهر هذا الحقل عند تفعيل موافقة الحملات.', en: 'Shown when campaign opt-in is enabled.' } },
+      ],
+    },
+    {
+      title: { ar: 'معلومات السجل', en: 'Record info' }, icon: 'doc', cols: 3, card: true, labelPosition: 'top',
+      fields: [
+        { key: 'id', type: 'readonly', label: { ar: 'المعرّف', en: 'ID' }, value: 'CNT-10472', mono: true },
+        { key: 'createdAt', type: 'readonly', label: { ar: 'تاريخ الإنشاء', en: 'Created' }, value: '2026-09-02 14:08', mono: true },
+        { key: 'status', type: 'badge', label: { ar: 'الحالة', en: 'Status' }, value: { ar: 'نشط', en: 'Active' }, tone: 'ok' },
+      ],
+    },
+  ],
+  actions: [
+    { key: 'remove', label: { ar: 'حذف', en: 'Delete' }, variant: 'danger', side: 'start', action: 'remove' },
+    { key: 'cancel', label: { ar: 'إلغاء', en: 'Cancel' }, variant: 'secondary', action: 'cancel' },
+    { key: 'save', label: { ar: 'حفظ جهة الاتصال', en: 'Save contact' }, variant: 'primary', submit: true, action: 'save' },
+  ],
+};
+
+const FALLBACK = {
+  MONO: "'IBM Plex Mono',monospace",
+  FONT: { ar: "'IBM Plex Sans Arabic',system-ui,sans-serif", en: "'IBM Plex Sans','IBM Plex Sans Arabic',system-ui,sans-serif" },
+  DENSITY: { comfortable: { h: '38px', hSm: '32px', fs: '14px', fsSm: '13px', px: '12px' }, compact: { h: '32px', hSm: '28px', fs: '13px', fsSm: '12px', px: '10px' } },
+  TONE: { ok: { bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', bd: 'var(--ok-sb)' }, warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', bd: 'var(--wn-sb)' }, danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--dg)', bd: 'var(--dg-sb)' }, info: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)', bd: 'var(--nf-sb)' }, muted: { bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--ink-4)', bd: 'var(--border)' } },
+  BUTTON: { primary: { bg: 'var(--pri)', fg: 'var(--on-pri)', bd: 'none' }, secondary: { bg: 'var(--surface)', fg: 'var(--ink)', bd: '1px solid var(--border-2)' }, danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', bd: '1px solid var(--dg-sb)' }, ghost: { bg: 'transparent', fg: 'var(--ink-2)', bd: 'none' }, tonal: { bg: 'var(--pri-s)', fg: 'var(--pri-d)', bd: '1px solid var(--pri-sb)' } },
+  ADDON_ICONS: {},
+  I18N: { ar: {}, en: {} },
+};
+const EXTRA = {
+  ar: { metaTitle: 'الميتا المستخدمة لهذا النموذج', metaHint: 'كل حقل سطر واحد: key + type + label + span. أنواع الحقول وتصميمها من ui-kit.js، والتوزيع من cols داخل كل section.', valuesTitle: 'القيم الحالية', log: 'سجل الأحداث', clearLog: 'مسح', required: 'هذا الحقل مطلوب', pickHint: 'اختر…', selectedN: 'عناصر مختارة' },
+  en: { metaTitle: 'Meta driving this form', metaHint: 'Each field is one line: key + type + label + span. Field types and styling come from ui-kit.js; layout comes from each section\'s cols.', valuesTitle: 'Current values', log: 'Event log', clearLog: 'Clear', required: 'This field is required', pickHint: 'Select…', selectedN: 'selected' },
+};
+
+class Component extends DCLogic {
+  state = { theme: null, lang: null, v: null, q: {}, open: null, acText: {}, acIdx: 0, errors: {}, closed: {}, tab: 0, log: [], width: 1280, dirty: false };
+
+  componentDidMount() {
+    this.onResize = () => this.setState({ width: window.innerWidth });
+    this.onKey = (e) => { if (e.key === 'Escape' && this.state.open) { e.stopPropagation(); this.setState({ open: null }); } };
+    this.onDoc = (e) => { const o = this.state.open; if (o && !e.target.closest('[data-fm-pop="' + o + '"]')) this.setState({ open: null }); };
+    window.addEventListener('resize', this.onResize); window.addEventListener('keydown', this.onKey); document.addEventListener('mousedown', this.onDoc);
+    this.onResize();
+    try { const t = localStorage.getItem('form.theme'); if (t) this.setState({ theme: t }); } catch (e) {}
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); window.removeEventListener('keydown', this.onKey); document.removeEventListener('mousedown', this.onDoc); }
+
+  meta() { return this.props.meta || FORM_META; }
+  allFields() { return (this.meta().sections || []).flatMap((s) => (s.fields || []).filter((f) => f.key && f.type !== 'divider')); }
+  initial() {
+    const o = {};
+    this.allFields().forEach((f) => { o[f.key] = f.value !== undefined ? f.value : (f.type === 'multiselect' || f.type === 'multiselect-dropdown' ? [] : (f.type === 'toggle' || f.type === 'checkbox' ? false : '')); });
+    return Object.assign(o, this.props.values || {});
+  }
+  vals() { return this.state.v || this.initial(); }
+  set(key, val) {
+    const v = { ...this.vals(), [key]: val };
+    const errors = { ...this.state.errors }; delete errors[key];
+    this.setState({ v, errors, dirty: true });
+    if (this.props.onChange) this.props.onChange(key, val, v);
+  }
+  logIt(entry) { this.setState((s) => ({ log: [JSON.stringify(entry), ...s.log].slice(0, 6) })); }
+  run(spec, args) {
+    const H = this.props.handlers || this.meta().handlers || {};
+    let fn = null, name = null;
+    if (typeof spec === 'function') { fn = spec; name = spec.name || 'fn'; }
+    else if (typeof spec === 'string') { name = spec; fn = H[spec]; }
+    let ret, error = null;
+    if (fn) { try { ret = fn.apply(null, args || []); } catch (e) { error = String((e && e.message) || e); } }
+    else if (name) error = 'handler "' + name + '" غير معرّف';
+    this.logIt({ action: name, returned: ret === undefined ? undefined : ret, error: error || undefined });
+    return ret;
+  }
+  validate(L, T) {
+    const v = this.vals(), errors = {};
+    this.allFields().forEach((f) => {
+      const val = v[f.key];
+      const empty = val === '' || val == null || (Array.isArray(val) && !val.length);
+      if (f.required && empty) { errors[f.key] = L(f.requiredError) || T.required; return; }
+      if (!empty && f.pattern && !(new RegExp(f.pattern).test(String(val)))) errors[f.key] = L(f.error) || T.invalid || 'قيمة غير صالحة';
+      if (!empty && f.min != null && Number(val) < f.min) errors[f.key] = (L(f.error) || '≥ ' + f.min);
+      if (!empty && f.max != null && Number(val) > f.max) errors[f.key] = (L(f.error) || '≤ ' + f.max);
+    });
+    return errors;
+  }
+  // showIf: { key: value } أو { key: [v1,v2] } أو دالة (values) => bool
+  visible(f, v) {
+    const c = f.showIf ?? f.visibleIf;
+    if (c == null) return true;
+    if (typeof c === 'function') { try { return !!c(v); } catch (e) { return true; } }
+    return Object.keys(c).every((k) => {
+      const want = c[k], got = v[k];
+      if (Array.isArray(want)) return want.includes(got);
+      if (typeof want === 'object' && want !== null) {
+        if ('not' in want) return got !== want.not;
+        if ('in' in want) return (want.in || []).includes(got);
+        if ('truthy' in want) return want.truthy ? !!got : !got;
+      }
+      return got === want;
+    });
+  }
+  bytes(n) { if (n == null) return ''; const u = ['B', 'KB', 'MB', 'GB']; let i = 0, x = Number(n); while (x >= 1024 && i < u.length - 1) { x /= 1024; i++; } return (i ? x.toFixed(1) : x) + ' ' + u[i]; }
+  fmt(tpl, item, L) { return String(tpl).replace(/\{([\w.$-]+)\}/g, (m, p) => { const x = p.split('.').reduce((o, k) => (o == null ? undefined : o[k]), item); return x == null ? '' : L(x); }); }
+
+  renderVals() {
+    const K = window.UIKit || FALLBACK, S = this.state, P = this.props, M = this.meta();
+    const lang = S.lang ?? P.lang ?? M.lang ?? 'ar', rtl = lang !== 'en', dir = rtl ? 'rtl' : 'ltr';
+    const L = (x) => K.L ? K.L(lang, x) : ((x && x[lang]) || x || '');
+    const pref = S.theme ?? P.theme ?? M.theme ?? 'light';
+    let sysDark = false; try { sysDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) {}
+    const theme = pref === 'auto' ? (sysDark ? 'dark' : 'light') : pref;
+    const isMobile = S.width < (P.breakpoint ?? 700);
+    const dkey = (isMobile ? 'comfortable' : (P.density ?? M.density ?? 'comfortable')) === 'compact' ? 'compact' : 'comfortable';
+    const D = (K.DENSITY || FALLBACK.DENSITY)[dkey];
+    const TONE = K.TONE || FALLBACK.TONE, BTN = K.BUTTON || FALLBACK.BUTTON, ICONS = K.ADDON_ICONS || {};
+    const tone = (k) => TONE[k] || TONE.muted;
+    const tt = (k) => (K.t ? K.t(lang, k) : k);
+    const T = { ...EXTRA[lang], search: tt('search'), none: tt('none'), clear: tt('clear'), pick: tt('pick'), unsaved: tt('unsaved'), invalid: tt('invalid'), of: tt('of') };
+    const dn = {
+      pagePad: P.embed ? '0' : (isMobile ? '14px' : '24px'), secGap: dkey === 'compact' ? '12px' : '16px', headGap: dkey === 'compact' ? '10px' : '14px',
+      gap: dkey === 'compact' ? '10px 12px' : '14px 16px', h: D.h, hSm: D.hSm, fs: D.fs, fsSm: D.fsSm, px: D.px,
+      labelFs: dkey === 'compact' ? '12px' : '13px', h1: isMobile ? '18px' : '20px', h2: dkey === 'compact' ? '13px' : '14px',
+      btnH: isMobile ? '46px' : (dkey === 'compact' ? '32px' : '36px'), btnPx: '16px', btnFs: isMobile ? '14px' : '13px', btnFlex: isMobile ? '1 1 140px' : 'none',
+      popMaxH: isMobile ? '54vh' : '260px',
+    };
+    // الجوال: حقول بحجم 16px (يمنع تكبير iOS) ومساحات لمس أكبر
+    if (isMobile) { dn.fs = '16px'; dn.fsSm = '14px'; dn.h = '46px'; dn.hSm = '38px'; dn.px = '13px'; dn.labelFs = '13px'; dn.gap = '14px'; }
+    const v = this.vals(), errors = S.errors;
+    const MONO = K.MONO || FALLBACK.MONO;
+    const icon = (n) => ({ __html: ICONS[n] || '' });
+
+    // layout: 'stack' (افتراضي) أو 'tabs' — كل section يصبح تبويباً
+    const layout = (P.layout && P.layout !== 'meta' ? P.layout : (M.layout || 'stack'));
+    const tabsOn = layout === 'tabs' && (M.sections || []).length > 1;
+    const tabStyle = M.tabsStyle || 'pill';
+    const activeTab = Math.min(S.tab, Math.max(0, (M.sections || []).length - 1));
+
+    const sections = (M.sections || []).map((sec, si) => {
+      const open = sec.collapsible ? !(S.closed[si] ?? (sec.open === false)) : true;
+      const secCols = sec.cols || M.cols || 1;
+      const labelSide = (sec.labelPosition || M.labelPosition || 'top') === 'side' && !isMobile;
+      // في وضع التبويبات: البطاقة هي الحاوية الخارجية، فالأقسام بلا إطار
+      const card = tabsOn ? false : sec.card !== false;
+      return {
+        display: (tabsOn && si !== activeTab) ? 'none' : 'flex',
+        title: L(sec.title), sub: L(sec.sub), hasSub: !!sec.sub, hasHead: !!(sec.title || sec.sub) && !tabsOn,
+        collapsible: !!sec.collapsible && !tabsOn, open: tabsOn ? true : open, chev: open ? 'rotate(180deg)' : 'rotate(0deg)', cursor: sec.collapsible ? 'pointer' : 'default',
+        onToggle: sec.collapsible ? () => this.setState((st) => ({ closed: { ...st.closed, [si]: open } })) : undefined,
+        bg: card ? 'var(--surface)' : 'transparent', bd: card ? '1px solid var(--border)' : 'none', pad: card ? (isMobile ? '14px' : '16px 18px') : '0',
+        cols: isMobile ? 'minmax(0,1fr)' : 'repeat(' + secCols + ',minmax(0,1fr))',
+        fields: (sec.fields || []).filter((f) => this.visible(f, v)).map((f) => {
+          const t = f.type || 'text';
+          if (t === 'divider') return { isDivider: true, isField: false, hasLabel: !!f.label, label: L(f.label) };
+          const key = f.key, val = v[key];
+          const mono = !!f.mono || t === 'number';
+          const err = errors[key];
+          const bd = err ? 'var(--dg-sb)' : 'var(--border-2)';
+          const disabled = !!f.disabled;
+          const popOpen = S.open === key;
+          const q = (S.q[key] || '').trim().toLowerCase();
+          const opts = (f.options || []).map((o) => ({ v: o.v, label: L(o.l ?? o.label) }));
+          const base = {
+            isField: true, isDivider: false, key, span: (f.span && !isMobile) ? 'span ' + Math.min(f.span, secCols) : 'auto',
+            label: L(f.label), hasLabel: f.label != null && t !== 'divider', required: !!f.required,
+            hint: L(f.hint), hasHint: !!f.hint, placeholder: L(f.placeholder) || '', disabled,
+            rowDir: labelSide ? 'row' : 'column', rowAlign: labelSide ? 'flex-start' : 'stretch', rowGap: labelSide ? '12px' : '6px',
+            labelW: labelSide ? '150px' : 'auto', labelFlex: labelSide ? 'none' : 'initial', labelPad: labelSide ? '9px' : '0',
+            bd, inputBg: disabled ? 'var(--sunken)' : 'var(--surface)', vdir: mono ? 'ltr' : dir, vfont: mono ? MONO : 'inherit', align: mono ? 'left' : 'start',
+            value: val == null ? '' : val, rows: f.rows || 3, opts,
+            hasMsg: !!(err || f.help), msg: err || L(f.help), msgFg: err ? 'var(--dg-i)' : 'var(--ink-3)',
+            onInput: (e) => this.set(key, t === 'number' ? e.target.value : e.target.value),
+            isInput: false, isAddons: false, isTextarea: false, isSelect: false, isPicker: false, isAuto: false, isSegment: false, isToggle: false, isChecks: false, isReadonly: false, isBadge: false, isHtml: false, isFile: false, files: [], hasFiles: false,
+            popOpen: false, popItems: [], hasSearch: false, popEmpty: false, hasFooter: false, footerActions: [], q: S.q[key] || '', onQ: (e) => this.setState((st) => ({ q: { ...st.q, [key]: e.target.value } })),
+            popStart: '0', popEnd: '0', emptyText: T.none, chips: [], hasChips: false,
+            searchIcon: icon('search'), clearIcon: icon('clear'), attStart: [], attEnd: [], inStart: [], inEnd: [],
+          };
+          const openPop = () => this.setState({ open: popOpen ? null : key, acIdx: 0 });
+
+          if (t === 'addons' || t === 'text' || t === 'number' || t === 'date') {
+            if (t === 'addons' || (Array.isArray(f.addons) && f.addons.length)) {
+              base.isAddons = true;
+              const it2 = t === 'addons' ? (f.inputType || 'text') : t;
+              base.inputType = it2 === 'number' ? 'number' : it2 === 'date' ? 'date' : 'text';
+              const mk = (a) => {
+                const tn = a.tone ? tone(a.tone) : null;
+                return { hasIcon: !!a.icon, icon: icon(a.icon), hasLabel: !!a.label, label: L(a.label), title: L(a.title ?? a.label), bg: tn ? tn.bg : 'var(--sunken)', fg: tn ? tn.fg : 'var(--ink-2)', cursor: (a.action || a.onClick) ? 'pointer' : 'default', onClick: () => { if (a.action === 'copy') { try { navigator.clipboard.writeText(String(val ?? '')); } catch (e) {} this.logIt({ action: 'copy', key }); return; } this.run(a.onClick || a.action, [val, key]); } };
+              };
+              const A = f.addons;
+              base.attStart = A.filter((a) => a.mode === 'attached' && a.side !== 'end').map(mk);
+              base.attEnd = A.filter((a) => a.mode === 'attached' && a.side === 'end').map(mk);
+              base.inStart = A.filter((a) => a.mode !== 'attached' && a.side !== 'end').map(mk);
+              base.inEnd = A.filter((a) => a.mode !== 'attached' && a.side === 'end').map(mk);
+              base.barePad = base.inStart.length || base.inEnd.length ? '0 4px' : '0 ' + D.px;
+            } else {
+              base.isInput = true;
+              base.inputType = t === 'number' ? 'number' : t === 'date' ? 'date' : 'text';
+            }
+          } else if (t === 'textarea') base.isTextarea = true;
+          else if (t === 'select') { base.isSelect = true; base.selFg = (val === '' || val == null) ? 'var(--ink-4)' : 'var(--ink)'; }
+          else if (t === 'dropdown' || t === 'multiselect-dropdown') {
+            const multi = t === 'multiselect-dropdown';
+            const arr = multi ? (Array.isArray(val) ? val : []) : [];
+            const sel = multi ? null : opts.find((o) => o.v === val);
+            base.isPicker = true; base.popOpen = popOpen; base.chev = popOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+            base.pickBd = popOpen ? 'var(--pri)' : bd;
+            base.hasChips = multi && arr.length > 0;
+            base.chips = multi ? arr.map((x) => { const o = opts.find((oo) => oo.v === x); return { label: o ? o.label : x, onRemove: (e) => { e.stopPropagation(); this.set(key, arr.filter((y) => y !== x)); } }; }) : [];
+            base.hasText = multi ? arr.length === 0 : true;
+            base.pickText = multi ? (base.placeholder || T.pick) : (sel ? sel.label : (base.placeholder || T.pick));
+            base.pickFg = (multi ? arr.length === 0 : !sel) ? 'var(--ink-4)' : 'var(--ink)';
+            base.onOpen = disabled ? undefined : openPop;
+            base.hasSearch = opts.length > 6;
+            const shown = opts.filter((o) => !q || o.label.toLowerCase().includes(q));
+            base.popItems = shown.map((o) => ({ label: o.label, secondary: '', hasSecondary: false, meta: '', hasMeta: false, hasAvatar: false, avatar: '', hasCheck: multi, on: multi ? arr.includes(o.v) : false, bg: (!multi && o.v === val) ? 'var(--pri-s)' : 'transparent', fg: (!multi && o.v === val) ? 'var(--pri-d)' : 'var(--ink)', weight: (!multi && o.v === val) ? 600 : 400, onPick: () => { if (multi) { this.set(key, arr.includes(o.v) ? arr.filter((y) => y !== o.v) : arr.concat([o.v])); } else { this.set(key, o.v); this.setState({ open: null }); } } }));
+            base.popEmpty = shown.length === 0;
+          } else if (t === 'autocomplete') {
+            const raw = f.items || [];
+            const list = Array.isArray(raw) ? raw : Object.keys(raw).map((k2) => ({ id: k2, ...raw[k2] }));
+            const F2 = f.itemFormat || { primary: '{name}', value: '{name}' };
+            const text = S.acText[key] !== undefined ? S.acText[key] : (val == null ? '' : String(val));
+            const needle = text.trim().toLowerCase();
+            const fields = f.searchFields || Object.keys(list[0] || {});
+            const hits = list.filter((it) => !needle || fields.some((k2) => String(L(it[k2]) || '').toLowerCase().includes(needle))).slice(0, f.limit || 8);
+            base.isAuto = true; base.popOpen = popOpen && (hits.length > 0 || !!f.footerActions); base.acText = text; base.hasValue = !!text;
+            base.onOpen = () => this.setState({ open: key });
+            base.onAcInput = (e) => { const x = e.target.value; this.setState((st) => ({ acText: { ...st.acText, [key]: x }, open: key, acIdx: 0 })); if (f.allowFree !== false) this.set(key, x); };
+            base.onClear = () => { this.setState((st) => ({ acText: { ...st.acText, [key]: '' } })); this.set(key, ''); };
+            base.onAcKey = (e) => {
+              if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); this.setState((st) => ({ open: key, acIdx: Math.max(0, Math.min(hits.length - 1, st.acIdx + (e.key === 'ArrowDown' ? 1 : -1))) })); }
+              else if (e.key === 'Enter' && popOpen && hits[S.acIdx]) { e.preventDefault(); const it = hits[S.acIdx]; const nv = this.fmt(F2.value || F2.primary, it, L); this.setState((st) => ({ acText: { ...st.acText, [key]: nv }, open: null })); this.set(key, nv); }
+            };
+            base.popItems = hits.map((it, i) => ({
+              label: this.fmt(F2.primary, it, L), secondary: F2.secondary ? this.fmt(F2.secondary, it, L) : '', hasSecondary: !!F2.secondary,
+              meta: F2.meta ? this.fmt(F2.meta, it, L) : '', hasMeta: !!F2.meta,
+              hasAvatar: !!F2.avatar, avatar: typeof F2.avatar === 'function' ? F2.avatar(it) : '', hasCheck: false, on: false,
+              bg: i === S.acIdx && popOpen ? 'var(--pri-s)' : 'transparent', fg: 'var(--ink)', weight: 400,
+              onPick: () => { const nv = this.fmt(F2.value || F2.primary, it, L); this.setState((st) => ({ acText: { ...st.acText, [key]: nv }, open: null })); this.set(key, nv); },
+            }));
+            base.popEmpty = hits.length === 0;
+            base.emptyText = f.allowFree === false ? T.none : (tt('noneFree') || T.none);
+          } else if (t === 'segment') {
+            base.isSegment = true;
+            base.opts = opts.map((o) => ({ label: o.label, weight: o.v === val ? 600 : 400, fg: o.v === val ? 'var(--ink)' : 'var(--ink-3)', bg: o.v === val ? 'var(--surface)' : 'transparent', shadow: o.v === val ? '0 1px 2px rgba(0,0,0,.08)' : 'none', onPick: () => this.set(key, o.v) }));
+          } else if (t === 'toggle' || t === 'checkbox') {
+            if (t === 'toggle') {
+              const on = !!val;
+              base.isToggle = true; base.trackBg = on ? 'var(--pri)' : 'var(--border-2)'; base.knob = on ? '18px' : '2px';
+              base.toggleText = L(f.onText ?? f.offText ?? '') || (on ? tt('on') : tt('off'));
+              base.onToggle = () => this.set(key, !on);
+            } else {
+              base.isChecks = true; base.checkType = 'checkbox';
+              base.opts = [{ label: L(f.text ?? f.label), on: !!val, onPick: () => this.set(key, !val) }];
+            }
+          } else if (t === 'multiselect' || t === 'radio') {
+            const multi = t === 'multiselect', arr = Array.isArray(val) ? val : [];
+            base.isChecks = true; base.checkType = multi ? 'checkbox' : 'radio';
+            base.opts = opts.map((o) => ({ label: o.label, on: multi ? arr.includes(o.v) : o.v === val, onPick: () => this.set(key, multi ? (arr.includes(o.v) ? arr.filter((y) => y !== o.v) : arr.concat([o.v])) : o.v) }));
+          } else if (t === 'file') {
+            const arr = Array.isArray(val) ? val : (val ? [val] : []);
+            base.isFile = true; base.accept = f.accept || ''; base.multiple = f.multiple !== false;
+            base.fileIcon = icon('attach') || { __html: '<svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M13 7l-5.2 5.2a2.3 2.3 0 103.3 3.3L16 10.6a4 4 0 10-5.7-5.7L5 10.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' };
+            base.fileCta = L(f.cta) || (rtl ? 'اختر ملفاً…' : 'Choose a file…');
+            base.fileHint = L(f.fileHint) || (f.accept ? f.accept : (rtl ? 'اسحب الملف أو انقر للاختيار' : 'Drag a file or click to pick'));
+            base.hasFiles = arr.length > 0;
+            base.files = arr.map((x, i) => ({ name: x.name || String(x), size: this.bytes(x.size), onRemove: (e) => { e.preventDefault(); this.set(key, arr.filter((_, j) => j !== i)); } }));
+            base.onFiles = (e) => {
+              const picked = Array.from(e.target.files || []).map((x) => ({ name: x.name, size: x.size, type: x.type }));
+              this.set(key, base.multiple ? arr.concat(picked) : picked.slice(0, 1));
+            };
+          } else if (t === 'readonly') base.isReadonly = true;
+          else if (t === 'badge') { const tn = tone(f.tone); base.isBadge = true; base.value = L(f.value); base.badgeBg = tn.bg; base.badgeFg = tn.fg; base.badgeBd = tn.bd; base.badgeDot = tn.dot; }
+          else if (t === 'html') { base.isHtml = true; base.html = { __html: L(f.html) }; }
+          else base.isInput = true;
+
+          if (f.footerActions && (base.isPicker || base.isAuto)) {
+            base.hasFooter = true;
+            base.footerActions = f.footerActions.map((a) => { const b = BTN[a.variant || 'secondary'] || BTN.secondary; return { label: L(a.label), bg: b.bg, fg: b.fg, bd: b.bd, onClick: () => { this.setState({ open: null }); this.run(a.onClick || a.action, [v[key], key]); } }; });
+          }
+          if (base.isAddons || base.isAuto) base.inputType = base.inputType || 'text';
+          return base;
+        }),
+      };
+    });
+
+    const mkBtn = (a) => {
+      const b = BTN[a.variant || 'secondary'] || BTN.secondary;
+      return { label: L(a.label), bg: b.bg, fg: b.fg, bd: b.bd, onClick: () => {
+        if (a.submit) {
+          const errs = this.validate(L, T);
+          if (Object.keys(errs).length) {
+            // انتقل لأول تبويب فيه خطأ
+            const bad = (M.sections || []).findIndex((sec) => (sec.fields || []).some((f) => f.key && errs[f.key]));
+            this.setState(tabsOn && bad >= 0 ? { errors: errs, tab: bad } : { errors: errs });
+            this.logIt({ action: a.action || a.key, invalid: Object.keys(errs) });
+            return;
+          }
+          this.setState({ errors: {}, dirty: false });
+          const out = this.vals();
+          this.run(a.onClick || a.action, [out]);
+          if (this.props.onSubmit) this.props.onSubmit(out);
+          return;
+        }
+        if (a.reset) { this.setState({ v: null, errors: {}, dirty: false, acText: {} }); this.logIt({ action: 'reset' }); return; }
+        this.run(a.onClick || a.action, [this.vals()]);
+      } };
+    };
+    const acts = M.actions || [];
+
+    return {
+      dir, theme, font: (K.FONT || FALLBACK.FONT)[lang], dn, T, sections,
+      rootMinH: P.embed ? 'auto' : '100vh', rootBg: P.embed ? 'transparent' : 'var(--bg)',
+      maxW: P.embed ? '100%' : (P.maxWidth ?? M.maxWidth ?? 880) + 'px',
+      hasHead: !!(M.title || M.sub),
+      head: { title: L(M.title), sub: L(M.sub), hasSub: !!M.sub, hasBadge: !!M.badge, badge: L(M.badge), badgeBg: tone(M.badgeTone).bg, badgeFg: tone(M.badgeTone).fg, badgeBd: tone(M.badgeTone).bd },
+      // التبويبات داخل بطاقة النموذج نفسها؛ الأقسام تُعرض تحتها
+      shell: {
+        gap: tabsOn ? (isMobile ? '14px' : '16px') : dn.secGap,
+        bg: tabsOn ? 'var(--surface)' : 'transparent',
+        bd: tabsOn ? '1px solid var(--border)' : 'none',
+        radius: tabsOn ? '12px' : '0',
+        pad: tabsOn ? (isMobile ? '0 14px 14px' : '0 18px 18px') : '0',
+        // لا overflow:hidden هنا — يقصّ القوائم المنسدلة
+      },
+      tabs: {
+        show: tabsOn, h: dkey === 'compact' ? '38px' : '44px', gap: tabStyle === 'pill' ? '2px' : '2px',
+        pad: tabStyle === 'pill' ? '3px' : '0 ' + (isMobile ? '14px' : '18px'),
+        margin: tabStyle === 'pill' ? (isMobile ? '12px 0 0' : '14px 0 0') : '0 ' + (isMobile ? '-14px' : '-18px'),
+        barBg: tabStyle === 'pill' ? 'var(--sunken)' : 'transparent',
+        barBd: tabStyle === 'pill' ? 'none' : '1px solid var(--border)', barRadius: tabStyle === 'pill' ? '10px' : '0',
+        itemFlex: isMobile ? 'none' : (tabStyle === 'pill' ? '1 1 0' : 'none'),
+        items: (M.sections || []).map((sec, si) => {
+          const on = si === activeTab;
+          const bad = (sec.fields || []).filter((f) => f.key && errors[f.key]).length;
+          return {
+            label: L(sec.title) || (rtl ? 'قسم ' + (si + 1) : 'Section ' + (si + 1)),
+            hasIcon: !!sec.icon, icon: icon(sec.icon),
+            hasCount: bad > 0, count: String(bad),
+            bg: tabStyle === 'pill' ? (on ? 'var(--surface)' : 'transparent') : 'transparent',
+            fg: on ? (tabStyle === 'pill' ? 'var(--ink)' : 'var(--pri-d)') : 'var(--ink-3)',
+            weight: on ? 600 : 400, radius: tabStyle === 'pill' ? '8px' : '0',
+            underline: tabStyle === 'pill' ? 'none' : '2px solid ' + (on ? 'var(--pri)' : 'transparent'),
+            shadow: (tabStyle === 'pill' && on) ? '0 1px 2px rgba(0,0,0,.08)' : 'none',
+            onPick: () => this.setState({ tab: si, open: null }),
+          };
+        }),
+      },
+      hasBar: acts.length > 0, barStart: acts.filter((a) => a.side === 'start').map(mkBtn), barEnd: acts.filter((a) => a.side !== 'start').map(mkBtn),
+      hasDirty: S.dirty && !isMobile,
+      // شريط الأزرار يثبت أسفل الشاشة على الجوال
+      bar: isMobile
+        ? { pos: 'sticky', margin: '4px -14px 0', pad: '10px 14px calc(10px + env(safe-area-inset-bottom))', bg: 'var(--surface)', spacer: '0 0 0' }
+        : { pos: 'static', margin: '0', pad: '12px 0 0', bg: 'transparent', spacer: '1 1 auto' },
+      showDocs: (P.showDocs ?? M.showDocs) !== false,
+      docJson: JSON.stringify({ cols: M.cols, sections: (M.sections || []).map((s) => ({ title: s.title, cols: s.cols, fields: (s.fields || []).map((f) => ({ key: f.key, type: f.type || 'text', label: f.label, span: f.span, required: f.required || undefined })) })) }, null, 2),
+      valuesJson: JSON.stringify(v, null, 2),
+      log: S.log, hasLog: S.log.length > 0, clearLog: () => this.setState({ log: [] }),
+    };
+  }
+}
+</script>
+</body>
+</html>

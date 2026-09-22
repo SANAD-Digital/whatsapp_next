@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);height:100%;overflow:hidden;}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button,select,textarea{font-family:inherit;}
+  .sm-sb{scrollbar-width:thin;}
+  .sm-sb::-webkit-scrollbar{width:9px;height:9px;}
+  .sm-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:9px;border:2px solid transparent;background-clip:content-box;}
+  .ct-host{min-height:0;min-width:0;display:flex;overflow:hidden}
+  .ct-host > .sc-host{flex:1 1 0%;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .ct-host > .sc-host > *{flex:1 1 0%;min-height:0;min-width:0}
+</style>
+</helmet>
+<div data-screen-label="محاكي الواتساب" dir="rtl" style="flex:1;min-height:0;height:100%;max-height:100dvh;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;overflow:hidden">
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:{{ cols }};overflow:hidden">
+
+    <sc-if value="{{ showList }}" hint-placeholder-val="{{ true }}">
+      <div style="min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--surface);border-inline-end:1px solid var(--border);overflow:hidden">
+        <div style="flex:none;display:flex;flex-direction:column;gap:9px;padding:12px 12px 10px;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+            <span style="font-size:14px;font-weight:700">المحادثات</span>
+            <button type="button" onClick="{{ openBulk }}" style="display:inline-flex;align-items:center;gap:7px;min-height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--pri);background:var(--pri);color:var(--on-pri);font-size:11px;font-weight:700;cursor:pointer;flex:none;white-space:nowrap" style-hover="background:var(--pri-d);border-color:var(--pri-d)"><svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M3 10.5l13-6-5 13-2-5-6-2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path></svg>إرسال رسالة جماعية</button>
+          </div>
+          <span style="display:flex;align-items:center;gap:8px;min-height:36px;padding:0 11px;border-radius:999px;background:var(--bg);border:1px solid var(--border)">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none"><circle cx="9" cy="9" r="5.5" stroke="var(--ink-4)" stroke-width="1.6"></circle><path d="M13.5 13.5L17 17" stroke="var(--ink-4)" stroke-width="1.6" stroke-linecap="round"></path></svg>
+            <input type="text" value="{{ query }}" onInput="{{ onQuery }}" placeholder="{{ searchPlaceholder }}" style="flex:1;min-width:0;border:none;background:transparent;font-size:13px;color:var(--ink);outline:none" />
+          </span>
+        </div>
+
+        <div class="sm-sb" style="flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column">
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+            <span onClick="{{ r.onPick }}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);background:{{ r.bg }};border-inline-start:3px solid {{ r.edge }};cursor:pointer" style-hover="background:var(--sunken)">
+              <span style="width:38px;height:38px;border-radius:50%;background:{{ r.avBg }};color:{{ r.avFg }};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:none">{{ r.initials }}</span>
+              <span style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1">
+                <span style="display:flex;align-items:center;gap:6px;min-width:0">
+                  <span style="font-size:13px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">{{ r.name }}</span>
+                  <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-4);flex:none">{{ r.at }}</span>
+                </span>
+                <span style="font-size:11px;color:var(--ink-4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.preview }}</span>
+              </span>
+              <sc-if value="{{ r.hasBadge }}" hint-placeholder-val="{{ false }}"><span onClick="{{ r.onBadge }}" title="تفاصيل جهة الاتصال" style="padding:2px 8px;border-radius:999px;background:{{ r.badgeBg }};color:{{ r.badgeFg }};border:1px solid transparent;font-size:10px;font-weight:600;flex:none;white-space:nowrap;cursor:pointer" style-hover="border-color:var(--border-2);filter:brightness(.97)">{{ r.badge }}</span></sc-if>
+            </span>
+          </sc-for>
+          <sc-if value="{{ noRows }}" hint-placeholder-val="{{ false }}"><span style="margin:14px;padding:14px;border-radius:10px;background:var(--bg);border:1px dashed var(--border-2);font-size:12px;color:var(--ink-4)">لا نتائج مطابقة للبحث.</span></sc-if>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showThread }}" hint-placeholder-val="{{ true }}">
+      <div style="min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden">
+        <div style="flex:none;display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--pri);color:var(--on-pri);flex-wrap:wrap">
+          <sc-if value="{{ showBack }}" hint-placeholder-val="{{ false }}">
+            <span onClick="{{ onBack }}" title="كل المحادثات" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;font-size:15px;font-weight:700">→</span>
+          </sc-if>
+          <span style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex:none"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3 10.5l13-6-5 13-2-5-6-2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path></svg></span>
+          <span style="display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1 1 170px">
+            <span style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ head.title }}</span>
+            <span style="font-size:11px;opacity:.88;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ head.sub }}</span>
+          </span>
+          <span style="display:inline-flex;align-items:center;gap:6px;min-height:32px;padding:0 6px 0 10px;border-radius:999px;background:rgba(255,255,255,.16);flex:none">
+            <span style="width:7px;height:7px;border-radius:50%;background:{{ devDot }};flex:none"></span>
+            <select value="{{ devId }}" onChange="{{ onDevice }}" title="جهاز الإرسال" style="min-width:0;max-width:190px;min-height:26px;border:none;background:transparent;color:var(--on-pri);font-size:11px;font-weight:700;cursor:pointer;outline:none">
+              <sc-for list="{{ deviceOptions }}" as="d" hint-placeholder-count="3">
+                <option value="{{ d.v }}" style="color:var(--ink)">{{ d.l }}</option>
+              </sc-for>
+            </select>
+          </span>
+        </div>
+
+        <div class="ct-host" style="flex:1;min-height:0">
+          <dc-import name="Chat Thread" meta="{{ threadMeta }}" handlers="{{ chatHandlers }}" value="{{ draft }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,100%"></dc-import>
+        </div>
+
+      </div>
+    </sc-if>
+  </div>
+
+  <dc-import name="Overlay Panel" panel="{{ panelMeta }}" on-action="{{ onPanelAction }}" on-close="{{ onPanelClose }}" embed="{{ true }}" theme="{{ theme }}" hint-size="0,0"></dc-import>
+  <sc-if value="{{ bulkOpen }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="Send Message Dialog" title="إرسال رسالة جماعية" prefill="{{ bulkPrefill }}" on-sent="{{ onBulkSent }}" on-close="{{ closeBulk }}" theme="{{ theme }}" hint-size="0,0"></dc-import>
+  </sc-if>
+  <dc-import name="Confirm Dialog" meta="{{ confirmMeta }}" handlers="{{ handlers }}" open-key="{{ confirmKey }}" on-close="{{ onConfirmClose }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1300,&quot;height&quot;:900},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;prefill&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;{kind:'group'|'contact', value: string|string[]} | null&quot;},&quot;onSent&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(count: number) =&gt; void&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+// ── Hub Screen - WhatsApp Simulator: محاكي واتساب — المجموعات وجهات الاتصال على اليمين، المحادثة وصندوق الكتابة على اليسار،
+//    بنفس تفاصيل لوحة الإرسال (ترويسة، إعدادات الإرسال، تقدير، زر إرسال). زر «إرسال رسالة جماعية» يفتح Send Message Dialog.
+// props: theme, prefill, onSent(count), onNavigate(route, filter)
+const ROUTE = '/send';
+const KIND_PREFIX = { image: '🖼️ صورة مرفقة', video: '🎬 فيديو مرفق', document: '📄 مستند مرفق', audio: '🎙️ رسالة صوتية', location: '📍 موقع', contact: '👤 بطاقة جهة اتصال' };
+const PROXY_TAG = 'رسالة بالنيابة';
+const MEDIA_KIND = { 'صورة': 'image', 'فيديو': 'video', 'مستند': 'document', 'رسالة صوتية': 'audio', 'موقع': 'location', 'جهة اتصال': 'contact' };
+const KIND_AR = { image: 'صورة', video: 'فيديو', document: 'مستند', audio: 'رسالة صوتية', location: 'موقع', contact: 'جهة اتصال' };
+const TICK = { queued: '🕓', scheduled: '🕓', sending: '✓', sent: '✓', delivered: '✓✓', read: '✓✓', failed: '⚠' };
+const hhmm = (ts) => new Date(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, q: '', active: null, draft: null, kind: null, v: {}, panel: null, bulk: false, confirmKey: null, fire: null, rev: 0, width: 1280 };
+  componentDidMount() {
+    const w = () => {
+      if (window.HubData && window.HubShared && window.UIKit) {
+        const flt = this.props.prefill || window.HubShared.takeFilter(ROUTE);
+        if (flt && flt.kind === 'group') this.setState({ ready: true, active: { kind: 'group', id: [].concat(flt.value)[0] } });
+        else if (flt && flt.kind === 'contact') this.setState({ ready: true, active: { kind: 'contact', id: [].concat(flt.value)[0] } });
+        else this.setState({ ready: true });
+      } else this.t = setTimeout(w, 40);
+    };
+    w();
+    this.onR = () => this.setState({ width: window.innerWidth });
+    window.addEventListener('resize', this.onR); this.onR();
+  }
+  componentWillUnmount() { clearTimeout(this.t); window.removeEventListener('resize', this.onR); }
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+  initials(name) {
+    const w = String(name || '؟').replace(/^(شركة|مؤسسة|مصنع|مجموعة)\s+/, '').trim().split(/\s+/);
+    const strip = (x) => (x.length > 3 && x.slice(0, 2) === 'ال' ? x.slice(2) : x);
+    const a = strip(w[0]) || w[0] || '؟';
+    return w[1] ? a[0] + strip(w[1])[0] : a.slice(0, 2);
+  }
+
+  /* الردّ الآلي في وضع النيابة: يطابق الأمر ثم يبني النتيجة من بيانات النظام */
+  answer(text, contact) {
+    const D = window.HubData, f = D.fmt, s = String(text).trim();
+    const hit = (D.commands || []).find((x) => x.status === 'active' && (x.code === s || (x.synonyms || []).some((y) => y === s) || s.includes(x.code)));
+    if (!hit) return { cmd: null, text: 'لم نفهم طلبك. الأوامر المتاحة:\n' + D.commands.filter((x) => x.status === 'active').slice(0, 5).map((x) => '• ' + x.code).join('\n'), tone: 'warn' };
+    if (hit.requiresLink && !contact.linked) return { cmd: hit, text: 'رقمك غير مربوط بحساب لدينا. تواصل مع قسم المحاسبة لربط الرقم ثم أعد المحاولة.', tone: 'warn' };
+    const msgs = D.messages.filter((m) => m.contactId === contact.id);
+    const last = msgs[0];
+    if (hit.fn.includes('كشف')) return { cmd: hit, text: 'كشف حساب «' + contact.name + '»\nالرصيد: ' + f.money(Math.abs(contact.balance || 0)) + ' ر.س ' + ((contact.balance || 0) >= 0 ? 'مدين' : 'دائن') + '\nعدد الحركات: ' + f.n(msgs.length) + '\nآخر حركة: ' + (last ? f.date(last.ts) : '—') };
+    if (hit.fn.includes('رصيد')) return { cmd: hit, text: 'رصيد الصناديق حتى ' + f.time(Date.now()) + '\nالصندوق الرئيسي: ' + f.money(184320) + ' ر.س\nصندوق الفرع: ' + f.money(41870) + ' ر.س' };
+    if (hit.fn.includes('فاتورة') && last) return { cmd: hit, text: 'آخر فاتورة بيع\nالرقم: ' + last.docNo + '\nالمبلغ: ' + f.money(last.amount) + ' ر.س\nالتاريخ: ' + f.date(last.ts) };
+    if (hit.fn.includes('مبيعات')) { const today = D.messages.filter((m) => m.direction === 'out' && m.ts > Date.now() - 86400000); return { cmd: hit, text: 'مبيعات اليوم\nعدد المستندات: ' + f.n(today.length) + '\nالإجمالي: ' + f.money(today.reduce((a, m) => a + (m.amount || 0), 0)) + ' ر.س' }; }
+    return { cmd: hit, text: 'نتيجة «' + hit.fn + '»\nالبيانات محدّثة حتى ' + f.date(Date.now()) + ' ' + f.time(Date.now()) };
+  }
+
+  /* ميتا نافذة «رسالة بالنيابة» — شبكة أوامر (choice) أو نص حر */
+  proxyPanel(c) {
+    const D = window.HubData;
+    const cmds = (D.commands || []).filter((x) => x.status === 'active');
+    return {
+      type: 'modal', width: '46%', height: '72%',
+      title: 'رسالة بالنيابة', subtitle: 'محاكاة رسالة واردة من «' + (c.name || c.phone) + '» لمعرفة ما سيصلها من ردّ',
+      badge: { text: 'بلا إرسال فعلي', tone: 'info' },
+      content: { sections: [
+        { title: 'أمر من الأوامر المتاحة', cols: 1, fields: [
+          { key: 'cmd', label: 'الأمر', type: 'choice', value: '', stacked: true, searchable: true, searchPlaceholder: 'ابحث في الأوامر…', choiceCols: 2, emptyText: 'لا أمر مطابق للبحث.',
+            options: cmds.map((x) => ({ v: x.code, l: x.code, mono: true, note: x.fn + ((x.synonyms || []).length ? ' · ' + x.synonyms.slice(0, 2).join(' / ') : '') })) },
+        ] },
+        { title: 'أو رسالة عادية ليست أمراً', note: 'تُسجَّل في المحادثة وفي الصادر والوارد بعلامة «رسالة بالنيابة»، بلا إرسال فعلي.', noteTone: 'info', cols: 1, fields: [
+          { key: 'body', label: 'نص الرسالة', type: 'textarea', rows: 3, value: '', stacked: true, placeholder: 'اكتب الرسالة كما يكتبها العميل…', hint: 'الكتابة هنا تُلغي تحديد الأمر؛ إن لم تطابق أمراً يظهر الردّ الافتراضي.' },
+        ] },
+      ] },
+      actions: [
+        { key: 'cancel', label: 'إلغاء', variant: 'secondary', close: true },
+        { key: 'send', label: 'إرسال بالنيابة', variant: 'primary', close: true },
+      ],
+    };
+  }
+
+  /* ميتا نافذة «تعريف الجهة» — من هي، وما الجهات المرتبطة بها */
+  contactPanel(c) {
+    const D = window.HubData, f = D.fmt;
+    const type = c.type ? D.PARTY_TYPES[c.type] : null;
+    const msgs = (D.messages || []).filter((m) => m.contactId === c.id);
+    const out = msgs.filter((m) => m.direction === 'out').length;
+    const groups = (D.contactGroups || []).filter((g) => (g.memberIds || g.members || []).includes(c.id));
+    const links = (c.accounts || []).map((a, i) => ({ key: 'acc' + i, label: String(a).replace(' — حساب مجمد', ''), type: 'readonly', value: String(a).includes('مجمد') ? 'حساب في النظام — مجمد' : 'حساب في النظام' }))
+      .concat(groups.map((g, i) => ({ key: 'grp' + i, label: g.name, type: 'readonly', value: 'مجموعة جهات · ' + f.n(g.size || (g.memberIds || []).length || 0) + ' جهة' })));
+    return {
+      type: 'modal', width: '44%', height: 'auto',
+      title: c.name || c.phone || '—', subtitle: c.phone || '', subtitleMono: true,
+      badge: c.unknown ? { text: 'رقم مجهول', tone: 'info' } : (type ? { text: type.ar, tone: 'muted' } : { text: 'بلا تصنيف', tone: 'warn' }),
+      content: { sections: [
+        { title: 'من هي هذه الجهة', layout: 'rows', fields: [
+          { key: 'name', label: 'الاسم', type: 'readonly', value: c.name || (c.unknown ? 'غير مسجَّل في جهات الاتصال' : 'بلا اسم') },
+          { key: 'type', label: 'التصنيف', type: 'readonly', value: c.unknown ? 'غير مسجَّل' : (type ? type.ar : 'بلا تصنيف — ليست عميلاً ولا مورداً') },
+          { key: 'linked', label: 'الربط بحساب', type: 'readonly', value: c.linked ? 'مربوط بحساب في النظام' : 'غير مربوط' },
+          { key: 'inDevice', label: 'في دليل الجهاز', type: 'readonly', value: c.inDevice ? 'نعم' : 'لا' },
+          ...(c.balance !== undefined && c.balance !== null ? [{ key: 'bal', label: 'الرصيد', type: 'readonly', mono: true, value: f.money(Math.abs(c.balance || 0)) + ' ' + ((c.balance || 0) >= 0 ? 'مدين' : 'دائن') }] : []),
+          { key: 'msgs', label: 'الرسائل', type: 'readonly', value: f.n(out) + ' صادر · ' + f.n(msgs.length - out) + ' وارد' },
+          ...(c.lastMessageAt ? [{ key: 'last', label: 'آخر رسالة', type: 'readonly', value: f.date(c.lastMessageAt) }] : []),
+        ] },
+        { title: 'الجهات المرتبطة بها', layout: 'rows',
+          fields: links.length ? links : [{ key: 'none', label: c.unknown ? 'رقم غير مسجَّل كجهة اتصال' : 'لا جهات مرتبطة', type: 'readonly', value: c.unknown ? 'لا حسابات ولا مجموعات — الأوامر التي تحتاج ربطاً بحساب سترفضه' : 'لا حسابات ولا مجموعات مرتبطة بهذه الجهة بعد' }] },
+      ] },
+      actions: [{ key: 'close', label: 'إغلاق', variant: 'primary', close: true }],
+    };
+  }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    const empty = { theme, handlers: {}, chatHandlers: {}, cols: 'minmax(0,1fr)', showList: true, showThread: false, showBack: false, onBack: () => {}, query: '', onQuery: () => {}, searchPlaceholder: 'ابحث بالاسم أو الرقم…', rows: [], noRows: false, devName: '—', devFg: 'var(--ink-3)', openDevices: () => {}, openBulk: () => {}, bulkOpen: false, bulkPrefill: null, onBulkSent: () => {}, closeBulk: () => {}, head: { title: 'محاكي الواتساب', sub: 'اختر محادثة' }, settingsOpen: false, proxyOpen: false, proxyContact: null, closeProxy: () => {}, onProxySend: () => {}, threadMeta: { bubbles: [] }, draft: '', estimate: [], askSend: () => {}, sendLabel: 'إرسال', sendBg: 'var(--border-2)', sendFg: 'var(--ink-3)', sendBd: 'var(--border-2)', confirmMeta: { dialogs: [] }, confirmKey: null, onConfirmClose: () => {}, toastsMeta: { types: [] }, toastFire: null };
+    if (!D || !H || !S.ready) return empty;
+
+    const f = D.fmt, sub = D.subscription, V = S.v;
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+    const groups = D.contactGroups || [];
+    const allContacts = D.contacts.filter((x) => x.phone && !String(x.phone).includes('@g.us'));
+    const isBlack = (g) => String(g.kind || '').includes('سوداء');
+    const memberIds = (g) => {
+      const ids = g.memberIds || g.members || [];
+      if (ids.length) return ids;
+      if (isBlack(g)) return [];
+      // لا أعضاء في البيانات: عيّنة ثابتة لكل مجموعة (إزاحة بترتيبها) حتى تختلف المحادثات
+      const n = Math.min(g.size || 0, 40), off = (groups.indexOf(g) * 7) % Math.max(1, allContacts.length);
+      return allContacts.concat(allContacts).slice(off, off + n).map((c) => c.id);
+    };
+
+    /* مثالان في القائمة: رقم غير مسجَّل كجهة اتصال، وجهة اتصال بلا تصنيف جهة */
+    const EX_BY_ID = {};
+    const examples = [
+      { id: '__ex-unknown', name: '', phone: '+966500112233', type: null, linked: false, unknown: true, exampleNote: 'رقم غير مسجَّل في جهات الاتصال' },
+      { id: '__ex-untyped', name: 'بندر السالم', phone: '+966555447788', type: null, linked: false, exampleNote: 'جهة اتصال بلا تصنيف — ليست عميلاً ولا مورداً' },
+    ];
+    examples.forEach((x) => { EX_BY_ID[x.id] = x; });
+    const listContacts = examples.concat(allContacts);
+
+    const inMap = {};
+    (D.incoming || []).forEach((m) => { inMap[m.id] = m; });
+    const textOf = (m) => m.direction === 'in'
+      ? ((inMap[m.id] && inMap[m.id].text) || m.body || '—')
+      : String(m.body || m.docType || '—').replace('{no}', m.docNo || '').replace('{amt}', f.money(m.amount || 0));
+
+    const byContact = {};
+    (D.messages || []).forEach((m) => { if (!m.contactId) return; (byContact[m.contactId] = byContact[m.contactId] || []).push(m); });
+    const histContact = (id) => (byContact[id] || []).slice().sort((a, b) => a.ts - b.ts);
+    const histGroup = (g) => memberIds(g).flatMap((id) => byContact[id] || []).sort((a, b) => a.ts - b.ts);
+
+    /* ——— المحادثة المفتوحة ——— */
+    const act = S.active;
+    const actGroup = act && act.kind === 'group' ? groups.find((g) => g.id === act.id) : null;
+    const actContact = act && act.kind === 'contact' ? (allContacts.find((c) => c.id === act.id) || EX_BY_ID[act.id] || null) : null;
+    const isGroup = !!actGroup;
+    const hist = (isGroup ? histGroup(actGroup) : (actContact ? histContact(actContact.id) : [])).slice(-40);
+    const targets = isGroup ? memberIds(actGroup) : (actContact ? [actContact.id] : []);
+
+    /* ——— إعدادات الإرسال ——— */
+    const tpls = D.msgTemplates || [];
+    const tplId = V.templateId || '';
+    const tpl = tpls.find((t) => t.id === tplId);
+    const body = S.draft !== null ? S.draft : (tpl ? tpl.body : '');
+    const devId = V.deviceId || (D.devices.find((d) => d.status === 'connected') || D.devices[0] || {}).id;
+    const dev = D.deviceById(devId) || { name: '—', status: 'disconnected' };
+    const rate = Number(V.rate) || D.queue.rate || 20;
+    const when = V.when || 'now';
+    const left = Math.max(0, sub.quota - sub.used);
+    const overflow = Math.max(0, targets.length - left);
+    const mins = targets.length / Math.max(1, rate);
+    const ready = targets.length > 0 && (String(body).trim() !== '' || !!S.kind) && dev.status === 'connected';
+
+    /* وضع النيابة: تُسجَّل الرسالة كأنها واردة من الجهة، ويُسجَّل ردّ النظام — بعلامة «رسالة بالنيابة»=1 وبلا إرسال فعلي */
+    const doProxy = (raw) => {
+      const now = Date.now(), c = actContact;
+      const text = String(raw);
+      const inId = 'pxi-' + now;
+      const inRec = { id: inId, direction: 'in', contactId: c.id, deviceId: devId, templateId: null, docType: PROXY_TAG, docNo: 'PRX-' + String(now).slice(-6), amount: 0, status: 'read', error: null, ts: now, body: text, proxy: 1 };
+      D.messages.unshift(inRec);
+      if (D.incoming) D.incoming.unshift({ ...inRec, text, matchedCommand: null });
+      const a = this.answer(text, { ...c, name: c.name || c.phone });
+      if (D.incoming && a.cmd) D.incoming[0].matchedCommand = a.cmd.id;
+      D.messages.unshift({ id: 'pxo-' + now, direction: 'out', contactId: c.id, deviceId: devId, templateId: null, docType: PROXY_TAG, docNo: 'PRX-' + String(now + 1).slice(-6), amount: 0, status: 'sent', error: null, ts: now + 1, body: a.text, proxy: 1 });
+      D.logActivity('محاكاة بالنيابة عن «' + (c.name || c.phone) + '»: ' + (a.cmd ? 'الأمر ' + a.cmd.code : 'رسالة مفتوحة') + ' — بلا إرسال فعلي', 'info');
+      this.setState({ draft: '', kind: null });
+      this.bump();
+    };
+
+    const doSend = () => {
+      const now = Date.now(), st = when === 'now' ? 'queued' : 'scheduled';
+      targets.forEach((id, i) => {
+        D.messages.unshift({ id: 'sim-' + now + '-' + i, direction: 'out', contactId: id, deviceId: devId, templateId: tpl ? tpl.id : null, docType: S.kind ? KIND_AR[S.kind] : 'رسالة مباشرة', docNo: 'MSG-' + String(now + i).slice(-6), amount: 0, status: st, error: null, ts: now + i, body: (S.kind ? KIND_PREFIX[S.kind] + '\n' : '') + String(body) });
+      });
+      if (tpl) tpl.uses = (tpl.uses || 0) + targets.length;
+      D.logActivity('أُرسلت رسالة من المحاكي إلى ' + (isGroup ? 'مجموعة «' + actGroup.name + '» — ' + f.n(targets.length) + ' مستلم' : (actContact.name || actContact.phone)), 'primary');
+      if (this.props.onSent) this.props.onSent(targets.length);
+      this.setState({ draft: '', kind: null });
+      this.bump();
+    };
+
+    const handlers = {
+      askSend: () => {
+        if (!act) { this.toast({ key: 'invalid', title: 'لا محادثة مفتوحة', text: 'اختر مجموعة أو جهة من القائمة.' }); return; }
+        if (!String(body).trim() && !S.kind) { this.toast({ key: 'invalid', title: 'الرسالة فارغة', text: 'اكتب نص الرسالة أو اختر نوع مرفق.' }); return; }
+        if (dev.status !== 'connected') { this.toast({ key: 'invalid', title: 'الجهاز غير متصل', text: 'اختر جهازاً متصلاً من قائمة الأجهزة أعلى المحادثة.' }); return; }
+        if (targets.length > 1 || when !== 'now') { this.setState({ confirmKey: 'send' }); return; }
+        doSend();
+      },
+      send: doSend,
+      openQueue: () => go('/messages/queue'),
+      pickTemplate: () => go('/msg-templates'),
+    };
+
+    /* ——— قائمة المحادثات ——— */
+    const q = S.q.trim();
+    let rows = [];
+    {
+      rows = listContacts.filter((x) => !q || (x.name || '').includes(q) || String(x.phone).replace(/[\s\-()]/g, '').includes(q.replace(/[\s\-()]/g, '')))
+        .slice(0, 150).map((x) => {
+          const on = !!actContact && actContact.id === x.id, t = D.PARTY_TYPES[x.type];
+          const h = histContact(x.id), last = h[h.length - 1];
+          const ex = !!x.exampleNote;
+          return {
+            name: x.name || (x.unknown ? x.phone : 'بلا اسم — من دليل الجهاز'), initials: x.unknown ? '#' : this.initials(x.name),
+            at: last ? hhmm(last.ts) : '', preview: ex ? x.exampleNote : (last ? textOf(last).split('\n')[0] : x.phone),
+            avBg: on ? 'var(--pri)' : (x.unknown ? 'var(--nf-s)' : 'var(--sunken)'), avFg: on ? '#fff' : (x.unknown ? 'var(--nf-i)' : 'var(--ink-3)'),
+            hasBadge: ex || !!t, badge: x.unknown ? 'رقم مجهول' : (ex ? 'بلا تصنيف' : (t ? t.ar : '')),
+            badgeBg: ex ? (x.unknown ? 'var(--nf-s)' : 'var(--wn-s)') : 'var(--sunken)', badgeFg: ex ? (x.unknown ? 'var(--nf-i)' : 'var(--wn-ix)') : 'var(--ink-3)',
+            bg: on ? 'var(--pri-s)' : 'transparent', edge: on ? 'var(--pri)' : 'transparent',
+            onPick: () => this.setState({ active: { kind: 'contact', id: x.id }, draft: '', kind: null }),
+            onBadge: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setState({ panel: this.contactPanel(x) }); },
+          };
+        });
+    }
+
+    const narrow = S.width < 900;
+    const stamp = hhmm(Date.now());
+    const bubbles = hist.map((m, i) => {
+      const isIn = m.direction === 'in';
+      const who = isGroup && m.contactId ? (D.contactById(m.contactId) || {}).name : null;
+      const kind = MEDIA_KIND[m.docType] || null;
+      const react = i % 6 === 2 ? '👍' : (i % 11 === 5 ? '❤️' : null);
+      return {
+        dir: isIn ? 'in' : 'out',
+        text: (who && isIn ? who + '\n' : '') + textOf(m),
+        at: hhmm(m.ts), tick: isIn ? '' : (TICK[m.status] || ''),
+        tone: m.status === 'failed' ? 'danger' : undefined,
+        kind,
+        mediaName: kind ? m.docType + (m.docNo ? ' · ' + m.docNo : '') : undefined,
+        tag: m.proxy ? PROXY_TAG : undefined, tagTone: 'info',
+        reaction: react, reactionCount: react === '👍' ? 2 : 1,
+      };
+    });
+    /* أمثلة: مرفقات وتفاعلات — تظهر في رأس كل محادثة للتوضيح */
+    const samples = act ? [
+      { dir: 'in', kind: 'image', mediaName: 'إيصال سداد.jpg', mediaNote: 'JPG · 1.4 MB', text: 'أرفقت إيصال السداد', at: '09:12', tag: 'مثال', tagTone: 'muted', reaction: '👍' },
+      { dir: 'out', kind: 'document', mediaName: 'كشف حساب — سبتمبر.pdf', mediaNote: 'PDF · 320 KB', text: 'تفضل كشف الحساب حتى نهاية الشهر', at: '09:14', tick: '✓✓', tag: 'مثال', tagTone: 'muted', reaction: '❤️', reactionCount: 2 },
+      { dir: 'in', kind: 'audio', mediaName: 'رسالة صوتية', mediaNote: '0:14', text: '', at: '09:15', tag: 'مثال', tagTone: 'muted' },
+      { dir: 'out', kind: 'location', mediaName: 'موقع المستودع', mediaNote: '24.7136, 46.6753', text: 'هذا موقع الاستلام', at: '09:16', tick: '✓✓', tag: 'مثال', tagTone: 'muted', reaction: '🙏' },
+    ] : [];
+    if (String(body).trim() || S.kind) bubbles.push({
+      dir: 'out', text: String(body), at: stamp, tick: '🕓',
+      kind: S.kind || undefined, mediaName: S.kind ? KIND_AR[S.kind] : undefined,
+    });
+
+    return {
+      theme, handlers,
+      cols: narrow ? 'minmax(0,1fr)' : 'minmax(0,330px) minmax(0,1fr)',
+      showList: !narrow || !act, showThread: !narrow || !!act,
+      showBack: narrow && !!act, onBack: () => this.setState({ active: null }),
+
+      query: S.q, onQuery: (e) => this.setState({ q: e.target.value }),
+      searchPlaceholder: 'ابحث بالاسم أو الرقم…',
+      rows, noRows: rows.length === 0,
+      devId,
+      deviceOptions: D.devices.map((d) => ({ v: d.id, l: d.name + (d.status === 'connected' ? '' : ' — غير متصل') })),
+      onDevice: (e) => this.setState({ v: { ...V, deviceId: e.target.value } }),
+      devDot: dev.status === 'connected' ? '#8FE3C6' : '#F3D18A',
+      openDevices: () => go('/devices'),
+
+      openBulk: () => this.setState({ bulk: true }),
+      bulkOpen: S.bulk,
+      bulkPrefill: null,
+      onBulkSent: (n) => { if (this.props.onSent) this.props.onSent(n); this.bump(); },
+      closeBulk: () => this.setState({ bulk: false }),
+
+      head: {
+        title: act ? (isGroup ? actGroup.name : (actContact.name || actContact.phone)) : 'محاكي الواتساب',
+        sub: act
+          ? (isGroup ? f.n(targets.length) + ' مستلم' : actContact.phone + (actContact.linked ? ' · مربوط بحساب' : ''))
+          : 'اختر جهة اتصال من القائمة، ثم اكتب الرسالة',
+      },
+      
+
+      draft: body,
+      panelMeta: S.panel,
+      onPanelAction: (key, values) => {
+        if (key !== 'send') return;
+        const text = String(values.cmd || values.body || '').trim();
+        if (text) doProxy(text);
+      },
+      onPanelClose: () => this.setState({ panel: null }),
+      chatHandlers: {
+        onDraft: (t) => this.setState({ draft: t }),
+        onAction: (k) => {
+          if (k !== 'proxy') return;
+          if (!actContact) { this.toast({ key: 'invalid', title: 'اختر جهة اتصال', text: 'الرسالة بالنيابة تحتاج جهة اتصال محددة.' }); return; }
+          this.setState({ panel: this.proxyPanel(actContact) });
+        },
+        send: () => handlers.askSend(),
+        onAttach: (k) => this.setState({ kind: k }),
+        reset: () => this.setState({ draft: '' }),
+      },
+      threadMeta: {
+        frame: 'plain',
+        header: null, /* الهوية معروضة في الترويسة الخضراء أعلى العمود */
+        note: {
+          text: !act
+            ? 'اختر جهة اتصال لتفعيل الإرسال، أو استخدم «إرسال رسالة جماعية» لعدة مجموعات وأرقام معاً.'
+            : (isGroup ? 'الإرسال فعلي — النص يُرسل لكل عضو في المجموعة على حدة.' : 'الإرسال فعلي — زر «رسالة بالنيابة» يحاكي رسالة من الجهة بلا إرسال.'),
+          tone: 'muted',
+        },
+        dayLabel: bubbles.length ? 'سجل المحادثة' : null,
+        bubbles: samples.concat(bubbles),
+        empty: act
+          ? { title: 'لا رسائل بعد', text: 'اكتب في صندوق الكتابة أدناه لبدء المحادثة — تظهر هنا كما تصل المستلم.' }
+          : { title: 'اختر محادثة', text: 'جهات الاتصال في القائمة المجاورة. للإرسال لعدة مجموعات وأرقام معاً استخدم زر «إرسال رسالة جماعية».' },
+        composer: {
+          actions: act && !isGroup ? [{ key: 'proxy', iconSvg: '<span style="font-size:16px;font-weight:700;line-height:1">#</span>', label: 'رسالة بالنيابة', tone: 'info', title: 'رسالة بالنيابة — محاكاة رسالة واردة من الجهة بلا إرسال فعلي' }] : [],
+          multiline: true, rows: 2, placeholder: act ? 'اكتب رسالتك…' : 'اختر جهة اتصال من القائمة أولاً…', sendTitle: 'إرسال', resetLabel: 'مسح النص',
+          attachTitle: 'نوع الرسالة',
+          attach: [
+            { key: 'image', label: 'صورة', tone: 'primary' },
+            { key: 'video', label: 'فيديو', tone: 'info' },
+            { key: 'document', label: 'مستند', tone: 'warn' },
+            { key: 'audio', label: 'رسالة صوتية', tone: 'ok' },
+            { key: 'location', label: 'موقع', tone: 'danger' },
+            { key: 'contact', label: 'جهة اتصال', tone: 'muted' },
+          ],
+        },
+      },
+
+      estimate: [
+        { k: 'المستلمون', v: f.n(targets.length), dir: 'ltr', font: "'IBM Plex Mono',monospace", color: 'var(--ink)' },
+        { k: 'الزمن المتوقع', v: !targets.length ? '—' : (mins < 1 ? 'أقل من دقيقة' : (mins < 60 ? Math.round(mins) + ' دقيقة' : Math.round(mins / 60) + ' ساعة')), dir: 'rtl', font: 'inherit', color: 'var(--ink)' },
+        ...(overflow ? [{ k: 'من المحفظة', v: f.money(overflow * sub.pricePerMessage) + ' ر.س', dir: 'ltr', font: "'IBM Plex Mono',monospace", color: 'var(--wn-ix)' }] : []),
+      ],
+      askSend: handlers.askSend,
+      sendLabel: when === 'now' ? (targets.length > 1 ? 'إرسال إلى ' + f.n(targets.length) : 'إرسال') : 'جدولة الإرسال',
+      sendBg: ready ? 'var(--pri)' : 'var(--sunken)',
+      sendFg: ready ? 'var(--on-pri)' : 'var(--ink-3)',
+      sendBd: ready ? 'var(--pri)' : 'var(--border-2)',
+
+      confirmMeta: { handlers, dialogs: [
+        { key: 'send', tone: overflow ? 'warn' : 'info', icon: 'send',
+          title: (when === 'now' ? 'إرسال ' : 'جدولة ') + f.n(targets.length) + ' رسالة؟',
+          text: when === 'now'
+            ? 'الرسائل تدخل الطابور فوراً وتُرسل بمعدّل ' + rate + ' رسالة/دقيقة. لا يمكن سحب ما أُرسل.'
+            : 'الرسائل تُجدول للإرسال في الموعد المحدد، ويمكن إلغاؤها من الطابور قبل بدئها.',
+          facts: [
+            { label: isGroup ? 'المجموعة' : 'الجهة', value: act ? (isGroup ? actGroup.name : (actContact.name || actContact.phone)) : '—' },
+            { label: 'المستلمون', value: f.n(targets.length), mono: true },
+            { label: 'الجهاز', value: dev.name },
+            { label: 'يُخصم من الباقة', value: f.n(Math.min(targets.length, left)), mono: true },
+            ...(overflow ? [{ label: 'زائد على الباقة', value: f.n(overflow) + ' · ' + f.money(overflow * sub.pricePerMessage) + ' ر.س', mono: true, tone: 'warn' }] : []),
+          ],
+          checks: targets.length > 200 ? [{ key: 'sure', label: 'أفهم أن ' + f.n(targets.length) + ' رسالة ستُرسل فعلياً وتُخصم من الرصيد', required: true }] : [],
+          confirmLabel: when === 'now' ? 'أرسل الآن' : 'جدول الإرسال', action: 'send' },
+      ] },
+      confirmKey: S.confirmKey, onConfirmClose: () => this.setState({ confirmKey: null }),
+      toastsMeta: { position: 'bottom-start', duration: 4000, types: [{ key: 'sent', tone: 'ok', icon: 'check' }, { key: 'invalid', tone: 'warn', icon: 'alert' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

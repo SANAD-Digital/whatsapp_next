@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--c-sent:#8FC0E4;--c-deliv:#2E7FD1;--c-read:#22A7C9;--c-queued:#EDA93E;--c-failed:#E0615A;--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--c-sent:#6FA6D8;--c-deliv:#3E82CC;--c-read:#37A9C9;--c-queued:#D9A33A;--c-failed:#DE6F68;--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button,select{font-family:inherit;}
+  .lv-sb::-webkit-scrollbar{width:8px;height:8px}
+  .lv-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:999px}
+  .lv-sb::-webkit-scrollbar-track{background:transparent}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+</style>
+</helmet>
+
+<div dir="rtl" data-theme="{{ theme }}" style="flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:{{ dn.radius }};overflow:hidden;color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;height:{{ height }}">
+
+  <!-- الشريط العلوي: بحث · فلاتر · فترة · تجميع · تصدير -->
+  <div style="display:flex;align-items:center;gap:8px;padding:{{ dn.barPad }};border-bottom:1px solid var(--border);flex:none;flex-wrap:wrap">
+    <label style="position:relative;display:flex;align-items:center;flex:1;min-width:{{ dn.searchMin }};max-width:{{ dn.searchMax }}">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none" style="position:absolute;inset-inline-start:11px;pointer-events:none"><circle cx="9" cy="9" r="5.5" stroke="var(--ink-3)" stroke-width="1.6"></circle><path d="M13 13l3.5 3.5" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round"></path></svg>
+      <input type="text" value="{{ q }}" onInput="{{ onQ }}" placeholder="{{ searchPlaceholder }}" style="width:100%;min-height:{{ dn.h }};padding-inline-start:34px;padding-inline-end:12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);font-size:13px;color:var(--ink);outline:none" style-focus="border-color:var(--pri)" />
+    </label>
+
+    <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+      <sc-for list="{{ filters }}" as="s" hint-placeholder-count="2">
+        <span data-lv-filter="1" style="position:relative;display:flex">
+          <button type="button" onClick="{{ s.onToggleOpen }}" style="display:inline-flex;align-items:center;gap:6px;min-height:{{ dn.h }};max-width:220px;padding-inline-start:12px;padding-inline-end:10px;border-radius:8px;border:1px solid {{ s.bd }};background:{{ s.bg }};color:{{ s.fg }};font-size:13px;font-weight:{{ s.weight }};cursor:pointer;outline:none;white-space:nowrap">
+            <span style="min-width:0;overflow:hidden;text-overflow:ellipsis">{{ s.text }}</span>
+            <sc-if value="{{ s.on }}" hint-placeholder-val="{{ false }}"><span onClick="{{ s.onClear }}" title="مسح الفلتر" style="width:18px;height:18px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:13px;line-height:1;flex:none" style-hover="background:var(--pri-sb)">×</span></sc-if>
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="none" style="flex:none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </button>
+          <sc-if value="{{ s.open }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;top:calc(100% + 5px);inset-inline-start:0;width:250px;z-index:45;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-lg);padding:6px;display:flex;flex-direction:column;gap:2px;animation:fadeUp .15s ease-out">
+              <span style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 8px 2px">
+                <span style="font-size:11px;color:var(--ink-3)">{{ s.label }}</span>
+                <span style="display:flex;align-items:center;gap:4px">
+                  <sc-if value="{{ s.on }}" hint-placeholder-val="{{ false }}"><span onClick="{{ s.onClear }}" style="font-size:11px;font-weight:600;color:var(--dg-i);cursor:pointer">مسح</span></sc-if>
+                  <span onClick="{{ s.onClose }}" title="إغلاق" style="width:22px;height:22px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3);font-size:15px;line-height:1" style-hover="background:var(--sunken)">×</span>
+                </span>
+              </span>
+              <div class="lv-sb" style="max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:2px">
+                <sc-for list="{{ s.options }}" as="o" hint-placeholder-count="4">
+                  <label style="display:flex;align-items:center;gap:8px;min-height:32px;padding:0 8px;border-radius:6px;font-size:13px;color:var(--ink);cursor:pointer" style-hover="background:var(--sunken)">
+                    <input type="checkbox" checked="{{ o.on }}" onChange="{{ o.onToggle }}" style="width:15px;height:15px;accent-color:var(--pri);cursor:pointer;margin:0;flex:none" />
+                    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.l }}</span>
+                  </label>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </span>
+      </sc-for>
+      <sc-if value="{{ hasRange }}" hint-placeholder-val="{{ false }}">
+        <span style="display:inline-flex;border:1px solid var(--border-2);border-radius:8px;overflow:hidden;background:var(--surface)">
+          <sc-for list="{{ ranges }}" as="r" hint-placeholder-count="4">
+            <span onClick="{{ r.onPick }}" style="min-height:{{ dn.hSm }};padding:0 12px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:{{ r.bg }};color:{{ r.fg }};border-inline-start:1px solid {{ r.bd }}">{{ r.label }}</span>
+          </sc-for>
+        </span>
+      </sc-if>
+    </sc-if>
+
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+      <button type="button" onClick="{{ openSheet }}" style="min-height:{{ dn.h }};padding:0 12px;border-radius:8px;border:1px solid {{ filterBtnBd }};background:{{ filterBtnBg }};color:{{ filterBtnFg }};font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap"><svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M6 10h8M8 15h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg>فلاتر<sc-if value="{{ hasActive }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--pri);color:var(--on-pri);display:inline-flex;align-items:center;justify-content:center">{{ activeCount }}</span></sc-if></button>
+    </sc-if>
+
+    <sc-if value="{{ hasActive }}" hint-placeholder-val="{{ false }}">
+      <span onClick="{{ clearAll }}" style="display:inline-flex;align-items:center;gap:6px;min-height:{{ dn.hSm }};padding:0 10px;border-radius:8px;font-size:12px;font-weight:600;color:var(--dg-i);cursor:pointer" style-hover="background:var(--dg-s)">مسح <span style="font-size:14px;line-height:1">×</span></span>
+    </sc-if>
+
+    <span style="margin-inline-start:auto;display:flex;align-items:center;gap:6px;flex:none">
+      <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+        <span style="display:inline-flex;align-items:center;gap:8px;min-height:{{ dn.h }};padding:0 10px;border-radius:8px;background:var(--pri-s);color:var(--pri-d);font-size:12px;font-weight:600"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace">{{ selText }}</span> محددة<span onClick="{{ clearSel }}" style="cursor:pointer;font-size:14px;line-height:1">×</span></span>
+        <sc-for list="{{ bulkBtns }}" as="b" hint-placeholder-count="1">
+          <button type="button" onClick="{{ b.onClick }}" style="min-height:{{ dn.h }};padding:0 14px;border-radius:8px;border:1px solid var(--pri-sb);background:var(--pri-s);color:var(--pri-d);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap" style-hover="background:var(--pri-sb)">{{ b.label }}</button>
+        </sc-for>
+      </sc-if>
+      <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+        <span data-lv-menu="1" style="position:relative">
+          <button type="button" onClick="{{ toggleGroupMenu }}" style="min-height:{{ dn.h }};padding:0 10px;border-radius:8px;border:1px solid {{ groupBtnBd }};background:{{ groupBtnBg }};color:{{ groupBtnFg }};font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap"><svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h9M3 15h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg>{{ groupBtnLabel }}</button>
+          <sc-if value="{{ groupMenuOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;top:40px;inset-inline-end:0;width:250px;z-index:40;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-lg);padding:6px;display:flex;flex-direction:column;gap:2px;animation:fadeUp .15s ease-out">
+              <sc-if value="{{ isGrouped }}" hint-placeholder-val="{{ false }}">
+                <span style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px 4px;font-size:11px;color:var(--ink-3)">مستويات التجميع<span onClick="{{ clearGroups }}" style="cursor:pointer;color:var(--dg-i);font-weight:600">إزالة الكل</span></span>
+                <sc-for list="{{ groupLevels }}" as="g" hint-placeholder-count="1">
+                  <span style="display:flex;align-items:center;gap:8px;min-height:32px;padding:0 6px 0 4px;border-radius:6px;background:var(--pri-s);color:var(--pri-d);font-size:13px;font-weight:600"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;width:18px;height:18px;border-radius:50%;background:var(--pri);color:var(--on-pri);display:inline-flex;align-items:center;justify-content:center;flex:none">{{ g.n }}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.label }}</span><span onClick="{{ g.onRemove }}" style="width:22px;height:22px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;line-height:1" style-hover="background:var(--dg-s);color:var(--dg-i)">×</span></span>
+                </sc-for>
+                <span style="height:1px;background:var(--border);margin:4px 0"></span>
+              </sc-if>
+              <span style="padding:6px 10px 4px;font-size:11px;color:var(--ink-3)">{{ addLabel }}</span>
+              <sc-for list="{{ groupOptions }}" as="g" hint-placeholder-count="3">
+                <span onClick="{{ g.onPick }}" style="display:flex;align-items:center;justify-content:space-between;min-height:32px;padding:0 10px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--ink)" style-hover="background:var(--sunken)">{{ g.label }}<span style="font-size:14px;color:var(--ink-4)">+</span></span>
+              </sc-for>
+            </div>
+          </sc-if>
+        </span>
+      </sc-if>
+      <button type="button" onClick="{{ exportCsv }}" title="تصدير CSV" style="min-height:{{ dn.h }};padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap" style-hover="background:var(--sunken)"><svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 3v10M6 9l4 4 4-4M4 16h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg><sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">تصدير</sc-if></button>
+    </span>
+  </div>
+
+  <!-- هيكل التحميل -->
+  <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden">
+      <div style="height:36px;background:var(--sunken);border-bottom:1px solid var(--border);flex:none"></div>
+      <sc-for list="{{ skel }}" as="r" hint-placeholder-count="8">
+        <span style="display:flex;align-items:center;gap:22px;height:{{ dn.rowH }};padding:0 12px;border-bottom:1px solid var(--border);flex:none">
+          <span style="width:15px;height:15px;border-radius:3px;background:var(--sunken);flex:none"></span>
+          <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="5"><span style="width:{{ c.w }};height:11px;border-radius:999px;background:linear-gradient(90deg,var(--sunken) 25%,var(--bg) 50%,var(--sunken) 75%);background-size:220% 100%;animation:shimmer 1.6s linear infinite;flex:none"></span></sc-for>
+        </span>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <!-- الجدول (سطح المكتب) -->
+  <sc-if value="{{ showTable }}" hint-placeholder-val="{{ true }}">
+    <div class="lv-sb" style="flex:1;min-height:0;overflow:auto;position:relative">
+      <table style="border-collapse:separate;border-spacing:0;table-layout:fixed;width:100%;min-width:{{ tableMin }}">
+        <thead>
+          <tr>
+            <th style="position:sticky;top:0;inset-inline-start:0;z-index:6;width:44px;min-width:44px;max-width:44px;background:var(--sunken);border-bottom:1px solid var(--border);padding:0 12px;height:36px;text-align:center"><input type="checkbox" checked="{{ allChecked }}" onChange="{{ toggleAll }}" style="width:15px;height:15px;accent-color:var(--pri);cursor:pointer;margin:0;vertical-align:middle" /></th>
+            <sc-for list="{{ cols }}" as="c" hint-placeholder-count="6">
+              <th style="position:sticky;top:0;inset-inline-start:{{ c.left }};z-index:{{ c.hz }};width:{{ c.wPx }};min-width:{{ c.wPx }};max-width:{{ c.wPx }};background-color:var(--sunken);background-image:{{ c.headTint }};border-bottom:1px solid var(--border);border-inline-start:{{ c.sep }};box-shadow:{{ c.shadow }};padding:0 12px;height:36px;text-align:{{ c.align }};font-size:12px;font-weight:600;color:var(--ink-2);white-space:nowrap">
+                <span onMouseDown="{{ c.onResizeStart }}" onDoubleClick="{{ c.onResizeReset }}" title="اسحب لتغيير عرض العمود · نقرة مزدوجة للعرض الأصلي" style="position:absolute;top:0;bottom:0;left:-4px;width:9px;cursor:col-resize;z-index:8;display:flex;align-items:center;justify-content:center;user-select:none"><span style="width:2px;height:16px;border-radius:2px;background:{{ c.gripBg }}"></span></span>
+                <span style="display:flex;align-items:center;gap:6px;justify-content:{{ c.justify }}">
+                  <span onClick="{{ c.onSort }}" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;color:{{ c.labelColor }}">{{ c.label }}<sc-if value="{{ c.sorted }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;color:var(--pri)">{{ c.sortIcon }}</span></sc-if></span>
+                  <span onClick="{{ c.onPin }}" title="{{ c.pinTitle }}" style="width:20px;height:20px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:{{ c.pinColor }};background:{{ c.pinBg }};flex:none" style-hover="background:var(--border)"><svg width="11" height="11" viewBox="0 0 20 20" fill="none"><path d="M12.5 2.5l5 5-3.5 1 -2.5 4.5-2-2-5 5 5-5-2-2 4.5-2.5 1-3.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="{{ c.pinFill }}"></path></svg></span>
+                </span>
+              </th>
+            </sc-for>
+            <sc-if value="{{ hasOpen }}" hint-placeholder-val="{{ true }}"><th style="position:sticky;top:0;z-index:5;width:64px;min-width:64px;max-width:64px;background:var(--sunken);border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--ink-2);text-align:center;padding:0 8px">عرض</th></sc-if>
+            <th style="position:sticky;top:0;z-index:5;width:auto;background:var(--sunken);border-bottom:1px solid var(--border)"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+            <sc-if value="{{ r.isGroup }}" hint-placeholder-val="{{ false }}">
+              <tr style="background:{{ r.rowBg }}">
+                <td colspan="{{ colSpan }}" style="position:sticky;top:{{ r.stickyTop }};inset-inline-start:0;z-index:{{ r.stickyZ }};height:{{ dn.gH }};padding:0;border-bottom:1px solid var(--border);background:inherit">
+                  <span onClick="{{ r.onToggle }}" style="position:sticky;inset-inline-start:0;width:max-content;max-width:100%;display:flex;align-items:center;gap:10px;min-height:36px;padding:0 12px;padding-inline-start:{{ r.indent }};cursor:pointer;user-select:none">
+                    <span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-3);transform:{{ r.chev }};transition:transform .15s"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                    <input type="checkbox" checked="{{ r.checked }}" onChange="{{ r.onCheck }}" onClick="{{ stop }}" style="width:15px;height:15px;accent-color:var(--pri);cursor:pointer;margin:0" />
+                    <span style="font-size:11px;color:var(--ink-3)">{{ r.field }}</span><span style="font-size:13px;font-weight:{{ r.weight }}">{{ r.label }}</span>
+                    <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-2);background:var(--sunken);border-radius:999px;padding:2px 8px">{{ r.count }}</span>
+                    <sc-if value="{{ r.hasSum }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--ink-3)">{{ r.sumLabel }} <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;color:var(--ink)">{{ r.sum }}</span></span></sc-if>
+                  </span>
+                </td>
+              </tr>
+            </sc-if>
+            <sc-if value="{{ r.isRow }}" hint-placeholder-val="{{ true }}">
+              <tr onClick="{{ r.onSelect }}" onDoubleClick="{{ r.onOpen }}" style="background:{{ r.bg }};cursor:pointer" style-hover="background:var(--sunken)">
+                <td style="position:sticky;inset-inline-start:0;z-index:2;background:inherit;border-bottom:1px solid var(--border);padding:0 12px;height:{{ dn.rowH }};text-align:center"><input type="checkbox" checked="{{ r.checked }}" onChange="{{ r.onCheck }}" onClick="{{ stop }}" style="width:15px;height:15px;accent-color:var(--pri);cursor:pointer;margin:0;vertical-align:middle" /></td>
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="6">
+                  <td style="position:{{ c.pos }};inset-inline-start:{{ c.left }};z-index:{{ c.z }};background-color:inherit;background-image:{{ c.tint }};border-bottom:1px solid var(--border);border-inline-start:{{ c.sep }};box-shadow:{{ c.shadow }};padding:0 12px;height:{{ dn.rowH }};font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:{{ c.align }}">
+                    <sc-if value="{{ c.isTwo }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font-weight:600;overflow:hidden;text-overflow:ellipsis">{{ c.main }}</span><span dir="{{ c.subDir }}" style="font-family:{{ c.subFont }};font-size:11px;color:var(--ink-3);text-align:right;overflow:hidden;text-overflow:ellipsis">{{ c.sub }}</span></span></sc-if>
+                    <sc-if value="{{ c.isAvatar }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:8px;min-width:0;max-width:100%"><span style="width:24px;height:24px;border-radius:6px;background:{{ c.avBg }};color:{{ c.avFg }};display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex:none">{{ c.initials }}</span><span style="overflow:hidden;text-overflow:ellipsis;font-weight:{{ c.weight }}">{{ c.main }}</span></span></sc-if>
+                    <sc-if value="{{ c.isBadge }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }};font-size:11px;font-weight:600;max-width:100%"><span style="width:6px;height:6px;border-radius:50%;background:{{ c.dot }};flex:none"></span><span style="overflow:hidden;text-overflow:ellipsis">{{ c.main }}</span></span></sc-if>
+                    <sc-if value="{{ c.isMono }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:{{ c.color }};font-weight:{{ c.weight }}">{{ c.main }}</span></sc-if>
+                    <sc-if value="{{ c.isBar }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-2);text-align:right">{{ c.main }}</span><span style="height:5px;border-radius:999px;background:var(--border);overflow:hidden"><span style="display:block;height:100%;width:{{ c.pct }};background:{{ c.color }}"></span></span></span></sc-if>
+                    <sc-if value="{{ c.isBtn }}" hint-placeholder-val="{{ false }}"><span onClick="{{ c.onBtn }}" style="display:inline-flex;align-items:center;min-height:26px;padding:0 10px;border-radius:6px;background:{{ c.btnBg }};border:1px solid {{ c.btnBd }};color:{{ c.btnFg }};font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap" style-hover="background:var(--pri-s);border-color:var(--pri-sb);color:var(--pri-d)">{{ c.main }}</span></sc-if>
+                    <sc-if value="{{ c.isText }}" hint-placeholder-val="{{ true }}"><span style="color:{{ c.color }};font-weight:{{ c.weight }}">{{ c.main }}</span></sc-if>
+                  </td>
+                </sc-for>
+                <sc-if value="{{ hasOpen }}" hint-placeholder-val="{{ true }}"><td style="border-bottom:1px solid var(--border);background:inherit;padding:0 8px;text-align:center"><button type="button" onClick="{{ r.onOpen }}" onDoubleClick="{{ stop }}" title="عرض التفاصيل" style="min-height:26px;padding:0 10px;border-radius:6px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink-2);font-size:12px;font-weight:600;cursor:pointer" style-hover="background:var(--pri-s);color:var(--pri-d);border-color:var(--pri-sb)">عرض</button></td></sc-if>
+                <td style="border-bottom:1px solid var(--border);background:inherit"></td>
+              </tr>
+            </sc-if>
+          </sc-for>
+        </tbody>
+      </table>
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:48px 16px;color:var(--ink-3);font-size:13px;text-align:center">{{ emptyText }}<sc-if value="{{ hasActive }}" hint-placeholder-val="{{ false }}"><span onClick="{{ clearAll }}" style="color:var(--pri);font-weight:600;cursor:pointer">مسح الفلاتر</span></sc-if></div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- بطاقات (الموبايل) -->
+  <sc-if value="{{ showCards }}" hint-placeholder-val="{{ false }}">
+    <div class="lv-sb" style="flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column">
+      <sc-for list="{{ mrows }}" as="r" hint-placeholder-count="6">
+        <sc-if value="{{ r.isGroup }}" hint-placeholder-val="{{ false }}">
+          <span onClick="{{ r.onToggle }}" style="display:flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;background:var(--sunken);border-bottom:1px solid var(--border);font-size:12px;cursor:pointer"><span style="color:var(--ink-3)">{{ r.field }}</span><span style="font-weight:700;flex:1">{{ r.label }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;color:var(--ink-2)">{{ r.count }}</span></span>
+        </sc-if>
+        <sc-if value="{{ r.isRow }}" hint-placeholder-val="{{ true }}">
+          <div onClick="{{ r.onOpenOrSelect }}" style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);background:{{ r.bg }};min-height:56px">
+            <input type="checkbox" checked="{{ r.checked }}" onChange="{{ r.onCheck }}" onClick="{{ stop }}" style="width:18px;height:18px;accent-color:var(--pri);margin:3px 0 0;flex:none" />
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+              <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">{{ r.title }}</span><sc-if value="{{ r.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:{{ r.badge.bg }};color:{{ r.badge.fg }};font-size:11px;font-weight:600;flex:none"><span style="width:6px;height:6px;border-radius:50%;background:{{ r.badge.dot }}"></span>{{ r.badge.main }}</span></sc-if></span>
+              <sc-if value="{{ r.hasSub }}" hint-placeholder-val="{{ false }}"><span dir="{{ r.subDir }}" style="font-family:{{ r.subFont }};font-size:12px;color:var(--ink-3);text-align:right">{{ r.sub }}</span></sc-if>
+              <span style="display:flex;flex-wrap:wrap;gap:4px 14px">
+                <sc-for list="{{ r.extra }}" as="x" hint-placeholder-count="3"><span style="display:inline-flex;gap:5px;font-size:12px;min-width:0"><span style="color:var(--ink-3)">{{ x.label }}</span><span dir="{{ x.dir }}" style="font-family:{{ x.font }};color:{{ x.color }};font-weight:600;overflow:hidden;text-overflow:ellipsis">{{ x.main }}</span></span></sc-for>
+              </span>
+            </span>
+            <sc-if value="{{ hasOpen }}" hint-placeholder-val="{{ true }}"><span style="width:18px;height:18px;color:var(--ink-4);flex:none;margin-top:3px;transform:rotate(180deg)"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M8 5l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if>
+          </div>
+        </sc-if>
+      </sc-for>
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:48px 16px;color:var(--ink-3);font-size:13px;text-align:center">{{ emptyText }}<sc-if value="{{ hasActive }}" hint-placeholder-val="{{ false }}"><span onClick="{{ clearAll }}" style="color:var(--pri);font-weight:600;cursor:pointer">مسح الفلاتر</span></sc-if></div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- التذييل: العدّ · المجموع · الترقيم -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:{{ dn.footPad }};border-top:1px solid var(--border);flex-wrap:wrap;flex:none">
+    <span style="font-size:12px;color:var(--ink-3);display:flex;gap:12px;flex-wrap:wrap"><span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;color:var(--ink)">{{ totalText }}</span> {{ unit }}</span><sc-if value="{{ hasSum }}" hint-placeholder-val="{{ false }}"><span>{{ sumLabel }} <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;color:var(--ink)">{{ sumText }}</span></span></sc-if></span>
+    <span style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:12px;color:var(--ink-3)"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;color:var(--ink)">{{ pg.cur }}</span> / <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;color:var(--ink)">{{ pg.total }}</span></span>
+      <button type="button" onClick="{{ pg.prev }}" disabled="{{ pg.noPrev }}" style="min-height:{{ dn.hSm }};min-width:{{ dn.hSm }};padding:0 10px;border-radius:6px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:12px;font-weight:600;cursor:pointer;opacity:{{ pg.prevOp }}">السابق</button>
+      <button type="button" onClick="{{ pg.next }}" disabled="{{ pg.noNext }}" style="min-height:{{ dn.hSm }};min-width:{{ dn.hSm }};padding:0 10px;border-radius:6px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:12px;font-weight:600;cursor:pointer;opacity:{{ pg.nextOp }}">التالي</button>
+    </span>
+  </div>
+
+  <!-- ورقة الفلاتر (الموبايل) -->
+  <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSheet }}" style="position:fixed;inset:0;z-index:60;background:rgba(15,20,19,.4)"></div>
+    <div role="dialog" style="position:fixed;inset-inline:0;bottom:0;z-index:61;max-height:80vh;overflow:auto;background:var(--surface);border-radius:14px 14px 0 0;box-shadow:var(--shadow-lg);padding:14px 16px 24px;display:flex;flex-direction:column;gap:14px;animation:fadeUp .18s ease-out">
+      <span style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:15px;font-weight:700">الفلاتر</span><span onClick="{{ closeSheet }}" style="width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3);font-size:18px" style-hover="background:var(--sunken)">×</span></span>
+      <sc-if value="{{ hasRange }}" hint-placeholder-val="{{ false }}">
+        <span style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:600;color:var(--ink-2)">الفترة</span><span style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ ranges }}" as="r" hint-placeholder-count="4"><span onClick="{{ r.onPick }}" style="min-height:40px;padding:0 14px;display:inline-flex;align-items:center;border-radius:8px;border:1px solid var(--border-2);font-size:13px;font-weight:600;cursor:pointer;background:{{ r.bg }};color:{{ r.fg }}">{{ r.label }}</span></sc-for></span></span>
+      </sc-if>
+      <sc-for list="{{ filters }}" as="s" hint-placeholder-count="2">
+        <span style="display:flex;flex-direction:column;gap:6px">
+          <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:12px;font-weight:600;color:var(--ink-2)">{{ s.label }}</span><sc-if value="{{ s.on }}" hint-placeholder-val="{{ false }}"><span onClick="{{ s.onClear }}" style="font-size:12px;font-weight:600;color:var(--dg-i);cursor:pointer">مسح</span></sc-if></span>
+          <span style="display:flex;gap:6px;flex-wrap:wrap">
+            <sc-for list="{{ s.options }}" as="o" hint-placeholder-count="3">
+              <label style="display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border-radius:8px;border:1px solid {{ o.bd }};background:{{ o.bg }};color:{{ o.fg }};font-size:13px;font-weight:600;cursor:pointer">
+                <input type="checkbox" checked="{{ o.on }}" onChange="{{ o.onToggle }}" style="width:16px;height:16px;accent-color:var(--pri);cursor:pointer;margin:0" />{{ o.l }}
+              </label>
+            </sc-for>
+          </span>
+        </span>
+      </sc-for>
+      <span style="display:flex;gap:8px"><button type="button" onClick="{{ closeSheet }}" style="flex:1;min-height:44px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:14px;font-weight:600;cursor:pointer">تطبيق</button><sc-if value="{{ hasActive }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ clearAll }}" style="min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--dg-i);font-size:14px;font-weight:600;cursor:pointer">مسح</button></sc-if></span>
+    </div>
+  </sc-if>
+
+  <!-- لوحة التفاصيل -->
+  <sc-if value="{{ det.open }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ det.close }}" style="position:fixed;inset:0;z-index:60;background:rgba(15,20,19,.35)"></div>
+    <aside role="dialog" style="position:fixed;top:0;bottom:0;inset-inline-start:0;z-index:70;width:{{ det.w }};background:var(--surface);border-inline-end:1px solid var(--border);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;animation:fadeUp .18s ease-out">
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:16px 18px 14px;border-bottom:1px solid var(--border)">
+        <span style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:0">
+          <span style="font-size:16px;font-weight:700;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ det.title }}</span>
+          <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><sc-if value="{{ det.hasSub }}" hint-placeholder-val="{{ false }}"><span dir="{{ det.subDir }}" style="font-family:{{ det.subFont }};font-size:12px;color:var(--ink-3)">{{ det.sub }}</span></sc-if><sc-if value="{{ det.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:{{ det.badge.bg }};color:{{ det.badge.fg }};font-size:11px;font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:{{ det.badge.dot }}"></span>{{ det.badge.main }}</span></sc-if></span>
+        </span>
+        <span onClick="{{ det.close }}" title="إغلاق (Esc)" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;font-size:16px;color:var(--ink-3)" style-hover="background:var(--sunken)">×</span>
+      </div>
+      <div class="lv-sb" style="flex:1;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:16px">
+        <sc-if value="{{ det.hasAlert }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:8px;background:{{ det.alert.bg }};border:1px solid {{ det.alert.bd }}">
+            <span style="font-size:13px;font-weight:700;color:{{ det.alert.fg }}">{{ det.alert.title }}</span>
+            <sc-for list="{{ det.alert.lines }}" as="l" hint-placeholder-count="2"><span dir="{{ l.dir }}" style="font-family:{{ l.font }};font-size:12px;color:{{ det.alert.fg }};text-align:right;word-break:break-word;line-height:1.7">{{ l.text }}</span></sc-for>
+          </div>
+        </sc-if>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px">
+          <sc-for list="{{ det.fields }}" as="x" hint-placeholder-count="8"><span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:11px;color:var(--ink-3)">{{ x.k }}</span><span dir="{{ x.dir }}" style="font-size:13px;font-weight:600;color:{{ x.color }};font-family:{{ x.font }};text-align:right;overflow:hidden;text-overflow:ellipsis">{{ x.v }}</span></span></sc-for>
+        </div>
+        <sc-for list="{{ det.blocks }}" as="b" hint-placeholder-count="1">
+          <sc-if value="{{ b.isList }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:11px;color:var(--ink-3)">{{ b.label }}</span><sc-if value="{{ b.hasMore }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--ink-4);flex:none">{{ b.more }}</span></sc-if></span>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <sc-for list="{{ b.list }}" as="it" hint-placeholder-count="3">
+                  <span style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--border)">
+                    <sc-if value="{{ it.hasAvatar }}" hint-placeholder-val="{{ false }}"><span style="width:26px;height:26px;border-radius:7px;background:{{ it.avBg }};color:{{ it.avFg }};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none">{{ it.initials }}</span></sc-if>
+                    <span style="display:flex;flex-direction:column;gap:2px;min-width:0;flex:1"><span style="font-size:12px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.text }}</span><sc-if value="{{ it.hasSub }}" hint-placeholder-val="{{ false }}"><span dir="{{ it.subDir }}" style="text-align:start;font-family:{{ it.subFont }};font-size:11px;color:var(--ink-4)">{{ it.sub }}</span></sc-if></span>
+                    <sc-if value="{{ it.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="padding:2px 8px;border-radius:999px;background:{{ it.badgeBg }};color:{{ it.badgeFg }};font-size:10px;font-weight:600;flex:none;white-space:nowrap">{{ it.badge }}</span></sc-if>
+                  </span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ b.isText }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:11px;color:var(--ink-3)">{{ b.label }}</span><span style="padding:12px;border-radius:8px;background:{{ b.bg }};border:1px solid {{ b.bd }};font-size:13px;line-height:1.9;white-space:pre-wrap;word-break:break-word">{{ b.text }}</span></div></sc-if>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--border);flex-wrap:wrap">
+        <sc-for list="{{ det.actions }}" as="a" hint-placeholder-count="1"><button type="button" onClick="{{ a.onClick }}" style="min-height:40px;padding:0 14px;border-radius:8px;border:{{ a.bd }};background:{{ a.bg }};color:{{ a.fg }};font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">{{ a.label }}</button></sc-for>
+        <button type="button" onClick="{{ det.close }}" style="margin-inline-start:auto;min-height:40px;padding:0 14px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">إغلاق</button>
+      </div>
+    </aside>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:700},&quot;columns&quot;:{&quot;editor&quot;:null,&quot;default&quot;:[],&quot;tsType&quot;:&quot;Column[]&quot;},&quot;rows&quot;:{&quot;editor&quot;:null,&quot;default&quot;:[],&quot;tsType&quot;:&quot;Row[]&quot;},&quot;detail&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(row) =&gt; Detail | null&quot;},&quot;onOpen&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(row) =&gt; void&quot;},&quot;bulk&quot;:{&quot;editor&quot;:null,&quot;default&quot;:[],&quot;tsType&quot;:&quot;{label:string,onClick:(rows)=&gt;void}[]&quot;},&quot;rangeKey&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;string | null&quot;},&quot;sumKey&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;string | null&quot;},&quot;sumLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;المجموع&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;unit&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;سجل&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;searchPlaceholder&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;بحث…&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;searchKeys&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;string[] | null&quot;},&quot;exportName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;list&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;defaultSort&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;{key:string,dir:'asc'|'desc'} | null&quot;},&quot;pinned&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;string[] | null&quot;},&quot;columnBorders&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;الجدول&quot;},&quot;pageSize&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:50,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:10,&quot;max&quot;:500},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;compact&quot;,&quot;tsType&quot;:&quot;'compact' | 'comfortable'&quot;,&quot;options&quot;:[&quot;compact&quot;,&quot;comfortable&quot;]},&quot;height&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;auto&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;emptyText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;لا نتائج مطابقة.&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;loading&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;theme&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;'light' | 'dark' | null&quot;}}">
+// ── List View: قائمة موحّدة تقودها الميتا
+// columns: [{ key, label, w, kind:'text'|'two'|'avatar'|'badge'|'mono'|'num'|'money'|'time'|'date'|'bar', align, group, groupLabel, filter, weight, color, border }]
+// border على العمود يرسم فاصلاً رأسياً له وحده؛ columnBorders يرسمه لكل الأعمدة.
+// rows: [{ id, <key>: قيمة أو { text, sub, initials, avBg, avFg, bg, fg, dot, color, weight, value, sort } }]
+// detail(row) → { title, sub, badge, alert:{tone,title,lines}, fields:[{k,v,mono}], blocks:[{label,text,tone}], actions:[{label,tone,onClick}] }
+// onOpen(row): بديل للتفاصيل الداخلية · bulk:[{label,onClick(rows)}] · rangeKey · sumKey/sumLabel · unit · searchKeys · exportName · defaultSort · pinned · pageSize · density · height · emptyText
+const MONO = "'IBM Plex Mono',monospace";
+const RANGES = [['today', 'اليوم'], ['week', '7 أيام'], ['month', '30 يوم'], ['all', 'الكل']];
+const TONES = {
+  ok: { bg: 'var(--ok-s)', fg: 'var(--ok-i)', bd: 'var(--ok-sb)' }, warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', bd: 'var(--wn-sb)' },
+  danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', bd: 'var(--dg-sb)' }, info: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', bd: 'var(--nf-sb)' },
+  primary: { bg: 'var(--pri-s)', fg: 'var(--pri-d)', bd: 'var(--pri-sb)' }, muted: { bg: 'var(--bg)', fg: 'var(--ink)', bd: 'var(--border)' },
+};
+const isObj = (v) => v && typeof v === 'object';
+const txt = (v) => (isObj(v) ? (v.text != null ? v.text : '') : (v == null ? '' : String(v)));
+const sortVal = (v) => (isObj(v) ? (v.sort != null ? v.sort : (v.value != null ? v.value : v.text)) : v);
+
+class Component extends DCLogic {
+  state = { q: '', filters: {}, range: null, sort: null, pinned: null, groups: [], collapsed: {}, sel: {}, page: 1, menu: false, sheet: false, detail: null, width: typeof window !== 'undefined' ? window.innerWidth : 1280 };
+
+  componentDidMount() {
+    this.onR = () => this.setState({ width: window.innerWidth });
+    this.onKey = (e) => {
+      if (e.key !== 'Escape' || window.__hubDropOpen) return;
+      if (this.state.fOpen) { e.preventDefault(); this.setState({ fOpen: null }); }
+      else if (this.state.colMenu) { e.preventDefault(); this.setState({ colMenu: false }); }
+      else if (this.state.menu) { e.preventDefault(); this.setState({ menu: false }); }
+      else if (this.state.sheet) { e.preventDefault(); this.setState({ sheet: false }); }
+      else if (this.state.detail) { e.preventDefault(); this.setState({ detail: null }); }
+    };
+    this.onDoc = (e) => {
+      if (this.state.menu && !e.target.closest('[data-lv-menu]')) this.setState({ menu: false });
+      if (this.state.colMenu && !e.target.closest('[data-lv-cols]')) this.setState({ colMenu: false });
+      if (this.state.fOpen && !e.target.closest('[data-lv-filter]')) this.setState({ fOpen: null });
+    };
+    window.addEventListener('resize', this.onR); document.addEventListener('keydown', this.onKey); document.addEventListener('mousedown', this.onDoc);
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onR); document.removeEventListener('keydown', this.onKey); document.removeEventListener('mousedown', this.onDoc); }
+  componentDidUpdate(pp) { if (pp.columns !== this.props.columns && this.state.groups.length) this.setState({ groups: [], collapsed: {} }); }
+
+  fmt() { const D = window.HubData; return D ? D.fmt : { n: (x) => String(x), money: (x) => String(x), time: (t) => new Date(t).toLocaleTimeString(), date: (t) => new Date(t).toISOString().slice(0, 10) }; }
+  rangeStart(k) { const D = window.HubData; if (k === 'all') return 0; if (D && D.rangeStart) return D.rangeStart(k); const day = 86400000; return Date.now() - (k === 'today' ? day : k === 'week' ? 7 * day : 30 * day); }
+
+  renderVals() {
+    const P = this.props, S = this.state, f = this.fmt();
+    const COLS = Array.isArray(P.columns) ? P.columns : [];
+    const ROWS = Array.isArray(P.rows) ? P.rows : [];
+    const isMobile = S.width < 720;
+    const compact = (P.density || 'compact') === 'compact';
+    const dn = {
+      h: isMobile ? '40px' : (compact ? '32px' : '36px'), hSm: isMobile ? '36px' : (compact ? '30px' : '34px'),
+      rowH: compact ? '38px' : '50px', barPad: isMobile ? '10px 12px' : '8px 10px', footPad: isMobile ? '10px 14px' : '8px 12px',
+      radius: P.embed === false ? '0' : '8px', searchMin: isMobile ? '140px' : '200px', searchMax: isMobile ? '100%' : '320px',
+      headH: compact ? '34px' : '38px', gH: compact ? '36px' : '40px',
+    };
+    const theme = P.theme || null;
+    const stop = (e) => e.stopPropagation();
+    const height = P.height || 'auto';
+    const hasOpen = !!(P.detail || P.onOpen);
+    const base = { theme, dn, height, stop, isMobile, isDesktop: !isMobile, hasOpen, loading: !!P.loading, showTable: false, showCards: false, skel: [0, 1, 2, 3, 4, 5, 6, 7].map((i) => ({ cells: [0, 1, 2, 3, 4].map((ci) => ({ w: Math.round([150, 90, 120, 70, 110][(ci + i) % 5] * (0.8 + ((ci * 7 + i * 3) % 5) * 0.08)) + 'px' })) })), q: S.q, onQ: (e) => this.setState({ q: e.target.value, page: 1 }), searchPlaceholder: P.searchPlaceholder || 'بحث…', filters: [], ranges: [], hasRange: false, hasActive: false, activeCount: 0, clearAll: () => {}, hasSel: false, selText: '0', clearSel: () => {}, bulkBtns: [], groupMenuOpen: false, toggleGroupMenu: () => {}, groupBtnLabel: 'تجميع', groupBtnBd: 'var(--border-2)', groupBtnBg: 'var(--surface)', groupBtnFg: 'var(--ink)', isGrouped: false, groupLevels: [], groupOptions: [], addLabel: 'التجميع حسب', clearGroups: () => {}, exportCsv: () => {}, cols: [], rows: [], mrows: [], colSpan: 3, tableMin: '600px', allChecked: false, toggleAll: () => {}, isEmpty: false, emptyText: P.emptyText || 'لا نتائج مطابقة.', totalText: '0', unit: P.unit || 'سجل', hasSum: false, sumLabel: P.sumLabel || 'المجموع', sumText: '', pg: { cur: '1', total: '1', noPrev: true, noNext: true, prevOp: .45, nextOp: .45, prev: () => {}, next: () => {} }, sheetOpen: false, openSheet: () => {}, closeSheet: () => {}, filterBtnBd: 'var(--border-2)', filterBtnBg: 'var(--surface)', filterBtnFg: 'var(--ink)', det: { open: false, fields: [], blocks: [], actions: [], alert: { lines: [] }, badge: {} } };
+    if (P.loading) return base;
+
+    /* ——— الفلاتر والفترة ——— */
+    const rangeKey = P.rangeKey || null;
+    const range = S.range || 'month';
+    const start = rangeKey ? this.rangeStart(range) : 0;
+    const q = S.q.trim().toLowerCase();
+    const searchKeys = P.searchKeys || COLS.map((c) => c.key);
+    const filterCols = COLS.filter((c) => c.filter);
+    const optionsOf = (c) => { const seen = new Map(); ROWS.forEach((r) => { const v = r[c.key]; const t = txt(v); if (t && !seen.has(t)) seen.set(t, { v: t, l: t }); }); return [...seen.values()].sort((a, b) => String(a.l).localeCompare(String(b.l), 'ar')); };
+    let list = ROWS.filter((r) => {
+      if (rangeKey && start && !(r[rangeKey] >= start)) return false;
+      for (const c of filterCols) { const fv = S.filters[c.key]; const arr = Array.isArray(fv) ? fv : (fv ? [fv] : []); if (arr.length && !arr.includes(txt(r[c.key]))) return false; }
+      if (!q) return true;
+      return searchKeys.some((k) => { const v = r[k]; const s = isObj(v) ? [v.text, v.sub, v.initials].filter(Boolean).join(' ') : String(v == null ? '' : v); return s.toLowerCase().replace(/\s/g, '').includes(q.replace(/\s/g, '')); });
+    });
+
+    /* ——— الفرز والتجميع ——— */
+    const sort = S.sort || P.defaultSort || (COLS[0] ? { key: COLS[0].key, dir: 'asc' } : null);
+    const colOf = (k) => COLS.find((c) => c.key === k) || {};
+    const gkey = (r, k) => { const c = colOf(k); const v = r[k]; return (c.kind === 'time' || c.kind === 'date') && typeof v === 'number' ? f.date(v) : txt(v) || String(sortVal(v) == null ? '' : sortVal(v)); };
+    const cmp = (a, b, k, dir) => { const x = sortVal(a[k]), y = sortVal(b[k]); const r = (typeof x === 'number' && typeof y === 'number') ? x - y : String(x == null ? '' : x).localeCompare(String(y == null ? '' : y), 'ar'); return dir === 'asc' ? r : -r; };
+    list.sort((a, b) => {
+      for (const k of S.groups) { const ga = gkey(a, k), gb = gkey(b, k); if (ga !== gb) { const c = colOf(k); return (c.kind === 'time' || c.kind === 'date') ? (ga < gb ? 1 : -1) : ga.localeCompare(gb, 'ar'); } }
+      return sort ? cmp(a, b, sort.key, sort.dir) : 0;
+    });
+
+    /* ——— الترقيم ——— */
+    const pageSize = P.pageSize || 50;
+    const total = list.length, pages = Math.max(1, Math.ceil(total / pageSize)), page = Math.min(S.page, pages);
+    const slice = list.slice((page - 1) * pageSize, page * pageSize);
+
+    /* ——— الأعمدة والتثبيت ——— */
+    const pinnedKeys = S.pinned || P.pinned || (COLS[0] ? [COLS[0].key] : []);
+    const ordered = [...COLS.filter((c) => pinnedKeys.includes(c.key)), ...COLS.filter((c) => !pinnedKeys.includes(c.key))];
+    let off = 44;
+    const meta = ordered.map((c, i) => {
+      const pinned = pinnedKeys.includes(c.key) && !isMobile;
+      const lastPinned = pinned && (i === ordered.length - 1 || !pinnedKeys.includes(ordered[i + 1].key));
+      const w = (S.colW && S.colW[c.key]) || c.w || 140;
+      const m = { ...c, w, pinned, left: pinned ? off + 'px' : 'auto', pos: pinned ? 'sticky' : 'static', z: pinned ? 2 : 'auto', hz: pinned ? 6 : 5, shadow: lastPinned ? 'inset 1px 0 0 var(--border-2)' : 'none', align: c.align || 'start' };
+      if (pinned) off += w;
+      return m;
+    });
+    const cols = meta.map((c) => ({
+      ...c, wPx: c.w + 'px', justify: c.align === 'end' ? 'flex-end' : 'flex-start', sorted: !!(sort && sort.key === c.key), sortIcon: sort && sort.dir === 'asc' ? '▲' : '▼', labelColor: sort && sort.key === c.key ? 'var(--pri)' : 'var(--ink-2)',
+      pinTitle: c.pinned ? 'إلغاء تثبيت العمود' : 'تثبيت العمود', pinColor: c.pinned ? 'var(--pri)' : 'var(--ink-4)', pinBg: c.pinned ? 'var(--pri-s)' : 'transparent', pinFill: c.pinned ? 'currentColor' : 'none',
+      onSort: () => this.setState({ sort: { key: c.key, dir: sort && sort.key === c.key && sort.dir === 'desc' ? 'asc' : 'desc' } }),
+      onPin: () => this.setState({ pinned: c.pinned ? pinnedKeys.filter((k) => k !== c.key) : [...pinnedKeys, c.key] }),
+      gripBg: S.resizeKey === c.key ? 'var(--pri)' : 'var(--border-2)',
+      headTint: c.pinned ? 'linear-gradient(rgba(15,122,99,.10),rgba(15,122,99,.10))' : 'none',
+      sep: (c.border === undefined ? P.columnBorders : c.border) ? '1px solid var(--border)' : 'none',
+      onResizeStart: (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const startX = e.clientX, startW = c.w;
+        this.setState({ resizeKey: c.key });
+        const move = (ev) => {
+          const next = Math.max(70, Math.min(680, Math.round(startW + (startX - ev.clientX))));
+          this.setState((s) => ({ colW: { ...(s.colW || {}), [c.key]: next } }));
+        };
+        const up = () => { window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); this.setState({ resizeKey: null }); };
+        window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+      },
+      onResizeReset: (e) => { e.preventDefault(); e.stopPropagation(); this.setState((s) => { const n = { ...(s.colW || {}) }; delete n[c.key]; return { colW: n }; }); },
+    }));
+
+    /* ——— الخلايا ——— */
+    const cell = (r, c) => {
+      const v = r[c.key], o = isObj(v) ? v : {};
+      const out = { pos: c.pos, left: c.left, z: c.z, shadow: c.shadow, align: c.align, tint: c.pinned ? 'linear-gradient(rgba(15,122,99,.055),rgba(15,122,99,.055))' : 'none', sep: (c.border === undefined ? P.columnBorders : c.border) ? '1px solid var(--border)' : 'none', isTwo: false, isAvatar: false, isBadge: false, isMono: false, isBar: false, isText: false, main: '', sub: '', color: o.color || c.color || 'var(--ink)', weight: o.weight || c.weight || 400, subDir: o.subMono === false ? 'rtl' : 'ltr', subFont: o.subMono === false ? 'inherit' : MONO };
+      switch (c.kind) {
+        case 'two': return { ...out, isTwo: true, main: txt(v), sub: o.sub || '' };
+        case 'avatar': return { ...out, isAvatar: true, main: txt(v), initials: o.initials || String(txt(v)).slice(0, 2), avBg: o.avBg || 'var(--sunken)', avFg: o.avFg || 'var(--ink-2)', weight: o.weight || 600 };
+        case 'badge': return { ...out, isBadge: true, main: txt(v), bg: o.bg || 'var(--sunken)', fg: o.fg || 'var(--ink-2)', dot: o.dot || 'var(--ink-4)' };
+        case 'mono': return { ...out, isMono: true, main: txt(v), color: o.color || c.color || 'var(--ink-2)' };
+        case 'num': return { ...out, isMono: true, main: isObj(v) ? txt(v) : f.n(v == null ? 0 : v) };
+        case 'money': return { ...out, isMono: true, main: isObj(v) ? txt(v) : f.money(v == null ? 0 : v) };
+        case 'time': return { ...out, isMono: true, main: typeof v === 'number' ? f.date(v) + ' ' + f.time(v) : txt(v), color: 'var(--ink-3)' };
+        case 'date': return { ...out, isMono: true, main: typeof v === 'number' ? (v ? f.date(v) : '—') : txt(v), color: 'var(--ink-3)' };
+        case 'bar': return { ...out, isBar: true, main: txt(v), pct: Math.max(0, Math.min(100, o.value || 0)) + '%', color: o.color || 'var(--pri)' };
+        case 'btn': return { ...out, isBtn: true, main: txt(v) || c.btnLabel || 'تعديل', btnBg: o.bg || 'var(--surface)', btnBd: o.bd || 'var(--border-2)', btnFg: o.fg || 'var(--ink-2)',
+          onBtn: (e) => { e.stopPropagation(); if (typeof o.onClick === 'function') o.onClick(r); } };
+        default: return { ...out, isText: true, main: txt(v) || '—', color: o.color || c.color || (txt(v) ? 'var(--ink)' : 'var(--ink-4)') };
+      }
+    };
+    const toggleSel = (ids, on) => this.setState((st) => { const sel = { ...st.sel }; ids.forEach((id) => { if (on) sel[id] = true; else delete sel[id]; }); return { sel }; });
+    const open = (r) => { if (P.onOpen) P.onOpen(r); else if (P.detail) this.setState({ detail: r.id }); };
+    const rowOf = (r) => ({
+      isRow: true, isGroup: false, checked: !!S.sel[r.id], bg: S.sel[r.id] ? 'var(--pri-s)' : 'var(--surface)',
+      onCheck: (e) => toggleSel([r.id], e.target.checked), onSelect: () => toggleSel([r.id], !S.sel[r.id]), onOpen: (e) => { if (e) e.stopPropagation(); open(r); },
+      cells: meta.map((c) => cell(r, c)),
+    });
+    const sumKey = P.sumKey || null;
+    const sumOf = (items) => sumKey ? f.money(items.reduce((a, r) => a + (Number(sortVal(r[sumKey])) || 0), 0)) : '';
+    const build = (items, level, path) => {
+      if (level >= S.groups.length) return items.map(rowOf);
+      const k = S.groups[level], gc = colOf(k);
+      const groups = []; let cur = null;
+      items.forEach((r) => { const v = gkey(r, k); if (!cur || cur.key !== v) { cur = { key: v, items: [] }; groups.push(cur); } cur.items.push(r); });
+      return groups.flatMap((g) => {
+        const p = path + '|' + g.key, ids = g.items.map((r) => r.id), isOpen = !S.collapsed[p];
+        const head = { stickyTop: 'calc(' + dn.headH + ' + ' + (level * parseInt(dn.gH, 10)) + 'px)', stickyZ: 6 - level, isGroup: true, isRow: false, field: gc.groupLabel || gc.label, label: g.key || '—', count: f.n(g.items.length), hasSum: !!sumKey, sumLabel: P.sumLabel || 'المجموع', sum: sumOf(g.items), indent: (12 + level * 22) + 'px', weight: level === 0 ? 700 : 600, rowBg: level === 0 ? 'var(--sunken)' : 'var(--bg)', chev: isOpen ? 'rotate(-90deg)' : 'rotate(0deg)', checked: ids.every((id) => S.sel[id]), onToggle: () => this.setState((st) => ({ collapsed: { ...st.collapsed, [p]: isOpen } })), onCheck: (e) => toggleSel(ids, e.target.checked) };
+        return isOpen ? [head, ...build(g.items, level + 1, p)] : [head];
+      });
+    };
+    const rows = build(slice, 0, '');
+
+    /* ——— بطاقات الموبايل: العمود الأول عنوان، أول badge شارة، الباقي أزواج ——— */
+    const mrows = rows.map((r) => {
+      if (r.isGroup) return r;
+      const cells = r.cells.map((c, i) => ({ ...c, col: meta[i] }));
+      const title = cells[0], badge = cells.find((c, i) => i > 0 && c.isBadge);
+      const extra = cells.filter((c, i) => i > 0 && c !== badge && !c.isBar).slice(0, 4).map((c) => ({ label: c.col.label, main: c.main || '—', color: c.color, dir: c.isMono ? 'ltr' : 'rtl', font: c.isMono ? MONO : 'inherit' }));
+      return { ...r, title: title ? title.main : '', hasSub: !!(title && title.sub), sub: title ? title.sub : '', subDir: title ? title.subDir : 'ltr', subFont: title ? title.subFont : MONO, hasBadge: !!badge, badge: badge || {}, extra, onOpenOrSelect: () => (hasOpen ? open(slice.find((x) => rowOf(x).cells === r.cells) || ROWS.find((x) => !!S.sel[x.id]) || null) : null) };
+    });
+    // ربط أدق للفتح على الموبايل: عبر الفهرس
+    let ri = 0; const flatRows = slice; mrows.forEach((m) => { if (m.isRow) { const rec = flatRows[ri++]; m.onOpenOrSelect = () => { if (hasOpen) open(rec); else toggleSel([rec.id], !S.sel[rec.id]); }; } });
+
+    /* ——— التفاصيل ——— */
+    const dr = S.detail != null ? ROWS.find((r) => r.id === S.detail) : null;
+    const dd = dr && P.detail ? P.detail(dr) : null;
+    const first = dr ? dr[COLS[0] ? COLS[0].key : ''] : null;
+    const badgeCol = COLS.find((c) => c.kind === 'badge');
+    const bdg = dr && badgeCol && isObj(dr[badgeCol.key]) ? dr[badgeCol.key] : null;
+    const fld = (x) => ({ k: x.k, v: x.v == null ? '—' : String(x.v), dir: x.mono ? 'ltr' : 'rtl', font: x.mono ? MONO : 'inherit', color: x.color || 'var(--ink)' });
+    const det = dd ? {
+      open: true, close: () => this.setState({ detail: null }), w: isMobile ? '100%' : 'min(440px,100%)',
+      title: dd.title || txt(first), hasSub: !!(dd.sub || (isObj(first) && first.sub)), sub: dd.sub || (isObj(first) ? first.sub : ''), subDir: 'ltr', subFont: MONO,
+      hasBadge: !!(dd.badge || bdg), badge: dd.badge ? { main: txt(dd.badge), bg: dd.badge.bg, fg: dd.badge.fg, dot: dd.badge.dot } : (bdg ? { main: bdg.text, bg: bdg.bg, fg: bdg.fg, dot: bdg.dot } : {}),
+      hasAlert: !!dd.alert, alert: dd.alert ? { title: dd.alert.title, ...(TONES[dd.alert.tone] || TONES.warn), lines: (dd.alert.lines || []).map((l) => (isObj(l) ? { text: l.text, dir: l.mono ? 'ltr' : 'rtl', font: l.mono ? MONO : 'inherit' } : { text: l, dir: 'rtl', font: 'inherit' })) } : { lines: [] },
+      fields: (dd.fields || []).map(fld),
+      blocks: (dd.blocks || []).map((b) => (Array.isArray(b.list)
+        ? {
+          label: b.label, isList: true, isText: false,
+          hasMore: !!b.more, more: b.more || '',
+          list: b.list.map((it) => ({
+            text: it.text, hasSub: !!it.sub, sub: it.sub || '', subDir: it.subMono === false ? 'rtl' : 'ltr', subFont: it.subMono === false ? 'inherit' : MONO,
+            hasAvatar: !!it.initials, initials: it.initials || '', avBg: it.avBg || 'var(--sunken)', avFg: it.avFg || 'var(--ink-2)',
+            hasBadge: !!it.badge, badge: it.badge || '', badgeBg: (it.badgeTone && TONES[it.badgeTone] ? TONES[it.badgeTone].bg : 'var(--sunken)'), badgeFg: (it.badgeTone && TONES[it.badgeTone] ? TONES[it.badgeTone].fg : 'var(--ink-3)'),
+          })),
+        }
+        : { label: b.label, isText: true, isList: false, text: b.text, ...(b.tone ? TONES[b.tone] : TONES.muted) })),
+      actions: (dd.actions || []).map((a) => ({ label: a.label, onClick: () => { if (a.onClick) a.onClick(dr); if (a.closes !== false) this.setState({ detail: null }); }, bg: a.tone === 'primary' ? 'var(--pri)' : a.tone === 'danger' ? 'var(--dg)' : 'var(--surface)', fg: a.tone === 'primary' || a.tone === 'danger' ? '#fff' : 'var(--ink)', bd: a.tone ? 'none' : '1px solid var(--border-2)' })),
+    } : base.det;
+
+    /* ——— الفلاتر ——— */
+    const selOf = (key) => { const fv = S.filters[key]; return Array.isArray(fv) ? fv : (fv ? [fv] : []); };
+    const setSelOf = (key, arr) => this.setState((st) => ({ filters: { ...st.filters, [key]: arr }, page: 1 }));
+    const filters = filterCols.map((c) => {
+      const picked = selOf(c.key), label = c.filterLabel || c.label, on = picked.length > 0;
+      return {
+        key: c.key, label, on, count: f.n(picked.length),
+        text: !on ? label : (picked.length === 1 ? picked[0] : label + ' · ' + f.n(picked.length)),
+        open: S.fOpen === c.key,
+        onToggleOpen: () => this.setState({ fOpen: S.fOpen === c.key ? null : c.key }),
+        onClose: () => this.setState({ fOpen: null }),
+        onClear: (e) => { if (e && e.stopPropagation) e.stopPropagation(); setSelOf(c.key, []); },
+        options: optionsOf(c).map((o) => { const sel = picked.includes(o.v); return { v: o.v, l: o.l, on: sel, bd: sel ? 'var(--pri-sb)' : 'var(--border-2)', bg: sel ? 'var(--pri-s)' : 'var(--surface)', fg: sel ? 'var(--pri-d)' : 'var(--ink)', onToggle: () => setSelOf(c.key, sel ? picked.filter((x) => x !== o.v) : [...picked, o.v]) }; }),
+        bd: on ? 'var(--pri-sb)' : 'var(--border-2)', bg: on ? 'var(--pri-s)' : 'var(--surface)', fg: on ? 'var(--pri-d)' : 'var(--ink)', weight: on ? 600 : 400,
+      };
+    });
+    const activeCount = filters.filter((x) => x.on).length + (q ? 1 : 0) + (rangeKey && range !== 'month' ? 1 : 0);
+    const clearAll = () => this.setState({ q: '', filters: {}, range: null, page: 1 });
+    const selIds = Object.keys(S.sel), selRows = selIds.length ? ROWS.filter((r) => S.sel[r.id]) : [];
+    const groupables = COLS.filter((c) => c.group);
+    const glabel = (k) => { const c = colOf(k); return c.groupLabel || c.label; };
+    const setGroups = (groups) => this.setState({ groups, collapsed: {}, page: 1 });
+
+    return {
+      ...base,
+      showTable: !isMobile, showCards: isMobile,
+      filters, hasRange: !!rangeKey,
+      ranges: RANGES.map(([k, l], i) => ({ label: l, onPick: () => this.setState({ range: k, page: 1 }), bg: range === k ? 'var(--pri)' : (isMobile ? 'var(--surface)' : 'transparent'), fg: range === k ? 'var(--on-pri)' : 'var(--ink-2)', bd: i ? 'var(--border-2)' : 'transparent' })),
+      hasActive: activeCount > 0, activeCount: f.n(activeCount), clearAll,
+      filterBtnBd: activeCount ? 'var(--pri-sb)' : 'var(--border-2)', filterBtnBg: activeCount ? 'var(--pri-s)' : 'var(--surface)', filterBtnFg: activeCount ? 'var(--pri-d)' : 'var(--ink)',
+      sheetOpen: S.sheet, openSheet: () => this.setState({ sheet: true }), closeSheet: () => this.setState({ sheet: false }),
+      hasSel: selIds.length > 0, selText: f.n(selIds.length), clearSel: () => this.setState({ sel: {} }),
+      bulkBtns: (P.bulk || []).map((b) => ({ label: b.label, onClick: () => { b.onClick(selRows); this.setState({ sel: {} }); } })),
+      groupMenuOpen: S.menu, toggleGroupMenu: () => this.setState({ menu: !S.menu }),
+      groupBtnLabel: S.groups.length ? S.groups.map(glabel).join(' › ') : 'تجميع',
+      groupBtnBd: S.groups.length ? 'var(--pri-sb)' : 'var(--border-2)', groupBtnBg: S.groups.length ? 'var(--pri-s)' : 'var(--surface)', groupBtnFg: S.groups.length ? 'var(--pri-d)' : 'var(--ink)',
+      isGrouped: S.groups.length > 0,
+      groupLevels: S.groups.map((k, i) => ({ n: i + 1, label: glabel(k), onRemove: () => setGroups(S.groups.filter((x) => x !== k)) })),
+      addLabel: S.groups.length ? 'إضافة مستوى' : 'التجميع حسب',
+      groupOptions: groupables.filter((c) => !S.groups.includes(c.key)).map((c) => ({ label: c.groupLabel || c.label, onPick: () => setGroups([...S.groups, c.key]) })),
+      clearGroups: () => setGroups([]),
+      exportCsv: () => {
+        const src = selRows.length ? selRows : list;
+        const csv = ['\uFEFF' + COLS.map((c) => c.label).join(','), ...src.map((r) => COLS.map((c) => { const v = r[c.key]; const s = (c.kind === 'time' || c.kind === 'date') && typeof v === 'number' ? f.date(v) + ' ' + f.time(v) : (isObj(v) ? [v.text, v.sub].filter(Boolean).join(' ') : (v == null ? '' : v)); return '"' + String(s).replace(/"/g, '""') + '"'; }).join(','))].join('\n');
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = (P.exportName || 'list') + '.csv'; a.click();
+      },
+      cols, rows, mrows, colSpan: meta.length + (hasOpen ? 3 : 2), tableMin: (44 + meta.reduce((a, c) => a + c.w, 0) + (hasOpen ? 64 : 0)) + 'px',
+      allChecked: slice.length > 0 && slice.every((r) => S.sel[r.id]), toggleAll: (e) => toggleSel(slice.map((r) => r.id), e.target.checked),
+      isEmpty: total === 0, totalText: f.n(total), hasSum: !!sumKey, sumText: sumOf(list),
+      pg: { cur: f.n(page), total: f.n(pages), noPrev: page <= 1, noNext: page >= pages, prevOp: page <= 1 ? .45 : 1, nextOp: page >= pages ? .45 : 1, prev: () => this.setState({ page: page - 1 }), next: () => this.setState({ page: page + 1 }) },
+      det,
+    };
+  }
+}
+</script>
+</body>
+</html>

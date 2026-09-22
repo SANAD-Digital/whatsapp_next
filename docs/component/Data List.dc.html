@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F6; --surface:#FFFFFF; --sunken:#EEF2F0; --border:#E3E8E6; --border-2:#C9D2CF;
+    --ink:#0F1A18; --ink-2:#33423F; --ink-3:#55645F; --ink-4:#62716D;
+    --pri:#0F7A63; --pri-d:#0A6250; --pri-s:#DFF1EC; --pri-sb:#B6DDD2; --on-pri:#FFFFFF;
+    --ok:#1A8B50; --ok-s:#E1F3E8; --ok-i:#16713F; --ok-sb:#B9E2CA;
+    --wn:#9A6C14; --wn-s:#FBF1DC; --wn-i:#8A6116; --wn-sb:#EFDCB4;
+    --dg:#C9524B; --dg-s:#FBEAE8; --dg-i:#A93A34; --dg-sb:#F2CBC7;
+    --nf:#2568AF; --nf-s:#E4EFFA; --nf-i:#1F5A97; --nf-sb:#C2DCF2;
+    --c-sent:#8FC0E4; --c-deliv:#2E7FD1; --c-read:#22A7C9; --c-queued:#EDA93E; --c-failed:#E0615A;
+    --shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);
+  }
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button,select{font-family:inherit;}
+  .dl-sb::-webkit-scrollbar{width:8px;height:8px}
+  .dl-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:999px}
+  .dl-sb::-webkit-scrollbar-track{background:transparent}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<div style="direction:rtl;min-height:{{ rootMinH }};padding:{{ rootPad }};background:{{ rootBg }};color:var(--ink);display:flex;flex-direction:column;gap:16px">
+
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+    <span style="display:flex;flex-direction:column;gap:4px">
+      <h1 style="margin:0;font-size:20px;font-weight:700;line-height:1.2">الرسائل الصادرة</h1>
+      <span style="font-size:12px;color:var(--ink-3)"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace">{{ totalText }}</span> رسالة مطابقة · تُعرض <span dir="ltr" style="font-family:'IBM Plex Mono',monospace">{{ pageText }}</span></span>
+    </span>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+        <span style="display:inline-flex;align-items:center;gap:8px;min-height:36px;padding:0 12px;border-radius:8px;background:var(--pri-s);color:var(--pri-d);font-size:12px;font-weight:600">{{ selText }} محددة<span onClick="{{ clearSel }}" style="cursor:pointer;font-size:14px;line-height:1">×</span></span>
+      </sc-if>
+
+      <button type="button" onClick="{{ exportCsv }}" style="min-height:36px;padding:0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px" style-hover="background:var(--sunken)"><svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M10 3v10M6 9l4 4 4-4M4 16h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>تصدير</button>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+
+    <div style="display:flex;align-items:flex-start;gap:12px;padding:12px;border-bottom:1px solid var(--border)">
+    <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <label style="position:relative;display:flex;align-items:center;flex:1;min-width:220px;max-width:360px">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" style="position:absolute;inset-inline-start:11px;pointer-events:none"><circle cx="9" cy="9" r="5.5" stroke="var(--ink-3)" stroke-width="1.6"></circle><path d="M13 13l3.5 3.5" stroke="var(--ink-3)" stroke-width="1.6" stroke-linecap="round"></path></svg>
+        <input type="text" value="{{ fl.search }}" onInput="{{ fl.onSearch }}" placeholder="ابحث في الاسم أو الرقم أو رقم المستند…" style="width:100%;min-height:36px;padding:0 34px 0 12px;border-radius:8px;border:1px solid var(--border-2);background:var(--bg);font-size:13px;color:var(--ink);outline:none" />
+      </label>
+
+      <sc-for list="{{ fl.selects }}" as="s" hint-placeholder-count="3">
+        <span style="position:relative;display:flex">
+          <select value="{{ s.value }}" onChange="{{ s.onChange }}" style="appearance:none;min-height:36px;padding:0 30px 0 12px;border-radius:8px;border:1px solid {{ s.bd }};background:{{ s.bg }};color:{{ s.fg }};font-size:13px;font-weight:{{ s.weight }};cursor:pointer;outline:none">
+            <option value="">{{ s.label }}</option>
+            <sc-for list="{{ s.options }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+          </select>
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="none" style="position:absolute;inset-inline-end:11px;top:50%;transform:translateY(-50%);pointer-events:none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </span>
+      </sc-for>
+
+      <span style="display:inline-flex;border:1px solid var(--border-2);border-radius:8px;overflow:hidden;background:var(--surface)">
+        <sc-for list="{{ fl.ranges }}" as="r" hint-placeholder-count="4">
+          <span onClick="{{ r.onPick }}" style="min-height:34px;padding:0 12px;display:inline-flex;align-items:center;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;background:{{ r.bg }};color:{{ r.fg }};border-inline-start:1px solid {{ r.bd }}">{{ r.label }}</span>
+        </sc-for>
+      </span>
+
+      <sc-if value="{{ fl.hasActive }}" hint-placeholder-val="{{ false }}">
+        <span onClick="{{ fl.clearAll }}" style="display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 10px;border-radius:8px;font-size:12px;font-weight:600;color:var(--dg-i);cursor:pointer" style-hover="background:var(--dg-s)">مسح الفلاتر <span style="font-size:14px;line-height:1">×</span></span>
+      </sc-if>
+    </div>
+
+    <div data-dl-menu="1" style="position:relative;flex:none">
+      <button type="button" onClick="{{ toggleGroupMenu }}" style="min-height:36px;padding:0 12px;border-radius:8px;border:1px solid {{ groupBtnBd }};background:{{ groupBtnBg }};color:{{ groupBtnFg }};font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M3 5h14M3 10h9M3 15h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg>{{ groupBtnLabel }}
+        <sc-if value="{{ isGrouped }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--pri);color:var(--on-pri);display:inline-flex;align-items:center;justify-content:center">{{ groupCount }}</span></sc-if>
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </button>
+      <sc-if value="{{ groupMenuOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;top:42px;inset-inline-end:0;width:264px;z-index:40;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-lg);padding:6px;display:flex;flex-direction:column;gap:2px;animation:fadeUp .15s ease-out">
+          <sc-if value="{{ isGrouped }}" hint-placeholder-val="{{ false }}">
+            <span style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px 4px;font-size:11px;color:var(--ink-3)">مستويات التجميع بالترتيب<span onClick="{{ clearGroups }}" style="cursor:pointer;color:var(--dg-i);font-weight:600">إزالة الكل</span></span>
+            <sc-for list="{{ groupLevels }}" as="g" hint-placeholder-count="2">
+              <span style="display:flex;align-items:center;gap:8px;min-height:34px;padding:0 6px 0 4px;border-radius:6px;background:var(--pri-s);color:var(--pri-d);font-size:13px;font-weight:600">
+                <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;width:18px;height:18px;border-radius:50%;background:var(--pri);color:var(--on-pri);display:inline-flex;align-items:center;justify-content:center;flex:none">{{ g.n }}</span>
+                <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.label }}</span>
+                <span onClick="{{ g.onUp }}" title="أعلى" style="width:22px;height:22px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;opacity:{{ g.upOp }}" style-hover="background:var(--pri-sb)"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M5 12l5-5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                <span onClick="{{ g.onDown }}" title="أسفل" style="width:22px;height:22px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;opacity:{{ g.downOp }}" style-hover="background:var(--pri-sb)"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                <span onClick="{{ g.onRemove }}" title="إزالة" style="width:22px;height:22px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;line-height:1" style-hover="background:var(--dg-s);color:var(--dg-i)">×</span>
+              </span>
+            </sc-for>
+            <span style="height:1px;background:var(--border);margin:4px 0"></span>
+          </sc-if>
+          <span style="padding:6px 10px 4px;font-size:11px;color:var(--ink-3)">{{ addLabel }}</span>
+          <sc-for list="{{ groupOptions }}" as="g" hint-placeholder-count="5">
+            <span onClick="{{ g.onPick }}" style="display:flex;align-items:center;justify-content:space-between;min-height:34px;padding:0 10px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--ink)" style-hover="background:var(--sunken)">{{ g.label }}<span style="font-size:14px;color:var(--ink-4)">+</span></span>
+          </sc-for>
+          <sc-if value="{{ noMoreOptions }}" hint-placeholder-val="{{ false }}"><span style="padding:6px 10px;font-size:12px;color:var(--ink-4)">كل الحقول مستخدمة</span></sc-if>
+          <sc-if value="{{ isGrouped }}" hint-placeholder-val="{{ false }}">
+            <span style="height:1px;background:var(--border);margin:4px 0"></span>
+            <span style="display:flex;gap:4px;padding:0 4px 2px">
+              <span onClick="{{ expandAll }}" style="flex:1;text-align:center;min-height:30px;line-height:30px;border-radius:6px;font-size:12px;cursor:pointer;color:var(--ink-2)" style-hover="background:var(--sunken)">فتح الكل</span>
+              <span onClick="{{ collapseAll }}" style="flex:1;text-align:center;min-height:30px;line-height:30px;border-radius:6px;font-size:12px;cursor:pointer;color:var(--ink-2)" style-hover="background:var(--sunken)">طيّ الكل</span>
+            </span>
+          </sc-if>
+        </div>
+      </sc-if>
+    </div>
+    </div>
+    <div class="dl-sb" style="overflow:auto;max-height:calc(100vh - 230px);position:relative">
+      <table style="border-collapse:separate;border-spacing:0;table-layout:fixed;width:100%;min-width:{{ tableMin }}">
+
+        <thead>
+          <tr>
+            <th style="position:sticky;top:0;inset-inline-start:0;z-index:6;width:44px;min-width:44px;max-width:44px;background:var(--sunken);border-bottom:1px solid var(--border);padding:0 12px;height:40px;text-align:center"><input type="checkbox" checked="{{ allChecked }}" onChange="{{ toggleAll }}" style="width:15px;height:15px;accent-color:var(--pri);cursor:pointer;margin:0;vertical-align:middle" /></th>
+            <sc-for list="{{ cols }}" as="c" hint-placeholder-count="8">
+              <th style="position:sticky;top:0;inset-inline-start:{{ c.left }};z-index:{{ c.hz }};width:{{ c.wPx }};min-width:{{ c.wPx }};max-width:{{ c.wPx }};background:var(--sunken);border-bottom:1px solid var(--border);box-shadow:{{ c.shadow }};padding:0 12px;height:40px;text-align:start;font-size:12px;font-weight:600;color:var(--ink-2);white-space:nowrap">
+                <span style="display:flex;align-items:center;gap:6px">
+                  <span onClick="{{ c.onSort }}" style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;color:{{ c.labelColor }}">{{ c.label }}<sc-if value="{{ c.sorted }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;color:var(--pri)">{{ c.sortIcon }}</span></sc-if></span>
+                  <span onClick="{{ c.onPin }}" title="{{ c.pinTitle }}" style="width:22px;height:22px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:{{ c.pinColor }};background:{{ c.pinBg }};flex:none" style-hover="background:var(--border)"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M12.5 2.5l5 5-3.5 1 -2.5 4.5-2-2-5 5 5-5-2-2 4.5-2.5 1-3.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" fill="{{ c.pinFill }}"></path></svg></span>
+                </span>
+              </th>
+            </sc-for>
+            <th style="position:sticky;top:0;z-index:5;width:72px;min-width:72px;max-width:72px;background:var(--sunken);border-bottom:1px solid var(--border);font-size:12px;font-weight:600;color:var(--ink-2);text-align:center;padding:0 8px">عرض</th>
+            <th style="position:sticky;top:0;z-index:5;width:auto;background:var(--sunken);border-bottom:1px solid var(--border)"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{ rows }}" as="r" hint-placeholder-count="12">
+            <sc-if value="{{ r.isGroup }}" hint-placeholder-val="{{ false }}">
+              <tr style="background:{{ r.rowBg }}">
+                <td colspan="{{ colSpan }}" style="position:sticky;inset-inline-start:0;padding:0;border-bottom:1px solid var(--border);background:inherit">
+                  <span onClick="{{ r.onToggle }}" style="display:flex;align-items:center;gap:10px;min-height:38px;padding:0 12px;padding-inline-start:{{ r.indent }};cursor:pointer;user-select:none">
+                    <span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink-3);transform:{{ r.chev }};transition:transform .15s"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M7 4l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                    <input type="checkbox" checked="{{ r.checked }}" onChange="{{ r.onCheck }}" onClick="{{ stop }}" style="width:15px;height:15px;accent-color:var(--pri);cursor:pointer;margin:0" />
+                    <span style="font-size:11px;color:var(--ink-3)">{{ r.field }}</span><span style="font-size:13px;font-weight:{{ r.weight }}">{{ r.label }}</span>
+                    <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-2);background:var(--sunken);border-radius:999px;padding:2px 8px">{{ r.count }}</span>
+                    <span style="font-size:12px;color:var(--ink-3)">المجموع <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;color:var(--ink)">{{ r.total }}</span> ر.س</span>
+                  </span>
+                </td>
+              </tr>
+            </sc-if>
+            <sc-if value="{{ r.isRow }}" hint-placeholder-val="{{ true }}">
+              <tr onClick="{{ r.onSelect }}" onDoubleClick="{{ r.onOpen }}" style="background:{{ r.bg }};cursor:pointer" style-hover="background:var(--sunken)">
+                <td style="position:sticky;inset-inline-start:0;z-index:2;background:inherit;border-bottom:1px solid var(--border);padding:0 12px;height:{{ rowH }};text-align:center"><input type="checkbox" checked="{{ r.checked }}" onChange="{{ r.onCheck }}" onClick="{{ stop }}" style="width:15px;height:15px;accent-color:var(--pri);cursor:pointer;margin:0;vertical-align:middle" /></td>
+                <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="8">
+                  <td style="position:{{ c.pos }};inset-inline-start:{{ c.left }};z-index:{{ c.z }};background:inherit;border-bottom:1px solid var(--border);box-shadow:{{ c.shadow }};padding:0 12px;height:{{ rowH }};font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:{{ c.align }}">
+                    <sc-if value="{{ c.isTwo }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font-weight:600;overflow:hidden;text-overflow:ellipsis">{{ c.main }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);text-align:right">{{ c.sub }}</span></span></sc-if>
+                    <sc-if value="{{ c.isBadge }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:{{ c.bg }};color:{{ c.fg }};font-size:11px;font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:{{ c.dot }}"></span>{{ c.main }}</span></sc-if>
+                    <sc-if value="{{ c.isMono }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:{{ c.color }}">{{ c.main }}</span></sc-if>
+                    <sc-if value="{{ c.isText }}" hint-placeholder-val="{{ true }}"><span style="color:{{ c.color }}">{{ c.main }}</span></sc-if>
+                  </td>
+                </sc-for>
+                <td style="border-bottom:1px solid var(--border);background:inherit;padding:0 8px;text-align:center"><button type="button" onClick="{{ r.onOpen }}" onDoubleClick="{{ stop }}" title="عرض التفاصيل" style="min-height:28px;padding:0 10px;border-radius:6px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink-2);font-size:12px;font-weight:600;cursor:pointer" style-hover="background:var(--pri-s);color:var(--pri-d);border-color:var(--pri-sb)">عرض</button></td>
+                <td style="border-bottom:1px solid var(--border);background:inherit"></td>
+              </tr>
+            </sc-if>
+          </sc-for>
+        </tbody>
+      </table>
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:48px 16px;color:var(--ink-3);font-size:13px">لا نتائج مطابقة للفلاتر الحالية.<span onClick="{{ fl.clearAll }}" style="color:var(--pri);font-weight:600;cursor:pointer">مسح الفلاتر</span></div>
+      </sc-if>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-top:1px solid var(--border);flex-wrap:wrap">
+      <span style="font-size:12px;color:var(--ink-3)">صفحة <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;color:var(--ink)">{{ pg.cur }}</span> من <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;color:var(--ink)">{{ pg.total }}</span></span>
+      <span style="display:flex;gap:4px">
+        <button type="button" onClick="{{ pg.prev }}" disabled="{{ pg.noPrev }}" style="min-height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:12px;font-weight:600;cursor:pointer;opacity:{{ pg.prevOp }}">السابق</button>
+        <button type="button" onClick="{{ pg.next }}" disabled="{{ pg.noNext }}" style="min-height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:12px;font-weight:600;cursor:pointer;opacity:{{ pg.nextOp }}">التالي</button>
+      </span>
+    </div>
+  </div>
+
+  <sc-if value="{{ det.open }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ det.close }}" style="position:fixed;inset:0;z-index:60;background:rgba(15,20,19,.35)"></div>
+    <aside data-dl-panel="1" style="position:fixed;top:0;bottom:0;inset-inline-start:0;z-index:70;width:min(440px,100%);background:var(--surface);border-inline-end:1px solid var(--border);box-shadow:var(--shadow-lg);display:flex;flex-direction:column;animation:fadeUp .18s ease-out">
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:18px 18px 14px;border-bottom:1px solid var(--border)">
+        <span style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:0">
+          <span style="font-size:16px;font-weight:700;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ det.name }}</span>
+          <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-3)">{{ det.phone }}</span>
+            <span style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:999px;background:{{ det.stBg }};color:{{ det.stFg }};font-size:11px;font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:{{ det.stDot }}"></span>{{ det.status }}</span>
+          </span>
+        </span>
+        <span onClick="{{ det.close }}" title="إغلاق" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;font-size:16px;color:var(--ink-3)" style-hover="background:var(--sunken)">×</span>
+      </div>
+      <div class="dl-sb" style="flex:1;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:16px">
+        <sc-if value="{{ det.hasError }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:8px;background:var(--dg-s);border:1px solid var(--dg-sb)">
+            <span style="font-size:13px;font-weight:700;color:var(--dg-i)">{{ det.errorAr }}</span>
+            <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dg-i);text-align:right;word-break:break-all">{{ det.errorRaw }}</span>
+            <span style="font-size:12px;color:var(--dg-i)">الإجراء المقترح: {{ det.errorFix }}</span>
+          </div>
+        </sc-if>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px">
+          <sc-for list="{{ det.fields }}" as="x" hint-placeholder-count="8">
+            <span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-size:11px;color:var(--ink-3)">{{ x.k }}</span><span dir="{{ x.dir }}" style="font-size:13px;font-weight:600;color:{{ x.color }};font-family:{{ x.font }};text-align:right;overflow:hidden;text-overflow:ellipsis">{{ x.v }}</span></span>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span style="font-size:11px;color:var(--ink-3)">نص الرسالة</span>
+          <span style="padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-size:13px;line-height:1.9;white-space:pre-wrap">{{ det.body }}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--border)">
+        <button type="button" onClick="{{ det.copy }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap" style-hover="background:var(--sunken)">نسخ الرقم</button>
+        <button type="button" onClick="{{ det.close }}" style="margin-inline-start:auto;min-height:36px;padding:0 14px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">إغلاق</button>
+      </div>
+    </aside>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;'comfortable'|'compact'&quot;,&quot;section&quot;:&quot;الجدول&quot;},&quot;pageSize&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:60,&quot;options&quot;:[30,60,120],&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;الجدول&quot;}}">
+const COLS = [
+  { key: 'contact', label: 'جهة الاتصال', w: 210, kind: 'two', group: true },
+  { key: 'status', label: 'الحالة', w: 130, kind: 'badge', group: true },
+  { key: 'docType', label: 'نوع المستند', w: 130, kind: 'text', group: true },
+  { key: 'docNo', label: 'رقم المستند', w: 120, kind: 'mono' },
+  { key: 'amount', label: 'المبلغ', w: 120, kind: 'mono', align: 'end' },
+  { key: 'device', label: 'الجهاز', w: 150, kind: 'text', group: true },
+  { key: 'ts', label: 'الوقت', w: 150, kind: 'mono', group: true, groupLabel: 'اليوم' },
+  { key: 'error', label: 'الخطأ', w: 200, kind: 'text' },
+];
+const TONE = {
+  read: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--c-read)' },
+  delivered: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--c-deliv)' },
+  sent: { bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--c-sent)' },
+  warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--c-queued)' },
+  danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--c-failed)' },
+  muted: { bg: 'var(--sunken)', fg: 'var(--ink-3)', dot: 'var(--ink-4)' },
+};
+const RANGES = [['today', 'اليوم'], ['week', '7 أيام'], ['month', '30 يوم'], ['all', 'الكل']];
+
+class Component extends DCLogic {
+  state = { search: '', status: '', device: '', docType: '', range: 'month', sort: { key: 'ts', dir: 'desc' }, pinned: ['contact'], groups: [], collapsed: {}, sel: {}, page: 1, menu: false, detail: null };
+
+  componentDidMount() {
+    this.onKey = (e) => { if (e.key !== 'Escape') return; if (this.state.menu) this.setState({ menu: false }); else if (this.state.detail) this.setState({ detail: null }); };
+    this.onDoc = (e) => { if (this.state.menu && !e.target.closest('[data-dl-menu]')) this.setState({ menu: false }); };
+    window.addEventListener('keydown', this.onKey);
+    document.addEventListener('mousedown', this.onDoc);
+    const wait = () => { if (window.HubData) this.forceUpdate(); else setTimeout(wait, 60); };
+    wait();
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); document.removeEventListener('mousedown', this.onDoc); }
+
+  get D() { return window.HubData; }
+
+  source() {
+    if (this._src) return this._src;
+    const D = this.D;
+    this._src = D.messages.filter((m) => m.direction === 'out').sort((a, b) => b.ts - a.ts).slice(0, 4000).map((m) => {
+      const c = D.contactById(m.contactId) || { name: '', phone: '' }, d = D.deviceById(m.deviceId) || { name: '—' };
+      return { ...m, contactName: c.name || 'بلا اسم', phone: c.phone, deviceName: d.name, statusAr: D.STATUS[m.status].ar, tone: D.STATUS[m.status].tone, errorAr: m.error ? D.ERRORS[m.error].ar : '', day: D.fmt.date(m.ts) };
+    });
+    return this._src;
+  }
+
+  renderVals() {
+    const S = this.state, D = this.D;
+    const set = (patch) => this.setState({ ...patch, page: 1 });
+    const pageSize = this.props.pageSize ?? 60;
+    const rowH = (this.props.density ?? 'comfortable') === 'compact' ? '40px' : '52px';
+    const stop = (e) => e.stopPropagation();
+    const E = !!this.props.embed;
+    const base = { rootMinH: E ? 'auto' : '100vh', rootPad: E ? '0' : '24px', rootBg: E ? 'transparent' : 'var(--bg)', rowH, stop, colSpan: COLS.length + 2, tableMin: (44 + COLS.reduce((a, c) => a + c.w, 0)) + 'px', isEmpty: false, hasSel: false, det: { open: false, fields: [] }, rows: [], cols: [], groupOptions: [], fl: { selects: [], ranges: [], hasActive: false }, pg: {} };
+    if (!D) return { ...base, totalText: '…', pageText: '…' };
+    const f = D.fmt;
+
+    // ── filtering
+    const start = S.range === 'all' ? 0 : D.rangeStart(S.range);
+    const q = S.search.trim().toLowerCase();
+    let list = this.source().filter((m) =>
+      m.ts >= start && (!S.status || m.status === S.status) && (!S.device || m.deviceId === S.device) && (!S.docType || m.docType === S.docType) &&
+      (!q || m.contactName.toLowerCase().includes(q) || m.phone.replace(/\s/g, '').includes(q.replace(/\s/g, '')) || m.docNo.toLowerCase().includes(q)));
+
+    // ── sorting (group key first when grouped)
+    const val = (m, k) => k === 'contact' ? m.contactName : k === 'status' ? m.statusAr : k === 'device' ? m.deviceName : k === 'error' ? m.errorAr : k === 'ts' ? m.ts : m[k];
+    const gkey = (m, k) => k === 'ts' ? m.day : val(m, k);
+    const cmp = (a, b, k, dir) => { const x = val(a, k), y = val(b, k); const r = typeof x === 'number' ? x - y : String(x).localeCompare(String(y), 'ar'); return dir === 'asc' ? r : -r; };
+    list.sort((a, b) => {
+      for (const k of S.groups) { const ga = gkey(a, k), gb = gkey(b, k); if (ga !== gb) return k === 'ts' ? (ga < gb ? 1 : -1) : String(ga).localeCompare(String(gb), 'ar'); }
+      return cmp(a, b, S.sort.key, S.sort.dir);
+    });
+
+    // ── paging
+    const total = list.length, pages = Math.max(1, Math.ceil(total / pageSize)), page = Math.min(S.page, pages);
+    const slice = list.slice((page - 1) * pageSize, page * pageSize);
+
+    // ── columns with pin offsets
+    const ordered = [...COLS.filter((c) => S.pinned.includes(c.key)), ...COLS.filter((c) => !S.pinned.includes(c.key))];
+    let off = 44;
+    const meta = ordered.map((c, i) => {
+      const pinned = S.pinned.includes(c.key);
+      const lastPinned = pinned && (i === ordered.length - 1 || !S.pinned.includes(ordered[i + 1].key));
+      const m = { ...c, pinned, left: pinned ? off + 'px' : 'auto', pos: pinned ? 'sticky' : 'static', z: pinned ? 2 : 'auto', hz: pinned ? 6 : 5, shadow: lastPinned ? 'inset 1px 0 0 var(--border-2)' : 'none' };
+      if (pinned) off += c.w;
+      return m;
+    });
+    const cols = meta.map((c) => ({
+      ...c, wPx: c.w + 'px', sorted: S.sort.key === c.key, sortIcon: S.sort.dir === 'asc' ? '▲' : '▼', labelColor: S.sort.key === c.key ? 'var(--pri)' : 'var(--ink-2)',
+      pinTitle: c.pinned ? 'إلغاء تثبيت العمود' : 'تثبيت العمود', pinColor: c.pinned ? 'var(--pri)' : 'var(--ink-4)', pinBg: c.pinned ? 'var(--pri-s)' : 'transparent', pinFill: c.pinned ? 'currentColor' : 'none',
+      onSort: () => this.setState({ sort: { key: c.key, dir: S.sort.key === c.key && S.sort.dir === 'desc' ? 'asc' : 'desc' } }),
+      onPin: () => this.setState({ pinned: c.pinned ? S.pinned.filter((k) => k !== c.key) : [...S.pinned, c.key] }),
+    }));
+
+    // ── cells
+    const cell = (m, c) => {
+      const t = TONE[m.tone] || TONE.muted;
+      const o = { pos: c.pos, left: c.left, z: c.z, shadow: c.shadow, align: c.align || 'start', isTwo: false, isBadge: false, isMono: false, isText: false, color: 'var(--ink)', main: '', sub: '' };
+      switch (c.key) {
+        case 'contact': return { ...o, isTwo: true, main: m.contactName, sub: m.phone };
+        case 'status': return { ...o, isBadge: true, main: m.statusAr, bg: t.bg, fg: t.fg, dot: t.dot };
+        case 'docType': return { ...o, isText: true, main: m.docType, color: 'var(--ink-2)' };
+        case 'docNo': return { ...o, isMono: true, main: m.docNo, color: 'var(--ink-2)' };
+        case 'amount': return { ...o, isMono: true, main: f.money(m.amount) };
+        case 'device': return { ...o, isText: true, main: m.deviceName, color: 'var(--ink-2)' };
+        case 'ts': return { ...o, isMono: true, main: m.day + ' ' + f.time(m.ts), color: 'var(--ink-3)' };
+        case 'error': return { ...o, isText: true, main: m.errorAr || '—', color: m.errorAr ? 'var(--dg-i)' : 'var(--ink-4)' };
+      }
+    };
+    const toggleSel = (ids, on) => this.setState((st) => { const sel = { ...st.sel }; ids.forEach((id) => { if (on) sel[id] = true; else delete sel[id]; }); return { sel }; });
+    const rowOf = (m) => ({
+      isRow: true, isGroup: false, checked: !!S.sel[m.id], bg: S.sel[m.id] ? 'var(--pri-s)' : 'var(--surface)',
+      onCheck: (e) => toggleSel([m.id], e.target.checked), onSelect: () => toggleSel([m.id], !S.sel[m.id]), onOpen: (e) => { e.stopPropagation(); this.setState({ detail: m.id }); },
+      cells: meta.map((c) => cell(m, c)),
+    });
+
+    // ── grouping (nested, in user order)
+    const build = (items, level, path) => {
+      if (level >= S.groups.length) return items.map(rowOf);
+      const k = S.groups[level], gc = COLS.find((c) => c.key === k);
+      const groups = [];
+      let cur = null;
+      items.forEach((m) => { const v = gkey(m, k); if (!cur || cur.key !== v) { cur = { key: v, items: [] }; groups.push(cur); } cur.items.push(m); });
+      return groups.flatMap((g) => {
+        const p = path + '|' + g.key, ids = g.items.map((m) => m.id), open = !S.collapsed[p];
+        const head = {
+          isGroup: true, isRow: false, field: gc.groupLabel || gc.label, label: String(g.key), count: f.n(g.items.length), total: f.money(g.items.reduce((a, m) => a + m.amount, 0)),
+          indent: (12 + level * 22) + 'px', weight: level === 0 ? 700 : 600, rowBg: level === 0 ? 'var(--sunken)' : 'var(--bg)',
+          chev: open ? 'rotate(-90deg)' : 'rotate(0deg)', checked: ids.every((id) => S.sel[id]),
+          onToggle: () => this.setState((st) => ({ collapsed: { ...st.collapsed, [p]: open } })),
+          onCheck: (e) => toggleSel(ids, e.target.checked),
+        };
+        return open ? [head, ...build(g.items, level + 1, p)] : [head];
+      });
+    };
+    const rows = build(slice, 0, '');
+    const allPaths = () => { const out = {}; const walk = (items, level, path) => { if (level >= S.groups.length) return; const k = S.groups[level]; const seen = {}; items.forEach((m) => { const v = gkey(m, k); (seen[v] = seen[v] || []).push(m); }); Object.keys(seen).forEach((v) => { out[path + '|' + v] = true; walk(seen[v], level + 1, path + '|' + v); }); }; walk(slice, 0, ''); return out; };
+
+    const dm = S.detail ? this.source().find((m) => m.id === S.detail) : null;
+    const MONO = "'IBM Plex Mono',monospace";
+    const det = dm ? (() => {
+      const t = TONE[dm.tone] || TONE.muted, err = dm.error ? D.ERRORS[dm.error] : null;
+      const camp = dm.campaignId && D.campaigns ? D.campaigns.find((c) => c.id === dm.campaignId) : null;
+      const tpl = dm.templateId && D.templates ? D.templates.find((c) => c.id === dm.templateId) : null;
+      const fld = (k, v, mono, color) => ({ k, v, dir: mono ? 'ltr' : 'rtl', font: mono ? MONO : 'inherit', color: color || 'var(--ink)' });
+      return {
+        open: true, close: () => this.setState({ detail: null }), name: dm.contactName, phone: dm.phone, status: dm.statusAr, stBg: t.bg, stFg: t.fg, stDot: t.dot,
+        hasError: !!err, errorAr: err ? err.ar : '', errorRaw: err ? err.raw.replace('{n}', dm.phone) : '', errorFix: err ? err.fix : '',
+        fields: [
+          fld('نوع المستند', dm.docType), fld('رقم المستند', dm.docNo, true),
+          fld('المبلغ', f.money(dm.amount) + ' SAR', true), fld('الجهاز', dm.deviceName),
+          fld('التاريخ', dm.day, true), fld('الوقت', f.time(dm.ts), true),
+          fld('الحملة', camp ? camp.name : '—', false, camp ? 'var(--ink)' : 'var(--ink-4)'), fld('النموذج', tpl ? tpl.name : '—', false, tpl ? 'var(--ink)' : 'var(--ink-4)'),
+          fld('المحاولات', f.n(dm.attempts), true), fld('المصدر', dm.sandbox ? 'صندوق الاختبار' : dm.campaignId ? 'حملة' : 'إرسال مباشر'),
+        ],
+        body: dm.body.replace('{no}', dm.docNo).replace('{amt}', f.money(dm.amount)),
+        copy: () => { if (navigator.clipboard) navigator.clipboard.writeText(dm.phone); },
+      };
+    })() : { open: false, fields: [] };
+
+    const selCount = Object.keys(S.sel).length;
+    const selects = [
+      { key: 'status', label: 'كل الحالات', options: Object.keys(D.STATUS).map((k) => ({ v: k, l: D.STATUS[k].ar })) },
+      { key: 'device', label: 'كل الأجهزة', options: D.devices.map((d) => ({ v: d.id, l: d.name })) },
+      { key: 'docType', label: 'كل المستندات', options: D.DOC_TYPES.map((t) => ({ v: t, l: t })) },
+    ].map((s) => ({ ...s, value: S[s.key], onChange: (e) => set({ [s.key]: e.target.value }), bd: S[s.key] ? 'var(--pri-sb)' : 'var(--border-2)', bg: S[s.key] ? 'var(--pri-s)' : 'var(--surface)', fg: S[s.key] ? 'var(--pri-d)' : 'var(--ink)', weight: S[s.key] ? 600 : 400 }));
+    const groupables = COLS.filter((c) => c.group);
+    const glabel = (k) => { const c = COLS.find((x) => x.key === k); return c.groupLabel || c.label; };
+    const setGroups = (groups) => set({ groups, collapsed: {} });
+    const move = (i, d) => { const g = [...S.groups]; const j = i + d; if (j < 0 || j >= g.length) return; [g[i], g[j]] = [g[j], g[i]]; setGroups(g); };
+
+    return {
+      ...base, det, cols, rows, isEmpty: total === 0,
+      totalText: f.n(total), pageText: total ? f.n((page - 1) * pageSize + 1) + '–' + f.n(Math.min(total, page * pageSize)) : '0',
+      hasSel: selCount > 0, selText: f.n(selCount), clearSel: () => this.setState({ sel: {} }),
+      allChecked: slice.length > 0 && slice.every((m) => S.sel[m.id]),
+      toggleAll: (e) => toggleSel(slice.map((m) => m.id), e.target.checked),
+      fl: {
+        search: S.search, onSearch: (e) => set({ search: e.target.value }), selects,
+        ranges: RANGES.map(([k, l], i) => ({ label: l, onPick: () => set({ range: k }), bg: S.range === k ? 'var(--pri)' : 'transparent', fg: S.range === k ? 'var(--on-pri)' : 'var(--ink-2)', bd: i ? 'var(--border-2)' : 'transparent' })),
+        hasActive: !!(q || S.status || S.device || S.docType || S.range !== 'month'),
+        clearAll: () => set({ search: '', status: '', device: '', docType: '', range: 'month' }),
+      },
+      isGrouped: S.groups.length > 0, groupCount: f.n(S.groups.length), groupMenuOpen: S.menu, toggleGroupMenu: () => this.setState({ menu: !S.menu }),
+      groupBtnLabel: S.groups.length ? 'مجمّع حسب ' + S.groups.map(glabel).join(' › ') : 'تجميع',
+      groupBtnBd: S.groups.length ? 'var(--pri-sb)' : 'var(--border-2)', groupBtnBg: S.groups.length ? 'var(--pri-s)' : 'var(--surface)', groupBtnFg: S.groups.length ? 'var(--pri-d)' : 'var(--ink)',
+      groupLevels: S.groups.map((k, i) => ({ n: i + 1, label: glabel(k), upOp: i === 0 ? .3 : 1, downOp: i === S.groups.length - 1 ? .3 : 1, onUp: () => move(i, -1), onDown: () => move(i, 1), onRemove: () => setGroups(S.groups.filter((x) => x !== k)) })),
+      addLabel: S.groups.length ? 'إضافة مستوى' : 'التجميع حسب',
+      groupOptions: groupables.filter((c) => !S.groups.includes(c.key)).map((c) => ({ label: c.groupLabel || c.label, onPick: () => setGroups([...S.groups, c.key]) })),
+      noMoreOptions: groupables.every((c) => S.groups.includes(c.key)),
+      clearGroups: () => setGroups([]),
+      expandAll: () => this.setState({ collapsed: {}, menu: false }),
+      collapseAll: () => this.setState({ collapsed: allPaths(), menu: false }),
+      exportCsv: () => {
+        const src = selCount ? list.filter((m) => S.sel[m.id]) : list;
+        const csv = ['\uFEFF' + COLS.map((c) => c.label).join(','), ...src.map((m) => [m.contactName + ' ' + m.phone, m.statusAr, m.docType, m.docNo, m.amount, m.deviceName, m.day + ' ' + f.time(m.ts), m.errorAr].map((v) => '"' + String(v).replace(/"/g, '""') + '"').join(','))].join('\n');
+        const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'outbound.csv'; a.click();
+      },
+      pg: { cur: f.n(page), total: f.n(pages), noPrev: page <= 1, noNext: page >= pages, prevOp: page <= 1 ? .45 : 1, nextOp: page >= pages ? .45 : 1, prev: () => this.setState({ page: page - 1 }), next: () => this.setState({ page: page + 1 }) },
+    };
+  }
+}
+</script>
+</body>
+</html>

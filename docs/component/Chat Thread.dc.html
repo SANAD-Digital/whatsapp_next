@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;color-scheme:dark;}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button,textarea{font-family:inherit;}
+  .ct-sb{scrollbar-width:thin;}
+  @keyframes ctDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.8)}}
+</style>
+</helmet>
+<div dir="{{ dir }}" data-theme="{{ theme }}" style="display:flex;flex-direction:column;gap:{{ dn.gap }};min-height:{{ rootMinH }};background:{{ rootBg }};padding:{{ dn.pagePad }};color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:{{ frame.align }}">
+    <div style="display:flex;flex-direction:column;min-height:0;flex:{{ frame.flex }};width:{{ frame.width }};max-width:100%;border-radius:{{ frame.radius }};border:{{ frame.border }};background:var(--surface);overflow:hidden;box-shadow:{{ frame.shadow }}">
+
+      <sc-if value="{{ frame.isPhone }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 14px 4px;background:var(--ink);flex:none">
+          <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--surface)">{{ clock }}</span>
+          <span style="display:flex;gap:4px"><span style="width:4px;height:4px;border-radius:50%;background:var(--surface)"></span><span style="width:4px;height:4px;border-radius:50%;background:var(--surface)"></span><span style="width:4px;height:4px;border-radius:50%;background:var(--surface)"></span></span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ head.show }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);background:{{ head.bg }};flex:none;flex-wrap:wrap">
+          <span style="width:28px;height:28px;border-radius:{{ head.avRadius }};background:{{ head.avBg }};color:{{ head.avFg }};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:none">{{ head.initials }}</span>
+          <span style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0">
+            <span style="font-size:13px;font-weight:700;color:{{ head.fg }};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ head.name }}</span>
+            <sc-if value="{{ head.hasSub }}" hint-placeholder-val="{{ true }}"><span dir="{{ head.subDir }}" style="font-family:{{ head.subFont }};font-size:11px;color:{{ head.subFg }};text-align:start">{{ head.sub }}</span></sc-if>
+          </span>
+          <sc-if value="{{ head.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;background:{{ head.badgeBg }};color:{{ head.badgeFg }};font-size:10px;font-weight:600;flex:none"><span style="width:6px;height:6px;border-radius:50%;background:{{ head.badgeDot }}"></span>{{ head.badge }}</span></sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ note.show }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:{{ note.bg }};border-bottom:1px solid var(--border);flex:none;flex-wrap:wrap">
+          <span style="width:6px;height:6px;border-radius:50%;background:{{ note.dot }};flex:none"></span>
+          <span style="font-size:10px;color:{{ note.fg }};line-height:1.7">{{ note.text }}</span>
+        </div>
+      </sc-if>
+
+      <div ref="{{ scrollRef }}" class="ct-sb" style="flex:1;min-height:{{ dn.minH }};overflow:auto;padding:12px;display:flex;flex-direction:column;gap:6px;background:linear-gradient(180deg,var(--bg),var(--sunken))">
+        <sc-if value="{{ hasDay }}" hint-placeholder-val="{{ true }}">
+          <span style="align-self:center;padding:3px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--border);font-size:10px;color:var(--ink-4);margin-bottom:4px">{{ dayLabel }}</span>
+        </sc-if>
+        <sc-for list="{{ bubbles }}" as="b" hint-placeholder-count="3">
+          <div style="align-self:{{ b.align }};max-width:{{ dn.bubbleMax }};display:flex;flex-direction:column;gap:4px;margin-bottom:{{ b.gapBottom }}">
+            <div style="position:relative;padding:9px 12px;border-radius:{{ b.radius }};background:{{ b.bg }};border:1px solid {{ b.bd }};font-size:0;line-height:0;color:var(--ink)">
+              <sc-if value="{{ b.hasTag }}" hint-placeholder-val="{{ false }}">
+                <span style="display:inline-flex;align-items:center;gap:5px;margin-bottom:6px;padding:2px 8px;border-radius:999px;background:{{ b.tagBg }};color:{{ b.tagFg }};font-size:10px;font-weight:700;white-space:nowrap">{{ b.tag }}</span>
+              </sc-if>
+              <sc-if value="{{ b.isImage }}" hint-placeholder-val="{{ false }}">
+                <span style="display:flex;align-items:flex-end;height:118px;margin-bottom:7px;border-radius:8px;border:1px solid var(--border);background-image:repeating-linear-gradient(135deg,var(--sunken) 0 8px,var(--surface) 8px 16px);padding:8px"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-4);background:var(--surface);padding:2px 6px;border-radius:5px">{{ b.mediaName }}</span></span>
+              </sc-if>
+              <sc-if value="{{ b.isFile }}" hint-placeholder-val="{{ false }}">
+                <span style="display:flex;align-items:center;gap:8px;margin-bottom:7px;padding:8px 9px;border-radius:8px;background:var(--surface);border:1px solid var(--border)">
+                  <span style="width:30px;height:30px;border-radius:7px;background:{{ b.mediaBg }};color:{{ b.mediaFg }};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex:none">{{ b.mediaIcon }}</span>
+                  <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                    <span style="font-size:11px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ b.mediaName }}</span>
+                    <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-4)">{{ b.mediaNote }}</span>
+                  </span>
+                </span>
+              </sc-if>
+              <sc-if value="{{ b.hasText }}" hint-placeholder-val="{{ true }}">
+                <span style="display:block;font-size:12px;line-height:1.9;white-space:pre-wrap;text-wrap:pretty">{{ b.text }}</span>
+              </sc-if>
+              <sc-if value="{{ b.hasReaction }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute;bottom:-12px;inset-inline-start:10px;display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:999px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);font-size:11px;line-height:1.5">{{ b.reaction }}<sc-if value="{{ b.hasReactionCount }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--ink-4)">{{ b.reactionCount }}</span></sc-if></span>
+              </sc-if>
+            </div>
+            <span style="display:flex;align-items:center;gap:6px;align-self:{{ b.metaAlign }};font-size:10px;color:var(--ink-4)"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace">{{ b.at }}</span>{{ b.tick }}</span>
+          </div>
+        </sc-for>
+        <sc-if value="{{ typing }}" hint-placeholder-val="{{ false }}">
+          <div style="align-self:flex-end;display:flex;align-items:center;gap:6px;padding:11px 14px;border-radius:12px 14px 4px 14px;background:var(--surface);border:1px solid var(--pri-sb)">
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--ink-4);animation:ctDot 1s ease-in-out infinite"></span>
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--ink-4);animation:ctDot 1s ease-in-out .2s infinite"></span>
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--ink-4);animation:ctDot 1s ease-in-out .4s infinite"></span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+          <span style="margin:auto;display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px;text-align:center">
+            <span style="font-size:13px;font-weight:600;color:var(--ink-2)">{{ emptyTitle }}</span>
+            <span style="font-size:11px;color:var(--ink-4);line-height:1.8;max-width:260px">{{ emptyText }}</span>
+          </span>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ composer.show }}" hint-placeholder-val="{{ true }}">
+        <div style="position:relative;display:flex;flex-direction:column;gap:8px;padding:9px 10px;border-top:1px solid var(--border);background:var(--sunken);flex:none">
+          <sc-if value="{{ composer.attachOpen }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;bottom:calc(100% - 2px);inset-inline-start:10px;z-index:8;display:grid;grid-template-columns:repeat(3,minmax(88px,1fr));gap:4px;padding:8px;border-radius:14px;background:var(--surface);border:1px solid var(--border);box-shadow:0 14px 34px rgba(15,23,32,.18)">
+              <sc-for list="{{ composer.attach }}" as="a" hint-placeholder-count="6">
+                <span onClick="{{ a.onPick }}" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border-radius:10px;cursor:pointer" style-hover="background:var(--sunken)">
+                  <span style="width:38px;height:38px;border-radius:50%;background:{{ a.bg }};color:{{ a.fg }};display:flex;align-items:center;justify-content:center;flex:none" dangerouslySetInnerHTML="{{ a.icon }}"></span>
+                  <span style="font-size:11px;font-weight:600;color:var(--ink-2);white-space:nowrap">{{ a.label }}</span>
+                </span>
+              </sc-for>
+            </span>
+          </sc-if>
+
+          <sc-if value="{{ composer.hasKind }}" hint-placeholder-val="{{ false }}">
+            <span style="display:inline-flex;align-items:center;gap:8px;align-self:flex-start;padding:5px 10px;border-radius:999px;background:var(--surface);border:1px solid {{ composer.kindBd }};color:{{ composer.kindFg }};font-size:11px;font-weight:600">
+              <span style="width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;color:{{ composer.kindFg }}" dangerouslySetInnerHTML="{{ composer.kindIcon }}"></span>{{ composer.kindLabel }}
+              <span onClick="{{ composer.onKindClear }}" title="إزالة" style="cursor:pointer;font-size:13px;line-height:1;color:var(--ink-4)">×</span>
+            </span>
+          </sc-if>
+
+          <div style="display:flex;align-items:flex-end;gap:7px">
+            <span style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:none">
+              <sc-for list="{{ composer.actions }}" as="a" hint-placeholder-count="0">
+                <span onClick="{{ a.onPick }}" title="{{ a.title }}" style="width:34px;height:34px;border-radius:50%;background:{{ a.bg }};color:{{ a.fg }};border:1px solid {{ a.bd }};display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none" style-hover="filter:brightness(.95)" dangerouslySetInnerHTML="{{ a.icon }}"></span>
+              </sc-for>
+            <sc-if value="{{ composer.hasAttach }}" hint-placeholder-val="{{ false }}">
+              <span onClick="{{ composer.onToggleAttach }}" title="{{ composer.attachTitle }}" style="width:40px;height:40px;border-radius:50%;background:var(--surface);border:1px solid var(--border);color:{{ composer.attachFg }};display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none;transform:{{ composer.attachRot }};transition:transform .18s ease" style-hover="background:var(--bg)"><svg width="19" height="19" viewBox="0 0 20 20" fill="none"><path d="M10 4.5v11M4.5 10h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></span>
+            </sc-if>
+            </span>
+            <span style="flex:1;min-width:0;display:flex;align-items:flex-end;gap:6px;padding:4px 6px 4px 12px;border-radius:22px;background:var(--surface);border:1px solid var(--border)">
+              <sc-if value="{{ composer.isArea }}" hint-placeholder-val="{{ false }}">
+                <textarea value="{{ composer.value }}" onInput="{{ composer.onInput }}" onKeyDown="{{ composer.onKey }}" placeholder="{{ composer.placeholder }}" rows="{{ composer.rows }}" style="flex:1;min-width:0;padding:8px 2px;border:none;background:transparent;font-size:13px;line-height:1.85;color:var(--ink);resize:none;outline:none;max-height:120px"></textarea>
+              </sc-if>
+              <sc-if value="{{ composer.isLine }}" hint-placeholder-val="{{ true }}">
+                <input type="text" value="{{ composer.value }}" onInput="{{ composer.onInput }}" onKeyDown="{{ composer.onKey }}" placeholder="{{ composer.placeholder }}" style="flex:1;min-width:0;min-height:34px;padding:0 2px;border:none;background:transparent;font-size:13px;color:var(--ink);outline:none" />
+              </sc-if>
+              <sc-if value="{{ composer.hasReset }}" hint-placeholder-val="{{ true }}">
+                <span onClick="{{ composer.onReset }}" title="{{ composer.resetLabel }}" style="width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-4);flex:none;margin-bottom:2px" style-hover="background:var(--sunken);color:var(--ink-2)"><svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></span>
+              </sc-if>
+            </span>
+            <button type="button" onClick="{{ composer.onSend }}" title="{{ composer.sendTitle }}" style="width:42px;height:42px;border-radius:50%;border:none;background:var(--pri);color:var(--on-pri);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:none" style-hover="background:var(--pri-d)"><svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3.4 10.2l12.4-5.6-4.7 12.4-1.9-4.8-5.8-2z" fill="currentColor"></path></svg></button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <sc-if value="{{ showDocs }}" hint-placeholder-val="{{ true }}">
+    <section style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
+      <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:700">{{ T.metaTitle }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border-radius:999px;background:var(--sunken);color:var(--ink-2)">Chat Thread meta</span></span>
+      <span style="font-size:12px;color:var(--ink-3);line-height:1.8">{{ T.metaHint }}</span>
+      <pre dir="ltr" style="margin:0;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:var(--ink-2);overflow:auto;max-height:300px;text-align:left">{{ docJson }}</pre>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:760,&quot;height&quot;:640},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ar&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;],&quot;tsType&quot;:&quot;'ar'|'en'&quot;},&quot;showDocs&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;meta&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;ChatThreadMeta&quot;},&quot;handlers&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, Function&gt;&quot;},&quot;value&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;embed&quot;:{&quot;editor&quot;:null,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onSend&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(text: string) =&gt; void&quot;},&quot;onDraft&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(text: string) =&gt; void&quot;},&quot;onQuick&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(value: string) =&gt; void&quot;},&quot;onReset&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+// ── Chat Thread: محادثة واتساب بفقاعات صادرة/واردة، بإطار هاتف أو بلا إطار
+// meta: { frame:'plain'|'phone', width, header:{name,sub,subMono,initials,avatarColor,badge,badgeTone,tone}, note:{text,tone},
+//         dayLabel, bubbles:[{dir:'in'|'out', text, at, tick, tone}], typing, empty:{title,text},
+//         composer:{show,placeholder,sendTitle,resetLabel,quickLabel,quick:[{label,value,mono}]} }
+// props: meta, handlers{send(text), quick(value), reset()}, value, on-send, on-quick, on-reset, theme, embed, lang, showDocs
+const DEMO = {
+  frame: 'plain',
+  header: { name: 'مؤسسة المطلق للتجارة', sub: '+966 50 123 4567', subMono: true, initials: 'مط', badge: 'مربوط بحساب', badgeTone: 'ok' },
+  note: { text: 'الردّ يُبنى من بيانات النظام — بلا إرسال فعلي', tone: 'muted' },
+  dayLabel: 'اليوم',
+  bubbles: [
+    { dir: 'in', text: 'كشف', at: '14:02' },
+    { dir: 'out', text: 'كشف حساب «مؤسسة المطلق للتجارة»\nالرصيد: 10,420.00 ر.س مدين\nعدد الحركات: 32', at: '14:02', tick: '✓✓' },
+    { dir: 'in', text: 'شكراً', at: '14:03' },
+  ],
+  composer: { placeholder: 'اكتب كما يكتب العميل…', resetLabel: 'مسح', quickLabel: 'أوامر سريعة', quick: [{ label: 'كشف', mono: true }, { label: 'رصيد', mono: true }, { label: 'فاتورة', mono: true }] },
+};
+const MEDIA = {
+  image: { icon: 'IMG', name: 'صورة مرفقة', note: 'JPG · 1.4 MB', bg: 'var(--pri-s)', fg: 'var(--pri-d)' },
+  document: { icon: 'PDF', name: 'مستند مرفق', note: 'PDF · 320 KB', bg: 'var(--dg-s)', fg: 'var(--dg-i)' },
+  audio: { icon: 'VOC', name: 'رسالة صوتية', note: '0:14', bg: 'var(--ok-s)', fg: 'var(--ok-i)' },
+  video: { icon: 'VID', name: 'مقطع فيديو', note: 'MP4 · 6.2 MB', bg: 'var(--nf-s)', fg: 'var(--nf-i)' },
+  location: { icon: 'GEO', name: 'موقع مشارَك', note: '24.7136, 46.6753', bg: 'var(--wn-s)', fg: 'var(--wn-ix)' },
+  contact: { icon: 'VCF', name: 'بطاقة جهة اتصال', note: 'vCard', bg: 'var(--sunken)', fg: 'var(--ink-2)' },
+};
+const TONES = {
+  ok: { bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)' },
+  warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)' },
+  danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--dg)' },
+  info: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)' },
+  primary: { bg: 'var(--pri-s)', fg: 'var(--pri-d)', dot: 'var(--pri)' },
+  muted: { bg: 'var(--sunken)', fg: 'var(--ink-3)', dot: 'var(--ink-4)' },
+};
+const MONO = "'IBM Plex Mono',monospace";
+const SV = (p, extra) => '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
+const ATTACH_ICONS = {
+  text: SV('<path d="M5 6h14M5 11h14M5 16h9"></path>'),
+  image: SV('<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"></rect><circle cx="9" cy="10" r="1.6"></circle><path d="M4 17l4.8-4.6 3.4 3.2 2.6-2.4L20 17"></path>'),
+  video: SV('<rect x="3" y="6" width="12.5" height="12" rx="2.5"></rect><path d="M15.5 11.2l5-2.7v7l-5-2.7z"></path>'),
+  document: SV('<path d="M13.5 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9z"></path><path d="M13.5 3.5V9H19M9 13h6M9 16.5h4"></path>'),
+  audio: SV('<path d="M12 4.5a2.4 2.4 0 0 1 2.4 2.4v4.6a2.4 2.4 0 0 1-4.8 0V6.9A2.4 2.4 0 0 1 12 4.5z"></path><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v3M9.5 20h5"></path>'),
+  location: SV('<path d="M12 21s6.5-6 6.5-11a6.5 6.5 0 1 0-13 0C5.5 15 12 21 12 21z"></path><circle cx="12" cy="10" r="2.3"></circle>'),
+  contact: SV('<circle cx="12" cy="9" r="3.2"></circle><path d="M5.5 19.5c1-3.2 3.6-4.8 6.5-4.8s5.5 1.6 6.5 4.8"></path>'),
+  poll: SV('<path d="M6 19V9M12 19V5M18 19v-6"></path>'),
+  file: SV('<path d="M13.5 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9z"></path><path d="M13.5 3.5V9H19"></path>'),
+};
+const I18N = {
+  ar: { attach: 'إرفاق', metaTitle: 'الميتا المستخدمة لهذه المحادثة', metaHint: 'المحادثة كلها ميتا: header للترويسة، bubbles للفقاعات (dir: in وارد / out صادر)، typing لمؤشر الكتابة، composer لصندوق الكتابة والأوامر السريعة، frame: phone يلفّها بإطار هاتف.', send: 'إرسال', reset: 'مسح', quick: 'أوامر سريعة', empty: 'لا رسائل بعد' },
+  en: { attach: 'Attach', metaTitle: 'Meta driving this thread', metaHint: 'The whole thread is meta: header, bubbles (dir: in/out), typing indicator, composer with quick commands, and frame: phone to wrap it in a device.', send: 'Send', reset: 'Clear', quick: 'Quick commands', empty: 'No messages yet' },
+};
+
+class Component extends DCLogic {
+  state = { text: null, width: 1280, attachOpen: false, kind: null };
+  componentDidMount() {
+    this.onResize = () => this.setState({ width: window.innerWidth });
+    window.addEventListener('resize', this.onResize); this.onResize();
+    this.scrollDown();
+  }
+  componentDidUpdate(pp) {
+    const n = (this.props.meta && this.props.meta.bubbles || []).length;
+    if (n !== this.lastN || (pp.meta && pp.meta.typing) !== (this.props.meta && this.props.meta.typing)) { this.lastN = n; this.scrollDown(); }
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); }
+  scrollDown() { setTimeout(() => { const el = this.scrollEl; if (el && el.scrollTo) el.scrollTop = el.scrollHeight; }, 30); }
+  run(name, args) {
+    const H = this.props.handlers || (this.props.meta || DEMO).handlers || {};
+    const fn = typeof this.props[name] === 'function' ? this.props[name] : H[name];
+    if (fn) { try { return fn.apply(null, args || []); } catch (e) { return undefined; } }
+    return undefined;
+  }
+
+  renderVals() {
+    const S = this.state, P = this.props, M = P.meta || DEMO;
+    const lang = P.lang ?? M.lang ?? 'ar', dir = lang === 'en' ? 'ltr' : 'rtl';
+    const L = (v) => (v && typeof v === 'object' && !Array.isArray(v)) ? (v[lang] ?? v.ar ?? v.en ?? '') : (v == null ? '' : String(v));
+    const theme = P.theme || M.theme || 'light';
+    const T = I18N[lang] || I18N.ar;
+    const embed = !!P.embed;
+    const isMobile = S.width < 640;
+    const isPhone = (M.frame || 'plain') === 'phone';
+    const tone = (k) => TONES[k] || TONES.muted;
+
+    const H = M.header || {};
+    const headTone = H.tone ? tone(H.tone) : null;
+    const badgeTn = tone(H.badgeTone || 'muted');
+    const nt = M.note ? tone(M.note.tone || 'muted') : null;
+    const C = M.composer || {};
+    const kindKey = P.kind !== undefined ? P.kind : S.kind;
+    const kind = kindKey ? ((C.attach || []).find((a) => a.key === kindKey) || { key: kindKey, label: kindKey }) : null;
+    const kindTone = kind && kind.tone ? tone(kind.tone) : TONES.primary;
+    const text = S.text ?? P.value ?? '';
+    const send = (raw) => {
+      const v = raw !== undefined ? raw : text;
+      if (!String(v).trim()) return;
+      this.setState({ text: '' });
+      this.run('onSend', [String(v).trim()]) ?? this.run('send', [String(v).trim()]);
+    };
+
+    const bubbles = (M.bubbles || []).map((b) => {
+      const out = b.dir === 'out';
+      const bt = b.tone ? tone(b.tone) : null;
+      const md = b.kind ? (MEDIA[b.kind] || MEDIA.document) : null;
+      const tg = b.tag ? tone(b.tagTone || 'info') : null;
+      return {
+        text: L(b.text), align: out ? 'flex-end' : 'flex-start', metaAlign: out ? 'flex-end' : 'flex-start',
+        gapBottom: b.reaction ? '10px' : '0',
+        hasText: String(L(b.text) || '').trim() !== '',
+        hasTag: !!b.tag, tag: L(b.tag), tagBg: tg ? tg.bg : 'transparent', tagFg: tg ? tg.fg : 'var(--ink-3)',
+        isImage: b.kind === 'image', isFile: !!md && b.kind !== 'image',
+        mediaIcon: md ? md.icon : '', mediaBg: md ? md.bg : 'var(--sunken)', mediaFg: md ? md.fg : 'var(--ink-3)',
+        mediaName: L(b.mediaName) || (md ? md.name : ''), mediaNote: L(b.mediaNote) || (md ? md.note : ''),
+        hasReaction: !!b.reaction, reaction: b.reaction || '',
+        hasReactionCount: !!b.reactionCount && b.reactionCount > 1, reactionCount: b.reactionCount || '',
+        radius: out ? '12px 12px 3px 12px' : '12px 12px 12px 3px',
+        bg: bt ? bt.bg : (out ? 'var(--pri-s)' : 'var(--surface)'),
+        bd: bt ? bt.dot : (out ? 'var(--pri-sb)' : 'var(--border)'),
+        at: typeof b.at === 'number' ? new Date(b.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : L(b.at),
+        tick: L(b.tick),
+      };
+    });
+
+    return {
+      dir, theme, T, showDocs: (P.showDocs ?? M.showDocs) !== false,
+      rootMinH: embed ? 'auto' : '100vh', rootBg: embed ? 'transparent' : 'var(--bg)',
+      dn: { pagePad: embed ? '0' : (isMobile ? '12px' : '20px'), gap: embed ? '0' : '16px', minH: embed ? '0' : (isPhone ? '190px' : '200px'), bubbleMax: isPhone ? '86%' : '78%' },
+      frame: isPhone
+        ? { isPhone: true, align: 'center', flex: 'none', width: M.width || '260px', radius: '16px', border: '6px solid var(--ink)', shadow: 'var(--shadow-lg)' }
+        : { isPhone: false, align: 'stretch', flex: '1 1 0%', width: M.width || '100%', radius: '8px', border: '1px solid var(--border)', shadow: 'none' },
+      clock: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      head: {
+        show: !!(H.name || H.initials),
+        name: L(H.name), hasSub: H.sub != null, sub: L(H.sub), subDir: H.subMono ? 'ltr' : dir, subFont: H.subMono ? MONO : 'inherit',
+        initials: L(H.initials) || String(L(H.name) || '').trim().slice(0, 2),
+        avBg: H.avatarColor || (isPhone ? 'var(--pri-s)' : 'var(--sunken)'), avFg: H.avatarColor ? '#fff' : (isPhone ? 'var(--pri-d)' : 'var(--ink-2)'),
+        avRadius: isPhone ? '50%' : '7px',
+        bg: isPhone ? 'var(--pri)' : (headTone ? headTone.bg : 'var(--surface)'),
+        fg: isPhone ? 'var(--on-pri)' : 'var(--ink)', subFg: isPhone ? 'var(--pri-s)' : 'var(--ink-3)',
+        hasBadge: H.badge != null, badge: L(H.badge), badgeBg: badgeTn.bg, badgeFg: badgeTn.fg, badgeDot: badgeTn.dot,
+      },
+      note: M.note ? { show: true, text: L(M.note.text), bg: nt.bg, fg: nt.fg, dot: nt.dot } : { show: false },
+      hasDay: !!M.dayLabel, dayLabel: L(M.dayLabel),
+      bubbles, typing: !!M.typing,
+      isEmpty: bubbles.length === 0 && !M.typing,
+      emptyTitle: L((M.empty || {}).title) || T.empty, emptyText: L((M.empty || {}).text),
+      scrollRef: (el) => { this.scrollEl = el; },
+      composer: {
+        show: C.show !== false,
+        actions: (C.actions || []).map((a) => {
+          const tn = tone(a.tone || 'muted');
+          return {
+            label: L(a.label), title: L(a.title || a.label), bg: tn.bg, fg: tn.fg, bd: tn.dot,
+            icon: { __html: a.iconSvg || ATTACH_ICONS[a.icon || a.key] || ATTACH_ICONS.contact },
+            onPick: () => this.run('onAction', [a.key]),
+          };
+        }),
+        value: text, placeholder: L(C.placeholder) || '', sendTitle: L(C.sendTitle) || T.send,
+        onInput: (e) => { const v = e.target.value; this.setState({ text: v }); this.run('onDraft', [v]); },
+        onKey: (e) => { if (e.key === 'Enter' && !e.shiftKey && C.multiline !== true) { e.preventDefault(); send(); } },
+        isArea: C.multiline === true, isLine: C.multiline !== true, rows: C.rows || 3,
+        onSend: () => send(),
+        hasReset: C.resetLabel !== null && C.resetLabel !== false, resetLabel: L(C.resetLabel) || T.reset,
+        onReset: () => { this.setState({ text: '' }); this.run('onReset', []) ?? this.run('reset', []); },
+        hasAttach: !!(C.attach && C.attach.length), attachTitle: L(C.attachTitle) || T.attach,
+        attachOpen: !!S.attachOpen, attachFg: S.attachOpen ? 'var(--pri-d)' : 'var(--ink-3)', attachRot: S.attachOpen ? 'rotate(45deg)' : 'none',
+        onToggleAttach: () => this.setState({ attachOpen: !S.attachOpen }),
+        attach: (C.attach || []).map((a) => {
+          const t = a.tone ? tone(a.tone) : TONES.primary;
+          return {
+            label: L(a.label), icon: { __html: ATTACH_ICONS[a.key] || ATTACH_ICONS.file }, bg: t.bg, fg: t.fg,
+            onPick: () => { this.setState({ attachOpen: false, kind: a.key }); this.run('onAttach', [a.key]); },
+          };
+        }),
+        hasKind: !!kind, kindLabel: kind ? (L(kind.label) + (kind.hint ? ' · ' + L(kind.hint) : '')) : '',
+        kindIcon: { __html: kind ? (ATTACH_ICONS[kind.key] || ATTACH_ICONS.file) : '' },
+        kindBd: kindTone.dot, kindFg: kindTone.fg,
+        onKindClear: () => { this.setState({ kind: null }); this.run('onAttach', [null]); },
+      },
+      docJson: JSON.stringify({ frame: M.frame || 'plain', header: M.header ? Object.keys(M.header) : [], bubbles: (M.bubbles || []).map((b) => ({ dir: b.dir, at: b.at })), typing: !!M.typing, composer: { quick: (C.quick || []).length } }, null, 2),
+    };
+  }
+}
+</script>
+</body>
+</html>

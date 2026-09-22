@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F6; --surface:#FFFFFF; --sunken:#EEF2F0; --border:#E3E8E6; --border-2:#C9D2CF;
+    --ink:#0F1A18; --ink-2:#33423F; --ink-3:#55645F; --ink-4:#62716D;
+    --pri:#0F7A63; --pri-d:#0A6250; --pri-s:#DFF1EC; --pri-sb:#B6DDD2; --on-pri:#FFFFFF;
+    --ok:#1A8B50; --ok-s:#E1F3E8; --ok-i:#16713F; --ok-sb:#B9E2CA;
+    --wn:#9A6C14; --wn-s:#FBF1DC; --wn-i:#8A6116; --wn-sb:#EFDCB4;
+    --dg:#C9524B; --dg-s:#FBEAE8; --dg-i:#A93A34; --dg-sb:#F2CBC7;
+    --nf:#2568AF; --nf-s:#E4EFFA; --nf-i:#1F5A97; --nf-sb:#C2DCF2;
+    --c-sent:#8FC0E4; --c-deliv:#2E7FD1; --c-read:#22A7C9; --c-queued:#EDA93E; --c-failed:#E0615A;
+    --skel-a:#E4EAE8; --skel-b:#EFF3F2;
+    --shadow-sm:0 1px 2px rgba(23,33,31,.06); --shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);
+  }
+  [data-theme="dark"]{
+    --bg:#0E1513; --surface:#14201D; --sunken:#1B2926; --border:#243531; --border-2:#334742;
+    --ink:#EAF2F0; --ink-2:#C4D2CE; --ink-3:#9AAAA6; --ink-4:#7E8F8B;
+    --pri:#2FA98C; --pri-d:#49C3A5; --pri-s:#16302A; --pri-sb:#23493F; --on-pri:#04150F;
+    --ok:#35A96A; --ok-s:#132A1E; --ok-i:#7FD3A3; --ok-sb:#1E4531;
+    --wn:#C79436; --wn-s:#2C2314; --wn-i:#E0BC78; --wn-sb:#4A3A1B;
+    --dg:#D9736C; --dg-s:#2E1A19; --dg-i:#F0A8A2; --dg-sb:#4C2A28;
+    --nf:#4A8ED0; --nf-s:#141F2C; --nf-i:#9CC5EC; --nf-sb:#25405C;
+    --c-sent:#6FA6D8; --c-deliv:#3E82CC; --c-read:#37A9C9; --c-queued:#D9A33A; --c-failed:#DE6F68;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-lg:0 18px 40px -22px rgba(0,0,0,.7);
+    --skel-a:#1E2C31; --skel-b:#28373C;
+    color-scheme:dark;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  .ch-sb{scrollbar-width:thin;scrollbar-color:var(--border-2) transparent;}
+  .ch-sb::-webkit-scrollbar{width:8px;height:8px;}
+  .ch-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:999px;}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important;}}
+  .ch-sk{background:linear-gradient(90deg,var(--skel-a) 25%,var(--skel-b) 50%,var(--skel-a) 75%);background-size:200% 100%;animation:chSk 1.4s linear infinite;border-radius:6px;}
+  @keyframes chSk{to{background-position:-200% 0}}
+</style>
+</helmet>
+
+<div dir="{{ dir }}" data-theme="{{ theme }}" style="min-height:{{ rootMinH }};background:{{ rootBg }};color:var(--ink);font-family:{{ font }};padding:{{ pad }};display:flex;flex-direction:column;gap:14px">
+
+  <div style="display:grid;grid-template-columns:{{ cols }};gap:14px;align-items:stretch">
+    <sc-for list="{{ charts }}" as="c" hint-placeholder-count="2">
+      <section style="display:flex;flex-direction:column;gap:12px;padding:{{ cardPad }};min-width:0;border-radius:12px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);grid-column:{{ c.span }}">
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+            <span style="font-size:14px;font-weight:700;line-height:1.35">{{ c.title }}</span>
+            <sc-if value="{{ c.hasNote }}" hint-placeholder-val="{{ true }}"><span style="font-size:11.5px;color:var(--ink-3)">{{ c.note }}</span></sc-if>
+          </span>
+          <span style="display:flex;align-items:center;gap:10px;flex:none">
+            <sc-if value="{{ c.hasTotal }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;letter-spacing:-.02em;color:{{ c.totalFg }}">{{ c.total }}</span></sc-if>
+            <sc-if value="{{ c.hasCta }}" hint-placeholder-val="{{ false }}"><span onClick="{{ c.onCta }}" style="font-size:12px;font-weight:600;color:var(--pri);cursor:pointer;white-space:nowrap">{{ c.cta }}</span></sc-if>
+          </span>
+        </div>
+
+        <sc-if value="{{ c.isSkel }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <span style="display:flex;gap:12px;justify-content:center"><span class="ch-sk" style="height:10px;width:56px"></span><span class="ch-sk" style="height:10px;width:48px"></span><span class="ch-sk" style="height:10px;width:52px"></span></span>
+            <span style="display:flex;align-items:flex-end;gap:10px;height:{{ c.h }}">
+              <sc-for list="{{ c.skelBars }}" as="b" hint-placeholder-count="7"><span class="ch-sk" style="flex:1;height:{{ b }}"></span></sc-for>
+            </span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ c.hasLegend }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:14px">
+            <sc-for list="{{ c.legend }}" as="g" hint-placeholder-count="5">
+              <span onClick="{{ g.onToggle }}" style="display:flex;align-items:center;gap:6px;font-size:11px;color:{{ g.fg }};cursor:pointer;opacity:{{ g.opacity }}"><span style="width:8px;height:8px;border-radius:2px;background:{{ g.color }};flex:none"></span>{{ g.label }}</span>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ c.isStacked }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;align-items:flex-end;gap:12px;height:{{ c.h }}">
+            <div style="display:flex;flex-direction:column;justify-content:space-between;height:100%;padding-bottom:26px;flex:none;text-align:end">
+              <sc-for list="{{ c.yTicks }}" as="y" hint-placeholder-count="4"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-4)">{{ y }}</span></sc-for>
+            </div>
+            <div style="flex:1;min-width:0;display:flex;align-items:flex-end;gap:{{ c.barGap }};height:100%">
+              <sc-for list="{{ c.buckets }}" as="b" hint-placeholder-count="7">
+                <div onClick="{{ b.onClick }}" title="{{ b.title }}" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end;cursor:{{ b.cursor }}">
+                  <div style="width:100%;max-width:{{ c.barMax }};display:flex;flex-direction:column;border-radius:6px 6px 2px 2px;overflow:hidden;height:{{ b.h }};transition:height .45s cubic-bezier(.22,.61,.36,1)">
+                    <sc-for list="{{ b.parts }}" as="p" hint-placeholder-count="3"><div style="flex:{{ p.flex }};background:{{ p.color }};min-height:{{ p.minH }}"></div></sc-for>
+                  </div>
+                  <span style="font-size:11px;color:var(--ink-3);white-space:nowrap">{{ b.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ c.isBreakdown }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column">
+            <sc-for list="{{ c.rows }}" as="r" hint-placeholder-count="5">
+              <div onClick="{{ r.onClick }}" style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) 46px 40px;gap:10px;align-items:center;padding:8px 4px;border-radius:7px;cursor:{{ r.cursor }};min-width:0" style-hover="background:var(--sunken)">
+                <span title="{{ r.label }}" style="font-size:12.5px;color:var(--ink-2);line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.label }}</span>
+                <span style="height:8px;border-radius:999px;background:var(--sunken);overflow:hidden"><span style="display:block;width:{{ r.w }};height:100%;border-radius:999px;background:{{ r.color }};transition:width .45s cubic-bezier(.22,.61,.36,1)"></span></span>
+                <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);text-align:left">{{ r.pct }}</span>
+                <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;text-align:left;color:{{ r.valueFg }}">{{ r.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ c.isEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:6px;padding:20px 14px;border-radius:12px;background:{{ c.emptyBg }};border:1px solid {{ c.emptyBd }}">
+            <span style="font-size:13.5px;font-weight:600;color:{{ c.emptyFg }}">{{ c.emptyTitle }}</span>
+            <span style="font-size:12px;color:{{ c.emptyFg }};line-height:1.75;text-wrap:pretty">{{ c.emptyText }}</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ c.hasFooter }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border)">
+            <sc-for list="{{ c.footer }}" as="ft" hint-placeholder-count="2">
+              <span style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                <span style="font-size:11px;color:var(--ink-4)">{{ ft.label }}</span>
+                <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:{{ ft.fg }};text-align:start">{{ ft.value }}</span>
+              </span>
+            </sc-for>
+          </div>
+        </sc-if>
+      </section>
+    </sc-for>
+  </div>
+
+  <sc-if value="{{ showDocs }}" hint-placeholder-val="{{ true }}">
+    <section style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
+      <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:700">{{ T.metaTitle }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border-radius:999px;background:var(--sunken);color:var(--ink-2)">Charts meta</span></span>
+      <span style="font-size:12px;color:var(--ink-3);line-height:1.8;text-wrap:pretty">{{ T.metaHint }}</span>
+      <pre dir="ltr" class="ch-sb" style="margin:0;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:var(--ink-2);overflow:auto;max-height:280px;text-align:left">{{ docJson }}</pre>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;,&quot;auto&quot;],&quot;tsType&quot;:&quot;'light'|'dark'|'auto'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ar&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;],&quot;tsType&quot;:&quot;'ar'|'en'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;cols&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:12,&quot;min&quot;:1,&quot;max&quot;:12,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;breakpoint&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:780,&quot;min&quot;:560,&quot;max&quot;:1000,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;showDocs&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;embed&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;meta&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;ChartsMeta&quot;},&quot;handlers&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, Function&gt;&quot;}}">
+// ── ميتا الرسوم الموسّعة
+// chart: { kind:'stacked'|'breakdown', title, note, total, cta, action, span, height,
+//          legend:[{key,label,color}], buckets:[{label, values:{key:n}, action}],   ← stacked
+//          rows:[{label,value,pct,tone,action}], empty:{title,text,tone} }          ← breakdown
+const CHARTS_META = {
+  cols: 12, pad: 0,
+  handlers: { openList: (k) => 'فتح السجل: ' + (k || 'الكل'), openErrors: (k) => 'تصفية على الخطأ: ' + k },
+  charts: [
+    {
+      kind: 'stacked', span: 8, height: 210, title: { ar: 'حجم الرسائل — الأسبوع', en: 'Message volume — week' },
+      total: '985', cta: { ar: 'عرض الكل', en: 'View all' }, action: 'openList',
+      legend: [
+        { key: 'read', label: { ar: 'مقروء', en: 'Read' }, color: 'var(--c-read)' },
+        { key: 'delivered', label: { ar: 'مستلم', en: 'Delivered' }, color: 'var(--c-deliv)' },
+        { key: 'sent', label: { ar: 'مرسل', en: 'Sent' }, color: 'var(--c-sent)' },
+        { key: 'queued', label: { ar: 'قيد الإرسال', en: 'Queued' }, color: 'var(--c-queued)' },
+        { key: 'failed', label: { ar: 'فشل', en: 'Failed' }, color: 'var(--c-failed)' },
+      ],
+      buckets: [
+        { label: { ar: 'الأحد', en: 'Sun' }, values: { read: 52, delivered: 31, sent: 18, queued: 9, failed: 6 } },
+        { label: { ar: 'الاثنين', en: 'Mon' }, values: { read: 71, delivered: 38, sent: 22, queued: 7, failed: 11 } },
+        { label: { ar: 'الثلاثاء', en: 'Tue' }, values: { read: 64, delivered: 29, sent: 14, queued: 11, failed: 9 } },
+        { label: { ar: 'الأربعاء', en: 'Wed' }, values: { read: 88, delivered: 44, sent: 26, queued: 12, failed: 14 } },
+        { label: { ar: 'الخميس', en: 'Thu' }, values: { read: 76, delivered: 41, sent: 19, queued: 8, failed: 12 } },
+        { label: { ar: 'الجمعة', en: 'Fri' }, values: { read: 43, delivered: 22, sent: 11, queued: 5, failed: 7 } },
+        { label: { ar: 'السبت', en: 'Sat' }, values: { read: 69, delivered: 36, sent: 21, queued: 10, failed: 8 } },
+      ],
+    },
+    {
+      kind: 'breakdown', span: 4, title: { ar: 'الفشل حسب نوع الخطأ', en: 'Failures by error type' },
+      cta: { ar: 'عرض الكل', en: 'View all' }, action: 'openList', tone: 'danger',
+      rows: [
+        { label: { ar: 'رقم غير مسجّل بواتساب', en: 'Not a WhatsApp number' }, value: 38, action: 'openErrors' },
+        { label: { ar: 'الجهاز مفصول', en: 'Device disconnected' }, value: 27, action: 'openErrors' },
+        { label: { ar: 'انتهاء المهلة', en: 'Timeout' }, value: 14, action: 'openErrors' },
+        { label: { ar: 'رفض من المنصة', en: 'Platform rejected' }, value: 9, action: 'openErrors' },
+        { label: { ar: 'قالب غير صالح', en: 'Invalid template' }, value: 5, action: 'openErrors' },
+      ],
+      empty: { title: { ar: 'لا فشل في هذه الفترة', en: 'No failures in this period' }, text: { ar: 'كل ما أُرسل وصل. جرّب فترة أوسع إن كنت تتابع خطأً قديماً.', en: 'Everything sent was delivered. Widen the period to trace an older error.' }, tone: 'ok' },
+      footer: [
+        { label: { ar: 'إجمالي الفشل', en: 'Total failures' }, value: '93', tone: 'danger' },
+        { label: { ar: 'نسبة الفشل', en: 'Failure rate' }, value: '9.4%', tone: 'danger' },
+      ],
+    },
+  ],
+};
+
+const FALLBACK = {
+  FONT: { ar: "'IBM Plex Sans Arabic',system-ui,sans-serif", en: "'IBM Plex Sans','IBM Plex Sans Arabic',system-ui,sans-serif" },
+  TONE: { ok: { bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', bd: 'var(--ok-sb)' }, warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', bd: 'var(--wn-sb)' }, danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--dg)', bd: 'var(--dg-sb)' }, info: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)', bd: 'var(--nf-sb)' }, muted: { bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--ink-4)', bd: 'var(--border)' } },
+};
+const EXTRA = {
+  ar: { metaTitle: 'الميتا المستخدمة لهذه الرسوم', metaHint: 'kind: stacked (أعمدة مركّبة بمفتاح ألوان ومحور رأسي، النقر على العمود يمرّر تسميته) أو breakdown (صفوف: تسمية + شريط + نسبة + عدد، مع حالة «لا فشل» عند خلو البيانات). span يحدد عرض الرسم داخل شبكة cols.' },
+  en: { metaTitle: 'Meta driving these charts', metaHint: 'kind: stacked (stacked columns with a colour key and y-axis; clicking a column passes its label) or breakdown (rows: label + bar + share + count, with an empty state when there is no data). span sets the chart width inside the cols grid.' },
+};
+
+class Component extends DCLogic {
+  state = { theme: null, lang: null, off: {}, width: 1280 };
+  componentDidMount() { this.onResize = () => this.setState({ width: window.innerWidth }); window.addEventListener('resize', this.onResize); this.onResize(); }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); }
+  meta() { return this.props.meta || CHARTS_META; }
+  run(spec, args) {
+    const H = this.props.handlers || this.meta().handlers || {};
+    const fn = typeof spec === 'function' ? spec : H[spec];
+    if (fn) { try { return fn.apply(null, args || []); } catch (e) { return String(e && e.message); } }
+    return undefined;
+  }
+  nice(max) { if (max <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(max))); const s = [1, 2, 2.5, 5, 10].find((x) => x * p >= max) || 10; return s * p; }
+
+  renderVals() {
+    const K = window.UIKit || FALLBACK, S = this.state, P = this.props, M = this.meta();
+    const lang = S.lang ?? P.lang ?? M.lang ?? 'ar', rtl = lang !== 'en', dir = rtl ? 'rtl' : 'ltr';
+    const L = (x) => (K.L ? K.L(lang, x) : ((x && x[lang]) || x || ''));
+    const pref = S.theme ?? P.theme ?? M.theme ?? 'light';
+    let sysDark = false; try { sysDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) {}
+    const theme = pref === 'auto' ? (sysDark ? 'dark' : 'light') : pref;
+    const isMobile = S.width < (P.breakpoint ?? 780);
+    const TONE = K.TONE || FALLBACK.TONE;
+    const tone = (k) => TONE[k] || TONE.muted;
+    const T = { ...EXTRA[lang] };
+    const embed = !!P.embed;
+    const n = (v) => Number(v || 0).toLocaleString('en-US');
+    const colsN = P.cols ?? M.cols ?? 12;
+
+    const loading = !!P.loading;
+    const SKEL_H = ['62%', '84%', '48%', '96%', '72%', '40%', '88%'];
+    const charts = (M.charts || []).map((c, ci) => {
+      if (loading) return { span: isMobile ? 'auto' : 'span ' + Math.min(colsN, c.span || colsN), title: L(c.title), hasNote: false, hasTotal: false, hasCta: false, hasLegend: false, legend: [], isSkel: true, isStacked: false, isBreakdown: false, isEmpty: false, hasFooter: false, footer: [], buckets: [], yTicks: [], rows: [], h: (c.height || 210) + 'px', skelBars: SKEL_H };
+      const isStacked = (c.kind || 'stacked') === 'stacked';
+      const legend = (c.legend || []).map((g) => {
+        const on = !S.off[ci + ':' + g.key];
+        return { key: g.key, label: L(g.label), color: g.color || tone(g.tone).dot, fg: on ? 'var(--ink-3)' : 'var(--ink-4)', opacity: on ? '1' : '.45', on, onToggle: () => this.setState((st) => ({ off: { ...st.off, [ci + ':' + g.key]: on } })) };
+      });
+      const activeKeys = legend.filter((g) => g.on).map((g) => g.key);
+      let buckets = [], yTicks = [], rows = [], isEmpty = false;
+
+      if (isStacked) {
+        const raw = (c.buckets || []).map((b) => {
+          const vals = b.values || {};
+          const total = activeKeys.reduce((a, k2) => a + (Number(vals[k2]) || 0), 0);
+          return { label: L(b.label), vals, total, action: b.action };
+        });
+        const maxTotal = Math.max(1, ...raw.map((b) => b.total));
+        const top = this.nice(maxTotal);
+        yTicks = [top, Math.round(top * 0.66), Math.round(top * 0.33), 0].map((v) => n(v));
+        buckets = raw.map((b) => ({
+          label: b.label, h: Math.max(4, Math.round((b.total / top) * 100)) + '%',
+          title: b.label + ' · ' + n(b.total),
+          cursor: (b.action || c.action) ? 'pointer' : 'default',
+          onClick: (b.action || c.action) ? () => this.run(b.action || c.action, [b.label]) : undefined,
+          parts: activeKeys.map((k2) => {
+            const g = legend.find((x) => x.key === k2) || {};
+            const v = Number(b.vals[k2]) || 0;
+            return { flex: v, color: g.color, minH: v > 0 ? '2px' : '0' };
+          }).filter((p) => p.flex > 0),
+        }));
+        isEmpty = raw.every((b) => b.total === 0);
+      } else {
+        const src = (c.rows || []).map((r) => ({ label: L(r.label), value: Number(r.value) || 0, tone: r.tone || c.tone || 'danger', action: r.action }));
+        const total = src.reduce((a, r) => a + r.value, 0);
+        const max = Math.max(1, ...src.map((r) => r.value));
+        rows = src.map((r) => ({
+          label: r.label, value: n(r.value), valueFg: 'var(--ink)',
+          pct: total ? Math.round((r.value / total) * 100) + '%' : '0%',
+          w: Math.round((r.value / max) * 100) + '%', color: tone(r.tone).dot,
+          cursor: r.action ? 'pointer' : 'default', onClick: r.action ? () => this.run(r.action, [r.label]) : undefined,
+        }));
+        isEmpty = total === 0;
+      }
+
+      const em = c.empty || {};
+      const emTone = tone(em.tone || 'ok');
+      return {
+        span: isMobile ? 'auto' : 'span ' + Math.min(colsN, c.span || colsN),
+        title: L(c.title), hasNote: !!c.note, note: L(c.note),
+        hasTotal: c.total != null, total: L(c.total), totalFg: c.totalTone ? tone(c.totalTone).fg : 'var(--ink)',
+        hasCta: !!c.cta, cta: L(c.cta), onCta: () => this.run(c.action, []),
+        hasLegend: isStacked && legend.length > 0, legend,
+        isSkel: false, skelBars: SKEL_H, isStacked: isStacked && !isEmpty, isBreakdown: !isStacked && !isEmpty,
+        h: (c.height || 210) + 'px', barGap: isMobile ? '6px' : '12px', barMax: isMobile ? '34px' : '52px',
+        buckets, yTicks, rows,
+        isEmpty: isEmpty && !!c.empty, emptyTitle: L(em.title), emptyText: L(em.text), emptyBg: emTone.bg, emptyBd: emTone.bd, emptyFg: emTone.fg,
+        hasFooter: (c.footer || []).length > 0,
+        footer: (c.footer || []).map((ft) => ({ label: L(ft.label), value: L(ft.value), fg: ft.tone ? tone(ft.tone).fg : 'var(--ink)' })),
+      };
+    });
+
+    return {
+      dir, theme, font: (K.FONT || FALLBACK.FONT)[lang], T,
+      rootMinH: embed ? 'auto' : '100vh', rootBg: embed ? 'transparent' : 'var(--bg)',
+      pad: embed ? '0' : (isMobile ? '14px' : '24px'),
+      cardPad: isMobile ? '14px' : '16px',
+      cols: isMobile ? 'minmax(0,1fr)' : 'repeat(' + colsN + ',minmax(0,1fr))',
+      charts,
+      showDocs: (P.showDocs ?? M.showDocs) !== false,
+      docJson: JSON.stringify({ cols: colsN, charts: (M.charts || []).map((c) => ({ kind: c.kind, span: c.span, title: c.title, legend: (c.legend || []).map((g) => g.key), buckets: (c.buckets || []).length, rows: (c.rows || []).length, footer: (c.footer || []).length })) }, null, 2),
+    };
+  }
+}
+</script>
+</body>
+</html>

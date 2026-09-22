@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F6; --surface:#FFFFFF; --sunken:#EEF2F0; --border:#E3E8E6; --border-2:#C9D2CF;
+    --ink:#0F1A18; --ink-2:#33423F; --ink-3:#55645F; --ink-4:#62716D;
+    --pri:#0F7A63; --pri-d:#0A6250; --pri-s:#DFF1EC; --pri-sb:#B6DDD2; --on-pri:#FFFFFF;
+    --ok:#1A8B50; --ok-s:#E1F3E8; --ok-i:#16713F; --ok-sb:#B9E2CA;
+    --wn:#9A6C14; --wn-s:#FBF1DC; --wn-i:#8A6116; --wn-sb:#EFDCB4;
+    --dg:#C9524B; --dg-s:#FBEAE8; --dg-i:#A93A34; --dg-sb:#F2CBC7;
+    --nf:#2568AF; --nf-s:#E4EFFA; --nf-i:#1F5A97; --nf-sb:#C2DCF2;
+    --shadow-sm:0 1px 2px rgba(23,33,31,.06);
+    --shadow-md:0 8px 20px -14px rgba(23,33,31,.4);
+    --shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);
+  }
+  [data-theme="dark"]{
+    --bg:#0E1513; --surface:#14201D; --sunken:#1B2926; --border:#243531; --border-2:#334742;
+    --ink:#EAF2F0; --ink-2:#C4D2CE; --ink-3:#9AAAA6; --ink-4:#7E8F8B;
+    --pri:#2FA98C; --pri-d:#49C3A5; --pri-s:#16302A; --pri-sb:#23493F; --on-pri:#04150F;
+    --ok:#35A96A; --ok-s:#132A1E; --ok-i:#7FD3A3; --ok-sb:#1E4531;
+    --wn:#C79436; --wn-s:#2C2314; --wn-i:#E0BC78; --wn-sb:#4A3A1B;
+    --dg:#D9736C; --dg-s:#2E1A19; --dg-i:#F0A8A2; --dg-sb:#4C2A28;
+    --nf:#4A8ED0; --nf-s:#141F2C; --nf-i:#9CC5EC; --nf-sb:#25405C;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:0 8px 20px -14px rgba(0,0,0,.6);
+    --shadow-lg:0 18px 40px -22px rgba(0,0,0,.7);
+    color-scheme:dark;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,select,textarea,button{font-family:inherit;}
+  .wz-i:focus{border-color:var(--pri) !important;box-shadow:0 0 0 3px var(--pri-s);}
+  .wz-sb{scrollbar-width:thin;scrollbar-color:var(--border-2) transparent;}
+  .wz-sb::-webkit-scrollbar{width:8px;height:8px;}
+  .wz-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:999px;}
+  @keyframes wzPop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  @keyframes wzStep{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes wzFade{from{opacity:0}to{opacity:1}}
+  [data-wz-tap]{transition:background .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .12s ease;}
+  [data-wz-tap]:active{transform:translateY(1px);}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important;}}
+  @keyframes wzModal{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<div dir="{{ dir }}" data-theme="{{ theme }}" style="min-height:{{ rootMinH }};background:{{ rootBg }};color:var(--ink);font-family:{{ font }};padding:{{ dn.pagePad }};display:flex;flex-direction:column;align-items:center;gap:{{ dn.secGap }}">
+
+  <sc-if value="{{ vb.show }}" hint-placeholder-val="{{ true }}">
+    <div class="wz-sb" style="width:100%;max-width:{{ maxW }};display:flex;align-items:center;gap:8px;padding:8px;border-radius:12px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow-x:auto;flex:none">
+      <span style="font-size:11px;font-weight:600;color:var(--ink-4);padding:0 6px;white-space:nowrap;flex:none">{{ vb.label }}</span>
+      <sc-for list="{{ vb.items }}" as="o" hint-placeholder-count="9">
+        <span data-wz-tap="1" onClick="{{ o.onPick }}" title="{{ o.hint }}" style="display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:0 11px;border-radius:999px;background:{{ o.bg }};color:{{ o.fg }};border:1px solid {{ o.bd }};font-size:12px;font-weight:{{ o.weight }};cursor:pointer;white-space:nowrap;flex:none" style-hover="border-color:var(--pri-sb)">{{ o.label }}</span>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ md.backdrop }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ md.close }}" style="position:fixed;inset:0;z-index:60;background:rgba(15,20,19,.5);backdrop-filter:blur(2px)"></div>
+  </sc-if>
+
+  <sc-if value="{{ md.reopen }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:32px;border-radius:14px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm)">
+      <span style="font-size:13px;color:var(--ink-3)">{{ md.closedText }}</span>
+      <button type="button" onClick="{{ md.open }}" style="min-height:38px;padding:0 18px;border-radius:8px;background:var(--pri);color:var(--on-pri);border:none;font-size:13px;font-weight:600;cursor:pointer">{{ md.reopenLabel }}</button>
+    </div>
+  </sc-if>
+
+  <div class="wz-sb" style="position:{{ shell.pos }};top:{{ shell.top }};left:{{ shell.left }};transform:{{ shell.tf }};z-index:{{ shell.z }};width:100%;max-width:{{ shell.maxW }};max-height:{{ shell.maxH }};overflow:{{ shell.overflow }};display:{{ shell.display }};flex-direction:column;gap:{{ dn.secGap }};background:{{ shell.bg }};border:{{ shell.bd }};border-radius:{{ shell.radius }};box-shadow:{{ shell.shadow }};padding:{{ shell.pad }};animation:{{ shell.anim }}">
+
+    <sc-if value="{{ md.show }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:flex-start;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--border)">
+        <span style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0">
+          <span style="font-size:16px;font-weight:700;line-height:1.3">{{ head.title }}</span>
+          <sc-if value="{{ head.hasSub }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;color:var(--ink-3);line-height:1.6;text-wrap:pretty">{{ head.sub }}</span></sc-if>
+        </span>
+        <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--ink-3);flex:none;padding-top:3px">{{ head.counter }}</span>
+        <span onClick="{{ md.close }}" title="{{ T.close }}" style="width:30px;height:30px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3);flex:none;font-size:17px;line-height:1" style-hover="background:var(--sunken);color:var(--ink)">×</span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ head.show }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap">
+        <span style="display:flex;flex-direction:column;gap:4px;min-width:0">
+          <span style="font-size:{{ dn.h1 }};font-weight:700;line-height:1.25;letter-spacing:-.2px">{{ head.title }}</span>
+          <sc-if value="{{ head.hasSub }}" hint-placeholder-val="{{ true }}"><span style="font-size:13px;color:var(--ink-3);line-height:1.7;text-wrap:pretty;max-width:66ch">{{ head.sub }}</span></sc-if>
+        </span>
+        <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--ink-2);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:5px 11px;flex:none;box-shadow:var(--shadow-sm)">{{ head.counter }}</span>
+      </div>
+    </sc-if>
+
+    <div style="display:grid;grid-template-columns:{{ grid.cols }};gap:{{ grid.gap }};align-items:{{ grid.align }};min-width:0">
+
+      <sc-if value="{{ rail.show }}" hint-placeholder-val="{{ true }}">
+        <aside style="display:flex;flex-direction:column;gap:{{ rail.gap }};background:{{ rail.bg }};border:{{ rail.bd }};border-radius:{{ rail.radius }};padding:{{ rail.pad }};position:{{ rail.pos }};top:16px;align-self:{{ rail.selfAlign }};min-height:{{ rail.minH }};box-shadow:{{ rail.shadow }}">
+          <sc-if value="{{ rail.hasBrand }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:10px;padding-bottom:6px">
+              <span style="width:34px;height:34px;border-radius:9px;background:{{ rail.brandBg }};color:{{ rail.brandFg }};display:inline-flex;align-items:center;justify-content:center;flex:none" dangerouslySetInnerHTML="{{ rail.brandIcon }}"></span>
+              <span style="display:flex;flex-direction:column;min-width:0"><span style="font-size:13px;font-weight:700;color:{{ rail.titleFg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ rail.brandName }}</span><span style="font-size:11px;color:{{ rail.subFg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ rail.brandSub }}</span></span>
+            </div>
+          </sc-if>
+          <span style="font-size:11px;font-weight:600;color:{{ rail.labelFg }};padding:0 4px 2px">{{ T.stepsTitle }}</span>
+          <sc-for list="{{ rail.items }}" as="s" hint-placeholder-count="5">
+            <div data-wz-tap="1" onClick="{{ s.onJump }}" title="{{ s.label }}" style="display:flex;align-items:flex-start;gap:11px;padding:5px 6px;border-radius:9px;cursor:{{ s.cursor }};background:{{ s.rowBg }};transition:background .18s ease">
+              <span style="display:flex;flex-direction:column;align-items:center;flex:none;width:26px;align-self:stretch">
+                <span style="width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;background:{{ s.dotBg }};color:{{ s.dotFg }};border:1px solid {{ s.dotBd }};box-shadow:{{ s.dotRing }}">
+                  <sc-if value="{{ s.isDone }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 20 20" fill="none"><path d="M5 10.5l3.5 3.5L15 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+                  <sc-if value="{{ s.showNum }}" hint-placeholder-val="{{ true }}">{{ s.num }}</sc-if>
+                </span>
+                <sc-if value="{{ s.hasLine }}" hint-placeholder-val="{{ true }}"><span style="flex:1;width:2px;min-height:18px;border-radius:2px;background:{{ s.lineBg }};margin:5px 0"></span></sc-if>
+              </span>
+              <span style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;padding-bottom:{{ s.padB }}">
+                <span style="display:flex;align-items:center;gap:6px;min-width:0">
+                  <span style="font-size:13px;font-weight:{{ s.weight }};color:{{ s.fg }};min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.label }}</span>
+                  <sc-if value="{{ s.hasErr }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="min-width:17px;height:17px;padding:0 5px;border-radius:999px;background:var(--dg);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:none">{{ s.errCount }}</span></sc-if>
+                  <sc-if value="{{ s.isOptional }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;color:{{ s.optFg }};white-space:nowrap">{{ T.optional }}</span></sc-if>
+                </span>
+                <sc-if value="{{ s.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:{{ s.subFg }};line-height:1.6;text-wrap:pretty">{{ s.sub }}</span></sc-if>
+              </span>
+            </div>
+          </sc-for>
+          <sc-if value="{{ rail.hasMeter }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top:auto;display:flex;flex-direction:column;gap:7px;padding:10px 6px 2px">
+              <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:11px;color:{{ rail.labelFg }}">{{ T.progress }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:{{ rail.titleFg }}">{{ prog.counter }}</span></span>
+              <span style="height:5px;border-radius:999px;background:{{ rail.trackBg }};overflow:hidden"><span style="display:block;height:100%;border-radius:999px;background:{{ rail.barBg }};width:{{ prog.pct }};transition:width .5s cubic-bezier(.22,.61,.36,1)"></span></span>
+            </div>
+          </sc-if>
+        </aside>
+      </sc-if>
+
+      <div style="display:flex;flex-direction:column;gap:{{ dn.secGap }};min-width:0">
+
+        <sc-if value="{{ hbar.show }}" hint-placeholder-val="{{ false }}">
+          <div class="wz-sb" style="display:flex;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;overflow-x:auto;box-shadow:var(--shadow-sm)">
+            <sc-for list="{{ hbar.items }}" as="s" hint-placeholder-count="5">
+              <span onClick="{{ s.onJump }}" style="display:flex;align-items:center;gap:9px;flex:{{ s.flex }};min-width:0;cursor:{{ s.cursor }}">
+                <span style="width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;background:{{ s.dotBg }};color:{{ s.dotFg }};border:1px solid {{ s.dotBd }};box-shadow:{{ s.dotRing }}">
+                  <sc-if value="{{ s.isDone }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 20 20" fill="none"><path d="M5 10.5l3.5 3.5L15 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+                  <sc-if value="{{ s.showNum }}" hint-placeholder-val="{{ true }}">{{ s.num }}</sc-if>
+                </span>
+                <sc-if value="{{ s.showLabel }}" hint-placeholder-val="{{ true }}"><span style="display:flex;flex-direction:column;min-width:0"><span style="font-size:12px;font-weight:{{ s.weight }};color:{{ s.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.label }}</span><sc-if value="{{ s.isOptional }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;color:var(--ink-4)">{{ T.optional }}</span></sc-if></span></sc-if>
+                <sc-if value="{{ s.hasLine }}" hint-placeholder-val="{{ true }}"><span style="flex:1;min-width:18px;height:2px;border-radius:2px;background:{{ s.lineBg }};margin:0 10px"></span></sc-if>
+              </span>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ chev.show }}" hint-placeholder-val="{{ false }}">
+          <div class="wz-sb" style="display:flex;align-items:stretch;border-radius:10px;overflow:hidden;box-shadow:var(--shadow-sm)">
+            <sc-for list="{{ chev.items }}" as="s" hint-placeholder-count="5">
+              <span onClick="{{ s.onJump }}" title="{{ s.label }}" style="flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 20px;background:{{ s.segBg }};color:{{ s.segFg }};clip-path:{{ chev.clip }};margin-inline-start:{{ s.segMs }};cursor:{{ s.cursor }};font-size:12px;font-weight:{{ s.weight }};transition:background .2s ease,color .2s ease">
+                <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;opacity:.9;flex:none">{{ s.num }}</span>
+                <span style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.label }}</span>
+              </span>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ tabs.show }}" hint-placeholder-val="{{ false }}">
+          <div class="wz-sb" style="display:flex;align-items:stretch;gap:2px;border-bottom:1px solid var(--border);overflow-x:auto">
+            <sc-for list="{{ tabs.items }}" as="s" hint-placeholder-count="5">
+              <span onClick="{{ s.onJump }}" style="display:flex;align-items:center;gap:8px;min-height:42px;padding:0 14px;border-bottom:2px solid {{ s.underline }};color:{{ s.fg }};font-size:13px;font-weight:{{ s.weight }};cursor:{{ s.cursor }};white-space:nowrap" style-hover="color:var(--ink)">
+                <span style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;background:{{ s.dotBg }};color:{{ s.dotFg }};border:1px solid {{ s.dotBd }}">
+                  <sc-if value="{{ s.isDone }}" hint-placeholder-val="{{ false }}"><svg width="11" height="11" viewBox="0 0 20 20" fill="none"><path d="M5 10.5l3.5 3.5L15 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+                  <sc-if value="{{ s.showNum }}" hint-placeholder-val="{{ true }}">{{ s.num }}</sc-if>
+                </span>
+                {{ s.label }}
+                <sc-if value="{{ s.hasErr }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="min-width:17px;height:17px;padding:0 5px;border-radius:999px;background:var(--dg);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:none">{{ s.errCount }}</span></sc-if>
+              </span>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ dots.show }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:9px">
+            <span style="display:flex;align-items:center;gap:7px">
+              <sc-for list="{{ dots.items }}" as="s" hint-placeholder-count="5">
+                <span onClick="{{ s.onJump }}" title="{{ s.label }}" style="width:{{ s.w }};height:8px;border-radius:999px;background:{{ s.pill }};cursor:{{ s.cursor }};transition:width .2s ease,background .2s ease"></span>
+              </sc-for>
+            </span>
+            <span style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:600;color:var(--ink-2)">{{ prog.title }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-4)">{{ prog.counter }}</span></span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ prog.show }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <span style="display:flex;align-items:center;gap:8px;min-width:0">
+                <span style="width:24px;height:24px;border-radius:50%;background:var(--pri);color:var(--on-pri);font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:none">{{ prog.num }}</span>
+                <span style="font-size:13px;font-weight:600;color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ prog.title }}</span>
+              </span>
+              <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);flex:none">{{ prog.counter }}</span>
+            </span>
+            <span style="height:6px;border-radius:999px;background:var(--border);overflow:hidden"><span style="display:block;height:100%;border-radius:999px;background:var(--pri);width:{{ prog.pct }};transition:width .5s cubic-bezier(.22,.61,.36,1)"></span></span>
+          </div>
+        </sc-if>
+
+        <sc-for list="{{ acc.before }}" as="s" hint-placeholder-count="0">
+          <div data-wz-tap="1" onClick="{{ s.onJump }}" style="display:flex;align-items:center;gap:11px;padding:12px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--border);cursor:{{ s.cursor }};animation:wzFade .26s ease-out both;box-shadow:var(--shadow-sm)">
+            <span style="width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;background:{{ s.dotBg }};color:{{ s.dotFg }};border:1px solid {{ s.dotBd }}">
+              <sc-if value="{{ s.isDone }}" hint-placeholder-val="{{ true }}"><svg width="13" height="13" viewBox="0 0 20 20" fill="none"><path d="M5 10.5l3.5 3.5L15 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></sc-if>
+              <sc-if value="{{ s.showNum }}" hint-placeholder-val="{{ false }}">{{ s.num }}</sc-if>
+            </span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:13px;font-weight:{{ s.weight }};color:{{ s.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.label }}</span>
+              <sc-if value="{{ s.hasSummary }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--ink-4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.summary }}</span></sc-if>
+            </span>
+            <span style="font-size:12px;font-weight:600;color:var(--pri);flex:none">{{ T.edit }}</span>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{ done.show }}" hint-placeholder-val="{{ false }}">
+          <section style="display:flex;flex-direction:column;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:{{ dn.cardPad }};text-align:center;box-shadow:var(--shadow-sm);animation:wzStep .22s ease-out">
+            <span style="width:58px;height:58px;border-radius:50%;background:var(--ok-s);color:var(--ok-i);display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--ok-sb)"><svg width="27" height="27" viewBox="0 0 20 20" fill="none"><path d="M5 10.5l3.5 3.5L15 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+            <span style="font-size:18px;font-weight:700">{{ done.title }}</span>
+            <span style="font-size:13px;color:var(--ink-3);line-height:1.75;max-width:52ch;text-wrap:pretty">{{ done.sub }}</span>
+            <sc-if value="{{ done.hasRows }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;flex-direction:column;gap:1px;width:100%;max-width:420px;background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:4px;margin-top:4px">
+                <sc-for list="{{ done.rows }}" as="r" hint-placeholder-count="2">
+                  <span style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px">
+                    <span style="font-size:12px;color:var(--ink-3)">{{ r.label }}</span>
+                    <span dir="{{ r.dir }}" style="font-size:12px;font-weight:600;color:var(--ink);font-family:{{ r.font }};min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.value }}</span>
+                  </span>
+                </sc-for>
+              </span>
+            </sc-if>
+            <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px">
+              <sc-for list="{{ done.actions }}" as="a" hint-placeholder-count="2"><button type="button" onClick="{{ a.onClick }}" style="min-height:{{ dn.btnH }};padding:0 {{ dn.btnPx }};border-radius:8px;background:{{ a.bg }};color:{{ a.fg }};border:{{ a.bd }};font-size:{{ dn.btnFs }};font-weight:600;cursor:pointer">{{ a.label }}</button></sc-for>
+            </span>
+          </section>
+        </sc-if>
+
+        <sc-if value="{{ step.show }}" hint-placeholder-val="{{ true }}">
+          <section key="{{ step.animKey }}" style="display:flex;flex-direction:column;gap:{{ dn.headGap }};background:{{ card.bg }};border:{{ card.bd }};border-radius:14px;padding:{{ card.pad }};box-shadow:{{ card.shadow }};animation:wzStep .28s cubic-bezier(.22,.61,.36,1) both">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <sc-if value="{{ step.hasIcon }}" hint-placeholder-val="{{ false }}"><span style="width:36px;height:36px;border-radius:10px;background:var(--pri-s);color:var(--pri-d);display:inline-flex;align-items:center;justify-content:center;flex:none;border:1px solid var(--pri-sb)" dangerouslySetInnerHTML="{{ step.icon }}"></span></sc-if>
+              <span style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0">
+                <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span style="font-size:{{ dn.h2 }};font-weight:700;line-height:1.35">{{ step.title }}</span>
+                  <sc-if value="{{ step.optional }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:600;color:var(--ink-3);background:var(--sunken);border:1px solid var(--border);border-radius:999px;padding:2px 9px">{{ T.optional }}</span></sc-if>
+                </span>
+                <sc-if value="{{ step.hasSub }}" hint-placeholder-val="{{ true }}"><span style="font-size:12.5px;color:var(--ink-3);line-height:1.75;text-wrap:pretty;max-width:74ch">{{ step.sub }}</span></sc-if>
+              </span>
+            </div>
+
+            <sc-if value="{{ step.hasNote }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;align-items:flex-start;gap:9px;padding:11px 13px;border-radius:11px;background:{{ step.noteBg }};border:1px solid {{ step.noteBd }}">
+                <span style="width:18px;height:18px;border-radius:50%;background:{{ step.noteDot }};color:var(--on-pri);font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:none">i</span>
+                <span style="font-size:12px;color:{{ step.noteFg }};line-height:1.75;text-wrap:pretty">{{ step.note }}</span>
+              </span>
+            </sc-if>
+
+            <sc-if value="{{ step.isChoice }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:{{ step.choiceCols }};gap:10px">
+                <sc-for list="{{ step.choices }}" as="c" hint-placeholder-count="3">
+                  <div data-wz-tap="1" onClick="{{ c.onPick }}" style="display:flex;align-items:flex-start;gap:11px;padding:15px;border-radius:12px;border:1px solid {{ c.bd }};background:{{ c.bg }};cursor:pointer;box-shadow:{{ c.shadow }}" style-hover="border-color:var(--pri-sb)">
+                    <sc-if value="{{ c.hasIcon }}" hint-placeholder-val="{{ true }}"><span style="width:36px;height:36px;border-radius:10px;background:{{ c.iconBg }};color:{{ c.iconFg }};display:inline-flex;align-items:center;justify-content:center;flex:none" dangerouslySetInnerHTML="{{ c.icon }}"></span></sc-if>
+                    <span style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0">
+                      <span style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+                        <span style="font-size:13.5px;font-weight:600;color:{{ c.titleFg }}">{{ c.title }}</span>
+                        <sc-if value="{{ c.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;font-weight:600;color:{{ c.badgeFg }};background:{{ c.badgeBg }};border-radius:999px;padding:2px 8px">{{ c.badge }}</span></sc-if>
+                      </span>
+                      <sc-if value="{{ c.hasSub }}" hint-placeholder-val="{{ true }}"><span style="font-size:12px;color:var(--ink-3);line-height:1.65;text-wrap:pretty">{{ c.sub }}</span></sc-if>
+                      <sc-if value="{{ c.hasMeta }}" hint-placeholder-val="{{ false }}"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-4);text-align:start">{{ c.meta }}</span></sc-if>
+                    </span>
+                    <span style="width:18px;height:18px;border-radius:50%;border:1px solid {{ c.radioBd }};background:{{ c.radioBg }};display:inline-flex;align-items:center;justify-content:center;flex:none;margin-top:3px"><sc-if value="{{ c.on }}" hint-placeholder-val="{{ false }}"><span style="width:8px;height:8px;border-radius:50%;background:var(--on-pri)"></span></sc-if></span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ step.isReview }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <sc-for list="{{ step.review }}" as="g" hint-placeholder-count="3">
+                  <div style="display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:11px 13px">
+                    <span style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:7px">
+                      <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:20px;height:20px;border-radius:50%;background:var(--pri-s);color:var(--pri-d);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:none">{{ g.num }}</span><span style="font-size:12.5px;font-weight:700;color:var(--ink-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ g.title }}</span></span>
+                      <span onClick="{{ g.onEdit }}" style="font-size:12px;font-weight:600;color:var(--pri);cursor:pointer;flex:none">{{ T.edit }}</span>
+                    </span>
+                    <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
+                      <span style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:6px 0;border-top:1px solid var(--border)">
+                        <span style="font-size:12px;color:var(--ink-3);flex:none">{{ r.label }}</span>
+                        <span dir="{{ r.dir }}" style="font-size:12px;font-weight:600;color:{{ r.fg }};font-family:{{ r.font }};text-align:{{ r.align }};min-width:0;text-wrap:pretty">{{ r.value }}</span>
+                      </span>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ step.isHtml }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:13px;color:var(--ink-2);line-height:1.9" dangerouslySetInnerHTML="{{ step.html }}"></div>
+            </sc-if>
+
+            <sc-if value="{{ step.hasFields }}" hint-placeholder-val="{{ true }}">
+              <div style="display:grid;grid-template-columns:{{ step.cols }};gap:{{ dn.gap }};align-items:start">
+                <sc-for list="{{ step.fields }}" as="f" hint-placeholder-count="4">
+
+                  <sc-if value="{{ f.isDivider }}" hint-placeholder-val="{{ false }}">
+                    <span style="grid-column:1/-1;display:flex;align-items:center;gap:10px;padding-top:4px"><sc-if value="{{ f.hasLabel }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:600;color:var(--ink-4);white-space:nowrap">{{ f.label }}</span></sc-if><span style="flex:1;height:1px;background:var(--border)"></span></span>
+                  </sc-if>
+
+                  <sc-if value="{{ f.isField }}" hint-placeholder-val="{{ true }}">
+                    <div data-wz-pop="{{ f.key }}" style="grid-column:{{ f.span }};min-width:0;display:flex;flex-direction:column;gap:6px;position:relative">
+                      <sc-if value="{{ f.hasLabel }}" hint-placeholder-val="{{ true }}">
+                        <span style="display:flex;align-items:center;gap:5px">
+                          <span style="font-size:{{ dn.labelFs }};font-weight:600;color:var(--ink-2);line-height:1.5">{{ f.label }}</span>
+                          <sc-if value="{{ f.required }}" hint-placeholder-val="{{ false }}"><span style="color:var(--dg-i);font-size:13px;line-height:1">*</span></sc-if>
+                          <sc-if value="{{ f.hasHint }}" hint-placeholder-val="{{ false }}"><span title="{{ f.hint }}" style="width:15px;height:15px;border-radius:50%;background:var(--sunken);color:var(--ink-3);font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:help">i</span></sc-if>
+                        </span>
+                      </sc-if>
+
+                      <sc-if value="{{ f.isInput }}" hint-placeholder-val="{{ true }}">
+                        <input class="wz-i" type="{{ f.inputType }}" dir="{{ f.vdir }}" value="{{ f.value }}" onInput="{{ f.onInput }}" placeholder="{{ f.placeholder }}" disabled="{{ f.disabled }}" style="width:100%;min-height:{{ dn.h }};padding:0 {{ dn.px }};border-radius:8px;border:1px solid {{ f.bd }};background:{{ f.inputBg }};color:var(--ink);font-size:{{ dn.fs }};font-family:{{ f.vfont }};text-align:{{ f.align }};outline:none" />
+                      </sc-if>
+
+                      <sc-if value="{{ f.isTextarea }}" hint-placeholder-val="{{ false }}">
+                        <textarea class="wz-i" value="{{ f.value }}" onInput="{{ f.onInput }}" placeholder="{{ f.placeholder }}" rows="{{ f.rows }}" disabled="{{ f.disabled }}" style="width:100%;padding:9px {{ dn.px }};border-radius:8px;border:1px solid {{ f.bd }};background:{{ f.inputBg }};color:var(--ink);font-size:{{ dn.fs }};line-height:1.7;resize:vertical;outline:none"></textarea>
+                      </sc-if>
+
+                      <sc-if value="{{ f.isSelect }}" hint-placeholder-val="{{ false }}">
+                        <span style="position:relative;display:flex;width:100%">
+                          <select class="wz-i" value="{{ f.value }}" onChange="{{ f.onInput }}" disabled="{{ f.disabled }}" style="appearance:none;width:100%;min-height:{{ dn.h }};padding-inline-start:{{ dn.px }};padding-inline-end:30px;border-radius:8px;border:1px solid {{ f.bd }};background:{{ f.inputBg }};color:{{ f.selFg }};font-size:{{ dn.fs }};outline:none;cursor:pointer">
+                            <sc-for list="{{ f.opts }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.label }}</option></sc-for>
+                          </select>
+                          <span style="position:absolute;inset-inline-end:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--ink-3);display:inline-flex"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                        </span>
+                      </sc-if>
+
+                      <sc-if value="{{ f.isPicker }}" hint-placeholder-val="{{ false }}">
+                        <span onClick="{{ f.onOpen }}" style="display:flex;align-items:center;gap:8px;width:100%;min-height:{{ dn.h }};padding:4px {{ dn.px }};border-radius:8px;border:1px solid {{ f.pickBd }};background:{{ f.inputBg }};cursor:pointer;flex-wrap:wrap">
+                          <sc-if value="{{ f.hasChips }}" hint-placeholder-val="{{ false }}">
+                            <sc-for list="{{ f.chips }}" as="c" hint-placeholder-count="2"><span style="display:inline-flex;align-items:center;gap:5px;padding:2px 4px 2px 8px;border-radius:6px;background:var(--pri-s);color:var(--pri-d);font-size:{{ dn.fsSm }};font-weight:600;flex:none">{{ c.label }}<span onClick="{{ c.onRemove }}" style="width:16px;height:16px;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer">×</span></span></sc-for>
+                          </sc-if>
+                          <sc-if value="{{ f.hasText }}" hint-placeholder-val="{{ true }}"><span style="flex:1;min-width:0;font-size:{{ dn.fs }};color:{{ f.pickFg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.pickText }}</span></sc-if>
+                          <span style="color:var(--ink-3);display:inline-flex;flex:none;transform:{{ f.chev }};transition:transform .15s"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                        </span>
+                      </sc-if>
+
+                      <sc-if value="{{ f.isSegment }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:flex;align-items:center;gap:2px;padding:2px;border-radius:8px;background:var(--sunken);border:1px solid var(--border);width:fit-content;max-width:100%;overflow-x:auto">
+                          <sc-for list="{{ f.opts }}" as="o" hint-placeholder-count="3"><span onClick="{{ o.onPick }}" style="min-height:{{ dn.hSm }};padding:0 12px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:{{ dn.fsSm }};font-weight:{{ o.weight }};color:{{ o.fg }};background:{{ o.bg }};box-shadow:{{ o.shadow }};cursor:pointer;white-space:nowrap">{{ o.label }}</span></sc-for>
+                        </span>
+                      </sc-if>
+
+                      <sc-if value="{{ f.isToggle }}" hint-placeholder-val="{{ false }}">
+                        <span onClick="{{ f.onToggle }}" style="display:inline-flex;align-items:center;gap:10px;min-height:{{ dn.h }};cursor:pointer;user-select:none;width:fit-content">
+                          <span style="width:36px;height:20px;border-radius:999px;background:{{ f.trackBg }};position:relative;transition:background .15s;flex:none"><span style="position:absolute;top:2px;inset-inline-start:{{ f.knob }};width:16px;height:16px;border-radius:50%;background:#fff;transition:inset-inline-start .15s;box-shadow:0 1px 2px rgba(0,0,0,.2)"></span></span>
+                          <span style="font-size:{{ dn.fs }};color:var(--ink-2)">{{ f.toggleText }}</span>
+                        </span>
+                      </sc-if>
+
+                      <sc-if value="{{ f.isChecks }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:flex;flex-direction:column;gap:6px">
+                          <sc-for list="{{ f.opts }}" as="o" hint-placeholder-count="3">
+                            <label style="display:flex;align-items:flex-start;gap:9px;min-height:{{ dn.hSm }};cursor:pointer;font-size:{{ dn.fs }};color:var(--ink-2);line-height:1.65"><input type="{{ f.checkType }}" checked="{{ o.on }}" onChange="{{ o.onPick }}" style="width:16px;height:16px;margin-top:3px;accent-color:var(--pri);flex:none" /><span style="min-width:0;text-wrap:pretty">{{ o.label }}</span></label>
+                          </sc-for>
+                        </span>
+                      </sc-if>
+
+                      <sc-if value="{{ f.isReadonly }}" hint-placeholder-val="{{ false }}">
+                        <span dir="{{ f.vdir }}" style="display:flex;align-items:center;min-height:{{ dn.h }};padding:0 {{ dn.px }};border-radius:8px;background:var(--sunken);border:1px solid var(--border);color:var(--ink-2);font-size:{{ dn.fs }};font-family:{{ f.vfont }};text-align:start">{{ f.value }}</span>
+                      </sc-if>
+
+                      <sc-if value="{{ f.isBadge }}" hint-placeholder-val="{{ false }}">
+                        <span style="display:inline-flex;align-items:center;gap:6px;width:fit-content;padding:4px 10px;border-radius:999px;background:{{ f.badgeBg }};border:1px solid {{ f.badgeBd }};color:{{ f.badgeFg }};font-size:{{ dn.fsSm }};font-weight:600"><span style="width:7px;height:7px;border-radius:50%;background:{{ f.badgeDot }}"></span>{{ f.value }}</span>
+                      </sc-if>
+
+                      <sc-if value="{{ f.isHtml }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:{{ dn.fs }};color:var(--ink-2);line-height:1.7" dangerouslySetInnerHTML="{{ f.html }}"></span>
+                      </sc-if>
+
+                      <sc-if value="{{ f.hasMsg }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:11px;color:{{ f.msgFg }};line-height:1.6;text-wrap:pretty">{{ f.msg }}</span>
+                      </sc-if>
+
+                      <sc-if value="{{ f.popOpen }}" hint-placeholder-val="{{ false }}">
+                        <div class="wz-sb" style="position:absolute;top:calc(100% + 4px);inset-inline-start:0;inset-inline-end:0;z-index:40;max-height:{{ dn.popMaxH }};overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-lg);padding:4px;display:flex;flex-direction:column;gap:2px;animation:wzPop .14s ease-out">
+                          <sc-if value="{{ f.hasSearch }}" hint-placeholder-val="{{ false }}">
+                            <input type="text" value="{{ f.q }}" onInput="{{ f.onQ }}" placeholder="{{ T.search }}" autoFocus="{{ true }}" style="width:100%;min-height:{{ dn.hSm }};margin-bottom:2px;padding:0 10px;border-radius:6px;border:1px solid var(--border-2);background:var(--bg);color:var(--ink);font-size:{{ dn.fsSm }};outline:none" />
+                          </sc-if>
+                          <sc-for list="{{ f.popItems }}" as="o" hint-placeholder-count="4">
+                            <span onClick="{{ o.onPick }}" style="display:flex;align-items:center;gap:9px;min-height:{{ dn.h }};padding:4px 9px;border-radius:6px;cursor:pointer;background:{{ o.bg }}" style-hover="background:var(--sunken)">
+                              <sc-if value="{{ o.hasCheck }}" hint-placeholder-val="{{ false }}"><input type="checkbox" checked="{{ o.on }}" readOnly="{{ true }}" style="width:15px;height:15px;accent-color:var(--pri);flex:none;pointer-events:none" /></sc-if>
+                              <span style="flex:1;min-width:0;font-size:{{ dn.fs }};color:{{ o.fg }};font-weight:{{ o.weight }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ o.label }}</span>
+                            </span>
+                          </sc-for>
+                          <sc-if value="{{ f.popEmpty }}" hint-placeholder-val="{{ false }}"><span style="padding:9px;font-size:{{ dn.fsSm }};color:var(--ink-4)">{{ T.none }}</span></sc-if>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-if>
+
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ step.hasError }}" hint-placeholder-val="{{ false }}">
+              <span style="display:flex;align-items:center;gap:9px;padding:11px 13px;border-radius:11px;background:var(--dg-s);border:1px solid var(--dg-sb);color:var(--dg-i);font-size:12px;font-weight:600">{{ step.errorText }}</span>
+            </sc-if>
+
+            <sc-if value="{{ nav.inCard }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:{{ nav.margin }};padding:{{ nav.pad }};border-top:1px solid var(--border)">
+                <sc-if value="{{ nav.hasBack }}" hint-placeholder-val="{{ false }}">
+                  <button type="button" onClick="{{ nav.onBack }}" style="display:inline-flex;align-items:center;gap:7px;min-height:{{ dn.btnH }};padding:0 {{ dn.btnPx }};border-radius:8px;background:var(--surface);color:var(--ink);border:1px solid var(--border-2);font-size:{{ dn.btnFs }};font-weight:600;cursor:pointer;flex:{{ dn.btnFlex }};justify-content:center"><span style="display:inline-flex;transform:{{ nav.backRot }}"><svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M12 5l-5 5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>{{ T.back }}</button>
+                </sc-if>
+                <sc-for list="{{ nav.extra }}" as="a" hint-placeholder-count="1"><button type="button" onClick="{{ a.onClick }}" style="min-height:{{ dn.btnH }};padding:0 {{ dn.btnPx }};border-radius:8px;background:{{ a.bg }};color:{{ a.fg }};border:{{ a.bd }};font-size:{{ dn.btnFs }};font-weight:600;cursor:pointer;flex:{{ dn.btnFlex }}">{{ a.label }}</button></sc-for>
+                <span style="flex:{{ nav.spacer }};min-width:0"></span>
+                <sc-if value="{{ nav.hasSkip }}" hint-placeholder-val="{{ false }}">
+                  <button type="button" onClick="{{ nav.onSkip }}" style="min-height:{{ dn.btnH }};padding:0 14px;border-radius:8px;background:transparent;color:var(--ink-3);border:none;font-size:{{ dn.btnFs }};font-weight:600;cursor:pointer">{{ T.skip }}</button>
+                </sc-if>
+                <button type="button" onClick="{{ nav.onNext }}" style="display:inline-flex;align-items:center;gap:7px;min-height:{{ dn.btnH }};padding:0 {{ dn.btnPx }};border-radius:8px;background:var(--pri);color:var(--on-pri);border:none;font-size:{{ dn.btnFs }};font-weight:600;cursor:pointer;flex:{{ dn.btnFlex }};justify-content:center;box-shadow:var(--shadow-sm)">{{ nav.nextLabel }}<sc-if value="{{ nav.hasNextIcon }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;transform:{{ nav.nextRot }}"><svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M8 5l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></sc-if></button>
+              </div>
+            </sc-if>
+          </section>
+        </sc-if>
+
+        <sc-for list="{{ acc.after }}" as="s" hint-placeholder-count="0">
+          <div data-wz-tap="1" onClick="{{ s.onJump }}" style="display:flex;align-items:center;gap:11px;padding:12px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--border);cursor:{{ s.cursor }};animation:wzFade .26s ease-out both;opacity:.82;box-shadow:var(--shadow-sm)">
+            <span style="width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;background:{{ s.dotBg }};color:{{ s.dotFg }};border:1px solid {{ s.dotBd }}">{{ s.num }}</span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+              <span style="font-size:13px;font-weight:{{ s.weight }};color:{{ s.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.label }}</span>
+              <sc-if value="{{ s.hasSub }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--ink-4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.sub }}</span></sc-if>
+            </span>
+            <sc-if value="{{ s.isOptional }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;color:var(--ink-4);flex:none">{{ T.optional }}</span></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ showDocs }}" hint-placeholder-val="{{ true }}">
+    <section style="width:100%;max-width:{{ maxW }};display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
+      <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:700">{{ T.metaTitle }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border-radius:999px;background:var(--sunken);color:var(--ink-2)">Wizard meta</span></span>
+      <span style="font-size:12px;color:var(--ink-3);line-height:1.8;text-wrap:pretty">{{ T.metaHint }}</span>
+      <pre dir="ltr" class="wz-sb" style="margin:0;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:var(--ink-2);overflow:auto;max-height:280px;text-align:left">{{ docJson }}</pre>
+      <span style="font-size:12px;font-weight:600;color:var(--ink-2)">{{ T.valuesTitle }}</span>
+      <pre dir="ltr" class="wz-sb" style="margin:0;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:var(--ink-2);overflow:auto;max-height:200px;text-align:left">{{ valuesJson }}</pre>
+      <sc-if value="{{ hasLog }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:5px;padding-top:8px;border-top:1px solid var(--border)">
+          <span style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;font-weight:600;color:var(--ink-2)">{{ T.log }}</span><span onClick="{{ clearLog }}" style="font-size:12px;font-weight:600;color:var(--dg-i);cursor:pointer">{{ T.clearLog }}</span></span>
+          <sc-for list="{{ log }}" as="l" hint-placeholder-count="2"><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);text-align:left">{{ l }}</span></sc-for>
+        </div>
+      </sc-if>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;meta&quot;,&quot;options&quot;:[&quot;meta&quot;,&quot;rail&quot;,&quot;split&quot;,&quot;topline&quot;,&quot;chevron&quot;,&quot;tabs&quot;,&quot;dots&quot;,&quot;progress&quot;,&quot;accordion&quot;,&quot;modal&quot;],&quot;tsType&quot;:&quot;'meta'|'rail'|'split'|'topline'|'chevron'|'tabs'|'dots'|'progress'|'accordion'|'modal'&quot;,&quot;section&quot;:&quot;الشكل&quot;},&quot;showVariantBar&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;الشكل&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;,&quot;auto&quot;],&quot;tsType&quot;:&quot;'light'|'dark'|'auto'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ar&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;],&quot;tsType&quot;:&quot;'ar'|'en'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;'comfortable'|'compact'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;maxWidth&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1020,&quot;min&quot;:600,&quot;max&quot;:1280,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;breakpoint&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:860,&quot;min&quot;:600,&quot;max&quot;:1100,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;allowJump&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;السلوك&quot;},&quot;showDocs&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;meta&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;WizardMeta&quot;},&quot;values&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, any&gt;&quot;},&quot;handlers&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, Function&gt;&quot;},&quot;onChange&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(key: string, val: any, values: any) =&gt; void&quot;},&quot;onFinish&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(values: any) =&gt; void&quot;}}">
+// ── ميتا الويزرد: steps[] بأنواع choice | form | html | review
+// step: { key, title, sub, icon, note, noteTone, optional, type, cols, optionCols, fields[], options[], html, showIf }
+// variant: rail | split | topline | chevron | tabs | dots | progress | accordion | modal
+const WIZARD_META = {
+  title: { ar: 'ربط جهاز واتساب جديد', en: 'Link a new WhatsApp device' },
+  sub: { ar: 'خطوات قصيرة: نوع الربط، بيانات الجهاز، التحقق، الإعدادات، ثم المراجعة.', en: 'Short steps: link type, device details, verification, settings, then review.' },
+  variant: 'rail', allowJump: true,
+  brand: { name: { ar: 'مركز تكامل واتساب', en: 'WhatsApp Integration Hub' }, sub: { ar: 'شركة سند التجارية', en: 'SANAD Trading Co.' }, icon: 'whatsapp' },
+  handlers: {
+    finish: (v) => 'تم الإنشاء لـ ' + (v.deviceName || '—'),
+    cancel: () => 'أُلغيت العملية',
+    saveDraft: (v) => 'حُفظت مسودة بـ ' + Object.keys(v).length + ' قيمة',
+    openDevices: () => 'الانتقال إلى الأجهزة',
+  },
+  steps: [
+    {
+      key: 'channel', type: 'choice', icon: 'link', optionCols: 1,
+      title: { ar: 'نوع الربط', en: 'Link type' },
+      sub: { ar: 'اختر كيف سيتصل الرقم بالمنصة. يمكن تغييره لاحقاً من إعدادات الجهاز.', en: 'Pick how the number connects to the platform. You can change it later in device settings.' },
+      required: true,
+      options: [
+        { v: 'qr', icon: 'scan', title: { ar: 'مسح رمز QR', en: 'Scan a QR code' }, sub: { ar: 'اربط هاتفاً يعمل بواتساب خلال دقيقة، بدون مزوّد خارجي.', en: 'Link a phone running WhatsApp in under a minute, no provider needed.' }, badge: { ar: 'الأسرع', en: 'Fastest' }, meta: '~1 min' },
+        { v: 'api', icon: 'shield', title: { ar: 'واتساب بزنس API', en: 'WhatsApp Business API' }, sub: { ar: 'رقم معتمد عبر مزوّد رسمي، يدعم القوالب المعتمدة والحجم الكبير.', en: 'Approved number via an official provider, supports templates and high volume.' }, meta: '1–3 days' },
+        { v: 'webhook', icon: 'hook', title: { ar: 'مزوّد خارجي (Webhook)', en: 'External provider (webhook)' }, sub: { ar: 'استقبل وأرسل عبر رابط مزوّدك الحالي ومفتاح وصوله.', en: 'Send and receive through your current provider endpoint and key.' }, meta: '~10 min' },
+      ],
+    },
+    {
+      key: 'device', type: 'form', icon: 'user', cols: 2,
+      title: { ar: 'بيانات الجهاز', en: 'Device details' },
+      sub: { ar: 'الاسم يظهر في قائمة الأجهزة وفي سجل الرسائل.', en: 'The name appears in the devices list and the message log.' },
+      fields: [
+        { key: 'deviceName', type: 'text', label: { ar: 'اسم الجهاز', en: 'Device name' }, required: true, placeholder: { ar: 'مثال: جهاز المبيعات 3', en: 'e.g. Sales device 3' }, span: 2 },
+        { key: 'phone', type: 'text', label: { ar: 'رقم الواتساب', en: 'WhatsApp number' }, required: true, mono: true, placeholder: '+966 5X XXX XXXX', pattern: '^\\+?[0-9 ]{9,}$', error: { ar: 'أدخل رقماً دولياً صحيحاً', en: 'Enter a valid international number' } },
+        { key: 'branch', type: 'select', label: { ar: 'الفرع', en: 'Branch' }, value: '', required: true, options: [{ v: '', l: { ar: 'اختر…', en: 'Select…' } }, { v: 'ryd', l: { ar: 'الرياض', en: 'Riyadh' } }, { v: 'jed', l: { ar: 'جدة', en: 'Jeddah' } }, { v: 'dmm', l: { ar: 'الدمام', en: 'Dammam' } }] },
+        { key: 'usage', type: 'segment', label: { ar: 'الاستخدام', en: 'Usage' }, value: 'sales', options: [{ v: 'sales', l: { ar: 'مبيعات', en: 'Sales' } }, { v: 'support', l: { ar: 'دعم', en: 'Support' } }, { v: 'billing', l: { ar: 'فواتير', en: 'Billing' } }] },
+        { key: 'owners', type: 'multiselect-dropdown', label: { ar: 'المسؤولون', en: 'Owners' }, value: ['u1'], placeholder: { ar: 'اختر مستخدمين…', en: 'Pick users…' },
+          options: [{ v: 'u1', l: { ar: 'عبدالله الفهد', en: 'Abdullah Al-Fahd' } }, { v: 'u2', l: { ar: 'نورة العتيبي', en: 'Noura Al-Otaibi' } }, { v: 'u3', l: { ar: 'خالد الدوسري', en: 'Khalid Al-Dosari' } }, { v: 'u4', l: { ar: 'فريق الدعم', en: 'Support team' } }] },
+      ],
+    },
+    {
+      key: 'verifyQr', type: 'html', icon: 'scan', showIf: { channel: 'qr' },
+      title: { ar: 'مسح الرمز من الهاتف', en: 'Scan the code from your phone' },
+      sub: { ar: 'أبقِ الهاتف متصلاً بالإنترنت حتى تكتمل المزامنة الأولى.', en: 'Keep the phone online until the first sync completes.' },
+      note: { ar: 'الجلسة تبقى مفتوحة على الهاتف. إغلاق واتساب ويب من الهاتف يفصل الجهاز.', en: 'The session stays open on the phone. Signing out of WhatsApp Web on the phone disconnects the device.' }, noteTone: 'info',
+      html: {
+        ar: '<ol style="margin:0;padding-inline-start:20px"><li>افتح واتساب على الهاتف.</li><li>القائمة ← <b>الأجهزة المرتبطة</b> ← <b>ربط جهاز</b>.</li><li>وجّه الكاميرا إلى الرمز الظاهر في الشاشة.</li></ol><div style="margin-top:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap"><span style="width:112px;height:112px;border-radius:12px;background:repeating-linear-gradient(45deg,var(--sunken) 0 6px,var(--surface) 6px 12px);border:1px solid var(--border-2);display:inline-flex;align-items:center;justify-content:center;font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--ink-4);text-align:center;padding:8px">رمز QR</span><span style="font-size:12px;color:var(--ink-3);line-height:1.9">ينتهي الرمز بعد <b>60</b> ثانية ويتجدد تلقائياً.<br>رمز الجلسة: <code style="font-family:\'IBM Plex Mono\',monospace">WZ-4F19-22C7</code></span></div>',
+        en: '<ol style="margin:0;padding-inline-start:20px"><li>Open WhatsApp on the phone.</li><li>Menu → <b>Linked devices</b> → <b>Link a device</b>.</li><li>Point the camera at the code on screen.</li></ol><div style="margin-top:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap"><span style="width:112px;height:112px;border-radius:12px;background:repeating-linear-gradient(45deg,var(--sunken) 0 6px,var(--surface) 6px 12px);border:1px solid var(--border-2);display:inline-flex;align-items:center;justify-content:center;font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--ink-4);text-align:center;padding:8px">QR code</span><span style="font-size:12px;color:var(--ink-3);line-height:1.9">The code expires after <b>60</b> seconds and refreshes automatically.<br>Session code: <code style="font-family:\'IBM Plex Mono\',monospace">WZ-4F19-22C7</code></span></div>',
+      },
+      fields: [
+        { key: 'qrConfirmed', type: 'checkbox', text: { ar: 'ظهر الجهاز في قائمة الأجهزة المرتبطة على الهاتف', en: 'The device now appears in Linked devices on the phone' }, required: true, requiredError: { ar: 'أكّد ظهور الجهاز قبل المتابعة', en: 'Confirm the device appears before continuing' } },
+      ],
+    },
+    {
+      key: 'verifyApi', type: 'form', icon: 'shield', cols: 2, showIf: { channel: ['api', 'webhook'] },
+      title: { ar: 'بيانات الاتصال بالمزوّد', en: 'Provider credentials' },
+      sub: { ar: 'تُخزَّن المفاتيح مشفّرة ولا تظهر بعد الحفظ.', en: 'Keys are stored encrypted and hidden after saving.' },
+      fields: [
+        { key: 'endpoint', type: 'text', label: { ar: 'رابط المزوّد', en: 'Provider endpoint' }, required: true, mono: true, placeholder: 'https://api.provider.com/v1', span: 2 },
+        { key: 'token', type: 'text', label: { ar: 'مفتاح الوصول', en: 'Access token' }, required: true, mono: true, placeholder: 'sk_live_…' },
+        { key: 'senderId', type: 'text', label: { ar: 'معرّف المُرسل', en: 'Sender ID' }, mono: true, help: { ar: 'اختياري — يستخدمه بعض المزوّدين لتحديد الرقم.', en: 'Optional — some providers use it to identify the number.' } },
+        { key: 'verifySignature', type: 'toggle', label: { ar: 'التحقق من توقيع الطلبات', en: 'Verify request signature' }, value: true, span: 2 },
+      ],
+    },
+    {
+      key: 'settings', type: 'form', icon: 'gear', cols: 2, optional: true,
+      title: { ar: 'إعدادات التشغيل', en: 'Operating settings' },
+      sub: { ar: 'يمكنك تخطي هذه الخطوة والعودة إليها من إعدادات الجهاز.', en: 'You can skip this step and return to it from device settings.' },
+      fields: [
+        { key: 'autoReply', type: 'toggle', label: { ar: 'الرد التلقائي خارج ساعات العمل', en: 'Auto-reply outside working hours' }, value: true },
+        { key: 'dailyCap', type: 'number', label: { ar: 'حد الرسائل اليومي', en: 'Daily message cap' }, value: 500, min: 0, max: 20000 },
+        { key: 'startDate', type: 'date', label: { ar: 'تاريخ بدء التشغيل', en: 'Go-live date' }, value: '2026-09-20' },
+        { key: 'notify', type: 'multiselect', label: { ar: 'تنبيهات الانقطاع', en: 'Disconnect alerts' }, value: ['wa'], options: [{ v: 'wa', l: { ar: 'واتساب', en: 'WhatsApp' } }, { v: 'mail', l: { ar: 'بريد', en: 'Email' } }, { v: 'none', l: { ar: 'بدون', en: 'None' } }] },
+        { type: 'divider', label: { ar: 'ملاحظات داخلية', en: 'Internal notes' } },
+        { key: 'notes', type: 'textarea', label: { ar: 'ملاحظات', en: 'Notes' }, rows: 3, span: 2, placeholder: { ar: 'لا تظهر للعميل.', en: 'Not visible to the customer.' } },
+      ],
+    },
+    {
+      key: 'review', type: 'review', icon: 'doc',
+      title: { ar: 'المراجعة والتأكيد', en: 'Review & confirm' },
+      sub: { ar: 'راجع البيانات قبل الإنشاء. اضغط «تعديل» للعودة إلى أي خطوة.', en: 'Check the data before creating. Use “Edit” to jump back to any step.' },
+      fields: [
+        { key: 'agree', type: 'checkbox', required: true, text: { ar: 'أُقر بأن الرقم مملوك للشركة وأن استخدامه يوافق سياسة واتساب للأعمال', en: 'I confirm the number belongs to the company and its use complies with the WhatsApp Business policy' }, requiredError: { ar: 'الموافقة مطلوبة لإنشاء الجهاز', en: 'Consent is required to create the device' } },
+      ],
+    },
+  ],
+  actions: [{ key: 'saveDraft', label: { ar: 'حفظ كمسودة', en: 'Save draft' }, variant: 'ghost', action: 'saveDraft' }],
+  done: {
+    title: { ar: 'تم ربط الجهاز', en: 'Device linked' },
+    sub: { ar: 'بدأت أول مزامنة للرسائل. ستظهر حالة الاتصال في قائمة الأجهزة خلال لحظات.', en: 'The first message sync has started. Connection status appears in the devices list shortly.' },
+    rows: [
+      { label: { ar: 'الجهاز', en: 'Device' }, key: 'deviceName' },
+      { label: { ar: 'الرقم', en: 'Number' }, key: 'phone', mono: true },
+    ],
+    actions: [
+      { label: { ar: 'فتح قائمة الأجهزة', en: 'Open devices list' }, variant: 'primary', action: 'openDevices' },
+      { label: { ar: 'ربط جهاز آخر', en: 'Link another device' }, variant: 'secondary', reset: true },
+    ],
+  },
+};
+
+const FALLBACK = {
+  MONO: "'IBM Plex Mono',monospace",
+  FONT: { ar: "'IBM Plex Sans Arabic',system-ui,sans-serif", en: "'IBM Plex Sans','IBM Plex Sans Arabic',system-ui,sans-serif" },
+  DENSITY: { comfortable: { h: '38px', hSm: '32px', fs: '14px', fsSm: '13px', px: '12px' }, compact: { h: '32px', hSm: '28px', fs: '13px', fsSm: '12px', px: '10px' } },
+  TONE: { ok: { bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', bd: 'var(--ok-sb)' }, warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', bd: 'var(--wn-sb)' }, danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--dg)', bd: 'var(--dg-sb)' }, info: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)', bd: 'var(--nf-sb)' }, muted: { bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--ink-4)', bd: 'var(--border)' } },
+  BUTTON: { primary: { bg: 'var(--pri)', fg: 'var(--on-pri)', bd: 'none' }, secondary: { bg: 'var(--surface)', fg: 'var(--ink)', bd: '1px solid var(--border-2)' }, danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', bd: '1px solid var(--dg-sb)' }, ghost: { bg: 'transparent', fg: 'var(--ink-2)', bd: 'none' }, tonal: { bg: 'var(--pri-s)', fg: 'var(--pri-d)', bd: '1px solid var(--pri-sb)' } },
+  ADDON_ICONS: {},
+};
+const VARIANTS = [
+  { v: 'rail', label: { ar: 'ريل جانبي', en: 'Side rail' }, hint: { ar: 'خطوات رأسية بجانب المحتوى', en: 'Vertical steps beside the content' } },
+  { v: 'split', label: { ar: 'لوحة مقسومة', en: 'Split panel' }, hint: { ar: 'لوحة هوية ملوّنة + خطوات', en: 'Branded panel + steps' } },
+  { v: 'topline', label: { ar: 'شريط أعلى', en: 'Top stepper' }, hint: { ar: 'دوائر مرقّمة بخطوط واصلة', en: 'Numbered circles with connectors' } },
+  { v: 'chevron', label: { ar: 'أسهم', en: 'Chevrons' }, hint: { ar: 'مقاطع سهمية متتابعة', en: 'Arrow segments' } },
+  { v: 'tabs', label: { ar: 'تبويبات', en: 'Tabs' }, hint: { ar: 'تبويبات بخط سفلي', en: 'Underlined tabs' } },
+  { v: 'dots', label: { ar: 'نقاط', en: 'Dots' }, hint: { ar: 'مؤشر مصغّر للخطوات القليلة', en: 'Minimal pager for few steps' } },
+  { v: 'progress', label: { ar: 'شريط تقدم', en: 'Progress bar' }, hint: { ar: 'نسبة الإكمال فقط', en: 'Completion only' } },
+  { v: 'accordion', label: { ar: 'أكورديون', en: 'Accordion' }, hint: { ar: 'قائمة مهام تُفتح خطوة واحدة', en: 'Checklist with one open step' } },
+  { v: 'modal', label: { ar: 'نافذة', en: 'Modal' }, hint: { ar: 'ويزرد داخل نافذة منبثقة', en: 'Wizard inside a dialog' } },
+];
+const EXTRA = {
+  ar: { stepsTitle: 'الخطوات', step: 'خطوة', of: 'من', next: 'التالي', back: 'السابق', finish: 'إنشاء الجهاز', skip: 'تخطي', optional: 'اختيارية', edit: 'تعديل', progress: 'الإكمال', required: 'هذا الحقل مطلوب', invalid: 'قيمة غير صالحة', stepErrors: 'أكمل الحقول المطلوبة في هذه الخطوة.', pickOne: 'اختر أحد الخيارات للمتابعة.', yes: 'نعم', no: 'لا', empty: '—', close: 'إغلاق', closedText: 'أُغلقت نافذة الويزرد.', reopen: 'إعادة الفتح', shapes: 'الشكل', metaTitle: 'الميتا المستخدمة لهذا الويزرد', metaHint: 'كل خطوة سطر: key + type + title + fields. الأنواع: choice (بطاقات اختيار) · form (حقول) · html (شرح حر) · review (ملخص تلقائي). showIf يُظهر الخطوة حسب القيم السابقة، وvariant يحدد شكل مؤشر الخطوات.', valuesTitle: 'القيم الحالية', log: 'سجل الأحداث', clearLog: 'مسح', none: 'لا نتائج', search: 'بحث…', pick: 'اختر…' },
+  en: { stepsTitle: 'Steps', step: 'Step', of: 'of', next: 'Next', back: 'Back', finish: 'Create device', skip: 'Skip', optional: 'Optional', edit: 'Edit', progress: 'Progress', required: 'This field is required', invalid: 'Invalid value', stepErrors: 'Complete the required fields in this step.', pickOne: 'Pick one option to continue.', yes: 'Yes', no: 'No', empty: '—', close: 'Close', closedText: 'The wizard dialog was closed.', reopen: 'Reopen', shapes: 'Shape', metaTitle: 'Meta driving this wizard', metaHint: 'Each step is one line: key + type + title + fields. Types: choice (option cards) · form (fields) · html (free explainer) · review (auto summary). showIf reveals a step based on earlier values; variant sets the stepper shape.', valuesTitle: 'Current values', log: 'Event log', clearLog: 'Clear', none: 'No results', search: 'Search…', pick: 'Select…' },
+};
+
+class Component extends DCLogic {
+  state = { theme: null, lang: null, variant: null, i: 0, v: null, errors: {}, stepError: '', visited: { 0: true }, q: {}, open: null, done: false, modalClosed: false, width: 1280, log: [] };
+
+  componentDidMount() {
+    this.onResize = () => this.setState({ width: window.innerWidth });
+    // ESC: يغلق آخر منسدلة أولاً، ثم نافذة الويزرد (قاعدة المشروع)
+    this.onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      if (this.state.open) { e.stopPropagation(); this.setState({ open: null }); return; }
+      if (this.variant === 'modal' && !this.state.modalClosed) this.setState({ modalClosed: true });
+    };
+    this.onDoc = (e) => { const o = this.state.open; if (o && !e.target.closest('[data-wz-pop="' + o + '"]')) this.setState({ open: null }); };
+    window.addEventListener('resize', this.onResize); window.addEventListener('keydown', this.onKey); document.addEventListener('mousedown', this.onDoc);
+    this.onResize();
+    try { const t = localStorage.getItem('wizard.theme'); if (t === 'dark' || t === 'light') this.setState({ theme: t }); } catch (e) {}
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); window.removeEventListener('keydown', this.onKey); document.removeEventListener('mousedown', this.onDoc); }
+
+  meta() { return this.props.meta || WIZARD_META; }
+  allSteps() { return this.meta().steps || []; }
+  stepFields(s) { return (s.fields || []).filter((f) => f.key && f.type !== 'divider'); }
+  initial() {
+    const o = {};
+    this.allSteps().forEach((s) => {
+      if (s.type === 'choice' && s.key) o[s.key] = s.value !== undefined ? s.value : '';
+      this.stepFields(s).forEach((f) => { o[f.key] = f.value !== undefined ? f.value : (f.type === 'multiselect' || f.type === 'multiselect-dropdown' ? [] : (f.type === 'toggle' || f.type === 'checkbox' ? false : '')); });
+    });
+    return Object.assign(o, this.props.values || {});
+  }
+  vals() { return this.state.v || this.initial(); }
+  set(key, val) {
+    const v = { ...this.vals(), [key]: val };
+    const errors = { ...this.state.errors }; delete errors[key];
+    this.setState({ v, errors, stepError: '' });
+    if (this.props.onChange) this.props.onChange(key, val, v);
+  }
+  logIt(entry) { this.setState((s) => ({ log: [JSON.stringify(entry), ...s.log].slice(0, 6) })); }
+  run(spec, args) {
+    const H = this.props.handlers || this.meta().handlers || {};
+    let fn = null, name = null;
+    if (typeof spec === 'function') { fn = spec; name = spec.name || 'fn'; }
+    else if (typeof spec === 'string') { name = spec; fn = H[spec]; }
+    let ret, error = null;
+    if (fn) { try { ret = fn.apply(null, args || []); } catch (e) { error = String((e && e.message) || e); } }
+    else if (name) error = 'handler "' + name + '" غير معرّف';
+    this.logIt({ action: name, returned: ret === undefined ? undefined : ret, error: error || undefined });
+    return ret;
+  }
+  visible(x, v) {
+    const c = x.showIf ?? x.visibleIf;
+    if (c == null) return true;
+    if (typeof c === 'function') { try { return !!c(v); } catch (e) { return true; } }
+    return Object.keys(c).every((k) => {
+      const want = c[k], got = v[k];
+      if (Array.isArray(want)) return want.includes(got);
+      if (typeof want === 'object' && want !== null) {
+        if ('not' in want) return got !== want.not;
+        if ('in' in want) return (want.in || []).includes(got);
+        if ('truthy' in want) return want.truthy ? !!got : !got;
+      }
+      return got === want;
+    });
+  }
+  steps() { const v = this.vals(); return this.allSteps().filter((s) => this.visible(s, v)); }
+  checkStep(s, L, T) {
+    const v = this.vals(), errors = {};
+    this.stepFields(s).filter((f) => this.visible(f, v)).forEach((f) => {
+      const val = v[f.key];
+      const empty = val === '' || val == null || val === false || (Array.isArray(val) && !val.length);
+      if (f.required && empty) { errors[f.key] = L(f.requiredError) || T.required; return; }
+      if (empty) return;
+      if (f.pattern && !(new RegExp(f.pattern).test(String(val)))) errors[f.key] = L(f.error) || T.invalid;
+      else if (f.min != null && Number(val) < f.min) errors[f.key] = L(f.error) || '≥ ' + f.min;
+      else if (f.max != null && Number(val) > f.max) errors[f.key] = L(f.error) || '≤ ' + f.max;
+    });
+    let stepError = '';
+    if (s.type === 'choice' && s.required !== false && s.key && !v[s.key]) stepError = T.pickOne;
+    else if (Object.keys(errors).length) stepError = T.stepErrors;
+    return { errors, stepError };
+  }
+  display(f, v, L, T) {
+    const val = v[f.key];
+    if (f.type === 'toggle' || f.type === 'checkbox') return val ? T.yes : T.no;
+    if (Array.isArray(val)) {
+      if (!val.length) return T.empty;
+      return val.map((x) => { const o = (f.options || []).find((oo) => oo.v === x); return o ? L(o.l ?? o.label) : x; }).join('، ');
+    }
+    if (val === '' || val == null) return T.empty;
+    const o = (f.options || []).find((oo) => oo.v === val);
+    return o ? L(o.l ?? o.label) : String(val);
+  }
+  stepSummary(s, v, L, T) {
+    if (s.type === 'choice' && s.key) { const o = (s.options || []).find((x) => x.v === v[s.key]); return o ? L(o.title) : T.empty; }
+    const fs = this.stepFields(s).filter((f) => this.visible(f, v)).slice(0, 2);
+    return fs.map((f) => this.display(f, v, L, T)).filter((x) => x && x !== T.empty).join(' · ');
+  }
+
+  renderVals() {
+    const K = window.UIKit || FALLBACK, S = this.state, P = this.props, M = this.meta();
+    const lang = S.lang ?? P.lang ?? M.lang ?? 'ar', rtl = lang !== 'en', dir = rtl ? 'rtl' : 'ltr';
+    const L = (x) => K.L ? K.L(lang, x) : ((x && x[lang]) || x || '');
+    const pref = S.theme ?? P.theme ?? M.theme ?? 'light';
+    let sysDark = false; try { sysDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) {}
+    const theme = pref === 'auto' ? (sysDark ? 'dark' : 'light') : pref;
+    const isMobile = S.width < (P.breakpoint ?? 860);
+    const dkey = (isMobile ? 'comfortable' : (P.density ?? M.density ?? 'comfortable')) === 'compact' ? 'compact' : 'comfortable';
+    const D = (K.DENSITY || FALLBACK.DENSITY)[dkey];
+    const TONE = K.TONE || FALLBACK.TONE, BTN = K.BUTTON || FALLBACK.BUTTON, ICONS = K.ADDON_ICONS || FALLBACK.ADDON_ICONS;
+    const tone = (k) => TONE[k] || TONE.muted;
+    const T = { ...EXTRA[lang] };
+    const LBL = M.labels || {}; Object.keys(LBL).forEach((k) => { const t = L(LBL[k]); if (t) T[k] = t; });
+    const MONO = K.MONO || FALLBACK.MONO;
+    const icon = (n) => ({ __html: ICONS[n] || '' });
+    const dn = {
+      pagePad: P.embed ? '0' : (isMobile ? '14px' : '26px'), secGap: dkey === 'compact' ? '14px' : '18px', headGap: dkey === 'compact' ? '14px' : '18px',
+      cardPad: isMobile ? '16px' : (dkey === 'compact' ? '18px' : '22px'),
+      gap: dkey === 'compact' ? '10px 12px' : '15px 16px', h: D.h, hSm: D.hSm, fs: D.fs, fsSm: D.fsSm, px: D.px,
+      labelFs: dkey === 'compact' ? '12px' : '13px', h1: isMobile ? '19px' : '22px', h2: dkey === 'compact' ? '14px' : '16px',
+      btnH: isMobile ? '46px' : (dkey === 'compact' ? '34px' : '38px'), btnPx: '18px', btnFs: isMobile ? '14px' : '13px', btnFlex: isMobile ? '1 1 130px' : 'none',
+      popMaxH: isMobile ? '54vh' : '260px',
+    };
+    if (isMobile) { dn.fs = '16px'; dn.fsSm = '14px'; dn.h = '46px'; dn.hSm = '38px'; dn.px = '13px'; dn.gap = '14px'; }
+
+    const v = this.vals(), errors = S.errors;
+    const steps = this.steps(), n = steps.length;
+    const i = Math.min(S.i, Math.max(0, n - 1));
+    const cur = steps[i] || {};
+    const allowJump = (P.allowJump ?? M.allowJump) !== false;
+
+    // الشكل: rail | split | topline | chevron | tabs | dots | progress | accordion | modal
+    // variant (وبديله القديم stepper) → الشكل المطلوب
+    const propV = (P.variant && P.variant !== 'meta') ? P.variant : ((P.stepper && P.stepper !== 'meta') ? P.stepper : null);
+    const want = S.variant ?? propV ?? M.variant ?? 'rail';
+    const variant = isMobile && want !== 'modal' && want !== 'accordion' ? 'progress' : want;
+    this.variant = variant;
+    const isSplit = variant === 'split', isModal = variant === 'modal', isAcc = variant === 'accordion';
+    const doneShow = S.done && !!M.done;
+    const maxW = P.embed ? '100%' : (P.maxWidth ?? M.maxWidth ?? 1020) + 'px';
+
+    const jumpTo = (k) => {
+      if (k === i) return;
+      if (!allowJump && !S.visited[k]) return;
+      if (k > i) { const chk = this.checkStep(cur, L, T); if (Object.keys(chk.errors).length || chk.stepError) { this.setState({ errors: chk.errors, stepError: chk.stepError }); return; } }
+      this.setState((st) => ({ i: k, errors: {}, stepError: '', open: null, visited: { ...st.visited, [k]: true } }));
+    };
+    const goNext = () => {
+      const chk = this.checkStep(cur, L, T);
+      if (Object.keys(chk.errors).length || chk.stepError) { this.setState({ errors: chk.errors, stepError: chk.stepError }); this.logIt({ step: cur.key, invalid: Object.keys(chk.errors) }); return; }
+      if (i >= n - 1) { const out = this.vals(); this.run('finish', [out]); if (P.onFinish) P.onFinish(out); this.setState({ done: true, errors: {}, stepError: '' }); return; }
+      this.setState((st) => ({ i: i + 1, errors: {}, stepError: '', open: null, visited: { ...st.visited, [i + 1]: true } }));
+    };
+    const goBack = () => this.setState((st) => ({ i: Math.max(0, i - 1), errors: {}, stepError: '', open: null, visited: { ...st.visited, [Math.max(0, i - 1)]: true } }));
+    const skip = () => this.setState((st) => ({ i: Math.min(n - 1, i + 1), errors: {}, stepError: '', open: null, visited: { ...st.visited, [Math.min(n - 1, i + 1)]: true } }));
+
+    // لوحة split على خلفية أساسية → ألوان مخصّصة بتباين كافٍ
+    const pal = isSplit ? {
+      cur: { bg: 'var(--on-pri)', fg: 'var(--pri-d)', bd: 'var(--on-pri)', ring: '0 0 0 4px rgba(255,255,255,.18)' },
+      done: { bg: 'rgba(255,255,255,.22)', fg: 'var(--on-pri)', bd: 'rgba(255,255,255,.5)', ring: 'none' },
+      up: { bg: 'rgba(255,255,255,.08)', fg: 'var(--pri-s)', bd: 'rgba(255,255,255,.35)', ring: 'none' },
+      line: 'rgba(255,255,255,.25)', lineDone: 'rgba(255,255,255,.55)',
+      fgCur: 'var(--on-pri)', fgDone: 'var(--on-pri)', fgUp: 'var(--pri-s)', rowBg: 'rgba(255,255,255,.12)', rowOff: 'transparent',
+    } : {
+      cur: { bg: 'var(--pri)', fg: 'var(--on-pri)', bd: 'var(--pri)', ring: '0 0 0 3px var(--pri-s)' },
+      done: { bg: 'var(--pri-s)', fg: 'var(--pri-d)', bd: 'var(--pri-sb)', ring: 'none' },
+      up: { bg: 'var(--surface)', fg: 'var(--ink-4)', bd: 'var(--border-2)', ring: 'none' },
+      line: 'var(--border)', lineDone: 'var(--pri-sb)',
+      fgCur: 'var(--ink)', fgDone: 'var(--ink-2)', fgUp: 'var(--ink-4)', rowBg: 'var(--pri-s)', rowOff: 'transparent',
+    };
+    const stepItems = steps.map((s, k) => {
+      const isCur = k === i, isDone = k < i && !doneShow ? true : (doneShow ? true : k < i);
+      const p = isCur && !doneShow ? pal.cur : isDone ? pal.done : pal.up;
+      const errCount = this.stepFields(s).filter((f) => errors[f.key]).length;
+      const clickable = !doneShow && (allowJump || S.visited[k]);
+      return {
+        isDone: isDone && !(isCur && !doneShow), showNum: !(isDone && !(isCur && !doneShow)), num: String(k + 1),
+        dotBg: p.bg, dotFg: p.fg, dotBd: p.bd, dotRing: p.ring,
+        lineBg: k < i || doneShow ? pal.lineDone : pal.line,
+        label: L(s.title) || (T.step + ' ' + (k + 1)), sub: L(s.sub), hasSub: isCur && !!s.sub && !isSplit ? false : (isSplit && isCur && !!s.sub),
+        subFg: isSplit ? 'var(--pri-s)' : 'var(--ink-4)', optFg: isSplit ? 'var(--pri-s)' : 'var(--ink-4)',
+        weight: isCur ? 600 : 400, fg: isCur && !doneShow ? pal.fgCur : (k < i || doneShow) ? pal.fgDone : pal.fgUp,
+        rowBg: isCur && !doneShow ? pal.rowBg : pal.rowOff, cursor: clickable ? 'pointer' : 'default',
+        hasErr: errCount > 0, errCount: String(errCount), isOptional: !!s.optional,
+        hasLine: k < n - 1, padB: k < n - 1 ? '12px' : '0', flex: k < n - 1 ? '1 1 auto' : 'none',
+        showLabel: isCur || n <= 5, underline: isCur ? 'var(--pri)' : 'transparent',
+        segBg: isCur && !doneShow ? 'var(--pri)' : (k < i || doneShow) ? 'var(--pri-s)' : 'var(--sunken)',
+        segFg: isCur && !doneShow ? 'var(--on-pri)' : (k < i || doneShow) ? 'var(--pri-d)' : 'var(--ink-3)',
+        segMs: k === 0 ? '0' : '-12px',
+        w: isCur ? '26px' : '8px', pill: isCur && !doneShow ? 'var(--pri)' : (k < i || doneShow) ? 'var(--pri-sb)' : 'var(--border-2)',
+        hasSummary: false, summary: '',
+        onJump: clickable ? () => jumpTo(k) : undefined,
+      };
+    });
+
+    const secCols = cur.cols || M.cols || 1;
+    const fields = (cur.fields || []).filter((f) => this.visible(f, v)).map((f) => {
+      const t = f.type || 'text';
+      if (t === 'divider') return { isDivider: true, isField: false, hasLabel: !!f.label, label: L(f.label) };
+      const key = f.key, val = v[key], mono = !!f.mono || t === 'number';
+      const err = errors[key], bd = err ? 'var(--dg-sb)' : 'var(--border-2)';
+      const disabled = !!f.disabled, popOpen = S.open === key;
+      const q = (S.q[key] || '').trim().toLowerCase();
+      const opts = (f.options || []).map((o) => ({ v: o.v, label: L(o.l ?? o.label) }));
+      const base = {
+        isField: true, isDivider: false, key, span: (f.span && !isMobile) ? 'span ' + Math.min(f.span, secCols) : 'auto',
+        label: L(f.label), hasLabel: f.label != null, required: !!f.required, hint: L(f.hint), hasHint: !!f.hint,
+        placeholder: L(f.placeholder) || '', disabled, bd, inputBg: disabled ? 'var(--sunken)' : 'var(--surface)',
+        vdir: mono ? 'ltr' : dir, vfont: mono ? MONO : 'inherit', align: mono ? 'left' : 'start',
+        value: val == null ? '' : val, rows: f.rows || 3, opts,
+        hasMsg: !!(err || f.help), msg: err || L(f.help), msgFg: err ? 'var(--dg-i)' : 'var(--ink-3)',
+        onInput: (e) => this.set(key, e.target.value),
+        isInput: false, isTextarea: false, isSelect: false, isPicker: false, isSegment: false, isToggle: false, isChecks: false, isReadonly: false, isBadge: false, isHtml: false,
+        popOpen: false, popItems: [], hasSearch: false, popEmpty: false, chips: [], hasChips: false, hasText: true,
+        q: S.q[key] || '', onQ: (e) => this.setState((st) => ({ q: { ...st.q, [key]: e.target.value } })),
+      };
+      if (t === 'text' || t === 'number' || t === 'date') { base.isInput = true; base.inputType = t === 'number' ? 'number' : t === 'date' ? 'date' : 'text'; }
+      else if (t === 'textarea') base.isTextarea = true;
+      else if (t === 'select') { base.isSelect = true; base.selFg = (val === '' || val == null) ? 'var(--ink-4)' : 'var(--ink)'; }
+      else if (t === 'dropdown' || t === 'multiselect-dropdown') {
+        const multi = t === 'multiselect-dropdown', arr = multi ? (Array.isArray(val) ? val : []) : [];
+        const sel = multi ? null : opts.find((o) => o.v === val);
+        base.isPicker = true; base.popOpen = popOpen; base.chev = popOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        base.pickBd = popOpen ? 'var(--pri)' : bd;
+        base.hasChips = multi && arr.length > 0;
+        base.chips = multi ? arr.map((x) => { const o = opts.find((oo) => oo.v === x); return { label: o ? o.label : x, onRemove: (e) => { e.stopPropagation(); this.set(key, arr.filter((y) => y !== x)); } }; }) : [];
+        base.hasText = multi ? arr.length === 0 : true;
+        base.pickText = multi ? (base.placeholder || T.pick) : (sel ? sel.label : (base.placeholder || T.pick));
+        base.pickFg = (multi ? arr.length === 0 : !sel) ? 'var(--ink-4)' : 'var(--ink)';
+        base.onOpen = disabled ? undefined : () => this.setState({ open: popOpen ? null : key });
+        base.hasSearch = opts.length > 6;
+        const shown = opts.filter((o) => !q || o.label.toLowerCase().includes(q));
+        base.popItems = shown.map((o) => ({ label: o.label, hasCheck: multi, on: multi ? arr.includes(o.v) : false, bg: (!multi && o.v === val) ? 'var(--pri-s)' : 'transparent', fg: (!multi && o.v === val) ? 'var(--pri-d)' : 'var(--ink)', weight: (!multi && o.v === val) ? 600 : 400, onPick: () => { if (multi) this.set(key, arr.includes(o.v) ? arr.filter((y) => y !== o.v) : arr.concat([o.v])); else { this.set(key, o.v); this.setState({ open: null }); } } }));
+        base.popEmpty = shown.length === 0;
+      }
+      else if (t === 'segment') { base.isSegment = true; base.opts = opts.map((o) => ({ label: o.label, weight: o.v === val ? 600 : 400, fg: o.v === val ? 'var(--ink)' : 'var(--ink-3)', bg: o.v === val ? 'var(--surface)' : 'transparent', shadow: o.v === val ? 'var(--shadow-sm)' : 'none', onPick: () => this.set(key, o.v) })); }
+      else if (t === 'toggle') { const on = !!val; base.isToggle = true; base.trackBg = on ? 'var(--pri)' : 'var(--border-2)'; base.knob = on ? '18px' : '2px'; base.toggleText = L(f.text) || (on ? (rtl ? 'مفعّل' : 'On') : (rtl ? 'غير مفعّل' : 'Off')); base.onToggle = () => this.set(key, !on); }
+      else if (t === 'checkbox') { base.isChecks = true; base.checkType = 'checkbox'; base.opts = [{ label: L(f.text ?? f.label), on: !!val, onPick: () => this.set(key, !val) }]; }
+      else if (t === 'multiselect' || t === 'radio') {
+        const multi = t === 'multiselect', arr = Array.isArray(val) ? val : [];
+        base.isChecks = true; base.checkType = multi ? 'checkbox' : 'radio';
+        base.opts = opts.map((o) => ({ label: o.label, on: multi ? arr.includes(o.v) : o.v === val, onPick: () => this.set(key, multi ? (arr.includes(o.v) ? arr.filter((y) => y !== o.v) : arr.concat([o.v])) : o.v) }));
+      }
+      else if (t === 'readonly') base.isReadonly = true;
+      else if (t === 'badge') { const tn = tone(f.tone); base.isBadge = true; base.value = L(f.value); base.badgeBg = tn.bg; base.badgeFg = tn.fg; base.badgeBd = tn.bd; base.badgeDot = tn.dot; }
+      else if (t === 'html') { base.isHtml = true; base.html = { __html: L(f.html) }; }
+      else { base.isInput = true; base.inputType = 'text'; }
+      return base;
+    });
+
+    const review = cur.type === 'review' ? steps.map((s, k) => {
+      if (k === i) return null;
+      const rows = [];
+      if (s.type === 'choice' && s.key) {
+        const o = (s.options || []).find((x) => x.v === v[s.key]);
+        rows.push({ label: L(s.title), value: o ? L(o.title) : T.empty, dir, font: 'inherit', align: 'end', fg: o ? 'var(--ink)' : 'var(--ink-4)' });
+      }
+      this.stepFields(s).filter((f) => this.visible(f, v)).forEach((f) => {
+        const text = this.display(f, v, L, T), mono = !!f.mono || f.type === 'number' || f.type === 'date';
+        rows.push({ label: L(f.label) || L(f.text), value: text, dir: mono ? 'ltr' : dir, font: mono ? MONO : 'inherit', align: mono ? 'left' : 'end', fg: text === T.empty ? 'var(--ink-4)' : 'var(--ink)' });
+      });
+      if (!rows.length) return null;
+      return { num: String(k + 1), title: L(s.title), rows, onEdit: () => jumpTo(k) };
+    }).filter(Boolean) : [];
+
+    const choices = cur.type === 'choice' ? (cur.options || []).map((o) => {
+      const on = v[cur.key] === o.v, tn = o.tone ? tone(o.tone) : null;
+      return {
+        title: L(o.title), sub: L(o.sub), hasSub: !!o.sub, on, hasMeta: !!o.meta, meta: o.meta || '',
+        hasIcon: !!o.icon, icon: icon(o.icon), iconBg: on ? 'var(--pri)' : 'var(--sunken)', iconFg: on ? 'var(--on-pri)' : 'var(--ink-3)',
+        bd: on ? 'var(--pri)' : 'var(--border)', bg: on ? 'var(--pri-s)' : 'var(--surface)', shadow: on ? '0 0 0 3px var(--pri-s)' : 'var(--shadow-sm)',
+        titleFg: on ? 'var(--pri-d)' : 'var(--ink)',
+        hasBadge: !!o.badge, badge: L(o.badge), badgeBg: tn ? tn.bg : 'var(--ok-s)', badgeFg: tn ? tn.fg : 'var(--ok-i)',
+        radioBd: on ? 'var(--pri)' : 'var(--border-2)', radioBg: on ? 'var(--pri)' : 'var(--surface)',
+        onPick: () => this.set(cur.key, o.v),
+      };
+    }) : [];
+
+    const mkBtn = (a) => {
+      const b = BTN[a.variant || 'secondary'] || BTN.secondary;
+      return { label: L(a.label), bg: b.bg, fg: b.fg, bd: b.bd, onClick: () => { if (a.reset) { this.setState({ v: null, i: 0, errors: {}, stepError: '', done: false, visited: { 0: true } }); this.logIt({ action: 'reset' }); return; } this.run(a.onClick || a.action, [this.vals()]); } };
+    };
+    const noteTn = tone(cur.noteTone || 'info');
+    const DN = M.done || {};
+    const B = M.brand || {};
+    const modalHidden = isModal && S.modalClosed;
+
+    return {
+      dir, theme, font: (K.FONT || FALLBACK.FONT)[lang], dn, T, maxW,
+      rootMinH: P.embed ? 'auto' : '100vh', rootBg: P.embed ? 'transparent' : 'var(--bg)',
+      vb: {
+        show: (P.showVariantBar ?? M.showVariantBar) !== false, label: T.shapes,
+        items: VARIANTS.map((o) => {
+          const on = o.v === want;
+          return { label: L(o.label), hint: L(o.hint), bg: on ? 'var(--pri)' : 'var(--surface)', fg: on ? 'var(--on-pri)' : 'var(--ink-2)', bd: on ? 'var(--pri)' : 'var(--border-2)', weight: on ? 600 : 500, onPick: () => this.setState({ variant: o.v, modalClosed: false, open: null }) };
+        }),
+      },
+      md: {
+        show: isModal && !modalHidden, backdrop: isModal && !modalHidden, reopen: modalHidden,
+        close: () => { this.setState({ modalClosed: true, open: null }); this.run('cancel', [this.vals()]); },
+        open: () => this.setState({ modalClosed: false }), closedText: T.closedText, reopenLabel: T.reopen,
+      },
+      shell: {
+        pos: isModal && !modalHidden ? 'fixed' : 'static', z: isModal && !modalHidden ? 70 : 1,
+        // النافذة تتمركز في الشاشة مهما كان موضعها في الصفحة (مهم عند الدمج داخل هيكل التطبيق)
+        top: isModal && !modalHidden ? '50%' : 'auto', left: isModal && !modalHidden ? '50%' : 'auto', tf: isModal && !modalHidden ? 'translate(-50%,-50%)' : 'none',
+        maxW: isModal ? '760px' : maxW, maxH: isModal && !modalHidden ? '88vh' : 'none', overflow: isModal && !modalHidden ? 'auto' : 'visible',
+        display: modalHidden ? 'none' : 'flex',
+        bg: isModal || isSplit ? 'var(--surface)' : 'transparent',
+        bd: isModal || isSplit ? '1px solid var(--border)' : 'none',
+        radius: isModal ? '16px' : isSplit ? '16px' : '0',
+        shadow: isModal ? 'var(--shadow-lg)' : isSplit ? 'var(--shadow-md)' : 'none',
+        pad: isModal ? (isMobile ? '16px' : '20px 22px') : '0',
+        anim: isModal && !modalHidden ? 'wzFade .2s ease-out' : 'none',
+      },
+      head: { show: !isModal && !isSplit, hasSub: !!M.sub, title: L(M.title), sub: L(M.sub), counter: doneShow ? '✓' : (i + 1) + ' / ' + n },
+      grid: {
+        cols: (variant === 'rail' && !isMobile) ? '250px minmax(0,1fr)' : (isSplit && !isMobile) ? '288px minmax(0,1fr)' : 'minmax(0,1fr)',
+        gap: (variant === 'rail' && !isMobile) ? '20px' : (isSplit && !isMobile) ? '0' : '0',
+        align: isSplit ? 'stretch' : 'start',
+      },
+      rail: {
+        show: (variant === 'rail' || isSplit) && !isMobile, items: stepItems, gap: '4px',
+        bg: isSplit ? 'var(--pri)' : 'var(--surface)', bd: isSplit ? 'none' : '1px solid var(--border)',
+        radius: isSplit ? (rtl ? '0 16px 16px 0' : '16px 0 0 16px') : '12px',
+        pad: isSplit ? '22px 18px' : '16px 12px', pos: isSplit ? 'static' : 'sticky', selfAlign: isSplit ? 'stretch' : 'flex-start',
+        minH: isSplit ? '100%' : 'auto', shadow: isSplit ? 'none' : 'var(--shadow-sm)',
+        hasBrand: isSplit && !!B.name, brandName: L(B.name), brandSub: L(B.sub), brandIcon: icon(B.icon || 'whatsapp'),
+        brandBg: isSplit ? 'rgba(255,255,255,.16)' : 'var(--pri-s)', brandFg: isSplit ? 'var(--on-pri)' : 'var(--pri-d)',
+        titleFg: isSplit ? 'var(--on-pri)' : 'var(--ink)', subFg: isSplit ? 'var(--pri-s)' : 'var(--ink-3)', labelFg: isSplit ? 'var(--pri-s)' : 'var(--ink-4)',
+        hasMeter: true, trackBg: isSplit ? 'rgba(255,255,255,.22)' : 'var(--border)', barBg: isSplit ? 'var(--on-pri)' : 'var(--pri)',
+      },
+      hbar: { show: variant === 'topline', items: stepItems },
+      chev: { show: variant === 'chevron', items: stepItems, clip: rtl ? 'polygon(12px 0, 100% 0, calc(100% - 12px) 50%, 100% 100%, 12px 100%, 0 50%)' : 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)' },
+      tabs: { show: variant === 'tabs', items: stepItems },
+      dots: { show: variant === 'dots', items: stepItems },
+      prog: { show: variant === 'progress' || isModal, title: L(cur.title), num: String(i + 1), counter: (doneShow ? n : i + 1) + ' / ' + n, pct: Math.round(((doneShow ? n : i) / Math.max(1, n)) * 100) + '%' },
+      acc: {
+        before: isAcc && !doneShow ? steps.slice(0, i).map((s, k) => ({ ...stepItems[k], hasSummary: true, summary: this.stepSummary(s, v, L, T) })) : [],
+        after: isAcc && !doneShow ? steps.slice(i + 1).map((s, k) => ({ ...stepItems[i + 1 + k], hasSub: !!s.sub, sub: L(s.sub) })) : [],
+      },
+      card: {
+        bg: isModal || isSplit ? 'transparent' : 'var(--surface)',
+        bd: isModal || isSplit ? 'none' : '1px solid var(--border)',
+        pad: isModal ? '0' : isSplit ? (isMobile ? '18px' : '24px 26px') : dn.cardPad,
+        shadow: isModal || isSplit ? 'none' : 'var(--shadow-sm)',
+      },
+      step: {
+        show: !doneShow, animKey: 'st-' + (cur.key || i) + '-' + variant, title: L(cur.title), sub: L(cur.sub), hasSub: !!cur.sub, hasIcon: !!cur.icon, icon: icon(cur.icon), optional: !!cur.optional,
+        hasNote: !!cur.note, note: L(cur.note), noteBg: noteTn.bg, noteBd: noteTn.bd, noteFg: noteTn.fg, noteDot: noteTn.dot,
+        isChoice: cur.type === 'choice', choices,
+        choiceCols: isMobile ? 'minmax(0,1fr)' : (cur.optionCols ? 'repeat(' + cur.optionCols + ',minmax(0,1fr))' : 'minmax(0,1fr)'),
+        isReview: cur.type === 'review', review,
+        isHtml: cur.type === 'html', html: { __html: L(cur.html) },
+        hasFields: fields.length > 0, fields, cols: isMobile ? 'minmax(0,1fr)' : 'repeat(' + secCols + ',minmax(0,1fr))',
+        hasError: !!S.stepError, errorText: S.stepError,
+      },
+      done: {
+        show: doneShow, title: L(DN.title), sub: L(DN.sub), hasRows: (DN.rows || []).length > 0,
+        rows: (DN.rows || []).map((r) => ({ label: L(r.label), value: (v[r.key] === '' || v[r.key] == null) ? T.empty : String(v[r.key]), dir: r.mono ? 'ltr' : dir, font: r.mono ? MONO : 'inherit' })),
+        actions: (DN.actions || []).map(mkBtn),
+      },
+      nav: {
+        inCard: !doneShow, hasBack: i > 0, onBack: goBack, backRot: rtl ? 'rotate(180deg)' : 'none',
+        hasSkip: !!cur.optional && i < n - 1, onSkip: skip,
+        onNext: goNext, nextLabel: i >= n - 1 ? T.finish : T.next, hasNextIcon: i < n - 1, nextRot: rtl ? 'rotate(180deg)' : 'none',
+        extra: isMobile ? [] : (M.actions || []).map(mkBtn),
+        margin: isModal ? '4px 0 0' : (isSplit ? '6px -26px -24px' : '4px ' + '-' + dn.cardPad + ' -' + dn.cardPad),
+        pad: isModal ? '16px 0 0' : (isSplit ? '16px 26px 20px' : '16px ' + dn.cardPad),
+        spacer: isMobile ? '0 0 0' : '1 1 auto',
+      },
+      showDocs: (P.showDocs ?? M.showDocs) !== false,
+      docJson: JSON.stringify({ variant: want, steps: this.allSteps().map((s) => ({ key: s.key, type: s.type, title: s.title, optional: s.optional || undefined, showIf: s.showIf || undefined, fields: (s.fields || []).map((f) => ({ key: f.key, type: f.type || 'text', label: f.label || f.text, required: f.required || undefined })) })) }, null, 2),
+      valuesJson: JSON.stringify(v, null, 2),
+      log: S.log, hasLog: S.log.length > 0, clearLog: () => this.setState({ log: [] }),
+    };
+  }
+}
+</script>
+</body>
+</html>

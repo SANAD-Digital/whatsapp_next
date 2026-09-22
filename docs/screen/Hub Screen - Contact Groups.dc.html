@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+  .lv-host > .sc-host{flex:1 1 0%;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .lv-host > .sc-host > *{flex:1 1 0%;min-height:0;min-width:0}
+</style>
+</helmet>
+<div data-screen-label="مجموعات جهات الاتصال" dir="rtl" style="flex:1;min-height:0;height:100%;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px;width:100%">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;flex:none">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <h1 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em">مجموعات جهات الاتصال</h1>
+        <span style="font-size:12px;color:var(--ink-3)">قوائم تُستهدف في الحملات وتُستخدم في صلاحيات الأوامر. القائمة السوداء محجوبة من كل إرسال.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button type="button" onClick="{{ create }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer">+ مجموعة جديدة</button>
+      </div>
+    </div>
+
+    <dc-import name="Cards" meta="{{ cardsMeta }}" loading="{{ loading }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,72px"></dc-import>
+
+    <div class="lv-host" style="flex:1;min-height:340px;display:flex;overflow:hidden">
+      <dc-import name="List View" loading="{{ loading }}" columns="{{ columns }}" rows="{{ rows }}" detail="{{ detail }}" unit="مجموعة" search-placeholder="اسم المجموعة…" export-name="contact-groups" default-sort="{{ defaultSort }}" page-size="{{ 50 }}" density="compact" theme="{{ theme }}" hint-size="100%,100%"></dc-import>
+    </div>
+  </div>
+  <sc-if value="{{ editorOpen }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="Group Editor" group="{{ editGroup }}" on-save="{{ onSaveGroup }}" on-close="{{ onEditorClose }}" theme="{{ theme }}" hint-size="0,0"></dc-import>
+  </sc-if>
+  <sc-if value="{{ sendOpen }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="Send Message Dialog" prefill="{{ sendPrefill }}" on-close="{{ onSendClose }}" theme="{{ theme }}" hint-size="0,0"></dc-import>
+  </sc-if>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:860},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;]},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+const ROUTE = '/groups';
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, editor: false, editId: null, sendTo: null, fire: null, rev: 0, loading: true };
+  componentDidMount() { const w = () => { if (window.HubData && window.HubShared && window.UIKit) { this.setState({ ready: true }); setTimeout(() => this.setState({ loading: false }), 220); } else this.t = setTimeout(w, 40); }; w(); }
+  componentWillUnmount() { clearTimeout(this.t); }
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+
+  members(g, D) { let seed = 0; for (let i = 0; i < g.id.length; i++) seed += g.id.charCodeAt(i); const pool = D.contacts.filter((c) => c.name); const out = []; for (let i = 0; i < Math.min(g.size, 12); i++) { const c = pool[(seed * 7 + i * 5) % pool.length]; if (c && !out.some((x) => x.id === c.id)) out.push(c); } return out; }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    if (!D || !H || !S.ready) return { theme, loading: true, create: () => {}, importCsv: () => {}, sendOpen: false, sendPrefill: null, onSendClose: () => {}, openSend: () => {}, editorOpen: false, editGroup: null, onEditorClose: () => {}, onSaveGroup: () => {}, cardsMeta: { sections: [] }, columns: [], rows: [], detail: null, defaultSort: null, toastsMeta: { types: [] }, toastFire: null };
+    const f = D.fmt, all = D.contactGroups || [];
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+    const isBlack = (g) => g.kind === 'قائمة سوداء';
+
+    const cardsMeta = { sections: [{ min: 180, mobileColumns: 1, cards: [
+      { kind: 'stat', icon: 'user', label: 'عدد المجموعات', value: f.n(all.length), valueMono: true, note: 'كل القوائم المعرّفة في النظام' },
+      { kind: 'stat', icon: 'user', tone: 'info', label: 'إجمالي الجهات', value: f.n(all.reduce((n, g) => n + (g.size || 0), 0)), valueMono: true, note: 'مجموع أعضاء كل المجموعات' },
+      { kind: 'stat', icon: 'warn', tone: all.some(isBlack) ? 'warn' : undefined, label: 'قوائم سوداء', value: f.n(all.filter(isBlack).length), valueMono: true, note: 'محجوبة من الأوامر والحملات' },
+    ] }] };
+
+    const columns = [
+      { key: 'name', label: 'المجموعة', w: 300, kind: 'two' },
+      { key: 'kind', label: 'النوع', w: 130, kind: 'badge', group: true, filter: true },
+      { key: 'size', label: 'عدد الجهات', w: 110, kind: 'num', align: 'end' },
+      { key: 'source', label: 'المصدر', w: 180, group: true, filter: true },
+      { key: 'updated', label: 'آخر تحديث', w: 120, kind: 'date' },
+      { key: 'edit', label: 'تعديل', w: 90, kind: 'btn', sortable: false },
+    ];
+    const rows = all.map((g) => ({ id: g.id, name: { text: g.name, sub: g.note, subMono: false }, kind: { text: g.kind, bg: isBlack(g) ? 'var(--wn-s)' : 'var(--pri-s)', fg: isBlack(g) ? 'var(--wn-ix)' : 'var(--pri-d)', dot: isBlack(g) ? 'var(--wn)' : 'var(--pri)' }, size: g.size || 0, source: g.source, updated: g.updated || 0, edit: { text: 'تعديل', onClick: () => this.setState({ editor: true, editId: g.id }) }, _g: g }));
+
+    const detail = (r) => {
+      const g = r._g, mem = this.members(g, D);
+      return {
+        title: g.name, sub: g.kind + ' · ' + f.n(g.size) + ' جهة · ' + g.source,
+        alert: isBlack(g) ? { tone: 'warn', title: 'قائمة سوداء', lines: ['أعضاء هذه القائمة لا تصلهم أي رسالة من الأوامر أو الحملات.'] } : null,
+        fields: [{ k: 'النوع', v: g.kind }, { k: 'المصدر', v: g.source }, { k: 'عدد الجهات', v: f.n(g.size), mono: true }, { k: 'آخر تحديث', v: f.date(g.updated), mono: true }],
+        blocks: [
+          {
+            label: 'الأعضاء', more: g.size > mem.length ? 'أول ' + f.n(mem.length) + ' من ' + f.n(g.size) : f.n(mem.length) + ' عضو',
+            list: mem.map((c) => ({
+              text: c.name || 'بلا اسم', sub: c.phone, initials: this.initials ? this.initials(c.name) : String(c.name || '؟').trim().slice(0, 2),
+              avBg: isBlack(g) ? 'var(--wn-s)' : 'var(--pri-s)', avFg: isBlack(g) ? 'var(--wn-ix)' : 'var(--pri-d)',
+              badge: D.PARTY_TYPES[c.type] ? D.PARTY_TYPES[c.type].ar : '',
+            })),
+          },
+          ...(g.note ? [{ label: 'ملاحظة', text: g.note }] : []),
+        ],
+        actions: [
+          { label: 'إرسال رسالة لهذه المجموعة', tone: 'primary', closes: false, onClick: () => this.setState({ sendTo: { kind: 'group', value: g.id } }) },
+          { label: 'تعديل المجموعة والأعضاء', onClick: () => this.setState({ editor: true, editId: g.id }) },
+          { label: 'حملة لهذه المجموعة', onClick: () => go('/campaigns', { kind: 'group', value: g.id }) },
+          { label: 'جهات الاتصال', onClick: () => go('/contacts', { kind: 'group', value: g.id }) },
+        ],
+      };
+    };
+
+    return {
+      sendOpen: !!S.sendTo || !!S.sendBlank, sendPrefill: S.sendTo, onSendClose: () => this.setState({ sendTo: null, sendBlank: false }),
+      openSend: () => this.setState({ sendBlank: true }),
+      theme, loading: S.loading,
+      create: () => this.setState({ editor: true, editId: null }),
+      editorOpen: !!S.editor, editGroup: S.editId ? all.find((g) => g.id === S.editId) || null : null,
+      onEditorClose: () => this.setState({ editor: false, editId: null }),
+      onSaveGroup: (dr) => {
+        const existing = S.editId ? all.find((g) => g.id === S.editId) : null;
+        const src = dr.manual.length && dr.contactIds.length ? 'مختلط' : (dr.manual.length ? 'إدخال يدوي' : 'جهات الاتصال');
+        if (existing) {
+          Object.assign(existing, { name: dr.name, kind: dr.kind, note: dr.note, memberIds: dr.contactIds, manual: dr.manual, size: dr.size, source: src, updated: Date.now() });
+          this.toast({ key: 'created', title: 'حُفظت «' + dr.name + '»', text: f.n(dr.size) + ' جهة في المجموعة.' });
+        } else {
+          all.unshift({ id: 'g-' + Date.now(), name: dr.name, kind: dr.kind, note: dr.note, memberIds: dr.contactIds, manual: dr.manual, size: dr.size, source: src, updated: Date.now() });
+          if (D.logActivity) D.logActivity('أُنشئت مجموعة «' + dr.name + '» بـ' + f.n(dr.size) + ' جهة', 'primary');
+          this.toast({ key: 'created', title: 'أُنشئت «' + dr.name + '»', text: dr.size ? f.n(dr.size) + ' جهة جاهزة للاستهداف من الحملات.' : 'مجموعة فارغة — أضف الجهات لاحقاً.' });
+        }
+        this.setState({ editor: false, editId: null });
+        this.bump();
+      },
+      importCsv: () => this.toast({ key: 'info', title: 'استيراد CSV', text: 'سيُفتح منتقي الملفات في النسخة الفعلية.' }),
+      cardsMeta, columns, rows, detail, defaultSort: { key: 'size', dir: 'desc' },
+      toastsMeta: { position: 'bottom-start', duration: 3500, types: [{ key: 'created', tone: 'ok', icon: 'check' }, { key: 'info', tone: 'info', icon: 'send' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

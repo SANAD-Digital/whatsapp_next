@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F7F6; --surface:#FFFFFF; --sunken:#EEF2F0; --border:#E3E8E6; --border-2:#C9D2CF;
+    --ink:#0F1A18; --ink-2:#33423F; --ink-3:#55645F; --ink-4:#62716D;
+    --pri:#0F7A63; --pri-d:#0A6250; --pri-s:#DFF1EC; --pri-sb:#B6DDD2; --on-pri:#FFFFFF;
+    --ok:#1A8B50; --ok-s:#E1F3E8; --ok-i:#16713F; --ok-sb:#B9E2CA;
+    --wn:#9A6C14; --wn-s:#FBF1DC; --wn-i:#8A6116; --wn-sb:#EFDCB4;
+    --dg:#C9524B; --dg-s:#FBEAE8; --dg-i:#A93A34; --dg-sb:#F2CBC7;
+    --nf:#2568AF; --nf-s:#E4EFFA; --nf-i:#1F5A97; --nf-sb:#C2DCF2;
+    --shadow-sm:0 1px 2px rgba(23,33,31,.06); --shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);
+    --skel-a:#E4EAE8; --skel-b:#EFF3F2;
+  }
+  [data-theme="dark"]{
+    --bg:#0E1513; --surface:#14201D; --sunken:#1B2926; --border:#243531; --border-2:#334742;
+    --ink:#EAF2F0; --ink-2:#C4D2CE; --ink-3:#9AAAA6; --ink-4:#7E8F8B;
+    --pri:#2FA98C; --pri-d:#49C3A5; --pri-s:#16302A; --pri-sb:#23493F; --on-pri:#04150F;
+    --ok:#35A96A; --ok-s:#132A1E; --ok-i:#7FD3A3; --ok-sb:#1E4531;
+    --wn:#C79436; --wn-s:#2C2314; --wn-i:#E0BC78; --wn-sb:#4A3A1B;
+    --dg:#D9736C; --dg-s:#2E1A19; --dg-i:#F0A8A2; --dg-sb:#4C2A28;
+    --nf:#4A8ED0; --nf-s:#141F2C; --nf-i:#9CC5EC; --nf-sb:#25405C;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow-lg:0 18px 40px -22px rgba(0,0,0,.7);
+    --skel-a:#1E2C31; --skel-b:#28373C;
+    color-scheme:dark;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,select,button,textarea{font-family:inherit;}
+  .st-sb{scrollbar-width:thin;scrollbar-color:var(--border-2) transparent;}
+  .st-sb::-webkit-scrollbar{width:8px;height:8px;}
+  .st-sb::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:999px;}
+  .st-sk{background:linear-gradient(90deg,var(--skel-a) 25%,var(--skel-b) 37%,var(--skel-a) 63%);background-size:400% 100%;animation:stSk 1.3s ease-in-out infinite;border-radius:6px;}
+  @keyframes stSk{0%{background-position:100% 50%}100%{background-position:0 50%}}
+  @keyframes stSpin{to{transform:rotate(360deg)}}
+  @keyframes stIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  [data-st-tap]{transition:background .16s ease,border-color .16s ease,color .16s ease,transform .12s ease;}
+  [data-st-tap]:active{transform:translateY(1px);}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important;}}
+</style>
+</helmet>
+
+<div dir="{{ dir }}" data-theme="{{ theme }}" style="min-height:{{ rootMinH }};background:{{ rootBg }};color:var(--ink);font-family:{{ font }};padding:{{ dn.pagePad }};display:flex;justify-content:center">
+  <div style="width:100%;max-width:{{ maxW }};display:flex;flex-direction:column;gap:14px">
+
+    <sc-if value="{{ sw.show }}" hint-placeholder-val="{{ true }}">
+      <div class="st-sb" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:12px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow-x:auto">
+        <span style="font-size:11px;font-weight:600;color:var(--ink-4);padding:0 6px;white-space:nowrap;flex:none">{{ T.stateLabel }}</span>
+        <sc-for list="{{ sw.items }}" as="o" hint-placeholder-count="5">
+          <span data-st-tap="1" onClick="{{ o.onPick }}" style="display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:0 12px;border-radius:999px;background:{{ o.bg }};color:{{ o.fg }};border:1px solid {{ o.bd }};font-size:12px;font-weight:{{ o.weight }};cursor:pointer;white-space:nowrap;flex:none"><span style="width:7px;height:7px;border-radius:50%;background:{{ o.dot }}"></span>{{ o.label }}</span>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ banner.show }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:10px;padding:{{ dn.bannerPad }};border-radius:11px;background:{{ banner.bg }};border:1px solid {{ banner.bd }};position:sticky;top:8px;z-index:20;animation:stIn .22s ease-out">
+        <span style="width:22px;height:22px;border-radius:50%;background:{{ banner.dot }};color:var(--on-pri);display:inline-flex;align-items:center;justify-content:center;flex:none" dangerouslySetInnerHTML="{{ banner.icon }}"></span>
+        <span style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:0">
+          <span style="font-size:13px;font-weight:700;color:{{ banner.fg }}">{{ banner.title }}</span>
+          <span style="font-size:12px;color:{{ banner.fg }};line-height:1.65;text-wrap:pretty">{{ banner.text }}</span>
+        </span>
+        <sc-if value="{{ banner.hasCta }}" hint-placeholder-val="{{ false }}">
+          <button type="button" onClick="{{ banner.onCta }}" style="min-height:{{ dn.hSm }};padding:0 13px;border-radius:8px;background:var(--surface);color:{{ banner.fg }};border:1px solid {{ banner.bd }};font-size:12px;font-weight:600;cursor:pointer;flex:none">{{ banner.cta }}</button>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <section style="display:flex;flex-direction:column;gap:{{ dn.gap }};background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:{{ dn.cardPad }};box-shadow:var(--shadow-sm);opacity:{{ body.opacity }};pointer-events:{{ body.pointer }}">
+
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0">
+          <span style="font-size:{{ dn.h1 }};font-weight:700;line-height:1.3">{{ head.title }}</span>
+          <span style="font-size:12px;color:var(--ink-3)">{{ head.sub }}</span>
+        </span>
+        <sc-for list="{{ head.actions }}" as="a" hint-placeholder-count="2">
+          <button type="button" disabled="{{ a.disabled }}" onClick="{{ a.onClick }}" style="min-height:{{ dn.h }};padding:0 14px;border-radius:8px;background:{{ a.bg }};color:{{ a.fg }};border:{{ a.bd }};font-size:13px;font-weight:600;cursor:{{ a.cursor }};flex:none">{{ a.label }}</button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ kpi.show }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:{{ kpi.cols }};gap:10px">
+          <sc-for list="{{ kpi.items }}" as="k" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:6px;padding:14px;border-radius:12px;background:var(--bg);border:1px solid var(--border)">
+              <sc-if value="{{ k.isSkel }}" hint-placeholder-val="{{ false }}">
+                <span class="st-sk" style="height:11px;width:58%"></span>
+                <span class="st-sk" style="height:22px;width:42%"></span>
+              </sc-if>
+              <sc-if value="{{ k.isReal }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:12px;color:var(--ink-3)">{{ k.label }}</span>
+                <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:21px;font-weight:600;color:{{ k.fg }};text-align:start">{{ k.value }}</span>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ rows.show }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <sc-for list="{{ rows.items }}" as="r" hint-placeholder-count="5">
+            <span style="display:flex;align-items:center;gap:12px;min-height:{{ dn.rowH }};padding:0 4px;border-bottom:1px solid {{ r.sep }}">
+              <sc-if value="{{ r.isSkel }}" hint-placeholder-val="{{ false }}">
+                <span class="st-sk" style="width:32px;height:32px;border-radius:50%;flex:none"></span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:0"><span class="st-sk" style="height:11px;width:{{ r.w1 }}"></span><span class="st-sk" style="height:10px;width:{{ r.w2 }}"></span></span>
+                <span class="st-sk" style="width:74px;height:20px;border-radius:999px;flex:none"></span>
+              </sc-if>
+              <sc-if value="{{ r.isReal }}" hint-placeholder-val="{{ true }}">
+                <span style="width:32px;height:32px;border-radius:50%;background:var(--sunken);color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex:none">{{ r.initials }}</span>
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
+                  <span style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.title }}</span>
+                  <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-3);text-align:start">{{ r.sub }}</span>
+                </span>
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;background:{{ r.bg }};color:{{ r.fg }};font-size:11px;font-weight:600;flex:none"><span style="width:6px;height:6px;border-radius:50%;background:{{ r.dot }}"></span>{{ r.status }}</span>
+              </sc-if>
+            </span>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ empty.show }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:{{ dn.emptyPad }};text-align:center;animation:stIn .24s ease-out">
+          <span style="width:132px;height:88px;border-radius:12px;border:1px solid var(--border-2);background:repeating-linear-gradient(135deg,var(--sunken) 0 7px,var(--surface) 7px 14px);display:inline-flex;align-items:center;justify-content:center"><span style="width:34px;height:34px;border-radius:9px;background:var(--surface);border:1px solid var(--border);color:var(--ink-3);display:inline-flex;align-items:center;justify-content:center" dangerouslySetInnerHTML="{{ empty.icon }}"></span></span>
+          <span style="font-size:15px;font-weight:700">{{ empty.title }}</span>
+          <span style="font-size:13px;color:var(--ink-3);line-height:1.8;max-width:48ch;text-wrap:pretty">{{ empty.text }}</span>
+          <sc-if value="{{ empty.hasHints }}" hint-placeholder-val="{{ false }}">
+            <span style="display:flex;flex-direction:column;gap:6px;width:100%;max-width:420px;text-align:start;background:var(--bg);border:1px solid var(--border);border-radius:11px;padding:12px 14px">
+              <sc-for list="{{ empty.hints }}" as="h" hint-placeholder-count="2">
+                <span style="display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.7"><span style="width:18px;height:18px;border-radius:50%;background:var(--pri-s);color:var(--pri-d);font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;flex:none;margin-top:2px">{{ h.num }}</span><span style="min-width:0;text-wrap:pretty">{{ h.text }}</span></span>
+              </sc-for>
+            </span>
+          </sc-if>
+          <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center">
+            <sc-for list="{{ empty.actions }}" as="a" hint-placeholder-count="2"><button type="button" onClick="{{ a.onClick }}" style="min-height:{{ dn.h }};padding:0 16px;border-radius:8px;background:{{ a.bg }};color:{{ a.fg }};border:{{ a.bd }};font-size:13px;font-weight:600;cursor:pointer">{{ a.label }}</button></sc-for>
+          </span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ error.show }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:13px;padding:{{ dn.emptyPad }};text-align:center;animation:stIn .24s ease-out">
+          <span style="width:52px;height:52px;border-radius:50%;background:var(--dg-s);border:1px solid var(--dg-sb);color:var(--dg-i);display:inline-flex;align-items:center;justify-content:center;font-size:22px;font-weight:700">!</span>
+          <span style="font-size:15px;font-weight:700;color:var(--dg-i)">{{ error.title }}</span>
+          <span style="font-size:13px;color:var(--ink-3);line-height:1.8;max-width:48ch;text-wrap:pretty">{{ error.text }}</span>
+          <span dir="ltr" class="st-sb" style="width:100%;max-width:520px;padding:11px 13px;border-radius:9px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.7;color:var(--ink-2);text-align:left;overflow:auto">{{ error.raw }}</span>
+          <span style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center">
+            <sc-for list="{{ error.actions }}" as="a" hint-placeholder-count="2"><button type="button" onClick="{{ a.onClick }}" style="min-height:{{ dn.h }};padding:0 16px;border-radius:8px;background:{{ a.bg }};color:{{ a.fg }};border:{{ a.bd }};font-size:13px;font-weight:600;cursor:pointer">{{ a.label }}</button></sc-for>
+          </span>
+          <sc-if value="{{ error.hasMeta }}" hint-placeholder-val="{{ false }}">
+            <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-4)">{{ error.meta }}</span>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ loadingNote.show }}" hint-placeholder-val="{{ false }}">
+        <span style="display:inline-flex;align-items:center;gap:9px;align-self:center;padding:8px 13px;border-radius:999px;background:var(--bg);border:1px solid var(--border);font-size:12px;color:var(--ink-3)">
+          <span style="width:15px;height:15px;border-radius:50%;border:2px solid var(--border-2);border-top-color:var(--pri);animation:stSpin .8s linear infinite;flex:none"></span>{{ loadingNote.text }}
+        </span>
+      </sc-if>
+    </section>
+
+    <sc-if value="{{ showDocs }}" hint-placeholder-val="{{ true }}">
+      <section style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:12px;background:var(--surface);border:1px solid var(--border)">
+        <span style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:14px;font-weight:700">{{ T.metaTitle }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:3px 8px;border-radius:999px;background:var(--sunken);color:var(--ink-2)">States meta</span></span>
+        <span style="font-size:12px;color:var(--ink-3);line-height:1.8;text-wrap:pretty">{{ T.metaHint }}</span>
+        <pre dir="ltr" class="st-sb" style="margin:0;padding:12px;border-radius:8px;background:var(--bg);border:1px solid var(--border);font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.6;color:var(--ink-2);overflow:auto;max-height:300px;text-align:left">{{ docJson }}</pre>
+      </section>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ok&quot;,&quot;options&quot;:[&quot;ok&quot;,&quot;loading&quot;,&quot;empty&quot;,&quot;error&quot;,&quot;offline&quot;],&quot;tsType&quot;:&quot;'ok'|'loading'|'empty'|'error'|'offline'&quot;,&quot;section&quot;:&quot;الحالة&quot;},&quot;showSwitcher&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;الحالة&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;,&quot;auto&quot;],&quot;tsType&quot;:&quot;'light'|'dark'|'auto'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ar&quot;,&quot;options&quot;:[&quot;ar&quot;,&quot;en&quot;],&quot;tsType&quot;:&quot;'ar'|'en'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;comfortable&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;tsType&quot;:&quot;'comfortable'|'compact'&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;maxWidth&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:880,&quot;min&quot;:600,&quot;max&quot;:1200,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;breakpoint&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:760,&quot;min&quot;:560,&quot;max&quot;:1000,&quot;step&quot;:20,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;showDocs&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;العرض&quot;},&quot;meta&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;StatesMeta&quot;},&quot;handlers&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string, Function&gt;&quot;}}">
+// ── ميتا الحالات: ok | loading | empty | error | offline
+// كل حالة تعرّف عنوانها ونصها وإجراءاتها؛ loading يرسم هيكلاً (skeleton) بنفس شكل المحتوى الحقيقي
+const STATES_META = {
+  title: { ar: 'الرسائل الصادرة', en: 'Outbound messages' },
+  sub: { ar: 'آخر تحديث قبل دقيقتين', en: 'Updated 2 minutes ago' },
+  actions: [
+    { key: 'refresh', label: { ar: 'تحديث', en: 'Refresh' }, variant: 'secondary', action: 'refresh' },
+    { key: 'compose', label: { ar: 'رسالة جديدة', en: 'New message' }, variant: 'primary', action: 'compose', needsOnline: true },
+  ],
+  kpis: [
+    { label: { ar: 'أُرسلت اليوم', en: 'Sent today' }, value: '1,248' },
+    { label: { ar: 'في الطابور', en: 'Queued' }, value: '312', tone: 'warn' },
+    { label: { ar: 'فشلت', en: 'Failed' }, value: '96', tone: 'danger' },
+    { label: { ar: 'نسبة التسليم', en: 'Delivery rate' }, value: '97.4%', tone: 'ok' },
+  ],
+  rows: [
+    { title: { ar: 'مؤسسة المطلق للتجارة', en: 'Al-Mutlaq Trading' }, sub: '+966 50 123 4567', status: { ar: 'مستلم', en: 'Delivered' }, tone: 'ok' },
+    { title: { ar: 'شركة الرياض للمقاولات', en: 'Riyadh Contracting' }, sub: '+966 55 902 8814', status: { ar: 'مقروء', en: 'Read' }, tone: 'info' },
+    { title: { ar: 'مجموعة الخليج الغذائية', en: 'Gulf Foods Group' }, sub: '+966 53 222 1100', status: { ar: 'قيد الإرسال', en: 'Queued' }, tone: 'warn' },
+    { title: { ar: 'مصنع النخبة للبلاستيك', en: 'Elite Plastics' }, sub: '+966 56 400 9080', status: { ar: 'فشل', en: 'Failed' }, tone: 'danger' },
+    { title: { ar: 'صيدلية الحياة', en: 'Al Hayat Pharmacy' }, sub: '+966 55 606 0606', status: { ar: 'مرسل', en: 'Sent' }, tone: 'muted' },
+  ],
+  loading: { rows: 5, note: { ar: 'يجري تحميل آخر ٥٠ رسالة…', en: 'Loading the latest 50 messages…' } },
+  empty: {
+    icon: 'send',
+    title: { ar: 'لا رسائل بعد', en: 'No messages yet' },
+    text: { ar: 'لم تُرسل أي رسالة من هذا الحساب. اربط جهازاً وفعّل نموذج إشعار لتبدأ الرسائل بالخروج تلقائياً.', en: 'No message has been sent from this account. Link a device and enable a notification template to start sending automatically.' },
+    hints: [
+      { text: { ar: 'اربط جهازاً من شاشة الأجهزة (مسح QR).', en: 'Link a device from the Devices screen (scan QR).' } },
+      { text: { ar: 'فعّل نموذج إشعار لنوع مستند واحد على الأقل.', en: 'Enable a notification template for at least one document type.' } },
+      { text: { ar: 'اعتمد مستنداً تجريبياً وراقب الطابور.', en: 'Approve a test document and watch the queue.' } },
+    ],
+    actions: [
+      { key: 'link', label: { ar: 'ربط جهاز', en: 'Link a device' }, variant: 'primary', action: 'linkDevice' },
+      { key: 'docs', label: { ar: 'دليل البدء', en: 'Getting started' }, variant: 'secondary', action: 'openDocs' },
+    ],
+  },
+  error: {
+    title: { ar: 'تعذّر تحميل الرسائل', en: 'Could not load messages' },
+    text: { ar: 'فشل طلب خدمة التجميع. البيانات المعروضة قد تكون قديمة.', en: 'The aggregation service request failed. Displayed data may be stale.' },
+    raw: 'GET /api/v1/messages?range=month → 502 Bad Gateway\nrequest_id: req_8f21c04b · upstream: agg-svc-3 · elapsed: 30.2s',
+    meta: 'retry 3/3 · last attempt 14:22:41',
+    actions: [
+      { key: 'retry', label: { ar: 'إعادة المحاولة', en: 'Retry' }, variant: 'primary', action: 'retry' },
+      { key: 'status', label: { ar: 'حالة الخدمة', en: 'Service status' }, variant: 'secondary', action: 'openStatus' },
+      { key: 'copy', label: { ar: 'نسخ تفاصيل الخطأ', en: 'Copy error details' }, variant: 'ghost', action: 'copyError' },
+    ],
+  },
+  offline: {
+    title: { ar: 'لا يوجد اتصال بالإنترنت', en: 'No internet connection' },
+    text: { ar: 'الأرقام المعروضة من آخر مزامنة. الإجراءات معطّلة حتى يعود الاتصال، والرسائل الجديدة تُحفظ في الطابور.', en: 'Values are from the last sync. Actions are disabled until the connection returns; new messages stay queued.' },
+    cta: { ar: 'إعادة المحاولة', en: 'Retry' }, action: 'retry', stale: { ar: 'آخر مزامنة 14:08', en: 'Last sync 14:08' },
+  },
+  handlers: {
+    refresh: () => 'تحديث البيانات',
+    compose: () => 'فتح نموذج رسالة',
+    retry: () => 'إعادة المحاولة',
+    linkDevice: () => 'فتح ويزرد ربط جهاز',
+    openDocs: () => 'فتح الدليل',
+    openStatus: () => 'فتح صفحة حالة الخدمة',
+    copyError: () => 'نُسخت تفاصيل الخطأ',
+  },
+};
+
+const ICONS_EXTRA = {
+  send: '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 10l14-6-4 14-3-6z"/><path d="M10 12l7-8"/></svg>',
+  wifiOff: '<svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8.5a9 9 0 0112 0M6.5 11.5a5.5 5.5 0 017 0"/><circle cx="10" cy="15" r="1" fill="currentColor" stroke="none"/><path d="M3 3l14 14"/></svg>',
+};
+const FALLBACK = {
+  MONO: "'IBM Plex Mono',monospace",
+  FONT: { ar: "'IBM Plex Sans Arabic',system-ui,sans-serif", en: "'IBM Plex Sans','IBM Plex Sans Arabic',system-ui,sans-serif" },
+  DENSITY: { comfortable: { h: '38px', hSm: '32px', fs: '14px', fsSm: '13px', px: '12px' }, compact: { h: '32px', hSm: '28px', fs: '13px', fsSm: '12px', px: '10px' } },
+  TONE: { ok: { bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)', bd: 'var(--ok-sb)' }, warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', bd: 'var(--wn-sb)' }, danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--dg)', bd: 'var(--dg-sb)' }, info: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)', bd: 'var(--nf-sb)' }, muted: { bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--ink-4)', bd: 'var(--border)' } },
+  BUTTON: { primary: { bg: 'var(--pri)', fg: 'var(--on-pri)', bd: 'none' }, secondary: { bg: 'var(--surface)', fg: 'var(--ink)', bd: '1px solid var(--border-2)' }, danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', bd: '1px solid var(--dg-sb)' }, ghost: { bg: 'transparent', fg: 'var(--ink-2)', bd: 'none' }, tonal: { bg: 'var(--pri-s)', fg: 'var(--pri-d)', bd: '1px solid var(--pri-sb)' } },
+  ADDON_ICONS: {},
+};
+const LABELS = {
+  ar: { ok: 'عادي', loading: 'تحميل', empty: 'فارغ', error: 'خطأ', offline: 'عدم اتصال' },
+  en: { ok: 'Normal', loading: 'Loading', empty: 'Empty', error: 'Error', offline: 'Offline' },
+};
+const EXTRA = {
+  ar: { stateLabel: 'الحالة', metaTitle: 'الميتا المستخدمة لهذه الحالات', metaHint: 'حالة واحدة تُمرَّر عبر state: ok | loading | empty | error | offline. loading يرسم هيكل التحميل بنفس بنية المحتوى، empty يحمل خطوات بدء، error يعرض الخطأ الخام ومعرّف الطلب، offline يعطّل الإجراءات ويثبّت شريطاً أعلى الشاشة.' },
+  en: { stateLabel: 'State', metaTitle: 'Meta driving these states', metaHint: 'One state passed via state: ok | loading | empty | error | offline. loading mirrors the real content structure, empty carries first-run steps, error shows the raw payload and request id, offline disables actions and pins a banner.' },
+};
+
+class Component extends DCLogic {
+  state = { theme: null, lang: null, st: null, width: 1280 };
+  componentDidMount() {
+    this.onResize = () => this.setState({ width: window.innerWidth });
+    window.addEventListener('resize', this.onResize); this.onResize();
+  }
+  componentWillUnmount() { window.removeEventListener('resize', this.onResize); }
+  meta() { return this.props.meta || STATES_META; }
+  run(spec, args) {
+    const H = this.props.handlers || this.meta().handlers || {};
+    const fn = typeof spec === 'function' ? spec : H[spec];
+    if (fn) { try { return fn.apply(null, args || []); } catch (e) { return String(e && e.message); } }
+    return undefined;
+  }
+
+  renderVals() {
+    const K = window.UIKit || FALLBACK, S = this.state, P = this.props, M = this.meta();
+    const lang = S.lang ?? P.lang ?? M.lang ?? 'ar', rtl = lang !== 'en', dir = rtl ? 'rtl' : 'ltr';
+    const L = (x) => K.L ? K.L(lang, x) : ((x && x[lang]) || x || '');
+    const pref = S.theme ?? P.theme ?? M.theme ?? 'light';
+    let sysDark = false; try { sysDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) {}
+    const theme = pref === 'auto' ? (sysDark ? 'dark' : 'light') : pref;
+    const isMobile = S.width < (P.breakpoint ?? 760);
+    const dkey = (P.density ?? M.density ?? 'comfortable') === 'compact' ? 'compact' : 'comfortable';
+    const D = (K.DENSITY || FALLBACK.DENSITY)[dkey];
+    const TONE = K.TONE || FALLBACK.TONE, BTN = K.BUTTON || FALLBACK.BUTTON;
+    const ICONS = Object.assign({}, K.ADDON_ICONS || {}, ICONS_EXTRA);
+    const tone = (k) => TONE[k] || TONE.muted;
+    const icon = (n) => ({ __html: ICONS[n] || '' });
+    const T = { ...EXTRA[lang] };
+    const dn = {
+      pagePad: P.embed ? '0' : (isMobile ? '14px' : '24px'), gap: dkey === 'compact' ? '14px' : '18px',
+      cardPad: isMobile ? '16px' : (dkey === 'compact' ? '18px' : '22px'),
+      h: isMobile ? '44px' : D.h, hSm: isMobile ? '38px' : D.hSm, h1: isMobile ? '17px' : '18px',
+      rowH: isMobile ? '58px' : '52px', emptyPad: isMobile ? '18px 4px' : '28px 8px', bannerPad: isMobile ? '11px 12px' : '12px 14px',
+    };
+
+    const st = S.st ?? P.state ?? M.state ?? 'ok';
+    const isLoading = st === 'loading', isEmpty = st === 'empty', isError = st === 'error', isOffline = st === 'offline';
+    const OFF = M.offline || {}, EM = M.empty || {}, ER = M.error || {}, LD = M.loading || {};
+    const skelRows = LD.rows || 5;
+    const widths = ['62%', '48%', '70%', '54%', '66%', '58%'];
+    const STOP = ['شركة', 'مؤسسة', 'مصنع', 'مجموعة', 'صيدلية', 'مكتب', 'مطاعم', 'al', 'the'];
+    const strip = (w) => w.replace(/^(لل|ال|بال|وال)/, '') || w;
+    const ini = (name) => {
+      const all = String(name).trim().split(/\s+/);
+      const kept = all.filter((x) => !STOP.includes(x.toLowerCase()));
+      const use = (kept.length ? kept : all).map(strip).filter(Boolean);
+      const out = use.slice(0, 2).map((x) => x[0]).join('');
+      return out.length > 1 ? out : (use[0] || String(name)).slice(0, 2);
+    };
+    const mkBtn = (a) => {
+      const b = BTN[a.variant || 'secondary'] || BTN.secondary;
+      const off = isOffline && a.needsOnline;
+      return { label: L(a.label), bg: off ? 'var(--sunken)' : b.bg, fg: off ? 'var(--ink-4)' : b.fg, bd: off ? '1px solid var(--border)' : b.bd, disabled: off, cursor: off ? 'not-allowed' : 'pointer', onClick: off ? undefined : () => this.run(a.onClick || a.action, []) };
+    };
+
+    return {
+      dir, theme, font: (K.FONT || FALLBACK.FONT)[lang], dn, T, rootMinH: P.embed ? 'auto' : '100vh', rootBg: P.embed ? 'transparent' : 'var(--bg)', maxW: P.embed ? '100%' : (P.maxWidth ?? M.maxWidth ?? 880) + 'px',
+      sw: {
+        show: (P.showSwitcher ?? M.showSwitcher) !== false,
+        items: ['ok', 'loading', 'empty', 'error', 'offline'].map((k) => {
+          const on = k === st, tn = k === 'error' ? tone('danger') : k === 'offline' ? tone('warn') : k === 'empty' ? tone('muted') : k === 'loading' ? tone('info') : tone('ok');
+          return { label: LABELS[lang][k], bg: on ? 'var(--pri)' : 'var(--surface)', fg: on ? 'var(--on-pri)' : 'var(--ink-2)', bd: on ? 'var(--pri)' : 'var(--border-2)', weight: on ? 600 : 500, dot: on ? 'var(--on-pri)' : tn.dot, onPick: () => this.setState({ st: k }) };
+        }),
+      },
+      banner: isOffline ? {
+        show: true, title: L(OFF.title), text: L(OFF.text), icon: icon('wifiOff'),
+        bg: tone('warn').bg, bd: tone('warn').bd, fg: tone('warn').fg, dot: tone('warn').dot,
+        hasCta: !!OFF.cta, cta: L(OFF.cta), onCta: () => this.run(OFF.action || 'retry', []),
+      } : { show: false },
+      head: {
+        title: L(M.title), sub: isOffline ? L(OFF.stale) : isLoading ? '' : L(M.sub),
+        actions: (M.actions || []).map(mkBtn),
+      },
+      body: { opacity: isOffline ? '.85' : '1', pointer: 'auto' },
+      kpi: {
+        show: isLoading || st === 'ok' || isOffline, cols: isMobile ? 'repeat(2,minmax(0,1fr))' : 'repeat(4,minmax(0,1fr))',
+        items: isLoading
+          ? Array.from({ length: 4 }).map(() => ({ isSkel: true, isReal: false }))
+          : (M.kpis || []).map((k) => ({ isSkel: false, isReal: true, label: L(k.label), value: k.value, fg: k.tone ? tone(k.tone).fg : 'var(--ink)' })),
+      },
+      rows: {
+        show: isLoading || st === 'ok' || isOffline,
+        items: isLoading
+          ? Array.from({ length: skelRows }).map((_, idx) => ({ isSkel: true, isReal: false, w1: widths[idx % widths.length], w2: widths[(idx + 2) % widths.length], sep: idx === skelRows - 1 ? 'transparent' : 'var(--border)' }))
+          : (M.rows || []).map((r, idx) => { const tn = tone(r.tone); return { isSkel: false, isReal: true, initials: ini(L(r.title)), title: L(r.title), sub: r.sub, status: L(r.status), bg: tn.bg, fg: tn.fg, dot: tn.dot, sep: idx === (M.rows || []).length - 1 ? 'transparent' : 'var(--border)' }; }),
+      },
+      empty: isEmpty ? {
+        show: true, icon: icon(EM.icon || 'send'), title: L(EM.title), text: L(EM.text),
+        hasHints: (EM.hints || []).length > 0, hints: (EM.hints || []).map((h, idx) => ({ num: String(idx + 1), text: L(h.text) })),
+        actions: (EM.actions || []).map(mkBtn),
+      } : { show: false, hints: [], actions: [] },
+      error: isError ? {
+        show: true, title: L(ER.title), text: L(ER.text), raw: ER.raw || '', hasMeta: !!ER.meta, meta: ER.meta || '',
+        actions: (ER.actions || []).map(mkBtn),
+      } : { show: false, actions: [] },
+      loadingNote: { show: isLoading && !!(LD.note), text: L(LD.note) },
+      showDocs: (P.showDocs ?? M.showDocs) !== false,
+      docJson: JSON.stringify({ state: st, loading: { rows: skelRows, note: !!LD.note }, empty: { hints: (EM.hints || []).length, actions: (EM.actions || []).map((a) => a.key) }, error: { raw: !!ER.raw, actions: (ER.actions || []).map((a) => a.key) }, offline: { disablesActions: (M.actions || []).filter((a) => a.needsOnline).map((a) => a.key) } }, null, 2),
+    };
+  }
+}
+</script>
+</body>
+</html>

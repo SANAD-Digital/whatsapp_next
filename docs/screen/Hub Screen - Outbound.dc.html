@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--c-sent:#8FC0E4;--c-deliv:#2E7FD1;--c-read:#22A7C9;--c-queued:#EDA93E;--c-failed:#E0615A;--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--c-sent:#6FA6D8;--c-deliv:#3E82CC;--c-read:#37A9C9;--c-queued:#D9A33A;--c-failed:#DE6F68;--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+  .lv-host > .sc-host{flex:1 1 0%;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .lv-host > .sc-host > *{flex:1 1 0%;min-height:0;min-width:0}
+</style>
+</helmet>
+<div data-screen-label="الرسائل الصادرة" dir="rtl" style="flex:1;min-height:0;height:100%;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;flex:none">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <h1 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em">الرسائل الصادرة</h1>
+        <span style="font-size:12px;color:var(--ink-3)">كل ما أُرسل من الأجهزة: الحالة، المستند، الجهاز، والأخطاء إن وُجدت.</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <sc-if value="{{ hasScope }}" hint-placeholder-val="{{ false }}">
+          <span style="display:inline-flex;align-items:center;gap:8px;min-height:32px;padding:0 10px;border-radius:8px;background:var(--pri-s);color:var(--pri-d);font-size:12px;font-weight:600">{{ scopeLabel }}<span onClick="{{ clearScope }}" title="إزالة" style="cursor:pointer;font-size:14px;line-height:1">×</span></span>
+        </sc-if>
+      </div>
+    </div>
+
+    <div class="lv-host" style="flex:1;min-height:340px;display:flex;overflow:hidden">
+      <dc-import name="List View" loading="{{ loading }}" columns="{{ columns }}" rows="{{ rows }}" detail="{{ detail }}" bulk="{{ bulk }}" range-key="ts" sum-key="amount" sum-label="مجموع المبالغ" unit="رسالة" search-placeholder="اسم، رقم، أو رقم مستند…" search-keys="{{ searchKeys }}" export-name="outbound" default-sort="{{ defaultSort }}" page-size="{{ 50 }}" density="{{ density }}" theme="{{ theme }}" hint-size="100%,100%"></dc-import>
+    </div>
+  </div>
+
+  <sc-if value="{{ sendOpen }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="Send Message Dialog" prefill="{{ sendPrefill }}" on-close="{{ onSendClose }}" theme="{{ theme }}" hint-size="0,0"></dc-import>
+  </sc-if>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:860},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;]},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;compact&quot;,&quot;tsType&quot;:&quot;'compact' | 'comfortable'&quot;,&quot;options&quot;:[&quot;compact&quot;,&quot;comfortable&quot;]},&quot;filter&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;{kind:'device'|'status'|'error'|'docType'|'search'|'window', value?, device?, from?, to?, label?} | null&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+const ROUTE = '/messages/outbound';
+const STATUS_TONE = {
+  read: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--c-read)' }, delivered: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--c-deliv)' },
+  sent: { bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--c-sent)' }, warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--c-queued)' },
+  danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--c-failed)' }, muted: { bg: 'var(--sunken)', fg: 'var(--ink-3)', dot: 'var(--ink-4)' },
+};
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, scope: null, fire: null, rev: 0, loading: true };
+
+  componentDidMount() {
+    const w = () => {
+      if (window.HubData && window.HubShared) {
+        const filter = this.props.filter || window.HubShared.takeFilter(ROUTE);
+        this.setState({ ready: true, scope: filter || null });
+        setTimeout(() => this.setState({ loading: false }), 260);
+      } else this.t = setTimeout(w, 40);
+    };
+    w();
+  }
+  componentWillUnmount() { clearTimeout(this.t); }
+  componentDidUpdate(pp) { if (pp.filter !== this.props.filter && this.props.filter) this.setState({ scope: this.props.filter }); }
+
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    const density = this.props.density || 'compact';
+    if (!D || !H || !S.ready) return { theme, density, loading: true, qPaused: false, qRunning: true, pauseQueue: () => {}, resumeQueue: () => {}, sendTo: null, columns: [], rows: [], detail: null, bulk: [], searchKeys: [], defaultSort: null, hasScope: false, scopeLabel: '', clearScope: () => {}, goSandbox: () => {}, toastsMeta: { types: [] }, toastFire: null };
+    const f = D.fmt;
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+
+    /* ——— النطاق القادم من صفحة أخرى (جهاز، حالة، بحث…) ——— */
+    const sc = S.scope;
+    let msgs = D.messages.filter((m) => m.direction === 'out');
+    let scopeLabel = '';
+    if (sc) {
+      if (sc.kind === 'device') { const d = D.deviceById(sc.value); msgs = msgs.filter((m) => m.deviceId === sc.value); scopeLabel = 'الجهاز: ' + (d ? d.name : sc.value); }
+      if (sc.kind === 'status') { msgs = msgs.filter((m) => m.status === sc.value && (!sc.device || m.deviceId === sc.device)); scopeLabel = 'الحالة: ' + (D.STATUS[sc.value] ? D.STATUS[sc.value].ar : sc.value); }
+      if (sc.kind === 'error') { msgs = msgs.filter((m) => m.error === sc.value); scopeLabel = 'الخطأ: ' + (D.ERRORS[sc.value] ? D.ERRORS[sc.value].ar : sc.value); }
+      if (sc.kind === 'docType') { msgs = msgs.filter((m) => m.docType === sc.value); scopeLabel = 'المستند: ' + sc.value; }
+      if (sc.kind === 'search') { const q = String(sc.value).toLowerCase(); msgs = msgs.filter((m) => { const c = D.contactById(m.contactId) || {}; return [c.name, c.phone, m.docNo, m.docType].filter(Boolean).join(' ').toLowerCase().includes(q); }); scopeLabel = 'بحث: ' + sc.value; }
+      if (sc.kind === 'window') { msgs = msgs.filter((m) => m.ts >= sc.from && m.ts <= sc.to); scopeLabel = 'الفترة: ' + (sc.label || ''); }
+    }
+
+    /* ——— الخلايا ——— */
+    const chipOf = (m) => { const t = STATUS_TONE[D.STATUS[m.status].tone] || STATUS_TONE.muted; return { text: D.STATUS[m.status].ar, bg: t.bg, fg: t.fg, dot: t.dot, sort: m.status }; };
+    const devCell = (id) => { const d = D.deviceById(id) || { name: '—', initials: '—', color: 'var(--ink-4)' }; return { text: d.name, initials: d.initials, avBg: d.color, avFg: '#fff', sort: d.name }; };
+    const ctCell = (id) => { const c = D.contactById(id) || { name: '', phone: '' }; return { text: c.name || 'بلا اسم — من دليل الجهاز', sub: c.phone, sort: c.name || 'ي' }; };
+    const bodyOf = (m) => (m.body || '').replace('{no}', m.docNo || '').replace('{amt}', f.money(m.amount || 0));
+
+    const columns = [
+      { key: 'contact', label: 'الجهة', w: 210, kind: 'two', group: true },
+      { key: 'status', label: 'الحالة', w: 120, kind: 'badge', group: true, filter: true },
+      { key: 'docType', label: 'نوع المستند', w: 130, group: true, filter: true },
+      { key: 'docNo', label: 'رقم المستند', w: 110, kind: 'mono' },
+      { key: 'device', label: 'الجهاز', w: 150, kind: 'avatar', group: true, filter: true },
+      { key: 'ts', label: 'التاريخ والوقت', w: 150, kind: 'time', group: true, groupLabel: 'اليوم' },
+      { key: 'error', label: 'الخطأ', w: 200, filter: true },
+      { key: 'onBehalf', label: 'مرسل بالنيابة', w: 140, kind: 'badge', group: true, filter: true },
+      { key: 'kind', label: 'نوع الرسالة', w: 120, kind: 'badge', group: true, filter: true },
+      { key: 'cmdCode', label: 'الأمر المرسل', w: 130, kind: 'mono', filter: true },
+      { key: 'inId', label: 'معرّف الرسالة الوارد', w: 150, kind: 'mono' },
+      { key: 'inTs', label: 'تاريخ ووقت الوارد', w: 150, kind: 'time' },
+      { key: 'gap', label: 'الوقت المستغرق', w: 130, align: 'end' },
+      { key: 'printTpl', label: 'قالب الطباعة', w: 170, filter: true },
+      { key: 'schedAt', label: 'تاريخ ووقت الجدولة', w: 160, kind: 'time' },
+    ];
+    const rows = msgs.slice(0, 4000).map((m) => ({ id: m.id, contact: ctCell(m.contactId), status: chipOf(m), docType: m.docType, docNo: m.docNo, amount: m.amount, device: devCell(m.deviceId), ts: m.ts, error: m.error ? { text: D.ERRORS[m.error].ar, color: 'var(--dg-i)' } : { text: '—', color: 'var(--ink-4)' },
+      onBehalf: m.sandbox
+        ? { text: 'نعم', bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)', sort: 'a' }
+        : { text: '—', bg: 'var(--sunken)', fg: 'var(--ink-4)', dot: 'var(--ink-4)', sort: 'b' },
+      kind: m.kind === 'document'
+        ? { text: 'مستند', bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)', sort: 'b' }
+        : m.kind === 'image'
+          ? { text: 'صورة', bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', sort: 'c' }
+          : { text: 'نص', bg: 'var(--sunken)', fg: 'var(--ink-2)', dot: 'var(--ink-4)', sort: 'a' },
+      cmdCode: m.commandId ? (((D.commands || []).find((c) => c.id === m.commandId) || {}).code || '—') : '—',
+      inId: m.triggerId ? String(m.triggerId).toUpperCase() : '—',
+      inTs: m.triggerTs ? m.triggerTs : { text: '—', color: 'var(--ink-4)', sort: -1 },
+      gap: (() => {
+        if (!m.triggerTs) return { text: '—', color: 'var(--ink-4)', sort: -1 };
+        const sec = Math.max(0, Math.round((m.ts - m.triggerTs) / 1000));
+        return { text: sec < 60 ? f.n(sec) + ' ثانية' : f.n(Math.round(sec / 60)) + ' دقيقة', color: 'var(--ink-2)', sort: sec };
+      })(),
+      printTpl: m.printTpl || '—',
+      schedAt: m.scheduledAt ? m.scheduledAt : { text: '—', color: 'var(--ink-4)', sort: -1 },
+      _m: m }));
+
+    const detail = (r) => {
+      const m = r._m, err = m.error ? D.ERRORS[m.error] : null;
+      const camp = m.campaignId ? D.campaigns.find((c) => c.id === m.campaignId) : null;
+      const tpl = m.templateId ? D.templates.find((t) => t.id === m.templateId) : null;
+      const cmd = m.commandId ? (D.commands || []).find((c) => c.id === m.commandId) : null;
+      const gap = m.triggerTs ? Math.max(0, Math.round((m.ts - m.triggerTs) / 1000)) : null;
+      const gapText = gap == null ? '' : (gap < 60 ? f.n(gap) + ' ثانية' : f.n(Math.round(gap / 60)) + ' دقيقة');
+      return {
+        alert: err ? { tone: 'danger', title: err.ar, lines: [{ text: err.raw.replace('{n}', ctCell(m.contactId).sub), mono: true }, 'الإجراء المقترح: ' + err.fix] } : null,
+        fields: [
+          { k: 'معرّف الرسالة', v: String(m.id).toUpperCase(), mono: true },
+          { k: 'نوع المستند', v: m.docType },
+          { k: 'رقم المستند', v: m.docNo, mono: true },
+          { k: 'الجهاز المرسل', v: devCell(m.deviceId).text },
+          { k: 'النموذج', v: tpl ? tpl.name : (camp ? camp.name : 'إرسال يدوي') },
+        ].concat(cmd ? [{ k: 'الأمر', v: cmd.code }, { k: 'الدالة', v: cmd.fn || '—' }] : [], [
+          { k: 'وقت الإرسال', v: f.date(m.ts) + ' ' + f.time(m.ts), mono: true },
+        ]),
+        blocks: [].concat(m.triggerText ? [{ label: cmd ? 'النص الوارد · أمر من العميل' : 'النص الوارد', text: m.triggerText, tone: 'warn' }] : [], [
+          { label: 'النص المُرسَل', text: bodyOf(m) },
+        ], gap != null ? [{ label: 'فارق الرد', text: gapText + ' بين استلام الوارد وإرسال الصادر' }] : [], [
+          { label: 'سجل المحاولات', list: (() => {
+            const n = m.attempts || 1, out = [];
+            for (let i = n; i >= 1; i--) {
+              const last = i === n;
+              const failed = last && m.status === 'failed';
+              out.push({
+                text: 'المحاولة ' + f.n(i) + ' — ' + (failed ? 'فشلت: ' + (err ? err.ar : 'خطأ غير محدد') : last ? D.STATUS[m.status].ar : 'فشلت وأُعيدت'),
+                sub: f.date(m.ts) + ' ' + f.time(m.ts),
+                badge: failed ? 'فشل' : last ? D.STATUS[m.status].ar : 'إعادة',
+                badgeTone: failed ? 'danger' : last && (m.status === 'read' || m.status === 'delivered') ? 'ok' : 'muted',
+              });
+            }
+            out.push({ text: tpl ? 'أُنشئت الرسالة من نموذج «' + tpl.name + '»' : camp ? 'أُنشئت الرسالة من حملة «' + camp.name + '»' : cmd ? 'أُنشئت الرسالة رداً على الأمر «' + cmd.code + '»' : 'أُنشئت الرسالة من إرسال يدوي', sub: f.date(m.ts) + ' ' + f.time(m.ts), subMono: false });
+            return out;
+          })() },
+        ]),
+        actions: [
+          ...(m.status === 'failed' ? [{ label: 'إعادة الإرسال', tone: 'primary', onClick: () => { m.status = 'queued'; m.error = null; m.attempts = (m.attempts || 1) + 1; D.logActivity && D.logActivity('أُعيد إرسال رسالة إلى ' + ctCell(m.contactId).text, 'warn'); this.toast({ key: 'requeued', title: 'أُعيدت الرسالة إلى الطابور', text: 'الحالة الآن «قيد الإرسال».' }); this.bump(); } }] : []),
+          ...(m.contactId ? [{ label: 'إرسال رسالة', closes: false, onClick: () => this.setState({ sendTo: { kind: 'contact', value: m.contactId } }) }] : []),
+          { label: 'جهة الاتصال', onClick: () => go('/contacts', { kind: 'contact', value: m.contactId }) },
+        ],
+      };
+    };
+    const bulk = [{ label: 'إعادة إرسال الفاشلة', onClick: (sel) => { let n = 0; sel.forEach((r) => { if (r._m.status === 'failed') { r._m.status = 'queued'; r._m.error = null; n++; } }); this.toast(n ? { key: 'requeued', title: 'أُعيدت ' + f.n(n) + ' رسالة إلى الطابور' } : { key: 'none', title: 'لا رسائل فاشلة ضمن التحديد', tone: 'muted' }); if (n) this.bump(); } }];
+
+    return {
+      sendOpen: !!S.sendTo, sendPrefill: S.sendTo, onSendClose: () => this.setState({ sendTo: null }),
+      theme, density, loading: S.loading,
+      columns, rows, detail, bulk, searchKeys: ['contact', 'docNo', 'docType', 'error'], defaultSort: { key: 'ts', dir: 'desc' },
+      hasScope: !!scopeLabel, scopeLabel, clearScope: () => this.setState({ scope: null }),
+      qPaused: !!(D.queue && D.queue.paused), qRunning: !(D.queue && D.queue.paused),
+      pauseQueue: () => { D.setQueuePaused(true, 'سند ديجيتال'); D.logActivity('أُوقف الإرسال من شاشة الصادرة', 'warn'); this.toast({ key: 'requeued', title: 'أُوقف الإرسال مؤقتاً' }); this.bump(); },
+      resumeQueue: () => { D.setQueuePaused(false, 'سند ديجيتال'); D.logActivity('استُؤنف الإرسال من شاشة الصادرة', 'primary'); this.toast({ key: 'requeued', title: 'استُؤنف الإرسال' }); this.bump(); },
+      goSandbox: () => go('/sandbox'),
+      toastsMeta: { position: 'bottom-start', duration: 3500, types: [{ key: 'requeued', tone: 'ok', icon: 'check' }, { key: 'none', tone: 'muted', icon: 'alert' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

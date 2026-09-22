@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="20" fill="#0F7A63"/><circle cx="60" cy="58" r="26" fill="#FFFFFF"/><path d="M34 88l6-16 12 4z" fill="#FFFFFF"/><text x="60" y="68" font-family="system-ui,sans-serif" font-size="26" font-weight="700" fill="#0F7A63" text-anchor="middle">هَب</text></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=5"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--c-sent:#8FC0E4;--c-deliv:#2E7FD1;--c-read:#22A7C9;--c-queued:#EDA93E;--c-failed:#E0615A;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--c-sent:#6FA6D8;--c-deliv:#3E82CC;--c-read:#37A9C9;--c-queued:#D9A33A;--c-failed:#DE6F68;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+  @keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
+</style>
+</helmet>
+<div data-screen-label="الرئيسية" dir="rtl" style="flex:1;min-height:0;height:100%;overflow:auto;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="min-height:100%;display:flex;flex-direction:column;gap:14px;padding:16px;width:100%">
+
+    <dc-import name="Cards" meta="{{ topMeta }}" handlers="{{ handlers }}" loading="{{ loading }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,420px"></dc-import>
+
+    <dc-import name="Charts" meta="{{ chartsMeta }}" handlers="{{ handlers }}" loading="{{ loading }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,300px"></dc-import>
+
+    <dc-import name="Cards" meta="{{ panelsMeta }}" handlers="{{ handlers }}" loading="{{ loading }}" lang="ar" theme="{{ theme }}" density="compact" embed="{{ true }}" show-docs="{{ false }}" hint-size="100%,300px"></dc-import>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:4px;margin-top:auto;border-top:1px solid var(--border);font-size:11px;color:var(--ink-4)">
+      <span>© مركز تكامل واتساب. جميع الحقوق محفوظة.</span>
+      <span style="display:flex;align-items:center;gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ok);animation:livePulse 2.4s ease-in-out infinite"></span>جميع الأنظمة تعمل بشكل طبيعي · <span dir="ltr" style="font-family:'IBM Plex Mono',monospace">v2.4.0</span></span>
+    </div>
+  </div>
+
+  <dc-import name="Confirm Dialog" meta="{{ confirmMeta }}" handlers="{{ handlers }}" open-key="{{ confirmKey }}" on-close="{{ onConfirmClose }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+  <sc-if value="{{ sendOpen }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="Send Message Dialog" prefill="{{ sendPrefill }}" on-close="{{ onSendClose }}" theme="{{ theme }}" hint-size="0,0"></dc-import>
+  </sc-if>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:960},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;defaultRange&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;week&quot;,&quot;options&quot;:[&quot;today&quot;,&quot;week&quot;,&quot;month&quot;,&quot;year&quot;],&quot;tsType&quot;:&quot;'today'|'week'|'month'|'year'&quot;,&quot;section&quot;:&quot;اللوحة&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+const ROUTE = '/';
+const USER = 'عبدالله الفهد';
+const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+/* نغمة البطاقات لكل حالة رسالة */
+const TONE_OF = { read: 'info', delivered: 'ok', sent: 'muted', warn: 'warn', danger: 'danger', muted: 'muted' };
+const CAMP_TONE = { running: { t: 'ok', ar: 'جارية' }, scheduled: { t: 'info', ar: 'مجدولة' }, paused: { t: 'warn', ar: 'موقوفة' } };
+const DEV_TONE = { connected: 'ok', disconnected: 'danger', pending: 'warn' };
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, loading: true, range: null, sendOpenFlag: false, confirmKey: null, fire: null, rev: 0 };
+
+  componentDidMount() {
+    const w = () => { if (window.HubData && window.HubShared && window.UIKit) { this.setState({ ready: true }); setTimeout(() => this.setState({ loading: false }), 280); } else this.t = setTimeout(w, 40); };
+    w();
+    this.timer = setInterval(() => { if (document.hidden) return; const D = window.HubData; if (D && D.advanceQueue) D.advanceQueue(2); this.bump(); }, 5000);
+  }
+  componentWillUnmount() { clearTimeout(this.t); clearInterval(this.timer); }
+
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+  range() { return this.state.range || this.props.defaultRange || 'week'; }
+
+  rangeDates(D, range) {
+    const to = new Date(), from = new Date(D.rangeStart(range));
+    const d = (x) => x.getDate();
+    if (range === 'today') return d(to) + ' ' + MONTHS[to.getMonth()] + ' ' + to.getFullYear();
+    if (from.getMonth() === to.getMonth()) return d(from) + ' – ' + d(to) + ' ' + MONTHS[to.getMonth()] + ' ' + to.getFullYear();
+    return d(from) + ' ' + MONTHS[from.getMonth()] + ' – ' + d(to) + ' ' + MONTHS[to.getMonth()] + ' ' + to.getFullYear();
+  }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    const empty = { theme, loading: true, handlers: {}, topMeta: { sections: [] }, chartsMeta: { charts: [] }, panelsMeta: { sections: [] }, confirmMeta: { dialogs: [] }, confirmKey: null, onConfirmClose: () => {}, toastsMeta: { types: [] }, toastFire: null };
+    if (!D || !H || !S.ready) return empty;
+
+    const f = D.fmt, range = this.range(), sub = D.subscription;
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+    const openList = (filter) => go('/messages/outbound', filter);
+
+    const k = D.kpis(range, null);
+    const sp = D.sparkSeries(range, null);
+    const health = D.deviceHealth();
+    const pending = D.pendingQueueCount();
+    const vol = D.volumeSeries(range, null);
+    const fails = D.failureBreakdown(range, null);
+    const org = D.company || { name: '—', branch: '—' };
+    const disconnected = D.devices.find((d) => d.status === 'disconnected');
+    const lastOut = D.messages.find((m) => m.direction === 'out' && m.status !== 'unsent');
+    const usedPct = Math.round((sub.used / sub.quota) * 100);
+
+    const handlers = {
+      openSend: () => this.setState({ sendOpenFlag: true }),
+      setRange: (r) => { this.setState({ range: r, loading: true }); setTimeout(() => this.setState({ loading: false }), 240); },
+      askResume: () => this.setState({ confirmKey: 'resume' }),
+      resume: () => {
+        D.setQueuePaused(false, USER);
+        D.logActivity('استأنف ' + USER + ' الطابور — ' + f.n(pending) + ' رسالة معلّقة', 'primary');
+        this.toast({ key: 'resumed', title: 'استُئنف الطابور', text: f.n(pending) + ' رسالة تنتقل إلى «قيد الإرسال» تدريجياً.' });
+        this.bump();
+      },
+      diagnose: () => go('/devices', { kind: 'status', value: 'failed' }),
+      openList: (filter) => openList(filter || null),
+      openStatus: (st) => openList({ kind: 'status', value: st }),
+      openErrorLabel: (label) => { const row = fails.find((x) => x.label === label); openList(row ? { kind: 'error', value: row.code } : null); },
+      openWindow: (label) => { const b = vol.buckets.find((x) => x.label === label); openList(b ? { kind: 'window', label: b.label, from: b.from, to: b.to } : null); },
+      openQueue: () => go('/messages/queue', { kind: 'status', value: 'queued' }),
+      openDevices: () => go('/devices'),
+      openCampaigns: () => go('/campaigns'),
+      openBilling: () => go('/billing'),
+      openMessage: (docNo) => openList({ kind: 'search', value: docNo }),
+    };
+
+    /* ——— صحة التشغيل + الفترة + التنبيهات + المؤشرات (Cards) ——— */
+    const ops = [
+      { icon: 'device', label: 'الأجهزة المتصلة', value: health.connected + ' من ' + health.total, note: health.disconnected ? health.disconnected + ' جهاز مفصول' : 'كل الأجهزة متصلة', tone: health.disconnected ? 'warn' : 'ok', action: 'openDevices' },
+      { icon: 'clock', label: 'الطابور', value: D.queue.paused ? 'متوقف مؤقتاً' : 'يعمل', note: D.queue.paused ? f.n(pending) + ' رسالة معلّقة' : D.queue.rate + ' رسالة/دقيقة', tone: D.queue.paused ? 'warn' : 'ok', action: 'openQueue' },
+      { icon: 'send', label: 'آخر إرسال', value: lastOut ? f.ago(lastOut.ts).replace('قبل ', '') : '—', note: 'ضمن المعدل الطبيعي', tone: 'info', action: 'openList' },
+      { icon: 'code', label: 'واجهة برمجة التطبيقات', value: 'سليم', note: 'زمن الاستجابة 320ms', tone: 'ok' },
+      { icon: 'hook', label: 'ويب هوك', value: 'غير مفعّل', note: 'لا تصل تحديثات الحالة', tone: 'danger' },
+      { icon: 'card', label: 'استخدام الباقة', value: usedPct + '%', valueMono: true, note: f.n(sub.used) + ' من ' + f.n(sub.quota) + ' رسالة', tone: usedPct > 80 ? 'warn' : 'info', action: 'openBilling' },
+    ].map((c) => ({ kind: 'stat', ...c }));
+
+    const alerts = [].concat(
+      D.queue.paused ? [{ kind: 'alert', tone: 'warn', label: 'الطابور متوقف مؤقتاً — ' + f.n(pending) + ' رسالة معلّقة', note: 'أوقفه ' + D.queue.pausedBy + ' قبل ' + Math.max(1, Math.round((Date.now() - D.queue.pausedSince) / 60000)) + ' دقيقة — «' + D.queue.reason + '»', cta: 'استئناف الطابور', ctaStyle: 'solid', action: 'askResume' }] : [],
+      disconnected ? [{ kind: 'alert', tone: 'danger', label: 'جهاز «' + disconnected.name + '» غير متصل منذ ' + Math.round((Date.now() - disconnected.lastSeen) / 60000) + ' دقيقة', note: 'نسبة الفشل في هذه الفترة ' + k.failRate.toFixed(1) + '% — أغلبها من هذا الجهاز', cta: 'تشخيص الجهاز', action: 'diagnose' }] : []
+    );
+
+    const kpis = [
+      { label: 'الرسائل المرسلة', value: f.n(k.total), note: f.pct(k.deltaTotal) + ' عن الفترة السابقة', noteTone: k.deltaTotal >= 0 ? 'ok' : 'danger', icon: 'send', tone: 'primary', series: sp.total, action: 'openList' },
+      { label: 'نسبة التسليم', value: k.deliveredRate.toFixed(1) + '%', note: f.n(k.delivered) + ' رسالة مستلمة', icon: 'check', series: sp.delivered, action: 'openStatus', args: 'delivered' },
+      { label: 'نسبة القراءة', value: k.readRate.toFixed(1) + '%', note: f.n(k.read) + ' رسالة مقروءة', icon: 'read', tone: 'info', series: sp.read, action: 'openStatus', args: 'read' },
+      { label: 'نسبة الفشل', value: k.failRate.toFixed(1) + '%', valueTone: 'danger', note: f.n(k.failed) + ' من ' + f.n(k.total), icon: 'fail', tone: 'danger', series: sp.failed, action: 'openStatus', args: 'failed' },
+      { label: 'قيد المعالجة', value: f.n(pending), note: D.queue.paused ? 'الطابور متوقف مؤقتاً' : 'في الطابور حالياً', noteTone: D.queue.paused ? 'warn' : undefined, icon: 'queue', tone: 'muted', series: sp.queued, action: 'openQueue' },
+    ].map((c) => ({ kind: 'kpi', ...c }));
+
+    const topMeta = { handlers, sections: [].concat(
+      [{
+        title: 'لوحة المراقبة',
+        sub: org.name + ' · ' + org.branch + ' — ' + this.rangeDates(D, range),
+        segment: { value: range, action: 'setRange', options: Object.keys(D.RANGES).map((key) => ({ v: key, label: D.RANGES[key] })) },
+        min: 230, mobileColumns: 2, cards: ops,
+      }],
+      alerts.length ? [{ min: 420, cards: alerts }] : [],
+      [{ min: 200, mobileColumns: 2, cards: kpis }]
+    ) };
+
+    /* ——— الرسوم (Charts) ——— */
+    const chartsMeta = { handlers, cols: 12, charts: [
+      {
+        kind: 'stacked', span: 8, height: 210, title: 'حجم الرسائل — ' + D.RANGES[range], note: 'كل عمود فترة واحدة؛ النقر يفتح السجل عليها', total: f.n(k.total),
+        cta: 'عرض الكل', action: 'openList',
+        legend: [
+          { key: 'read', label: 'مقروء', color: 'var(--c-read)' },
+          { key: 'delivered', label: 'مستلم', color: 'var(--c-deliv)' },
+          { key: 'sent', label: 'مرسل', color: 'var(--c-sent)' },
+          { key: 'queued', label: 'قيد الإرسال', color: 'var(--c-queued)' },
+          { key: 'failed', label: 'فشل', color: 'var(--c-failed)' },
+        ],
+        buckets: vol.buckets.map((b) => ({ label: b.label, values: b.parts, action: 'openWindow' })),
+      },
+      {
+        kind: 'breakdown', span: 4, title: 'الفشل حسب نوع الخطأ', cta: 'عرض الكل', action: 'openStatus', tone: 'danger',
+        rows: fails.map((x) => ({ label: x.label, value: x.count, action: 'openErrorLabel' })),
+        empty: { title: 'لا فشل في هذه الفترة', text: 'كل ما أُرسل وصل. جرّب فترة أوسع إن كنت تتابع خطأً قديماً.', tone: 'ok' },
+        footer: [
+          { label: 'إجمالي الفشل', value: f.n(k.failed), tone: 'danger' },
+          { label: 'نسبة الفشل', value: k.failRate.toFixed(1) + '%', tone: 'danger' },
+        ],
+      },
+    ] };
+
+    /* ——— الألواح السفلية (Cards: panel بصفوف موسّعة) ——— */
+    const feedRows = D.liveFeed(5).map((m) => {
+      const c = D.contactById(m.contactId) || { name: '', phone: '' };
+      const dv = D.deviceById(m.deviceId) || { initials: '—', color: 'var(--ink-4)' };
+      return {
+        label: c.name || c.phone || '—',
+        sub: (m.direction === 'in' ? 'وارد' : 'صادر') + ' · ' + (m.docNo || '—') + ' · ' + f.time(m.ts),
+        avatar: dv.initials, avatarColor: dv.color,
+        badge: D.STATUS[m.status].ar, badgeTone: TONE_OF[D.STATUS[m.status].tone] || 'muted',
+        action: 'openMessage', args: m.docNo, key: 'feed',
+      };
+    });
+
+    const campRows = D.campaigns
+      .filter((c) => ['running', 'scheduled', 'paused'].includes(c.status))
+      .sort((a, b) => ({ running: 0, paused: 1, scheduled: 2 }[a.status] - { running: 0, paused: 1, scheduled: 2 }[b.status]) || a.startAt - b.startAt)
+      .slice(0, 5)
+      .map((c) => ({
+        label: c.name, sub: f.n(c.sent) + ' / ' + f.n(c.recipients) + ' مستلم', subMono: false,
+        badge: CAMP_TONE[c.status].ar, badgeTone: CAMP_TONE[c.status].t, action: 'openCampaigns', key: 'campaign',
+      }));
+
+    const deviceRows = D.devices.map((d) => {
+      const t = H.statusTone(d.status);
+      return { label: d.name, sub: d.phone, subMono: true, avatar: d.initials, avatarColor: d.color, badge: t.text, badgeTone: DEV_TONE[d.status] || 'muted', action: 'openDevices', key: 'device' };
+    });
+
+    const panelsMeta = { handlers, sections: [{ min: 330, cards: [
+      { kind: 'panel', label: 'التدفق المباشر', note: 'آخر خمس حركات صادرة وواردة', cta: 'إرسال رسالة', ctaStyle: 'solid', action: 'openSend', rows: feedRows },
+      { kind: 'panel', label: 'الحملات النشطة', note: campRows.length ? 'الجارية والموقوفة والمجدولة' : 'لا حملات نشطة الآن', cta: 'عرض الكل', action: 'openCampaigns', rows: campRows },
+      { kind: 'panel', label: 'حالة الأجهزة', note: health.connected + ' من ' + health.total + ' متصلة', cta: 'عرض الكل', action: 'openDevices', rows: deviceRows },
+      { kind: 'panel', label: 'الباقة والمحفظة', note: sub.plan, cta: 'تجديد الآن', action: 'openBilling',
+        bars: [{ label: 'استهلاك الباقة', value: f.n(sub.used) + ' / ' + f.n(sub.quota), pct: usedPct, tone: usedPct > 80 ? 'warn' : 'primary' }],
+        rows: [
+          { label: 'رصيد الرسائل المتبقية', value: f.n(sub.quota - sub.used) },
+          { label: 'رصيد المحفظة', value: f.money(sub.wallet) + ' ﷼' },
+          { label: 'تاريخ التجديد', value: f.date(sub.renewAt) },
+          { label: 'المتبقي للتجديد', value: Math.round((sub.renewAt - Date.now()) / 86400000) + ' يوم' },
+        ] },
+    ] }] };
+
+    const confirmMeta = { handlers, dialogs: [
+      { key: 'resume', tone: 'info', icon: 'send', title: 'استئناف الطابور؟', text: 'الاستئناف يبدأ الإرسال من أقدم رسالة معلّقة. يمكنك الإيقاف مرة أخرى في أي لحظة من شاشة الطابور.',
+        facts: [
+          { label: 'رسائل ستُرسل فوراً', value: f.n(pending), mono: true },
+          { label: 'معدّل الإرسال', value: D.queue.rate + ' / دقيقة', mono: true },
+          { label: 'يُخصم من رصيد الباقة', value: f.n(pending), mono: true, tone: 'warn' },
+          { label: 'الرصيد بعد الإرسال', value: f.n(Math.max(0, sub.quota - sub.used - pending)), mono: true },
+        ],
+        confirmLabel: 'استأنف الإرسال', action: 'resume' },
+    ] };
+
+    return {
+      theme, loading: S.loading, handlers,
+      sendOpen: !!S.sendOpenFlag, sendPrefill: null, onSendClose: () => this.setState({ sendOpenFlag: false }),
+      topMeta, chartsMeta, panelsMeta,
+      confirmMeta, confirmKey: S.confirmKey, onConfirmClose: () => this.setState({ confirmKey: null }),
+      toastsMeta: { position: 'bottom-start', duration: 4000, types: [{ key: 'resumed', tone: 'ok', icon: 'check' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>

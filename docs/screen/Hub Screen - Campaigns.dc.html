@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="../shared/support.js"></script>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#0F7A63"/><circle cx="50" cy="46" r="22" fill="#fff"/><path d="M28 76l5-13 10 3z" fill="#fff"/></svg></template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="../shared/ui-kit.js?v=3"></script>
+<script src="../shared/hub-data.global.js?v=10"></script>
+<script src="../shared/hub-pages.js?v=1"></script>
+<script src="../shared/hub-shared.js?v=2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F7F6;--surface:#FFFFFF;--sunken:#EEF2F0;--border:#E3E8E6;--border-2:#C9D2CF;--ink:#0F1A18;--ink-2:#33423F;--ink-3:#55645F;--ink-4:#62716D;--pri:#0F7A63;--pri-d:#0A6250;--pri-s:#DFF1EC;--pri-sb:#B6DDD2;--on-pri:#FFFFFF;--ok:#1A8B50;--ok-s:#E1F3E8;--ok-i:#16713F;--ok-sb:#B9E2CA;--wn:#9A6C14;--wn-s:#FBF1DC;--wn-i:#8A6116;--wn-ix:#6F4E10;--wn-sb:#EFDCB4;--dg:#C9524B;--dg-s:#FBEAE8;--dg-i:#A93A34;--dg-sb:#F2CBC7;--nf:#2568AF;--nf-s:#E4EFFA;--nf-i:#1F5A97;--nf-sb:#C2DCF2;--shadow-sm:0 1px 2px rgba(23,33,31,.06);--shadow-lg:0 18px 40px -26px rgba(23,33,31,.5);}
+  [data-theme="dark"]{--bg:#111A1D;--surface:#172226;--sunken:#1E2C31;--border:#2A363B;--border-2:#334247;--ink:#E4EBE9;--ink-2:#C4D0CD;--ink-3:#9CACA9;--ink-4:#94A4A1;--pri:#17A184;--pri-d:#63D3B8;--pri-s:#0D3730;--pri-sb:#1A5347;--on-pri:#04201A;--ok:#2FAF63;--ok-s:#103220;--ok-i:#6CD79C;--ok-sb:#1B4E33;--wn:#D9A33A;--wn-s:#37290E;--wn-i:#EEC069;--wn-ix:#F3D18A;--wn-sb:#54401A;--dg:#DE6F68;--dg-s:#3A1D1B;--dg-i:#F0A49E;--dg-sb:#562A27;--nf:#3E82CC;--nf-s:#14263C;--nf-i:#8FBAE8;--nf-sb:#213C60;--shadow-sm:0 1px 2px rgba(0,0,0,.3);--shadow-lg:0 18px 40px -26px rgba(0,0,0,.75);}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:'IBM Plex Sans Arabic',system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:var(--ink);}
+  *{box-sizing:border-box;}
+  a{color:var(--pri);text-decoration:none;} a:hover{color:var(--pri-d);text-decoration:underline;}
+  input,button{font-family:inherit;}
+  @keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.72)}}
+  .lv-host > .sc-host{flex:1 1 0%;min-height:0;min-width:0;display:flex;overflow:hidden}
+  .lv-host > .sc-host > *{flex:1 1 0%;min-height:0;min-width:0}
+</style>
+</helmet>
+<div data-screen-label="الحملات" dir="rtl" style="flex:1;min-height:0;height:100%;overflow-y:auto;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic',system-ui,sans-serif">
+  <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;padding:16px;width:100%">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;flex:none">
+      <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+        <h1 style="margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em">الحملات</h1>
+        <span style="font-size:12px;color:var(--ink-3)">إرسال جماعي لمجموعة جهات من نموذج واحد، بمعدّل محكوم ومتابعة لحظية.</span>
+      </div>
+      <button type="button" onClick="{{ create }}" style="min-height:36px;padding:0 14px;border-radius:8px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer">+ حملة جديدة</button>
+    </div>
+
+    <sc-if value="{{ hasRunning }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;align-items:center;gap:14px;padding:9px 12px;border-radius:8px;background:var(--surface);border:1px solid var(--pri-sb);box-shadow:inset 3px 0 0 var(--pri);flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="width:8px;height:8px;border-radius:50%;background:var(--pri);animation:livePulse 1.8s ease-in-out infinite;flex:none"></span><span style="font-size:16px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ run.name }}</span><span style="padding:3px 8px;border-radius:999px;background:var(--pri-s);color:var(--pri-d);font-size:11px;font-weight:600;flex:none;white-space:nowrap">جارية الآن</span></span>
+          <span style="display:flex;align-items:center;gap:8px;flex:1;min-width:200px">
+            <span style="flex:1;min-width:80px;height:6px;border-radius:999px;background:var(--sunken);overflow:hidden;display:flex">
+              <span style="width:{{ run.wRead }};background:var(--nf)"></span>
+              <span style="width:{{ run.wDeliv }};background:var(--pri)"></span>
+              <span style="width:{{ run.wSent }};background:var(--pri-sb)"></span>
+              <span style="width:{{ run.wFailed }};background:var(--dg)"></span>
+            </span>
+            <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-2);white-space:nowrap">{{ run.progressText }}</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <sc-for list="{{ run.stats }}" as="s" hint-placeholder-count="4">
+              <span style="display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap"><span style="font-size:10px;color:var(--ink-4)">{{ s.label }}</span><span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:{{ s.color }}">{{ s.value }}</span></span>
+            </sc-for>
+          </span>
+          <span style="display:flex;gap:6px;flex:none">
+            <button type="button" onClick="{{ run.askPause }}" style="min-height:32px;padding:0 11px;border-radius:6px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink-2);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap" style-hover="background:var(--sunken)">إيقاف مؤقت</button>
+            <button type="button" onClick="{{ run.onOpenList }}" style="min-height:32px;padding:0 11px;border-radius:6px;border:none;background:var(--pri);color:var(--on-pri);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">سجل الصادر</button>
+          </span>
+        </div>
+        <span style="font-size:11px;color:var(--ink-4);line-height:1.6">{{ run.eta }}</span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ hasScheduled }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:none;display:flex;flex-direction:column;gap:5px">
+        <sc-for list="{{ schedList }}" as="k" hint-placeholder-count="2">
+          <div style="display:flex;align-items:center;gap:14px;padding:9px 12px;border-radius:8px;background:var(--surface);border:1px solid var(--nf-sb);box-shadow:inset 3px 0 0 var(--nf);flex-wrap:wrap">
+            <span style="display:flex;align-items:center;gap:8px;min-width:0">
+              <span style="width:8px;height:8px;border-radius:50%;background:var(--nf);flex:none"></span>
+              <span style="font-size:15px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ k.name }}</span>
+              <span style="padding:3px 8px;border-radius:999px;background:var(--nf-s);color:var(--nf-i);font-size:11px;font-weight:600;flex:none;white-space:nowrap">مجدولة</span>
+            </span>
+            <span dir="ltr" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-2);flex:none">{{ k.when }}</span>
+            <span style="font-size:11px;color:var(--ink-3);flex:1;min-width:120px">{{ k.meta }}</span>
+            <span style="display:flex;gap:6px;flex:none">
+              <button type="button" onClick="{{ k.onPause }}" style="min-height:32px;padding:0 11px;border-radius:6px;border:1px solid var(--border-2);background:var(--surface);color:var(--ink-2);font-size:13px;font-weight:600;cursor:pointer" white-space:nowrap" style-hover="background:var(--sunken)">إيقاف للتعديل</button>
+              <button type="button" onClick="{{ k.onOpen }}" style="min-height:32px;padding:0 11px;border-radius:6px;border:1px solid var(--nf-sb);background:var(--nf-s);color:var(--nf-i);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">الصادر المجدول</button>
+            </span>
+          </div>
+        </sc-for>
+        <sc-if value="{{ moreScheduled }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;color:var(--ink-4)">{{ moreScheduledText }}</span></sc-if>
+      </div>
+    </sc-if>
+
+
+    <div class="lv-host" style="flex:1;min-height:340px;display:flex;overflow:hidden">
+      <dc-import name="List View" loading="{{ loading }}" columns="{{ columns }}" rows="{{ rows }}" detail="{{ detail }}" bulk="{{ bulk }}" sum-key="recipients" sum-label="إجمالي المستلمين" unit="حملة" search-placeholder="اسم الحملة أو المالك…" search-keys="{{ searchKeys }}" export-name="campaigns" default-sort="{{ defaultSort }}" pinned="{{ pinned }}" page-size="{{ 50 }}" density="compact" theme="{{ theme }}" hint-size="100%,100%"></dc-import>
+    </div>
+  </div>
+
+  <dc-import name="Overlay Panel" panel="{{ panel }}" on-action="{{ onPanelAction }}" on-close="{{ onPanelClose }}" density="compact" theme="{{ theme }}" embed="{{ true }}" hint-size="0,0"></dc-import>
+  <dc-import name="Confirm Dialog" meta="{{ confirmMeta }}" handlers="{{ handlers }}" open-key="{{ confirmKey }}" on-close="{{ onConfirmClose }}" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+  <dc-import name="Toasts" meta="{{ toastsMeta }}" fire="{{ toastFire }}" position="bottom-start" lang="ar" theme="{{ theme }}" embed="{{ true }}" show-docs="{{ false }}" hint-size="0,0"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:900},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;light&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;onNavigate&quot;:{&quot;editor&quot;:null,&quot;default&quot;:null,&quot;tsType&quot;:&quot;(route: string, filter?: object) =&gt; void&quot;}}">
+const ROUTE = '/campaigns';
+const USER = 'عبدالله الفهد';
+const ST = {
+  draft: { ar: 'مسودة', tone: 'muted' },
+  scheduled: { ar: 'مجدولة', tone: 'info' },
+  running: { ar: 'قيد الإرسال', tone: 'ok' },
+  paused: { ar: 'موقوفة', tone: 'warn' },
+  completed: { ar: 'مكتملة', tone: 'muted' },
+  cancelled: { ar: 'ملغية', tone: 'danger' },
+};
+/* الانتقالات المسموحة: مسودة ← مجدولة/قيد الإرسال · مجدولة أو قيد الإرسال ← موقوفة · موقوفة ← استئناف أو إلغاء نهائي */
+const CAN = { pause: ['scheduled', 'running'], resume: ['paused'], cancel: ['paused'], edit: ['draft', 'paused'] };
+const LOG_AR = { pause: 'إيقاف', resume: 'استئناف', recipients: 'مستلمون', body: 'الرسالة', device: 'الجهاز', reschedule: 'جدولة', cancel: 'إلغاء', approve: 'اعتماد' };
+const TONE_BG = {
+  ok: { bg: 'var(--ok-s)', fg: 'var(--ok-i)', dot: 'var(--ok)' },
+  info: { bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)' },
+  warn: { bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)' },
+  danger: { bg: 'var(--dg-s)', fg: 'var(--dg-i)', dot: 'var(--dg)' },
+  muted: { bg: 'var(--sunken)', fg: 'var(--ink-3)', dot: 'var(--ink-4)' },
+};
+
+class Component extends DCLogic {
+  state = { ready: typeof window !== 'undefined' && !!window.HubData, panel: null, confirmKey: null, pendingIds: [], fire: null, rev: 0, loading: true };
+  componentDidMount() {
+    const w = () => { if (window.HubData && window.HubShared && window.UIKit) { this.setState({ ready: true }); setTimeout(() => this.setState({ loading: false }), 220); } else this.t = setTimeout(w, 40); };
+    w();
+    this.timer = setInterval(() => { if (document.hidden) return; const D = window.HubData; if (!D) return; (D.campaigns || []).forEach((c) => {
+      if (c.status === 'running' && c.sent < c.recipients) { c.sent = Math.min(c.recipients, c.sent + Math.round(c.recipients * 0.01)); c.delivered = Math.max(0, c.sent - c.failed); }
+      else if (c.status === 'running' && c.sent >= c.recipients && !c.endAt) { c.status = 'completed'; c.endAt = Date.now(); }
+    }); this.bump(); }, 5000);
+  }
+  componentWillUnmount() { clearTimeout(this.t); clearInterval(this.timer); }
+  toast(f) { this.setState((s) => ({ fire: { ...f, n: (s.fire ? s.fire.n : 0) + 1 } })); }
+  bump() { this.setState((s) => ({ rev: s.rev + 1 })); }
+  theme() { return this.props.theme || (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || 'light'; }
+
+  /* ——— استهداف الحملة: تفكيك المجموعات والجهات والأرقام إلى قائمة أرقام مفردة ——— */
+  parseNums(text) { return String(text || '').split(/[\s,،؛;\n\r]+/).map((x) => x.trim()).filter(Boolean); }
+  groupMembers(g) {
+    const D = window.HubData;
+    if (g.memberIds) return g.memberIds.map((id) => D.contactById(id)).filter(Boolean).concat((g.manual || []).map((p) => ({ phone: p, name: '' })));
+    let seed = 0; for (let i = 0; i < g.id.length; i++) seed += g.id.charCodeAt(i);
+    const pool = D.contacts.filter((c) => c.phone && c.phone.indexOf('@') < 0);
+    const want = Math.min(g.size || 0, 600), out = [], used = {};
+    for (let i = 0; i < want; i++) {
+      const c = pool[(seed * 7 + i * 5) % pool.length];
+      if (c && !used[c.id]) { used[c.id] = 1; out.push(c); continue; }
+      out.push({ id: g.id + '-x' + i, name: '', phone: '+9665' + ((seed * 13 + i * 7) % 10) + ' ' + (100 + ((seed * 31 + i * 17) % 900)) + ' ' + (1000 + ((seed * 57 + i * 29) % 9000)), imported: true });
+    }
+    return out;
+  }
+  resolve(v) {
+    const D = window.HubData, seen = {}, rows = [];
+    let dup = 0;
+    const push = (phone, name, src, hasChat) => {
+      const k = String(phone || '').replace(/[^0-9+@a-z]/gi, '');
+      if (!k) return;
+      if (seen[k]) { dup++; return; }
+      seen[k] = 1;
+      rows.push({ phone: String(phone).trim(), name: name || '', src, hasChat: !!hasChat });
+    };
+    (v.groupIds || []).forEach((gid) => { const g = (D.contactGroups || []).find((x) => x.id === gid); if (g) this.groupMembers(g).forEach((m) => push(m.phone, m.name, g.name, !!m.inDevice)); });
+    (v.contactIds || []).forEach((cid) => { const c = D.contactById(cid); if (c) push(c.phone, c.name, 'جهة اتصال', !!c.inDevice); });
+    if (v.fltType) {
+      const flts = (D.PARTY_FILTERS || {})[v.fltType] || [];
+      D.contacts.filter((c) => c.type === v.fltType && c.active !== false).forEach((c) => {
+        const okAll = flts.every((ff) => { const picked = v['flt_' + ff.key] || []; return !picked.length || picked.indexOf(c[ff.key]) >= 0; });
+        if (!okAll) return;
+        const label = (D.PARTY_TYPES[v.fltType] || {}).ar || 'فلترة';
+        const extra = flts.map((ff) => c[ff.key]).filter(Boolean).slice(0, 2).join(' · ');
+        push(c.phone, c.name, 'فلترة: ' + label + (extra ? ' — ' + extra : ''), !!c.inDevice);
+      });
+    }
+    (v.numbers || []).forEach((n) => push(n, '', 'رقم مكتوب', false));
+    this.parseNums(v.imported).forEach((n) => push(n, '', 'استيراد', false));
+    const excl = v.excluded || [];
+    let noChat = 0, removed = 0;
+    const kept = rows.filter((r) => {
+      if (excl.indexOf(r.phone) >= 0) { removed++; return false; }
+      if (v.skipNoChat && !r.hasChat) { noChat++; return false; }
+      return true;
+    });
+    return { rows: kept, dup, noChat, removed, total: rows.length };
+  }
+
+
+  /* ——— دورة حياة الحملة: قائمة المستلمين (roster) وسجل التعديلات والمزامنة مع الصادر ——— */
+  ensureRoster(c) {
+    const D = window.HubData;
+    if (Array.isArray(c.roster) && c.roster.length) return c.roster;
+    let seed = 0; const sid = String(c.id); for (let i = 0; i < sid.length; i++) seed += sid.charCodeAt(i);
+    const pool = D.contacts.filter((x) => x.phone && x.phone.indexOf('@') < 0);
+    const n = Math.min(c.recipients || 0, 400), out = [], used = {};
+    for (let i = 0; i < n; i++) {
+      const p = pool[(seed * 7 + i * 5) % pool.length];
+      if (p && !used[p.id]) { used[p.id] = 1; out.push({ phone: p.phone, name: p.name || '', contactId: p.id, sent: false, added: false, removed: false }); }
+      else out.push({ phone: '+9665' + ((seed * 13 + i * 7) % 10) + ' ' + (100 + ((seed * 31 + i * 17) % 900)) + ' ' + (1000 + ((seed * 57 + i * 29) % 9000)), name: '', contactId: null, sent: false, added: false, removed: false });
+    }
+    c.roster = out;
+    return out;
+  }
+  rosterStats(c) {
+    const R = this.ensureRoster(c);
+    const active = R.filter((x) => !x.removed);
+    active.forEach((x, i) => { x.sent = i < (c.sent || 0); });
+    return {
+      roster: R, active, pending: active.filter((x) => !x.sent), sentRows: active.filter((x) => x.sent),
+      removed: R.filter((x) => x.removed), added: R.filter((x) => x.added && !x.removed),
+      initial: c.initialRecipients != null ? c.initialRecipients : active.length,
+    };
+  }
+  logEdit(c, kind, text, from, to) { if (!Array.isArray(c.log)) c.log = []; c.log.push({ ts: Date.now(), kind, text, by: USER, from: from == null ? null : String(from), to: to == null ? null : String(to) }); }
+  cut(t, n) { const x = String(t || '').replace(/\s+/g, ' ').trim(); return x.length > n ? x.slice(0, n) + '…' : (x || '—'); }
+  camMsgs(c) { return (window.HubData.messages || []).filter((m) => m.campaignId === c.id && m.direction === 'out'); }
+  pendingMsgs(c) { return this.camMsgs(c).filter((m) => m.status === 'queued' || m.status === 'unsent'); }
+  norm(p) { return String(p || '').replace(/[^0-9+@a-z]/gi, ''); }
+  /* إنشاء الحملة = إنشاء صادر: فوري يدخل الطابور، والمجدول صادر مجدول بتاريخ ووقت */
+  makeMsgs(c, rows) {
+    const D = window.HubData, out = [], sched = c.status === 'scheduled' || c.status === 'draft';
+    rows.slice(0, 200).forEach((r, i) => out.push({
+      id: 'mc-' + c.id + '-' + Date.now() + '-' + i, ts: c.startAt, direction: 'out',
+      status: sched ? 'unsent' : 'queued', docType: 'رسالة حملة', docNo: '', amount: 0, error: null,
+      contactId: r.contactId || null, phone: r.phone, deviceId: c.deviceId,
+      campaignId: c.id, templateId: c.templateId || null, body: c.body || '',
+      scheduledAt: c.wasScheduled ? c.startAt : null, attempts: 0,
+    }));
+    if (out.length) D.messages.unshift.apply(D.messages, out);
+    return out.length;
+  }
+  /* rows: كائنات {phone, contactId} أو أرقام — تُلغى رسائل الصادر غير المرسلة لهؤلاء المستلمين */
+  cancelMsgsFor(c, rows) {
+    const D = window.HubData, byPhone = {}, byId = {};
+    (rows || []).forEach((r) => {
+      const ph = typeof r === 'string' ? r : r.phone;
+      if (ph) byPhone[this.norm(ph)] = 1;
+      if (r && r.contactId) byId[r.contactId] = 1;
+    });
+    let n = 0;
+    this.pendingMsgs(c).forEach((m) => {
+      const k = this.norm(m.phone || (D.contactById(m.contactId) || {}).phone);
+      if ((k && byPhone[k]) || (m.contactId && byId[m.contactId])) { m.status = 'cancelled'; n++; }
+    });
+    return n;
+  }
+  doPause(c) {
+    if (CAN.pause.indexOf(c.status) < 0) return false;
+    const f = window.HubData.fmt;
+    c.prevStatus = c.status;
+    c.status = 'paused';
+    c.pauseCount = (c.pauseCount || 0) + 1;
+    if (c.initialRecipients == null) c.initialRecipients = c.recipients;
+    this.logEdit(c, 'pause', c.prevStatus === 'scheduled' ? 'أُوقفت الحملة قبل موعد إرسالها' : 'أُوقفت وهي قيد الإرسال — ' + f.n(c.sent || 0) + ' رسالة أُرسلت ولا يمكن إيقافها', (ST[c.prevStatus] || {}).ar, 'موقوفة');
+    return true;
+  }
+  doResume(c) {
+    if (CAN.resume.indexOf(c.status) < 0) return false;
+    const f = window.HubData.fmt;
+    const st = c.wasScheduled && c.startAt > Date.now() ? 'scheduled' : 'running';
+    c.status = st;
+    this.logEdit(c, 'resume', st === 'scheduled' ? 'استُئنفت كحملة مجدولة لـ' + f.date(c.startAt) + ' ' + f.time(c.startAt) : 'استُئنف الإرسال من نفس النقطة', 'موقوفة', (ST[st] || {}).ar);
+    return true;
+  }
+  doCancel(c) {
+    if (CAN.cancel.indexOf(c.status) < 0) return false;
+    const f = window.HubData.fmt, st = this.rosterStats(c);
+    const n = this.cancelMsgsFor(c, st.pending);
+    c.status = 'cancelled';
+    c.endAt = Date.now();
+    this.logEdit(c, 'cancel', 'أُلغيت نهائياً — ' + f.n(st.pending.length) + ' مستلماً لم تُرسل لهم' + (n ? ' وأُلغيت ' + f.n(n) + ' رسالة في الصادر' : ''), 'موقوفة', 'ملغية');
+    return true;
+  }
+  newAdditions(c, v) {
+    const R = this.resolve({ groupIds: v.addGroupIds, contactIds: v.addContactIds, numbers: v.addNumbers, imported: v.addImported, skipNoChat: v.addSkipNoChat });
+    const st = this.rosterStats(c), have = {};
+    st.active.forEach((x) => { have[this.norm(x.phone)] = 1; });
+    let dupExisting = 0;
+    const rows = R.rows.filter((r) => { if (have[this.norm(r.phone)]) { dupExisting++; return false; } return true; });
+    return { rows, dupExisting, noChat: R.noChat };
+  }
+  /* حقول الفلترة: نوع الجهة ثم حقول خاصة بكل نوع (تظهر بعد اختيار النوع) */
+  filterFields() {
+    const D = window.HubData, PT = D.PARTY_TYPES || {}, PF = D.PARTY_FILTERS || {};
+    const typeField = {
+      key: 'fltType', label: 'فلترة حسب نوع الجهة', type: 'select', span: 2,
+      options: [{ v: '', l: 'بدون فلترة' }].concat(Object.keys(PT).map((k) => ({ v: k, l: PT[k].ar }))),
+      hint: 'اختر النوع لتظهر حقول الفلترة الخاصة به، وتُضاف كل الجهات المطابقة إلى المستلمين.',
+    };
+    const fields = [typeField];
+    Object.keys(PF).forEach((t) => {
+      PF[t].forEach((ff) => {
+        fields.push({
+          key: 'flt_' + ff.key, label: ff.label, type: 'multiChoice', showIf: { fltType: t },
+          options: ff.options.map((o) => ({ v: o, l: o })),
+          choiceCols: 2, maxH: '132px', searchable: ff.options.length > 8, emptyText: 'لا خيار مطابق.',
+          hint: 'اتركه فارغاً ليشمل الكل.',
+        });
+      });
+    });
+    return fields;
+  }
+
+  pickOpts() {
+    const D = window.HubData, f = D.fmt;
+    const pad = (n) => String(n).padStart(2, '0');
+    const iso = (dt) => dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate());
+    const WD = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    const day = (n) => { const dt = new Date(); dt.setDate(dt.getDate() + n); return dt; };
+    const nextDow = (dw) => { const dt = new Date(); dt.setDate(dt.getDate() + (((dw - dt.getDay() + 7) % 7) || 7)); return dt; };
+    return {
+      groupOpts: (D.contactGroups || []).map((g) => ({ v: g.id, l: g.name, note: g.kind + ' · ' + f.n(g.size || 0) + ' رقم' })),
+      contactOpts: D.contacts.filter((c) => c.phone).map((c) => ({ v: c.id, l: c.name || 'بلا اسم', note: c.phone, noteMono: true })),
+      devOpts: D.devices.map((d) => ({ v: d.id, l: d.name + (d.status === 'connected' ? '' : ' — غير متصل') })),
+      tplOpts: (D.msgTemplates || []).map((t) => ({ v: t.id, l: t.name, note: t.category })),
+      firstDev: (D.devices.find((d) => d.status === 'connected') || D.devices[0] || {}).id,
+      iso: iso, pad: pad,
+      datePresets: [
+        { v: iso(day(1)), l: 'غداً ' + WD[day(1).getDay()] },
+        { v: iso(day(2)), l: 'بعد غد ' + WD[day(2).getDay()] },
+        { v: iso(nextDow(4)), l: 'الخميس القادم' },
+        { v: iso(nextDow(5)), l: 'الجمعة القادمة' },
+        { v: iso(day(7)), l: 'بعد أسبوع' },
+      ],
+      timePresets: [{ v: '08:00', l: '٨:٠٠ صباحاً' }, { v: '11:00', l: '١١:٠٠ صباحاً' }, { v: '16:00', l: '٤:٠٠ عصراً' }, { v: '20:00', l: '٨:٠٠ مساءً' }],
+    };
+  }
+
+  /* ——— ميتا نافذة تعديل حملة موقوفة أو مسودة ——— */
+  editPanel(c) {
+    const D = window.HubData, f = D.fmt, self = this, O = this.pickOpts();
+    const isDraft = c.status === 'draft';
+    const st = this.rosterStats(c);
+    const sd = new Date(c.startAt || Date.now());
+    const canSchedule = isDraft || c.wasScheduled;
+    return {
+      type: 'modal', width: '64%', height: '90%', closeOnBackdrop: false,
+      title: (isDraft ? 'تعديل مسودة «' : 'تعديل حملة موقوفة «') + c.name + '»',
+      subtitle: isDraft ? 'المسودة قابلة للتعديل بالكامل حتى اعتمادها' : 'يمكن تعديل المتبقي فقط: المستلمون غير المرسل لهم، الرسالة، الجهاز، والجدولة',
+      badge: { text: (ST[c.status] || ST.draft).ar, tone: (ST[c.status] || ST.draft).tone },
+      content: { sections: [].concat([
+        { title: 'المستلمون الحاليون', cols: 1, note: isDraft ? 'لا شيء أُرسل بعد — كل المستلمين قابلون للإزالة.' : f.n(st.sentRows.length) + ' مستلماً أُرسلت لهم الرسالة ولا يمكن إيقافهم. الإزالة تشمل غير المرسل لهم فقط.', noteTone: isDraft ? 'info' : 'warn', fields: [
+          { key: 'roster', label: 'المستلمون', type: 'list', maxH: '220px', searchable: true, searchPlaceholder: 'ابحث في الأرقام أو الأسماء…',
+            rowCols: '150px minmax(0,1fr) 0 74px 24px', head: ['الرقم', 'الاسم أو المصدر', '', 'الحالة', ''], compute: (v, api) => {
+            const s2 = self.rosterStats(c), rem = v.removeList || [];
+            const rows = s2.active.filter((x) => rem.indexOf(x.phone) < 0), shown = rows.slice(0, 60), notes = [];
+            if (rows.length > 60) notes.push('يُعرض أول ٦٠ من ' + f.n(rows.length));
+            if (rem.length) notes.push('سيُزال ' + f.n(rem.length) + ' مستلماً عند الحفظ');
+            return {
+              label: 'كل رقم على حدة — ' + f.n(rows.length) + ' مستلم',
+              rowsData: shown.map((x) => ({
+                text: x.phone, sub: x.name || (x.added ? 'أُضيف بعد الاعتماد' : 'من إنشاء الحملة'),
+                tag: x.sent ? 'أُرسلت' : (x.added ? 'مُضاف' : ''), tone: x.sent ? 'ok' : 'info',
+                onRemove: x.sent ? null : () => api.setAll({ removeList: (api.get('removeList') || []).concat([x.phone]) }),
+              })),
+              more: notes.join(' · '), onReset: rem.length ? () => api.setAll({ removeList: [] }) : null,
+              emptyText: 'لا مستلمين في الحملة.',
+            };
+          } },
+        ] },
+        { title: 'إضافة مستلمين جدد', cols: 2, note: 'الأرقام الموجودة في الحملة أصلاً تُتجاهل تلقائياً.', noteTone: 'info', fields: [
+          { key: 'addGroupIds', label: 'مجموعات جهات الاتصال', type: 'multiChoice', options: O.groupOpts, searchable: true, searchPlaceholder: 'ابحث في المجموعات…', choiceCols: 1, maxH: '140px', emptyText: 'لا مجموعة مطابقة.' },
+          { key: 'addContactIds', label: 'جهات اتصال', type: 'multiChoice', options: O.contactOpts, searchable: true, searchPlaceholder: 'اسم أو رقم…', choiceCols: 1, maxH: '140px', emptyText: 'لا جهة مطابقة.' },
+          { key: 'addNumbers', label: 'أرقام مكتوبة يدوياً', type: 'tags', placeholder: '+9665…', hint: 'Enter أو فاصلة يضيف الرقم.' },
+          { key: 'addImported', label: 'استيراد أرقام (لصق قائمة)', type: 'textarea', rows: 3, stacked: true, placeholder: '+966551234567', hint: 'رقم في كل سطر أو مفصولة بفواصل.' },
+          { key: 'addSkipNoChat', label: 'استثناء الأرقام التي ليس بيني وبينها محادثة', type: 'toggle', value: true, span: 2 },
+          { key: 'addPreview', label: 'الأرقام الجديدة', type: 'list', span: 2, maxH: '170px', searchable: true, searchPlaceholder: 'ابحث في الأرقام الجديدة…',
+            rowCols: '150px minmax(0,1fr) 0 60px 24px', head: ['الرقم', 'الاسم أو المصدر', '', '', ''], compute: (v) => {
+            const A = self.newAdditions(c, v), notes = [];
+            if (A.dupExisting) notes.push('تُجوهل ' + f.n(A.dupExisting) + ' رقماً موجوداً في الحملة أصلاً');
+            if (A.noChat) notes.push('استُثني ' + f.n(A.noChat) + ' رقماً بلا محادثة (حماية من الحظر)');
+            return {
+              label: 'ستُضاف — ' + f.n(A.rows.length) + ' رقم',
+              rowsData: A.rows.slice(0, 60).map((r) => ({ text: r.phone, sub: r.name || r.src, tag: 'جديد', tone: 'info' })),
+              more: notes.join(' · '), emptyText: 'لم تُختر أرقام جديدة بعد.',
+            };
+          } },
+        ] },
+        { title: 'الرسالة', cols: 1, fields: [
+          { key: 'templateId', label: 'جلب من قوالب الرسائل', type: 'choice', value: '', options: O.tplOpts, searchable: true, searchPlaceholder: 'ابحث في القوالب…', choiceCols: 2, emptyText: 'لا قالب مطابق.', hint: 'الاختيار ينسخ نص القالب إلى الرسالة، وتبقى قابلة للتعديل.',
+            onChange: (nv, api) => { const t = (D.msgTemplates || []).find((x) => x.id === nv); if (t) api.setAll({ body: t.body }); } },
+          { key: 'body', label: 'نص الرسالة', type: 'textarea', rows: 6, value: c.body || '', required: true, stacked: true,
+            compute: (v) => ({ hint: String(v.body || '').length + ' حرف · التعديل يُطبَّق على الرسائل غير المرسلة في الصادر.' }) },
+        ] },
+        { title: 'الجهاز', cols: 2, fields: [
+          { key: 'deviceId', label: 'الجهاز المُرسل منه', type: 'select', value: c.deviceId, options: O.devOpts, compute: (v) => { const d = D.deviceById(v.deviceId); return { hint: !d ? '' : (d.status === 'connected' ? 'الرقم ' + d.phone : 'الجهاز غير متصل — الحملة تنتظر اتصاله.') }; } },
+        ] },
+      ], canSchedule ? [{ title: 'الجدولة', cols: 2, note: 'تعديل الموعد يُحدّث الصادر المجدول لهذه الحملة.', noteTone: 'info', fields: [
+        { key: 'startDate', label: 'التاريخ', type: 'date', mono: true, value: O.iso(sd), presets: O.datePresets },
+        { key: 'startTime', label: 'الوقت', type: 'time', mono: true, value: O.pad(sd.getHours()) + ':' + O.pad(sd.getMinutes()), presets: O.timePresets },
+      ] }] : []) },
+      actions: [].concat(
+        [{ key: 'cancel', label: 'إلغاء', variant: 'secondary', align: 'start', close: true }],
+        [{ key: 'saveEdit', label: 'حفظ التعديلات', variant: 'secondary' }],
+        isDraft ? [{ key: 'approve', label: 'اعتماد وبدء الحملة', variant: 'primary' }] : [{ key: 'saveResume', label: 'حفظ واستئناف', variant: 'primary' }]
+      ),
+      _campaignId: c.id,
+    };
+  }
+
+  /* ——— ميتا نافذة الإنشاء (Overlay Panel) ——— */
+  createPanel() {
+    const D = window.HubData, f = D.fmt, self = this, O = this.pickOpts();
+    const groupOpts = O.groupOpts, contactOpts = O.contactOpts, devOpts = O.devOpts, tplOpts = O.tplOpts, firstDev = O.firstDev;
+    return {
+      type: 'modal', width: '64%', height: '90%',
+      title: 'حملة إرسال جديدة', subtitle: 'اختر المستلمين، ثم الرسالة والتوقيت',
+      closeOnBackdrop: false,
+      content: { sections: [
+        { title: 'المستلمون — اختر واحداً أو أكثر', cols: 2, note: 'المصادر تُجمع كلها معاً، والمكرّر يُحذف تلقائياً.', noteTone: 'info', fields: [
+          { key: 'groupIds', label: 'مجموعات جهات الاتصال', type: 'multiChoice', options: groupOpts, searchable: true, searchPlaceholder: 'ابحث في المجموعات…', choiceCols: 1, maxH: '156px', emptyText: 'لا مجموعة مطابقة.' },
+          { key: 'contactIds', label: 'جهات اتصال', type: 'multiChoice', options: contactOpts, searchable: true, searchPlaceholder: 'اسم أو رقم…', choiceCols: 1, maxH: '156px', emptyText: 'لا جهة مطابقة.' },
+          { key: 'numbers', label: 'أرقام مكتوبة يدوياً', type: 'tags', placeholder: '+9665…', hint: 'Enter أو فاصلة يضيف الرقم.' },
+          { key: 'imported', label: 'استيراد أرقام (لصق قائمة)', type: 'textarea', rows: 3, stacked: true, placeholder: '+966551234567\n+966559876543', hint: 'رقم في كل سطر أو مفصولة بفواصل.' },
+        ].concat(self.filterFields()) },
+        { title: 'الأرقام النهائية', cols: 1, fields: [
+          { key: 'recipients', label: 'الأرقام', type: 'list', maxH: '230px', searchable: true, searchPlaceholder: 'ابحث في الأرقام أو الأسماء…',
+            rowCols: '150px minmax(0,1fr) 0 90px 24px', head: ['الرقم', 'الاسم أو المصدر', '', 'الحالة', ''], compute: (v, api) => {
+            const R = self.resolve(v), shown = R.rows.slice(0, 60), notes = [];
+            if (R.rows.length > 60) notes.push('يُعرض أول ٦٠ من ' + f.n(R.rows.length));
+            if (R.dup) notes.push('حُذف ' + f.n(R.dup) + ' رقماً مكرراً');
+            if (R.noChat) notes.push('استُثني ' + f.n(R.noChat) + ' رقماً بلا محادثة');
+            if (R.removed) notes.push('استثناء يدوي: ' + f.n(R.removed));
+            return {
+              label: 'كل رقم على حدة — ' + f.n(R.rows.length) + ' مستلم',
+              rowsData: shown.map((r) => ({ text: r.phone, sub: r.name || r.src, tag: r.hasChat ? '' : 'بلا محادثة', tone: 'warn', onRemove: () => api.setAll({ excluded: (api.get('excluded') || []).concat([r.phone]) }) })),
+              more: notes.join(' · '), onReset: R.removed ? () => api.setAll({ excluded: [] }) : null,
+              emptyText: 'اختر مجموعات أو جهات أو اكتب أرقاماً لتظهر هنا رقماً رقماً.',
+            };
+          } },
+        ] },
+        { title: 'الحملة والجهاز', cols: 2, fields: [
+          { key: 'name', label: 'اسم الحملة', type: 'text', value: '', required: true, placeholder: 'مثال: تذكير مستحقات أكتوبر' },
+          { key: 'deviceId', label: 'الجهاز المُرسل منه', type: 'select', value: firstDev, required: true, options: devOpts, compute: (v) => { const d = D.deviceById(v.deviceId); return { hint: !d ? '' : (d.status === 'connected' ? 'الرقم ' + d.phone : 'الجهاز غير متصل — الحملة تنتظر اتصاله.') }; } },
+        ] },
+        { title: 'الرسالة', cols: 1, fields: [
+          { key: 'templateId', label: 'جلب من قوالب الرسائل', type: 'choice', value: '', options: tplOpts, searchable: true, searchPlaceholder: 'ابحث في القوالب…', choiceCols: 2, emptyText: 'لا قالب مطابق.', hint: 'الاختيار ينسخ نص القالب إلى الرسالة، وتبقى قابلة للتعديل.',
+            onChange: (nv, api) => { const t = (D.msgTemplates || []).find((x) => x.id === nv); if (t) api.setAll({ body: t.body }); } },
+          { key: 'body', label: 'نص الرسالة', type: 'textarea', rows: 6, value: '', required: true, stacked: true, placeholder: 'اكتب نص الرسالة…',
+            compute: (v) => ({ hint: String(v.body || '').length + ' حرف · المتغيّرات بين قوسين معقوفين تُعبّأ لكل مستلم.' }) },
+        ] },
+        { title: 'التوقيت', cols: 2, fields: [
+          { key: 'when', label: 'بدء الإرسال', type: 'segment', value: 'now', options: [{ v: 'now', l: 'الآن' }, { v: 'later', l: 'جدولة' }] },
+          { key: 'startDate', label: 'التاريخ', type: 'date', value: '', mono: true, required: true, showIf: { when: 'later' }, presets: O.datePresets },
+          { key: 'startTime', label: 'الوقت', type: 'time', value: '', mono: true, required: true, showIf: { when: 'later' }, presets: O.timePresets },
+        ] },
+        { title: 'حماية من الحظر', cols: 1, fields: [
+          { key: 'skipNoChat', label: 'استثناء الأرقام التي ليس بيني وبينها محادثة', type: 'toggle', value: true, hint: 'الرسالة الأولى لرقم لم يراسلك من قبل هي أكثر أسباب حظر الرقم.' },
+        ] },
+      ] },
+      actions: [
+        { key: 'cancel', label: 'إلغاء', variant: 'secondary', align: 'start', close: true },
+        { key: 'draft', label: 'حفظ كمسودة', variant: 'secondary' },
+        { key: 'create', label: 'إنشاء الحملة', variant: 'primary' },
+      ],
+    };
+  }
+
+  /* ——— ميتا نافذة رسائل الحملة ——— */
+  messagesPanel(c) {
+    const D = window.HubData, f = D.fmt;
+    const MTONE = { read: 'info', delivered: 'ok', sent: 'muted', queued: 'warn', failed: 'danger', cancelled: 'muted', unsent: 'muted' };
+    const msgs = (D.messages || []).filter((m) => m.campaignId === c.id && m.direction === 'out').sort((a, b) => b.ts - a.ts);
+    const byStatus = {};
+    msgs.forEach((m) => { byStatus[m.status] = (byStatus[m.status] || 0) + 1; });
+    const summary = Object.keys(byStatus).map((k) => (D.STATUS[k] ? D.STATUS[k].ar : k) + ' ' + f.n(byStatus[k])).join(' · ');
+    /* رسالة غير مرسلة بموعد محدد = صادر مجدول */
+    const stLabel = (m) => (m.status === 'unsent' && (m.scheduledAt || c.wasScheduled) ? 'مجدول' : (D.STATUS[m.status] ? D.STATUS[m.status].ar : m.status));
+    const shown = msgs.slice(0, 80), shownBy = {};
+    shown.forEach((m) => { shownBy[m.status] = (shownBy[m.status] || 0) + 1; });
+    return {
+      type: 'drawer', width: '42%', side: 'start',
+      title: 'رسائل حملة «' + c.name + '»', subtitle: f.n(msgs.length) + ' رسالة في السجل من ' + f.n(c.recipients) + ' مستلم',
+      badge: { text: (ST[c.status] || ST.draft).ar, tone: (ST[c.status] || ST.draft).tone === 'muted' ? 'muted' : (ST[c.status] || ST.draft).tone },
+      content: { sections: [
+        { title: 'الرسائل', cols: 1, note: summary || 'لا رسائل مسجّلة لهذه الحملة بعد.', noteTone: msgs.length ? 'info' : 'warn', fields: [
+          { key: 'msgs', label: 'كل رسالة على حدة', type: 'list', maxH: '62vh', searchable: true, searchPlaceholder: 'ابحث برقم أو اسم أو حالة…',
+            rowCols: '150px minmax(0,1fr) 150px 86px 24px', head: ['الرقم', 'الاسم', 'الوقت', 'الحالة', ''],
+            filters: Object.keys(shownBy).map((k) => ({ v: k, l: stLabel({ status: k, scheduledAt: null }), count: f.n(shownBy[k]) })),
+            rowsData: shown.map((m) => {
+              const ct = D.contactById(m.contactId) || {};
+              return {
+                text: m.phone || ct.phone || '—', sub: ct.name || 'بلا اسم',
+                meta: f.date(m.ts) + ' ' + f.time(m.ts) + (m.error ? ' · ' + (D.ERRORS[m.error] ? D.ERRORS[m.error].ar : m.error) : ''), metaMono: !m.error,
+                tag: stLabel(m), tone: m.status === 'unsent' && (m.scheduledAt || c.wasScheduled) ? 'info' : (MTONE[m.status] || 'muted'), filter: m.status,
+              };
+            }),
+            more: msgs.length > shown.length ? 'يُعرض أحدث ' + f.n(shown.length) + ' من ' + f.n(msgs.length) + ' رسالة — بقيتها في سجل الصادر.' : '',
+            emptyText: 'لا رسائل مسجّلة لهذه الحملة.' },
+        ] },
+      ] },
+      actions: [
+        { key: 'openLog', label: 'عرض في سجل الصادر', variant: 'secondary', align: 'start', close: true },
+        { key: 'close', label: 'إغلاق', variant: 'primary', close: true },
+      ],
+      _campaignId: c.id,
+    };
+  }
+
+  renderVals() {
+    const S = this.state, D = window.HubData, H = window.HubShared, theme = this.theme();
+    const empty = { theme, loading: true, handlers: {}, create: () => {}, hasRunning: false, run: { stats: [] }, cardsMeta: { sections: [] }, columns: [], rows: [], detail: null, bulk: [], searchKeys: [], defaultSort: null, pinned: [], hasScheduled: false, schedList: [], moreScheduled: false, moreScheduledText: '', panel: null, onPanelAction: () => {}, onPanelClose: () => {}, confirmMeta: { dialogs: [] }, confirmKey: null, onConfirmClose: () => {}, toastsMeta: { types: [] }, toastFire: null };
+    if (!D || !H || !S.ready) return empty;
+
+    const f = D.fmt, all = D.campaigns || [], sub = D.subscription;
+    const go = (route, filter) => { if (this.props.onNavigate) return this.props.onNavigate(route, filter); H.goRoute(route, filter); };
+    const live = all.filter((c) => c.status === 'running');
+    const soon = all.filter((c) => c.status === 'scheduled');
+    const sentAll = all.reduce((n, c) => n + (c.sent || 0), 0);
+    const failedAll = all.reduce((n, c) => n + (c.failed || 0), 0);
+    const groups = D.contactGroups || [];
+    const devName = (id) => { const d = D.deviceById(id); return d ? d.name : '—'; };
+
+    const handlers = {
+      openList: () => go('/messages/outbound'),
+      openGroups: () => go('/groups'),
+      pause: () => {
+        let n = 0;
+        S.pendingIds.forEach((id) => { const c = all.find((x) => x.id === id); if (c && this.doPause(c)) n++; });
+        if (n) D.logActivity('أوقف ' + USER + ' ' + n + ' حملة', 'warn');
+        this.setState({ pendingIds: [] });
+        this.toast(n
+          ? { key: 'paused', title: 'أُوقفت ' + f.n(n) + ' حملة', text: 'ما لم يُرسل يبقى محفوظاً، ويمكن الآن تعديل المستلمين والرسالة والجهاز والجدولة.' }
+          : { key: 'error', title: 'لا شيء للإيقاف', text: 'الإيقاف يصلح للحملات المجدولة أو قيد الإرسال فقط.' });
+        this.bump();
+      },
+      resume: () => {
+        let n = 0;
+        S.pendingIds.forEach((id) => { const c = all.find((x) => x.id === id); if (c && this.doResume(c)) n++; });
+        this.setState({ pendingIds: [] });
+        this.toast(n ? { key: 'resumed', title: 'استُئنفت ' + f.n(n) + ' حملة' } : { key: 'error', title: 'لا شيء للاستئناف', text: 'الاستئناف يصلح للحملات الموقوفة فقط.' });
+        this.bump();
+      },
+      cancel: () => {
+        let n = 0;
+        S.pendingIds.forEach((id) => { const c = all.find((x) => x.id === id); if (c && this.doCancel(c)) n++; });
+        this.setState({ pendingIds: [] });
+        this.toast(n
+          ? { key: 'cancelled', title: 'أُلغيت ' + f.n(n) + ' حملة نهائياً', text: 'غير المرسل أُلغي في الصادر، والمرسل يبقى في السجل.' }
+          : { key: 'error', title: 'الإلغاء غير ممكن', text: 'الإلغاء النهائي يتم من الحالة «موقوفة» فقط — أوقف الحملة أولاً.' });
+        this.bump();
+      },
+    };
+
+    /* ——— شريط الحملة الجارية (Cards: live) ——— */
+    const runC = live[0];
+    const liveSection = runC ? (() => {
+      const pctOf = (v) => (v / Math.max(1, runC.recipients)) * 100;
+      const remaining = Math.max(0, runC.recipients - runC.sent);
+      const mins = remaining / Math.max(1, D.queue.rate || 20);
+      return { min: 600, cards: [{
+        kind: 'live', span: 2, tone: 'primary', key: 'liveCamp',
+        label: runC.name, badge: 'جارية الآن', badgeTone: 'primary',
+        progressText: f.n(runC.sent) + ' / ' + f.n(runC.recipients) + ' · ' + Math.round(pctOf(runC.sent)) + '%',
+        segments: [
+          { pct: pctOf(runC.read || 0), color: 'var(--c-read)', label: 'مقروءة' },
+          { pct: pctOf(Math.max(0, (runC.delivered || 0) - (runC.read || 0))), color: 'var(--c-deliv)', label: 'مستلمة' },
+          { pct: pctOf(Math.max(0, runC.sent - (runC.delivered || 0) - (runC.failed || 0))), color: 'var(--c-sent)', label: 'أُرسلت' },
+          { pct: pctOf(runC.failed || 0), color: 'var(--c-failed)', label: 'فشلت' },
+        ],
+        stats: [
+          { label: 'المستلمون', value: f.n(runC.recipients) },
+          { label: 'مستلمة', value: f.n(runC.delivered || 0), tone: 'ok' },
+          { label: 'مقروءة', value: f.n(runC.read || 0), tone: 'info' },
+          { label: 'فشل', value: f.n(runC.failed || 0), tone: runC.failed ? 'danger' : undefined },
+        ],
+        foot: 'المتبقي ' + f.n(remaining) + ' رسالة — نحو ' + (mins < 60 ? Math.round(mins) + ' دقيقة' : Math.round(mins / 60) + ' ساعة') + ' بمعدّل ' + (D.queue.rate || 20) + ' رسالة/دقيقة.',
+        actions: [
+          { key: 'pauseLive', label: 'إيقاف مؤقت', variant: 'secondary', action: 'pauseLive' },
+          { key: 'liveList', label: 'سجل رسائلها', variant: 'primary', action: 'liveList' },
+        ],
+      }] };
+    })() : null;
+
+    handlers.pauseLive = () => { if (runC) this.setState({ pendingIds: [runC.id], confirmKey: 'pause' }); };
+    handlers.liveList = () => { if (runC) go('/messages/outbound', { kind: 'device', value: runC.deviceId }); };
+
+    /* ——— الحملة الجارية (شريط لحظي) ——— */
+    const rc = live[0] || null;
+    const run = rc ? (() => {
+      const pctOf = (v) => (Math.max(0, v) / Math.max(1, rc.recipients)) * 100 + '%';
+      const remaining = Math.max(0, rc.recipients - rc.sent);
+      const rate = (D.queue && D.queue.rate) || 20;
+      const mins = remaining / rate;
+      const dev = D.deviceById(rc.deviceId) || { name: '—' };
+      return {
+        name: rc.name,
+        progressText: f.n(rc.sent) + ' / ' + f.n(rc.recipients) + ' · ' + Math.round((rc.sent / Math.max(1, rc.recipients)) * 100) + '%',
+        wRead: pctOf(rc.read || 0), wDeliv: pctOf((rc.delivered || 0) - (rc.read || 0)),
+        wSent: pctOf(rc.sent - (rc.delivered || 0) - (rc.failed || 0)), wFailed: pctOf(rc.failed || 0),
+        stats: [
+          { label: 'أُرسل', value: f.n(rc.sent), color: 'var(--ink)' },
+          { label: 'مستلم', value: f.n(rc.delivered || 0), color: 'var(--ink)' },
+          { label: 'مقروء', value: f.n(rc.read || 0), color: 'var(--ok-i)' },
+          { label: 'فشل', value: f.n(rc.failed || 0), color: rc.failed ? 'var(--dg-i)' : 'var(--ink)' },
+        ],
+        eta: 'المتبقي ' + f.n(remaining) + ' رسالة — نحو ' + (mins < 60 ? Math.round(mins) + ' دقيقة' : Math.round(mins / 60) + ' ساعة') + ' بمعدّل ' + rate + '/دقيقة من جهاز «' + dev.name + '».',
+        onOpenList: () => this.setState({ panel: this.messagesPanel(rc) }),
+        askPause: () => this.setState({ pendingIds: [rc.id], confirmKey: 'pause' }),
+      };
+    })() : { stats: [] };
+
+    /* ——— الحملات المجدولة القادمة ——— */
+    const soonSorted = soon.slice().sort((a, b) => a.startAt - b.startAt);
+    const schedList = soonSorted.slice(0, 3).map((k) => {
+      const days = Math.round((k.startAt - Date.now()) / 86400000);
+      const rel = k.startAt < Date.now() ? 'الموعد فات — بانتظار الاستئناف' : (days <= 0 ? 'اليوم' : days === 1 ? 'غداً' : 'بعد ' + f.n(days) + ' يوم');
+      return {
+        name: k.name, when: f.date(k.startAt) + ' ' + f.time(k.startAt),
+        meta: rel + ' · ' + f.n(k.recipients) + ' مستلم · ' + devName(k.deviceId) + (k.pauseCount ? ' · عُدّلت ' + f.n(k.pauseCount) + ' مرة' : ''),
+        onOpen: () => this.setState({ panel: this.messagesPanel(k) }),
+        onPause: () => this.setState({ pendingIds: [k.id], confirmKey: 'pause' }),
+      };
+    });
+
+    /* ——— المؤشرات (Cards) ——— */
+    const cardsMeta = { handlers, sections: [].concat(liveSection ? [liveSection] : [], [{ min: 200, mobileColumns: 2, cards: [
+      { kind: 'stat', icon: 'chart', label: 'عدد الحملات', value: f.n(all.length), valueMono: true, note: f.n(all.filter((c) => c.status === 'completed').length) + ' مكتملة' },
+      { kind: 'stat', icon: 'send', tone: live.length ? 'ok' : undefined, label: 'جارية الآن', value: f.n(live.length), valueMono: true, note: f.n(soon.length) + ' مجدولة قادمة' },
+      { kind: 'stat', icon: 'sigma', tone: 'info', label: 'رسائل أُرسلت', value: f.n(sentAll), valueMono: true, note: 'من ' + f.n(all.reduce((n, c) => n + (c.recipients || 0), 0)) + ' مستلم مستهدف', action: 'openList' },
+      { kind: 'stat', icon: 'fail', tone: failedAll ? 'danger' : undefined, label: 'رسائل فاشلة', value: f.n(failedAll), valueMono: true, note: sentAll ? ((failedAll / sentAll) * 100).toFixed(1) + '% من المرسل' : 'لا فشل' },
+    ] }]) };
+
+    /* ——— القائمة (List View) ——— */
+    const stCell = (c) => { const s = ST[c.status] || ST.draft, t = TONE_BG[s.tone]; return { text: s.ar, bg: t.bg, fg: t.fg, dot: t.dot, sort: c.status }; };
+    const devCell = (id) => { const d = D.deviceById(id) || { name: '—', initials: '—', color: 'var(--ink-4)' }; return { text: d.name, initials: d.initials, avBg: d.color, avFg: '#fff', sort: d.name }; };
+    const columns = [
+      { key: 'name', label: 'الحملة', w: 240, kind: 'two' },
+      { key: 'status', label: 'الحالة', w: 120, kind: 'badge', group: true, filter: true },
+      { key: 'act', label: 'تعديل', w: 104, kind: 'btn', sortable: false },
+      { key: 'progress', label: 'التقدّم', w: 170, kind: 'bar' },
+      { key: 'recipients', label: 'المستلمون', w: 110, kind: 'num', align: 'end' },
+      { key: 'sent', label: 'مُرسل', w: 100, kind: 'num', align: 'end' },
+      { key: 'okRate', label: 'نسبة النجاح', w: 110, kind: 'num', align: 'end' },
+      { key: 'read', label: 'مقروء', w: 100, kind: 'num', align: 'end' },
+      { key: 'readRate', label: 'نسبة المقروء', w: 115, kind: 'num', align: 'end' },
+      { key: 'failed', label: 'فشل', w: 90, kind: 'num', align: 'end' },
+      { key: 'failRate', label: 'نسبة الفشل', w: 110, kind: 'num', align: 'end' },
+      { key: 'device', label: 'الجهاز', w: 150, kind: 'avatar', group: true, filter: true },
+      { key: 'startKind', label: 'نوع البدء', w: 110, kind: 'badge', group: true, filter: true },
+      { key: 'schedAt', label: 'موعد الجدولة', w: 150, kind: 'num', align: 'end' },
+      { key: 'createdAt', label: 'تاريخ الإنشاء', w: 150, kind: 'num', align: 'end' },
+      { key: 'startAt', label: 'البداية', w: 120, kind: 'date' },
+      { key: 'edited', label: 'تعديل بعد الاعتماد', w: 145, kind: 'badge', group: true, filter: true },
+      { key: 'initRecipients', label: 'المستلمون في البداية', w: 140, kind: 'num', align: 'end' },
+      { key: 'editPct', label: 'نسبة التعديل', w: 110, kind: 'num', align: 'end' },
+      { key: 'firstMsgAt', label: 'أول رسالة صادرة', w: 150, kind: 'num', align: 'end' },
+      { key: 'lastMsgAt', label: 'آخر رسالة صادرة', w: 150, kind: 'num', align: 'end' },
+      { key: 'estDur', label: 'المدة التقديرية', w: 120, kind: 'num', align: 'end' },
+      { key: 'actDur', label: 'المدة الفعلية', w: 120, kind: 'num', align: 'end' },
+      { key: 'durDiff', label: 'فارق المدة', w: 110, kind: 'num', align: 'end' },
+    ];
+    const BAR = { running: 'var(--pri)', scheduled: 'var(--nf)', paused: 'var(--wn)', completed: 'var(--ok)', draft: 'var(--ink-4)', cancelled: 'var(--dg)' };
+    const dtCell = (ts, color) => (ts ? { text: f.date(ts) + ' ' + f.time(ts), color: color || 'var(--ink-2)', sort: ts } : { text: '—', color: 'var(--ink-4)', sort: -1 });
+    const rate = (num, den, color) => { if (!den) return { text: '—', color: 'var(--ink-4)', sort: -1 }; const p = (num / den) * 100; return { text: (p >= 99.95 || p === 0 ? Math.round(p) : p.toFixed(1)) + '%', color, sort: p }; };
+    const durText = (ms) => { const m = Math.round(ms / 60000); return m < 60 ? m + ' د' : Math.floor(m / 60) + ' س ' + (m % 60) + ' د'; };
+    const durCell = (ms, color) => (ms == null ? { text: '—', color: 'var(--ink-4)', sort: -1 } : { text: durText(ms), color: color || 'var(--ink-2)', sort: ms });
+    const rows = all.map((c) => {
+      const pct = Math.round((c.sent / Math.max(1, c.recipients)) * 100);
+      const ok = Math.max(0, (c.sent || 0) - (c.failed || 0));
+      const cRate = c.rate || (D.queue && D.queue.rate) || 20;
+      const est = (c.recipients / cRate) * 60000;
+      const act = c.endAt ? c.endAt - c.startAt : (c.status === 'running' || c.status === 'paused' ? Math.max(0, Date.now() - c.startAt) : null);
+      const diff = c.endAt ? act - est : null;
+      const msgs = this.camMsgs(c).map((m) => m.ts).sort((a, b) => a - b);
+      const initN = c.initialRecipients != null ? c.initialRecipients : c.recipients;
+      const editPct = initN ? ((c.recipients - initN) / initN) * 100 : 0;
+      return {
+        id: c.id, name: { text: c.name, sub: c.owner, subMono: false }, status: stCell(c),
+        /* التعديل متاح للمسودة والموقوفة؛ المجدولة وقيد الإرسال تُوقف أولاً */
+        act: CAN.edit.indexOf(c.status) >= 0
+          ? { text: 'تعديل', bg: 'var(--pri-s)', bd: '1px solid var(--pri-sb)', fg: 'var(--pri-d)', onClick: () => this.setState({ panel: this.editPanel(c) }) }
+          : (CAN.pause.indexOf(c.status) >= 0
+            ? { text: 'إيقاف للتعديل', bg: 'var(--surface)', bd: '1px solid var(--border-2)', fg: 'var(--ink-2)', onClick: () => this.setState({ pendingIds: [c.id], confirmKey: 'pause' }) }
+            : { text: '—', bg: 'transparent', bd: '1px solid transparent', fg: 'var(--ink-4)', onClick: () => {} }),
+        progress: { value: pct, text: f.n(c.sent) + ' / ' + f.n(c.recipients), color: BAR[c.status] || 'var(--pri)', sort: pct },
+        recipients: c.recipients, sent: c.sent || 0, read: c.read || 0,
+        okRate: rate(ok, c.sent || 0, 'var(--ok-i)'),
+        readRate: rate(c.read || 0, c.delivered || 0, 'var(--nf-i)'),
+        failRate: rate(c.failed || 0, c.sent || 0, c.failed ? 'var(--dg-i)' : 'var(--ink-2)'),
+        failed: { text: f.n(c.failed), color: c.failed ? 'var(--dg-i)' : 'var(--ink-2)', sort: c.failed },
+        device: devCell(c.deviceId), startAt: c.startAt, createdAt: dtCell(c.createdAt),
+        startKind: c.wasScheduled
+          ? { text: 'مجدولة', bg: 'var(--nf-s)', fg: 'var(--nf-i)', dot: 'var(--nf)', sort: 'scheduled' }
+          : { text: 'فورية', bg: 'var(--sunken)', fg: 'var(--ink-3)', dot: 'var(--ink-4)', sort: 'now' },
+        schedAt: c.wasScheduled ? dtCell(c.startAt, 'var(--nf-i)') : { text: 'فورية', color: 'var(--ink-4)', sort: 0 },
+        edited: c.pauseCount
+          ? { text: 'نعم — ' + f.n(c.pauseCount) + ' مرة', bg: 'var(--wn-s)', fg: 'var(--wn-i)', dot: 'var(--wn)', sort: 'yes' }
+          : { text: 'لا', bg: 'var(--sunken)', fg: 'var(--ink-3)', dot: 'var(--ink-4)', sort: 'no' },
+        initRecipients: c.initialRecipients != null ? c.initialRecipients : { text: '—', color: 'var(--ink-4)', sort: -1 },
+        editPct: c.initialRecipients != null && c.initialRecipients !== c.recipients
+          ? { text: (editPct >= 0 ? '+' : '−') + Math.abs(editPct).toFixed(1) + '%', color: editPct < 0 ? 'var(--dg-i)' : 'var(--ok-i)', sort: editPct }
+          : { text: '—', color: 'var(--ink-4)', sort: -1 },
+        firstMsgAt: dtCell(msgs[0]), lastMsgAt: dtCell(msgs[msgs.length - 1]),
+        estDur: durCell(est), actDur: durCell(act, c.endAt ? 'var(--ink-2)' : 'var(--ink-3)'),
+        durDiff: diff == null ? { text: '—', color: 'var(--ink-4)', sort: -1 } : { text: (diff >= 0 ? '+' : '−') + durText(Math.abs(diff)), color: diff > 60000 ? 'var(--dg-i)' : (diff < -60000 ? 'var(--ok-i)' : 'var(--ink-2)'), sort: diff },
+        _c: c,
+      };
+    });
+
+    const detail = (r) => {
+      const c = r._c, pct = Math.round((c.sent / Math.max(1, c.recipients)) * 100);
+      const remaining = Math.max(0, c.recipients - c.sent);
+      const rs = this.rosterStats(c);
+      const initN = c.initialRecipients != null ? c.initialRecipients : c.recipients;
+      const editPct = initN ? ((c.recipients - initN) / initN) * 100 : 0;
+      const editedLine = c.pauseCount ? 'عُدّلت بعد اعتمادها ' + f.n(c.pauseCount) + ' مرة — من ' + f.n(initN) + ' إلى ' + f.n(c.recipients) + ' مستلم (' + (editPct >= 0 ? '+' : '−') + Math.abs(editPct).toFixed(1) + '%).' : null;
+      const alert = c.status === 'paused'
+        ? { tone: 'warn', title: 'موقوفة — قابلة للتعديل', lines: [f.n(remaining) + ' رسالة لم تُرسل بعد؛ يمكن تعديل المستلمين المتبقين والرسالة والجهاز والجدولة ثم الاستئناف.', f.n(rs.sentRows.length) + ' مستلماً أُرسلت لهم الرسالة ولا يمكن التراجع عنها.'].concat(editedLine ? [editedLine] : []) }
+        : c.status === 'cancelled' ? { tone: 'danger', title: 'ملغية نهائياً', lines: ['لا يمكن تعديلها أو استئنافها. غير المرسل أُلغي في الصادر، والمرسل يبقى في السجل.'] }
+        : c.status === 'draft' ? { tone: 'info', title: 'مسودة', lines: ['قابلة للتعديل بالكامل ولم تُنشئ صادراً بعد. الاعتماد يحوّلها إلى مجدولة أو قيد إرسال.'] }
+        : c.status === 'scheduled' ? { tone: 'info', title: 'مجدولة ومعتمدة', lines: ['لا تُعدّل إلا بإيقافها أولاً. موعدها ' + f.date(c.startAt) + ' ' + f.time(c.startAt) + '.'].concat(editedLine ? [editedLine] : []) }
+        : (editedLine ? { tone: 'warn', title: 'عُدّلت بعد الاعتماد', lines: [editedLine] } : null);
+      return {
+        alert: alert,
+        blocks: (c.log && c.log.length) ? [{
+          label: 'سجل التعديلات', more: f.n(c.log.length) + ' حدث · ' + f.n(c.pauseCount || 0) + ' جولة إيقاف',
+          list: c.log.slice().reverse().map((e) => ({
+            text: e.text + (e.from || e.to ? ' — السابق: ' + (e.from || '—') + ' · الجديد: ' + (e.to || '—') : ''),
+            sub: f.date(e.ts) + ' ' + f.time(e.ts) + ' · ' + (e.by || USER),
+            initials: (LOG_AR[e.kind] || '—').slice(0, 2),
+          })),
+        }] : [],
+        fields: [
+          { k: 'الحالة', v: (ST[c.status] || ST.draft).ar }, { k: 'التقدّم', v: pct + '%', mono: true },
+          { k: 'المستلمون (الحالي)', v: f.n(c.recipients), mono: true }, { k: 'أُرسل', v: f.n(c.sent), mono: true },
+          { k: 'مستلمة', v: f.n(c.delivered || 0), mono: true }, { k: 'مقروءة', v: f.n(c.read || 0), mono: true },
+          { k: 'فشل', v: f.n(c.failed || 0), mono: true }, { k: 'الجهاز', v: devName(c.deviceId) },
+          { k: 'نص الرسالة', v: c.body || '—' },
+          { k: 'صاحب الحملة', v: c.owner }, { k: 'أُنشئت', v: f.date(c.createdAt), mono: true },
+          { k: 'نوع البدء', v: c.wasScheduled ? 'مجدولة مسبقاً' : 'إرسال فوري' },
+        ].concat(c.wasScheduled ? [{ k: 'موعد الجدولة', v: f.date(c.startAt) + ' ' + f.time(c.startAt), mono: true }] : [],
+          c.initialRecipients != null ? [
+            { k: 'المستلمون في البداية', v: f.n(initN), mono: true },
+            { k: 'نسبة التعديل', v: (editPct >= 0 ? '+' : '−') + Math.abs(editPct).toFixed(1) + '%', mono: true },
+            { k: 'أُزيل من المستلمين', v: f.n(rs.removed.length + (c.removedCount || 0)), mono: true },
+            { k: 'أُضيف من المستلمين', v: f.n(rs.added.length + (c.addedCount || 0)), mono: true },
+            { k: 'مرات الإيقاف والتعديل', v: f.n(c.pauseCount || 0), mono: true },
+          ] : [], [
+          { k: (c.status === 'scheduled' ? 'تبدأ' : 'بدأت'), v: f.date(c.startAt), mono: true },
+          { k: 'المدة التقديرية', v: durText((c.recipients / (c.rate || (D.queue && D.queue.rate) || 20)) * 60000), mono: true },
+          { k: 'المدة الفعلية', v: c.endAt ? durText(c.endAt - c.startAt) : (c.status === 'running' || c.status === 'paused' ? durText(Math.max(0, Date.now() - c.startAt)) + ' حتى الآن' : '—'), mono: true },
+          { k: 'تكلفة تقديرية', v: f.money((c.recipients || 0) * sub.pricePerMessage) + ' ﷼', mono: true },
+        ]),
+        actions: [].concat(
+          c.status === 'draft' ? [{ label: 'تعديل المسودة واعتمادها', onClick: () => this.setState({ panel: this.editPanel(c) }) }] : [],
+          CAN.pause.indexOf(c.status) >= 0 ? [{ label: 'إيقاف الحملة', onClick: () => this.setState({ pendingIds: [c.id], confirmKey: 'pause' }) }] : [],
+          c.status === 'paused' ? [
+            { label: 'تعديل المستلمين والرسالة', onClick: () => this.setState({ panel: this.editPanel(c) }) },
+            { label: 'استئناف الحملة', onClick: () => { this.setState({ pendingIds: [c.id] }); handlers.resume(); } },
+            { label: 'إلغاء نهائي', tone: 'danger', onClick: () => this.setState({ pendingIds: [c.id], confirmKey: 'cancel' }) },
+          ] : [],
+          [{ label: 'رسائل الحملة', onClick: () => this.setState({ panel: this.messagesPanel(c) }) }],
+          [{ label: 'عرض في سجل الصادر', onClick: () => go('/messages/outbound', { kind: 'search', value: c.name }) }]
+        ),
+      };
+    };
+
+    const bulk = [
+      { label: 'إيقاف المحددة', onClick: (s) => this.setState({ pendingIds: s.map((r) => r.id), confirmKey: 'pause' }) },
+      { label: 'استئناف المحددة', onClick: (s) => { this.setState({ pendingIds: s.map((r) => r.id) }); handlers.resume(); } },
+      { label: 'إلغاء المحددة', onClick: (s) => this.setState({ pendingIds: s.map((r) => r.id), confirmKey: 'cancel' }) },
+    ];
+
+    /* ——— نافذة الإنشاء ونافذة رسائل الحملة (Overlay Panel) ——— */
+    const onPanelAction = (key, vals) => {
+      const p = S.panel || {};
+      if (key === 'openLog') { const c = all.find((x) => x.id === p._campaignId); if (c) go('/messages/outbound', { kind: 'search', value: c.name }); return; }
+      if (key === 'saveEdit' || key === 'saveResume' || key === 'approve') {
+        const c = all.find((x) => x.id === p._campaignId);
+        if (!c) return;
+        const st = this.rosterStats(c), changed = [];
+        let curCount = st.active.length;
+        const rem = (vals.removeList || []).filter((ph) => st.active.some((x) => x.phone === ph && !x.sent));
+        if (rem.length) {
+          st.roster.forEach((x) => { if (rem.indexOf(x.phone) >= 0 && !x.sent) x.removed = true; });
+          const nc = this.cancelMsgsFor(c, st.roster.filter((x) => rem.indexOf(x.phone) >= 0));
+          this.logEdit(c, 'recipients', 'أُزيل ' + f.n(rem.length) + ' مستلماً لم تُرسل لهم' + (nc ? ' وأُلغيت ' + f.n(nc) + ' رسالة في الصادر' : ''), f.n(curCount) + ' مستلم', f.n(curCount - rem.length) + ' مستلم');
+          curCount -= rem.length;
+          changed.push('المستلمون');
+        }
+        const A = this.newAdditions(c, vals);
+        if (A.rows.length) {
+          A.rows.forEach((x) => st.roster.push({ phone: x.phone, name: x.name, contactId: null, sent: false, added: true, removed: false }));
+          const nm = this.makeMsgs(c, A.rows.map((x) => ({ phone: x.phone, contactId: null })));
+          this.logEdit(c, 'recipients', 'أُضيف ' + f.n(A.rows.length) + ' مستلماً جديداً' + (nm ? ' وأُنشئت لهم ' + f.n(nm) + ' رسالة في الصادر' : ''), f.n(curCount) + ' مستلم', f.n(curCount + A.rows.length) + ' مستلم');
+          curCount += A.rows.length;
+          changed.push('المستلمون');
+        }
+        const body = String(vals.body || '');
+        if (body.trim() && body !== c.body) {
+          const oldBody = c.body || '';
+          c.body = body;
+          this.pendingMsgs(c).forEach((m) => { m.body = body; });
+          this.logEdit(c, 'body', 'عُدّل نص الرسالة وحُدّثت الرسائل غير المرسلة', this.cut(oldBody, 50), this.cut(body, 50));
+          changed.push('نص الرسالة');
+        }
+        if (vals.deviceId && vals.deviceId !== c.deviceId) {
+          const old = devName(c.deviceId);
+          c.deviceId = vals.deviceId;
+          this.pendingMsgs(c).forEach((m) => { m.deviceId = c.deviceId; });
+          this.logEdit(c, 'device', 'غُيّر جهاز الإرسال', old, devName(c.deviceId));
+          changed.push('الجهاز');
+        }
+        if (vals.startDate) {
+          const ts = new Date(vals.startDate + 'T' + (vals.startTime || '09:00')).getTime();
+          if (ts && Math.abs(ts - c.startAt) > 60000) {
+            const od = new Date(c.startAt), nd = new Date(ts);
+            const dChanged = od.toDateString() !== nd.toDateString();
+            const tChanged = od.getHours() !== nd.getHours() || od.getMinutes() !== nd.getMinutes();
+            c.startAt = ts; c.wasScheduled = true;
+            this.pendingMsgs(c).forEach((m) => { m.ts = ts; m.scheduledAt = ts; });
+            this.logEdit(c, 'reschedule', 'أُعيدت الجدولة' + (dChanged && tChanged ? ' (التاريخ والوقت)' : dChanged ? ' (التاريخ)' : ' (الوقت)'), f.date(od.getTime()) + ' ' + f.time(od.getTime()), f.date(ts) + ' ' + f.time(ts));
+            changed.push('الجدولة');
+          }
+        }
+        const st2 = this.rosterStats(c);
+        c.recipients = st2.active.length;
+        if (key === 'approve') {
+          c.status = c.wasScheduled && c.startAt > Date.now() ? 'scheduled' : 'running';
+          c.prevStatus = c.status;
+          if (c.initialRecipients == null) c.initialRecipients = c.recipients;
+          const nm = this.makeMsgs(c, st2.pending);
+          this.logEdit(c, 'approve', 'اعتُمدت الحملة ' + (c.status === 'scheduled' ? 'وجُدولت لـ' + f.date(c.startAt) + ' ' + f.time(c.startAt) : 'وبدأ الإرسال') + ' — ' + f.n(nm) + ' رسالة في الصادر', 'مسودة', (ST[c.status] || {}).ar);
+          D.logActivity('اعتمد ' + USER + ' حملة «' + c.name + '» لـ' + f.n(c.recipients) + ' مستلم', 'primary');
+        }
+        if (key === 'saveResume') this.doResume(c);
+        const uniq = changed.filter((x, i, a) => a.indexOf(x) === i);
+        this.setState({ panel: null });
+        this.toast(key === 'approve'
+          ? { key: 'created', title: 'اعتُمدت الحملة', text: c.status === 'scheduled' ? 'مجدولة لـ' + f.date(c.startAt) + ' ' + f.time(c.startAt) + ' — ' + f.n(c.recipients) + ' مستلم.' : f.n(c.recipients) + ' رسالة دخلت الطابور.' }
+          : uniq.length
+            ? { key: 'saved', title: key === 'saveResume' ? 'حُفظت التعديلات واستُئنفت' : 'حُفظت التعديلات', text: 'عُدّل: ' + uniq.join(' · ') + ' — ' + f.n(c.recipients) + ' مستلم الآن.' }
+            : { key: 'error', title: 'لا تغييرات', text: 'لم يُعدّل شيء في الحملة.' });
+        this.bump();
+        return;
+      }
+      if (key !== 'create' && key !== 'draft') return;
+      const R = this.resolve(vals), name = String(vals.name || '').trim();
+      if (!name) return this.toast({ key: 'error', title: 'اسم الحملة مطلوب', text: 'اكتب اسماً يميّز الحملة في السجل.' });
+      if (!String(vals.body || '').trim()) return this.toast({ key: 'error', title: 'نص الرسالة فارغ', text: 'اكتب الرسالة أو اجلبها من قالب.' });
+      if (!R.rows.length) return this.toast({ key: 'error', title: 'لا مستلمين', text: 'اختر مجموعة أو جهات أو اكتب أرقاماً.' });
+      const sched = vals.when === 'later' && !!vals.startDate;
+      const startAt = sched ? (new Date(vals.startDate + 'T' + (vals.startTime || '09:00')).getTime() || Date.now()) : Date.now();
+      const nc = {
+        id: 'k-' + Date.now(), name, status: key === 'draft' ? 'draft' : (sched ? 'scheduled' : 'running'),
+        recipients: R.rows.length, sent: 0, failed: 0, delivered: 0, read: 0,
+        rate: (D.queue && D.queue.rate) || 20, deviceId: vals.deviceId || (D.devices[0] || {}).id,
+        createdAt: Date.now(), startAt, endAt: null, wasScheduled: sched, owner: USER,
+        templateId: vals.templateId || null, body: vals.body, skipNoChat: !!vals.skipNoChat,
+        initialRecipients: key === 'draft' ? null : R.rows.length, pauseCount: 0, prevStatus: null, log: [],
+        roster: R.rows.map((x) => ({ phone: x.phone, name: x.name, contactId: null, sent: false, added: false, removed: false })),
+      };
+      all.unshift(nc);
+      if (key !== 'draft') {
+        const nm = this.makeMsgs(nc, nc.roster);
+        this.logEdit(nc, 'approve', 'أُنشئت الحملة ' + (sched ? 'وجُدولت لـ' + f.date(startAt) + ' ' + f.time(startAt) : 'وبدأ الإرسال') + ' — ' + f.n(nm) + ' رسالة في الصادر', '—', (ST[nc.status] || {}).ar);
+      }
+      D.logActivity('أنشأ ' + USER + ' حملة «' + name + '» لـ' + f.n(R.rows.length) + ' مستلم', 'primary');
+      this.setState({ panel: null });
+      this.toast(key === 'draft'
+        ? { key: 'created', title: 'حُفظت المسودة', text: name + ' — ' + f.n(R.rows.length) + ' مستلم جاهز.' }
+        : (sched
+          ? { key: 'created', title: 'جُدولت الحملة', text: f.date(startAt) + ' — ' + f.n(R.rows.length) + ' مستلم.' }
+          : { key: 'created', title: 'بدأت الحملة', text: f.n(R.rows.length) + ' رسالة دخلت الطابور.' }));
+      this.bump();
+    };
+
+    /* ——— التأكيدات ——— */
+    const nP = S.pendingIds.length;
+    const pRemaining = S.pendingIds.reduce((n, id) => { const c = all.find((x) => x.id === id); return n + (c ? Math.max(0, c.recipients - c.sent) : 0); }, 0);
+    const confirmMeta = { handlers, dialogs: [
+      { key: 'pause', tone: 'warn', icon: 'pause', title: 'إيقاف ' + f.n(nP) + ' حملة؟', text: 'الإيقاف لا يحذف شيئاً. ما لم يُرسل يبقى محفوظاً ويُستأنف من نفس النقطة.',
+        facts: [{ label: 'رسائل ستتوقف', value: f.n(pRemaining), mono: true, tone: 'warn' }, { label: 'حملات', value: f.n(nP), mono: true }],
+        reason: { label: 'سبب الإيقاف (يظهر في سجل التدقيق)', placeholder: 'مثال: مراجعة نص الرسالة' },
+        confirmLabel: 'أوقف الحملات', action: 'pause' },
+      { key: 'resume', tone: 'ok', icon: 'play', title: 'استئناف ' + f.n(nP) + ' حملة؟', text: 'الاستئناف يكمل من نفس النقطة بالمستلمين والرسالة بعد التعديل.',
+        facts: [{ label: 'رسائل ستُرسل', value: f.n(pRemaining), mono: true, tone: 'ok' }],
+        confirmLabel: 'استأنف', action: 'resume' },
+      { key: 'cancel', tone: 'danger', icon: 'trash', title: 'إلغاء ' + f.n(nP) + ' حملة نهائياً؟', text: 'الإلغاء النهائي يتم من الحالة «موقوفة» فقط، ولا يمكن التراجع عنه: غير المرسل يُلغى في الصادر، والمرسل يبقى في السجل.',
+        facts: [
+          { label: 'رسائل لن تُرسل', value: f.n(pRemaining), mono: true, tone: 'danger' },
+          { label: 'رصيد يُوفَّر', value: f.n(pRemaining), mono: true, tone: 'ok' },
+        ],
+        checks: pRemaining > 500 ? [{ key: 'sure', label: 'أفهم أن ' + f.n(pRemaining) + ' رسالة لن تُرسل ولا يمكن استرجاع الحملة', required: true }] : [],
+        confirmLabel: 'ألغِ الحملات', action: 'cancel' },
+    ] };
+
+    return {
+      theme, loading: S.loading, handlers,
+      create: () => this.setState({ panel: this.createPanel() }),
+      hasRunning: !!rc, run,
+      hasScheduled: schedList.length > 0, schedList,
+      moreScheduled: soonSorted.length > 3, moreScheduledText: 'و' + f.n(Math.max(0, soonSorted.length - 3)) + ' حملة مجدولة أخرى في القائمة أدناه.',
+      cardsMeta, columns, rows, detail, bulk,
+      searchKeys: ['name', 'owner'], defaultSort: { key: 'startAt', dir: 'desc' }, pinned: ['name'],
+      panel: S.panel, onPanelAction, onPanelClose: () => this.setState({ panel: null }),
+      confirmMeta, confirmKey: S.confirmKey, onConfirmClose: () => this.setState({ confirmKey: null }),
+      toastsMeta: { position: 'bottom-start', duration: 3800, types: [{ key: 'created', tone: 'ok', icon: 'check' }, { key: 'saved', tone: 'ok', icon: 'check' }, { key: 'error', tone: 'danger', icon: 'alert' }, { key: 'resumed', tone: 'ok', icon: 'check' }, { key: 'paused', tone: 'warn', icon: 'alert' }, { key: 'cancelled', tone: 'danger', icon: 'x' }] },
+      toastFire: S.fire,
+    };
+  }
+}
+</script>
+</body>
+</html>
