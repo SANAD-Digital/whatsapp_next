@@ -26,6 +26,8 @@ One entry per decision. Never delete; supersede with a new entry that references
 | D-020 | 2026-09-22 | 1 | Client credentials keep the existing three-field shape: `customer_api_key` (→ `X-SND-API-Key`), `api_key` + `api_secret` (→ `Authorization: token k:s`, and `X-SND-API-Secret` when the platform enforces it). Stored as Password fields (D-014). Refines D-013. | Owner decision. Resolves platform Q-06 and Q-03 (store and send the secret from day one). |
 | D-021 | 2026-09-22 | 1 | The platform is **not** the system of record for message data. `whatsapp_next` stores all outbound, inbound and status history; platform Delivery Log retention is irrelevant to the client. Confirms D-011. | Owner decision. Resolves platform Q-05. |
 | D-022 | 2026-09-22 | 1 | Platform technical debt and security gaps (`05-platform-summary.md` Findings/Risks) are **fixed** in the platform, on branch `whatsapp-next-integration` created from `feat/link-webhook-secret` (= `main` + 8 commits; `main` tracks `upstream/main` and lacks the link-secret, batch enqueue and status API work). Rule `.claude/rules/platform.md` updated accordingly. | Owner decision. `feat/link-webhook-secret` is what runs on `w-platform.dev`, so it is the effective development branch. |
+| D-023 | 2026-09-22 | 1 | All previously uncommitted work in both source apps is **approved as baseline** and committed: legacy `redesgin-integration-ui` (command engine + API library, campaign recipient sources, batch queue contract, webhook log fields, redesigned console, workspace sidebar removal) and platform `whatsapp-next-integration` (sender-mobile enrichment on `message.received`, webhook payload log). The R-001 markers in `01-snd-whatsapp-summary.md` are therefore released behaviour and are ported functionally (with debt fixed per D-015). The stray `.claude/` folder in the legacy app stayed untracked. | Owner: "the changes are useful solutions, adopt and carry them." Closes R-001, R-002, R-012. |
+| D-024 | 2026-09-22 | 1 | Platform send contract for `whatsapp_next`: batch `enqueue_messages_api` with `client_ref`, status via `message.*` webhooks plus `get_message_status_api` reconcile, `message.held` handled as a status. Per-message `send_message_api` only for the test send. | Follows D-023 (the contract is now committed on the running branch). Resolves OD-3 and legacy Q1. |
 
 ## Open decisions (resolve at Gate 1 — from spec §7)
 
@@ -33,7 +35,7 @@ One entry per decision. Never delete; supersede with a new entry that references
   as a real DocType (§5.1) and before deciding whether Functions Center could be a Virtual DocType.
 - **OD-2** *Post-build review, deferred:* Wizard as modal vs Page; Home on Insights components.
   Nothing may assume or block these.
-- **OD-3** (phase 1) Which platform send/status contract is live on `w-platform.dev`: batch `enqueue_messages_api` + `get_message_status_api` vs per-message `send_message_api`. Decides the queue design.
+- ~~**OD-3**~~ Resolved by D-024: batch enqueue + webhooks + status reconcile.
 - ~~**OD-4**~~ Resolved by D-018: platform states become Active/Disabled/Locked(+Revoked).
 - ~~**OD-5**~~ Resolved by D-016: both in scope, ported functionally, sends via the queue.
 - ~~**OD-6**~~ Resolved by D-019: dev tenant upgraded to a full-feature plan.
