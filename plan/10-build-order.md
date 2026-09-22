@@ -49,7 +49,7 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [ ] Docs per step (`docs/` page list §L), `changelog.md`, `openapi.yaml` draft
 
 ### 4.C whatsapp_next services (order = `backend-plan.md` §15)
-- [ ] B-7 `services/read_layer.py` — the one UNION (`frappe.db.sql(str(qb_union))`, decision D-025) (B-4)
+- [x] B-7 `services/read_layer.py` — the one UNION ALL via `frappe.qb` (`.run()` works on v16, no `frappe.db.sql`; D-043) (B-4) — 11 tests
 - [ ] B-8 `services/permissions.py` contextual layer §4 (declared field sets, query filters, audit) (B-4, B-5)
 - [ ] B-9 `services/templates.py`, `attachments.py`, `polls.py` (B-4)
 - [ ] B-10 `services/dispatch.py` (claim `for_update(skip_locked)`, batch enqueue with `client_ref` = `WhatsApp Log` name, backoff, dead-letter, global/campaign pause, rate), `reconcile.py` (cron `*/5`), `quick_send.py` (B-5, B-6, B-9)
