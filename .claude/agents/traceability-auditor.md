@@ -25,7 +25,7 @@ Then review:
   `api/` or in custom Page JS; the only UNION lives in the read layer.
 - **Frappe standards** — naming, permissions JSON, translations, `frappe.qb` over raw SQL.
 
-The orchestrator passes you the result of `git -C apps/snd_whatsapp status --porcelain`; any
+The orchestrator passes you the result of `git -C ../snd_whatsapp status --porcelain`; any
 output there is a critical finding.
 
 Output → `plan/11-traceability-report.md`

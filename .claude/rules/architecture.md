@@ -1,6 +1,6 @@
 ---
 paths:
-  - "apps/whatsapp_next/**/*.py"
+  - "**/*.py"
   - "plan/backend-plan*.md"
 ---
 

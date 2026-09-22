@@ -2,8 +2,9 @@
 """PreToolUse hook: block file-tool writes to read-only areas.
 
 Protected:
-  apps/snd_whatsapp/        legacy app — reference only (note the trailing slash:
-                            apps/snd_whatsapp_platform/ is NOT protected)
+  ../snd_whatsapp/          legacy app — reference only. Paths are relative to this
+                            app (apps/whatsapp_next); sibling apps live one level up.
+                            ../snd_whatsapp_platform/ is NOT protected.
   docs/                     the prototype — input only
   plan/00-screens-spec.md   binding spec — the product owner edits it by hand
 
@@ -14,7 +15,7 @@ import json
 import os
 import sys
 
-PROTECTED_DIRS = ("apps/snd_whatsapp", "docs")
+PROTECTED_DIRS = ("../snd_whatsapp", "docs")
 PROTECTED_FILES = ("plan/00-screens-spec.md",)
 
 

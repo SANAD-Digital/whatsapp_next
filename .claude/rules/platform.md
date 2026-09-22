@@ -1,6 +1,6 @@
 ---
 paths:
-  - "apps/snd_whatsapp_platform/**"
+  - "../snd_whatsapp_platform/**"
   - "plan/*platform*.md"
 ---
 
@@ -12,7 +12,7 @@ paths:
 - Every new external endpoint is versioned, permission-checked, and documented as you build it.
 
 ## Documentation audience
-`apps/snd_whatsapp_platform/docs/` serves an external developer integrating from **any** stack,
+`../snd_whatsapp_platform/docs/` serves an external developer integrating from **any** stack,
 not only Frappe: authentication and credentials · base URL and versioning · every endpoint with
 request/response examples in **curl, Python and JavaScript** · webhook contract (payload schema,
 signature verification, retry and idempotency semantics) · device pairing (QR + 8-digit code) ·

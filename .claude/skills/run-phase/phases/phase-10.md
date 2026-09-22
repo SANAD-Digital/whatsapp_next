@@ -1,13 +1,13 @@
 # Phase 10 — Documentation & release prep
 
-**`apps/whatsapp_next/docs/`** — for a developer extending the product: README · architecture
+**`developer-docs/`** (not `docs/`, which is the read-only design prototype) — for a developer extending the product: README · architecture
 overview with diagram · install and configure · **"Add a new provider" guide** (the `BaseProvider`
 contract, a worked Meta Cloud skeleton, the registration hook, testing your provider) · API
 reference (purpose, args, returns, permissions, errors, example for each endpoint) · events and
 hooks · component kit reference · permission model including the contextual layer ·
 troubleshooting · CONTRIBUTING and LICENSE.
 
-**`apps/snd_whatsapp_platform/docs/`** — for external developers on any stack; follow
+**`../snd_whatsapp_platform/docs/`** — for external developers on any stack; follow
 `.claude/rules/platform.md`.
 
 Final steps, in this order:

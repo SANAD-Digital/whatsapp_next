@@ -1,9 +1,9 @@
 ---
 paths:
-  - "apps/whatsapp_next/**/*.py"
-  - "apps/whatsapp_next/**/doctype/**/*.json"
-  - "apps/snd_whatsapp_platform/**/*.py"
-  - "apps/snd_whatsapp_platform/**/doctype/**/*.json"
+  - "**/*.py"
+  - "**/doctype/**/*.json"
+  - "../snd_whatsapp_platform/**/*.py"
+  - "../snd_whatsapp_platform/**/doctype/**/*.json"
 ---
 
 # Security & permissions — acceptance criteria, not advice

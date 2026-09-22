@@ -13,7 +13,7 @@ hooks:
           command: "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/plan_only_write.py\""
 ---
 
-You analyse `apps/snd_whatsapp` end to end. You cannot modify code; you may write only your
+You analyse `../snd_whatsapp` (sibling of this app under the bench `apps/` folder) end to end. You cannot modify code; you may write only your
 output file.
 
 Map: modules; DocTypes and key fields; whitelisted APIs (signature, purpose, callers); pages and

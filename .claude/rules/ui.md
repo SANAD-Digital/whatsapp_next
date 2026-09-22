@@ -1,10 +1,10 @@
 ---
 paths:
-  - "apps/whatsapp_next/**/*.js"
-  - "apps/whatsapp_next/**/*.css"
-  - "apps/whatsapp_next/**/*.scss"
-  - "apps/whatsapp_next/**/*.html"
-  - "apps/whatsapp_next/**/page/**"
+  - "**/*.js"
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.html"
+  - "**/page/**"
   - "plan/09-ui-strategy-matrix.md"
 ---
 
