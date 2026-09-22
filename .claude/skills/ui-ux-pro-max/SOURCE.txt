@@ -1,0 +1,4 @@
+Source: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill
+Version: 2.13.0 (commit dcc40ff, 2026-09-21)
+License: MIT (see LICENSE)
+Copied from the repo's .claude/skills/ui-ux-pro-max/ on 2026-09-22.

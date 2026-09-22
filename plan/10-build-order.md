@@ -14,7 +14,7 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [x] Phase 1 analysis (`01-snd-whatsapp-summary.md`, `05-platform-summary.md`, D-010..D-024)
 - [x] Phase 2 plans (`02`, `06`, `fields`, `fields-platform`, `backend-plan`, `backend-plan-platform`, `09`, this file)
 - [x] **Gate 1 approved** (D-027..D-029) — all open questions resolved as the planners' defaults
-- [ ] Design phases 5–7: run `design:design-critique` + `design:accessibility-review` (+ `ux-copy` for strings) on each component/page before ticking it (D-029c)
+- [ ] Design phases 5–7: design quality gate per `.claude/rules/ui.md` — `ui-ux-pro-max` (ux/product/chart/icons domains) + `design:design-critique` + `design:accessibility-review` + `design:ux-copy` on each component/page before ticking it (D-029c, D-030)
 
 ## Phase 3 — Scaffold & schema (exit: `bench migrate` clean on both sites)
 
@@ -45,7 +45,7 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [ ] P-6 Device: `pairing_mode`, status audit, `update_device_api`, `reconnect_device_api` (P-1)
 - [ ] P-7 Account/plan/wallet/usage endpoints (`get_account_api`, `list_plans_api`, `get_wallet_api`, `request_wallet_topup_api`, `get_usage_api`) (P-4)
 - [ ] P-8 Messages/queue endpoints: `send_message_api` codes + `allow_fallback`, `enqueue_messages_api` per-item codes, `get_message_status_api` additive keys, `cancel_queued_messages_api`, `get_queue_status_api` (P-4)
-- [ ] P-10 Credentials rotation: rotate `api_secret` with grace, keep `api_key` as identifier (D-029, OQ-P1)
+- [ ] P-10 Credentials rotation: rotate `api_secret` with grace, keep `api_key` as identifier (D-029)
 - [ ] Docs per step (`docs/` page list §L), `changelog.md`, `openapi.yaml` draft
 
 ### 4.C whatsapp_next services (order = `backend-plan.md` §15)

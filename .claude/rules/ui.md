@@ -41,3 +41,11 @@ Bundle as `whatsapp_next.bundle.js`, load via `app_include_js`, expose on one na
 - show loading, empty, and error states; have no dead buttons;
 - be keyboard accessible;
 - use realtime wherever the prototype shows live state.
+
+## Design quality gate (D-029c, D-030)
+Before a kit component or custom Page is ticked in `plan/10-build-order.md`:
+- query `ui-ux-pro-max` (project copy in `.claude/skills/ui-ux-pro-max/`, `ux`/`product`/`chart`/`icons` domains
+  only — its palettes, fonts, GSAP and stack advice are **not** used; Espresso and Desk decide those);
+- run `design:design-critique` and `design:accessibility-review` on the rendered screen, and
+  `design:ux-copy` on its strings (Arabic + English);
+- record the findings applied in the component `README.md` / page commit message.
