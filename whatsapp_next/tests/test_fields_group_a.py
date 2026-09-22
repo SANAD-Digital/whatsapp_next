@@ -80,6 +80,7 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"phone_fieldname": "Data",
 		"contact_fieldname": "Data",
 		"name_fieldname": "Data",
+		"filters_json": "Code",
 		"enabled": "Check",
 	},
 	"WhatsApp Device": {

@@ -11,6 +11,7 @@
   "phone_fieldname",
   "contact_fieldname",
   "name_fieldname",
+  "filters_json",
   "enabled"
  ],
  "fields": [
@@ -61,6 +62,13 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Display Name Fieldname"
+  },
+  {
+   "description": "Server-side filters merged into every picker query on this DocType (JSON list, e.g. [[\"disabled\",\"=\",0]]). Set by administrators only; the client cannot remove them.",
+   "fieldname": "filters_json",
+   "fieldtype": "Code",
+   "label": "Mandatory Filters (JSON)",
+   "options": "JSON"
   },
   {
    "default": "1",

@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+import json
+
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -127,3 +129,24 @@ class WhatsAppSettings(Document):
 				)
 			if not row.label:
 				row.label = _(meta.name)
+			self._validate_picker_filters(row, meta)
+
+	@staticmethod
+	def _validate_picker_filters(row, meta) -> None:
+		"""`filters_json` (gap G-1) must be a JSON list of `[fieldname, operator, value]` triples on
+		fields the DocType has; it is merged into every picker query server-side."""
+		if not (row.filters_json or "").strip():
+			row.filters_json = None
+			return
+		from whatsapp_next.services.permissions import validate_filters
+
+		try:
+			parsed = json.loads(row.filters_json)
+			validate_filters(meta, parsed)
+		except (ValueError, TypeError) as exc:
+			frappe.throw(
+				_("Row {0}: Mandatory Filters must be a JSON list of [field, operator, value]: {1}").format(
+					row.idx, exc
+				),
+				WAValidationError,
+			)
