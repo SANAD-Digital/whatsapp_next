@@ -86,8 +86,9 @@ class TestReadLayer(IntegrationTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		ensure_settings()
-		cls.device = ensure_device()
-		cls.device2 = ensure_device("Second Device", "WAD-TEST-0002", phone="+966500000003")
+		# Dedicated devices: other modules' rows on the shared test device must not affect counts.
+		cls.device = ensure_device("Read Layer Device", "WAD-TEST-RL01", phone="+966500000011")
+		cls.device2 = ensure_device("Read Layer Device 2", "WAD-TEST-RL02", phone="+966500000012")
 
 	def setUp(self):
 		self._clean()
@@ -168,7 +169,8 @@ class TestReadLayer(IntegrationTestCase):
 		for i in range(4):
 			_outbound(self.device, phone=KEY_A if i < 2 else KEY_B, ts=self._t(i))
 		_inbound(self.device, phone=KEY_B, ts=self._t(4))
-		upper = self._t(10)
+		# `upper` stays in the past so rows other modules create "now" fall outside the window.
+		upper = self._t(5)
 		batches = list(read_layer.iter_keys_since(self._t(-1), upper, batch=2))
 		self.assertEqual(len(batches), 3)
 		self.assertEqual(set().union(*batches), {KEY_A, KEY_B})

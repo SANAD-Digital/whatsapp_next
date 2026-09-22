@@ -97,6 +97,9 @@ class TestDispatch(IntegrationTestCase):
 			g = frappe.get_doc("WhatsApp Contact Group", BLACKLIST)
 			g.set("members", [])
 			g.save(ignore_permissions=True)
+		# dispatch_device_batch commits mid-job, so the cleanup must be committed too — otherwise
+		# the base class rollback resurrects rows and pollutes later modules.
+		frappe.db.commit()
 
 	def _log(self, name):
 		return frappe.db.get_value(
