@@ -92,7 +92,8 @@ class TestReadLayer(IntegrationTestCase):
 
 	def setUp(self):
 		self._clean()
-		self.t0 = add_to_date(now_datetime(), minutes=-10)
+		# Two days back: no other module backdates rows there, so window-based tests stay isolated.
+		self.t0 = add_to_date(now_datetime(), days=-2)
 
 	def tearDown(self):
 		self._clean()
