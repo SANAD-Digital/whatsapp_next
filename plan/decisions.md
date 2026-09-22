@@ -28,14 +28,43 @@ One entry per decision. Never delete; supersede with a new entry that references
 | D-022 | 2026-09-22 | 1 | Platform technical debt and security gaps (`05-platform-summary.md` Findings/Risks) are **fixed** in the platform, on branch `whatsapp-next-integration` created from `feat/link-webhook-secret` (= `main` + 8 commits; `main` tracks `upstream/main` and lacks the link-secret, batch enqueue and status API work). Rule `.claude/rules/platform.md` updated accordingly. | Owner decision. `feat/link-webhook-secret` is what runs on `w-platform.dev`, so it is the effective development branch. |
 | D-023 | 2026-09-22 | 1 | All previously uncommitted work in both source apps is **approved as baseline**: legacy `redesgin-integration-ui` (**not committed by owner choice**: the legacy working tree, as it stands, is the reference; no commit is made in `../snd_whatsapp`) (command engine + API library, campaign recipient sources, batch queue contract, webhook log fields, redesigned console, workspace sidebar removal) and platform `whatsapp-next-integration` (sender-mobile enrichment on `message.received`, webhook payload log). The R-001 markers in `01-snd-whatsapp-summary.md` are therefore released behaviour and are ported functionally (with debt fixed per D-015). The stray `.claude/` folder in the legacy app stayed untracked. | Owner: "the changes are useful solutions, adopt and carry them." Closes R-001, R-002, R-012. |
 | D-024 | 2026-09-22 | 1 | Platform send contract for `whatsapp_next`: batch `enqueue_messages_api` with `client_ref`, status via `message.*` webhooks plus `get_message_status_api` reconcile, `message.held` handled as a status. Per-message `send_message_api` only for the test send. | Follows D-023 (the contract is now committed on the running branch). Resolves OD-3 and legacy Q1. |
+| D-025 | 2026-09-22 | 2 | Phase 1 branch fast-forwarded into `version-16`; phase 2 works on `phase-2-plan`. Phase-2 plan files written by the four planner pairs: `02-doctypes-gap.md`, `06-doctypes-gap-platform.md`, `fields.md`, `fields-platform.md`, `backend-plan.md`, `backend-plan-platform.md`, `09-ui-strategy-matrix.md`, `10-build-order.md`. | Phase 2 deliverables; all await Gate 1. |
+| D-026 | 2026-09-22 | 2 | **OD-1 evidence (Frappe v16.28.0):** for a Virtual DocType, `reportview.get/get_list/get_count/get_sidebar_stats` (`frappe/desk/reportview.py:30,43,60,717`) and `frappe.get_all` (`frappe/model/db_query.py:207-226`) delegate **everything** — raw `filters`, `or_filters`, `order_by`, `start`, `page_length`, `fields` — to `controller.get_list/get_count/get_stats`; no permission engine, no user permissions, no `_user_tags/_comments/_assign/_liked_by`. `frappe.db.get_value/set_value/exists/count` are not virtual-aware (no `is_virtual` in `database.py`) → list bulk edit, Assign To, Tags, Comments, Like, Number Cards, Report Builder group-by fail; bulk delete works only via a controller `delete()`; lazy loading unsupported (`document.py:2097`); a virtual parent cannot own real children (`doctype.py:1702`). Frappe's own reference (`RQ Job`) filters on two fields only and slices in Python. **Recommendation:** spec §5.1 confirmed — Queue is a real status-driven DocType; Functions Center stays a Custom Page over the real `WhatsApp Function` DocType (a Virtual DocType would give a plain self-filtered list with none of the storefront interactions). | Phase 2 investigation in the main thread. Awaits owner confirmation at Gate 1; on approval OD-1 and R-007 close. |
 
 ## Open decisions (resolve at Gate 1 — from spec §7)
 
-- **OD-1** Virtual DocType filtering limits on Frappe 16.28 — evidence needed before locking Queue
-  as a real DocType (§5.1) and before deciding whether Functions Center could be a Virtual DocType.
+- **OD-1** Virtual DocType filtering limits on Frappe 16.28 — evidence recorded in D-026; awaiting
+  owner confirmation at Gate 1 (Queue = real DocType; Functions Center = Custom Page).
 - **OD-2** *Post-build review, deferred:* Wizard as modal vs Page; Home on Insights components.
   Nothing may assume or block these.
 - ~~**OD-3**~~ Resolved by D-024: batch enqueue + webhooks + status reconcile.
 - ~~**OD-4**~~ Resolved by D-018: platform states become Active/Disabled/Locked(+Revoked).
 - ~~**OD-5**~~ Resolved by D-016: both in scope, ported functionally, sends via the queue.
 - ~~**OD-6**~~ Resolved by D-019: dev tenant upgraded to a full-feature plan.
+
+## Gate 1 — questions awaiting the owner (phase 2)
+
+Each planner file keeps its own open-question table with a proposed default. The orchestrator's
+consolidated list, grouped by what it blocks; "default" is what the build assumes if approved as is.
+
+| Ref | Question | Blocks | Default proposed |
+|---|---|---|---|
+| OD-1 / D-026 | Confirm Queue = real DocType, Functions Center = Custom Page | Queue, Functions Center | Confirm |
+| 02 OQ-1 | Separate `WhatsApp Queue Item` (1:1 with Outbound) vs same row with status filter | Queue, dispatch | Separate table |
+| 02 OQ-2 | D-011 "unified log" = read layer, not one physical table | Outbound/Inbound | Read layer |
+| 02 OQ-3 + 09 OQ-8 | `WhatsApp Notification` and `Notification Alert` as second and third lists under Templates (10) | D-016 placement | Confirm |
+| 02 OQ-4 | Seed a disabled command service user on install; roles empty; refuse Administrator/SM | Commands | Seed disabled |
+| 02 OQ-5 | Add custom field `Contact Phone.wa_phone_e164` (the only core custom field) | Numbers, picker | Add |
+| 02 OQ-6..9, fields OQ-A..E | CU on all groups; drop device `battery`; Queue terminal `Completed` kept 7 days; Notification body Link-or-inline; 8 message types; composite unique `(device, provider_message_id)` on Inbound; audit summary as key+args; group recipients reserved (deferred); PNG alerts kept with binary check | schema details | Defaults as listed in the files |
+| backend OQ-1 | Outbound stays `Sending` after hand-over until `message.sent` (Queue Item `Completed`) | Outbound semantics | `Sending` until `message.sent` |
+| backend OQ-2 | PDF engine wkhtmltopdf via `frappe.get_print` (drop WeasyPrint) | attachments, alerts | wkhtmltopdf |
+| backend OQ-3..8 | Audit every CU read; no auto-resend after `message.failed`; CU without Viewer denied conversation; onboarding obtains `customer_api_key` from `complete_signup` (platform change) with manual fallback; job times 02:30/03:00; Simulator dry-run default | services | Defaults as listed |
+| 06 OQ-1 / fields-plat OQ-1 | Lock counter per HTTP attempt, reset on 2xx, cancel in-flight logs on lock | D-018 code | As designed |
+| 06 OQ-2 / fields-plat OQ-2 | `strict_client_ref` flag per link, enforced in code | D-024 reconcile | As designed |
+| plat OQ-P1 | Key rotation: rotate `api_secret` (local) and keep `api_key` as identifier, since `api_key` is the wa-admin key | platform step P-10 only | Rotate secret; drop `previous_api_key*` |
+| plat OQ-P2..P7, 06 OQ-3..6, fields-plat OQ-5..8 | Replay after unlock (add); keep double `message.sent` (client dedupes); notify on lock; token-user binding audit-only; receiver limit constant; doc wording "E.164 digits without `+`"; Logged Out devices still count; no `disabled` device flag; audit desk-only; Support reads bodies; audit desk actions too | platform details | Defaults as listed |
+| 09 OQ-1 | `WhatsApp Campaign.exclude_unknown_numbers` field | Campaign | Add, default 0 |
+| 09 OQ-2 | Queue per-row ETA: native list + summary ETA + Drawer | Queue UI | (a) native |
+| 09 OQ-3..7, 11..14 | Synonym blocked on Active command; no contact enable/disable; bulk send via Campaign draft; billing actions hidden; Roles/support-ticket not built; CU conversation hidden on 403; Commands form fallback with redirect; Home charts via fixtures; Desk primary colour | UI details | Defaults as listed |
+| 09 OQ-9 | Accept `ConfirmDialog`, `PhoneField`, `PagedChildTable`, `ChatThread`, `TemplateEditor` into the kit | Kit scope | Accept |
+| 09 OQ-10 | Accept realtime events `wa:campaign:status`, `wa:inbound:received`, `wa:pairing:status`, `wa:import:progress` | Home, Devices, Inbound | Accept |
