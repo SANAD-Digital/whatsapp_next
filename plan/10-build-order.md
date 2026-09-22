@@ -13,7 +13,8 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [x] Phase 0 recon (`00-conventions.md`, `09` inventory)
 - [x] Phase 1 analysis (`01-snd-whatsapp-summary.md`, `05-platform-summary.md`, D-010..D-024)
 - [x] Phase 2 plans (`02`, `06`, `fields`, `fields-platform`, `backend-plan`, `backend-plan-platform`, `09`, this file)
-- [ ] **Gate 1 approved** — owner answers the open questions listed in `decisions.md` §Gate 1
+- [x] **Gate 1 approved** (D-027..D-029) — all open questions resolved as the planners' defaults
+- [ ] Design phases 5–7: run `design:design-critique` + `design:accessibility-review` (+ `ux-copy` for strings) on each component/page before ticking it (D-029c)
 
 ## Phase 3 — Scaffold & schema (exit: `bench migrate` clean on both sites)
 
