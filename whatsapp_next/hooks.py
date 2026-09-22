@@ -68,7 +68,33 @@ doc_events = {
 ignore_links_on_delete = ["WhatsApp Webhook Event", "WhatsApp Queue Item", "WhatsApp Audit Log"]
 
 # Scheduler events are added in phase 4 (B-17) together with the services they call.
-scheduler_events = {}
+scheduler_events = {
+	# backend-plan §5.2 — every job is idempotent and dedup-guarded by its own job_id
+	"cron": {
+		"* * * * *": [
+			"whatsapp_next.services.dispatch.dispatch_tick",
+			"whatsapp_next.services.campaign_runner.promote_scheduled",
+		],
+		"*/5 * * * *": [
+			"whatsapp_next.services.reconcile.reconcile_statuses",
+			"whatsapp_next.services.notifications.trigger_offset",
+		],
+		"*/10 * * * *": ["whatsapp_next.webhooks.handlers.reprocess_failed"],
+		"*/15 * * * *": ["whatsapp_next.services.alerts.run_due_alerts"],
+		"30 2 * * *": ["whatsapp_next.services.numbers_materializer.nightly_reconcile"],
+		"0 3 * * *": ["whatsapp_next.services.retention.purge"],
+	},
+	"hourly": [
+		"whatsapp_next.services.devices.sync_from_provider",
+		"whatsapp_next.services.usage_sync.sync_subscription",
+		"whatsapp_next.services.webhook_setup.sync_status",
+	],
+	"daily": [
+		"whatsapp_next.services.notifications.trigger_daily",
+		"whatsapp_next.services.functions_catalog.check_updates",
+	],
+}
+
 
 # Desk assets (phase 5–7): app_include_js = "whatsapp_next.bundle.js"
 
