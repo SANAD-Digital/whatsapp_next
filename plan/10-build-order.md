@@ -38,29 +38,29 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [x] B-6 `providers/`: schemas, base, registry, `snd_platform`, `meta_cloud` skeleton, `tests/fake_provider.py`, webhook fixtures `tests/fixtures/webhooks/*.json` (B-2, B-4, platform docs)
 - [x] Exit: `bench --site whatsapp.dev.sanad.digital migrate` and `bench --site w-platform.dev.sanad.digital migrate` clean; both test suites green
 
-## Phase 4 — Backend & provider layer
+## Phase 4 — Backend & provider layer — **done 2026-09-23** (client 228 tests on `phase-4-backend`; platform 116 tests, commit 5569fd5 on `whatsapp-next-integration`). Open: whatsapp_next dev link flags (no link on `w-platform.dev` yet), platform docs quickstart/auth/rate-limits/sandbox/events (phase 10), `test_guest_surface.py` (B-27, phase 5)
 
 ### 4.P Platform (remaining steps)
-- [ ] P-5 Receiver refactor `services/receiver.py` (auth, rate limit, payload gate, device by `wa_device_id`, delivered/read correlation, sender cache) (P-2, P-4)
-- [ ] P-6 Device: `pairing_mode`, status audit, `update_device_api`, `reconnect_device_api` (P-1)
-- [ ] P-7 Account/plan/wallet/usage endpoints (`get_account_api`, `list_plans_api`, `get_wallet_api`, `request_wallet_topup_api`, `get_usage_api`) (P-4)
-- [ ] P-8 Messages/queue endpoints: `send_message_api` codes + `allow_fallback`, `enqueue_messages_api` per-item codes, `get_message_status_api` additive keys, `cancel_queued_messages_api`, `get_queue_status_api` (P-4)
-- [ ] P-10 Credentials rotation: rotate `api_secret` with grace, keep `api_key` as identifier (D-029)
-- [ ] Docs per step (`docs/` page list §L), `changelog.md`, `openapi.yaml` draft
+- [x] P-5 Receiver refactor `services/receiver.py` (auth, rate limit, payload gate, device by `wa_device_id`, delivered/read correlation, sender cache) (P-2, P-4) — platform commit 5569fd5, `test_receiver.py` 7 tests
+- [x] P-6 Device: `pairing_mode`, status audit (`services/devices.set_device_status`), `update_device_api`, `reconnect_device_api`, device-limit precheck (P-1) — `test_devices_api.py` 6 tests
+- [x] P-7 Account/plan/wallet/usage endpoints (`get_account_api`, `list_plans_api`, `get_wallet_api`, `request_wallet_topup_api`, `get_usage_api`) + C-32/C-33 (P-4) — `test_account_usage_wallet.py` 4 tests
+- [x] P-8 Messages/queue endpoints: `cancel_queued_messages_api`, `get_queue_status_api` (qb, `batch_id`, `held_reason`), list filters/paging (C-35), queue on `frappe.qb` with stamp-confirmed claim (C-31) (P-4) — `test_messages_api.py` 5 tests
+- [x] P-10 Credentials rotation: `rotate_api_secret_api`, `previous_api_secret` + expiry on the link, daily `expire_previous_api_secrets` (D-029) — `test_credentials.py` 2 tests
+- [x] Docs per step: `endpoints/account.md`, `endpoints/devices.md`, `endpoints/messages.md` additions, `changelog.md`, `openapi.yaml` draft (quickstart / authentication / rate-limits / sandbox / events pages remain for phase 10)
 
 ### 4.C whatsapp_next services (order = `backend-plan.md` §15)
 - [x] B-7 `services/read_layer.py` — the one UNION ALL via `frappe.qb` (`.run()` works on v16, no `frappe.db.sql`; D-043) (B-4) — 11 tests
 - [x] B-8 `services/permissions.py` contextual layer §4 (declared field sets, EXISTS query filters, audit; Picker Source `filters_json` G-1 added; D-044, R-028) (B-4, B-5) — 10 tests
 - [x] B-9 `services/templates.py`, `attachments.py`, `polls.py` (B-4) — D-045, R-029; 12 tests
-- [ ] B-10 `services/dispatch.py` (claim `for_update(skip_locked)`, batch enqueue with `client_ref` = `WhatsApp Log` name, backoff, dead-letter, global/campaign pause, rate), `reconcile.py` (cron `*/5`), `quick_send.py` (B-5, B-6, B-9)
-- [ ] B-11 `services/devices.py` + pairing cache (QR + 8-digit code) (B-5, B-6)
-- [ ] B-12 `webhooks/` receiver (guest, HMAC over `<ts>.<body>`, window, dedupe `(event, event_id)` + `(client_ref, status)`, enqueue), handlers incl. `message.held`, `services/inbound.py`, D-012 command routing under the service user (B-6, B-10, B-11)
-- [ ] B-13 `services/numbers_materializer.py` nightly watermark job + incremental companion, idempotency test (B-7)
-- [ ] B-14 `functions/registry.py`, `functions/catalog/v1/catalog.json`, `services/functions_catalog.py`, `command_router.py`, `simulator.py` (B-9, B-10, B-12)
-- [ ] B-15 `services/campaign_runner.py`, `services/picker.py` (six sources, add/remove, E.164 dedupe, Excel/CSV/vCard) (B-8, B-10, B-13)
-- [ ] B-16 `services/notifications.py`, `alerts.py`, `alerts_dates.py`, `report_render.py`, `doc_events` hooks — D-016 port, sends through the queue (B-9, B-10)
-- [ ] B-17 `services/webhook_setup.py`, `usage_sync.py`, `retention.py`; final `scheduler_events` (B-6, B-11)
-- [ ] Realtime events wired: `wa:device:status`, `wa:message:status`, `wa:queue:progress` (+ `wa:campaign:status`, `wa:inbound:received`, `wa:pairing:status`, `wa:import:progress` — accepted D-029)
+- [x] B-10 `services/dispatch.py` (claim `for_update(skip_locked)`, batch enqueue with `client_ref` = `WhatsApp Log` name, backoff, dead-letter, global/campaign pause, rate), `reconcile.py` (cron `*/5`), `quick_send.py` (B-5, B-6, B-9) — D-046; 13 tests
+- [x] B-11 `services/devices.py` + pairing cache (QR + 8-digit code) (B-5, B-6) — 4 tests
+- [x] B-12 `webhooks/` receiver (guest, HMAC over `<ts>.<body>`, window, dedupe `(event_name, event_id)` composite unique — D-047), handlers incl. `message.held`, `services/inbound.py` (B-6, B-10, B-11) — 8 tests
+- [x] B-13 `services/numbers_materializer.py` nightly watermark job + incremental companion, idempotency test (B-7) — 4 tests
+- [x] B-14 `functions/registry.py`, `functions/catalog/v1/catalog.json` (2 functions), `services/functions_catalog.py`, `command_router.py`, `simulator.py` (B-9, B-10, B-12) — D-048; 9 tests
+- [x] B-15 `services/campaign_runner.py`, `services/picker.py` (six sources, add/remove, E.164 dedupe, Excel/CSV/vCard) (B-8, B-10, B-13) — 8 tests
+- [x] B-16 `services/notifications.py`, `alerts.py`, `alerts_dates.py`, `report_render.py`, `doc_events` hooks — D-016 port, sends through the queue (B-9, B-10) — D-049; 8 tests
+- [x] B-17 `services/webhook_setup.py`, `usage_sync.py`, `retention.py`; final `scheduler_events` (B-6, B-11) — 3 tests
+- [x] Realtime events wired: `wa:device:status`, `wa:message:status`, `wa:queue:progress` (+ `wa:campaign:status`, `wa:inbound:received`, `wa:pairing:status`, `wa:import:progress` — accepted D-029); payloads carry names / hashes only
 
 ## Phase 5 — API surface + portable component kit
 

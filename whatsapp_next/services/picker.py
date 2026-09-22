@@ -385,15 +385,31 @@ def parse_vcard(file_url: str) -> ParseResult:
 
 
 def parse_upload(file_url: str, kind: str, mapping: dict[str, str] | None = None) -> ParseResult:
-	"""Dispatch on `kind ∈ excel | csv | vcf`."""
+	"""Dispatch on `kind ∈ excel | csv | vcf`; publishes `wa:import:progress` (D-029 OQ-10) so the
+	picker can show parsing progress for large files."""
 	kind = (kind or "").lower()
-	if kind == "excel":
-		return parse_excel(file_url, mapping)
-	if kind == "csv":
-		return parse_csv(file_url, mapping)
-	if kind == "vcf":
-		return parse_vcard(file_url)
-	frappe.throw(_("Unknown upload kind {0}").format(kind), WAValidationError)
+	parsers = {
+		"excel": lambda: parse_excel(file_url, mapping),
+		"csv": lambda: parse_csv(file_url, mapping),
+		"vcf": lambda: parse_vcard(file_url),
+	}
+	if kind not in parsers:
+		frappe.throw(_("Unknown upload kind {0}").format(kind), WAValidationError)
+	_publish_import_progress(kind, "parsing", 0)
+	result = parsers[kind]()
+	_publish_import_progress(
+		kind, "parsed", result.total, valid=len(result.rows), invalid=len(result.invalid)
+	)
+	return result
+
+
+def _publish_import_progress(kind: str, stage: str, total: int, **extra: Any) -> None:
+	frappe.publish_realtime(
+		"wa:import:progress",
+		{"kind": kind, "stage": stage, "total": total, **extra},
+		user=frappe.session.user,
+		after_commit=False,
+	)
 
 
 # ---- targets -----------------------------------------------------------------------------
