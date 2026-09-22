@@ -1,0 +1,402 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "field_order": [
+  "campaign_tab",
+  "campaign_name",
+  "description",
+  "status",
+  "column_break_5",
+  "device",
+  "scheduled_at",
+  "messages_per_minute",
+  "exclude_unknown_numbers",
+  "messages_tab",
+  "messages",
+  "recipients_tab",
+  "recipients",
+  "progress_tab",
+  "total_recipients",
+  "initial_recipients",
+  "added_count",
+  "removed_count",
+  "pause_count",
+  "column_break_6",
+  "queued_count",
+  "sent_count",
+  "delivered_count",
+  "read_count",
+  "failed_count",
+  "cancelled_count",
+  "message_times_section",
+  "first_message_at",
+  "column_break_7",
+  "last_message_at",
+  "log_tab",
+  "started_at",
+  "ended_at",
+  "last_batch_started_at",
+  "started_by",
+  "column_break_8",
+  "paused_at",
+  "paused_by",
+  "pause_reason",
+  "cancelled_at",
+  "cancelled_by",
+  "cancel_reason"
+ ],
+ "fields": [
+  {
+   "fieldname": "campaign_tab",
+   "fieldtype": "Tab Break",
+   "label": "Campaign"
+  },
+  {
+   "fieldname": "campaign_name",
+   "label": "Campaign Name",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "description",
+   "label": "Description",
+   "fieldtype": "Small Text"
+  },
+  {
+   "fieldname": "status",
+   "label": "Status",
+   "fieldtype": "Select",
+   "options": "Draft\nScheduled\nQueued\nRunning\nPaused\nCompleted\nPartially Failed\nCancelled",
+   "reqd": 1,
+   "default": "Draft",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "read_only": 1,
+   "search_index": 1,
+   "description": "Written by services/campaign_runner.py"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "device",
+   "label": "Device",
+   "fieldtype": "Link",
+   "options": "WhatsApp Device",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "scheduled_at",
+   "label": "Scheduled At",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Empty = manual start (Immediate); set = Scheduled"
+  },
+  {
+   "fieldname": "messages_per_minute",
+   "label": "Messages per Minute",
+   "fieldtype": "Int",
+   "description": "Default from Settings; must be ≤ Settings value"
+  },
+  {
+   "fieldname": "exclude_unknown_numbers",
+   "label": "Exclude Unknown Numbers",
+   "fieldtype": "Check",
+   "default": "0",
+   "description": "Skip recipients with no prior conversation (D-029, 09 OQ-1)"
+  },
+  {
+   "fieldname": "messages_tab",
+   "fieldtype": "Tab Break",
+   "label": "Messages"
+  },
+  {
+   "fieldname": "messages",
+   "label": "Messages",
+   "fieldtype": "Table",
+   "options": "WhatsApp Campaign Message",
+   "reqd": 1,
+   "description": "At least one row"
+  },
+  {
+   "fieldname": "recipients_tab",
+   "fieldtype": "Tab Break",
+   "label": "Recipients"
+  },
+  {
+   "fieldname": "recipients",
+   "label": "Recipients",
+   "fieldtype": "Table",
+   "options": "WhatsApp Campaign Recipient",
+   "description": "Rendered through a paginated component"
+  },
+  {
+   "fieldname": "progress_tab",
+   "fieldtype": "Tab Break",
+   "label": "Progress"
+  },
+  {
+   "fieldname": "total_recipients",
+   "label": "Total Recipients",
+   "fieldtype": "Int",
+   "default": "0",
+   "in_list_view": 1,
+   "read_only": 1,
+   "description": "Live rows not Removed"
+  },
+  {
+   "fieldname": "initial_recipients",
+   "label": "Recipients at Start",
+   "fieldtype": "Int",
+   "default": "0",
+   "read_only": 1,
+   "description": "Snapshot at start"
+  },
+  {
+   "fieldname": "added_count",
+   "label": "Added after Start",
+   "fieldtype": "Int",
+   "default": "0",
+   "read_only": 1
+  },
+  {
+   "fieldname": "removed_count",
+   "label": "Removed after Start",
+   "fieldtype": "Int",
+   "default": "0",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pause_count",
+   "label": "Pause Count",
+   "fieldtype": "Int",
+   "default": "0",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "queued_count",
+   "label": "Queued",
+   "fieldtype": "Int",
+   "default": "0",
+   "read_only": 1,
+   "description": "Counters = Outbound rows by campaign + status, refreshed by runner"
+  },
+  {
+   "fieldname": "sent_count",
+   "label": "Sent",
+   "fieldtype": "Int",
+   "default": "0",
+   "in_list_view": 1,
+   "read_only": 1,
+   "description": "Sent+Delivered+Read"
+  },
+  {
+   "fieldname": "delivered_count",
+   "label": "Delivered",
+   "fieldtype": "Int",
+   "default": "0",
+   "read_only": 1
+  },
+  {
+   "fieldname": "read_count",
+   "label": "Read",
+   "fieldtype": "Int",
+   "default": "0",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "failed_count",
+   "label": "Failed",
+   "fieldtype": "Int",
+   "default": "0",
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "cancelled_count",
+   "label": "Cancelled",
+   "fieldtype": "Int",
+   "default": "0",
+   "read_only": 1
+  },
+  {
+   "fieldname": "message_times_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "first_message_at",
+   "label": "First Message At",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_7",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_message_at",
+   "label": "Last Message At",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "log_tab",
+   "fieldtype": "Tab Break",
+   "label": "Log"
+  },
+  {
+   "fieldname": "started_at",
+   "label": "Started At",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "ended_at",
+   "label": "Ended At",
+   "fieldtype": "Datetime",
+   "read_only": 1,
+   "description": "Completed/Partially Failed/Cancelled"
+  },
+  {
+   "fieldname": "last_batch_started_at",
+   "label": "Last Batch Started At",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "started_by",
+   "label": "Started By",
+   "fieldtype": "Link",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_8",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "paused_at",
+   "label": "Paused At",
+   "fieldtype": "Datetime",
+   "read_only": 1,
+   "depends_on": "eval:doc.status==\"Paused\""
+  },
+  {
+   "fieldname": "paused_by",
+   "label": "Paused By",
+   "fieldtype": "Link",
+   "options": "User",
+   "read_only": 1,
+   "depends_on": "eval:doc.status==\"Paused\""
+  },
+  {
+   "fieldname": "pause_reason",
+   "label": "Pause Reason",
+   "fieldtype": "Small Text",
+   "depends_on": "eval:doc.status==\"Paused\""
+  },
+  {
+   "fieldname": "cancelled_at",
+   "label": "Cancelled At",
+   "fieldtype": "Datetime",
+   "read_only": 1,
+   "depends_on": "eval:doc.status==\"Cancelled\""
+  },
+  {
+   "fieldname": "cancelled_by",
+   "label": "Cancelled By",
+   "fieldtype": "Link",
+   "options": "User",
+   "read_only": 1,
+   "depends_on": "eval:doc.status==\"Cancelled\""
+  },
+  {
+   "fieldname": "cancel_reason",
+   "label": "Cancel Reason",
+   "fieldtype": "Small Text",
+   "depends_on": "eval:doc.status==\"Cancelled\""
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Campaign",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Agent",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Viewer",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "WA-CAMP-.YYYY.-.#####",
+ "naming_rule": "Expression (old style)",
+ "title_field": "campaign_name",
+ "search_fields": "campaign_name"
+}

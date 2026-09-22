@@ -1,0 +1,34 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "field_order": [
+  "party_type"
+ ],
+ "fields": [
+  {
+   "fieldname": "party_type",
+   "label": "Party Type",
+   "fieldtype": "Link",
+   "options": "DocType",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "One of Customer, Supplier, Employee, Sales Person, User (validated server-side)"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Command Party Type",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0,
+ "istable": 1,
+ "editable_grid": 1
+}

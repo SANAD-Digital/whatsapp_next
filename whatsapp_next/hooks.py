@@ -1,258 +1,76 @@
+# Module role: Frappe app hooks for whatsapp_next — provider registry, fixtures, doc events,
+# install/migrate hooks. Scheduler entries are registered in phase 4 (build order B-17) once the
+# services exist; nothing here references a function that does not exist yet.
+
 app_name = "whatsapp_next"
 app_title = "WhatsApp Next"
 app_publisher = "Sanad Digital"
-app_description = "WhatsApp Next"
+app_description = "WhatsApp integration for ERPNext built on a provider abstraction (SND Platform first)"
 app_email = "sanad@digital.info"
 app_license = "mit"
 
-# Apps
-# ------------------
+required_apps = ["frappe", "erpnext"]
 
-# required_apps = []
+# Provider registry (architecture.md) — nothing outside providers/ imports a provider module.
+whatsapp_providers = {
+	"snd_platform": "whatsapp_next.providers.snd_platform.SndPlatformProvider",
+	"meta_cloud": "whatsapp_next.providers.meta_cloud.MetaCloudProvider",
+}
 
-# Each item in the list will be shown as an app in the apps page
-# add_to_apps_screen = [
-# 	{
-# 		"name": "whatsapp_next",
-# 		"logo": "/assets/whatsapp_next/logo.png",
-# 		"title": "WhatsApp Next",
-# 		"route": "/whatsapp_next",
-# 		"has_permission": "whatsapp_next.api.permission.has_app_permission"
-# 	}
-# ]
+# Function catalogs (backend-plan §13); other apps may append their own dotted module path.
+whatsapp_function_catalogs = ["whatsapp_next.functions.catalog"]
 
-# Includes in <head>
-# ------------------
+# Installation / migration
+after_install = "whatsapp_next.install.after_install"
+after_migrate = "whatsapp_next.install.after_migrate"
 
-# include js, css files in header of desk.html
-# app_include_css = "/assets/whatsapp_next/css/whatsapp_next.css"
-# app_include_js = "/assets/whatsapp_next/js/whatsapp_next.js"
+# Fixtures: the four product roles and the single custom field on a core DocType (D-028).
+fixtures = [
+	{
+		"dt": "Role",
+		"filters": [
+			[
+				"name",
+				"in",
+				["WhatsApp Manager", "WhatsApp Agent", "WhatsApp Viewer", "WhatsApp Contact User"],
+			]
+		],
+	},
+	{"dt": "Custom Field", "filters": [["name", "in", ["Contact Phone-wa_phone_e164"]]]},
+]
 
-# include js, css files in header of web template
-# web_include_css = "/assets/whatsapp_next/css/whatsapp_next.css"
-# web_include_js = "/assets/whatsapp_next/js/whatsapp_next.js"
+# Document events.
+# - Contact.validate keeps Contact Phone.wa_phone_e164 normalized (D-028).
+# - "*" events feed WhatsApp Notification (D-016); the handler short-circuits per DocType via cache
+#   and is a no-op until phase 4 (backend-plan §11).
+# - Message tables enqueue the Numbers incremental upsert (architecture.md); no-op until phase 4.
+doc_events = {
+	"Contact": {
+		"validate": "whatsapp_next.services.phone.sync_contact_phones",
+	},
+	"*": {
+		"validate": "whatsapp_next.services.notifications.on_doc_event",
+		"on_update": "whatsapp_next.services.notifications.on_doc_event",
+		"on_submit": "whatsapp_next.services.notifications.on_doc_event",
+		"on_cancel": "whatsapp_next.services.notifications.on_doc_event",
+		"after_insert": "whatsapp_next.services.notifications.on_doc_event",
+		"on_change": "whatsapp_next.services.notifications.on_doc_event",
+	},
+	"WhatsApp Log": {
+		"after_insert": "whatsapp_next.services.numbers_materializer.on_message_insert",
+	},
+	"WhatsApp Inbound Message": {
+		"after_insert": "whatsapp_next.services.numbers_materializer.on_message_insert",
+	},
+}
 
-# include custom scss in every website theme (without file extension ".scss")
-# website_theme_scss = "whatsapp_next/public/scss/website"
+# Log tables must never pin a Device / Campaign / Outbound row against deletion (backend-plan §13).
+ignore_links_on_delete = ["WhatsApp Webhook Event", "WhatsApp Queue Item", "WhatsApp Audit Log"]
 
-# include js, css files in header of web form
-# webform_include_js = {"doctype": "public/js/doctype.js"}
-# webform_include_css = {"doctype": "public/css/doctype.css"}
+# Scheduler events are added in phase 4 (B-17) together with the services they call.
+scheduler_events = {}
 
-# include js in page
-# page_js = {"page" : "public/js/file.js"}
-
-# include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
-# doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
-# doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
-# doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
-
-# Svg Icons
-# ------------------
-# include app icons in desk
-# app_include_icons = "whatsapp_next/public/icons.svg"
-
-# Home Pages
-# ----------
-
-# application home page (will override Website Settings)
-# home_page = "login"
-
-# website user home page (by Role)
-# role_home_page = {
-# 	"Role": "home_page"
-# }
-
-# Generators
-# ----------
-
-# automatically create page for each record of this doctype
-# website_generators = ["Web Page"]
-
-# automatically load and sync documents of this doctype from downstream apps
-# importable_doctypes = [doctype_1]
-
-# Jinja
-# ----------
-
-# add methods and filters to jinja environment
-# jinja = {
-# 	"methods": "whatsapp_next.utils.jinja_methods",
-# 	"filters": "whatsapp_next.utils.jinja_filters"
-# }
-
-# Installation
-# ------------
-
-# before_install = "whatsapp_next.install.before_install"
-# after_install = "whatsapp_next.install.after_install"
-
-# Uninstallation
-# ------------
-
-# before_uninstall = "whatsapp_next.uninstall.before_uninstall"
-# after_uninstall = "whatsapp_next.uninstall.after_uninstall"
-
-# Integration Setup
-# ------------------
-# To set up dependencies/integrations with other apps
-# Name of the app being installed is passed as an argument
-
-# before_app_install = "whatsapp_next.utils.before_app_install"
-# after_app_install = "whatsapp_next.utils.after_app_install"
-
-# Integration Cleanup
-# -------------------
-# To clean up dependencies/integrations with other apps
-# Name of the app being uninstalled is passed as an argument
-
-# before_app_uninstall = "whatsapp_next.utils.before_app_uninstall"
-# after_app_uninstall = "whatsapp_next.utils.after_app_uninstall"
-
-# Build
-# ------------------
-# To hook into the build process
-
-# after_build = "whatsapp_next.build.after_build"
-
-# Desk Notifications
-# ------------------
-# See frappe.core.notifications.get_notification_config
-
-# notification_config = "whatsapp_next.notifications.get_notification_config"
-
-# Permissions
-# -----------
-# Permissions evaluated in scripted ways
-
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
-#
-# has_permission = {
-# 	"Event": "frappe.desk.doctype.event.event.has_permission",
-# }
-
-# Document Events
-# ---------------
-# Hook on document methods and events
-
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
-
-# Scheduled Tasks
-# ---------------
-
-# scheduler_events = {
-# 	"all": [
-# 		"whatsapp_next.tasks.all"
-# 	],
-# 	"daily": [
-# 		"whatsapp_next.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"whatsapp_next.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"whatsapp_next.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"whatsapp_next.tasks.monthly"
-# 	],
-# }
-
-# Testing
-# -------
-
-# before_tests = "whatsapp_next.install.before_tests"
-
-# Extend DocType Class
-# ------------------------------
-#
-# Specify custom mixins to extend the standard doctype controller.
-# extend_doctype_class = {
-# 	"Task": "whatsapp_next.custom.task.CustomTaskMixin"
-# }
-
-# Overriding Methods
-# ------------------------------
-#
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "whatsapp_next.event.get_events"
-# }
-#
-# each overriding function accepts a `data` argument;
-# generated from the base implementation of the doctype dashboard,
-# along with any modifications made in other Frappe apps
-# override_doctype_dashboards = {
-# 	"Task": "whatsapp_next.task.get_dashboard_data"
-# }
-
-# exempt linked doctypes from being automatically cancelled
-#
-# auto_cancel_exempted_doctypes = ["Auto Repeat"]
-
-# Ignore links to specified DocTypes when deleting documents
-# -----------------------------------------------------------
-
-# ignore_links_on_delete = ["Communication", "ToDo"]
-
-# Request Events
-# ----------------
-# before_request = ["whatsapp_next.utils.before_request"]
-# after_request = ["whatsapp_next.utils.after_request"]
-
-# Job Events
-# ----------
-# before_job = ["whatsapp_next.utils.before_job"]
-# after_job = ["whatsapp_next.utils.after_job"]
-
-# User Data Protection
-# --------------------
-
-# user_data_fields = [
-# 	{
-# 		"doctype": "{doctype_1}",
-# 		"filter_by": "{filter_by}",
-# 		"redact_fields": ["{field_1}", "{field_2}"],
-# 		"partial": 1,
-# 	},
-# 	{
-# 		"doctype": "{doctype_2}",
-# 		"filter_by": "{filter_by}",
-# 		"partial": 1,
-# 	},
-# 	{
-# 		"doctype": "{doctype_3}",
-# 		"strict": False,
-# 	},
-# 	{
-# 		"doctype": "{doctype_4}"
-# 	}
-# ]
-
-# Authentication and authorization
-# --------------------------------
-
-# auth_hooks = [
-# 	"whatsapp_next.auth.validate"
-# ]
-
-# Automatically update python controller files with type annotations for this app.
-# export_python_type_annotations = True
-
-# default_log_clearing_doctypes = {
-# 	"Logging DocType Name": 30  # days to retain logs
-# }
+# Desk assets (phase 5–7): app_include_js = "whatsapp_next.bundle.js"
 
 # Translation
-# ------------
-# List of apps whose translatable strings should be excluded from this app's translations.
-# ignore_translatable_strings_from = []
-
+ignore_translatable_strings_from = []

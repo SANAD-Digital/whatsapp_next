@@ -1,0 +1,16 @@
+{
+ "client_ref": "a1b2c3d4e5",
+ "delivered_at": "2026-09-22 10:00:05",
+ "device": "WAD-00001",
+ "device_name": "Main",
+ "event": "message.delivered",
+ "event_id": "3EB0SENT0001",
+ "integration_link": "WAIL-00001",
+ "message_log": "WAML-00001",
+ "occurred_at": "2026-09-22 10:00:00",
+ "phone_number": "966500000001",
+ "provider_message_id": "3EB0SENT0001",
+ "queue_id": "WAMQ-00001",
+ "subscription": "WASUB-00001",
+ "wa_device_id": "wa-dev-1"
+}

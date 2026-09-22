@@ -1,0 +1,651 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "provider_tab",
+  "provider",
+  "platform_base_url",
+  "request_timeout",
+  "connection_test_section",
+  "connection_status",
+  "last_connection_test_at",
+  "connection_test_column",
+  "last_connection_latency_ms",
+  "last_connection_error",
+  "credentials_tab",
+  "customer_api_key",
+  "api_key",
+  "api_secret",
+  "credentials_updated_at",
+  "webhook_tab",
+  "webhook_secret",
+  "webhook_endpoint",
+  "webhook_endpoint_url",
+  "webhook_status",
+  "webhook_column",
+  "webhook_events",
+  "webhook_max_retries",
+  "webhook_synced_at",
+  "webhook_last_event_at",
+  "queue_tab",
+  "messages_per_minute",
+  "max_attempts",
+  "retry_backoff_seconds",
+  "queue_pause_section",
+  "queue_paused",
+  "queue_paused_by",
+  "queue_pause_column",
+  "queue_paused_at",
+  "queue_pause_reason",
+  "commands_tab",
+  "enable_commands",
+  "command_service_user",
+  "unknown_command_reply",
+  "commands_column",
+  "send_receipt_reply",
+  "receipt_reply",
+  "reply_device",
+  "policy_tab",
+  "default_device",
+  "default_country",
+  "policy_column",
+  "global_blacklist_group",
+  "send_only_to_known_numbers",
+  "picker_tab",
+  "picker_sources",
+  "retention_tab",
+  "outbound_retention_days",
+  "inbound_retention_days",
+  "queue_retention_days",
+  "retention_column",
+  "webhook_event_retention_days",
+  "audit_retention_days",
+  "numbers_job_section",
+  "numbers_watermark",
+  "numbers_job_column",
+  "numbers_last_run_at",
+  "subscription_tab",
+  "plan_code",
+  "plan_name",
+  "subscription_status",
+  "message_limit",
+  "messages_used",
+  "messages_remaining",
+  "plan_messages_per_minute",
+  "subscription_column",
+  "device_limit",
+  "wallet_balance",
+  "wallet_currency",
+  "subscription_start",
+  "subscription_end",
+  "plan_features",
+  "subscription_synced_at",
+  "onboarding_tab",
+  "setup_completed",
+  "setup_completed_at",
+  "onboarding_column",
+  "redirect_unregistered_to_wizard"
+ ],
+ "fields": [
+  {
+   "fieldname": "provider_tab",
+   "fieldtype": "Tab Break",
+   "label": "Provider"
+  },
+  {
+   "default": "snd_platform",
+   "description": "Provider registry key; the `whatsapp_providers` hook registry is the source of the options and the stored value must exist there",
+   "fieldname": "provider",
+   "fieldtype": "Select",
+   "label": "Provider",
+   "options": "snd_platform\nmeta_cloud",
+   "reqd": 1
+  },
+  {
+   "description": "https only; no trailing slash; validated on save",
+   "fieldname": "platform_base_url",
+   "fieldtype": "Data",
+   "label": "Platform Base URL"
+  },
+  {
+   "default": "30",
+   "description": "5\u2013120",
+   "fieldname": "request_timeout",
+   "fieldtype": "Int",
+   "label": "Request Timeout (s)"
+  },
+  {
+   "fieldname": "connection_test_section",
+   "fieldtype": "Section Break",
+   "label": "Connection Test"
+  },
+  {
+   "default": "Untested",
+   "description": "Result of \"test connection\" (`get_subscription_status`)",
+   "fieldname": "connection_status",
+   "fieldtype": "Select",
+   "label": "Connection Status",
+   "options": "Untested\nOK\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_connection_test_at",
+   "fieldtype": "Datetime",
+   "label": "Last Connection Test",
+   "read_only": 1
+  },
+  {
+   "fieldname": "connection_test_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_connection_latency_ms",
+   "fieldtype": "Int",
+   "label": "Latency (ms)",
+   "read_only": 1
+  },
+  {
+   "description": "No secrets in text",
+   "fieldname": "last_connection_error",
+   "fieldtype": "Small Text",
+   "label": "Last Connection Error",
+   "read_only": 1
+  },
+  {
+   "fieldname": "credentials_tab",
+   "fieldtype": "Tab Break",
+   "label": "Credentials"
+  },
+  {
+   "description": "Sent as `X-SND-API-Key` (D-020). Encrypted",
+   "fieldname": "customer_api_key",
+   "fieldtype": "Password",
+   "label": "Customer API Key",
+   "permlevel": 1
+  },
+  {
+   "description": "Link api_key; sent as `Authorization: token k:s` (D-020). Encrypted",
+   "fieldname": "api_key",
+   "fieldtype": "Password",
+   "label": "API Key",
+   "permlevel": 1
+  },
+  {
+   "description": "Link api_secret; also `X-SND-API-Secret` (D-020). Encrypted",
+   "fieldname": "api_secret",
+   "fieldtype": "Password",
+   "label": "API Secret",
+   "permlevel": 1
+  },
+  {
+   "description": "Set on any credential change + Audit `Credentials Changed`",
+   "fieldname": "credentials_updated_at",
+   "fieldtype": "Datetime",
+   "label": "Credentials Updated At",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "webhook_tab",
+   "fieldtype": "Tab Break",
+   "label": "Webhook"
+  },
+  {
+   "description": "Fetched via `get_integration_webhook_secret_api` (D-013), never typed. Encrypted",
+   "fieldname": "webhook_secret",
+   "fieldtype": "Password",
+   "label": "Webhook Secret",
+   "permlevel": 1,
+   "read_only": 1
+  },
+  {
+   "description": "Platform `WhatsApp Webhook Endpoint` docname",
+   "fieldname": "webhook_endpoint",
+   "fieldtype": "Data",
+   "label": "Webhook Endpoint (platform)",
+   "read_only": 1
+  },
+  {
+   "description": "`https://{site}/api/method/whatsapp_next.webhooks.v1.receiver.receive` (D-031)",
+   "fieldname": "webhook_endpoint_url",
+   "fieldtype": "Data",
+   "label": "Webhook Endpoint URL",
+   "read_only": 1
+  },
+  {
+   "description": "Mirror of platform state (D-018); refreshed by `list_webhook_endpoints_api`",
+   "fieldname": "webhook_status",
+   "fieldtype": "Select",
+   "label": "Webhook Status",
+   "options": "\nActive\nDisabled\nLocked\nRevoked",
+   "read_only": 1
+  },
+  {
+   "fieldname": "webhook_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "List of platform event names accepted on the endpoint; written by save \u2192 `update_webhook_endpoint_api`",
+   "fieldname": "webhook_events",
+   "fieldtype": "JSON",
+   "label": "Subscribed Events"
+  },
+  {
+   "default": "3",
+   "description": "Sent to platform endpoint `max_retries`",
+   "fieldname": "webhook_max_retries",
+   "fieldtype": "Select",
+   "label": "Webhook Retries",
+   "options": "1\n3\n5"
+  },
+  {
+   "fieldname": "webhook_synced_at",
+   "fieldtype": "Datetime",
+   "label": "Webhook Synced At",
+   "read_only": 1
+  },
+  {
+   "description": "Set by receiver on every valid event",
+   "fieldname": "webhook_last_event_at",
+   "fieldtype": "Datetime",
+   "label": "Last Webhook Event At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "queue_tab",
+   "fieldtype": "Tab Break",
+   "label": "Queue"
+  },
+  {
+   "default": "20",
+   "description": "5\u201360 and \u2264 `plan_messages_per_minute`",
+   "fieldname": "messages_per_minute",
+   "fieldtype": "Int",
+   "label": "Messages per Minute",
+   "reqd": 1
+  },
+  {
+   "default": "3",
+   "description": "Copied to Queue Item at create",
+   "fieldname": "max_attempts",
+   "fieldtype": "Int",
+   "label": "Max Attempts",
+   "reqd": 1
+  },
+  {
+   "default": "300",
+   "description": "Base for exponential backoff on transient errors",
+   "fieldname": "retry_backoff_seconds",
+   "fieldtype": "Int",
+   "label": "Retry Backoff (s)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "queue_pause_section",
+   "fieldtype": "Section Break",
+   "label": "Pause"
+  },
+  {
+   "default": "0",
+   "description": "Global dispatcher gate; write via `api.v1.queue.pause_queue` (WhatsApp Manager)",
+   "fieldname": "queue_paused",
+   "fieldtype": "Check",
+   "label": "Queue Paused",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.queue_paused",
+   "fieldname": "queue_paused_by",
+   "fieldtype": "Link",
+   "label": "Paused By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "queue_pause_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.queue_paused",
+   "fieldname": "queue_paused_at",
+   "fieldtype": "Datetime",
+   "label": "Paused At",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.queue_paused",
+   "description": "Also copied to Audit `Queue Paused`",
+   "fieldname": "queue_pause_reason",
+   "fieldtype": "Small Text",
+   "label": "Pause Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "commands_tab",
+   "fieldtype": "Tab Break",
+   "label": "Commands"
+  },
+  {
+   "default": "0",
+   "fieldname": "enable_commands",
+   "fieldtype": "Check",
+   "label": "Enable Commands"
+  },
+  {
+   "depends_on": "eval:doc.enable_commands",
+   "description": "Required when commands are enabled; must be an enabled user, not Administrator, without the System Manager role (D-012)",
+   "fieldname": "command_service_user",
+   "fieldtype": "Link",
+   "label": "Command Service User",
+   "options": "User"
+  },
+  {
+   "depends_on": "eval:doc.enable_commands",
+   "description": "Jinja; empty = no reply",
+   "fieldname": "unknown_command_reply",
+   "fieldtype": "Small Text",
+   "label": "Unknown Command Reply"
+  },
+  {
+   "fieldname": "commands_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.enable_commands",
+   "description": "Acknowledge a matched command before executing",
+   "fieldname": "send_receipt_reply",
+   "fieldtype": "Check",
+   "label": "Send Receipt Reply"
+  },
+  {
+   "depends_on": "eval:doc.send_receipt_reply",
+   "fieldname": "receipt_reply",
+   "fieldtype": "Small Text",
+   "label": "Receipt Reply Text"
+  },
+  {
+   "depends_on": "eval:doc.enable_commands",
+   "description": "Empty = reply from the device that received the inbound",
+   "fieldname": "reply_device",
+   "fieldtype": "Link",
+   "label": "Reply Device",
+   "options": "WhatsApp Device"
+  },
+  {
+   "fieldname": "policy_tab",
+   "fieldtype": "Tab Break",
+   "label": "Policy"
+  },
+  {
+   "description": "Used by Quick Send / Notification when none set",
+   "fieldname": "default_device",
+   "fieldtype": "Link",
+   "label": "Default Device",
+   "options": "WhatsApp Device"
+  },
+  {
+   "description": "E.164 default region for national numbers",
+   "fieldname": "default_country",
+   "fieldtype": "Link",
+   "label": "Default Country",
+   "options": "Country",
+   "reqd": 1
+  },
+  {
+   "fieldname": "policy_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Group of kind `Blacklist`; members never receive anything",
+   "fieldname": "global_blacklist_group",
+   "fieldtype": "Link",
+   "label": "Global Blacklist",
+   "options": "WhatsApp Contact Group"
+  },
+  {
+   "default": "0",
+   "description": "Blocks non-campaign sends to numbers with `inbound_count = 0` and `conversation_confirmed = 0`",
+   "fieldname": "send_only_to_known_numbers",
+   "fieldtype": "Check",
+   "label": "Send Only to Known Numbers"
+  },
+  {
+   "fieldname": "picker_tab",
+   "fieldtype": "Tab Break",
+   "label": "Picker"
+  },
+  {
+   "description": "Whitelist for ContactPicker source 3",
+   "fieldname": "picker_sources",
+   "fieldtype": "Table",
+   "label": "Picker DocType Sources",
+   "options": "WhatsApp Settings Picker Source"
+  },
+  {
+   "fieldname": "retention_tab",
+   "fieldtype": "Tab Break",
+   "label": "Retention"
+  },
+  {
+   "default": "365",
+   "description": "0 = never purge",
+   "fieldname": "outbound_retention_days",
+   "fieldtype": "Int",
+   "label": "Outbound Retention (days)"
+  },
+  {
+   "default": "365",
+   "description": "0 = never purge",
+   "fieldname": "inbound_retention_days",
+   "fieldtype": "Int",
+   "label": "Inbound Retention (days)"
+  },
+  {
+   "default": "7",
+   "description": "Terminal Queue Items purged after N days",
+   "fieldname": "queue_retention_days",
+   "fieldtype": "Int",
+   "label": "Queue Retention (days)"
+  },
+  {
+   "fieldname": "retention_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "30",
+   "description": "Payload is PII",
+   "fieldname": "webhook_event_retention_days",
+   "fieldtype": "Int",
+   "label": "Webhook Event Retention (days)"
+  },
+  {
+   "default": "365",
+   "fieldname": "audit_retention_days",
+   "fieldtype": "Int",
+   "label": "Audit Retention (days)"
+  },
+  {
+   "fieldname": "numbers_job_section",
+   "fieldtype": "Section Break",
+   "label": "Numbers Job"
+  },
+  {
+   "description": "Last `creation` processed by the nightly distinct job",
+   "fieldname": "numbers_watermark",
+   "fieldtype": "Datetime",
+   "label": "Numbers Watermark",
+   "read_only": 1
+  },
+  {
+   "fieldname": "numbers_job_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "numbers_last_run_at",
+   "fieldtype": "Datetime",
+   "label": "Numbers Job Last Run",
+   "read_only": 1
+  },
+  {
+   "fieldname": "subscription_tab",
+   "fieldtype": "Tab Break",
+   "label": "Subscription"
+  },
+  {
+   "description": "Cache from `get_subscription_status`",
+   "fieldname": "plan_code",
+   "fieldtype": "Data",
+   "label": "Plan Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "plan_name",
+   "fieldtype": "Data",
+   "label": "Plan",
+   "read_only": 1
+  },
+  {
+   "description": "Platform enum (Trial/Active/Near Expiry/Expired/Suspended/Cancelled) stored as text",
+   "fieldname": "subscription_status",
+   "fieldtype": "Data",
+   "label": "Subscription Status",
+   "read_only": 1
+  },
+  {
+   "fieldname": "message_limit",
+   "fieldtype": "Int",
+   "label": "Message Limit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "messages_used",
+   "fieldtype": "Int",
+   "label": "Messages Used",
+   "read_only": 1
+  },
+  {
+   "fieldname": "messages_remaining",
+   "fieldtype": "Int",
+   "label": "Messages Remaining",
+   "read_only": 1
+  },
+  {
+   "description": "Upper bound for `messages_per_minute`",
+   "fieldname": "plan_messages_per_minute",
+   "fieldtype": "Int",
+   "label": "Plan Rate Limit",
+   "read_only": 1
+  },
+  {
+   "fieldname": "subscription_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "device_limit",
+   "fieldtype": "Int",
+   "label": "Device Limit",
+   "read_only": 1
+  },
+  {
+   "description": "`get_wallet_balance_api`",
+   "fieldname": "wallet_balance",
+   "fieldtype": "Currency",
+   "label": "Wallet Balance",
+   "options": "wallet_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "wallet_currency",
+   "fieldtype": "Link",
+   "label": "Wallet Currency",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "subscription_start",
+   "fieldtype": "Date",
+   "label": "Subscription Start",
+   "read_only": 1
+  },
+  {
+   "fieldname": "subscription_end",
+   "fieldtype": "Date",
+   "label": "Subscription End",
+   "read_only": 1
+  },
+  {
+   "description": "`features{allow_*}` snapshot gates Campaign/Commands UI",
+   "fieldname": "plan_features",
+   "fieldtype": "JSON",
+   "label": "Plan Features",
+   "read_only": 1
+  },
+  {
+   "fieldname": "subscription_synced_at",
+   "fieldtype": "Datetime",
+   "label": "Subscription Synced At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "onboarding_tab",
+   "fieldtype": "Tab Break",
+   "label": "Onboarding"
+  },
+  {
+   "default": "0",
+   "description": "Set when credentials OK + \u22651 device Connected + webhook Active",
+   "fieldname": "setup_completed",
+   "fieldtype": "Check",
+   "label": "Setup Completed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "setup_completed_at",
+   "fieldtype": "Datetime",
+   "label": "Setup Completed At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "onboarding_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "redirect_unregistered_to_wizard",
+   "fieldtype": "Check",
+   "label": "Redirect to Wizard when not set up"
+  }
+ ],
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "permlevel": 1,
+   "read": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "role": "WhatsApp Manager"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

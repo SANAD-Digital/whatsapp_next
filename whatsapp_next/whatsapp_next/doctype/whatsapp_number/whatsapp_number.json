@@ -1,0 +1,274 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:phone_e164",
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "number_section",
+  "link_status",
+  "phone_e164",
+  "phone",
+  "jid",
+  "number_column",
+  "number_type",
+  "display_name",
+  "contact_section",
+  "contact",
+  "contact_column",
+  "linked_by",
+  "linked_at",
+  "activity_section",
+  "first_seen",
+  "last_seen",
+  "last_direction",
+  "last_device",
+  "activity_column",
+  "outbound_count",
+  "inbound_count",
+  "conversation_section",
+  "conversation_confirmed",
+  "conversation_confirmed_by",
+  "conversation_column",
+  "conversation_confirmed_at",
+  "conversation_note"
+ ],
+ "fields": [
+  {
+   "fieldname": "number_section",
+   "fieldtype": "Section Break",
+   "label": "Number"
+  },
+  {
+   "default": "Not Linked",
+   "description": "First list column, colour indicator; = `contact` set",
+   "fieldname": "link_status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Link Status",
+   "options": "Linked\nNot Linked",
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "description": "E.164 for individuals; JID for Group/LID",
+   "fieldname": "phone_e164",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Number",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "Last raw form seen",
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Phone (raw)"
+  },
+  {
+   "fieldname": "jid",
+   "fieldtype": "Data",
+   "label": "JID"
+  },
+  {
+   "fieldname": "number_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Individual",
+   "fieldname": "number_type",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Number Type",
+   "options": "Individual\nGroup\nLID",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "description": "Push name from inbound; Contact name when linked",
+   "fieldname": "display_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "WhatsApp Name"
+  },
+  {
+   "fieldname": "contact_section",
+   "fieldtype": "Section Break",
+   "label": "Contact"
+  },
+  {
+   "description": "Set only by link/convert action",
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Contact",
+   "options": "Contact"
+  },
+  {
+   "fieldname": "contact_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.contact",
+   "fieldname": "linked_by",
+   "fieldtype": "Link",
+   "label": "Linked By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.contact",
+   "fieldname": "linked_at",
+   "fieldtype": "Datetime",
+   "label": "Linked At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "activity_section",
+   "fieldtype": "Section Break",
+   "label": "Activity"
+  },
+  {
+   "fieldname": "first_seen",
+   "fieldtype": "Datetime",
+   "label": "First Seen",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_seen",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Last Seen",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "last_direction",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Last Direction",
+   "options": "\nOutbound\nInbound",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_device",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Last Device",
+   "options": "WhatsApp Device",
+   "read_only": 1
+  },
+  {
+   "fieldname": "activity_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "outbound_count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Outbound",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "inbound_count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Inbound",
+   "read_only": 1
+  },
+  {
+   "fieldname": "conversation_section",
+   "fieldtype": "Section Break",
+   "label": "Conversation"
+  },
+  {
+   "default": "0",
+   "description": "Manual override for `send_only_to_known_numbers`",
+   "fieldname": "conversation_confirmed",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Conversation Confirmed"
+  },
+  {
+   "depends_on": "eval:doc.conversation_confirmed",
+   "fieldname": "conversation_confirmed_by",
+   "fieldtype": "Link",
+   "label": "Confirmed By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "conversation_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.conversation_confirmed",
+   "fieldname": "conversation_confirmed_at",
+   "fieldtype": "Datetime",
+   "label": "Confirmed At",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.conversation_confirmed",
+   "fieldname": "conversation_note",
+   "fieldtype": "Small Text",
+   "label": "Confirmation Note"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Number",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "select": 1
+  },
+  {
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Manager",
+   "select": 1
+  },
+  {
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Agent",
+   "select": 1
+  },
+  {
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Viewer",
+   "select": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Contact User",
+   "select": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "phone_e164,display_name",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "display_name",
+ "track_changes": 0
+}

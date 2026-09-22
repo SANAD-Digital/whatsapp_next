@@ -3,12 +3,15 @@ name = "whatsapp_next"
 authors = [
     { name = "Sanad Digital", email = "sanad@digital.info"}
 ]
-description = "WhatsApp Next"
-requires-python = ">=3.14"
+description = "WhatsApp integration for ERPNext built on a provider abstraction (SND Platform first)"
+requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
     # "frappe~=16.0.0" # Installed and managed by bench.
+    # phonenumbers, requests: provided by frappe.
+    "openpyxl>=3.1",   # ContactPicker source 4 (Excel)
+    "vobject>=0.9.7",  # ContactPicker source 5 (vCard)
 ]
 
 [build-system]
@@ -25,7 +28,8 @@ packages = []
 
 [tool.ruff]
 line-length = 110
-target-version = "py314"
+target-version = "py310"
+extend-exclude = ["docs", ".claude", "node_modules"]
 
 [tool.ruff.lint]
 select = [
@@ -56,6 +60,10 @@ ignore = [
     "UP032", # Use f-string instead of `format` call (translations)
     "UP037", # quoted annotations
     "UP040", # Use type aliases instead of type annotations
+    "RUF001", # ambiguous unicode in strings (Arabic, typography)
+    "RUF002", # ambiguous unicode in docstrings
+    "RUF003", # ambiguous unicode in comments
+    "RUF012", # mutable class attributes (Frappe controllers)
 ]
 typing-modules = ["frappe.types.DF"]
 

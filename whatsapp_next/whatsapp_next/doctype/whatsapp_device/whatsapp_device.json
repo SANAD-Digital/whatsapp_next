@@ -1,0 +1,232 @@
+{
+ "actions": [],
+ "autoname": "WA-DEV-.###",
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "device_tab",
+  "device_name",
+  "phone",
+  "phone_e164",
+  "platform_device",
+  "wa_device_id",
+  "device_column",
+  "status",
+  "is_default",
+  "disabled",
+  "notes",
+  "connection_tab",
+  "last_seen",
+  "connected_at",
+  "disconnected_at",
+  "connection_column",
+  "logged_out_at",
+  "webhook_registered",
+  "webhook_registered_at",
+  "diagnostics_tab",
+  "last_error",
+  "last_status_event_at"
+ ],
+ "fields": [
+  {
+   "fieldname": "device_tab",
+   "fieldtype": "Tab Break",
+   "label": "Device"
+  },
+  {
+   "description": "Sent to `create_device_api`",
+   "fieldname": "device_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Device Name",
+   "reqd": 1
+  },
+  {
+   "description": "Raw `phone_number` from platform / pairing form",
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Phone"
+  },
+  {
+   "description": "Normalized",
+   "fieldname": "phone_e164",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Phone (E.164)",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "description": "Platform `WhatsApp Device` docname passed as `device` on every call (D-013)",
+   "fieldname": "platform_device",
+   "fieldtype": "Data",
+   "label": "Platform Device",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "wa-admin id from platform",
+   "fieldname": "wa_device_id",
+   "fieldtype": "Data",
+   "label": "WA Device ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "device_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Pending QR",
+   "description": "Written only by `services/devices.py` from `connection.*` events / `verify_device_connection_api`",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Pending QR\nConnected\nDisconnected\nLogged Out",
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "default": "0",
+   "description": "Exactly one",
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Default Device"
+  },
+  {
+   "default": "0",
+   "description": "Local switch: dispatcher skips device, queue holds",
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Disabled"
+  },
+  {
+   "description": "User notes",
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "connection_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connection"
+  },
+  {
+   "description": "From `list_devices_api.last_seen`",
+   "fieldname": "last_seen",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Last Seen",
+   "read_only": 1
+  },
+  {
+   "fieldname": "connected_at",
+   "fieldtype": "Datetime",
+   "label": "Connected At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "disconnected_at",
+   "fieldtype": "Datetime",
+   "label": "Disconnected At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "connection_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "logged_out_at",
+   "fieldtype": "Datetime",
+   "label": "Logged Out At",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "From `wa_webhook_*` on `list_devices_api`",
+   "fieldname": "webhook_registered",
+   "fieldtype": "Check",
+   "label": "Webhook Registered",
+   "read_only": 1
+  },
+  {
+   "fieldname": "webhook_registered_at",
+   "fieldtype": "Datetime",
+   "label": "Webhook Registered At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "diagnostics_tab",
+   "fieldtype": "Tab Break",
+   "label": "Diagnostics"
+  },
+  {
+   "description": "No tokens/PII",
+   "fieldname": "last_error",
+   "fieldtype": "Small Text",
+   "label": "Last Error",
+   "read_only": 1
+  },
+  {
+   "description": "Last `connection.*` webhook",
+   "fieldname": "last_status_event_at",
+   "fieldtype": "Datetime",
+   "label": "Last Status Event At",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Device",
+ "naming_rule": "Expression (old style)",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "select": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Manager",
+   "select": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Agent",
+   "select": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Viewer",
+   "select": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "device_name,phone_e164",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "device_name",
+ "track_changes": 1
+}

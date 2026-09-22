@@ -53,3 +53,10 @@ jspm_packages/
 
 # Aider AI Chat
 .aider*
+
+# whatsapp_next
+whatsapp_next/public/dist/
+whatsapp_next/public/node_modules/
+*.pyc
+.ruff_cache/
+.pytest_cache/

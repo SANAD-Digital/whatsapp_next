@@ -1,0 +1,85 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "document_type",
+  "label",
+  "phone_source",
+  "phone_fieldname",
+  "contact_fieldname",
+  "name_fieldname",
+  "enabled"
+ ],
+ "fields": [
+  {
+   "description": "Validate unique within table; must be non-child, non-single",
+   "fieldname": "document_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "DocType",
+   "options": "DocType",
+   "reqd": 1
+  },
+  {
+   "description": "Shown in picker; default = DocType label",
+   "fieldname": "label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Label"
+  },
+  {
+   "default": "Field",
+   "description": "`Linked Contact` reads Contact Phone through the DocType's `contact`-like Link",
+   "fieldname": "phone_source",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Phone Source",
+   "options": "Field\nLinked Contact",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.phone_source==\"Field\"",
+   "description": "Fieldname on `document_type` holding the phone",
+   "fieldname": "phone_fieldname",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Phone Fieldname"
+  },
+  {
+   "depends_on": "eval:doc.phone_source==\"Linked Contact\"",
+   "description": "Link-to-Contact fieldname on `document_type`",
+   "fieldname": "contact_fieldname",
+   "fieldtype": "Data",
+   "label": "Contact Link Fieldname"
+  },
+  {
+   "description": "Empty = `title_field` of the DocType",
+   "fieldname": "name_fieldname",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Display Name Fieldname"
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled"
+  }
+ ],
+ "istable": 1,
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Settings Picker Source",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

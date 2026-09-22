@@ -1,0 +1,334 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "field_order": [
+  "schedule_tab",
+  "alert_name",
+  "enabled",
+  "periodicity",
+  "day_of_week",
+  "column_break_19",
+  "day_of_month",
+  "month_of_year",
+  "notification_time",
+  "content_tab",
+  "content_type",
+  "report",
+  "filters_json",
+  "dynamic_filters_json",
+  "body_section",
+  "template",
+  "message",
+  "attachment_section",
+  "attachment_format",
+  "print_format",
+  "column_break_20",
+  "letter_head",
+  "language",
+  "device",
+  "recipients_tab",
+  "recipients",
+  "stats_tab",
+  "send_count",
+  "last_sent_at",
+  "column_break_21",
+  "next_run_at",
+  "last_error"
+ ],
+ "fields": [
+  {
+   "fieldname": "schedule_tab",
+   "fieldtype": "Tab Break",
+   "label": "Schedule"
+  },
+  {
+   "fieldname": "alert_name",
+   "label": "Name",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "enabled",
+   "label": "Enabled",
+   "fieldtype": "Check",
+   "default": "1",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "periodicity",
+   "label": "Periodicity",
+   "fieldtype": "Select",
+   "options": "Daily\nWeekly\nMonthly\nQuarterly\nYearly",
+   "reqd": 1,
+   "default": "Daily",
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "day_of_week",
+   "label": "Day of Week",
+   "fieldtype": "Select",
+   "options": "Monday\nTuesday\nWednesday\nThursday\nFriday\nSaturday\nSunday",
+   "depends_on": "eval:doc.periodicity==\"Weekly\""
+  },
+  {
+   "fieldname": "column_break_19",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "day_of_month",
+   "label": "Day of Month",
+   "fieldtype": "Int",
+   "default": "1",
+   "depends_on": "eval:[\"Monthly\",\"Quarterly\",\"Yearly\"].includes(doc.periodicity)",
+   "description": "1–28"
+  },
+  {
+   "fieldname": "month_of_year",
+   "label": "Month",
+   "fieldtype": "Select",
+   "options": "January\nFebruary\nMarch\nApril\nMay\nJune\nJuly\nAugust\nSeptember\nOctober\nNovember\nDecember",
+   "depends_on": "eval:doc.periodicity==\"Yearly\""
+  },
+  {
+   "fieldname": "notification_time",
+   "label": "Time",
+   "fieldtype": "Time",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "Site timezone"
+  },
+  {
+   "fieldname": "content_tab",
+   "fieldtype": "Tab Break",
+   "label": "Content"
+  },
+  {
+   "fieldname": "content_type",
+   "label": "Content",
+   "fieldtype": "Select",
+   "options": "Report\nStatic Message",
+   "reqd": 1,
+   "default": "Report",
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "report",
+   "label": "Report",
+   "fieldtype": "Link",
+   "options": "Report",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "depends_on": "eval:doc.content_type==\"Report\"",
+   "description": "Required when Content = Report"
+  },
+  {
+   "fieldname": "filters_json",
+   "label": "Filters",
+   "fieldtype": "Code",
+   "options": "JSON",
+   "depends_on": "eval:doc.content_type==\"Report\""
+  },
+  {
+   "fieldname": "dynamic_filters_json",
+   "label": "Dynamic Filters",
+   "fieldtype": "Code",
+   "options": "JSON",
+   "depends_on": "eval:doc.content_type==\"Report\"",
+   "description": "Jinja-evaluated dates"
+  },
+  {
+   "fieldname": "body_section",
+   "fieldtype": "Section Break",
+   "label": "Body"
+  },
+  {
+   "fieldname": "template",
+   "label": "Template",
+   "fieldtype": "Link",
+   "options": "WhatsApp Template",
+   "description": "Body source; context = rows, columns, report, alert"
+  },
+  {
+   "fieldname": "message",
+   "label": "Message",
+   "fieldtype": "Code",
+   "options": "Jinja",
+   "depends_on": "eval:!doc.template",
+   "description": "Inline fallback; required if template empty"
+  },
+  {
+   "fieldname": "attachment_section",
+   "fieldtype": "Section Break",
+   "label": "Attachment"
+  },
+  {
+   "fieldname": "attachment_format",
+   "label": "Attachment",
+   "fieldtype": "Select",
+   "options": "None\nPDF\nPNG",
+   "reqd": 1,
+   "default": "PDF",
+   "depends_on": "eval:doc.content_type==\"Report\"",
+   "description": "PNG needs wkhtmltoimage on the bench"
+  },
+  {
+   "fieldname": "print_format",
+   "label": "Print Format",
+   "fieldtype": "Link",
+   "options": "Print Format",
+   "depends_on": "eval:doc.attachment_format!=\"None\""
+  },
+  {
+   "fieldname": "column_break_20",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "letter_head",
+   "label": "Letter Head",
+   "fieldtype": "Link",
+   "options": "Letter Head",
+   "depends_on": "eval:doc.attachment_format!=\"None\""
+  },
+  {
+   "fieldname": "language",
+   "label": "Language",
+   "fieldtype": "Link",
+   "options": "Language",
+   "description": "Render language"
+  },
+  {
+   "fieldname": "device",
+   "label": "Device",
+   "fieldtype": "Link",
+   "options": "WhatsApp Device",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Empty = default device"
+  },
+  {
+   "fieldname": "recipients_tab",
+   "fieldtype": "Tab Break",
+   "label": "Recipients"
+  },
+  {
+   "fieldname": "recipients",
+   "label": "Recipients",
+   "fieldtype": "Table",
+   "options": "WhatsApp Notification Alert Recipient",
+   "reqd": 1,
+   "description": "At least one row"
+  },
+  {
+   "fieldname": "stats_tab",
+   "fieldtype": "Tab Break",
+   "label": "Stats"
+  },
+  {
+   "fieldname": "send_count",
+   "label": "Sends",
+   "fieldtype": "Int",
+   "default": "0",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_sent_at",
+   "label": "Last Sent At",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_21",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "next_run_at",
+   "label": "Next Run At",
+   "fieldtype": "Datetime",
+   "read_only": 1,
+   "search_index": 1,
+   "description": "Recomputed on save and after each run"
+  },
+  {
+   "fieldname": "last_error",
+   "label": "Last Error",
+   "fieldtype": "Small Text",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Notification Alert",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Agent",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Viewer",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "field:alert_name",
+ "naming_rule": "By fieldname",
+ "allow_rename": 1,
+ "search_fields": "alert_name"
+}

@@ -1,0 +1,182 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "field_order": [
+  "group_section",
+  "group_name",
+  "kind",
+  "description",
+  "column_break_4",
+  "source",
+  "member_count",
+  "members_changed_at",
+  "disabled",
+  "members_section",
+  "members"
+ ],
+ "fields": [
+  {
+   "fieldname": "group_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "group_name",
+   "label": "Group Name",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "kind",
+   "label": "Kind",
+   "fieldtype": "Select",
+   "options": "Marketing\nMailing List\nProfessional\nBlacklist\nOther",
+   "reqd": 1,
+   "default": "Other",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Blacklist members are blocked from commands and campaigns"
+  },
+  {
+   "fieldname": "description",
+   "label": "Description",
+   "fieldtype": "Small Text"
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "source",
+   "label": "Source",
+   "fieldtype": "Select",
+   "options": "Manual\nImport\nPicker",
+   "reqd": 1,
+   "default": "Manual",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Last bulk source used"
+  },
+  {
+   "fieldname": "member_count",
+   "label": "Members",
+   "fieldtype": "Int",
+   "default": "0",
+   "in_list_view": 1,
+   "read_only": 1,
+   "description": "Maintained on member insert/delete"
+  },
+  {
+   "fieldname": "members_changed_at",
+   "label": "Members Changed At",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "disabled",
+   "label": "Disabled",
+   "fieldtype": "Check",
+   "default": "0",
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Disabled groups are not offered in the picker"
+  },
+  {
+   "fieldname": "members_section",
+   "fieldtype": "Section Break",
+   "label": "Members"
+  },
+  {
+   "fieldname": "members",
+   "label": "Members",
+   "fieldtype": "Table",
+   "options": "WhatsApp Contact Group Member"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Contact Group",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Agent",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Viewer",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Contact User",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "field:group_name",
+ "naming_rule": "By fieldname",
+ "allow_rename": 1,
+ "search_fields": "group_name"
+}

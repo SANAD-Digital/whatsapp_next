@@ -1,0 +1,106 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "field_order": [
+  "output_key",
+  "label",
+  "output_type",
+  "default_template",
+  "template",
+  "condition",
+  "print_format",
+  "file_name_template",
+  "variables",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "output_key",
+   "label": "Output Key",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "in_list_view": 1,
+   "read_only": 1,
+   "description": "Unique per parent"
+  },
+  {
+   "fieldname": "label",
+   "label": "Label",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "output_type",
+   "label": "Type",
+   "fieldtype": "Select",
+   "options": "Text\nDocument",
+   "reqd": 1,
+   "default": "Text",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "default_template",
+   "label": "Default Template",
+   "fieldtype": "Text",
+   "read_only": 1,
+   "description": "From manifest; source for \"restore defaults\""
+  },
+  {
+   "fieldname": "template",
+   "label": "Template",
+   "fieldtype": "Text",
+   "in_list_view": 1,
+   "description": "Jinja over data.* (Text) or Print Format name (Document)"
+  },
+  {
+   "fieldname": "condition",
+   "label": "Condition",
+   "fieldtype": "Code",
+   "options": "Python",
+   "description": "Expression over data; empty = always"
+  },
+  {
+   "fieldname": "print_format",
+   "label": "Print Format",
+   "fieldtype": "Link",
+   "options": "Print Format",
+   "depends_on": "eval:doc.output_type==\"Document\""
+  },
+  {
+   "fieldname": "file_name_template",
+   "label": "File Name Template",
+   "fieldtype": "Data",
+   "depends_on": "eval:doc.output_type==\"Document\"",
+   "description": "Jinja"
+  },
+  {
+   "fieldname": "variables",
+   "label": "Available Variables",
+   "fieldtype": "Small Text",
+   "read_only": 1,
+   "description": "Tokens from manifest"
+  },
+  {
+   "fieldname": "notes",
+   "label": "Notes",
+   "fieldtype": "Small Text"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Function Output",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0,
+ "istable": 1,
+ "editable_grid": 1
+}

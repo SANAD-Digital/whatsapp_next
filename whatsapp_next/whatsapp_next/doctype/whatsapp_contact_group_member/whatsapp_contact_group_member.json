@@ -1,0 +1,104 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "field_order": [
+  "phone",
+  "phone_e164",
+  "display_name",
+  "contact",
+  "source_type",
+  "source_doctype",
+  "source_name",
+  "added_by",
+  "added_on",
+  "note"
+ ],
+ "fields": [
+  {
+   "fieldname": "phone",
+   "label": "Phone",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "description": "Raw"
+  },
+  {
+   "fieldname": "phone_e164",
+   "label": "Phone (E.164)",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1,
+   "description": "Normalized; unique per parent enforced in service"
+  },
+  {
+   "fieldname": "display_name",
+   "label": "Display Name",
+   "fieldtype": "Data",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "contact",
+   "label": "Contact",
+   "fieldtype": "Link",
+   "options": "Contact",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "source_type",
+   "label": "Source",
+   "fieldtype": "Select",
+   "options": "Contact Group\nContact\nDocType\nExcel\nvCard\nManual",
+   "reqd": 1,
+   "default": "Manual"
+  },
+  {
+   "fieldname": "source_doctype",
+   "label": "Source DocType",
+   "fieldtype": "Link",
+   "options": "DocType",
+   "depends_on": "eval:doc.source_type==\"DocType\""
+  },
+  {
+   "fieldname": "source_name",
+   "label": "Source Document",
+   "fieldtype": "Dynamic Link",
+   "options": "source_doctype",
+   "depends_on": "eval:doc.source_type==\"DocType\""
+  },
+  {
+   "fieldname": "added_by",
+   "label": "Added By",
+   "fieldtype": "Link",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "added_on",
+   "label": "Added On",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "note",
+   "label": "Note",
+   "fieldtype": "Small Text",
+   "description": "e.g. blacklist reason"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Contact Group Member",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0,
+ "istable": 1,
+ "editable_grid": 1
+}

@@ -1,0 +1,38 @@
+[
+ {
+  "doctype": "Role",
+  "name": "WhatsApp Manager",
+  "role_name": "WhatsApp Manager",
+  "desk_access": 1,
+  "disabled": 0,
+  "is_custom": 0,
+  "two_factor_auth": 0
+ },
+ {
+  "doctype": "Role",
+  "name": "WhatsApp Agent",
+  "role_name": "WhatsApp Agent",
+  "desk_access": 1,
+  "disabled": 0,
+  "is_custom": 0,
+  "two_factor_auth": 0
+ },
+ {
+  "doctype": "Role",
+  "name": "WhatsApp Viewer",
+  "role_name": "WhatsApp Viewer",
+  "desk_access": 1,
+  "disabled": 0,
+  "is_custom": 0,
+  "two_factor_auth": 0
+ },
+ {
+  "doctype": "Role",
+  "name": "WhatsApp Contact User",
+  "role_name": "WhatsApp Contact User",
+  "desk_access": 1,
+  "disabled": 0,
+  "is_custom": 0,
+  "two_factor_auth": 0
+ }
+]

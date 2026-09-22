@@ -1,0 +1,339 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "field_order": [
+  "function_tab",
+  "function_key",
+  "function_name",
+  "category",
+  "status",
+  "column_break_9",
+  "description",
+  "when_to_use",
+  "party_types",
+  "versions_tab",
+  "installed_version",
+  "installed_at",
+  "installed_by",
+  "latest_version",
+  "latest_version_date",
+  "update_available",
+  "column_break_10",
+  "catalog_source",
+  "catalog_checked_at",
+  "checksum",
+  "handler_registered",
+  "manifest_section",
+  "manifest",
+  "settings_tab",
+  "settings",
+  "outputs_tab",
+  "outputs",
+  "stats_tab",
+  "call_count",
+  "last_called_at",
+  "avg_ms",
+  "column_break_11",
+  "error_count",
+  "last_error"
+ ],
+ "fields": [
+  {
+   "fieldname": "function_tab",
+   "fieldtype": "Tab Break",
+   "label": "Function"
+  },
+  {
+   "fieldname": "function_key",
+   "label": "Function Key",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "unique": 1,
+   "description": "Registry key; handler resolved from whatsapp_next/functions/registry.py"
+  },
+  {
+   "fieldname": "function_name",
+   "label": "Function Name",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "category",
+   "label": "Category",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "From catalog"
+  },
+  {
+   "fieldname": "status",
+   "label": "Status",
+   "fieldtype": "Select",
+   "options": "Active\nInactive",
+   "reqd": 1,
+   "default": "Active",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Inactive: linked commands match but do not execute (block_reason = Function Inactive)"
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "description",
+   "label": "What It Does",
+   "fieldtype": "Small Text"
+  },
+  {
+   "fieldname": "when_to_use",
+   "label": "When To Use",
+   "fieldtype": "Small Text"
+  },
+  {
+   "fieldname": "party_types",
+   "label": "Party Types",
+   "fieldtype": "Table MultiSelect",
+   "options": "WhatsApp Command Party Type",
+   "description": "From manifest; default for new Commands"
+  },
+  {
+   "fieldname": "versions_tab",
+   "fieldtype": "Tab Break",
+   "label": "Versions"
+  },
+  {
+   "fieldname": "installed_version",
+   "label": "Installed Version",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "installed_at",
+   "label": "Installed At",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "installed_by",
+   "label": "Installed By",
+   "fieldtype": "Link",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "latest_version",
+   "label": "Latest Version",
+   "fieldtype": "Data",
+   "read_only": 1,
+   "description": "From catalog check"
+  },
+  {
+   "fieldname": "latest_version_date",
+   "label": "Latest Version Date",
+   "fieldtype": "Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "update_available",
+   "label": "Update Available",
+   "fieldtype": "Check",
+   "default": "0",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "read_only": 1,
+   "search_index": 1,
+   "description": "latest_version != installed_version; stored so the list can filter"
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "catalog_source",
+   "label": "Catalog Source",
+   "fieldtype": "Data",
+   "read_only": 1,
+   "description": "catalog/vN/catalog.json path + app version"
+  },
+  {
+   "fieldname": "catalog_checked_at",
+   "label": "Catalog Checked At",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "checksum",
+   "label": "Checksum",
+   "fieldtype": "Data",
+   "read_only": 1,
+   "description": "sha256 of manifest for diff"
+  },
+  {
+   "fieldname": "handler_registered",
+   "label": "Handler Registered",
+   "fieldtype": "Check",
+   "default": "0",
+   "read_only": 1,
+   "description": "Computed in validate: key exists in code registry"
+  },
+  {
+   "fieldname": "manifest_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "manifest",
+   "label": "Manifest",
+   "fieldtype": "JSON",
+   "read_only": 1,
+   "description": "Snapshot: inputs, outputs tokens, example, suggested_commands, changelog"
+  },
+  {
+   "fieldname": "settings_tab",
+   "fieldtype": "Tab Break",
+   "label": "Settings"
+  },
+  {
+   "fieldname": "settings",
+   "label": "Settings",
+   "fieldtype": "Table",
+   "options": "WhatsApp Function Setting",
+   "description": "Installed defaults; values editable"
+  },
+  {
+   "fieldname": "outputs_tab",
+   "fieldtype": "Tab Break",
+   "label": "Outputs"
+  },
+  {
+   "fieldname": "outputs",
+   "label": "Outputs",
+   "fieldtype": "Table",
+   "options": "WhatsApp Function Output",
+   "description": "Defaults copied to Commands"
+  },
+  {
+   "fieldname": "stats_tab",
+   "fieldtype": "Tab Break",
+   "label": "Stats"
+  },
+  {
+   "fieldname": "call_count",
+   "label": "Calls",
+   "fieldtype": "Int",
+   "default": "0",
+   "read_only": 1,
+   "description": "Lifetime counter; 30-day figure derived from Inbound"
+  },
+  {
+   "fieldname": "last_called_at",
+   "label": "Last Called At",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "avg_ms",
+   "label": "Avg Duration (ms)",
+   "fieldtype": "Int",
+   "default": "0",
+   "in_list_view": 1,
+   "read_only": 1,
+   "description": "Rolling average"
+  },
+  {
+   "fieldname": "column_break_11",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "error_count",
+   "label": "Errors",
+   "fieldtype": "Int",
+   "default": "0",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_error",
+   "label": "Last Error",
+   "fieldtype": "Small Text",
+   "read_only": 1,
+   "description": "No PII"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Function",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 0,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Manager",
+   "read": 1,
+   "write": 1,
+   "create": 0,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Agent",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Viewer",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "field:function_key",
+ "naming_rule": "By fieldname",
+ "allow_rename": 1,
+ "title_field": "function_name",
+ "search_fields": "function_name,category,installed_version"
+}

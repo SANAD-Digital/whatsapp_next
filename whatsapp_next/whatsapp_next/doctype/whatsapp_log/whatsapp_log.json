@@ -1,0 +1,643 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "message_tab",
+  "device",
+  "recipient_type",
+  "phone",
+  "phone_e164",
+  "jid",
+  "recipient_column",
+  "display_name",
+  "contact",
+  "message_type",
+  "content_section",
+  "body",
+  "caption",
+  "attachment",
+  "file_name",
+  "mime_type",
+  "view_once",
+  "content_column",
+  "print_format",
+  "letter_head",
+  "language",
+  "location_section",
+  "location_latitude",
+  "location_longitude",
+  "location_column",
+  "location_name",
+  "location_address",
+  "poll_section",
+  "poll_question",
+  "poll_options",
+  "poll_column",
+  "poll_allow_multiple",
+  "poll_id",
+  "delivery_tab",
+  "status",
+  "scheduled_at",
+  "queued_at",
+  "sent_at",
+  "delivered_at",
+  "read_at",
+  "delivery_column",
+  "failed_at",
+  "cancelled_at",
+  "held_at",
+  "held_reason",
+  "error_section",
+  "error_code",
+  "error_message",
+  "error_column",
+  "attempts",
+  "source_tab",
+  "source_type",
+  "reference_doctype",
+  "reference_name",
+  "template",
+  "source_column",
+  "campaign",
+  "campaign_recipient",
+  "campaign_message_idx",
+  "notification",
+  "notification_alert",
+  "command",
+  "trigger_inbound",
+  "flags_section",
+  "is_test",
+  "flags_column",
+  "is_simulated",
+  "provider_tab",
+  "queue_item",
+  "provider",
+  "provider_message_id",
+  "platform_queue_id",
+  "provider_column",
+  "platform_message_log",
+  "requested_device",
+  "device_fallback"
+ ],
+ "fields": [
+  {
+   "fieldname": "message_tab",
+   "fieldtype": "Tab Break",
+   "label": "Message"
+  },
+  {
+   "description": "Device requested",
+   "fieldname": "device",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Device",
+   "options": "WhatsApp Device",
+   "reqd": 1
+  },
+  {
+   "default": "Individual",
+   "fieldname": "recipient_type",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Recipient Type",
+   "options": "Individual\nGroup",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.recipient_type==\"Individual\"",
+   "description": "Raw as given by the caller",
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Phone"
+  },
+  {
+   "description": "Normalized on insert; required for Individual; the drawer joins WhatsApp Number on it",
+   "fieldname": "phone_e164",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Phone (E.164)",
+   "search_index": 1
+  },
+  {
+   "depends_on": "eval:doc.recipient_type==\"Group\"",
+   "description": "Group `@g.us` / LID; required for Group",
+   "fieldname": "jid",
+   "fieldtype": "Data",
+   "label": "JID"
+  },
+  {
+   "fieldname": "recipient_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Contact name or WhatsApp push name at send time",
+   "fieldname": "display_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Display Name"
+  },
+  {
+   "description": "Resolved at insert via `Contact Phone.wa_phone_e164`",
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Contact",
+   "options": "Contact"
+  },
+  {
+   "default": "Text",
+   "description": "Platform `message_type` vocabulary; `Template` is a source (`template` Link), not a type",
+   "fieldname": "message_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Message Type",
+   "options": "Text\nDocument\nImage\nVideo\nAudio\nSticker\nLocation\nPoll",
+   "reqd": 1
+  },
+  {
+   "fieldname": "content_section",
+   "fieldtype": "Section Break",
+   "label": "Content"
+  },
+  {
+   "description": "Final rendered text (Jinja already applied); PII \u2192 retention",
+   "fieldname": "body",
+   "fieldtype": "Text",
+   "label": "Body"
+  },
+  {
+   "depends_on": "eval:[\"Document\",\"Image\",\"Video\"].includes(doc.message_type)",
+   "fieldname": "caption",
+   "fieldtype": "Small Text",
+   "label": "Caption"
+  },
+  {
+   "depends_on": "eval:[\"Document\",\"Image\",\"Video\",\"Audio\",\"Sticker\"].includes(doc.message_type)",
+   "description": "Private file",
+   "fieldname": "attachment",
+   "fieldtype": "Attach",
+   "label": "Attachment"
+  },
+  {
+   "description": "Name sent to platform",
+   "fieldname": "file_name",
+   "fieldtype": "Data",
+   "label": "File Name"
+  },
+  {
+   "fieldname": "mime_type",
+   "fieldtype": "Data",
+   "label": "MIME Type"
+  },
+  {
+   "default": "0",
+   "fieldname": "view_once",
+   "fieldtype": "Check",
+   "label": "View Once"
+  },
+  {
+   "fieldname": "content_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.message_type==\"Document\"",
+   "fieldname": "print_format",
+   "fieldtype": "Link",
+   "label": "Print Format",
+   "options": "Print Format"
+  },
+  {
+   "depends_on": "eval:doc.message_type==\"Document\"",
+   "fieldname": "letter_head",
+   "fieldtype": "Link",
+   "label": "Letter Head",
+   "options": "Letter Head"
+  },
+  {
+   "description": "PDF render language",
+   "fieldname": "language",
+   "fieldtype": "Link",
+   "label": "Language",
+   "options": "Language"
+  },
+  {
+   "depends_on": "eval:doc.message_type==\"Location\"",
+   "fieldname": "location_section",
+   "fieldtype": "Section Break",
+   "label": "Location"
+  },
+  {
+   "depends_on": "eval:doc.message_type==\"Location\"",
+   "fieldname": "location_latitude",
+   "fieldtype": "Float",
+   "label": "Latitude"
+  },
+  {
+   "depends_on": "eval:doc.message_type==\"Location\"",
+   "fieldname": "location_longitude",
+   "fieldtype": "Float",
+   "label": "Longitude"
+  },
+  {
+   "fieldname": "location_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.message_type==\"Location\"",
+   "fieldname": "location_name",
+   "fieldtype": "Data",
+   "label": "Location Name"
+  },
+  {
+   "depends_on": "eval:doc.message_type==\"Location\"",
+   "fieldname": "location_address",
+   "fieldtype": "Small Text",
+   "label": "Location Address"
+  },
+  {
+   "depends_on": "eval:doc.message_type==\"Poll\"",
+   "fieldname": "poll_section",
+   "fieldtype": "Section Break",
+   "label": "Poll"
+  },
+  {
+   "depends_on": "eval:doc.message_type==\"Poll\"",
+   "fieldname": "poll_question",
+   "fieldtype": "Data",
+   "label": "Poll Question"
+  },
+  {
+   "depends_on": "eval:doc.message_type==\"Poll\"",
+   "description": "List of strings",
+   "fieldname": "poll_options",
+   "fieldtype": "JSON",
+   "label": "Poll Options"
+  },
+  {
+   "fieldname": "poll_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "depends_on": "eval:doc.message_type==\"Poll\"",
+   "fieldname": "poll_allow_multiple",
+   "fieldtype": "Check",
+   "label": "Allow Multiple Answers"
+  },
+  {
+   "depends_on": "eval:doc.message_type==\"Poll\"",
+   "description": "Provider id for `get_poll_results_api`",
+   "fieldname": "poll_id",
+   "fieldtype": "Data",
+   "label": "Poll ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "delivery_tab",
+   "fieldtype": "Tab Break",
+   "label": "Delivery"
+  },
+  {
+   "default": "Unsent",
+   "description": "Written only by `services/dispatch.py`; `Held` per D-024",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Unsent\nQueued\nSending\nSent\nDelivered\nRead\nFailed\nCancelled\nHeld",
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "description": "Empty = ASAP",
+   "fieldname": "scheduled_at",
+   "fieldtype": "Datetime",
+   "in_standard_filter": 1,
+   "label": "Scheduled At"
+  },
+  {
+   "fieldname": "queued_at",
+   "fieldtype": "Datetime",
+   "label": "Queued At",
+   "read_only": 1
+  },
+  {
+   "description": "`message.sent`",
+   "fieldname": "sent_at",
+   "fieldtype": "Datetime",
+   "label": "Sent At",
+   "read_only": 1
+  },
+  {
+   "description": "`message.delivered`",
+   "fieldname": "delivered_at",
+   "fieldtype": "Datetime",
+   "label": "Delivered At",
+   "read_only": 1
+  },
+  {
+   "description": "`message.read`",
+   "fieldname": "read_at",
+   "fieldtype": "Datetime",
+   "label": "Read At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "delivery_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "failed_at",
+   "fieldtype": "Datetime",
+   "label": "Failed At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cancelled_at",
+   "fieldtype": "Datetime",
+   "label": "Cancelled At",
+   "read_only": 1
+  },
+  {
+   "description": "`message.held`",
+   "fieldname": "held_at",
+   "fieldtype": "Datetime",
+   "label": "Held At",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.status==\"Held\"",
+   "description": "Platform `reason` on held; cleared on resume",
+   "fieldname": "held_reason",
+   "fieldtype": "Small Text",
+   "label": "Held Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error_section",
+   "fieldtype": "Section Break",
+   "label": "Errors"
+  },
+  {
+   "description": "Normalized code: `recipient_not_registered` / `device_disconnected` / `timeout` / `platform_rejected` / `invalid_template` / `insufficient_balance` / `unknown`; mapped in `services/errors.py`",
+   "fieldname": "error_code",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Error Code",
+   "read_only": 1
+  },
+  {
+   "description": "Provider text with numbers masked",
+   "fieldname": "error_message",
+   "fieldtype": "Small Text",
+   "label": "Error Message",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Dispatcher attempts",
+   "fieldname": "attempts",
+   "fieldtype": "Int",
+   "label": "Attempts",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_tab",
+   "fieldtype": "Tab Break",
+   "label": "Source"
+  },
+  {
+   "description": "Who created the row",
+   "fieldname": "source_type",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Source",
+   "options": "Quick Send\nForm\nCampaign\nNotification\nNotification Alert\nCommand Reply\nSimulator\nAPI",
+   "reqd": 1
+  },
+  {
+   "description": "Business document that triggered the message",
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Reference DocType",
+   "options": "DocType"
+  },
+  {
+   "depends_on": "eval:doc.reference_doctype",
+   "description": "`amount` is read from the document in the read layer, not stored",
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Reference Name",
+   "options": "reference_doctype"
+  },
+  {
+   "fieldname": "template",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Template",
+   "options": "WhatsApp Template"
+  },
+  {
+   "fieldname": "source_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.source_type==\"Campaign\"",
+   "fieldname": "campaign",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Campaign",
+   "options": "WhatsApp Campaign"
+  },
+  {
+   "depends_on": "eval:doc.campaign",
+   "description": "Child row `name`",
+   "fieldname": "campaign_recipient",
+   "fieldtype": "Data",
+   "label": "Campaign Recipient Row"
+  },
+  {
+   "depends_on": "eval:doc.campaign",
+   "description": "Which of the campaign's messages this is",
+   "fieldname": "campaign_message_idx",
+   "fieldtype": "Int",
+   "label": "Campaign Message #"
+  },
+  {
+   "depends_on": "eval:doc.source_type==\"Notification\"",
+   "fieldname": "notification",
+   "fieldtype": "Link",
+   "label": "Notification",
+   "options": "WhatsApp Notification"
+  },
+  {
+   "depends_on": "eval:doc.source_type==\"Notification Alert\"",
+   "fieldname": "notification_alert",
+   "fieldtype": "Link",
+   "label": "Notification Alert",
+   "options": "WhatsApp Notification Alert"
+  },
+  {
+   "depends_on": "eval:doc.source_type==\"Command Reply\"",
+   "fieldname": "command",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Command",
+   "options": "WhatsApp Command"
+  },
+  {
+   "depends_on": "eval:doc.source_type==\"Command Reply\"",
+   "description": "Reply-to; `received_at` read through the link",
+   "fieldname": "trigger_inbound",
+   "fieldtype": "Link",
+   "label": "Trigger Inbound",
+   "options": "WhatsApp Inbound Message"
+  },
+  {
+   "fieldname": "flags_section",
+   "fieldtype": "Section Break",
+   "label": "Flags"
+  },
+  {
+   "default": "0",
+   "description": "Sent via `send_message_api` from the Simulator sandbox (D-024)",
+   "fieldname": "is_test",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Test Send"
+  },
+  {
+   "fieldname": "flags_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "No real send; Simulator \"on behalf\" row",
+   "fieldname": "is_simulated",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Simulated"
+  },
+  {
+   "fieldname": "provider_tab",
+   "fieldtype": "Tab Break",
+   "label": "Provider"
+  },
+  {
+   "description": "1:1 back-link",
+   "fieldname": "queue_item",
+   "fieldtype": "Link",
+   "label": "Queue Item",
+   "options": "WhatsApp Queue Item",
+   "read_only": 1
+  },
+  {
+   "description": "Provider key at send time",
+   "fieldname": "provider",
+   "fieldtype": "Data",
+   "label": "Provider",
+   "read_only": 1
+  },
+  {
+   "description": "Key for `message.delivered/read`",
+   "fieldname": "provider_message_id",
+   "fieldtype": "Data",
+   "label": "Provider Message ID",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "description": "From `enqueue_messages_api.accepted[].queue_id`",
+   "fieldname": "platform_queue_id",
+   "fieldtype": "Data",
+   "label": "Platform Queue ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "provider_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "platform_message_log",
+   "fieldtype": "Data",
+   "label": "Platform Message Log",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.device_fallback",
+   "description": "Original device when platform fell back",
+   "fieldname": "requested_device",
+   "fieldtype": "Link",
+   "label": "Requested Device",
+   "options": "WhatsApp Device",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Platform sent from another device",
+   "fieldname": "device_fallback",
+   "fieldtype": "Check",
+   "label": "Device Fallback",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Log",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "select": 1
+  },
+  {
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Manager",
+   "select": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Agent",
+   "select": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Viewer",
+   "select": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "phone_e164,display_name",
+ "show_title_field_in_link": 1,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "display_name",
+ "track_changes": 0
+}

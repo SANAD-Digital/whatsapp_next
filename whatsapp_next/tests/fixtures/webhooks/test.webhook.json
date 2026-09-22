@@ -1,0 +1,14 @@
+{
+ "created_at": "2026-09-22 10:00:00",
+ "data": {
+  "message": "Test webhook from SND WhatsApp Platform"
+ },
+ "device": null,
+ "device_name": null,
+ "event": "test.webhook",
+ "event_id": "evt_test",
+ "integration_link": "WAIL-00001",
+ "occurred_at": "2026-09-22 10:00:00",
+ "phone_number": null,
+ "subscription": "WASUB-00001"
+}

@@ -1,0 +1,14 @@
+{
+ "chat_jid": "120363000000000001@g.us",
+ "device": "WAD-00001",
+ "device_name": "Main",
+ "event": "group.updated",
+ "event_id": "grp-0001",
+ "integration_link": "WAIL-00001",
+ "occurred_at": "2026-09-22 10:00:00",
+ "phone_number": "966500000001",
+ "status": "Connected",
+ "subject": "Sales Team",
+ "subscription": "WASUB-00001",
+ "wa_device_id": "wa-dev-1"
+}

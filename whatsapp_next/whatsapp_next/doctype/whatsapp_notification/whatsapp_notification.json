@@ -1,0 +1,368 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "field_order": [
+  "trigger_tab",
+  "notification_name",
+  "enabled",
+  "document_type",
+  "column_break_15",
+  "event",
+  "date_changed",
+  "days_in_advance",
+  "datetime_changed",
+  "minutes_offset",
+  "value_changed",
+  "method",
+  "condition_section",
+  "condition",
+  "message_tab",
+  "device",
+  "template",
+  "message",
+  "attachment_section",
+  "message_type",
+  "attach_print",
+  "print_format",
+  "column_break_16",
+  "letter_head",
+  "attach_field",
+  "recipients_tab",
+  "recipients",
+  "property_tab",
+  "set_property_after_alert",
+  "column_break_17",
+  "property_value",
+  "stats_tab",
+  "variables_count",
+  "send_count",
+  "last_sent_at",
+  "column_break_18",
+  "last_error",
+  "last_error_at"
+ ],
+ "fields": [
+  {
+   "fieldname": "trigger_tab",
+   "fieldtype": "Tab Break",
+   "label": "Trigger"
+  },
+  {
+   "fieldname": "notification_name",
+   "label": "Name",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "enabled",
+   "label": "Enabled",
+   "fieldtype": "Check",
+   "default": "1",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "document_type",
+   "label": "Document Type",
+   "fieldtype": "Link",
+   "options": "DocType",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "column_break_15",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "event",
+   "label": "Send Alert On",
+   "fieldtype": "Select",
+   "options": "New\nSave\nSubmit\nCancel\nDays Before\nDays After\nMinutes Before\nMinutes After\nValue Change\nMethod",
+   "reqd": 1,
+   "in_standard_filter": 1,
+   "description": "Save = every document; Submit = on submit; Days After + date_changed = overdue; Submit + condition = amount threshold"
+  },
+  {
+   "fieldname": "date_changed",
+   "label": "Reference Date",
+   "fieldtype": "Select",
+   "depends_on": "eval:[\"Days Before\",\"Days After\"].includes(doc.event)",
+   "description": "Options set by JS from Date fields of document_type"
+  },
+  {
+   "fieldname": "days_in_advance",
+   "label": "Days Before or After",
+   "fieldtype": "Int",
+   "default": "0",
+   "depends_on": "eval:[\"Days Before\",\"Days After\"].includes(doc.event)"
+  },
+  {
+   "fieldname": "datetime_changed",
+   "label": "Reference Datetime",
+   "fieldtype": "Select",
+   "depends_on": "eval:[\"Minutes Before\",\"Minutes After\"].includes(doc.event)"
+  },
+  {
+   "fieldname": "minutes_offset",
+   "label": "Minutes Before or After",
+   "fieldtype": "Int",
+   "default": "0",
+   "depends_on": "eval:[\"Minutes Before\",\"Minutes After\"].includes(doc.event)"
+  },
+  {
+   "fieldname": "value_changed",
+   "label": "Value Changed",
+   "fieldtype": "Select",
+   "depends_on": "eval:doc.event==\"Value Change\"",
+   "description": "Fieldname"
+  },
+  {
+   "fieldname": "method",
+   "label": "Method",
+   "fieldtype": "Data",
+   "depends_on": "eval:doc.event==\"Method\"",
+   "description": "Doc event name (e.g. on_update_after_submit), not a dotted path"
+  },
+  {
+   "fieldname": "condition_section",
+   "fieldtype": "Section Break",
+   "label": "Condition"
+  },
+  {
+   "fieldname": "condition",
+   "label": "Condition",
+   "fieldtype": "Code",
+   "options": "Python",
+   "description": "Expression over doc; safe_eval"
+  },
+  {
+   "fieldname": "message_tab",
+   "fieldtype": "Tab Break",
+   "label": "Message"
+  },
+  {
+   "fieldname": "device",
+   "label": "Device",
+   "fieldtype": "Link",
+   "options": "WhatsApp Device",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Empty = Settings.default_device"
+  },
+  {
+   "fieldname": "template",
+   "label": "Template",
+   "fieldtype": "Link",
+   "options": "WhatsApp Template",
+   "in_standard_filter": 1,
+   "description": "Preferred body source"
+  },
+  {
+   "fieldname": "message",
+   "label": "Message",
+   "fieldtype": "Code",
+   "options": "Jinja",
+   "depends_on": "eval:!doc.template",
+   "description": "Inline fallback when no template; required if template empty"
+  },
+  {
+   "fieldname": "attachment_section",
+   "fieldtype": "Section Break",
+   "label": "Attachment"
+  },
+  {
+   "fieldname": "message_type",
+   "label": "Message Type",
+   "fieldtype": "Select",
+   "options": "Text\nDocument\nImage",
+   "reqd": 1,
+   "default": "Text"
+  },
+  {
+   "fieldname": "attach_print",
+   "label": "Attach Print",
+   "fieldtype": "Check",
+   "default": "0",
+   "depends_on": "eval:doc.message_type==\"Document\""
+  },
+  {
+   "fieldname": "print_format",
+   "label": "Print Format",
+   "fieldtype": "Link",
+   "options": "Print Format",
+   "depends_on": "eval:doc.attach_print"
+  },
+  {
+   "fieldname": "column_break_16",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "letter_head",
+   "label": "Letter Head",
+   "fieldtype": "Link",
+   "options": "Letter Head",
+   "depends_on": "eval:doc.attach_print"
+  },
+  {
+   "fieldname": "attach_field",
+   "label": "Attach from Field",
+   "fieldtype": "Data",
+   "depends_on": "eval:doc.message_type!=\"Text\"",
+   "description": "Attach fieldname on the document"
+  },
+  {
+   "fieldname": "recipients_tab",
+   "fieldtype": "Tab Break",
+   "label": "Recipients"
+  },
+  {
+   "fieldname": "recipients",
+   "label": "Recipients",
+   "fieldtype": "Table",
+   "options": "WhatsApp Notification Recipient",
+   "reqd": 1,
+   "description": "At least one row"
+  },
+  {
+   "fieldname": "property_tab",
+   "fieldtype": "Tab Break",
+   "label": "Property"
+  },
+  {
+   "fieldname": "set_property_after_alert",
+   "label": "Set Property After Alert",
+   "fieldtype": "Select",
+   "description": "Fieldname on document_type"
+  },
+  {
+   "fieldname": "column_break_17",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "property_value",
+   "label": "Value To Be Set",
+   "fieldtype": "Data",
+   "depends_on": "eval:doc.set_property_after_alert"
+  },
+  {
+   "fieldname": "stats_tab",
+   "fieldtype": "Tab Break",
+   "label": "Stats"
+  },
+  {
+   "fieldname": "variables_count",
+   "label": "Variables",
+   "fieldtype": "Int",
+   "default": "0",
+   "in_list_view": 1,
+   "read_only": 1,
+   "description": "Counted from body on save"
+  },
+  {
+   "fieldname": "send_count",
+   "label": "Sends",
+   "fieldtype": "Int",
+   "default": "0",
+   "read_only": 1,
+   "description": "Lifetime counter; 30-day figure from Outbound (notification, creation)"
+  },
+  {
+   "fieldname": "last_sent_at",
+   "label": "Last Sent At",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_18",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_error",
+   "label": "Last Error",
+   "fieldtype": "Small Text",
+   "read_only": 1,
+   "description": "Render/recipient errors logged, never thrown"
+  },
+  {
+   "fieldname": "last_error_at",
+   "label": "Last Error At",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Notification",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Agent",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Viewer",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "field:notification_name",
+ "naming_rule": "By fieldname",
+ "allow_rename": 1,
+ "search_fields": "notification_name"
+}

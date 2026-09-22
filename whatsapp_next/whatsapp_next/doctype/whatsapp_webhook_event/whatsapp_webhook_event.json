@@ -1,0 +1,229 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "event_section",
+  "event_id",
+  "event_name",
+  "received_at",
+  "event_timestamp",
+  "event_column",
+  "signature_valid",
+  "timestamp_fresh",
+  "duplicate_count",
+  "routing_section",
+  "device",
+  "platform_device",
+  "client_ref",
+  "routing_column",
+  "provider_message_id",
+  "inbound_message",
+  "outbound_message",
+  "payload_section",
+  "payload",
+  "processing_section",
+  "status",
+  "error",
+  "processing_column",
+  "processed_at",
+  "processing_ms"
+ ],
+ "fields": [
+  {
+   "fieldname": "event_section",
+   "fieldtype": "Section Break",
+   "label": "Event"
+  },
+  {
+   "description": "`X-SND-Event-ID`; dedupe key",
+   "fieldname": "event_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Event ID",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "`X-SND-Event`; Data not Select so unknown/future events are storable as `Ignored`",
+   "fieldname": "event_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Event",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "received_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Received At",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "description": "From `X-SND-Timestamp`",
+   "fieldname": "event_timestamp",
+   "fieldtype": "Datetime",
+   "label": "Event Timestamp"
+  },
+  {
+   "fieldname": "event_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Invalid \u2192 row still stored with `Ignored` for forensics, payload blanked",
+   "fieldname": "signature_valid",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Signature Valid"
+  },
+  {
+   "default": "0",
+   "description": "Within \u00b15 min",
+   "fieldname": "timestamp_fresh",
+   "fieldtype": "Check",
+   "in_standard_filter": 1,
+   "label": "Timestamp Fresh"
+  },
+  {
+   "default": "0",
+   "description": "Incremented when the same `event_id` arrives again (200 returned, no reprocessing)",
+   "fieldname": "duplicate_count",
+   "fieldtype": "Int",
+   "label": "Duplicate Deliveries"
+  },
+  {
+   "fieldname": "routing_section",
+   "fieldtype": "Section Break",
+   "label": "Routing"
+  },
+  {
+   "description": "Resolved from `platform_device`; unknown \u2192 `Ignored`",
+   "fieldname": "device",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Device",
+   "options": "WhatsApp Device"
+  },
+  {
+   "description": "Raw `device` from payload",
+   "fieldname": "platform_device",
+   "fieldtype": "Data",
+   "label": "Platform Device"
+  },
+  {
+   "description": "`message.*` queue-path payloads",
+   "fieldname": "client_ref",
+   "fieldtype": "Data",
+   "label": "Client Ref",
+   "search_index": 1
+  },
+  {
+   "fieldname": "routing_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "For delivered/read/reaction routing",
+   "fieldname": "provider_message_id",
+   "fieldtype": "Data",
+   "label": "Provider Message ID"
+  },
+  {
+   "description": "Created from `message.received`/`reaction`",
+   "fieldname": "inbound_message",
+   "fieldtype": "Link",
+   "label": "Inbound Message",
+   "options": "WhatsApp Inbound Message"
+  },
+  {
+   "description": "Resolved via `client_ref` / `provider_message_id`",
+   "fieldname": "outbound_message",
+   "fieldtype": "Link",
+   "label": "Outbound Message",
+   "options": "WhatsApp Log"
+  },
+  {
+   "fieldname": "payload_section",
+   "fieldtype": "Section Break",
+   "label": "Payload"
+  },
+  {
+   "description": "Raw body; PII \u2192 purged after `webhook_event_retention_days`, blanked after processing for terminal `message.*` events",
+   "fieldname": "payload",
+   "fieldtype": "JSON",
+   "label": "Payload"
+  },
+  {
+   "fieldname": "processing_section",
+   "fieldtype": "Section Break",
+   "label": "Processing"
+  },
+  {
+   "default": "Received",
+   "description": "Written only by `services/webhook.py`",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Received\nProcessed\nIgnored\nFailed",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "depends_on": "eval:doc.status==\"Failed\"",
+   "description": "No PII",
+   "fieldname": "error",
+   "fieldtype": "Small Text",
+   "label": "Error"
+  },
+  {
+   "fieldname": "processing_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "processed_at",
+   "fieldtype": "Datetime",
+   "label": "Processed At"
+  },
+  {
+   "fieldname": "processing_ms",
+   "fieldtype": "Int",
+   "label": "Processing (ms)"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Webhook Event",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "select": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Manager",
+   "select": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "event_id,event_name",
+ "show_title_field_in_link": 1,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "event_name",
+ "track_changes": 0
+}

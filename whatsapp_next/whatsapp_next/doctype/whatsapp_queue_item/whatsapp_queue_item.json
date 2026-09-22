@@ -1,0 +1,307 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "queue_section",
+  "outbound_message",
+  "client_ref",
+  "device",
+  "campaign",
+  "queue_column",
+  "phone_e164",
+  "display_name",
+  "priority",
+  "dispatch_section",
+  "scheduled_at",
+  "status",
+  "attempts",
+  "max_attempts",
+  "next_attempt_at",
+  "dispatch_column",
+  "last_error_code",
+  "last_error",
+  "job_id",
+  "claimed_at",
+  "platform_section",
+  "batch_id",
+  "platform_column",
+  "platform_queue_id",
+  "state_section",
+  "paused_by",
+  "paused_at",
+  "pause_reason",
+  "deleted_by",
+  "deleted_at",
+  "state_column",
+  "delete_reason",
+  "dead_letter_reason",
+  "completed_at"
+ ],
+ "fields": [
+  {
+   "fieldname": "queue_section",
+   "fieldtype": "Section Break",
+   "label": "Queue Item"
+  },
+  {
+   "description": "1:1",
+   "fieldname": "outbound_message",
+   "fieldtype": "Link",
+   "label": "Outbound Message",
+   "options": "WhatsApp Log",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "description": "= `outbound_message` name; sent to platform (D-024)",
+   "fieldname": "client_ref",
+   "fieldtype": "Data",
+   "label": "Client Ref",
+   "reqd": 1
+  },
+  {
+   "description": "Denormalized for claim query + User Permissions",
+   "fieldname": "device",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Device",
+   "options": "WhatsApp Device",
+   "reqd": 1
+  },
+  {
+   "fieldname": "campaign",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Campaign",
+   "options": "WhatsApp Campaign"
+  },
+  {
+   "fieldname": "queue_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Denormalized",
+   "fieldname": "phone_e164",
+   "fieldtype": "Data",
+   "label": "Phone (E.164)"
+  },
+  {
+   "description": "Denormalized",
+   "fieldname": "display_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Display Name"
+  },
+  {
+   "default": "5",
+   "description": "1 = highest; Quick Send/Command Reply 1, Notification 3, Campaign 5",
+   "fieldname": "priority",
+   "fieldtype": "Int",
+   "label": "Priority",
+   "reqd": 1
+  },
+  {
+   "fieldname": "dispatch_section",
+   "fieldtype": "Section Break",
+   "label": "Dispatch"
+  },
+  {
+   "description": "Earliest dispatch time",
+   "fieldname": "scheduled_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Scheduled At",
+   "reqd": 1
+  },
+  {
+   "default": "Queued",
+   "description": "Written only by `services/dispatch.py`",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Queued\nSending\nPaused\nDeleted\nCompleted\nDead Letter",
+   "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "attempts",
+   "fieldtype": "Int",
+   "label": "Attempts"
+  },
+  {
+   "description": "Copied from Settings at create",
+   "fieldname": "max_attempts",
+   "fieldtype": "Int",
+   "label": "Max Attempts",
+   "reqd": 1
+  },
+  {
+   "description": "Set on transient failure",
+   "fieldname": "next_attempt_at",
+   "fieldtype": "Datetime",
+   "label": "Next Attempt At",
+   "search_index": 1
+  },
+  {
+   "fieldname": "dispatch_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Normalized code",
+   "fieldname": "last_error_code",
+   "fieldtype": "Data",
+   "in_standard_filter": 1,
+   "label": "Last Error Code"
+  },
+  {
+   "description": "No PII",
+   "fieldname": "last_error",
+   "fieldtype": "Small Text",
+   "label": "Last Error"
+  },
+  {
+   "description": "Job that claimed the row",
+   "fieldname": "job_id",
+   "fieldtype": "Data",
+   "label": "RQ Job ID"
+  },
+  {
+   "description": "Claim time; stale claims (> 10 min) re-queued by reconcile",
+   "fieldname": "claimed_at",
+   "fieldtype": "Datetime",
+   "label": "Claimed At"
+  },
+  {
+   "fieldname": "platform_section",
+   "fieldtype": "Section Break",
+   "label": "Platform"
+  },
+  {
+   "description": "Platform batch",
+   "fieldname": "batch_id",
+   "fieldtype": "Data",
+   "label": "Batch ID",
+   "search_index": 1
+  },
+  {
+   "fieldname": "platform_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "From `accepted[].queue_id`",
+   "fieldname": "platform_queue_id",
+   "fieldtype": "Data",
+   "label": "Platform Queue ID"
+  },
+  {
+   "fieldname": "state_section",
+   "fieldtype": "Section Break",
+   "label": "State Details"
+  },
+  {
+   "depends_on": "eval:doc.status==\"Paused\"",
+   "fieldname": "paused_by",
+   "fieldtype": "Link",
+   "label": "Paused By",
+   "options": "User"
+  },
+  {
+   "depends_on": "eval:doc.status==\"Paused\"",
+   "fieldname": "paused_at",
+   "fieldtype": "Datetime",
+   "label": "Paused At"
+  },
+  {
+   "depends_on": "eval:doc.status==\"Paused\"",
+   "fieldname": "pause_reason",
+   "fieldtype": "Small Text",
+   "label": "Pause Reason"
+  },
+  {
+   "depends_on": "eval:doc.status==\"Deleted\"",
+   "fieldname": "deleted_by",
+   "fieldtype": "Link",
+   "label": "Deleted By",
+   "options": "User"
+  },
+  {
+   "depends_on": "eval:doc.status==\"Deleted\"",
+   "fieldname": "deleted_at",
+   "fieldtype": "Datetime",
+   "label": "Deleted At"
+  },
+  {
+   "fieldname": "state_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.status==\"Deleted\"",
+   "description": "Audit `Queue Items Deleted`",
+   "fieldname": "delete_reason",
+   "fieldtype": "Small Text",
+   "label": "Delete Reason"
+  },
+  {
+   "depends_on": "eval:doc.status==\"Dead Letter\"",
+   "fieldname": "dead_letter_reason",
+   "fieldtype": "Small Text",
+   "label": "Dead Letter Reason"
+  },
+  {
+   "depends_on": "eval:doc.status==\"Completed\"",
+   "description": "Platform accepted the ref",
+   "fieldname": "completed_at",
+   "fieldtype": "Datetime",
+   "label": "Completed At"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Queue Item",
+ "naming_rule": "Random",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "select": 1
+  },
+  {
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Manager",
+   "select": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Agent",
+   "select": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Viewer",
+   "select": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "search_fields": "display_name",
+ "show_title_field_in_link": 1,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "display_name",
+ "track_changes": 0
+}

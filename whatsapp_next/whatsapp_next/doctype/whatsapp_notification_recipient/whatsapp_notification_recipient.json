@@ -1,0 +1,86 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "field_order": [
+  "recipient_type",
+  "receiver_by_document_field",
+  "linked_document_field",
+  "linked_mobile_fieldname",
+  "phone",
+  "phone_e164",
+  "condition"
+ ],
+ "fields": [
+  {
+   "fieldname": "recipient_type",
+   "label": "Recipient Type",
+   "fieldtype": "Select",
+   "options": "Document Field\nLinked Document Field\nFixed Number",
+   "reqd": 1,
+   "default": "Document Field",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "receiver_by_document_field",
+   "label": "Document Field",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "depends_on": "eval:doc.recipient_type==\"Document Field\"",
+   "description": "Phone or Link-to-Contact field on the parent's document_type (options by JS)"
+  },
+  {
+   "fieldname": "linked_document_field",
+   "label": "Linked Document Field",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "depends_on": "eval:doc.recipient_type==\"Linked Document Field\"",
+   "description": "Link field on the document"
+  },
+  {
+   "fieldname": "linked_mobile_fieldname",
+   "label": "Mobile Fieldname on Linked Doc",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "depends_on": "eval:doc.recipient_type==\"Linked Document Field\""
+  },
+  {
+   "fieldname": "phone",
+   "label": "Phone",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "depends_on": "eval:doc.recipient_type==\"Fixed Number\"",
+   "description": "Raw"
+  },
+  {
+   "fieldname": "phone_e164",
+   "label": "Phone (E.164)",
+   "fieldtype": "Data",
+   "read_only": 1,
+   "depends_on": "eval:doc.recipient_type==\"Fixed Number\"",
+   "description": "Normalized on save"
+  },
+  {
+   "fieldname": "condition",
+   "label": "Condition",
+   "fieldtype": "Code",
+   "options": "Python",
+   "description": "Row-level condition over doc"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Notification Recipient",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0,
+ "istable": 1,
+ "editable_grid": 1
+}

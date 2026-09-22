@@ -1,0 +1,221 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "field_order": [
+  "event_section",
+  "action",
+  "severity",
+  "summary",
+  "column_break_1",
+  "user",
+  "job_name",
+  "timestamp",
+  "references_section",
+  "reference_doctype",
+  "reference_name",
+  "column_break_2",
+  "target_doctype",
+  "target_name",
+  "details_section",
+  "fields_written",
+  "reason",
+  "column_break_3",
+  "count",
+  "ip_address",
+  "details_json_section",
+  "details"
+ ],
+ "fields": [
+  {
+   "fieldname": "event_section",
+   "fieldtype": "Section Break",
+   "label": "Event"
+  },
+  {
+   "fieldname": "action",
+   "label": "Action",
+   "fieldtype": "Select",
+   "options": "Device Created\nDevice Connected\nDevice Disconnected\nDevice Deleted\nCredentials Changed\nSettings Changed\nWebhook Changed\nConnection Tested\nQueue Paused\nQueue Resumed\nQueue Rate Changed\nQueue Items Deleted\nQueue Items Retried\nCampaign Started\nCampaign Paused\nCampaign Resumed\nCampaign Cancelled\nCampaign Recipients Changed\nContact Group Members Changed\nBulk Send\nTest Send\nElevated Contact Read\nElevated Contact Write\nNumber Linked\nNumber Converted\nConversation Confirmed\nFunction Installed\nFunction Updated\nFunction Removed\nCommand Changed\nCommand Defaults Restored\nRetention Purge",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "severity",
+   "label": "Severity",
+   "fieldtype": "Select",
+   "options": "Info\nAction\nWarning\nDanger",
+   "reqd": 1,
+   "default": "Action",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Prototype tone"
+  },
+  {
+   "fieldname": "summary",
+   "label": "Summary",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "Template key + args rendered at read time via __(); no PII (phones masked)"
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "user",
+   "label": "User",
+   "fieldtype": "Link",
+   "options": "User",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "frappe.session.user; scheduler = Administrator with job_name set"
+  },
+  {
+   "fieldname": "job_name",
+   "label": "Job Name",
+   "fieldtype": "Data",
+   "description": "Scheduler/RQ job when system-initiated"
+  },
+  {
+   "fieldname": "timestamp",
+   "label": "Timestamp",
+   "fieldtype": "Datetime",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1,
+   "description": "= creation; explicit for reports"
+  },
+  {
+   "fieldname": "references_section",
+   "fieldtype": "Section Break",
+   "label": "References"
+  },
+  {
+   "fieldname": "reference_doctype",
+   "label": "Reference DocType",
+   "fieldtype": "Link",
+   "options": "DocType",
+   "in_standard_filter": 1,
+   "description": "Acted-on record"
+  },
+  {
+   "fieldname": "reference_name",
+   "label": "Reference Name",
+   "fieldtype": "Dynamic Link",
+   "options": "reference_doctype",
+   "depends_on": "eval:doc.reference_doctype"
+  },
+  {
+   "fieldname": "column_break_2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "target_doctype",
+   "label": "Target DocType",
+   "fieldtype": "Link",
+   "options": "DocType",
+   "description": "Secondary record (e.g. Contact created from Number)"
+  },
+  {
+   "fieldname": "target_name",
+   "label": "Target Name",
+   "fieldtype": "Dynamic Link",
+   "options": "target_doctype",
+   "depends_on": "eval:doc.target_doctype"
+  },
+  {
+   "fieldname": "details_section",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "fieldname": "fields_written",
+   "label": "Fields Written",
+   "fieldtype": "Small Text",
+   "description": "Fieldnames only, never values"
+  },
+  {
+   "fieldname": "reason",
+   "label": "Reason",
+   "fieldtype": "Small Text",
+   "description": "User-entered reason (pause/cancel/delete)"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "count",
+   "label": "Count",
+   "fieldtype": "Int",
+   "description": "Rows affected for bulk actions"
+  },
+  {
+   "fieldname": "ip_address",
+   "label": "IP Address",
+   "fieldtype": "Data",
+   "description": "frappe.local.request_ip"
+  },
+  {
+   "fieldname": "details_json_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "details",
+   "label": "Details",
+   "fieldtype": "JSON",
+   "description": "Structured, no PII (ids, counts, old/new for non-secret settings)"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Audit Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "export": 1,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Manager",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "export": 1,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0,
+ "autoname": "hash",
+ "naming_rule": "Random",
+ "title_field": "summary",
+ "show_title_field_in_link": 1,
+ "search_fields": "summary",
+ "in_create": 1
+}

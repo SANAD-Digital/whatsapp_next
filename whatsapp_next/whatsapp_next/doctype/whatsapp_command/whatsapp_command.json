@@ -1,0 +1,258 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "field_order": [
+  "command_section",
+  "code",
+  "title",
+  "function",
+  "column_break_12",
+  "status",
+  "synonyms",
+  "access_section",
+  "requires_linked_contact",
+  "allowed_party_types",
+  "allowed_group",
+  "column_break_13",
+  "blocked_group",
+  "reply_device",
+  "overrides_section",
+  "settings_overrides",
+  "outputs",
+  "notes_section",
+  "description",
+  "stats_section",
+  "run_count",
+  "column_break_14",
+  "last_run_at",
+  "defaults_restored_at"
+ ],
+ "fields": [
+  {
+   "fieldname": "command_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "code",
+   "label": "Command Word",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1,
+   "description": "Casefolded + trimmed on save; unique against every other command's code and synonyms"
+  },
+  {
+   "fieldname": "title",
+   "label": "Title",
+   "fieldtype": "Data",
+   "description": "Human label; default = code"
+  },
+  {
+   "fieldname": "function",
+   "label": "Function",
+   "fieldtype": "Link",
+   "options": "WhatsApp Function",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "description": "Only Active functions on create; the list warns when the function is inactive"
+  },
+  {
+   "fieldname": "column_break_12",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "status",
+   "label": "Status",
+   "fieldtype": "Select",
+   "options": "Active\nInactive",
+   "reqd": 1,
+   "default": "Inactive",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "search_index": 1,
+   "description": "Inactive ↔ Active via action only"
+  },
+  {
+   "fieldname": "synonyms",
+   "label": "Synonyms",
+   "fieldtype": "Small Text",
+   "in_list_view": 1,
+   "description": "One per line; casefolded; unique across commands"
+  },
+  {
+   "fieldname": "access_section",
+   "fieldtype": "Section Break",
+   "label": "Access"
+  },
+  {
+   "fieldname": "requires_linked_contact",
+   "label": "Requires Linked Contact",
+   "fieldtype": "Check",
+   "default": "1",
+   "in_standard_filter": 1,
+   "description": "Sender's phone_e164 must resolve to a Contact with a party of an allowed type"
+  },
+  {
+   "fieldname": "allowed_party_types",
+   "label": "Allowed Party Types",
+   "fieldtype": "Table MultiSelect",
+   "options": "WhatsApp Command Party Type",
+   "description": "Empty = all"
+  },
+  {
+   "fieldname": "allowed_group",
+   "label": "Allowed Group",
+   "fieldtype": "Link",
+   "options": "WhatsApp Contact Group",
+   "description": "Whitelist; empty = everyone not blocked"
+  },
+  {
+   "fieldname": "column_break_13",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "blocked_group",
+   "label": "Blocked Group",
+   "fieldtype": "Link",
+   "options": "WhatsApp Contact Group",
+   "description": "In addition to Settings.global_blacklist_group"
+  },
+  {
+   "fieldname": "reply_device",
+   "label": "Reply Device",
+   "fieldtype": "Link",
+   "options": "WhatsApp Device",
+   "description": "Overrides Settings; empty = receiving device"
+  },
+  {
+   "fieldname": "overrides_section",
+   "fieldtype": "Section Break",
+   "label": "Overrides"
+  },
+  {
+   "fieldname": "settings_overrides",
+   "label": "Settings Overrides",
+   "fieldtype": "JSON",
+   "description": "{key: value}; keys validated against function.settings"
+  },
+  {
+   "fieldname": "outputs",
+   "label": "Outputs",
+   "fieldtype": "Table",
+   "options": "WhatsApp Function Output",
+   "description": "Copied from Function on create; \"restore defaults\" re-copies"
+  },
+  {
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "description",
+   "label": "Description",
+   "fieldtype": "Small Text"
+  },
+  {
+   "fieldname": "stats_section",
+   "fieldtype": "Section Break",
+   "label": "Stats"
+  },
+  {
+   "fieldname": "run_count",
+   "label": "Runs",
+   "fieldtype": "Int",
+   "default": "0",
+   "read_only": 1,
+   "description": "Lifetime counter; 30-day figure derived from Inbound (command, received_at)"
+  },
+  {
+   "fieldname": "column_break_14",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_run_at",
+   "label": "Last Run At",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "defaults_restored_at",
+   "label": "Defaults Restored At",
+   "fieldtype": "Datetime",
+   "read_only": 1,
+   "description": "Audit: Command Defaults Restored"
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Command",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Agent",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  },
+  {
+   "role": "WhatsApp Viewer",
+   "read": 1,
+   "write": 0,
+   "create": 0,
+   "delete": 0,
+   "export": 0,
+   "print": 0,
+   "report": 1,
+   "email": 0,
+   "share": 0,
+   "select": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1,
+ "autoname": "field:code",
+ "naming_rule": "By fieldname",
+ "allow_rename": 1,
+ "title_field": "title",
+ "search_fields": "code,title"
+}

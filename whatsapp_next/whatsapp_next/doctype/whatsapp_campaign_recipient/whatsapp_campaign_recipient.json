@@ -1,0 +1,170 @@
+{
+ "actions": [],
+ "creation": "2026-09-22 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "field_order": [
+  "recipient_type",
+  "phone",
+  "phone_e164",
+  "jid",
+  "display_name",
+  "contact",
+  "source_type",
+  "contact_group",
+  "source_doctype",
+  "source_name",
+  "status",
+  "outbound_message",
+  "error_code",
+  "added_by",
+  "added_at",
+  "removed_by",
+  "removed_at"
+ ],
+ "fields": [
+  {
+   "fieldname": "recipient_type",
+   "label": "Recipient Type",
+   "fieldtype": "Select",
+   "options": "Individual\nGroup",
+   "reqd": 1,
+   "default": "Individual",
+   "description": "Group rows come from picker source \"device groups\""
+  },
+  {
+   "fieldname": "phone",
+   "label": "Phone",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "description": "Raw as imported"
+  },
+  {
+   "fieldname": "phone_e164",
+   "label": "Phone (E.164)",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "search_index": 1,
+   "description": "Required for Individual; duplicate flag key"
+  },
+  {
+   "fieldname": "jid",
+   "label": "JID",
+   "fieldtype": "Data",
+   "depends_on": "eval:doc.recipient_type==\"Group\""
+  },
+  {
+   "fieldname": "display_name",
+   "label": "Display Name",
+   "fieldtype": "Data",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "contact",
+   "label": "Contact",
+   "fieldtype": "Link",
+   "options": "Contact",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "source_type",
+   "label": "Source",
+   "fieldtype": "Select",
+   "options": "Contact Group\nContact\nDocType\nExcel\nvCard\nManual",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "Picker source used"
+  },
+  {
+   "fieldname": "contact_group",
+   "label": "Contact Group",
+   "fieldtype": "Link",
+   "options": "WhatsApp Contact Group",
+   "depends_on": "eval:doc.source_type==\"Contact Group\""
+  },
+  {
+   "fieldname": "source_doctype",
+   "label": "Source DocType",
+   "fieldtype": "Link",
+   "options": "DocType",
+   "depends_on": "eval:doc.source_type==\"DocType\""
+  },
+  {
+   "fieldname": "source_name",
+   "label": "Source Document",
+   "fieldtype": "Dynamic Link",
+   "options": "source_doctype",
+   "depends_on": "eval:doc.source_type==\"DocType\"",
+   "description": "Print-format context for Document messages"
+  },
+  {
+   "fieldname": "status",
+   "label": "Status",
+   "fieldtype": "Select",
+   "options": "Pending\nQueued\nSent\nDelivered\nRead\nFailed\nCancelled\nRemoved",
+   "reqd": 1,
+   "default": "Pending",
+   "in_list_view": 1,
+   "read_only": 1,
+   "search_index": 1,
+   "description": "Aggregate of this recipient's Outbound rows (worst-of when multi-message)"
+  },
+  {
+   "fieldname": "outbound_message",
+   "label": "Last Outbound",
+   "fieldtype": "Link",
+   "options": "WhatsApp Log",
+   "read_only": 1,
+   "description": "Last Outbound created for the row"
+  },
+  {
+   "fieldname": "error_code",
+   "label": "Error Code",
+   "fieldtype": "Data",
+   "read_only": 1,
+   "depends_on": "eval:doc.status==\"Failed\""
+  },
+  {
+   "fieldname": "added_by",
+   "label": "Added By",
+   "fieldtype": "Link",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "added_at",
+   "label": "Added At",
+   "fieldtype": "Datetime",
+   "read_only": 1
+  },
+  {
+   "fieldname": "removed_by",
+   "label": "Removed By",
+   "fieldtype": "Link",
+   "options": "User",
+   "read_only": 1,
+   "depends_on": "eval:doc.status==\"Removed\""
+  },
+  {
+   "fieldname": "removed_at",
+   "label": "Removed At",
+   "fieldtype": "Datetime",
+   "read_only": 1,
+   "depends_on": "eval:doc.status==\"Removed\""
+  }
+ ],
+ "links": [],
+ "modified": "2026-09-22 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Campaign Recipient",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0,
+ "istable": 1,
+ "editable_grid": 1
+}

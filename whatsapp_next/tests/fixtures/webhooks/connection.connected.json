@@ -1,0 +1,13 @@
+{
+ "device": "WAD-00001",
+ "device_name": "Main",
+ "event": "connection.connected",
+ "event_id": "conn-0001",
+ "integration_link": "WAIL-00001",
+ "last_status_reason": "wa-admin webhook",
+ "occurred_at": "2026-09-22 10:00:00",
+ "phone_number": "966500000001",
+ "status": "Connected",
+ "subscription": "WASUB-00001",
+ "wa_device_id": "wa-dev-1"
+}
