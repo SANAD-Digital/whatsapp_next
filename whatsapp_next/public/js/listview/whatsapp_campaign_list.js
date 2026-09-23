@@ -69,6 +69,9 @@ function bind_edit_chips($root, listview) {
 // ---- the campaigns console -------------------------------------------------------------------
 
 const OVERVIEW_DAYS = 30;
+/** How much of the screen the console may claim: the prototype's one live strip, three in all. */
+const LIVE_STRIPS = 2;
+const STRIP_BUDGET = 3;
 const overview_state = { promise: null, at: 0 };
 const OVERVIEW_TTL = 15000;
 
@@ -390,15 +393,31 @@ function render_console($el, header) {
 	if (!$el.children().length) new sanad.ui.EmptyState({ wrapper: $el, state: "loading", size: "sm", rows: 2 });
 	return Promise.all([overview(), sanad.ui.call("campaigns.get_sending_now", {}, { silent: true })])
 		.then(([o, rows]) => {
-			const live = (rows || []).filter((r) => ["Running", "Queued", "Paused"].includes(r.status));
+			// `Paused` is stated by the metric row ("2 paused"); the strips are for what moves
+			const live = (rows || []).filter((r) => ["Running", "Queued"].includes(r.status));
 			$el.html(`<section class="wa-ops">${metrics_html(o)}</section>
 				<div class="wa-strips"></div>
 				${foot_html(o)}`);
 			$el.find("[data-go=failed]").on("click", () => frappe.set_route("List", "WhatsApp Log", { status: "Failed" }));
 
+			// The console must not eat the table. The prototype shows the campaign that is sending
+			// and the next scheduled ones — not one strip per campaign in flight — so at most two
+			// live strips are drawn and the rest are counted in a line (owner: five strips pushed
+			// the table down to two clipped rows, 2026-09-24).
 			const $strips = $el.find(".wa-strips").data("header", header);
-			live.forEach((row) => $strips.append(live_strip(row, header)));
-			return render_next($strips, live.length);
+			const shown = live.slice(0, LIVE_STRIPS);
+			shown.forEach((row) => $strips.append(live_strip(row, header)));
+			if (live.length > shown.length) {
+				$strips.append(
+					`<p class="wa-strips__more">${esc(
+						sanad.ui.plural(live.length - shown.length, {
+							one: __("{0} more campaign is sending — it is in the list below."),
+							other: __("{0} more campaigns are sending — they are in the list below."),
+						})
+					)}</p>`
+				);
+			}
+			return render_next($strips, shown.length);
 		})
 		.catch((err) => {
 			new sanad.ui.EmptyState({
@@ -413,7 +432,7 @@ function render_console($el, header) {
 
 /** The campaigns waiting for their hour — the prototype shows up to three, then counts the rest. */
 function render_next($strips, live_count) {
-	const LIMIT = live_count ? 2 : 3;
+	const LIMIT = Math.max(1, STRIP_BUDGET - live_count);
 	return Promise.all([
 		frappe.db.get_list("WhatsApp Campaign", {
 			filters: { status: "Scheduled" },

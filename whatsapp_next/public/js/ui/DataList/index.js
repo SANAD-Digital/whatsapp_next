@@ -9,7 +9,7 @@
 import ui from "../_core/index.js";
 
 /** The table never gets less than this, however tall the console above it is. */
-const MIN_TABLE_HEIGHT = 320;
+const MIN_TABLE_HEIGHT = 280;
 
 const CONTROL_SELECTOR = "a, button, input, select, textarea, label, .sanad-datalist__action, [data-toggle]";
 
