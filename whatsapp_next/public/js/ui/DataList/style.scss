@@ -70,8 +70,12 @@
 			[dir="rtl"] & { box-shadow: inset -1px 0 0 var(--outline-gray-1); }
 		}
 	}
+	// Stacking ladder inside the table (it has its own stacking context, see `__wrap`):
+	//   0 body cell · 2 pinned body cell · 3 checkbox/action body cell · 5 group row
+	//   8 header · 9 pinned header · 10 checkbox/action header
+	// The sticky checkbox and action cells must stay BELOW a group row, or they float over it.
 	thead th.sanad-datalist__th--check, thead th.sanad-datalist__th--action { z-index: 10; background-color: var(--surface-gray-2); }
-	tbody td.sanad-datalist__td--check, tbody td.sanad-datalist__td--action { z-index: 6; background-color: var(--surface-white); }
+	tbody td.sanad-datalist__td--check, tbody td.sanad-datalist__td--action { z-index: 3; background-color: var(--surface-white); }
 	&__row:hover td.sanad-datalist__td--check, &__row:hover td.sanad-datalist__td--action { background-color: var(--surface-gray-1); }
 	&__row:has(.list-row-checkbox:checked) td.sanad-datalist__td--check,
 	&__row:has(.list-row-checkbox:checked) td.sanad-datalist__td--action { background-color: var(--sanad-accent-soft); }
@@ -183,7 +187,7 @@
 	tbody tr.sanad-datalist__group td {
 		position: sticky;
 		inset-block-start: var(--sanad-head-h);
-		z-index: 4;
+		z-index: 5; // above every body cell, below the header
 		height: 36px;
 		padding: 0;
 		// only a rule above: the one below sat between the group and its own rows and read as a
@@ -283,7 +287,7 @@
 	// fill is set per row state, with the accent tint painted on top of it, never instead of it.
 	tbody td.sanad-datalist__td--pinned {
 		position: sticky;
-		z-index: 3;
+		z-index: 2;
 		background-color: var(--surface-white);
 		background-image: linear-gradient(
 			color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-white)),

@@ -42,6 +42,19 @@ Bundle as `whatsapp_next.bundle.js`, load via `app_include_js`, expose on one na
 - be keyboard accessible;
 - use realtime wherever the prototype shows live state.
 
+## The list table's stacking ladder (D-076)
+`DataList` renders sticky headers, sticky pinned columns, a sticky checkbox and action column and
+sticky group rows in one table. Changing one z-index in isolation has broken the grouped view more
+than once, so the order is fixed and written in `DataList/style.scss`:
+
+    0 body cell · 2 pinned body cell · 3 checkbox/action body cell · 5 group row
+    8 header · 9 pinned header · 10 checkbox/action header
+
+All of it lives inside `.sanad-datalist__wrap`, which is its own stacking context, so nothing here
+can ever paint over Desk's menus. After touching `DataList` or `FilterBar`, run
+`scripts/list_checks.mjs` — it hit-tests the sticky group row and checks the toolbar, the group
+tree and group selection.
+
 ## Design quality gate (D-029c, D-030)
 Before a kit component or custom Page is ticked in `plan/10-build-order.md`:
 - query `ui-ux-pro-max` (project copy in `.claude/skills/ui-ux-pro-max/`, `ux`/`product`/`chart`/`icons` domains
