@@ -371,16 +371,264 @@ function metrics_html(o) {
 		</div>`;
 }
 
-/** The line under the console: what is not sending yet. */
-function foot_html(o) {
-	const states = (o && o.states) || {};
-	return `<p class="wa-camp__foot wa-ops__sub">${esc(
-		__("{0} scheduled · {1} drafts · {2} finished", [
-			fmt_int(states.Scheduled),
-			fmt_int(states.Draft),
-			fmt_int(cint(states.Completed) + cint(states["Partially Failed"])),
-		])
-	)}</p>`;
+/**
+ * The prototype's four-segment bar (`docs/screen/Hub Screen - Campaigns.dc.html`): read, then
+ * delivered, then sent-but-not-yet-delivered, then failed — each as a share of the recipients, so
+ * the bar is the campaign's funnel and the empty tail is what has not gone out yet.
+ */
+function bar_html(doc, { paused } = {}) {
+	const total = Math.max(cint(doc.total_recipients), 1);
+	const w = (n) => `${Math.max(0, (cint(n) * 100) / total).toFixed(2)}%`;
+	return `<span class="wa-strip__bar${paused ? " wa-strip__bar--paused" : ""}" role="img"
+			aria-label="${esc(__("{0} sent, {1} delivered, {2} read, {3} failed, of {4} recipients", [
+				fmt_int(handed_of_doc(doc)), fmt_int(doc.delivered_count), fmt_int(doc.read_count), fmt_int(doc.failed_count), fmt_int(doc.total_recipients),
+			]))}">
+		<span class="wa-strip__seg wa-strip__seg--read" style="inline-size:${w(doc.read_count)}"></span>
+		<span class="wa-strip__seg wa-strip__seg--delivered" style="inline-size:${w(doc.delivered_count)}"></span>
+		<span class="wa-strip__seg wa-strip__seg--sent" style="inline-size:${w(doc.sent_count)}"></span>
+		<span class="wa-strip__seg wa-strip__seg--failed" style="inline-size:${w(doc.failed_count)}"></span>
+	</span>`;
+}
+
+/** The same bar inside a table cell, with the prototype's "sent / recipients" label above it. */
+function progress_html(doc, { tone } = {}) {
+	if (!cint(doc.total_recipients)) return `<span class="text-muted">—</span>`;
+	return `<span class="wa-strip__cell">
+		<span class="wa-strip__cell-label sanad-tabular">${esc(fmt_int(handed_of_doc(doc)))} / ${esc(fmt_int(doc.total_recipients))}</span>
+		${bar_html(doc, { paused: tone === "amber" })}
+	</span>`;
+}
+
+/** The counters the prototype prints beside the bar: label above the number, four of them. */
+function stats_html(doc) {
+	const items = [
+		{ label: __("Sent"), value: handed_of_doc(doc) },
+		{ label: __("Delivered"), value: cint(doc.delivered_count) + cint(doc.read_count) },
+		{ label: __("Read"), value: cint(doc.read_count), tone: "green" },
+		{ label: __("Failed"), value: cint(doc.failed_count), tone: cint(doc.failed_count) ? "red" : "" },
+	];
+	return items
+		.map(
+			(s) => `<span class="wa-strip__stat">
+				<span class="wa-strip__stat-label">${esc(s.label)}</span>
+				<span class="wa-strip__stat-value sanad-tabular${s.tone ? ` sanad-tone--${s.tone}` : ""}">${esc(fmt_int(s.value))}</span>
+			</span>`
+		)
+		.join("");
+}
+
+/** "N messages left — about 12 min at 20/min from device X." */
+function eta_text(doc, progress) {
+	const rates = (progress && progress.rates) || {};
+	const counters = (progress && progress.counters) || {};
+	const remaining = counters.open != null ? cint(counters.open) : Math.max(0, cint(doc.total_recipients) - handed_of_doc(doc) - cint(doc.failed_count));
+	const rate = cint(rates.messages_per_minute) || cint(doc.messages_per_minute) || 20;
+	if (!remaining) return __("Everything has been handed to the queue.");
+	const minutes = remaining / Math.max(rate, 1);
+	return __("{0} left — about {1} at {2}/min from device {3}.", [
+		sanad.ui.plural(remaining, { one: __("{0} message"), other: __("{0} messages") }),
+		minutes < 60 ? __("{0} min", [fmt_int(Math.round(minutes))]) : __("{0} h", [fmt_int(Math.round(minutes / 60))]),
+		fmt_int(rate),
+		esc(device_title(doc.device) || "—"),
+	]);
+}
+
+/** The running campaign, as the prototype draws it: one line, then the sentence under it. */
+function live_strip(row, header) {
+	const doc = Object.assign({}, row, counters_as_doc(row));
+	const paused = row.status === "Paused";
+	const $strip = $(`
+		<div class="wa-strip${paused ? " wa-strip--paused" : ""}">
+			<div class="wa-strip__line">
+				<span class="wa-strip__title">
+					<span class="wa-strip__dot" aria-hidden="true"></span>
+					<a class="wa-strip__name" href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${esc(row.campaign_name || row.name)}</a>
+					<span class="wa-strip__badge">${esc(paused ? __("Paused") : __("Running now"))}</span>
+				</span>
+				<span class="wa-strip__progress">
+					${bar_html(doc, { paused })}
+					<span class="wa-strip__progress-text sanad-tabular">${esc(fmt_int(handed_of_doc(doc)))} / ${esc(fmt_int(doc.total_recipients))} · ${esc(pct_text(handed_of_doc(doc), doc.total_recipients))}</span>
+				</span>
+				<span class="wa-strip__stats">${stats_html(doc)}</span>
+				<span class="wa-strip__actions"></span>
+			</div>
+			<p class="wa-strip__foot" aria-live="polite" dir="auto"></p>
+		</div>`);
+
+	const $actions = $strip.find(".wa-strip__actions");
+	if (is_manager()) {
+		const label = paused ? __("Resume") : __("Pause");
+		$(`<button type="button" class="btn btn-default btn-sm">${esc(label)}</button>`)
+			.on("click", () => (paused ? resume_campaign(row, header) : pause_campaign(row, doc, header)))
+			.appendTo($actions);
+	}
+	$(`<button type="button" class="btn btn-primary btn-sm">${esc(__("Outbound log"))}</button>`)
+		.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: row.name }))
+		.appendTo($actions);
+
+	$strip.find(".wa-strip__foot").text(eta_text(doc, null));
+	sanad.ui
+		.call("campaigns.get_progress", { name: row.name }, { silent: true })
+		.then((p) => $strip.find(".wa-strip__foot").text(eta_text(doc, p)))
+		.catch(() => {});
+	return $strip;
+}
+
+/** A campaign waiting for its hour, as the prototype draws it. */
+function scheduled_strip(row, header) {
+	const when = row.scheduled_at ? `${frappe.datetime.str_to_user(row.scheduled_at).slice(0, 10)} ${row.scheduled_at.slice(11, 16)}` : "—";
+	const days = row.scheduled_at ? frappe.datetime.get_day_diff(row.scheduled_at, frappe.datetime.now_datetime()) : null;
+	const relative =
+		days == null
+			? ""
+			: days < 0
+				? __("the time has passed — waiting to resume")
+				: days === 0
+					? __("today")
+					: days === 1
+						? __("tomorrow")
+						: __("in {0} days", [fmt_int(days)]);
+	const meta = [
+		relative,
+		sanad.ui.plural(cint(row.total_recipients), { one: __("{0} recipient"), other: __("{0} recipients") }),
+		device_title(row.device),
+		cint(row.pause_count) ? __("edited {0} times", [fmt_int(row.pause_count)]) : "",
+	]
+		.filter(Boolean)
+		.join(" · ");
+
+	const $strip = $(`
+		<div class="wa-strip wa-strip--scheduled">
+			<div class="wa-strip__line">
+				<span class="wa-strip__title">
+					<span class="wa-strip__dot" aria-hidden="true"></span>
+					<a class="wa-strip__name" href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${esc(row.campaign_name || row.name)}</a>
+					<span class="wa-strip__badge">${esc(__("Scheduled"))}</span>
+				</span>
+				<span class="wa-strip__when sanad-tabular">${esc(when)}</span>
+				<span class="wa-strip__meta">${esc(meta)}</span>
+				<span class="wa-strip__actions"></span>
+			</div>
+		</div>`);
+
+	const $actions = $strip.find(".wa-strip__actions");
+	if (is_manager()) {
+		$(`<button type="button" class="btn btn-default btn-sm">${esc(__("Stop to edit"))}</button>`)
+			.on("click", () => stop_to_edit(row, () => refresh_all(header)))
+			.appendTo($actions);
+	}
+	$(`<button type="button" class="btn btn-default btn-sm wa-strip__btn-blue">${esc(__("Scheduled messages"))}</button>`)
+		.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: row.name }))
+		.appendTo($actions);
+	return $strip;
+}
+
+/** A device shows by its own name; Frappe caches the link title after the list has fetched it. */
+function device_title(name) {
+	if (!name) return "";
+	const title = frappe.utils.get_link_title && frappe.utils.get_link_title("WhatsApp Device", name);
+	return title || name;
+}
+
+/** `get_sending_now` returns live counters beside the campaign's own fields. */
+function counters_as_doc(row) {
+	const c = row.counters || {};
+	return {
+		total_recipients: cint(row.total_recipients) || cint(c.total),
+		sent_count: cint(c.sent),
+		delivered_count: cint(c.delivered),
+		read_count: cint(c.read),
+		failed_count: cint(c.failed) || cint(row.failed_count),
+		messages_per_minute: row.messages_per_minute,
+		device: row.device,
+	};
+}
+
+function pause_campaign(row, doc, header) {
+	const remaining = Math.max(0, cint(doc.total_recipients) - handed_of_doc(doc) - cint(doc.failed_count));
+	sanad.ui.ConfirmDialog.ask({
+		title: __("Pause {0}?", [row.campaign_name || row.name]),
+		message: __("Nothing is deleted. Unsent messages stay saved and sending resumes from the same point."),
+		impact: [{ label: __("Messages that will stop"), value: fmt_int(remaining) }],
+		reason_field: { label: __("Reason"), required: false },
+		confirm_label: __("Pause"),
+		on_confirm: ({ reason }) => sanad.ui.call("campaigns.pause", { name: row.name, reason: reason || null }),
+	})
+		.then(() => {
+			sanad.ui.Toast.success(__("Campaign paused"));
+			refresh_all(header);
+		})
+		.catch(() => {});
+}
+
+function resume_campaign(row, header) {
+	return sanad.ui
+		.call("campaigns.resume", { name: row.name })
+		.then(() => {
+			sanad.ui.Toast.success(__("Campaign resumed"));
+			refresh_all(header);
+		})
+		.catch((err) => sanad.ui.Toast.error(err));
+}
+
+
+/** The metric row: what every campaign together is doing, and what the last 30 days achieved. */
+function metrics_html(o) {
+	if (!o) return "";
+	const states = o.states || {};
+	const totals = o.totals || {};
+	const running = cint(states.Running) + cint(states.Queued);
+	const paused = cint(states.Paused);
+	const per_minute = o.per_minute == null ? null : Math.round(o.per_minute);
+
+	return `
+		<div class="wa-ops__metrics">
+			<div class="wa-ops__metric wa-ops__metric--state">
+				<span class="wa-ops__label">${esc(__("Sending now"))}</span>
+				<div class="wa-ops__state-row">
+					<span class="wa-ops__state sanad-tone--${running ? "green" : "gray"}">
+						${running ? '<span class="wa-ops__pulse" aria-hidden="true"></span>' : ""}${esc(
+							running ? sanad.ui.plural(running, { one: __("{0} campaign"), other: __("{0} campaigns") }) : __("Nothing")
+						)}
+					</span>
+				</div>
+				<span class="wa-ops__sub">${esc(
+					paused
+						? sanad.ui.plural(paused, { one: __("{0} paused"), other: __("{0} paused") })
+						: running
+							? __("handing messages to the queue")
+							: __("no campaign is sending")
+				)}</span>
+			</div>
+			${metric(
+				__("In flight"),
+				esc(fmt_int(o.in_flight)),
+				esc(__("recipients not yet sent")),
+			)}
+			${metric(
+				__("Throughput"),
+				per_minute == null ? "—" : esc(__("{0}/min", [fmt_int(per_minute)])),
+				esc(__("last hour, actual")),
+			)}
+			${metric(
+				__("Delivery rate"),
+				esc(pct_text(totals.delivered, totals.sent)),
+				esc(__("of {0} sent", [fmt_int(totals.sent)])),
+			)}
+			${metric(
+				__("Read rate"),
+				esc(pct_text(totals.read, totals.sent)),
+				esc(__("last {0} days", [fmt_int(o.days || OVERVIEW_DAYS)])),
+			)}
+			${metric(
+				__("Failed"),
+				esc(fmt_int(totals.failed)),
+				cint(totals.failed)
+					? `<button type="button" class="wa-ops__link" data-go="failed">${esc(__("See the messages"))}</button>`
+					: esc(__("no failures")),
+				{ tone: cint(totals.failed) ? "red" : "" },
+			)}
+		</div>`;
 }
 
 /**
@@ -396,8 +644,7 @@ function render_console($el, header) {
 			// `Paused` is stated by the metric row ("2 paused"); the strips are for what moves
 			const live = (rows || []).filter((r) => ["Running", "Queued"].includes(r.status));
 			$el.html(`<section class="wa-ops">${metrics_html(o)}</section>
-				<div class="wa-strips"></div>
-				${foot_html(o)}`);
+				<div class="wa-strips"></div>`);
 			$el.find("[data-go=failed]").on("click", () => frappe.set_route("List", "WhatsApp Log", { status: "Failed" }));
 
 			// The console must not eat the table. The prototype shows the campaign that is sending

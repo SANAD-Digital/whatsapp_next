@@ -185,9 +185,3 @@
 	}
 	&__cell &__bar { flex: none; inline-size: 100%; }
 }
-
-// the campaigns console's own foot line: what is not sending yet
-.wa-camp__foot {
-	margin: var(--sanad-gap-sm) 0 0;
-	padding-inline: var(--sanad-gap-xs);
-}
