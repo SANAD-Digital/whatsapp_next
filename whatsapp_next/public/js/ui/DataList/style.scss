@@ -178,18 +178,17 @@
 		&[aria-expanded="true"] { transform: rotate(180deg); }
 	}
 	// ---- grouping (prototype: a 36 px group row per level, indented 22 px, with count and total)
+	// A group row scrolls with the table — pinning it sideways clipped its own label — and is
+	// marked by a soft accent wash plus a rule above and below, as the prototype does.
 	tbody tr.sanad-datalist__group td {
-		position: sticky;
-		z-index: 5; // above the pinned data cells it scrolls over, below the header
+		position: static;
 		height: 36px;
 		padding: 0;
-		border-block-end: var(--sanad-border);
-		background-color: var(--surface-gray-2);
+		border-block: 1px solid var(--sanad-accent-outline);
+		background-color: color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-white));
 	}
-	tbody tr.sanad-datalist__group td.sanad-datalist__group-cell { inset-inline-start: 44px; }
-	tbody tr.sanad-datalist__group td.sanad-datalist__group-check { inset-inline-start: 0; z-index: 7; }
-	tbody tr.sanad-datalist__group--l1 td { background-color: var(--surface-gray-1); }
-	tbody tr.sanad-datalist__group--l2 td, tbody tr.sanad-datalist__group--l3 td { background-color: var(--surface-white); }
+	tbody tr.sanad-datalist__group--l1 td { background-color: color-mix(in srgb, var(--sanad-accent) 4%, var(--surface-white)); }
+	tbody tr.sanad-datalist__group--l2 td, tbody tr.sanad-datalist__group--l3 td { background-color: color-mix(in srgb, var(--sanad-accent) 2%, var(--surface-white)); }
 	&__group-inner {
 		display: flex;
 		align-items: stretch;
@@ -249,7 +248,8 @@
 		padding-block: 2px;
 		padding-inline: 8px;
 		border-radius: var(--border-radius-full, 999px);
-		background: var(--surface-gray-3);
+		background: var(--surface-white);
+		border: 1px solid var(--sanad-accent-outline);
 		color: var(--ink-gray-7);
 		font-size: var(--text-tiny, 11px);
 	}
@@ -374,23 +374,22 @@
 // ---- one card around toolbar + table + footer (prototype: List View is a single panel) --------
 // `.sanad-list-card` is set by DataList on the list's own wrapper, so the three pieces — which live
 // in different Desk containers — read as one surface.
+// The list fills its page edge to edge: no card, no radius, no border, no outer margin. Desk's
+// own `.frappe-list { margin: 0 var(--margin-md) }` is overridden here on purpose.
 .sanad-list-card {
-	// A flex column that fills the page: the table takes whatever height is left and scrolls
-	// inside the card, so the list fills the screen at any window size and in Desk's full-width
-	// mode instead of being sized by a guessed `calc()`.
 	display: flex;
 	flex-direction: column;
 	min-height: 0;
-	padding-block: var(--sanad-gap-md) var(--sanad-gap-lg);
+	margin: 0 !important;
+	padding: 0;
+	border-radius: 0;
 
 	.sanad-filterbar--list {
 		margin-block-end: 0;
 		padding: var(--sanad-gap-md);
 		background: var(--surface-white);
-		border: var(--sanad-border);
+		border: 0;
 		border-block-end: var(--sanad-border);
-		border-start-start-radius: var(--sanad-card-radius);
-		border-start-end-radius: var(--sanad-card-radius);
 	}
 	// Desk fixes `.result-container` to a computed height while its child overflows `visible`, which
 	// pushed the table under the footer. Inside the card the table owns the scrolling instead
@@ -402,8 +401,7 @@
 		min-height: 0;
 		display: flex;
 		background: var(--surface-white);
-		border-inline-start: var(--sanad-border);
-		border-inline-end: var(--sanad-border);
+		border: 0;
 	}
 	.result, .sanad-datalist-host { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; }
 	.sanad-datalist__wrap {
@@ -415,31 +413,12 @@
 	.sanad-filterbar--list, .sanad-datalist__footer { flex: none; }
 	// the table fills the width it is given, however many columns are shown
 	.sanad-datalist { min-width: 100%; }
-	// the filter bar already draws the card's top edge
-	.sanad-filterbar--list + .result-container .sanad-datalist__wrap {
+	.sanad-datalist__wrap { border: 0; border-radius: 0; }
+	.sanad-datalist__footer {
 		border: 0;
+		border-block-start: var(--sanad-border);
 		border-radius: 0;
 	}
-	.sanad-datalist__wrap {
-		border-inline: 0;
-		border-block-start: 0;
-		border-block-end: 0;
-		border-start-start-radius: var(--sanad-card-radius);
-		border-start-end-radius: var(--sanad-card-radius);
-	}
-	.sanad-datalist__footer {
-		border: var(--sanad-border);
-		border-block-start: var(--sanad-border);
-		border-end-start-radius: var(--sanad-card-radius);
-		border-end-end-radius: var(--sanad-card-radius);
-	}
-}
-
-// The field the card sits on. Desk's list area is white, so a white card on it reads as nothing;
-// the prototype floats its panel on a tinted page. Scoped to pages that carry a kit list.
-.sanad-list-page .layout-main-section {
-	background: var(--surface-gray-1);
-	border-radius: 0;
 }
 
 // mobile: one card per row (label: value pairs)

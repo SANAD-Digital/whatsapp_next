@@ -218,6 +218,12 @@
 	}
 	&__period-short { display: none; }
 
+	// too narrow for the filter buttons: they collapse behind the single Filters button
+	&--compact &__dd:not(&__dd--group):not(&__dd--columns) { display: none; }
+	&--compact &__clear { display: none; }
+	&--compact &__mobile-toggle { display: inline-flex; }
+	&--compact &__extra { display: contents; }
+
 	// a filter the bar has no button for (one arriving in the URL): visible and removable
 	&__extra { display: contents; }
 	&__chipfilter {

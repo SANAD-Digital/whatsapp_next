@@ -128,6 +128,7 @@ sanad.ui.FilterBar = class FilterBar {
 		this.$extra.appendTo(this.$main); // always last among the filters
 		this.sync();
 		this.apply_defaults();
+		this.watch_width();
 		$(document).on(`mousedown.${this.id} touchstart.${this.id}`, (e) => {
 			if ($(e.target).closest(".sanad-filterbar__dd").length) return;
 			this.close_popover();
@@ -350,9 +351,47 @@ sanad.ui.FilterBar = class FilterBar {
 	}
 
 	/**
-	 * Under 768 px the prototype hides the filter buttons behind one "Filters" button carrying the
-	 * number that is set; it opens a sheet holding the same option lists. The button is always in
-	 * the DOM and shown by the media query, so there is no resize listener to get wrong.
+	 * Collapse the filter buttons behind the single "Filters" button whenever they no longer fit
+	 * on one line — a fixed breakpoint cannot know how many filters a screen declares, or how wide
+	 * Desk's sidebar is. The measurement is done on a hidden copy of the row's natural width.
+	 */
+	watch_width() {
+		const el = this.$toolbar && this.$toolbar[0];
+		if (!el || typeof ResizeObserver !== "function") return;
+		const measure = () => {
+			if (!el.isConnected) return;
+			const end = this.$end && this.$end[0] ? this.$end[0].getBoundingClientRect().width : 0;
+			// what the filters want: the search box plus every dropdown, at their natural widths
+			let wanted = 0;
+			this.$main.children().each((i, child) => {
+				if ($(child).hasClass("sanad-filterbar__mobile-toggle")) return;
+				wanted += child.getBoundingClientRect().width + 8;
+			});
+			const room = el.getBoundingClientRect().width - end - 8;
+			const compact = this.$wrapper.hasClass("sanad-filterbar--compact");
+			// hysteresis: expand again only with room to spare, so a resize cannot oscillate
+			if (!compact && wanted > room) this.$wrapper.addClass("sanad-filterbar--compact");
+			else if (compact && room > this.natural_width() + 24) this.$wrapper.removeClass("sanad-filterbar--compact");
+		};
+		this._ro = new ResizeObserver(ui.debounce(measure, 120));
+		this._ro.observe(el);
+		window.setTimeout(measure, 0);
+	}
+
+	/** Width the filter buttons need when they are all shown (measured once, off-screen). */
+	natural_width() {
+		if (this._natural) return this._natural;
+		const $clone = this.$main.clone().css({ position: "absolute", visibility: "hidden", width: "auto", "flex-wrap": "nowrap" });
+		$clone.find(".sanad-filterbar__mobile-toggle").remove();
+		$clone.appendTo(document.body);
+		this._natural = $clone[0].scrollWidth;
+		$clone.remove();
+		return this._natural;
+	}
+
+	/**
+	 * The "Filters" button and its sheet: one button carrying the number that is set, opening a
+	 * full-height sheet with the same option lists.
 	 */
 	render_mobile_toggle() {
 		this.$mobile_btn = $(`<button type="button" class="sanad-filterbar__btn sanad-filterbar__mobile-toggle">${ui.icon("es-line-filter", "xs")}<span>${ui.escape(__("Filters"))}</span><span class="sanad-filterbar__mobile-count sanad-tabular" hidden></span></button>`)
@@ -1031,6 +1070,7 @@ sanad.ui.FilterBar = class FilterBar {
 	}
 
 	destroy() {
+		this._ro && this._ro.disconnect();
 		this.close_popover();
 		this.close_levels();
 		this.close_columns();

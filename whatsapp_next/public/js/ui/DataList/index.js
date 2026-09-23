@@ -64,10 +64,8 @@ sanad.ui.DataList = class DataList {
 		lv.$no_result && lv.$no_result.hide();
 		lv._sanad_datalist = this; // FilterBar's grouping control drives this table
 		lv.$result.addClass("sanad-datalist-host");
-		// toolbar + table + footer read as one card (prototype: List View is a single panel),
-		// floating on a tinted page rather than a white one
+		// the list owns its page edge to edge: no card frame, no outer margin
 		lv.$frappe_list.addClass("sanad-list-card");
-		lv.page.wrapper.addClass("sanad-list-page");
 		this.$table = $(`<div class="sanad-kit sanad-datalist__wrap${this.opts.mobile === "cards" ? " sanad-datalist__wrap--cards" : ""}"></div>`);
 		lv.$result.find(".list-row-container, .list-row-head").remove();
 		lv.$result.prepend(this.$table);
@@ -596,7 +594,7 @@ sanad.ui.DataList = class DataList {
 		// the card is sized to the room left on screen, then its flex children share it: the table
 		// takes what is left and the footer sits on the card's bottom edge, as Desk's list does
 		const top = card.getBoundingClientRect().top;
-		const room = Math.max(280, Math.round(window.innerHeight - top - 16));
+		const room = Math.max(280, Math.round(window.innerHeight - top));
 		card.style.height = `${room}px`;
 		el.style.maxHeight = "";
 	}
@@ -805,7 +803,6 @@ sanad.ui.DataList = class DataList {
 
 	destroy() {
 		$(window).off(`resize.${this.id}`);
-		this.listview.page.wrapper.removeClass("sanad-list-page");
 		this.listview.$frappe_list.removeClass("sanad-list-card");
 		this.listview.$result.off(`.${this.id}`);
 		this.$footer.off(`.${this.id}`).remove();
