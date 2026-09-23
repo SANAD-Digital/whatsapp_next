@@ -62,7 +62,7 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [x] B-17 `services/webhook_setup.py`, `usage_sync.py`, `retention.py`; final `scheduler_events` (B-6, B-11) — 3 tests
 - [x] Realtime events wired: `wa:device:status`, `wa:message:status`, `wa:queue:progress` (+ `wa:campaign:status`, `wa:inbound:received`, `wa:pairing:status`, `wa:import:progress` — accepted D-029); payloads carry names / hashes only
 
-## Phase 5 — API surface + portable component kit — **done 2026-09-23** (branch `phase-5-kit`; client suite 318+ tests green serially; kit 20 components + ContactPicker sub-system, live uses on 7 lists / 6 forms, Workspace + dashboard fixtures; design gate `plan/13-design-gate-phase-5.md`; open: no browser render yet — R-032)
+## Phase 5 — API surface + portable component kit — **done 2026-09-23** (branch `phase-5-kit`; client suite 318+ tests green serially; kit 20 components + ContactPicker sub-system, live uses on 7 lists / 6 forms, Workspace + dashboard fixtures; design gate `plan/13-design-gate-phase-5.md` + real-browser smoke `scripts/browser_smoke.mjs` on 18 routes, R-032 closed; open for phase 7: user-facing field descriptions R-036, mobile filter collapse R-037)
 
 > Phase file says "Portable component kit"; the API layer (`backend-plan.md` B-18..B-27) has to exist first, so it opens this phase.
 
