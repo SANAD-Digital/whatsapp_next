@@ -1,0 +1,154 @@
+// Campaigns screen — what only this screen has: the campaigns that are sending right now, one row
+// each inside the console's lower half, and the line of what is not sending yet. The panel itself
+// is the shared console (`screens/_console.scss`).
+
+.wa-camp {
+	// ---- a campaign that is sending ------------------------------------------------------------
+
+	&__live {
+		display: grid;
+	}
+
+	&__row {
+		display: grid;
+		gap: var(--sanad-gap-sm);
+		padding-block: var(--sanad-gap-md);
+		border-block-end: var(--sanad-border);
+		&:first-child { padding-block-start: 0; }
+		&:last-child { border-block-end: 0; padding-block-end: 0; }
+		grid-template-areas:
+			"head    actions"
+			"bar     actions"
+			"facts   actions"
+			"note    actions";
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		@media (max-width: 767px) {
+			grid-template-areas: "head" "bar" "facts" "note" "actions";
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	&__head {
+		grid-area: head;
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+		min-inline-size: 0;
+	}
+	&__name {
+		font-size: var(--text-base, 14px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		&:hover { color: var(--sanad-accent-ink); }
+	}
+	&__pct {
+		margin-inline-start: auto;
+		font-size: var(--text-base, 14px);
+		font-weight: 600;
+		color: var(--ink-gray-8);
+	}
+
+	// sent, failed and what is still to go — one bar, never a number pretending to be progress
+	// the bar lives in two places: a row of the console (where it takes the `bar` area) and a
+	// table cell (where `grid-area` would push it into an implicit column and collapse it)
+	&__row > &__bar { grid-area: bar; }
+	&__bar {
+		display: flex;
+		inline-size: 100%;
+		block-size: 8px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-3);
+		overflow: hidden;
+		&--paused { opacity: 0.55; }
+	}
+	&__bar-sent {
+		background: var(--sanad-accent);
+		transition: inline-size var(--sanad-motion) ease-out;
+	}
+	&__bar-failed {
+		background: var(--ink-red-4);
+		transition: inline-size var(--sanad-motion) ease-out;
+	}
+
+	&__facts {
+		grid-area: facts;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-xs) var(--sanad-gap-lg);
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+		b { font-weight: 600; color: var(--ink-gray-9); }
+	}
+	&__note {
+		grid-area: note;
+		margin: 0;
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-5);
+		min-block-size: 16px;
+	}
+	&__actions {
+		grid-area: actions;
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		padding-inline-start: var(--sanad-gap-lg);
+		@media (max-width: 767px) {
+			padding-inline-start: 0;
+			padding-block-start: var(--sanad-gap-xs);
+		}
+		.btn { min-block-size: var(--sanad-target); white-space: nowrap; }
+	}
+
+	// ---- nothing is sending --------------------------------------------------------------------
+
+	&__next {
+		display: grid;
+		gap: var(--sanad-gap-sm);
+		ul {
+			display: grid;
+			gap: var(--sanad-gap-sm);
+			margin: 0;
+			padding: 0;
+			list-style: none;
+		}
+		li {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: baseline;
+			gap: var(--sanad-gap-sm) var(--sanad-gap-lg);
+			font-size: var(--text-xs, 11px);
+			color: var(--ink-gray-6);
+			padding-block-end: var(--sanad-gap-sm);
+			border-block-end: var(--sanad-border);
+			&:last-child { border-block-end: 0; padding-block-end: 0; }
+		}
+		a {
+			font-size: var(--text-sm, 13px);
+			font-weight: 600;
+			color: var(--ink-gray-9);
+			&:hover { color: var(--sanad-accent-ink); }
+		}
+	}
+
+	// the same bar inside a table cell, with its label above it
+	&__cell {
+		display: grid;
+		gap: 3px;
+		inline-size: 100%;
+		min-inline-size: 96px;
+	}
+	&__cell-label {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-7);
+	}
+
+	&__foot {
+		margin: var(--sanad-gap-sm) 0 0;
+		padding-inline: var(--sanad-gap-xs);
+	}
+}

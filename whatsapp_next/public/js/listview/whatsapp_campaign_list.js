@@ -23,18 +23,22 @@ const EDITABLE = ["Draft", "Paused"];
 const fmt_int = (v) => sanad.ui.format_int(v);
 const esc = (v) => sanad.ui.escape(v);
 const is_manager = () => frappe.user.has_role("WhatsApp Manager") || frappe.user.has_role("System Manager");
-const pct = (part, whole) => (cint(whole) ? frappe.format((cint(part) * 100) / cint(whole), { fieldtype: "Percent", precision: 1 }) : "—");
+/** A share as plain text, one decimal, never Frappe's wrapped HTML (it would be escaped). */
+const pct = (part, whole) => {
+	if (!cint(whole)) return "—";
+	const value = (cint(part) * 100) / cint(whole);
+	return `${frappe.format(value, { fieldtype: "Float", precision: value % 1 ? 1 : 0 }, { inline: true })}%`;
+};
 const badge = (doc) => sanad.ui.StatusBadge.html({ label: __(doc.status), colour: sanad.ui.indicator_for("WhatsApp Campaign", Object.assign({ doctype: "WhatsApp Campaign" }, doc)).colour });
 
 function progress_html(doc, { tone } = {}) {
 	const total = cint(doc.total_recipients);
 	const sent = cint(doc.sent_count);
 	const failed = cint(doc.failed_count);
-	const sent_pct = total ? Math.min(100, (sent * 100) / total) : 0;
-	const failed_pct = total ? Math.min(100 - sent_pct, (failed * 100) / total) : 0;
-	return `<div class="sanad-progress ${tone ? `sanad-progress--${tone}` : ""}" role="img" aria-label="${esc(__("{0} of {1} sent", [fmt_int(sent), fmt_int(total)]))}">
-		<div class="sanad-progress__label"><span>${fmt_int(sent)} / ${fmt_int(total)}</span></div>
-		<div class="sanad-progress__bar"><div class="sanad-progress__fill" style="width:${sent_pct}%"></div><div class="sanad-progress__fail" style="width:${failed_pct}%"></div></div>
+	if (!total) return `<span class="text-muted">—</span>`;
+	return `<div class="wa-camp__cell">
+		<span class="wa-camp__cell-label sanad-tabular">${esc(fmt_int(sent))} / ${esc(fmt_int(total))}</span>
+		${bar_html(total, sent, failed, { paused: tone === "amber" })}
 	</div>`;
 }
 
@@ -73,50 +77,196 @@ function bind_edit_chips($root, listview) {
 	});
 }
 
-// ---- header blocks -----------------------------------------------------------------------
+// ---- the campaigns console -------------------------------------------------------------------
 
+const OVERVIEW_DAYS = 30;
+const overview_state = { promise: null, at: 0 };
+const OVERVIEW_TTL = 15000;
+
+/** The screen's own numbers, cached beside the per-campaign reads that share the same tick. */
+function overview(fresh = false) {
+	if (fresh || (overview_state.promise && Date.now() - overview_state.at > OVERVIEW_TTL)) overview_state.promise = null;
+	if (!overview_state.promise) {
+		overview_state.at = Date.now();
+		overview_state.promise = sanad.ui
+			.call("campaigns.get_overview", { days: OVERVIEW_DAYS }, { silent: true })
+			.catch(() => null);
+	}
+	return overview_state.promise;
+}
+
+const share = (part, whole) => (cint(whole) ? Math.round((cint(part) * 100) / cint(whole)) : null);
+
+/**
+ * What has left the campaign. `Sent`, `Delivered` and `Read` are three stages of the same fact,
+ * so progress that counts only `Sent` shows 3 % for a campaign that has handed over a third.
+ */
+const handed_of = (c) => cint(c.sent) + cint(c.delivered) + cint(c.read);
+const pct_text = (part, whole) => {
+	const value = share(part, whole);
+	return value == null ? "—" : `${fmt_int(value)}%`;
+};
+
+/** One cell of the metric row: small capital label, the number, the line that qualifies it. */
+function metric(label, value, sub, opts = {}) {
+	return `<div class="wa-ops__metric">
+		<span class="wa-ops__label">${esc(label)}</span>
+		<span class="wa-ops__value${opts.tone ? ` sanad-tone--${opts.tone}` : ""} sanad-tabular">${value}</span>
+		<span class="wa-ops__sub">${sub || "&nbsp;"}</span>
+	</div>`;
+}
+
+/** A campaign's own progress: sent, failed and what is still to go, in one bar. */
+function bar_html(total, sent, failed, { paused } = {}) {
+	const t = Math.max(cint(total), 1);
+	const sent_pct = Math.min(100, (cint(sent) * 100) / t);
+	const failed_pct = Math.min(100 - sent_pct, (cint(failed) * 100) / t);
+	return `<div class="wa-camp__bar${paused ? " wa-camp__bar--paused" : ""}" role="img"
+			aria-label="${esc(__("{0} of {1} sent, {2} failed", [fmt_int(sent), fmt_int(total), fmt_int(failed)]))}">
+		<span class="wa-camp__bar-sent" style="inline-size:${sent_pct.toFixed(2)}%"></span>
+		<span class="wa-camp__bar-failed" style="inline-size:${failed_pct.toFixed(2)}%"></span>
+	</div>`;
+}
+
+/** The sentence under a running campaign: what is left, how long it takes, which device sends it. */
 function eta_text(p) {
 	const r = (p && p.rates) || {};
 	const c = (p && p.counters) || {};
 	const remaining = cint(c.open);
-	const eta = cint(r.eta_seconds);
-	const minutes = eta ? Math.max(1, Math.round(eta / 60)) : 0;
-	const device = p && p.device ? __("from device {0}", [p.device]) : "";
-	if (!remaining) return __("All messages handed to the queue.");
-	return [__("{0} messages remaining", [fmt_int(remaining)]), minutes ? __("about {0} min at {1} per minute", [fmt_int(minutes), fmt_int(r.messages_per_minute)]) : "", device].filter(Boolean).join(" — ");
+	const minutes = cint(r.eta_seconds) ? Math.max(1, Math.round(cint(r.eta_seconds) / 60)) : 0;
+	if (!remaining) return __("Everything has been handed to the queue.");
+	return [
+		sanad.ui.plural(remaining, { one: __("{0} message left"), other: __("{0} messages left") }),
+		minutes ? __("about {0} min at {1}/min", [fmt_int(minutes), fmt_int(r.messages_per_minute)]) : "",
+		p && p.device ? __("device {0}", [p.device]) : "",
+	]
+		.filter(Boolean)
+		.join(" · ");
 }
 
-function render_sending_now($el, header) {
-	const state = new sanad.ui.EmptyState({ wrapper: $el, state: "loading", size: "sm", rows: 1 });
-	return sanad.ui
-		.call("campaigns.get_sending_now", {}, { silent: true })
-		.then((rows) => {
-			rows = (rows || []).filter((r) => ["Running", "Queued"].includes(r.status));
-			if (!rows.length) return state.hide();
-			state.hide();
-			const $list = $('<div class="sanad-strip-list"></div>');
-			rows.forEach((row) => {
+/** The metric row: what every campaign together is doing, and what the last 30 days achieved. */
+function metrics_html(o) {
+	if (!o) return "";
+	const states = o.states || {};
+	const totals = o.totals || {};
+	const running = cint(states.Running) + cint(states.Queued);
+	const paused = cint(states.Paused);
+	const per_minute = o.per_minute == null ? null : Math.round(o.per_minute);
+
+	return `
+		<div class="wa-ops__metrics">
+			<div class="wa-ops__metric wa-ops__metric--state">
+				<span class="wa-ops__label">${esc(__("Sending now"))}</span>
+				<div class="wa-ops__state-row">
+					<span class="wa-ops__state sanad-tone--${running ? "green" : "gray"}">
+						${running ? '<span class="wa-ops__pulse" aria-hidden="true"></span>' : ""}${esc(
+							running ? sanad.ui.plural(running, { one: __("{0} campaign"), other: __("{0} campaigns") }) : __("Nothing")
+						)}
+					</span>
+				</div>
+				<span class="wa-ops__sub">${esc(
+					paused
+						? sanad.ui.plural(paused, { one: __("{0} paused"), other: __("{0} paused") })
+						: running
+							? __("handing messages to the queue")
+							: __("no campaign is sending")
+				)}</span>
+			</div>
+			${metric(
+				__("In flight"),
+				esc(fmt_int(o.in_flight)),
+				esc(__("recipients not yet sent")),
+			)}
+			${metric(
+				__("Throughput"),
+				per_minute == null ? "—" : esc(__("{0}/min", [fmt_int(per_minute)])),
+				esc(__("last hour, actual")),
+			)}
+			${metric(
+				__("Delivery rate"),
+				esc(pct_text(totals.delivered, totals.sent)),
+				esc(__("of {0} sent", [fmt_int(totals.sent)])),
+			)}
+			${metric(
+				__("Read rate"),
+				esc(pct_text(totals.read, totals.sent)),
+				esc(__("last {0} days", [fmt_int(o.days || OVERVIEW_DAYS)])),
+			)}
+			${metric(
+				__("Failed"),
+				esc(fmt_int(totals.failed)),
+				cint(totals.failed)
+					? `<button type="button" class="wa-ops__link" data-go="failed">${esc(__("See the messages"))}</button>`
+					: esc(__("no failures")),
+				{ tone: cint(totals.failed) ? "red" : "" },
+			)}
+		</div>`;
+}
+
+/** The line under the console: what is not sending yet. */
+function foot_html(o) {
+	const states = (o && o.states) || {};
+	return `<p class="wa-camp__foot wa-ops__sub">${esc(
+		__("{0} scheduled · {1} drafts · {2} finished", [
+			fmt_int(states.Scheduled),
+			fmt_int(states.Draft),
+			fmt_int(cint(states.Completed) + cint(states["Partially Failed"])),
+		])
+	)}</p>`;
+}
+
+/**
+ * The lower half: every campaign that is sending right now, one row each — name and state, the
+ * bar that says how far it got, the four counters it is judged by, the sentence that says when it
+ * ends, and its verbs. When nothing is sending, the next scheduled campaigns take the space, and
+ * when there is neither, the block stays empty rather than drawing a band that says nothing.
+ */
+function render_console($el, header) {
+	if (!$el.children().length) new sanad.ui.EmptyState({ wrapper: $el, state: "loading", size: "sm", rows: 2 });
+	return Promise.all([overview(), sanad.ui.call("campaigns.get_sending_now", {}, { silent: true })])
+		.then(([o, rows]) => {
+			const live = (rows || []).filter((r) => ["Running", "Queued", "Paused"].includes(r.status));
+			$el.html(`<section class="wa-ops">
+				${metrics_html(o)}
+				<div class="wa-ops__lower wa-ops__lower--single"></div>
+			</section>
+			${foot_html(o)}`);
+			$el.find("[data-go=failed]").on("click", () => frappe.set_route("List", "WhatsApp Log", { status: "Failed" }));
+			const $lower = $el.find(".wa-ops__lower");
+			if (!live.length) return render_next($lower);
+
+			const $list = $('<div class="wa-camp__live"></div>');
+			live.forEach((row) => {
 				const c = row.counters || {};
-				const total = cint(row.total_recipients);
-				const done = cint(c.sent) || cint(row.sent_count);
-				const $strip = $(`
-					<div class="sanad-strip sanad-strip--green" data-name="${esc(row.name)}">
-						<span class="sanad-strip__title sanad-tone--green"><span class="sanad-strip__dot" aria-hidden="true"></span><a href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${esc(row.campaign_name || row.name)}</a></span>
-						${badge(row)}
-						<div class="sanad-strip__grow">${progress_html({ total_recipients: total, sent_count: done, failed_count: cint(c.failed) })}</div>
-						<span class="sanad-strip__meta sanad-tabular" dir="auto">
-							<span>${esc(__("{0}% · {1} / {2}", [total ? Math.round((done * 100) / total) : 0, fmt_int(done), fmt_int(total)]))}</span>
-							<span>${esc(__("Sent {0}", [fmt_int(c.sent)]))}</span><span>${esc(__("Delivered {0}", [fmt_int(c.delivered)]))}</span><span>${esc(__("Read {0}", [fmt_int(c.read)]))}</span><span class="${cint(c.failed) ? "sanad-tone--red" : ""}">${esc(__("Failed {0}", [fmt_int(c.failed)]))}</span>
-						</span>
-						<div class="sanad-strip__actions"></div>
-						<div class="sanad-strip__note" aria-live="polite" dir="auto"></div>
-					</div>`);
-				const $actions = $strip.find(".sanad-strip__actions");
-				if (is_manager()) {
+				const total = cint(row.total_recipients) || cint(c.total);
+				const sent = handed_of(c) || cint(row.sent_count);
+				const failed = cint(c.failed) || cint(row.failed_count);
+				const paused = row.status === "Paused";
+				const $row = $(`
+					<article class="wa-camp__row" data-name="${esc(row.name)}">
+						<header class="wa-camp__head">
+							<a class="wa-camp__name" href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${esc(row.campaign_name || row.name)}</a>
+							${badge(row)}
+							<span class="wa-camp__pct sanad-tabular">${esc(pct_text(sent, total))}</span>
+						</header>
+						${bar_html(total, sent, failed, { paused })}
+						<div class="wa-camp__facts">
+							<span>${esc(__("Sent"))} <b class="sanad-tabular">${esc(fmt_int(sent))}</b> / <span class="sanad-tabular">${esc(fmt_int(total))}</span></span>
+							<span>${esc(__("Delivered"))} <b class="sanad-tabular">${esc(fmt_int(c.delivered))}</b></span>
+							<span>${esc(__("Read"))} <b class="sanad-tabular">${esc(fmt_int(c.read))}</b></span>
+							<span class="${failed ? "sanad-tone--red" : ""}">${esc(__("Failed"))} <b class="sanad-tabular">${esc(fmt_int(failed))}</b></span>
+						</div>
+						<p class="wa-camp__note" aria-live="polite" dir="auto"></p>
+						<div class="wa-camp__actions"></div>
+					</article>`);
+
+				const $actions = $row.find(".wa-camp__actions");
+				if (is_manager() && !paused) {
 					$(`<button type="button" class="btn btn-default btn-sm">${esc(__("Pause"))}</button>`)
 						.on("click", () =>
 							sanad.ui.ConfirmDialog.ask({
 								title: __("Pause {0}?", [row.campaign_name || row.name]),
+								message: __("Nothing is deleted. Unsent messages stay saved and sending resumes from the same point."),
 								impact: [{ label: __("Messages that will stop"), value: fmt_int(cint(c.open)) }],
 								reason_field: { label: __("Reason"), required: false },
 								confirm_label: __("Pause"),
@@ -124,74 +274,81 @@ function render_sending_now($el, header) {
 							})
 								.then(() => {
 									sanad.ui.Toast.success(__("Campaign paused"));
-									header.refresh(true);
-									header.listview.refresh();
+									refresh_all(header);
 								})
 								.catch(() => {})
 						)
 						.appendTo($actions);
 				}
-				$(`<button type="button" class="btn btn-primary btn-sm">${esc(__("Sent messages"))}</button>`)
-					.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: row.name }))
-					.appendTo($actions);
-				$list.append($strip);
-				sanad.ui
-					.call("campaigns.get_progress", { name: row.name }, { silent: true })
-					.then((p) => $strip.find(".sanad-strip__note").text(eta_text(p)))
-					.catch(() => {});
-			});
-			$el.html($list);
-		})
-		.catch((err) => state.error(err, { action: { label: __("Retry"), onclick: () => render_sending_now($el, header) } }));
-}
-
-function render_scheduled($el, header) {
-	const LIMIT = 3;
-	return Promise.all([
-		frappe.db.get_list("WhatsApp Campaign", {
-			filters: { status: "Scheduled" },
-			fields: ["name", "campaign_name", "status", "scheduled_at", "total_recipients", "device", "sent_count", "failed_count"],
-			order_by: "scheduled_at asc",
-			limit: LIMIT,
-		}),
-		frappe.db.count("WhatsApp Campaign", { filters: { status: "Scheduled" } }),
-	])
-		.then(([rows, total]) => {
-			$el.empty();
-			if (!rows.length) return;
-			const $list = $('<div class="sanad-strip-list"></div>');
-			rows.forEach((row) => {
-				const days = row.scheduled_at ? frappe.datetime.get_day_diff(row.scheduled_at, frappe.datetime.now_datetime()) : null;
-				const when = days == null ? "" : days <= 0 ? __("today") : sanad.ui.plural(days, { one: __("in {0} day"), two: __("in {0} days"), few: __("in {0} days"), many: __("in {0} days"), other: __("in {0} days") });
-				const $strip = $(`
-					<div class="sanad-strip" data-name="${esc(row.name)}">
-						<span class="sanad-strip__title sanad-tone--blue"><span class="sanad-strip__dot" aria-hidden="true"></span><a href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${esc(row.campaign_name || row.name)}</a></span>
-						${badge(row)}
-						<span class="sanad-strip__meta" dir="auto">
-							<span class="sanad-tabular">${esc(frappe.datetime.str_to_user(row.scheduled_at))}</span>
-							${when ? `<span>${esc(when)}</span>` : ""}
-							<span>${esc(sanad.ui.plural(cint(row.total_recipients), { one: __("{0} recipient"), two: __("{0} recipients"), few: __("{0} recipients"), many: __("{0} recipients"), other: __("{0} recipients") }))}</span>
-							${row.device ? `<span>${esc(row.device)}</span>` : ""}
-						</span>
-						<div class="sanad-strip__actions"></div>
-					</div>`);
-				const $actions = $strip.find(".sanad-strip__actions");
-				if (is_manager()) {
-					$(`<button type="button" class="btn btn-default btn-sm">${esc(__("Stop to edit"))}</button>`)
-						.on("click", () => stop_to_edit(row, () => header.refresh(true)))
+				if (is_manager() && paused) {
+					$(`<button type="button" class="btn btn-default btn-sm">${esc(__("Resume"))}</button>`)
+						.on("click", () =>
+							sanad.ui
+								.call("campaigns.resume", { name: row.name })
+								.then(() => {
+									sanad.ui.Toast.success(__("Campaign resumed"));
+									refresh_all(header);
+								})
+								.catch((err) => sanad.ui.Toast.error(err))
+						)
 						.appendTo($actions);
 				}
-				$(`<button type="button" class="btn btn-default btn-sm">${esc(__("Scheduled messages"))}</button>`)
+				$(`<button type="button" class="btn btn-default btn-sm">${esc(__("Messages"))}</button>`)
 					.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: row.name }))
 					.appendTo($actions);
-				$list.append($strip);
+
+				$list.append($row);
+				sanad.ui
+					.call("campaigns.get_progress", { name: row.name }, { silent: true })
+					.then((p) => $row.find(".wa-camp__note").text(eta_text(p)))
+					.catch(() => {});
 			});
-			$el.append($list);
-			if (total > rows.length) {
-				$el.append(`<p class="sanad-strip-more">${esc(sanad.ui.plural(total - rows.length, { one: __("{0} more scheduled campaign in the list below."), two: __("{0} more scheduled campaigns in the list below."), few: __("{0} more scheduled campaigns in the list below."), many: __("{0} more scheduled campaigns in the list below."), other: __("{0} more scheduled campaigns in the list below.") }))}</p>`);
-			}
+			$lower.html($list);
 		})
-		.catch((err) => new sanad.ui.EmptyState({ wrapper: $el, state: "error", size: "sm", description: err.message, action: { label: __("Retry"), onclick: () => render_scheduled($el, header) } }));
+		.catch((err) => {
+			new sanad.ui.EmptyState({
+				wrapper: $el,
+				state: "error",
+				size: "sm",
+				description: err.message,
+				action: { label: __("Retry"), onclick: () => render_console($el, header) },
+			});
+		});
+}
+
+/** Nothing is sending: what is next, as plain lines — never a band of empty cards. */
+function render_next($el) {
+	return frappe.db
+		.get_list("WhatsApp Campaign", {
+			filters: { status: "Scheduled" },
+			fields: ["name", "campaign_name", "scheduled_at", "total_recipients", "device"],
+			order_by: "scheduled_at asc",
+			limit: 3,
+		})
+		.then((rows) => {
+			$el.empty();
+			if (!rows || !rows.length) return;
+			const items = rows
+				.map(
+					(row) => `<li>
+						<a href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${esc(row.campaign_name || row.name)}</a>
+						<span class="sanad-tabular">${esc(frappe.datetime.str_to_user(row.scheduled_at))}</span>
+						<span>${esc(sanad.ui.plural(cint(row.total_recipients), { one: __("{0} recipient"), other: __("{0} recipients") }))}</span>
+					</li>`
+				)
+				.join("");
+			$el.html(`<div class="wa-camp__next">
+				<span class="wa-ops__label">${esc(__("Next scheduled"))}</span>
+				<ul>${items}</ul>
+			</div>`);
+		})
+		.catch(() => $el.empty());
+}
+
+function refresh_all(header) {
+	overview(true);
+	header.refresh(true);
+	header.listview && header.listview.refresh();
 }
 
 // ---- list settings -----------------------------------------------------------------------
@@ -214,16 +371,21 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 
 	onload(listview) {
 		const ui = sanad.ui;
+		// No title and no description: Desk's breadcrumb names the list and the console's first
+		// cell says what the campaigns are doing, which is all a title could have said. "New
+		// campaign" goes back to Desk's own primary slot, where a list's create action belongs.
 		listview.sanad_header = new ui.PageHeader({
 			listview,
-			title: __("Campaigns"),
-			description: __("Bulk sending to a group of contacts from one template, at a controlled rate, with step-by-step tracking."),
-			primary: { label: __("New campaign"), icon: "es-line-add", perm: "create", handler: () => frappe.new_doc("WhatsApp Campaign") },
-			blocks: [
-				{ key: "sending", events: ["wa:campaign:status", "wa:queue:progress"], render: render_sending_now },
-				{ key: "scheduled", events: ["wa:campaign:status"], render: render_scheduled },
-			],
+			blocks: [{ key: "campaign-console", events: ["wa:campaign:status", "wa:queue:progress"], render: render_console }],
 		});
+		// Desk rewrites its own "+ Add WhatsApp Campaign" on every refresh, so the screen's label is
+		// re-applied after each render rather than once on load
+		const set_create = () => {
+			if (!frappe.perm.has_perm("WhatsApp Campaign", 0, "create")) return;
+			listview.page.set_primary_action(__("New campaign"), () => frappe.new_doc("WhatsApp Campaign"), "es-line-add");
+		};
+		set_create();
+		ui.on_list_render(listview, set_create);
 
 		if (typeof ui.FilterBar === "function") {
 			new ui.FilterBar({
@@ -239,17 +401,15 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 		}
 
 		const columns = [
-			{ fieldname: "campaign_name", label: __("Campaign"), sortable: true, format: (v, doc) => esc(v || doc.name), sub: (doc) => esc(frappe.user.full_name(doc.owner) || doc.owner || "") },
-			{ fieldname: "status", label: __("Status"), type: "status", sortable: true },
-			{ fieldname: "_edit", label: __("Edit"), sortable: false, format: (v, doc) => edit_chip(doc) },
-			{ fieldname: "sent_count", label: __("Progress"), sortable: false, format: (v, doc) => progress_html(doc, { tone: doc.status === "Paused" ? "amber" : "" }) },
-			{ fieldname: "total_recipients", label: __("Recipients"), type: "number", align: "end", sortable: true },
-			{ fieldname: "sent_count", label: __("Sent"), type: "number", align: "end", sortable: true },
-			{ fieldname: "_ok_rate", label: __("Success %"), align: "end", sortable: false, format: (v, doc) => (cint(doc.sent_count) ? `<span class="sanad-tone--green sanad-tabular">${esc(pct(cint(doc.sent_count) - cint(doc.failed_count), doc.sent_count))}</span>` : "—") },
-			{ fieldname: "read_count", label: __("Read"), type: "number", align: "end", sortable: true },
-			{ fieldname: "_read_rate", label: __("Read %"), align: "end", sortable: false, format: (v, doc) => (cint(doc.sent_count) ? `<span class="sanad-tone--blue sanad-tabular">${esc(pct(doc.read_count, doc.sent_count))}</span>` : "—") },
-			{ fieldname: "failed_count", label: __("Failed"), type: "number", align: "end", sortable: true, hidden_xs: true, format: (v) => (cint(v) ? `<span class="sanad-tone--red sanad-tabular">${fmt_int(v)}</span>` : "0") },
-			{ fieldname: "device", label: __("Device"), type: "avatar", sortable: true, hidden_xs: true },
+			{ fieldname: "campaign_name", label: __("Campaign"), width: 200, sortable: true, format: (v, doc) => esc(v || doc.name), sub: (doc) => esc(frappe.user.full_name(doc.owner) || doc.owner || "") },
+			{ fieldname: "status", label: __("Status"), type: "status", width: 110, sortable: true },
+			{ fieldname: "_edit", label: __("Edit"), width: 95, sortable: false, format: (v, doc) => edit_chip(doc) },
+			{ fieldname: "sent_count", label: __("Progress"), width: 125, sortable: false, format: (v, doc) => progress_html(doc, { tone: doc.status === "Paused" ? "amber" : "" }) },
+			{ fieldname: "total_recipients", label: __("Recipients"), type: "number", width: 95, align: "end", sortable: true },
+			{ fieldname: "_ok_rate", label: __("Success %"), width: 90, align: "end", sortable: false, format: (v, doc) => (cint(doc.sent_count) ? `<span class="sanad-tone--green sanad-tabular">${esc(pct(cint(doc.sent_count) - cint(doc.failed_count), doc.sent_count))}</span>` : "—") },
+			{ fieldname: "_read_rate", label: __("Read %"), width: 80, align: "end", sortable: false, format: (v, doc) => (cint(doc.sent_count) ? `<span class="sanad-tone--blue sanad-tabular">${esc(pct(doc.read_count, doc.sent_count))}</span>` : "—") },
+			{ fieldname: "failed_count", label: __("Failures"), type: "number", width: 95, align: "end", sortable: true, hidden_xs: true, format: (v) => (cint(v) ? `<span class="sanad-tone--red sanad-tabular">${fmt_int(v)}</span>` : "0") },
+			{ fieldname: "device", label: __("Device"), type: "avatar", width: 140, sortable: true, hidden_xs: true },
 		];
 
 		if (typeof ui.DataList === "function") {

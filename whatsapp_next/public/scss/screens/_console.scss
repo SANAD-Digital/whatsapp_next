@@ -1,0 +1,170 @@
+// The operations console — one visual language for every screen that watches something running
+// (Queue, Campaigns). A card, a metric row read left to right in the order an operator asks the
+// questions, and a lower half for the evidence and the controls that screen owns.
+//
+// Hairline dividers instead of a border per card, small capital labels, tabular figures, 8 px
+// radii: this has to read as an instrument next to a dense table, not as a marketing hero.
+// Colours are Espresso tokens only; every offset is a logical property, so RTL is free.
+
+$wa-tones: "blue" "cyan" "amber" "red" "green";
+
+.wa-ops {
+	border: var(--sanad-border);
+	border-radius: var(--sanad-radius);
+	background: var(--surface-white);
+	overflow: hidden;
+
+	// ---- the metric row ------------------------------------------------------------------------
+
+	&__metrics {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		@media (min-width: 768px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+		@media (min-width: 1200px) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+	}
+
+	&__metric {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: var(--sanad-gap-md) var(--sanad-gap-lg);
+		min-inline-size: 0;
+		// hairlines, drawn as shadows so no cell needs to know where it sits in the grid
+		box-shadow: inset 1px 0 0 0 var(--outline-gray-1), inset 0 -1px 0 0 var(--outline-gray-1);
+		// spans both columns only in the three-column band, where the row would otherwise break
+		&--wide { grid-column: span 1; }
+		@media (min-width: 768px) and (max-width: 1199px) {
+			&--wide { grid-column: span 2; }
+		}
+	}
+
+	&__label {
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--ink-gray-5);
+		white-space: nowrap;
+	}
+	&__value {
+		font-size: var(--text-2xl, 22px);
+		font-weight: 600;
+		line-height: 1.25;
+		color: var(--ink-gray-9);
+		background: none; // a tone class must colour the ink here, never the surface
+	}
+	&__sub {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+		line-height: 1.5;
+		min-block-size: 16px;
+	}
+
+	// the verb sits beside the state it changes; on a narrow cell it drops under it
+	&__state-row {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+	}
+	&__verb {
+		min-block-size: var(--sanad-target);
+		white-space: nowrap;
+	}
+
+	// status reads as state, so it keeps the dot and the tone but not a pill's weight
+	&__state {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		font-size: var(--text-lg, 16px);
+		font-weight: 600;
+		line-height: 1.6;
+		background: none;
+	}
+	&__pulse {
+		inline-size: 8px;
+		block-size: 8px;
+		border-radius: 50%;
+		background: currentColor;
+		flex: none;
+		animation: wa-ops-pulse 2s ease-in-out infinite;
+	}
+	&--paused &__pulse { animation: none; }
+
+	// the depth's breakdown: counts that are also the list's filters, drawn as text, never as pills
+	&__parts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-xs) var(--sanad-gap-md);
+	}
+	&__part {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 0;
+		min-block-size: 20px;
+		border: 0;
+		background: none;
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+		span.sanad-tabular { font-weight: 600; color: var(--ink-gray-8); }
+		&:hover { color: var(--ink-gray-9); text-decoration: underline; }
+		&[aria-pressed="true"] {
+			color: var(--sanad-accent-ink);
+			span.sanad-tabular { color: var(--sanad-accent-ink); }
+		}
+	}
+	&__dot {
+		inline-size: 7px;
+		block-size: 7px;
+		border-radius: 50%;
+		flex: none;
+	}
+	&__link {
+		padding: 0;
+		border: 0;
+		background: none;
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+		text-align: start;
+		&:hover { color: var(--sanad-accent-ink); text-decoration: underline; }
+	}
+
+	// ---- the lower half: each screen fills it with its own evidence and controls ---------------
+
+	&__lower {
+		display: grid;
+		gap: var(--sanad-gap-lg);
+		padding: var(--sanad-gap-md) var(--sanad-gap-lg) var(--sanad-gap-lg);
+		@media (min-width: 992px) {
+			grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+			gap: var(--sanad-gap-xl);
+		}
+		&--single {
+			grid-template-columns: minmax(0, 1fr);
+			@media (min-width: 992px) { grid-template-columns: minmax(0, 1fr); }
+		}
+	}
+}
+
+// the tone classes carry a soft surface; on a dot and on a metric's ink the colour is the signal
+@each $tone in $wa-tones {
+	.wa-ops__dot.sanad-tone--#{$tone} {
+		background: currentColor;
+		border: 0;
+	}
+	.wa-ops__value.sanad-tone--#{$tone},
+	.wa-ops__state.sanad-tone--#{$tone} {
+		background: none;
+		border: 0;
+	}
+}
+
+@keyframes wa-ops-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.wa-ops__pulse { animation: none !important; }
+}

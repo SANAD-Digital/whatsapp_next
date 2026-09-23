@@ -176,6 +176,39 @@ class TestApiCampaigns(IntegrationTestCase):
 		self.assertIn(name, [r["name"] for r in now])
 		self.assertEqual(next(r for r in now if r["name"] == name)["counters"]["total"], 2)
 
+	def test_overview(self):
+		"""Campaign states, what is still in flight, and the shares the console's metric row shows."""
+		running = self._running()
+		frappe.db.set_value(
+			"WhatsApp Campaign",
+			running,
+			{
+				"total_recipients": 10,
+				"sent_count": 6,
+				"delivered_count": 5,
+				"read_count": 2,
+				"failed_count": 1,
+				"started_at": frappe.utils.now_datetime(),
+			},
+			update_modified=False,
+		)
+		with as_user("WhatsApp Viewer"):
+			out = api.get_overview(days=30)
+		self.assertEqual(out["days"], 30)
+		self.assertGreaterEqual(out["states"]["Running"], 1)
+		# 10 recipients, 6 sent and 1 failed leaves 3 still to go
+		self.assertGreaterEqual(out["in_flight"], 3)
+		self.assertGreaterEqual(out["totals"]["sent"], 6)
+		self.assertGreaterEqual(out["totals"]["delivered"], 5)
+		self.assertGreaterEqual(out["totals"]["read"], 2)
+		self.assertGreaterEqual(out["totals"]["failed"], 1)
+		self.assertIsNotNone(out["per_minute"])
+
+	def test_overview_window_is_bounded(self):
+		with as_user("WhatsApp Viewer"):
+			self.assertEqual(api.get_overview(days=9999)["days"], 365)
+			self.assertEqual(api.get_overview(days=0)["days"], 30)
+
 	def test_recipients_page(self):
 		name = self._running()
 		with as_user("WhatsApp Viewer"):

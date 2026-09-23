@@ -1,7 +1,9 @@
 // whatsapp_next Desk styles — the portable kit styles, this app's own branding, and the few
 // blocks that belong to one screen only.
 @import "../js/ui/style";
+@import "screens/console";
 @import "screens/queue";
+@import "screens/campaigns";
 
 // ---------------------------------------------------------------------------------------------
 // Brand accent. The kit (`public/js/ui/`) never names a colour: it drives every active, selected
