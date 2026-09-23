@@ -263,6 +263,48 @@ await page.waitForTimeout(300);
 await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 
+// ---- the column picker holds its place while you tick ----
+await page.setViewportSize({ width: 1500, height: 950 });
+await page.waitForTimeout(700);
+await page.click(".sanad-filterbar__dd--columns .sanad-filterbar__action");
+await page.waitForTimeout(700);
+await page.$eval(".sanad-filterbar__columns-list", (e) => {
+	e.scrollTop = 180;
+});
+await page.waitForTimeout(300);
+const col_before = await page.evaluate(() => {
+	const list = document.querySelector(".sanad-filterbar__columns-list");
+	const rows = [...list.querySelectorAll(".sanad-filterbar__column")];
+	const box = list.getBoundingClientRect();
+	const mid = rows.find((r) => {
+		const b = r.getBoundingClientRect();
+		return b.top > box.top + 40 && b.bottom < box.bottom;
+	});
+	return { top: Math.round(list.scrollTop), field: mid ? mid.getAttribute("data-field") : null, index: rows.indexOf(mid) };
+});
+if (col_before.field) {
+	await page.click(`.sanad-filterbar__column[data-field="${col_before.field}"] input`);
+	await page.waitForTimeout(800);
+	const col_after = await page.evaluate((f) => {
+		const list = document.querySelector(".sanad-filterbar__columns-list");
+		const rows = [...list.querySelectorAll(".sanad-filterbar__column")];
+		return {
+			top: Math.round(list.scrollTop),
+			index: rows.findIndex((r) => r.getAttribute("data-field") === f),
+			focused: !!(document.activeElement && document.activeElement.closest(`[data-field="${f}"]`)),
+		};
+	}, col_before.field);
+	check("ticking a column keeps the list where it was", col_after.top === col_before.top, `${col_before.top} → ${col_after.top}`);
+	check("and keeps the row under the pointer", col_after.index === col_before.index, `row ${col_before.index} → ${col_after.index}`);
+	check("and leaves focus on the row", col_after.focused);
+	await page.click(`.sanad-filterbar__column[data-field="${col_before.field}"] input`);
+	await page.waitForTimeout(800);
+} else {
+	check("ticking a column keeps the list where it was", false, "no scrollable column list");
+}
+await page.keyboard.press("Escape");
+await page.waitForTimeout(300);
+
 // ---- the phone: filters behind one button, each list in a drawer off the bottom edge ----
 await page.setViewportSize({ width: 393, height: 760 });
 await page.waitForTimeout(900);

@@ -76,6 +76,17 @@ inside itself, with 48 px rows, its own search when the list is long, `Clear`, a
 only dismisses (choices apply as they are made). The scrim, Escape and Done all close it. It is the
 same option list the desktop popover and `More` use — one implementation, three hosts.
 
+## Pickers that hold their place
+
+The column picker and the grouping levels rebuild themselves after every change — they have to,
+since one tick re-orders the rest and re-enables the arrows — so both re-renders run through
+`keeping_place()`, which puts back the list's scroll offset and the control that had focus. The
+column list also **freezes its order while it is open**: unticking a column used to send its row
+from the shown group to the bottom of the list, so ticking a few in a row meant hunting for each
+one again. Re-ticking puts the column back where it was in the table rather than at the far right.
+Only the arrows — which exist to move a column — and `Reset` re-sort the list, and reopening the
+picker starts from the table's real order.
+
 ## Live use
 Outbound list — `public/js/listview/whatsapp_log_list.js` (status tabs, device, source, campaign,
 reference DocType, period, search, simulated); Inbound list —

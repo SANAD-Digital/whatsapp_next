@@ -1019,6 +1019,7 @@ sanad.ui.FilterBar = class FilterBar {
 	open_columns() {
 		this.close_popover();
 		this.close_levels();
+		this.columns_order = null;
 		const $pop = $(`<div class="sanad-filterbar__pop sanad-filterbar__pop--columns" id="${this.columns_pop_id}" role="dialog" aria-label="${ui.escape(__("Columns"))}"></div>`).appendTo(this.$columns_dd);
 		this.$columns = $pop;
 		this.$columns_btn.attr("aria-expanded", "true");
@@ -1026,18 +1027,69 @@ sanad.ui.FilterBar = class FilterBar {
 		this.keep_in_view($pop);
 	}
 
+	/**
+	 * Re-render a popover that lists things to tick and reorder, without moving the ground under
+	 * the pointer. Both of these rebuild themselves after every change — they have to, since one
+	 * tick re-orders the rest and re-enables the arrows — and that used to send the list back to
+	 * the top: picking three columns from the bottom of the list meant scrolling down three times.
+	 * The scroll offset of each list, and the control that was focused, are put back afterwards.
+	 */
+	keeping_place($pop, render) {
+		if (!$pop || !$pop.length) return render();
+		// `__pop-list` is the only list that scrolls inside itself; the levels lists grow the popover
+		const lists = () => $pop.find(".sanad-filterbar__pop-list").toArray();
+		const tops = lists().map((el) => el.scrollTop);
+		const own = $pop[0].scrollTop;
+		const active = document.activeElement;
+		const $row = active && $pop[0].contains(active) ? $(active).closest("[data-field]") : $();
+		const field = $row.attr("data-field") || null;
+		const dir = field && active.tagName === "BUTTON" ? $(active).attr("data-dir") : null;
+		const removing = field && active.tagName === "BUTTON" && $(active).hasClass("sanad-filterbar__level-remove");
+		const out = render();
+		lists().forEach((el, i) => {
+			if (tops[i]) el.scrollTop = tops[i];
+		});
+		if (own) $pop[0].scrollTop = own;
+		if (field) {
+			const $again = $pop.find(`[data-field="${CSS.escape(field)}"]`).first();
+			// the arrow that was clicked can end up disabled at the end of the list; fall back to
+			// the row's own control so focus never lands back on the document
+			const candidates = [
+				dir != null ? $again.find(`button[data-dir="${dir}"]`) : $(),
+				removing ? $again.find(".sanad-filterbar__level-remove") : $(),
+				$again.find('input[type="checkbox"]'),
+				$again.is("button") ? $again : $(),
+			];
+			const $target = candidates.find(($c) => $c.length && !$c.prop("disabled"));
+			if ($target) $target.trigger("focus");
+		}
+		return out;
+	}
+
 	fill_columns() {
+		return this.keeping_place(this.$columns, () => this.paint_columns());
+	}
+
+	paint_columns() {
 		const $pop = this.$columns;
 		const dl = this.datalist();
 		if (!$pop || !dl) return;
 		const available = dl.available_columns();
 		const shown = dl.visible_columns();
+		const typed = $pop.find(".sanad-filterbar__pop-search").val() || "";
 		$pop.empty().append(
 			`<div class="sanad-filterbar__pop-head"><span class="sanad-filterbar__pop-title">${ui.escape(__("Columns"))}</span><button type="button" class="sanad-filterbar__levels-clear">${ui.escape(__("Reset"))}</button></div>
 			<input type="search" class="form-control input-xs sanad-filterbar__pop-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search columns"))}">`
 		);
 		const $list = $(`<div class="sanad-filterbar__pop-list sanad-filterbar__columns-list"></div>`).appendTo($pop);
-		const order = shown.concat(available.map((c) => c.fieldname).filter((f) => !shown.includes(f)));
+		// The order is frozen while the picker is open. Rebuilding it on every tick moved the row
+		// under the pointer — unticking a column sent it from the shown group to the bottom of the
+		// list — so ticking a few in a row meant hunting for each one again. Only the arrows, which
+		// exist to move a column, and Reset recompute it; reopening the picker starts fresh.
+		const natural = shown.concat(available.map((c) => c.fieldname).filter((f) => !shown.includes(f)));
+		const known = new Set(this.columns_order || []);
+		const order = this.columns_order ? this.columns_order.concat(natural.filter((f) => !known.has(f))) : natural;
+		this.columns_order = order;
 		const paint = (txt) => {
 			$list.empty();
 			order.forEach((fieldname) => {
@@ -1056,15 +1108,20 @@ sanad.ui.FilterBar = class FilterBar {
 				</div>`).appendTo($list);
 			});
 		};
-		paint("");
-		$pop.find(".sanad-filterbar__pop-search").on("input", ui.debounce((e) => paint($(e.target).val()), 200));
+		paint(typed);
+		$pop.find(".sanad-filterbar__pop-search")
+			.val(typed)
+			.on("input", ui.debounce((e) => paint($(e.target).val()), 200));
 		$pop.find(".sanad-filterbar__levels-clear").on("click", () => {
 			dl.reset_columns();
+			this.columns_order = null;
 			this.fill_columns();
 		});
 		$list.on("change", "input[type=checkbox]", (e) => {
 			const field = $(e.currentTarget).closest(".sanad-filterbar__column").data("field");
-			const next = e.currentTarget.checked ? shown.concat(field) : shown.filter((f) => f !== field);
+			// re-ticking puts a column back where it was, not at the far right of the table: the row
+			// has not moved in the list, so the table should not move it either
+			const next = e.currentTarget.checked ? this.in_list_order(shown.concat(field)) : shown.filter((f) => f !== field);
 			if (!next.length) {
 				e.currentTarget.checked = true;
 				return ui.announce(__("At least one column has to stay."));
@@ -1080,8 +1137,19 @@ sanad.ui.FilterBar = class FilterBar {
 			if (i < 0 || i + dir < 0 || i + dir >= next.length) return;
 			next.splice(i + dir, 0, next.splice(i, 1)[0]);
 			dl.set_visible_columns(next);
+			this.columns_order = null; // an arrow is a request to move it, so the list re-sorts
 			this.fill_columns();
 		});
+	}
+
+	/** Sort fieldnames the way the open column picker lists them. */
+	in_list_order(fields) {
+		const order = this.columns_order || [];
+		const rank = (f) => {
+			const i = order.indexOf(f);
+			return i < 0 ? Number.MAX_SAFE_INTEGER : i;
+		};
+		return fields.slice().sort((a, b) => rank(a) - rank(b));
 	}
 
 	close_columns(restore_focus = false) {
@@ -1143,6 +1211,10 @@ sanad.ui.FilterBar = class FilterBar {
 	}
 
 	fill_levels() {
+		return this.keeping_place(this.$levels, () => this.paint_levels());
+	}
+
+	paint_levels() {
 		const $pop = this.$levels;
 		if (!$pop) return;
 		const dl = this.datalist();
