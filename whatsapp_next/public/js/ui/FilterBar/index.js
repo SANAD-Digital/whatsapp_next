@@ -23,6 +23,13 @@ const PERIOD_DEFAULTS = () => [
 	{ value: null, label: __("All") },
 ];
 
+/** Narrow form of a period label, so a phone shows "30d" instead of clipping "30 days". */
+const short_period = (value, label) => {
+	if (value == null) return __("All");
+	if (cint(value) === 0) return __("Today");
+	return __("{0}d", [ui.format_int(value)]);
+};
+
 /** `"30d"` / `"7d"` / `"today"` / `"all"` / number → days or null. */
 const parse_period = (v) => {
 	if (v == null || v === "all" || v === "") return null;
@@ -296,7 +303,7 @@ sanad.ui.FilterBar = class FilterBar {
 		const label = this.label_of(p);
 		const $group = $(`<div class="sanad-filterbar__period" role="group" aria-label="${ui.escape(label)}"></div>`);
 		options.forEach((o) => {
-			$(`<button type="button" class="sanad-filterbar__period-btn" data-key="${ui.escape(key_of(o.value))}" aria-pressed="false">${ui.escape(o.label)}</button>`)
+			$(`<button type="button" class="sanad-filterbar__period-btn" data-key="${ui.escape(key_of(o.value))}" aria-pressed="false" aria-label="${ui.escape(o.label)}"><span class="sanad-filterbar__period-long">${ui.escape(o.label)}</span><span class="sanad-filterbar__period-short" aria-hidden="true">${ui.escape(short_period(o.value, o.label))}</span></button>`)
 				.on("click", () => this.set(p.fieldname, o.value))
 				.appendTo($group);
 		});
@@ -414,6 +421,24 @@ sanad.ui.FilterBar = class FilterBar {
 		this.reflect(p.fieldname);
 	}
 
+	/** Flip / shift a popover so it never hangs off the edge of the window. */
+	keep_in_view($pop) {
+		window.setTimeout(() => {
+			if (!$pop || !$pop.parent().length) return;
+			$pop.css({ "inset-inline-start": "", "inset-inline-end": "" });
+			const box = $pop[0].getBoundingClientRect();
+			const margin = 12;
+			if (box.right > window.innerWidth - margin || box.left < margin) {
+				// anchor to the button's other edge instead of its start
+				$pop.css({ "inset-inline-start": "auto", "inset-inline-end": "0" });
+				const flipped = $pop[0].getBoundingClientRect();
+				if (flipped.left < margin || flipped.right > window.innerWidth - margin) {
+					$pop.css({ "inset-inline-end": "", "inset-inline-start": "", position: "fixed", top: `${Math.round(box.top)}px`, left: `${Math.max(margin, Math.min(window.innerWidth - box.width - margin, box.left))}px` });
+				}
+			}
+		}, 0);
+	}
+
 	open_popover(fieldname) {
 		this.close_popover();
 		const c = this.controls[fieldname];
@@ -449,9 +474,11 @@ sanad.ui.FilterBar = class FilterBar {
 			e.preventDefault();
 			items[idx].focus();
 		});
+		this.keep_in_view($pop);
 		this.fill_popover(fieldname, "").then(() => {
 			const $first = $search.length ? $search : $pop.find(".sanad-filterbar__opt input").first();
 			$first.trigger("focus");
+			this.keep_in_view($pop);
 		});
 	}
 
@@ -540,9 +567,11 @@ sanad.ui.FilterBar = class FilterBar {
 		this.$group_dd = $dd;
 		this.group_pop_id = pop_id;
 		this.$group_btn.on("click", () => (this.$levels ? this.close_levels() : this.open_levels()));
-		// DataList usually mounts after this bar: label the button once the table is there
+		// DataList mounts after this bar and is rebuilt when the route is re-entered: re-label from
+		// the list's own render cycle so the button can never describe a table that is gone
 		this.reflect_levels();
 		window.setTimeout(() => this.reflect_levels(), 0);
+		if (this.listview) ui.on_list_render(this.listview, () => this.reflect_levels());
 	}
 
 	/** The table this bar groups (set by DataList through `listview._sanad_datalist`). */
@@ -582,6 +611,7 @@ sanad.ui.FilterBar = class FilterBar {
 	open_levels() {
 		this.close_popover();
 		const $pop = $(`<div class="sanad-filterbar__pop sanad-filterbar__pop--levels" id="${this.group_pop_id}" role="dialog" aria-label="${ui.escape(__("Grouping levels"))}"></div>`).appendTo(this.$group_dd);
+		this.keep_in_view($pop);
 		this.$levels = $pop;
 		this.$group_btn.attr("aria-expanded", "true");
 		this.fill_levels();

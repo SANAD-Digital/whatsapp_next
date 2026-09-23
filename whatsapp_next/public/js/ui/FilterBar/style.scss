@@ -205,6 +205,8 @@
 			color: var(--sanad-accent-on);
 		}
 	}
+	&__period-short { display: none; }
+
 	&__clear {
 		appearance: none;
 		border: 0;
@@ -397,20 +399,25 @@
 
 // Under 768 px the prototype collapses the dropdowns behind one "Filters" button; until that
 // exists (R-037) the controls stack full-width but the search and the period stay on top.
+// Phone layout. Two rows, nothing clipped: search on its own, then Filters · Group · period.
+// Export and Desk's Filter popover are desktop-only affordances and are dropped here.
 @media (max-width: 767px) {
 	.sanad-filterbar {
-		&--list { padding-inline: var(--sanad-gap-sm); }
-		&__field, &__field--range, &__field--search { flex-basis: 100%; max-width: none; }
-		// the dropdowns collapse behind the single Filters button; search and period stay visible
+		&--list { padding: var(--sanad-gap-md) 14px; gap: var(--sanad-gap-sm); }
+		&__field, &__field--range, &__field--search { flex: 1 0 100%; max-width: none; }
+		&__row--toolbar { gap: var(--sanad-gap-sm); }
 		&__dd:not(&__dd--group) { display: none; }
 		&__clear { display: none; }
-		&__mobile-toggle { display: inline-flex; }
-		// the period gets its own full-width row so no segment is clipped
-		&__end { margin-inline-start: 0; width: 100%; flex-wrap: wrap; }
-		&__period { order: 2; flex: 1 0 100%; min-width: 0; }
-		&__period-btn { flex: 1; padding-inline: var(--sanad-gap-sm); }
-		&__actions { order: 1; flex: none; }
-		&__mobile-toggle { flex: 1; justify-content: center; }
+		// the Filters button takes only what it needs so the period never clips a label
+		&__mobile-toggle { display: inline-flex; flex: 0 0 auto; gap: 6px; }
+		&__end { margin-inline-start: 0; flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; gap: var(--sanad-gap-sm); }
+		&__period { flex: 1 1 auto; min-width: 0; }
+		&__period-btn { flex: 1 1 0; min-width: 0; padding-inline: 6px; font-size: var(--text-xs, 12px); }
+		&__period-long { display: none; }
+		&__period-short { display: inline; }
+		&__actions { flex: none; }
+		&__action--icon, &__native { display: none; }
+		&__levels { display: none; }
 		&__pop { max-width: calc(100vw - 2 * var(--sanad-gap-md)); }
 	}
 }

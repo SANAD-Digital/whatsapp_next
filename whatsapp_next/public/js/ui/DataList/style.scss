@@ -45,7 +45,21 @@
 	&__th--center { text-align: center; }
 	&__th--check, &__td--check { width: 44px; text-align: center; padding-inline: var(--sanad-gap-sm); }
 	&__th--expand, &__td--expand { width: 32px; padding-inline: var(--sanad-gap-xs); }
-	&__th--action, &__td--action { width: 1%; text-align: center; white-space: nowrap; }
+	// the action column stays put when the table scrolls sideways, so "View" is never half-cut
+	&__th--action, &__td--action {
+		width: 1%;
+		text-align: center;
+		white-space: nowrap;
+		position: sticky;
+		inset-inline-end: 0;
+		background: var(--surface-white);
+		box-shadow: inset 1px 0 0 var(--outline-gray-1);
+		[dir="rtl"] & { box-shadow: inset -1px 0 0 var(--outline-gray-1); }
+	}
+	&__th--action { z-index: 6; background: var(--surface-gray-2); }
+	&__td--action { z-index: 2; }
+	&__row:hover &__td--action { background: var(--surface-gray-1); }
+	&__row:has(.list-row-checkbox:checked) &__td--action { background: var(--sanad-accent-soft); }
 	&__th--sorted { color: var(--ink-gray-9); }
 	&__sort {
 		appearance: none;
@@ -150,6 +164,8 @@
 	}
 	// ---- grouping (prototype: a 36 px group row per level, indented 22 px, with count and total)
 	&__group td {
+		position: sticky;
+		inset-inline-start: 0;
 		height: 36px;
 		padding: 0;
 		border-block-end: var(--sanad-border);
@@ -344,12 +360,16 @@
 		.sanad-filterbar--list,
 		.result-container,
 		.sanad-datalist__footer { border-inline: 0; border-radius: 0; }
+		.result-container { padding-inline: 14px; }
+		.sanad-datalist__footer { padding-inline: 14px; gap: var(--sanad-gap-xs); }
 	}
 	.sanad-datalist__wrap--cards {
 		border: 0;
 		background: transparent;
 		// pinning is a desktop affordance; on a card there is nothing to scroll past
-		.sanad-datalist__td--pinned, .sanad-datalist__th--pinned { position: static; background-image: none; box-shadow: none; }
+		.sanad-datalist__td--pinned, .sanad-datalist__th--pinned,
+		.sanad-datalist__td--action, .sanad-datalist__th--action,
+		.sanad-datalist__group td { position: static; background-image: none; box-shadow: none; }
 		.sanad-datalist thead { display: none; }
 		.sanad-datalist, .sanad-datalist tbody { display: block; }
 		.sanad-datalist__row {
@@ -402,5 +422,10 @@
 		.sanad-datalist__detail td { display: block; }
 		.sanad-datalist__row--empty, .sanad-datalist__row--skeleton { display: block; td { display: block; } }
 	}
-	.sanad-datalist__footer { flex-direction: column; align-items: stretch; .sanad-datalist__pager { justify-content: space-between; } }
+	.sanad-datalist__footer {
+		flex-direction: column;
+		align-items: stretch;
+		.sanad-datalist__pager { justify-content: space-between; }
+		.sanad-datalist__page { margin-inline-end: 0; }
+	}
 }

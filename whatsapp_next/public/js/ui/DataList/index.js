@@ -26,6 +26,8 @@ sanad.ui.DataList = class DataList {
 	 * @param {{title?, description?, action?}} [opts.empty]
 	 * @param {"cards"|"scroll"} [opts.mobile="cards"]
 	 * @param {Array<string>} [opts.group_by] — initial grouping levels, outermost first
+	 * @param {number} [opts.group_page_length=200] — rows fetched while grouping, so the groups and
+	 *   their counts describe the whole filtered result rather than one page
 	 * @param {boolean} [opts.groupable=true] — offer grouping (the levels menu lives in FilterBar)
 	 * @param {boolean} [opts.pinnable=true] — a pin toggle on every header cell
 	 * @param {Array<string>} [opts.pinned] — initially pinned fieldnames, in order
@@ -95,9 +97,10 @@ sanad.ui.DataList = class DataList {
 		};
 		lv.reset_defaults = function () {
 			// the page that was just fetched (a caller resetting `start = 0` lands on page 1)
-			self.page = Math.floor(cint(lv.start) / self.page_length);
-			lv.page_length = self.page_length;
-			lv.start = self.page * self.page_length;
+			const size = self.rows_wanted();
+			self.page = Math.floor(cint(lv.start) / size);
+			lv.page_length = size;
+			lv.start = self.page * size;
 		};
 		lv.toggle_result_area = function () {
 			lv.$result.parent(".result-container").show();
@@ -349,13 +352,32 @@ sanad.ui.DataList = class DataList {
 			.join("");
 	}
 
-	/** Replace the grouping levels (outermost first); `[]` turns grouping off. */
+	/**
+	 * Replace the grouping levels (outermost first); `[]` turns grouping off.
+	 * Grouping a single page would describe 20 rows out of hundreds, so while it is on the list
+	 * fetches up to `group_page_length` rows and the pager stands down.
+	 */
 	set_group_by(fields) {
+		const was = this.group_by.length;
 		this.group_by = (fields || []).filter(Boolean);
 		this.collapsed.clear();
-		this.render();
 		if (typeof this.opts.on_group_change === "function") this.opts.on_group_change(this.group_by.slice(), this);
+		if (!!was !== !!this.group_by.length) {
+			this.page = 0;
+			const lv = this.listview;
+			lv.start = 0;
+			lv.page_length = this.rows_wanted();
+			lv.last_args = null;
+			lv.refresh();
+		} else {
+			this.render();
+		}
 		return this;
+	}
+
+	/** How many rows this table asks the server for right now. */
+	rows_wanted() {
+		return this.group_by.length ? cint(this.opts.group_page_length) || 200 : this.page_length;
 	}
 
 	/** Fields that can be grouped: every column backed by a real, low-cardinality-ish field. */
@@ -549,7 +571,7 @@ sanad.ui.DataList = class DataList {
 	count_for(rows) {
 		const lv = this.listview;
 		const key = JSON.stringify(lv.get_filters_for_args() || []);
-		if (this.page === 0 && rows.length < this.page_length) {
+		if (this.page === 0 && rows.length < this.rows_wanted()) {
 			this.count_key = key;
 			this.total = rows.length;
 			return Promise.resolve(this.total);
@@ -570,6 +592,13 @@ sanad.ui.DataList = class DataList {
 		const paint = () => {
 			const total = this.total == null ? rows.length : this.total;
 			const text = typeof this.opts.footer.count === "function" ? this.opts.footer.count(total, rows) : ui.plural(total, { one: __("{0} record"), other: __("{0} records") });
+			if (this.group_by.length) {
+				const capped = total > rows.length;
+				$count.text(capped ? __("{0} · grouping the first {1}", [text, ui.format_int(rows.length)]) : __("{0} · all grouped", [text]));
+				$pager.empty();
+				if (typeof this.opts.footer.extra === "function") this.opts.footer.extra(this.$footer.find(".sanad-datalist__extra"), rows, this);
+				return;
+			}
 			const from = rows.length ? this.page * this.page_length + 1 : 0;
 			const to = this.page * this.page_length + rows.length;
 			$count.text(rows.length ? __("{0} · showing {1}–{2}", [text, ui.format_int(from), ui.format_int(to)]) : text);

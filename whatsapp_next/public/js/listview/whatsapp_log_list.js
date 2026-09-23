@@ -1,5 +1,5 @@
 // WhatsApp Log (Outbound) list — screen 4 (09 §1B/§1C row 4), prototype-faithful (D-064):
-// PageHeader (title + description) → FilterBar toolbar → DataList table (Contact + phone, Status,
+// FilterBar toolbar → DataList table (Contact + phone, Status,
 // Document type, Document no., Device, Sent at, Error, On behalf, View) → footer. "View" and the
 // row click open the record Drawer over `messages.get_outbound`; BulkActions (resend failed)
 // works on the table's checkboxes; realtime `wa:message:status` refreshes the page.
@@ -167,13 +167,8 @@ frappe.provide("whatsapp_next.messages");
 			const refresh = () => listview.refresh();
 			const open = (doc) => whatsapp_next.messages.open_outbound_drawer(doc.name, { after_change: refresh, listview });
 
-			if (typeof ui.PageHeader === "function") {
-				new ui.PageHeader({
-					listview,
-					title: __("Outbound messages"),
-					description: __("Everything sent from your devices: status, document, device and errors."),
-				});
-			}
+			// No PageHeader here: Desk's own page head already names the screen, and a second title
+			// above the toolbar only repeated it (owner, 2026-09-23). The card starts at the toolbar.
 
 			new ui.FilterBar({
 				listview,
