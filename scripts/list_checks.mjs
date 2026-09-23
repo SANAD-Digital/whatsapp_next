@@ -2,7 +2,8 @@
 //
 // These assert the things that broke more than once while the list was being built: the stacking
 // order around sticky cells, the grouping tree, group selection, the toolbar's shape at several
-// widths, and the date filter's popup placement, per-field rail and grid pickers. Run it after touching `public/js/ui/DataList` or `public/js/ui/FilterBar`.
+// widths, its overflow into "More" on a narrow desktop, the phone's filter drawer, and the
+// date filter's popup placement, per-field rail and grid pickers. Run it after touching `public/js/ui/DataList` or `public/js/ui/FilterBar`.
 //
 // Needs Playwright + Chromium outside the repo (see scripts/browser_smoke.mjs), and is run from
 // that folder so `playwright` resolves:
@@ -42,30 +43,89 @@ await page.evaluate(async () => {
 });
 await page.goto(`${HOST}/app/${ROUTE}`, { waitUntil: "networkidle" });
 await page.waitForTimeout(3000);
+// Frappe remembers a user's list filters, so a previous run's leftovers would decide how much room
+// the toolbar has and what this run measures. Every run starts from none.
+await page.evaluate(async () => {
+	await cur_list.filter_area.clear(false);
+	cur_list.refresh();
+});
+await page.waitForTimeout(1800);
 
-// ---- the toolbar keeps its shape and never hides its filters on a desktop ----
+// ---- the toolbar is one line at every desktop width: what does not fit goes behind "More" ----
+const wrapped = (sel) =>
+	page.evaluate((s) => {
+		const box = document.querySelector(s);
+		if (!box) return false;
+		const rects = [...box.children].filter((k) => k.offsetParent).map((k) => k.getBoundingClientRect());
+		if (rects.length < 2) return false;
+		const first = rects[0];
+		return rects.some((r) => r.top >= first.bottom - 1 || r.bottom <= first.top + 1);
+	}, sel);
+
 for (const width of [1700, 1400, 1200, 1000, 900]) {
 	await page.setViewportSize({ width, height: 950 });
-	await page.waitForTimeout(600);
-	const shown = await page.$$eval(".sanad-filterbar__dd:not(.sanad-filterbar__dd--group):not(.sanad-filterbar__dd--columns)", (n) => n.filter((e) => e.offsetParent).length);
-	const collapsed = await page.$eval(".sanad-filterbar__mobile-toggle", (e) => !!e.offsetParent).catch(() => false);
-	const same_line = await page.evaluate(() => {
-		const m = document.querySelector(".sanad-filterbar__main");
-		const e = document.querySelector(".sanad-filterbar__end");
-		return !m || !e ? true : Math.abs(m.getBoundingClientRect().top - e.getBoundingClientRect().top) < 6;
+	await page.waitForTimeout(700);
+	const state = await page.evaluate(() => {
+		const main = document.querySelector(".sanad-filterbar__main");
+		const dd = [...main.querySelectorAll(":scope > .sanad-filterbar__dd")].filter((e) => !e.classList.contains("sanad-filterbar__dd--more"));
+		const more = document.querySelector(".sanad-filterbar__dd--more");
+		const count = document.querySelector(".sanad-filterbar__more-count");
+		return {
+			total: dd.length,
+			shown: dd.filter((e) => e.offsetParent).length,
+			more_on: !!(more && !more.hasAttribute("hidden")),
+			count: count ? parseInt(count.textContent || "0", 10) || 0 : 0,
+			phone: !!document.querySelector(".sanad-filterbar__mobile-toggle").offsetParent,
+		};
 	});
-	check(`${width}px: filters visible`, shown > 0 && !collapsed, `${shown} shown, collapsed=${collapsed}`);
-	check(`${width}px: the action cluster holds the first line`, same_line);
+	const one_line = !(await wrapped(".sanad-filterbar__main")) && !(await wrapped(".sanad-filterbar__actions"));
+	check(`${width}px: the toolbar stays on one line`, one_line);
+	check(
+		`${width}px: every filter is shown or counted in "More"`,
+		!state.phone && state.shown + state.count === state.total && (state.count > 0) === state.more_on,
+		`${state.shown} shown, ${state.count} behind More of ${state.total}`
+	);
+}
+
+// the hidden ones are reachable, and they are the same fields the toolbar would have shown
+await page.setViewportSize({ width: 900, height: 950 });
+await page.waitForTimeout(700);
+const hidden_now = await page.$eval(".sanad-filterbar__more-count", (e) => parseInt(e.textContent || "0", 10) || 0).catch(() => 0);
+if (hidden_now) {
+	await page.click(".sanad-filterbar__more");
+	await page.waitForTimeout(500);
+	const rows = await page.$$eval(".sanad-filterbar__more-list .sanad-filter-sheet__row", (n) => n.length);
+	check('"More" lists every filter it hides', rows === hidden_now, `${rows} row(s) for ${hidden_now} hidden`);
+	await page.click(".sanad-filterbar__more-list .sanad-filter-sheet__trigger >> nth=0");
+	await page.waitForTimeout(800);
+	const opts = await page.$$eval(".sanad-filterbar__more-list .sanad-filterbar__opt", (n) => n.length);
+	check("a filter opens its options inside More", opts > 0, `${opts} option(s)`);
+	await page.keyboard.press("Escape");
+	await page.waitForTimeout(300);
+} else {
+	check('"More" lists every filter it hides', false, "nothing overflowed at 900px");
 }
 await page.setViewportSize({ width: 1500, height: 950 });
 await page.waitForTimeout(600);
 
 // ---- grouping ----
+// grouping is remembered per user in List View Settings, so the run starts from none and adds its
+// own; without the reset a second run piled levels on the first one's and measured a different table
+await page.click(".sanad-filterbar__action--group");
+await page.waitForTimeout(400);
+if ((await page.$$(".sanad-filterbar__levels-clear")).length) {
+	await page.click(".sanad-filterbar__levels-clear");
+	await page.waitForTimeout(1200);
+}
+await page.keyboard.press("Escape");
+await page.waitForTimeout(300);
 for (const i of [1, 0, 0]) {
 	await page.click(".sanad-filterbar__action--group");
 	await page.waitForTimeout(400);
-	const add = await page.$$(".sanad-filterbar__level--add");
-	if (add[i]) await add[i].click();
+	// a fresh locator each time: the popover re-renders itself, and a handle taken before that
+	// clicks a node that is no longer in the document, silently doing nothing
+	const add = await page.$$eval(".sanad-filterbar__level--add", (n) => n.length);
+	if (add > i) await page.click(`.sanad-filterbar__level--add >> nth=${i}`);
 	await page.waitForTimeout(1200);
 	await page.keyboard.press("Escape");
 	await page.waitForTimeout(300);
@@ -202,6 +262,45 @@ await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
+
+// ---- the phone: filters behind one button, each list in a drawer off the bottom edge ----
+await page.setViewportSize({ width: 393, height: 760 });
+await page.waitForTimeout(900);
+// Desk keeps its sidebar expanded over the page at this width until it is told otherwise; in a real
+// phone session the user closes it, and a script has to do the same before it can reach the toolbar
+await page.evaluate(() => {
+	document.querySelectorAll(".body-sidebar-container.expanded").forEach((e) => e.classList.remove("expanded"));
+});
+await page.waitForTimeout(400);
+check("the phone collapses the filters behind one button", await page.$eval(".sanad-filterbar__mobile-toggle", (e) => !!e.offsetParent).catch(() => false));
+await page.click(".sanad-filterbar__mobile-toggle");
+await page.waitForTimeout(800);
+const sheet_rows = await page.$$eval(".sanad-filter-sheet__row", (n) => n.length);
+check("the sheet has one field per filter", sheet_rows > 0, `${sheet_rows} field(s)`);
+await page.click(".sanad-filter-sheet__trigger >> nth=0");
+await page.waitForTimeout(800);
+const drawer = await page
+	.$eval(".sanad-optsheet__panel", (e) => {
+		const r = e.getBoundingClientRect();
+		return { top: Math.round(r.top), bottom: Math.round(r.bottom), h: Math.round(r.height) };
+	})
+	.catch(() => null);
+check(
+	"tapping a filter raises a drawer off the bottom edge",
+	!!drawer && Math.abs(drawer.bottom - 760) < 2 && drawer.h >= 760 * 0.4 && drawer.h <= 760 * 0.9,
+	drawer ? JSON.stringify(drawer) : "no drawer"
+);
+const row_h = await page.$eval(".sanad-optsheet__list .sanad-filterbar__opt", (e) => Math.round(e.getBoundingClientRect().height)).catch(() => 0);
+check("its rows are a thumb's size", row_h >= 44, `${row_h}px`);
+const scrolls = await page.$eval(".sanad-optsheet__list", (e) => getComputedStyle(e).overflowY === "auto").catch(() => false);
+check("the list scrolls inside the drawer", scrolls);
+await page.click(".sanad-optsheet__list .sanad-filterbar__opt >> nth=0");
+await page.waitForTimeout(1000);
+const picked = await page.$eval(".sanad-filter-sheet__row:first-child .sanad-filter-sheet__chosen", (e) => e.textContent.trim()).catch(() => "");
+check("choosing in the drawer sets the filter", !!picked && picked !== "All", picked);
+await page.click(".sanad-optsheet__done");
+await page.waitForTimeout(600);
+check("Done dismisses the drawer", (await page.$$(".sanad-optsheet")).length === 0);
 
 check("no console errors", errors.length === 0, errors.join(" | "));
 await browser.close();

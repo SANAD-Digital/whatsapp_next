@@ -52,6 +52,30 @@ Methods: `set(fieldname, value)`, `set_search(text, fields)`, `sync()` (re-read 
 filters, incl. mapping an `in` filter back to checked boxes), `get_filters()`,
 `get_or_filters()`, `group_by(fieldname)`, `export()`, `clear()`, `destroy()`.
 
+## Widths: one line, then "More"
+
+The toolbar is **one line at every desktop width**. It is not wrapped to a second line and it is
+not squeezed: filter buttons that do not fit are hidden from the end and counted on a **More**
+button, which opens them as a list of fields — each naming what is chosen and opening its own
+options in place, with a search box where the list is long. If every filter is already behind
+`More` and the row is still short, the action icons start moving into a **…** menu of their own
+(they are lent to it and handed back, so each keeps its own popover).
+
+The measurement is the browser's: the row is allowed to wrap in CSS and items are hidden until
+nothing has wrapped, which is checked by **vertical overlap**, not `offsetTop` — the row centres
+its items, so a short button sits a few pixels lower than a tall one on the very same line. That
+detail is what made two earlier attempts (D-072, D-075b) hide a toolbar that fit perfectly.
+`ResizeObserver` re-runs it, once per frame.
+
+## Phones: a drawer off the bottom edge
+
+Under 768 px the filters collapse behind one **Filters** button carrying the number that is set.
+Its sheet is a list of fields, and tapping one raises that filter's options in a **drawer off the
+bottom of the screen** — around half the height, growing to 88 % as the list needs it, scrolling
+inside itself, with 48 px rows, its own search when the list is long, `Clear`, and a `Done` that
+only dismisses (choices apply as they are made). The scrim, Escape and Done all close it. It is the
+same option list the desktop popover and `More` use — one implementation, three hosts.
+
 ## Live use
 Outbound list — `public/js/listview/whatsapp_log_list.js` (status tabs, device, source, campaign,
 reference DocType, period, search, simulated); Inbound list —

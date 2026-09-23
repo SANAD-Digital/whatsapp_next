@@ -55,7 +55,10 @@
 	&__field--range { flex-basis: 200px; }
 	&__field--search {
 		position: relative;
-		flex: 1 1 220px;
+		// it may grow to 320 but it gives way first: a search that fills the row leaves the filters
+		// nowhere to sit, and a 140 px box is still a usable one
+		flex: 1 1 140px;
+		min-width: 120px;
 		max-width: 320px;
 		.sanad-filterbar__search {
 			min-height: var(--sanad-ctl-h);
@@ -181,10 +184,13 @@
 		display: flex;
 		align-items: center;
 		flex-wrap: nowrap;
+		// the cluster keeps its natural width: letting it shrink here squeezed the icon row into
+		// wrapping at any width, and the toolbar then hid a cluster that had all the room it needed
 		flex: none;
 		gap: var(--sanad-gap-sm);
 		margin-inline-start: auto;
 	}
+	&__datefilter { min-width: 0; }
 
 	// joined segmented period control (prototype: one bordered group, no gaps)
 	&__period {
@@ -218,6 +224,44 @@
 	}
 	&__period-short { display: none; }
 
+
+	// overflow: what the toolbar could not fit, kept reachable rather than wrapped or squeezed
+	&__hidden { display: none !important; }
+	&__more { font-weight: 600; }
+	&__more-icon { display: inline-flex; color: var(--ink-gray-6); }
+	// on a tight row the word goes and the icon carries it, so "More" itself never causes the wrap
+	@media (max-width: 900px) {
+		&__more &__btn-label { display: none; }
+	}
+	&__more-count {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 18px;
+		height: 18px;
+		padding-inline: 5px;
+		border-radius: 999px;
+		background: var(--sanad-accent-soft);
+		color: var(--sanad-accent-ink);
+		font-size: var(--text-tiny, 11px);
+		font-weight: 700;
+		&:empty { display: none; }
+	}
+	&__pop--more { width: 280px; padding: 0; }
+	&__pop--more &__pop-head { padding: 8px 10px; border-block-end: var(--sanad-border); }
+	&__more-list { padding: 2px 10px 8px; max-height: 60vh; overflow: auto; }
+	&__pop--amore {
+		width: auto;
+		min-width: 0;
+		padding: 5px;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+	}
+	&__pop--amore &__dd { width: 100%; }
+	&__pop--amore &__action { width: 100%; justify-content: flex-start; }
+	&__pop--amore &__action--icon { width: var(--sanad-ctl-h); }
+	&__pop--amore &__native { width: 100%; }
 
 	// a filter the bar has no button for (one arriving in the URL): visible and removable
 	&__extra { display: contents; }
@@ -268,7 +312,7 @@
 
 	// Group by / Export / the native Filter popover — every one of them the same 32 px control, so
 	// the row reads as one toolbar rather than three button languages side by side.
-	&__actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sanad-gap-sm); }
+	&__actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sanad-gap-sm); min-width: 0; }
 	&__action--icon,
 	&__action--group {
 		width: var(--sanad-ctl-h);
@@ -524,4 +568,102 @@
 		padding-block-end: var(--sanad-gap-sm);
 		&[hidden] { display: none; }
 	}
+}
+
+// The option drawer: one filter's list, rising from the bottom of the screen where a thumb is.
+// It stops around half the screen and grows to 88 % as the list needs it, scrolling inside itself.
+.sanad-optsheet {
+	position: fixed;
+	inset: 0;
+	z-index: 2000;
+	display: flex;
+	align-items: flex-end;
+
+	&__scrim {
+		position: absolute;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.35);
+		opacity: 0;
+		transition: opacity 180ms ease;
+	}
+	&--in &__scrim { opacity: 1; }
+
+	&__panel {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		min-height: 46vh;
+		max-height: 88vh;
+		background: var(--surface-modal, var(--surface-white));
+		border-start-start-radius: 16px;
+		border-start-end-radius: 16px;
+		box-shadow: var(--shadow-lg);
+		transform: translateY(100%);
+		transition: transform 200ms cubic-bezier(0.2, 0, 0, 1);
+		padding-block-end: env(safe-area-inset-bottom, 0);
+	}
+	&--in &__panel { transform: translateY(0); }
+
+	&__grip {
+		flex: none;
+		width: 36px;
+		height: 4px;
+		margin: 8px auto 2px;
+		border-radius: 999px;
+		background: var(--outline-gray-2);
+	}
+	&__head {
+		flex: none;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--sanad-gap-sm);
+		padding: 6px 16px 10px;
+	}
+	&__title { font-size: var(--text-md, 14px); font-weight: 600; color: var(--ink-gray-9); }
+	&__clear {
+		appearance: none;
+		border: 0;
+		background: transparent;
+		padding: 6px 4px;
+		color: var(--sanad-accent-ink);
+		font-size: var(--text-sm, 13px);
+		font-weight: 600;
+		cursor: pointer;
+	}
+	&__search {
+		flex: none;
+		padding: 0 16px 10px;
+		.form-control { min-height: 40px; font-size: var(--text-sm, 13px); }
+	}
+	&__list {
+		flex: 1;
+		min-height: 0;
+		overflow: auto;
+		-webkit-overflow-scrolling: touch;
+		padding: 0 8px 8px;
+		// a row a thumb can hit, not a desktop checkbox line
+		.sanad-filterbar__opt {
+			min-height: 48px;
+			padding-inline: 8px;
+			border-radius: var(--border-radius-md, 6px);
+			gap: 12px;
+			font-size: var(--text-sm, 13px);
+			&:active { background: var(--surface-gray-2); }
+			input { width: 18px; height: 18px; }
+		}
+	}
+	&__foot {
+		flex: none;
+		display: flex;
+		padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+		border-block-start: var(--sanad-border);
+		.btn { width: 100%; min-height: 44px; }
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.sanad-optsheet__panel,
+	.sanad-optsheet__scrim { transition: none; }
 }

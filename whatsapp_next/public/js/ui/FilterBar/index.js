@@ -113,6 +113,7 @@ sanad.ui.FilterBar = class FilterBar {
 		of_type(["select", "daterange"])
 			.slice(0, cint(this.opts.max_inline) || 99)
 			.forEach((p) => (p.type === "daterange" ? this.render_daterange(p) : this.render_select(p)));
+		this.render_more();
 		$(`<button type="button" class="sanad-filterbar__clear" hidden>${ui.escape(__("Clear filters"))}</button>`)
 			.on("click", () => this.clear())
 			.appendTo(this.$main);
@@ -124,6 +125,7 @@ sanad.ui.FilterBar = class FilterBar {
 		of_type(["tabs"]).forEach((p) => this.render_tabs(p));
 		if (!this.$tabs.children().length) this.$tabs.remove();
 		this.render_actions();
+		this.render_actions_more();
 		if (this.listview) {
 			this.listview._sanad_filterbar = this;
 			this.bind_listview();
@@ -138,16 +140,21 @@ sanad.ui.FilterBar = class FilterBar {
 			this.close_popover();
 			this.close_levels();
 			this.close_columns();
+			this.close_more();
+			this.close_amore();
 		});
 		// the popovers re-render their own contents, which drops focus to the body; a document-level
 		// handler keeps Escape working wherever focus ended up
 		$(document).on(`keydown.${this.id}`, (e) => {
-			if (e.key !== "Escape" || (!this.$open && !this.$levels && !this.$columns)) return;
+			if (e.key !== "Escape" || (!this.$open && !this.$levels && !this.$columns && !this.$more && !this.$amore)) return;
 			e.stopPropagation();
 			this.close_popover(true);
 			this.close_levels(true);
 			this.close_columns(true);
+			this.close_more(true);
+			this.close_amore(true);
 		});
+		this.watch_layout();
 	}
 
 	bind_listview() {
@@ -440,6 +447,126 @@ sanad.ui.FilterBar = class FilterBar {
 		this.controls[preset.fieldname] = { preset, $el: $list, type: "tabs", options };
 	}
 
+	// ---- overflow: what does not fit goes behind "More" ---------------------------------------
+
+	/**
+	 * The toolbar is one line. Whatever does not fit on it is not wrapped to a second line and it
+	 * is not squeezed — it moves behind **More**, which carries the number hidden and opens them
+	 * as a list. The measurement is the browser's own: the row is allowed to wrap in CSS, and
+	 * buttons are hidden from the end until nothing has wrapped. Predicting widths is what broke
+	 * this twice before (D-072, D-075b) — a flex line that has actually wrapped cannot be wrong.
+	 */
+	render_more() {
+		this.$more_dd = $('<div class="sanad-filterbar__dd sanad-filterbar__dd--more" hidden></div>').appendTo(this.$main);
+		this.more_pop_id = `${this.id}-more-pop`;
+		this.$more_btn = $(`<button type="button" class="sanad-filterbar__btn sanad-filterbar__more" aria-haspopup="dialog" aria-expanded="false" aria-controls="${this.more_pop_id}">
+				<span class="sanad-filterbar__more-icon" aria-hidden="true">${ui.icon("es-line-filter", "xs")}</span>
+				<span class="sanad-filterbar__btn-label">${ui.escape(__("More"))}</span>
+				<span class="sanad-filterbar__more-count sanad-tabular"></span>
+				<span class="sanad-filterbar__chevron" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
+			</button>`)
+			.on("click", () => (this.$more ? this.close_more() : this.open_more()))
+			.appendTo(this.$more_dd);
+	}
+
+	/** The same treatment for the action cluster: the icons that do not fit go under a "…". */
+	render_actions_more() {
+		if (!this.$actions || !this.$actions.children().length) return;
+		this.$amore_dd = $('<div class="sanad-filterbar__dd sanad-filterbar__dd--amore" hidden></div>').appendTo(this.$actions);
+		this.amore_pop_id = `${this.id}-amore-pop`;
+		this.$amore_btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--icon" title="${ui.escape(__("More actions"))}" aria-label="${ui.escape(__("More actions"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${this.amore_pop_id}">${ui.icon("es-line-dot-horizontal", "sm")}</button>`)
+			.on("click", () => (this.$amore ? this.close_amore() : this.open_amore()))
+			.appendTo(this.$amore_dd);
+	}
+
+	/** Re-lay the toolbar whenever it changes size; one pass per frame, never during a paint. */
+	watch_layout() {
+		this.relayout();
+		const run = () => {
+			window.cancelAnimationFrame(this._layout_raf);
+			this._layout_raf = window.requestAnimationFrame(() => this.relayout());
+		};
+		if (window.ResizeObserver) {
+			this._ro = new ResizeObserver(run);
+			this._ro.observe(this.$toolbar[0]);
+		}
+		$(window).on(`resize.${this.id}`, run);
+		if (document.fonts && document.fonts.ready) document.fonts.ready.then(run).catch(() => {});
+	}
+
+	/**
+	 * Has any child of `$box` been pushed onto a second flex line?
+	 *
+	 * Not by `offsetTop`: the row centres its items, so a short button sits a few pixels lower than
+	 * a tall one on the very same line — which is what made an earlier pass hide a toolbar that fit
+	 * perfectly. Two items share a line when their vertical extents overlap; an item that clears
+	 * the first one's band entirely is on another line.
+	 */
+	static wrapped($box) {
+		const kids = $box.children(":visible").toArray();
+		if (kids.length < 2) return false;
+		const rects = kids.map((k) => k.getBoundingClientRect()).filter((r) => r.height > 0);
+		if (rects.length < 2) return false;
+		const first = rects[0];
+		return rects.some((r) => r.top >= first.bottom - 1 || r.bottom <= first.top + 1);
+	}
+
+	/**
+	 * Hide items from the end of `$box` until it fits on one line, showing `$more` while any are
+	 * hidden. Returns the fieldnames (or elements) left out.
+	 */
+	fit($box, items, $more_dd) {
+		items.forEach((el) => $(el).removeClass("sanad-filterbar__hidden"));
+		$more_dd.prop("hidden", true);
+		let left = items.slice();
+		if (!$box.is(":visible") || !$box[0].clientWidth) return [];
+		if (!FilterBar.wrapped($box)) return [];
+		$more_dd.prop("hidden", false);
+		while (left.length && FilterBar.wrapped($box)) {
+			const el = left.pop();
+			$(el).addClass("sanad-filterbar__hidden");
+		}
+		const hidden = items.filter((el) => !left.includes(el));
+		$more_dd.prop("hidden", !hidden.length);
+		return hidden;
+	}
+
+	relayout() {
+		// the "…" menu holds real buttons on loan; they go home before anything is measured
+		if (this.$amore) this.close_amore();
+		if (!this.$main || !this.$main.length || this.phone()) {
+			if (this.$more_dd) this.$more_dd.prop("hidden", true);
+			if (this.$amore_dd) this.$amore_dd.prop("hidden", true);
+			if (this.$main) this.$main.find(".sanad-filterbar__hidden").removeClass("sanad-filterbar__hidden");
+			if (this.$actions) this.$actions.find(".sanad-filterbar__hidden").removeClass("sanad-filterbar__hidden");
+			return this;
+		}
+		const filters = this.$main.children(".sanad-filterbar__dd, .sanad-filterbar__chipfilter").not(this.$more_dd).toArray();
+		// Desk's own filter section rides in the cluster too, so it overflows with the rest
+		const actions = this.$actions ? this.$actions.children(".sanad-filterbar__dd, .sanad-filterbar__action, .sanad-filterbar__native").not(this.$amore_dd).toArray() : [];
+		// the cluster settles first: an icon row that has wrapped is as wrong as a filter row that has
+		this.hidden_actions = this.$amore_dd ? this.fit(this.$actions, actions, this.$amore_dd) : [];
+		this.hidden_filters = this.fit(this.$main, filters, this.$more_dd);
+		// the filters give way first; only once every one of them is behind "More" and the row is
+		// still short does the action cluster start handing its icons to the "…"
+		while (this.$amore_dd && actions.length > this.hidden_actions.length && this.hidden_filters.length === filters.length && FilterBar.wrapped(this.$main)) {
+			const el = actions[actions.length - 1 - this.hidden_actions.length];
+			$(el).addClass("sanad-filterbar__hidden");
+			this.hidden_actions.push(el);
+			this.$amore_dd.prop("hidden", false);
+			this.hidden_filters = this.fit(this.$main, filters, this.$more_dd);
+		}
+		this.$more_btn.find(".sanad-filterbar__more-count").text(this.hidden_filters.length ? ui.format_int(this.hidden_filters.length) : "");
+		if (this.$more && this.hidden_filters.length) this.fill_more();
+		else if (this.$more) this.close_more();
+		if (this.$amore && !this.hidden_actions.length) this.close_amore();
+		return this;
+	}
+
+	phone() {
+		return window.matchMedia("(max-width: 767px)").matches;
+	}
+
 	/**
 	 * The "Filters" button and its sheet: one button carrying the number that is set, opening a
 	 * full-height sheet with the same option lists.
@@ -472,14 +599,80 @@ sanad.ui.FilterBar = class FilterBar {
 			dialog.hide();
 		});
 		const $body = dialog.get_field("body").$wrapper.empty();
-		presets.forEach((preset) => this.sheet_field($body, preset));
+		presets.forEach((preset) => this.option_field($body, preset));
 		dialog.show();
 		this.$sheet = dialog;
 		return dialog;
 	}
 
-	/** One collapsible field in the sheet. */
-	sheet_field($body, preset) {
+	/**
+	 * The hidden filters, as a list of the same fields the phone sheet uses: one row per filter
+	 * naming what is chosen, opening its own options in place. `More` is a place to reach a filter,
+	 * not a second kind of filter UI.
+	 */
+	open_more() {
+		this.close_popover();
+		this.close_levels();
+		this.close_columns();
+		this.$more = $(`<div class="sanad-filterbar__pop sanad-filterbar__pop--more" id="${this.more_pop_id}" role="dialog" aria-label="${ui.escape(__("More filters"))}"></div>`).appendTo(this.$more_dd);
+		this.$more_btn.attr("aria-expanded", "true");
+		this.fill_more();
+		this.keep_in_view(this.$more);
+	}
+
+	fill_more() {
+		if (!this.$more) return;
+		const $pop = this.$more.empty();
+		$(`<div class="sanad-filterbar__pop-head"><span class="sanad-filterbar__pop-title">${ui.escape(__("More filters"))}</span>
+				<button type="button" class="btn btn-xs btn-default sanad-filterbar__pop-close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "xs")}</button></div>`)
+			.appendTo($pop)
+			.find(".sanad-filterbar__pop-close")
+			.on("click", () => this.close_more(true));
+		const $body = $('<div class="sanad-filter-sheet sanad-filterbar__more-list"></div>').appendTo($pop);
+		(this.hidden_filters || []).forEach((el) => {
+			const c = Object.values(this.controls).find((x) => x.$dd && x.$dd[0] === el);
+			if (c) this.option_field($body, c.preset, { inline: true });
+		});
+		if (!$body.children().length) $body.append(`<div class="sanad-filterbar__pop-empty">${ui.escape(__("No options"))}</div>`);
+	}
+
+	close_more(restore_focus = false) {
+		if (!this.$more) return;
+		this.$more.remove();
+		this.$more = null;
+		this.$more_btn.attr("aria-expanded", "false");
+		if (restore_focus) this.$more_btn.trigger("focus");
+	}
+
+	/**
+	 * The action icons that did not fit, moved bodily into a menu — the buttons keep their own
+	 * handlers and their own popovers, so nothing is reimplemented for the narrow case.
+	 */
+	open_amore() {
+		this.close_popover();
+		this.close_more();
+		this.$amore = $(`<div class="sanad-filterbar__pop sanad-filterbar__pop--amore" id="${this.amore_pop_id}" role="dialog" aria-label="${ui.escape(__("More actions"))}"></div>`).appendTo(this.$amore_dd);
+		this.$amore_btn.attr("aria-expanded", "true");
+		(this.hidden_actions || []).forEach((el) => $(el).removeClass("sanad-filterbar__hidden").appendTo(this.$amore));
+		this.keep_in_view(this.$amore);
+	}
+
+	close_amore(restore_focus = false) {
+		if (!this.$amore) return;
+		// put them back where the toolbar expects them, still hidden, before the menu goes
+		(this.hidden_actions || []).forEach((el) => $(el).addClass("sanad-filterbar__hidden").insertBefore(this.$amore_dd));
+		this.$amore.remove();
+		this.$amore = null;
+		this.$amore_btn.attr("aria-expanded", "false");
+		if (restore_focus) this.$amore_btn.trigger("focus");
+	}
+
+	/**
+	 * One filter as a field: a row naming it and what is chosen. On a desktop (`inline`) its
+	 * options open underneath it; on a phone they rise from the bottom of the screen in a drawer,
+	 * which is where a list of any length is comfortable to read, search and scroll with a thumb.
+	 */
+	option_field($body, preset, { inline = false } = {}) {
 		const label = this.label_of(preset);
 		const $row = $(`<section class="sanad-filter-sheet__row">
 				<button type="button" class="sanad-filter-sheet__trigger" aria-expanded="false">
@@ -491,49 +684,137 @@ sanad.ui.FilterBar = class FilterBar {
 			</section>`).appendTo($body);
 		const $trigger = $row.find(".sanad-filter-sheet__trigger");
 		const $list = $row.find(".sanad-filter-sheet__list");
-
-		const paint_chosen = () => {
-			const chosen = this.chosen(preset.fieldname);
-			const text = !chosen.length ? __("All") : chosen.length === 1 ? this.label_for_value(preset.fieldname, chosen[0]) : __("{0} selected", [ui.format_int(chosen.length)]);
-			$row.find(".sanad-filter-sheet__chosen").text(text).toggleClass("sanad-filter-sheet__chosen--set", !!chosen.length);
-		};
+		const paint_chosen = () => this.paint_chosen($row, preset);
 		paint_chosen();
 
-		const fill = () => {
-			$list.html(ui.skeleton(2, { lines: 1 }));
-			this.resolve_options(preset, "")
-				.then((options) => {
-					this.remember(preset.fieldname, options);
-					$list.empty();
-					if (!options.length) return $list.append(`<div class="sanad-filterbar__pop-empty">${ui.escape(__("No options"))}</div>`);
-					const type = preset.multiple === false ? "radio" : "checkbox";
-					options.forEach((o) => {
-						const on = this.chosen(preset.fieldname).some((v) => key_of(v) === key_of(o.value));
-						const $opt = $(`<label class="sanad-filterbar__opt"><input type="${type}" name="${this.id}-sheet-${ui.escape(preset.fieldname)}" value="${ui.escape(key_of(o.value))}"${on ? " checked" : ""}><span class="sanad-filterbar__opt-label">${ui.escape(o.label)}</span></label>`);
-						$opt.find("input").on("change", (e) => {
-							this.toggle(preset.fieldname, o.value, e.target.checked);
-							paint_chosen();
-						});
-						$list.append($opt);
-					});
-					return undefined;
-				})
-				.catch((err) => {
-					$list.empty();
-					new sanad.ui.EmptyState({ wrapper: $list, state: "error", size: "sm", description: err.message });
-				});
-		};
+		if (!inline) {
+			$trigger.on("click", () => this.open_option_sheet(preset, paint_chosen));
+			return $row;
+		}
+
+		const $search = $(`<input type="search" class="form-control input-xs sanad-filterbar__pop-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [label]))}" hidden>`).insertBefore($list);
+		const fill = (txt) => this.fill_options($list, preset, txt, paint_chosen);
+		$search.on("input", ui.debounce(() => fill($search.val()), 250));
 
 		$trigger.on("click", () => {
 			const open = $trigger.attr("aria-expanded") === "true";
 			// one field open at a time, like a set of dropdowns
 			$body.find(".sanad-filter-sheet__trigger").attr("aria-expanded", "false");
 			$body.find(".sanad-filter-sheet__list").prop("hidden", true);
+			$body.find(".sanad-filterbar__pop-search").prop("hidden", true);
 			if (open) return;
 			$trigger.attr("aria-expanded", "true");
 			$list.prop("hidden", false);
-			fill();
+			$search.prop("hidden", !this.searchable(preset));
+			fill("");
 		});
+		return $row;
+	}
+
+	/**
+	 * One filter's options as a drawer rising from the bottom of the screen — the reach of a thumb,
+	 * not the top of a phone. It stops around half the screen and grows to 88 % as the list needs
+	 * it, scrolls inside itself, carries its own search when the list is long enough to want one,
+	 * and closes on the scrim, on Escape or on Done. Selections apply as they are made, so Done
+	 * only dismisses.
+	 *
+	 * @param {Object} preset
+	 * @param {Function} [after] — called after every change, to repaint the row that opened it
+	 */
+	open_option_sheet(preset, after) {
+		const label = this.label_of(preset);
+		const searchable = this.searchable(preset);
+		const $sheet = $(`<div class="sanad-kit sanad-optsheet" role="dialog" aria-modal="true" aria-label="${ui.escape(label)}">
+				<div class="sanad-optsheet__scrim"></div>
+				<div class="sanad-optsheet__panel">
+					<div class="sanad-optsheet__grip" aria-hidden="true"></div>
+					<div class="sanad-optsheet__head">
+						<span class="sanad-optsheet__title">${ui.escape(label)}</span>
+						<button type="button" class="sanad-optsheet__clear">${ui.escape(__("Clear"))}</button>
+					</div>
+					${searchable ? `<div class="sanad-optsheet__search"><input type="search" class="form-control" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [label]))}"></div>` : ""}
+					<div class="sanad-optsheet__list" role="group" aria-label="${ui.escape(label)}"></div>
+					<div class="sanad-optsheet__foot"><button type="button" class="btn btn-primary btn-sm sanad-optsheet__done">${ui.escape(__("Done"))}</button></div>
+				</div>
+			</div>`).appendTo(document.body);
+		const $list = $sheet.find(".sanad-optsheet__list");
+		const changed = () => {
+			if (typeof after === "function") after();
+		};
+		const fill = (txt) => this.fill_options($list, preset, txt, changed);
+		const close = () => {
+			$sheet.removeClass("sanad-optsheet--in");
+			$(document).off(`keydown.${this.id}-opt`);
+			window.setTimeout(() => $sheet.remove(), 180);
+			if (this.$optsheet === $sheet) this.$optsheet = null;
+		};
+		$sheet.find(".sanad-optsheet__scrim, .sanad-optsheet__done").on("click", close);
+		$sheet.find(".sanad-optsheet__clear").on("click", () => {
+			this.set(preset.fieldname, null);
+			changed();
+			fill($sheet.find(".sanad-optsheet__search input").val() || "");
+		});
+		const $search = $sheet.find(".sanad-optsheet__search input");
+		$search.on("input", ui.debounce(() => fill($search.val()), 250));
+		$(document).on(`keydown.${this.id}-opt`, (e) => {
+			if (e.key !== "Escape") return;
+			e.stopPropagation();
+			close();
+		});
+		this.$optsheet = $sheet;
+		fill("");
+		// one frame before the transition, so it slides in rather than appearing
+		window.requestAnimationFrame(() => $sheet.addClass("sanad-optsheet--in"));
+		return $sheet;
+	}
+
+	/** Does this filter's list want a search box? A static handful does not; anything else does. */
+	searchable(preset) {
+		const stat = this.static_options(preset);
+		return !stat || stat.length > SEARCH_THRESHOLD;
+	}
+
+	paint_chosen($row, preset) {
+		const chosen = this.chosen(preset.fieldname);
+		const text = !chosen.length ? __("All") : chosen.length === 1 ? this.label_for_value(preset.fieldname, chosen[0]) : __("{0} selected", [ui.format_int(chosen.length)]);
+		$row.find(".sanad-filter-sheet__chosen").text(text).toggleClass("sanad-filter-sheet__chosen--set", !!chosen.length);
+	}
+
+	/** Fill any container with one filter's options — the sheet, the drawer and "More" share it. */
+	fill_options($list, preset, txt, after) {
+		$list.html(ui.skeleton(3, { lines: 1 }));
+		return this.resolve_options(preset, txt || "")
+			.then((options) => {
+				this.remember(preset.fieldname, options);
+				const chosen = this.chosen(preset.fieldname);
+				const listed = new Set(options.map((o) => key_of(o.value)));
+				chosen.filter((v) => !listed.has(key_of(v))).forEach((v) => options.unshift({ value: v, label: this.label_for_value(preset.fieldname, v) }));
+				$list.empty();
+				if (!options.length) {
+					$list.append(`<div class="sanad-filterbar__pop-empty">${ui.escape(txt ? __("No match for {0}", [txt]) : __("No options"))}</div>`);
+					return;
+				}
+				const type = preset.multiple === false ? "radio" : "checkbox";
+				options.forEach((o) => {
+					const on = chosen.some((v) => key_of(v) === key_of(o.value));
+					const $opt = $(`<label class="sanad-filterbar__opt"><input type="${type}" name="${this.id}-opt-${ui.escape(preset.fieldname)}" value="${ui.escape(key_of(o.value))}"${on ? " checked" : ""}><span class="sanad-filterbar__opt-label">${ui.escape(o.label)}</span></label>`);
+					$opt.find("input").on("change", (e) => {
+						this.toggle(preset.fieldname, o.value, e.target.checked);
+						if (typeof after === "function") after();
+					});
+					$list.append($opt);
+				});
+			})
+			.catch((err) => {
+				$list.empty();
+				new sanad.ui.EmptyState({
+					wrapper: $list,
+					state: "error",
+					size: "sm",
+					description: err.message,
+					action: { label: __("Retry"), onclick: () => this.fill_options($list, preset, txt, after) },
+				});
+			});
 	}
 
 	// ---- dropdown filters (multi-select popover) --------------------------------------------
