@@ -185,3 +185,100 @@
 	}
 	&__cell &__bar { flex: none; inline-size: 100%; }
 }
+
+// ---- the campaign form's console ---------------------------------------------------------------
+// The form opens with the same instrument as the list: the metric row over the funnel, the verbs
+// beside the state they change. Desk wraps a dashboard section in its own card, so the wrapper is
+// neutralised here — the console draws its own edge and must not sit inside a second one.
+
+.form-dashboard-section.wa-camp__section {
+	margin: 0 0 var(--sanad-gap-md);
+	padding: 0;
+	border: 0;
+	background: none;
+
+	> .section-head { display: none; }
+	> .section-body { margin: 0; }
+}
+
+.wa-camp {
+	&__run,
+	&__plan {
+		display: grid;
+		gap: var(--sanad-gap-sm);
+		padding: var(--sanad-gap-md) var(--sanad-gap-lg);
+		border-block-start: 1px solid var(--outline-gray-1);
+	}
+
+	&__funnel {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-md);
+		flex-wrap: wrap;
+
+		.wa-strip__bar {
+			flex: 1;
+			min-inline-size: 200px;
+		}
+	}
+
+	&__stats {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-sm) var(--sanad-gap-xl);
+	}
+
+	&__foot,
+	&__plan-text {
+		margin: 0;
+		font-size: var(--text-sm, 12px);
+		color: var(--ink-gray-7);
+		unicode-bidi: plaintext;
+	}
+
+	&__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-sm);
+	}
+
+	// the one verb that cannot be undone keeps a quiet outline until it is pressed
+	&__verb--danger {
+		color: var(--ink-red-4);
+		border-color: var(--outline-red-1);
+
+		&:hover:not([disabled]) {
+			background: var(--surface-red-1);
+			color: var(--ink-red-4);
+		}
+	}
+}
+
+.wa-ops {
+	&__verbs {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-sm);
+	}
+	&__hint {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-5);
+	}
+}
+
+// The form's console lives in a column, not across the screen: its metric row follows the width
+// it actually has (a container query), not the viewport's — six cells inside a 760 px form column
+// left every sub-line broken over three lines.
+.wa-camp {
+	container-type: inline-size;
+
+	.wa-ops__metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+	@container (min-width: 560px) {
+		.wa-ops__metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+	}
+	@container (min-width: 1000px) {
+		.wa-ops__metrics { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+	}
+}

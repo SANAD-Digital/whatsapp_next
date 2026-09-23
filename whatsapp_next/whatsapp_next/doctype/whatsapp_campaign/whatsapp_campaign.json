@@ -77,7 +77,7 @@
    "in_standard_filter": 1,
    "read_only": 1,
    "search_index": 1,
-   "description": "Written by services/campaign_runner.py"
+   "description": "Set by the campaign as it runs. The console above always states it."
   },
   {
    "fieldname": "column_break_5",
@@ -99,20 +99,20 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "search_index": 1,
-   "description": "Empty = manual start (Immediate); set = Scheduled"
+   "description": "Leave it empty to start the campaign yourself. Give it a time and the campaign starts by itself."
   },
   {
    "fieldname": "messages_per_minute",
    "label": "Messages per Minute",
    "fieldtype": "Int",
-   "description": "Default from Settings; must be ≤ Settings value"
+   "description": "How fast messages leave. Empty uses the rate in Settings, and it can never exceed it."
   },
   {
    "fieldname": "exclude_unknown_numbers",
    "label": "Exclude Unknown Numbers",
    "fieldtype": "Check",
    "default": "0",
-   "description": "Skip recipients with no prior conversation (D-029, 09 OQ-1)"
+   "description": "Skip recipients who have never had a conversation on WhatsApp."
   },
   {
    "fieldname": "messages_tab",
@@ -125,7 +125,7 @@
    "fieldtype": "Table",
    "options": "WhatsApp Campaign Message",
    "reqd": 1,
-   "description": "At least one row"
+   "description": "At least one message. Every recipient receives all of them, in order."
   },
   {
    "fieldname": "recipients_tab",
@@ -136,8 +136,7 @@
    "fieldname": "recipients",
    "label": "Recipients",
    "fieldtype": "Table",
-   "options": "WhatsApp Campaign Recipient",
-   "description": "Rendered through a paginated component"
+   "options": "WhatsApp Campaign Recipient"
   },
   {
    "fieldname": "progress_tab",
@@ -151,7 +150,7 @@
    "default": "0",
    "in_list_view": 1,
    "read_only": 1,
-   "description": "Live rows not Removed"
+   "description": "Recipients in the campaign right now."
   },
   {
    "fieldname": "initial_recipients",
@@ -159,28 +158,31 @@
    "fieldtype": "Int",
    "default": "0",
    "read_only": 1,
-   "description": "Snapshot at start"
+   "description": "How many recipients there were when it started."
   },
   {
    "fieldname": "added_count",
    "label": "Added after Start",
    "fieldtype": "Int",
    "default": "0",
-   "read_only": 1
+   "read_only": 1,
+   "description": "Recipients added after it started."
   },
   {
    "fieldname": "removed_count",
    "label": "Removed after Start",
    "fieldtype": "Int",
    "default": "0",
-   "read_only": 1
+   "read_only": 1,
+   "description": "Recipients removed after it started."
   },
   {
    "fieldname": "pause_count",
    "label": "Pause Count",
    "fieldtype": "Int",
    "default": "0",
-   "read_only": 1
+   "read_only": 1,
+   "description": "How many times it was paused."
   },
   {
    "fieldname": "column_break_6",
@@ -192,7 +194,7 @@
    "fieldtype": "Int",
    "default": "0",
    "read_only": 1,
-   "description": "Counters = Outbound rows by campaign + status, refreshed by runner"
+   "description": "Messages waiting in the queue."
   },
   {
    "fieldname": "sent_count",
@@ -201,14 +203,15 @@
    "default": "0",
    "in_list_view": 1,
    "read_only": 1,
-   "description": "Sent+Delivered+Read"
+   "description": "Messages that left the device and are not yet reported delivered."
   },
   {
    "fieldname": "delivered_count",
    "label": "Delivered",
    "fieldtype": "Int",
    "default": "0",
-   "read_only": 1
+   "read_only": 1,
+   "description": "Messages that arrived and are not yet read."
   },
   {
    "fieldname": "read_count",
@@ -216,7 +219,8 @@
    "fieldtype": "Int",
    "default": "0",
    "in_list_view": 1,
-   "read_only": 1
+   "read_only": 1,
+   "description": "Messages the recipient read."
   },
   {
    "fieldname": "failed_count",
@@ -224,14 +228,16 @@
    "fieldtype": "Int",
    "default": "0",
    "in_list_view": 1,
-   "read_only": 1
+   "read_only": 1,
+   "description": "Messages that could not be sent."
   },
   {
    "fieldname": "cancelled_count",
    "label": "Cancelled",
    "fieldtype": "Int",
    "default": "0",
-   "read_only": 1
+   "read_only": 1,
+   "description": "Messages that were cancelled before they left."
   },
   {
    "fieldname": "message_times_section",
@@ -241,7 +247,8 @@
    "fieldname": "first_message_at",
    "label": "First Message At",
    "fieldtype": "Datetime",
-   "read_only": 1
+   "read_only": 1,
+   "description": "When the first message left."
   },
   {
    "fieldname": "column_break_7",
@@ -251,7 +258,8 @@
    "fieldname": "last_message_at",
    "label": "Last Message At",
    "fieldtype": "Datetime",
-   "read_only": 1
+   "read_only": 1,
+   "description": "When the last message left."
   },
   {
    "fieldname": "log_tab",
@@ -269,7 +277,7 @@
    "label": "Ended At",
    "fieldtype": "Datetime",
    "read_only": 1,
-   "description": "Completed/Partially Failed/Cancelled"
+   "description": "When the campaign ended, whatever ended it."
   },
   {
    "fieldname": "last_batch_started_at",
