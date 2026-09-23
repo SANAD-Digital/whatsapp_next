@@ -29,7 +29,7 @@
 	thead th {
 		position: sticky;
 		inset-block-start: 0;
-		z-index: 1;
+		z-index: 8; // above every body cell, including the sticky group rows
 		height: var(--sanad-head-h);
 		background: var(--surface-gray-2);
 		color: var(--ink-gray-7);
@@ -65,8 +65,8 @@
 			[dir="rtl"] & { box-shadow: inset -1px 0 0 var(--outline-gray-1); }
 		}
 	}
-	thead th.sanad-datalist__th--check, thead th.sanad-datalist__th--action { z-index: 7; background-color: var(--surface-gray-2); }
-	tbody td.sanad-datalist__td--check, tbody td.sanad-datalist__td--action { z-index: 5; background-color: var(--surface-white); }
+	thead th.sanad-datalist__th--check, thead th.sanad-datalist__th--action { z-index: 10; background-color: var(--surface-gray-2); }
+	tbody td.sanad-datalist__td--check, tbody td.sanad-datalist__td--action { z-index: 6; background-color: var(--surface-white); }
 	&__row:hover td.sanad-datalist__td--check, &__row:hover td.sanad-datalist__td--action { background-color: var(--surface-gray-1); }
 	&__row:has(.list-row-checkbox:checked) td.sanad-datalist__td--check,
 	&__row:has(.list-row-checkbox:checked) td.sanad-datalist__td--action { background-color: var(--sanad-accent-soft); }
@@ -175,14 +175,14 @@
 	// ---- grouping (prototype: a 36 px group row per level, indented 22 px, with count and total)
 	tbody tr.sanad-datalist__group td {
 		position: sticky;
-		z-index: 4; // above the pinned data cells it scrolls over
+		z-index: 5; // above the pinned data cells it scrolls over, below the header
 		height: 36px;
 		padding: 0;
 		border-block-end: var(--sanad-border);
 		background-color: var(--surface-gray-2);
 	}
 	tbody tr.sanad-datalist__group td.sanad-datalist__group-cell { inset-inline-start: 44px; }
-	tbody tr.sanad-datalist__group td.sanad-datalist__group-check { inset-inline-start: 0; z-index: 5; }
+	tbody tr.sanad-datalist__group td.sanad-datalist__group-check { inset-inline-start: 0; z-index: 7; }
 	tbody tr.sanad-datalist__group--l1 td { background-color: var(--surface-gray-1); }
 	tbody tr.sanad-datalist__group--l2 td, tbody tr.sanad-datalist__group--l3 td { background-color: var(--surface-white); }
 	&__group-inner {
@@ -204,14 +204,11 @@
 		margin-inline-end: calc(-1 * var(--sanad-gap-sm));
 		border-inline-start: 1px solid var(--outline-gray-2);
 	}
-	&__indent {
-		display: flex;
-		align-items: stretch;
-		gap: var(--sanad-gap-sm);
-		min-height: var(--sanad-row-h);
-		margin-block: calc(-1 * var(--sanad-gap-xs));
-	}
-	&__indent-body { align-self: center; min-width: 0; flex: 1; }
+	// A data row is indented to sit under its group, but draws no rules of its own — repeating the
+	// guides on every row made the table look like it had extra empty columns.
+	&__indent { display: flex; align-items: center; gap: 0; min-width: 0; }
+	&__indent .sanad-datalist__rail { border-inline-start: 0; width: 22px; }
+	&__indent-body { min-width: 0; flex: 1; }
 
 	// a group row selects every row under it; partly selected shows as indeterminate
 	&__group-check { vertical-align: middle; }
@@ -269,7 +266,7 @@
 	}
 	thead th.sanad-datalist__th--pinned {
 		position: sticky;
-		z-index: 6;
+		z-index: 9;
 		background-color: var(--surface-gray-2);
 		background-image: linear-gradient(
 			color-mix(in srgb, var(--sanad-accent) 10%, var(--surface-gray-2)),
@@ -349,6 +346,16 @@
 	.sanad-datalist__count { min-height: 18px; unicode-bidi: plaintext; }
 	.sanad-datalist__extra:empty { display: none; }
 	.sanad-datalist__pager { display: inline-flex; align-items: center; gap: var(--sanad-gap-sm); }
+	.sanad-datalist__paging {
+		display: flex !important;
+		align-items: center;
+		gap: var(--sanad-gap-md);
+		margin: 0;
+		padding: 0;
+		border: 0;
+		.level-left, .level-right { margin: 0; }
+		.btn { min-height: var(--sanad-ctl-h); border-radius: var(--border-radius-md, 6px); font-size: var(--text-xs, 12px); font-weight: 600; }
+	}
 	.sanad-datalist__page { color: var(--ink-gray-7); margin-inline-end: var(--sanad-gap-xs); }
 	.btn {
 		min-height: var(--sanad-ctl-h);
@@ -363,8 +370,12 @@
 // `.sanad-list-card` is set by DataList on the list's own wrapper, so the three pieces — which live
 // in different Desk containers — read as one surface.
 .sanad-list-card {
-	// breathing room above and below, so the card is not wedged between the page head and the
-	// viewport edge (the prototype floats its panel on a tinted field — see `.sanad-list-page`)
+	// A flex column that fills the page: the table takes whatever height is left and scrolls
+	// inside the card, so the list fills the screen at any window size and in Desk's full-width
+	// mode instead of being sized by a guessed `calc()`.
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
 	padding-block: var(--sanad-gap-md) var(--sanad-gap-lg);
 
 	.sanad-filterbar--list {
@@ -380,20 +391,25 @@
 	// pushed the table under the footer. Inside the card the table owns the scrolling instead
 	// (prototype: `max-height: calc(100vh - 230px)` with a sticky header), so the footer always sits
 	// on the card's bottom edge.
-	.result-container,
-	.result {
-		min-height: 0 !important; // Desk reserves a screenful; the card shrinks to its rows instead
-	}
 	.result-container {
+		flex: 1 1 auto;
 		height: auto !important;
+		min-height: 120px;
+		display: flex;
 		background: var(--surface-white);
 		border-inline-start: var(--sanad-border);
 		border-inline-end: var(--sanad-border);
 	}
+	.result, .sanad-datalist-host { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; }
 	.sanad-datalist__wrap {
-		max-height: calc(100vh - 260px);
-		overflow: auto;
+		flex: 1 1 auto;
+		min-width: 0;
+		min-height: 0;
+		overflow: auto; // `max-height` is measured in JS (DataList.fit_height)
 	}
+	.sanad-filterbar--list, .sanad-datalist__footer { flex: none; }
+	// the table fills the width it is given, however many columns are shown
+	.sanad-datalist { min-width: 100%; }
 	// the filter bar already draws the card's top edge
 	.sanad-filterbar--list + .result-container .sanad-datalist__wrap {
 		border: 0;

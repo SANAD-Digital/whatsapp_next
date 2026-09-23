@@ -51,7 +51,7 @@ sanad.ui.FilterBar = class FilterBar {
 	 *   options?: Array<string|{value,label}> | () => Promise<Array>, multiple?: boolean (select, default true),
 	 *   fields?: string[] (search), placeholder?, all_label?, default?: "30d"|"7d"|"today"|"all"|number (period)}`
 	 * @param {Array<string>} [opts.actions] — `"group_by"` (multi-level grouping of the table),
-	 *   `"export"` (Desk's exporter)
+	 *   `"columns"` (pick and order the table's columns), `"export"` (Desk's exporter)
 	 * @param {string} [opts.intro] — one-line description rendered above the toolbar
 	 * @param {boolean} [opts.replace_standard_filters=true] — list mode: hide Frappe's standard-filter fields
 	 * @param {Function} [opts.on_change] — `(filters, {or_filters, values, search}) => void` (page mode; also fired in list mode)
@@ -127,14 +127,16 @@ sanad.ui.FilterBar = class FilterBar {
 			if ($(e.target).closest(".sanad-filterbar__dd").length) return;
 			this.close_popover();
 			this.close_levels();
+			this.close_columns();
 		});
 		// the popovers re-render their own contents, which drops focus to the body; a document-level
 		// handler keeps Escape working wherever focus ended up
 		$(document).on(`keydown.${this.id}`, (e) => {
-			if (e.key !== "Escape" || (!this.$open && !this.$levels)) return;
+			if (e.key !== "Escape" || (!this.$open && !this.$levels && !this.$columns)) return;
 			e.stopPropagation();
 			this.close_popover(true);
 			this.close_levels(true);
+			this.close_columns(true);
 		});
 	}
 
@@ -556,6 +558,7 @@ sanad.ui.FilterBar = class FilterBar {
 	render_actions() {
 		const actions = this.opts.actions || [];
 		if (actions.includes("group_by")) this.render_group_by();
+		if (actions.includes("columns")) this.render_columns();
 		if (actions.includes("export") && this.listview) {
 			$(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--icon" title="${ui.escape(__("Export"))}" aria-label="${ui.escape(__("Export"))}">${ui.icon("download", "sm")}</button>`)
 				.on("click", () => this.export())
@@ -580,6 +583,96 @@ sanad.ui.FilterBar = class FilterBar {
 		this.reflect_levels();
 		window.setTimeout(() => this.reflect_levels(), 0);
 		if (this.listview) ui.on_list_render(this.listview, () => this.reflect_levels());
+	}
+
+	/**
+	 * Column picker: the table starts on the screen's default columns, and any other field of the
+	 * DocType can be added, reordered or hidden. The choice is stored in Frappe's own
+	 * `List View Settings`, so it behaves like the rest of Desk.
+	 */
+	render_columns() {
+		const $dd = $(`<div class="sanad-filterbar__dd sanad-filterbar__dd--columns"></div>`).appendTo(this.$actions);
+		const pop_id = `${this.id}-columns-pop`;
+		this.$columns_btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--icon" title="${ui.escape(__("Columns"))}" aria-label="${ui.escape(__("Columns"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-preview", "sm")}</button>`).appendTo($dd);
+		this.$columns_dd = $dd;
+		this.columns_pop_id = pop_id;
+		this.$columns_btn.on("click", () => (this.$columns ? this.close_columns() : this.open_columns()));
+	}
+
+	open_columns() {
+		this.close_popover();
+		this.close_levels();
+		const $pop = $(`<div class="sanad-filterbar__pop sanad-filterbar__pop--columns" id="${this.columns_pop_id}" role="dialog" aria-label="${ui.escape(__("Columns"))}"></div>`).appendTo(this.$columns_dd);
+		this.$columns = $pop;
+		this.$columns_btn.attr("aria-expanded", "true");
+		this.fill_columns();
+		this.keep_in_view($pop);
+	}
+
+	fill_columns() {
+		const $pop = this.$columns;
+		const dl = this.datalist();
+		if (!$pop || !dl) return;
+		const available = dl.available_columns();
+		const shown = dl.visible_columns();
+		$pop.empty().append(
+			`<div class="sanad-filterbar__pop-head"><span class="sanad-filterbar__pop-title">${ui.escape(__("Columns"))}</span><button type="button" class="sanad-filterbar__levels-clear">${ui.escape(__("Reset"))}</button></div>
+			<input type="search" class="form-control input-xs sanad-filterbar__pop-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search columns"))}">`
+		);
+		const $list = $(`<div class="sanad-filterbar__pop-list sanad-filterbar__columns-list"></div>`).appendTo($pop);
+		const order = shown.concat(available.map((c) => c.fieldname).filter((f) => !shown.includes(f)));
+		const paint = (txt) => {
+			$list.empty();
+			order.forEach((fieldname) => {
+				const col = available.find((c) => c.fieldname === fieldname);
+				if (!col) return;
+				if (txt && !String(col.label).toLowerCase().includes(txt.toLowerCase())) return;
+				const on = shown.includes(fieldname);
+				const at = shown.indexOf(fieldname);
+				$(`<div class="sanad-filterbar__column" data-field="${ui.escape(fieldname)}">
+					<label class="sanad-filterbar__opt">
+						<input type="checkbox"${on ? " checked" : ""} aria-label="${ui.escape(__("Show {0}", [col.label]))}">
+						<span class="sanad-filterbar__opt-label">${ui.escape(col.label)}</span>
+					</label>
+					<button type="button" class="sanad-filterbar__level-move" data-dir="-1"${!on || at <= 0 ? " disabled" : ""} aria-label="${ui.escape(__("Move {0} up", [col.label]))}">${ui.icon("es-line-up", "xs")}</button>
+					<button type="button" class="sanad-filterbar__level-move" data-dir="1"${!on || at < 0 || at >= shown.length - 1 ? " disabled" : ""} aria-label="${ui.escape(__("Move {0} down", [col.label]))}">${ui.icon("es-line-down", "xs")}</button>
+				</div>`).appendTo($list);
+			});
+		};
+		paint("");
+		$pop.find(".sanad-filterbar__pop-search").on("input", ui.debounce((e) => paint($(e.target).val()), 200));
+		$pop.find(".sanad-filterbar__levels-clear").on("click", () => {
+			dl.reset_columns();
+			this.fill_columns();
+		});
+		$list.on("change", "input[type=checkbox]", (e) => {
+			const field = $(e.currentTarget).closest(".sanad-filterbar__column").data("field");
+			const next = e.currentTarget.checked ? shown.concat(field) : shown.filter((f) => f !== field);
+			if (!next.length) {
+				e.currentTarget.checked = true;
+				return ui.announce(__("At least one column has to stay."));
+			}
+			dl.set_visible_columns(next);
+			this.fill_columns();
+		});
+		$list.on("click", ".sanad-filterbar__level-move", (e) => {
+			const field = $(e.currentTarget).closest(".sanad-filterbar__column").data("field");
+			const dir = cint($(e.currentTarget).data("dir"));
+			const next = shown.slice();
+			const i = next.indexOf(field);
+			if (i < 0 || i + dir < 0 || i + dir >= next.length) return;
+			next.splice(i + dir, 0, next.splice(i, 1)[0]);
+			dl.set_visible_columns(next);
+			this.fill_columns();
+		});
+	}
+
+	close_columns(restore_focus = false) {
+		if (!this.$columns) return;
+		this.$columns.remove();
+		this.$columns = null;
+		this.$columns_btn.attr("aria-expanded", "false");
+		if (restore_focus) this.$columns_btn.trigger("focus");
 	}
 
 	/** The table this bar groups (set by DataList through `listview._sanad_datalist`). */
@@ -894,6 +987,7 @@ sanad.ui.FilterBar = class FilterBar {
 	destroy() {
 		this.close_popover();
 		this.close_levels();
+		this.close_columns();
 		$(document).off(`.${this.id}`);
 		this.$wrapper && this.$wrapper.remove();
 	}

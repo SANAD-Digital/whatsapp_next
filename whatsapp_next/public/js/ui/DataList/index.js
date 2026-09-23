@@ -26,8 +26,6 @@ sanad.ui.DataList = class DataList {
 	 * @param {{title?, description?, action?}} [opts.empty]
 	 * @param {"cards"|"scroll"} [opts.mobile="cards"]
 	 * @param {Array<string>} [opts.group_by] — initial grouping levels, outermost first
-	 * @param {number} [opts.group_page_length=200] — rows fetched while grouping, so the groups and
-	 *   their counts describe the whole filtered result rather than one page
 	 * @param {boolean} [opts.groupable=true] — offer grouping (the levels menu lives in FilterBar)
 	 * @param {boolean} [opts.pinnable=true] — a pin toggle on every header cell
 	 * @param {Array<string>} [opts.pinned] — initially pinned fieldnames, in order
@@ -50,7 +48,8 @@ sanad.ui.DataList = class DataList {
 		this.collapsed = new Set(); // group paths the user folded away
 		this.pinned = (this.opts.pinned || []).slice();
 		this.id = ui.uid("datalist");
-		this.columns = this.resolve_columns(this.opts.columns);
+		this.declared = (this.opts.columns || []).slice(); // the screen's own default column set
+		this.columns = this.resolve_columns(this.apply_saved_columns(this.opts.columns));
 		this.mount();
 	}
 
@@ -62,7 +61,6 @@ sanad.ui.DataList = class DataList {
 		lv.page_length = this.page_length;
 		lv.selected_page_count = this.page_length;
 		lv.start = 0;
-		lv.$paging_area && lv.$paging_area.hide();
 		lv.$no_result && lv.$no_result.hide();
 		lv._sanad_datalist = this; // FilterBar's grouping control drives this table
 		lv.$result.addClass("sanad-datalist-host");
@@ -74,8 +72,10 @@ sanad.ui.DataList = class DataList {
 		lv.$result.find(".list-row-container, .list-row-head").remove();
 		lv.$result.prepend(this.$table);
 		this.$footer = $(`<div class="sanad-kit sanad-datalist__footer"><div class="sanad-datalist__count" aria-live="polite"></div><div class="sanad-datalist__extra"></div><nav class="sanad-datalist__pager" aria-label="${ui.escape(__("Pages"))}"></nav></div>`);
-		if (lv.$paging_area) this.$footer.insertAfter(lv.$paging_area);
-		else lv.$frappe_list.append(this.$footer);
+		lv.$frappe_list.append(this.$footer);
+		// Frappe's own paging component (page sizes + Load More) moves into the footer: it divides
+		// the pages, keeps the fetch small and is what the rest of Desk behaves like.
+		if (lv.$paging_area) lv.$paging_area.addClass("sanad-datalist__paging").appendTo(this.$footer.find(".sanad-datalist__pager")).show();
 
 		// rows: our table instead of Desk's row markup (keeps the shared render hooks of the kit)
 		lv._sanad_render_hooks = lv._sanad_render_hooks || [];
@@ -91,34 +91,24 @@ sanad.ui.DataList = class DataList {
 		};
 		lv.render_header = () => {};
 		lv.render_skeleton = () => {};
-		// data: one page at a time (Desk concatenates for "load more")
-		lv.prepare_data = function (r) {
-			let data = r.message || {};
-			Object.assign(frappe.boot.user_info, data.user_info);
-			delete data.user_info;
-			data = !Array.isArray(data) ? frappe.utils.dict(data.keys, data.values) : data;
-			lv.data = data.uniqBy((d) => d.name);
-		};
-		lv.reset_defaults = function () {
-			// the page that was just fetched (a caller resetting `start = 0` lands on page 1)
-			const size = self.rows_wanted();
-			self.page = Math.floor(cint(lv.start) / size);
-			lv.page_length = size;
-			lv.start = self.page * size;
-		};
+		// data, paging and "load more" stay Frappe's: nothing is overridden here any more
+		const orig_toggle = lv.toggle_result_area.bind(lv);
 		lv.toggle_result_area = function () {
+			orig_toggle();
 			lv.$result.parent(".result-container").show();
 			lv.$result.show();
-			lv.$paging_area && lv.$paging_area.hide();
-			lv.$no_result && lv.$no_result.hide();
+			lv.$no_result && lv.$no_result.hide(); // the empty state is drawn inside the table
 		};
 		lv.render_count = () => this.render_footer();
 		lv.get_count_str = () => Promise.resolve("");
 		lv.freeze = (on) => this.set_loading(!!on);
-		// the card scrolls the table itself (see style.scss), so Desk's result-height maths is skipped
+		// the card is a flex column that fills its page, so Desk's result-height maths is skipped
 		lv.set_result_height = () => {};
 		this.bind_events();
-		this._on_resize = ui.debounce(() => this.apply_pins(), 150);
+		this._on_resize = ui.debounce(() => {
+			this.apply_pins();
+			this.fit_height();
+		}, 150);
 		$(window).on(`resize.${this.id}`, this._on_resize);
 		this.render_skeleton();
 	}
@@ -188,10 +178,6 @@ sanad.ui.DataList = class DataList {
 			this.sync_group_checkboxes();
 			ui.announce(on ? __("All rows on this page selected.") : __("Selection cleared."));
 		});
-		this.$footer.on(`click.${this.id}`, "[data-page]", (e) => {
-			e.preventDefault();
-			this.go_to(cint($(e.currentTarget).data("page")));
-		});
 	}
 
 	run(fn, doc, $el) {
@@ -228,6 +214,93 @@ sanad.ui.DataList = class DataList {
 		this.columns = this.resolve_columns(columns);
 		this.render();
 		return this;
+	}
+
+	// ---- which columns are shown (Frappe's own List View Settings) --------------------------
+
+	/**
+	 * Every column the user may show: the screen's declared ones first, then the rest of the
+	 * DocType's own fields, so a list starts with sensible defaults and can be widened like any
+	 * Frappe list.
+	 */
+	available_columns() {
+		const meta = frappe.get_meta(this.doctype) || { fields: [] };
+		const declared = (this.declared || []).map((c) => c.fieldname);
+		const extra = (meta.fields || [])
+			.filter(
+				(df) =>
+					!frappe.model.layout_fields.includes(df.fieldtype) &&
+					!["Text Editor", "Code", "HTML", "Markdown Editor", "Signature", "Table", "Table MultiSelect"].includes(df.fieldtype) &&
+					df.label &&
+					!df.hidden &&
+					!declared.includes(df.fieldname)
+			)
+			.map((df) => ({ fieldname: df.fieldname, label: __(df.label) }));
+		return (this.declared || []).map((c) => ({ fieldname: c.fieldname, label: c.label || __(c.fieldname), declared: true })).concat(extra);
+	}
+
+	/** Fieldnames currently shown, in order. */
+	visible_columns() {
+		return this.columns.map((c) => c.fieldname);
+	}
+
+	/** Column spec for a fieldname: the screen's own definition when it has one. */
+	spec_for(fieldname) {
+		return (this.declared || []).find((c) => c.fieldname === fieldname) || { fieldname };
+	}
+
+	/**
+	 * The user's own column choice, kept in Frappe's per-user `user_settings` for this DocType.
+	 * The shared `List View Settings.fields` is deliberately not reused: it is written by Desk's
+	 * own list and would drag 27 unrelated fields into a screen that declares 8.
+	 */
+	apply_saved_columns(columns) {
+		const saved = this.saved_fields();
+		if (!saved || !saved.length) return columns;
+		const meta = frappe.get_meta(this.doctype) || { fields: [] };
+		const known = new Set((meta.fields || []).map((df) => df.fieldname).concat(["name"]));
+		const declared = (columns || []).slice();
+		const out = saved
+			.filter((f) => known.has(f))
+			.map((f) => declared.find((c) => c.fieldname === f) || { fieldname: f });
+		return out.length ? out : columns;
+	}
+
+	saved_fields() {
+		const settings = frappe.get_user_settings(this.doctype) || {};
+		const saved = settings[this.settings_key()];
+		return Array.isArray(saved) ? saved : null;
+	}
+
+	settings_key() {
+		return `sanad_columns_${this.opts.settings_key || "default"}`;
+	}
+
+	/** Show exactly these fieldnames, in this order, and remember the choice like Frappe does. */
+	set_visible_columns(fieldnames, { save = true } = {}) {
+		const list = (fieldnames || []).filter(Boolean);
+		if (!list.length) return this;
+		this.pinned = this.pinned.filter((f) => list.includes(f));
+		this.columns = this.resolve_columns(list.map((f) => this.spec_for(f)));
+		this.render();
+		if (save) this.save_columns();
+		return this;
+	}
+
+	/** Back to the screen's declared columns, and forget the saved choice. */
+	reset_columns() {
+		this.columns = this.resolve_columns(this.declared);
+		this.render();
+		this.forget_columns();
+		return this;
+	}
+
+	save_columns() {
+		return frappe.model.user_settings.save(this.doctype, this.settings_key(), this.visible_columns());
+	}
+
+	forget_columns() {
+		return frappe.model.user_settings.save(this.doctype, this.settings_key(), null);
 	}
 
 	// ---- render ----------------------------------------------------------------------------
@@ -292,6 +365,7 @@ sanad.ui.DataList = class DataList {
 		this.expanded.forEach((name) => this.render_expand(name, true));
 		this.apply_pins();
 		this.restore_selection();
+		this.fit_height();
 		return this;
 	}
 
@@ -465,27 +539,17 @@ sanad.ui.DataList = class DataList {
 		return this;
 	}
 
+	/**
+	 * Replace the grouping levels (outermost first); `[]` turns grouping off.
+	 * Grouping shapes the rows that are loaded — it never widens the fetch, so a big table stays
+	 * as cheap grouped as ungrouped and "Load More" keeps working.
+	 */
 	set_group_by(fields) {
-		const was = this.group_by.length;
 		this.group_by = (fields || []).filter(Boolean);
 		this.collapsed.clear();
 		if (typeof this.opts.on_group_change === "function") this.opts.on_group_change(this.group_by.slice(), this);
-		if (!!was !== !!this.group_by.length) {
-			this.page = 0;
-			const lv = this.listview;
-			lv.start = 0;
-			lv.page_length = this.rows_wanted();
-			lv.last_args = null;
-			lv.refresh();
-		} else {
-			this.render();
-		}
+		this.render();
 		return this;
-	}
-
-	/** How many rows this table asks the server for right now. */
-	rows_wanted() {
-		return this.group_by.length ? cint(this.opts.group_page_length) || 200 : this.page_length;
 	}
 
 	/**
@@ -518,6 +582,20 @@ sanad.ui.DataList = class DataList {
 	ordered_columns(columns) {
 		const pinned = this.pinned.map((f) => columns.find((c) => c.fieldname === f)).filter(Boolean);
 		return pinned.concat(columns.filter((c) => !this.pinned.includes(c.fieldname)));
+	}
+
+	/**
+	 * Give the table exactly the height left on the screen, so it fills the window and scrolls
+	 * inside the card instead of growing the page. Measured rather than guessed with a `calc()`,
+	 * because the toolbar's height depends on how many filters a screen declares.
+	 */
+	fit_height() {
+		const el = this.$table && this.$table[0];
+		if (!el || !el.isConnected) return;
+		const top = el.getBoundingClientRect().top;
+		const footer = (this.$footer && this.$footer.outerHeight(true)) || 0;
+		const room = Math.max(200, Math.round(window.innerHeight - top - footer - 24));
+		el.style.maxHeight = `${room}px`;
 	}
 
 	/**
@@ -668,23 +746,6 @@ sanad.ui.DataList = class DataList {
 		lv.on_sort_change(fieldname, order);
 	}
 
-	go_to(page) {
-		const lv = this.listview;
-		const pages = this.page_count();
-		page = Math.max(0, Math.min(page, Math.max(0, pages - 1)));
-		this.page = page;
-		lv.start = page * this.page_length;
-		lv.page_length = this.page_length;
-		lv.last_args = null;
-		lv.refresh();
-		ui.announce(__("Page {0} of {1}.", [ui.format_int(page + 1), ui.format_int(Math.max(1, pages))]));
-	}
-
-	page_count() {
-		if (this.total == null) return this.page + 1;
-		return Math.max(1, Math.ceil(this.total / this.page_length));
-	}
-
 	set_loading(on) {
 		this.$table.find(".sanad-datalist").attr("aria-busy", on).toggleClass("sanad-datalist--loading", on);
 	}
@@ -697,7 +758,8 @@ sanad.ui.DataList = class DataList {
 	count_for(rows) {
 		const lv = this.listview;
 		const key = JSON.stringify(lv.get_filters_for_args() || []);
-		if (this.page === 0 && rows.length < this.rows_wanted()) {
+		// a page that came back short is the whole result; no extra request needed
+		if (rows.length < cint(lv.start) + cint(lv.page_length)) {
 			this.count_key = key;
 			this.total = rows.length;
 			return Promise.resolve(this.total);
@@ -718,21 +780,7 @@ sanad.ui.DataList = class DataList {
 		const paint = () => {
 			const total = this.total == null ? rows.length : this.total;
 			const text = typeof this.opts.footer.count === "function" ? this.opts.footer.count(total, rows) : ui.plural(total, { one: __("{0} record"), other: __("{0} records") });
-			if (this.group_by.length) {
-				const capped = total > rows.length;
-				$count.text(capped ? __("{0} · grouping the first {1}", [text, ui.format_int(rows.length)]) : __("{0} · all grouped", [text]));
-				$pager.empty();
-				if (typeof this.opts.footer.extra === "function") this.opts.footer.extra(this.$footer.find(".sanad-datalist__extra"), rows, this);
-				return;
-			}
-			const from = rows.length ? this.page * this.page_length + 1 : 0;
-			const to = this.page * this.page_length + rows.length;
-			$count.text(rows.length ? __("{0} · showing {1}–{2}", [text, ui.format_int(from), ui.format_int(to)]) : text);
-			const pages = this.page_count();
-			$pager.html(`
-				<span class="sanad-datalist__page">${ui.escape(__("Page {0} of {1}", [ui.format_int(this.page + 1), ui.format_int(pages)]))}</span>
-				<button type="button" class="btn btn-sm btn-default" data-page="${this.page - 1}"${this.page <= 0 ? " disabled" : ""}>${ui.escape(__("Previous"))}</button>
-				<button type="button" class="btn btn-sm btn-default" data-page="${this.page + 1}"${this.page + 1 >= pages ? " disabled" : ""}>${ui.escape(__("Next"))}</button>`);
+			$count.text(rows.length ? __("{0} · showing {1}", [text, ui.format_int(rows.length)]) : text);
 			if (typeof this.opts.footer.extra === "function") this.opts.footer.extra(this.$footer.find(".sanad-datalist__extra"), rows, this);
 		};
 		paint();

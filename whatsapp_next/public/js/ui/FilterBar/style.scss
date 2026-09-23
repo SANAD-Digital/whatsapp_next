@@ -287,6 +287,15 @@
 		gap: 7px;
 	}
 	&__pop--levels { min-width: 250px; overflow: auto; }
+	&__pop--columns { min-width: 280px; }
+	&__columns-list { max-height: 260px; }
+	&__column {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-xs);
+		.sanad-filterbar__opt { flex: 1; min-width: 0; }
+		.sanad-filterbar__level-move { color: var(--ink-gray-6); &:hover { background: var(--surface-gray-2); } }
+	}
 	&__levels-clear {
 		appearance: none;
 		border: 0;
@@ -416,7 +425,7 @@
 		&__period-long { display: none; }
 		&__period-short { display: inline; }
 		&__actions { flex: none; }
-		&__action--icon, &__native { display: none; }
+		&__action--icon, &__native, &__dd--columns { display: none; }
 		&__levels { display: none; }
 		&__pop { max-width: calc(100vw - 2 * var(--sanad-gap-md)); }
 	}

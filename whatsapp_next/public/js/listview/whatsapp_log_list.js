@@ -172,7 +172,7 @@ frappe.provide("whatsapp_next.messages");
 
 			new ui.FilterBar({
 				listview,
-				actions: ["group_by", "export"],
+				actions: ["group_by", "columns", "export"],
 				presets: [
 					{ fieldname: "phone_e164", type: "search", fields: ["phone_e164", "display_name", "reference_name"], placeholder: __("Search name, number or document…") },
 					{ fieldname: "status", type: "select" },
