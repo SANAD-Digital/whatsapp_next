@@ -291,3 +291,20 @@ Strings that were checked and **pass** (kept for the record): all ConfirmDialog 
 13. Contrast and focus — replace `--ink-gray-5` text with `--ink-gray-6` (`ui/Stepper/style.scss:53,62`, `ui/ContactPicker/style.scss:139`); `ui/RowActions/style.scss:53–54` use a 2 px `--ink-blue-3` outline instead of `outline: none` + faint inset shadow.
 14. Status colours — read them through `sanad.ui.indicator_for` from one `get_indicator` per DocType instead of the six local maps (`listview/whatsapp_log_list.js:13`, `whatsapp_inbound_message_list.js:10–12`, `whatsapp_queue_item_list.js:10`, `whatsapp_campaign_list.js:5`, `form/whatsapp_campaign.js:9`, `ui/ContactPicker/index.js:118`); render "Not linked" as gray without the warning icon.
 15. Copy sweep per §3.1 — highest value first: "Not Linked" → "Not linked", "Unconfirm conversation" → "Remove confirmation", "Add to the list" → "Add recipients to {0}", "The list changed meanwhile", jargon (dispatcher, dead letter, resolve, DocType, outbound log), `ConfirmDialog` default "Confirm" → required `confirm_label`, and add `ui.plural()` for the Arabic count strings.
+
+
+## 5. Prototype comparison after D-064 (2026-09-23)
+
+Screenshots in the session scratchpad (`pw/shots/`, both `en-1280-*` and `ar-1280-*`, prototype
+`proto-*`); rerun with `scripts/browser_smoke.mjs` + `scripts/browser_smoke_routes.json`.
+
+| Screen | Prototype anatomy present | Still different |
+|---|---|---|
+| Outbound | title/desc, one toolbar (search, checkbox dropdowns, period segmented 30d default, Group by / Export), table (two-line contact, status chip, doc type/no., device avatar, sent at, red error, on behalf, View), footer count + pager | Desk chrome above; no Amount column; View column added (prototype has none here) |
+| Inbound | same anatomy, columns Sender · Incoming text · Matched command · Contact link · Device · Time · View | empty on the dev site |
+| Queue | Pause/Resume primary with impact dialog, paused/running banner, 3 KPIs, rate-slider card with recommendation chip and drain sentence, table with # and expected send, footer | no Amount column / total; Document type & no. filled after render |
+| Campaigns | "Sending now" strips (progress, counters, Pause, Sent messages, ETA), "Scheduled" strips, table with Edit / Stop-to-edit chips and progress bars | prototype's optional extra columns omitted |
+| Contact Groups | 3 KPIs, table with Edit + View, expandable member preview | — |
+| Commands | secondary Functions Center N, 4 KPIs, table, MetaDialog on View | site has no commands (empty state) |
+| WhatsApp Numbers | 4 KPIs, TreeGroupBy chips, avatar chip, ConversationDrawer on View | — |
+| Templates / Notifications / Alerts | KPIs, toolbar, table with enable/disable toggle, View → form | Alerts has no prototype screen; Templates toolbar has two extra dropdowns |

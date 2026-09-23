@@ -104,6 +104,16 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
   - [x] Live use: Campaigns (Contacts tab) and Contact Groups (Members)
 - [x] Portability check: no `whatsapp_next.*` import under `public/js/ui/`; `public/js/ui/README.md` "copy the kit into another app"
 
+### 5.B Prototype-faithful native lists (owner decision D-064, option A — pulled forward from phase 7) — **done 2026-09-23**; remaining differences: Desk's own breadcrumb / Filter-sort chrome above the header, Desk black primary buttons instead of the prototype green, Outbound has no Amount column
+- [x] `DataList` (table renderer inside `frappe.views.ListView`: sortable headers, checkbox column, two-line cells, avatar/status/number/date cell types, View button, expandable row, footer count + pager, mobile cards)
+- [x] `PageHeader` (title, description, primary/secondary buttons, KPI cards via ListStatsCard, banner, custom blocks, realtime refresh)
+- [x] Outbound · Inbound (PageHeader + FilterBar + DataList, Drawer on View/row)
+- [x] Queue (pause/resume primary, paused banner, KPIs, rate-slider block, DataList)
+- [x] Campaigns ("sending now" + "scheduled" strips, progress column) · Contact Groups (KPIs, expandable members row)
+- [x] Commands (KPIs, Functions Center link, MetaDialog on View) · WhatsApp Numbers (KPIs, avatar chip, ConversationDrawer on View)
+- [x] Message Templates · Notifications · Notification Alerts lists
+- [x] Screenshot comparison with the prototype for all eight screens (en + ar) recorded in `plan/13-design-gate-phase-5.md`
+
 ## Phase 6 — Custom Desk pages (`page/wa-*`, all data from `api/`, Espresso tokens, RTL, states, realtime)
 - [ ] `wa-home` (L) — device status, campaigns sending now, queue health, click-through; Number Cards/Charts via fixtures (D-029)
 - [ ] `wa-devices` (L) — DeviceCard grid, PairingModal QR + 8-digit code, live status
@@ -115,7 +125,7 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [ ] Page permissions JSON per 09 §5; `translations/ar.csv` for every string
 
 ## Phase 7 — Frappe-native customization (→ Gate 2)
-- [ ] Outbound (UI-4): listview_settings, indicators, FilterBar presets, Drawer, RowActions (resend, quick send, cancel), BulkActions
+- [ ] Outbound (UI-4): list side done in 5.B; remaining: form side, RowActions (resend, quick send, cancel) inside DataList's View/drawer, BulkActions
 - [ ] Inbound (UI-5): Drawer, tabs matched/unmatched, reply via QuickSend, "add as synonym" blocked on Active (D-029)
 - [ ] Queue (UI-9): default status filter, ListStatsCard summary + pause banner + rate slider, pause/resume/delete-as-state/retry, ETA: summary + Drawer (D-029)
 - [ ] Campaigns (UI-6): ListStatsCard "sending now" modal, form tabs Data/Contacts, PagedChildTable recipients, ContactPicker add/remove, start/pause/resume/cancel, `exclude_unknown_numbers` (D-029)
