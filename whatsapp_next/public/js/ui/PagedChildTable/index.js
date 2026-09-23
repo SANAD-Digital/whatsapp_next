@@ -43,7 +43,8 @@ sanad.ui.PagedChildTable = class PagedChildTable {
 		const df = frappe.meta.get_docfield(this.frm.doctype, this.fieldname);
 		this.child_doctype = df && df.options;
 		this.child_meta = this.child_doctype ? frappe.get_meta(this.child_doctype) : null;
-		this.label = (df && df.label) || this.fieldname;
+		// the panel prints this label, so it is translated here once rather than at each use
+		this.label = df && df.label ? __(df.label) : this.fieldname;
 		const fields = this.child_meta ? this.child_meta.fields : [];
 		this.field_map = {};
 		fields.forEach((f) => (this.field_map[f.fieldname] = f));
@@ -61,9 +62,13 @@ sanad.ui.PagedChildTable = class PagedChildTable {
 		const id = ui.uid("pct");
 		this.$el = $(`
 			<div class="sanad-kit sanad-pct" data-fieldname="${ui.escape(this.fieldname)}" id="${id}">
+				<div class="sanad-pct__head">
+					<h4 class="sanad-pct__title">${ui.escape(this.label)}</h4>
+					<span class="sanad-pct__count sanad-tabular" aria-live="polite"></span>
+					<div class="sanad-pct__actions"></div>
+				</div>
 				<div class="sanad-pct__toolbar">
 					<div class="sanad-pct__filters"></div>
-					<div class="sanad-pct__actions"></div>
 				</div>
 				<div class="sanad-pct__note" hidden></div>
 				<div class="sanad-pct__state"></div>
@@ -87,6 +92,7 @@ sanad.ui.PagedChildTable = class PagedChildTable {
 		else this.frm.$wrapper.find(".form-page").first().append(this.$el);
 		if (this.$host && this.opts.hide_grid) this.$host.addClass("sanad-pct-host");
 		this.$filters = this.$el.find(".sanad-pct__filters");
+		this.$count = this.$el.find(".sanad-pct__count");
 		this.$actions = this.$el.find(".sanad-pct__actions");
 		this.$state = this.$el.find(".sanad-pct__state");
 		this.$note = this.$el.find(".sanad-pct__note");
@@ -110,10 +116,10 @@ sanad.ui.PagedChildTable = class PagedChildTable {
 			if (!options && df.fieldtype === "Select") options = (df.options || "").split("\n").filter(Boolean);
 			options = options || [];
 			if (options.length <= CHIP_LIMIT) {
-				const $group = $(`<div class="sanad-chip-row sanad-pct__chips" role="group" aria-label="${ui.escape(label)}"></div>`);
+				const $group = $(`<div class="sanad-chip-row sanad-pct__chips" role="group" data-field="${ui.escape(f.fieldname)}" aria-label="${ui.escape(label)}"></div>`);
 				const all = [{ value: "", label: __("All") }].concat(options.map((o) => ({ value: o, label: __(o) })));
 				all.forEach((o) => {
-					const $chip = $(`<button type="button" class="sanad-chip sanad-pct__chip" data-value="${ui.escape(o.value)}" aria-pressed="${o.value === "" ? "true" : "false"}">${ui.escape(o.label)}</button>`);
+					const $chip = $(`<button type="button" class="sanad-chip sanad-pct__chip" data-value="${ui.escape(o.value)}" data-label="${ui.escape(o.label)}" aria-pressed="${o.value === "" ? "true" : "false"}"><span class="sanad-pct__chip-label">${ui.escape(o.label)}</span></button>`);
 					$chip.on("click", () => {
 						$group.find(".sanad-pct__chip").attr("aria-pressed", "false");
 						$chip.attr("aria-pressed", "true");
@@ -202,6 +208,8 @@ sanad.ui.PagedChildTable = class PagedChildTable {
 				const rows = (r && r.rows) || [];
 				this.state.rows = rows;
 				this.state.total = cint(r && r.total);
+				this.state.counts = (r && r.counts) || null;
+				this.render_counts();
 				this.$table.removeAttr("aria-busy");
 				if (!rows.length) {
 					this.$table.empty();
@@ -217,6 +225,38 @@ sanad.ui.PagedChildTable = class PagedChildTable {
 				this.$table.removeAttr("aria-busy").empty();
 				this.state_view.error(err, { action: { label: __("Retry"), onclick: () => this.refresh() } });
 			});
+	}
+
+	/**
+	 * The head's count and, when the page reports `counts` — `{fieldname: {value: n, All: n}}` —
+	 * the number on every chip of that field. A value with no rows steps out of the row unless it
+	 * is the one in force, so the chips only offer what is actually there. A field the page says
+	 * nothing about keeps plain chips.
+	 */
+	render_counts() {
+		const counts = this.state.counts || {};
+		const any = Object.keys(counts)[0];
+		const total = any && counts[any] && counts[any].All != null ? cint(counts[any].All) : cint(this.state.total);
+		this.$count.text(ui.plural(total, { one: __("{0} row"), other: __("{0} rows") }));
+		this.$el.find(".sanad-pct__chips").each((i, group) => {
+			const $group = $(group);
+			const field = counts[$group.attr("data-field")];
+			let offered = 0;
+			$group.find(".sanad-pct__chip").each((j, el) => {
+				const $chip = $(el);
+				const value = $chip.attr("data-value");
+				const active = $chip.attr("aria-pressed") === "true";
+				$chip.find(".sanad-pct__chip-label").text($chip.attr("data-label"));
+				$chip.find(".sanad-pct__chip-count").remove();
+				if (!field) return;
+				const n = value === "" ? cint(field.All) : cint(field[value]);
+				$chip.append(`<span class="sanad-pct__chip-count sanad-tabular">${ui.escape(ui.format_int(n))}</span>`);
+				$chip.attr("hidden", !n && !active && value !== "" ? "hidden" : null);
+				if (value !== "" && (n || active)) offered += 1;
+			});
+			// a row that can only be read one way is not a choice: it goes, and the head keeps the count
+			if (field) $group.attr("hidden", offered > 1 ? null : "hidden");
+		});
 	}
 
 	format_cell(col, row) {

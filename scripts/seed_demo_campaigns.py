@@ -87,6 +87,21 @@ def _log(campaign, device, name, phone, status, when):
     return doc.name
 
 
+def _recipient_status(index, sample, status, sent_share, fail_share):
+    """The sampled recipients, spread the way the campaign's own counters are spread."""
+    if status in ("Draft", "Scheduled"):
+        return "Pending"
+    if status == "Cancelled":
+        return "Cancelled" if index >= int(sample * sent_share) else "Sent"
+    handed = int(sample * sent_share)
+    failed = int(handed * fail_share)
+    if index < failed:
+        return "Failed"
+    if index < handed:
+        return random.choice(["Sent", "Delivered", "Read", "Read"])
+    return "Queued" if status in ("Running", "Paused") else "Pending"
+
+
 def _campaign(device, title, status, total, sent_share, fail_share, days_ago, logs=True):
     started = None if days_ago is None else add_to_date(now_datetime(), days=-days_ago, hours=-random.randint(0, 6))
     doc = frappe.new_doc("WhatsApp Campaign")
@@ -95,7 +110,11 @@ def _campaign(device, title, status, total, sent_share, fail_share, days_ago, lo
     doc.status = "Draft"  # the status writer owns the field; set the real one after insert
     doc.messages_per_minute = random.choice([20, 25, 30])
     doc.append("messages", {"message_type": "Text", "body": f"{title} — demo body for {{{{ name }}}}."})
-    for i in range(min(total, 25)):  # the recipients table shows a real sample, not 1500 rows
+    # The recipients table shows a real sample, not 1500 rows — and the sample carries the same
+    # spread of statuses as the campaign's counters, so the panel and the console never contradict
+    # each other (a campaign 60 % handed over whose every recipient reads "Pending").
+    sample = min(total, 25)
+    for i in range(sample):
         name = random.choice(NAMES)
         doc.append(
             "recipients",
@@ -104,7 +123,7 @@ def _campaign(device, title, status, total, sent_share, fail_share, days_ago, lo
                 "display_name": name,
                 "phone": f"05{random.randint(10000000, 99999999)}",
                 "source_type": "Contact",
-                "status": "Pending",
+                "status": _recipient_status(i, sample, status, sent_share, fail_share),
             },
         )
     doc.flags.ignore_permissions = True

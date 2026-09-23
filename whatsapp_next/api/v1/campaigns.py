@@ -248,7 +248,12 @@ def get_recipients_page(
 	page: int = 1,
 	page_length: int = 50,
 ) -> dict[str, Any]:
-	"""One page of the recipients child table → `{rows, total}`; `search` matches phone or name."""
+	"""One page of the recipients child table → `{rows, total, counts}`.
+
+	`search` matches phone or name. `counts` is every status this campaign's recipients hold under
+	the same search and source filter — the panel's chips carry them, so the reader sees how many
+	are still pending before choosing a chip, and `counts["All"]` is the panel's own total.
+	"""
 	_require(name, "read")
 	filters: list[list[Any]] = [
 		["WhatsApp Campaign Recipient", "parent", "=", name],
@@ -282,7 +287,24 @@ def get_recipients_page(
 		or_filters=or_filters,
 		fields=[{"COUNT": "name", "as": "n"}],
 	)[0].n
-	return {"rows": rows, "total": int(total or 0)}
+
+	# Each field's counts ignore that field's own filter — a chip has to say how many rows it would
+	# show — but keep every other filter and the search, so they describe the rows being looked at.
+	counts: dict[str, dict[str, int]] = {}
+	for field in ("status", "source_type"):
+		own: dict[str, int] = {}
+		for row in frappe.get_all(
+			"WhatsApp Campaign Recipient",
+			filters=[f for f in filters if f[1] != field],
+			or_filters=or_filters,
+			fields=[field, {"COUNT": "name", "as": "n"}],
+			group_by=field,
+		):
+			own[row[field]] = int(row["n"] or 0)
+		own["All"] = sum(own.values())
+		counts[field] = own
+
+	return {"rows": rows, "total": int(total or 0), "counts": counts}
 
 
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))

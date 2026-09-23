@@ -1,8 +1,12 @@
-// Host = the Table field's `.grid-field`: keep its label / description, hide the native grid parts.
+// Host = the Table field's `.grid-field`: the panel's own head carries the name and the count, so
+// the field's label steps aside rather than printing the same word twice; the native grid parts
+// stay hidden.
 .sanad-pct-host {
 	> .grid-custom-buttons,
 	> .form-grid-container,
 	> .grid-footer { display: none; }
+	> .control-label,
+	> .grid-label { display: none; }
 }
 
 .sanad-pct {
@@ -10,6 +14,25 @@
 	flex-direction: column;
 	gap: var(--sanad-gap-md);
 	margin-block: var(--sanad-gap-sm) var(--sanad-gap-lg);
+
+	// the head: what these rows are, how many there are, and what may be done to them
+	&__head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+	}
+	&__title {
+		margin: 0;
+		font-size: var(--text-lg, 16px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+	}
+	&__count {
+		font-size: var(--text-sm, 12px);
+		color: var(--ink-gray-6);
+		flex: 1;
+	}
 
 	&__toolbar {
 		display: flex;
@@ -76,4 +99,27 @@
 @media (max-width: 767px) {
 	.sanad-pct__search, .sanad-pct__select { max-width: 100%; width: 100%; }
 	.sanad-pct__pager-btns .btn span { display: none; }
+}
+
+// A chip carries the number behind it, so the reader chooses knowing how many rows are there.
+.sanad-pct__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sanad-gap-xs);
+
+	&[hidden] { display: none; }
+}
+.sanad-pct__chip-count {
+	font-size: var(--text-xs, 11px);
+	color: var(--ink-gray-6);
+}
+.sanad-pct__chip[aria-pressed="true"] .sanad-pct__chip-count {
+	color: inherit;
+}
+
+// two chip groups on one line are two questions: they need air between them, and a group that
+// offers nothing to choose is hidden by the component
+.sanad-pct__chips {
+	&[hidden] { display: none; }
+	& + .sanad-pct__chips { margin-inline-start: var(--sanad-gap-md); }
 }

@@ -1,7 +1,9 @@
 # PagedChildTable
 
 Replaces the native grid of a large child table (thousands of rows) with a paged, read-only
-table fed by a configured API key that returns `{rows, total}`. The child data stays on the form
+panel fed by a configured API key that returns `{rows, total}` — and, when it can, `counts`.
+The panel has a head (the field's label, how many rows there are, and the caller's actions),
+one filter row and the table. The child data stays on the form
 and the **field stays visible** (its label, description and the tab it lives in are kept — Frappe
 hides a tab whose fields are all hidden); the component mounts inside the field's `.grid-field`
 wrapper and hides only the native grid DOM (`.form-grid-container`, `.grid-footer`, custom grid
@@ -19,7 +21,7 @@ frappe.ui.form.on("Sales Order", {
     frm.items_table = new sanad.ui.PagedChildTable({
       frm,
       fieldname: "items",
-      page_method: "orders.get_items_page",          // → {rows, total}; args {name, page, page_length, search, ...filters}
+      page_method: "orders.get_items_page",          // → {rows, total, counts?}; args {name, page, page_length, search, ...filters}
       page_length: 50,
       filters: [{ fieldname: "item_group", type: "select" }],   // options from meta when omitted
       status_field: "status",
@@ -41,6 +43,13 @@ icon?, condition?(row), handler(row, table)}]`, `status_field` (`"status"`, `nul
 `status_indicator?(row) → {label, colour}`, `filters?[{fieldname, type: "select", label?,
 options?}]`, `toolbar_actions?[{label, primary?, icon?, condition?(), disabled?, title?,
 handler(table)}]`, `empty_text?`, `search` (true), `hide_grid` (true).
+
+**Counts.** When the page method returns `counts` — `{fieldname: {value: n, "All": n}}` — the head
+prints the total and every chip of those fields carries its number; a value with no rows steps out
+of the row (unless it is the one in force), and a chip group left with a single choice hides
+itself. Each field's counts should ignore that field's own filter and honour the others, so a chip
+always says how many rows pressing it would show. A method that returns no `counts` keeps plain
+chips and the head counts the page's `total`.
 Methods: `refresh()`, `go(page)`, `update(opts)` (re-renders the toolbar with new options —
 call it from `refresh` when the document status changes), `set_filter(fieldname, value)`,
 `destroy()` (restores the grid). `state` exposes `{page, page_length, total, rows, search, filters}`.
@@ -51,6 +60,10 @@ status / source type, "Add recipients" / "Remove recipients" through ContactPick
 `WhatsApp Contact Group` form — `public/js/form/whatsapp_contact_group.js` (members).
 
 ## Design gate
+- The panel head names the rows once: the field's own label is hidden on the host, so "Recipients"
+  is not printed twice, and the count sits beside it as an `aria-live` slot.
+- A chip states how many rows are behind it before it is pressed, and never offers a filter that
+  would empty the table.
 - Skeleton with reserved height while loading; the pager text ("1–50 of 1,234", "No rows") is an
   `aria-live` slot that stays in place.
 - Empty states carry a helpful message (and "Try a different search or filter" when a filter is
