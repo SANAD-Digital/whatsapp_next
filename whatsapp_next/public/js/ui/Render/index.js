@@ -105,11 +105,16 @@ const Render = {
 		}
 	},
 
+	/** The icon that stands for a field in a fact tile (from its meaning, then its type). */
+	field_icon(df) {
+		return icon_for_field(df);
+	},
+
 	/** An inline chip for a link target: the DocType's icon, the name, and a route. */
-	doc_link(doctype, name, display) {
+	doc_link(doctype, name, display, opts = {}) {
 		if (!doctype || !name) return ui.escape(display || name || "");
 		return parts.chip({
-			icon: Render.icon_for(doctype),
+			icon: opts.icon === false ? null : Render.icon_for(doctype),
 			text: cstr(display || name),
 			href: frappe.utils.get_form_link(doctype, name),
 			title: `${__(doctype)}: ${name}`,
@@ -202,7 +207,9 @@ const Render = {
 		const title_entry = pick(profile.title) || auto_title(doc, meta, used);
 		const title = title_entry && title_entry.value != null ? cstr(title_entry.value) : cstr(doc.name || "");
 		const line_specs = profile.lines || (profile.subtitle ? [profile.subtitle] : auto_lines(doc, meta, kind, used));
-		const lines = line_specs.map((e) => text_of(pick(e))).filter(Boolean);
+		const lines = line_specs
+			.map((e) => text_of(pick(e)))
+			.filter((l) => l && cstr(l.value != null ? l.value : l.text) !== title);
 
 		// media
 		const image_entry = profile.image ? pick(profile.image) : auto_image(doc, meta, used);
@@ -249,7 +256,7 @@ const Render = {
 				lines,
 				description: profile.description ? cstr((pick(profile.description) || {}).value || "") : "",
 				image,
-				initials: image ? "" : ui.initials(title),
+				initials: image || !is_nameish(title, doc) ? "" : ui.initials(title),
 				icon: profile.icon || kind_defaults.icon,
 				tone: profile.tone || (status ? status.colour : "gray"),
 				shape: profile.shape || kind_defaults.shape,
@@ -413,6 +420,14 @@ const Render = {
 
 // ---- auto-derivation from meta ------------------------------------------------------------
 
+/** A title worth taking initials from: a name, not a document number. */
+function is_nameish(title, doc) {
+	const text = cstr(title).trim();
+	if (!text || text === cstr(doc.name)) return false;
+	if (/^[A-Za-z]{2,}[-/][A-Za-z0-9-]+$/.test(text)) return false; // SAL-ORD-2026-00004
+	return /[A-Za-z\u0600-\u06FF]/.test(text);
+}
+
 function field_of(meta, fieldname) {
 	if (!meta || !fieldname) return null;
 	return (meta.fields || []).find((df) => df.fieldname === fieldname) || null;
@@ -435,7 +450,9 @@ function icon_for_field(df) {
 	if (/group|team/.test(name)) return "es-line-group";
 	if (/tag/.test(name)) return "es-line-tag";
 	if (/count|qty|quantity|retry|attempt/.test(name)) return "es-line-reload";
-	return { Date: "es-line-calender", Datetime: "es-line-time", Currency: "es-line-payments", Percent: "es-line-progress", Select: "es-line-status", Link: "es-line-link", Check: "es-line-check", Attach: "es-line-attachment", "Attach Image": "es-line-image" }[df.fieldtype] || "es-line-details";
+	if (/^(template|campaign|command)/.test(name)) return { template: "es-line-template", campaign: "es-line-plan", command: "es-line-zap" }[name.split("_")[0]];
+	// only where the type itself carries a meaning; a generic Data or Select gets no icon
+	return { Date: "es-line-calender", Datetime: "es-line-time", Currency: "es-line-payments", Percent: "es-line-progress", Attach: "es-line-attachment", "Attach Image": "es-line-image", Rating: "es-line-star", Geolocation: "es-line-location" }[df.fieldtype] || null;
 }
 
 function auto_title(doc, meta, used) {

@@ -369,8 +369,8 @@ sanad.ui.Drawer = class Drawer {
 				fact({
 					label: f.label,
 					// inline density inside a tile: a link stays a chip, a percent still gets its bar
-					value: Render.value(doc[f.field], f.df, doc, { density: "inline", doctype: this.doctype, variant: f.variant || (f.df && f.df.fieldtype === "Percent" ? "progress" : undefined) }),
-					icon: f.icon,
+					value: Render.value(doc[f.field], f.df, doc, { density: "inline", icon: false, doctype: this.doctype, variant: f.variant || (f.df && f.df.fieldtype === "Percent" ? "progress" : undefined) }),
+					icon: f.icon || Render.field_icon(f.df),
 					ltr: f.ltr,
 				})
 			)
@@ -389,12 +389,16 @@ sanad.ui.Drawer = class Drawer {
 
 	/** Everything that did not earn a tile, in a block the reader can fold away. */
 	render_details(doc, details) {
-		const rows = details.map((d) => ({
-			label: d.label,
-			value: Render.value(doc[d.field], d.df, doc, { density: "card", doctype: this.doctype }),
-			wide: LONG_TYPES.includes(d.df && d.df.fieldtype),
-			ltr: d.ltr,
-		}));
+		const rows = details.map((d) => {
+			const long = LONG_TYPES.includes(d.df && d.df.fieldtype);
+			return {
+				label: d.label,
+				// only the long fields get room; everything else stays one line, like its neighbours
+				value: Render.value(doc[d.field], d.df, doc, { density: long ? "card" : "inline", doctype: this.doctype }),
+				wide: long,
+				ltr: d.ltr,
+			};
+		});
 		const html = dl(rows);
 		if (!html) return;
 		$(`<details class="sanad-doc__details" open>

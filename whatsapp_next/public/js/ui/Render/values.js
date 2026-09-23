@@ -103,7 +103,7 @@ function link(value, df, doc, opts = {}) {
 	if (Render && opts.density && opts.density !== "inline") {
 		return Render.entity({ doctype: target, name: value, title: display }, { density: opts.density, compact_fallback: true });
 	}
-	return Render ? Render.doc_link(target, value, display) : frappe.utils.get_form_link(target, value, true, ui.escape(display));
+	return Render ? Render.doc_link(target, value, display, { icon: opts.icon }) : frappe.utils.get_form_link(target, value, true, ui.escape(display));
 }
 
 function dynamic_link(value, df, doc, opts = {}) {

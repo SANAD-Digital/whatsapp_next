@@ -208,7 +208,7 @@
 	&__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sanad-gap-xs); flex-direction: row-reverse; }
 	&__label { flex: 1; font-size: var(--text-xs, 11px); color: var(--ink-gray-6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	&__icon { display: inline-flex; flex: none; color: var(--ink-gray-4); }
-	&__value { font-size: var(--text-sm, 13px); font-weight: 600; color: var(--ink-gray-9); overflow-wrap: anywhere; }
+	&__value { font-size: var(--text-sm, 13px); font-weight: 600; color: var(--ink-gray-9); overflow-wrap: anywhere; text-align: match-parent; }
 }
 
 // Key / value list — the "additional details" block.
@@ -230,6 +230,11 @@
 	// The value keeps the panel's own direction so labels and values line up on the same side;
 	// the value's `dir="auto"` still renders its own text correctly.
 	dd { margin: 0; font-size: var(--text-sm, 13px); color: var(--ink-gray-8); overflow-wrap: anywhere; direction: inherit; text-align: start; }
+	// A value inside the list follows its label, whatever language it is written in; only the
+	// text's own rendering is left to `dir="auto"`.
+	// `start` would resolve against the value's own `dir="auto"` and throw an Arabic value to the
+	// other side of its English label; `match-parent` resolves it against the list instead.
+	dd .sanad-clamp, dd .sanad-rich { unicode-bidi: isolate; text-align: match-parent; }
 	@media (max-width: 520px) {
 		&--cols-2 { grid-template-columns: minmax(0, 1fr); }
 	}
@@ -314,8 +319,10 @@
 	&__dot { inline-size: 6px; block-size: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
 	&__go { display: inline-flex; color: var(--ink-gray-4); flex: none; }
 
-	&:is(a, button) { border: 0; background: none; padding: 0; cursor: pointer; }
+	// A clickable entity is still an entity: only the UA chrome goes, never the density's box.
+	&:is(a, button) { appearance: none; font: inherit; color: inherit; cursor: pointer; }
 	&:is(a, button):hover { text-decoration: none; }
+	&--inline:is(a, button) { border: 0; background: none; padding: 0; }
 
 	// inline — a table cell or a sentence: no box, one line.
 	&--inline {

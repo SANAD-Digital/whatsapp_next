@@ -81,20 +81,6 @@
 	&__choice-label { font-weight: 600; }
 	&__choice-desc { color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
 
-	// timeline helper used by record sections (rendered by callers)
-	&__timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sanad-gap-sm); }
-	&__event {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--sanad-gap-xs) var(--sanad-gap-md);
-		align-items: baseline;
-		padding-block: var(--sanad-gap-xs);
-		border-block-end: 1px dashed var(--outline-gray-1);
-		font-size: var(--text-sm, 13px);
-		&:last-child { border-block-end: 0; }
-	}
-	&__event-time { color: var(--ink-gray-6); white-space: nowrap; font-variant-numeric: tabular-nums; }
-	&__event-text { color: var(--ink-gray-8); overflow-wrap: anywhere; }
 }
 
 .sanad-drawer-open { overflow: hidden; }
