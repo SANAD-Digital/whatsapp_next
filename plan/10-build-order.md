@@ -14,7 +14,7 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [x] Phase 1 analysis (`01-snd-whatsapp-summary.md`, `05-platform-summary.md`, D-010..D-024)
 - [x] Phase 2 plans (`02`, `06`, `fields`, `fields-platform`, `backend-plan`, `backend-plan-platform`, `09`, this file)
 - [x] **Gate 1 approved** (D-027..D-029) — all open questions resolved as the planners' defaults
-- [ ] Design phases 5–7: design quality gate per `.claude/rules/ui.md` — `ui-ux-pro-max` (ux/product/chart/icons domains) + `design:design-critique` + `design:accessibility-review` + `design:ux-copy` on each component/page before ticking it (D-029c, D-030)
+- [ ] Design phases 5–7 (phase 5 done — `plan/13-design-gate-phase-5.md`; 6–7 pending): design quality gate per `.claude/rules/ui.md` — `ui-ux-pro-max` (ux/product/chart/icons domains) + `design:design-critique` + `design:accessibility-review` + `design:ux-copy` on each component/page before ticking it (D-029c, D-030)
 
 ## Phase 3 — Scaffold & schema (exit: `bench migrate` clean on both sites) — **done 2026-09-22** (client 138 tests, platform 100 tests, both migrates clean; branch `phase-3-schema`, platform commits 1447cef + 7cb522a)
 
@@ -62,47 +62,47 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [x] B-17 `services/webhook_setup.py`, `usage_sync.py`, `retention.py`; final `scheduler_events` (B-6, B-11) — 3 tests
 - [x] Realtime events wired: `wa:device:status`, `wa:message:status`, `wa:queue:progress` (+ `wa:campaign:status`, `wa:inbound:received`, `wa:pairing:status`, `wa:import:progress` — accepted D-029); payloads carry names / hashes only
 
-## Phase 5 — API surface + portable component kit
+## Phase 5 — API surface + portable component kit — **done 2026-09-23** (branch `phase-5-kit`; client suite 318+ tests green serially; kit 20 components + ContactPicker sub-system, live uses on 7 lists / 6 forms, Workspace + dashboard fixtures; design gate `plan/13-design-gate-phase-5.md`; open: no browser render yet — R-032)
 
 > Phase file says "Portable component kit"; the API layer (`backend-plan.md` B-18..B-27) has to exist first, so it opens this phase.
 
 ### 5.A API (`api/v1/<area>.py`, dotted `whatsapp_next.api.v1.<area>.<fn>`, thin, `api_endpoint`-decorated — D-031)
-- [ ] B-18 `api/settings.py`, `api/onboarding.py`, `api/home.py` (B-17)
-- [ ] B-19 `api/devices.py` (B-11)
-- [ ] B-20 `api/quick_send.py`, `api/messages.py`, `api/simulator.py` (B-10, B-14)
-- [ ] B-21 `api/queue.py` (B-10)
-- [ ] B-22 `api/numbers.py`, `api/contacts.py` (B-8, B-13)
-- [ ] B-23 `api/picker.py` (B-15)
-- [ ] B-24 `api/campaigns.py` (B-15)
-- [ ] B-25 `api/templates.py`, `api/notifications.py`, `api/alerts.py` (B-16)
-- [ ] B-26 `api/functions.py`, `api/commands.py` (B-14)
-- [ ] B-27 `webhooks.receiver` is the only guest endpoint; `tests/test_guest_surface.py` (B-12)
-- [ ] Additive `names[]` bulk variants (09 G-01): resend failed, campaign pause/resume/cancel, function update/status, command status, contacts link, numbers convert
+- [x] B-18 `api/settings.py`, `api/onboarding.py`, `api/home.py` (B-17)
+- [x] B-19 `api/devices.py` (B-11)
+- [x] B-20 `api/quick_send.py`, `api/messages.py`, `api/simulator.py` (B-10, B-14)
+- [x] B-21 `api/queue.py` (B-10)
+- [x] B-22 `api/numbers.py`, `api/contacts.py` (B-8, B-13)
+- [x] B-23 `api/picker.py` (B-15)
+- [x] B-24 `api/campaigns.py` (B-15)
+- [x] B-25 `api/templates.py`, `api/notifications.py`, `api/alerts.py` (B-16)
+- [x] B-26 `api/functions.py`, `api/commands.py` (B-14)
+- [x] B-27 `webhooks.receiver` is the only guest endpoint; `tests/test_guest_surface.py` (B-12)
+- [x] Additive `names[]` bulk variants (09 G-01): resend failed, campaign pause/resume/cancel, function update/status, command status, contacts link, numbers convert
 
 ### 5.K Kit (`public/js/ui/<Component>/`, `sanad.ui.*`, README + one live use each; no `whatsapp_next.*` import)
-- [ ] `StatusBadge`, `EmptyState`, `Toast`, `ConfirmDialog` (S — foundations used by everything)
-- [ ] `FilterBar`, `TreeGroupBy`, `RowActions`, `BulkActions` (S — list helpers)
-- [ ] `Stepper`, `PhoneField` (S)
-- [ ] `ListStatsCard` (S) — live use: Campaigns
-- [ ] `MetaDialog` (M) — live use: Commands modal
-- [ ] `Drawer` record/form/choice (M) — live use: Outbound
-- [ ] `ChatThread` (M) → `ConversationDrawer` variant (M) — live use: WhatsApp Numbers
-- [ ] `QuickSend` (M) — live use: Outbound list
-- [ ] `TemplateEditor` (M) — live use: Message Templates
-- [ ] `PagedChildTable` (M) — live use: Contact Groups members
-- [ ] `DashboardBlock` (M) + Number Card / Dashboard Chart fixtures
-- [ ] **ContactPicker sub-system (XL)** — sub-plan:
-  - [ ] Shell: modal/sheet, source tabs, Selected tab last, add/remove modes, `picker.list_sources`
-  - [ ] Source 1 Contact Groups (`search_groups`, `get_group_members`)
-  - [ ] Source 2 Contacts through the §4 layer (`search_contacts`)
-  - [ ] Source 3 System screen: DocType from `Settings.picker_sources`, Frappe `FilterGroup` reused, server-side `filters_json` merged (`picker.query_doctype`)
-  - [ ] Source 4 Excel upload → mapping → preview (`parse_upload kind=excel`)
-  - [ ] Source 5 Phone export vCard / CSV (`parse_upload kind=vcf|csv`)
-  - [ ] Source 6 Manual (`parse_manual`)
-  - [ ] Selected tab: live counter, red duplicate flags on `phone_e164`, counts already-added / available / invalid, `known_count`
-  - [ ] Confirm step with exact count → `commit_add` / `commit_remove`; audit rows; 409 on running campaign where applicable
-  - [ ] Live use: Campaigns (Contacts tab) and Contact Groups (Members)
-- [ ] Portability check: no `whatsapp_next.*` import under `public/js/ui/`; `public/js/ui/README.md` "copy the kit into another app"
+- [x] `StatusBadge`, `EmptyState`, `Toast`, `ConfirmDialog` (S — foundations used by everything)
+- [x] `FilterBar`, `TreeGroupBy`, `RowActions`, `BulkActions` (S — list helpers)
+- [x] `Stepper`, `PhoneField` (S)
+- [x] `ListStatsCard` (S) — live use: Campaigns
+- [x] `MetaDialog` (M) — live use: Commands modal
+- [x] `Drawer` record/form/choice (M) — live use: Outbound
+- [x] `ChatThread` (M) → `ConversationDrawer` variant (M) — live use: WhatsApp Numbers
+- [x] `QuickSend` (M) — live use: Outbound list
+- [x] `TemplateEditor` (M) — live use: Message Templates
+- [x] `PagedChildTable` (M) — live use: Contact Groups members
+- [x] `DashboardBlock` (M) + Number Card / Dashboard Chart fixtures
+- [x] **ContactPicker sub-system (XL)** — sub-plan:
+  - [x] Shell: modal/sheet, source tabs, Selected tab last, add/remove modes, `picker.list_sources`
+  - [x] Source 1 Contact Groups (`search_groups`, `get_group_members`)
+  - [x] Source 2 Contacts through the §4 layer (`search_contacts`)
+  - [x] Source 3 System screen: DocType from `Settings.picker_sources`, Frappe `FilterGroup` reused, server-side `filters_json` merged (`picker.query_doctype`)
+  - [x] Source 4 Excel upload → mapping → preview (`parse_upload kind=excel`)
+  - [x] Source 5 Phone export vCard / CSV (`parse_upload kind=vcf|csv`)
+  - [x] Source 6 Manual (`parse_manual`)
+  - [x] Selected tab: live counter, red duplicate flags on `phone_e164`, counts already-added / available / invalid, `known_count`
+  - [x] Confirm step with exact count → `commit_add` / `commit_remove`; audit rows; 409 on running campaign where applicable
+  - [x] Live use: Campaigns (Contacts tab) and Contact Groups (Members)
+- [x] Portability check: no `whatsapp_next.*` import under `public/js/ui/`; `public/js/ui/README.md` "copy the kit into another app"
 
 ## Phase 6 — Custom Desk pages (`page/wa-*`, all data from `api/`, Espresso tokens, RTL, states, realtime)
 - [ ] `wa-home` (L) — device status, campaigns sending now, queue health, click-through; Number Cards/Charts via fixtures (D-029)
