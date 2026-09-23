@@ -131,17 +131,24 @@ itself rather than as two dates.
 - Typed dates accept `DD/MM/YYYY`, `YYYY-M-D`, dots, dashes, slashes or spaces, two-digit years,
   and Arabic-Indic digits. An unparseable value turns the field red and blocks Apply.
 - Years and months are **picked, not stepped**: the calendar's month head, the month grid's own
-  year, and both of the fiscal panel's steppers open a 3×4 grid in place. The year grid is centred
-  on the year in hand (2026 opens on 2021–2032) and pages by twelve; the fiscal steppers keep their
-  arrows beside the value for a one-step nudge.
+  year, and both of the fiscal panel's steppers open a grid in place, under a header bar carrying
+  back at the start, the caption centred and paging at the end. The grid takes the width of what it
+  replaces — four columns across the fiscal form or a two-month calendar, three across one month —
+  so the panel never changes size underfoot. The year grid is centred on the year in hand (2026
+  opens on 2021–2032) and pages by twelve, today's year and month are outlined, and the fiscal
+  steppers keep their arrows beside the value for a one-step nudge.
 - Panel and menus hang off the **start** edge of the trigger — the left in English, the right in
   Arabic — and are measured after mounting: one that would run off the viewport flips to the other
   edge, and is pinned to the viewport if even that does not fit. The menus are at least as wide as
   the trigger, so they read as attached to it rather than as a stub sticking out one side.
 - The panel never closes on selection. Escape, Cancel, Apply or a click outside close it; Escape
   closes the field picker, the operator menu or the month picker first.
-- Month and weekday names come from `moment`, so they follow the user's language; the calendar
-  inherits RTL from Desk and the range band flips with it.
+- Month and weekday names come from `Intl` in the user's language. Desk pins `moment.locale("en")`
+  for its own formats, so moment would say "September" and "Su Mo Tu" in an Arabic session. Weekdays
+  are narrow (Arabic's "ح ن ث" …); English narrow repeats letters, so it falls back to two letters
+  of the short name. The fiscal month bars carry the month's number where the language has no short
+  form, with the full name as the label. The calendar inherits RTL from Desk and the range band
+  flips with it.
 
 ## Live use
 

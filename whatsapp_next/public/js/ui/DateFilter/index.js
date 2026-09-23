@@ -72,6 +72,51 @@ const normalise_fields = (list) =>
 		.map((f) => (typeof f === "string" ? { value: f, label: f } : { value: f.value || f.fieldname, label: f.label || f.value || f.fieldname }))
 		.filter((f) => f.value);
 
+/**
+ * Month and weekday names in the user's own language.
+ *
+ * Desk pins `moment.locale("en")` for its own formats, so moment hands back English names even in
+ * an Arabic session — the calendar read "September" and "Su Mo Tu" under an Arabic UI. `Intl`
+ * follows the user instead. Weekdays are taken narrow (Arabic's "ح ن ث" …); English narrow is
+ * ambiguous — S M T W T F S — so a set with repeats falls back to two letters of the short name,
+ * which is what moment used to give. Results are cached per language.
+ */
+const names_cache = {};
+const ui_lang = () => (frappe.boot && frappe.boot.lang) || "en";
+const intl_names = (make, count, from) => {
+	const out = [];
+	for (let i = 0; i < count; i++) out.push(make.format(from(i)));
+	return out;
+};
+const month_list = (style) => {
+	const key = `m:${style}:${ui_lang()}`;
+	if (!names_cache[key]) {
+		try {
+			names_cache[key] = intl_names(new Intl.DateTimeFormat(ui_lang(), { month: style }), 12, (i) => new Date(2021, i, 1));
+		} catch (e) {
+			names_cache[key] = style === "short" ? moment.monthsShort() : moment.months();
+		}
+	}
+	return names_cache[key];
+};
+const weekday_list = () => {
+	const key = `w:${ui_lang()}`;
+	if (!names_cache[key]) {
+		let out;
+		try {
+			// 1 August 2021 was a Sunday, so the week comes out in index order
+			out = intl_names(new Intl.DateTimeFormat(ui_lang(), { weekday: "narrow" }), 7, (i) => new Date(2021, 7, 1 + i));
+			if (new Set(out).size < 7) {
+				out = intl_names(new Intl.DateTimeFormat(ui_lang(), { weekday: "short" }), 7, (i) => new Date(2021, 7, 1 + i)).map((n) => n.slice(0, 2));
+			}
+		} catch (e) {
+			out = moment.weekdaysMin();
+		}
+		names_cache[key] = out;
+	}
+	return names_cache[key];
+};
+
 const OPERATORS = () => [
 	{ key: "is", label: __("Is") },
 	{ key: "after", label: __("After") },
@@ -819,11 +864,20 @@ sanad.ui.DateFilter = class DateFilter {
 
 	render_calendar($main) {
 		const $body = $('<div class="sanad-datefilter__cal"></div>').appendTo($main);
-		if (this.state.pick === "month") return this.render_month_picker($body);
-		if (this.state.pick === "year") return this.render_year_picker($body, this.view_year, (y) => {
-			this.view_year = y;
-			this.set({ pick: "month", picker_year: y });
-		});
+		// the grid takes the width of the calendar it stands in, so the panel never jumps
+		const wide = !this.compact() && this.is_between();
+		if (this.state.pick === "month") return this.render_month_picker($body, { wide });
+		if (this.state.pick === "year") {
+			return this.render_year_picker(
+				$body,
+				this.view_year,
+				(y) => {
+					this.view_year = y;
+					this.set({ pick: "month", picker_year: y });
+				},
+				{ wide, on_back: () => this.set({ pick: "month" }) }
+			);
+		}
 		const months = this.compact() || this.is_single() ? 1 : 2;
 		for (let i = 0; i < months; i++) {
 			let y = this.view_year;
@@ -836,7 +890,7 @@ sanad.ui.DateFilter = class DateFilter {
 	}
 
 	month_names() {
-		return moment.months();
+		return month_list("long");
 	}
 
 	render_month($body, y, m, first, last) {
@@ -868,7 +922,7 @@ sanad.ui.DateFilter = class DateFilter {
 
 		const ws = this.week_start();
 		const $grid = $('<div class="sanad-datefilter__grid"></div>').appendTo($col);
-		const names = moment.weekdaysMin();
+		const names = weekday_list();
 		for (let i = 0; i < 7; i++) $(`<span class="sanad-datefilter__wd">${ui.escape(names[(i + ws) % 7])}</span>`).appendTo($grid);
 
 		const first_day = new Date(y, m, 1).getDay();
@@ -974,26 +1028,42 @@ sanad.ui.DateFilter = class DateFilter {
 	 * @param {Function} o.on_pick — `(item) => void`
 	 */
 	grid_picker($body, o) {
-		const $wrap = $('<div class="sanad-datefilter__picker"></div>').appendTo($body);
-		const $head = $('<div class="sanad-datefilter__month-head"></div>').appendTo($wrap);
-		if (o.on_prev) {
-			$(`<button type="button" class="sanad-datefilter__nav" aria-label="${ui.escape(o.prev_label || __("Previous"))}">${ui.icon("es-line-left-chevron", "xs")}</button>`)
-				.on("click", o.on_prev)
-				.appendTo($head);
+		const $wrap = $(`<div class="sanad-datefilter__picker${o.wide ? " sanad-datefilter__picker--wide" : ""}"></div>`).appendTo($body);
+		// a header bar rather than a bare row: back at the start, the caption dead-centre whatever
+		// sits beside it, paging at the end — the shape every panel of this kit uses
+		const $head = $('<div class="sanad-datefilter__picker-head"></div>').appendTo($wrap);
+		const $start = $('<div class="sanad-datefilter__picker-slot"></div>').appendTo($head);
+		if (o.on_back) {
+			$(`<button type="button" class="sanad-datefilter__nav" aria-label="${ui.escape(__("Back"))}">${ui.icon("es-line-left-chevron", "xs")}</button>`)
+				.on("click", o.on_back)
+				.appendTo($start);
 		}
 		const caption = ui.escape(o.head.text);
 		const $cap = o.head.on_click
-			? $(`<button type="button" class="sanad-datefilter__picker-year sanad-datefilter__picker-year--open sanad-tabular" aria-label="${ui.escape(o.head.aria || o.head.text)}">${caption}${ui.icon("es-line-down", "xs")}</button>`).on("click", o.head.on_click)
-			: $(`<span class="sanad-datefilter__picker-year sanad-tabular">${caption}</span>`);
+			? $(`<button type="button" class="sanad-datefilter__picker-title sanad-datefilter__picker-title--open sanad-tabular" aria-label="${ui.escape(o.head.aria || o.head.text)}">${caption}${ui.icon("es-line-down", "xs")}</button>`).on("click", o.head.on_click)
+			: $(`<span class="sanad-datefilter__picker-title sanad-tabular">${caption}</span>`);
 		$cap.appendTo($head);
+		const $end = $('<div class="sanad-datefilter__picker-slot sanad-datefilter__picker-slot--end"></div>').appendTo($head);
+		if (o.on_prev) {
+			$(`<button type="button" class="sanad-datefilter__nav" aria-label="${ui.escape(o.prev_label || __("Previous"))}">${ui.icon("es-line-left-chevron", "xs")}</button>`)
+				.on("click", o.on_prev)
+				.appendTo($end);
+		}
 		if (o.on_next) {
 			$(`<button type="button" class="sanad-datefilter__nav" aria-label="${ui.escape(o.next_label || __("Next"))}">${ui.icon("es-line-right-chevron", "xs")}</button>`)
 				.on("click", o.on_next)
-				.appendTo($head);
+				.appendTo($end);
 		}
 		const $grid = $('<div class="sanad-datefilter__picker-grid"></div>').appendTo($wrap);
 		o.items.forEach((it) => {
-			$(`<button type="button" class="sanad-datefilter__picker-cell${it.on ? " sanad-datefilter__picker-cell--on" : ""}">${ui.escape(it.label)}</button>`)
+			const cls = [
+				"sanad-datefilter__picker-cell",
+				it.on ? "sanad-datefilter__picker-cell--on" : "",
+				!it.on && it.now ? "sanad-datefilter__picker-cell--now" : "",
+			]
+				.filter(Boolean)
+				.join(" ");
+			$(`<button type="button" class="${cls}"${it.on ? ' aria-current="true"' : ""}>${ui.escape(it.label)}</button>`)
 				.on("click", () => o.on_pick(it))
 				.appendTo($grid);
 		});
@@ -1001,19 +1071,22 @@ sanad.ui.DateFilter = class DateFilter {
 	}
 
 	/** Twelve years to a page, so any year is two clicks away rather than twelve. */
-	render_year_picker($body, current, on_pick) {
+	render_year_picker($body, current, on_pick, o = {}) {
 		// the page is centred on the year in hand, not on a decade: 2026 opens on 2021–2032, so the
 		// years either side of it are one click away rather than a page away
 		const page = this.state.picker_page == null ? current - 5 : this.state.picker_page;
 		const years = [];
 		for (let i = 0; i < 12; i++) years.push(page + i);
+		const this_year = new Date().getFullYear();
 		return this.grid_picker($body, {
+			wide: o.wide,
+			on_back: o.on_back,
 			head: { text: `${page} – ${page + 11}` },
 			prev_label: __("Previous years"),
 			next_label: __("Next years"),
 			on_prev: () => this.set({ picker_page: page - 12 }),
 			on_next: () => this.set({ picker_page: page + 12 }),
-			items: years.map((y) => ({ label: String(y), value: y, on: y === current })),
+			items: years.map((y) => ({ label: String(y), value: y, on: y === current, now: y === this_year })),
 			on_pick: (it) => {
 				this.state.picker_page = null;
 				on_pick(it.value);
@@ -1021,15 +1094,21 @@ sanad.ui.DateFilter = class DateFilter {
 		});
 	}
 
-	render_month_picker($body) {
+	render_month_picker($body, o = {}) {
 		const y = this.state.picker_year || this.view_year;
 		return this.grid_picker($body, {
+			wide: o.wide,
 			head: { text: String(y), aria: __("Pick a year"), on_click: () => this.set({ pick: "year", picker_page: null }) },
 			prev_label: __("Previous year"),
 			next_label: __("Next year"),
 			on_prev: () => this.set({ picker_year: y - 1 }),
 			on_next: () => this.set({ picker_year: y + 1 }),
-			items: this.month_names().map((name, i) => ({ label: name, value: i, on: i === this.view_month && y === this.view_year })),
+			items: this.month_names().map((name, i) => ({
+				label: name,
+				value: i,
+				on: i === this.view_month && y === this.view_year,
+				now: i === new Date().getMonth() && y === new Date().getFullYear(),
+			})),
 			on_pick: (it) => {
 				this.view_year = y;
 				this.view_month = it.value;
@@ -1099,16 +1178,29 @@ sanad.ui.DateFilter = class DateFilter {
 		});
 	}
 
+	/**
+	 * A label for one of the twelve month bars. Twelve of them share the panel's width, so a short
+	 * name only fits where the language has one: Arabic's "short" month is the whole word, and the
+	 * month's number carries it better than a truncation would. The full name stays as the label.
+	 */
+	bar_label(month) {
+		const short = month_list("short")[month];
+		return short && short !== month_list("long")[month] ? short : ui.format_int(month + 1);
+	}
+
 	render_fiscal($body) {
 		const s = this.state;
 		// both of the fiscal panel's steppers open a grid instead of walking one click at a time
+		const back = () => this.set({ pick: null });
 		if (s.pick === "fiscal_year") {
-			return this.render_year_picker($body, s.fiscal_year, (y) => this.set({ fiscal_year: y, pick: null }));
+			return this.render_year_picker($body, s.fiscal_year, (y) => this.set({ fiscal_year: y, pick: null }), { wide: true, on_back: back });
 		}
 		if (s.pick === "fiscal_start") {
 			return this.grid_picker($body, {
+				wide: true,
+				on_back: back,
 				head: { text: __("Starts in") },
-				items: this.month_names().map((name, i) => ({ label: name, value: i, on: i === s.fiscal_start })),
+				items: this.month_names().map((name, i) => ({ label: name, value: i, on: i === s.fiscal_start, now: i === new Date().getMonth() })),
 				on_pick: (it) => this.set({ fiscal_start: it.value, pick: null }),
 			});
 		}
@@ -1151,7 +1243,7 @@ sanad.ui.DateFilter = class DateFilter {
 		for (let i = 0; i < 12; i++) {
 			const month = (s.fiscal_start + i) % 12;
 			const inside = i >= p.a && i < p.b;
-			$(`<button type="button" class="sanad-datefilter__bar${inside ? " sanad-datefilter__bar--on" : ""}" aria-label="${ui.escape(this.month_names()[month])}"><span class="sanad-datefilter__bar-fill"></span><span class="sanad-datefilter__bar-label">${ui.escape(moment.monthsShort()[month])}</span></button>`)
+			$(`<button type="button" class="sanad-datefilter__bar${inside ? " sanad-datefilter__bar--on" : ""}" aria-label="${ui.escape(this.month_names()[month])}"><span class="sanad-datefilter__bar-fill"></span><span class="sanad-datefilter__bar-label">${ui.escape(this.bar_label(month))}</span></button>`)
 				.on("click", () => {
 					const q = ["Q1", "Q2", "Q3", "Q4"][Math.floor(i / 3)];
 					this.set({ fiscal_period: q });
