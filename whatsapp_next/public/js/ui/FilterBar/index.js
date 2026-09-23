@@ -563,7 +563,7 @@ sanad.ui.FilterBar = class FilterBar {
 	render_group_by() {
 		const $dd = $(`<div class="sanad-filterbar__dd sanad-filterbar__dd--group"></div>`).appendTo(this.$actions);
 		const pop_id = `${this.id}-levels-pop`;
-		this.$group_btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--group" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-sort", "sm")}<span class="sanad-filterbar__levels"></span></button>`).appendTo($dd);
+		this.$group_btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--group" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-group", "sm")}<span class="sanad-filterbar__levels"></span></button>`).appendTo($dd);
 		this.$group_dd = $dd;
 		this.group_pop_id = pop_id;
 		this.$group_btn.on("click", () => (this.$levels ? this.close_levels() : this.open_levels()));

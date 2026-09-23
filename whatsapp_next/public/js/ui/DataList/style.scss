@@ -41,25 +41,35 @@
 		padding-inline: var(--sanad-cell-px);
 		border-block-end: var(--sanad-border);
 	}
-	&__th--end { text-align: end; }
-	&__th--center { text-align: center; }
-	&__th--check, &__td--check { width: 44px; text-align: center; padding-inline: var(--sanad-gap-sm); }
-	&__th--expand, &__td--expand { width: 32px; padding-inline: var(--sanad-gap-xs); }
-	// the action column stays put when the table scrolls sideways, so "View" is never half-cut
-	&__th--action, &__td--action {
-		width: 1%;
-		text-align: center;
-		white-space: nowrap;
-		position: sticky;
-		inset-inline-end: 0;
-		background: var(--surface-white);
-		box-shadow: inset 1px 0 0 var(--outline-gray-1);
-		[dir="rtl"] & { box-shadow: inset -1px 0 0 var(--outline-gray-1); }
+	// Column rules live under `thead th` / `tbody td`: those selectors out-specify a bare class,
+	// so written any other way the paddings, the z-index and the sticky fills never applied.
+	thead th, tbody td {
+		&.sanad-datalist__th--end, &.sanad-datalist__td--end { text-align: end; }
+		&.sanad-datalist__th--center, &.sanad-datalist__td--center { text-align: center; }
+		&.sanad-datalist__th--check, &.sanad-datalist__td--check {
+			width: 44px;
+			text-align: center;
+			padding-inline: var(--sanad-gap-sm);
+			position: sticky;
+			inset-inline-start: 0; // the checkbox leads the sticky block
+		}
+		&.sanad-datalist__th--expand, &.sanad-datalist__td--expand { width: 32px; padding-inline: var(--sanad-gap-xs); }
+		// the action column stays put when the table scrolls sideways, so "View" is never half-cut
+		&.sanad-datalist__th--action, &.sanad-datalist__td--action {
+			width: 1%;
+			text-align: center;
+			white-space: nowrap;
+			position: sticky;
+			inset-inline-end: 0;
+			box-shadow: inset 1px 0 0 var(--outline-gray-1);
+			[dir="rtl"] & { box-shadow: inset -1px 0 0 var(--outline-gray-1); }
+		}
 	}
-	&__th--action { z-index: 6; background: var(--surface-gray-2); }
-	&__td--action { z-index: 2; }
-	&__row:hover &__td--action { background: var(--surface-gray-1); }
-	&__row:has(.list-row-checkbox:checked) &__td--action { background: var(--sanad-accent-soft); }
+	thead th.sanad-datalist__th--check, thead th.sanad-datalist__th--action { z-index: 7; background-color: var(--surface-gray-2); }
+	tbody td.sanad-datalist__td--check, tbody td.sanad-datalist__td--action { z-index: 5; background-color: var(--surface-white); }
+	&__row:hover td.sanad-datalist__td--check, &__row:hover td.sanad-datalist__td--action { background-color: var(--surface-gray-1); }
+	&__row:has(.list-row-checkbox:checked) td.sanad-datalist__td--check,
+	&__row:has(.list-row-checkbox:checked) td.sanad-datalist__td--action { background-color: var(--sanad-accent-soft); }
 	&__th--sorted { color: var(--ink-gray-9); }
 	&__sort {
 		appearance: none;
@@ -163,16 +173,17 @@
 		&[aria-expanded="true"] { transform: rotate(180deg); }
 	}
 	// ---- grouping (prototype: a 36 px group row per level, indented 22 px, with count and total)
-	&__group td {
+	tbody tr.sanad-datalist__group td {
 		position: sticky;
 		inset-inline-start: 0;
+		z-index: 4; // above the pinned data cells it scrolls over
 		height: 36px;
 		padding: 0;
 		border-block-end: var(--sanad-border);
-		background: var(--surface-gray-2);
+		background-color: var(--surface-gray-2);
 	}
-	&__group--l1 td { background: var(--surface-gray-1); }
-	&__group--l2 td, &__group--l3 td { background: var(--surface-white); }
+	tbody tr.sanad-datalist__group--l1 td { background-color: var(--surface-gray-1); }
+	tbody tr.sanad-datalist__group--l2 td, tbody tr.sanad-datalist__group--l3 td { background-color: var(--surface-white); }
 	&__group-inner {
 		display: flex;
 		align-items: center;
@@ -213,23 +224,37 @@
 	&__group-sum-label { color: var(--ink-gray-5); }
 
 	// ---- pinned columns (sticky at the inline-start, accent-tinted, shadow on the last one)
-	// the prototype tints a pinned column faintly over whatever fill the row already has
-	&__th--pinned, &__td--pinned {
+	// A sticky cell must be fully opaque or the columns scrolling beneath it show through. The
+	// fill is set per row state, with the accent tint painted on top of it, never instead of it.
+	tbody td.sanad-datalist__td--pinned {
 		position: sticky;
 		z-index: 3;
+		background-color: var(--surface-white);
 		background-image: linear-gradient(
-			color-mix(in srgb, var(--sanad-accent) 6%, transparent),
-			color-mix(in srgb, var(--sanad-accent) 6%, transparent)
+			color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-white)),
+			color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-white))
 		);
 		background-clip: padding-box;
 	}
-	&__th--pinned {
+	thead th.sanad-datalist__th--pinned {
+		position: sticky;
+		z-index: 6;
+		background-color: var(--surface-gray-2);
 		background-image: linear-gradient(
-			color-mix(in srgb, var(--sanad-accent) 10%, transparent),
-			color-mix(in srgb, var(--sanad-accent) 10%, transparent)
+			color-mix(in srgb, var(--sanad-accent) 10%, var(--surface-gray-2)),
+			color-mix(in srgb, var(--sanad-accent) 10%, var(--surface-gray-2))
+		);
+		background-clip: padding-box;
+	}
+	&__row:hover td.sanad-datalist__td--pinned {
+		background-image: linear-gradient(
+			color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-gray-1)),
+			color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-gray-1))
 		);
 	}
-	&__th--pinned { z-index: 6; }
+	&__row:has(.list-row-checkbox:checked) td.sanad-datalist__td--pinned {
+		background-image: linear-gradient(var(--sanad-accent-soft), var(--sanad-accent-soft));
+	}
 	&__cell--pin-edge { box-shadow: inset -1px 0 0 var(--outline-gray-2); [dir="rtl"] & { box-shadow: inset 1px 0 0 var(--outline-gray-2); } }
 
 	// pin toggle in the header
@@ -307,6 +332,10 @@
 // `.sanad-list-card` is set by DataList on the list's own wrapper, so the three pieces — which live
 // in different Desk containers — read as one surface.
 .sanad-list-card {
+	// breathing room above and below, so the card is not wedged between the page head and the
+	// viewport edge (the prototype floats its panel on a tinted field — see `.sanad-list-page`)
+	padding-block: var(--sanad-gap-md) var(--sanad-gap-lg);
+
 	.sanad-filterbar--list {
 		margin-block-end: 0;
 		padding: var(--sanad-gap-md);
@@ -352,6 +381,13 @@
 		border-end-start-radius: var(--sanad-card-radius);
 		border-end-end-radius: var(--sanad-card-radius);
 	}
+}
+
+// The field the card sits on. Desk's list area is white, so a white card on it reads as nothing;
+// the prototype floats its panel on a tinted page. Scoped to pages that carry a kit list.
+.sanad-list-page .layout-main-section {
+	background: var(--surface-gray-1);
+	border-radius: 0;
 }
 
 // mobile: one card per row (label: value pairs)

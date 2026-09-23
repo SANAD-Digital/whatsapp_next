@@ -64,8 +64,10 @@ sanad.ui.DataList = class DataList {
 		lv.$no_result && lv.$no_result.hide();
 		lv._sanad_datalist = this; // FilterBar's grouping control drives this table
 		lv.$result.addClass("sanad-datalist-host");
-		// toolbar + table + footer read as one card (prototype: List View is a single panel)
+		// toolbar + table + footer read as one card (prototype: List View is a single panel),
+		// floating on a tinted page rather than a white one
 		lv.$frappe_list.addClass("sanad-list-card");
+		lv.page.wrapper.addClass("sanad-list-page");
 		this.$table = $(`<div class="sanad-kit sanad-datalist__wrap${this.opts.mobile === "cards" ? " sanad-datalist__wrap--cards" : ""}"></div>`);
 		lv.$result.find(".list-row-container, .list-row-head").remove();
 		lv.$result.prepend(this.$table);
@@ -195,11 +197,12 @@ sanad.ui.DataList = class DataList {
 				.filter((c) => c.type === "Field" || c.type === "Subject" || c.type === "Status")
 				.map((c) => (c.type === "Status" ? { fieldname: "status", type: "status" } : { fieldname: c.df.fieldname }));
 		}
-		return list.map((c) => {
+		const resolved = list.map((c) => {
 			const df = df_of(c.fieldname);
 			const type = c.type || (df.fieldtype === "Link" ? "link" : ["Int", "Float", "Currency", "Percent"].includes(df.fieldtype) ? "number" : ["Date", "Datetime"].includes(df.fieldtype) ? "date" : "text");
 			return Object.assign({ sortable: !c.format && !c.sub && !!df.fieldtype, align: type === "number" ? "end" : "start" }, c, { df, type, label: c.label || __(df.label || c.fieldname) });
 		});
+		return this.ordered_columns(resolved);
 	}
 
 	set_columns(columns) {
@@ -380,10 +383,15 @@ sanad.ui.DataList = class DataList {
 		return this.group_by.length ? cint(this.opts.group_page_length) || 200 : this.page_length;
 	}
 
-	/** Fields that can be grouped: every column backed by a real, low-cardinality-ish field. */
+	/**
+	 * Fields worth grouping by. Free text and dates give one bucket per row, which is not a
+	 * grouping at all, so only the field types that form real buckets are offered — plus anything
+	 * a column opts into with `groupable: true`.
+	 */
 	group_options() {
+		const BUCKETED = ["Select", "Link", "Check", "Dynamic Link"];
 		return this.columns
-			.filter((c) => c.df && c.df.fieldname && !["Text", "Text Editor", "Long Text", "Code"].includes(c.df.fieldtype))
+			.filter((c) => c.groupable === true || (c.groupable !== false && c.df && BUCKETED.includes(c.df.fieldtype)))
 			.map((c) => ({ value: c.fieldname, label: c.label }));
 	}
 
@@ -393,8 +401,18 @@ sanad.ui.DataList = class DataList {
 		const at = this.pinned.indexOf(fieldname);
 		if (at >= 0) this.pinned.splice(at, 1);
 		else this.pinned.push(fieldname);
+		this.columns = this.ordered_columns(this.columns);
 		this.render();
 		return this;
+	}
+
+	/**
+	 * Pinned columns lead, in the order they were pinned; the rest keep their declared order.
+	 * A pinned column that stayed in place would leave a gap the unpinned ones scroll through.
+	 */
+	ordered_columns(columns) {
+		const pinned = this.pinned.map((f) => columns.find((c) => c.fieldname === f)).filter(Boolean);
+		return pinned.concat(columns.filter((c) => !this.pinned.includes(c.fieldname)));
 	}
 
 	/**
@@ -628,6 +646,7 @@ sanad.ui.DataList = class DataList {
 
 	destroy() {
 		$(window).off(`resize.${this.id}`);
+		this.listview.page.wrapper.removeClass("sanad-list-page");
 		this.listview.$frappe_list.removeClass("sanad-list-card");
 		this.listview.$result.off(`.${this.id}`);
 		this.$footer.off(`.${this.id}`).remove();
