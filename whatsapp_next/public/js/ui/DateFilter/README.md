@@ -48,11 +48,17 @@ new sanad.ui.DateFilterSet({
 });
 ```
 
-The field list is **multi-select**: ticking a field the set does not have adds a row for it, so
-each field carries its own operator and its own dates; unticking drops that row. A set that is a
-single row with nothing applied *moves* to the field just picked instead of growing a second empty
-row, so the everyday "filter on another date instead" is one click. The last row never goes — with
-no rows there would be nothing left to pick a field from.
+The toolbar keeps **one** trigger. Its field segment reads the field's own name while one field is
+filtered, and a tag carrying the count once several are — `2 fields`, `3 fields` — because the
+names would not fit and the panel lists them anyway.
+
+Opening it shows a **rail** of the fields being filtered, each with its own dates: the one being
+edited is outlined, clicking another switches to it (an unapplied draft is kept), and its × drops
+it. Ticking an unheld field in the field list adds it and opens it straight away; a field with
+nothing applied *moves* to the one just ticked instead of leaving an empty field behind. One
+**Apply** commits every field at once, so the list is refetched once, and the trigger's × clears
+the lot back to a single field. The last field never goes — there would be nothing left to pick
+from.
 
 A single `DateFilter` takes `fields` too; on its own the picker just switches which field the
 control reports (`on_field_change(now, was)`).
@@ -89,6 +95,8 @@ the chosen times) when the field is a Datetime.
 | `value` | — | a previously emitted value, to restore |
 | `fields` | — | `[{value\|fieldname, label}]` — shows the field segment |
 | `fieldname` | first of `fields` | which field this control reports on |
+| `field_caption` | the field's label | `() => {text, count}` for the field segment (a set's count tag) |
+| `field_rail` | — | `() => [{fieldname, label, summary}]` — the panel's rail, drawn from two up |
 | `on_change` | — | `(value\|null) => void` on Apply and on Clear |
 | `on_field_change` | — | `(now, was) => void` when the field segment changes |
 
@@ -122,6 +130,10 @@ itself rather than as two dates.
   date as the start and today as the end.
 - Typed dates accept `DD/MM/YYYY`, `YYYY-M-D`, dots, dashes, slashes or spaces, two-digit years,
   and Arabic-Indic digits. An unparseable value turns the field red and blocks Apply.
+- Years and months are **picked, not stepped**: the calendar's month head, the month grid's own
+  year, and both of the fiscal panel's steppers open a 3×4 grid in place. The year grid is centred
+  on the year in hand (2026 opens on 2021–2032) and pages by twelve; the fiscal steppers keep their
+  arrows beside the value for a one-step nudge.
 - Panel and menus hang off the **start** edge of the trigger — the left in English, the right in
   Arabic — and are measured after mounting: one that would run off the viewport flips to the other
   edge, and is pinned to the viewport if even that does not fit. The menus are at least as wide as

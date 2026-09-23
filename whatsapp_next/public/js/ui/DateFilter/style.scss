@@ -72,7 +72,16 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		// several fields do not fit as names, so the segment carries their count instead
+		&--tag {
+			padding: 1px 7px;
+			border-radius: 999px;
+			background: var(--sanad-accent-soft);
+			color: var(--sanad-accent-ink);
+			font-weight: 600;
+		}
 	}
+	&--hidden { display: none; }
 	&__fieldpick[aria-expanded="true"] &__caret { transform: rotate(180deg); }
 	&__value { flex: 1; min-width: 0; gap: 8px; padding-inline: 10px; }
 	&__text[hidden] { display: none; }
@@ -160,6 +169,59 @@
 		white-space: nowrap;
 	}
 	&__menu-item--mine { font-weight: 600; }
+
+	// ---- the fields being filtered, one per rail item, each with its own dates ----
+	&__rail {
+		display: flex;
+		align-items: stretch;
+		gap: 4px;
+		flex-wrap: wrap;
+		padding: 8px 10px;
+		border-block-end: var(--sanad-border);
+		background: var(--surface-gray-1);
+	}
+	&__rail-item {
+		display: inline-flex;
+		align-items: stretch;
+		border: 1px solid var(--outline-gray-2);
+		border-radius: var(--border-radius-md, 6px);
+		background: var(--surface-white);
+		overflow: hidden;
+		&--on { border-color: var(--sanad-accent); box-shadow: 0 0 0 2px var(--sanad-accent-soft); }
+	}
+	&__rail-pick {
+		appearance: none;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1px;
+		padding: 5px 9px;
+		border: 0;
+		background: transparent;
+		text-align: start;
+		cursor: pointer;
+		&:hover { background: var(--surface-gray-2); }
+	}
+	&__rail-name { font-size: var(--text-xs, 12px); font-weight: 600; color: var(--ink-gray-8); }
+	&__rail-item--on &__rail-name { color: var(--sanad-accent-ink); }
+	&__rail-value {
+		font-size: var(--text-tiny, 11px);
+		color: var(--ink-gray-6);
+		&--empty { font-style: italic; color: var(--ink-gray-4); }
+	}
+	&__rail-drop {
+		appearance: none;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 24px;
+		border: 0;
+		border-inline-start: 1px solid var(--outline-gray-1);
+		background: transparent;
+		color: var(--ink-gray-5);
+		cursor: pointer;
+		&:hover { background: var(--surface-gray-2); color: var(--ink-gray-8); }
+	}
 
 	// ---- panel ----
 	&__panel {
@@ -369,6 +431,22 @@
 	// month / year picker
 	&__picker { width: 252px; min-height: 250px; }
 	&__picker-year { font-size: var(--text-sm, 13px); font-weight: 700; }
+	// the month grid's year is itself a button: it opens the year grid
+	&__picker-year--open {
+		appearance: none;
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		height: 26px;
+		padding-inline: 8px;
+		border: 0;
+		border-radius: var(--border-radius-md, 6px);
+		background: transparent;
+		color: var(--ink-gray-9);
+		cursor: pointer;
+		svg { color: var(--ink-gray-5); }
+		&:hover { background: var(--surface-gray-2); }
+	}
 	&__picker-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
 	&__picker-cell {
 		appearance: none;
@@ -451,7 +529,26 @@
 		border: 1px solid var(--outline-gray-2);
 		border-radius: var(--border-radius-md, 6px);
 	}
-	&__stepper-value { min-width: 60px; text-align: center; font-size: var(--text-xs, 12px); font-weight: 700; }
+	// the value opens a grid; the arrows beside it stay for a one-step nudge
+	&__stepper-value {
+		appearance: none;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 4px;
+		min-width: 92px;
+		height: 28px;
+		padding-inline: 8px;
+		border: 0;
+		border-radius: var(--border-radius-md, 5px);
+		background: transparent;
+		color: var(--ink-gray-9);
+		font-size: var(--text-xs, 12px);
+		font-weight: 700;
+		cursor: pointer;
+		svg { color: var(--ink-gray-5); }
+		&:hover { background: var(--surface-gray-2); }
+	}
 	&__bars { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; width: 100%; }
 	&__panel--compact &__bars { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 	&__bar {

@@ -415,21 +415,27 @@ sanad.ui.DateFilter = class DateFilter {
 		return this;
 	}
 
-	apply() {
+	/**
+	 * @param {{cascade?: boolean, silent?: boolean}} [o] — `cascade` lets a set apply every one of
+	 *   its fields from this one Apply; `silent` is how the set then applies each of them.
+	 */
+	apply({ cascade = true, silent = false } = {}) {
 		const value = this.get_value();
 		if (!value) return this;
 		this.applied = { snapshot: Object.assign({}, this.state), value };
 		this.close();
 		this.reflect_trigger();
-		if (typeof this.opts.on_change === "function") this.opts.on_change(value);
+		if (cascade && typeof this.opts.on_apply_all === "function") return this.opts.on_apply_all();
+		if (!silent && typeof this.opts.on_change === "function") this.opts.on_change(value);
 		return this;
 	}
 
-	clear({ silent = false } = {}) {
+	clear({ silent = false, cascade = true } = {}) {
 		this.applied = null;
 		this.state = this.defaults();
 		this.close();
 		this.reflect_trigger();
+		if (cascade && typeof this.opts.on_clear_all === "function") return this.opts.on_clear_all();
 		if (!silent && typeof this.opts.on_change === "function") this.opts.on_change(null);
 		return this;
 	}
@@ -491,8 +497,8 @@ sanad.ui.DateFilter = class DateFilter {
 			e.stopPropagation();
 			if (this.$fields) return this.close_fields(true);
 			if (this.$menu) return this.close_menu(true);
-			if (this.state.pick_month) {
-				this.state.pick_month = false;
+			if (this.state.pick) {
+				this.state.pick = null;
 				return this.render_panel();
 			}
 			return this.close(true);
@@ -506,8 +512,11 @@ sanad.ui.DateFilter = class DateFilter {
 		const value = this.applied && this.applied.value;
 		this.$el.find(".sanad-datefilter__op-label").text(op.label);
 		if (this.fields.length) {
-			const f = this.fields.find((x) => x.value === this.fieldname) || this.fields[0];
-			this.$el.find(".sanad-datefilter__fieldpick-label").text(f ? f.label : "");
+			const cap = this.field_caption();
+			this.$el
+				.find(".sanad-datefilter__fieldpick-label")
+				.text(cap.text)
+				.toggleClass("sanad-datefilter__fieldpick-label--tag", cap.count > 1);
 		}
 		const placeholder = this.opts.placeholder == null ? __("Pick a date") : this.opts.placeholder;
 		this.$el
@@ -550,6 +559,16 @@ sanad.ui.DateFilter = class DateFilter {
 	}
 
 	// ---- field picker ----------------------------------------------------------------------------
+
+	/**
+	 * What the field segment reads: the field's own name while one field is filtered, and a tag
+	 * carrying the count once several are — the names would not fit, and the panel lists them.
+	 */
+	field_caption() {
+		if (typeof this.opts.field_caption === "function") return this.opts.field_caption();
+		const f = this.fields.find((x) => x.value === this.fieldname);
+		return { text: f ? f.label : "", count: 1 };
+	}
 
 	/**
 	 * Which date field this filter runs on. The list is multi-select: ticking a field the set does
@@ -695,6 +714,7 @@ sanad.ui.DateFilter = class DateFilter {
 		if (!this.$panel) return;
 		const compact = this.compact();
 		this.$panel.toggleClass("sanad-datefilter__panel--compact", compact).empty();
+		this.render_field_rail();
 		const $body = $('<div class="sanad-datefilter__body"></div>').appendTo(this.$panel);
 		if (this.is_calendar()) {
 			if (this.is_between()) this.render_presets($body);
@@ -799,7 +819,11 @@ sanad.ui.DateFilter = class DateFilter {
 
 	render_calendar($main) {
 		const $body = $('<div class="sanad-datefilter__cal"></div>').appendTo($main);
-		if (this.state.pick_month) return this.render_month_picker($body);
+		if (this.state.pick === "month") return this.render_month_picker($body);
+		if (this.state.pick === "year") return this.render_year_picker($body, this.view_year, (y) => {
+			this.view_year = y;
+			this.set({ pick: "month", picker_year: y });
+		});
 		const months = this.compact() || this.is_single() ? 1 : 2;
 		for (let i = 0; i < months; i++) {
 			let y = this.view_year;
@@ -829,7 +853,7 @@ sanad.ui.DateFilter = class DateFilter {
 			})
 			.appendTo($head);
 		$(`<button type="button" class="sanad-datefilter__month-title">${ui.escape(`${this.month_names()[m]} ${y}`)}${ui.icon("es-line-down", "xs")}</button>`)
-			.on("click", () => this.set({ pick_month: true, picker_year: y }))
+			.on("click", () => this.set({ pick: "month", picker_year: y }))
 			.appendTo($head);
 		$(`<button type="button" class="sanad-datefilter__nav" aria-label="${ui.escape(__("Next month"))}"${last ? "" : " hidden"}>${ui.icon("es-line-right-chevron", "xs")}</button>`)
 			.on("click", () => {
@@ -938,27 +962,79 @@ sanad.ui.DateFilter = class DateFilter {
 		return this.set({ start: a, end: b, hover: null, typed: {} });
 	}
 
-	render_month_picker($body) {
-		const y = this.state.picker_year || this.view_year;
+	/**
+	 * A 3×4 grid of choices in place of the panel body. Stepping a year or a month one arrow click
+	 * at a time is slow, so every year and month in the control opens one of these instead.
+	 *
+	 * @param {Object} o
+	 * @param {{text: string, on_click?: Function, aria?: string}} o.head — the caption; clickable when
+	 *   `on_click` is given (the month grid's year opens the year grid that way)
+	 * @param {Function} [o.on_prev] / [o.on_next] — paging arrows; left out, no arrows are drawn
+	 * @param {Array<{label: string, on?: boolean, value: *}>} o.items
+	 * @param {Function} o.on_pick — `(item) => void`
+	 */
+	grid_picker($body, o) {
 		const $wrap = $('<div class="sanad-datefilter__picker"></div>').appendTo($body);
 		const $head = $('<div class="sanad-datefilter__month-head"></div>').appendTo($wrap);
-		$(`<button type="button" class="sanad-datefilter__nav" aria-label="${ui.escape(__("Previous year"))}">${ui.icon("es-line-left-chevron", "xs")}</button>`)
-			.on("click", () => this.set({ picker_year: y - 1 }))
-			.appendTo($head);
-		$(`<span class="sanad-datefilter__picker-year sanad-tabular">${ui.escape(String(y))}</span>`).appendTo($head);
-		$(`<button type="button" class="sanad-datefilter__nav" aria-label="${ui.escape(__("Next year"))}">${ui.icon("es-line-right-chevron", "xs")}</button>`)
-			.on("click", () => this.set({ picker_year: y + 1 }))
-			.appendTo($head);
+		if (o.on_prev) {
+			$(`<button type="button" class="sanad-datefilter__nav" aria-label="${ui.escape(o.prev_label || __("Previous"))}">${ui.icon("es-line-left-chevron", "xs")}</button>`)
+				.on("click", o.on_prev)
+				.appendTo($head);
+		}
+		const caption = ui.escape(o.head.text);
+		const $cap = o.head.on_click
+			? $(`<button type="button" class="sanad-datefilter__picker-year sanad-datefilter__picker-year--open sanad-tabular" aria-label="${ui.escape(o.head.aria || o.head.text)}">${caption}${ui.icon("es-line-down", "xs")}</button>`).on("click", o.head.on_click)
+			: $(`<span class="sanad-datefilter__picker-year sanad-tabular">${caption}</span>`);
+		$cap.appendTo($head);
+		if (o.on_next) {
+			$(`<button type="button" class="sanad-datefilter__nav" aria-label="${ui.escape(o.next_label || __("Next"))}">${ui.icon("es-line-right-chevron", "xs")}</button>`)
+				.on("click", o.on_next)
+				.appendTo($head);
+		}
 		const $grid = $('<div class="sanad-datefilter__picker-grid"></div>').appendTo($wrap);
-		this.month_names().forEach((name, i) => {
-			const on = i === this.view_month && y === this.view_year;
-			$(`<button type="button" class="sanad-datefilter__picker-cell${on ? " sanad-datefilter__picker-cell--on" : ""}">${ui.escape(name)}</button>`)
-				.on("click", () => {
-					this.view_year = y;
-					this.view_month = i;
-					this.set({ pick_month: false });
-				})
+		o.items.forEach((it) => {
+			$(`<button type="button" class="sanad-datefilter__picker-cell${it.on ? " sanad-datefilter__picker-cell--on" : ""}">${ui.escape(it.label)}</button>`)
+				.on("click", () => o.on_pick(it))
 				.appendTo($grid);
+		});
+		return $wrap;
+	}
+
+	/** Twelve years to a page, so any year is two clicks away rather than twelve. */
+	render_year_picker($body, current, on_pick) {
+		// the page is centred on the year in hand, not on a decade: 2026 opens on 2021–2032, so the
+		// years either side of it are one click away rather than a page away
+		const page = this.state.picker_page == null ? current - 5 : this.state.picker_page;
+		const years = [];
+		for (let i = 0; i < 12; i++) years.push(page + i);
+		return this.grid_picker($body, {
+			head: { text: `${page} – ${page + 11}` },
+			prev_label: __("Previous years"),
+			next_label: __("Next years"),
+			on_prev: () => this.set({ picker_page: page - 12 }),
+			on_next: () => this.set({ picker_page: page + 12 }),
+			items: years.map((y) => ({ label: String(y), value: y, on: y === current })),
+			on_pick: (it) => {
+				this.state.picker_page = null;
+				on_pick(it.value);
+			},
+		});
+	}
+
+	render_month_picker($body) {
+		const y = this.state.picker_year || this.view_year;
+		return this.grid_picker($body, {
+			head: { text: String(y), aria: __("Pick a year"), on_click: () => this.set({ pick: "year", picker_page: null }) },
+			prev_label: __("Previous year"),
+			next_label: __("Next year"),
+			on_prev: () => this.set({ picker_year: y - 1 }),
+			on_next: () => this.set({ picker_year: y + 1 }),
+			items: this.month_names().map((name, i) => ({ label: name, value: i, on: i === this.view_month && y === this.view_year })),
+			on_pick: (it) => {
+				this.view_year = y;
+				this.view_month = it.value;
+				this.set({ pick: null });
+			},
 		});
 	}
 
@@ -1025,24 +1101,50 @@ sanad.ui.DateFilter = class DateFilter {
 
 	render_fiscal($body) {
 		const s = this.state;
+		// both of the fiscal panel's steppers open a grid instead of walking one click at a time
+		if (s.pick === "fiscal_year") {
+			return this.render_year_picker($body, s.fiscal_year, (y) => this.set({ fiscal_year: y, pick: null }));
+		}
+		if (s.pick === "fiscal_start") {
+			return this.grid_picker($body, {
+				head: { text: __("Starts in") },
+				items: this.month_names().map((name, i) => ({ label: name, value: i, on: i === s.fiscal_start })),
+				on_pick: (it) => this.set({ fiscal_start: it.value, pick: null }),
+			});
+		}
 		const $form = $('<div class="sanad-datefilter__form"></div>').appendTo($body);
 		const row = (label) => {
 			const $r = $('<div class="sanad-datefilter__form-row"></div>').appendTo($form);
 			$(`<span class="sanad-datefilter__form-label">${ui.escape(label)}</span>`).appendTo($r);
 			return $('<div class="sanad-datefilter__form-field"></div>').appendTo($r);
 		};
-		const stepper = ($parent, value, on_step, aria) => {
+		// arrows to nudge, the value itself to jump — the grid is behind the value
+		const stepper = ($parent, value, on_step, on_open, aria) => {
 			const $s = $('<div class="sanad-datefilter__stepper"></div>').appendTo($parent);
 			$(`<button type="button" class="sanad-datefilter__nav" aria-label="${ui.escape(__("Previous {0}", [aria]))}">${ui.icon("es-line-left-chevron", "xs")}</button>`)
 				.on("click", () => on_step(-1))
 				.appendTo($s);
-			$(`<span class="sanad-datefilter__stepper-value sanad-tabular">${ui.escape(value)}</span>`).appendTo($s);
+			$(`<button type="button" class="sanad-datefilter__stepper-value sanad-tabular" aria-label="${ui.escape(__("Pick a {0}", [aria]))}">${ui.escape(value)}${ui.icon("es-line-down", "xs")}</button>`)
+				.on("click", on_open)
+				.appendTo($s);
 			$(`<button type="button" class="sanad-datefilter__nav" aria-label="${ui.escape(__("Next {0}", [aria]))}">${ui.icon("es-line-right-chevron", "xs")}</button>`)
 				.on("click", () => on_step(1))
 				.appendTo($s);
 		};
-		stepper(row(__("Fiscal year")), String(s.fiscal_year), (n) => this.set({ fiscal_year: s.fiscal_year + n }), __("year"));
-		stepper(row(__("Starts in")), this.month_names()[s.fiscal_start], (n) => this.set({ fiscal_start: (s.fiscal_start + n + 12) % 12 }), __("month"));
+		stepper(
+			row(__("Fiscal year")),
+			String(s.fiscal_year),
+			(n) => this.set({ fiscal_year: s.fiscal_year + n }),
+			() => this.set({ pick: "fiscal_year", picker_page: null }),
+			__("year")
+		);
+		stepper(
+			row(__("Starts in")),
+			this.month_names()[s.fiscal_start],
+			(n) => this.set({ fiscal_start: (s.fiscal_start + n + 12) % 12 }),
+			() => this.set({ pick: "fiscal_start" }),
+			__("month")
+		);
 		this.segmented(row(__("Period")), PERIODS().map((p) => ({ key: p.key, label: p.short })), s.fiscal_period, (k) => this.set({ fiscal_period: k }));
 		const p = PERIODS().find((x) => x.key === s.fiscal_period) || PERIODS()[0];
 		const $bars = $('<div class="sanad-datefilter__bars"></div>').appendTo(row(__("Months")));
@@ -1056,6 +1158,36 @@ sanad.ui.DateFilter = class DateFilter {
 				})
 				.appendTo($bars);
 		}
+	}
+
+	/**
+	 * With more than one field filtered, the panel opens on a rail of them: each carries its own
+	 * dates, the one being edited is pressed, and its × drops it. This is the whole of "several
+	 * fields at once" — the toolbar keeps one trigger, and the rail is where they are added,
+	 * reviewed and edited.
+	 */
+	render_field_rail() {
+		const entries = typeof this.opts.field_rail === "function" ? this.opts.field_rail() : [];
+		if (entries.length < 2) return;
+		const $rail = $(`<div class="sanad-datefilter__rail" role="tablist" aria-label="${ui.escape(__("Date field"))}"></div>`).appendTo(this.$panel);
+		entries.forEach((e) => {
+			const on = e.fieldname === this.fieldname;
+			const $item = $(`<div class="sanad-datefilter__rail-item${on ? " sanad-datefilter__rail-item--on" : ""}">
+					<button type="button" class="sanad-datefilter__rail-pick" role="tab" aria-selected="${on}">
+						<span class="sanad-datefilter__rail-name">${ui.escape(e.label)}</span>
+						<span class="sanad-datefilter__rail-value${e.summary ? "" : " sanad-datefilter__rail-value--empty"}">${ui.escape(e.summary || __("Not set"))}</span>
+					</button>
+					<button type="button" class="sanad-datefilter__rail-drop" aria-label="${ui.escape(__("Remove {0}", [e.label]))}">${ui.icon("es-line-close", "xs")}</button>
+				</div>`).appendTo($rail);
+			$item.find(".sanad-datefilter__rail-pick").on("click", () => {
+				if (on || typeof this.opts.on_pick_row !== "function") return;
+				this.opts.on_pick_row(e.fieldname);
+			});
+			$item.find(".sanad-datefilter__rail-drop").on("click", (ev) => {
+				ev.stopPropagation();
+				if (typeof this.opts.on_drop_row === "function") this.opts.on_drop_row(e.fieldname);
+			});
+		});
 	}
 
 	// ---- footer -----------------------------------------------------------------------------------
@@ -1083,25 +1215,25 @@ sanad.ui.DateFilter = class DateFilter {
 };
 
 /**
- * sanad.ui.DateFilterSet — one `DateFilter` per date field.
+ * sanad.ui.DateFilterSet — several date fields behind **one** trigger.
  *
- * The field segment of every row's trigger lists the same fields and ticks the ones the set holds.
- * Ticking a field the set does not have adds a row for it — unless the set is a single untouched
- * row, which simply moves to the field just picked, so the common "filter by another date" gesture
- * costs one click and does not leave an empty row behind. Unticking drops that field's row; the
- * last row never goes, since a set with no rows would have nothing left to pick a field from.
+ * The toolbar shows a single control: it reads the field's own name while one field is filtered,
+ * and a tag carrying the count once several are. Opening it shows a rail of those fields, each
+ * with its own dates; the rail is where a field is reviewed, edited or dropped, and the field
+ * segment's multi-select list is where one is added. Apply commits every field at once, so the
+ * list is refetched once, and the trigger's × clears the lot back to a single field.
  *
- * `on_change(rows, {removed})` fires whenever any row applies, clears or changes field, with
- * `rows = [{fieldname, value}]` and `removed` the fieldnames that no longer belong to the set.
+ * `on_change(rows, {removed})` fires on Apply and on Clear, with `rows = [{fieldname, value}]` and
+ * `removed` the fieldnames the set no longer holds.
  */
 sanad.ui.DateFilterSet = class DateFilterSet {
 	/**
 	 * @param {Object} opts
 	 * @param {jQuery|HTMLElement} opts.wrapper
 	 * @param {Array} opts.fields — `[{fieldname|value, label}]`, the date fields on offer
-	 * @param {string} [opts.fieldname] — the field the first row starts on
+	 * @param {string} [opts.fieldname] — the field the set starts on
 	 * @param {Function} [opts.on_change] — `(rows, {removed}) => void`
-	 * …plus anything `DateFilter` takes, passed straight through to every row.
+	 * …plus anything `DateFilter` takes, passed straight through to every field.
 	 */
 	constructor(opts = {}) {
 		this.opts = Object.assign({}, opts);
@@ -1119,12 +1251,25 @@ sanad.ui.DateFilterSet = class DateFilterSet {
 		return this.rows.find((r) => r.fieldname === fieldname) || null;
 	}
 
-	/** `[{fieldname, value}]` — `value` is `null` while that row has nothing applied. */
+	/** `[{fieldname, value}]` — `value` is `null` while that field has nothing applied. */
 	values() {
 		return this.rows.map((r) => ({ fieldname: r.fieldname, value: (r.applied && r.applied.value) || null }));
 	}
 
-	add(fieldname, { silent = false } = {}) {
+	label_of(fieldname) {
+		const f = this.fields.find((x) => x.value === fieldname);
+		return f ? f.label : fieldname;
+	}
+
+	/** Only the active field's trigger is in the toolbar; the rest wait behind the rail. */
+	render() {
+		if (!this.active || !this.rows.includes(this.active)) this.active = this.rows[0];
+		this.rows.forEach((r) => r.$el.toggleClass("sanad-datefilter--hidden", r !== this.active));
+		if (this.active) this.active.reflect_trigger();
+		return this;
+	}
+
+	add(fieldname, { silent = false, activate = true } = {}) {
 		if (!fieldname || this.row_of(fieldname)) return null;
 		const row = new sanad.ui.DateFilter(
 			Object.assign({}, this.opts, {
@@ -1132,49 +1277,103 @@ sanad.ui.DateFilterSet = class DateFilterSet {
 				fields: this.fields,
 				fieldname,
 				value: null,
-				label: this.rows.length ? null : this.opts.label, // only the first row carries the caption
+				field_caption: () => this.field_caption(),
+				field_rail: () => this.rail_entries(),
 				selected_fields: () => this.selected(),
 				on_toggle_field: (picked, from) => this.toggle(picked, from),
-				on_change: () => this.emit(),
+				on_pick_row: (fn) => this.activate(fn, { open: true }),
+				on_drop_row: (fn) => this.remove(fn, { open: true }),
+				on_apply_all: () => this.apply_all(),
+				on_clear_all: () => this.clear(),
+				on_change: null, // the set emits once for every field, from apply_all / clear
 			})
 		);
 		this.rows.push(row);
+		if (activate) this.active = row;
+		this.render();
 		if (!silent) this.emit();
 		return row;
 	}
 
-	remove(fieldname, { silent = false } = {}) {
+	remove(fieldname, { silent = false, open = false } = {}) {
 		const row = this.row_of(fieldname);
 		if (!row || this.rows.length < 2) return this;
+		const was_active = row === this.active;
 		this.rows = this.rows.filter((r) => r !== row);
 		const had = !!row.applied;
 		row.destroy();
+		if (was_active) this.active = this.rows[0];
+		this.render();
+		if (open) this.reopen();
 		if (!silent) this.emit(had ? [fieldname] : []);
 		return this;
 	}
 
-	/** One tick in a row's field list. */
+	/** Show the active field's panel, redrawing it in place when it is already open. */
+	reopen() {
+		if (!this.active) return this;
+		if (this.active.$panel) this.active.render_panel();
+		else this.active.open({ keep_state: true });
+		return this;
+	}
+
+	/** Show another field's dates; the one being left keeps its unapplied draft. */
+	activate(fieldname, { open = false } = {}) {
+		const row = this.row_of(fieldname);
+		if (!row) return this;
+		if (this.active) this.active.close();
+		this.active = row;
+		this.render();
+		if (open) row.open({ keep_state: true });
+		return this;
+	}
+
+	/** One tick in the field list: an unheld field is added and opened, a held one is dropped. */
 	toggle(fieldname, from) {
-		if (this.row_of(fieldname)) return this.remove(fieldname);
-		if (this.rows.length === 1 && !this.rows[0].applied) {
-			const was = this.rows[0].fieldname;
-			this.rows[0].set_field(fieldname, { silent: true });
-			return this.emit(was === fieldname ? [] : [was]);
-		}
-		if (from && !from.applied && this.rows.length > 1) {
-			// an untouched row moves rather than breeding a second empty one
+		if (this.row_of(fieldname)) return this.remove(fieldname, { open: true });
+		const blank = from && !from.applied;
+		if (blank) {
+			// an untouched field moves rather than leaving an empty one behind
 			const was = from.fieldname;
 			from.set_field(fieldname, { silent: true });
+			this.activate(fieldname, { open: true });
 			return this.emit(was === fieldname ? [] : [was]);
 		}
-		return this.add(fieldname);
+		this.add(fieldname);
+		return this.reopen();
+	}
+
+	field_caption() {
+		const n = this.rows.length;
+		if (n > 1) return { text: __("{0} fields", [ui.format_int(n)]), count: n };
+		return { text: this.label_of((this.rows[0] || {}).fieldname), count: 1 };
+	}
+
+	rail_entries() {
+		return this.rows.map((r) => ({
+			fieldname: r.fieldname,
+			label: this.label_of(r.fieldname),
+			summary: r.applied ? r.applied.value.label : "",
+		}));
+	}
+
+	/** One Apply commits every field that has a usable draft, so the list is refetched once. */
+	apply_all() {
+		this.rows.forEach((r) => {
+			if (r !== this.active && r.get_value()) r.apply({ cascade: false, silent: true });
+		});
+		this.rows.forEach((r) => r.close());
+		this.render();
+		return this.emit();
 	}
 
 	clear({ silent = false } = {}) {
 		const removed = this.rows.slice(1).map((r) => r.fieldname);
 		this.rows.slice(1).forEach((r) => r.destroy());
 		this.rows = this.rows.slice(0, 1);
-		this.rows.forEach((r) => r.clear({ silent: true }));
+		this.rows.forEach((r) => r.clear({ silent: true, cascade: false }));
+		this.active = this.rows[0];
+		this.render();
 		if (!silent) this.emit(removed);
 		return this;
 	}

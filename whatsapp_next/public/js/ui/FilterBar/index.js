@@ -50,8 +50,8 @@ sanad.ui.FilterBar = class FilterBar {
 	 * @param {Array<Object>} opts.presets — `{fieldname, type?: "select"|"tabs"|"daterange"|"search"|"period", label?,
 	 *   options?: Array<string|{value,label}> | () => Promise<Array>, multiple?: boolean (select, default true),
 	 *   fields?: string[] (search), placeholder?, all_label?, default?: "30d"|"7d"|"today"|"all"|number (period)}`
-	 *   — `type: "date"` mounts `sanad.ui.DateFilterSet`: a date filter per date field, with the
-	 *   field picked inside each trigger. It offers the DocType's Date / Datetime fields plus
+	 *   — `type: "date"` mounts `sanad.ui.DateFilterSet`: one trigger that filters any number of
+	 *   date fields, each with its own dates. It offers the DocType's Date / Datetime fields plus
 	 *   `creation` / `modified` and starts on its `sort_field`; `fieldname` pins the first field,
 	 *   `date_fields: [...]` narrows the list, `fields: false` goes back to one `sanad.ui.DateFilter`
 	 * @param {Array<string>} [opts.actions] — `"group_by"` (multi-level grouping of the table),

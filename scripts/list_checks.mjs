@@ -2,7 +2,7 @@
 //
 // These assert the things that broke more than once while the list was being built: the stacking
 // order around sticky cells, the grouping tree, group selection, the toolbar's shape at several
-// widths, and the date filter's popup placement and one-row-per-field set. Run it after touching `public/js/ui/DataList` or `public/js/ui/FilterBar`.
+// widths, and the date filter's popup placement, per-field rail and grid pickers. Run it after touching `public/js/ui/DataList` or `public/js/ui/FilterBar`.
 //
 // Needs Playwright + Chromium outside the repo (see scripts/browser_smoke.mjs), and is run from
 // that folder so `playwright` resolves:
@@ -147,33 +147,61 @@ const anchored = async (opener, popup, tag) => {
 	await page.keyboard.press("Escape");
 	await page.waitForTimeout(250);
 };
-await anchored(".sanad-datefilter__op", ".sanad-datefilter__menu", "the operator menu");
-await anchored(".sanad-datefilter__fieldpick", ".sanad-datefilter__menu--fields", "the field picker");
+await anchored(".sanad-datefilter:not(.sanad-datefilter--hidden) .sanad-datefilter__op", ".sanad-datefilter__menu", "the operator menu");
+await anchored(".sanad-datefilter:not(.sanad-datefilter--hidden) .sanad-datefilter__fieldpick", ".sanad-datefilter__menu--fields", "the field picker");
 
-await page.click(".sanad-datefilter__fieldpick");
+const live = ".sanad-datefilter:not(.sanad-datefilter--hidden)";
+const visible = () => page.$$eval(live, (n) => n.length);
+const caption = () => page.$eval(`${live} .sanad-datefilter__fieldpick-label`, (e) => e.textContent.trim());
+
+await page.click(`${live} .sanad-datefilter__fieldpick`);
 await page.waitForTimeout(400);
 const offered = await page.$$eval(".sanad-datefilter__menu--fields .sanad-datefilter__menu-item", (n) => n.length);
 check("the field picker lists the DocType's date fields", offered >= 3, `${offered} offered`);
-// an untouched single row moves to the field just ticked rather than growing a second one
-await page.click(".sanad-datefilter__menu--fields .sanad-datefilter__menu-item >> nth=0");
-await page.waitForTimeout(500);
-check("ticking a field on an empty set moves its one row", (await page.$$eval(".sanad-datefilter", (n) => n.length)) === 1);
+// an untouched field moves to the one just ticked rather than leaving an empty field behind
+await page.click(".sanad-datefilter__menu--fields .sanad-datefilter__menu-item >> nth=2");
+await page.waitForTimeout(600);
+check("ticking a field on an empty set moves it", (await visible()) === 1 && (await page.$$eval(".sanad-datefilter", (n) => n.length)) === 1);
 
-// apply a range, then tick another field: that one gets a row of its own
-await page.click(".sanad-datefilter__value");
-await page.waitForTimeout(500);
+// apply a range, then tick another field: it is added, and the toolbar still shows one trigger
 await page.click(".sanad-datefilter__preset >> nth=2");
 await page.waitForTimeout(250);
 await page.click(".sanad-datefilter__apply");
 await page.waitForTimeout(1400);
-await page.click(".sanad-datefilter__fieldpick");
+await page.click(`${live} .sanad-datefilter__fieldpick`);
 await page.waitForTimeout(400);
-const items = await page.$$(".sanad-datefilter__menu--fields .sanad-datefilter__menu-item");
-await items[items.length - 1].click();
+await page.click(".sanad-datefilter__menu--fields .sanad-datefilter__menu-item >> nth=3");
 await page.waitForTimeout(900);
-check("ticking another field adds a second row", (await page.$$eval(".sanad-datefilter", (n) => n.length)) === 2);
-const applied = await page.evaluate(() => cur_list.filter_area.get().filter((f) => f[2] === "Between").length);
-check("only the row that was applied filters the list", applied === 1, `${applied} range filter(s)`);
+check("a second field keeps one trigger", (await visible()) === 1, `${await visible()} visible`);
+check("the field segment turns into a count tag", /2/.test(await caption()) && (await page.$$eval(".sanad-datefilter__fieldpick-label--tag", (n) => n.length)) === 1, await caption());
+const rail = await page.$$eval(".sanad-datefilter__rail-item", (n) => n.length);
+check("the panel lists both fields on its rail", rail === 2, `${rail} item(s)`);
+
+await page.click(".sanad-datefilter__preset >> nth=0");
+await page.waitForTimeout(250);
+await page.click(".sanad-datefilter__apply");
+await page.waitForTimeout(1600);
+const ranges = await page.evaluate(() => cur_list.filter_area.get().filter((f) => f[2] === "Between").length);
+check("one Apply commits every field", ranges === 2, `${ranges} range filter(s)`);
+
+// the fiscal panel's year and month open a grid instead of stepping
+await page.click(`${live} .sanad-datefilter__op`);
+await page.waitForTimeout(400);
+await page.click(".sanad-datefilter__menu-item >> nth=7");
+await page.waitForTimeout(700);
+await page.click(".sanad-datefilter__stepper-value >> nth=0");
+await page.waitForTimeout(450);
+const years = await page.$$eval(".sanad-datefilter__picker-cell", (n) => n.map((x) => x.textContent.trim()));
+check("the fiscal year opens a year grid", years.length === 12 && /^\d{4}$/.test(years[0]), years.slice(0, 2).join(", "));
+await page.click(".sanad-datefilter__picker-cell >> nth=8");
+await page.waitForTimeout(450);
+await page.click(".sanad-datefilter__stepper-value >> nth=1");
+await page.waitForTimeout(450);
+check("the fiscal start month opens a month grid", (await page.$$eval(".sanad-datefilter__picker-cell", (n) => n.length)) === 12);
+await page.keyboard.press("Escape");
+await page.waitForTimeout(300);
+await page.keyboard.press("Escape");
+await page.waitForTimeout(300);
 
 check("no console errors", errors.length === 0, errors.join(" | "));
 await browser.close();
