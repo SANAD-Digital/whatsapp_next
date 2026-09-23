@@ -1,0 +1,396 @@
+// sanad.ui.Render styles — the visual language of the kit: media, chips, facts, values and the
+// five entity densities. Sizes are pinned (they are geometry, taken from the renderer reference);
+// every colour is an Espresso token and every box uses logical properties, so RTL needs no rules
+// of its own.
+
+:root {
+	--sanad-ent-radius: var(--border-radius-lg, 10px);
+	--sanad-media-xs: 20px;
+	--sanad-media-sm: 24px;
+	--sanad-media-md: 34px;
+	--sanad-media-lg: 44px;
+	--sanad-media-xl: 72px;
+}
+
+// An icon never grows to fill a flex row (a bare <svg> flex item would). Espresso icons carry
+// `es-icon`, the legacy set carries `icon`.
+:is(.sanad-kit, .sanad-ent, .sanad-fact, .sanad-chipline, .sanad-doc__block-title, .sanad-timeline) :is(svg.es-icon, svg.icon) {
+	flex: none;
+}
+
+// ---- media ---------------------------------------------------------------------------------
+
+.sanad-avatar {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	inline-size: var(--sanad-media-md);
+	block-size: var(--sanad-media-md);
+	border-radius: var(--border-radius-md, 6px);
+	background: var(--surface-gray-2);
+	color: var(--ink-gray-7);
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	line-height: 1;
+	overflow: hidden;
+
+	img {
+		inline-size: 100%;
+		block-size: 100%;
+		object-fit: cover;
+	}
+
+	&--xs { inline-size: var(--sanad-media-xs); block-size: var(--sanad-media-xs); font-size: 9px; border-radius: var(--border-radius-sm, 4px); }
+	&--sm { inline-size: var(--sanad-media-sm); block-size: var(--sanad-media-sm); font-size: 10px; }
+	&--lg { inline-size: var(--sanad-media-lg); block-size: var(--sanad-media-lg); font-size: 15px; }
+	&--xl { inline-size: var(--sanad-media-xl); block-size: var(--sanad-media-xl); font-size: 24px; border-radius: var(--sanad-ent-radius); }
+
+	&--image { background: var(--surface-gray-2); }
+	// The filled variant is for dense tables, where the initials are a marker, not a portrait.
+	&--solid { background: var(--surface-gray-7); color: var(--ink-white); }
+}
+
+// A person is a circle, everything else is a tile — the quickest way to tell them apart.
+.sanad-ent--person .sanad-avatar,
+.sanad-avatar--circle { border-radius: var(--border-radius-full, 999px); }
+
+.sanad-thumb {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	inline-size: var(--sanad-media-lg);
+	block-size: var(--sanad-media-lg);
+	border-radius: var(--border-radius-md, 6px);
+	border: var(--sanad-border);
+	background: var(--surface-gray-1);
+	color: var(--ink-gray-5);
+	overflow: hidden;
+
+	img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+
+	&--sm { inline-size: var(--sanad-media-md); block-size: var(--sanad-media-md); }
+	&--md { inline-size: var(--sanad-media-lg); block-size: var(--sanad-media-lg); }
+	&--lg { inline-size: var(--sanad-media-xl); block-size: var(--sanad-media-xl); }
+	&--cover { inline-size: 100%; block-size: auto; aspect-ratio: 4 / 3; border: 0; border-radius: var(--sanad-ent-radius); }
+}
+
+// File type tile: the extension is the icon (reference image 05).
+.sanad-filetype {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	inline-size: var(--sanad-media-md);
+	block-size: var(--sanad-media-md);
+	border: 1px solid;
+	border-radius: var(--border-radius-md, 6px);
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	&--lg { inline-size: var(--sanad-media-xl); block-size: var(--sanad-media-xl); font-size: 14px; border-radius: var(--sanad-ent-radius); }
+	&__ext { direction: ltr; }
+}
+
+// ---- small pieces --------------------------------------------------------------------------
+
+.sanad-chipline {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sanad-gap-xs);
+	min-inline-size: 0;
+	max-inline-size: 100%;
+	color: var(--ink-gray-6);
+	font-size: var(--text-sm, 13px);
+	line-height: 1.4;
+
+	&__icon { display: inline-flex; flex: none; color: var(--ink-gray-5); }
+	&__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&:is(a):hover { color: var(--sanad-accent-ink); text-decoration: none; }
+	&--link { color: var(--sanad-accent-ink); }
+}
+.sanad-chipline-row {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+	min-inline-size: 0;
+}
+
+.sanad-tag-row { display: inline-flex; flex-wrap: wrap; gap: var(--sanad-gap-xs); align-items: center; }
+.sanad-tag {
+	display: inline-flex;
+	align-items: center;
+	padding-inline: var(--sanad-gap-sm);
+	padding-block: 2px;
+	border-radius: var(--border-radius-full, 999px);
+	background: var(--surface-gray-2);
+	color: var(--ink-gray-7);
+	font-size: var(--text-xs, 11px);
+	line-height: 1.6;
+	&--rest { background: transparent; color: var(--ink-gray-5); }
+}
+
+.sanad-swatch { inline-size: 12px; block-size: 12px; border-radius: 3px; border: var(--sanad-border); display: inline-block; }
+.sanad-muted { color: var(--ink-gray-4); }
+
+.sanad-amount,
+.sanad-number {
+	color: var(--ink-gray-9);
+	font-weight: 600;
+	&--strong { font-size: var(--text-lg, 16px); font-weight: 700; }
+}
+.sanad-when { color: var(--ink-gray-6); white-space: nowrap; }
+
+.sanad-clamp {
+	display: -webkit-box;
+	text-align: start;
+	unicode-bidi: plaintext;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	&--1 { -webkit-line-clamp: 1; }
+	&--4 { -webkit-line-clamp: 4; }
+}
+.sanad-rich {
+	font-size: var(--text-sm, 13px);
+	line-height: 1.8;
+	color: var(--ink-gray-8);
+	text-align: start;
+	unicode-bidi: plaintext;
+	> :last-child { margin-block-end: 0; }
+}
+
+.sanad-progress {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sanad-gap-sm);
+	inline-size: 100%;
+	min-inline-size: 90px;
+
+	&__track { flex: 1; block-size: 6px; border-radius: var(--border-radius-full, 999px); background: var(--surface-gray-3); overflow: hidden; }
+	&__bar { display: block; block-size: 100%; border-radius: inherit; background: var(--ink-gray-6); }
+	&__value { flex: none; font-size: var(--text-sm, 13px); color: var(--ink-gray-7); font-weight: 600; }
+	&--green { background: var(--ink-green-3); }
+	&--blue { background: var(--sanad-accent); }
+	&--amber { background: var(--ink-amber-3); }
+	&--red { background: var(--ink-red-4); }
+	&--gray { background: var(--ink-gray-5); }
+}
+
+.sanad-stars {
+	display: inline-flex;
+	align-items: center;
+	gap: 1px;
+	&__star { display: inline-flex; color: var(--surface-gray-4); }
+	&__star--full, &__star--half { color: var(--ink-amber-3); }
+	&__star--half { opacity: 0.6; }
+	&__value { margin-inline-start: var(--sanad-gap-xs); color: var(--ink-gray-7); font-size: var(--text-sm, 13px); }
+}
+
+// Quick facts — label above, value below, icon in the corner (reference image 01).
+.sanad-fact-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: var(--sanad-gap-sm);
+}
+.sanad-fact {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: var(--sanad-gap-sm) var(--sanad-gap-md);
+	border: var(--sanad-border);
+	border-radius: var(--sanad-ent-radius);
+	background: var(--surface-white);
+	min-inline-size: 0;
+
+	&__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sanad-gap-xs); flex-direction: row-reverse; }
+	&__label { flex: 1; font-size: var(--text-xs, 11px); color: var(--ink-gray-6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__icon { display: inline-flex; flex: none; color: var(--ink-gray-4); }
+	&__value { font-size: var(--text-sm, 13px); font-weight: 600; color: var(--ink-gray-9); overflow-wrap: anywhere; }
+}
+
+// Key / value list — the "additional details" block.
+.sanad-dl {
+	display: grid;
+	gap: var(--sanad-gap-sm) var(--sanad-gap-lg);
+	margin: 0;
+	&--cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	&--cols-1 { grid-template-columns: minmax(0, 1fr); }
+
+	&__row {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		min-inline-size: 0;
+		&--wide { grid-column: 1 / -1; }
+	}
+	dt { font-size: var(--text-xs, 11px); font-weight: 400; color: var(--ink-gray-6); }
+	// The value keeps the panel's own direction so labels and values line up on the same side;
+	// the value's `dir="auto"` still renders its own text correctly.
+	dd { margin: 0; font-size: var(--text-sm, 13px); color: var(--ink-gray-8); overflow-wrap: anywhere; direction: inherit; text-align: start; }
+	@media (max-width: 520px) {
+		&--cols-2 { grid-template-columns: minmax(0, 1fr); }
+	}
+}
+
+.sanad-code {
+	font-family: var(--font-stack-mono, monospace);
+	font-size: var(--text-xs, 11px);
+	&--inline { padding-inline: var(--sanad-gap-xs); border-radius: 4px; background: var(--surface-gray-2); color: var(--ink-gray-8); }
+}
+.sanad-code-block {
+	position: relative;
+	&__pre {
+		margin: 0;
+		padding: var(--sanad-gap-md);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-ent-radius);
+		background: var(--surface-gray-1);
+		color: var(--ink-gray-8);
+		font-family: var(--font-stack-mono, monospace);
+		font-size: var(--text-xs, 11px);
+		line-height: 1.7;
+		max-block-size: 220px;
+		overflow: auto;
+	}
+	&__copy {
+		position: absolute;
+		inset-block-start: var(--sanad-gap-sm);
+		inset-inline-end: var(--sanad-gap-sm);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 26px;
+		block-size: 26px;
+		border: var(--sanad-border);
+		border-radius: var(--border-radius-md, 6px);
+		background: var(--surface-white);
+		color: var(--ink-gray-6);
+		&:hover { color: var(--ink-gray-9); }
+	}
+}
+
+// Icon-only quick actions on a row or card.
+.sanad-iconbtn-row { display: inline-flex; align-items: center; gap: var(--sanad-gap-xs); flex: none; }
+.sanad-iconbtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--sanad-gap-xs);
+	min-inline-size: var(--sanad-target);
+	block-size: var(--sanad-target);
+	padding-inline: var(--sanad-gap-sm);
+	border: var(--sanad-border);
+	border-radius: var(--border-radius-md, 6px);
+	background: var(--surface-white);
+	color: var(--ink-gray-7);
+	cursor: pointer;
+	&:hover { background: var(--surface-gray-2); color: var(--ink-gray-9); text-decoration: none; }
+	&__label { font-size: var(--text-sm, 13px); }
+	&--md { block-size: 36px; }
+}
+
+// ---- entities ------------------------------------------------------------------------------
+
+.sanad-ent {
+	display: flex;
+	align-items: center;
+	gap: var(--sanad-gap-sm);
+	min-inline-size: 0;
+	color: inherit;
+	text-align: start;
+	font: inherit;
+
+	&__text { display: flex; flex-direction: column; gap: 1px; min-inline-size: 0; flex: 1; }
+	&__title { font-size: var(--text-sm, 13px); font-weight: 600; color: var(--ink-gray-9); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__sub { font-size: var(--text-xs, 11px); color: var(--ink-gray-6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__desc { font-size: var(--text-sm, 13px); color: var(--ink-gray-7); line-height: 1.7; }
+	&__trail { display: inline-flex; align-items: center; gap: var(--sanad-gap-sm); flex: none; margin-inline-start: auto; }
+	&__value { font-size: var(--text-sm, 13px); font-weight: 700; color: var(--ink-gray-9); white-space: nowrap; }
+	&__value--hero { font-size: var(--text-xl, 20px); }
+	&__facts { display: flex; flex-wrap: wrap; gap: var(--sanad-gap-xs) var(--sanad-gap-md); }
+	&__dot { inline-size: 6px; block-size: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+	&__go { display: inline-flex; color: var(--ink-gray-4); flex: none; }
+
+	&:is(a, button) { border: 0; background: none; padding: 0; cursor: pointer; }
+	&:is(a, button):hover { text-decoration: none; }
+
+	// inline — a table cell or a sentence: no box, one line.
+	&--inline {
+		display: inline-flex;
+		gap: var(--sanad-gap-xs);
+		.sanad-ent__sub { color: var(--ink-gray-5); }
+		.sanad-ent__title { font-weight: 500; }
+	}
+
+	// compact — dense lists and pick results.
+	&--compact {
+		padding: var(--sanad-gap-xs) var(--sanad-gap-sm);
+		border: var(--sanad-border);
+		border-radius: var(--border-radius-md, 8px);
+		background: var(--surface-white);
+		&:hover { background: var(--surface-gray-1); }
+	}
+
+	// row — drawer lists, selection results: media, two lines, a trailing value or badge.
+	&--row {
+		inline-size: 100%;
+		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-ent-radius);
+		background: var(--surface-white);
+		min-block-size: 52px;
+		&:hover { background: var(--surface-gray-1); }
+	}
+
+	// card — the record deserves space: media, title, facts, value.
+	&--card {
+		flex-direction: column;
+		align-items: stretch;
+		gap: var(--sanad-gap-sm);
+		padding: var(--sanad-gap-md);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-card-radius);
+		background: var(--surface-white);
+		block-size: 100%;
+		.sanad-ent__head { display: flex; align-items: center; gap: var(--sanad-gap-sm); }
+		.sanad-ent__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sanad-gap-sm); margin-block-start: auto; }
+		.sanad-ent__body { display: flex; flex-direction: column; gap: var(--sanad-gap-xs); }
+		.sanad-ent__cover { position: relative; display: block; margin: calc(-1 * var(--sanad-gap-md)); margin-block-end: 0; }
+		.sanad-ent__flag { position: absolute; inset-block-start: var(--sanad-gap-sm); inset-inline-end: var(--sanad-gap-sm); }
+		.sanad-ent__title { white-space: normal; }
+		&:hover { border-color: var(--outline-gray-2); }
+	}
+
+	// hero — the subject of the screen.
+	&--hero {
+		align-items: flex-start;
+		gap: var(--sanad-gap-lg);
+		padding: var(--sanad-gap-lg);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-card-radius);
+		background: var(--surface-white);
+		.sanad-ent__hero-body { display: flex; flex-direction: column; gap: var(--sanad-gap-sm); min-inline-size: 0; flex: 1; }
+		.sanad-ent__hero-head { display: flex; align-items: center; gap: var(--sanad-gap-sm); flex-wrap: wrap; }
+		.sanad-ent__title { font-size: var(--text-lg, 16px); white-space: normal; margin: 0; }
+		@media (max-width: 520px) {
+			flex-direction: column;
+		}
+	}
+
+	// File rows keep their type tile square even inside a person-shaped list.
+	&--file .sanad-avatar { border-radius: var(--border-radius-md, 6px); }
+}
+
+[dir="rtl"] .sanad-ent__go { transform: scaleX(-1); }
+
+.sanad-ent-list {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-sm);
+	&--card, &--compact { flex-direction: row; flex-wrap: wrap; }
+	&__item { min-inline-size: 0; }
+	&--row > .sanad-ent-list__item { inline-size: 100%; }
+}

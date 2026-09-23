@@ -102,3 +102,111 @@
 @media (max-width: 767px) {
 	.sanad-drawer__dl { grid-template-columns: minmax(0, 1fr); }
 }
+
+// ---- document layout (reference image 01) ---------------------------------------------------
+// The record introduces itself, says its piece, states its facts, points at what it is linked to,
+// folds the rest away and ends with its history. Blocks are separated by space, not by boxes.
+.sanad-drawer__body {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-lg);
+}
+
+.sanad-doc {
+	&__identity {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--sanad-gap-md);
+		flex-wrap: wrap;
+	}
+	&__identity-main { display: flex; align-items: flex-start; gap: var(--sanad-gap-md); min-inline-size: 0; flex: 1; }
+	&__identity-text { display: flex; flex-direction: column; gap: 2px; min-inline-size: 0; }
+	&__identity-title {
+		margin: 0;
+		font-size: var(--text-lg, 16px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+		overflow-wrap: anywhere;
+	}
+	&__identity-sub { font-size: var(--text-sm, 13px); color: var(--ink-gray-7); overflow-wrap: anywhere; }
+	&__identity-ref {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-xs);
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-5);
+		code { font-family: var(--font-stack-mono, monospace); color: inherit; background: none; padding: 0; }
+	}
+	&__identity-side {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: var(--sanad-gap-xs);
+		flex: none;
+	}
+	&__identity-time {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--sanad-gap-xs);
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+		white-space: nowrap;
+	}
+	&__identity-value { font-size: var(--text-lg, 16px); font-weight: 700; color: var(--ink-gray-9); }
+
+	&__block { display: flex; flex-direction: column; gap: var(--sanad-gap-sm); min-inline-size: 0; }
+	&__block-title {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-xs);
+		margin: 0;
+		font-size: var(--text-sm, 13px);
+		font-weight: 600;
+		color: var(--ink-gray-7);
+	}
+	&__block-icon { display: inline-flex; color: var(--ink-gray-5); }
+	&__block-body { min-inline-size: 0; }
+
+	// the record's own content: a tinted panel, quiet enough to sit under the identity
+	&__block--highlight .sanad-doc__block-title { color: var(--sanad-accent-ink); }
+	&__highlight {
+		padding: var(--sanad-gap-md);
+		border: 1px solid var(--sanad-accent-outline);
+		border-radius: var(--sanad-ent-radius);
+		background: var(--sanad-accent-soft);
+		color: var(--ink-gray-9);
+		font-size: var(--text-base, 14px);
+		line-height: 1.8;
+		text-align: start;
+		unicode-bidi: plaintext;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+
+	&__details {
+		border-block-start: var(--sanad-border);
+		padding-block-start: var(--sanad-gap-md);
+		summary {
+			cursor: pointer;
+			list-style: none;
+			display: flex;
+			align-items: center;
+			gap: var(--sanad-gap-xs);
+			min-block-size: var(--sanad-target);
+			&::-webkit-details-marker { display: none; }
+			&::after {
+				content: "";
+				inline-size: 8px;
+				block-size: 8px;
+				margin-inline-start: auto;
+				border-inline-end: 1.5px solid var(--ink-gray-5);
+				border-block-end: 1.5px solid var(--ink-gray-5);
+				transform: rotate(45deg);
+				transition: transform var(--sanad-motion);
+			}
+		}
+		&[open] summary::after { transform: rotate(-135deg); }
+	}
+	&__details-body { padding-block-start: var(--sanad-gap-sm); }
+}

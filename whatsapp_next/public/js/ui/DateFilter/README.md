@@ -161,3 +161,19 @@ and a calendar together outgrow it, so Apply is always reachable.
 ## Live use
 
 `WhatsApp Log` (Outbound) — the date filter in its toolbar, over the log's ten date fields.
+
+## Design gate
+
+- Nothing is emitted until **Apply**, so a half-typed range never refetches the list; Cancel
+  restores the applied snapshot and the × clears the filter outright.
+- Years and months are picked from a grid, never stepped one at a time, and the grid takes the
+  width of what it replaces so the panel does not change size underfoot.
+- The panel hangs off the trigger's start edge, is measured after mounting and flips or pins itself
+  rather than running off the viewport.
+- Escape closes the innermost thing first (field picker, operator menu, month grid, then the
+  panel); the panel never closes on selection.
+- Month and weekday names come from `Intl` in the user's language, not from moment, which Desk
+  pins to English.
+- Under 768 px the control is one icon beside the search box and its operator and field move into
+  the panel as rows, so neither disappears on a small screen and Apply stays reachable.
+- Every control is ≥ 32 px; the phone sheet's rows are 48 px, a thumb's size.

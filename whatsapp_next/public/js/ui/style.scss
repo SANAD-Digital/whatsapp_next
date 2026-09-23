@@ -1,5 +1,6 @@
 // sanad.ui kit styles — one import per component; imported by the host app's *.bundle.scss.
 @import "./_core/style";
+@import "./Render/style";
 @import "./StatusBadge/style";
 @import "./EmptyState/style";
 @import "./Toast/style";
@@ -14,6 +15,7 @@
 @import "./ListStatsCard/style";
 @import "./MetaDialog/style";
 @import "./DataList/style";
+@import "./Collection/style";
 @import "./PageHeader/style";
 @import "./Drawer/style";
 @import "./ChatThread/style";

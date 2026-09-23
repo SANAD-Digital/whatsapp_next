@@ -13,6 +13,7 @@ loading (skeleton) / empty / error states, and every panel is keyboard-accessibl
 | Component | What it does | Live use in this app |
 |---|---|---|
 | `_core` | namespace, `sanad.ui.configure`, `call`, escaping, icons, tones, announcer, focus trap, skeleton, meta helpers | everything |
+| `Render` | one presentation layer: values, records and links at five display levels | every list cell, the drawer, Collection |
 | `StatusBadge` | status pill coloured by the DocType's own indicator rules | Outbound / Numbers lists |
 | `EmptyState` | loading (skeleton) · empty · error · offline | every panel |
 | `Toast` | tone + timing + aria-live wrapper over `frappe.show_alert` | QuickSend, bulk actions |
@@ -25,7 +26,8 @@ loading (skeleton) / empty / error states, and every panel is keyboard-accessibl
 | `PhoneField` | phone input with country hint and E.164 preview | ContactPicker manual source |
 | `ListStatsCard` | cards above a list (count / sum / method) with a detail modal | Campaigns "sending now" |
 | `MetaDialog` | tabbed dialog whose fields come from a DocType's meta | Commands modal |
-| `Drawer` | record / form / choice side panel from a list | Outbound, Inbound, Queue |
+| `Collection` | rows as a table, list, cards, gallery or timeline, with the switch between them | drawer activity history |
+| `Drawer` | record / form / choice side panel from a list; `record` reads as a document | Outbound, Inbound, Queue |
 | `ChatThread` | message bubbles, ticks, day separators | ConversationDrawer |
 | `ConversationDrawer` | one thread across both directions (read layer), realtime | WhatsApp Numbers |
 | `QuickSend` | one-message composer dialog | Outbound list, Numbers, Templates |
@@ -51,6 +53,11 @@ with a usage snippet, its live use and the design-gate findings applied.
        // … only the keys of the components you use (each README lists its keys)
      },
      defaults: { simulator_route: "your-simulator-page" },
+     // optional: how your records look wherever the kit draws them (see Render/README.md)
+     renderers: {
+       doctypes: { "Your DocType": "document" },
+       profiles: { "Your DocType": { lines: ["party_name"], value: "grand_total" } },
+     },
    });
    ```
    and `<your_app>/public/scss/<your_app>.bundle.scss` containing `@import "../js/ui/style";`.
@@ -80,3 +87,5 @@ Applied kit-wide from `ui-ux-pro-max` (ux / icons domains), `design:design-criti
 - Toasts are transient (3–8 s) and never carry decisions; decisions use ConfirmDialog with impact rows.
 - Targets ≥ 32 px with ≥ 8 px gaps; tables scroll inside a wrapper; sheets use `100dvh`.
 - Copy: sentence case, verbs on buttons, no "OK", numbers with tabular figures.
+- One presentation language: every value and every record is drawn by `Render`, at the density the
+  place calls for — a person reads as a person in a cell, a drawer and a picker row alike.

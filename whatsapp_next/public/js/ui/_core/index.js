@@ -9,10 +9,18 @@ const ui = sanad.ui;
 ui.version = "1.0.0";
 ui.config = ui.config || { api: {}, defaults: {} };
 
-/** Merge host configuration: `{ api: {key: "dotted.method"}, defaults: {...} }`. */
+/**
+ * Merge host configuration:
+ * `{ api: {key: "dotted.method"}, defaults: {...}, renderers: {doctypes, profiles, kinds, fields} }`.
+ * The `renderers` block is handed to `sanad.ui.Render` — see its README for the spec.
+ */
 ui.configure = function (opts = {}) {
 	ui.config.api = Object.assign(ui.config.api || {}, opts.api || {});
 	ui.config.defaults = Object.assign(ui.config.defaults || {}, opts.defaults || {});
+	if (opts.renderers) {
+		ui.config.renderers = Object.assign(ui.config.renderers || {}, opts.renderers);
+		if (sanad.ui.Render) sanad.ui.Render.configure(opts.renderers);
+	}
 	return ui.config;
 };
 

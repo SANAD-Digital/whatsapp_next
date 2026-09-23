@@ -699,7 +699,9 @@ sanad.ui.DataList = class DataList {
 				return sanad.ui.StatusBadge.html({ label: __(String(value)), colour: ind.colour });
 			}
 			case "avatar":
-				return `<span class="sanad-avatar" aria-hidden="true">${ui.escape(ui.initials(display))}</span><span class="sanad-datalist__avatar-text">${ui.escape(display)}</span>`;
+				return `<span class="sanad-avatar sanad-avatar--sm sanad-avatar--solid" aria-hidden="true">${ui.escape(ui.initials(display))}</span><span class="sanad-datalist__avatar-text">${ui.escape(display)}</span>`;
+			case "entity":
+				return sanad.ui.Render.entity(doc, { doctype: doctype || doc.doctype, density: "inline" });
 			case "number":
 				return `<span class="sanad-tabular">${frappe.format(value, df || { fieldtype: "Int" }, { inline: true }, doc)}</span>`;
 			case "date":
@@ -710,7 +712,9 @@ sanad.ui.DataList = class DataList {
 				return target ? frappe.utils.get_form_link(target, value, true, ui.escape(display)) : ui.escape(display);
 			}
 			default:
-				return df && df.fieldtype && df.fieldtype !== "Data" ? ui.meta.format(value, df, doc) : ui.escape(display);
+				// Everything else is drawn by the kit's one presentation layer, at cell density:
+				// a check reads "Yes", a percent gets its bar, an attachment gets its file chip.
+				return df && df.fieldtype && df.fieldtype !== "Data" ? sanad.ui.Render.value(value, df, doc, { density: "inline", doctype: doctype || doc.doctype }) : ui.escape(display);
 		}
 	}
 

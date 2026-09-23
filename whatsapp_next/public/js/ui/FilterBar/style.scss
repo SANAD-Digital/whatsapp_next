@@ -606,11 +606,12 @@
 	&__scrim {
 		position: absolute;
 		inset: 0;
-		background: rgba(0, 0, 0, 0.35);
+		// same scrim as every other kit overlay (`.sanad-backdrop`)
+		background: var(--surface-gray-7);
 		opacity: 0;
 		transition: opacity 180ms ease;
 	}
-	&--in &__scrim { opacity: 1; }
+	&--in &__scrim { opacity: 0.45; }
 
 	&__panel {
 		position: relative;

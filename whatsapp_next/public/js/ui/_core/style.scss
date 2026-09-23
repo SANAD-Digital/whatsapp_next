@@ -24,7 +24,7 @@
 
 	// Accent = the kit's "active / selected / primary" colour. It defaults to Desk's own Espresso
 	// blue, so a plain copy of `ui/` is theme-safe and native; a host app repoints these five
-	// tokens to its brand in its own bundle (whatsapp_next does, to the prototype's teal).
+	// tokens to its brand in its own bundle.
 	--sanad-accent: var(--ink-blue-3);
 	--sanad-accent-ink: var(--ink-blue-3);
 	--sanad-accent-soft: var(--surface-blue-1);

@@ -17,6 +17,8 @@ PUBLIC = APP_DIR / "public"
 UI = PUBLIC / "js" / "ui"
 
 EXPECTED_COMPONENTS = {
+	"Render",
+	"Collection",
 	"StatusBadge",
 	"EmptyState",
 	"Toast",
@@ -67,8 +69,10 @@ class TestKitPortability(IntegrationTestCase):
 			for fname in ("index.js", "style.scss", "README.md"):
 				self.assertTrue((comp / fname).exists(), f"{comp.name}/{fname} missing")
 			index = (comp / "index.js").read_text(encoding="utf-8")
-			self.assertIn(
-				f"sanad.ui.{comp.name} = class", index, f"{comp.name} must export sanad.ui.{comp.name}"
+			# most components are a class; a foundation like Render is a namespace object
+			self.assertTrue(
+				f"sanad.ui.{comp.name} = class" in index or f"sanad.ui.{comp.name} = " in index,
+				f"{comp.name} must export sanad.ui.{comp.name}",
 			)
 			self.assertNotIn("stub, replaced", index, f"{comp.name}/index.js is still a stub")
 			readme = (comp / "README.md").read_text(encoding="utf-8")

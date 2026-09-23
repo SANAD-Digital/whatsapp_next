@@ -1,0 +1,206 @@
+// sanad.ui.Collection styles — the frame (header, view switch, footer total) and the five ways
+// the rows can be laid out. The rows themselves are drawn by sanad.ui.Render, so nothing here
+// styles a record; it only places them.
+
+.sanad-collection {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-md);
+	min-inline-size: 0;
+
+	&__head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--sanad-gap-md);
+		flex-wrap: wrap;
+	}
+	&__heading { display: flex; align-items: center; gap: var(--sanad-gap-sm); min-inline-size: 0; }
+	&__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 32px;
+		block-size: 32px;
+		border-radius: var(--border-radius-md, 8px);
+		background: var(--sanad-accent-soft);
+		color: var(--sanad-accent-ink);
+		flex: none;
+	}
+	&__title { margin: 0; font-size: var(--text-base, 14px); font-weight: 600; color: var(--ink-gray-9); }
+	&__desc { margin: 0; font-size: var(--text-xs, 11px); color: var(--ink-gray-6); }
+
+	&__body { min-inline-size: 0; }
+
+	&__list { display: flex; flex-direction: column; gap: var(--sanad-gap-sm); }
+	&__item { min-inline-size: 0; }
+
+	&__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+		gap: var(--sanad-gap-md);
+	}
+	&__cell { min-inline-size: 0; display: flex; }
+	&__cell > * { inline-size: 100%; }
+
+	&__gallery {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+		gap: var(--sanad-gap-sm);
+	}
+	&__tile {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-xs);
+		min-inline-size: 0;
+	}
+	&__caption { font-size: var(--text-xs, 11px); color: var(--ink-gray-6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__more {
+		position: absolute;
+		inset-block-start: 0;
+		inset-inline: 0;
+		block-size: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--sanad-ent-radius);
+		background: var(--surface-gray-7);
+		opacity: 0.75;
+		color: var(--ink-white);
+		font-size: var(--text-lg, 16px);
+		font-weight: 700;
+		direction: ltr;
+	}
+
+	&__clickable { cursor: pointer; }
+
+	&__foot {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--sanad-gap-md);
+		flex-wrap: wrap;
+		padding-block-start: var(--sanad-gap-sm);
+		border-block-start: var(--sanad-border);
+	}
+	&__total { display: flex; align-items: baseline; gap: var(--sanad-gap-sm); }
+	&__total-label { font-size: var(--text-sm, 13px); color: var(--ink-gray-6); }
+	&__total-value { font-size: var(--text-lg, 16px); font-weight: 700; color: var(--ink-gray-9); }
+	&__total-note { font-size: var(--text-xs, 11px); color: var(--ink-gray-5); }
+
+	// The table view keeps the kit's read table, with the first column carrying the identity.
+	&__table {
+		.sanad-table__end { text-align: end; }
+		.sanad-table__center { text-align: center; }
+		tbody tr:last-child td { border-block-end: 0; }
+	}
+
+	// On a phone the table becomes stacked rows: the header text moves into each cell.
+	@media (max-width: 640px) {
+		&__table {
+			thead { display: none; }
+			tr { display: block; border-block-end: var(--sanad-border); padding-block: var(--sanad-gap-sm); }
+			td {
+				display: flex;
+				justify-content: space-between;
+				gap: var(--sanad-gap-md);
+				border: 0;
+				padding-block: 2px;
+				&::before {
+					content: attr(data-label);
+					color: var(--ink-gray-6);
+					font-size: var(--text-xs, 11px);
+					flex: none;
+				}
+			}
+		}
+	}
+}
+
+// Segmented control for the view switch (table · list · cards · gallery).
+.sanad-seg {
+	display: inline-flex;
+	padding: 2px;
+	border: var(--sanad-border);
+	border-radius: var(--border-radius-full, 999px);
+	background: var(--surface-gray-1);
+	gap: 2px;
+	max-inline-size: 100%;
+	overflow-x: auto;
+
+	&__btn {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--sanad-gap-xs);
+		min-block-size: 28px;
+		padding-inline: var(--sanad-gap-md);
+		border: 0;
+		border-radius: var(--border-radius-full, 999px);
+		background: transparent;
+		color: var(--ink-gray-7);
+		font-size: var(--text-sm, 13px);
+		white-space: nowrap;
+		cursor: pointer;
+		&:hover { color: var(--ink-gray-9); }
+		&[aria-selected="true"] {
+			background: var(--surface-white);
+			color: var(--sanad-accent-ink);
+			font-weight: 600;
+			box-shadow: var(--shadow-sm);
+		}
+	}
+	// On phones the labels go, the icons stay.
+	@media (max-width: 520px) {
+		&__btn span { display: none; }
+		&__btn { padding-inline: var(--sanad-gap-sm); }
+	}
+}
+
+// Activity history — time and sequence are the information (reference image 07 §4).
+.sanad-timeline {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+
+	&__item {
+		display: flex;
+		gap: var(--sanad-gap-md);
+		min-inline-size: 0;
+		&:last-child .sanad-timeline__rail::after { display: none; }
+	}
+	&__rail {
+		position: relative;
+		display: flex;
+		justify-content: center;
+		flex: none;
+		inline-size: 24px;
+		&::after {
+			content: "";
+			position: absolute;
+			inset-block: 24px 0;
+			inline-size: 2px;
+			background: var(--outline-gray-1);
+		}
+	}
+	&__dot {
+		position: relative;
+		z-index: 1;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 24px;
+		block-size: 24px;
+		border: 1px solid;
+		border-radius: var(--border-radius-full, 999px);
+		margin-block-start: 2px;
+	}
+	&__body { flex: 1; min-inline-size: 0; padding-block-end: var(--sanad-gap-lg); }
+	&__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sanad-gap-md); flex-wrap: wrap; }
+	&__title { font-size: var(--text-sm, 13px); font-weight: 600; color: var(--ink-gray-9); }
+	&__time { font-size: var(--text-xs, 11px); color: var(--ink-gray-5); white-space: nowrap; }
+	&__desc { font-size: var(--text-sm, 13px); color: var(--ink-gray-7); line-height: 1.7; }
+	&__user { margin-block-start: var(--sanad-gap-xs); }
+}

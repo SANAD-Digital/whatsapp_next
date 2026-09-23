@@ -344,21 +344,7 @@
 }
 
 // 2-letter initials chip (device / contact) — prototype: 24 px, 6 px radius, 10 px bold
-.sanad-avatar {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	flex: none;
-	width: 24px;
-	height: 24px;
-	border-radius: var(--border-radius-md, 6px);
-	background: var(--surface-gray-7);
-	color: var(--ink-white);
-	font-size: 10px;
-	font-weight: 700;
-	letter-spacing: 0.02em;
-	line-height: 1;
-}
+// `.sanad-avatar` lives in Render/style.scss — one avatar for the whole kit.
 
 // footer: count at the inline-start, pager at the inline-end (inside the card, not the viewport)
 .sanad-datalist__footer {

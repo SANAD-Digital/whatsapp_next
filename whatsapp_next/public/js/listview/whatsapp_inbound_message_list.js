@@ -102,9 +102,22 @@
 			method: "messages.get_inbound",
 			fields: DRAWER_FIELDS,
 			listview,
+			// the incoming text is the record: it leads, the rest explains it
+			highlight: { field: "body", label: __("Incoming text"), icon: "es-line-chat-alt" },
+			// the badge follows the command match, which the payload carries inside `command_trace`
+			profile: {
+				status: (d) => {
+					const status = (d.command_trace || {}).command_status || d.command_status;
+					if (!status) return null;
+					const ind = ui.indicator_for(DT, { doctype: DT, command_status: status });
+					return { label: __(ind.label || status), colour: ind.colour };
+				},
+			},
+			facts: ["message_type", "device", "received_at"],
+			relations: [{ field: "contact", doctype: "Contact", label: __("Contact"), actions: [{ icon: "es-line-reply", label: __("Reply"), condition: () => is_agent(), on_click: () => reply(doc, refresh) }] }],
 			sections: [
-				{ label: __("Command trace"), render: render_trace },
-				{ label: __("Reply"), render: render_reply },
+				{ label: __("Command trace"), icon: "es-line-zap", render: render_trace },
+				{ label: __("Reply"), icon: "es-line-reply", render: render_reply },
 			],
 			actions: [
 				{ label: __("Reply"), icon: "es-line-reply", condition: () => is_agent(), handler: (d) => reply(d, refresh) },

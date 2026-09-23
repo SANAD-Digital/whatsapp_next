@@ -12,6 +12,8 @@ frappe.provide("whatsapp_next.messages");
 	const ui = sanad.ui;
 	const DT = "WhatsApp Log";
 	const TERMINAL = ["Sent", "Delivered", "Read", "Failed", "Cancelled"];
+	// the timeline dot is never colour alone: each tone carries its own mark
+	const TONE_ICON = { green: "es-line-success", red: "es-line-close-circle", amber: "es-line-alert-triangle", blue: "es-line-time", gray: "es-line-dot" };
 	const AGENT_ROLES = ["WhatsApp Agent", "WhatsApp Manager", "System Manager"];
 	const MANAGER_ROLES = ["WhatsApp Manager", "System Manager"];
 	const DRAWER_FIELDS = [
@@ -119,11 +121,19 @@ frappe.provide("whatsapp_next.messages");
 		$el.html(`<ol class="sanad-drawer__timeline">${html}</ol>`);
 	};
 
+	/** The document this message was sent about — its number, its type and its amount, as a row. */
 	whatsapp_next.messages.render_reference = function ($el, doc) {
 		const ref = doc.reference || {};
-		const link = frappe.utils.get_form_link(ref.doctype, ref.name, true, `${__(ref.doctype)}: ${ref.name}`);
-		const amount = ref.amount != null ? frappe.format(ref.amount, { fieldtype: "Currency" }) : "";
-		$el.html(`<dl class="sanad-drawer__dl"><div class="sanad-drawer__field"><dt>${ui.escape(__("Document"))}</dt><dd>${link}</dd></div>${amount ? `<div class="sanad-drawer__field"><dt>${ui.escape(__("Amount"))}</dt><dd class="sanad-tabular">${amount}</dd></div>` : ""}</dl>`);
+		ui.Render.mount(
+			$el,
+			{ doctype: ref.doctype, name: ref.name, amount: ref.amount },
+			{
+				doctype: ref.doctype,
+				kind: "document",
+				density: "row",
+				profile: { title: () => ref.name, lines: [{ text: __(ref.doctype) }], value: ref.amount != null ? { value: ref.amount, df: { fieldtype: "Currency" } } : false, status: false },
+			}
+		);
 	};
 
 	/** Record drawer of one outbound row (used by the Outbound and Queue lists). */
@@ -136,9 +146,24 @@ frappe.provide("whatsapp_next.messages");
 			method: "messages.get_outbound",
 			fields: DRAWER_FIELDS,
 			listview,
+			// document layout: the message says itself first, then the facts that explain it,
+			// then who it went to, then everything else, then what happened to it.
+			highlight: { field: "body", label: __("Message"), icon: ui.icons.quick_send },
+			facts: ["message_type", "recipient_type", "device", "source_type", "language", "attempts"],
+			relations: [
+				{
+					field: "contact",
+					doctype: "Contact",
+					label: __("Contact"),
+					actions: [
+						{ icon: ui.icons.quick_send, label: __("Quick send"), condition: () => is_agent(), on_click: () => whatsapp_next.messages.quick_send(drawer.doc, refresh) },
+						{ icon: "es-line-call", label: __("Open contact"), on_click: () => whatsapp_next.messages.open_contact(drawer.doc) },
+					],
+				},
+			],
+			activity: (d) => whatsapp_next.messages.timeline_rows(d).map((r) => ({ title: r.text, time: r.at, tone: r.tone, icon: TONE_ICON[r.tone] })),
 			sections: [
-				{ label: __("Reference"), condition: (d) => d.reference && d.reference.doctype && d.reference.name, render: whatsapp_next.messages.render_reference },
-				{ label: __("Timeline"), render: ($el, d) => whatsapp_next.messages.render_timeline($el, whatsapp_next.messages.timeline_rows(d)) },
+				{ label: __("Reference"), icon: "es-line-article", condition: (d) => d.reference && d.reference.doctype && d.reference.name, render: whatsapp_next.messages.render_reference },
 			],
 			actions: [
 				{ label: __("Resend"), icon: ui.icons.resend, condition: (d) => is_agent() && TERMINAL.includes(d.status), handler: (d) => whatsapp_next.messages.resend(d.name, refresh) },

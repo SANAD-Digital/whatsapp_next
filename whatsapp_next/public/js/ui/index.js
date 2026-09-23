@@ -3,6 +3,7 @@
 
 import "./_core/index.js";
 // foundations
+import "./Render/index.js";
 import "./StatusBadge/index.js";
 import "./EmptyState/index.js";
 import "./Toast/index.js";
@@ -20,6 +21,7 @@ import "./ListStatsCard/index.js";
 import "./MetaDialog/index.js";
 // list renderers
 import "./DataList/index.js";
+import "./Collection/index.js";
 import "./PageHeader/index.js";
 // panels
 import "./Drawer/index.js";

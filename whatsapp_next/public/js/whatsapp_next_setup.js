@@ -39,6 +39,67 @@ sanad.ui.configure({
 		devices_route: "wa-devices",
 		contacts_route: "wa-contacts",
 	},
+
+	// How this app's records look wherever the kit draws them — a list cell, a drawer identity,
+	// a picker row, a card. `doctypes` picks the renderer family, `profiles` says which field
+	// plays which part; everything not named here is read from the DocType's own meta.
+	renderers: {
+		doctypes: {
+			"WhatsApp Log": "document",
+			"WhatsApp Inbound Message": "document",
+			"WhatsApp Queue Item": "document",
+			"WhatsApp Campaign": "document",
+			"WhatsApp Number": "person",
+			"WhatsApp Contact Group": "generic",
+			"WhatsApp Device": "generic",
+			"WhatsApp Template": "generic",
+			"WhatsApp Command": "generic",
+		},
+		profiles: {
+			// A message is known by who it went to, not by its hash of a name.
+			"WhatsApp Log": {
+				icon: "es-line-chat",
+				title: { field: "display_name", value: (doc) => doc.display_name || doc.phone_e164 || doc.jid || doc.name },
+				title_ltr: false,
+				lines: [{ field: "phone_e164", ltr: true, icon: "es-line-call" }],
+				value: false,
+			},
+			"WhatsApp Inbound Message": {
+				icon: "es-line-chat-alt",
+				title: { field: "display_name", value: (doc) => doc.display_name || doc.phone_e164 || doc.jid || doc.name },
+				lines: [{ field: "phone_e164", ltr: true, icon: "es-line-call" }],
+				value: false,
+			},
+			"WhatsApp Number": {
+				icon: "es-line-call",
+				title: { field: "display_name", value: (doc) => doc.display_name || doc.phone_e164 || doc.name },
+				lines: [{ field: "phone_e164", ltr: true }, "link_status"],
+				value: false,
+			},
+			"WhatsApp Device": {
+				icon: "es-line-laptop",
+				title: { field: "device_name", value: (doc) => doc.device_name || doc.name },
+				lines: ["phone_e164"],
+				value: false,
+			},
+			"WhatsApp Campaign": {
+				icon: "es-line-plan",
+				title: { field: "campaign_name", value: (doc) => doc.campaign_name || doc.name },
+				progress: "progress",
+				value: false,
+			},
+			"WhatsApp Contact Group": {
+				icon: "es-line-group",
+				title: { field: "group_name", value: (doc) => doc.group_name || doc.name },
+				value: "member_count",
+			},
+			"WhatsApp Template": { icon: "es-line-template", title: { field: "template_name", value: (doc) => doc.template_name || doc.name }, value: false },
+			"WhatsApp Command": { icon: "es-line-zap", title: { field: "keyword", value: (doc) => doc.keyword || doc.name }, value: false },
+			Contact: {
+				lines: [{ field: "mobile_no", ltr: true, icon: "es-line-call" }, { field: "email_id", ltr: true, icon: "es-line-email" }],
+			},
+		},
+	},
 });
 
 frappe.provide("whatsapp_next");
