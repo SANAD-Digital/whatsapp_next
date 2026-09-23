@@ -363,6 +363,7 @@ sanad.ui.DataList = class DataList {
 		this.expanded.forEach((name) => this.render_expand(name, true));
 		this.apply_pins();
 		this.restore_selection();
+		this.render_group_tools(); // grouping can change without a refetch
 		this.fit_height();
 		return this;
 	}
@@ -442,12 +443,12 @@ sanad.ui.DataList = class DataList {
 				this.group_names.set(gid, { path: node.path, names });
 				const label = `${label_col ? label_col.label : __(node.fieldname)}: ${node.label}`;
 				const check = this.opts.selectable
-					? `<td class="sanad-datalist__td sanad-datalist__td--check sanad-datalist__group-check"><input type="checkbox" class="sanad-datalist__group-checkbox" data-gid="${gid}" aria-label="${ui.escape(__("Select the {0} rows in {1}", [ui.format_int(node.count), label]))}"></td>`
+					? `<span class="sanad-datalist__group-check"><input type="checkbox" class="sanad-datalist__group-checkbox" data-gid="${gid}" aria-label="${ui.escape(__("Select the {0} rows in {1}", [ui.format_int(node.count), label]))}"></span>`
 					: "";
 				let html = `<tr class="sanad-datalist__group sanad-datalist__group--l${node.level}" data-gid="${gid}">
-					${check}
-					<td class="sanad-datalist__group-cell" colspan="${this.colspan() - (this.opts.selectable ? 1 : 0)}">
+					<td class="sanad-datalist__group-cell" colspan="${this.colspan()}">
 						<div class="sanad-datalist__group-inner">
+							${check}
 							${this.rails(node.level)}
 							<button type="button" class="sanad-datalist__group-toggle" aria-expanded="${open}" aria-label="${ui.escape(open ? __("Collapse {0}", [node.label]) : __("Expand {0}", [node.label]))}">${ui.icon("es-line-down", "xs")}</button>
 							<span class="sanad-datalist__group-field">${ui.escape(label_col ? label_col.label : __(node.fieldname))}</span>
@@ -503,6 +504,15 @@ sanad.ui.DataList = class DataList {
 			if (changed) this.listview.on_row_checked();
 		}
 		this.sync_group_checkboxes();
+	}
+
+	/** Fold or unfold every group at once. */
+	set_all_folded(folded) {
+		if (!folded) this.collapsed.clear();
+		else Array.from(this.group_names.values()).forEach((g) => this.collapsed.add(g.path));
+		this.render();
+		ui.announce(folded ? __("All groups collapsed.") : __("All groups expanded."));
+		return this;
 	}
 
 	/** Group boxes reflect their rows: checked, unchecked, or indeterminate when partly selected. */
@@ -782,6 +792,7 @@ sanad.ui.DataList = class DataList {
 			const total = this.total == null ? rows.length : this.total;
 			const text = typeof this.opts.footer.count === "function" ? this.opts.footer.count(total, rows) : ui.plural(total, { one: __("{0} record"), other: __("{0} records") });
 			$count.text(rows.length ? __("{0} · showing {1}", [text, ui.format_int(rows.length)]) : text);
+			this.render_group_tools();
 			if (typeof this.opts.footer.extra === "function") this.opts.footer.extra(this.$footer.find(".sanad-datalist__extra"), rows, this);
 		};
 		paint();
@@ -791,6 +802,28 @@ sanad.ui.DataList = class DataList {
 				if (this.total !== before) paint();
 			})
 			.catch(() => {});
+	}
+
+	/** Expand all / Collapse all, next to the count, only while the table is grouped. */
+	render_group_tools() {
+		let $tools = this.$footer.find(".sanad-datalist__group-tools");
+		if (!this.group_by.length) {
+			$tools.remove();
+			return;
+		}
+		if (!$tools.length) {
+			$tools = $('<div class="sanad-datalist__group-tools"></div>').insertAfter(this.$footer.find(".sanad-datalist__count"));
+			$(`<button type="button" class="sanad-datalist__group-tool" data-fold="0">${ui.icon("es-line-expand", "xs")}<span>${ui.escape(__("Expand all"))}</span></button>`)
+				.on("click", () => this.set_all_folded(false))
+				.appendTo($tools);
+			$(`<button type="button" class="sanad-datalist__group-tool" data-fold="1">${ui.icon("es-line-sidebar-collapse", "xs")}<span>${ui.escape(__("Collapse all"))}</span></button>`)
+				.on("click", () => this.set_all_folded(true))
+				.appendTo($tools);
+		}
+		const total = this.group_names.size;
+		const folded = Array.from(this.group_names.values()).filter((g) => this.collapsed.has(g.path)).length;
+		$tools.find('[data-fold="0"]').prop("disabled", folded === 0);
+		$tools.find('[data-fold="1"]').prop("disabled", total > 0 && folded === total);
 	}
 
 	refresh() {

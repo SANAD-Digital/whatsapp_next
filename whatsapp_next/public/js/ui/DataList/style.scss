@@ -178,25 +178,42 @@
 		&[aria-expanded="true"] { transform: rotate(180deg); }
 	}
 	// ---- grouping (prototype: a 36 px group row per level, indented 22 px, with count and total)
-	// A group row scrolls with the table — pinning it sideways clipped its own label — and is
-	// marked by a soft accent wash plus a rule above and below, as the prototype does.
+	// A group row sticks under the header as you scroll down, and its contents stick to the start
+	// edge as you scroll sideways, so the label is never scrolled out of its own row.
 	tbody tr.sanad-datalist__group td {
-		position: static;
+		position: sticky;
+		inset-block-start: var(--sanad-head-h);
+		z-index: 4;
 		height: 36px;
 		padding: 0;
 		border-block: 1px solid var(--sanad-accent-outline);
 		background-color: color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-white));
 	}
+	tbody tr.sanad-datalist__group--l1 td { inset-block-start: calc(var(--sanad-head-h) + 36px); z-index: 3; }
+	tbody tr.sanad-datalist__group--l2 td { inset-block-start: calc(var(--sanad-head-h) + 72px); z-index: 2; }
+	tbody tr.sanad-datalist__group--l3 td { inset-block-start: calc(var(--sanad-head-h) + 108px); z-index: 1; }
 	tbody tr.sanad-datalist__group--l1 td { background-color: color-mix(in srgb, var(--sanad-accent) 4%, var(--surface-white)); }
 	tbody tr.sanad-datalist__group--l2 td, tbody tr.sanad-datalist__group--l3 td { background-color: color-mix(in srgb, var(--sanad-accent) 2%, var(--surface-white)); }
 	&__group-inner {
+		position: sticky;
+		inset-inline-start: 0;
 		display: flex;
 		align-items: stretch;
+		width: max-content;
+		max-width: 100%;
 		gap: var(--sanad-gap-sm);
 		min-height: 36px;
 		padding-inline-end: var(--sanad-cell-px);
 		font-size: var(--text-sm, 13px);
 		> *:not(.sanad-datalist__rail) { align-self: center; }
+	}
+	// the group's checkbox lines up with the row checkboxes below it
+	&__group-check {
+		flex: none;
+		width: 44px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	// tree guide: one vertical rule per ancestor level, so the nesting reads as a tree rather
@@ -348,8 +365,27 @@
 	color: var(--ink-gray-6);
 	font-size: var(--text-xs, 12px);
 	font-variant-numeric: tabular-nums;
-	.sanad-datalist__count { min-height: 18px; unicode-bidi: plaintext; }
+	.sanad-datalist__count { min-height: 18px; unicode-bidi: plaintext; margin-inline-end: var(--sanad-gap-md); }
 	.sanad-datalist__extra:empty { display: none; }
+	.sanad-datalist__group-tools { display: inline-flex; align-items: center; gap: var(--sanad-gap-xs); }
+	.sanad-datalist__group-tool {
+		appearance: none;
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		min-height: var(--sanad-ctl-h-sm);
+		padding-inline: 8px;
+		border: 1px solid var(--outline-gray-2);
+		border-radius: var(--border-radius-md, 6px);
+		background: var(--surface-white);
+		color: var(--ink-gray-7);
+		font-size: var(--text-xs, 12px);
+		font-weight: 600;
+		cursor: pointer;
+		.icon { width: 12px; height: 12px; }
+		&:hover:not([disabled]) { background: var(--sanad-accent-soft); border-color: var(--sanad-accent-outline); color: var(--sanad-accent-ink); }
+		&[disabled] { opacity: 0.45; cursor: default; }
+	}
 	.sanad-datalist__pager { display: inline-flex; align-items: center; gap: var(--sanad-gap-sm); }
 	.sanad-datalist__paging {
 		display: flex !important;
