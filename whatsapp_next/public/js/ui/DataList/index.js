@@ -44,6 +44,8 @@ sanad.ui.DataList = class DataList {
 		this.page = 0;
 		this.total = null;
 		this.expanded = new Set();
+		this.group_names = new Map(); // rendered group id → { path, names }
+		this.selected = new Set(); // checked docnames, kept across re-renders (folding, sorting, realtime)
 		this.group_by = (this.opts.group_by || []).slice();
 		this.collapsed = new Set(); // group paths the user folded away
 		this.pinned = (this.opts.pinned || []).slice();
@@ -142,9 +144,11 @@ sanad.ui.DataList = class DataList {
 		$r.on(`click.${this.id}`, ".sanad-datalist__group-toggle", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			const path = $(e.currentTarget).closest("tr").data("path");
-			if (this.collapsed.has(path)) this.collapsed.delete(path);
-			else this.collapsed.add(path);
+			const gid = e.currentTarget.closest("tr").getAttribute("data-gid");
+			const group = this.group_names.get(String(gid));
+			if (!group) return;
+			if (this.collapsed.has(group.path)) this.collapsed.delete(group.path);
+			else this.collapsed.add(group.path);
 			this.render();
 		});
 		$r.on(`click.${this.id}`, ".sanad-datalist__toggle", (e) => {
@@ -163,10 +167,25 @@ sanad.ui.DataList = class DataList {
 			const doc = this.doc_of($(e.currentTarget).data("name"));
 			if (doc) this.run(this.opts.on_row_click, doc, $(e.currentTarget));
 		});
+		$r.on(`change.${this.id}`, ".sanad-datalist__group-checkbox", (e) => {
+			e.stopPropagation();
+			this.select_group(e.currentTarget.getAttribute("data-gid"), e.currentTarget.checked);
+		});
+		$r.on(`change.${this.id}`, ".list-row-checkbox", (e) => {
+			const name = e.currentTarget.getAttribute("data-name");
+			if (e.currentTarget.checked) this.selected.add(name);
+			else this.selected.delete(name);
+			this.sync_group_checkboxes();
+		});
 		$r.on(`change.${this.id}`, ".sanad-datalist__check-all", (e) => {
 			const on = e.currentTarget.checked;
-			$r.find(".list-row-checkbox").prop("checked", on);
+			$r.find(".list-row-checkbox").each((i, el) => {
+				el.checked = on;
+				if (on) this.selected.add(el.getAttribute("data-name"));
+				else this.selected.delete(el.getAttribute("data-name"));
+			});
 			this.listview.on_row_checked();
+			this.sync_group_checkboxes();
 			ui.announce(on ? __("All rows on this page selected.") : __("Selection cleared."));
 		});
 		this.$footer.on(`click.${this.id}`, "[data-page]", (e) => {
@@ -260,6 +279,7 @@ sanad.ui.DataList = class DataList {
 		if (!rows.length) {
 			body = `<tr class="sanad-datalist__row--empty"><td colspan="${this.colspan()}"><div class="sanad-datalist__empty"></div></td></tr>`;
 		} else if (this.group_by.length) {
+			this.group_names = new Map();
 			body = this.group_html(this.group_tree(rows, 0, []), 0);
 		} else {
 			body = rows.map((doc) => this.row_html(doc)).join("");
@@ -271,6 +291,7 @@ sanad.ui.DataList = class DataList {
 		}
 		this.expanded.forEach((name) => this.render_expand(name, true));
 		this.apply_pins();
+		this.restore_selection();
 		return this;
 	}
 
@@ -331,15 +352,31 @@ sanad.ui.DataList = class DataList {
 			});
 	}
 
+	/** `level` tree guides — the vertical rules that make the nesting read as a tree. */
+	rails(level) {
+		let html = "";
+		for (let i = 0; i < level; i++) html += '<span class="sanad-datalist__rail" aria-hidden="true"></span>';
+		return html;
+	}
+
 	group_html(nodes) {
 		const sum_col = this.sum_column();
 		return nodes
 			.map((node) => {
 				const open = !this.collapsed.has(node.path);
 				const label_col = this.columns.find((c) => c.fieldname === node.fieldname);
-				let html = `<tr class="sanad-datalist__group sanad-datalist__group--l${node.level}" data-path="${ui.escape(node.path)}">
-					<td class="sanad-datalist__group-cell" colspan="${this.colspan()}">
-						<div class="sanad-datalist__group-inner" style="padding-inline-start:${12 + node.level * 22}px">
+				const names = node.rows.map((d) => d.name);
+				const gid = String(this.group_names.size);
+				this.group_names.set(gid, { path: node.path, names });
+				const label = `${label_col ? label_col.label : __(node.fieldname)}: ${node.label}`;
+				const check = this.opts.selectable
+					? `<td class="sanad-datalist__td sanad-datalist__td--check sanad-datalist__group-check"><input type="checkbox" class="sanad-datalist__group-checkbox" data-gid="${gid}" aria-label="${ui.escape(__("Select the {0} rows in {1}", [ui.format_int(node.count), label]))}"></td>`
+					: "";
+				let html = `<tr class="sanad-datalist__group sanad-datalist__group--l${node.level}" data-gid="${gid}">
+					${check}
+					<td class="sanad-datalist__group-cell" colspan="${this.colspan() - (this.opts.selectable ? 1 : 0)}">
+						<div class="sanad-datalist__group-inner">
+							${this.rails(node.level)}
 							<button type="button" class="sanad-datalist__group-toggle" aria-expanded="${open}" aria-label="${ui.escape(open ? __("Collapse {0}", [node.label]) : __("Expand {0}", [node.label]))}">${ui.icon("es-line-down", "xs")}</button>
 							<span class="sanad-datalist__group-field">${ui.escape(label_col ? label_col.label : __(node.fieldname))}</span>
 							<span class="sanad-datalist__group-label">${ui.escape(node.label)}</span>
@@ -349,10 +386,69 @@ sanad.ui.DataList = class DataList {
 					</td>
 				</tr>`;
 				if (!open) return html;
-				html += node.children ? this.group_html(node.children) : node.rows.map((doc) => this.row_html(doc)).join("");
+				html += node.children ? this.group_html(node.children) : node.rows.map((doc) => this.row_html(doc, node.level + 1)).join("");
 				return html;
 			})
 			.join("");
+	}
+
+	// ---- selecting a whole group ------------------------------------------------------------
+
+	/** Row checkboxes belonging to one rendered group. */
+	$rows_of(gid) {
+		const group = this.group_names.get(String(gid));
+		const set = new Set((group && group.names) || []);
+		return this.$table.find(".list-row-checkbox").filter((i, el) => set.has(el.getAttribute("data-name")));
+	}
+
+	select_group(gid, on) {
+		const $boxes = this.$rows_of(gid);
+		$boxes.each((i, el) => {
+			el.checked = !!on;
+			if (on) this.selected.add(el.getAttribute("data-name"));
+			else this.selected.delete(el.getAttribute("data-name"));
+		});
+		this.listview.on_row_checked();
+		this.sync_group_checkboxes();
+		ui.announce(
+			on
+				? ui.plural($boxes.length, { one: __("{0} row selected"), other: __("{0} rows selected") })
+				: __("Selection cleared.")
+		);
+	}
+
+	/** Re-check the rows the user had selected before this render, then refresh the group boxes. */
+	restore_selection() {
+		if (this.selected.size) {
+			let changed = false;
+			this.$table.find(".list-row-checkbox").each((i, el) => {
+				const on = this.selected.has(el.getAttribute("data-name"));
+				if (el.checked !== on) {
+					el.checked = on;
+					changed = true;
+				}
+			});
+			if (changed) this.listview.on_row_checked();
+		}
+		this.sync_group_checkboxes();
+	}
+
+	/** Group boxes reflect their rows: checked, unchecked, or indeterminate when partly selected. */
+	sync_group_checkboxes() {
+		this.$table.find(".sanad-datalist__group-checkbox").each((i, el) => {
+			const $boxes = this.$rows_of(el.getAttribute("data-gid"));
+			const total = $boxes.length;
+			const on = $boxes.filter(":checked").length;
+			el.checked = total > 0 && on === total;
+			el.indeterminate = on > 0 && on < total;
+		});
+		const $all = this.$table.find(".sanad-datalist__check-all");
+		if ($all.length) {
+			const rows = this.$table.find(".list-row-checkbox");
+			const on = rows.filter(":checked").length;
+			$all[0].checked = rows.length > 0 && on === rows.length;
+			$all[0].indeterminate = on > 0 && on < rows.length;
+		}
 	}
 
 	/**
@@ -360,6 +456,15 @@ sanad.ui.DataList = class DataList {
 	 * Grouping a single page would describe 20 rows out of hundreds, so while it is on the list
 	 * fetches up to `group_page_length` rows and the pager stands down.
 	 */
+	/** Forget the selection (filters changed, or the caller cleared it). */
+	clear_selection() {
+		this.selected.clear();
+		this.$table.find(".list-row-checkbox").prop("checked", false);
+		this.listview.on_row_checked();
+		this.sync_group_checkboxes();
+		return this;
+	}
+
 	set_group_by(fields) {
 		const was = this.group_by.length;
 		this.group_by = (fields || []).filter(Boolean);
@@ -435,7 +540,7 @@ sanad.ui.DataList = class DataList {
 		});
 	}
 
-	row_html(doc) {
+	row_html(doc, depth = 0) {
 		const name = ui.escape(doc.name);
 		const clickable = !!this.opts.on_row_click;
 		let html = `<tr class="sanad-datalist__row${clickable ? " sanad-datalist__row--clickable" : ""}" data-name="${name}"${clickable ? ' tabindex="0"' : ""}>`;
@@ -446,11 +551,14 @@ sanad.ui.DataList = class DataList {
 			const open = this.expanded.has(doc.name);
 			html += `<td class="sanad-datalist__td sanad-datalist__td--expand"><button type="button" class="sanad-datalist__toggle" aria-expanded="${open}" aria-label="${ui.escape(__("Details of {0}", [this.title_of(doc)]))}">${ui.icon("es-line-down", "xs")}</button></td>`;
 		}
+		let first = true;
 		this.columns.forEach((c) => {
+			const rails = first && depth ? this.rails(depth) : "";
+			first = false;
 			const pinned = this.pinned.includes(c.fieldname) ? " sanad-datalist__td--pinned" : "";
 			const card = this.in_card_layout(c) ? "" : " sanad-datalist__td--off-card";
 			const kind = c.type === "status" ? " sanad-datalist__td--status" : "";
-			html += `<td class="sanad-datalist__td sanad-datalist__td--${c.align}${c.hidden_xs ? " sanad-datalist__td--hidden-xs" : ""}${pinned}${card}${kind}" data-fieldname="${ui.escape(c.fieldname)}" data-label="${ui.escape(c.label)}">${this.cell_html(c, doc)}</td>`;
+			html += `<td class="sanad-datalist__td sanad-datalist__td--${c.align}${c.hidden_xs ? " sanad-datalist__td--hidden-xs" : ""}${pinned}${card}${kind}" data-fieldname="${ui.escape(c.fieldname)}" data-label="${ui.escape(c.label)}">${rails ? `<div class="sanad-datalist__indent">${rails}<div class="sanad-datalist__indent-body">${this.cell_html(c, doc)}</div></div>` : this.cell_html(c, doc)}</td>`;
 		});
 		if (this.opts.row_action) {
 			html += `<td class="sanad-datalist__td sanad-datalist__td--action"><button type="button" class="sanad-datalist__view sanad-datalist__action">${ui.escape(this.opts.row_action.label || __("View"))}</button></td>`;

@@ -128,6 +128,14 @@ sanad.ui.FilterBar = class FilterBar {
 			this.close_popover();
 			this.close_levels();
 		});
+		// the popovers re-render their own contents, which drops focus to the body; a document-level
+		// handler keeps Escape working wherever focus ended up
+		$(document).on(`keydown.${this.id}`, (e) => {
+			if (e.key !== "Escape" || (!this.$open && !this.$levels)) return;
+			e.stopPropagation();
+			this.close_popover(true);
+			this.close_levels(true);
+		});
 	}
 
 	bind_listview() {
@@ -656,7 +664,11 @@ sanad.ui.FilterBar = class FilterBar {
 			});
 		}
 		$pop.find(".sanad-filterbar__levels-clear").on("click", () => this.set_group_levels([]));
-		$pop.find(".sanad-filterbar__level--add").on("click", (e) => this.set_group_levels(this.group_levels().concat($(e.currentTarget).data("field"))));
+		$pop.find(".sanad-filterbar__level--add").on("click", (e) => {
+			const field = $(e.currentTarget).data("field");
+			this.set_group_levels(this.group_levels().concat(field));
+			this.$levels && this.$levels.find(`.sanad-filterbar__level[data-field="${CSS.escape(field)}"] .sanad-filterbar__level-remove`).trigger("focus");
+		});
 		$pop.find(".sanad-filterbar__level-remove").on("click", (e) => {
 			const f = $(e.currentTarget).closest(".sanad-filterbar__level").data("field");
 			this.set_group_levels(this.group_levels().filter((x) => x !== f));

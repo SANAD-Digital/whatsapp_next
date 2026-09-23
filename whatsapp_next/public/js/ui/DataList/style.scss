@@ -175,22 +175,53 @@
 	// ---- grouping (prototype: a 36 px group row per level, indented 22 px, with count and total)
 	tbody tr.sanad-datalist__group td {
 		position: sticky;
-		inset-inline-start: 0;
 		z-index: 4; // above the pinned data cells it scrolls over
 		height: 36px;
 		padding: 0;
 		border-block-end: var(--sanad-border);
 		background-color: var(--surface-gray-2);
 	}
+	tbody tr.sanad-datalist__group td.sanad-datalist__group-cell { inset-inline-start: 44px; }
+	tbody tr.sanad-datalist__group td.sanad-datalist__group-check { inset-inline-start: 0; z-index: 5; }
 	tbody tr.sanad-datalist__group--l1 td { background-color: var(--surface-gray-1); }
 	tbody tr.sanad-datalist__group--l2 td, tbody tr.sanad-datalist__group--l3 td { background-color: var(--surface-white); }
 	&__group-inner {
 		display: flex;
-		align-items: center;
+		align-items: stretch;
 		gap: var(--sanad-gap-sm);
 		min-height: 36px;
 		padding-inline-end: var(--sanad-cell-px);
 		font-size: var(--text-sm, 13px);
+		> *:not(.sanad-datalist__rail) { align-self: center; }
+	}
+
+	// tree guide: one vertical rule per ancestor level, so the nesting reads as a tree rather
+	// than as rows that happen to be indented
+	&__rail {
+		flex: none;
+		width: 22px;
+		align-self: stretch;
+		margin-inline-end: calc(-1 * var(--sanad-gap-sm));
+		border-inline-start: 1px solid var(--outline-gray-2);
+	}
+	&__indent {
+		display: flex;
+		align-items: stretch;
+		gap: var(--sanad-gap-sm);
+		min-height: var(--sanad-row-h);
+		margin-block: calc(-1 * var(--sanad-gap-xs));
+	}
+	&__indent-body { align-self: center; min-width: 0; flex: 1; }
+
+	// a group row selects every row under it; partly selected shows as indeterminate
+	&__group-check { vertical-align: middle; }
+	&__group-checkbox {
+		width: 15px;
+		height: 15px;
+		margin: 0;
+		accent-color: var(--sanad-accent);
+		vertical-align: middle;
+		cursor: pointer;
 	}
 	&__group-toggle {
 		appearance: none;
