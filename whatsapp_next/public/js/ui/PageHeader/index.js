@@ -59,6 +59,10 @@ sanad.ui.PageHeader = class PageHeader {
 		this.$banner = this.$el.find(".sanad-pagehead__banner");
 		this.$blocks = this.$el.find(".sanad-pagehead__blocks");
 		this.render_actions();
+		// a header may carry nothing but a banner and its blocks (a screen whose console names
+		// itself): an empty title row would then reserve space and draw a stray margin
+		if (!o.title && !o.description) this.$el.find(".sanad-pagehead__text").remove();
+		if (!this.$el.find(".sanad-pagehead__row").children().length) this.$el.find(".sanad-pagehead__row").remove();
 		if (o.stats && o.stats.length) {
 			this.stats = new sanad.ui.ListStatsCard({ wrapper: this.$stats, cards: o.stats, refresh_seconds: o.refresh_seconds, layout: "kpi" });
 		} else {

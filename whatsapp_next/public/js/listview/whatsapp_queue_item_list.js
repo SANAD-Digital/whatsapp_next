@@ -205,11 +205,8 @@
 
 		const header = new sanad.ui.PageHeader({
 			listview,
-			title: __("Queue"),
-			description: __("Every message waiting to go out, in send order."),
-			// a placeholder so the actions slot exists from the first render; `render_verb` sets the
-			// label the moment the summary says which way the queue is going
-			primary: is_manager() ? { label: __("Pause sending"), icon: "es-line-time", handler: () => ask_pause(refresh_all) } : null,
+			// no title and no description: the console's first cell states what the queue is doing,
+			// which is the only thing a title could have said (owner, 2026-09-23)
 			banner: () => summary().then((s) => (s && s.paused ? { tone: "amber", text: paused_title(s) } : null)),
 			blocks: [
 				{
@@ -220,17 +217,16 @@
 			],
 		});
 
-		/** Pause / Resume is this screen's primary verb, and its label says which way it goes. */
-		const render_verb = (s) => {
-			if (!is_manager()) return;
-			const paused = !!s.paused;
-			header.opts.primary = {
-				label: paused ? __("Resume sending") : __("Pause sending"),
-				icon: paused ? "es-line-zap" : "es-line-time",
-				handler: () => (paused ? ask_resume(refresh_all) : ask_pause(refresh_all)),
-			};
-			header.render_actions();
-		};
+		/**
+		 * The one verb sits in the Status cell, beside the state it changes, and its label says
+		 * which way it will go. A manager who cannot change the queue never sees a dead button.
+		 */
+		const verb_html = (paused) =>
+			is_manager()
+				? `<button type="button" class="btn btn-default btn-sm wa-ops__verb">
+						${ui.icon(paused ? "es-line-zap" : "es-line-time", "xs")} ${ui.escape(paused ? __("Resume sending") : __("Pause sending"))}
+					</button>`
+				: "";
 
 		// ---- the metric row ---------------------------------------------------------------------
 
@@ -348,9 +344,12 @@
 			const state_cell = `
 				<div class="wa-ops__metric wa-ops__metric--state">
 					<span class="wa-ops__label">${ui.escape(__("Status"))}</span>
-					<span class="wa-ops__state sanad-tone--${paused ? "amber" : "green"}">
-						<span class="wa-ops__pulse" aria-hidden="true"></span>${ui.escape(paused ? __("Paused") : __("Running"))}
-					</span>
+					<div class="wa-ops__state-row">
+						<span class="wa-ops__state sanad-tone--${paused ? "amber" : "green"}">
+							<span class="wa-ops__pulse" aria-hidden="true"></span>${ui.escape(paused ? __("Paused") : __("Running"))}
+						</span>
+						${verb_html(paused)}
+					</div>
 					<span class="wa-ops__sub">${ui.escape(paused ? __("Nothing is going out.") : __("Messages go out automatically."))}</span>
 				</div>`;
 
@@ -385,8 +384,8 @@
 					if (!on) area.add([[DT, "status", "=", status]]);
 				});
 			});
+			$el.find(".wa-ops__verb").on("click", () => (paused ? ask_resume(refresh_all) : ask_pause(refresh_all)));
 			bind_rate($el, rate, max);
-			render_verb(s);
 		};
 
 		const bind_rate = ($el, rate, max) => {
@@ -492,7 +491,9 @@
 				},
 			],
 			mobile_columns: ["display_name", "status"],
-			count: (total) => ui.plural(total, { one: __("{0} pending message"), other: __("{0} pending messages") }),
+			// the table may hold finished rows too (the live-status filter is a default, not a rule),
+			// so the count says what it counts and never calls a completed row pending
+			count: (total) => ui.plural(total, { one: __("{0} message"), other: __("{0} messages") }),
 			empty: { title: __("The queue is empty"), description: __("Everything scheduled has gone out. New messages appear here the moment a form or campaign creates them."), action: { label: __("Go to campaigns"), onclick: () => frappe.set_route("List", "WhatsApp Campaign") } },
 		});
 	};

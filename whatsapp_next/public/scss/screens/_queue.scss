@@ -63,6 +63,18 @@ $wa-tones: "blue" "cyan" "amber" "red" "green";
 		min-block-size: 16px;
 	}
 
+	// the verb sits beside the state it changes; on a narrow cell it drops under it
+	&__state-row {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+	}
+	&__verb {
+		min-block-size: var(--sanad-target);
+		white-space: nowrap;
+	}
+
 	// status reads as state, so it keeps the dot and the tone but not a pill's weight
 	&__state {
 		display: inline-flex;

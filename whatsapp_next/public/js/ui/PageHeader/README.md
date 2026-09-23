@@ -34,6 +34,10 @@ frappe.listview_settings["Sales Order"] = {
 };
 ```
 
+A header given neither `title` nor `description` drops its whole title row (with no actions it
+drops the row entirely), so a screen whose own console names it can still use the header for its
+banner and blocks.
+
 Options: `listview` | `wrapper`, `title`, `description`, `primary {label, icon?, handler, roles?,
 perm?, condition?}`, `secondary[{label, icon?, count?, handler, roles?, perm?}]`, `stats[]`
 (ListStatsCard card specs; `sub` text or `(value, raw) => text`), `banner` (object or
@@ -48,9 +52,9 @@ with a tabular label) — used by campaign strips and by DataList progress cells
 `WhatsApp Campaign` list — `public/js/listview/whatsapp_campaign_list.js` (title, "New campaign",
 "Sending now" and "Scheduled" strips as blocks); `WhatsApp Contact Group` list —
 `public/js/listview/whatsapp_contact_group_list.js` (title, "New group", three KPIs);
-`WhatsApp Queue Item` list — `public/js/listview/whatsapp_queue_item_list.js` (title, the
-Pause / Resume verb as a primary whose label follows the state, the pause banner, and the whole
-operations console — metric row, throughput sparkline and rate control — as one block that
+`WhatsApp Queue Item` list — `public/js/listview/whatsapp_queue_item_list.js` (no title —
+the pause banner and the whole operations console, whose Status cell carries the Pause / Resume
+verb — metric row, throughput sparkline and rate control — as one block that
 re-renders on `wa:queue:progress`).
 
 ## Design gate
