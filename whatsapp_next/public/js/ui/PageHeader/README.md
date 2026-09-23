@@ -47,7 +47,11 @@ with a tabular label) — used by campaign strips and by DataList progress cells
 ## Live use
 `WhatsApp Campaign` list — `public/js/listview/whatsapp_campaign_list.js` (title, "New campaign",
 "Sending now" and "Scheduled" strips as blocks); `WhatsApp Contact Group` list —
-`public/js/listview/whatsapp_contact_group_list.js` (title, "New group", three KPIs).
+`public/js/listview/whatsapp_contact_group_list.js` (title, "New group", three KPIs);
+`WhatsApp Queue Item` list — `public/js/listview/whatsapp_queue_item_list.js` (title, the
+Pause / Resume verb as a primary whose label follows the state, the pause banner, and the whole
+operations console — metric row, throughput sparkline and rate control — as one block that
+re-renders on `wa:queue:progress`).
 
 ## Design gate
 - One primary action per screen: Frappe's "+ Add" is cleared (`can_create = false`, re-cleared on

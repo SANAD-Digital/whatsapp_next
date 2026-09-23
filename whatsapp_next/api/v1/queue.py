@@ -9,7 +9,7 @@ from typing import Any
 
 import frappe
 from frappe import _
-from frappe.utils import add_to_date, cint, now_datetime
+from frappe.utils import add_to_date, cint, get_datetime, now_datetime
 
 from whatsapp_next.api._common import api_endpoint, paginate
 from whatsapp_next.api.v1._roles import MANAGER, VIEWER_UP
@@ -122,6 +122,39 @@ def get_summary() -> dict[str, Any]:
 		"rate": s["rate"],
 		"plan_rate": s["plan_rate"],
 		"platform_queue": dispatch.platform_queue_status(),
+	}
+
+
+@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
+def get_throughput(minutes: int = 60) -> dict[str, Any]:
+	"""What actually left the queue, one bucket per minute over the last `minutes` (5–180).
+
+	The console draws this as a sparkline beside the send rate, so an operator sees whether the
+	rate they set is the rate the queue is really achieving. Zero-filled and oldest first.
+	"""
+	window = max(5, min(cint(minutes) or 60, 180))
+	now = now_datetime()
+	since = add_to_date(now, minutes=-window)
+	rows = frappe.get_all(
+		"WhatsApp Queue Item",
+		filters={"status": "Completed", "completed_at": (">=", since)},
+		fields=["completed_at"],
+		limit_page_length=0,
+	)
+	buckets = [0] * window
+	for row in rows:
+		at = get_datetime(row.completed_at)
+		index = int((now - at).total_seconds() // 60)
+		if 0 <= index < window:
+			buckets[window - 1 - index] += 1
+	sent = sum(buckets)
+	return {
+		"minutes": window,
+		"buckets": buckets,
+		"sent": sent,
+		"peak": max(buckets) if buckets else 0,
+		# the achieved rate over the window, which is what the sparkline is compared against
+		"per_minute": round(sent / window, 2),
 	}
 
 

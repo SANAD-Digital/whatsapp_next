@@ -13,7 +13,7 @@ const areas = {
 	quick_send: ["get_context", "preview", "send"],
 	messages: ["get_outbound", "get_inbound", "get_conversation", "resend", "resend_many", "cancel"],
 	simulator: ["get_context", "simulate_inbound", "send_test", "dry_run_command"],
-	queue: ["list_queue", "get_summary", "pause_queue", "resume_queue", "set_rate", "pause_items", "resume_items", "delete_items", "retry_dead_letter"],
+	queue: ["list_queue", "get_summary", "get_throughput", "pause_queue", "resume_queue", "set_rate", "pause_items", "resume_items", "delete_items", "retry_dead_letter"],
 	campaigns: ["start", "schedule", "unschedule", "pause", "resume", "cancel", "pause_many", "resume_many", "cancel_many", "get_progress", "get_sending_now", "get_recipients_page", "preview_message", "get_poll_results"],
 	picker: ["list_sources", "search_groups", "get_group_members", "search_contacts", "list_doctype_rows", "parse_upload", "parse_manual", "preview", "commit_add", "commit_remove"],
 	contacts: ["list_contacts", "get_contact", "create_contact", "update_contact", "search_party", "toggle_blacklist", "get_contact_numbers", "link_many"],

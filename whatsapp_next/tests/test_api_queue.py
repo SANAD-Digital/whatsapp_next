@@ -101,6 +101,38 @@ class TestApiQueue(IntegrationTestCase):
 		self.assertEqual(out["platform_queue"]["messages_per_minute"], 60)
 		frappe.cache.delete_value(dispatch.PLATFORM_QUEUE_CACHE_KEY)
 
+	def test_throughput_buckets(self):
+		"""One bucket per minute, zero-filled, with the completed rows landing in their own minute."""
+		_, q1 = self._item(P1)
+		_, q2 = self._item(P2)
+		now = frappe.utils.now_datetime()
+		for name, minutes in ((q1, 2), (q2, 40)):
+			frappe.db.set_value(
+				"WhatsApp Queue Item",
+				name,
+				{"status": "Completed", "completed_at": frappe.utils.add_to_date(now, minutes=-minutes)},
+				update_modified=False,
+			)
+		with as_user("WhatsApp Viewer"):
+			out = api.get_throughput(minutes=60)
+		self.assertEqual(out["minutes"], 60)
+		self.assertEqual(len(out["buckets"]), 60)
+		self.assertGreaterEqual(out["sent"], 2)
+		# newest minute last: the two-minutes-old row sits near the end, the forty-minutes-old one before it
+		self.assertGreaterEqual(out["buckets"][-3], 1)
+		self.assertGreaterEqual(out["buckets"][19], 1)
+		self.assertGreaterEqual(out["peak"], 1)
+		# a row outside the window is not counted
+		with as_user("WhatsApp Viewer"):
+			narrow = api.get_throughput(minutes=5)
+		self.assertEqual(len(narrow["buckets"]), 5)
+		self.assertEqual(sum(narrow["buckets"]), 1)
+
+	def test_throughput_window_is_bounded(self):
+		with as_user("WhatsApp Viewer"):
+			self.assertEqual(api.get_throughput(minutes=9999)["minutes"], 180)
+			self.assertEqual(api.get_throughput(minutes=1)["minutes"], 5)
+
 	def test_global_pause_resume_rate(self):
 		with as_user("WhatsApp Manager"):
 			paused = api.pause_queue(reason="ApiTest pause")

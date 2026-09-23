@@ -1,9 +1,11 @@
 // WhatsApp Queue Item list — screen 9 (09 §1B/§1C row 9). What is only this screen's lives here:
-// the queue bar (state · In queue · Drains in · Charged from plan · the send-rate slider →
-// `queue.set_rate`), the Pause / Resume verb in Desk's page head with a ConfirmDialog fed by
+// the operations console (status · depth with its breakdown as filters · the throughput actually
+// achieved, drawn minute by minute from `queue.get_throughput` · the drain clock · failures · what
+// is left of the plan · the send-rate control over its recommended band → `queue.set_rate`), the
+// Pause / Resume verb as the screen's primary action with a ConfirmDialog fed by
 // `queue.get_summary`, the row enrichment with the linked outbound's document, and the bulk verbs
-// over `queue.*_items` / `retry_dead_letter`. No title and no description: Desk's page head names
-// the screen, and one bar states everything that band of cards used to say (owner, 2026-09-24).
+// over `queue.*_items` / `retry_dead_letter`. The header, its title, description, banner and blocks
+// come from the kit's PageHeader, so the screen is composed, not decorated.
 // The toolbar and the table come from the shared message-list scaffold, so this screen carries the
 // same search · filters · date filter · grouping · columns · export as Outbound and Inbound; a row
 // opens the linked message's drawer, which also carries this queue's own Pause / Resume / Retry.
@@ -141,126 +143,302 @@
 			: __("Sending has been paused {0} by {1}. Nothing is sent until you resume.", [since, by]);
 	};
 
-	// ---- the queue bar ------------------------------------------------------------------------
+	// ---- the operations console -----------------------------------------------------------------
+
+	/** The live pipeline, in the order a message travels it — the breakdown under the depth. */
+	const FLOW = [
+		{ status: "Queued", tone: "blue", label: () => __("Waiting") },
+		{ status: "Sending", tone: "cyan", label: () => __("Sending") },
+		{ status: "Paused", tone: "amber", label: () => __("Held back") },
+		{ status: "Dead Letter", tone: "red", label: () => __("Given up") },
+	];
+
+	const count_by = (s, status) => cint(s && s.counts_by_status && s.counts_by_status[status]);
+	const depth_of = (s) => count_by(s, "Queued") + count_by(s, "Sending");
+
+	/** The clock the queue empties at — a horizon an operator can hold against a meeting. */
+	const drain_clock = (queued, rate) => {
+		if (!queued || typeof moment === "undefined") return "";
+		const at = moment().add(queued / Math.max(rate, 1), "minutes");
+		return at.isSame(moment(), "day") ? at.format("HH:mm") : at.format("D MMM HH:mm");
+	};
+
+	/** The span `eta_text` states, worded to sit inside a sentence. */
+	const eta_phrase = (queued, rate) => {
+		const minutes = queued / Math.max(rate, 1);
+		if (minutes < 1) return __("under a minute");
+		if (minutes < 60) return ui.plural(Math.round(minutes), { one: __("{0} minute"), other: __("{0} minutes") });
+		return __("{0} h {1} min", [ui.format_int(Math.floor(minutes / 60)), ui.format_int(Math.round(minutes % 60))]);
+	};
+
+	// ---- throughput (its own cache: heavier than the summary and it moves slower) ---------------
+
+	const THROUGHPUT_WINDOW = 60;
+	const THROUGHPUT_TTL = 20000;
+	const flow_state = { promise: null, at: 0 };
+	const throughput = (fresh = false) => {
+		if (fresh || (flow_state.promise && Date.now() - flow_state.at > THROUGHPUT_TTL)) flow_state.promise = null;
+		if (!flow_state.promise) {
+			flow_state.at = Date.now();
+			flow_state.promise = ui
+				.call("queue.get_throughput", { minutes: THROUGHPUT_WINDOW }, { silent: true })
+				.catch(() => ({ buckets: [], sent: 0, peak: 0, per_minute: 0, minutes: THROUGHPUT_WINDOW }));
+		}
+		return flow_state.promise;
+	};
 
 	/**
-	 * One row above the list: what the queue is doing, what it holds, what it will cost, how fast
-	 * it goes — and the only control that changes any of it. No title and no description: Desk's
-	 * own page head already names the screen (owner, 2026-09-24).
+	 * The console above the list: one instrument panel, read left to right in the order an
+	 * operator asks the questions — is it running · how much is in it · how fast is it really
+	 * going · when is it empty · what failed · what does it cost — then the evidence (what left
+	 * the queue each of the last sixty minutes) beside the one control that changes it.
+	 *
+	 * Deliberately not a band of cards: cards state numbers and stop there. Here the numbers carry
+	 * their own sub-line, the depth carries its breakdown as filters on the list below, and the
+	 * rate is shown against the rate actually being achieved.
 	 */
-	const make_bar = (listview) => {
-		const $bar = $(`
-			<header class="sanad-kit wa-queue-bar" aria-label="${ui.escape(__("Queue status"))}">
-				<span class="wa-queue-bar__state"></span>
-				<div class="wa-queue-bar__stats"></div>
-				<div class="wa-queue-bar__rate"></div>
-			</header>`).prependTo(listview.$frappe_list);
+	const make_console = (listview) => {
+		const refresh_all = () => {
+			con.refresh(true);
+			listview.refresh();
+		};
 
-		const bar = {
-			$el: $bar,
+		const header = new sanad.ui.PageHeader({
+			listview,
+			title: __("Queue"),
+			description: __("Every message waiting to go out, in send order."),
+			// a placeholder so the actions slot exists from the first render; `render_verb` sets the
+			// label the moment the summary says which way the queue is going
+			primary: is_manager() ? { label: __("Pause sending"), icon: "es-line-time", handler: () => ask_pause(refresh_all) } : null,
+			banner: () => summary().then((s) => (s && s.paused ? { tone: "amber", text: paused_title(s) } : null)),
+			blocks: [
+				{
+					key: "queue-console",
+					events: ["wa:queue:progress"],
+					render: ($el) => Promise.all([summary(), throughput()]).then(([s, t]) => paint($el, s, t)),
+				},
+			],
+		});
+
+		/** Pause / Resume is this screen's primary verb, and its label says which way it goes. */
+		const render_verb = (s) => {
+			if (!is_manager()) return;
+			const paused = !!s.paused;
+			header.opts.primary = {
+				label: paused ? __("Resume sending") : __("Pause sending"),
+				icon: paused ? "es-line-zap" : "es-line-time",
+				handler: () => (paused ? ask_resume(refresh_all) : ask_pause(refresh_all)),
+			};
+			header.render_actions();
+		};
+
+		// ---- the metric row ---------------------------------------------------------------------
+
+		const metric = (label, value, sub, opts = {}) => `
+			<div class="wa-ops__metric${opts.wide ? " wa-ops__metric--wide" : ""}">
+				<span class="wa-ops__label">${ui.escape(label)}</span>
+				<span class="wa-ops__value${opts.tone ? ` sanad-tone--${opts.tone}` : ""} sanad-tabular">${value}</span>
+				<span class="wa-ops__sub">${sub || "&nbsp;"}</span>
+			</div>`;
+
+		/** The depth's own breakdown: four counts that are also the list's filters. */
+		const breakdown_html = (s) => {
+			const active = (listview.filter_area ? listview.filter_area.get() : []).filter((f) => f[1] === "status");
+			const is_on = (status) => active.some((f) => f[2] === "=" && f[3] === status);
+			const parts = FLOW.filter((f) => count_by(s, f.status) || is_on(f.status)).map(
+				(f) => `<button type="button" class="wa-ops__part" data-status="${ui.escape(f.status)}" aria-pressed="${is_on(f.status)}">
+					<span class="wa-ops__dot sanad-tone--${f.tone}" aria-hidden="true"></span>${ui.escape(f.label())}
+					<span class="sanad-tabular">${ui.escape(ui.format_int(count_by(s, f.status)))}</span>
+				</button>`
+			);
+			return parts.length ? parts.join("") : `<span class="wa-ops__sub">${ui.escape(__("Nothing is waiting."))}</span>`;
+		};
+
+		// ---- the evidence: what actually left the queue, minute by minute -------------------------
+
+		const chart_html = (t, rate) => {
+			const buckets = (t && t.buckets) || [];
+			const peak = Math.max(cint(t && t.peak), 1);
+			const scale = Math.max(peak, rate);
+			const caption = __("Sent per minute — last {0} minutes", [ui.format_int(t && t.minutes ? t.minutes : THROUGHPUT_WINDOW)]);
+			// an empty window still gets its plot: a panel that collapses when nothing happened
+			// reads as broken, and the baseline plus the target line are the answer to "how fast?"
+			const empty = !buckets.length || !cint(t && t.sent);
+			const series = buckets.length ? buckets : new Array(THROUGHPUT_WINDOW).fill(0);
+			const bars = series
+				.map((n, i) => `<rect x="${(i + 0.15).toFixed(2)}" y="${(100 - (n / scale) * 100).toFixed(2)}" width="0.7" height="${((n / scale) * 100).toFixed(2)}"></rect>`)
+				.join("");
+			return `<figure class="wa-ops__chart">
+				<figcaption class="wa-ops__label">
+					${ui.escape(caption)}
+					${empty ? "" : `<span class="wa-ops__peak sanad-tabular">${ui.escape(__("peak {0}/min", [ui.format_int(peak)]))}</span>`}
+				</figcaption>
+				<div class="wa-ops__plot" style="--wa-target:${Math.min((rate / scale) * 100, 96).toFixed(2)}%">
+					<svg viewBox="0 0 ${series.length} 100" preserveAspectRatio="none" aria-hidden="true">${bars}</svg>
+					<span class="wa-ops__target" aria-hidden="true"></span>
+				</div>
+				<p class="sanad-visually-hidden">${ui.escape(
+					empty
+						? __("Nothing has left the queue in the last {0} minutes.", [ui.format_int(t && t.minutes ? t.minutes : THROUGHPUT_WINDOW)])
+						: __("{0} messages left the queue in the last {1} minutes; the busiest minute sent {2}.", [
+								ui.format_int(cint(t.sent)),
+								ui.format_int(t.minutes || THROUGHPUT_WINDOW),
+								ui.format_int(peak),
+							])
+				)}</p>
+				<div class="wa-ops__axis" aria-hidden="true">
+					<span>${ui.escape(__("{0} min ago", [ui.format_int(t && t.minutes ? t.minutes : THROUGHPUT_WINDOW)]))}</span>
+					<span class="wa-ops__axis-note">${ui.escape(empty ? __("nothing sent in this window") : __("dashed line: the rate you set"))}</span>
+					<span>${ui.escape(__("now"))}</span>
+				</div>
+			</figure>`;
+		};
+
+		// ---- the one control ---------------------------------------------------------------------
+
+		const rate_html = (s, rate, max, t) => {
+			const id = ui.uid("wa-rate");
+			const span = Math.max(max - RATE_MIN, 1);
+			const zone_from = ((Math.max(RECOMMENDED.low, RATE_MIN) - RATE_MIN) / span) * 100;
+			const zone_to = ((Math.min(RECOMMENDED.high, max) - RATE_MIN) / span) * 100;
+			const verdict = rate_verdict(rate);
+			const achieved = t && t.per_minute != null ? t.per_minute : null;
+			return `<div class="wa-ops__rate">
+				<div class="wa-ops__rate-head">
+					<label class="wa-ops__label" for="${id}">${ui.escape(__("Send rate"))}</label>
+					<output class="wa-ops__rate-value sanad-tabular" for="${id}">${ui.escape(__("{0}/min", [ui.format_int(rate)]))}</output>
+				</div>
+				<div class="wa-ops__track">
+					<span class="wa-ops__zone" style="--wa-from:${zone_from.toFixed(2)}%;--wa-to:${zone_to.toFixed(2)}%" aria-hidden="true"></span>
+					<input type="range" class="wa-ops__slider" id="${id}" min="${RATE_MIN}" max="${max}" step="1" value="${rate}"
+						aria-describedby="${id}-note" aria-valuetext="${ui.escape(per_minute(rate))}" ${is_manager() ? "" : "disabled"}>
+				</div>
+				<div class="wa-ops__scale" aria-hidden="true">
+					<span class="sanad-tabular">${ui.escape(ui.format_int(RATE_MIN))}</span>
+					<span class="wa-ops__scale-zone">${ui.escape(__("Recommended {0}–{1}", [ui.format_int(RECOMMENDED.low), ui.format_int(RECOMMENDED.high)]))}</span>
+					<span class="sanad-tabular">${ui.escape(ui.format_int(max))}</span>
+				</div>
+				<p class="wa-ops__rate-note" id="${id}-note">
+					<span class="wa-ops__verdict">${sanad.ui.StatusBadge.html({ label: verdict.label, colour: verdict.tone })}</span>
+					${ui.escape(achieved == null ? __("A higher rate raises the platform's ban risk.") : __("Achieving {0}/min over the last hour.", [ui.format_int(Math.round(achieved))]))}
+				</p>
+			</div>`;
+		};
+
+		// ---- paint --------------------------------------------------------------------------------
+
+		const paint = ($el, s, t) => {
+			if (!s) return;
+			// a realtime tick must never replace the slider under a hand that is dragging it: the
+			// old input then fires its `change` with the value it was abandoned at (seen in the
+			// audit log as two rate changes 68 ms apart). Defer the repaint to the release.
+			if (con.interacting) {
+				con.pending = true;
+				return;
+			}
+			const depth = depth_of(s);
+			const rate = rate_of(s);
+			const max = Math.min(RATE_MAX, cint(s.plan_rate) || RATE_MAX);
+			const paused = !!s.paused;
+			const failed = count_by(s, "Dead Letter");
+			const remaining = s.platform_queue && s.platform_queue.messages_remaining;
+			const achieved = t && t.per_minute != null ? Math.round(t.per_minute) : null;
+			const clock = paused || !depth ? "—" : drain_clock(depth, rate) || __("now");
+
+			const state_cell = `
+				<div class="wa-ops__metric wa-ops__metric--state">
+					<span class="wa-ops__label">${ui.escape(__("Status"))}</span>
+					<span class="wa-ops__state sanad-tone--${paused ? "amber" : "green"}">
+						<span class="wa-ops__pulse" aria-hidden="true"></span>${ui.escape(paused ? __("Paused") : __("Running"))}
+					</span>
+					<span class="wa-ops__sub">${ui.escape(paused ? __("Nothing is going out.") : __("Messages go out automatically."))}</span>
+				</div>`;
+
+			$el.html(`
+				<section class="wa-ops${paused ? " wa-ops--paused" : ""}" aria-label="${ui.escape(__("Queue status"))}">
+					<div class="wa-ops__metrics">
+						${state_cell}
+						${metric(__("In queue"), ui.escape(ui.format_int(depth)), `<span class="wa-ops__parts">${breakdown_html(s)}</span>`, { wide: true })}
+						${metric(__("Throughput"), achieved == null ? "—" : ui.escape(__("{0}/min", [ui.format_int(achieved)])), ui.escape(__("last hour, actual")))}
+						${metric(__("Drains by"), ui.escape(clock), ui.escape(paused ? __("sending is paused") : depth ? __("in {0}", [eta_phrase(depth, rate)]) : __("queue is empty")))}
+						${metric(__("Given up"), ui.escape(ui.format_int(failed)), failed ? `<button type="button" class="wa-ops__link" data-status="Dead Letter">${ui.escape(__("Review and retry"))}</button>` : ui.escape(__("no failures")), { tone: failed ? "red" : "" })}
+						${metric(
+							__("Plan left"),
+							remaining == null ? "—" : ui.escape(ui.format_int(Math.max(0, cint(remaining) - depth))),
+							`<button type="button" class="wa-ops__link" data-go="billing">${ui.escape(
+								remaining == null ? __("plan reading unavailable") : depth ? __("after this queue sends") : __("messages available")
+							)}</button>`
+						)}
+					</div>
+					<div class="wa-ops__lower">
+						${chart_html(t, rate)}
+						${rate_html(s, rate, max, t)}
+					</div>
+				</section>`);
+
+			$el.find("[data-go=billing]").on("click", () => frappe.set_route("wa-settings", { tab: "billing" }));
+			$el.find("[data-status]").on("click", function () {
+				const status = $(this).data("status");
+				const on = $(this).attr("aria-pressed") === "true";
+				const area = listview.filter_area;
+				Promise.resolve(area.remove("status")).then(() => {
+					if (!on) area.add([[DT, "status", "=", status]]);
+				});
+			});
+			bind_rate($el, rate, max);
+			render_verb(s);
+		};
+
+		const bind_rate = ($el, rate, max) => {
+			const $input = $el.find(".wa-ops__slider");
+			const hold = () => (con.interacting = true);
+			const release = () => {
+				con.interacting = false;
+				if (!con.pending) return;
+				con.pending = false;
+				con.refresh(true);
+			};
+			$input.on("pointerdown focusin", hold);
+			$input.on("pointerup pointercancel focusout", release);
+			const $value = $el.find(".wa-ops__rate-value");
+			const $verdict = $el.find(".wa-ops__verdict");
+			const track = $el.find(".wa-ops__track").get(0);
+			const fill = (value) => track && track.style.setProperty("--wa-fill", `${(((value - RATE_MIN) / Math.max(max - RATE_MIN, 1)) * 100).toFixed(2)}%`);
+			const paint_rate = (value) => {
+				const v = rate_verdict(value);
+				$value.text(__("{0}/min", [ui.format_int(value)]));
+				$verdict.html(sanad.ui.StatusBadge.html({ label: v.label, colour: v.tone }));
+				$input.attr("aria-valuetext", per_minute(value));
+				fill(value);
+			};
+			fill(rate);
+			$input.on("input", () => paint_rate(cint($input.val())));
+			$input.on("change", () => {
+				const value = cint($input.val());
+				if (value === rate) return; // a repaint mid-drag can land the input back where it was
+				ui.call("queue.set_rate", { messages_per_minute: value })
+					.then((r) => {
+						ui.Toast.success(__("Send rate set to {0}", [per_minute(r.messages_per_minute)]));
+						con.interacting = false;
+						con.pending = false;
+						con.refresh(true);
+					})
+					.catch((err) => {
+						ui.Toast.error(err);
+						$input.val(rate);
+						paint_rate(rate);
+					});
+			});
+		};
+
+		const con = {
+			header,
 			refresh(fresh = false) {
-				return summary(fresh).then((s) => {
-					bar.paint(s);
-					return s;
-				});
-			},
-			paint(s) {
-				const queued = queued_of(s);
-				const rate = rate_of(s);
-				const paused = !!s.paused;
-				const remaining = s.platform_queue && s.platform_queue.messages_remaining;
-
-				$bar.toggleClass("wa-queue-bar--running", !paused);
-				$bar.find(".wa-queue-bar__state")
-					.attr("class", `wa-queue-bar__state sanad-tone--${paused ? "amber" : "green"}`)
-					.attr("title", paused_title(s))
-					.html(`<span class="wa-queue-bar__dot" aria-hidden="true"></span>${ui.escape(paused ? __("Paused") : __("Running"))}`);
-
-				const stat = (label, value, note, on_click) =>
-					`<${on_click ? "button type=\"button\"" : "div"} class="wa-queue-bar__stat${on_click ? " wa-queue-bar__stat--link" : ""}"${on_click ? ` data-go="${on_click}"` : ""}>
-						<span class="wa-queue-bar__label">${ui.escape(label)}</span>
-						<span class="wa-queue-bar__value sanad-tabular">${ui.escape(value)}</span>
-						${note ? `<span class="wa-queue-bar__note">${ui.escape(note)}</span>` : ""}
-					</${on_click ? "button" : "div"}>`;
-				$bar.find(".wa-queue-bar__stats").html(
-					[
-						// the label says what the number is; a note under it only repeats the label.
-						// The plan keeps one, because the balance after sending is a second fact.
-						stat(__("In queue"), ui.format_int(queued)),
-						stat(__("Drains in"), paused ? __("Nothing is going out") : eta_text(queued, rate)),
-						stat(__("Charged from plan"), ui.format_int(queued), remaining != null ? __("Balance after: {0}", [ui.format_int(Math.max(0, cint(remaining) - queued))]) : "", "billing"),
-					].join("")
-				);
-				$bar.find("[data-go=billing]").on("click", () => frappe.set_route("wa-settings", { tab: "billing" }));
-
-				bar.render_rate(s, rate);
-				bar.render_actions(s);
-			},
-
-			/** The rate lives in the bar, not in a card: a slider, its number, and the verdict. */
-			render_rate(s, rate) {
-				const max = Math.min(RATE_MAX, cint(s.plan_rate) || RATE_MAX);
-				const verdict = rate_verdict(rate);
-				const id = ui.uid("wa-rate");
-				const $rate = $bar.find(".wa-queue-bar__rate").html(`
-					<label class="wa-queue-bar__label" for="${id}">${ui.escape(__("Send rate"))}</label>
-					<input type="range" class="wa-queue-bar__slider" id="${id}" min="${RATE_MIN}" max="${max}" step="1" value="${rate}"
-						title="${ui.escape(__("A higher rate raises the platform's ban risk. Recommended: {0}–{1} messages per minute.", [RECOMMENDED.low + 8, RECOMMENDED.high - 5]))}"
-						aria-valuetext="${ui.escape(per_minute(rate))}" ${is_manager() ? "" : "disabled"}>
-					<span class="wa-queue-bar__rate-value sanad-tabular" aria-live="polite">${ui.escape(__("{0}/min", [ui.format_int(rate)]))}</span>
-					<span class="wa-queue-bar__verdict">${sanad.ui.StatusBadge.html({ label: verdict.label, colour: verdict.tone })}</span>`);
-
-				const $input = $rate.find(`#${id}`);
-				const paint = (value) => {
-					const v = rate_verdict(value);
-					$rate.find(".wa-queue-bar__rate-value").text(__("{0}/min", [ui.format_int(value)]));
-					$rate.find(".wa-queue-bar__verdict").html(sanad.ui.StatusBadge.html({ label: v.label, colour: v.tone }));
-					$input.attr("aria-valuetext", per_minute(value));
-				};
-				$input.on("input", () => paint(cint($input.val())));
-				$input.on("change", () => {
-					const value = cint($input.val());
-					ui.call("queue.set_rate", { messages_per_minute: value })
-						.then((r) => {
-							ui.Toast.success(__("Send rate set to {0}", [per_minute(r.messages_per_minute)]));
-							bar.refresh(true);
-						})
-						.catch((err) => {
-							ui.Toast.error(err);
-							paint(rate);
-							$input.val(rate);
-						});
-				});
-			},
-
-			/**
-			 * The one verb lives in Desk's own page head, where a page's actions live — not in a
-			 * button floating over the list. Its label says which way it will go.
-			 */
-			render_actions(s) {
-				if (!is_manager()) return;
-				const paused = !!s.paused;
-				const label = paused ? __("Resume sending") : __("Pause sending");
-				if (bar.verb === label) return;
-				if (bar.verb) listview.page.remove_inner_button(bar.verb);
-				bar.verb = label;
-				const refresh_all = () => {
-					bar.refresh(true);
-					listview.refresh();
-				};
-				listview.page.add_inner_button(label, () => (paused ? ask_resume(refresh_all) : ask_pause(refresh_all)));
+				return Promise.all([summary(fresh), throughput(fresh)]).then(() => header.refresh(true));
 			},
 		};
 
-		// the bar mounts first; FilterBar prepends itself too, so keep our place on every render
-		const keep_first = () => {
-			if ($bar.parent().length && !$bar.is(":first-child")) $bar.prependTo(listview.$frappe_list);
-		};
-		window.setTimeout(keep_first, 0);
-		ui.on_list_render(listview, keep_first);
-		frappe.realtime.on("wa:queue:progress", () => bar.refresh(true));
-		bar.refresh(true);
-		return bar;
+		return con;
 	};
 
 	// ---- rows: enrich with the linked outbound's document + open the drawer -----------------
@@ -398,7 +576,7 @@
 
 			state.listview = listview;
 			state.promise = null;
-			listview._sanad_bar = make_bar(listview);
+			listview._sanad_console = make_console(listview);
 
 			const bulk = is_manager() ? bulk_actions(refresh) : [];
 			listview._sanad_datalist = make_list(listview, refresh, bulk);

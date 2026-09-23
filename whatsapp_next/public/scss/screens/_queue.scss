@@ -1,114 +1,325 @@
-// Queue screen — the one bar above the list. The screen's job is the list; the bar states what
-// the queue is doing, what it will cost and how fast, and carries the only control that changes
-// any of it. One row, 72 px, no titles: Desk's page head already names the screen.
+// Queue screen — the operations console above the list.
+//
+// One instrument panel, not a band of cards: a metric row read left to right in the order an
+// operator asks the questions (running? · how deep? · how fast really? · empty when? · what
+// failed? · what is left of the plan?), then the evidence — what left the queue each of the last
+// sixty minutes — beside the one control that changes it. Hairline dividers instead of borders per
+// card, small capital labels, tabular figures, and 8 px radii: the panel has to read as an
+// instrument next to a dense table, not as a marketing hero.
+//
+// Colours are Espresso tokens only; every offset is a logical property, so RTL is free.
 
-.wa-queue-bar {
-	display: flex;
-	align-items: stretch;
-	flex-wrap: wrap;
-	// one row while there is room for one: the stats and the slider give way, not the button
-	@media (min-width: 992px) { flex-wrap: nowrap; }
-	gap: var(--sanad-gap-md) var(--sanad-gap-xl);
-	padding: var(--sanad-gap-md) var(--sanad-gap-lg);
-	margin-block-end: var(--sanad-gap-md);
+$wa-tones: "blue" "cyan" "amber" "red" "green";
+
+.wa-ops {
 	border: var(--sanad-border);
-	border-radius: var(--sanad-card-radius);
+	border-radius: var(--sanad-radius);
 	background: var(--surface-white);
+	overflow: hidden;
 
+	// ---- the metric row ------------------------------------------------------------------------
+
+	&__metrics {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		@media (min-width: 768px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+		@media (min-width: 1200px) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+	}
+
+	&__metric {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: var(--sanad-gap-md) var(--sanad-gap-lg);
+		min-inline-size: 0;
+		// hairlines, drawn as shadows so no cell needs to know where it sits in the grid
+		box-shadow: inset 1px 0 0 0 var(--outline-gray-1), inset 0 -1px 0 0 var(--outline-gray-1);
+		// spans both columns only in the three-column band, where the row would otherwise break
+		&--wide { grid-column: span 1; }
+		@media (min-width: 768px) and (max-width: 1199px) {
+			&--wide { grid-column: span 2; }
+		}
+	}
+
+	&__label {
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--ink-gray-5);
+		white-space: nowrap;
+	}
+	&__value {
+		font-size: var(--text-2xl, 22px);
+		font-weight: 600;
+		line-height: 1.25;
+		color: var(--ink-gray-9);
+		background: none; // a tone class must colour the ink here, never the surface
+	}
+	&__sub {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+		line-height: 1.5;
+		min-block-size: 16px;
+	}
+
+	// status reads as state, so it keeps the dot and the tone but not a pill's weight
 	&__state {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--sanad-gap-xs);
-		align-self: center;
-		padding-inline: var(--sanad-gap-md);
-		min-block-size: 28px;
-		border: 1px solid;
-		border-radius: var(--border-radius-full, 999px);
-		font-size: var(--text-sm, 13px);
+		gap: var(--sanad-gap-sm);
+		font-size: var(--text-lg, 16px);
 		font-weight: 600;
-		white-space: nowrap;
+		line-height: 1.6;
+		background: none;
+	}
+	&__pulse {
+		inline-size: 8px;
+		block-size: 8px;
+		border-radius: 50%;
+		background: currentColor;
+		flex: none;
+		animation: wa-queue-pulse 2s ease-in-out infinite;
+	}
+	&--paused &__pulse { animation: none; }
+
+	// the depth's breakdown: counts that are also the list's filters, drawn as text, never as pills
+	&__parts {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-xs) var(--sanad-gap-md);
+	}
+	&__part {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 0;
+		min-block-size: 20px;
+		border: 0;
+		background: none;
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+		span.sanad-tabular { font-weight: 600; color: var(--ink-gray-8); }
+		&:hover { color: var(--ink-gray-9); text-decoration: underline; }
+		&[aria-pressed="true"] {
+			color: var(--sanad-accent-ink);
+			span.sanad-tabular { color: var(--sanad-accent-ink); }
+		}
 	}
 	&__dot {
 		inline-size: 7px;
 		block-size: 7px;
 		border-radius: 50%;
-		background: currentColor;
 		flex: none;
 	}
-	// a running queue breathes; a paused one holds still
-	&--running &__dot { animation: wa-queue-pulse 2s ease-in-out infinite; }
-
-	&__stats {
-		display: flex;
-		align-items: center;
-		gap: var(--sanad-gap-lg);
-		flex: 1 1 auto;
-		flex-wrap: wrap;
-		min-inline-size: 0;
-		@media (min-width: 992px) { flex-wrap: nowrap; gap: var(--sanad-gap-xl); }
-	}
-	&__stat {
-		display: flex;
-		flex-direction: column;
-		gap: 1px;
-		min-inline-size: 0;
+	&__link {
+		padding: 0;
 		border: 0;
 		background: none;
-		padding: 0;
-		text-align: start;
-		&--link { cursor: pointer; }
-		&--link:hover .wa-queue-bar__value { color: var(--sanad-accent-ink); }
-	}
-	&__label {
 		font-size: var(--text-xs, 11px);
 		color: var(--ink-gray-6);
-		white-space: nowrap;
+		text-align: start;
+		&:hover { color: var(--sanad-accent-ink); text-decoration: underline; }
 	}
-	&__value {
-		font-size: var(--text-lg, 16px);
-		font-weight: 700;
-		color: var(--ink-gray-9);
-		line-height: 1.3;
-		white-space: nowrap;
+
+	// ---- the evidence and the control ----------------------------------------------------------
+
+	&__lower {
+		display: grid;
+		gap: var(--sanad-gap-lg);
+		padding: var(--sanad-gap-md) var(--sanad-gap-lg) var(--sanad-gap-lg);
+		@media (min-width: 992px) {
+			grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+			gap: var(--sanad-gap-xl);
+		}
 	}
-	&__note { font-size: var(--text-xs, 11px); color: var(--ink-gray-5); white-space: nowrap; }
+
+	&__chart {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		margin: 0;
+		min-inline-size: 0;
+		figcaption {
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			gap: var(--sanad-gap-sm);
+		}
+		&--empty { justify-content: start; }
+	}
+	&__peak {
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0;
+		text-transform: none;
+		color: var(--ink-gray-5);
+	}
+	&__plot {
+		position: relative;
+		block-size: 64px;
+		svg {
+			inline-size: 100%;
+			block-size: 100%;
+			display: block;
+			overflow: visible;
+		}
+		rect { fill: var(--sanad-accent); }
+		// the axis labels flip with the document; the SVG does not, so mirror it by hand or the
+		// oldest minute would sit under "now"
+		[dir="rtl"] & svg { transform: scaleX(-1); }
+		// the floor keeps an all-zero window from reading as a missing chart
+		border-block-end: 1px solid var(--outline-gray-1);
+	}
+	// the rate that was asked for, against the rate that is actually happening
+	&__target {
+		position: absolute;
+		inset-inline: 0;
+		inset-block-end: var(--wa-target, 0%);
+		border-block-start: 1px dashed var(--ink-gray-5);
+		opacity: 0.7;
+		pointer-events: none;
+	}
+
+	&__axis {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--sanad-gap-sm);
+		font-size: 11px;
+		color: var(--ink-gray-5);
+	}
+	&__axis-note { color: var(--ink-gray-6); }
 
 	&__rate {
-		display: flex;
-		align-items: center;
-		gap: var(--sanad-gap-md);
-		flex: 0 1 auto;
+		display: grid;
+		gap: var(--sanad-gap-xs);
+		align-content: start;
 		min-inline-size: 0;
-		margin-inline-start: auto;
-		padding-inline-start: var(--sanad-gap-xl);
-		border-inline-start: var(--sanad-border);
+		@media (min-width: 992px) {
+			padding-inline-start: var(--sanad-gap-xl);
+			border-inline-start: var(--sanad-border);
+		}
+		@media (max-width: 991px) {
+			padding-block-start: var(--sanad-gap-md);
+			border-block-start: var(--sanad-border);
+		}
 	}
-	&__slider {
-		flex: 0 1 140px;
-		min-inline-size: 80px;
-		accent-color: var(--sanad-accent);
-		min-block-size: var(--sanad-target);
-		cursor: pointer;
-		&:disabled { cursor: not-allowed; opacity: 0.6; }
+	&__rate-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--sanad-gap-sm);
 	}
 	&__rate-value {
-		font-size: var(--text-base, 14px);
-		font-weight: 700;
+		font-size: var(--text-lg, 16px);
+		font-weight: 600;
 		color: var(--ink-gray-9);
-		white-space: nowrap;
 		direction: ltr;
 	}
+	&__rate-note {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-sm);
+		margin: 0;
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+		line-height: 1.6;
+	}
 
-	@media (max-width: 767px) {
-		gap: var(--sanad-gap-md);
-		&__stats { gap: var(--sanad-gap-lg); flex: 1; }
-		&__rate {
-			inline-size: 100%;
-			padding-inline-start: 0;
-			border-inline-start: 0;
-			border-block-start: var(--sanad-border);
-			padding-block-start: var(--sanad-gap-md);
+	// the recommended band is drawn on the track, so the control explains itself
+	&__track {
+		position: relative;
+		display: flex;
+		align-items: center;
+		min-block-size: var(--sanad-target);
+		--wa-fill: 0%;
+		&::before,
+		&::after {
+			content: "";
+			position: absolute;
+			inset-block-start: 50%;
+			translate: 0 -50%;
+			block-size: 4px;
+			border-radius: var(--border-radius-full, 999px);
+			pointer-events: none;
 		}
+		&::before {
+			inset-inline: 0;
+			background: var(--surface-gray-3);
+		}
+		&::after {
+			inset-inline-start: 0;
+			inline-size: var(--wa-fill);
+			background: var(--sanad-accent);
+		}
+	}
+	&__zone {
+		position: absolute;
+		inset-block-start: 50%;
+		translate: 0 -50%;
+		inset-inline-start: var(--wa-from, 0%);
+		inline-size: calc(var(--wa-to, 0%) - var(--wa-from, 0%));
+		block-size: 12px;
+		border-radius: 2px;
+		background: var(--surface-green-1);
+		border: 1px solid var(--outline-green-1);
+		pointer-events: none;
+	}
+	&__slider {
+		position: relative;
+		z-index: 1;
+		inline-size: 100%;
+		min-block-size: var(--sanad-target);
+		margin: 0;
+		background: none;
+		appearance: none;
+		-webkit-appearance: none;
+		cursor: pointer;
+		&:disabled { cursor: not-allowed; opacity: 0.6; }
+		&::-webkit-slider-runnable-track { block-size: 4px; background: transparent; }
+		&::-moz-range-track { block-size: 4px; background: transparent; }
+		&::-webkit-slider-thumb {
+			appearance: none;
+			-webkit-appearance: none;
+			inline-size: 16px;
+			block-size: 16px;
+			margin-block-start: -6px;
+			border-radius: 50%;
+			border: 2px solid var(--surface-white);
+			background: var(--sanad-accent);
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+		}
+		&::-moz-range-thumb {
+			inline-size: 16px;
+			block-size: 16px;
+			border-radius: 50%;
+			border: 2px solid var(--surface-white);
+			background: var(--sanad-accent);
+		}
+	}
+	&__scale {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--sanad-gap-sm);
+		font-size: 11px;
+		color: var(--ink-gray-5);
+	}
+	&__scale-zone { color: var(--ink-green-3); }
+}
+
+// the tone classes carry a soft surface; on a dot and on a metric's ink the colour is the signal
+@each $tone in $wa-tones {
+	.wa-ops__dot.sanad-tone--#{$tone} {
+		background: currentColor;
+		border: 0;
+	}
+	.wa-ops__value.sanad-tone--#{$tone},
+	.wa-ops__state.sanad-tone--#{$tone} {
+		background: none;
+		border: 0;
 	}
 }
 
@@ -117,5 +328,5 @@
 	50% { opacity: 0.35; }
 }
 @media (prefers-reduced-motion: reduce) {
-	.wa-queue-bar__dot { animation: none !important; }
+	.wa-ops__pulse { animation: none !important; }
 }
