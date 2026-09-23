@@ -170,6 +170,50 @@
 	}
 	&__menu-item--mine { font-weight: 600; }
 
+	// ---- phone: the operator and the field, inside the panel ----
+	&__chead {
+		display: flex;
+		flex-direction: column;
+		border-block-end: var(--sanad-border);
+		background: var(--surface-gray-1);
+	}
+	&__chead-row + &__chead-row { border-block-start: 1px solid var(--outline-gray-1); }
+	&__chead-trigger {
+		appearance: none;
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		width: 100%;
+		min-height: 44px;
+		padding-inline: 12px;
+		border: 0;
+		background: transparent;
+		cursor: pointer;
+	}
+	&__chead-label { flex: none; font-size: var(--text-xs, 12px); color: var(--ink-gray-6); }
+	&__chead-value {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		text-align: end;
+		font-size: var(--text-sm, 13px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+	}
+	&__chead-trigger[aria-expanded="true"] &__caret { transform: rotate(180deg); }
+	&__chead-list {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		max-height: 220px;
+		padding: 4px 8px 8px;
+		overflow: auto;
+		background: var(--surface-white);
+		.sanad-datefilter__menu-item { min-height: 40px; height: auto; }
+	}
+
 	// ---- the fields being filtered, one per rail item, each with its own dates ----
 	&__rail {
 		display: flex;
@@ -703,4 +747,33 @@
 		align-items: stretch;
 		> .sanad-datefilter { width: 100%; }
 	}
+}
+
+// Phone: the whole control is one icon beside the search box and the Filters button. Its operator
+// and its field move into the panel (`__chead`), so nothing becomes unreachable.
+@media (max-width: 767px) {
+	.sanad-datefilter {
+		&__label,
+		&__op,
+		&__fieldpick { display: none; }
+		&__trigger { height: var(--sanad-ctl-h); }
+		&__value { width: var(--sanad-ctl-h); justify-content: center; gap: 0; padding-inline: 0; }
+		&__text { display: none; }
+		// set: a dot on the icon, and the × beside it so it can be cleared without opening the panel
+		&--set &__value { width: auto; gap: 4px; padding-inline: 6px; }
+		&--set &__icon { color: var(--sanad-accent); }
+		&--set &__trigger { background: var(--sanad-accent-soft); }
+		&__panel {
+			position: fixed;
+			inset-inline: 8px;
+			inset-block-start: auto;
+			width: auto;
+			max-width: none;
+			// the head, a rail and a calendar can add up past a short screen; it scrolls rather than
+			// running off the bottom where Apply would be out of reach
+			max-height: calc(100dvh - 110px);
+			overflow: auto;
+		}
+	}
+	.sanad-datefilter-set { display: inline-flex; align-items: stretch; }
 }

@@ -548,8 +548,15 @@ sanad.ui.FilterBar = class FilterBar {
 		this.hidden_actions = this.$amore_dd ? this.fit(this.$actions, actions, this.$amore_dd) : [];
 		this.hidden_filters = this.fit(this.$main, filters, this.$more_dd);
 		// the filters give way first; only once every one of them is behind "More" and the row is
-		// still short does the action cluster start handing its icons to the "…"
-		while (this.$amore_dd && actions.length > this.hidden_actions.length && this.hidden_filters.length === filters.length && FilterBar.wrapped(this.$main)) {
+		// still cramped does the action cluster start handing its icons to the "…". Cramped is not
+		// only a wrap: a search box pinned to its 120 px floor is a row out of room too, and the
+		// icons are worth less than a search field you can read what you typed into.
+		const cramped = () => {
+			if (FilterBar.wrapped(this.$main)) return true;
+			const $search = this.$main.children(".sanad-filterbar__field--search");
+			return $search.length ? $search[0].getBoundingClientRect().width < 180 : false;
+		};
+		while (this.$amore_dd && actions.length > this.hidden_actions.length && this.hidden_filters.length === filters.length && cramped()) {
 			const el = actions[actions.length - 1 - this.hidden_actions.length];
 			$(el).addClass("sanad-filterbar__hidden");
 			this.hidden_actions.push(el);
@@ -653,8 +660,31 @@ sanad.ui.FilterBar = class FilterBar {
 		this.close_more();
 		this.$amore = $(`<div class="sanad-filterbar__pop sanad-filterbar__pop--amore" id="${this.amore_pop_id}" role="dialog" aria-label="${ui.escape(__("More actions"))}"></div>`).appendTo(this.$amore_dd);
 		this.$amore_btn.attr("aria-expanded", "true");
-		(this.hidden_actions || []).forEach((el) => $(el).removeClass("sanad-filterbar__hidden").appendTo(this.$amore));
+		(this.hidden_actions || []).forEach((el) => {
+			const $item = $('<div class="sanad-filterbar__amore-item"></div>').appendTo(this.$amore);
+			$(el).removeClass("sanad-filterbar__hidden").appendTo($item);
+			const text = FilterBar.action_label(el);
+			if (!text) return;
+			// the icon alone says nothing in a stack of four; the row names it, and clicking the
+			// name is the same as clicking the icon
+			$(`<span class="sanad-filterbar__amore-label">${ui.escape(text)}</span>`)
+				.on("click", () => {
+					const $btn = $(el).is("button") ? $(el) : $(el).find("button").first();
+					$btn.trigger("click");
+				})
+				.appendTo($item);
+		});
 		this.keep_in_view(this.$amore);
+	}
+
+	/** What to call an action in the "…" menu: its own name, stable whatever it is showing. */
+	static action_label(el) {
+		const $el = $(el);
+		if ($el.hasClass("sanad-filterbar__dd--group")) return __("Group by");
+		if ($el.hasClass("sanad-filterbar__dd--columns")) return __("Columns");
+		if ($el.hasClass("sanad-filterbar__native")) return __("More filters");
+		const $btn = $el.is("button") ? $el : $el.find("button").first();
+		return ($btn.attr("aria-label") || $btn.attr("title") || $el.attr("title") || "").trim();
 	}
 
 	close_amore(restore_focus = false) {

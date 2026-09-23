@@ -150,6 +150,14 @@ itself rather than as two dates.
   form, with the full name as the label. The calendar inherits RTL from Desk and the range band
   flips with it.
 
+## On a phone
+
+Under 768 px the whole control is **one icon** beside the search box, so it costs a toolbar slot
+rather than a row. Its operator and its field move into the panel as two rows that open their list
+in place — a menu hung off a 32 px button has nowhere to go, and neither control may disappear just
+because the screen is small. The panel spans the screen's width and scrolls if the head, the rail
+and a calendar together outgrow it, so Apply is always reachable.
+
 ## Live use
 
 `WhatsApp Log` (Outbound) — the date filter in its toolbar, over the log's ten date fields.

@@ -87,6 +87,24 @@ for (const width of [1700, 1400, 1200, 1000, 900]) {
 	);
 }
 
+// the search box shows its icon: Desk's `.form-control` is positioned, so the input used to paint
+// over it and the icon was never visible at any width
+const search_icon = await page.evaluate(() => {
+	const icon = document.querySelector(".sanad-filterbar__search-icon");
+	const input = document.querySelector(".sanad-filterbar__search");
+	if (!icon || !input) return null;
+	const box = icon.getBoundingClientRect();
+	const field = input.getBoundingClientRect();
+	const use = icon.querySelector("use");
+	const href = use ? (use.getAttribute("href") || "").slice(1) : "";
+	return {
+		z: getComputedStyle(icon).zIndex,
+		painted: box.width > 0 && box.height > 0 && box.left >= field.left && box.right <= field.right,
+		symbol: !!(href && document.getElementById(href)),
+	};
+});
+check("the search box shows its icon", !!search_icon && search_icon.painted && search_icon.symbol && search_icon.z !== "auto", JSON.stringify(search_icon));
+
 // the hidden ones are reachable, and they are the same fields the toolbar would have shown
 await page.setViewportSize({ width: 900, height: 950 });
 await page.waitForTimeout(700);
@@ -263,6 +281,38 @@ await page.waitForTimeout(300);
 await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 
+// the "…" menu names every action it holds
+// how narrow the cluster has to get before it overflows depends on what the date filter is
+// showing, so step down until it does rather than guessing one width
+let has_amore = false;
+for (const w of [900, 860, 820, 790, 768]) {
+	await page.setViewportSize({ width: w, height: 950 });
+	await page.waitForTimeout(700);
+	has_amore = await page.$eval(".sanad-filterbar__dd--amore", (e) => !e.hasAttribute("hidden")).catch(() => false);
+	if (has_amore) break;
+}
+if (has_amore) {
+	await page.click(".sanad-filterbar__dd--amore .sanad-filterbar__action");
+	await page.waitForTimeout(600);
+	const named = await page.$$eval(".sanad-filterbar__amore-item", (n) =>
+		n.map((e) => {
+			const label = e.querySelector(".sanad-filterbar__amore-label");
+			return label ? label.textContent.trim() : "";
+		})
+	);
+	check('every action in the "…" menu is named', named.length > 0 && named.every((t) => t.length > 1), named.join(" · ") || "no labels");
+	await page.keyboard.press("Escape");
+	await page.waitForTimeout(300);
+} else {
+	// a container squeezed to nothing is the shape of this going wrong, so say how wide it got
+	const why = await page.evaluate(() => {
+		const main = document.querySelector(".sanad-filterbar__main");
+		const end = document.querySelector(".sanad-filterbar__end");
+		return { main: main ? Math.round(main.getBoundingClientRect().width) : null, end: end ? Math.round(end.getBoundingClientRect().width) : null };
+	});
+	check('every action in the "…" menu is named', false, `no overflow down to 768px — ${JSON.stringify(why)}`);
+}
+
 // ---- the column picker holds its place while you tick ----
 await page.setViewportSize({ width: 1500, height: 950 });
 await page.waitForTimeout(700);
@@ -343,6 +393,40 @@ check("choosing in the drawer sets the filter", !!picked && picked !== "All", pi
 await page.click(".sanad-optsheet__done");
 await page.waitForTimeout(600);
 check("Done dismisses the drawer", (await page.$$(".sanad-optsheet")).length === 0);
+
+// the Filters sheet is still up over the toolbar; Done only dismissed the drawer
+await page.keyboard.press("Escape");
+await page.waitForTimeout(600);
+
+// the date filter is one icon beside the search box, and keeps its operator and field in the panel
+const phone_row = await page.evaluate(() => {
+	const s = document.querySelector(".sanad-filterbar__search");
+	const d = document.querySelector(".sanad-filterbar__datefilter");
+	const f = document.querySelector(".sanad-filterbar__mobile-toggle");
+	if (!s || !d || !f) return null;
+	const sr = s.getBoundingClientRect();
+	const dr = d.getBoundingClientRect();
+	const fr = f.getBoundingClientRect();
+	return { same_row: Math.abs(sr.top - dr.top) < 6 && Math.abs(sr.top - fr.top) < 6, date_w: Math.round(dr.width), search_h: Math.round(sr.height) };
+});
+check("the date filter is an icon beside the search box", !!phone_row && phone_row.same_row && phone_row.date_w <= 56, JSON.stringify(phone_row));
+// the set keeps the fields it is not showing in the DOM, so target the one on screen; and the
+// trigger toggles, so a panel left open by an earlier step would be closed by this click
+const live_date = ".sanad-datefilter:not(.sanad-datefilter--hidden) .sanad-datefilter__value";
+await page.click(live_date);
+await page.waitForTimeout(800);
+if (!(await page.$$(".sanad-datefilter__panel")).length) {
+	await page.click(live_date);
+	await page.waitForTimeout(800);
+}
+const head = await page.$$eval(".sanad-datefilter__chead-row", (n) => n.length);
+check("its operator and field move into the panel", head === 2, `${head} row(s)`);
+await page.click(".sanad-datefilter__chead-trigger >> nth=0");
+await page.waitForTimeout(500);
+const ops = await page.$$eval(".sanad-datefilter__chead-list .sanad-datefilter__menu-item", (n) => n.length);
+check("the operator list opens in place", ops === 8, `${ops} operator(s)`);
+await page.keyboard.press("Escape");
+await page.waitForTimeout(300);
 
 check("no console errors", errors.length === 0, errors.join(" | "));
 await browser.close();

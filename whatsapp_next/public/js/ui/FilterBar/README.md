@@ -67,9 +67,17 @@ its items, so a short button sits a few pixels lower than a tall one on the very
 detail is what made two earlier attempts (D-072, D-075b) hide a toolbar that fit perfectly.
 `ResizeObserver` re-runs it, once per frame.
 
+Every row of the **…** menu names its action ("Group by", "Columns", "Export", "More filters") —
+a column of bare icons says nothing — and the button itself is lent to the menu, so it keeps its own
+popover. The cluster may shrink, but only through the date filter, whose summary elides: with
+`flex: none` a long date summary once grew it to 644 px on a 768 px screen and left the filters a
+container 0 px wide, where nothing looks like it overflows because nothing has room to.
+
 ## Phones: a drawer off the bottom edge
 
-Under 768 px the filters collapse behind one **Filters** button carrying the number that is set.
+Under 768 px the toolbar is **one row**: the search box, the **Filters** button carrying the number
+that is set, and the date filter reduced to a single icon (its operator and its field move inside
+its panel, so neither becomes unreachable).
 Its sheet is a list of fields, and tapping one raises that filter's options in a **drawer off the
 bottom of the screen** — around half the height, growing to 88 % as the list needs it, scrolling
 inside itself, with 48 px rows, its own search when the list is long, `Clear`, and a `Done` that

@@ -75,6 +75,9 @@
 		inset-inline-start: 11px;
 		inset-block-start: 50%;
 		transform: translateY(-50%);
+		// Desk's `.form-control` is itself positioned, so the input — the later sibling — painted
+		// over the icon and it has never been visible. One step up is all it needs.
+		z-index: 1;
 		color: var(--ink-gray-5);
 		pointer-events: none;
 		display: inline-flex;
@@ -184,13 +187,16 @@
 		display: flex;
 		align-items: center;
 		flex-wrap: nowrap;
-		// the cluster keeps its natural width: letting it shrink here squeezed the icon row into
-		// wrapping at any width, and the toolbar then hid a cluster that had all the room it needed
-		flex: none;
+		// The cluster may shrink, but only through the date filter: with `flex: none` a long date
+		// summary grew it to 644 px on a 768 px screen and left the filters a container 0 px wide,
+		// where nothing looks like it overflows because nothing has room to. The icons keep their
+		// size (`__actions` is `flex: none`), so the squeeze lands on the date text, which elides.
+		flex: 0 1 auto;
+		min-width: 0;
 		gap: var(--sanad-gap-sm);
 		margin-inline-start: auto;
 	}
-	&__datefilter { min-width: 0; }
+	&__datefilter { flex: 1 1 auto; min-width: 0; }
 
 	// joined segmented period control (prototype: one bordered group, no gaps)
 	&__period {
@@ -250,18 +256,35 @@
 	&__pop--more { width: 280px; padding: 0; }
 	&__pop--more &__pop-head { padding: 8px 10px; border-block-end: var(--sanad-border); }
 	&__more-list { padding: 2px 10px 8px; max-height: 60vh; overflow: auto; }
+	// the menu is a menu, not a column of bare icons: every row names what it does
 	&__pop--amore {
-		width: auto;
-		min-width: 0;
+		width: max-content;
+		min-width: 180px;
 		padding: 5px;
 		display: flex;
 		flex-direction: column;
-		gap: 4px;
+		gap: 2px;
 	}
-	&__pop--amore &__dd { width: 100%; }
-	&__pop--amore &__action { width: 100%; justify-content: flex-start; }
-	&__pop--amore &__action--icon { width: var(--sanad-ctl-h); }
-	&__pop--amore &__native { width: 100%; }
+	&__amore-item {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		padding-inline-end: 8px;
+		border-radius: var(--border-radius-md, 6px);
+		cursor: pointer;
+		&:hover { background: var(--surface-gray-2); }
+	}
+	&__amore-label {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: var(--text-xs, 12px);
+		color: var(--ink-gray-8);
+	}
+	&__pop--amore &__dd { flex: none; }
+	&__pop--amore &__action--group &__levels { display: none; }
 
 	// a filter the bar has no button for (one arriving in the URL): visible and removable
 	&__extra { display: contents; }
@@ -312,7 +335,7 @@
 
 	// Group by / Export / the native Filter popover — every one of them the same 32 px control, so
 	// the row reads as one toolbar rather than three button languages side by side.
-	&__actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sanad-gap-sm); min-width: 0; }
+	&__actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sanad-gap-sm); flex: none; }
 	&__action--icon,
 	&__action--group {
 		width: var(--sanad-ctl-h);
@@ -502,15 +525,16 @@
 @media (max-width: 767px) {
 	.sanad-filterbar {
 		&--list { padding: var(--sanad-gap-md) 14px; gap: var(--sanad-gap-sm); }
-		&__row--toolbar { flex-wrap: wrap; }
-		&__main { flex: 1 0 100%; }
-		&__field, &__field--range, &__field--search { flex: 1 0 100%; max-width: none; }
-		&__row--toolbar { gap: var(--sanad-gap-sm); }
+		// one row: search · Filters · the date icon — the date filter used to take a row of its own
+		&__row--toolbar { flex-wrap: nowrap; gap: var(--sanad-gap-sm); align-items: center; }
+		&__main { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; }
+		&__field, &__field--range { flex: 1 0 100%; max-width: none; }
+		&__field--search { flex: 1 1 auto; min-width: 80px; max-width: none; }
 		&__dd:not(&__dd--group) { display: none; }
 		&__clear { display: none; }
 		// the Filters button takes only what it needs so the period never clips a label
 		&__mobile-toggle { display: inline-flex; flex: 0 0 auto; gap: 6px; }
-		&__end { margin-inline-start: 0; flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; gap: var(--sanad-gap-sm); }
+		&__end { margin-inline-start: 0; flex: none; flex-wrap: nowrap; gap: var(--sanad-gap-sm); }
 		&__period { flex: 1 1 auto; min-width: 0; }
 		&__period-btn { flex: 1 1 0; min-width: 0; padding-inline: 6px; font-size: var(--text-xs, 12px); }
 		&__period-long { display: none; }

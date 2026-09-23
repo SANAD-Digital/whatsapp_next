@@ -679,6 +679,7 @@ sanad.ui.DateFilter = class DateFilter {
 		this.close_menu();
 		this.reflect_trigger();
 		// keep the draft: re-reading the applied snapshot here would undo the operator just picked
+		if (this.$panel) return this.render_panel(); // picked from inside the panel (compact)
 		this.open({ keep_state: true });
 	}
 
@@ -695,6 +696,7 @@ sanad.ui.DateFilter = class DateFilter {
 		}
 		this.state.hover = null;
 		this.state.typed = {};
+		this.state.head = null;
 		const anchor = this.is_between() ? this.state.start : this.state.date;
 		const d = to_date(anchor || today_key());
 		this.view_year = d.getFullYear();
@@ -759,6 +761,7 @@ sanad.ui.DateFilter = class DateFilter {
 		if (!this.$panel) return;
 		const compact = this.compact();
 		this.$panel.toggleClass("sanad-datefilter__panel--compact", compact).empty();
+		if (compact) this.render_compact_head();
 		this.render_field_rail();
 		const $body = $('<div class="sanad-datefilter__body"></div>').appendTo(this.$panel);
 		if (this.is_calendar()) {
@@ -1250,6 +1253,60 @@ sanad.ui.DateFilter = class DateFilter {
 				})
 				.appendTo($bars);
 		}
+	}
+
+	/**
+	 * On a phone the trigger shrinks to one icon, so the operator and the field move inside the
+	 * panel: two rows that open their list in place. A floating menu hung off a 32 px button has
+	 * nowhere to go, and neither control may simply disappear because the screen is small.
+	 */
+	render_compact_head() {
+		const $head = $('<div class="sanad-datefilter__chead"></div>').appendTo(this.$panel);
+		const row = (key, label, value) => {
+			const on = this.state.head === key;
+			const $row = $('<div class="sanad-datefilter__chead-row"></div>').appendTo($head);
+			$(`<button type="button" class="sanad-datefilter__chead-trigger" aria-expanded="${on}">
+					<span class="sanad-datefilter__chead-label">${ui.escape(label)}</span>
+					<span class="sanad-datefilter__chead-value">${ui.escape(value)}</span>
+					<span class="sanad-datefilter__caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
+				</button>`)
+				.on("click", () => this.set({ head: on ? null : key }))
+				.appendTo($row);
+			return on ? $('<div class="sanad-datefilter__chead-list"></div>').appendTo($row) : null;
+		};
+
+		const op = OPERATORS().find((o) => o.key === this.state.op) || OPERATORS()[0];
+		const $ops = row("op", __("Comparison"), op.label);
+		if ($ops) {
+			OPERATORS().forEach((o) => {
+				const sel = o.key === this.state.op;
+				$(`<button type="button" class="sanad-datefilter__menu-item${sel ? " sanad-datefilter__menu-item--on" : ""}">
+						<span>${ui.escape(o.label)}</span>${sel ? `<span class="sanad-datefilter__menu-check" aria-hidden="true">${ui.icon("es-line-check", "xs")}</span>` : ""}
+					</button>`)
+					.on("click", () => {
+						this.state.head = null;
+						this.set_op(o.key);
+					})
+					.appendTo($ops);
+			});
+		}
+
+		if (!this.fields.length) return;
+		const taken = typeof this.opts.selected_fields === "function" ? this.opts.selected_fields() : [this.fieldname];
+		const $fields = row("field", __("Date field"), this.field_caption().text);
+		if (!$fields) return;
+		this.fields.forEach((f) => {
+			const chosen = taken.includes(f.value);
+			$(`<button type="button" class="sanad-datefilter__menu-item${chosen ? " sanad-datefilter__menu-item--on" : ""}${f.value === this.fieldname ? " sanad-datefilter__menu-item--mine" : ""}">
+					<span class="sanad-datefilter__menu-box" aria-hidden="true">${chosen ? ui.icon("es-line-check", "xs") : ""}</span>
+					<span class="sanad-datefilter__menu-text">${ui.escape(f.label)}</span>
+				</button>`)
+				.on("click", () => {
+					this.state.head = null;
+					this.toggle_field(f.value);
+				})
+				.appendTo($fields);
+		});
 	}
 
 	/**
