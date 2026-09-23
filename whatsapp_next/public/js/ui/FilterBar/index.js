@@ -98,7 +98,11 @@ sanad.ui.FilterBar = class FilterBar {
 		// the inline-start, then a single cluster at the inline-end — period, Group by, Export and
 		// Desk's own Filter popover, all restyled to the same 32 px control.
 		this.$toolbar = $('<div class="sanad-filterbar__row sanad-filterbar__row--toolbar"></div>').appendTo(this.$wrapper);
+		// the filters wrap inside their own group, so the period / grouping / columns / export
+		// cluster stays on the first line however many filters a screen declares
+		this.$main = $('<div class="sanad-filterbar__main"></div>').appendTo(this.$toolbar);
 		this.$tabs = $('<div class="sanad-filterbar__row sanad-filterbar__row--tabs"></div>').appendTo(this.$wrapper);
+		this.$extra = $('<div class="sanad-filterbar__extra"></div>').appendTo(this.$main);
 		this.$groupby = $('<div class="sanad-filterbar__groupby"></div>').appendTo(this.$wrapper);
 		const of_type = (types) => this.opts.presets.filter((p) => types.includes(p.type || "select"));
 		of_type(["search"]).forEach((p) => this.render_search(p));
@@ -107,7 +111,7 @@ sanad.ui.FilterBar = class FilterBar {
 			.forEach((p) => (p.type === "daterange" ? this.render_daterange(p) : this.render_select(p)));
 		$(`<button type="button" class="sanad-filterbar__clear" hidden>${ui.escape(__("Clear filters"))}</button>`)
 			.on("click", () => this.clear())
-			.appendTo(this.$toolbar);
+			.appendTo(this.$main);
 		this.render_mobile_toggle();
 		this.$end = $('<div class="sanad-filterbar__end"></div>').appendTo(this.$toolbar);
 		this.$actions = $('<div class="sanad-filterbar__actions"></div>').appendTo(this.$end);
@@ -121,6 +125,7 @@ sanad.ui.FilterBar = class FilterBar {
 		}
 		if (!this.$actions.children().length) this.$actions.remove();
 		if (!this.$end.children().length) this.$end.remove();
+		this.$extra.appendTo(this.$main); // always last among the filters
 		this.sync();
 		this.apply_defaults();
 		$(document).on(`mousedown.${this.id} touchstart.${this.id}`, (e) => {
@@ -271,7 +276,7 @@ sanad.ui.FilterBar = class FilterBar {
 	render_search(preset) {
 		const fields = preset.fields || this.search_fields();
 		const label = preset.label || __("Search");
-		const $field = $(`<div class="sanad-filterbar__field sanad-filterbar__field--search"></div>`).appendTo(this.$toolbar);
+		const $field = $(`<div class="sanad-filterbar__field sanad-filterbar__field--search"></div>`).appendTo(this.$main);
 		const $input = $(`<input type="search" class="form-control sanad-filterbar__search" placeholder="${ui.escape(preset.placeholder || label)}" aria-label="${ui.escape(label)}">`);
 		const apply = ui.debounce(() => this.set_search($input.val(), fields), this.opts.debounce);
 		$input.on("input", apply).on("keydown", (e) => {
@@ -295,7 +300,7 @@ sanad.ui.FilterBar = class FilterBar {
 
 	render_daterange(preset) {
 		const label = this.label_of(preset);
-		const $field = $(`<div class="sanad-filterbar__field sanad-filterbar__field--range"></div>`).appendTo(this.$toolbar);
+		const $field = $(`<div class="sanad-filterbar__field sanad-filterbar__field--range"></div>`).appendTo(this.$main);
 		const control = frappe.ui.form.make_control({
 			df: { fieldtype: "DateRange", fieldname: preset.fieldname, label, placeholder: label, onchange: () => this.set(preset.fieldname, control.get_value()) },
 			parent: $field,
@@ -352,7 +357,7 @@ sanad.ui.FilterBar = class FilterBar {
 	render_mobile_toggle() {
 		this.$mobile_btn = $(`<button type="button" class="sanad-filterbar__btn sanad-filterbar__mobile-toggle">${ui.icon("es-line-filter", "xs")}<span>${ui.escape(__("Filters"))}</span><span class="sanad-filterbar__mobile-count sanad-tabular" hidden></span></button>`)
 			.on("click", () => this.open_filter_sheet())
-			.appendTo(this.$toolbar);
+			.appendTo(this.$main);
 	}
 
 	reflect_mobile() {
@@ -405,7 +410,7 @@ sanad.ui.FilterBar = class FilterBar {
 	render_select(preset) {
 		const p = Object.assign({ multiple: true }, preset);
 		const label = this.label_of(p);
-		const $dd = $(`<div class="sanad-filterbar__dd"></div>`).appendTo(this.$toolbar);
+		const $dd = $(`<div class="sanad-filterbar__dd"></div>`).appendTo(this.$main);
 		const pop_id = `${this.id}-${p.fieldname}-pop`;
 		const $btn = $(`<button type="button" class="sanad-filterbar__btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">
 			<span class="sanad-filterbar__btn-label">${ui.escape(label)}</span><span class="sanad-filterbar__btn-value"></span>
@@ -916,14 +921,52 @@ sanad.ui.FilterBar = class FilterBar {
 	}
 
 	reflect_clear() {
-		const active = Object.keys(this.values).some((k) => k !== "__group_by") || !!this.search_text;
+		const extra = this.$extra ? this.$extra.children().length : 0;
+		// the period is always set, so it alone is not something to offer to clear
+		const set = Object.keys(this.values).filter((k) => k !== "__group_by" && (this.controls[k] || {}).type !== "period");
+		const active = extra > 0 || set.length > 0 || !!this.search_text;
 		this.$wrapper.find(".sanad-filterbar__clear").prop("hidden", !active);
+	}
+
+	/**
+	 * Any filter the list carries that no button on this bar represents — one arriving in the URL,
+	 * or set from another screen — is shown as a removable chip. Without this, Desk's standard
+	 * filter fields are hidden and such a filter is invisible and impossible to clear.
+	 */
+	render_extra_filters(filters) {
+		if (!this.$extra) return;
+		const mine = new Set(Object.keys(this.controls).filter((k) => !k.startsWith("__")));
+		if (this.controls.__search) (this.controls.__search.fields || []).forEach((f) => mine.add(f));
+		const extra = (filters || []).filter((f) => !mine.has(f[1]));
+		this.$extra.empty();
+		extra.forEach((f) => {
+			const [, fieldname, operator, value] = f;
+			const label = __(this.df(fieldname).label || fieldname);
+			const shown = Array.isArray(value) ? value.join(", ") : String(value == null ? "" : value);
+			$(`<span class="sanad-filterbar__chipfilter sanad-accent-soft">
+					<span class="sanad-filterbar__chipfilter-label">${ui.escape(label)}</span>
+					<span class="sanad-filterbar__chipfilter-value" title="${ui.escape(`${label} ${operator} ${shown}`)}">${ui.escape(shown)}</span>
+					<button type="button" class="sanad-filterbar__chipfilter-x" aria-label="${ui.escape(__("Clear {0}", [label]))}">${ui.icon("es-line-close", "xs")}</button>
+				</span>`)
+				.find(".sanad-filterbar__chipfilter-x")
+				.on("click", () => this.remove_filter(fieldname))
+				.end()
+				.appendTo(this.$extra);
+		});
+	}
+
+	/** Drop one filter the bar does not own, and refresh once. */
+	remove_filter(fieldname) {
+		if (!this.listview) return Promise.resolve();
+		if (frappe.route_options) delete frappe.route_options[fieldname];
+		return this.quietly(() => this.listview.filter_area.remove(fieldname)).then(() => this.refresh_list());
 	}
 
 	/** Read the list's current filters into the bar (list mode). */
 	sync() {
 		if (!this.listview || !this.listview.filter_area) return;
 		const filters = this.listview.filter_area.get();
+		this.render_extra_filters(filters);
 		Object.keys(this.controls).forEach((fieldname) => {
 			if (fieldname.startsWith("__")) return;
 			const c = this.controls[fieldname];
@@ -965,8 +1008,11 @@ sanad.ui.FilterBar = class FilterBar {
 	}
 
 	clear() {
-		const fields = Object.keys(this.values).filter((f) => !f.startsWith("__"));
-		fields.forEach((fieldname) => {
+		const own = Object.keys(this.values).filter((f) => !f.startsWith("__"));
+		const extra = this.listview ? this.listview.filter_area.get().map((f) => f[1]).filter((f) => !own.includes(f)) : [];
+		const fields = own.concat(extra);
+		if (frappe.route_options) extra.forEach((f) => delete frappe.route_options[f]);
+		own.forEach((fieldname) => {
 			delete this.values[fieldname];
 			this.reflect(fieldname);
 		});

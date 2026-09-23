@@ -27,6 +27,16 @@
 		align-items: center;
 		gap: var(--sanad-gap-sm);
 	}
+	// toolbar = a wrapping group of filters + a cluster that never leaves the first line
+	&__row--toolbar { flex-wrap: nowrap; align-items: flex-start; }
+	&__main {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		flex: 1 1 auto;
+		min-width: 0;
+	}
 	&__row--tabs {
 		overflow-x: auto;
 		flex-wrap: nowrap;
@@ -170,7 +180,8 @@
 	&__end {
 		display: flex;
 		align-items: center;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
+		flex: none;
 		gap: var(--sanad-gap-sm);
 		margin-inline-start: auto;
 	}
@@ -206,6 +217,39 @@
 		}
 	}
 	&__period-short { display: none; }
+
+	// a filter the bar has no button for (one arriving in the URL): visible and removable
+	&__extra { display: contents; }
+	&__chipfilter {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		min-height: var(--sanad-ctl-h);
+		max-width: 240px;
+		padding-inline: var(--sanad-cell-px) 6px;
+		border: 1px solid var(--sanad-accent-outline);
+		border-radius: var(--sanad-radius);
+		font-size: var(--text-sm, 13px);
+	}
+	&__chipfilter-label { color: var(--ink-gray-7); flex: none; }
+	&__chipfilter-value { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__chipfilter-x {
+		appearance: none;
+		border: 0;
+		background: transparent;
+		width: 18px;
+		height: 18px;
+		flex: none;
+		padding: 0;
+		border-radius: 5px;
+		color: inherit;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		.icon { width: 11px; height: 11px; }
+		&:hover { background: var(--sanad-accent-outline); }
+	}
 
 	&__clear {
 		appearance: none;
@@ -413,6 +457,8 @@
 @media (max-width: 767px) {
 	.sanad-filterbar {
 		&--list { padding: var(--sanad-gap-md) 14px; gap: var(--sanad-gap-sm); }
+		&__row--toolbar { flex-wrap: wrap; }
+		&__main { flex: 1 0 100%; }
 		&__field, &__field--range, &__field--search { flex: 1 0 100%; max-width: none; }
 		&__row--toolbar { gap: var(--sanad-gap-sm); }
 		&__dd:not(&__dd--group) { display: none; }

@@ -590,12 +590,15 @@ sanad.ui.DataList = class DataList {
 	 * because the toolbar's height depends on how many filters a screen declares.
 	 */
 	fit_height() {
+		const card = this.listview.$frappe_list && this.listview.$frappe_list[0];
 		const el = this.$table && this.$table[0];
-		if (!el || !el.isConnected) return;
-		const top = el.getBoundingClientRect().top;
-		const footer = (this.$footer && this.$footer.outerHeight(true)) || 0;
-		const room = Math.max(200, Math.round(window.innerHeight - top - footer - 24));
-		el.style.maxHeight = `${room}px`;
+		if (!card || !el || !el.isConnected) return;
+		// the card is sized to the room left on screen, then its flex children share it: the table
+		// takes what is left and the footer sits on the card's bottom edge, as Desk's list does
+		const top = card.getBoundingClientRect().top;
+		const room = Math.max(280, Math.round(window.innerHeight - top - 16));
+		card.style.height = `${room}px`;
+		el.style.maxHeight = "";
 	}
 
 	/**

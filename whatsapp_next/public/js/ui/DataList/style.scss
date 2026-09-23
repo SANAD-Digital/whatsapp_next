@@ -10,6 +10,11 @@
 }
 
 .sanad-datalist__wrap {
+	// its own stacking context: the sticky header and pinned columns stack inside the table only,
+	// so Desk's page-head menus and dropdowns always paint above it
+	position: relative;
+	z-index: 0;
+	isolation: isolate;
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
 	border: var(--sanad-border);
@@ -394,7 +399,7 @@
 	.result-container {
 		flex: 1 1 auto;
 		height: auto !important;
-		min-height: 120px;
+		min-height: 0;
 		display: flex;
 		background: var(--surface-white);
 		border-inline-start: var(--sanad-border);
