@@ -353,7 +353,9 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 
 	async load_chart(chart, { initial = false } = {}) {
 		chart.$el.attr("aria-busy", "true");
-		if (initial) {
+		// Skeleton only while no chart exists: an existing instance keeps its canvas visible and is
+		// refreshed in place through `update(data)` (hiding/emptying it would break its observer).
+		if (initial && !chart.instance) {
 			chart.$canvas.prop("hidden", true);
 			chart.state.loading({ rows: 4 });
 		}
@@ -367,8 +369,8 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 			const data = await frappe.xcall(METHODS.chart_get, this.chart_args(doc));
 			chart.data = data;
 			if (!data || !data.labels || !data.labels.length) {
+				this.dispose_chart(chart);
 				chart.$canvas.prop("hidden", true);
-				chart.instance = null;
 				chart.$summary.text(__("No data for this period"));
 				chart.state.empty({
 					title: __("No data for this period"),
@@ -381,10 +383,10 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 			chart.state.hide();
 			chart.$canvas.prop("hidden", false);
 			chart.$summary.text(this.chart_summary(doc, data));
-			this.draw_chart(chart, data);
+			await this.draw_chart(chart, data);
 		} catch (err) {
+			this.dispose_chart(chart);
 			chart.$canvas.prop("hidden", true);
-			chart.instance = null;
 			chart.state.error(as_error(err), { action: { label: __("Retry"), onclick: () => this.load_chart(chart, { initial: true }) } });
 		} finally {
 			chart.$el.attr("aria-busy", "false");
@@ -423,7 +425,7 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 		return __("{0}: {1} groups, largest {2} with {3}.", [title, ui.format_int(labels.length), labels[0], frappe.format(values[0], { fieldtype: "Float" }, { inline: true })]);
 	}
 
-	draw_chart(chart, data) {
+	async draw_chart(chart, data) {
 		const doc = chart.doc;
 		const circular = ["Pie", "Donut", "Percentage"].includes(doc.type);
 		const value_field = doc.value_based_on || doc.aggregate_function_based_on;
@@ -447,11 +449,32 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 		};
 		if (doc.color) args.colors = [doc.color];
 		if (doc.show_values_over_chart) args.valuesOverPoints = true;
-		if (!chart.instance || circular) {
-			chart.$canvas.empty();
-			chart.instance = frappe.utils.make_chart(chart.$canvas[0], args);
-		} else {
+		// One stable container per chart: refresh through `update(data)`; circular charts (whose
+		// slice count can change) are rebuilt, but only after the previous instance released its
+		// ResizeObserver and window listeners, otherwise frappe-charts redraws into a removed SVG.
+		if (chart.instance && !circular) {
 			chart.instance.update(data);
+			return;
+		}
+		this.dispose_chart(chart);
+		chart.$canvas.empty();
+		// frappe-charts measures the container on creation: wait one frame so the (shadow-root)
+		// canvas has been laid out and has a real width.
+		await new Promise((resolve) => window.requestAnimationFrame(resolve));
+		if (chart.$canvas.prop("hidden") || !chart.$canvas[0].isConnected) return;
+		chart.instance = frappe.utils.make_chart(chart.$canvas[0], args);
+	}
+
+	/** Release a frappe.Chart instance (ResizeObserver + window resize listeners) before its SVG goes. */
+	dispose_chart(chart) {
+		const instance = chart.instance;
+		chart.instance = null;
+		if (!instance) return;
+		try {
+			if (typeof instance.destroy === "function") instance.destroy();
+			else if (instance.resizeObserver && typeof instance.resizeObserver.disconnect === "function") instance.resizeObserver.disconnect();
+		} catch (e) {
+			// already torn down
 		}
 	}
 
@@ -496,6 +519,7 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 		if (this._timer) window.clearInterval(this._timer);
 		this._handlers.forEach(([event, fn]) => frappe.realtime.off(event, fn));
 		this._handlers = [];
+		Object.values(this.charts).forEach((chart) => this.dispose_chart(chart));
 		this.$root.remove();
 	}
 };

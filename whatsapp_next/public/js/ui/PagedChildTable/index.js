@@ -1,6 +1,7 @@
 // sanad.ui.PagedChildTable — replaces the native grid of a large child table with a paged,
 // read-only table fed by a configured API key (`{rows, total}`), while the child data stays on
-// the form (the grid is only hidden). Columns default to the child DocType's `in_list_view`
+// the form. The field itself stays visible (its label and description are kept and Frappe keeps
+// the tab it lives in); only the grid DOM inside the field wrapper is hidden. Columns default to the child DocType's `in_list_view`
 // fields from meta; values are formatted through `frappe.format`; a status column renders as a
 // StatusBadge. Filter chips, a search box, a toolbar with the caller's actions (e.g. "Add rows")
 // and per-row actions are all options. States: skeleton / empty / error through EmptyState.
@@ -25,7 +26,7 @@ sanad.ui.PagedChildTable = class PagedChildTable {
 	 * @param {Array<{fieldname, type: "select"|"search", label?, options?: string[]}>} [opts.filters]
 	 * @param {Array<{label, primary?, icon?, condition?(), disabled?, hint?, handler()}>} [opts.toolbar_actions] — `hint` is shown as visible text when disabled
 	 * @param {string} [opts.empty_text]
-	 * @param {boolean} [opts.hide_grid=true]
+	 * @param {boolean} [opts.hide_grid=true] — hide the native grid DOM (never the field, so its tab stays)
 	 * @param {boolean} [opts.search=true] — search box (sent as `search`)
 	 */
 	constructor(opts = {}) {
@@ -57,7 +58,6 @@ sanad.ui.PagedChildTable = class PagedChildTable {
 
 	make() {
 		const field = this.frm.get_field(this.fieldname);
-		if (this.opts.hide_grid) this.frm.set_df_property(this.fieldname, "hidden", 1);
 		const id = ui.uid("pct");
 		this.$el = $(`
 			<div class="sanad-kit sanad-pct" data-fieldname="${ui.escape(this.fieldname)}" id="${id}">
@@ -76,11 +76,16 @@ sanad.ui.PagedChildTable = class PagedChildTable {
 					</div>
 				</div>
 			</div>`);
-		// Idempotent mount: a previous instance of the same field is replaced.
+		// Mount inside the field's own wrapper (`.grid-field`: label, description, grid, footer) so
+		// the field stays visible — Frappe hides a tab whose fields are all hidden — and only the
+		// grid parts are hidden through the host class (see style.scss). Idempotent: a previous
+		// instance of the same field is replaced; the host class survives grid re-renders.
+		this.$host = field && field.grid && field.grid.wrapper ? field.grid.wrapper : field && field.$wrapper;
 		const $existing = this.frm.$wrapper.find(`.sanad-pct[data-fieldname="${this.fieldname}"]`);
 		if ($existing.length) $existing.replaceWith(this.$el);
-		else if (field && field.$wrapper) field.$wrapper.after(this.$el);
+		else if (this.$host && this.$host.length) this.$host.append(this.$el);
 		else this.frm.$wrapper.find(".form-page").first().append(this.$el);
+		if (this.$host && this.opts.hide_grid) this.$host.addClass("sanad-pct-host");
 		this.$filters = this.$el.find(".sanad-pct__filters");
 		this.$actions = this.$el.find(".sanad-pct__actions");
 		this.$state = this.$el.find(".sanad-pct__state");
@@ -267,7 +272,7 @@ sanad.ui.PagedChildTable = class PagedChildTable {
 
 	destroy() {
 		this.$el.remove();
-		if (this.opts.hide_grid) this.frm.set_df_property(this.fieldname, "hidden", 0);
+		if (this.$host) this.$host.removeClass("sanad-pct-host");
 	}
 };
 

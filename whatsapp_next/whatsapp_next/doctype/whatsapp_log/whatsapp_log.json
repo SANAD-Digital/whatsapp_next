@@ -118,7 +118,6 @@
    "description": "Normalized on insert; required for Individual; the drawer joins WhatsApp Number on it",
    "fieldname": "phone_e164",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "label": "Phone (E.164)",
    "search_index": 1
   },
@@ -153,7 +152,6 @@
    "description": "Platform `message_type` vocabulary; `Template` is a source (`template` Link), not a type",
    "fieldname": "message_type",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Message Type",
    "options": "Text\nDocument\nImage\nVideo\nAudio\nSticker\nLocation\nPoll",
@@ -165,7 +163,7 @@
    "label": "Content"
   },
   {
-   "description": "Final rendered text (Jinja already applied); PII \u2192 retention",
+   "description": "Final rendered text (Jinja already applied); PII → retention",
    "fieldname": "body",
    "fieldtype": "Text",
    "label": "Body"
@@ -333,7 +331,8 @@
    "fieldname": "sent_at",
    "fieldtype": "Datetime",
    "label": "Sent At",
-   "read_only": 1
+   "read_only": 1,
+   "in_list_view": 1
   },
   {
    "description": "`message.delivered`",
@@ -391,7 +390,8 @@
    "fieldtype": "Data",
    "in_standard_filter": 1,
    "label": "Error Code",
-   "read_only": 1
+   "read_only": 1,
+   "in_list_view": 1
   },
   {
    "description": "Provider text with numbers masked",
@@ -430,7 +430,6 @@
    "description": "Business document that triggered the message",
    "fieldname": "reference_doctype",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Reference DocType",
    "options": "DocType"
@@ -530,7 +529,8 @@
    "fieldname": "is_simulated",
    "fieldtype": "Check",
    "in_standard_filter": 1,
-   "label": "Simulated"
+   "label": "Simulated",
+   "in_list_view": 1
   },
   {
    "fieldname": "provider_tab",

@@ -16,15 +16,16 @@ ui.configure = function (opts = {}) {
 	return ui.config;
 };
 
-/** Resolve a configured API method by key; an explicit dotted path passes through unchanged. */
+/**
+ * Resolve a configured API key (`"area.fn"`) to its dotted method. A full dotted path
+ * (three or more segments, e.g. `frappe.client.get_value`) passes through unchanged.
+ */
 ui.api = function (key) {
 	if (!key) return null;
-	if (key.includes(".")) return key;
 	const method = (ui.config.api || {})[key];
-	if (!method) {
-		throw new Error(__("sanad.ui: API method '{0}' is not configured", [key]));
-	}
-	return method;
+	if (method) return method;
+	if (key.split(".").length >= 3) return key;
+	throw new Error(__("sanad.ui: API method '{0}' is not configured", [key]));
 };
 
 /**
@@ -201,7 +202,7 @@ ui.icons = {
 	more: "es-line-overflow",
 };
 
-ui.format_int = (value) => frappe.format(cint(value), { fieldtype: "Int" });
+ui.format_int = (value) => frappe.format(cint(value), { fieldtype: "Int" }, { inline: true });
 
 /** Docname of a Desk list row (`.list-row-container`). */
 ui.docname_of_row = ($row) => {

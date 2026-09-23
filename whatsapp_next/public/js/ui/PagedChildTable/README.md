@@ -2,8 +2,10 @@
 
 Replaces the native grid of a large child table (thousands of rows) with a paged, read-only
 table fed by a configured API key that returns `{rows, total}`. The child data stays on the form
-— the grid is only hidden (`frm.set_df_property(fieldname, "hidden", 1)`) — so saving, printing
-and server logic are untouched. Columns default to the child DocType's `in_list_view` fields from
+and the **field stays visible** (its label, description and the tab it lives in are kept — Frappe
+hides a tab whose fields are all hidden); the component mounts inside the field's `.grid-field`
+wrapper and hides only the native grid DOM (`.form-grid-container`, `.grid-footer`, custom grid
+buttons) through a host class, so saving, printing and server logic are untouched. Columns default to the child DocType's `in_list_view` fields from
 meta and are formatted through `frappe.format`; the `status` column (or any `status_field`)
 renders as a StatusBadge coloured by the child DocType's indicator rules. Filter chips (options
 from the Select field's meta), a search box, a toolbar for the caller's actions and per-row

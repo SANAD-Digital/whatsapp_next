@@ -11,6 +11,11 @@
 		padding-inline: var(--sanad-gap-md);
 		border-block-end: var(--sanad-border);
 	}
+	&__intro {
+		margin: 0;
+		color: var(--ink-gray-6);
+		font-size: var(--text-sm, 13px);
+	}
 	&__row {
 		display: flex;
 		flex-wrap: wrap;
@@ -22,9 +27,10 @@
 		flex-wrap: nowrap;
 		scrollbar-width: thin;
 	}
-	&__tabs { flex-wrap: nowrap; }
+	&__pills { flex-wrap: nowrap; }
+	&__pills--period { margin-inline-start: auto; }
 	&__field {
-		flex: 1 1 160px;
+		flex: 0 1 180px;
 		max-width: 240px;
 		min-width: 0;
 		.frappe-control { margin: 0; }
@@ -33,7 +39,7 @@
 	&__field--range { flex-basis: 220px; max-width: 280px; }
 	&__field--search {
 		position: relative;
-		flex: 2 1 220px;
+		flex: 1 1 240px;
 		max-width: 360px;
 		.sanad-filterbar__search { padding-inline-start: calc(var(--sanad-gap-lg) + var(--sanad-gap-md)); }
 	}
@@ -47,12 +53,14 @@
 		display: inline-flex;
 	}
 	&__select { min-width: 0; }
-	&__clear { align-self: flex-start; padding-inline: 0; color: var(--ink-blue-3); }
+	&__clear { padding-inline: 0; color: var(--ink-blue-3); }
 }
 
 @media (max-width: 767px) {
 	.sanad-filterbar {
 		&--list { padding-inline: var(--sanad-gap-sm); }
 		&__field, &__field--range, &__field--search { flex-basis: 100%; max-width: none; }
+		&__pills--period { margin-inline-start: 0; }
+		&__row--toolbar { overflow-x: auto; }
 	}
 }

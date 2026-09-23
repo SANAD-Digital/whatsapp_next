@@ -210,28 +210,64 @@ frappe.listview_settings["WhatsApp Number"] = {
 			: [__("Not linked"), "gray", "link_status,=,Not Linked"];
 	},
 
-	formatters: {
-		link_status(value) {
-			return sanad.ui.ConversationDrawer.link_badge(value === "Linked");
-		},
-	},
-
 	onload(listview) {
 		// Numbers are materialised from messages — never created by hand. `can_create = false`
 		// makes Desk's own `set_primary_action()` clear the button on every refresh / unselect.
 		listview.can_create = false;
 		listview.page.clear_primary_action();
 
+		if (typeof sanad.ui.FilterBar === "function") {
+			new sanad.ui.FilterBar({
+				listview,
+				intro: __("Every number you have exchanged messages with. Link it to a contact or open the conversation."),
+				presets: [
+					{ fieldname: "phone_e164", type: "search", fields: ["phone_e164", "display_name"], placeholder: __("Search name or number…") },
+					{ fieldname: "number_type", type: "select" },
+					{ fieldname: "last_device", type: "select" },
+					{ fieldname: "last_direction", type: "select" },
+					{ fieldname: "conversation_confirmed", type: "select", label: __("Confirmed") },
+					{ fieldname: "last_seen", type: "period", label: __("Last seen") },
+				],
+			});
+		}
+
 		if (typeof sanad.ui.TreeGroupBy === "function") {
 			new sanad.ui.TreeGroupBy({ listview, group_by_field: "link_status" });
 		}
-		if (typeof sanad.ui.RowActions === "function") {
+		const has_row_actions = typeof sanad.ui.RowActions === "function";
+		if (has_row_actions) {
 			new sanad.ui.RowActions({
 				listview,
 				actions: ROW_ACTIONS(listview),
 				on_row_click: (doc) => open_conversation(doc, listview),
 			});
 		}
+
+		// Row click anywhere inside the row (RowActions covers `.list-row`; this covers the rest of the
+		// container) and keyboard Enter / Space on the focused row open the conversation.
+		const doc_of = (el) => {
+			const name = sanad.ui.docname_of_row($(el));
+			return (listview.data || []).find((d) => d.name === name);
+		};
+		const is_control = ($t) =>
+			$t.is(":checkbox") ||
+			$t.closest("a, button, input, select, .sanad-rowactions, [data-toggle='dropdown'], .filterable, .list-row-like, .select-like, .level-right .checkbox").length > 0;
+		listview.$result.off("click.sanadnumbers keydown.sanadnumbers");
+		listview.$result.on("click.sanadnumbers", ".list-row-container", (e) => {
+			if (e.ctrlKey || e.metaKey || e.isDefaultPrevented()) return;
+			const $t = $(e.target);
+			if (is_control($t)) return;
+			if (has_row_actions && $t.closest(".list-row").length) return; // RowActions already handles `.list-row`
+			const doc = doc_of(e.currentTarget);
+			if (doc) open_conversation(doc, listview);
+		});
+		listview.$result.on("keydown.sanadnumbers", ".list-row-container", (e) => {
+			if (e.key !== "Enter" && e.key !== " ") return;
+			if (e.target !== e.currentTarget) return; // only when the row itself is focused
+			e.preventDefault();
+			const doc = doc_of(e.currentTarget);
+			if (doc) open_conversation(doc, listview);
+		});
 
 		// Realtime: a new inbound message may add or move a row — throttled, only while this list is shown.
 		sanad.ui.bind_list_realtime(listview, "wa:inbound:received", 3000);

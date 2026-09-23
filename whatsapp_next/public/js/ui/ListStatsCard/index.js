@@ -77,7 +77,7 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 		if (card.sum) {
 			const { doctype, field, filters } = card.sum;
 			return frappe.db
-				.get_list(doctype, { fields: [`sum(${field}) as value`], filters: filters || {}, limit: 1 })
+				.get_list(doctype, { fields: [{ SUM: field, as: "value" }], filters: filters || {}, limit: 1 })
 				.then((rows) => (rows && rows.length ? rows[0].value : 0));
 		}
 		return Promise.resolve(typeof card.value === "function" ? card.value() : card.value);

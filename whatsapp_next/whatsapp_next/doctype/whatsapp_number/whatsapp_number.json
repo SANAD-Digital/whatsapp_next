@@ -45,7 +45,6 @@
    "description": "First list column, colour indicator; = `contact` set",
    "fieldname": "link_status",
    "fieldtype": "Select",
-   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Link Status",
    "options": "Linked\nNot Linked",

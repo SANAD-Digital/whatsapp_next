@@ -1,8 +1,10 @@
-// sanad.ui.FilterBar — a compact preset bar (status tabs, selects, a date range, a search box)
-// rendered above a Desk list or a custom page. On a list view every control writes into the
-// list's own `filter_area`, so the standard filter UI, saved views and the URL stay the source of
-// truth; the search box adds `or_filters` over the meta search fields through `get_args`. On a
-// page it only reports `on_change(filters, extra)`. Options come from meta unless supplied.
+// sanad.ui.FilterBar — one toolbar above a Desk list or a custom page, in the prototype's order:
+// search first, then selects / date range, then "period" pills (All · Today · 7 days · 30 days),
+// with the status pills (`tabs`) on their own row below. On a list view it replaces Frappe's
+// standard-filter fields (the Filter popover and the sort selector stay) and every control writes
+// into the list's own `filter_area`, so saved views and the URL stay the source of truth; the
+// search box adds `or_filters` over the meta search fields through `get_args`. On a page it only
+// reports `on_change(filters, extra)`. Options come from meta unless supplied.
 
 import ui from "../_core/index.js";
 
@@ -11,6 +13,13 @@ const ALL = "";
 /** Stable string key for an option value (`"a"` or `["a","b"]`). */
 const key_of = (value) => (Array.isArray(value) ? JSON.stringify(value) : String(value == null ? "" : value));
 
+const PERIOD_DEFAULTS = () => [
+	{ value: null, label: __("All") },
+	{ value: 0, label: __("Today") },
+	{ value: 7, label: __("7 days") },
+	{ value: 30, label: __("30 days") },
+];
+
 sanad.ui.FilterBar = class FilterBar {
 	/**
 	 * @param {Object} opts
@@ -18,12 +27,15 @@ sanad.ui.FilterBar = class FilterBar {
 	 * @param {Object} [opts.page] — a custom page (`frappe.ui.Page`) — needs `doctype` + `on_change`
 	 * @param {jQuery|HTMLElement} [opts.wrapper] — explicit mount point (default: above the list / `page.main`)
 	 * @param {string} [opts.doctype] — defaults to `listview.doctype`
-	 * @param {Array<{fieldname: string, label?: string, type: "tabs"|"select"|"daterange"|"search", options?: Array, fields?: string[], all_label?: string}>} opts.presets
-	 * @param {Function} [opts.on_change] — `(filters, {or_filters, values}) => void` (page mode; also fired in list mode)
+	 * @param {Array<{fieldname: string, label?: string, type: "tabs"|"select"|"daterange"|"search"|"period", options?: Array, fields?: string[], all_label?: string}>} opts.presets
+	 *   `period` options: `[{value: days|null, label}]` (default All / Today / 7 days / 30 days) → `>=` on a date(time) field
+	 * @param {string} [opts.intro] — one-line description rendered above the toolbar
+	 * @param {boolean} [opts.replace_standard_filters=true] — list mode: hide Frappe's standard-filter fields
+	 * @param {Function} [opts.on_change] — `(filters, {or_filters, values, search}) => void` (page mode; also fired in list mode)
 	 * @param {number} [opts.debounce=300] — search debounce in ms
 	 */
 	constructor(opts = {}) {
-		this.opts = Object.assign({ presets: [], debounce: 300 }, opts);
+		this.opts = Object.assign({ presets: [], debounce: 300, replace_standard_filters: true }, opts);
 		this.listview = this.opts.listview || null;
 		this.doctype = this.opts.doctype || (this.listview && this.listview.doctype);
 		if (!this.doctype) throw new Error("sanad.ui.FilterBar: doctype is required");
@@ -47,21 +59,26 @@ sanad.ui.FilterBar = class FilterBar {
 		if ($mount) $mount.append(this.$wrapper);
 		else if (this.listview) this.listview.$frappe_list.prepend(this.$wrapper);
 		else if (this.opts.page) $(this.opts.page.main).prepend(this.$wrapper);
+		if (this.opts.intro) this.$wrapper.append(`<p class="sanad-filterbar__intro">${ui.escape(this.opts.intro)}</p>`);
+		this.$toolbar = $('<div class="sanad-filterbar__row sanad-filterbar__row--toolbar"></div>').appendTo(this.$wrapper);
 		this.$tabs = $('<div class="sanad-filterbar__row sanad-filterbar__row--tabs"></div>').appendTo(this.$wrapper);
-		this.$controls = $('<div class="sanad-filterbar__row sanad-filterbar__row--controls"></div>').appendTo(this.$wrapper);
-		this.opts.presets.forEach((preset) => this.render_preset(preset));
+		// prototype order: search → selects / date range → period pills; status pills below
+		const by_type = (types) => this.opts.presets.filter((p) => types.includes(p.type || "select"));
+		by_type(["search"]).forEach((p) => this.render_search(p));
+		by_type(["select", "daterange"]).forEach((p) => (p.type === "daterange" ? this.render_daterange(p) : this.render_select(p)));
+		by_type(["period"]).forEach((p) => this.render_period(p));
+		$(`<button type="button" class="btn btn-xs btn-link sanad-filterbar__clear" hidden>${ui.escape(__("Clear filters"))}</button>`)
+			.on("click", () => this.clear())
+			.appendTo(this.$toolbar);
+		by_type(["tabs"]).forEach((p) => this.render_tabs(p));
 		if (!this.$tabs.children().length) this.$tabs.remove();
-		if (!this.$controls.children().length) this.$controls.remove();
-		this.$wrapper.append(
-			`<button type="button" class="btn btn-xs btn-link sanad-filterbar__clear" hidden>${ui.escape(__("Clear filters"))}</button>`
-		);
-		this.$wrapper.find(".sanad-filterbar__clear").on("click", () => this.clear());
 		if (this.listview) this.bind_listview();
 		this.sync();
 	}
 
 	bind_listview() {
 		const lv = this.listview;
+		if (this.opts.replace_standard_filters) this.hide_standard_filters();
 		// search → or_filters over the search fields (Frappe filters are AND-only)
 		if (!lv._sanad_get_args) {
 			lv._sanad_get_args = lv.get_args.bind(lv);
@@ -72,13 +89,24 @@ sanad.ui.FilterBar = class FilterBar {
 				return args;
 			};
 		}
-		// keep tabs / selects in step with filters set elsewhere (standard filters, URL, sidebar)
+		// keep pills / selects in step with filters set elsewhere (Filter popover, URL, sidebar)
 		const orig = lv.on_filter_change.bind(lv);
 		lv.on_filter_change = (...a) => {
 			const r = orig(...a);
 			this.sync();
 			return r;
 		};
+	}
+
+	/** Hide Frappe's standard-filter fields; keep the Filter popover, the sort selector and `.filter-section`. */
+	hide_standard_filters() {
+		const lv = this.listview;
+		const $form = lv.page.page_form;
+		const $std = (lv.filter_area && lv.filter_area.standard_filters_wrapper) || $form.find(".standard-filter-section");
+		$std.hide().attr("aria-hidden", "true");
+		$form.find(".filter-toggle").hide(); // mobile toggle of the same section
+		const others = $form.children().filter((i, el) => !$(el).is(".standard-filter-section, .clearfix") && $(el).children().length);
+		$form.toggleClass("hide", !others.length);
 	}
 
 	// ---- presets ---------------------------------------------------------------------------
@@ -104,48 +132,46 @@ sanad.ui.FilterBar = class FilterBar {
 		return [];
 	}
 
-	render_preset(preset) {
-		switch (preset.type) {
-			case "tabs":
-				return this.render_tabs(preset);
-			case "daterange":
-				return this.render_daterange(preset);
-			case "search":
-				return this.render_search(preset);
-			default:
-				return this.render_select(preset);
-		}
-	}
-
-	render_tabs(preset) {
+	/** A `role="radiogroup"` of `.sanad-chip` radios; arrows move focus, Enter / Space applies. */
+	render_pills(preset, options, type, $parent) {
 		const label = this.label_of(preset);
-		const options = [{ value: ALL, label: preset.all_label || __("All") }].concat(this.options_of(preset));
-		const $list = $(`<div class="sanad-chip-row sanad-filterbar__tabs" role="radiogroup" aria-label="${ui.escape(label)}"></div>`);
+		const $list = $(`<div class="sanad-chip-row sanad-filterbar__pills sanad-filterbar__pills--${type}" role="radiogroup" aria-label="${ui.escape(label)}"></div>`);
 		options.forEach((o, i) => {
-			$(`<button type="button" class="sanad-chip sanad-filterbar__tab" role="radio" data-key="${ui.escape(key_of(o.value))}" aria-checked="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${ui.escape(o.label)}</button>`)
+			$(`<button type="button" class="sanad-chip sanad-filterbar__pill" role="radio" data-key="${ui.escape(key_of(o.value))}" aria-checked="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${ui.escape(o.label)}</button>`)
 				.on("click", () => this.set(preset.fieldname, o.value))
 				.appendTo($list);
 		});
-		// arrows / Home / End only move focus (manual activation); Enter / Space click the radio
-		$list.on("keydown", (e) => this.tabs_keydown(e, $list));
-		this.$tabs.append($list);
-		this.controls[preset.fieldname] = { preset, $el: $list, type: "tabs", options };
+		$list.on("keydown", (e) => this.pills_keydown(e, $list));
+		$parent.append($list);
+		this.controls[preset.fieldname] = { preset, $el: $list, type, options };
 	}
 
-	tabs_keydown(e, $list) {
-		const tabs = $list.find('[role="radio"]').toArray();
-		const idx = ui.roving_index(e, tabs, Math.max(0, tabs.indexOf(document.activeElement)));
+	render_tabs(preset) {
+		const options = [{ value: ALL, label: preset.all_label || __("All") }].concat(this.options_of(preset));
+		this.render_pills(preset, options, "tabs", this.$tabs);
+	}
+
+	render_period(preset) {
+		const options = preset.options
+			? preset.options.map((o) => ({ value: o.value == null ? null : cint(o.value), label: o.label }))
+			: PERIOD_DEFAULTS();
+		this.render_pills(Object.assign({ fieldname: "creation", label: __("Period") }, preset), options, "period", this.$toolbar);
+	}
+
+	pills_keydown(e, $list) {
+		const pills = $list.find('[role="radio"]').toArray();
+		const idx = ui.roving_index(e, pills, Math.max(0, pills.indexOf(document.activeElement)));
 		if (idx < 0) return;
 		e.preventDefault();
-		tabs.forEach((el) => el.setAttribute("tabindex", "-1"));
-		tabs[idx].setAttribute("tabindex", "0");
-		tabs[idx].focus();
+		pills.forEach((el) => el.setAttribute("tabindex", "-1"));
+		pills[idx].setAttribute("tabindex", "0");
+		pills[idx].focus();
 	}
 
 	render_select(preset) {
 		const df = this.df(preset.fieldname);
 		const label = this.label_of(preset);
-		const $field = $(`<div class="sanad-filterbar__field"></div>`).appendTo(this.$controls);
+		const $field = $(`<div class="sanad-filterbar__field"></div>`).appendTo(this.$toolbar);
 		const on_change = ui.debounce((value) => this.set(preset.fieldname, value), 150);
 		if (df.fieldtype === "Link" && !preset.options) {
 			const control = frappe.ui.form.make_control({
@@ -174,7 +200,7 @@ sanad.ui.FilterBar = class FilterBar {
 
 	render_daterange(preset) {
 		const label = this.label_of(preset);
-		const $field = $(`<div class="sanad-filterbar__field sanad-filterbar__field--range"></div>`).appendTo(this.$controls);
+		const $field = $(`<div class="sanad-filterbar__field sanad-filterbar__field--range"></div>`).appendTo(this.$toolbar);
 		const control = frappe.ui.form.make_control({
 			df: { fieldtype: "DateRange", fieldname: preset.fieldname, label, placeholder: label, onchange: () => this.set(preset.fieldname, control.get_value()) },
 			parent: $field,
@@ -188,7 +214,7 @@ sanad.ui.FilterBar = class FilterBar {
 	render_search(preset) {
 		const fields = preset.fields || this.search_fields();
 		const label = preset.label || __("Search");
-		const $field = $(`<div class="sanad-filterbar__field sanad-filterbar__field--search"></div>`).appendTo(this.$controls);
+		const $field = $(`<div class="sanad-filterbar__field sanad-filterbar__field--search"></div>`).appendTo(this.$toolbar);
 		const $input = $(`<input type="search" class="form-control sanad-filterbar__search" placeholder="${ui.escape(preset.placeholder || label)}" aria-label="${ui.escape(label)}">`);
 		const apply = ui.debounce(() => this.set_search($input.val(), fields), this.opts.debounce);
 		$input.on("input", apply).on("keydown", (e) => {
@@ -212,9 +238,15 @@ sanad.ui.FilterBar = class FilterBar {
 
 	// ---- state -----------------------------------------------------------------------------
 
+	is_empty(fieldname, value) {
+		const c = this.controls[fieldname] || {};
+		if (c.type === "period") return value == null || value === "";
+		return value == null || value === "" || (Array.isArray(value) && !value.filter(Boolean).length);
+	}
+
 	/** Set one preset's value (`""` / `null` clears it). */
 	set(fieldname, value) {
-		const empty = value == null || value === "" || (Array.isArray(value) && !value.filter(Boolean).length);
+		const empty = this.is_empty(fieldname, value);
 		const unchanged = key_of(this.values[fieldname]) === key_of(empty ? "" : value);
 		if (empty) delete this.values[fieldname];
 		else this.values[fieldname] = value;
@@ -238,25 +270,29 @@ sanad.ui.FilterBar = class FilterBar {
 		this.emit();
 	}
 
-	apply_listview(fieldname, value) {
-		const lv = this.listview;
-		const control = this.controls[fieldname] || {};
-		if (value == null) return lv.filter_area.remove(fieldname);
-		let filter;
-		if (control.type === "daterange") filter = [this.doctype, fieldname, "Between", value];
-		else if (Array.isArray(value)) filter = [this.doctype, fieldname, "in", value];
-		else filter = [this.doctype, fieldname, "=", value];
-		// replace an existing filter on the same field, then add (add() triggers the refresh)
-		return lv.filter_area.remove(fieldname).then(() => lv.filter_area.add([filter]));
+	/** Frappe filter tuple for one preset value. */
+	filter_of(fieldname, value) {
+		const c = this.controls[fieldname] || {};
+		if (c.type === "daterange") return [this.doctype, fieldname, "Between", value];
+		if (c.type === "period") return [this.doctype, fieldname, ">=", frappe.datetime.add_days(frappe.datetime.now_date(), -cint(value))];
+		if (Array.isArray(value)) return [this.doctype, fieldname, "in", value];
+		return [this.doctype, fieldname, "=", value];
 	}
 
-	/** Update the active tab / select / range to `this.values` without emitting. */
+	apply_listview(fieldname, value) {
+		const lv = this.listview;
+		if (value == null) return lv.filter_area.remove(fieldname);
+		// replace an existing filter on the same field, then add (add() triggers the refresh)
+		return lv.filter_area.remove(fieldname).then(() => lv.filter_area.add([this.filter_of(fieldname, value)]));
+	}
+
+	/** Update the active pill / select / range to `this.values` without emitting. */
 	reflect(fieldname) {
 		const c = this.controls[fieldname];
 		if (!c) return;
 		const value = this.values[fieldname];
-		if (c.type === "tabs") {
-			const current = key_of(value == null ? ALL : value);
+		if (c.type === "tabs" || c.type === "period") {
+			const current = key_of(value == null ? (c.type === "period" ? null : ALL) : value);
 			c.$el.find('[role="radio"]').each((i, el) => {
 				const on = String($(el).attr("data-key")) === current;
 				$(el).attr("aria-checked", on).attr("tabindex", on ? 0 : -1);
@@ -286,7 +322,11 @@ sanad.ui.FilterBar = class FilterBar {
 			let value = null;
 			if (f) {
 				if (c.type === "daterange" && f[2] === "Between") value = f[3];
-				else if (f[2] === "=" || f[2] === "in") value = f[3];
+				else if (c.type === "period" && f[2] === ">=") {
+					const days = frappe.datetime.get_day_diff(frappe.datetime.now_date(), String(f[3]).slice(0, 10));
+					const match = (c.options || []).find((o) => o.value != null && o.value === days);
+					value = match ? match.value : null;
+				} else if (f[2] === "=" || f[2] === "in") value = f[3];
 			}
 			if (value == null) delete this.values[fieldname];
 			else this.values[fieldname] = value;
@@ -296,11 +336,7 @@ sanad.ui.FilterBar = class FilterBar {
 
 	/** Frappe-style filter list built from the bar's own values. */
 	get_filters() {
-		return Object.entries(this.values).map(([fieldname, value]) => {
-			const c = this.controls[fieldname] || {};
-			if (c.type === "daterange") return [this.doctype, fieldname, "Between", value];
-			return Array.isArray(value) ? [this.doctype, fieldname, "in", value] : [this.doctype, fieldname, "=", value];
-		});
+		return Object.entries(this.values).map(([fieldname, value]) => this.filter_of(fieldname, value));
 	}
 
 	get_or_filters() {
@@ -326,7 +362,7 @@ sanad.ui.FilterBar = class FilterBar {
 		} else {
 			this.emit();
 		}
-		ui.announce(__("Filters cleared"));
+		ui.announce(__("Filters cleared."));
 	}
 
 	destroy() {

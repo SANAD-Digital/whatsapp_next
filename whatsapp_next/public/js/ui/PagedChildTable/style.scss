@@ -1,3 +1,10 @@
+// Host = the Table field's `.grid-field`: keep its label / description, hide the native grid parts.
+.sanad-pct-host {
+	> .grid-custom-buttons,
+	> .form-grid-container,
+	> .grid-footer { display: none; }
+}
+
 .sanad-pct {
 	display: flex;
 	flex-direction: column;

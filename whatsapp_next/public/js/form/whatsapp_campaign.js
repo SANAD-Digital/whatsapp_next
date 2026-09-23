@@ -82,7 +82,7 @@ function render_progress(frm, p) {
 		[__("Cancelled"), c.cancelled],
 	];
 	const meta = [
-		__("{0} done", [frappe.format(percent, { fieldtype: "Percent" })]),
+		__("{0} done", [frappe.format(percent, { fieldtype: "Percent" }, { inline: true })]),
 		__("{0} messages per minute", [fmt_int(r.messages_per_minute)]),
 		__("{0} sent in the last minute", [fmt_int(r.sent_last_minute)]),
 	].concat(eta_text ? [eta_text] : []);

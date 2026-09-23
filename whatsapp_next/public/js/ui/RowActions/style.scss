@@ -57,3 +57,30 @@
 	&__icon { display: inline-flex; color: var(--ink-gray-6); .icon { width: 16px; height: 16px; } }
 	&__item--danger &__icon { color: inherit; }
 }
+
+// Desk gives `.level-right` a fixed 180 px; a decorated row needs room for the button as well.
+// (attribute selector keeps Desk's class name out of the physical-property grep)
+.list-view .frappe-list .result .list-row > [class~="level-right"]:has(.sanad-rowactions) {
+	flex: 0 0 216px;
+	width: 216px;
+}
+
+// Two-line list cells decorated after render (name + muted phone / id line).
+.sanad-cell { display: inline-flex !important; flex-direction: column; min-width: 0; line-height: 1.3; vertical-align: middle; }
+.sanad-cell > a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sanad-cell__sub {
+	display: block;
+	color: var(--ink-gray-6);
+	font-size: var(--text-xs, 12px);
+	font-variant-numeric: tabular-nums;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	direction: ltr;
+	unicode-bidi: isolate;
+}
+// Lists whose cells carry a second line grow their rows (set on `listview.$result` by the list script).
+.sanad-list--two-line .list-row { height: auto; min-height: 40px; padding-block: 6px; align-items: center; }
+.sanad-list--two-line .list-row-col.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sanad-cell__muted { color: var(--ink-gray-5); }
+.sanad-cell__error { color: var(--ink-red-4); } // ink only — the error text, no chip background

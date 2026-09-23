@@ -151,7 +151,8 @@ frappe.provide("whatsapp_next.messages");
 
 	frappe.listview_settings[DT] = {
 		hide_name_column: true,
-		add_fields: ["status", "phone", "phone_e164", "jid", "recipient_type", "display_name", "contact", "device", "source_type", "campaign", "reference_doctype", "reference_name", "message_type", "error_code", "is_simulated", "is_test"],
+		// fetched with every row (not extra columns): the list columns come from the DocType's `in_list_view` flags
+		add_fields: ["status", "phone", "phone_e164", "jid", "recipient_type", "display_name", "contact", "device", "source_type", "campaign", "reference_doctype", "reference_name", "message_type", "error_code", "error_message", "is_simulated", "is_test", "creation", "sent_at"],
 
 		// The one status → colour rule for this DocType; every badge reads it through `sanad.ui.indicator_for`.
 		get_indicator(doc) {
@@ -160,9 +161,29 @@ frappe.provide("whatsapp_next.messages");
 		},
 
 		formatters: {
+			// the subject cell is rendered as text by Desk; the phone line is added after render (see onload)
+			display_name(value) {
+				return value || __("Unknown");
+			},
 			status(value, df, doc) {
 				const ind = ui.indicator_for(DT, Object.assign({ doctype: DT }, doc));
 				return ui.StatusBadge.html({ label: __(value), colour: ind.colour });
+			},
+			sent_at(value, df, doc) {
+				const at = value || doc.creation;
+				return at ? `<span class="sanad-tabular">${ui.escape(frappe.datetime.str_to_user(at))}</span>` : "—";
+			},
+			error_code(value, df, doc) {
+				if (!value) return `<span class="sanad-cell__muted" aria-hidden="true">—</span>`;
+				return `<span class="sanad-cell__error" title="${ui.escape(doc.error_message || value)}">${ui.escape(value)}</span>`;
+			},
+			reference_name(value, df, doc) {
+				if (!value) return `<span class="sanad-cell__muted" aria-hidden="true">—</span>`;
+				const link = doc.reference_doctype ? frappe.utils.get_form_link(doc.reference_doctype, value, true, ui.escape(value)) : ui.escape(value);
+				return doc.reference_doctype ? `${ui.escape(__(doc.reference_doctype))} · ${link}` : link;
+			},
+			is_simulated(value) {
+				return cint(value) ? ui.StatusBadge.html({ label: __("Yes"), colour: "gray", icon: false }) : `<span class="sanad-cell__muted" aria-hidden="true">—</span>`;
 			},
 		},
 
@@ -171,16 +192,30 @@ frappe.provide("whatsapp_next.messages");
 
 			new ui.FilterBar({
 				listview,
+				intro: __("Everything sent from your devices: status, document, device and errors."),
 				presets: [
+					{ fieldname: "phone_e164", type: "search", fields: ["phone_e164", "display_name", "reference_name"], placeholder: __("Search name, number or document…") },
 					{ fieldname: "status", type: "tabs" },
 					{ fieldname: "device", type: "select" },
+					{ fieldname: "reference_doctype", type: "select" },
 					{ fieldname: "source_type", type: "select" },
 					{ fieldname: "campaign", type: "select" },
-					{ fieldname: "reference_doctype", type: "select" },
-					{ fieldname: "creation", type: "daterange", label: __("Period") },
-					{ fieldname: "phone_e164", type: "search", fields: ["phone_e164", "display_name"], placeholder: __("Search phone or name…") },
 					{ fieldname: "is_simulated", type: "select", label: __("Simulated") },
+					{ fieldname: "creation", type: "period", label: __("Period") },
 				],
+			});
+
+			// subject cell: name + the phone (or JID) as a muted second line (Desk renders the subject as text)
+			listview.$result.addClass("sanad-list--two-line");
+			ui.on_list_render(listview, () => {
+				listview.$result.find(".list-row-container").each((i, el) => {
+					const $row = $(el);
+					if ($row.find(".sanad-cell__sub").length) return;
+					const doc = (listview.data || []).find((d) => d.name === ui.docname_of_row($row));
+					const key = doc && (doc.phone_e164 || doc.phone || doc.jid);
+					if (!key) return;
+					$row.find(".list-subject a").first().parent().addClass("sanad-cell").append(`<span class="sanad-cell__sub" dir="ltr">${ui.escape(key)}</span>`);
+				});
 			});
 
 			listview._sanad_row_actions = new ui.RowActions({

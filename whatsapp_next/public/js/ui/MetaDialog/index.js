@@ -7,8 +7,9 @@
 
 import ui from "../_core/index.js";
 
-// Keys copied from a meta docfield must not carry the docfield's own document identity.
-const DF_INTERNAL = ["name", "doctype", "parent", "parentfield", "parenttype", "idx", "owner", "creation", "modified", "modified_by", "docstatus"];
+// Keys copied from a meta docfield must not carry the docfield's own document identity
+// (`parent` stays: Frappe's Tab uses `df.parent` as the doctype when there is no form).
+const DF_INTERNAL = ["name", "doctype", "parentfield", "parenttype", "idx", "owner", "creation", "modified", "modified_by", "docstatus"];
 // Keys a grid adds to child rows that no API payload wants back.
 const ROW_INTERNAL = ["doctype", "parent", "parentfield", "parenttype", "owner", "creation", "modified", "modified_by", "docstatus", "__islocal", "__unsaved", "__unedited", "__last_sync_on", "__checked"];
 
@@ -103,7 +104,13 @@ sanad.ui.MetaDialog = class MetaDialog {
 		groups.forEach((tab, i) => {
 			if (tabbed) {
 				// `hidden: 0` matters: Frappe only treats an explicitly visible Tab Break as the first tab.
-				out.push({ fieldtype: "Tab Break", fieldname: `${this.uid}_tab_${i}`, label: tab.label || __("Details"), hidden: 0 });
+				out.push({
+					fieldtype: "Tab Break",
+					fieldname: `tab_${i}`,
+					label: tab.label || __("Details"),
+					parent: this.doctype, // Tab.make() slugs `df.parent` when the layout has no form
+					hidden: 0,
+				});
 			}
 			(tab.fields || []).forEach((entry) => {
 				const df = this.make_df(entry);
@@ -118,14 +125,14 @@ sanad.ui.MetaDialog = class MetaDialog {
 		const spec = typeof entry === "string" ? { fieldname: entry } : Object.assign({}, entry);
 		if (spec.fieldtype === "HTML" && typeof spec.render === "function") {
 			this.html_panes.push({ fieldname: spec.fieldname, render: spec.render });
-			return { fieldtype: "HTML", fieldname: spec.fieldname, label: spec.label, hidden: 0 };
+			return { fieldtype: "HTML", fieldname: spec.fieldname, label: spec.label, parent: this.doctype, hidden: 0 };
 		}
 		const meta_df = (this.meta.fields || []).find((f) => f.fieldname === spec.fieldname);
 		if (!meta_df && !spec.fieldtype) {
 			console.warn(`sanad.ui.MetaDialog: ${this.doctype} has no field '${spec.fieldname}'`); // eslint-disable-line no-console
 			return null;
 		}
-		const df = Object.assign(meta_df ? strip(meta_df, DF_INTERNAL) : {}, spec);
+		const df = Object.assign(meta_df ? strip(meta_df, DF_INTERNAL) : { parent: this.doctype }, spec);
 		if (df.fieldtype === "Table") this.prepare_table_df(df);
 		if (!ui.meta.is_layout(df) && df.fieldtype !== "Table") {
 			df.change = () => this.handle_change(df.fieldname);
