@@ -43,7 +43,8 @@ sanad.ui.FilterBar = class FilterBar {
 	 * @param {Array<Object>} opts.presets — `{fieldname, type?: "select"|"tabs"|"daterange"|"search"|"period", label?,
 	 *   options?: Array<string|{value,label}> | () => Promise<Array>, multiple?: boolean (select, default true),
 	 *   fields?: string[] (search), placeholder?, all_label?, default?: "30d"|"7d"|"today"|"all"|number (period)}`
-	 * @param {Array<string>} [opts.actions] — `"group_by"` (TreeGroupBy rail on a chosen preset field), `"export"` (Desk's exporter)
+	 * @param {Array<string>} [opts.actions] — `"group_by"` (multi-level grouping of the table),
+	 *   `"export"` (Desk's exporter)
 	 * @param {string} [opts.intro] — one-line description rendered above the toolbar
 	 * @param {boolean} [opts.replace_standard_filters=true] — list mode: hide Frappe's standard-filter fields
 	 * @param {Function} [opts.on_change] — `(filters, {or_filters, values, search}) => void` (page mode; also fired in list mode)
@@ -100,6 +101,7 @@ sanad.ui.FilterBar = class FilterBar {
 		$(`<button type="button" class="sanad-filterbar__clear" hidden>${ui.escape(__("Clear filters"))}</button>`)
 			.on("click", () => this.clear())
 			.appendTo(this.$toolbar);
+		this.render_mobile_toggle();
 		this.$end = $('<div class="sanad-filterbar__end"></div>').appendTo(this.$toolbar);
 		this.$actions = $('<div class="sanad-filterbar__actions"></div>').appendTo(this.$end);
 		of_type(["period"]).forEach((p) => this.render_period(p));
@@ -115,7 +117,9 @@ sanad.ui.FilterBar = class FilterBar {
 		this.sync();
 		this.apply_defaults();
 		$(document).on(`mousedown.${this.id} touchstart.${this.id}`, (e) => {
-			if (this.$open && !$(e.target).closest(".sanad-filterbar__dd").length) this.close_popover();
+			if ($(e.target).closest(".sanad-filterbar__dd").length) return;
+			this.close_popover();
+			this.close_levels();
 		});
 	}
 
@@ -162,6 +166,9 @@ sanad.ui.FilterBar = class FilterBar {
 		}
 		const others = $form.children().filter((i, el) => !$(el).is(".standard-filter-section, .clearfix") && $(el).children().length);
 		$form.toggleClass("hide", !others.length);
+		// on phones Desk re-orders and re-shows `page_form` after this runs, so mark the page and
+		// let CSS keep the row down for good
+		lv.page.wrapper.addClass("sanad-hide-page-form");
 	}
 
 	/** Period presets with a `default` apply it once, when the list has no filter on that field yet. */
@@ -320,6 +327,62 @@ sanad.ui.FilterBar = class FilterBar {
 		this.controls[preset.fieldname] = { preset, $el: $list, type: "tabs", options };
 	}
 
+	/**
+	 * Under 768 px the prototype hides the filter buttons behind one "Filters" button carrying the
+	 * number that is set; it opens a sheet holding the same option lists. The button is always in
+	 * the DOM and shown by the media query, so there is no resize listener to get wrong.
+	 */
+	render_mobile_toggle() {
+		this.$mobile_btn = $(`<button type="button" class="sanad-filterbar__btn sanad-filterbar__mobile-toggle">${ui.icon("es-line-filter", "xs")}<span>${ui.escape(__("Filters"))}</span><span class="sanad-filterbar__mobile-count sanad-tabular" hidden></span></button>`)
+			.on("click", () => this.open_filter_sheet())
+			.appendTo(this.$toolbar);
+	}
+
+	reflect_mobile() {
+		if (!this.$mobile_btn) return;
+		const n = Object.keys(this.values).filter((k) => !k.startsWith("__") && this.controls[k] && this.controls[k].type === "select").length;
+		this.$mobile_btn.find(".sanad-filterbar__mobile-count").prop("hidden", !n).text(ui.format_int(n));
+		this.$mobile_btn.toggleClass("sanad-filterbar__btn--active", !!n);
+	}
+
+	/** Every select preset as one section in a full-height sheet (kit dialogs share `.sanad-sheet`). */
+	open_filter_sheet() {
+		const presets = this.opts.presets.filter((p) => (p.type || "select") === "select");
+		const dialog = new frappe.ui.Dialog({ title: __("Filters"), fields: [{ fieldtype: "HTML", fieldname: "body" }], primary_action_label: __("Done"), primary_action: () => dialog.hide() });
+		dialog.$wrapper.addClass("sanad-kit sanad-sheet sanad-filter-sheet");
+		dialog.set_secondary_action_label(__("Clear all"));
+		dialog.set_secondary_action(() => {
+			this.clear();
+			dialog.hide();
+		});
+		const $body = dialog.get_field("body").$wrapper.empty();
+		presets.forEach((preset) => {
+			const label = this.label_of(preset);
+			const $section = $(`<section class="sanad-filter-sheet__section"><h3 class="sanad-filter-sheet__title">${ui.escape(label)}</h3><div class="sanad-filter-sheet__list"></div></section>`).appendTo($body);
+			const $list = $section.find(".sanad-filter-sheet__list").html(ui.skeleton(2, { lines: 1 }));
+			this.resolve_options(preset, "")
+				.then((options) => {
+					this.remember(preset.fieldname, options);
+					$list.empty();
+					if (!options.length) return $list.append(`<div class="sanad-filterbar__pop-empty">${ui.escape(__("No options"))}</div>`);
+					const type = preset.multiple === false ? "radio" : "checkbox";
+					options.forEach((o) => {
+						const on = this.chosen(preset.fieldname).some((v) => key_of(v) === key_of(o.value));
+						const $opt = $(`<label class="sanad-filterbar__opt"><input type="${type}" name="${this.id}-sheet-${ui.escape(preset.fieldname)}" value="${ui.escape(key_of(o.value))}"${on ? " checked" : ""}><span class="sanad-filterbar__opt-label">${ui.escape(o.label)}</span></label>`);
+						$opt.find("input").on("change", (e) => this.toggle(preset.fieldname, o.value, e.target.checked));
+						$list.append($opt);
+					});
+					return undefined;
+				})
+				.catch((err) => {
+					$list.empty();
+					new sanad.ui.EmptyState({ wrapper: $list, state: "error", size: "sm", description: err.message });
+				});
+		});
+		dialog.show();
+		return dialog;
+	}
+
 	// ---- dropdown filters (multi-select popover) --------------------------------------------
 
 	render_select(preset) {
@@ -465,28 +528,126 @@ sanad.ui.FilterBar = class FilterBar {
 		}
 	}
 
+	/**
+	 * The prototype's grouping control: a button that names the active levels, opening a popover
+	 * with the ordered levels (each removable, movable up / down), the fields that can still be
+	 * added, and "Remove all". It drives the DataList's multi-level group rows.
+	 */
 	render_group_by() {
-		const candidates = this.opts.presets.filter((p) => ["select", "tabs"].includes(p.type || "select"));
-		if (!candidates.length) return;
-		const $dd = $(`<div class="sanad-filterbar__dd"></div>`).appendTo(this.$actions);
-		const pop_id = `${this.id}-groupby-pop`;
-		const $btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--group" title="${ui.escape(__("Group by"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-sort", "sm")}<span class="sanad-filterbar__btn-value"></span></button>`).appendTo($dd);
-		const options = [{ value: "", label: __("None") }].concat(candidates.map((p) => ({ value: p.fieldname, label: this.label_of(p) })));
-		this.remember("__group_by", options);
-		this.controls.__group_by = { preset: { fieldname: "__group_by", multiple: false, options }, $el: $btn, $dd, type: "select", pop_id, label: __("Group by") };
-		$btn.on("click", () => (this.$open && this.$open.data("field") === "__group_by" ? this.close_popover() : this.open_popover("__group_by")));
-		this.values.__group_by = "";
-		this.reflect("__group_by");
+		const $dd = $(`<div class="sanad-filterbar__dd sanad-filterbar__dd--group"></div>`).appendTo(this.$actions);
+		const pop_id = `${this.id}-levels-pop`;
+		this.$group_btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--group" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-sort", "sm")}<span class="sanad-filterbar__levels"></span></button>`).appendTo($dd);
+		this.$group_dd = $dd;
+		this.group_pop_id = pop_id;
+		this.$group_btn.on("click", () => (this.$levels ? this.close_levels() : this.open_levels()));
+		// DataList usually mounts after this bar: label the button once the table is there
+		this.reflect_levels();
+		window.setTimeout(() => this.reflect_levels(), 0);
 	}
 
-	/** Mount (or replace / remove) a TreeGroupBy rail under the toolbar. */
-	group_by(fieldname) {
-		if (this.tree) {
-			this.tree.destroy();
-			this.tree = null;
+	/** The table this bar groups (set by DataList through `listview._sanad_datalist`). */
+	datalist() {
+		return this.listview && this.listview._sanad_datalist;
+	}
+
+	group_levels() {
+		const dl = this.datalist();
+		return dl ? dl.group_by.slice() : [];
+	}
+
+	set_group_levels(levels) {
+		const dl = this.datalist();
+		if (dl) dl.set_group_by(levels);
+		this.reflect_levels();
+		if (this.$levels) this.fill_levels();
+	}
+
+	reflect_levels() {
+		if (!this.$group_btn) return;
+		const dl = this.datalist();
+		const levels = this.group_levels();
+		const label_of = (f) => {
+			const col = dl && dl.columns.find((c) => c.fieldname === f);
+			return col ? col.label : __(f);
+		};
+		const text = levels.map(label_of).join(" › ");
+		this.$group_btn
+			.toggleClass("sanad-filterbar__action--active", !!levels.length)
+			.attr("title", levels.length ? __("Grouped by {0}", [text]) : __("Group by"))
+			.attr("aria-label", levels.length ? __("Grouped by {0}", [text]) : __("Group by"))
+			.find(".sanad-filterbar__levels")
+			.text(text);
+	}
+
+	open_levels() {
+		this.close_popover();
+		const $pop = $(`<div class="sanad-filterbar__pop sanad-filterbar__pop--levels" id="${this.group_pop_id}" role="dialog" aria-label="${ui.escape(__("Grouping levels"))}"></div>`).appendTo(this.$group_dd);
+		this.$levels = $pop;
+		this.$group_btn.attr("aria-expanded", "true");
+		this.fill_levels();
+		$pop.on("keydown", (e) => {
+			if (e.key === "Escape") {
+				e.preventDefault();
+				e.stopPropagation();
+				this.close_levels(true);
+			}
+		});
+	}
+
+	fill_levels() {
+		const $pop = this.$levels;
+		if (!$pop) return;
+		const dl = this.datalist();
+		const options = dl ? dl.group_options() : [];
+		const levels = this.group_levels();
+		const label_of = (f) => (options.find((o) => o.value === f) || { label: __(f) }).label;
+		$pop.empty();
+		$pop.append(`<div class="sanad-filterbar__pop-head"><span class="sanad-filterbar__pop-title">${ui.escape(__("Grouping levels"))}</span>${levels.length ? `<button type="button" class="sanad-filterbar__levels-clear">${ui.escape(__("Remove all"))}</button>` : ""}</div>`);
+		const $list = $(`<div class="sanad-filterbar__levels-list"></div>`).appendTo($pop);
+		levels.forEach((f, i) => {
+			$(`<div class="sanad-filterbar__level">
+				<span class="sanad-filterbar__level-no sanad-tabular">${ui.escape(ui.format_int(i + 1))}</span>
+				<span class="sanad-filterbar__level-label">${ui.escape(label_of(f))}</span>
+				<button type="button" class="sanad-filterbar__level-move" data-dir="-1" ${i === 0 ? "disabled" : ""} aria-label="${ui.escape(__("Move {0} up", [label_of(f)]))}">${ui.icon("es-line-up", "xs")}</button>
+				<button type="button" class="sanad-filterbar__level-move" data-dir="1" ${i === levels.length - 1 ? "disabled" : ""} aria-label="${ui.escape(__("Move {0} down", [label_of(f)]))}">${ui.icon("es-line-down", "xs")}</button>
+				<button type="button" class="sanad-filterbar__level-remove" aria-label="${ui.escape(__("Remove level {0}", [label_of(f)]))}">${ui.icon("es-line-close", "xs")}</button>
+			</div>`)
+				.attr("data-field", f)
+				.appendTo($list);
+		});
+		const rest = options.filter((o) => !levels.includes(o.value));
+		if (rest.length) {
+			$pop.append(`<div class="sanad-filterbar__pop-title sanad-filterbar__levels-add">${ui.escape(__("Add a level"))}</div>`);
+			const $add = $(`<div class="sanad-filterbar__levels-list"></div>`).appendTo($pop);
+			rest.forEach((o) => {
+				$(`<button type="button" class="sanad-filterbar__level sanad-filterbar__level--add"><span class="sanad-filterbar__level-label">${ui.escape(o.label)}</span><span class="sanad-filterbar__level-plus" aria-hidden="true">+</span></button>`)
+					.attr("data-field", o.value)
+					.appendTo($add);
+			});
 		}
-		if (!fieldname || typeof sanad.ui.TreeGroupBy !== "function") return;
-		this.tree = new sanad.ui.TreeGroupBy({ listview: this.listview || undefined, doctype: this.doctype, group_by_field: fieldname, wrapper: this.$groupby, on_select: this.listview ? undefined : (value) => this.set(fieldname, value) });
+		$pop.find(".sanad-filterbar__levels-clear").on("click", () => this.set_group_levels([]));
+		$pop.find(".sanad-filterbar__level--add").on("click", (e) => this.set_group_levels(this.group_levels().concat($(e.currentTarget).data("field"))));
+		$pop.find(".sanad-filterbar__level-remove").on("click", (e) => {
+			const f = $(e.currentTarget).closest(".sanad-filterbar__level").data("field");
+			this.set_group_levels(this.group_levels().filter((x) => x !== f));
+		});
+		$pop.find(".sanad-filterbar__level-move").on("click", (e) => {
+			const dir = cint($(e.currentTarget).data("dir"));
+			const f = $(e.currentTarget).closest(".sanad-filterbar__level").data("field");
+			const next = this.group_levels();
+			const i = next.indexOf(f);
+			if (i < 0 || i + dir < 0 || i + dir >= next.length) return;
+			next.splice(i + dir, 0, next.splice(i, 1)[0]);
+			this.set_group_levels(next);
+		});
+	}
+
+	close_levels(restore_focus = false) {
+		if (!this.$levels) return;
+		this.$levels.remove();
+		this.$levels = null;
+		this.$group_btn.attr("aria-expanded", "false");
+		if (restore_focus) this.$group_btn.trigger("focus");
 	}
 
 	/** Desk's own exporter (Data Export dialog) over the checked rows or the current filters. */
@@ -511,12 +672,6 @@ sanad.ui.FilterBar = class FilterBar {
 
 	/** Set one preset's value (`""` / `null` / `[]` clears it). */
 	set(fieldname, value) {
-		if (fieldname === "__group_by") {
-			this.values.__group_by = value || "";
-			this.reflect(fieldname);
-			this.group_by(value);
-			return this;
-		}
 		const empty = this.is_empty(fieldname, value);
 		const unchanged = key_of(this.values[fieldname]) === key_of(empty ? "" : value);
 		if (empty) delete this.values[fieldname];
@@ -599,13 +754,13 @@ sanad.ui.FilterBar = class FilterBar {
 		if (!c) return;
 		const value = this.values[fieldname];
 		if (c.type === "select") {
-			const chosen = fieldname === "__group_by" ? (value ? [value] : []) : this.chosen(fieldname);
+			const chosen = this.chosen(fieldname);
 			const $value = c.$el.find(".sanad-filterbar__btn-value");
 			if (!chosen.length) $value.text("").attr("hidden", true);
 			else if (chosen.length === 1) $value.text(this.label_for_value(fieldname, chosen[0])).removeAttr("hidden");
 			else $value.text(ui.format_int(chosen.length)).removeAttr("hidden");
 			c.$el.toggleClass("sanad-filterbar__btn--active", chosen.length > 0);
-			c.$el.find(".sanad-filterbar__btn-clear").prop("hidden", !chosen.length || fieldname === "__group_by");
+			c.$el.find(".sanad-filterbar__btn-clear").prop("hidden", !chosen.length);
 		} else if (c.type === "period") {
 			const current = key_of(value == null ? null : value);
 			c.$el.find(".sanad-filterbar__period-btn").each((i, el) => {
@@ -622,6 +777,7 @@ sanad.ui.FilterBar = class FilterBar {
 			if (JSON.stringify(current || "") !== JSON.stringify(value || "")) c.control.set_value(value == null ? "" : value);
 		}
 		this.reflect_clear();
+		this.reflect_mobile();
 	}
 
 	reflect_clear() {
@@ -695,8 +851,8 @@ sanad.ui.FilterBar = class FilterBar {
 
 	destroy() {
 		this.close_popover();
+		this.close_levels();
 		$(document).off(`.${this.id}`);
-		this.tree && this.tree.destroy();
 		this.$wrapper && this.$wrapper.remove();
 	}
 };

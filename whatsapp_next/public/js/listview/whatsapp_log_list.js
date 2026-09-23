@@ -218,6 +218,10 @@ frappe.provide("whatsapp_next.messages");
 				],
 				row_action: { label: __("View"), handler: open },
 				on_row_click: open,
+				// grouping levels and pinning are driven from the toolbar / the column headers
+				groupable: true,
+				pinnable: true,
+				mobile_columns: ["display_name", "status"],
 				footer: { count: (total) => ui.plural(total, { one: __("{0} message"), other: __("{0} messages") }) },
 				empty: { title: __("No messages match"), description: __("Change the filters or the period to see more.") },
 			});

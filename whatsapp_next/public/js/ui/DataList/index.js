@@ -25,9 +25,16 @@ sanad.ui.DataList = class DataList {
 	 * @param {{count?: Function(total, rows) → string, extra?: Function($el, rows)}} [opts.footer]
 	 * @param {{title?, description?, action?}} [opts.empty]
 	 * @param {"cards"|"scroll"} [opts.mobile="cards"]
+	 * @param {Array<string>} [opts.group_by] — initial grouping levels, outermost first
+	 * @param {boolean} [opts.groupable=true] — offer grouping (the levels menu lives in FilterBar)
+	 * @param {boolean} [opts.pinnable=true] — a pin toggle on every header cell
+	 * @param {Array<string>} [opts.pinned] — initially pinned fieldnames, in order
+	 * @param {string|{fieldname, label?}} [opts.sum] — field totalled on every group row
+	 * @param {Array<string>} [opts.mobile_columns] — columns kept in the card layout (default: the
+	 *   first column plus any status column)
 	 */
 	constructor(opts = {}) {
-		this.opts = Object.assign({ selectable: true, page_length: 20, mobile: "cards", footer: {}, empty: {} }, opts);
+		this.opts = Object.assign({ selectable: true, page_length: 20, mobile: "cards", groupable: true, pinnable: true, footer: {}, empty: {} }, opts);
 		this.listview = this.opts.listview;
 		if (!this.listview) throw new Error("sanad.ui.DataList: listview is required");
 		this.doctype = this.listview.doctype;
@@ -35,6 +42,9 @@ sanad.ui.DataList = class DataList {
 		this.page = 0;
 		this.total = null;
 		this.expanded = new Set();
+		this.group_by = (this.opts.group_by || []).slice();
+		this.collapsed = new Set(); // group paths the user folded away
+		this.pinned = (this.opts.pinned || []).slice();
 		this.id = ui.uid("datalist");
 		this.columns = this.resolve_columns(this.opts.columns);
 		this.mount();
@@ -50,6 +60,7 @@ sanad.ui.DataList = class DataList {
 		lv.start = 0;
 		lv.$paging_area && lv.$paging_area.hide();
 		lv.$no_result && lv.$no_result.hide();
+		lv._sanad_datalist = this; // FilterBar's grouping control drives this table
 		lv.$result.addClass("sanad-datalist-host");
 		// toolbar + table + footer read as one card (prototype: List View is a single panel)
 		lv.$frappe_list.addClass("sanad-list-card");
@@ -100,6 +111,8 @@ sanad.ui.DataList = class DataList {
 		// the card scrolls the table itself (see style.scss), so Desk's result-height maths is skipped
 		lv.set_result_height = () => {};
 		this.bind_events();
+		this._on_resize = ui.debounce(() => this.apply_pins(), 150);
+		$(window).on(`resize.${this.id}`, this._on_resize);
 		this.render_skeleton();
 	}
 
@@ -107,6 +120,7 @@ sanad.ui.DataList = class DataList {
 		const $r = this.listview.$result;
 		$r.on(`click.${this.id}`, ".sanad-datalist__sort", (e) => {
 			e.preventDefault();
+			if ($(e.target).closest(".sanad-datalist__pin").length) return;
 			this.sort($(e.currentTarget).closest("th").data("fieldname"));
 		});
 		$r.on(`click.${this.id}`, ".sanad-datalist__view", (e) => {
@@ -114,6 +128,19 @@ sanad.ui.DataList = class DataList {
 			e.stopPropagation();
 			const doc = this.doc_of($(e.currentTarget).closest("tr").data("name"));
 			if (doc && this.opts.row_action && this.opts.row_action.handler) this.run(this.opts.row_action.handler, doc, $(e.currentTarget));
+		});
+		$r.on(`click.${this.id}`, ".sanad-datalist__pin", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			this.toggle_pin($(e.currentTarget).data("fieldname"));
+		});
+		$r.on(`click.${this.id}`, ".sanad-datalist__group-toggle", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			const path = $(e.currentTarget).closest("tr").data("path");
+			if (this.collapsed.has(path)) this.collapsed.delete(path);
+			else this.collapsed.add(path);
+			this.render();
 		});
 		$r.on(`click.${this.id}`, ".sanad-datalist__toggle", (e) => {
 			e.preventDefault();
@@ -204,11 +231,16 @@ sanad.ui.DataList = class DataList {
 			const aria = active ? ` aria-sort="${sort_order === "asc" ? "ascending" : "descending"}"` : "";
 			const style = c.width ? ` style="width:${ui.escape(typeof c.width === "number" ? `${c.width}px` : c.width)}"` : "";
 			const icon = active ? ui.icon(sort_order === "asc" ? "sort-ascending" : "sort-descending", "xs") : ui.icon("es-line-sort", "xs");
-			html += `<th scope="col" class="sanad-datalist__th sanad-datalist__th--${c.align}${c.hidden_xs ? " sanad-datalist__th--hidden-xs" : ""}${active ? " sanad-datalist__th--sorted" : ""}" data-fieldname="${ui.escape(c.fieldname)}"${aria}${style}>`;
+			const pinned = this.pinned.includes(c.fieldname) ? " sanad-datalist__th--pinned" : "";
+			html += `<th scope="col" class="sanad-datalist__th sanad-datalist__th--${c.align}${c.hidden_xs ? " sanad-datalist__th--hidden-xs" : ""}${active ? " sanad-datalist__th--sorted" : ""}${pinned}" data-fieldname="${ui.escape(c.fieldname)}"${aria}${style}>`;
 			if (c.sortable) {
 				const dir = active && sort_order === "asc" ? __("descending") : __("ascending");
 				html += `<button type="button" class="sanad-datalist__sort" aria-label="${ui.escape(__("Sort by {0}, {1}", [c.label, dir]))}"><span>${ui.escape(c.label)}</span><span class="sanad-datalist__sort-icon" aria-hidden="true">${icon}</span></button>`;
 			} else html += `<span class="sanad-datalist__label">${ui.escape(c.label)}</span>`;
+			if (this.opts.pinnable) {
+				const on = this.pinned.includes(c.fieldname);
+				html += `<button type="button" class="sanad-datalist__pin${on ? " sanad-datalist__pin--on" : ""}" data-fieldname="${ui.escape(c.fieldname)}" aria-pressed="${on}" title="${ui.escape(on ? __("Unpin {0}", [c.label]) : __("Pin {0}", [c.label]))}" aria-label="${ui.escape(on ? __("Unpin {0}", [c.label]) : __("Pin {0}", [c.label]))}">${ui.icon("es-line-pin", "xs")}</button>`;
+			}
 			html += "</th>";
 		});
 		if (this.opts.row_action) html += `<th scope="col" class="sanad-datalist__th sanad-datalist__th--action"><span class="sanad-datalist__label">${ui.escape(this.opts.row_action.label || __("View"))}</span></th>`;
@@ -221,6 +253,8 @@ sanad.ui.DataList = class DataList {
 		let body = "";
 		if (!rows.length) {
 			body = `<tr class="sanad-datalist__row--empty"><td colspan="${this.colspan()}"><div class="sanad-datalist__empty"></div></td></tr>`;
+		} else if (this.group_by.length) {
+			body = this.group_html(this.group_tree(rows, 0, []), 0);
 		} else {
 			body = rows.map((doc) => this.row_html(doc)).join("");
 		}
@@ -230,7 +264,135 @@ sanad.ui.DataList = class DataList {
 			new sanad.ui.EmptyState({ wrapper: this.$table.find(".sanad-datalist__empty"), state: "empty", title: e.title || __("No records match"), description: e.description || __("Change the filters or the period to see more."), action: e.action });
 		}
 		this.expanded.forEach((name) => this.render_expand(name, true));
+		this.apply_pins();
 		return this;
+	}
+
+	// ---- grouping -------------------------------------------------------------------------
+
+	/** The field totalled on every group row, as a column-like spec (or null). */
+	sum_column() {
+		const raw = this.opts.sum;
+		if (!raw) return null;
+		const fieldname = typeof raw === "string" ? raw : raw.fieldname;
+		const col = this.columns.find((c) => c.fieldname === fieldname);
+		const df = (col && col.df) || frappe.meta.get_docfield(this.doctype, fieldname) || { fieldtype: "Float" };
+		return { fieldname, df, label: (typeof raw === "object" && raw.label) || (col && col.label) || __(df.label || fieldname) };
+	}
+
+	/** Display label of one group value on `level` (Link titles and Select labels included). */
+	group_label(fieldname, doc) {
+		const col = this.columns.find((c) => c.fieldname === fieldname);
+		const raw = doc[fieldname];
+		if (raw == null || raw === "") return __("Not set");
+		if (col && typeof col.group_label === "function") return col.group_label(raw, doc);
+		const title_field = (this.listview.link_field_title_fields || {})[fieldname];
+		if (title_field && doc[`${fieldname}_${title_field}`]) return String(doc[`${fieldname}_${title_field}`]);
+		const df = (col && col.df) || frappe.meta.get_docfield(this.doctype, fieldname);
+		if (df && ["Select", "Data"].includes(df.fieldtype)) return __(String(raw));
+		return String(raw);
+	}
+
+	/**
+	 * Bucket `rows` into the grouping levels, outermost first. Each node is
+	 * `{key, label, path, level, rows, count, sum, children}`; grouping is over the loaded page,
+	 * as in the prototype, so the counts describe what is on screen.
+	 */
+	group_tree(rows, level, path) {
+		const fieldname = this.group_by[level];
+		const buckets = new Map();
+		rows.forEach((doc) => {
+			const key = String(doc[fieldname] == null ? "" : doc[fieldname]);
+			if (!buckets.has(key)) buckets.set(key, { key, label: this.group_label(fieldname, doc), rows: [] });
+			buckets.get(key).rows.push(doc);
+		});
+		const sum_col = this.sum_column();
+		return Array.from(buckets.values())
+			.sort((a, b) => String(a.label).localeCompare(String(b.label), frappe.boot.lang || undefined))
+			.map((b) => {
+				const node_path = path.concat(b.key);
+				return {
+					fieldname,
+					key: b.key,
+					label: b.label,
+					path: node_path.join("\u0000"),
+					level,
+					rows: b.rows,
+					count: b.rows.length,
+					sum: sum_col ? b.rows.reduce((t, d) => t + flt(d[sum_col.fieldname]), 0) : null,
+					children: level + 1 < this.group_by.length ? this.group_tree(b.rows, level + 1, node_path) : null,
+				};
+			});
+	}
+
+	group_html(nodes) {
+		const sum_col = this.sum_column();
+		return nodes
+			.map((node) => {
+				const open = !this.collapsed.has(node.path);
+				const label_col = this.columns.find((c) => c.fieldname === node.fieldname);
+				let html = `<tr class="sanad-datalist__group sanad-datalist__group--l${node.level}" data-path="${ui.escape(node.path)}">
+					<td class="sanad-datalist__group-cell" colspan="${this.colspan()}">
+						<div class="sanad-datalist__group-inner" style="padding-inline-start:${12 + node.level * 22}px">
+							<button type="button" class="sanad-datalist__group-toggle" aria-expanded="${open}" aria-label="${ui.escape(open ? __("Collapse {0}", [node.label]) : __("Expand {0}", [node.label]))}">${ui.icon("es-line-down", "xs")}</button>
+							<span class="sanad-datalist__group-field">${ui.escape(label_col ? label_col.label : __(node.fieldname))}</span>
+							<span class="sanad-datalist__group-label">${ui.escape(node.label)}</span>
+							<span class="sanad-datalist__group-count sanad-tabular">${ui.escape(ui.format_int(node.count))}</span>
+							${sum_col && node.sum ? `<span class="sanad-datalist__group-sum"><span class="sanad-datalist__group-sum-label">${ui.escape(__("Total {0}", [sum_col.label]))}</span> <span class="sanad-tabular" dir="ltr">${frappe.format(node.sum, sum_col.df, { inline: true })}</span></span>` : ""}
+						</div>
+					</td>
+				</tr>`;
+				if (!open) return html;
+				html += node.children ? this.group_html(node.children) : node.rows.map((doc) => this.row_html(doc)).join("");
+				return html;
+			})
+			.join("");
+	}
+
+	/** Replace the grouping levels (outermost first); `[]` turns grouping off. */
+	set_group_by(fields) {
+		this.group_by = (fields || []).filter(Boolean);
+		this.collapsed.clear();
+		this.render();
+		if (typeof this.opts.on_group_change === "function") this.opts.on_group_change(this.group_by.slice(), this);
+		return this;
+	}
+
+	/** Fields that can be grouped: every column backed by a real, low-cardinality-ish field. */
+	group_options() {
+		return this.columns
+			.filter((c) => c.df && c.df.fieldname && !["Text", "Text Editor", "Long Text", "Code"].includes(c.df.fieldtype))
+			.map((c) => ({ value: c.fieldname, label: c.label }));
+	}
+
+	// ---- pinned columns ---------------------------------------------------------------------
+
+	toggle_pin(fieldname) {
+		const at = this.pinned.indexOf(fieldname);
+		if (at >= 0) this.pinned.splice(at, 1);
+		else this.pinned.push(fieldname);
+		this.render();
+		return this;
+	}
+
+	/**
+	 * Stick the pinned columns to the inline-start edge. Offsets are measured after paint, because
+	 * the table sizes itself to its content; the last pinned column carries the edge shadow.
+	 */
+	apply_pins() {
+		const $table = this.$table.find("table.sanad-datalist");
+		$table.find(".sanad-datalist__td--pinned, .sanad-datalist__th--pinned").removeClass("sanad-datalist__cell--pin-edge").css({ "inset-inline-start": "" });
+		if (!this.pinned.length) return;
+		let offset = 0;
+		const $lead = $table.find("thead th.sanad-datalist__th--check, thead th.sanad-datalist__th--expand");
+		$lead.each((i, el) => (offset += $(el).outerWidth() || 0));
+		const order = this.columns.map((c) => c.fieldname).filter((f) => this.pinned.includes(f));
+		order.forEach((fieldname, i) => {
+			const $cells = $table.find(`[data-fieldname="${CSS.escape(fieldname)}"]`).filter(".sanad-datalist__th, .sanad-datalist__td");
+			$cells.css("inset-inline-start", `${offset}px`);
+			if (i === order.length - 1) $cells.addClass("sanad-datalist__cell--pin-edge");
+			offset += ($cells.first().outerWidth() || 0);
+		});
 	}
 
 	row_html(doc) {
@@ -245,12 +407,23 @@ sanad.ui.DataList = class DataList {
 			html += `<td class="sanad-datalist__td sanad-datalist__td--expand"><button type="button" class="sanad-datalist__toggle" aria-expanded="${open}" aria-label="${ui.escape(__("Details of {0}", [this.title_of(doc)]))}">${ui.icon("es-line-down", "xs")}</button></td>`;
 		}
 		this.columns.forEach((c) => {
-			html += `<td class="sanad-datalist__td sanad-datalist__td--${c.align}${c.hidden_xs ? " sanad-datalist__td--hidden-xs" : ""}" data-label="${ui.escape(c.label)}">${this.cell_html(c, doc)}</td>`;
+			const pinned = this.pinned.includes(c.fieldname) ? " sanad-datalist__td--pinned" : "";
+			const card = this.in_card_layout(c) ? "" : " sanad-datalist__td--off-card";
+			const kind = c.type === "status" ? " sanad-datalist__td--status" : "";
+			html += `<td class="sanad-datalist__td sanad-datalist__td--${c.align}${c.hidden_xs ? " sanad-datalist__td--hidden-xs" : ""}${pinned}${card}${kind}" data-fieldname="${ui.escape(c.fieldname)}" data-label="${ui.escape(c.label)}">${this.cell_html(c, doc)}</td>`;
 		});
 		if (this.opts.row_action) {
 			html += `<td class="sanad-datalist__td sanad-datalist__td--action"><button type="button" class="sanad-datalist__view sanad-datalist__action">${ui.escape(this.opts.row_action.label || __("View"))}</button></td>`;
 		}
 		return html + "</tr>";
+	}
+
+	/** Columns kept in the phone card layout: the first one, any status column, plus `mobile_columns`. */
+	in_card_layout(c) {
+		if (this.opts.mobile !== "cards") return true;
+		const picked = this.opts.mobile_columns;
+		if (picked && picked.length) return picked.includes(c.fieldname);
+		return c === this.columns[0] || c.type === "status";
 	}
 
 	title_of(doc) {
@@ -425,6 +598,7 @@ sanad.ui.DataList = class DataList {
 	}
 
 	destroy() {
+		$(window).off(`resize.${this.id}`);
 		this.listview.$frappe_list.removeClass("sanad-list-card");
 		this.listview.$result.off(`.${this.id}`);
 		this.$footer.off(`.${this.id}`).remove();

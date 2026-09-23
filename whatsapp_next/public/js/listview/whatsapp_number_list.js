@@ -1,5 +1,5 @@
 // WhatsApp Number list (09 row 13, D-064 option A: the prototype "WhatsApp contacts" screen):
-// PageHeader (title, "Open contacts", four KPIs) → FilterBar → TreeGroupBy on `link_status` →
+// PageHeader (title, "Open contacts", four KPIs) → FilterBar (grouped by `link_status`) →
 // DataList (avatar name, number, link status, contact, last message, since, View → conversation
 // drawer). PageHeader / DataList are guarded with `typeof` — until they land the native rows,
 // RowActions and the FilterBar intro render instead. Numbers are materialised from messages, so
@@ -329,13 +329,10 @@ frappe.listview_settings[DOCTYPE] = {
 			});
 		}
 
-		if (has_kit("TreeGroupBy")) {
-			new sanad.ui.TreeGroupBy({ listview, group_by_field: "link_status" });
-		}
-
 		if (has_kit("DataList")) {
 			listview._sanad_datalist = new sanad.ui.DataList({
 				listview,
+				group_by: ["link_status"], // the rail this list used to carry, now real group rows
 				columns: COLUMNS(),
 				selectable: true,
 				page_length: 20,

@@ -1,2 +1,26 @@
-// whatsapp_next Desk styles — the portable kit styles plus app-specific list/form tweaks.
+// whatsapp_next Desk styles — the portable kit styles plus this app's own branding.
 @import "../js/ui/style";
+
+// ---------------------------------------------------------------------------------------------
+// Brand accent. The kit (`public/js/ui/`) never names a colour: it drives every active, selected
+// and primary state from five `--sanad-accent*` custom properties that default to Desk's Espresso
+// blue. This block — the app's own stylesheet, not the portable kit — repoints them at the teal of
+// the design prototype (`docs/component/List View.dc.html`: `--pri` / `--pri-d` / `--pri-s` /
+// `--pri-sb` / `--on-pri`), with the prototype's own dark-mode pair so Desk's theme switch keeps
+// working. It is the single place this product's colour is written down.
+// ---------------------------------------------------------------------------------------------
+:root {
+	--sanad-accent: #0f7a63;
+	--sanad-accent-ink: #0a6250;
+	--sanad-accent-soft: #dff1ec;
+	--sanad-accent-outline: #b6ddd2;
+	--sanad-accent-on: #ffffff;
+}
+
+[data-theme="dark"] {
+	--sanad-accent: #17a184;
+	--sanad-accent-ink: #63d3b8;
+	--sanad-accent-soft: #0d3730;
+	--sanad-accent-outline: #1a5347;
+	--sanad-accent-on: #04201a;
+}

@@ -148,6 +148,94 @@
 		&:hover { background: var(--surface-gray-2); }
 		&[aria-expanded="true"] { transform: rotate(180deg); }
 	}
+	// ---- grouping (prototype: a 36 px group row per level, indented 22 px, with count and total)
+	&__group td {
+		height: 36px;
+		padding: 0;
+		border-block-end: var(--sanad-border);
+		background: var(--surface-gray-2);
+	}
+	&__group--l1 td { background: var(--surface-gray-1); }
+	&__group--l2 td, &__group--l3 td { background: var(--surface-white); }
+	&__group-inner {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		min-height: 36px;
+		padding-inline-end: var(--sanad-cell-px);
+		font-size: var(--text-sm, 13px);
+	}
+	&__group-toggle {
+		appearance: none;
+		border: 0;
+		background: transparent;
+		width: 18px;
+		height: 18px;
+		flex: none;
+		padding: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--ink-gray-6);
+		cursor: pointer;
+		transition: transform 150ms;
+		.icon { width: 14px; height: 14px; }
+		&[aria-expanded="false"] { transform: rotate(-90deg); [dir="rtl"] & { transform: rotate(90deg); } }
+	}
+	&__group-field { color: var(--ink-gray-5); font-size: var(--text-tiny, 11px); }
+	&__group-label { font-weight: 700; color: var(--ink-gray-9); }
+	&__group--l1 &__group-label, &__group--l2 &__group-label, &__group--l3 &__group-label { font-weight: 600; }
+	&__group-count {
+		padding-block: 2px;
+		padding-inline: 8px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-3);
+		color: var(--ink-gray-7);
+		font-size: var(--text-tiny, 11px);
+	}
+	&__group-sum { margin-inline-start: auto; color: var(--ink-gray-7); font-size: var(--text-xs, 12px); }
+	&__group-sum-label { color: var(--ink-gray-5); }
+
+	// ---- pinned columns (sticky at the inline-start, accent-tinted, shadow on the last one)
+	// the prototype tints a pinned column faintly over whatever fill the row already has
+	&__th--pinned, &__td--pinned {
+		position: sticky;
+		z-index: 3;
+		background-image: linear-gradient(
+			color-mix(in srgb, var(--sanad-accent) 6%, transparent),
+			color-mix(in srgb, var(--sanad-accent) 6%, transparent)
+		);
+		background-clip: padding-box;
+	}
+	&__th--pinned {
+		background-image: linear-gradient(
+			color-mix(in srgb, var(--sanad-accent) 10%, transparent),
+			color-mix(in srgb, var(--sanad-accent) 10%, transparent)
+		);
+	}
+	&__th--pinned { z-index: 6; }
+	&__cell--pin-edge { box-shadow: inset -1px 0 0 var(--outline-gray-2); [dir="rtl"] & { box-shadow: inset 1px 0 0 var(--outline-gray-2); } }
+
+	// pin toggle in the header
+	&__pin {
+		appearance: none;
+		border: 0;
+		background: transparent;
+		width: 20px;
+		height: 20px;
+		margin-inline-start: var(--sanad-gap-xs);
+		padding: 0;
+		border-radius: 5px;
+		color: var(--ink-gray-4, var(--ink-gray-5));
+		opacity: 0;
+		cursor: pointer;
+		vertical-align: middle;
+		.icon { width: 12px; height: 12px; }
+		&:hover { background: var(--outline-gray-2); color: var(--ink-gray-8); }
+		&--on, &:focus-visible { opacity: 1; color: var(--sanad-accent); }
+	}
+	&__th:hover &__pin { opacity: 1; }
+
 	&__detail td { background: var(--surface-gray-1); height: auto; padding-block: var(--sanad-gap-md); }
 	&__detail-body { padding-inline-start: var(--sanad-gap-xl); }
 	&__check-all, .list-row-checkbox { width: 15px; height: 15px; margin: 0; accent-color: var(--sanad-accent); vertical-align: middle; }
@@ -260,13 +348,17 @@
 	.sanad-datalist__wrap--cards {
 		border: 0;
 		background: transparent;
+		// pinning is a desktop affordance; on a card there is nothing to scroll past
+		.sanad-datalist__td--pinned, .sanad-datalist__th--pinned { position: static; background-image: none; box-shadow: none; }
 		.sanad-datalist thead { display: none; }
 		.sanad-datalist, .sanad-datalist tbody { display: block; }
 		.sanad-datalist__row {
 			display: grid;
-			grid-template-columns: auto 1fr auto;
-			gap: var(--sanad-gap-xs) var(--sanad-gap-sm);
-			padding: var(--sanad-gap-md);
+			grid-template-columns: auto minmax(0, 1fr) auto auto;
+			align-items: center;
+			gap: var(--sanad-gap-xs) 10px;
+			min-height: 56px;
+			padding: var(--sanad-gap-md) 14px;
 			margin-block-end: var(--sanad-gap-sm);
 			border: var(--sanad-border);
 			border-radius: var(--sanad-card-radius);
@@ -274,17 +366,37 @@
 		}
 		.sanad-datalist__row td { display: block; border: 0; padding: 0; height: auto; background: transparent !important; }
 		.sanad-datalist__td--check { grid-column: 1; grid-row: 1; }
-		.sanad-datalist__td--action { grid-column: 3; grid-row: 1; }
-		.sanad-datalist__td--expand { grid-column: 3; grid-row: 2; }
+		.sanad-datalist__td--action { grid-column: 4; grid-row: 1; }
+		// keeps its own tap target instead of hiding under the row action
+		.sanad-datalist__td--expand { grid-column: 4; grid-row: 2; justify-self: end; }
+		// only the title column and the status badge survive; the rest live in the record drawer
+		.sanad-datalist__td--off-card, .sanad-datalist__td--hidden-xs { display: none !important; }
 		.sanad-datalist__td:not(.sanad-datalist__td--check):not(.sanad-datalist__td--action):not(.sanad-datalist__td--expand) {
-			grid-column: 1 / -1;
-			display: flex;
-			gap: var(--sanad-gap-sm);
-			align-items: baseline;
-			&::before { content: attr(data-label); flex: 0 0 34%; color: var(--ink-gray-6); font-size: var(--text-xs, 12px); }
-			&.sanad-datalist__td--hidden-xs { display: none; }
+			grid-column: 2;
+			grid-row: 1;
+			min-width: 0;
 		}
-		.sanad-datalist__row td:first-child + td:not(.sanad-datalist__td--action) { grid-column: 2; grid-row: 1; &::before { display: none; } }
+		// beats the :not() chain above, which would otherwise pull the badge onto the title's line
+		.sanad-datalist__td--status.sanad-datalist__td--status { grid-column: 3; grid-row: 1; justify-self: end; }
+		.sanad-datalist__main { font-size: var(--text-base, 14px); font-weight: 600; }
+		.sanad-datalist__sub { font-size: var(--text-xs, 12px); }
+		.list-row-checkbox { width: 18px; height: 18px; }
+		// the row action becomes the prototype's trailing chevron
+		.sanad-datalist__view {
+			width: 28px;
+			min-height: 28px;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			color: var(--ink-gray-5);
+			font-size: 0;
+			&::after { content: "›"; font-size: 22px; line-height: 1; }
+			[dir="rtl"] &::after { content: "‹"; }
+		}
+		// grouping stays readable: one indented strip per level
+		.sanad-datalist__group { display: block; margin-block: var(--sanad-gap-sm) var(--sanad-gap-xs); }
+		.sanad-datalist__group td { display: block; background: transparent; border: 0; }
+		.sanad-datalist__group-inner { min-height: 32px; }
 		.sanad-datalist__main, .sanad-datalist__sub { max-width: none; white-space: normal; }
 		.sanad-datalist__detail { display: block; }
 		.sanad-datalist__detail td { display: block; }
