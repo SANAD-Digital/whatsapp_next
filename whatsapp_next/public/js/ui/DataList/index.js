@@ -645,7 +645,7 @@ sanad.ui.DataList = class DataList {
 			const rails = first && depth ? this.rails(depth) : "";
 			first = false;
 			const pinned = this.pinned.includes(c.fieldname) ? " sanad-datalist__td--pinned" : "";
-			const card = this.in_card_layout(c) ? "" : " sanad-datalist__td--off-card";
+			const card = this.in_card_layout(c) ? (c === this.card_title_column() || c.type === "status" ? "" : " sanad-datalist__td--card-extra") : " sanad-datalist__td--off-card";
 			const kind = c.type === "status" ? " sanad-datalist__td--status" : "";
 			html += `<td class="sanad-datalist__td sanad-datalist__td--${c.align}${c.hidden_xs ? " sanad-datalist__td--hidden-xs" : ""}${pinned}${card}${kind}" data-fieldname="${ui.escape(c.fieldname)}" data-label="${ui.escape(c.label)}">${rails ? `<div class="sanad-datalist__indent">${rails}<div class="sanad-datalist__indent-body">${this.cell_html(c, doc)}</div></div>` : this.cell_html(c, doc)}</td>`;
 		});
@@ -653,6 +653,11 @@ sanad.ui.DataList = class DataList {
 			html += `<td class="sanad-datalist__td sanad-datalist__td--action"><button type="button" class="sanad-datalist__view sanad-datalist__action">${ui.escape(this.opts.row_action.label || __("View"))}</button></td>`;
 		}
 		return html + "</tr>";
+	}
+
+	/** The column that titles the phone card: the first one kept in that layout. */
+	card_title_column() {
+		return this.columns.find((c) => this.in_card_layout(c));
 	}
 
 	/** Columns kept in the phone card layout: the first one, any status column, plus `mobile_columns`. */

@@ -3,3 +3,4 @@
 
 import "./ui/index.js";
 import "./whatsapp_next_setup.js";
+import "./screens/messages.js";

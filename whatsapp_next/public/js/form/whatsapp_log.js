@@ -1,7 +1,7 @@
 // WhatsApp Log (Outbound) form — phase 5 live kit use: Resend / Cancel / Quick send /
 // Open conversation buttons calling `messages.*` and `quick_send.*` (the form itself is read-only
-// for users; every state change goes through the dispatcher). The shared helpers live in the
-// Outbound list script and are loaded on demand with `frappe.require`.
+// for users; every state change goes through the dispatcher). The shared helpers live in
+// `js/screens/messages.js`, which the app bundle loads on every route.
 
 frappe.ui.form.on("WhatsApp Log", {
 	refresh(frm) {
@@ -12,11 +12,6 @@ frappe.ui.form.on("WhatsApp Log", {
 		const is_agent = frappe.user.has_role(["WhatsApp Agent", "WhatsApp Manager", "System Manager"]);
 		const is_manager = frappe.user.has_role(["WhatsApp Manager", "System Manager"]);
 		const key = doc.phone_e164 || doc.jid;
-		const with_helpers = () =>
-			whatsapp_next.messages && whatsapp_next.messages.cancel
-				? Promise.resolve()
-				: frappe.require("/assets/whatsapp_next/js/listview/whatsapp_log_list.js");
-
 		if (is_agent && TERMINAL.includes(doc.status)) {
 			frm.add_custom_button(__("Resend"), () => {
 				ui.call("messages.resend", { name: doc.name })
@@ -30,7 +25,7 @@ frappe.ui.form.on("WhatsApp Log", {
 
 		if (is_manager && doc.status === "Queued") {
 			frm.add_custom_button(__("Cancel"), () => {
-				with_helpers().then(() => whatsapp_next.messages.cancel(doc, () => frm.reload_doc()));
+				whatsapp_next.messages.cancel(doc, () => frm.reload_doc());
 			});
 		}
 

@@ -1,40 +1,18 @@
-// WhatsApp Inbound Message list — screen 5 (09 §1B/§1C row 5), prototype-faithful (D-064):
-// PageHeader → FilterBar toolbar → DataList table (Sender + phone, Incoming text, Matched command,
-// Contact link, Device, Time, View) → footer. "View" and the row click open the record Drawer over
-// `messages.get_inbound` with the command trace and the reply; realtime `wa:inbound:received`.
+// WhatsApp Inbound Message list — screen 5 (09 §1B/§1C row 5). Same scaffold as the Outbound
+// list (`whatsapp_next.screens.message_list`), so both message screens carry the same toolbar,
+// the same table behaviour and the same drawer shape; this file only says what an incoming
+// message is — the matched command, the contact link, and the reply that went back.
 
 (function () {
 	const ui = sanad.ui;
 	const DT = "WhatsApp Inbound Message";
-	const AGENT_ROLES = ["WhatsApp Agent", "WhatsApp Manager", "System Manager"];
-	const DRAWER_FIELDS = ["device", "phone_e164", "display_name", "contact", "is_group", "message_type", "body", "caption", "received_at", "is_simulated", "creation"];
+	const M = whatsapp_next.messages;
+	const fmt = whatsapp_next.fmt;
+	const dl = ui.Render.parts.dl;
+	const is_agent = M.is_agent;
+	const DRAWER_FIELDS = ["device", "phone_e164", "display_name", "contact", "is_group", "message_type", "body", "caption", "attachment", "received_at", "is_simulated", "creation"];
 
-	const is_agent = () => frappe.user.has_role(AGENT_ROLES);
-	const fmt_dt = (v) => (v ? frappe.datetime.str_to_user(v) : "");
-	// table cell: user date + HH:mm (no seconds), like the prototype's time column
-	const fmt_short = (v) => (v ? moment(frappe.datetime.convert_to_user_tz ? frappe.datetime.convert_to_user_tz(v, false) : v).format(`${frappe.datetime.get_user_date_fmt().toUpperCase()} HH:mm`) : "");
-	const badge = (doctype, doc, label) => {
-		const ind = ui.indicator_for(doctype, Object.assign({ doctype }, doc));
-		return ui.StatusBadge.html({ label: __(label || ind.label || ""), colour: ind.colour });
-	};
-	const dl = (rows) =>
-		`<dl class="sanad-drawer__dl">${rows
-			.filter((r) => r[1] !== "" && r[1] != null)
-			.map((r) => `<div class="sanad-drawer__field${r[2] ? " sanad-drawer__field--wide" : ""}"><dt>${ui.escape(r[0])}</dt><dd>${r[3] ? r[1] : ui.escape(r[1])}</dd></div>`)
-			.join("")}</dl>`;
-
-	const reply = (doc, after) => {
-		const opts = { device: doc.device, on_sent: after };
-		if (doc.is_group && doc.chat_jid) opts.jid = doc.chat_jid;
-		else opts.phone = doc.phone_e164 || doc.phone || doc.jid;
-		if (doc.contact) opts.contact = doc.contact;
-		return new ui.QuickSend(opts);
-	};
-
-	const open_contact = (doc) => {
-		if (doc.contact) return frappe.set_route("Form", "Contact", doc.contact);
-		return frappe.set_route("List", "WhatsApp Number", { phone_e164: doc.phone_e164 });
-	};
+	const reply = (doc, after) => M.quick_send(doc, after);
 
 	/** "Matched command" cell: green "code — function" chip or an amber "No match" chip. */
 	const match_chip = (doc) => {
@@ -51,7 +29,7 @@
 	const render_trace = ($el, doc) => {
 		const t = doc.command_trace || {};
 		const status = t.command_status || "None";
-		const status_badge = badge(DT, { command_status: status }, status);
+		const status_badge = fmt.badge(DT, { command_status: status }, status);
 		if (!t.command && (status === "None" || status === "Not Matched")) {
 			$el.html(`<p class="text-muted">${status_badge} ${ui.escape(__("No command matches this text."))}</p>`);
 			return;
@@ -60,12 +38,12 @@
 		if (args && typeof args === "object") args = JSON.stringify(args);
 		$el.html(
 			dl([
-				[__("Result"), status_badge, false, true],
-				[__("Command"), t.command ? frappe.utils.get_form_link("WhatsApp Command", t.command, true) : "", false, true],
-				[__("Matched text"), t.command_text],
-				[__("Arguments"), args, true],
-				[__("Block reason"), t.block_reason ? __(t.block_reason) : ""],
-				[__("Error"), t.command_error, true],
+				{ label: __("Result"), value: status_badge },
+				{ label: __("Command"), value: t.command ? frappe.utils.get_form_link("WhatsApp Command", t.command, true) : "" },
+				{ label: __("Matched text"), value: t.command_text },
+				{ label: __("Arguments"), value: args, wide: true },
+				{ label: __("Block reason"), value: t.block_reason ? __(t.block_reason) : "" },
+				{ label: __("Error"), value: t.command_error, wide: true },
 			])
 		);
 	};
@@ -84,12 +62,12 @@
 		// colour from the Outbound DocType's own indicator rule (gray when its list script is not loaded)
 		$el.html(
 			dl([
-				[__("Reply"), frappe.utils.get_form_link("WhatsApp Log", r.name, true), false, true],
-				[__("Status"), badge("WhatsApp Log", r, r.status), false, true],
-				[__("Sent at"), fmt_dt(r.sent_at)],
-				[__("Response time"), gap],
-				[__("Error"), r.error_code],
-				[__("Text"), r.body, true],
+				{ label: __("Reply"), value: frappe.utils.get_form_link("WhatsApp Log", r.name, true) },
+				{ label: __("Status"), value: fmt.badge("WhatsApp Log", r, r.status) },
+				{ label: __("Sent at"), value: fmt.dt(r.sent_at) },
+				{ label: __("Response time"), value: gap },
+				{ label: __("Error"), value: r.error_code },
+				{ label: __("Text"), value: r.body, wide: true },
 			])
 		);
 	};
@@ -113,16 +91,20 @@
 					return { label: __(ind.label || status), colour: ind.colour };
 				},
 			},
-			facts: ["message_type", "device", "received_at"],
-			relations: [{ field: "contact", doctype: "Contact", label: __("Contact"), actions: [{ icon: "es-line-reply", label: __("Reply"), condition: () => is_agent(), on_click: () => reply(doc, refresh) }] }],
+			facts: [
+				{ field: "message_type", icon: "es-line-chat-alt" },
+				{ field: "device", icon: "es-line-laptop" },
+				{ field: "received_at", icon: "es-line-time" },
+			],
+			relations: [{ field: "contact", doctype: "Contact", label: __("Contact"), actions: [{ icon: "es-line-reply", label: __("Reply"), condition: is_agent, on_click: () => reply(doc, refresh) }] }],
 			sections: [
 				{ label: __("Command trace"), icon: "es-line-zap", render: render_trace },
 				{ label: __("Reply"), icon: "es-line-reply", render: render_reply },
 			],
 			actions: [
-				{ label: __("Reply"), icon: "es-line-reply", condition: () => is_agent(), handler: (d) => reply(d, refresh) },
+				{ label: __("Reply"), icon: "es-line-reply", condition: is_agent, handler: (d) => reply(d, refresh) },
 				{ label: __("Open command"), icon: "es-line-zap", condition: (d) => !!(d.command_trace && d.command_trace.command), handler: (d) => frappe.set_route("Form", "WhatsApp Command", d.command_trace.command) },
-				{ label: __("Contact"), icon: "es-line-customer", handler: (d) => open_contact(d) },
+				{ label: __("Contact"), icon: "es-line-customer", handler: (d) => M.open_contact(d) },
 			],
 		}).show();
 
@@ -141,52 +123,29 @@
 			const refresh = () => listview.refresh();
 			const open = (doc) => open_drawer(doc, refresh, listview);
 
-			if (typeof ui.PageHeader === "function") {
-				new ui.PageHeader({
-					listview,
-					title: __("Inbound messages"),
-					description: __("Everything received from customers on your devices, with the matched command and the automatic reply."),
-				});
-			}
-
-			new ui.FilterBar({
-				listview,
-				actions: ["group_by", "export"],
-				presets: [
-					{ fieldname: "phone_e164", type: "search", fields: ["phone_e164", "display_name", "body"], placeholder: __("Search name, number or message text…") },
+			whatsapp_next.screens.message_list(listview, {
+				open,
+				realtime: "wa:inbound:received",
+				search: { fields: ["phone_e164", "display_name", "body"], placeholder: __("Search name, number or message text…") },
+				filters: [
 					{ fieldname: "command_status", type: "select", label: __("Matched command") },
 					{ fieldname: "command", type: "select" },
 					{ fieldname: "contact", type: "select", label: __("Contact link") },
 					{ fieldname: "device", type: "select" },
 					{ fieldname: "message_type", type: "select" },
 					{ fieldname: "is_simulated", type: "select", label: __("On behalf") },
-					{ fieldname: "received_at", type: "period", label: __("Period"), default: "30d" },
 				],
-			});
-
-			new ui.DataList({
-				listview,
 				columns: [
-					{
-						fieldname: "display_name",
-						label: __("Sender"),
-						sortable: true,
-						format: (v) => ui.escape(v || __("Unknown")),
-						sub: (doc) => `<span dir="ltr">${ui.escape(doc.phone_e164 || doc.phone || doc.jid || "")}</span>`,
-					},
+					whatsapp_next.columns.party({ label: __("Sender") }),
 					{ fieldname: "body", label: __("Incoming text"), format: (v) => ui.escape(frappe.utils.html2text ? frappe.utils.html2text(v || "") : v || "") },
-					{ fieldname: "command_status", label: __("Matched command"), sortable: true, format: (v, doc) => match_chip(doc) },
+					{ fieldname: "command_status", type: "status", label: __("Matched command"), sortable: true, format: (v, doc) => match_chip(doc) },
 					{ fieldname: "contact", label: __("Contact link"), sortable: true, format: (v) => ui.StatusBadge.html(v ? { label: __("Linked"), colour: "green" } : { label: __("Not linked"), colour: "gray", icon: false }) },
-					{ fieldname: "device", type: "avatar", label: __("Device"), sortable: true },
-					{ fieldname: "received_at", type: "date", label: __("Time"), sortable: true, format: (v, doc) => `<span class="sanad-tabular sanad-datalist__date" dir="ltr">${ui.escape(fmt_short(v || doc.creation))}</span>` },
+					whatsapp_next.columns.device(),
+					whatsapp_next.columns.time({ fieldname: "received_at", label: __("Time") }),
 				],
-				row_action: { label: __("View"), handler: open },
-				on_row_click: open,
-				footer: { count: (total) => ui.plural(total, { one: __("{0} message"), other: __("{0} messages") }) },
-				empty: { title: __("No messages match"), description: __("Change the filters or the period to see more.") },
+				mobile_columns: ["display_name", "command_status"],
+				buttons: [{ label: __("Quick send"), condition: is_agent, action: () => new ui.QuickSend({ on_sent: refresh }) }],
 			});
-
-			ui.bind_list_realtime(listview, "wa:inbound:received", 2000);
 		},
 	};
 })();

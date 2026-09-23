@@ -496,6 +496,9 @@
 		}
 		// beats the :not() chain above, which would otherwise pull the badge onto the title's line
 		.sanad-datalist__td--status.sanad-datalist__td--status { grid-column: 3; grid-row: 1; justify-self: end; }
+		// anything else a screen keeps in the card starts a line of its own rather than painting
+		// over the title, which shares that cell
+		.sanad-datalist__td--card-extra.sanad-datalist__td--card-extra { grid-column: 2 / 4; grid-row: 2; justify-self: start; }
 		.sanad-datalist__main { font-size: var(--text-base, 14px); font-weight: 600; }
 		.sanad-datalist__sub { font-size: var(--text-xs, 12px); }
 		.list-row-checkbox { width: 18px; height: 18px; }

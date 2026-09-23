@@ -1,10 +1,11 @@
-// WhatsApp Queue Item list — screen 9 (09 §1B/§1C row 9, D-064 prototype anatomy): PageHeader
-// (title, Pause / Resume sending with a ConfirmDialog fed by `queue.get_summary`, paused / running
-// banner, KPIs In queue now · Expected drain time · Charged from plan, the send-rate slider card →
-// `queue.set_rate`), FilterBar, DataList (# · Contact · Document type · Document no. · Status ·
-// Device · Expected send · View → Drawer of the linked outbound), RowActions / BulkActions over
-// `queue.*_items` / `retry_dead_letter`, and the `wa:queue:progress` throttled refresh. PageHeader
-// and DataList are guarded: until they land the list keeps Desk's own header and rows.
+// WhatsApp Queue Item list — screen 9 (09 §1B/§1C row 9, D-064 prototype anatomy). What is only
+// this screen's lives here: the PageHeader (Pause / Resume sending with a ConfirmDialog fed by
+// `queue.get_summary`, the paused / running banner, the KPIs In queue now · Expected drain time ·
+// Charged from plan, and the send-rate slider → `queue.set_rate`), the row enrichment with the
+// linked outbound's document, and the bulk verbs over `queue.*_items` / `retry_dead_letter`.
+// The toolbar and the table come from the shared message-list scaffold, so this screen carries the
+// same search · filters · date filter · grouping · columns · export as Outbound and Inbound; a row
+// opens the linked message's drawer, which also carries this queue's own Pause / Resume / Retry.
 
 (function () {
 	const ui = sanad.ui;
@@ -17,11 +18,7 @@
 
 	const is_manager = () => frappe.user.has_role(MANAGER_ROLES);
 	const count_of = (docs, statuses) => docs.filter((d) => statuses.includes(d.status)).length;
-	const fmt_dt = (v) => (v ? frappe.datetime.str_to_user(v) : "");
-	const with_helpers = () =>
-		whatsapp_next.messages && whatsapp_next.messages.open_outbound_drawer
-			? Promise.resolve()
-			: frappe.require("/assets/whatsapp_next/js/listview/whatsapp_log_list.js");
+	const fmt_dt = whatsapp_next.fmt.dt;
 
 	const run = (method, args, message, after) =>
 		ui.call(method, args)
@@ -34,23 +31,19 @@
 				if (err && err.message !== "cancelled") ui.Toast.error(err);
 			});
 
-	/** Cancel through the shared outbound helper (same dialog everywhere). */
-	const cancel_one = (doc, after) => {
-		if (!doc.outbound_message) {
-			ui.Toast.info(__("This queue item has no message linked to it."));
-			return;
-		}
-		return with_helpers().then(() =>
-			whatsapp_next.messages.cancel({ name: doc.outbound_message, display_name: doc.display_name, phone_e164: doc.phone_e164, status: doc.status }, after)
-		);
-	};
+	/** The queue's own verbs on one row, shown inside the message drawer the row opens. */
+	const queue_actions = (doc, refresh) => [
+		{ label: __("Pause"), icon: "es-line-time", condition: () => is_manager() && doc.status === "Queued", handler: () => run("queue.pause_items", { names: [doc.name] }, __("Message paused"), refresh) },
+		{ label: __("Resume"), icon: "es-line-zap", condition: () => is_manager() && doc.status === "Paused", handler: () => run("queue.resume_items", { names: [doc.name] }, __("Message resumed"), refresh) },
+		{ label: __("Retry"), icon: ui.icons.resend, condition: () => is_manager() && doc.status === "Dead Letter", handler: () => run("queue.retry_dead_letter", { names: [doc.name] }, __("Message re-queued"), refresh) },
+	];
 
 	const open_drawer = (doc, refresh, listview) => {
 		if (!doc.outbound_message) {
 			ui.Toast.info(__("This queue item has no message linked to it."));
 			return;
 		}
-		return with_helpers().then(() => whatsapp_next.messages.open_outbound_drawer(doc.outbound_message, { after_change: refresh, listview }));
+		return whatsapp_next.messages.open_outbound_drawer(doc.outbound_message, { after_change: refresh, listview, extra_actions: queue_actions(doc, refresh) });
 	};
 
 	// ---- queue summary (one in-flight call per refresh cycle, shared by banner / block / dialogs) --
@@ -205,7 +198,6 @@
 	};
 
 	const make_header = (listview) => {
-		if (typeof ui.PageHeader !== "function") return null;
 		const refresh_all = () => {
 			summary(true);
 			header.refresh(true);
@@ -278,32 +270,92 @@
 			.catch(() => {});
 	};
 
-	const make_datalist = (listview, refresh) => {
-		if (typeof ui.DataList !== "function") return null;
+	/** The same toolbar and table as the other message screens; the queue adds its own columns. */
+	const make_list = (listview, refresh, bulk) => {
 		const page_start = () => cint(listview.start) || 0;
-		return new ui.DataList({
-			listview,
-			selectable: true,
+		const open = (doc) => open_drawer(doc, refresh, listview);
+		return whatsapp_next.screens.message_list(listview, {
+			open,
+			bulk,
+			realtime: "wa:queue:progress",
+			datalist: { selectable: true },
+			search: { fieldname: "search", fields: ["display_name", "phone_e164", "outbound_message"], placeholder: __("Name, number or document no.…") },
+			filters: [
+				{ fieldname: "status", type: "select" },
+				{ fieldname: "device", type: "select" },
+				{ fieldname: "campaign", type: "select" },
+			],
+			date: { label: __("Expected send"), fieldname: "scheduled_at" },
 			columns: [
 				{ fieldname: "name", label: "#", width: 40, align: "end", sortable: false, type: "number", format: (v, doc) => ui.format_int(page_start() + (listview.data || []).indexOf(doc) + 1) },
-				{ fieldname: "display_name", label: __("Contact"), width: 200, sortable: true, format: (v, doc) => ui.escape(v || __("No name — from the device directory")), sub: (doc) => `<span dir="ltr">${ui.escape(doc.phone_e164 || "")}</span>` },
+				whatsapp_next.columns.party({ width: 200, fallback: __("No name — from the device directory") }),
 				{ fieldname: "_ref_doctype", label: __("Document type"), width: 110, sortable: false, format: (v, doc) => (doc._ref && doc._ref.reference_doctype ? ui.escape(__(doc._ref.reference_doctype)) : "—") },
 				{ fieldname: "_ref_name", label: __("Document no."), width: 100, sortable: false, format: (v, doc) => (doc._ref && doc._ref.reference_name ? frappe.utils.get_form_link(doc._ref.reference_doctype, doc._ref.reference_name, true) : "—") },
 				{ fieldname: "status", label: __("Status"), width: 100, type: "status", sortable: true },
-				{ fieldname: "device", label: __("Device"), width: 130, type: "avatar", sortable: true },
+				whatsapp_next.columns.device({ width: 130 }),
 				{
 					fieldname: "scheduled_at",
 					label: __("Expected send"),
 					width: 130,
 					sortable: true,
+					// a paused queue has no expected time: say so instead of showing a stale one
 					format: (v, doc) => (doc.status === "Paused" || (state.summary && state.summary.paused) ? ui.escape(__("Paused")) : ui.escape(fmt_dt(v))),
 				},
 			],
-			row_action: { label: __("View"), handler: (doc) => open_drawer(doc, refresh, listview) },
-			on_row_click: (doc) => open_drawer(doc, refresh, listview),
-			footer: { count: (total) => ui.plural(total, { one: __("{0} pending message"), other: __("{0} pending messages") }) },
+			mobile_columns: ["display_name", "status"],
+			count: (total) => ui.plural(total, { one: __("{0} pending message"), other: __("{0} pending messages") }),
 			empty: { title: __("The queue is empty"), description: __("Everything scheduled has gone out. New messages appear here the moment a form or campaign creates them."), action: { label: __("Go to campaigns"), onclick: () => frappe.set_route("List", "WhatsApp Campaign") } },
 		});
+	};
+
+	const bulk_actions = (refresh) => {
+		const plural = (n, one, other) => ui.plural(n, { one, other });
+		return [
+			{
+				label: (n) => (n ? __("Pause ({0})", [ui.format_int(n)]) : __("Pause")),
+				method: "queue.pause_items",
+				condition: (docs) => count_of(docs, ["Queued"]) > 0,
+				args: (names, { docs }) => ({ names: docs.filter((d) => d.status === "Queued").map((d) => d.name) }),
+				success: (r) => plural(r.count || 0, __("{0} message paused"), __("{0} messages paused")),
+			},
+			{
+				label: (n) => (n ? __("Resume ({0})", [ui.format_int(n)]) : __("Resume")),
+				method: "queue.resume_items",
+				condition: (docs) => count_of(docs, ["Paused"]) > 0,
+				args: (names, { docs }) => ({ names: docs.filter((d) => d.status === "Paused").map((d) => d.name) }),
+				success: (r) => plural(r.count || 0, __("{0} message resumed"), __("{0} messages resumed")),
+			},
+			{
+				label: (n) => (n ? __("Retry after giving up ({0})", [ui.format_int(n)]) : __("Retry after giving up")),
+				method: "queue.retry_dead_letter",
+				condition: (docs) => count_of(docs, ["Dead Letter"]) > 0,
+				args: (names, { docs }) => ({ names: docs.filter((d) => d.status === "Dead Letter").map((d) => d.name) }),
+				success: (r) => plural(r.count || 0, __("{0} message re-queued"), __("{0} messages re-queued")),
+			},
+			{
+				label: (n) => (n ? __("Cancel ({0})", [ui.format_int(n)]) : __("Cancel")),
+				method: "queue.delete_items",
+				condition: (docs) => count_of(docs, ["Queued", "Paused"]) > 0,
+				confirm: (names, docs) => {
+					const n = count_of(docs, ["Queued", "Paused"]);
+					return {
+						title: plural(n, __("Cancel {0} message?"), __("Cancel {0} messages?")),
+						message: __("The messages leave the queue and their status becomes Cancelled."),
+						impact: [
+							{ label: __("Will be cancelled"), value: ui.format_int(n), tone: "red" },
+							{ label: __("Ignored (already sent or removed)"), value: ui.format_int(names.length - n) },
+						],
+						reason_field: true,
+						ack_checkbox: __("I understand these messages will not be sent."),
+						danger: true,
+						confirm_label: __("Cancel messages"),
+						cancel_label: __("Keep them"),
+					};
+				},
+				args: (names, { docs }) => ({ names: docs.filter((d) => ["Queued", "Paused"].includes(d.status)).map((d) => d.name) }),
+				success: (r) => plural(r.count || 0, __("{0} message cancelled"), __("{0} messages cancelled")),
+			},
+		];
 	};
 
 	frappe.listview_settings[DT] = {
@@ -337,95 +389,9 @@
 			state.promise = null;
 			listview._sanad_header = make_header(listview);
 
-			if (typeof ui.FilterBar === "function") {
-				listview._sanad_filterbar = new ui.FilterBar({
-					listview,
-					presets: [
-						{ type: "search", fieldname: "search", fields: ["display_name", "phone_e164", "outbound_message"], placeholder: __("Name, number or document no.…") },
-						{ fieldname: "status", type: "select" },
-						{ fieldname: "device", type: "select" },
-						{ fieldname: "campaign", type: "select" },
-					],
-					actions: ["group_by", "export"],
-				});
-			}
-
-			listview._sanad_datalist = make_datalist(listview, refresh);
+			const bulk = is_manager() ? bulk_actions(refresh) : [];
+			listview._sanad_datalist = make_list(listview, refresh, bulk);
 			ui.on_list_render(listview, () => enrich_rows(listview, listview._sanad_datalist));
-
-			if (is_manager()) {
-				listview._sanad_row_actions = listview._sanad_datalist
-					? null
-					: new ui.RowActions({
-							listview,
-							actions: [
-								{ label: __("Pause"), icon: "es-line-time", condition: (doc) => doc.status === "Queued", handler: (doc) => run("queue.pause_items", { names: [doc.name] }, __("Message paused"), refresh) },
-								{ label: __("Resume"), icon: "es-line-zap", condition: (doc) => doc.status === "Paused", handler: (doc) => run("queue.resume_items", { names: [doc.name] }, __("Message resumed"), refresh) },
-								{ label: __("Retry"), icon: ui.icons.resend, condition: (doc) => doc.status === "Dead Letter", handler: (doc) => run("queue.retry_dead_letter", { names: [doc.name] }, __("Message re-queued"), refresh) },
-								{ label: __("Cancel"), icon: ui.icons.cancel, danger: true, condition: (doc) => ["Queued", "Paused"].includes(doc.status), handler: (doc) => cancel_one(doc, refresh) },
-							],
-							on_row_click: (doc) => open_drawer(doc, refresh, listview),
-					  });
-
-				const plural = (n, one, other) => ui.plural(n, { one, other });
-				new ui.BulkActions({
-					listview,
-					actions: [
-						{
-							label: (n) => (n ? __("Pause ({0})", [ui.format_int(n)]) : __("Pause")),
-							method: "queue.pause_items",
-							condition: (docs) => count_of(docs, ["Queued"]) > 0,
-							args: (names, { docs }) => ({ names: docs.filter((d) => d.status === "Queued").map((d) => d.name) }),
-							success: (r) => plural(r.count || 0, __("{0} message paused"), __("{0} messages paused")),
-						},
-						{
-							label: (n) => (n ? __("Resume ({0})", [ui.format_int(n)]) : __("Resume")),
-							method: "queue.resume_items",
-							condition: (docs) => count_of(docs, ["Paused"]) > 0,
-							args: (names, { docs }) => ({ names: docs.filter((d) => d.status === "Paused").map((d) => d.name) }),
-							success: (r) => plural(r.count || 0, __("{0} message resumed"), __("{0} messages resumed")),
-						},
-						{
-							label: (n) => (n ? __("Retry after giving up ({0})", [ui.format_int(n)]) : __("Retry after giving up")),
-							method: "queue.retry_dead_letter",
-							condition: (docs) => count_of(docs, ["Dead Letter"]) > 0,
-							args: (names, { docs }) => ({ names: docs.filter((d) => d.status === "Dead Letter").map((d) => d.name) }),
-							success: (r) => plural(r.count || 0, __("{0} message re-queued"), __("{0} messages re-queued")),
-						},
-						{
-							label: (n) => (n ? __("Cancel ({0})", [ui.format_int(n)]) : __("Cancel")),
-							method: "queue.delete_items",
-							condition: (docs) => count_of(docs, ["Queued", "Paused"]) > 0,
-							confirm: (names, docs) => {
-								const n = count_of(docs, ["Queued", "Paused"]);
-								return {
-									title: plural(n, __("Cancel {0} message?"), __("Cancel {0} messages?")),
-									message: __("The messages leave the queue and their status becomes Cancelled."),
-									impact: [
-										{ label: __("Will be cancelled"), value: ui.format_int(n), tone: "red" },
-										{ label: __("Ignored (already sent or removed)"), value: ui.format_int(names.length - n) },
-									],
-									reason_field: true,
-									ack_checkbox: __("I understand these messages will not be sent."),
-									danger: true,
-									confirm_label: __("Cancel messages"),
-									cancel_label: __("Keep them"),
-								};
-							},
-							args: (names, { docs }) => ({ names: docs.filter((d) => ["Queued", "Paused"].includes(d.status)).map((d) => d.name) }),
-							success: (r) => plural(r.count || 0, __("{0} message cancelled"), __("{0} messages cancelled")),
-						},
-					],
-				});
-			} else if (!listview._sanad_datalist) {
-				listview._sanad_row_actions = new ui.RowActions({ listview, actions: [], on_row_click: (doc) => open_drawer(doc, refresh, listview) });
-			}
-
-			ui.bind_list_realtime(listview, "wa:queue:progress", 2000);
-		},
-
-		refresh(listview) {
-			listview && listview._sanad_row_actions && listview._sanad_row_actions.decorate();
 		},
 	};
 })();
