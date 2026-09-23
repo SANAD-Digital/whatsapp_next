@@ -302,12 +302,13 @@ def run_alert(name: str, *, preview: bool = False) -> AlertRun:
 	return run
 
 
-def report_columns(report: str) -> list[dict[str, Any]]:
-	"""Column choices for the Report Column recipient type (runs the report with no filters)."""
+def report_columns(report: str, filters: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+	"""Column choices for the Report Column recipient type (runs the report with `filters`, or
+	none); an unrunnable report yields an empty list."""
 	from frappe.desk.query_report import run
 
 	try:
-		result = run(report, filters={}, ignore_prepared_report=True)
+		result = run(report, filters=filters or {}, ignore_prepared_report=True)
 	except Exception:
 		return []
 	return [

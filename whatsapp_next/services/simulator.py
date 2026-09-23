@@ -10,7 +10,7 @@ from typing import Any
 
 import frappe
 from frappe import _
-from frappe.utils import now_datetime
+from frappe.utils import cint, now_datetime
 
 from whatsapp_next.exceptions import WAInvalidPhoneError, WAValidationError
 from whatsapp_next.services import command_router, dispatch
@@ -130,3 +130,55 @@ def send_test(device: str, phone: str, body: str, user: str | None = None) -> st
 
 	audit.log("Test Send", reference=("WhatsApp Log", outbound), user=user, details={"device": device})
 	return outbound
+
+
+def get_context() -> dict[str, Any]:
+	"""Simulator page bootstrap: enabled devices, Active commands and recent individual numbers
+	as sample senders (screen 11)."""
+	settings = frappe.get_cached_doc("WhatsApp Settings")
+	devices = frappe.get_all(
+		"WhatsApp Device",
+		filters={"disabled": 0},
+		fields=["name", "device_name", "status", "is_default", "phone_e164"],
+		order_by="is_default desc, device_name asc",
+	)
+	commands = frappe.get_all(
+		"WhatsApp Command",
+		filters={"status": "Active"},
+		fields=["name", "code", "title", "function", "description", "requires_linked_contact"],
+		order_by="code asc",
+	)
+	sample_contacts = frappe.get_all(
+		"WhatsApp Number",
+		filters=[["phone_e164", "not like", "%@%"]],
+		fields=["phone_e164", "display_name", "contact", "link_status", "last_seen"],
+		order_by="last_seen desc",
+		limit=10,
+	)
+	return {
+		"devices": devices,
+		"default_device": settings.default_device,
+		"commands": commands,
+		"commands_enabled": bool(cint(settings.enable_commands)),
+		"sample_contacts": sample_contacts,
+	}
+
+
+def dry_run_command(text: str, sender: str, device: str | None = None) -> dict[str, Any]:
+	"""One dry-run route on an in-memory inbound (`command_router.dry_run`) — the shared body of
+	`api.simulator.dry_run_command` and `api.commands.test_command`. Nothing is persisted and
+	nothing is sent.
+
+	Returns `{matched, status, command, block_reason, args, reply_body, replies, error, function_ms}`."""
+	res = command_router.dry_run(text, sender, device)
+	return {
+		"matched": res.status not in ("None", "Not Matched"),
+		"status": res.status,
+		"command": res.command,
+		"block_reason": res.block_reason,
+		"args": res.args,
+		"reply_body": next((r.get("body") for r in res.replies if r.get("body")), None),
+		"replies": res.replies,
+		"error": res.error,
+		"function_ms": res.elapsed_ms,
+	}

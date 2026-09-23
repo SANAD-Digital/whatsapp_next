@@ -174,7 +174,8 @@ def sample_context(reference_doctype: str | None, sample_json: str | dict | None
 				doc = frappe._dict(base)
 			extra = parsed
 	ctx = context_for(reference_doctype, getattr(doc, "name", None), extra, doc=doc)
-	ctx.setdefault("recipient", frappe._dict(phone_e164="+966500000000", display_name=_("Recipient")))
+	if not ctx.get("recipient"):  # `context_for` always sets an (empty) recipient; fill the sample one
+		ctx["recipient"] = frappe._dict(phone_e164="+966500000000", display_name=_("Recipient"))
 	return ctx
 
 

@@ -540,3 +540,160 @@ def sending_now() -> list[dict[str, Any]]:
 	):
 		out.append({**r, "counters": counters_for(r.name).__dict__})
 	return out
+
+
+# ---- read helpers for api.campaigns --------------------------------------------------------
+
+PROGRESS_FIELDS: tuple[str, ...] = (
+	"name",
+	"campaign_name",
+	"status",
+	"device",
+	"scheduled_at",
+	"messages_per_minute",
+	"total_recipients",
+	"initial_recipients",
+	"added_count",
+	"removed_count",
+	"pause_count",
+	"started_at",
+	"ended_at",
+	"paused_at",
+	"paused_by",
+	"pause_reason",
+	"first_message_at",
+	"last_message_at",
+)
+RECENT_LIMIT = 10
+POLL_CACHE_SECONDS = 600
+
+
+def progress(campaign: str) -> dict[str, Any]:
+	"""Live counters, rates (configured rate, sent in the last minute, percent done, ETA) and the
+	`RECENT_LIMIT` most recently changed outbound rows of one campaign."""
+	row = frappe.db.get_value("WhatsApp Campaign", campaign, list(PROGRESS_FIELDS), as_dict=True)
+	if not row:
+		frappe.throw(_("WhatsApp Campaign {0} not found").format(campaign), WAValidationError)
+	c = counters_for(campaign)
+	rate = cint(row.messages_per_minute) or cint(
+		frappe.get_cached_doc("WhatsApp Settings").messages_per_minute
+	)
+	since = add_to_date(now_datetime(), seconds=-60)
+	sent_last_minute = frappe.db.count(
+		"WhatsApp Log",
+		{"campaign": campaign, "status": ("in", ["Sent", "Delivered", "Read"]), "sent_at": (">=", since)},
+	)
+	done = c.total - c.open
+	recent = frappe.get_all(
+		"WhatsApp Log",
+		filters={"campaign": campaign},
+		fields=[
+			"name",
+			"phone_e164",
+			"display_name",
+			"status",
+			"message_type",
+			"campaign_message_idx",
+			"sent_at",
+			"failed_at",
+			"error_code",
+			"modified",
+		],
+		order_by="modified desc",
+		limit=RECENT_LIMIT,
+	)
+	return {
+		**row,
+		"counters": dict(c.__dict__),
+		"rates": {
+			"messages_per_minute": rate,
+			"sent_last_minute": cint(sent_last_minute),
+			"percent": round(done * 100 / c.total, 1) if c.total else 0.0,
+			"eta_seconds": int(c.open * 60 / rate) if rate and c.open else 0,
+		},
+		"recent": recent,
+	}
+
+
+def preview_message(campaign: str, idx: int, recipient_row: str | None = None) -> dict[str, Any]:
+	"""Render message `idx` (1-based) of the campaign as one recipient would receive it —
+	`recipient_row` is a recipient child-row name, else a sample recipient — with the attachment
+	(or rendered document) file name and compile errors of the source."""
+	doc = _doc(campaign)
+	messages = doc.get("messages") or []
+	idx = cint(idx)
+	if idx < 1 or idx > len(messages):
+		frappe.throw(_("Campaign has no message {0}").format(idx), WAValidationError)
+	msg = messages[idx - 1]
+	recipient = None
+	if recipient_row:
+		recipient = next((r for r in doc.get("recipients") or [] if r.name == recipient_row), None)
+		if recipient is None:
+			frappe.throw(_("Recipient row {0} not found").format(recipient_row), WAValidationError)
+	if recipient is None:
+		recipient = frappe._dict(
+			phone_e164="+966500000000",
+			display_name=_("Recipient"),
+			contact=None,
+			source_doctype=None,
+			source_name=None,
+		)
+	source = msg.body or (
+		frappe.db.get_value("WhatsApp Template", msg.template, "body") if msg.template else None
+	)
+	attachment_name = None
+	if msg.attachment:
+		attachment_name = (
+			frappe.db.get_value("File", {"file_url": msg.attachment}, "file_name") or msg.attachment
+		)
+	elif msg.message_type == "Document" and msg.print_format:
+		attachment_name = templates.render_text(
+			msg.file_name_template,
+			{"doc": frappe._dict(name=recipient.source_name), "recipient": recipient},
+			fallback=recipient.source_name or msg.print_format,
+		)
+	return {
+		"idx": idx,
+		"message_type": msg.message_type,
+		"body": _render_message_body(msg, recipient, doc),
+		"attachment_name": attachment_name,
+		"errors": templates.compile_check(source),
+	}
+
+
+def poll_results(campaign: str, *, refresh: bool = False) -> dict[str, Any]:
+	"""Aggregated poll results per Poll message of the campaign (`polls.fetch_results` over the
+	sent rows' `poll_id`), cached `POLL_CACHE_SECONDS` unless `refresh`."""
+	key = f"wa:poll-results:{campaign}"
+	if not refresh:
+		cached = frappe.cache.get_value(key)
+		if cached:
+			return cached
+	doc = _doc(campaign)
+	poll_messages = {
+		i: m for i, m in enumerate(doc.get("messages") or [], start=1) if m.message_type == "Poll"
+	}
+	out: dict[str, Any] = {"campaign": campaign, "fetched_at": now_datetime(), "results": []}
+	if not poll_messages:
+		return out
+	device = doc.device or frappe.get_cached_doc("WhatsApp Settings").default_device
+	platform_device = frappe.db.get_value("WhatsApp Device", device, "platform_device") if device else None
+	if not platform_device:
+		frappe.throw(_("Campaign device is not registered on the platform"), WAValidationError)
+	rows = frappe.get_all(
+		"WhatsApp Log",
+		filters={"campaign": campaign, "message_type": "Poll", "poll_id": ("is", "set")},
+		fields=["poll_id", "campaign_message_idx"],
+	)
+	ids_by_idx: dict[int, list[str]] = {}
+	for r in rows:
+		ids_by_idx.setdefault(cint(r.campaign_message_idx) or 1, []).append(r.poll_id)
+	for idx, msg in poll_messages.items():
+		options = polls.parse_options(msg.poll_options)
+		ids = ids_by_idx.get(idx, [])
+		res = (
+			polls.fetch_results(platform_device, ids, options) if ids else polls.PollResults(options=options)
+		)
+		out["results"].append({"idx": idx, "question": msg.poll_question, "sent": len(ids), **res.as_dict()})
+	frappe.cache.set_value(key, out, expires_in_sec=POLL_CACHE_SECONDS)
+	return out

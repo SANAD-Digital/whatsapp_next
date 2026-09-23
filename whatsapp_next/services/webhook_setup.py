@@ -229,6 +229,24 @@ def test(user: str | None = None) -> dict[str, Any]:
 		"detail": {
 			k: v
 			for k, v in (result or {}).items()
-			if k in ("ok", "status", "http_status", "delivered_at", "error")
+			if k in ("ok", "status", "http_status", "http_status_code", "delivered_at", "error")
 		},
 	}
+
+
+def available_events() -> list[dict[str, Any]]:
+	"""`[{event_name, enabled, disabled_reason}]` from the provider, marking which ones this site
+	currently subscribes to (`subscribed`)."""
+	subscribed = set(_events(_settings()))
+	out = []
+	for row in registry.get_provider().list_available_webhook_events():
+		name = row.get("event_name")
+		out.append(
+			{
+				"event_name": name,
+				"enabled": bool(row.get("enabled", True)),
+				"disabled_reason": row.get("disabled_reason"),
+				"subscribed": name in subscribed,
+			}
+		)
+	return out

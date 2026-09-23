@@ -739,6 +739,70 @@ def convert_number(
 	return contact
 
 
+def add_contact_link(name: str, link_doctype: str, link_name: str) -> list[str]:
+	"""Add one party link to a Contact (bulk "contacts link", 09 G-01) through `update_contact`;
+	returns the fieldnames written (empty when the link already exists)."""
+	require("write")
+	if not frappe.db.exists("Contact", name):
+		frappe.throw(_("Contact {0} not found").format(name), WANotFoundError)
+	current = [
+		{"link_doctype": r["link_doctype"], "link_name": r["link_name"]}
+		for r in _links_for([name]).get(name, [])
+	]
+	if any(r["link_doctype"] == link_doctype and r["link_name"] == link_name for r in current):
+		return []
+	update_contact(name, {"links": [*current, {"link_doctype": link_doctype, "link_name": link_name}]})
+	return ["links"]
+
+
+def unlink_number(phone_e164: str, user: str | None = None) -> str:
+	"""Detach a `WhatsApp Number` from its Contact (`contact`, `linked_by`, `linked_at` cleared,
+	`link_status` = Not Linked); audited `Number Linked` with `details.unlinked=1`. The role gate
+	(Manager) is the API's; the Contact itself is not touched."""
+	kind, key = classify(phone_e164)
+	if not kind or not frappe.db.exists("WhatsApp Number", key):
+		frappe.throw(_("WhatsApp Number {0} not found").format(phone_e164), WANotFoundError)
+	previous = frappe.db.get_value("WhatsApp Number", key, "contact")
+	values = {"contact": None, "link_status": "Not Linked", "linked_by": None, "linked_at": None}
+	frappe.db.set_value("WhatsApp Number", key, values, update_modified=True)
+	audit.log(
+		"Number Linked",
+		reference=("WhatsApp Number", key),
+		target=("Contact", previous) if previous else None,
+		fields_written=values.keys(),
+		details={"unlinked": 1},
+		user=user,
+	)
+	return key
+
+
+def confirm_conversation(
+	phone_e164: str, confirmed: bool, note: str | None = None, user: str | None = None
+) -> bool:
+	"""Set / clear `conversation_confirmed` (+ by / at / note) on a `WhatsApp Number`; audited
+	`Conversation Confirmed`. Returns the resulting flag."""
+	kind, key = classify(phone_e164)
+	if not kind or not frappe.db.exists("WhatsApp Number", key):
+		frappe.throw(_("WhatsApp Number {0} not found").format(phone_e164), WANotFoundError)
+	who = user or frappe.session.user
+	values = {
+		"conversation_confirmed": 1 if confirmed else 0,
+		"conversation_confirmed_by": who if confirmed else None,
+		"conversation_confirmed_at": now_datetime() if confirmed else None,
+		"conversation_note": (note or "")[:500] or None,
+	}
+	frappe.db.set_value("WhatsApp Number", key, values, update_modified=True)
+	audit.log(
+		"Conversation Confirmed",
+		reference=("WhatsApp Number", key),
+		fields_written=values.keys(),
+		reason=note,
+		details={"confirmed": bool(confirmed)},
+		user=user,
+	)
+	return bool(confirmed)
+
+
 def toggle_blacklist(key: str, blocked: bool, note: str | None = None, user: str | None = None) -> bool:
 	"""Add to / remove from the global blacklist group; returns the resulting state. Requires
 	write on `WhatsApp Contact Group` (CU, AGT, MGR); audited `Contact Group Members Changed`."""

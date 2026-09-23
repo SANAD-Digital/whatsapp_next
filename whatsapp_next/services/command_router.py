@@ -651,3 +651,59 @@ def _finish(
 				update_modified=False,
 			)
 	return result
+
+
+# ---- editor helpers (api.v1.commands) ------------------------------------------------------
+
+
+def dry_run(text: str, sender_phone: str, device: str | None = None) -> RouteResult:
+	"""`commands.test_command`: route `text` from `sender_phone` through `route(dry_run=True)`
+	on an in-memory inbound — nothing persisted, nothing sent. `device` defaults to the
+	Settings default device."""
+	from whatsapp_next.exceptions import WAInvalidPhoneError
+	from whatsapp_next.services.permissions import resolve_contact_by_phone
+	from whatsapp_next.services.phone import classify
+
+	kind, key = classify(sender_phone)
+	if not kind:
+		frappe.throw(_("Invalid sender number: {0}").format(sender_phone), WAInvalidPhoneError)
+	if not (text or "").strip():
+		frappe.throw(_("Message text is required"), WAValidationError)
+	device = device or frappe.get_cached_doc("WhatsApp Settings").default_device
+	inbound = frappe._dict(
+		name=None,
+		doctype="WhatsApp Inbound Message",
+		device=device,
+		phone=key if kind == "Individual" else None,
+		phone_e164=key if kind == "Individual" else None,
+		jid=key if kind != "Individual" else None,
+		chat_jid=key if kind == "Group" else None,
+		sender_jid=key if kind != "Individual" else None,
+		is_group=1 if kind == "Group" else 0,
+		contact=resolve_contact_by_phone(key) if kind == "Individual" else None,
+		display_name=_("Simulator"),
+		message_type="Text",
+		body=text,
+		received_at=now_datetime(),
+		command_status="None",
+		is_simulated=1,
+	)
+	return route(None, inbound=inbound, dry_run=True)
+
+
+def recent_run_counts(commands: list[str], days: int = 30) -> dict[str, int]:
+	"""`{command → inbound messages that matched it in the last `days` days}` (by `received_at`)."""
+	if not commands:
+		return {}
+	from frappe.utils import add_days
+
+	rows = frappe.get_all(
+		"WhatsApp Inbound Message",
+		filters={
+			"command": ("in", list(commands)),
+			"received_at": (">=", add_days(now_datetime(), -abs(cint(days)))),
+		},
+		fields=["command", {"COUNT": "name", "as": "run_count"}],
+		group_by="command",
+	)
+	return {r.command: cint(r.run_count) for r in rows}

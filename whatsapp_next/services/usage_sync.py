@@ -55,11 +55,14 @@ def _values(info: AccountInfo) -> dict[str, Any]:
 	}
 
 
-def sync_subscription() -> dict[str, Any] | None:
-	"""Hourly (+ after `test_connection`): `get_account` → Settings cache fields. Never raises."""
+def sync_subscription(*, raise_errors: bool = False) -> dict[str, Any] | None:
+	"""Hourly (+ after `test_connection`): `get_account` → Settings cache fields. Never raises
+	unless `raise_errors` (the interactive `settings.sync_subscription` endpoint) is set."""
 	try:
 		info = registry.get_provider().get_account()
 	except pex.ProviderError as exc:
+		if raise_errors:
+			raise
 		frappe.log_error(title="WhatsApp usage sync failed", message=f"code={exc.code}")
 		return None
 	values = _values(info)

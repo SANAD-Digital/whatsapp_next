@@ -12,8 +12,10 @@ from dataclasses import dataclass
 from typing import Any
 
 import frappe
+from frappe import _
 from frappe.utils import add_days, add_to_date, cint, get_datetime, now_datetime, nowdate
 
+from whatsapp_next.exceptions import WANotFoundError, WAValidationError
 from whatsapp_next.services import attachments, dispatch, templates
 from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.phone import normalize
@@ -310,6 +312,7 @@ def send_for_document(notification: str, doctype: str, name: str, event: str) ->
 	recipients = resolve_recipients(notif, doc)
 	sent = 0
 	last_error = None
+	outbounds: list[str] = []
 	for r in recipients:
 		ctx["recipient"] = frappe._dict(
 			phone_e164=r.phone_e164, display_name=r.display_name, contact=r.contact
@@ -330,6 +333,7 @@ def send_for_document(notification: str, doctype: str, name: str, event: str) ->
 		try:
 			outbound = dispatch.create_outbound(spec)
 			dispatch.enqueue([outbound], priority=3)
+			outbounds.append(outbound)
 			sent += 1
 		except Exception as exc:
 			last_error = f"{type(exc).__name__}: {str(exc)[:200]}"
@@ -346,7 +350,95 @@ def send_for_document(notification: str, doctype: str, name: str, event: str) ->
 	if last_error:
 		values.update({"last_error": last_error[:500], "last_error_at": now_datetime()})
 	frappe.db.set_value("WhatsApp Notification", notification, values, update_modified=False)
-	return {"sent": sent, "skipped": len(recipients) - sent, "error": last_error}
+	return {"sent": sent, "skipped": len(recipients) - sent, "error": last_error, "outbounds": outbounds}
+
+
+# ---- editor helpers (api.v1.notifications) -------------------------------------------------
+
+_FIELD_EXCLUDED_TYPES = frozenset(
+	{
+		"Section Break",
+		"Column Break",
+		"Tab Break",
+		"HTML",
+		"Button",
+		"Fold",
+		"Heading",
+		"Table",
+		"Table MultiSelect",
+	}
+)
+_PHONE_FIELD_RE = ("phone", "mobile", "whatsapp", "contact_no")
+
+
+def document_fields(document_type: str) -> dict[str, list[dict[str, Any]]]:
+	"""Field choices for the Notification editor selects: `{date_fields, datetime_fields,
+	phone_fields, link_fields, all_fields}` as `{fieldname, label, fieldtype, options}` rows."""
+	if not frappe.db.exists("DocType", document_type):
+		frappe.throw(_("DocType {0} not found").format(document_type), WAValidationError)
+	meta = frappe.get_meta(document_type)
+	out: dict[str, list[dict[str, Any]]] = {
+		"date_fields": [],
+		"datetime_fields": [],
+		"phone_fields": [],
+		"link_fields": [],
+		"all_fields": [],
+	}
+	for df in meta.fields:
+		if df.fieldtype in _FIELD_EXCLUDED_TYPES or not df.fieldname:
+			continue
+		row = {
+			"fieldname": df.fieldname,
+			"label": df.label or df.fieldname,
+			"fieldtype": df.fieldtype,
+			"options": df.options if df.fieldtype in ("Link", "Dynamic Link") else None,
+		}
+		out["all_fields"].append(row)
+		if df.fieldtype == "Date":
+			out["date_fields"].append(row)
+		elif df.fieldtype == "Datetime":
+			out["datetime_fields"].append(row)
+		elif df.fieldtype in ("Link", "Dynamic Link"):
+			out["link_fields"].append(row)
+		if df.fieldtype in ("Data", "Phone") and (
+			df.options == "Phone" or any(k in df.fieldname.lower() for k in _PHONE_FIELD_RE)
+		):
+			out["phone_fields"].append(row)
+	return out
+
+
+def preview_for_document(notification: str, reference_name: str) -> dict[str, Any]:
+	"""Dry evaluation of one notification against one document: condition, rendered body and
+	the resolved recipients (phones masked). Nothing is sent or queued."""
+	from whatsapp_next.services.phone import mask
+
+	notif = frappe.get_doc("WhatsApp Notification", notification)
+	errors: list[str] = []
+	if not frappe.db.exists(notif.document_type, reference_name):
+		frappe.throw(_("{0} {1} not found").format(_(notif.document_type), reference_name), WANotFoundError)
+	doc = frappe.get_doc(notif.document_type, reference_name)
+	meets = evaluate(notif, doc, notif.event)
+	recipients = resolve_recipients(notif, doc)
+	ctx = templates.context_for(
+		notif.document_type, reference_name, {"event": notif.event, "notification": notif.name}, doc=doc
+	)
+	if recipients:  # render as the job would for the first recipient
+		first = recipients[0]
+		ctx["recipient"] = frappe._dict(
+			phone_e164=first.phone_e164, display_name=first.display_name, contact=first.contact
+		)
+	body, render_error = _body(notif, ctx)
+	if render_error:
+		errors.append(f"template: {render_error}")
+	last_error = frappe.db.get_value("WhatsApp Notification", notification, "last_error")
+	if last_error and last_error.startswith(("condition:", "row ")):
+		errors.append(last_error)
+	return {
+		"meets_condition": bool(meets),
+		"message": body or "",
+		"recipients": [{"phone_e164": mask(r.phone_e164), "source": r.source} for r in recipients],
+		"errors": errors,
+	}
 
 
 # ---- scheduled events ----------------------------------------------------------------------

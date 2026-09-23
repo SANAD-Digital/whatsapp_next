@@ -102,3 +102,41 @@ def preview(
 	)
 	result = templates.render(source, ctx)
 	return {"body": result.text, "errors": [result.error] if result.error else []}
+
+
+def get_context(
+	phone: str | None = None,
+	contact: str | None = None,
+	number: str | None = None,
+	reference_doctype: str | None = None,
+	reference_name: str | None = None,
+) -> dict[str, Any]:
+	"""Composer bootstrap (`api.quick_send.get_context`): enabled devices, the default device,
+	usable templates (generic ones plus those bound to `reference_doctype`), the resolved
+	recipient when a phone / contact / number was given, and the known-number policy."""
+	settings = frappe.get_cached_doc("WhatsApp Settings")
+	devices = frappe.get_all(
+		"WhatsApp Device",
+		filters={"disabled": 0},
+		fields=["name", "device_name", "status", "is_default", "phone_e164"],
+		order_by="is_default desc, device_name asc",
+	)
+	rows = frappe.get_all(
+		"WhatsApp Template",
+		filters={"disabled": 0},
+		fields=["name", "template_name", "message_type", "category", "reference_doctype"],
+		order_by="template_name asc",
+	)
+	if reference_doctype:
+		rows = [t for t in rows if not t.reference_doctype or t.reference_doctype == reference_doctype]
+	recipient = resolve_recipient(phone, contact, number) if (phone or contact or number) else None
+	return {
+		"devices": devices,
+		"default_device": settings.default_device,
+		"templates": rows,
+		"recipient": recipient,
+		"reference": {"doctype": reference_doctype, "name": reference_name}
+		if reference_doctype and reference_name
+		else None,
+		"policy": {"send_only_to_known_numbers": bool(cint(settings.send_only_to_known_numbers))},
+	}

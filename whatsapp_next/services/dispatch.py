@@ -1106,3 +1106,143 @@ def publish_progress(device: str | None, *, force: bool = False) -> None:
 		return
 	frappe.cache.set_value(key, 1, expires_in_sec=PROGRESS_THROTTLE_SECONDS)
 	frappe.publish_realtime("wa:queue:progress", queue_summary(device), after_commit=True)
+
+
+PLATFORM_QUEUE_CACHE_KEY = "wa:platform_queue"
+PLATFORM_QUEUE_TTL = 60
+
+
+def platform_queue_status() -> dict[str, Any] | None:
+	"""The provider's own queue view (`get_queue_status`), cached 60 s; `None` when unavailable."""
+	cached = frappe.cache.get_value(PLATFORM_QUEUE_CACHE_KEY)
+	if cached:
+		return cached
+	try:
+		state = registry.get_provider().get_queue_status()
+	except pex.ProviderError as exc:
+		frappe.log_error(title="WhatsApp platform queue status failed", message=f"code={exc.code}")
+		return None
+	data = {
+		"counts": dict(state.counts or {}),
+		"messages_per_minute": cint(state.messages_per_minute),
+		"messages_remaining": cint(state.messages_remaining),
+		"held_reason": state.held_reason,
+		"fetched_at": str(now_datetime()),
+	}
+	frappe.cache.set_value(PLATFORM_QUEUE_CACHE_KEY, data, expires_in_sec=PLATFORM_QUEUE_TTL)
+	return data
+
+
+def queue_position(row: dict[str, Any]) -> int | None:
+	"""1-based rank of a `Queued` row among the `Queued` rows of its device, ordered by
+	`(priority, scheduled_at, creation)` — the order `claim_batch` uses. `None` for other states."""
+	if row.get("status") != "Queued":
+		return None
+	Q = frappe.qb.DocType("WhatsApp Queue Item")
+	from frappe.query_builder.functions import Count
+
+	priority = cint(row.get("priority"))
+	scheduled_at = get_datetime(row.get("scheduled_at"))
+	creation = get_datetime(row.get("creation"))
+	ahead = (
+		frappe.qb.from_(Q)
+		.select(Count("*").as_("n"))
+		.where((Q.status == "Queued") & (Q.device == row.get("device")))
+		.where(
+			(Q.priority < priority)
+			| ((Q.priority == priority) & (Q.scheduled_at < scheduled_at))
+			| ((Q.priority == priority) & (Q.scheduled_at == scheduled_at) & (Q.creation < creation))
+		)
+		.run()
+	)
+	return cint(ahead[0][0]) + 1
+
+
+# ---- resend / cancel of one row (api.messages) --------------------------------------------
+
+# Content and source fields copied verbatim from the original row on a resend.
+RESEND_COPY_FIELDS: tuple[str, ...] = (
+	"message_type",
+	"body",
+	"caption",
+	"attachment",
+	"file_name",
+	"mime_type",
+	"print_format",
+	"letter_head",
+	"language",
+	"poll_question",
+	"poll_options",
+	"template",
+	"source_type",
+	"reference_doctype",
+	"reference_name",
+	"campaign",
+	"campaign_recipient",
+	"campaign_message_idx",
+	"notification",
+	"notification_alert",
+	"command",
+	"trigger_inbound",
+	"display_name",
+	"contact",
+)
+
+
+def resend_outbound(outbound: str, *, user: str | None = None) -> tuple[str, str]:
+	"""New `WhatsApp Log` from a **terminal** row (content, source and reference copied,
+	`attempts` 0) queued at the source's priority; returns `(new_outbound, queue_item)`.
+
+	Non-terminal rows raise `WAStateConflictError`; unknown names `WANotFoundError`."""
+	row = frappe.db.get_value("WhatsApp Log", outbound, "*", as_dict=True)
+	if not row:
+		frappe.throw(_("WhatsApp Log {0} not found").format(outbound), WANotFoundError)
+	if row.status not in OUTBOUND_TERMINAL:
+		frappe.throw(
+			_("Only sent, failed or cancelled messages can be resent (this one is {0})").format(
+				_(row.status)
+			),
+			WAStateConflictError,
+		)
+	is_group = row.recipient_type == "Group"
+	spec = OutboundSpec(
+		device=row.requested_device or row.device,
+		phone=None if is_group else (row.phone_e164 or row.phone),
+		jid=row.jid if is_group else None,
+		recipient_type=row.recipient_type,
+		view_once=bool(cint(row.view_once)),
+		poll_allow_multiple=bool(cint(row.poll_allow_multiple)),
+		location=(
+			{
+				"latitude": row.location_latitude,
+				"longitude": row.location_longitude,
+				"name": row.location_name,
+				"address": row.location_address,
+			}
+			if row.message_type == "Location"
+			else None
+		),
+		**{f: row.get(f) for f in RESEND_COPY_FIELDS},
+	)
+	new = create_outbound(spec, user=user)
+	items = enqueue([new])
+	return new, items[0]
+
+
+def cancel_outbound(outbound: str, *, user: str | None = None, reason: str | None = None) -> str:
+	"""Delete-as-state the open queue rows of one outbound (`delete_items`); returns the
+	outbound's resulting status. `Sending` raises `WAStateConflictError`; a row with no open
+	queue item cannot be cancelled either."""
+	if not frappe.db.exists("WhatsApp Log", outbound):
+		frappe.throw(_("WhatsApp Log {0} not found").format(outbound), WANotFoundError)
+	items = frappe.get_all(
+		"WhatsApp Queue Item",
+		filters={"outbound_message": outbound, "status": ("in", list(QUEUE_OPEN))},
+		pluck="name",
+	)
+	if not items:
+		frappe.throw(
+			_("Message {0} is not queued and cannot be cancelled").format(outbound), WAStateConflictError
+		)
+	delete_items(items, user=user, reason=reason)
+	return frappe.db.get_value("WhatsApp Log", outbound, "status")
