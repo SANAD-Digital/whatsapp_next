@@ -32,6 +32,7 @@ sanad.ui.PageHeader = class PageHeader {
 		this.block_handlers = [];
 		this.make();
 		this.bind_events();
+		this.last_refresh = Date.now();
 		this.refresh_banner();
 		this.render_blocks();
 	}
@@ -75,6 +76,8 @@ sanad.ui.PageHeader = class PageHeader {
 				this.clear_frappe_primary();
 			});
 			this.clear_frappe_primary();
+			// Desk fires `show` immediately after mount; without this guard every banner, block and
+			// KPI was fetched twice on each visit to the list.
 			this.listview.page.wrapper.on("show.sanadpagehead", () => this.refresh());
 		} else {
 			$(this.opts.wrapper).prepend(this.$el);
@@ -187,7 +190,11 @@ sanad.ui.PageHeader = class PageHeader {
 		});
 	}
 
-	refresh() {
+	/** @param {boolean} [force] — refresh even inside the quiet window (an explicit user action). */
+	refresh(force = false) {
+		const now = Date.now();
+		if (!force && this.last_refresh && now - this.last_refresh < 2000) return Promise.resolve();
+		this.last_refresh = now;
 		const jobs = [this.refresh_banner(), this.render_blocks()];
 		if (this.stats) jobs.push(this.stats.refresh());
 		return Promise.all(jobs);

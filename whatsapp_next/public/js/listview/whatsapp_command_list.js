@@ -39,7 +39,7 @@ frappe.provide("whatsapp_next");
 	function refresh_all(listview) {
 		if (!listview) return;
 		listview.refresh();
-		listview._sanad_header && listview._sanad_header.refresh();
+		listview._sanad_header && listview._sanad_header.refresh(true);
 	}
 
 	function set_primary(listview) {
@@ -117,7 +117,7 @@ frappe.provide("whatsapp_next");
 				const changed = extra.synonyms !== synonyms || extra.stopped !== stopped;
 				extra.synonyms = synonyms;
 				extra.stopped = stopped;
-				if (changed && header.stats) header.stats.refresh();
+				if (changed && header.stats) header.stats.refresh(true);
 			});
 		const header = new ui.PageHeader({
 			listview,

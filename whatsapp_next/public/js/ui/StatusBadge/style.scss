@@ -4,18 +4,18 @@
 	gap: var(--sanad-gap-xs);
 	border: 1px solid transparent;
 	border-radius: var(--border-radius-full, 999px);
-	padding-block: 1px;
-	padding-inline: 8px;
-	font-size: var(--text-xs, 12px);
-	font-weight: 500;
-	line-height: 1.6;
+	padding-block: 3px;
+	padding-inline: 9px;
+	font-size: var(--text-tiny, 11px);
+	font-weight: 600;
+	line-height: 1.2;
 	white-space: nowrap;
 	max-width: 100%;
 
 	&--md {
-		font-size: var(--text-sm, 13px);
+		font-size: var(--text-xs, 12px);
 		padding-inline: 10px;
-		padding-block: 2px;
+		padding-block: 4px;
 	}
 	&__label {
 		overflow: hidden;
@@ -31,6 +31,6 @@
 	&__icon {
 		display: inline-flex;
 		flex: none;
-		.icon { width: 12px; height: 12px; }
+		.icon { width: 11px; height: 11px; }
 	}
 }

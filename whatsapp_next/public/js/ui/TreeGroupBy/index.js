@@ -123,11 +123,14 @@ sanad.ui.TreeGroupBy = class TreeGroupBy {
 		const entries = this.opts.show_all ? [{ name: ALL, label: __("All"), count: total }] : [];
 		this.rows.forEach((r) => entries.push({ name: r.name == null ? "" : String(r.name), label: this.label_of(r), count: cint(r.count) }));
 		if (!this.rows.length) {
+			// nothing to group is not worth a panel: hide the rail rather than leave a hole in the card
 			this.$chips.empty();
 			this.$select.empty();
-			this.state.empty({ title: __("Nothing to group"), description: __("No records match the current filters.") });
+			this.state.hide();
+			this.$wrapper.attr("hidden", true);
 			return;
 		}
+		this.$wrapper.removeAttr("hidden");
 		this.state.hide();
 		const selected = this.selected == null ? ALL : String(this.selected);
 		const limit = this.opts.limit;

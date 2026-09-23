@@ -165,7 +165,7 @@
 					{ fieldname: "command_status", label: __("Matched command"), sortable: true, format: (v, doc) => match_chip(doc) },
 					{ fieldname: "contact", label: __("Contact link"), sortable: true, format: (v) => ui.StatusBadge.html(v ? { label: __("Linked"), colour: "green" } : { label: __("Not linked"), colour: "gray", icon: false }) },
 					{ fieldname: "device", type: "avatar", label: __("Device"), sortable: true },
-					{ fieldname: "received_at", type: "date", label: __("Time"), sortable: true, format: (v, doc) => `<span class="sanad-tabular sanad-datalist__date">${ui.escape(fmt_short(v || doc.creation))}</span>` },
+					{ fieldname: "received_at", type: "date", label: __("Time"), sortable: true, format: (v, doc) => `<span class="sanad-tabular sanad-datalist__date" dir="ltr">${ui.escape(fmt_short(v || doc.creation))}</span>` },
 				],
 				row_action: { label: __("View"), handler: open },
 				on_row_click: open,

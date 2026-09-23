@@ -308,7 +308,7 @@ frappe.listview_settings[DOCTYPE] = {
 					handler: () => frappe.set_route((sanad.ui.config.defaults || {}).contacts_route || "wa-contacts"),
 				},
 				stats: STATS(),
-				events: { "wa:inbound:received": (data, header) => header.refresh() },
+				events: { "wa:inbound:received": (data, header) => header.refresh(true) },
 			});
 		}
 

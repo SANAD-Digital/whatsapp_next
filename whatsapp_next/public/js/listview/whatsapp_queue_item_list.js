@@ -55,10 +55,12 @@
 
 	// ---- queue summary (one in-flight call per refresh cycle, shared by banner / block / dialogs) --
 
-	const state = { summary: null, promise: null, listview: null };
+	const state = { summary: null, promise: null, listview: null, at: 0 };
+	const SUMMARY_TTL = 2000; // the banner, the KPI cards and the rate block all ask on mount
 	const summary = (fresh = false) => {
-		if (fresh) state.promise = null;
+		if (fresh || (state.promise && Date.now() - state.at > SUMMARY_TTL)) state.promise = null;
 		if (!state.promise) {
+			state.at = Date.now();
 			state.promise = ui.call("queue.get_summary", {}, { silent: true }).then((s) => {
 				const was_paused = !!(state.summary && state.summary.paused);
 				state.summary = s;
@@ -191,7 +193,7 @@
 				ui.call("queue.set_rate", { messages_per_minute: value })
 					.then((r) => {
 						ui.Toast.success(__("Send rate set to {0}", [per_minute(r.messages_per_minute)]));
-						summary(true).then(() => header && header.refresh && header.refresh());
+						summary(true).then(() => header && header.refresh && header.refresh(true));
 					})
 					.catch((err) => {
 						ui.Toast.error(err);
@@ -206,7 +208,7 @@
 		if (typeof ui.PageHeader !== "function") return null;
 		const refresh_all = () => {
 			summary(true);
-			header.refresh();
+			header.refresh(true);
 			listview.refresh();
 		};
 		const header = new ui.PageHeader({

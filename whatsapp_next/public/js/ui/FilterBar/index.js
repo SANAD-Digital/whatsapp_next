@@ -48,9 +48,11 @@ sanad.ui.FilterBar = class FilterBar {
 	 * @param {boolean} [opts.replace_standard_filters=true] — list mode: hide Frappe's standard-filter fields
 	 * @param {Function} [opts.on_change] — `(filters, {or_filters, values, search}) => void` (page mode; also fired in list mode)
 	 * @param {number} [opts.debounce=300] — search debounce in ms
+	 * @param {number} [opts.max_inline=4] — filter buttons shown in the row; the rest stay reachable
+	 *   through Desk's Filter popover, which sits in the same toolbar (prototype: one row, no wrap)
 	 */
 	constructor(opts = {}) {
-		this.opts = Object.assign({ presets: [], actions: [], debounce: 300, replace_standard_filters: true }, opts);
+		this.opts = Object.assign({ presets: [], actions: [], debounce: 300, max_inline: 4, replace_standard_filters: true }, opts);
 		this.listview = this.opts.listview || null;
 		this.doctype = this.opts.doctype || (this.listview && this.listview.doctype);
 		if (!this.doctype) throw new Error("sanad.ui.FilterBar: doctype is required");
@@ -59,10 +61,18 @@ sanad.ui.FilterBar = class FilterBar {
 		this.controls = {};
 		this.labels = {}; // fieldname → { value → label } (remembered Link titles)
 		this.id = ui.uid("filterbar");
-		ui.meta.with_doctype(this.doctype).then((meta) => {
-			this.meta = meta;
+		// Meta is already loaded on a list route: mount synchronously so the toolbar is painted in
+		// the same frame as the list (an async mount made the page jump and re-layout twice).
+		const cached = frappe.get_meta(this.doctype);
+		if (cached && (cached.fields || []).length) {
+			this.meta = cached;
 			this.make();
-		});
+		} else {
+			ui.meta.with_doctype(this.doctype).then((meta) => {
+				this.meta = meta;
+				this.make();
+			});
+		}
 	}
 
 	// ---- mount -----------------------------------------------------------------------------
@@ -76,25 +86,32 @@ sanad.ui.FilterBar = class FilterBar {
 		else if (this.listview) this.listview.$frappe_list.prepend(this.$wrapper);
 		else if (this.opts.page) $(this.opts.page.main).prepend(this.$wrapper);
 		if (this.opts.intro) this.$wrapper.append(`<p class="sanad-filterbar__intro">${ui.escape(this.opts.intro)}</p>`);
+		// One row, one button style (prototype `List View` toolbar): search and the filter buttons at
+		// the inline-start, then a single cluster at the inline-end — period, Group by, Export and
+		// Desk's own Filter popover, all restyled to the same 32 px control.
 		this.$toolbar = $('<div class="sanad-filterbar__row sanad-filterbar__row--toolbar"></div>').appendTo(this.$wrapper);
 		this.$tabs = $('<div class="sanad-filterbar__row sanad-filterbar__row--tabs"></div>').appendTo(this.$wrapper);
-		this.$actions = $('<div class="sanad-filterbar__actions"></div>').appendTo(this.$wrapper);
 		this.$groupby = $('<div class="sanad-filterbar__groupby"></div>').appendTo(this.$wrapper);
 		const of_type = (types) => this.opts.presets.filter((p) => types.includes(p.type || "select"));
 		of_type(["search"]).forEach((p) => this.render_search(p));
-		of_type(["select", "daterange"]).forEach((p) => (p.type === "daterange" ? this.render_daterange(p) : this.render_select(p)));
-		$(`<button type="button" class="btn btn-xs btn-link sanad-filterbar__clear" hidden>${ui.escape(__("Clear filters"))}</button>`)
+		of_type(["select", "daterange"])
+			.slice(0, cint(this.opts.max_inline) || 99)
+			.forEach((p) => (p.type === "daterange" ? this.render_daterange(p) : this.render_select(p)));
+		$(`<button type="button" class="sanad-filterbar__clear" hidden>${ui.escape(__("Clear filters"))}</button>`)
 			.on("click", () => this.clear())
 			.appendTo(this.$toolbar);
+		this.$end = $('<div class="sanad-filterbar__end"></div>').appendTo(this.$toolbar);
+		this.$actions = $('<div class="sanad-filterbar__actions"></div>').appendTo(this.$end);
 		of_type(["period"]).forEach((p) => this.render_period(p));
 		of_type(["tabs"]).forEach((p) => this.render_tabs(p));
 		if (!this.$tabs.children().length) this.$tabs.remove();
 		this.render_actions();
-		if (!this.$actions.children().length) this.$actions.remove();
 		if (this.listview) {
 			this.listview._sanad_filterbar = this;
 			this.bind_listview();
 		}
+		if (!this.$actions.children().length) this.$actions.remove();
+		if (!this.$end.children().length) this.$end.remove();
 		this.sync();
 		this.apply_defaults();
 		$(document).on(`mousedown.${this.id} touchstart.${this.id}`, (e) => {
@@ -124,13 +141,25 @@ sanad.ui.FilterBar = class FilterBar {
 		};
 	}
 
-	/** Hide Frappe's standard-filter fields; keep the Filter popover, the sort selector and `.filter-section`. */
+	/**
+	 * Replace Frappe's filter row with this toolbar (D-064 / R-038: the prototype has one toolbar,
+	 * not two). The standard filter fields are hidden, and Frappe's own Filter popover and sort
+	 * selector are *moved* into this bar's action row — nothing becomes unreachable — after which
+	 * the now-empty `page_form` row is hidden, which also removes a whole layout row above the list.
+	 */
 	hide_standard_filters() {
 		const lv = this.listview;
 		const $form = lv.page.page_form;
 		const $std = (lv.filter_area && lv.filter_area.standard_filters_wrapper) || $form.find(".standard-filter-section");
 		$std.hide().attr("aria-hidden", "true");
 		$form.find(".filter-toggle").hide(); // mobile toggle of the same section
+		const $section = $form.find(".filter-section");
+		if ($section.length && this.$actions && this.$actions.parent().length) {
+			$section.find(".sort-selector").hide(); // the table's own column headers sort
+			$section.find(".filter-button .button-label").hide(); // icon only; the kit buttons name what is set
+			$section.find(".filter-button").attr("title", __("More filters"));
+			$section.addClass("sanad-filterbar__native").appendTo(this.$actions);
+		}
 		const others = $form.children().filter((i, el) => !$(el).is(".standard-filter-section, .clearfix") && $(el).children().length);
 		$form.toggleClass("hide", !others.length);
 	}
@@ -175,6 +204,18 @@ sanad.ui.FilterBar = class FilterBar {
 
 	/** Options for a popover → Promise<[{value, label}]>; Link targets are searched server-side. */
 	resolve_options(preset, txt = "") {
+		// a fetched list (Link target / callback) is cached per search text, so re-opening the same
+		// dropdown is instant instead of another round trip
+		const key = `${preset.fieldname}::${txt || ""}`;
+		this._options_cache = this._options_cache || {};
+		if (this._options_cache[key]) return Promise.resolve(this._options_cache[key]);
+		return this.fetch_options(preset, txt).then((options) => {
+			this._options_cache[key] = options;
+			return options;
+		});
+	}
+
+	fetch_options(preset, txt = "") {
 		const stat = this.static_options(preset);
 		if (stat) return Promise.resolve(txt ? stat.filter((o) => String(o.label).toLowerCase().includes(txt.toLowerCase())) : stat);
 		if (typeof preset.options === "function") {
@@ -246,13 +287,14 @@ sanad.ui.FilterBar = class FilterBar {
 		const p = Object.assign({ fieldname: "creation", label: __("Period") }, preset);
 		const options = preset.options ? preset.options.map((o) => ({ value: parse_period(o.value), label: o.label })) : PERIOD_DEFAULTS();
 		const label = this.label_of(p);
-		const $group = $(`<div class="btn-group sanad-filterbar__period" role="group" aria-label="${ui.escape(label)}"></div>`);
+		const $group = $(`<div class="sanad-filterbar__period" role="group" aria-label="${ui.escape(label)}"></div>`);
 		options.forEach((o) => {
-			$(`<button type="button" class="btn btn-sm btn-default sanad-filterbar__period-btn" data-key="${ui.escape(key_of(o.value))}" aria-pressed="false">${ui.escape(o.label)}</button>`)
+			$(`<button type="button" class="sanad-filterbar__period-btn" data-key="${ui.escape(key_of(o.value))}" aria-pressed="false">${ui.escape(o.label)}</button>`)
 				.on("click", () => this.set(p.fieldname, o.value))
 				.appendTo($group);
 		});
-		this.$toolbar.append($group);
+		if (this.$actions && this.$actions.parent().length) $group.insertBefore(this.$actions);
+		else this.$end.append($group);
 		this.controls[p.fieldname] = { preset: p, $el: $group, type: "period", options };
 	}
 
@@ -287,9 +329,17 @@ sanad.ui.FilterBar = class FilterBar {
 		const pop_id = `${this.id}-${p.fieldname}-pop`;
 		const $btn = $(`<button type="button" class="sanad-filterbar__btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">
 			<span class="sanad-filterbar__btn-label">${ui.escape(label)}</span><span class="sanad-filterbar__btn-value"></span>
+			<span class="sanad-filterbar__btn-clear" title="${ui.escape(__("Clear {0}", [label]))}" hidden>${ui.icon("es-line-close", "xs")}</span>
 			<span class="sanad-filterbar__chevron" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 		</button>`)
-			.on("click", () => (this.$open && this.$open.data("field") === p.fieldname ? this.close_popover() : this.open_popover(p.fieldname)))
+			.on("click", (e) => {
+				// the inline × clears this one filter instead of opening the list
+				if ($(e.target).closest(".sanad-filterbar__btn-clear").length) {
+					this.close_popover();
+					return this.set(p.fieldname, null);
+				}
+				return this.$open && this.$open.data("field") === p.fieldname ? this.close_popover() : this.open_popover(p.fieldname);
+			})
 			.on("keydown", (e) => {
 				if (e.key === "ArrowDown") {
 					e.preventDefault();
@@ -409,7 +459,7 @@ sanad.ui.FilterBar = class FilterBar {
 		const actions = this.opts.actions || [];
 		if (actions.includes("group_by")) this.render_group_by();
 		if (actions.includes("export") && this.listview) {
-			$(`<button type="button" class="btn btn-sm btn-default sanad-filterbar__action">${ui.icon("download", "xs")} <span>${ui.escape(__("Export"))}</span></button>`)
+			$(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--icon" title="${ui.escape(__("Export"))}" aria-label="${ui.escape(__("Export"))}">${ui.icon("download", "sm")}</button>`)
 				.on("click", () => this.export())
 				.appendTo(this.$actions);
 		}
@@ -420,7 +470,7 @@ sanad.ui.FilterBar = class FilterBar {
 		if (!candidates.length) return;
 		const $dd = $(`<div class="sanad-filterbar__dd"></div>`).appendTo(this.$actions);
 		const pop_id = `${this.id}-groupby-pop`;
-		const $btn = $(`<button type="button" class="btn btn-sm btn-default sanad-filterbar__action sanad-filterbar__action--group" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-sort", "xs")} <span class="sanad-filterbar__btn-label">${ui.escape(__("Group by"))}</span><span class="sanad-filterbar__btn-value"></span> ${ui.icon("es-line-down", "xs")}</button>`).appendTo($dd);
+		const $btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--group" title="${ui.escape(__("Group by"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-sort", "sm")}<span class="sanad-filterbar__btn-value"></span></button>`).appendTo($dd);
 		const options = [{ value: "", label: __("None") }].concat(candidates.map((p) => ({ value: p.fieldname, label: this.label_of(p) })));
 		this.remember("__group_by", options);
 		this.controls.__group_by = { preset: { fieldname: "__group_by", multiple: false, options }, $el: $btn, $dd, type: "select", pop_id, label: __("Group by") };
@@ -500,14 +550,47 @@ sanad.ui.FilterBar = class FilterBar {
 		return [this.doctype, fieldname, "=", value];
 	}
 
+	/**
+	 * Write one preset into the list's filters and refresh **once**.
+	 * Frappe's `filter_area.remove()` and `add()` each schedule their own (debounced) refresh, so a
+	 * plain remove-then-add fetched the list twice per click. Both are run with the area's
+	 * `trigger_refresh` flag down and a single `refresh()` is issued here.
+	 */
 	apply_listview(fieldname, value) {
 		const lv = this.listview;
-		// drop an existing filter on the same field only when there is one (remove() refreshes the list
-		// and fires on_filter_change → sync() before the new filter exists), then add and re-sync
-		const has = lv.filter_area.get().some((f) => f[1] === fieldname);
-		const removed = has ? lv.filter_area.remove(fieldname) : Promise.resolve();
-		if (value == null) return removed;
-		return removed.then(() => lv.filter_area.add([this.filter_of(fieldname, value)])).then(() => this.sync());
+		const area = lv.filter_area;
+		const has = area.get().some((f) => f[1] === fieldname);
+		if (!has && value == null) return Promise.resolve();
+		return this.quietly(() => {
+			const removed = has ? area.remove(fieldname) : Promise.resolve();
+			return value == null ? removed : removed.then(() => area.add([this.filter_of(fieldname, value)], false));
+		}).then(() => this.refresh_list());
+	}
+
+	/** Run `fn` with Frappe's own filter refresh suppressed (it is debounced by 300 ms). */
+	quietly(fn) {
+		const area = this.listview.filter_area;
+		area.trigger_refresh = false;
+		window.clearTimeout(this._restore);
+		return Promise.resolve(fn()).then(
+			(out) => {
+				this._restore = window.setTimeout(() => (area.trigger_refresh = true), 400);
+				return out;
+			},
+			(err) => {
+				this._restore = window.setTimeout(() => (area.trigger_refresh = true), 400);
+				throw err;
+			}
+		);
+	}
+
+	/** The one refresh a filter change is allowed to cost. */
+	refresh_list() {
+		const lv = this.listview;
+		lv.start = 0;
+		const out = lv.refresh();
+		this.sync();
+		return out;
 	}
 
 	/** Update a button / pill / segment / control to `this.values` without emitting. */
@@ -522,11 +605,11 @@ sanad.ui.FilterBar = class FilterBar {
 			else if (chosen.length === 1) $value.text(this.label_for_value(fieldname, chosen[0])).removeAttr("hidden");
 			else $value.text(ui.format_int(chosen.length)).removeAttr("hidden");
 			c.$el.toggleClass("sanad-filterbar__btn--active", chosen.length > 0);
+			c.$el.find(".sanad-filterbar__btn-clear").prop("hidden", !chosen.length || fieldname === "__group_by");
 		} else if (c.type === "period") {
 			const current = key_of(value == null ? null : value);
 			c.$el.find(".sanad-filterbar__period-btn").each((i, el) => {
-				const on = String($(el).attr("data-key")) === current;
-				$(el).attr("aria-pressed", on).toggleClass("btn-primary", on).toggleClass("btn-default", !on);
+				$(el).attr("aria-pressed", String($(el).attr("data-key")) === current);
 			});
 		} else if (c.type === "tabs") {
 			const current = key_of(value == null ? ALL : value);
@@ -591,19 +674,23 @@ sanad.ui.FilterBar = class FilterBar {
 	}
 
 	clear() {
-		Object.keys(this.values).forEach((fieldname) => {
-			if (fieldname.startsWith("__")) return;
+		const fields = Object.keys(this.values).filter((f) => !f.startsWith("__"));
+		fields.forEach((fieldname) => {
 			delete this.values[fieldname];
 			this.reflect(fieldname);
-			if (this.listview) this.listview.filter_area.remove(fieldname);
 		});
 		if (this.controls.__search) {
 			this.controls.__search.$el.val("");
-			this.set_search("", this.controls.__search.fields);
-		} else {
-			this.emit();
+			this.search_text = "";
+			if (this.listview) this.listview._sanad_or_filters = [];
 		}
+		const done = this.listview
+			? this.quietly(() => fields.reduce((chain, f) => chain.then(() => this.listview.filter_area.remove(f)), Promise.resolve())).then(() => this.refresh_list())
+			: Promise.resolve();
+		this.reflect_clear();
+		this.emit();
 		ui.announce(__("Filters cleared."));
+		return done;
 	}
 
 	destroy() {

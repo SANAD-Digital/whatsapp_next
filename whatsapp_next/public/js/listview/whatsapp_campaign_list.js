@@ -124,7 +124,7 @@ function render_sending_now($el, header) {
 							})
 								.then(() => {
 									sanad.ui.Toast.success(__("Campaign paused"));
-									header.refresh();
+									header.refresh(true);
 									header.listview.refresh();
 								})
 								.catch(() => {})
@@ -178,7 +178,7 @@ function render_scheduled($el, header) {
 				const $actions = $strip.find(".sanad-strip__actions");
 				if (is_manager()) {
 					$(`<button type="button" class="btn btn-default btn-sm">${esc(__("Stop to edit"))}</button>`)
-						.on("click", () => stop_to_edit(row, () => header.refresh()))
+						.on("click", () => stop_to_edit(row, () => header.refresh(true)))
 						.appendTo($actions);
 				}
 				$(`<button type="button" class="btn btn-default btn-sm">${esc(__("Scheduled messages"))}</button>`)

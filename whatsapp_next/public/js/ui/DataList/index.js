@@ -51,6 +51,8 @@ sanad.ui.DataList = class DataList {
 		lv.$paging_area && lv.$paging_area.hide();
 		lv.$no_result && lv.$no_result.hide();
 		lv.$result.addClass("sanad-datalist-host");
+		// toolbar + table + footer read as one card (prototype: List View is a single panel)
+		lv.$frappe_list.addClass("sanad-list-card");
 		this.$table = $(`<div class="sanad-kit sanad-datalist__wrap${this.opts.mobile === "cards" ? " sanad-datalist__wrap--cards" : ""}"></div>`);
 		lv.$result.find(".list-row-container, .list-row-head").remove();
 		lv.$result.prepend(this.$table);
@@ -95,14 +97,8 @@ sanad.ui.DataList = class DataList {
 		lv.render_count = () => this.render_footer();
 		lv.get_count_str = () => Promise.resolve("");
 		lv.freeze = (on) => this.set_loading(!!on);
-		const orig_height = lv.set_result_height ? lv.set_result_height.bind(lv) : null;
-		lv.set_result_height = () => {
-			if (!orig_height) return;
-			orig_height();
-			const $rc = lv.$result.parent(".result-container");
-			const h = parseInt($rc.css("height"), 10);
-			if (h) $rc.css("height", `${Math.max(240, h - this.$footer.outerHeight(true))}px`);
-		};
+		// the card scrolls the table itself (see style.scss), so Desk's result-height maths is skipped
+		lv.set_result_height = () => {};
 		this.bind_events();
 		this.render_skeleton();
 	}
@@ -252,7 +248,7 @@ sanad.ui.DataList = class DataList {
 			html += `<td class="sanad-datalist__td sanad-datalist__td--${c.align}${c.hidden_xs ? " sanad-datalist__td--hidden-xs" : ""}" data-label="${ui.escape(c.label)}">${this.cell_html(c, doc)}</td>`;
 		});
 		if (this.opts.row_action) {
-			html += `<td class="sanad-datalist__td sanad-datalist__td--action"><button type="button" class="btn btn-sm btn-default sanad-datalist__view sanad-datalist__action">${ui.escape(this.opts.row_action.label || __("View"))}</button></td>`;
+			html += `<td class="sanad-datalist__td sanad-datalist__td--action"><button type="button" class="sanad-datalist__view sanad-datalist__action">${ui.escape(this.opts.row_action.label || __("View"))}</button></td>`;
 		}
 		return html + "</tr>";
 	}
@@ -297,7 +293,8 @@ sanad.ui.DataList = class DataList {
 			case "number":
 				return `<span class="sanad-tabular">${frappe.format(value, df || { fieldtype: "Int" }, { inline: true }, doc)}</span>`;
 			case "date":
-				return `<span class="sanad-tabular sanad-datalist__date">${ui.escape(frappe.datetime.str_to_user(value))}</span>`;
+				// dates stay left-to-right inside an Arabic row, or the time jumps ahead of the date
+				return `<span class="sanad-tabular sanad-datalist__date" dir="ltr">${ui.escape(frappe.datetime.str_to_user(value))}</span>`;
 			case "link": {
 				const target = df && df.options;
 				return target ? frappe.utils.get_form_link(target, value, true, ui.escape(display)) : ui.escape(display);
@@ -371,6 +368,27 @@ sanad.ui.DataList = class DataList {
 		this.$table.find(".sanad-datalist").attr("aria-busy", on).toggleClass("sanad-datalist--loading", on);
 	}
 
+	/**
+	 * Count for the footer / pager. The total only changes when the filters change, and a first
+	 * page that is not full already *is* the total — so most refreshes (paging, sorting, realtime)
+	 * cost no extra request. Previously every render fired `frappe.db.count`.
+	 */
+	count_for(rows) {
+		const lv = this.listview;
+		const key = JSON.stringify(lv.get_filters_for_args() || []);
+		if (this.page === 0 && rows.length < this.page_length) {
+			this.count_key = key;
+			this.total = rows.length;
+			return Promise.resolve(this.total);
+		}
+		if (this.count_key === key && this.total != null) return Promise.resolve(this.total);
+		return frappe.db.count(this.doctype, { filters: lv.get_filters_for_args() }).then((n) => {
+			this.count_key = key;
+			this.total = cint(n);
+			return this.total;
+		});
+	}
+
 	render_footer() {
 		const lv = this.listview;
 		const rows = lv.data || [];
@@ -390,11 +408,10 @@ sanad.ui.DataList = class DataList {
 			if (typeof this.opts.footer.extra === "function") this.opts.footer.extra(this.$footer.find(".sanad-datalist__extra"), rows, this);
 		};
 		paint();
-		return frappe.db
-			.count(this.doctype, { filters: lv.get_filters_for_args() })
-			.then((n) => {
-				this.total = cint(n);
-				paint();
+		const before = this.total;
+		return this.count_for(rows)
+			.then(() => {
+				if (this.total !== before) paint();
 			})
 			.catch(() => {});
 	}
@@ -408,6 +425,7 @@ sanad.ui.DataList = class DataList {
 	}
 
 	destroy() {
+		this.listview.$frappe_list.removeClass("sanad-list-card");
 		this.listview.$result.off(`.${this.id}`);
 		this.$footer.off(`.${this.id}`).remove();
 		this.$table.remove();

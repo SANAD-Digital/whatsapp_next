@@ -36,6 +36,7 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 		const lv = this.opts.listview;
 		if (lv && lv.$frappe_list) {
 			lv.$frappe_list.prepend(this.$el);
+			// `show` fires straight after mount: `refresh()` skips a repeat within its quiet window
 			lv.page && lv.page.wrapper.on("show.sanadstats", () => this.refresh()).on("hide.sanadstats", () => this.stop_timer());
 		} else {
 			$(this.opts.wrapper).append(this.$el);
@@ -85,7 +86,15 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 		return Promise.resolve(typeof card.value === "function" ? card.value() : card.value);
 	}
 
-	refresh() {
+	/**
+	 * Fetch every card's value. Repeat calls inside a 2 s quiet window are skipped: Desk fires
+	 * `show` immediately after mount, which used to fetch every card twice on each visit.
+	 * @param {boolean} [force] — refresh anyway (interval tick, realtime event, user action).
+	 */
+	refresh(force = false) {
+		const now = Date.now();
+		if (!force && this.last_refresh && now - this.last_refresh < 2000) return Promise.resolve();
+		this.last_refresh = now;
 		const jobs = this.opts.cards.map((card) => {
 			const $value = this.$card(card.key).find(".sanad-stats__value");
 			return this.fetch(card)
@@ -118,7 +127,7 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 		const seconds = cint(this.opts.refresh_seconds);
 		if (!seconds) return;
 		this.timer = window.setInterval(() => {
-			if (document.visibilityState === "visible" && this.$el.is(":visible") && !this.modal_open) this.refresh();
+			if (document.visibilityState === "visible" && this.$el.is(":visible") && !this.modal_open) this.refresh(true);
 		}, seconds * 1000);
 	}
 
@@ -155,7 +164,7 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 		this.modal_open = true; // auto-refresh pauses while the modal is open
 		dialog.$wrapper.on("hidden.bs.modal", () => {
 			this.modal_open = false;
-			this.refresh();
+			this.refresh(true);
 		});
 		const $body = dialog.get_field("body").$wrapper;
 		const state = new sanad.ui.EmptyState({ wrapper: $body, state: "loading", rows: 4 });
@@ -208,7 +217,7 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 			this.run_row_action(action, row).then((done) => {
 				if (done) {
 					reload();
-					this.refresh();
+					this.refresh(true);
 				}
 			});
 		});

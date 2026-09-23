@@ -1,48 +1,51 @@
+// Prototype `stat` card (docs/component/Cards.dc.html, compact): 10/12 padding, 30 px icon tile at
+// the trailing edge, 17 px bold value, 12 px/600 label, 11 px note; grid auto-fit from 150 px.
 .sanad-stats {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-	gap: var(--sanad-gap-md);
-	margin-block: var(--sanad-gap-sm) var(--sanad-gap-md);
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: var(--sanad-gap-sm);
+	margin-block: var(--sanad-gap-xs) var(--sanad-gap-md);
 
 	&__card {
 		display: flex;
 		align-items: center;
 		gap: var(--sanad-gap-md);
-		min-height: 64px;
-		padding-block: var(--sanad-gap-md);
-		padding-inline: var(--sanad-gap-lg);
+		min-height: 56px;
+		padding-block: 10px;
+		padding-inline: var(--sanad-cell-px);
 		border: var(--sanad-border);
-		border-radius: var(--sanad-radius-lg);
+		border-radius: var(--sanad-radius);
 		background: var(--surface-white);
 		color: var(--ink-gray-9);
 		transition: border-color var(--sanad-motion), background var(--sanad-motion);
 
 		&--interactive {
 			cursor: pointer;
-			&:hover { background: var(--surface-gray-1); border-color: var(--outline-gray-2); }
+			&:hover { background: var(--surface-gray-1); border-color: var(--sanad-accent-outline); }
 		}
 		&--error { border-color: var(--outline-red-1); }
 	}
 	&__icon {
 		display: inline-flex;
+		order: 2; // the prototype puts the tile on the trailing edge
 		flex: none;
-		width: 36px;
-		height: 36px;
+		width: 30px;
+		height: 30px;
 		align-items: center;
 		justify-content: center;
 		border-radius: var(--sanad-radius);
 		background: var(--surface-gray-2);
-		color: var(--ink-gray-7);
-		.icon { width: 18px; height: 18px; }
+		color: var(--ink-gray-6);
+		.icon { width: 15px; height: 15px; }
 	}
-	&__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-	&__sub { font-size: var(--text-xs, 12px); color: var(--ink-gray-6); min-height: 1.2em; }
-	&__label { font-size: var(--text-sm, 13px); color: var(--ink-gray-6); }
+	&__text { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+	&__sub { font-size: var(--text-tiny, 11px); color: var(--ink-gray-6); min-height: 1.2em; }
+	&__label { font-size: var(--text-xs, 12px); font-weight: 600; color: var(--ink-gray-6); }
 	&__value {
-		min-height: 26px; // reserved so the skeleton → number swap never shifts the row
-		font-size: var(--text-xl, 20px);
-		font-weight: 600;
-		line-height: 1.3;
+		min-height: 24px; // reserved so the skeleton → number swap never shifts the row
+		font-size: 17px;
+		font-weight: 700;
+		line-height: 1.2;
 		.sanad-skeleton { padding-block: 6px; }
 		.sanad-skeleton__line { width: 40% !important; }
 	}
@@ -69,15 +72,15 @@
 
 // KPI layout (PageHeader): prototype card — icon square at the inline-start, label, big number, sub-text.
 .sanad-stats--kpi {
-	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); // 3 or 4 cards fill the row; 2 on tablets; 1 on phones
+	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); // 4 cards fill the row; 2 on tablets; 1 on phones
 	margin-block: 0;
-	.sanad-stats__card { min-height: 88px; align-items: flex-start; padding-block: var(--sanad-gap-lg); }
-	.sanad-stats__icon { margin-block-start: 2px; }
+	.sanad-stats__card { min-height: 64px; align-items: center; padding-block: var(--sanad-gap-md); }
 	.sanad-stats__icon.sanad-tone--blue { background: var(--surface-blue-1); color: var(--ink-blue-3); }
+	.sanad-stats__icon.sanad-tone--gray { background: var(--surface-gray-2); color: var(--ink-gray-6); }
 	.sanad-stats__icon.sanad-tone--amber { background: var(--surface-amber-1); color: var(--ink-amber-3); }
 	.sanad-stats__icon.sanad-tone--red { background: var(--surface-red-1); color: var(--ink-red-4); }
 	.sanad-stats__icon.sanad-tone--green { background: var(--surface-green-1); color: var(--ink-green-3); }
-	.sanad-stats__value { font-size: var(--text-2xl, 24px); }
+	.sanad-stats__value { font-size: 21px; }
 }
 
 @media (max-width: 767px) {

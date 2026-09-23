@@ -181,11 +181,12 @@ frappe.provide("whatsapp_next.messages");
 				presets: [
 					{ fieldname: "phone_e164", type: "search", fields: ["phone_e164", "display_name", "reference_name"], placeholder: __("Search name, number or document…") },
 					{ fieldname: "status", type: "select" },
-					{ fieldname: "reference_doctype", type: "select" },
+					{ fieldname: "reference_doctype", type: "select", label: __("Document type") },
 					{ fieldname: "device", type: "select" },
 					{
 						fieldname: "error_code",
 						type: "select",
+						label: __("Error"),
 						// Data field: distinct values seen in the log (guarded — an empty list just hides nothing)
 						options: (txt) =>
 							frappe.db
@@ -193,10 +194,6 @@ frappe.provide("whatsapp_next.messages");
 								.then((rows) => Array.from(new Set((rows || []).map((r) => r.error_code).filter(Boolean))))
 								.catch(() => []),
 					},
-					{ fieldname: "is_simulated", type: "select", label: __("On behalf") },
-					{ fieldname: "message_type", type: "select" },
-					{ fieldname: "command", type: "select" },
-					{ fieldname: "template", type: "select" },
 					{ fieldname: "creation", type: "period", label: __("Period"), default: "30d" },
 				],
 			});
@@ -215,7 +212,7 @@ frappe.provide("whatsapp_next.messages");
 					{ fieldname: "reference_doctype", label: __("Document type"), format: (v) => (v ? ui.escape(__(v)) : ""), sortable: true },
 					{ fieldname: "reference_name", label: __("Document no."), format: (v, doc) => (v ? (doc.reference_doctype ? frappe.utils.get_form_link(doc.reference_doctype, v, true, ui.escape(v)) : ui.escape(v)) : ""), sortable: true },
 					{ fieldname: "device", type: "avatar", label: __("Device"), sortable: true },
-					{ fieldname: "sent_at", type: "date", label: __("Sent at"), sortable: true, format: (v, doc) => (v || doc.creation ? `<span class="sanad-tabular sanad-datalist__date">${ui.escape(fmt_short(v || doc.creation))}</span>` : "") },
+					{ fieldname: "sent_at", type: "date", label: __("Sent at"), sortable: true, format: (v, doc) => (v || doc.creation ? `<span class="sanad-tabular sanad-datalist__date" dir="ltr">${ui.escape(fmt_short(v || doc.creation))}</span>` : "") },
 					{ fieldname: "error_code", label: __("Error"), sortable: true, format: (v, doc) => (v ? `<span class="sanad-cell__error" title="${ui.escape(doc.error_message || v)}">${ui.escape(v)}</span>` : "") },
 					{ fieldname: "is_simulated", label: __("On behalf"), sortable: true, format: (v) => (cint(v) ? ui.StatusBadge.html({ label: __("Yes"), colour: "gray", icon: false }) : "") },
 				],
