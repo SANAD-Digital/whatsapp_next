@@ -1,8 +1,8 @@
 // Regression checks for the kit's list table (sanad.ui.DataList + FilterBar).
 //
 // These assert the things that broke more than once while the list was being built: the stacking
-// order around sticky cells, the grouping tree, group selection, and the toolbar's shape at
-// several widths. Run it after touching `public/js/ui/DataList` or `public/js/ui/FilterBar`.
+// order around sticky cells, the grouping tree, group selection, the toolbar's shape at several
+// widths, and the date filter's popup placement and one-row-per-field set. Run it after touching `public/js/ui/DataList` or `public/js/ui/FilterBar`.
 //
 // Needs Playwright + Chromium outside the repo (see scripts/browser_smoke.mjs), and is run from
 // that folder so `playwright` resolves:
@@ -124,6 +124,56 @@ const header_top = await page.evaluate(() => {
 	return !!(el && el.closest("thead"));
 });
 check("the header row stays above the body", header_top);
+
+// ---- the date filter: its popups stay under the trigger, and one row per date field ----
+await page.setViewportSize({ width: 1500, height: 950 });
+await page.evaluate(async () => {
+	await cur_list.filter_area.clear(false);
+	cur_list.refresh();
+});
+await page.waitForTimeout(1500);
+
+const anchored = async (opener, popup, tag) => {
+	await page.click(opener);
+	await page.waitForTimeout(400);
+	const box = await page
+		.$eval(popup, (el) => {
+			const p = el.getBoundingClientRect();
+			const t = el.closest(".sanad-datefilter").querySelector(".sanad-datefilter__trigger").getBoundingClientRect();
+			return { start: Math.round(p.left - t.left), wide: p.width >= t.width - 1, inside: p.left >= 0 && p.right <= window.innerWidth };
+		})
+		.catch(() => null);
+	check(`${tag} hangs off the trigger and stays on screen`, !!box && Math.abs(box.start) <= 1 && box.wide && box.inside, box ? JSON.stringify(box) : "no popup");
+	await page.keyboard.press("Escape");
+	await page.waitForTimeout(250);
+};
+await anchored(".sanad-datefilter__op", ".sanad-datefilter__menu", "the operator menu");
+await anchored(".sanad-datefilter__fieldpick", ".sanad-datefilter__menu--fields", "the field picker");
+
+await page.click(".sanad-datefilter__fieldpick");
+await page.waitForTimeout(400);
+const offered = await page.$$eval(".sanad-datefilter__menu--fields .sanad-datefilter__menu-item", (n) => n.length);
+check("the field picker lists the DocType's date fields", offered >= 3, `${offered} offered`);
+// an untouched single row moves to the field just ticked rather than growing a second one
+await page.click(".sanad-datefilter__menu--fields .sanad-datefilter__menu-item >> nth=0");
+await page.waitForTimeout(500);
+check("ticking a field on an empty set moves its one row", (await page.$$eval(".sanad-datefilter", (n) => n.length)) === 1);
+
+// apply a range, then tick another field: that one gets a row of its own
+await page.click(".sanad-datefilter__value");
+await page.waitForTimeout(500);
+await page.click(".sanad-datefilter__preset >> nth=2");
+await page.waitForTimeout(250);
+await page.click(".sanad-datefilter__apply");
+await page.waitForTimeout(1400);
+await page.click(".sanad-datefilter__fieldpick");
+await page.waitForTimeout(400);
+const items = await page.$$(".sanad-datefilter__menu--fields .sanad-datefilter__menu-item");
+await items[items.length - 1].click();
+await page.waitForTimeout(900);
+check("ticking another field adds a second row", (await page.$$eval(".sanad-datefilter", (n) => n.length)) === 2);
+const applied = await page.evaluate(() => cur_list.filter_area.get().filter((f) => f[2] === "Between").length);
+check("only the row that was applied filters the list", applied === 1, `${applied} range filter(s)`);
 
 check("no console errors", errors.length === 0, errors.join(" | "));
 await browser.close();

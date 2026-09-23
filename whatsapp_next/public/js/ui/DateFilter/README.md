@@ -28,18 +28,52 @@ new sanad.ui.DateFilter({
 });
 ```
 
+## Which field — `sanad.ui.DateFilterSet`
+
+Give the trigger a field segment by passing `fields`, and a **set** turns each picked field into a
+filter row of its own:
+
+```js
+new sanad.ui.DateFilterSet({
+    wrapper: $("<div>").appendTo(page.main),
+    fields: [
+        { value: "sent_at", label: __("Sent at") },
+        { value: "creation", label: __("Created On") },
+    ],
+    fieldname: "creation",            // the field the first row starts on
+    on_change: (rows, { removed }) => {
+        // rows = [{fieldname, value|null}] — one entry per row
+        // removed = the fieldnames the set no longer holds
+    },
+});
+```
+
+The field list is **multi-select**: ticking a field the set does not have adds a row for it, so
+each field carries its own operator and its own dates; unticking drops that row. A set that is a
+single row with nothing applied *moves* to the field just picked instead of growing a second empty
+row, so the everyday "filter on another date instead" is one click. The last row never goes — with
+no rows there would be nothing left to pick a field from.
+
+A single `DateFilter` takes `fields` too; on its own the picker just switches which field the
+control reports (`on_field_change(now, was)`).
+
 In a list, use the `date` preset type instead and `FilterBar` does the wiring:
 
 ```js
 new sanad.ui.FilterBar({
     listview,
-    presets: [{ fieldname: "creation", type: "date", label: __("Date"), default_op: "between" }],
+    presets: [{ type: "date", label: __("Date"), default_op: "between" }],
 });
 ```
 
-`FilterBar` turns the value into one Frappe filter: `Between` for a range, `>` / `>=` / `<` / `<=`
-for the single-sided operators, and it appends `00:00:00` / `23:59:59` (or the chosen times) when
-the field is a Datetime.
+With no `fieldname`, the picker offers every **Date** and **Datetime** field on the DocType, in the
+DocType's own order, plus `creation` and `modified`, and starts on the DocType's `sort_field` —
+all of it from meta, nothing hard-coded. `date_fields: [...]` narrows the list and `fields: false`
+drops the picker and goes back to the single-field control.
+
+`FilterBar` turns each row into one Frappe filter on its own field: `Between` for a range,
+`>` / `>=` / `<` / `<=` for the single-sided operators, and it appends `00:00:00` / `23:59:59` (or
+the chosen times) when the field is a Datetime.
 
 ## Options
 
@@ -53,7 +87,10 @@ the field is a Datetime.
 | `week_start` | Frappe's setting | `sun` / `mon` / `sat` |
 | `fiscal_start_month` | `1` | 1–12 |
 | `value` | — | a previously emitted value, to restore |
+| `fields` | — | `[{value\|fieldname, label}]` — shows the field segment |
+| `fieldname` | first of `fields` | which field this control reports on |
 | `on_change` | — | `(value\|null) => void` on Apply and on Clear |
+| `on_field_change` | — | `(now, was) => void` when the field segment changes |
 
 ## Value
 
@@ -85,11 +122,15 @@ itself rather than as two dates.
   date as the start and today as the end.
 - Typed dates accept `DD/MM/YYYY`, `YYYY-M-D`, dots, dashes, slashes or spaces, two-digit years,
   and Arabic-Indic digits. An unparseable value turns the field red and blocks Apply.
+- Panel and menus hang off the **start** edge of the trigger — the left in English, the right in
+  Arabic — and are measured after mounting: one that would run off the viewport flips to the other
+  edge, and is pinned to the viewport if even that does not fit. The menus are at least as wide as
+  the trigger, so they read as attached to it rather than as a stub sticking out one side.
 - The panel never closes on selection. Escape, Cancel, Apply or a click outside close it; Escape
-  closes the operator menu or the month picker first.
+  closes the field picker, the operator menu or the month picker first.
 - Month and weekday names come from `moment`, so they follow the user's language; the calendar
   inherits RTL from Desk and the range band flips with it.
 
 ## Live use
 
-`WhatsApp Log` (Outbound) — the `creation` filter in its toolbar.
+`WhatsApp Log` (Outbound) — the date filter in its toolbar, over the log's ten date fields.

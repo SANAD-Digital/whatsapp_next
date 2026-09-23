@@ -50,7 +50,10 @@ sanad.ui.FilterBar = class FilterBar {
 	 * @param {Array<Object>} opts.presets — `{fieldname, type?: "select"|"tabs"|"daterange"|"search"|"period", label?,
 	 *   options?: Array<string|{value,label}> | () => Promise<Array>, multiple?: boolean (select, default true),
 	 *   fields?: string[] (search), placeholder?, all_label?, default?: "30d"|"7d"|"today"|"all"|number (period)}`
-	 *   — `type: "date"` mounts `sanad.ui.DateFilter` (operators, presets, calendar, fiscal periods)
+	 *   — `type: "date"` mounts `sanad.ui.DateFilterSet`: a date filter per date field, with the
+	 *   field picked inside each trigger. It offers the DocType's Date / Datetime fields plus
+	 *   `creation` / `modified` and starts on its `sort_field`; `fieldname` pins the first field,
+	 *   `date_fields: [...]` narrows the list, `fields: false` goes back to one `sanad.ui.DateFilter`
 	 * @param {Array<string>} [opts.actions] — `"group_by"` (multi-level grouping of the table),
 	 *   `"columns"` (pick and order the table's columns), `"export"` (Desk's exporter)
 	 * @param {string} [opts.intro] — one-line description rendered above the toolbar
@@ -209,7 +212,12 @@ sanad.ui.FilterBar = class FilterBar {
 	// ---- meta / options --------------------------------------------------------------------
 
 	df(fieldname) {
-		return (this.meta.fields || []).find((f) => f.fieldname === fieldname) || frappe.meta.get_docfield(this.doctype, fieldname) || { fieldname, label: fieldname, fieldtype: "Data" };
+		const standard = { creation: __("Created On"), modified: __("Last Updated On") };
+		return (
+			(this.meta.fields || []).find((f) => f.fieldname === fieldname) ||
+			frappe.meta.get_docfield(this.doctype, fieldname) ||
+			(standard[fieldname] ? { fieldname, label: standard[fieldname], fieldtype: "Datetime" } : { fieldname, label: fieldname, fieldtype: "Data" })
+		);
 	}
 
 	label_of(preset) {
@@ -336,16 +344,78 @@ sanad.ui.FilterBar = class FilterBar {
 	 */
 	render_date(preset) {
 		if (typeof sanad.ui.DateFilter !== "function") return this.render_period(preset);
-		const p = Object.assign({ fieldname: "creation" }, preset);
+		const fields = preset.fields === false ? [] : this.date_fields(preset);
+		const p = Object.assign({ fieldname: this.default_date_field(preset, fields) }, preset);
 		const $slot = $('<div class="sanad-filterbar__datefilter"></div>').appendTo(this.$end);
-		const control = new sanad.ui.DateFilter({
+		if (!fields.length || typeof sanad.ui.DateFilterSet !== "function") {
+			const control = new sanad.ui.DateFilter({
+				wrapper: $slot,
+				placeholder: this.label_of(p),
+				default_op: p.default_op || "between",
+				on_change: (value) => this.set(p.fieldname, value ? { __date: value } : null),
+			});
+			this.controls[p.fieldname] = { preset: p, $el: $slot, type: "date", control };
+			return control;
+		}
+		// one row per date field: the field picker inside each trigger owns which fields are filtered
+		const control = new sanad.ui.DateFilterSet({
 			wrapper: $slot,
-			placeholder: this.label_of(p),
+			fields,
+			fieldname: p.fieldname,
+			placeholder: "", // the field name is the caption now; the value segment is the calendar
 			default_op: p.default_op || "between",
-			on_change: (value) => this.set(p.fieldname, value ? { __date: value } : null),
+			on_change: (rows, { removed } = {}) => this.set_date_rows(p, $slot, rows, removed || []),
 		});
-		this.controls[p.fieldname] = { preset: p, $el: $slot, type: "date", control };
+		this.date_control = { preset: p, $el: $slot, control };
+		this.register_date_rows(p, $slot, control.values().map((r) => r.fieldname));
 		return control;
+	}
+
+	/**
+	 * The date fields the picker offers: every Date / Datetime field on the DocType in its own
+	 * order, plus the two Frappe keeps on every doc. `preset.date_fields` overrides the lot.
+	 */
+	date_fields(preset) {
+		if (Array.isArray(preset.date_fields)) {
+			return preset.date_fields.map((f) => (typeof f === "string" ? { value: f, label: __(this.df(f).label || f) } : f));
+		}
+		const own = (this.meta.fields || [])
+			.filter((f) => ["Date", "Datetime"].includes(f.fieldtype) && !f.hidden)
+			.map((f) => ({ value: f.fieldname, label: __(f.label || f.fieldname) }));
+		const standard = [
+			{ value: "creation", label: __("Created On") },
+			{ value: "modified", label: __("Last Updated On") },
+		].filter((f) => !own.some((o) => o.value === f.value));
+		return own.concat(standard);
+	}
+
+	/** The field the first row starts on: the preset's own, else the DocType's sort field. */
+	default_date_field(preset, fields) {
+		const has = (f) => f && fields.some((x) => x.value === f);
+		if (preset.fieldname && (!fields.length || has(preset.fieldname))) return preset.fieldname;
+		const sort = this.meta.sort_field ? String(this.meta.sort_field).split(",")[0].trim().split(" ")[0] : null;
+		if (has(sort)) return sort;
+		return (fields[0] || {}).value || "creation";
+	}
+
+	/** Every field the set holds gets its own entry in `controls`, so one filter each is built. */
+	register_date_rows(p, $slot, fieldnames) {
+		fieldnames.forEach((fieldname) => {
+			if (!this.controls[fieldname]) {
+				this.controls[fieldname] = { preset: Object.assign({}, p, { fieldname }), $el: $slot, type: "date", control: this.date_control.control };
+			}
+		});
+	}
+
+	/** Mirror the set into the bar: one value per field, and a clear for the fields it dropped. */
+	set_date_rows(p, $slot, rows, removed) {
+		removed.forEach((fieldname) => {
+			if (!this.controls[fieldname]) return;
+			this.set(fieldname, null);
+			delete this.controls[fieldname];
+		});
+		this.register_date_rows(p, $slot, rows.map((r) => r.fieldname));
+		rows.forEach((r) => this.set(r.fieldname, r.value ? { __date: r.value } : null));
 	}
 
 	render_tabs(preset) {
@@ -1094,6 +1164,14 @@ sanad.ui.FilterBar = class FilterBar {
 			if (c && c.type === "date" && c.control) c.control.clear({ silent: true });
 			this.reflect(fieldname);
 		});
+		if (this.date_control) {
+			// the set keeps one row; the rows it dropped must not leave stale entries behind
+			const kept = this.date_control.control.values().map((r) => r.fieldname);
+			Object.keys(this.controls).forEach((f) => {
+				if (this.controls[f].control === this.date_control.control && !kept.includes(f)) delete this.controls[f];
+			});
+			this.register_date_rows(this.date_control.preset, this.date_control.$el, kept);
+		}
 		if (this.controls.__search) {
 			this.controls.__search.$el.val("");
 			this.search_text = "";

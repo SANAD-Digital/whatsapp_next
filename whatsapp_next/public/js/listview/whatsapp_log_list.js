@@ -190,8 +190,9 @@ frappe.provide("whatsapp_next.messages");
 								.catch(() => []),
 					},
 					// the full date filter (operators, presets, a range calendar, relative spans,
-					// fiscal periods) in place of the four quick period buttons
-					{ fieldname: "creation", type: "date", label: __("Date"), default_op: "between" },
+					// fiscal periods) in place of the four quick period buttons. No `fieldname`: the
+					// picker lists the DocType's own date fields and starts on its sort field.
+					{ type: "date", label: __("Date"), default_op: "between" },
 				],
 			});
 

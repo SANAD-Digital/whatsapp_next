@@ -66,6 +66,12 @@ const parse_input = (text) => {
 	return dt.getMonth() === mo - 1 && dt.getDate() === d ? to_key(dt) : null;
 };
 
+/** `["creation"]`, `[{fieldname, label}]` or `[{value, label}]` → `[{value, label}]`. */
+const normalise_fields = (list) =>
+	(list || [])
+		.map((f) => (typeof f === "string" ? { value: f, label: f } : { value: f.value || f.fieldname, label: f.label || f.value || f.fieldname }))
+		.filter((f) => f.value);
+
 const OPERATORS = () => [
 	{ key: "is", label: __("Is") },
 	{ key: "after", label: __("After") },
@@ -113,6 +119,9 @@ sanad.ui.DateFilter = class DateFilter {
 	constructor(opts = {}) {
 		this.opts = Object.assign({ default_op: "between", layout: "auto", fiscal_start_month: 1 }, opts);
 		this.id = ui.uid("datefilter");
+		// the field picker is optional: with no `fields` the control is the plain single-field filter
+		this.fields = normalise_fields(this.opts.fields);
+		this.fieldname = this.opts.fieldname || (this.fields[0] ? this.fields[0].value : null);
 		this.applied = null;
 		this.state = this.defaults();
 		this.make();
@@ -436,8 +445,12 @@ sanad.ui.DateFilter = class DateFilter {
 						<span class="sanad-datefilter__op-label"></span>
 						<span class="sanad-datefilter__caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 					</button>
+					${this.fields.length ? `<button type="button" class="sanad-datefilter__fieldpick" aria-haspopup="listbox" aria-expanded="false" aria-label="${ui.escape(__("Date field"))}">
+						<span class="sanad-datefilter__fieldpick-label"></span>
+						<span class="sanad-datefilter__caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
+					</button>` : ""}
 					<button type="button" class="sanad-datefilter__value" aria-haspopup="dialog" aria-expanded="false">
-						<span class="sanad-datefilter__icon" aria-hidden="true">${ui.icon("es-line-calendar", "xs")}</span>
+						<span class="sanad-datefilter__icon" aria-hidden="true">${ui.icon("es-solid-calendar", "xs")}</span>
 						<span class="sanad-datefilter__text"></span>
 						<span class="sanad-datefilter__clear" role="button" tabindex="0" aria-label="${ui.escape(__("Clear"))}" hidden>${ui.icon("es-line-close", "xs")}</span>
 					</button>
@@ -445,6 +458,7 @@ sanad.ui.DateFilter = class DateFilter {
 			</div>`).appendTo($(this.opts.wrapper));
 
 		this.$el.on("click", ".sanad-datefilter__op", () => (this.$menu ? this.close_menu() : this.open_menu()));
+		this.$el.on("click", ".sanad-datefilter__fieldpick", () => (this.$fields ? this.close_fields() : this.open_fields()));
 		this.$el.on("click", ".sanad-datefilter__value", (e) => {
 			if ($(e.target).closest(".sanad-datefilter__clear").length) return;
 			if (this.$panel) this.close();
@@ -456,22 +470,26 @@ sanad.ui.DateFilter = class DateFilter {
 			e.stopPropagation();
 			this.clear();
 		});
-		this.$el.on("keydown", ".sanad-datefilter__op, .sanad-datefilter__value", (e) => {
+		this.$el.on("keydown", ".sanad-datefilter__op, .sanad-datefilter__fieldpick, .sanad-datefilter__value", (e) => {
 			if (!["Enter", " ", "ArrowDown"].includes(e.key)) return;
 			e.preventDefault();
-			if ($(e.currentTarget).hasClass("sanad-datefilter__op")) this.open_menu();
+			const $t = $(e.currentTarget);
+			if ($t.hasClass("sanad-datefilter__op")) this.open_menu();
+			else if ($t.hasClass("sanad-datefilter__fieldpick")) this.open_fields();
 			else this.open();
 		});
 
 		this._outside = (e) => {
-			if (!this.$panel && !this.$menu) return;
+			if (!this.$panel && !this.$menu && !this.$fields) return;
 			if ($(e.target).closest(`#${this.id}`).length) return;
 			this.close();
 			this.close_menu();
+			this.close_fields();
 		};
 		this._escape = (e) => {
-			if (e.key !== "Escape" || (!this.$panel && !this.$menu)) return;
+			if (e.key !== "Escape" || (!this.$panel && !this.$menu && !this.$fields)) return;
 			e.stopPropagation();
+			if (this.$fields) return this.close_fields(true);
 			if (this.$menu) return this.close_menu(true);
 			if (this.state.pick_month) {
 				this.state.pick_month = false;
@@ -487,10 +505,16 @@ sanad.ui.DateFilter = class DateFilter {
 		const op = OPERATORS().find((o) => o.key === this.state.op) || OPERATORS()[0];
 		const value = this.applied && this.applied.value;
 		this.$el.find(".sanad-datefilter__op-label").text(op.label);
+		if (this.fields.length) {
+			const f = this.fields.find((x) => x.value === this.fieldname) || this.fields[0];
+			this.$el.find(".sanad-datefilter__fieldpick-label").text(f ? f.label : "");
+		}
+		const placeholder = this.opts.placeholder == null ? __("Pick a date") : this.opts.placeholder;
 		this.$el
 			.find(".sanad-datefilter__text")
-			.text(value ? value.label : this.opts.placeholder || __("Pick a date"))
-			.toggleClass("sanad-datefilter__text--empty", !value);
+			.text(value ? value.label : placeholder)
+			.toggleClass("sanad-datefilter__text--empty", !value)
+			.prop("hidden", !value && !placeholder);
 		this.$el.find(".sanad-datefilter__clear").prop("hidden", !value);
 		this.$el.toggleClass("sanad-datefilter--set", !!value);
 		return this;
@@ -500,6 +524,7 @@ sanad.ui.DateFilter = class DateFilter {
 
 	open_menu() {
 		this.close();
+		this.close_fields();
 		const ops = OPERATORS();
 		this.$menu = $(`<div class="sanad-datefilter__menu" role="listbox" aria-label="${ui.escape(__("Comparison"))}"></div>`).appendTo(this.$el);
 		ops.forEach((o) => {
@@ -512,6 +537,7 @@ sanad.ui.DateFilter = class DateFilter {
 				.appendTo(this.$menu);
 		});
 		this.$el.find(".sanad-datefilter__op").attr("aria-expanded", "true");
+		this.place(this.$menu);
 		this.$menu.find(".sanad-datefilter__menu-item--on, .sanad-datefilter__menu-item").first().trigger("focus");
 	}
 
@@ -521,6 +547,59 @@ sanad.ui.DateFilter = class DateFilter {
 		this.$menu = null;
 		this.$el.find(".sanad-datefilter__op").attr("aria-expanded", "false");
 		if (restore_focus) this.$el.find(".sanad-datefilter__op").trigger("focus");
+	}
+
+	// ---- field picker ----------------------------------------------------------------------------
+
+	/**
+	 * Which date field this filter runs on. The list is multi-select: ticking a field the set does
+	 * not have yet adds a filter row of its own for it, and unticking one drops that row — so each
+	 * field carries its own operator and its own dates. The host owns the set, so the decision is
+	 * delegated through `on_toggle_field`; standalone, the picker just switches this row's field.
+	 */
+	open_fields() {
+		if (!this.fields.length) return;
+		this.close();
+		this.close_menu();
+		const taken = typeof this.opts.selected_fields === "function" ? this.opts.selected_fields() : [this.fieldname];
+		this.$fields = $(`<div class="sanad-datefilter__menu sanad-datefilter__menu--fields" role="listbox" aria-multiselectable="true" aria-label="${ui.escape(__("Date field"))}"></div>`).appendTo(this.$el);
+		this.fields.forEach((f) => {
+			const on = taken.includes(f.value);
+			const mine = f.value === this.fieldname;
+			$(`<button type="button" class="sanad-datefilter__menu-item${on ? " sanad-datefilter__menu-item--on" : ""}${mine ? " sanad-datefilter__menu-item--mine" : ""}" role="option" aria-selected="${on}">
+					<span class="sanad-datefilter__menu-box" aria-hidden="true">${on ? ui.icon("es-line-check", "xs") : ""}</span>
+					<span class="sanad-datefilter__menu-text">${ui.escape(f.label)}</span>
+				</button>`)
+				.on("click", () => this.toggle_field(f.value))
+				.appendTo(this.$fields);
+		});
+		this.$el.find(".sanad-datefilter__fieldpick").attr("aria-expanded", "true");
+		this.place(this.$fields);
+		this.$fields.find(".sanad-datefilter__menu-item--mine, .sanad-datefilter__menu-item").first().trigger("focus");
+	}
+
+	close_fields(restore_focus = false) {
+		if (!this.$fields) return;
+		this.$fields.remove();
+		this.$fields = null;
+		this.$el.find(".sanad-datefilter__fieldpick").attr("aria-expanded", "false");
+		if (restore_focus) this.$el.find(".sanad-datefilter__fieldpick").trigger("focus");
+	}
+
+	toggle_field(fieldname) {
+		this.close_fields();
+		if (typeof this.opts.on_toggle_field === "function") return this.opts.on_toggle_field(fieldname, this);
+		return this.set_field(fieldname);
+	}
+
+	/** Point this row at another field. The host re-keys whatever filter it built from this one. */
+	set_field(fieldname, { silent = false } = {}) {
+		if (!fieldname || fieldname === this.fieldname) return this;
+		const was = this.fieldname;
+		this.fieldname = fieldname;
+		this.reflect_trigger();
+		if (!silent && typeof this.opts.on_field_change === "function") this.opts.on_field_change(fieldname, was, this);
+		return this;
 	}
 
 	/** Switching operator keeps the dates the user already picked. */
@@ -544,6 +623,7 @@ sanad.ui.DateFilter = class DateFilter {
 	/** @param {{keep_state?: boolean}} [o] — `keep_state` reopens on the current draft, not the applied one. */
 	open(o = {}) {
 		this.close_menu();
+		this.close_fields();
 		if (this.$panel) return this;
 		if (!o.keep_state) {
 			const base = this.applied ? this.applied.snapshot : this.defaults();
@@ -562,24 +642,29 @@ sanad.ui.DateFilter = class DateFilter {
 		return this;
 	}
 
-	/**
-	 * Keep the panel on screen. It hangs off the start edge of a trigger that usually sits at the
-	 * end of a toolbar, so it is flipped to the other edge, and pinned to the viewport if even
-	 * that does not fit.
-	 */
 	keep_in_view() {
+		return this.place(this.$panel);
+	}
+
+	/**
+	 * Keep a popup on screen. Panel and menus alike hang off the **start** edge of the trigger, which
+	 * is the left in English and the right in Arabic, so the same rule reads correctly both ways:
+	 * measure, flip to the other edge if the popup runs off the viewport, and pin it to the viewport
+	 * if even that does not fit. Measuring is why this cannot be CSS alone.
+	 */
+	place($pop) {
 		window.setTimeout(() => {
-			const el = this.$panel && this.$panel[0];
+			const el = $pop && $pop[0];
 			if (!el || !el.isConnected) return;
-			this.$panel.css({ "inset-inline-start": "", "inset-inline-end": "", position: "", left: "", top: "" });
+			$pop.css({ "inset-inline-start": "", "inset-inline-end": "", position: "", left: "", top: "" });
 			const margin = 12;
 			let box = el.getBoundingClientRect();
 			if (box.right <= window.innerWidth - margin && box.left >= margin) return;
-			this.$panel.css({ "inset-inline-start": "auto", "inset-inline-end": "0" });
+			$pop.css({ "inset-inline-start": "auto", "inset-inline-end": "0" });
 			box = el.getBoundingClientRect();
 			if (box.left >= margin && box.right <= window.innerWidth - margin) return;
 			const anchor = this.$el[0].getBoundingClientRect();
-			this.$panel.css({
+			$pop.css({
 				"inset-inline-start": "",
 				"inset-inline-end": "",
 				position: "fixed",
@@ -587,6 +672,7 @@ sanad.ui.DateFilter = class DateFilter {
 				left: `${Math.round(Math.max(margin, Math.min(window.innerWidth - box.width - margin, anchor.left)))}px`,
 			});
 		}, 0);
+		return this;
 	}
 
 	close(restore_focus = false) {
@@ -991,6 +1077,116 @@ sanad.ui.DateFilter = class DateFilter {
 		$(document).off(`.${this.id}`);
 		this.close();
 		this.close_menu();
+		this.close_fields();
+		this.$el.remove();
+	}
+};
+
+/**
+ * sanad.ui.DateFilterSet — one `DateFilter` per date field.
+ *
+ * The field segment of every row's trigger lists the same fields and ticks the ones the set holds.
+ * Ticking a field the set does not have adds a row for it — unless the set is a single untouched
+ * row, which simply moves to the field just picked, so the common "filter by another date" gesture
+ * costs one click and does not leave an empty row behind. Unticking drops that field's row; the
+ * last row never goes, since a set with no rows would have nothing left to pick a field from.
+ *
+ * `on_change(rows, {removed})` fires whenever any row applies, clears or changes field, with
+ * `rows = [{fieldname, value}]` and `removed` the fieldnames that no longer belong to the set.
+ */
+sanad.ui.DateFilterSet = class DateFilterSet {
+	/**
+	 * @param {Object} opts
+	 * @param {jQuery|HTMLElement} opts.wrapper
+	 * @param {Array} opts.fields — `[{fieldname|value, label}]`, the date fields on offer
+	 * @param {string} [opts.fieldname] — the field the first row starts on
+	 * @param {Function} [opts.on_change] — `(rows, {removed}) => void`
+	 * …plus anything `DateFilter` takes, passed straight through to every row.
+	 */
+	constructor(opts = {}) {
+		this.opts = Object.assign({}, opts);
+		this.fields = normalise_fields(opts.fields);
+		this.rows = [];
+		this.$el = $('<div class="sanad-kit sanad-datefilter-set"></div>').appendTo($(opts.wrapper));
+		this.add(opts.fieldname || (this.fields[0] || {}).value, { silent: true });
+	}
+
+	selected() {
+		return this.rows.map((r) => r.fieldname);
+	}
+
+	row_of(fieldname) {
+		return this.rows.find((r) => r.fieldname === fieldname) || null;
+	}
+
+	/** `[{fieldname, value}]` — `value` is `null` while that row has nothing applied. */
+	values() {
+		return this.rows.map((r) => ({ fieldname: r.fieldname, value: (r.applied && r.applied.value) || null }));
+	}
+
+	add(fieldname, { silent = false } = {}) {
+		if (!fieldname || this.row_of(fieldname)) return null;
+		const row = new sanad.ui.DateFilter(
+			Object.assign({}, this.opts, {
+				wrapper: this.$el,
+				fields: this.fields,
+				fieldname,
+				value: null,
+				label: this.rows.length ? null : this.opts.label, // only the first row carries the caption
+				selected_fields: () => this.selected(),
+				on_toggle_field: (picked, from) => this.toggle(picked, from),
+				on_change: () => this.emit(),
+			})
+		);
+		this.rows.push(row);
+		if (!silent) this.emit();
+		return row;
+	}
+
+	remove(fieldname, { silent = false } = {}) {
+		const row = this.row_of(fieldname);
+		if (!row || this.rows.length < 2) return this;
+		this.rows = this.rows.filter((r) => r !== row);
+		const had = !!row.applied;
+		row.destroy();
+		if (!silent) this.emit(had ? [fieldname] : []);
+		return this;
+	}
+
+	/** One tick in a row's field list. */
+	toggle(fieldname, from) {
+		if (this.row_of(fieldname)) return this.remove(fieldname);
+		if (this.rows.length === 1 && !this.rows[0].applied) {
+			const was = this.rows[0].fieldname;
+			this.rows[0].set_field(fieldname, { silent: true });
+			return this.emit(was === fieldname ? [] : [was]);
+		}
+		if (from && !from.applied && this.rows.length > 1) {
+			// an untouched row moves rather than breeding a second empty one
+			const was = from.fieldname;
+			from.set_field(fieldname, { silent: true });
+			return this.emit(was === fieldname ? [] : [was]);
+		}
+		return this.add(fieldname);
+	}
+
+	clear({ silent = false } = {}) {
+		const removed = this.rows.slice(1).map((r) => r.fieldname);
+		this.rows.slice(1).forEach((r) => r.destroy());
+		this.rows = this.rows.slice(0, 1);
+		this.rows.forEach((r) => r.clear({ silent: true }));
+		if (!silent) this.emit(removed);
+		return this;
+	}
+
+	emit(removed = []) {
+		if (typeof this.opts.on_change === "function") this.opts.on_change(this.values(), { removed });
+		return this;
+	}
+
+	destroy() {
+		this.rows.forEach((r) => r.destroy());
+		this.rows = [];
 		this.$el.remove();
 	}
 };

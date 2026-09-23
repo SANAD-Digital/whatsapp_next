@@ -22,6 +22,7 @@
 		transition: border-color var(--sanad-motion), box-shadow var(--sanad-motion);
 	}
 	&:has(&__op[aria-expanded="true"]) &__trigger,
+	&:has(&__fieldpick[aria-expanded="true"]) &__trigger,
 	&:has(&__value[aria-expanded="true"]) &__trigger {
 		border-color: var(--sanad-accent);
 		box-shadow: 0 0 0 3px var(--sanad-accent-soft);
@@ -29,6 +30,7 @@
 	&--set &__trigger { border-color: var(--sanad-accent-outline); }
 
 	&__op,
+	&__fieldpick,
 	&__value {
 		appearance: none;
 		display: flex;
@@ -53,7 +55,27 @@
 		&:hover { background: var(--surface-gray-2); }
 		&[aria-expanded="true"] { background: var(--surface-gray-2); }
 	}
+	// the date field the filter runs on — one segment, so operator · field · value read as one control
+	&__fieldpick {
+		flex: none;
+		gap: 6px;
+		min-width: 0;
+		max-width: 160px;
+		padding-inline: 10px;
+		border-inline-end: 1px solid var(--outline-gray-1);
+		font-weight: 500;
+		&:hover,
+		&[aria-expanded="true"] { background: var(--surface-gray-1); }
+	}
+	&__fieldpick-label {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&__fieldpick[aria-expanded="true"] &__caret { transform: rotate(180deg); }
 	&__value { flex: 1; min-width: 0; gap: 8px; padding-inline: 10px; }
+	&__text[hidden] { display: none; }
 	&__icon, &__caret { display: inline-flex; flex: none; color: var(--ink-gray-5); }
 	&__caret { transition: transform var(--sanad-motion); }
 	&__op[aria-expanded="true"] &__caret { transform: rotate(180deg); }
@@ -86,7 +108,10 @@
 		inset-block-start: calc(100% + 5px);
 		inset-inline-start: 0;
 		z-index: 1031;
-		width: 200px;
+		// as wide as the trigger it hangs under, so it reads as attached to it in English and Arabic
+		width: max-content;
+		min-width: 100%;
+		max-width: min(280px, calc(100vw - 24px));
 		display: flex;
 		flex-direction: column;
 		padding: 4px;
@@ -115,6 +140,26 @@
 		&--on { color: var(--sanad-accent-ink); font-weight: 600; }
 	}
 	&__menu-check { display: inline-flex; color: var(--sanad-accent); }
+	&__menu--fields &__menu-item { justify-content: flex-start; }
+	&__menu-box {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: none;
+		width: 16px;
+		height: 16px;
+		border: 1px solid var(--outline-gray-2);
+		border-radius: 4px;
+		color: var(--surface-white);
+	}
+	&__menu-item--on &__menu-box { border-color: var(--sanad-accent); background: var(--sanad-accent); }
+	&__menu-text {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&__menu-item--mine { font-weight: 600; }
 
 	// ---- panel ----
 	&__panel {
@@ -492,5 +537,20 @@
 		max-height: 85dvh;
 		overflow: auto;
 		border-radius: var(--sanad-radius-lg) var(--sanad-radius-lg) 0 0;
+	}
+}
+
+// One row per date field, stacked; on a phone they fill the width like any other filter field.
+.sanad-datefilter-set {
+	display: inline-flex;
+	flex-direction: column;
+	align-items: stretch; // every row as wide as the widest, so the segments line up down the stack
+	gap: var(--sanad-gap-sm, 8px);
+	min-width: 0;
+
+	@media (max-width: 767px) {
+		display: flex;
+		align-items: stretch;
+		> .sanad-datefilter { width: 100%; }
 	}
 }
