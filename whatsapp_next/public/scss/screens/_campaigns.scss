@@ -1,141 +1,178 @@
-// Campaigns screen — what only this screen has: the campaigns that are sending right now, one row
-// each inside the console's lower half, and the line of what is not sending yet. The panel itself
-// is the shared console (`screens/_console.scss`).
+// Campaigns screen — the prototype's live strips (`docs/screen/Hub Screen - Campaigns.dc.html`):
+// one line per campaign that is sending or waiting, with a rule down its inline-start edge, the
+// four-segment funnel bar (read · delivered · sent · failed of the recipients), the counters and
+// the two verbs. The metric row above them is the shared console (`screens/_console.scss`).
 
-.wa-camp {
-	// ---- a campaign that is sending ------------------------------------------------------------
+.wa-strips {
+	display: grid;
+	gap: var(--sanad-gap-sm);
+	margin-block-start: var(--sanad-gap-sm);
 
-	&__live {
-		display: grid;
+	&__more {
+		margin: 0;
+		font-size: 11px;
+		color: var(--ink-gray-5);
 	}
+}
 
-	&__row {
-		display: grid;
-		gap: var(--sanad-gap-sm);
-		padding-block: var(--sanad-gap-md);
-		border-block-end: var(--sanad-border);
-		&:first-child { padding-block-start: 0; }
-		&:last-child { border-block-end: 0; padding-block-end: 0; }
-		grid-template-areas:
-			"head    actions"
-			"bar     actions"
-			"facts   actions"
-			"note    actions";
-		grid-template-columns: minmax(0, 1fr) auto;
-		align-items: center;
-		@media (max-width: 767px) {
-			grid-template-areas: "head" "bar" "facts" "note" "actions";
-			grid-template-columns: minmax(0, 1fr);
-		}
-	}
+.wa-strip {
+	display: grid;
+	gap: 5px;
+	padding: 9px 12px;
+	border: 1px solid var(--sanad-accent-outline);
+	border-inline-start: 3px solid var(--sanad-accent);
+	border-radius: var(--sanad-radius);
+	background: var(--surface-white);
 
-	&__head {
-		grid-area: head;
+	&__line {
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+		gap: var(--sanad-gap-md) var(--sanad-gap-lg);
+	}
+
+	&__title {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
 		min-inline-size: 0;
 	}
+	&__dot {
+		inline-size: 8px;
+		block-size: 8px;
+		border-radius: 50%;
+		background: var(--sanad-accent);
+		flex: none;
+		animation: wa-ops-pulse 1.8s ease-in-out infinite;
+	}
 	&__name {
-		font-size: var(--text-base, 14px);
-		font-weight: 600;
+		font-size: var(--text-lg, 16px);
+		font-weight: 700;
 		color: var(--ink-gray-9);
+		min-inline-size: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		&:hover { color: var(--sanad-accent-ink); }
 	}
-	&__pct {
-		margin-inline-start: auto;
-		font-size: var(--text-base, 14px);
+	&__badge {
+		padding: 3px 8px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--sanad-accent-soft);
+		color: var(--sanad-accent-ink);
+		font-size: 11px;
 		font-weight: 600;
-		color: var(--ink-gray-8);
+		white-space: nowrap;
+		flex: none;
 	}
 
-	// sent, failed and what is still to go — one bar, never a number pretending to be progress
-	// the bar lives in two places: a row of the console (where it takes the `bar` area) and a
-	// table cell (where `grid-area` would push it into an implicit column and collapse it)
-	&__row > &__bar { grid-area: bar; }
+	// ---- the funnel bar ------------------------------------------------------------------------
+
+	&__progress {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		flex: 1;
+		min-inline-size: 200px;
+	}
+	&__progress-text {
+		font-size: 11px;
+		color: var(--ink-gray-7);
+		white-space: nowrap;
+	}
 	&__bar {
 		display: flex;
-		inline-size: 100%;
-		block-size: 8px;
+		flex: 1;
+		min-inline-size: 80px;
+		block-size: 6px;
 		border-radius: var(--border-radius-full, 999px);
 		background: var(--surface-gray-3);
 		overflow: hidden;
 		&--paused { opacity: 0.55; }
 	}
-	&__bar-sent {
-		background: var(--sanad-accent);
+	&__seg {
 		transition: inline-size var(--sanad-motion) ease-out;
-	}
-	&__bar-failed {
-		background: var(--ink-red-4);
-		transition: inline-size var(--sanad-motion) ease-out;
+		&--read { background: var(--ink-blue-3); }
+		&--delivered { background: var(--sanad-accent); }
+		&--sent { background: var(--sanad-accent-outline); }
+		&--failed { background: var(--ink-red-4); }
 	}
 
-	&__facts {
-		grid-area: facts;
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--sanad-gap-xs) var(--sanad-gap-lg);
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-6);
-		b { font-weight: 600; color: var(--ink-gray-9); }
-	}
-	&__note {
-		grid-area: note;
-		margin: 0;
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-5);
-		min-block-size: 16px;
-	}
-	&__actions {
-		grid-area: actions;
+	// ---- the counters --------------------------------------------------------------------------
+
+	&__stats {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
-		padding-inline-start: var(--sanad-gap-lg);
-		@media (max-width: 767px) {
-			padding-inline-start: 0;
-			padding-block-start: var(--sanad-gap-xs);
-		}
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-md);
+	}
+	&__stat {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 5px;
+		white-space: nowrap;
+	}
+	&__stat-label {
+		font-size: 10px;
+		color: var(--ink-gray-5);
+	}
+	&__stat-value {
+		font-size: var(--text-xs, 12px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+	}
+
+	&__when {
+		font-size: var(--text-xs, 12px);
+		color: var(--ink-gray-7);
+		flex: none;
+	}
+	&__meta {
+		font-size: 11px;
+		color: var(--ink-gray-6);
+		flex: 1;
+		min-inline-size: 120px;
+	}
+
+	&__actions {
+		display: flex;
+		gap: 6px;
+		flex: none;
 		.btn { min-block-size: var(--sanad-target); white-space: nowrap; }
 	}
 
-	// ---- nothing is sending --------------------------------------------------------------------
-
-	&__next {
-		display: grid;
-		gap: var(--sanad-gap-sm);
-		ul {
-			display: grid;
-			gap: var(--sanad-gap-sm);
-			margin: 0;
-			padding: 0;
-			list-style: none;
-		}
-		li {
-			display: flex;
-			flex-wrap: wrap;
-			align-items: baseline;
-			gap: var(--sanad-gap-sm) var(--sanad-gap-lg);
-			font-size: var(--text-xs, 11px);
-			color: var(--ink-gray-6);
-			padding-block-end: var(--sanad-gap-sm);
-			border-block-end: var(--sanad-border);
-			&:last-child { border-block-end: 0; padding-block-end: 0; }
-		}
-		a {
-			font-size: var(--text-sm, 13px);
-			font-weight: 600;
-			color: var(--ink-gray-9);
-			&:hover { color: var(--sanad-accent-ink); }
-		}
+	&__foot {
+		margin: 0;
+		font-size: 11px;
+		color: var(--ink-gray-5);
+		line-height: 1.6;
 	}
 
-	// the same bar inside a table cell, with its label above it
+	// a paused campaign keeps its place but stops breathing
+	&--paused {
+		border-color: var(--outline-amber-1);
+		border-inline-start-color: var(--ink-amber-3);
+		.wa-strip__dot { background: var(--ink-amber-3); animation: none; }
+		.wa-strip__badge { background: var(--surface-amber-1); color: var(--ink-amber-3); }
+	}
+
+	// a scheduled campaign is blue and still
+	&--scheduled {
+		border-color: var(--outline-blue-1);
+		border-inline-start-color: var(--ink-blue-3);
+		.wa-strip__dot { background: var(--ink-blue-3); animation: none; }
+		.wa-strip__name { font-size: var(--text-base, 15px); }
+		.wa-strip__badge { background: var(--surface-blue-1); color: var(--ink-blue-3); }
+	}
+	&__btn-blue {
+		border-color: var(--outline-blue-1);
+		background: var(--surface-blue-1);
+		color: var(--ink-blue-3);
+		&:hover { background: var(--surface-blue-2, var(--surface-blue-1)); color: var(--ink-blue-3); }
+	}
+
+	// ---- the same bar inside a table cell -------------------------------------------------------
+
 	&__cell {
 		display: grid;
 		gap: 3px;
@@ -146,9 +183,11 @@
 		font-size: var(--text-xs, 11px);
 		color: var(--ink-gray-7);
 	}
+	&__cell &__bar { flex: none; inline-size: 100%; }
+}
 
-	&__foot {
-		margin: var(--sanad-gap-sm) 0 0;
-		padding-inline: var(--sanad-gap-xs);
-	}
+// the campaigns console's own foot line: what is not sending yet
+.wa-camp__foot {
+	margin: var(--sanad-gap-sm) 0 0;
+	padding-inline: var(--sanad-gap-xs);
 }

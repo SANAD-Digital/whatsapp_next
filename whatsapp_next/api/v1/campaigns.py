@@ -187,6 +187,9 @@ def get_overview(days: int = 30) -> dict[str, Any]:
 	)
 	in_flight = sum(max(0, cint(r.total_recipients) - cint(r.sent_count) - cint(r.failed_count)) for r in active)
 
+	# The campaign counters are four disjoint buckets: a message that was read is not also counted
+	# as sent. The rates a console shows are stage shares, so the buckets are rolled up here —
+	# `sent` is everything that left, `delivered` everything that arrived (read included).
 	totals = {"recipients": 0, "sent": 0, "delivered": 0, "read": 0, "failed": 0}
 	for row in frappe.get_all(
 		"WhatsApp Campaign",
@@ -201,8 +204,8 @@ def get_overview(days: int = 30) -> dict[str, Any]:
 		limit_page_length=0,
 	):
 		totals["recipients"] += cint(row.total_recipients)
-		totals["sent"] += cint(row.sent_count)
-		totals["delivered"] += cint(row.delivered_count)
+		totals["sent"] += cint(row.sent_count) + cint(row.delivered_count) + cint(row.read_count)
+		totals["delivered"] += cint(row.delivered_count) + cint(row.read_count)
 		totals["read"] += cint(row.read_count)
 		totals["failed"] += cint(row.failed_count)
 

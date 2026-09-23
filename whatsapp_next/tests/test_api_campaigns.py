@@ -198,8 +198,9 @@ class TestApiCampaigns(IntegrationTestCase):
 		self.assertGreaterEqual(out["states"]["Running"], 1)
 		# 10 recipients, 6 sent and 1 failed leaves 3 still to go
 		self.assertGreaterEqual(out["in_flight"], 3)
-		self.assertGreaterEqual(out["totals"]["sent"], 6)
-		self.assertGreaterEqual(out["totals"]["delivered"], 5)
+		# the four buckets are disjoint, so the totals roll up: sent = 6 + 5 + 2, delivered = 5 + 2
+		self.assertGreaterEqual(out["totals"]["sent"], 13)
+		self.assertGreaterEqual(out["totals"]["delivered"], 7)
 		self.assertGreaterEqual(out["totals"]["read"], 2)
 		self.assertGreaterEqual(out["totals"]["failed"], 1)
 		self.assertIsNotNone(out["per_minute"])

@@ -30,18 +30,22 @@ NAMES = [
     "Omar Haddad", "Lina Khoury", "Tariq Nasser", "Dana Saleh", "Yousef Amin",
 ]
 
-# name, status, recipients, share sent, share failed of what was sent, days since it started
+# name, status, recipients, share handed over, share of those that failed, days since it started.
+# The counters of a campaign are four *disjoint* buckets (a message that was read is not also
+# counted as sent), so every seeded message gets a real `WhatsApp Log` row and the campaign's
+# counters are exactly what those rows say. That keeps the totals under the recipients, the way
+# the running system writes them.
 PLAN = [
-    ("DEMO Eid offer — all customers", "Running", 480, 0.62, 0.03, 0),
-    ("DEMO Invoice reminder — overdue", "Paused", 260, 0.41, 0.06, 0),
-    ("DEMO New branch in Jeddah", "Scheduled", 320, 0.0, 0.0, None),
-    ("DEMO Weekly offers — subscribers", "Scheduled", 1450, 0.0, 0.0, None),
+    ("DEMO Eid offer — all customers", "Running", 320, 0.62, 0.03, 0),
+    ("DEMO Invoice reminder — overdue", "Paused", 180, 0.41, 0.06, 0),
+    ("DEMO New branch in Jeddah", "Scheduled", 240, 0.0, 0.0, None),
+    ("DEMO Weekly offers — subscribers", "Scheduled", 420, 0.0, 0.0, None),
     ("DEMO Customer satisfaction survey", "Draft", 0, 0.0, 0.0, None),
     ("DEMO Ramadan working hours", "Draft", 0, 0.0, 0.0, None),
-    ("DEMO Back to school", "Completed", 890, 1.0, 0.02, 6),
-    ("DEMO National Day offer", "Completed", 1240, 1.0, 0.01, 12),
-    ("DEMO Loyalty points expiring", "Partially Failed", 540, 1.0, 0.14, 19),
-    ("DEMO Delivery delay apology", "Cancelled", 150, 0.22, 0.0, 24),
+    ("DEMO Back to school", "Completed", 260, 1.0, 0.02, 6),
+    ("DEMO National Day offer", "Completed", 300, 1.0, 0.01, 12),
+    ("DEMO Loyalty points expiring", "Partially Failed", 220, 1.0, 0.14, 19),
+    ("DEMO Delivery delay apology", "Cancelled", 120, 0.22, 0.0, 24),
 ]
 
 
@@ -107,23 +111,21 @@ def _campaign(device, title, status, total, sent_share, fail_share, days_ago, lo
     doc.flags.ignore_mandatory = True
     doc.insert(ignore_permissions=True)
 
-    sent = int(total * sent_share)
-    failed = int(sent * fail_share)
-    delivered = int((sent - failed) * random.uniform(0.86, 0.97))
-    read = int(delivered * random.uniform(0.35, 0.72))
+    handed = int(total * sent_share)
+    failed = int(handed * fail_share)
+    left = max(0, handed - failed)
+    # of what went out: some have been read, more have been delivered, the rest only sent
+    read = int(left * random.uniform(0.28, 0.45))
+    delivered = int((left - read) * random.uniform(0.55, 0.8))
+    sent = max(0, left - read - delivered)
 
-    if logs and sent:
+    if logs:
         when = started or now_datetime()
-        for i in range(min(sent, 60)):  # a sample of real outbound rows, enough for the rates
-            at = add_to_date(when, minutes=random.randint(0, 50))
-            share = i / max(min(sent, 60), 1)
-            status_log = (
-                "Failed" if share < fail_share
-                else "Read" if share < fail_share + 0.35
-                else "Delivered" if share < fail_share + 0.8
-                else "Sent"
-            )
-            _log(doc.name, device, random.choice(NAMES), f"05{random.randint(10000000, 99999999)}", status_log, at)
+        buckets = [("Read", read), ("Delivered", delivered), ("Sent", sent), ("Failed", failed)]
+        for status_log, count in buckets:
+            for _ in range(count):
+                at = add_to_date(when, minutes=random.randint(0, 50), seconds=random.randint(0, 59))
+                _log(doc.name, device, random.choice(NAMES), f"05{random.randint(10000000, 99999999)}", status_log, at)
 
     frappe.db.set_value(
         "WhatsApp Campaign",
@@ -136,7 +138,13 @@ def _campaign(device, title, status, total, sent_share, fail_share, days_ago, lo
             "delivered_count": delivered,
             "read_count": read,
             "failed_count": failed,
-            "queued_count": max(0, total - sent - failed) if status in ("Running", "Paused") else 0,
+            "queued_count": max(0, total - handed) if status in ("Running", "Paused") else 0,
+            "first_message_at": add_to_date(started, minutes=1) if (started and handed) else None,
+            "last_message_at": add_to_date(started, minutes=50) if (started and handed) else None,
+            "ended_at": add_to_date(started, minutes=random.randint(55, 240))
+            if (started and status in ("Completed", "Partially Failed", "Cancelled"))
+            else None,
+            "pause_count": random.choice([0, 0, 1, 2]),
             "started_at": started,
             "scheduled_at": None if status != "Scheduled" else add_to_date(now_datetime(), hours=random.randint(3, 72)),
         },
