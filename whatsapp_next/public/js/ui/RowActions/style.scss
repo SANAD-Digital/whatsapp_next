@@ -1,0 +1,59 @@
+.sanad-rowactions {
+	display: inline-flex;
+	align-items: center;
+	margin-inline-start: var(--sanad-gap-sm);
+	min-width: 28px; // stable slot even when a row has no actions
+
+	&__btn {
+		min-width: 28px;
+		min-height: 28px;
+		padding: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--ink-gray-6);
+		.icon { width: 16px; height: 16px; }
+		&:hover, &[aria-expanded="true"] { color: var(--ink-gray-9); background: var(--surface-gray-2); }
+	}
+	&__clickable .list-row { cursor: pointer; }
+
+	&__menu {
+		position: fixed;
+		inset-block-start: 0;
+		inset-inline-start: 0;
+		translate: var(--sanad-menu-x, 0) var(--sanad-menu-y, 0);
+		z-index: 1035; // above the list, below Desk modals (1050)
+		min-width: 180px;
+		max-width: min(320px, calc(100vw - 16px));
+		padding: var(--sanad-gap-xs);
+		background: var(--surface-white);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		box-shadow: var(--shadow-md, 0 4px 12px var(--surface-gray-4));
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	&__item {
+		appearance: none;
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		width: 100%;
+		min-height: var(--sanad-target);
+		padding-inline: var(--sanad-gap-md);
+		border: 0;
+		border-radius: var(--sanad-radius);
+		background: transparent;
+		color: var(--ink-gray-8);
+		font-size: var(--text-sm, 13px);
+		text-align: start;
+		cursor: pointer;
+		&:hover, &:focus-visible { background: var(--surface-gray-2); color: var(--ink-gray-9); }
+		&:focus-visible { outline: 2px solid var(--ink-blue-3); outline-offset: -2px; }
+		&--danger { color: var(--ink-red-4); }
+		&--danger:hover, &--danger:focus-visible { background: var(--surface-red-1); color: var(--ink-red-4); }
+	}
+	&__icon { display: inline-flex; color: var(--ink-gray-6); .icon { width: 16px; height: 16px; } }
+	&__item--danger &__icon { color: inherit; }
+}

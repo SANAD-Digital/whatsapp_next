@@ -1,0 +1,60 @@
+.sanad-metadialog {
+	.modal-body {
+		scroll-padding-block-end: 88px; // keeps a focused field clear of the sticky footer
+	}
+	.form-tabs-list {
+		position: sticky;
+		inset-block-start: 0;
+		z-index: 2;
+		background: var(--surface-white);
+	}
+
+	&__alert {
+		margin-block-end: var(--sanad-gap-md);
+	}
+	&__summary,
+	&__error {
+		border: 1px solid var(--outline-red-1);
+		background: var(--surface-red-1);
+		color: var(--ink-red-4);
+		border-radius: var(--sanad-radius);
+		padding-block: var(--sanad-gap-sm);
+		padding-inline: var(--sanad-gap-md);
+		font-size: var(--text-sm, 13px);
+	}
+	&__summary-title {
+		font-weight: 600;
+	}
+	&__summary ul {
+		margin: var(--sanad-gap-xs) 0 0;
+		padding-inline-start: var(--sanad-gap-lg);
+	}
+	&__summary a {
+		color: inherit;
+		text-decoration: underline;
+	}
+	&__error .btn {
+		margin-inline-start: var(--sanad-gap-sm);
+	}
+	&__field-error {
+		color: var(--ink-red-4);
+		font-size: var(--text-xs, 12px);
+		margin-block-start: var(--sanad-gap-xs);
+	}
+	&__field--invalid {
+		input,
+		select,
+		textarea {
+			border-color: var(--outline-red-1) !important;
+		}
+	}
+
+	&--loading .form-layout {
+		opacity: 0.6;
+		pointer-events: none;
+	}
+	&--readonly .grid-add-row,
+	&--readonly .grid-remove-rows {
+		display: none;
+	}
+}

@@ -48,9 +48,18 @@ class ParseResult:
 	invalid: list[dict[str, Any]] = field(default_factory=list)
 	columns: list[str] = field(default_factory=list)
 	total: int = 0
+	needs_mapping: bool = False
+	error: str | None = None
 
 	def as_dict(self) -> dict[str, Any]:
-		return {"rows": self.rows, "invalid": self.invalid, "columns": self.columns, "total": self.total}
+		return {
+			"rows": self.rows,
+			"invalid": self.invalid,
+			"columns": self.columns,
+			"total": self.total,
+			"needs_mapping": self.needs_mapping,
+			"error": self.error,
+		}
 
 
 @dataclass
@@ -105,6 +114,10 @@ def _page(page, page_length) -> tuple[int, int]:
 # ---- sources -----------------------------------------------------------------------------
 
 
+# Party DocTypes offered as chips in source 2 (only those installed on the site are returned).
+CONTACT_LINK_DOCTYPES = ("Customer", "Supplier", "Employee", "Sales Partner", "Lead")
+
+
 def list_sources(target_doctype: str | None = None) -> list[dict[str, Any]]:
 	"""Sources with enablement (source 3 lists the enabled Picker Sources; 5 lists vcf/csv)."""
 	settings = frappe.get_cached_doc("WhatsApp Settings")
@@ -123,6 +136,8 @@ def list_sources(target_doctype: str | None = None) -> list[dict[str, Any]]:
 			entry["kinds"] = ["vcf", "csv"]
 		if key == "Excel":
 			entry["kinds"] = ["excel"]
+		if key == "Contact":
+			entry["link_doctypes"] = [dt for dt in CONTACT_LINK_DOCTYPES if frappe.db.exists("DocType", dt)]
 		out.append(entry)
 	return out
 
@@ -146,7 +161,7 @@ def search_groups(
 	rows = frappe.get_all(
 		"WhatsApp Contact Group",
 		filters=filters,
-		fields=["name", "kind", "member_count", "description"],
+		fields=["name", "group_name", "kind", "member_count", "description"],
 		order_by="group_name asc",
 		start=start,
 		page_length=length,
@@ -184,14 +199,16 @@ def get_group_members(group: str, page: int = 1, page_length: int = 50) -> dict[
 
 def search_contacts(
 	txt: str | None = None, link_doctype: str | None = None, page: int = 1, page_length: int = 20
-) -> list[dict[str, Any]]:
-	"""Source 2: contacts through the contextual layer; one row per WhatsApp phone."""
+) -> dict[str, Any]:
+	"""Source 2: `{rows, total}` — contacts through the contextual layer, one row per contact."""
 	if link_doctype:
-		found = permissions.list_contacts(
+		listed = permissions.list_contacts(
 			search=txt, link_doctype=link_doctype, page=page, page_length=page_length
-		)["rows"]
+		)
+		found, total = listed["rows"], listed["total"]
 	else:
 		found = permissions.search_contacts(txt, page=page, page_length=page_length)
+		total = permissions.count_contacts(txt)
 	rows = []
 	for c in found:
 		phones = [p for p in c.get("phone_nos") or [] if p.get("wa_phone_e164")]
@@ -221,7 +238,7 @@ def search_contacts(
 				source_name=c["name"],
 			)
 		)
-	return rows
+	return {"rows": rows, "total": total}
 
 
 def list_doctype_rows(
@@ -240,7 +257,12 @@ def list_doctype_rows(
 		)
 		for r in result["rows"]
 	]
-	return {"rows": rows, "total": len(rows), "page": result["page"], "page_length": result["page_length"]}
+	return {
+		"rows": rows,
+		"total": result.get("total", len(rows)),
+		"page": result["page"],
+		"page_length": result["page_length"],
+	}
 
 
 def parse_manual(text: str | None) -> ParseResult:
@@ -301,7 +323,11 @@ def _tabular(
 	phone_col = mapping.get("phone") or _guess_columns(columns)[0]
 	name_col = mapping.get("name") or _guess_columns(columns)[1]
 	if not phone_col or phone_col not in columns:
-		frappe.throw(_("Choose the column that holds the phone number"), WAValidationError)
+		# Not an error: the client shows a mapping step over `columns` and parses again.
+		result.needs_mapping = True
+		result.error = _("Choose the column that holds the phone number")
+		result.total = len(records)
+		return result
 	if len(records) > MAX_UPLOAD_ROWS:
 		frappe.throw(_("The file has more than {0} rows").format(MAX_UPLOAD_ROWS), WAFileError)
 	for rec in records:

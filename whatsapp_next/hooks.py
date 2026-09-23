@@ -37,6 +37,12 @@ fixtures = [
 		],
 	},
 	{"dt": "Custom Field", "filters": [["name", "in", ["Contact Phone-wa_phone_e164"]]]},
+	# Dashboard sources for the DashboardBlock (phase 5): created on the site, exported here. The
+	# "WhatsApp" Workspace is a module document (whatsapp_next/workspace/whatsapp/) — a public
+	# module workspace shipped only as a fixture is deleted by migrate's orphan-entity sweep.
+	{"dt": "Number Card", "filters": [["name", "like", "WA %"]]},
+	{"dt": "Dashboard Chart", "filters": [["name", "like", "WA %"]]},
+	{"dt": "Custom HTML Block", "filters": [["name", "like", "WA %"]]},
 ]
 
 # Document events.
@@ -64,8 +70,16 @@ doc_events = {
 	},
 }
 
-# Log tables must never pin a Device / Campaign / Outbound row against deletion (backend-plan §13).
-ignore_links_on_delete = ["WhatsApp Webhook Event", "WhatsApp Queue Item", "WhatsApp Audit Log"]
+# Log / derived tables must never pin a Device, Contact, Campaign or Outbound row against deletion
+# (backend-plan §13): message history and the materialized Numbers table keep dangling links.
+ignore_links_on_delete = [
+	"WhatsApp Webhook Event",
+	"WhatsApp Queue Item",
+	"WhatsApp Audit Log",
+	"WhatsApp Log",
+	"WhatsApp Inbound Message",
+	"WhatsApp Number",
+]
 
 # Scheduler events are added in phase 4 (B-17) together with the services they call.
 scheduler_events = {
@@ -96,7 +110,28 @@ scheduler_events = {
 }
 
 
-# Desk assets (phase 5–7): app_include_js = "whatsapp_next.bundle.js"
+# Desk assets (phase 5): the portable kit (`public/js/ui/`, namespace `sanad.ui`) plus the app
+# setup that maps kit API keys to `whatsapp_next.api.v1.*` (D-031). Per-DocType list/form scripts
+# are registered below as they land (phase 5 live uses, phase 7 customisation).
+app_include_js = ["whatsapp_next.bundle.js"]
+app_include_css = ["whatsapp_next.bundle.css"]
+doctype_js = {
+	"WhatsApp Log": "public/js/form/whatsapp_log.js",
+	"WhatsApp Campaign": "public/js/form/whatsapp_campaign.js",
+	"WhatsApp Contact Group": "public/js/form/whatsapp_contact_group.js",
+	"WhatsApp Command": "public/js/form/whatsapp_command.js",
+	"WhatsApp Template": "public/js/form/whatsapp_template.js",
+	"WhatsApp Number": "public/js/form/whatsapp_number.js",
+}
+doctype_list_js = {
+	"WhatsApp Log": "public/js/listview/whatsapp_log_list.js",
+	"WhatsApp Inbound Message": "public/js/listview/whatsapp_inbound_message_list.js",
+	"WhatsApp Number": "public/js/listview/whatsapp_number_list.js",
+	"WhatsApp Campaign": "public/js/listview/whatsapp_campaign_list.js",
+	"WhatsApp Contact Group": "public/js/listview/whatsapp_contact_group_list.js",
+	"WhatsApp Command": "public/js/listview/whatsapp_command_list.js",
+	"WhatsApp Queue Item": "public/js/listview/whatsapp_queue_item_list.js",
+}
 
 # Translation
 ignore_translatable_strings_from = []

@@ -317,6 +317,7 @@ def delete(device: str, delete_remote: bool = True, user: str | None = None) -> 
 		except pex.NotFoundError:
 			pass  # already gone on the platform
 	clear_pairing(device)
+	_release_device_links(device)
 	audit.log(
 		"Device Deleted",
 		reference=("WhatsApp Device", device),
@@ -336,6 +337,29 @@ def delete(device: str, delete_remote: bool = True, user: str | None = None) -> 
 		},
 		after_commit=True,
 	)
+
+
+# Configuration rows that point at a device lose it on delete (spec 09 row 3: "templates lose
+# their device, campaigns stop"); message history and Numbers keep dangling links via
+# `ignore_links_on_delete`.
+DEVICE_LINK_FIELDS: tuple[tuple[str, str], ...] = (
+	("WhatsApp Campaign", "device"),
+	("WhatsApp Notification", "device"),
+	("WhatsApp Notification Alert", "device"),
+	("WhatsApp Command", "reply_device"),
+)
+SETTINGS_DEVICE_FIELDS = ("default_device", "reply_device")
+
+
+def _release_device_links(device: str) -> None:
+	for doctype, fieldname in DEVICE_LINK_FIELDS:
+		for name in frappe.get_all(doctype, filters={fieldname: device}, pluck="name"):
+			frappe.db.set_value(doctype, name, fieldname, None, update_modified=False)
+	settings = frappe.get_cached_doc("WhatsApp Settings")
+	for fieldname in SETTINGS_DEVICE_FIELDS:
+		if settings.get(fieldname) == device:
+			frappe.db.set_single_value("WhatsApp Settings", fieldname, None)
+	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 
 
 def set_default(device: str, user: str | None = None) -> None:

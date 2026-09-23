@@ -408,7 +408,8 @@ def _materialize_recipients(doc, recipients) -> dict[str, int]:
 				counts["failed"] += 1
 				frappe.log_error(
 					title="WhatsApp campaign: message not created",
-					message=f"campaign={campaign} recipient={recipient.name} msg={m_idx} {type(exc).__name__}",
+					message=f"campaign={campaign} recipient={recipient.name} msg={m_idx} "
+					f"{type(exc).__name__}\n{frappe.get_traceback()}",
 				)
 				continue
 			first_outbound = first_outbound or name

@@ -120,8 +120,9 @@ class TestPicker(IntegrationTestCase):
 			(res.rows[0]["phone_e164"], res.rows[0]["display_name"], res.rows[0]["source_type"]),
 			(P2, "Ahmed", "Excel"),
 		)
-		with self.assertRaises(WAValidationError):
-			picker.parse_upload(url, "excel", mapping={"phone": "nope"})
+		unmapped = picker.parse_upload(url, "excel", mapping={"phone": "nope"})
+		self.assertTrue(unmapped.needs_mapping)
+		self.assertEqual((unmapped.rows, unmapped.columns[:2]), ([], ["الاسم", "رقم الجوال"]))
 		res = picker.parse_upload(url, "excel", mapping={"phone": "note", "name": "الاسم"})
 		self.assertEqual(len(res.rows), 0)
 

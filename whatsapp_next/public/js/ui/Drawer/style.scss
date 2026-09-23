@@ -1,0 +1,104 @@
+// Drawer — content styles only; the panel shell, backdrop, mobile sheet and focus ring come from
+// `_core/style.scss` (`.sanad-panel`, `.sanad-backdrop`).
+.sanad-drawer {
+	&__backdrop[hidden], &[hidden] { display: none; }
+	&__heading { display: flex; flex-direction: column; gap: var(--sanad-gap-xs); white-space: normal; }
+	&__title {
+		margin: 0;
+		font-size: var(--text-lg, 16px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+		overflow-wrap: anywhere;
+	}
+	&__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sanad-gap-sm); color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
+	&__tools { display: flex; gap: var(--sanad-gap-xs); flex: none; align-self: flex-start; }
+	&__close, &__open { min-width: var(--sanad-target); min-height: var(--sanad-target); display: inline-flex; align-items: center; justify-content: center; gap: var(--sanad-gap-xs); }
+	&__body { min-height: 160px; }
+	&__footer[hidden] { display: none; }
+	&__action { min-height: var(--sanad-target); }
+
+	// record mode — two-column definition list
+	&__dl {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--sanad-gap-md) var(--sanad-gap-lg);
+		margin: 0;
+	}
+	&__field {
+		min-width: 0;
+		dt { font-size: var(--text-xs, 12px); font-weight: 500; color: var(--ink-gray-6); margin-block-end: 2px; }
+		dd { margin: 0; color: var(--ink-gray-9); font-size: var(--text-base, 14px); overflow-wrap: anywhere; }
+		&--wide { grid-column: 1 / -1; dd { white-space: pre-wrap; } }
+	}
+	&__section { margin-block-start: var(--sanad-gap-xl); }
+	&__section-title {
+		font-size: var(--text-sm, 13px);
+		font-weight: 600;
+		color: var(--ink-gray-7);
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		margin: 0 0 var(--sanad-gap-sm);
+		padding-block-end: var(--sanad-gap-xs);
+		border-block-end: var(--sanad-border);
+	}
+
+	// form mode
+	&__form .frappe-control { margin-block-end: var(--sanad-gap-md); }
+	&__summary {
+		margin-block-end: var(--sanad-gap-md);
+		padding: var(--sanad-gap-md);
+		border: 1px solid var(--outline-red-1);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-red-1);
+		color: var(--ink-red-4);
+		font-size: var(--text-sm, 13px);
+		a { color: inherit; text-decoration: underline; }
+		&[hidden] { display: none; }
+	}
+
+	// choice mode
+	&__choices { display: flex; flex-direction: column; gap: var(--sanad-gap-sm); }
+	&__choice {
+		appearance: none;
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-md);
+		width: 100%;
+		min-height: 56px;
+		padding-block: var(--sanad-gap-sm);
+		padding-inline: var(--sanad-gap-md);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		color: var(--ink-gray-9);
+		text-align: start;
+		cursor: pointer;
+		transition: background var(--sanad-motion), border-color var(--sanad-motion);
+		&:hover { background: var(--surface-gray-1); border-color: var(--outline-gray-2); }
+	}
+	&__choice-icon { display: inline-flex; color: var(--ink-gray-6); flex: none; }
+	&__choice-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+	&__choice-label { font-weight: 600; }
+	&__choice-desc { color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
+
+	// timeline helper used by record sections (rendered by callers)
+	&__timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sanad-gap-sm); }
+	&__event {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: var(--sanad-gap-xs) var(--sanad-gap-md);
+		align-items: baseline;
+		padding-block: var(--sanad-gap-xs);
+		border-block-end: 1px dashed var(--outline-gray-1);
+		font-size: var(--text-sm, 13px);
+		&:last-child { border-block-end: 0; }
+	}
+	&__event-time { color: var(--ink-gray-6); white-space: nowrap; font-variant-numeric: tabular-nums; }
+	&__event-text { color: var(--ink-gray-8); overflow-wrap: anywhere; }
+}
+
+.sanad-drawer-open { overflow: hidden; }
+
+@media (max-width: 767px) {
+	.sanad-drawer__dl { grid-template-columns: minmax(0, 1fr); }
+}

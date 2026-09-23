@@ -200,8 +200,34 @@ class TestDevices(IntegrationTestCase):
 			with self.assertRaises(WAStateConflictError):
 				devices.set_default(a)
 			devices.set_disabled(a, False)
+			# rows pointing at the device: history keeps a dangling link, configuration is released
+			number = frappe.get_doc(
+				{
+					"doctype": "WhatsApp Number",
+					"phone_e164": "+966500000499",
+					"number_type": "Individual",
+					"last_device": a,
+				}
+			)
+			number.flags.wa_system_writer = True
+			number.insert(ignore_permissions=True)
+			notification = frappe.get_doc(
+				{
+					"doctype": "WhatsApp Notification",
+					"notification_name": "DevTest Notification",
+					"document_type": "ToDo",
+					"event": "New",
+					"device": a,
+					"message": "x",
+					"recipients": [{"recipient_type": "Fixed Number", "phone": "+966500000498"}],
+				}
+			).insert(ignore_permissions=True)
 			devices.delete(a, delete_remote=True)
 			self.assertFalse(frappe.db.exists("WhatsApp Device", a))
+			self.assertEqual(frappe.db.get_value("WhatsApp Number", number.name, "last_device"), a)
+			self.assertIsNone(frappe.db.get_value("WhatsApp Notification", notification.name, "device"))
+			frappe.delete_doc("WhatsApp Notification", notification.name, ignore_permissions=True, force=True)
+			frappe.delete_doc("WhatsApp Number", number.name, ignore_permissions=True, force=True)
 			self.assertNotIn(pd_a, fp.devices)
 			self.assertEqual(
 				frappe.db.count("WhatsApp Audit Log", {"action": "Device Deleted", "reference_name": a}), 1

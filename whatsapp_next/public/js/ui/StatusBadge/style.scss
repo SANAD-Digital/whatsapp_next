@@ -1,0 +1,36 @@
+.sanad-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sanad-gap-xs);
+	border: 1px solid transparent;
+	border-radius: var(--border-radius-full, 999px);
+	padding-block: 1px;
+	padding-inline: 8px;
+	font-size: var(--text-xs, 12px);
+	font-weight: 500;
+	line-height: 1.6;
+	white-space: nowrap;
+	max-width: 100%;
+
+	&--md {
+		font-size: var(--text-sm, 13px);
+		padding-inline: 10px;
+		padding-block: 2px;
+	}
+	&__label {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	&__dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: currentColor;
+		flex: none;
+	}
+	&__icon {
+		display: inline-flex;
+		flex: none;
+		.icon { width: 12px; height: 12px; }
+	}
+}

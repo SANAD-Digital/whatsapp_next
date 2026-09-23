@@ -1,0 +1,51 @@
+.sanad-phone {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-xs);
+	margin-block-end: var(--sanad-gap-md);
+
+	&__label {
+		font-size: var(--text-sm, 13px);
+		color: var(--ink-gray-7);
+		font-weight: 500;
+		margin: 0;
+	}
+	&__req { color: var(--ink-red-4); }
+	&__row {
+		display: flex;
+		gap: var(--sanad-gap-sm);
+		align-items: stretch;
+	}
+	&__country {
+		flex: 0 1 200px;
+		min-width: 120px;
+		min-height: var(--sanad-target);
+	}
+	&__input {
+		flex: 1 1 160px;
+		min-width: 0;
+		min-height: var(--sanad-target);
+		font-variant-numeric: tabular-nums;
+		text-align: start;
+		&[aria-invalid="true"] { border-color: var(--outline-red-2); }
+	}
+}
+
+// Shared by the standalone field and the wrapped Frappe control.
+.sanad-phone__hint {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--sanad-gap-xs);
+	min-height: 18px; // reserved so the field does not jump between states
+	margin-block-start: var(--sanad-gap-xs);
+	font-size: var(--text-xs, 12px);
+	color: var(--ink-gray-6);
+	.icon { flex: none; margin-block-start: 2px; }
+	&--ok { color: var(--ink-green-3); }
+	&--error { color: var(--ink-red-4); }
+}
+
+@media (max-width: 767px) {
+	.sanad-phone__row { flex-wrap: wrap; }
+	.sanad-phone__country { flex: 1 1 100%; }
+}

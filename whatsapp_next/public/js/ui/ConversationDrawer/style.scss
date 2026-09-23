@@ -1,0 +1,58 @@
+// The shell (position, width, backdrop, mobile sheet, header / actions / body) is `.sanad-panel`
+// from _core; only the conversation-specific parts live here.
+.sanad-convo {
+	&__avatar {
+		flex: none;
+		width: 36px;
+		height: 36px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
+		background: var(--surface-gray-2);
+		color: var(--ink-gray-7);
+		font-weight: 600;
+		font-size: var(--text-sm, 13px);
+	}
+	&__title {
+		margin: 0;
+		font-size: inherit;
+		font-weight: inherit;
+		color: inherit;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&__sub { text-align: start; min-height: 1.2em; }
+	&__badge { flex: none; min-width: 64px; display: inline-flex; justify-content: flex-end; }
+	&__badge-skeleton { display: inline-block; width: 64px; height: 18px; }
+	&__close {
+		flex: none;
+		min-width: var(--sanad-target);
+		min-height: var(--sanad-target);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+	}
+	&__actions {
+		min-height: 48px; // reserved while the number loads
+		.sanad-skeleton { flex: 1 1 auto; padding-block: 0; }
+	}
+	&__action {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--sanad-gap-xs);
+		min-height: var(--sanad-target);
+	}
+	&__body {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden; // the thread scrolls, not the body
+		padding: var(--sanad-gap-md);
+		background: var(--surface-gray-1);
+	}
+	&__state:empty { display: none; }
+	&__thread { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+	&__thread .sanad-chat { flex: 1 1 auto; }
+}

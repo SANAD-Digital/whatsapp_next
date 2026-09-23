@@ -1,0 +1,167 @@
+.sanad-dashboard {
+	--sanad-dashboard-columns: 4;
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-lg);
+	min-width: 0;
+
+	&__toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--sanad-gap-sm);
+	}
+	&__refresh {
+		min-height: var(--sanad-target);
+		margin-inline-start: auto;
+	}
+
+	// Period segmented control (radiogroup)
+	&__period {
+		display: inline-flex;
+		gap: 2px;
+		padding: 2px;
+		border: var(--sanad-border);
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-1);
+	}
+	&__period-btn {
+		border-color: transparent;
+		background: transparent;
+	}
+
+	// Number cards
+	&__cards {
+		display: grid;
+		grid-template-columns: repeat(var(--sanad-dashboard-columns), minmax(0, 1fr));
+		gap: var(--sanad-gap-md);
+	}
+	&__card {
+		min-width: 0;
+	}
+	&__card-btn {
+		width: 100%;
+		min-height: 104px; // reserved: label + value + stat slot, no jump between skeleton and value
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: var(--sanad-gap-xs);
+		text-align: start;
+		padding-block: var(--sanad-gap-md);
+		padding-inline: var(--sanad-gap-lg);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius-lg);
+		background: var(--surface-white);
+		color: var(--ink-gray-9);
+		cursor: pointer;
+		transition: background var(--sanad-motion), box-shadow var(--sanad-motion);
+		&:hover {
+			background: var(--surface-gray-1);
+		}
+		&--static {
+			cursor: default;
+			&:hover {
+				background: var(--surface-white);
+			}
+		}
+	}
+	&__card-label {
+		font-size: var(--text-sm, 13px);
+		color: var(--ink-gray-6);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&__card-value {
+		display: block;
+		min-height: 32px;
+		line-height: 32px;
+		font-size: var(--text-2xl, 24px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+		.sanad-skeleton {
+			padding-block: 10px;
+		}
+		.sanad-skeleton__line {
+			width: 45% !important;
+		}
+	}
+	&__card-stat {
+		display: block;
+		min-height: 18px;
+		font-size: var(--text-xs, 12px);
+		color: var(--ink-gray-6);
+	}
+	&__stat {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--sanad-gap-xs);
+		background: none;
+		.icon {
+			width: 12px;
+			height: 12px;
+		}
+	}
+	&__card-state .sanad-empty {
+		min-height: 104px;
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius-lg);
+		background: var(--surface-white);
+	}
+
+	// Charts
+	&__charts {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--sanad-gap-md);
+	}
+	&__chart {
+		min-width: 0;
+		overflow: hidden;
+		padding-block: var(--sanad-gap-md);
+		padding-inline: var(--sanad-gap-lg);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius-lg);
+		background: var(--surface-white);
+	}
+	&__chart-title {
+		margin: 0 0 var(--sanad-gap-sm);
+		font-size: var(--text-base, 14px);
+		font-weight: 600;
+		color: var(--ink-gray-8);
+	}
+	&__chart-body {
+		position: relative;
+	}
+	&__chart-canvas {
+		overflow-x: auto; // a wide series scrolls inside the card, never the page
+	}
+
+	@media (max-width: 991px) {
+		&__cards {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		&__charts {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+	@media (max-width: 575px) {
+		&__cards {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		&__toolbar {
+			flex-direction: column;
+			align-items: stretch;
+		}
+		&__period {
+			display: flex;
+		}
+		&__period-btn {
+			flex: 1;
+		}
+		&__refresh {
+			margin-inline-start: 0;
+		}
+	}
+}

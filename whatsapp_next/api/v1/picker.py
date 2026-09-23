@@ -63,9 +63,8 @@ def get_group_members(group: str, page: int = 1, page_length: int = 50) -> dict[
 def search_contacts(
 	txt: str | None = None, link_doctype: str | None = None, page: int = 1, page_length: int = 20
 ) -> dict[str, Any]:
-	"""Source 2: `{rows}` through the contextual layer (`permissions.search_contacts`)."""
-	rows = picker.search_contacts(txt, link_doctype=link_doctype, page=page, page_length=page_length)
-	return {"rows": rows, "total": len(rows)}
+	"""Source 2: `{rows, total}` through the contextual layer (`permissions.search_contacts`)."""
+	return picker.search_contacts(txt, link_doctype=link_doctype, page=page, page_length=page_length)
 
 
 @api_endpoint(roles=PICKER_ROLES, methods=("GET", "POST"))
@@ -79,8 +78,9 @@ def list_doctype_rows(
 
 @api_endpoint(roles=PICKER_ROLES, schema={"kind": {"enum": list(UPLOAD_KINDS)}})
 def parse_upload(file_url: str, kind: str, mapping: dict | None = None) -> dict[str, Any]:
-	"""Sources 4/5: parse a private upload you own → `{rows[], invalid[], columns[], total}`.
-	`WAFileError` when public / too large / unreadable; `mapping = {phone: <col>, name: <col>}`."""
+	"""Sources 4/5: parse a private upload you own → `{rows[], invalid[], columns[], total,
+	needs_mapping, error}`; `needs_mapping` asks the client for `mapping = {phone: <col>, name: <col>}`.
+	`WAFileError` when public / too large / unreadable."""
 	return picker.parse_upload(file_url, kind, mapping).as_dict()
 
 

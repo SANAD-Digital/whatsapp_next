@@ -1,0 +1,187 @@
+// sanad.ui core styles — shared primitives (tones, skeleton, visually-hidden, focus). Colours come
+// only from Desk Espresso tokens; layout uses logical properties so RTL works untouched.
+
+:root {
+	--sanad-gap-xs: 4px;
+	--sanad-gap-sm: 8px;
+	--sanad-gap-md: 12px;
+	--sanad-gap-lg: 16px;
+	--sanad-gap-xl: 24px;
+	--sanad-radius: var(--border-radius-md, 8px);
+	--sanad-radius-lg: var(--border-radius-lg, 12px);
+	--sanad-border: 1px solid var(--outline-gray-1);
+	--sanad-target: 32px; // ≥ 24 CSS px (WCAG 2.2 target size) with comfortable spacing
+	--sanad-motion: 160ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--sanad-motion: 0ms;
+	}
+}
+
+.sanad-visually-hidden {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+// Tone triplets — surface / ink / outline — used by badges, banners, chips and counts.
+@each $tone, $suffix in ("green": "green-1", "blue": "blue-1", "amber": "amber-1", "red": "red-1", "gray": "gray-2", "cyan": "cyan-1", "violet": "violet-1", "pink": "pink-1") {
+	.sanad-tone--#{$tone} {
+		background: var(--surface-#{$suffix});
+		border-color: var(--outline-#{$suffix});
+	}
+}
+.sanad-tone--green { color: var(--ink-green-3); }
+.sanad-tone--blue { color: var(--ink-blue-3); }
+.sanad-tone--amber { color: var(--ink-amber-3); }
+.sanad-tone--red { color: var(--ink-red-4); }
+.sanad-tone--gray { color: var(--ink-gray-6); }
+.sanad-tone--cyan { color: var(--ink-cyan-1); }
+.sanad-tone--violet { color: var(--ink-violet-1); }
+.sanad-tone--pink { color: var(--ink-pink-1); }
+
+.sanad-skeleton {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-md);
+	padding-block: var(--sanad-gap-sm);
+}
+.sanad-skeleton__row {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-sm);
+}
+.sanad-skeleton__line {
+	height: 12px;
+	border-radius: var(--border-radius-full, 999px);
+	background: var(--surface-gray-3);
+	animation: sanad-pulse 1.2s ease-in-out infinite;
+}
+@keyframes sanad-pulse {
+	0%, 100% { opacity: 0.55; }
+	50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.sanad-skeleton__line { animation: none; }
+}
+
+// One focus ring for every interactive element inside kit markup.
+.sanad-focusable:focus-visible,
+.sanad-kit :is(button, a, input, select, textarea, [tabindex]):focus-visible {
+	outline: 2px solid var(--ink-blue-3);
+	outline-offset: 2px;
+}
+
+// Chip / pill control (filters, group-by, period, kind tabs): one height, one look.
+.sanad-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--sanad-gap-xs);
+	min-height: var(--sanad-target);
+	padding-inline: var(--sanad-gap-md);
+	border: 1px solid var(--outline-gray-2);
+	border-radius: var(--border-radius-full, 999px);
+	background: var(--surface-white);
+	color: var(--ink-gray-8);
+	font-size: var(--text-sm, 13px);
+	line-height: 1.2;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: background var(--sanad-motion), border-color var(--sanad-motion);
+	&:hover { background: var(--surface-gray-2); }
+	&[aria-pressed="true"], &[aria-checked="true"], &[aria-selected="true"], &--active {
+		background: var(--surface-blue-1);
+		border-color: var(--outline-blue-1);
+		color: var(--ink-blue-3);
+		font-weight: 600;
+	}
+	&[disabled], &--disabled { opacity: 0.6; cursor: not-allowed; }
+	&__count { color: var(--ink-gray-6); font-weight: 400; }
+}
+.sanad-chip-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--sanad-gap-sm);
+	align-items: center;
+}
+
+// Read table used by pickers, paged child tables and stats modals.
+.sanad-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.sanad-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--text-sm, 13px);
+	th, td {
+		text-align: start;
+		padding-block: var(--sanad-gap-sm);
+		padding-inline: var(--sanad-gap-md);
+		border-block-end: var(--sanad-border);
+		vertical-align: middle;
+	}
+	th { color: var(--ink-gray-6); font-weight: 500; background: var(--surface-gray-1); white-space: nowrap; }
+	tbody tr:hover { background: var(--surface-gray-1); }
+	tbody tr[aria-selected="true"] { background: var(--surface-blue-1); }
+	.sanad-table__num { text-align: end; font-variant-numeric: tabular-nums; }
+	.sanad-table__ltr { direction: ltr; unicode-bidi: isolate; }
+}
+
+// Side panel shell shared by Drawer and ConversationDrawer (header / body / footer).
+.sanad-panel {
+	position: fixed;
+	inset-block: 0;
+	inset-inline-end: 0;
+	width: min(var(--sanad-panel-width, 520px), 100%);
+	display: flex;
+	flex-direction: column;
+	background: var(--surface-white);
+	border-inline-start: var(--sanad-border);
+	box-shadow: var(--shadow-lg);
+	z-index: 1041;
+	transform: translateX(100%);
+	transition: transform var(--sanad-motion) ease-out;
+	[dir="rtl"] & { transform: translateX(-100%); }
+	&--open { transform: none !important; }
+	&__header {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-md);
+		padding-block: var(--sanad-gap-md);
+		padding-inline: var(--sanad-gap-lg);
+		border-block-end: var(--sanad-border);
+		min-height: 56px;
+	}
+	&__title { flex: 1; min-width: 0; font-size: var(--text-base, 14px); font-weight: 600; color: var(--ink-gray-9); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__subtitle { font-size: var(--text-sm, 13px); color: var(--ink-gray-6); font-weight: 400; }
+	&__actions { display: flex; flex-wrap: wrap; gap: var(--sanad-gap-sm); padding-block: var(--sanad-gap-sm); padding-inline: var(--sanad-gap-lg); border-block-end: var(--sanad-border); }
+	&__body { flex: 1; min-height: 0; overflow: auto; padding: var(--sanad-gap-lg); scroll-padding-block-end: 80px; }
+	&__footer { display: flex; flex-wrap: wrap; gap: var(--sanad-gap-sm); justify-content: flex-end; padding-block: var(--sanad-gap-md); padding-inline: var(--sanad-gap-lg); border-block-start: var(--sanad-border); background: var(--surface-white); }
+	@media (max-width: 767px) {
+		width: 100%;
+		height: 100dvh;
+	}
+}
+.sanad-backdrop {
+	position: fixed;
+	inset: 0;
+	background: var(--surface-gray-7);
+	opacity: 0.45;
+	z-index: 1040;
+}
+
+// Any kit dialog becomes a full-height sheet on small screens.
+@media (max-width: 767px) {
+	.sanad-sheet .modal-dialog { margin: 0; max-width: 100%; width: 100%; height: 100dvh; }
+	.sanad-sheet .modal-content { height: 100dvh; border-radius: 0; display: flex; flex-direction: column; }
+	.sanad-sheet .modal-body { flex: 1; min-height: 0; overflow: auto; scroll-padding-block-end: 96px; }
+	.sanad-sheet .modal-footer { position: sticky; inset-block-end: 0; background: var(--surface-modal, var(--surface-white)); }
+}
+
+.sanad-tabular { font-variant-numeric: tabular-nums; }

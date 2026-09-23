@@ -1,0 +1,73 @@
+.sanad-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: var(--sanad-gap-md);
+	margin-block: var(--sanad-gap-sm) var(--sanad-gap-md);
+
+	&__card {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-md);
+		min-height: 64px;
+		padding-block: var(--sanad-gap-md);
+		padding-inline: var(--sanad-gap-lg);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius-lg);
+		background: var(--surface-white);
+		color: var(--ink-gray-9);
+		transition: border-color var(--sanad-motion), background var(--sanad-motion);
+
+		&--interactive {
+			cursor: pointer;
+			&:hover { background: var(--surface-gray-1); border-color: var(--outline-gray-2); }
+		}
+		&--error { border-color: var(--outline-red-1); }
+	}
+	&__icon {
+		display: inline-flex;
+		flex: none;
+		width: 36px;
+		height: 36px;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--sanad-radius);
+		background: var(--surface-gray-2);
+		color: var(--ink-gray-7);
+		.icon { width: 18px; height: 18px; }
+	}
+	&__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+	&__label { font-size: var(--text-sm, 13px); color: var(--ink-gray-6); }
+	&__value {
+		min-height: 26px; // reserved so the skeleton → number swap never shifts the row
+		font-size: var(--text-xl, 20px);
+		font-weight: 600;
+		line-height: 1.3;
+		.sanad-skeleton { padding-block: 6px; }
+		.sanad-skeleton__line { width: 40% !important; }
+	}
+	&__error {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--sanad-gap-xs);
+		font-size: var(--text-sm, 13px);
+		font-weight: 500;
+		color: var(--ink-red-4);
+	}
+	&__chevron { color: var(--ink-gray-5); display: inline-flex; }
+	[dir="rtl"] &__chevron { transform: scaleX(-1); }
+}
+
+.sanad-stats-modal {
+	&__table { margin: 0; }
+	&__actions {
+		white-space: nowrap;
+		text-align: end;
+		.btn { min-height: var(--sanad-target); margin-inline-start: var(--sanad-gap-xs); }
+	}
+}
+
+@media (max-width: 767px) {
+	.sanad-stats { grid-template-columns: 1fr 1fr; gap: var(--sanad-gap-sm); }
+	.sanad-stats__card { padding-inline: var(--sanad-gap-md); }
+	.sanad-stats__icon { display: none; }
+}

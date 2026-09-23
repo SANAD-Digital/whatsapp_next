@@ -1,0 +1,21 @@
+.sanad-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	gap: var(--sanad-gap-sm);
+	padding-block: var(--sanad-gap-xl);
+	padding-inline: var(--sanad-gap-lg);
+	color: var(--ink-gray-6);
+	min-height: 120px;
+
+	&--sm { padding-block: var(--sanad-gap-lg); min-height: 80px; }
+	&--loading { align-items: stretch; text-align: start; }
+	&__icon .icon { width: 28px; height: 28px; color: var(--ink-gray-5); }
+	&__title { color: var(--ink-gray-8); font-weight: 600; font-size: var(--text-base, 14px); }
+	&__desc { max-width: 42ch; font-size: var(--text-sm, 13px); }
+	&__actions { display: flex; flex-wrap: wrap; gap: var(--sanad-gap-sm); margin-block-start: var(--sanad-gap-xs); }
+	&--error &__icon .icon { color: var(--ink-red-4); }
+	&--offline &__icon .icon { color: var(--ink-amber-3); }
+}

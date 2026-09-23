@@ -1,0 +1,59 @@
+.sanad-quicksend {
+	&__recipient {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-md);
+		min-height: 48px; // reserved while the context loads
+		padding-block: var(--sanad-gap-sm);
+		padding-inline: var(--sanad-gap-md);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-gray-1);
+		margin-block-end: var(--sanad-gap-sm);
+		&--empty { color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
+	}
+	&__avatar {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		background: var(--surface-white);
+		border: var(--sanad-border);
+		color: var(--ink-gray-6);
+		flex: none;
+	}
+	&__who { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+	&__name { font-weight: 600; color: var(--ink-gray-9); overflow-wrap: anywhere; }
+	&__phone { color: var(--ink-gray-6); font-size: var(--text-sm, 13px); direction: ltr; unicode-bidi: isolate; }
+	&__badges { display: inline-flex; gap: var(--sanad-gap-xs); flex-wrap: wrap; }
+
+	&__preview { margin-block-start: var(--sanad-gap-xs); min-height: 56px; }
+	&__preview-label { font-size: var(--text-xs, 12px); font-weight: 600; color: var(--ink-gray-6); margin-block-end: var(--sanad-gap-xs); }
+	&__bubble {
+		display: inline-block;
+		max-width: 100%;
+		padding-block: var(--sanad-gap-sm);
+		padding-inline: var(--sanad-gap-md);
+		border: 1px solid var(--outline-green-1);
+		border-radius: var(--sanad-radius-lg);
+		border-start-start-radius: 4px;
+		background: var(--surface-green-1);
+		color: var(--ink-gray-9);
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		font-size: var(--text-base, 14px);
+	}
+
+	&__error {
+		margin-block-start: var(--sanad-gap-xs);
+		color: var(--ink-red-4);
+		font-size: var(--text-sm, 13px);
+	}
+	&__field--invalid .form-control { border-color: var(--outline-red-1); }
+	&__fix { margin-inline-start: var(--sanad-gap-sm); }
+	.modal-footer .custom-actions { margin-inline-end: auto; }
+	&__simulator { color: var(--ink-blue-3); }
+}

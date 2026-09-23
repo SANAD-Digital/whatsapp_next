@@ -1,0 +1,21 @@
+.sanad-bulk {
+	&__progress {
+		height: 8px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-3);
+		overflow: hidden;
+		margin-block: var(--sanad-gap-sm);
+	}
+	&__bar {
+		height: 100%;
+		background: var(--ink-blue-3);
+		border-radius: inherit;
+		transition: width var(--sanad-motion) linear;
+	}
+	&__status {
+		font-size: var(--text-sm, 13px);
+		color: var(--ink-gray-7);
+		min-height: 20px;
+		font-variant-numeric: tabular-nums;
+	}
+}

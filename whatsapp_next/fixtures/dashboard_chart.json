@@ -1,0 +1,100 @@
+[
+ {
+  "aggregate_function_based_on": null,
+  "based_on": "creation",
+  "chart_name": "WA Messages per Day",
+  "chart_type": "Count",
+  "color": null,
+  "currency": null,
+  "custom_options": null,
+  "docstatus": 0,
+  "doctype": "Dashboard Chart",
+  "document_type": "WhatsApp Log",
+  "dynamic_filters_json": null,
+  "filters_json": "[]",
+  "from_date": null,
+  "group_by_based_on": null,
+  "group_by_type": "Count",
+  "heatmap_year": null,
+  "is_public": 1,
+  "is_standard": 0,
+  "last_synced_on": null,
+  "modified": "2026-09-23 05:50:18.419606",
+  "module": "WhatsApp Next",
+  "name": "WA Messages per Day",
+  "number_of_groups": 0,
+  "parent_document_type": null,
+  "report_name": null,
+  "roles": [
+   {
+    "role": "WhatsApp Manager"
+   },
+   {
+    "role": "WhatsApp Agent"
+   },
+   {
+    "role": "WhatsApp Viewer"
+   }
+  ],
+  "show_values_over_chart": 0,
+  "source": null,
+  "time_interval": "Daily",
+  "timeseries": 1,
+  "timespan": "Last Month",
+  "to_date": null,
+  "type": "Line",
+  "use_report_chart": 0,
+  "value_based_on": null,
+  "x_field": null,
+  "y_axis": []
+ },
+ {
+  "aggregate_function_based_on": null,
+  "based_on": null,
+  "chart_name": "WA Outbound by Status",
+  "chart_type": "Group By",
+  "color": null,
+  "currency": null,
+  "custom_options": null,
+  "docstatus": 0,
+  "doctype": "Dashboard Chart",
+  "document_type": "WhatsApp Log",
+  "dynamic_filters_json": null,
+  "filters_json": "[]",
+  "from_date": null,
+  "group_by_based_on": "status",
+  "group_by_type": "Count",
+  "heatmap_year": null,
+  "is_public": 1,
+  "is_standard": 0,
+  "last_synced_on": null,
+  "modified": "2026-09-23 05:50:18.479798",
+  "module": "WhatsApp Next",
+  "name": "WA Outbound by Status",
+  "number_of_groups": 0,
+  "parent_document_type": null,
+  "report_name": null,
+  "roles": [
+   {
+    "role": "WhatsApp Manager"
+   },
+   {
+    "role": "WhatsApp Agent"
+   },
+   {
+    "role": "WhatsApp Viewer"
+   }
+  ],
+  "show_values_over_chart": 0,
+  "source": null,
+  "time_interval": "Yearly",
+  "timeseries": 0,
+  "timespan": "Last Year",
+  "to_date": null,
+  "type": "Donut",
+  "use_report_chart": 0,
+  "value_based_on": null,
+  "x_field": null,
+  "y_axis": []
+ }
+]

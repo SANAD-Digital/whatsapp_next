@@ -1,0 +1,23 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Custom HTML Block",
+  "html": "<div class=\"wa-dashboard\"></div>",
+  "modified": "2026-09-23 05:50:18.501254",
+  "name": "WA Dashboard Block",
+  "private": 0,
+  "roles": [
+   {
+    "role": "WhatsApp Manager"
+   },
+   {
+    "role": "WhatsApp Agent"
+   },
+   {
+    "role": "WhatsApp Viewer"
+   }
+  ],
+  "script": "// Mounts the portable dashboard driver (sanad.ui.DashboardBlock) on this block.\nconst mount = root_element.querySelector(\".wa-dashboard\");\nif (mount && window.sanad && sanad.ui && typeof sanad.ui.DashboardBlock === \"function\") {\n\tnew sanad.ui.DashboardBlock({\n\t\twrapper: mount,\n\t\tnumber_cards: [\"WA Queued Now\", \"WA Connected Devices\", \"WA Sent Today\", \"WA Failed Today\"],\n\t\tcharts: [\"WA Messages per Day\", \"WA Outbound by Status\"],\n\t\tperiod_filter: true,\n\t\trefresh_seconds: 120,\n\t\tevents: { \"wa:queue:progress\": true, \"wa:message:status\": true, \"wa:device:status\": true },\n\t});\n} else if (mount) {\n\tmount.textContent = __(\"The dashboard kit is not loaded.\");\n}\n",
+  "style": ""
+ }
+]

@@ -1,0 +1,21 @@
+.sanad-confirm {
+	&__message { color: var(--ink-gray-7); margin-block-end: var(--sanad-gap-md); }
+	&__impact {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-xs);
+		margin: 0 0 var(--sanad-gap-md);
+		padding: var(--sanad-gap-md);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-gray-1);
+	}
+	&__row {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--sanad-gap-md);
+		dt { font-weight: 400; color: var(--ink-gray-6); margin: 0; }
+		dd { margin: 0; font-weight: 600; color: var(--ink-gray-9); background: none; border: 0; }
+	}
+	&__error { color: var(--ink-red-4); margin-block-start: var(--sanad-gap-sm); }
+}

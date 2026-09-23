@@ -362,6 +362,13 @@ def get_contact(name: str) -> dict[str, Any]:
 	return row
 
 
+def count_contacts(txt: str | None = None) -> int:
+	"""Number of contacts `search_contacts(txt)` would page through (same query, no audit row)."""
+	require("read")
+	q, _c = _contact_query(search=txt)
+	return cint(q.select(Count("*")).run()[0][0])
+
+
 def search_contacts(txt: str | None = None, page: int = 1, page_length: int = 20) -> list[dict[str, Any]]:
 	"""ContactPicker source 2: `name, full_name, image` + phones for contacts matching `txt`."""
 	require("read")
@@ -536,7 +543,8 @@ def list_doctype_rows(
 		r.setdefault("contact", None)
 		r["phone_e164"] = normalize(r.get("phone")) if r.get("phone") else None
 	_audit_read(count=len(rows), document_type=document_type)
-	return {"rows": rows, "page": max(cint(page) or 1, 1), "page_length": length}
+	total = frappe.db.count(document_type, filters=merged)
+	return {"rows": rows, "total": total, "page": max(cint(page) or 1, 1), "page_length": length}
 
 
 # --------------------------------------------------------------------------------------------
