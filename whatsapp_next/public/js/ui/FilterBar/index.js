@@ -91,7 +91,10 @@ sanad.ui.FilterBar = class FilterBar {
 		if (!this.$tabs.children().length) this.$tabs.remove();
 		this.render_actions();
 		if (!this.$actions.children().length) this.$actions.remove();
-		if (this.listview) this.bind_listview();
+		if (this.listview) {
+			this.listview._sanad_filterbar = this;
+			this.bind_listview();
+		}
 		this.sync();
 		this.apply_defaults();
 		$(document).on(`mousedown.${this.id} touchstart.${this.id}`, (e) => {
@@ -137,7 +140,7 @@ sanad.ui.FilterBar = class FilterBar {
 		Object.values(this.controls).forEach((c) => {
 			if (c.type !== "period" || c.preset.default === undefined) return;
 			if (this.values[c.preset.fieldname] !== undefined) return;
-			if (this.listview && frappe.route_options) return;
+			if (this.listview && frappe.route_options && Object.keys(frappe.route_options).length) return;
 			const days = parse_period(c.preset.default);
 			if (days != null) this.set(c.preset.fieldname, days);
 		});
@@ -406,7 +409,7 @@ sanad.ui.FilterBar = class FilterBar {
 		const actions = this.opts.actions || [];
 		if (actions.includes("group_by")) this.render_group_by();
 		if (actions.includes("export") && this.listview) {
-			$(`<button type="button" class="btn btn-sm btn-default sanad-filterbar__action">${ui.icon("es-line-download", "xs")} <span>${ui.escape(__("Export"))}</span></button>`)
+			$(`<button type="button" class="btn btn-sm btn-default sanad-filterbar__action">${ui.icon("download", "xs")} <span>${ui.escape(__("Export"))}</span></button>`)
 				.on("click", () => this.export())
 				.appendTo(this.$actions);
 		}
@@ -422,6 +425,8 @@ sanad.ui.FilterBar = class FilterBar {
 		this.remember("__group_by", options);
 		this.controls.__group_by = { preset: { fieldname: "__group_by", multiple: false, options }, $el: $btn, $dd, type: "select", pop_id, label: __("Group by") };
 		$btn.on("click", () => (this.$open && this.$open.data("field") === "__group_by" ? this.close_popover() : this.open_popover("__group_by")));
+		this.values.__group_by = "";
+		this.reflect("__group_by");
 	}
 
 	/** Mount (or replace / remove) a TreeGroupBy rail under the toolbar. */
@@ -497,9 +502,12 @@ sanad.ui.FilterBar = class FilterBar {
 
 	apply_listview(fieldname, value) {
 		const lv = this.listview;
-		if (value == null) return lv.filter_area.remove(fieldname);
-		// replace an existing filter on the same field, then add (add() triggers the refresh)
-		return lv.filter_area.remove(fieldname).then(() => lv.filter_area.add([this.filter_of(fieldname, value)]));
+		// drop an existing filter on the same field only when there is one (remove() refreshes the list
+		// and fires on_filter_change → sync() before the new filter exists), then add and re-sync
+		const has = lv.filter_area.get().some((f) => f[1] === fieldname);
+		const removed = has ? lv.filter_area.remove(fieldname) : Promise.resolve();
+		if (value == null) return removed;
+		return removed.then(() => lv.filter_area.add([this.filter_of(fieldname, value)])).then(() => this.sync());
 	}
 
 	/** Update a button / pill / segment / control to `this.values` without emitting. */

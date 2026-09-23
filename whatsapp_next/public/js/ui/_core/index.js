@@ -204,6 +204,17 @@ ui.icons = {
 
 ui.format_int = (value) => frappe.format(cint(value), { fieldtype: "Int" }, { inline: true });
 
+/** Avatar initials: first letter of the first two words, upper-cased (`"Sales device"` → `"SD"`). */
+ui.initials = (text) => {
+	const words = cstr(text).trim().split(/[\s_\-.]+/).filter(Boolean);
+	if (!words.length) return "";
+	return words
+		.slice(0, 2)
+		.map((w) => Array.from(w)[0])
+		.join("")
+		.toUpperCase();
+};
+
 /** Docname of a Desk list row (`.list-row-container`). */
 ui.docname_of_row = ($row) => {
 	const $r = $($row).closest(".list-row-container");

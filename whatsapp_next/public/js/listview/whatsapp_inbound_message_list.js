@@ -1,7 +1,7 @@
-// WhatsApp Inbound Message list — screen 5 (09 §1B/§1C row 5). FilterBar (matched tabs on
-// `command_status`, command / contact / device, received_at range, search, simulated), row
-// click → record Drawer over `messages.get_inbound` with the command trace and the reply,
-// RowActions (reply via QuickSend, open command, contact) and the `wa:inbound:received` refresh.
+// WhatsApp Inbound Message list — screen 5 (09 §1B/§1C row 5), prototype-faithful (D-064):
+// PageHeader → FilterBar toolbar → DataList table (Sender + phone, Incoming text, Matched command,
+// Contact link, Device, Time, View) → footer. "View" and the row click open the record Drawer over
+// `messages.get_inbound` with the command trace and the reply; realtime `wa:inbound:received`.
 
 (function () {
 	const ui = sanad.ui;
@@ -11,6 +11,8 @@
 
 	const is_agent = () => frappe.user.has_role(AGENT_ROLES);
 	const fmt_dt = (v) => (v ? frappe.datetime.str_to_user(v) : "");
+	// table cell: user date + HH:mm (no seconds), like the prototype's time column
+	const fmt_short = (v) => (v ? moment(frappe.datetime.convert_to_user_tz ? frappe.datetime.convert_to_user_tz(v, false) : v).format(`${frappe.datetime.get_user_date_fmt().toUpperCase()} HH:mm`) : "");
 	const badge = (doctype, doc, label) => {
 		const ind = ui.indicator_for(doctype, Object.assign({ doctype }, doc));
 		return ui.StatusBadge.html({ label: __(label || ind.label || ""), colour: ind.colour });
@@ -32,6 +34,18 @@
 	const open_contact = (doc) => {
 		if (doc.contact) return frappe.set_route("Form", "Contact", doc.contact);
 		return frappe.set_route("List", "WhatsApp Number", { phone_e164: doc.phone_e164 });
+	};
+
+	/** "Matched command" cell: green "code — function" chip or an amber "No match" chip. */
+	const match_chip = (doc) => {
+		const status = doc.command_status || "None";
+		if (doc.command && ["Matched", "Executed"].includes(status)) {
+			const title = doc.command_title || doc.command_code || doc.command;
+			return ui.StatusBadge.html({ label: title, colour: "green", icon: false });
+		}
+		if (status === "Failed") return ui.StatusBadge.html({ label: __("Failed"), colour: "red" });
+		if (status === "Blocked") return ui.StatusBadge.html({ label: __("Blocked"), colour: "orange" });
+		return ui.StatusBadge.html({ label: __("No match"), colour: "orange", icon: false });
 	};
 
 	const render_trace = ($el, doc) => {
@@ -101,55 +115,65 @@
 
 	frappe.listview_settings[DT] = {
 		hide_name_column: true,
-		add_fields: ["command_status", "command", "phone", "phone_e164", "jid", "chat_jid", "is_group", "display_name", "contact", "device", "message_type", "received_at", "is_simulated"],
+		add_fields: ["command_status", "command", "phone", "phone_e164", "jid", "chat_jid", "is_group", "display_name", "contact", "device", "message_type", "body", "received_at", "is_simulated", "creation"],
 
 		// The one command_status → colour rule; badges read it through `sanad.ui.indicator_for`.
 		get_indicator(doc) {
 			const status = doc.command_status || "None";
-			const colour = { Matched: "green", Executed: "green", "Not Matched": "gray", None: "gray", Failed: "red", Blocked: "orange" }[status] || "gray";
+			const colour = { Matched: "green", Executed: "green", "Not Matched": "orange", None: "gray", Failed: "red", Blocked: "orange" }[status] || "gray";
 			return [__(status), colour, `command_status,=,${status}`];
-		},
-
-		formatters: {
-			command_status(value, df, doc) {
-				return badge(DT, Object.assign({}, doc, { command_status: value || "None" }), value || "None");
-			},
 		},
 
 		onload(listview) {
 			const refresh = () => listview.refresh();
+			const open = (doc) => open_drawer(doc, refresh, listview);
+
+			if (typeof ui.PageHeader === "function") {
+				new ui.PageHeader({
+					listview,
+					title: __("Inbound messages"),
+					description: __("Everything received from customers on your devices, with the matched command and the automatic reply."),
+				});
+			}
 
 			new ui.FilterBar({
 				listview,
-				intro: __("Everything received on your devices: the matched command, the reply and any errors."),
 				actions: ["group_by", "export"],
 				presets: [
-					{ fieldname: "phone_e164", type: "search", fields: ["phone_e164", "display_name", "body"], placeholder: __("Search phone, name or text…") },
-					{ fieldname: "command_status", type: "select", label: __("Result") },
+					{ fieldname: "phone_e164", type: "search", fields: ["phone_e164", "display_name", "body"], placeholder: __("Search name, number or message text…") },
+					{ fieldname: "command_status", type: "select", label: __("Matched command") },
 					{ fieldname: "command", type: "select" },
-					{ fieldname: "contact", type: "select" },
+					{ fieldname: "contact", type: "select", label: __("Contact link") },
 					{ fieldname: "device", type: "select" },
 					{ fieldname: "message_type", type: "select" },
-					{ fieldname: "is_simulated", type: "select", label: __("Simulated") },
+					{ fieldname: "is_simulated", type: "select", label: __("On behalf") },
 					{ fieldname: "received_at", type: "period", label: __("Period"), default: "30d" },
 				],
 			});
 
-			listview._sanad_row_actions = new ui.RowActions({
+			new ui.DataList({
 				listview,
-				actions: [
-					{ label: __("Reply"), icon: "es-line-reply", condition: () => is_agent(), handler: (doc) => reply(doc, refresh) },
-					{ label: __("Open command"), icon: "es-line-zap", condition: (doc) => !!doc.command, handler: (doc) => frappe.set_route("Form", "WhatsApp Command", doc.command) },
-					{ label: __("Contact"), icon: "es-line-customer", handler: (doc) => open_contact(doc) },
+				columns: [
+					{
+						fieldname: "display_name",
+						label: __("Sender"),
+						sortable: true,
+						format: (v) => ui.escape(v || __("Unknown")),
+						sub: (doc) => `<span dir="ltr">${ui.escape(doc.phone_e164 || doc.phone || doc.jid || "")}</span>`,
+					},
+					{ fieldname: "body", label: __("Incoming text"), format: (v) => ui.escape(frappe.utils.html2text ? frappe.utils.html2text(v || "") : v || "") },
+					{ fieldname: "command_status", label: __("Matched command"), sortable: true, format: (v, doc) => match_chip(doc) },
+					{ fieldname: "contact", label: __("Contact link"), sortable: true, format: (v) => ui.StatusBadge.html(v ? { label: __("Linked"), colour: "green" } : { label: __("Not linked"), colour: "gray", icon: false }) },
+					{ fieldname: "device", type: "avatar", label: __("Device"), sortable: true },
+					{ fieldname: "received_at", type: "date", label: __("Time"), sortable: true, format: (v, doc) => `<span class="sanad-tabular sanad-datalist__date">${ui.escape(fmt_short(v || doc.creation))}</span>` },
 				],
-				on_row_click: (doc) => open_drawer(doc, refresh, listview),
+				row_action: { label: __("View"), handler: open },
+				on_row_click: open,
+				footer: { count: (total) => ui.plural(total, { one: __("{0} message"), other: __("{0} messages") }) },
+				empty: { title: __("No messages match"), description: __("Change the filters or the period to see more.") },
 			});
 
 			ui.bind_list_realtime(listview, "wa:inbound:received", 2000);
-		},
-
-		refresh(listview) {
-			listview && listview._sanad_row_actions && listview._sanad_row_actions.decorate();
 		},
 	};
 })();

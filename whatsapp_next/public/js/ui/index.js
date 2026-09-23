@@ -17,6 +17,9 @@ import "./Stepper/index.js";
 import "./PhoneField/index.js";
 import "./ListStatsCard/index.js";
 import "./MetaDialog/index.js";
+// list renderers
+import "./DataList/index.js";
+import "./PageHeader/index.js";
 // panels
 import "./Drawer/index.js";
 import "./ChatThread/index.js";

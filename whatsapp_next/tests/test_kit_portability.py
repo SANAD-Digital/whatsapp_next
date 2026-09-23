@@ -37,6 +37,8 @@ EXPECTED_COMPONENTS = {
 	"PagedChildTable",
 	"DashboardBlock",
 	"ContactPicker",
+	"DataList",
+	"PageHeader",
 }
 
 HEX_OR_RGB = re.compile(r"(#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\()")

@@ -1,0 +1,191 @@
+// DataList — the prototype's dense table on a Desk list; colours only from Espresso tokens.
+.sanad-datalist-host {
+	// Desk sizes `.result` for its own rows; the table brings its own borders
+	.freeze { display: none !important; }
+}
+
+.sanad-datalist__wrap {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	border: var(--sanad-border);
+	border-radius: var(--sanad-radius-lg);
+	background: var(--surface-white);
+}
+
+.sanad-datalist {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	font-size: var(--text-sm, 13px);
+	color: var(--ink-gray-8);
+	transition: opacity var(--sanad-motion);
+	&--loading { opacity: 0.6; }
+
+	thead th {
+		position: sticky;
+		inset-block-start: 0;
+		z-index: 1;
+		background: var(--surface-gray-1);
+		color: var(--ink-gray-6);
+		font-weight: 500;
+		font-size: var(--text-xs, 12px);
+		text-align: start;
+		white-space: nowrap;
+		padding-block: var(--sanad-gap-sm);
+		padding-inline: var(--sanad-gap-sm);
+		border-block-end: var(--sanad-border);
+	}
+	&__th--end { text-align: end; }
+	&__th--center { text-align: center; }
+	&__th--check, &__td--check { width: 36px; padding-inline: var(--sanad-gap-md) var(--sanad-gap-xs); }
+	&__th--expand, &__td--expand { width: 32px; padding-inline: var(--sanad-gap-xs); }
+	&__th--action, &__td--action { width: 1%; text-align: end; }
+	&__th--sorted { color: var(--ink-gray-9); }
+	&__sort {
+		appearance: none;
+		display: inline-flex;
+		align-items: center;
+		gap: var(--sanad-gap-xs);
+		border: 0;
+		background: transparent;
+		padding: 0;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+		&:hover { color: var(--ink-gray-9); }
+	}
+	&__sort-icon { display: inline-flex; color: var(--ink-gray-5); .icon { width: 12px; height: 12px; } }
+	&__th--sorted &__sort-icon { color: var(--ink-blue-3); }
+
+	tbody td {
+		padding-block: var(--sanad-gap-sm);
+		padding-inline: var(--sanad-gap-sm);
+		border-block-end: var(--sanad-border);
+		vertical-align: middle;
+		min-height: 44px;
+	}
+	tbody tr:last-child td { border-block-end: 0; }
+	&__row--clickable { cursor: pointer; }
+	&__row:hover td { background: var(--surface-gray-1); }
+	&__row:focus-visible { outline: 2px solid var(--ink-blue-3); outline-offset: -2px; }
+	&__row:has(.list-row-checkbox:checked) td { background: var(--surface-blue-1); }
+	&__td--end { text-align: end; }
+	&__td--center { text-align: center; }
+	&__td--end &__cell { align-items: flex-end; }
+
+	&__cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; line-height: 1.3; }
+	&__main { display: flex; align-items: center; gap: var(--sanad-gap-sm); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+	&__sub {
+		color: var(--ink-gray-6);
+		font-size: var(--text-xs, 12px);
+		font-variant-numeric: tabular-nums;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 260px;
+	}
+	&__muted { color: var(--ink-gray-5); }
+	&__date { color: var(--ink-gray-7); white-space: nowrap; }
+	&__avatar-text { overflow: hidden; text-overflow: ellipsis; }
+	&__action { min-height: 28px; white-space: nowrap; }
+	&__toggle {
+		appearance: none;
+		border: 0;
+		background: transparent;
+		width: 28px;
+		height: 28px;
+		border-radius: var(--sanad-radius);
+		color: var(--ink-gray-6);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: transform var(--sanad-motion), background var(--sanad-motion);
+		&:hover { background: var(--surface-gray-2); }
+		&[aria-expanded="true"] { transform: rotate(180deg); }
+	}
+	&__detail td { background: var(--surface-gray-1); padding-block: var(--sanad-gap-md); }
+	&__detail-body { padding-inline-start: var(--sanad-gap-xl); }
+	&__check-all, .list-row-checkbox { width: 15px; height: 15px; margin: 0; accent-color: var(--ink-blue-3); vertical-align: middle; }
+	&__row--skeleton td { padding-block: var(--sanad-gap-xs); border-block-end: var(--sanad-border); }
+	&__row--empty td { padding: 0; }
+}
+
+// 2-letter initials chip (device / contact)
+.sanad-avatar {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	width: 24px;
+	height: 24px;
+	border-radius: var(--sanad-radius);
+	background: var(--surface-gray-7);
+	color: var(--ink-white);
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	line-height: 1;
+}
+
+// footer: count at the inline-start, pager at the inline-end (sticky like Desk's paging area)
+.sanad-datalist__footer {
+	position: sticky;
+	inset-block-end: 0;
+	z-index: 2;
+	background: var(--surface-white);
+	border-block-start: var(--sanad-border);
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--sanad-gap-sm);
+	padding-block: var(--sanad-gap-md);
+	padding-inline: var(--sanad-gap-xs);
+	color: var(--ink-gray-6);
+	font-size: var(--text-sm, 13px);
+	font-variant-numeric: tabular-nums;
+	.sanad-datalist__count { min-height: 20px; unicode-bidi: plaintext; }
+	.sanad-datalist__extra:empty { display: none; }
+	.sanad-datalist__pager { display: inline-flex; align-items: center; gap: var(--sanad-gap-sm); }
+	.sanad-datalist__page { color: var(--ink-gray-7); margin-inline-end: var(--sanad-gap-xs); }
+	.btn { min-height: var(--sanad-target); }
+}
+
+// mobile: one card per row (label: value pairs)
+@media (max-width: 767px) {
+	.sanad-datalist__wrap--cards {
+		border: 0;
+		background: transparent;
+		.sanad-datalist thead { display: none; }
+		.sanad-datalist, .sanad-datalist tbody { display: block; }
+		.sanad-datalist__row {
+			display: grid;
+			grid-template-columns: auto 1fr auto;
+			gap: var(--sanad-gap-xs) var(--sanad-gap-sm);
+			padding: var(--sanad-gap-md);
+			margin-block-end: var(--sanad-gap-sm);
+			border: var(--sanad-border);
+			border-radius: var(--sanad-radius-lg);
+			background: var(--surface-white);
+		}
+		.sanad-datalist__row td { display: block; border: 0; padding: 0; background: transparent !important; }
+		.sanad-datalist__td--check { grid-column: 1; grid-row: 1; }
+		.sanad-datalist__td--action { grid-column: 3; grid-row: 1; }
+		.sanad-datalist__td--expand { grid-column: 3; grid-row: 2; }
+		.sanad-datalist__td:not(.sanad-datalist__td--check):not(.sanad-datalist__td--action):not(.sanad-datalist__td--expand) {
+			grid-column: 1 / -1;
+			display: flex;
+			gap: var(--sanad-gap-sm);
+			align-items: baseline;
+			&::before { content: attr(data-label); flex: 0 0 34%; color: var(--ink-gray-6); font-size: var(--text-xs, 12px); }
+			&.sanad-datalist__td--hidden-xs { display: none; }
+		}
+		.sanad-datalist__row td:first-child + td:not(.sanad-datalist__td--action) { grid-column: 2; grid-row: 1; &::before { display: none; } }
+		.sanad-datalist__main, .sanad-datalist__sub { max-width: none; white-space: normal; }
+		.sanad-datalist__detail { display: block; }
+		.sanad-datalist__detail td { display: block; }
+		.sanad-datalist__row--empty, .sanad-datalist__row--skeleton { display: block; td { display: block; } }
+	}
+	.sanad-datalist__footer { flex-direction: column; align-items: stretch; .sanad-datalist__pager { justify-content: space-between; } }
+}

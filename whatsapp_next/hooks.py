@@ -131,6 +131,9 @@ doctype_list_js = {
 	"WhatsApp Contact Group": "public/js/listview/whatsapp_contact_group_list.js",
 	"WhatsApp Command": "public/js/listview/whatsapp_command_list.js",
 	"WhatsApp Queue Item": "public/js/listview/whatsapp_queue_item_list.js",
+	"WhatsApp Template": "public/js/listview/whatsapp_template_list.js",
+	"WhatsApp Notification": "public/js/listview/whatsapp_notification_list.js",
+	"WhatsApp Notification Alert": "public/js/listview/whatsapp_notification_alert_list.js",
 }
 
 # Translation

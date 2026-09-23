@@ -45,7 +45,9 @@ frappe.listview_settings["Sales Order"] = {
 };
 ```
 
-Options: `listview` | `wrapper`, `cards[{key, label, icon?, tone?, method?, args?, count?,
+Options: `listview` | `wrapper`, `layout` (`"row"` | `"kpi"` — PageHeader's KPI cards: icon in a
+tinted square, label, big number, sub-text; 4 / 2 / 1 per row), `cards[{key, label, icon?, tone?,
+sub?: string | (value, raw) => string, method?, args?, count?,
 sum?, value?, format?(value, raw), onclick?(card, value, raw), modal?: {title, method, args?,
 columns[{fieldname, label, format?(value, row)}], row_actions[{label, icon?, method?,
 args?(row, {reason}), handler?(row), confirm?: true | ConfirmDialog options (+ `impact_of(row)`),

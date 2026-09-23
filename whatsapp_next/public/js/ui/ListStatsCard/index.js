@@ -13,11 +13,12 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 	 * @param {Object} [opts.listview] — a Desk ListView; cards are inserted above the result rows
 	 * @param {jQuery|HTMLElement} [opts.wrapper] — alternative mount point
 	 * @param {Array<Object>} opts.cards — `{key, label, icon?, tone?, method?, args?, count?: {doctype, filters},
-	 *   sum?: {doctype, field, filters}, format?(value), onclick?(card, value), modal?: {title, method, args?,
+	 *   sum?: {doctype, field, filters}, format?(value), sub?: string|Function(value, raw), onclick?(card, value), modal?: {title, method, args?,
 	 *   columns: [{fieldname, label, format?(value, row)}], row_actions?: [{label, icon?, method?, args?(row),
 	 *   handler?(row), confirm?: true|ConfirmDialog opts, condition?(row)}], empty_text?}}`
 	 *   A `method` may resolve to a number, `{value, tone}`, or an array (its length is the value).
 	 * @param {number} [opts.refresh_seconds] — interval refresh (paused while the page is hidden)
+	 * @param {"row"|"kpi"} [opts.layout="row"] — `kpi`: prototype KPI cards (4 / 2 / 1 per row, icon in a tinted square, sub-text)
 	 * @param {Object<string, Function>} [opts.events] — realtime event name → handler (`this` = card set)
 	 */
 	constructor(opts = {}) {
@@ -30,7 +31,7 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 	}
 
 	make() {
-		this.$el = $('<div class="sanad-kit sanad-stats" role="group"></div>').attr("aria-label", __("Summary"));
+		this.$el = $(`<div class="sanad-kit sanad-stats sanad-stats--${this.opts.layout === "kpi" ? "kpi" : "row"}" role="group"></div>`).attr("aria-label", __("Summary"));
 		this.opts.cards.forEach((card) => this.$el.append(this.card_html(card)));
 		const lv = this.opts.listview;
 		if (lv && lv.$frappe_list) {
@@ -53,10 +54,11 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 		const attrs = interactive ? ` tabindex="0" role="button"` : "";
 		return `
 			<div class="sanad-stats__card ${interactive ? "sanad-stats__card--interactive" : ""}" data-key="${ui.escape(card.key)}"${attrs}>
-				${card.icon ? `<div class="sanad-stats__icon" aria-hidden="true">${ui.icon(card.icon, "md")}</div>` : ""}
+				${card.icon ? `<div class="sanad-stats__icon ${card.tone ? `sanad-tone--${ui.tone(card.tone)}` : ""}" aria-hidden="true">${ui.icon(card.icon, "md")}</div>` : ""}
 				<div class="sanad-stats__text">
 					<div class="sanad-stats__label">${ui.escape(card.label)}</div>
 					<div class="sanad-stats__value sanad-tabular">${ui.skeleton(1, { lines: 1 })}</div>
+					${card.sub != null ? `<div class="sanad-stats__sub">${typeof card.sub === "string" ? ui.escape(card.sub) : ""}</div>` : ""}
 				</div>
 				${interactive ? `<span class="sanad-stats__chevron" aria-hidden="true">${ui.icon("es-line-right-chevron", "xs")}</span>` : ""}
 			</div>`;
@@ -98,6 +100,7 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 					this.values[card.key] = { raw, value };
 					const text = card.format ? card.format(value, raw) : ui.format_int(value || 0);
 					$value.html(`<span class="${tone ? `sanad-tone--${ui.tone(tone)}` : ""}">${ui.escape(text)}</span>`);
+					if (typeof card.sub === "function") this.$card(card.key).find(".sanad-stats__sub").text(card.sub(value, raw) || "");
 					this.$card(card.key).removeClass("sanad-stats__card--error");
 				})
 				.catch((err) => {

@@ -1,7 +1,8 @@
-// WhatsApp Log (Outbound) list — screen 4 (09 §1B/§1C row 4). Mounts the kit: FilterBar presets,
-// RowActions (resend / quick send / contact / cancel), BulkActions (resend failed), the record
-// Drawer over `messages.get_outbound`, a "Quick send" page button and the `wa:message:status`
-// realtime refresh. All data goes through `whatsapp_next.api.v1.messages.*` / `quick_send.*`.
+// WhatsApp Log (Outbound) list — screen 4 (09 §1B/§1C row 4), prototype-faithful (D-064):
+// PageHeader (title + description) → FilterBar toolbar → DataList table (Contact + phone, Status,
+// Document type, Document no., Device, Sent at, Error, On behalf, View) → footer. "View" and the
+// row click open the record Drawer over `messages.get_outbound`; BulkActions (resend failed)
+// works on the table's checkboxes; realtime `wa:message:status` refreshes the page.
 // The `whatsapp_next.messages.*` helpers are shared with the Outbound form and the Queue list
 // (they `frappe.require` this file when it is not loaded on their route).
 
@@ -23,6 +24,8 @@ frappe.provide("whatsapp_next.messages");
 	const is_agent = () => frappe.user.has_role(AGENT_ROLES);
 	const is_manager = () => frappe.user.has_role(MANAGER_ROLES);
 	const fmt_dt = (v) => (v ? frappe.datetime.str_to_user(v) : "");
+	// table cell: user date + HH:mm (no seconds), like the prototype's time column
+	const fmt_short = (v) => (v ? moment(frappe.datetime.convert_to_user_tz ? frappe.datetime.convert_to_user_tz(v, false) : v).format(`${frappe.datetime.get_user_date_fmt().toUpperCase()} HH:mm`) : "");
 
 	// ---- shared helpers (also used by the Outbound form and the Queue list) -----------------
 
@@ -151,8 +154,8 @@ frappe.provide("whatsapp_next.messages");
 
 	frappe.listview_settings[DT] = {
 		hide_name_column: true,
-		// fetched with every row (not extra columns): the list columns come from the DocType's `in_list_view` flags
-		add_fields: ["status", "phone", "phone_e164", "jid", "recipient_type", "display_name", "contact", "device", "source_type", "campaign", "reference_doctype", "reference_name", "message_type", "error_code", "error_message", "is_simulated", "is_test", "creation", "sent_at"],
+		// every field the table, the badges and the actions read (the columns are explicit below)
+		add_fields: ["status", "phone", "phone_e164", "jid", "recipient_type", "display_name", "contact", "device", "source_type", "campaign", "reference_doctype", "reference_name", "message_type", "error_code", "error_message", "is_simulated", "is_test", "creation", "sent_at", "command", "template"],
 
 		// The one status → colour rule for this DocType; every badge reads it through `sanad.ui.indicator_for`.
 		get_indicator(doc) {
@@ -160,39 +163,20 @@ frappe.provide("whatsapp_next.messages");
 			return [__(doc.status), colour, `status,=,${doc.status}`];
 		},
 
-		formatters: {
-			// the subject cell is rendered as text by Desk; the phone line is added after render (see onload)
-			display_name(value) {
-				return value || __("Unknown");
-			},
-			status(value, df, doc) {
-				const ind = ui.indicator_for(DT, Object.assign({ doctype: DT }, doc));
-				return ui.StatusBadge.html({ label: __(value), colour: ind.colour });
-			},
-			sent_at(value, df, doc) {
-				const at = value || doc.creation;
-				return at ? `<span class="sanad-tabular">${ui.escape(frappe.datetime.str_to_user(at))}</span>` : "—";
-			},
-			error_code(value, df, doc) {
-				if (!value) return `<span class="sanad-cell__muted" aria-hidden="true">—</span>`;
-				return `<span class="sanad-cell__error" title="${ui.escape(doc.error_message || value)}">${ui.escape(value)}</span>`;
-			},
-			reference_name(value, df, doc) {
-				if (!value) return `<span class="sanad-cell__muted" aria-hidden="true">—</span>`;
-				const link = doc.reference_doctype ? frappe.utils.get_form_link(doc.reference_doctype, value, true, ui.escape(value)) : ui.escape(value);
-				return doc.reference_doctype ? `${ui.escape(__(doc.reference_doctype))} · ${link}` : link;
-			},
-			is_simulated(value) {
-				return cint(value) ? ui.StatusBadge.html({ label: __("Yes"), colour: "gray", icon: false }) : `<span class="sanad-cell__muted" aria-hidden="true">—</span>`;
-			},
-		},
-
 		onload(listview) {
 			const refresh = () => listview.refresh();
+			const open = (doc) => whatsapp_next.messages.open_outbound_drawer(doc.name, { after_change: refresh, listview });
+
+			if (typeof ui.PageHeader === "function") {
+				new ui.PageHeader({
+					listview,
+					title: __("Outbound messages"),
+					description: __("Everything sent from your devices: status, document, device and errors."),
+				});
+			}
 
 			new ui.FilterBar({
 				listview,
-				intro: __("Everything sent from your devices: status, document, device and errors."),
 				actions: ["group_by", "export"],
 				presets: [
 					{ fieldname: "phone_e164", type: "search", fields: ["phone_e164", "display_name", "reference_name"], placeholder: __("Search name, number or document…") },
@@ -209,7 +193,7 @@ frappe.provide("whatsapp_next.messages");
 								.then((rows) => Array.from(new Set((rows || []).map((r) => r.error_code).filter(Boolean))))
 								.catch(() => []),
 					},
-					{ fieldname: "is_simulated", type: "select", label: __("Simulated") },
+					{ fieldname: "is_simulated", type: "select", label: __("On behalf") },
 					{ fieldname: "message_type", type: "select" },
 					{ fieldname: "command", type: "select" },
 					{ fieldname: "template", type: "select" },
@@ -217,28 +201,28 @@ frappe.provide("whatsapp_next.messages");
 				],
 			});
 
-			// subject cell: name + the phone (or JID) as a muted second line (Desk renders the subject as text)
-			listview.$result.addClass("sanad-list--two-line");
-			ui.on_list_render(listview, () => {
-				listview.$result.find(".list-row-container").each((i, el) => {
-					const $row = $(el);
-					if ($row.find(".sanad-cell__sub").length) return;
-					const doc = (listview.data || []).find((d) => d.name === ui.docname_of_row($row));
-					const key = doc && (doc.phone_e164 || doc.phone || doc.jid);
-					if (!key) return;
-					$row.find(".list-subject a").first().parent().addClass("sanad-cell").append(`<span class="sanad-cell__sub" dir="ltr">${ui.escape(key)}</span>`);
-				});
-			});
-
-			listview._sanad_row_actions = new ui.RowActions({
+			new ui.DataList({
 				listview,
-				actions: [
-					{ label: __("Resend"), icon: ui.icons.resend, condition: (doc) => is_agent() && TERMINAL.includes(doc.status), handler: (doc) => whatsapp_next.messages.resend(doc.name, refresh) },
-					{ label: __("Quick send"), icon: ui.icons.quick_send, condition: () => is_agent(), handler: (doc) => whatsapp_next.messages.quick_send(doc, refresh) },
-					{ label: __("Contact"), icon: "es-line-customer", handler: (doc) => whatsapp_next.messages.open_contact(doc) },
-					{ label: __("Cancel"), icon: ui.icons.cancel, danger: true, condition: (doc) => is_manager() && doc.status === "Queued", handler: (doc) => whatsapp_next.messages.cancel(doc, refresh) },
+				columns: [
+					{
+						fieldname: "display_name",
+						label: __("Contact"),
+						sortable: true,
+						format: (v) => ui.escape(v || __("Unknown")),
+						sub: (doc) => `<span dir="ltr">${ui.escape(doc.phone_e164 || doc.phone || doc.jid || "")}</span>`,
+					},
+					{ fieldname: "status", type: "status", label: __("Status"), sortable: true },
+					{ fieldname: "reference_doctype", label: __("Document type"), format: (v) => (v ? ui.escape(__(v)) : ""), sortable: true },
+					{ fieldname: "reference_name", label: __("Document no."), format: (v, doc) => (v ? (doc.reference_doctype ? frappe.utils.get_form_link(doc.reference_doctype, v, true, ui.escape(v)) : ui.escape(v)) : ""), sortable: true },
+					{ fieldname: "device", type: "avatar", label: __("Device"), sortable: true },
+					{ fieldname: "sent_at", type: "date", label: __("Sent at"), sortable: true, format: (v, doc) => (v || doc.creation ? `<span class="sanad-tabular sanad-datalist__date">${ui.escape(fmt_short(v || doc.creation))}</span>` : "") },
+					{ fieldname: "error_code", label: __("Error"), sortable: true, format: (v, doc) => (v ? `<span class="sanad-cell__error" title="${ui.escape(doc.error_message || v)}">${ui.escape(v)}</span>` : "") },
+					{ fieldname: "is_simulated", label: __("On behalf"), sortable: true, format: (v) => (cint(v) ? ui.StatusBadge.html({ label: __("Yes"), colour: "gray", icon: false }) : "") },
 				],
-				on_row_click: (doc) => whatsapp_next.messages.open_outbound_drawer(doc.name, { after_change: refresh, listview }),
+				row_action: { label: __("View"), handler: open },
+				on_row_click: open,
+				footer: { count: (total) => ui.plural(total, { one: __("{0} message"), other: __("{0} messages") }) },
+				empty: { title: __("No messages match"), description: __("Change the filters or the period to see more.") },
 			});
 
 			if (is_agent()) {
@@ -279,11 +263,6 @@ frappe.provide("whatsapp_next.messages");
 			ui.bind_list_realtime(listview, "wa:message:status", 2000);
 		},
 
-		// Frappe 16 calls `before_render` without arguments; RowActions re-decorates rows through
-		// `sanad.ui.on_list_render`, so nothing is needed here beyond keeping the hooks explicit.
 		before_render() {},
-		refresh(listview) {
-			listview && listview._sanad_row_actions && listview._sanad_row_actions.decorate();
-		},
 	};
 })();
