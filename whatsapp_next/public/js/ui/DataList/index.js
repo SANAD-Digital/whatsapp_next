@@ -612,22 +612,25 @@ sanad.ui.DataList = class DataList {
 		const card = this.listview.$frappe_list && this.listview.$frappe_list[0];
 		const el = this.$table && this.$table[0];
 		if (!card || !el || !el.isConnected) return;
-		// the card is sized to the room left on screen, then its flex children share it: the table
-		// takes what is left and the footer sits on the card's bottom edge, as Desk's list does.
 		const top = card.getBoundingClientRect().top;
-		const room = Math.round(window.innerHeight - top);
-		// Whatever sits above the table inside the card — a screen's own console, the toolbar — and
-		// the footer under it claim their height first. Desk keeps `.result` at a 200 px minimum, so
-		// a tall console used to push the table *under* the footer instead of shrinking it. The card
-		// grows past the viewport in that case and the page scrolls, which is what a screen with a
-		// console wants anyway.
-		const others = Array.from(card.children).reduce((n, child) => {
-			if (child.contains(el)) return n;
-			const style = window.getComputedStyle(child);
-			if (style.display === "none" || style.position === "absolute" || style.position === "fixed") return n;
-			return n + child.getBoundingClientRect().height;
-		}, 0);
-		card.style.height = `${Math.max(280, room, Math.round(others) + MIN_TABLE_HEIGHT)}px`;
+		const room = Math.max(MIN_TABLE_HEIGHT, Math.round(window.innerHeight - top));
+
+		// A screen may carry a console above its toolbar (Queue, Campaigns). The card is then made
+		// exactly one console taller than the room on screen, so the page scrolls by the height of
+		// the console and stops: at the end of that scroll the toolbar sits at the top, the table
+		// fills the viewport and the footer rests on its bottom edge. Without a console the card is
+		// the room itself and nothing scrolls, as Desk's own list does.
+		const bar = card.querySelector(":scope > .sanad-filterbar");
+		let above = 0;
+		if (bar) {
+			for (const child of Array.from(card.children)) {
+				if (child === bar || child.contains(el)) break;
+				const style = window.getComputedStyle(child);
+				if (style.display === "none" || style.position === "absolute" || style.position === "fixed") continue;
+				above += child.getBoundingClientRect().height;
+			}
+		}
+		card.style.height = `${Math.round(room + above)}px`;
 		el.style.maxHeight = "";
 	}
 
