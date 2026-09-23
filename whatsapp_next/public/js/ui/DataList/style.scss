@@ -435,6 +435,10 @@
 		border: 0;
 	}
 	.result, .sanad-datalist-host { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; }
+	// Desk keeps `.result` at a 200 px minimum with the same specificity as the line above, and it
+	// wins by order: inside the card the table owns its height, so the rule is overruled from a
+	// stronger selector. Without this the table paints over the footer when a console sits above it.
+	&.frappe-list .result { min-height: 0; }
 	.sanad-datalist__wrap {
 		flex: 1 1 auto;
 		min-width: 0;

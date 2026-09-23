@@ -8,6 +8,9 @@
 
 import ui from "../_core/index.js";
 
+/** The table never gets less than this, however tall the console above it is. */
+const MIN_TABLE_HEIGHT = 320;
+
 const CONTROL_SELECTOR = "a, button, input, select, textarea, label, .sanad-datalist__action, [data-toggle]";
 
 sanad.ui.DataList = class DataList {
@@ -108,6 +111,14 @@ sanad.ui.DataList = class DataList {
 			this.fit_height();
 		}, 150);
 		$(window).on(`resize.${this.id}`, this._on_resize);
+		// a screen's console above the table fills in after its own reads, and it is taller then
+		// than it was at mount: the card has to be re-measured when that happens
+		if (typeof ResizeObserver === "function") {
+			this._card_observer = new ResizeObserver(ui.debounce(() => this.fit_height(), 120));
+			Array.from(lv.$frappe_list[0].children).forEach((child) => {
+				if (!child.contains(this.$table[0])) this._card_observer.observe(child);
+			});
+		}
 		this.render_skeleton();
 	}
 
@@ -602,10 +613,21 @@ sanad.ui.DataList = class DataList {
 		const el = this.$table && this.$table[0];
 		if (!card || !el || !el.isConnected) return;
 		// the card is sized to the room left on screen, then its flex children share it: the table
-		// takes what is left and the footer sits on the card's bottom edge, as Desk's list does
+		// takes what is left and the footer sits on the card's bottom edge, as Desk's list does.
 		const top = card.getBoundingClientRect().top;
-		const room = Math.max(280, Math.round(window.innerHeight - top));
-		card.style.height = `${room}px`;
+		const room = Math.round(window.innerHeight - top);
+		// Whatever sits above the table inside the card — a screen's own console, the toolbar — and
+		// the footer under it claim their height first. Desk keeps `.result` at a 200 px minimum, so
+		// a tall console used to push the table *under* the footer instead of shrinking it. The card
+		// grows past the viewport in that case and the page scrolls, which is what a screen with a
+		// console wants anyway.
+		const others = Array.from(card.children).reduce((n, child) => {
+			if (child.contains(el)) return n;
+			const style = window.getComputedStyle(child);
+			if (style.display === "none" || style.position === "absolute" || style.position === "fixed") return n;
+			return n + child.getBoundingClientRect().height;
+		}, 0);
+		card.style.height = `${Math.max(280, room, Math.round(others) + MIN_TABLE_HEIGHT)}px`;
 		el.style.maxHeight = "";
 	}
 
@@ -845,6 +867,7 @@ sanad.ui.DataList = class DataList {
 
 	destroy() {
 		$(window).off(`resize.${this.id}`);
+		this._card_observer && this._card_observer.disconnect();
 		this.listview.$frappe_list.removeClass("sanad-list-card");
 		this.listview.$result.off(`.${this.id}`);
 		this.$footer.off(`.${this.id}`).remove();

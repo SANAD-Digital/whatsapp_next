@@ -496,7 +496,15 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 					{ fieldname: "status", type: "select" },
 					{ fieldname: "device", type: "select" },
 					{ fieldname: "owner", type: "select", label: __("Owner") },
-					{ fieldname: "started_at", type: "daterange", label: __("Start") },
+					// the same date control as Inbound and Outbound — operators, presets and a range
+					// calendar — not a bare input
+					{
+						fieldname: "started_at",
+						type: "date",
+						label: __("Start"),
+						default_op: "between",
+						date_fields: ["started_at", "scheduled_at", "creation", "first_message_at", "last_message_at"],
+					},
 				],
 			});
 		}
