@@ -186,7 +186,10 @@
 		z-index: 4;
 		height: 36px;
 		padding: 0;
-		border-block: 1px solid var(--sanad-accent-outline);
+		// only a rule above: the one below sat between the group and its own rows and read as a
+		// stray border in front of them
+		border-block-start: 1px solid var(--sanad-accent-outline);
+		border-block-end: 0;
 		background-color: color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-white));
 	}
 	tbody tr.sanad-datalist__group--l1 td { inset-block-start: calc(var(--sanad-head-h) + 36px); z-index: 3; }
