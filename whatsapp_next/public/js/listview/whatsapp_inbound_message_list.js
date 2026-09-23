@@ -7,7 +7,6 @@
 	const ui = sanad.ui;
 	const DT = "WhatsApp Inbound Message";
 	const AGENT_ROLES = ["WhatsApp Agent", "WhatsApp Manager", "System Manager"];
-	const MATCHED = ["Matched", "Executed"];
 	const DRAWER_FIELDS = ["device", "phone_e164", "display_name", "contact", "is_group", "message_type", "body", "caption", "received_at", "is_simulated", "creation"];
 
 	const is_agent = () => frappe.user.has_role(AGENT_ROLES);
@@ -122,14 +121,17 @@
 
 			new ui.FilterBar({
 				listview,
+				intro: __("Everything received on your devices: the matched command, the reply and any errors."),
+				actions: ["group_by", "export"],
 				presets: [
-					{ fieldname: "command_status", type: "tabs", options: [{ value: MATCHED, label: __("Matched") }, { value: "Not Matched", label: __("Not matched") }] },
+					{ fieldname: "phone_e164", type: "search", fields: ["phone_e164", "display_name", "body"], placeholder: __("Search phone, name or text…") },
+					{ fieldname: "command_status", type: "select", label: __("Result") },
 					{ fieldname: "command", type: "select" },
 					{ fieldname: "contact", type: "select" },
 					{ fieldname: "device", type: "select" },
-					{ fieldname: "received_at", type: "daterange", label: __("Period") },
-					{ fieldname: "phone_e164", type: "search", fields: ["phone_e164", "display_name", "body"], placeholder: __("Search phone, name or text…") },
+					{ fieldname: "message_type", type: "select" },
 					{ fieldname: "is_simulated", type: "select", label: __("Simulated") },
+					{ fieldname: "received_at", type: "period", label: __("Period"), default: "30d" },
 				],
 			});
 

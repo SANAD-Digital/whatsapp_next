@@ -28,8 +28,9 @@ Options: `listview` | `page` (+ `doctype`), `wrapper`, `group_by_field`, `label`
 Counts refresh after every list render (wraps `listview.render_list`, shared with RowActions).
 
 ## Live use
-Functions Center page (`category`), Contacts page (`link_doctype`) — mounted by those pages'
-scripts; the list-mode path is exercised by the same class on any Desk list.
+Outbound and Inbound lists through the FilterBar "Group by ▾" action
+(`public/js/listview/whatsapp_log_list.js`, `whatsapp_inbound_message_list.js`); Functions
+Center page (`category`) and Contacts page (`link_doctype`) mount it directly.
 
 ## Design gate
 Applied from the phase-5 audit:

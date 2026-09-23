@@ -193,15 +193,27 @@ frappe.provide("whatsapp_next.messages");
 			new ui.FilterBar({
 				listview,
 				intro: __("Everything sent from your devices: status, document, device and errors."),
+				actions: ["group_by", "export"],
 				presets: [
 					{ fieldname: "phone_e164", type: "search", fields: ["phone_e164", "display_name", "reference_name"], placeholder: __("Search name, number or document…") },
-					{ fieldname: "status", type: "tabs" },
-					{ fieldname: "device", type: "select" },
+					{ fieldname: "status", type: "select" },
 					{ fieldname: "reference_doctype", type: "select" },
-					{ fieldname: "source_type", type: "select" },
-					{ fieldname: "campaign", type: "select" },
+					{ fieldname: "device", type: "select" },
+					{
+						fieldname: "error_code",
+						type: "select",
+						// Data field: distinct values seen in the log (guarded — an empty list just hides nothing)
+						options: (txt) =>
+							frappe.db
+								.get_list(DT, { fields: ["error_code"], filters: [["error_code", "is", "set"]].concat(txt ? [["error_code", "like", `%${txt}%`]] : []), group_by: "error_code", order_by: "error_code asc", limit: 50 })
+								.then((rows) => Array.from(new Set((rows || []).map((r) => r.error_code).filter(Boolean))))
+								.catch(() => []),
+					},
 					{ fieldname: "is_simulated", type: "select", label: __("Simulated") },
-					{ fieldname: "creation", type: "period", label: __("Period") },
+					{ fieldname: "message_type", type: "select" },
+					{ fieldname: "command", type: "select" },
+					{ fieldname: "template", type: "select" },
+					{ fieldname: "creation", type: "period", label: __("Period"), default: "30d" },
 				],
 			});
 
