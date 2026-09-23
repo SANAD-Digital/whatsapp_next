@@ -50,6 +50,7 @@ sanad.ui.FilterBar = class FilterBar {
 	 * @param {Array<Object>} opts.presets — `{fieldname, type?: "select"|"tabs"|"daterange"|"search"|"period", label?,
 	 *   options?: Array<string|{value,label}> | () => Promise<Array>, multiple?: boolean (select, default true),
 	 *   fields?: string[] (search), placeholder?, all_label?, default?: "30d"|"7d"|"today"|"all"|number (period)}`
+	 *   — `type: "date"` mounts `sanad.ui.DateFilter` (operators, presets, calendar, fiscal periods)
 	 * @param {Array<string>} [opts.actions] — `"group_by"` (multi-level grouping of the table),
 	 *   `"columns"` (pick and order the table's columns), `"export"` (Desk's exporter)
 	 * @param {string} [opts.intro] — one-line description rendered above the toolbar
@@ -116,6 +117,7 @@ sanad.ui.FilterBar = class FilterBar {
 		this.$end = $('<div class="sanad-filterbar__end"></div>').appendTo(this.$toolbar);
 		this.$actions = $('<div class="sanad-filterbar__actions"></div>').appendTo(this.$end);
 		of_type(["period"]).forEach((p) => this.render_period(p));
+		of_type(["date"]).forEach((p) => this.render_date(p));
 		of_type(["tabs"]).forEach((p) => this.render_tabs(p));
 		if (!this.$tabs.children().length) this.$tabs.remove();
 		this.render_actions();
@@ -326,6 +328,25 @@ sanad.ui.FilterBar = class FilterBar {
 		if (this.$actions && this.$actions.parent().length) $group.insertBefore(this.$actions);
 		else this.$end.append($group);
 		this.controls[p.fieldname] = { preset: p, $el: $group, type: "period", options };
+	}
+
+	/**
+	 * The full date filter (`sanad.ui.DateFilter`): operators, a preset rail, a range calendar,
+	 * relative spans and fiscal periods. Its value becomes one Frappe filter on the field —
+	 * `Between` for a range, `>=` / `<=` / `>` / `<` / `=` for the single-sided operators.
+	 */
+	render_date(preset) {
+		if (typeof sanad.ui.DateFilter !== "function") return this.render_period(preset);
+		const p = Object.assign({ fieldname: "creation" }, preset);
+		const $slot = $('<div class="sanad-filterbar__datefilter"></div>').appendTo(this.$end);
+		const control = new sanad.ui.DateFilter({
+			wrapper: $slot,
+			placeholder: this.label_of(p),
+			default_op: p.default_op || "between",
+			on_change: (value) => this.set(p.fieldname, value ? { __date: value } : null),
+		});
+		this.controls[p.fieldname] = { preset: p, $el: $slot, type: "date", control };
+		return control;
 	}
 
 	render_tabs(preset) {
@@ -845,6 +866,7 @@ sanad.ui.FilterBar = class FilterBar {
 
 	is_empty(fieldname, value) {
 		const c = this.controls[fieldname] || {};
+		if (c.type === "date") return !value || !value.__date;
 		if (c.type === "period") return value == null || value === "";
 		return value == null || value === "" || (Array.isArray(value) && !value.filter((v) => v != null && v !== "").length);
 	}
@@ -878,6 +900,16 @@ sanad.ui.FilterBar = class FilterBar {
 	/** Frappe filter tuple for one preset value. */
 	filter_of(fieldname, value) {
 		const c = this.controls[fieldname] || {};
+		if (c.type === "date" && value && value.__date) {
+			const v = value.__date;
+			const df = this.df(fieldname);
+			const datetime = df.fieldtype === "Datetime";
+			const from = v.from && datetime ? `${v.from} ${v.fromTime || "00:00"}:00` : v.from;
+			const to = v.to && datetime ? `${v.to} ${v.toTime || "23:59"}:59` : v.to;
+			if (from && to) return [this.doctype, fieldname, "Between", [from, to]];
+			if (from) return [this.doctype, fieldname, v.exclusive ? ">" : ">=", from];
+			return [this.doctype, fieldname, v.exclusive ? "<" : "<=", to];
+		}
 		if (c.type === "daterange") return [this.doctype, fieldname, "Between", value];
 		if (c.type === "period") return [this.doctype, fieldname, ">=", frappe.datetime.add_days(frappe.datetime.now_date(), -cint(value))];
 		if (Array.isArray(value)) return [this.doctype, fieldname, "in", value];
@@ -951,6 +983,9 @@ sanad.ui.FilterBar = class FilterBar {
 				const on = String($(el).attr("data-key")) === current;
 				$(el).attr("aria-checked", on).attr("tabindex", on ? 0 : -1);
 			});
+		} else if (c.type === "date") {
+			// the DateFilter owns its own draft; the bar only mirrors whether it is set
+			c.$el.toggleClass("sanad-filterbar__datefilter--set", value != null);
 		} else if (c.control) {
 			const current = c.control.get_value();
 			if (JSON.stringify(current || "") !== JSON.stringify(value || "")) c.control.set_value(value == null ? "" : value);
@@ -1011,6 +1046,7 @@ sanad.ui.FilterBar = class FilterBar {
 			const c = this.controls[fieldname];
 			const f = filters.find((x) => x[1] === fieldname);
 			let value = null;
+			if (c.type === "date") return; // the control is the source of truth for its own value
 			if (f) {
 				if (c.type === "daterange" && f[2] === "Between") value = f[3];
 				else if (c.type === "period" && f[2] === ">=") {
@@ -1053,6 +1089,8 @@ sanad.ui.FilterBar = class FilterBar {
 		if (frappe.route_options) extra.forEach((f) => delete frappe.route_options[f]);
 		own.forEach((fieldname) => {
 			delete this.values[fieldname];
+			const c = this.controls[fieldname];
+			if (c && c.type === "date" && c.control) c.control.clear({ silent: true });
 			this.reflect(fieldname);
 		});
 		if (this.controls.__search) {

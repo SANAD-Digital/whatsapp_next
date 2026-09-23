@@ -15,6 +15,7 @@ import "./BulkActions/index.js";
 // inputs and flows
 import "./Stepper/index.js";
 import "./PhoneField/index.js";
+import "./DateFilter/index.js";
 import "./ListStatsCard/index.js";
 import "./MetaDialog/index.js";
 // list renderers

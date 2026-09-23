@@ -1,5 +1,5 @@
 // WhatsApp Log (Outbound) list — screen 4 (09 §1B/§1C row 4), prototype-faithful (D-064):
-// FilterBar toolbar → DataList table (Contact + phone, Status,
+// FilterBar toolbar (search · filters · date filter · grouping · columns) → DataList table (Contact + phone, Status,
 // Document type, Document no., Device, Sent at, Error, On behalf, View) → footer. "View" and the
 // row click open the record Drawer over `messages.get_outbound`; BulkActions (resend failed)
 // works on the table's checkboxes; realtime `wa:message:status` refreshes the page.
@@ -189,7 +189,9 @@ frappe.provide("whatsapp_next.messages");
 								.then((rows) => Array.from(new Set((rows || []).map((r) => r.error_code).filter(Boolean))))
 								.catch(() => []),
 					},
-					{ fieldname: "creation", type: "period", label: __("Period"), default: "30d" },
+					// the full date filter (operators, presets, a range calendar, relative spans,
+					// fiscal periods) in place of the four quick period buttons
+					{ fieldname: "creation", type: "date", label: __("Date"), default_op: "between" },
 				],
 			});
 
