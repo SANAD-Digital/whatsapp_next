@@ -130,7 +130,6 @@ sanad.ui.FilterBar = class FilterBar {
 		this.$extra.appendTo(this.$main); // always last among the filters
 		this.sync();
 		this.apply_defaults();
-		this.watch_width();
 		$(document).on(`mousedown.${this.id} touchstart.${this.id}`, (e) => {
 			if ($(e.target).closest(".sanad-filterbar__dd").length) return;
 			this.close_popover();
@@ -372,45 +371,6 @@ sanad.ui.FilterBar = class FilterBar {
 	}
 
 	/**
-	 * Collapse the filter buttons behind the single "Filters" button whenever they no longer fit
-	 * on one line — a fixed breakpoint cannot know how many filters a screen declares, or how wide
-	 * Desk's sidebar is. The measurement is done on a hidden copy of the row's natural width.
-	 */
-	watch_width() {
-		const el = this.$toolbar && this.$toolbar[0];
-		if (!el || typeof ResizeObserver !== "function") return;
-		const measure = () => {
-			if (!el.isConnected) return;
-			const end = this.$end && this.$end[0] ? this.$end[0].getBoundingClientRect().width : 0;
-			// what the filters want: the search box plus every dropdown, at their natural widths
-			let wanted = 0;
-			this.$main.children().each((i, child) => {
-				if ($(child).hasClass("sanad-filterbar__mobile-toggle")) return;
-				wanted += child.getBoundingClientRect().width + 8;
-			});
-			const room = el.getBoundingClientRect().width - end - 8;
-			const compact = this.$wrapper.hasClass("sanad-filterbar--compact");
-			// hysteresis: expand again only with room to spare, so a resize cannot oscillate
-			if (!compact && wanted > room) this.$wrapper.addClass("sanad-filterbar--compact");
-			else if (compact && room > this.natural_width() + 24) this.$wrapper.removeClass("sanad-filterbar--compact");
-		};
-		this._ro = new ResizeObserver(ui.debounce(measure, 120));
-		this._ro.observe(el);
-		window.setTimeout(measure, 0);
-	}
-
-	/** Width the filter buttons need when they are all shown (measured once, off-screen). */
-	natural_width() {
-		if (this._natural) return this._natural;
-		const $clone = this.$main.clone().css({ position: "absolute", visibility: "hidden", width: "auto", "flex-wrap": "nowrap" });
-		$clone.find(".sanad-filterbar__mobile-toggle").remove();
-		$clone.appendTo(document.body);
-		this._natural = $clone[0].scrollWidth;
-		$clone.remove();
-		return this._natural;
-	}
-
-	/**
 	 * The "Filters" button and its sheet: one button carrying the number that is set, opening a
 	 * full-height sheet with the same option lists.
 	 */
@@ -427,7 +387,11 @@ sanad.ui.FilterBar = class FilterBar {
 		this.$mobile_btn.toggleClass("sanad-filterbar__btn--active", !!n);
 	}
 
-	/** Every select preset as one section in a full-height sheet (kit dialogs share `.sanad-sheet`). */
+	/**
+	 * The phone sheet: one field per filter, each a row showing its label and what is chosen, which
+	 * opens its own list in place. A flat wall of checkboxes for every filter at once was unusable;
+	 * this reads like the toolbar's own dropdowns, one open at a time.
+	 */
 	open_filter_sheet() {
 		const presets = this.opts.presets.filter((p) => (p.type || "select") === "select");
 		const dialog = new frappe.ui.Dialog({ title: __("Filters"), fields: [{ fieldtype: "HTML", fieldname: "body" }], primary_action_label: __("Done"), primary_action: () => dialog.hide() });
@@ -438,10 +402,35 @@ sanad.ui.FilterBar = class FilterBar {
 			dialog.hide();
 		});
 		const $body = dialog.get_field("body").$wrapper.empty();
-		presets.forEach((preset) => {
-			const label = this.label_of(preset);
-			const $section = $(`<section class="sanad-filter-sheet__section"><h3 class="sanad-filter-sheet__title">${ui.escape(label)}</h3><div class="sanad-filter-sheet__list"></div></section>`).appendTo($body);
-			const $list = $section.find(".sanad-filter-sheet__list").html(ui.skeleton(2, { lines: 1 }));
+		presets.forEach((preset) => this.sheet_field($body, preset));
+		dialog.show();
+		this.$sheet = dialog;
+		return dialog;
+	}
+
+	/** One collapsible field in the sheet. */
+	sheet_field($body, preset) {
+		const label = this.label_of(preset);
+		const $row = $(`<section class="sanad-filter-sheet__row">
+				<button type="button" class="sanad-filter-sheet__trigger" aria-expanded="false">
+					<span class="sanad-filter-sheet__name">${ui.escape(label)}</span>
+					<span class="sanad-filter-sheet__chosen"></span>
+					<span class="sanad-filter-sheet__caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
+				</button>
+				<div class="sanad-filter-sheet__list" hidden></div>
+			</section>`).appendTo($body);
+		const $trigger = $row.find(".sanad-filter-sheet__trigger");
+		const $list = $row.find(".sanad-filter-sheet__list");
+
+		const paint_chosen = () => {
+			const chosen = this.chosen(preset.fieldname);
+			const text = !chosen.length ? __("All") : chosen.length === 1 ? this.label_for_value(preset.fieldname, chosen[0]) : __("{0} selected", [ui.format_int(chosen.length)]);
+			$row.find(".sanad-filter-sheet__chosen").text(text).toggleClass("sanad-filter-sheet__chosen--set", !!chosen.length);
+		};
+		paint_chosen();
+
+		const fill = () => {
+			$list.html(ui.skeleton(2, { lines: 1 }));
 			this.resolve_options(preset, "")
 				.then((options) => {
 					this.remember(preset.fieldname, options);
@@ -451,7 +440,10 @@ sanad.ui.FilterBar = class FilterBar {
 					options.forEach((o) => {
 						const on = this.chosen(preset.fieldname).some((v) => key_of(v) === key_of(o.value));
 						const $opt = $(`<label class="sanad-filterbar__opt"><input type="${type}" name="${this.id}-sheet-${ui.escape(preset.fieldname)}" value="${ui.escape(key_of(o.value))}"${on ? " checked" : ""}><span class="sanad-filterbar__opt-label">${ui.escape(o.label)}</span></label>`);
-						$opt.find("input").on("change", (e) => this.toggle(preset.fieldname, o.value, e.target.checked));
+						$opt.find("input").on("change", (e) => {
+							this.toggle(preset.fieldname, o.value, e.target.checked);
+							paint_chosen();
+						});
 						$list.append($opt);
 					});
 					return undefined;
@@ -460,9 +452,18 @@ sanad.ui.FilterBar = class FilterBar {
 					$list.empty();
 					new sanad.ui.EmptyState({ wrapper: $list, state: "error", size: "sm", description: err.message });
 				});
+		};
+
+		$trigger.on("click", () => {
+			const open = $trigger.attr("aria-expanded") === "true";
+			// one field open at a time, like a set of dropdowns
+			$body.find(".sanad-filter-sheet__trigger").attr("aria-expanded", "false");
+			$body.find(".sanad-filter-sheet__list").prop("hidden", true);
+			if (open) return;
+			$trigger.attr("aria-expanded", "true");
+			$list.prop("hidden", false);
+			fill();
 		});
-		dialog.show();
-		return dialog;
 	}
 
 	// ---- dropdown filters (multi-select popover) --------------------------------------------
@@ -1108,7 +1109,6 @@ sanad.ui.FilterBar = class FilterBar {
 	}
 
 	destroy() {
-		this._ro && this._ro.disconnect();
 		this.close_popover();
 		this.close_levels();
 		this.close_columns();

@@ -218,11 +218,6 @@
 	}
 	&__period-short { display: none; }
 
-	// too narrow for the filter buttons: they collapse behind the single Filters button
-	&--compact &__dd:not(&__dd--group):not(&__dd--columns) { display: none; }
-	&--compact &__clear { display: none; }
-	&--compact &__mobile-toggle { display: inline-flex; }
-	&--compact &__extra { display: contents; }
 
 	// a filter the bar has no button for (one arriving in the URL): visible and removable
 	&__extra { display: contents; }
@@ -488,16 +483,45 @@
 .sanad-hide-page-form .page-head .standard-filter-section,
 .sanad-hide-page-form .page-head .filter-toggle { display: none !important; }
 
-// the phone filter sheet (a kit dialog, so `.sanad-sheet` already makes it full height)
+// the phone filter sheet (a kit dialog, so `.sanad-sheet` already makes it full height):
+// one field per filter, each opening its own list in place
 .sanad-filter-sheet {
-	&__section { padding-block-end: var(--sanad-gap-md); }
-	&__title {
-		margin: 0 0 var(--sanad-gap-xs);
-		font-size: var(--text-tiny, 11px);
-		font-weight: 600;
-		color: var(--ink-gray-6);
-		text-transform: uppercase;
-		letter-spacing: 0.02em;
+	&__row { border-block-end: var(--sanad-border); }
+	&__trigger {
+		appearance: none;
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		width: 100%;
+		min-height: 44px;
+		padding-inline: 2px;
+		border: 0;
+		background: transparent;
+		color: var(--ink-gray-8);
+		font-size: var(--text-sm, 13px);
+		text-align: start;
+		cursor: pointer;
 	}
-	&__list { display: flex; flex-direction: column; gap: 2px; }
+	&__name { flex: none; font-weight: 600; }
+	&__chosen {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		text-align: end;
+		color: var(--ink-gray-5);
+		&--set { color: var(--sanad-accent-ink); font-weight: 600; }
+	}
+	&__caret { display: inline-flex; flex: none; color: var(--ink-gray-5); transition: transform var(--sanad-motion); }
+	&__trigger[aria-expanded="true"] &__caret { transform: rotate(180deg); }
+	&__list {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		max-height: 45dvh;
+		overflow: auto;
+		padding-block-end: var(--sanad-gap-sm);
+		&[hidden] { display: none; }
+	}
 }

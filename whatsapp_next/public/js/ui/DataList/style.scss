@@ -192,9 +192,11 @@
 		border-block-end: 0;
 		background-color: color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-white));
 	}
-	tbody tr.sanad-datalist__group--l1 td { inset-block-start: calc(var(--sanad-head-h) + 36px); z-index: 3; }
-	tbody tr.sanad-datalist__group--l2 td { inset-block-start: calc(var(--sanad-head-h) + 72px); z-index: 2; }
-	tbody tr.sanad-datalist__group--l3 td { inset-block-start: calc(var(--sanad-head-h) + 108px); z-index: 1; }
+	// Only the outermost level stays under the header. Stacking every level meant a child's row —
+	// and its checkbox — piled on top of its parent's.
+	tbody tr.sanad-datalist__group--l1 td,
+	tbody tr.sanad-datalist__group--l2 td,
+	tbody tr.sanad-datalist__group--l3 td { position: static; }
 	tbody tr.sanad-datalist__group--l1 td { background-color: color-mix(in srgb, var(--sanad-accent) 4%, var(--surface-white)); }
 	tbody tr.sanad-datalist__group--l2 td, tbody tr.sanad-datalist__group--l3 td { background-color: color-mix(in srgb, var(--sanad-accent) 2%, var(--surface-white)); }
 	&__group-inner {
