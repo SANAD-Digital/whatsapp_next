@@ -1,16 +1,24 @@
 # ContactPicker
 
 The recipient / member picker sub-system: one `frappe.ui.Dialog` (extra-large on desktop, a
-full-height `100dvh` sheet under 768 px) with source tabs on the inline-start side, a **Selected**
-tab always last (live count badge), and a footer counter + "Continue" that leads to a
-ConfirmDialog stating the exact counts before the commit. The same shell serves **add** and
-**remove**. Sources come from `picker.list_sources(target_doctype)` (disabled ones are hidden);
-every source returns rows in one shape `{phone, phone_e164, display_name, contact, source_type,
-source_doctype, source_name, valid, error}`; the selection is a `Map` keyed by `phone_e164`
-(fallback: the raw phone) and the server (`picker.preview`) — never the client — decides what is
-already in the target, invalid or duplicated. One source per operation: switching source with a
-non-empty selection asks to discard it. Portable: DocType names arrive as options / server
-entries; kind chips and `source_type` chips come from meta.
+full-height `100dvh` sheet under 768 px) in three zones — **where numbers come from** (a rail of
+sources, each with its icon and how many of the selection it contributed), **where they are picked**
+(the source's own pane) and **what has been picked** (a tray that is always in sight: the live
+buckets from `picker.preview`, a chip per source with an × that drops that source's rows, a search
+and the rows themselves). The same shell serves **add** and **remove**.
+
+Sources mix freely — a campaign is built from a group *and* a handful of typed numbers — because
+every row keeps its own `source_type` / `source_ref`, and the commit makes one `picker.commit_add`
+call per source so the audit says where each batch came from. Sources come from
+`picker.list_sources(target_doctype)` (disabled ones are hidden); every source returns rows in one
+shape `{phone, phone_e164, display_name, contact, source_type, source_doctype, source_name, valid,
+error}`; the selection is a `Map` keyed by `phone_e164` (fallback: the raw phone) and the server —
+never the client — decides what is already in the target, invalid or duplicated.
+
+Three things a reader tries without being told now work: **pasting a list of numbers** anywhere in
+the dialog offers to add them (`picker.parse_manual`), **dropping a file** on the dialog opens the
+source that reads it and uploads it, and **Ctrl / ⌘ + Enter** finishes. Portable: DocType names
+arrive as options / server entries; kind chips and `source_type` chips come from meta.
 
 ## Usage
 
@@ -35,6 +43,7 @@ the target), `contact_link_doctypes?` (chips for source 2, default `config.defau
 wins), `current?: {method, args(state), server_filters?, source_types?, status_field?}` (remove
 mode paging of the target's rows — defaults per target), `api?` (key overrides).
 Methods on the instance (used by sources): `add_rows(rows, {source_type, source_ref, quiet})`,
+`source_groups()` (the selection split by the source it came from), `accept_file(file)`,
 `remove_rows(keys)`, `clear_selection()`, `activate(key)`, `set_progress(text)`, `call(key, args)`.
 `sanad.ui.ContactPicker.sources` is the registry (`{apiKey: SourceClass}`) — a host may replace or
 add a source class before opening.

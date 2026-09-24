@@ -11,13 +11,13 @@ import ui from "../_core/index.js";
 
 const TYPE_ICON = {
 	Text: "es-line-chat-alt",
-	Document: "es-line-file",
+	Document: "es-line-filetype",
 	Image: "es-line-image",
 	Video: "es-line-video",
-	Audio: "es-line-sound",
+	Audio: "es-line-call",
 	Sticker: "es-line-emoji",
 	Location: "es-line-location",
-	Poll: "es-line-list",
+	Poll: "es-line-bullet-list",
 	Template: "es-line-copy",
 };
 

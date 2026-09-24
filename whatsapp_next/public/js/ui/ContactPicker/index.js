@@ -37,6 +37,17 @@ const ALIASES = {
 };
 
 sanad.ui.ContactPicker = class ContactPicker {
+	/** What each source looks like in the rail; a host source falls back to a list icon. */
+	static SOURCE_ICON = {
+		"Contact Group": "es-line-group",
+		Contact: "es-line-people",
+		DocType: "es-line-filter",
+		Excel: "es-line-file-upload",
+		vCard: "es-line-mobile",
+		Manual: "es-line-edit",
+		__current: "es-line-bullet-list",
+	};
+
 	/** Registry of source classes by API key — add or replace a source before opening. */
 	static get sources() {
 		if (!this._sources) {
@@ -164,7 +175,14 @@ sanad.ui.ContactPicker = class ContactPicker {
 		(rows || []).forEach((row) => {
 			const key = this.row_key(row);
 			if (this.selection.has(key)) return;
-			this.selection.set(key, Object.assign({}, row, { source_type: row.source_type || (source_type === CURRENT ? null : source_type) }));
+			this.selection.set(
+				key,
+				Object.assign({}, row, {
+					source_type: row.source_type || (source_type === CURRENT ? null : source_type),
+					source_ref: row.source_ref || (source_type === CURRENT ? null : source_ref),
+					__source: this.active || source_type || null,
+				})
+			);
 			added += 1;
 		});
 		if (source_type && source_type !== CURRENT) {
@@ -175,7 +193,7 @@ sanad.ui.ContactPicker = class ContactPicker {
 				this.source_ref = null;
 			}
 		}
-		if (this.active && this.active !== SELECTED) this.selection_source = this.active;
+		this.selection_source = this.active || this.selection_source;
 		this.on_selection_change();
 		if (!quiet) this.notify_added(added, rows ? rows.length - added : 0);
 		return added;
@@ -205,14 +223,139 @@ sanad.ui.ContactPicker = class ContactPicker {
 		this.$badge.text(ui.format_int(n)).toggleClass("sanad-picker__badge--empty", !n);
 		this.$counter.text(n ? __("{0} selected", [ui.format_int(n)]) : __("Nothing selected"));
 		this.dialog.get_primary_btn().prop("disabled", !n);
+		this.render_source_counts();
 		this.selected.clear_alert();
 		this.selected.render();
 		this.selected.schedule_preview();
 		this.announce_count(n);
 	}
 
+	/** How many of the selection each source contributed — in the rail, and in the tray. */
+	source_groups() {
+		const by = new Map();
+		this.selection.forEach((row, key) => {
+			const source = row.__source || row.source_type || "manual";
+			if (!by.has(source)) by.set(source, { source, rows: [], label: null });
+			by.get(source).rows.push([key, row]);
+		});
+		by.forEach((g) => {
+			const tab = this.tabs.find((x) => x.key === g.source);
+			g.label = tab ? tab.label : __(g.source);
+		});
+		return Array.from(by.values());
+	}
+
+	render_source_counts() {
+		if (!this.$tabs) return;
+		const counts = {};
+		this.source_groups().forEach((g) => (counts[g.source] = g.rows.length));
+		this.$tabs.find(".sanad-picker__tab-count").each((i, el) => {
+			const n = counts[el.getAttribute("data-count")] || 0;
+			$(el).text(n ? ui.format_int(n) : "").toggleClass("sanad-picker__tab-count--on", !!n);
+		});
+		if (!this.$tray_sources) return;
+		const groups = this.source_groups();
+		this.$tray_sources.empty();
+		if (groups.length < 2) return; // one source needs no breakdown; the count above says it
+		groups.forEach((g) => {
+			const $chip = $(`<span class="sanad-picker__srcchip">
+					<span>${ui.escape(g.label)}</span>
+					<span class="sanad-tabular">${ui.escape(ui.format_int(g.rows.length))}</span>
+					<button type="button" class="sanad-picker__srcchip-x" aria-label="${ui.escape(__("Remove everything from {0}", [g.label]))}">${ui.icon("es-line-close", "xs")}</button>
+				</span>`);
+			$chip.find(".sanad-picker__srcchip-x").on("click", () => this.remove_rows(g.rows.map(([key]) => key)));
+			this.$tray_sources.append($chip);
+		});
+	}
+
 	set_progress(text) {
 		this.$progress.text(text || "");
+	}
+
+	/**
+	 * Three things a reader tries without being told: pasting a list of numbers, dropping a file on
+	 * the dialog, and pressing Ctrl+Enter to finish. None of them used to do anything.
+	 */
+	bind_shortcuts() {
+		const $w = this.dialog.$wrapper;
+		$w.on("keydown.picker", (e) => {
+			if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+				e.preventDefault();
+				if (this.selection.size) this.continue_();
+			}
+		});
+		$w.on("paste.picker", (e) => {
+			const text = (e.originalEvent && e.originalEvent.clipboardData && e.originalEvent.clipboardData.getData("text")) || "";
+			const numbers = ContactPicker.numbers_in(text);
+			// a search box is a legitimate place to paste one number; two or more is a list
+			if (numbers.length < 2) return;
+			this.offer_paste(text, numbers.length);
+		});
+		["dragenter", "dragover"].forEach((type) =>
+			$w.on(`${type}.picker`, (e) => {
+				if (!(e.originalEvent.dataTransfer && Array.from(e.originalEvent.dataTransfer.types || []).includes("Files"))) return;
+				e.preventDefault();
+				e.stopPropagation();
+				$w.addClass("sanad-picker-dialog--drop");
+			})
+		);
+		$w.on("dragleave.picker drop.picker", (e) => {
+			if (e.type === "dragleave" && $w[0].contains(e.originalEvent.relatedTarget)) return;
+			$w.removeClass("sanad-picker-dialog--drop");
+			if (e.type !== "drop") return;
+			const file = e.originalEvent.dataTransfer && e.originalEvent.dataTransfer.files && e.originalEvent.dataTransfer.files[0];
+			if (!file) return;
+			e.preventDefault();
+			e.stopPropagation();
+			this.accept_file(file);
+		});
+	}
+
+	/** Phone-like tokens in pasted text: 7 digits or more, `+` kept. */
+	static numbers_in(text) {
+		return Array.from(String(text || "").matchAll(/\+?\d[\d\s\-()]{6,}\d/g)).map((m) => m[0].trim());
+	}
+
+	offer_paste(text, count) {
+		if (!this.$paste) return;
+		this.$paste
+			.removeAttr("hidden")
+			.empty()
+			.append(
+				$(`<span>${ui.escape(ui.plural(count, { one: __("{0} number in what you pasted."), other: __("{0} numbers in what you pasted.") }))}</span>`),
+				$(`<button type="button" class="btn btn-sm btn-primary">${ui.escape(__("Add them"))}</button>`).on("click", () => this.add_pasted(text)),
+				$(`<button type="button" class="btn btn-sm btn-default">${ui.escape(__("Ignore"))}</button>`).on("click", () => this.$paste.attr("hidden", true))
+			);
+	}
+
+	add_pasted(text) {
+		this.$paste.attr("hidden", true);
+		this.set_progress(__("Reading the numbers…"));
+		return this.call("picker.parse_manual", { text }, { silent: true })
+			.then((r) => {
+				this.set_progress(null);
+				const rows = (r.rows || []).map((row) => Object.assign({}, row, { source_type: "Manual", __source: "manual" }));
+				this.add_rows(rows, { source_type: "Manual" });
+				if ((r.invalid || []).length) sanad.ui.Toast.warning(__("{0} of them could not be read as a number.", [ui.format_int(r.invalid.length)]));
+			})
+			.catch((err) => {
+				this.set_progress(null);
+				sanad.ui.Toast.error(err);
+			});
+	}
+
+	/** A dropped file goes to the source that understands it. */
+	accept_file(file) {
+		const name = String(file.name || "").toLowerCase();
+		const key = /\.(vcf|vcard)$/.test(name) ? "phonebook" : /\.(xlsx|xls|csv)$/.test(name) ? "excel" : null;
+		if (!key || !this.tabs.some((tab) => tab.key === key)) {
+			return sanad.ui.Toast.warning(__("That file is not one this list can read. Use an Excel file, a CSV or a vCard."));
+		}
+		this.activate(key).then(() => {
+			const source = this.instances[key];
+			if (source && source.accept_file) source.accept_file(file);
+			else sanad.ui.Toast.info(__("Choose the file in the panel — dropping it opened the right source."));
+		});
 	}
 
 	// ---- dialog ---------------------------------------------------------------------------
@@ -238,12 +381,27 @@ sanad.ui.ContactPicker = class ContactPicker {
 		this.$root = $(`
 			<div class="sanad-picker">
 				<div class="sanad-picker__tabs" role="tablist" aria-orientation="vertical" aria-label="${ui.escape(__("Sources"))}"></div>
-				<div class="sanad-picker__panes"></div>
+				<div class="sanad-picker__work">
+					<div class="sanad-picker__paste" hidden></div>
+					<div class="sanad-picker__panes"></div>
+				</div>
+				<aside class="sanad-picker__tray" aria-label="${ui.escape(__("The selection"))}">
+					<div class="sanad-picker__tray-head">
+						<span class="sanad-picker__tray-title">${ui.escape(__("Selected"))}</span>
+						<span class="sanad-picker__badge sanad-picker__badge--empty sanad-tabular">0</span>
+					</div>
+					<div class="sanad-picker__tray-sources"></div>
+					<div class="sanad-picker__tray-body"></div>
+				</aside>
 			</div>`);
 		$body.html(this.$root);
 		this.$tabs = this.$root.find(".sanad-picker__tabs");
 		this.$panes = this.$root.find(".sanad-picker__panes");
-		this.$badge = $('<span class="sanad-picker__badge sanad-picker__badge--empty sanad-tabular" aria-hidden="true">0</span>');
+		this.$tray = this.$root.find(".sanad-picker__tray-body");
+		this.$tray_sources = this.$root.find(".sanad-picker__tray-sources");
+		this.$paste = this.$root.find(".sanad-picker__paste");
+		this.$badge = this.$root.find(".sanad-picker__badge");
+		this.bind_shortcuts();
 		this.state = new sanad.ui.EmptyState({ wrapper: this.$panes, state: "loading", rows: 4 });
 		this.dialog.$wrapper.on("hidden.bs.modal", () => this.destroy());
 		this.dialog.show();
@@ -280,7 +438,7 @@ sanad.ui.ContactPicker = class ContactPicker {
 				return inst;
 			});
 		});
-		this.add_tab(SELECTED, __("Selected"), (pane) => this.selected.mount(pane), this.$badge);
+		this.selected.mount(this.$tray);
 		if (!entries.length) {
 			sanad.ui.Toast.warning(__("No source is enabled for {0}. Enable one in the WhatsApp settings.", [__(this.target_doctype)]));
 		}
@@ -294,7 +452,12 @@ sanad.ui.ContactPicker = class ContactPicker {
 
 	add_tab(key, label, mount, $badge) {
 		const id = ui.uid("ptab");
-		const $tab = $(`<button type="button" class="sanad-picker__tab" role="tab" id="${id}" data-key="${ui.escape(key)}" aria-selected="false" aria-controls="${id}-pane" tabindex="-1"><span class="sanad-picker__tab-label">${ui.escape(label)}</span></button>`);
+		const icon = ContactPicker.SOURCE_ICON[key] || "es-line-list";
+		const $tab = $(`<button type="button" class="sanad-picker__tab" role="tab" id="${id}" data-key="${ui.escape(key)}" aria-selected="false" aria-controls="${id}-pane" tabindex="-1">
+			<span class="sanad-picker__tab-icon" aria-hidden="true">${ui.icon(icon, "sm")}</span>
+			<span class="sanad-picker__tab-label">${ui.escape(label)}</span>
+			<span class="sanad-picker__tab-count sanad-tabular" data-count="${ui.escape(key)}"></span>
+		</button>`);
 		if ($badge) $tab.append($badge);
 		$tab.on("click", () => this.activate(key));
 		const $pane = $(`<div class="sanad-picker__pane" role="tabpanel" id="${id}-pane" aria-labelledby="${id}" tabindex="0" hidden></div>`);
@@ -317,17 +480,9 @@ sanad.ui.ContactPicker = class ContactPicker {
 	activate(key, { force = false } = {}) {
 		const tab = this.tabs.find((t) => t.key === key);
 		if (!tab || key === this.active) return Promise.resolve(false);
-		const is_source = key !== SELECTED;
-		const guard = !force && is_source && this.selection.size && this.selection_source && this.selection_source !== key;
-		const proceed = guard
-			? sanad.ui.ConfirmDialog.ask({
-					title: __("Discard the current selection?"),
-					message: __("You can add from one source at a time. Switching to {0} clears the {1} numbers you picked.", [tab.label, ui.format_int(this.selection.size)]),
-					impact: [{ label: __("Selected numbers"), value: ui.format_int(this.selection.size), tone: "red" }],
-					danger: true,
-					confirm_label: __("Discard and switch"),
-			  }).then(() => this.clear_selection())
-			: Promise.resolve();
+		// Sources mix freely: a campaign is built from a group *and* a handful of typed numbers, and
+		// the tray keeps every row's own source, so the commit writes each one under its own name.
+		const proceed = Promise.resolve();
 		return proceed.then(
 			() => {
 				this.tabs.forEach((t) => {
@@ -343,7 +498,6 @@ sanad.ui.ContactPicker = class ContactPicker {
 				} else if (this.instances[key] && this.instances[key].on_show) {
 					this.instances[key].on_show();
 				}
-				if (key === SELECTED) this.selected.schedule_preview();
 				return true;
 			},
 			() => false
@@ -375,8 +529,8 @@ sanad.ui.ContactPicker = class ContactPicker {
 		if (!this.selection.size) return;
 		const remove = this.operation === "remove";
 		this.dialog.get_primary_btn().prop("disabled", true);
-		return this.activate(SELECTED)
-			.then(() => this.selected.ensure_preview())
+		return this.selected
+			.ensure_preview()
 			.then(() => {
 				const c = this.selected.counts();
 				if (!c.action) {
@@ -413,10 +567,34 @@ sanad.ui.ContactPicker = class ContactPicker {
 	commit(counts) {
 		const remove = this.operation === "remove";
 		this.set_progress(remove ? __("Removing {0}…", [ui.format_int(counts.action)]) : __("Adding {0}…", [ui.format_int(counts.action)]));
-		const args = remove
-			? { target_doctype: this.target_doctype, target_name: this.target_name, phone_e164s: counts.keys }
-			: { target_doctype: this.target_doctype, target_name: this.target_name, rows: Array.from(this.selection.values()), source_type: this.source_type || "Manual", source_ref: this.source_ref || null };
-		return this.call(remove ? "picker.commit_remove" : "picker.commit_add", args, { silent: true })
+		// One call per source, so the audit row says where each batch came from and the target's
+		// rows carry their own origin — a campaign built from a group and a pasted list says so.
+		const run = remove
+			? this.call("picker.commit_remove", { target_doctype: this.target_doctype, target_name: this.target_name, phone_e164s: counts.keys }, { silent: true })
+			: this.source_groups().reduce(
+					(chain, group) =>
+						chain.then((sum) => {
+							const rows = group.rows.map(([, row]) => row);
+							const first = rows[0] || {};
+							return this.call(
+								"picker.commit_add",
+								{
+									target_doctype: this.target_doctype,
+									target_name: this.target_name,
+									rows,
+									source_type: first.source_type || "Manual",
+									source_ref: first.source_ref || null,
+								},
+								{ silent: true }
+							).then((r) => ({
+								added: cint(sum.added) + cint(r.added),
+								skipped_duplicates: cint(sum.skipped_duplicates) + cint(r.skipped_duplicates),
+								skipped_invalid: cint(sum.skipped_invalid) + cint(r.skipped_invalid),
+							}));
+						}),
+					Promise.resolve({ added: 0, skipped_duplicates: 0, skipped_invalid: 0 })
+			  );
+		return run
 			.then((result) => {
 				this.set_progress(null);
 				this.committed = true;

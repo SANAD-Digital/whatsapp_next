@@ -23,9 +23,116 @@
 
 .sanad-picker {
 	display: grid;
-	grid-template-columns: 200px minmax(0, 1fr);
+	// three zones: where numbers come from, where they are picked, and what has been picked.
+	// The third used to be a tab you had to leave the others to see.
+	grid-template-columns: 196px minmax(0, 1fr) 272px;
 	gap: var(--sanad-gap-lg);
-	min-height: 420px;
+	min-height: 440px;
+
+	@media (max-width: 1100px) {
+		grid-template-columns: 172px minmax(0, 1fr);
+		grid-template-areas: "rail work" "tray tray";
+		.sanad-picker__tabs { grid-area: rail; }
+		.sanad-picker__work { grid-area: work; }
+		.sanad-picker__tray { grid-area: tray; }
+	}
+	@media (max-width: 767px) {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas: "rail" "work" "tray";
+	}
+
+	&__work {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		min-inline-size: 0;
+	}
+
+	// what a paste is offered as, before anything is done with it
+	&__paste {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
+		border: 1px solid var(--sanad-accent-outline);
+		border-radius: var(--sanad-radius);
+		background: var(--sanad-accent-soft);
+		color: var(--sanad-accent-ink);
+		font-size: var(--text-sm, 13px);
+
+		&[hidden] { display: none; }
+		> span { flex: 1; min-inline-size: 0; }
+	}
+
+	// ---- the tray ------------------------------------------------------------------------------
+
+	&__tray {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		min-inline-size: 0;
+		padding-inline-start: var(--sanad-gap-md);
+		border-inline-start: var(--sanad-border);
+
+		@media (max-width: 1100px) {
+			padding-inline-start: 0;
+			padding-block-start: var(--sanad-gap-md);
+			border-inline-start: 0;
+			border-block-start: var(--sanad-border);
+		}
+	}
+	&__tray-head {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+	}
+	&__tray-title {
+		font-size: var(--text-xs, 11px);
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--ink-gray-5);
+		flex: 1;
+	}
+	&__tray-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		min-block-size: 0;
+		overflow: hidden;
+	}
+	&__tray-sources {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-xs);
+	}
+	&__srcchip {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		padding-block: 2px;
+		padding-inline: 8px 2px;
+		border: 1px solid var(--outline-gray-1);
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-1);
+		color: var(--ink-gray-7);
+		font-size: var(--text-xs, 11px);
+	}
+	&__srcchip-x {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 18px;
+		block-size: 18px;
+		padding: 0;
+		border: 0;
+		border-radius: var(--border-radius-full, 999px);
+		background: none;
+		color: inherit;
+		cursor: pointer;
+		&:hover { background: var(--outline-gray-1); }
+		.icon { width: 10px; height: 10px; }
+	}
 
 	&__tabs {
 		display: flex;
@@ -37,7 +144,6 @@
 	&__tab {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--sanad-gap-sm);
 		min-height: var(--sanad-target);
 		padding-block: var(--sanad-gap-xs);
@@ -198,4 +304,128 @@
 		&__tab { flex: none; }
 		&__group { grid-template-columns: 1fr; }
 	}
+}
+
+// ---- the rail's own marks ----------------------------------------------------------------------
+
+.sanad-picker__tab-icon {
+	display: inline-flex;
+	color: var(--ink-gray-5);
+	flex: none;
+}
+.sanad-picker__tab[aria-selected="true"] .sanad-picker__tab-icon { color: inherit; }
+.sanad-picker__tab-label {
+	flex: 1;
+	min-inline-size: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.sanad-picker__tab-count {
+	font-size: var(--text-xs, 11px);
+	color: var(--ink-gray-5);
+	&--on {
+		padding-inline: 6px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--sanad-accent-soft);
+		color: var(--sanad-accent-ink);
+		font-weight: 600;
+	}
+}
+
+// a file being dragged over the dialog says where it may land
+.sanad-picker-dialog--drop .modal-content {
+	outline: 2px dashed var(--sanad-accent);
+	outline-offset: -6px;
+}
+
+// ---- the tray's own rows -----------------------------------------------------------------------
+// 272 px does not hold a five-column table: a row is a dot that says what will happen to it, the
+// name over the number, and the × that takes it out.
+
+.sanad-picker__trayrows {
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	max-block-size: 320px;
+	border: var(--sanad-border);
+	border-radius: var(--sanad-radius);
+}
+.sanad-picker__trayrow {
+	display: flex;
+	align-items: center;
+	gap: var(--sanad-gap-sm);
+	padding: 6px var(--sanad-gap-sm);
+	border-block-end: 1px solid var(--outline-gray-1);
+	font-size: var(--text-sm, 12px);
+
+	&:last-child { border-block-end: 0; }
+	&:hover { background: var(--surface-gray-1); }
+}
+.sanad-picker__traydot {
+	inline-size: 8px;
+	block-size: 8px;
+	border-radius: 50%;
+	background: currentColor;
+	flex: none;
+}
+.sanad-picker__trayname {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	flex: 1;
+	min-inline-size: 0;
+
+	> span {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}
+.sanad-picker__trayphone {
+	font-size: var(--text-xs, 11px);
+	color: var(--ink-gray-6);
+}
+.sanad-picker__trayrow .sanad-picker__remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 24px;
+	block-size: 24px;
+	padding: 0;
+	border: 0;
+	border-radius: var(--sanad-radius);
+	background: none;
+	color: var(--ink-gray-5);
+	cursor: pointer;
+	flex: none;
+
+	&:hover { background: var(--surface-gray-2); color: var(--ink-gray-8); }
+}
+
+// the tray's count is read, not decorated: the tab badge's filled pill is wrong at this size
+.sanad-picker__tray-head .sanad-picker__badge {
+	min-inline-size: 26px;
+	padding-inline: 8px;
+	border-radius: var(--border-radius-full, 999px);
+	background: var(--sanad-accent-soft);
+	color: var(--sanad-accent-ink);
+	font-size: var(--text-xs, 11px);
+	font-weight: 700;
+	text-align: center;
+
+	&--empty {
+		background: var(--surface-gray-2);
+		color: var(--ink-gray-6);
+	}
+}
+
+// search and "clear all" share one line: the tray is narrow and both are one gesture
+.sanad-picker__tray-body > .sanad-picker__head {
+	display: flex;
+	align-items: center;
+	gap: var(--sanad-gap-xs);
+
+	.sanad-picker__search { flex: 1; min-inline-size: 0; }
+	.btn { flex: none; }
 }

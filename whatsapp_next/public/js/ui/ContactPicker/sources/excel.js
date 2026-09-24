@@ -104,6 +104,25 @@ export class UploadSource extends BaseSource {
 		}
 	}
 
+	/**
+	 * A file dropped on the dialog: the source picks the kind that matches it and hands it to the
+	 * uploader it already owns, so the drop follows exactly the path the button does.
+	 */
+	accept_file(file) {
+		const name = String(file.name || "").toLowerCase();
+		const kind = /\.(vcf|vcard)$/.test(name) ? "vcf" : /\.csv$/.test(name) ? "csv" : "excel";
+		if (this.kinds().includes(kind) && kind !== this.kind) this.set_kind(kind);
+		if (!this.uploader || !this.uploader.uploader) {
+			return sanad.ui.Toast.warning(__("Choose the file in the panel."));
+		}
+		try {
+			this.uploader.uploader.add_files([file]);
+			this.uploader.uploader.upload_files();
+		} catch (e) {
+			sanad.ui.Toast.warning(__("Choose the file in the panel."));
+		}
+	}
+
 	read_error() {
 		return __("The file could not be read. Check that it is a valid {0} file and try again.", [{ excel: __("Excel"), csv: __("CSV"), vcf: __("vCard") }[this.kind] || this.kind]);
 	}
