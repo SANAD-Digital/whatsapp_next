@@ -45,7 +45,7 @@ sanad.ui.PageHeader = class PageHeader {
 			<header class="sanad-kit sanad-pagehead">
 				<div class="sanad-pagehead__row">
 					<div class="sanad-pagehead__text">
-						<h2 class="sanad-pagehead__title">${ui.escape(o.title || "")}</h2>
+						${o.title ? `<h2 class="sanad-pagehead__title">${ui.escape(o.title)}</h2>` : ""}
 						${o.description ? `<p class="sanad-pagehead__desc">${ui.escape(o.description)}</p>` : ""}
 					</div>
 					<div class="sanad-pagehead__actions"></div>

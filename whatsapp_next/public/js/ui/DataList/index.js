@@ -888,6 +888,18 @@ sanad.ui.DataList = class DataList {
 		});
 	}
 
+	/** Page mode: which page this is, and whether there is another one. */
+	render_page_state() {
+		if (!this.page_mode) return;
+		const pages = Math.max(1, Math.ceil((this.total || 0) / this.page_length));
+		const $pager = this.$footer.find(".sanad-datalist__pager");
+		let $state = $pager.find(".sanad-datalist__page-state");
+		if (!$state.length) $state = $('<span class="sanad-datalist__page-state sanad-tabular" aria-live="polite"></span>').prependTo($pager);
+		$state.text(__("{0} / {1}", [ui.format_int(this.page + 1), ui.format_int(pages)]));
+		$pager.find('[data-go="prev"]').prop("disabled", this.page <= 0);
+		$pager.find('[data-go="next"]').prop("disabled", this.page + 1 >= pages);
+	}
+
 	render_footer() {
 		const lv = this.listview;
 		const rows = this.page_mode ? this.rows : lv.data || [];
@@ -898,6 +910,7 @@ sanad.ui.DataList = class DataList {
 			const text = typeof this.opts.footer.count === "function" ? this.opts.footer.count(total, rows) : ui.plural(total, { one: __("{0} record"), other: __("{0} records") });
 			$count.text(rows.length ? __("{0} · showing {1}", [text, ui.format_int(rows.length)]) : text);
 			this.render_group_tools();
+			this.render_page_state();
 			if (typeof this.opts.footer.extra === "function") this.opts.footer.extra(this.$footer.find(".sanad-datalist__extra"), rows, this);
 		};
 		paint();
