@@ -1,0 +1,527 @@
+// sanad.kit primitives — the design prototype's own controls, ported as classes.
+//
+// `docs/shared/ui-kit.js` calls itself "one source for the design of fields and buttons, used by
+// the Overlay Panel, the tables and every other screen". It is the product's control layer, and
+// Frappe has no equivalent for most of it — no segmented control, no tonal button, no tone-aware
+// badge, no field with attached add-ons, no density switch. This file is that source, turned from
+// inline style strings into classes, value for value.
+//
+// Everything is driven by the palette in `public/scss/_tokens.scss`, so a control takes the
+// product's colours wherever the palette applies and Desk's own where it does not — which is how
+// the same class can sit on a Page and inside a Desk list without repainting the list.
+//
+// Geometry comes from the prototype's `DENSITY` and `BUTTON_SIZES` maps. It is pinned in px
+// because it is geometry, and logical properties are used throughout so Arabic mirrors for free.
+
+.wa {
+	// DENSITY.comfortable — the default
+	--wa-h: 38px;
+	--wa-h-sm: 32px;
+	--wa-fs: 14px;
+	--wa-fs-sm: 13px;
+	--wa-px: 12px;
+	--wa-row-gap: 12px 16px;
+	--wa-row-pad: 14px 0;
+	--wa-radius: 8px;
+	--wa-radius-lg: 12px;
+	--wa-motion: 160ms;
+}
+
+// DENSITY.compact — a table, a toolbar, a panel that has to fit more in
+.wa--compact {
+	--wa-h: 32px;
+	--wa-h-sm: 28px;
+	--wa-fs: 13px;
+	--wa-fs-sm: 12px;
+	--wa-px: 10px;
+	--wa-row-gap: 8px 12px;
+	--wa-row-pad: 8px 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.wa { --wa-motion: 0ms; }
+}
+
+// ---- icons ---------------------------------------------------------------------------------
+//
+// The glyphs are drawn on a 20×20 grid and take `currentColor`. Desk's own global icon rule sets
+// `margin: 0 auto`, which centres an icon inside any flex row it lands in, so the size and the
+// margin are both stated here rather than left to whatever Frappe last declared.
+
+.wa-ico {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	margin: 0;
+	color: inherit;
+
+	> svg {
+		display: block;
+		inline-size: 100%;
+		block-size: 100%;
+		margin: 0;
+	}
+
+	&--xs { inline-size: 14px; block-size: 14px; }
+	&--sm { inline-size: 16px; block-size: 16px; }
+	&--md { inline-size: 20px; block-size: 20px; }
+	&--lg { inline-size: 26px; block-size: 26px; }
+}
+
+// ---- buttons -------------------------------------------------------------------------------
+//
+// BUTTON: five variants, each with its own use. primary = the one main action on a screen.
+// secondary = cancel, export, supporting actions. danger = delete and what cannot be undone.
+// ghost = light actions inside tables and lists. tonal = the *active* state of a secondary button
+// (filter on, column pinned) — which is the one Frappe has no idea about and the product uses
+// everywhere.
+
+.wa-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	min-block-size: 36px;
+	padding-inline: 14px;
+	border: none;
+	border-radius: var(--wa-radius, 8px);
+	background: var(--wa-surface);
+	color: var(--wa-ink);
+	font: inherit;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1;
+	white-space: nowrap;
+	cursor: pointer;
+	transition: background var(--wa-motion, 160ms), border-color var(--wa-motion, 160ms), color var(--wa-motion, 160ms);
+
+	&:focus-visible {
+		outline: 2px solid var(--wa-pri);
+		outline-offset: 2px;
+	}
+	&[disabled],
+	&[aria-disabled="true"] {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	// BUTTON_SIZES
+	&--sm { min-block-size: 28px; padding-inline: 10px; font-size: 12px; }
+	&--lg { min-block-size: 42px; padding-inline: 18px; font-size: 14px; }
+
+	// an icon on its own keeps the square the size gives it
+	&--icon {
+		padding-inline: 0;
+		inline-size: 36px;
+		&.wa-btn--sm { inline-size: 28px; }
+		&.wa-btn--lg { inline-size: 42px; }
+	}
+	&--block { inline-size: 100%; }
+
+	&--primary {
+		background: var(--wa-pri);
+		color: var(--wa-on-pri);
+		&:hover:not([disabled]) { background: var(--wa-pri-d); }
+	}
+	&--secondary {
+		background: var(--wa-surface);
+		color: var(--wa-ink);
+		border: 1px solid var(--wa-border-2);
+		&:hover:not([disabled]) { background: var(--wa-sunken); }
+	}
+	&--danger {
+		background: var(--wa-dg-s);
+		color: var(--wa-dg-i);
+		border: 1px solid var(--wa-dg-sb);
+		&:hover:not([disabled]) { background: var(--wa-dg-sb); }
+	}
+	&--ghost {
+		background: transparent;
+		color: var(--wa-ink-2);
+		&:hover:not([disabled]) { background: var(--wa-sunken); }
+	}
+	&--tonal {
+		background: var(--wa-pri-s);
+		color: var(--wa-pri-d);
+		border: 1px solid var(--wa-pri-sb);
+		&:hover:not([disabled]) { background: var(--wa-pri-sb); }
+	}
+}
+
+// a row of buttons: danger is anchored to the start of the bar, the rest sit at the end
+.wa-btnbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+
+	> .wa-btn--danger:first-child { margin-inline-end: auto; }
+}
+
+// ---- badges --------------------------------------------------------------------------------
+//
+// TONE: five tones, each a surface, a readable ink, a dot and a border. The ink is made for its
+// own surface, which is why a coloured word on a coloured badge is legible here.
+
+.wa-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding-block: 4px;
+	padding-inline: 10px;
+	border: 1px solid var(--wa-border);
+	border-radius: 999px;
+	background: var(--wa-sunken);
+	color: var(--wa-ink-2);
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.4;
+	white-space: nowrap;
+
+	&::before {
+		content: "";
+		inline-size: 7px;
+		block-size: 7px;
+		flex: none;
+		border-radius: 50%;
+		background: var(--wa-ink-4);
+	}
+	&--nodot::before { display: none; }
+
+	&--ok { background: var(--wa-ok-s); color: var(--wa-ok-i); border-color: var(--wa-ok-sb); &::before { background: var(--wa-ok); } }
+	&--warn { background: var(--wa-wn-s); color: var(--wa-wn-i); border-color: var(--wa-wn-sb); &::before { background: var(--wa-wn); } }
+	&--danger { background: var(--wa-dg-s); color: var(--wa-dg-i); border-color: var(--wa-dg-sb); &::before { background: var(--wa-dg); } }
+	&--info { background: var(--wa-nf-s); color: var(--wa-nf-i); border-color: var(--wa-nf-sb); &::before { background: var(--wa-nf); } }
+	&--pri { background: var(--wa-pri-s); color: var(--wa-pri-d); border-color: var(--wa-pri-sb); &::before { background: var(--wa-pri); } }
+}
+
+// ---- fields --------------------------------------------------------------------------------
+//
+// FIELD_BASE, verbatim: full width, 8 px radius, the `--border-2` rule, the surface fill and the
+// ink. The focus ring is the prototype's — the primary at three pixels, soft.
+
+.wa-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-inline-size: 0;
+
+	&__label {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--wa-ink-2);
+	}
+	&__req {
+		color: var(--wa-dg);
+		font-weight: 700;
+	}
+	&__hint {
+		font-size: 12px;
+		color: var(--wa-ink-3);
+		line-height: 1.6;
+	}
+	&__error {
+		display: flex;
+		align-items: center;
+		gap: 5px;
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--wa-dg-i);
+	}
+	&--invalid &__input { border-color: var(--wa-dg); }
+}
+
+.wa-input,
+.wa-select,
+.wa-textarea {
+	inline-size: 100%;
+	min-block-size: var(--wa-h, 38px);
+	padding-inline: var(--wa-px, 12px);
+	border: 1px solid var(--wa-border-2);
+	border-radius: var(--wa-radius, 8px);
+	background: var(--wa-surface);
+	color: var(--wa-ink);
+	font-family: inherit;
+	font-size: var(--wa-fs, 14px);
+	outline: none;
+	transition: border-color var(--wa-motion, 160ms), box-shadow var(--wa-motion, 160ms);
+
+	&::placeholder { color: var(--wa-ink-4); }
+	&:hover:not([disabled]):not(:focus) { border-color: var(--wa-ink-4); }
+	&:focus {
+		border-color: var(--wa-pri);
+		box-shadow: 0 0 0 3px var(--wa-pri-s);
+	}
+	&[disabled] {
+		background: var(--wa-sunken);
+		color: var(--wa-ink-4);
+		cursor: not-allowed;
+	}
+	// a number, an id or a phone reads left to right whatever the page direction is
+	&--mono {
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		direction: ltr;
+		text-align: start;
+	}
+}
+
+.wa-textarea {
+	padding-block: 9px;
+	line-height: 1.7;
+	resize: vertical;
+}
+
+.wa-select {
+	appearance: none;
+	padding-inline-end: 32px;
+	cursor: pointer;
+
+	// the caret, drawn where the writing direction puts the end of the field
+	background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+		linear-gradient(135deg, currentColor 50%, transparent 50%);
+	background-size: 5px 5px, 5px 5px;
+	background-repeat: no-repeat;
+	background-position: right 14px center, right 19px center;
+
+	[dir="rtl"] & {
+		background-position: left 19px center, left 14px center;
+	}
+	// the empty value is a prompt, not a value
+	&:invalid,
+	&[data-empty="true"] { color: var(--wa-ink-4); }
+}
+
+// a field with something attached: an icon inside it, or a joined segment beside it
+.wa-affix {
+	display: flex;
+	align-items: stretch;
+	position: relative;
+	min-inline-size: 0;
+
+	&__in {
+		position: absolute;
+		inset-block: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 34px;
+		color: var(--wa-ink-4);
+		pointer-events: none;
+
+		&--start { inset-inline-start: 0; }
+		&--end { inset-inline-end: 0; pointer-events: auto; }
+	}
+	&--has-start .wa-input { padding-inline-start: 34px; }
+	&--has-end .wa-input { padding-inline-end: 34px; }
+
+	// `mode: "attached"` — a part joined to the field showing text, an icon, or both
+	&__on {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		flex: none;
+		padding-inline: 12px;
+		border: 1px solid var(--wa-border-2);
+		background: var(--wa-sunken);
+		color: var(--wa-ink-2);
+		font-size: var(--wa-fs-sm, 13px);
+		font-weight: 600;
+		white-space: nowrap;
+		cursor: pointer;
+
+		&:hover { background: var(--wa-border); }
+	}
+	&__on--start {
+		border-start-start-radius: var(--wa-radius, 8px);
+		border-end-start-radius: var(--wa-radius, 8px);
+		border-inline-end: 0;
+	}
+	&__on--end {
+		border-start-end-radius: var(--wa-radius, 8px);
+		border-end-end-radius: var(--wa-radius, 8px);
+		border-inline-start: 0;
+	}
+	&--on-start .wa-input { border-start-start-radius: 0; border-end-start-radius: 0; }
+	&--on-end .wa-input { border-start-end-radius: 0; border-end-end-radius: 0; }
+}
+
+// ---- segmented -------------------------------------------------------------------------------
+//
+// Two to four short options side by side. What a select becomes when the options are few — a
+// control Frappe does not have at all, and the product leans on constantly.
+
+.wa-seg {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	padding: 3px;
+	border: 1px solid var(--wa-border);
+	border-radius: 10px;
+	background: var(--wa-sunken);
+	max-inline-size: 100%;
+	flex-wrap: wrap;
+
+	&__opt {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		min-block-size: var(--wa-h-sm, 32px);
+		padding-inline: 12px;
+		border: 1px solid transparent;
+		border-radius: 7px;
+		background: transparent;
+		color: var(--wa-ink-3);
+		font: inherit;
+		font-size: var(--wa-fs-sm, 13px);
+		cursor: pointer;
+		white-space: nowrap;
+		transition: background var(--wa-motion, 160ms), color var(--wa-motion, 160ms);
+
+		&:hover:not([disabled]) { color: var(--wa-ink); }
+		&[aria-checked="true"],
+		&[aria-selected="true"],
+		&[aria-pressed="true"] {
+			background: var(--wa-surface);
+			border-color: var(--wa-border-2);
+			color: var(--wa-ink);
+			font-weight: 600;
+			box-shadow: var(--wa-shadow-sm);
+		}
+		&[disabled] { opacity: 0.5; cursor: not-allowed; }
+	}
+}
+
+// ---- toggle · checkbox · radio ----------------------------------------------------------------
+
+.wa-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	cursor: pointer;
+
+	&__track {
+		position: relative;
+		inline-size: 38px;
+		block-size: 22px;
+		flex: none;
+		border-radius: 999px;
+		background: var(--wa-border-2);
+		transition: background var(--wa-motion, 160ms);
+
+		&::after {
+			content: "";
+			position: absolute;
+			inset-block-start: 3px;
+			inset-inline-start: 3px;
+			inline-size: 16px;
+			block-size: 16px;
+			border-radius: 50%;
+			background: var(--wa-surface);
+			box-shadow: var(--wa-shadow-sm);
+			transition: inset-inline-start var(--wa-motion, 160ms);
+		}
+	}
+	&__label { font-size: var(--wa-fs-sm, 13px); color: var(--wa-ink-2); }
+
+	input { position: absolute; opacity: 0; pointer-events: none; }
+	input:checked + &__track,
+	&[aria-checked="true"] &__track {
+		background: var(--wa-pri);
+		&::after { inset-inline-start: 19px; }
+	}
+	input:focus-visible + &__track {
+		outline: 2px solid var(--wa-pri);
+		outline-offset: 2px;
+	}
+}
+
+.wa-check,
+.wa-radio {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: var(--wa-fs-sm, 13px);
+	color: var(--wa-ink-2);
+	cursor: pointer;
+
+	input {
+		inline-size: 16px;
+		block-size: 16px;
+		flex: none;
+		accent-color: var(--wa-pri);
+		cursor: pointer;
+	}
+}
+
+// ---- avatar ----------------------------------------------------------------------------------
+
+.wa-avatar {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 48px;
+	block-size: 48px;
+	flex: none;
+	border-radius: 50%;
+	background: var(--wa-pri-s);
+	color: var(--wa-pri-d);
+	font-size: 16px;
+	font-weight: 700;
+	text-transform: uppercase;
+	overflow: hidden;
+
+	img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+
+	&--sq { border-radius: 12px; }
+	&--sm { inline-size: 32px; block-size: 32px; font-size: 12px; }
+	&--md { inline-size: 40px; block-size: 40px; font-size: 14px; }
+	&--lg { inline-size: 56px; block-size: 56px; font-size: 18px; }
+}
+
+// ---- a section rule with its caption at the end -----------------------------------------------
+//
+// The prototype's form sections are titled by a rule with the section's name at the start and its
+// obligation ("مطلوبة" / "اختياري") at the end. Frappe's section break draws neither.
+
+.wa-rule {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-block: 4px;
+
+	&__label {
+		font-size: 12px;
+		font-weight: 700;
+		color: var(--wa-ink-2);
+		white-space: nowrap;
+	}
+	&__line {
+		flex: 1;
+		block-size: 1px;
+		background: var(--wa-border);
+	}
+	&__note {
+		font-size: 11px;
+		color: var(--wa-ink-4);
+		white-space: nowrap;
+	}
+}
+
+// ---- surfaces ----------------------------------------------------------------------------------
+
+.wa-card {
+	background: var(--wa-surface);
+	border: 1px solid var(--wa-border);
+	border-radius: var(--wa-radius-lg, 12px);
+	box-shadow: var(--wa-shadow-sm);
+}
+.wa-sunken {
+	background: var(--wa-bg);
+	border: 1px solid var(--wa-border);
+	border-radius: var(--wa-radius-lg, 12px);
+}

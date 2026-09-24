@@ -1,0 +1,217 @@
+// The product's palette — the design prototype's own, not Desk's.
+//
+// Every screen prototype in `docs/` opens with the same `:root` block: a complete design system of
+// thirty-one values, in a light and a dark set. It is the product's palette, it was designed for
+// this product, and it is what the screens are supposed to look like. This file is that block,
+// copied verbatim, and then a bridge.
+//
+// The bridge is the point. Every component in this app was written against Desk's Espresso
+// variables — `--surface-white`, `--ink-gray-9`, `--outline-gray-1`, `--surface-green-3` and the
+// rest. Rather than rewrite hundreds of declarations, those variables are **redefined** on the
+// product's own surfaces to point at the palette above. One file, and every screen, card, badge,
+// table and dialog this app draws changes colour together; Desk's own chrome outside our pages is
+// untouched, which is why the bridge is scoped to our containers and not to `:root`.
+//
+// Two notes on why this is not "hard-coded colour". The values live in exactly one place and are
+// referenced everywhere as tokens, which is what that rule was protecting. And the prototype's
+// palette carries something Espresso does not: a readable ink for every tone (`--wa-ok-i`,
+// `--wa-wn-i`, `--wa-dg-i`, `--wa-nf-i`), made to sit on that tone's own soft surface — so a
+// coloured word on a coloured card passes AA here, which it could not with Espresso's three-step
+// tone inks.
+//
+// `docs/screen/*.dc.html` is the source. If the prototype's palette changes, this file changes,
+// and nothing else does.
+
+:root {
+	--wa-bg: #f5f7f6;
+	--wa-surface: #ffffff;
+	--wa-sunken: #eef2f0;
+	--wa-border: #e3e8e6;
+	--wa-border-2: #c9d2cf;
+
+	--wa-ink: #0f1a18;
+	--wa-ink-2: #33423f;
+	--wa-ink-3: #55645f;
+	--wa-ink-4: #62716d;
+
+	// primary — the product's green
+	--wa-pri: #0f7a63;
+	--wa-pri-d: #0a6250;
+	--wa-pri-s: #dff1ec;
+	--wa-pri-sb: #b6ddd2;
+	--wa-on-pri: #ffffff;
+
+	// ok · warn · danger · info — each with a strong, a soft surface, a readable ink and a border
+	--wa-ok: #1a8b50;
+	--wa-ok-s: #e1f3e8;
+	--wa-ok-i: #16713f;
+	--wa-ok-sb: #b9e2ca;
+
+	--wa-wn: #9a6c14;
+	--wa-wn-s: #fbf1dc;
+	--wa-wn-i: #8a6116;
+	--wa-wn-sb: #efdcb4;
+
+	--wa-dg: #c9524b;
+	--wa-dg-s: #fbeae8;
+	--wa-dg-i: #a93a34;
+	--wa-dg-sb: #f2cbc7;
+
+	--wa-nf: #2568af;
+	--wa-nf-s: #e4effa;
+	--wa-nf-i: #1f5a97;
+	--wa-nf-sb: #c2dcf2;
+
+	--wa-shadow-sm: 0 1px 2px rgb(23 33 31 / 6%);
+	--wa-shadow-md: 0 8px 20px -14px rgb(23 33 31 / 40%);
+	--wa-shadow-lg: 0 18px 40px -26px rgb(23 33 31 / 50%);
+}
+
+[data-theme="dark"] {
+	--wa-bg: #0e1513;
+	--wa-surface: #14201d;
+	--wa-sunken: #1b2926;
+	--wa-border: #243531;
+	--wa-border-2: #334742;
+
+	--wa-ink: #eaf2f0;
+	--wa-ink-2: #c4d2ce;
+	--wa-ink-3: #9aaaa6;
+	--wa-ink-4: #7e8f8b;
+
+	--wa-pri: #2fa98c;
+	--wa-pri-d: #49c3a5;
+	--wa-pri-s: #16302a;
+	--wa-pri-sb: #23493f;
+	--wa-on-pri: #04150f;
+
+	--wa-ok: #35a96a;
+	--wa-ok-s: #132a1e;
+	--wa-ok-i: #7fd3a3;
+	--wa-ok-sb: #1e4531;
+
+	--wa-wn: #c79436;
+	--wa-wn-s: #2c2314;
+	--wa-wn-i: #e0bc78;
+	--wa-wn-sb: #4a3a1b;
+
+	--wa-dg: #d9736c;
+	--wa-dg-s: #2e1a19;
+	--wa-dg-i: #f0a8a2;
+	--wa-dg-sb: #4c2a28;
+
+	--wa-nf: #4a8ed0;
+	--wa-nf-s: #141f2c;
+	--wa-nf-i: #9cc5ec;
+	--wa-nf-sb: #25405c;
+
+	--wa-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+	--wa-shadow-md: 0 8px 20px -14px rgb(0 0 0 / 60%);
+	--wa-shadow-lg: 0 18px 40px -22px rgb(0 0 0 / 70%);
+}
+
+// ---------------------------------------------------------------------------------------------
+// The bridge: Desk's variable names, this product's values, on this product's surfaces only.
+// ---------------------------------------------------------------------------------------------
+
+// Where the palette applies: this product's own Pages, its forms, and the dialogs its components
+// open. **Not the Desk lists.** Those screens are finished and the owner is happy with them, so
+// they keep Desk's own colours — which is also why `.sanad-kit` is not listed bare here: kit
+// components mount inside lists too, and a bare class selector would repaint them there. A kit
+// component inside a Page, a form or one of our dialogs inherits the palette from the container,
+// which is exactly the scope asked for.
+$wa-surfaces:
+	"#page-wa-home",
+	"#page-wa-devices",
+	"#page-wa-contacts",
+	"#page-wa-settings",
+	"#page-wa-onboarding",
+	"#page-wa-functions-center",
+	"#page-wa-simulator",
+	'body[data-route^="Form/WhatsApp "] .page-container',
+	".modal.sanad-sheet";
+
+$wa-bridge: ();
+@each $sel in $wa-surfaces {
+	$wa-bridge: append($wa-bridge, unquote($sel), comma);
+}
+
+#{$wa-bridge} {
+	// surfaces
+	--surface-white: var(--wa-surface);
+	--surface-modal: var(--wa-surface);
+	--surface-gray-1: var(--wa-bg);
+	--surface-gray-2: var(--wa-sunken);
+	--surface-gray-3: var(--wa-border);
+	--surface-gray-4: var(--wa-border-2);
+	--surface-gray-5: var(--wa-ink-4);
+	--surface-gray-6: var(--wa-ink-3);
+	--surface-gray-7: var(--wa-ink-2);
+
+	// outlines
+	--outline-gray-1: var(--wa-border);
+	--outline-gray-2: var(--wa-border-2);
+	--outline-gray-3: var(--wa-ink-4);
+	--border-color: var(--wa-border);
+
+	// inks
+	--ink-gray-9: var(--wa-ink);
+	--ink-gray-8: var(--wa-ink-2);
+	--ink-gray-7: var(--wa-ink-3);
+	--ink-gray-6: var(--wa-ink-3);
+	--ink-gray-5: var(--wa-ink-4);
+	--ink-gray-4: var(--wa-ink-4);
+	--ink-white: var(--wa-on-pri);
+	--text-color: var(--wa-ink);
+
+	// tones — strong / soft / readable ink / border, the four the prototype gives each of them
+	--surface-green-3: var(--wa-ok);
+	--surface-green-2: var(--wa-ok-sb);
+	--surface-green-1: var(--wa-ok-s);
+	--outline-green-1: var(--wa-ok-sb);
+	--ink-green-3: var(--wa-ok-i);
+	--ink-green-2: var(--wa-ok);
+
+	--surface-blue-3: var(--wa-nf);
+	--surface-blue-2: var(--wa-nf-sb);
+	--surface-blue-1: var(--wa-nf-s);
+	--outline-blue-1: var(--wa-nf-sb);
+	--ink-blue-3: var(--wa-nf-i);
+	--ink-blue-2: var(--wa-nf);
+
+	--surface-amber-3: var(--wa-wn);
+	--surface-amber-2: var(--wa-wn-sb);
+	--surface-amber-1: var(--wa-wn-s);
+	--outline-amber-1: var(--wa-wn-sb);
+	--ink-amber-3: var(--wa-wn-i);
+	--ink-amber-2: var(--wa-wn);
+
+	--surface-red-5: var(--wa-dg);
+	--surface-red-2: var(--wa-dg-sb);
+	--surface-red-1: var(--wa-dg-s);
+	--outline-red-1: var(--wa-dg-sb);
+	--outline-red-2: var(--wa-dg);
+	--ink-red-4: var(--wa-dg-i);
+	--ink-red-3: var(--wa-dg);
+
+	// the kit's accent — the five properties every active, selected and primary state reads
+	--sanad-accent: var(--wa-pri);
+	--sanad-accent-ink: var(--wa-pri-d);
+	--sanad-accent-soft: var(--wa-pri-s);
+	--sanad-accent-outline: var(--wa-pri-sb);
+	--sanad-accent-on: var(--wa-on-pri);
+
+	// shadows
+	--shadow-sm: var(--wa-shadow-sm);
+	--shadow-base: var(--wa-shadow-md);
+	--shadow-md: var(--wa-shadow-md);
+	--shadow-lg: var(--wa-shadow-lg);
+
+	// the page itself, and the controls Desk draws inside our screens
+	--control-bg: var(--wa-sunken);
+	--awesomplete-hover-bg: var(--wa-pri-s);
+	--btn-primary-bg: var(--wa-pri);
+	--fg-color: var(--wa-surface);
+	--bg-color: var(--wa-bg);
+	--card-bg: var(--wa-surface);
+}

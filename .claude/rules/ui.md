@@ -13,8 +13,17 @@ paths:
 ## Platform: Frappe Desk, not Frappe UI
 The product is embedded in ERPNext and the user is already in Desk. A Frappe UI / Vue SPA would
 mean rebuilding Desk's meta-driven machinery and forfeiting future framework improvements.
-- Custom Pages use Desk's **Espresso CSS custom properties** (`--surface-*`, `--ink-*`,
-  `--outline-*`) — never hard-coded colours — so they read as native and inherit theme/dark mode.
+- **The product's palette is the prototype's own, not Desk's.** Every `docs/screen/*.dc.html` opens
+  with the same `:root` block — thirty-one values, light and dark. That block lives in
+  `public/scss/_tokens.scss` as `--wa-*`, and the same file re-points Desk's Espresso variables at
+  it on this product's surfaces, so a screen written against either name comes out in the product's
+  colours. Write `--wa-pri`, `--wa-ok-s`, `--wa-wn-i`, `--wa-surface`, `--wa-ink-3`. Never write a
+  colour anywhere else; `_tokens.scss` is the one place a colour is spelled out, and it is spelled
+  out there because the prototype spelled it out first.
+- Frappe is used for what is genuinely ready-made — routing, permissions, meta, dialogs, the file
+  uploader, save and dirty state. It is not a reason to inherit Desk's look. Where the prototype
+  draws its own control, draw its own control; `frappe.ui.form.make_control` is for a field the
+  prototype did not design, not for one it did.
 - **Never mix the two UI worlds in one screen** (no Vue + frappe-ui Tailwind inside a Desk page).
 - **Every custom Page takes all data from an independently callable API layer.** No business logic
   and no data assembly in page JS.

@@ -1,5 +1,7 @@
 // whatsapp_next Desk styles — the portable kit styles, this app's own branding, and the few
 // blocks that belong to one screen only.
+// the product's palette comes first: everything below is drawn in it
+@import "tokens";
 @import "../js/ui/style";
 @import "screens/shell";
 @import "screens/console";

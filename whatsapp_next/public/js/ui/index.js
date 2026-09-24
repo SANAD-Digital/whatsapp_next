@@ -2,6 +2,7 @@
 // Copy `public/js/ui/` into any Frappe app and import this file from that app's bundle.
 
 import "./_core/index.js";
+import "./_kit/index.js";
 // foundations
 import "./Render/index.js";
 import "./StatusBadge/index.js";
