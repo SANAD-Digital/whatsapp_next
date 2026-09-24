@@ -1,62 +1,123 @@
-// The Devices screen (`page/wa_devices`) — the prototype's screen, drawn with Espresso tokens.
+// The Devices screen (`page/wa_devices`) — the fleet console.
 //
-// `docs/screen/Hub Screen - Devices.dc.html` over `docs/component/Cards.dc.html` (`kind: entity`):
-// a marked screen header, one alert strip when a number stops sending, then a grid of device
-// cards. Each card is five bands in a fixed order — who it is · what it sent · how fresh it is ·
-// what is wrong · what you can do — with a 14 px rhythm between them and the verbs on one line at
-// equal widths. Geometry follows the prototype (44 px avatar, 12 px card radius, 38 px verbs);
-// every colour is an Espresso token and every offset is a logical property, so Arabic and dark
-// mode are the same code.
+// `docs/screen/Hub Screen - Devices.dc.html` over `docs/component/Cards.dc.html` (`kind: entity`)
+// gives the screen its order: a marked header, the incident first when a number stops sending,
+// then one card per device. What this file adds over the prototype's card is the discipline that
+// a Desk page's 360 px column needs and a 400 px mock never had — the state gets its own line so
+// the name keeps the head, the three readings become one instrument instead of three floating
+// boxes, and every verb carries the icon that says it before the word is read.
+//
+// State is signalled three times over, never by colour alone (WCAG 1.4.1): the rail down the card's
+// inline-start edge, the ring around the avatar, and the pill that carries both a dot and the word.
+//
+// Every colour is an Espresso token and every offset is a logical property, so Arabic and dark
+// mode are the same code. Geometry is pinned in px because it is geometry: 44 px avatar, 12 px
+// card radius, 36 px verbs, a 14 px rhythm between the bands.
 
 .wa-devices {
-	padding-block-end: var(--sanad-gap-xl);
+	--wa-device-gap: 14px;
 
-	// the header band: mark · title + line · verbs, all on one row (the prototype's screen head).
-	// Desk stacks that row on a phone; the mark stays beside the title there and only the verbs
-	// drop to their own line.
+	display: flex;
+	flex-direction: column;
+
+	// ---- the header band -------------------------------------------------------------------------
+	//
+	// With Desk's own strip gone (`_shell.scss`) this is the screen's only header, so it carries
+	// the weight of one: the mark, the name, the line that says what the screen is for, and the
+	// verbs at the far end — closed by a hairline that separates it from the work below.
+
+	.sanad-pagehead {
+		gap: var(--sanad-gap-lg);
+	}
 	.sanad-pagehead__row {
 		align-items: center;
 		gap: var(--sanad-gap-md);
+		padding-block-end: var(--sanad-gap-lg);
+		border-block-end: var(--sanad-border);
 
 		@media (max-width: 767px) {
 			flex-direction: row;
 			flex-wrap: wrap;
 		}
 	}
+	// the kit's header row is `space-between`, which leaves a title with no `flex` floating in the
+	// middle of the row; with a mark beside it the title has to hug that mark, not the centre
 	.sanad-pagehead__text {
+		flex: 1 1 auto;
+
 		@media (max-width: 767px) {
 			flex: 1 1 180px;
 		}
+	}
+	.sanad-pagehead__title {
+		font-size: var(--text-2xl, 20px);
+		letter-spacing: -0.01em;
+	}
+	.sanad-pagehead__actions .btn {
+		min-block-size: 36px;
+		border-radius: var(--sanad-radius);
+		font-weight: 600;
 	}
 
 	&__mark {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 36px;
-		block-size: 36px;
+		inline-size: 40px;
+		block-size: 40px;
 		flex: none;
-		border-radius: var(--sanad-radius);
+		border-radius: 11px;
 		background: var(--sanad-accent-soft);
 		color: var(--sanad-accent-ink);
+		box-shadow: inset 0 0 0 1px var(--sanad-accent-outline);
 	}
 
-	// ---- the alert strip ------------------------------------------------------------------------
+	// ---- the incident ----------------------------------------------------------------------------
+	//
+	// What is wrong, before anything else. A tinted card with the tone's rail down its edge and the
+	// tone's icon in a plate, so the incident survives a greyscale screen and a colour-blind reader.
 
 	&__alert {
+		position: relative;
 		display: flex;
 		align-items: center;
 		gap: var(--sanad-gap-md);
 		flex-wrap: wrap;
-		min-block-size: 56px;
 		padding-block: var(--sanad-gap-md);
-		padding-inline: var(--sanad-gap-lg);
+		padding-inline: var(--sanad-gap-lg) var(--sanad-gap-md);
 		border: 1px solid;
-		border-radius: var(--sanad-radius);
+		border-radius: var(--sanad-card-radius);
+		overflow: hidden;
+
+		&::before {
+			content: "";
+			position: absolute;
+			inset-block: 0;
+			inset-inline-start: 0;
+			inline-size: 4px;
+			background: currentColor;
+		}
+
+		&--amber {
+			background: var(--surface-amber-1);
+			border-color: var(--outline-amber-1);
+			color: var(--ink-amber-3);
+		}
+		&--red {
+			background: var(--surface-red-1);
+			border-color: var(--outline-red-1);
+			color: var(--ink-red-4);
+		}
 	}
 	&__alert-icon {
 		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 36px;
+		block-size: 36px;
 		flex: none;
+		border-radius: 10px;
+		background: var(--surface-white);
 	}
 	&__alert-text {
 		display: flex;
@@ -65,10 +126,14 @@
 		flex: 1;
 		min-inline-size: 200px;
 	}
+	// the incident's tone paints the rail, the icon and the fill; the sentence itself takes a
+	// neutral ink, because `--ink-amber-3` on `--surface-amber-1` is 3.0:1 and a 13 px line has to
+	// clear 4.5:1 whether it is bold or not
 	&__alert-title {
 		font-size: var(--text-sm, 13px);
 		font-weight: 700;
 		line-height: 1.5;
+		color: var(--ink-gray-9);
 	}
 	&__alert-line {
 		font-size: var(--text-xs, 12px);
@@ -76,105 +141,231 @@
 		line-height: 1.6;
 	}
 	&__alert-action {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
 		flex: none;
 		min-block-size: 36px;
 		padding-inline: 14px;
-		border-radius: var(--border-radius-md, 6px);
+		border: 1px solid currentColor;
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		font: inherit;
+		font-size: var(--text-xs, 12px);
 		font-weight: 600;
-	}
-	// the verb of an incident carries the incident's colour, filled (prototype: `ctaStyle: solid`)
-	.sanad-tone--red &__alert-action--strong {
-		background: var(--surface-red-5);
-		border-color: var(--surface-red-5);
-		color: var(--ink-white);
-		&:hover { background: var(--surface-red-6); border-color: var(--surface-red-6); color: var(--ink-white); }
-	}
-	.sanad-tone--amber &__alert-action--strong {
-		background: var(--surface-amber-3);
-		border-color: var(--surface-amber-3);
-		color: var(--ink-white);
-		&:hover { background: var(--ink-amber-3); border-color: var(--ink-amber-3); color: var(--ink-white); }
+		cursor: pointer;
+		transition: background var(--sanad-motion), box-shadow var(--sanad-motion);
+
+		// the border keeps the incident's colour; the word does not, for the same reason the title
+		// does not
+		.wa-devices__alert-label {
+			color: var(--ink-gray-9);
+		}
+		.icon {
+			inline-size: 14px;
+			block-size: 14px;
+		}
+		&:hover {
+			box-shadow: var(--shadow-sm);
+		}
+
+		// The prototype fills the verb of an incident with the incident's own colour. Filled amber
+		// would put white on `--surface-amber-3` at 3.2:1, so the fill here is the product's accent
+		// — 5.3:1 against white, and the same colour the screen's own primary verb wears, which is
+		// right for the one action the strip is asking for.
+		&--strong {
+			background: var(--sanad-accent);
+			border-color: var(--sanad-accent);
+
+			.wa-devices__alert-label,
+			.icon {
+				color: var(--sanad-accent-on);
+			}
+			&:hover {
+				background: var(--sanad-accent-ink);
+				border-color: var(--sanad-accent-ink);
+			}
+		}
 	}
 
-	// ---- the grid -------------------------------------------------------------------------------
+	// ---- the fleet rail --------------------------------------------------------------------------
+	//
+	// One segmented control that is both the summary and the filter: read across, it says how the
+	// fleet stands; clicked, it says what to show. Segments sit inside one sunken track rather than
+	// floating as separate pills, which is what makes it read as an instrument and not a toolbar.
 
-	&__filters {
-		margin-block-end: var(--sanad-gap-xs);
+	&__rail {
+		margin-block-end: var(--sanad-gap-lg);
+	}
+	&__rail:empty {
+		display: none;
 	}
 
-	// the prototype's grid: one card per device, at least 300 px each, and the cards of one row
-	// share its height so the verbs at their feet stand on the same line
+	&__segments {
+		display: inline-flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 3px;
+		padding: 3px;
+		border: var(--sanad-border);
+		border-radius: 11px;
+		background: var(--surface-gray-1);
+		max-inline-size: 100%;
+	}
+
+	&__segment {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		min-block-size: 34px;
+		padding-inline: var(--sanad-gap-md);
+		border: 1px solid transparent;
+		border-radius: 8px;
+		background: transparent;
+		color: var(--ink-gray-7);
+		font: inherit;
+		font-size: var(--text-sm, 13px);
+		cursor: pointer;
+		white-space: nowrap;
+		transition: background var(--sanad-motion), color var(--sanad-motion), box-shadow var(--sanad-motion);
+
+		&:hover:not([disabled]) {
+			background: var(--surface-white);
+			color: var(--ink-gray-9);
+		}
+		&[aria-pressed="true"] {
+			background: var(--surface-white);
+			border-color: var(--outline-gray-1);
+			color: var(--ink-gray-9);
+			font-weight: 600;
+			box-shadow: var(--shadow-sm);
+		}
+		&[disabled] {
+			opacity: 0.45;
+			cursor: default;
+		}
+	}
+	&__segment-dot {
+		inline-size: 8px;
+		block-size: 8px;
+		flex: none;
+		border-radius: 50%;
+		background: var(--ink-gray-5);
+	}
+	&__segment--green &__segment-dot { background: var(--surface-green-3); }
+	&__segment--blue &__segment-dot { background: var(--surface-blue-3); }
+	&__segment--amber &__segment-dot { background: var(--surface-amber-3); }
+
+	&__segment-count {
+		padding-inline: 7px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-2);
+		color: var(--ink-gray-7);
+		font-size: var(--text-xs, 11px);
+		font-weight: 600;
+		line-height: 18px;
+	}
+	&__segment[aria-pressed="true"] &__segment-count {
+		background: var(--sanad-accent-soft);
+		color: var(--sanad-accent-ink);
+	}
+
+	// ---- the grid --------------------------------------------------------------------------------
+	//
+	// One card per device, at least 320 px each; the cards of one row share its height so the verbs
+	// at their feet stand on the same line.
+
 	&__grid {
 		display: grid;
 		gap: var(--sanad-gap-lg);
-		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 		align-items: stretch;
 	}
 }
 
-// ---- the device card ----------------------------------------------------------------------------
+// ---- the device card -----------------------------------------------------------------------------
 
 .wa-device {
+	position: relative;
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
+	gap: var(--wa-device-gap, 14px);
 	padding: var(--sanad-gap-lg);
+	padding-inline-start: calc(var(--sanad-gap-lg) + 4px);
 	border: var(--sanad-border);
 	border-radius: var(--sanad-card-radius);
 	background: var(--surface-white);
 	min-inline-size: 0;
+	overflow: hidden;
+	transition: border-color var(--sanad-motion), box-shadow var(--sanad-motion), transform var(--sanad-motion);
 
-	// avatar · name and number · state, on one line as the prototype draws it. The gap is the
-	// small one rather than the prototype's 12 px: on a Desk page the card is 339 px wide, not
-	// 400, and those four pixels are what let the whole phone number stand beside the badge.
+	&:hover {
+		border-color: var(--outline-gray-2);
+		box-shadow: var(--shadow-md, 0 8px 24px -12px rgb(23 33 31 / 22%));
+		transform: translateY(-1px);
+	}
+
+	// the state, said the first of four times: a rail down the card's inline-start edge
+	&__rail {
+		position: absolute;
+		inset-block: 0;
+		inset-inline-start: 0;
+		inline-size: 4px;
+		background: var(--wa-device-tone, var(--surface-gray-4));
+	}
+
+	&--green { --wa-device-tone: var(--surface-green-3); --wa-device-soft: var(--surface-green-1); --wa-device-line: var(--outline-green-1); }
+	&--blue { --wa-device-tone: var(--surface-blue-3); --wa-device-soft: var(--surface-blue-1); --wa-device-line: var(--outline-blue-1); }
+	&--amber { --wa-device-tone: var(--surface-amber-3); --wa-device-soft: var(--surface-amber-1); --wa-device-line: var(--outline-amber-1); }
+	&--red { --wa-device-tone: var(--surface-red-5); --wa-device-soft: var(--surface-red-1); --wa-device-line: var(--outline-red-1); }
+	&--gray { --wa-device-tone: var(--surface-gray-5); --wa-device-soft: var(--surface-gray-2); --wa-device-line: var(--outline-gray-2); }
+
+	// ---- who it is -----------------------------------------------------------------------------
+
 	&__head {
 		display: flex;
-		align-items: flex-start;
-		flex-wrap: wrap;
-		gap: var(--sanad-gap-sm);
+		align-items: center;
+		gap: var(--sanad-gap-md);
 		min-inline-size: 0;
 	}
 
-	// the identity plate: solid status colour, two letters, the name beside it
 	&__avatar {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		inline-size: 44px;
 		block-size: 44px;
-		border-radius: 10px;
+		flex: none;
+		border-radius: 12px;
+		background: var(--wa-device-tone, var(--surface-gray-4));
+		color: var(--ink-white);
 		font-size: var(--text-base, 14px);
 		font-weight: 700;
-		color: var(--ink-white);
 		text-transform: uppercase;
-
-		&--green { background: var(--surface-green-3); }
-		&--blue { background: var(--surface-blue-3); }
-		&--amber { background: var(--surface-amber-3); }
-		&--red { background: var(--surface-red-5); }
-		&--gray { background: var(--surface-gray-5); }
+		// the state, said a second time: the ring the avatar sits in
+		box-shadow: 0 0 0 3px var(--wa-device-soft, var(--surface-gray-1));
 	}
 
 	&__identity {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sanad-gap-xs);
-		// 88 px is what a 339 px card leaves once the avatar, the badge and the menu have theirs:
-		// the identity keeps the head's first line, and a narrower card wraps rather than clips
-		flex: 1 1 88px;
+		gap: 3px;
+		flex: 1;
 		min-inline-size: 0;
 	}
 
-	// the prototype cuts the name at one line; its cards are 400 px wide and its names are short.
-	// Ours sit three to a Desk page: the name gets a second line before it is cut, so the device
-	// can still be told apart, and `title` carries the whole of it.
+	// the name gets the head's full width now that the state has its own line, so one line is
+	// enough for all but the longest; `title` carries the whole of it either way
 	&__name {
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
+		margin: 0;
 		font-size: var(--text-lg, 16px);
 		font-weight: 700;
-		line-height: 1.3;
+		line-height: 1.35;
 		color: var(--ink-gray-9);
+		white-space: nowrap;
 		overflow: hidden;
-		overflow-wrap: anywhere;
+		text-overflow: ellipsis;
 	}
 
 	&__phone {
@@ -187,68 +378,153 @@
 		text-overflow: ellipsis;
 	}
 
-	&__flags {
+	&__head-end {
+		display: inline-flex;
+		flex: none;
+	}
+
+	&__more {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 32px;
+		block-size: 32px;
+		padding: 0;
+		border: 1px solid transparent;
+		border-radius: 8px;
+		background: transparent;
+		color: var(--ink-gray-5);
+		cursor: pointer;
+		transition: background var(--sanad-motion), color var(--sanad-motion), border-color var(--sanad-motion);
+
+		.icon {
+			inline-size: 16px;
+			block-size: 16px;
+		}
+		&:hover,
+		&[aria-expanded="true"] {
+			background: var(--surface-gray-2);
+			border-color: var(--outline-gray-1);
+			color: var(--ink-gray-9);
+		}
+	}
+
+	// ---- the state and the standing flags ---------------------------------------------------------
+
+	&__tags {
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
-		justify-content: flex-end;
-		gap: var(--sanad-gap-xs);
-		flex: 0 0 auto;
-		margin-inline-start: auto;
+		gap: 6px;
+		margin-block-start: calc(var(--wa-device-gap, 14px) * -0.5);
+	}
+	&__tags:empty {
+		display: none;
+	}
+
+	// The state, said a third time: the dot, and the word beside it. Espresso's tone inks stop at
+	// the third step — `--ink-green-3` on `--surface-green-1` is 3.9:1, and `--ink-amber-3` on its
+	// own soft surface only 3.0:1 — so a 12 px word in them misses AA. The colour therefore lives
+	// in the dot, the fill and the border, where contrast is not a requirement, and the word itself
+	// takes a near-black ink and reads at better than 12:1 in every tone.
+	&__state {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding-block: 4px;
+		padding-inline: 10px;
+		border: 1px solid var(--wa-device-line, var(--outline-gray-2));
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--wa-device-soft, var(--surface-gray-1));
+		color: var(--ink-gray-8);
+		font-size: var(--text-xs, 12px);
+		font-weight: 600;
+		white-space: nowrap;
+	}
+	&__state-dot {
+		inline-size: 7px;
+		block-size: 7px;
+		flex: none;
+		border-radius: 50%;
+		background: var(--wa-device-tone, var(--ink-gray-6));
 	}
 
 	&__flag {
 		display: inline-flex;
 		align-items: center;
-		padding-inline: var(--sanad-gap-sm);
-		padding-block: 2px;
-		border: 1px solid;
+		gap: 5px;
+		padding-block: 4px;
+		padding-inline: 10px;
+		border: var(--sanad-border);
 		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-1);
+		color: var(--ink-gray-7);
 		font-size: var(--text-xs, 11px);
 		font-weight: 600;
+		white-space: nowrap;
+
+		.icon {
+			inline-size: 12px;
+			block-size: 12px;
+		}
+		&--muted {
+			color: var(--ink-gray-8);
+			background: var(--surface-amber-1);
+			border-color: var(--outline-amber-1);
+			.icon { color: var(--ink-amber-3); }
+		}
 	}
 
-	&__more {
-		min-inline-size: var(--sanad-target);
-		min-block-size: var(--sanad-target);
-		padding: 0;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		color: var(--ink-gray-6);
-		.icon { inline-size: 16px; block-size: 16px; }
-		&:hover,
-		&[aria-expanded="true"] { color: var(--ink-gray-9); }
-	}
+	// ---- what it sent ------------------------------------------------------------------------------
+	//
+	// One instrument, not three boxes: three readings divided by hairlines, and under them the bar
+	// that gives the third its meaning. A failure rate is a number nobody has a feel for; the same
+	// rate drawn as the red end of a delivery bar is read without being read.
 
-	// ---- what it sent: three read boxes ---------------------------------------------------------
-
-	&__tiles {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: var(--sanad-gap-sm);
-	}
-
-	&__tile {
+	&__panel {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sanad-gap-xs);
-		padding-block: 10px;
-		padding-inline: var(--sanad-gap-md);
-		border: 1px solid transparent;
-		border-radius: var(--sanad-radius);
+		gap: var(--sanad-gap-md);
+		padding: var(--sanad-gap-md);
+		border: var(--sanad-border);
+		border-radius: 11px;
 		background: var(--surface-gray-1);
+	}
+
+	&__stats {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	&__stat {
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+		padding: 0;
+		padding-inline: var(--sanad-gap-sm);
+		border: 0;
+		border-inline-start: var(--sanad-border);
+		background: transparent;
 		text-align: start;
 		min-inline-size: 0;
 		font: inherit;
 		color: inherit;
+
+		&:first-child {
+			border-inline-start: 0;
+			padding-inline-start: 2px;
+		}
 	}
 
-	button.wa-device__tile {
+	button.wa-device__stat {
 		cursor: pointer;
-		&:hover {
-			background: var(--surface-gray-2);
-			border-color: var(--outline-gray-1);
+		border-radius: 6px;
+		transition: color var(--sanad-motion);
+
+		&:hover .wa-device__stat-label {
+			color: var(--sanad-accent-ink);
+			text-decoration: underline;
+			text-underline-offset: 2px;
 		}
 		&:focus-visible {
 			outline: 2px solid var(--sanad-accent);
@@ -256,59 +532,114 @@
 		}
 	}
 
-	&__tile-label {
+	&__stat-label {
 		font-size: var(--text-xs, 11px);
 		color: var(--ink-gray-6);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
+		transition: color var(--sanad-motion);
 	}
 
-	&__tile-value {
-		font-size: var(--text-lg, 16px);
-		font-weight: 600;
-		line-height: 1.3;
+	&__stat-value {
+		font-size: var(--text-lg, 17px);
+		font-weight: 700;
+		line-height: 1.25;
 		color: var(--ink-gray-9);
 		direction: ltr;
 		text-align: start;
-		min-block-size: 21px;
-		&--alert { color: var(--ink-red-4); }
-		.sanad-skeleton { padding-block: 4px; gap: 0; }
+		min-block-size: 22px;
+
+		&--alert {
+			color: var(--ink-red-4);
+		}
+		.sanad-skeleton {
+			padding-block: 5px;
+			gap: 0;
+		}
 	}
 
-	// ---- how fresh it is ---------------------------------------------------------------------------
+	// the delivery bar: what arrived against what was attempted, over the same thirty days the
+	// readings above cover. Its accessible name is written by the card, in a whole sentence.
+	&__bar {
+		display: flex;
+		block-size: 6px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-3);
+		overflow: hidden;
+	}
+	&__bar-seg {
+		display: block;
+		flex-grow: 0;
+		flex-shrink: 0;
+		flex-basis: 0;
+		transition: flex-basis var(--sanad-motion) ease-out;
 
-	&__meta:empty { display: none; }
+		&--ok { background: var(--surface-green-3); }
+		&--bad { background: var(--surface-red-5); }
+	}
+	&__bar--idle &__bar-seg {
+		flex-basis: 0 !important;
+	}
+
+	// ---- how fresh it is -----------------------------------------------------------------------------
 
 	&__meta {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: var(--sanad-gap-sm) var(--sanad-gap-lg);
-		padding-inline: var(--sanad-gap-xs);
+		gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+		margin: 0;
+		padding-inline: 2px;
+	}
+	&__meta:empty {
+		display: none;
 	}
 
 	&__meta-item {
 		display: flex;
 		flex-direction: column;
-		gap: 5px;
+		gap: 4px;
 		min-inline-size: 0;
 	}
 
 	&__meta-label {
-		font-size: var(--text-xs, 12px);
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin: 0;
+		font-size: var(--text-xs, 11px);
+		font-weight: 400;
 		color: var(--ink-gray-6);
 		white-space: nowrap;
 	}
+	&__meta-icon {
+		display: inline-flex;
+		color: var(--ink-gray-5);
+		.icon {
+			inline-size: 13px;
+			block-size: 13px;
+		}
+	}
 
 	&__meta-value {
+		margin: 0;
 		font-size: var(--text-base, 14px);
 		font-weight: 600;
 		color: var(--ink-gray-9);
-		&--alert { color: var(--ink-red-4); }
-		.sanad-skeleton { padding-block: 3px; gap: 0; }
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+
+		&--alert {
+			color: var(--ink-red-4);
+		}
+		.sanad-skeleton {
+			padding-block: 3px;
+			gap: 0;
+		}
 	}
 
-	// ---- what is wrong -------------------------------------------------------------------------------
+	// ---- what is wrong ---------------------------------------------------------------------------------
 
 	&__notice {
 		display: flex;
@@ -317,7 +648,7 @@
 		padding-block: 10px;
 		padding-inline: var(--sanad-gap-md);
 		border: 1px solid;
-		border-radius: 10px;
+		border-radius: 11px;
 	}
 	&__notice-icon {
 		display: inline-flex;
@@ -326,7 +657,7 @@
 		inline-size: 36px;
 		block-size: 36px;
 		flex: none;
-		border-radius: 9px;
+		border-radius: 10px;
 		background: var(--surface-white);
 	}
 	&__notice-text {
@@ -338,6 +669,8 @@
 	&__notice-title {
 		font-size: var(--text-sm, 13px);
 		font-weight: 700;
+		// the tone stays in the icon and the fill; the sentence takes an ink that passes AA
+		color: var(--ink-gray-9);
 	}
 	&__notice-line {
 		font-size: var(--text-xs, 12px);
@@ -346,46 +679,135 @@
 	}
 
 	// ---- what you can do ---------------------------------------------------------------------------------
+	//
+	// Each verb carries the icon that says it before the word is read. The one that moves the device
+	// on leads and, when it is the encouraged one, wears the accent; the two that only open a log
+	// stay quiet; the one that cannot be undone is an icon alone at the far end, out of the path of
+	// the hand, with its name on the control for the tooltip and the screen reader both.
 
+	// one line, always: `wrap` would break the row in two the moment a verb's word grew — which is
+	// what English does to "Disconnect" — so the verbs shrink instead, and the word that no longer
+	// fits is cut with its whole self still on the control for the tooltip and the screen reader
 	&__actions {
 		display: flex;
 		align-items: center;
-		flex-wrap: wrap;
-		gap: 6px;
+		flex-wrap: nowrap;
+		gap: 5px;
 		margin-block-start: auto;
-		padding-block-start: 14px;
+		padding-block-start: var(--wa-device-gap, 14px);
 		border-block-start: var(--sanad-border);
 	}
 
-	// The prototype gives every verb an equal share of one line (`flex: 1 1 0`) because its cards
-	// are 400 px wide. At a Desk page's 330 px an equal share clips the word itself — "Discon…",
-	// "Pair ag…" — so the share starts at the word's own width: the verbs still fill the line, and
-	// when they no longer fit they wrap, which the prototype's row does too.
 	&__btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
 		flex: 1 1 auto;
 		min-inline-size: 0;
-		min-block-size: 38px;
-		padding-inline: 10px;
+		min-block-size: 36px;
+		padding-inline: 8px;
+		border: var(--sanad-border);
 		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		color: var(--ink-gray-8);
+		font: inherit;
 		font-size: var(--text-xs, 12px);
 		font-weight: 600;
+		cursor: pointer;
 		white-space: nowrap;
+		overflow: hidden;
+		transition: background var(--sanad-motion), border-color var(--sanad-motion), color var(--sanad-motion);
+
+		&:hover {
+			background: var(--surface-gray-2);
+			border-color: var(--outline-gray-2);
+			color: var(--ink-gray-9);
+		}
+		&:focus-visible {
+			outline: 2px solid var(--sanad-accent);
+			outline-offset: 2px;
+		}
+	}
+	&__btn-icon {
+		display: inline-flex;
+		flex: none;
+		.icon {
+			inline-size: 14px;
+			block-size: 14px;
+		}
+	}
+	&__btn-label {
+		min-inline-size: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
+	&__btn-count {
+		padding-inline: 6px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-2);
+		color: var(--ink-gray-7);
+		font-size: var(--text-xs, 11px);
+		font-weight: 600;
+		line-height: 17px;
 
-	// the destructive verb never grows into the space the others leave
-	&__btn--danger { flex: 0 1 auto; }
-
-	& &__btn--danger {
-		background: var(--surface-red-1);
-		border-color: var(--outline-red-1);
-		color: var(--ink-red-4);
-		&:hover {
-			background: var(--surface-red-2);
-			border-color: var(--outline-red-2);
-			color: var(--ink-red-4);
+		&--empty {
+			display: none;
 		}
+	}
+
+	&__btn--primary {
+		background: var(--sanad-accent);
+		border-color: var(--sanad-accent);
+		color: var(--sanad-accent-on);
+
+		&:hover {
+			background: var(--sanad-accent-ink);
+			border-color: var(--sanad-accent-ink);
+			color: var(--sanad-accent-on);
+		}
+	}
+
+	// ---- the card while the fleet loads -------------------------------------------------------------------
+
+	&--skeleton {
+		pointer-events: none;
+
+		&:hover {
+			transform: none;
+			box-shadow: none;
+			border-color: var(--outline-gray-1);
+		}
+		.wa-device__avatar,
+		.wa-device__stat,
+		.sanad-skeleton__line {
+			background: var(--surface-gray-3);
+			box-shadow: none;
+			animation: sanad-pulse 1.2s ease-in-out infinite;
+		}
+		.wa-device__stat {
+			block-size: 40px;
+			border-radius: 6px;
+			border-inline-start: 0;
+			margin-inline: 2px;
+		}
+		.sanad-skeleton__line {
+			display: block;
+			block-size: 12px;
+		}
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.wa-device,
+	.wa-device__bar-seg {
+		transition: none;
+	}
+	.wa-device:hover {
+		transform: none;
+	}
+	.wa-device--skeleton :is(.wa-device__avatar, .wa-device__stat, .sanad-skeleton__line) {
+		animation: none;
 	}
 }
 
@@ -592,5 +1014,6 @@
 
 @media (max-width: 575px) {
 	.wa-devices__grid { grid-template-columns: minmax(0, 1fr); }
+	.wa-devices__segments { inline-size: 100%; }
 	.wa-pairing__qr { inline-size: 160px; block-size: 160px; }
 }

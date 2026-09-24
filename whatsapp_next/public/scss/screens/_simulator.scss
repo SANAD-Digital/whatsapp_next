@@ -7,7 +7,9 @@
 	display: grid;
 	grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
 	gap: var(--sanad-gap-lg);
-	block-size: calc(100dvh - 190px);
+	// `page.main` itself carries this class, so the shell's gutter (`_shell.scss`) is this box's own
+	// padding and the two panes get what the viewport leaves after it
+	block-size: calc(100dvh - var(--wa-viewport-offset, 190px));
 	min-block-size: 460px;
 
 	&__rail,

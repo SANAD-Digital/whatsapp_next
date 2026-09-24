@@ -1,6 +1,7 @@
 // whatsapp_next Desk styles — the portable kit styles, this app's own branding, and the few
 // blocks that belong to one screen only.
 @import "../js/ui/style";
+@import "screens/shell";
 @import "screens/console";
 @import "screens/queue";
 @import "screens/campaigns";
@@ -34,4 +35,25 @@
 	--sanad-accent-soft: #0d3730;
 	--sanad-accent-outline: #1a5347;
 	--sanad-accent-on: #04201a;
+}
+
+// Desk's own `.btn-primary` is near-black. The prototype's primary verb is the product's teal
+// (`docs/screen/Hub Screen - Devices.dc.html`: `background: var(--pri)`), and a screen whose
+// header asks for the one action that matters should say so in the product's colour. The kit's
+// own markup all carries `.sanad-kit`, and the dialogs it opens carry `.sanad-sheet`, so this
+// brands every screen header, wizard, drawer and dialog the product draws and leaves the ones Desk
+// draws for itself alone. A destructive confirmation swaps to `.btn-danger` and is untouched.
+.sanad-kit .btn-primary,
+.sanad-sheet .btn-primary {
+	background: var(--sanad-accent);
+	border-color: var(--sanad-accent);
+	color: var(--sanad-accent-on);
+
+	&:hover,
+	&:focus,
+	&:active {
+		background: var(--sanad-accent-ink);
+		border-color: var(--sanad-accent-ink);
+		color: var(--sanad-accent-on);
+	}
 }

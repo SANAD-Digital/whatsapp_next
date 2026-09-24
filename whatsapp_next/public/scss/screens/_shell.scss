@@ -1,0 +1,113 @@
+// The shell every whatsapp_next Desk screen sits in — one gutter, one width, one header.
+//
+// Desk draws a strip above every page: a breadcrumb, the page's own title a second time, and an
+// indicator pill. On the seven screens of this product the header under it already carries the
+// mark, the title, the line that explains the screen and the verbs — so the strip only repeats
+// what is directly beneath it. Worse, Desk shows it on some routes and hides it on others, so the
+// same screen had two different heights depending on how it was reached. It goes, and it goes
+// deterministically. Below 992 px it stays, stripped to the one control that exists nowhere else
+// at that width: the sidebar toggle.
+//
+// The gutter is the other half. `.layout-main-section` takes whatever padding the Desk theme and
+// the user's width setting happen to leave it, which on a wide screen is close to nothing — a card
+// grid then runs into the glass on both sides. These rules pin it instead: a page-id selector
+// outranks Desk's own, the value is a token the screens read back (the simulator sizes its panes
+// from it), and both sides are logical properties, so Arabic mirrors without a second rule. The
+// Desk lists this product owns ask for the same gutter by the route Desk names their page after.
+
+// Every screen of this product, by the id Desk gives its page container (`#page-<route>`).
+$wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-settings, #page-wa-onboarding, #page-wa-functions-center, #page-wa-simulator";
+
+:root {
+	--wa-page-gutter: 32px;
+	--wa-list-gutter: 16px;
+	--wa-page-top: 20px;
+	--wa-page-bottom: 40px;
+	// What a screen that wants to fill the viewport takes off `100dvh`. The page strip is no longer
+	// in that sum — that is the point of it — and this product's Desk wears its navigation in the
+	// sidebar, so the section starts at the top of the viewport and what is left to subtract is the
+	// air under the screen; the padding above is already inside the box.
+	--wa-viewport-offset: 8px;
+}
+
+@media (max-width: 991px) {
+	:root {
+		--wa-page-gutter: 16px;
+		--wa-list-gutter: 12px;
+		--wa-page-top: 14px;
+		--wa-page-bottom: 28px;
+		// the strip survives at this width (see below), so a full-height screen loses its height too
+		--wa-viewport-offset: 46px;
+	}
+}
+
+#{$wa-pages} {
+	> .page-head {
+		display: none;
+	}
+
+	.layout-main-section {
+		padding-inline: var(--wa-page-gutter);
+		padding-block: var(--wa-page-top) var(--wa-page-bottom);
+		// a console reads better a little narrower than the whole of a 2560 px monitor; the cap is
+		// centred, so the gutter stays even on both sides once it bites
+		max-inline-size: 1680px;
+		margin-inline: auto;
+	}
+}
+
+// The product's Desk lists: the same gutter. Every DocType this app ships is named "WhatsApp …"
+// and Desk names a list's page container after its route, so one selector reaches all ten of them
+// and no other app's — which a class set from a kit component could not, since four of these lists
+// draw their own toolbar and never mount a `PageHeader`. Their strip stays, because theirs holds
+// the view switcher, the saved filters and the menu; only its contents move in to the same edge as
+// the table beneath, so the screen lines up from its first row to its last.
+//
+// Their gutter is the narrower one. A screen of cards can give 32 px away on each side; a table of
+// twelve columns cannot — every pixel taken from it is a column pushed behind a horizontal scroll —
+// and what was asked for is that nothing touch the glass, which 16 px settles.
+[id^="page-List/WhatsApp "] {
+	// the row inside the strip is a Bootstrap `.row`, whose negative side margins eat any padding
+	// put on the container around it, so the gutter goes on the row itself and the title gives up
+	// the 15 px it was carrying on its own
+	> .page-head > .container {
+		padding-inline: 0;
+	}
+	> .page-head .page-head-content {
+		margin-inline: 0;
+		padding-inline: var(--wa-list-gutter);
+	}
+	> .page-head .page-title {
+		padding-inline: 0;
+	}
+
+	.layout-main-section {
+		padding-inline: var(--wa-list-gutter);
+		padding-block-end: var(--wa-page-bottom);
+	}
+}
+
+// Under 992 px Desk draws the sidebar toggle inside the page strip and nowhere else, so on a phone
+// the strip survives — with nothing left in it but that one button.
+@media (max-width: 991px) {
+	#{$wa-pages} {
+		> .page-head {
+			display: flex;
+			position: static;
+			background: transparent;
+			border-block-end: 0;
+
+			.page-head-content {
+				height: auto;
+				padding-block: 4px;
+			}
+			.title-area,
+			.page-actions {
+				display: none;
+			}
+			.sidebar-toggle-btn {
+				display: flex;
+			}
+		}
+	}
+}

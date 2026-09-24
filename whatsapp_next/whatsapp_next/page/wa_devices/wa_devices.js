@@ -14,6 +14,8 @@ frappe.provide("whatsapp_next.devices");
 	const OFFLINE = ["Disconnected", "Logged Out"];
 	const STATS_DAYS = 30;
 	const POLL_MS = 4000;
+	// above this share of attempts the failure reading turns red and the delivery bar with it
+	const FAIL_ALERT = 0.08;
 
 	const is_manager = () => frappe.user.has_role(MANAGER);
 	const is_agent = () => frappe.user.has_role(AGENT_UP);
@@ -429,9 +431,16 @@ frappe.provide("whatsapp_next.devices");
 			this.stepper && this.stepper.destroy();
 		}
 	}
-
 	// -------------------------------------------------------------------------------------------
-	// The card — the prototype's device tile: identity, 30-day traffic, freshness and the verbs.
+	// The card
+	//
+	// One device read top to bottom in four bands whose order never changes: who it is, what it
+	// sent, how fresh it is, what you can do about it. The fixed order is what makes a wall of ten
+	// cards scannable — the eye learns the shape once and afterwards only reads what moved.
+	//
+	// The state is never carried by colour alone (WCAG 1.4.1). A device says it three times over:
+	// the rail down its inline-start edge, the ring around its avatar, and the pill that carries
+	// both a dot and the word itself.
 	// -------------------------------------------------------------------------------------------
 	class DeviceCard {
 		constructor(screen, row) {
@@ -442,49 +451,59 @@ frappe.provide("whatsapp_next.devices");
 		render() {
 			const row = this.row;
 			const status = status_of(row);
-			const pending = row.status === "Pending QR";
+			const title = row.device_name || row.name;
+			const number = row.phone_e164 ? ui.PhoneField.format_display(row.phone_e164) : __("No number yet");
 			this.$el = $(`
-				<article class="wa-device" data-device="${ui.escape(row.name)}" aria-label="${ui.escape(row.device_name || row.name)}">
+				<article class="wa-device wa-device--${status.tone}" data-device="${ui.escape(row.name)}" aria-label="${ui.escape(title)}">
+					<span class="wa-device__rail" aria-hidden="true"></span>
 					<header class="wa-device__head">
-						<span class="sanad-avatar sanad-avatar--lg wa-device__avatar wa-device__avatar--${status.tone}" aria-hidden="true">${ui.escape(initials(row.device_name))}</span>
+						<span class="wa-device__avatar" aria-hidden="true">${ui.escape(initials(row.device_name))}</span>
 						<span class="wa-device__identity">
-							<span class="wa-device__name" dir="auto" title="${ui.escape(row.device_name || row.name)}">${ui.escape(row.device_name || row.name)}</span>
-							<span class="wa-device__phone sanad-tabular" dir="ltr" title="${ui.escape(row.phone_e164 || "")}">${ui.escape(row.phone_e164 ? ui.PhoneField.format_display(row.phone_e164) : __("No number yet"))}</span>
+							<h3 class="wa-device__name" dir="auto" title="${ui.escape(title)}">${ui.escape(title)}</h3>
+							<span class="wa-device__phone sanad-tabular" dir="ltr" title="${ui.escape(row.phone_e164 || "")}">${ui.escape(number)}</span>
 						</span>
-						<span class="wa-device__flags" data-slot="flags"></span>
+						<span class="wa-device__head-end" data-slot="more"></span>
 					</header>
-					<div class="wa-device__tiles" data-slot="tiles"></div>
-					<div class="wa-device__meta" data-slot="meta"></div>
+					<div class="wa-device__tags" data-slot="tags"></div>
+					<div class="wa-device__panel" data-slot="panel"></div>
+					<dl class="wa-device__meta" data-slot="meta"></dl>
 					<footer class="wa-device__actions" data-slot="actions"></footer>
 				</article>`);
-			this.render_flags();
-			this.render_tiles();
-			// the prototype gives a device that is still waiting for its code the notice and no
-			// freshness band: "last seen" and "last message" say nothing before the first pairing
-			if (pending) this.render_notice();
+			this.render_tags();
+			this.render_panel();
+			// a device still waiting for its first code has no freshness to report: "last seen" and
+			// "last message" would both read "never", which says less than the notice that replaces
+			// them and tells the reader what to do instead
+			if (row.status === "Pending QR") this.render_notice();
 			else this.render_meta();
 			this.render_actions();
 			return this.$el;
 		}
 
-		render_flags() {
+		// ---- who it is --------------------------------------------------------------------------
+
+		/**
+		 * The state pill and the standing flags, on their own line under the name. The prototype
+		 * puts the pill at the end of the name's line; at a Desk page's card width that line has to
+		 * hold a two-word name, a nine-character number, a pill and a menu, and the name is what
+		 * loses. Giving the pill its own line costs one 26 px band and buys the name the card.
+		 */
+		render_tags() {
 			const row = this.row;
 			const status = status_of(row);
-			const $flags = this.$el.find('[data-slot="flags"]');
-			// the prototype's card badge is a tinted pill with its word in it (`Cards.dc.html`,
-			// `kind: entity`): no icon, so the name and the number keep the head's first line
-			$flags.append(ui.StatusBadge.html({ label: status.label(), colour: status.tone, icon: false }));
+			const $tags = this.$el.find('[data-slot="tags"]');
+			$(`<span class="wa-device__state"><span class="wa-device__state-dot" aria-hidden="true"></span>${ui.escape(status.label())}</span>`).appendTo($tags);
 			if (row.is_default) {
-				$flags.append(`<span class="wa-device__flag sanad-tone--gray">${ui.escape(__("Default"))}</span>`);
+				$(`<span class="wa-device__flag" title="${ui.escape(__("New messages use this device unless another one is chosen."))}">${ui.icon("es-line-star", "xs")}${ui.escape(__("Default"))}</span>`).appendTo($tags);
 			}
 			if (row.disabled) {
-				$flags.append(`<span class="wa-device__flag sanad-tone--gray">${ui.escape(__("Disabled"))}</span>`);
+				$(`<span class="wa-device__flag wa-device__flag--muted" title="${ui.escape(__("Nothing is sent from this device until it is enabled again."))}">${ui.icon("es-line-slash", "xs")}${ui.escape(__("Sending paused"))}</span>`).appendTo($tags);
 			}
 			const items = this.menu_items();
 			if (!items.length) return;
-			$(`<button type="button" class="btn btn-xs btn-default wa-device__more" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("Actions for {0}", [row.device_name || row.name]))}">${ui.icon(ui.icons.more, "sm")}</button>`)
+			$(`<button type="button" class="wa-device__more" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("Actions for {0}", [row.device_name || row.name]))}">${ui.icon(ui.icons.more, "sm")}</button>`)
 				.on("click", (e) => open_menu($(e.currentTarget), this.menu_items()))
-				.appendTo($flags);
+				.appendTo(this.$el.find('[data-slot="more"]'));
 		}
 
 		menu_items() {
@@ -492,82 +511,101 @@ frappe.provide("whatsapp_next.devices");
 			const screen = this.screen;
 			const items = [];
 			if (is_agent()) {
-				items.push({
-					label: __("Check status now"),
-					icon: "es-line-reload",
-					handler: () => screen.poll(row),
-				});
+				items.push({ label: __("Check status now"), icon: "es-line-reload", handler: () => screen.poll(row) });
 			}
 			if (!is_manager()) return items;
 			if (!row.is_default) {
-				items.push({
-					label: __("Make it the default device"),
-					icon: "es-line-star",
-					handler: () => screen.set_default(row),
-				});
+				items.push({ label: __("Make it the default device"), icon: "es-line-star", handler: () => screen.set_default(row) });
 			}
 			items.push({
 				label: row.disabled ? __("Enable sending") : __("Pause sending from this device"),
 				icon: row.disabled ? "es-line-success" : "es-line-slash",
 				handler: () => screen.set_disabled(row, !row.disabled),
 			});
+			items.push({ label: __("Delete device"), icon: "es-line-delete", danger: true, handler: () => screen.remove(row) });
 			return items;
 		}
 
-		render_tiles() {
-			const $tiles = this.$el.find('[data-slot="tiles"]');
+		// ---- what it sent -----------------------------------------------------------------------
+
+		/**
+		 * One sunken panel rather than three floating boxes: three readings divided by hairlines,
+		 * and under them the bar that gives the third reading its meaning. A failure rate is a
+		 * number nobody has a feel for; the same rate drawn as the red end of a delivery bar is
+		 * read without being read.
+		 */
+		render_panel() {
+			const $panel = this.$el.find('[data-slot="panel"]');
 			const title = this.row.device_name || this.row.name;
-			const tiles = [
-				{
-					key: "sent",
-					label: __("Sent ({0}d)", [STATS_DAYS]),
-					route: {},
-					name: __("Open the outbound log of {0}", [title]),
-				},
-				{
-					key: "failed",
-					label: __("Failures"),
-					route: { status: "Failed" },
-					name: __("Open the failed messages of {0}", [title]),
-				},
+			const readings = [
+				{ key: "sent", label: __("Sent · {0}d", [STATS_DAYS]), route: {}, name: __("Open the outbound log of {0}", [title]) },
+				{ key: "failed", label: __("Failures"), route: { status: "Failed" }, name: __("Open the failed messages of {0}", [title]) },
 				{ key: "rate", label: __("Failure rate") },
 			];
-			tiles.forEach((tile) => {
-				const clickable = !!tile.route;
+			const $row = $('<div class="wa-device__stats"></div>').appendTo($panel);
+			readings.forEach((r) => {
+				const clickable = !!r.route;
 				const tag = clickable ? "button" : "span";
-				const $tile = $(`<${tag} class="wa-device__tile" data-tile="${tile.key}"${clickable ? ` type="button" aria-label="${ui.escape(tile.name)}" title="${ui.escape(tile.name)}"` : ""}><span class="wa-device__tile-label">${ui.escape(tile.label)}</span><span class="wa-device__tile-value sanad-tabular" data-slot="value">${ui.skeleton(1, { lines: 1 })}</span></${tag}>`);
+				const $stat = $(`<${tag} class="wa-device__stat" data-stat="${r.key}"${clickable ? ` type="button" aria-label="${ui.escape(r.name)}" title="${ui.escape(r.name)}"` : ""}><span class="wa-device__stat-label">${ui.escape(r.label)}</span><span class="wa-device__stat-value sanad-tabular" data-slot="value">${ui.skeleton(1, { lines: 1 })}</span></${tag}>`);
 				if (clickable) {
-					$tile.on("click", () =>
-						frappe.set_route("List", "WhatsApp Log", Object.assign({ device: this.row.name }, tile.route))
-					);
+					$stat.on("click", () => frappe.set_route("List", "WhatsApp Log", Object.assign({ device: this.row.name }, r.route)));
 				}
-				$tiles.append($tile);
+				$row.append($stat);
 			});
+			$(`
+				<div class="wa-device__bar wa-device__bar--idle" data-slot="bar" role="img" aria-label="${ui.escape(__("Delivery over the last {0} days", [STATS_DAYS]))}">
+					<span class="wa-device__bar-seg wa-device__bar-seg--ok" data-slot="ok"></span>
+					<span class="wa-device__bar-seg wa-device__bar-seg--bad" data-slot="bad"></span>
+				</div>`).appendTo($panel);
 		}
 
-		/** Fill the three tiles and the "last message" line once `get_device_stats` answers. */
+		/** Fill the three readings, the delivery bar, the "last message" line and the inbound count. */
 		set_stats(stats) {
 			if (!this.$el) return;
-			const high = Number(stats.fail_rate || 0) > 0.08;
-			this.$el.find('[data-tile="sent"] [data-slot="value"]').text(ui.format_int(stats.sent));
+			const sent = Number(stats.sent || 0);
+			const failed = Number(stats.failed || 0);
+			const rate = Number(stats.fail_rate || 0);
+			const attempted = sent + failed;
+			const high = rate > FAIL_ALERT;
+			this.$el.find('[data-stat="sent"] [data-slot="value"]').text(ui.format_int(sent));
 			this.$el
-				.find('[data-tile="failed"] [data-slot="value"]')
-				.text(ui.format_int(stats.failed))
-				.toggleClass("wa-device__tile-value--alert", high);
+				.find('[data-stat="failed"] [data-slot="value"]')
+				.text(ui.format_int(failed))
+				.toggleClass("wa-device__stat-value--alert", high);
 			this.$el
-				.find('[data-tile="rate"] [data-slot="value"]')
-				.text(percent(stats.fail_rate))
-				.toggleClass("wa-device__tile-value--alert", high);
+				.find('[data-stat="rate"] [data-slot="value"]')
+				.text(percent(rate))
+				.toggleClass("wa-device__stat-value--alert", high);
+			const $bar = this.$el.find('[data-slot="bar"]');
+			$bar.toggleClass("wa-device__bar--idle", !attempted);
+			$bar.find('[data-slot="ok"]').css("flex-basis", attempted ? `${((sent / attempted) * 100).toFixed(2)}%` : "0%");
+			$bar.find('[data-slot="bad"]').css("flex-basis", attempted ? `${((failed / attempted) * 100).toFixed(2)}%` : "0%");
+			// one atomic sentence, not a bare number: the bar is the only thing on the card that
+			// carries a proportion, and a screen reader has to be told it in words
+			$bar.attr(
+				"aria-label",
+				attempted
+					? __("{0} of {1} messages arrived over the last {2} days; {3} failed.", [ui.format_int(sent), ui.format_int(attempted), STATS_DAYS, ui.format_int(failed)])
+					: __("Nothing was sent over the last {0} days.", [STATS_DAYS])
+			);
 			this.$el
 				.find('[data-meta="message"] [data-slot="value"]')
 				.text(stats.last_message_at ? ago(stats.last_message_at) : __("No messages"));
+			const inbound = Number(stats.inbound || 0);
+			this.$el
+				.find('[data-verb="inbound"] [data-slot="count"]')
+				.text(inbound ? ui.format_int(inbound) : "")
+				.toggleClass("wa-device__btn-count--empty", !inbound);
 		}
 
 		set_stats_error() {
 			if (!this.$el) return;
-			this.$el.find(".wa-device__tile [data-slot='value']").text("—");
+			this.$el.find(".wa-device__stat [data-slot='value']").text("—");
+			this.$el.find('[data-slot="bar"]').addClass("wa-device__bar--idle").attr("aria-label", __("The traffic of this device could not be read."));
 			this.$el.find('[data-meta="message"] [data-slot="value"]').text("—");
 		}
+
+		// ---- how fresh it is --------------------------------------------------------------------
 
 		render_meta() {
 			const row = this.row;
@@ -576,15 +614,20 @@ frappe.provide("whatsapp_next.devices");
 			const pairs = [
 				{
 					key: "seen",
+					icon: offline ? "es-line-wifi-off" : "es-line-time",
 					label: offline ? __("Offline since") : __("Last seen"),
 					value: ago(since) || __("Never"),
 					alert: offline,
 				},
-				{ key: "message", label: __("Last message"), value: ui.skeleton(1, { lines: 1 }), html: true },
+				{ key: "message", icon: "es-line-chat", label: __("Last message"), value: ui.skeleton(1, { lines: 1 }), html: true },
 			];
 			const $meta = this.$el.find('[data-slot="meta"]');
 			pairs.forEach((pair) => {
-				const $pair = $(`<div class="wa-device__meta-item" data-meta="${pair.key}"><span class="wa-device__meta-label">${ui.escape(pair.label)}</span><span class="wa-device__meta-value${pair.alert ? " wa-device__meta-value--alert" : ""}" data-slot="value"></span></div>`);
+				const $pair = $(`
+					<div class="wa-device__meta-item" data-meta="${pair.key}">
+						<dt class="wa-device__meta-label"><span class="wa-device__meta-icon" aria-hidden="true">${ui.icon(pair.icon, "xs")}</span>${ui.escape(pair.label)}</dt>
+						<dd class="wa-device__meta-value${pair.alert ? " wa-device__meta-value--alert" : ""}" data-slot="value"></dd>
+					</div>`);
 				if (pair.html) $pair.find('[data-slot="value"]').html(pair.value);
 				else $pair.find('[data-slot="value"]').text(pair.value);
 				$meta.append($pair);
@@ -592,39 +635,56 @@ frappe.provide("whatsapp_next.devices");
 		}
 
 		render_notice() {
-			$(`<div class="wa-device__notice sanad-tone--blue" role="status"><span class="wa-device__notice-icon" aria-hidden="true">${ui.icon("es-line-alert-circle", "sm")}</span><span class="wa-device__notice-text"><b class="wa-device__notice-title">${ui.escape(__("The code has not been scanned yet"))}</b><span class="wa-device__notice-line">${ui.escape(__("Open pairing again to scan a fresh code."))}</span></span></div>`).insertBefore(this.$el.find('[data-slot="actions"]'));
+			$(`
+				<div class="wa-device__notice sanad-tone--blue" role="status">
+					<span class="wa-device__notice-icon" aria-hidden="true">${ui.icon("es-line-security", "sm")}</span>
+					<span class="wa-device__notice-text">
+						<b class="wa-device__notice-title">${ui.escape(__("The code has not been scanned yet"))}</b>
+						<span class="wa-device__notice-line">${ui.escape(__("Open pairing again to scan a fresh code."))}</span>
+					</span>
+				</div>`).insertBefore(this.$el.find('[data-slot="actions"]'));
 		}
 
+		// ---- what you can do ----------------------------------------------------------------------
+
+		/**
+		 * Three verbs, each with the icon that says it before the word is read: the one that moves
+		 * the device on leads and, when it is the encouraged one, wears the accent; the two that
+		 * only open a log stay quiet. Deleting is not among them — it lives in the overflow menu
+		 * with the other settings, one step further from the hand than an action that cannot be
+		 * undone should ever be, which also leaves the three that remain room for their whole word
+		 * on one line in English as well as in Arabic.
+		 */
 		render_actions() {
 			const row = this.row;
 			const screen = this.screen;
 			const connected = row.status === "Connected";
 			const pending = row.status === "Pending QR";
-			const actions = [];
+			const verbs = [];
 			if (is_manager()) {
-				actions.push(
+				verbs.push(
 					connected
-						? { label: __("Disconnect"), handler: () => screen.disconnect(row) }
-						: {
-								label: pending ? __("Show code") : __("Pair again"),
-								primary: true,
-								handler: () => screen.pair(row),
-						  }
+						? { key: "disconnect", label: __("Disconnect"), icon: "es-line-wifi-off", handler: () => screen.disconnect(row) }
+						: pending
+						? { key: "code", label: __("Show code"), icon: "es-line-security", primary: true, handler: () => screen.pair(row) }
+						: { key: "pair", label: __("Pair again"), icon: "es-line-link", primary: true, handler: () => screen.pair(row) }
 				);
 			}
-			actions.push(
-				{ label: __("Outbound"), handler: () => frappe.set_route("List", "WhatsApp Log", { device: row.name }) },
-				{ label: __("Inbound"), handler: () => frappe.set_route("List", "WhatsApp Inbound Message", { device: row.name }) }
+			verbs.push(
+				{ key: "outbound", label: __("Outbound"), icon: "es-line-arrow-up-right", handler: () => frappe.set_route("List", "WhatsApp Log", { device: row.name }) },
+				{ key: "inbound", label: __("Inbound"), icon: "es-line-inbox", count: true, handler: () => frappe.set_route("List", "WhatsApp Inbound Message", { device: row.name }) }
 			);
-			if (is_manager()) {
-				actions.push({ label: __("Delete"), danger: true, handler: () => screen.remove(row) });
-			}
 			const $actions = this.$el.find('[data-slot="actions"]');
-			actions.forEach((action) => {
-				$(`<button type="button" class="btn btn-sm wa-device__btn ${action.primary ? "btn-primary" : "btn-default"}${action.danger ? " wa-device__btn--danger" : ""}" title="${ui.escape(action.label)}">${ui.escape(action.label)}</button>`)
-					.on("click", action.handler)
+			verbs.forEach((verb) => {
+				$(`<button type="button" class="wa-device__btn${verb.primary ? " wa-device__btn--primary" : ""}" data-verb="${verb.key}" title="${ui.escape(verb.label)}" aria-label="${ui.escape(verb.label)}"><span class="wa-device__btn-icon" aria-hidden="true">${ui.icon(verb.icon, "sm")}</span><span class="wa-device__btn-label">${ui.escape(verb.label)}</span>${verb.count ? '<span class="wa-device__btn-count wa-device__btn-count--empty sanad-tabular" data-slot="count"></span>' : ""}</button>`)
+					.on("click", verb.handler)
 					.appendTo($actions);
 			});
+		}
+
+		destroy() {
+			this.$el && this.$el.remove();
+			this.$el = null;
 		}
 	}
 
@@ -638,7 +698,7 @@ frappe.provide("whatsapp_next.devices");
 			this.filter = "all";
 			this.cards = [];
 			this.stats = {};
-			this.$screen = $('<div class="wa-devices"></div>').appendTo(page.main);
+			this.$screen = $('<div class="sanad-kit wa-devices"></div>').appendTo(page.main);
 			this.header = new ui.PageHeader({
 				wrapper: this.$screen,
 				title: __("Devices"),
@@ -659,7 +719,7 @@ frappe.provide("whatsapp_next.devices");
 			$(wrapper).on("hide", () => this.unbind_realtime());
 		}
 
-		/** The prototype's screen mark: a tinted plate carrying the screen's icon beside its title. */
+		/** The screen's mark: the tinted plate carrying the screen's icon beside its title. */
 		mark_header() {
 			$(`<span class="wa-devices__mark" aria-hidden="true">${ui.icon("es-line-mobile", "md")}</span>`).prependTo(
 				this.header.$el.find(".sanad-pagehead__row")
@@ -691,7 +751,7 @@ frappe.provide("whatsapp_next.devices");
 			this._rows = null;
 			this.stats = {};
 			this._remote = remote;
-			return this.header.refresh();
+			return this.header.refresh(true);
 		}
 
 		// ---- realtime ---------------------------------------------------------------------------
@@ -715,12 +775,13 @@ frappe.provide("whatsapp_next.devices");
 			close_menu();
 		}
 
-		// ---- banner -----------------------------------------------------------------------------
+		// ---- the incident strip -------------------------------------------------------------------
 
 		/**
-		 * The prototype's alert strip: the icon, the fact in one bold line, what it costs in the
-		 * second, and the verb that ends it. Amber for a dropped connection, red once a device was
-		 * signed out on the phone (matrix §6 tones).
+		 * What is wrong, before anything else on the screen: the fact in one bold line, what it
+		 * costs in the second, and the verb that ends it. Amber once a connection drops, red once a
+		 * device was signed out on the phone (matrix §6 tones), and the tone is carried by the rail
+		 * and the icon as well as the fill, so it survives a greyscale screen.
 		 */
 		render_alert($el) {
 			return this.load().then((rows) => {
@@ -741,38 +802,65 @@ frappe.provide("whatsapp_next.devices");
 					: __("Messages addressed to them stay in the queue and are not sent until they are paired again.");
 				const action =
 					one && is_manager()
-						? { label: __("Pair again"), handler: () => this.pair(one), strong: true }
-						: { label: __("Show them"), handler: () => this.set_filter("offline") };
+						? { label: __("Pair again"), icon: "es-line-link", handler: () => this.pair(one), strong: true }
+						: { label: __("Show them"), icon: "es-line-filter", handler: () => this.set_filter("offline") };
 				const $alert = $(`
-					<div class="wa-devices__alert sanad-tone--${tone}" role="${tone === "red" ? "alert" : "status"}">
+					<div class="wa-devices__alert wa-devices__alert--${tone}" role="${tone === "red" ? "alert" : "status"}">
 						<span class="wa-devices__alert-icon" aria-hidden="true">${ui.icon("es-line-alert-triangle", "sm")}</span>
 						<span class="wa-devices__alert-text">
 							<b class="wa-devices__alert-title">${ui.escape(title)}</b>
 							<span class="wa-devices__alert-line">${ui.escape(line)}</span>
 						</span>
 					</div>`).appendTo($el);
-				$(`<button type="button" class="btn btn-sm wa-devices__alert-action${action.strong ? " wa-devices__alert-action--strong" : ""}">${ui.escape(action.label)}</button>`)
+				$(`<button type="button" class="wa-devices__alert-action${action.strong ? " wa-devices__alert-action--strong" : ""}"><span aria-hidden="true">${ui.icon(action.icon, "sm")}</span><span class="wa-devices__alert-label">${ui.escape(action.label)}</span></button>`)
 					.on("click", action.handler)
 					.appendTo($alert);
 			});
 		}
 
-		// ---- the grid ---------------------------------------------------------------------------
+		// ---- the fleet ----------------------------------------------------------------------------
 
 		render_block($el) {
-			$el.empty();
-			const $filters = $('<div class="wa-devices__filters sanad-chip-row" role="group" aria-label="' + ui.escape(__("Filter by status")) + '"></div>').appendTo($el);
-			const $grid = $('<div class="wa-devices__grid"></div>').appendTo($el);
-			const state = new ui.EmptyState({ wrapper: $grid, state: "loading", rows: 3 });
+			const first = !$el.children().length;
+			if (first) {
+				$el.html('<div class="wa-devices__rail" data-slot="rail"></div><div class="wa-devices__grid" data-slot="grid"></div>');
+			}
+			const $rail = $el.find('[data-slot="rail"]');
+			const $grid = $el.find('[data-slot="grid"]');
+			// the cards are replaced, not emptied and refilled: holding the grid's height across a
+			// refresh is what keeps the page from jumping under the pointer (CLS)
+			if (first) this.render_skeleton($grid);
 			return this.load()
 				.then((rows) => {
-					this.render_filters($filters, rows);
+					this.render_rail($rail, rows);
 					this.render_grid($grid, rows);
 				})
 				.catch((err) => {
-					$filters.empty();
-					state.error(err, { action: { label: __("Try again"), on_click: () => this.refresh() } });
+					$rail.empty();
+					$grid.empty();
+					new ui.EmptyState({
+						wrapper: $grid,
+						state: "error",
+						description: err.message,
+						action: { label: __("Try again"), on_click: () => this.refresh() },
+					});
 				});
+		}
+
+		/** Cards of the right shape while the fleet loads, so nothing on the page moves after it. */
+		render_skeleton($grid) {
+			$grid.empty();
+			for (let i = 0; i < 3; i++) {
+				$grid.append(`
+					<div class="wa-device wa-device--skeleton" aria-hidden="true">
+						<span class="wa-device__rail"></span>
+						<div class="wa-device__head"><span class="wa-device__avatar"></span><span class="wa-device__identity"><span class="sanad-skeleton__line" style="inline-size:55%"></span><span class="sanad-skeleton__line" style="inline-size:38%;block-size:9px"></span></span></div>
+						<div class="wa-device__tags"><span class="sanad-skeleton__line" style="inline-size:82px;block-size:22px;border-radius:999px"></span></div>
+						<div class="wa-device__panel"><div class="wa-device__stats"><span class="wa-device__stat"></span><span class="wa-device__stat"></span><span class="wa-device__stat"></span></div><div class="wa-device__bar wa-device__bar--idle"></div></div>
+						<div class="wa-device__meta"><span class="sanad-skeleton__line" style="inline-size:70%"></span><span class="sanad-skeleton__line" style="inline-size:70%"></span></div>
+						<div class="wa-device__actions"><span class="sanad-skeleton__line" style="block-size:36px;border-radius:8px"></span></div>
+					</div>`);
+			}
 		}
 
 		counts(rows) {
@@ -784,26 +872,33 @@ frappe.provide("whatsapp_next.devices");
 			};
 		}
 
-		render_filters($el, rows) {
+		/**
+		 * The fleet rail: one segmented control that is both the summary and the filter. Four
+		 * segments, each a state with its own dot and its own count — read left to right it says
+		 * how the fleet stands; clicked it says what to show. A state nothing is in stays readable
+		 * and is not clickable, which is truer than hiding it.
+		 */
+		render_rail($el, rows) {
 			$el.empty();
 			if (!rows.length) return;
 			const counts = this.counts(rows);
+			const $group = $(`<div class="wa-devices__segments" role="group" aria-label="${ui.escape(__("Filter by status"))}"></div>`).appendTo($el);
 			[
-				{ key: "all", label: __("All") },
-				{ key: "Connected", label: __("Connected") },
-				{ key: "Pending QR", label: __("Not paired") },
-				{ key: "offline", label: __("Not connected") },
-			].forEach((chip) => {
-				const count = counts[chip.key];
-				$(`<button type="button" class="sanad-chip" aria-pressed="${this.filter === chip.key}"${count ? "" : " disabled"}><span>${ui.escape(chip.label)}</span><span class="sanad-chip__count sanad-tabular">${ui.escape(ui.format_int(count))}</span></button>`)
-					.on("click", () => this.set_filter(chip.key))
-					.appendTo($el);
+				{ key: "all", label: __("All"), tone: "gray" },
+				{ key: "Connected", label: __("Connected"), tone: "green" },
+				{ key: "Pending QR", label: __("Not paired"), tone: "blue" },
+				{ key: "offline", label: __("Not connected"), tone: "amber" },
+			].forEach((seg) => {
+				const count = counts[seg.key];
+				$(`<button type="button" class="wa-devices__segment wa-devices__segment--${seg.tone}" aria-pressed="${this.filter === seg.key}"${count ? "" : " disabled"}>${seg.key === "all" ? "" : '<span class="wa-devices__segment-dot" aria-hidden="true"></span>'}<span class="wa-devices__segment-label">${ui.escape(seg.label)}</span><span class="wa-devices__segment-count sanad-tabular">${ui.escape(ui.format_int(count))}</span></button>`)
+					.on("click", () => this.set_filter(seg.key))
+					.appendTo($group);
 			});
 		}
 
 		set_filter(key) {
 			this.filter = key;
-			this.header.refresh();
+			this.header.refresh(true);
 		}
 
 		matches(row) {
@@ -813,8 +908,9 @@ frappe.provide("whatsapp_next.devices");
 		}
 
 		render_grid($grid, rows) {
-			$grid.empty();
+			this.cards.forEach((card) => card.destroy());
 			this.cards = [];
+			$grid.empty();
 			if (!rows.length) {
 				new ui.EmptyState({
 					wrapper: $grid,
