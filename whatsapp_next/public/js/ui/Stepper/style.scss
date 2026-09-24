@@ -51,12 +51,12 @@
 	}
 	&__optional { font-size: var(--text-xs, 12px); color: var(--ink-gray-6); }
 	&__step--current &__step-btn {
-		border-color: var(--outline-blue-1);
-		background: var(--surface-blue-1);
-		color: var(--ink-blue-3);
+		border-color: var(--sanad-accent-outline);
+		background: var(--sanad-accent-soft);
+		color: var(--sanad-accent-ink);
 		font-weight: 600;
 	}
-	&__step--current &__num { background: var(--ink-blue-3); color: var(--ink-white); }
+	&__step--current &__num { background: var(--sanad-accent-ink); color: var(--ink-white); }
 	&__step--done &__num { background: var(--surface-green-1); color: var(--ink-green-3); }
 	&__step--todo &__step-btn { color: var(--ink-gray-6); }
 
@@ -91,4 +91,21 @@
 @media (max-width: 767px) {
 	.sanad-stepper__list { flex-wrap: nowrap; overflow-x: auto; padding-block-end: var(--sanad-gap-xs); }
 	.sanad-stepper__step--todo .sanad-stepper__label { display: none; }
+}
+
+// a step that is behind the reader is done, and says so with a check instead of its number
+.sanad-stepper__check { display: none; }
+.sanad-stepper__step--done {
+	.sanad-stepper__num { display: none; }
+	.sanad-stepper__check {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 22px;
+		block-size: 22px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--sanad-accent);
+		color: var(--sanad-accent-on);
+		flex: none;
+	}
 }

@@ -210,7 +210,9 @@ ui.icons = {
 	more: "es-line-overflow",
 };
 
-ui.format_int = (value) => frappe.format(cint(value), { fieldtype: "Int" }, { inline: true });
+// Frappe's Int formatter is `cint()` — no separator — and this product prints large counts on
+// every screen ("3,540 of 6,000"), so the kit groups them in the reader's own locale.
+ui.format_int = (value) => (typeof format_number === "function" ? format_number(cint(value), null, 0) : String(cint(value)));
 
 /** Avatar initials: first letter of the first two words, upper-cased (`"Sales device"` → `"SD"`). */
 ui.initials = (text) => {

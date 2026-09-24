@@ -71,7 +71,7 @@ sanad.ui.Stepper = class Stepper {
 		}
 		this.$back = $(`<button type="button" class="btn btn-default btn-sm">${ui.escape(this.opts.back_label || __("Back"))}</button>`)
 			.on("click", () => this.back())
-			.appendTo($end);
+			.appendTo($start);
 		this.$skip = $(`<button type="button" class="btn btn-default btn-sm">${ui.escape(__("Skip"))}</button>`)
 			.on("click", () => this.skip())
 			.appendTo($end);
@@ -82,7 +82,7 @@ sanad.ui.Stepper = class Stepper {
 		this.steps.forEach((step, i) => {
 			const $li = $(`<li class="sanad-stepper__step" data-index="${i}"></li>`);
 			const $btn = $(`<button type="button" class="sanad-stepper__step-btn" aria-describedby="${id}-progress"></button>`);
-			$btn.append(`<span class="sanad-stepper__num" aria-hidden="true">${i + 1}</span>`);
+			$btn.append(`<span class="sanad-stepper__num" aria-hidden="true">${i + 1}</span><span class="sanad-stepper__check" aria-hidden="true">${ui.icon("es-line-check", "xs")}</span>`);
 			$btn.append(`<span class="sanad-stepper__label">${ui.escape(step.label)}</span>`);
 			if (step.can_skip) $btn.append(`<span class="sanad-stepper__optional">${ui.escape(__("Optional"))}</span>`);
 			$btn.on("click", () => {

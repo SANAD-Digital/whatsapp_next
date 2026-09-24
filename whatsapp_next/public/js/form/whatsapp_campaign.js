@@ -484,6 +484,7 @@ frappe.ui.form.on("WhatsApp Campaign", {
 	},
 
 	refresh(frm) {
+		frm.$wrapper.addClass("wa-campaign"); // the screen's own styling hook
 		// the console states the status in words, with the verb that changes it; the field itself
 		// would be the same fact twice, read-only, in the middle of the fields the reader may edit
 		frm.set_df_property("status", "hidden", 1);

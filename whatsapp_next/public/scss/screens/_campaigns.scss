@@ -346,3 +346,40 @@
 		overflow: hidden;
 	}
 }
+
+// ---- the campaign's own form --------------------------------------------------------------------
+// Desk lays its fields on the page with no frame; this screen gives them the card the rest of the
+// product uses, so the tab reads as a panel and not as a column of controls in a void.
+
+.wa-campaign {
+	.form-page .form-section:not(.empty-section) {
+		margin-block-end: var(--sanad-gap-md);
+		padding: var(--sanad-gap-lg);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+	}
+	// the tab that carries a component of ours draws its own frame already
+	.form-page .form-section:has(.sanad-mc),
+	.form-page .form-section:has(.wa-recipients) {
+		padding: 0;
+		border: 0;
+		background: none;
+	}
+	.form-section .section-head {
+		font-size: var(--text-sm, 12px);
+		font-weight: 600;
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+		color: var(--ink-gray-5);
+	}
+	// a description is a line of help, not a page of it
+	textarea[data-fieldname="description"] {
+		min-block-size: 76px;
+		max-block-size: 140px;
+	}
+	.frappe-control[data-fieldname] .help-box {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-5);
+	}
+}
