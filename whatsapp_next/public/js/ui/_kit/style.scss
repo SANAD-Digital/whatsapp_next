@@ -215,8 +215,10 @@
 		font-weight: 600;
 		color: var(--wa-ink-2);
 	}
+	// the strong danger is 4.38:1 on a white card — under the bar for a mark this small, so the
+	// asterisk takes the readable ink of the same tone, which measures 6.28:1
 	&__req {
-		color: var(--wa-dg);
+		color: var(--wa-dg-i);
 		font-weight: 700;
 	}
 	&__hint {
