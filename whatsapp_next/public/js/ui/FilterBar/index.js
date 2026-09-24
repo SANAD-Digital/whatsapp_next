@@ -107,6 +107,11 @@ sanad.ui.FilterBar = class FilterBar {
 		this.$main = $('<div class="sanad-filterbar__main"></div>').appendTo(this.$toolbar);
 		this.$tabs = $('<div class="sanad-filterbar__row sanad-filterbar__row--tabs"></div>').appendTo(this.$wrapper);
 		this.$extra = $('<div class="sanad-filterbar__extra"></div>').appendTo(this.$main);
+		// the prototype's recap line: every filter in force, each removable, then "Clear filters"
+		this.$applied = $(`<div class="sanad-filterbar__row sanad-filterbar__row--applied" hidden>
+			<span class="sanad-filterbar__applied-label">${ui.escape(__("Filters applied"))}</span>
+			<div class="sanad-filterbar__applied-chips"></div>
+		</div>`).appendTo(this.$wrapper);
 		this.$groupby = $('<div class="sanad-filterbar__groupby"></div>').appendTo(this.$wrapper);
 		const of_type = (types) => this.opts.presets.filter((p) => types.includes(p.type || "select"));
 		of_type(["search"]).forEach((p) => this.render_search(p));
@@ -116,7 +121,7 @@ sanad.ui.FilterBar = class FilterBar {
 		this.render_more();
 		$(`<button type="button" class="sanad-filterbar__clear" hidden>${ui.escape(__("Clear filters"))}</button>`)
 			.on("click", () => this.clear())
-			.appendTo(this.$main);
+			.appendTo(this.$applied);
 		this.render_mobile_toggle();
 		this.$end = $('<div class="sanad-filterbar__end"></div>').appendTo(this.$toolbar);
 		this.$actions = $('<div class="sanad-filterbar__actions"></div>').appendTo(this.$end);
@@ -306,6 +311,14 @@ sanad.ui.FilterBar = class FilterBar {
 		this.controls.__search = { preset, $el: $input, type: "search", fields };
 	}
 
+	/** Empty the search box and the filter it drives (the recap chip's ×). */
+	clear_search() {
+		const c = this.controls.__search;
+		if (!c) return;
+		c.$el.val("");
+		this.set_search("", c.fields);
+	}
+
 	/** Meta search fields + title field + name (used unless the preset lists `fields`). */
 	search_fields() {
 		const meta = this.meta;
@@ -480,6 +493,16 @@ sanad.ui.FilterBar = class FilterBar {
 	}
 
 	/** Re-lay the toolbar whenever it changes size; one pass per frame, never during a paint. */
+	/**
+	 * Re-measure on the next frame. Setting or clearing a filter changes the width of the row
+	 * (a button grows by its value, the recap line appears), and nothing else would notice: the
+	 * `ResizeObserver` watches the row's box, which does not change when its contents do.
+	 */
+	queue_layout() {
+		window.cancelAnimationFrame(this._layout_raf);
+		this._layout_raf = window.requestAnimationFrame(() => this.relayout());
+	}
+
 	watch_layout() {
 		this.relayout();
 		const run = () => {
@@ -520,9 +543,17 @@ sanad.ui.FilterBar = class FilterBar {
 		$more_dd.prop("hidden", true);
 		let left = items.slice();
 		if (!$box.is(":visible") || !$box[0].clientWidth) return [];
-		if (!FilterBar.wrapped($box)) return [];
+		const over = () => {
+			const el = this.$toolbar && this.$toolbar[0];
+			if (!el) return false;
+			if (el.scrollWidth > el.clientWidth + 1) return true;
+			if (!this.$end || !this.$end.length) return false;
+			const end = this.$end[0].getBoundingClientRect();
+			return end.right > el.getBoundingClientRect().right + 1 || end.right > window.innerWidth - 4;
+		};
+		if (!FilterBar.wrapped($box) && !over()) return [];
 		$more_dd.prop("hidden", false);
-		while (left.length && FilterBar.wrapped($box)) {
+		while (left.length && (FilterBar.wrapped($box) || over())) {
 			const el = left.pop();
 			$(el).addClass("sanad-filterbar__hidden");
 		}
@@ -541,6 +572,24 @@ sanad.ui.FilterBar = class FilterBar {
 			if (this.$actions) this.$actions.find(".sanad-filterbar__hidden").removeClass("sanad-filterbar__hidden");
 			return this;
 		}
+		// A row can be out of room without anything wrapping: `--toolbar` does not wrap, so the
+		// cluster at its end simply runs past the edge — which is how the date filter ended up
+		// half outside the list card once its neighbours started naming themselves.
+		const overflowing = () => {
+			const el = this.$toolbar[0];
+			if (!el) return false;
+			if (el.scrollWidth > el.clientWidth + 1) return true;
+			if (!this.$end || !this.$end.length) return false;
+			const end = this.$end[0].getBoundingClientRect();
+			// past the row's own edge, or past the window's — the second happens when the card
+			// itself is wider than the screen, and the cluster is then off the screen entirely
+			return end.right > el.getBoundingClientRect().right + 1 || end.right > window.innerWidth - 4;
+		};
+		// the labels of the action buttons go first: "Columns" losing its word costs less than a
+		// filter losing its place behind "More"
+		this.$wrapper.removeClass("sanad-filterbar--tight");
+		if (overflowing()) this.$wrapper.addClass("sanad-filterbar--tight");
+
 		const filters = this.$main.children(".sanad-filterbar__dd, .sanad-filterbar__chipfilter").not(this.$more_dd).toArray();
 		// Desk's own filter section rides in the cluster too, so it overflows with the rest
 		const actions = this.$actions ? this.$actions.children(".sanad-filterbar__dd, .sanad-filterbar__action, .sanad-filterbar__native").not(this.$amore_dd).toArray() : [];
@@ -552,7 +601,7 @@ sanad.ui.FilterBar = class FilterBar {
 		// only a wrap: a search box pinned to its 120 px floor is a row out of room too, and the
 		// icons are worth less than a search field you can read what you typed into.
 		const cramped = () => {
-			if (FilterBar.wrapped(this.$main)) return true;
+			if (FilterBar.wrapped(this.$main) || overflowing()) return true;
 			const $search = this.$main.children(".sanad-filterbar__field--search");
 			return $search.length ? $search[0].getBoundingClientRect().width < 180 : false;
 		};
@@ -1007,7 +1056,7 @@ sanad.ui.FilterBar = class FilterBar {
 		if (actions.includes("group_by")) this.render_group_by();
 		if (actions.includes("columns")) this.render_columns();
 		if (actions.includes("export") && this.listview) {
-			$(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--icon" title="${ui.escape(__("Export"))}" aria-label="${ui.escape(__("Export"))}">${ui.icon("download", "sm")}</button>`)
+			$(`<button type="button" class="sanad-filterbar__action" title="${ui.escape(__("Export"))}" aria-label="${ui.escape(__("Export"))}">${ui.icon("download", "sm")}<span class="sanad-filterbar__action-label">${ui.escape(__("Export"))}</span></button>`)
 				.on("click", () => this.export())
 				.appendTo(this.$actions);
 		}
@@ -1021,7 +1070,7 @@ sanad.ui.FilterBar = class FilterBar {
 	render_group_by() {
 		const $dd = $(`<div class="sanad-filterbar__dd sanad-filterbar__dd--group"></div>`).appendTo(this.$actions);
 		const pop_id = `${this.id}-levels-pop`;
-		this.$group_btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--group" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-group", "sm")}<span class="sanad-filterbar__levels"></span></button>`).appendTo($dd);
+		this.$group_btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--group" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-group", "sm")}<span class="sanad-filterbar__action-label">${ui.escape(__("Group"))}</span><span class="sanad-filterbar__levels"></span></button>`).appendTo($dd);
 		this.$group_dd = $dd;
 		this.group_pop_id = pop_id;
 		this.$group_btn.on("click", () => (this.$levels ? this.close_levels() : this.open_levels()));
@@ -1040,7 +1089,7 @@ sanad.ui.FilterBar = class FilterBar {
 	render_columns() {
 		const $dd = $(`<div class="sanad-filterbar__dd sanad-filterbar__dd--columns"></div>`).appendTo(this.$actions);
 		const pop_id = `${this.id}-columns-pop`;
-		this.$columns_btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--icon" title="${ui.escape(__("Columns"))}" aria-label="${ui.escape(__("Columns"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-preview", "sm")}</button>`).appendTo($dd);
+		this.$columns_btn = $(`<button type="button" class="sanad-filterbar__action" title="${ui.escape(__("Columns"))}" aria-label="${ui.escape(__("Columns"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-preview", "sm")}<span class="sanad-filterbar__action-label">${ui.escape(__("Columns"))}</span></button>`).appendTo($dd);
 		this.$columns_dd = $dd;
 		this.columns_pop_id = pop_id;
 		this.$columns_btn.on("click", () => (this.$columns ? this.close_columns() : this.open_columns()));
@@ -1421,7 +1470,9 @@ sanad.ui.FilterBar = class FilterBar {
 		if (c.type === "select") {
 			const chosen = this.chosen(fieldname);
 			const $value = c.$el.find(".sanad-filterbar__btn-value");
-			if (!chosen.length) $value.text("").attr("hidden", true);
+			// the prototype names the default too ("Status: All"), so a filter button always reads as
+			// a sentence and the row does not change width when one is chosen
+			if (!chosen.length) $value.text(__("All")).removeAttr("hidden");
 			else if (chosen.length === 1) $value.text(this.label_for_value(fieldname, chosen[0])).removeAttr("hidden");
 			else $value.text(ui.format_int(chosen.length)).removeAttr("hidden");
 			c.$el.toggleClass("sanad-filterbar__btn--active", chosen.length > 0);
@@ -1454,6 +1505,49 @@ sanad.ui.FilterBar = class FilterBar {
 		const set = Object.keys(this.values).filter((k) => k !== "__group_by" && (this.controls[k] || {}).type !== "period");
 		const active = extra > 0 || set.length > 0 || !!this.search_text;
 		this.$wrapper.find(".sanad-filterbar__clear").prop("hidden", !active);
+		this.render_applied();
+		this.queue_layout();
+	}
+
+	/**
+	 * The prototype's recap of what is in force: one chip per filter, each naming its field and its
+	 * value and removing that one filter, plus the search. The buttons above say the same thing,
+	 * but a reader who has scrolled the toolbar cannot see them all at once — and a filter set from
+	 * another screen or from the URL has no button at all.
+	 */
+	render_applied() {
+		if (!this.$applied) return;
+		const $chips = this.$applied.find(".sanad-filterbar__applied-chips").empty();
+		const chip = (label, value, on_remove) => {
+			const $chip = $(`<span class="sanad-filterbar__chip">
+				<span class="sanad-filterbar__chip-label">${ui.escape(label)}</span>
+				<span class="sanad-filterbar__chip-value">${ui.escape(value)}</span>
+				<button type="button" class="sanad-filterbar__chip-x" aria-label="${ui.escape(__("Remove {0}", [label]))}">${ui.icon("es-line-close", "xs")}</button>
+			</span>`);
+			$chip.find(".sanad-filterbar__chip-x").on("click", on_remove);
+			$chips.append($chip);
+		};
+		if (this.search_text) chip(__("Search"), this.search_text, () => this.clear_search());
+		Object.keys(this.values).forEach((fieldname) => {
+			if (fieldname === "__group_by") return;
+			const c = this.controls[fieldname];
+			if (!c || c.type === "period" || c.type === "tabs") return;
+			const value = this.values[fieldname];
+			if (value == null || (Array.isArray(value) && !value.length)) return;
+			chip(c.label || __(this.df(fieldname).label || fieldname), this.value_text(fieldname, value), () => this.set(fieldname, null));
+		});
+		this.$applied.prop("hidden", !$chips.children().length && this.$wrapper.find(".sanad-filterbar__clear").prop("hidden"));
+	}
+
+	/** One filter's value as the reader would say it: a label, a count, or a date summary. */
+	value_text(fieldname, value) {
+		const c = this.controls[fieldname] || {};
+		if (c.type === "date" && value && value.__date) return this.date_summary ? this.date_summary(fieldname, value) : __("a period");
+		if (Array.isArray(value)) {
+			if (value.length === 1) return this.label_for_value(fieldname, value[0]);
+			return ui.plural(value.length, { one: __("{0} value"), other: __("{0} values") });
+		}
+		return this.label_for_value(fieldname, value);
 	}
 
 	/**

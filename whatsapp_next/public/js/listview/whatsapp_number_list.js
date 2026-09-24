@@ -335,8 +335,7 @@ frappe.listview_settings[DOCTYPE] = {
 				group_by: ["link_status"], // the rail this list used to carry, now real group rows
 				columns: COLUMNS(),
 				selectable: true,
-				page_length: 20,
-				row_action: { label: __("View"), handler: (doc) => open_conversation(doc, listview) },
+				page_length: 50,
 				on_row_click: (doc) => open_conversation(doc, listview),
 				footer: { count: (total) => sanad.ui.plural(total, { one: __("{0} number"), other: __("{0} numbers") }) },
 				empty: {

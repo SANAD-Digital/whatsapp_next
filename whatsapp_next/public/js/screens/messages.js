@@ -270,7 +270,6 @@ frappe.provide("whatsapp_next.fmt");
 				{
 					listview,
 					columns: (opts.columns || []).flat(),
-					row_action: { label: __("View"), handler: opts.open },
 					on_row_click: opts.open,
 					// grouping levels and pinning are driven from the toolbar / the column headers
 					groupable: true,

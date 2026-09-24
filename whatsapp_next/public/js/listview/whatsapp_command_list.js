@@ -165,7 +165,9 @@ frappe.provide("whatsapp_next");
 		const names = rows.map((d) => d.name);
 		Promise.all([
 			ui.call("commands.list_commands", { filters: {}, page: 1, page_length: 200 }, { silent: true }).catch(() => ({ rows: [] })),
-			frappe.db.get_list("WhatsApp Command Party Type", { parent: DT, fields: ["parent", "party_type"], filters: { parent: ["in", names] }, limit: 500 }).catch(() => []),
+			// a child table is read through its parent DocType: Frappe 16 names that argument
+			// `parent_doctype` (`parent` reached `DatabaseQuery.execute()` and threw a 500)
+			frappe.db.get_list("WhatsApp Command Party Type", { parent_doctype: DT, fields: ["parent", "party_type"], filters: { parenttype: DT, parent: ["in", names] }, limit: 500 }).catch(() => []),
 		]).then(([api, parties]) => {
 			const by_name = {};
 			(api.rows || []).forEach((r) => (by_name[r.name] = r));
@@ -201,7 +203,6 @@ frappe.provide("whatsapp_next");
 				{ fieldname: "status", label: __("Status"), type: "status", sortable: true },
 				{ fieldname: "_runs", label: __("Runs (30d)"), type: "number", align: "end", sortable: false, format: (v, doc) => ui.format_int(doc._extra ? doc._extra.run_count_30d : 0) },
 			],
-			row_action: { label: __("View"), handler: (doc) => view_command(listview, doc) },
 			on_row_click: (doc) => view_command(listview, doc),
 			footer: { count: (total) => ui.plural(total, { one: __("{0} command"), other: __("{0} commands") }) },
 			empty: { title: __("No commands yet"), description: __("A command is a word the customer types; pick a function and give it a word."), action: is_manager() ? { label: __("New command"), onclick: () => open_modal(listview) } : undefined },

@@ -534,3 +534,30 @@
 		.sanad-datalist__page { margin-inline-end: 0; }
 	}
 }
+
+// ---- the prototype's summary line and page footer ----------------------------------------------
+// `docs/component/Data List.dc.html`: what matched is said above the table ("4,000 messages · showing
+// 1–60"), and the footer carries only the page and the two ways out of it.
+
+.sanad-datalist__summary {
+	margin: 0;
+	padding-inline: var(--sanad-gap-md);
+	padding-block: var(--sanad-gap-sm) 0;
+	color: var(--ink-gray-6);
+	font-size: var(--text-sm, 12px);
+	font-variant-numeric: tabular-nums;
+}
+
+.sanad-datalist__page-btn {
+	min-inline-size: 84px;
+	&[disabled] { opacity: 0.5; }
+}
+
+// The prototype's rows breathe: 52 px comfortable (40 px compact), which is what makes a two-line
+// cell read as one record rather than as two lines of a dense report.
+.sanad-datalist tbody td {
+	block-size: 52px;
+}
+.sanad-datalist--compact tbody td {
+	block-size: 40px;
+}
