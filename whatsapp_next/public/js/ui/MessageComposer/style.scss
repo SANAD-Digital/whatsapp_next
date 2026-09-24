@@ -38,6 +38,47 @@
 	}
 	&__hint { font-size: var(--text-xs, 11px); color: var(--ink-gray-5); }
 
+	// both "Add message" buttons open the same list, so both wear the caret that says so
+	&__addwrap {
+		position: relative;
+		display: inline-flex;
+	}
+	&__add {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-weight: 600;
+	}
+	&__railadd {
+		position: relative;
+		margin-block-start: var(--sanad-gap-sm);
+	}
+	&__railaddbtn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		inline-size: 100%;
+		min-block-size: 34px;
+		padding-inline: var(--sanad-gap-sm);
+		border: 1px dashed var(--outline-gray-2);
+		border-radius: var(--sanad-radius);
+		background: transparent;
+		color: var(--ink-gray-7);
+		font: inherit;
+		font-size: var(--text-sm, 12px);
+		font-weight: 600;
+		cursor: pointer;
+		transition: background var(--sanad-motion), border-color var(--sanad-motion), color var(--sanad-motion);
+
+		&:hover:not([disabled]) {
+			border-color: var(--sanad-accent-outline);
+			background: var(--sanad-accent-soft);
+			color: var(--sanad-accent-ink);
+		}
+		&[disabled] { opacity: 0.45; cursor: default; }
+	}
+
 	// ---- the split: which message | writing it -------------------------------------------------
 
 	&__split {
@@ -50,7 +91,7 @@
 		overflow: hidden;
 
 		@container (min-width: 760px) {
-			grid-template-columns: 248px minmax(0, 1fr);
+			grid-template-columns: 288px minmax(0, 1fr);
 			gap: 0;
 		}
 	}
@@ -157,7 +198,13 @@
 		transition: opacity var(--sanad-motion);
 	}
 	&__railitem:hover &__railactions,
+	&__railitem--on &__railactions,
 	&__railitem:focus-within &__railactions { opacity: 1; }
+
+	// a finger cannot hover: on touch the verbs of a row are simply there
+	@media (hover: none) {
+		&__railactions { opacity: 1; }
+	}
 
 	// the wait between two messages, written on the rail
 	&__railwait {
@@ -196,8 +243,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 24px;
-		block-size: 24px;
+		inline-size: 22px;
+		block-size: 22px;
 		padding: 0;
 		border: 0;
 		border-radius: var(--sanad-radius);
@@ -217,12 +264,10 @@
 	}
 	&__etop {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		gap: var(--sanad-gap-sm);
 		flex-wrap: wrap;
 		margin-block-end: var(--sanad-gap-md);
-
-		.sanad-mc__types { flex: 1; min-inline-size: 0; }
 	}
 	&__toggle-preview {
 		display: inline-flex;
@@ -240,31 +285,154 @@
 		&:hover { background: var(--surface-gray-2); }
 	}
 
-	&__types {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--sanad-gap-xs);
+	// ---- what this message is ------------------------------------------------------------------
+
+	&__typewrap {
+		position: relative;
+		display: inline-flex;
 	}
-	&__type-btn {
+	&__typepick {
 		display: inline-flex;
 		align-items: center;
-		gap: 4px;
-		min-block-size: 30px;
-		padding-inline: 10px;
+		gap: var(--sanad-gap-sm);
+		min-block-size: 42px;
+		padding-block: 4px;
+		padding-inline: 10px 8px;
 		border: 1px solid var(--outline-gray-2);
-		border-radius: var(--sanad-radius);
+		border-radius: 10px;
 		background: var(--surface-white);
-		color: var(--ink-gray-7);
-		font-size: var(--text-sm, 12px);
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+		transition: border-color var(--sanad-motion), background var(--sanad-motion);
+
+		&:hover:not([disabled]) {
+			border-color: var(--sanad-accent-outline);
+			background: var(--sanad-accent-soft);
+		}
+		&[aria-expanded="true"] {
+			border-color: var(--sanad-accent-outline);
+			background: var(--sanad-accent-soft);
+		}
+		&[disabled] { cursor: default; background: var(--surface-gray-1); }
+	}
+	&__typepick-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 28px;
+		block-size: 28px;
+		flex: none;
+		border-radius: 8px;
+		background: var(--sanad-accent-soft);
+		color: var(--sanad-accent-ink);
+	}
+	&__typepick-text {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		min-inline-size: 0;
+	}
+	&__typepick-caption {
+		font-size: 10px;
+		font-weight: 600;
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+		color: var(--ink-gray-5);
+		line-height: 1.2;
+	}
+	&__typepick-name {
+		font-size: var(--text-sm, 13px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+		line-height: 1.3;
+	}
+	&__typepick-caret {
+		display: inline-flex;
+		flex: none;
+		color: var(--ink-gray-5);
+	}
+
+	// the list of what else it could be: one shelf per intent, one line per type
+	&__typemenu {
+		position: absolute;
+		inset-block-start: calc(100% + 4px);
+		inset-inline-start: 0;
+		z-index: 10;
+		inline-size: 296px;
+		max-inline-size: calc(100vw - 32px);
+		max-block-size: min(76vh, 520px);
+		overflow-y: auto;
+		padding: var(--sanad-gap-xs);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius-lg);
+		background: var(--surface-white);
+		box-shadow: var(--shadow-lg);
+	}
+	&__typegroup {
+		margin: var(--sanad-gap-sm) 0 2px;
+		padding-inline: var(--sanad-gap-sm);
+		font-size: 10px;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--ink-gray-5);
+
+		&:first-child { margin-block-start: var(--sanad-gap-xs); }
+	}
+	&__typeopt {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--sanad-gap-sm);
+		inline-size: 100%;
+		padding: 7px var(--sanad-gap-sm);
+		border: 0;
+		border-radius: var(--sanad-radius);
+		background: none;
+		font: inherit;
+		text-align: start;
 		cursor: pointer;
 
-		&:hover { background: var(--surface-gray-2); }
-		&--on {
-			background: var(--sanad-accent);
-			border-color: var(--sanad-accent);
-			color: var(--sanad-accent-on);
-			font-weight: 600;
-		}
+		&:hover { background: var(--surface-gray-1); }
+		&--on { background: var(--sanad-accent-soft); }
+	}
+	&__typeopt-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 28px;
+		block-size: 28px;
+		flex: none;
+		border-radius: 8px;
+		background: var(--surface-gray-2);
+		color: var(--ink-gray-7);
+	}
+	&__typeopt--on &__typeopt-icon {
+		background: var(--sanad-accent);
+		color: var(--sanad-accent-on);
+	}
+	&__typeopt-text {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		flex: 1;
+		min-inline-size: 0;
+	}
+	&__typeopt-name {
+		font-size: var(--text-sm, 13px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+	}
+	&__typeopt-hint {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+		line-height: 1.4;
+		text-wrap: pretty;
+	}
+	&__typeopt-tick {
+		display: inline-flex;
+		flex: none;
+		color: var(--sanad-accent-ink);
 	}
 
 	&__egrid {
@@ -347,7 +515,7 @@
 		border: var(--sanad-border);
 		border-radius: var(--sanad-radius);
 		background: var(--surface-white);
-		box-shadow: var(--shadow-base, 0 4px 12px rgba(0, 0, 0, 0.1));
+		box-shadow: var(--shadow-base);
 	}
 	&__varopt {
 		display: flex;
@@ -437,7 +605,7 @@
 		color: var(--ink-gray-9);
 		font-size: var(--text-sm, 13px);
 		line-height: 1.7;
-		box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06);
+		box-shadow: var(--shadow-sm);
 	}
 	&__text {
 		white-space: pre-wrap;

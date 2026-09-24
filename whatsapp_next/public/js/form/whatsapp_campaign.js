@@ -410,8 +410,11 @@ function unsubscribe(frm) {
  * message, its own editor beside a live bubble, and the delay between two messages drawn as the
  * gap between their cards. The native grid stays hidden behind it.
  */
+function can_write_messages(frm) {
+	return !TERMINAL.includes(frm.doc.status) && EDITABLE.includes(frm.doc.status) && frappe.perm.has_perm(frm.doctype, 0, "write", frm.doc);
+}
+
 function mount_messages(frm) {
-	const editable = !TERMINAL.includes(frm.doc.status) && EDITABLE.includes(frm.doc.status) && frappe.perm.has_perm(frm.doctype, 0, "write", frm.doc);
 	if (frm.sanad_messages && frm.$wrapper.find('.sanad-mc[data-fieldname="messages"]').length) {
 		frm.sanad_messages.refresh();
 		return;
@@ -435,7 +438,10 @@ function mount_messages(frm) {
 			Location: [],
 			Poll: ["poll_question", "poll_options", "poll_allow_multiple"],
 		},
-		can_edit: () => editable,
+		// asked every time it is drawn, never captured: Desk keeps one `frm` per DocType and hands
+		// it the next document, so a composer built while a Running campaign was open would have
+		// stayed read-only over a Draft one for the rest of the session
+		can_edit: () => can_write_messages(frm),
 		preview: { method: "campaigns.preview_message", args: (row) => ({ name: frm.doc.name, idx: row.idx }) },
 		// the campaign renders per recipient: these are the names that exist in that context
 		// (`services/campaign_runner._render_message_body`), said in the reader's words

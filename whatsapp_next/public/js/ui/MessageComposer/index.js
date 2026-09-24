@@ -9,25 +9,36 @@
 
 import ui from "../_core/index.js";
 
-const TYPE_ICON = {
-	Text: "es-line-chat-alt",
-	Document: "es-line-filetype",
-	Image: "es-line-image",
-	Video: "es-line-video",
-	Audio: "es-line-call",
-	Sticker: "es-line-emoji",
-	Location: "es-line-location",
-	Poll: "es-line-bullet-list",
-	Template: "es-line-copy",
+// What each type is: the icon that stands for it, the shelf it belongs on, and the one line that
+// tells it from its neighbours. A type the host adds to the child DocType's Select and does not
+// name here still works — it takes the default icon and lands on the last shelf.
+const TYPES = {
+	Text: { icon: "es-line-chat-alt", group: "say", hint: () => __("A written message.") },
+	Image: { icon: "es-line-image", group: "send", hint: () => __("A picture, with a caption under it if you want one.") },
+	Video: { icon: "es-line-video", group: "send", hint: () => __("A video clip, with an optional caption.") },
+	Audio: { icon: "es-line-call", group: "send", hint: () => __("A voice note or an audio file.") },
+	Document: { icon: "es-line-filetype", group: "send", hint: () => __("A file to download, or a document printed to PDF.") },
+	Sticker: { icon: "es-line-emoji", group: "send", hint: () => __("A sticker, sent on its own.") },
+	Location: { icon: "es-line-location", group: "ask", hint: () => __("A point on the map.") },
+	Poll: { icon: "es-line-bullet-list", group: "ask", hint: () => __("A question with answers to choose from.") },
+	Template: { icon: "es-line-copy", group: "ask", hint: () => __("A message written and approved beforehand.") },
 };
+const TYPE_ICON_FALLBACK = "es-line-chat-alt";
+const GROUPS = [
+	{ key: "say", label: () => __("Write") },
+	{ key: "send", label: () => __("Send a file") },
+	{ key: "ask", label: () => __("Ask something") },
+];
 
 /** WhatsApp's own text marks, offered as a toolbar over the body field. */
 const MARKS = [
-	{ key: "bold", mark: "*", icon: "es-line-bold", label: "Bold" },
-	{ key: "italic", mark: "_", icon: "es-line-italic", label: "Italic" },
-	{ key: "strike", mark: "~", icon: "es-line-strike-through", label: "Strikethrough" },
-	{ key: "mono", mark: "```", icon: "es-line-code", label: "Monospace" },
+	{ key: "bold", mark: "*", icon: "es-line-bold", label: () => __("Bold") },
+	{ key: "italic", mark: "_", icon: "es-line-italic", label: () => __("Italic") },
+	{ key: "strike", mark: "~", icon: "es-line-strike-through", label: () => __("Strikethrough") },
+	{ key: "mono", mark: "```", icon: "es-line-code", label: () => __("Monospace") },
 ];
+
+const icon_of = (type) => (TYPES[type] && TYPES[type].icon) || TYPE_ICON_FALLBACK;
 
 sanad.ui.MessageComposer = class MessageComposer {
 	/**
@@ -86,7 +97,10 @@ sanad.ui.MessageComposer = class MessageComposer {
 
 	can_edit() {
 		if (typeof this.opts.can_edit === "function") return !!this.opts.can_edit();
-		return !this.frm.is_read_only();
+		// `frm.read_only` is the flag Desk sets (workflow, `set_read_only()`); there is no
+		// `frm.is_read_only()` on a Form, and calling one threw the moment a host left `can_edit`
+		// to its default
+		return !this.frm.read_only && !cint(this.frm.doc.docstatus) && frappe.model.can_write(this.frm.doctype);
 	}
 
 	// ---- mount --------------------------------------------------------------------------------
@@ -134,12 +148,26 @@ sanad.ui.MessageComposer = class MessageComposer {
 	render_head_actions() {
 		this.$actions.empty();
 		if (!this.can_edit()) return;
+		this.add_button(this.$actions, "btn btn-sm btn-primary sanad-mc__add");
+	}
+
+	/**
+	 * "Add message" does not add a message: it asks what kind of message, and adds that. The type
+	 * is the one thing about a message that cannot be typed into a field, so it is asked at the
+	 * only moment the writer is thinking about it — and the same list answers "change this one".
+	 */
+	add_button($host, cls) {
 		const full = this.opts.max && this.rows().length >= cint(this.opts.max);
-		$(`<button type="button" class="btn btn-sm btn-default sanad-mc__add">${ui.icon("es-line-add", "xs")} ${ui.escape(__("Add message"))}</button>`)
+		const $wrap = $('<span class="sanad-mc__addwrap"></span>').appendTo($host);
+		const $btn = $(`<button type="button" class="${cls}" aria-haspopup="menu" aria-expanded="false">${ui.icon("es-line-add", "xs")}<span>${ui.escape(__("Add message"))}</span>${ui.icon("es-line-down", "xs")}</button>`)
 			.prop("disabled", !!full)
-			.attr("title", full ? __("A campaign may carry {0} messages.", [ui.format_int(this.opts.max)]) : null)
-			.on("click", () => this.add())
-			.appendTo(this.$actions);
+			.attr("title", full ? __("This record may carry {0} messages.", [ui.format_int(this.opts.max)]) : __("Choose what the next message is"))
+			.on("click", (e) => {
+				e.stopPropagation();
+				this.open_type_menu($wrap, $btn, null, (type) => this.add(type));
+			})
+			.appendTo($wrap);
+		return $btn;
 	}
 
 	render_rail(rows) {
@@ -164,7 +192,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 					<button type="button" class="sanad-mc__railbtn" aria-current="${on}" data-name="${ui.escape(row.name)}">
 						<span class="sanad-mc__order sanad-tabular">${ui.escape(ui.format_int(index + 1))}</span>
 						<span class="sanad-mc__railmain">
-							<span class="sanad-mc__railtype">${ui.icon(TYPE_ICON[type] || "es-line-chat-alt", "xs")} ${ui.escape(__(type || ""))}</span>
+							<span class="sanad-mc__railtype">${ui.icon(icon_of(type), "xs")} ${ui.escape(__(type || ""))}</span>
 							<span class="sanad-mc__railline" dir="auto">${ui.escape(this.summary_of(row))}</span>
 						</span>
 						${problem ? `<span class="sanad-mc__raildot" title="${ui.escape(problem)}" aria-label="${ui.escape(problem)}"></span>` : ""}
@@ -190,6 +218,8 @@ sanad.ui.MessageComposer = class MessageComposer {
 			$list.append($item);
 			if (this.opts.delay_field && index < rows.length - 1) $list.append(this.rail_delay(rows[index + 1]));
 		});
+		// the verb again at the foot of the list, where the eye already is once it has read it
+		if (this.can_edit()) this.add_button($('<div class="sanad-mc__railadd"></div>').appendTo(this.$rail), "sanad-mc__railaddbtn");
 	}
 
 	/** Between two rail items: how long the campaign waits before the next message. */
@@ -218,7 +248,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 		if (!row) return;
 		const type = row[this.opts.type_field] || this.types[0];
 		const $head = $(`<div class="sanad-mc__etop"></div>`).appendTo(this.$editor);
-		this.render_types($head, row);
+		this.render_type_control($head, row);
 		$(`<button type="button" class="sanad-mc__toggle-preview" aria-pressed="${this.show_preview}">${ui.icon("es-line-preview", "xs")} <span>${ui.escape(this.show_preview ? __("Hide preview") : __("Show preview"))}</span></button>`)
 			.on("click", () => {
 				this.show_preview = !this.show_preview;
@@ -240,27 +270,100 @@ sanad.ui.MessageComposer = class MessageComposer {
 		this.preview(row);
 	}
 
-	render_types($host, row) {
+	/**
+	 * The type, as one control instead of nine. A button per type spent a whole band of the editor
+	 * on a choice that is made once per message and never looked at again, and read as a toolbar
+	 * rather than as an answer to "what is this?". One pill says what the message is; it opens the
+	 * list of what else it could be, grouped, each with the line that tells it from its neighbours.
+	 */
+	render_type_control($host, row) {
 		const current = row[this.opts.type_field] || this.types[0];
-		const $group = $(`<div class="sanad-mc__types" role="radiogroup" aria-label="${ui.escape(__((this.field_map[this.opts.type_field] || {}).label || "Type"))}"></div>`).appendTo($host);
-		this.types.forEach((type) => {
-			const on = type === current;
-			$(`<button type="button" class="sanad-mc__type-btn${on ? " sanad-mc__type-btn--on" : ""}" role="radio" aria-checked="${on}" tabindex="${on ? 0 : -1}">${ui.icon(TYPE_ICON[type] || "es-line-chat-alt", "xs")}<span>${ui.escape(__(type))}</span></button>`)
-				.on("click", () => {
-					if (!this.can_edit() || type === current) return;
-					frappe.model.set_value(row.doctype, row.name, this.opts.type_field, type);
-					this.render();
-				})
-				.appendTo($group);
+		const type_label = __((this.field_map[this.opts.type_field] || {}).label || "Type");
+		const $wrap = $('<div class="sanad-mc__typewrap"></div>').appendTo($host);
+		const $btn = $(`
+			<button type="button" class="sanad-mc__typepick" aria-haspopup="menu" aria-expanded="false">
+				<span class="sanad-mc__typepick-icon" aria-hidden="true">${ui.icon(icon_of(current), "sm")}</span>
+				<span class="sanad-mc__typepick-text">
+					<span class="sanad-mc__typepick-caption">${ui.escape(type_label)}</span>
+					<span class="sanad-mc__typepick-name">${ui.escape(__(current || ""))}</span>
+				</span>
+				<span class="sanad-mc__typepick-caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
+			</button>`).appendTo($wrap);
+		if (!this.can_edit()) {
+			$btn.prop("disabled", true).find(".sanad-mc__typepick-caret").remove();
+			return;
+		}
+		$btn.attr("aria-label", __("{0}: {1}. Change it.", [type_label, __(current || "")])).on("click", (e) => {
+			e.stopPropagation();
+			this.open_type_menu($wrap, $btn, current, (type) => {
+				frappe.model.set_value(row.doctype, row.name, this.opts.type_field, type);
+				this.render();
+			});
 		});
-		$group.on("keydown", (e) => {
-			const items = $group.find('[role="radio"]').toArray();
-			const idx = ui.roving_index(e, items, items.findIndex((el) => el.getAttribute("aria-checked") === "true"));
+	}
+
+	/**
+	 * The list of what a message can be. `current` is the type to tick, or null when the list is
+	 * being used to add a message rather than to change one.
+	 */
+	open_type_menu($host, $btn, current, on_pick) {
+		if (this.close_type_menu(true)) return; // a second click on the same button closes it
+		const $menu = $(`<div class="sanad-mc__typemenu" role="menu" aria-label="${ui.escape(__("Message type"))}"></div>`).appendTo($host);
+		const shelves = GROUPS.map((g) => [g, this.types.filter((t) => ((TYPES[t] || {}).group || GROUPS[GROUPS.length - 1].key) === g.key)]);
+		shelves.forEach(([group, types]) => {
+			if (!types.length) return;
+			$(`<p class="sanad-mc__typegroup">${ui.escape(group.label())}</p>`).appendTo($menu);
+			types.forEach((type) => {
+				const meta = TYPES[type] || {};
+				const on = type === current;
+				$(`
+					<button type="button" class="sanad-mc__typeopt${on ? " sanad-mc__typeopt--on" : ""}" role="menuitemradio" aria-checked="${on}" tabindex="-1">
+						<span class="sanad-mc__typeopt-icon" aria-hidden="true">${ui.icon(icon_of(type), "sm")}</span>
+						<span class="sanad-mc__typeopt-text">
+							<span class="sanad-mc__typeopt-name">${ui.escape(__(type))}</span>
+							${meta.hint ? `<span class="sanad-mc__typeopt-hint">${ui.escape(meta.hint())}</span>` : ""}
+						</span>
+						<span class="sanad-mc__typeopt-tick" aria-hidden="true">${on ? ui.icon("es-line-check", "xs") : ""}</span>
+					</button>`)
+					.on("click", (e) => {
+						e.stopPropagation();
+						this.close_type_menu();
+						if (type !== current) on_pick(type);
+					})
+					.appendTo($menu);
+			});
+		});
+		$btn.attr("aria-expanded", "true");
+		this.type_menu = { $menu, $btn };
+		$menu.on("keydown", (e) => {
+			if (e.key === "Escape") {
+				e.preventDefault();
+				this.close_type_menu(true);
+				return;
+			}
+			const items = $menu.find('[role="menuitemradio"]').toArray();
+			const idx = ui.roving_index(e, items, items.indexOf(document.activeElement));
 			if (idx < 0) return;
 			e.preventDefault();
 			items[idx].focus();
-			items[idx].click();
 		});
+		window.setTimeout(() => {
+			$(document).on(`click.${this.id}-types`, () => this.close_type_menu());
+			const items = $menu.find('[role="menuitemradio"]').toArray();
+			const start = items.find((el) => el.getAttribute("aria-checked") === "true") || items[0];
+			start && start.focus();
+		}, 0);
+	}
+
+	close_type_menu(restore_focus) {
+		$(document).off(`click.${this.id}-types`);
+		const open = this.type_menu;
+		if (!open) return false;
+		open.$menu.remove();
+		open.$btn.attr("aria-expanded", "false");
+		if (restore_focus) open.$btn.trigger("focus");
+		this.type_menu = null;
+		return true;
 	}
 
 	/** The fields this type uses: the ones that lead it first, the rest behind "More options". */
@@ -314,7 +417,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 		if (!this.can_edit()) return;
 		const $bar = $('<div class="sanad-mc__toolbar"></div>').insertAfter($wrap.find(".control-input-wrapper").first().length ? $wrap.find(".control-input-wrapper").first() : $wrap.children().first());
 		MARKS.forEach((m) => {
-			$(`<button type="button" class="sanad-mc__mark" title="${ui.escape(__(m.label))}" aria-label="${ui.escape(__(m.label))}">${ui.icon(m.icon, "xs")}</button>`)
+			$(`<button type="button" class="sanad-mc__mark" title="${ui.escape(m.label())}" aria-label="${ui.escape(m.label())}">${ui.icon(m.icon, "xs")}</button>`)
 				.on("click", () => this.wrap_selection(row, fieldname, control, m.mark))
 				.appendTo($bar);
 		});
@@ -583,10 +686,10 @@ sanad.ui.MessageComposer = class MessageComposer {
 		d.show();
 	}
 
-	add() {
+	add(type) {
 		if (!this.can_edit()) return;
 		if (this.opts.max && this.rows().length >= cint(this.opts.max)) return;
-		const row = this.frm.add_child(this.fieldname, { [this.opts.type_field]: this.types[0] || "Text" });
+		const row = this.frm.add_child(this.fieldname, { [this.opts.type_field]: type || this.types[0] || "Text" });
 		this.frm.refresh_field(this.fieldname);
 		this.active = row.name;
 		this.render();
@@ -650,6 +753,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 	}
 
 	destroy() {
+		this.close_type_menu();
 		$(document).off(`click.${this.id}-vars`);
 		this.$el && this.$el.remove();
 		this.$host && this.$host.removeClass("sanad-mc-host");

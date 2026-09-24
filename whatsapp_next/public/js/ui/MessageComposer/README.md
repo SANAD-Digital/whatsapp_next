@@ -41,8 +41,11 @@ Options: `frm`, `fieldname`, `type_field` (`"message_type"`), `body_field` (`"bo
 `preview?` (`{method, args(row, frm)}` → `{body, attachment_name, message_type, errors[]}`),
 `variables?` (array of `{name, label}` or `{method, args(frm)}`), `can_edit?()`, `max?`,
 `empty_text?`, `debounce` (500).
-Methods: `refresh()`, `add()`, `duplicate(row)`, `remove(row)`, `move(row, delta)`,
+Methods: `refresh()`, `add(type?)`, `duplicate(row)`, `remove(row)`, `move(row, delta)`,
 `insert_variable(row, name)`, `destroy()`.
+
+A type the host adds to the Select but does not name in the component's own catalogue still works:
+it takes the default icon, no explanatory line, and the last shelf of the chooser.
 
 The bubble renders WhatsApp's own emphasis (asterisks, underscores, tildes, backticks), draws an
 attachment as a file chip and a poll as its question and answers, and shows a variable that has not
@@ -61,6 +64,19 @@ Audio, Sticker, Location, Poll), five at most, with the campaign's own variables
   collapsed row, so a campaign is never started on a message that cannot be sent.
 - The delay is not a number in a form: it is the space between two messages, and it is edited where
   it is read.
-- Type is a radio group with arrow-key roving focus; every icon-only action carries its name;
-  inserting a variable announces itself; the form is not marked dirty by opening an editor.
+- The type is **one control, not one per type**. A button per type spent a whole band of the editor
+  on a choice made once per message, and read as a toolbar rather than as an answer to "what is
+  this?". A pill says what the message is and opens the list of what else it could be — grouped by
+  what the writer is trying to do (write · send a file · ask something), each with the line that
+  tells it from its neighbours. The same list is what "Add message" opens, because the type is the
+  one thing about a message that cannot be typed into a field, so it is asked at the only moment
+  the writer is thinking about it.
+- The verb that adds a message is in two places, because a writer looking at the list of messages
+  should not have to look back up at the header to add one: the header carries it as the primary
+  action, and the foot of the rail carries it again.
+- The chooser is a `menu` of `menuitemradio`s with arrow-key roving focus, Escape to close and
+  focus returned to the button that opened it; every icon-only action carries its name; inserting a
+  variable announces itself; the form is not marked dirty by opening an editor.
+- A row's verbs appear on hover, on focus **and** on the row being edited — and unconditionally
+  where the pointer cannot hover (`@media (hover: none)`), since a finger has no hover state.
 - Removing a message that has content asks first and names it; an empty one goes without a question.
