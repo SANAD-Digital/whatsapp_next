@@ -61,12 +61,24 @@ class MetaCloudProvider(BaseProvider):
 	def get_usage(self, from_: date, to: date, group_by: str = "day") -> UsageReport:
 		raise pex.NotSupportedError("Usage report is not available for the Meta Cloud API")
 
+	def get_signup_bootstrap(self) -> dict:
+		raise pex.NotSupportedError("Sign-up is handled in Meta Business Manager")
+
 	def start_signup(
-		self, plan_code: str, mobile_e164: str, full_name: str, email: str, channel: str
+		self,
+		plan_code: str,
+		mobile_e164: str,
+		full_name: str,
+		email: str,
+		channel: str,
+		coupon_code: str | None = None,
 	) -> SignupState:
 		raise pex.NotSupportedError("Sign-up is handled in Meta Business Manager")
 
 	def get_signup_status(self, request_key: str) -> SignupState:
+		raise pex.NotSupportedError("Sign-up is handled in Meta Business Manager")
+
+	def verify_signup_code(self, request_key: str, code: str, purpose: str | None = None) -> SignupState:
 		raise pex.NotSupportedError("Sign-up is handled in Meta Business Manager")
 
 	def complete_signup(self, request_key: str, code: str, password: str | None = None) -> SignupState:
@@ -74,6 +86,21 @@ class MetaCloudProvider(BaseProvider):
 
 	def start_password_reset(self, identifier: str) -> SignupState:
 		raise pex.NotSupportedError("Password reset is handled in Meta Business Manager")
+
+	def get_password_reset_status(self, request_key: str) -> SignupState:
+		raise pex.NotSupportedError("Password reset is handled in Meta Business Manager")
+
+	def complete_password_reset(self, request_key: str, password: str) -> SignupState:
+		raise pex.NotSupportedError("Password reset is handled in Meta Business Manager")
+
+	def login(self, email: str, password: str) -> dict:
+		raise pex.NotSupportedError("Sign-in is handled in Meta Business Manager")
+
+	def validate_coupon(self, code: str, email: str | None = None, mobile_e164: str | None = None) -> dict:
+		raise pex.NotSupportedError("Meta Cloud has no coupons")
+
+	def get_referral_coupon(self) -> dict:
+		raise pex.NotSupportedError("Meta Cloud has no coupons")
 
 	# --- devices (phone numbers) ---
 	def create_device(self, device_name: str, phone_e164: str | None, pairing_mode: str) -> DeviceState:

@@ -62,14 +62,28 @@ class BaseProvider(ABC):
 		"""Usage rows for the period (NotSupportedError until the provider exposes it)."""
 
 	@abstractmethod
+	def get_signup_bootstrap(self) -> dict:
+		"""What the sign-up form needs before anything is typed (plans, code TTL)."""
+
+	@abstractmethod
 	def start_signup(
-		self, plan_code: str, mobile_e164: str, full_name: str, email: str, channel: str
+		self,
+		plan_code: str,
+		mobile_e164: str,
+		full_name: str,
+		email: str,
+		channel: str,
+		coupon_code: str | None = None,
 	) -> SignupState:
-		"""Begin a tenant sign-up; returns a request key."""
+		"""Begin a tenant sign-up; returns a request key. A coupon is validated here."""
 
 	@abstractmethod
 	def get_signup_status(self, request_key: str) -> SignupState:
 		"""Poll a sign-up request."""
+
+	@abstractmethod
+	def verify_signup_code(self, request_key: str, code: str, purpose: str | None = None) -> SignupState:
+		"""Check the verification code of a sign-up or password-reset request."""
 
 	@abstractmethod
 	def complete_signup(self, request_key: str, code: str, password: str | None = None) -> SignupState:
@@ -78,6 +92,26 @@ class BaseProvider(ABC):
 	@abstractmethod
 	def start_password_reset(self, identifier: str) -> SignupState:
 		"""Begin a password reset for a tenant user."""
+
+	@abstractmethod
+	def get_password_reset_status(self, request_key: str) -> SignupState:
+		"""Poll a password-reset request."""
+
+	@abstractmethod
+	def complete_password_reset(self, request_key: str, password: str) -> SignupState:
+		"""Set the new password of a verified password-reset request."""
+
+	@abstractmethod
+	def login(self, email: str, password: str) -> dict:
+		"""Authenticate a tenant user; returns their credentials once. Never logged."""
+
+	@abstractmethod
+	def validate_coupon(self, code: str, email: str | None = None, mobile_e164: str | None = None) -> dict:
+		"""Is a coupon usable and what does it give? Never redeems."""
+
+	@abstractmethod
+	def get_referral_coupon(self) -> dict:
+		"""This tenant's own referral coupon (NotSupportedError where there are none)."""
 
 	# --- device lifecycle ---
 	@abstractmethod

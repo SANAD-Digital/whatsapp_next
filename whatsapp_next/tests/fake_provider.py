@@ -96,14 +96,29 @@ class FakeProvider(BaseProvider):
 		self._record("get_usage", from_=from_, to=to, group_by=group_by)
 		return UsageReport(from_=from_, to=to, group_by=group_by, rows=())
 
-	def start_signup(self, plan_code, mobile_e164, full_name, email, channel) -> SignupState:
-		self._record("start_signup", plan_code=plan_code)
+	def get_signup_bootstrap(self) -> dict:
+		self._record("get_signup_bootstrap")
+		return {
+			"ok": True,
+			"plans": [{"plan_code": "trial", "plan_name": "Fake Trial", "monthly_price": 0}],
+			"code_ttl_minutes": 10,
+		}
+
+	def start_signup(self, plan_code, mobile_e164, full_name, email, channel, coupon_code=None) -> SignupState:
+		self._record("start_signup", plan_code=plan_code, coupon_code=coupon_code)
 		return SignupState(request_key="req-1", status="Pending")
 
 	def get_signup_status(self, request_key) -> SignupState:
 		return SignupState(request_key=request_key, status="Pending")
 
+	def verify_signup_code(self, request_key, code, purpose=None) -> SignupState:
+		self._record("verify_signup_code", request_key=request_key)
+		if code != "123456":
+			raise pex.ValidationError("Invalid verification code.", code="VALIDATION_ERROR")
+		return SignupState(request_key=request_key, status="Verified")
+
 	def complete_signup(self, request_key, code, password=None) -> SignupState:
+		self._record("complete_signup", request_key=request_key, with_password=bool(password))
 		return SignupState(
 			request_key=request_key,
 			status="Completed",
@@ -112,6 +127,55 @@ class FakeProvider(BaseProvider):
 
 	def start_password_reset(self, identifier) -> SignupState:
 		return SignupState(request_key="reset-1", status="Pending")
+
+	def get_password_reset_status(self, request_key) -> SignupState:
+		return SignupState(request_key=request_key, status="Pending")
+
+	def complete_password_reset(self, request_key, password) -> SignupState:
+		self._record("complete_password_reset", request_key=request_key)
+		return SignupState(request_key=request_key, status="Completed")
+
+	def login(self, email, password) -> dict:
+		self._record("login", email=email)
+		if password != "right-password":
+			raise pex.AuthError("Incorrect email or password", code="LOGIN_FAILED", http_status=401)
+		return {
+			"ok": True,
+			"customer": "WAC-FAKE-1",
+			"customer_name": "Fake Tenant",
+			"integration_link": "WAIL-FAKE-1",
+			"api_base_url": "https://fake.invalid/api/method/x",
+			"credentials": {"customer_api_key": "ck", "api_key": "k", "api_secret": "s"},
+		}
+
+	def validate_coupon(self, code, email=None, mobile_e164=None) -> dict:
+		self._record("validate_coupon", code=code)
+		if code == "BSHQ-FREE2":
+			return {
+				"ok": True,
+				"valid": True,
+				"code": code,
+				"kind": "Referral",
+				"reward_kind": "Extra Free Months",
+				"reward_value": 1,
+				"message": "1 extra free month(s) on your subscription.",
+			}
+		return {
+			"ok": True,
+			"valid": False,
+			"code": code,
+			"reason": "COUPON_NOT_FOUND",
+			"message": "This coupon code is not valid",
+		}
+
+	def get_referral_coupon(self) -> dict:
+		self._record("get_referral_coupon")
+		return {
+			"ok": True,
+			"customer": "WAC-FAKE-1",
+			"redemption_count": 2,
+			"coupon": {"code": "BSHQ-7K42P", "kind": "Referral", "reward_value": 1, "enabled": True},
+		}
 
 	# --- devices ---
 	def create_device(self, device_name, phone_e164, pairing_mode) -> DeviceState:

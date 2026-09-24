@@ -413,20 +413,29 @@ class SndPlatformProvider(BaseProvider):
 		return UsageReport(from_=from_, to=to, group_by=group_by, rows=rows)
 
 	# ------------------------------------------------------------------ signup (guest)
+	def get_signup_bootstrap(self) -> dict:
+		"""`{plans[], device_phone, device_ready, code_ttl_minutes}` before anything is typed."""
+		return self._request("GET", "get_signup_bootstrap", guest=True)
+
 	def start_signup(
-		self, plan_code: str, mobile_e164: str, full_name: str, email: str, channel: str
+		self,
+		plan_code: str,
+		mobile_e164: str,
+		full_name: str,
+		email: str,
+		channel: str,
+		coupon_code: str | None = None,
 	) -> SignupState:
-		data = self._request(
-			"POST",
-			"start_signup",
-			guest=True,
-			body={
-				"full_name": full_name,
-				"email": email,
-				"mobile_no": _digits(mobile_e164),
-				"plan_code": plan_code,
-			},
-		)
+		body: dict[str, Any] = {
+			"full_name": full_name,
+			"email": email,
+			"mobile_no": _digits(mobile_e164),
+			"plan_code": plan_code,
+		}
+		# Older platforms reject an unknown argument, so it is sent only when used.
+		if coupon_code:
+			body["coupon_code"] = coupon_code
+		data = self._request("POST", "start_signup", guest=True, body=body)
 		return SignupState(
 			request_key=data.get("token") or data.get("request_key"),
 			status=str(data.get("status") or "Pending"),
@@ -437,10 +446,19 @@ class SndPlatformProvider(BaseProvider):
 		data = self._request("POST", "get_signup_status", guest=True, body={"token": request_key})
 		return SignupState(request_key=request_key, status=str(data.get("status") or "Pending"), extra=data)
 
+	def verify_signup_code(self, request_key: str, code: str, purpose: str | None = None) -> SignupState:
+		body: dict[str, Any] = {"token": request_key, "code": code}
+		if purpose:
+			body["purpose"] = purpose
+		data = self._request("POST", "verify_email_code", guest=True, body=body)
+		return SignupState(request_key=request_key, status=str(data.get("status") or "Verified"), extra=data)
+
 	def complete_signup(self, request_key: str, code: str, password: str | None = None) -> SignupState:
-		data = self._request(
-			"POST", "verify_email_code", guest=True, body={"token": request_key, "code": code}
-		)
+		data: dict[str, Any] = {}
+		if code:
+			data = self._request(
+				"POST", "verify_email_code", guest=True, body={"token": request_key, "code": code}
+			)
 		if password:
 			data = self._request(
 				"POST", "complete_signup", guest=True, body={"token": request_key, "password": password}
@@ -459,6 +477,43 @@ class SndPlatformProvider(BaseProvider):
 		return SignupState(
 			request_key=data.get("token"), status=str(data.get("status") or "Pending"), extra=data
 		)
+
+	def get_password_reset_status(self, request_key: str) -> SignupState:
+		data = self._request("POST", "get_password_reset_status", guest=True, body={"token": request_key})
+		return SignupState(request_key=request_key, status=str(data.get("status") or "Pending"), extra=data)
+
+	def complete_password_reset(self, request_key: str, password: str) -> SignupState:
+		data = self._request(
+			"POST", "complete_password_reset", guest=True, body={"token": request_key, "password": password}
+		)
+		return SignupState(
+			request_key=request_key, status=str(data.get("status") or "Completed"), extra=data
+		)
+
+	# ------------------------------------------------------------------ sign-in and coupons
+	def login(self, email: str, password: str) -> dict:
+		"""Exchange an e-mail and password for this tenant's credentials.
+
+		Returns the platform's answer unchanged: `{ok, customer, customer_name,
+		integration_link, api_base_url, credentials{customer_api_key, api_key,
+		api_secret}}`. The caller stores `credentials` and never returns them.
+		"""
+		return self._request(
+			"POST", "login_with_password", v1=True, guest=True, body={"email": email, "password": password}
+		)
+
+	def validate_coupon(self, code: str, email: str | None = None, mobile_e164: str | None = None) -> dict:
+		"""`{ok, valid, code, message, reward_kind?, reward_value?, reason?}`; never redeems."""
+		body: dict[str, Any] = {"code": code}
+		if email:
+			body["email"] = email
+		if mobile_e164:
+			body["mobile_no"] = _digits(mobile_e164)
+		return self._request("POST", "validate_coupon", v1=True, guest=True, body=body)
+
+	def get_referral_coupon(self) -> dict:
+		"""`{ok, customer, redemption_count, coupon{...}}` for the configured tenant."""
+		return self._request("POST", "get_my_referral_coupon", v1=True)
 
 	# ------------------------------------------------------------------ devices
 	def _device_state(self, row: dict) -> DeviceState:

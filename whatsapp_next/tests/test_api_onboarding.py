@@ -12,7 +12,9 @@ from whatsapp_next.api.v1 import onboarding as api
 from whatsapp_next.api.v1 import settings as settings_api
 from whatsapp_next.exceptions import (
 	WAInvalidPhoneError,
+	WANotSupportedError,
 	WAPermissionError,
+	WAProviderAuthError,
 	WAStateConflictError,
 	WAValidationError,
 )
@@ -166,3 +168,126 @@ class TestApiOnboarding(IntegrationTestCase):
 			status = api.get_status()
 			self.assertTrue(status["setup_completed"])
 			self.assertTrue(all(s["done"] for s in status["steps"]))
+
+
+class TestApiOnboardingPlatformFlow(IntegrationTestCase):
+	"""The rest of the setup screen's flow: bootstrap, password sign-up, sign-in, coupons."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		ensure_settings()
+		s = frappe.get_doc(SETTINGS)
+		cls._saved = {f: s.get(f) for f in FIELDS}
+		cls._secrets = {f: s.get_password(f, raise_exception=False) for f in SECRETS}
+
+	@classmethod
+	def tearDownClass(cls):
+		frappe.db.set_value(SETTINGS, SETTINGS, cls._saved, update_modified=False)
+		for f, value in cls._secrets.items():
+			if value:
+				set_encrypted_password(SETTINGS, SETTINGS, value, f)
+			else:
+				remove_encrypted_password(SETTINGS, SETTINGS, f)
+		frappe.clear_document_cache(SETTINGS, SETTINGS)
+		super().tearDownClass()
+
+	def test_bootstrap_carries_the_platform_plans_and_no_second_country_list(self):
+		with fake_provider(), as_user("System Manager"):
+			out = api.get_signup_bootstrap()
+		self.assertEqual(out["plans"][0]["plan_code"], "trial")
+		self.assertEqual(out["code_ttl_minutes"], 10)
+		self.assertIn("device_ready", out)
+		# Countries are api.v1.phone.get_countries' job; two answers would drift apart.
+		self.assertNotIn("countries", out)
+
+	def test_signup_carries_a_coupon_and_a_password(self):
+		for f in SECRETS:
+			remove_encrypted_password(SETTINGS, SETTINGS, f)
+		with fake_provider() as provider, as_user("System Manager"):
+			api.start_signup(
+				plan_code="trial",
+				mobile="0500910007",
+				full_name="Coupon Tenant",
+				email="c@b.c",
+				channel="sms",
+				coupon_code="BSHQ-FREE2",
+			)
+			started = dict(provider.calls)["start_signup"]
+			self.assertEqual(started["coupon_code"], "BSHQ-FREE2")
+
+			# The code check is its own step now.
+			self.assertEqual(api.verify_code(request_key="req-1", code="123456"), {"ok": True, "status": "Verified"})
+			with self.assertRaises(WAValidationError):
+				api.verify_code(request_key="req-1", code="000000")
+
+			done = api.complete_signup(request_key="req-1", password="a-real-Password-1!")
+			self.assertEqual(done, {"ok": True, "status": "Completed", "credentials_stored": True})
+			self.assertTrue(dict(provider.calls)["complete_signup"]["with_password"])
+			self.assertNotIn("a-real-Password-1!", str(done))
+			self.assertEqual(
+				frappe.get_doc(SETTINGS).get_password("customer_api_key", raise_exception=False), "ck"
+			)
+
+	def test_login_stores_the_keys_and_returns_none_of_them(self):
+		for f in SECRETS:
+			remove_encrypted_password(SETTINGS, SETTINGS, f)
+		with fake_provider(), as_user("System Manager") as sm:
+			with self.assertRaises(WAProviderAuthError):
+				api.login(
+					platform_base_url="https://api.example.test",
+					email="tenant@example.test",
+					password="wrong-password",
+				)
+			out = api.login(
+				platform_base_url="https://api.example.test",
+				email="tenant@example.test",
+				password="right-password",
+			)
+		self.assertEqual(out["ok"], True)
+		self.assertEqual(out["customer_name"], "Fake Tenant")
+		# Not one key, and not the password, may appear in the answer.
+		for secret in ("ck", "right-password"):
+			self.assertNotIn(secret, str(out))
+		self.assertNotIn("credentials", out)
+		s = frappe.get_doc(SETTINGS)
+		self.assertEqual(s.get_password("customer_api_key", raise_exception=False), "ck")
+		self.assertEqual(s.get_password("api_secret", raise_exception=False), "s")
+		self.assertEqual(frappe.db.get_single_value(SETTINGS, "platform_base_url"), "https://api.example.test")
+		self.assertTrue(
+			frappe.db.exists("WhatsApp Audit Log", {"action": "Credentials Changed", "user": sm})
+		)
+
+	def test_coupon_validation_is_an_answer_not_an_error(self):
+		with fake_provider(), as_user("System Manager"):
+			good = api.validate_coupon(code="BSHQ-FREE2")
+			bad = api.validate_coupon(code="NOPE-11111")
+		self.assertEqual((good["valid"], good["reward_value"]), (True, 1))
+		self.assertEqual((bad["valid"], bad["reason"]), (False, "COUPON_NOT_FOUND"))
+
+	def test_referral_coupon_is_readable_by_any_whatsapp_role(self):
+		with fake_provider(), as_user("WhatsApp Viewer"):
+			out = api.get_referral_coupon()
+		self.assertEqual(out["coupon"]["code"], "BSHQ-7K42P")
+		self.assertEqual(out["redemption_count"], 2)
+		with fake_provider(), as_user("_none"), self.assertRaises(WAPermissionError):
+			api.get_referral_coupon()
+
+	def test_password_reset_runs_through_the_provider(self):
+		with fake_provider(), as_user("System Manager"):
+			started = api.start_password_reset(identifier="a@b.c")
+			self.assertEqual((started["ok"], started["request_key"]), (True, "reset-1"))
+			self.assertEqual(api.get_password_reset_status(request_key="reset-1")["status"], "Pending")
+			done = api.complete_password_reset(request_key="reset-1", password="a-real-Password-1!")
+			self.assertEqual(done, {"ok": True, "status": "Completed"})
+
+	def test_the_new_endpoints_are_closed_to_everyone_else(self):
+		with fake_provider(), as_user("WhatsApp Manager"):
+			for call in (
+				lambda: api.get_signup_bootstrap(),
+				lambda: api.login(platform_base_url="", email="a@b.c", password="x"),
+				lambda: api.validate_coupon(code="BSHQ-FREE2"),
+				lambda: api.complete_password_reset(request_key="r", password="x"),
+			):
+				with self.assertRaises(WAPermissionError):
+					call()

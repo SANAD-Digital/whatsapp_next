@@ -137,12 +137,44 @@ def store_signup_credentials(state: SignupState, user: str | None = None) -> boo
 	return True
 
 
-def start_signup(plan_code: str, mobile: str, full_name: str, email: str, channel: str) -> SignupState:
-	"""Begin a tenant sign-up through the provider (`mobile` normalised to E.164 first)."""
+def signup_bootstrap() -> dict[str, Any]:
+	"""What the sign-up form needs before anything is typed: the plans it may choose.
+
+	`{plans, code_ttl_minutes, device_phone, device_ready}`. Prices and limits
+	are the platform's to state, so they come from the provider untouched.
+
+	Countries are deliberately not here: `api.v1.phone.get_countries` already
+	serves the calling regions from the same libphonenumber metadata the server
+	validates numbers with, and a second list built from the `Country` DocType
+	would be a second answer to the same question.
+	"""
+	data = registry.get_provider().get_signup_bootstrap() or {}
+	return {
+		"plans": data.get("plans") or [],
+		"code_ttl_minutes": cint(data.get("code_ttl_minutes")) or None,
+		"device_phone": data.get("device_phone"),
+		"device_ready": bool(data.get("device_ready")),
+	}
+
+
+def start_signup(
+	plan_code: str,
+	mobile: str,
+	full_name: str,
+	email: str,
+	channel: str,
+	coupon_code: str | None = None,
+) -> SignupState:
+	"""Begin a tenant sign-up through the provider (`mobile` normalised to E.164 first).
+
+	A `coupon_code` is validated by the platform at this moment, so a bad code
+	is refused while the user is still on the form."""
 	e164 = normalize(mobile)
 	if not e164:
 		frappe.throw(_("Invalid phone number: {0}").format(mobile), WAInvalidPhoneError)
-	return registry.get_provider().start_signup(plan_code, e164, full_name, email, channel)
+	return registry.get_provider().start_signup(
+		plan_code, e164, full_name, email, channel, coupon_code=coupon_code
+	)
 
 
 def get_signup_status(request_key: str) -> SignupState:
@@ -150,9 +182,20 @@ def get_signup_status(request_key: str) -> SignupState:
 	return registry.get_provider().get_signup_status(request_key)
 
 
-def complete_signup(request_key: str, code: str, user: str | None = None) -> dict[str, Any]:
-	"""Finish the sign-up; credentials (if returned) are stored, never returned."""
-	state = registry.get_provider().complete_signup(request_key, code)
+def verify_code(request_key: str, code: str, purpose: str | None = None) -> SignupState:
+	"""Check a verification code without finishing the sign-up."""
+	return registry.get_provider().verify_signup_code(request_key, code, purpose=purpose)
+
+
+def complete_signup(
+	request_key: str, code: str | None = None, password: str | None = None, user: str | None = None
+) -> dict[str, Any]:
+	"""Finish the sign-up; credentials (if returned) are stored, never returned.
+
+	`code` verifies the request (skipped when it was verified already) and
+	`password` sets the tenant's portal password, which is what makes the
+	account real on the platform."""
+	state = registry.get_provider().complete_signup(request_key, code or "", password=password)
 	stored = store_signup_credentials(state, user=user)
 	return {"ok": state.status == "Completed", "status": state.status, "credentials_stored": stored}
 
@@ -160,6 +203,54 @@ def complete_signup(request_key: str, code: str, user: str | None = None) -> dic
 def start_password_reset(identifier: str) -> SignupState:
 	"""Begin a password reset for a tenant user."""
 	return registry.get_provider().start_password_reset(identifier)
+
+
+def get_password_reset_status(request_key: str) -> SignupState:
+	"""Poll a password-reset request."""
+	return registry.get_provider().get_password_reset_status(request_key)
+
+
+def complete_password_reset(request_key: str, password: str) -> SignupState:
+	"""Set the new password of a verified password-reset request."""
+	return registry.get_provider().complete_password_reset(request_key, password)
+
+
+def login(platform_base_url: str, email: str, password: str, user: str | None = None) -> dict[str, Any]:
+	"""Sign in against the platform and store the credentials it hands back.
+
+	The base URL is saved first, because the provider needs it to reach the
+	platform at all. What comes back is written with `set_password` exactly the
+	way `save_credentials` writes it; only `{ok, customer, customer_name}` goes
+	to the caller - a key never reaches the browser.
+	"""
+	# Only write the URL when it actually changes: a sign-in is not a reason to
+	# take a write lock on the Settings single, and a repeat sign-in never does.
+	wanted = (platform_base_url or "").strip().rstrip("/")
+	if wanted and wanted != (frappe.db.get_single_value("WhatsApp Settings", "platform_base_url") or ""):
+		save_credentials(platform_base_url=platform_base_url, user=user)
+	result = registry.get_provider().login(email, password) or {}
+	returned = result.get("credentials") or {}
+	values = {f: returned.get(f) for f in CREDENTIAL_FIELDS if returned.get(f)}
+	if not values:
+		frappe.throw(_("The platform returned no credentials for this account"), WAValidationError)
+	written = save_credentials(user=user, **values)
+	return {
+		"ok": True,
+		"customer": result.get("customer"),
+		"customer_name": result.get("customer_name"),
+		"credentials_stored": bool(written),
+	}
+
+
+def validate_coupon(code: str, email: str | None = None, mobile: str | None = None) -> dict[str, Any]:
+	"""Ask the platform whether a coupon is usable; an unusable one is an answer, not an error."""
+	e164 = normalize(mobile) if mobile else None
+	return registry.get_provider().validate_coupon(code, email=email, mobile_e164=e164)
+
+
+def referral_coupon() -> dict[str, Any]:
+	"""This tenant's own referral coupon, for the "share and get a free month" card."""
+	return registry.get_provider().get_referral_coupon()
 
 
 def steps(settings=None) -> list[Step]:
