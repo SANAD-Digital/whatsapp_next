@@ -1,6 +1,5 @@
-// MessageComposer — messages drawn as the conversation they will produce. The card is the message,
-// the connector between two cards is the delay between them, and the preview is a chat bubble, so
-// the editor and the result are read in one glance. Espresso tokens only; logical properties only.
+// MessageComposer — an editor, not a viewer: a rail of messages beside one writing surface, with
+// the preview as a panel the writer may fold away. Espresso tokens only; logical properties only.
 
 .sanad-mc-host {
 	> .grid-custom-buttons,
@@ -8,7 +7,9 @@
 	> .grid-footer,
 	> .grid-empty { display: none; }
 	> .control-label,
-	> .grid-label { display: none; }
+	> .grid-label,
+	> .help-box,
+	> .small.text-muted { display: none; }
 }
 
 .sanad-mc {
@@ -16,6 +17,7 @@
 	flex-direction: column;
 	gap: var(--sanad-gap-md);
 	margin-block: var(--sanad-gap-sm) var(--sanad-gap-lg);
+	container-type: inline-size;
 
 	&__head {
 		display: flex;
@@ -34,213 +36,208 @@
 		font-size: var(--text-sm, 12px);
 		color: var(--ink-gray-6);
 	}
-	&__head-actions {
-		display: flex;
-		align-items: center;
-		gap: var(--sanad-gap-sm);
-	}
-	&__hint {
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-5);
-	}
-	&__foot {
-		margin: 0;
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-5);
-	}
+	&__hint { font-size: var(--text-xs, 11px); color: var(--ink-gray-5); }
 
-	&__list {
-		display: flex;
-		flex-direction: column;
-	}
+	// ---- the split: which message | writing it -------------------------------------------------
 
-	// ---- the card ------------------------------------------------------------------------------
-
-	&__card {
-		container-type: inline-size;
+	&__split {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--sanad-gap-md);
 		border: var(--sanad-border);
 		border-radius: var(--sanad-radius);
 		background: var(--surface-white);
 		overflow: hidden;
-		transition: border-color var(--sanad-motion), box-shadow var(--sanad-motion);
 
-		&--open {
-			border-color: var(--sanad-accent-outline);
-			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+		@container (min-width: 760px) {
+			grid-template-columns: 248px minmax(0, 1fr);
+			gap: 0;
 		}
-		&--problem { border-inline-start: 3px solid var(--outline-amber-1); }
 	}
 
-	&__card-head {
+	&__rail {
+		padding: var(--sanad-gap-sm);
+		background: var(--surface-gray-1);
+
+		@container (min-width: 760px) {
+			border-inline-end: var(--sanad-border);
+			min-block-size: 360px;
+		}
+	}
+	&__raillist {
+		list-style: none;
+		margin: 0;
+		padding: 0;
 		display: flex;
-		align-items: stretch;
-		gap: var(--sanad-gap-sm);
-		padding-inline-end: var(--sanad-gap-sm);
+		flex-direction: column;
 	}
+	&__railitem {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+		padding-inline-end: 2px;
+		border: 1px solid transparent;
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
 
-	&__disclose {
+		&:hover { border-color: var(--outline-gray-1); }
+		&--on {
+			border-color: var(--sanad-accent-outline);
+			background: var(--sanad-accent-soft);
+		}
+		&--problem .sanad-mc__raildot { background: var(--ink-amber-3); }
+	}
+	&__railbtn {
 		display: flex;
 		align-items: center;
 		gap: var(--sanad-gap-sm);
 		flex: 1;
 		min-inline-size: 0;
-		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
+		padding: var(--sanad-gap-sm);
 		border: 0;
 		background: none;
 		text-align: start;
 		cursor: pointer;
-
-		&:hover { background: var(--surface-gray-1); }
 	}
+	&__railmain {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		min-inline-size: 0;
+		flex: 1;
+	}
+	&__railtype {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		font-size: 10px;
+		font-weight: 600;
+		letter-spacing: 0.03em;
+		text-transform: uppercase;
+		color: var(--ink-gray-5);
 
+		.icon { flex: none; }
+	}
+	&__railline {
+		font-size: var(--text-sm, 12px);
+		color: var(--ink-gray-8);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		unicode-bidi: plaintext;
+	}
+	&__raildot {
+		inline-size: 7px;
+		block-size: 7px;
+		border-radius: 50%;
+		flex: none;
+	}
 	&__order {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 22px;
-		block-size: 22px;
-		border-radius: var(--border-radius-full, 999px);
-		background: var(--sanad-accent-soft);
-		color: var(--sanad-accent-ink);
-		font-size: var(--text-xs, 11px);
-		font-weight: 700;
-		flex: none;
-	}
-
-	&__type {
-		display: inline-flex;
-		align-items: center;
-		gap: 4px;
-		padding: 2px 8px;
+		inline-size: 20px;
+		block-size: 20px;
 		border-radius: var(--border-radius-full, 999px);
 		background: var(--surface-gray-2);
 		color: var(--ink-gray-7);
-		font-size: var(--text-xs, 11px);
-		white-space: nowrap;
+		font-size: 10px;
+		font-weight: 700;
 		flex: none;
-
-		.icon { flex: none; }
 	}
-
-	&__summary {
-		flex: 1;
-		min-inline-size: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		color: var(--ink-gray-8);
-		font-size: var(--text-sm, 13px);
-		unicode-bidi: plaintext;
+	&__railitem--on &__order {
+		background: var(--sanad-accent);
+		color: var(--sanad-accent-on);
 	}
+	&__railactions {
+		display: flex;
+		align-items: center;
+		gap: 0;
+		opacity: 0;
+		transition: opacity var(--sanad-motion);
+	}
+	&__railitem:hover &__railactions,
+	&__railitem:focus-within &__railactions { opacity: 1; }
 
-	&__problem {
+	// the wait between two messages, written on the rail
+	&__railwait {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+		block-size: 26px;
+
+		&::before {
+			content: "";
+			position: absolute;
+			inset-block: 0;
+			inline-size: 0;
+			border-inline-start: 1px dashed var(--outline-gray-2);
+		}
+	}
+	&__delay {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
 		gap: 4px;
-		color: var(--ink-amber-3);
-		font-size: var(--text-xs, 11px);
+		padding: 1px 8px;
+		border: 1px solid var(--outline-gray-1);
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-white);
+		color: var(--ink-gray-6);
+		font-size: 10px;
+		cursor: pointer;
 		white-space: nowrap;
-		flex: none;
-	}
 
-	&__chevron {
-		display: inline-flex;
-		color: var(--ink-gray-5);
-		flex: none;
-	}
-
-	&__card-actions {
-		display: flex;
-		align-items: center;
-		gap: 2px;
+		&:hover { border-color: var(--sanad-accent-outline); color: var(--sanad-accent-ink); }
 	}
 
 	&__icon-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: var(--sanad-target);
-		block-size: var(--sanad-target);
+		inline-size: 24px;
+		block-size: 24px;
 		padding: 0;
 		border: 0;
 		border-radius: var(--sanad-radius);
 		background: none;
-		color: var(--ink-gray-6);
+		color: var(--ink-gray-5);
 		cursor: pointer;
 
 		&:hover:not([disabled]) { background: var(--surface-gray-2); color: var(--ink-gray-8); }
-		&[disabled] { opacity: 0.35; cursor: default; }
-	}
-
-	// ---- the connector: the delay, drawn as the gap it is --------------------------------------
-
-	&__connector {
-		display: flex;
-		align-items: center;
-		gap: var(--sanad-gap-sm);
-		padding-inline: var(--sanad-gap-lg);
-		block-size: 34px;
-	}
-	&__connector-line {
-		flex: 1;
-		block-size: 0;
-		border-block-start: 1px dashed var(--outline-gray-2);
-	}
-	&__delay {
-		display: inline-flex;
-		align-items: center;
-		gap: 4px;
-		padding: 2px 10px;
-		border: 1px solid var(--outline-gray-1);
-		border-radius: var(--border-radius-full, 999px);
-		background: var(--surface-white);
-		color: var(--ink-gray-6);
-		font-size: var(--text-xs, 11px);
-		cursor: pointer;
-		white-space: nowrap;
-
-		&:hover { background: var(--surface-gray-2); color: var(--ink-gray-8); }
+		&[disabled] { opacity: 0.3; cursor: default; }
 	}
 
 	// ---- the editor ----------------------------------------------------------------------------
 
-	&__body[hidden] { display: none; }
-
-	&__edit {
-		display: grid;
-		gap: var(--sanad-gap-lg);
-		padding: var(--sanad-gap-md) var(--sanad-gap-lg) var(--sanad-gap-lg);
-		border-block-start: var(--sanad-border);
-		grid-template-columns: 1fr;
-
-		// two panes: the editor, and what it will look like. The card is the container — an element
-		// cannot answer a container query it declares itself, which is why this asked and nothing
-		// happened the first time.
-		@container (min-width: 620px) {
-			grid-template-columns: minmax(0, 1.1fr) minmax(220px, 0.9fr);
-		}
-	}
-
-	&__pane {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-sm);
+	&__editor {
+		padding: var(--sanad-gap-lg);
 		min-inline-size: 0;
 	}
-	// the preview follows the reader down a long message instead of scrolling out of sight
-	@container (min-width: 620px) {
-		.sanad-mc__pane--preview {
-			position: sticky;
-			inset-block-start: var(--sanad-gap-sm);
-			align-self: start;
-		}
+	&__etop {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--sanad-gap-sm);
+		flex-wrap: wrap;
+		margin-block-end: var(--sanad-gap-md);
+
+		.sanad-mc__types { flex: 1; min-inline-size: 0; }
 	}
-	&__pane-label {
+	&__toggle-preview {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		margin-inline-start: auto;
+		padding: 4px 8px;
+		border: 1px solid var(--outline-gray-1);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		color: var(--ink-gray-6);
 		font-size: var(--text-xs, 11px);
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--ink-gray-5);
+		cursor: pointer;
+
+		&:hover { background: var(--surface-gray-2); }
 	}
 
 	&__types {
@@ -252,7 +249,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 4px;
-		min-block-size: var(--sanad-target);
+		min-block-size: 30px;
 		padding-inline: 10px;
 		border: 1px solid var(--outline-gray-2);
 		border-radius: var(--sanad-radius);
@@ -263,45 +260,176 @@
 
 		&:hover { background: var(--surface-gray-2); }
 		&--on {
-			background: var(--sanad-accent-soft);
-			border-color: var(--sanad-accent-outline);
-			color: var(--sanad-accent-ink);
+			background: var(--sanad-accent);
+			border-color: var(--sanad-accent);
+			color: var(--sanad-accent-on);
 			font-weight: 600;
 		}
 	}
 
-	&__fields {
+	&__egrid {
 		display: grid;
-		gap: var(--sanad-gap-sm);
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--sanad-gap-lg);
+
+		@container (min-width: 860px) {
+			grid-template-columns: minmax(0, 1.25fr) minmax(250px, 0.75fr);
+			&--nopreview { grid-template-columns: minmax(0, 1fr); }
+		}
 	}
+	&__eform {
+		display: grid;
+		gap: var(--sanad-gap-md);
+		min-inline-size: 0;
+	}
+
 	&__field {
 		.frappe-control { margin: 0; }
-		.control-label { font-size: var(--text-xs, 11px); color: var(--ink-gray-6); }
-		// a body field is read while it is written: tall enough to see the message, never taller
+		.control-label {
+			font-size: var(--text-xs, 11px);
+			font-weight: 600;
+			color: var(--ink-gray-7);
+		}
 		textarea {
-			min-block-size: 96px;
-			max-block-size: 168px;
+			min-block-size: 132px;
+			max-block-size: 260px;
 			resize: vertical;
+			line-height: 1.7;
 		}
 	}
 
-	// ---- the bubble ----------------------------------------------------------------------------
+	// the writing toolbar, attached under the field it acts on
+	&__toolbar {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+		margin-block-start: 4px;
+	}
+	&__mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 28px;
+		block-size: 28px;
+		padding: 0;
+		border: 1px solid transparent;
+		border-radius: var(--sanad-radius);
+		background: none;
+		color: var(--ink-gray-6);
+		cursor: pointer;
 
+		&:hover { background: var(--surface-gray-2); color: var(--ink-gray-9); }
+	}
+	&__varpick { position: relative; margin-inline-start: auto; }
+	&__varbtn {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		padding: 3px 8px;
+		border: 1px solid var(--outline-gray-1);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		color: var(--ink-gray-7);
+		font-size: var(--text-xs, 11px);
+		cursor: pointer;
+
+		&:hover { border-color: var(--sanad-accent-outline); color: var(--sanad-accent-ink); }
+	}
+	&__varmenu {
+		position: absolute;
+		inset-inline-end: 0;
+		inset-block-start: calc(100% + 4px);
+		z-index: 20;
+		min-inline-size: 230px;
+		max-block-size: 260px;
+		overflow-y: auto;
+		padding: 4px;
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		box-shadow: var(--shadow-base, 0 4px 12px rgba(0, 0, 0, 0.1));
+	}
+	&__varopt {
+		display: flex;
+		align-items: baseline;
+		gap: var(--sanad-gap-sm);
+		inline-size: 100%;
+		padding: 6px 8px;
+		border: 0;
+		border-radius: var(--sanad-radius);
+		background: none;
+		text-align: start;
+		cursor: pointer;
+
+		&:hover { background: var(--sanad-accent-soft); }
+	}
+	&__var-label {
+		font-size: var(--text-sm, 12px);
+		color: var(--ink-gray-8);
+		white-space: nowrap;
+	}
+	&__var-name {
+		font-family: var(--font-stack-mono, monospace);
+		font-size: 10px;
+		color: var(--ink-gray-5);
+		margin-inline-start: auto;
+	}
+
+	&__more {
+		border-block-start: var(--sanad-border);
+		padding-block-start: var(--sanad-gap-sm);
+
+		> summary {
+			cursor: pointer;
+			font-size: var(--text-sm, 12px);
+			color: var(--ink-gray-6);
+			margin-block-end: var(--sanad-gap-sm);
+		}
+	}
+
+	&__delayline {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-xs);
+		flex-wrap: wrap;
+		font-size: var(--text-sm, 12px);
+		color: var(--ink-gray-6);
+	}
+
+	// ---- the preview ---------------------------------------------------------------------------
+
+	&__epreview {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		min-inline-size: 0;
+
+		@container (min-width: 860px) {
+			position: sticky;
+			inset-block-start: var(--sanad-gap-sm);
+			align-self: start;
+		}
+	}
+	&__pane-label {
+		font-size: 10px;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--ink-gray-5);
+	}
 	&__chat {
+		display: flex;
+		justify-content: flex-end;
 		padding: var(--sanad-gap-md);
 		border-radius: var(--sanad-radius);
 		background: var(--surface-gray-2);
-		min-block-size: 96px;
-		display: flex;
-		justify-content: flex-end;
+		min-block-size: 110px;
 	}
-
 	&__bubble {
-		position: relative;
 		display: inline-flex;
 		flex-direction: column;
 		gap: 6px;
-		max-inline-size: 92%;
+		max-inline-size: 100%;
 		padding: 8px 10px;
 		border-radius: 12px;
 		border-end-end-radius: 4px;
@@ -311,7 +439,6 @@
 		line-height: 1.7;
 		box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06);
 	}
-
 	&__text {
 		white-space: pre-wrap;
 		word-break: break-word;
@@ -325,8 +452,6 @@
 			font-size: 0.92em;
 		}
 	}
-
-	// a variable that has not been rendered yet reads as what it is, not as stray punctuation
 	&__var {
 		display: inline-block;
 		padding: 0 5px;
@@ -336,7 +461,15 @@
 		font-family: var(--font-stack-mono, monospace);
 		font-size: 0.86em;
 	}
+	&__thumb {
+		display: block;
+		max-inline-size: 220px;
+		border-radius: 8px;
+		overflow: hidden;
+		background: var(--surface-white);
 
+		img { display: block; inline-size: 100%; max-block-size: 160px; object-fit: cover; }
+	}
 	&__file {
 		display: inline-flex;
 		align-items: center;
@@ -350,7 +483,6 @@
 
 		span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	}
-
 	&__poll {
 		display: flex;
 		flex-direction: column;
@@ -366,11 +498,7 @@
 		border-radius: var(--border-radius-full, 999px);
 		font-size: var(--text-xs, 12px);
 	}
-	&__poll-note {
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-5);
-	}
-
+	&__poll-note { font-size: 10px; color: var(--ink-gray-5); }
 	&__meta {
 		display: inline-flex;
 		align-items: center;
@@ -381,58 +509,10 @@
 
 		.icon { width: 12px; height: 12px; }
 	}
-
 	&__errors {
 		color: var(--ink-red-4);
 		font-size: var(--text-xs, 11px);
 
 		ul { margin: 0; padding-inline-start: 16px; }
 	}
-
-	// ---- variables -----------------------------------------------------------------------------
-
-	&__varsrow {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-xs);
-		margin-block-start: var(--sanad-gap-xs);
-	}
-	&__vars {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--sanad-gap-xs);
-	}
-	&__var-btn {
-		display: inline-flex;
-		align-items: baseline;
-		gap: 6px;
-		max-inline-size: 100%;
-		padding: 3px 8px;
-		border: 1px solid var(--outline-gray-1);
-		border-radius: var(--sanad-radius);
-		background: var(--surface-white);
-		text-align: start;
-		cursor: pointer;
-
-		&:hover { background: var(--sanad-accent-soft); border-color: var(--sanad-accent-outline); }
-	}
-	&__var-name {
-		font-family: var(--font-stack-mono, monospace);
-		font-size: 10px;
-		color: var(--ink-gray-5);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	&__var-label {
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-8);
-		white-space: nowrap;
-	}
-}
-
-// the phone reads one column, and the preview comes first: it is the reason the editor exists
-// a narrow column reads the preview first: it is the reason the editor exists
-@container (max-width: 619px) {
-	.sanad-mc__edit .sanad-mc__pane--preview { order: -1; }
 }

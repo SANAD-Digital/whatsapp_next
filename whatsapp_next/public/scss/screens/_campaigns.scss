@@ -282,3 +282,67 @@
 		.wa-ops__metrics { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 	}
 }
+
+// ---- the campaign's recipients ------------------------------------------------------------------
+// The product's own list inside a form tab: a head that names the rows and carries the two verbs,
+// a toolbar of the filters the server answers, and `sanad.ui.DataList` in page mode under them.
+
+.wa-recipients {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-md);
+	margin-block: var(--sanad-gap-sm) var(--sanad-gap-lg);
+
+	&__head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+	}
+	&__title {
+		margin: 0;
+		font-size: var(--text-lg, 16px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+	}
+	&__count {
+		flex: 1;
+		font-size: var(--text-sm, 12px);
+		color: var(--ink-gray-6);
+	}
+	&__actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+	}
+	&__hint {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-5);
+	}
+
+	&__toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+	}
+	&__search {
+		flex: 1 1 220px;
+		max-inline-size: 320px;
+		min-block-size: var(--sanad-ctl-h);
+	}
+	&__select {
+		inline-size: auto;
+		min-inline-size: 150px;
+		min-block-size: var(--sanad-ctl-h);
+	}
+
+	// the table draws its own card inside the tab
+	&__table {
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		overflow: hidden;
+	}
+}

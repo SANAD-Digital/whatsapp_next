@@ -1,11 +1,11 @@
-// MessageComposer — the ordered messages a record will send, drawn as the conversation they will
-// produce instead of as a child-table grid.
+// MessageComposer — an editor for the ordered messages a record sends. It is an *input*: the
+// writing surface is the screen, the list of messages is a rail beside it, and the preview is a
+// small panel the writer may fold away.
 //
-// A grid asks the reader to imagine the result from a row of inputs. This component shows it: each
-// message is a card that opens into its own editor beside a live bubble, and the gap between two
-// cards *is* the delay between them. Which fields a message shows is read from the child DocType's
-// own `depends_on` rules, so a host app adds a message type by adding it to the Select and the
-// component follows.
+// A child-table grid cannot do this: a message has a type, and the type decides which fields
+// exist, which is why the rail/editor split beats a row of inputs. Which fields a type offers is
+// read from the child DocType's own `depends_on` rules and its Select options, so a host app adds
+// a type by adding it to the field and the component follows.
 
 import ui from "../_core/index.js";
 
@@ -21,6 +21,14 @@ const TYPE_ICON = {
 	Template: "es-line-copy",
 };
 
+/** WhatsApp's own text marks, offered as a toolbar over the body field. */
+const MARKS = [
+	{ key: "bold", mark: "*", icon: "es-line-bold", label: "Bold" },
+	{ key: "italic", mark: "_", icon: "es-line-italic", label: "Italic" },
+	{ key: "strike", mark: "~", icon: "es-line-strike-through", label: "Strikethrough" },
+	{ key: "mono", mark: "```", icon: "es-line-code", label: "Monospace" },
+];
+
 sanad.ui.MessageComposer = class MessageComposer {
 	/**
 	 * @param {object} opts
@@ -28,28 +36,31 @@ sanad.ui.MessageComposer = class MessageComposer {
 	 * @param {string} opts.fieldname — the Table field holding the messages
 	 * @param {string} [opts.type_field="message_type"]
 	 * @param {string} [opts.body_field="body"]
-	 * @param {string} [opts.delay_field] — Int seconds; drawn as the connector between two cards
-	 * @param {Array<string>} [opts.fields] — the fields the editor offers (default: every field of
-	 *   the child DocType that is not a layout break, in meta order)
-	 * @param {{method: string, args: Function}} [opts.preview] — `args(row, frm)`; the reply is
-	 *   `{body, attachment_name, message_type, errors[]}` and is drawn inside the bubble
-	 * @param {{method: string, args: Function}} [opts.variables] — `[{name, label, fieldtype}]`
-	 * @param {Function} [opts.can_edit] — `() => boolean` (default: the form is editable)
+	 * @param {string} [opts.delay_field] — Int seconds, edited under the editor
+	 * @param {Object<string,string[]>} [opts.primary_fields] — per type, the fields that lead the
+	 *   editor; everything else the type allows goes under "More options"
+	 * @param {Array<string>} [opts.fields] — the fields the editor may offer at all
+	 * @param {{method: string, args: Function}} [opts.preview] — `args(row, frm)` → `{body,
+	 *   attachment_name, message_type, errors[]}`
+	 * @param {Array<{name, label}>|{method: string, args: Function}} [opts.variables]
+	 * @param {Function} [opts.can_edit] — `() => boolean`
 	 * @param {string} [opts.empty_text]
-	 * @param {number} [opts.max] — refuse to add beyond this many messages
+	 * @param {number} [opts.max]
 	 */
 	constructor(opts = {}) {
-		this.opts = Object.assign({ type_field: "message_type", body_field: "body", debounce: 500 }, opts);
+		this.opts = Object.assign({ type_field: "message_type", body_field: "body", debounce: 400 }, opts);
 		this.frm = this.opts.frm;
 		this.fieldname = this.opts.fieldname;
 		this.id = ui.uid("mc");
-		this.open = new Set(); // the rows the reader has expanded
-		this.previews = new Map(); // row name → last preview payload
-		this.controls = new Map(); // row name → {fieldname: control}
+		this.active = null; // the message being written
+		this.show_preview = true;
+		this.controls = new Map();
 		this.resolve_meta();
 		this.mount();
 		this.load_variables();
 	}
+
+	// ---- meta ---------------------------------------------------------------------------------
 
 	resolve_meta() {
 		const df = frappe.meta.get_docfield(this.frm.doctype, this.fieldname);
@@ -62,20 +73,23 @@ sanad.ui.MessageComposer = class MessageComposer {
 		this.editable_fields = (this.opts.fields || fields.filter((f) => !ui.meta.is_layout(f) && !f.read_only).map((f) => f.fieldname)).filter(
 			(f) => this.field_map[f] && f !== this.opts.type_field && f !== this.opts.delay_field
 		);
-		const type_df = this.field_map[this.opts.type_field] || {};
-		this.types = (type_df.options || "").split("\n").filter(Boolean);
+		this.types = ((this.field_map[this.opts.type_field] || {}).options || "").split("\n").filter(Boolean);
 	}
 
 	rows() {
 		return (this.frm.doc[this.fieldname] || []).slice().sort((a, b) => cint(a.idx) - cint(b.idx));
 	}
 
-	can_edit() {
-		if (typeof this.opts.can_edit === "function") return !!this.opts.can_edit();
-		return !this.frm.doc.__islocal ? !this.frm.is_read_only() : true;
+	row_of(name) {
+		return this.rows().find((r) => r.name === name) || null;
 	}
 
-	// ---- mounting ---------------------------------------------------------------------------
+	can_edit() {
+		if (typeof this.opts.can_edit === "function") return !!this.opts.can_edit();
+		return !this.frm.is_read_only();
+	}
+
+	// ---- mount --------------------------------------------------------------------------------
 
 	mount() {
 		const field = this.frm.get_field(this.fieldname);
@@ -87,47 +101,33 @@ sanad.ui.MessageComposer = class MessageComposer {
 					<span class="sanad-mc__count sanad-tabular" aria-live="polite"></span>
 					<div class="sanad-mc__head-actions"></div>
 				</div>
-				<div class="sanad-mc__list" role="list"></div>
-				<p class="sanad-mc__foot"></p>
+				<div class="sanad-mc__split">
+					<nav class="sanad-mc__rail" aria-label="${ui.escape(this.label)}"></nav>
+					<section class="sanad-mc__editor" aria-live="polite"></section>
+				</div>
 			</div>`);
 		const $existing = this.frm.$wrapper.find(`.sanad-mc[data-fieldname="${this.fieldname}"]`);
 		if ($existing.length) $existing.replaceWith(this.$el);
 		else if (this.$host && this.$host.length) this.$host.append(this.$el);
 		else this.frm.$wrapper.find(".form-page").first().append(this.$el);
-		// the native grid stays in the DOM (Frappe saves from it) but never shows: this component is
-		// the way in, and a second, different editor of the same rows is how data goes out of step
 		if (this.$host) this.$host.addClass("sanad-mc-host");
-		this.$list = this.$el.find(".sanad-mc__list");
+		this.$rail = this.$el.find(".sanad-mc__rail");
+		this.$editor = this.$el.find(".sanad-mc__editor");
 		this.$actions = this.$el.find(".sanad-mc__head-actions");
+		const first = this.rows()[0];
+		this.active = first ? first.name : null;
 		this.render();
 	}
 
-	// ---- the list ---------------------------------------------------------------------------
+	// ---- the rail: which message is being written ---------------------------------------------
 
 	render() {
 		const rows = this.rows();
-		this.$list.empty();
+		if (!rows.some((r) => r.name === this.active)) this.active = rows.length ? rows[0].name : null;
 		this.$el.find(".sanad-mc__count").text(ui.plural(rows.length, { one: __("{0} message"), other: __("{0} messages") }));
-		if (!rows.length) {
-			new sanad.ui.EmptyState({
-				wrapper: this.$list,
-				state: "empty",
-				size: "sm",
-				title: this.opts.empty_text || __("No message yet"),
-				description: __("A campaign sends every message below, in order, to every recipient."),
-				action: this.can_edit() ? { label: __("Add the first message"), onclick: () => this.add() } : undefined,
-			});
-		} else {
-			rows.forEach((row, i) => {
-				if (i && this.opts.delay_field) this.$list.append(this.connector(row));
-				this.$list.append(this.card(row, i));
-			});
-		}
 		this.render_head_actions();
-		this.$el.find(".sanad-mc__foot").text(
-			rows.length > 1 ? __("Every recipient receives all {0} messages, in this order.", [ui.format_int(rows.length)]) : ""
-		);
-		this.open.forEach((name) => this.mount_editor(name));
+		this.render_rail(rows);
+		this.render_editor();
 		return this;
 	}
 
@@ -135,116 +135,310 @@ sanad.ui.MessageComposer = class MessageComposer {
 		this.$actions.empty();
 		if (!this.can_edit()) return;
 		const full = this.opts.max && this.rows().length >= cint(this.opts.max);
-		const $add = $(`<button type="button" class="btn btn-sm btn-default sanad-mc__add">${ui.icon("es-line-add", "xs")} ${ui.escape(__("Add message"))}</button>`)
+		$(`<button type="button" class="btn btn-sm btn-default sanad-mc__add">${ui.icon("es-line-add", "xs")} ${ui.escape(__("Add message"))}</button>`)
 			.prop("disabled", !!full)
-			.on("click", () => this.add());
-		this.$actions.append($add);
-		if (full) this.$actions.append(`<span class="sanad-mc__hint">${ui.escape(__("A campaign may carry {0} messages.", [ui.format_int(this.opts.max)]))}</span>`);
+			.attr("title", full ? __("A campaign may carry {0} messages.", [ui.format_int(this.opts.max)]) : null)
+			.on("click", () => this.add())
+			.appendTo(this.$actions);
 	}
 
-	/** The gap between two messages, which is also where their delay is set. */
-	connector(row) {
-		const seconds = cint(row[this.opts.delay_field]);
-		const label = seconds ? __("after {0}", [this.duration(seconds)]) : __("immediately after");
-		const $c = $(`
-			<div class="sanad-mc__connector" role="listitem">
-				<span class="sanad-mc__connector-line" aria-hidden="true"></span>
-				<button type="button" class="sanad-mc__delay" aria-label="${ui.escape(__("Delay before message {0}", [row.idx]))}">${ui.icon("es-line-time", "xs")} <span>${ui.escape(label)}</span></button>
-				<span class="sanad-mc__connector-line" aria-hidden="true"></span>
-			</div>`);
-		$c.find(".sanad-mc__delay").on("click", () => this.ask_delay(row));
-		return $c;
-	}
-
-	duration(seconds) {
-		const n = cint(seconds);
-		if (n < 60) return __("{0} s", [ui.format_int(n)]);
-		if (n < 3600) return __("{0} min", [ui.format_int(Math.round(n / 60))]);
-		return __("{0} h", [ui.format_int(Math.round(n / 360) / 10)]);
-	}
-
-	ask_delay(row) {
-		if (!this.can_edit()) return;
-		const d = new frappe.ui.Dialog({
-			title: __("Wait before this message"),
-			fields: [
-				{
-					fieldtype: "Int",
-					fieldname: "seconds",
-					label: __("Seconds"),
-					default: cint(row[this.opts.delay_field]),
-					description: __("0 sends it as soon as the one before it has left."),
-				},
-			],
-			primary_action_label: __("Set"),
-			primary_action: ({ seconds }) => {
-				frappe.model.set_value(row.doctype, row.name, this.opts.delay_field, Math.max(0, cint(seconds)));
-				d.hide();
-				this.render();
-			},
-		});
-		d.show();
-	}
-
-	/** One message: a summary line that opens into its editor. */
-	card(row, index) {
-		const type = row[this.opts.type_field] || this.types[0] || "Text";
-		const open = this.open.has(row.name);
-		const problem = this.problem_of(row);
-		const $card = $(`
-			<section class="sanad-mc__card${open ? " sanad-mc__card--open" : ""}${problem ? " sanad-mc__card--problem" : ""}" role="listitem" data-name="${ui.escape(row.name)}">
-				<header class="sanad-mc__card-head">
-					<button type="button" class="sanad-mc__disclose" aria-expanded="${open}" aria-controls="${this.id}-${index}">
-						<span class="sanad-mc__order sanad-tabular">${ui.escape(ui.format_int(index + 1))}</span>
-						<span class="sanad-mc__type">${ui.icon(TYPE_ICON[type] || "es-line-chat-alt", "xs")} ${ui.escape(__(type))}</span>
-						<span class="sanad-mc__summary" dir="auto">${ui.escape(this.summary_of(row))}</span>
-						${problem ? `<span class="sanad-mc__problem">${ui.icon("es-line-alert-triangle", "xs")} ${ui.escape(problem)}</span>` : ""}
-						<span class="sanad-mc__chevron" aria-hidden="true">${ui.icon(open ? "es-line-up" : "es-line-down", "xs")}</span>
-					</button>
-					<div class="sanad-mc__card-actions"></div>
-				</header>
-				<div class="sanad-mc__body" id="${this.id}-${index}"${open ? "" : " hidden"}></div>
-			</section>`);
-
-		$card.find(".sanad-mc__disclose").on("click", () => this.toggle(row.name));
-		const $actions = $card.find(".sanad-mc__card-actions");
-		if (this.can_edit()) {
-			const rows = this.rows();
-			const btn = (icon, label, disabled, handler) =>
-				$(`<button type="button" class="sanad-mc__icon-btn" title="${ui.escape(label)}" aria-label="${ui.escape(label)}">${ui.icon(icon, "xs")}</button>`)
-					.prop("disabled", !!disabled)
-					.on("click", (e) => {
-						e.stopPropagation();
-						handler();
-					})
-					.appendTo($actions);
-			btn("es-line-up", __("Move up"), index === 0, () => this.move(row, -1));
-			btn("es-line-down", __("Move down"), index === rows.length - 1, () => this.move(row, 1));
-			btn("es-line-duplicate", __("Duplicate"), false, () => this.duplicate(row));
-			btn("es-line-delete", __("Delete"), false, () => this.remove(row));
+	render_rail(rows) {
+		this.$rail.empty();
+		if (!rows.length) {
+			new sanad.ui.EmptyState({
+				wrapper: this.$rail,
+				state: "empty",
+				size: "sm",
+				title: this.opts.empty_text || __("No message yet"),
+				action: this.can_edit() ? { label: __("Add the first message"), onclick: () => this.add() } : undefined,
+			});
+			return;
 		}
-		return $card;
+		const $list = $('<ol class="sanad-mc__raillist"></ol>').appendTo(this.$rail);
+		rows.forEach((row, index) => {
+			const type = row[this.opts.type_field] || this.types[0];
+			const on = row.name === this.active;
+			const problem = this.problem_of(row);
+			const $item = $(`
+				<li class="sanad-mc__railitem${on ? " sanad-mc__railitem--on" : ""}${problem ? " sanad-mc__railitem--problem" : ""}">
+					<button type="button" class="sanad-mc__railbtn" aria-current="${on}" data-name="${ui.escape(row.name)}">
+						<span class="sanad-mc__order sanad-tabular">${ui.escape(ui.format_int(index + 1))}</span>
+						<span class="sanad-mc__railmain">
+							<span class="sanad-mc__railtype">${ui.icon(TYPE_ICON[type] || "es-line-chat-alt", "xs")} ${ui.escape(__(type || ""))}</span>
+							<span class="sanad-mc__railline" dir="auto">${ui.escape(this.summary_of(row))}</span>
+						</span>
+						${problem ? `<span class="sanad-mc__raildot" title="${ui.escape(problem)}" aria-label="${ui.escape(problem)}"></span>` : ""}
+					</button>
+					<span class="sanad-mc__railactions"></span>
+				</li>`);
+			$item.find(".sanad-mc__railbtn").on("click", () => this.select(row.name));
+			const $acts = $item.find(".sanad-mc__railactions");
+			if (this.can_edit()) {
+				const btn = (icon, label, disabled, handler) =>
+					$(`<button type="button" class="sanad-mc__icon-btn" title="${ui.escape(label)}" aria-label="${ui.escape(label)}">${ui.icon(icon, "xs")}</button>`)
+						.prop("disabled", !!disabled)
+						.on("click", (e) => {
+							e.stopPropagation();
+							handler();
+						})
+						.appendTo($acts);
+				btn("es-line-up", __("Move up"), index === 0, () => this.move(row, -1));
+				btn("es-line-down", __("Move down"), index === rows.length - 1, () => this.move(row, 1));
+				btn("es-line-duplicate", __("Duplicate"), false, () => this.duplicate(row));
+				btn("es-line-delete", __("Delete"), false, () => this.remove(row));
+			}
+			$list.append($item);
+			if (this.opts.delay_field && index < rows.length - 1) $list.append(this.rail_delay(rows[index + 1]));
+		});
+	}
+
+	/** Between two rail items: how long the campaign waits before the next message. */
+	rail_delay(next_row) {
+		const seconds = cint(next_row[this.opts.delay_field]);
+		const label = seconds ? __("wait {0}", [this.duration(seconds)]) : __("no wait");
+		const $li = $(`<li class="sanad-mc__railwait">
+			<button type="button" class="sanad-mc__delay">${ui.icon("es-line-time", "xs")} <span>${ui.escape(label)}</span></button>
+		</li>`);
+		$li.find("button").on("click", () => this.ask_delay(next_row));
+		return $li;
+	}
+
+	select(name) {
+		this.active = name;
+		this.render_rail(this.rows());
+		this.render_editor();
+		window.setTimeout(() => this.$editor.find("textarea, input, select").first().trigger("focus"), 30);
+	}
+
+	// ---- the editor ---------------------------------------------------------------------------
+
+	render_editor() {
+		this.$editor.empty();
+		const row = this.row_of(this.active);
+		if (!row) return;
+		const type = row[this.opts.type_field] || this.types[0];
+		const $head = $(`<div class="sanad-mc__etop"></div>`).appendTo(this.$editor);
+		this.render_types($head, row);
+		$(`<button type="button" class="sanad-mc__toggle-preview" aria-pressed="${this.show_preview}">${ui.icon("es-line-preview", "xs")} <span>${ui.escape(this.show_preview ? __("Hide preview") : __("Show preview"))}</span></button>`)
+			.on("click", () => {
+				this.show_preview = !this.show_preview;
+				this.render_editor();
+			})
+			.appendTo($head);
+
+		const $grid = $(`<div class="sanad-mc__egrid${this.show_preview ? "" : " sanad-mc__egrid--nopreview"}"></div>`).appendTo(this.$editor);
+		const $form = $('<div class="sanad-mc__eform"></div>').appendTo($grid);
+		if (this.show_preview) {
+			$(`<aside class="sanad-mc__epreview">
+					<span class="sanad-mc__pane-label">${ui.escape(__("As the recipient will see it"))}</span>
+					<div class="sanad-mc__chat"></div>
+					<div class="sanad-mc__errors" role="alert"></div>
+				</aside>`).appendTo($grid);
+		}
+		this.render_fields($form, row, type);
+		this.render_delay($form, row);
+		this.preview(row);
+	}
+
+	render_types($host, row) {
+		const current = row[this.opts.type_field] || this.types[0];
+		const $group = $(`<div class="sanad-mc__types" role="radiogroup" aria-label="${ui.escape(__((this.field_map[this.opts.type_field] || {}).label || "Type"))}"></div>`).appendTo($host);
+		this.types.forEach((type) => {
+			const on = type === current;
+			$(`<button type="button" class="sanad-mc__type-btn${on ? " sanad-mc__type-btn--on" : ""}" role="radio" aria-checked="${on}" tabindex="${on ? 0 : -1}">${ui.icon(TYPE_ICON[type] || "es-line-chat-alt", "xs")}<span>${ui.escape(__(type))}</span></button>`)
+				.on("click", () => {
+					if (!this.can_edit() || type === current) return;
+					frappe.model.set_value(row.doctype, row.name, this.opts.type_field, type);
+					this.render();
+				})
+				.appendTo($group);
+		});
+		$group.on("keydown", (e) => {
+			const items = $group.find('[role="radio"]').toArray();
+			const idx = ui.roving_index(e, items, items.findIndex((el) => el.getAttribute("aria-checked") === "true"));
+			if (idx < 0) return;
+			e.preventDefault();
+			items[idx].focus();
+			items[idx].click();
+		});
+	}
+
+	/** The fields this type uses: the ones that lead it first, the rest behind "More options". */
+	render_fields($form, row, type) {
+		const allowed = this.editable_fields.filter((f) => this.shows(this.field_map[f], row));
+		const lead = (this.opts.primary_fields || {})[type] || allowed;
+		const primary = allowed.filter((f) => lead.includes(f));
+		const rest = allowed.filter((f) => !lead.includes(f));
+		const controls = {};
+		this.controls.set(row.name, controls);
+
+		primary.forEach((fieldname) => this.field(  $form, row, fieldname, controls));
+		if (!rest.length) return;
+		const $more = $(`<details class="sanad-mc__more"><summary>${ui.escape(__("More options"))}</summary></details>`).appendTo($form);
+		rest.forEach((fieldname) => this.field($more, row, fieldname, controls));
+	}
+
+	field($host, row, fieldname, controls) {
+		const df = this.field_map[fieldname];
+		const is_body = fieldname === this.opts.body_field || (df.fieldtype === "Small Text" && fieldname === "caption");
+		const $wrap = $(`<div class="sanad-mc__field sanad-mc__field--${ui.escape(df.fieldtype.toLowerCase().replace(/\s+/g, "-"))}"></div>`).appendTo($host);
+		let ready = false;
+		const control = frappe.ui.form.make_control({
+			df: Object.assign({}, df, {
+				read_only: this.can_edit() ? df.read_only : 1,
+				// no doctype/docname on purpose: a bound control writes on render and the form
+				// would be "Not saved" before the writer typed anything
+				change: () => {
+					if (!ready) return;
+					const value = control.get_value();
+					if (String(value == null ? "" : value) === String(row[fieldname] == null ? "" : row[fieldname])) return;
+					frappe.model.set_value(row.doctype, row.name, fieldname, value);
+					this.touch(row);
+				},
+			}),
+			parent: $wrap,
+			render_input: true,
+			only_input: false,
+		});
+		control.set_value(row[fieldname] == null ? "" : row[fieldname]);
+		window.setTimeout(() => (ready = true), 0);
+		controls[fieldname] = control;
+		if (is_body && control.$input) {
+			control.$input.attr("rows", 7);
+			this.render_toolbar($wrap, row, fieldname, control);
+		}
+	}
+
+	/** The writing toolbar: WhatsApp's marks, and the variables, over the field they act on. */
+	render_toolbar($wrap, row, fieldname, control) {
+		if (!this.can_edit()) return;
+		const $bar = $('<div class="sanad-mc__toolbar"></div>').insertAfter($wrap.find(".control-input-wrapper").first().length ? $wrap.find(".control-input-wrapper").first() : $wrap.children().first());
+		MARKS.forEach((m) => {
+			$(`<button type="button" class="sanad-mc__mark" title="${ui.escape(__(m.label))}" aria-label="${ui.escape(__(m.label))}">${ui.icon(m.icon, "xs")}</button>`)
+				.on("click", () => this.wrap_selection(row, fieldname, control, m.mark))
+				.appendTo($bar);
+		});
+		const $vars = $(`<div class="sanad-mc__varpick"></div>`).appendTo($bar);
+		$(`<button type="button" class="sanad-mc__varbtn" aria-haspopup="listbox" aria-expanded="false">${ui.icon("es-line-add", "xs")} ${ui.escape(__("Variable"))}</button>`)
+			.on("click", (e) => {
+				e.stopPropagation();
+				this.toggle_vars($vars, row, fieldname, control);
+			})
+			.appendTo($vars);
+	}
+
+	toggle_vars($host, row, fieldname, control) {
+		const open = $host.find(".sanad-mc__varmenu").length;
+		$(document).off(`click.${this.id}-vars`);
+		$host.find(".sanad-mc__varmenu").remove();
+		$host.find(".sanad-mc__varbtn").attr("aria-expanded", open ? "false" : "true");
+		if (open) return;
+		const list = this.variables || [];
+		const $menu = $('<div class="sanad-mc__varmenu" role="listbox"></div>').appendTo($host);
+		if (!list.length) $menu.append(`<p class="sanad-mc__hint">${ui.escape(__("No variable is offered for this record."))}</p>`);
+		list.forEach((v) => {
+			$(`<button type="button" class="sanad-mc__varopt" role="option">
+					<span class="sanad-mc__var-label">${ui.escape(__(v.label || v.name))}</span>
+					<span class="sanad-mc__var-name">${ui.escape(v.name)}</span>
+				</button>`)
+				.on("click", () => {
+					this.insert_at_caret(row, fieldname, control, `{{ ${v.name} }}`);
+					this.toggle_vars($host, row, fieldname, control);
+				})
+				.appendTo($menu);
+		});
+		window.setTimeout(() => $(document).on(`click.${this.id}-vars`, () => this.toggle_vars($host, row, fieldname, control)), 0);
+	}
+
+	/** Put marks around what is selected, or at the caret when nothing is selected. */
+	wrap_selection(row, fieldname, control, mark) {
+		const input = control.$input && control.$input[0];
+		const value = String(control.get_value() || "");
+		if (!input || typeof input.selectionStart !== "number") return this.insert_at_caret(row, fieldname, control, `${mark}${mark}`);
+		const start = input.selectionStart;
+		const end = input.selectionEnd;
+		const chosen = value.slice(start, end) || __("text");
+		const next = `${value.slice(0, start)}${mark}${chosen}${mark}${value.slice(end)}`;
+		control.set_value(next);
+		frappe.model.set_value(row.doctype, row.name, fieldname, next);
+		this.touch(row);
+		window.setTimeout(() => {
+			input.focus();
+			input.setSelectionRange(start + mark.length, start + mark.length + chosen.length);
+		}, 0);
+	}
+
+	insert_at_caret(row, fieldname, control, token) {
+		const input = control.$input && control.$input[0];
+		const value = String(control.get_value() || "");
+		let next = value + token;
+		let caret = next.length;
+		if (input && typeof input.selectionStart === "number") {
+			const start = input.selectionStart;
+			next = value.slice(0, start) + token + value.slice(input.selectionEnd);
+			caret = start + token.length;
+		}
+		control.set_value(next);
+		frappe.model.set_value(row.doctype, row.name, fieldname, next);
+		this.touch(row);
+		window.setTimeout(() => {
+			if (!input) return;
+			input.focus();
+			input.setSelectionRange(caret, caret);
+		}, 0);
+		ui.announce(__("{0} inserted", [token]));
+	}
+
+	/** The wait before this message, written as a sentence under the editor. */
+	render_delay($form, row) {
+		if (!this.opts.delay_field) return;
+		const rows = this.rows();
+		if (rows.findIndex((r) => r.name === row.name) === 0) return; // the first message waits for nothing
+		const seconds = cint(row[this.opts.delay_field]);
+		const $line = $(`<div class="sanad-mc__delayline">
+				<span>${ui.escape(__("Send it"))}</span>
+				<button type="button" class="sanad-mc__delay">${ui.icon("es-line-time", "xs")} <span>${ui.escape(seconds ? this.duration(seconds) : __("immediately"))}</span></button>
+				<span>${ui.escape(__("after the message before it."))}</span>
+			</div>`).appendTo($form);
+		$line.find("button").on("click", () => this.ask_delay(row));
+	}
+
+	// ---- reading a message --------------------------------------------------------------------
+
+	shows(df, row) {
+		if (!df) return false;
+		if (!df.depends_on) return true;
+		try {
+			return !!frappe.utils.eval(String(df.depends_on).replace(/^eval:/, ""), { doc: row, parent: this.frm.doc });
+		} catch (e) {
+			return true;
+		}
+	}
+
+	/** In the rail a variable reads as what it stands for, not as its path in braces. */
+	plain(text) {
+		const labels = {};
+		(this.variables || []).forEach((v) => (labels[v.name] = __(v.label || v.name)));
+		return String(text || "").replace(/\{\{\s*([^}]+?)\s*\}\}/g, (m, name) => labels[name] || name.split(".").pop());
 	}
 
 	summary_of(row) {
 		const type = row[this.opts.type_field];
 		if (type === "Poll") return row.poll_question || __("No question yet");
 		if (type === "Location") return __("A location");
-		const body = (row[this.opts.body_field] || "").trim();
-		if (body) return body.length > 90 ? `${body.slice(0, 90)}…` : body;
-		if (row.attachment) return String(row.attachment).split("/").pop();
+		const body = this.plain((row[this.opts.body_field] || row.caption || "").trim());
+		if (body) return body.length > 60 ? `${body.slice(0, 60)}…` : body;
+		if (row.attachment) return decodeURIComponent(String(row.attachment).split("/").pop());
 		if (row.print_format) return __("The document, as {0}", [row.print_format]);
 		return __("Nothing to send yet");
 	}
 
-	/** What stops this message from going out, said in the reader's words. */
 	problem_of(row) {
 		const type = row[this.opts.type_field];
 		if (!type) return __("Pick a type");
 		if (type === "Poll") {
-			const options = this.poll_options(row);
 			if (!row.poll_question) return __("The question is missing");
-			if (options.length < 2) return __("At least two answers");
+			if (this.poll_options(row).length < 2) return __("At least two answers");
 			return "";
 		}
 		if (["Document", "Image", "Video", "Audio", "Sticker"].includes(type)) {
@@ -264,153 +458,45 @@ sanad.ui.MessageComposer = class MessageComposer {
 		}
 	}
 
-	// ---- the editor -------------------------------------------------------------------------
-
-	toggle(name) {
-		if (this.open.has(name)) this.open.delete(name);
-		else this.open.add(name);
-		this.render();
+	duration(seconds) {
+		const n = cint(seconds);
+		if (n < 60) return __("{0} s", [ui.format_int(n)]);
+		if (n < 3600) return __("{0} min", [ui.format_int(Math.round(n / 60))]);
+		return __("{0} h", [ui.format_int(Math.round(n / 360) / 10)]);
 	}
 
-	mount_editor(name) {
-		const row = this.rows().find((r) => r.name === name);
-		const $card = this.$list.find(`.sanad-mc__card[data-name="${name}"]`);
-		if (!row || !$card.length) return;
-		const $body = $card.find(".sanad-mc__body").removeAttr("hidden").empty();
-		$body.append(`
-			<div class="sanad-mc__edit">
-				<div class="sanad-mc__pane sanad-mc__pane--form"></div>
-				<div class="sanad-mc__pane sanad-mc__pane--preview">
-					<span class="sanad-mc__pane-label">${ui.escape(__("As the recipient will see it"))}</span>
-					<div class="sanad-mc__chat"></div>
-					<div class="sanad-mc__errors" role="alert"></div>
-				</div>
-			</div>`);
-		const $form = $body.find(".sanad-mc__pane--form");
-		this.render_types($form, row);
-		this.render_fields($form, row);
-		// the variables sit under the field they write into, not in a column of their own: the form
-		// column of a Desk form is ~700 px and a third pane leaves the editor unusable
-		const $vars = $(`<div class="sanad-mc__varsrow">
-				<span class="sanad-mc__pane-label">${ui.escape(__("Insert a variable"))}</span>
-				<div class="sanad-mc__vars"></div>
-			</div>`).appendTo($form);
-		this.render_vars($vars.find(".sanad-mc__vars"), row);
-		this.preview(row);
-	}
-
-	render_types($pane, row) {
-		const current = row[this.opts.type_field] || this.types[0];
-		const $group = $(`<div class="sanad-mc__types" role="radiogroup" aria-label="${ui.escape(__(this.field_map[this.opts.type_field].label || "Type"))}"></div>`).appendTo($pane);
-		this.types.forEach((type) => {
-			const on = type === current;
-			const $b = $(`<button type="button" class="sanad-mc__type-btn${on ? " sanad-mc__type-btn--on" : ""}" role="radio" aria-checked="${on}" tabindex="${on ? 0 : -1}">${ui.icon(TYPE_ICON[type] || "es-line-chat-alt", "xs")}<span>${ui.escape(__(type))}</span></button>`);
-			$b.on("click", () => {
-				if (!this.can_edit()) return;
-				frappe.model.set_value(row.doctype, row.name, this.opts.type_field, type);
-				this.render();
-			});
-			$group.append($b);
-		});
-		$group.on("keydown", (e) => {
-			const items = $group.find('[role="radio"]').toArray();
-			const idx = ui.roving_index(e, items, items.findIndex((el) => el.getAttribute("aria-checked") === "true"));
-			if (idx < 0) return;
-			e.preventDefault();
-			items[idx].focus();
-			items[idx].click();
-		});
-	}
-
-	/** The fields this type actually uses, read from the child DocType's own `depends_on`. */
-	render_fields($pane, row) {
-		const $form = $('<div class="sanad-mc__fields"></div>').appendTo($pane);
-		const controls = {};
-		this.editable_fields.forEach((fieldname) => {
-			const df = this.field_map[fieldname];
-			if (!this.shows(df, row)) return;
-			const $wrap = $('<div class="sanad-mc__field"></div>').appendTo($form);
-			let ready = false;
-			const control = frappe.ui.form.make_control({
-				df: Object.assign({}, df, {
-					read_only: this.can_edit() ? df.read_only : 1,
-					// no `doctype`/`docname` on purpose: a control bound to the row writes to it as
-					// soon as it is rendered, and the form was "Not saved" before the reader typed
-					change: () => {
-						if (!ready) return;
-						const value = control.get_value();
-						if (String(value == null ? "" : value) === String(row[fieldname] == null ? "" : row[fieldname])) return;
-						frappe.model.set_value(row.doctype, row.name, fieldname, value);
-						this.touch(row);
-					},
-				}),
-				parent: $wrap,
-				render_input: true,
-				only_input: false,
-			});
-			control.set_value(row[fieldname] == null ? "" : row[fieldname]);
-			window.setTimeout(() => (ready = true), 0);
-			if (control.$input && ["Text", "Small Text", "Code"].includes(df.fieldtype)) {
-				control.$input.attr("rows", df.fieldname === this.opts.body_field ? 6 : 3);
-			}
-			controls[fieldname] = control;
-		});
-		this.controls.set(row.name, controls);
-	}
-
-	shows(df, row) {
-		if (!df.depends_on) return true;
-		try {
-			return !!frappe.utils.eval(String(df.depends_on).replace(/^eval:/, ""), { doc: row, parent: this.frm.doc });
-		} catch (e) {
-			return true;
-		}
-	}
-
-	/** A change to a field the summary or the preview depends on. */
 	touch(row) {
-		const $card = this.$list.find(`.sanad-mc__card[data-name="${row.name}"]`);
-		$card.find(".sanad-mc__summary").text(this.summary_of(row));
-		const problem = this.problem_of(row);
-		$card.toggleClass("sanad-mc__card--problem", !!problem);
+		this.render_rail(this.rows());
 		this.debounced_preview = this.debounced_preview || ui.debounce((r) => this.preview(r), this.opts.debounce);
 		this.debounced_preview(row);
 	}
 
-	// ---- the bubble -------------------------------------------------------------------------
+	// ---- the preview --------------------------------------------------------------------------
 
-	/**
-	 * The message as it will arrive. The server renders it when the record is saved (variables and
-	 * all); before that, the text is shown as typed so the reader is never looking at an empty pane.
-	 */
 	preview(row) {
-		const $card = this.$list.find(`.sanad-mc__card[data-name="${row.name}"]`);
-		const $chat = $card.find(".sanad-mc__chat");
+		const $chat = this.$editor.find(".sanad-mc__chat");
 		if (!$chat.length) return;
 		this.draw_bubble($chat, this.local_preview(row));
 		if (!this.opts.preview || this.frm.is_new() || this.frm.is_dirty()) return;
-		const args = this.opts.preview.args(row, this.frm);
-		ui.call(this.opts.preview.method, args, { silent: true })
+		ui.call(this.opts.preview.method, this.opts.preview.args(row, this.frm), { silent: true })
 			.then((p) => {
-				this.previews.set(row.name, p);
-				this.draw_bubble($chat, {
-					type: p.message_type || row[this.opts.type_field],
-					body: p.body,
-					attachment: p.attachment_name,
-					poll: this.poll_of(row),
-				});
-				const $errors = $card.find(".sanad-mc__errors");
+				if (this.active !== row.name) return;
+				this.draw_bubble($chat, { type: p.message_type || row[this.opts.type_field], body: p.body, attachment: p.attachment_name, image: this.local_preview(row).image, poll: this.poll_of(row) });
 				const errors = p.errors || [];
-				$errors.html(errors.length ? `<ul>${errors.map((e) => `<li>${ui.escape(e)}</li>`).join("")}</ul>` : "");
+				this.$editor.find(".sanad-mc__errors").html(errors.length ? `<ul>${errors.map((e) => `<li>${ui.escape(e)}</li>`).join("")}</ul>` : "");
 			})
 			.catch(() => {});
 	}
 
 	local_preview(row) {
+		const type = row[this.opts.type_field];
+		const file = row.attachment ? decodeURIComponent(String(row.attachment).split("/").pop()) : "";
+		const media = ["Document", "Image", "Video", "Audio", "Sticker"].includes(type);
 		return {
-			type: row[this.opts.type_field],
-			body: row[this.opts.body_field] || row.caption || "",
-			attachment: row.attachment ? String(row.attachment).split("/").pop() : row.print_format ? __("{0} (PDF)", [row.print_format]) : "",
+			type,
+			body: media ? row.caption || "" : row[this.opts.body_field] || "",
+			attachment: file || (row.print_format ? __("{0} (PDF)", [row.print_format]) : ""),
+			image: ["Image", "Sticker"].includes(type) && row.attachment ? row.attachment : null,
 			poll: this.poll_of(row),
 		};
 	}
@@ -424,39 +510,45 @@ sanad.ui.MessageComposer = class MessageComposer {
 		const now = frappe.datetime.now_datetime().slice(11, 16);
 		const body = (message.body || "").trim();
 		let inner = "";
-		if (message.attachment) {
-			inner += `<span class="sanad-mc__file">${ui.icon("es-line-file", "xs")} <span dir="auto">${ui.escape(message.attachment)}</span></span>`;
-		}
+		if (message.image) inner += `<span class="sanad-mc__thumb" data-file="${ui.escape(message.attachment || "")}"><img src="${ui.escape(message.image)}" alt="${ui.escape(message.attachment || __("Image"))}" loading="lazy"></span>`;
+		else if (message.attachment) inner += `<span class="sanad-mc__file">${ui.icon("es-line-filetype", "xs")} <span dir="auto">${ui.escape(message.attachment)}</span></span>`;
 		if (message.poll) {
 			inner += `<span class="sanad-mc__poll">
 				<span class="sanad-mc__poll-q" dir="auto">${ui.escape(message.poll.question)}</span>
-				${(message.poll.options.length ? message.poll.options : [__("No answer yet")])
-					.map((o) => `<span class="sanad-mc__poll-o" dir="auto">${ui.escape(o)}</span>`)
-					.join("")}
+				${(message.poll.options.length ? message.poll.options : [__("No answer yet")]).map((o) => `<span class="sanad-mc__poll-o" dir="auto">${ui.escape(o)}</span>`).join("")}
 				<span class="sanad-mc__poll-note">${ui.escape(message.poll.multiple ? __("More than one answer allowed") : __("One answer"))}</span>
 			</span>`;
 		}
 		if (body) inner += `<span class="sanad-mc__text" dir="auto">${this.format_body(body)}</span>`;
 		if (!inner) inner = `<span class="sanad-mc__text sanad-mc__text--empty">${ui.escape(__("Nothing to send yet"))}</span>`;
-		$chat.html(`
-			<div class="sanad-mc__bubble">
-				${inner}
-				<span class="sanad-mc__meta"><span class="sanad-tabular">${ui.escape(now)}</span>${ui.icon("es-line-double-check", "xs")}</span>
-			</div>`);
+		$chat.html(`<div class="sanad-mc__bubble">${inner}<span class="sanad-mc__meta"><span class="sanad-tabular">${ui.escape(now)}</span>${ui.icon("es-line-double-check", "xs")}</span></div>`);
+		$chat.find(".sanad-mc__thumb img").on("error", (e) => {
+			const $thumb = $(e.currentTarget).closest(".sanad-mc__thumb");
+			const file = $thumb.attr("data-file") || __("The file is missing");
+			$thumb.replaceWith(`<span class="sanad-mc__file">${ui.icon("es-line-filetype", "xs")} <span dir="auto">${ui.escape(file)}</span></span>`);
+		});
 	}
 
-	/** WhatsApp's own emphasis, and a variable that has not been filled in yet reads as a chip. */
+	/**
+	 * WhatsApp's own marks, and a variable that has not been filled in yet as a chip. The
+	 * variables are lifted out before the marks run: an underscore inside
+	 * `{{ recipient.display_name }}` is part of a name, not a request for italics.
+	 */
 	format_body(text) {
-		let html = ui.escape(text);
-		html = html.replace(/\{\{([^}]+)\}\}/g, (m, name) => `<span class="sanad-mc__var">${ui.escape(name.trim())}</span>`);
+		const vars = [];
+		let html = ui.escape(text).replace(/\{\{([^}]+)\}\}/g, (m, name) => {
+			vars.push(name.trim());
+			return `\u0000${vars.length - 1}\u0000`;
+		});
 		html = html.replace(/\*([^*\n]+)\*/g, "<b>$1</b>");
 		html = html.replace(/_([^_\n]+)_/g, "<i>$1</i>");
 		html = html.replace(/~([^~\n]+)~/g, "<s>$1</s>");
 		html = html.replace(/```([^`]+)```/g, "<code>$1</code>");
+		html = html.replace(/\u0000(\d+)\u0000/g, (m, i) => `<span class="sanad-mc__var">${vars[cint(i)]}</span>`);
 		return html.replace(/\n/g, "<br>");
 	}
 
-	// ---- variables --------------------------------------------------------------------------
+	// ---- variables ----------------------------------------------------------------------------
 
 	load_variables() {
 		if (!this.opts.variables) return Promise.resolve([]);
@@ -468,72 +560,37 @@ sanad.ui.MessageComposer = class MessageComposer {
 			.call(this.opts.variables.method, this.opts.variables.args ? this.opts.variables.args(this.frm) : {}, { silent: true })
 			.then((list) => {
 				this.variables = list || [];
-				this.open.forEach((name) => {
-					const $card = this.$list.find(`.sanad-mc__card[data-name="${name}"]`);
-					const row = this.rows().find((r) => r.name === name);
-					if (row && $card.length) this.render_vars($card.find(".sanad-mc__vars"), row);
-				});
+				this.render_rail(this.rows()); // the labels the rail prints arrive with them
 				return this.variables;
 			})
 			.catch(() => []);
 	}
 
-	render_vars($wrap, row) {
-		if (!$wrap.length) return;
-		const list = this.variables || [];
-		if (!list.length) {
-			$wrap.html(`<p class="sanad-mc__hint">${ui.escape(__("No variable is offered for this record."))}</p>`);
-			return;
-		}
-		$wrap.empty();
-		list.forEach((v) => {
-			$(`<button type="button" class="sanad-mc__var-btn" title="{{ ${ui.escape(v.name)} }}">
-					<span class="sanad-mc__var-label">${ui.escape(__(v.label || v.name))}</span>
-					<span class="sanad-mc__var-name">${ui.escape(v.name)}</span>
-				</button>`)
-				.on("click", () => this.insert_variable(row, v.name))
-				.appendTo($wrap);
-		});
-	}
+	// ---- the set ------------------------------------------------------------------------------
 
-	insert_variable(row, name) {
+	ask_delay(row) {
 		if (!this.can_edit()) return;
-		const controls = this.controls.get(row.name) || {};
-		const control = controls[this.opts.body_field] || controls.caption || controls.poll_question;
-		const token = `{{ ${name} }}`;
-		if (!control) return;
-		const input = control.$input && control.$input[0];
-		const value = String(control.get_value() || "");
-		let next = value + token;
-		if (input && typeof input.selectionStart === "number") {
-			const start = input.selectionStart;
-			const end = input.selectionEnd;
-			next = value.slice(0, start) + token + value.slice(end);
-			control.set_value(next);
-			window.setTimeout(() => {
-				input.focus();
-				input.setSelectionRange(start + token.length, start + token.length);
-			}, 0);
-		} else control.set_value(next);
-		frappe.model.set_value(row.doctype, row.name, control.df.fieldname, next);
-		this.touch(row);
-		ui.announce(__("{0} inserted", [token]));
+		const d = new frappe.ui.Dialog({
+			title: __("Wait before this message"),
+			fields: [{ fieldtype: "Int", fieldname: "seconds", label: __("Seconds"), default: cint(row[this.opts.delay_field]), description: __("0 sends it as soon as the one before it has left.") }],
+			primary_action_label: __("Set"),
+			primary_action: ({ seconds }) => {
+				frappe.model.set_value(row.doctype, row.name, this.opts.delay_field, Math.max(0, cint(seconds)));
+				d.hide();
+				this.render();
+			},
+		});
+		d.show();
 	}
-
-	// ---- the set ----------------------------------------------------------------------------
 
 	add() {
 		if (!this.can_edit()) return;
 		if (this.opts.max && this.rows().length >= cint(this.opts.max)) return;
 		const row = this.frm.add_child(this.fieldname, { [this.opts.type_field]: this.types[0] || "Text" });
 		this.frm.refresh_field(this.fieldname);
-		this.open.add(row.name);
+		this.active = row.name;
 		this.render();
-		window.setTimeout(() => {
-			const $card = this.$list.find(`.sanad-mc__card[data-name="${row.name}"]`);
-			$card[0] && $card[0].scrollIntoView({ block: "nearest", behavior: "smooth" });
-			$card.find("textarea, input").first().trigger("focus");
-		}, 50);
+		window.setTimeout(() => this.$editor.find("textarea, input").first().trigger("focus"), 50);
 	}
 
 	duplicate(row) {
@@ -542,7 +599,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 		["name", "idx", "creation", "modified", "owner", "modified_by", "parent", "parentfield", "parenttype", "docstatus", "__islocal", "__unsaved"].forEach((k) => delete copy[k]);
 		const made = this.frm.add_child(this.fieldname, copy);
 		this.frm.refresh_field(this.fieldname);
-		this.open.add(made.name);
+		this.active = made.name;
 		this.render();
 		ui.announce(__("Message duplicated"));
 	}
@@ -553,14 +610,13 @@ sanad.ui.MessageComposer = class MessageComposer {
 		const doit = () => {
 			this.frm.doc[this.fieldname] = rows.filter((r) => r.name !== row.name);
 			this.frm.doc[this.fieldname].forEach((r, i) => (r.idx = i + 1));
-			this.open.delete(row.name);
+			if (this.active === row.name) this.active = null;
 			this.frm.refresh_field(this.fieldname);
 			this.frm.dirty();
 			this.render();
 			ui.announce(__("Message removed"));
 		};
-		const empty = !this.summary_of(row) || this.problem_of(row) === __("Nothing to send yet");
-		if (empty) return doit();
+		if (this.problem_of(row) === __("The text is empty") || this.summary_of(row) === __("Nothing to send yet")) return doit();
 		sanad.ui.ConfirmDialog.ask({
 			title: __("Remove message {0}?", [ui.format_int(rows.findIndex((r) => r.name === row.name) + 1)]),
 			message: this.summary_of(row),
@@ -594,6 +650,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 	}
 
 	destroy() {
+		$(document).off(`click.${this.id}-vars`);
 		this.$el && this.$el.remove();
 		this.$host && this.$host.removeClass("sanad-mc-host");
 	}

@@ -12,6 +12,8 @@ const K = whatsapp_next.campaigns;
 const CON = whatsapp_next.console;
 const { TERMINAL, EDITABLE, is_manager, handed_of_doc, pct_text, device_title, bar_html, stats_html, eta_text } = K;
 const fmt_int = (v) => sanad.ui.format_int(v);
+const RECIPIENT_STATUSES = ["Pending", "Queued", "Sent", "Delivered", "Read", "Failed", "Cancelled", "Removed"];
+const SOURCE_TYPES = ["Contact Group", "Contact", "DocType", "Excel", "vCard", "Manual"];
 const esc = (v) => sanad.ui.escape(v);
 
 // The one status → colour source for recipient rows; PagedChildTable and the ContactPicker read it
@@ -38,32 +40,194 @@ function open_picker(frm, operation, preselect) {
 	});
 }
 
+/**
+ * The recipients, as the product's own list: the shared toolbar (search · status · source ·
+ * grouping) over `sanad.ui.DataList` in page mode, paged and ordered by the server. The native
+ * grid stays hidden behind it, and the picker's two verbs sit in the panel's head.
+ */
 function mount_recipients(frm) {
-	// Shown as visible text next to the buttons when they are disabled (never only a hover title).
-	const hint = frm.is_new() || frm.is_dirty() ? __("Save the campaign to add or remove recipients.") : TERMINAL.includes(frm.doc.status) ? __("The campaign has ended, so recipients can no longer change.") : undefined;
-	const toolbar_actions = [
-		{ label: __("Add recipients"), primary: true, icon: "es-line-add", condition: () => !TERMINAL.includes(frm.doc.status) && is_manager(), disabled: !can_change_recipients(frm), hint, handler: () => open_picker(frm, "add") },
-		{ label: __("Remove recipients"), icon: "es-line-delete", condition: () => !TERMINAL.includes(frm.doc.status) && is_manager() && cint(frm.doc.total_recipients) > 0, disabled: !can_change_recipients(frm), hint, handler: () => open_picker(frm, "remove") },
-	];
-	if (frm.sanad_recipients && frm.sanad_recipients.frm === frm && frm.$wrapper.find('.sanad-pct[data-fieldname="recipients"]').length) {
-		frm.sanad_recipients.update({ toolbar_actions });
+	const state = { page: 0, page_length: 50, search: "", filters: {}, order_by: "idx asc", group_by: [] };
+	const field = frm.get_field("recipients");
+	const $host = field && field.grid && field.grid.wrapper ? field.grid.wrapper : field && field.$wrapper;
+	if (!$host || !$host.length) return;
+	if (frm.sanad_recipients && frm.$wrapper.find(".wa-recipients").length) {
+		frm.sanad_recipients.update_actions();
 		return;
 	}
-	frm.sanad_recipients = new sanad.ui.PagedChildTable({
-		frm,
-		fieldname: "recipients",
-		page_method: "campaigns.get_recipients_page",
-		page_length: 50,
-		columns: [{ fieldname: "display_name" }, { fieldname: "phone_e164" }, { fieldname: "source_type" }, { fieldname: "status" }, { fieldname: "contact" }],
-		filters: [{ fieldname: "status", type: "select" }, { fieldname: "source_type", type: "select" }],
-		status_field: "status",
-		row_actions: [
-			{ label: __("Sent message"), icon: "es-line-link", condition: (row) => !!row.outbound_message, handler: (row) => frappe.set_route("Form", "WhatsApp Log", row.outbound_message) },
-			{ label: __("Open contact"), icon: "es-line-people", condition: (row) => !!row.contact, handler: (row) => frappe.set_route("Form", "Contact", row.contact) },
+	$host.addClass("sanad-mc-host"); // the native grid parts are hidden by the same rule
+	const $panel = $(`
+		<div class="sanad-kit wa-recipients">
+			<div class="wa-recipients__head">
+				<h4 class="wa-recipients__title">${esc(__("Recipients"))}</h4>
+				<span class="wa-recipients__count sanad-tabular" aria-live="polite"></span>
+				<div class="wa-recipients__actions"></div>
+			</div>
+			<div class="wa-recipients__toolbar"></div>
+			<div class="wa-recipients__table"></div>
+		</div>`);
+	$host.find(".wa-recipients").remove();
+	$host.append($panel);
+
+	const $count = $panel.find(".wa-recipients__count");
+	const $actions = $panel.find(".wa-recipients__actions");
+
+	const load = (table) =>
+		sanad.ui
+			.call(
+				"campaigns.get_recipients_page",
+				{
+					name: frm.doc.name,
+					page: state.page + 1,
+					page_length: state.page_length,
+					search: state.search || undefined,
+					status: state.filters.status || undefined,
+					source_type: state.filters.source_type || undefined,
+					order_by: state.order_by,
+				},
+				{ silent: true }
+			)
+			.then((r) => {
+				table.set_rows(r.rows || [], r.total);
+				const counts = (r.counts || {}).status || {};
+				$count.text(sanad.ui.plural(cint(counts.All || r.total), { one: __("{0} recipient"), other: __("{0} recipients") }));
+				render_filters(counts, (r.counts || {}).source_type || {});
+				return r;
+			})
+			.catch((err) => sanad.ui.Toast.error(err));
+
+	const table = new sanad.ui.DataList({
+		wrapper: $panel.find(".wa-recipients__table"),
+		doctype: "WhatsApp Campaign Recipient",
+		page_length: state.page_length,
+		selectable: true,
+		pinnable: false,
+		columns: [
+			{ fieldname: "display_name", label: __("Name"), sortable: true, sub: (row) => `<span class="sanad-tabular" dir="ltr">${esc(row.phone_e164 || row.phone || "")}</span>` },
+			{ fieldname: "status", label: __("Status"), type: "status", sortable: true, width: 130 },
+			{ fieldname: "source_type", label: __("Source"), sortable: true, width: 140 },
+			{ fieldname: "contact", label: __("Contact"), width: 170 },
+			{ fieldname: "error_code", label: __("Error"), width: 140, format: (v) => (v ? `<span class="sanad-tone--red">${esc(v)}</span>` : "—") },
 		],
-		toolbar_actions,
-		empty_text: __("No recipients yet"),
+		on_page: (page, t) => {
+			state.page = page;
+			load(t);
+		},
+		on_sort: (fieldname, order, t) => {
+			state.order_by = `${fieldname} ${order}`;
+			state.page = 0;
+			load(t);
+		},
+		on_row_click: (row) => {
+			if (row.outbound_message) frappe.set_route("Form", "WhatsApp Log", row.outbound_message);
+			else if (row.contact) frappe.set_route("Form", "Contact", row.contact);
+		},
+		on_select: () => render_actions(),
+		empty: { title: __("No recipient matches"), description: __("Change the filters, or add recipients from a group, a file or a list you paste.") },
 	});
+
+	// ---- the toolbar: search, the two filters the server answers, and grouping ----------------
+	const $toolbar = $panel.find(".wa-recipients__toolbar");
+	function render_filters(status_counts, source_counts) {
+		if ($toolbar.data("built")) return update_filter_counts(status_counts, source_counts);
+		$toolbar.data("built", true);
+		const $search = $(`<input type="search" class="form-control input-xs wa-recipients__search" placeholder="${esc(__("Search a name or a number"))}" aria-label="${esc(__("Search a name or a number"))}">`);
+		$search.on(
+			"input",
+			sanad.ui.debounce(() => {
+				state.search = $search.val().trim();
+				state.page = 0;
+				load(table);
+			}, 300)
+		);
+		$toolbar.append($search);
+		$toolbar.append(filter_select("status", __("Status"), RECIPIENT_STATUSES, status_counts));
+		$toolbar.append(filter_select("source_type", __("Source"), SOURCE_TYPES, source_counts));
+		$toolbar.append(group_select());
+	}
+
+	function filter_select(fieldname, label, options, counts) {
+		const $select = $(`<select class="form-control input-xs wa-recipients__select" data-field="${esc(fieldname)}" aria-label="${esc(label)}"></select>`);
+		$select.on("change", () => {
+			state.filters[fieldname] = $select.val();
+			state.page = 0;
+			load(table);
+		});
+		fill_select($select, label, options, counts, fieldname);
+		return $select;
+	}
+
+	function fill_select($select, label, options, counts, fieldname) {
+		const current = state.filters[fieldname] || "";
+		$select.empty().append(`<option value="">${esc(__("{0}: All", [label]))}${counts.All ? ` (${fmt_int(counts.All)})` : ""}</option>`);
+		options.forEach((o) => {
+			const n = cint(counts[o]);
+			if (!n && current !== o) return; // a filter that would empty the table is not offered
+			$select.append(`<option value="${esc(o)}"${current === o ? " selected" : ""}>${esc(__(o))}${n ? ` (${fmt_int(n)})` : ""}</option>`);
+		});
+		$select.val(current);
+	}
+
+	function update_filter_counts(status_counts, source_counts) {
+		fill_select($toolbar.find('[data-field="status"]'), __("Status"), RECIPIENT_STATUSES, status_counts, "status");
+		fill_select($toolbar.find('[data-field="source_type"]'), __("Source"), SOURCE_TYPES, source_counts, "source_type");
+	}
+
+	function group_select() {
+		const $select = $(`<select class="form-control input-xs wa-recipients__select" aria-label="${esc(__("Group by"))}">
+				<option value="">${esc(__("No grouping"))}</option>
+				<option value="status">${esc(__("Group by {0}", [__("Status")]))}</option>
+				<option value="source_type">${esc(__("Group by {0}", [__("Source")]))}</option>
+			</select>`);
+		$select.on("change", () => {
+			state.group_by = $select.val() ? [$select.val()] : [];
+			table.set_group_by(state.group_by);
+		});
+		return $select;
+	}
+
+	// ---- the two verbs, and what the selection allows -----------------------------------------
+	function render_actions() {
+		$actions.empty();
+		const selected = table.get_selected();
+		const hint = frm.is_dirty() ? __("Save the campaign to add or remove recipients.") : TERMINAL.includes(frm.doc.status) ? __("The campaign has ended, so recipients can no longer change.") : "";
+		if (selected.length && can_change_recipients(frm) && is_manager()) {
+			$(`<button type="button" class="btn btn-sm btn-default">${esc(__("Remove {0}", [fmt_int(selected.length)]))}</button>`)
+				.on("click", () => remove_selected(selected))
+				.appendTo($actions);
+		}
+		if (!TERMINAL.includes(frm.doc.status) && is_manager()) {
+			$(`<button type="button" class="btn btn-sm btn-primary">${sanad.ui.icon("es-line-add", "xs")} ${esc(__("Add recipients"))}</button>`)
+				.prop("disabled", !can_change_recipients(frm))
+				.on("click", () => open_picker(frm, "add"))
+				.appendTo($actions);
+			$(`<button type="button" class="btn btn-sm btn-default">${esc(__("Remove recipients"))}</button>`)
+				.prop("disabled", !can_change_recipients(frm) || !cint(frm.doc.total_recipients))
+				.on("click", () => open_picker(frm, "remove"))
+				.appendTo($actions);
+		}
+		if (hint) $actions.append(`<span class="wa-recipients__hint">${esc(hint)}</span>`);
+	}
+
+	function remove_selected(rows) {
+		const keys = rows.map((r) => r.phone_e164).filter(Boolean);
+		sanad.ui.ConfirmDialog.ask({
+			title: __("Remove {0} recipients?", [fmt_int(keys.length)]),
+			message: __("They stop receiving this campaign. Nothing else changes."),
+			impact: [{ label: __("Recipients to remove"), value: fmt_int(keys.length), tone: "red" }],
+			danger: true,
+			confirm_label: __("Remove {0}", [fmt_int(keys.length)]),
+			on_confirm: () => sanad.ui.call("picker.commit_remove", { target_doctype: frm.doctype, target_name: frm.doc.name, phone_e164s: keys }),
+		})
+			.then(() => {
+				sanad.ui.Toast.success(__("Removed {0}", [fmt_int(keys.length)]));
+				frm.reload_doc();
+			})
+			.catch(() => {});
+	}
+
+	render_actions();
+	frm.sanad_recipients = { table, refresh: () => load(table), update_actions: render_actions };
+	load(table);
 }
 
 // ---- the campaign console ----------------------------------------------------------------------
@@ -259,6 +423,18 @@ function mount_messages(frm) {
 		body_field: "body",
 		delay_field: "delay_seconds",
 		max: 5,
+		// what leads the editor for each type; everything else the type allows waits under
+		// "More options", so a text message is a text box and not a form of eleven fields
+		primary_fields: {
+			Text: ["body"],
+			Image: ["attachment", "caption"],
+			Video: ["attachment", "caption"],
+			Audio: ["attachment"],
+			Sticker: ["attachment"],
+			Document: ["attachment", "print_format", "file_name_template", "caption"],
+			Location: [],
+			Poll: ["poll_question", "poll_options", "poll_allow_multiple"],
+		},
 		can_edit: () => editable,
 		preview: { method: "campaigns.preview_message", args: (row) => ({ name: frm.doc.name, idx: row.idx }) },
 		// the campaign renders per recipient: these are the names that exist in that context

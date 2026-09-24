@@ -43,6 +43,7 @@ RECIPIENT_FIELDS: tuple[str, ...] = (
 	"removed_at",
 )
 RECIPIENT_STATUSES = ("Pending", "Queued", "Sent", "Delivered", "Read", "Failed", "Cancelled", "Removed")
+ORDERABLE_RECIPIENT_FIELDS = ("idx", "display_name", "phone_e164", "status", "source_type", "added_at")
 SOURCE_TYPES = ("Contact Group", "Contact", "DocType", "Excel", "vCard", "Manual")
 
 
@@ -247,6 +248,7 @@ def get_recipients_page(
 	search: str | None = None,
 	page: int = 1,
 	page_length: int = 50,
+	order_by: str = "idx asc",
 ) -> dict[str, Any]:
 	"""One page of the recipients child table → `{rows, total, counts}`.
 
@@ -271,13 +273,16 @@ def get_recipients_page(
 			["WhatsApp Campaign Recipient", "phone", "like", like],
 			["WhatsApp Campaign Recipient", "display_name", "like", like],
 		]
+	field, _sep, direction = (order_by or "idx asc").strip().partition(" ")
+	if field not in ORDERABLE_RECIPIENT_FIELDS or direction.lower() not in ("", "asc", "desc"):
+		frappe.throw(_("Cannot order by {0}").format(order_by), WAValidationError)
 	start, length = paginate(page, page_length)
 	rows = frappe.get_all(
 		"WhatsApp Campaign Recipient",
 		filters=filters,
 		or_filters=or_filters,
 		fields=list(RECIPIENT_FIELDS),
-		order_by="idx asc",
+		order_by=f"{field} {direction or 'asc'}",
 		start=start,
 		page_length=length,
 	)

@@ -47,6 +47,12 @@ class TestApiCommon(IntegrationTestCase):
 		self.assertEqual(coerce_value("x", '{"a":1}', dict), {"a": 1})
 		with self.assertRaises(wex.WAValidationError):
 			coerce_value("x", "abc", int)
+		# an optional argument sent as `null` arrives as "" over a form-encoded request: unset,
+		# not False — otherwise a screen filters on something nobody asked for
+		self.assertIsNone(coerce_value("x", "", bool | None))
+		self.assertIsNone(coerce_value("x", "  ", str | None))
+		self.assertIsNone(coerce_value("x", "", int | None))
+		self.assertFalse(coerce_value("x", "", bool))  # a required bool keeps the old reading
 
 	def test_unknown_missing_and_enum(self):
 		with as_user("WhatsApp Manager"):

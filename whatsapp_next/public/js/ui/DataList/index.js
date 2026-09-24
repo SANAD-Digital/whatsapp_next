@@ -55,7 +55,7 @@ sanad.ui.DataList = class DataList {
 		this.expanded = new Set();
 		this.group_names = new Map(); // rendered group id → { path, names }
 		this.selected = new Set(); // checked docnames, kept across re-renders (folding, sorting, realtime)
-		this.group_by = this.opts.listview ? (this.opts.group_by || []).slice() : []; // grouping reads the list's own data
+		this.group_by = (this.opts.group_by || []).slice(); // grouping reads the rows it has, from either host
 		this.collapsed = new Set(); // group paths the user folded away
 		this.pinned = (this.opts.pinned || []).slice();
 		this.id = ui.uid("datalist");
@@ -230,6 +230,7 @@ sanad.ui.DataList = class DataList {
 			const name = e.currentTarget.getAttribute("data-name");
 			if (e.currentTarget.checked) this.selected.add(name);
 			else this.selected.delete(name);
+			this.selection_changed(); // one row is a selection too: the host hears about it
 			this.sync_group_checkboxes();
 		});
 		$r.on(`change.${this.id}`, ".sanad-datalist__check-all", (e) => {

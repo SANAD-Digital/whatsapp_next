@@ -127,6 +127,11 @@ def coerce_value(name: str, value, hint):
 	"""Coerce one value according to its type hint (`int`, `bool`, `float`, `list`, `dict`, dates)."""
 	if value is None or hint is None or hint is inspect.Parameter.empty:
 		return value
+	# A client that sends `null` over a form-encoded request sends an empty string: without this,
+	# an optional `bool` read it as False and the endpoint filtered on something nobody asked for
+	# (the contacts screen was silently narrowing its list this way).
+	if isinstance(value, str) and value.strip() == "" and type(None) in typing.get_args(hint):
+		return None
 	hint = _unwrap_optional(hint)
 	origin = typing.get_origin(hint) or hint
 	try:
