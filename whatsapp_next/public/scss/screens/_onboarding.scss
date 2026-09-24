@@ -1,682 +1,1295 @@
-// The Onboarding Wizard (`page/wa_onboarding`) — the prototype's Wizard component in its side-rail
-// shape: the steps stand in a rail at the inline-start, the current step owns the pane, and the
-// footer keeps Back / Next where the eye left them.
+// The WhatsApp setup screen (`page/wa_onboarding`) — the sign-up console.
 //
-// The rail is the kit Stepper's own header, laid out as a column here and nowhere else: one screen
-// decides its shape, the component keeps its markup. Espresso tokens only, logical properties only.
+// `docs/screen/Hub Page - Onboarding.html` draws one instrument, not a form on a page: a brand
+// rail in the product's own green down the inline-start edge, carrying the pitch, the free month
+// and the three steps of the flow; and beside it a single card at a time, centred, on a quiet
+// field. This file is that instrument.
+//
+// It styles only what the ported control layer does not already give. Buttons, badges, fields,
+// inputs, the section rule, the segmented control, the card and the sunken surface all come from
+// `public/js/ui/_kit/style.scss`, which is the prototype's `docs/shared/ui-kit.js`. What is left —
+// the rail, the flow list, the terms panel, the code plate, the activity combobox, the ready
+// panel — is the screen's own, and is written here in the same idiom.
+//
+// Two rules hold it together. Every colour is a `--wa-*` token from `public/scss/_tokens.scss`,
+// which is the prototype's own `:root` block, so light and dark are one set of rules. And every
+// offset is a logical property, so Arabic mirrors with no second stylesheet.
+//
+// Mobile-first: the base is the narrow shape (rail hidden, the flow as segments over the card),
+// and two `min-width` queries open it out — 620 px gives the form its second column, 900 px brings
+// the rail in.
 
-.wa-onboarding {
-	padding-block-end: var(--sanad-gap-xl);
-
-	// the head band: mark · title + line (the prototype's wizard head). Desk stacks that row on a
-	// phone; the mark stays beside the title there.
-	.sanad-pagehead__row {
-		align-items: center;
-		gap: var(--sanad-gap-md);
-
-		@media (max-width: 767px) {
-			flex-direction: row;
-			flex-wrap: wrap;
-		}
+@keyframes wa-onb-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
 	}
-	.sanad-pagehead__text {
-		@media (max-width: 767px) {
-			flex: 1 1 180px;
-		}
+	to {
+		opacity: 1;
+		transform: none;
 	}
+}
 
-	&__mark {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		inline-size: 36px;
-		block-size: 36px;
-		flex: none;
-		border-radius: var(--sanad-radius);
-		background: var(--sanad-accent-soft);
-		color: var(--sanad-accent-ink);
-	}
-
-	&__panel {
-		margin-block-start: var(--sanad-gap-md);
+@keyframes wa-onb-spin {
+	to {
+		transform: rotate(360deg);
 	}
 }
 
 .wa-onb {
-	&__card {
-		padding: var(--sanad-gap-xl);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-card-radius);
-		background: var(--surface-white);
+	--wa-onb-gap: 14px;
+
+	display: flex;
+	align-items: stretch;
+	min-block-size: calc(100dvh - var(--wa-viewport-offset) - var(--wa-page-top) - var(--wa-page-bottom));
+	border: 1px solid var(--wa-border);
+	border-radius: 14px;
+	overflow: hidden;
+	background: var(--wa-bg);
+	color: var(--wa-ink);
+
+	// screen-reader-only text: the state of a rail step, which is otherwise a shape and a colour
+	&__sr {
+		position: absolute !important;
+		inline-size: 1px;
+		block-size: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
 	}
 
-	// The prototype's wizard in its side-rail shape: a rail card at the inline-start naming the
-	// steps and how far the flow has come, and the step's own card beside it with the footer verbs
-	// closing it. The Stepper owns the markup; this screen only says where its parts sit.
-	&__wizard {
-		.sanad-stepper {
-			gap: var(--sanad-gap-lg);
+	// =============================================================================================
+	// The brand rail
+	// =============================================================================================
 
-			@media (min-width: 992px) {
-				display: grid;
-				grid-template-columns: 240px minmax(0, 1fr);
-				grid-template-areas:
-					"rail body"
-					"rail footer";
-				align-items: start;
-				column-gap: var(--sanad-gap-xl);
-				row-gap: 0;
-			}
+	&__brand {
+		display: none; // ≥ 900 px only — the narrow shape wears the top bar instead
+		inline-size: 280px;
+		flex: none;
+		flex-direction: column;
+		gap: 22px;
+		padding: 26px;
+		background: var(--wa-pri);
+		color: var(--wa-on-pri);
 
-			// ---- the rail ---------------------------------------------------------------------
-			.sanad-stepper__header {
-				gap: var(--sanad-gap-md);
-				padding: var(--sanad-gap-lg);
-				border: var(--sanad-border);
-				border-radius: var(--sanad-card-radius);
-				background: var(--surface-white);
-
-				@media (min-width: 992px) {
-					grid-area: rail;
-					position: sticky;
-					inset-block-start: var(--sanad-gap-md);
-				}
-			}
-
-			.sanad-stepper__progress {
-				font-size: var(--text-xs, 11px);
-				font-weight: 600;
-				letter-spacing: 0.05em;
-				text-transform: uppercase;
-				// 11 px is normal-size text: --ink-gray-5 reads 4.2:1 on white, --ink-gray-6 7.4:1
-				color: var(--ink-gray-6);
-			}
-
-			// the kit's step list defaults to Desk's blue; this product's current step is its own
-			// accent, on the rail and on the narrow strip alike
-			.sanad-stepper__step--current .sanad-stepper__step-btn {
-				border-color: var(--sanad-accent-outline);
-				background: var(--sanad-accent-soft);
-				color: var(--sanad-accent-ink);
-			}
-			.sanad-stepper__step--current .sanad-stepper__num {
-				background: var(--sanad-accent);
-				color: var(--sanad-accent-on);
-			}
-			.sanad-stepper__step--done .sanad-stepper__num {
-				background: var(--surface-green-1);
-				color: var(--ink-green-3);
-			}
-
-			// Back at the inline-start, Next at the inline-end — the prototype's wizard footer.
-			// Back is the group's first child even when the first step hides it, so Next keeps
-			// the inline-end on every step.
-			.sanad-stepper__footer-end {
-				flex: 1 1 auto;
-				justify-content: flex-end;
-				> .btn:first-child { margin-inline-end: auto; }
-			}
-
-			@media (min-width: 992px) {
-				.sanad-stepper__list {
-					flex-direction: column;
-					align-items: stretch;
-					gap: 10px;
-				}
-				.sanad-stepper__step {
-					display: block;
-					position: relative;
-					// the thread the prototype draws from one step's circle down to the next
-					& + .sanad-stepper__step::before {
-						content: "";
-						position: absolute;
-						inset-block-start: -10px;
-						inset-inline-start: 24px;
-						inline-size: 2px;
-						block-size: 10px;
-						border-radius: 2px;
-						background: var(--outline-gray-2);
-					}
-					&--current::before,
-					&--done::before {
-						background: var(--sanad-accent-outline);
-					}
-				}
-				.sanad-stepper__step-btn {
-					inline-size: 100%;
-					justify-content: flex-start;
-					gap: var(--sanad-gap-md);
-					padding-block: var(--sanad-gap-sm);
-					border-color: transparent;
-					border-radius: var(--sanad-radius);
-					background: transparent;
-					text-align: start;
-				}
-			}
-
-			.sanad-stepper__num {
-				inline-size: 26px;
-				block-size: 26px;
-				font-size: var(--text-xs, 12px);
-			}
-
-			// ---- the step's card ---------------------------------------------------------------
-			.sanad-stepper__body {
-				min-block-size: 320px;
-				padding: var(--sanad-gap-xl);
-				border: var(--sanad-border);
-				border-end-start-radius: 0;
-				border-end-end-radius: 0;
-				border-start-start-radius: var(--sanad-card-radius);
-				border-start-end-radius: var(--sanad-card-radius);
-				border-block-end: 0;
-				background: var(--surface-white);
-
-				@media (min-width: 992px) {
-					grid-area: body;
-				}
-			}
-
-			.sanad-stepper__footer {
-				padding: var(--sanad-gap-md) var(--sanad-gap-xl);
-				border: var(--sanad-border);
-				border-block-start: var(--sanad-border);
-				border-start-start-radius: 0;
-				border-start-end-radius: 0;
-				border-end-start-radius: var(--sanad-card-radius);
-				border-end-end-radius: var(--sanad-card-radius);
-				background: var(--surface-white);
-
-				@media (min-width: 992px) {
-					grid-area: footer;
-				}
-			}
+		// The rail's blocks never shrink. A column flex item shrinks by default, which let the
+		// pitch and the foot squeeze themselves instead of making the console taller — and since
+		// the console clips its rounded corners, the squeezed foot simply vanished.
+		> * {
+			flex: none;
 		}
 	}
 
-	// the rail's foot: the word, the fraction, and the bar that fills with the flow
-	&__rail-foot {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-sm);
-		padding-block-start: var(--sanad-gap-md);
-		border-block-start: var(--sanad-border);
-	}
-	&__rail-line {
+	&__brand-id {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: var(--sanad-gap-sm);
+		gap: 11px;
 	}
-	&__rail-label {
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-6);
-	}
-	&__rail-count {
-		font-size: var(--text-xs, 12px);
-		font-weight: 600;
-		color: var(--ink-gray-8);
-		direction: ltr;
-	}
-	&__rail-track {
-		block-size: 6px;
-		border-radius: var(--border-radius-full, 999px);
-		background: var(--surface-gray-2);
-		overflow: hidden;
-	}
-	&__rail-bar {
-		display: block;
-		block-size: 100%;
-		inline-size: 0;
-		border-radius: var(--border-radius-full, 999px);
-		background: var(--sanad-accent);
-		transition: inline-size var(--sanad-motion) ease-out;
-	}
-
-	// ---- a step's own head ------------------------------------------------------------------------
-
-	&__step-head {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--sanad-gap-md);
-		margin-block-end: var(--sanad-gap-lg);
-	}
-	&__step-icon {
+	&__brand-logo {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 36px;
-		block-size: 36px;
+		inline-size: 38px;
+		block-size: 38px;
 		flex: none;
-		border: 1px solid var(--sanad-accent-outline);
-		border-radius: 10px;
-		background: var(--sanad-accent-soft);
-		color: var(--sanad-accent-ink);
+		border-radius: 11px;
+		background: color-mix(in srgb, var(--wa-on-pri) 16%, transparent);
 	}
-	&__step-text {
+	&__brand-names {
+		display: flex;
+		flex-direction: column;
 		min-inline-size: 0;
 	}
-	&__step-title {
-		margin: 0;
-		font-size: var(--text-lg, 16px);
+	&__brand-name {
+		font-size: 15px;
 		font-weight: 700;
-		color: var(--ink-gray-9);
 	}
-	&__step-sub {
-		margin: var(--sanad-gap-xs) 0 0;
-		font-size: var(--text-sm, 13px);
-		color: var(--ink-gray-6);
-		line-height: 1.75;
-		max-inline-size: 74ch;
+	&__brand-tag {
+		font-size: 11px;
+		// 0.92 is the floor: the rail's ink at that alpha over the green still clears 4.5:1
+		opacity: 0.92;
 	}
 
-	// ---- the choice cards ---------------------------------------------------------------------------
+	&__pitch {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+	&__badge {
+		display: inline-flex;
+		align-items: center;
+		align-self: flex-start;
+		gap: 7px;
+		min-block-size: 26px;
+		padding-inline: 11px;
+		border-radius: 999px;
+		background: var(--wa-surface);
+		color: var(--wa-pri-d);
+		font-size: 11.5px;
+		font-weight: 700;
+	}
+	&__badge-dot {
+		inline-size: 6px;
+		block-size: 6px;
+		flex: none;
+		border-radius: 50%;
+		background: var(--wa-pri);
+	}
+	&__pitch-title {
+		margin: 0;
+		// Desk gives every `h2` its own dark ink; on the rail the heading is the rail's own ink
+		color: inherit;
+		font-size: 20px;
+		font-weight: 700;
+		line-height: 1.5;
+		text-wrap: pretty;
+	}
+	&__pitch-body {
+		margin: 0;
+		font-size: 12.5px;
+		line-height: 1.9;
+		opacity: 0.92;
+	}
+	&__ticks {
+		display: flex;
+		flex-direction: column;
+		gap: 7px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		opacity: 0.92;
+	}
+	&__tick {
+		display: flex;
+		align-items: flex-start;
+		gap: 8px;
+		font-size: 12px;
+		line-height: 1.7;
 
-	&__choices {
+		.wa-ico {
+			margin-block-start: 3px;
+		}
+	}
+
+	// the flow, as the rail tells it: one row per step, the current one on a lifted plate
+	&__flow {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	&__flow-item {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		padding: 7px 9px;
+		border-radius: 8px;
+	}
+	// A step still ahead is told apart by its numeral and its hollow ring, never by a dimmer ink:
+	// below 0.92 the rail's own text stops clearing 4.5:1 against the green.
+	&__flow-item--current {
+		background: color-mix(in srgb, var(--wa-on-pri) 14%, transparent);
+	}
+	&__flow-num {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 20px;
+		block-size: 20px;
+		flex: none;
+		border-radius: 50%;
+		border: 1px solid color-mix(in srgb, var(--wa-on-pri) 40%, transparent);
+		font-size: 10px;
+		font-weight: 700;
+		line-height: 1;
+	}
+	&__flow-item--current &__flow-num {
+		background: var(--wa-on-pri);
+		border-color: var(--wa-on-pri);
+		color: var(--wa-pri);
+	}
+	&__flow-item--done &__flow-num {
+		background: color-mix(in srgb, var(--wa-on-pri) 28%, transparent);
+	}
+	&__flow-text {
+		display: flex;
+		flex-direction: column;
+		min-inline-size: 0;
+	}
+	&__flow-label {
+		font-size: 12.5px;
+		font-weight: 600;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&__flow-sub {
+		font-size: 11px;
+		opacity: 0.92;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	&__brand-foot {
 		display: flex;
 		flex-direction: column;
 		gap: 10px;
+		margin-block-start: auto;
+		font-size: 11px;
+		line-height: 1.8;
 	}
-	&__choice {
+	&__chips {
 		display: flex;
-		&:focus-visible {
-			outline: 2px solid var(--sanad-accent);
-			outline-offset: 2px;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	&__chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		min-block-size: 30px;
+		padding-inline: 11px;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--wa-on-pri) 14%, transparent);
+		color: var(--wa-on-pri);
+		font-size: 11.5px;
+		font-weight: 600;
+
+		&:hover,
+		&:focus {
+			background: color-mix(in srgb, var(--wa-on-pri) 26%, transparent);
+			color: var(--wa-on-pri);
+			text-decoration: none;
 		}
+	}
+	&__support,
+	&__rights {
+		margin: 0;
+		opacity: 0.92;
+	}
+
+	// =============================================================================================
+	// The main column
+	// =============================================================================================
+
+	&__main {
+		flex: 1;
+		min-inline-size: 0;
+		display: flex;
+		flex-direction: column;
+		background: var(--wa-bg);
+	}
+
+	&__topbar {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-block-size: 48px;
+		flex: none;
+		padding-inline: 16px;
+	}
+	&__topmark {
+		display: inline-flex;
+		align-items: center;
+		gap: 9px;
+		font-size: 14px;
+		font-weight: 700;
+		color: var(--wa-ink);
+	}
+	&__topmark-logo {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 30px;
+		block-size: 30px;
+		flex: none;
+		border-radius: 9px;
+		background: var(--wa-pri-s);
+		color: var(--wa-pri-d);
+	}
+	&__topbar-spacer {
+		flex: 1;
+	}
+	&__counter {
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--wa-ink-3);
+	}
+
+	// the rail's narrow shape: one segment per step, then the step's own name
+	&__mbar {
+		display: flex;
+		flex-direction: column;
+		gap: 7px;
+		flex: none;
+		padding-inline: 16px;
+		padding-block-end: 10px;
+	}
+	&__mbar-track {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+	&__mbar-seg {
+		flex: 1;
+		block-size: 4px;
+		border-radius: 999px;
+		background: var(--wa-border-2);
+	}
+	&__mbar-seg--on {
+		background: var(--wa-pri);
+	}
+	&__mbar-line {
+		display: flex;
+		align-items: baseline;
+		gap: 8px;
+		flex-wrap: wrap;
+		margin: 0;
+
+		b {
+			font-size: 13.5px;
+			color: var(--wa-ink);
+		}
+		span {
+			font-size: 11.5px;
+			color: var(--wa-ink-3);
+		}
+	}
+
+	&__stage {
+		// grows into spare height, never shrinks below the card it holds
+		flex: 1 0 auto;
+		display: flex;
 		align-items: flex-start;
-		gap: 11px;
+		justify-content: center;
+		padding: 4px 14px 16px;
+	}
+
+	// =============================================================================================
+	// The card
+	// =============================================================================================
+
+	&__card {
 		inline-size: 100%;
-		padding: var(--sanad-gap-lg);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius-lg);
-		background: var(--surface-white);
-		text-align: start;
-		cursor: pointer;
-		&:hover {
-			border-color: var(--sanad-accent-outline);
-		}
-		// the chosen way in: the accent's own border, its tinted ground and a soft ring
-		&[aria-checked="true"] {
-			border-color: var(--sanad-accent);
-			background: var(--sanad-accent-soft);
-			box-shadow: 0 0 0 3px var(--sanad-accent-soft);
-		}
-	}
-	&__choice-icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		inline-size: 36px;
-		block-size: 36px;
-		flex: none;
-		border-radius: 10px;
-		background: var(--surface-gray-2);
-		color: var(--ink-gray-6);
-	}
-	&__choice[aria-checked="true"] &__choice-icon {
-		background: var(--sanad-accent);
-		color: var(--sanad-accent-on);
-	}
-	&__choice[aria-checked="true"] &__choice-text b {
-		color: var(--sanad-accent-ink);
-	}
-	&__choice-text {
 		display: flex;
 		flex-direction: column;
-		gap: 2px;
-		flex: 1;
-		min-inline-size: 0;
-		b {
-			font-size: var(--text-base, 14px);
-			font-weight: 600;
-			color: var(--ink-gray-9);
+		gap: var(--wa-onb-gap);
+		padding: 16px 14px;
+		box-shadow: var(--wa-shadow-md);
+		animation: wa-onb-in 0.22s ease-out;
+
+		&--sm {
+			max-inline-size: 430px;
 		}
-		span {
-			font-size: var(--text-sm, 13px);
-			color: var(--ink-gray-6);
-			line-height: 1.6;
+		&--md {
+			max-inline-size: 560px;
 		}
-	}
-	&__choice-meta {
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-6);
-		text-align: start;
-	}
-	// the ring is the only mark an unchosen way carries, so it is a UI component boundary:
-	// --outline-gray-2 reads 1.3:1 on the card, --ink-gray-5 reads 4.2:1 (WCAG 1.4.11 wants 3:1)
-	&__choice-mark {
-		inline-size: 18px;
-		block-size: 18px;
-		flex: none;
-		margin-block-start: 3px;
-		border: 2px solid var(--ink-gray-5);
-		border-radius: 50%;
-	}
-	&__choice[aria-checked="true"] &__choice-mark {
-		border-color: var(--sanad-accent);
-		background: radial-gradient(circle at center, var(--sanad-accent) 0 5px, transparent 5px);
+		&--lg {
+			max-inline-size: 680px;
+		}
+		&--ready {
+			max-inline-size: 520px;
+			align-items: center;
+			text-align: center;
+			gap: 16px;
+		}
 	}
 
-	// ---- forms, notes and results ---------------------------------------------------------------------
-
-	&__form {
-		display: grid;
-		gap: var(--sanad-gap-md);
-		max-inline-size: 560px;
-		.frappe-control {
-			margin-block-end: 0;
-		}
-	}
-	&__field {
-		min-inline-size: 0;
-		&[hidden] {
-			display: none;
-		}
-	}
-	&__label {
-		display: block;
-		margin-block-end: var(--sanad-gap-sm);
-		font-size: var(--text-sm, 13px);
-		color: var(--ink-gray-7);
-	}
-	&__actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--sanad-gap-sm);
-		margin-block-start: var(--sanad-gap-lg);
-		.btn {
-			min-block-size: var(--sanad-target);
-		}
-	}
-	&__result {
-		margin-block-start: var(--sanad-gap-md);
-	}
-	&__error:empty {
-		display: none;
-	}
-	&__lead {
-		margin: 0 0 var(--sanad-gap-md);
-		font-size: var(--text-sm, 13px);
-		color: var(--ink-gray-7);
-	}
-	&__note {
+	&__card-head {
 		display: flex;
 		align-items: flex-start;
-		gap: var(--sanad-gap-sm);
-		margin: var(--sanad-gap-md) 0 0;
-		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-		border: 1px solid;
-		border-radius: var(--sanad-radius);
-		font-size: var(--text-sm, 13px);
-		max-inline-size: 66ch;
-	}
-	&__code-row {
-		display: flex;
-		align-items: flex-end;
-		gap: var(--sanad-gap-sm);
+		gap: 12px;
 		flex-wrap: wrap;
-		.frappe-control {
-			margin-block-end: 0;
-			min-inline-size: 200px;
-		}
-		.btn {
-			min-block-size: var(--sanad-target);
-		}
 	}
-
-	// ---- the checklist ----------------------------------------------------------------------------------
-
-	&__checklist {
+	&__card-heading {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sanad-gap-sm);
-		margin-block-start: var(--sanad-gap-md);
-	}
-	&__check {
-		display: flex;
-		align-items: center;
-		gap: var(--sanad-gap-md);
-		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
-		background: var(--surface-white);
-	}
-	&__check-icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		inline-size: 24px;
-		block-size: 24px;
-		flex: none;
-		border: 1px solid;
-		border-radius: 50%;
-	}
-	&__check-text {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		flex: 1;
+		gap: 6px;
+		flex: 1 1 200px;
 		min-inline-size: 0;
-		b {
-			font-size: var(--text-sm, 13px);
-			font-weight: 600;
-			color: var(--ink-gray-9);
-		}
-		span {
-			font-size: var(--text-xs, 12px);
-			color: var(--ink-gray-6);
-		}
 	}
-	&__check-open {
-		flex: none;
-		min-block-size: var(--sanad-target);
-		padding-inline: var(--sanad-gap-md);
-		font-size: var(--text-xs, 12px);
-		font-weight: 600;
-	}
-	&__check-state {
-		flex: none;
-		padding-inline: var(--sanad-gap-sm);
-		padding-block: 2px;
-		border: 1px solid;
-		border-radius: var(--border-radius-full, 999px);
-		font-size: var(--text-xs, 11px);
-		font-weight: 600;
-	}
-
-	// ---- device and webhook panes --------------------------------------------------------------------------
-
-	&__device,
-	&__webhook {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-sm);
-	}
-	&__device-row {
+	&__card-titles {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-md);
-		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
-	}
-	&__device-name {
-		font-size: var(--text-sm, 13px);
-		font-weight: 600;
-		color: var(--ink-gray-9);
-	}
-	&__device-phone {
-		flex: 1;
-		font-size: var(--text-sm, 13px);
-		color: var(--ink-gray-6);
-		unicode-bidi: isolate;
-	}
-	&__kv {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-xs);
-		padding: var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
-		background: var(--surface-gray-1);
-	}
-	&__kv-label {
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-6);
-	}
-	&__kv-value {
-		font-size: var(--text-xs, 12px);
-		color: var(--ink-gray-8);
-		overflow-wrap: anywhere;
-		unicode-bidi: isolate;
-	}
-
-	// ---- pairing inside the wizard ---------------------------------------------------------------------------
-
-	&__pairing {
-		margin-block-start: var(--sanad-gap-lg);
-	}
-	&__pair-grid {
-		display: flex;
+		gap: 9px;
 		flex-wrap: wrap;
-		gap: var(--sanad-gap-xl);
-		align-items: flex-start;
 	}
-	&__pair-code {
+	&__card-title {
+		margin: 0;
+		font-size: 17px;
+		font-weight: 700;
+		color: var(--wa-ink);
+	}
+	&__card-sub {
+		margin: 0;
+		font-size: 12px;
+		line-height: 1.7;
+		color: var(--wa-ink-3);
+	}
+	// The prototype's "تعبئة بيانات تجريبية" chip is a dashed amber one, which is exactly what a
+	// control that fills the form with fictional data should look like: obviously not part of the
+	// form. It only renders in developer mode.
+	&__card-aside {
 		flex: none;
-	}
-	&__qr {
-		inline-size: 180px;
-		block-size: 180px;
-		padding: var(--sanad-gap-sm);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius-lg);
-		background: var(--surface-white);
-	}
-	&__pin {
-		display: inline-flex;
-		padding: var(--sanad-gap-md) var(--sanad-gap-lg);
-		border: 1px solid var(--outline-gray-2);
-		border-radius: var(--sanad-radius-lg);
-		background: var(--surface-gray-1);
-		font-size: 26px;
-		font-weight: 600;
-		letter-spacing: 0.14em;
-		color: var(--ink-gray-9);
-	}
-	&__raw {
-		display: block;
-		max-inline-size: 220px;
-		padding: var(--sanad-gap-sm);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
-		background: var(--surface-gray-1);
-		font-size: var(--text-xs, 11px);
-		overflow-wrap: anywhere;
-	}
-	&__pair-how {
-		flex: 1;
-		min-inline-size: 220px;
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-md);
-	}
-	&__pair-steps {
-		margin: 0;
-		padding-inline-start: 20px;
-		font-size: var(--text-sm, 13px);
-		color: var(--ink-gray-8);
-		line-height: 1.9;
-	}
-	&__pair-status {
-		display: flex;
-		align-items: center;
-		gap: var(--sanad-gap-sm);
-		margin: 0;
-		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-		border: 1px solid;
-		border-radius: var(--sanad-radius);
-		font-size: var(--text-sm, 13px);
-		.btn {
-			margin-inline-start: auto;
+
+		.wa-btn {
+			border-style: dashed;
+			border-color: var(--wa-wn-sb);
+			background: var(--wa-wn-s);
+			color: var(--wa-wn-i);
+
+			&:hover {
+				background: var(--wa-wn-sb);
+			}
 		}
 	}
-	&__dot {
-		inline-size: 8px;
-		block-size: 8px;
-		flex: none;
-		border-radius: 50%;
-		background: currentColor;
-		animation: wa-onb-pulse 2s ease-in-out infinite;
-	}
 
-	// ---- the finished state -------------------------------------------------------------------------------------
-
-	&__done {
+	&__fail {
+		align-items: center;
 		text-align: center;
 	}
-	&__done-icon {
+	&__fail-mark {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		inline-size: 48px;
 		block-size: 48px;
-		border: 1px solid;
 		border-radius: 50%;
+		background: var(--wa-dg-s);
+		color: var(--wa-dg-i);
 	}
-	&__done-title {
-		margin: var(--sanad-gap-md) 0 0;
-		font-size: var(--text-xl, 18px);
-		font-weight: 700;
-		color: var(--ink-gray-9);
+
+	// =============================================================================================
+	// Strips, groups, fields
+	// =============================================================================================
+
+	&__errslot:empty {
+		display: none;
 	}
-	&__done-sub {
-		margin: var(--sanad-gap-xs) auto 0;
-		font-size: var(--text-sm, 13px);
-		color: var(--ink-gray-6);
-		max-inline-size: 60ch;
-	}
-	&__done-actions {
+
+	// The palette gives every tone a readable ink made for its own soft surface, so unlike Desk's
+	// three-step tone inks the sentence itself may carry the colour here.
+	&__strip {
 		display: flex;
+		align-items: flex-start;
+		gap: 8px;
+		margin: 0;
+		padding: 10px 12px;
+		border: 1px solid var(--wa-border);
+		border-radius: 9px;
+		background: var(--wa-sunken);
+		font-size: 12px;
+		line-height: 1.7;
+		color: var(--wa-ink-2);
+	}
+	&__strip-icon {
+		display: inline-flex;
+		flex: none;
+		margin-block-start: 1px;
+	}
+	&__strip-text {
+		flex: 1;
+		min-inline-size: 0;
+	}
+	&__strip--ok {
+		background: var(--wa-ok-s);
+		border-color: var(--wa-ok-sb);
+		color: var(--wa-ok-i);
+	}
+	&__strip--warn {
+		background: var(--wa-wn-s);
+		border-color: var(--wa-wn-sb);
+		color: var(--wa-wn-i);
+	}
+	&__strip--danger {
+		background: var(--wa-dg-s);
+		border-color: var(--wa-dg-sb);
+		color: var(--wa-dg-i);
+	}
+	&__strip--info {
+		background: var(--wa-nf-s);
+		border-color: var(--wa-nf-sb);
+		color: var(--wa-nf-i);
+	}
+
+	&__group {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	&__grid,
+	&__stack {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 10px 14px;
+	}
+	&__field-wide {
+		min-inline-size: 0;
+	}
+
+	&__label-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
 		flex-wrap: wrap;
-		justify-content: center;
-		gap: var(--sanad-gap-sm);
-		margin-block-start: var(--sanad-gap-lg);
-		.btn {
-			min-block-size: var(--sanad-target);
+
+		.wa-field__label {
+			flex: 1;
+			min-inline-size: 70px;
 		}
 	}
-	&__done &__checklist {
+
+	// The kit marks a required field with `--wa-dg`, which is 4.38:1 on the card's white and just
+	// under the bar. `--wa-dg-i` is the palette's *readable* danger ink and measures 6.28:1, which
+	// is what a 13 px glyph needs. Worth fixing in `_kit/style.scss` for every screen, not only
+	// this one.
+	.wa-field__req {
+		color: var(--wa-dg-i);
+	}
+
+	// the field's own state, said twice: the frame and the hint's icon
+	&__ok .wa-input {
+		border-color: var(--wa-ok);
+	}
+	&__bad .wa-input {
+		border-color: var(--wa-dg);
+	}
+	&__hint--ok {
+		color: var(--wa-ok-i);
+	}
+	&__hint--bad {
+		color: var(--wa-dg-i);
+	}
+	&__hint-icon {
+		display: inline-flex;
+		flex: none;
+		margin-block-start: 1px;
+	}
+	.wa-field__hint {
+		display: flex;
+		align-items: flex-start;
+		gap: 5px;
+
+		&:empty {
+			display: none;
+		}
+	}
+
+	// ---- the password strength bars ---------------------------------------------------------------
+
+	&__pwbars {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		block-size: 4px;
+	}
+	&__pwbar {
+		flex: 1;
+		block-size: 4px;
+		border-radius: 999px;
+		background: var(--wa-border-2);
+
+		&--danger {
+			background: var(--wa-dg);
+		}
+		&--warn {
+			background: var(--wa-wn);
+		}
+		&--ok {
+			background: var(--wa-ok);
+		}
+	}
+
+	// ---- the activity combobox ----------------------------------------------------------------------
+
+	&__sector {
+		position: relative;
+	}
+	&__sector-btn {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		inline-size: 100%;
+		min-block-size: var(--wa-h, 38px);
+		padding-inline: var(--wa-px, 12px);
+		border: 1px solid var(--wa-border-2);
+		border-radius: var(--wa-radius, 8px);
+		background: var(--wa-surface);
+		color: var(--wa-ink);
+		font: inherit;
+		font-size: var(--wa-fs, 14px);
 		text-align: start;
-		max-inline-size: 520px;
-		margin-inline: auto;
-		margin-block-start: var(--sanad-gap-lg);
+		cursor: pointer;
+
+		&:hover {
+			border-color: var(--wa-ink-4);
+		}
+		&:focus-visible {
+			outline: none;
+			border-color: var(--wa-pri);
+			box-shadow: 0 0 0 3px var(--wa-pri-s);
+		}
+	}
+	&__sector-value {
+		flex: 1;
+		min-inline-size: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&__sector-caret {
+		display: inline-flex;
+		flex: none;
+		color: var(--wa-ink-4);
+	}
+	&__sector-pop {
+		position: absolute;
+		inset-block-start: calc(100% + 6px);
+		inset-inline-start: 0;
+		z-index: 45;
+		inline-size: 100%;
+		display: flex;
+		flex-direction: column;
+		padding: 6px;
+		border: 1px solid var(--wa-border);
+		border-radius: 10px;
+		background: var(--wa-surface);
+		box-shadow: var(--wa-shadow-lg);
+	}
+	&__sector-search {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		min-block-size: 32px;
+		padding-inline: 9px;
+		margin-block-end: 5px;
+		border: 1px solid var(--wa-border);
+		border-radius: 8px;
+		background: var(--wa-bg);
+		color: var(--wa-ink-4);
+
+		input {
+			flex: 1;
+			min-inline-size: 0;
+			border: none;
+			background: transparent;
+			outline: none;
+			font: inherit;
+			font-size: 12px;
+			color: var(--wa-ink);
+		}
+	}
+	&__sector-list {
+		display: flex;
+		flex-direction: column;
+		max-block-size: 210px;
+		overflow: auto;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	&__sector-opt,
+	&__sector-none {
+		padding: 7px 9px;
+		border-radius: 7px;
+		font-size: 12.5px;
+		color: var(--wa-ink);
+		cursor: pointer;
+
+		&:hover {
+			background: var(--wa-sunken);
+		}
+	}
+	&__sector-opt--on,
+	&__sector-opt--cursor {
+		background: var(--wa-pri-s);
+	}
+	&__sector-none {
+		color: var(--wa-pri-d);
+		line-height: 1.7;
+	}
+
+	// =============================================================================================
+	// The terms panel
+	// =============================================================================================
+
+	&__terms {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		max-block-size: clamp(240px, calc(100dvh - 360px), 560px);
+		overflow: auto;
+		padding: 14px 16px;
+
+		&:focus-visible {
+			outline: 2px solid var(--wa-pri);
+			outline-offset: 2px;
+		}
+	}
+	&__terms-sec {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	&__terms-h {
+		margin: 0;
+		font-size: 12.5px;
+		font-weight: 700;
+		color: var(--wa-ink);
+	}
+	&__terms-p {
+		margin: 0;
+		font-size: 12px;
+		line-height: 2;
+		color: var(--wa-ink-2);
+	}
+	&__terms-foot {
+		margin: 0;
+		padding-block-start: 10px;
+		border-block-start: 1px solid var(--wa-border);
+		font-size: 11px;
+		line-height: 1.9;
+		color: var(--wa-ink-3);
+	}
+	&__consent {
+		margin: 0;
+		font-size: 11.5px;
+		line-height: 1.9;
+		color: var(--wa-ink-3);
+	}
+	// the gate that stands in for the create button until the terms have been read
+	&__gate.wa-btn {
+		border-style: dashed;
+		white-space: normal;
+		text-align: center;
+	}
+
+	// =============================================================================================
+	// The confirmation code
+	// =============================================================================================
+
+	&__route {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		flex-wrap: wrap;
+		padding: 14px 16px;
+	}
+	&__route-col {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		min-inline-size: 0;
+	}
+	&__route-k {
+		font-size: 11px;
+		color: var(--wa-ink-3);
+	}
+	&__route-v {
+		font-size: 14px;
+		font-weight: 700;
+		color: var(--wa-ink);
+	}
+	&__route-v--mono {
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+	}
+	&__route-arrow {
+		display: inline-flex;
+		flex: none;
+		color: var(--wa-ink-4);
+	}
+
+	&__codebox {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		padding: 16px;
+	}
+	&__code-input {
+		inline-size: 100%;
+		min-block-size: 52px;
+		padding-inline: 14px;
+		border: 1px dashed var(--wa-pri-sb);
+		border-radius: 10px;
+		background: var(--wa-pri-s);
+		color: var(--wa-ink);
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: 20px;
+		font-weight: 700;
+		letter-spacing: 4px;
+		text-align: center;
+
+		&::placeholder {
+			color: var(--wa-ink-4);
+			letter-spacing: 4px;
+		}
+		&:focus {
+			outline: none;
+			border-style: solid;
+			border-color: var(--wa-pri);
+			box-shadow: 0 0 0 3px var(--wa-pri-s);
+		}
+	}
+	&__code-help {
+		margin: 0;
+		font-size: 11.5px;
+		line-height: 1.8;
+		color: var(--wa-ink-3);
+	}
+
+	// =============================================================================================
+	// Sign-in, devices, webhook
+	// =============================================================================================
+
+	&__loginfoot {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		flex-wrap: wrap;
+	}
+	&__lock {
+		display: inline-flex;
+		align-items: center;
+		gap: 7px;
+		font-size: 11.5px;
+		line-height: 1.7;
+		color: var(--wa-ink-3);
+	}
+	&__divider {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		font-size: 11px;
+		color: var(--wa-ink-3);
+
+		&::before,
+		&::after {
+			content: "";
+			flex: 1;
+			block-size: 1px;
+			background: var(--wa-border);
+		}
+	}
+
+	&__device {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 10px 12px;
+		border: 1px solid var(--wa-border);
+		border-radius: 10px;
+		background: var(--wa-bg);
+	}
+	&__device-mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 32px;
+		block-size: 32px;
+		flex: none;
+		border-radius: 9px;
+		background: var(--wa-pri-s);
+		color: var(--wa-pri-d);
+	}
+	&__device-text {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-inline-size: 0;
+		gap: 2px;
+
+		b {
+			font-size: 13px;
+			color: var(--wa-ink);
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+	}
+	&__device-phone {
+		font-size: 12px;
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		color: var(--wa-ink-3);
+	}
+
+	&__pairing:empty {
+		display: none;
+	}
+	&__pair {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		gap: 16px;
+		padding: 16px;
+	}
+	&__pair-code {
+		flex: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-inline-size: 180px;
+	}
+	&__qr {
+		inline-size: 180px;
+		block-size: 180px;
+		border-radius: 10px;
+		background: var(--wa-surface);
+		padding: 6px;
+	}
+	&__pin,
+	&__raw {
+		display: inline-block;
+		padding: 12px 16px;
+		border: 1px dashed var(--wa-pri-sb);
+		border-radius: 10px;
+		background: var(--wa-pri-s);
+		color: var(--wa-ink);
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: 20px;
+		font-weight: 700;
+		letter-spacing: 3px;
+	}
+	&__raw {
+		font-size: 11px;
+		letter-spacing: 0;
+		word-break: break-all;
+		max-inline-size: 260px;
+	}
+	&__pair-how {
+		flex: 1 1 200px;
+		min-inline-size: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	&__pair-steps {
+		margin: 0;
+		padding-inline-start: 18px;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		font-size: 12.5px;
+		line-height: 1.7;
+		color: var(--wa-ink-2);
+	}
+
+	&__kv {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		flex-wrap: wrap;
+		padding: 10px 12px;
+	}
+	&__kv-label {
+		font-size: 11px;
+		font-weight: 600;
+		color: var(--wa-ink-3);
+	}
+	&__kv-value {
+		flex: 1;
+		min-inline-size: 140px;
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: 11.5px;
+		color: var(--wa-ink);
+		word-break: break-all;
+		background: transparent;
+		padding: 0;
+	}
+
+	// =============================================================================================
+	// The checklist, and the ready panel
+	// =============================================================================================
+
+	&__checklist {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		inline-size: 100%;
+	}
+	&__check {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 9px 12px;
+		border: 1px solid var(--wa-border);
+		border-radius: 10px;
+		background: var(--wa-surface);
+		text-align: start;
+	}
+	&__check-mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 26px;
+		block-size: 26px;
+		flex: none;
+		border-radius: 50%;
+		background: var(--wa-sunken);
+		color: var(--wa-ink-4);
+	}
+	&__check--done &__check-mark {
+		background: var(--wa-ok-s);
+		color: var(--wa-ok-i);
+	}
+	&__check-text {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-inline-size: 0;
+		gap: 2px;
+
+		b {
+			font-size: 12.5px;
+			color: var(--wa-ink);
+		}
+		span {
+			font-size: 11.5px;
+			line-height: 1.6;
+			color: var(--wa-ink-3);
+		}
+	}
+
+	&__ready-mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 54px;
+		block-size: 54px;
+		border-radius: 50%;
+		border: 1px solid var(--wa-ok-sb);
+		background: var(--wa-ok-s);
+		color: var(--wa-ok-i);
+	}
+	&__ready-title {
+		margin: 0;
+		font-size: 17px;
+		font-weight: 700;
+		color: var(--wa-ink);
+	}
+	&__ready-sub {
+		margin: 0;
+		font-size: 12.5px;
+		line-height: 1.9;
+		color: var(--wa-ink-3);
+	}
+	&__ready-note {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		inline-size: 100%;
+		padding: 12px 14px;
+		border: 1px solid var(--wa-ok-sb);
+		border-radius: 11px;
+		background: var(--wa-ok-s);
+		text-align: start;
+	}
+	&__ready-note-mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 28px;
+		block-size: 28px;
+		flex: none;
+		border-radius: 9px;
+		background: var(--wa-ok);
+		color: var(--wa-on-pri);
+	}
+	&__ready-note-text {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+
+		b {
+			font-size: 12.5px;
+			color: var(--wa-ink);
+		}
+		span {
+			font-size: 11.5px;
+			line-height: 1.7;
+			color: var(--wa-ink-3);
+		}
+	}
+
+	&__invite {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		inline-size: 100%;
+		padding: 16px;
+		border: 1px solid var(--wa-pri-sb);
+		border-radius: 12px;
+		background: var(--wa-pri-s);
+		text-align: start;
+	}
+	&__invite-head {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+
+		b {
+			font-size: 14px;
+			color: var(--wa-ink);
+		}
+	}
+	&__invite-mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 30px;
+		block-size: 30px;
+		flex: none;
+		border-radius: 9px;
+		background: var(--wa-pri);
+		color: var(--wa-on-pri);
+	}
+	&__invite-body {
+		margin: 0;
+		font-size: 12.5px;
+		line-height: 2;
+		color: var(--wa-ink-2);
+	}
+	&__invite-slot {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		flex-wrap: wrap;
+		margin: 0;
+		min-block-size: var(--wa-h, 38px);
+		padding: 6px 12px;
+		border: 1px dashed var(--wa-pri-sb);
+		border-radius: var(--wa-radius, 8px);
+		background: var(--wa-surface);
+	}
+	&__invite-k {
+		font-size: 11px;
+		color: var(--wa-ink-3);
+	}
+	&__invite-v {
+		font-size: 12.5px;
+		font-weight: 600;
+		color: var(--wa-ink-2);
+	}
+
+	// Connecting this site: the work that follows the account, in its own block under the panel
+	// that says the account is ready — never a step of the rail above it.
+	&__site {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		inline-size: 100%;
+		padding-block-start: 16px;
+		border-block-start: 1px solid var(--wa-border);
+		text-align: start;
+	}
+	&__site-head {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		flex-wrap: wrap;
+	}
+	&__site-title {
+		margin: 0;
+		flex: 1;
+		min-inline-size: 0;
+		font-size: 14px;
+		font-weight: 700;
+		color: var(--wa-ink);
+	}
+	&__site-sub {
+		margin: 0;
+		font-size: 12px;
+		line-height: 1.8;
+		color: var(--wa-ink-3);
+	}
+
+	// =============================================================================================
+	// Verbs and motion
+	// =============================================================================================
+
+	&__grow.wa-btn {
+		flex: 1 1 180px;
+	}
+	&__btn--busy::before {
+		content: "";
+		inline-size: 14px;
+		block-size: 14px;
+		flex: none;
+		border-radius: 50%;
+		border: 2px solid currentColor;
+		border-block-start-color: transparent;
+		animation: wa-onb-spin 0.7s linear infinite;
+	}
+
+	&__foot-note {
+		margin: 0;
+		font-size: 11px;
+		line-height: 1.9;
+		color: var(--wa-ink-3);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		&__card {
+			animation: none;
+		}
+		&__btn--busy::before {
+			animation: none;
+		}
+	}
+
+	// =============================================================================================
+	// Wider than a phone
+	// =============================================================================================
+
+	@media (min-width: 620px) {
+		&__card {
+			padding: 20px 22px;
+		}
+		&__grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		&__field-wide {
+			grid-column: 1 / -1;
+		}
+		&__stage {
+			padding: 6px 22px 20px;
+		}
+	}
+
+	@media (min-width: 900px) {
+		&__brand {
+			display: flex;
+		}
+		&__topmark {
+			display: none;
+		}
+		&__mbar {
+			display: none;
+		}
+		&__topbar {
+			padding-inline: 20px;
+		}
+	}
+
+	@media (min-width: 1180px) {
+		&__brand {
+			inline-size: 340px;
+		}
 	}
 }
 
-@keyframes wa-onb-pulse {
-	0%,
-	100% {
-		opacity: 1;
-	}
-	50% {
-		opacity: 0.35;
-	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.wa-onb__dot {
-		animation: none;
-	}
-}
-
-@media (max-width: 767px) {
-	.wa-onb__card,
-	.wa-onb__wizard {
-		padding: var(--sanad-gap-lg);
-	}
-	.wa-onb__qr {
-		inline-size: 160px;
-		block-size: 160px;
-	}
+// The one glyph whose meaning is its direction. `chevronEnd` already points at the end of the
+// line, so Arabic needs nothing — but Desk renders some icon sets unmirrored, so the rule is
+// stated rather than assumed.
+html[dir="rtl"] .wa-onb__route-arrow {
+	transform: scaleX(-1);
 }
