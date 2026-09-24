@@ -114,15 +114,16 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [x] Message Templates · Notifications · Notification Alerts lists
 - [x] Screenshot comparison with the prototype for all eight screens (en + ar) recorded in `plan/13-design-gate-phase-5.md`
 
-## Phase 6 — Custom Desk pages (`page/wa-*`, all data from `api/`, Espresso tokens, RTL, states, realtime)
-- [ ] `wa-home` (L) — device status, campaigns sending now, queue health, click-through; Number Cards/Charts via fixtures (D-029)
-- [ ] `wa-devices` (L) — DeviceCard grid, PairingModal QR + 8-digit code, live status
-- [ ] `wa-onboarding` (M) — Stepper sign-up / sign-in / forgot / pair; **redirect from Home NOT enabled** (phase 10)
-- [ ] `wa-functions-center` (L) — catalog, FunctionDetail, PreviewModal diff-before-install/update
-- [ ] `wa-simulator` (L) — ChatThread, composer, "message on behalf" (dry-run default, D-029)
-- [ ] `wa-contacts` (L) — ContactsTable over `contacts.*`, Drawer create/edit, ConversationDrawer hidden on 403 (D-029), CU-only page permission
-- [ ] `wa-settings` (L) — SettingsNav left / content right over the Single; sections per 09 row 15; billing actions hidden until platform A-01..A-04 (D-029)
-- [ ] Page permissions JSON per 09 §5; `translations/ar.csv` for every string
+## Phase 6 — Custom Desk pages (`page/wa-*`, all data from `api/`, Espresso tokens, RTL, states, realtime) — **done 2026-09-24** (commit `3eeaa4f`; four agents built them, then reviewed each screen against `docs/screen/*.dc.html`; every page renders at 1280 / 430 px in Arabic and English with zero JS/HTTP errors)
+- [x] `wa-home` (L) — the prototype's bands: KPI row, alert band, five metrics with sparklines, stacked volume chart + failures by error, four panels; every click-through of 09 §1B row 2
+- [x] `wa-devices` (L) — DeviceCard grid, PairingModal QR + 8-digit code, live status
+- [x] `wa-onboarding` (M) — Stepper sign-up / sign-in / forgot / pair; **redirect from Home NOT enabled** (phase 10)
+- [x] `wa-functions-center` (L) — catalog on `DataList` page mode, FunctionDetail (three columns), PreviewModal diff-before-install/update
+- [x] `wa-simulator` (L) — ChatThread, the prototype's one-row composer, "message on behalf" (dry-run default, D-029)
+- [x] `wa-contacts` (L) — `DataList` page mode over `contacts.*`, KPI row from `contacts.get_stats`, Drawer create/edit, ConversationDrawer hidden on 403 (D-029), CU-only page permission
+- [x] `wa-settings` (L) — SettingsNav left / content right over the Single; sections per 09 row 15 (the open section is a query parameter, not a path segment — Desk reads `route[1]` as a workspace); billing actions hidden until platform A-01..A-04 (D-029)
+- [x] Page permissions JSON per 09 §5; `translations/ar.csv` for every string (280 merged)
+- Open, for phase 7 or the owner: `home.get_series` (per-bucket counts; today bucketed client-side), `numbers.search_numbers` has no last-message preview, `functions.get_manifest` missing, no catalog export, `contacts.list_contacts` has no "conversation exists" filter, and the provider's raw error text reaches the Arabic screens untranslated
 
 ## Phase 7 — Frappe-native customization (→ Gate 2)
 - [ ] Outbound (UI-4): list side done in 5.B; remaining: form side, RowActions (resend, quick send, cancel) inside DataList's View/drawer, BulkActions
