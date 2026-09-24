@@ -48,6 +48,30 @@ Methods: `refresh()`, `set_columns(cols)`, `get_selected()`, `expand_row(name)`,
 static `DataList.format(type, value, df, doc, display, doctype)`. Helper: `sanad.ui.initials(text)`.
 Keep every rendered field in `listview_settings.add_fields`.
 
+## On a custom page
+
+A page that has no Desk list view passes a `wrapper` instead of a `listview` and owns the data:
+the table draws what it is given, and asks for more through `on_page` / `on_sort`.
+
+```js
+const table = new sanad.ui.DataList({
+  wrapper: $panel,                       // any element; the table, its summary line and its footer go inside
+  doctype: "Contact",                    // optional: used for meta-driven formatting only
+  columns: [{ fieldname: "full_name", label: __("Contact"), sortable: true }, …],
+  page_length: 20,
+  rows: [], total: 0,                    // or leave out for a skeleton until the first `set_rows`
+  on_page: (page, t) => load(page).then((r) => t.set_rows(r.rows, r.total)),
+  on_sort: (fieldname, order, t) => { state.order_by = `${fieldname} ${order}`; t.refresh(); },
+  on_select: (rows) => bar.update(rows), // instead of the list view's own selection bar
+  on_row_click: (doc) => open(doc),
+});
+load(0).then((r) => table.set_rows(r.rows, r.total));
+```
+
+`set_rows(rows, total)` is the only way data enters; `refresh()` calls `on_page` for the current
+page. Grouping is a list-view feature and stays off on a page; pinning, sorting, selection, the
+expandable row, the mobile card layout, the summary line and the pager all work the same.
+
 ## Live use
 Outbound list — `public/js/listview/whatsapp_log_list.js`; Inbound list —
 `public/js/listview/whatsapp_inbound_message_list.js` (both: "View" and row click open the record
