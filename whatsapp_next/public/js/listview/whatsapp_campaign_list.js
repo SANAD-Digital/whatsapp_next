@@ -429,6 +429,7 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 				selectable: true,
 				groupable: true,
 				pinnable: true,
+				row_action: { label: __("View"), handler: (doc) => frappe.set_route("Form", "WhatsApp Campaign", doc.name) },
 				on_row_click: (doc) => frappe.set_route("Form", "WhatsApp Campaign", doc.name),
 				page_length: 50,
 				mobile_columns: ["campaign_name", "status", "sent_count"],

@@ -1,0 +1,424 @@
+// The settings page (phase 6). Espresso tokens only, logical properties only.
+//
+// Screen 15 — the claude.ai shape the binding spec asks for (§5.7): a section rail on the
+// inline-start that stays put, one content pane on the inline-end that changes. The prototype's
+// own tabs (`docs/screen/Hub Screen - Settings.dc.html`) would not hold ten sections; its content
+// blocks — the state banner, the two-column panels with label/value rows, the event checklist, the
+// usage bars and the audit table — are what this file draws. Under 900 px the rail becomes a
+// scrollable row of chips above the pane.
+
+.wa-settings {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-md);
+
+	&__body {
+		display: grid;
+		gap: var(--sanad-gap-lg);
+		align-items: start;
+		@media (min-width: 900px) {
+			grid-template-columns: 232px minmax(0, 1fr);
+		}
+	}
+
+	// ---- the section rail ---------------------------------------------------------------------
+
+	&__nav {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: var(--sanad-gap-sm);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-card-radius);
+		background: var(--surface-white);
+		@media (min-width: 900px) {
+			position: sticky;
+			inset-block-start: var(--sanad-gap-lg);
+		}
+		@media (max-width: 899px) {
+			flex-direction: row;
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			scrollbar-width: thin;
+		}
+	}
+
+	&__nav-item {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		min-block-size: var(--sanad-target);
+		padding-inline: var(--sanad-gap-md);
+		border: 0;
+		border-radius: var(--sanad-radius);
+		background: none;
+		color: var(--ink-gray-7);
+		font-size: var(--text-sm, 13px);
+		text-align: start;
+		white-space: nowrap;
+		cursor: pointer;
+		&:hover {
+			background: var(--surface-gray-2);
+			color: var(--ink-gray-9);
+		}
+		&--on {
+			background: var(--sanad-accent-soft);
+			color: var(--sanad-accent-ink);
+			font-weight: 600;
+		}
+	}
+	&__nav-icon {
+		display: inline-flex;
+		flex: none;
+		opacity: 0.85;
+	}
+
+	// ---- the content pane -----------------------------------------------------------------------
+
+	&__pane {
+		min-inline-size: 0;
+		border: var(--sanad-border);
+		border-radius: var(--sanad-card-radius);
+		background: var(--surface-white);
+		overflow: hidden;
+	}
+	&__pane-head {
+		padding: var(--sanad-gap-lg);
+		border-block-end: var(--sanad-border);
+		h3 {
+			margin: 0;
+			font-size: var(--text-lg, 16px);
+			font-weight: 600;
+			color: var(--ink-gray-9);
+		}
+		p {
+			margin: var(--sanad-gap-xs) 0 0;
+			font-size: var(--text-sm, 13px);
+			color: var(--ink-gray-6);
+		}
+	}
+	&__pane-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-lg);
+		padding: var(--sanad-gap-lg);
+	}
+
+	// ---- shared blocks --------------------------------------------------------------------------
+
+	&__banner {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+		padding: var(--sanad-gap-md);
+		border: 1px solid;
+		border-radius: var(--sanad-radius);
+		font-size: var(--text-sm, 13px);
+		.btn {
+			margin-inline-start: auto;
+		}
+	}
+	&__banner-icon {
+		display: inline-flex;
+		flex: none;
+	}
+	&__banner-text {
+		display: flex;
+		flex-direction: column;
+		min-inline-size: 0;
+		strong {
+			font-weight: 600;
+		}
+		> span {
+			opacity: 0.85;
+		}
+	}
+
+	&__cols {
+		display: grid;
+		gap: var(--sanad-gap-lg);
+		align-items: start;
+		@media (min-width: 992px) {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	&__panel {
+		min-inline-size: 0;
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		overflow: hidden;
+		> header {
+			display: flex;
+			align-items: center;
+			gap: var(--sanad-gap-sm);
+			padding: var(--sanad-gap-sm) var(--sanad-gap-md);
+			border-block-end: var(--sanad-border);
+			background: var(--surface-gray-1);
+			> span {
+				display: flex;
+				flex-direction: column;
+				min-inline-size: 0;
+			}
+			strong {
+				font-size: var(--text-sm, 13px);
+				font-weight: 600;
+				color: var(--ink-gray-9);
+			}
+			span span {
+				font-size: var(--text-xs, 11px);
+				color: var(--ink-gray-5);
+			}
+			.btn {
+				margin-inline-start: auto;
+			}
+		}
+	}
+	&__panel-body {
+		padding: var(--sanad-gap-md);
+	}
+
+	&__rows {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		li {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: var(--sanad-gap-md);
+			min-block-size: var(--sanad-target);
+			padding-block: var(--sanad-gap-xs);
+			border-block-end: var(--sanad-border);
+			font-size: var(--text-sm, 13px);
+			&:last-child {
+				border-block-end: 0;
+			}
+		}
+	}
+	&__row--stacked {
+		flex-direction: column;
+		align-items: stretch !important;
+		gap: 2px !important;
+		.wa-settings__row-value {
+			text-align: start;
+		}
+	}
+	&__row-label {
+		display: flex;
+		flex: none;
+		flex-direction: column;
+		min-inline-size: 0;
+		color: var(--ink-gray-6);
+		> span {
+			font-size: var(--text-xs, 11px);
+			color: var(--ink-gray-5);
+		}
+	}
+	&__row-value {
+		flex: 1;
+		min-inline-size: 0;
+		text-align: end;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		color: var(--ink-gray-9);
+	}
+
+	&__facts {
+		display: grid;
+		gap: var(--sanad-gap-md) var(--sanad-gap-lg);
+		margin: 0;
+		@media (min-width: 640px) {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		dt {
+			font-size: 11px;
+			font-weight: 600;
+			letter-spacing: 0.05em;
+			text-transform: uppercase;
+			color: var(--ink-gray-5);
+		}
+		dd {
+			margin: 0;
+			font-size: var(--text-sm, 13px);
+			color: var(--ink-gray-9);
+			word-break: break-word;
+		}
+	}
+
+	&__form {
+		display: grid;
+		gap: var(--sanad-gap-md);
+		@media (min-width: 640px) {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.frappe-control {
+			margin-block-end: 0;
+			min-inline-size: 0;
+		}
+	}
+
+	&__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-sm);
+	}
+
+	&__subhead {
+		margin: 0;
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--ink-gray-5);
+	}
+
+	&__muted,
+	&__note {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-5);
+		margin: 0;
+	}
+	&__longtext {
+		display: block;
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
+	&__minilist {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		li {
+			display: flex;
+			justify-content: space-between;
+			gap: var(--sanad-gap-sm);
+		}
+	}
+	&__nowrap {
+		white-space: nowrap;
+	}
+
+	// ---- the webhook event checklist --------------------------------------------------------------
+
+	&__checks {
+		display: grid;
+		gap: var(--sanad-gap-xs);
+		margin: 0;
+		padding: 0;
+		border: 0;
+	}
+	&__check {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--sanad-gap-sm);
+		min-block-size: var(--sanad-target);
+		margin: 0;
+		padding-inline: var(--sanad-gap-xs);
+		border-radius: var(--sanad-radius);
+		font-size: var(--text-sm, 13px);
+		font-weight: 400;
+		cursor: pointer;
+		&:hover {
+			background: var(--surface-gray-2);
+		}
+		input {
+			accent-color: var(--sanad-accent);
+			margin-block-start: 9px;
+			inline-size: 15px;
+			block-size: 15px;
+		}
+		> span {
+			display: flex;
+			flex-direction: column;
+			align-self: center;
+			min-inline-size: 0;
+			span {
+				font-size: var(--text-xs, 11px);
+				color: var(--ink-gray-5);
+			}
+		}
+		input:disabled + span {
+			color: var(--ink-gray-5);
+		}
+	}
+	&__check-save {
+		margin-block-start: var(--sanad-gap-md);
+	}
+
+	// ---- the usage bars ----------------------------------------------------------------------------
+
+	&__kpis {
+		display: block;
+	}
+	&__chart-head {
+		display: flex;
+		align-items: baseline;
+		gap: var(--sanad-gap-sm);
+		margin-block-end: var(--sanad-gap-md);
+	}
+	&__chart-total {
+		font-size: var(--text-2xl, 22px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+	}
+	&__chart {
+		display: flex;
+		align-items: flex-end;
+		gap: var(--sanad-gap-xs);
+		block-size: 160px;
+	}
+	&__bar {
+		display: flex;
+		flex: 1 1 0;
+		flex-direction: column;
+		justify-content: flex-end;
+		align-items: center;
+		gap: var(--sanad-gap-xs);
+		block-size: 100%;
+		min-inline-size: 0;
+	}
+	&__bar-fill {
+		inline-size: 100%;
+		border-radius: var(--border-radius-md, 8px) var(--border-radius-md, 8px) 0 0;
+		background: var(--sanad-accent);
+	}
+	&__bar-label {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-5);
+		font-variant-numeric: tabular-nums;
+	}
+
+	// ---- the audit log ------------------------------------------------------------------------------
+
+	&__audit-filters {
+		display: grid;
+		gap: var(--sanad-gap-md);
+		@media (min-width: 640px) {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+		.frappe-control {
+			margin-block-end: 0;
+			min-inline-size: 0;
+		}
+	}
+	&__pager {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-sm);
+		padding-block-start: var(--sanad-gap-sm);
+		font-size: var(--text-sm, 13px);
+		color: var(--ink-gray-6);
+		> span:last-child {
+			display: flex;
+			align-items: center;
+			gap: var(--sanad-gap-sm);
+		}
+	}
+	&__audit-open {
+		align-self: flex-start;
+	}
+}

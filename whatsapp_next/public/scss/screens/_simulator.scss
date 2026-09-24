@@ -1,0 +1,415 @@
+// WhatsApp Simulator (screen 11) — the conversation rail on the inline-start, the thread and the
+// composer on the inline-end, both panes scrolling inside themselves so the Desk page never does.
+// Under 900 px the two panes become one: the list, then the conversation with a way back.
+// Espresso tokens only; logical properties throughout, so Arabic mirrors without a rule of its own.
+
+.wa-sim {
+	display: grid;
+	grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+	gap: var(--sanad-gap-lg);
+	block-size: calc(100dvh - 190px);
+	min-block-size: 460px;
+
+	&__rail,
+	&__main {
+		display: flex;
+		flex-direction: column;
+		min-block-size: 0;
+		min-inline-size: 0;
+		border: var(--sanad-border);
+		border-radius: var(--sanad-card-radius);
+		background: var(--surface-white);
+		overflow: hidden;
+	}
+
+	// ---- the conversation rail ----------------------------------------------------------------
+
+	&__rail-head {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		padding: var(--sanad-gap-md);
+		border-block-end: var(--sanad-border);
+	}
+	&__rail-title {
+		margin: 0;
+		font-size: var(--text-base, 14px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+	}
+	&__rail-sub {
+		margin: 0;
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+	}
+
+	&__list {
+		flex: 1 1 auto;
+		min-block-size: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: var(--sanad-gap-sm);
+	}
+
+	&__row {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		inline-size: 100%;
+		min-block-size: 52px;
+		padding: var(--sanad-gap-sm);
+		border: 1px solid transparent;
+		border-radius: var(--sanad-radius);
+		background: none;
+		text-align: start;
+		cursor: pointer;
+		&:hover {
+			background: var(--surface-gray-1);
+		}
+		&--on {
+			background: var(--sanad-accent-soft);
+			border-color: var(--sanad-accent-outline);
+		}
+	}
+	&__row-text {
+		flex: 1 1 auto;
+		min-inline-size: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	&__row-name {
+		font-size: var(--text-sm, 13px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&__row-sub {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&__row-line {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--sanad-gap-sm);
+		min-inline-size: 0;
+	}
+	&__row-at {
+		flex: none;
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-5);
+		font-variant-numeric: tabular-nums;
+	}
+	&__more {
+		margin: 0;
+		padding: var(--sanad-gap-sm);
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+		text-align: center;
+	}
+
+	&__avatar {
+		flex: none;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 32px;
+		block-size: 32px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-2);
+		color: var(--ink-gray-7);
+		font-size: var(--text-xs, 11px);
+		font-weight: 600;
+		&--lg {
+			inline-size: 36px;
+			block-size: 36px;
+			font-size: var(--text-sm, 13px);
+		}
+	}
+
+	// ---- the conversation header ---------------------------------------------------------------
+
+	&__head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--sanad-gap-md);
+		padding: var(--sanad-gap-md);
+		border-block-end: var(--sanad-border);
+	}
+	&__back {
+		display: none;
+	}
+	&__identity {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		flex: 1 1 220px;
+		min-inline-size: 0;
+	}
+	&__identity-text {
+		display: flex;
+		flex-direction: column;
+		min-inline-size: 0;
+	}
+	&__identity-name {
+		font-size: var(--text-base, 14px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&__identity-sub {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&__device {
+		display: flex;
+		flex: 0 0 auto;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		margin-inline-start: auto;
+		select.form-control {
+			inline-size: 170px;
+			block-size: var(--sanad-ctl-h);
+			padding-block: 0;
+		}
+	}
+	&__dot {
+		inline-size: 8px;
+		block-size: 8px;
+		border-radius: var(--border-radius-full, 999px);
+		background: currentColor;
+		flex: none;
+	}
+
+	&__hint {
+		padding-block: var(--sanad-gap-sm);
+		padding-inline: var(--sanad-gap-md);
+		border-block-end: var(--sanad-border);
+		background: var(--surface-gray-1);
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+	}
+
+	// ---- the result strip ------------------------------------------------------------------------
+
+	&__result {
+		padding: var(--sanad-gap-sm);
+		border-block-end: var(--sanad-border);
+	}
+	&__strip {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
+		border: 1px solid;
+		border-radius: var(--sanad-radius);
+		font-size: var(--text-sm, 13px);
+	}
+	&__strip-title {
+		font-weight: 600;
+	}
+	&__strip-line {
+		color: var(--ink-gray-8);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-inline-size: 46ch;
+	}
+	&__strip-actions {
+		display: flex;
+		gap: var(--sanad-gap-sm);
+		margin-inline-start: auto;
+	}
+
+	// ---- the thread and the composer --------------------------------------------------------------
+
+	&__thread {
+		flex: 1 1 auto;
+		min-block-size: 0;
+		display: flex;
+		flex-direction: column;
+		padding: var(--sanad-gap-sm);
+		> * {
+			min-block-size: 0;
+		}
+		// a conversation reads from the bottom: a short thread sits on the composer, not under
+		// the header (kit suggestion: ChatThread could do this itself)
+		.sanad-chat__scroll {
+			display: flex;
+			flex-direction: column;
+		}
+		.sanad-chat__list {
+			margin-block-start: auto;
+		}
+	}
+
+	&__composer {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		padding: var(--sanad-gap-md);
+		border-block-start: var(--sanad-border);
+		background: var(--surface-white);
+	}
+	&__input {
+		resize: vertical;
+		min-block-size: 56px;
+	}
+	&__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-sm);
+		justify-content: flex-end;
+	}
+
+	// ---- one pane at a time on small screens ------------------------------------------------------
+
+	@media (max-width: 899px) {
+		grid-template-columns: minmax(0, 1fr);
+		block-size: calc(100dvh - 150px);
+		&__main {
+			display: none;
+		}
+		&.wa-sim--open &__rail {
+			display: none;
+		}
+		&.wa-sim--open &__main {
+			display: flex;
+		}
+		&__back {
+			display: inline-flex;
+			align-items: center;
+			min-block-size: var(--sanad-target);
+		}
+		&__device select.form-control {
+			inline-size: 130px;
+		}
+	}
+}
+
+// ---- "message on behalf" ------------------------------------------------------------------------
+
+.wa-sim-behalf {
+	&__intro {
+		margin: 0 0 var(--sanad-gap-sm);
+		color: var(--ink-gray-8);
+	}
+	&__note {
+		margin: 0;
+		font-size: var(--text-sm, 13px);
+		color: var(--ink-gray-6);
+	}
+	&__label {
+		display: block;
+		font-size: var(--text-xs, 11px);
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--ink-gray-5);
+		margin-block-end: var(--sanad-gap-sm);
+	}
+	&__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+		gap: var(--sanad-gap-sm);
+		max-block-size: 220px;
+		overflow-y: auto;
+	}
+	&__cmd {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		align-items: flex-start;
+		min-block-size: var(--sanad-target);
+		padding: var(--sanad-gap-sm);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		text-align: start;
+		cursor: pointer;
+		font-size: var(--text-sm, 13px);
+		color: var(--ink-gray-8);
+		code {
+			font-family: var(--font-stack-mono, monospace);
+			color: var(--sanad-accent-ink);
+			direction: ltr;
+			unicode-bidi: isolate;
+		}
+		&:hover {
+			background: var(--surface-gray-1);
+		}
+		&[aria-pressed="true"] {
+			background: var(--sanad-accent-soft);
+			border-color: var(--sanad-accent-outline);
+		}
+	}
+	&__syn {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-5);
+	}
+}
+
+// ---- "who is this?" ------------------------------------------------------------------------------
+
+.wa-sim-who {
+	&__facts {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: var(--sanad-gap-md);
+		margin: 0;
+		padding: var(--sanad-gap-md);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-gray-1);
+		dt {
+			font-size: var(--text-xs, 11px);
+			font-weight: 500;
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+			color: var(--ink-gray-5);
+		}
+		dd {
+			margin: 0;
+			font-size: var(--text-sm, 13px);
+			color: var(--ink-gray-9);
+		}
+	}
+	&__title {
+		margin-block: var(--sanad-gap-lg) var(--sanad-gap-sm);
+		font-size: var(--text-sm, 13px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+	}
+	&__links {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		li {
+			display: flex;
+			align-items: center;
+			gap: var(--sanad-gap-sm);
+			font-size: var(--text-sm, 13px);
+		}
+	}
+	&__muted {
+		margin: 0;
+		font-size: var(--text-sm, 13px);
+		color: var(--ink-gray-6);
+	}
+}

@@ -24,7 +24,7 @@ sanad.ui.DataList = class DataList {
 	 * @param {{label: string, handler: Function}|false} [opts.row_action] — per-row button at the inline-end
 	 * @param {Function} [opts.on_row_click] — `(doc, $row) => void` (whole row except controls / links)
 	 * @param {Function} [opts.expand] — `($el, doc) => void|Promise` renders an expandable row
-	 * @param {number} [opts.page_length=50]
+	 * @param {number} [opts.page_length=20]
 	 * @param {{count?: Function(total, rows) → string, extra?: Function($el, rows)}} [opts.footer]
 	 * @param {{title?, description?, action?}} [opts.empty]
 	 * @param {"cards"|"scroll"} [opts.mobile="cards"]
@@ -37,10 +37,10 @@ sanad.ui.DataList = class DataList {
 	 *   first column plus any status column)
 	 */
 	constructor(opts = {}) {
-		this.opts = Object.assign({ selectable: true, page_length: 50, mobile: "cards", groupable: true, pinnable: true, footer: {}, empty: {} }, opts);
-		// Two hosts: a Desk list view (the table replaces its rows) or any wrapper on a custom page
-		// (the page owns the data and hands it over with `set_rows`). Everything below the mount is
-		// the same table, so a page and a list read alike.
+		this.opts = Object.assign({ selectable: true, page_length: 20, mobile: "cards", groupable: true, pinnable: true, footer: {}, empty: {} }, opts);
+		// Two hosts. A Desk list view (the table replaces its rows, which is every screen built so
+		// far) or, on a custom page that has no list view, a plain wrapper: the page then owns the
+		// data and hands it over with `set_rows`. Nothing about the list path changes.
 		this.listview = this.opts.listview || null;
 		this.lv = this.listview;
 		this.page_mode = !this.lv;
@@ -48,19 +48,19 @@ sanad.ui.DataList = class DataList {
 		this.doctype = this.lv ? this.lv.doctype : this.opts.doctype || null;
 		this.rows = (this.opts.rows || []).slice();
 		this.sort_state = this.opts.sort || {};
+		this.page = 0;
 		this.page_length = cint(this.opts.page_length) || 20;
 		this.page = 0;
 		this.total = null;
 		this.expanded = new Set();
 		this.group_names = new Map(); // rendered group id → { path, names }
 		this.selected = new Set(); // checked docnames, kept across re-renders (folding, sorting, realtime)
-		this.group_by = this.opts.listview ? (this.opts.group_by || []).slice() : []; // grouping needs the list's own data
+		this.group_by = this.opts.listview ? (this.opts.group_by || []).slice() : []; // grouping reads the list's own data
 		this.collapsed = new Set(); // group paths the user folded away
 		this.pinned = (this.opts.pinned || []).slice();
 		this.id = ui.uid("datalist");
 		this.declared = (this.opts.columns || []).slice(); // the screen's own default column set
 		this.columns = this.resolve_columns(this.apply_saved_columns(this.opts.columns));
-		if (this.page_mode) this.total = cint(this.opts.total) || this.rows.length;
 		this.mount();
 	}
 
@@ -73,7 +73,6 @@ sanad.ui.DataList = class DataList {
 		lv.page_length = this.page_length;
 		lv.selected_page_count = this.page_length;
 		lv.start = 0;
-		this.page = 0;
 		lv.$no_result && lv.$no_result.hide();
 		lv._sanad_datalist = this; // FilterBar's grouping control drives this table
 		lv.$result.addClass("sanad-datalist-host");
@@ -82,21 +81,15 @@ sanad.ui.DataList = class DataList {
 		this.$table = $(`<div class="sanad-kit sanad-datalist__wrap${this.opts.mobile === "cards" ? " sanad-datalist__wrap--cards" : ""}"></div>`);
 		lv.$result.find(".list-row-container, .list-row-head").remove();
 		lv.$result.prepend(this.$table);
-		this.$summary = $('<p class="sanad-kit sanad-datalist__summary" aria-live="polite"></p>');
-		lv.$frappe_list.prepend(this.$summary);
 		this.$footer = $(`<div class="sanad-kit sanad-datalist__footer"><div class="sanad-datalist__count" aria-live="polite"></div><div class="sanad-datalist__extra"></div><nav class="sanad-datalist__pager" aria-label="${ui.escape(__("Pages"))}"></nav></div>`);
 		lv.$frappe_list.append(this.$footer);
-		// Frappe's own paging component (page sizes + "Load more") is not what the prototype draws:
-		// the table moves page by page, so the component is kept for its state and hidden.
-		if (lv.$paging_area) lv.$paging_area.addClass("sanad-datalist__paging").hide();
-		this.render_pager();
+		// Frappe's own paging component (page sizes + Load More) moves into the footer: it divides
+		// the pages, keeps the fetch small and is what the rest of Desk behaves like.
+		if (lv.$paging_area) lv.$paging_area.addClass("sanad-datalist__paging").appendTo(this.$footer.find(".sanad-datalist__pager")).show();
 
 		// rows: our table instead of Desk's row markup (keeps the shared render hooks of the kit)
 		lv._sanad_render_hooks = lv._sanad_render_hooks || [];
 		lv.render_list = function () {
-			// Frappe refetched from the top: the reader is looking at a new result set
-			if (cint(lv.start) === 0) self.page = 0;
-			if (lv.$paging_area) lv.$paging_area.hide(); // it re-shows itself on every render
 			self.render();
 			lv._sanad_render_hooks.forEach((fn) => {
 				try {
@@ -121,7 +114,6 @@ sanad.ui.DataList = class DataList {
 		lv.freeze = (on) => this.set_loading(!!on);
 		// the card is a flex column that fills its page, so Desk's result-height maths is skipped
 		lv.set_result_height = () => {};
-		this.$root = lv.$result;
 		this.bind_events();
 		this._on_resize = ui.debounce(() => {
 			this.apply_pins();
@@ -139,16 +131,19 @@ sanad.ui.DataList = class DataList {
 		this.render_skeleton();
 	}
 
-	/** The same table on a custom page: the host owns the data, the filters and the fetching. */
+	/**
+	 * The same table on a custom page: the page owns the data, the filters and the fetching, and
+	 * hands over one page at a time. Used where a screen has no Desk list view to stand on.
+	 */
 	mount_page() {
 		const $w = $(this.opts.wrapper);
-		$w.addClass("sanad-kit sanad-list-card sanad-datalist-page");
-		this.$summary = $('<p class="sanad-datalist__summary" aria-live="polite"></p>').appendTo($w);
+		$w.addClass("sanad-kit sanad-datalist-page");
 		this.$table = $(`<div class="sanad-datalist__wrap${this.opts.mobile === "cards" ? " sanad-datalist__wrap--cards" : ""}"></div>`).appendTo($w);
 		this.$footer = $(`<div class="sanad-datalist__footer"><div class="sanad-datalist__count" aria-live="polite"></div><div class="sanad-datalist__extra"></div><nav class="sanad-datalist__pager" aria-label="${ui.escape(__("Pages"))}"></nav></div>`).appendTo($w);
 		this.$root = $w;
-		this.render_pager();
+		this.total = cint(this.opts.total) || this.rows.length;
 		this.bind_events();
+		this.render_page_buttons();
 		this._on_resize = ui.debounce(() => this.apply_pins(), 150);
 		$(window).on(`resize.${this.id}`, this._on_resize);
 		if (this.opts.rows) {
@@ -157,17 +152,30 @@ sanad.ui.DataList = class DataList {
 		} else this.render_skeleton();
 	}
 
-	/**
-	 * The page hands over the rows of the page being read, and how many there are in all. The
-	 * table draws them, the footer says which page this is, and `on_page` / `on_sort` ask the page
-	 * for the next one.
-	 */
+	/** The page hands over the rows it fetched and how many there are in all. */
 	set_rows(rows, total) {
 		this.rows = (rows || []).slice();
 		if (total != null) this.total = cint(total);
+		this.set_loading(false);
 		this.render();
 		this.render_footer();
 		return this;
+	}
+
+	/** Page mode's own footer buttons (a list view keeps Frappe's paging component instead). */
+	render_page_buttons() {
+		const $pager = this.$footer.find(".sanad-datalist__pager");
+		if (!this.page_mode || $pager.find(".sanad-datalist__page-btn").length) return;
+		const step = (delta) => {
+			const pages = Math.max(1, Math.ceil((this.total || 0) / this.page_length));
+			const target = Math.max(0, Math.min(this.page + delta, pages - 1));
+			if (target === this.page) return;
+			this.page = target;
+			this.set_loading(true);
+			if (this.opts.on_page) this.opts.on_page(target, this);
+		};
+		$(`<button type="button" class="btn btn-default btn-sm sanad-datalist__page-btn" data-go="prev">${ui.escape(__("Previous"))}</button>`).on("click", () => step(-1)).appendTo($pager);
+		$(`<button type="button" class="btn btn-default btn-sm sanad-datalist__page-btn" data-go="next">${ui.escape(__("Next"))}</button>`).on("click", () => step(1)).appendTo($pager);
 	}
 
 	bind_events() {
@@ -386,9 +394,7 @@ sanad.ui.DataList = class DataList {
 			const active = c.sortable && sort_by === c.fieldname;
 			const aria = active ? ` aria-sort="${sort_order === "asc" ? "ascending" : "descending"}"` : "";
 			const style = c.width ? ` style="width:${ui.escape(typeof c.width === "number" ? `${c.width}px` : c.width)}"` : "";
-			// only the sorted column carries a marker (prototype): a caret on every header is noise,
-			// and the column that decides the order should be the one that stands out
-			const icon = active ? ui.icon(sort_order === "asc" ? "sort-ascending" : "sort-descending", "xs") : "";
+			const icon = active ? ui.icon(sort_order === "asc" ? "sort-ascending" : "sort-descending", "xs") : ui.icon("es-line-sort", "xs");
 			const pinned = this.pinned.includes(c.fieldname) ? " sanad-datalist__th--pinned" : "";
 			html += `<th scope="col" class="sanad-datalist__th sanad-datalist__th--${c.align}${c.hidden_xs ? " sanad-datalist__th--hidden-xs" : ""}${active ? " sanad-datalist__th--sorted" : ""}${pinned}" data-fieldname="${ui.escape(c.fieldname)}"${aria}${style}>`;
 			if (c.sortable) {
@@ -405,20 +411,8 @@ sanad.ui.DataList = class DataList {
 		return html + "</tr></thead>";
 	}
 
-	/**
-	 * The rows of the page being read. Frappe's list buffers every page it has fetched in
-	 * `listview.data` (its own footer is a "load more"); the prototype's table shows one page and
-	 * moves between them, so the buffer is sliced here and `Previous` costs no request at all.
-	 */
-	page_rows() {
-		if (this.page_mode) return this.rows; // the host pages; these are the rows it handed over
-		const all = this.listview.data || [];
-		const start = this.page * this.page_length;
-		return all.slice(start, start + this.page_length);
-	}
-
 	render() {
-		const rows = this.page_rows();
+		const rows = this.page_mode ? this.rows : this.listview.data || [];
 		this.expanded = new Set(Array.from(this.expanded).filter((n) => rows.some((d) => d.name === n)));
 		let body = "";
 		if (!rows.length) {
@@ -849,10 +843,11 @@ sanad.ui.DataList = class DataList {
 		const col = this.columns.find((c) => c.fieldname === fieldname);
 		if (!col || !col.sortable) return;
 		if (this.page_mode) {
-			// the page owns the query: the table only says what the reader asked for
+			// the page owns the query: the table only reports what the reader asked for
 			const order = this.sort_state.fieldname === fieldname && this.sort_state.order === "desc" ? "asc" : "desc";
 			this.sort_state = { fieldname, order };
 			this.page = 0;
+			this.set_loading(true);
 			if (this.opts.on_sort) this.opts.on_sort(fieldname, order, this);
 			else this.render();
 			return;
@@ -892,68 +887,15 @@ sanad.ui.DataList = class DataList {
 		});
 	}
 
-	/** Total pages under the current filters (at least one, even when nothing matched). */
-	page_count() {
-		const total = this.total == null ? (this.page_mode ? this.rows.length : (this.listview.data || []).length) : this.total;
-		return Math.max(1, Math.ceil(total / this.page_length));
-	}
-
-	/**
-	 * Move to a page. A page already in the buffer is drawn without a request; the next one is
-	 * fetched by asking Frappe to continue from where the buffer ends.
-	 */
-	go_to_page(page) {
-		const lv = this.listview;
-		const target = Math.max(0, Math.min(page, this.page_count() - 1));
-		if (target === this.page) return;
-		if (this.page_mode) {
-			this.page = target;
-			this.set_loading(true);
-			if (this.opts.on_page) this.opts.on_page(target, this);
-			return;
-		}
-		const buffered = (lv.data || []).length;
-		this.page = target;
-		if ((target + 1) * this.page_length <= buffered || buffered >= (this.total || 0)) {
-			this.render();
-			this.render_footer();
-			return;
-		}
-		lv.start = buffered;
-		lv.refresh();
-	}
-
-	/** The prototype's footer: which page this is, and the two ways out of it. */
-	render_pager() {
-		const $pager = this.$footer.find(".sanad-datalist__pager");
-		if ($pager.find(".sanad-datalist__page-btn").length) return;
-		$(`<button type="button" class="btn btn-default btn-sm sanad-datalist__page-btn" data-go="prev">${ui.escape(__("Previous"))}</button>`)
-			.on("click", () => this.go_to_page(this.page - 1))
-			.appendTo($pager);
-		$(`<button type="button" class="btn btn-default btn-sm sanad-datalist__page-btn" data-go="next">${ui.escape(__("Next"))}</button>`)
-			.on("click", () => this.go_to_page(this.page + 1))
-			.appendTo($pager);
-	}
-
 	render_footer() {
 		const lv = this.listview;
-		const rows = lv.data || [];
-		const shown = this.page_rows();
+		const rows = this.page_mode ? this.rows : lv.data || [];
 		const $count = this.$footer.find(".sanad-datalist__count");
 		const $pager = this.$footer.find(".sanad-datalist__pager");
 		const paint = () => {
 			const total = this.total == null ? rows.length : this.total;
-			const pages = this.page_count();
 			const text = typeof this.opts.footer.count === "function" ? this.opts.footer.count(total, rows) : ui.plural(total, { one: __("{0} record"), other: __("{0} records") });
-			// above the table: what matched and which slice of it is on screen
-			const from = shown.length ? this.page * this.page_length + 1 : 0;
-			const to = this.page * this.page_length + shown.length;
-			this.$summary.text(shown.length ? __("{0} · showing {1}–{2}", [text, ui.format_int(from), ui.format_int(to)]) : text);
-			// in the footer: the page, and the two ways out of it
-			$count.text(__("Page {0} of {1}", [ui.format_int(this.page + 1), ui.format_int(pages)]));
-			this.render_pager();
-			$pager.find('[data-go="prev"]').prop("disabled", this.page <= 0);
-			$pager.find('[data-go="next"]').prop("disabled", this.page + 1 >= pages);
+			$count.text(rows.length ? __("{0} · showing {1}", [text, ui.format_int(rows.length)]) : text);
 			this.render_group_tools();
 			if (typeof this.opts.footer.extra === "function") this.opts.footer.extra(this.$footer.find(".sanad-datalist__extra"), rows, this);
 		};
@@ -998,7 +940,7 @@ sanad.ui.DataList = class DataList {
 		return this.listview.get_checked_items();
 	}
 
-	/** A list view keeps its own toolbar in step; a page is told. */
+	/** A list view keeps its own toolbar in step with a selection; a page is told instead. */
 	selection_changed() {
 		if (this.lv) this.lv.on_row_checked();
 		else if (this.opts.on_select) this.opts.on_select(this.get_selected(), this);

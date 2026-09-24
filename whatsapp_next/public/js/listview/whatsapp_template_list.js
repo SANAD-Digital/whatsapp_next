@@ -119,7 +119,8 @@ frappe.listview_settings[DOCTYPE] = {
 				listview,
 				columns: COLUMNS(),
 				selectable: true,
-				page_length: 50,
+				page_length: 20,
+				row_action: { label: __("View"), handler: open_form },
 				on_row_click: open_form,
 				footer: { count: (total) => sanad.ui.plural(total, { one: __("{0} template"), other: __("{0} templates") }) },
 				empty: {

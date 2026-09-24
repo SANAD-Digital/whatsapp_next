@@ -1,0 +1,553 @@
+// Functions Center (screen 7) — the storefront table, the function modal and the install / update
+// diff. The screen reads as one instrument: a header, one toolbar, one dense table. Colours are
+// Espresso tokens only and every offset is a logical property, so Arabic needs nothing extra.
+
+.wa-functions {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-lg);
+	padding-block-end: var(--sanad-gap-xl);
+
+	&__body {
+		min-block-size: 200px;
+	}
+
+	// ---- the table ---------------------------------------------------------------------------
+
+	&__table-wrap {
+		border: var(--sanad-border);
+		border-radius: var(--sanad-card-radius);
+		background: var(--surface-white);
+		overflow: hidden;
+	}
+
+	&__table {
+		th,
+		td {
+			padding-block: var(--sanad-gap-sm);
+			padding-inline: var(--sanad-gap-sm);
+			white-space: nowrap;
+		}
+		th {
+			padding-block: 0;
+			block-size: var(--sanad-head-h);
+		}
+		tbody tr {
+			cursor: pointer;
+			block-size: var(--sanad-row-h);
+		}
+		tbody tr:last-child td {
+			border-block-end: 0;
+		}
+		// the last cell must not touch the card edge at the width where the table is tightest
+		td:last-child,
+		th:last-child {
+			padding-inline-end: var(--sanad-gap-md);
+		}
+	}
+
+	&__tools {
+		display: flex;
+		justify-content: flex-end;
+		margin-block-start: calc(-1 * var(--sanad-gap-sm));
+	}
+
+	// a group header reads as a band across the table, never as a row of data
+	&__group th {
+		background: var(--surface-gray-2);
+		color: var(--ink-gray-8);
+		font-weight: 600;
+		text-align: start;
+		block-size: 30px;
+	}
+
+	// the sort button carries the header label, so the whole cell is one target
+	&__sort {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--sanad-gap-xs);
+		border: 0;
+		background: none;
+		padding: 0;
+		font: inherit;
+		color: inherit;
+		cursor: pointer;
+		white-space: nowrap;
+		&:hover {
+			color: var(--ink-gray-8);
+		}
+	}
+	&__caret {
+		font-size: 9px;
+		color: var(--sanad-accent-ink);
+		inline-size: 9px;
+	}
+
+	// the function's name is the control that opens it (the prototype has no extra "view" column)
+	&__open {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		align-items: flex-start;
+		inline-size: 100%;
+		min-block-size: var(--sanad-target);
+		padding: 0;
+		border: 0;
+		background: none;
+		text-align: start;
+		cursor: pointer;
+	}
+	&__name {
+		display: block;
+		font-weight: 600;
+		color: var(--ink-gray-9);
+		text-decoration: underline;
+		text-decoration-color: transparent;
+		.wa-functions__open:hover & {
+			text-decoration-color: currentColor;
+		}
+	}
+	&__sub {
+		display: block;
+		max-inline-size: 26ch;
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	&__check {
+		inline-size: 36px;
+		text-align: center;
+	}
+	&__row-action {
+		text-align: end;
+		white-space: nowrap;
+	}
+
+	// ---- selection and footer ----------------------------------------------------------------
+
+	&__bulk {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		padding-block: var(--sanad-gap-sm);
+		padding-inline: var(--sanad-gap-md);
+		background: var(--sanad-accent-soft);
+		border-block-end: var(--sanad-border);
+	}
+	&__bulk-count {
+		font-weight: 600;
+		color: var(--sanad-accent-ink);
+		margin-inline-end: var(--sanad-gap-sm);
+	}
+	&__bulk-note {
+		font-size: var(--text-sm, 13px);
+		color: var(--ink-gray-6);
+	}
+
+	&__footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--sanad-gap-md);
+		padding-block: var(--sanad-gap-sm);
+		padding-inline: var(--sanad-gap-md);
+		border-block-start: var(--sanad-border);
+		background: var(--surface-gray-1);
+		font-size: var(--text-sm, 13px);
+		color: var(--ink-gray-6);
+	}
+
+	&__empty:empty {
+		display: none;
+	}
+
+	// ---- phones: every row becomes a card of label / value pairs -----------------------------
+
+	@media (max-width: 767px) {
+		&__table {
+			thead {
+				display: none;
+			}
+			// one card per function: the checkbox and the name on the first line, then every
+			// column as a "label — value" row, which is the only shape that reads on a phone
+			tbody tr {
+				display: grid;
+				grid-template-columns: auto minmax(0, 1fr);
+				gap: var(--sanad-gap-xs) var(--sanad-gap-sm);
+				padding: var(--sanad-gap-md);
+				block-size: auto;
+				border-block-end: var(--sanad-border);
+			}
+			td {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: var(--sanad-gap-sm);
+				grid-column: 1 / -1;
+				border: 0;
+				padding: 0;
+				min-block-size: 26px;
+				white-space: normal;
+			}
+			td[data-label]::before {
+				content: attr(data-label);
+				flex: none;
+				font-size: var(--text-xs, 11px);
+				color: var(--ink-gray-5);
+			}
+			td.wa-functions__check {
+				grid-column: 1;
+				inline-size: auto;
+			}
+			td.wa-functions__cell-name {
+				grid-column: 2;
+				&::before {
+					content: none;
+				}
+			}
+			td.wa-functions__xs {
+				display: none;
+			}
+		}
+		&__sub {
+			max-inline-size: 100%;
+		}
+	}
+}
+
+// ---- the function modal ----------------------------------------------------------------------
+
+.wa-fndetail {
+	.modal-body {
+		padding-block-end: 0;
+		// the tab row and the action bar are sticky: keep a focused control clear of both
+		// (WCAG 2.2 "focus not obscured")
+		scroll-padding-block: 56px 88px;
+	}
+
+	&__head {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		padding-block-end: var(--sanad-gap-md);
+	}
+	&__tab .sanad-chip__count {
+		display: inline-block;
+		min-inline-size: 18px;
+		padding-inline: var(--sanad-gap-xs);
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-2);
+		font-size: var(--text-xs, 11px);
+		text-align: center;
+	}
+	&__badges {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+	}
+	&__versions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-lg);
+		font-size: var(--text-sm, 13px);
+		color: var(--ink-gray-6);
+		b {
+			color: var(--ink-gray-9);
+			margin-inline-start: var(--sanad-gap-xs);
+		}
+	}
+
+	&__tabs {
+		display: flex;
+		gap: var(--sanad-gap-lg);
+		border-block-end: var(--sanad-border);
+		position: sticky;
+		inset-block-start: 0;
+		background: var(--surface-modal, var(--surface-white));
+		z-index: 2;
+	}
+	&__tab {
+		border: 0;
+		background: none;
+		padding-block: var(--sanad-gap-sm);
+		padding-inline: 0;
+		min-block-size: var(--sanad-target);
+		font-size: var(--text-base, 14px);
+		color: var(--ink-gray-6);
+		border-block-end: 2px solid transparent;
+		cursor: pointer;
+		&[aria-selected="true"] {
+			color: var(--sanad-accent-ink);
+			font-weight: 600;
+			border-block-end-color: var(--sanad-accent);
+		}
+	}
+
+	&__pane {
+		padding-block: var(--sanad-gap-lg);
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-lg);
+		min-block-size: 220px;
+	}
+
+	&__alert {
+		border: 1px solid;
+		border-radius: var(--sanad-radius);
+		padding: var(--sanad-gap-md);
+		font-size: var(--text-sm, 13px);
+	}
+
+	&__facts {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+		gap: var(--sanad-gap-md);
+		margin: 0;
+		padding: var(--sanad-gap-md);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-gray-1);
+		dt {
+			font-size: var(--text-xs, 11px);
+			font-weight: 500;
+			color: var(--ink-gray-5);
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+		}
+		dd {
+			margin: 0;
+			font-size: var(--text-sm, 13px);
+			color: var(--ink-gray-9);
+		}
+	}
+
+	&__block {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+	}
+	&__block-title {
+		margin: 0;
+		font-size: var(--text-sm, 13px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+	}
+
+	&__rows {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		li {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: var(--sanad-gap-sm);
+			padding: var(--sanad-gap-sm);
+			border: var(--sanad-border);
+			border-radius: var(--sanad-radius);
+			font-size: var(--text-sm, 13px);
+		}
+	}
+	&__token {
+		font-family: var(--font-stack-mono, monospace);
+		background: var(--surface-gray-2);
+		border-radius: var(--border-radius-sm, 4px);
+		padding-inline: var(--sanad-gap-xs);
+		direction: ltr;
+		unicode-bidi: isolate;
+	}
+	&__row-label {
+		color: var(--ink-gray-9);
+	}
+	&__muted {
+		margin: 0;
+		color: var(--ink-gray-6);
+		font-size: var(--text-sm, 13px);
+	}
+	&__template {
+		flex-basis: 100%;
+		margin: 0;
+		padding: var(--sanad-gap-sm);
+		background: var(--surface-gray-2);
+		border-radius: var(--sanad-radius);
+		font-family: var(--font-stack-mono, monospace);
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-8);
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+	&__chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-sm);
+	}
+
+	&__log li {
+		flex-direction: column;
+		align-items: stretch;
+	}
+	&__version-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		button {
+			margin-inline-start: auto;
+		}
+	}
+
+	&__note {
+		margin: 0;
+		font-size: var(--text-sm, 13px);
+		color: var(--ink-gray-6);
+	}
+	&__form {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: var(--sanad-gap-md);
+	}
+	&__field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-xs);
+		flex: 1 1 200px;
+		font-size: var(--text-sm, 13px);
+		color: var(--ink-gray-6);
+		margin: 0;
+	}
+	&__result {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		margin-block-start: var(--sanad-gap-md);
+	}
+	&__result-head {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+	}
+	&__reply {
+		padding: var(--sanad-gap-md);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-green-1);
+		color: var(--ink-gray-9);
+		font-size: var(--text-sm, 13px);
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+
+	&__actions {
+		position: sticky;
+		inset-block-end: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-sm);
+		padding-block: var(--sanad-gap-md);
+		border-block-start: var(--sanad-border);
+		background: var(--surface-modal, var(--surface-white));
+		z-index: 2;
+	}
+	&__danger {
+		color: var(--ink-red-4);
+		margin-inline-start: auto;
+	}
+}
+
+// ---- the install / update diff ----------------------------------------------------------------
+
+.wa-diff {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-md);
+
+	&__versions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--sanad-gap-md);
+		padding: var(--sanad-gap-md);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-gray-1);
+	}
+	&__version {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		b {
+			font-size: var(--text-lg, 16px);
+			color: var(--ink-gray-9);
+		}
+	}
+	&__arrow {
+		color: var(--ink-gray-5);
+		[dir="rtl"] & {
+			transform: scaleX(-1);
+		}
+	}
+
+	&__group {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--sanad-gap-sm);
+	}
+	&__label {
+		font-size: var(--text-xs, 11px);
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--ink-gray-5);
+	}
+	&__keys {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-xs);
+	}
+	&__key {
+		font-family: var(--font-stack-mono, monospace);
+		font-size: var(--text-xs, 11px);
+		background: var(--surface-gray-2);
+		border: 1px solid var(--outline-gray-2);
+		border-radius: var(--border-radius-sm, 4px);
+		padding-inline: var(--sanad-gap-xs);
+		direction: ltr;
+		unicode-bidi: isolate;
+	}
+	&__list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-xs);
+		flex-basis: 100%;
+	}
+	&__fields {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+	}
+	&__note {
+		margin: 0;
+		font-size: var(--text-sm, 13px);
+		color: var(--ink-gray-6);
+	}
+	&__warning {
+		padding: var(--sanad-gap-md);
+		border: 1px solid var(--outline-red-1);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-red-1);
+		color: var(--ink-red-4);
+		font-size: var(--text-sm, 13px);
+	}
+}
