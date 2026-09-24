@@ -55,13 +55,31 @@ def credentials(settings=None) -> dict[str, str]:
 	return out
 
 
+def platform_base_url(settings=None) -> str:
+	"""Where this product's platform lives.
+
+	It is not something a tenant knows or should be asked for — every site of
+	this product talks to the same platform — so a fresh site that has never
+	saved Settings still has an address to sign in against. Settings wins when
+	it holds one (an operator may point a site at a staging platform); otherwise
+	the bench answers, through `whatsapp_platform_base_url` in the site or
+	common site config, which is where "where is our platform" belongs in a
+	Frappe deployment.
+	"""
+	settings = settings or frappe.get_doc("WhatsApp Settings")
+	url = (settings.get("platform_base_url") or "").strip()
+	if not url:
+		url = (frappe.conf.get("whatsapp_platform_base_url") or "").strip()
+	return url.rstrip("/")
+
+
 def build_settings(provider_key: str | None = None) -> ProviderSettings:
 	"""Assemble `ProviderSettings` from WhatsApp Settings."""
 	settings = frappe.get_doc("WhatsApp Settings")
 	key = provider_key or settings.get("provider") or "snd_platform"
 	return ProviderSettings(
 		provider_key=key,
-		base_url=(settings.get("platform_base_url") or "").rstrip("/"),
+		base_url=platform_base_url(settings),
 		timeout=int(settings.get("request_timeout") or 30),
 		credentials=credentials(settings),
 	)

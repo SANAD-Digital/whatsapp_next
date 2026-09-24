@@ -218,16 +218,26 @@ def complete_password_reset(request_key: str, password: str) -> SignupState:
 def login(platform_base_url: str, email: str, password: str, user: str | None = None) -> dict[str, Any]:
 	"""Sign in against the platform and store the credentials it hands back.
 
-	The base URL is saved first, because the provider needs it to reach the
-	platform at all. What comes back is written with `set_password` exactly the
-	way `save_credentials` writes it; only `{ok, customer, customer_name}` goes
-	to the caller - a key never reaches the browser.
+	`platform_base_url` is optional and the sign-in card does not ask for it:
+	the address of this product's platform is not something a tenant knows.
+	When it is given it is saved first (an operator pointing a site at staging);
+	when it is not, `registry.platform_base_url` answers from Settings or from
+	the bench's own `whatsapp_platform_base_url`, so a site that has never saved
+	Settings can still sign in. What comes back is written with `set_password`
+	exactly the way `save_credentials` writes it; only
+	`{ok, customer, customer_name}` goes to the caller - a key never reaches the
+	browser.
 	"""
 	# Only write the URL when it actually changes: a sign-in is not a reason to
 	# take a write lock on the Settings single, and a repeat sign-in never does.
 	wanted = (platform_base_url or "").strip().rstrip("/")
 	if wanted and wanted != (frappe.db.get_single_value("WhatsApp Settings", "platform_base_url") or ""):
 		save_credentials(platform_base_url=platform_base_url, user=user)
+	if not registry.platform_base_url():
+		frappe.throw(
+			_("This site does not know where the WhatsApp platform is. Set it in WhatsApp Settings, or set `whatsapp_platform_base_url` in the site config."),
+			WAValidationError,
+		)
 	result = registry.get_provider().login(email, password) or {}
 	returned = result.get("credentials") or {}
 	values = {f: returned.get(f) for f in CREDENTIAL_FIELDS if returned.get(f)}
