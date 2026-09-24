@@ -33,6 +33,9 @@ sanad.ui.configure({
 			quick_send: ["WhatsApp Agent", "WhatsApp Manager", "System Manager"],
 			confirm: ["WhatsApp Agent", "WhatsApp Manager", "System Manager"],
 		},
+		// The prototype's phone field opens on Saudi Arabia (+966). The site's own country setting
+		// would otherwise decide it, and this product's numbers are Saudi by default.
+		country: "SA",
 		group_doctype: "WhatsApp Contact Group",
 		contact_link_doctypes: ["Customer", "Supplier", "Employee"],
 		simulator_route: "wa-simulator",

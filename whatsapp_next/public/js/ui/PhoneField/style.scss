@@ -1,51 +1,324 @@
+// sanad.ui.PhoneField — the prototype's phone field (`docs/component/Phone Field.dc.html`).
+//
+// Geometry is the prototype's, to the pixel: a 40 px box with a 9 px radius, the country trigger
+// closed off by a hairline on its inline-end, an 11 px ISO code beside a 13 px monospace dial code,
+// a caret that turns when the list opens, and a 3 px ring in the state's own colour on focus and
+// on error. The list is 268 px wide, its rows 7/9 px, its scroll capped at 210 px.
+//
+// Colour is named, never written: every value here is a Desk Espresso variable, which the product
+// re-points at the prototype's palette on its own surfaces (`public/scss/_tokens.scss`). That is
+// what keeps this file copy-pasteable into another Frappe app — there it simply wears Desk's own
+// colours — and it is why there is not a single literal below.
+//
+// Every offset is a logical property, so the field mirrors into Arabic with no second rule: the
+// trigger sits at the inline-start in both scripts, the number itself always reads `dir="ltr"`.
+
 .sanad-phone {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sanad-gap-xs);
+	gap: 6px;
+	min-inline-size: 0;
 	margin-block-end: var(--sanad-gap-md);
 
-	&__label {
-		font-size: var(--text-sm, 13px);
-		color: var(--ink-gray-7);
-		font-weight: 500;
-		margin: 0;
-	}
-	&__req { color: var(--ink-red-4); }
-	&__row {
+	// ---- the label, and the bubble that explains the field ------------------------------------
+
+	&__labelrow {
+		position: relative;
 		display: flex;
-		gap: var(--sanad-gap-sm);
+		align-items: center;
+		gap: 6px;
+	}
+	&__label {
+		margin: 0;
+		font-size: var(--text-sm, 12px);
+		font-weight: 600;
+		color: var(--ink-gray-8);
+	}
+	&__req {
+		color: var(--ink-red-4);
+	}
+
+	// Unseen it is bigger and wears a ring, because a field whose number is not the obvious one has
+	// to ask to be read once. After the first open it shrinks and goes quiet for good.
+	&__tip-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 17px;
+		block-size: 17px;
+		flex: none;
+		padding: 0;
+		border: 1px solid var(--sanad-accent);
+		border-radius: 50%;
+		background: var(--sanad-accent);
+		color: var(--sanad-accent-on);
+		box-shadow: 0 0 0 3px var(--sanad-accent-soft);
+		font: inherit;
+		font-size: 11px;
+		font-weight: 700;
+		line-height: 1;
+		cursor: pointer;
+
+		&--seen {
+			inline-size: 15px;
+			block-size: 15px;
+			border-color: var(--sanad-accent-outline);
+			background: var(--sanad-accent-soft);
+			color: var(--sanad-accent-ink);
+			box-shadow: none;
+		}
+		&:focus-visible {
+			outline: 2px solid var(--sanad-accent);
+			outline-offset: 2px;
+		}
+	}
+	&__tip-pop {
+		position: absolute;
+		inset-block-start: 22px;
+		inset-inline-start: 0;
+		z-index: 50;
+		inline-size: 290px;
+		max-inline-size: 78vw;
+		padding: 10px 12px;
+		border-radius: 10px;
+		background: var(--ink-gray-9);
+		color: var(--surface-white);
+		font-size: 11.5px;
+		font-weight: 400;
+		line-height: 1.9;
+		box-shadow: var(--shadow-lg);
+	}
+
+	// ---- the box -------------------------------------------------------------------------------
+
+	&__box {
+		position: relative;
+		display: flex;
 		align-items: stretch;
+		min-block-size: 40px;
+		border: 1px solid var(--outline-gray-2);
+		border-radius: 9px;
+		background: var(--surface-gray-1);
+
+		&--focus {
+			border-color: var(--sanad-accent);
+			box-shadow: 0 0 0 3px var(--sanad-accent-soft);
+		}
+		&--error {
+			border-color: var(--outline-red-2);
+			box-shadow: 0 0 0 3px var(--surface-red-1);
+		}
 	}
+
 	&__country {
-		flex: 0 1 200px;
-		min-width: 120px;
-		min-height: var(--sanad-target);
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		flex: none;
+		padding: 0 10px;
+		border: 0;
+		border-inline-end: 1px solid var(--outline-gray-1);
+		border-start-start-radius: 8px;
+		border-end-start-radius: 8px;
+		background: transparent;
+		color: var(--ink-gray-8);
+		font: inherit;
+		cursor: pointer;
+
+		&:hover {
+			background: var(--surface-gray-2);
+		}
+		&:focus-visible {
+			outline: 2px solid var(--sanad-accent);
+			outline-offset: 2px;
+		}
 	}
+	&__iso {
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.5px;
+		color: var(--ink-gray-7);
+	}
+	&__dial {
+		font-size: var(--text-base, 13px);
+		font-weight: 600;
+		font-family: var(--font-stack-mono, ui-monospace, monospace);
+	}
+	&__caret {
+		display: inline-flex;
+		flex: none;
+		color: var(--ink-gray-5);
+		transition: transform var(--sanad-motion);
+
+		&--open {
+			transform: rotate(180deg);
+		}
+	}
+
 	&__input {
-		flex: 1 1 160px;
-		min-width: 0;
-		min-height: var(--sanad-target);
-		font-variant-numeric: tabular-nums;
-		text-align: start;
-		&[aria-invalid="true"] { border-color: var(--outline-red-2); }
+		flex: 1;
+		min-inline-size: 0;
+		border: 0;
+		background: transparent;
+		outline: none;
+		padding: 0 12px;
+		font-size: 13.5px;
+		letter-spacing: 0.6px;
+		font-family: var(--font-stack-mono, ui-monospace, monospace);
+		color: var(--ink-gray-9);
+
+		&::placeholder {
+			color: var(--ink-gray-5);
+		}
+	}
+
+	&__tick {
+		display: flex;
+		align-items: center;
+		padding-inline-end: 10px;
+		flex: none;
+		color: var(--ink-green-3);
+
+		&[hidden] {
+			display: none;
+		}
+	}
+
+	// ---- the country list ------------------------------------------------------------------------
+
+	&__pop {
+		position: absolute;
+		inset-block-start: 44px;
+		inset-inline-start: 0;
+		z-index: 40;
+		inline-size: 268px;
+		max-inline-size: 100%;
+		display: flex;
+		flex-direction: column;
+		padding: 6px;
+		border: var(--sanad-border);
+		border-radius: 10px;
+		background: var(--surface-white);
+		box-shadow: var(--shadow-lg);
+	}
+	&__search {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		min-block-size: 32px;
+		padding: 0 9px;
+		margin-block-end: 5px;
+		border: var(--sanad-border);
+		border-radius: 8px;
+		background: var(--surface-gray-1);
+		color: var(--ink-gray-5);
+	}
+	&__q {
+		flex: 1;
+		min-inline-size: 0;
+		border: 0;
+		background: transparent;
+		outline: none;
+		font: inherit;
+		font-size: var(--text-sm, 12px);
+		color: var(--ink-gray-9);
+	}
+	&__list {
+		display: flex;
+		flex-direction: column;
+		max-block-size: 210px;
+		overflow: auto;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	&__opt {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		padding: 7px 9px;
+		border-radius: 7px;
+		font-size: var(--text-sm, 12.5px);
+		color: var(--ink-gray-9);
+		cursor: pointer;
+
+		&:hover {
+			background: var(--surface-gray-2);
+		}
+		&--on,
+		&--cursor {
+			background: var(--sanad-accent-soft);
+		}
+	}
+	&__opt-iso {
+		inline-size: 24px;
+		flex: none;
+		font-size: 11px;
+		font-weight: 700;
+		color: var(--ink-gray-7);
+	}
+	&__opt-name {
+		flex: 1;
+		min-inline-size: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&__opt-dial {
+		flex: none;
+		font-size: var(--text-sm, 12px);
+		font-family: var(--font-stack-mono, ui-monospace, monospace);
+		color: var(--ink-gray-7);
+	}
+	&__empty {
+		padding: 10px;
+		font-size: var(--text-sm, 12px);
+		color: var(--ink-gray-5);
+	}
+
+	// The caret and the tick are inline SVGs drawn by this component, not icon-font glyphs:
+	// Frappe's own icon rule carries `margin: 0 auto`, which inside a flex row hands the icon the
+	// free space and parks it in the middle of its line. The shared `.wa-ico` wrapper already
+	// pins its own margin, so the search glyph needs nothing here beyond its size.
+	&__svg {
+		flex: none;
+		margin-inline: 0;
+	}
+	&__search .wa-ico {
+		inline-size: 13px;
+		block-size: 13px;
 	}
 }
 
-// Shared by the standalone field and the wrapped Frappe control.
+// Shared by the full field and by the hint-only mode over a wrapped Frappe control.
 .sanad-phone__hint {
 	display: flex;
 	align-items: flex-start;
 	gap: var(--sanad-gap-xs);
-	min-height: 18px; // reserved so the field does not jump between states
+	min-block-size: 18px; // reserved so the field does not jump between states
 	margin-block-start: var(--sanad-gap-xs);
-	font-size: var(--text-xs, 12px);
-	color: var(--ink-gray-6);
-	.icon { flex: none; margin-block-start: 2px; }
-	&--ok { color: var(--ink-green-3); }
-	&--error { color: var(--ink-red-4); }
+	font-size: 11px;
+	line-height: 1.7;
+	color: var(--ink-gray-5);
+
+	// Espresso renders `es-icon`, not `icon` — a rule written against `.icon` alone never matched,
+	// which is how the global `margin: 0 auto` survived here and centred the hint's icon.
+	.icon,
+	.es-icon {
+		flex: none;
+		margin-inline: 0;
+		margin-block-start: 2px;
+	}
+	&--ok {
+		color: var(--ink-green-3);
+	}
+	&--error {
+		color: var(--ink-red-4);
+	}
 }
 
 @media (max-width: 767px) {
-	.sanad-phone__row { flex-wrap: wrap; }
-	.sanad-phone__country { flex: 1 1 100%; }
+	.sanad-phone__pop {
+		inline-size: 100%;
+	}
 }
