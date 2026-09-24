@@ -322,6 +322,12 @@
 		line-height: 1.6;
 	}
 
+	// `html` — a composition the vocabulary does not have, in the vocabulary's own surface
+	&--html {
+		padding: var(--wa-cards-panelpad);
+		border-radius: 12px;
+	}
+
 	// `alert` — what is wrong, what it costs, the verb that ends it
 	&--alert {
 		display: flex;

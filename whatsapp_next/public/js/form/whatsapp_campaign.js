@@ -334,14 +334,26 @@ function funnel_stages(t) {
 }
 
 /**
- * The Progress tab, composed out of the prototype's card vocabulary rather than invented.
+ * The Progress tab.
  *
- * The prototype has no per-campaign progress screen — it draws a campaign's progress as one bar in
- * the campaigns list and edits the campaign in an overlay panel. So there was nothing to port, and
- * the first attempt at this tab invented a layout, which is exactly why it did not look like the
- * rest of the product. What *is* in the design system is the set of card kinds every screen that
- * shows numbers is built from, and the way the home console arranges them: a row of readings, then
- * a panel whose rows carry the detail. This tab is that, and nothing else.
+ * The prototype has no per-campaign progress screen — it draws progress as one bar column in the
+ * campaigns list — so there is nothing to port, only its vocabulary to compose with. The first two
+ * attempts failed for the same reason in different clothes: they said the same six numbers twice,
+ * once as a row of equal-weight readings and again as the rows of a funnel, and a screen that says
+ * a thing twice has no hierarchy. The operator then has to read everything to learn anything,
+ * which is the opposite of knowing it at a glance.
+ *
+ * So the six readings are gone. There is one place each number is said:
+ *
+ *   The band answers, in one look, the four questions an operator actually has — is it moving,
+ *   how far has it got, is anything wrong, and what do I press. One dominant figure carries the
+ *   progress, one bar carries where every message currently is, one sentence carries the rate and
+ *   what is left, and the verb that changes the state stands beside the state (D-088).
+ *
+ *   The funnel then answers the fifth question — where they are dying — and it is the only place
+ *   the stage numbers appear.
+ *
+ *   The audience and the timing are the footnote they always were.
  */
 
 const STAGE_ICON = {
@@ -354,89 +366,140 @@ const STAGE_ICON = {
 	cancelled: "x",
 };
 
-/** The readings across the top: where the campaign stands, in the words the console uses. */
-function progress_sections(frm, t, progress) {
-	const doc = t.doc;
+/** Where every message the campaign produced currently is — the one bar the band carries. */
+function outcome_slices(t) {
+	return [
+		{ key: "read", label: __("Read"), value: t.read, tone: "pri" },
+		{ key: "arrived", label: __("Arrived"), value: t.delivered_only, tone: "ok" },
+		{ key: "left", label: __("Left the device"), value: t.sent_only, tone: "ok" },
+		{ key: "queued", label: __("Still in the queue"), value: t.queued, tone: "info" },
+		{ key: "failed", label: __("Failed"), value: t.failed, tone: "danger" },
+		{ key: "cancelled", label: __("Cancelled"), value: t.cancelled, tone: "muted" },
+	].filter((s) => s.value > 0);
+}
+
+/**
+ * The band: state, the one figure that matters, where the messages are, and the verb. Everything
+ * an operator needs before deciding whether to keep watching.
+ */
+function band_html(frm, t, progress) {
+	const doc = frm.doc;
 	const tone = { gray: "muted", blue: "info", green: "ok", orange: "warn", red: "danger" }[K.INDICATOR[doc.status]] || "muted";
-	const delivered_pct = t.left ? Math.round((t.arrived / t.left) * 100) : 0;
-	const read_pct = t.arrived ? Math.round((t.read / t.arrived) * 100) : 0;
-	const failed_pct = t.produced ? (t.failed / t.produced) * 100 : 0;
+	const running = ["Running", "Queued"].includes(doc.status);
+	const done = t.produced ? Math.round(((t.left + t.failed + t.cancelled) / t.produced) * 100) : 0;
+	const slices = outcome_slices(t);
+	const bar = t.produced
+		? slices
+				.map((s) => `<span class="wa-band__slice wa-band__slice--${s.tone}" style="flex-basis:${((s.value / t.produced) * 100).toFixed(2)}%" title="${esc(`${s.label} · ${fmt_int(s.value)}`)}"></span>`)
+				.join("")
+		: "";
+	const legend = slices
+		.map((s) => `<span class="wa-band__key"><span class="wa-band__key-dot wa-band__slice--${s.tone}"></span>${esc(s.label)}<b class="sanad-tabular">${esc(fmt_int(s.value))}</b></span>`)
+		.join("");
 
-	const readings = {
-		title: __("How it is going"),
-		min: 210,
-		cards: [
-			{ kind: "stat", key: "state", label: __("Campaign"), value: __(doc.status), note: state_sub(frm), tone, icon: "chart" },
-			{ kind: "stat", key: "recipients", label: __("Recipients"), value: fmt_int(doc.total_recipients), note: __("in the list below"), icon: "users", dot: false },
-			{ kind: "stat", key: "left", label: __("Left the device"), value: fmt_int(t.left), note: __("of {0} produced", [fmt_int(t.produced)]), tone: "ok", icon: "send" },
-			{ kind: "stat", key: "arrived", label: __("Arrived"), value: `${delivered_pct}%`, note: __("of what left the device"), tone: "ok", icon: "check" },
-			{ kind: "stat", key: "read", label: __("Read"), value: `${read_pct}%`, note: __("of what arrived"), tone: "pri", icon: "read" },
-			{
-				kind: "stat",
-				key: "failed",
-				label: __("Failed"),
-				value: fmt_int(t.failed),
-				note: t.failed ? __("see the messages") : __("no failures"),
-				tone: t.failed ? "danger" : "muted",
-				icon: t.failed ? "fail" : "check",
-				action: t.failed ? "open_failed" : undefined,
-			},
-		],
-	};
+	return `
+		<div class="wa-band wa-band--${tone}">
+			<div class="wa-band__top">
+				<span class="wa-band__state">
+					<span class="wa-band__dot${running ? " wa-band__dot--live" : ""}" aria-hidden="true"></span>
+					<span class="wa-band__state-text">
+						<b class="wa-band__status">${esc(__(doc.status))}</b>
+						<span class="wa-band__sub" dir="auto">${esc(state_sub(frm))}</span>
+					</span>
+				</span>
+				<span class="wa-btnbar wa-band__verbs"></span>
+			</div>
+			<div class="wa-band__read">
+				<span class="wa-band__figure">
+					<b class="sanad-tabular" dir="ltr">${esc(`${done}%`)}</b>
+					<span>${esc(t.produced ? __("of {0} messages", [fmt_int(t.produced)]) : __("nothing produced yet"))}</span>
+				</span>
+				<span class="wa-band__meter">
+					<span class="wa-band__bar" role="img" aria-label="${esc(t.produced ? __("{0} of {1} messages have left the queue", [fmt_int(t.left + t.failed + t.cancelled), fmt_int(t.produced)]) : __("Nothing has been sent yet"))}">${bar}</span>
+					<span class="wa-band__legend">${legend}</span>
+				</span>
+			</div>
+			<p class="wa-band__line" aria-live="polite" dir="auto">${esc(t.produced ? eta_text(doc, progress) : plan_text(frm))}</p>
+		</div>`;
+}
 
-	// nothing has gone out yet: one strip saying what pressing the verb would cost, and no funnel
-	if (!t.produced) {
-		return [
-			readings,
-			{
-				min: 420,
-				cards: [{ kind: "alert", tone: "info", icon: "info", label: __("Nothing has been sent yet"), note: plan_text(frm) }],
-			},
-		];
+function progress_sections(frm, t, progress) {
+	const doc = frm.doc;
+	const sections = [{ min: 420, cards: [{ kind: "html", key: "band", span: 2, html: band_html(frm, t, progress) }] }];
+
+	if (t.failed) {
+		const pct = ((t.failed / t.produced) * 100).toFixed(t.failed / t.produced >= 0.1 ? 0 : 1);
+		sections.push({
+			min: 420,
+			cards: [
+				{
+					kind: "alert",
+					tone: "danger",
+					icon: "error",
+					span: 2,
+					label: __("{0} messages failed — {1}% of the send.", [fmt_int(t.failed), pct]),
+					note: __("Open them to see the reason each one gives; a number that keeps failing is usually not on WhatsApp."),
+					cta: __("See the messages"),
+					action: "open_failed",
+				},
+			],
+		});
 	}
 
-	const stages = funnel_stages(t).map((st) => {
-		const share = st.of ? (st.value / st.of) * 100 : 0;
-		return {
-			key: st.key,
-			label: st.label,
-			sub: st.note,
-			value: `${fmt_int(st.value)}  ·  ${share.toFixed(share >= 10 || !share ? 0 : 1)}%`,
-			bar: share,
-			tone: { gray: "muted", blue: "info", green: "ok", accent: "pri", red: "danger" }[st.tone] || "muted",
-			action: st.go && st.value ? "open_failed" : undefined,
-		};
-	});
+	// nothing has gone out: the funnel would be seven zeroes, which says less than not drawing it
+	if (!t.produced) return sections;
 
-	const audience = [
+	const stages = funnel_stages(t)
+		.filter((st) => st.key !== "produced")
+		.map((st) => {
+			const share = st.of ? (st.value / st.of) * 100 : 0;
+			return {
+				key: st.key,
+				label: st.label,
+				sub: st.note,
+				value: fmt_int(st.value),
+				badge: `${share.toFixed(share >= 10 || !share ? 0 : 1)}%`,
+				badgeTone: st.value ? { gray: "muted", blue: "info", green: "ok", accent: "pri", red: "danger" }[st.tone] : "muted",
+				bar: share,
+				tone: { gray: "muted", blue: "info", green: "ok", accent: "pri", red: "danger" }[st.tone] || "muted",
+				action: st.go && st.value ? "open_failed" : undefined,
+			};
+		});
+
+	const aside = [
 		{ label: __("At the start"), value: fmt_int(doc.initial_recipients || doc.total_recipients) },
 		{ label: __("Added since"), value: fmt_int(doc.added_count) },
 		{ label: __("Removed since"), value: fmt_int(doc.removed_count) },
 		{ label: __("Times paused"), value: fmt_int(doc.pause_count) },
 	];
 	const first = doc.first_message_at;
-	const span = span_text(first, doc.last_message_at);
 	if (first) {
-		audience.push({ label: __("First message"), value: whatsapp_next.fmt.dt(first) });
-		audience.push({ label: __("Last message"), value: doc.last_message_at ? whatsapp_next.fmt.dt(doc.last_message_at) : __("still going") });
-		if (span) audience.push({ label: __("Sending took"), value: span });
+		aside.push({ label: __("First message"), value: whatsapp_next.fmt.dt(first) });
+		aside.push({ label: __("Last message"), value: doc.last_message_at ? whatsapp_next.fmt.dt(doc.last_message_at) : __("still going") });
+		const span = span_text(first, doc.last_message_at);
+		if (span) aside.push({ label: __("Sending took"), value: span });
 	}
 
-	return [
-		readings,
-		{
-			title: __("Where the messages got to"),
-			sub: __("each stage as a share of the one above it, which is where the drop-off shows"),
-			min: 420,
-			cards: [
-				{ kind: "panel", key: "funnel", label: __("The funnel"), note: __("{0} messages produced", [fmt_int(t.produced)]), span: 2, rows: stages, foot: eta_text(doc, progress) },
-				{ kind: "panel", key: "audience", label: __("The audience"), note: __("{0} recipients now", [fmt_int(doc.total_recipients)]), rows: audience },
-			],
-		},
-		failed_pct > 8
-			? { min: 420, cards: [{ kind: "alert", tone: "danger", icon: "error", label: __("{0}% of the messages failed.", [failed_pct.toFixed(1)]), note: __("Open the failed messages to see the reason each one gives."), cta: __("See the messages"), action: "open_failed" }] }
-			: null,
-	].filter(Boolean);
+	sections.push({
+		min: 380,
+		cards: [
+			{
+				kind: "panel",
+				key: "funnel",
+				label: __("Where they got to"),
+				note: __("each stage of the one above it"),
+				rows: stages,
+			},
+			{
+				kind: "panel",
+				key: "aside",
+				label: __("The audience"),
+				note: __("{0} recipients now", [fmt_int(doc.total_recipients)]),
+				rows: aside,
+			},
+		],
+	});
+	return sections;
 }
 
 function render_progress(frm, progress) {
@@ -445,33 +508,32 @@ function render_progress(frm, progress) {
 	const t = tallies(frm, progress);
 	$el.empty();
 
-	// the verbs first: this tab replaced the strip above the tabs, so it is the only place the
-	// campaign is started, paused or stopped, and a verb stands beside the state it changes (D-088)
-	const $bar = $('<div class="wa-btnbar wa-progress__verbs"></div>').appendTo($el);
-	const after = () => frm.reload_doc();
-	const verbs = K.verbs(frm.doc, { after, messages: messages_of(frm) });
-	const lead = verbs.find((v) => ["start", "resume", "pause"].includes(v.key));
-	const add = (verb, primary) =>
-		$(sanad.ui.btn({ label: verb.label, variant: primary ? "primary" : verb.tone === "danger" ? "danger" : "secondary", disabled: frm.is_dirty() }))
-			.on("click", () => verb.run())
-			.appendTo($bar);
-	if (lead) add(lead, true);
-	verbs.filter((v) => v !== lead).forEach((v) => add(v, false));
-	if (cint(frm.doc.total_recipients)) {
-		$(sanad.ui.btn({ label: __("Outbound log"), icon: "table", variant: "secondary" }))
-			.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: frm.doc.name }))
-			.appendTo($bar);
-	}
-	if (frm.is_dirty() && verbs.length) $bar.append(`<span class="wa-progress__hint">${esc(__("Save first."))}</span>`);
-
-	const $cards = $('<div class="wa-progress__cards"></div>').appendTo($el);
 	frm.sanad_progress_cards = new sanad.ui.Cards({
-		wrapper: $cards,
+		wrapper: $el,
 		sections: progress_sections(frm, t, progress),
 		handlers: {
 			open_failed: () => frappe.set_route("List", "WhatsApp Log", { campaign: frm.doc.name, status: "Failed" }),
 		},
 	});
+
+	// the verbs go into the band, beside the state they change — this tab replaced the strip above
+	// the tabs, so it is the only place the campaign is started, paused or stopped
+	const $verbs = $el.find(".wa-band__verbs");
+	const after = () => frm.reload_doc();
+	const verbs = K.verbs(frm.doc, { after, messages: messages_of(frm) });
+	const lead = verbs.find((v) => ["start", "resume", "pause"].includes(v.key));
+	const add = (verb, primary) =>
+		$(sanad.ui.btn({ label: verb.label, variant: primary ? "primary" : verb.tone === "danger" ? "danger" : "secondary", size: "sm", disabled: frm.is_dirty() }))
+			.on("click", () => verb.run())
+			.appendTo($verbs);
+	if (lead) add(lead, true);
+	verbs.filter((v) => v !== lead).forEach((v) => add(v, false));
+	if (cint(frm.doc.total_recipients)) {
+		$(sanad.ui.btn({ label: __("Outbound log"), icon: "table", variant: "ghost", size: "sm" }))
+			.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: frm.doc.name }))
+			.appendTo($verbs);
+	}
+	if (frm.is_dirty() && verbs.length) $verbs.append(`<span class="wa-band__hint">${esc(__("Save first."))}</span>`);
 }
 
 function mount_progress(frm) {

@@ -386,11 +386,16 @@
 
 // ---- the Progress tab ------------------------------------------------------------------------------
 //
-// The tab is composed from `sanad.ui.Cards` — the prototype's own card vocabulary — so almost
-// nothing is needed here. What was here before was three hundred lines of a layout invented for
-// this one screen, which is exactly why it did not look like the rest of the product. It is gone.
-// The fields it replaced are still hidden, because hiding them in the model would take the tab
-// with them (Desk hides a tab whose every field is hidden).
+// The tab is composed from `sanad.ui.Cards`. The only thing written here is the band at its top —
+// an `html` card, which is the prototype's own escape hatch for a composition its vocabulary does
+// not have, so it still sits in the same grid at the same radius on the same border.
+//
+// The band exists because the first two attempts at this tab said the same six numbers twice: a
+// row of equal-weight readings, then the rows of a funnel repeating them. A screen that says a
+// thing twice has no hierarchy, and the operator has to read all of it to learn any of it. So
+// there is one dominant figure, one bar carrying where every message currently is, one sentence
+// carrying the rate, and the verb beside the state it changes — and every stage number is said
+// once, in the funnel below.
 
 .tab-pane:has(> .wa-progress) > .form-section {
 	display: none;
@@ -399,16 +404,168 @@
 .wa-progress {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sanad-gap-lg);
 	margin-block: var(--sanad-gap-lg) var(--sanad-gap-xl);
+}
 
-	// the verbs sit above the readings they change
-	&__verbs {
-		min-block-size: 36px;
+.wa-band {
+	--wa-band: var(--wa-ink-4);
+	--wa-band-soft: var(--wa-sunken);
+
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+
+	&--ok { --wa-band: var(--wa-ok); --wa-band-soft: var(--wa-ok-s); }
+	&--info { --wa-band: var(--wa-nf); --wa-band-soft: var(--wa-nf-s); }
+	&--warn { --wa-band: var(--wa-wn); --wa-band-soft: var(--wa-wn-s); }
+	&--danger { --wa-band: var(--wa-dg); --wa-band-soft: var(--wa-dg-s); }
+	&--muted { --wa-band: var(--wa-ink-4); --wa-band-soft: var(--wa-sunken); }
+
+	// ---- the state, and the verb that changes it ----------------------------------------------
+
+	&__top {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--sanad-gap-lg);
+		flex-wrap: wrap;
 	}
+	&__state {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-inline-size: 0;
+	}
+	&__dot {
+		inline-size: 10px;
+		block-size: 10px;
+		flex: none;
+		border-radius: 50%;
+		background: var(--wa-band);
+
+		&--live { animation: wa-band-pulse 1.8s ease-in-out infinite; }
+	}
+	&__state-text {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		min-inline-size: 0;
+	}
+	&__status {
+		font-size: 17px;
+		font-weight: 700;
+		line-height: 1.3;
+		color: var(--wa-ink);
+	}
+	&__sub {
+		font-size: 12px;
+		color: var(--wa-ink-3);
+		line-height: 1.6;
+	}
+	&__verbs { flex: none; }
 	&__hint {
+		align-self: center;
 		font-size: 11px;
 		color: var(--wa-ink-3);
-		align-self: center;
 	}
+
+	// ---- the one figure, and where the messages are --------------------------------------------
+	//
+	// The figure is the largest thing on the screen because it is the one number an operator
+	// glances for. The bar beside it is every message the campaign produced, split by where it
+	// currently is — which is what the row of six readings used to say, said once and in order.
+
+	&__read {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-xl);
+		flex-wrap: wrap;
+	}
+	&__figure {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		flex: none;
+
+		b {
+			font-size: 44px;
+			font-weight: 700;
+			letter-spacing: -0.03em;
+			line-height: 1;
+			color: var(--wa-ink);
+		}
+		span {
+			font-size: 12px;
+			color: var(--wa-ink-3);
+		}
+	}
+	&__meter {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		flex: 1 1 260px;
+		min-inline-size: 0;
+	}
+	&__bar {
+		display: flex;
+		gap: 2px;
+		block-size: 14px;
+		padding: 2px;
+		border-radius: 999px;
+		background: var(--wa-sunken);
+		overflow: hidden;
+	}
+	&__slice {
+		display: block;
+		flex-grow: 0;
+		flex-shrink: 0;
+		border-radius: 999px;
+		transition: flex-basis var(--wa-motion, 160ms) ease-out;
+
+		&--pri { background: var(--wa-pri); }
+		&--ok { background: var(--wa-ok); }
+		&--info { background: var(--wa-nf); }
+		&--danger { background: var(--wa-dg); }
+		&--warn { background: var(--wa-wn); }
+		&--muted { background: var(--wa-ink-4); }
+	}
+	&__legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px 16px;
+	}
+	&__key {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 11px;
+		color: var(--wa-ink-3);
+
+		b { color: var(--wa-ink); font-weight: 700; }
+	}
+	&__key-dot {
+		inline-size: 8px;
+		block-size: 8px;
+		flex: none;
+		border-radius: 3px;
+	}
+
+	&__line {
+		margin: 0;
+		padding-block-start: 14px;
+		border-block-start: 1px solid var(--wa-border);
+		font-size: 13px;
+		color: var(--wa-ink-2);
+		line-height: 1.7;
+	}
+}
+
+@keyframes wa-band-pulse {
+	0%, 100% { opacity: 1; transform: scale(1); }
+	50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.wa-band__dot--live { animation: none; }
+	.wa-band__slice { transition: none; }
 }

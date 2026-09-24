@@ -169,6 +169,17 @@ sanad.ui.Cards = class Cards {
 		</div>`;
 	}
 
+	/**
+	 * `html` — the prototype's own escape hatch (`kind: 'html'`). A screen that needs one
+	 * composition the vocabulary does not have puts it in a card surface rather than inventing a
+	 * surface of its own, so it still sits in the same grid, at the same radius, on the same
+	 * border. Markup is the caller's and is not escaped: it is the caller's own, never a value.
+	 */
+	html_html(card) {
+		const span = cint(card.span) > 1 ? ` style="--wa-card-span:${cint(card.span)}"` : "";
+		return `<div class="wa-card wa-card--html wa-card--${tone_of(card.tone)}"${span}>${card.html || ""}</div>`;
+	}
+
 	alert_html(card) {
 		const tone = tone_of(card.tone || "warn");
 		const cta =
