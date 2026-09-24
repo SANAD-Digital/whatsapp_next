@@ -87,6 +87,31 @@ $wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-setting
 	}
 }
 
+// The product's Desk forms. Their sidebar — assignments, attachments, tags, share, "last edited
+// by" — is Desk's own furniture, and on these forms it is furniture nobody uses: the record is
+// worked on through the screens this app draws, and the 280 px the sidebar holds is 280 px the
+// campaign's message editor and its preview do not have. It goes, and the form takes the width
+// back. The selector is the route Desk names the page after, so it reaches this product's forms
+// and no other app's. Desk ids a *list's* container after its route but a form's after its DocType
+// alone, so the hook here is the route on `<body>` — which also out-specifies Desk's own
+// `body[data-route^="Form"] .layout-main-section-wrapper` width rule.
+body[data-route^="Form/WhatsApp "] {
+	.layout-side-section { display: none; }
+
+	.layout-main .layout-main-section-wrapper {
+		inline-size: 100%;
+		flex: 1 1 100%;
+	}
+
+	// Desk also caps a form section at `--page-max-width`, which is right for a column of fields
+	// and wrong for a panel that is two or three columns of its own — a message rail beside an
+	// editor beside a preview, or a table of recipients. Only the sections carrying one are freed;
+	// the ordinary field sections keep the measure that makes them readable.
+	.form-section:has(.sanad-mc, .wa-recipients, .sanad-datalist) .section-body {
+		max-width: none;
+	}
+}
+
 // Under 992 px Desk draws the sidebar toggle inside the page strip and nowhere else, so on a phone
 // the strip survives — with nothing left in it but that one button.
 @media (max-width: 991px) {

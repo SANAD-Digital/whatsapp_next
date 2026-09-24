@@ -383,3 +383,32 @@
 		color: var(--ink-gray-5);
 	}
 }
+
+// ---- the Progress tab ------------------------------------------------------------------------------
+//
+// The tab is composed from `sanad.ui.Cards` — the prototype's own card vocabulary — so almost
+// nothing is needed here. What was here before was three hundred lines of a layout invented for
+// this one screen, which is exactly why it did not look like the rest of the product. It is gone.
+// The fields it replaced are still hidden, because hiding them in the model would take the tab
+// with them (Desk hides a tab whose every field is hidden).
+
+.tab-pane:has(> .wa-progress) > .form-section {
+	display: none;
+}
+
+.wa-progress {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-lg);
+	margin-block: var(--sanad-gap-lg) var(--sanad-gap-xl);
+
+	// the verbs sit above the readings they change
+	&__verbs {
+		min-block-size: 36px;
+	}
+	&__hint {
+		font-size: 11px;
+		color: var(--wa-ink-3);
+		align-self: center;
+	}
+}

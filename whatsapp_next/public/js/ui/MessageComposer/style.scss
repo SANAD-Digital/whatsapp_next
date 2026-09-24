@@ -113,10 +113,10 @@
 		flex-direction: column;
 	}
 	&__railitem {
+		position: relative;
 		display: flex;
-		align-items: center;
-		gap: 2px;
-		padding-inline-end: 2px;
+		flex-direction: column;
+		padding: 6px var(--sanad-gap-sm) var(--sanad-gap-sm);
 		border: 1px solid transparent;
 		border-radius: var(--sanad-radius);
 		background: var(--surface-white);
@@ -128,29 +128,47 @@
 		}
 		&--problem .sanad-mc__raildot { background: var(--ink-amber-3); }
 	}
-	&__railbtn {
+	&__railtop {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
-		flex: 1;
+		gap: 6px;
+		min-block-size: 24px;
+	}
+	// Splitting the row in two left only the summary clickable. The button keeps the summary — that
+	// is what a screen reader should read as the row's name — and reaches over the whole row with a
+	// stretched pseudo-element, so a click anywhere on the card selects it. The row's own verbs are
+	// lifted above that overlay so they still get their clicks.
+	&__railbtn {
+		display: block;
+		inline-size: 100%;
 		min-inline-size: 0;
-		padding: var(--sanad-gap-sm);
+		margin-block-start: 2px;
+		padding: 0;
 		border: 0;
 		background: none;
 		text-align: start;
 		cursor: pointer;
+
+		&::after {
+			content: "";
+			position: absolute;
+			inset: 0;
+			border-radius: inherit;
+		}
 	}
-	&__railmain {
-		display: flex;
-		flex-direction: column;
-		gap: 1px;
-		min-inline-size: 0;
-		flex: 1;
+	&__railtop &__railactions,
+	&__railtop &__raildot {
+		position: relative;
+		z-index: 1;
 	}
 	&__railtype {
 		display: inline-flex;
 		align-items: center;
 		gap: 4px;
+		min-inline-size: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 		font-size: 10px;
 		font-weight: 600;
 		letter-spacing: 0.03em;
@@ -160,7 +178,9 @@
 		.icon { flex: none; }
 	}
 	&__railline {
+		display: block;
 		font-size: var(--text-sm, 12px);
+		line-height: 1.55;
 		color: var(--ink-gray-8);
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -172,6 +192,7 @@
 		block-size: 7px;
 		border-radius: 50%;
 		flex: none;
+		margin-inline-start: 2px;
 	}
 	&__order {
 		display: inline-flex;
@@ -194,6 +215,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0;
+		margin-inline-start: auto;
 		opacity: 0;
 		transition: opacity var(--sanad-motion);
 	}
@@ -440,8 +462,8 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--sanad-gap-lg);
 
-		@container (min-width: 860px) {
-			grid-template-columns: minmax(0, 1.25fr) minmax(250px, 0.75fr);
+		@container (min-width: 820px) {
+			grid-template-columns: minmax(0, 1fr) clamp(260px, 30%, 340px);
 			&--nopreview { grid-template-columns: minmax(0, 1fr); }
 		}
 	}
@@ -459,19 +481,45 @@
 			color: var(--ink-gray-7);
 		}
 		textarea {
-			min-block-size: 132px;
-			max-block-size: 260px;
+			min-block-size: 168px;
+			max-block-size: 420px;
 			resize: vertical;
-			line-height: 1.7;
+			line-height: 1.75;
 		}
 	}
 
-	// the writing toolbar, attached under the field it acts on
+	// The field a writer writes in is a box with a toolbar on it, not a box with four icons loose
+	// underneath and a fifth one adrift at the far end. The control stacks in reading order —
+	// label, input, toolbar, hint — and the toolbar is joined to the foot of the input it acts on,
+	// which is why the input gives up its bottom corners.
+	&__field--small-text .frappe-control,
+	&__field--text-editor .frappe-control,
+	&__field--long-text .frappe-control {
+		display: flex;
+		flex-direction: column;
+
+		> .clearfix { order: 0; }
+		> .control-input-wrapper { order: 1; }
+		> .sanad-mc__toolbar { order: 2; }
+		.help-box,
+		.description { order: 3; margin-block-start: 6px; }
+
+		textarea {
+			border-end-start-radius: 0;
+			border-end-end-radius: 0;
+		}
+	}
+
 	&__toolbar {
 		display: flex;
 		align-items: center;
 		gap: 2px;
-		margin-block-start: 4px;
+		padding: 4px 6px;
+		border: 1px solid var(--outline-gray-2);
+		border-block-start: 0;
+		border-end-start-radius: var(--sanad-radius);
+		border-end-end-radius: var(--sanad-radius);
+		background: var(--surface-gray-1);
 	}
 	&__mark {
 		display: inline-flex;
@@ -481,24 +529,26 @@
 		block-size: 28px;
 		padding: 0;
 		border: 1px solid transparent;
-		border-radius: var(--sanad-radius);
+		border-radius: 6px;
 		background: none;
 		color: var(--ink-gray-6);
 		cursor: pointer;
 
-		&:hover { background: var(--surface-gray-2); color: var(--ink-gray-9); }
+		&:hover { background: var(--surface-white); border-color: var(--outline-gray-1); color: var(--ink-gray-9); }
 	}
 	&__varpick { position: relative; margin-inline-start: auto; }
 	&__varbtn {
 		display: inline-flex;
 		align-items: center;
 		gap: 4px;
-		padding: 3px 8px;
+		min-block-size: 26px;
+		padding-inline: 8px;
 		border: 1px solid var(--outline-gray-1);
-		border-radius: var(--sanad-radius);
+		border-radius: 6px;
 		background: var(--surface-white);
 		color: var(--ink-gray-7);
 		font-size: var(--text-xs, 11px);
+		font-weight: 600;
 		cursor: pointer;
 
 		&:hover { border-color: var(--sanad-accent-outline); color: var(--sanad-accent-ink); }
@@ -572,7 +622,7 @@
 		gap: var(--sanad-gap-sm);
 		min-inline-size: 0;
 
-		@container (min-width: 860px) {
+		@container (min-width: 820px) {
 			position: sticky;
 			inset-block-start: var(--sanad-gap-sm);
 			align-self: start;
@@ -585,15 +635,26 @@
 		text-transform: uppercase;
 		color: var(--ink-gray-5);
 	}
+	// The pane is a conversation, not a swatch: a sunken surface with the faint weave a chat window
+	// has behind it, so the bubble on it reads as a message that was sent and not as a green box.
+	// The weave is two Espresso greys at 45°, which costs nothing and survives dark mode.
 	&__chat {
 		display: flex;
 		justify-content: flex-end;
 		padding: var(--sanad-gap-md);
-		border-radius: var(--sanad-radius);
-		background: var(--surface-gray-2);
-		min-block-size: 110px;
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius-lg);
+		background-color: var(--surface-gray-2);
+		background-image: repeating-linear-gradient(
+			45deg,
+			var(--surface-gray-2) 0 9px,
+			var(--surface-gray-1) 9px 18px
+		);
+		min-block-size: 140px;
+		overflow: hidden;
 	}
 	&__bubble {
+		position: relative;
 		display: inline-flex;
 		flex-direction: column;
 		gap: 6px;
@@ -606,6 +667,18 @@
 		font-size: var(--text-sm, 13px);
 		line-height: 1.7;
 		box-shadow: var(--shadow-sm);
+
+		// the tail, on the side the bubble is anchored to
+		&::after {
+			content: "";
+			position: absolute;
+			inset-block-end: 0;
+			inset-inline-end: -6px;
+			inline-size: 10px;
+			block-size: 12px;
+			background: var(--sanad-accent-soft);
+			clip-path: polygon(0 0, 0 100%, 100% 100%);
+		}
 	}
 	&__text {
 		white-space: pre-wrap;
@@ -629,14 +702,23 @@
 		font-family: var(--font-stack-mono, monospace);
 		font-size: 0.86em;
 	}
+	// a picture is shown at the size the pane allows, whole — a recipient sees the picture, so the
+	// writer checking the message has to see it too
 	&__thumb {
 		display: block;
-		max-inline-size: 220px;
+		inline-size: 100%;
+		max-inline-size: 260px;
 		border-radius: 8px;
 		overflow: hidden;
 		background: var(--surface-white);
 
-		img { display: block; inline-size: 100%; max-block-size: 160px; object-fit: cover; }
+		img {
+			display: block;
+			inline-size: 100%;
+			max-block-size: 260px;
+			object-fit: contain;
+			background: var(--surface-gray-1);
+		}
 	}
 	&__file {
 		display: inline-flex;
@@ -650,6 +732,9 @@
 		max-inline-size: 100%;
 
 		span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+		// the name under a picture that travels as a file
+		&--under { margin-block-start: -2px; }
 	}
 	&__poll {
 		display: flex;

@@ -1,0 +1,346 @@
+// Cards — the prototype's card vocabulary (`docs/component/Cards.dc.html`), geometry for geometry.
+//
+// The two density scales are the prototype's own, and so is the grid rule: a section says the
+// narrowest a card of its kind may be and the columns fall out of
+// `repeat(auto-fit, minmax(min(100%, min), 1fr))`. That single line is why six readings become
+// three and three on a laptop and one column on a phone with no media query per screen.
+
+.wa-cards {
+	// DENSITY.comfortable
+	--wa-cards-gap: 16px;
+	--wa-cards-secgap: 18px;
+	--wa-cards-headgap: 12px;
+	--wa-cards-pad: 12px 16px;
+	--wa-cards-panelpad: 16px;
+	--wa-cards-tile: 34px;
+	--wa-cards-stat: 19px;
+	--wa-cards-kpi: 26px;
+	--wa-cards-title: 18px;
+	--wa-cards-min: 240px;
+
+	display: flex;
+	flex-direction: column;
+	gap: var(--wa-cards-secgap);
+
+	&--compact {
+		// DENSITY.compact
+		--wa-cards-gap: 10px;
+		--wa-cards-secgap: 14px;
+		--wa-cards-headgap: 8px;
+		--wa-cards-pad: 10px 12px;
+		--wa-cards-panelpad: 12px;
+		--wa-cards-tile: 30px;
+		--wa-cards-stat: 17px;
+		--wa-cards-kpi: 22px;
+		--wa-cards-title: 16px;
+	}
+
+	&__section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--wa-cards-headgap);
+		min-inline-size: 0;
+	}
+	&__head {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	&__title {
+		margin: 0;
+		font-size: var(--wa-cards-title);
+		font-weight: 700;
+		line-height: 1.4;
+		color: var(--wa-ink);
+	}
+	&__sub {
+		margin: 0;
+		font-size: 12px;
+		color: var(--wa-ink-3);
+		line-height: 1.6;
+	}
+
+	&__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--wa-cards-min, 240px)), 1fr));
+		gap: var(--wa-cards-gap);
+		align-items: stretch;
+	}
+}
+
+// ---- a card ------------------------------------------------------------------------------------
+
+.wa-card {
+	grid-column: span var(--wa-card-span, 1);
+	min-inline-size: 0;
+	padding: var(--wa-cards-pad);
+	border: 1px solid var(--wa-border);
+	border-radius: 8px;
+	background: var(--wa-surface);
+	color: var(--wa-ink);
+	font: inherit;
+	text-align: start;
+
+	// the tone a card carries, as the prototype's four quartets
+	--wa-card-strong: var(--wa-ink-4);
+	--wa-card-soft: var(--wa-sunken);
+	--wa-card-ink: var(--wa-ink-2);
+	--wa-card-line: var(--wa-border);
+
+	&--ok { --wa-card-strong: var(--wa-ok); --wa-card-soft: var(--wa-ok-s); --wa-card-ink: var(--wa-ok-i); --wa-card-line: var(--wa-ok-sb); }
+	&--warn { --wa-card-strong: var(--wa-wn); --wa-card-soft: var(--wa-wn-s); --wa-card-ink: var(--wa-wn-i); --wa-card-line: var(--wa-wn-sb); }
+	&--danger { --wa-card-strong: var(--wa-dg); --wa-card-soft: var(--wa-dg-s); --wa-card-ink: var(--wa-dg-i); --wa-card-line: var(--wa-dg-sb); }
+	&--info { --wa-card-strong: var(--wa-nf); --wa-card-soft: var(--wa-nf-s); --wa-card-ink: var(--wa-nf-i); --wa-card-line: var(--wa-nf-sb); }
+	&--pri { --wa-card-strong: var(--wa-pri); --wa-card-soft: var(--wa-pri-s); --wa-card-ink: var(--wa-pri-d); --wa-card-line: var(--wa-pri-sb); }
+
+	&--click {
+		cursor: pointer;
+		transition: border-color var(--wa-motion, 160ms), background var(--wa-motion, 160ms);
+		&:hover { border-color: var(--wa-border-2); }
+		&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: 2px; }
+	}
+
+	// `stat` — a reading on one line
+	&--stat {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+	&__body {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		flex: 1;
+		min-inline-size: 0;
+	}
+	&__line {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-inline-size: 0;
+	}
+	&__dot {
+		inline-size: 7px;
+		block-size: 7px;
+		flex: none;
+		border-radius: 50%;
+		background: var(--wa-card-strong);
+
+		&--ok { background: var(--wa-ok); }
+		&--warn { background: var(--wa-wn); }
+		&--danger { background: var(--wa-dg); }
+		&--info { background: var(--wa-nf); }
+		&--pri { background: var(--wa-pri); }
+		&--muted { background: var(--wa-ink-4); }
+	}
+	&__label {
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--wa-ink-3);
+		min-inline-size: 0;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	&__value {
+		font-size: var(--wa-cards-stat);
+		font-weight: 700;
+		line-height: 1.2;
+		color: var(--wa-ink);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		text-align: start;
+	}
+	&__note {
+		font-size: 11px;
+		color: var(--wa-ink-3);
+		min-inline-size: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	&__tile {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: var(--wa-cards-tile);
+		block-size: var(--wa-cards-tile);
+		flex: none;
+		border-radius: 8px;
+		background: var(--wa-card-soft);
+		color: var(--wa-card-ink);
+	}
+
+	// `kpi` — a reading with room
+	&--kpi {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+
+		.wa-card__tile { inline-size: 28px; block-size: 28px; border-radius: 6px; }
+	}
+	&__top {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 8px;
+	}
+	&__figure {
+		font-size: var(--wa-cards-kpi);
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		line-height: 1.1;
+		color: var(--wa-ink);
+		text-align: start;
+	}
+	&__foot {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 8px;
+	}
+	&__spark { flex: none; color: var(--wa-card-strong); }
+
+	// `panel` — a titled surface holding rows
+	&--panel {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		padding: var(--wa-cards-panelpad);
+		border-radius: 12px;
+	}
+	&__phead {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 8px;
+		min-inline-size: 0;
+	}
+	&__ptitle {
+		font-size: 14px;
+		font-weight: 700;
+		line-height: 1.4;
+		color: var(--wa-ink);
+	}
+	&__rows {
+		display: flex;
+		flex-direction: column;
+	}
+	&__row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 10px;
+		min-block-size: 38px;
+		padding: 0;
+		border: 0;
+		border-block-end: 1px solid var(--wa-border);
+		background: none;
+		font: inherit;
+		color: inherit;
+		text-align: start;
+
+		&:last-child { border-block-end: 0; }
+		&--click {
+			cursor: pointer;
+			&:hover { background: var(--wa-bg); }
+			&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: -2px; }
+		}
+	}
+	&__row-main {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-inline-size: 0;
+		flex: 1;
+	}
+	&__av {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 28px;
+		block-size: 28px;
+		flex: none;
+		border-radius: 7px;
+		background: var(--wa-card-soft);
+		color: var(--wa-card-ink);
+		font-size: 11px;
+		font-weight: 700;
+	}
+	&__row-text {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		min-inline-size: 0;
+	}
+	&__row-label {
+		font-size: 12px;
+		color: var(--wa-ink-2);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	&__row-sub {
+		font-size: 11px;
+		color: var(--wa-ink-4);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	&__row-value {
+		flex: none;
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--wa-ink);
+	}
+
+	// a row may carry its own share as a bar — a funnel is a panel whose rows narrow
+	&__bar {
+		flex: 1 1 90px;
+		max-inline-size: 180px;
+		block-size: 6px;
+		border-radius: 999px;
+		background: var(--wa-sunken);
+		overflow: hidden;
+	}
+	&__bar-fill {
+		display: block;
+		block-size: 100%;
+		border-radius: inherit;
+		background: var(--wa-ink-4);
+		transition: inline-size var(--wa-motion, 160ms) ease-out;
+
+		&--ok { background: var(--wa-ok); }
+		&--warn { background: var(--wa-wn); }
+		&--danger { background: var(--wa-dg); }
+		&--info { background: var(--wa-nf); }
+		&--pri { background: var(--wa-pri); }
+	}
+	&__pfoot {
+		font-size: 11px;
+		color: var(--wa-ink-3);
+		line-height: 1.6;
+	}
+
+	// `alert` — what is wrong, what it costs, the verb that ends it
+	&--alert {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		background: var(--wa-card-soft);
+		border-color: var(--wa-card-line);
+
+		.wa-card__tile { background: var(--wa-surface); }
+	}
+	&__alert-label {
+		font-size: 13px;
+		font-weight: 700;
+		line-height: 1.5;
+		color: var(--wa-ink);
+	}
+	&__cta { flex: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.wa-card__bar-fill { transition: none; }
+}

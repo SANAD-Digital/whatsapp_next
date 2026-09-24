@@ -40,6 +40,12 @@ const MARKS = [
 
 const icon_of = (type) => (TYPES[type] && TYPES[type].icon) || TYPE_ICON_FALLBACK;
 
+// A file the browser can draw. The preview shows it as a picture whatever the message's type says
+// — a PDF sent as a Document is a file card, but a JPG is a JPG, and the writer attached it to see
+// it, not to read its name.
+const IMAGE_FILE = /\.(png|jpe?g|gif|webp|bmp|avif|svg)(\?|#|$)/i;
+const is_image_file = (url) => !!url && IMAGE_FILE.test(String(url));
+
 sanad.ui.MessageComposer = class MessageComposer {
 	/**
 	 * @param {object} opts
@@ -187,17 +193,20 @@ sanad.ui.MessageComposer = class MessageComposer {
 			const type = row[this.opts.type_field] || this.types[0];
 			const on = row.name === this.active;
 			const problem = this.problem_of(row);
+			// the order, the type and the verbs share the top line; the summary takes the one under
+			// it whole, because a message is told apart by what it says and an Arabic sentence
+			// squeezed into what four icon buttons leave says nothing at all
 			const $item = $(`
 				<li class="sanad-mc__railitem${on ? " sanad-mc__railitem--on" : ""}${problem ? " sanad-mc__railitem--problem" : ""}">
-					<button type="button" class="sanad-mc__railbtn" aria-current="${on}" data-name="${ui.escape(row.name)}">
+					<span class="sanad-mc__railtop">
 						<span class="sanad-mc__order sanad-tabular">${ui.escape(ui.format_int(index + 1))}</span>
-						<span class="sanad-mc__railmain">
-							<span class="sanad-mc__railtype">${ui.icon(icon_of(type), "xs")} ${ui.escape(__(type || ""))}</span>
-							<span class="sanad-mc__railline" dir="auto">${ui.escape(this.summary_of(row))}</span>
-						</span>
+						<span class="sanad-mc__railtype">${ui.icon(icon_of(type), "xs")} ${ui.escape(__(type || ""))}</span>
 						${problem ? `<span class="sanad-mc__raildot" title="${ui.escape(problem)}" aria-label="${ui.escape(problem)}"></span>` : ""}
+						<span class="sanad-mc__railactions"></span>
+					</span>
+					<button type="button" class="sanad-mc__railbtn" aria-current="${on}" data-name="${ui.escape(row.name)}">
+						<span class="sanad-mc__railline" dir="auto">${ui.escape(this.summary_of(row))}</span>
 					</button>
-					<span class="sanad-mc__railactions"></span>
 				</li>`);
 			$item.find(".sanad-mc__railbtn").on("click", () => this.select(row.name));
 			const $acts = $item.find(".sanad-mc__railactions");
@@ -584,7 +593,8 @@ sanad.ui.MessageComposer = class MessageComposer {
 		ui.call(this.opts.preview.method, this.opts.preview.args(row, this.frm), { silent: true })
 			.then((p) => {
 				if (this.active !== row.name) return;
-				this.draw_bubble($chat, { type: p.message_type || row[this.opts.type_field], body: p.body, attachment: p.attachment_name, image: this.local_preview(row).image, poll: this.poll_of(row) });
+				const local = this.local_preview(row);
+				this.draw_bubble($chat, { type: p.message_type || row[this.opts.type_field], body: p.body, attachment: p.attachment_name || local.attachment, image: local.image, poll: this.poll_of(row) });
 				const errors = p.errors || [];
 				this.$editor.find(".sanad-mc__errors").html(errors.length ? `<ul>${errors.map((e) => `<li>${ui.escape(e)}</li>`).join("")}</ul>` : "");
 			})
@@ -599,7 +609,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 			type,
 			body: media ? row.caption || "" : row[this.opts.body_field] || "",
 			attachment: file || (row.print_format ? __("{0} (PDF)", [row.print_format]) : ""),
-			image: ["Image", "Sticker"].includes(type) && row.attachment ? row.attachment : null,
+			image: row.attachment && (["Image", "Sticker"].includes(type) || is_image_file(row.attachment)) ? row.attachment : null,
 			poll: this.poll_of(row),
 		};
 	}
@@ -613,8 +623,16 @@ sanad.ui.MessageComposer = class MessageComposer {
 		const now = frappe.datetime.now_datetime().slice(11, 16);
 		const body = (message.body || "").trim();
 		let inner = "";
-		if (message.image) inner += `<span class="sanad-mc__thumb" data-file="${ui.escape(message.attachment || "")}"><img src="${ui.escape(message.image)}" alt="${ui.escape(message.attachment || __("Image"))}" loading="lazy"></span>`;
-		else if (message.attachment) inner += `<span class="sanad-mc__file">${ui.icon("es-line-filetype", "xs")} <span dir="auto">${ui.escape(message.attachment)}</span></span>`;
+		if (message.image) {
+			inner += `<span class="sanad-mc__thumb" data-file="${ui.escape(message.attachment || "")}"><img src="${ui.escape(message.image)}" alt="${ui.escape(message.attachment || __("Image"))}" loading="lazy"></span>`;
+			// a picture carried by a Document arrives as a file with a preview on it, so its name
+			// is part of what the recipient sees
+			if (message.attachment && !["Image", "Sticker"].includes(message.type)) {
+				inner += `<span class="sanad-mc__file sanad-mc__file--under">${ui.icon("es-line-filetype", "xs")} <span dir="auto">${ui.escape(message.attachment)}</span></span>`;
+			}
+		} else if (message.attachment) {
+			inner += `<span class="sanad-mc__file">${ui.icon("es-line-filetype", "xs")} <span dir="auto">${ui.escape(message.attachment)}</span></span>`;
+		}
 		if (message.poll) {
 			inner += `<span class="sanad-mc__poll">
 				<span class="sanad-mc__poll-q" dir="auto">${ui.escape(message.poll.question)}</span>

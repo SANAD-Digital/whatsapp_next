@@ -5,6 +5,7 @@ import "./_core/index.js";
 import "./_kit/index.js";
 // foundations
 import "./Render/index.js";
+import "./Cards/index.js";
 import "./StatusBadge/index.js";
 import "./EmptyState/index.js";
 import "./Toast/index.js";

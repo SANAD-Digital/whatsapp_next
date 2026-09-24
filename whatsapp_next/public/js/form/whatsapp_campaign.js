@@ -269,124 +269,230 @@ function plan_text(frm) {
 	]);
 }
 
-function metrics_html(frm, progress) {
-	const doc = frm.doc;
-	const handed = handed_of_doc(doc);
-	const delivered = cint(doc.delivered_count) + cint(doc.read_count);
-	const failed = cint(doc.failed_count);
-	const changed = cint(doc.added_count) + cint(doc.removed_count);
-	const running = ["Running", "Queued"].includes(doc.status);
+// ---- the Progress tab ---------------------------------------------------------------------------
+//
+// Fourteen read-only integers in two Desk columns told nobody anything: `queued_count 40` and
+// `read_count 420` are the same shape on the page, and the one number that matters — how far down
+// the funnel the campaign actually got — was left for the reader to work out. The fields are hidden
+// and the tab draws what they mean instead: one bar for every message the campaign produced, the
+// funnel under it stage by stage with each stage's share of the one above, what the audience did
+// after the campaign started, and how long the sending itself took.
 
-	const recipients_sub =
-		changed && doc.started_at
-			? __("{0} added · {1} removed since it started", [fmt_int(doc.added_count), fmt_int(doc.removed_count)])
-			: doc.exclude_unknown_numbers
-				? __("numbers with no conversation are skipped")
-				: __("everyone in the list below");
-
-	return `
-		<div class="wa-ops__metrics">
-			${CON.state_metric({
-				label: __("Campaign"),
-				state: __(doc.status),
-				tone: TONE[K.INDICATOR[doc.status]] || "gray",
-				pulse: running,
-				sub: esc(state_sub(frm)),
-				verbs: '<span class="wa-ops__verbs"></span>',
-			})}
-			${CON.metric(__("Recipients"), esc(fmt_int(doc.total_recipients)), esc(recipients_sub))}
-			${CON.metric(__("Handed over"), esc(pct_text(handed, doc.total_recipients)), esc(__("{0} of {1} recipients", [fmt_int(handed), fmt_int(doc.total_recipients)])))}
-			${CON.metric(__("Delivered"), esc(pct_text(delivered, handed)), esc(__("of {0} handed over", [fmt_int(handed)])))}
-			${CON.metric(__("Read"), esc(pct_text(doc.read_count, delivered)), esc(__("of {0} delivered", [fmt_int(delivered)])))}
-			${CON.metric(
-				__("Failed"),
-				esc(fmt_int(failed)),
-				failed ? `<button type="button" class="wa-ops__link" data-go="failed">${esc(__("See the messages"))}</button>` : esc(__("no failures")),
-				{ tone: failed ? "red" : "" }
-			)}
-		</div>`;
+/** "1 h 28 min" — how long two datetimes are apart, said the way a person says it. */
+function span_text(from, to) {
+	if (!from || !to) return "";
+	const minutes = Math.max(0, Math.round((frappe.datetime.str_to_obj(to) - frappe.datetime.str_to_obj(from)) / 60000));
+	if (minutes < 1) return __("under a minute");
+	if (minutes < 60) return __("{0} min", [fmt_int(minutes)]);
+	const hours = Math.floor(minutes / 60);
+	const rest = minutes % 60;
+	return rest ? __("{0} h {1} min", [fmt_int(hours), fmt_int(rest)]) : __("{0} h", [fmt_int(hours)]);
 }
 
-/** The lower half: the funnel while it runs, the plan before it starts. */
-function run_html(frm, progress) {
-	const doc = frm.doc;
-	const started = handed_of_doc(doc) || cint(doc.failed_count) || !["Draft", "Scheduled"].includes(doc.status);
-	if (!started) {
-		return `<div class="wa-camp__plan">
-			<p class="wa-camp__plan-text" dir="auto">${esc(plan_text(frm))}</p>
-			<span class="wa-camp__actions"></span>
-		</div>`;
-	}
-	const paused = doc.status === "Paused";
-	return `<div class="wa-camp__run">
-		<div class="wa-camp__funnel">
-			${bar_html(doc, { paused })}
-			<span class="wa-strip__progress-text sanad-tabular">${esc(fmt_int(handed_of_doc(doc)))} / ${esc(fmt_int(doc.total_recipients))} · ${esc(pct_text(handed_of_doc(doc), doc.total_recipients))}</span>
-		</div>
-		<div class="wa-camp__stats">${stats_html(doc)}</div>
-		<p class="wa-camp__foot" aria-live="polite" dir="auto">${esc(eta_text(doc, progress))}</p>
-		<span class="wa-camp__actions"></span>
-	</div>`;
-}
-
-function render_console(frm, progress) {
-	const $el = frm.sanad_console;
-	if (!$el || !$el.closest("body").length) return;
-	$el.html(`<section class="wa-ops wa-camp${frm.doc.status === "Paused" ? " wa-ops--paused" : ""}" aria-label="${esc(__("Campaign status"))}">
-		${metrics_html(frm, progress)}
-		${run_html(frm, progress)}
-	</section>`);
-
-	$el.find("[data-go=failed]").on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: frm.doc.name, status: "Failed" }));
-
-	// The verbs sit beside the state they change; each one refreshes the form it acted on.
-	const after = () => frm.reload_doc();
-	const $verbs = $el.find(".wa-ops__verbs");
-	const $actions = $el.find(".wa-camp__actions");
-	const verbs = K.verbs(frm.doc, { after, messages: messages_of(frm) });
-	const button = (verb, $host, primary) => {
-		const cls = primary ? "btn-primary" : verb.tone === "danger" ? "btn-default wa-camp__verb--danger" : "btn-default";
-		return $(`<button type="button" class="btn ${cls} btn-sm wa-ops__verb"></button>`)
-			.text(verb.label)
-			.prop("disabled", frm.is_dirty())
-			.on("click", () => verb.run())
-			.appendTo($host);
+/**
+ * The campaign's own counters are mutually exclusive by final state — a message that was read is
+ * counted in `read_count` and nowhere else — so a stage is the sum of everything at or past it.
+ * `get_progress` returns the same fields, fresher, so it simply overlays the document.
+ */
+function tallies(frm, progress) {
+	const d = Object.assign({}, frm.doc, progress || {});
+	const read = cint(d.read_count);
+	const delivered_only = cint(d.delivered_count);
+	const sent_only = cint(d.sent_count);
+	const queued = cint(d.queued_count);
+	const failed = cint(d.failed_count);
+	const cancelled = cint(d.cancelled_count);
+	const left = sent_only + delivered_only + read; // everything that got past the device
+	return {
+		doc: d,
+		read,
+		delivered_only,
+		sent_only,
+		queued,
+		failed,
+		cancelled,
+		left,
+		arrived: delivered_only + read,
+		produced: left + queued + failed + cancelled,
 	};
-	// the verb that changes the state stands beside it (D-088); the rest join the other actions,
-	// because a metric cell holding three stacked buttons is no longer a metric cell
-	const lead = verbs.find((v) => ["start", "resume", "pause"].includes(v.key));
-	if (lead) button(lead, $verbs, true);
-	if (frm.is_dirty() && verbs.length) $verbs.append(`<span class="wa-ops__hint">${esc(__("Save first."))}</span>`);
-	verbs.filter((v) => v !== lead).forEach((v) => button(v, $actions, false));
-	if (cint(frm.doc.total_recipients)) {
-		$(`<button type="button" class="btn btn-default btn-sm wa-camp__log"></button>`)
-			.text(__("Outbound log"))
-			.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: frm.doc.name }))
-			.appendTo($actions);
+}
+
+/**
+ * The stages, in the order a message passes through them. Each one's share is of the stage above
+ * it, not of the whole — that is what makes a funnel a funnel: it says where the drop-off is.
+ */
+function funnel_stages(t) {
+	return [
+		{ key: "produced", label: __("Messages produced"), value: t.produced, of: t.produced, tone: "gray", note: __("one per recipient, per message of the campaign") },
+		{ key: "queued", label: __("Still in the queue"), value: t.queued, of: t.produced, tone: "blue", note: __("waiting for their turn to leave") },
+		{ key: "left", label: __("Left the device"), value: t.left, of: t.produced, tone: "green", note: __("accepted by WhatsApp") },
+		{ key: "arrived", label: __("Arrived"), value: t.arrived, of: t.left, tone: "green", note: __("of what left the device") },
+		{ key: "read", label: __("Read"), value: t.read, of: t.arrived, tone: "accent", note: __("of what arrived") },
+		{ key: "failed", label: __("Failed"), value: t.failed, of: t.produced, tone: "red", note: __("never left"), go: "failed" },
+		{ key: "cancelled", label: __("Cancelled"), value: t.cancelled, of: t.produced, tone: "gray", note: __("stopped before they were sent") },
+	];
+}
+
+/**
+ * The Progress tab, composed out of the prototype's card vocabulary rather than invented.
+ *
+ * The prototype has no per-campaign progress screen — it draws a campaign's progress as one bar in
+ * the campaigns list and edits the campaign in an overlay panel. So there was nothing to port, and
+ * the first attempt at this tab invented a layout, which is exactly why it did not look like the
+ * rest of the product. What *is* in the design system is the set of card kinds every screen that
+ * shows numbers is built from, and the way the home console arranges them: a row of readings, then
+ * a panel whose rows carry the detail. This tab is that, and nothing else.
+ */
+
+const STAGE_ICON = {
+	produced: "cards",
+	queued: "clock",
+	left: "send",
+	arrived: "check",
+	read: "read",
+	failed: "fail",
+	cancelled: "x",
+};
+
+/** The readings across the top: where the campaign stands, in the words the console uses. */
+function progress_sections(frm, t, progress) {
+	const doc = t.doc;
+	const tone = { gray: "muted", blue: "info", green: "ok", orange: "warn", red: "danger" }[K.INDICATOR[doc.status]] || "muted";
+	const delivered_pct = t.left ? Math.round((t.arrived / t.left) * 100) : 0;
+	const read_pct = t.arrived ? Math.round((t.read / t.arrived) * 100) : 0;
+	const failed_pct = t.produced ? (t.failed / t.produced) * 100 : 0;
+
+	const readings = {
+		title: __("How it is going"),
+		min: 210,
+		cards: [
+			{ kind: "stat", key: "state", label: __("Campaign"), value: __(doc.status), note: state_sub(frm), tone, icon: "chart" },
+			{ kind: "stat", key: "recipients", label: __("Recipients"), value: fmt_int(doc.total_recipients), note: __("in the list below"), icon: "users", dot: false },
+			{ kind: "stat", key: "left", label: __("Left the device"), value: fmt_int(t.left), note: __("of {0} produced", [fmt_int(t.produced)]), tone: "ok", icon: "send" },
+			{ kind: "stat", key: "arrived", label: __("Arrived"), value: `${delivered_pct}%`, note: __("of what left the device"), tone: "ok", icon: "check" },
+			{ kind: "stat", key: "read", label: __("Read"), value: `${read_pct}%`, note: __("of what arrived"), tone: "pri", icon: "read" },
+			{
+				kind: "stat",
+				key: "failed",
+				label: __("Failed"),
+				value: fmt_int(t.failed),
+				note: t.failed ? __("see the messages") : __("no failures"),
+				tone: t.failed ? "danger" : "muted",
+				icon: t.failed ? "fail" : "check",
+				action: t.failed ? "open_failed" : undefined,
+			},
+		],
+	};
+
+	// nothing has gone out yet: one strip saying what pressing the verb would cost, and no funnel
+	if (!t.produced) {
+		return [
+			readings,
+			{
+				min: 420,
+				cards: [{ kind: "alert", tone: "info", icon: "info", label: __("Nothing has been sent yet"), note: plan_text(frm) }],
+			},
+		];
 	}
+
+	const stages = funnel_stages(t).map((st) => {
+		const share = st.of ? (st.value / st.of) * 100 : 0;
+		return {
+			key: st.key,
+			label: st.label,
+			sub: st.note,
+			value: `${fmt_int(st.value)}  ·  ${share.toFixed(share >= 10 || !share ? 0 : 1)}%`,
+			bar: share,
+			tone: { gray: "muted", blue: "info", green: "ok", accent: "pri", red: "danger" }[st.tone] || "muted",
+			action: st.go && st.value ? "open_failed" : undefined,
+		};
+	});
+
+	const audience = [
+		{ label: __("At the start"), value: fmt_int(doc.initial_recipients || doc.total_recipients) },
+		{ label: __("Added since"), value: fmt_int(doc.added_count) },
+		{ label: __("Removed since"), value: fmt_int(doc.removed_count) },
+		{ label: __("Times paused"), value: fmt_int(doc.pause_count) },
+	];
+	const first = doc.first_message_at;
+	const span = span_text(first, doc.last_message_at);
+	if (first) {
+		audience.push({ label: __("First message"), value: whatsapp_next.fmt.dt(first) });
+		audience.push({ label: __("Last message"), value: doc.last_message_at ? whatsapp_next.fmt.dt(doc.last_message_at) : __("still going") });
+		if (span) audience.push({ label: __("Sending took"), value: span });
+	}
+
+	return [
+		readings,
+		{
+			title: __("Where the messages got to"),
+			sub: __("each stage as a share of the one above it, which is where the drop-off shows"),
+			min: 420,
+			cards: [
+				{ kind: "panel", key: "funnel", label: __("The funnel"), note: __("{0} messages produced", [fmt_int(t.produced)]), span: 2, rows: stages, foot: eta_text(doc, progress) },
+				{ kind: "panel", key: "audience", label: __("The audience"), note: __("{0} recipients now", [fmt_int(doc.total_recipients)]), rows: audience },
+			],
+		},
+		failed_pct > 8
+			? { min: 420, cards: [{ kind: "alert", tone: "danger", icon: "error", label: __("{0}% of the messages failed.", [failed_pct.toFixed(1)]), note: __("Open the failed messages to see the reason each one gives."), cta: __("See the messages"), action: "open_failed" }] }
+			: null,
+	].filter(Boolean);
 }
 
-/** The live counters; the form's own fields paint first so the console never starts empty. */
-function load_console(frm) {
-	if (frm.is_new()) return;
-	render_console(frm, null);
-	sanad.ui
-		.call("campaigns.get_progress", { name: frm.doc.name }, { silent: true })
-		.then((p) => render_console(frm, p))
-		.catch(() => {});
+function render_progress(frm, progress) {
+	const $el = frm.sanad_progress;
+	if (!$el || !$el.closest("body").length) return;
+	const t = tallies(frm, progress);
+	$el.empty();
+
+	// the verbs first: this tab replaced the strip above the tabs, so it is the only place the
+	// campaign is started, paused or stopped, and a verb stands beside the state it changes (D-088)
+	const $bar = $('<div class="wa-btnbar wa-progress__verbs"></div>').appendTo($el);
+	const after = () => frm.reload_doc();
+	const verbs = K.verbs(frm.doc, { after, messages: messages_of(frm) });
+	const lead = verbs.find((v) => ["start", "resume", "pause"].includes(v.key));
+	const add = (verb, primary) =>
+		$(sanad.ui.btn({ label: verb.label, variant: primary ? "primary" : verb.tone === "danger" ? "danger" : "secondary", disabled: frm.is_dirty() }))
+			.on("click", () => verb.run())
+			.appendTo($bar);
+	if (lead) add(lead, true);
+	verbs.filter((v) => v !== lead).forEach((v) => add(v, false));
+	if (cint(frm.doc.total_recipients)) {
+		$(sanad.ui.btn({ label: __("Outbound log"), icon: "table", variant: "secondary" }))
+			.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: frm.doc.name }))
+			.appendTo($bar);
+	}
+	if (frm.is_dirty() && verbs.length) $bar.append(`<span class="wa-progress__hint">${esc(__("Save first."))}</span>`);
+
+	const $cards = $('<div class="wa-progress__cards"></div>').appendTo($el);
+	frm.sanad_progress_cards = new sanad.ui.Cards({
+		wrapper: $cards,
+		sections: progress_sections(frm, t, progress),
+		handlers: {
+			open_failed: () => frappe.set_route("List", "WhatsApp Log", { campaign: frm.doc.name, status: "Failed" }),
+		},
+	});
 }
 
-function mount_console(frm) {
+function mount_progress(frm) {
+	// The fields themselves are hidden in CSS, not with `set_df_property`: Desk hides a tab whose
+	// every field is hidden, and this tab has nothing else in it — the panel below would have gone
+	// down with them. `_campaigns.scss` hides the sections of whatever tab this panel is mounted in.
 	if (frm.is_new()) {
-		frm.sanad_console = null;
+		frm.sanad_progress = null;
 		return;
 	}
-	const attached = frm.sanad_console && frm.sanad_console.closest("body").length;
-	if (!attached) {
-		// css_class "custom": the dashboard drops it on every reset, so it is re-added per refresh.
-		frm.sanad_console = frm.dashboard.add_section(sanad.ui.skeleton(1, { lines: 3 }), null, "custom wa-camp__section");
+	const tab = (frm.layout.tabs || []).find((t) => t.df && t.df.fieldname === "progress_tab");
+	if (!tab || !tab.wrapper || !tab.wrapper.length) return;
+	if (!frm.sanad_progress || !frm.sanad_progress.closest("body").length) {
+		tab.wrapper.find(".wa-progress").remove();
+		frm.sanad_progress = $(`<section class="sanad-kit wa-progress" aria-label="${esc(__("Progress"))}"></section>`).prependTo(tab.wrapper);
 	}
-	load_console(frm);
+	render_progress(frm, null);
+	sanad.ui
+		.call("campaigns.get_progress", { name: frm.doc.name }, { silent: true })
+		.then((p) => render_progress(frm, p))
+		.catch(() => {});
 }
 
 function subscribe(frm) {
@@ -394,7 +500,7 @@ function subscribe(frm) {
 	frm.sanad_realtime = (data) => {
 		if (!data || data.campaign !== frm.doc.name) return;
 		if (data.status && data.status !== frm.doc.status) return frm.reload_doc();
-		load_console(frm);
+		mount_progress(frm);
 		if (frm.sanad_recipients) frm.sanad_recipients.refresh();
 	};
 	frappe.realtime.on("wa:campaign:status", frm.sanad_realtime);
@@ -434,7 +540,10 @@ function mount_messages(frm) {
 			Video: ["attachment", "caption"],
 			Audio: ["attachment"],
 			Sticker: ["attachment"],
-			Document: ["attachment", "print_format", "file_name_template", "caption"],
+			// printing the recipient's own document to PDF is a real capability, but it is not what a
+			// campaign's document message usually is: it leads the editor no longer, and waits with
+			// `file_name_template` under "More options" for the campaign that wants it
+			Document: ["attachment", "caption"],
 			Location: [],
 			Poll: ["poll_question", "poll_options", "poll_allow_multiple"],
 		},
@@ -500,8 +609,8 @@ frappe.ui.form.on("WhatsApp Campaign", {
 		} else if (!EDITABLE.includes(frm.doc.status) && !frm.is_new()) {
 			["messages", "device", "scheduled_at", "messages_per_minute", "exclude_unknown_numbers"].forEach((f) => frm.set_df_property(f, "read_only", 1));
 		}
-		mount_console(frm);
 		mount_recipients(frm);
+		mount_progress(frm);
 		if (!frm.is_new()) subscribe(frm);
 		if (frm.sanad_picker_group && !frm.is_new() && can_change_recipients(frm)) {
 			const group = frm.sanad_picker_group;
