@@ -49,6 +49,76 @@ def _region_from_settings() -> str | None:
 	return (code or "").upper() or None
 
 
+def country_catalog() -> list[dict[str, object]]:
+	"""Every calling region libphonenumber knows, as `[{iso, dial, main, example, international, trunk, len}]`.
+
+	The browser had been carrying a hand-written table of sixty-eight countries with invented
+	lengths and groupings; this is the same metadata Google publishes, for all two hundred and
+	forty-five regions, taken from the library the server already validates with — so a number the
+	field accepts is a number `normalize()` will accept, by construction rather than by agreement.
+
+	`example` is the region's own sample **mobile** number in national form. It is what the field
+	shows as a placeholder and what it derives its grouping from, which is how every serious phone
+	input does it: the mask is the example's own shape, not a rule somebody typed in. `trunk` is
+	the national prefix the example carries (Saudi Arabia writes `050 123 4567` nationally but
+	`+966 50 123 4567` internationally) so the field can strip it the way the library does.
+
+	Region *names* are deliberately absent: the browser names a region in the reader's own language
+	with `Intl.DisplayNames`, which is localised for free and always current.
+	"""
+	cached = frappe.cache().get_value("wa_country_catalog")
+	if cached:
+		return cached
+	rows: list[dict[str, object]] = []
+	for iso in sorted(phonenumbers.SUPPORTED_REGIONS):
+		dial = phonenumbers.country_code_for_region(iso)
+		if not dial:
+			continue
+		example = phonenumbers.example_number_for_type(iso, phonenumbers.PhoneNumberType.MOBILE)
+		if example is None:
+			example = phonenumbers.example_number_for_type(iso, phonenumbers.PhoneNumberType.FIXED_LINE)
+		national = ""
+		significant = ""
+		international = ""
+		if example is not None:
+			national = phonenumbers.format_number(example, phonenumbers.PhoneNumberFormat.NATIONAL)
+			international = phonenumbers.format_number(
+				example, phonenumbers.PhoneNumberFormat.INTERNATIONAL
+			)
+			significant = phonenumbers.national_significant_number(example)
+		rows.append(
+			{
+				"iso": iso,
+				"dial": dial,
+				# Twenty-five regions share `+1` and six share `+7`. libphonenumber names one of
+				# each as the code's main region, which is the one a bare `+1…` should resolve to;
+				# without it the browser picks whichever sorts first, and a US number came out
+				# Antiguan.
+				"main": phonenumbers.region_code_for_country_code(dial) == iso,
+				"example": national,
+				# what the number looks like beside its dial code — `+966 50 123 4567`. This is the
+				# grouping a field next to a country picker must use, and it is the library's, not
+				# a rule derived from the length.
+				"international": international,
+				# what the national form adds in front of the significant digits, if anything
+				"trunk": _trunk_prefix(national, significant),
+				"len": len(significant),
+			}
+		)
+	# a day: the metadata only changes when the library is upgraded, and a stale copy outliving a
+	# `pip install -U phonenumbers` is exactly the bug nobody would look for
+	frappe.cache().set_value("wa_country_catalog", rows, expires_in_sec=86400)
+	return rows
+
+
+def _trunk_prefix(national: str, significant: str) -> str:
+	"""The digits a national form puts before the significant number — Saudi Arabia's `0`."""
+	digits = re.sub(r"\D", "", national or "")
+	if significant and digits.endswith(significant) and len(digits) > len(significant):
+		return digits[: len(digits) - len(significant)]
+	return ""
+
+
 def clear_region_cache() -> None:
 	"""Forget the cached default region (called by the Settings controller on save)."""
 	if hasattr(frappe.local, "cache"):

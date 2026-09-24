@@ -22,125 +22,102 @@
 
 import ui from "../_core/index.js";
 
-// ISO | Frappe Country name | dial — the most common ~68 countries (server table is complete).
-const COUNTRIES = [
-	["SA", "Saudi Arabia", "966"],
-	["AE", "United Arab Emirates", "971"],
-	["KW", "Kuwait", "965"],
-	["QA", "Qatar", "974"],
-	["BH", "Bahrain", "973"],
-	["OM", "Oman", "968"],
-	["YE", "Yemen", "967"],
-	["JO", "Jordan", "962"],
-	["EG", "Egypt", "20"],
-	["IQ", "Iraq", "964"],
-	["SY", "Syria", "963"],
-	["LB", "Lebanon", "961"],
-	["PS", "Palestine", "970"],
-	["SD", "Sudan", "249"],
-	["LY", "Libya", "218"],
-	["TN", "Tunisia", "216"],
-	["DZ", "Algeria", "213"],
-	["MA", "Morocco", "212"],
-	["MR", "Mauritania", "222"],
-	["SO", "Somalia", "252"],
-	["DJ", "Djibouti", "253"],
-	["KM", "Comoros", "269"],
-	["TR", "Turkey", "90"],
-	["IR", "Iran", "98"],
-	["PK", "Pakistan", "92"],
-	["IN", "India", "91"],
-	["BD", "Bangladesh", "880"],
-	["LK", "Sri Lanka", "94"],
-	["NP", "Nepal", "977"],
-	["AF", "Afghanistan", "93"],
-	["ID", "Indonesia", "62"],
-	["MY", "Malaysia", "60"],
-	["PH", "Philippines", "63"],
-	["SG", "Singapore", "65"],
-	["CN", "China", "86"],
-	["JP", "Japan", "81"],
-	["KR", "South Korea", "82"],
-	["HK", "Hong Kong", "852"],
-	["US", "United States", "1"],
-	["CA", "Canada", "1"],
-	["MX", "Mexico", "52"],
-	["BR", "Brazil", "55"],
-	["AR", "Argentina", "54"],
-	["GB", "United Kingdom", "44"],
-	["IE", "Ireland", "353"],
-	["FR", "France", "33"],
-	["DE", "Germany", "49"],
-	["IT", "Italy", "39"],
-	["ES", "Spain", "34"],
-	["PT", "Portugal", "351"],
-	["NL", "Netherlands", "31"],
-	["BE", "Belgium", "32"],
-	["CH", "Switzerland", "41"],
-	["AT", "Austria", "43"],
-	["SE", "Sweden", "46"],
-	["NO", "Norway", "47"],
-	["DK", "Denmark", "45"],
-	["PL", "Poland", "48"],
-	["GR", "Greece", "30"],
-	["RU", "Russia", "7"],
-	["UA", "Ukraine", "380"],
-	["AU", "Australia", "61"],
-	["NZ", "New Zealand", "64"],
-	["ZA", "South Africa", "27"],
-	["NG", "Nigeria", "234"],
-	["KE", "Kenya", "254"],
-	["ET", "Ethiopia", "251"],
-	["GH", "Ghana", "233"],
+// The countries come from the server, which reads them out of Google's libphonenumber — the same
+// library `services/phone.normalize()` validates with. This file used to carry sixty-eight of them
+// by hand, with lengths and groupings somebody typed in and nineteen invented sample numbers; a
+// number the field called complete was only as right as that table. Now a number the field accepts
+// is a number the server accepts, by construction.
+//
+// Three things come over the wire per region and nothing else: the dial code, the region's own
+// sample **mobile** number in national form, and the national prefix that form carries (`0` in
+// Saudi Arabia). The mask is read off the sample's own shape — which is how a phone input is meant
+// to get its mask, the way `intl-tel-input` and every serious implementation do it — and the
+// placeholder is the sample. Region *names* never travel: the browser names a region in the
+// reader's own language with `Intl.DisplayNames`, localised for free and never stale.
+
+/** Enough to answer a synchronous caller before the catalogue lands; replaced the moment it does. */
+const SEED = [
+	{ iso: "SA", main: true, dial: 966, example: "051 234 5678", international: "+966 51 234 5678", trunk: "0", len: 9 },
+	{ iso: "AE", main: true, dial: 971, example: "050 123 4567", international: "+971 50 123 4567", trunk: "0", len: 9 },
+	{ iso: "KW", main: true, dial: 965, example: "500 12345", international: "+965 500 12345", trunk: "", len: 8 },
+	{ iso: "QA", main: true, dial: 974, example: "3312 3456", international: "+974 3312 3456", trunk: "", len: 8 },
+	{ iso: "BH", main: true, dial: 973, example: "3600 1234", international: "+973 3600 1234", trunk: "", len: 8 },
+	{ iso: "OM", main: true, dial: 968, example: "9212 3456", international: "+968 9212 3456", trunk: "", len: 8 },
+	{ iso: "YE", main: true, dial: 967, example: "0712 345 678", international: "+967 712 345 678", trunk: "0", len: 9 },
+	{ iso: "EG", main: true, dial: 20, example: "010 01234567", international: "+20 100 1234567", trunk: "0", len: 10 },
+	{ iso: "JO", main: true, dial: 962, example: "07 9012 3456", international: "+962 7 9012 3456", trunk: "0", len: 9 },
+	{ iso: "US", main: true, dial: 1, example: "(201) 555-0123", international: "+1 201-555-0123", trunk: "", len: 10 },
+	{ iso: "GB", main: true, dial: 44, example: "07400 123456", international: "+44 7400 123456", trunk: "0", len: 10 },
 ];
 
-// The national-number shape, from the prototype: how many digits a mobile has after the dial code,
-// and which digits it may start with. A country with `len: 0` is the prototype's own generic case
-// — it accepts six digits or more and says so. `groups` is derived from the length exactly as the
-// prototype derives it, and is what both the mask and the placeholder are built from.
-const SHAPES = {
-	SA: [9, "5"],
-	AE: [9, "5"],
-	KW: [8, "569"],
-	QA: [8, "3567"],
-	BH: [8, "3"],
-	OM: [8, "79"],
-	YE: [9, "7"],
-	JO: [9, "7"],
-	EG: [10, "1"],
-	IQ: [10, "7"],
-	SY: [9, "9"],
-	LB: [8, ""],
-	PS: [9, "5"],
-	SD: [9, "9"],
-	LY: [9, "9"],
-	TN: [8, ""],
-	DZ: [9, "5679"],
-	MA: [9, "67"],
-	MR: [8, ""],
-	SO: [0, ""],
-	DJ: [8, ""],
-	KM: [7, ""],
-	TR: [10, "5"],
-	US: [10, ""],
-	CA: [10, ""],
-	GB: [10, ""],
-	IN: [10, ""],
-	PK: [10, "3"],
-};
+let CATALOG = SEED.slice();
+let catalog_promise = null;
 
-const groups_for = (len) => (len === 8 ? [4, 4] : len === 9 ? [3, 3, 3] : len === 10 ? [3, 3, 4] : [3, 3, 3, 3]);
+/** Names a region in the reader's language; falls back to the ISO code where the browser cannot. */
+const region_name = (() => {
+	let dn = null;
+	try {
+		const lang = (frappe.boot && frappe.boot.lang) || document.documentElement.lang || "en";
+		dn = new Intl.DisplayNames([lang, "en"], { type: "region" });
+	} catch (e) {
+		dn = null;
+	}
+	return (iso) => {
+		try {
+			return (dn && dn.of(iso)) || iso;
+		} catch (e) {
+			return iso;
+		}
+	};
+})();
 
-const CATALOG = COUNTRIES.map(([iso, name, dial]) => {
-	const [len, starts] = SHAPES[iso] || [0, ""];
-	return { iso, name, dial, len, starts: starts ? starts.split("") : [], groups: groups_for(len) };
-});
+/**
+ * The grouping a region writes its numbers in when they stand beside a dial code, read straight
+ * off the library's own international sample: `+966 50 123 4567` → `[2, 3, 4]`. This is the field's
+ * whole mask, and it is the library's answer rather than a rule derived from a length — Saudi
+ * mobiles really are written 2-3-4 after the code, not 3-3-3.
+ */
+function groups_from_example(international) {
+	const runs = String(international || "").trim().match(/\d+/g) || [];
+	// the first run is the dial code itself
+	const sizes = runs.slice(1).map((r) => r.length);
+	return sizes.length ? sizes : [3, 3, 3];
+}
+
+/** Decorate a server row with what the browser can work out for itself. */
+const decorate = (row) =>
+	Object.assign({}, row, {
+		// the server sends the dial code as a number; it is a prefix everywhere it is used, and a
+		// prefix is a string — `+1` must not swallow `+1246` because a sort compared `undefined`
+		dial: String(row.dial),
+		name: region_name(row.iso),
+		groups: groups_from_example(row.international),
+	});
+
+CATALOG = SEED.map(decorate);
+
+/**
+ * Fetch the full catalogue once per session. Every screen that mounts a field shares the promise,
+ * so ten fields on a page cost one request; a failure leaves the seed in place rather than an
+ * empty picker.
+ */
+function load_catalog() {
+	if (catalog_promise) return catalog_promise;
+	catalog_promise = ui
+		.call("phone.get_countries", {}, { silent: true })
+		.then((r) => {
+			const rows = (r && r.countries) || [];
+			if (rows.length) CATALOG = rows.map(decorate);
+			if (r && r.default) sanad.ui.PhoneField.site_region = r.default;
+			return CATALOG;
+		})
+		.catch(() => CATALOG);
+	return catalog_promise;
+}
 
 const E164 = /^\+[1-9]\d{7,14}$/; // 8–15 digits: loose, the server is authoritative
 const ARABIC_DIGITS = { "٠": "0", "١": "1", "٢": "2", "٣": "3", "٤": "4", "٥": "5", "٦": "6", "٧": "7", "٨": "8", "٩": "9", "۰": "0", "۱": "1", "۲": "2", "۳": "3", "۴": "4", "۵": "5", "۶": "6", "۷": "7", "۸": "8", "۹": "9" };
 
-// National sample numbers for examples in copy (fictional ranges); others use a generic pattern.
-const SAMPLE_NATIONAL = { SA: "501234567", AE: "501234567", KW: "51234567", QA: "33123456", BH: "36001234", OM: "92123456", YE: "712345678", JO: "791234567", EG: "1001234567", IQ: "7901234567", LB: "71123456", TR: "5321234567", PK: "3001234567", IN: "9876543210", US: "4155552671", CA: "4165550123", GB: "7911123456", DE: "15123456789", FR: "612345678" };
 
 /** Latin and Arabic-Indic digits in, Latin digits only out. */
 const to_digits = (raw) =>
@@ -179,6 +156,15 @@ sanad.ui.PhoneField = class PhoneField {
 		if (this.opts.label == null) this.opts.label = __("Mobile number (WhatsApp)");
 		this.id = ui.uid("phone");
 		this.country = sanad.ui.PhoneField.resolve_country(this.opts.country_default);
+		// the seed answers immediately so nothing flashes empty; the full catalogue arrives a tick
+		// later and the field redraws on the region it then resolves to
+		load_catalog().then(() => {
+			if (!this.$el || !this.$el.closest("body").length) return;
+			const better = sanad.ui.PhoneField.resolve_country(this.opts.country_default);
+			const same = better && this.country && better.iso === this.country.iso;
+			this.country = same ? Object.assign({}, better) : this.country.iso ? sanad.ui.PhoneField.resolve_country(this.country.iso) : better;
+			this.render && this.render();
+		});
 		this.state = { open: false, touched: false, focus: false, q: "", tip: false, tip_seen: false };
 		this.digits = "";
 		this.make();
@@ -190,12 +176,15 @@ sanad.ui.PhoneField = class PhoneField {
 		return CATALOG;
 	}
 
+	/** The site's own region, as the server reported it alongside the catalogue. */
+	static site_region = null;
+
 	/**
-	 * Country record from an ISO-2 code or a Country name. Falls back to the host's configured
-	 * default, then the site's country, then Saudi Arabia — which is the prototype's default and
-	 * the only one for which "no country at all" was never a sensible answer.
+	 * Country record from an ISO-2 code or a Country name. Falls back to the region the server
+	 * reports, then the host's configured default, then the site's country, then Saudi Arabia.
 	 */
 	static resolve_country(hint) {
+		if (!hint && sanad.ui.PhoneField.site_region) hint = sanad.ui.PhoneField.site_region;
 		const config = (ui.config && ui.config.defaults && ui.config.defaults.country) || "";
 		const site = (frappe.boot && frappe.boot.sysdefaults && frappe.boot.sysdefaults.country) || "";
 		const tries = [hint, config, site, "SA"];
@@ -281,7 +270,8 @@ sanad.ui.PhoneField = class PhoneField {
 	static example(country, { format = true } = {}) {
 		const c = country && typeof country === "object" ? country : sanad.ui.PhoneField.resolve_country(country);
 		const dial = c ? c.dial : "966";
-		const national = (c && SAMPLE_NATIONAL[c.iso]) || "123456789";
+		// the region's own sample, from the library — not a number anybody made up
+		const national = (c && String(c.example || "").replace(/\D/g, "").slice((c.trunk || "").length)) || "123456789";
 		const e164 = `+${dial}${national}`;
 		return format ? sanad.ui.PhoneField.format_display(e164, c) : e164;
 	}
@@ -463,6 +453,7 @@ sanad.ui.PhoneField = class PhoneField {
 	matches() {
 		const q = cstr(this.state.q).trim().replace(/^\+/, "");
 		if (!q) return CATALOG;
+		// `name` is the localised one, so a reader searching in Arabic finds it in Arabic
 		const lower = q.toLowerCase();
 		return CATALOG.filter(
 			(c) =>
@@ -559,7 +550,10 @@ sanad.ui.PhoneField = class PhoneField {
 		const c = this.country;
 		const d = this.digits;
 		const full = c.len ? d.length === c.len : d.length >= 6;
-		const start_ok = !d.length || !c.starts.length || c.starts.indexOf(d[0]) >= 0;
+		// libphonenumber knows which digits a region's mobiles start with, but does not publish that
+		// rule in a form a browser can apply, so the field judges length only and leaves the rest to
+		// the server — which is the library itself. A claim we cannot check is a claim we do not make.
+		const start_ok = true;
 		return { full, start_ok, valid: full && start_ok };
 	}
 
@@ -568,7 +562,7 @@ sanad.ui.PhoneField = class PhoneField {
 		const { valid, start_ok } = this.validity();
 		const show_error = (this.state.touched && !this.state.focus && this.digits.length > 0 && !valid) || !!this.opts.invalid;
 		if (show_error) {
-			const starts = c.starts.join(` ${__("or")} `);
+			const starts = "";
 			return {
 				error: true,
 				text: !start_ok
@@ -596,7 +590,10 @@ sanad.ui.PhoneField = class PhoneField {
 		this.$root.find('[data-slot="iso"]').text(c.iso);
 		this.$root.find('[data-slot="dial"]').text(`+${c.dial}`);
 		this.$root.find('[data-slot="caret"]').toggleClass("sanad-phone__caret--open", !!this.state.open);
-		const placeholder = this.opts.placeholder || sanad.ui.PhoneField.mask((c.starts[0] || "X") + "X".repeat(Math.max(0, (c.len || 9) - 1)), c);
+		// the placeholder is the region's own sample in national form, masked into its own groups —
+		// `501 234 5678` for Saudi Arabia, which is what the reader is about to type
+		const sample = String(c.example || "").replace(/\D/g, "").slice((c.trunk || "").length);
+		const placeholder = this.opts.placeholder || sanad.ui.PhoneField.mask(sample || "X".repeat(c.len || 9), c);
 		this.$input.attr("placeholder", placeholder);
 		if (this.$input.val() !== sanad.ui.PhoneField.mask(this.digits, c)) {
 			this.$input.val(sanad.ui.PhoneField.mask(this.digits, c));
@@ -673,9 +670,11 @@ sanad.ui.PhoneField = class PhoneField {
 		const raw = cstr(value).trim();
 		const digits = to_digits(raw);
 		if (raw.startsWith("+") || raw.startsWith("00")) {
-			// longest dial code first, so +1 never swallows +1246
+			// Longest dial code first, so `+1` never swallows `+1246`; and among the regions that
+			// share one, the library's own main region wins — twenty-five share `+1`, and without
+			// this a US number resolved to whichever sorted first.
 			const hit = CATALOG.slice()
-				.sort((a, b) => b.dial.length - a.dial.length)
+				.sort((a, b) => b.dial.length - a.dial.length || (b.main ? 1 : 0) - (a.main ? 1 : 0))
 				.find((c) => digits.startsWith(c.dial));
 			if (hit) {
 				this.country = hit;
