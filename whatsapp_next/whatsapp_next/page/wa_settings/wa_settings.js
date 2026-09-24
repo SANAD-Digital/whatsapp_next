@@ -43,13 +43,30 @@ class SettingsPage {
 		});
 		this.wrapper = wrapper;
 		this.sections = this.section_list();
-		this.current = (frappe.get_route() || [])[1] || this.sections[0].key;
+		this.current = this.section_from_url() || this.sections[0].key;
 		this.make();
 		sanad.ui.meta.with_doctype(SINGLE).then((meta) => {
 			this.meta = meta;
 			this.show(this.current);
 		});
 		this.bind_realtime();
+	}
+
+	/**
+	 * The section a link asks for. It is a query argument, not a second route segment: Desk reads
+	 * `route[1]` of a two-part route as a workspace name (`ui/sidebar/sidebar.js`
+	 * `set_workspace_sidebar`), so `/app/wa-settings/subscription` opened ERPNext's Subscription
+	 * sidebar next to our page. A path-style link from before still works.
+	 */
+	section_from_url() {
+		let section = null;
+		try {
+			section = new URLSearchParams(window.location.search || "").get("section");
+		} catch (e) {
+			section = null;
+		}
+		if (!section && frappe.route_options) section = frappe.route_options.section;
+		return section || (frappe.get_route() || [])[1] || null;
 	}
 
 	// ---- the section list -------------------------------------------------------------------
@@ -126,9 +143,9 @@ class SettingsPage {
 		// The open section belongs in the URL so it can be linked to and reopened where it was
 		// left. `history.replaceState` only — `frappe.router.push_state` re-runs routing, and a
 		// second history entry per click would turn Back into a section-by-section rewind.
-		const path = `/app/wa-settings/${section.key}`;
-		if (window.history && window.location.pathname !== path) {
-			window.history.replaceState(null, "", path);
+		const url = `/app/wa-settings?section=${encodeURIComponent(section.key)}`;
+		if (window.history && `${window.location.pathname}${window.location.search}` !== url) {
+			window.history.replaceState(null, "", url);
 		}
 		$(`<header class="wa-settings__pane-head">
 				<h3>${frappe.utils.escape_html(section.label)}</h3>
@@ -204,6 +221,9 @@ class SettingsPage {
 			});
 			control.set_value(values[fieldname] == null ? "" : values[fieldname]);
 			control.refresh();
+			// Desk draws the label as a plain <label> with no `for`, so the input has no
+			// accessible name of its own; it is given one here
+			if (control.$input) control.$input.attr("aria-label", __(df.label || fieldname));
 			controls[fieldname] = control;
 		});
 		const has_controls = Object.keys(controls).length > 0;
@@ -459,12 +479,9 @@ class SettingsPage {
 			const values = creds.credentials || {};
 			this.state.hide();
 			$el.empty();
-			this.banner($el, {
-				tone: "blue",
-				icon: "es-line-lock",
-				title: __("Keys are never shown again."),
-				text: __("They are stored encrypted. If one is lost, rotate it — it cannot be read back."),
-			});
+			// no banner here: the section's own blurb already says the keys are stored encrypted and
+			// shown once, and the panel's note repeats it beside the rotate action. A banner that
+			// carries no state is a third copy of the same sentence.
 			const $body = this.panel($el, {
 				title: __("Credentials"),
 				note: __("Stored encrypted · shown once when generated"),
@@ -568,7 +585,9 @@ class SettingsPage {
 			const url = values.webhook_endpoint_url || status.webhook_url;
 			this.banner($el, {
 				tone: active ? "green" : "red",
-				icon: active ? "es-line-success" : "es-line-alert-circle",
+				// the same triangle the platform banner uses: a circled "i" reads as a note, and an
+				// inactive webhook is the screen's loudest problem
+				icon: active ? "es-line-success" : "es-line-alert-triangle",
 				title: active ? __("The webhook is active.") : __("The webhook is not active."),
 				text: active
 					? __("Status updates and inbound messages reach this site.")
@@ -1185,6 +1204,7 @@ class SettingsPage {
 				render_input: true,
 			});
 			control.refresh();
+			if (control.$input) control.$input.attr("aria-label", df.label);
 			this.audit_controls[df.fieldname] = control;
 		});
 	}

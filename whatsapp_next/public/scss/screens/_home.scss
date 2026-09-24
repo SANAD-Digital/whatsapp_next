@@ -1,1 +1,798 @@
 // The home page (phase 6). Espresso tokens only, logical properties only.
+//
+// Home is the product's operations board: six cards that are true *now*, the two things that are
+// wrong, the period's five numbers with the shape behind each one, the evidence (volume per
+// bucket beside failures per error) and the four panels. It borrows the operations console's
+// language (`_console.scss`) — small capital labels, tabular figures, hairlines instead of boxes
+// inside boxes — so the screen that watches the product reads like the screens that watch the
+// queue and the campaigns.
+
+.wa-home {
+	display: flex;
+	flex-direction: column;
+	padding-block-end: var(--sanad-gap-lg);
+
+	// The five bands of the volume chart. They are derived from Espresso ink tokens, so dark
+	// mode and any future theme move them with everything else; `Sent` is the one band with no
+	// token of its own, mixed from the delivered blue so the two read as one family.
+	// `--ink-cyan-1` is only 2.1:1 against white; darkened toward the ink it clears the 3:1 that
+	// WCAG 1.4.11 asks of a graphic that carries meaning, and stays a teal beside the blue
+	--wa-band-read: color-mix(in srgb, var(--ink-cyan-1) 70%, var(--ink-gray-9));
+	--wa-band-delivered: var(--ink-blue-3);
+	--wa-band-sent: color-mix(in srgb, var(--ink-blue-3) 45%, var(--surface-white));
+	--wa-band-waiting: var(--ink-amber-2);
+	--wa-band-failed: var(--ink-red-3);
+
+	--wa-plot-h: 168px;
+	--wa-gutter: 38px;
+
+	// PageHeader stacks its own parts; the bands need more air between them than a list needs
+	.sanad-pagehead__blocks { gap: var(--sanad-gap-lg); }
+	.sanad-pagehead { gap: var(--sanad-gap-lg); }
+
+	// The kit's focus ring is scoped to `.sanad-kit`; this screen draws its own buttons, and
+	// every one of them has to show where the keyboard is.
+	:is(button, a, [tabindex]):focus-visible {
+		outline: 2px solid var(--sanad-accent);
+		outline-offset: 2px;
+	}
+}
+
+// ---- the board head ---------------------------------------------------------------------
+// What the screen is, the window every number below it means, and the control that changes it.
+
+.wa-home__board {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+	padding-block-end: var(--sanad-gap-sm);
+}
+
+.wa-home__lede {
+	margin: 0;
+	min-inline-size: 0;
+	font-size: var(--text-sm, 13px);
+	line-height: 1.5;
+	color: var(--ink-gray-6);
+}
+
+.wa-home__range {
+	color: var(--ink-gray-5);
+	white-space: nowrap;
+
+	&::before {
+		content: "·";
+		margin-inline: var(--sanad-gap-xs);
+	}
+}
+
+.wa-home__period {
+	flex: none;
+	display: flex;
+	gap: var(--sanad-gap-xs);
+
+	.sanad-chip {
+		min-block-size: var(--sanad-ctl-h);
+		padding-inline: var(--sanad-gap-md);
+	}
+}
+
+// ---- band 2: the operating state ---------------------------------------------------------
+// The kit's KPI cards, tightened: a state card carries a word, not a headline, and the six of
+// them have to read as one instrument rather than six posters.
+
+.wa-home .sanad-stats--kpi {
+	.sanad-stats__card {
+		min-height: 0;
+		min-block-size: 78px;
+		align-items: flex-start;
+		padding-block: var(--sanad-gap-sm);
+		gap: var(--sanad-gap-sm);
+	}
+	.sanad-stats__value {
+		font-size: var(--text-xl, 18px);
+		line-height: 1.3;
+		text-wrap: balance;
+	}
+	.sanad-stats__label {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.sanad-stats__sub {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		min-block-size: 30px;
+		line-height: 1.4;
+	}
+	.sanad-stats__icon {
+		align-self: center;
+		inline-size: 28px;
+		block-size: 28px;
+	}
+	.sanad-stats__chevron { align-self: center; }
+
+	// the prototype keeps two state cards side by side on a phone; one per row reads as a stack
+	// of banners and pushes everything that matters below the fold
+	@media (max-width: 767px) {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	@media (max-width: 359px) {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+// ---- band 3: the alert band ----------------------------------------------------------------
+// One card per thing that is wrong right now. Tone carries the urgency, the title carries the
+// fact, and the button carries the single verb that fixes it.
+
+.wa-home__alerts {
+	display: grid;
+	gap: var(--sanad-gap-sm);
+	grid-template-columns: minmax(0, 1fr);
+	@media (min-width: 992px) {
+		grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+	}
+}
+
+.wa-home__alert {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--sanad-gap-sm);
+	padding-block: var(--sanad-gap-sm);
+	padding-inline: var(--sanad-gap-md);
+	border: 1px solid;
+	border-radius: var(--sanad-radius);
+
+	&-icon {
+		display: inline-flex;
+		flex: none;
+		margin-block-start: 2px;
+	}
+	&-text {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		flex: 1;
+		min-inline-size: 0;
+	}
+	&-title {
+		font-size: var(--text-sm, 13px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+	}
+	&-note {
+		font-size: var(--text-xs, 12px);
+		color: var(--ink-gray-7);
+		line-height: 1.5;
+	}
+	&-action {
+		flex: none;
+		align-self: center;
+		min-block-size: var(--sanad-target);
+		white-space: nowrap;
+	}
+
+	@media (max-width: 575px) {
+		flex-wrap: wrap;
+		&-action {
+			inline-size: 100%;
+			margin-block-start: var(--sanad-gap-xs);
+		}
+	}
+}
+
+// ---- band 4: the period's five numbers -----------------------------------------------------
+// Label with its own dot, the number, and the period's shape beside the line that qualifies it.
+
+.wa-home__kpis {
+	display: grid;
+	gap: var(--sanad-gap-sm);
+	grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+
+	@media (max-width: 767px) {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	@media (max-width: 359px) {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	// the skeleton reserves the band's height so the row never jumps when the numbers land
+	> .sanad-skeleton {
+		grid-column: 1 / -1;
+		min-block-size: 104px;
+	}
+}
+
+.wa-home__kpi {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-xs);
+	min-block-size: 104px;
+	min-inline-size: 0;
+	padding-block: var(--sanad-gap-sm);
+	padding-inline: var(--sanad-gap-md);
+	border: var(--sanad-border);
+	border-radius: var(--sanad-radius);
+	background: var(--surface-white);
+	text-align: start;
+
+	&:hover {
+		border-color: var(--outline-gray-2);
+		background: var(--surface-gray-1);
+	}
+
+	&-head {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		min-inline-size: 0;
+	}
+	&-dot {
+		inline-size: 7px;
+		block-size: 7px;
+		border-radius: 50%;
+		flex: none;
+	}
+	&-label {
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--ink-gray-5);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	&-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: none;
+		inline-size: 24px;
+		block-size: 24px;
+		margin-inline-start: auto;
+		border-radius: var(--border-radius-sm, 6px);
+	}
+	&-value {
+		font-size: var(--text-2xl, 22px);
+		font-weight: 600;
+		line-height: 1.2;
+		color: var(--ink-gray-9);
+	}
+	&-foot {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: var(--sanad-gap-sm);
+		margin-block-start: auto;
+	}
+	&-note {
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		min-inline-size: 0;
+		font-size: var(--text-xs, 11px);
+		line-height: 1.4;
+		color: var(--ink-gray-6);
+
+		svg {
+			vertical-align: -2px;
+			margin-inline-end: 2px;
+		}
+	}
+	&-spark {
+		flex: none;
+		inline-size: 56px;
+		block-size: 22px;
+
+		svg {
+			display: block;
+			inline-size: 100%;
+			block-size: 100%;
+			overflow: visible;
+		}
+		polyline {
+			fill: none;
+			stroke: currentColor;
+			stroke-width: 1.5px;
+			stroke-linecap: round;
+			stroke-linejoin: round;
+			vector-effect: non-scaling-stroke;
+		}
+		// the axis flips with the document; the drawing does not, so the oldest bucket would
+		// otherwise sit under "now"
+		[dir="rtl"] & svg { transform: scaleX(-1); }
+	}
+}
+
+// ---- band 5: the evidence ------------------------------------------------------------------
+
+.wa-home__evidence {
+	display: grid;
+	gap: var(--sanad-gap-md);
+	grid-template-columns: minmax(0, 1fr);
+	@media (min-width: 992px) {
+		grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+	}
+}
+
+// ---- the shared card: an evidence card and a panel are the same object ----------------------
+
+.wa-home__card {
+	display: flex;
+	flex-direction: column;
+	min-inline-size: 0;
+	border: var(--sanad-border);
+	border-radius: var(--sanad-radius);
+	background: var(--surface-white);
+	overflow: hidden;
+
+	&-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--sanad-gap-md);
+		padding-block: var(--sanad-gap-sm);
+		padding-inline: var(--sanad-gap-md);
+		border-block-end: var(--sanad-border);
+	}
+	&-text { min-inline-size: 0; }
+	&-title {
+		margin: 0;
+		font-size: var(--text-base, 14px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+		line-height: 1.4;
+	}
+	&-note {
+		margin: 2px 0 0;
+		font-size: var(--text-xs, 12px);
+		color: var(--ink-gray-6);
+		line-height: 1.5;
+	}
+	&-aside {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		flex: none;
+
+		.btn {
+			min-block-size: var(--sanad-target);
+			white-space: nowrap;
+		}
+		// a head link is still a target: it keeps the control height the chips and buttons keep
+		.wa-ops__link {
+			display: inline-flex;
+			align-items: center;
+			min-block-size: var(--sanad-target);
+			padding-inline: var(--sanad-gap-xs);
+			white-space: nowrap;
+		}
+	}
+	&-total {
+		font-size: var(--text-lg, 16px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+		white-space: nowrap;
+	}
+	&-body {
+		flex: 1;
+		min-inline-size: 0;
+		padding-block: var(--sanad-gap-md);
+		padding-inline: var(--sanad-gap-md);
+	}
+
+	@media (max-width: 575px) {
+		&-head { flex-wrap: wrap; }
+		&-aside {
+			inline-size: 100%;
+			justify-content: flex-end;
+			.btn { flex: 1; }
+			.wa-ops__link { margin-inline-start: auto; }
+		}
+	}
+}
+
+// ---- the volume plot ------------------------------------------------------------------------
+// One column per bucket, split by what became of the messages that started in it. The legend
+// names every band and every column states its own split in words, so the colour is a shortcut
+// and never the only carrier of the value.
+
+.wa-home__plot {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-sm);
+
+	&-note {
+		margin: 0;
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-5);
+	}
+}
+
+.wa-home__legend {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--sanad-gap-xs) var(--sanad-gap-md);
+	font-size: var(--text-xs, 11px);
+	color: var(--ink-gray-6);
+
+	&-item {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+	}
+}
+
+.wa-home__swatch {
+	inline-size: 9px;
+	block-size: 9px;
+	border-radius: 2px;
+	flex: none;
+
+	&--read { background: var(--wa-band-read); }
+	&--delivered { background: var(--wa-band-delivered); }
+	&--sent { background: var(--wa-band-sent); }
+	&--waiting { background: var(--wa-band-waiting); }
+	&--failed { background: var(--wa-band-failed); }
+}
+
+.wa-home__grid {
+	position: relative;
+	min-inline-size: 0;
+}
+
+.wa-home__rules {
+	position: absolute;
+	inset-inline: 0;
+	inset-block-start: 0;
+	block-size: var(--wa-plot-h);
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	pointer-events: none;
+}
+
+.wa-home__rule {
+	position: relative;
+	block-size: 0;
+
+	&::after {
+		content: "";
+		position: absolute;
+		inset-inline-start: var(--wa-gutter);
+		inset-inline-end: 0;
+		inset-block-start: 0;
+		border-block-start: 1px dashed var(--outline-gray-2);
+	}
+
+	i {
+		position: absolute;
+		inset-inline-start: 0;
+		inset-block-start: -8px;
+		inline-size: calc(var(--wa-gutter) - 6px);
+		font-style: normal;
+		font-size: 11px;
+		line-height: 1.4;
+		color: var(--ink-gray-5);
+		text-align: end;
+	}
+}
+
+.wa-home__cols {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	padding-inline-start: var(--wa-gutter);
+	// the gridlines belong behind the columns, not printed across them
+	position: relative;
+	z-index: 1;
+	display: flex;
+	align-items: flex-end;
+	gap: 2px;
+	min-inline-size: 0;
+}
+
+.wa-home__col {
+	flex: 1 1 0;
+	min-inline-size: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-xs);
+
+	&-btn {
+		display: flex;
+		align-items: flex-end;
+		inline-size: 100%;
+		block-size: var(--wa-plot-h);
+		padding: 0 2px;
+		border: 0;
+		border-radius: var(--border-radius-sm, 6px);
+		background: none;
+
+		&:hover { background: var(--surface-gray-1); }
+	}
+
+	// Only every fifth day (or fourth hour) is named, so a label wider than its own column has
+	// blank neighbours to spill into — clipping it to the column width is what turned
+	// "24 September" into "24 S".
+	&-tick {
+		font-size: 11px;
+		line-height: 1.4;
+		color: var(--ink-gray-5);
+		text-align: center;
+		white-space: nowrap;
+		overflow: visible;
+		min-block-size: 15px;
+	}
+}
+
+.wa-home__stack {
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	inline-size: 100%;
+	block-size: 100%;
+	border-start-start-radius: 3px;
+	border-start-end-radius: 3px;
+	overflow: hidden;
+}
+
+.wa-home__seg {
+	display: block;
+	inline-size: 100%;
+	min-block-size: 2px;
+
+	&--read { background: var(--wa-band-read); }
+	&--delivered { background: var(--wa-band-delivered); }
+	&--sent { background: var(--wa-band-sent); }
+	&--waiting { background: var(--wa-band-waiting); }
+	&--failed { background: var(--wa-band-failed); }
+	// a bucket with nothing in it still draws its floor, or the axis looks like a broken chart
+	&--none {
+		block-size: 2px;
+		background: var(--outline-gray-2);
+	}
+}
+
+// ---- failures by error -----------------------------------------------------------------------
+// A horizontal bar per error, largest first. The count and the share are printed beside every
+// bar, so the length is a shortcut and never the only carrier of the value.
+
+.wa-home__fails {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-sm);
+
+	&-foot {
+		display: grid;
+		grid-template-columns: 1fr auto 1fr auto;
+		gap: var(--sanad-gap-xs) var(--sanad-gap-sm);
+		align-items: center;
+		padding-block-start: var(--sanad-gap-sm);
+		border-block-start: var(--sanad-border);
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-6);
+
+		// the tone class carries a pale surface too; on a printed number the ink is the signal
+		span:nth-child(even) {
+			font-weight: 600;
+			text-align: end;
+			background: none;
+			border: 0;
+		}
+	}
+}
+
+.wa-home__fail-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.wa-home__fail {
+	display: grid;
+	grid-template-columns: minmax(0, 1.5fr) minmax(40px, 1fr) 38px 32px;
+	align-items: center;
+	gap: var(--sanad-gap-sm);
+	inline-size: 100%;
+	min-block-size: var(--sanad-target);
+	padding-block: var(--sanad-gap-xs);
+	padding-inline: var(--sanad-gap-xs);
+	border: 0;
+	border-radius: var(--border-radius-sm, 6px);
+	background: none;
+	text-align: start;
+	font-size: var(--text-xs, 12px);
+	color: var(--ink-gray-8);
+
+	&:hover { background: var(--surface-gray-2); }
+
+	&-label {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&-bar {
+		display: block;
+		block-size: 6px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-3);
+		overflow: hidden;
+
+		> span {
+			display: block;
+			block-size: 100%;
+			border-radius: var(--border-radius-full, 999px);
+			background: var(--ink-red-4);
+		}
+	}
+	&-share {
+		color: var(--ink-gray-6);
+		text-align: end;
+	}
+	&-count {
+		font-weight: 600;
+		color: var(--ink-gray-9);
+		text-align: end;
+	}
+}
+
+// ---- band 6: the four panels -----------------------------------------------------------------
+
+.wa-home__panels {
+	display: grid;
+	gap: var(--sanad-gap-md);
+	grid-template-columns: minmax(0, 1fr);
+	@media (min-width: 768px) {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+	@media (min-width: 1100px) {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+.wa-home__panel {
+	.wa-home__card-body {
+		min-block-size: 168px;
+		padding-block: var(--sanad-gap-xs);
+		padding-inline: var(--sanad-gap-sm);
+	}
+
+	// the kit draws every record here, so the rows only need their own hairlines
+	.sanad-ent-list { gap: 0; }
+	.sanad-ent-list__item + .sanad-ent-list__item { border-block-start: var(--sanad-border); }
+	.sanad-ent {
+		padding-block: var(--sanad-gap-sm);
+		padding-inline: var(--sanad-gap-xs);
+	}
+}
+
+// ---- the plan panel ----------------------------------------------------------------------------
+
+.wa-home__plan {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-md);
+	padding-block: var(--sanad-gap-sm);
+	padding-inline: var(--sanad-gap-xs);
+}
+
+// How much of the plan is gone. Drawn here rather than with the kit's `.sanad-progress`, which
+// two components currently define differently (see the report) — the label is printed beside the
+// bar, so the length is never the only carrier of the number.
+.wa-home__usage {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-xs);
+
+	&-label {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--sanad-gap-sm);
+		font-size: var(--text-xs, 12px);
+		color: var(--ink-gray-6);
+
+		span:last-child {
+			font-weight: 600;
+			color: var(--ink-gray-9);
+		}
+	}
+	&-track {
+		block-size: 6px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-3);
+		overflow: hidden;
+	}
+	&-fill {
+		display: block;
+		block-size: 100%;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--ink-blue-3);
+
+		&--amber { background: var(--ink-amber-3); }
+	}
+}
+
+.wa-home__facts {
+	margin: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-xs);
+}
+
+.wa-home__fact {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--sanad-gap-sm);
+	font-size: var(--text-xs, 12px);
+
+	dt {
+		color: var(--ink-gray-6);
+		font-weight: 400;
+	}
+	dd {
+		margin: 0;
+		color: var(--ink-gray-9);
+		font-weight: 600;
+	}
+}
+
+// ---- the tone map --------------------------------------------------------------------------
+// `.sanad-tone--*` carries a soft surface; on a dot, a sparkline, a number or a note the colour
+// is the signal itself, so the surface is cleared and the ink is set from the same token family.
+
+$wa-home-inks: (
+	"blue": var(--ink-blue-3),
+	"green": var(--ink-green-3),
+	"amber": var(--ink-amber-3),
+	"red": var(--ink-red-3),
+	"cyan": var(--wa-band-read),
+	"gray": var(--ink-gray-5)
+);
+
+// the icon's own square: a tint of the same family, one step stronger than `.sanad-tone--*`'s
+// surface, which is too pale to read at 24 px
+$wa-home-tints: (
+	"blue": var(--surface-blue-2),
+	"green": var(--surface-green-2),
+	"amber": var(--surface-amber-2),
+	"red": var(--surface-red-2),
+	"cyan": var(--surface-cyan-1),
+	"gray": var(--surface-gray-2)
+);
+
+@each $name, $tint in $wa-home-tints {
+	.wa-home__kpi-icon.sanad-tone--#{$name} { background: $tint; }
+}
+
+@each $name, $ink in $wa-home-inks {
+	.wa-home__kpi-dot.sanad-tone--#{$name} {
+		background: $ink;
+		border: 0;
+	}
+	.wa-home__kpi-icon.sanad-tone--#{$name} { color: $ink; }
+	.wa-home__kpi-spark.sanad-tone--#{$name},
+	.wa-home__kpi-note.sanad-tone--#{$name},
+	.wa-home__kpi-value.sanad-tone--#{$name} {
+		color: $ink;
+		background: none;
+		border: 0;
+	}
+}

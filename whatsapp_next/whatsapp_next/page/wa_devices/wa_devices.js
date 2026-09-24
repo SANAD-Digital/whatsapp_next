@@ -442,14 +442,15 @@ frappe.provide("whatsapp_next.devices");
 		render() {
 			const row = this.row;
 			const status = status_of(row);
-			const offline = OFFLINE.includes(row.status);
 			const pending = row.status === "Pending QR";
 			this.$el = $(`
-				<article class="wa-device${offline ? " wa-device--offline" : ""}${row.status === "Logged Out" ? " wa-device--signed-out" : ""}" data-device="${ui.escape(row.name)}" aria-label="${ui.escape(row.device_name || row.name)}">
+				<article class="wa-device" data-device="${ui.escape(row.name)}" aria-label="${ui.escape(row.device_name || row.name)}">
 					<header class="wa-device__head">
-						<span class="wa-device__avatar sanad-tone--${status.tone}" aria-hidden="true">${ui.escape(initials(row.device_name))}</span>
-						<span class="wa-device__name" title="${ui.escape(row.device_name || row.name)}">${ui.escape(row.device_name || row.name)}</span>
-						<span class="wa-device__phone sanad-tabular" dir="ltr" title="${ui.escape(row.phone_e164 || "")}">${ui.escape(row.phone_e164 ? ui.PhoneField.format_display(row.phone_e164) : __("No number yet"))}</span>
+						<span class="sanad-avatar sanad-avatar--lg wa-device__avatar wa-device__avatar--${status.tone}" aria-hidden="true">${ui.escape(initials(row.device_name))}</span>
+						<span class="wa-device__identity">
+							<span class="wa-device__name" dir="auto" title="${ui.escape(row.device_name || row.name)}">${ui.escape(row.device_name || row.name)}</span>
+							<span class="wa-device__phone sanad-tabular" dir="ltr" title="${ui.escape(row.phone_e164 || "")}">${ui.escape(row.phone_e164 ? ui.PhoneField.format_display(row.phone_e164) : __("No number yet"))}</span>
+						</span>
 						<span class="wa-device__flags" data-slot="flags"></span>
 					</header>
 					<div class="wa-device__tiles" data-slot="tiles"></div>
@@ -458,8 +459,10 @@ frappe.provide("whatsapp_next.devices");
 				</article>`);
 			this.render_flags();
 			this.render_tiles();
-			this.render_meta();
+			// the prototype gives a device that is still waiting for its code the notice and no
+			// freshness band: "last seen" and "last message" say nothing before the first pairing
 			if (pending) this.render_notice();
+			else this.render_meta();
 			this.render_actions();
 			return this.$el;
 		}
@@ -468,7 +471,9 @@ frappe.provide("whatsapp_next.devices");
 			const row = this.row;
 			const status = status_of(row);
 			const $flags = this.$el.find('[data-slot="flags"]');
-			$flags.append(ui.StatusBadge.html({ label: status.label(), colour: status.tone }));
+			// the prototype's card badge is a tinted pill with its word in it (`Cards.dc.html`,
+			// `kind: entity`): no icon, so the name and the number keep the head's first line
+			$flags.append(ui.StatusBadge.html({ label: status.label(), colour: status.tone, icon: false }));
 			if (row.is_default) {
 				$flags.append(`<span class="wa-device__flag sanad-tone--gray">${ui.escape(__("Default"))}</span>`);
 			}
@@ -587,7 +592,7 @@ frappe.provide("whatsapp_next.devices");
 		}
 
 		render_notice() {
-			$(`<div class="wa-device__notice sanad-tone--blue" role="status"><span class="wa-device__notice-icon" aria-hidden="true">${ui.icon("es-line-alert-circle", "sm")}</span><span class="wa-device__notice-text"><b>${ui.escape(__("The code has not been scanned yet"))}</b><span>${ui.escape(__("Open pairing again to scan a fresh code."))}</span></span></div>`).insertBefore(this.$el.find('[data-slot="actions"]'));
+			$(`<div class="wa-device__notice sanad-tone--blue" role="status"><span class="wa-device__notice-icon" aria-hidden="true">${ui.icon("es-line-alert-circle", "sm")}</span><span class="wa-device__notice-text"><b class="wa-device__notice-title">${ui.escape(__("The code has not been scanned yet"))}</b><span class="wa-device__notice-line">${ui.escape(__("Open pairing again to scan a fresh code."))}</span></span></div>`).insertBefore(this.$el.find('[data-slot="actions"]'));
 		}
 
 		render_actions() {
@@ -616,7 +621,7 @@ frappe.provide("whatsapp_next.devices");
 			}
 			const $actions = this.$el.find('[data-slot="actions"]');
 			actions.forEach((action) => {
-				$(`<button type="button" class="btn btn-sm ${action.primary ? "btn-primary" : "btn-default"}${action.danger ? " wa-device__btn--danger" : ""}">${ui.escape(action.label)}</button>`)
+				$(`<button type="button" class="btn btn-sm wa-device__btn ${action.primary ? "btn-primary" : "btn-default"}${action.danger ? " wa-device__btn--danger" : ""}" title="${ui.escape(action.label)}">${ui.escape(action.label)}</button>`)
 					.on("click", action.handler)
 					.appendTo($actions);
 			});
@@ -634,24 +639,31 @@ frappe.provide("whatsapp_next.devices");
 			this.cards = [];
 			this.stats = {};
 			this.$screen = $('<div class="wa-devices"></div>').appendTo(page.main);
-			this.make_page_actions();
 			this.header = new ui.PageHeader({
 				wrapper: this.$screen,
+				title: __("Devices"),
 				description: __("Every device is its own WhatsApp number. Messages are routed to one of them by the template or the campaign."),
-				banner: () => this.banner(),
-				blocks: [{ key: "devices", render: ($el) => this.render_block($el) }],
+				primary: is_manager()
+					? { label: __("Add device"), icon: "es-line-add", handler: () => this.pair(null) }
+					: null,
+				secondary: [
+					{ label: __("Refresh"), icon: "es-line-reload", handler: () => this.refresh({ remote: true }) },
+				],
+				blocks: [
+					{ key: "alert", render: ($el) => this.render_alert($el) },
+					{ key: "devices", render: ($el) => this.render_block($el) },
+				],
 			});
+			this.mark_header();
 			this.bind_realtime();
 			$(wrapper).on("hide", () => this.unbind_realtime());
 		}
 
-		make_page_actions() {
-			if (is_manager()) {
-				this.page.set_primary_action(__("Add device"), () => this.pair(null), "add");
-			}
-			this.page.add_action_icon("es-line-reload", () => this.refresh({ remote: true }), "", __("Refresh from the platform"));
-			// `add_action_icon` only sets a title: an icon-only control also needs a name (WCAG 4.1.2)
-			this.page.icon_group.find(".icon-btn").last().attr("aria-label", __("Refresh from the platform"));
+		/** The prototype's screen mark: a tinted plate carrying the screen's icon beside its title. */
+		mark_header() {
+			$(`<span class="wa-devices__mark" aria-hidden="true">${ui.icon("es-line-mobile", "md")}</span>`).prependTo(
+				this.header.$el.find(".sanad-pagehead__row")
+			);
 		}
 
 		// ---- data -------------------------------------------------------------------------------
@@ -705,26 +717,43 @@ frappe.provide("whatsapp_next.devices");
 
 		// ---- banner -----------------------------------------------------------------------------
 
-		banner() {
+		/**
+		 * The prototype's alert strip: the icon, the fact in one bold line, what it costs in the
+		 * second, and the verb that ends it. Amber for a dropped connection, red once a device was
+		 * signed out on the phone (matrix §6 tones).
+		 */
+		render_alert($el) {
 			return this.load().then((rows) => {
 				const offline = rows.filter((row) => OFFLINE.includes(row.status));
-				if (!offline.length) return null;
-				if (offline.length === 1) {
-					const row = offline[0];
-					const since = ago(row.disconnected_at || row.logged_out_at || row.last_seen);
-					return {
-						tone: "amber",
-						text: since
-							? __("Device {0} has been offline since {1}. Messages for it stay in the queue until it is paired again.", [row.device_name || row.name, since])
-							: __("Device {0} is offline. Messages for it stay in the queue until it is paired again.", [row.device_name || row.name]),
-						action: is_manager() ? { label: __("Pair again"), handler: () => this.pair(row) } : null,
-					};
-				}
-				return {
-					tone: "amber",
-					text: __("{0} devices are not connected. Messages for them stay in the queue until they are paired again.", [ui.format_int(offline.length)]),
-					action: { label: __("Show them"), handler: () => this.set_filter("offline") },
-				};
+				$el.empty();
+				if (!offline.length) return;
+				const signed_out = offline.some((row) => row.status === "Logged Out");
+				const tone = signed_out ? "red" : "amber";
+				const one = offline.length === 1 ? offline[0] : null;
+				const since = one && ago(one.disconnected_at || one.logged_out_at || one.last_seen);
+				const title = one
+					? since
+						? __("Device {0} has been offline since {1}.", [one.device_name || one.name, since])
+						: __("Device {0} is offline.", [one.device_name || one.name])
+					: __("{0} devices are not connected.", [ui.format_int(offline.length)]);
+				const line = one
+					? __("Messages addressed to it stay in the queue and are not sent until it is paired again.")
+					: __("Messages addressed to them stay in the queue and are not sent until they are paired again.");
+				const action =
+					one && is_manager()
+						? { label: __("Pair again"), handler: () => this.pair(one), strong: true }
+						: { label: __("Show them"), handler: () => this.set_filter("offline") };
+				const $alert = $(`
+					<div class="wa-devices__alert sanad-tone--${tone}" role="${tone === "red" ? "alert" : "status"}">
+						<span class="wa-devices__alert-icon" aria-hidden="true">${ui.icon("es-line-alert-triangle", "sm")}</span>
+						<span class="wa-devices__alert-text">
+							<b class="wa-devices__alert-title">${ui.escape(title)}</b>
+							<span class="wa-devices__alert-line">${ui.escape(line)}</span>
+						</span>
+					</div>`).appendTo($el);
+				$(`<button type="button" class="btn btn-sm wa-devices__alert-action${action.strong ? " wa-devices__alert-action--strong" : ""}">${ui.escape(action.label)}</button>`)
+					.on("click", action.handler)
+					.appendTo($alert);
 			});
 		}
 

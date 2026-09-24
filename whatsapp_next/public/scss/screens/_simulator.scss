@@ -31,14 +31,21 @@
 		padding: var(--sanad-gap-md);
 		border-block-end: var(--sanad-border);
 	}
+	// the prototype's rail head is one line: what the list is, and how much of it there is
+	&__rail-line {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--sanad-gap-sm);
+	}
 	&__rail-title {
 		margin: 0;
 		font-size: var(--text-base, 14px);
 		font-weight: 600;
 		color: var(--ink-gray-9);
 	}
-	&__rail-sub {
-		margin: 0;
+	&__rail-count {
+		flex: none;
 		font-size: var(--text-xs, 11px);
 		color: var(--ink-gray-6);
 	}
@@ -256,23 +263,63 @@
 		}
 	}
 
+	// One line, as the prototype draws it: the field, its clear, then the verbs at the inline-end.
 	&__composer {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-sm);
 		padding: var(--sanad-gap-md);
 		border-block-start: var(--sanad-border);
 		background: var(--surface-white);
 	}
-	&__input {
+	&__composer-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: var(--sanad-gap-sm);
+	}
+	&__field {
+		position: relative;
+		flex: 1 1 260px;
+		min-inline-size: 0;
+	}
+	// `.form-control` is carried so this outranks Desk's own `textarea.form-control`
+	&__input.form-control {
+		// Desk fixes a textarea at 120 px; the composer is one line that grows when it is dragged
+		block-size: auto;
 		resize: vertical;
-		min-block-size: 56px;
+		min-block-size: 36px;
+		max-block-size: 160px;
+		border-radius: var(--sanad-card-radius);
+		padding-inline-end: 40px;
+	}
+	&__clear {
+		position: absolute;
+		inset-inline-end: 2px;
+		inset-block-end: 2px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		// a real target, not a glyph (WCAG 2.2 target size)
+		inline-size: var(--sanad-target);
+		block-size: var(--sanad-target);
+		border: 0;
+		border-radius: var(--border-radius-full, 999px);
+		background: none;
+		color: var(--ink-gray-5);
+		font-size: var(--text-lg, 16px);
+		line-height: 1;
+		cursor: pointer;
+		&:hover {
+			background: var(--surface-gray-2);
+			color: var(--ink-gray-7);
+		}
 	}
 	&__actions {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--sanad-gap-sm);
 		justify-content: flex-end;
+		.btn {
+			min-block-size: var(--sanad-target);
+		}
 	}
 
 	// ---- one pane at a time on small screens ------------------------------------------------------
@@ -289,13 +336,27 @@
 		&.wa-sim--open &__main {
 			display: flex;
 		}
+		// the header reads down the page instead of squeezing four things onto one line:
+		// the way back, then who this is, then which device answers
 		&__back {
 			display: inline-flex;
 			align-items: center;
 			min-block-size: var(--sanad-target);
+			order: 1;
+		}
+		&__identity {
+			flex: 1 1 100%;
+			order: 2;
+		}
+		&__device {
+			flex: 1 1 100%;
+			margin-inline-start: 0;
+			order: 3;
 		}
 		&__device select.form-control {
-			inline-size: 130px;
+			flex: 1 1 auto;
+			inline-size: auto;
+			min-inline-size: 0;
 		}
 	}
 }

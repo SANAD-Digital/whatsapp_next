@@ -47,6 +47,21 @@
 	/** "12 ms" — the average run of the installed handler; a dash while it has never run. */
 	const ms_text = (value) => (cint(value) ? __("{0} ms", [fmt_int(value)]) : "—");
 
+	/**
+	 * The two versions the prototype puts at the top of the detail, side by side: the one this site
+	 * runs and the newest the catalog offers, each named so the pair never has to be decoded.
+	 */
+	const version_pill = (label, version, tone) =>
+		`<span class="wa-fndetail__pill sanad-tone--${tone}">
+			<b class="sanad-tabular">${esc(version || "—")}</b>
+			<span>${esc(label)}</span>
+		</span>`;
+
+	/** One number of the detail's stat block: the label above it, the figure large and tabular. */
+	const fact_tile = (label, value) =>
+		`<div class="wa-fndetail__tile"><span class="wa-fndetail__tile-label">${esc(label)}</span>
+			<b class="wa-fndetail__tile-value sanad-tabular">${value}</b></div>`;
+
 	const command_route = (entry) => frappe.set_route("List", "WhatsApp Command", { function: entry.function_key });
 
 	// ---- data ---------------------------------------------------------------------------------
@@ -366,9 +381,9 @@
 						${e.installed ? status_badge(e) : ""}
 						${e.installed ? update_badge(e) : ""}
 					</div>
-					<div class="wa-fndetail__versions sanad-tabular">
-						<span>${esc(__("Installed"))} <b>${esc(e.installed_version || __("None"))}</b></span>
-						<span>${esc(__("Latest"))} <b>${esc(e.latest_version || "—")}</b></span>
+					<div class="wa-fndetail__versions">
+						${e.installed ? version_pill(__("Installed"), e.installed_version, "green") : ""}
+						${version_pill(__("Latest"), e.latest_version, e.update_available ? "amber" : "gray")}
 					</div>
 				</div>
 				<div class="wa-fndetail__tabs" role="tablist" aria-label="${esc(__("Function detail"))}">${tabs}</div>
@@ -460,23 +475,24 @@
 			return `<section class="wa-fndetail__block"><h3 class="wa-fndetail__block-title">${esc(label)}</h3>${body}</section>`;
 		}
 
+		/** The prototype's four tiles: what this function costs and what runs on it. */
 		facts() {
 			const e = this.entry;
-			const rows = [
-				[__("Category"), esc(e.category || __("Uncategorised"))],
-				[__("Serves"), esc((e.party_types || []).map((t) => __(t)).join(" · ") || __("Any sender"))],
-				[__("Calls (30 days)"), `<span class="sanad-tabular">${fmt_int(e.calls_30d)}</span>`],
-				[__("Average run"), `<span class="sanad-tabular">${esc(ms_text(e.avg_ms))}</span>`],
-				[
-					__("Linked commands"),
-					`<span class="sanad-tabular">${fmt_int((e.linked_commands || []).length)}</span>`,
-				],
-				[__("Handler"), esc(e.handler_registered ? __("Registered") : __("Missing"))],
-				[__("Catalog"), `<code>${esc(e.source || "—")}</code>`],
-			];
-			return `<dl class="wa-fndetail__facts">${rows
-				.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`)
-				.join("")}</dl>`;
+			const linked = e.linked_commands || [];
+			return `<div class="wa-fndetail__tiles">
+				${fact_tile(__("Calls (30d)"), fmt_int(e.calls_30d))}
+				${fact_tile(__("Average run"), esc(ms_text(e.avg_ms)))}
+				${fact_tile(__("Linked commands"), fmt_int(linked.length))}
+				${fact_tile(__("Active among them"), fmt_int(linked.filter((c) => c.status === "Active").length))}
+			</div>`;
+		}
+
+		/** Where the function comes from and whether this site can actually run it. */
+		provenance() {
+			const e = this.entry;
+			return `<p class="wa-fndetail__muted">${esc(
+				__("Handler: {0}", [e.handler_registered ? __("Registered") : __("Missing")])
+			)} · <code class="wa-fndetail__token">${esc(e.source || "—")}</code></p>`;
 		}
 
 		alert_html() {
@@ -561,18 +577,37 @@
 							.join("")}</div>`
 					: `<p class="wa-fndetail__muted">${esc(__("No command runs this function yet."))}</p>`
 			);
+			const serves = (e.party_types || []).map((t) => `<span class="sanad-chip sanad-chip--sm">${esc(__(t))}</span>`).join("");
+			// The prototype reads this pane in three columns: what the function is on the
+			// inline-start, what it takes in the middle, what it writes at the inline-end. Below
+			// 1100 px they fall into one column in the same order.
 			this.$pane.html(`
 				${this.alert_html()}
-				${this.facts()}
-				${this.block(__("What it does"), `<p>${esc(e.description || __("No description in the catalog."))}</p>`)}
-				${this.block(
-					__("When it is used"),
-					`<p>${esc(e.when_to_use || __("The catalog does not say when to use it."))}</p>`
-				)}
-				${inputs_html}
-				${outputs_html}
-				${settings_html}
-				${commands_html}`);
+				<div class="wa-fndetail__cols">
+					<div class="wa-fndetail__col">
+						<p class="wa-fndetail__lede" dir="auto">${esc(e.description || __("No description in the catalog."))}</p>
+						<div class="wa-fndetail__card">
+							<span class="wa-fndetail__block-title">${esc(__("When it is used"))}</span>
+							<p class="wa-fndetail__muted" dir="auto">${esc(e.when_to_use || __("The catalog does not say when to use it."))}</p>
+						</div>
+						${this.block(
+							__("Party types it serves"),
+							serves
+								? `<div class="wa-fndetail__chips">${serves}</div>`
+								: `<p class="wa-fndetail__muted">${esc(__("Any sender."))}</p>`
+						)}
+						${this.facts()}
+						${commands_html}
+						${this.provenance()}
+					</div>
+					<div class="wa-fndetail__col">
+						${inputs_html}
+						${settings_html}
+					</div>
+					<div class="wa-fndetail__col">
+						${outputs_html}
+					</div>
+				</div>`);
 		}
 
 		render_log() {
@@ -844,42 +879,48 @@
 	 * the sorting and the paging, and the table only renders them — the same table the Outbound,
 	 * Inbound, Queue and Commands screens use.
 	 */
+	// The prototype's row is one line: the function's name, bold, and nine facts beside it. The
+	// catalog description is *searched* but not drawn here (it is the detail's "What it does"), so
+	// the row keeps the prototype's density instead of wrapping a paragraph into the name cell.
 	const columns = () => [
 		{
 			fieldname: "function_name",
 			label: __("Function"),
+			width: 160,
 			sortable: true,
 			format: (v) => `<strong>${esc(v || "")}</strong>`,
-			sub: (doc) => esc(doc.description || doc.function_key),
 		},
-		{ fieldname: "category", label: __("Category"), sortable: true, format: (v) => esc(v || "") },
+		{ fieldname: "category", label: __("Category"), width: 108, sortable: true, format: (v) => esc(v || "") },
 		{
 			fieldname: "installed_version",
 			label: __("Version"),
+			width: 84,
 			sortable: true,
 			format: (v, doc) => `<span class="sanad-tabular">${esc(v || doc.latest_version || "")}</span>`,
 		},
 		{
 			fieldname: "update_available",
 			label: __("Update"),
+			width: 112,
 			sortable: true,
 			format: (v, doc) => (doc.installed ? update_badge(doc) : ""),
 		},
 		{
 			fieldname: "commands_count",
-			label: __("Commands"),
+			label: __("Linked commands"),
 			type: "number",
 			align: "end",
+			width: 104,
 			sortable: true,
 			format: (v) => fmt_int(v),
 		},
 		{
 			fieldname: "calls_30d",
-			label: __("Calls (30 days)"),
+			label: __("Calls (30d)"),
 			type: "number",
 			align: "end",
+			width: 96,
 			sortable: true,
-			hidden_xs: true,
 			format: (v) => fmt_int(v),
 		},
 		{
@@ -887,12 +928,13 @@
 			label: __("Average run"),
 			type: "number",
 			align: "end",
+			width: 98,
 			sortable: true,
 			hidden_xs: true,
 			format: (v) => (cint(v) ? esc(ms_text(v)) : ""),
 		},
-		{ fieldname: "status", label: __("Status"), sortable: true, format: (v, doc) => (doc.installed ? status_badge(doc) : "") },
-		{ fieldname: "installed", label: __("Install"), sortable: true, format: (v, doc) => install_badge(doc) },
+		{ fieldname: "status", label: __("Status"), width: 94, sortable: true, format: (v, doc) => (doc.installed ? status_badge(doc) : "") },
+		{ fieldname: "installed", label: __("Install"), width: 98, sortable: true, format: (v, doc) => install_badge(doc) },
 	];
 
 	/** How each column is compared when the reader sorts by it. */
@@ -984,8 +1026,10 @@
 
 		/**
 		 * No title row: Desk's own page head already names the screen, and a second title above the
-		 * toolbar only repeats it (owner, 2026-09-23). The header carries the KPI row and the one
-		 * banner the operator must not miss; the screen's sentence lives in the toolbar's intro.
+		 * toolbar only repeats it (owner, 2026-09-23). What the prototype puts under that title —
+		 * the sentence that says what a function is, and the "Commands · N" button at the
+		 * inline-end of the same row — the header carries instead, above the KPI row and the one
+		 * banner the operator must not miss.
 		 */
 		render_header() {
 			const c = this.counters();
@@ -993,6 +1037,15 @@
 			this.$head.empty();
 			this.header = new sanad.ui.PageHeader({
 				wrapper: this.$head,
+				description: __("A function is the logic behind a command. Review its versions here and update it."),
+				secondary: [
+					{
+						label: __("Commands"),
+						icon: "es-line-chat-alt",
+						count: this.commands_total,
+						handler: () => frappe.set_route("List", "WhatsApp Command"),
+					},
+				],
 				stats: [
 					{
 						key: "total",
@@ -1011,7 +1064,7 @@
 					},
 					{
 						key: "calls",
-						label: __("Calls (30 days)"),
+						label: __("Calls (30d)"),
 						icon: "es-line-chart",
 						tone: "blue",
 						value: () => c.calls,
@@ -1032,16 +1085,6 @@
 				],
 				banner: () => this.banner(),
 			});
-			this.render_page_button();
-		}
-
-		/** The one Desk-level action of this screen, in Desk's own inner toolbar. */
-		render_page_button() {
-			if (this.$commands_btn) this.$commands_btn.remove();
-			this.$commands_btn = this.page.add_inner_button(
-				__("Commands ({0})", [fmt_int(this.commands_total)]),
-				() => frappe.set_route("List", "WhatsApp Command")
-			);
 		}
 
 		/** The one state the operator must not miss: a catalog file that could not be read. */
@@ -1069,7 +1112,6 @@
 				page: this.page,
 				wrapper: this.$toolbar,
 				doctype: "WhatsApp Function",
-				intro: __("A function is the logic behind a command. Review its versions here and update it."),
 				presets: [
 					{
 						fieldname: "function_name",
@@ -1171,8 +1213,22 @@
 					selectable: is_manager(),
 					page_length: 20,
 					sort: this.sort,
+					// what the prototype's phone card carries: the name, its group and version, the
+					// update state, the commands behind it and the two state badges
+					mobile_columns: [
+						"function_name",
+						"category",
+						"installed_version",
+						"update_available",
+						"commands_count",
+						"calls_30d",
+						"status",
+						"installed",
+					],
 					pinnable: false,
-					row_action: { label: __("Open"), handler: (doc) => this.open(doc) },
+					// the prototype's storefront has no "view" column: the row is the control, and
+					// DataList keeps it focusable with Enter — nine columns of state need the width
+					row_action: false,
 					on_row_click: (doc) => this.open(doc),
 					on_sort: (fieldname, order) => {
 						this.sort = { fieldname, order };
@@ -1195,6 +1251,10 @@
 							: null,
 					},
 				});
+				// The table tells a page about "select all" and about a group, but not about one
+				// row's checkbox (kit ask in the report), so the screen listens for it itself.
+				// It is bound after the table's own handler, which has already updated the set.
+				this.$body.on("change", ".list-row-checkbox", () => this.render_bulk(this.table.get_selected()));
 			}
 			this.apply();
 		}
@@ -1210,28 +1270,36 @@
 
 		// ---- selection ---------------------------------------------------------------------------
 
-		/** The prototype's bulk row: update, activate, deactivate — each naming its count. */
+		/**
+		 * The prototype's selection cluster (`docs/component/List View.dc.html`): a tinted
+		 * "N selected ×" pill and, beside it, the verbs that act on the selection — update,
+		 * activate, deactivate — each naming how many rows it will actually touch. It sits at the
+		 * inline-end above the table, where the prototype ends its toolbar.
+		 */
 		render_bulk(picked) {
 			if (!is_manager() || !picked.length) return this.$bulk.attr("hidden", true).empty();
 			const updatable = picked.filter((e) => e.update_available).length;
 			const installed = picked.filter((e) => e.installed).length;
 			this.$bulk.removeAttr("hidden").html(`
-				<span class="wa-functions__bulk-count" role="status">${esc(
-					sanad.ui.plural(picked.length, { one: __("{0} selected"), other: __("{0} selected") })
-				)}</span>
+				<span class="wa-functions__bulk-count">
+					<span role="status" aria-atomic="true">${esc(
+						sanad.ui.plural(picked.length, { one: __("{0} selected"), other: __("{0} selected") })
+					)}</span>
+					<button type="button" class="wa-functions__bulk-clear" aria-label="${esc(__("Clear selection"))}">&times;</button>
+				</span>
 				${
 					updatable
-						? `<button type="button" class="btn btn-default btn-sm" data-bulk="update">${esc(
+						? `<button type="button" class="btn btn-sm wa-functions__bulk-btn" data-bulk="update">${esc(
 								__("Update {0}", [fmt_int(updatable)])
 						  )}</button>`
 						: ""
 				}
 				${
 					installed
-						? `<button type="button" class="btn btn-default btn-sm" data-bulk="Active">${esc(
+						? `<button type="button" class="btn btn-sm wa-functions__bulk-btn" data-bulk="Active">${esc(
 								__("Activate {0}", [fmt_int(installed)])
 						  )}</button>
-							<button type="button" class="btn btn-default btn-sm" data-bulk="Inactive">${esc(
+							<button type="button" class="btn btn-sm wa-functions__bulk-btn" data-bulk="Inactive">${esc(
 								__("Deactivate {0}", [fmt_int(installed)])
 							)}</button>`
 						: `<span class="wa-functions__bulk-note">${esc(
@@ -1239,6 +1307,10 @@
 						  )}</span>`
 				}`);
 			this.$bulk.find("[data-bulk]").on("click", (ev) => this.bulk($(ev.currentTarget).data("bulk"), picked));
+			this.$bulk.find(".wa-functions__bulk-clear").on("click", () => {
+				this.table.clear_selection();
+				this.render_bulk([]);
+			});
 		}
 
 		// ---- actions -------------------------------------------------------------------------------
@@ -1335,7 +1407,7 @@
 			else if (skipped && !cint((result || {}).count)) sanad.ui.Toast.info(__("Nothing to do"));
 			else sanad.ui.Toast.success(message);
 			if (this.table) {
-				this.table.selected = new Set();
+				this.table.clear_selection();
 				this.render_bulk([]);
 			}
 			this.reload();

@@ -1,17 +1,21 @@
-// Screen 12 — Contacts (spec §2 row 12, §4; matrix rows 12 §1A/§1B/§1C).
+// Screen 12 — Contacts (spec §2 row 12, §4; matrix row 12 §1A/§1B/§1C).
 //
 // This page exists because of the contextual permission layer: a `WhatsApp Contact User` holds
 // zero rows in the `Contact` permission matrix, so a native list view is impossible and every
 // read and write goes through `contacts.*` / `numbers.*`, which elevate against a declared field
 // set and audit. Nothing here touches `frappe.client`, `frappe.db` or a Contact form.
 //
-// Anatomy (docs/screen/Hub Screen - Contacts.dc.html): header + KPI row → toolbar → the table
-// (checkbox · contact · number · type · link status · accounts · status · conversation · last
-// message · since) with an expandable detail row → count and pager.
+// Anatomy, from `docs/screen/Hub Screen - Contacts.dc.html`: the screen header with its four
+// stat cards, the one-line toolbar (search · filters · selection chip and bulk verbs at the
+// inline-end), then the prototype's own list — `sanad.ui.DataList` in page mode: checkbox column,
+// the ten columns, a row that opens its detail panel in place, and the footer count with the
+// pager. The page owns the data; the table only asks for a page, a sort or a selection.
 
 frappe.provide("whatsapp_next.contacts");
 
 const PARTY_TYPES = ["Customer", "Supplier", "Employee", "Sales Person"];
+/** `Contact.status` as the DocType declares it — the screen reads it, it never writes it. */
+const CONTACT_STATUSES = ["Passive", "Open", "Replied"];
 const PAGE_LENGTH = 20;
 /** One bulk call never carries more than this, the same cap the kit's BulkActions uses. */
 const BULK_CAP = 200;
@@ -41,9 +45,6 @@ class ContactsPage {
 		this.order_by = "modified desc";
 		this.current_page = 1;
 		this.rows = [];
-		this.total = 0;
-		this.selected = new Set();
-		this.expanded = new Set();
 		this.make();
 		this.bind_realtime();
 		this.load();
@@ -55,41 +56,35 @@ class ContactsPage {
 		this.$el = $(`
 			<div class="wa-contacts sanad-kit">
 				<div class="wa-contacts__head"></div>
-				<div class="wa-contacts__toolbar"></div>
-				<section class="wa-contacts__card" aria-labelledby="wa-contacts-caption">
-					<div class="wa-contacts__bulk" hidden></div>
-					<div class="wa-contacts__tablewrap sanad-table-wrap">
-						<table class="sanad-table wa-contacts__table" role="table">
-							<caption id="wa-contacts-caption" class="sanad-visually-hidden">${frappe.utils.escape_html(
-								__("Contacts and the accounts they are linked to")
-							)}</caption>
-							<thead></thead>
-							<tbody></tbody>
-						</table>
-					</div>
-					<div class="wa-contacts__state"></div>
-					<div class="wa-contacts__footer"></div>
-				</section>
+				<div class="wa-contacts__toolbar">
+					<div class="wa-contacts__filters"></div>
+					<div class="wa-contacts__selection" hidden></div>
+				</div>
+				<div class="wa-contacts__list"></div>
 			</div>`);
 		this.$el.appendTo(this.page.main);
-		this.$thead = this.$el.find("thead").attr("role", "rowgroup");
-		this.$tbody = this.$el.find("tbody").attr("role", "rowgroup");
-		this.$bulk = this.$el.find(".wa-contacts__bulk");
-		this.$footer = this.$el.find(".wa-contacts__footer");
-		this.$tablewrap = this.$el.find(".wa-contacts__tablewrap");
-		this.state = new sanad.ui.EmptyState({ wrapper: this.$el.find(".wa-contacts__state") });
+		this.$selection = this.$el.find(".wa-contacts__selection");
 
 		this.make_header();
 		this.make_toolbar();
-		this.render_head();
-		this.bind_table();
+		this.make_table();
+	}
+
+	/**
+	 * The screen's four numbers in one audited read. Every card asks for the same promise, so the
+	 * row costs one call, not four; `reload()` drops it so the next refresh counts again.
+	 */
+	stats() {
+		if (!this._stats) this._stats = sanad.ui.call("contacts.get_stats", {}, { silent: true });
+		return this._stats;
+	}
+
+	/** One card's number, read from the shared stats call. */
+	stat(key) {
+		return () => this.stats().then((s) => cint(s && s[key]));
 	}
 
 	make_header() {
-		const kpi = (args) => () =>
-			sanad.ui
-				.call("contacts.list_contacts", Object.assign({ page: 1, page_length: 1 }, args), { silent: true })
-				.then((r) => cint(r && r.total));
 		this.header = new sanad.ui.PageHeader({
 			wrapper: this.$el.find(".wa-contacts__head"),
 			title: __("Contacts"),
@@ -99,41 +94,47 @@ class ContactsPage {
 			primary: CAN_CREATE()
 				? { label: __("New contact"), icon: "es-line-add", handler: () => this.open_form(null) }
 				: null,
+			// the prototype's own four numbers, in its order: linked · not linked · on more than
+			// one account · what share of the screen is ready to be notified
 			stats: [
 				{
-					key: "total",
-					label: __("Contacts"),
+					key: "linked",
+					label: __("Linked"),
+					icon: "es-line-success",
+					tone: "green",
+					value: this.stat("linked"),
+					sub: __("Linked to an account and notified automatically"),
+					onclick: () => this.apply({ linked: 1 }),
+				},
+				{
+					key: "unlinked",
+					label: __("Not linked"),
+					icon: "es-line-alert-triangle",
+					tone: "amber",
+					value: this.stat("unlinked"),
+					sub: __("No account in the ledger"),
+					onclick: () => this.apply({ linked: 0 }),
+				},
+				{
+					key: "multi_linked",
+					label: __("Linked to more than one account"),
 					icon: "es-line-people",
-					value: kpi({}),
-					sub: __("Every contact this screen may read"),
+					value: this.stat("multi_linked"),
+					sub: __("One number serving two accounts or more"),
 					onclick: () => this.apply({}, ""),
 				},
 				{
-					key: "reachable",
-					label: __("On WhatsApp"),
-					icon: "es-line-chat",
-					tone: "green",
-					value: kpi({ has_whatsapp: 1 }),
-					sub: (v) => __("Ready for notifications"),
-					onclick: () => this.apply({ has_whatsapp: 1 }),
-				},
-				{
-					key: "unreachable",
-					label: __("No WhatsApp number"),
-					icon: "es-line-alert-triangle",
-					tone: "amber",
-					value: kpi({ has_whatsapp: 0 }),
-					sub: __("Never messaged from this system"),
-					onclick: () => this.apply({ has_whatsapp: 0 }),
-				},
-				{
-					key: "blocked",
-					label: __("Blocked"),
-					icon: "es-line-close-circle",
-					tone: "red",
-					value: kpi({ blacklisted: 1 }),
-					sub: __("On the global blacklist"),
-					onclick: () => this.apply({ blacklisted: 1 }),
+					key: "coverage",
+					label: __("Coverage"),
+					icon: "es-line-chart",
+					tone: "blue",
+					value: () =>
+						this.stats().then((s) =>
+							cint(s && s.total) ? Math.round((cint(s.linked) / cint(s.total)) * 100) : 0
+						),
+					format: (v) => `${sanad.ui.format_int(v)}%`,
+					sub: __("Share of contacts ready for notifications"),
+					onclick: () => this.apply({}, ""),
 				},
 			],
 		});
@@ -141,8 +142,10 @@ class ContactsPage {
 
 	make_toolbar() {
 		this.filterbar = new sanad.ui.FilterBar({
-			wrapper: this.$el.find(".wa-contacts__toolbar"),
+			wrapper: this.$el.find(".wa-contacts__filters"),
 			doctype: "Contact",
+			// the matrix gives this screen five dropdowns; FilterBar shows four and drops the rest
+			max_inline: 5,
 			presets: [
 				{
 					fieldname: "search",
@@ -156,6 +159,23 @@ class ContactsPage {
 					label: __("Type"),
 					multiple: false,
 					options: PARTY_TYPES.map((d) => ({ value: d, label: __(d) })),
+				},
+				{
+					fieldname: "linked",
+					type: "select",
+					label: __("Link status"),
+					multiple: false,
+					options: [
+						{ value: "1", label: __("Linked") },
+						{ value: "0", label: __("Not linked") },
+					],
+				},
+				{
+					fieldname: "status",
+					type: "select",
+					label: __("Status"),
+					multiple: false,
+					options: CONTACT_STATUSES.map((v) => ({ value: v, label: __(v) })),
 				},
 				{
 					fieldname: "has_whatsapp",
@@ -183,12 +203,21 @@ class ContactsPage {
 				this.search = search || "";
 				this.filters = {
 					link_doctype: values.link_doctype || null,
+					linked: this.tri(values.linked),
+					status: this.one(values.status),
 					has_whatsapp: this.tri(values.has_whatsapp),
 					blacklisted: this.tri(values.blacklisted),
 				};
 				this.current_page = 1;
 				this.load();
 			},
+		});
+		// A KPI card sets «حالة الربط» without the dropdown ever being opened, and FilterBar only
+		// learns an option's label when it resolves that dropdown — so the button would read
+		// "Link status 1". The labels this screen already holds are handed over now (kit ask in
+		// the report: remember statically supplied options at mount).
+		(this.filterbar.opts.presets || []).forEach((preset) => {
+			if (Array.isArray(preset.options)) this.filterbar.remember(preset.fieldname, preset.options);
 		});
 	}
 
@@ -199,8 +228,17 @@ class ContactsPage {
 		return cint(v) ? 1 : 0;
 	}
 
+	/** A single-choice select: the first value, or null when nothing is chosen. */
+	one(value) {
+		const v = Array.isArray(value) ? value[0] : value;
+		return v === undefined || v === null || v === "" ? null : v;
+	}
+
 	apply(filters, search) {
-		this.filters = Object.assign({ link_doctype: null, has_whatsapp: null, blacklisted: null }, filters);
+		this.filters = Object.assign(
+			{ link_doctype: null, linked: null, status: null, has_whatsapp: null, blacklisted: null },
+			filters
+		);
 		if (search !== undefined) this.search = search;
 		this.current_page = 1;
 		if (this.filterbar) {
@@ -212,324 +250,253 @@ class ContactsPage {
 		this.load();
 	}
 
-	// ---- data -----------------------------------------------------------------------------
+	// ---- the table ---------------------------------------------------------------------------
 
-	args() {
-		return {
-			search: this.search || null,
-			link_doctype: this.filters.link_doctype || null,
-			has_whatsapp: this.filters.has_whatsapp,
-			blacklisted: this.filters.blacklisted,
-			page: this.current_page,
+	make_table() {
+		this.table = new sanad.ui.DataList({
+			wrapper: this.$el.find(".wa-contacts__list"),
+			doctype: "Contact",
+			columns: this.columns(),
+			selectable: CAN_WRITE(),
 			page_length: PAGE_LENGTH,
-			order_by: this.order_by,
-		};
-	}
-
-	load() {
-		this.$tablewrap.attr("aria-busy", "true");
-		if (!this.rows.length) {
-			this.$el.find(".wa-contacts__table").prop("hidden", true);
-			this.state.loading({ rows: 6 });
-		}
-		return sanad.ui
-			.call("contacts.list_contacts", this.args())
-			.then((r) => {
-				this.rows = (r && r.rows) || [];
-				this.total = cint(r && r.total);
-				this.render();
-			})
-			.catch((err) => {
-				this.$el.find(".wa-contacts__table").prop("hidden", true);
-				this.$footer.empty();
-				this.state.error(err, { action: { label: __("Retry"), onclick: () => this.load() } });
-			})
-			.finally(() => this.$tablewrap.attr("aria-busy", "false"));
-	}
-
-	reload() {
-		this.header && this.header.refresh();
-		return this.load();
-	}
-
-	// ---- table ----------------------------------------------------------------------------
-
-	columns() {
-		return [
-			{ key: "contact", label: __("Contact"), sort: "full_name" },
-			{ key: "phone", label: __("Number") },
-			{ key: "type", label: __("Type") },
-			{ key: "link_status", label: __("Link status") },
-			{ key: "accounts_count", label: __("Account count"), num: true, xs: true, md: true },
-			{ key: "accounts", label: __("Linked accounts"), xs: true },
-			{ key: "status", label: __("Status") },
-			{ key: "conversation", label: __("Conversation") },
-			{ key: "last", label: __("Last message"), sort: "modified", xs: true },
-		];
-	}
-
-	render_head() {
-		const cells = this.columns()
-			.map((c) => {
-				const cls = ContactsPage.cell_class(c);
-				if (!c.sort) return `<th scope="col" role="columnheader" class="${cls}">${frappe.utils.escape_html(c.label)}</th>`;
-				const active = this.order_by.split(" ")[0] === c.sort;
-				const dir = active && this.order_by.endsWith("asc") ? "ascending" : active ? "descending" : "none";
-				const next = active && this.order_by.endsWith("desc") ? __("ascending") : __("descending");
-				return `<th scope="col" role="columnheader" class="${cls}" aria-sort="${dir}">
-					<button type="button" class="wa-contacts__sort" data-sort="${c.sort}"
-						aria-label="${frappe.utils.escape_html(__("Sort by {0}, {1}", [c.label, next]))}">
-						${frappe.utils.escape_html(c.label)}
-						<span aria-hidden="true">${active ? (dir === "ascending" ? "&#9650;" : "&#9660;") : ""}</span>
-					</button></th>`;
-			})
-			.join("");
-		this.$thead.html(`<tr role="row">
-			<th scope="col" role="columnheader" class="wa-contacts__col-check">
-				<input type="checkbox" class="wa-contacts__check-all"
-					aria-label="${frappe.utils.escape_html(__("Select every contact on this page"))}">
-			</th>
-			<th scope="col" role="columnheader" class="wa-contacts__col-expand"><span class="sanad-visually-hidden">${frappe.utils.escape_html(
-				__("Details")
-			)}</span></th>
-			${cells}
-			<th scope="col" role="columnheader" class="wa-contacts__col-actions"><span class="sanad-visually-hidden">${frappe.utils.escape_html(
-				__("Actions")
-			)}</span></th>
-		</tr>`);
-	}
-
-	render() {
-		this.state.hide();
-		this.$el.find(".wa-contacts__table").prop("hidden", false);
-		this.render_head();
-		this.$tbody.empty();
-		if (!this.rows.length) {
-			this.$el.find(".wa-contacts__table").prop("hidden", true);
-			this.state.empty({
+			sort: { fieldname: "modified", order: "desc" },
+			mobile: "cards",
+			// the prototype's phone card: who, which number, whether it is linked and to what,
+			// and whether a conversation exists — the rest stays for the wide table
+			mobile_columns: ["full_name", "link_status"],
+			expand: ($el, doc) => this.render_detail($el, doc),
+			on_row_click: (doc) => this.table.expand_row(doc.name),
+			on_page: (page) => {
+				this.current_page = page + 1;
+				this.load();
+			},
+			on_sort: (fieldname, order) => {
+				this.order_by = `${fieldname} ${order}`;
+				this.current_page = 1;
+				this.load();
+			},
+			on_select: () => this.render_selection(),
+			footer: {
+				count: (total) =>
+					sanad.ui.plural(total, { one: __("{0} contact"), other: __("{0} contacts") }),
+			},
+			empty: {
 				title: __("No contact matches"),
 				description: __("Change the search or the filters, or add the contact yourself."),
 				action: CAN_CREATE()
 					? { label: __("New contact"), onclick: () => this.open_form(null) }
 					: undefined,
-			});
-			this.render_footer();
-			return;
-		}
-		this.rows.forEach((row) => this.$tbody.append(this.row_html(row)));
-		this.render_footer();
-		this.sync_selection();
-		this.expanded.forEach((name) => {
-			if (this.rows.some((r) => r.name === name)) this.expand(name, true);
+			},
 		});
+		// DataList tells a page about "select all", but not yet about a single checkbox, so the
+		// page listens for that one itself (kit note in the report).
+		this.$el.find(".wa-contacts__list").on("change", ".list-row-checkbox", () => this.render_selection());
 	}
 
-	/** The id of a row's detail row, so its chevron can name what it opens (WCAG 4.1.2). */
-	static detail_id(name) {
-		return `wa-contacts-detail-${String(name).replace(/[^A-Za-z0-9_-]/g, "-")}`;
-	}
-
-	/** Column classes: alignment plus the two widths at which a column steps out of the table. */
-	static cell_class(column) {
+	columns() {
+		const esc = frappe.utils.escape_html;
+		const badge = sanad.ui.StatusBadge.html;
 		return [
-			column.num ? "sanad-table__num" : "",
-			column.xs ? "wa-contacts__hide-xs" : "",
-			column.md ? "wa-contacts__hide-md" : "",
-		]
-			.filter(Boolean)
-			.join(" ");
+			{
+				fieldname: "full_name",
+				label: __("Contact"),
+				sortable: true,
+				format: (v, doc) => {
+					const name = doc.full_name || __("No name");
+					const linked = (doc.links || []).length > 0;
+					return `<span class="wa-contacts__identity">
+							<span class="sanad-avatar sanad-avatar--sm ${
+								linked ? "wa-contacts__avatar--linked" : ""
+							}" aria-hidden="true">${esc(sanad.ui.initials(name))}</span>
+							<span class="wa-contacts__names" title="${esc(
+								doc.company_name ? __("{0} ({1})", [name, doc.company_name]) : name
+							)}"><span class="wa-contacts__name">${esc(name)}</span>${
+						doc.company_name ? `<span class="wa-contacts__sub">${esc(doc.company_name)}</span>` : ""
+					}</span>
+						</span>`;
+				},
+				// the phone card keeps the title and the badge; the number rides the title's second
+				// line there and is hidden on a wide screen, where it has a column of its own
+				sub: (doc) => {
+					const phone = ContactsPage.phone_of(doc);
+					return phone
+						? `<span class="wa-contacts__card-only sanad-tabular" dir="ltr">${esc(phone)}</span>`
+						: "";
+				},
+			},
+			{
+				fieldname: "phone",
+				label: __("Number"),
+				format: (v, doc) => {
+					const phone = ContactsPage.phone_of(doc);
+					return phone
+						? `<span class="sanad-tabular" dir="ltr">${esc(phone)}</span>`
+						: `<span class="wa-contacts__muted">${esc(__("None"))}</span>`;
+				},
+			},
+			{
+				fieldname: "link_doctype",
+				label: __("Type"),
+				format: (v, doc) =>
+					(doc.links || []).length
+						? `<span class="wa-contacts__type">${esc(__(doc.links[0].link_doctype))}</span>`
+						: `<span class="wa-contacts__muted">&mdash;</span>`,
+			},
+			{
+				fieldname: "link_status",
+				label: __("Link status"),
+				// `type` only places the cell (its own badge is drawn by `format`): on a phone card
+				// the status sits beside the title instead of starting a line of its own
+				type: "status",
+				format: (v, doc) =>
+					(doc.links || []).length
+						? badge({ label: __("Linked"), colour: "green" })
+						: badge({ label: __("Not linked"), colour: "orange" }),
+			},
+			{
+				fieldname: "accounts_count",
+				label: __("Account count"),
+				align: "end",
+				hidden_xs: true,
+				format: (v, doc) =>
+					`<span class="sanad-tabular">${sanad.ui.format_int((doc.links || []).length)}</span>`,
+			},
+			{
+				fieldname: "accounts",
+				label: __("Linked accounts"),
+				hidden_xs: true,
+				format: (v, doc) => {
+					const names = (doc.links || []).map((l) => l.link_title || l.link_name);
+					return names.length
+						? `<span class="wa-contacts__accounts" title="${esc(names.join(" · "))}">${esc(
+								names.join(" · ")
+						  )}</span>`
+						: `<span class="wa-contacts__muted">&mdash;</span>`;
+				},
+			},
+			{
+				fieldname: "status",
+				label: __("Status"),
+				sortable: true,
+				format: (v, doc) =>
+					cint(doc.blacklisted)
+						? badge({ label: __("Blocked"), colour: "red" })
+						: badge({ label: __(doc.status || "Passive"), colour: doc.status === "Open" ? "blue" : "gray" }),
+			},
+			{
+				fieldname: "conversation",
+				label: __("Conversation"),
+				format: (v, doc) => {
+					if (cint(doc.inbound_count)) return badge({ label: __("Inbound recorded"), colour: "green" });
+					if (cint(doc.conversation_confirmed))
+						return badge({ label: __("Confirmed by hand"), colour: "blue" });
+					return badge({ label: __("No conversation"), colour: "gray" });
+				},
+			},
+			{
+				fieldname: "last_seen",
+				label: __("Last message"),
+				type: "date",
+				hidden_xs: true,
+			},
+			{
+				fieldname: "since",
+				label: __("Since"),
+				hidden_xs: true,
+				format: (v, doc) =>
+					doc.last_seen
+						? `<span class="wa-contacts__muted">${frappe.datetime.comment_when(doc.last_seen, true)}</span>`
+						: `<span class="wa-contacts__muted">&mdash;</span>`,
+			},
+		];
 	}
 
 	/** A row's primary number: the primary mobile if there is one, else the first phone. */
 	static phone_of(row) {
-		const phones = row.phone_nos || [];
+		const phones = (row && row.phone_nos) || [];
 		const primary = phones.find((p) => cint(p.is_primary_mobile_no)) || phones[0];
 		if (!primary) return null;
 		return primary.wa_phone_e164 || primary.phone || null;
 	}
 
-	cell_values(row) {
-		const esc = frappe.utils.escape_html;
-		const links = row.links || [];
-		const phone = ContactsPage.phone_of(row);
-		const name = row.full_name || __("No name");
-		const linked = links.length > 0;
-		const badge = sanad.ui.StatusBadge.html;
-		return {
-			contact: `<span class="wa-contacts__identity">
-					<span class="wa-contacts__avatar ${linked ? "wa-contacts__avatar--linked" : ""}" aria-hidden="true">${esc(
-				sanad.ui.initials(name)
-			)}</span>
-					<span class="wa-contacts__names" title="${esc(
-				row.company_name ? __("{0} ({1})", [name, row.company_name]) : name
-			)}">
-						<span class="wa-contacts__name">${esc(name)}</span>
-						${row.company_name ? `<span class="wa-contacts__sub">${esc(row.company_name)}</span>` : ""}
-					</span>
-				</span>`,
-			phone: phone
-				? `<span class="sanad-table__ltr wa-contacts__phone">${esc(phone)}</span>`
-				: `<span class="wa-contacts__muted">${esc(__("None"))}</span>`,
-			type: links.length
-				? `<span class="wa-contacts__type">${esc(__(links[0].link_doctype))}</span>`
-				: `<span class="wa-contacts__muted">&mdash;</span>`,
-			link_status: linked
-				? badge({ label: __("Linked"), colour: "green" })
-				: badge({ label: __("Not linked"), colour: "orange" }),
-			accounts_count: `<span class="sanad-tabular">${sanad.ui.format_int(links.length)}</span>`,
-			accounts: links.length
-				? `<span class="wa-contacts__accounts" title="${esc(
-						links.map((l) => l.link_title || l.link_name).join(" · ")
-				  )}">${esc(links.map((l) => l.link_title || l.link_name).join(" · "))}</span>`
-				: `<span class="wa-contacts__muted">&mdash;</span>`,
-			status: cint(row.blacklisted)
-				? badge({ label: __("Blocked"), colour: "red" })
-				: badge({ label: __(row.status || "Passive"), colour: row.status === "Open" ? "blue" : "gray" }),
-			conversation: this.conversation_badge(row),
-			last: row.last_seen
-				? `<span class="wa-contacts__nowrap" title="${esc(
-						frappe.datetime.str_to_user(row.last_seen)
-				  )}">${frappe.datetime.comment_when(row.last_seen, true)}</span>`
-				: `<span class="wa-contacts__muted">&mdash;</span>`,
+	// ---- data -----------------------------------------------------------------------------
+
+	/**
+	 * Only the filters that are set. Frappe's request layer form-encodes its arguments, so a `null` reaches
+	 * the server as an empty string — which `has_whatsapp is not None` accepts and then reads as
+	 * `False`. Sending "unset" as a value silently filtered the screen down to the contacts with
+	 * no WhatsApp number as soon as any other filter was touched.
+	 */
+	args() {
+		const args = { page: this.current_page, page_length: PAGE_LENGTH, order_by: this.order_by };
+		const chosen = {
+			search: this.search,
+			link_doctype: this.filters.link_doctype,
+			linked: this.filters.linked,
+			status: this.filters.status,
+			has_whatsapp: this.filters.has_whatsapp,
+			blacklisted: this.filters.blacklisted,
 		};
+		Object.entries(chosen).forEach(([key, value]) => {
+			if (value !== null && value !== undefined && value !== "") args[key] = value;
+		});
+		return args;
 	}
 
-	conversation_badge(row) {
-		const badge = sanad.ui.StatusBadge.html;
-		if (cint(row.inbound_count)) return badge({ label: __("Inbound recorded"), colour: "green" });
-		if (cint(row.conversation_confirmed)) return badge({ label: __("Confirmed by hand"), colour: "blue" });
-		return badge({ label: __("No conversation"), colour: "gray" });
-	}
-
-	row_html(row) {
-		const esc = frappe.utils.escape_html;
-		const values = this.cell_values(row);
-		const cells = this.columns()
-			.map((c) => {
-				const cls = ContactsPage.cell_class(c);
-				return `<td role="cell" class="${cls}" data-label="${esc(c.label)}">${values[c.key]}</td>`;
+	load() {
+		this.table.set_loading(true);
+		return sanad.ui
+			.call("contacts.list_contacts", this.args())
+			.then((r) => {
+				this.rows = (r && r.rows) || [];
+				this.table.set_rows(this.rows, cint(r && r.total));
+				this.render_selection();
 			})
-			.join("");
-		const open = this.expanded.has(row.name);
-		return `<tr role="row" class="wa-contacts__row" data-name="${esc(row.name)}">
-			<td role="cell" class="wa-contacts__col-check">
-				<input type="checkbox" class="wa-contacts__check" data-name="${esc(row.name)}"
-					aria-label="${esc(__("Select {0}", [row.full_name || row.name]))}">
-			</td>
-			<td role="cell" class="wa-contacts__col-expand">
-				<button type="button" class="wa-contacts__expand" data-name="${esc(row.name)}"
-					aria-expanded="${open ? "true" : "false"}"
-					aria-controls="${esc(ContactsPage.detail_id(row.name))}"
-					aria-label="${esc(__("Show details of {0}", [row.full_name || row.name]))}">
-					${sanad.ui.icon("es-line-down", "xs")}
-				</button>
-			</td>
-			${cells}
-			<td role="cell" class="wa-contacts__col-actions">
-				<button type="button" class="btn btn-xs btn-default wa-contacts__more" data-name="${esc(row.name)}"
-					aria-haspopup="menu" aria-expanded="false"
-					aria-label="${esc(__("Actions for {0}", [row.full_name || row.name]))}">
-					${sanad.ui.icon("es-line-overflow", "xs")}
-				</button>
-			</td>
-		</tr>`;
+			.catch((err) => {
+				this.table.set_loading(false);
+				this.table.set_rows([], 0);
+				new sanad.ui.EmptyState({
+					wrapper: this.$el.find(".sanad-datalist__empty, .wa-contacts__list").first(),
+					state: "error",
+					title: err.message,
+					action: { label: __("Retry"), onclick: () => this.load() },
+				});
+			});
 	}
 
-	render_footer() {
-		const pages = Math.max(1, Math.ceil(this.total / PAGE_LENGTH));
-		const count = sanad.ui.plural(this.total, {
-			one: __("{0} contact"),
-			other: __("{0} contacts"),
-		});
-		this.$footer.html(`
-			<span class="wa-contacts__count" role="status">${frappe.utils.escape_html(count)}</span>
-			<div class="wa-contacts__pager">
-				<button type="button" class="btn btn-xs btn-default" data-page="prev" ${
-					this.current_page <= 1 ? "disabled" : ""
-				}>${frappe.utils.escape_html(__("Previous"))}</button>
-				<span class="sanad-tabular">${frappe.utils.escape_html(
-					__("Page {0} of {1}", [this.current_page, pages])
-				)}</span>
-				<button type="button" class="btn btn-xs btn-default" data-page="next" ${
-					this.current_page >= pages ? "disabled" : ""
-				}>${frappe.utils.escape_html(__("Next"))}</button>
-			</div>`);
-		this.$footer.find("[data-page]").on("click", (e) => {
-			const pages_now = Math.max(1, Math.ceil(this.total / PAGE_LENGTH));
-			this.current_page =
-				$(e.currentTarget).data("page") === "next"
-					? Math.min(pages_now, this.current_page + 1)
-					: Math.max(1, this.current_page - 1);
-			this.load().then(() =>
-				sanad.ui.announce(__("Page {0} of {1}", [this.current_page, pages_now]))
-			);
-		});
+	reload() {
+		this._stats = null;
+		this.header && this.header.refresh(true);
+		return this.load();
 	}
 
-	bind_table() {
-		this.$el.on("click", ".wa-contacts__sort", (e) => {
-			const field = $(e.currentTarget).data("sort");
-			const [current, dir] = this.order_by.split(" ");
-			this.order_by = current === field && dir === "desc" ? `${field} asc` : `${field} desc`;
-			this.current_page = 1;
-			this.load();
-		});
-		this.$el.on("click", ".wa-contacts__expand", (e) => {
-			const name = $(e.currentTarget).data("name");
-			this.expanded.has(name) ? this.collapse(name) : this.expand(name);
-		});
-		this.$el.on("change", ".wa-contacts__check", (e) => {
-			const name = $(e.currentTarget).data("name");
-			e.currentTarget.checked ? this.selected.add(name) : this.selected.delete(name);
-			this.sync_selection();
-		});
-		this.$el.on("change", ".wa-contacts__check-all", (e) => {
-			const on = e.currentTarget.checked;
-			this.rows.forEach((r) => (on ? this.selected.add(r.name) : this.selected.delete(r.name)));
-			this.sync_selection();
-		});
-		this.$el.on("click", ".wa-contacts__more", (e) => this.open_menu($(e.currentTarget)));
-	}
+	// ---- the selection chip and its verbs, at the inline-end of the toolbar --------------------
 
-	// ---- selection and bulk actions ---------------------------------------------------------
-
-	sync_selection() {
-		this.$el.find(".wa-contacts__check").each((_i, el) => {
-			el.checked = this.selected.has($(el).data("name"));
-			$(el).closest("tr").attr("aria-selected", el.checked ? "true" : "false");
-		});
-		const on_page = this.rows.filter((r) => this.selected.has(r.name)).length;
-		const $all = this.$el.find(".wa-contacts__check-all")[0];
-		if ($all) {
-			$all.checked = on_page > 0 && on_page === this.rows.length;
-			$all.indeterminate = on_page > 0 && on_page < this.rows.length;
-		}
-		this.render_bulk();
-	}
-
-	render_bulk() {
-		const n = this.selected.size;
-		if (!n || !CAN_WRITE()) return this.$bulk.prop("hidden", true).empty();
-		this.$bulk.prop("hidden", false).html(`
-			<span class="wa-contacts__bulk-count" role="status">${frappe.utils.escape_html(
-				sanad.ui.plural(n, { one: __("{0} contact selected"), other: __("{0} contacts selected") })
-			)}</span>
-			<button type="button" class="btn btn-xs btn-primary" data-bulk="link">${frappe.utils.escape_html(
-				__("Link {0} to an account", [sanad.ui.format_int(n)])
-			)}</button>
-			<button type="button" class="btn btn-xs btn-default" data-bulk="clear">${frappe.utils.escape_html(
-				__("Clear selection")
+	render_selection() {
+		const rows = this.table.get_selected();
+		if (!rows.length || !CAN_WRITE()) return this.$selection.prop("hidden", true).empty();
+		const esc = frappe.utils.escape_html;
+		// one sentence, not a number glued to a word: the count is placed inside the translated
+		// string so Arabic can put it where Arabic puts it
+		const count = `<span class="sanad-tabular">${esc(sanad.ui.format_int(rows.length))}</span>`;
+		this.$selection.prop("hidden", false).html(`
+			<span class="wa-contacts__selected" role="status">
+				<span>${__("{0} selected", [count])}</span>
+				<button type="button" class="wa-contacts__selected-clear" aria-label="${esc(
+					__("Clear selection")
+				)}">&times;</button>
+			</span>
+			<button type="button" class="btn btn-sm sanad-accent-soft wa-contacts__bulk">${esc(
+				__("Link to an account")
 			)}</button>`);
-		this.$bulk.find('[data-bulk="clear"]').on("click", () => {
-			this.selected.clear();
-			this.sync_selection();
-		});
-		this.$bulk.find('[data-bulk="link"]').on("click", () => this.link_selected());
+		// `clear_selection` unchecks the boxes and calls `on_select`, which redraws this chip
+		this.$selection.find(".wa-contacts__selected-clear").on("click", () => this.table.clear_selection());
+		this.$selection.find(".wa-contacts__bulk").on("click", () => this.link_selected(rows));
 	}
 
-	link_selected() {
-		const names = Array.from(this.selected).slice(0, BULK_CAP);
-		if (this.selected.size > BULK_CAP) {
+	link_selected(selected) {
+		const names = selected.map((d) => d.name).slice(0, BULK_CAP);
+		if (selected.length > BULK_CAP) {
 			sanad.ui.Toast.warning(__("Only the first {0} contacts are linked in one go.", [BULK_CAP]));
 		}
 		this.ask_party(__("Link {0} contacts to an account", [names.length])).then(
@@ -543,17 +510,11 @@ class ContactsPage {
 						sanad.ui.Toast.success(
 							__("Linked {0} of {1} contacts to {2}", [done, names.length, link_name])
 						);
-						if (skipped) {
-							sanad.ui.Toast.warning(
-								__("{0} were already linked to that account.", [skipped])
-							);
-						}
+						if (skipped) sanad.ui.Toast.warning(__("{0} were already linked to that account.", [skipped]));
 						if (failed) {
-							sanad.ui.Toast.error(
-								__("{0} could not be linked. Open one of them to see why.", [failed])
-							);
+							sanad.ui.Toast.error(__("{0} could not be linked. Open one of them to see why.", [failed]));
 						}
-						this.selected.clear();
+						this.table.clear_selection();
 						this.reload();
 					})
 					.catch((err) => sanad.ui.Toast.error(err))
@@ -616,40 +577,23 @@ class ContactsPage {
 		});
 	}
 
-	// ---- the expandable detail row ------------------------------------------------------------
-
-	collapse(name) {
-		this.expanded.delete(name);
-		this.$el.find(`.wa-contacts__detail[data-for="${name}"]`).remove();
-		this.$el.find(`.wa-contacts__expand[data-name="${name}"]`).attr("aria-expanded", "false");
-	}
-
-	expand(name, silent) {
-		const row = this.rows.find((r) => r.name === name);
-		if (!row) return;
-		this.expanded.add(name);
-		this.$el.find(`.wa-contacts__expand[data-name="${name}"]`).attr("aria-expanded", "true");
-		const $tr = this.$el.find(`.wa-contacts__row[data-name="${name}"]`);
-		this.$el.find(`.wa-contacts__detail[data-for="${name}"]`).remove();
-		const span = this.columns().length + 3;
-		const $detail = $(
-			`<tr role="row" class="wa-contacts__detail" id="${ContactsPage.detail_id(
-				name
-			)}" data-for="${frappe.utils.escape_html(
-				name
-			)}"><td role="cell" colspan="${span}"><div class="wa-contacts__detail-body"></div></td></tr>`
-		);
-		$tr.after($detail);
-		this.render_detail($detail.find(".wa-contacts__detail-body"), row);
-		if (!silent) sanad.ui.announce(__("{0} details opened.", [row.full_name || name]));
-	}
+	// ---- the detail panel the row opens in place ------------------------------------------------
 
 	render_detail($el, row) {
 		const esc = frappe.utils.escape_html;
 		const links = row.links || [];
 		const phone = ContactsPage.phone_of(row);
 		const alert = this.detail_alert(row);
-		$el.empty();
+		$el.empty().addClass("wa-contacts__detail-body");
+		$el.append(`<header class="wa-contacts__detail-head">
+			<span class="wa-contacts__detail-title">${esc(row.full_name || __("No name"))}</span>
+			${phone ? `<span class="wa-contacts__detail-sub sanad-tabular" dir="ltr">${esc(phone)}</span>` : ""}
+			${
+				links.length
+					? sanad.ui.StatusBadge.html({ label: __("Linked"), colour: "green" })
+					: sanad.ui.StatusBadge.html({ label: __("Not linked"), colour: "orange" })
+			}
+		</header>`);
 		if (alert) {
 			$el.append(`<div class="wa-contacts__alert sanad-tone--${alert.tone}" role="${
 				alert.tone === "red" ? "alert" : "status"
@@ -668,18 +612,23 @@ class ContactsPage {
 			<div><dt>${esc(__("Messages received"))}</dt><dd class="sanad-tabular">${sanad.ui.format_int(
 			row.inbound_count
 		)}</dd></div>
+			<div><dt>${esc(__("Status"))}</dt><dd>${
+			cint(row.blacklisted)
+				? sanad.ui.StatusBadge.html({ label: __("Blocked"), colour: "red" })
+				: sanad.ui.StatusBadge.html({ label: __(row.status || "Passive"), colour: "gray" })
+		}</dd></div>
 			<div><dt>${esc(__("Email"))}</dt><dd>${
-			row.email_id ? `<span class="sanad-table__ltr">${esc(row.email_id)}</span>` : "&mdash;"
+			row.email_id ? `<span dir="ltr">${esc(row.email_id)}</span>` : "&mdash;"
 		}</dd></div>
 		</dl>`);
 
 		const $blocks = $('<div class="wa-contacts__blocks"></div>').appendTo($el);
 		const $accounts = $(
-			`<section class="wa-contacts__block"><h4>${esc(__("Linked accounts"))}</h4><div></div></section>`
+			`<section class="wa-contacts__block"><h3>${esc(__("Linked accounts"))}</h3><div></div></section>`
 		).appendTo($blocks);
 		if (links.length) {
 			$accounts.find("div").html(
-				`<ul class="wa-contacts__list">${links
+				`<ul class="wa-contacts__list-rows">${links
 					.map(
 						(l) =>
 							`<li><span>${esc(l.link_title || l.link_name)}</span><span class="wa-contacts__tag">${esc(
@@ -700,18 +649,21 @@ class ContactsPage {
 		}
 
 		const $messages = $(
-			`<section class="wa-contacts__block"><h4>${esc(__("Recent messages"))}</h4><div></div></section>`
+			`<section class="wa-contacts__block"><h3>${esc(__("Recent messages"))}</h3><div></div></section>`
 		).appendTo($blocks);
 		this.render_messages($messages.find("div"), phone);
 
 		const $actions = $('<div class="wa-contacts__row-actions"></div>').appendTo($el);
 		this.actions_for(row).forEach((a) => {
 			$(
-				`<button type="button" class="btn btn-xs ${a.primary ? "btn-primary" : "btn-default"}">${
-					a.icon ? sanad.ui.icon(a.icon, "xs") + " " : ""
-				}${esc(a.label)}</button>`
+				`<button type="button" class="btn btn-sm ${
+					a.primary ? "btn-primary" : a.danger ? "btn-danger" : "btn-default"
+				}">${a.icon ? sanad.ui.icon(a.icon, "xs") + " " : ""}${esc(a.label)}</button>`
 			)
-				.on("click", () => a.handler(row))
+				.on("click", (e) => {
+					e.stopPropagation();
+					a.handler(row);
+				})
 				.appendTo($actions);
 		});
 	}
@@ -771,7 +723,7 @@ class ContactsPage {
 				}
 				state.hide();
 				$el.html(
-					`<ul class="wa-contacts__list wa-contacts__list--messages">${rows
+					`<ul class="wa-contacts__list-rows wa-contacts__list-rows--messages">${rows
 						.slice(0, 5)
 						.map(
 							(m) =>
@@ -784,7 +736,9 @@ class ContactsPage {
 						.join("")}</ul>`
 				);
 			})
-			.catch((err) => state.error(err, { action: { label: __("Retry"), onclick: () => this.render_messages($el, phone) } }));
+			.catch((err) =>
+				state.error(err, { action: { label: __("Retry"), onclick: () => this.render_messages($el, phone) } })
+			);
 	}
 
 	// ---- row actions --------------------------------------------------------------------------
@@ -847,63 +801,6 @@ class ContactsPage {
 		return list;
 	}
 
-	open_menu($button) {
-		this.close_menu();
-		const row = this.rows.find((r) => r.name === $button.data("name"));
-		if (!row) return;
-		const actions = this.actions_for(row);
-		if (!actions.length) return;
-		const menu_id = sanad.ui.uid("wa-contacts-menu");
-		const $menu = $(`<div class="wa-contacts__menu" role="menu" id="${menu_id}"></div>`);
-		actions.forEach((a) => {
-			$(
-				`<button type="button" role="menuitem" class="wa-contacts__menu-item${
-					a.danger ? " wa-contacts__menu-item--danger" : ""
-				}">${a.icon ? sanad.ui.icon(a.icon, "xs") : ""}<span>${frappe.utils.escape_html(a.label)}</span></button>`
-			)
-				.on("click", () => {
-					this.close_menu();
-					a.handler(row);
-				})
-				.appendTo($menu);
-		});
-		$menu.appendTo($button.closest("td"));
-		$button.attr({ "aria-expanded": "true", "aria-controls": menu_id });
-		this.$menu = $menu;
-		this.menu_opener = $button;
-		this.untrap_menu = sanad.ui.trap_focus($menu);
-		$menu.find("button").first().trigger("focus");
-		$menu.on("keydown", (e) => {
-			const items = $menu.find("button").toArray();
-			if (e.key === "Escape") {
-				e.stopPropagation();
-				this.close_menu();
-				return;
-			}
-			const idx = sanad.ui.roving_index(e, items, items.indexOf(document.activeElement));
-			if (idx < 0) return;
-			e.preventDefault();
-			items[idx].focus();
-		});
-		this.outside = (e) => {
-			if (!$(e.target).closest(".wa-contacts__menu, .wa-contacts__more").length) this.close_menu();
-		};
-		$(document).on("click.wacontactsmenu", this.outside);
-	}
-
-	close_menu() {
-		if (!this.$menu) return;
-		this.untrap_menu && this.untrap_menu();
-		this.$menu.remove();
-		this.$menu = null;
-		$(document).off("click.wacontactsmenu");
-		if (this.menu_opener) {
-			this.menu_opener.attr("aria-expanded", "false").removeAttr("aria-controls");
-			if (document.contains(this.menu_opener[0])) this.menu_opener.trigger("focus");
-			this.menu_opener = null;
-		}
-	}
-
 	link_one(row) {
 		this.ask_party(__("Link {0} to an account", [row.full_name || row.name])).then(
 			({ link_doctype, link_name }) =>
@@ -926,10 +823,7 @@ class ContactsPage {
 				: __("Use this when the conversation happened before this system was connected."),
 			impact: [
 				{ label: __("Number"), value: phone },
-				{
-					label: __("Current state"),
-					value: confirmed ? __("Confirmed by hand") : __("No conversation"),
-				},
+				{ label: __("Current state"), value: confirmed ? __("Confirmed by hand") : __("No conversation") },
 			],
 			reason_field: {
 				label: __("Note"),
@@ -984,11 +878,7 @@ class ContactsPage {
 
 	open_form(row) {
 		if (this.form) this.form.destroy();
-		this.form = new ContactForm({
-			row,
-			page: this,
-			on_saved: () => this.reload(),
-		});
+		this.form = new ContactForm({ row, page: this, on_saved: () => this.reload() });
 		this.form.show();
 	}
 
@@ -1000,10 +890,7 @@ class ContactsPage {
 		const unsubscribe = () => frappe.realtime.off("wa:inbound:received", this.on_inbound);
 		subscribe();
 		$(this.wrapper).on("show", subscribe);
-		$(this.wrapper).on("hide", () => {
-			unsubscribe();
-			this.close_menu();
-		});
+		$(this.wrapper).on("hide", unsubscribe);
 	}
 }
 
@@ -1046,7 +933,7 @@ class ContactForm {
 					<div class="wa-contact-form__summary" role="alert" tabindex="-1" hidden></div>
 					<div class="wa-contact-form__fields"></div>
 					<section class="wa-contact-form__block">
-						<h4>${esc(__("Linked accounts"))}</h4>
+						<h3>${esc(__("Linked accounts"))}</h3>
 						<p class="wa-contact-form__hint">${esc(
 							__("One number can serve more than one account. Add the account and its type.")
 						)}</p>
@@ -1093,6 +980,9 @@ class ContactForm {
 			const control = frappe.ui.form.make_control({ df, parent: $fields, render_input: true });
 			control.set_value(row[df.fieldname] == null ? "" : row[df.fieldname]);
 			control.refresh();
+			// Desk draws the label as a plain <label> with no `for`, so the input has no
+			// accessible name of its own; it is given one here
+			if (control.$input) control.$input.attr("aria-label", df.label);
 			this.controls[df.fieldname] = control;
 		});
 		const $phone = $('<div class="wa-contact-form__phone"></div>').appendTo($fields);
@@ -1108,9 +998,7 @@ class ContactForm {
 		const esc = frappe.utils.escape_html;
 		const $el = this.$root.find(".wa-contact-form__links");
 		if (!this.links.length) {
-			$el.html(
-				`<p class="wa-contact-form__empty">${esc(__("No account is linked to this number"))}</p>`
-			);
+			$el.html(`<p class="wa-contact-form__empty">${esc(__("No account is linked to this number"))}</p>`);
 			return;
 		}
 		$el.html(
@@ -1182,15 +1070,15 @@ class ContactForm {
 	save() {
 		const values = this.values();
 		const missing = [];
-		if (!values.first_name) missing.push({ field: "first_name", label: __("First name") });
-		if (!values.phone_nos.length) missing.push({ field: "phone", label: __("WhatsApp number") });
+		if (!values.first_name) missing.push(__("First name"));
+		if (!values.phone_nos.length) missing.push(__("WhatsApp number"));
 		const $summary = this.$root.find(".wa-contact-form__summary");
 		if (missing.length) {
 			$summary
 				.prop("hidden", false)
 				.html(
 					`${frappe.utils.escape_html(__("Fill in the required fields:"))} ${missing
-						.map((m) => frappe.utils.escape_html(m.label))
+						.map((m) => frappe.utils.escape_html(m))
 						.join(", ")}`
 				)
 				.trigger("focus");

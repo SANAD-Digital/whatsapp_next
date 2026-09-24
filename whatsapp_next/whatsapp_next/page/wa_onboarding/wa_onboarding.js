@@ -16,6 +16,9 @@ frappe.provide("whatsapp_next.onboarding");
 
 	const can_setup = () => frappe.user.has_role(SETUP_ROLES);
 
+	// which pane of the wizard finishes each step the backend reports
+	const STEP_INDEX = { credentials: 1, connection: 1, device: 2, webhook: 3 };
+
 	const STEP_LABEL = {
 		credentials: () => __("Credentials"),
 		connection: () => __("Connection"),
@@ -42,6 +45,11 @@ frappe.provide("whatsapp_next.onboarding");
 			render_input: true,
 		});
 		if (value != null) control.set_value(value);
+		// A required field that has never been typed in is not an error yet: Desk suppresses the
+		// same red frame inside a dialog until its primary action is pressed (`base_input.js`,
+		// `set_mandatory`). The asterisk still says the field is required, and the frame comes
+		// back the moment a value is entered and then cleared.
+		control.$wrapper.removeClass("has-error");
 		return control;
 	}
 
@@ -93,11 +101,20 @@ frappe.provide("whatsapp_next.onboarding");
 			this.$screen = $('<div class="wa-onboarding"></div>').appendTo(page.main);
 			this.header = new ui.PageHeader({
 				wrapper: this.$screen,
+				title: __("WhatsApp setup"),
 				description: __("Connect this site to the WhatsApp platform: an account, a paired device and a webhook. It takes a few minutes."),
 			});
+			this.mark_header();
 			this.$panel = $('<div class="wa-onb__panel"></div>').appendTo(this.$screen);
 			this.load();
 			$(wrapper).on("hide", () => this.unbind());
+		}
+
+		/** The prototype's wizard head: the screen's icon on a tinted plate beside its title. */
+		mark_header() {
+			$(`<span class="wa-onboarding__mark" aria-hidden="true">${ui.icon("es-line-settings", "md")}</span>`).prependTo(
+				this.header.$el.find(".sanad-pagehead__row")
+			);
 		}
 
 		// ---- status -----------------------------------------------------------------------------
@@ -157,11 +174,11 @@ frappe.provide("whatsapp_next.onboarding");
 				.appendTo($actions);
 		}
 
-		render_checklist($el) {
+		render_checklist($el, { open_step = false } = {}) {
 			$el.empty();
 			(this.status.steps || []).forEach((step) => {
 				const label = (STEP_LABEL[step.key] || (() => step.key))();
-				$el.append(`
+				const $row = $(`
 					<div class="wa-onb__check${step.done ? " wa-onb__check--done" : ""}">
 						<span class="wa-onb__check-icon sanad-tone--${step.done ? "green" : "gray"}" aria-hidden="true">${ui.icon(step.done ? "es-line-check" : "es-line-dot", "sm")}</span>
 						<span class="wa-onb__check-text">
@@ -169,7 +186,14 @@ frappe.provide("whatsapp_next.onboarding");
 							<span>${ui.escape(step.detail || (step.done ? __("Done") : __("Not done yet")))}</span>
 						</span>
 						<span class="wa-onb__check-state sanad-tone--${step.done ? "green" : "gray"}">${ui.escape(step.done ? __("Done") : __("To do"))}</span>
-					</div>`);
+					</div>`).appendTo($el);
+				// the prototype's review opens any group again from the summary; here only the step
+				// that is still missing needs the way back
+				if (open_step && !step.done && STEP_INDEX[step.key] != null) {
+					$(`<button type="button" class="btn btn-default btn-sm wa-onb__check-open" aria-label="${ui.escape(__("Open the {0} step", [label]))}">${ui.escape(__("Open"))}</button>`)
+						.on("click", () => this.stepper.go(STEP_INDEX[step.key]))
+						.appendTo($row);
+				}
 			});
 		}
 
@@ -187,6 +211,14 @@ frappe.provide("whatsapp_next.onboarding");
 				this.step_webhook(),
 				this.step_review(),
 			];
+			steps.forEach((step) => {
+				const on_show = step.on_show;
+				// the rail's completion bar follows the step the wizard is on
+				step.on_show = (...args) => {
+					this.sync_rail();
+					return on_show && on_show(...args);
+				};
+			});
 			this.stepper = new ui.Stepper({
 				wrapper: $mount,
 				ctx: this.ctx,
@@ -197,6 +229,33 @@ frappe.provide("whatsapp_next.onboarding");
 				finish_label: __("Finish setup"),
 				on_finish: () => this.finish(),
 			});
+			this.make_rail();
+		}
+
+		/**
+		 * The prototype's rail foot: the word, the fraction and the bar that fills with the flow
+		 * (`docs/component/Wizard.dc.html`, "ريل جانبي"). The Stepper owns the list; this is the
+		 * completion line under it.
+		 */
+		make_rail() {
+			const $header = this.stepper.$el.find(".sanad-stepper__header");
+			this.$rail = $(`
+				<div class="wa-onb__rail-foot">
+					<div class="wa-onb__rail-line">
+						<span class="wa-onb__rail-label">${ui.escape(__("Completion"))}</span>
+						<span class="wa-onb__rail-count sanad-tabular" data-slot="count"></span>
+					</div>
+					<div class="wa-onb__rail-track"><span class="wa-onb__rail-bar" data-slot="bar"></span></div>
+				</div>`).appendTo($header);
+			this.sync_rail();
+		}
+
+		sync_rail() {
+			if (!this.$rail || !this.stepper) return;
+			const total = this.stepper.steps.length;
+			const at = Math.max(1, this.stepper.index + 1);
+			this.$rail.find('[data-slot="count"]').text(`${at} / ${total}`);
+			this.$rail.find('[data-slot="bar"]').css("inline-size", `${Math.round((at / total) * 100)}%`);
 		}
 
 		/** Open on the first step the backend still reports as not done. */
@@ -238,11 +297,11 @@ frappe.provide("whatsapp_next.onboarding");
 				label: __("Account"),
 				render: ($body, ctx, stepper) => {
 					$body.html(step_head("es-line-agent", __("How do you reach the platform?"), __("This decides where the credentials come from. You can change them later in Settings.")));
-					const $choices = $('<div class="wa-onb__choices" role="radiogroup" aria-label="' + ui.escape(__("Ways to reach the platform")) + '"></div>').appendTo($body);
 					if (this.step_done("credentials")) {
 						note($body, "green", __("Credentials are already saved on this site. Choose “I already have an account” to change or re-test them."), "es-line-check");
 						ctx.path = ctx.path || "signin";
 					}
+					const $choices = $('<div class="wa-onb__choices" role="radiogroup" aria-label="' + ui.escape(__("Ways to reach the platform")) + '"></div>').appendTo($body);
 					choices.forEach((choice) => {
 						$(`
 							<button type="button" class="wa-onb__choice" role="radio" aria-checked="${ctx.path === choice.value}" data-value="${choice.value}">
@@ -250,8 +309,8 @@ frappe.provide("whatsapp_next.onboarding");
 								<span class="wa-onb__choice-text">
 									<b>${ui.escape(choice.title)}</b>
 									<span>${ui.escape(choice.sub)}</span>
+									${choice.meta ? `<span class="wa-onb__choice-meta sanad-tabular">${ui.escape(choice.meta)}</span>` : ""}
 								</span>
-								${choice.meta ? `<span class="wa-onb__choice-meta sanad-tabular">${ui.escape(choice.meta)}</span>` : ""}
 								<span class="wa-onb__choice-mark" aria-hidden="true"></span>
 							</button>`)
 							.on("click", (e) => {
@@ -564,7 +623,7 @@ frappe.provide("whatsapp_next.onboarding");
 						connected.slice(0, 3).forEach((row) => {
 							$panel.append(`
 								<div class="wa-onb__device-row">
-									<span class="wa-onb__device-name">${ui.escape(row.device_name || row.name)}</span>
+									<span class="wa-onb__device-name" dir="auto">${ui.escape(row.device_name || row.name)}</span>
 									<span class="wa-onb__device-phone sanad-tabular" dir="ltr">${ui.escape(row.phone_e164 ? ui.PhoneField.format_display(row.phone_e164) : __("No number yet"))}</span>
 									${ui.StatusBadge.html({ label: __("Connected"), colour: "green" })}
 								</div>`);
@@ -831,7 +890,7 @@ frappe.provide("whatsapp_next.onboarding");
 				.call("onboarding.get_status")
 				.then((status) => {
 					this.status = status;
-					this.render_checklist($list);
+					this.render_checklist($list, { open_step: true });
 					const missing = (status.steps || []).filter((s) => !s.done);
 					this.stepper.set_step_valid(!missing.length);
 					if (missing.length) {

@@ -20,7 +20,13 @@
 	const RAIL_LENGTH = 30;
 
 	const device_tone = (status) => (status === "Connected" ? "green" : status === "Disconnected" ? "amber" : "red");
-	const link_tone = (status) => (status === "Linked" ? "green" : status === "Not Linked" ? "amber" : "gray");
+	/**
+	 * Most numbers a site has ever messaged are not linked to an account, so "Not Linked" is the
+	 * ordinary case, not a warning: it stays gray and the rail reads as a list of names again
+	 * (design critique, 2026-09-24). Only "Linked" earns a colour, because it is the fact that
+	 * lets a command answer about an account.
+	 */
+	const link_tone = (status) => (status === "Linked" ? "green" : "gray");
 
 	/** The rail row title: a name when the number has one, the number itself otherwise. */
 	const title_of = (row) => cstr(row.display_name) || cstr(row.phone_e164) || cstr(row.name);
@@ -221,8 +227,10 @@
 			this.$main.html(`
 				<div class="wa-sim__rail">
 					<div class="wa-sim__rail-head">
-						<h2 class="wa-sim__rail-title">${esc(__("Conversations"))}</h2>
-						<p class="wa-sim__rail-sub">${esc(__("Numbers this site has exchanged messages with."))}</p>
+						<div class="wa-sim__rail-line">
+							<h2 class="wa-sim__rail-title">${esc(__("Conversations"))}</h2>
+							<span class="wa-sim__rail-count sanad-tabular" role="status" aria-atomic="true"></span>
+						</div>
 						<input type="search" class="form-control wa-sim__search" dir="auto"
 							placeholder="${esc(__("Search a name or a number…"))}"
 							aria-label="${esc(__("Search a name or a number"))}" />
@@ -244,6 +252,7 @@
 			this.$thread = this.$main.find(".wa-sim__thread");
 			this.$composer = this.$main.find(".wa-sim__composer");
 			this.$search = this.$main.find(".wa-sim__search");
+			this.$rail_count = this.$main.find(".wa-sim__rail-count");
 			this.list_state = new sanad.ui.EmptyState({ wrapper: this.$list, state: "loading", rows: 5 });
 			this.thread_state = new sanad.ui.EmptyState({ wrapper: this.$thread, state: "loading", rows: 4 });
 			this.$search.on(
@@ -317,6 +326,12 @@
 		render_rail(total) {
 			const typed = this.typed_number();
 			const rows = typed ? [typed].concat(this.rows) : this.rows;
+			if (total != null) this.rail_total = cint(total);
+			this.$rail_count.text(
+				this.rail_total == null
+					? ""
+					: sanad.ui.plural(this.rail_total, { one: __("{0} number"), other: __("{0} numbers") })
+			);
 			if (!rows.length) {
 				this.$list.empty();
 				new sanad.ui.EmptyState({
@@ -410,9 +425,13 @@
 			this.$head.html(`
 				<button type="button" class="wa-sim__back btn btn-default btn-xs">${esc(__("Back to the list"))}</button>
 				<div class="wa-sim__identity">
-					<span class="wa-sim__avatar wa-sim__avatar--lg" aria-hidden="true">${esc(
-						c ? (c.display_name ? sanad.ui.initials(title_of(c)) : "#") : "?"
-					)}</span>
+					${
+						c
+							? `<span class="wa-sim__avatar wa-sim__avatar--lg" aria-hidden="true">${esc(
+									c.display_name ? sanad.ui.initials(title_of(c)) : "#"
+							  )}</span>`
+							: ""
+					}
 					<span class="wa-sim__identity-text">
 						<span class="wa-sim__identity-name">${esc(c ? title_of(c) : __("WhatsApp simulator"))}</span>
 						<span class="wa-sim__identity-sub"${c ? ' dir="ltr"' : ""}>${esc(
@@ -563,24 +582,39 @@
 
 		// ---- the composer ----------------------------------------------------------------------
 
+		/**
+		 * The prototype's composer is one line, not a form: the text field, the clear inside it,
+		 * and the verbs at its inline-end (`docs/component/Chat Thread.dc.html`). The attachment
+		 * button the prototype also draws is Gap G-04 — `simulator.send_test` takes a body only —
+		 * so it is not drawn at all rather than drawn dead.
+		 *
+		 * The field carries no `dir="auto"`: an empty one resolves to LTR, which in Arabic would
+		 * lay the placeholder under the clear button. It follows the page instead, and the bidi
+		 * algorithm still sets a mixed line correctly.
+		 */
 		render_composer() {
 			const enabled = !!this.contact;
 			this.$composer.html(`
-				<label class="sanad-visually-hidden" for="wa-sim-body">${esc(__("Message"))}</label>
-				<textarea id="wa-sim-body" class="form-control wa-sim__input" rows="2" dir="auto"
-					placeholder="${esc(
-						enabled ? __("Write the message…") : __("Pick a contact from the list first…")
-					)}"></textarea>
-				<div class="wa-sim__actions">
-					${
-						enabled
-							? `<button type="button" class="btn btn-default btn-sm wa-sim__behalf">${esc(
-									__("Message on behalf")
-							  )}</button>`
-							: ""
-					}
-					<button type="button" class="btn btn-default btn-sm wa-sim__clear">${esc(__("Clear text"))}</button>
-					<button type="button" class="btn btn-primary btn-sm wa-sim__send">${esc(__("Send test"))}</button>
+				<div class="wa-sim__composer-row">
+					<div class="wa-sim__field">
+						<label class="sanad-visually-hidden" for="wa-sim-body">${esc(__("Message"))}</label>
+						<textarea id="wa-sim-body" class="form-control wa-sim__input" rows="1"
+							placeholder="${esc(
+								enabled ? __("Write the message…") : __("Pick a contact from the list first…")
+							)}"></textarea>
+						<button type="button" class="wa-sim__clear" aria-label="${esc(__("Clear text"))}"
+							title="${esc(__("Clear text"))}">&times;</button>
+					</div>
+					<div class="wa-sim__actions">
+						${
+							enabled
+								? `<button type="button" class="btn btn-default btn-sm wa-sim__behalf">${esc(
+										__("Message on behalf")
+								  )}</button>`
+								: ""
+						}
+						<button type="button" class="btn btn-primary btn-sm wa-sim__send">${esc(__("Send test"))}</button>
+					</div>
 				</div>`);
 			this.$input = this.$composer.find(".wa-sim__input");
 			this.$composer.find(".wa-sim__clear").on("click", () => {

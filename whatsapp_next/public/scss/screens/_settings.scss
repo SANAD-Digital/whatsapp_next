@@ -12,6 +12,15 @@
 	flex-direction: column;
 	gap: var(--sanad-gap-md);
 
+	// The brief's minimum target is 32 px and Desk's small button is 29 px tall. Only this
+	// screen's own buttons are raised — Desk's chrome keeps its own metrics.
+	.btn-sm {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-block-size: var(--sanad-ctl-h);
+	}
+
 	&__body {
 		display: grid;
 		gap: var(--sanad-gap-lg);
@@ -75,16 +84,13 @@
 
 	// ---- the content pane -----------------------------------------------------------------------
 
+	// The prototype stacks its cards straight on the canvas; the pane is only the column that
+	// holds them, so the section reads as blocks rather than one framed box inside another.
 	&__pane {
 		min-inline-size: 0;
-		border: var(--sanad-border);
-		border-radius: var(--sanad-card-radius);
-		background: var(--surface-white);
-		overflow: hidden;
 	}
 	&__pane-head {
-		padding: var(--sanad-gap-lg);
-		border-block-end: var(--sanad-border);
+		padding-block-end: var(--sanad-gap-sm);
 		h3 {
 			margin: 0;
 			font-size: var(--text-lg, 16px);
@@ -100,8 +106,7 @@
 	&__pane-body {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sanad-gap-lg);
-		padding: var(--sanad-gap-lg);
+		gap: var(--sanad-gap-md);
 	}
 
 	// ---- shared blocks --------------------------------------------------------------------------
@@ -137,7 +142,7 @@
 
 	&__cols {
 		display: grid;
-		gap: var(--sanad-gap-lg);
+		gap: var(--sanad-gap-md);
 		align-items: start;
 		@media (min-width: 992px) {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -154,9 +159,7 @@
 			display: flex;
 			align-items: center;
 			gap: var(--sanad-gap-sm);
-			padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-			border-block-end: var(--sanad-border);
-			background: var(--surface-gray-1);
+			padding: var(--sanad-gap-md) var(--sanad-gap-md) var(--sanad-gap-sm);
 			> span {
 				display: flex;
 				flex-direction: column;
@@ -177,7 +180,7 @@
 		}
 	}
 	&__panel-body {
-		padding: var(--sanad-gap-md);
+		padding: 0 var(--sanad-gap-md) var(--sanad-gap-md);
 	}
 
 	&__rows {
@@ -198,12 +201,18 @@
 			}
 		}
 	}
+	// a stacked row carries a long value — the receiver URL — and it is there to be read, not
+	// elided: it wraps on its own line instead of ending in an ellipsis nobody can open
 	&__row--stacked {
 		flex-direction: column;
 		align-items: stretch !important;
 		gap: 2px !important;
 		.wa-settings__row-value {
 			text-align: start;
+			overflow-wrap: anywhere;
+			overflow: visible;
+			text-overflow: clip;
+			white-space: normal;
 		}
 	}
 	&__row-label {
