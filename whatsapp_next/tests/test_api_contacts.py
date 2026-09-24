@@ -115,6 +115,29 @@ class TestApiContacts(IntegrationTestCase):
 			with self.assertRaises(WAValidationError):
 				api.toggle_blacklist(blocked=True)
 
+	def test_stats_and_link_filters(self):
+		"""The screen's own numbers, and the two filters the list answers in the query."""
+		name = self._seed()
+		with as_user("System Manager"):
+			before = api.get_stats()
+			self.assertGreaterEqual(before["total"], 1)
+			self.assertEqual(before["total"], before["linked"] + before["unlinked"])
+			# the seeded contact has a WhatsApp Number, so it counts as reachable and not as linked
+			self.assertGreaterEqual(before["with_whatsapp"], 1)
+			unlinked = api.list_contacts(linked=False, page_length=50)
+			self.assertIn(name, [r["name"] for r in unlinked["rows"]])
+			self.assertNotIn(name, [r["name"] for r in api.list_contacts(linked=True, page_length=50)["rows"]])
+
+			if self.customer:
+				api.update_contact(name=name, payload={"links": [{"link_doctype": "Customer", "link_name": self.customer}]})
+				after = api.get_stats()
+				self.assertEqual(after["linked"], before["linked"] + 1)
+				self.assertIn(name, [r["name"] for r in api.list_contacts(linked=True, page_length=50)["rows"]])
+
+			status = frappe.db.get_value("Contact", name, "status")
+			same = api.list_contacts(status=status, page_length=50)["rows"]
+			self.assertIn(name, [r["name"] for r in same])
+
 	def test_link_many(self):
 		if not self.customer:
 			self.skipTest("no Customer on this site")

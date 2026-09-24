@@ -19,7 +19,8 @@ class TestErrors(IntegrationTestCase):
 		self.assertEqual(wex.WAProviderUnavailableError.http_status_code, 503)
 		self.assertEqual(wex.WAProviderRejectedError.http_status_code, 422)
 		self.assertEqual(wex.WARateLimitError.http_status_code, 429)
-		self.assertEqual(wex.WANotSupportedError.http_status_code, 501)
+		# 422, not the honest 501: Frappe's own `request.js` throws while handling a 501 (D-097)
+		self.assertEqual(wex.WANotSupportedError.http_status_code, 422)
 		self.assertTrue(issubclass(wex.WAInvalidPhoneError, wex.WAValidationError))
 		self.assertTrue(issubclass(wex.WADeviceOfflineError, wex.WAStateConflictError))
 

@@ -251,6 +251,8 @@ def _contact_query(
 	link_name: str | None = None,
 	has_whatsapp: bool | None = None,
 	blacklisted: bool | None = None,
+	linked: bool | None = None,
+	status: str | None = None,
 ):
 	"""The filtered Contact query (condition 2: filtering happens here, not in the view)."""
 	C = frappe.qb.DocType("Contact")
@@ -302,6 +304,18 @@ def _contact_query(
 			q = q.where(ExistsCriterion(black) if blacklisted else ~ExistsCriterion(black))
 		elif blacklisted:
 			q = q.where(C.name.isnull())  # no blacklist configured → nothing matches
+	if linked is not None:
+		# "is this contact tied to an account at all" — the screen's «حالة الربط» filter, answered
+		# in the query so a Contact User never sees a row the layer would have hidden
+		D = frappe.qb.DocType("Dynamic Link")
+		any_link = (
+			frappe.qb.from_(D)
+			.select(D.name)
+			.where((D.parenttype == "Contact") & (D.parent == C.name) & (D.link_doctype.isin(list(PARTY_TYPES))))
+		)
+		q = q.where(ExistsCriterion(any_link) if linked else ~ExistsCriterion(any_link))
+	if status:
+		q = q.where(C.status == status)
 	return q, C
 
 
@@ -311,6 +325,8 @@ def list_contacts(
 	link_name: str | None = None,
 	has_whatsapp: bool | None = None,
 	blacklisted: bool | None = None,
+	linked: bool | None = None,
+	status: str | None = None,
 	page: int = 1,
 	page_length: int = 20,
 	order_by: str = "modified desc",
@@ -322,7 +338,7 @@ def list_contacts(
 	if field not in ORDERABLE_FIELDS or direction.lower() not in ("", "asc", "desc"):
 		frappe.throw(_("Cannot order by {0}").format(order_by), WAValidationError)
 	start, length = _page(page, page_length)
-	q, C = _contact_query(search, link_doctype, link_name, has_whatsapp, blacklisted)
+	q, C = _contact_query(search, link_doctype, link_name, has_whatsapp, blacklisted, linked, status)
 	total = q.select(Count("*")).run()[0][0]
 	order_col = getattr(C, field)
 	rows = (
@@ -344,6 +360,8 @@ def list_contacts(
 				"link_name": link_name,
 				"has_whatsapp": has_whatsapp,
 				"blacklisted": blacklisted,
+				"linked": linked,
+				"status": status,
 			}.items()
 			if v not in (None, "")
 		],
@@ -360,6 +378,47 @@ def get_contact(name: str) -> dict[str, Any]:
 	_attach_children([row])
 	_audit_read(count=1, contact=name)
 	return row
+
+
+def contact_stats() -> dict[str, int]:
+	"""The Contacts screen's own numbers, in one read instead of four paged ones.
+
+	`linked` counts the contacts tied to at least one account, `multi_linked` those tied to more
+	than one, and every count is taken through the same filtered query the list uses — so a Contact
+	User's numbers describe exactly the rows that user may see. One audit row, not four.
+	"""
+	require("read")
+	C = frappe.qb.DocType("Contact")
+	D = frappe.qb.DocType("Dynamic Link")
+
+	def total_of(**kwargs) -> int:
+		q, _c = _contact_query(**kwargs)
+		return int(q.select(Count("*")).run()[0][0])
+
+	links = (
+		frappe.qb.from_(D)
+		.select(D.parent, Count("*").as_("n"))
+		.where((D.parenttype == "Contact") & (D.link_doctype.isin(list(PARTY_TYPES))))
+		.groupby(D.parent)
+		.run(as_dict=True)
+	)
+	names = {row["parent"] for row in links}
+	multi = {row["parent"] for row in links if cint(row["n"]) > 1}
+	# a link row may point at a contact this user cannot see: count only the ones in the query
+	visible = {
+		row[0]
+		for row in _contact_query()[0].select(C.name).run()
+	}
+	stats = {
+		"total": total_of(),
+		"linked": len(names & visible),
+		"multi_linked": len(multi & visible),
+		"with_whatsapp": total_of(has_whatsapp=True),
+		"blacklisted": total_of(blacklisted=True),
+	}
+	stats["unlinked"] = max(0, stats["total"] - stats["linked"])
+	_audit_read(count=stats["total"], filters=["stats"])
+	return stats
 
 
 def count_contacts(txt: str | None = None) -> int:

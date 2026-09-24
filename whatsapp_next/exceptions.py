@@ -111,7 +111,13 @@ class WAFileError(WAValidationError):
 
 
 class WANotSupportedError(WANextError):
-	"""Capability absent for the active provider (501)."""
+	"""Capability absent for the active provider (422).
 
-	http_status_code = 501
+	It used to answer 501, which is the honest status — but Frappe's own `request.js` handles 501
+	by parsing the body as JSON and calling the error callback with a second argument it never
+	receives, so a 501 raises a JS exception inside Desk before the screen can show its message.
+	The envelope still carries `code: "not_supported"`, which is what clients actually branch on.
+	"""
+
+	http_status_code = 422
 	code = "not_supported"

@@ -1,133 +1,19 @@
-// Functions Center (screen 7) — the storefront table, the function modal and the install / update
-// diff. The screen reads as one instrument: a header, one toolbar, one dense table. Colours are
-// Espresso tokens only and every offset is a logical property, so Arabic needs nothing extra.
+// Functions Center (screen 7) — the screen's own blocks only. The table, its header, its cards on
+// a phone and its footer are the kit's `DataList`; what is left here is the selection row, the
+// screen's spacing and the two dialogs (the function itself and the install / update diff).
+// Espresso tokens only; logical properties throughout, so Arabic mirrors without a rule of its own.
 
 .wa-functions {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sanad-gap-lg);
+	gap: var(--sanad-gap-md);
 	padding-block-end: var(--sanad-gap-xl);
 
 	&__body {
 		min-block-size: 200px;
 	}
 
-	// ---- the table ---------------------------------------------------------------------------
-
-	&__table-wrap {
-		border: var(--sanad-border);
-		border-radius: var(--sanad-card-radius);
-		background: var(--surface-white);
-		overflow: hidden;
-	}
-
-	&__table {
-		th,
-		td {
-			padding-block: var(--sanad-gap-sm);
-			padding-inline: var(--sanad-gap-sm);
-			white-space: nowrap;
-		}
-		th {
-			padding-block: 0;
-			block-size: var(--sanad-head-h);
-		}
-		tbody tr {
-			cursor: pointer;
-			block-size: var(--sanad-row-h);
-		}
-		tbody tr:last-child td {
-			border-block-end: 0;
-		}
-		// the last cell must not touch the card edge at the width where the table is tightest
-		td:last-child,
-		th:last-child {
-			padding-inline-end: var(--sanad-gap-md);
-		}
-	}
-
-	&__tools {
-		display: flex;
-		justify-content: flex-end;
-		margin-block-start: calc(-1 * var(--sanad-gap-sm));
-	}
-
-	// a group header reads as a band across the table, never as a row of data
-	&__group th {
-		background: var(--surface-gray-2);
-		color: var(--ink-gray-8);
-		font-weight: 600;
-		text-align: start;
-		block-size: 30px;
-	}
-
-	// the sort button carries the header label, so the whole cell is one target
-	&__sort {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--sanad-gap-xs);
-		border: 0;
-		background: none;
-		padding: 0;
-		font: inherit;
-		color: inherit;
-		cursor: pointer;
-		white-space: nowrap;
-		&:hover {
-			color: var(--ink-gray-8);
-		}
-	}
-	&__caret {
-		font-size: 9px;
-		color: var(--sanad-accent-ink);
-		inline-size: 9px;
-	}
-
-	// the function's name is the control that opens it (the prototype has no extra "view" column)
-	&__open {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		align-items: flex-start;
-		inline-size: 100%;
-		min-block-size: var(--sanad-target);
-		padding: 0;
-		border: 0;
-		background: none;
-		text-align: start;
-		cursor: pointer;
-	}
-	&__name {
-		display: block;
-		font-weight: 600;
-		color: var(--ink-gray-9);
-		text-decoration: underline;
-		text-decoration-color: transparent;
-		.wa-functions__open:hover & {
-			text-decoration-color: currentColor;
-		}
-	}
-	&__sub {
-		display: block;
-		max-inline-size: 26ch;
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-6);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	&__check {
-		inline-size: 36px;
-		text-align: center;
-	}
-	&__row-action {
-		text-align: end;
-		white-space: nowrap;
-	}
-
-	// ---- selection and footer ----------------------------------------------------------------
-
+	// the selection row sits between the toolbar and the table, as the prototype draws it
 	&__bulk {
 		display: flex;
 		flex-wrap: wrap;
@@ -135,8 +21,9 @@
 		gap: var(--sanad-gap-sm);
 		padding-block: var(--sanad-gap-sm);
 		padding-inline: var(--sanad-gap-md);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
 		background: var(--sanad-accent-soft);
-		border-block-end: var(--sanad-border);
 	}
 	&__bulk-count {
 		font-weight: 600;
@@ -146,76 +33,6 @@
 	&__bulk-note {
 		font-size: var(--text-sm, 13px);
 		color: var(--ink-gray-6);
-	}
-
-	&__footer {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--sanad-gap-md);
-		padding-block: var(--sanad-gap-sm);
-		padding-inline: var(--sanad-gap-md);
-		border-block-start: var(--sanad-border);
-		background: var(--surface-gray-1);
-		font-size: var(--text-sm, 13px);
-		color: var(--ink-gray-6);
-	}
-
-	&__empty:empty {
-		display: none;
-	}
-
-	// ---- phones: every row becomes a card of label / value pairs -----------------------------
-
-	@media (max-width: 767px) {
-		&__table {
-			thead {
-				display: none;
-			}
-			// one card per function: the checkbox and the name on the first line, then every
-			// column as a "label — value" row, which is the only shape that reads on a phone
-			tbody tr {
-				display: grid;
-				grid-template-columns: auto minmax(0, 1fr);
-				gap: var(--sanad-gap-xs) var(--sanad-gap-sm);
-				padding: var(--sanad-gap-md);
-				block-size: auto;
-				border-block-end: var(--sanad-border);
-			}
-			td {
-				display: flex;
-				align-items: center;
-				justify-content: space-between;
-				gap: var(--sanad-gap-sm);
-				grid-column: 1 / -1;
-				border: 0;
-				padding: 0;
-				min-block-size: 26px;
-				white-space: normal;
-			}
-			td[data-label]::before {
-				content: attr(data-label);
-				flex: none;
-				font-size: var(--text-xs, 11px);
-				color: var(--ink-gray-5);
-			}
-			td.wa-functions__check {
-				grid-column: 1;
-				inline-size: auto;
-			}
-			td.wa-functions__cell-name {
-				grid-column: 2;
-				&::before {
-					content: none;
-				}
-			}
-			td.wa-functions__xs {
-				display: none;
-			}
-		}
-		&__sub {
-			max-inline-size: 100%;
-		}
 	}
 }
 

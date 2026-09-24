@@ -25,12 +25,15 @@ def list_contacts(
 	link_name: str | None = None,
 	has_whatsapp: bool | None = None,
 	blacklisted: bool | None = None,
+	linked: bool | None = None,
+	status: str | None = None,
 	page: int = 1,
 	page_length: int = 20,
 	order_by: str = "modified desc",
 ) -> dict[str, Any]:
 	"""Contacts page: READ field set + phones + party links + WhatsApp Number counters. Returns
-	`{rows, total, page, page_length}`. P: Contact User | Contact read."""
+	`{rows, total, page, page_length}`. `linked` filters on "tied to at least one account" and
+	`status` on the contact's own status, both in the query. P: Contact User | Contact read."""
 	permissions.require("read")
 	return permissions.list_contacts(
 		search=search,
@@ -38,10 +41,21 @@ def list_contacts(
 		link_name=link_name,
 		has_whatsapp=has_whatsapp,
 		blacklisted=blacklisted,
+		linked=linked,
+		status=status,
 		page=page,
 		page_length=page_length,
 		order_by=order_by,
 	)
+
+
+@api_endpoint(roles=None, methods=("GET", "POST"))
+def get_stats() -> dict[str, int]:
+	"""The Contacts screen's own numbers — `{total, linked, unlinked, multi_linked, with_whatsapp,
+	blacklisted}` — counted through the same filtered query the list uses, in one audited read.
+	P: Contact User | Contact read."""
+	permissions.require("read")
+	return permissions.contact_stats()
 
 
 @api_endpoint(roles=None, methods=("GET", "POST"))

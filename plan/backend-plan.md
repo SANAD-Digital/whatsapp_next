@@ -264,7 +264,7 @@ Pairing methods raise `NotSupportedError` (Cloud API has no QR/pair-code); the c
 | `WAProviderRejectedError` | 422 | business rejection (`reason`, `code` passed through) |
 | `WARateLimitError` | 429 | provider or local rate limit |
 | `WAFileError` | 417 | upload not private / not owned / too large / unparsable |
-| `WANotSupportedError` | 501 | capability absent for the active provider |
+| `WANotSupportedError` | 422 | capability absent for the active provider (was 501 — Frappe's own `request.js` breaks on that status, D-097) |
 
 Common short-hands in the tables: **P** = permission, **E** = error codes beyond `WAPermissionError`/`WAValidationError`.
 

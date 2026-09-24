@@ -16,7 +16,7 @@ const areas = {
 	queue: ["list_queue", "get_summary", "get_throughput", "pause_queue", "resume_queue", "set_rate", "pause_items", "resume_items", "delete_items", "retry_dead_letter"],
 	campaigns: ["start", "schedule", "get_overview", "unschedule", "pause", "resume", "cancel", "pause_many", "resume_many", "cancel_many", "get_progress", "get_sending_now", "get_recipients_page", "preview_message", "get_poll_results"],
 	picker: ["list_sources", "search_groups", "get_group_members", "search_contacts", "list_doctype_rows", "parse_upload", "parse_manual", "preview", "commit_add", "commit_remove"],
-	contacts: ["list_contacts", "get_contact", "create_contact", "update_contact", "search_party", "toggle_blacklist", "get_contact_numbers", "link_many"],
+	contacts: ["list_contacts", "get_stats", "get_contact", "create_contact", "update_contact", "search_party", "toggle_blacklist", "get_contact_numbers", "link_many"],
 	numbers: ["get_number", "link_number", "convert_number", "convert_many", "unlink_number", "confirm_conversation", "search_numbers"],
 	templates: ["preview", "list_variables", "pick_sample"],
 	notifications: ["preview", "get_document_fields", "send_now"],
