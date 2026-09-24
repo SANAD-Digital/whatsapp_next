@@ -847,8 +847,39 @@
 	}
 
 	// =============================================================================================
-	// Sign-in, devices, webhook
+	// Sign in
 	// =============================================================================================
+
+	// the prototype puts the reveal inside the field; it carries a word, not a glyph, so the slot
+	// is wider than the kit's icon-sized default and the input reserves that much at its end
+	&__pwaffix {
+		.wa-input {
+			padding-inline-end: 58px;
+		}
+	}
+	&__reveal-slot {
+		inline-size: 58px;
+	}
+	&__reveal {
+		padding: 4px 6px;
+		border: 0;
+		border-radius: 6px;
+		background: transparent;
+		color: var(--wa-ink-3);
+		font: inherit;
+		font-size: 11px;
+		font-weight: 600;
+		cursor: pointer;
+
+		&:hover {
+			background: var(--wa-sunken);
+			color: var(--wa-pri);
+		}
+		&:focus-visible {
+			outline: 2px solid var(--wa-pri);
+			outline-offset: 2px;
+		}
+	}
 
 	&__loginfoot {
 		display: flex;
@@ -881,183 +912,9 @@
 		}
 	}
 
-	&__device {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		padding: 10px 12px;
-		border: 1px solid var(--wa-border);
-		border-radius: 10px;
-		background: var(--wa-bg);
-	}
-	&__device-mark {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		inline-size: 32px;
-		block-size: 32px;
-		flex: none;
-		border-radius: 9px;
-		background: var(--wa-pri-s);
-		color: var(--wa-pri-d);
-	}
-	&__device-text {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		min-inline-size: 0;
-		gap: 2px;
-
-		b {
-			font-size: 13px;
-			color: var(--wa-ink);
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-	}
-	&__device-phone {
-		font-size: 12px;
-		font-family: "IBM Plex Mono", ui-monospace, monospace;
-		color: var(--wa-ink-3);
-	}
-
-	&__pairing:empty {
-		display: none;
-	}
-	&__pair {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: flex-start;
-		gap: 16px;
-		padding: 16px;
-	}
-	&__pair-code {
-		flex: none;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		min-inline-size: 180px;
-	}
-	&__qr {
-		inline-size: 180px;
-		block-size: 180px;
-		border-radius: 10px;
-		background: var(--wa-surface);
-		padding: 6px;
-	}
-	&__pin,
-	&__raw {
-		display: inline-block;
-		padding: 12px 16px;
-		border: 1px dashed var(--wa-pri-sb);
-		border-radius: 10px;
-		background: var(--wa-pri-s);
-		color: var(--wa-ink);
-		font-family: "IBM Plex Mono", ui-monospace, monospace;
-		font-size: 20px;
-		font-weight: 700;
-		letter-spacing: 3px;
-	}
-	&__raw {
-		font-size: 11px;
-		letter-spacing: 0;
-		word-break: break-all;
-		max-inline-size: 260px;
-	}
-	&__pair-how {
-		flex: 1 1 200px;
-		min-inline-size: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-	}
-	&__pair-steps {
-		margin: 0;
-		padding-inline-start: 18px;
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-		font-size: 12.5px;
-		line-height: 1.7;
-		color: var(--wa-ink-2);
-	}
-
-	&__kv {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		flex-wrap: wrap;
-		padding: 10px 12px;
-	}
-	&__kv-label {
-		font-size: 11px;
-		font-weight: 600;
-		color: var(--wa-ink-3);
-	}
-	&__kv-value {
-		flex: 1;
-		min-inline-size: 140px;
-		font-family: "IBM Plex Mono", ui-monospace, monospace;
-		font-size: 11.5px;
-		color: var(--wa-ink);
-		word-break: break-all;
-		background: transparent;
-		padding: 0;
-	}
-
 	// =============================================================================================
-	// The checklist, and the ready panel
+	// Ready to work
 	// =============================================================================================
-
-	&__checklist {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-		inline-size: 100%;
-	}
-	&__check {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		padding: 9px 12px;
-		border: 1px solid var(--wa-border);
-		border-radius: 10px;
-		background: var(--wa-surface);
-		text-align: start;
-	}
-	&__check-mark {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		inline-size: 26px;
-		block-size: 26px;
-		flex: none;
-		border-radius: 50%;
-		background: var(--wa-sunken);
-		color: var(--wa-ink-4);
-	}
-	&__check--done &__check-mark {
-		background: var(--wa-ok-s);
-		color: var(--wa-ok-i);
-	}
-	&__check-text {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		min-inline-size: 0;
-		gap: 2px;
-
-		b {
-			font-size: 12.5px;
-			color: var(--wa-ink);
-		}
-		span {
-			font-size: 11.5px;
-			line-height: 1.6;
-			color: var(--wa-ink-3);
-		}
-	}
 
 	&__ready-mark {
 		display: inline-flex;
@@ -1158,6 +1015,12 @@
 		line-height: 2;
 		color: var(--wa-ink-2);
 	}
+	&__invite-row {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		flex-wrap: wrap;
+	}
 	&__invite-slot {
 		display: flex;
 		align-items: center;
@@ -1165,7 +1028,8 @@
 		flex-wrap: wrap;
 		margin: 0;
 		min-block-size: var(--wa-h, 38px);
-		padding: 6px 12px;
+		padding-block: 5px;
+		padding-inline: 12px 6px;
 		border: 1px dashed var(--wa-pri-sb);
 		border-radius: var(--wa-radius, 8px);
 		background: var(--wa-surface);
@@ -1174,40 +1038,16 @@
 		font-size: 11px;
 		color: var(--wa-ink-3);
 	}
-	&__invite-v {
-		font-size: 12.5px;
-		font-weight: 600;
-		color: var(--wa-ink-2);
-	}
-
-	// Connecting this site: the work that follows the account, in its own block under the panel
-	// that says the account is ready — never a step of the rail above it.
-	&__site {
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-		inline-size: 100%;
-		padding-block-start: 16px;
-		border-block-start: 1px solid var(--wa-border);
-		text-align: start;
-	}
-	&__site-head {
-		display: flex;
-		align-items: center;
-		gap: 9px;
-		flex-wrap: wrap;
-	}
-	&__site-title {
-		margin: 0;
-		flex: 1;
-		min-inline-size: 0;
-		font-size: 14px;
+	&__invite-code {
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: 13.5px;
 		font-weight: 700;
+		letter-spacing: 1px;
 		color: var(--wa-ink);
 	}
-	&__site-sub {
+	&__invite-note {
 		margin: 0;
-		font-size: 12px;
+		font-size: 11px;
 		line-height: 1.8;
 		color: var(--wa-ink-3);
 	}

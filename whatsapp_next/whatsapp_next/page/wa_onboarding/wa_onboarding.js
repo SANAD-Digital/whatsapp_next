@@ -1,26 +1,26 @@
-// Module role: the WhatsApp setup screen (spec §2 row 1, matrix row 1), built on the design
-// prototype `docs/screen/Hub Page - Onboarding.html` and on the product's own control layer.
+// Module role: the WhatsApp setup screen (spec §2 row 1, matrix row 1) — the design prototype
+// `docs/screen/Hub Page - Onboarding.html`, and nothing beyond it.
 //
-// The prototype is an account flow drawn as a console: a brand rail down the inline-start edge
-// carrying the pitch, the free month and **three** steps — بيانات الحساب · الشروط والأحكام ·
-// تفعيل الحساب — and beside it one card at a time on a quiet field. That is what this screen is,
-// step for step.
+// The page is three parts: بيانات الحساب · الشروط والأحكام · تفعيل الحساب. They are what the
+// brand rail lists, they are the whole flow, and it ends at "اكتمل التسجيل" with the جاهز للعمل
+// panel — the free month and the invite coupon — and nothing after them. Connecting this site to
+// the platform (the keys, the first device, the webhook) is not part of signing up and is not
+// drawn here; that code is parked in `_parked_site_setup.js` beside this file, which Frappe does
+// not load, until it is given a home.
 //
-// The four things this product needs before it can send anything — the platform keys, a linked
-// device, the webhook, the flag that says the site is set up — are not steps of that flow and are
-// not in that rail. They come **after** the account is active, in their own card reached from the
-// "جاهز للعمل" panel, with their own progress inside that card. An account with no device sends
-// nothing, but a person signing up is not thinking about webhooks yet.
+// The way in for an account that already exists is the prototype's sign-in card, exactly as it
+// draws it: an e-mail and a password. `onboarding.login` authenticates against the platform and
+// stores the keys server-side, so no key is ever typed into or held by this screen.
 //
 // Every control is the ported layer's (`ui.btn`, `ui.badge`, `ui.rule`, `ui.segmented`, `ui.ico`,
-// `.wa-input`, `.wa-card`), every colour is a `--wa-*` token, and every icon comes from the
-// prototype's own glyph family. No `frappe.ui.form.make_control`, no Espresso icon, no Desk button.
+// `.wa-input`, `.wa-card`, `.wa-sunken`), every colour is a `--wa-*` token, and every glyph comes
+// from the prototype's own family. No `frappe.ui.form.make_control`, no Espresso icon, no Desk
+// button. Dark mode is Desk's: the palette answers `[data-theme="dark"]` and this screen adds no
+// control of its own.
 //
-// Every write goes through `api.v1.onboarding` (plus `settings.test_connection` /
-// `settings.setup_webhook` and `devices.*`) with `sanad.ui.call`. What the prototype asks for and
-// the API has no field for — the sector, the invite coupon, the sign-up password, a recorded
-// acceptance of the terms — is built, gated client-side where that is honest, and marked with a
-// `TODO(backend)` naming the endpoint it needs. Nothing here invents one.
+// Every call goes through `api.v1.onboarding` with `sanad.ui.call`. What the API still has no
+// field for — the sector, and a recorded acceptance of the terms — carries a `TODO(backend)`
+// naming what it needs. Nothing here invents an endpoint or fakes a local path.
 //
 // The Home → wizard redirect stays governed by `WhatsApp Settings.redirect_unregistered_to_wizard`
 // and is deliberately not wired here (spec #1: it is enabled last, in phase 10).
@@ -35,10 +35,11 @@ frappe.provide("whatsapp_next.onboarding");
 	const POLL_MS = 4000;
 	const SIGNUP_POLL_MS = 5000;
 	// The prototype signs every new tenant up on the free plan and says so on the ready panel.
-	// No endpoint lists the platform's plan codes, so the code is a constant here.
-	// TODO(backend): `onboarding.list_plans()` → `[{code, label, price}]`.
+	// `onboarding.get_signup_bootstrap()` carries the platform's own plans, so the free one is
+	// looked up rather than assumed; this is only the fallback when the call has not answered yet.
 	const SIGNUP_PLAN = "free";
-	// The prototype's resend lock: the code lives 240 s, resending opens after the first 30 s.
+	// The prototype's resend lock: resending opens 30 s after the code was sent. The code's own
+	// life comes from the bootstrap (`code_ttl_minutes`); this is the fallback.
 	const RESEND_LOCK_S = 30;
 	const DEFAULT_TTL_S = 240;
 
@@ -118,8 +119,6 @@ frappe.provide("whatsapp_next.onboarding");
 		{ key: "activate", label: __("Activate the account"), sub: __("One confirmation code") },
 	];
 	const STAGE_STEP = { login: 0, reset: 0, signup: 0, terms: 1, verify: 2 };
-	// Beyond the account: these live in their own card, never in the rail.
-	const SITE_STAGES = ["connect", "device", "webhook"];
 
 	// ---------------------------------------------------------------------------------------------
 	// Small builders in the layer's idiom
@@ -199,7 +198,6 @@ frappe.provide("whatsapp_next.onboarding");
 				channel: "whatsapp",
 				verify: "idle",
 				left: DEFAULT_TTL_S,
-				rerun: false,
 			};
 			this.f = { org: "", sector: "", sector_other: "", person: "", email: "", phone: "", phone_ok: false, password: "", password2: "", coupon: "" };
 			this.ctx = {};
@@ -257,7 +255,6 @@ frappe.provide("whatsapp_next.onboarding");
 						</span>
 						<span class="wa-onb__topbar-spacer"></span>
 						<span class="wa-onb__counter" data-slot="counter" aria-live="polite"></span>
-						<span data-slot="theme"></span>
 					</div>
 					<div class="wa-onb__mbar" data-slot="mbar"></div>
 					<div class="wa-onb__stage" data-slot="stage"></div>
@@ -266,29 +263,6 @@ frappe.provide("whatsapp_next.onboarding");
 			this.$counter = this.$screen.find('[data-slot="counter"]');
 			this.$mbar = this.$screen.find('[data-slot="mbar"]');
 			this.$stage = this.$screen.find('[data-slot="stage"]');
-			this.make_theme_toggle();
-		}
-
-		/**
-		 * The prototype's corner theme switch. Desk owns the theme, so this drives Desk's own
-		 * (`frappe.ui.set_theme` + the user preference), and the palette follows through
-		 * `_tokens.scss`'s `[data-theme="dark"]` block.
-		 */
-		make_theme_toggle() {
-			const label = () => (frappe.ui.get_current_theme() === "dark" ? __("Light mode") : __("Dark mode"));
-			const $slot = this.$screen.find('[data-slot="theme"]');
-			const draw = () => {
-				$slot.html(ui.btn({ label: label(), variant: "ghost", size: "sm", attrs: { "data-act": "theme" } }));
-			};
-			draw();
-			$slot.on("click", '[data-act="theme"]', () => {
-				const next = frappe.ui.get_current_theme() === "dark" ? "light" : "dark";
-				frappe.ui.set_theme(next);
-				draw();
-				frappe
-					.xcall("frappe.core.doctype.user.user.switch_theme", { theme: next === "dark" ? "Dark" : "Light" })
-					.catch(() => {});
-			});
 		}
 
 		// ---- status -------------------------------------------------------------------------------
@@ -303,6 +277,16 @@ frappe.provide("whatsapp_next.onboarding");
 				.then((status) => {
 					this.status = status || {};
 					this.resume();
+					// what the form needs before anything is typed: the platform's plans and how
+					// long a code lives. It only refines the screen, so a failure never blocks it.
+					return ui
+						.call("onboarding.get_signup_bootstrap", {}, { silent: true })
+						.then((boot) => {
+							this.boot = boot || {};
+							const ttl = cint(this.boot.code_ttl_minutes) * 60;
+							if (ttl) this.ctx.code_ttl = ttl;
+						})
+						.catch(() => {});
 				})
 				.catch((err) => this.render_error(err, () => this.load()));
 		}
@@ -328,23 +312,29 @@ frappe.provide("whatsapp_next.onboarding");
 			return (step && step.detail) || "";
 		}
 
-		/** The first part of connecting this site that is still missing. */
-		first_open_site_stage() {
-			if (!this.step_done("credentials") || !this.step_done("connection")) return "connect";
-			if (!this.step_done("device")) return "device";
-			if (!this.step_done("webhook")) return "webhook";
-			return null;
-		}
-
 		/**
-		 * Open where this site actually stands. An account that already has its keys is an account
-		 * that exists, so the rail is complete and the screen opens on "جاهز للعمل" — with the card
-		 * beneath it saying what is left to connect.
+		 * Open where this site actually stands. An account whose keys are already on this site is
+		 * an account that exists, so the rail is complete and the screen opens on "جاهز للعمل".
 		 */
 		resume() {
-			if (this.status.setup_completed && !this.s.rerun) return this.set_state({ stage: "ready" });
-			if (this.step_done("credentials")) return this.set_state({ stage: "ready" });
-			return this.set_state({ stage: "signup" });
+			return this.set_state({ stage: this.step_done("credentials") ? "ready" : "signup" });
+		}
+
+		/** The free plan the prototype signs up on, from the platform's own list when it answered. */
+		plan() {
+			const plans = (this.boot && this.boot.plans) || [];
+			const free = plans.find((p) => p.is_free || /free|مجان/i.test(`${p.code || ""} ${p.name || ""} ${p.label || ""}`));
+			return free || plans[0] || null;
+		}
+
+		plan_code() {
+			const p = this.plan();
+			return (p && (p.code || p.name)) || SIGNUP_PLAN;
+		}
+
+		plan_label() {
+			const p = this.plan();
+			return (p && (p.label || p.title || p.name || p.code)) || __("Free");
 		}
 
 		set_state(patch, redraw = true) {
@@ -359,7 +349,7 @@ frappe.provide("whatsapp_next.onboarding");
 
 		/** `true` once the account exists — the rail is complete and the terminal is showing. */
 		account_done() {
-			return this.s.stage === "ready" || SITE_STAGES.includes(this.s.stage);
+			return this.s.stage === "ready";
 		}
 
 		render_flow() {
@@ -406,9 +396,6 @@ frappe.provide("whatsapp_next.onboarding");
 				login: () => this.card_login(),
 				reset: () => this.card_reset(),
 				ready: () => this.card_ready(),
-				connect: () => this.card_connect(),
-				device: () => this.card_device(),
-				webhook: () => this.card_webhook(),
 			};
 			(by_stage[this.s.stage] || by_stage.signup)();
 		}
@@ -458,31 +445,9 @@ frappe.provide("whatsapp_next.onboarding");
 		// ---- a manager who may watch but not write ---------------------------------------------------
 
 		card_readonly() {
-			const $card = this.card("md", {
+			this.card("md", {
 				title: __("Setup status"),
-				sub: __("Only a System Manager can run this setup. These are the steps and where they stand."),
-			});
-			this.checklist($('<div class="wa-onb__checklist"></div>').appendTo($card));
-		}
-
-		checklist($el) {
-			const labels = {
-				credentials: __("Credentials"),
-				connection: __("Connection"),
-				device: __("Device"),
-				webhook: __("Webhook"),
-			};
-			$el.empty();
-			(this.status.steps || []).forEach((step) => {
-				$el.append(`
-					<div class="wa-onb__check${step.done ? " wa-onb__check--done" : ""}">
-						<span class="wa-onb__check-mark">${ico(step.done ? "tick" : "clock", "sm")}</span>
-						<span class="wa-onb__check-text">
-							<b>${esc(labels[step.key] || step.key)}</b>
-							<span>${esc(step.detail || (step.done ? __("Done") : __("Not done yet")))}</span>
-						</span>
-						${ui.badge(step.done ? __("Done") : __("To do"), step.done ? "ok" : "muted")}
-					</div>`);
+				sub: __("Only a System Manager can register an account for this site."),
 			});
 		}
 
@@ -533,13 +498,8 @@ frappe.provide("whatsapp_next.onboarding");
 
 			// ---- the password ------------------------------------------------------------------------
 			//
-			// The provider already takes a password on `complete_signup`, but the service and the
-			// whitelisted endpoint do not forward one, so what is typed here never leaves the browser.
-			// It is still asked for: the prototype asks for it, and the rules it teaches belong with
-			// the sign-up rather than a later "set your password" e-mail.
-			// TODO(backend): `onboarding.complete_signup(request_key, code, password)` →
-			// `services.onboarding.complete_signup(..., password)` → `provider.complete_signup(...,
-			// password=…)`, which accepts it already (`providers/snd_platform.py:440`).
+			// The password the account is created with. It goes to the platform with the confirmation
+			// code (`onboarding.complete_signup(request_key, code, password)`), never to this site.
 			const $pw = $('<div class="wa-onb__group"></div>').appendTo($card);
 			$pw.append(ui.rule(__("Password"), __("Required")));
 			const $pwgrid = $('<div class="wa-onb__grid"></div>').appendTo($pw);
@@ -561,10 +521,8 @@ frappe.provide("whatsapp_next.onboarding");
 
 			// ---- the invite coupon ---------------------------------------------------------------------
 			//
-			// Checked for shape here and going no further: no endpoint accepts one, and `start_signup`
-			// has no parameter it could honestly ride on.
-			// TODO(backend): `onboarding.apply_coupon(code)`, or a `coupon` parameter on
-			// `onboarding.start_signup`, reaching the platform's referral ledger.
+			// Checked against the platform as it is typed (`onboarding.validate_coupon` says whether a
+			// code is usable and what it gives, without redeeming it), and sent with the sign-up.
 			const $cp = $('<div class="wa-onb__group"></div>').appendTo($card);
 			$cp.append(ui.rule(__("Invite coupon"), __("Optional")));
 			$cp.append(field_html({ id: "wa-onb-coupon", label: __("A coupon a customer invited you with — one extra free month"), dir: "ltr", placeholder: "BSHQ-FREE2", value: this.f.coupon, mono: true, extra: 'data-f="coupon"' }));
@@ -721,11 +679,56 @@ frappe.provide("whatsapp_next.onboarding");
 			}
 			if (key === "coupon") {
 				const raw = (this.f.coupon || "").trim();
+				this.coupon_ok = false;
 				if (!raw) return set(null, __("If one of our customers invited you, enter their coupon and start with one extra free month."));
-				const ok = COUPON_RE.test(raw);
-				return set(ok ? "ok" : "bad", ok ? __("The coupon looks right — it is checked when the account is activated.") : __("The coupon's shape is not right — for example BSHQ-FREE2."));
+				if (!COUPON_RE.test(raw)) return set("bad", __("The coupon's shape is not right — for example BSHQ-FREE2."));
+				set(null, __("Checking the coupon…"));
+				return this.check_coupon($card, raw);
 			}
 			return this;
+		}
+
+		/**
+		 * Ask the platform whether a coupon is usable, and say what it gives. It is only checked
+		 * here — redeeming happens with the sign-up. Debounced, and a late answer for a code that
+		 * has since been retyped is dropped.
+		 */
+		check_coupon($card, code) {
+			if (!this._coupon_debounce) {
+				this._coupon_debounce = ui.debounce((raw) => {
+					this._coupon_seq = (this._coupon_seq || 0) + 1;
+					const seq = this._coupon_seq;
+					ui.call("onboarding.validate_coupon", { code: raw }, { silent: true })
+						.then((r) => {
+							if (seq !== this._coupon_seq || (this.f.coupon || "").trim() !== raw) return;
+							// `{ok, valid, message, reason}` — an unusable coupon answers normally
+							const ok = !!(r && r.valid);
+							this.coupon_ok = ok;
+							const text =
+								(r && (r.message || r.reason)) ||
+								(ok
+									? __("Valid coupon — the extra free month is added when the account is activated.")
+									: __("This coupon is not valid or has expired. Check it against the one you were sent."));
+							this.set_coupon_hint($card, ok ? "ok" : "bad", text);
+						})
+						.catch((err) => {
+							if (seq !== this._coupon_seq) return;
+							this.coupon_ok = false;
+							this.set_coupon_hint($card, "bad", err.message);
+						});
+				}, 450);
+			}
+			this._coupon_debounce(code);
+			return this;
+		}
+
+		set_coupon_hint($card, tone, text) {
+			const $field = $card.find('[data-f="coupon"]').closest(".wa-field");
+			$field.removeClass("wa-onb__ok wa-onb__bad").addClass(tone === "ok" ? "wa-onb__ok" : "wa-onb__bad");
+			$field
+				.find('[data-slot="hint"]')
+				.attr("class", `wa-field__hint wa-onb__hint--${tone}`)
+				.html(`<span class="wa-onb__hint-icon">${ico(tone === "ok" ? "tick" : "warn", "xs")}</span><span>${esc(text)}</span>`);
 		}
 
 		/** The sector combobox: open, search, pick, or turn the search text into a custom activity. */
@@ -910,11 +913,11 @@ frappe.provide("whatsapp_next.onboarding");
 		 * Ask the platform for an account. It is given what the endpoint takes: the plan, the mobile,
 		 * the name, the email and the channel the code should arrive on.
 		 *
-		 * TODO(backend): the sector (`f.sector` / `sector_other`), the invite coupon (`f.coupon`),
-		 * the password (`f.password`) and the fact that the terms were read and accepted all stop
-		 * here. They want, in order: `onboarding.start_signup(..., sector, coupon)`,
-		 * `onboarding.complete_signup(request_key, code, password)`, and
-		 * `onboarding.accept_terms(version)` — or three fields on `WhatsApp Settings`.
+		 * The coupon rides along here; the password goes with the confirmation code.
+		 *
+		 * TODO(backend): the sector (`f.sector` / `f.sector_other`) and the fact that the terms were
+		 * read and accepted still stop here — they want `onboarding.start_signup(..., sector)` and
+		 * `onboarding.accept_terms(version)`, or two fields on `WhatsApp Settings`.
 		 */
 		start_signup($btn) {
 			this.show_error("");
@@ -923,11 +926,12 @@ frappe.provide("whatsapp_next.onboarding");
 				__("Creating the account…"),
 				ui
 					.call("onboarding.start_signup", {
-						plan_code: SIGNUP_PLAN,
+						plan_code: this.plan_code(),
 						mobile: this.f.phone,
 						full_name: this.f.person,
 						email: this.f.email,
 						channel: this.s.channel,
+						coupon_code: (this.f.coupon || "").trim() || undefined,
 					})
 					.then((r) => {
 						this.ctx.request_key = r.request_key;
@@ -1042,7 +1046,7 @@ frappe.provide("whatsapp_next.onboarding");
 				$btn,
 				__("Verifying…"),
 				ui
-					.call("onboarding.complete_signup", { request_key: this.ctx.request_key, code })
+					.call("onboarding.complete_signup", { request_key: this.ctx.request_key, code, password: this.f.password })
 					.then((r) => {
 						if (!r || !r.ok) {
 							this.s.verify = "fail";
@@ -1094,11 +1098,12 @@ frappe.provide("whatsapp_next.onboarding");
 				__("Sending…"),
 				ui
 					.call("onboarding.start_signup", {
-						plan_code: SIGNUP_PLAN,
+						plan_code: this.plan_code(),
 						mobile: this.f.phone,
 						full_name: this.f.person,
 						email: this.f.email,
 						channel: this.s.channel,
+						coupon_code: (this.f.coupon || "").trim() || undefined,
 					})
 					.then((r) => {
 						this.ctx.request_key = r.request_key || this.ctx.request_key;
@@ -1137,35 +1142,95 @@ frappe.provide("whatsapp_next.onboarding");
 		// The way in for an account that already exists
 		// =============================================================================================
 
+		/**
+		 * The prototype's sign-in card, drawn as it draws it: an e-mail, a password with the reveal
+		 * inside the field, the line that says where the details are kept, "نسيت كلمة المرور؟",
+		 * the divider and the way to a new account. No platform address and no API keys — the
+		 * platform authenticates the person, and `onboarding.login` stores the keys server-side.
+		 */
 		card_login() {
 			const $card = this.card("sm", {
 				title: __("Sign in"),
-				sub: __("A platform account is reached with its address and its API keys. They are stored encrypted and are never shown again."),
+				sub: __("Enter your account details to continue to the dashboard."),
 			});
-			const $form = $('<div class="wa-onb__stack"></div>').appendTo($card);
-			$form.append(field_html({ id: "wa-onb-url", label: __("Platform address"), dir: "ltr", placeholder: "https://platform.example.com", value: this.ctx.platform_base_url || "", required: true, extra: 'data-c="platform_base_url"' }));
-			[
-				["customer_api_key", __("Customer API key")],
-				["api_key", __("API key")],
-				["api_secret", __("API secret")],
-			].forEach(([key, label]) => {
-				$form.append(field_html({ id: `wa-onb-${key}`, label, type: "password", mono: true, autocomplete: "off", required: true, extra: `data-c="${key}"` }));
-			});
-
+			$card.append(
+				field_html({ id: "wa-onb-login-email", label: __("Email"), type: "email", dir: "ltr", placeholder: "email@company.com", value: this.f.email, autocomplete: "email", extra: 'data-l="email"' })
+			);
 			$card.append(`
+				<div class="wa-field">
+					<label class="wa-field__label" for="wa-onb-login-pw">${esc(__("Password"))}</label>
+					<span class="wa-affix wa-onb__pwaffix">
+						<input class="wa-input" id="wa-onb-login-pw" data-l="password" type="password" dir="ltr"
+							autocomplete="current-password" placeholder="••••••••">
+						<span class="wa-affix__in wa-affix__in--end wa-onb__reveal-slot">
+							<button type="button" class="wa-onb__reveal" data-act="reveal" aria-pressed="false"
+								aria-controls="wa-onb-login-pw">${esc(__("Show"))}</button>
+						</span>
+					</span>
+				</div>
 				<div class="wa-onb__loginfoot">
-					<span class="wa-onb__lock">${ico("shield", "xs")}${esc(__("The keys are stored encrypted in the app's settings"))}</span>
+					<span class="wa-onb__lock">${ico("shield", "xs")}${esc(__("Sign-in details are kept in the app's settings"))}</span>
 					${ui.btn({ label: __("Forgot the password?"), variant: "ghost", size: "sm", attrs: { "data-act": "reset" } })}
 				</div>
-				${ui.btn({ label: __("Sign in"), variant: "primary", block: true, attrs: { "data-act": "save" } })}
-				<div data-slot="conn"></div>
+				${ui.btn({ label: __("Sign in"), variant: "primary", block: true, attrs: { "data-act": "login" } })}
 				<div class="wa-onb__divider"><span>${esc(__("No account yet?"))}</span></div>
 				${ui.btn({ label: __("Create a new account"), variant: "secondary", block: true, attrs: { "data-act": "new" } })}`);
 
-			this.draw_connection($card);
-			$card.on("click", '[data-act="save"]', (e) => this.save_credentials($(e.currentTarget), $card, "login"));
+			$card.on("input", "[data-l]", (e) => {
+				this.f[$(e.currentTarget).data("l")] = e.currentTarget.value;
+				this.show_error("");
+			});
+			$card.on("click", '[data-act="reveal"]', (e) => {
+				const $b = $(e.currentTarget);
+				const on = $b.attr("aria-pressed") !== "true";
+				$b.attr("aria-pressed", String(on)).text(on ? __("Hide") : __("Show"));
+				$card.find('[data-l="password"]').attr("type", on ? "text" : "password");
+			});
+			$card.on("keydown", "[data-l]", (e) => {
+				if (e.key === "Enter") $card.find('[data-act="login"]').trigger("click");
+			});
 			$card.on("click", '[data-act="reset"]', () => this.set_state({ stage: "reset" }));
 			$card.on("click", '[data-act="new"]', () => this.set_state({ stage: "signup" }));
+			$card.on("click", '[data-act="login"]', (e) => this.do_login($(e.currentTarget)));
+		}
+
+		/**
+		 * `onboarding.login(platform_base_url, email, password)` authenticates against the platform
+		 * and stores the keys with `set_password`; it returns only whether it worked and who the
+		 * customer is. Nothing is kept in the browser.
+		 */
+		do_login($btn) {
+			const email = (this.f.email || "").trim();
+			const password = this.f.password || "";
+			if (!email || !password) return this.show_error(__("Enter the email and the password."));
+			if (!EMAIL_RE.test(email)) return this.show_error(__("The email format is not valid — for example email@company.com"));
+			this.show_error("");
+			return this.busy_button(
+				$btn,
+				__("Signing in…"),
+				ui
+					.call(
+						"onboarding.login",
+						{
+							// The prototype's card has no address field, because the platform this
+							// site talks to is a setting, not something a person retypes to sign in.
+							// `services.onboarding.login` keeps the stored address when this is
+							// empty and only overwrites it when a different one is passed.
+							platform_base_url: "",
+							email,
+							password,
+						},
+						// a refusal belongs in this card, not in a Desk dialog over it
+						{ silent: true }
+					)
+					.then((r) => {
+						if (r && r.ok === false) return this.show_error(r.message || __("The email or the password is not right."));
+						if (r && r.customer_name) this.f.org = r.customer_name;
+						ui.Toast.success(__("Signed in."));
+						return this.load();
+					})
+					.catch((err) => this.show_error(err.message))
+			);
 		}
 
 		card_reset() {
@@ -1206,8 +1271,13 @@ frappe.provide("whatsapp_next.onboarding");
 		// Ready to work — and, under it, connecting this site
 		// =============================================================================================
 
+		/**
+		 * The prototype's last panel, and the end of this screen: the tick, the plan, the free
+		 * month, and the invite card with the customer's own referral coupon. Nothing follows it —
+		 * connecting the site to the platform is not part of signing up and is not drawn here.
+		 */
 		card_ready() {
-			const plan = (this.ctx.connection && this.ctx.connection.plan_code) || __("Free");
+			const plan = this.plan_label();
 			const org = this.f.org;
 			const $card = this.card("ready");
 			$card.append(`
@@ -1229,392 +1299,59 @@ frappe.provide("whatsapp_next.onboarding");
 						<b>${esc(__("Share and get an extra free month"))}</b>
 					</span>
 					<p class="wa-onb__invite-body">${esc(__("Send your coupon to any company you know: they start their subscription with a free month, and a free month is added to yours for every company that activates with your coupon — with no limit on invitations."))}</p>
-					<p class="wa-onb__invite-slot">
-						<span class="wa-onb__invite-k">${esc(__("Invite coupon"))}</span>
-						<span class="wa-onb__invite-v">${esc(__("Issued on the subscription page"))}</span>
-					</p>
-				</div>`);
-
-			// ---- connecting this site: after the account, never in the rail --------------------------
-			const open = this.first_open_site_stage();
-			const $site = $(`<div class="wa-onb__site"></div>`).appendTo($card);
-			$site.append(`
-				<div class="wa-onb__site-head">
-					<h3 class="wa-onb__site-title">${esc(__("Connect this site"))}</h3>
-					${ui.badge(open ? __("Not finished") : __("Done"), open ? "warn" : "ok")}
+					<div data-slot="referral">${ui.skeleton(1, { lines: 1 })}</div>
+					<p class="wa-onb__invite-note">${esc(__("The free month is added to your balance as soon as the invited account is activated, and shows on the subscription page."))}</p>
 				</div>
-				<p class="wa-onb__site-sub">${esc(__("The account exists. These three connect this site to it, so messages can actually leave and replies can come back."))}</p>`);
-			this.checklist($('<div class="wa-onb__checklist"></div>').appendTo($site));
-			const $bar = $('<div class="wa-btnbar"></div>').appendTo($site);
-			if (open) {
-				$bar.append(ui.btn({ label: __("Finish connecting"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "site" } }));
-			} else if (!this.status.setup_completed) {
-				$bar.append(ui.btn({ label: __("Switch the product on"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "finish" } }));
-			} else {
-				$bar.append(ui.btn({ label: __("Go to the dashboard"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "home" } }));
-			}
-			$bar.append(ui.btn({ label: __("Open the subscription page"), variant: "secondary", attrs: { "data-act": "sub" } }));
-			if (this.status.setup_completed) {
-				$bar.append(ui.btn({ label: __("Run the setup again"), variant: "ghost", attrs: { "data-act": "again" } }));
-			}
 
-			$card.on("click", '[data-act="site"]', () => this.set_state({ stage: open }));
+				${ui.btn({ label: __("Go to the dashboard"), variant: "primary", block: true, attrs: { "data-act": "home" } })}`);
+
 			$card.on("click", '[data-act="home"]', () => frappe.set_route("wa-home"));
-			$card.on("click", '[data-act="sub"]', () => frappe.set_route("wa-settings"));
-			$card.on("click", '[data-act="again"]', () => {
-				this.s.rerun = true;
-				this.set_state({ stage: "connect" });
-			});
-			$card.on("click", '[data-act="finish"]', (e) =>
-				this.busy_button(
-					$(e.currentTarget),
-					__("Finishing…"),
-					ui
-						.call("onboarding.complete_setup")
-						.then(() => {
-							ui.Toast.success(__("The setup is complete."));
-							this.s.rerun = false;
-							return this.load();
-						})
-						.catch((err) => this.show_error(err.message))
-				)
-			);
+			this.load_referral($card);
 		}
 
-		/** The head every site-setup card wears: which of the three it is, and the way back. */
-		site_head($card, index) {
-			$card.find(".wa-onb__card-titles").append(ui.badge(__("Step {0} of {1}", [index, 3]), "info"));
-			$card.on("click", '[data-act="site-back"]', () => this.set_state({ stage: "ready" }));
-		}
-
-		// ---- connecting: the platform keys ------------------------------------------------------------
-
-		card_connect() {
-			const saved = this.step_done("credentials");
-			const $card = this.card("md", {
-				title: __("Platform connection"),
-				sub: saved
-					? __("The keys are already on this site. Test them, or type new ones over them.")
-					: __("Enter the address of the platform and the three keys it issued."),
-			});
-			this.site_head($card, 1);
-			const $form = $('<div class="wa-onb__stack"></div>').appendTo($card);
-			$form.append(field_html({ id: "wa-onb-url2", label: __("Platform address"), dir: "ltr", placeholder: "https://platform.example.com", value: this.ctx.platform_base_url || "", extra: 'data-c="platform_base_url"' }));
-			[
-				["customer_api_key", __("Customer API key")],
-				["api_key", __("API key")],
-				["api_secret", __("API secret")],
-			].forEach(([key, label]) => {
-				$form.append(field_html({ id: `wa-onb-c-${key}`, label, type: "password", mono: true, autocomplete: "off", placeholder: saved ? __("Stored — leave empty to keep it") : "", extra: `data-c="${key}"` }));
-			});
-			$card.append('<div data-slot="conn"></div>');
-			$card.append(`
-				<div class="wa-btnbar">
-					${ui.btn({ label: saved ? __("Test the connection") : __("Save and test the connection"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "save" } })}
-					${ui.btn({ label: __("Back"), variant: "ghost", attrs: { "data-act": "site-back" } })}
-				</div>`);
-			this.draw_connection($card);
-			$card.on("click", '[data-act="save"]', (e) => this.save_credentials($(e.currentTarget), $card, "connect"));
-		}
-
-		save_credentials($btn, $card, from) {
-			const values = {};
-			$card.find("[data-c]").each((i, el) => {
-				const value = (el.value || "").trim();
-				if (value) values[$(el).data("c")] = value;
-			});
-			const saved = this.step_done("credentials");
-			if (!Object.keys(values).length && !saved) return this.show_error(__("Enter the platform address and the three keys first."));
-			this.show_error("");
-			this.ctx.platform_base_url = values.platform_base_url || this.ctx.platform_base_url;
-			const write = Object.keys(values).length ? ui.call("onboarding.save_credentials", values) : Promise.resolve();
-			return this.busy_button(
-				$btn,
-				__("Testing…"),
-				write
-					.then(() => ui.call("settings.test_connection"))
-					.then((conn) => {
-						this.ctx.connection = conn;
-						return ui.call("onboarding.get_status");
-					})
-					.then((status) => {
-						this.status = status || {};
-						this.draw_connection($card);
-						this.render_flow();
-						if (this.ctx.connection && this.ctx.connection.ok) {
-							ui.Toast.success(__("The platform answered. The connection works."));
-							window.setTimeout(() => this.set_state({ stage: from === "login" ? "ready" : "device" }), 700);
-						}
-					})
-					.catch((err) => this.show_error(err.message))
-			);
-		}
-
-		draw_connection($card) {
-			const $slot = $card.find('[data-slot="conn"]');
-			const r = this.ctx.connection;
-			$slot.empty();
-			if (!r) return;
-			$slot.html(
-				r.ok
-					? strip_html("ok", r.plan_code ? __("Answered in {0} ms · plan {1}", [ui.format_int(r.latency_ms), r.plan_code]) : __("Answered in {0} ms", [ui.format_int(r.latency_ms)]))
-					: strip_html("danger", r.error || __("The platform did not answer."), { role: "alert" })
-			);
-		}
-
-		// ---- connecting: the first device --------------------------------------------------------------
-
-		card_device() {
-			const $card = this.card("md", {
-				title: __("Link the first device"),
-				sub: __("A device is one WhatsApp number. Messages go out from it, and it stays linked until it is signed out."),
-			});
-			this.site_head($card, 2);
-			const $body = $('<div class="wa-onb__stack"></div>').appendTo($card);
-			$body.html(ui.skeleton(2));
+		/** The customer's own coupon, from the platform. Nothing about it is invented here. */
+		load_referral($card) {
+			const $slot = $card.find('[data-slot="referral"]');
 			return ui
-				.call("devices.list_devices")
+				.call("onboarding.get_referral_coupon", {}, { silent: true })
 				.then((r) => {
-					const connected = (r.rows || []).filter((d) => d.status === "Connected");
-					$body.empty();
-					if (connected.length) {
-						$card.find(".wa-onb__card-sub").text(__("A device is connected. You can link another one now, or move on."));
-						connected.slice(0, 3).forEach((row) => {
-							$body.append(`
-								<div class="wa-onb__device">
-									<span class="wa-onb__device-mark">${ico("device", "sm")}</span>
-									<span class="wa-onb__device-text">
-										<b dir="auto">${esc(row.device_name || row.name)}</b>
-										<span class="wa-onb__device-phone" dir="ltr">${esc(row.phone_e164 ? ui.PhoneField.format_display(row.phone_e164) : __("No number yet"))}</span>
-									</span>
-									${ui.badge(__("Connected"), "ok")}
-								</div>`);
-						});
-						$card.append(`
-							<div class="wa-btnbar">
-								${ui.btn({ label: __("Next — the webhook"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "next" } })}
-								${ui.btn({ label: __("Link another device"), variant: "secondary", attrs: { "data-act": "pair" } })}
-								${ui.btn({ label: __("Back"), variant: "ghost", attrs: { "data-act": "site-back" } })}
-							</div>`);
-						$card.on("click", '[data-act="next"]', () => this.set_state({ stage: "webhook" }));
-						$card.on("click", '[data-act="pair"]', () => this.pair_form($body, $card));
+					const coupon = (r && r.coupon) || {};
+					const code = coupon.code || "";
+					if (!code) {
+						$slot.html(strip_html("warn", __("No invite coupon has been issued for this account yet.")));
 						return;
 					}
-					this.pair_form($body, $card);
+					const link = coupon.share_url || coupon.url || "";
+					const message = link
+						? __("Try WhatsApp Next for your company's WhatsApp messages — use coupon {0} for a free month: {1}", [code, link])
+						: __("Try WhatsApp Next for your company's WhatsApp messages — use coupon {0} for a free month.", [code]);
+					$slot.html(`
+						<div class="wa-onb__invite-row">
+							<span class="wa-onb__invite-slot">
+								<span class="wa-onb__invite-k">${esc(__("Invite coupon"))}</span>
+								<span class="wa-onb__invite-code" dir="ltr">${esc(code)}</span>
+								${ui.btn({ label: __("Copy"), icon: "copy", variant: "primary", size: "sm", attrs: { "data-act": "copy-code" } })}
+							</span>
+							${ui.btn({ label: __("Share on WhatsApp"), icon: "whatsapp", variant: "primary", size: "sm", attrs: { "data-act": "share" } })}
+						</div>`);
+					const flash = ($b, text) => {
+						const $l = $b.find("span").last();
+						const before = $l.text();
+						$l.text(text);
+						window.setTimeout(() => $l.text(before), 1800);
+					};
+					$slot.on("click", '[data-act="copy-code"]', (e) =>
+						copy_to_clipboard(code)
+							.then(() => flash($(e.currentTarget), __("Copied")))
+							.catch(() => ui.Toast.warning(__("The browser did not allow copying. Select the code and copy it by hand.")))
+					);
+					$slot.on("click", '[data-act="share"]', (e) =>
+						copy_to_clipboard(message)
+							.then(() => flash($(e.currentTarget), __("The invite is copied")))
+							.catch(() => ui.Toast.warning(__("The browser did not allow copying. Select the code and copy it by hand.")))
+					);
 				})
-				.catch((err) => this.render_error(err, () => this.render()));
-		}
-
-		pair_form($body, $card) {
-			$body.empty();
-			$card.find(".wa-btnbar").remove();
-			this.pair_mode = "QR";
-			$body.append(field_html({ id: "wa-onb-device", label: __("Device name"), placeholder: __("e.g. Sales device"), required: true, extra: 'data-d="device_name"' }));
-			const $mode = $(`
-				<div class="wa-field">
-					<span class="wa-field__label" id="wa-onb-mode">${esc(__("Linking method"))}</span>
-					<div data-slot="seg"></div>
-				</div>`).appendTo($body);
-			$mode.find('[data-slot="seg"]').html(
-				ui.segmented(
-					[
-						{ value: "QR", label: __("QR code"), icon: "scan" },
-						{ value: "Code", label: __("8-digit code"), icon: "shield" },
-					],
-					"QR",
-					{ label: __("Linking method") }
-				)
-			);
-			const $phone = $('<div class="wa-onb__pairphone" hidden></div>').appendTo($body);
-			this.pair_phone = new ui.PhoneField({
-				wrapper: $phone,
-				label: __("WhatsApp number"),
-				required: true,
-				on_change: ({ phone_e164, valid }) => (this.ctx.pair_phone = valid ? phone_e164 : null),
-			});
-			ui.bind_segmented($mode.find(".wa-seg"), (value) => {
-				this.pair_mode = value;
-				$phone.attr("hidden", value === "Code" ? null : true);
-			});
-
-			$card.append(`
-				<div class="wa-btnbar">
-					${ui.btn({ label: __("Create and link"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "create" } })}
-					${ui.btn({ label: __("Do it later"), variant: "secondary", attrs: { "data-act": "later" } })}
-					${ui.btn({ label: __("Back"), variant: "ghost", attrs: { "data-act": "site-back" } })}
-				</div>`);
-			const $pair = $('<div class="wa-onb__pairing"></div>').appendTo($card);
-
-			$card.off("click", '[data-act="later"]').on("click", '[data-act="later"]', () => this.set_state({ stage: "webhook" }));
-			$card.off("click", '[data-act="create"]').on("click", '[data-act="create"]', (e) => {
-				const $btn = $(e.currentTarget);
-				const name = ($card.find('[data-d="device_name"]').val() || "").trim();
-				if (!name) return this.show_error(__("Name the device first."));
-				if (this.pair_mode === "Code" && !this.ctx.pair_phone) return this.show_error(__("Enter the WhatsApp number that receives the 8-digit code."));
-				this.show_error("");
-				this.busy_button(
-					$btn,
-					__("Creating…"),
-					ui
-						.call("devices.create_device", { device_name: name, phone: this.pair_mode === "Code" ? this.ctx.pair_phone : null, pairing_mode: this.pair_mode })
-						.then((r) => {
-							this.ctx.device = r.name;
-							return this.start_pairing($pair);
-						})
-						.catch((err) => this.show_error(err.message))
-				);
-			});
-		}
-
-		start_pairing($pair) {
-			$pair.html(ui.skeleton(2));
-			this.stop_pairing_watch();
-			return ui
-				.call("devices.start_pairing", { device: this.ctx.device, mode: this.pair_mode })
-				.then((payload) => {
-					this.render_pairing($pair, payload || {});
-					this.watch_pairing();
-				})
-				.catch((err) => {
-					$pair.html(strip_html("danger", (err && err.message) || __("Something went wrong. Please try again."), { role: "alert" }));
-					$pair.append(ui.btn({ label: __("Try again"), variant: "secondary", size: "sm", attrs: { "data-act": "repair" } }));
-					$pair.find('[data-act="repair"]').on("click", () => this.start_pairing($pair));
-				});
-		}
-
-		render_pairing($pair, payload) {
-			const qr = payload.qr_code || "";
-			const is_image = /^(data:image|https?:)/.test(qr);
-			const steps = [
-				__("Open WhatsApp on the phone."),
-				__("Menu → Linked devices → Link a device."),
-				this.pair_mode === "Code" ? __("Choose “Link with phone number” and type the code.") : __("Point the camera at the code."),
-			];
-			$pair.html(`
-				<div class="wa-sunken wa-onb__pair">
-					<div class="wa-onb__pair-code" data-slot="code"></div>
-					<div class="wa-onb__pair-how">
-						<ol class="wa-onb__pair-steps">${steps.map((s) => `<li>${esc(s)}</li>`).join("")}</ol>
-						<div data-slot="countdown"></div>
-					</div>
-				</div>`);
-			const $code = $pair.find('[data-slot="code"]');
-			if (this.pair_mode === "Code" && payload.pair_code) {
-				$code.html(`<span class="wa-onb__pin" dir="ltr">${esc(payload.pair_code)}</span>`);
-			} else if (is_image) {
-				$code.html(`<img class="wa-onb__qr" src="${esc(qr)}" alt="${esc(__("QR code — scan it with WhatsApp on the phone"))}">`);
-			} else if (qr) {
-				$code.html(`<code class="wa-onb__raw" dir="ltr">${esc(qr)}</code>`);
-			} else {
-				$code.html(strip_html("warn", __("The platform did not return a linking code for this device.")));
-			}
-			this.pair_countdown($pair.find('[data-slot="countdown"]'), payload.expires_in || 60, $pair);
-		}
-
-		pair_countdown($el, seconds, $pair) {
-			let left = Math.max(0, parseInt(seconds, 10) || 60);
-			const spoken = new Set();
-			const tick = () => {
-				if ([30, 10].includes(left) && !spoken.has(left)) {
-					spoken.add(left);
-					ui.announce(__("The linking code expires in {0} seconds.", [left]));
-				}
-				if (left <= 0) {
-					window.clearInterval(this._pair_countdown);
-					$el.html(strip_html("muted", __("The code expired.")));
-					$(ui.btn({ label: __("Get a new code"), variant: "secondary", size: "sm", attrs: { "data-act": "recode" } }))
-						.on("click", () => this.start_pairing($pair))
-						.appendTo($el);
-					return;
-				}
-				$el.html(strip_html("warn", __("Waiting for the scan — the code expires in {0} s", [left])));
-				left -= 1;
-			};
-			window.clearInterval(this._pair_countdown);
-			tick();
-			this._pair_countdown = window.setInterval(tick, 1000);
-		}
-
-		watch_pairing() {
-			this.stop_pairing_watch(true);
-			this._pair_poll = window.setInterval(() => {
-				if (document.hidden) return;
-				ui.call("devices.poll_status", { device: this.ctx.device }, { silent: true })
-					.then((r) => this.apply_device_status(r && r.status))
-					.catch(() => {});
-			}, POLL_MS);
-			this._pair_realtime = (data) => {
-				if (data && data.device === this.ctx.device) this.apply_device_status(data.status);
-			};
-			frappe.realtime.on("wa:device:status", this._pair_realtime);
-		}
-
-		stop_pairing_watch(keep_countdown) {
-			if (this._pair_poll) window.clearInterval(this._pair_poll);
-			this._pair_poll = null;
-			if (!keep_countdown && this._pair_countdown) window.clearInterval(this._pair_countdown);
-			if (this._pair_realtime) frappe.realtime.off("wa:device:status", this._pair_realtime);
-			this._pair_realtime = null;
-		}
-
-		apply_device_status(status) {
-			if (status !== "Connected") return;
-			this.stop_pairing_watch();
-			ui.announce(__("The device is linked."), { assertive: true });
-			ui.Toast.success(__("The device is linked."));
-			ui.call("onboarding.get_status").then((s) => {
-				this.status = s || {};
-				this.render();
-			});
-		}
-
-		// ---- connecting: the webhook ---------------------------------------------------------------------
-
-		card_webhook() {
-			const done = this.step_done("webhook");
-			const $card = this.card("md", {
-				title: __("Register the webhook"),
-				sub: __("The platform calls this site when a message is delivered, read or answered. Without it, this site never learns what happened."),
-			});
-			this.site_head($card, 3);
-			if (this.status.webhook_url) {
-				$card.append(`
-					<div class="wa-sunken wa-onb__kv">
-						<span class="wa-onb__kv-label">${esc(__("Endpoint"))}</span>
-						<code class="wa-onb__kv-value" dir="ltr">${esc(this.status.webhook_url)}</code>
-						${ui.btn({ label: __("Copy"), icon: "copy", variant: "ghost", size: "sm", attrs: { "data-act": "copy-url" } })}
-					</div>`);
-			}
-			$card.append(done ? strip_html("ok", __("The webhook is active.")) : strip_html("warn", this.step_detail("webhook") || __("The webhook is not registered yet.")));
-			$card.append(`
-				<div class="wa-btnbar">
-					${done
-						? ui.btn({ label: __("Back to «Ready to work»"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "site-back" } })
-						: ui.btn({ label: __("Register the webhook"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "register" } })}
-					${ui.btn({ label: __("Back to the device"), variant: "ghost", attrs: { "data-act": "back-device" } })}
-				</div>`);
-
-			$card.on("click", '[data-act="copy-url"]', (e) => {
-				copy_to_clipboard(this.status.webhook_url)
-					.then(() => $(e.currentTarget).find("span").last().text(__("Copied")))
-					.catch(() => ui.Toast.warning(__("The browser did not allow copying. Select the address and copy it by hand.")));
-			});
-			$card.on("click", '[data-act="back-device"]', () => this.set_state({ stage: "device" }));
-			$card.on("click", '[data-act="register"]', (e) =>
-				this.busy_button(
-					$(e.currentTarget),
-					__("Registering…"),
-					ui
-						.call("settings.setup_webhook")
-						.then(() => ui.call("onboarding.get_status"))
-						.then((status) => {
-							this.status = status || {};
-							ui.Toast.success(__("The webhook is registered."));
-							this.render();
-						})
-						.catch((err) => this.show_error(err.message))
-				)
-			);
+				.catch((err) => $slot.html(strip_html("danger", err.message, { role: "alert" })));
 		}
 
 		// ---- housekeeping -----------------------------------------------------------------------------
