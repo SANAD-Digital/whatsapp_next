@@ -1,0 +1,438 @@
+// MessageComposer — messages drawn as the conversation they will produce. The card is the message,
+// the connector between two cards is the delay between them, and the preview is a chat bubble, so
+// the editor and the result are read in one glance. Espresso tokens only; logical properties only.
+
+.sanad-mc-host {
+	> .grid-custom-buttons,
+	> .form-grid-container,
+	> .grid-footer,
+	> .grid-empty { display: none; }
+	> .control-label,
+	> .grid-label { display: none; }
+}
+
+.sanad-mc {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sanad-gap-md);
+	margin-block: var(--sanad-gap-sm) var(--sanad-gap-lg);
+
+	&__head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+	}
+	&__title {
+		margin: 0;
+		font-size: var(--text-lg, 16px);
+		font-weight: 600;
+		color: var(--ink-gray-9);
+	}
+	&__count {
+		flex: 1;
+		font-size: var(--text-sm, 12px);
+		color: var(--ink-gray-6);
+	}
+	&__head-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+	}
+	&__hint {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-5);
+	}
+	&__foot {
+		margin: 0;
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-5);
+	}
+
+	&__list {
+		display: flex;
+		flex-direction: column;
+	}
+
+	// ---- the card ------------------------------------------------------------------------------
+
+	&__card {
+		container-type: inline-size;
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		overflow: hidden;
+		transition: border-color var(--sanad-motion), box-shadow var(--sanad-motion);
+
+		&--open {
+			border-color: var(--sanad-accent-outline);
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+		}
+		&--problem { border-inline-start: 3px solid var(--outline-amber-1); }
+	}
+
+	&__card-head {
+		display: flex;
+		align-items: stretch;
+		gap: var(--sanad-gap-sm);
+		padding-inline-end: var(--sanad-gap-sm);
+	}
+
+	&__disclose {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		flex: 1;
+		min-inline-size: 0;
+		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
+		border: 0;
+		background: none;
+		text-align: start;
+		cursor: pointer;
+
+		&:hover { background: var(--surface-gray-1); }
+	}
+
+	&__order {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 22px;
+		block-size: 22px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--sanad-accent-soft);
+		color: var(--sanad-accent-ink);
+		font-size: var(--text-xs, 11px);
+		font-weight: 700;
+		flex: none;
+	}
+
+	&__type {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		padding: 2px 8px;
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-gray-2);
+		color: var(--ink-gray-7);
+		font-size: var(--text-xs, 11px);
+		white-space: nowrap;
+		flex: none;
+
+		.icon { flex: none; }
+	}
+
+	&__summary {
+		flex: 1;
+		min-inline-size: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		color: var(--ink-gray-8);
+		font-size: var(--text-sm, 13px);
+		unicode-bidi: plaintext;
+	}
+
+	&__problem {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		color: var(--ink-amber-3);
+		font-size: var(--text-xs, 11px);
+		white-space: nowrap;
+		flex: none;
+	}
+
+	&__chevron {
+		display: inline-flex;
+		color: var(--ink-gray-5);
+		flex: none;
+	}
+
+	&__card-actions {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+	}
+
+	&__icon-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: var(--sanad-target);
+		block-size: var(--sanad-target);
+		padding: 0;
+		border: 0;
+		border-radius: var(--sanad-radius);
+		background: none;
+		color: var(--ink-gray-6);
+		cursor: pointer;
+
+		&:hover:not([disabled]) { background: var(--surface-gray-2); color: var(--ink-gray-8); }
+		&[disabled] { opacity: 0.35; cursor: default; }
+	}
+
+	// ---- the connector: the delay, drawn as the gap it is --------------------------------------
+
+	&__connector {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		padding-inline: var(--sanad-gap-lg);
+		block-size: 34px;
+	}
+	&__connector-line {
+		flex: 1;
+		block-size: 0;
+		border-block-start: 1px dashed var(--outline-gray-2);
+	}
+	&__delay {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		padding: 2px 10px;
+		border: 1px solid var(--outline-gray-1);
+		border-radius: var(--border-radius-full, 999px);
+		background: var(--surface-white);
+		color: var(--ink-gray-6);
+		font-size: var(--text-xs, 11px);
+		cursor: pointer;
+		white-space: nowrap;
+
+		&:hover { background: var(--surface-gray-2); color: var(--ink-gray-8); }
+	}
+
+	// ---- the editor ----------------------------------------------------------------------------
+
+	&__body[hidden] { display: none; }
+
+	&__edit {
+		display: grid;
+		gap: var(--sanad-gap-lg);
+		padding: var(--sanad-gap-md) var(--sanad-gap-lg) var(--sanad-gap-lg);
+		border-block-start: var(--sanad-border);
+		grid-template-columns: 1fr;
+
+		// two panes: the editor, and what it will look like. The card is the container — an element
+		// cannot answer a container query it declares itself, which is why this asked and nothing
+		// happened the first time.
+		@container (min-width: 620px) {
+			grid-template-columns: minmax(0, 1.1fr) minmax(220px, 0.9fr);
+		}
+	}
+
+	&__pane {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		min-inline-size: 0;
+	}
+	// the preview follows the reader down a long message instead of scrolling out of sight
+	@container (min-width: 620px) {
+		.sanad-mc__pane--preview {
+			position: sticky;
+			inset-block-start: var(--sanad-gap-sm);
+			align-self: start;
+		}
+	}
+	&__pane-label {
+		font-size: var(--text-xs, 11px);
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--ink-gray-5);
+	}
+
+	&__types {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-xs);
+	}
+	&__type-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		min-block-size: var(--sanad-target);
+		padding-inline: 10px;
+		border: 1px solid var(--outline-gray-2);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		color: var(--ink-gray-7);
+		font-size: var(--text-sm, 12px);
+		cursor: pointer;
+
+		&:hover { background: var(--surface-gray-2); }
+		&--on {
+			background: var(--sanad-accent-soft);
+			border-color: var(--sanad-accent-outline);
+			color: var(--sanad-accent-ink);
+			font-weight: 600;
+		}
+	}
+
+	&__fields {
+		display: grid;
+		gap: var(--sanad-gap-sm);
+	}
+	&__field {
+		.frappe-control { margin: 0; }
+		.control-label { font-size: var(--text-xs, 11px); color: var(--ink-gray-6); }
+		// a body field is read while it is written: tall enough to see the message, never taller
+		textarea {
+			min-block-size: 96px;
+			max-block-size: 168px;
+			resize: vertical;
+		}
+	}
+
+	// ---- the bubble ----------------------------------------------------------------------------
+
+	&__chat {
+		padding: var(--sanad-gap-md);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-gray-2);
+		min-block-size: 96px;
+		display: flex;
+		justify-content: flex-end;
+	}
+
+	&__bubble {
+		position: relative;
+		display: inline-flex;
+		flex-direction: column;
+		gap: 6px;
+		max-inline-size: 92%;
+		padding: 8px 10px;
+		border-radius: 12px;
+		border-end-end-radius: 4px;
+		background: var(--sanad-accent-soft);
+		color: var(--ink-gray-9);
+		font-size: var(--text-sm, 13px);
+		line-height: 1.7;
+		box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06);
+	}
+
+	&__text {
+		white-space: pre-wrap;
+		word-break: break-word;
+		unicode-bidi: plaintext;
+
+		&--empty { color: var(--ink-gray-5); font-style: italic; }
+		code {
+			padding: 1px 4px;
+			border-radius: 4px;
+			background: var(--surface-white);
+			font-size: 0.92em;
+		}
+	}
+
+	// a variable that has not been rendered yet reads as what it is, not as stray punctuation
+	&__var {
+		display: inline-block;
+		padding: 0 5px;
+		border-radius: 4px;
+		background: var(--surface-white);
+		color: var(--sanad-accent-ink);
+		font-family: var(--font-stack-mono, monospace);
+		font-size: 0.86em;
+	}
+
+	&__file {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 8px;
+		border-radius: 8px;
+		background: var(--surface-white);
+		color: var(--ink-gray-8);
+		font-size: var(--text-xs, 12px);
+		max-inline-size: 100%;
+
+		span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	}
+
+	&__poll {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: 8px;
+		border-radius: 8px;
+		background: var(--surface-white);
+	}
+	&__poll-q { font-weight: 600; }
+	&__poll-o {
+		padding: 4px 8px;
+		border: 1px solid var(--outline-gray-1);
+		border-radius: var(--border-radius-full, 999px);
+		font-size: var(--text-xs, 12px);
+	}
+	&__poll-note {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-5);
+	}
+
+	&__meta {
+		display: inline-flex;
+		align-items: center;
+		gap: 3px;
+		align-self: flex-end;
+		color: var(--ink-gray-5);
+		font-size: 10px;
+
+		.icon { width: 12px; height: 12px; }
+	}
+
+	&__errors {
+		color: var(--ink-red-4);
+		font-size: var(--text-xs, 11px);
+
+		ul { margin: 0; padding-inline-start: 16px; }
+	}
+
+	// ---- variables -----------------------------------------------------------------------------
+
+	&__varsrow {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-xs);
+		margin-block-start: var(--sanad-gap-xs);
+	}
+	&__vars {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--sanad-gap-xs);
+	}
+	&__var-btn {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 6px;
+		max-inline-size: 100%;
+		padding: 3px 8px;
+		border: 1px solid var(--outline-gray-1);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		text-align: start;
+		cursor: pointer;
+
+		&:hover { background: var(--sanad-accent-soft); border-color: var(--sanad-accent-outline); }
+	}
+	&__var-name {
+		font-family: var(--font-stack-mono, monospace);
+		font-size: 10px;
+		color: var(--ink-gray-5);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&__var-label {
+		font-size: var(--text-xs, 11px);
+		color: var(--ink-gray-8);
+		white-space: nowrap;
+	}
+}
+
+// the phone reads one column, and the preview comes first: it is the reason the editor exists
+// a narrow column reads the preview first: it is the reason the editor exists
+@container (max-width: 619px) {
+	.sanad-mc__edit .sanad-mc__pane--preview { order: -1; }
+}

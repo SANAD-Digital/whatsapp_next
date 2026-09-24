@@ -29,6 +29,7 @@ import "./ChatThread/index.js";
 import "./ConversationDrawer/index.js";
 import "./QuickSend/index.js";
 import "./TemplateEditor/index.js";
+import "./MessageComposer/index.js";
 import "./PagedChildTable/index.js";
 import "./DashboardBlock/index.js";
 // sub-system

@@ -241,6 +241,41 @@ function unsubscribe(frm) {
 	frm.sanad_realtime = null;
 }
 
+/**
+ * The messages the campaign sends, drawn as the conversation they will produce: one card per
+ * message, its own editor beside a live bubble, and the delay between two messages drawn as the
+ * gap between their cards. The native grid stays hidden behind it.
+ */
+function mount_messages(frm) {
+	const editable = !TERMINAL.includes(frm.doc.status) && EDITABLE.includes(frm.doc.status) && frappe.perm.has_perm(frm.doctype, 0, "write", frm.doc);
+	if (frm.sanad_messages && frm.$wrapper.find('.sanad-mc[data-fieldname="messages"]').length) {
+		frm.sanad_messages.refresh();
+		return;
+	}
+	frm.sanad_messages = new sanad.ui.MessageComposer({
+		frm,
+		fieldname: "messages",
+		type_field: "message_type",
+		body_field: "body",
+		delay_field: "delay_seconds",
+		max: 5,
+		can_edit: () => editable,
+		preview: { method: "campaigns.preview_message", args: (row) => ({ name: frm.doc.name, idx: row.idx }) },
+		// the campaign renders per recipient: these are the names that exist in that context
+		// (`services/campaign_runner._render_message_body`), said in the reader's words
+		variables: [
+			{ name: "recipient.display_name", label: __("Recipient name") },
+			{ name: "recipient.phone_e164", label: __("Recipient number") },
+			{ name: "recipient.contact", label: __("Linked contact") },
+			{ name: "campaign.campaign_name", label: __("Campaign name") },
+			{ name: "doc.name", label: __("Source document") },
+			{ name: "today", label: __("Today's date") },
+			{ name: "now", label: __("Now") },
+		],
+		empty_text: __("No message yet"),
+	});
+}
+
 function preview_message(frm, row) {
 	sanad.ui
 		.call("campaigns.preview_message", { name: frm.doc.name, idx: row.idx }, { silent: true })
@@ -290,14 +325,7 @@ frappe.ui.form.on("WhatsApp Campaign", {
 			frm.sanad_picker_group = null;
 			open_picker(frm, "add", { source: "groups", ref: group });
 		}
-		if (!frm.is_new() && frm.fields_dict.messages && frm.fields_dict.messages.grid) {
-			frm.fields_dict.messages.grid.add_custom_button(__("Preview message"), () => {
-				const selected = frm.fields_dict.messages.grid.get_selected_children();
-				const row = selected[0] || (frm.doc.messages || [])[0];
-				if (!row) return sanad.ui.Toast.warning(__("Add a message first"));
-				preview_message(frm, row);
-			});
-		}
+		mount_messages(frm);
 	},
 
 	on_hide(frm) {
