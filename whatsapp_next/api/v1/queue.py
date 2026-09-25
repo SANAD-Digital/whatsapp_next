@@ -103,6 +103,17 @@ def list_queue(filters: dict | None = None, page: int = 1, page_length: int = 20
 
 
 @api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
+def get_limits() -> dict[str, Any]:
+	"""The send rate the queue allows and the plan's ceiling → `{rate, plan_rate}`.
+
+	What a campaign's slider needs and nothing else: `get_summary` also asks the provider for its
+	queue view, which a form opening a hundred times a day has no use for.
+	"""
+	s = dispatch.queue_summary()
+	return {"rate": s["rate"], "plan_rate": s["plan_rate"]}
+
+
+@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
 def get_summary() -> dict[str, Any]:
 	"""Counts by status, global pause state, rate / plan rate and the provider's queue view (60 s cache)."""
 	s = dispatch.queue_summary()

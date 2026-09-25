@@ -47,7 +47,8 @@ the checked rows or the current filters), `replace_standard_filters` (default tr
 `label`, `options` — strings, `{value, label}` objects or `(txt) => Promise<…>`; for `period`:
 `[{value: days | null, label}]`, `multiple` (select, default true), `default` (period:
 `"30d"` / `"7d"` / `"today"` / `"all"`), `all_label`, `fields` / `placeholder` for search),
-`on_change`, `debounce`. Presets render by type in the prototype order regardless of array order.
+`on_change`, `debounce`, `datalist` (page mode: the `DataList` — or `() => DataList` — that the
+`group_by` action groups; on a list the DataList registers itself). Presets render by type in the prototype order regardless of array order.
 Methods: `set(fieldname, value)`, `set_search(text, fields)`, `sync()` (re-read the list's
 filters, incl. mapping an `in` filter back to checked boxes), `get_filters()`,
 `get_or_filters()`, `group_by(fieldname)`, `export()`, `clear()`, `destroy()`.

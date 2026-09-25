@@ -161,6 +161,9 @@
 		border: 0;
 		background: transparent;
 		outline: none;
+		// the kit gives every focused input a ring; here the ring belongs to the box around the
+		// country trigger and the digits, so the input inside it must not draw a second one
+		&:focus-visible { box-shadow: none !important; outline: none !important; }
 		padding: 0 12px;
 		font-size: 13.5px;
 		letter-spacing: 0.6px;

@@ -129,7 +129,9 @@ $wa-surfaces:
 	"#page-wa-functions-center",
 	"#page-wa-simulator",
 	'body[data-route^="Form/WhatsApp "] .page-container',
-	".modal.sanad-sheet";
+	".modal.sanad-sheet",
+	// the prototype's overlay panel mounts on <body>, outside every page, and is always ours
+	".sanad-op";
 
 $wa-bridge: ();
 @each $sel in $wa-surfaces {

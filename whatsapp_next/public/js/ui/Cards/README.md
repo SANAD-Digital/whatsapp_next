@@ -53,6 +53,8 @@ take more than one column of its section's grid.
 ## Live use
 `public/js/form/whatsapp_campaign.js` — the campaign's Progress tab: a section of `stat` readings,
 a `panel` whose rows are the stages of the funnel, and a second section for the audience.
+Functions Center (`page/wa_functions_center/wa_functions_center.js`) — the prototype's four compact
+`stat` readings (functions · active · calls · updates) as a `PageHeader` block, two of them clickable.
 
 ## Design gate
 - Tone is never colour alone: every toned card carries its tone in a dot, a tile or a badge **and**

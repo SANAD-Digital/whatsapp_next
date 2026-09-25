@@ -26,7 +26,8 @@ sanad.ui.Drawer = class Drawer {
 	 * @param {Object} [opts.doc] — a payload to render without fetching
 	 * @param {string} [opts.title] — default: the doc's title field / name
 	 * @param {string} [opts.subtitle]
-	 * @param {Array<{label: string, icon?: string, handler: Function, primary?: boolean, danger?: boolean, condition?: Function, perm?: string, roles?: string[]}>} [opts.actions]
+	 * @param {Array<{label: string, icon?: string, handler: Function, primary?: boolean, danger?: boolean, menu?: boolean, condition?: Function, perm?: string, roles?: string[]}>} [opts.actions]
+	 *   — `menu: true` puts the action behind the footer's one "More" button
 	 * @param {Array<{label: string, render: Function($el, doc), condition?: Function}>} [opts.sections] — extra blocks under the fields (`record`)
 	 * @param {"document"|"fields"} [opts.layout="document"] — `record` mode: the document layout
 	 *   (identity · highlight · quick facts · related · details · activity) or the plain field list
@@ -128,6 +129,7 @@ sanad.ui.Drawer = class Drawer {
 
 	hide({ silent = false } = {}) {
 		if (this.$root.prop("hidden")) return this;
+		this.close_menu();
 		this.untrap && this.untrap();
 		ui.overlay.close(this);
 		this.$root.removeClass("sanad-panel--open");
@@ -157,11 +159,14 @@ sanad.ui.Drawer = class Drawer {
 	}
 
 	destroy() {
-		this.hide({ silent: true });
-		window.setTimeout(() => {
+		const remove = () => {
 			this.$root.remove();
 			this.$backdrop.remove();
-		}, 200);
+		};
+		// a drawer that is already closed leaves at once, so its content never shadows a new one's
+		if (this.$root.prop("hidden")) return remove();
+		this.hide({ silent: true });
+		window.setTimeout(remove, 200);
 	}
 
 	// ---- data ------------------------------------------------------------------------------
@@ -547,27 +552,103 @@ sanad.ui.Drawer = class Drawer {
 		this.render_actions({});
 	}
 
+	/**
+	 * The footer holds the verbs the reference draws there: two or three. An action marked
+	 * `menu: true` goes behind one "More" button instead, so a record with seven things to do
+	 * does not end in three ragged rows of buttons.
+	 */
 	render_actions(doc) {
 		this.$footer.empty();
+		this.close_menu();
 		const actions = ui.visible_actions(this.opts.actions, doc, this.doctype);
 		if (!actions.length) {
 			this.$footer.prop("hidden", true);
 			return;
 		}
-		actions.forEach((a) => {
+		const run = (a, $btn) => {
+			$btn && $btn.prop("disabled", true);
+			Promise.resolve(a.handler(this.doc, this))
+				.catch((err) => {
+					if (err && err.message && err.message !== "cancelled") sanad.ui.Toast.error(err);
+				})
+				.finally(() => $btn && $btn.prop("disabled", false));
+		};
+		const inline = actions.filter((a) => !a.menu);
+		const more = actions.filter((a) => a.menu);
+		if (more.length) {
+			const $more = $(`<button type="button" class="btn btn-sm btn-default sanad-drawer__action sanad-drawer__more" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("More actions"))}" title="${ui.escape(__("More actions"))}">${ui.icon(ui.icons.more, "sm")}</button>`);
+			$more.on("click", () => (this.$menu ? this.close_menu(true) : this.open_menu($more, more, run)));
+			this.$footer.append($more);
+		}
+		inline.forEach((a) => {
 			const cls = a.primary ? "btn-primary" : a.danger ? "btn-danger" : "btn-default";
 			const $btn = $(`<button type="button" class="btn btn-sm ${cls} sanad-drawer__action">${a.icon ? ui.icon(a.icon, "xs") + " " : ""}${ui.escape(a.label)}</button>`);
-			$btn.on("click", () => {
-				$btn.prop("disabled", true);
-				Promise.resolve(a.handler(this.doc, this))
-					.catch((err) => {
-						if (err && err.message && err.message !== "cancelled") sanad.ui.Toast.error(err);
-					})
-					.finally(() => $btn.prop("disabled", false));
-			});
+			$btn.on("click", () => run(a, $btn));
 			this.$footer.append($btn);
 		});
 		this.$footer.prop("hidden", false);
+	}
+
+	/** The "More" menu — the same menu RowActions draws on a list row, anchored to the button. */
+	open_menu($btn, actions, run) {
+		const id = ui.uid("drawermenu");
+		// the list's menu sits under an open panel; this one belongs to the panel, so it sits above it
+		const $menu = $(`<div class="sanad-kit sanad-rowactions__menu sanad-drawer__menu" id="${id}" role="menu" aria-label="${ui.escape(__("More actions"))}"></div>`);
+		actions.forEach((a) => {
+			$(`<button type="button" class="sanad-rowactions__item${a.danger ? " sanad-rowactions__item--danger" : ""}" role="menuitem" tabindex="-1">${a.icon ? `<span class="sanad-rowactions__icon" aria-hidden="true">${ui.icon(a.icon, "sm")}</span>` : ""}<span>${ui.escape(a.label)}</span></button>`)
+				.on("click", (e) => {
+					e.preventDefault();
+					this.close_menu(true);
+					run(a, null);
+				})
+				.appendTo($menu);
+		});
+		$menu.on("keydown", (e) => {
+			const items = $menu.find('[role="menuitem"]').toArray();
+			if (e.key === "Escape") {
+				e.preventDefault();
+				e.stopPropagation();
+				return this.close_menu(true);
+			}
+			if (e.key === "Tab") return this.close_menu();
+			const i = ui.roving_index(e, items, items.indexOf(document.activeElement));
+			if (i < 0) return;
+			e.preventDefault();
+			items.forEach((el) => el.setAttribute("tabindex", "-1"));
+			items[i].setAttribute("tabindex", "0");
+			items[i].focus();
+		});
+		$menu.appendTo(document.body);
+		// above the button, inside the panel's own column
+		const rect = $btn[0].getBoundingClientRect();
+		const w = $menu.outerWidth();
+		const h = $menu.outerHeight();
+		let x = ui.is_rtl() ? rect.right - w : rect.left;
+		x = Math.max(8, Math.min(x, window.innerWidth - w - 8));
+		let y = rect.top - h - 4;
+		if (y < 8) y = rect.bottom + 4;
+		const tx = ui.is_rtl() ? -(window.innerWidth - (x + w)) : x;
+		$menu[0].style.setProperty("--sanad-menu-x", `${Math.round(tx)}px`);
+		$menu[0].style.setProperty("--sanad-menu-y", `${Math.round(y)}px`);
+		$btn.attr("aria-expanded", "true").attr("aria-controls", id);
+		this.$menu = $menu;
+		this.$menu_opener = $btn;
+		this._outside = (e) => {
+			if (!$(e.target).closest(".sanad-rowactions__menu, .sanad-drawer__more").length) this.close_menu();
+		};
+		window.setTimeout(() => $(document).on("mousedown.sanaddrawermenu touchstart.sanaddrawermenu", this._outside), 0);
+		$menu.find('[role="menuitem"]').first().attr("tabindex", "0").trigger("focus");
+	}
+
+	close_menu(restore_focus = false) {
+		if (!this.$menu) return;
+		this.$menu.remove();
+		this.$menu = null;
+		$(document).off(".sanaddrawermenu");
+		if (this.$menu_opener) {
+			this.$menu_opener.attr("aria-expanded", "false").removeAttr("aria-controls");
+			if (restore_focus) this.$menu_opener.trigger("focus");
+		}
 	}
 
 	/** The open drawer, if the current overlay is one. */

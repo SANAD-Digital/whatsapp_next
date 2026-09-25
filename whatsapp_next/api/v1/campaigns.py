@@ -10,6 +10,8 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
+import json
+
 import frappe
 from frappe import _
 from frappe.query_builder.functions import Count
@@ -18,7 +20,7 @@ from frappe.utils import add_to_date, cint, now_datetime
 from whatsapp_next.api._common import api_endpoint, paginate
 from whatsapp_next.api.v1 import _bulk
 from whatsapp_next.api.v1._roles import MANAGER, VIEWER_UP
-from whatsapp_next.exceptions import WANotFoundError, WAPermissionError
+from whatsapp_next.exceptions import WANotFoundError, WAPermissionError, WAValidationError
 from whatsapp_next.services import campaign_runner as runner
 
 RECIPIENT_FIELDS: tuple[str, ...] = (
@@ -236,15 +238,31 @@ def get_sending_now() -> list[dict[str, Any]]:
 	return runner.sending_now()
 
 
+def _one_or_many(name: str, value: Any, allowed: tuple[str, ...]) -> list[str]:
+	"""A filter value as the list it filters on: `None`/"" → `[]`, a string → `[it]`, a JSON list
+	string or a list → its members; anything outside `allowed` is refused."""
+	if value in (None, "", [], ()):
+		return []
+	if isinstance(value, str) and value.lstrip().startswith("["):
+		try:
+			value = json.loads(value)
+		except ValueError:
+			frappe.throw(_("Invalid value for {0}").format(name), WAValidationError)
+	values = [value] if isinstance(value, str) else list(value)
+	bad = [v for v in values if v not in allowed]
+	if bad:
+		frappe.throw(_("Invalid value for {0}: {1}").format(name, ", ".join(map(str, bad))), WAValidationError)
+	return values
+
+
 @api_endpoint(
 	roles=VIEWER_UP,
 	methods=("GET", "POST"),
-	schema={"status": {"enum": list(RECIPIENT_STATUSES)}, "source_type": {"enum": list(SOURCE_TYPES)}},
 )
 def get_recipients_page(
 	name: str,
-	status: str | None = None,
-	source_type: str | None = None,
+	status: str | list[str] | None = None,
+	source_type: str | list[str] | None = None,
 	search: str | None = None,
 	page: int = 1,
 	page_length: int = 50,
@@ -252,19 +270,23 @@ def get_recipients_page(
 ) -> dict[str, Any]:
 	"""One page of the recipients child table → `{rows, total, counts}`.
 
-	`search` matches phone or name. `counts` is every status this campaign's recipients hold under
-	the same search and source filter — the panel's chips carry them, so the reader sees how many
-	are still pending before choosing a chip, and `counts["All"]` is the panel's own total.
+	`search` matches phone or name. `status` and `source_type` take one value or a list (a JSON
+	list over the wire) — a filter bar with checkboxes asks for several at once. `counts` is every
+	status this campaign's recipients hold under the same search and source filter — the panel's
+	chips carry them, so the reader sees how many are still pending before choosing a chip, and
+	`counts["All"]` is the panel's own total.
 	"""
 	_require(name, "read")
 	filters: list[list[Any]] = [
 		["WhatsApp Campaign Recipient", "parent", "=", name],
 		["WhatsApp Campaign Recipient", "parenttype", "=", "WhatsApp Campaign"],
 	]
-	if status:
-		filters.append(["WhatsApp Campaign Recipient", "status", "=", status])
-	if source_type:
-		filters.append(["WhatsApp Campaign Recipient", "source_type", "=", source_type])
+	status_in = _one_or_many("status", status, RECIPIENT_STATUSES)
+	source_in = _one_or_many("source_type", source_type, SOURCE_TYPES)
+	if status_in:
+		filters.append(["WhatsApp Campaign Recipient", "status", "in", status_in])
+	if source_in:
+		filters.append(["WhatsApp Campaign Recipient", "source_type", "in", source_in])
 	or_filters: list[list[Any]] = []
 	if search:
 		like = f"%{search.strip()}%"
@@ -326,3 +348,43 @@ def get_poll_results(name: str, refresh: bool = False) -> dict[str, Any]:
 	`{results[{idx, question, options, counts, responses, errors, by_poll_id}]}`."""
 	_require(name, "read")
 	return runner.poll_results(name, refresh=refresh)
+
+
+@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
+def get_readiness(name: str) -> dict[str, Any]:
+	"""The five checks that decide whether the campaign can start → `{ok, status, checks[]}`;
+	each check is `{key, ok, …facts}` and the screen writes the sentence."""
+	_require(name, "read")
+	return runner.readiness(name)
+
+
+@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
+def get_failures(name: str) -> dict[str, Any]:
+	"""Failures by `error_code` → `{total, retryable, rows[{error_code, count, share, retryable,
+	sample}]}` — what to fix, in the order it costs."""
+	_require(name, "read")
+	return runner.failures(name)
+
+
+@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
+def get_message_stats(name: str) -> dict[str, Any]:
+	"""Each message of the campaign with the counts of its own outbound rows →
+	`{rows[{idx, message_type, delay_seconds, preview, attachment, counts{}, total}]}`."""
+	_require(name, "read")
+	return runner.message_stats(name)
+
+
+@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
+def get_timeline(name: str) -> dict[str, Any]:
+	"""What happened to the campaign and when → `{events[{key, at, …}], status}`. Audit events are
+	included only for a reader who may read the audit log."""
+	_require(name, "read")
+	return runner.timeline(name)
+
+
+@api_endpoint(roles=MANAGER)
+def retry_failed(name: str, error_code: str | None = None, limit: int = runner.RETRY_LIMIT) -> dict[str, Any]:
+	"""Resend failed messages of the campaign (retryable codes, or one bucket) →
+	`{retried, refused, remaining}`. Each resend is a new message row; audited."""
+	_require(name, "write")
+	return runner.retry_failed(name, error_code=error_code, user=frappe.session.user, limit=cint(limit))

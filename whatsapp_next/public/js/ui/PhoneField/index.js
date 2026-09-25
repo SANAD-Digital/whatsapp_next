@@ -37,8 +37,8 @@ import ui from "../_core/index.js";
 
 /** Enough to answer a synchronous caller before the catalogue lands; replaced the moment it does. */
 const SEED = [
-	{ iso: "SA", main: true, dial: 966, example: "051 234 5678", international: "+966 51 234 5678", trunk: "0", len: 9 },
-	{ iso: "AE", main: true, dial: 971, example: "050 123 4567", international: "+971 50 123 4567", trunk: "0", len: 9 },
+	{ iso: "SA", main: true, dial: 966, example: "051 234 5678", international: "+966 51 234 5678", trunk: "0", len: 9, mobile: "579[0-8]\\d{5}|5(?:[013-689]\\d|7[0-8])\\d{6}" },
+	{ iso: "AE", main: true, dial: 971, example: "050 123 4567", international: "+971 50 123 4567", trunk: "0", len: 9, mobile: "5[02-68]\\d{7}" },
 	{ iso: "KW", main: true, dial: 965, example: "500 12345", international: "+965 500 12345", trunk: "", len: 8 },
 	{ iso: "QA", main: true, dial: 974, example: "3312 3456", international: "+974 3312 3456", trunk: "", len: 8 },
 	{ iso: "BH", main: true, dial: 973, example: "3600 1234", international: "+973 3600 1234", trunk: "", len: 8 },
@@ -545,15 +545,29 @@ sanad.ui.PhoneField = class PhoneField {
 		return result;
 	}
 
+	/** True when `digits` match the region's mobile rule; an unparsable rule counts as a pass. */
+	static mobile_ok(digits, pattern) {
+		if (!pattern) return true;
+		const cache = (sanad.ui.PhoneField._mobile_re = sanad.ui.PhoneField._mobile_re || {});
+		if (!(pattern in cache)) {
+			try {
+				cache[pattern] = new RegExp(`^(?:${pattern})$`);
+			} catch (e) {
+				cache[pattern] = null;
+			}
+		}
+		return cache[pattern] ? cache[pattern].test(digits) : true;
+	}
+
 	/** `{full, start_ok, valid}` for the digits currently held. */
 	validity() {
 		const c = this.country;
 		const d = this.digits;
 		const full = c.len ? d.length === c.len : d.length >= 6;
-		// libphonenumber knows which digits a region's mobiles start with, but does not publish that
-		// rule in a form a browser can apply, so the field judges length only and leaves the rest to
-		// the server — which is the library itself. A claim we cannot check is a claim we do not make.
-		const start_ok = true;
+		// the region's own mobile rule, as libphonenumber publishes it and the server sends it: a
+		// landline or a typo in the first digits is refused here, not only when the server
+		// normalises the number. A region without a separate mobile rule is judged by length.
+		const start_ok = !full || !c.mobile || sanad.ui.PhoneField.mobile_ok(d, c.mobile);
 		return { full, start_ok, valid: full && start_ok };
 	}
 
@@ -562,11 +576,10 @@ sanad.ui.PhoneField = class PhoneField {
 		const { valid, start_ok } = this.validity();
 		const show_error = (this.state.touched && !this.state.focus && this.digits.length > 0 && !valid) || !!this.opts.invalid;
 		if (show_error) {
-			const starts = "";
 			return {
 				error: true,
 				text: !start_ok
-					? __("A mobile number in {0} starts with {1}", [__(c.name), starts])
+					? __("Not a mobile number in {0} — check the first digits", [__(c.name)])
 					: c.len
 						? __("The number must be {0} digits after +{1}", [c.len, c.dial])
 						: __("The number must be at least 6 digits after +{0}", [c.dial]),

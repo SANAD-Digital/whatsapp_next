@@ -3,9 +3,10 @@
 // Screen 12 — the system contacts screen the contextual permission layer forces into existence.
 // Its anatomy comes from `docs/screen/Hub Screen - Contacts.dc.html`: the screen header with its
 // four stat cards, a one-line toolbar whose inline-end carries the selection chip and the bulk
-// verbs, then the prototype's list. The table itself is `sanad.ui.DataList` in page mode, so
-// everything below is only what this screen adds: the identity cell, the detail panel the row
-// opens, and the drawer that edits a contact.
+// verbs, then the prototype's list. The table itself is `sanad.ui.DataList` in page mode, and a
+// row's detail, the create / edit form and the smaller state changes all open in
+// `sanad.ui.OverlayPanel` (the prototype's own panel), so everything below is only what this
+// screen adds around the table: the toolbar's inline-end and the identity cell.
 
 .wa-contacts {
 	display: flex;
@@ -73,6 +74,8 @@
 		border-radius: var(--sanad-card-radius);
 		background: var(--surface-white);
 		overflow: hidden;
+		// a row opens its detail: say so with the pointer, as the prototype's rows do
+		.sanad-datalist__row[tabindex] { cursor: pointer; }
 	}
 
 	// ---- the identity cell ----------------------------------------------------------------------
@@ -133,140 +136,6 @@
 		color: var(--ink-gray-7);
 	}
 
-	// ---- the detail panel a row opens in place ---------------------------------------------------
-
-	// The detail row is as wide as the table, which scrolls sideways; the panel sticks to the
-	// scroll port's inline-start edge and stops at a readable width, so it is never scrolled away.
-	&__detail-body {
-		position: sticky;
-		inset-inline-start: 0;
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-md);
-		max-inline-size: 960px;
-	}
-	&__detail-head {
-		display: flex;
-		align-items: baseline;
-		flex-wrap: wrap;
-		gap: var(--sanad-gap-sm);
-	}
-	&__detail-title {
-		font-size: var(--text-base, 14px);
-		font-weight: 600;
-		color: var(--ink-gray-9);
-	}
-	&__detail-sub {
-		font-size: var(--text-sm, 13px);
-		color: var(--ink-gray-6);
-	}
-
-	&__alert {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--sanad-gap-sm);
-		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-		border: 1px solid;
-		border-radius: var(--sanad-radius);
-		font-size: var(--text-sm, 13px);
-		strong {
-			display: block;
-			font-weight: 600;
-		}
-		span span {
-			color: inherit;
-			opacity: 0.85;
-		}
-	}
-	&__alert-icon {
-		flex: none;
-		display: inline-flex;
-	}
-
-	&__facts {
-		display: grid;
-		// the prototype's four facts plus the email: they share one line on a wide screen instead
-		// of leaving the fifth stranded on a row of its own
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: var(--sanad-gap-sm) var(--sanad-gap-lg);
-		margin: 0;
-		@media (min-width: 768px) {
-			grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-		}
-		dt {
-			font-size: 11px;
-			font-weight: 600;
-			letter-spacing: 0.05em;
-			text-transform: uppercase;
-			color: var(--ink-gray-5);
-		}
-		dd {
-			margin: 0;
-			font-size: var(--text-base, 14px);
-			color: var(--ink-gray-9);
-		}
-	}
-
-	&__blocks {
-		display: grid;
-		gap: var(--sanad-gap-lg);
-		@media (min-width: 768px) {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-	}
-	&__block {
-		min-inline-size: 0;
-		h3 {
-			margin: 0 0 var(--sanad-gap-sm);
-			font-size: var(--text-sm, 13px);
-			font-weight: 600;
-			color: var(--ink-gray-8);
-		}
-	}
-
-	&__list-rows {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
-		background: var(--surface-white);
-		li {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: var(--sanad-gap-sm);
-			padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-			border-block-end: var(--sanad-border);
-			font-size: var(--text-sm, 13px);
-			&:last-child {
-				border-block-end: 0;
-			}
-		}
-	}
-	&__msg {
-		min-inline-size: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		color: var(--ink-gray-8);
-	}
-	&__tag {
-		flex: none;
-		padding-inline: var(--sanad-gap-sm);
-		border-radius: var(--border-radius-full, 999px);
-		background: var(--surface-gray-2);
-		color: var(--ink-gray-6);
-		font-size: var(--text-xs, 11px);
-		white-space: nowrap;
-	}
-
-	&__row-actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--sanad-gap-sm);
-	}
-
 	// only the phone card shows the number under the name; the table has a column for it
 	&__card-only {
 		@media (min-width: 768px) {
@@ -290,122 +159,9 @@
 	}
 }
 
-// ---- the page-owned contact form (a drawer over the write field set) --------------------------
+// ---- what this screen adds inside the prototype's panel -----------------------------------------
 
-.wa-contact-form {
-	--sanad-panel-width: 480px;
-
-	.btn-sm {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-block-size: var(--sanad-ctl-h);
-	}
-
-	.sanad-panel__title {
-		display: flex;
-		flex-direction: column;
-		white-space: normal;
-	}
-	.sanad-panel__subtitle {
-		display: block;
-	}
-
-	&__summary {
-		margin-block-end: var(--sanad-gap-md);
-		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-		border: 1px solid var(--outline-red-1);
-		border-radius: var(--sanad-radius);
-		background: var(--surface-red-1);
-		color: var(--ink-red-4);
-		font-size: var(--text-sm, 13px);
-	}
-
-	&__fields {
-		display: grid;
-		gap: var(--sanad-gap-md);
-		@media (min-width: 560px) {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-		.frappe-control {
-			margin-block-end: 0;
-		}
-	}
-	&__phone {
-		@media (min-width: 560px) {
-			grid-column: 1 / -1;
-		}
-	}
-
-	&__block {
-		margin-block-start: var(--sanad-gap-xl);
-		h3 {
-			margin: 0;
-			font-size: var(--text-sm, 13px);
-			font-weight: 600;
-			color: var(--ink-gray-8);
-		}
-	}
-	&__hint {
-		display: block;
-		margin-block: var(--sanad-gap-xs) 0;
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-5);
-	}
-	&__empty {
-		margin: var(--sanad-gap-sm) 0 0;
-		padding: var(--sanad-gap-md);
-		border: 1px dashed var(--outline-gray-2);
-		border-radius: var(--sanad-radius);
-		color: var(--ink-gray-5);
-		font-size: var(--text-sm, 13px);
-	}
-	&__linklist {
-		list-style: none;
-		margin: var(--sanad-gap-sm) 0;
-		padding: 0;
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
-		li {
-			display: flex;
-			align-items: center;
-			gap: var(--sanad-gap-sm);
-			padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-			border-block-end: var(--sanad-border);
-			font-size: var(--text-sm, 13px);
-			&:last-child {
-				border-block-end: 0;
-			}
-			> span:first-child {
-				flex: 1;
-				min-inline-size: 0;
-				overflow: hidden;
-				text-overflow: ellipsis;
-				white-space: nowrap;
-			}
-		}
-	}
-	&__add {
-		margin-block-start: var(--sanad-gap-sm);
-	}
-
-	&__readonly {
-		display: grid;
-		gap: var(--sanad-gap-md);
-		margin-block-start: var(--sanad-gap-xl);
-		padding-block-start: var(--sanad-gap-lg);
-		border-block-start: var(--sanad-border);
-		dt {
-			font-size: 11px;
-			font-weight: 600;
-			letter-spacing: 0.05em;
-			text-transform: uppercase;
-			color: var(--ink-gray-5);
-		}
-		dd {
-			margin: 0;
-			font-size: var(--text-sm, 13px);
-			color: var(--ink-gray-8);
-		}
-	}
+// the recent-messages block: a message is a line of text with when it went and which way
+.wa-contacts-msgs {
+	&__when { flex: none; font-size: 11px; color: var(--wa-ink-4); white-space: nowrap; }
 }

@@ -10,6 +10,7 @@ from collections.abc import Iterable
 
 import frappe
 import phonenumbers
+from phonenumbers import PhoneMetadata
 
 from whatsapp_next.exceptions import WAInvalidPhoneError
 
@@ -66,7 +67,9 @@ def country_catalog() -> list[dict[str, object]]:
 	Region *names* are deliberately absent: the browser names a region in the reader's own language
 	with `Intl.DisplayNames`, which is localised for free and always current.
 	"""
-	cached = frappe.cache().get_value("wa_country_catalog")
+	# the key carries a version: a cached copy outlives a change of shape (the `mobile` pattern was
+	# added after the first deploy), and a stale shape is exactly the bug nobody would look for
+	cached = frappe.cache().get_value("wa_country_catalog_v2")
 	if cached:
 		return cached
 	rows: list[dict[str, object]] = []
@@ -103,12 +106,25 @@ def country_catalog() -> list[dict[str, object]]:
 				# what the national form adds in front of the significant digits, if anything
 				"trunk": _trunk_prefix(national, significant),
 				"len": len(significant),
+				# the library's own rule for a mobile number's digits in this region (`5[0-9]…` in
+				# Saudi Arabia) — the browser tests it, so a landline or a typo is refused where it
+				# is typed and not only when the server normalises it
+				"mobile": _mobile_pattern(iso),
 			}
 		)
 	# a day: the metadata only changes when the library is upgraded, and a stale copy outliving a
 	# `pip install -U phonenumbers` is exactly the bug nobody would look for
-	frappe.cache().set_value("wa_country_catalog", rows, expires_in_sec=86400)
+	frappe.cache().set_value("wa_country_catalog_v2", rows, expires_in_sec=86400)
 	return rows
+
+
+def _mobile_pattern(iso: str) -> str | None:
+	"""The national-number regex libphonenumber holds for a region's mobiles, or None when the
+	metadata has no separate mobile rule. The syntax is plain enough (`\\d`, classes, groups,
+	alternation, `{n,m}`) to run unchanged in a browser."""
+	meta = PhoneMetadata.metadata_for_region(iso)
+	pattern = meta.mobile.national_number_pattern if meta and meta.mobile else None
+	return pattern or None
 
 
 def _trunk_prefix(national: str, significant: str) -> str:

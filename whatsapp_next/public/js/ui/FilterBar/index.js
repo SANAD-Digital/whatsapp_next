@@ -59,6 +59,7 @@ sanad.ui.FilterBar = class FilterBar {
 	 * @param {string} [opts.intro] — one-line description rendered above the toolbar
 	 * @param {boolean} [opts.replace_standard_filters=true] — list mode: hide Frappe's standard-filter fields
 	 * @param {Function} [opts.on_change] — `(filters, {or_filters, values, search}) => void` (page mode; also fired in list mode)
+	 * @param {Object|Function} [opts.datalist] — page mode: the `sanad.ui.DataList` the `group_by` action drives (or `() => DataList`)
 	 * @param {number} [opts.debounce=300] — search debounce in ms
 	 * @param {number} [opts.max_inline=4] — filter buttons shown in the row; the rest stay reachable
 	 *   through Desk's Filter popover, which sits in the same toolbar (prototype: one row, no wrap)
@@ -1190,9 +1191,14 @@ sanad.ui.FilterBar = class FilterBar {
 		if (restore_focus) this.$columns_btn.trigger("focus");
 	}
 
-	/** The table this bar groups (set by DataList through `listview._sanad_datalist`). */
+	/**
+	 * The table this bar groups: on a list, the one DataList registered on it; on a page, the one
+	 * the page hands over as `opts.datalist` (a DataList, or a function returning it — the table
+	 * is usually built after the bar).
+	 */
 	datalist() {
-		return this.listview && this.listview._sanad_datalist;
+		const own = typeof this.opts.datalist === "function" ? this.opts.datalist() : this.opts.datalist;
+		return own || (this.listview && this.listview._sanad_datalist);
 	}
 
 	group_levels() {

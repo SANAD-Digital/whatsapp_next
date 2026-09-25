@@ -118,7 +118,7 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [x] `wa-home` (L) — the prototype's bands: KPI row, alert band, five metrics with sparklines, stacked volume chart + failures by error, four panels; every click-through of 09 §1B row 2
 - [x] `wa-devices` (L) — DeviceCard grid, PairingModal QR + 8-digit code, live status
 - [x] `wa-onboarding` (M) — Stepper sign-up / sign-in / forgot / pair; **redirect from Home NOT enabled** (phase 10)
-- [x] `wa-functions-center` (L) — catalog on `DataList` page mode, FunctionDetail (three columns), PreviewModal diff-before-install/update
+- [x] `wa-functions-center` (L) — the prototype's four `Cards` over `DataList` page mode; the function as the record `Drawer` (document layout), the preview / diff / settings as `OverlayPanel` forms (D-099)
 - [x] `wa-simulator` (L) — ChatThread, the prototype's one-row composer, "message on behalf" (dry-run default, D-029)
 - [x] `wa-contacts` (L) — `DataList` page mode over `contacts.*`, KPI row from `contacts.get_stats`, Drawer create/edit, ConversationDrawer hidden on 403 (D-029), CU-only page permission
 - [x] `wa-settings` (L) — SettingsNav left / content right over the Single; sections per 09 row 15 (the open section is a query parameter, not a path segment — Desk reads `route[1]` as a workspace); billing actions hidden until platform A-01..A-04 (D-029)

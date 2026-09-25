@@ -10,7 +10,7 @@ from frappe.model.document import Document
 from frappe.utils import cint, now_datetime
 
 from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
-from whatsapp_next.services.guards import assert_status_writer
+from whatsapp_next.services.guards import assert_status_writer, field_changed
 from whatsapp_next.services.phone import set_phone_pair
 
 EDITABLE_STATUSES = ("Draft", "Scheduled")
@@ -79,7 +79,7 @@ class WhatsAppCampaign(Document):
 		before = self.get_doc_before_save()
 		if before is None or before.status in EDITABLE_STATUSES:
 			return
-		changed = [f for f in LOCKED_FIELDS if (before.get(f) or None) != (self.get(f) or None)]
+		changed = [f for f in LOCKED_FIELDS if field_changed(before, self, f)]
 		if _message_rows(before) != _message_rows(self):
 			changed.append("messages")
 		if changed:

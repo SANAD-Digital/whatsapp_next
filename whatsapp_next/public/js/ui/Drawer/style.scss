@@ -16,6 +16,9 @@
 	&__body { min-height: 160px; }
 	&__footer[hidden] { display: none; }
 	&__action { min-height: var(--sanad-target); }
+	// the "More" button sits at the footer's start; the verbs keep the end
+	&__menu { z-index: 1060; }
+	&__more { margin-inline-end: auto; min-width: var(--sanad-target); padding-inline: var(--sanad-gap-sm); }
 
 	// record mode — two-column definition list
 	&__dl {

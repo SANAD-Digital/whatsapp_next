@@ -13,6 +13,7 @@ from frappe import _
 from frappe.model.document import Document
 
 from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
+from whatsapp_next.services.guards import field_changed
 from whatsapp_next.whatsapp_next.doctype.whatsapp_function.whatsapp_function import (
 	check_party_types,
 	check_unique_rows,
@@ -162,7 +163,7 @@ class WhatsAppCommand(Document):
 			if df.fieldtype in frappe.model.table_fields:
 				if _rows(before, df.fieldname) != _rows(self, df.fieldname):
 					changed.add(df.fieldname)
-			elif (before.get(df.fieldname) or None) != (self.get(df.fieldname) or None):
+			elif field_changed(before, self, df.fieldname):
 				changed.add(df.fieldname)
 		return changed
 

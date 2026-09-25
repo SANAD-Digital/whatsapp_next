@@ -18,34 +18,53 @@
 	}
 	.sanad-picker__counter { font-weight: 600; color: var(--ink-gray-8); }
 	.sanad-picker__progress { font-size: var(--text-xs, 12px); color: var(--ink-gray-6); min-height: 1.2em; }
-	&--remove .modal-footer .btn-primary { background: var(--surface-red-1); border-color: var(--outline-red-1); color: var(--ink-red-4); }
+	.modal-footer .btn {
+		min-height: 34px;
+		padding-inline: 16px;
+		border-radius: 999px;
+		font-size: 13px;
+		font-weight: 600;
+		box-shadow: none;
+	}
+	.modal-footer .btn-primary { background: var(--wa-pri); border-color: var(--wa-pri); color: var(--wa-on-pri); &:disabled { opacity: 0.5; } }
+	.modal-footer .btn-secondary, .modal-footer .btn-default { background: var(--wa-surface); border: 1px solid var(--wa-border-2); color: var(--wa-ink-2); }
+	&--remove .modal-footer .btn-primary { background: var(--wa-dg-s); border-color: var(--wa-dg-sb); color: var(--wa-dg-i); }
 }
 
 .sanad-picker {
+	// On a desk: the sources across the top, then what is being chosen beside what has been
+	// chosen. The dialog keeps one height: a long list scrolls inside its own area and the head,
+	// the pager and the "Add N" button stay where the hand left them. On a phone the two zones
+	// become two tabs (`&__zones`) and only one shows at a time.
 	display: grid;
-	// three zones: where numbers come from, where they are picked, and what has been picked.
-	// The third used to be a tab you had to leave the others to see.
-	grid-template-columns: 196px minmax(0, 1fr) 272px;
-	gap: var(--sanad-gap-lg);
-	min-height: 440px;
+	grid-template-columns: minmax(0, 1fr) 280px;
+	grid-template-rows: auto minmax(0, 1fr);
+	grid-template-areas: "tabs tabs" "work tray";
+	gap: var(--sanad-gap-sm) var(--sanad-gap-lg);
+	block-size: clamp(420px, calc(100vh - 230px), 680px);
+	min-block-size: 0;
+	> .sanad-picker__tabs { grid-area: tabs; }
+	> .sanad-picker__work { grid-area: work; }
+	> .sanad-picker__tray { grid-area: tray; }
+	> .sanad-picker__zones { display: none; }
 
-	@media (max-width: 1100px) {
-		grid-template-columns: 172px minmax(0, 1fr);
-		grid-template-areas: "rail work" "tray tray";
-		.sanad-picker__tabs { grid-area: rail; }
-		.sanad-picker__work { grid-area: work; }
-		.sanad-picker__tray { grid-area: tray; }
-	}
-	@media (max-width: 767px) {
-		grid-template-columns: minmax(0, 1fr);
-		grid-template-areas: "rail" "work" "tray";
+	// below 1000px the dialog is too narrow for two panes side by side: one column, two tabs
+	@media (max-width: 999px) {
+		display: flex;
+		flex-direction: column;
+		> .sanad-picker__zones { display: flex; }
+		&:not(.sanad-picker--zone-selected) .sanad-picker__tray { display: none; }
+		&.sanad-picker--zone-selected .sanad-picker__work { display: none; }
+		.sanad-picker__tray-head { display: none; }
 	}
 
 	&__work {
 		display: flex;
 		flex-direction: column;
 		gap: var(--sanad-gap-sm);
+		flex: 1;
 		min-inline-size: 0;
+		min-block-size: 0;
 	}
 
 	// what a paste is offered as, before anything is done with it
@@ -64,42 +83,89 @@
 		> span { flex: 1; min-inline-size: 0; }
 	}
 
+	// ---- the two zones as two tabs, on a phone only ------------------------------------------------
+	&__zones {
+		gap: 2px;
+		padding: 3px;
+		border: 1px solid var(--wa-border);
+		border-radius: 999px;
+		background: var(--wa-sunken);
+		position: sticky;
+		inset-block-start: 0;
+		z-index: 3;
+		flex: none;
+	}
+	&__zone {
+		flex: 1 1 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		min-height: 34px;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: var(--wa-ink-3);
+		font-size: 13px;
+		font-weight: 600;
+		cursor: pointer;
+		&[aria-selected="true"] { background: var(--wa-surface); color: var(--wa-ink); box-shadow: var(--wa-shadow-sm); }
+	}
+	&__zone-count {
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: 11px;
+		padding-inline: 7px;
+		border-radius: 999px;
+		background: var(--wa-pri-s);
+		color: var(--wa-pri-d);
+		&:empty { display: none; }
+	}
+
 	// ---- the tray ------------------------------------------------------------------------------
 
 	&__tray {
 		display: flex;
 		flex-direction: column;
 		gap: var(--sanad-gap-sm);
+		flex: 1;
 		min-inline-size: 0;
+		min-block-size: 0;
 		padding-inline-start: var(--sanad-gap-md);
 		border-inline-start: var(--sanad-border);
-
-		@media (max-width: 1100px) {
-			padding-inline-start: 0;
-			padding-block-start: var(--sanad-gap-md);
-			border-inline-start: 0;
-			border-block-start: var(--sanad-border);
-		}
+		@media (max-width: 999px) { padding-inline-start: 0; border-inline-start: 0; }
 	}
 	&__tray-head {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: 8px;
+		min-block-size: 30px;
 	}
 	&__tray-title {
-		font-size: var(--text-xs, 11px);
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--ink-gray-5);
+		font-size: 13px;
+		font-weight: 700;
+		color: var(--wa-ink);
 		flex: 1;
+	}
+	&__clear {
+		margin-inline-start: auto;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--wa-dg-i);
+		font-size: 11.5px;
+		font-weight: 600;
+		cursor: pointer;
+		&:hover { text-decoration: underline; }
+		&[disabled] { opacity: 0.4; cursor: default; text-decoration: none; }
 	}
 	&__tray-body {
 		display: flex;
 		flex-direction: column;
 		gap: var(--sanad-gap-sm);
+		flex: 1;
 		min-block-size: 0;
 		overflow: hidden;
+		> .sanad-picker__results { min-block-size: 0; flex: 1 1 auto; }
 	}
 	&__tray-sources {
 		display: flex;
@@ -134,33 +200,45 @@
 		.icon { width: 10px; height: 10px; }
 	}
 
+	// the sources: the prototype's pill strip — one sunken track, one pill per source, the
+	// chosen one filled; the count of what each source contributed sits inside its pill
 	&__tabs {
 		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-xs);
-		border-inline-end: var(--sanad-border);
-		padding-inline-end: var(--sanad-gap-md);
+		gap: 2px;
+		padding: 3px;
+		border: 1px solid var(--wa-border);
+		border-radius: 999px;
+		background: var(--wa-sunken);
+		flex: none;
+		min-inline-size: 0;
+		overflow-x: auto;
+		scrollbar-width: none;
+		&::-webkit-scrollbar { display: none; }
 	}
 	&__tab {
-		display: flex;
+		display: inline-flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
-		min-height: var(--sanad-target);
-		padding-block: var(--sanad-gap-xs);
-		padding-inline: var(--sanad-gap-md);
-		border: 1px solid transparent;
-		border-radius: var(--sanad-radius);
+		justify-content: center;
+		gap: 5px;
+		flex: 1 1 0;
+		min-inline-size: 0;
+		min-height: 30px;
+		padding-block: 0;
+		padding-inline: 10px;
+		border: 0;
+		border-radius: 999px;
 		background: transparent;
-		color: var(--ink-gray-7);
-		font-size: var(--text-sm, 13px);
-		text-align: start;
+		color: var(--wa-ink-3);
+		font-size: 12px;
+		font-weight: 600;
+		white-space: nowrap;
 		cursor: pointer;
-		&:hover { background: var(--surface-gray-2); }
+		transition: background var(--sanad-motion, 160ms), color var(--sanad-motion, 160ms);
+		&:hover { color: var(--wa-ink); }
 		&[aria-selected="true"] {
-			background: var(--surface-blue-1);
-			border-color: var(--outline-blue-1);
-			color: var(--ink-blue-3);
-			font-weight: 600;
+			background: var(--wa-pri);
+			color: var(--wa-on-pri);
+			box-shadow: var(--wa-shadow-sm);
 		}
 	}
 	&__badge {
@@ -174,21 +252,195 @@
 		text-align: center;
 		&--empty { background: var(--surface-gray-3); color: var(--ink-gray-6); }
 	}
-	&__panes { min-width: 0; }
+	&__panes {
+		min-width: 0;
+		flex: 1;
+		min-block-size: 0;
+		display: flex;
+		flex-direction: column;
+	}
 	&__pane {
 		display: flex;
 		flex-direction: column;
 		gap: var(--sanad-gap-md);
+		flex: 1;
+		min-block-size: 0;
+		overflow: hidden; // each pane scrolls its own long part, never the pane as a whole
 		&[hidden] { display: none; }
 	}
+	// a stepper flow: the steps and the Next / Back stay put, the step's body scrolls
+	&__pane > .sanad-stepper {
+		flex: 1;
+		min-block-size: 0;
+		gap: var(--sanad-gap-md);
+		// the step's body takes the height the pane leaves it; what it holds is sized to fit, so
+		// the drop zone shrinks and grows with the dialog instead of asking for a scrollbar
+		.sanad-stepper__body { flex: 1; min-block-size: 0; overflow: auto; display: flex; flex-direction: column; }
+		.sanad-stepper__pane:not([hidden]) { display: flex; flex-direction: column; gap: var(--sanad-gap-sm); flex: 1; min-block-size: 0; }
+		.sanad-stepper__content { display: flex; flex-direction: column; gap: var(--sanad-gap-sm); flex: 1 1 auto; min-block-size: 0; }
+		.sanad-stepper__footer { flex: none; }
+	}
+	&__uploader { flex: 1 1 auto; min-block-size: 0; display: flex; flex-direction: column; }
+
+	// ---- Desk's controls, in the kit's shape: one border, one radius, one focus halo -------------
+	.form-control {
+		min-height: var(--sanad-ctl-h, 32px);
+		border: 1px solid var(--outline-gray-2);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		color: var(--ink-gray-8);
+		font-size: var(--text-sm, 13px);
+		box-shadow: none;
+		&::placeholder { color: var(--ink-gray-5); }
+		&:hover:not(:disabled):not(:focus) { border-color: var(--outline-gray-3, var(--ink-gray-4)); }
+		&:focus { border-color: var(--sanad-accent); box-shadow: 0 0 0 3px var(--sanad-accent-soft); outline: none; }
+		&:disabled { background: var(--surface-gray-1); color: var(--ink-gray-5); }
+	}
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		min-height: var(--sanad-ctl-h, 32px);
+		padding-inline: 14px;
+		border-radius: 999px;
+		font-size: var(--text-sm, 13px);
+		font-weight: 600;
+		line-height: 1;
+		box-shadow: none;
+		white-space: nowrap;
+		&.btn-xs { min-height: 26px; padding-inline: 9px; font-size: var(--text-xs, 12px); }
+		&.btn-default {
+			background: var(--surface-white);
+			border: 1px solid var(--outline-gray-2);
+			color: var(--ink-gray-8);
+			&:hover:not(:disabled) { background: var(--surface-gray-1); border-color: var(--outline-gray-3, var(--ink-gray-4)); }
+		}
+		&.btn-primary {
+			background: var(--sanad-accent);
+			border: 1px solid var(--sanad-accent);
+			color: var(--ink-white);
+			&:hover:not(:disabled) { filter: brightness(0.94); }
+		}
+		&:disabled { opacity: 0.5; cursor: not-allowed; }
+	}
+	// the "Add N" button sits where the eye lands after choosing: end of its row
+	&__foot { justify-content: flex-start; }
 	&__head {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--sanad-gap-sm);
-		.sanad-picker__search { flex: 1 1 220px; min-height: var(--sanad-target); }
+		flex: none;
+		.sanad-picker__search { flex: 1 1 220px; }
 		p { margin: 0; flex-basis: 100%; }
 	}
+	// the prototype's search: a rounded field, the glass inside it, no chrome of its own
+	&__search {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-block-size: 36px;
+		margin: 0;
+		padding-inline: 11px;
+		border: 1px solid var(--wa-border);
+		border-radius: 999px;
+		background: var(--wa-bg);
+		color: var(--wa-ink);
+		min-inline-size: 0;
+		transition: border-color var(--sanad-motion, 160ms), background var(--sanad-motion, 160ms), box-shadow var(--sanad-motion, 160ms);
+		&:focus-within { border-color: var(--wa-pri); background: var(--wa-surface); box-shadow: 0 0 0 3px var(--wa-pri-s); }
+		&--sm { min-block-size: 32px; }
+	}
+	&__search-icon { display: inline-flex; flex: none; color: var(--wa-ink-4); }
+	&__search-input {
+		flex: 1;
+		min-inline-size: 0;
+		border: 0;
+		background: transparent;
+		font: inherit;
+		font-size: 13px;
+		color: var(--wa-ink);
+		outline: none;
+		&::placeholder { color: var(--wa-ink-4); }
+		&:focus-visible { outline: none; box-shadow: none; }
+	}
+	// ---- a dropdown field: the button names the choice, the popover lists the options ----------
+	&__dd { position: relative; flex: none; }
+	&__head-dd { display: contents; }
+	&__dd-btn {
+		appearance: none;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		min-height: var(--sanad-ctl-h, 32px);
+		max-width: 240px;
+		padding-inline: var(--sanad-cell-px, 12px) 10px;
+		border: 1px solid var(--outline-gray-2);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		color: var(--ink-gray-8);
+		font-size: var(--text-sm, 13px);
+		white-space: nowrap;
+		cursor: pointer;
+		&:hover { background: var(--surface-gray-2); }
+		&[aria-expanded="true"] { background: var(--surface-gray-2); border-color: var(--outline-gray-3, var(--ink-gray-4)); }
+		&--active {
+			background: var(--sanad-accent-soft);
+			border-color: var(--sanad-accent-outline);
+			color: var(--sanad-accent-ink);
+			font-weight: 600;
+			.sanad-picker__dd-label { color: var(--sanad-accent-ink); }
+		}
+	}
+	&__dd-label { color: var(--ink-gray-7); }
+	&__dd-value {
+		font-weight: 600;
+		max-width: 150px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		&::before { content: ": "; font-weight: 400; }
+	}
+	&__dd-chevron { display: inline-flex; color: var(--ink-gray-5); .icon { width: 11px; height: 11px; } }
+	&__dd-btn[aria-expanded="true"] &__dd-chevron { transform: rotate(180deg); }
+	&__dd-pop {
+		position: absolute;
+		inset-block-start: calc(100% + 5px);
+		inset-inline-start: 0;
+		z-index: 1060; // inside a Desk modal (1050)
+		min-width: 220px;
+		max-width: min(320px, calc(100vw - 32px));
+		max-height: 300px;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: var(--sanad-gap-xs);
+		background: var(--surface-white);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		box-shadow: var(--shadow-lg);
+		&[hidden] { display: none; }
+	}
+	&__dd-search { margin-block-end: 2px; min-height: var(--sanad-ctl-h-sm, 28px); }
+	&__dd-list { flex: 1 1 auto; min-height: 40px; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
+	&__dd-empty { padding: var(--sanad-gap-sm); color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
+	&__dd-opt {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		min-height: var(--sanad-ctl-h, 32px);
+		padding-inline: 9px;
+		border: 0;
+		border-radius: var(--border-radius-md, 6px);
+		background: none;
+		color: var(--ink-gray-8);
+		font-size: var(--text-sm, 13px);
+		text-align: start;
+		cursor: pointer;
+		&:hover { background: var(--surface-gray-2); }
+		&[aria-selected="true"] { background: var(--sanad-accent-soft); color: var(--sanad-accent-ink); font-weight: 600; }
+	}
+
 	&__field {
 		display: flex;
 		flex-direction: column;
@@ -200,24 +452,331 @@
 	&__filters .filter-area, &__filters .filter-box { margin: 0; }
 	&__results {
 		min-height: 160px; // reserved so skeleton → table never jumps
+		// takes what its rows need and no more, so "Add N" follows a short list and a long one
+		// scrolls inside its own frame
+		flex: 0 1 auto;
+		min-block-size: 160px;
+		display: flex;
+		flex-direction: column;
 		.sanad-empty { min-height: 160px; }
+		> .sanad-picker__scroll { flex: 1 1 auto; min-block-size: 0; }
 	}
 	&__scroll {
 		border: var(--sanad-border);
 		border-radius: var(--sanad-radius);
 		background: var(--surface-white);
+		overflow: auto;
+		max-block-size: 100%;
+		thead th {
+			position: sticky;
+			inset-block-start: 0;
+			z-index: 1;
+		}
 	}
-	&__table {
-		td { white-space: nowrap; }
-		tbody tr:last-child td { border-block-end: 0; }
-		input[type="checkbox"] { width: 16px; height: 16px; margin: 0; }
+	&__manual { flex: none; }
+	&__manual textarea { resize: vertical; }
+
+	// ---- a person, a group, a record: the prototype's row ----------------------------------------
+	&__list {
+		display: flex;
+		flex-direction: column;
+		flex: 1 1 auto;
+		min-block-size: 0;
+		border: 1px solid var(--wa-border);
+		border-radius: 12px;
+		background: var(--wa-surface);
+		overflow: hidden;
 	}
-	&__th-check, &__td-check { width: 1%; }
-	&__td-check { padding-inline: var(--sanad-gap-md); }
+	&__all {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin: 0;
+		padding: 6px 12px;
+		border-block-end: 1px solid var(--wa-border);
+		background: var(--wa-bg);
+		font-size: 11.5px;
+		font-weight: 600;
+		color: var(--wa-ink-3);
+		cursor: pointer;
+		input { width: 15px; height: 15px; margin: 0; accent-color: var(--wa-pri); }
+	}
+	&__rows {
+		flex: 1 1 auto;
+		min-block-size: 0;
+		overflow: auto;
+		display: flex;
+		flex-direction: column;
+	}
+	&__row {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 8px 12px;
+		border-block-end: 1px solid var(--wa-border);
+		background: var(--wa-surface);
+		cursor: pointer;
+		transition: background var(--sanad-motion, 160ms);
+		&:last-child { border-block-end: 0; }
+		&:hover { background: var(--wa-sunken); }
+		&[aria-checked="true"] { background: var(--wa-pri-s); }
+		&[aria-checked="true"] .sanad-picker__av { background: var(--wa-pri); color: var(--wa-on-pri); }
+		&[aria-checked="true"] .sanad-picker__mark { border-color: var(--wa-pri); background: var(--wa-pri); color: var(--wa-on-pri); .icon { opacity: 1; } }
+		&--disabled { cursor: default; .sanad-picker__row-name { color: var(--wa-ink-4); } .sanad-picker__mark { visibility: hidden; } &:hover { background: var(--wa-surface); } }
+		&--chosen { cursor: default; &:hover { background: var(--wa-surface); } }
+		&--danger .sanad-picker__row-name { color: var(--wa-dg-i); }
+	}
+	&__av {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 32px;
+		block-size: 32px;
+		flex: none;
+		border-radius: 50%;
+		background: var(--wa-sunken);
+		color: var(--wa-ink-3);
+		font-size: 12px;
+		font-weight: 700;
+		&--on { background: var(--wa-pri); color: var(--wa-on-pri); }
+		&--manual { background: var(--wa-nf); color: var(--wa-on-pri); }
+	}
+	&__row-text {
+		display: flex;
+		flex-direction: column;
+		gap: 1px;
+		flex: 1;
+		min-inline-size: 0;
+		> span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	}
+	&__row-name { font-size: 13px; font-weight: 600; color: var(--wa-ink); }
+	&__row-sub { font-size: 11px; color: var(--wa-ink-4); }
+	&__row-error { font-size: 11px; color: var(--wa-wn-i); white-space: normal; }
+	&__row-badge {
+		display: inline-flex;
+		align-items: center;
+		flex: none;
+		padding: 2px 8px;
+		border-radius: 999px;
+		background: var(--wa-sunken);
+		color: var(--wa-ink-3);
+		font-size: 10px;
+		font-weight: 600;
+		white-space: nowrap;
+		&--warn { background: var(--wa-wn-s); color: var(--wa-wn-i); }
+		&--danger { background: var(--wa-dg-s); color: var(--wa-dg-i); }
+		&--ok { background: var(--wa-ok-s); color: var(--wa-ok-i); }
+		&--muted { background: var(--wa-sunken); color: var(--wa-ink-3); }
+		.indicator-pill { padding: 0; background: none; font-size: inherit; }
+	}
+	&__mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 20px;
+		block-size: 20px;
+		flex: none;
+		padding: 0;
+		border: 1.5px solid var(--wa-border-2);
+		border-radius: 50%;
+		background: transparent;
+		color: var(--wa-on-pri);
+		.icon { width: 11px; height: 11px; opacity: 0; }
+		&--x {
+			border-color: var(--wa-dg-sb);
+			background: var(--wa-dg-s);
+			color: var(--wa-dg-i);
+			cursor: pointer;
+			.icon { opacity: 1; }
+			&:hover { background: var(--wa-dg-sb); }
+		}
+	}
+	&__peek {
+		flex: none;
+		padding: 3px 9px;
+		border: 1px solid var(--wa-border-2);
+		border-radius: 999px;
+		background: var(--wa-surface);
+		color: var(--wa-ink-2);
+		font-size: 11px;
+		font-weight: 600;
+		cursor: pointer;
+		&:hover { background: var(--wa-sunken); }
+		&[aria-expanded="true"] { background: var(--wa-pri-s); border-color: var(--wa-pri-sb); color: var(--wa-pri-d); }
+	}
+	&__group { display: flex; flex-direction: column; border-block-end: 1px solid var(--wa-border); &:last-child { border-block-end: 0; } .sanad-picker__row { border-block-end: 0; } }
+
+	// ---- a group's members, in a window of their own ----------------------------------------------
+	&__members {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		block-size: clamp(360px, calc(100vh - 260px), 600px);
+		min-block-size: 0;
+	}
+	&__members-bar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+		.btn { min-height: 28px; }
+		.btn[hidden] { display: none; }
+		.sanad-picker__members-show[aria-pressed="true"] { background: var(--wa-pri-s); border-color: var(--wa-pri-sb); color: var(--wa-pri-d); }
+	}
+	&__members-count { margin-inline-start: auto; }
+	&__members-list { flex: 0 1 auto; min-block-size: 120px; display: flex; flex-direction: column; .sanad-picker__list { flex: 0 1 auto; min-block-size: 0; } }
 	&__row--disabled td { color: var(--ink-gray-6); }
-	&__row--flagged td { background: var(--surface-amber-1); }
-	&__row-error { font-size: var(--text-xs, 12px); color: var(--ink-amber-3); white-space: normal; }
-	&__td-remove { text-align: end; width: 1%; .btn { min-height: 28px; } }
+	&__row-error--cell { white-space: normal; }
+	&__foot { justify-content: flex-start; }
+	&__head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		flex: none;
+		.sanad-picker__search { flex: 1 1 220px; }
+		p { margin: 0; flex-basis: 100%; }
+	}
+	// the prototype's search: a rounded field, the glass inside it, no chrome of its own
+	&__search {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-block-size: 36px;
+		margin: 0;
+		padding-inline: 11px;
+		border: 1px solid var(--wa-border);
+		border-radius: 999px;
+		background: var(--wa-bg);
+		color: var(--wa-ink);
+		min-inline-size: 0;
+		transition: border-color var(--sanad-motion, 160ms), background var(--sanad-motion, 160ms), box-shadow var(--sanad-motion, 160ms);
+		&:focus-within { border-color: var(--wa-pri); background: var(--wa-surface); box-shadow: 0 0 0 3px var(--wa-pri-s); }
+		&--sm { min-block-size: 32px; }
+	}
+	&__search-icon { display: inline-flex; flex: none; color: var(--wa-ink-4); }
+	&__search-input {
+		flex: 1;
+		min-inline-size: 0;
+		border: 0;
+		background: transparent;
+		font: inherit;
+		font-size: 13px;
+		color: var(--wa-ink);
+		outline: none;
+		&::placeholder { color: var(--wa-ink-4); }
+		&:focus-visible { outline: none; box-shadow: none; }
+	}
+	// ---- a dropdown field: the button names the choice, the popover lists the options ----------
+	&__dd { position: relative; flex: none; }
+	&__head-dd { display: contents; }
+	&__dd-btn {
+		appearance: none;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		min-height: var(--sanad-ctl-h, 32px);
+		max-width: 240px;
+		padding-inline: var(--sanad-cell-px, 12px) 10px;
+		border: 1px solid var(--outline-gray-2);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		color: var(--ink-gray-8);
+		font-size: var(--text-sm, 13px);
+		white-space: nowrap;
+		cursor: pointer;
+		&:hover { background: var(--surface-gray-2); }
+		&[aria-expanded="true"] { background: var(--surface-gray-2); border-color: var(--outline-gray-3, var(--ink-gray-4)); }
+		&--active {
+			background: var(--sanad-accent-soft);
+			border-color: var(--sanad-accent-outline);
+			color: var(--sanad-accent-ink);
+			font-weight: 600;
+			.sanad-picker__dd-label { color: var(--sanad-accent-ink); }
+		}
+	}
+	&__dd-label { color: var(--ink-gray-7); }
+	&__dd-value {
+		font-weight: 600;
+		max-width: 150px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		&::before { content: ": "; font-weight: 400; }
+	}
+	&__dd-chevron { display: inline-flex; color: var(--ink-gray-5); .icon { width: 11px; height: 11px; } }
+	&__dd-btn[aria-expanded="true"] &__dd-chevron { transform: rotate(180deg); }
+	&__dd-pop {
+		position: absolute;
+		inset-block-start: calc(100% + 5px);
+		inset-inline-start: 0;
+		z-index: 1060; // inside a Desk modal (1050)
+		min-width: 220px;
+		max-width: min(320px, calc(100vw - 32px));
+		max-height: 300px;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: var(--sanad-gap-xs);
+		background: var(--surface-white);
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		box-shadow: var(--shadow-lg);
+		&[hidden] { display: none; }
+	}
+	&__dd-search { margin-block-end: 2px; min-height: var(--sanad-ctl-h-sm, 28px); }
+	&__dd-list { flex: 1 1 auto; min-height: 40px; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
+	&__dd-empty { padding: var(--sanad-gap-sm); color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
+	&__dd-opt {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		min-height: var(--sanad-ctl-h, 32px);
+		padding-inline: 9px;
+		border: 0;
+		border-radius: var(--border-radius-md, 6px);
+		background: none;
+		color: var(--ink-gray-8);
+		font-size: var(--text-sm, 13px);
+		text-align: start;
+		cursor: pointer;
+		&:hover { background: var(--surface-gray-2); }
+		&[aria-selected="true"] { background: var(--sanad-accent-soft); color: var(--sanad-accent-ink); font-weight: 600; }
+	}
+
+	&__field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-xs);
+		label { font-size: var(--text-sm, 13px); color: var(--ink-gray-7); margin: 0; }
+		.form-control { min-height: var(--sanad-target); }
+	}
+	&__filters:empty { display: none; }
+	&__filters .filter-area, &__filters .filter-box { margin: 0; }
+	&__results {
+		min-height: 160px; // reserved so skeleton → table never jumps
+		// takes what its rows need and no more, so "Add N" follows a short list and a long one
+		// scrolls inside its own frame
+		flex: 0 1 auto;
+		min-block-size: 160px;
+		display: flex;
+		flex-direction: column;
+		.sanad-empty { min-height: 160px; }
+		> .sanad-picker__scroll { flex: 1 1 auto; min-block-size: 0; }
+	}
+	&__scroll {
+		border: var(--sanad-border);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-white);
+		overflow: auto;
+		max-block-size: 100%;
+		thead th {
+			position: sticky;
+			inset-block-start: 0;
+			z-index: 1;
+		}
+	}
+	&__manual { flex: none; }
+	&__manual textarea { resize: vertical; }
 	&__foot {
 		display: flex;
 		flex-wrap: wrap;
@@ -245,22 +804,10 @@
 		color: var(--ink-gray-6);
 		.btn { min-height: var(--sanad-target); margin-inline-start: var(--sanad-gap-xs); }
 	}
-	&__groups { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sanad-gap-xs); }
-	&__group {
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
-		padding-block: var(--sanad-gap-sm);
-		padding-inline: var(--sanad-gap-md);
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		align-items: center;
-		gap: var(--sanad-gap-sm);
-	}
-	&__group-main { display: flex; align-items: center; gap: var(--sanad-gap-sm); margin: 0; min-height: var(--sanad-target); cursor: pointer; font-weight: 400; }
-	&__group-name { font-weight: 600; color: var(--ink-gray-8); }
-	&__group-count { color: var(--ink-gray-6); font-size: var(--text-sm, 13px); margin-inline-start: auto; }
-	&__peek-body { grid-column: 1 / -1; &[hidden] { display: none; } }
 	&__uploader { min-height: 120px; }
+	// Frappe's drop zone asks for 16rem of its own; inside the picker it takes the room it has
+	.sanad-picker-dialog & .file-uploader { display: flex; flex-direction: column; flex: 1 1 auto; min-block-size: 96px; }
+	.sanad-picker-dialog & .file-upload-area { flex: 1 1 auto; min-height: 96px; min-block-size: 96px; }
 	&__mapping { &[hidden] { display: none; } details { border: var(--sanad-border); border-radius: var(--sanad-radius); padding-block: var(--sanad-gap-sm); padding-inline: var(--sanad-gap-md); } summary { cursor: pointer; font-weight: 500; } }
 	&__mapping-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--sanad-gap-sm); margin-block: var(--sanad-gap-sm); }
 	&__invalid {
@@ -274,10 +821,71 @@
 	}
 	&__reason { color: var(--ink-amber-3); }
 	&__manual textarea { font-variant-numeric: tabular-nums; }
+
+	// ---- the lines that did not read: each one a field, its reason, and a way back --------------
+	&__fixes {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sanad-gap-sm);
+		min-block-size: 0;
+		&[hidden] { display: none; }
+	}
+	&__fixes-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		.btn { min-height: 28px; }
+		.btn:first-of-type { margin-inline-start: auto; }
+	}
+	&__fixes-title { font-weight: 600; color: var(--ink-amber-3); }
+	&__fixrows {
+		display: flex;
+		flex-direction: column;
+		overflow: auto;
+		min-block-size: 0;
+		border: 1px solid var(--outline-amber-1);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-amber-1);
+	}
+	&__fix {
+		display: grid;
+		grid-template-columns: minmax(160px, 1fr) minmax(0, 1fr) auto auto;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		padding-block: 6px;
+		padding-inline: var(--sanad-gap-sm);
+		border-block-end: 1px solid var(--outline-amber-1);
+		&:last-child { border-block-end: 0; }
+		.btn { min-height: 28px; }
+		&--busy { opacity: 0.6; }
+		&--still .sanad-picker__fix-input { border-color: var(--outline-red-1); box-shadow: 0 0 0 2px var(--surface-red-1); }
+		@media (max-width: 767px) {
+			grid-template-columns: minmax(0, 1fr) auto auto;
+			.sanad-picker__fix-reason { grid-column: 1 / -1; }
+		}
+	}
+	&__fix-input { min-height: 32px; background: var(--surface-white); }
+	&__fix-reason { font-size: var(--text-sm, 13px); color: var(--ink-amber-3); min-inline-size: 0; }
+	&__fix .sanad-picker__remove {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 28px;
+		block-size: 28px;
+		padding: 0;
+		border: 0;
+		border-radius: var(--sanad-radius);
+		background: none;
+		color: var(--ink-gray-6);
+		cursor: pointer;
+		&:hover { background: var(--surface-gray-2); color: var(--ink-gray-8); }
+	}
 	&__counts {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
+		flex: none;
 		gap: var(--sanad-gap-sm);
 		min-height: 28px;
 		font-size: var(--text-sm, 13px);
@@ -291,46 +899,36 @@
 
 @media (max-width: 767px) {
 	.sanad-picker {
-		grid-template-columns: 1fr;
 		min-height: 0;
-		&__tabs {
-			flex-direction: row;
-			overflow-x: auto;
-			border-inline-end: 0;
-			border-block-end: var(--sanad-border);
-			padding-inline-end: 0;
-			padding-block-end: var(--sanad-gap-sm);
-		}
+		block-size: auto;
+		&__pane, &__results, &__scroll, &__trayrows { overflow: visible; max-block-size: none; }
+		&__pane > .sanad-stepper .sanad-stepper__body { overflow: visible; }
+		&__trayrows { max-block-size: 320px; overflow-y: auto; }
 		&__tab { flex: none; }
-		&__group { grid-template-columns: 1fr; }
 	}
 }
 
-// ---- the rail's own marks ----------------------------------------------------------------------
+// ---- inside a pill: the icon, the name, the count -------------------------------------------------
 
 .sanad-picker__tab-icon {
 	display: inline-flex;
-	color: var(--ink-gray-5);
 	flex: none;
+	opacity: 0.75;
+	.icon { width: 13px; height: 13px; }
 }
-.sanad-picker__tab[aria-selected="true"] .sanad-picker__tab-icon { color: inherit; }
+.sanad-picker__tab[aria-selected="true"] .sanad-picker__tab-icon { opacity: 1; }
 .sanad-picker__tab-label {
-	flex: 1;
 	min-inline-size: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 .sanad-picker__tab-count {
-	font-size: var(--text-xs, 11px);
-	color: var(--ink-gray-5);
-	&--on {
-		padding-inline: 6px;
-		border-radius: var(--border-radius-full, 999px);
-		background: var(--sanad-accent-soft);
-		color: var(--sanad-accent-ink);
-		font-weight: 600;
-	}
+	font-family: "IBM Plex Mono", ui-monospace, monospace;
+	font-size: 10px;
+	color: var(--wa-ink-4);
+	&:empty { display: none; }
+	&--on { color: inherit; opacity: 0.85; }
 }
 
 // a file being dragged over the dialog says where it may land
@@ -339,84 +937,34 @@
 	outline-offset: -6px;
 }
 
-// ---- the tray's own rows -----------------------------------------------------------------------
-// 272 px does not hold a five-column table: a row is a dot that says what will happen to it, the
-// name over the number, and the × that takes it out.
+// ---- the tray's own rows: the prototype's chosen list ---------------------------------------------
 
 .sanad-picker__trayrows {
-	display: flex;
-	flex-direction: column;
+	flex: 1 1 auto;
+	min-block-size: 0;
+	max-block-size: 100%;
 	overflow-y: auto;
-	max-block-size: 320px;
-	border: var(--sanad-border);
-	border-radius: var(--sanad-radius);
-}
-.sanad-picker__trayrow {
-	display: flex;
-	align-items: center;
-	gap: var(--sanad-gap-sm);
-	padding: 6px var(--sanad-gap-sm);
-	border-block-end: 1px solid var(--outline-gray-1);
-	font-size: var(--text-sm, 12px);
-
-	&:last-child { border-block-end: 0; }
-	&:hover { background: var(--surface-gray-1); }
-}
-.sanad-picker__traydot {
-	inline-size: 8px;
-	block-size: 8px;
-	border-radius: 50%;
-	background: currentColor;
-	flex: none;
-}
-.sanad-picker__trayname {
-	display: flex;
-	flex-direction: column;
-	gap: 1px;
-	flex: 1;
-	min-inline-size: 0;
-
-	> span {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-}
-.sanad-picker__trayphone {
-	font-size: var(--text-xs, 11px);
-	color: var(--ink-gray-6);
-}
-.sanad-picker__trayrow .sanad-picker__remove {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	inline-size: 24px;
-	block-size: 24px;
-	padding: 0;
-	border: 0;
-	border-radius: var(--sanad-radius);
-	background: none;
-	color: var(--ink-gray-5);
-	cursor: pointer;
-	flex: none;
-
-	&:hover { background: var(--surface-gray-2); color: var(--ink-gray-8); }
+	border: 1px solid var(--wa-border);
+	border-radius: 12px;
+	.sanad-picker__row { padding: 7px 10px; gap: 8px; }
+	.sanad-picker__av { inline-size: 28px; block-size: 28px; font-size: 11px; }
 }
 
 // the tray's count is read, not decorated: the tab badge's filled pill is wrong at this size
 .sanad-picker__tray-head .sanad-picker__badge {
 	min-inline-size: 26px;
 	padding-inline: 8px;
-	border-radius: var(--border-radius-full, 999px);
-	background: var(--sanad-accent-soft);
-	color: var(--sanad-accent-ink);
-	font-size: var(--text-xs, 11px);
+	border-radius: 999px;
+	background: var(--wa-pri-s);
+	color: var(--wa-pri-d);
+	font-family: "IBM Plex Mono", ui-monospace, monospace;
+	font-size: 11px;
 	font-weight: 700;
 	text-align: center;
 
 	&--empty {
-		background: var(--surface-gray-2);
-		color: var(--ink-gray-6);
+		background: var(--wa-sunken);
+		color: var(--wa-ink-4);
 	}
 }
 
@@ -424,8 +972,10 @@
 .sanad-picker__tray-body > .sanad-picker__head {
 	display: flex;
 	align-items: center;
-	gap: var(--sanad-gap-xs);
+	gap: 8px;
+	flex: none;
+	flex-wrap: nowrap;
 
 	.sanad-picker__search { flex: 1; min-inline-size: 0; }
-	.btn { flex: none; }
+	.sanad-picker__clear { flex: none; }
 }

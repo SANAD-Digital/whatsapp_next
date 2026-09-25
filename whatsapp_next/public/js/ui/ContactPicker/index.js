@@ -48,6 +48,27 @@ sanad.ui.ContactPicker = class ContactPicker {
 		__current: "es-line-bullet-list",
 	};
 
+	/**
+	 * The enabled sources of a target, fetched once per page and shared by every picker and by
+	 * the screens that draw the sources before the picker opens (`prefetch` is the same call,
+	 * made early). Settings change rarely; a reload forgets the cache.
+	 */
+	static sources_for(target_doctype, { api } = {}) {
+		this._sources_cache = this._sources_cache || {};
+		const key = target_doctype || "";
+		if (!this._sources_cache[key]) {
+			this._sources_cache[key] = sanad.ui.call((api && api["picker.list_sources"]) || "picker.list_sources", { target_doctype }, { silent: true }).catch((err) => {
+				delete this._sources_cache[key];
+				throw err;
+			});
+		}
+		return this._sources_cache[key];
+	}
+
+	static prefetch(target_doctype) {
+		return this.sources_for(target_doctype).catch(() => []);
+	}
+
 	/** Registry of source classes by API key — add or replace a source before opening. */
 	static get sources() {
 		if (!this._sources) {
@@ -217,10 +238,17 @@ sanad.ui.ContactPicker = class ContactPicker {
 		this.on_selection_change();
 	}
 
+	show_zone(zone) {
+		const selected = zone === "selected";
+		this.$root.toggleClass("sanad-picker--zone-selected", selected);
+		this.$root.find(".sanad-picker__zone").each((i, el) => el.setAttribute("aria-selected", (el.getAttribute("data-zone") === "selected") === selected ? "true" : "false"));
+	}
+
 	on_selection_change() {
 		this.revision += 1;
 		const n = this.selection.size;
 		this.$badge.text(ui.format_int(n)).toggleClass("sanad-picker__badge--empty", !n);
+		this.$root.find("[data-zone-count]").text(n ? ui.format_int(n) : "");
 		this.$counter.text(n ? __("{0} selected", [ui.format_int(n)]) : __("Nothing selected"));
 		this.dialog.get_primary_btn().prop("disabled", !n);
 		this.render_source_counts();
@@ -371,7 +399,8 @@ sanad.ui.ContactPicker = class ContactPicker {
 			secondary_action_label: __("Cancel"),
 			secondary_action: () => this.dialog.hide(),
 		});
-		this.dialog.$wrapper.addClass("sanad-kit sanad-sheet sanad-picker-dialog").toggleClass("sanad-picker-dialog--remove", remove);
+		// no fade: the dialog is there the moment it is asked for, like the prototype's panel
+		this.dialog.$wrapper.removeClass("fade").addClass("sanad-kit sanad-sheet sanad-picker-dialog").toggleClass("sanad-picker-dialog--remove", remove);
 		this.dialog.get_primary_btn().prop("disabled", true);
 		// One live channel only: the selection count is announced through the debounced `ui.announce`.
 		this.$counter = $('<span class="sanad-picker__counter sanad-tabular"></span>').text(__("Nothing selected"));
@@ -380,7 +409,11 @@ sanad.ui.ContactPicker = class ContactPicker {
 		const $body = this.dialog.get_field("body").$wrapper;
 		this.$root = $(`
 			<div class="sanad-picker">
-				<div class="sanad-picker__tabs" role="tablist" aria-orientation="vertical" aria-label="${ui.escape(__("Sources"))}"></div>
+				<div class="sanad-picker__tabs" role="tablist" aria-orientation="horizontal" aria-label="${ui.escape(__("Sources"))}"></div>
+				<div class="sanad-picker__zones" role="tablist" aria-label="${ui.escape(__("Choose or review"))}">
+					<button type="button" class="sanad-picker__zone" role="tab" data-zone="pick" aria-selected="true">${ui.escape(__("Choose"))}</button>
+					<button type="button" class="sanad-picker__zone" role="tab" data-zone="selected" aria-selected="false">${ui.escape(__("Selected"))} <span class="sanad-picker__zone-count sanad-tabular" data-zone-count></span></button>
+				</div>
 				<div class="sanad-picker__work">
 					<div class="sanad-picker__paste" hidden></div>
 					<div class="sanad-picker__panes"></div>
@@ -401,6 +434,9 @@ sanad.ui.ContactPicker = class ContactPicker {
 		this.$tray_sources = this.$root.find(".sanad-picker__tray-sources");
 		this.$paste = this.$root.find(".sanad-picker__paste");
 		this.$badge = this.$root.find(".sanad-picker__badge");
+		// The two zones are two tabs: what is being chosen, and what has been chosen — the
+		// prototype's pane shows one at a time, and side by side the second was scrolled past.
+		this.$root.find(".sanad-picker__zone").on("click", (e) => this.show_zone($(e.currentTarget).attr("data-zone")));
 		this.bind_shortcuts();
 		this.state = new sanad.ui.EmptyState({ wrapper: this.$panes, state: "loading", rows: 4 });
 		this.dialog.$wrapper.on("hidden.bs.modal", () => this.destroy());
@@ -411,7 +447,7 @@ sanad.ui.ContactPicker = class ContactPicker {
 	}
 
 	load_sources() {
-		return this.call("picker.list_sources", { target_doctype: this.target_doctype }, { silent: true })
+		return ContactPicker.sources_for(this.target_doctype, { api: this.opts.api })
 			.then((entries) => {
 				const wanted = (this.opts.sources || []).map((k) => ALIASES[String(k).toLowerCase()] || k);
 				const list = (entries || []).filter((e) => e.enabled !== false && (!wanted.length || wanted.includes(e.key)) && sanad.ui.ContactPicker.sources[e.key]);
@@ -492,6 +528,7 @@ sanad.ui.ContactPicker = class ContactPicker {
 					else t.$pane.attr("hidden", true);
 				});
 				this.active = key;
+				this.show_zone("pick");
 				if (!tab.mounted) {
 					tab.mounted = true;
 					tab.mount(tab.$pane);

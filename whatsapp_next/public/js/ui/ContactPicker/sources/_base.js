@@ -49,9 +49,10 @@ export class BaseSource {
 		return this.picker.call(key, args, opts);
 	}
 
-	/** A search box that debounces into `on_search(text)`. */
+	/** The prototype's search: a rounded field with the glass inside it, debouncing into `on_search(text)`. */
 	search_box(placeholder, on_search) {
-		const $input = $(`<input type="search" class="form-control sanad-picker__search" placeholder="${ui.escape(placeholder)}" aria-label="${ui.escape(placeholder)}">`);
+		const $field = $(`<label class="sanad-picker__search"><span class="sanad-picker__search-icon" aria-hidden="true">${ui.icon("es-line-search", "sm")}</span></label>`);
+		const $input = $(`<input type="search" class="sanad-picker__search-input" placeholder="${ui.escape(placeholder)}" aria-label="${ui.escape(placeholder)}">`).appendTo($field);
 		$input.on("input", ui.debounce(() => on_search($input.val().trim()), 300));
 		$input.on("keydown", (e) => {
 			if (e.key === "Enter") {
@@ -59,7 +60,8 @@ export class BaseSource {
 				on_search($input.val().trim());
 			}
 		});
-		return $input;
+		$field.val = (...a) => $input.val(...a);
+		return $field;
 	}
 
 	/** Toggle chips (`aria-pressed`) with an "All" entry; `on_change(value)` receives "" for All. */
@@ -78,49 +80,159 @@ export class BaseSource {
 		return $group;
 	}
 
+	/**
+	 * A single choice among options that may be many: a dropdown field — the button says
+	 * `Label: value`, the popover lists the options with a search box once they pass a handful —
+	 * the same control the product's filter bars use. `on_change(value)` receives "" for All.
+	 * A row of chips is kept only for two or three fixed kinds (`chips`).
+	 */
+	select_field(label, options, on_change, { all = true, searchable = null } = {}) {
+		const list = (all ? [{ value: "", label: __("All") }] : []).concat(options.map((o) => (typeof o === "string" ? { value: o, label: __(o) } : o)));
+		const id = ui.uid("pdd");
+		const with_search = searchable === null ? list.length > 7 : !!searchable;
+		const $dd = $(`<div class="sanad-picker__dd"></div>`);
+		const $btn = $(`<button type="button" class="sanad-picker__dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="${id}">
+			<span class="sanad-picker__dd-label">${ui.escape(label)}</span>
+			<span class="sanad-picker__dd-value"></span>
+			<span class="sanad-picker__dd-chevron" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
+		</button>`).appendTo($dd);
+		const $pop = $(`<div class="sanad-picker__dd-pop" id="${id}" role="listbox" aria-label="${ui.escape(label)}" hidden></div>`).appendTo($dd);
+		const $search = with_search ? $(`<input type="search" class="form-control sanad-picker__dd-search" placeholder="${ui.escape(__("Search…"))}" aria-label="${ui.escape(__("Search {0}", [label]))}">`).appendTo($pop) : null;
+		const $list = $(`<div class="sanad-picker__dd-list"></div>`).appendTo($pop);
+		let value = "";
+		const reflect = () => {
+			const chosen = list.find((o) => o.value === value) || list[0];
+			$btn.find(".sanad-picker__dd-value").text(chosen ? chosen.label : "").toggleClass("sanad-picker__dd-value--set", !!value);
+			$btn.toggleClass("sanad-picker__dd-btn--active", !!value);
+			$list.find("[role=option]").each((i, el) => el.setAttribute("aria-selected", el.dataset.value === value ? "true" : "false"));
+		};
+		const fill = (q = "") => {
+			const needle = q.trim().toLowerCase();
+			$list.empty();
+			const shown = list.filter((o) => !needle || o.label.toLowerCase().includes(needle));
+			if (!shown.length) $list.append(`<div class="sanad-picker__dd-empty">${ui.escape(__("No match for {0}", [q]))}</div>`);
+			shown.forEach((o) => {
+				$(`<button type="button" class="sanad-picker__dd-opt" role="option" data-value="${ui.escape(o.value)}" aria-selected="${o.value === value}">${ui.escape(o.label)}</button>`)
+					.on("click", () => {
+						value = o.value;
+						reflect();
+						close();
+						on_change(value);
+					})
+					.appendTo($list);
+			});
+		};
+		const open = () => {
+			fill();
+			$pop.removeAttr("hidden");
+			$btn.attr("aria-expanded", "true");
+			$(document).on(`mousedown.${id} touchstart.${id}`, (e) => {
+				if (!$dd[0].contains(e.target)) close();
+			});
+			$dd.on(`keydown.${id}`, (e) => {
+				if (e.key === "Escape") {
+					e.preventDefault();
+					close();
+					$btn.trigger("focus");
+				}
+			});
+			if ($search) $search.val("").trigger("focus");
+			else $list.find("[aria-selected=true], [role=option]").first().trigger("focus");
+		};
+		const close = () => {
+			$pop.attr("hidden", true);
+			$btn.attr("aria-expanded", "false");
+			$(document).off(`.${id}`);
+			$dd.off(`keydown.${id}`);
+		};
+		$btn.on("click", () => ($pop.prop("hidden") ? open() : close()));
+		if ($search) $search.on("input", () => fill($search.val()));
+		$list.on("keydown", "[role=option]", (e) => {
+			const opts = $list.find("[role=option]").toArray();
+			const i = opts.indexOf(e.currentTarget);
+			const next = e.key === "ArrowDown" ? i + 1 : e.key === "ArrowUp" ? i - 1 : e.key === "Home" ? 0 : e.key === "End" ? opts.length - 1 : -1;
+			if (next < 0 || next >= opts.length) return;
+			e.preventDefault();
+			opts[next].focus();
+		});
+		reflect();
+		$dd.get_value = () => value;
+		$dd.set_value = (v) => {
+			value = v || "";
+			reflect();
+		};
+		return $dd;
+	}
+
 	/** Loading / empty / error host for the pane's result area. */
 	state_for($area) {
 		return new sanad.ui.EmptyState({ wrapper: $area, state: "loading", size: "sm", rows: 4 });
 	}
 
 	/**
-	 * Checkbox table of candidate rows in the common shape.
-	 * @returns {jQuery} table wrapper; `selected_rows()` reads the checked rows.
+	 * The candidate rows, drawn the way the prototype draws a person: a round avatar with the
+	 * initials, the name over the number, a small badge for what else is known, and a round mark
+	 * at the end that fills when the row is chosen. The whole row is the control. The API is the
+	 * one the sources already use: `selected_rows()`, `select_all(on)`, the `selection-change` event.
 	 */
 	candidate_table(rows, { selectable = true, show_source = false, extra_columns = [], disabled_when = null } = {}) {
 		const id = ui.uid("cands");
-		const cols = [{ label: __("Name") }, { label: __("Phone") }].concat(show_source ? [{ label: __("Source") }] : []).concat(extra_columns);
-		let html = `<div class="sanad-table-wrap sanad-picker__scroll"><table class="sanad-table sanad-picker__table" id="${id}"><thead><tr>`;
-		if (selectable) {
-			html += `<th scope="col" class="sanad-picker__th-check"><input type="checkbox" class="sanad-picker__check-all" aria-label="${ui.escape(__("Select all on page"))}"></th>`;
+		const $el = $(`<div class="sanad-picker__list" id="${id}" role="${selectable ? "group" : "list"}"></div>`);
+		if (selectable && rows.length > 1) {
+			$el.append(`<label class="sanad-picker__all"><input type="checkbox" class="sanad-picker__check-all"><span>${ui.escape(__("Select all on page"))}</span></label>`);
 		}
-		cols.forEach((c) => (html += `<th scope="col">${ui.escape(c.label)}</th>`));
-		html += "</tr></thead><tbody>";
+		const $rows = $('<div class="sanad-picker__rows"></div>').appendTo($el);
 		rows.forEach((row, i) => {
 			const disabled = disabled_when ? disabled_when(row) : !row.valid && !row.phone_e164;
 			const name = row.display_name || row.source_name || row.contact || "";
-			html += `<tr data-idx="${i}" class="${disabled ? "sanad-picker__row--disabled" : ""}">`;
-			if (selectable) {
-				html += `<td class="sanad-picker__td-check"><input type="checkbox" class="sanad-picker__check" data-idx="${i}" ${disabled ? "disabled" : ""} aria-label="${ui.escape(__("Select {0}", [name || row.phone || ""]))}"></td>`;
-			}
-			html += `<td>${ui.escape(name)}${row.error ? `<div class="sanad-picker__row-error">${ui.escape(row.error)}</div>` : ""}</td>`;
-			html += `<td class="sanad-tabular sanad-table__ltr">${ui.escape(row.phone_e164 || row.phone || "")}</td>`;
-			if (show_source) html += `<td>${row.source_type ? sanad.ui.StatusBadge.html({ label: __(row.source_type), colour: "gray", icon: false }) : ""}</td>`;
-			extra_columns.forEach((c) => (html += `<td>${c.format ? c.format(row) : ui.escape(row[c.fieldname] == null ? "" : row[c.fieldname])}</td>`));
-			html += "</tr>";
-		});
-		html += "</tbody></table></div>";
-		const $el = $(html);
-		if (selectable) {
-			$el.find(".sanad-picker__check-all").on("change", (e) => {
-				$el.find(".sanad-picker__check:not(:disabled)").prop("checked", e.target.checked);
-				$el.trigger("selection-change");
+			const phone = row.phone_e164 || row.phone || "";
+			const badges = [];
+			if (show_source && row.source_type) badges.push(ui.escape(__(row.source_type)));
+			extra_columns.forEach((c) => {
+				const v = c.format ? c.format(row) : ui.escape(row[c.fieldname] == null ? "" : row[c.fieldname]);
+				if (v) badges.push(v);
 			});
-			$el.find(".sanad-picker__check").on("change", () => $el.trigger("selection-change"));
-			$el.selected_rows = () => $el.find(".sanad-picker__check:checked").toArray().map((el) => rows[cint(el.dataset.idx)]);
+			const $row = $(`
+				<div class="sanad-picker__row${disabled ? " sanad-picker__row--disabled" : ""}" data-idx="${i}"${selectable ? ` role="checkbox" aria-checked="false" tabindex="${disabled ? -1 : 0}"${disabled ? ' aria-disabled="true"' : ""}` : ' role="listitem"'}>
+					<span class="sanad-picker__av" aria-hidden="true">${ui.escape(ui.initials(name || phone) || "#")}</span>
+					<span class="sanad-picker__row-text">
+						<span class="sanad-picker__row-name" dir="auto">${ui.escape(name || phone)}</span>
+						${name && phone ? `<span class="sanad-picker__row-sub sanad-tabular" dir="ltr">${ui.escape(phone)}</span>` : ""}
+						${row.error ? `<span class="sanad-picker__row-error" dir="auto">${ui.escape(row.error)}</span>` : ""}
+					</span>
+					${badges.map((b) => `<span class="sanad-picker__row-badge">${b}</span>`).join("")}
+					${selectable ? `<span class="sanad-picker__mark" aria-hidden="true">${ui.icon("es-line-check", "xs")}</span>` : ""}
+				</div>`);
+			$rows.append($row);
+		});
+		if (selectable) {
+			const checked = new Set();
+			const reflect = () => {
+				$rows.find(".sanad-picker__row").each((i, el) => el.setAttribute("aria-checked", checked.has(cint(el.dataset.idx)) ? "true" : "false"));
+				const enabled = $rows.find('.sanad-picker__row:not(.sanad-picker__row--disabled)').length;
+				$el.find(".sanad-picker__check-all").prop("checked", enabled > 0 && checked.size >= enabled).prop("indeterminate", checked.size > 0 && checked.size < enabled);
+			};
+			const toggle = (el) => {
+				if (el.classList.contains("sanad-picker__row--disabled")) return;
+				const i = cint(el.dataset.idx);
+				if (checked.has(i)) checked.delete(i);
+				else checked.add(i);
+				reflect();
+				$el.trigger("selection-change");
+			};
+			$rows.on("click", ".sanad-picker__row", (e) => toggle(e.currentTarget));
+			$rows.on("keydown", ".sanad-picker__row", (e) => {
+				if (e.key === " " || e.key === "Enter") {
+					e.preventDefault();
+					toggle(e.currentTarget);
+				}
+			});
+			$el.find(".sanad-picker__check-all").on("change", (e) => $el.select_all(e.target.checked));
+			$el.selected_rows = () => Array.from(checked).sort((x, y) => x - y).map((i) => rows[i]);
 			$el.select_all = (on) => {
-				$el.find(".sanad-picker__check:not(:disabled)").prop("checked", on);
-				$el.find(".sanad-picker__check-all").prop("checked", on);
+				checked.clear();
+				if (on) $rows.find(".sanad-picker__row:not(.sanad-picker__row--disabled)").each((i, el) => checked.add(cint(el.dataset.idx)));
+				reflect();
 				$el.trigger("selection-change");
 			};
 		}

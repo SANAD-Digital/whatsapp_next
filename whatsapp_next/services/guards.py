@@ -31,6 +31,16 @@ def is_status_writer() -> bool:
 	return bool(getattr(frappe.flags, FLAG, 0))
 
 
+def field_changed(before, doc, fieldname: str) -> bool:
+	"""True when `fieldname` differs between the saved document and the one being saved.
+
+	Both sides are cast through the field's own type first: the saved copy carries `datetime`
+	objects while a document that arrived from the client carries their strings, and a plain
+	`!=` between those is always True. Empty values (None / "") compare equal.
+	"""
+	return (before.get_value(fieldname) or None) != (doc.get_value(fieldname) or None)
+
+
 def assert_status_writer(doc, fieldnames: tuple[str, ...] = ("status",)) -> None:
 	"""Controller helper: reject a change of any listed field made outside `status_writer()`.
 
@@ -42,7 +52,7 @@ def assert_status_writer(doc, fieldnames: tuple[str, ...] = ("status",)) -> None
 	if before is None:
 		return
 	for fieldname in fieldnames:
-		if (before.get(fieldname) or None) != (doc.get(fieldname) or None):
+		if field_changed(before, doc, fieldname):
 			frappe.throw(
 				_("{0} of {1} can only be changed by the system").format(
 					_(doc.meta.get_label(fieldname)), _(doc.doctype)

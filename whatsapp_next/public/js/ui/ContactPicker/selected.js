@@ -8,7 +8,8 @@
 import ui from "../_core/index.js";
 
 const RENDER_STEP = 200;
-const PREVIEW_DEBOUNCE = 400;
+const PREVIEW_DEBOUNCE = 250;
+const SLOW = 300; // the counts strip turns into a skeleton only when the server is slower than this
 
 export class SelectedTab {
 	constructor(picker) {
@@ -26,13 +27,13 @@ export class SelectedTab {
 		// in the tray the rows are read in 272 px: name, number, and what will happen to it
 		this.compact = $pane.hasClass("sanad-picker__tray-body");
 		const $head = $('<div class="sanad-picker__head"></div>');
-		const $search = $(`<input type="search" class="form-control sanad-picker__search" placeholder="${ui.escape(__("Search the selection"))}" aria-label="${ui.escape(__("Search the selection"))}">`);
+		const $search = $(`<label class="sanad-picker__search sanad-picker__search--sm"><span class="sanad-picker__search-icon" aria-hidden="true">${ui.icon("es-line-search", "sm")}</span><input type="search" class="sanad-picker__search-input" placeholder="${ui.escape(__("Search the selection"))}" aria-label="${ui.escape(__("Search the selection"))}"></label>`);
 		$search.on("input", ui.debounce(() => {
-			this.txt = $search.val().trim().toLowerCase();
+			this.txt = $search.find("input").val().trim().toLowerCase();
 			this.limit = RENDER_STEP;
 			this.render();
 		}, 200));
-		this.$clear = $(`<button type="button" class="btn btn-default btn-sm">${ui.escape(__("Clear all"))}</button>`).on("click", () => this.picker.clear_selection());
+		this.$clear = $(`<button type="button" class="sanad-picker__clear">${ui.escape(__("Clear all"))}</button>`).on("click", () => this.picker.clear_selection());
 		$head.append($search, this.$clear);
 		this.$counts = $('<div class="sanad-picker__counts"></div>');
 		this.$alert = $('<div class="sanad-picker__alert" role="alert" hidden></div>');
@@ -68,10 +69,13 @@ export class SelectedTab {
 			this.render();
 			return Promise.resolve(this.preview);
 		}
-		if (this.$counts) this.$counts.html(ui.skeleton(1, { lines: 1 }));
-		this.picker.set_progress(__("Checking {0} numbers against the list…", [ui.format_int(rows.length)]));
+		const slow = window.setTimeout(() => {
+			if (this.$counts) this.$counts.html(ui.skeleton(1, { lines: 1 }));
+			this.picker.set_progress(__("Checking {0} numbers against the list…", [ui.format_int(rows.length)]));
+		}, SLOW);
 		return this.picker
 			.call("picker.preview", { target_doctype: this.picker.target_doctype, target_name: this.picker.target_name, rows }, { silent: true })
+			.finally(() => window.clearTimeout(slow))
 			.then((p) => {
 				if (rev !== this.picker.revision) return this.preview; // stale — a newer preview is on its way
 				this.preview = p;
@@ -177,30 +181,38 @@ export class SelectedTab {
 		this.$list.find(".sanad-picker__remove").on("click", (e) => this.picker.remove_rows([$(e.currentTarget).data("key")]));
 	}
 
-	/** The tray's own rows: one line each, the flag as a dot that carries its meaning as a title. */
+	/**
+	 * The tray's rows, as the prototype draws the chosen: the avatar (a `#` for a typed number),
+	 * the name over the number, a badge saying where it came from or what will happen to it, and a
+	 * round × that takes it out.
+	 */
 	render_compact(visible) {
 		const remove = this.picker.operation === "remove";
-		const tone_of = (bucket) => ({ already_added: remove ? "green" : "red", invalid: "amber", duplicates_in_selection: "red" })[bucket] || "green";
+		const tone_of = (bucket) => ({ already_added: remove ? "ok" : "danger", invalid: "warn", duplicates_in_selection: "danger" })[bucket] || "";
 		const words = {
 			already_added: remove ? __("Will be removed") : __("Already in the list"),
 			invalid: __("Invalid"),
 			duplicates_in_selection: __("Duplicate in the selection"),
-			available: remove ? __("Not in the list") : __("Will be added"),
+			available: remove ? __("Not in the list") : "",
 		};
-		let html = '<div class="sanad-picker__trayrows">';
+		let html = '<div class="sanad-picker__rows sanad-picker__trayrows">';
 		visible.slice(0, this.limit).forEach(([key, row]) => {
 			const b = this.buckets.get(key);
 			const bucket = b ? b.bucket : "available";
 			const name = row.display_name || row.source_name || row.contact || "";
+			const phone = row.phone_e164 || row.phone || "";
 			const word = (b && b.error) || words[bucket] || "";
-			html += `<div class="sanad-picker__trayrow" data-key="${ui.escape(key)}">
-				<span class="sanad-picker__traydot sanad-tone--${tone_of(bucket)}" title="${ui.escape(word)}" aria-hidden="true"></span>
-				<span class="sanad-picker__trayname">
-					<span dir="auto">${ui.escape(name || row.phone_e164 || row.phone || "")}</span>
-					${name ? `<span class="sanad-picker__trayphone sanad-tabular" dir="ltr">${ui.escape(row.phone_e164 || row.phone || "")}</span>` : ""}
-					<span class="sanad-visually-hidden">${ui.escape(word)}</span>
+			const manual = (row.source_type || row.__source) === "Manual" || row.__source === "manual";
+			const source = row.source_type ? __(row.source_type) : "";
+			const tone = tone_of(bucket);
+			html += `<div class="sanad-picker__row sanad-picker__row--chosen${tone ? ` sanad-picker__row--${tone}` : ""}" data-key="${ui.escape(key)}" role="listitem">
+				<span class="sanad-picker__av${manual ? " sanad-picker__av--manual" : " sanad-picker__av--on"}" aria-hidden="true">${manual && !name ? "#" : ui.escape(ui.initials(name || phone) || "#")}</span>
+				<span class="sanad-picker__row-text">
+					<span class="sanad-picker__row-name" dir="auto">${ui.escape(name || phone)}</span>
+					${name && phone ? `<span class="sanad-picker__row-sub sanad-tabular" dir="ltr">${ui.escape(phone)}</span>` : ""}
 				</span>
-				<button type="button" class="sanad-picker__remove" data-key="${ui.escape(key)}" aria-label="${ui.escape(__("Remove {0} from the selection", [name || row.phone || ""]))}">${ui.icon("es-line-close", "xs")}</button>
+				${word ? `<span class="sanad-picker__row-badge sanad-picker__row-badge--${tone || "muted"}">${ui.escape(word)}</span>` : source ? `<span class="sanad-picker__row-badge">${ui.escape(source)}</span>` : ""}
+				<button type="button" class="sanad-picker__mark sanad-picker__mark--x sanad-picker__remove" data-key="${ui.escape(key)}" aria-label="${ui.escape(__("Remove {0} from the selection", [name || phone]))}">${ui.icon("es-line-close", "xs")}</button>
 			</div>`;
 		});
 		html += "</div>";

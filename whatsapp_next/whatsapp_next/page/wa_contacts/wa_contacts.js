@@ -8,8 +8,11 @@
 // Anatomy, from `docs/screen/Hub Screen - Contacts.dc.html`: the screen header with its four
 // stat cards, the one-line toolbar (search · filters · selection chip and bulk verbs at the
 // inline-end), then the prototype's own list — `sanad.ui.DataList` in page mode: checkbox column,
-// the ten columns, a row that opens its detail panel in place, and the footer count with the
-// pager. The page owns the data; the table only asks for a page, a sort or a selection.
+// the ten columns, and the footer count with the pager. A row opens the prototype's detail panel
+// (`sanad.ui.OverlayPanel` as a drawer: alert · facts · linked accounts · recent messages · the
+// verbs); "New contact" and "Edit" open its edit modal (`editPanel` in the prototype), and the
+// two state changes open its smaller modals (`chatPanel`, `statusPanel`). The page owns the
+// data; the table only asks for a page, a sort or a selection.
 
 frappe.provide("whatsapp_next.contacts");
 
@@ -19,10 +22,14 @@ const CONTACT_STATUSES = ["Passive", "Open", "Replied"];
 const PAGE_LENGTH = 20;
 /** One bulk call never carries more than this, the same cap the kit's BulkActions uses. */
 const BULK_CAP = 200;
+/** How many of a number's messages the detail panel shows. */
+const RECENT_MESSAGES = 5;
 
 /** Roles that may open a conversation / send, mirroring the API's own gates. */
 const CAN_SEND = () => frappe.user.has_role(["WhatsApp Agent", "WhatsApp Manager", "System Manager"]);
 const CAN_CONFIRM = CAN_SEND;
+const CAN_READ_CONVERSATION = () =>
+	frappe.user.has_role(["WhatsApp Viewer", "WhatsApp Agent", "WhatsApp Manager", "System Manager"]);
 const CAN_WRITE = () =>
 	frappe.user.has_role("WhatsApp Contact User") || frappe.perm.has_perm("Contact", 0, "write");
 const CAN_CREATE = () =>
@@ -214,8 +221,7 @@ class ContactsPage {
 		});
 		// A KPI card sets «حالة الربط» without the dropdown ever being opened, and FilterBar only
 		// learns an option's label when it resolves that dropdown — so the button would read
-		// "Link status 1". The labels this screen already holds are handed over now (kit ask in
-		// the report: remember statically supplied options at mount).
+		// "Link status 1". The labels this screen already holds are handed over now.
 		(this.filterbar.opts.presets || []).forEach((preset) => {
 			if (Array.isArray(preset.options)) this.filterbar.remember(preset.fieldname, preset.options);
 		});
@@ -264,8 +270,8 @@ class ContactsPage {
 			// the prototype's phone card: who, which number, whether it is linked and to what,
 			// and whether a conversation exists — the rest stays for the wide table
 			mobile_columns: ["full_name", "link_status"],
-			expand: ($el, doc) => this.render_detail($el, doc),
-			on_row_click: (doc) => this.table.expand_row(doc.name),
+			// the prototype's row opens the detail panel; Enter does the same from the keyboard
+			on_row_click: (doc) => this.open_detail(doc),
 			on_page: (page) => {
 				this.current_page = page + 1;
 				this.load();
@@ -288,8 +294,6 @@ class ContactsPage {
 					: undefined,
 			},
 		});
-		// DataList tells a page about "select all", but not yet about a single checkbox, so the
-		// page listens for that one itself (kit note in the report).
 		this.$el.find(".wa-contacts__list").on("change", ".list-row-checkbox", () => this.render_selection());
 	}
 
@@ -345,8 +349,6 @@ class ContactsPage {
 			{
 				fieldname: "link_status",
 				label: __("Link status"),
-				// `type` only places the cell (its own badge is drawn by `format`): on a phone card
-				// the status sits beside the title instead of starting a line of its own
 				type: "status",
 				format: (v, doc) =>
 					(doc.links || []).length
@@ -419,13 +421,31 @@ class ContactsPage {
 		return primary.wa_phone_e164 || primary.phone || null;
 	}
 
+	/** What the screen calls the row: its name, or the honest "No name". */
+	static title_of(row) {
+		return (row && row.full_name) || __("No name");
+	}
+
+	/** The conversation state in words, the same three the table's column uses. */
+	static conversation_of(row) {
+		if (cint(row.inbound_count)) return { text: __("Inbound recorded in the system"), tone: "ok" };
+		if (cint(row.conversation_confirmed)) return { text: __("Confirmed by hand"), tone: "info" };
+		return { text: __("No conversation"), tone: "muted" };
+	}
+
+	/** The link badge the header, the detail and the edit modal all wear. */
+	static link_badge(row) {
+		return (row.links || []).length
+			? { text: __("Linked"), tone: "ok" }
+			: { text: __("Not linked"), tone: "warn" };
+	}
+
 	// ---- data -----------------------------------------------------------------------------
 
 	/**
-	 * Only the filters that are set. Frappe's request layer form-encodes its arguments, so a `null` reaches
-	 * the server as an empty string — which `has_whatsapp is not None` accepts and then reads as
-	 * `False`. Sending "unset" as a value silently filtered the screen down to the contacts with
-	 * no WhatsApp number as soon as any other filter was touched.
+	 * Only the filters that are set. Frappe's request layer form-encodes its arguments, so a
+	 * `null` reaches the server as an empty string, which `has_whatsapp is not None` accepts and
+	 * then reads as `False`.
 	 */
 	args() {
 		const args = { page: this.current_page, page_length: PAGE_LENGTH, order_by: this.order_by };
@@ -470,14 +490,30 @@ class ContactsPage {
 		return this.load();
 	}
 
+	/**
+	 * After a change made from the detail panel: refresh the page and put the operator back in
+	 * front of the same record, now current. A record that left the page (a filter no longer
+	 * matches it) simply stays closed.
+	 */
+	after_change(name) {
+		return this.reload().then(() => {
+			const row = name && this.rows.find((r) => r.name === name);
+			if (row) this.open_detail(row);
+		});
+	}
+
+	/** Reopen the detail of `name` from the rows already on the page (after a cancelled modal). */
+	back_to_detail(name) {
+		const row = name && this.rows.find((r) => r.name === name);
+		if (row) this.open_detail(row);
+	}
+
 	// ---- the selection chip and its verbs, at the inline-end of the toolbar --------------------
 
 	render_selection() {
 		const rows = this.table.get_selected();
 		if (!rows.length || !CAN_WRITE()) return this.$selection.prop("hidden", true).empty();
 		const esc = frappe.utils.escape_html;
-		// one sentence, not a number glued to a word: the count is placed inside the translated
-		// string so Arabic can put it where Arabic puts it
 		const count = `<span class="sanad-tabular">${esc(sanad.ui.format_int(rows.length))}</span>`;
 		this.$selection.prop("hidden", false).html(`
 			<span class="wa-contacts__selected" role="status">
@@ -489,7 +525,6 @@ class ContactsPage {
 			<button type="button" class="btn btn-sm sanad-accent-soft wa-contacts__bulk">${esc(
 				__("Link to an account")
 			)}</button>`);
-		// `clear_selection` unchecks the boxes and calls `on_select`, which redraws this chip
 		this.$selection.find(".wa-contacts__selected-clear").on("click", () => this.table.clear_selection());
 		this.$selection.find(".wa-contacts__bulk").on("click", () => this.link_selected(rows));
 	}
@@ -499,8 +534,11 @@ class ContactsPage {
 		if (selected.length > BULK_CAP) {
 			sanad.ui.Toast.warning(__("Only the first {0} contacts are linked in one go.", [BULK_CAP]));
 		}
-		this.ask_party(__("Link {0} contacts to an account", [names.length])).then(
-			({ link_doctype, link_name }) =>
+		this.ask_party({
+			title: __("Link {0} contacts to an account", [names.length]),
+			subtitle: __("The same account is added to every selected contact."),
+		})
+			.then(({ link_doctype, link_name, link_title }) =>
 				sanad.ui
 					.call("contacts.link_many", { names, link_doctype, link_name }, { freeze: true })
 					.then((r) => {
@@ -508,7 +546,7 @@ class ContactsPage {
 						const skipped = ((r && r.skipped) || []).length;
 						const failed = ((r && r.failed) || []).length;
 						sanad.ui.Toast.success(
-							__("Linked {0} of {1} contacts to {2}", [done, names.length, link_name])
+							__("Linked {0} of {1} contacts to {2}", [done, names.length, link_title || link_name])
 						);
 						if (skipped) sanad.ui.Toast.warning(__("{0} were already linked to that account.", [skipped]));
 						if (failed) {
@@ -518,227 +556,328 @@ class ContactsPage {
 						this.reload();
 					})
 					.catch((err) => sanad.ui.Toast.error(err))
-		);
+			)
+			.catch(() => {});
 	}
 
-	// ---- the party picker (contacts.search_party) --------------------------------------------
+	// ---- the party chooser: the prototype's modal with a segment and a choice grid ----------------
 
-	/** Resolve with `{link_doctype, link_name}`; rejects when the user cancels. */
-	ask_party(title) {
+	/** `[{value, label, note}]` of one party DocType, as the choice grid and the add row want it. */
+	search_party(party_type, txt) {
+		return sanad.ui
+			.call("contacts.search_party", { party_type, txt: txt || "", page_length: 20 }, { silent: true })
+			.then((rows) => (rows || []).map((r) => ({ value: r.name, label: r.title || r.name, note: r.name, note_mono: true })))
+			.catch(() => []);
+	}
+
+	/** Resolve with `{link_doctype, link_name, link_title}`; rejects with "cancelled" on close. */
+	ask_party({ title, subtitle } = {}) {
 		return new Promise((resolve, reject) => {
 			let settled = false;
-			const dialog = new frappe.ui.Dialog({
+			let chosen = null;
+			const panel = new sanad.ui.OverlayPanel({
+				type: "modal",
+				width: "520px",
 				title: title || __("Link to an account"),
-				fields: [
+				subtitle,
+				sections: [
 					{
-						fieldname: "link_doctype",
-						label: __("Account type"),
-						fieldtype: "Select",
-						options: PARTY_TYPES.map((d) => ({ value: d, label: __(d) })),
-						default: PARTY_TYPES[0],
-						reqd: 1,
-						onchange: () => dialog.set_value("link_name", ""),
-					},
-					{
-						fieldname: "link_name",
-						label: __("Account"),
-						fieldtype: "Autocomplete",
-						reqd: 1,
-						description: __("Only the accounts you are allowed to see are listed."),
+						title: __("The account"),
+						cols: 1,
+						fields: [
+							{
+								key: "link_doctype",
+								type: "segment",
+								label: __("Account type"),
+								value: PARTY_TYPES[0],
+								options: PARTY_TYPES.map((d) => ({ value: d, label: __(d) })),
+								on_change: (_v, p) => p.set_value("link_name", "", ""),
+							},
+							{
+								key: "link_name",
+								type: "link",
+								label: __("Account"),
+								required: true,
+								placeholder: __("Search by name or ID…"),
+								hint: __("Only the accounts you are allowed to see are listed."),
+								search: (txt) =>
+									this.search_party(panel.get_value("link_doctype"), txt).then((items) => {
+										chosen = items;
+										return items;
+									}),
+							},
+						],
 					},
 				],
-				primary_action_label: __("Link"),
-				primary_action: (values) => {
-					if (!values.link_name) return;
-					settled = true;
-					dialog.hide();
-					resolve(values);
-				},
+				actions: [
+					{ key: "cancel", label: __("Cancel"), close: true },
+					{
+						key: "link",
+						label: __("Link"),
+						variant: "primary",
+						handler: (values) => {
+							const item = (chosen || []).find((i) => String(i.value) === String(values.link_name));
+							settled = true;
+							resolve({
+								link_doctype: values.link_doctype,
+								link_name: values.link_name,
+								link_title: item ? item.label : values.link_name,
+							});
+						},
+					},
+				],
+				on_close: () => !settled && reject(new Error("cancelled")),
 			});
-			const field = dialog.get_field("link_name");
-			const search = frappe.utils.debounce((txt) => {
-				sanad.ui
-					.call(
-						"contacts.search_party",
-						{ party_type: dialog.get_value("link_doctype"), txt: txt || "", page_length: 20 },
-						{ silent: true }
-					)
-					.then((rows) =>
-						field.set_data(
-							(rows || []).map((r) => ({ value: r.name, label: r.title || r.name, description: r.name }))
-						)
-					)
-					.catch(() => field.set_data([]));
-			}, 250);
-			field.$input.on("input focus", (e) => search(e.target.value));
-			dialog.$wrapper.on("hidden.bs.modal", () => !settled && reject(new Error("cancelled")));
-			dialog.show();
-			search("");
+			panel.show();
 		});
 	}
 
-	// ---- the detail panel the row opens in place ------------------------------------------------
+	// ---- the detail: the kit's document drawer (D-084, reference image 01) ---------------------
 
-	render_detail($el, row) {
-		const esc = frappe.utils.escape_html;
-		const links = row.links || [];
+	/** The party DocTypes' own title fields, so a linked account renders as the party it is. */
+	static PARTY_TITLE = { Customer: "customer_name", Supplier: "supplier_name", Employee: "employee_name", "Sales Person": "sales_person_name" };
+
+	open_detail(row) {
+		if (this.detail) this.detail.destroy();
 		const phone = ContactsPage.phone_of(row);
+		const links = row.links || [];
+		const blocked = cint(row.blacklisted);
+		const conversation = ContactsPage.conversation_of(row);
 		const alert = this.detail_alert(row);
-		$el.empty().addClass("wa-contacts__detail-body");
-		$el.append(`<header class="wa-contacts__detail-head">
-			<span class="wa-contacts__detail-title">${esc(row.full_name || __("No name"))}</span>
-			${phone ? `<span class="wa-contacts__detail-sub sanad-tabular" dir="ltr">${esc(phone)}</span>` : ""}
-			${
-				links.length
-					? sanad.ui.StatusBadge.html({ label: __("Linked"), colour: "green" })
-					: sanad.ui.StatusBadge.html({ label: __("Not linked"), colour: "orange" })
-			}
-		</header>`);
-		if (alert) {
-			$el.append(`<div class="wa-contacts__alert sanad-tone--${alert.tone}" role="${
-				alert.tone === "red" ? "alert" : "status"
-			}">
-				<span class="wa-contacts__alert-icon" aria-hidden="true">${sanad.ui.icon(alert.icon, "sm")}</span>
-				<span><strong>${esc(alert.title)}</strong><span>${esc(alert.text)}</span></span>
-			</div>`);
-		}
-		$el.append(`<dl class="wa-contacts__facts">
-			<div><dt>${esc(__("Linked accounts"))}</dt><dd class="sanad-tabular">${sanad.ui.format_int(
-			links.length
-		)}</dd></div>
-			<div><dt>${esc(__("Messages sent"))}</dt><dd class="sanad-tabular">${sanad.ui.format_int(
-			row.outbound_count
-		)}</dd></div>
-			<div><dt>${esc(__("Messages received"))}</dt><dd class="sanad-tabular">${sanad.ui.format_int(
-			row.inbound_count
-		)}</dd></div>
-			<div><dt>${esc(__("Status"))}</dt><dd>${
-			cint(row.blacklisted)
-				? sanad.ui.StatusBadge.html({ label: __("Blocked"), colour: "red" })
-				: sanad.ui.StatusBadge.html({ label: __(row.status || "Passive"), colour: "gray" })
-		}</dd></div>
-			<div><dt>${esc(__("Email"))}</dt><dd>${
-			row.email_id ? `<span dir="ltr">${esc(row.email_id)}</span>` : "&mdash;"
-		}</dd></div>
-		</dl>`);
+		// the row, read as a document: the scalars the identity and the facts need are spelled out
+		const doc = Object.assign({}, row, {
+			doctype: "Contact",
+			phone: phone || "",
+			linked_count: links.length,
+			// a contact whose number has never been seen carries no counters; zero is still a fact
+			outbound_count: cint(row.outbound_count),
+			inbound_count: cint(row.inbound_count),
+			conversation: conversation.text,
+		});
+		this.detail_name = row.name;
+		this.detail = new sanad.ui.Drawer({
+			doctype: "Contact",
+			name: row.name,
+			mode: "record",
+			layout: "document",
+			doc,
+			width: 560,
+			title: __("Contact"),
+			open_link: false,
+			fields: [
+				{ fieldname: "full_name", fieldtype: "Data", label: __("Name") },
+				{ fieldname: "phone", fieldtype: "Data", options: "Phone", label: __("WhatsApp number") },
+				{ fieldname: "company_name", fieldtype: "Data", label: __("Company") },
+				{ fieldname: "designation", fieldtype: "Data", label: __("Designation") },
+				{ fieldname: "email_id", fieldtype: "Data", options: "Email", label: __("Email") },
+				{ fieldname: "status", fieldtype: "Select", label: __("Status"), options: CONTACT_STATUSES.join("\n") },
+				{ fieldname: "linked_count", fieldtype: "Int", label: __("Linked accounts") },
+				{ fieldname: "outbound_count", fieldtype: "Int", label: __("Messages sent") },
+				{ fieldname: "inbound_count", fieldtype: "Int", label: __("Messages received") },
+				{ fieldname: "conversation", fieldtype: "Data", label: __("Conversation") },
+				{ fieldname: "salutation", fieldtype: "Data", label: __("Salutation") },
+			],
+			profile: {
+				title: "full_name",
+				lines: ["phone", "company_name"],
+				image: "image",
+				value: false,
+				// the badge beside the identity says what an operator asks first: is it reachable, and is it linked
+				status: () =>
+					blocked
+						? { label: __("Blocked"), colour: "red" }
+						: links.length
+							? { label: __("Linked"), colour: "green" }
+							: { label: __("Not linked"), colour: "orange" },
+			},
+			time_field: "last_seen",
+			highlight: alert
+				? ($el) =>
+						$el.html(
+							`<div class="sanad-op__alert sanad-op__alert--${alert.tone}" role="${alert.tone === "danger" ? "alert" : "status"}">
+								<span class="sanad-op__alert-title">${frappe.utils.escape_html(alert.title)}</span>
+								${alert.lines.map((l) => `<span class="sanad-op__alert-line">${frappe.utils.escape_html(l)}</span>`).join("")}
+							</div>`
+						)
+				: null,
+			highlight_label: alert ? __("Needs attention") : undefined,
+			facts: [
+				{ field: "linked_count", icon: "es-line-link" },
+				{ field: "outbound_count", icon: "es-line-send" },
+				{ field: "inbound_count", icon: "es-line-inbox" },
+				{ field: "conversation", icon: "es-line-chat-alt" },
+				{ field: "status", icon: "es-line-flag" },
+				{ field: "email_id", icon: "es-line-email" },
+			],
+			relations: [],
+			sections: [
+				{
+					label: __("Linked accounts"),
+					icon: "es-line-customer",
+					render: ($el) => this.render_links($el, links, row),
+				},
+				{
+					label: __("Recent messages"),
+					icon: "es-line-chat",
+					render: ($el) => this.render_messages($el, phone),
+				},
+			],
+			details: ["designation", "salutation"],
+			activity: () => this.load_activity(row.name),
+			activity_label: __("Activity"),
+			actions: this.actions_for(row).map((a) => ({
+				label: a.label,
+				icon: a.icon,
+				primary: a.primary,
+				danger: a.danger,
+				menu: !!a.menu,
+				handler: () => a.handler(row),
+			})),
+		});
+		this.detail.show();
+	}
 
-		const $blocks = $('<div class="wa-contacts__blocks"></div>').appendTo($el);
-		const $accounts = $(
-			`<section class="wa-contacts__block"><h3>${esc(__("Linked accounts"))}</h3><div></div></section>`
-		).appendTo($blocks);
-		if (links.length) {
-			$accounts.find("div").html(
-				`<ul class="wa-contacts__list-rows">${links
-					.map(
-						(l) =>
-							`<li><span>${esc(l.link_title || l.link_name)}</span><span class="wa-contacts__tag">${esc(
-								__(l.link_doctype)
-							)}</span></li>`
-					)
-					.join("")}</ul>`
-			);
-		} else {
+	/** What an operator must know before anything else: the number is blocked, or not linked. */
+	detail_alert(row) {
+		if (cint(row.blacklisted)) {
+			return {
+				tone: "danger",
+				title: __("This contact is blocked."),
+				lines: [__("No message reaches it: no notification, no campaign, no manual send. Unblock it with a note to reach it again.")],
+			};
+		}
+		if (!(row.links || []).length) {
+			return {
+				tone: "warn",
+				title: __("The number is not linked to an account."),
+				lines: [
+					__("Automatic notifications are not sent, and commands that need a link are refused. Link it to a ledger account and everything works."),
+				],
+			};
+		}
+		return null;
+	}
+
+	/** Every linked account drawn as the party it is — a customer reads as a customer. */
+	render_links($el, links, row) {
+		const esc = frappe.utils.escape_html;
+		if (!links.length) {
 			new sanad.ui.EmptyState({
-				wrapper: $accounts.find("div"),
+				wrapper: $el,
 				state: "empty",
 				size: "sm",
 				title: __("No account is linked to this number"),
 				description: __("Automatic notifications are not sent until it is linked."),
 				action: CAN_WRITE() ? { label: __("Link to an account"), onclick: () => this.link_one(row) } : undefined,
 			});
+			return;
 		}
-
-		const $messages = $(
-			`<section class="wa-contacts__block"><h3>${esc(__("Recent messages"))}</h3><div></div></section>`
-		).appendTo($blocks);
-		this.render_messages($messages.find("div"), phone);
-
-		const $actions = $('<div class="wa-contacts__row-actions"></div>').appendTo($el);
-		this.actions_for(row).forEach((a) => {
-			$(
-				`<button type="button" class="btn btn-sm ${
-					a.primary ? "btn-primary" : a.danger ? "btn-danger" : "btn-default"
-				}">${a.icon ? sanad.ui.icon(a.icon, "xs") + " " : ""}${esc(a.label)}</button>`
-			)
-				.on("click", (e) => {
-					e.stopPropagation();
-					a.handler(row);
-				})
-				.appendTo($actions);
+		const $list = $('<div class="sanad-ent-list sanad-ent-list--row"></div>').appendTo($el);
+		Promise.all(links.map((l) => sanad.ui.meta.with_doctype(l.link_doctype).catch(() => null))).then(() => {
+			links.forEach((l) => {
+				const title_field = ContactsPage.PARTY_TITLE[l.link_doctype] || "title";
+				const doc = { doctype: l.link_doctype, name: l.link_name, [title_field]: l.link_title || l.link_name };
+				const $item = $('<div class="sanad-ent-list__item"></div>').appendTo($list);
+				sanad.ui.Render.mount($item, doc, {
+					doctype: l.link_doctype,
+					density: "row",
+					profile: { title: title_field, lines: [], status: false, value: false, facts: [] },
+					vm: { lines: [{ text: __(l.link_doctype) }] },
+					href: frappe.perm.has_perm(l.link_doctype, 0, "read") ? undefined : null,
+				});
+				void esc;
+			});
 		});
 	}
 
-	detail_alert(row) {
-		if (cint(row.blacklisted)) {
-			return {
-				tone: "red",
-				icon: "es-line-close-circle",
-				title: __("This contact is blocked."),
-				text: __("No message reaches it: no notification, no campaign, no manual send."),
-			};
-		}
-		if (!(row.links || []).length) {
-			return {
-				tone: "amber",
-				icon: "es-line-alert-triangle",
-				title: __("The number is not linked to an account."),
-				text: __("Automatic notifications are not sent, and commands that need a link are refused."),
-			};
-		}
-		return null;
-	}
-
+	/** The last messages to and from this number, each drawn as the message record it is. */
 	render_messages($el, phone) {
-		if (!phone) {
-			new sanad.ui.EmptyState({
-				wrapper: $el,
-				state: "empty",
-				size: "sm",
-				title: __("No WhatsApp number"),
-				description: __("Add a number to the contact before sending anything."),
-			});
-			return;
-		}
-		if (!frappe.user.has_role(["WhatsApp Viewer", "WhatsApp Agent", "WhatsApp Manager", "System Manager"])) {
-			new sanad.ui.EmptyState({
-				wrapper: $el,
-				state: "empty",
-				size: "sm",
-				title: __("Conversations are not visible with your role"),
-				description: __("Reading a conversation needs the WhatsApp Viewer role."),
-			});
-			return;
-		}
+		const esc = frappe.utils.escape_html;
+		const empty = (title, description) => new sanad.ui.EmptyState({ wrapper: $el, state: "empty", size: "sm", title, description });
+		if (!phone) return empty(__("No WhatsApp number"), __("Add a number to the contact before sending anything."));
+		if (!CAN_READ_CONVERSATION()) return empty(__("Conversations are not visible with your role"), __("Reading a conversation needs the WhatsApp Viewer role."));
 		const state = new sanad.ui.EmptyState({ wrapper: $el, state: "loading", rows: 2, size: "sm" });
 		sanad.ui
-			.call("messages.get_conversation", { key: phone, limit: 5 }, { silent: true })
+			.call("messages.get_conversation", { key: phone, limit: RECENT_MESSAGES }, { silent: true })
 			.then((r) => {
 				const rows = (r && r.rows) || [];
-				if (!rows.length) {
-					state.empty({
-						title: __("No message yet"),
-						description: __("Nothing has been sent to or received from this number."),
-					});
-					return;
-				}
+				if (!rows.length) return state.empty({ title: __("No message yet"), description: __("Nothing has been sent to or received from this number.") });
 				state.hide();
-				$el.html(
-					`<ul class="wa-contacts__list-rows wa-contacts__list-rows--messages">${rows
-						.slice(0, 5)
-						.map(
-							(m) =>
-								`<li><span class="wa-contacts__msg">${frappe.utils.escape_html(
-									(m.body || m.message_type || "").slice(0, 90) || __("No text")
-								)}</span><span class="wa-contacts__tag">${frappe.utils.escape_html(
-									__(m.direction === "Inbound" ? "Received" : "Sent")
-								)} · ${frappe.datetime.comment_when(m.ts || m.creation, true)}</span></li>`
-						)
-						.join("")}</ul>`
-				);
+				$el.empty();
+				const $list = $('<div class="sanad-ent-list sanad-ent-list--compact"></div>').appendTo($el);
+				rows.slice(0, RECENT_MESSAGES).forEach((m) => {
+					const inbound = m.direction === "Inbound";
+					const doctype = inbound ? "WhatsApp Inbound Message" : "WhatsApp Log";
+					const doc = Object.assign({}, m, {
+						doctype,
+						text: (m.body || m.caption || "").trim().slice(0, 140) || __(m.message_type || "No text"),
+						when: `${inbound ? __("Received") : __("Sent")} · ${frappe.datetime.prettyDate(m.ts || m.creation, true)}`,
+					});
+					const $item = $('<div class="sanad-ent-list__item"></div>').appendTo($list);
+					sanad.ui.Render.mount($item, doc, {
+						doctype,
+						kind: "document",
+						density: "compact",
+						// a message has no initials: the direction's icon stands in the picture's place
+						vm: { initials: "" },
+						profile: {
+							title: "text",
+							title_ltr: false,
+							lines: ["when"],
+							value: false,
+							facts: [],
+							icon: inbound ? "es-line-inbox" : "es-line-send",
+							status: () => (inbound ? { label: __("Received"), colour: "blue" } : { label: __(m.status || "Sent"), colour: ContactsPage.status_colour(m.status) }),
+						},
+						href: null,
+						on_click: () => sanad.ui.ConversationDrawer.open({ key: phone, on_close: () => this.back_to_detail(this.detail_name) }),
+					});
+				});
+				void esc;
 			})
-			.catch((err) =>
-				state.error(err, { action: { label: __("Retry"), onclick: () => this.render_messages($el, phone) } })
-			);
+			.catch((err) => state.error(err, { action: { label: __("Retry"), onclick: () => this.render_messages($el, phone) } }));
+	}
+
+	/** An outbound status in Desk's indicator colours. */
+	static status_colour(status) {
+		if (["Delivered", "Read", "Sent"].includes(status)) return "green";
+		if (["Failed", "Cancelled"].includes(status)) return "red";
+		if (["Queued", "Sending", "Paused"].includes(status)) return "orange";
+		return "gray";
+	}
+
+	/** The audit rows that touched this contact or its numbers, as the timeline wants them. */
+	load_activity(name) {
+		const tone_of = (r) => {
+			if (r.action === "Contact Group Members Changed") return r.blocked ? "red" : "green";
+			if (r.action === "Conversation Confirmed") return "blue";
+			if (r.action === "Number Linked" || r.action === "Number Converted") return "green";
+			return "gray";
+		};
+		const icon_of = (r) => {
+			if (r.action === "Contact Group Members Changed") return "es-line-close-circle";
+			if (r.action === "Conversation Confirmed") return "es-line-chat-alt";
+			if (r.action === "Number Linked" || r.action === "Number Converted") return "es-line-link";
+			return "es-line-edit";
+		};
+		const title_of = (r) => {
+			if (r.action === "Contact Group Members Changed") return r.blocked ? __("Number blocked") : __("Number unblocked");
+			if (r.action === "Conversation Confirmed") return r.confirmed ? __("Conversation confirmed by hand") : __("Conversation confirmation removed");
+			if (r.action === "Elevated Contact Write") return r.reason === "create" ? __("Contact created") : __("Contact details changed");
+			return __(r.summary || r.action);
+		};
+		// the write audit carries "create" / "update" as its reason: that is the title's job, not a note
+		const note_of = (r) => (r.reason && !["create", "update"].includes(r.reason) ? r.reason : "");
+		return sanad.ui.call("contacts.get_activity", { name }, { silent: true }).then((rows) =>
+			(rows || []).map((r) => ({
+				title: title_of(r),
+				description: note_of(r),
+				time: r.timestamp,
+				user: r.user,
+				icon: icon_of(r),
+				tone: tone_of(r),
+			}))
+		);
 	}
 
 	// ---- row actions --------------------------------------------------------------------------
@@ -748,141 +887,373 @@ class ContactsPage {
 		const linked = (row.links || []).length > 0;
 		const list = [];
 		if (!linked && CAN_WRITE()) {
-			list.push({
-				label: __("Link to an account"),
-				icon: "es-line-link",
-				primary: true,
-				handler: () => this.link_one(row),
-			});
+			list.push({ key: "link", label: __("Link to an account"), icon: "es-line-link", primary: true, handler: () => this.link_one(row) });
 		}
-		if (phone && CAN_SEND()) {
+		if (phone && CAN_SEND() && !cint(row.blacklisted)) {
 			list.push({
+				key: "send",
 				label: __("Send a message"),
 				icon: "es-line-chat",
 				primary: linked,
-				handler: () => new sanad.ui.QuickSend({ phone, contact: row.name, on_sent: () => this.reload() }),
+				close: false,
+				handler: () => new sanad.ui.QuickSend({ phone, contact: row.name, on_sent: () => this.after_change(row.name) }),
 			});
 		}
 		if (CAN_WRITE()) {
-			list.push({ label: __("Edit"), icon: "es-line-edit", handler: () => this.open_form(row) });
+			list.push({ key: "edit", label: __("Edit"), icon: "es-line-edit", handler: () => this.open_form(row) });
+		}
+		if (phone && CAN_WRITE()) {
+			list.push({
+				key: "block",
+				label: cint(row.blacklisted) ? __("Unblock") : __("Block"),
+				icon: "es-line-close-circle",
+				danger: !cint(row.blacklisted),
+				menu: true,
+				handler: () => this.toggle_block(row, phone),
+			});
 		}
 		if (phone && CAN_CONFIRM() && !cint(row.inbound_count)) {
-			list.push({
-				label: __("Change conversation state"),
-				icon: "es-line-chat-alt",
-				handler: () => this.change_conversation(row, phone),
-			});
-		}
-		if (phone) {
-			list.push({
-				label: __("Message history"),
-				icon: "es-line-chat-alt",
-				handler: () => sanad.ui.ConversationDrawer.open({ key: phone, on_close: () => this.load() }),
-			});
+			list.push({ key: "chat", label: __("Change conversation state"), icon: "es-line-chat-alt", menu: true, handler: () => this.change_conversation(row, phone) });
 		}
 		if (phone && CAN_SEND()) {
 			list.push({
-				label: __("Open in the simulator"),
+				key: "simulator",
+				label: __("WhatsApp simulator"),
 				icon: "es-line-zap",
+				menu: true,
 				handler: () => {
 					frappe.route_options = { contact: row.name, phone };
 					frappe.set_route(sanad.ui.config.defaults.simulator_route || "wa-simulator");
 				},
 			});
 		}
-		if (phone && CAN_WRITE()) {
+		if (phone && CAN_READ_CONVERSATION()) {
 			list.push({
-				label: cint(row.blacklisted) ? __("Unblock") : __("Block"),
-				icon: "es-line-close-circle",
-				danger: !cint(row.blacklisted),
-				handler: () => this.toggle_block(row, phone),
+				key: "history",
+				label: __("Message history"),
+				icon: "es-line-chat",
+				menu: true,
+				handler: () => sanad.ui.ConversationDrawer.open({ key: phone, on_close: () => this.back_to_detail(row.name) }),
 			});
 		}
 		return list;
 	}
 
 	link_one(row) {
-		this.ask_party(__("Link {0} to an account", [row.full_name || row.name])).then(
-			({ link_doctype, link_name }) =>
+		this.ask_party({
+			title: __("Link «{0}» to an account", [ContactsPage.title_of(row)]),
+			subtitle: ContactsPage.phone_of(row) || undefined,
+		})
+			.then(({ link_doctype, link_name, link_title }) =>
 				sanad.ui
 					.call("contacts.link_many", { names: [row.name], link_doctype, link_name }, { freeze: true })
 					.then(() => {
-						sanad.ui.Toast.success(__("Linked to {0}", [link_name]));
-						this.reload();
+						sanad.ui.Toast.success(__("Linked to {0}", [link_title || link_name]));
+						this.after_change(row.name);
 					})
-					.catch((err) => sanad.ui.Toast.error(err))
-		);
+					.catch((err) => {
+						sanad.ui.Toast.error(err);
+						this.back_to_detail(row.name);
+					})
+			)
+			.catch(() => this.back_to_detail(row.name));
 	}
 
+	/** The prototype's `chatPanel`: current state, the new state as a segment, a mandatory note. */
 	change_conversation(row, phone) {
+		const current = ContactsPage.conversation_of(row);
 		const confirmed = cint(row.conversation_confirmed);
-		sanad.ui.ConfirmDialog.ask({
-			title: confirmed ? __("Remove the conversation confirmation?") : __("Confirm an existing conversation?"),
-			message: confirmed
-				? __("The number goes back to having no recorded conversation.")
-				: __("Use this when the conversation happened before this system was connected."),
-			impact: [
-				{ label: __("Number"), value: phone },
-				{ label: __("Current state"), value: confirmed ? __("Confirmed by hand") : __("No conversation") },
+		let saved = false;
+		new sanad.ui.OverlayPanel({
+			type: "modal",
+			width: "520px",
+			title: __("Change conversation state"),
+			subtitle: __("{0} · {1}", [ContactsPage.title_of(row), phone]),
+			badge: { text: current.text, tone: current.tone },
+			sections: [
+				{
+					title: __("The state"),
+					cols: 1,
+					fields: [
+						{ key: "current", type: "readonly", label: __("Current state"), value: current.text },
+						{
+							key: "chat",
+							type: "segment",
+							label: __("New state"),
+							value: confirmed ? "yes" : "no",
+							options: [
+								{ value: "yes", label: __("There is a conversation") },
+								{ value: "no", label: __("There is none") },
+							],
+							hint: __("Confirm a conversation that happened before the system was connected and was never recorded in it."),
+						},
+						{
+							key: "note",
+							type: "textarea",
+							label: __("Note"),
+							required: true,
+							rows: 3,
+							placeholder: __("Why it changed — for example: an earlier conversation with the customer on the sales device, before the link."),
+							hint: __("Required. It is kept in the audit log with your name."),
+						},
+					],
+				},
 			],
-			reason_field: {
-				label: __("Note"),
-				required: true,
-				description: __("Required. It is kept in the audit log with your name."),
-			},
-			confirm_label: confirmed ? __("Remove the confirmation") : __("Confirm the conversation"),
-			on_confirm: ({ reason }) =>
-				sanad.ui.call("numbers.confirm_conversation", {
-					phone_e164: phone,
-					confirmed: confirmed ? 0 : 1,
-					note: reason,
-				}),
-		})
-			.then(() => {
-				sanad.ui.Toast.success(__("Conversation state updated"));
-				this.load();
-			})
-			.catch(() => {});
+			actions: [
+				{ key: "cancel", label: __("Cancel"), close: true },
+				{
+					key: "save",
+					label: __("Save the change"),
+					variant: "primary",
+					handler: (values) =>
+						sanad.ui
+							.call(
+								"numbers.confirm_conversation",
+								{ phone_e164: phone, confirmed: values.chat === "yes" ? 1 : 0, note: values.note },
+								{ silent: true }
+							)
+							.then(() => {
+								saved = true;
+								sanad.ui.Toast.success(__("Conversation state updated"));
+							}),
+				},
+			],
+			on_close: () => (saved ? this.after_change(row.name) : this.back_to_detail(row.name)),
+		}).show();
 	}
 
+	/** The prototype's `statusPanel`: the state now, the state after saving, a mandatory note. */
 	toggle_block(row, phone) {
 		const blocked = cint(row.blacklisted);
-		sanad.ui.ConfirmDialog.ask({
-			title: blocked ? __("Unblock this number?") : __("Block this number?"),
-			message: blocked
-				? __("Notifications, campaigns and manual sends reach it again.")
-				: __("No message reaches it: no notification, no campaign, no manual send."),
-			impact: [
-				{ label: __("Number"), value: phone },
-				{ label: __("Contact"), value: row.full_name || row.name },
+		let saved = false;
+		new sanad.ui.OverlayPanel({
+			type: "modal",
+			width: "520px",
+			title: blocked ? __("Unblock the number") : __("Block the number"),
+			subtitle: __("{0} · {1}", [ContactsPage.title_of(row), phone]),
+			badge: blocked ? { text: __("Blocked"), tone: "danger" } : { text: __("Not blocked"), tone: "ok" },
+			sections: [
+				{
+					title: __("The state"),
+					cols: 1,
+					fields: [
+						{ key: "current", type: "readonly", label: __("Current state"), value: blocked ? __("Blocked") : __("Not blocked") },
+						{
+							key: "next",
+							type: "readonly",
+							label: __("After saving"),
+							value: blocked ? __("Not blocked") : __("Blocked"),
+							hint: blocked
+								? __("Notifications, campaigns and manual sends reach it again.")
+								: __("No message reaches it: no notification, no campaign, no manual send."),
+						},
+						{
+							key: "note",
+							type: "textarea",
+							label: __("Note"),
+							required: true,
+							rows: 3,
+							placeholder: blocked
+								? __("Why it is unblocked — for example: the customer asked for notifications again.")
+								: __("Why it is blocked — for example: the customer asked to stop notifications."),
+							hint: __("Required. It is kept with the blacklist entry and in the audit log with your name."),
+						},
+					],
+				},
 			],
-			reason_field: { label: __("Note"), required: true, description: __("Kept with the blacklist entry.") },
-			danger: !blocked,
-			confirm_label: blocked ? __("Unblock") : __("Block"),
-			on_confirm: ({ reason }) =>
-				sanad.ui.call("contacts.toggle_blacklist", {
-					contact: row.name,
-					phone,
-					blocked: blocked ? 0 : 1,
-					note: reason,
-				}),
-		})
-			.then(() => {
-				sanad.ui.Toast.success(blocked ? __("Number unblocked") : __("Number blocked"));
-				this.reload();
-			})
-			.catch(() => {});
+			actions: [
+				{ key: "cancel", label: __("Cancel"), close: true },
+				{
+					key: "save",
+					label: blocked ? __("Unblock") : __("Block"),
+					variant: blocked ? "primary" : "danger",
+					handler: (values) =>
+						sanad.ui
+							.call(
+								"contacts.toggle_blacklist",
+								{ contact: row.name, phone, blocked: blocked ? 0 : 1, note: values.note },
+								{ silent: true }
+							)
+							.then(() => {
+								saved = true;
+								sanad.ui.Toast.success(blocked ? __("Number unblocked") : __("Number blocked"));
+							}),
+				},
+			],
+			on_close: () => (saved ? this.after_change(row.name) : this.back_to_detail(row.name)),
+		}).show();
 	}
 
-	// ---- the page-owned contact form -----------------------------------------------------------
+	// ---- the edit modal: the prototype's `editPanel` over the WRITE field set -----------------------
+
+	/** `[{value, label, note}]` of the site's companies, for the Company link. */
+	search_company(txt) {
+		return sanad.ui
+			.call("contacts.search_company", { txt: txt || "", page_length: 20 }, { silent: true })
+			.then((rows) => (rows || []).map((r) => ({ value: r.name, label: r.title || r.name, note: r.name })))
+			.catch(() => []);
+	}
 
 	open_form(row) {
 		if (this.form) this.form.destroy();
-		this.form = new ContactForm({ row, page: this, on_saved: () => this.reload() });
+		const editing = !!row;
+		const r = row || {};
+		const conversation = editing ? ContactsPage.conversation_of(r) : null;
+		const blocked = cint(r.blacklisted);
+		const link_rows = (r.links || []).map((l) => ({
+			link_doctype: l.link_doctype,
+			link_name: l.link_name,
+			link_name_title: l.link_title || l.link_name,
+		}));
+		let saved = false;
+
+		this.form = new sanad.ui.OverlayPanel({
+			type: "modal",
+			width: "680px",
+			title: editing ? __("Edit «{0}»", [ContactsPage.title_of(r)]) : __("New contact"),
+			subtitle: editing ? r.name : __("Added straight to the system contacts"),
+			subtitle_mono: editing,
+			badge: editing ? ContactsPage.link_badge(r) : null,
+			sections: [
+				{
+					title: __("Contact details"),
+					cols: 2,
+					fields: [
+						{ key: "first_name", label: __("First name"), required: true, value: r.first_name, placeholder: __("The person's or the company's name") },
+						{ key: "last_name", label: __("Last name"), value: r.last_name },
+						{
+							key: "company_name",
+							label: __("Company"),
+							type: "link",
+							value: r.company_name,
+							display: r.company_name,
+							placeholder: __("Choose a company…"),
+							search: (txt) => this.search_company(txt),
+						},
+						{ key: "designation", label: __("Designation"), value: r.designation },
+						{
+							key: "phone",
+							label: __("WhatsApp number"),
+							type: "phone",
+							required: true,
+							value: ContactsPage.phone_of(r) || "",
+						},
+						{ key: "email_id", label: __("Email"), type: "email", mono: true, value: r.email_id, placeholder: "name@example.com", autocomplete: "off" },
+					],
+				},
+				{
+					title: __("Linked accounts"),
+					note_end: __("Optional"),
+					cols: 1,
+					fields: [
+						{
+							key: "links",
+							type: "rows",
+							label: "",
+							value: link_rows,
+							columns: [
+								{
+									key: "link_doctype",
+									label: __("Account type"),
+									type: "select",
+									width: "150px",
+									options: PARTY_TYPES.map((d) => ({ value: d, label: __(d) })),
+									resets: ["link_name"],
+								},
+								{
+									key: "link_name",
+									label: __("Account"),
+									type: "link",
+									placeholder: __("Search by name or ID…"),
+									search: (txt, current) => this.search_party(current.link_doctype || PARTY_TYPES[0], txt),
+								},
+							],
+							add_label: __("Add an account"),
+							empty: __("No account is linked to this number. Automatic notifications are not sent until it is linked."),
+							incomplete_text: __("Choose the account on every row, or remove the row."),
+							hint: __("One number can serve more than one account."),
+						},
+					],
+				},
+				...(editing
+					? [
+							{
+								title: __("The state"),
+								cols: 2,
+								fields: [
+									{
+										key: "status_ro",
+										type: "readonly",
+										label: __("Status"),
+										html: sanad.kit.badge(blocked ? __("Blocked") : __(r.status || "Passive"), blocked ? "danger" : r.status === "Open" ? "info" : "muted"),
+										hint: __("Changed with the Block action, with a note."),
+									},
+									{
+										key: "chat_ro",
+										type: "readonly",
+										label: __("Conversation"),
+										html: sanad.kit.badge(conversation.text, conversation.tone),
+										hint: cint(r.inbound_count)
+											? __("A real inbound message exists; this cannot change.")
+											: __("Changed with the conversation action, with a note."),
+									},
+								],
+							},
+					  ]
+					: []),
+			],
+			actions: [
+				{ key: "cancel", label: __("Cancel"), close: true },
+				{
+					key: "save",
+					label: editing ? __("Save") : __("Add contact"),
+					variant: "primary",
+					requires_dirty: editing,
+					handler: (values) => {
+						const payload = this.form_payload(values);
+						const call = editing
+							? sanad.ui.call("contacts.update_contact", { name: r.name, payload }, { silent: true })
+							: sanad.ui.call("contacts.create_contact", { payload }, { silent: true });
+						return call.then(() => {
+							saved = true;
+							sanad.ui.Toast.success(editing ? __("Contact saved") : __("Contact added"));
+						});
+					},
+				},
+			],
+			// an edit returns the operator to the record; a new contact only joins the list, as in
+			// the prototype, so adding several in a row costs nothing extra
+			on_close: () => {
+				if (saved && editing) this.after_change(r.name);
+				else if (saved) this.reload();
+				else if (editing) this.back_to_detail(r.name);
+			},
+		});
 		this.form.show();
 	}
 
-	// ---- realtime ------------------------------------------------------------------------------
+	/** The WRITE payload, and nothing else: the scalars that have a value, the phone, the links. */
+	form_payload(values) {
+		const out = {};
+		["first_name", "last_name", "company_name", "designation", "email_id"].forEach((k) => {
+			const v = values[k];
+			if (v !== undefined && v !== null && String(v).trim() !== "") out[k] = String(v).trim();
+		});
+		out.phone_nos = values.phone ? [{ phone: values.phone, is_primary_mobile_no: 1 }] : [];
+		const seen = new Set();
+		out.links = (values.links || [])
+			.filter((l) => l.link_doctype && l.link_name && !seen.has(`${l.link_doctype}:${l.link_name}`) && seen.add(`${l.link_doctype}:${l.link_name}`))
+			.map((l) => ({ link_doctype: l.link_doctype, link_name: l.link_name }));
+		return out;
+	}
+
+	// ---- realtime, and leaving the page -----------------------------------------------------------
+
+	/** The panels live on <body>; leaving the route must take them along. */
+	close_overlays() {
+		this.detail && this.detail.hide();
+		this.form && this.form.hide();
+	}
 
 	bind_realtime() {
 		this.on_inbound = sanad.ui.throttle(() => this.load(), 4000);
@@ -890,244 +1261,9 @@ class ContactsPage {
 		const unsubscribe = () => frappe.realtime.off("wa:inbound:received", this.on_inbound);
 		subscribe();
 		$(this.wrapper).on("show", subscribe);
-		$(this.wrapper).on("hide", unsubscribe);
-	}
-}
-
-// -------------------------------------------------------------------------------------------
-// The contact form — a page-owned drawer over CONTACT_WRITE_FIELDS, its phones and its party
-// links (backend-plan §9). A Contact User never sees a native Contact form: this panel writes
-// only through `contacts.create_contact` / `contacts.update_contact`.
-// -------------------------------------------------------------------------------------------
-
-class ContactForm {
-	constructor(opts) {
-		this.opts = opts;
-		this.row = opts.row || null;
-		this.links = ((this.row && this.row.links) || []).map((l) => ({
-			link_doctype: l.link_doctype,
-			link_name: l.link_name,
-			link_title: l.link_title,
-		}));
-		this.id = sanad.ui.uid("wa-contact-form");
-		this.make();
-	}
-
-	make() {
-		const esc = frappe.utils.escape_html;
-		const editing = !!this.row;
-		this.$backdrop = $('<div class="sanad-backdrop" hidden></div>').appendTo(document.body);
-		this.$root = $(`
-			<aside class="sanad-panel sanad-kit wa-contact-form" role="dialog" aria-modal="true"
-				aria-labelledby="${this.id}-title" hidden>
-				<header class="sanad-panel__header">
-					<span class="sanad-panel__title" id="${this.id}-title">${esc(
-			editing ? __("Edit contact") : __("New contact")
-		)}<span class="sanad-panel__subtitle">${esc(
-			editing ? this.row.full_name || this.row.name : __("Added straight to the system contacts")
-		)}</span></span>
-					<button type="button" class="btn btn-xs btn-default wa-contact-form__close"
-						aria-label="${esc(__("Close"))}">${sanad.ui.icon("es-line-close", "xs")}</button>
-				</header>
-				<div class="sanad-panel__body">
-					<div class="wa-contact-form__summary" role="alert" tabindex="-1" hidden></div>
-					<div class="wa-contact-form__fields"></div>
-					<section class="wa-contact-form__block">
-						<h3>${esc(__("Linked accounts"))}</h3>
-						<p class="wa-contact-form__hint">${esc(
-							__("One number can serve more than one account. Add the account and its type.")
-						)}</p>
-						<div class="wa-contact-form__links"></div>
-						<button type="button" class="btn btn-xs btn-default wa-contact-form__add">${sanad.ui.icon(
-							"es-line-add",
-							"xs"
-						)} ${esc(__("Add an account"))}</button>
-					</section>
-					<dl class="wa-contact-form__readonly"></dl>
-				</div>
-				<footer class="sanad-panel__footer">
-					<button type="button" class="btn btn-sm btn-default wa-contact-form__cancel">${esc(
-						__("Cancel")
-					)}</button>
-					<button type="button" class="btn btn-sm btn-primary wa-contact-form__save">${esc(
-						editing ? __("Save") : __("Add contact")
-					)}</button>
-				</footer>
-			</aside>`).appendTo(document.body);
-
-		this.make_fields();
-		this.render_links();
-		this.render_readonly();
-		this.$root.find(".wa-contact-form__close, .wa-contact-form__cancel").on("click", () => this.hide());
-		this.$root.find(".wa-contact-form__save").on("click", () => this.save());
-		this.$root.find(".wa-contact-form__add").on("click", () => this.add_link());
-		this.$backdrop.on("click", () => this.hide());
-		this.$root.on("keydown", (e) => e.key === "Escape" && this.hide());
-	}
-
-	make_fields() {
-		const $fields = this.$root.find(".wa-contact-form__fields");
-		const row = this.row || {};
-		this.controls = {};
-		const dfs = [
-			{ fieldname: "first_name", label: __("First name"), fieldtype: "Data", reqd: 1 },
-			{ fieldname: "last_name", label: __("Last name"), fieldtype: "Data" },
-			{ fieldname: "company_name", label: __("Company"), fieldtype: "Data" },
-			{ fieldname: "designation", label: __("Designation"), fieldtype: "Data" },
-			{ fieldname: "email_id", label: __("Email"), fieldtype: "Data", options: "Email" },
-		];
-		dfs.forEach((df) => {
-			const control = frappe.ui.form.make_control({ df, parent: $fields, render_input: true });
-			control.set_value(row[df.fieldname] == null ? "" : row[df.fieldname]);
-			control.refresh();
-			// Desk draws the label as a plain <label> with no `for`, so the input has no
-			// accessible name of its own; it is given one here
-			if (control.$input) control.$input.attr("aria-label", df.label);
-			this.controls[df.fieldname] = control;
+		$(this.wrapper).on("hide", () => {
+			unsubscribe();
+			this.close_overlays();
 		});
-		const $phone = $('<div class="wa-contact-form__phone"></div>').appendTo($fields);
-		this.phone = new sanad.ui.PhoneField({
-			wrapper: $phone,
-			label: __("WhatsApp number"),
-			required: true,
-			value: ContactsPage.phone_of(row) || "",
-		});
-	}
-
-	render_links() {
-		const esc = frappe.utils.escape_html;
-		const $el = this.$root.find(".wa-contact-form__links");
-		if (!this.links.length) {
-			$el.html(`<p class="wa-contact-form__empty">${esc(__("No account is linked to this number"))}</p>`);
-			return;
-		}
-		$el.html(
-			`<ul class="wa-contact-form__linklist">${this.links
-				.map(
-					(l, i) =>
-						`<li><span>${esc(l.link_title || l.link_name)}</span><span class="wa-contacts__tag">${esc(
-							__(l.link_doctype)
-						)}</span><button type="button" class="btn btn-xs btn-default" data-remove="${i}"
-							aria-label="${esc(__("Remove {0}", [l.link_title || l.link_name]))}">${sanad.ui.icon(
-							"es-line-delete",
-							"xs"
-						)}</button></li>`
-				)
-				.join("")}</ul>`
-		);
-		$el.find("[data-remove]").on("click", (e) => {
-			this.links.splice(cint($(e.currentTarget).data("remove")), 1);
-			this.render_links();
-		});
-	}
-
-	render_readonly() {
-		const esc = frappe.utils.escape_html;
-		const row = this.row;
-		if (!row) return this.$root.find(".wa-contact-form__readonly").remove();
-		const conversation = cint(row.inbound_count)
-			? __("Inbound recorded in the system")
-			: cint(row.conversation_confirmed)
-			? __("Confirmed by hand")
-			: __("No conversation");
-		this.$root.find(".wa-contact-form__readonly").html(`
-			<div><dt>${esc(__("Status"))}</dt><dd>${sanad.ui.StatusBadge.html({
-			label: cint(row.blacklisted) ? __("Blocked") : __(row.status || "Passive"),
-			colour: cint(row.blacklisted) ? "red" : "gray",
-		})}<span class="wa-contact-form__hint">${esc(
-			__("Changed with the Block action, and recorded with its note.")
-		)}</span></dd></div>
-			<div><dt>${esc(__("Conversation"))}</dt><dd>${esc(conversation)}<span class="wa-contact-form__hint">${esc(
-			cint(row.inbound_count)
-				? __("Cannot be changed: a real inbound message exists from this number.")
-				: __("Changed with the conversation action, and recorded with its note.")
-		)}</span></dd></div>`);
-	}
-
-	add_link() {
-		this.opts.page
-			.ask_party(__("Add an account"))
-			.then(({ link_doctype, link_name }) => {
-				if (this.links.some((l) => l.link_doctype === link_doctype && l.link_name === link_name)) return;
-				this.links.push({ link_doctype, link_name, link_title: link_name });
-				this.render_links();
-			})
-			.catch(() => {});
-	}
-
-	values() {
-		const out = {};
-		Object.entries(this.controls).forEach(([fieldname, control]) => {
-			const value = control.get_value();
-			if (value !== undefined && value !== null && value !== "") out[fieldname] = value;
-		});
-		const phone = this.phone.get_value();
-		out.phone_nos = phone.phone_e164 ? [{ phone: phone.phone_e164, is_primary_mobile_no: 1 }] : [];
-		out.links = this.links.map((l) => ({ link_doctype: l.link_doctype, link_name: l.link_name }));
-		return out;
-	}
-
-	save() {
-		const values = this.values();
-		const missing = [];
-		if (!values.first_name) missing.push(__("First name"));
-		if (!values.phone_nos.length) missing.push(__("WhatsApp number"));
-		const $summary = this.$root.find(".wa-contact-form__summary");
-		if (missing.length) {
-			$summary
-				.prop("hidden", false)
-				.html(
-					`${frappe.utils.escape_html(__("Fill in the required fields:"))} ${missing
-						.map((m) => frappe.utils.escape_html(m))
-						.join(", ")}`
-				)
-				.trigger("focus");
-			return;
-		}
-		$summary.prop("hidden", true).empty();
-		const call = this.row
-			? sanad.ui.call("contacts.update_contact", { name: this.row.name, payload: values }, { freeze: true })
-			: sanad.ui.call("contacts.create_contact", { payload: values }, { freeze: true });
-		call
-			.then(() => {
-				sanad.ui.Toast.success(this.row ? __("Contact saved") : __("Contact added"));
-				this.hide();
-				this.opts.on_saved && this.opts.on_saved();
-			})
-			.catch((err) => sanad.ui.Toast.error(err));
-	}
-
-	show() {
-		this.opener = document.activeElement;
-		sanad.ui.overlay.open(this);
-		this.$backdrop.prop("hidden", false);
-		this.$root.prop("hidden", false);
-		$(document.body).addClass("sanad-drawer-open");
-		window.requestAnimationFrame(() => this.$root.addClass("sanad-panel--open"));
-		this.untrap = sanad.ui.trap_focus(this.$root);
-		this.$root.find("input").first().trigger("focus");
-		return this;
-	}
-
-	hide() {
-		if (this.$root.prop("hidden")) return this;
-		this.untrap && this.untrap();
-		sanad.ui.overlay.close(this);
-		this.$root.removeClass("sanad-panel--open");
-		window.setTimeout(() => {
-			this.$root.prop("hidden", true);
-			this.$backdrop.prop("hidden", true);
-			if (!sanad.ui.overlay.current) $(document.body).removeClass("sanad-drawer-open");
-		}, 160);
-		if (this.opener && document.contains(this.opener) && this.opener.focus) this.opener.focus();
-		return this;
-	}
-
-	destroy() {
-		this.hide();
-		window.setTimeout(() => {
-			this.$root.remove();
-			this.$backdrop.remove();
-		}, 200);
 	}
 }

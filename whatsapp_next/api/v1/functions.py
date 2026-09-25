@@ -39,9 +39,11 @@ def get_catalog() -> dict[str, Any]:
 	}
 	for e in entries:
 		e["commands_count"] = counts.get(e["function_key"], 0)
-		e["changelog"] = {
-			v: (m or {}).get("changelog")
-			for v, m in functions_catalog.get_function(e["function_key"]).versions.items()
+		versions = functions_catalog.get_function(e["function_key"]).versions
+		e["changelog"] = {v: (m or {}).get("changelog") for v, m in versions.items()}
+		e["releases"] = {
+			v: {"released": (m or {}).get("released"), "changelog": (m or {}).get("changelog")}
+			for v, m in versions.items()
 		}
 	catalog = functions_catalog.load_catalog()
 	return {
@@ -49,6 +51,52 @@ def get_catalog() -> dict[str, Any]:
 		"catalog_source": catalog.sources,
 		"catalog_errors": catalog.errors,
 		"checked_at": now_datetime(),
+	}
+
+
+@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
+def get_manifest(function_key: str, version: str | None = None) -> dict[str, Any]:
+	"""What one version of a catalog function is made of, for the storefront's detail:
+	`{version, released, changelog, inputs[], settings[], outputs[], example, suggested_commands[],
+	party_types[], installed{}}`. `version` defaults to the installed version, else the latest.
+	When the function is installed, each setting row carries its site `value` and `installed`
+	holds the record's own facts (`installed_at`, `installed_by`, `call_count`, `avg_ms`,
+	`error_count`, `last_error`). P: Viewer+. E: `WANotFoundError`."""
+	installed: dict[str, Any] = {}
+	values: dict[str, str] = {}
+	if frappe.db.exists("WhatsApp Function", function_key):
+		doc = frappe.get_doc("WhatsApp Function", function_key)
+		version = version or doc.installed_version
+		values = {r.key: r.value for r in doc.get("settings") or []}
+		installed = {
+			"installed_version": doc.installed_version,
+			"installed_at": doc.installed_at,
+			"installed_by": doc.installed_by,
+			"catalog_source": doc.catalog_source,
+			"call_count": doc.call_count,
+			"avg_ms": doc.avg_ms,
+			"error_count": doc.error_count,
+			"last_called_at": doc.last_called_at,
+			"last_error": doc.last_error,
+		}
+	version, manifest = functions_catalog.manifest_for(function_key, version)
+	fn = functions_catalog.get_function(function_key)
+	settings = [dict(row) for row in manifest.get("settings") or []]
+	for row in settings:
+		if row.get("key") in values:
+			row["value"] = values[row["key"]]
+	return {
+		"function_key": function_key,
+		"version": version,
+		"released": manifest.get("released"),
+		"changelog": manifest.get("changelog"),
+		"inputs": list(manifest.get("inputs") or []),
+		"settings": settings,
+		"outputs": list(manifest.get("outputs") or []),
+		"example": manifest.get("example"),
+		"suggested_commands": list(manifest.get("suggested_commands") or []),
+		"party_types": list(manifest.get("party_types") or fn.party_types or []),
+		"installed": installed,
 	}
 
 

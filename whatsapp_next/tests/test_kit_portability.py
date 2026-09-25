@@ -32,6 +32,7 @@ EXPECTED_COMPONENTS = {
 	"ListStatsCard",
 	"MetaDialog",
 	"Drawer",
+	"OverlayPanel",
 	"ChatThread",
 	"ConversationDrawer",
 	"QuickSend",

@@ -51,6 +51,9 @@ class TestApiFunctions(IntegrationTestCase):
 				(entry["installed"], entry["commands_count"], entry["handler_registered"]), (False, 0, True)
 			)
 			self.assertEqual(entry["changelog"], {"1.0.0": "Initial release."})
+			self.assertEqual(
+				entry["releases"]["1.0.0"], {"released": "2026-09-22", "changelog": "Initial release."}
+			)
 			self.assertTrue(cat["catalog_source"])
 			pre = api.preview_install(function_key="document_info")
 			self.assertEqual(
@@ -75,6 +78,27 @@ class TestApiFunctions(IntegrationTestCase):
 			self.assertEqual(api.remove(function_key="document_info"), {"removed": True})
 			with self.assertRaises(WANotFoundError):
 				api.remove(function_key="document_info")
+
+	def test_get_manifest(self):
+		with as_user("WhatsApp Viewer"):
+			m = api.get_manifest(function_key="document_info")
+			self.assertEqual((m["version"], m["released"], m["installed"]), ("1.0.0", "2026-09-22", {}))
+			self.assertEqual([i["key"] for i in m["inputs"]], ["name"])
+			self.assertEqual([o["output_key"] for o in m["outputs"]], ["summary", "document"])
+			self.assertNotIn("value", m["settings"][0])
+			self.assertEqual(m["party_types"], ["Customer", "Supplier"])
+			with self.assertRaises(WANotFoundError):
+				api.get_manifest(function_key="document_info", version="9.9.9")
+			with self.assertRaises(WANotFoundError):
+				api.get_manifest(function_key="nope")
+		with as_user("WhatsApp Manager"):
+			api.install(function_key="document_info")
+			api.save_settings(function_key="document_info", values={"document_type": "Sales Order"})
+			m = api.get_manifest(function_key="document_info")
+			self.assertEqual(m["installed"]["installed_version"], "1.0.0")
+			self.assertEqual(
+				{s["key"]: s.get("value") for s in m["settings"]}["document_type"], "Sales Order"
+			)
 
 	def test_save_settings(self):
 		with as_user("WhatsApp Manager"):

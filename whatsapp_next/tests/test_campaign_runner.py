@@ -234,3 +234,29 @@ class TestCampaignRunner(IntegrationTestCase):
 			)
 			self.assertEqual(runner.promote_scheduled(), [name])
 		self.assertEqual(self._status(name), "Queued")
+
+	def test_edit_lock_ignores_datetime_round_trip(self):
+		"""A Paused campaign saved from the client (datetimes as strings) may still gain recipients;
+		only a real change of `scheduled_at` / `device` is refused."""
+		import json
+
+		name = _campaign(self.device)
+		runner.schedule(name, add_to_date(now_datetime(), minutes=5))
+		frappe.db.set_value("WhatsApp Campaign", name, "status", "Paused", update_modified=False)  # as the runner leaves it
+
+		def from_client(**changes):
+			data = json.loads(frappe.as_json(frappe.get_doc("WhatsApp Campaign", name).as_dict()))
+			data.update(changes)
+			return frappe.get_doc(data)
+
+		doc = from_client()
+		doc.append(
+			"recipients",
+			{"recipient_type": "Individual", "phone": P3, "display_name": "R3", "source_type": "Manual", "status": "Pending"},
+		)
+		doc.save(ignore_permissions=True)  # scheduled_at came back as a string: not a change
+		self.assertEqual(frappe.db.count("WhatsApp Campaign Recipient", {"parent": name}), 3)
+
+		later = str(add_to_date(now_datetime(), minutes=10))
+		with self.assertRaises(WAStateConflictError):
+			from_client(scheduled_at=later).save(ignore_permissions=True)

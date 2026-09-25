@@ -43,7 +43,7 @@ new sanad.ui.Drawer({
 
 Options: `doctype`, `name`, `mode`, `fields[]` (fieldnames or docfield-like objects), `method`,
 `args`, `doc` (render without fetching), `title`, `subtitle`, `actions[]` (`label`, `icon`,
-`handler(doc, drawer)`, `primary`, `danger`, `condition(doc)`, `perm`, `roles`), `sections[]`
+`handler(doc, drawer)`, `primary`, `danger`, `menu` — behind the footer's one "More" button —, `condition(doc)`, `perm`, `roles`), `sections[]`
 (`label`, `render($el, doc, drawer)`, `condition`), `on_save(values, doc)`, `save_label`,
 `choices[]`, `on_choose(value, choice)`, `on_close`, `width`, `open_link`.
 Methods: `show()`, `hide()`, `refresh()`, `set_doc(doc)`, `get_values()` (form), `destroy()`;
@@ -51,6 +51,14 @@ static `open(opts)`, `current`. Helper classes for sections: `sanad-drawer__dl` 
 `sanad-drawer__timeline` / `__event`.
 
 ## Live use
+Contacts page — `page/wa_contacts/wa_contacts.js` (document layout of a Contact from the
+page's own row: identity, an alert as the highlight, facts, the linked accounts rendered as the
+parties they are, the last messages, an audit timeline, three verbs and a "More" menu);
+Functions Center — `page/wa_functions_center/wa_functions_center.js` (document layout of a
+catalog function: the alert and the description as the highlight, six facts, the manifest's
+variables · settings · outputs as sections, the linked commands rendered as commands, the
+versions as the activity timeline, Install / Update / Preview in the footer and the rest behind
+"More"; plus a `choice` drawer to pick another version);
 Outbound list — `public/js/listview/whatsapp_log_list.js` (`messages.get_outbound`: fields +
 Reference + Timeline sections); Inbound list — `public/js/listview/whatsapp_inbound_message_list.js`
 (`messages.get_inbound`: Command trace + Reply); Queue list —

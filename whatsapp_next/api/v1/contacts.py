@@ -94,6 +94,98 @@ def search_party(party_type: str, txt: str | None = None, page: int = 1, page_le
 	return permissions.search_party(party_type, txt, page=page, page_length=page_length)
 
 
+@api_endpoint(roles=None, methods=("GET", "POST"))
+def search_company(txt: str | None = None, page_length: int = 20) -> list[dict]:
+	"""`[{name, title}]` of the site's own companies, for the contact form's Company link. The
+	Company DocType grants no read to a plain Contact User, and a company's name is not a secret:
+	the declared field set is `name` and `company_name`, nothing else. P: Contact User | Contact
+	read."""
+	permissions.require("read")
+	length = min(max(int(page_length or 20), 1), 50)
+	filters = {"company_name": ("like", f"%{(txt or '').strip()}%")} if (txt or "").strip() else None
+	rows = frappe.get_all(
+		"Company",
+		filters=filters,
+		fields=["name", "company_name"],
+		order_by="company_name asc",
+		limit=length,
+		ignore_permissions=True,
+	)
+	return [{"name": r.name, "title": r.company_name or r.name} for r in rows]
+
+
+ACTIVITY_FIELDS: tuple[str, ...] = ("name", "action", "summary", "reason", "user", "timestamp", "details")
+ACTIVITY_LIMIT = 30
+
+
+@api_endpoint(roles=None, methods=("GET", "POST"))
+def get_activity(name: str) -> list[dict[str, Any]]:
+	"""What happened to one contact, newest first, for the drawer's activity timeline: the audit
+	rows written on the Contact itself (elevated writes, a number converted into it) and on its
+	numbers (linked, conversation confirmed, blocked / unblocked). Only the columns a reader needs
+	— never the IP address, never another record's rows. P: Contact User | Contact read."""
+	permissions.require("read")
+	phones = permissions.contact_phones(name)
+	or_filters: list[list[Any]] = [
+		["reference_doctype", "=", "Contact"],
+		["target_doctype", "=", "Contact"],
+	]
+	rows = frappe.get_all(
+		"WhatsApp Audit Log",
+		filters=[["WhatsApp Audit Log", "name", "!=", ""]],
+		or_filters=[
+			[
+				"WhatsApp Audit Log",
+				"reference_name",
+				"=",
+				name,
+			],
+			["WhatsApp Audit Log", "target_name", "=", name],
+			*([["WhatsApp Audit Log", "reference_name", "in", phones]] if phones else []),
+		],
+		fields=list(ACTIVITY_FIELDS),
+		order_by="timestamp desc, name desc",
+		limit=ACTIVITY_LIMIT,
+	)
+	del or_filters
+	# a block / unblock is written on the blacklist group, with the number inside `details`
+	if phones:
+		for key in phones:
+			rows += frappe.get_all(
+				"WhatsApp Audit Log",
+				filters={"action": "Contact Group Members Changed", "details": ("like", f'%"key": "{key}"%')},
+				fields=list(ACTIVITY_FIELDS),
+				order_by="timestamp desc",
+				limit=ACTIVITY_LIMIT,
+			)
+	seen: set[str] = set()
+	out: list[dict[str, Any]] = []
+	for r in sorted(rows, key=lambda r: (str(r.timestamp or ""), r.name), reverse=True):
+		if r.name in seen:
+			continue
+		seen.add(r.name)
+		details = r.details if isinstance(r.details, dict) else {}
+		if isinstance(r.details, str):
+			try:
+				details = frappe.parse_json(r.details) or {}
+			except Exception:
+				details = {}
+		out.append(
+			{
+				"action": r.action,
+				"summary": r.summary or r.action,
+				"reason": r.reason,
+				"user": r.user,
+				"timestamp": r.timestamp,
+				"blocked": details.get("blocked"),
+				"confirmed": details.get("confirmed"),
+			}
+		)
+		if len(out) >= ACTIVITY_LIMIT:
+			break
+	return out
+
+
 @api_endpoint(roles=CONTACT_USER + AGENT_UP)
 def toggle_blacklist(
 	blocked: bool, contact: str | None = None, phone: str | None = None, note: str | None = None

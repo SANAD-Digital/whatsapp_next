@@ -15,7 +15,7 @@ from whatsapp_next.services import phone
 
 @api_endpoint(roles=VIEWER_UP + CONTACT_USER, methods=("GET", "POST"))
 def get_countries() -> dict[str, Any]:
-	"""`{default, countries: [{iso, dial, example, trunk, len}]}` — every calling region
+	"""`{default, countries: [{iso, dial, example, trunk, len, mobile}]}` — every calling region
 	libphonenumber knows.
 
 	`example` is the region's own sample mobile number in national form: the field shows it as the

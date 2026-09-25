@@ -15,7 +15,15 @@ from frappe.query_builder.functions import Count, Max
 from frappe.utils import add_to_date, cint, get_datetime, now_datetime
 
 from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
-from whatsapp_next.services import attachments, audit, dispatch, numbers_materializer, polls, templates
+from whatsapp_next.services import (
+	attachments,
+	audit,
+	dispatch,
+	errors,
+	numbers_materializer,
+	polls,
+	templates,
+)
 from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.services.phone import key_for
@@ -698,3 +706,311 @@ def poll_results(campaign: str, *, refresh: bool = False) -> dict[str, Any]:
 		out["results"].append({"idx": idx, "question": msg.poll_question, "sent": len(ids), **res.as_dict()})
 	frappe.cache.set_value(key, out, expires_in_sec=POLL_CACHE_SECONDS)
 	return out
+
+
+# ---- the builder's reads (screen 6: readiness, failures, per-message, timeline) -------------
+#
+# The campaign form is a builder before it starts and a monitor after, and both halves ask the
+# document questions its own fields cannot answer: is the device actually connected, does every
+# message still have its file, where are the failures concentrated, what happened and when. Each
+# answer is **data** — codes, counts and datetimes — never a sentence: the screen writes the
+# sentence in the reader's language, which is the same rule the rest of `api/v1` follows.
+
+#: The types whose message is the file: without one there is nothing to send.
+ATTACHMENT_TYPES = frozenset({"Document", "Image", "Video", "Audio", "Sticker"})
+#: How many failed messages one `retry_failed` call may resend.
+RETRY_LIMIT = 500
+#: The audit actions that belong on a campaign's timeline, in the words the screen translates.
+TIMELINE_ACTIONS = (
+	"Campaign Started",
+	"Campaign Paused",
+	"Campaign Resumed",
+	"Campaign Cancelled",
+	"Campaign Recipients Changed",
+)
+_TIMELINE_KEY = {
+	"Campaign Started": "started",
+	"Campaign Paused": "paused",
+	"Campaign Resumed": "resumed",
+	"Campaign Cancelled": "cancelled",
+	"Campaign Recipients Changed": "recipients_changed",
+}
+
+
+def _message_problem(msg) -> str | None:
+	"""The one thing that stops this message row from being sendable, as a code, or `None`."""
+	if msg.message_type == "Text":
+		return None if (msg.body or msg.template) else "empty_body"
+	if msg.message_type == "Document":
+		return None if (msg.attachment or msg.print_format or msg.template) else "no_attachment"
+	if msg.message_type in ATTACHMENT_TYPES:
+		return None if (msg.attachment or msg.template) else "no_attachment"
+	if msg.message_type == "Poll":
+		if not (msg.poll_question or "").strip():
+			return "no_question"
+		return None if len(polls.parse_options(msg.poll_options)) >= 2 else "few_options"
+	return None
+
+
+def readiness(campaign: str) -> dict[str, Any]:
+	"""What stands between the campaign and its first message, check by check.
+
+	Five checks, each `{key, ok, …facts}`: the **device** is chosen, enabled and connected; every
+	**message** carries what its type needs; every **attachment** still exists as a File; every
+	**variable** compiles; the **audience** is not empty. `ok` is true only when all five pass,
+	which is exactly what `start()` would accept — the reader learns it before pressing, not after.
+	"""
+	doc = _doc(campaign)
+	messages = doc.get("messages") or []
+	active = [r for r in doc.get("recipients") or [] if r.status != "Removed"]
+
+	device = doc.device or frappe.get_cached_doc("WhatsApp Settings").default_device
+	row = (
+		frappe.db.get_value(
+			"WhatsApp Device", device, ["name", "device_name", "status", "disabled"], as_dict=True
+		)
+		if device
+		else None
+	)
+	device_check = {
+		"key": "device",
+		"ok": bool(row) and not cint(row.disabled) and row.status == "Connected",
+		"device": row.name if row else None,
+		"device_name": row.device_name if row else None,
+		"status": row.status if row else None,
+		"disabled": bool(cint(row.disabled)) if row else False,
+	}
+
+	incomplete = [
+		{"idx": i, "message_type": m.message_type, "problem": problem}
+		for i, m in enumerate(messages, start=1)
+		if (problem := _message_problem(m))
+	]
+	missing_files = [
+		{"idx": i, "message_type": m.message_type, "attachment": m.attachment}
+		for i, m in enumerate(messages, start=1)
+		if m.attachment and not frappe.db.exists("File", {"file_url": m.attachment})
+	]
+
+	bad_variables: list[dict[str, Any]] = []
+	for i, m in enumerate(messages, start=1):
+		source = m.body or (
+			frappe.db.get_value("WhatsApp Template", m.template, "body") if m.template else None
+		)
+		problems = templates.compile_check(source)
+		if problems:
+			bad_variables.append({"idx": i, "errors": problems})
+
+	by_source: dict[str, int] = {}
+	for r in active:
+		by_source[r.source_type or "Manual"] = by_source.get(r.source_type or "Manual", 0) + 1
+	excluded = frappe.db.count(
+		"WhatsApp Campaign Recipient",
+		{
+			"parent": campaign,
+			"parenttype": "WhatsApp Campaign",
+			"error_code": "unknown_number_policy",
+		},
+	)
+
+	checks = [
+		device_check,
+		{"key": "messages", "ok": bool(messages) and not incomplete, "count": len(messages), "incomplete": incomplete},
+		{"key": "attachments", "ok": not missing_files, "missing": missing_files},
+		{"key": "variables", "ok": not bad_variables, "invalid": bad_variables},
+		{
+			"key": "audience",
+			"ok": bool(active),
+			"count": len(active),
+			"by_source": by_source,
+			"excluded_unknown": cint(excluded),
+		},
+	]
+	return {
+		"campaign": campaign,
+		"status": doc.status,
+		"ok": all(c["ok"] for c in checks),
+		"checks": checks,
+	}
+
+
+def failures(campaign: str) -> dict[str, Any]:
+	"""Where the campaign's failures are concentrated: one row per `error_code` with its share and
+	whether the dispatcher counts that code as retryable (`services/errors.RETRYABLE`)."""
+	L = frappe.qb.DocType("WhatsApp Log")
+	grouped = (
+		frappe.qb.from_(L)
+		.select(L.error_code, Count("*").as_("n"))
+		.where((L.campaign == campaign) & (L.status == "Failed"))
+		.groupby(L.error_code)
+		.run(as_dict=True)
+	)
+	total = sum(cint(r["n"]) for r in grouped)
+	rows: list[dict[str, Any]] = []
+	for r in grouped:
+		code = r["error_code"] or "unknown"
+		sample = (
+			frappe.db.get_value(
+				"WhatsApp Log",
+				{"campaign": campaign, "status": "Failed", "error_code": r["error_code"]},
+				"error_message",
+			)
+			if r["error_code"]
+			else None
+		)
+		rows.append(
+			{
+				"error_code": code,
+				"count": cint(r["n"]),
+				"retryable": code in errors.RETRYABLE,
+				"share": round(cint(r["n"]) * 100 / total, 1) if total else 0.0,
+				"sample": sample,
+			}
+		)
+	rows.sort(key=lambda r: -r["count"])
+	return {
+		"total": total,
+		"retryable": sum(r["count"] for r in rows if r["retryable"]),
+		"rows": rows,
+	}
+
+
+def message_stats(campaign: str) -> dict[str, Any]:
+	"""Each message of the campaign with what became of it — the counts of its own outbound rows,
+	so a campaign that fails on its third message says so instead of averaging it away."""
+	L = frappe.qb.DocType("WhatsApp Log")
+	grouped = (
+		frappe.qb.from_(L)
+		.select(L.campaign_message_idx, L.status, Count("*").as_("n"))
+		.where(L.campaign == campaign)
+		.groupby(L.campaign_message_idx, L.status)
+		.run(as_dict=True)
+	)
+	by_idx: dict[int, dict[str, int]] = {}
+	for r in grouped:
+		by_idx.setdefault(cint(r["campaign_message_idx"]) or 1, {})[r["status"]] = cint(r["n"])
+
+	doc = _doc(campaign)
+	rows = []
+	for i, m in enumerate(doc.get("messages") or [], start=1):
+		counts = by_idx.get(i, {})
+		rows.append(
+			{
+				"idx": i,
+				"message_type": m.message_type,
+				"delay_seconds": cint(m.delay_seconds),
+				"preview": (m.body or m.poll_question or m.caption or "")[:140],
+				"attachment": bool(m.attachment),
+				"counts": counts,
+				"total": sum(counts.values()),
+			}
+		)
+	return {"rows": rows}
+
+
+def timeline(campaign: str) -> dict[str, Any]:
+	"""What happened to the campaign and when — the document's own milestones, plus the audit rows
+	for the state changes when the reader is allowed to read them. Events carry a key and a time;
+	the screen writes the sentence."""
+	fields = (
+		"creation",
+		"owner",
+		"status",
+		"scheduled_at",
+		"first_message_at",
+		"last_message_at",
+		"ended_at",
+	)
+	row = frappe.db.get_value("WhatsApp Campaign", campaign, list(fields), as_dict=True)
+	if not row:
+		frappe.throw(_("WhatsApp Campaign {0} not found").format(campaign), WAValidationError)
+
+	events: list[dict[str, Any]] = [{"key": "created", "at": row.creation, "user": row.owner}]
+	if row.status == "Scheduled" and row.scheduled_at:
+		events.append({"key": "scheduled", "at": row.scheduled_at})
+
+	if frappe.has_permission("WhatsApp Audit Log", "read"):
+		for a in frappe.get_all(
+			"WhatsApp Audit Log",
+			filters={
+				"reference_doctype": "WhatsApp Campaign",
+				"reference_name": campaign,
+				"action": ("in", list(TIMELINE_ACTIONS)),
+			},
+			fields=["action", "user", "timestamp", "reason", "count"],
+			order_by="timestamp asc",
+			limit_page_length=200,
+		):
+			events.append(
+				{
+					"key": _TIMELINE_KEY.get(a.action, "event"),
+					"at": a.timestamp,
+					"user": a.user,
+					"reason": a.reason,
+					"count": cint(a.count),
+				}
+			)
+
+	if row.first_message_at:
+		events.append({"key": "first_message", "at": row.first_message_at})
+	if row.last_message_at:
+		events.append({"key": "last_message", "at": row.last_message_at})
+	if row.ended_at:
+		events.append({"key": "ended", "at": row.ended_at, "status": row.status})
+
+	events.sort(key=lambda e: get_datetime(e["at"]))
+	return {"events": events, "status": row.status}
+
+
+def retry_failed(
+	campaign: str, *, error_code: str | None = None, user: str | None = None, limit: int = RETRY_LIMIT
+) -> dict[str, Any]:
+	"""Send the campaign's failed messages again — by default only the codes the dispatcher counts
+	as retryable, or one `error_code` when the reader chose a bucket.
+
+	A resend is a **new** message row (`dispatch.resend_outbound`): the failed one stays in the log,
+	which is why the screen says so. A `Paused` campaign's new rows are paused with it, and a
+	`Cancelled` one refuses — its messages were stopped on purpose.
+	"""
+	status = frappe.db.get_value("WhatsApp Campaign", campaign, "status")
+	if status is None:
+		frappe.throw(_("WhatsApp Campaign {0} not found").format(campaign), WAValidationError)
+	if status == "Cancelled":
+		frappe.throw(_("A cancelled campaign cannot send again"), WAStateConflictError)
+
+	filters: dict[str, Any] = {"campaign": campaign, "status": "Failed"}
+	filters["error_code"] = error_code if error_code else ("in", sorted(errors.RETRYABLE))
+	names = frappe.get_all(
+		"WhatsApp Log",
+		filters=filters,
+		pluck="name",
+		order_by="creation asc",
+		limit_page_length=max(1, min(cint(limit) or RETRY_LIMIT, RETRY_LIMIT)),
+	)
+
+	retried, refused = 0, 0
+	for name in names:
+		try:
+			dispatch.resend_outbound(name, user=user)
+			retried += 1
+		except Exception:
+			refused += 1
+			frappe.log_error(
+				title="WhatsApp campaign: retry failed",
+				message=f"campaign={campaign} outbound={name}\n{frappe.get_traceback()}",
+			)
+	if retried and status == "Paused":
+		dispatch.pause_items(
+			{"campaign": campaign, "status": "Queued"}, user=user, reason=f"campaign {campaign} paused"
+		)
+	if retried:
+		audit.log(
+			"Queue Items Retried",
+			reference=("WhatsApp Campaign", campaign),
+			user=user,
+			count=retried,
+			details={"error_code": error_code} if error_code else None,
+		)
+		refresh_counters(campaign)
+	remaining = frappe.db.count("WhatsApp Log", {"campaign": campaign, "status": "Failed"})
+	return {"retried": retried, "refused": refused, "remaining": cint(remaining)}

@@ -1,0 +1,664 @@
+// sanad.ui.OverlayPanel — the prototype's overlay panel (`docs/component/Overlay Panel.dc.html`),
+// value for value.
+//
+// A modal is a 12 px-radius card centred on a dimmed page that pops in; a drawer is a sheet on
+// the inline edge that slides in. Both have the same header (16 px title, a 12 px subtitle or a
+// monospace id, a badge, the "unsaved changes" pill, a 32 px close), the same 18 px body gutter,
+// and the same footer (start verbs at the start, the rest at the end). The fields inside are the
+// kit's own controls (`wa-input`, `wa-select`, `wa-seg`, `wa-toggle`), so the panel wears the
+// product's palette wherever the palette applies, and Desk's own where it does not.
+//
+// Every offset is logical, every colour is a token, every size is the prototype's.
+
+.sanad-op-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1040;
+	background: var(--wa-ink, var(--surface-gray-7));
+	opacity: 0.35;
+}
+
+.sanad-op {
+	--sanad-op-width: 50%;
+	position: fixed;
+	z-index: 1041;
+	display: flex;
+	flex-direction: column;
+	max-inline-size: 100%;
+	max-block-size: 100%;
+	background: var(--wa-surface);
+	color: var(--wa-ink);
+	border: 1px solid var(--wa-border);
+	box-shadow: var(--wa-shadow-lg);
+	overflow: hidden;
+	// a fade only: nothing moves or grows, so a panel is where it will stay from its first frame
+	opacity: 0;
+	transition: opacity var(--wa-motion, 160ms) ease-out;
+
+	&--in { opacity: 1; }
+
+	// ---- the two geometries ---------------------------------------------------------------------
+
+	// centred by auto margins, not by a translate: the RTL build flips every translateX, so a
+	// symmetric scale is the only transform a modal may carry
+	&--modal {
+		inset: 0;
+		margin: auto;
+		inline-size: min(var(--sanad-op-width), calc(100% - 32px));
+		block-size: fit-content;
+		max-block-size: calc(100% - 32px);
+		border-radius: 12px;
+	}
+	// the entrance slide is written for LTR only: the RTL build flips every translateX itself,
+	// and the open state wins over both with !important, as `.sanad-panel--open` does
+	&--drawer {
+		inset-block: 0;
+		inline-size: min(var(--sanad-op-width, 40%), 100%);
+		border-radius: 0;
+		&.sanad-op--end { inset-inline-end: 0; border-inline-start: 1px solid var(--wa-border); }
+		&.sanad-op--start { inset-inline-start: 0; border-inline-end: 1px solid var(--wa-border); }
+	}
+
+	// ---- header ---------------------------------------------------------------------------------
+
+	&__head {
+		display: flex;
+		align-items: flex-start;
+		gap: 12px;
+		padding: 18px 18px 14px;
+		border-block-end: 1px solid var(--wa-border);
+		flex: none;
+	}
+	&__heading {
+		flex: 1;
+		min-inline-size: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	&__title {
+		margin: 0;
+		font-size: 16px;
+		font-weight: 700;
+		line-height: 1.4;
+		color: var(--wa-ink);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	&__meta {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 8px;
+		min-block-size: 0;
+		&:empty { display: none; }
+	}
+	&__subtitle {
+		font-size: 12px;
+		color: var(--wa-ink-3);
+		&--mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+	}
+	&__badge[hidden] { display: none; }
+	&__dirty {
+		padding: 3px 9px;
+		border-radius: 999px;
+		background: var(--wa-wn-s);
+		color: var(--wa-wn-i);
+		font-size: 11px;
+		font-weight: 600;
+	}
+	&__close {
+		flex: none;
+		inline-size: 32px;
+		block-size: 32px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		border: 1px solid var(--wa-border);
+		border-radius: 8px;
+		background: transparent;
+		color: var(--wa-ink-3);
+		cursor: pointer;
+		&:hover { background: var(--wa-sunken); color: var(--wa-ink); }
+	}
+
+	// ---- body -----------------------------------------------------------------------------------
+
+	&__body {
+		flex: 1;
+		min-block-size: 0;
+		overflow: auto;
+		padding: 16px 18px;
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+		scroll-padding-block-end: 80px;
+		scrollbar-width: thin;
+	}
+	&__summary {
+		padding: 10px 12px;
+		border: 1px solid var(--wa-dg-sb);
+		border-radius: 8px;
+		background: var(--wa-dg-s);
+		color: var(--wa-dg-i);
+		font-size: 12px;
+		line-height: 1.7;
+		a { color: inherit; text-decoration: underline; font-weight: 600; }
+		&[hidden] { display: none; }
+	}
+	&__mono {
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		direction: ltr;
+		unicode-bidi: isolate;
+		text-align: start;
+	}
+
+	// ---- form sections --------------------------------------------------------------------------
+
+	&__section {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+	&__note {
+		padding: 10px 12px;
+		border-radius: 8px;
+		border: 1px solid;
+		font-size: 12px;
+		line-height: 1.7;
+		&--info { background: var(--wa-nf-s); border-color: var(--wa-nf-sb); color: var(--wa-nf-i); }
+		&--warn { background: var(--wa-wn-s); border-color: var(--wa-wn-sb); color: var(--wa-wn-i); }
+		&--danger { background: var(--wa-dg-s); border-color: var(--wa-dg-sb); color: var(--wa-dg-i); }
+		&--ok { background: var(--wa-ok-s); border-color: var(--wa-ok-sb); color: var(--wa-ok-i); }
+		&--muted, &--pri { background: var(--wa-sunken); border-color: var(--wa-border); color: var(--wa-ink-2); }
+	}
+	&__grid {
+		display: grid;
+		grid-template-columns: repeat(var(--sanad-op-cols, 2), minmax(0, 1fr));
+		gap: 12px 16px;
+	}
+	&__field {
+		gap: 5px;
+		// the prototype's grid label: 11 px, the quiet ink, the asterisk in the danger ink
+		.wa-field__label {
+			font-size: 11px;
+			font-weight: 600;
+			color: var(--wa-ink-3);
+		}
+		// the kit's phone field carries its own label and gutter; inside the grid it loses the gutter
+		.sanad-phone { margin-block-end: 0; }
+		.sanad-phone__label { font-size: 11px; font-weight: 600; color: var(--wa-ink-3); }
+	}
+	&__readonly {
+		min-block-size: var(--wa-h, 38px);
+		display: flex;
+		align-items: center;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--wa-ink);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		.wa-badge { font-weight: 600; }
+	}
+
+	// ---- the list field: a bordered table, then an add row on a sunken strip -------------------
+
+	&__listfield {
+		display: flex;
+		flex-direction: column;
+		border: 1px solid var(--wa-border);
+		border-radius: 10px;
+		background: var(--wa-surface);
+		overflow: hidden;
+	}
+	&__table {
+		display: flex;
+		flex-direction: column;
+		max-block-size: 240px;
+		overflow: auto;
+		scrollbar-width: thin;
+	}
+	&__thead,
+	&__trow {
+		display: grid;
+		grid-template-columns: var(--sanad-op-rowcols);
+		align-items: center;
+		gap: 10px;
+		padding: 7px 11px;
+		border-block-end: 1px solid var(--wa-border);
+		min-inline-size: 0;
+		> * { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	}
+	&__thead {
+		position: sticky;
+		inset-block-start: 0;
+		z-index: 1;
+		padding-block: 6px;
+		background: var(--wa-sunken);
+		border-block-end-color: var(--wa-border-2);
+		> span { font-size: 10px; font-weight: 700; color: var(--wa-ink-3); }
+	}
+	&__trow {
+		&:last-child { border-block-end: 0; }
+		&--empty { display: block; padding: 14px; font-size: 12px; color: var(--wa-ink-4); white-space: normal; }
+	}
+	&__trow-text { font-size: 12px; color: var(--wa-ink); }
+	&__trow-sub { font-size: 11px; color: var(--wa-ink-2); }
+	&__trow-meta { font-size: 11px; color: var(--wa-ink-4); }
+	&__trow-tag { display: inline-flex; overflow: visible; .wa-badge { font-size: 10px; padding-block: 2px; } }
+	// the prototype draws this at 22 px; 24 px is the smallest target WCAG 2.5.8 accepts
+	&__trow-remove {
+		inline-size: 24px;
+		block-size: 24px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		justify-self: center;
+		padding: 0;
+		border: 0;
+		border-radius: 6px;
+		background: transparent;
+		color: var(--wa-ink-4);
+		cursor: pointer;
+		&:hover { background: var(--wa-sunken); color: var(--wa-dg-i); }
+	}
+	&__tadd {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		padding: 7px 11px;
+		background: var(--wa-sunken);
+		border-block-start: 1px solid var(--wa-border);
+	}
+	&__tadd-input,
+	&__tadd-type {
+		block-size: 30px;
+		border: 1px solid var(--wa-border-2);
+		border-radius: 7px;
+		background: var(--wa-surface);
+		color: var(--wa-ink);
+		font-family: inherit;
+		outline: none;
+		&:focus { border-color: var(--wa-pri); box-shadow: 0 0 0 3px var(--wa-pri-s); }
+	}
+	&__tadd-input {
+		flex: 1;
+		min-inline-size: 0;
+		padding-inline: 9px;
+		font-size: 12px;
+		&::placeholder { color: var(--wa-ink-4); }
+	}
+	&__tadd-type {
+		flex: none;
+		max-inline-size: 40%;
+		padding-inline: 7px;
+		font-size: 11px;
+	}
+	&__tadd-btn {
+		flex: none;
+		block-size: 30px;
+		padding-inline: 12px;
+		border: 0;
+		border-radius: 7px;
+		background: var(--wa-pri);
+		color: var(--wa-on-pri);
+		font-family: inherit;
+		font-size: 11px;
+		font-weight: 600;
+		cursor: pointer;
+		white-space: nowrap;
+		&:hover { background: var(--wa-pri-d); }
+	}
+	&__tadd-list {
+		position: absolute;
+		inset-inline: 11px;
+		inset-block-start: calc(100% - 4px);
+		z-index: 3;
+		margin: 0;
+		padding: 4px;
+		list-style: none;
+		max-block-size: 220px;
+		overflow: auto;
+		border: 1px solid var(--wa-border);
+		border-radius: 8px;
+		background: var(--wa-surface);
+		box-shadow: var(--wa-shadow-lg);
+		&[hidden] { display: none; }
+	}
+	&__tadd-opt {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 10px;
+		padding: 7px 9px;
+		border-radius: 6px;
+		cursor: pointer;
+		&[aria-selected="true"], &:hover { background: var(--wa-pri-s); }
+	}
+	&__tadd-opt-label { font-size: 12px; font-weight: 600; color: var(--wa-ink); min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__tadd-opt-note { flex: none; font-size: 11px; color: var(--wa-ink-4); }
+	&__tadd-empty { padding: 9px; font-size: 12px; color: var(--wa-ink-4); }
+
+	// ---- the link field: an input, a clear, and the matches in a list under it -----------------
+
+	&__link {
+		position: relative;
+		display: flex;
+		align-items: center;
+		min-inline-size: 0;
+		.sanad-op__link-input { padding-inline-end: 34px; }
+		&--set .sanad-op__link-input { font-weight: 500; }
+	}
+	&__link-clear {
+		position: absolute;
+		inset-inline-end: 8px;
+		inline-size: 24px;
+		block-size: 24px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		border: 0;
+		border-radius: 6px;
+		background: transparent;
+		color: var(--wa-ink-4);
+		cursor: pointer;
+		&:hover { background: var(--wa-sunken); color: var(--wa-ink); }
+		&[hidden] { display: none; }
+	}
+	&__pop {
+		position: absolute;
+		inset-inline: 0;
+		inset-block-start: calc(100% + 4px);
+		z-index: 4;
+		margin: 0;
+		padding: 4px;
+		list-style: none;
+		max-block-size: 232px;
+		overflow: auto;
+		border: 1px solid var(--wa-border);
+		border-radius: 10px;
+		background: var(--wa-surface);
+		box-shadow: var(--wa-shadow-lg);
+		&[hidden] { display: none; }
+	}
+	&__pop-item {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: 7px 10px;
+		border-radius: 7px;
+		cursor: pointer;
+		&[aria-selected="true"], &:hover { background: var(--wa-pri-s); }
+	}
+	&__pop-label { font-size: 13px; font-weight: 500; color: var(--wa-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__pop-note { font-size: 11px; color: var(--wa-ink-4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__pop-empty { padding: 9px 10px; font-size: 12px; color: var(--wa-ink-4); }
+
+	// ---- the rows field: a child table drawn with the kit's controls ---------------------------
+
+	&__rows {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	&__rows-head,
+	&__row {
+		display: grid;
+		grid-template-columns: var(--sanad-op-rowcols);
+		align-items: center;
+		gap: 8px;
+	}
+	&__rows-head {
+		padding-inline: 2px;
+		> span { font-size: 11px; font-weight: 600; color: var(--wa-ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+		&[hidden] { display: none; }
+	}
+	&__rows-body {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	&__rows-empty {
+		padding: 12px;
+		border: 1px dashed var(--wa-border-2);
+		border-radius: 8px;
+		font-size: 12px;
+		color: var(--wa-ink-4);
+	}
+	&__cell {
+		min-inline-size: 0;
+		&.wa-field--invalid .wa-input { border-color: var(--wa-dg); }
+	}
+	&__row-remove {
+		inline-size: 32px;
+		block-size: 32px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		justify-self: end;
+		padding: 0;
+		border: 1px solid transparent;
+		border-radius: 7px;
+		background: transparent;
+		color: var(--wa-ink-4);
+		cursor: pointer;
+		&:hover { background: var(--wa-dg-s); color: var(--wa-dg-i); }
+	}
+	&__rows-foot { display: flex; }
+
+	// ---- the choice grid ------------------------------------------------------------------------
+
+	&__choice {
+		display: flex;
+		flex-direction: column;
+		gap: 7px;
+	}
+	&__search {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		min-block-size: 34px;
+		margin: 0;
+		padding-inline: 10px;
+		border: 1px solid var(--wa-border-2);
+		border-radius: 8px;
+		background: var(--wa-surface);
+		color: var(--wa-ink-4);
+		&:focus-within { border-color: var(--wa-pri); box-shadow: 0 0 0 3px var(--wa-pri-s); }
+		input {
+			flex: 1;
+			min-inline-size: 0;
+			border: 0;
+			background: transparent;
+			font-family: inherit;
+			font-size: 12px;
+			color: var(--wa-ink);
+			outline: none;
+		}
+	}
+	&__choices {
+		display: grid;
+		grid-template-columns: repeat(var(--sanad-op-cols, 2), minmax(0, 1fr));
+		gap: 7px;
+		max-block-size: 260px;
+		overflow: auto;
+		scrollbar-width: thin;
+		&[aria-busy="true"] { opacity: 0.6; }
+	}
+	&__opt {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 3px;
+		min-inline-size: 0;
+		padding: 9px 11px;
+		border: 1px solid var(--wa-border);
+		border-radius: 10px;
+		background: var(--wa-surface);
+		font-family: inherit;
+		text-align: start;
+		cursor: pointer;
+		&:hover { border-color: var(--wa-pri-sb); }
+		&[aria-selected="true"] { background: var(--wa-pri-s); border-color: var(--wa-pri); .sanad-op__opt-label { color: var(--wa-pri-d); } }
+	}
+	&__opt-label { font-size: 12px; font-weight: 600; color: var(--wa-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__opt-note { font-size: 10px; color: var(--wa-ink-4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__empty {
+		padding: 11px;
+		border-radius: 8px;
+		font-size: 12px;
+		color: var(--wa-ink-4);
+		background: var(--wa-bg);
+		border: 1px solid var(--wa-border);
+		&--dashed { grid-column: 1 / -1; background: var(--wa-surface); border-style: dashed; border-color: var(--wa-border-2); }
+	}
+
+	// ---- a record's detail: alert · facts · blocks ---------------------------------------------
+
+	&__alert {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: 12px;
+		border-radius: 8px;
+		border: 1px solid;
+		&--warn { background: var(--wa-wn-s); border-color: var(--wa-wn-sb); color: var(--wa-wn-i); }
+		&--danger { background: var(--wa-dg-s); border-color: var(--wa-dg-sb); color: var(--wa-dg-i); }
+		&--info { background: var(--wa-nf-s); border-color: var(--wa-nf-sb); color: var(--wa-nf-i); }
+		&--ok { background: var(--wa-ok-s); border-color: var(--wa-ok-sb); color: var(--wa-ok-i); }
+		&--muted, &--pri { background: var(--wa-sunken); border-color: var(--wa-border); color: var(--wa-ink-2); }
+	}
+	&__alert-title { font-size: 13px; font-weight: 700; }
+	&__alert-line { font-size: 12px; line-height: 1.7; word-break: break-word; }
+
+	&__facts {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px 16px;
+		margin: 0;
+	}
+	&__fact {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		min-inline-size: 0;
+		dt { font-size: 11px; font-weight: 400; color: var(--wa-ink-3); }
+		dd { margin: 0; font-size: 13px; font-weight: 600; color: var(--wa-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+		dd.sanad-op__mono { font-size: 12px; }
+		&--ok dd { color: var(--wa-ok-i); }
+		&--warn dd { color: var(--wa-wn-i); }
+		&--danger dd { color: var(--wa-dg-i); }
+		&--info dd { color: var(--wa-nf-i); }
+		&--muted dd { color: var(--wa-ink-3); }
+	}
+
+	&__block {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	&__block-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+	}
+	&__block-label { font-size: 11px; color: var(--wa-ink-3); }
+	&__block-more { font-size: 11px; color: var(--wa-ink-4); flex: none; }
+	&__list {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	&__item {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		padding: 8px 10px;
+		border-radius: 8px;
+		background: var(--wa-bg);
+		border: 1px solid var(--wa-border);
+		.wa-avatar { inline-size: 26px; block-size: 26px; border-radius: 7px; font-size: 11px; }
+		.wa-badge { font-size: 10px; padding-block: 2px; flex: none; }
+	}
+	&__item-main {
+		flex: 1;
+		min-inline-size: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	&__item-text { font-size: 12px; font-weight: 600; color: var(--wa-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__item-sub { font-size: 11px; color: var(--wa-ink-4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__text {
+		padding: 12px;
+		border-radius: 8px;
+		background: var(--wa-bg);
+		border: 1px solid var(--wa-border);
+		font-size: 13px;
+		line-height: 1.9;
+		white-space: pre-wrap;
+		word-break: break-word;
+		&--warn { background: var(--wa-wn-s); border-color: var(--wa-wn-sb); color: var(--wa-wn-i); }
+		&--danger { background: var(--wa-dg-s); border-color: var(--wa-dg-sb); color: var(--wa-dg-i); }
+		&--info { background: var(--wa-nf-s); border-color: var(--wa-nf-sb); color: var(--wa-nf-i); }
+		&--ok { background: var(--wa-ok-s); border-color: var(--wa-ok-sb); color: var(--wa-ok-i); }
+	}
+
+	// ---- footer ---------------------------------------------------------------------------------
+
+	&__foot {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-wrap: wrap;
+		padding: 12px 18px;
+		border-block-start: 1px solid var(--wa-border);
+		background: var(--wa-surface);
+		flex: none;
+		&[hidden] { display: none; }
+	}
+	&__foot-start,
+	&__foot-end {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-wrap: wrap;
+		&:empty { display: none; }
+	}
+	&__foot-end { margin-inline-start: auto; }
+	.wa-btn--busy { opacity: 0.6; cursor: progress; }
+	.wa-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+	// ---- under 768 px both geometries are a full sheet -----------------------------------------
+
+	@media (max-width: 767px) {
+		&--modal,
+		&--drawer {
+			inset: 0;
+			inline-size: 100%;
+			max-inline-size: 100%;
+			block-size: 100dvh;
+			max-block-size: 100dvh;
+			border-radius: 0;
+		}
+		&__grid { grid-template-columns: minmax(0, 1fr); > * { grid-column: span 1 !important; } }
+		&__facts { grid-template-columns: minmax(0, 1fr); }
+		&__choices { grid-template-columns: minmax(0, 1fr); }
+		&__foot { position: sticky; inset-block-end: 0; }
+		&__foot .wa-btn { flex: 1 1 auto; }
+	}
+}
+
+body.sanad-op-open { overflow: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+	.sanad-op { transition: none; }
+}

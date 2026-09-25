@@ -85,7 +85,11 @@ export class UploadSource extends BaseSource {
 				wrapper: this.$uploader,
 				folder: "Home/Attachments",
 				make_attachments_public: false,
-				disable_file_browser: true,
+				// a file comes from this device or from the files the system already holds — not
+				// from a web link, not from the camera
+				disable_file_browser: false,
+				allow_web_link: false,
+				allow_take_photo: false,
 				allow_multiple: false,
 				restrictions: { allowed_file_types: this.allowed_types(this.kind), max_file_size: 5 * 1024 * 1024, max_number_of_files: 1 },
 				upload_notes: __("Private upload. Up to 5 MB and 20,000 rows."),

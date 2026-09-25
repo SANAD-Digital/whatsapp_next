@@ -289,3 +289,120 @@ class TestApiCampaigns(IntegrationTestCase):
 			self.assertEqual((self._status(running), self._status(draft)), ("Cancelled", "Cancelled"))
 			res = api.cancel_many(names=[running])
 			self.assertEqual((res["count"], res["skipped"]), (0, [{"name": running, "reason": "Cancelled"}]))
+
+	# -- the builder's reads -------------------------------------------------------------
+
+	def test_readiness(self):
+		"""Five checks, each with the facts behind it; `ok` is what `start()` would accept."""
+		name = self._campaign()
+		with as_user("WhatsApp Manager"):
+			r = api.get_readiness(name=name)
+		by_key = {c["key"]: c for c in r["checks"]}
+		self.assertTrue(r["ok"], r)
+		self.assertEqual(sorted(by_key), ["attachments", "audience", "device", "messages", "variables"])
+		self.assertTrue(by_key["device"]["ok"])
+		self.assertEqual(by_key["device"]["status"], "Connected")
+		self.assertEqual(by_key["audience"]["count"], 2)
+		self.assertEqual(by_key["audience"]["by_source"], {"Manual": 1, "Contact": 1})
+		self.assertEqual(by_key["messages"]["count"], 1)
+
+		# a message that cannot be sent, and an audience that is empty
+		empty = self._campaign(
+			recipients=(),
+			messages=[{"message_type": "Image", "body": ""}, {"message_type": "Poll", "poll_question": "?"}],
+		)
+		with as_user("WhatsApp Manager"):
+			r = api.get_readiness(name=empty)
+		by_key = {c["key"]: c for c in r["checks"]}
+		self.assertFalse(r["ok"])
+		self.assertFalse(by_key["audience"]["ok"])
+		self.assertEqual(by_key["audience"]["count"], 0)
+		self.assertEqual(
+			[(row["idx"], row["problem"]) for row in by_key["messages"]["incomplete"]],
+			[(1, "no_attachment"), (2, "few_options")],
+		)
+
+	def test_readiness_reads_a_broken_variable_and_a_disconnected_device(self):
+		name = self._campaign(messages=[{"message_type": "Text", "body": "{% if %}"}])
+		ensure_device("ApiTest Device CP", "WAD-TEST-API24", status="Disconnected")
+		try:
+			with as_user("WhatsApp Manager"):
+				by_key = {c["key"]: c for c in api.get_readiness(name=name)["checks"]}
+			self.assertFalse(by_key["device"]["ok"])
+			self.assertEqual(by_key["device"]["status"], "Disconnected")
+			self.assertFalse(by_key["variables"]["ok"])
+			self.assertEqual(by_key["variables"]["invalid"][0]["idx"], 1)
+			self.assertTrue(by_key["variables"]["invalid"][0]["errors"])
+		finally:
+			ensure_device("ApiTest Device CP", "WAD-TEST-API24", status="Connected")
+
+	def test_failures_and_retry(self):
+		"""Failures group by code with their share; a retry is a new row and the failed one stays."""
+		name = self._running()
+		rows = frappe.get_all("WhatsApp Log", filters={"campaign": name}, pluck="name")
+		self.assertEqual(len(rows), 2)
+		with status_writer():
+			frappe.db.set_value(
+				"WhatsApp Log", rows[0], {"status": "Failed", "error_code": "timeout"}, update_modified=False
+			)
+			frappe.db.set_value(
+				"WhatsApp Log",
+				rows[1],
+				{"status": "Failed", "error_code": "recipient_not_registered"},
+				update_modified=False,
+			)
+
+		with as_user("WhatsApp Manager"):
+			f = api.get_failures(name=name)
+		self.assertEqual(f["total"], 2)
+		self.assertEqual(f["retryable"], 1)  # only `timeout` is retryable
+		self.assertEqual({r["error_code"]: r["retryable"] for r in f["rows"]}, {"timeout": True, "recipient_not_registered": False})
+		self.assertEqual({r["share"] for r in f["rows"]}, {50.0})
+
+		with as_user("WhatsApp Manager"):
+			out = api.retry_failed(name=name)
+		self.assertEqual(out["retried"], 1)
+		self.assertEqual(out["refused"], 0)
+		self.assertEqual(out["remaining"], 2)  # the failed rows stay; the retry is a new row
+		self.assertEqual(frappe.db.count("WhatsApp Log", {"campaign": name}), 3)
+		self.assertTrue(
+			frappe.db.exists("WhatsApp Audit Log", {"reference_name": name, "action": "Queue Items Retried"})
+		)
+
+		# a cancelled campaign refuses, and only a Manager may ask at all
+		with as_user("WhatsApp Agent"), self.assertRaises(WAPermissionError):
+			api.retry_failed(name=name)
+		with as_user("WhatsApp Manager"):
+			api.cancel(name=name, reason="done")
+			with self.assertRaises(WAStateConflictError):
+				api.retry_failed(name=name)
+
+	def test_message_stats(self):
+		name = self._running(
+			messages=[
+				{"message_type": "Text", "body": f"{TAG} one"},
+				{"message_type": "Text", "body": f"{TAG} two", "delay_seconds": 45},
+			]
+		)
+		with as_user("WhatsApp Viewer"):
+			rows = api.get_message_stats(name=name)["rows"]
+		self.assertEqual([r["idx"] for r in rows], [1, 2])
+		self.assertEqual(rows[1]["delay_seconds"], 45)
+		self.assertEqual(rows[0]["total"], 2)  # one per recipient
+		self.assertEqual(sum(rows[0]["counts"].values()), 2)
+		self.assertIn(TAG, rows[0]["preview"])
+
+	def test_timeline(self):
+		name = self._running()
+		with as_user("WhatsApp Manager"):
+			keys = [e["key"] for e in api.get_timeline(name=name)["events"]]
+		self.assertEqual(keys[0], "created")
+		self.assertIn("started", keys)
+		with as_user("WhatsApp Manager"):
+			api.pause(name=name, reason="lunch")
+			events = api.get_timeline(name=name)["events"]
+		paused = [e for e in events if e["key"] == "paused"]
+		self.assertEqual(len(paused), 1)
+		self.assertEqual(paused[0]["reason"], "lunch")
+		# the events come back in the order they happened
+		self.assertEqual([e["at"] for e in events], sorted(e["at"] for e in events))

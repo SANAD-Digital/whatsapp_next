@@ -54,14 +54,16 @@ progress text under the footer counter during parsing; subscribed on open, off o
 ## Sub-plan — one section per tab
 
 ### Source 1 · Contact groups (`sources/groups.js`) — built
-Search box + `kind` chips (options from the group DocType's Select meta) → `picker.search_groups
+Search box + a `kind` dropdown field (`select_field`: the button says `Kind: value`, the popover
+lists the options with a search box once they pass a handful — options may be many, and a row of
+chips does not scale; options from the group DocType's Select meta) → `picker.search_groups
 {txt, kind, exclude, page, page_length}`; the target group is excluded when the target is a group.
 Each group row: checkbox, `group_name`, kind badge (Blacklist red), member count, "Show members" (first 10
 via `picker.get_group_members`). "Add members of N groups" pages through `get_group_members`
 (200 per page, progress note) and adds every member; `source_ref` = the group when exactly one.
 
 ### Source 2 · Contacts (`sources/contacts.js`) — built
-Search by name / phone, `link_doctype` chips (the entry's `link_doctypes` = installed party
+Search by name / phone, a `link_doctype` dropdown field (the entry's `link_doctypes` = installed party
 DocTypes, or `contact_link_doctypes`) → `picker.search_contacts {txt, link_doctype, page,
 page_length}` → `{rows, total}`; checkbox rows, contacts without a phone are listed disabled
 with the reason; "Select all on page"; "Add N"; pager "1–20 of N".
@@ -94,7 +96,11 @@ mapping step ("vCard files need no column mapping").
 ### Source 6 · Manual entry (`sources/manual.js`) — built
 Textarea, one per line (`phone` or `name;phone`), hint text with the country-code rule (no
 dependency on PhoneField), line counter, Ctrl/⌘+Enter → `picker.parse_manual {text}`; valid rows
-go to the selection, invalid lines stay in the textarea and are listed with their reason.
+go to the selection. A line the server refused does **not** go back into the textarea: it becomes
+a row of its own under the box — the text in an input, the reason beside it, **Fix** (or Enter)
+sends that one line back to `parse_manual` and it leaves the list the moment it reads, × ignores
+it; **Fix all** / **Ignore all** act on the whole list. The textarea is empty after every parse,
+so what is left on screen is exactly what still needs the reader.
 
 ### Selected (`selected.js`) — built
 Debounced `picker.preview {target_doctype, target_name, rows}` on every change → chips per row:
@@ -112,7 +118,7 @@ close. A 409 `WAStateConflictError` (or any commit error) is shown inline in the
 ### Remove mode (`sources/current.js`) — built
 A first tab "Current recipients / members" pages the target's rows (`campaigns.get_recipients_page`
 for campaigns with server search / `source_type` filter and a status badge; `picker.get_group_members`
-for groups with client-side narrowing), chips by `source_type` (from the child meta), "Select all
+for groups with client-side narrowing), a `source_type` dropdown field (from the child meta), "Select all
 shown", "Choose N" → Selected tab → confirm → `commit_remove`.
 
 ## Live use
@@ -121,8 +127,28 @@ recipients"; `frappe.flags.wa_picker_group` (set by the Contact Group screens) p
 form — `public/js/form/whatsapp_contact_group.js` ("Add members" / "Remove members";
 `?import=csv` opens source 5 with CSV preselected).
 
+## Height and scrolling
+The dialog keeps **one height** on desktop (`clamp(420px, 100vh − 230px, 680px)`): the three zones
+fill it, a long result table scrolls inside its own area with a sticky header, the tray's rows
+scroll inside the tray, and the search box, the chips, the pager and the "Add N" button stay
+where the hand left them. A stepper flow taller than its pane scrolls as a pane. Under 768 px the
+sheet scrolls as a whole, as before. A contact without a number says so in the number's own cell,
+so every candidate row is one line. Desk's `.form-control` and `.btn` inside the dialog take the
+kit's shape (one border, one radius, one focus halo — no outline ring on top of a border), so a
+field in the picker and a field on the page behind it read as the same control.
+
+## The prototype's picking pane (`docs/component/Bulk Send.dc.html`)
+The dialog draws what the prototype draws: the sources as **one pill strip** over the pane (a
+sunken track, the chosen source filled, the count each source contributed inside its pill); a
+**rounded search field** with the glass inside it; every candidate as **a row** — a round avatar
+with the initials, the name over the number, a small badge for what else is known (kind, record,
+status, source) and a round **mark** at the end that fills when the row is chosen (the whole row
+is the control, `role="checkbox"`); the tray as the same rows with a `#` avatar for a typed
+number and a round × that takes the row out, under "Selected · N · Clear all". Groups are the
+same rows with "Show members" folding the first ten under them.
+
 ## Design gate
-- Tabs are a real `role="tablist"` (vertical on desktop, horizontal scroll on phones) with roving
+- Tabs are a real `role="tablist"` (a horizontal pill strip; it scrolls sideways on phones) with roving
   `tabindex`, RTL-aware arrow keys via `ui.roving_index` (Home / End too), `aria-selected` and
   `aria-controls`; panes are focusable `role="tabpanel"`.
 - One live channel: the selection count is announced only through the debounced `ui.announce`

@@ -27,6 +27,7 @@ import "./Collection/index.js";
 import "./PageHeader/index.js";
 // panels
 import "./Drawer/index.js";
+import "./OverlayPanel/index.js";
 import "./ChatThread/index.js";
 import "./ConversationDrawer/index.js";
 import "./QuickSend/index.js";

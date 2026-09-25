@@ -89,6 +89,12 @@ class TestApiQueue(IntegrationTestCase):
 			paged = api.list_queue(filters={"device": self.device}, page=2, page_length=2)
 			self.assertEqual(len(paged["rows"]), 1)
 
+	def test_limits(self):
+		with as_user("WhatsApp Viewer"):
+			out = api.get_limits()
+		self.assertEqual(set(out), {"rate", "plan_rate"})
+		self.assertEqual(out["rate"], 20)
+
 	def test_summary(self):
 		frappe.cache.delete_value(dispatch.PLATFORM_QUEUE_CACHE_KEY)
 		self._item(P1)

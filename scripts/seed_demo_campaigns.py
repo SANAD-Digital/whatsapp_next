@@ -35,18 +35,42 @@ NAMES = [
 # counted as sent), so every seeded message gets a real `WhatsApp Log` row and the campaign's
 # counters are exactly what those rows say. That keeps the totals under the recipients, the way
 # the running system writes them.
-PLAN = [
-    ("DEMO Eid offer — all customers", "Running", 320, 0.62, 0.03, 0),
-    ("DEMO Invoice reminder — overdue", "Paused", 180, 0.41, 0.06, 0),
-    ("DEMO New branch in Jeddah", "Scheduled", 240, 0.0, 0.0, None),
-    ("DEMO Weekly offers — subscribers", "Scheduled", 420, 0.0, 0.0, None),
-    ("DEMO Customer satisfaction survey", "Draft", 0, 0.0, 0.0, None),
-    ("DEMO Ramadan working hours", "Draft", 0, 0.0, 0.0, None),
-    ("DEMO Back to school", "Completed", 260, 1.0, 0.02, 6),
-    ("DEMO National Day offer", "Completed", 300, 1.0, 0.01, 12),
-    ("DEMO Loyalty points expiring", "Partially Failed", 220, 1.0, 0.14, 19),
-    ("DEMO Delivery delay apology", "Cancelled", 120, 0.22, 0.0, 24),
+# A campaign being written is a sequence, not one message: the builder's second step draws the
+# waits between them, so at least one demo draft has to have some.
+SEQUENCE = [
+    {"message_type": "Text", "body": "مرحباً {{ recipient.display_name }} 👋\nنقاط الولاء لديك تنتهي نهاية هذا الشهر."},
+    {"message_type": "Text", "body": "يمكنك استبدال النقاط بخصم فوري على طلبك القادم.", "delay_seconds": 45},
+    {
+        "message_type": "Poll",
+        "poll_question": "ما الذي يهمك أكثر؟",
+        "poll_options": '["خصم فوري", "شحن مجاني", "هدية"]',
+        "delay_seconds": 120,
+    },
+    {"message_type": "Text", "body": "ردّ بكلمة «نقاط» في أي وقت لمعرفة رصيدك.", "delay_seconds": 60},
 ]
+
+# name, status, recipients, share handed over, share of those that failed, days since it started,
+# and whether it carries the full message sequence.
+PLAN = [
+    ("DEMO Eid offer — all customers", "Running", 320, 0.62, 0.03, 0, False),
+    ("DEMO Invoice reminder — overdue", "Paused", 180, 0.41, 0.06, 0, False),
+    ("DEMO New branch in Jeddah", "Scheduled", 240, 0.0, 0.0, None, False),
+    ("DEMO Weekly offers — subscribers", "Scheduled", 420, 0.0, 0.0, None, False),
+    ("DEMO Customer satisfaction survey", "Draft", 0, 0.0, 0.0, None, False),
+    ("DEMO Ramadan working hours", "Draft", 0, 0.0, 0.0, None, False),
+    # the draft the builder is for: an audience, a sequence, and nothing sent yet
+    ("DEMO Loyalty points expiring — draft", "Draft", 220, 0.0, 0.0, None, True),
+    ("DEMO Back to school", "Completed", 260, 1.0, 0.02, 6, False),
+    ("DEMO National Day offer", "Completed", 300, 1.0, 0.01, 12, False),
+    ("DEMO Loyalty points expiring", "Partially Failed", 220, 1.0, 0.14, 19, False),
+    ("DEMO Delivery delay apology", "Cancelled", 120, 0.22, 0.0, 24, False),
+]
+
+
+def _rate_cap():
+    from whatsapp_next.whatsapp_next.doctype.whatsapp_campaign.whatsapp_campaign import settings_rate_limit
+
+    return settings_rate_limit() or 60
 
 
 def _device():
@@ -78,7 +102,9 @@ def _log(campaign, device, name, phone, status, when):
         doc.read_at = add_to_date(when, minutes=random.randint(2, 90))
     if status == "Failed":
         doc.failed_at = when
-        doc.error_code = random.choice(["not_on_whatsapp", "device_offline", "rate_limit"])
+        # the canonical vocabulary (`services/errors.ERROR_CODES`) — the screens read it to say
+        # what a failure means and whether the dispatcher may retry it
+        doc.error_code = random.choice(["recipient_not_registered", "device_disconnected", "timeout"])
         doc.error_message = "Demo failure."
     doc.flags.ignore_permissions = True
     doc.flags.ignore_mandatory = True
@@ -102,18 +128,26 @@ def _recipient_status(index, sample, status, sent_share, fail_share):
     return "Queued" if status in ("Running", "Paused") else "Pending"
 
 
-def _campaign(device, title, status, total, sent_share, fail_share, days_ago, logs=True):
+def _campaign(device, title, status, total, sent_share, fail_share, days_ago, sequence=False, logs=True):
     started = None if days_ago is None else add_to_date(now_datetime(), days=-days_ago, hours=-random.randint(0, 6))
     doc = frappe.new_doc("WhatsApp Campaign")
     doc.campaign_name = title
     doc.device = device
     doc.status = "Draft"  # the status writer owns the field; set the real one after insert
-    doc.messages_per_minute = random.choice([20, 25, 30])
-    doc.append("messages", {"message_type": "Text", "body": f"{title} — demo body for {{{{ name }}}}."})
+    # a campaign may not be faster than the queue's own rate (`check_rate_limit`), and a dev site
+    # is often set well below the demo's favourite numbers
+    doc.messages_per_minute = min(random.choice([20, 25, 30]), _rate_cap())
+    if sequence:
+        for row in SEQUENCE:
+            doc.append("messages", dict(row))
+    else:
+        doc.append("messages", {"message_type": "Text", "body": f"{title} — demo body for {{{{ name }}}}."})
     # The recipients table shows a real sample, not 1500 rows — and the sample carries the same
     # spread of statuses as the campaign's counters, so the panel and the console never contradict
     # each other (a campaign 60 % handed over whose every recipient reads "Pending").
-    sample = min(total, 25)
+    # A draft carrying the full sequence is the one the builder is demonstrated on, so it gets its
+    # whole audience: the readiness check and the audience step count the rows, not the counter.
+    sample = total if sequence else min(total, 25)
     for i in range(sample):
         name = random.choice(NAMES)
         doc.append(
@@ -165,6 +199,8 @@ def _campaign(device, title, status, total, sent_share, fail_share, days_ago, lo
             else None,
             "pause_count": random.choice([0, 0, 1, 2]),
             "started_at": started,
+            # a campaign exists before it runs — the timeline reads `creation` as its first event
+            "creation": add_to_date(started, minutes=-random.randint(15, 180)) if started else None,
             "scheduled_at": None if status != "Scheduled" else add_to_date(now_datetime(), hours=random.randint(3, 72)),
         },
         update_modified=False,
@@ -175,9 +211,9 @@ def _campaign(device, title, status, total, sent_share, fail_share, days_ago, lo
 def run():
     device = _device()
     made = []
-    for title, status, total, sent_share, fail_share, days_ago in PLAN:
+    for title, status, total, sent_share, fail_share, days_ago, sequence in PLAN:
         try:
-            made.append(_campaign(device, title, status, total, sent_share, fail_share, days_ago))
+            made.append(_campaign(device, title, status, total, sent_share, fail_share, days_ago, sequence=sequence))
         except Exception as exc:  # a dev site may miss a template or a permission
             print("skip", title, type(exc).__name__, str(exc)[:160])
     frappe.db.commit()

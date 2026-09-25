@@ -18,6 +18,7 @@ from frappe.utils import add_days, add_to_date, cint, get_datetime, now_datetime
 from whatsapp_next.exceptions import WANotFoundError, WAValidationError
 from whatsapp_next.services import attachments, dispatch, templates
 from whatsapp_next.services.dispatch import OutboundSpec
+from whatsapp_next.services.guards import field_changed
 from whatsapp_next.services.phone import normalize
 
 CACHE_PREFIX = "wa:notif:"
@@ -118,7 +119,7 @@ def _event_matches(notification, doc, method: str) -> bool:
 		if not field or getattr(doc.flags, "in_insert", False):
 			return False
 		before = doc.get_doc_before_save()
-		return before is not None and (before.get(field) or None) != (doc.get(field) or None)
+		return before is not None and field_changed(before, doc, field)
 	return True
 
 

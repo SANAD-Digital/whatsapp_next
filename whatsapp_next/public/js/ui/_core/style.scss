@@ -104,6 +104,13 @@
 	outline: 2px solid var(--sanad-accent);
 	outline-offset: 2px;
 }
+// A text control already has a border: focus is that border turning to the accent with a soft
+// halo, the same as the product's own fields — an outline on top of it drew two rings at once.
+.sanad-kit :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea):focus-visible {
+	outline: none;
+	border-color: var(--sanad-accent);
+	box-shadow: 0 0 0 3px var(--sanad-accent-soft);
+}
 
 // Chip / pill control (filters, group-by, period, kind tabs): one height, one look.
 .sanad-chip {

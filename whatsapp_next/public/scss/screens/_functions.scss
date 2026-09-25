@@ -1,7 +1,11 @@
-// Functions Center (screen 7) — the screen's own blocks only. The table, its header, its cards on
-// a phone and its footer are the kit's `DataList`; what is left here is the selection row, the
-// screen's spacing and the two dialogs (the function itself and the install / update diff).
-// Espresso tokens only; logical properties throughout, so Arabic mirrors without a rule of its own.
+// Functions Center (screen 7) — the screen's own blocks only. The header, the four readings, the
+// toolbar, the table and every panel are the kit's (`PageHeader`, `Cards`, `FilterBar`,
+// `DataList`, `Drawer`, `OverlayPanel`); what is left here is the screen's spacing, the selection
+// row, the mark beside the title, and the shapes the function drawer draws that the kit has no
+// word for yet — a manifest row, an output card, a preview exchange.
+//
+// Colours are the product's tokens (`_tokens.scss`), never spelled out; every offset is a logical
+// property, so Arabic mirrors without a rule of its own.
 
 .wa-functions {
 	display: flex;
@@ -18,17 +22,25 @@
 		min-block-size: 200px;
 	}
 
-	// The screen's own sentence is the page header's description; Desk's head above it already
-	// carries the title, so the header's empty heading must not reserve a line of its own.
-	// (Kit ask: PageHeader should not render `<h2>` when it was given no title.)
-	.sanad-pagehead__title:empty {
-		display: none;
+	// The screen's mark: the tinted plate carrying the screen's icon beside its title, as the
+	// devices screen wears it.
+	&__mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 40px;
+		block-size: 40px;
+		flex: none;
+		border-radius: 11px;
+		background: var(--wa-pri-s);
+		color: var(--wa-pri-d);
+		box-shadow: inset 0 0 0 1px var(--wa-pri-sb);
 	}
 
-	// The prototype puts four KPI cards two-up on a phone (`Cards` → `mobileColumns: 2`); the kit
-	// stacks them one-up below 768 px. Local until the kit takes a `mobile_columns` option.
+	// The prototype puts the four readings two-up on a phone (`Cards` → `mobileColumns: 2`); the
+	// kit's grid rule falls to one column under 400 px. Local until the kit takes the option.
 	@media (max-width: 767px) {
-		.sanad-stats--kpi {
+		.wa-cards__grid {
 			grid-template-columns: 1fr 1fr;
 		}
 		// the header's one secondary button stays a button, not a full-width bar
@@ -58,12 +70,12 @@
 				gap: var(--sanad-gap-sm);
 				min-block-size: 22px;
 				font-size: var(--text-sm, 13px);
-				color: var(--ink-gray-8);
+				color: var(--wa-ink-2);
 
 				&::before {
 					content: attr(data-label);
 					flex: none;
-					color: var(--ink-gray-5);
+					color: var(--wa-ink-3);
 					font-size: var(--text-xs, 12px);
 				}
 			}
@@ -71,8 +83,7 @@
 	}
 
 	// The selection cluster the prototype ends its toolbar with: a tinted count pill that can be
-	// dismissed, then the verbs that act on the selection. It sits above the table, at the
-	// inline-end, and carries no bar of its own.
+	// dismissed, then the verbs that act on the selection, drawn with the kit's tonal button.
 	&__bulk {
 		display: flex;
 		flex-wrap: wrap;
@@ -87,8 +98,8 @@
 		min-block-size: var(--sanad-target);
 		padding-inline: var(--sanad-gap-md);
 		border-radius: var(--border-radius-md, 8px);
-		background: var(--sanad-accent-soft);
-		color: var(--sanad-accent-ink);
+		background: var(--wa-pri-s);
+		color: var(--wa-pri-d);
 		font-size: var(--text-sm, 13px);
 		font-weight: 600;
 	}
@@ -109,417 +120,285 @@
 		padding: 0;
 		cursor: pointer;
 		&:hover {
-			background: var(--sanad-accent-outline);
+			background: var(--wa-pri-sb);
 		}
 	}
-	&__bulk-btn {
-		min-block-size: var(--sanad-target);
-		border: 1px solid var(--sanad-accent-outline);
-		background: var(--sanad-accent-soft);
-		color: var(--sanad-accent-ink);
-		font-weight: 600;
-		&:hover:not([disabled]),
-		&:focus:not([disabled]) {
-			background: var(--sanad-accent-outline);
-			color: var(--sanad-accent-ink);
-		}
-	}
-	// why a selection offers no verb: a line of its own under the pill, never squeezed beside it
 	&__bulk-note {
-		flex: 1 1 100%;
-		text-align: end;
-		font-size: var(--text-sm, 13px);
-		color: var(--ink-gray-6);
+		font-size: var(--text-xs, 12px);
+		color: var(--wa-ink-3);
 	}
 }
 
-// ---- the function modal ----------------------------------------------------------------------
+// ---- the function drawer --------------------------------------------------------------------------
+//
+// The document layout is the kit's; these are the shapes inside its blocks. A manifest row is the
+// prototype's card in the Function Detail (`docs/component/Function Detail.dc.html`): a token in
+// mono, the label beside it, the type and the required mark at the end, the note under it.
 
-.wa-fndetail {
-	.modal-body {
-		padding-block-end: 0;
-		// the tab row and the action bar are sticky: keep a focused control clear of both
-		// (WCAG 2.2 "focus not obscured")
-		scroll-padding-block: 56px 88px;
+.wa-fn {
+	&__lede {
+		margin: 0 0 var(--sanad-gap-sm);
+		font-size: var(--text-md, 14px);
+		line-height: 1.75;
+		color: var(--wa-ink);
+		text-wrap: pretty;
 	}
-
+	&__when {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
+		border-radius: var(--border-radius-md, 8px);
+		background: var(--wa-bg);
+		border: 1px solid var(--wa-border);
+	}
+	&__when-label,
+	&__tags-label,
+	&__head-label,
+	&__kv-label {
+		font-size: var(--text-xs, 12px);
+		font-weight: 600;
+		color: var(--wa-ink-2);
+	}
+	&__when-text {
+		font-size: var(--text-sm, 13px);
+		line-height: 1.7;
+		color: var(--wa-ink-3);
+	}
+	&__tags {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		margin-block-start: var(--sanad-gap-sm);
+	}
 	&__head {
 		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-sm);
-		padding-block-end: var(--sanad-gap-md);
-	}
-	&__tab .sanad-chip__count {
-		display: inline-block;
-		min-inline-size: 18px;
-		padding-inline: var(--sanad-gap-xs);
-		border-radius: var(--border-radius-full, 999px);
-		background: var(--surface-gray-2);
-		font-size: var(--text-xs, 11px);
-		text-align: center;
-	}
-	&__badges {
-		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
+		justify-content: space-between;
 		gap: var(--sanad-gap-sm);
+		margin-block: var(--sanad-gap-sm) 6px;
 	}
-	// the two versions, side by side: the one this site runs and the newest the catalog offers
-	&__versions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--sanad-gap-sm);
-	}
-	&__pill {
-		display: inline-flex;
-		align-items: baseline;
-		gap: var(--sanad-gap-xs);
-		padding-block: var(--sanad-gap-xs);
-		padding-inline: var(--sanad-gap-md);
-		border: 1px solid;
-		border-radius: var(--border-radius-md, 8px);
-		font-size: var(--text-xs, 11px);
-		b {
-			font-size: var(--text-base, 14px);
-		}
-	}
-
-	&__tabs {
-		display: flex;
-		gap: var(--sanad-gap-lg);
-		border-block-end: var(--sanad-border);
-		position: sticky;
-		inset-block-start: 0;
-		background: var(--surface-modal, var(--surface-white));
-		z-index: 2;
-	}
-	&__tab {
-		border: 0;
-		background: none;
-		padding-block: var(--sanad-gap-sm);
-		padding-inline: 0;
-		min-block-size: var(--sanad-target);
-		font-size: var(--text-base, 14px);
-		color: var(--ink-gray-6);
-		border-block-end: 2px solid transparent;
-		cursor: pointer;
-		&[aria-selected="true"] {
-			color: var(--sanad-accent-ink);
-			font-weight: 600;
-			border-block-end-color: var(--sanad-accent);
-		}
-	}
-
-	&__pane {
-		padding-block: var(--sanad-gap-lg);
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-lg);
-		min-block-size: 220px;
-	}
-
-	&__alert {
-		border: 1px solid;
-		border-radius: var(--sanad-radius);
-		padding: var(--sanad-gap-md);
-		font-size: var(--text-sm, 13px);
-	}
-
-	// The pane reads in three columns, as the prototype draws it: what the function is, what it
-	// takes, what it writes. One column below 1100 px, in the same order.
-	&__cols {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: var(--sanad-gap-lg);
-		align-items: start;
-	}
-	&__col {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-lg);
-		min-inline-size: 0;
-	}
-
-	&__lede {
+	&__muted {
 		margin: 0;
-		font-size: var(--text-base, 14px);
-		color: var(--ink-gray-9);
-		// catalog prose is the app's own language, not the reader's: `dir="auto"` decides the
-		// direction and the alignment has to follow it rather than the page's
-		text-align: start;
-	}
-	&__card {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-xs);
-		padding: var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
-		background: var(--surface-gray-1);
+		font-size: var(--text-xs, 12px);
+		color: var(--wa-ink-3);
+		line-height: 1.6;
 	}
 
-	// the four numbers, as tiles rather than as a definition list
-	&__tiles {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: var(--sanad-gap-sm);
-	}
-	&__tile {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
-		background: var(--surface-gray-1);
-	}
-	&__tile-label {
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-5);
-	}
-	&__tile-value {
-		font-size: var(--text-lg, 16px);
-		color: var(--ink-gray-9);
-	}
-
-	&__block {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-sm);
-	}
-	&__block-title {
-		margin: 0;
-		font-size: var(--text-sm, 13px);
-		font-weight: 600;
-		color: var(--ink-gray-9);
-	}
-
+	// a row of the manifest: variables and settings
 	&__rows {
 		list-style: none;
 		margin: 0;
 		padding: 0;
 		display: flex;
 		flex-direction: column;
-		gap: var(--sanad-gap-sm);
-		li {
-			display: flex;
-			flex-wrap: wrap;
-			align-items: center;
-			gap: var(--sanad-gap-sm);
-			padding: var(--sanad-gap-sm);
-			border: var(--sanad-border);
-			border-radius: var(--sanad-radius);
-			font-size: var(--text-sm, 13px);
-		}
+		gap: 6px;
 	}
-	&__token {
-		font-family: var(--font-stack-mono, monospace);
-		background: var(--surface-gray-2);
-		border-radius: var(--border-radius-sm, 4px);
-		padding-inline: var(--sanad-gap-xs);
-		direction: ltr;
-		unicode-bidi: isolate;
-	}
-	&__row-label {
-		color: var(--ink-gray-9);
-	}
-	&__muted {
-		margin: 0;
-		color: var(--ink-gray-6);
-		font-size: var(--text-sm, 13px);
-		text-align: start;
-	}
-	&__template {
-		flex-basis: 100%;
-		margin: 0;
-		padding: var(--sanad-gap-sm);
-		background: var(--surface-gray-2);
-		border-radius: var(--sanad-radius);
-		font-family: var(--font-stack-mono, monospace);
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-8);
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
-	}
-	&__chips {
+	&__row {
 		display: flex;
-		flex-wrap: wrap;
-		gap: var(--sanad-gap-sm);
-	}
-
-	&__log li {
 		flex-direction: column;
-		align-items: stretch;
+		gap: 5px;
+		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
+		border-radius: var(--border-radius-md, 8px);
+		background: var(--wa-bg);
+		border: 1px solid var(--wa-border);
 	}
-	&__version-head {
+	&__row-head {
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--sanad-gap-sm);
-		button {
+		flex-wrap: wrap;
+		min-inline-size: 0;
+	}
+	&__row-label {
+		font-size: var(--text-sm, 13px);
+		color: var(--wa-ink-2);
+		min-inline-size: 0;
+		&--strong {
+			font-weight: 600;
+			color: var(--wa-ink);
+		}
+	}
+	&__row-end {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-inline-start: auto;
+		flex: none;
+		flex-wrap: wrap;
+		.wa-badge {
+			// the kit's badge is a state; here it is a value, so it wears no dot
+			padding-inline: 8px;
+		}
+	}
+	&__row-note {
+		font-size: var(--text-xs, 12px);
+		line-height: 1.7;
+		color: var(--wa-ink-3);
+	}
+	&__token,
+	&__type,
+	&__choices {
+		font-family: var(--font-mono, ui-monospace, monospace);
+		font-size: var(--text-xs, 12px);
+		padding: 2px 7px;
+		border-radius: 6px;
+		background: var(--wa-surface);
+		border: 1px solid var(--wa-border-2);
+		color: var(--wa-ink);
+		unicode-bidi: plaintext;
+		white-space: nowrap;
+	}
+	&__type {
+		color: var(--wa-ink-3);
+		border-color: var(--wa-border);
+	}
+	&__choices {
+		white-space: normal;
+		color: var(--wa-ink-3);
+		align-self: flex-start;
+	}
+
+	// an output: the prototype's card with the accent rule, the type, the template and its copy
+	&__output {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: var(--sanad-gap-md);
+		border-radius: var(--border-radius-md, 8px);
+		background: var(--wa-surface);
+		border: 1px solid var(--wa-border);
+		& + & {
+			margin-block-start: 8px;
+		}
+		.sanad-code-block {
+			margin: 0;
+		}
+	}
+	&__output-head {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		flex-wrap: wrap;
+		.wa-badge {
 			margin-inline-start: auto;
 		}
 	}
-
-	&__note {
-		margin: 0;
+	&__output-name {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
 		font-size: var(--text-sm, 13px);
-		color: var(--ink-gray-6);
+		font-weight: 700;
+		color: var(--wa-ink);
+		&::before {
+			content: "";
+			inline-size: 3px;
+			block-size: 15px;
+			border-radius: 2px;
+			background: var(--wa-pri);
+			flex: none;
+		}
 	}
-	&__form {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: flex-end;
-		gap: var(--sanad-gap-md);
-	}
-	&__field {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-xs);
-		flex: 1 1 200px;
-		font-size: var(--text-sm, 13px);
-		color: var(--ink-gray-6);
-		margin: 0;
-	}
-	&__result {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-sm);
-		margin-block-start: var(--sanad-gap-md);
-	}
-	&__result-head {
+	&__kv {
 		display: flex;
 		align-items: center;
 		gap: var(--sanad-gap-sm);
-	}
-	&__reply {
-		padding: var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
-		background: var(--surface-green-1);
-		color: var(--ink-gray-9);
-		font-size: var(--text-sm, 13px);
-		white-space: pre-wrap;
-		overflow-wrap: anywhere;
-	}
-
-	&__actions {
-		position: sticky;
-		inset-block-end: 0;
-		display: flex;
 		flex-wrap: wrap;
-		gap: var(--sanad-gap-sm);
-		padding-block: var(--sanad-gap-md);
-		border-block-start: var(--sanad-border);
-		background: var(--surface-modal, var(--surface-white));
-		z-index: 2;
-	}
-	&__danger {
-		color: var(--ink-red-4);
-		margin-inline-start: auto;
 	}
 
-	// a phone, and any window too narrow for three readable columns, reads them one after another
-	@media (max-width: 1099px) {
-		&__cols {
-			grid-template-columns: minmax(0, 1fr);
+	// the one text verb a block may end with: "Edit settings", "Open in commands"
+	&__link {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-block-start: var(--sanad-gap-sm);
+		min-block-size: var(--sanad-target);
+		padding: 0 var(--sanad-gap-sm);
+		border: 0;
+		border-radius: var(--border-radius-md, 8px);
+		background: none;
+		color: var(--wa-pri-d);
+		font-size: var(--text-xs, 12px);
+		font-weight: 600;
+		cursor: pointer;
+		&:hover {
+			background: var(--wa-pri-s);
 		}
-	}
-	@media (max-width: 575px) {
-		&__tiles {
-			grid-template-columns: minmax(0, 1fr);
-		}
-		&__head {
-			gap: var(--sanad-gap-sm);
+		&:focus-visible {
+			outline: 2px solid var(--wa-pri);
+			outline-offset: 2px;
 		}
 	}
 }
 
-// ---- the install / update diff ----------------------------------------------------------------
+// a row of token pills — suggested words, an output's variables — in the mono face, each LTR,
+// as the prototype draws its `{{customer_name}}` chips
+.wa-fn__pills {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	.wa-badge {
+		font-family: var(--font-mono, ui-monospace, monospace);
+		direction: ltr;
+		unicode-bidi: isolate;
+	}
+}
 
-.wa-diff {
+// ---- the dry-run preview (inside the OverlayPanel) ------------------------------------------------
+//
+// The result is the exchange it would be: the sender's message in, the reply out, in the kit's
+// own bubbles, under a line that says what matched and how long the function took.
+
+.wa-fn-preview {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sanad-gap-md);
-
-	&__versions {
+	gap: var(--sanad-gap-sm);
+	&__head {
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--sanad-gap-md);
-		padding: var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
-		background: var(--surface-gray-1);
-	}
-	&__version {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		b {
-			font-size: var(--text-lg, 16px);
-			color: var(--ink-gray-9);
-		}
-	}
-	&__arrow {
-		color: var(--ink-gray-5);
-		[dir="rtl"] & {
-			transform: scaleX(-1);
-		}
-	}
-
-	&__group {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
 		gap: var(--sanad-gap-sm);
 	}
-	&__label {
-		font-size: var(--text-xs, 11px);
-		font-weight: 600;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--ink-gray-5);
+	&__ms {
+		font-size: var(--text-xs, 12px);
+		color: var(--wa-ink-3);
+	}
+	&__thread {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding: var(--sanad-gap-md);
+		border-radius: var(--border-radius-md, 8px);
+		background: var(--wa-sunken);
+		border: 1px solid var(--wa-border);
+	}
+}
+
+// ---- the diff before install / update (inside the OverlayPanel) -------------------------------------
+
+.wa-fn-diff {
+	&__line {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--sanad-gap-sm);
+		& + & {
+			margin-block-start: 6px;
+		}
+	}
+	&__what {
+		flex: none;
+		min-inline-size: 64px;
+		padding-block-start: 3px;
+		font-size: var(--text-xs, 12px);
+		color: var(--wa-ink-3);
 	}
 	&__keys {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--sanad-gap-xs);
-	}
-	&__key {
-		font-family: var(--font-stack-mono, monospace);
-		font-size: var(--text-xs, 11px);
-		background: var(--surface-gray-2);
-		border: 1px solid var(--outline-gray-2);
-		border-radius: var(--border-radius-sm, 4px);
-		padding-inline: var(--sanad-gap-xs);
-		direction: ltr;
-		unicode-bidi: isolate;
-	}
-	&__list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: flex;
-		flex-direction: column;
-		gap: var(--sanad-gap-xs);
-		flex-basis: 100%;
-	}
-	&__fields {
-		font-size: var(--text-xs, 11px);
-		color: var(--ink-gray-6);
-	}
-	&__note {
-		margin: 0;
-		font-size: var(--text-sm, 13px);
-		color: var(--ink-gray-6);
-	}
-	&__warning {
-		padding: var(--sanad-gap-md);
-		border: 1px solid var(--outline-red-1);
-		border-radius: var(--sanad-radius);
-		background: var(--surface-red-1);
-		color: var(--ink-red-4);
-		font-size: var(--text-sm, 13px);
+		gap: 4px;
+		.wa-badge {
+			font-family: var(--font-mono, ui-monospace, monospace);
+			direction: ltr;
+		}
 	}
 }
