@@ -3,7 +3,7 @@
 // DataList (avatar name, number, link status, contact, last message, since, View → conversation
 // drawer). PageHeader / DataList are guarded with `typeof` — until they land the native rows,
 // RowActions and the FilterBar intro render instead. Numbers are materialised from messages, so
-// there is no "New" button. The link / convert dialog is page-local for now.
+// there is no "New" button. The actions and the link / convert dialog live in `screens/numbers.js`.
 
 const AGENT_ROLES = ["WhatsApp Agent", "WhatsApp Manager"];
 const CONTACT_ROLES = ["WhatsApp Contact User", "WhatsApp Manager", "WhatsApp Agent"];
@@ -11,158 +11,7 @@ const DOCTYPE = "WhatsApp Number";
 
 const has_kit = (name) => typeof sanad.ui[name] === "function";
 
-function open_conversation(doc, listview) {
-	return sanad.ui.ConversationDrawer.open({
-		key: doc.phone_e164 || doc.jid || doc.name,
-		device: doc.last_device || undefined,
-		on_link: (number) => link_convert_dialog(number || doc, () => listview && listview.refresh()),
-		on_close: () => listview && listview.refresh(),
-	});
-}
-
-function quick_send(doc) {
-	if (typeof sanad.ui.QuickSend !== "function") return;
-	const args = { device: doc.last_device || undefined };
-	if (doc.phone_e164) args.phone = doc.phone_e164;
-	else if (doc.jid) args.jid = doc.jid;
-	new sanad.ui.QuickSend(args);
-}
-
-function confirm_conversation(doc, listview) {
-	return sanad.ui.ConversationDrawer.confirm_dialog(doc)
-		.then(() => listview.refresh())
-		.catch(() => {});
-}
-
-function unlink_number(doc, listview) {
-	return sanad.ui.ConfirmDialog.ask({
-		title: __("Unlink {0}?", [doc.phone_e164]),
-		message: __("The number stays in the list as not linked. The contact is not deleted."),
-		impact: [
-			{ label: __("Contact"), value: doc.contact },
-			{ label: __("Number"), value: doc.phone_e164 },
-		],
-		danger: true,
-		confirm_label: __("Unlink"),
-		on_confirm: () => sanad.ui.call("numbers.unlink_number", { phone_e164: doc.phone_e164 }),
-	})
-		.then(() => {
-			sanad.ui.Toast.success(__("Number unlinked"));
-			listview.refresh();
-		})
-		.catch(() => {});
-}
-
-/** Page-local link / convert dialog: link an existing Contact, or create one from the number. */
-function link_convert_dialog(doc, on_done) {
-	const phone_e164 = doc.phone_e164 || doc.name;
-	let party_search = null;
-	const dialog = new frappe.ui.Dialog({
-		title: __("Add {0} as a contact", [doc.display_name || phone_e164]),
-		size: "small",
-		fields: [
-			{ fieldtype: "HTML", fieldname: "error_html" },
-			{
-				fieldtype: "Select",
-				fieldname: "mode",
-				label: __("Add by"),
-				options: [
-					{ label: __("Link an existing contact"), value: "link" },
-					{ label: __("Create a new contact"), value: "create" },
-				],
-				default: "link",
-				reqd: 1,
-			},
-			{ fieldtype: "Data", fieldname: "phone_e164", label: __("WhatsApp number"), default: phone_e164, read_only: 1 },
-			{ fieldtype: "Section Break", fieldname: "link_section", depends_on: "eval:doc.mode=='link'" },
-			{
-				fieldtype: "Link",
-				fieldname: "contact",
-				label: __("Contact"),
-				options: "Contact",
-				mandatory_depends_on: "eval:doc.mode=='link'",
-				description: __("Search by name, email or company."),
-			},
-			{ fieldtype: "Section Break", fieldname: "create_section", depends_on: "eval:doc.mode=='create'" },
-			{ fieldtype: "Data", fieldname: "first_name", label: __("First name"), default: doc.display_name || "", mandatory_depends_on: "eval:doc.mode=='create'" },
-			{ fieldtype: "Data", fieldname: "last_name", label: __("Last name") },
-			{ fieldtype: "Column Break", fieldname: "party_column" },
-			{
-				fieldtype: "Select",
-				fieldname: "party_type",
-				label: __("Linked to"),
-				options: [
-					{ label: "", value: "" },
-					{ label: __("Customer"), value: "Customer" },
-					{ label: __("Supplier"), value: "Supplier" },
-					{ label: __("Employee"), value: "Employee" },
-				],
-				change: () => {
-					const party_type = dialog.get_value("party_type");
-					dialog.set_value("party_name", "");
-					dialog.fields_dict.party_name.set_data([]);
-					dialog.set_df_property("party_name", "description", party_type ? __("Type to search {0}.", [__(party_type)]) : "");
-				},
-			},
-			{
-				fieldtype: "Autocomplete",
-				fieldname: "party_name",
-				label: __("Linked record"),
-				depends_on: "eval:doc.party_type",
-			},
-		],
-		primary_action_label: __("Add as contact"),
-		primary_action: (values) => {
-			set_error("");
-			const $btn = dialog.get_primary_btn().prop("disabled", true);
-			const call =
-				values.mode === "link"
-					? sanad.ui.call("numbers.link_number", { phone_e164, contact: values.contact })
-					: sanad.ui.call("numbers.convert_number", {
-							phone_e164,
-							first_name: values.first_name,
-							last_name: values.last_name || null,
-							party_type: values.party_type || null,
-							party_name: values.party_type ? values.party_name || null : null,
-					  });
-			call
-				.then((r) => {
-					dialog.hide();
-					sanad.ui.Toast.success(__("Linked to contact {0}", [r.contact]), {
-						action: { label: __("Open contact"), onclick: () => frappe.set_route("Form", "Contact", r.contact) },
-					});
-					on_done && on_done(r);
-				})
-				.catch((err) => {
-					$btn.prop("disabled", false);
-					set_error((err && err.message) || __("Something went wrong. Please try again."));
-				});
-		},
-	});
-	dialog.$wrapper.addClass("sanad-kit sanad-sheet");
-	// Server errors stay visible inside the dialog (a toast alone disappears after 8 s).
-	const $error = dialog.get_field("error_html").$wrapper;
-	const set_error = (message) => {
-		if (!message) {
-			$error.empty();
-			return;
-		}
-		$error.html(`<div class="alert alert-danger sanad-link-dialog__error" role="alert" tabindex="-1">${frappe.utils.escape_html(message)}</div>`);
-		$error.find("[role=alert]").trigger("focus");
-	};
-	// Party search goes through the contextual permission layer, not a direct Link on the party DocType.
-	party_search = frappe.utils.debounce((txt) => {
-		const party_type = dialog.get_value("party_type");
-		if (!party_type) return;
-		sanad.ui
-			.call("contacts.search_party", { party_type, txt: txt || "" }, { silent: true })
-			.then((rows) => dialog.fields_dict.party_name.set_data((rows || []).map((r) => ({ value: r.name, label: r.title || r.name }))))
-			.catch((err) => set_error((err && err.message) || __("Could not search {0}.", [__(party_type)])));
-	}, 250);
-	dialog.fields_dict.party_name.$input.on("input focus", (e) => party_search(e.target.value));
-	dialog.show();
-	return dialog;
-}
+const { open_conversation, quick_send, confirm_conversation, unlink_number, link_convert_dialog } = whatsapp_next.numbers;
 
 const ROW_ACTIONS = (listview) => [
 	{
@@ -347,6 +196,39 @@ frappe.listview_settings[DOCTYPE] = {
 			});
 		} else {
 			mount_native_rows(listview);
+		}
+
+		// Bulk convert (09 G-01): one Contact per unknown individual number, named after its WhatsApp name.
+		if (has_kit("BulkActions") && frappe.user.has_role(CONTACT_ROLES)) {
+			const unknown = (docs) => docs.filter((d) => !d.contact && d.number_type === "Individual");
+			new sanad.ui.BulkActions({
+				listview,
+				actions: [
+					{
+						label: (n) => (n ? __("Create contacts ({0})", [sanad.ui.format_int(n)]) : __("Create contacts")),
+						condition: (docs) => unknown(docs).length > 0,
+						confirm: (names, docs) => {
+							const count = unknown(docs).length;
+							return {
+								title: sanad.ui.plural(count, { one: __("Create a contact for {0} unknown number?"), other: __("Create contacts for {0} unknown numbers?") }),
+								message: __("Each contact is named after the name the number uses on WhatsApp; you can rename it later."),
+								impact: [
+									{ label: __("Contacts to create"), value: sanad.ui.format_int(count), tone: "green" },
+									{ label: __("Skipped (already linked or not a person)"), value: sanad.ui.format_int(names.length - count) },
+								],
+								confirm_label: __("Create contacts"),
+							};
+						},
+						handler: (names, docs) =>
+							sanad.ui.call(
+								"numbers.convert_many",
+								{ phone_e164s: unknown(docs).map((d) => d.phone_e164 || d.name) },
+								{ freeze: true, freeze_message: __("Creating contacts…") }
+							),
+						success: (r) => sanad.ui.plural(r.count || 0, { one: __("{0} contact created"), other: __("{0} contacts created") }),
+					},
+				],
+			});
 		}
 
 		// Realtime: a new inbound message may add or move a row — throttled, only while this list is shown.
