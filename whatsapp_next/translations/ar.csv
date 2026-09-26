@@ -3836,3 +3836,6 @@ Function {0} is not in the catalog.,الدالة {0} غير موجودة في ا
 Open Functions Center,افتح مركز الدوال,
 Open function,افتح الدالة,
 Open in Functions Center,افتح في مركز الدوال,
+Cancel this message,ألغِ هذه الرسالة,
+It will not be sent. The row stays in the queue as Deleted and the message is marked Cancelled.,لن تُرسل. يبقى السطر في الطابور بحالة «محذوف» وتُعلَّم الرسالة «ملغاة».,
+Open message,افتح الرسالة,

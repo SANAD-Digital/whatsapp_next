@@ -127,6 +127,7 @@ doctype_js = {
 	"WhatsApp Device": "public/js/form/whatsapp_device.js",
 	"WhatsApp Inbound Message": "public/js/form/whatsapp_inbound_message.js",
 	"WhatsApp Function": "public/js/form/whatsapp_function.js",
+	"WhatsApp Queue Item": "public/js/form/whatsapp_queue_item.js",
 }
 doctype_list_js = {
 	"WhatsApp Log": "public/js/listview/whatsapp_log_list.js",
