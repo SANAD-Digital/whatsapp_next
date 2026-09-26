@@ -101,7 +101,27 @@ frappe.provide("whatsapp_next");
 	}
 
 	/** View: read-only for Active commands and non-managers, editable otherwise. */
-	const view_command = (listview, doc) => open_modal(listview, doc.name, { read_only: doc.status === "Active" || !is_manager() });
+	/**
+	 * View: read-only for Active commands and non-managers, editable otherwise. The table has one
+	 * row button (View), so the lifecycle verbs a manager has on a command live in this dialog's
+	 * footer: Stop to edit on an Active command; Start and Restore defaults on a stopped one.
+	 */
+	const view_command = (listview, doc) => {
+		const active = doc.status === "Active";
+		const then_close = (fn) => (values, dialog) => {
+			dialog.hide();
+			fn();
+		};
+		const actions = !is_manager()
+			? []
+			: active
+			? [{ label: __("Stop to edit"), handler: then_close(() => edit_command(listview, doc)) }]
+			: [
+					{ label: __("Start command"), handler: then_close(() => set_status(listview, doc.name, "Active")) },
+					{ label: __("Restore defaults"), handler: then_close(() => restore_defaults(listview, doc)) },
+			  ];
+		return open_modal(listview, doc.name, { read_only: active || !is_manager(), actions });
+	};
 
 	// ---- header ------------------------------------------------------------------------------
 

@@ -109,7 +109,8 @@ whatsapp_next.command_test_dialog = function (doc = {}) {
 
 /**
  * The CommandModal. `name` empty → new command. `opts.read_only` for Active commands,
- * `opts.on_saved(result)` after a successful save.
+ * `opts.on_saved(result)` after a successful save, `opts.actions` extra footer buttons
+ * (`[{label, handler(values, dialog)}]` — the lifecycle verbs the list offers on a command).
  */
 whatsapp_next.command_modal = function (name, opts = {}) {
 	const state = { name: name || null, settings_overrides: {}, tester: null };
@@ -179,6 +180,7 @@ whatsapp_next.command_modal = function (name, opts = {}) {
 				opts.on_saved && opts.on_saved(result);
 			},
 		},
+		extra_actions: opts.actions || [],
 		on_change: (fieldname, value, d) => {
 			if (fieldname === "function" && is_new && value) apply_function_defaults(value, d);
 		},
@@ -200,7 +202,14 @@ whatsapp_next.command_modal = function (name, opts = {}) {
 
 frappe.ui.form.on("WhatsApp Command", {
 	refresh(frm) {
-		if (frm.is_new()) return;
+		if (frm.is_new()) {
+			// A command is created in the CommandModal only (D-029): `/new` goes back to the list with
+			// the editor open, so defaults, suggestions and the allow-listed save always apply.
+			frappe.set_route("List", "WhatsApp Command").then(() =>
+				whatsapp_next.command_modal(null, { on_saved: () => window.cur_list && cur_list.refresh() })
+			);
+			return;
+		}
 		const active = frm.doc.status === "Active";
 		const manager = frappe.user.has_role("WhatsApp Manager");
 		frm.set_intro(
@@ -213,7 +222,7 @@ frappe.ui.form.on("WhatsApp Command", {
 		const open = () => whatsapp_next.command_modal(frm.doc.name, { read_only: active, on_saved: () => frm.reload_doc() });
 		frm.add_custom_button(__("Open editor"), open);
 		if (!manager) return;
-		frm.add_custom_button(active ? __("Stop") : __("Start"), async () => {
+		frm.add_custom_button(active ? __("Stop") : __("Start command"), async () => {
 			try {
 				await sanad.ui.call("commands.set_status", { name: frm.doc.name, status: active ? "Inactive" : "Active" });
 				sanad.ui.Toast.success(active ? __("Command stopped") : __("Command started"));
@@ -223,5 +232,21 @@ frappe.ui.form.on("WhatsApp Command", {
 			}
 		});
 		frm.add_custom_button(__("Test"), () => whatsapp_next.command_test_dialog(frm.doc));
+		if (!active) {
+			frm.add_custom_button(__("Restore defaults"), () =>
+				sanad.ui.ConfirmDialog.ask({
+					title: __("Restore defaults for {0}?", [frm.doc.code || frm.doc.name]),
+					message: __("Outputs are re-copied from the function and the settings overrides are cleared."),
+					impact: [{ label: __("Function"), value: frm.doc.function || "—" }],
+					confirm_label: __("Restore defaults"),
+					on_confirm: () => sanad.ui.call("commands.restore_defaults", { name: frm.doc.name }),
+				})
+					.then(() => {
+						sanad.ui.Toast.success(__("Defaults restored"));
+						frm.reload_doc();
+					})
+					.catch(() => {})
+			);
+		}
 	},
 });
