@@ -136,6 +136,10 @@ def make_handler(upstream_port, site):
 		def _forward(self):
 			body = self._read_body()
 			headers = build_upstream_headers(self.headers.items(), self.path, site)
+			# One Content-Length, whatever case the client wrote it in: a second one (e.g. the
+			# client's "content-length" beside ours) makes gunicorn answer 400.
+			for k in [k for k in headers if k.lower() == "content-length"]:
+				del headers[k]
 			if body is not None:
 				headers["Content-Length"] = str(len(body))
 			conn = http.client.HTTPConnection(BIND, upstream_port, timeout=120)
