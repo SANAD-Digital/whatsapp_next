@@ -196,6 +196,15 @@ def check_target(label, base, opener, site, headers, tries):
 			continue
 		st, ct, _ = get(opener, base + m.group(1), h, tries)
 		report("PASS" if st == 200 and want in ct else "FAIL", f"{label} {kind}", f"{st} {ct.split(';')[0]} {m.group(1)}")
+		if kind == "JS":
+			# Dev Tunnels forbids browser caching, so every page downloads the bundles again: they must be compressed.
+			req = urllib.request.Request(base + m.group(1), headers={**h, "Accept-Encoding": "gzip"})
+			try:
+				with opener.open(req, timeout=45) as r:
+					enc, size = r.headers.get("Content-Encoding", ""), len(r.read())
+			except Exception as e:
+				enc, size = f"error {e}", 0
+			report("PASS" if enc == "gzip" else "WARN", f"{label} JS gzip", f"{enc or 'not compressed'} {size} bytes")
 	st, _, body = get(opener, base + "/api/method/ping", h, tries)
 	try:
 		pong = json.loads(body).get("message") == "pong"

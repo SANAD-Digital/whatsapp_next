@@ -86,6 +86,7 @@ without use; the next `start.sh` then creates a new one, with new URLs.
 | `X-Frappe-Site-Name: <site>` on every request, so Frappe serves the right site whatever the public hostname | `site_proxy.py` |
 | `/files/` requests: Host rewritten to the site, because Frappe's static-file middleware (`frappe/middlewares.py`) picks `sites/<Host>/public/files` from Host only | `site_proxy.py` |
 | `X-Forwarded-Proto: https` when missing: TLS ends at the tunnel, and Frappe must know the browser is on HTTPS (session cookies come back `Secure`) | `site_proxy.py` |
+| gzip for text responses (JS/CSS/HTML/JSON/SVG), compressed assets cached in memory per ETag: Dev Tunnels disables browser caching, so size is what matters on a phone | `site_proxy.py` |
 | Safety gate before the tunnel starts; nothing is hosted if it fails | `start.sh` -> `verify.sh --safety-only` |
 | Tunnel login, selection, ports, anonymous access, host | `start.sh` |
 | PID + command-line checks, so stale PIDs after a VM restart are never trusted or killed | `common.sh` |
@@ -101,6 +102,7 @@ without use; the next `start.sh` then creates a new one, with new URLs.
   which proves routing does not depend on the hostname. They check:
   - `/login` returns 200 and a Frappe page;
   - the first CSS and JS bundle that page references return 200 with the right content type;
+  - the JS bundle is served gzip-compressed (WARN if not);
   - `/api/method/ping` returns `pong`;
   - **correct site:** a public file unique to that site is served byte-identical, and the other
     site's unique file is not served.
@@ -162,6 +164,28 @@ sudo -E dev/mobile-preview/start.sh && sudo -E dev/mobile-preview/stop.sh --dele
 - **The sites and their data:** `bootstrap-cloud.sh` plus a dev-state restore.
 - **Not provided:** realtime (socket.io) is not started, so live updates in the desk need a page
   refresh. The first visit from a phone browser may show a Dev Tunnels "Continue" page.
+
+## Troubleshooting
+
+**Login returns to the login page.** The Login button was pressed before Frappe's JavaScript had
+loaded. The browser then submits the form natively: the proxy log shows `GET /login?` and no
+`POST /api/method/login`, and the page just reloads.
+
+The cause is download size. Dev Tunnels adds `Cache-Control: no-cache,no-store` and
+`Pragma: no-cache` to every response (Frappe itself sends `max-age=43200`), so a phone downloads
+every bundle again on each page.
+
+`site_proxy.py` therefore gzips text responses, as nginx does in production. Measured at 4 Mbps:
+
+| | Uncompressed | Compressed |
+|---|---|---|
+| Login page usable | 6.6 s, 2.1 MB | 3.2 s, 0.5 MB |
+| Desk open after login | 16 s, 10 MB | 7 s, 3.2 MB |
+
+On a slow connection, wait until the page has finished loading before pressing Login.
+
+**The platform site opens the setup wizard.** `platform.localhost` has not completed Frappe's
+setup wizard. This is site state, not a tunnel problem.
 
 ## Security notes
 

@@ -16,12 +16,20 @@ Routing rules (the behaviour tested for the mobile preview):
   paths Host is rewritten to <site>.
 - ``X-Forwarded-Proto: https`` is added when the client did not send one: the tunnel terminates
   TLS, so the application must know the browser is on HTTPS.
+- Text responses (JS, CSS, HTML, JSON, SVG, ...) are gzip-compressed when the client accepts it,
+  as nginx does in production. This matters on a phone: Dev Tunnels adds
+  ``Cache-Control: no-cache,no-store`` to every response, so the browser downloads the bundles
+  again on every page, and ~2.4 MB of uncompressed assets made the login page slow enough that
+  Login was pressed before Frappe's JavaScript ran (the form then just reloads the page).
+  Compressed /assets/ responses are kept in a small in-memory cache (keyed by path + ETag).
 
 Binds 127.0.0.1 only and refuses anything else. Standard library only.
 """
 
+import gzip
 import http.client
 import sys
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 BIND = "127.0.0.1"
@@ -35,6 +43,59 @@ HOP_BY_HOP = {
 	"transfer-encoding",
 	"upgrade",
 }
+
+
+COMPRESSIBLE = ("text/", "application/javascript", "application/json", "application/xml", "image/svg+xml")
+MIN_COMPRESS = 1024
+ASSET_CACHE_LIMIT = 64 * 1024 * 1024
+_asset_cache = {}
+_asset_cache_size = 0
+_asset_cache_lock = threading.Lock()
+
+
+def accepts_gzip(accept_encoding):
+	"""True when an Accept-Encoding header value allows gzip (and does not give it q=0)."""
+	for part in (accept_encoding or "").lower().split(","):
+		name, _, params = part.strip().partition(";")
+		if name.strip() in ("gzip", "*"):
+			q = params.replace(" ", "")
+			try:
+				return not q.startswith("q=") or float(q[2:]) > 0
+			except ValueError:
+				return False
+	return False
+
+
+def should_compress(status, headers, body):
+	"""Compress only complete, not yet encoded, reasonably large text responses."""
+	lower = {k.lower(): v for k, v in headers}
+	ctype = lower.get("content-type", "").lower()
+	return (
+		status == 200
+		and "content-encoding" not in lower
+		and len(body) >= MIN_COMPRESS
+		and any(ctype.startswith(t) for t in COMPRESSIBLE)
+	)
+
+
+def compress(path, etag, body):
+	"""gzip ``body``; /assets/ results are reused per ETag (the file is unchanged while the ETag is)."""
+	global _asset_cache_size
+	key = (path, etag) if path.startswith("/assets/") and etag else None
+	if key:
+		with _asset_cache_lock:
+			hit = _asset_cache.get(key)
+		if hit is not None:
+			return hit
+	data = gzip.compress(body, compresslevel=6)
+	if key:
+		with _asset_cache_lock:
+			if _asset_cache_size + len(data) > ASSET_CACHE_LIMIT:
+				_asset_cache.clear()
+				_asset_cache_size = 0
+			_asset_cache[key] = data
+			_asset_cache_size += len(data)
+	return data
 
 
 def build_upstream_headers(items, path, site):
@@ -87,10 +148,28 @@ def make_handler(upstream_port, site):
 				return
 			finally:
 				conn.close()
+			resp_headers = resp.getheaders()
+			gzipped = accepts_gzip(self.headers.get("Accept-Encoding")) and should_compress(
+				resp.status, resp_headers, data
+			)
+			if gzipped:
+				etag = next((v for k, v in resp_headers if k.lower() == "etag"), "")
+				data = compress(self.path.split("?", 1)[0], etag, data)
 			self.send_response(resp.status, resp.reason)
-			for k, v in resp.getheaders():
-				if k.lower() not in HOP_BY_HOP and k.lower() != "content-length":
-					self.send_header(k, v)
+			vary = []
+			for k, v in resp_headers:
+				kl = k.lower()
+				if kl in HOP_BY_HOP or kl == "content-length":
+					continue
+				if gzipped and kl == "vary":
+					vary.append(v)
+					continue
+				if gzipped and kl == "etag" and not v.startswith("W/"):
+					v = "W/" + v  # the encoded body differs byte-wise (as nginx does)
+				self.send_header(k, v)
+			if gzipped:
+				self.send_header("Content-Encoding", "gzip")
+				self.send_header("Vary", ", ".join([*vary, "Accept-Encoding"]))
 			self.send_header("Content-Length", str(len(data)))
 			self.end_headers()
 			if self.command != "HEAD":
