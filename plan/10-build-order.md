@@ -128,18 +128,18 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 ## Phase 7 — Frappe-native customization (→ Gate 2)
 
 > **Started 2026-09-26** in a Claude Cloud session (D-106), on `whatsapp.localhost` / `platform.localhost`. Post-phase-6 work recorded as D-100..D-105. Baseline: 342 tests, all green except the PDF paths (`wkhtmltopdf` is not installed in this environment: `test_attachments`, `test_alerts` ×2, `test_api_alerts`, `test_command_router.test_render_outputs_and_send_test`). One real failure fixed on the way: `guards.field_changed` read two empty Datetime values as changed (Frappe casts empty to *now*), which blocked adding recipients to a Running campaign (`tests/test_guards.py`). Tests in this environment need the CA variables pointed at `/etc/ssl/certs/ca-certificates.crt` (the inherited ones name a file under `/root`).
-- [ ] Outbound (UI-4): list side done in 5.B; remaining: form side, RowActions (resend, quick send, cancel) inside DataList's View/drawer, BulkActions
-- [ ] Inbound (UI-5): Drawer, tabs matched/unmatched, reply via QuickSend, "add as synonym" blocked on Active (D-029)
-- [ ] Queue (UI-9): default status filter, ListStatsCard summary + pause banner + rate slider, pause/resume/delete-as-state/retry, ETA: summary + Drawer (D-029)
-- [ ] Campaigns (UI-6): ListStatsCard "sending now" modal, form tabs Data/Contacts, PagedChildTable recipients, ContactPicker add/remove, start/pause/resume/cancel, `exclude_unknown_numbers` (D-029)
-- [ ] Commands (UI-8): New/edit → CommandModal only, edit blocked while Active, restore defaults, native form fallback with redirect (D-029)
-- [ ] Functions (UI-7 native list): primary action → Functions Center
-- [ ] Message Templates (UI-10a), Notifications (UI-10b), Notification Alerts (UI-10c): forms, previews, send-now/run-now, bulk enable/disable
-- [ ] WhatsApp Numbers (UI-13): `link_status` first column with indicator, ConversationDrawer, link/convert MetaDialog, no New
-- [ ] Contact Groups (UI-14): kind tabs, PagedChildTable + ContactPicker, Blacklist banner, CSV import route
-- [ ] Devices native list (UI-3 fallback), Settings native form (SM fallback)
-- [ ] Workspace "WhatsApp" fixture: shortcuts, cards, Number Cards, sidebar order (09 §5)
-- [ ] Form side: dashboards/connections (Campaign ↔ Outbound, Number ↔ messages), sidebar stats
+- [x] Outbound (UI-4): drawer verbs (resend, quick send, cancel), bulk resend, form buttons and tabs were already built (5.B/6). Held for Gate 2 (D-116): the extra filters source / campaign / command / on behalf
+- [x] Inbound (UI-5): drawer + reply were built; added Add as synonym (stopped commands only), Contact → link-or-create, Open command → CommandModal, form script (D-114). The matched/unmatched split stays the approved filter, not a tab rail (D-116)
+- [x] Queue (UI-9): console, filters, ETA, bulk verbs were built; added Cancel this message (with reason) in the drawer and the Queue Item form's verbs (commit `e950f4f`)
+- [x] Campaigns (UI-6): built as the campaign builder + monitor (D-093..D-105); "sending now" is the three strips of D-089/D-091, not a modal
+- [x] Commands (UI-8): verbs reachable again from View (D-107), `/new` → CommandModal, Restore defaults and Open function on the form
+- [x] Functions (UI-7 native list): primary → Functions Center; form → Open in Functions Center; page deep link (D-115)
+- [x] Message Templates (UI-10a), Notifications (UI-10b), Notification Alerts (UI-10c): Notification / Alert form scripts, previews, Send now / Run now (D-108); Template form tabs held (D-116)
+- [x] WhatsApp Numbers (UI-13): Unlink in the drawer, bulk Create contacts, form verbs; column order stays the prototype's (D-113)
+- [x] Contact Groups (UI-14): members panel, picker, Blacklist banner, `?import=csv` were built; kind tabs / list CSV button / form tabs held (D-116)
+- [x] Devices native list (UI-3 fallback), Settings native form (SM fallback): insert guard, Open Devices page, Pair / Disconnect / Delete (D-112); Settings form needs nothing
+- [x] Workspace "WhatsApp" fixture: shortcuts, cards, Number Cards, sidebar order (09 §5) (D-110)
+- [x] Form side: connections on ten DocTypes (D-111); field descriptions rewritten as user copy (R-036)
 - [ ] **Gate 2** demo checklist in Arabic
 
 ## Phase 8 — Planned-vs-delivered audit
