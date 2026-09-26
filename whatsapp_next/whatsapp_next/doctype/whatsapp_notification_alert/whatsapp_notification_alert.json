@@ -263,8 +263,14 @@
    "read_only": 1
   }
  ],
- "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "links": [
+  {
+   "group": "Messages",
+   "link_doctype": "WhatsApp Log",
+   "link_fieldname": "notification_alert"
+  }
+ ],
+ "modified": "2026-09-26 18:30:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Notification Alert",

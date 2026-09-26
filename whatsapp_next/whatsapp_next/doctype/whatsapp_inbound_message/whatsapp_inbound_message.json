@@ -129,7 +129,7 @@
   },
   {
    "default": "Text",
-   "description": "Provider type mapped; unknown \u2192 Other",
+   "description": "Provider type mapped; unknown → Other",
    "fieldname": "message_type",
    "fieldtype": "Select",
    "in_standard_filter": 1,
@@ -138,7 +138,7 @@
    "reqd": 1
   },
   {
-   "description": "Text / caption; PII \u2192 retention",
+   "description": "Text / caption; PII → retention",
    "fieldname": "body",
    "fieldtype": "Text",
    "in_list_view": 1,
@@ -327,8 +327,14 @@
    "label": "Simulated"
   }
  ],
- "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "links": [
+  {
+   "group": "Replies",
+   "link_doctype": "WhatsApp Log",
+   "link_fieldname": "trigger_inbound"
+  }
+ ],
+ "modified": "2026-09-26 18:30:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Inbound Message",
