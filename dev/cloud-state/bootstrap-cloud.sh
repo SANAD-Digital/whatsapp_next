@@ -195,6 +195,9 @@ done
 # ---- 9. optional: loopback-only dev services ----------------------------------------------------
 if [[ $START_MOCK -eq 1 ]]; then
 	step "wa-admin mock"
+	# Discovery: WA_ADMIN_MOCK_DIR (config/defaults.env), else dev/wa_admin_mock next to this script,
+	# so any clone location works.
+	[[ -f "$WA_ADMIN_MOCK_DIR/wa_admin_mock.py" ]] || WA_ADMIN_MOCK_DIR="$(cd "$HERE/.." && pwd)/wa_admin_mock"
 	if pgrep -f "wa_admin_mock.py" >/dev/null; then skip "mock running"
 	elif [[ ! -f "$WA_ADMIN_MOCK_DIR/wa_admin_mock.py" ]]; then warn "mock not found at $WA_ADMIN_MOCK_DIR"
 	else

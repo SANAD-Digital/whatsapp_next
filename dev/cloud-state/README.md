@@ -191,7 +191,6 @@ merge this into `.claude/settings.json`:
 - frappe/erpnext come from their branch head when a new bench is created; if that is newer than the
   snapshot's commit, restore migrates (see the plan). Exact old commits are not checked out automatically.
 - `--as` renames a site, but URLs stored inside the data (e.g. another site's address) are not rewritten.
-- The wa-admin mock (`WA_ADMIN_MOCK_DIR`) is not in Git yet; `--start-mock` skips it when absent.
 - `cloud-environment-setup.sh` was verified idempotent on this image (`--check` and install mode);
   a from-scratch run happens only when Claude Cloud builds a fresh environment.
 
