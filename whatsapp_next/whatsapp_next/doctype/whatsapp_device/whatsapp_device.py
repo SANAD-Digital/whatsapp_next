@@ -5,14 +5,25 @@
 from __future__ import annotations
 
 import frappe
+from frappe import _
 from frappe.model.document import Document
 
-from whatsapp_next.services.guards import assert_status_writer
+from whatsapp_next.exceptions import WAValidationError
+from whatsapp_next.services.guards import assert_status_writer, is_status_writer
 from whatsapp_next.services.phone import set_phone_pair
 
 
 class WhatsAppDevice(Document):
 	"""A WhatsApp device paired through the active provider."""
+
+	def before_insert(self) -> None:
+		"""A device exists on the provider before it exists here (02 §6): only the device service,
+		inside `status_writer()`, inserts one. Desk "New", Data Import and the REST API are refused."""
+		if not is_status_writer():
+			frappe.throw(
+				_("Devices are added from the Devices page, which registers them with the platform first."),
+				WAValidationError,
+			)
 
 	def validate(self) -> None:
 		"""Normalize the phone pair and guard `status` against non-service writers."""

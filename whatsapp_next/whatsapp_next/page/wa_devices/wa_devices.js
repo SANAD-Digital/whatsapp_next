@@ -1048,5 +1048,15 @@ frappe.provide("whatsapp_next.devices");
 		if (!wrapper.wa_devices) return;
 		wrapper.wa_devices.bind_realtime();
 		wrapper.wa_devices.refresh();
+		// `frappe.route_options = {pair: <device>}` (the native Device form's Pair button) opens the
+		// pairing dialog for that device once the page is showing.
+		const pair = frappe.route_options && frappe.route_options.pair;
+		if (pair) {
+			frappe.route_options = null;
+			wrapper.wa_devices
+				.load()
+				.then((rows) => wrapper.wa_devices.pair((rows || []).find((row) => row.name === pair) || { name: pair, device_name: pair }))
+				.catch(() => {});
+		}
 	};
 })();

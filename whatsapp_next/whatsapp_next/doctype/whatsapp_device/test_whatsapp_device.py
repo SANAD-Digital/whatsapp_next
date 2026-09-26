@@ -6,7 +6,7 @@ from __future__ import annotations
 import frappe
 from frappe.tests import IntegrationTestCase
 
-from whatsapp_next.exceptions import WAStateConflictError
+from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
 from whatsapp_next.install import ensure_roles
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.tests.conftest_frappe import delete_all, ensure_settings, ensure_test_user
@@ -82,3 +82,14 @@ class TestWhatsAppDevice(IntegrationTestCase):
 		self.assertEqual(frappe.db.get_value(DOCTYPE, first.name, "is_default"), 0)
 		self.assertEqual(frappe.db.get_value(DOCTYPE, second.name, "is_default"), 1)
 		self.assertEqual(frappe.db.count(DOCTYPE, {"is_default": 1}), 1)
+
+	def test_insert_only_through_the_device_service(self):
+		"""Desk New, Data Import and REST inserts are refused: a device is registered on the
+		provider first, by services/devices.py inside status_writer()."""
+		with self.assertRaises(WAValidationError):
+			frappe.get_doc(
+				{"doctype": DOCTYPE, "device_name": "Device WAD-UT-NEW", "platform_device": "WAD-UT-NEW", "status": "Pending QR"}
+			).insert(ignore_permissions=True)
+		self.assertFalse(frappe.db.exists(DOCTYPE, {"platform_device": "WAD-UT-NEW"}))
+		self.assertTrue(_insert("WAD-UT-SVC").name)
+

@@ -124,6 +124,7 @@ doctype_js = {
 	"WhatsApp Number": "public/js/form/whatsapp_number.js",
 	"WhatsApp Notification": "public/js/form/whatsapp_notification.js",
 	"WhatsApp Notification Alert": "public/js/form/whatsapp_notification_alert.js",
+	"WhatsApp Device": "public/js/form/whatsapp_device.js",
 }
 doctype_list_js = {
 	"WhatsApp Log": "public/js/listview/whatsapp_log_list.js",
@@ -136,6 +137,7 @@ doctype_list_js = {
 	"WhatsApp Template": "public/js/listview/whatsapp_template_list.js",
 	"WhatsApp Notification": "public/js/listview/whatsapp_notification_list.js",
 	"WhatsApp Notification Alert": "public/js/listview/whatsapp_notification_alert_list.js",
+	"WhatsApp Device": "public/js/listview/whatsapp_device_list.js",
 }
 
 # Translation

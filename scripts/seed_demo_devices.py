@@ -22,6 +22,8 @@ import random
 import frappe
 from frappe.utils import add_to_date, now_datetime
 
+from whatsapp_next.services.guards import status_writer
+
 random.seed(20260924)
 
 TAG = "DEMOD-"
@@ -88,7 +90,8 @@ def run(scale: int = 12):
             "The phone lost its internet connection." if status == "Disconnected" else None
         )
         doc.flags.ignore_permissions = True
-        doc.insert(ignore_permissions=True)
+        with status_writer():  # the controller refuses inserts outside the device service
+            doc.insert(ignore_permissions=True)
         made.append(doc.name)
         for i in range(max(0, sent // scale)):
             _log(doc.name, random.choice(["Sent", "Delivered", "Read"]), add_to_date(now, minutes=-random.randint(1, 43200)), i)
