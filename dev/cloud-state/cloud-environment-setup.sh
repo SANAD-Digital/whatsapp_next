@@ -7,7 +7,8 @@
 #
 #   Ubuntu packages (build deps, MariaDB client + dev libs, PostgreSQL 16, Redis, age, ACL, Docker CLI)
 #   CA/TLS trust for the frappe user's toolchain, uv, Python 3.14, Node 24, Yarn 1.x,
-#   the frappe user, the Bench CLI, and (optionally) a pre-pulled mariadb:11.8 image.
+#   the frappe user, the Bench CLI, the Microsoft Dev Tunnels CLI (mobile preview; binary only,
+#   never a login), and (optionally) a pre-pulled mariadb:11.8 image.
 #
 # It never: creates or restores databases or sites, starts services as its final state,
 # clones private repositories, or contains any secret. Idempotent: safe to run any number of times.
@@ -116,6 +117,27 @@ else as_frappe "uv python install $PYTHON_VERSION" >/dev/null; ok "python $PYTHO
 if as_frappe "command -v bench" >/dev/null 2>&1; then have "bench $(as_frappe 'bench --version')"
 elif [[ $CHECK -eq 1 ]]; then need "bench CLI"
 else as_frappe "uv tool install frappe-bench" >/dev/null; ok "bench $(as_frappe 'bench --version')"; fi
+
+# ---- Microsoft Dev Tunnels CLI (mobile preview, dev/mobile-preview) -----------------------------
+# Binary only: no login, no tunnel, no token. Optional for the session (--check reports it but does
+# not fail on it), so a session without it still starts; dev/mobile-preview/start.sh names this step.
+step "Microsoft Dev Tunnels CLI (optional)"
+DEVTUNNEL_URL="${DEVTUNNEL_URL:-https://aka.ms/TunnelsCliDownload/linux-x64}"
+if command -v devtunnel >/dev/null 2>&1; then have "$(devtunnel --version 2>/dev/null | head -1)"
+elif [[ $CHECK -eq 1 ]]; then echo "INFO  devtunnel CLI not installed (needed only by dev/mobile-preview)"
+else
+	tmp=$(mktemp -d)
+	if curl -fsSL -o "$tmp/devtunnel" "$DEVTUNNEL_URL" \
+		&& [[ "$(head -c 4 "$tmp/devtunnel" | od -An -tx1 | tr -d ' \n')" == 7f454c46 ]] \
+		&& { [[ -z "${DEVTUNNEL_SHA256:-}" ]] || echo "$DEVTUNNEL_SHA256  $tmp/devtunnel" | sha256sum -c - >/dev/null; } \
+		&& chmod 0755 "$tmp/devtunnel" && "$tmp/devtunnel" --version >/dev/null 2>&1; then
+		install -m 0755 "$tmp/devtunnel" /usr/local/bin/devtunnel
+		ok "$(/usr/local/bin/devtunnel --version | head -1) (sha256 $(sha256sum /usr/local/bin/devtunnel | cut -c1-16)...)"
+	else
+		echo "WARN  devtunnel CLI download/check failed ($DEVTUNNEL_URL); mobile preview unavailable"
+	fi
+	rm -rf "$tmp"
+fi
 
 # ---- optional: pre-pull the MariaDB image (dockerd is stopped again afterwards) ----------------
 if [[ "$PREPULL_MARIADB" == 1 ]]; then

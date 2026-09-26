@@ -11,6 +11,8 @@
 #   sudo ./bootstrap-cloud.sh --restore <id>   [-- --force --yes]
 #   sudo ./bootstrap-cloud.sh --session-start        fast, never restores, never builds (for hooks)
 #   options: --start-mock --start-web --with-r2
+#            --mobile-preview   also run dev/mobile-preview/start.sh (public HTTPS URLs via a
+#                               Microsoft Dev Tunnel). Never implied: without it nothing is exposed.
 #
 # It never: re-runs bench init on an existing bench, recreates an existing MariaDB volume,
 # overwrites an existing site, switches a repository's branch, or restores data unless asked.
@@ -23,7 +25,7 @@ while IFS='=' read -r key value; do
 	[[ -z "${!key+x}" ]] && export "$key=$value"
 done < "$HERE/config/defaults.env"
 
-RESTORE="" WITH_R2=0 START_MOCK=0 START_WEB=0 SESSION_START=0
+RESTORE="" WITH_R2=0 START_MOCK=0 START_WEB=0 SESSION_START=0 MOBILE_PREVIEW=0
 RESTORE_ARGS=()
 while [[ $# -gt 0 ]]; do
 	case "$1" in
@@ -33,8 +35,9 @@ while [[ $# -gt 0 ]]; do
 		--start-mock) START_MOCK=1 ;;
 		--start-web) START_WEB=1 ;;
 		--session-start) SESSION_START=1 ;;
+		--mobile-preview) MOBILE_PREVIEW=1 ;;
 		--) shift; RESTORE_ARGS=("$@"); break ;;
-		-h|--help) sed -n '2,17p' "$0"; exit 0 ;;
+		-h|--help) sed -n '2,18p' "$0"; exit 0 ;;
 		*) echo "unknown option: $1" >&2; exit 2 ;;
 	esac
 	shift
@@ -233,4 +236,12 @@ if [[ $SESSION_START -eq 1 ]]; then
 	echo
 	"$HERE/list-dev-states.sh" 2>/dev/null | head -5 || true
 	echo "No data was restored. To restore explicitly: sudo $HERE/bootstrap-cloud.sh --restore-latest -- --dry-run"
+fi
+
+# ---- 11. optional: mobile preview (explicit only) -----------------------------------------------
+if [[ $MOBILE_PREVIEW -eq 1 ]]; then
+	step "mobile preview (Microsoft Dev Tunnel)"
+	# Exit 3 = device login needed: start.sh has printed the URL and code; not a bootstrap failure.
+	rc=0; "$(cd "$HERE/.." && pwd)/mobile-preview/start.sh" || rc=$?
+	[[ $rc -eq 0 || $rc -eq 3 ]] || warn "mobile preview failed (exit $rc); see the output above"
 fi

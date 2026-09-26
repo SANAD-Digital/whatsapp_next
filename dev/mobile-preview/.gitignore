@@ -1,0 +1,6 @@
+# Runtime state lives in ~frappe/.dev-state/runtime/, never here. Guard against accidents anyway.
+*.pid
+*.log
+*.urls
+*.tunnel-id
+__pycache__/

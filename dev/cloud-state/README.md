@@ -18,7 +18,7 @@ uncommitted or unpushed, but it does not carry code.
 
 | Layer | File | Runs | Does |
 |---|---|---|---|
-| 1. Base image | `cloud-environment-setup.sh` | once, when Claude Cloud builds/caches the environment | Ubuntu packages, PostgreSQL 16, Redis, MariaDB client + dev libs, Docker CLI, `age`, `acl`, uv, Python 3.14, Node 24, Yarn 1.x, the `frappe` user, CA/TLS trust, Bench CLI, pre-pulled `mariadb:11.8` |
+| 1. Base image | `cloud-environment-setup.sh` | once, when Claude Cloud builds/caches the environment | Ubuntu packages, PostgreSQL 16, Redis, MariaDB client + dev libs, Docker CLI, `age`, `acl`, uv, Python 3.14, Node 24, Yarn 1.x, the `frappe` user, CA/TLS trust, Bench CLI, Microsoft Dev Tunnels CLI (binary only), pre-pulled `mariadb:11.8` |
 | 2. Session | `bootstrap-cloud.sh` | every session (or the SessionStart hook in its safe mode) | starts PostgreSQL, dockerd, MariaDB (reusing its volume), Redis; ensures repositories, bench and app links; restores only when asked; verifies |
 
 Layer 1 never creates databases or sites, never leaves a service running, and holds no secret. Layer 2
@@ -49,7 +49,7 @@ switches a repository's branch and never restores unless asked.
 All run as root from this directory.
 
 ```bash
-./bootstrap-cloud.sh [--restore-latest | --restore <id>] [--start-mock] [--start-web] [--with-r2] [-- <restore args>]
+./bootstrap-cloud.sh [--restore-latest | --restore <id>] [--start-mock] [--start-web] [--with-r2] [--mobile-preview] [-- <restore args>]
 ./bootstrap-cloud.sh --session-start      # fast and safe: services + verify + "snapshot available", never restores
 ./save-dev-state.sh [--label TEXT] [--include-dirty-patches] [--backend local|r2] [--no-publish]
 ./restore-dev-state.sh latest|<id>|<dir>|<package> [--dry-run] [--site S] [--as OLD=NEW]
@@ -125,6 +125,10 @@ key to `DEV_STATE_AGE_RECIPIENTS`, so access can be revoked per person.
 4. `sudo ./bootstrap-cloud.sh --with-r2` (creates the boto3 helper venv), then `./save-dev-state.sh`.
 Object layout: `frappe-dev-state/snapshots/<ID>.tar.age`, `<ID>.meta.json`, and `latest.json`, which moves
 only after the upload is verified (size + sha256). Nothing is ever deleted.
+
+**L. Open the sites on a phone:** `sudo ../mobile-preview/start.sh` after `--session-start` (or add
+`--mobile-preview` to bootstrap). Public HTTPS URLs through a Microsoft Dev Tunnel; never started
+automatically. See `../mobile-preview/README.md`.
 
 ## Snapshot format
 
