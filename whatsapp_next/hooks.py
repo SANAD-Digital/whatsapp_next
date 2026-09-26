@@ -125,6 +125,7 @@ doctype_js = {
 	"WhatsApp Notification": "public/js/form/whatsapp_notification.js",
 	"WhatsApp Notification Alert": "public/js/form/whatsapp_notification_alert.js",
 	"WhatsApp Device": "public/js/form/whatsapp_device.js",
+	"WhatsApp Inbound Message": "public/js/form/whatsapp_inbound_message.js",
 }
 doctype_list_js = {
 	"WhatsApp Log": "public/js/listview/whatsapp_log_list.js",

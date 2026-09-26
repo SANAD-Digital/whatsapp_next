@@ -130,9 +130,68 @@ frappe.provide("whatsapp_next.fmt");
 	};
 
 	/** The contact behind a message — its Contact when linked, else its number in the phonebook. */
-	whatsapp_next.messages.open_contact = function (doc) {
+	whatsapp_next.messages.open_contact = function (doc, after) {
 		if (doc.contact) return frappe.set_route("Form", "Contact", doc.contact);
+		// Unknown number: link it to a contact or create one, in place (09 row 5 → `numbers.link_number`).
+		if (doc.phone_e164 && whatsapp_next.numbers && whatsapp_next.numbers.link_convert_dialog) {
+			return whatsapp_next.numbers.link_convert_dialog({ phone_e164: doc.phone_e164, name: doc.phone_e164, display_name: doc.display_name }, after);
+		}
 		return frappe.set_route("List", "WhatsApp Number", { phone_e164: doc.phone_e164 });
+	};
+
+	/** The CommandModal lives in the Command DocType's form script; load it on demand, read-only. */
+	whatsapp_next.messages.open_command = function (name) {
+		frappe.model.with_doctype("WhatsApp Command", () => {
+			if (typeof whatsapp_next.command_modal !== "function") {
+				const meta = frappe.get_meta("WhatsApp Command");
+				if (meta && meta.__js) new Function(meta.__js)();
+			}
+			if (typeof whatsapp_next.command_modal === "function") whatsapp_next.command_modal(name, { read_only: true });
+			else frappe.set_route("Form", "WhatsApp Command", name);
+		});
+	};
+
+	/**
+	 * "Add as synonym" (09 row 5): the incoming text becomes one more word of a command, so the next
+	 * customer who types it is matched. Only a stopped command takes it (`commands.save_command`
+	 * refuses an Active one, D-029 OQ-3); the payload carries the name and the synonyms only.
+	 */
+	whatsapp_next.messages.add_synonym = function (doc, after) {
+		const text = (frappe.utils.html2text ? frappe.utils.html2text(doc.body || "") : doc.body || "").trim().split("\n")[0].slice(0, 140);
+		const d = new frappe.ui.Dialog({
+			title: __("Add as a synonym"),
+			fields: [
+				{ fieldtype: "Data", fieldname: "synonym", label: __("Synonym"), default: text, reqd: 1, description: __("Saved in lower case; it must not be another command's word.") },
+				{
+					fieldtype: "Link",
+					fieldname: "command",
+					label: __("Command"),
+					options: "WhatsApp Command",
+					reqd: 1,
+					get_query: () => ({ filters: { status: "Inactive" } }),
+					description: __("Only a stopped command can take a new synonym; start it again afterwards."),
+				},
+			],
+			primary_action_label: __("Add synonym"),
+			primary_action: async (values) => {
+				const $btn = d.get_primary_btn().prop("disabled", true);
+				try {
+					const current = (await frappe.db.get_value("WhatsApp Command", values.command, "synonyms")).message || {};
+					const words = (current.synonyms || "").split("\n").map((w) => w.trim()).filter(Boolean);
+					if (!words.includes(values.synonym.trim())) words.push(values.synonym.trim());
+					await ui.call("commands.save_command", { payload: { name: values.command, synonyms: words.join("\n") } });
+					d.hide();
+					ui.Toast.success(__("«{0}» now matches {1}", [values.synonym.trim(), values.command]));
+					after && after();
+				} catch (err) {
+					$btn.prop("disabled", false);
+					ui.Toast.error(err);
+				}
+			},
+		});
+		d.$wrapper.addClass("sanad-kit");
+		d.show();
+		return d;
 	};
 
 	/** Timeline rows `{at, text, tone}` from the `messages.get_outbound` payload. */

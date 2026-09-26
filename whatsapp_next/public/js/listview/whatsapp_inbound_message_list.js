@@ -103,8 +103,9 @@
 			],
 			actions: [
 				{ label: __("Reply"), icon: "es-line-reply", condition: is_agent, handler: (d) => reply(d, refresh) },
-				{ label: __("Open command"), icon: "es-line-zap", condition: (d) => !!(d.command_trace && d.command_trace.command), handler: (d) => frappe.set_route("Form", "WhatsApp Command", d.command_trace.command) },
-				{ label: __("Contact"), icon: "es-line-customer", handler: (d) => M.open_contact(d) },
+				{ label: __("Open command"), icon: "es-line-zap", condition: (d) => !!(d.command_trace && d.command_trace.command), handler: (d) => M.open_command(d.command_trace.command) },
+				{ label: __("Add as synonym"), icon: "es-line-add", condition: (d) => M.is_manager() && !(d.command_trace && d.command_trace.command) && !!d.body, handler: (d) => M.add_synonym(d, refresh) },
+				{ label: __("Contact"), icon: "es-line-customer", handler: (d) => M.open_contact(d, refresh) },
 			],
 		}).show();
 
