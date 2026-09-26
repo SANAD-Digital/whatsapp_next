@@ -142,7 +142,7 @@
    "fieldtype": "Code",
    "options": "JSON",
    "depends_on": "eval:doc.content_type==\"Report\"",
-   "description": "Jinja-evaluated dates"
+   "description": "Report filter → date token, e.g. {\"from_date\": \"month_start\", \"to_date\": \"today\"}"
   },
   {
    "fieldname": "body_section",
