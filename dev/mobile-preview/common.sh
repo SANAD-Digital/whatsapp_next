@@ -36,6 +36,14 @@ as_frappe() {
 	local proxy="${HTTPS_PROXY:-${https_proxy:-}}"
 	local envs=(HOME="$FRAPPE_HOME" NO_PROXY="127.0.0.1,localhost" no_proxy="127.0.0.1,localhost")
 	[[ -n "$proxy" ]] && envs+=(HTTPS_PROXY="$proxy" https_proxy="$proxy")
+	# CA variables inherited from root may name a file under /root that frappe cannot read;
+	# httplib2 then refuses to import (and with it Frappe's Google integrations, e.g. Contact).
+	# The system bundle carries the same session CA and is readable by everyone.
+	local var sys_ca=/etc/ssl/certs/ca-certificates.crt
+	for var in SSL_CERT_FILE REQUESTS_CA_BUNDLE CURL_CA_BUNDLE HTTPLIB2_CA_CERTS NODE_EXTRA_CA_CERTS \
+		AWS_CA_BUNDLE PIP_CERT GIT_SSL_CAINFO GRPC_DEFAULT_SSL_ROOTS_FILE_PATH; do
+		[[ -n "${!var:-}" && -r "$sys_ca" ]] && envs+=("$var=$sys_ca")
+	done
 	if [[ $EUID -eq 0 ]]; then
 		runuser -u "$FRAPPE_USER" -- env "${envs[@]}" "$@"
 	elif [[ "$(id -un)" == "$FRAPPE_USER" ]]; then

@@ -36,9 +36,14 @@ def field_changed(before, doc, fieldname: str) -> bool:
 
 	Both sides are cast through the field's own type first: the saved copy carries `datetime`
 	objects while a document that arrived from the client carries their strings, and a plain
-	`!=` between those is always True. Empty values (None / "") compare equal.
+	`!=` between those is always True. Empty values (None / "") compare equal, and are checked
+	before casting: Frappe casts an empty Date/Datetime to *now*, so two empty values would
+	otherwise come out as two different instants.
 	"""
-	return (before.get_value(fieldname) or None) != (doc.get_value(fieldname) or None)
+	old, new = before.get(fieldname), doc.get(fieldname)
+	if old in (None, "") or new in (None, ""):
+		return (old in (None, "")) != (new in (None, ""))
+	return before.get_value(fieldname) != doc.get_value(fieldname)
 
 
 def assert_status_writer(doc, fieldnames: tuple[str, ...] = ("status",)) -> None:

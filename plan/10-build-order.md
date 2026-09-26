@@ -126,6 +126,8 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - Open, for phase 7 or the owner: `home.get_series` (per-bucket counts; today bucketed client-side), `numbers.search_numbers` has no last-message preview, `functions.get_manifest` missing, no catalog export, `contacts.list_contacts` has no "conversation exists" filter, and the provider's raw error text reaches the Arabic screens untranslated
 
 ## Phase 7 — Frappe-native customization (→ Gate 2)
+
+> **Started 2026-09-26** in a Claude Cloud session (D-106), on `whatsapp.localhost` / `platform.localhost`. Post-phase-6 work recorded as D-100..D-105. Baseline: 342 tests, all green except the PDF paths (`wkhtmltopdf` is not installed in this environment: `test_attachments`, `test_alerts` ×2, `test_api_alerts`, `test_command_router.test_render_outputs_and_send_test`). One real failure fixed on the way: `guards.field_changed` read two empty Datetime values as changed (Frappe casts empty to *now*), which blocked adding recipients to a Running campaign (`tests/test_guards.py`). Tests in this environment need the CA variables pointed at `/etc/ssl/certs/ca-certificates.crt` (the inherited ones name a file under `/root`).
 - [ ] Outbound (UI-4): list side done in 5.B; remaining: form side, RowActions (resend, quick send, cancel) inside DataList's View/drawer, BulkActions
 - [ ] Inbound (UI-5): Drawer, tabs matched/unmatched, reply via QuickSend, "add as synonym" blocked on Active (D-029)
 - [ ] Queue (UI-9): default status filter, ListStatsCard summary + pause banner + rate slider, pause/resume/delete-as-state/retry, ETA: summary + Drawer (D-029)
