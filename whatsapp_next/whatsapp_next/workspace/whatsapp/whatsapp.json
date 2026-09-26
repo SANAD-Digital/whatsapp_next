@@ -1,7 +1,7 @@
 {
  "app": "whatsapp_next",
  "charts": [],
- "content": "[{\"id\": \"wa_header\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>WhatsApp</b></span>\", \"col\": 12}}, {\"id\": \"wa_block\", \"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"WA Dashboard Block\", \"col\": 12}}, {\"id\": \"wa_spacer\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"wa_quick\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Quick access</b></span>\", \"col\": 12}}, {\"id\": \"wa_sc_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Outbound\", \"col\": 3}}, {\"id\": \"wa_sc_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Inbound\", \"col\": 3}}, {\"id\": \"wa_sc_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Queue\", \"col\": 3}}, {\"id\": \"wa_sc_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Campaigns\", \"col\": 3}}, {\"id\": \"wa_sc_4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Devices\", \"col\": 3}}, {\"id\": \"wa_sc_5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Settings\", \"col\": 3}}]",
+ "content": "[{\"id\": \"wa_header\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>WhatsApp</b></span>\", \"col\": 12}}, {\"id\": \"wa_block\", \"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"WA Dashboard Block\", \"col\": 12}}, {\"id\": \"wa_spacer\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"wa_sc_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Home\", \"col\": 3}}, {\"id\": \"wa_sc_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Devices\", \"col\": 3}}, {\"id\": \"wa_sc_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Simulator\", \"col\": 3}}, {\"id\": \"wa_sc_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Settings\", \"col\": 3}}, {\"id\": \"wa_spacer_2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"wa_card_0\", \"type\": \"card\", \"data\": {\"card_name\": \"Messages\", \"col\": 4}}, {\"id\": \"wa_card_1\", \"type\": \"card\", \"data\": {\"card_name\": \"Audience\", \"col\": 4}}, {\"id\": \"wa_card_2\", \"type\": \"card\", \"data\": {\"card_name\": \"Campaigns\", \"col\": 4}}, {\"id\": \"wa_card_3\", \"type\": \"card\", \"data\": {\"card_name\": \"Templates\", \"col\": 4}}, {\"id\": \"wa_card_4\", \"type\": \"card\", \"data\": {\"card_name\": \"Automation\", \"col\": 4}}, {\"id\": \"wa_card_5\", \"type\": \"card\", \"data\": {\"card_name\": \"System\", \"col\": 4}}]",
  "creation": "2026-09-23 05:47:46.870547",
  "custom_blocks": [
   {
@@ -18,8 +18,217 @@
  "is_hidden": 0,
  "label": "WhatsApp",
  "link_type": "DocType",
- "links": [],
- "modified": "2026-09-23 05:50:18.533382",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Messages",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Outbound",
+   "link_count": 0,
+   "link_to": "WhatsApp Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Inbound",
+   "link_count": 0,
+   "link_to": "WhatsApp Inbound Message",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Queue",
+   "link_count": 0,
+   "link_to": "WhatsApp Queue Item",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Audience",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Contacts",
+   "link_count": 0,
+   "link_to": "wa-contacts",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "WhatsApp Numbers",
+   "link_count": 0,
+   "link_to": "WhatsApp Number",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Contact Groups",
+   "link_count": 0,
+   "link_to": "WhatsApp Contact Group",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Campaigns",
+   "link_count": 1,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Campaigns",
+   "link_count": 0,
+   "link_to": "WhatsApp Campaign",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Templates",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Message Templates",
+   "link_count": 0,
+   "link_to": "WhatsApp Template",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Notification Templates",
+   "link_count": 0,
+   "link_to": "WhatsApp Notification",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Notification Alerts",
+   "link_count": 0,
+   "link_to": "WhatsApp Notification Alert",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Automation",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Commands",
+   "link_count": 0,
+   "link_to": "WhatsApp Command",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Functions Center",
+   "link_count": 0,
+   "link_to": "wa-functions-center",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Installed Functions",
+   "link_count": 0,
+   "link_to": "WhatsApp Function",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "System",
+   "link_count": 3,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Settings",
+   "link_count": 0,
+   "link_to": "wa-settings",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Audit Log",
+   "link_count": 0,
+   "link_to": "WhatsApp Audit Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Webhook Events",
+   "link_count": 0,
+   "link_to": "WhatsApp Webhook Event",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-09-26 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp",
@@ -45,39 +254,31 @@
  "shortcuts": [
   {
    "doc_view": "",
-   "label": "Outbound",
-   "link_to": "WhatsApp Log",
-   "type": "DocType"
-  },
-  {
-   "doc_view": "",
-   "label": "Inbound",
-   "link_to": "WhatsApp Inbound Message",
-   "type": "DocType"
-  },
-  {
-   "doc_view": "",
-   "label": "Queue",
-   "link_to": "WhatsApp Queue Item",
-   "type": "DocType"
-  },
-  {
-   "doc_view": "",
-   "label": "Campaigns",
-   "link_to": "WhatsApp Campaign",
-   "type": "DocType"
+   "label": "Home",
+   "link_to": "wa-home",
+   "type": "Page",
+   "color": "Grey"
   },
   {
    "doc_view": "",
    "label": "Devices",
-   "link_to": "WhatsApp Device",
-   "type": "DocType"
+   "link_to": "wa-devices",
+   "type": "Page",
+   "color": "Grey"
+  },
+  {
+   "doc_view": "",
+   "label": "Simulator",
+   "link_to": "wa-simulator",
+   "type": "Page",
+   "color": "Grey"
   },
   {
    "doc_view": "",
    "label": "Settings",
-   "link_to": "WhatsApp Settings",
-   "type": "DocType"
+   "link_to": "wa-settings",
+   "type": "Page",
+   "color": "Grey"
   }
  ],
  "title": "WhatsApp",
