@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
-from .common import Config, DevStateError, run, tool_version
+from .common import Config, DevStateError, private_tempfile, run, tool_version
 
 PROBE = Path(__file__).with_name("probe_site.py")
 #: Entries in sites/ that are bench infrastructure, not sites.
@@ -54,10 +54,13 @@ def site_db_info(site_config: dict, common: dict | None = None) -> dict:
 
 
 def probe_site(cfg: Config, site: str, counts=False) -> dict:
-	args = [str(cfg.bench_python), str(PROBE), str(cfg.sites_dir), site]
-	if counts:
-		args.append("--counts")
-	result = run(args, user=cfg.FRAPPE_USER, check=False, cwd=str(cfg.sites_dir))
+	# The probe runs as the frappe user, which may not be able to read this checkout (e.g. a clone
+	# in a private directory): run a private copy owned by frappe instead of the file in place.
+	with private_tempfile(PROBE.read_text(), cfg, suffix="-probe_site.py") as probe:
+		args = [str(cfg.bench_python), str(probe), str(cfg.sites_dir), site]
+		if counts:
+			args.append("--counts")
+		result = run(args, user=cfg.FRAPPE_USER, check=False, cwd=str(cfg.sites_dir))
 	lines = [ln for ln in (result.stdout or "").splitlines() if ln.startswith("{")]
 	if not lines:
 		return {"site": site, "ok": False, "error": (result.stderr or "no output").strip()[-400:]}
