@@ -140,7 +140,7 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [x] Devices native list (UI-3 fallback), Settings native form (SM fallback): insert guard, Open Devices page, Pair / Disconnect / Delete (D-112); Settings form needs nothing
 - [x] Workspace "WhatsApp" fixture: shortcuts, cards, Number Cards, sidebar order (09 §5) (D-110)
 - [x] Form side: connections on ten DocTypes (D-111); field descriptions rewritten as user copy (R-036)
-- [ ] **Gate 2** demo checklist in Arabic
+- [ ] **Gate 2** demo checklist in Arabic — presented 2026-09-26 in `plan/14-gate-2.md`; **awaiting owner approval** (five questions in its §5)
 
 ## Phase 8 — Planned-vs-delivered audit
 - [ ] `git -C ../snd_whatsapp status --porcelain` captured; `traceability-auditor` → `plan/11-traceability-report.md`
