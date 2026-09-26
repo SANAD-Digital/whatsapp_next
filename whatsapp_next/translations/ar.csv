@@ -3832,3 +3832,7 @@ Only a stopped command can take a new synonym; start it again afterwards.,لا �
 Saved in lower case; it must not be another command's word.,يُحفظ بأحرف صغيرة، ولا يجوز أن يكون كلمة أمر آخر.,
 Synonym,المرادف,
 «{0}» now matches {1},«{0}» يطابق الآن الأمر {1},
+Function {0} is not in the catalog.,الدالة {0} غير موجودة في الكتالوج.,
+Open Functions Center,افتح مركز الدوال,
+Open function,افتح الدالة,
+Open in Functions Center,افتح في مركز الدوال,

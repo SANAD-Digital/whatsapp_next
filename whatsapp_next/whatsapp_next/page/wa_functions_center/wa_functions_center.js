@@ -903,7 +903,7 @@
 			this.$bulk = $('<div class="wa-functions__bulk" hidden></div>').appendTo(this.$main);
 			this.$body = $('<div class="wa-functions__body"></div>').appendTo(this.$main);
 			this.state = new ui.EmptyState({ wrapper: this.$body, state: "loading", rows: 6 });
-			this.load();
+			this.loaded = this.load();
 		}
 
 		// ---- data -----------------------------------------------------------------------------
@@ -1378,7 +1378,19 @@
 	};
 
 	frappe.pages[ROUTE].on_page_show = function (wrapper) {
+		const screen = wrapper.whatsapp_next;
+		if (!screen) return;
 		// coming back from a command or a form: the install state may have moved meanwhile
-		if (wrapper.whatsapp_next && wrapper.whatsapp_next.entries.length) wrapper.whatsapp_next.reload();
+		const ready = screen.entries.length ? screen.reload() : screen.loaded || screen.load();
+		// `?function=<key>` or `frappe.route_options.function` (the native Function form, a command's
+		// "Open function"): open that function's record once the catalog is in.
+		const key = (frappe.route_options && frappe.route_options.function) || frappe.utils.get_url_arg("function");
+		if (!key) return;
+		frappe.route_options = null;
+		Promise.resolve(ready).then(() => {
+			const entry = screen.entry(key);
+			if (entry) screen.open(entry);
+			else ui.Toast.info(__("Function {0} is not in the catalog.", [key]));
+		});
 	};
 })();

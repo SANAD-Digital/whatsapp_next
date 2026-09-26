@@ -221,6 +221,12 @@ frappe.ui.form.on("WhatsApp Command", {
 		if (active) frm.disable_form();
 		const open = () => whatsapp_next.command_modal(frm.doc.name, { read_only: active, on_saved: () => frm.reload_doc() });
 		frm.add_custom_button(__("Open editor"), open);
+		if (frm.doc.function) {
+			frm.add_custom_button(__("Open function"), () => {
+				frappe.route_options = { function: frm.doc.function };
+				frappe.set_route("wa-functions-center");
+			});
+		}
 		if (!manager) return;
 		frm.add_custom_button(active ? __("Stop") : __("Start command"), async () => {
 			try {
