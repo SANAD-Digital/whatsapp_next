@@ -1,0 +1,32 @@
+{
+ "_comment": "Application repositories bootstrap-cloud.sh ensures exist. Code always comes from Git; snapshots only record which commit was in use. 'install': 'bench' = bench clones it into apps/; 'soft-link' = canonical working copy outside the bench, linked with bench get-app --soft-link.",
+ "repositories": [
+  {
+   "app": "frappe",
+   "url": "https://github.com/frappe/frappe",
+   "branch": "version-16",
+   "install": "bench"
+  },
+  {
+   "app": "erpnext",
+   "url": "https://github.com/frappe/erpnext",
+   "branch": "version-16",
+   "install": "bench"
+  },
+  {
+   "app": "whatsapp_next",
+   "url": "https://github.com/champion-alshwmi/whatsapp_next",
+   "branch": "claude/loving-euler-l9y9pj",
+   "path": "/home/user/whatsapp_next",
+   "install": "soft-link"
+  },
+  {
+   "app": "snd_whatsapp_platform",
+   "url": "https://github.com/champion-alshwmi/snd_whatsapp_platform.git",
+   "branch": "whatsapp-next-integration",
+   "remote": "upstream",
+   "path": "/home/user/snd_whatsapp_platform",
+   "install": "soft-link"
+  }
+ ]
+}

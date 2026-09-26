@@ -1,0 +1,18 @@
+# Snapshots, dumps, keys and logs never belong in Git; they live in ~frappe/.dev-state/.
+__pycache__/
+*.pyc
+*.log
+*.dump
+*.sql
+*.sql.gz
+*.tar
+*.tar.gz
+*.age
+*.agekey
+*.pw
+*.secret
+site_config.json
+common_site_config.json
+snapshots/
+staging/
+config/*.local.env
