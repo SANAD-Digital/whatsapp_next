@@ -38,7 +38,6 @@
    "label": "Event"
   },
   {
-   "description": "`X-SND-Event-ID`. The platform reuses one id across the status events of a message, so the dedupe key is (event_name, event_id) — composite unique in patches/v0_1/add_indexes.py (D-047).",
    "fieldname": "event_id",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -47,7 +46,7 @@
    "search_index": 1
   },
   {
-   "description": "`X-SND-Event`; Data not Select so unknown/future events are storable as `Ignored`",
+   "description": "The kind of event. Unknown kinds are kept and marked Ignored.",
    "fieldname": "event_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -65,7 +64,7 @@
    "search_index": 1
   },
   {
-   "description": "From `X-SND-Timestamp`",
+   "description": "When the platform sent the event.",
    "fieldname": "event_timestamp",
    "fieldtype": "Datetime",
    "label": "Event Timestamp"
@@ -76,7 +75,7 @@
   },
   {
    "default": "0",
-   "description": "Invalid → row still stored with `Ignored` for forensics, payload blanked",
+   "description": "Whether the event really came from the platform. Events that fail are kept as Ignored, without their content.",
    "fieldname": "signature_valid",
    "fieldtype": "Check",
    "in_standard_filter": 1,
@@ -84,7 +83,7 @@
   },
   {
    "default": "0",
-   "description": "Within ±5 min",
+   "description": "The event arrived within 5 minutes of being sent.",
    "fieldname": "timestamp_fresh",
    "fieldtype": "Check",
    "in_standard_filter": 1,
@@ -92,7 +91,7 @@
   },
   {
    "default": "0",
-   "description": "Incremented when the same `event_id` arrives again (200 returned, no reprocessing)",
+   "description": "How many more times the same event arrived. Repeats are not processed again.",
    "fieldname": "duplicate_count",
    "fieldtype": "Int",
    "label": "Duplicate Deliveries"
@@ -103,7 +102,7 @@
    "label": "Routing"
   },
   {
-   "description": "Resolved from `platform_device`; unknown → `Ignored`",
+   "description": "The device the event is about. Events for unknown devices are ignored.",
    "fieldname": "device",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -111,13 +110,11 @@
    "options": "WhatsApp Device"
   },
   {
-   "description": "Raw `device` from payload",
    "fieldname": "platform_device",
    "fieldtype": "Data",
    "label": "Platform Device"
   },
   {
-   "description": "`message.*` queue-path payloads",
    "fieldname": "client_ref",
    "fieldtype": "Data",
    "label": "Client Ref",
@@ -128,20 +125,19 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "For delivered/read/reaction routing",
    "fieldname": "provider_message_id",
    "fieldtype": "Data",
    "label": "Provider Message ID"
   },
   {
-   "description": "Created from `message.received`/`reaction`",
+   "description": "The received message created from this event.",
    "fieldname": "inbound_message",
    "fieldtype": "Link",
    "label": "Inbound Message",
    "options": "WhatsApp Inbound Message"
   },
   {
-   "description": "Resolved via `client_ref` / `provider_message_id`",
+   "description": "The sent message this event updates.",
    "fieldname": "outbound_message",
    "fieldtype": "Link",
    "label": "Outbound Message",
@@ -153,7 +149,7 @@
    "label": "Payload"
   },
   {
-   "description": "Raw body; PII → purged after `webhook_event_retention_days`, blanked after processing for terminal `message.*` events",
+   "description": "The event's content as received. Deleted after the retention period in Settings.",
    "fieldname": "payload",
    "fieldtype": "JSON",
    "label": "Payload"
@@ -165,7 +161,7 @@
   },
   {
    "default": "Received",
-   "description": "Written only by `services/webhook.py`",
+   "description": "Updated automatically as the event is processed.",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -177,7 +173,7 @@
   },
   {
    "depends_on": "eval:doc.status==\"Failed\"",
-   "description": "No PII",
+   "description": "Why processing failed.",
    "fieldname": "error",
    "fieldtype": "Small Text",
    "label": "Error"
@@ -198,7 +194,7 @@
   }
  ],
  "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Webhook Event",

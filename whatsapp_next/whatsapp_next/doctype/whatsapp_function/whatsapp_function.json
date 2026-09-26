@@ -51,8 +51,7 @@
    "label": "Function Key",
    "fieldtype": "Data",
    "reqd": 1,
-   "unique": 1,
-   "description": "Registry key; handler resolved from whatsapp_next/functions/registry.py"
+   "unique": 1
   },
   {
    "fieldname": "function_name",
@@ -67,8 +66,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "search_index": 1,
-   "description": "From catalog"
+   "search_index": 1
   },
   {
    "fieldname": "status",
@@ -80,7 +78,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "search_index": 1,
-   "description": "Inactive: linked commands match but do not execute (block_reason = Function Inactive)"
+   "description": "Inactive functions do not run: commands that use them are recognised but not carried out."
   },
   {
    "fieldname": "column_break_9",
@@ -101,7 +99,7 @@
    "label": "Party Types",
    "fieldtype": "Table MultiSelect",
    "options": "WhatsApp Command Party Type",
-   "description": "From manifest; default for new Commands"
+   "description": "The party types new commands allow by default."
   },
   {
    "fieldname": "versions_tab",
@@ -134,7 +132,7 @@
    "label": "Latest Version",
    "fieldtype": "Data",
    "read_only": 1,
-   "description": "From catalog check"
+   "description": "The newest version available in the catalogue."
   },
   {
    "fieldname": "latest_version_date",
@@ -151,7 +149,7 @@
    "in_standard_filter": 1,
    "read_only": 1,
    "search_index": 1,
-   "description": "latest_version != installed_version; stored so the list can filter"
+   "description": "A newer version is available."
   },
   {
    "fieldname": "column_break_10",
@@ -161,8 +159,7 @@
    "fieldname": "catalog_source",
    "label": "Catalog Source",
    "fieldtype": "Data",
-   "read_only": 1,
-   "description": "catalog/vN/catalog.json path + app version"
+   "read_only": 1
   },
   {
    "fieldname": "catalog_checked_at",
@@ -174,8 +171,7 @@
    "fieldname": "checksum",
    "label": "Checksum",
    "fieldtype": "Data",
-   "read_only": 1,
-   "description": "sha256 of manifest for diff"
+   "read_only": 1
   },
   {
    "fieldname": "handler_registered",
@@ -183,7 +179,7 @@
    "fieldtype": "Check",
    "default": "0",
    "read_only": 1,
-   "description": "Computed in validate: key exists in code registry"
+   "description": "Whether this site can run the function."
   },
   {
    "fieldname": "manifest_section",
@@ -194,7 +190,7 @@
    "label": "Manifest",
    "fieldtype": "JSON",
    "read_only": 1,
-   "description": "Snapshot: inputs, outputs tokens, example, suggested_commands, changelog"
+   "description": "The function's full definition as installed: inputs, outputs, example and change history."
   },
   {
    "fieldname": "settings_tab",
@@ -206,7 +202,7 @@
    "label": "Settings",
    "fieldtype": "Table",
    "options": "WhatsApp Function Setting",
-   "description": "Installed defaults; values editable"
+   "description": "The function's settings. You can change the values."
   },
   {
    "fieldname": "outputs_tab",
@@ -218,7 +214,7 @@
    "label": "Outputs",
    "fieldtype": "Table",
    "options": "WhatsApp Function Output",
-   "description": "Defaults copied to Commands"
+   "description": "Default replies. New commands start with a copy of them."
   },
   {
    "fieldname": "stats_tab",
@@ -231,7 +227,7 @@
    "fieldtype": "Int",
    "default": "0",
    "read_only": 1,
-   "description": "Lifetime counter; 30-day figure derived from Inbound"
+   "description": "How many times the function has run."
   },
   {
    "fieldname": "last_called_at",
@@ -246,7 +242,7 @@
    "default": "0",
    "in_list_view": 1,
    "read_only": 1,
-   "description": "Rolling average"
+   "description": "Average time a run takes."
   },
   {
    "fieldname": "column_break_11",
@@ -264,7 +260,7 @@
    "label": "Last Error",
    "fieldtype": "Small Text",
    "read_only": 1,
-   "description": "No PII"
+   "description": "The last error the function reported."
   }
  ],
  "links": [
@@ -274,7 +270,7 @@
    "link_fieldname": "function"
   }
  ],
- "modified": "2026-09-26 18:30:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Function",

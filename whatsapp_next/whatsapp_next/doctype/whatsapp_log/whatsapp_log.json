@@ -89,7 +89,7 @@
    "label": "Message"
   },
   {
-   "description": "Device requested",
+   "description": "The device chosen to send the message.",
    "fieldname": "device",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -109,13 +109,13 @@
   },
   {
    "depends_on": "eval:doc.recipient_type==\"Individual\"",
-   "description": "Raw as given by the caller",
+   "description": "The number as it was given.",
    "fieldname": "phone",
    "fieldtype": "Data",
    "label": "Phone"
   },
   {
-   "description": "Normalized on insert; required for Individual; the drawer joins WhatsApp Number on it",
+   "description": "The number in international format. Required when sending to a person.",
    "fieldname": "phone_e164",
    "fieldtype": "Data",
    "label": "Phone (E.164)",
@@ -123,7 +123,7 @@
   },
   {
    "depends_on": "eval:doc.recipient_type==\"Group\"",
-   "description": "Group `@g.us` / LID; required for Group",
+   "description": "The WhatsApp group address. Required when sending to a group.",
    "fieldname": "jid",
    "fieldtype": "Data",
    "label": "JID"
@@ -133,14 +133,14 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Contact name or WhatsApp push name at send time",
+   "description": "The recipient's name when the message was sent.",
    "fieldname": "display_name",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Display Name"
   },
   {
-   "description": "Resolved at insert via `Contact Phone.wa_phone_e164`",
+   "description": "Linked automatically when the number belongs to a contact.",
    "fieldname": "contact",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -149,7 +149,6 @@
   },
   {
    "default": "Text",
-   "description": "Platform `message_type` vocabulary; `Template` is a source (`template` Link), not a type",
    "fieldname": "message_type",
    "fieldtype": "Select",
    "in_standard_filter": 1,
@@ -163,7 +162,7 @@
    "label": "Content"
   },
   {
-   "description": "Final rendered text (Jinja already applied); PII → retention",
+   "description": "The final text the recipient receives. Deleted after the retention period in Settings.",
    "fieldname": "body",
    "fieldtype": "Text",
    "label": "Body"
@@ -176,13 +175,12 @@
   },
   {
    "depends_on": "eval:[\"Document\",\"Image\",\"Video\",\"Audio\",\"Sticker\"].includes(doc.message_type)",
-   "description": "Private file",
    "fieldname": "attachment",
    "fieldtype": "Attach",
    "label": "Attachment"
   },
   {
-   "description": "Name sent to platform",
+   "description": "The file name the recipient sees.",
    "fieldname": "file_name",
    "fieldtype": "Data",
    "label": "File Name"
@@ -217,7 +215,7 @@
    "options": "Letter Head"
   },
   {
-   "description": "PDF render language",
+   "description": "The language used to print the attached document.",
    "fieldname": "language",
    "fieldtype": "Link",
    "label": "Language",
@@ -271,7 +269,6 @@
   },
   {
    "depends_on": "eval:doc.message_type==\"Poll\"",
-   "description": "List of strings",
    "fieldname": "poll_options",
    "fieldtype": "JSON",
    "label": "Poll Options"
@@ -289,7 +286,6 @@
   },
   {
    "depends_on": "eval:doc.message_type==\"Poll\"",
-   "description": "Provider id for `get_poll_results_api`",
    "fieldname": "poll_id",
    "fieldtype": "Data",
    "label": "Poll ID",
@@ -302,7 +298,7 @@
   },
   {
    "default": "Unsent",
-   "description": "Written only by `services/dispatch.py`; `Held` per D-024",
+   "description": "Updated automatically as the message is sent, delivered and read.",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -314,7 +310,7 @@
    "search_index": 1
   },
   {
-   "description": "Empty = ASAP",
+   "description": "Empty sends as soon as possible.",
    "fieldname": "scheduled_at",
    "fieldtype": "Datetime",
    "in_standard_filter": 1,
@@ -327,7 +323,6 @@
    "read_only": 1
   },
   {
-   "description": "`message.sent`",
    "fieldname": "sent_at",
    "fieldtype": "Datetime",
    "label": "Sent At",
@@ -335,14 +330,12 @@
    "in_list_view": 1
   },
   {
-   "description": "`message.delivered`",
    "fieldname": "delivered_at",
    "fieldtype": "Datetime",
    "label": "Delivered At",
    "read_only": 1
   },
   {
-   "description": "`message.read`",
    "fieldname": "read_at",
    "fieldtype": "Datetime",
    "label": "Read At",
@@ -365,7 +358,7 @@
    "read_only": 1
   },
   {
-   "description": "`message.held`",
+   "description": "When sending was put on hold.",
    "fieldname": "held_at",
    "fieldtype": "Datetime",
    "label": "Held At",
@@ -373,7 +366,7 @@
   },
   {
    "depends_on": "eval:doc.status==\"Held\"",
-   "description": "Platform `reason` on held; cleared on resume",
+   "description": "Why sending was put on hold. Cleared when it resumes.",
    "fieldname": "held_reason",
    "fieldtype": "Small Text",
    "label": "Held Reason",
@@ -385,7 +378,7 @@
    "label": "Errors"
   },
   {
-   "description": "Normalized code: `recipient_not_registered` / `device_disconnected` / `timeout` / `platform_rejected` / `invalid_template` / `insufficient_balance` / `unknown`; mapped in `services/errors.py`",
+   "description": "Why the message failed, e.g. the number is not on WhatsApp, the device is disconnected, or the balance is too low.",
    "fieldname": "error_code",
    "fieldtype": "Data",
    "in_standard_filter": 1,
@@ -394,7 +387,7 @@
    "in_list_view": 1
   },
   {
-   "description": "Provider text with numbers masked",
+   "description": "The error reported when sending, with numbers hidden.",
    "fieldname": "error_message",
    "fieldtype": "Small Text",
    "label": "Error Message",
@@ -406,7 +399,7 @@
   },
   {
    "default": "0",
-   "description": "Dispatcher attempts",
+   "description": "How many times sending was tried.",
    "fieldname": "attempts",
    "fieldtype": "Int",
    "label": "Attempts",
@@ -418,7 +411,7 @@
    "label": "Source"
   },
   {
-   "description": "Who created the row",
+   "description": "What created the message.",
    "fieldname": "source_type",
    "fieldtype": "Select",
    "in_standard_filter": 1,
@@ -427,7 +420,7 @@
    "reqd": 1
   },
   {
-   "description": "Business document that triggered the message",
+   "description": "The type of document the message was sent for.",
    "fieldname": "reference_doctype",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -436,7 +429,7 @@
   },
   {
    "depends_on": "eval:doc.reference_doctype",
-   "description": "`amount` is read from the document in the read layer, not stored",
+   "description": "The document the message was sent for.",
    "fieldname": "reference_name",
    "fieldtype": "Dynamic Link",
    "in_list_view": 1,
@@ -464,7 +457,6 @@
   },
   {
    "depends_on": "eval:doc.campaign",
-   "description": "Child row `name`",
    "fieldname": "campaign_recipient",
    "fieldtype": "Data",
    "label": "Campaign Recipient Row"
@@ -500,7 +492,7 @@
   },
   {
    "depends_on": "eval:doc.source_type==\"Command Reply\"",
-   "description": "Reply-to; `received_at` read through the link",
+   "description": "The received message this one replies to.",
    "fieldname": "trigger_inbound",
    "fieldtype": "Link",
    "label": "Trigger Inbound",
@@ -513,7 +505,7 @@
   },
   {
    "default": "0",
-   "description": "Sent via `send_message_api` from the Simulator sandbox (D-024)",
+   "description": "Sent as a test from the Simulator.",
    "fieldname": "is_test",
    "fieldtype": "Check",
    "in_standard_filter": 1,
@@ -525,7 +517,7 @@
   },
   {
    "default": "0",
-   "description": "No real send; Simulator \"on behalf\" row",
+   "description": "Not really sent; created in the Simulator.",
    "fieldname": "is_simulated",
    "fieldtype": "Check",
    "in_standard_filter": 1,
@@ -538,7 +530,6 @@
    "label": "Provider"
   },
   {
-   "description": "1:1 back-link",
    "fieldname": "queue_item",
    "fieldtype": "Link",
    "label": "Queue Item",
@@ -546,14 +537,12 @@
    "read_only": 1
   },
   {
-   "description": "Provider key at send time",
    "fieldname": "provider",
    "fieldtype": "Data",
    "label": "Provider",
    "read_only": 1
   },
   {
-   "description": "Key for `message.delivered/read`",
    "fieldname": "provider_message_id",
    "fieldtype": "Data",
    "label": "Provider Message ID",
@@ -561,7 +550,6 @@
    "search_index": 1
   },
   {
-   "description": "From `enqueue_messages_api.accepted[].queue_id`",
    "fieldname": "platform_queue_id",
    "fieldtype": "Data",
    "label": "Platform Queue ID",
@@ -579,7 +567,7 @@
   },
   {
    "depends_on": "eval:doc.device_fallback",
-   "description": "Original device when platform fell back",
+   "description": "The device originally chosen, when another device sent the message instead.",
    "fieldname": "requested_device",
    "fieldtype": "Link",
    "label": "Requested Device",
@@ -588,7 +576,7 @@
   },
   {
    "default": "0",
-   "description": "Platform sent from another device",
+   "description": "Another device sent the message because the chosen one was unavailable.",
    "fieldname": "device_fallback",
    "fieldtype": "Check",
    "label": "Device Fallback",
@@ -596,7 +584,7 @@
   }
  ],
  "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Log",

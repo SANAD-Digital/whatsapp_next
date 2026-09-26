@@ -42,13 +42,13 @@
    "reqd": 1,
    "unique": 1,
    "in_list_view": 1,
-   "description": "Casefolded + trimmed on save; unique against every other command's code and synonyms"
+   "description": "The word a sender types to run the command. Capital letters and extra spaces are ignored, and it must not match another command or synonym."
   },
   {
    "fieldname": "title",
    "label": "Title",
    "fieldtype": "Data",
-   "description": "Human label; default = code"
+   "description": "A friendly name for the command. Empty uses the command word."
   },
   {
    "fieldname": "function",
@@ -58,7 +58,7 @@
    "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "description": "Only Active functions on create; the list warns when the function is inactive"
+   "description": "What the command does. Only active functions can be picked for a new command."
   },
   {
    "fieldname": "column_break_12",
@@ -74,14 +74,14 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "search_index": 1,
-   "description": "Inactive ↔ Active via action only"
+   "description": "Only active commands respond to senders."
   },
   {
    "fieldname": "synonyms",
    "label": "Synonyms",
    "fieldtype": "Small Text",
    "in_list_view": 1,
-   "description": "One per line; casefolded; unique across commands"
+   "description": "Other words that run the same command, one per line. Each must be unique across all commands."
   },
   {
    "fieldname": "access_section",
@@ -94,21 +94,21 @@
    "fieldtype": "Check",
    "default": "1",
    "in_standard_filter": 1,
-   "description": "Sender's phone_e164 must resolve to a Contact with a party of an allowed type"
+   "description": "Only senders whose number belongs to a contact of an allowed party type can run it."
   },
   {
    "fieldname": "allowed_party_types",
    "label": "Allowed Party Types",
    "fieldtype": "Table MultiSelect",
    "options": "WhatsApp Command Party Type",
-   "description": "Empty = all"
+   "description": "Leave empty to allow all party types."
   },
   {
    "fieldname": "allowed_group",
    "label": "Allowed Group",
    "fieldtype": "Link",
    "options": "WhatsApp Contact Group",
-   "description": "Whitelist; empty = everyone not blocked"
+   "description": "Only members of this group can run the command. Empty allows everyone who is not blocked."
   },
   {
    "fieldname": "column_break_13",
@@ -119,14 +119,14 @@
    "label": "Blocked Group",
    "fieldtype": "Link",
    "options": "WhatsApp Contact Group",
-   "description": "In addition to Settings.global_blacklist_group"
+   "description": "Members of this group cannot run the command, in addition to the global blacklist in Settings."
   },
   {
    "fieldname": "reply_device",
    "label": "Reply Device",
    "fieldtype": "Link",
    "options": "WhatsApp Device",
-   "description": "Overrides Settings; empty = receiving device"
+   "description": "The device that sends the reply, instead of the one in Settings."
   },
   {
    "fieldname": "overrides_section",
@@ -137,14 +137,14 @@
    "fieldname": "settings_overrides",
    "label": "Settings Overrides",
    "fieldtype": "JSON",
-   "description": "{key: value}; keys validated against function.settings"
+   "description": "Setting values for this command only, as JSON, e.g. {\"key\": \"value\"}. Keys must be settings of the function."
   },
   {
    "fieldname": "outputs",
    "label": "Outputs",
    "fieldtype": "Table",
    "options": "WhatsApp Function Output",
-   "description": "Copied from Function on create; \"restore defaults\" re-copies"
+   "description": "The replies the command sends. They start as the function's defaults, and Restore Defaults copies them again."
   },
   {
    "fieldname": "notes_section",
@@ -166,7 +166,7 @@
    "fieldtype": "Int",
    "default": "0",
    "read_only": 1,
-   "description": "Lifetime counter; 30-day figure derived from Inbound (command, received_at)"
+   "description": "How many times the command has run."
   },
   {
    "fieldname": "column_break_14",
@@ -183,7 +183,7 @@
    "label": "Defaults Restored At",
    "fieldtype": "Datetime",
    "read_only": 1,
-   "description": "Audit: Command Defaults Restored"
+   "description": "When the replies were last reset to the function's defaults."
   }
  ],
  "links": [
@@ -198,7 +198,7 @@
    "link_fieldname": "command"
   }
  ],
- "modified": "2026-09-26 18:30:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Command",

@@ -15,11 +15,11 @@
    "options": "DocType",
    "reqd": 1,
    "in_list_view": 1,
-   "description": "One of Customer, Supplier, Employee, Sales Person, User (validated server-side)"
+   "description": "Customer, Supplier, Employee, Sales Person or User."
   }
  ],
  "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Command Party Type",

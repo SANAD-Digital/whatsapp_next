@@ -380,5 +380,11 @@ class TestFieldsGroupA(IntegrationTestCase):
 		self.assertEqual(frappe.get_meta("WhatsApp Number").allow_rename or 0, 0)
 		self.assertEqual(
 			frappe.get_meta("WhatsApp Settings").get_field("webhook_endpoint_url").description,
-			"`https://{site}/api/method/whatsapp_next.webhooks.v1.receiver.receive` (D-031)",
+			"The address on this site where the platform sends messages and status updates.",
 		)
+		# The receiver is the versioned path (backend F-02, D-031), and it is a real guest method.
+		from whatsapp_next.services import webhook_setup
+		from whatsapp_next.webhooks.v1 import receiver
+
+		self.assertEqual(webhook_setup.RECEIVER_METHOD, "whatsapp_next.webhooks.v1.receiver.receive")
+		self.assertIn(receiver.receive, frappe.guest_methods)

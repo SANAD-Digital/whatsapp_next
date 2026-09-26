@@ -96,7 +96,7 @@
   },
   {
    "default": "snd_platform",
-   "description": "Provider registry key; the `whatsapp_providers` hook registry is the source of the options and the stored value must exist there",
+   "description": "The WhatsApp service this site sends through.",
    "fieldname": "provider",
    "fieldtype": "Select",
    "label": "Provider",
@@ -104,14 +104,14 @@
    "reqd": 1
   },
   {
-   "description": "https only; no trailing slash; validated on save",
+   "description": "Must start with https:// and have no slash at the end.",
    "fieldname": "platform_base_url",
    "fieldtype": "Data",
    "label": "Platform Base URL"
   },
   {
    "default": "30",
-   "description": "5\u2013120",
+   "description": "How long to wait for the platform, from 5 to 120 seconds.",
    "fieldname": "request_timeout",
    "fieldtype": "Int",
    "label": "Request Timeout (s)"
@@ -123,7 +123,7 @@
   },
   {
    "default": "Untested",
-   "description": "Result of \"test connection\" (`get_subscription_status`)",
+   "description": "The result of the last connection test.",
    "fieldname": "connection_status",
    "fieldtype": "Select",
    "label": "Connection Status",
@@ -147,7 +147,7 @@
    "read_only": 1
   },
   {
-   "description": "No secrets in text",
+   "description": "Why the last connection test failed.",
    "fieldname": "last_connection_error",
    "fieldtype": "Small Text",
    "label": "Last Connection Error",
@@ -159,28 +159,28 @@
    "label": "Credentials"
   },
   {
-   "description": "Sent as `X-SND-API-Key` (D-020). Encrypted",
+   "description": "Your customer key from the platform. Stored encrypted.",
    "fieldname": "customer_api_key",
    "fieldtype": "Password",
    "label": "Customer API Key",
    "permlevel": 1
   },
   {
-   "description": "Link api_key; sent as `Authorization: token k:s` (D-020). Encrypted",
+   "description": "The API key from the platform. Stored encrypted.",
    "fieldname": "api_key",
    "fieldtype": "Password",
    "label": "API Key",
    "permlevel": 1
   },
   {
-   "description": "Link api_secret; also `X-SND-API-Secret` (D-020). Encrypted",
+   "description": "The API secret from the platform. Stored encrypted.",
    "fieldname": "api_secret",
    "fieldtype": "Password",
    "label": "API Secret",
    "permlevel": 1
   },
   {
-   "description": "Set on any credential change + Audit `Credentials Changed`",
+   "description": "When the keys were last changed.",
    "fieldname": "credentials_updated_at",
    "fieldtype": "Datetime",
    "label": "Credentials Updated At",
@@ -193,7 +193,7 @@
    "label": "Webhook"
   },
   {
-   "description": "Fetched via `get_integration_webhook_secret_api` (D-013), never typed. Encrypted",
+   "description": "Fetched from the platform automatically; you never type it. Stored encrypted.",
    "fieldname": "webhook_secret",
    "fieldtype": "Password",
    "label": "Webhook Secret",
@@ -201,21 +201,20 @@
    "read_only": 1
   },
   {
-   "description": "Platform `WhatsApp Webhook Endpoint` docname",
    "fieldname": "webhook_endpoint",
    "fieldtype": "Data",
    "label": "Webhook Endpoint (platform)",
    "read_only": 1
   },
   {
-   "description": "`https://{site}/api/method/whatsapp_next.webhooks.v1.receiver.receive` (D-031)",
+   "description": "The address on this site where the platform sends messages and status updates.",
    "fieldname": "webhook_endpoint_url",
    "fieldtype": "Data",
    "label": "Webhook Endpoint URL",
    "read_only": 1
   },
   {
-   "description": "Mirror of platform state (D-018); refreshed by `list_webhook_endpoints_api`",
+   "description": "Whether the platform is currently sending updates to this site.",
    "fieldname": "webhook_status",
    "fieldtype": "Select",
    "label": "Webhook Status",
@@ -227,14 +226,14 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "List of platform event names accepted on the endpoint; written by save \u2192 `update_webhook_endpoint_api`",
+   "description": "The kinds of events the platform sends to this site.",
    "fieldname": "webhook_events",
    "fieldtype": "JSON",
    "label": "Subscribed Events"
   },
   {
    "default": "3",
-   "description": "Sent to platform endpoint `max_retries`",
+   "description": "How many times the platform retries an update this site did not receive.",
    "fieldname": "webhook_max_retries",
    "fieldtype": "Select",
    "label": "Webhook Retries",
@@ -247,7 +246,7 @@
    "read_only": 1
   },
   {
-   "description": "Set by receiver on every valid event",
+   "description": "When the last valid update arrived.",
    "fieldname": "webhook_last_event_at",
    "fieldtype": "Datetime",
    "label": "Last Webhook Event At",
@@ -260,7 +259,7 @@
   },
   {
    "default": "20",
-   "description": "5\u201360 and \u2264 `plan_messages_per_minute`",
+   "description": "From 5 to 60, and no more than your plan allows.",
    "fieldname": "messages_per_minute",
    "fieldtype": "Int",
    "label": "Messages per Minute",
@@ -268,7 +267,7 @@
   },
   {
    "default": "3",
-   "description": "Copied to Queue Item at create",
+   "description": "How many times a message is tried before it fails.",
    "fieldname": "max_attempts",
    "fieldtype": "Int",
    "label": "Max Attempts",
@@ -276,7 +275,7 @@
   },
   {
    "default": "300",
-   "description": "Base for exponential backoff on transient errors",
+   "description": "The first wait before a retry. Each later retry waits longer.",
    "fieldname": "retry_backoff_seconds",
    "fieldtype": "Int",
    "label": "Retry Backoff (s)",
@@ -289,7 +288,7 @@
   },
   {
    "default": "0",
-   "description": "Global dispatcher gate; write via `api.v1.queue.pause_queue` (WhatsApp Manager)",
+   "description": "When on, no messages are sent. Only a WhatsApp Manager can pause or resume the queue.",
    "fieldname": "queue_paused",
    "fieldtype": "Check",
    "label": "Queue Paused",
@@ -316,7 +315,7 @@
   },
   {
    "depends_on": "eval:doc.queue_paused",
-   "description": "Also copied to Audit `Queue Paused`",
+   "description": "Why the queue was paused.",
    "fieldname": "queue_pause_reason",
    "fieldtype": "Small Text",
    "label": "Pause Reason",
@@ -335,7 +334,7 @@
   },
   {
    "depends_on": "eval:doc.enable_commands",
-   "description": "Required when commands are enabled; must be an enabled user, not Administrator, without the System Manager role (D-012)",
+   "description": "Commands run as this user. Required when commands are on; it must be enabled, not Administrator and not a System Manager.",
    "fieldname": "command_service_user",
    "fieldtype": "Link",
    "label": "Command Service User",
@@ -343,7 +342,7 @@
   },
   {
    "depends_on": "eval:doc.enable_commands",
-   "description": "Jinja; empty = no reply",
+   "description": "The reply sent when no command matches. Leave empty to send no reply.",
    "fieldname": "unknown_command_reply",
    "fieldtype": "Small Text",
    "label": "Unknown Command Reply"
@@ -355,7 +354,7 @@
   {
    "default": "0",
    "depends_on": "eval:doc.enable_commands",
-   "description": "Acknowledge a matched command before executing",
+   "description": "Send a short acknowledgement before running a command.",
    "fieldname": "send_receipt_reply",
    "fieldtype": "Check",
    "label": "Send Receipt Reply"
@@ -368,7 +367,7 @@
   },
   {
    "depends_on": "eval:doc.enable_commands",
-   "description": "Empty = reply from the device that received the inbound",
+   "description": "Empty replies from the device that received the message.",
    "fieldname": "reply_device",
    "fieldtype": "Link",
    "label": "Reply Device",
@@ -380,14 +379,14 @@
    "label": "Policy"
   },
   {
-   "description": "Used by Quick Send / Notification when none set",
+   "description": "Used for quick sends and notifications when no device is chosen.",
    "fieldname": "default_device",
    "fieldtype": "Link",
    "label": "Default Device",
    "options": "WhatsApp Device"
   },
   {
-   "description": "E.164 default region for national numbers",
+   "description": "Numbers entered without a country code are treated as this country's.",
    "fieldname": "default_country",
    "fieldtype": "Link",
    "label": "Default Country",
@@ -399,7 +398,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Group of kind `Blacklist`; members never receive anything",
+   "description": "A blacklist group whose members never receive anything.",
    "fieldname": "global_blacklist_group",
    "fieldtype": "Link",
    "label": "Global Blacklist",
@@ -407,7 +406,7 @@
   },
   {
    "default": "0",
-   "description": "Blocks non-campaign sends to numbers with `inbound_count = 0` and `conversation_confirmed = 0`",
+   "description": "Outside campaigns, send only to numbers that have messaged you or are marked as confirmed.",
    "fieldname": "send_only_to_known_numbers",
    "fieldtype": "Check",
    "label": "Send Only to Known Numbers"
@@ -418,7 +417,7 @@
    "label": "Picker"
   },
   {
-   "description": "Whitelist for ContactPicker source 3",
+   "description": "Document types you can pick recipients from.",
    "fieldname": "picker_sources",
    "fieldtype": "Table",
    "label": "Picker DocType Sources",
@@ -431,21 +430,21 @@
   },
   {
    "default": "365",
-   "description": "0 = never purge",
+   "description": "How long sent messages are kept. 0 keeps them forever.",
    "fieldname": "outbound_retention_days",
    "fieldtype": "Int",
    "label": "Outbound Retention (days)"
   },
   {
    "default": "365",
-   "description": "0 = never purge",
+   "description": "How long received messages are kept. 0 keeps them forever.",
    "fieldname": "inbound_retention_days",
    "fieldtype": "Int",
    "label": "Inbound Retention (days)"
   },
   {
    "default": "7",
-   "description": "Terminal Queue Items purged after N days",
+   "description": "Finished queue items are deleted after this many days.",
    "fieldname": "queue_retention_days",
    "fieldtype": "Int",
    "label": "Queue Retention (days)"
@@ -456,7 +455,7 @@
   },
   {
    "default": "30",
-   "description": "Payload is PII",
+   "description": "Received events are deleted after this many days, as they contain personal data.",
    "fieldname": "webhook_event_retention_days",
    "fieldtype": "Int",
    "label": "Webhook Event Retention (days)"
@@ -473,7 +472,7 @@
    "label": "Numbers Job"
   },
   {
-   "description": "Last `creation` processed by the nightly distinct job",
+   "description": "Messages up to this time are counted in WhatsApp Numbers.",
    "fieldname": "numbers_watermark",
    "fieldtype": "Datetime",
    "label": "Numbers Watermark",
@@ -495,7 +494,6 @@
    "label": "Subscription"
   },
   {
-   "description": "Cache from `get_subscription_status`",
    "fieldname": "plan_code",
    "fieldtype": "Data",
    "label": "Plan Code",
@@ -508,7 +506,6 @@
    "read_only": 1
   },
   {
-   "description": "Platform enum (Trial/Active/Near Expiry/Expired/Suspended/Cancelled) stored as text",
    "fieldname": "subscription_status",
    "fieldtype": "Data",
    "label": "Subscription Status",
@@ -533,7 +530,7 @@
    "read_only": 1
   },
   {
-   "description": "Upper bound for `messages_per_minute`",
+   "description": "The highest sending rate your plan allows.",
    "fieldname": "plan_messages_per_minute",
    "fieldtype": "Int",
    "label": "Plan Rate Limit",
@@ -550,7 +547,6 @@
    "read_only": 1
   },
   {
-   "description": "`get_wallet_balance_api`",
    "fieldname": "wallet_balance",
    "fieldtype": "Currency",
    "label": "Wallet Balance",
@@ -577,7 +573,7 @@
    "read_only": 1
   },
   {
-   "description": "`features{allow_*}` snapshot gates Campaign/Commands UI",
+   "description": "The features your plan includes, such as campaigns and commands.",
    "fieldname": "plan_features",
    "fieldtype": "JSON",
    "label": "Plan Features",
@@ -596,7 +592,7 @@
   },
   {
    "default": "0",
-   "description": "Set when credentials OK + \u22651 device Connected + webhook Active",
+   "description": "On once the keys work, at least one device is connected and the webhook is active.",
    "fieldname": "setup_completed",
    "fieldtype": "Check",
    "label": "Setup Completed",
@@ -621,7 +617,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Settings",

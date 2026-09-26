@@ -88,7 +88,7 @@
    "fieldtype": "Int",
    "default": "1",
    "depends_on": "eval:[\"Monthly\",\"Quarterly\",\"Yearly\"].includes(doc.periodicity)",
-   "description": "1–28"
+   "description": "A day from 1 to 28."
   },
   {
    "fieldname": "month_of_year",
@@ -103,7 +103,7 @@
    "fieldtype": "Time",
    "reqd": 1,
    "in_list_view": 1,
-   "description": "Site timezone"
+   "description": "In the site's time zone."
   },
   {
    "fieldname": "content_tab",
@@ -127,7 +127,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "depends_on": "eval:doc.content_type==\"Report\"",
-   "description": "Required when Content = Report"
+   "description": "Required when the content is a report."
   },
   {
    "fieldname": "filters_json",
@@ -142,7 +142,7 @@
    "fieldtype": "Code",
    "options": "JSON",
    "depends_on": "eval:doc.content_type==\"Report\"",
-   "description": "Report filter → date token, e.g. {\"from_date\": \"month_start\", \"to_date\": \"today\"}"
+   "description": "Report filters that follow the date, e.g. {\"from_date\": \"month_start\", \"to_date\": \"today\"}."
   },
   {
    "fieldname": "body_section",
@@ -154,7 +154,7 @@
    "label": "Template",
    "fieldtype": "Link",
    "options": "WhatsApp Template",
-   "description": "Body source; context = rows, columns, report, alert"
+   "description": "The saved template for the message text. It can use the report's rows and columns."
   },
   {
    "fieldname": "message",
@@ -162,7 +162,7 @@
    "fieldtype": "Code",
    "options": "Jinja",
    "depends_on": "eval:!doc.template",
-   "description": "Inline fallback; required if template empty"
+   "description": "The message text, used when no template is chosen."
   },
   {
    "fieldname": "attachment_section",
@@ -177,7 +177,7 @@
    "reqd": 1,
    "default": "PDF",
    "depends_on": "eval:doc.content_type==\"Report\"",
-   "description": "PNG needs wkhtmltoimage on the bench"
+   "description": "How to attach the report. PNG must be supported on the server."
   },
   {
    "fieldname": "print_format",
@@ -202,7 +202,7 @@
    "label": "Language",
    "fieldtype": "Link",
    "options": "Language",
-   "description": "Render language"
+   "description": "The language used for the message and the attachment."
   },
   {
    "fieldname": "device",
@@ -211,7 +211,7 @@
    "options": "WhatsApp Device",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "description": "Empty = default device"
+   "description": "Empty uses the default device in Settings."
   },
   {
    "fieldname": "recipients_tab",
@@ -224,7 +224,7 @@
    "fieldtype": "Table",
    "options": "WhatsApp Notification Alert Recipient",
    "reqd": 1,
-   "description": "At least one row"
+   "description": "Add at least one recipient."
   },
   {
    "fieldname": "stats_tab",
@@ -254,7 +254,7 @@
    "fieldtype": "Datetime",
    "read_only": 1,
    "search_index": 1,
-   "description": "Recomputed on save and after each run"
+   "description": "When the alert is sent next."
   },
   {
    "fieldname": "last_error",
@@ -270,7 +270,7 @@
    "link_fieldname": "notification_alert"
   }
  ],
- "modified": "2026-09-26 18:30:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Notification Alert",

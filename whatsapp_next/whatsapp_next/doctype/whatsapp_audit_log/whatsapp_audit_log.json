@@ -52,8 +52,7 @@
    "reqd": 1,
    "default": "Action",
    "in_list_view": 1,
-   "in_standard_filter": 1,
-   "description": "Prototype tone"
+   "in_standard_filter": 1
   },
   {
    "fieldname": "summary",
@@ -61,7 +60,7 @@
    "fieldtype": "Data",
    "reqd": 1,
    "in_list_view": 1,
-   "description": "Template key + args rendered at read time via __(); no PII (phones masked)"
+   "description": "A short description of what happened."
   },
   {
    "fieldname": "column_break_1",
@@ -75,13 +74,13 @@
    "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "description": "frappe.session.user; scheduler = Administrator with job_name set"
+   "description": "Who did it. Automatic actions show Administrator with the job name."
   },
   {
    "fieldname": "job_name",
    "label": "Job Name",
    "fieldtype": "Data",
-   "description": "Scheduler/RQ job when system-initiated"
+   "description": "The automatic job that did it, when no person did."
   },
   {
    "fieldname": "timestamp",
@@ -89,8 +88,7 @@
    "fieldtype": "Datetime",
    "reqd": 1,
    "in_list_view": 1,
-   "search_index": 1,
-   "description": "= creation; explicit for reports"
+   "search_index": 1
   },
   {
    "fieldname": "references_section",
@@ -103,7 +101,7 @@
    "fieldtype": "Link",
    "options": "DocType",
    "in_standard_filter": 1,
-   "description": "Acted-on record"
+   "description": "The type of record the action was taken on."
   },
   {
    "fieldname": "reference_name",
@@ -121,7 +119,7 @@
    "label": "Target DocType",
    "fieldtype": "Link",
    "options": "DocType",
-   "description": "Secondary record (e.g. Contact created from Number)"
+   "description": "Another record the action created or changed, e.g. a contact created from a number."
   },
   {
    "fieldname": "target_name",
@@ -139,13 +137,13 @@
    "fieldname": "fields_written",
    "label": "Fields Written",
    "fieldtype": "Small Text",
-   "description": "Fieldnames only, never values"
+   "description": "The fields that were changed. Their values are not recorded."
   },
   {
    "fieldname": "reason",
    "label": "Reason",
    "fieldtype": "Small Text",
-   "description": "User-entered reason (pause/cancel/delete)"
+   "description": "The reason given for pausing, cancelling or deleting."
   },
   {
    "fieldname": "column_break_3",
@@ -155,13 +153,12 @@
    "fieldname": "count",
    "label": "Count",
    "fieldtype": "Int",
-   "description": "Rows affected for bulk actions"
+   "description": "How many records a bulk action affected."
   },
   {
    "fieldname": "ip_address",
    "label": "IP Address",
-   "fieldtype": "Data",
-   "description": "frappe.local.request_ip"
+   "fieldtype": "Data"
   },
   {
    "fieldname": "details_json_section",
@@ -171,11 +168,11 @@
    "fieldname": "details",
    "label": "Details",
    "fieldtype": "JSON",
-   "description": "Structured, no PII (ids, counts, old/new for non-secret settings)"
+   "description": "Extra details about the action. Secrets and personal data are never recorded."
   }
  ],
  "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Audit Log",

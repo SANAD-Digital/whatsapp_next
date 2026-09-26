@@ -19,8 +19,7 @@
    "label": "Key",
    "fieldtype": "Data",
    "reqd": 1,
-   "in_list_view": 1,
-   "description": "Read-only after install; unique per parent"
+   "in_list_view": 1
   },
   {
    "fieldname": "label",
@@ -36,30 +35,28 @@
    "options": "Check\nInt\nData\nSelect",
    "reqd": 1,
    "default": "Data",
-   "in_list_view": 1,
-   "description": "Read-only after install"
+   "in_list_view": 1
   },
   {
    "fieldname": "choices",
    "label": "Choices",
    "fieldtype": "Small Text",
    "depends_on": "eval:doc.fieldtype==\"Select\"",
-   "description": "One per line"
+   "description": "The allowed values, one per line."
   },
   {
    "fieldname": "default_value",
    "label": "Default",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "read_only": 1,
-   "description": "From manifest"
+   "read_only": 1
   },
   {
    "fieldname": "value",
    "label": "Value",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "description": "Effective value; validated by fieldtype/choices"
+   "description": "The value in use. It must match the type and choices."
   },
   {
    "fieldname": "notes",
@@ -68,7 +65,7 @@
   }
  ],
  "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Function Setting",

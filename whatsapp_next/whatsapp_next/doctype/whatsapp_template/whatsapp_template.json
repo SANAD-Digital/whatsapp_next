@@ -40,7 +40,7 @@
    "unique": 1
   },
   {
-   "description": "Free text with existing-value suggestions",
+   "description": "Type a new category or pick an existing one.",
    "fieldname": "category",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -75,7 +75,7 @@
    "label": "Body"
   },
   {
-   "description": "Plain text Jinja; validated by compiling on save; errors logged never thrown at send",
+   "description": "The message text. Variables like {{ doc.name }} are filled in when it is sent.",
    "fieldname": "body",
    "fieldtype": "Code",
    "label": "Body",
@@ -114,7 +114,7 @@
   },
   {
    "depends_on": "eval:doc.message_type==\"Document\"",
-   "description": "Jinja",
+   "description": "What the file is called when it arrives, e.g. Invoice-{{ doc.name }}.pdf.",
    "fieldname": "file_name_template",
    "fieldtype": "Data",
    "label": "File Name Template"
@@ -125,7 +125,7 @@
    "label": "Context"
   },
   {
-   "description": "Variable hints (`doc.*`) and sample record for preview",
+   "description": "The document type this template is for. Used to suggest variables and to preview with a sample record.",
    "fieldname": "reference_doctype",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -148,7 +148,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Values for editor preview",
+   "description": "Sample values used in the preview.",
    "fieldname": "sample_context",
    "fieldtype": "JSON",
    "label": "Sample Context"
@@ -160,7 +160,7 @@
   },
   {
    "default": "0",
-   "description": "Incremented by dispatcher",
+   "description": "How many times the template has been used.",
    "fieldname": "use_count",
    "fieldtype": "Int",
    "in_list_view": 1,
@@ -195,7 +195,7 @@
    "link_fieldname": "template"
   }
  ],
- "modified": "2026-09-26 18:30:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Template",

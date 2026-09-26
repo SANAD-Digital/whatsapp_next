@@ -31,14 +31,14 @@
    "options": "Individual\nGroup",
    "reqd": 1,
    "default": "Individual",
-   "description": "Group rows come from picker source \"device groups\""
+   "description": "Send to one person or to a WhatsApp group on the device."
   },
   {
    "fieldname": "phone",
    "label": "Phone",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "description": "Raw as imported"
+   "description": "The number as it was entered or imported."
   },
   {
    "fieldname": "phone_e164",
@@ -46,7 +46,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "search_index": 1,
-   "description": "Required for Individual; duplicate flag key"
+   "description": "The number in international format. Required for individuals and used to spot duplicates."
   },
   {
    "fieldname": "jid",
@@ -74,7 +74,7 @@
    "options": "Contact Group\nContact\nDocType\nExcel\nvCard\nManual",
    "reqd": 1,
    "in_list_view": 1,
-   "description": "Picker source used"
+   "description": "Where this recipient was added from."
   },
   {
    "fieldname": "contact_group",
@@ -96,7 +96,7 @@
    "fieldtype": "Dynamic Link",
    "options": "source_doctype",
    "depends_on": "eval:doc.source_type==\"DocType\"",
-   "description": "Print-format context for Document messages"
+   "description": "The document this recipient came from. Document messages print this document."
   },
   {
    "fieldname": "status",
@@ -108,7 +108,7 @@
    "in_list_view": 1,
    "read_only": 1,
    "search_index": 1,
-   "description": "Aggregate of this recipient's Outbound rows (worst-of when multi-message)"
+   "description": "The combined status of the messages sent to this recipient."
   },
   {
    "fieldname": "outbound_message",
@@ -116,7 +116,7 @@
    "fieldtype": "Link",
    "options": "WhatsApp Log",
    "read_only": 1,
-   "description": "Last Outbound created for the row"
+   "description": "The most recent message created for this recipient."
   },
   {
    "fieldname": "error_code",
@@ -155,7 +155,7 @@
   }
  ],
  "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Campaign Recipient",

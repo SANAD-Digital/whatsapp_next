@@ -87,14 +87,14 @@
    "options": "New\nSave\nSubmit\nCancel\nDays Before\nDays After\nMinutes Before\nMinutes After\nValue Change\nMethod",
    "reqd": 1,
    "in_standard_filter": 1,
-   "description": "Save = every document; Submit = on submit; Days After + date_changed = overdue; Submit + condition = amount threshold"
+   "description": "When to send the message, e.g. on submit, or some days after a date for overdue reminders."
   },
   {
    "fieldname": "date_changed",
    "label": "Reference Date",
    "fieldtype": "Select",
    "depends_on": "eval:[\"Days Before\",\"Days After\"].includes(doc.event)",
-   "description": "Options set by JS from Date fields of document_type"
+   "description": "The date field the days or minutes are counted from."
   },
   {
    "fieldname": "days_in_advance",
@@ -121,14 +121,14 @@
    "label": "Value Changed",
    "fieldtype": "Select",
    "depends_on": "eval:doc.event==\"Value Change\"",
-   "description": "Fieldname"
+   "description": "The field whose change sends the message."
   },
   {
    "fieldname": "method",
    "label": "Method",
    "fieldtype": "Data",
    "depends_on": "eval:doc.event==\"Method\"",
-   "description": "Doc event name (e.g. on_update_after_submit), not a dotted path"
+   "description": "The document event that sends the message, e.g. on_update_after_submit."
   },
   {
    "fieldname": "condition_section",
@@ -140,7 +140,7 @@
    "label": "Condition",
    "fieldtype": "Code",
    "options": "Python",
-   "description": "Expression over doc; safe_eval"
+   "description": "Send only when this is true, e.g. doc.grand_total > 1000."
   },
   {
    "fieldname": "message_tab",
@@ -154,7 +154,7 @@
    "options": "WhatsApp Device",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "description": "Empty = Settings.default_device"
+   "description": "Empty uses the default device in Settings."
   },
   {
    "fieldname": "template",
@@ -162,7 +162,7 @@
    "fieldtype": "Link",
    "options": "WhatsApp Template",
    "in_standard_filter": 1,
-   "description": "Preferred body source"
+   "description": "The saved template for the message text."
   },
   {
    "fieldname": "message",
@@ -170,7 +170,7 @@
    "fieldtype": "Code",
    "options": "Jinja",
    "depends_on": "eval:!doc.template",
-   "description": "Inline fallback when no template; required if template empty"
+   "description": "The message text, used when no template is chosen."
   },
   {
    "fieldname": "attachment_section",
@@ -215,7 +215,7 @@
    "label": "Attach from Field",
    "fieldtype": "Data",
    "depends_on": "eval:doc.message_type!=\"Text\"",
-   "description": "Attach fieldname on the document"
+   "description": "The document field that holds the file to send."
   },
   {
    "fieldname": "recipients_tab",
@@ -228,7 +228,7 @@
    "fieldtype": "Table",
    "options": "WhatsApp Notification Recipient",
    "reqd": 1,
-   "description": "At least one row"
+   "description": "Add at least one recipient."
   },
   {
    "fieldname": "property_tab",
@@ -239,7 +239,7 @@
    "fieldname": "set_property_after_alert",
    "label": "Set Property After Alert",
    "fieldtype": "Select",
-   "description": "Fieldname on document_type"
+   "description": "A field on the document to update after the message is sent."
   },
   {
    "fieldname": "column_break_17",
@@ -263,7 +263,7 @@
    "default": "0",
    "in_list_view": 1,
    "read_only": 1,
-   "description": "Counted from body on save"
+   "description": "How many variables the message uses."
   },
   {
    "fieldname": "send_count",
@@ -271,7 +271,7 @@
    "fieldtype": "Int",
    "default": "0",
    "read_only": 1,
-   "description": "Lifetime counter; 30-day figure from Outbound (notification, creation)"
+   "description": "How many messages this notification has sent."
   },
   {
    "fieldname": "last_sent_at",
@@ -288,7 +288,7 @@
    "label": "Last Error",
    "fieldtype": "Small Text",
    "read_only": 1,
-   "description": "Render/recipient errors logged, never thrown"
+   "description": "The last problem preparing a message. It never stops the document from being saved."
   },
   {
    "fieldname": "last_error_at",
@@ -304,7 +304,7 @@
    "link_fieldname": "notification"
   }
  ],
- "modified": "2026-09-26 18:30:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Notification",

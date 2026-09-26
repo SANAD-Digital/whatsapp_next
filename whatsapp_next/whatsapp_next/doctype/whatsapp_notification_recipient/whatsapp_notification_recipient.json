@@ -29,7 +29,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "depends_on": "eval:doc.recipient_type==\"Document Field\"",
-   "description": "Phone or Link-to-Contact field on the parent's document_type (options by JS)"
+   "description": "The document field that holds the phone number or the contact."
   },
   {
    "fieldname": "linked_document_field",
@@ -37,7 +37,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "depends_on": "eval:doc.recipient_type==\"Linked Document Field\"",
-   "description": "Link field on the document"
+   "description": "A link field on the document. The number is read from the linked record."
   },
   {
    "fieldname": "linked_mobile_fieldname",
@@ -52,7 +52,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "depends_on": "eval:doc.recipient_type==\"Fixed Number\"",
-   "description": "Raw"
+   "description": "The number as it was entered."
   },
   {
    "fieldname": "phone_e164",
@@ -60,18 +60,18 @@
    "fieldtype": "Data",
    "read_only": 1,
    "depends_on": "eval:doc.recipient_type==\"Fixed Number\"",
-   "description": "Normalized on save"
+   "description": "The number in international format."
   },
   {
    "fieldname": "condition",
    "label": "Condition",
    "fieldtype": "Code",
    "options": "Python",
-   "description": "Row-level condition over doc"
+   "description": "Send to this recipient only when this is true."
   }
  ],
  "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Notification Recipient",

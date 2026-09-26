@@ -42,7 +42,7 @@
   },
   {
    "default": "Not Linked",
-   "description": "First list column, colour indicator; = `contact` set",
+   "description": "Whether the number is linked to a contact.",
    "fieldname": "link_status",
    "fieldtype": "Select",
    "in_standard_filter": 1,
@@ -53,7 +53,7 @@
    "search_index": 1
   },
   {
-   "description": "E.164 for individuals; JID for Group/LID",
+   "description": "The number in international format, or the group address for groups.",
    "fieldname": "phone_e164",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -62,7 +62,7 @@
    "unique": 1
   },
   {
-   "description": "Last raw form seen",
+   "description": "The number as it was last seen.",
    "fieldname": "phone",
    "fieldtype": "Data",
    "label": "Phone (raw)"
@@ -87,7 +87,7 @@
    "search_index": 1
   },
   {
-   "description": "Push name from inbound; Contact name when linked",
+   "description": "The name shown on WhatsApp, or the contact name once linked.",
    "fieldname": "display_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -99,7 +99,7 @@
    "label": "Contact"
   },
   {
-   "description": "Set only by link/convert action",
+   "description": "Set when you link the number to a contact or convert it into one.",
    "fieldname": "contact",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -188,7 +188,7 @@
   },
   {
    "default": "0",
-   "description": "Manual override for `send_only_to_known_numbers`",
+   "description": "Treat this number as known, so messages can reach it when Send Only to Known Numbers is on.",
    "fieldname": "conversation_confirmed",
    "fieldtype": "Check",
    "in_standard_filter": 1,
@@ -232,7 +232,7 @@
    "link_fieldname": "phone_e164"
   }
  ],
- "modified": "2026-09-26 18:30:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Number",

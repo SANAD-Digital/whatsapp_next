@@ -22,7 +22,7 @@
    "label": "Phone",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "description": "Raw"
+   "description": "The number as it was entered."
   },
   {
    "fieldname": "phone_e164",
@@ -31,7 +31,7 @@
    "reqd": 1,
    "in_list_view": 1,
    "search_index": 1,
-   "description": "Normalized; unique per parent enforced in service"
+   "description": "The number in international format. Each number can appear only once in a group."
   },
   {
    "fieldname": "display_name",
@@ -85,11 +85,11 @@
    "fieldname": "note",
    "label": "Note",
    "fieldtype": "Small Text",
-   "description": "e.g. blacklist reason"
+   "description": "Any note, e.g. why the number is blacklisted."
   }
  ],
  "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Contact Group Member",

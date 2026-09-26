@@ -29,7 +29,7 @@
    "options": "User",
    "in_list_view": 1,
    "depends_on": "eval:doc.recipient_type==\"User\"",
-   "description": "Phone = User.mobile_no normalized at send; skipped with logged error when empty"
+   "description": "Sent to the user's mobile number. Skipped if the user has none."
   },
   {
    "fieldname": "role",
@@ -38,7 +38,7 @@
    "options": "Role",
    "in_list_view": 1,
    "depends_on": "eval:doc.recipient_type==\"Role\"",
-   "description": "Expands to enabled users of the role"
+   "description": "Sends to every enabled user with this role."
   },
   {
    "fieldname": "phone",
@@ -46,7 +46,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "depends_on": "eval:doc.recipient_type==\"Phone\"",
-   "description": "Raw"
+   "description": "The number as it was entered."
   },
   {
    "fieldname": "phone_e164",
@@ -54,7 +54,7 @@
    "fieldtype": "Data",
    "read_only": 1,
    "depends_on": "eval:doc.recipient_type==\"Phone\"",
-   "description": "Normalized on save"
+   "description": "The number in international format."
   },
   {
    "fieldname": "report_column",
@@ -62,11 +62,11 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "depends_on": "eval:doc.recipient_type==\"Report Column\"",
-   "description": "Column fieldname holding a phone; one message per distinct value, rows filtered to that value"
+   "description": "A report column that holds phone numbers. Each number gets its own message with only its rows."
   }
  ],
  "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Notification Alert Recipient",

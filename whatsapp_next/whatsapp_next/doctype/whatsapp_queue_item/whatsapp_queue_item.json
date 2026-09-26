@@ -47,7 +47,7 @@
    "label": "Queue Item"
   },
   {
-   "description": "1:1",
+   "description": "The message this item sends.",
    "fieldname": "outbound_message",
    "fieldtype": "Link",
    "label": "Outbound Message",
@@ -56,14 +56,12 @@
    "unique": 1
   },
   {
-   "description": "= `outbound_message` name; sent to platform (D-024)",
    "fieldname": "client_ref",
    "fieldtype": "Data",
    "label": "Client Ref",
    "reqd": 1
   },
   {
-   "description": "Denormalized for claim query + User Permissions",
    "fieldname": "device",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -84,13 +82,11 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Denormalized",
    "fieldname": "phone_e164",
    "fieldtype": "Data",
    "label": "Phone (E.164)"
   },
   {
-   "description": "Denormalized",
    "fieldname": "display_name",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -98,7 +94,7 @@
   },
   {
    "default": "5",
-   "description": "1 = highest; Quick Send/Command Reply 1, Notification 3, Campaign 5",
+   "description": "1 is the highest. Quick sends and command replies go first, then notifications, then campaigns.",
    "fieldname": "priority",
    "fieldtype": "Int",
    "label": "Priority",
@@ -110,7 +106,7 @@
    "label": "Dispatch"
   },
   {
-   "description": "Earliest dispatch time",
+   "description": "The earliest time the message may be sent.",
    "fieldname": "scheduled_at",
    "fieldtype": "Datetime",
    "in_list_view": 1,
@@ -119,7 +115,7 @@
   },
   {
    "default": "Queued",
-   "description": "Written only by `services/dispatch.py`",
+   "description": "Updated automatically as the message moves through the queue.",
    "fieldname": "status",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -135,14 +131,14 @@
    "label": "Attempts"
   },
   {
-   "description": "Copied from Settings at create",
+   "description": "How many times sending is tried before giving up.",
    "fieldname": "max_attempts",
    "fieldtype": "Int",
    "label": "Max Attempts",
    "reqd": 1
   },
   {
-   "description": "Set on transient failure",
+   "description": "When sending will be tried again after a temporary failure.",
    "fieldname": "next_attempt_at",
    "fieldtype": "Datetime",
    "label": "Next Attempt At",
@@ -153,26 +149,24 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "Normalized code",
    "fieldname": "last_error_code",
    "fieldtype": "Data",
    "in_standard_filter": 1,
    "label": "Last Error Code"
   },
   {
-   "description": "No PII",
+   "description": "The last error when sending.",
    "fieldname": "last_error",
    "fieldtype": "Small Text",
    "label": "Last Error"
   },
   {
-   "description": "Job that claimed the row",
    "fieldname": "job_id",
    "fieldtype": "Data",
    "label": "RQ Job ID"
   },
   {
-   "description": "Claim time; stale claims (> 10 min) re-queued by reconcile",
+   "description": "When sending started. Items stuck for more than 10 minutes go back to the queue.",
    "fieldname": "claimed_at",
    "fieldtype": "Datetime",
    "label": "Claimed At"
@@ -183,7 +177,6 @@
    "label": "Platform"
   },
   {
-   "description": "Platform batch",
    "fieldname": "batch_id",
    "fieldtype": "Data",
    "label": "Batch ID",
@@ -194,7 +187,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "description": "From `accepted[].queue_id`",
    "fieldname": "platform_queue_id",
    "fieldtype": "Data",
    "label": "Platform Queue ID"
@@ -242,7 +234,7 @@
   },
   {
    "depends_on": "eval:doc.status==\"Deleted\"",
-   "description": "Audit `Queue Items Deleted`",
+   "description": "Why the item was deleted.",
    "fieldname": "delete_reason",
    "fieldtype": "Small Text",
    "label": "Delete Reason"
@@ -255,14 +247,14 @@
   },
   {
    "depends_on": "eval:doc.status==\"Completed\"",
-   "description": "Platform accepted the ref",
+   "description": "When the platform accepted the message.",
    "fieldname": "completed_at",
    "fieldtype": "Datetime",
    "label": "Completed At"
   }
  ],
  "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Queue Item",

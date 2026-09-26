@@ -16,7 +16,7 @@
  ],
  "fields": [
   {
-   "description": "Validate unique within table; must be non-child, non-single",
+   "description": "Each document type can be added once. Child tables and single documents are not allowed.",
    "fieldname": "document_type",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -25,7 +25,7 @@
    "reqd": 1
   },
   {
-   "description": "Shown in picker; default = DocType label",
+   "description": "The name shown when picking recipients. Empty uses the document type's name.",
    "fieldname": "label",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -33,7 +33,7 @@
   },
   {
    "default": "Field",
-   "description": "`Linked Contact` reads Contact Phone through the DocType's `contact`-like Link",
+   "description": "Take the phone from a field on the document, or from its linked contact.",
    "fieldname": "phone_source",
    "fieldtype": "Select",
    "in_list_view": 1,
@@ -43,7 +43,7 @@
   },
   {
    "depends_on": "eval:doc.phone_source==\"Field\"",
-   "description": "Fieldname on `document_type` holding the phone",
+   "description": "The field on the document that holds the phone number.",
    "fieldname": "phone_fieldname",
    "fieldtype": "Data",
    "in_list_view": 1,
@@ -51,20 +51,20 @@
   },
   {
    "depends_on": "eval:doc.phone_source==\"Linked Contact\"",
-   "description": "Link-to-Contact fieldname on `document_type`",
+   "description": "The field on the document that links to the contact.",
    "fieldname": "contact_fieldname",
    "fieldtype": "Data",
    "label": "Contact Link Fieldname"
   },
   {
-   "description": "Empty = `title_field` of the DocType",
+   "description": "The field that holds the name to show. Empty uses the document's title.",
    "fieldname": "name_fieldname",
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Display Name Fieldname"
   },
   {
-   "description": "Server-side filters merged into every picker query on this DocType (JSON list, e.g. [[\"disabled\",\"=\",0]]). Set by administrators only; the client cannot remove them.",
+   "description": "Filters always applied when picking from this document type, as JSON, e.g. [[\"disabled\",\"=\",0]]. Users cannot remove them.",
    "fieldname": "filters_json",
    "fieldtype": "Code",
    "label": "Mandatory Filters (JSON)",
@@ -80,7 +80,7 @@
  ],
  "istable": 1,
  "links": [],
- "modified": "2026-09-22 00:00:00.000000",
+ "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Settings Picker Source",
