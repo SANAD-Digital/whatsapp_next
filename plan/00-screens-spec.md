@@ -21,9 +21,13 @@ contradict the project's founding principle of inheriting Frappe's future improv
 
 Consequences, all mandatory:
 
-- **Custom Pages are styled with Desk's Espresso CSS custom properties** (`--surface-*`,
-  `--ink-*`, `--outline-*`) rather than hard-coded colours, so they read as native Frappe and
-  inherit future theme and dark-mode changes for free.
+- **Custom Pages are styled with the prototype's palette, held as CSS custom properties**
+  (`--wa-*` in `public/scss/_tokens.scss`, light and dark: the `:root` block every
+  `docs/screen/*.dc.html` opens with), never hard-coded colours. On this product's own surfaces
+  those tokens re-point Desk's Espresso variables (`--surface-*`, `--ink-*`, `--outline-*`), so
+  Desk components placed there follow the prototype and still switch with Desk's dark mode. The
+  finished Desk lists stay on Desk's own palette. *(Amended 2026-09-27 per D-100 / D-129; was
+  "styled with Desk's Espresso CSS custom properties".)*
 - **Never mix the two UI worlds inside one screen.** Do not mount Vue + frappe-ui Tailwind inside a
   Desk page.
 - **Every custom Page takes all of its data from an independently callable API layer.** No business

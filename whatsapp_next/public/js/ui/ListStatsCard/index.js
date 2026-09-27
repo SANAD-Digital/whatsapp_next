@@ -16,7 +16,8 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 	 *   sum?: {doctype, field, filters}, format?(value), sub?: string|Function(value, raw), onclick?(card, value), modal?: {title, method, args?,
 	 *   columns: [{fieldname, label, format?(value, row)}], row_actions?: [{label, icon?, method?, args?(row),
 	 *   handler?(row), confirm?: true|ConfirmDialog opts, condition?(row)}], empty_text?}}`
-	 *   A `method` may resolve to a number, `{value, tone}`, or an array (its length is the value).
+	 *   A `method` may resolve to a number, `{value, tone}`, or an array (its length is the value);
+ *   it may also be a function returning such a promise, so several cards can share one call.
 	 * @param {number} [opts.refresh_seconds] — interval refresh (paused while the page is hidden)
 	 * @param {"row"|"kpi"} [opts.layout="row"] — `kpi`: prototype KPI cards (4 / 2 / 1 per row, icon in a tinted square, sub-text)
 	 * @param {Object<string, Function>} [opts.events] — realtime event name → handler (`this` = card set)
@@ -71,6 +72,8 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 
 	/** Fetch the value of one card according to its `method` / `count` / `sum` option. */
 	fetch(card) {
+		// a function lets several cards share one call (each picks its own figure from the answer)
+		if (typeof card.method === "function") return Promise.resolve(card.method());
 		if (card.method) {
 			return sanad.ui.call(card.method, typeof card.args === "function" ? card.args() : card.args || {}, { silent: true });
 		}

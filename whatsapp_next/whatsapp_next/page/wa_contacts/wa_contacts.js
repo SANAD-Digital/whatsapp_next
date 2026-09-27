@@ -998,6 +998,12 @@ class ContactsPage {
 						},
 					],
 				},
+				{
+					// 09 G-06: every change of this number's state, who made it and why
+					title: __("Conversation state history"),
+					cols: 1,
+					fields: [{ key: "history", type: "html", render: ($h) => ContactsPage.render_conversation_log($h, phone) }],
+				},
 			],
 			actions: [
 				{ key: "cancel", label: __("Cancel"), close: true },
@@ -1020,6 +1026,34 @@ class ContactsPage {
 			],
 			on_close: () => (saved ? this.after_change(row.name) : this.back_to_detail(row.name)),
 		}).show();
+	}
+
+	/** The number's conversation-state changes, newest first (`numbers.get_conversation_log`). */
+	static render_conversation_log($h, phone) {
+		const esc = sanad.ui.escape;
+		const state = new sanad.ui.EmptyState({ wrapper: $h, state: "loading", size: "sm", rows: 2 });
+		return sanad.ui
+			.call("numbers.get_conversation_log", { phone_e164: phone }, { silent: true })
+			.then((r) => {
+				state.hide();
+				const rows = (r && r.rows) || [];
+				if (!rows.length) {
+					$h.html(`<p class="wa-contacts__muted">${esc(__("No change recorded yet."))}</p>`);
+					return;
+				}
+				$h.html(
+					`<ol class="wa-contacts__log">${rows
+						.map(
+							(row) => `<li>
+								<strong>${esc(row.confirmed ? __("There is a conversation") : __("There is none"))}</strong>
+								<span class="wa-contacts__muted"> · ${esc(row.user_name || "")} · ${esc(frappe.datetime.str_to_user(row.at))}</span>
+								${row.note ? `<div>${esc(row.note)}</div>` : ""}
+							</li>`
+						)
+						.join("")}</ol>`
+				);
+			})
+			.catch((err) => state.error(err));
 	}
 
 	/** The prototype's `statusPanel`: the state now, the state after saving, a mandatory note. */

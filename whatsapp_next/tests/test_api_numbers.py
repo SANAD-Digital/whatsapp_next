@@ -138,6 +138,18 @@ class TestApiNumbers(IntegrationTestCase):
 			)
 			self.assertIsNone(frappe.db.get_value("WhatsApp Number", N3, "conversation_confirmed_by"))
 			self.assertEqual(len(_audit("Conversation Confirmed", N3)), 2)
+		# 09 G-06: the history, newest first, readable by a Contact User, only the reader's columns
+		with as_user("WhatsApp Contact User"):
+			log = api.get_conversation_log(phone_e164=N3)["rows"]
+		self.assertEqual([r["confirmed"] for r in log], [False, True])
+		self.assertEqual(log[1]["note"], "ok")
+		self.assertEqual(set(log[0]), {"at", "user", "user_name", "confirmed", "note"})
+		# a site that removed role All's Contact rights (D-125): no Contact read, no history
+		with as_user("_none"), patch.object(frappe, "has_permission", return_value=False):
+			with self.assertRaises(WAPermissionError):
+				api.get_conversation_log(phone_e164=N3)
+		with as_user("WhatsApp Contact User"), self.assertRaises(WANotFoundError):
+			api.get_conversation_log(phone_e164="+966500939999")
 
 	def test_convert_many(self):
 		contact = self._contact()

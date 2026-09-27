@@ -145,6 +145,40 @@ class TestApiMessages(IntegrationTestCase):
 		with as_user("WhatsApp Viewer"), self.assertRaises(WANotFoundError):
 			api.get_inbound(name="no-such-ApiTest-row")
 
+	def test_inbound_summary(self):
+		"""09 G-07: exact counts (measured as the difference its own rows make) and the reply time."""
+		from frappe.utils import add_to_date, now_datetime
+
+		with as_user("WhatsApp Viewer"):
+			before = api.get_inbound_summary(days=30)
+		executed = self._inbound(body=f"{TAG} summary 1")
+		self._inbound(body=f"{TAG} summary 2")
+		received = now_datetime()
+		frappe.db.set_value(
+			"WhatsApp Inbound Message",
+			executed,
+			{
+				"command_status": "Executed",
+				"received_at": received,
+				"replied_at": add_to_date(received, seconds=3),
+			},
+		)
+		frappe.db.set_value(
+			"WhatsApp Inbound Message",
+			self._inbound(body=f"{TAG} summary 3"),
+			"command_status",
+			"Not Matched",
+		)
+		with as_user("WhatsApp Viewer"):
+			after = api.get_inbound_summary(days=30)
+		self.assertEqual(after["total"] - before["total"], 3)
+		self.assertEqual(after["executed"] - before["executed"], 1)
+		self.assertEqual(after["unmatched"] - before["unmatched"], 1)
+		self.assertIsNotNone(after["avg_reply_seconds"])
+		self.assertGreaterEqual(after["replies_measured"], 1)
+		with as_user("_none"), self.assertRaises(WAPermissionError):
+			api.get_inbound_summary()
+
 	def test_get_conversation_pages(self):
 		o1, _ = self._queued()
 		i1 = self._inbound()

@@ -165,3 +165,14 @@
 .wa-contacts-msgs {
 	&__when { flex: none; font-size: 11px; color: var(--wa-ink-4); white-space: nowrap; }
 }
+
+// the conversation-state history in the "Change conversation state" window (09 G-06)
+.wa-contacts__log {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	max-height: 220px;
+	overflow-y: auto;
+	li { padding: 8px 0; border-bottom: 1px solid var(--wa-border); font-size: 13px; }
+	li:last-child { border-bottom: 0; }
+}

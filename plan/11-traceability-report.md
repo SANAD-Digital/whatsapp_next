@@ -311,5 +311,5 @@ Severity: **Critical** blocks release · **High** must be fixed before Gate 3 / 
 | OQ-1 | May the app remove Frappe's `All` DocPerm on `Contact` at install (making spec §4 hold by default), or is that a site-admin step only? | S-1 / R-028 | **Resolved 2026-09-27 (D-125): site-admin step; install / migrate warning and Settings → Policy banner built.** |
 | OQ-2 | Is "read-only queries and single-document status flips in `api/`" an accepted definition of "thin", or must every write path move to `services/`? | A-2 / RC-2 | **Resolved (D-128): write paths moved to services; allow-lists, bulk orchestration and read-only queries may stay in `api/`.** |
 | OQ-3 | Is the D-121 rule (user secret doubles as `X-SND-API-Secret`) the final platform contract, or should `login_with_password` return the link `api_secret` so C-04 keeps a separate factor? | S-2 / platform docs | Keep D-121, document it; revisit when the platform portal is built (spec §8) |
-| OQ-4 | 09 G-06 / G-07 endpoints: build in phase 9 or record as not built? | G-2 | Record as deferred with the interim path |
-| OQ-5 | Who edits spec §1 bullet 1 for D-100 and when? | A-4 | Owner, before Gate 3 |
+| OQ-4 | 09 G-06 / G-07 endpoints: build in phase 9 or record as not built? | G-2 | **Resolved (D-129): built.** |
+| OQ-5 | Who edits spec §1 bullet 1 for D-100 and when? | A-4 | **Resolved (D-129): spec §1 amended.** |

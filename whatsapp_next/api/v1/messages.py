@@ -277,3 +277,10 @@ def cancel(name: str, reason: str | None = None) -> dict[str, Any]:
 	"""Cancel a queued / paused message (`dispatch.delete_items`: queue row `Deleted`, outbound
 	`Cancelled`) → `{status}`. `WAStateConflictError` while `Sending` or when not queued."""
 	return {"status": dispatch.cancel_outbound(name, user=frappe.session.user, reason=reason)}
+
+
+@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
+def get_inbound_summary(days: int | None = 30) -> dict[str, Any]:
+	"""The Inbound screen's figures (09 G-07): total, match rate, unmatched, average reply time
+	over the last `days` (0 = all time). P: Viewer+."""
+	return inbound.summary(days)

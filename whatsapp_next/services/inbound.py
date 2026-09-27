@@ -241,3 +241,54 @@ def as_dict_for_ui(inbound: str) -> dict[str, Any]:
 		as_dict=True,
 	)
 	return json.loads(json.dumps(row, default=str)) if row else {}
+
+
+MATCHED_STATUSES = ("Matched", "Executed", "Failed", "Blocked")
+REPLY_SAMPLE = 5000
+
+
+def summary(days: int | None = 30) -> dict[str, Any]:
+	"""The Inbound screen's figures (09 G-07) over the last `days` (all time when falsy):
+	`{total, by_status{}, matched, executed, unmatched, match_rate, avg_reply_seconds,
+	replies_measured}`. `matched` = a command recognised the message (whatever happened next);
+	the average runs from `received_at` to `replied_at` over the newest replied rows."""
+	from frappe.utils import add_days, get_datetime, nowdate
+
+	msg = frappe.qb.DocType("WhatsApp Inbound Message")
+	since = get_datetime(add_days(nowdate(), -(cint(days) - 1))) if cint(days) else None
+	query = (
+		frappe.qb.from_(msg)
+		.select(msg.command_status, frappe.query_builder.functions.Count("*"))
+		.groupby(msg.command_status)
+	)
+	if since:
+		query = query.where(msg.received_at >= since)
+	by_status = {(status or "None"): int(n) for status, n in query.run()}
+	total = sum(by_status.values())
+	matched = sum(by_status.get(s, 0) for s in MATCHED_STATUSES)
+	filters: dict[str, Any] = {"replied_at": ("is", "set"), "received_at": ("is", "set")}
+	if since:
+		filters["received_at"] = (">=", since)
+	pairs = frappe.get_all(
+		"WhatsApp Inbound Message",
+		filters=filters,
+		fields=["received_at", "replied_at"],
+		order_by="received_at desc",
+		limit=REPLY_SAMPLE,
+	)
+	gaps = [
+		(get_datetime(p.replied_at) - get_datetime(p.received_at)).total_seconds()
+		for p in pairs
+		if p.replied_at and p.received_at and get_datetime(p.replied_at) >= get_datetime(p.received_at)
+	]
+	return {
+		"days": cint(days) or None,
+		"total": total,
+		"by_status": by_status,
+		"matched": matched,
+		"executed": by_status.get("Executed", 0),
+		"unmatched": by_status.get("Not Matched", 0),
+		"match_rate": round(matched * 100 / total, 1) if total else None,
+		"avg_reply_seconds": round(sum(gaps) / len(gaps), 2) if gaps else None,
+		"replies_measured": len(gaps),
+	}

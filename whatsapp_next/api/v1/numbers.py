@@ -164,3 +164,10 @@ def convert_many(phone_e164s: list[str]) -> dict[str, Any]:
 		permissions.convert_number(key, first_name=(row.display_name or "").strip() or key)
 
 	return _bulk.run_bulk(phone_e164s, one)
+
+
+@api_endpoint(roles=None, methods=("GET", "POST"))
+def get_conversation_log(phone_e164: str) -> dict[str, Any]:
+	"""The number's conversation-state history (09 G-06): `{rows[{at, user, user_name, confirmed,
+	note}]}`, newest first. P: Contact User | Contact read."""
+	return {"rows": permissions.conversation_log(phone_e164)}
