@@ -394,6 +394,9 @@ Pattern of core `Email Template` (gap §2). Read by AGT for Quick Send.
 | disabled | Disabled | Check | | | | 0 | | ✓ | | | | Message Templates |
 | use_count | Uses | Int | | | | 0 | ✓ | | | | read_only; incremented by dispatcher | Message Templates: «الاستخدام» |
 | last_used_at | Last Used At | Datetime | | | | | | | | | read_only | Message Templates |
+| preview_html | Preview | HTML | | | | | | | | | display only: the TemplateEditor mounts here (D-122) | Message Templates editor, Preview tab |
+
+Tabs (D-122): **Template** (name, category, description, type, disabled, body, usage) · **Attachment** (`depends_on` Document / Image) · **Preview** (reference DocType, language, sample context, `preview_html`).
 
 Indexes: `disabled`, `category`. `modified` serves «آخر تحديث».
 
@@ -439,6 +442,8 @@ CU role has C/R/W on all groups (OQ-6 default: all groups).
 | members_changed_at | Members Changed At | Datetime | | | | | | | | | read_only | Contact Groups: «آخر تحديث» |
 | disabled | Disabled | Check | | | | 0 | | ✓ | | | Disabled groups are not offered in the picker | — |
 | members | Members | Table | WhatsApp Contact Group Member | | | | | | | | Paginated component (gap R-01) | §3.2 |
+
+Tabs (D-122): **Group** · **Members** (`members_section` became the Members Tab Break).
 
 Indexes: `kind`, `disabled`.
 
