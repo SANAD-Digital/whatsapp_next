@@ -38,7 +38,7 @@
    "fieldname": "action",
    "label": "Action",
    "fieldtype": "Select",
-   "options": "Device Created\nDevice Connected\nDevice Disconnected\nDevice Deleted\nCredentials Changed\nSettings Changed\nWebhook Changed\nConnection Tested\nQueue Paused\nQueue Resumed\nQueue Rate Changed\nQueue Items Deleted\nQueue Items Retried\nCampaign Started\nCampaign Paused\nCampaign Resumed\nCampaign Cancelled\nCampaign Recipients Changed\nContact Group Members Changed\nBulk Send\nTest Send\nElevated Contact Read\nElevated Contact Write\nNumber Linked\nNumber Converted\nConversation Confirmed\nFunction Installed\nFunction Updated\nFunction Removed\nCommand Changed\nCommand Deleted\nCommand Defaults Restored\nRetention Purge",
+   "options": "Device Created\nDevice Connected\nDevice Disconnected\nDevice Deleted\nCredentials Changed\nSettings Changed\nWebhook Changed\nConnection Tested\nQueue Paused\nQueue Resumed\nQueue Rate Changed\nQueue Items Deleted\nQueue Items Retried\nCampaign Started\nCampaign Paused\nCampaign Resumed\nCampaign Cancelled\nCampaign Recipients Changed\nContact Group Members Changed\nBulk Send\nTest Send\nElevated Contact Read\nElevated Contact Write\nNumber Linked\nNumber Converted\nConversation Confirmed\nFunction Installed\nFunction Updated\nFunction Removed\nCommand Changed\nCommand Deleted\nCommand Defaults Restored\nRetention Purge\nAlert Test Sent",
    "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
@@ -172,7 +172,7 @@
   }
  ],
  "links": [],
- "modified": "2026-09-26 21:00:00.000000",
+ "modified": "2026-09-27 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Audit Log",

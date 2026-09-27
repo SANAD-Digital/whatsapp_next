@@ -8,6 +8,9 @@ frappe.ui.form.on("WhatsApp Notification Alert", {
 		load_report_columns(frm);
 		load_token_reference(frm);
 		if (frm.is_new() || !frappe.user.has_role(["WhatsApp Manager", "System Manager"])) return;
+		frm.add_custom_button(__("Open in the editor"), () =>
+			whatsapp_next.alerts.open(frm.doc.name, { on_saved: (r) => (r && r.deleted ? frappe.set_route("List", frm.doctype) : frm.reload_doc()) })
+		);
 		frm.add_custom_button(__("Preview"), () => preview(frm));
 		frm.add_custom_button(__("Run now"), () => run_now(frm));
 	},

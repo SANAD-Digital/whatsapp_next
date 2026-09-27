@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -20,6 +21,7 @@ from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.phone import normalize
 
 MAX_COLUMN_RECIPIENTS = 200
+PNG_BINARY = "wkhtmltoimage"
 
 
 @dataclass
@@ -196,7 +198,25 @@ def run_alert(name: str, *, preview: bool = False) -> AlertRun:
 	"""Job (`long`, `wa-alert-{name}`): execute, render, attach, send. `preview=True` renders
 	everything and returns it without creating outbound rows or touching counters."""
 	alert = frappe.get_doc("WhatsApp Notification Alert", name)
-	run = AlertRun(alert=name, preview=preview)
+	run = execute(alert, preview=preview)
+	if not preview:
+		run.next_run_at = alert.compute_next_run()
+		values: dict[str, Any] = {"next_run_at": run.next_run_at, "last_error": run.error}
+		if run.outbound:
+			values.update(
+				{"send_count": cint(alert.send_count) + len(run.outbound), "last_sent_at": now_datetime()}
+			)
+		frappe.db.set_value("WhatsApp Notification Alert", name, values, update_modified=False)
+	return run
+
+
+def execute(alert, *, preview: bool = False, test_phone: str | None = None) -> AlertRun:
+	"""Run one alert document — saved or a draft the editor built — and return what it did.
+	`preview` renders everything without creating outbound rows. `test_phone` sends to that one
+	number only, what the first recipient would receive (their rows, when the recipient is a report
+	column). Never touches the alert's counters; `run_alert` does that for a scheduled run."""
+	name = alert.name if not alert.is_new() else None
+	run = AlertRun(alert=name or alert.alert_name, preview=preview)
 	try:
 		filters = resolve_filters(alert)
 		columns: list[Any] = []
@@ -205,6 +225,13 @@ def run_alert(name: str, *, preview: bool = False) -> AlertRun:
 			columns, rows = _run_report(alert, filters)
 		run.rows, run.columns = len(rows), len(columns)
 		recipients = expand_recipients(alert, rows, columns)
+		if test_phone:
+			first = recipients[0] if recipients else Recipient(phone_e164=test_phone)
+			recipients = [
+				Recipient(phone_e164=test_phone, source="Test", column_value=first.column_value)
+			]
+			if first.source == "Report Column":
+				recipients[0].source = "Report Column"
 		column = next(
 			(r.report_column for r in alert.get("recipients") or [] if r.recipient_type == "Report Column"),
 			None,
@@ -230,7 +257,15 @@ def run_alert(name: str, *, preview: bool = False) -> AlertRun:
 			rendered = templates.render(source, ctx)
 			body = rendered.text if rendered.ok else _("Report {0}").format(alert.report or alert.alert_name)
 			attach: dict[str, Any] = {"message_type": "Text"}
-			if alert.content_type == "Report" and alert.attachment_format in ("PDF", "PNG"):
+			if preview and alert.content_type == "Report" and alert.attachment_format in ("PDF", "PNG"):
+				# a preview names the file it would attach; building it is the run's job
+				png = alert.attachment_format == "PNG" and bool(shutil.which(PNG_BINARY))
+				attach = {
+					"message_type": "Image" if png else "Document",
+					"file_name": f"{frappe.scrub(alert.alert_name or 'alert')}.{'png' if png else 'pdf'}",
+					"mime_type": "image/png" if png else "application/pdf",
+				}
+			elif alert.content_type == "Report" and alert.attachment_format in ("PDF", "PNG"):
 				html_text = report_render.report_html(columns, r_rows, alert, filters=filters)
 				content = report_render.report_png(html_text) if alert.attachment_format == "PNG" else None
 				if content:
@@ -251,7 +286,7 @@ def run_alert(name: str, *, preview: bool = False) -> AlertRun:
 					}
 				else:
 					url = attachments.save_private_file(
-						content, file_name, ("WhatsApp Notification Alert", name)
+						content, file_name, ("WhatsApp Notification Alert", name) if name else None
 					)
 					attach = {
 						"message_type": mtype,
@@ -291,14 +326,6 @@ def run_alert(name: str, *, preview: bool = False) -> AlertRun:
 	except Exception as exc:
 		run.error = f"{type(exc).__name__}: {str(exc)[:300]}"
 		frappe.log_error(title="WhatsApp alert failed", message=f"alert={name} {type(exc).__name__}")
-	if not preview:
-		run.next_run_at = alert.compute_next_run()
-		values: dict[str, Any] = {"next_run_at": run.next_run_at, "last_error": run.error}
-		if run.outbound:
-			values.update(
-				{"send_count": cint(alert.send_count) + len(run.outbound), "last_sent_at": now_datetime()}
-			)
-		frappe.db.set_value("WhatsApp Notification Alert", name, values, update_modified=False)
 	return run
 
 

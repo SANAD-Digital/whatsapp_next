@@ -21,7 +21,7 @@ const areas = {
 	numbers: ["get_number", "link_number", "convert_number", "convert_many", "unlink_number", "confirm_conversation", "search_numbers", "get_conversation_log"],
 	templates: ["preview", "list_variables", "pick_sample"],
 	notifications: ["preview", "get_document_fields", "send_now"],
-	alerts: ["preview", "run_now", "get_report_columns", "get_dynamic_filter_reference"],
+	alerts: ["preview", "run_now", "get_report_columns", "get_dynamic_filter_reference", "get_editor", "preview_draft", "send_test", "save_editor", "set_enabled", "delete_alert", "search"],
 	functions: ["get_catalog", "get_manifest", "preview_install", "install", "update", "update_many", "remove", "set_status", "set_status_many", "save_settings"],
 	commands: ["list_commands", "get_defaults", "save_command", "set_status", "set_status_many", "restore_defaults", "test_command", "get_editor", "get_function_spec", "save_editor", "preview_command", "delete_command", "search_groups", "search_contacts"],
 	// the calling regions, out of the library the server validates with

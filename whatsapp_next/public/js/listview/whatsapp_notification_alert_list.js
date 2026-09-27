@@ -2,13 +2,18 @@
 // "Notification templates" screen): PageHeader (title, "+ New alert", KPIs Alerts · Enabled ·
 // Sent · Due in 24 hours) → FilterBar (search, periodicity, status, device, content type) →
 // DataList (Alert · Periodicity · Content · Status toggle · Device avatar · Sent · Next run ·
-// Last updated · View → form). PageHeader / DataList are guarded with `typeof`.
+// Last updated · View → the alert editor window, D-139). PageHeader / DataList are guarded with `typeof`.
 
 const DOCTYPE = "WhatsApp Notification Alert";
 const has_kit = (name) => typeof sanad.ui[name] === "function";
 
+// a row, "View" and "New alert" open the alert editor window (D-139); the form stays one click away in it
 function open_form(doc) {
-	frappe.set_route("Form", DOCTYPE, doc.name);
+	whatsapp_next.alerts.open(doc.name);
+}
+
+function new_alert() {
+	whatsapp_next.alerts.open(null);
 }
 
 function toggle_enabled(doc, listview) {
@@ -123,7 +128,7 @@ frappe.listview_settings[DOCTYPE] = {
 				listview,
 				title: __("Notification alerts"),
 				description: __("Reports and messages sent on a schedule — daily, weekly, monthly — from a chosen device."),
-				primary: { label: __("New alert"), icon: "es-line-add", perm: "create", handler: () => frappe.new_doc(DOCTYPE) },
+				primary: { label: __("New alert"), icon: "es-line-add", perm: "create", handler: new_alert },
 				stats: STATS(),
 			});
 		}
@@ -155,7 +160,7 @@ frappe.listview_settings[DOCTYPE] = {
 				empty: {
 					title: __("No alerts yet"),
 					description: __("Send a report or a message on a schedule to a group of numbers."),
-					action: frappe.perm.has_perm(DOCTYPE, 0, "create") ? { label: __("New alert"), onclick: () => frappe.new_doc(DOCTYPE) } : null,
+					action: frappe.perm.has_perm(DOCTYPE, 0, "create") ? { label: __("New alert"), onclick: new_alert } : null,
 				},
 				mobile: "cards",
 			});
