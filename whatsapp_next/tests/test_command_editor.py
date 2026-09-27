@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import frappe
 from frappe.tests import IntegrationTestCase
 
@@ -249,6 +251,16 @@ class TestCommandEditor(IntegrationTestCase):
 				payload={**payload, "requires_linked_contact": 1}, sender={"phone": PHONE}
 			)
 			self.assertEqual((out["status"], out["block_reason"]), ("Blocked", "Not Linked"))
+
+			# a step that fails with frappe.throw reports in the result, without a queued desk message
+			def refuse(*_a, **_k):
+				frappe.throw("edtest missing", WAValidationError)
+
+			queued = len(frappe.local.message_log or [])
+			with patch.object(cr, "parse_args", side_effect=refuse):
+				out = api.preview_command(payload=payload, sender={"phone": PHONE})
+			self.assertEqual((out["status"], out["error"]), ("Failed", "edtest missing"))
+			self.assertEqual(len(frappe.local.message_log or []), queued)
 			with self.assertRaises(WAValidationError):
 				api.preview_command(payload={"code": CODE})
 		self.assertEqual(frappe.db.count("WhatsApp Log"), before)

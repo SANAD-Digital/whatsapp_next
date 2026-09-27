@@ -11,10 +11,10 @@
 // prototype's nine columns. The catalog is a file, so this screen owns the rows, the filtering,
 // the sorting and the paging and hands the table one page at a time.
 //
-// The function itself opens as the kit's record drawer in its document layout (D-084): identity,
-// what it does, the six facts an operator asks first, the variables · settings · outputs the
-// manifest declares, the commands that run on it drawn as themselves, the record's own details
-// and the versions as a timeline — two or three verbs in the footer, the rest behind "More".
+// The function itself opens as the prototype's function window (`sanad.ui.FunctionDetail`, D-133):
+// Details (what it does, when, who, four figures, words, linked commands · variables and options ·
+// outputs), the version log, and a live preview — Update / Install / Linked commands in the footer,
+// the rest behind "More".
 // A form is an `OverlayPanel`: the dry-run preview, the diff shown before install or update, and
 // the settings editor. Every read and write goes through `sanad.ui.call` to `functions.*` /
 // `commands.*`; no business logic lives here.
@@ -23,7 +23,6 @@
 	const ROUTE = "wa-functions-center";
 	const ui = sanad.ui;
 	const kit = sanad.kit;
-	const parts = ui.Render.parts;
 	const esc = (v) => ui.escape(v == null ? "" : v);
 	const fmt_int = (v) => ui.format_int(v);
 	const is_manager = () => frappe.user.has_role("WhatsApp Manager") || frappe.user.has_role("System Manager");
@@ -276,144 +275,6 @@
 
 	// ---- the dry-run preview ------------------------------------------------------------------
 
-	/**
-	 * A dry run instead of a mock-up: the prototype renders the reply from sample values, and this
-	 * app can do better — `commands.test_command` routes one message through the real command
-	 * router without storing or sending anything. The reply is drawn as the WhatsApp exchange it
-	 * would be: the sender's message in, the function's reply out.
-	 */
-	function run_preview(entry, manifest, { on_close } = {}) {
-		const commands = (entry.linked_commands || []).filter((c) => c.status === "Active");
-		const example = cstr((manifest && manifest.example) || "") || (commands[0] || {}).code || "";
-		const templates = ((manifest && manifest.outputs) || []).filter((o) => o.default_template);
-		let $result = null;
-		let $templates = null;
-		const idle = () => {
-			$result.empty();
-			new ui.EmptyState({
-				wrapper: $result,
-				state: "empty",
-				size: "sm",
-				title: commands.length ? __("Run the preview to see the reply") : __("No active command to run"),
-				description: commands.length
-					? __("The message goes through the real router: the command word, the sender's party, the function's outputs.")
-					: __("A command carries the word a sender writes. Link one to preview the reply."),
-				action: commands.length ? undefined : { label: __("Open commands"), onclick: () => command_list(entry) },
-			});
-		};
-		const render_result = (text, r) => {
-			const tone = r.block_reason ? "warn" : r.matched ? "ok" : "muted";
-			const label = r.block_reason
-				? __("Blocked: {0}", [__(r.block_reason)])
-				: r.matched
-				? __("Matched {0}", [r.command])
-				: __("No command matched this message");
-			$result.html(`
-				<div class="wa-fn-preview">
-					<div class="wa-fn-preview__head">${kit.badge(label, tone)}${r.matched && cint(r.function_ms) ? `<span class="wa-fn-preview__ms sanad-tabular" dir="ltr">${esc(ms_text(r.function_ms))}</span>` : ""}</div>
-					<div class="wa-fn-preview__thread">
-						<div class="sanad-chat__row sanad-chat__row--in"><div class="sanad-chat__bubble" dir="auto">${ui.ChatThread.format(text)}</div></div>
-						${
-							r.reply_body
-								? `<div class="sanad-chat__row sanad-chat__row--out"><div class="sanad-chat__bubble" dir="auto">${ui.ChatThread.format(r.reply_body)}</div></div>`
-								: `<p class="wa-fn__muted">${esc(r.error || __("The function produced no reply."))}</p>`
-						}
-					</div>
-				</div>`);
-			ui.announce(label);
-		};
-		const panel = new ui.OverlayPanel({
-			type: "modal",
-			width: "680px",
-			title: __("Preview {0}", [entry.function_name]),
-			subtitle: __("Simulation — the function runs, nothing is stored and nothing is sent."),
-			badge: { text: __("Simulation"), tone: "warn" },
-			sections: [
-				{
-					cols: 2,
-					fields: [
-						{ key: "text", label: __("Message"), value: example, span: 2, required: true, hint: __("What the sender would write — the command word first, then its arguments.") },
-						{ key: "phone", label: __("Sender number"), type: "phone", required: true, hint: __("The router reads the sender's party from this number.") },
-						{
-							key: "result",
-							type: "html",
-							span: 2,
-							render: ($h) => {
-								$result = $h;
-								idle();
-							},
-						},
-						{
-							key: "templates",
-							type: "html",
-							span: 2,
-							render: ($h) => {
-								$templates = $h;
-								if (!templates.length) return;
-								$h.html(
-									`<div class="wa-fn__head"><span class="wa-fn__head-label">${esc(__("Reply templates"))}</span></div>` +
-										templates
-											.map(
-												(o) =>
-													`<div class="wa-fn__output"><div class="wa-fn__output-head"><span class="wa-fn__output-name">${esc(__(o.label || o.output_key))}</span>${kit.badge(
-														__(o.output_type || "Text"),
-														"muted",
-														{ dot: false }
-													)}</div>${parts.code(o.default_template)}</div>`
-											)
-											.join("")
-								);
-							},
-						},
-					],
-				},
-			],
-			actions: [
-				{ key: "close", label: __("Close"), close: true },
-				{
-					key: "run",
-					label: __("Run preview"),
-					variant: "primary",
-					icon: "send",
-					handler: (values) => {
-						const text = cstr(values.text).trim();
-						const phone = ui.PhoneField.normalize(cstr(values.phone));
-						if (!phone.valid) {
-							panel.set_error("phone", __("Enter the sender's number in full, with its country code."));
-							return false;
-						}
-						$result.html(ui.skeleton(1, { lines: 2 }));
-						return ui
-							.call("commands.test_command", { text, sender_phone: phone.phone_e164 }, { silent: true })
-							.then((r) => render_result(text, r))
-							.catch((err) => {
-								$result.empty();
-								new ui.EmptyState({ wrapper: $result, state: "error", size: "sm", description: err.message });
-							})
-							.then(() => false);
-					},
-				},
-			],
-			on_close: () => on_close && on_close(false),
-		}).show();
-		if (!commands.length) panel.set_action_disabled("run", true);
-		// A real sender makes the preview honest: the router resolves the party from the number.
-		ui.call("numbers.search_numbers", { page: 1, page_length: 1 }, { silent: true })
-			.then((r) => {
-				const row = ((r && r.rows) || [])[0];
-				if (row && !cstr(panel.get_value("phone"))) {
-					panel.set_value("phone", row.phone_e164);
-					panel.mark_clean();
-				}
-			})
-			.catch(() => {});
-		void $templates;
-		if (parts.bind_copy) parts.bind_copy();
-		return panel;
-	}
-
-	// ---- the versions ---------------------------------------------------------------------------
-
 	/** Every version the catalog holds, newest first, to pick one to move to. */
 	function pick_version(entry, { on_pick, on_close } = {}) {
 		const versions = (entry.versions || []).slice().sort((a, b) => version_cmp(b, a));
@@ -450,401 +311,79 @@
 	 * use it, the six facts, the manifest's variables · settings · outputs, the commands that
 	 * run on it as themselves, the record's details, and every version as a timeline.
 	 */
-	class FunctionDrawer {
+	/** Fields a command output row may carry (`commands.save_editor` / `preview_command` allow-list). */
+	const OUTPUT_FIELDS = ["output_key", "label", "output_type", "default_template", "template", "condition", "print_format", "file_name_template", "variables", "notes"];
+	const PREVIEW_PARTY_TYPES = ["Customer", "Supplier", "Employee", "Sales Person"];
+
+	/**
+	 * The function as the prototype's window (`sanad.ui.FunctionDetail`, D-133): the manifest read
+	 * once, the verbs mapped onto this screen's forms. The preview runs the installed handler on a
+	 * throw-away command draft through `commands.preview_command` — nothing saved, nothing sent.
+	 */
+	class FunctionWindow {
 		constructor(page, entry) {
 			this.page = page;
 			this.entry = entry;
-			this.key = entry.function_key;
 		}
 
 		show() {
 			const e = this.entry;
+			const page = this.page;
 			const manager = is_manager();
-			this.state = new ui.EmptyState({ wrapper: $("<div>"), state: "loading" });
 			return ui
 				.call("functions.get_manifest", { function_key: e.function_key }, { silent: true })
 				.catch(() => null)
 				.then((manifest) => {
 					this.manifest = manifest || { inputs: [], settings: [], outputs: [], installed: {} };
-					return ui.meta.with_doctype("WhatsApp Command").catch(() => null);
-				})
-				.then(() => {
-					this.drawer = new ui.Drawer({
-						doctype: "WhatsApp Function",
-						name: e.function_key,
-						mode: "record",
-						layout: "document",
-						doc: this.document(),
-						width: 640,
-						title: __("Function"),
-						open_link: false,
-						fields: this.fields(),
-						profile: {
-							title: "function_name",
-							lines: ["category", "version_line"],
-							image: false,
-							value: false,
-							status: () => this.status(),
+					const linked = (e.linked_commands || []).length;
+					const more = [];
+					if (manager && e.installed) {
+						more.push({ label: e.status === "Active" ? __("Deactivate") : __("Activate"), handler: () => page.set_status(e, e.status === "Active" ? "Inactive" : "Active") });
+						if ((this.manifest.settings || []).length) more.push({ label: __("Edit settings"), handler: () => page.edit_settings(e, this.manifest) });
+						if ((e.versions || []).length > 1) more.push({ label: __("Another version…"), handler: () => page.pick_version(e) });
+						if (!linked) more.push({ label: __("Link a command"), handler: () => page.new_command(e) });
+					}
+					this.view = new ui.FunctionDetail({
+						entry: e,
+						manifest: this.manifest,
+						party_types: PREVIEW_PARTY_TYPES.map((k) => ({ key: k, label: __(k) })),
+						preview: manager && e.installed ? (args) => this.preview(args) : null,
+						search_contacts: manager ? (txt, party_type) => ui.call("commands.search_contacts", { txt, party_type }) : null,
+						on_update: manager ? () => page.change(e, e.latest_version) : null,
+						on_toggle_install: manager ? () => (e.installed ? page.remove(e) : page.change(e, null)) : null,
+						on_open_commands: () => {
+							this.view && this.view.close();
+							command_list(e);
 						},
-						time_field: "installed_at",
-						highlight: ($el) => this.render_about($el),
-						highlight_label: __("What it does"),
-						// a function that is not installed has no runs to count: only the version it offers
-						facts: e.installed
-							? [
-									{ field: "calls_30d", icon: "es-line-zap" },
-									{ field: "avg_ms_text", icon: "es-line-time", ltr: true },
-									{ field: "commands_count", icon: "es-line-chat-alt" },
-									{ field: "active_commands", icon: "es-line-success" },
-									{ field: "installed_version", icon: "es-line-check", ltr: true },
-									{ field: "latest_version", icon: "es-line-tag", ltr: true },
-							  ]
-							: [
-									{ field: "latest_version", icon: "es-line-tag", ltr: true },
-									{ field: "versions_count", icon: "es-line-time" },
-							  ],
-						relations: [],
-						sections: [
-							{ label: __("Variables it reads"), icon: "es-line-code", render: ($el) => this.render_inputs($el) },
-							{ label: __("Settings"), icon: "es-line-settings", render: ($el) => this.render_settings($el) },
-							{ label: __("Outputs"), icon: "es-line-chat", render: ($el) => this.render_outputs($el) },
-							{ label: __("Linked commands"), icon: "es-line-chat-alt", render: ($el) => this.render_commands($el) },
-						],
-						details: ["source", "handler_text", "installed_by", "call_count", "error_count", "last_error"],
-						activity: () => this.versions(),
-						activity_label: __("Versions"),
-						actions: this.actions(manager),
+						more,
+						on_close: () => {
+							if (page.detail === this) page.detail = null;
+						},
 					});
-					this.drawer.show();
-					if (parts.bind_copy) parts.bind_copy();
-					return this.drawer;
+					this.view.show();
+					return this.view;
 				});
+		}
+
+		preview({ code, settings, outputs, values, sender }) {
+			const payload = {
+				code,
+				function: this.entry.function_key,
+				allowed_party_types: [],
+				requires_linked_contact: 0,
+				settings_overrides: settings,
+				outputs: outputs.map((o) => {
+					const row = {};
+					OUTPUT_FIELDS.forEach((f) => o[f] !== undefined && (row[f] = o[f]));
+					return row;
+				}),
+			};
+			return ui.call("commands.preview_command", { payload, sender, values });
 		}
 
 		hide() {
-			if (this.drawer) this.drawer.destroy();
-			this.drawer = null;
-		}
-
-		/** The row, read as a document: the scalars the identity, the facts and the details need. */
-		document() {
-			const e = this.entry;
-			const m = this.manifest || {};
-			const inst = m.installed || {};
-			const linked = e.linked_commands || [];
-			const version_line = !e.installed
-				? __("Latest {0}", [e.latest_version || "—"])
-				: e.update_available
-				? __("Installed {0} · latest {1}", [e.installed_version, e.latest_version])
-				: __("Version {0} · up to date", [e.installed_version]);
-			return Object.assign({}, e, {
-				doctype: "WhatsApp Function",
-				name: e.function_key,
-				category: e.category || __("Uncategorised"),
-				version_line,
-				calls_30d: cint(e.calls_30d),
-				avg_ms_text: ms_text(inst.avg_ms != null ? inst.avg_ms : e.avg_ms),
-				commands_count: linked.length,
-				active_commands: linked.filter((c) => c.status === "Active").length,
-				installed_version: e.installed_version || "",
-				latest_version: e.latest_version || "",
-				versions_count: (e.versions || []).length,
-				handler_text: e.handler_registered ? __("Registered") : __("Missing"),
-				installed_at: inst.installed_at || "",
-				installed_by: inst.installed_by || "",
-				call_count: e.installed ? cint(inst.call_count != null ? inst.call_count : e.call_count) : "",
-				error_count: e.installed ? cint(inst.error_count != null ? inst.error_count : e.error_count) : "",
-				last_error: inst.last_error || "",
-			});
-		}
-
-		fields() {
-			return [
-				{ fieldname: "function_name", fieldtype: "Data", label: __("Function") },
-				{ fieldname: "category", fieldtype: "Data", label: __("Category") },
-				{ fieldname: "version_line", fieldtype: "Data", label: __("Version") },
-				{ fieldname: "calls_30d", fieldtype: "Int", label: __("Calls (30d)") },
-				{ fieldname: "avg_ms_text", fieldtype: "Data", label: __("Average run") },
-				{ fieldname: "commands_count", fieldtype: "Int", label: __("Commands") },
-				{ fieldname: "active_commands", fieldtype: "Int", label: __("Active") },
-				{ fieldname: "installed_version", fieldtype: "Data", label: __("Installed version") },
-				{ fieldname: "latest_version", fieldtype: "Data", label: __("Latest version") },
-				{ fieldname: "versions_count", fieldtype: "Int", label: __("Versions") },
-				{ fieldname: "source", fieldtype: "Data", label: __("Catalog source") },
-				{ fieldname: "handler_text", fieldtype: "Data", label: __("Handler") },
-				{ fieldname: "installed_at", fieldtype: "Datetime", label: __("Installed at") },
-				{ fieldname: "installed_by", fieldtype: "Link", options: "User", label: __("Installed by") },
-				{ fieldname: "call_count", fieldtype: "Int", label: __("Calls, all time") },
-				{ fieldname: "error_count", fieldtype: "Int", label: __("Errors") },
-				{ fieldname: "last_error", fieldtype: "Small Text", label: __("Last error") },
-			];
-		}
-
-		/** The one badge beside the identity: what an operator asks first — does it run? */
-		status() {
-			const e = this.entry;
-			if (!e.installed) return { label: __("Not installed"), colour: "gray" };
-			if (e.status !== "Active") return { label: __("Inactive"), colour: "orange" };
-			if (e.update_available) return { label: __("Update available"), colour: "orange" };
-			return { label: __("Active"), colour: "green" };
-		}
-
-		/** What needs attention, then what the function does, when to use it, and who it serves. */
-		render_about($el) {
-			const e = this.entry;
-			const m = this.manifest || {};
-			const linked = (e.linked_commands || []).length;
-			const alert = this.alert();
-			const party = (m.party_types && m.party_types.length ? m.party_types : e.party_types) || [];
-			const words = m.suggested_commands || [];
-			$el.html(`
-				${
-					alert
-						? `<div class="sanad-op__alert sanad-op__alert--${alert.tone}" role="${alert.tone === "danger" ? "alert" : "status"}">
-								<span class="sanad-op__alert-title">${esc(alert.title)}</span>
-								${alert.lines.map((l) => `<span class="sanad-op__alert-line">${esc(l)}</span>`).join("")}
-							</div>`
-						: ""
-				}
-				<p class="wa-fn__lede" dir="auto">${esc(e.description || __("No description in the catalog."))}</p>
-				<div class="wa-fn__when">
-					<span class="wa-fn__when-label">${esc(__("When to use it"))}</span>
-					<span class="wa-fn__when-text" dir="auto">${esc(e.when_to_use || __("The catalog does not say when to use it."))}</span>
-				</div>
-				<div class="wa-fn__tags">
-					<span class="wa-fn__tags-label">${esc(__("Who it serves"))}</span>
-					${party.length ? parts.chips(party.map((t) => ({ icon: "es-line-customer", text: __(t) }))) : `<span class="wa-fn__muted">${esc(__("Any sender."))}</span>`}
-				</div>
-				${
-					words.length
-						? `<div class="wa-fn__tags">
-								<span class="wa-fn__tags-label">${esc(__("Suggested command words"))}</span>
-								<span class="wa-fn__pills">${words.map((w) => kit.badge(w, "muted", { dot: false })).join("")}</span>
-							</div>`
-						: ""
-				}`);
-			void linked;
-		}
-
-		alert() {
-			const e = this.entry;
-			const linked = (e.linked_commands || []).length;
-			if (e.installed && e.update_available)
-				return {
-					tone: "warn",
-					title: __("A newer version is available: {0}.", [e.latest_version]),
-					lines: [__("Updating does not change the linked commands, their words or their permissions.")],
-				};
-			if (e.installed && e.status !== "Active")
-				return {
-					tone: "warn",
-					title: __("This function is inactive."),
-					lines: [
-						linked
-							? ui.plural(linked, {
-									one: __("{0} linked command matches its text but will not run until it is activated."),
-									other: __("{0} linked commands match their text but will not run until it is activated."),
-							  })
-							: __("No command is linked to it yet."),
-					],
-				};
-			if (e.installed && !e.handler_registered)
-				return {
-					tone: "danger",
-					title: __("No handler is registered for this function."),
-					lines: [__("Its commands will not run until the app that provides it is installed on this site.")],
-				};
-			if (!e.installed)
-				return {
-					tone: "info",
-					title: __("In the catalog, not installed on this site."),
-					lines: [__("Installing copies its settings and outputs here; nothing is sent.")],
-				};
-			return null;
-		}
-
-		/** A list block: rows the manifest declares, or one sentence when it declares none. */
-		rows($el, rows, render, empty_text) {
-			if (!rows || !rows.length) {
-				$el.html(`<p class="wa-fn__muted">${esc(empty_text)}</p>`);
-				return;
-			}
-			$el.html(`<ul class="wa-fn__rows">${rows.map(render).join("")}</ul>`);
-		}
-
-		render_inputs($el) {
-			const inputs = (this.manifest || {}).inputs || [];
-			this.rows(
-				$el,
-				inputs,
-				(i) => `<li class="wa-fn__row">
-					<div class="wa-fn__row-head">
-						<code class="wa-fn__token" dir="ltr">${esc(i.key)}</code>
-						<span class="wa-fn__row-label">${esc(__(i.label || i.key))}</span>
-						<span class="wa-fn__row-end">
-							${i.required ? kit.badge(__("Required"), "warn", { dot: false }) : ""}
-							${i.type ? `<code class="wa-fn__type" dir="ltr">${esc(i.type)}${i.rest ? " …" : ""}</code>` : ""}
-						</span>
-					</div>
-					${i.notes ? `<span class="wa-fn__row-note" dir="auto">${esc(__(i.notes))}</span>` : ""}
-				</li>`,
-				__("This function takes no variables: the command word alone runs it.")
-			);
-		}
-
-		render_settings($el) {
-			const e = this.entry;
-			const rows = (this.manifest || {}).settings || [];
-			this.rows(
-				$el,
-				rows,
-				(s) => {
-					const value = s.value != null && s.value !== "" ? s.value : s.default_value;
-					const shown = s.fieldtype === "Check" ? (cint(value) ? __("Yes") : __("No")) : cstr(value) || "—";
-					const is_default = s.value == null || s.value === "" || cstr(s.value) === cstr(s.default_value);
-					return `<li class="wa-fn__row">
-					<div class="wa-fn__row-head">
-						<span class="wa-fn__row-label wa-fn__row-label--strong">${esc(__(s.label || s.key))}</span>
-						<span class="wa-fn__row-end">
-							${kit.badge(shown, is_default ? "muted" : "pri", { dot: false })}
-							${e.installed && !is_default ? `<span class="wa-fn__muted">${esc(__("Default: {0}", [s.fieldtype === "Check" ? (cint(s.default_value) ? __("Yes") : __("No")) : s.default_value || "—"]))}</span>` : ""}
-						</span>
-					</div>
-					${s.notes ? `<span class="wa-fn__row-note" dir="auto">${esc(__(s.notes))}</span>` : ""}
-					${s.choices ? `<code class="wa-fn__choices" dir="ltr">${esc(cstr(s.choices).split("\n").filter(Boolean).join(" · "))}</code>` : ""}
-				</li>`;
-				},
-				__("This function has no settings.")
-			);
-			if (e.installed && is_manager() && rows.length) {
-				$(`<button type="button" class="wa-fn__link">${ui.icon("es-line-edit", "xs")}<span>${esc(__("Edit settings"))}</span></button>`)
-					.on("click", () => this.page.edit_settings(this.entry, this.manifest))
-					.appendTo($el);
-			}
-		}
-
-		render_outputs($el) {
-			const outputs = (this.manifest || {}).outputs || [];
-			if (!outputs.length) {
-				$el.html(`<p class="wa-fn__muted">${esc(__("This function writes no output."))}</p>`);
-				return;
-			}
-			$el.html(
-				outputs
-					.map((o) => {
-						const vars = cstr(o.variables)
-							.split(",")
-							.map((v) => v.trim())
-							.filter(Boolean);
-						return `<div class="wa-fn__output">
-							<div class="wa-fn__output-head">
-								<span class="wa-fn__output-name">${esc(__(o.label || o.output_key))}</span>
-								<code class="wa-fn__token" dir="ltr">${esc(o.output_key)}</code>
-								${kit.badge(__(o.output_type || "Text"), o.output_type === "Document" ? "info" : "muted", { dot: false })}
-							</div>
-							${o.notes ? `<span class="wa-fn__row-note" dir="auto">${esc(__(o.notes))}</span>` : ""}
-							${o.default_template ? parts.code(o.default_template) : ""}
-							${o.file_name_template ? `<div class="wa-fn__kv"><span class="wa-fn__kv-label">${esc(__("File name"))}</span><code class="wa-fn__token" dir="ltr">${esc(o.file_name_template)}</code></div>` : ""}
-							${o.condition ? `<div class="wa-fn__kv"><span class="wa-fn__kv-label">${esc(__("Sent when"))}</span><code class="wa-fn__token" dir="ltr">${esc(o.condition)}</code></div>` : ""}
-							${vars.length ? `<div class="wa-fn__kv"><span class="wa-fn__kv-label">${esc(__("Variables"))}</span><span class="wa-fn__pills">${vars.map((v) => kit.badge(v, "muted", { dot: false })).join("")}</span></div>` : ""}
-						</div>`;
-					})
-					.join("")
-			);
-		}
-
-		/** Every command that runs on this function, drawn as the command it is. */
-		render_commands($el) {
-			const e = this.entry;
-			const commands = e.linked_commands || [];
-			if (!commands.length) {
-				new ui.EmptyState({
-					wrapper: $el,
-					state: "empty",
-					size: "sm",
-					title: __("No command runs this function yet"),
-					description: __("A command carries the word a sender writes; the function is what it does."),
-					action: is_manager() && e.installed ? { label: __("Link a command"), onclick: () => this.page.new_command(e) } : undefined,
-				});
-				return;
-			}
-			const $list = $('<div class="sanad-ent-list sanad-ent-list--row"></div>').appendTo($el);
-			commands.forEach((c) => {
-				const doc = Object.assign({}, c, { doctype: "WhatsApp Command" });
-				const $item = $('<div class="sanad-ent-list__item"></div>').appendTo($list);
-				ui.Render.mount($item, doc, {
-					doctype: "WhatsApp Command",
-					kind: "generic",
-					density: "row",
-					vm: { initials: "", icon: "es-line-chat-alt" },
-					profile: {
-						title: "code",
-						title_ltr: false,
-						lines: [{ field: "run_count_30d", value: (d) => ui.plural(cint(d.run_count_30d), { one: __("{0} run in 30 days"), other: __("{0} runs in 30 days") }) }],
-						value: false,
-						facts: [],
-						status: () => ({ label: __(c.status || "Inactive"), colour: c.status === "Active" ? "green" : "gray" }),
-					},
-					href: null,
-					on_click: () => frappe.set_route("Form", "WhatsApp Command", c.name),
-				});
-			});
-			$(`<button type="button" class="wa-fn__link">${ui.icon("es-line-chat-alt", "xs")}<span>${esc(__("Open in commands"))}</span></button>`)
-				.on("click", () => command_list(e))
-				.appendTo($el);
-		}
-
-		/** The change log as the timeline it is: newest first, the installed one marked. */
-		versions() {
-			const e = this.entry;
-			const releases = e.releases || {};
-			return (e.versions || [])
-				.slice()
-				.sort((a, b) => version_cmp(b, a))
-				.map((v) => {
-					const marks = [];
-					if (v === e.latest_version) marks.push(__("Latest"));
-					if (v === e.installed_version) marks.push(__("Installed"));
-					const rel = releases[v] || {};
-					return {
-						title: marks.length ? `${v} — ${marks.join(" · ")}` : v,
-						description: (rel.changelog || (e.changelog || {})[v] || "").trim() || __("No note for this version."),
-						time: rel.released || "",
-						icon: v === e.installed_version ? "es-line-check" : v === e.latest_version ? "es-line-tag" : "es-line-time",
-						tone: v === e.installed_version ? "green" : v === e.latest_version && e.update_available ? "orange" : "gray",
-					};
-				});
-		}
-
-		/** Two or three verbs in the footer; everything else behind "More". */
-		actions(manager) {
-			const e = this.entry;
-			const page = this.page;
-			const linked = (e.linked_commands || []).length;
-			const list = [];
-			if (manager && !e.installed)
-				list.push({ label: __("Install"), icon: "es-line-download", primary: true, handler: () => page.change(e, null) });
-			if (manager && e.installed && e.update_available)
-				list.push({ label: __("Update to {0}", [e.latest_version]), icon: "es-line-upload", primary: true, handler: () => page.change(e, e.latest_version) });
-			if (manager && e.installed) list.push({ label: __("Preview"), icon: "es-line-zap", handler: () => page.preview(e, this.manifest) });
-			list.push({
-				label: linked ? __("Linked commands") : __("Link a command"),
-				icon: "es-line-chat-alt",
-				handler: () => (linked || !manager || !e.installed ? command_list(e) : page.new_command(e)),
-			});
-			if (manager && e.installed) {
-				list.push({
-					label: e.status === "Active" ? __("Deactivate") : __("Activate"),
-					icon: e.status === "Active" ? "es-line-close-circle" : "es-line-success",
-					menu: true,
-					handler: () => page.set_status(e, e.status === "Active" ? "Inactive" : "Active"),
-				});
-				list.push({ label: __("Edit settings"), icon: "es-line-settings", menu: true, handler: () => page.edit_settings(e, this.manifest) });
-				if ((e.versions || []).length > 1)
-					list.push({ label: __("Another version…"), icon: "es-line-tag", menu: true, handler: () => page.pick_version(e) });
-				list.push({ label: __("Remove"), icon: "es-line-delete", menu: true, danger: true, handler: () => page.remove(e) });
-			}
-			return list;
+			if (this.view) this.view.hide();
+			this.view = null;
 		}
 	}
 
@@ -1225,7 +764,7 @@
 
 		open(entry) {
 			if (this.detail) this.detail.hide();
-			this.detail = new FunctionDrawer(this, entry);
+			this.detail = new FunctionWindow(this, entry);
 			this.detail_key = entry.function_key;
 			return this.detail.show();
 		}
@@ -1243,10 +782,6 @@
 		/** A drawer verb that opens a form: the form takes the overlay, and the drawer returns after it. */
 		change(entry, version) {
 			return confirm_change(entry, version, { on_close: (changed) => this.back(changed) });
-		}
-
-		preview(entry, manifest) {
-			return run_preview(entry, manifest, { on_close: () => this.back(false) });
 		}
 
 		edit_settings(entry, manifest) {

@@ -426,15 +426,27 @@ def preview(payload: dict, sender: dict | None = None, values: dict | None = Non
 	`dry_run`: nothing is saved, nothing is sent. `sender{contact, party_type, party_name, phone}`,
 	`values{input key → text}`. Returns `{text, status, block_reason, reply_sent, args, missing[],
 	replies[], error}`; `reply_sent` says whether a live route would actually send the block reply."""
-	from whatsapp_next.functions.context import Sender
-	from whatsapp_next.services import command_router
-	from whatsapp_next.services.phone import classify
-
 	if not isinstance(payload, dict):
 		frappe.throw(_("payload must be an object"), WAValidationError)
 	doc = _draft(payload)
 	if not doc.function:
 		frappe.throw(_("Pick a function first"), WAValidationError)
+	# the preview reports refusals and errors in its result; a message a failed step queued
+	# (`frappe.throw` in argument parsing or in the handler) must not also pop up in the desk
+	queued = len(frappe.local.message_log or [])
+	try:
+		return _preview(doc, sender, values)
+	finally:
+		if frappe.local.message_log:
+			del frappe.local.message_log[queued:]
+
+
+def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
+	"""`preview` after the payload checks: access, arguments, handler, outputs — all dry."""
+	from whatsapp_next.functions.context import Sender
+	from whatsapp_next.services import command_router
+	from whatsapp_next.services.phone import classify
+
 	sender = sender if isinstance(sender, dict) else {}
 	values = values if isinstance(values, dict) else {}
 	contact = sender.get("contact") or None

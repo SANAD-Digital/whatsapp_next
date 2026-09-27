@@ -1,0 +1,251 @@
+// sanad.ui.FunctionDetail — the prototype's function window (`docs/component/Function Detail.dc.html`).
+// The shell (layer, modal, header row, tabs, columns, cards, chips, preview, footer) is
+// `sanad.ui.CommandEditor`'s: the two prototypes share it value for value. This file holds only
+// what the function window draws differently. Every colour is a product token.
+
+$fd-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+.sanad-fd {
+	inline-size: min(1220px, 100%);
+
+	&__head-row { align-items: flex-start; padding: 13px 16px 8px; }
+	&__tabs-row { padding: 0 16px; }
+	&__identity { display: flex; flex-direction: column; gap: 3px; min-inline-size: 0; }
+
+	&__name {
+		font-size: 15px;
+		font-weight: 700;
+		line-height: 1.35;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	&__sub { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+	&__x { inline-size: 30px; block-size: 30px; }
+
+	&__badge {
+		padding: 2px 8px;
+		border-radius: 999px;
+		font-size: 10px;
+		font-weight: 700;
+		white-space: nowrap;
+		border: 1px solid transparent;
+
+		&--ok { background: var(--wa-ok-s); color: var(--wa-ok-i); }
+		&--muted { background: var(--wa-sunken); color: var(--wa-ink-3); }
+		&--line { background: var(--wa-surface); border-color: var(--wa-border-2); color: var(--wa-ink-3); }
+		&--pri { background: var(--wa-pri-s); border-color: var(--wa-pri-sb); color: var(--wa-pri-d); }
+		&--wn { background: var(--wa-wn-s); color: var(--wa-wn-i); }
+	}
+
+	&__ver {
+		font-family: $fd-mono;
+		font-size: 11px;
+		padding: 3px 8px;
+		border-radius: 6px;
+		font-weight: 600;
+
+		&--pri { background: var(--wa-pri-s); border: 1px solid var(--wa-pri-sb); color: var(--wa-pri-d); }
+		&--wn { background: var(--wa-wn-s); border: 1px solid var(--wa-wn-sb); color: var(--wa-wn-i); }
+	}
+
+	// ---- details ------------------------------------------------------------------------------
+
+	&__body { padding: 16px; }
+	&__body--outs { gap: 10px; }
+
+	&__lede { margin: 0; font-size: 13px; color: var(--wa-ink-2); line-height: 1.9; text-wrap: pretty; }
+
+	&__box { padding: 12px; gap: 6px; }
+	&__box-title { font-size: 12px; font-weight: 600; color: var(--wa-ink-2); }
+	&__box-text { font-size: 11px; color: var(--wa-ink-3); line-height: 1.85; }
+
+	&__tag {
+		display: inline-flex;
+		align-items: center;
+		padding: 4px 11px;
+		border-radius: 999px;
+		background: var(--wa-pri-s);
+		border: 1px solid var(--wa-pri-sb);
+		color: var(--wa-pri-d);
+		font-size: 11px;
+		font-weight: 700;
+		white-space: nowrap;
+	}
+
+	&__stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+
+	&__stat {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		padding: 10px 11px;
+		border-radius: 8px;
+		background: var(--wa-bg);
+		border: 1px solid var(--wa-border);
+	}
+
+	&__stat-k { font-size: 10px; color: var(--wa-ink-4); }
+	&__stat-v { font-family: $fd-mono; font-size: 13px; font-weight: 700; color: var(--wa-ink); text-align: start; }
+
+	&__h { font-size: 12px; font-weight: 600; color: var(--wa-ink-2);
+		&--strong { font-weight: 700; }
+	}
+
+	&__word {
+		padding: 5px 11px;
+		border-radius: 999px;
+		background: var(--wa-sunken);
+		border: 1px solid var(--wa-border);
+		font-size: 11px;
+		font-weight: 600;
+		color: var(--wa-ink-2);
+		white-space: nowrap;
+	}
+
+	&__cmd {
+		display: inline-flex;
+		align-items: center;
+		padding: 5px 11px;
+		border-radius: 999px;
+		background: var(--wa-sunken);
+		border: 1px solid var(--wa-border);
+		color: var(--wa-ink-3);
+		font-family: $fd-mono;
+		font-size: 11px;
+		font-weight: 600;
+		white-space: nowrap;
+
+		&.is-on { background: var(--wa-pri-s); border-color: var(--wa-pri-sb); color: var(--wa-pri-d); }
+	}
+
+	&__value {
+		padding: 2px 8px;
+		border-radius: 6px;
+		background: var(--wa-pri-s);
+		border: 1px solid var(--wa-pri-sb);
+		color: var(--wa-pri-d);
+		font-size: 11px;
+		font-weight: 700;
+	}
+
+	&__choices { text-align: end; font-size: 11px; color: var(--wa-ink-4); }
+
+	&__out-name { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--wa-ink); min-inline-size: 0; }
+	&__bar { inline-size: 3px; block-size: 15px; border-radius: 2px; background: var(--wa-pri); flex: none; }
+
+	&__copybox {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		padding-block: 9px;
+		padding-inline: 11px 42px;
+		border-radius: 8px;
+		background: var(--wa-bg);
+		border: 1px solid var(--wa-border);
+
+		&--sm { padding-block: 8px; }
+	}
+
+	&__copytext { font-size: 12px; color: var(--wa-ink-2); line-height: 1.9; white-space: pre-wrap; user-select: text; overflow-wrap: anywhere; }
+
+	&__copy {
+		position: absolute;
+		inset-block-start: 7px;
+		inset-inline-end: 7px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 28px;
+		block-size: 28px;
+		border-radius: 6px;
+		border: 1px solid var(--wa-border-2);
+		background: var(--wa-surface);
+		color: var(--wa-pri-d);
+		cursor: pointer;
+
+		&:hover { background: var(--wa-pri-s); border-color: var(--wa-pri-sb); }
+	}
+
+	&__field {
+		font-size: 10px;
+		padding: 3px 8px;
+		border-radius: 6px;
+		background: var(--wa-bg);
+		border: 1px solid var(--wa-border-2);
+		color: var(--wa-pri-d);
+		cursor: pointer;
+
+		&:hover { background: var(--wa-pri-s); }
+	}
+
+	// ---- version log --------------------------------------------------------------------------
+
+	&__pane { padding: 14px 16px; gap: 8px; }
+
+	&__log {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: 13px 15px;
+		border-radius: 8px;
+		background: var(--wa-surface);
+		border: 1px solid var(--wa-border);
+
+		&.is-current { border-color: var(--wa-pri-sb); }
+	}
+
+	&__log-head {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-wrap: wrap;
+		cursor: pointer;
+		border: 0;
+		background: transparent;
+		padding: 0;
+		color: inherit;
+		text-align: start;
+	}
+
+	&__arrow { font-size: 10px; color: var(--wa-ink-4); flex: none; }
+	&__log-v { font-family: $fd-mono; font-size: 13px; font-weight: 700; color: var(--wa-ink); }
+	&__log-n { margin-inline-start: auto; font-size: 11px; color: var(--wa-ink-4); flex: none; }
+	&__changes { display: flex; flex-direction: column; gap: 4px; }
+	&__change { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; color: var(--wa-ink-2); line-height: 1.85; }
+	&__bullet { inline-size: 5px; block-size: 5px; border-radius: 50%; background: var(--wa-pri); flex: none; margin-block-start: 7px; }
+
+	// ---- preview & footer -----------------------------------------------------------------------
+
+	&__grid--preview { grid-template-columns: minmax(0, 320px) minmax(0, 1fr) minmax(0, 400px); }
+
+	@media (max-width: 1079px) {
+		&__grid--preview { grid-template-columns: minmax(0, 320px) minmax(0, 1fr); }
+	}
+
+	@media (max-width: 759px) {
+		&__grid--preview { grid-template-columns: minmax(0, 1fr); }
+	}
+
+	&__btn-pri-soft {
+		border-color: var(--wa-pri-sb);
+		background: var(--wa-pri-s);
+		color: var(--wa-pri-d);
+
+		&:hover { background: var(--wa-pri-sb); }
+	}
+
+	&__close { color: var(--wa-ink-3); }
+	&__more { position: relative; }
+
+	&__menu {
+		inset-block-start: auto;
+		inset-block-end: calc(100% + 4px);
+		inset-inline: auto 0;
+		min-inline-size: 200px;
+	}
+
+	&__danger { color: var(--wa-dg-i); }
+}

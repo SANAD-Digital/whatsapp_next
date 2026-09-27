@@ -33,6 +33,7 @@ import "./ConversationDrawer/index.js";
 import "./QuickSend/index.js";
 import "./TemplateEditor/index.js";
 import "./CommandEditor/index.js";
+import "./FunctionDetail/index.js";
 import "./MessageComposer/index.js";
 import "./PagedChildTable/index.js";
 import "./DashboardBlock/index.js";

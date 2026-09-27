@@ -4179,3 +4179,44 @@ Mode,الوضع,
 (unsaved command),(أمر غير محفوظ),
 Pick a function first,اختر دالة أولاً,
 Command {0} has run history; stop it instead of deleting it,للأمر {0} سجل تنفيذ؛ أوقفه بدلاً من حذفه,
+Active,مفعّلة,Function Detail
+Stopped,موقوفة,Function Detail
+Installed,منزّلة,Function Detail
+Not installed,غير منزّلة,Function Detail
+Latest,الأحدث,Function Detail
+Details,التفاصيل,Function Detail
+Linked commands,الأوامر المرتبطة,Function Detail
+Calls (30d),الاستدعاءات (٣٠ي),Function Detail
+Active of them,مفعّلة منها,
+Average run time,متوسط زمن التنفيذ,
+Back to the function's defaults,إرجاع افتراضيات الدالة,
+Changes here are for the preview only; they change neither the function nor the commands.,التعديل هنا للمعاينة فقط ولا يغيّر الدالة ولا الأوامر.,
+Copy the file name,نسخ اسم الملف,
+Copy the text,نسخ النص,
+Current {0} · {1},حالي {0} · {1},
+Latest {0} · {1},أخير {0} · {1},
+Default file name,اسم الملف الافتراضي,
+Fields you can use — click to copy,الحقول الممكن استخدامها — اضغط للنسخ,
+General,عام,
+Install the function,تنزيل الدالة,
+Uninstall,إلغاء التنزيل,
+Install the function to preview it: the preview runs the installed handler.,نزّل الدالة لتعاينها: المعاينة تشغّل الدالة المنزّلة فعلياً.,
+Installed now,المنزَّل حالياً,
+No command is linked to this function yet.,لا أوامر مرتبطة بهذه الدالة بعد.,
+No versions in the catalog.,لا إصدارات في الكتالوج.,
+Only a WhatsApp manager can run the preview.,المعاينة متاحة لمدير واتساب فقط.,
+Options and texts for this preview,خيارات ونصوص هذه المعاينة,
+Options the function can use,الخيارات الممكن استخدامها في الدالة,
+Outputs expected from the function,المخرجات المتوقعة من الدالة,
+Party type,نوع الجهة,
+Party type the function serves,نوع الجهة التي تخدمها الدالة,
+Refused: {0},رُفض: {0},
+Suggested commands for this function,أوامر مقترحة لهذه الدالة,
+"The reply comes from the function's output texts, run for real without sending.",الردّ من نصوص مخرجات الدالة بتشغيل فعلي — لا إرسال فعلي.,
+The result after rendering,النتيجة بعد الرندرة,
+Variables it can handle,المتغيرات الممكن التعامل معها,
+Version log,سجل الإصدارات,
+When exactly to use it,متى تُستخدم بالضبط,
+{0} change,{0} تغيير,
+{0} changes,{0} تغيير,
+Contact,جهة الاتصال,Function Detail
