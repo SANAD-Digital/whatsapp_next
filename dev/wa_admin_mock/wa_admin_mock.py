@@ -18,7 +18,6 @@ Run:
 from __future__ import annotations
 
 import argparse
-import itertools
 import json
 import os
 import re
@@ -59,9 +58,13 @@ class State:
 	polls: dict[str, dict] = field(default_factory=dict)
 	requests: list[dict] = field(default_factory=list)
 	lock: threading.RLock = field(default_factory=threading.RLock)
+	# Optional JSON file the state survives restarts in (dev VMs restart often; the platform
+	# keeps the api-key ids and device ids it was given, so a forgetful mock breaks it).
+	state_file: str | None = None
 
 	def __post_init__(self):
 		self.reset()
+		self.load()
 
 	def reset(self):
 		with self.lock:
@@ -70,27 +73,56 @@ class State:
 			self.webhooks.clear()
 			self.polls.clear()
 			self.requests.clear()
-			self._key_ids = itertools.count(1)
-			self._device_ids = itertools.count(1)
-			self._webhook_ids = itertools.count(1)
-			self._message_ids = itertools.count(1)
-			self._poll_ids = itertools.count(1)
+			self.seq = {"key": 0, "device": 0, "webhook": 0, "message": 0, "poll": 0}
 
 	# -- ids -------------------------------------------------------------------------------------
+	def _next(self, kind: str) -> int:
+		self.seq[kind] += 1
+		return self.seq[kind]
+
 	def next_key_id(self) -> int:
-		return next(self._key_ids)
+		return self._next("key")
 
 	def next_device_id(self) -> int:
-		return next(self._device_ids)
+		return self._next("device")
 
 	def next_webhook_id(self) -> int:
-		return next(self._webhook_ids)
+		return self._next("webhook")
 
 	def next_message_id(self) -> str:
-		return f"MOCKMSG{next(self._message_ids):08d}"
+		return f"MOCKMSG{self._next('message'):08d}"
 
 	def next_poll_id(self) -> str:
-		return f"MOCKPOLL{next(self._poll_ids):06d}"
+		return f"MOCKPOLL{self._next('poll'):06d}"
+
+	# -- persistence (only with --state-file) ------------------------------------------------------
+	def save(self) -> None:
+		if not self.state_file:
+			return
+		with self.lock:
+			data = {
+				"seq": self.seq,
+				"api_keys": self.api_keys,
+				"devices": self.devices,
+				"webhooks": self.webhooks,
+				"polls": self.polls,
+			}
+			tmp = f"{self.state_file}.tmp"
+			with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as fh:
+				json.dump(data, fh)
+			os.replace(tmp, self.state_file)
+
+	def load(self) -> None:
+		if not self.state_file or not os.path.exists(self.state_file):
+			return
+		with open(self.state_file) as fh:
+			data = json.load(fh)
+		with self.lock:
+			self.seq.update(data.get("seq") or {})
+			self.api_keys.update({int(k): v for k, v in (data.get("api_keys") or {}).items()})
+			self.devices.update(data.get("devices") or {})
+			self.webhooks.update({int(k): v for k, v in (data.get("webhooks") or {}).items()})
+			self.polls.update(data.get("polls") or {})
 
 	# -- lookups ---------------------------------------------------------------------------------
 	def key_by_value(self, api_key: str) -> dict | None:
@@ -185,6 +217,8 @@ class Handler(BaseHTTPRequestHandler):
 			if match:
 				with self.state.lock:
 					data = getattr(self, name)(*[unquote(g) for g in match.groups()])
+					if method != "GET":
+						self.state.save()
 				return HTTPStatus.OK, {"ok": True, "data": data}
 		raise MockError(404, f"cannot {method.lower()} {path}")
 
@@ -518,12 +552,12 @@ class Handler(BaseHTTPRequestHandler):
 		self._dispatch("DELETE")
 
 
-def make_server(host: str, port: int, admin_secret: str) -> ThreadingHTTPServer:
+def make_server(host: str, port: int, admin_secret: str, state_file: str | None = None) -> ThreadingHTTPServer:
 	if host not in LOOPBACK_HOSTS:
 		raise SystemExit(f"refusing to bind wa-admin mock to non-loopback host {host!r}")
 	if not admin_secret:
 		raise SystemExit("WA_MOCK_ADMIN_SECRET is required")
-	state = State(admin_secret=admin_secret)
+	state = State(admin_secret=admin_secret, state_file=state_file)
 	handler = type("BoundHandler", (Handler,), {"state": state})
 	server = ThreadingHTTPServer(("127.0.0.1" if host == "localhost" else host, port), handler)
 	server.daemon_threads = True
@@ -535,8 +569,9 @@ def main(argv=None):
 	parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
 	parser.add_argument("--host", default="127.0.0.1")
 	parser.add_argument("--port", type=int, default=18080)
+	parser.add_argument("--state-file", default=None, help="keep the state in this JSON file across restarts")
 	args = parser.parse_args(argv)
-	server = make_server(args.host, args.port, os.environ.get("WA_MOCK_ADMIN_SECRET", ""))
+	server = make_server(args.host, args.port, os.environ.get("WA_MOCK_ADMIN_SECRET", ""), args.state_file)
 	host, port = server.server_address[:2]
 	print(f"wa-admin mock listening on http://{host}:{port}{API_PREFIX}", flush=True)
 	try:

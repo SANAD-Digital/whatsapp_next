@@ -201,7 +201,7 @@ if [[ $START_MOCK -eq 1 ]]; then
 	# Discovery: WA_ADMIN_MOCK_DIR (config/defaults.env), else dev/wa_admin_mock next to this script,
 	# so any clone location works.
 	[[ -f "$WA_ADMIN_MOCK_DIR/wa_admin_mock.py" ]] || WA_ADMIN_MOCK_DIR="$(cd "$HERE/.." && pwd)/wa_admin_mock"
-	if pgrep -f "wa_admin_mock.py" >/dev/null; then skip "mock running"
+	if python3 -c "import socket,sys;s=socket.socket();s.settimeout(1);sys.exit(s.connect_ex(('127.0.0.1',$WA_ADMIN_MOCK_PORT)))"; then skip "mock running (127.0.0.1:$WA_ADMIN_MOCK_PORT answers)"
 	elif [[ ! -f "$WA_ADMIN_MOCK_DIR/wa_admin_mock.py" ]]; then warn "mock not found at $WA_ADMIN_MOCK_DIR"
 	else
 		# The mock must accept the secret the (possibly restored) platform site sends.
@@ -216,13 +216,17 @@ PY
 		f="$DEV_SECRETS_DIR/wa-admin-mock.secret"
 		if [[ -n "$secret" ]]; then (umask 077; printf '%s\n' "$secret" > "$f"); elif [[ ! -s "$f" ]]; then (umask 077; new_secret dev-wa-admin-mock > "$f"); fi
 		chown "$FRAPPE_USER:" "$f"
-		spawn_frappe "$WA_ADMIN_MOCK_DIR" "env WA_MOCK_ADMIN_SECRET=\"\$(cat '$f')\" '$BENCH_DIR/env/bin/python' wa_admin_mock.py --host 127.0.0.1 --port $WA_ADMIN_MOCK_PORT" "/home/$FRAPPE_USER/wa-admin-mock.log"
-		sleep 1; pgrep -f wa_admin_mock.py >/dev/null && ok "mock on 127.0.0.1:$WA_ADMIN_MOCK_PORT" || warn "mock did not start (see ~$FRAPPE_USER/wa-admin-mock.log)"
+		install -d -m 700 -o "$FRAPPE_USER" -g "$FRAPPE_USER" "$DEV_STATE_DIR/runtime"
+		spawn_frappe "$WA_ADMIN_MOCK_DIR" "env WA_MOCK_ADMIN_SECRET=\"\$(cat '$f')\" '$BENCH_DIR/env/bin/python' wa_admin_mock.py --host 127.0.0.1 --port $WA_ADMIN_MOCK_PORT --state-file '$DEV_STATE_DIR/runtime/wa-admin-mock.state.json'" "/home/$FRAPPE_USER/wa-admin-mock.log"
+		sleep 1
+		python3 -c "import socket,sys;s=socket.socket();s.settimeout(1);sys.exit(s.connect_ex(('127.0.0.1',$WA_ADMIN_MOCK_PORT)))" \
+			&& ok "mock on 127.0.0.1:$WA_ADMIN_MOCK_PORT" || warn "mock did not start (see ~$FRAPPE_USER/wa-admin-mock.log)"
 	fi
 fi
 if [[ $START_WEB -eq 1 ]]; then
 	step "web (gunicorn, loopback)"
-	if pgrep -f "gunicorn.*127.0.0.1:$DEV_WEB_PORT" >/dev/null; then skip "gunicorn"
+	# The port, not `pgrep -f`: a pattern match also hits any shell whose command line mentions the address.
+	if python3 -c "import socket,sys;s=socket.socket();s.settimeout(1);sys.exit(s.connect_ex(('127.0.0.1',$DEV_WEB_PORT)))"; then skip "gunicorn (127.0.0.1:$DEV_WEB_PORT answers)"
 	else spawn_frappe "$BENCH_DIR/sites" "../env/bin/gunicorn -b 127.0.0.1:$DEV_WEB_PORT -w 2 -t 120 --preload frappe.app:application" "/home/$FRAPPE_USER/gunicorn-dev.log"
 		sleep 3; ok "gunicorn on 127.0.0.1:$DEV_WEB_PORT"; fi
 fi

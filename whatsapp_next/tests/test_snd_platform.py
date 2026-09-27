@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 from unittest.mock import patch
 
+import frappe
 import requests
 from frappe.tests import IntegrationTestCase
 
@@ -440,3 +441,19 @@ class TestSndPlatform(IntegrationTestCase):
 			health = provider.health_check()
 		self.assertFalse(health.ok)
 		self.assertIn("connection", (health.error or "").lower())
+
+
+class TestPlatformSourceTypes(IntegrationTestCase):
+	"""Every outbound source maps to a value the platform's Message Log accepts (its Select),
+	otherwise the platform queues the message and then never delivers it."""
+
+	PLATFORM_OPTIONS = {"SANAD ERPNext", "External API", "Campaign", "Manual", "Simulator", "Scheduled Message", "Provider Webhook"}
+
+	def test_every_client_source_maps_to_platform_vocabulary(self):
+		from whatsapp_next.providers.snd_platform import SndPlatformProvider
+
+		ours = [o for o in (frappe.get_meta("WhatsApp Log").get_field("source_type").options or "").split("\n") if o]
+		self.assertTrue(ours)
+		for source in ours:
+			self.assertIn(SndPlatformProvider.PLATFORM_SOURCE_TYPES.get(source), self.PLATFORM_OPTIONS, source)
+		self.assertEqual(SndPlatformProvider.PLATFORM_SOURCE_TYPES.get("Something new", "External API"), "External API")

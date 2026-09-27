@@ -299,3 +299,38 @@ class TestSafety(unittest.TestCase):
 
 if __name__ == "__main__":
 	unittest.main()
+
+
+class TestStateFile(unittest.TestCase):
+	"""`--state-file`: keys, devices and id counters survive a restart (dev VMs restart often)."""
+
+	def _serve(self, path):
+		server = wa_admin_mock.make_server("127.0.0.1", 0, ADMIN_SECRET, state_file=path)
+		threading.Thread(target=server.serve_forever, daemon=True).start()
+		self.addCleanup(server.server_close)
+		self.addCleanup(server.shutdown)
+		return f"http://127.0.0.1:{server.server_address[1]}/api"
+
+	def _post(self, base, path, body):
+		req = urllib.request.Request(
+			base + path,
+			data=json.dumps(body).encode(),
+			headers={"Content-Type": "application/json", "X-Admin-Secret": ADMIN_SECRET},
+			method="POST",
+		)
+		with urllib.request.urlopen(req) as resp:
+			return json.loads(resp.read())["data"]
+
+	def test_state_survives_restart(self):
+		import tempfile
+
+		path = os.path.join(tempfile.mkdtemp(), "mock-state.json")
+		first = self._post(self._serve(path), "/admin/api-keys", {"customer_email": "a@example.com"})
+		self.assertTrue(os.path.exists(path))
+		self.assertEqual(oct(os.stat(path).st_mode & 0o777), "0o600")
+		base = self._serve(path)  # a second process reading the same file
+		second = self._post(base, "/admin/api-keys", {"customer_email": "b@example.com"})
+		self.assertEqual(second["id"], first["id"] + 1)  # the counter continued
+		req = urllib.request.Request(f"{base}/admin/api-keys/{first['id']}/devices", headers={"X-Admin-Secret": ADMIN_SECRET})
+		with urllib.request.urlopen(req) as resp:
+			self.assertEqual(json.loads(resp.read())["data"], [])  # the first key is still known

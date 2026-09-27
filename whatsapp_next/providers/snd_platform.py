@@ -642,6 +642,18 @@ class SndPlatformProvider(BaseProvider):
 		)
 
 	# ------------------------------------------------------------------ sending
+	# The platform's Message Log takes its own source vocabulary; ours is finer. Unknown → External API.
+	PLATFORM_SOURCE_TYPES: dict[str, str] = {
+		"Quick Send": "Manual",
+		"Form": "SANAD ERPNext",
+		"Campaign": "Campaign",
+		"Notification": "SANAD ERPNext",
+		"Notification Alert": "Scheduled Message",
+		"Command Reply": "External API",
+		"Simulator": "Simulator",
+		"API": "External API",
+	}
+
 	def _message_payload(self, message: NormalizedMessage) -> dict[str, Any]:
 		"""`NormalizedMessage` → platform keys (only `_PAYLOAD_KEYS` + `client_ref`, `priority`)."""
 		payload: dict[str, Any] = {
@@ -650,7 +662,7 @@ class SndPlatformProvider(BaseProvider):
 			"priority": message.priority,
 			"recipient_type": message.recipient_type,
 			"message_type": message.message_type,
-			"source_type": message.source.type,
+			"source_type": self.PLATFORM_SOURCE_TYPES.get(message.source.type or "", "External API"),
 			"source_site": message.source.site,
 			"source_doctype": message.source.doctype,
 			"source_docname": message.source.docname,
