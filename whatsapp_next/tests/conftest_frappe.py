@@ -86,6 +86,7 @@ def _restore_settings() -> None:
 	_SETTINGS_BEFORE.clear()
 	settings.flags.ignore_permissions = True
 	settings.flags.ignore_validate = True  # the originals were valid when the module started
+	settings.flags.ignore_links = True  # …and stay as they were even if a test deleted a target
 	settings.save(ignore_permissions=True)
 	frappe.db.commit()
 
