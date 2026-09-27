@@ -19,7 +19,10 @@
   "column_break_13",
   "blocked_group",
   "reply_device",
+  "access_modes",
+  "access_entries",
   "overrides_section",
+  "disabled_inputs",
   "settings_overrides",
   "outputs",
   "notes_section",
@@ -129,9 +132,29 @@
    "description": "The device that sends the reply, instead of the one in Settings."
   },
   {
+   "fieldname": "access_modes",
+   "label": "List Mode per Party Type",
+   "fieldtype": "Table",
+   "options": "WhatsApp Command Access",
+   "description": "Per allowed party type: Allow All (the entries below are a blacklist) or Deny All (they are a whitelist)."
+  },
+  {
+   "fieldname": "access_entries",
+   "label": "List Entries",
+   "fieldtype": "Table",
+   "options": "WhatsApp Command Access Entry",
+   "description": "Contact groups and contacts on each party type's list."
+  },
+  {
    "fieldname": "overrides_section",
    "fieldtype": "Section Break",
    "label": "Overrides"
+  },
+  {
+   "fieldname": "disabled_inputs",
+   "label": "Disabled Inputs",
+   "fieldtype": "Small Text",
+   "description": "Function input keys this command does not read, one per line."
   },
   {
    "fieldname": "settings_overrides",
@@ -198,7 +221,7 @@
    "link_fieldname": "command"
   }
  ],
- "modified": "2026-09-26 21:00:00.000000",
+ "modified": "2026-09-27 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Command",

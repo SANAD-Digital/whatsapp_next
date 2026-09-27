@@ -467,7 +467,7 @@ Indexes: `phone_e164` (search_index), `contact`.
 
 ### 14. `WhatsApp Command` — `autoname field:code` · `title_field title` · `track_changes 1`
 
-`validate` blocks any field change while `status = Active` except via the status action (§5.5). Create/edit in a modal (UI only).
+`validate` blocks any field change while `status = Active` except via the status action (§5.5). Create/edit in the command editor (`sanad.ui.CommandEditor`, D-132), whose save stops an Active command, saves and restarts it in one request.
 
 | fieldname | label | type | options | reqd | uniq | default | list | filter | depends_on | pl | description | serves |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -481,6 +481,9 @@ Indexes: `phone_e164` (search_index), `contact`.
 | allowed_group | Allowed Group | Link | WhatsApp Contact Group | | | | | | | | Whitelist; empty = everyone not blocked | legacy whitelist child |
 | blocked_group | Blocked Group | Link | WhatsApp Contact Group | | | | | | | | In addition to `Settings.global_blacklist_group` | legacy blacklist child |
 | reply_device | Reply Device | Link | WhatsApp Device | | | | | | | | Overrides Settings; empty = receiving device | legacy |
+| access_modes | List Mode per Party Type | Table | WhatsApp Command Access | | | | | | | | D-132: per allowed type, `Allow All` (entries = blacklist) or `Deny All` (entries = whitelist); absent = Allow All | Command editor: «الصلاحيات» |
+| access_entries | List Entries | Table | WhatsApp Command Access Entry | | | | | | | | D-132: a contact group or a contact on a type's list | Command editor: «الصلاحيات» |
+| disabled_inputs | Disabled Inputs | Small Text | | | | | | | | | D-132: manifest input keys the router does not read, one per line | Command editor: «المتغيرات» |
 | settings_overrides | Settings Overrides | JSON | | | | | | | | | `{key: value}`; keys validated against `function.settings` | Functions: settings |
 | outputs | Outputs | Table | WhatsApp Function Output | | | | | | | | Copied from Function on create; "restore defaults" re-copies (§5.5) | Functions: options |
 | description | Description | Small Text | | | | | | | | | | Commands modal |
@@ -495,6 +498,21 @@ Indexes: `status`, `function`.
 | fieldname | label | type | options | reqd | uniq | default | list | filter | depends_on | pl | description | serves |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | party_type | Party Type | Link | DocType | ✓ | | | ✓ | | | | Table MultiSelect requires a Link (Findings F-01); `set_query` restricts to `Customer`, `Supplier`, `Employee`, `Sales Person`, `User`; validated server-side | Commands: «الجهات المسموح لها» |
+
+### 15a. `WhatsApp Command Access` — child of Command (`access_modes`, D-132)
+
+| fieldname | label | type | options | reqd | uniq | default | list | filter | depends_on | pl | description | serves |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| party_type | Party Type | Link | DocType | ✓ | | | ✓ | | | | Must be one of the command's allowed types; one row per type | «الصلاحيات» tab |
+| mode | Mode | Select | Allow All / Deny All | ✓ | | Allow All | ✓ | | | | Allow All → the type's entries are a blacklist; Deny All → a whitelist | «الكل مسموح / الكل ممنوع» |
+
+### 15b. `WhatsApp Command Access Entry` — child of Command (`access_entries`, D-132)
+
+| fieldname | label | type | options | reqd | uniq | default | list | filter | depends_on | pl | description | serves |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| party_type | Party Type | Link | DocType | ✓ | | | ✓ | | | | Must be one of the command's allowed types | «الصلاحيات» tab |
+| contact_group | Contact Group | Link | WhatsApp Contact Group | | | | ✓ | | | | Exactly one of `contact_group` / `contact` | «مجموعات جهات الاتصال» |
+| contact | Contact | Link | Contact | | | | ✓ | | | | Exactly one of `contact_group` / `contact` | «جهات اتصال محددة» |
 
 ### 16. `WhatsApp Function` — `autoname field:function_key` · `title_field function_name` · `track_changes 1`
 

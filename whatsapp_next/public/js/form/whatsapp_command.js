@@ -1,34 +1,11 @@
-// whatsapp_command form script + the shared CommandModal. `whatsapp_next.command_modal(name)` is a
-// sanad.ui.MetaDialog over the WhatsApp Command meta (spec §5.5, matrix row 8): tabs Command ·
-// Permissions · Preview, defaults pulled from the Function on pick (`commands.get_defaults`), save
-// through `commands.save_command`, dry-run test through `commands.test_command`. The list view
-// loads this file through the DocType meta (`__js`) so both surfaces open the same dialog; the form
-// itself is read-only while the command is Active and points to the editor.
+// whatsapp_command form script + the shared command editor. `whatsapp_next.command_modal(name)` opens
+// `sanad.ui.CommandEditor` (the prototype's Command Editor, D-132) over the `commands.*` editor API:
+// Setup · Permissions · Preview, save with status through `commands.save_editor`, a dry run of the
+// unsaved draft through `commands.preview_command`. The list view loads this file through the
+// DocType meta (`__js`) so both surfaces open the same editor; the small "Test" dialog stays for the
+// list's row action.
 
 frappe.provide("whatsapp_next");
-
-const COMMAND_FIELDS = ["code", "title", "function", "synonyms", "description", "outputs"];
-const PERMISSION_FIELDS = ["requires_linked_contact", "allowed_party_types", "allowed_group", "blocked_group", "reply_device"];
-
-/** Allow-listed `commands.save_command` payload from the dialog values (backend-plan §4.10). */
-function command_payload(values, state) {
-	const payload = {
-		code: values.code || "",
-		title: values.title || "",
-		function: values.function || "",
-		synonyms: values.synonyms || "",
-		description: values.description || "",
-		requires_linked_contact: cint(values.requires_linked_contact),
-		allowed_party_types: (values.allowed_party_types || []).map((row) => row.party_type).filter(Boolean),
-		allowed_group: values.allowed_group || null,
-		blocked_group: values.blocked_group || null,
-		reply_device: values.reply_device || null,
-		settings_overrides: state.settings_overrides || {},
-		outputs: sanad.ui.MetaDialog.clean_rows(values.outputs || [], "WhatsApp Function Output"),
-	};
-	if (state.name) payload.name = state.name;
-	return payload;
-}
 
 /** Definition list of a `commands.test_command` result (dry run — nothing sent). */
 whatsapp_next.render_command_test_result = function ($el, result) {
@@ -108,102 +85,31 @@ whatsapp_next.command_test_dialog = function (doc = {}) {
 };
 
 /**
- * The CommandModal. `name` empty → new command. `opts.read_only` for Active commands,
- * `opts.on_saved(result)` after a successful save, `opts.actions` extra footer buttons
- * (`[{label, handler(values, dialog)}]` — the lifecycle verbs the list offers on a command).
+ * The command editor (`sanad.ui.CommandEditor`, the prototype's `Command Editor`, D-132). `name`
+ * empty → new command. `opts.read_only` for viewers, `opts.on_saved(result)` after a save or a
+ * delete. Status, per-type lists, variables, options, outputs and the live preview all live in it.
  */
 whatsapp_next.command_modal = function (name, opts = {}) {
-	const state = { name: name || null, settings_overrides: {}, tester: null };
-	const is_new = !name;
-
-	const apply_function_defaults = async (fn, dialog) => {
-		try {
-			const defaults = await sanad.ui.call("commands.get_defaults", { function: fn });
-			state.settings_overrides = {};
-			const outputs = (defaults.outputs || []).map((row) => Object.assign({}, row, { template: row.template || row.default_template }));
-			await dialog.set_values({ outputs });
-			if (defaults.party_types && defaults.party_types.length && !(dialog.get_values().allowed_party_types || []).length) {
-				await dialog.set_values({ allowed_party_types: defaults.party_types.map((party_type) => ({ party_type })) });
-			}
-			render_suggestions(dialog, defaults.suggested_commands || []);
-		} catch (err) {
-			sanad.ui.Toast.error(err);
-		}
-	};
-
-	const render_suggestions = (dialog, words) => {
-		const field = dialog.get_field("code");
-		if (!field) return;
-		field.$wrapper.find(".wa-command-suggest").remove();
-		if (!words.length) return;
-		const $box = $(`<div class="wa-command-suggest d-flex flex-wrap align-items-center mt-1" style="gap: 6px"><span class="text-muted small">${sanad.ui.escape(__("Suggested by the function:"))}</span></div>`);
-		words.forEach((word) => {
-			$(`<button type="button" class="btn btn-xs btn-default">${sanad.ui.escape(word)}</button>`)
-				.on("click", () => dialog.set_values({ code: word }))
-				.appendTo($box);
-		});
-		$box.appendTo(field.$wrapper);
-	};
-
-	const dialog = new sanad.ui.MetaDialog({
-		doctype: "WhatsApp Command",
-		name: state.name,
-		title: is_new ? __("New command") : opts.read_only ? __("Command") : __("Edit command"),
-		size: "large",
-		read_only: !!opts.read_only,
-		tabs: [
-			{ label: __("Command"), fields: COMMAND_FIELDS },
-			{ label: __("Permissions"), fields: PERMISSION_FIELDS },
-			{
-				label: __("Preview"),
-				fields: [
-					{
-						fieldtype: "HTML",
-						fieldname: "preview",
-						render: ($el) => {
-							state.tester = whatsapp_next.render_command_tester($el, {
-								note: is_new
-									? __("The test runs against saved commands — save this command first to test it.")
-									: __("The test runs against the saved command; save your changes first to test them."),
-							});
-						},
-					},
-				],
-			},
-		],
-		primary_action: {
-			label: is_new ? __("Create command") : __("Save"),
-			method: "commands.save_command",
-			args: (values) => ({ payload: command_payload(values, state) }),
-			on_success: (result) => {
-				sanad.ui.Toast.success(is_new ? __("Command created") : __("Command saved"));
-				opts.on_saved && opts.on_saved(result);
-			},
-		},
-		extra_actions: opts.actions || [],
-		on_change: (fieldname, value, d) => {
-			if (fieldname === "function" && is_new && value) apply_function_defaults(value, d);
-		},
-		on_load: (doc, d) => {
-			try {
-				state.settings_overrides = doc.settings_overrides ? JSON.parse(doc.settings_overrides) : {};
-			} catch (e) {
-				state.settings_overrides = {};
-			}
-			if (state.tester) {
-				state.tester.set_device(doc.reply_device || "");
-				state.tester.set_text(doc.code || "");
-			}
-		},
+	const call = (method, args) => sanad.ui.call(`commands.${method}`, args);
+	return new sanad.ui.CommandEditor({
+		name: name || null,
+		read_only: !!opts.read_only || !frappe.user.has_role("WhatsApp Manager"),
+		load: (n) => call("get_editor", { name: n }),
+		load_function: (fn) => call("get_function_spec", { function: fn }),
+		save: (payload) => call("save_editor", { payload }),
+		remove: (n) => call("delete_command", { name: n }),
+		preview: ({ payload, sender, values }) => call("preview_command", { payload, sender, values }),
+		search_groups: (txt) => call("search_groups", { txt }),
+		search_contacts: (txt, party_type) => call("search_contacts", { txt, party_type }),
+		on_saved: opts.on_saved,
+		on_close: opts.on_close,
 	});
-	dialog.show().catch((err) => sanad.ui.Toast.error(err));
-	return dialog;
 };
 
 frappe.ui.form.on("WhatsApp Command", {
 	refresh(frm) {
 		if (frm.is_new()) {
-			// A command is created in the CommandModal only (D-029): `/new` goes back to the list with
+			// A command is created in the command editor only (D-029): `/new` goes back to the list with
 			// the editor open, so defaults, suggestions and the allow-listed save always apply.
 			frappe.set_route("List", "WhatsApp Command").then(() =>
 				whatsapp_next.command_modal(null, { on_saved: () => window.cur_list && cur_list.refresh() })
@@ -212,14 +118,12 @@ frappe.ui.form.on("WhatsApp Command", {
 		}
 		const active = frm.doc.status === "Active";
 		const manager = frappe.user.has_role("WhatsApp Manager");
-		frm.set_intro(
-			active
-				? __('This command is active and locked. Stop it first, then edit it with "Open editor".')
-				: __('Edit this command with "Open editor".'),
-			active ? "orange" : "blue"
-		);
+		frm.set_intro(__('Edit this command with "Open editor".'), "blue");
 		if (active) frm.disable_form();
-		const open = () => whatsapp_next.command_modal(frm.doc.name, { read_only: active, on_saved: () => frm.reload_doc() });
+		const open = () =>
+			whatsapp_next.command_modal(frm.doc.name, {
+				on_saved: (r) => (r && r.deleted ? frappe.set_route("List", "WhatsApp Command") : frm.reload_doc()),
+			});
 		frm.add_custom_button(__("Open editor"), open);
 		if (frm.doc.function) {
 			frm.add_custom_button(__("Open function"), () => {

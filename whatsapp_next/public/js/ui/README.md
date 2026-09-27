@@ -32,6 +32,7 @@ loading (skeleton) / empty / error states, and every panel is keyboard-accessibl
 | `ConversationDrawer` | one thread across both directions (read layer), realtime | WhatsApp Numbers |
 | `QuickSend` | one-message composer dialog | Outbound list, Numbers, Templates |
 | `TemplateEditor` | variables sidebar + sample picker + live preview | Message Templates form |
+| `CommandEditor` | the prototype's command editor: setup · per-type lists · live dry-run preview | Commands list and form |
 | `PagedChildTable` | paged read table replacing a large child grid | Campaign recipients, Group members |
 | `DashboardBlock` | Custom HTML Block rendering Number Cards / Dashboard Charts | Workspace "WhatsApp" |
 | `ContactPicker` | six-source recipient picker with duplicate flags and confirm | Campaigns, Contact Groups |

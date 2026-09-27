@@ -47,6 +47,8 @@ class WhatsAppCommand(Document):
 		self.check_uniqueness()
 		self.check_settings_overrides()
 		check_party_types(self.get("allowed_party_types"))
+		self.check_access_lists()
+		self.normalize_disabled_inputs()
 		check_unique_rows(self.get("outputs"), "output_key", _("Output key"))
 		self.check_edit_lock()
 		if self.is_new() and not self.get("outputs"):
@@ -102,6 +104,51 @@ class WhatsAppCommand(Document):
 					_("Word {0} is already used by command {1}").format(", ".join(sorted(clash)), other.name),
 					WAValidationError,
 				)
+
+	def check_access_lists(self) -> None:
+		"""Per-type list modes and entries (D-132): every row names an allowed party type, one mode
+		per type, each entry holds exactly one contact group or contact, no duplicates."""
+		allowed = {r.party_type for r in self.get("allowed_party_types") or []}
+		seen_modes: set[str] = set()
+		for row in self.get("access_modes") or []:
+			if row.party_type not in allowed:
+				frappe.throw(
+					_("List mode for {0}: that party type is not allowed for this command").format(
+						row.party_type
+					),
+					WAValidationError,
+				)
+			if row.party_type in seen_modes:
+				frappe.throw(
+					_("Party type {0} has more than one list mode").format(row.party_type), WAValidationError
+				)
+			seen_modes.add(row.party_type)
+		seen: set[tuple] = set()
+		for row in self.get("access_entries") or []:
+			if row.party_type not in allowed:
+				frappe.throw(
+					_("List entry for {0}: that party type is not allowed for this command").format(
+						row.party_type
+					),
+					WAValidationError,
+				)
+			if bool(row.contact_group) == bool(row.contact):
+				frappe.throw(
+					_("List entry {0}: set either a contact group or a contact").format(row.idx),
+					WAValidationError,
+				)
+			key = (row.party_type, row.contact_group or "", row.contact or "")
+			if key in seen:
+				frappe.throw(_("List entry {0} is repeated").format(row.idx), WAValidationError)
+			seen.add(key)
+
+	def normalize_disabled_inputs(self) -> None:
+		"""`disabled_inputs` one input key per line, deduped."""
+		keys: list[str] = []
+		for line in (self.disabled_inputs or "").splitlines():
+			if line.strip() and line.strip() not in keys:
+				keys.append(line.strip())
+		self.disabled_inputs = "\n".join(keys) or None
 
 	def overrides_dict(self) -> dict[str, Any]:
 		"""`settings_overrides` parsed as a dict (empty when unset)."""

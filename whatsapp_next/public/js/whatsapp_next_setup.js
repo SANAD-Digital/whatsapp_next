@@ -22,7 +22,7 @@ const areas = {
 	notifications: ["preview", "get_document_fields", "send_now"],
 	alerts: ["preview", "run_now", "get_report_columns", "get_dynamic_filter_reference"],
 	functions: ["get_catalog", "get_manifest", "preview_install", "install", "update", "update_many", "remove", "set_status", "set_status_many", "save_settings"],
-	commands: ["list_commands", "get_defaults", "save_command", "set_status", "set_status_many", "restore_defaults", "test_command"],
+	commands: ["list_commands", "get_defaults", "save_command", "set_status", "set_status_many", "restore_defaults", "test_command", "get_editor", "get_function_spec", "save_editor", "preview_command", "delete_command", "search_groups", "search_contacts"],
 	// the calling regions, out of the library the server validates with
 	phone: ["get_countries"],
 };

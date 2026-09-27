@@ -17,7 +17,7 @@ from whatsapp_next.api._common import api_endpoint, paginate
 from whatsapp_next.api.v1 import _bulk
 from whatsapp_next.api.v1._roles import MANAGER, VIEWER_UP
 from whatsapp_next.exceptions import WANotFoundError, WAStateConflictError, WAValidationError
-from whatsapp_next.services import command_router, commands
+from whatsapp_next.services import command_router, commands, permissions
 from whatsapp_next.whatsapp_next.doctype.whatsapp_command.whatsapp_command import OUTPUT_COPY_FIELDS
 
 STATUS_SCHEMA = {"status": {"enum": ["Active", "Inactive"]}}
@@ -155,3 +155,80 @@ def set_status_many(names: list[str], status: str) -> dict[str, Any]:
 		commands.set_status(name, status)
 
 	return _bulk.run_bulk(names, one)
+
+
+# ---- the command editor (D-132) --------------------------------------------------------------
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+def get_editor(name: str | None = None) -> dict[str, Any]:
+	"""The editor's opening read (`services.commands.editor`). P: Manager. E: `WANotFoundError`."""
+	return commands.editor(name or None)
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+def get_function_spec(function: str) -> dict[str, Any]:
+	"""Inputs, settings, outputs and suggested words of one installed Function. P: Manager."""
+	return commands.function_spec(function)
+
+
+@api_endpoint(roles=MANAGER)
+def save_editor(payload: dict) -> dict[str, str]:
+	"""Save from the editor, status included (`services.commands.save_editor`). P: Manager."""
+	return commands.save_editor(payload, user=frappe.session.user)
+
+
+@api_endpoint(roles=MANAGER)
+def preview_command(payload: dict, sender: dict | None = None, values: dict | None = None) -> dict[str, Any]:
+	"""Dry-run the editor's draft for an assumed sender — nothing saved, nothing sent
+	(`services.commands.preview`). P: Manager."""
+	return commands.preview(payload, sender=sender, values=values)
+
+
+@api_endpoint(roles=MANAGER)
+def delete_command(name: str) -> dict[str, bool]:
+	"""Delete a command without run history (`services.commands.delete`). P: Manager."""
+	commands.delete(name, user=frappe.session.user)
+	return {"deleted": True}
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+def search_groups(txt: str | None = None) -> list[dict[str, Any]]:
+	"""Enabled contact groups for the editor's lists: `[{name, label, member_count}]`. P: Manager."""
+	filters: dict[str, Any] = {"disabled": 0}
+	if txt:
+		filters["group_name"] = ("like", f"%{txt}%")
+	rows = frappe.get_all(
+		"WhatsApp Contact Group",
+		filters=filters,
+		fields=["name", "group_name", "member_count"],
+		order_by="group_name asc",
+		limit=20,
+	)
+	return [
+		{"name": r.name, "label": r.group_name or r.name, "member_count": cint(r.member_count)} for r in rows
+	]
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+def search_contacts(txt: str | None = None, party_type: str | None = None) -> list[dict[str, Any]]:
+	"""Contacts for the editor's lists and preview sender, through the contextual permission layer
+	(`permissions.list_contacts`, audited): `[{name, label, phone, links[{link_doctype, link_name,
+	link_title}]}]`, filtered to contacts linked to a `party_type` when given. P: Manager and
+	Contact User | Contact read."""
+	permissions.require("read")
+	link_doctype = party_type if party_type in permissions.PARTY_TYPES else None
+	page = permissions.list_contacts(search=txt or None, link_doctype=link_doctype, page_length=20)
+	out = []
+	for r in page["rows"]:
+		phones = r.get("phone_nos") or []
+		phone = next((p.get("wa_phone_e164") for p in phones if p.get("wa_phone_e164")), None)
+		out.append(
+			{
+				"name": r["name"],
+				"label": r.get("full_name") or r["name"],
+				"phone": phone or next((p.get("phone") for p in phones if p.get("phone")), None),
+				"links": r.get("links") or [],
+			}
+		)
+	return out

@@ -133,8 +133,14 @@ def _member(group: str | None, key: str | None) -> bool:
 	)
 
 
-def sender_for(inbound) -> Sender:
-	"""Sender facts for access checks and the handler context (party from the linked Contact)."""
+def allowed_party_types(command) -> list[str]:
+	"""The command's allowed party types (empty = no type restriction)."""
+	return [r.party_type for r in command.get("allowed_party_types") or [] if r.party_type]
+
+
+def sender_for(inbound, allowed_types: list[str] | None = None) -> Sender:
+	"""Sender facts for access checks and the handler context. The party comes from the linked
+	Contact's Dynamic Links: the first one of an `allowed_types` type when given, else the first."""
 	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
 	contact = get("contact")
 	party_type = party_name = None
@@ -144,10 +150,11 @@ def sender_for(inbound) -> Sender:
 			filters={"parenttype": "Contact", "parent": contact, "link_doctype": ("in", list(PARTY_TYPES))},
 			fields=["link_doctype", "link_name"],
 			order_by="idx asc",
-			limit=1,
 		)
-		if links:
-			party_type, party_name = links[0].link_doctype, links[0].link_name
+		preferred = [link for link in links if link.link_doctype in (allowed_types or ())]
+		chosen = (preferred or links or [None])[0]
+		if chosen:
+			party_type, party_name = chosen.link_doctype, chosen.link_name
 	return Sender(
 		phone_e164=get("phone_e164"),
 		jid=get("sender_jid") or get("jid"),
@@ -159,16 +166,39 @@ def sender_for(inbound) -> Sender:
 	)
 
 
+def list_mode(command, party_type: str | None) -> str:
+	"""`Allow All` (the type's entries are a blacklist) or `Deny All` (a whitelist) — D-132."""
+	for row in command.get("access_modes") or []:
+		if row.party_type == party_type:
+			return row.mode or "Allow All"
+	return "Allow All"
+
+
+def on_list(command, party_type: str | None, contact: str | None, key: str | None) -> bool:
+	"""Whether the sender is on `party_type`'s list: the contact itself, or a member of a listed group."""
+	for row in command.get("access_entries") or []:
+		if row.party_type != party_type:
+			continue
+		if row.contact and contact and row.contact == contact:
+			return True
+		if row.contact_group and _member(row.contact_group, key):
+			return True
+	return False
+
+
 def check_access(command, inbound, sender: Sender | None = None) -> str | None:
 	"""Block reason in the fixed order: commands enabled → text → global blacklist → blocked
-	group → allowed group → requires linked contact → party types → function Active/handler."""
+	group → allowed group → requires linked contact → party types → the type's black / white
+	list (D-132) → function Active/handler. A sender with no party passes the type check when the
+	command does not require a linked contact."""
 	settings = frappe.get_cached_doc("WhatsApp Settings")
 	if not cint(settings.enable_commands):
 		return "Commands Disabled"
 	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
 	if (get("message_type") or "Text") != "Text":
 		return "Not Allowed"
-	sender = sender or sender_for(inbound)
+	allowed_types = allowed_party_types(command)
+	sender = sender or sender_for(inbound, allowed_types)
 	key = sender.phone_e164 or sender.jid
 	if _member(settings.global_blacklist_group, key):
 		return "Blacklist"
@@ -178,9 +208,16 @@ def check_access(command, inbound, sender: Sender | None = None) -> str | None:
 		return "Not Allowed"
 	if cint(command.requires_linked_contact) and not sender.contact:
 		return "Not Linked"
-	allowed_types = [r.party_type for r in command.get("allowed_party_types") or []]
 	if allowed_types and sender.party_type not in allowed_types:
-		return "Party Type"
+		if sender.party_type or cint(command.requires_linked_contact):
+			return "Party Type"
+	if sender.party_type:
+		listed = on_list(command, sender.party_type, sender.contact, key)
+		mode = list_mode(command, sender.party_type)
+		if mode == "Deny All" and not listed:
+			return "Not Allowed"
+		if mode == "Allow All" and listed:
+			return "Blacklist"
 	fn = frappe.db.get_value("WhatsApp Function", command.function, ["status", "function_key"], as_dict=True)
 	if not fn or fn.status != "Active" or not registry.is_registered(fn.function_key):
 		return "Function Inactive"
@@ -218,13 +255,21 @@ def _coerce(value: str, kind: str, spec: dict[str, Any]) -> Any:
 	return value.strip()
 
 
+def disabled_inputs(command) -> set[str]:
+	"""Input keys the command switched off (`disabled_inputs`, one per line)."""
+	return {k.strip() for k in (command.get("disabled_inputs") or "").splitlines() if k.strip()}
+
+
 def parse_args(command, text: str) -> dict[str, Any]:
 	"""Arguments after the command word per manifest `inputs`: `key=value` tokens first, then
 	positional order; the input flagged `rest` swallows the remaining text. Typed by
-	`type ∈ str|int|date|link`; missing `required` inputs raise `WAValidationError`."""
-	inputs = sorted(_manifest_inputs(command.function), key=lambda i: cint(i.get("position")) or 99)
-	if not inputs:
+	`type ∈ str|int|date|link`; missing `required` inputs raise `WAValidationError`. Inputs the
+	command disabled are not read."""
+	declared = _manifest_inputs(command.function)
+	if not declared:
 		return {"text": text.strip()} if text.strip() else {}
+	off = disabled_inputs(command)
+	inputs = sorted((i for i in declared if i["key"] not in off), key=lambda i: cint(i.get("position")) or 99)
 	try:
 		tokens = shlex.split(text) if text.strip() else []
 	except ValueError:
@@ -321,6 +366,10 @@ def execute(
 	)
 	service_user = _service_user()
 	previous = frappe.session.user
+	# `frappe.set_user` also overwrites the session id and data and the request's form_dict;
+	# restoring only the user would end a web request (the editor preview, the dry-run test) with
+	# the browser's session replaced by a bogus one, so the caller's next call arrives as Guest.
+	saved_sid, saved_data, saved_form = frappe.session.sid, frappe.session.data, frappe.local.form_dict
 	started = time.perf_counter()
 	try:
 		frappe.set_user(service_user)
@@ -335,6 +384,7 @@ def execute(
 		result = FunctionResult(error=f"{type(exc).__name__}: {str(exc)[:200]}")
 	finally:
 		frappe.set_user(previous)
+		frappe.session.sid, frappe.session.data, frappe.local.form_dict = saved_sid, saved_data, saved_form
 	elapsed = int((time.perf_counter() - started) * 1000)
 	_record_metrics(command.function, elapsed, error=result.error)
 	return result
@@ -545,7 +595,7 @@ def route(
 		return _finish(result, inbound, dry_run, create_simulated_rows, command=None)
 	command = frappe.get_cached_doc("WhatsApp Command", m.command)
 	result.command = command.name
-	sender = sender_for(inbound)
+	sender = sender_for(inbound, allowed_party_types(command))
 	reason = check_access(command, inbound, sender)
 	if reason:
 		result.status, result.block_reason = "Blocked", reason
