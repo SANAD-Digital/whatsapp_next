@@ -141,10 +141,10 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [x] Workspace "WhatsApp" fixture: shortcuts, cards, Number Cards, sidebar order (09 §5) (D-110)
 - [x] Form side: connections on ten DocTypes (D-111); field descriptions rewritten as user copy (R-036)
 - [x] **Gate 2** demo checklist in Arabic — presented 2026-09-26 in `plan/14-gate-2.md`; the owner answered its five questions (D-117) and they are built (D-118..D-123)
-- [ ] Owner's go to start phase 8
+- [x] Owner's go to start phase 8 (D-124)
 
 ## Phase 8 — Planned-vs-delivered audit
-- [ ] `git -C ../snd_whatsapp status --porcelain` captured; `traceability-auditor` → `plan/11-traceability-report.md`
+- [x] `git -C ../snd_whatsapp status --porcelain` — the legacy app is not cloned in the cloud environment, untouched by construction; `traceability-auditor` → `plan/11-traceability-report.md` (2026-09-27). Open: OQ-1 (owner), A-1..A-3 and S-2 carried into phase 9
 
 ## Phase 9 — Tests
 - [ ] `test-engineer` runs the suite (`bench --site whatsapp.dev.sanad.digital run-tests --app whatsapp_next`), fixes whatsapp_next bugs, writes `plan/12-test-report.md`

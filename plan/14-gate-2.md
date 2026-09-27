@@ -116,4 +116,4 @@
 
 - **الروابط:** رابطا Dev Tunnel في `dev/mobile-preview` (`start.sh` يطبعهما).
 - **بيانات الدخول:** في `/home/frappe/.dev-secrets/` على الـ VM، وليست في Git.
-- **إعادة التشغيل:** إذا أُعيد تشغيل الـ VM نفّذ `bootstrap-cloud.sh --session-start --mobile-preview`، وتبقى الروابط نفسها.
+- **إعادة التشغيل:** إذا أُعيد تشغيل الـ VM نفّذ `bootstrap-cloud.sh --session-start --start-mock --start-web --mobile-preview` (بدون `--start-mock --start-web` لا يعمل خادم التطوير على 8000 ولا محاكي wa-admin، فتتوقف مسارات المنصة)، وتبقى الروابط نفسها.
