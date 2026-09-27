@@ -18,6 +18,7 @@ IGNORE_TEST_RECORD_DEPENDENCIES = [
 	"WhatsApp Contact Group",
 	"WhatsApp Device",
 	"Print Format",
+	"Contact",
 ]
 FUNCTION_KEY = "_wa_test_cmd_fn"
 

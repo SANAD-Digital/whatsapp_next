@@ -28,7 +28,7 @@ Portable: the component knows nothing about the host app. The host passes the da
 const call = (m, args) => sanad.ui.call(`commands.${m}`, args);
 new sanad.ui.CommandEditor({
   name: "doc",                                   // empty for a new command
-  read_only: !frappe.user.has_role("WhatsApp Manager"),
+  read_only: !frappe.user.has_role("System Manager"),
   load: (name) => call("get_editor", { name }),  // {command, functions, party_types, function}
   load_function: (fn) => call("get_function_spec", { function: fn }),
   save: (payload) => call("save_editor", { payload }),      // → {name, status}
@@ -50,8 +50,8 @@ party_types[], suggested_commands[]}`. The save payload is the same shape with `
 `access` as names and `status`.
 
 ## Live use
-Commands list (New command, View, Edit) and the WhatsApp Command form ("Open editor"), through
-`whatsapp_next.command_modal(name, opts)`.
+The host app's Commands list (New command, View, Edit) and its command form ("Open editor"),
+through the host's own `command_modal(name, opts)` wrapper.
 
 ## Design gate
 - `role="dialog"` + `aria-modal`, focus kept inside (Tab / Shift+Tab wrap), Esc closes the open

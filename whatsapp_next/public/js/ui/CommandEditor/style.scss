@@ -27,7 +27,8 @@ body.sanad-ce-open { overflow: hidden; }
 .sanad-ce-backdrop {
 	position: absolute;
 	inset: 0;
-	background: rgb(15 20 19 / 45%);
+	background: var(--wa-ink);
+	opacity: 0.45;
 }
 
 @keyframes sanad-ce-in {
@@ -46,7 +47,7 @@ body.sanad-ce-open { overflow: hidden; }
 	border-radius: 10px;
 	background: var(--wa-bg);
 	border: 1px solid var(--wa-border);
-	box-shadow: 0 24px 60px rgb(15 23 32 / 28%);
+	box-shadow: 0 24px 60px color-mix(in srgb, var(--wa-ink) 28%, transparent);
 	overflow: hidden;
 	animation: sanad-ce-in 0.18s ease-out;
 
@@ -174,8 +175,8 @@ body.sanad-ce-open { overflow: hidden; }
 		inline-size: 13px;
 		block-size: 13px;
 		border-radius: 50%;
-		background: #f7faf9;
-		box-shadow: 0 1px 3px rgb(0 0 0 / 28%);
+		background: var(--wa-surface);
+		box-shadow: 0 1px 3px color-mix(in srgb, var(--wa-ink) 28%, transparent);
 		transition: inset-inline-end 0.18s ease-out;
 
 		.is-on & { inset-inline-end: 18px; }
@@ -420,7 +421,7 @@ body.sanad-ce-open { overflow: hidden; }
 		border-radius: 8px;
 		border: 1px solid var(--wa-border-2);
 		background: var(--wa-surface);
-		box-shadow: 0 12px 28px rgb(15 23 32 / 16%);
+		box-shadow: 0 12px 28px color-mix(in srgb, var(--wa-ink) 16%, transparent);
 
 		&--sm { max-block-size: 190px; }
 	}

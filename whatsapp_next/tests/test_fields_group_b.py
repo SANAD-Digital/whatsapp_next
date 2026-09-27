@@ -54,6 +54,7 @@ EXPECTED: dict[str, list[tuple[str, str, list[str] | None]]] = {
 				"Function Updated",
 				"Function Removed",
 				"Command Changed",
+				"Command Deleted",
 				"Command Defaults Restored",
 				"Retention Purge",
 			],
