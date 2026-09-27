@@ -19,12 +19,6 @@ from whatsapp_next.services import functions_catalog
 STATUS_SCHEMA = {"status": {"enum": ["Active", "Inactive"]}}
 
 
-def _installed(function_key: str):
-	if not frappe.db.exists("WhatsApp Function", function_key):
-		frappe.throw(_("Function {0} is not installed").format(function_key), WANotFoundError)
-	return frappe.get_doc("WhatsApp Function", function_key)
-
-
 @api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
 def get_catalog() -> dict[str, Any]:
 	"""`{entries[], catalog_source[], checked_at}`: every catalog function merged with its install
@@ -149,29 +143,14 @@ def remove(function_key: str) -> dict[str, bool]:
 @api_endpoint(roles=MANAGER, schema=STATUS_SCHEMA)
 def set_status(function_key: str, status: str) -> dict[str, str]:
 	"""Activate / deactivate an installed function. P: Manager. E: `WANotFoundError`."""
-	doc = _installed(function_key)
-	if doc.status != status:
-		doc.status = status
-		doc.save()
-	return {"status": doc.status}
+	return {"status": functions_catalog.set_status(function_key, status)}
 
 
 @api_endpoint(roles=MANAGER)
 def save_settings(function_key: str, values: dict) -> dict[str, Any]:
-	"""Write setting values by key (validated by the row's `fieldtype` / `choices`); unknown keys
-	are rejected. Returns `{values}`. P: Manager. E: `WANotFoundError`, `WAValidationError`."""
-	doc = _installed(function_key)
-	rows = {r.key: r for r in doc.get("settings") or []}
-	unknown = sorted(set(values or {}) - set(rows))
-	if unknown:
-		frappe.throw(
-			_("Unknown setting keys for function {0}: {1}").format(function_key, ", ".join(unknown)),
-			WAValidationError,
-		)
-	for key, value in (values or {}).items():
-		rows[key].value = "" if value is None else str(value)
-	doc.save()
-	return {"values": {r.key: r.value for r in doc.get("settings") or []}}
+	"""Write setting values by key; unknown keys are rejected. Returns `{values}`. P: Manager.
+	E: `WANotFoundError`, `WAValidationError`."""
+	return {"values": functions_catalog.save_settings(function_key, values)}
 
 
 @api_endpoint(roles=MANAGER)
@@ -198,10 +177,8 @@ def set_status_many(function_keys: list[str], status: str) -> dict[str, Any]:
 	"""Bulk activate / deactivate; rows already in `status` are `skipped`. P: Manager."""
 
 	def one(function_key: str) -> None:
-		doc = _installed(function_key)
-		if doc.status == status:
+		if functions_catalog.installed(function_key).status == status:
 			raise _bulk.Skip(f"already {status}")
-		doc.status = status
-		doc.save()
+		functions_catalog.set_status(function_key, status)
 
 	return _bulk.run_bulk(function_keys, one)

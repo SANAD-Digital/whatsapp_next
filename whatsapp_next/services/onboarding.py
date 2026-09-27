@@ -46,9 +46,11 @@ def has_secret(settings, fieldname: str) -> bool:
 
 
 def has_credentials(settings=None) -> bool:
-	"""All three platform credentials plus the base URL are present."""
+	"""All three platform credentials are present and the site knows its platform address — the
+	effective one (Settings, else the bench default `whatsapp_platform_base_url`, D-103): the
+	address is a default, never copied into Settings (D-117)."""
 	s = settings or _settings()
-	return bool(s.platform_base_url) and all(has_secret(s, f) for f in CREDENTIAL_FIELDS)
+	return bool(registry.platform_base_url(s)) and all(has_secret(s, f) for f in CREDENTIAL_FIELDS)
 
 
 def test_connection(user: str | None = None) -> dict[str, Any]:
@@ -263,14 +265,6 @@ def link_site(user: str | None = None) -> dict[str, Any]:
 	half-linked site still signs in and the Settings page offers the step that failed.
 
 	`{connection{ok, error}, webhook{ok, status, error}, devices{ok, adopted, error}}`."""
-	# The address is a default (D-103): a linked site keeps the bench's platform address in
-	# Settings, so the credentials step reads complete and an operator sees where it points.
-	if not frappe.db.get_single_value("WhatsApp Settings", "platform_base_url"):
-		frappe.db.set_single_value(
-			"WhatsApp Settings", "platform_base_url", registry.platform_base_url(), update_modified=False
-		)
-		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
-		registry.clear_cache()
 	connection = test_connection(user=user)
 	out: dict[str, Any] = {"connection": {"ok": connection["ok"], "error": connection.get("error")}}
 	if not connection["ok"]:

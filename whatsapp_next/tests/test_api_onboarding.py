@@ -297,7 +297,8 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 				self.assertEqual(out["devices"], {"ok": True, "adopted": 1})
 				self.assertNotIn("fake-secret", str(out))
 				s = frappe.get_doc(SETTINGS)
-				self.assertEqual(s.platform_base_url, "https://platform.example.test")
+				self.assertFalse(s.platform_base_url)  # a default, never copied into Settings
+				self.assertTrue(svc.has_credentials(s))  # …yet the credentials step is complete
 				self.assertEqual(s.connection_status, "OK")
 				self.assertEqual(s.webhook_status, "Active")
 				self.assertEqual(set(frappe.parse_json(s.webhook_events)), set(webhook_setup.DEFAULT_EVENTS))

@@ -18,6 +18,8 @@ from whatsapp_next.api.v1._roles import AGENT_UP, CONTACT_USER, MANAGER, SYSTEM_
 from whatsapp_next.exceptions import WANotSupportedError, WAProviderUnavailableError, WAValidationError
 from whatsapp_next.providers.schemas import CANONICAL_EVENTS
 from whatsapp_next.services import audit, onboarding, permissions, usage_sync, webhook_setup
+from whatsapp_next.services import settings as settings_service
+from whatsapp_next.services.settings import PICKER_SOURCE_FIELDS
 
 SETTINGS = "WhatsApp Settings"
 
@@ -94,16 +96,6 @@ SECRET_FIELDS: dict[str, tuple[str, ...]] = {
 	"webhook": ("webhook_secret",),
 }
 
-PICKER_SOURCE_FIELDS = (
-	"document_type",
-	"label",
-	"phone_source",
-	"phone_fieldname",
-	"contact_fieldname",
-	"name_fieldname",
-	"filters_json",
-	"enabled",
-)
 DOCTYPE_FIELD_TYPES = ("Data", "Phone", "Link", "Dynamic Link", "Small Text")
 AUDIT_FIELDS = (
 	"name",
@@ -165,28 +157,7 @@ def save_settings(section: str, values: dict) -> dict[str, Any]:
 		frappe.throw(
 			_("Fields not allowed in section {0}: {1}").format(section, ", ".join(unknown)), WAValidationError
 		)
-	if not values:
-		frappe.throw(_("Nothing to save"), WAValidationError)
-	doc = frappe.get_doc(SETTINGS)
-	changed: list[str] = []
-	for fieldname, value in values.items():
-		if fieldname == "picker_sources":
-			if not isinstance(value, list):
-				frappe.throw(_("picker_sources must be a list of rows"), WAValidationError)
-			doc.set("picker_sources", [])
-			for row in value:
-				doc.append(
-					"picker_sources", {f: row.get(f) for f in PICKER_SOURCE_FIELDS if f in (row or {})}
-				)
-			changed.append(fieldname)
-			continue
-		if doc.get(fieldname) != value:
-			doc.set(fieldname, value)
-			changed.append(fieldname)
-	if changed:
-		doc.flags.ignore_permissions = True
-		doc.save(ignore_permissions=True)
-		audit.log("Settings Changed", fields_written=changed, details={"section": section})
+	changed = settings_service.save_fields(values, section=section, user=frappe.session.user)
 	return {"ok": True, "changed": changed}
 
 

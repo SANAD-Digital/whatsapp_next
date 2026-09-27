@@ -394,6 +394,39 @@ def remove(function_key: str, user: str | None = None) -> None:
 	frappe.delete_doc("WhatsApp Function", function_key, ignore_permissions=True)
 
 
+def installed(function_key: str):
+	"""The installed `WhatsApp Function` document. E: `WANotFoundError`."""
+	if not frappe.db.exists("WhatsApp Function", function_key):
+		frappe.throw(_("Function {0} is not installed").format(function_key), WANotFoundError)
+	return frappe.get_doc("WhatsApp Function", function_key)
+
+
+def set_status(function_key: str, status: str) -> str:
+	"""Activate / deactivate an installed function; returns the status it now has."""
+	doc = installed(function_key)
+	if doc.status != status:
+		doc.status = status
+		doc.save()
+	return doc.status
+
+
+def save_settings(function_key: str, values: dict | None) -> dict[str, Any]:
+	"""Write setting values by key (validated by the row's `fieldtype` / `choices` in the
+	controller); unknown keys are rejected. Returns `{key: value}` of every setting."""
+	doc = installed(function_key)
+	rows = {r.key: r for r in doc.get("settings") or []}
+	unknown = sorted(set(values or {}) - set(rows))
+	if unknown:
+		frappe.throw(
+			_("Unknown setting keys for function {0}: {1}").format(function_key, ", ".join(unknown)),
+			WAValidationError,
+		)
+	for key, value in (values or {}).items():
+		rows[key].value = "" if value is None else str(value)
+	doc.save()
+	return {r.key: r.value for r in doc.get("settings") or []}
+
+
 def check_updates() -> dict[str, int]:
 	"""Daily: refresh `latest_version` / `update_available` on installed functions."""
 	catalog = load_catalog(use_cache=False)
