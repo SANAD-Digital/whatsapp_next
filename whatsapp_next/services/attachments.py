@@ -211,3 +211,130 @@ def attachment_ref(outbound, *, inline: bool = True) -> AttachmentRef | None:
 	from frappe.utils import get_url
 
 	return AttachmentRef(file_name=file_name, mime_type=mime_type, url=get_url(file_url))
+
+
+# ---- a message's kind, as the composer's "+" picks it (D-137) ---------------------------------
+
+KIND_TYPES: dict[str, str] = {
+	"text": "Text",
+	"image": "Image",
+	"video": "Video",
+	"document": "Document",
+	"audio": "Audio",
+	"location": "Location",
+	"contact": "Document",  # a contact card travels as a .vcf document
+}
+
+
+def _vcard_escape(value: Any) -> str:
+	return cstr(value).replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+
+
+def contact_vcard(contact: str) -> tuple[bytes, str]:
+	"""A vCard 3.0 of one Contact (name, organisation, WhatsApp numbers, email) and its file name.
+	Read through the contextual permission layer. E: `WAFileError` when the contact is missing."""
+	from whatsapp_next.services import permissions
+
+	permissions.require("read")
+	row = frappe.db.get_value(
+		"Contact", contact, ["full_name", "first_name", "last_name", "company_name", "email_id"], as_dict=True
+	)
+	if not row:
+		frappe.throw(_("Contact {0} not found").format(contact), WAFileError)
+	phones = frappe.get_all(
+		"Contact Phone",
+		filters={"parenttype": "Contact", "parent": contact},
+		fields=["phone", "wa_phone_e164"],
+		order_by="is_primary_mobile_no desc, idx asc",
+		ignore_permissions=True,
+	)
+	name = row.full_name or " ".join(filter(None, [row.first_name, row.last_name])) or contact
+	lines = [
+		"BEGIN:VCARD",
+		"VERSION:3.0",
+		f"FN:{_vcard_escape(name)}",
+		f"N:{_vcard_escape(row.last_name)};{_vcard_escape(row.first_name or name)};;;",
+	]
+	if row.company_name:
+		lines.append(f"ORG:{_vcard_escape(row.company_name)}")
+	for p in phones:
+		number = p.wa_phone_e164 or p.phone
+		if number:
+			digits = number.lstrip("+")
+			lines.append(f"TEL;type=CELL;waid={digits}:{number}")
+	if row.email_id:
+		lines.append(f"EMAIL:{_vcard_escape(row.email_id)}")
+	lines.append("END:VCARD")
+	return ("\r\n".join(lines) + "\r\n").encode("utf-8"), safe_file_name(name, "contact", "vcf")
+
+
+def message_parts(
+	kind: str | None,
+	*,
+	body: str | None = None,
+	attachment: str | None = None,
+	contact: str | None = None,
+	location: dict | None = None,
+	attached_to: tuple[str, str] | None = None,
+) -> dict[str, Any]:
+	"""The outbound fields for one composed message: `{message_type, body, caption, attachment,
+	file_name, mime_type, location}`. Text needs a body; a file kind needs an uploaded File; a
+	contact becomes a stored .vcf; a location needs a latitude and a longitude. The typed text is
+	the caption of a file. E: `WAValidationError`, `WAFileError`."""
+	from whatsapp_next.exceptions import WAValidationError
+
+	kind = (kind or "text").lower()
+	if kind not in KIND_TYPES:
+		frappe.throw(_("Unknown message kind {0}").format(kind), WAValidationError)
+	message_type = KIND_TYPES[kind]
+	body = (body or "").strip() or None
+	out: dict[str, Any] = {
+		"message_type": message_type,
+		"body": body,
+		"caption": None,
+		"attachment": None,
+		"file_name": None,
+		"mime_type": None,
+		"location": None,
+	}
+	if kind == "text":
+		if not body:
+			frappe.throw(_("Message text is required"), WAValidationError)
+		return out
+	if kind == "location":
+		loc = location if isinstance(location, dict) else {}
+		try:
+			lat, lng = float(loc.get("latitude")), float(loc.get("longitude"))
+		except (TypeError, ValueError):
+			frappe.throw(_("A location needs a latitude and a longitude"), WAValidationError)
+		if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+			frappe.throw(_("The latitude or longitude is out of range"), WAValidationError)
+		out.update(
+			body=None,
+			location={
+				"latitude": lat,
+				"longitude": lng,
+				"name": cstr(loc.get("name")).strip() or None,
+				"address": cstr(loc.get("address")).strip() or None,
+			},
+		)
+		return out
+	if kind == "contact":
+		if not contact:
+			frappe.throw(_("Pick the contact to share"), WAValidationError)
+		content, file_name = contact_vcard(contact)
+		url = save_private_file(content, file_name, attached_to)
+		out.update(body=None, caption=body, attachment=url, file_name=file_name, mime_type="text/vcard")
+		return out
+	if not attachment:
+		frappe.throw(_("Upload the file to send"), WAValidationError)
+	meta = file_meta(attachment)
+	check_mime_for_type(message_type, meta["mime_type"])
+	out.update(
+		body=None,
+		caption=body,
+		attachment=attachment,
+		file_name=meta["file_name"],
+		mime_type=meta["mime_type"],
+	)
+	return out

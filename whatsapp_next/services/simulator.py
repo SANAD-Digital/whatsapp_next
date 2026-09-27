@@ -107,13 +107,26 @@ def simulate_inbound(
 	)
 
 
-def send_test(device: str, phone: str, body: str, user: str | None = None) -> str:
-	"""Create an `is_test` outbound and start `dispatch.send_test_message` (D-010, D-024)."""
-	if not (body or "").strip():
-		frappe.throw(_("Message text is required"), WAValidationError)
+def send_test(
+	device: str,
+	phone: str,
+	body: str | None = None,
+	user: str | None = None,
+	*,
+	kind: str | None = None,
+	attachment: str | None = None,
+	contact: str | None = None,
+	location: dict | None = None,
+) -> str:
+	"""Create an `is_test` outbound and start `dispatch.send_test_message` (D-010, D-024). `kind`
+	is what the composer's "+" picked (text · image · video · document · audio · location ·
+	contact, D-137); the typed text is a file's caption."""
+	from whatsapp_next.services.attachments import message_parts
+
+	parts = message_parts(kind, body=body, attachment=attachment, contact=contact, location=location)
 	outbound = dispatch.create_outbound(
 		OutboundSpec(
-			device=device, phone=phone, body=body, source_type="Simulator", is_test=True, skip_policy=True
+			device=device, phone=phone, source_type="Simulator", is_test=True, skip_policy=True, **parts
 		),
 		user=user,
 	)
@@ -128,7 +141,12 @@ def send_test(device: str, phone: str, body: str, user: str | None = None) -> st
 	)
 	from whatsapp_next.services import audit
 
-	audit.log("Test Send", reference=("WhatsApp Log", outbound), user=user, details={"device": device})
+	audit.log(
+		"Test Send",
+		reference=("WhatsApp Log", outbound),
+		user=user,
+		details={"device": device, "message_type": parts["message_type"]},
+	)
 	return outbound
 
 

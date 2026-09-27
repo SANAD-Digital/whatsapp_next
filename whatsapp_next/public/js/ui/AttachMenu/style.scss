@@ -1,0 +1,143 @@
+// sanad.ui.AttachMenu — the prototype's composer "+" menu (`docs/component/Chat Thread.dc.html`):
+// a 14 px-radius popover with a 3-column grid (88 px minimum), a 38 px round icon in each kind's
+// tone over an 11 px label, and the chip the picked kind leaves above the field. Product tokens only.
+
+.sanad-am {
+	position: fixed;
+	z-index: 1070; // over the kit's modals (1040/1041) and Frappe's dialogs
+	padding: 8px;
+	border-radius: 14px;
+	background: var(--wa-surface);
+	border: 1px solid var(--wa-border);
+	box-shadow: 0 14px 34px color-mix(in srgb, var(--wa-ink) 18%, transparent);
+	color: var(--wa-ink);
+
+	&__grid { display: grid; grid-template-columns: repeat(3, minmax(88px, 1fr)); gap: 4px; }
+
+	&__item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 6px;
+		padding: 10px 6px;
+		border: 0;
+		border-radius: 10px;
+		background: transparent;
+		cursor: pointer;
+
+		&:hover:not(:disabled) { background: var(--wa-sunken); }
+		&:disabled { opacity: 0.45; cursor: not-allowed; }
+	}
+
+	&__icon {
+		inline-size: 38px;
+		block-size: 38px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex: none;
+
+		&--pri { background: var(--wa-pri-s); color: var(--wa-pri-d); }
+		&--nf { background: var(--wa-nf-s); color: var(--wa-nf-i); }
+		&--wn { background: var(--wa-wn-s); color: var(--wa-wn-i); }
+		&--ok { background: var(--wa-ok-s); color: var(--wa-ok-i); }
+		&--dg { background: var(--wa-dg-s); color: var(--wa-dg-i); }
+		&--muted { background: var(--wa-sunken); color: var(--wa-ink-3); }
+	}
+
+	&__label { font-size: 11px; font-weight: 600; color: var(--wa-ink-2); white-space: nowrap; }
+
+	// ---- the location / contact step --------------------------------------------------------
+
+	&__form { display: flex; flex-direction: column; gap: 8px; inline-size: 300px; max-inline-size: calc(100vw - 32px); padding: 4px; margin: 0; }
+	&__title { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; }
+	&__row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+	&__fld { display: flex; flex-direction: column; gap: 4px; margin: 0; font-size: 11px; font-weight: 600; color: var(--wa-ink-3); }
+
+	&__fld input,
+	&__search {
+		min-block-size: 34px;
+		padding: 0 10px;
+		border-radius: 8px;
+		border: 1px solid var(--wa-border-2);
+		background: var(--wa-bg);
+		color: var(--wa-ink);
+		font-size: 13px;
+		font-weight: 400;
+		outline: none;
+
+		&:focus { border-color: var(--wa-pri); background: var(--wa-surface); }
+	}
+
+	&__results { display: flex; flex-direction: column; gap: 2px; max-block-size: 220px; overflow: auto; }
+
+	&__opt {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1px;
+		padding: 7px 9px;
+		border: 0;
+		border-radius: 7px;
+		background: transparent;
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--wa-ink);
+		text-align: start;
+		cursor: pointer;
+
+		span { font-size: 11px; font-weight: 500; color: var(--wa-ink-4); }
+		&:hover { background: var(--wa-sunken); }
+	}
+
+	&__none { padding: 8px; font-size: 12px; color: var(--wa-ink-4); }
+	&__error { font-size: 11px; color: var(--wa-dg-i); }
+	&__error:empty { display: none; }
+	&__link { align-self: flex-start; border: 0; background: transparent; padding: 0; font-size: 11px; font-weight: 600; color: var(--wa-pri-d); cursor: pointer; }
+	&__actions { display: flex; justify-content: flex-end; gap: 6px; }
+
+	&__btn {
+		min-block-size: 32px;
+		padding: 0 12px;
+		border-radius: 8px;
+		border: 1px solid var(--wa-border-2);
+		background: var(--wa-surface);
+		color: var(--wa-ink-2);
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+
+		&--pri { border-color: var(--wa-pri); background: var(--wa-pri); color: var(--wa-on-pri); }
+	}
+
+	button:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: 2px; }
+}
+
+// the chip a picked kind leaves above the field
+.sanad-am__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	align-self: flex-start;
+	max-inline-size: 100%;
+	padding: 5px 10px;
+	border-radius: 999px;
+	background: var(--wa-surface);
+	border: 1px solid var(--wa-border-2);
+	font-size: 11px;
+	font-weight: 600;
+
+	&--pri { border-color: var(--wa-pri); color: var(--wa-pri-d); }
+	&--nf { border-color: var(--wa-nf); color: var(--wa-nf-i); }
+	&--wn { border-color: var(--wa-wn); color: var(--wa-wn-i); }
+	&--ok { border-color: var(--wa-ok); color: var(--wa-ok-i); }
+	&--dg { border-color: var(--wa-dg); color: var(--wa-dg-i); }
+	&--muted { border-color: var(--wa-ink-4); color: var(--wa-ink-3); }
+
+	svg { inline-size: 16px; block-size: 16px; }
+}
+
+.sanad-am__chip-icon { display: inline-flex; flex: none; }
+.sanad-am__chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sanad-am__chip-x { border: 0; background: transparent; padding: 0; font-size: 13px; line-height: 1; color: var(--wa-ink-4); cursor: pointer; }

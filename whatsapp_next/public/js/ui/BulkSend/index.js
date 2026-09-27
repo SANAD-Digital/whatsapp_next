@@ -58,6 +58,7 @@ frappe.provide("sanad.ui");
 				when: "now",
 				at: "",
 				body: "",
+				attach: null,
 				estimate: null,
 			};
 			this.show();
@@ -85,6 +86,10 @@ frappe.provide("sanad.ui");
 			this.$body = this.$root.find("[data-slot=body]");
 			$("body").addClass("sanad-ce-open");
 			this.$root.on("click", "[data-act]", (e) => this.on_act(e));
+			this.$root.on("click", "[data-attach-clear]", () => {
+				this.state.attach = null;
+				this.render();
+			});
 			this.$root.on("input", "[data-in]", (e) => this.on_input(e));
 			this.$root.on("change", "[data-ch]", (e) => this.on_change(e));
 			this.$root.on("keydown", (e) => this.on_key(e));
@@ -303,7 +308,7 @@ frappe.provide("sanad.ui");
 			const remaining = this.ctx.messages_remaining;
 			const mins = total / Math.max(1, cint(s.rate) || 20);
 			const eta = !total ? "—" : mins < 1 ? __("under a minute") : mins < 60 ? __("{0} minutes", [Math.round(mins)]) : __("{0} hours", [Math.round(mins / 60)]);
-			const ready = total > 0 && !!s.body.trim() && dev && dev.status === "Connected";
+			const ready = total > 0 && (!!s.body.trim() || !!s.attach) && dev && dev.status === "Connected";
 			const send_label = s.when === "later" ? __("Schedule the send") : total ? __("Send to {0}", [sanad.ui.format_int(total)]) : __("Send", null, "Bulk Send");
 			return `<section class="sanad-bs__main" aria-label="${esc(__("The message"))}">
 				<div class="sanad-bs__head">
@@ -323,15 +328,20 @@ frappe.provide("sanad.ui");
 				<div class="sanad-bs__note"><span class="sanad-bs__note-dot" aria-hidden="true"></span><span>${esc(__("The send is real — the text is sent as it is to every recipient."))}</span></div>
 				<div class="sanad-bs__thread">
 					${
-						s.body.trim()
-							? `<span class="sanad-bs__day">${esc(__("Today"))}</span><div class="sanad-bs__bubble" dir="auto">${esc(s.body)}<span class="sanad-bs__bubble-at" dir="ltr">${esc(frappe.datetime.now_time().slice(0, 5))} 🕓</span></div>`
+						s.body.trim() || s.attach
+							? `<span class="sanad-bs__day">${esc(__("Today"))}</span><div class="sanad-bs__bubble" dir="auto">${
+									s.attach
+										? `<span class="sanad-bs__bubble-file">${sanad.ui.AttachMenu.icon(s.attach.kind)}<bdi>${esc(s.attach.file_name || s.attach.contact_label || sanad.ui.AttachMenu.label(s.attach.kind))}</bdi></span>`
+										: ""
+							  }${esc(s.body)}<span class="sanad-bs__bubble-at" dir="ltr">${esc(frappe.datetime.now_time().slice(0, 5))} 🕓</span></div>`
 							: `<div class="sanad-bs__empty"><strong>${esc(__("Write the message"))}</strong><span>${esc(__("Write in the box below or pick a template from the send settings — it shows here as the recipient gets it."))}</span></div>`
 					}
 				</div>
+				${s.attach && sanad.ui.AttachMenu ? `<div class="sanad-bs__attach">${sanad.ui.AttachMenu.chip_html(s.attach)}</div>` : ""}
 				<div class="sanad-bs__composer">
-					<span class="sanad-bs__tools"><button type="button" class="sanad-bs__round sanad-bs__round--plain" disabled title="${esc(__("Attachments are not supported in a bulk message yet"))}" aria-label="${esc(__("Message type"))}">+</button></span>
+					<span class="sanad-bs__tools"><button type="button" class="sanad-bs__round sanad-bs__round--plain" data-act="plus" title="${esc(__("Message type"))}" aria-label="${esc(__("Message type"))}" aria-haspopup="dialog">+</button></span>
 					<span class="sanad-bs__field">
-						<textarea class="sanad-bs__input" rows="2" data-f="body" data-in="body" placeholder="${esc(__("Write your message…"))}" aria-label="${esc(__("Message"))}">${esc(s.body)}</textarea>
+						<textarea class="sanad-bs__input" rows="2" data-f="body" data-in="body" placeholder="${esc(s.attach ? __("Caption (optional)…") : __("Write your message…"))}" aria-label="${esc(__("Message"))}">${esc(s.body)}</textarea>
 						<button type="button" class="sanad-bs__clear-x" data-act="clear-body" aria-label="${esc(__("Clear the text"))}" title="${esc(__("Clear the text"))}">×</button>
 					</span>
 					<button type="button" class="sanad-bs__round sanad-bs__round--pri" data-act="send" title="${esc(__("Send", null, "Bulk Send"))}" aria-label="${esc(__("Send", null, "Bulk Send"))}">${SEND_ICON}</button>
@@ -544,6 +554,17 @@ frappe.provide("sanad.ui");
 				case "templates":
 					this.close();
 					return this.opts.on_templates && this.opts.on_templates();
+				case "plus":
+					return new sanad.ui.AttachMenu({
+						anchor: e.currentTarget,
+						kinds: ["image", "video", "document", "audio", "contact"],
+						reasons: { location: __("A location goes to one conversation at a time — send it from the simulator.") },
+						search_contacts: (txt) => this.opts.search_contacts(txt),
+						on_pick: (v) => {
+							s.attach = v;
+							this.render();
+						},
+					});
 				case "clear-body":
 					s.body = "";
 					this.render();
@@ -563,7 +584,8 @@ frappe.provide("sanad.ui");
 			const total = this.total();
 			const dev = this.device();
 			if (!this.picked_count()) return new sanad.ui.Toast({ tone: "warning", title: __("No recipients"), message: __("Pick a group or contacts, or enter numbers.") });
-			if (!s.body.trim()) return new sanad.ui.Toast({ tone: "warning", title: __("The message is empty"), message: __("Write the message text.") });
+			if (!s.body.trim() && !s.attach)
+				return new sanad.ui.Toast({ tone: "warning", title: __("The message is empty"), message: __("Write the message text, or pick a file or a contact with «+».") });
 			if (!dev || dev.status !== "Connected") return new sanad.ui.Toast({ tone: "warning", title: __("The device is not connected"), message: __("Pick a connected device from the send settings.") });
 			if (s.when === "later" && !s.at) return new sanad.ui.Toast({ tone: "warning", title: __("No start time"), message: __("Pick when the send starts, or send now.") });
 			if (this.rate_problem()) return new sanad.ui.Toast({ tone: "warning", title: __("The rate is too high"), message: this.rate_problem() });
@@ -590,7 +612,10 @@ frappe.provide("sanad.ui");
 						contacts: s.contacts.map((c) => c.name),
 						numbers: s.numbers,
 						body: s.body,
-						template: s.template || null,
+						template: s.attach ? null : s.template || null,
+						kind: s.attach ? s.attach.kind : "text",
+						attachment: s.attach ? s.attach.attachment || null : null,
+						contact: s.attach ? s.attach.contact || null : null,
 						device: s.device,
 						rate: cint(s.rate) || null,
 						scheduled_at: later ? s.at.replace("T", " ") : null,

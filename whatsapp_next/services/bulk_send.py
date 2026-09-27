@@ -15,6 +15,7 @@ from frappe.utils import cint, format_datetime, get_datetime, now_datetime
 
 from whatsapp_next.exceptions import WAValidationError
 from whatsapp_next.services import audit, campaign_runner, picker
+from whatsapp_next.services.attachments import message_parts
 from whatsapp_next.services.permissions import contact_phones
 from whatsapp_next.whatsapp_next.doctype.whatsapp_campaign.whatsapp_campaign import settings_rate_limit
 
@@ -150,19 +151,44 @@ def estimate(
 
 def send(payload: dict, user: str | None = None) -> dict[str, Any]:
 	"""Create the campaign for `{groups[], contacts[], numbers[], body, template, device, rate,
-	scheduled_at}` and start it now (or schedule it). Returns `{campaign, status, recipients,
+	scheduled_at, kind, attachment, contact}` (`kind` as the composer's "+" picks it, D-137; a file's
+	text is its caption) and start it now (or schedule it). Returns `{campaign, status, recipients,
 	excluded, invalid}`. E: `WAValidationError` (no recipient, empty message, bad schedule)."""
 	if not isinstance(payload, dict):
 		frappe.throw(_("payload must be an object"), WAValidationError)
 	unknown = sorted(
-		set(payload) - {"groups", "contacts", "numbers", "body", "template", "device", "rate", "scheduled_at"}
+		set(payload)
+		- {
+			"groups",
+			"contacts",
+			"numbers",
+			"body",
+			"template",
+			"device",
+			"rate",
+			"scheduled_at",
+			"kind",
+			"attachment",
+			"contact",
+		}
 	)
 	if unknown:
 		frappe.throw(_("Unknown payload keys: {0}").format(", ".join(unknown)), WAValidationError)
 	body = (payload.get("body") or "").strip()
 	template = payload.get("template") or None
-	if not body and not template:
+	kind = (payload.get("kind") or "text").lower()
+	if kind == "location":
+		# a campaign message carries no location fields: the single send in the simulator does
+		frappe.throw(_("A location cannot be sent as a bulk message"), WAValidationError)
+	if kind == "text" and not body and not template:
 		frappe.throw(_("Write the message text or pick a template"), WAValidationError)
+	parts = (
+		None
+		if kind == "text"
+		else message_parts(
+			kind, body=body, attachment=payload.get("attachment"), contact=payload.get("contact")
+		)
+	)
 	device = payload.get("device") or frappe.get_cached_doc("WhatsApp Settings").default_device
 	if not device:
 		frappe.throw(_("Pick a sending device"), WAValidationError)
@@ -181,7 +207,15 @@ def send(payload: dict, user: str | None = None) -> dict[str, Any]:
 			"description": _("Sent from the «Send a bulk message» window."),
 			"device": device,
 			"messages_per_minute": cint(payload.get("rate")) or None,
-			"messages": [{"message_type": "Text", "body": body or None, "template": template}],
+			"messages": [
+				{"message_type": "Text", "body": body or None, "template": template}
+				if parts is None
+				else {
+					"message_type": parts["message_type"],
+					"caption": parts["caption"],
+					"attachment": parts["attachment"],
+				}
+			],
 		}
 	)
 	doc.insert()

@@ -351,6 +351,7 @@
 
 		select(row) {
 			this.contact = row;
+			this.attach = null;
 			this.$main.addClass("wa-sim--open");
 			this.render_list();
 			this.render_head();
@@ -502,27 +503,47 @@
 
 		/**
 		 * The prototype's composer (`docs/component/Chat Thread.dc.html`): the round "#" (message on
-		 * behalf) above the round "+", the rounded two-line field with its clear, and the round send.
-		 * "+" chooses the kind of message in the prototype; `simulator.send_test` takes a text body
-		 * only (Gap G-04), so it is drawn disabled with that reason rather than drawn dead.
+		 * behalf) above the round "+" (`sanad.ui.AttachMenu`: image · video · document · voice note ·
+		 * location · contact card, D-137), the chip of what "+" picked, the rounded two-line field with
+		 * its clear (the caption of a file), and the round send.
 		 */
 		render_composer() {
 			const enabled = !!this.contact;
 			this.$composer.html(`
-				<span class="wa-sim__tools">
-					${enabled ? `<button type="button" class="wa-sim__round wa-sim__round--info wa-sim__behalf" title="${esc(__("Message on behalf — simulate a message from the contact without a real send"))}" aria-label="${esc(__("Message on behalf"))}">#</button>` : ""}
-					<button type="button" class="wa-sim__round wa-sim__round--plain" disabled title="${esc(__("Attachments are not supported in a test send yet"))}" aria-label="${esc(__("Message type"))}">+</button>
-				</span>
-				<span class="wa-sim__field">
-					<label class="sanad-visually-hidden" for="wa-sim-body">${esc(__("Message"))}</label>
-					<textarea id="wa-sim-body" class="wa-sim__input" rows="2" placeholder="${esc(enabled ? __("Write your message…") : __("Pick a contact from the list first…"))}"${enabled ? "" : " disabled"}></textarea>
-					<button type="button" class="wa-sim__clear" aria-label="${esc(__("Clear the text"))}" title="${esc(__("Clear the text"))}">×</button>
-				</span>
-				<button type="button" class="wa-sim__round wa-sim__round--pri wa-sim__send" title="${esc(__("Send"))}" aria-label="${esc(__("Send"))}">${SEND_ICON}</button>`);
+				<span class="wa-sim__attach" data-slot="attach">${sanad.ui.AttachMenu.chip_html(this.attach)}</span>
+				<span class="wa-sim__composer-row">
+					<span class="wa-sim__tools">
+						${enabled ? `<button type="button" class="wa-sim__round wa-sim__round--info wa-sim__behalf" title="${esc(__("Message on behalf — simulate a message from the contact without a real send"))}" aria-label="${esc(__("Message on behalf"))}">#</button>` : ""}
+						<button type="button" class="wa-sim__round wa-sim__round--plain wa-sim__plus" title="${esc(__("Message type"))}" aria-label="${esc(__("Message type"))}" aria-haspopup="dialog"${enabled ? "" : " disabled"}>+</button>
+					</span>
+					<span class="wa-sim__field">
+						<label class="sanad-visually-hidden" for="wa-sim-body">${esc(__("Message"))}</label>
+						<textarea id="wa-sim-body" class="wa-sim__input" rows="2" placeholder="${esc(
+							enabled ? (this.attach && this.attach.kind !== "location" ? __("Caption (optional)…") : __("Write your message…")) : __("Pick a contact from the list first…")
+						)}"${enabled ? "" : " disabled"}></textarea>
+						<button type="button" class="wa-sim__clear" aria-label="${esc(__("Clear the text"))}" title="${esc(__("Clear the text"))}">×</button>
+					</span>
+					<button type="button" class="wa-sim__round wa-sim__round--pri wa-sim__send" title="${esc(__("Send"))}" aria-label="${esc(__("Send"))}">${SEND_ICON}</button>
+				</span>`);
 			this.$input = this.$composer.find(".wa-sim__input");
 			this.$composer.find(".wa-sim__clear").on("click", () => this.$input.val("").trigger("focus"));
 			this.$composer.find(".wa-sim__send").on("click", () => this.ask_send());
 			this.$composer.find(".wa-sim__behalf").on("click", () => this.ask_behalf());
+			this.$composer.find("[data-attach-clear]").on("click", () => this.set_attach(null));
+			this.$composer.find(".wa-sim__plus").on("click", (ev) =>
+				new sanad.ui.AttachMenu({
+					anchor: ev.currentTarget,
+					search_contacts: (txt) =>
+						sanad.ui.call("contacts.list_contacts", { search: txt || null, page_length: 20 }, { silent: true }).then((r) =>
+							((r && r.rows) || []).map((c) => ({
+								name: c.name,
+								label: c.full_name || c.name,
+								phone: ((c.phone_nos || []).find((p) => p.wa_phone_e164) || {}).wa_phone_e164 || "",
+							}))
+						),
+					on_pick: (v) => this.set_attach(v),
+				})
+			);
 			// Ctrl / Cmd + Enter sends, so a multi-line message can still be written comfortably
 			this.$input.on("keydown", (ev) => {
 				if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
@@ -532,6 +553,14 @@
 			});
 		}
 
+		/** What "+" picked (or nothing): the chip and the field's placeholder follow it; typed text stays. */
+		set_attach(value) {
+			const text = this.$input ? this.$input.val() : "";
+			this.attach = value;
+			this.render_composer();
+			this.$input.val(text).trigger("focus");
+		}
+
 		/** The three guards the prototype states, each naming what to do about it. */
 		guard({ need_device = true } = {}) {
 			if (!this.contact) {
@@ -539,8 +568,8 @@
 				return false;
 			}
 			if (!need_device) return true;
-			if (!cstr(this.$input.val()).trim()) {
-				new sanad.ui.Toast({ tone: "warning", title: __("The message is empty"), message: __("Write the message text.") });
+			if (!cstr(this.$input.val()).trim() && !this.attach) {
+				new sanad.ui.Toast({ tone: "warning", title: __("The message is empty"), message: __("Write the message text, or pick a file, a location or a contact with «+».") });
 				return false;
 			}
 			const device = this.current_device();
@@ -566,10 +595,20 @@
 			const body = cstr(this.$input.val()).trim();
 			const $send = this.$composer.find(".wa-sim__send").prop("disabled", true);
 			this._sending = true;
+			const a = this.attach || {};
 			sanad.ui
-				.call("simulator.send_test", { device: this.device, phone: this.contact.phone_e164, body })
+				.call("simulator.send_test", {
+					device: this.device,
+					phone: this.contact.phone_e164,
+					body,
+					kind: a.kind || "text",
+					attachment: a.attachment || null,
+					contact: a.contact || null,
+					location: a.location || null,
+				})
 				.then((r) => {
 					this.$input.val("");
+					if (this.attach) this.set_attach(null);
 					this.sent_outbound = r && r.outbound;
 					sanad.ui.Toast.success(__("Message queued"));
 					if (this.contact.typed) {

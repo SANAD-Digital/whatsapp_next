@@ -360,6 +360,22 @@ $bs-mono: "IBM Plex Mono", ui-monospace, monospace;
 		gap: 4px;
 	}
 
+	&__bubble-file {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 8px;
+		border-radius: 8px;
+		background: color-mix(in srgb, var(--wa-surface) 70%, transparent);
+		font-size: 12px;
+		font-weight: 600;
+
+		svg { flex: none; }
+	}
+
+	&__attach { flex: none; display: flex; padding: 8px 12px 0; background: var(--wa-bg); border-block-start: 1px solid var(--wa-border); }
+	&__attach + .sanad-bs__composer { border-block-start: 0; }
+
 	&__bubble-at { align-self: flex-end; font-size: 10px; color: var(--wa-ink-4); }
 
 	&__empty {

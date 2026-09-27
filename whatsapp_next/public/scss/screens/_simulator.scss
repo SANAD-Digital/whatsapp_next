@@ -344,12 +344,16 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 	&__composer {
 		flex: none;
 		display: flex;
-		align-items: flex-end;
+		flex-direction: column;
 		gap: 8px;
 		padding: 10px 12px 12px;
 		background: var(--wa-bg);
 		border-block-start: 1px solid var(--wa-border);
 	}
+
+	&__composer-row { display: flex; align-items: flex-end; gap: 8px; }
+	&__attach { display: flex; }
+	&__attach:empty { display: none; }
 
 	&__tools { display: flex; flex-direction: column; gap: 8px; flex: none; }
 

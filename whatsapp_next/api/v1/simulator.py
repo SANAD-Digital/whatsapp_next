@@ -46,10 +46,31 @@ def simulate_inbound(device: str, sender_phone: str, text: str, run_commands: bo
 
 
 @api_endpoint(roles=AGENT_UP)
-def send_test(device: str, phone: str, body: str) -> dict[str, Any]:
+def send_test(
+	device: str,
+	phone: str,
+	body: str | None = None,
+	kind: str | None = None,
+	attachment: str | None = None,
+	contact: str | None = None,
+	location: dict | None = None,
+) -> dict[str, Any]:
 	"""Create an `is_test` outbound and start `dispatch.send_test_message` (job) → `{outbound}`;
-	audited `Test Send`. Raises like `quick_send.send` (invalid phone, empty body)."""
-	return {"outbound": simulator.send_test(device, phone, body, user=frappe.session.user)}
+	audited `Test Send`. `kind` text · image · video · document · audio · location · contact
+	(D-137): a file kind takes an uploaded `attachment`, `contact` becomes a .vcf, `location` is
+	`{latitude, longitude, name, address}`. Raises like `quick_send.send`."""
+	return {
+		"outbound": simulator.send_test(
+			device,
+			phone,
+			body,
+			user=frappe.session.user,
+			kind=kind,
+			attachment=attachment,
+			contact=contact,
+			location=location,
+		)
+	}
 
 
 @api_endpoint(roles=MANAGER)
