@@ -5,7 +5,7 @@
 //     sent it*, runs the command router over it and stores the reply — all marked simulated, and
 //     nothing ever leaves the site. This is how an operator checks what a customer would get.
 //   • The composer's send (`simulator.send_test`) sends one real WhatsApp message from the chosen
-//     device. It is confirmed first, because it cannot be recalled.
+//     device, straight away, as the prototype does for a single recipient (D-135).
 //
 // Anatomy, value for value from the prototype (`docs/screen/Hub Screen - WhatsApp Simulator.dc.html`,
 // D-134): edge to edge, the conversation list (330 px) on the inline-start — "Conversations" with
@@ -545,32 +545,33 @@
 			return true;
 		}
 
+		/**
+		 * One message to the open conversation goes straight out, as in the prototype — it asks only
+		 * before a many-recipient or scheduled send, which this composer does not make (D-135). The
+		 * button waits while the request runs, so a double click cannot send twice.
+		 */
 		ask_send() {
-			if (!this.guard()) return;
+			if (!this.guard() || this._sending) return;
 			const body = cstr(this.$input.val()).trim();
-			const device = this.current_device();
-			sanad.ui.ConfirmDialog.ask({
-				title: __("Send a real message to {0}?", [title_of(this.contact)]),
-				message: __("One WhatsApp message leaves the device now. It counts against the plan and cannot be recalled."),
-				impact: [
-					{ label: __("Recipient"), value: this.contact.phone_e164 },
-					{ label: __("Device"), value: device.device_name || device.name },
-					{ label: __("Message"), value: body.length > 60 ? `${body.slice(0, 60)}…` : body },
-				],
-				confirm_label: __("Send message"),
-				on_confirm: () => sanad.ui.call("simulator.send_test", { device: this.device, phone: this.contact.phone_e164, body }),
-			})
+			const $send = this.$composer.find(".wa-sim__send").prop("disabled", true);
+			this._sending = true;
+			sanad.ui
+				.call("simulator.send_test", { device: this.device, phone: this.contact.phone_e164, body })
 				.then((r) => {
 					this.$input.val("");
 					this.sent_outbound = r && r.outbound;
-					sanad.ui.Toast.success(__("Test message queued"));
+					sanad.ui.Toast.success(__("Message queued"));
 					if (this.contact.typed) {
 						this.contact.typed = false;
 						this.load_list();
 					}
 					this.refresh_newest();
 				})
-				.catch(() => {});
+				.catch((err) => sanad.ui.Toast.error(err))
+				.then(() => {
+					this._sending = false;
+					$send.prop("disabled", false);
+				});
 		}
 
 		ask_behalf() {
