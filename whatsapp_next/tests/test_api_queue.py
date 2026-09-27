@@ -108,7 +108,10 @@ class TestApiQueue(IntegrationTestCase):
 		frappe.cache.delete_value(dispatch.PLATFORM_QUEUE_CACHE_KEY)
 
 	def test_throughput_buckets(self):
-		"""One bucket per minute, zero-filled, with the completed rows landing in their own minute."""
+		"""One bucket per minute, zero-filled, with the completed rows landing in their own minute.
+		Counts are the difference this test's rows make: the site may be sending too (R-041)."""
+		with as_user("WhatsApp Viewer"):
+			narrow_before = sum(api.get_throughput(minutes=5)["buckets"])
 		_, q1 = self._item(P1)
 		_, q2 = self._item(P2)
 		now = frappe.utils.now_datetime()
@@ -132,7 +135,7 @@ class TestApiQueue(IntegrationTestCase):
 		with as_user("WhatsApp Viewer"):
 			narrow = api.get_throughput(minutes=5)
 		self.assertEqual(len(narrow["buckets"]), 5)
-		self.assertEqual(sum(narrow["buckets"]), 1)
+		self.assertEqual(sum(narrow["buckets"]) - narrow_before, 1)
 
 	def test_throughput_window_is_bounded(self):
 		with as_user("WhatsApp Viewer"):

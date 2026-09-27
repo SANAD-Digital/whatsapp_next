@@ -71,3 +71,16 @@ the default device); nothing is deleted.
 1. Keep `platform-test.localhost` for platform runs; never run the platform suite on `platform.localhost`.
 2. Before release (phase 10), run the five PDF tests on a bench with `wkhtmltopdf`.
 3. Run both suites with a timeout (`timeout 1200 bench … run-tests`).
+
+## Addendum 2026-09-27 (after D-129 / D-130)
+
+| Suite | Tests | Pass | Fail | Notes |
+|---|---|---|---|---|
+| whatsapp_next | 353 | 344 → 346 after the fixes below | 5 (PDF) | new: G-06 / G-07 / D-130 tests |
+| snd_whatsapp_platform | 164 (156 + 8) | 164 | 0 | new: link secret handed out, user secret refused |
+
+Two tests failed once on the seeded site and were fixed, not retried: `test_api_queue.test_throughput_buckets`
+counted the site's own send in the last five minutes (now measures its own difference, R-041), and
+`test_notifications.test_hook_short_circuit_and_new_event` saved one document twice without reloading it
+(a timing race; now reloads). After a run the cached `connection_status` may read `Failed` (a test
+checks the connection against a failing fake); the next connection test corrects it.

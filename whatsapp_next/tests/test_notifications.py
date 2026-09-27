@@ -79,7 +79,8 @@ class TestNotifications(IntegrationTestCase):
 		self.assertEqual(len(calls), 1)  # after_insert only; the on_update of the insert does not fire "New"
 		self.assertEqual(calls[0].kwargs["event"], "New")
 		self.assertTrue(calls[0].kwargs["enqueue_after_commit"])
-		# Save fires on update, not on insert
+		# Save fires on update, not on insert (reload: the document may have been touched since)
+		notif.reload()
 		notif.event = "Save"
 		notif.save(ignore_permissions=True)
 		with patch.object(frappe, "enqueue") as enq:
@@ -87,6 +88,7 @@ class TestNotifications(IntegrationTestCase):
 			todo.save(ignore_permissions=True)
 		self.assertEqual(len([c for c in enq.call_args_list if c.kwargs.get("event") == "Save"]), 1)
 		# a failing condition never blocks the document, and is recorded
+		notif.reload()
 		notif.condition = "doc.nonexistent.attr > 1"
 		notif.save(ignore_permissions=True)
 		with patch.object(frappe, "enqueue") as enq:
