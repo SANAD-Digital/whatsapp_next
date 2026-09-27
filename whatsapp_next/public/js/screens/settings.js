@@ -132,7 +132,7 @@ class SettingsView {
 			picker: __("The system screens the contact picker may select recipients from."),
 			retention: __("How long messages, queue rows, webhook events and the audit log are kept."),
 			subscription: __("Messages come out of the plan first; what goes beyond it comes out of the wallet. Billing is handled on the platform."),
-			usage: __("What was sent day by day, as the platform reports it."),
+			usage: __("What this site sent day by day: delivered, read and failed."),
 			audit: __("Every elevated write: who did it, to what, and when."),
 		}[key] || "";
 	}
@@ -1046,52 +1046,40 @@ class SettingsView {
 	// ---- 10. usage -----------------------------------------------------------------------------------
 
 	render_usage($el) {
-		return sanad.ui.call("onboarding.get_status").then((status) => {
-			this.state.hide();
-			$el.empty();
-			if (!SettingsView.linked(status)) {
-				new sanad.ui.EmptyState({
-					wrapper: $el,
-					state: "empty",
-					title: __("Usage is read from the platform"),
-					description: __("Connect to the platform to see what has been sent day by day."),
-					action: IS_MGR()
-						? { label: __("Open the platform link"), onclick: () => this.show("provider") }
-						: undefined,
-				});
-				return;
-			}
-			this.usage_days = this.usage_days || 14;
-			const $seg = $('<div class="wa-settings__period" role="radiogroup"></div>')
-				.attr("aria-label", __("Period"))
-				.appendTo($el);
-			[7, 14, 30].forEach((d) => {
-				$(`<button type="button" role="radio" aria-checked="${d === this.usage_days}" class="${
-					d === this.usage_days ? "is-on" : ""
-				}">${frappe.utils.escape_html(__("Last {0} days", [d]))}</button>`)
-					.on("click", () => {
-						this.usage_days = d;
-						this.show("usage");
-					})
-					.appendTo($seg);
-			});
-			const $body = $('<div class="wa-settings__usage"></div>').appendTo($el);
-			return this.load_usage($body, this.usage_days);
+		this.state.hide();
+		$el.empty();
+		this.usage_days = this.usage_days || 14;
+		const $seg = $('<div class="wa-settings__period" role="radiogroup"></div>')
+			.attr("aria-label", __("Period"))
+			.appendTo($el);
+		[7, 14, 30].forEach((d) => {
+			$(`<button type="button" role="radio" aria-checked="${d === this.usage_days}" class="${
+				d === this.usage_days ? "is-on" : ""
+			}">${frappe.utils.escape_html(__("Last {0} days", [d]))}</button>`)
+				.on("click", () => {
+					this.usage_days = d;
+					this.show("usage");
+				})
+				.appendTo($seg);
 		});
+		const $body = $('<div class="wa-settings__usage"></div>').appendTo($el);
+		return this.load_usage($body, this.usage_days);
 	}
 
+	/** Counted from this site's own outbound log, so it is there whether or not the platform reports. */
 	load_usage($el, days) {
 		const state = new sanad.ui.EmptyState({ wrapper: $el, state: "loading", rows: 4, size: "sm" });
 		const to_date = frappe.datetime.now_date();
 		const from_date = frappe.datetime.add_days(to_date, -(days - 1));
 		return sanad.ui
-			.call("settings.get_usage", { from_date, to_date, group_by: "day" }, { silent: true })
+			.call("settings.get_site_usage", { from_date, to_date })
 			.then((r) => {
 				const rows = (r && r.rows) || [];
-				if (!rows.length) {
+				const any = rows.some((x) => cint(x.sent) + cint(x.failed));
+				if (!any) {
 					state.empty({
-						title: __("No usage reported"),
-						description: __("The platform has nothing for this period."),
+						title: __("Nothing sent in this period"),
+						description: __("Messages this site sends appear here day by day."),
 					});
 					return;
 				}
@@ -1110,18 +1098,27 @@ class SettingsView {
 		const failed = rows.reduce((n, r) => n + cint(r.failed), 0);
 		const average = Math.round(total / rows.length);
 		const peak = rows.reduce((best, r) => (cint(r.sent) > cint(best.sent) ? r : best), rows[0]);
+		const delivered = rows.reduce((n, r) => n + cint(r.delivered), 0);
+		const read = rows.reduce((n, r) => n + cint(r.read), 0);
+		const pct = (n) => (total ? `${Math.round((n / total) * 100)}%` : "—");
 		$el.html(`
-			<div class="wa-settings__facts3">
+			<div class="wa-settings__facts3 wa-settings__facts3--4">
 				<div><span>${esc(__("Sent"))}</span><strong class="sanad-tabular" dir="ltr">${esc(
 					sanad.ui.format_int(total)
-				)}</strong><em>${esc(__("{0} days", [rows.length]))}</em></div>
-				<div><span>${esc(__("Daily average"))}</span><strong class="sanad-tabular" dir="ltr">${esc(
-					sanad.ui.format_int(average)
-				)}</strong><em>${esc(__("Busiest day {0}", [frappe.datetime.str_to_user(peak.key)]))}</em></div>
+				)}</strong><em>${esc(__("{0} a day on average", [sanad.ui.format_int(average)]))}</em></div>
+				<div><span>${esc(__("Delivered", null, "campaign"))}</span><strong class="sanad-tabular" dir="ltr">${esc(
+					pct(delivered)
+				)}</strong><em>${esc(__("{0} messages", [sanad.ui.format_int(delivered)]))}</em></div>
+				<div><span>${esc(__("Read", null, "campaign"))}</span><strong class="sanad-tabular" dir="ltr">${esc(
+					pct(read)
+				)}</strong><em>${esc(__("{0} messages", [sanad.ui.format_int(read)]))}</em></div>
 				<div><span>${esc(__("Failed"))}</span><strong class="sanad-tabular${failed ? " is-bad" : ""}" dir="ltr">${esc(
 					sanad.ui.format_int(failed)
 				)}</strong><em>${esc(total + failed ? __("{0}% of attempts", [Math.round((failed / (total + failed)) * 100)]) : "—")}</em></div>
 			</div>
+			<p class="wa-settings__note">${esc(
+				__("Counted from this site's own message log. Busiest day: {0}.", [frappe.datetime.str_to_user(peak.key)])
+			)}</p>
 			${sanad.ui.SettingsWindow.section_html(__("Messages per day"))}
 			<div class="wa-settings__chart" role="img" aria-label="${esc(
 				__("{0} messages over {1} days, {2} a day on average", [
@@ -1138,7 +1135,7 @@ class SettingsView {
 						return `<span class="wa-settings__bar" title="${esc(
 							__("{0}: {1} sent, {2} failed", [frappe.datetime.str_to_user(r.key), cint(r.sent), cint(r.failed)])
 						)}">
-								<span class="wa-settings__bar-col" style="block-size: ${h}%">
+								<span class="wa-settings__bar-col${all ? "" : " is-zero"}" style="block-size: ${h}%">
 									${fh ? `<span class="wa-settings__bar-fail" style="block-size: ${Math.round((fh / h) * 100)}%"></span>` : ""}
 								</span>
 								<span class="wa-settings__bar-label">${esc(String(r.key).slice(-2))}</span>

@@ -152,6 +152,29 @@ class TestApiSettings(IntegrationTestCase):
 			with self.assertRaises(WANotSupportedError):
 				api.get_usage(from_date="2026-02-01", to_date="2026-02-02")
 
+	def test_get_site_usage_counts_this_sites_log(self):
+		from frappe.utils import add_days, getdate, nowdate
+
+		today = getdate(nowdate())
+		start = add_days(today, -2)
+		with as_user("WhatsApp Viewer"):
+			out = api.get_site_usage(from_date=start, to_date=today)
+		self.assertEqual([r["key"] for r in out["rows"]], [str(add_days(start, i)) for i in range(3)])
+		row = out["rows"][-1]
+		since = f"{today} 00:00:00"
+		count = lambda statuses: frappe.db.count(
+			"WhatsApp Log", {"creation": (">=", since), "status": ("in", statuses)}
+		)
+		self.assertEqual(row["sent"], count(["Sent", "Delivered", "Read"]))
+		self.assertEqual(row["delivered"], count(["Delivered", "Read"]))
+		self.assertEqual(row["failed"], count(["Failed"]))
+		with as_user("WhatsApp Viewer"), self.assertRaises(WAValidationError):
+			api.get_site_usage(from_date=today, to_date=start)
+		with as_user("WhatsApp Viewer"), self.assertRaises(WAValidationError):
+			api.get_site_usage(from_date=add_days(today, -200), to_date=today)
+		with as_user("_none"), self.assertRaises(WAPermissionError):
+			api.get_site_usage(from_date=start, to_date=today)
+
 	# --- webhook --------------------------------------------------------------------------
 
 	def test_webhook_lifecycle(self):

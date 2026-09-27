@@ -200,6 +200,17 @@ def get_usage(from_date: date, to_date: date, group_by: str = "day") -> dict[str
 	return out
 
 
+@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
+def get_site_usage(from_date: date, to_date: date) -> dict[str, Any]:
+	"""Messages this site sent per day — sent, delivered, read, failed — from its own outbound
+	log, every day of the period included. Always available, unlike the provider's report."""
+	if from_date > to_date:
+		frappe.throw(_("from_date must not be after to_date"), WAValidationError)
+	if (to_date - from_date).days >= usage_sync.SITE_MAX_DAYS:
+		frappe.throw(_("A usage period is at most {0} days").format(usage_sync.SITE_MAX_DAYS), WAValidationError)
+	return {"rows": usage_sync.site_daily(from_date, to_date), "from": str(from_date), "to": str(to_date)}
+
+
 def _endpoint(summary: webhook_setup.EndpointSummary) -> dict[str, Any]:
 	data = asdict(summary)
 	data["endpoint_url"] = data.pop("url")

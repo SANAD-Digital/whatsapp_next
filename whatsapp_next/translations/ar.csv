@@ -4386,3 +4386,8 @@ keys secret,المفاتيح السر مفتاح,
 rate retry pause,السرعة المعدل إعادة المحاولة إيقاف,
 blacklist country device,القائمة السوداء الدولة الجهاز,
 Usage,الاستهلاك,Settings window
+Nothing sent in this period,لم يُرسل شيء في هذه الفترة,
+Messages this site sends appear here day by day.,تظهر هنا الرسائل التي يرسلها هذا الموقع يوماً بيوم.,
+{0} a day on average,{0} يومياً في المتوسط,
+Counted from this site's own message log. Busiest day: {0}.,محسوبة من سجل رسائل هذا الموقع. أعلى يوم: {0}.,
+"What this site sent day by day: delivered, read and failed.",ما أرسله هذا الموقع يوماً بيوم: المُسلَّم والمقروء والفاشل.,

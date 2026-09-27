@@ -8,7 +8,8 @@ from datetime import date
 from typing import Any
 
 import frappe
-from frappe.utils import cint, flt, now_datetime
+from frappe.query_builder.functions import Count, Date
+from frappe.utils import add_days, cint, flt, get_datetime, now_datetime
 
 from whatsapp_next.providers import exceptions as pex
 from whatsapp_next.providers import registry
@@ -95,3 +96,47 @@ def snapshot() -> dict[str, Any]:
 	except Exception:
 		out["plan_features"] = {}
 	return out
+
+
+# ---- this site's own count ---------------------------------------------------------------------
+
+SITE_LOG = "WhatsApp Log"
+SITE_SENT = ("Sent", "Delivered", "Read")
+SITE_MAX_DAYS = 92
+
+
+def site_daily(from_: date, to: date) -> list[dict[str, Any]]:
+	"""`[{key, sent, delivered, read, failed}]` for every day of the period (empty days included),
+	counted from this site's outbound log — what the Usage window shows whether or not the
+	provider reports usage. `sent` counts every message that left (sent, delivered or read);
+	`delivered` those that reached the phone (delivered or read). Grouped in the database."""
+	log = frappe.qb.DocType(SITE_LOG)
+	day = Date(log.creation)
+	rows = (
+		frappe.qb.from_(log)
+		.select(day.as_("day"), log.status, Count("*"))
+		.where(log.creation >= get_datetime(from_))
+		.where(log.creation < get_datetime(add_days(to, 1)))
+		.groupby(day, log.status)
+		.run()
+	)
+	days: dict[str, dict[str, Any]] = {}
+	cursor = from_
+	while cursor <= to:
+		key = str(cursor)
+		days[key] = {"key": key, "sent": 0, "delivered": 0, "read": 0, "failed": 0}
+		cursor = add_days(cursor, 1)
+	for bucket, status, count in rows:
+		entry = days.get(str(bucket)[:10])
+		if entry is None:
+			continue
+		count = int(count)
+		if status in SITE_SENT:
+			entry["sent"] += count
+		if status in ("Delivered", "Read"):
+			entry["delivered"] += count
+		if status == "Read":
+			entry["read"] += count
+		if status == "Failed":
+			entry["failed"] += count
+	return list(days.values())
