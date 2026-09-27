@@ -1,5 +1,5 @@
 {
- "device": "WAD-00001",
+ "device": "WAD-TEST-WH01",
  "device_name": "Main",
  "event": "wa_admin.something_new",
  "event_id": "unk-0001",

@@ -52,10 +52,22 @@ class TestSmoke(IntegrationTestCase):
 	def test_roles_and_service_user(self):
 		for role in PRODUCT_ROLES:
 			self.assertTrue(frappe.db.exists("Role", role), role)
-		email = command_service_user_email()
-		self.assertTrue(frappe.db.exists("User", email))
-		self.assertEqual(frappe.db.get_value("User", email, "enabled"), 0)
-		self.assertEqual(frappe.db.count("Has Role", {"parent": email}), 0)
+		self.assertTrue(frappe.db.exists("User", command_service_user_email()))
+		# The seed itself (the site's own user may since have been enabled by its admin, D-123):
+		# a fresh service user is disabled and holds no role.
+		from unittest.mock import patch
+
+		from whatsapp_next import install
+
+		email = "wa-commands-smoke@example.com"
+		frappe.delete_doc("User", email, ignore_permissions=True, force=True, ignore_missing=True)
+		try:
+			with patch.object(install, "command_service_user_email", return_value=email):
+				self.assertEqual(install.ensure_command_service_user(), email)
+			self.assertEqual(frappe.db.get_value("User", email, "enabled"), 0)
+			self.assertEqual(frappe.db.count("Has Role", {"parent": email}), 0)
+		finally:
+			frappe.delete_doc("User", email, ignore_permissions=True, force=True, ignore_missing=True)
 
 	def test_custom_field_and_contact_hook(self):
 		self.assertTrue(frappe.db.exists("Custom Field", "Contact Phone-wa_phone_e164"))

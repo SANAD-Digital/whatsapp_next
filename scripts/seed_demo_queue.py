@@ -50,14 +50,22 @@ def _refs():
 
 
 def _devices():
-    rows = [d.name for d in frappe.get_all("WhatsApp Device", fields=["name"], limit=6)]
+    # Demo devices only: a test fixture device (and every row on it) is deleted by its own test.
+    rows = [
+        d.name
+        for d in frappe.get_all("WhatsApp Device", filters={"device_name": ("like", "DEMO%")}, fields=["name"], limit=6)
+    ] or [d.name for d in frappe.get_all("WhatsApp Device", fields=["name"], limit=6)]
     if not rows:
         frappe.throw("Seed a WhatsApp Device first.")
     return rows
 
 
 def _campaigns():
-    return [c.name for c in frappe.get_all("WhatsApp Campaign", fields=["name"], limit=4)] or [None]
+    # demo campaigns only (seed_demo_campaigns names them "DEMO …"); a test's campaign is its own
+    return [
+        c.name
+        for c in frappe.get_all("WhatsApp Campaign", filters={"campaign_name": ("like", "DEMO%")}, fields=["name"], limit=4)
+    ] or [None]
 
 
 def _log(device, name, phone, status, when):
@@ -82,7 +90,7 @@ def _log(device, name, phone, status, when):
     doc.flags.ignore_permissions = True
     doc.flags.ignore_mandatory = True
     doc.insert(ignore_permissions=True)
-    doc.db_set("creation", when, update_modified=False)
+    doc.db_set("creation", min(when, now_datetime()), update_modified=False)  # never in the future
     return doc.name
 
 
@@ -106,7 +114,7 @@ def _item(i, device, campaign, status, scheduled, **extra):
     doc.flags.ignore_permissions = True
     doc.flags.ignore_mandatory = True
     doc.insert(ignore_permissions=True)
-    doc.db_set("creation", scheduled, update_modified=False)
+    doc.db_set("creation", min(scheduled, now_datetime()), update_modified=False)  # never in the future
     return doc.name
 
 

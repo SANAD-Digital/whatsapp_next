@@ -1,5 +1,5 @@
 {
- "device": "WAD-00001",
+ "device": "WAD-TEST-WH01",
  "device_name": "Main",
  "event": "connection.connected",
  "event_id": "conn-0001",

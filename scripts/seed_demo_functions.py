@@ -58,7 +58,11 @@ ARGS = ["SINV-2026-00012", "SINV-2026-00031", "SO-2026-00107", "SINV-2026-00044"
 
 
 def _device():
-	rows = [d.name for d in frappe.get_all("WhatsApp Device", fields=["name"], limit=1)]
+	# a demo device first: a test fixture device (and every row on it) is deleted by its own test
+	rows = [
+		d.name
+		for d in frappe.get_all("WhatsApp Device", filters={"device_name": ("like", "DEMO%")}, fields=["name"], limit=1)
+	] or [d.name for d in frappe.get_all("WhatsApp Device", fields=["name"], limit=1)]
 	if not rows:
 		frappe.throw("Seed a WhatsApp Device first.")
 	return rows[0]

@@ -11,7 +11,13 @@ from frappe.tests import IntegrationTestCase
 from frappe.utils import add_days, nowdate
 
 from whatsapp_next.services import notifications as svc
-from whatsapp_next.tests.conftest_frappe import delete_all, ensure_contact, ensure_device, ensure_settings
+from whatsapp_next.tests.conftest_frappe import (
+	delete_all,
+	delete_test_rows,
+	ensure_contact,
+	ensure_device,
+	ensure_settings,
+)
 
 PHONE = "+966500000901"
 NAME = "NotifTest ToDo"
@@ -50,8 +56,8 @@ class TestNotifications(IntegrationTestCase):
 
 	@staticmethod
 	def _clean():
-		delete_all("WhatsApp Queue Item")
-		delete_all("WhatsApp Log", {"source_type": "Notification"})
+		delete_test_rows("WhatsApp Queue Item")
+		delete_test_rows("WhatsApp Log", {"source_type": "Notification"})
 		delete_all("WhatsApp Notification", {"notification_name": ("like", "NotifTest%")})
 		delete_all("ToDo", {"description": ("like", "notif-test%")})
 		svc.clear_cache()

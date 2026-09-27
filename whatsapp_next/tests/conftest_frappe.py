@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import contextlib
+import unittest
 from collections.abc import Iterator
 
 import frappe
@@ -69,10 +70,34 @@ def ensure_country(name: str = "Saudi Arabia", code: str = "sa") -> str:
 	return name
 
 
+# Settings values a test module changed, as they were before it: put back when the module ends,
+# so a suite run leaves the site's configuration as it found it (R-041).
+_SETTINGS_BEFORE: dict[str, object] = {}
+_RESTORE_REGISTERED: list[bool] = []
+
+
+def _restore_settings() -> None:
+	_RESTORE_REGISTERED.clear()
+	if not _SETTINGS_BEFORE:
+		return
+	settings = frappe.get_single("WhatsApp Settings")
+	for key, value in _SETTINGS_BEFORE.items():
+		settings.set(key, value)
+	_SETTINGS_BEFORE.clear()
+	settings.flags.ignore_permissions = True
+	settings.flags.ignore_validate = True  # the originals were valid when the module started
+	settings.save(ignore_permissions=True)
+	frappe.db.commit()
+
+
 def ensure_settings(**values) -> "frappe.model.document.Document":
-	"""Return WhatsApp Settings with `default_country` set and any overrides applied."""
+	"""Return WhatsApp Settings with `default_country` set and any overrides applied. Every field
+	changed here is restored when the test module finishes."""
 	settings = frappe.get_single("WhatsApp Settings")
 	changed = False
+	if not _RESTORE_REGISTERED:
+		unittest.addModuleCleanup(_restore_settings)
+		_RESTORE_REGISTERED.append(True)
 	# Tests assume Saudi Arabia as the default region regardless of the site's System Settings.
 	country = ensure_country()
 	if settings.default_country != country:
@@ -80,6 +105,7 @@ def ensure_settings(**values) -> "frappe.model.document.Document":
 		changed = True
 	for key, value in values.items():
 		if settings.get(key) != value:
+			_SETTINGS_BEFORE.setdefault(key, settings.get(key))
 			settings.set(key, value)
 			changed = True
 	if changed:
@@ -97,7 +123,11 @@ def ensure_device(
 	status: str = "Connected",
 	phone: str = "+966500000001",
 ) -> str:
-	"""Insert (once) a WhatsApp Device row bypassing the platform; returns its name."""
+	"""Insert (once) a WhatsApp Device row bypassing the platform; returns its name. The platform
+	id must carry a test prefix, so clean-ups can tell fixture rows from site data (R-041)."""
+	assert platform_device.startswith(TEST_DEVICE_PREFIXES), (
+		f"test device id must start with {TEST_DEVICE_PREFIXES}"
+	)
 	name = frappe.db.get_value("WhatsApp Device", {"platform_device": platform_device}, "name")
 	if name:
 		if frappe.db.get_value("WhatsApp Device", name, "status") != status:
@@ -137,6 +167,28 @@ def ensure_contact(first_name: str = "WA Test Contact", phone: str = "+966500000
 	)
 	doc.insert(ignore_permissions=True)
 	return doc.name
+
+
+# Test fixture devices carry one of these platform ids; seeds and real devices never do (R-041).
+TEST_DEVICE_PREFIXES: tuple[str, ...] = ("WAD-TEST-", "WAD-APITEST-")
+
+
+def test_devices() -> list[str]:
+	"""Local names of the test fixture devices."""
+	names: list[str] = []
+	for prefix in TEST_DEVICE_PREFIXES:
+		names += frappe.get_all("WhatsApp Device", {"platform_device": ("like", f"{prefix}%")}, pluck="name")
+	return names
+
+
+def delete_test_rows(doctype: str, filters: dict | None = None) -> None:
+	"""Delete `doctype` rows (matching `filters`) that sit on a test fixture device — never the
+	site's own data (R-041: whole-table clean-ups emptied a dev site's queue, inbound and
+	webhook events). Leftovers of an earlier run are caught too, since the scope is the device,
+	not the time the row was made."""
+	devices = test_devices()
+	if devices:
+		delete_all(doctype, {**(filters or {}), "device": ("in", devices)})
 
 
 def delete_all(doctype: str, filters: dict | None = None) -> None:

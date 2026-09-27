@@ -1,7 +1,7 @@
 {
  "attempt_count": 0,
  "client_ref": "c3d4e5f6a7",
- "device": "WAD-00001",
+ "device": "WAD-TEST-WH01",
  "device_name": "Main",
  "event": "message.held",
  "event_id": "h0h1h2h3h4h5h6h7",

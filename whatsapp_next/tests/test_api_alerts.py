@@ -11,7 +11,13 @@ from frappe.tests import IntegrationTestCase
 from whatsapp_next.api.v1 import alerts as api
 from whatsapp_next.exceptions import WAPermissionError
 from whatsapp_next.services import alerts, alerts_dates
-from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_device, ensure_settings
+from whatsapp_next.tests.conftest_frappe import (
+	as_user,
+	delete_all,
+	delete_test_rows,
+	ensure_device,
+	ensure_settings,
+)
 
 NAME = "ApiTest Alert"
 PHONE = "+966500930301"
@@ -52,7 +58,7 @@ class TestApiAlerts(IntegrationTestCase):
 
 	@staticmethod
 	def _clean():
-		delete_all("WhatsApp Queue Item")
+		delete_test_rows("WhatsApp Queue Item")
 		delete_all("WhatsApp Log", {"phone_e164": PHONE})
 		delete_all("WhatsApp Notification Alert", {"alert_name": NAME})
 

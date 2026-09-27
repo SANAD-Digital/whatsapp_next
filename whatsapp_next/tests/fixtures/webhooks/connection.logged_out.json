@@ -1,5 +1,5 @@
 {
- "device": "WAD-00001",
+ "device": "WAD-TEST-WH01",
  "device_name": "Main",
  "event": "connection.logged_out",
  "event_id": "conn-0003",

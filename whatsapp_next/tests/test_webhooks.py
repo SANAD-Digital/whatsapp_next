@@ -15,13 +15,29 @@ from frappe.tests import IntegrationTestCase
 from whatsapp_next.providers.snd_platform import SndPlatformProvider
 from whatsapp_next.services import dispatch, inbound
 from whatsapp_next.services.dispatch import OutboundSpec
-from whatsapp_next.tests.conftest_frappe import delete_all, ensure_device, ensure_settings, fake_provider
+from whatsapp_next.tests.conftest_frappe import (
+	delete_all,
+	delete_test_rows,
+	ensure_device,
+	ensure_settings,
+	fake_provider,
+)
 from whatsapp_next.webhooks import handlers, verify
 from whatsapp_next.webhooks.v1 import receiver
 
 FIXTURES = Path(__file__).parent / "fixtures" / "webhooks"
 SECRET = "test-webhook-secret"
-PLATFORM_DEVICE = "WAD-00001"
+PLATFORM_DEVICE = "WAD-TEST-WH01"
+
+
+# Every event id these tests deliver: the fixtures' own plus the ones passed explicitly. Clean-ups
+# and counts are scoped to them, so the site's real webhook events are never touched (R-041).
+TEST_EVENT_IDS: tuple[str, ...] = tuple(
+	sorted(
+		{json.loads(p.read_text()).get("event_id") for p in FIXTURES.glob("*.json")} - {None}
+		| {"stale-1", "bad-json", "evt-nope", "evt_unknown_ref"}
+	)
+)
 
 
 def fixture(name: str, **overrides) -> dict:
@@ -62,7 +78,9 @@ class TestWebhooks(IntegrationTestCase):
 		from frappe.utils.password import remove_encrypted_password, set_encrypted_password
 
 		if cls._site_secret:
-			set_encrypted_password("WhatsApp Settings", "WhatsApp Settings", cls._site_secret, "webhook_secret")
+			set_encrypted_password(
+				"WhatsApp Settings", "WhatsApp Settings", cls._site_secret, "webhook_secret"
+			)
 		else:
 			remove_encrypted_password("WhatsApp Settings", "WhatsApp Settings", "webhook_secret")
 		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
@@ -79,9 +97,10 @@ class TestWebhooks(IntegrationTestCase):
 
 	@staticmethod
 	def _clean():
-		delete_all("WhatsApp Webhook Event")
-		delete_all("WhatsApp Inbound Message", {"device": ("like", "%")})
-		delete_all("WhatsApp Queue Item")
+		delete_test_rows("WhatsApp Webhook Event")
+		delete_all("WhatsApp Webhook Event", {"event_id": ("in", TEST_EVENT_IDS)})
+		delete_test_rows("WhatsApp Inbound Message")
+		delete_test_rows("WhatsApp Queue Item")
 		delete_all("WhatsApp Log", {"body": ("like", "webhook-test%")})
 		frappe.db.commit()
 
@@ -111,12 +130,16 @@ class TestWebhooks(IntegrationTestCase):
 		body = fixture("message.received")
 		with fake_provider():
 			self.assertEqual(receiver.handle({}, b"{}").http_status, 401)
-			self.assertEqual(frappe.db.count("WhatsApp Webhook Event"), 0)
+			self.assertEqual(
+				frappe.db.count("WhatsApp Webhook Event", {"event_id": ("in", TEST_EVENT_IDS)}), 0
+			)
 			headers, raw = signed(body, secret="wrong")
 			out = receiver.handle(headers, raw)
 			self.assertEqual((out.http_status, out.body["error"]), (401, "invalid signature"))
 			row = frappe.get_all(
-				"WhatsApp Webhook Event", fields=["status", "payload", "signature_valid", "error"]
+				"WhatsApp Webhook Event",
+				filters={"event_id": body["event_id"]},
+				fields=["status", "payload", "signature_valid", "error"],
 			)[0]
 			self.assertEqual(
 				(row.status, row.payload, row.signature_valid, row.error),

@@ -1,6 +1,6 @@
 {
  "client_ref": "a1b2c3d4e5",
- "device": "WAD-00001",
+ "device": "WAD-TEST-WH01",
  "device_name": "Main",
  "event": "message.read",
  "event_id": "3EB0SENT0001",

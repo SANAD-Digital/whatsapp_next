@@ -11,7 +11,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.services import alerts, alerts_dates, report_render
-from whatsapp_next.tests.conftest_frappe import delete_all, ensure_device, ensure_settings
+from whatsapp_next.tests.conftest_frappe import delete_all, delete_test_rows, ensure_device, ensure_settings
 
 PHONE = "+966500000911"
 NAME = "AlertTest Digest"
@@ -62,8 +62,8 @@ class TestAlerts(IntegrationTestCase):
 
 	@staticmethod
 	def _clean():
-		delete_all("WhatsApp Queue Item")
-		delete_all("WhatsApp Log", {"source_type": "Notification Alert"})
+		delete_test_rows("WhatsApp Queue Item")
+		delete_test_rows("WhatsApp Log", {"source_type": "Notification Alert"})
 		delete_all("WhatsApp Notification Alert", {"alert_name": ("like", "AlertTest%")})
 		for name in frappe.get_all(
 			"File", filters={"attached_to_doctype": "WhatsApp Notification Alert"}, pluck="name"

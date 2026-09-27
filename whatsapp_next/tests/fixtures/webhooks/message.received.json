@@ -1,6 +1,6 @@
 {
  "chat_jid": "966500000002@s.whatsapp.net",
- "device": "WAD-00001",
+ "device": "WAD-TEST-WH01",
  "device_name": "Main",
  "event": "message.received",
  "event_id": "3EB0A1B2C3D4E5F6",

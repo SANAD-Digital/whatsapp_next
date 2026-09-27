@@ -32,7 +32,10 @@ CONVERSATION = [
 
 
 def _device() -> str:
-    row = frappe.get_all("WhatsApp Device", filters={"disabled": 0}, fields=["name"], limit=1)
+    # a demo device first: a test fixture device (and every row on it) is deleted by its own test
+    row = frappe.get_all(
+        "WhatsApp Device", filters={"disabled": 0, "device_name": ("like", "DEMO%")}, fields=["name"], limit=1
+    ) or frappe.get_all("WhatsApp Device", filters={"disabled": 0}, fields=["name"], limit=1)
     if not row:
         frappe.throw("Pair a WhatsApp Device first.")
     return row[0].name

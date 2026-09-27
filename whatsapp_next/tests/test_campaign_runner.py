@@ -14,7 +14,13 @@ from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
 from whatsapp_next.services import campaign_runner as runner
 from whatsapp_next.services import dispatch
 from whatsapp_next.services.guards import status_writer
-from whatsapp_next.tests.conftest_frappe import delete_all, ensure_device, ensure_settings, fake_provider
+from whatsapp_next.tests.conftest_frappe import (
+	delete_all,
+	delete_test_rows,
+	ensure_device,
+	ensure_settings,
+	fake_provider,
+)
 
 P1, P2, P3 = "+966500000701", "+966500000702", "+966500000703"
 NAME = "CampaignTest"
@@ -69,8 +75,8 @@ class TestCampaignRunner(IntegrationTestCase):
 
 	@staticmethod
 	def _clean():
-		delete_all("WhatsApp Queue Item")
-		delete_all("WhatsApp Log", {"source_type": "Campaign"})
+		delete_test_rows("WhatsApp Queue Item")
+		delete_test_rows("WhatsApp Log", {"source_type": "Campaign"})
 		delete_all("WhatsApp Campaign", {"campaign_name": ("like", f"{NAME}%")})
 		delete_all("WhatsApp Audit Log", {"action": ("like", "Campaign%")})
 		frappe.db.commit()
@@ -242,7 +248,9 @@ class TestCampaignRunner(IntegrationTestCase):
 
 		name = _campaign(self.device)
 		runner.schedule(name, add_to_date(now_datetime(), minutes=5))
-		frappe.db.set_value("WhatsApp Campaign", name, "status", "Paused", update_modified=False)  # as the runner leaves it
+		frappe.db.set_value(
+			"WhatsApp Campaign", name, "status", "Paused", update_modified=False
+		)  # as the runner leaves it
 
 		def from_client(**changes):
 			data = json.loads(frappe.as_json(frappe.get_doc("WhatsApp Campaign", name).as_dict()))
@@ -252,7 +260,13 @@ class TestCampaignRunner(IntegrationTestCase):
 		doc = from_client()
 		doc.append(
 			"recipients",
-			{"recipient_type": "Individual", "phone": P3, "display_name": "R3", "source_type": "Manual", "status": "Pending"},
+			{
+				"recipient_type": "Individual",
+				"phone": P3,
+				"display_name": "R3",
+				"source_type": "Manual",
+				"status": "Pending",
+			},
 		)
 		doc.save(ignore_permissions=True)  # scheduled_at came back as a string: not a change
 		self.assertEqual(frappe.db.count("WhatsApp Campaign Recipient", {"parent": name}), 3)

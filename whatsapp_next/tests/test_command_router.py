@@ -15,7 +15,13 @@ from whatsapp_next.functions.context import FunctionResult
 from whatsapp_next.services import command_router as cr
 from whatsapp_next.services import functions_catalog as fc
 from whatsapp_next.services import simulator
-from whatsapp_next.tests.conftest_frappe import delete_all, ensure_contact, ensure_device, ensure_settings
+from whatsapp_next.tests.conftest_frappe import (
+	delete_all,
+	delete_test_rows,
+	ensure_contact,
+	ensure_device,
+	ensure_settings,
+)
 
 SERVICE_USER = "wa-test-svc@example.com"
 P_LINKED = "+966500000601"
@@ -112,17 +118,17 @@ class TestCommandRouter(IntegrationTestCase):
 
 	@classmethod
 	def _reset(cls):
-		delete_all("WhatsApp Queue Item")
-		delete_all("WhatsApp Log", {"source_type": ("in", ["Command Reply", "Simulator"])})
-		delete_all("WhatsApp Inbound Message", {"is_simulated": 1})
+		delete_test_rows("WhatsApp Queue Item")
+		delete_test_rows("WhatsApp Log", {"source_type": ("in", ["Command Reply", "Simulator"])})
+		delete_test_rows("WhatsApp Inbound Message", {"is_simulated": 1})
 		delete_all("WhatsApp Command", {"function": ("in", ["ping", "document_info"])})
 		delete_all("WhatsApp Function", {"name": ("in", ["ping", "document_info"])})
 		cr.clear_map()
 
 	def setUp(self):
-		delete_all("WhatsApp Queue Item")
-		delete_all("WhatsApp Log", {"source_type": ("in", ["Command Reply", "Simulator"])})
-		delete_all("WhatsApp Inbound Message", {"is_simulated": 1})
+		delete_test_rows("WhatsApp Queue Item")
+		delete_test_rows("WhatsApp Log", {"source_type": ("in", ["Command Reply", "Simulator"])})
+		delete_test_rows("WhatsApp Inbound Message", {"is_simulated": 1})
 		g = frappe.get_doc("WhatsApp Contact Group", BLACKLIST)
 		g.set("members", [])
 		g.save(ignore_permissions=True)

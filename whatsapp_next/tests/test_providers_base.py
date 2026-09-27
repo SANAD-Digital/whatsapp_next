@@ -100,7 +100,7 @@ class TestProviderContract(IntegrationTestCase):
 		self.assertEqual(event.inbound.body, "كشف حساب")
 		self.assertEqual(event.inbound.message_type, "Text")
 		self.assertFalse(event.inbound.is_group)
-		self.assertEqual(event.platform_device, "WAD-00001")
+		self.assertEqual(event.platform_device, "WAD-TEST-WH01")
 		with open(os.path.join(FIXTURES, "message.received.group.json"), encoding="utf-8") as fh:
 			group = provider.parse_webhook({}, json.load(fh))
 		self.assertTrue(group.inbound.is_group)

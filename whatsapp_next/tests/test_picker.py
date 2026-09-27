@@ -14,7 +14,13 @@ from frappe.tests import IntegrationTestCase
 from whatsapp_next.exceptions import WAFileError, WAStateConflictError, WAValidationError
 from whatsapp_next.services import attachments, picker
 from whatsapp_next.services.guards import status_writer
-from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_device, ensure_settings
+from whatsapp_next.tests.conftest_frappe import (
+	as_user,
+	delete_all,
+	delete_test_rows,
+	ensure_device,
+	ensure_settings,
+)
 
 GROUP = "PickerTest Group"
 P1, P2, P3 = "+966500000801", "+966500000802", "+966500000803"
@@ -44,8 +50,8 @@ class TestPicker(IntegrationTestCase):
 
 	@staticmethod
 	def _clean():
-		delete_all("WhatsApp Queue Item")
-		delete_all("WhatsApp Log", {"source_type": "Campaign"})
+		delete_test_rows("WhatsApp Queue Item")
+		delete_test_rows("WhatsApp Log", {"source_type": "Campaign"})
 		delete_all("WhatsApp Campaign", {"campaign_name": ("like", "PickerTest%")})
 		delete_all("WhatsApp Contact Group", {"group_name": ("like", "PickerTest%")})
 		delete_all(

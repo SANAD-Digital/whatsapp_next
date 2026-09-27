@@ -1,7 +1,7 @@
 {
  "caption": "photo",
  "chat_jid": "123456789012345@lid",
- "device": "WAD-00001",
+ "device": "WAD-TEST-WH01",
  "device_name": "Main",
  "event": "message.received",
  "event_id": "3EB0LID0001",

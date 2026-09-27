@@ -14,6 +14,7 @@ from whatsapp_next.tests.conftest_frappe import (
 	ROLE_USERS,
 	as_user,
 	delete_all,
+	delete_test_rows,
 	ensure_device,
 	ensure_settings,
 )
@@ -57,7 +58,7 @@ class TestApiNotifications(IntegrationTestCase):
 
 	@staticmethod
 	def _clean():
-		delete_all("WhatsApp Queue Item")
+		delete_test_rows("WhatsApp Queue Item")
 		delete_all("WhatsApp Log", {"phone_e164": PHONE})
 		delete_all("WhatsApp Notification", {"notification_name": NAME})
 		delete_all("ToDo", {"description": ("like", "apitest notif%")})

@@ -1,6 +1,6 @@
 {
  "chat_jid": "120363000000000001@g.us",
- "device": "WAD-00001",
+ "device": "WAD-TEST-WH01",
  "device_name": "Main",
  "event": "message.received",
  "event_id": "3EB0GROUP0001",

@@ -1,7 +1,7 @@
 {
  "action": "add",
  "chat_jid": "120363000000000001@g.us",
- "device": "WAD-00001",
+ "device": "WAD-TEST-WH01",
  "device_name": "Main",
  "event": "group.participants.updated",
  "event_id": "grp-0002",

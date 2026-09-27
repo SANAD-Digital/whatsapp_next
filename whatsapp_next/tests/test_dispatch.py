@@ -23,6 +23,7 @@ from whatsapp_next.services.guards import status_writer
 from whatsapp_next.tests.conftest_frappe import (
 	as_user,
 	delete_all,
+	delete_test_rows,
 	ensure_device,
 	ensure_settings,
 	fake_provider,
@@ -75,7 +76,7 @@ class TestDispatch(IntegrationTestCase):
 
 	@staticmethod
 	def _clean():
-		delete_all("WhatsApp Queue Item")
+		delete_test_rows("WhatsApp Queue Item")
 		delete_all("WhatsApp Log", {"body": ("like", "dispatch-test%")})
 		delete_all("WhatsApp Inbound Message", {"body": ("like", "dispatch-test%")})
 		delete_all(
@@ -206,7 +207,7 @@ class TestDispatch(IntegrationTestCase):
 			self.assertIsNotNone(log.queued_at)
 			self.assertEqual(dispatch.enqueue([name]), [])  # already queued
 		finally:
-			delete_all("WhatsApp Queue Item")
+			delete_test_rows("WhatsApp Queue Item")
 			delete_all("WhatsApp Log", {"template": tpl.name})
 			tpl.delete(ignore_permissions=True)
 

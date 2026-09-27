@@ -159,7 +159,9 @@ class TestReadLayer(IntegrationTestCase):
 		_outbound(self.device2, phone=KEY_B, ts=self._t(3))
 		rows = read_layer.cross_direction_rows({"device": self.device, "from": self._t(0)}, {"order": "asc"})
 		self.assertEqual([r.direction for r in rows], ["Outbound", "Inbound"])
-		only_in = read_layer.cross_direction_rows({"direction": "Inbound", "from": self._t(0)})
+		only_in = read_layer.cross_direction_rows(
+			{"direction": "Inbound", "device": self.device, "from": self._t(0)}
+		)
 		self.assertEqual([r.direction for r in only_in], ["Inbound"])
 		both_keys = read_layer.cross_direction_rows({"keys": [KEY_A, KEY_B], "from": self._t(0)})
 		self.assertEqual(len(both_keys), 3)
