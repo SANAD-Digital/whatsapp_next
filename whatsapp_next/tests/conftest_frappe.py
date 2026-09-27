@@ -81,12 +81,17 @@ def _restore_settings() -> None:
 	if not _SETTINGS_BEFORE:
 		return
 	settings = frappe.get_single("WhatsApp Settings")
+	meta = settings.meta
 	for key, value in _SETTINGS_BEFORE.items():
+		df = meta.get_field(key)
+		# A link whose target a test deleted (its own device, group…) goes back empty: a dangling
+		# link would make every later save of Settings fail link validation.
+		if value and df and df.fieldtype == "Link" and not frappe.db.exists(df.options, value):
+			value = None
 		settings.set(key, value)
 	_SETTINGS_BEFORE.clear()
 	settings.flags.ignore_permissions = True
 	settings.flags.ignore_validate = True  # the originals were valid when the module started
-	settings.flags.ignore_links = True  # …and stay as they were even if a test deleted a target
 	settings.save(ignore_permissions=True)
 	frappe.db.commit()
 

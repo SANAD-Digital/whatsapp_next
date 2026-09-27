@@ -147,8 +147,8 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [x] `git -C ../snd_whatsapp status --porcelain` — the legacy app is not cloned in the cloud environment, untouched by construction; `traceability-auditor` → `plan/11-traceability-report.md` (2026-09-27). Open: OQ-1 (owner), A-1..A-3 and S-2 carried into phase 9
 
 ## Phase 9 — Tests
-- [ ] `test-engineer` runs the suite (`bench --site whatsapp.dev.sanad.digital run-tests --app whatsapp_next`), fixes whatsapp_next bugs, writes `plan/12-test-report.md`
-- [ ] Platform suite green on `w-platform.dev.sanad.digital`; `test_patches.py` idempotent (P-12)
+- [x] Suite run on `whatsapp.localhost` (cloud dev site; R-041 closed by D-126): 352 tests, 345 pass, 5 need `wkhtmltopdf`, 2 skipped — repeatable; fixes A-1/A-2/A-3; `plan/12-test-report.md` (2026-09-27)
+- [x] Platform suite green on `platform-test.localhost` (PostgreSQL): 163 tests incl. `test_patches.py` (P-12); PostgreSQL test fixes in platform `1a944c9`
 
 ## Phase 10 — Documentation & release prep
 - [ ] `developer-docs/`: README, architecture + diagram, install/configure, "Add a new provider" guide, API reference, events & hooks, kit reference, permission model incl. §4 layer, troubleshooting, CONTRIBUTING, LICENSE
