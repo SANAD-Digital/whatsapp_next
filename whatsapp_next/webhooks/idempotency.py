@@ -42,6 +42,23 @@ def claim(
 	race surfaces as `DuplicateEntryError` and is treated as a duplicate."""
 	existing = _find(event_name, event_id)
 	if existing:
+		if signature_valid and timestamp_fresh and _was_rejected(existing):
+			# A rejected delivery (bad signature, stale timestamp) holds the id but was never
+			# processed: the platform's verified retry takes the row over. Otherwise an unsigned
+			# request carrying a real event id — or a delivery signed during a secret rotation —
+			# would turn the genuine event into a "duplicate" that is never handled.
+			_take_over(
+				existing,
+				payload=payload,
+				device=device,
+				platform_device=platform_device,
+				client_ref=client_ref,
+				provider_message_id=provider_message_id,
+				event_timestamp=event_timestamp,
+				status=status,
+				error=error,
+			)
+			return Claim(name=existing, duplicate=False)
 		_bump_duplicate(existing)
 		return Claim(name=existing, duplicate=True)
 	try:
@@ -81,6 +98,27 @@ def _find(event_name: str, event_id: str) -> str | None:
 	return frappe.db.get_value(
 		"WhatsApp Webhook Event", {"event_name": event_name, "event_id": event_id}, "name"
 	)
+
+
+def _was_rejected(name: str) -> bool:
+	row = frappe.db.get_value(
+		"WhatsApp Webhook Event", name, ["signature_valid", "timestamp_fresh"], as_dict=True
+	)
+	return bool(row) and not (cint(row.signature_valid) and cint(row.timestamp_fresh))
+
+
+def _take_over(name: str, *, payload: dict[str, Any] | None, status: str, error: str | None, **fields) -> None:
+	values = {
+		**fields,
+		"received_at": now_datetime(),
+		"signature_valid": 1,
+		"timestamp_fresh": 1,
+		"payload": json.dumps(payload, ensure_ascii=False, default=str) if payload is not None else None,
+		"status": status,
+		"error": (error or "")[:MAX_ERROR] or None,
+	}
+	with status_writer():
+		frappe.db.set_value("WhatsApp Webhook Event", name, values, update_modified=True)
 
 
 def _bump_duplicate(name: str) -> None:

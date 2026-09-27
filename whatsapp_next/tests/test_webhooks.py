@@ -50,9 +50,24 @@ class TestWebhooks(IntegrationTestCase):
 		super().setUpClass()
 		cls.device = ensure_device("Webhook Device", PLATFORM_DEVICE, phone="+966500000001")
 		settings = ensure_settings(enable_commands=0)
+		# The site's own signing secret goes back afterwards: left behind, the fixture secret makes
+		# every real delivery to this site fail its signature check.
+		cls._site_secret = settings.get_password("webhook_secret", raise_exception=False)
 		settings.webhook_secret = SECRET
 		settings.save(ignore_permissions=True)
 		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+
+	@classmethod
+	def tearDownClass(cls):
+		from frappe.utils.password import remove_encrypted_password, set_encrypted_password
+
+		if cls._site_secret:
+			set_encrypted_password("WhatsApp Settings", "WhatsApp Settings", cls._site_secret, "webhook_secret")
+		else:
+			remove_encrypted_password("WhatsApp Settings", "WhatsApp Settings", "webhook_secret")
+		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+		frappe.db.commit()
+		super().tearDownClass()
 
 	def setUp(self):
 		self._clean()
@@ -127,6 +142,31 @@ class TestWebhooks(IntegrationTestCase):
 			frappe.get_all("WhatsApp Webhook Event", filters={"event_id": body["event_id"]}, pluck="status"),
 			["Ignored"],
 		)
+
+	def test_verified_retry_takes_over_a_rejected_delivery(self):
+		"""A delivery refused for its signature (e.g. mid secret rotation) must not make the
+		platform's correctly signed retry of the same event a never-processed duplicate."""
+		body = fixture("message.received")
+		with fake_provider(), patch.object(frappe, "enqueue") as enq:
+			headers, raw = signed(body, secret="wrong")
+			self.assertEqual(receiver.handle(headers, raw).http_status, 401)
+			headers, raw = signed(body)
+			out = receiver.handle(headers, raw)
+			self.assertEqual(out.http_status, 200)
+			self.assertNotIn("duplicate", out.body)
+			row = self._event(out.event)
+			self.assertEqual(
+				(row.status, row.signature_valid, row.timestamp_fresh, row.error, row.duplicate_count),
+				("Received", 1, 1, None, 0),
+			)
+			self.assertIsNotNone(row.payload)
+			self.assertEqual(enq.call_count, 1)
+			# a verified repeat is a duplicate as before, and a later bad one never downgrades it
+			self.assertEqual(receiver.handle(headers, raw).body, {"ok": True, "duplicate": True})
+			headers, raw = signed(body, secret="wrong")
+			self.assertEqual(receiver.handle(headers, raw).http_status, 401)
+			self.assertEqual(self._event(out.event).status, "Received")
+		self.assertEqual(frappe.db.count("WhatsApp Webhook Event", {"event_id": body["event_id"]}), 1)
 
 	def test_signature_failure_counter_triggers_refetch_once(self):
 		with patch.object(frappe, "enqueue") as enq:

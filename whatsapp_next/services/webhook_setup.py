@@ -51,8 +51,11 @@ class EndpointSummary:
 
 
 def receiver_url() -> str:
-	"""Absolute URL of the versioned receiver (D-031)."""
-	return f"{get_url()}/api/method/{RECEIVER_METHOD}"
+	"""Absolute URL of the versioned receiver (D-031). `whatsapp_webhook_base_url` in the site
+	config wins over the site URL: the platform delivers only to a public https address, which a
+	site behind a private host name (or a dev tunnel) reaches it through."""
+	base = (frappe.conf.get("whatsapp_webhook_base_url") or "").strip().rstrip("/") or get_url()
+	return f"{base}/api/method/{RECEIVER_METHOD}"
 
 
 def _settings():
@@ -128,10 +131,14 @@ def fetch_secret(user: str | None = None) -> bool:
 
 
 def ensure_endpoint(
-	user: str | None = None, events: list[str] | None = None, max_retries: int | None = None
+	user: str | None = None,
+	events: list[str] | None = None,
+	max_retries: int | None = None,
+	refresh_secret: bool = False,
 ) -> EndpointSummary:
 	"""Register (or re-point) the provider endpoint at this site's receiver, fetch the secret
-	when none is stored, mirror the state. Idempotent."""
+	when none is stored (always with `refresh_secret`: new credentials may be another
+	account's, so a stored secret proves nothing), mirror the state. Idempotent."""
 	s = _settings()
 	provider = registry.get_provider()
 	wanted_events = events or _events(s)
@@ -157,7 +164,7 @@ def ensure_endpoint(
 	else:
 		state = provider.configure_webhook(url, wanted_events, retries)
 	_mirror(state)
-	if not (s.get_password("webhook_secret", raise_exception=False) or ""):
+	if refresh_secret or not (s.get_password("webhook_secret", raise_exception=False) or ""):
 		fetch_secret(user)
 	audit.log(
 		"Webhook Changed",

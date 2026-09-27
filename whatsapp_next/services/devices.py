@@ -439,3 +439,39 @@ def sync_from_provider() -> dict[str, int]:
 		if change.changed:
 			counts["changed"] += 1
 	return counts
+
+
+def adopt_from_provider(user: str | None = None) -> dict[str, int]:
+	"""Right after this site is linked to a platform account (sign-in / sign-up): create the local
+	row of every provider device this site does not know yet, so an account that already has its
+	first device brings it along. The hourly `sync_from_provider` still never creates (R-G); this
+	runs only on the explicit link, where every device of the account belongs to this site."""
+	counts = {"adopted": 0, "known": 0}
+	for state in registry.get_provider().list_devices():
+		if not state.platform_device or by_platform_device(state.platform_device):
+			counts["known"] += 1
+			continue
+		with status_writer():
+			doc = frappe.get_doc(
+				{
+					"doctype": "WhatsApp Device",
+					"device_name": state.device_name or state.platform_device,
+					"phone": state.phone_e164,
+					"platform_device": state.platform_device,
+					"wa_device_id": state.wa_device_id,
+					"status": state.status if state.status in STATUSES else "Pending QR",
+					"last_seen": state.last_seen,
+					"webhook_registered": 1 if state.webhook_registered else 0,
+					"is_default": 0 if frappe.db.count("WhatsApp Device") else 1,
+				}
+			)
+			doc.flags.ignore_permissions = True
+			doc.insert(ignore_permissions=True)
+		audit.log(
+			"Device Created",
+			reference=("WhatsApp Device", doc.name),
+			user=user,
+			details={"source": "adopt", "status": doc.status},
+		)
+		counts["adopted"] += 1
+	return counts

@@ -192,6 +192,27 @@ write_url() {
 mp_each_site write_url
 as_frappe bash -c 'umask 077; cat > "$1"' _ "$MP_URLS_FILE" < "$MP_URLS_FILE.tmp"; rm -f "$MP_URLS_FILE.tmp"
 
+# The platform only delivers webhooks to a public https address (its SSRF guard), so the
+# WhatsApp site advertises its tunnel URL as the receiver base (`whatsapp_webhook_base_url`,
+# read by `webhook_setup.receiver_url`). Written into that site's own config, never committed.
+set_webhook_base() {
+	local key=$1 site=$2 u
+	[[ "$key" == whatsapp ]] || return 0
+	u=$(awk -v k="$key" '$1==k {print $2}' "$MP_URLS_FILE")
+	as_frappe python3 - "$BENCH_DIR/sites/$site/site_config.json" "$u" <<'PY'
+import json, os, sys
+path, url = sys.argv[1], sys.argv[2]
+conf = json.load(open(path))
+if conf.get("whatsapp_webhook_base_url") != url:
+	conf["whatsapp_webhook_base_url"] = url
+	tmp = path + ".tmp"
+	with open(tmp, "w") as f:
+		json.dump(conf, f, indent=1, sort_keys=True)
+	os.replace(tmp, path)
+PY
+}
+mp_each_site set_webhook_base
+
 # ---- 6. verify through the public URLs ----------------------------------------------------------
 rc=0
 if [[ $VERIFY -eq 1 ]]; then

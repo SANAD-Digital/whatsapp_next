@@ -60,11 +60,39 @@ class EndpointProvider(FakeProvider):
 		return {"ok": True, "http_status": 200}
 
 
+WEBHOOK_FIELDS = (
+	"webhook_endpoint",
+	"webhook_endpoint_url",
+	"webhook_status",
+	"webhook_events",
+	"webhook_max_retries",
+	"webhook_synced_at",
+	"webhook_last_event_at",
+)
+
+
 class TestPlatformOps(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
 		cls.device = ensure_device("Ops Device", "WAD-TEST-OP01", phone="+966500000081")
+		# This site's webhook registration goes back afterwards (it may be a live dev site).
+		s = frappe.get_single("WhatsApp Settings")
+		cls._webhook = {f: s.get(f) for f in WEBHOOK_FIELDS}
+		cls._webhook_secret = s.get_password("webhook_secret", raise_exception=False)
+
+	@classmethod
+	def tearDownClass(cls):
+		from frappe.utils.password import remove_encrypted_password, set_encrypted_password
+
+		frappe.db.set_value("WhatsApp Settings", "WhatsApp Settings", cls._webhook, update_modified=False)
+		if cls._webhook_secret:
+			set_encrypted_password("WhatsApp Settings", "WhatsApp Settings", cls._webhook_secret, "webhook_secret")
+		else:
+			remove_encrypted_password("WhatsApp Settings", "WhatsApp Settings", "webhook_secret")
+		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+		frappe.db.commit()
+		super().tearDownClass()
 
 	def setUp(self):
 		delete_all(

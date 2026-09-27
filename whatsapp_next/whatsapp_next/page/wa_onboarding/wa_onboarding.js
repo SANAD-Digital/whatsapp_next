@@ -4,9 +4,9 @@
 // The page is three parts: بيانات الحساب · الشروط والأحكام · تفعيل الحساب. They are what the
 // brand rail lists, they are the whole flow, and it ends at "اكتمل التسجيل" with the جاهز للعمل
 // panel — the free month and the invite coupon — and nothing after them. Connecting this site to
-// the platform (the keys, the first device, the webhook) is not part of signing up and is not
-// drawn here; that code is parked in `_parked_site_setup.js` beside this file, which Frappe does
-// not load, until it is given a home.
+// the platform (the keys, the connection test, the webhook, the account's devices) is not drawn
+// here: the sign-up and sign-in calls do it server-side (`services.onboarding.link_site`, D-117)
+// and Settings shows the result; the platform address is a default, never asked for.
 //
 // The way in for an account that already exists is the prototype's sign-in card, exactly as it
 // draws it: an e-mail and a password. `onboarding.login` authenticates against the platform and
@@ -1077,17 +1077,10 @@ frappe.provide("whatsapp_next.onboarding");
 					ui.Toast.warning(__("The platform did not return the keys. Enter them here to finish."));
 					return;
 				}
-				return ui
-					.call("settings.test_connection")
-					.then((conn) => {
-						this.ctx.connection = conn;
-						return ui.call("onboarding.get_status");
-					})
-					.then((s2) => {
-						this.status = s2 || this.status;
-						this.set_state({ stage: "ready" });
-					})
-					.catch(() => this.set_state({ stage: "ready" }));
+				// `complete_signup` already tested the connection, registered the webhook and brought
+				// the account's devices in (`services.onboarding.link_site`); the status shows the result.
+				this.ctx.connection = result.connection;
+				this.set_state({ stage: "ready" });
 			});
 		}
 

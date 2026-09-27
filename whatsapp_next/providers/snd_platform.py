@@ -946,10 +946,15 @@ class SndPlatformProvider(BaseProvider):
 	def configure_webhook(
 		self, endpoint_url: str, events: list[str], max_retries: int
 	) -> WebhookEndpointState:
-		"""Register the receiver URL on the link, then create the events endpoint (never passes `secret`)."""
+		"""Register the receiver URL on the link, then create the events endpoint (never passes `secret`).
+
+		Registering the URL makes the platform create the link's endpoint subscribed to the
+		`connection.*` events only; that endpoint is reused and given the events asked for."""
 		self._request("POST", "configure_integration_webhook_api", body={"endpoint_url": endpoint_url})
 		for state in self.list_webhook_endpoints():
 			if state.url == endpoint_url and state.status != "Revoked":
+				if set(state.events) != set(events):
+					return self.update_webhook_endpoint(state.endpoint_id, None, list(events), None)
 				return state
 		data = self._request(
 			"POST",

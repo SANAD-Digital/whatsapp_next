@@ -457,3 +457,34 @@ class TestPlatformSourceTypes(IntegrationTestCase):
 		for source in ours:
 			self.assertIn(SndPlatformProvider.PLATFORM_SOURCE_TYPES.get(source), self.PLATFORM_OPTIONS, source)
 		self.assertEqual(SndPlatformProvider.PLATFORM_SOURCE_TYPES.get("Something new", "External API"), "External API")
+
+
+class TestConfigureWebhookEvents(IntegrationTestCase):
+	"""Registering the URL makes the platform create the link's endpoint with the `connection.*`
+	events only; `configure_webhook` must hand back that endpoint with the events it was asked for."""
+
+	def test_auto_created_endpoint_gets_the_requested_events(self):
+		from whatsapp_next.providers.schemas import WebhookEndpointState
+
+		provider = _provider()
+		url = "https://site.example.test/api/method/x"
+		auto = WebhookEndpointState(
+			endpoint_id="WAWE-1", url=url, status="Active", events=("connection.connected",), max_retries=3
+		)
+		wanted = ["message.sent", "connection.connected"]
+		updated = WebhookEndpointState(
+			endpoint_id="WAWE-1", url=url, status="Active", events=tuple(wanted), max_retries=3
+		)
+		with patch.object(provider, "_request", return_value={"ok": True}) as req, patch.object(
+			provider, "list_webhook_endpoints", return_value=[auto]
+		), patch.object(provider, "update_webhook_endpoint", return_value=updated) as upd:
+			state = provider.configure_webhook(url, wanted, 3)
+		self.assertEqual(state, updated)
+		upd.assert_called_once_with("WAWE-1", None, wanted, None)
+		self.assertEqual([c.args[1] for c in req.call_args_list], ["configure_integration_webhook_api"])
+		# already right: returned as is, nothing updated
+		with patch.object(provider, "_request", return_value={"ok": True}), patch.object(
+			provider, "list_webhook_endpoints", return_value=[updated]
+		), patch.object(provider, "update_webhook_endpoint") as upd:
+			self.assertEqual(provider.configure_webhook(url, wanted, 3), updated)
+		upd.assert_not_called()

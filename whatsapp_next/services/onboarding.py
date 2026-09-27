@@ -197,7 +197,15 @@ def complete_signup(
 	account real on the platform."""
 	state = registry.get_provider().complete_signup(request_key, code or "", password=password)
 	stored = store_signup_credentials(state, user=user)
-	return {"ok": state.status == "Completed", "status": state.status, "credentials_stored": stored}
+	out = {"ok": state.status == "Completed", "status": state.status, "credentials_stored": stored}
+	if stored:
+		if not frappe.db.get_single_value("WhatsApp Settings", "platform_base_url"):
+			frappe.db.set_single_value(
+				"WhatsApp Settings", "platform_base_url", registry.platform_base_url(), update_modified=False
+			)
+			frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+		out.update(link_site(user=user))
+	return out
 
 
 def start_password_reset(identifier: str) -> SignupState:
@@ -243,13 +251,50 @@ def login(platform_base_url: str, email: str, password: str, user: str | None = 
 	values = {f: returned.get(f) for f in CREDENTIAL_FIELDS if returned.get(f)}
 	if not values:
 		frappe.throw(_("The platform returned no credentials for this account"), WAValidationError)
+	# The address is a default (D-103): a site that signed in against the bench's platform keeps
+	# that address in Settings, so the credentials step reads complete and an operator sees it.
+	if not frappe.db.get_single_value("WhatsApp Settings", "platform_base_url"):
+		values["platform_base_url"] = registry.platform_base_url()
 	written = save_credentials(user=user, **values)
 	return {
 		"ok": True,
 		"customer": result.get("customer"),
 		"customer_name": result.get("customer_name"),
 		"credentials_stored": bool(written),
+		**link_site(user=user),
 	}
+
+
+def link_site(user: str | None = None) -> dict[str, Any]:
+	"""Everything that follows once the platform handed this site its keys (sign-in or sign-up):
+	test the connection, register this site's webhook endpoint (which stores its signing secret),
+	and bring the account's existing devices in. Each step is reported, none raises, so a
+	half-linked site still signs in and the Settings page offers the step that failed.
+
+	`{connection{ok, error}, webhook{ok, status, error}, devices{ok, adopted, error}}`."""
+	connection = test_connection(user=user)
+	out: dict[str, Any] = {"connection": {"ok": connection["ok"], "error": connection.get("error")}}
+	if not connection["ok"]:
+		return out
+	try:
+		endpoint = webhook_setup.ensure_endpoint(user=user, refresh_secret=True)
+		out["webhook"] = {"ok": endpoint.status == "Active", "status": endpoint.status}
+	except Exception as exc:
+		frappe.log_error(title="WhatsApp onboarding: webhook registration failed")
+		out["webhook"] = {"ok": False, "status": None, "error": _step_error(exc)}
+	from whatsapp_next.services import devices
+
+	try:
+		counts = devices.adopt_from_provider(user=user)
+		out["devices"] = {"ok": True, "adopted": counts["adopted"]}
+	except Exception as exc:
+		frappe.log_error(title="WhatsApp onboarding: device import failed")
+		out["devices"] = {"ok": False, "adopted": 0, "error": _step_error(exc)}
+	return out
+
+
+def _step_error(exc: Exception) -> str:
+	return (str(exc) if isinstance(exc, (pex.ProviderError, frappe.ValidationError)) else "") or exc.__class__.__name__
 
 
 def validate_coupon(code: str, email: str | None = None, mobile: str | None = None) -> dict[str, Any]:

@@ -36,7 +36,14 @@ FIELDS = (
 	"setup_completed",
 	"setup_completed_at",
 	"credentials_updated_at",
+	"webhook_endpoint",
+	"webhook_endpoint_url",
+	"webhook_events",
+	"webhook_max_retries",
+	"webhook_synced_at",
 )
+# Signing in runs `link_site`, which stores the platform's webhook secret: put the site's back.
+RESTORED_SECRETS = (*SECRETS, "webhook_secret")
 DEVICE = "WAD-APITEST-ONB1"
 
 
@@ -47,7 +54,7 @@ class TestApiOnboarding(IntegrationTestCase):
 		ensure_settings()
 		s = frappe.get_doc(SETTINGS)
 		cls._saved = {f: s.get(f) for f in FIELDS}
-		cls._secrets = {f: s.get_password(f, raise_exception=False) for f in SECRETS}
+		cls._secrets = {f: s.get_password(f, raise_exception=False) for f in RESTORED_SECRETS}
 
 	@classmethod
 	def tearDownClass(cls):
@@ -100,7 +107,11 @@ class TestApiOnboarding(IntegrationTestCase):
 			self.assertEqual(started["request_key"], "req-1")
 			self.assertEqual(api.get_signup_status(request_key="req-1")["status"], "Pending")
 			done = api.complete_signup(request_key="req-1", code="123456")
-			self.assertEqual(done, {"ok": True, "status": "Completed", "credentials_stored": True})
+			self.assertEqual(
+				{k: done[k] for k in ("ok", "status", "credentials_stored")},
+				{"ok": True, "status": "Completed", "credentials_stored": True},
+			)
+			self.assertTrue(done["connection"]["ok"])
 			self.assertNotIn("ck", str(done))
 			s = frappe.get_doc(SETTINGS)
 			self.assertEqual(s.get_password("api_key", raise_exception=False), "k")
@@ -179,7 +190,7 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		ensure_settings()
 		s = frappe.get_doc(SETTINGS)
 		cls._saved = {f: s.get(f) for f in FIELDS}
-		cls._secrets = {f: s.get_password(f, raise_exception=False) for f in SECRETS}
+		cls._secrets = {f: s.get_password(f, raise_exception=False) for f in RESTORED_SECRETS}
 
 	@classmethod
 	def tearDownClass(cls):
@@ -222,7 +233,10 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 				api.verify_code(request_key="req-1", code="000000")
 
 			done = api.complete_signup(request_key="req-1", password="a-real-Password-1!")
-			self.assertEqual(done, {"ok": True, "status": "Completed", "credentials_stored": True})
+			self.assertEqual(
+				{k: done[k] for k in ("ok", "status", "credentials_stored")},
+				{"ok": True, "status": "Completed", "credentials_stored": True},
+			)
 			self.assertTrue(dict(provider.calls)["complete_signup"]["with_password"])
 			self.assertNotIn("a-real-Password-1!", str(done))
 			self.assertEqual(
@@ -257,6 +271,59 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		self.assertTrue(
 			frappe.db.exists("WhatsApp Audit Log", {"action": "Credentials Changed", "user": sm})
 		)
+
+	def test_login_links_the_site(self):
+		"""Owner, Gate 2: the keys, the connection test, the account's devices and the webhook all
+		come from signing in; the platform address is the default, saved into Settings."""
+		from unittest.mock import patch
+
+		from whatsapp_next.providers import registry
+		from whatsapp_next.providers.schemas import DeviceState
+		from whatsapp_next.services import webhook_setup
+
+		frappe.db.set_single_value(SETTINGS, {"platform_base_url": None, "webhook_endpoint": None, "webhook_events": None})
+		frappe.clear_document_cache(SETTINGS, SETTINGS)
+		set_encrypted_password(SETTINGS, SETTINGS, "stale-secret", "webhook_secret")
+		with fake_provider() as provider, as_user("System Manager"), patch.object(
+			registry, "platform_base_url", return_value="https://platform.example.test"
+		):
+			provider.devices["WAD-ONB-LINK1"] = DeviceState(
+				platform_device="WAD-ONB-LINK1", device_name="Front desk", phone_e164="+966500910077", status="Connected"
+			)
+			try:
+				out = api.login(platform_base_url="", email="tenant@example.test", password="right-password")
+				self.assertEqual(out["connection"], {"ok": True, "error": None})
+				self.assertEqual(out["webhook"], {"ok": True, "status": "Active"})
+				self.assertEqual(out["devices"], {"ok": True, "adopted": 1})
+				self.assertNotIn("fake-secret", str(out))
+				s = frappe.get_doc(SETTINGS)
+				self.assertEqual(s.platform_base_url, "https://platform.example.test")
+				self.assertEqual(s.connection_status, "OK")
+				self.assertEqual(s.webhook_status, "Active")
+				self.assertEqual(set(frappe.parse_json(s.webhook_events)), set(webhook_setup.DEFAULT_EVENTS))
+				# a stored secret proves nothing after new credentials: it is always refetched
+				self.assertEqual(s.get_password("webhook_secret", raise_exception=False), "fake-secret")
+				device = frappe.db.get_value(
+					"WhatsApp Device", {"platform_device": "WAD-ONB-LINK1"}, ["device_name", "status", "phone_e164"], as_dict=True
+				)
+				self.assertEqual((device.device_name, device.status, device.phone_e164), ("Front desk", "Connected", "+966500910077"))
+				# signing in again adopts nothing twice
+				self.assertEqual(api.login(platform_base_url="", email="tenant@example.test", password="right-password")["devices"]["adopted"], 0)
+			finally:
+				delete_all("WhatsApp Device", {"platform_device": "WAD-ONB-LINK1"})
+
+	def test_a_failed_connection_stops_the_linking_there(self):
+		from unittest.mock import patch
+
+		from whatsapp_next.providers.schemas import HealthStatus
+
+		with fake_provider() as provider, as_user("System Manager"):
+			with patch.object(provider, "health_check", return_value=HealthStatus(ok=False, error="down")):
+				out = api.login(platform_base_url="https://api.example.test", email="t@example.test", password="right-password")
+		self.assertTrue(out["ok"])
+		self.assertEqual(out["connection"], {"ok": False, "error": "down"})
+		self.assertNotIn("webhook", out)
+		self.assertNotIn("configure_webhook", dict(provider.calls))
 
 	def test_coupon_validation_is_an_answer_not_an_error(self):
 		with fake_provider(), as_user("System Manager"):
