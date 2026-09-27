@@ -496,6 +496,11 @@ class SettingsPage {
 					colour: values.has_customer_api_key ? "green" : "orange",
 				},
 				{
+					label: __("Customer API secret"),
+					badge: values.has_customer_api_secret ? __("Stored") : __("Not set"),
+					colour: values.has_customer_api_secret ? "green" : "orange",
+				},
+				{
 					label: __("API key"),
 					badge: values.has_api_key ? __("Stored") : __("Not set"),
 					colour: values.has_api_key ? "green" : "orange",
@@ -523,7 +528,7 @@ class SettingsPage {
 				"New keys are shown once. Every integration still using the old keys stops immediately — tell the developer before you rotate."
 			),
 			impact: [
-				{ label: __("Keys to be replaced"), value: 3, tone: "red" },
+				{ label: __("Keys to be replaced"), value: 4, tone: "red" },
 				{ label: __("Paired devices"), value: devices },
 				{
 					label: __("Webhook"),
@@ -553,6 +558,7 @@ class SettingsPage {
 					description: __("For example https://platform.example.com"),
 				},
 				{ fieldname: "customer_api_key", label: __("Customer API key"), fieldtype: "Password" },
+				{ fieldname: "customer_api_secret", label: __("Customer API secret"), fieldtype: "Password" },
 				{ fieldname: "api_key", label: __("API key"), fieldtype: "Password" },
 				{ fieldname: "api_secret", label: __("API secret"), fieldtype: "Password" },
 			],

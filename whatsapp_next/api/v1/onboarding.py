@@ -125,11 +125,13 @@ def save_credentials(
 	customer_api_key: str | None = None,
 	api_key: str | None = None,
 	api_secret: str | None = None,
+	customer_api_secret: str | None = None,
 ) -> dict[str, Any]:
 	"""Store the platform URL and credentials (`set_password`); audited `Credentials Changed`."""
 	written = onboarding.save_credentials(
 		platform_base_url=platform_base_url,
 		customer_api_key=customer_api_key,
+		customer_api_secret=customer_api_secret,
 		api_key=api_key,
 		api_secret=api_secret,
 		user=frappe.session.user,

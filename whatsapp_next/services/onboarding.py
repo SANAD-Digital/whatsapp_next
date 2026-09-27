@@ -22,7 +22,10 @@ from whatsapp_next.providers.schemas import SignupState
 from whatsapp_next.services import audit, usage_sync, webhook_setup
 from whatsapp_next.services.phone import normalize
 
-CREDENTIAL_FIELDS: tuple[str, ...] = ("customer_api_key", "api_key", "api_secret")
+# What sign-in / sign-up hand back and Settings stores; the first three are required to call the
+# platform at all, `customer_api_secret` whenever the link requires the secret header (D-129).
+CREDENTIAL_FIELDS: tuple[str, ...] = ("customer_api_key", "customer_api_secret", "api_key", "api_secret")
+REQUIRED_CREDENTIALS: tuple[str, ...] = ("customer_api_key", "api_key", "api_secret")
 STEP_KEYS: tuple[str, ...] = ("credentials", "connection", "device", "webhook")
 
 
@@ -50,7 +53,7 @@ def has_credentials(settings=None) -> bool:
 	effective one (Settings, else the bench default `whatsapp_platform_base_url`, D-103): the
 	address is a default, never copied into Settings (D-117)."""
 	s = settings or _settings()
-	return bool(registry.platform_base_url(s)) and all(has_secret(s, f) for f in CREDENTIAL_FIELDS)
+	return bool(registry.platform_base_url(s)) and all(has_secret(s, f) for f in REQUIRED_CREDENTIALS)
 
 
 def test_connection(user: str | None = None) -> dict[str, Any]:
@@ -91,6 +94,7 @@ def save_credentials(
 	api_key: str | None = None,
 	api_secret: str | None = None,
 	user: str | None = None,
+	customer_api_secret: str | None = None,
 ) -> list[str]:
 	"""Store the platform credentials with `set_password` (values never logged or returned) and
 	the base URL (validated by the Settings controller). Returns the fieldnames written."""
@@ -101,6 +105,7 @@ def save_credentials(
 		written.append("platform_base_url")
 	for fieldname, value in (
 		("customer_api_key", customer_api_key),
+		("customer_api_secret", customer_api_secret),
 		("api_key", api_key),
 		("api_secret", api_secret),
 	):

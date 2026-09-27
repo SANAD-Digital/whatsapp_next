@@ -29,7 +29,7 @@ class _Resp:
 
 
 def _provider(**creds) -> SndPlatformProvider:
-	base = {"customer_api_key": "ck", "api_key": "k", "api_secret": "s"}
+	base = {"customer_api_key": "ck", "customer_api_secret": "cs", "api_key": "k", "api_secret": "s"}
 	base.update(creds)
 	return SndPlatformProvider(
 		ProviderSettings(
@@ -58,7 +58,8 @@ class TestSndPlatform(IntegrationTestCase):
 		headers = req.call_args.kwargs["headers"]
 		self.assertEqual(headers["X-SND-API-Key"], "ck")
 		self.assertEqual(headers["Authorization"], "token k:s")
-		self.assertEqual(headers["X-SND-API-Secret"], "s")
+		# the link's own secret (D-129), never the user's token secret
+		self.assertEqual(headers["X-SND-API-Secret"], "cs")
 		self.assertTrue(
 			req.call_args.args[1].startswith(
 				"https://platform.invalid/api/method/snd_whatsapp_platform.snd_whatsapp_platform.api.get_queue_status_api"

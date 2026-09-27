@@ -16,6 +16,7 @@
   "last_connection_error",
   "credentials_tab",
   "customer_api_key",
+  "customer_api_secret",
   "api_key",
   "api_secret",
   "credentials_updated_at",
@@ -163,6 +164,13 @@
    "fieldname": "customer_api_key",
    "fieldtype": "Password",
    "label": "Customer API Key",
+   "permlevel": 1
+  },
+  {
+   "description": "The integration's own secret from the platform, sent with every call. Stored encrypted.",
+   "fieldname": "customer_api_secret",
+   "fieldtype": "Password",
+   "label": "Customer API Secret",
    "permlevel": 1
   },
   {
@@ -617,7 +625,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-26 21:00:00.000000",
+ "modified": "2026-09-27 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Settings",

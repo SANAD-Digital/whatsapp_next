@@ -28,7 +28,7 @@ from whatsapp_next.tests.conftest_frappe import (
 )
 
 SETTINGS = "WhatsApp Settings"
-SECRETS = ("customer_api_key", "api_key", "api_secret")
+SECRETS = ("customer_api_key", "customer_api_secret", "api_key", "api_secret")
 FIELDS = (
 	"platform_base_url",
 	"connection_status",
@@ -267,6 +267,7 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		s = frappe.get_doc(SETTINGS)
 		self.assertEqual(s.get_password("customer_api_key", raise_exception=False), "ck")
 		self.assertEqual(s.get_password("api_secret", raise_exception=False), "s")
+		self.assertEqual(s.get_password("customer_api_secret", raise_exception=False), "cs")
 		self.assertEqual(frappe.db.get_single_value(SETTINGS, "platform_base_url"), "https://api.example.test")
 		self.assertTrue(
 			frappe.db.exists("WhatsApp Audit Log", {"action": "Credentials Changed", "user": sm})

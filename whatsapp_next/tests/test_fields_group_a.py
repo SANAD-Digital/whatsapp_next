@@ -15,6 +15,7 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"platform_base_url": "Data",
 		"request_timeout": "Int",
 		"customer_api_key": "Password",
+		"customer_api_secret": "Password",
 		"api_key": "Password",
 		"api_secret": "Password",
 		"webhook_secret": "Password",

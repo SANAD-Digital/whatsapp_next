@@ -173,8 +173,9 @@ class SndPlatformProvider(BaseProvider):
 			headers["X-SND-API-Key"] = creds["customer_api_key"]
 		if creds.get("api_key") and creds.get("api_secret"):
 			headers["Authorization"] = f"token {creds['api_key']}:{creds['api_secret']}"
-		if creds.get("api_secret"):
-			headers["X-SND-API-Secret"] = creds["api_secret"]
+		# the integration's own secret (D-129): a factor of its own, not the user's token secret
+		if creds.get("customer_api_secret"):
+			headers["X-SND-API-Secret"] = creds["customer_api_secret"]
 		return headers
 
 	def _url(self, endpoint: str, *, v1: bool = False) -> str:
@@ -496,8 +497,8 @@ class SndPlatformProvider(BaseProvider):
 		"""Exchange an e-mail and password for this tenant's credentials.
 
 		Returns the platform's answer unchanged: `{ok, customer, customer_name,
-		integration_link, api_base_url, credentials{customer_api_key, api_key,
-		api_secret}}`. The caller stores `credentials` and never returns them.
+		integration_link, api_base_url, credentials{customer_api_key, customer_api_secret,
+		api_key, api_secret}}`. The caller stores `credentials` and never returns them.
 		"""
 		return self._request(
 			"POST", "login_with_password", v1=True, guest=True, body={"email": email, "password": password}

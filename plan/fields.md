@@ -38,6 +38,7 @@ System-written fields (`read_only 1`) are set by services with `ignore_permissio
 | platform_base_url | Platform Base URL | Data | | ✓ | | | | | | | https only; no trailing slash; validated on save | Settings: «الربط بالمنصة» |
 | request_timeout | Request Timeout (s) | Int | | | | 30 | | | | | 5–120 | — |
 | customer_api_key | Customer API Key | **Password** | | | | | | | | 1 | → `X-SND-API-Key` (D-020). Encrypted | Settings: «بيانات الاعتماد» |
+| customer_api_secret | Customer API Secret | **Password** | | | | | | | | 1 | → `X-SND-API-Secret`: the link's own secret, handed out by sign-in / sign-up (D-130). Encrypted | Settings: «بيانات الاعتماد» |
 | api_key | API Key | **Password** | | | | | | | | 1 | Link api_key → `Authorization: token k:s` (D-020). Encrypted | Settings: «بيانات الاعتماد» |
 | api_secret | API Secret | **Password** | | | | | | | | 1 | Link api_secret; also `X-SND-API-Secret` (D-020). Encrypted | Settings: «بيانات الاعتماد» |
 | webhook_secret | Webhook Secret | **Password** | | | | | | | | 1 | read_only; fetched via `get_integration_webhook_secret_api` (D-013), never typed. Encrypted | Settings: «الويب هوك» |

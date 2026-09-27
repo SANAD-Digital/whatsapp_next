@@ -92,7 +92,7 @@ WRITABLE: dict[str, tuple[str, ...]] = {
 
 # Password fields exposed as `has_<field>` booleans (section they belong to).
 SECRET_FIELDS: dict[str, tuple[str, ...]] = {
-	"credentials": ("customer_api_key", "api_key", "api_secret"),
+	"credentials": ("customer_api_key", "customer_api_secret", "api_key", "api_secret"),
 	"webhook": ("webhook_secret",),
 }
 

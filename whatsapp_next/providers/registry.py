@@ -10,7 +10,13 @@ from whatsapp_next.providers.base import BaseProvider
 from whatsapp_next.providers.exceptions import NotSupportedError
 from whatsapp_next.providers.schemas import ProviderSettings
 
-CREDENTIAL_FIELDS: tuple[str, ...] = ("customer_api_key", "api_key", "api_secret", "webhook_secret")
+CREDENTIAL_FIELDS: tuple[str, ...] = (
+	"customer_api_key",
+	"customer_api_secret",
+	"api_key",
+	"api_secret",
+	"webhook_secret",
+)
 _OVERRIDE_KEY = "wa_provider_override"
 
 
