@@ -34,6 +34,7 @@ loading (skeleton) / empty / error states, and every panel is keyboard-accessibl
 | `TemplateEditor` | variables sidebar + sample picker + live preview | Message Templates form |
 | `CommandEditor` | the prototype's command editor: setup · per-type lists · live dry-run preview | Commands list and form |
 | `FunctionDetail` | the prototype's function window: details · version log · live dry-run preview | Functions screen |
+| `BulkSend` | the prototype's bulk message window: groups · contacts · numbers, settings, preview, send | Simulator |
 | `PagedChildTable` | paged read table replacing a large child grid | Campaign recipients, Group members |
 | `DashboardBlock` | Custom HTML Block rendering Number Cards / Dashboard Charts | Workspace "WhatsApp" |
 | `ContactPicker` | six-source recipient picker with duplicate flags and confirm | Campaigns, Contact Groups |

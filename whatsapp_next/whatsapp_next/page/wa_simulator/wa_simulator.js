@@ -10,7 +10,8 @@
 // Anatomy, value for value from the prototype (`docs/screen/Hub Screen - WhatsApp Simulator.dc.html`,
 // D-134): edge to edge, the conversation list (330 px) on the inline-start — "Conversations" with
 // the "Bulk message" button, a pill search, rows with avatar, name, time, last message and the
-// party-type badge (which opens "who is this") — and the thread on the rest: the green header with
+// party-type badge (which opens "who is this"); "Send a bulk message" opens `sanad.ui.BulkSend`,
+// D-136) — and the thread on the rest: the green header with
 // the device picker, the note line, the kit's `ChatThread` over `messages.get_conversation`, and
 // the prototype's composer (the "#" message-on-behalf button above "+", the rounded field, the round
 // send). Under 900 px the list and the thread take the screen in turn, with a way back.
@@ -222,7 +223,7 @@
 			this.$composer = this.$main.find(".wa-sim__composer");
 			this.$search = this.$main.find(".wa-sim__search input");
 			this.list_state = new sanad.ui.EmptyState({ wrapper: this.$list, state: "loading", rows: 5 });
-			this.$main.find(".wa-sim__bulk").on("click", () => frappe.new_doc("WhatsApp Campaign"));
+			this.$main.find(".wa-sim__bulk").on("click", () => this.open_bulk());
 			this.$search.on(
 				"input",
 				sanad.ui.debounce(() => {
@@ -230,6 +231,19 @@
 					this.load_list();
 				}, 300)
 			);
+		}
+
+		/** The prototype's "Send a bulk message" window (D-136): the send becomes a campaign. */
+		open_bulk() {
+			const call = (method, args) => sanad.ui.call(`bulk_send.${method}`, args);
+			return new sanad.ui.BulkSend({
+				load: () => call("get_context"),
+				estimate: (sel) => call("estimate", sel),
+				search_contacts: (txt) => call("search_contacts", { txt }),
+				send: (payload) => call("send", { payload }),
+				on_sent: () => this.load_list(),
+				on_templates: () => frappe.set_route("List", "WhatsApp Template"),
+			});
 		}
 
 		// ---- context ---------------------------------------------------------------------------
