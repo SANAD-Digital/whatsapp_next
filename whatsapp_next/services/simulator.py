@@ -252,3 +252,74 @@ def conversations(txt: str | None = None, limit: int = 30) -> dict[str, Any]:
 		r["last_body"] = ((last.body or last.message_type or "") if last else "")[:120]
 		r["last_at"] = last.creation if last else r.last_seen
 	return {"rows": rows, "total": total}
+
+
+def identity(phone_e164: str) -> dict[str, Any]:
+	"""The simulator's "who is this" panel for one number: `{phone_e164, name, contact, party_type,
+	link_status, outbound_count, inbound_count, last_seen, accounts[{doctype, name, title}],
+	groups[{name, label, kind, member_count}]}` — the contact's own account links and the contact
+	groups the number is a member of. E: `WAInvalidPhoneError`."""
+	from whatsapp_next.services.permissions import PARTY_TYPES
+
+	kind, key = classify(phone_e164)
+	if kind != "Individual":
+		frappe.throw(_("Invalid phone number: {0}").format(phone_e164), WAInvalidPhoneError)
+	number = (
+		frappe.db.get_value(
+			"WhatsApp Number",
+			key,
+			["display_name", "contact", "link_status", "outbound_count", "inbound_count", "last_seen"],
+			as_dict=True,
+		)
+		or frappe._dict()
+	)
+	contact = number.contact or resolve_contact_by_phone(key)
+	accounts = (
+		frappe.get_all(
+			"Dynamic Link",
+			filters={"parenttype": "Contact", "parent": contact, "link_doctype": ("in", list(PARTY_TYPES))},
+			fields=["link_doctype", "link_name", "link_title"],
+			order_by="idx asc",
+		)
+		if contact
+		else []
+	)
+	memberships = frappe.get_all(
+		"WhatsApp Contact Group Member",
+		filters={"parenttype": "WhatsApp Contact Group", "phone_e164": key},
+		pluck="parent",
+	)
+	groups = (
+		frappe.get_all(
+			"WhatsApp Contact Group",
+			filters={"name": ("in", sorted(set(memberships)))},
+			fields=["name", "group_name", "kind", "member_count"],
+			order_by="group_name asc",
+		)
+		if memberships
+		else []
+	)
+	return {
+		"phone_e164": key,
+		"name": number.display_name
+		or (frappe.db.get_value("Contact", contact, "full_name") if contact else None),
+		"contact": contact,
+		"party_type": accounts[0].link_doctype if accounts else None,
+		"link_status": number.link_status or ("Linked" if contact else "Not Linked"),
+		"outbound_count": cint(number.outbound_count),
+		"inbound_count": cint(number.inbound_count),
+		"last_seen": number.last_seen,
+		"accounts": [
+			{"doctype": a.link_doctype, "name": a.link_name, "title": a.link_title or a.link_name}
+			for a in accounts
+		],
+		"groups": [
+			{
+				"name": g.name,
+				"label": g.group_name or g.name,
+				"kind": g.kind,
+				"member_count": cint(g.member_count),
+			}
+			for g in groups
+		],
+	}

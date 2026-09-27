@@ -122,60 +122,57 @@
 
 	// ---- the "who is this" panel ---------------------------------------------------------------
 
-	/** The prototype's contact panel: who the number is, and what it is linked to. */
+	/**
+	 * The prototype's contact panel (`contactPanel`): who the number is — name, classification,
+	 * account link, messages, last message — and what it is linked to (its accounts and the contact
+	 * groups it belongs to), both in the rows layout: the label at the start, the value at the end.
+	 */
 	function identity_panel(row) {
 		sanad.ui
-			.call("numbers.get_number", { phone_e164: row.phone_e164 || row.name })
-			.then((number) => {
-				const load_contact = number.contact ? sanad.ui.call("contacts.get_contact", { name: number.contact }, { silent: true }).catch(() => null) : Promise.resolve(null);
-				return load_contact.then((contact) => ({ number, contact }));
-			})
-			.then(({ number, contact }) => {
-				const links = (contact && contact.links) || [];
-				const badge = !number.contact
+			.call("simulator.get_identity", { phone_e164: row.phone_e164 || row.name })
+			.then((who) => {
+				const unknown = !who.contact;
+				const badge = unknown
 					? { text: __("Unknown number", null, "Simulator"), tone: "info" }
-					: row.party_type
-					? { text: __(row.party_type), tone: "muted" }
+					: who.party_type
+					? { text: __(who.party_type), tone: "muted" }
 					: { text: __("No classification"), tone: "warn" };
-				sanad.ui.OverlayPanel.open({
+				const ro = (key, label, value, extra = {}) => Object.assign({ key, label, type: "readonly", value }, extra);
+				const facts = [
+					ro("name", __("Name", null, "Simulator"), who.name || (unknown ? __("Not saved in contacts") : __("No name"))),
+					ro("type", __("Classification"), unknown ? __("Not saved") : who.party_type ? __(who.party_type) : __("No classification — neither a customer nor a supplier")),
+					ro("linked", __("Linked to an account"), who.link_status === "Linked" ? __("Linked to an account in the system") : __("Not linked")),
+					ro("msgs", __("Messages", null, "Simulator"), __("{0} sent · {1} received", [fmt_int(who.outbound_count), fmt_int(who.inbound_count)])),
+				];
+				if (who.last_seen) facts.push(ro("last", __("Last message"), frappe.datetime.str_to_user(who.last_seen)));
+				const links = []
+					.concat(
+						(who.accounts || []).map((a, i) => ro(`acc${i}`, a.title, __("{0} in the system", [__(a.doctype)]))),
+						(who.groups || []).map((g, i) =>
+							ro(`grp${i}`, g.label, g.kind === "Blacklist" ? __("Blacklist") : __("Contact group · {0} contacts", [fmt_int(g.member_count)]))
+						)
+					);
+				if (!links.length)
+					links.push(
+						ro(
+							"none",
+							unknown ? __("A number not saved as a contact") : __("Nothing linked"),
+							unknown ? __("No accounts and no groups — commands that need a linked account will refuse it") : __("No accounts and no groups are linked to this contact yet")
+						)
+					);
+				new sanad.ui.OverlayPanel({
 					type: "modal",
 					width: "44%",
-					title: title_of(row),
-					subtitle: row.phone_e164,
+					title: who.name || who.phone_e164,
+					subtitle: who.phone_e164,
 					subtitle_mono: true,
 					badge,
-					detail: {
-						blocks: [
-							{
-								label: __("Who this is"),
-								list: [
-									{ text: __("Name"), sub: number.display_name || (contact && contact.full_name) || (number.contact ? __("No name") : __("Not saved in contacts")) },
-									{
-										text: __("Classification"),
-										sub: !number.contact ? __("Not saved") : row.party_type ? __(row.party_type) : __("No classification — neither a customer nor a supplier"),
-									},
-									{ text: __("Linked to an account"), sub: number.link_status === "Linked" ? __("Linked to an account in the system") : __("Not linked") },
-									{ text: __("Messages"), sub: __("{0} sent · {1} received", [fmt_int(number.outbound_count), fmt_int(number.inbound_count)]) },
-									{ text: __("Last message"), sub: number.last_seen ? frappe.datetime.str_to_user(number.last_seen) : __("None yet") },
-								],
-							},
-							{
-								label: __("What it is linked to"),
-								list: links.length
-									? links.map((l) => ({ text: l.link_title || l.link_name, sub: __("Account in the system"), badge: __(l.link_doctype), badge_tone: "info" }))
-									: [
-											{
-												text: number.contact ? __("Nothing linked") : __("A number not saved as a contact"),
-												sub: number.contact
-													? __("No accounts and no groups are linked to this contact yet")
-													: __("No accounts and no groups — commands that need a linked account will refuse it"),
-											},
-									  ],
-							},
-						],
-					},
+					sections: [
+						{ title: __("Who this is"), layout: "rows", fields: facts },
+						{ title: __("What it is linked to"), layout: "rows", fields: links },
+					],
 					actions: [{ key: "close", label: __("Close"), variant: "primary", close: true }],
-				});
+				}).show();
 			})
 			.catch((err) => sanad.ui.Toast.error(err));
 	}

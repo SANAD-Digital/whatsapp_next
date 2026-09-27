@@ -179,10 +179,15 @@ sanad.ui.OverlayPanel = class OverlayPanel {
 	// ---- form sections -------------------------------------------------------------------------
 
 	render_section(s) {
-		const $s = $(`<section class="sanad-op__section"></section>`).appendTo(this.$body);
-		if (s.title) $s.append(kit.rule(s.title, s.note_end));
+		// `layout: "rows"` is the prototype's settings / record layout: a 17 px title, then one row per
+		// field — the label at the start, the value or control at the end, a rule under each
+		const rows = s.layout === "rows";
+		const $s = $(`<section class="sanad-op__section${rows ? " sanad-op__section--rows" : ""}"></section>`).appendTo(this.$body);
+		if (s.title) $s.append(rows ? `<h3 class="sanad-op__rows-title">${esc(s.title)}</h3>` : kit.rule(s.title, s.note_end));
 		if (s.note) $s.append(`<div class="sanad-op__note sanad-op__note--${tone_of(s.note_tone || "info")}">${esc(s.note)}</div>`);
-		const $grid = $(`<div class="sanad-op__grid" style="--sanad-op-cols:${cint(s.cols) || 2}"></div>`).appendTo($s);
+		const $grid = rows
+			? $(`<div class="sanad-op__rows"></div>`).appendTo($s)
+			: $(`<div class="sanad-op__grid" style="--sanad-op-cols:${cint(s.cols) || 2}"></div>`).appendTo($s);
 		(s.fields || []).forEach((df) => this.render_field(df, $grid));
 	}
 

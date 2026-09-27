@@ -65,3 +65,10 @@ def list_conversations(txt: str | None = None, limit: int = 30) -> dict[str, Any
 	"""The conversation list: individual numbers with party type and last-message preview →
 	`{rows[{phone_e164, display_name, contact, link_status, party_type, last_body, last_at}], total}`."""
 	return simulator.conversations(txt, limit)
+
+
+@api_endpoint(roles=AGENT_UP, methods=("GET", "POST"))
+def get_identity(phone_e164: str) -> dict[str, Any]:
+	"""The "who is this" panel for one number: name, classification, account link, message counts,
+	its accounts and the contact groups it belongs to. P: Agent+."""
+	return simulator.identity(phone_e164)

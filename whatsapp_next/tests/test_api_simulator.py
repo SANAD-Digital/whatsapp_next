@@ -181,6 +181,16 @@ class TestApiSimulator(IntegrationTestCase):
 		with as_user("_none"), self.assertRaises(WAPermissionError):
 			api.list_conversations()
 
+	def test_get_identity(self):
+		with as_user("WhatsApp Agent"):
+			who = api.get_identity(phone_e164="0500920301")
+			self.assertEqual(who["phone_e164"], P1)
+			self.assertEqual(set(who) >= {"accounts", "groups", "link_status", "party_type"}, True)
+			with self.assertRaises(WAInvalidPhoneError):
+				api.get_identity(phone_e164="abc")
+		with as_user("_none"), self.assertRaises(WAPermissionError):
+			api.get_identity(phone_e164=P1)
+
 	def test_send_test(self):
 		with as_user("WhatsApp Agent"), patch.object(frappe, "enqueue") as enq:
 			res = api.send_test(device=self.device, phone="0500920301", body=f"{TAG} test send")

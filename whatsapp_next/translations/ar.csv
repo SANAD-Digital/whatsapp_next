@@ -4337,3 +4337,8 @@ Write the message text or pick a template,اكتب نص الرسالة أو اخ
 No recipient yet,لا مستلم بعد,Bulk Send
 The site's queue sends at most {0} messages a minute.,طابور الموقع يرسل {0} رسالة/دقيقة كحد أقصى.,
 The rate is too high,المعدّل أعلى من المسموح,
+{0} in the system,{0} في النظام,
+Contact group · {0} contacts,مجموعة جهات · {0} جهة,
+What it is linked to,الجهات المرتبطة بها,Simulator
+Name,الاسم,Simulator
+Messages,الرسائل,Simulator

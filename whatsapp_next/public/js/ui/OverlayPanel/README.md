@@ -66,7 +66,7 @@ sanad.ui.OverlayPanel.open({
 ```
 
 Options: `type` (`modal` | `drawer`), `width`, `side` (drawer: `start` | `end`), `title`, `subtitle`,
-`subtitle_mono`, `badge {text, tone}`, `sections[{title, note, note_tone, cols, fields[]}]`,
+`subtitle_mono`, `badge {text, tone}`, `sections[{title, note, note_tone, cols, layout, fields[]}]` (`layout: "rows"` — label · value rows under a large title, the prototype's record layout),
 `detail {alert, facts[], blocks[]}`, `actions[{key, label, icon, variant, align, close, requires_dirty,
 validate, handler(values, panel)}]`, `on_change(key, value, panel)`, `on_close`, `close_on_backdrop`,
 `compact`. A handler may return a promise: the button waits, a rejection is shown inline above

@@ -12,7 +12,7 @@ const areas = {
 	devices: ["list_devices", "create_device", "start_pairing", "poll_status", "disconnect_device", "delete_device", "update_device", "set_default", "set_disabled", "get_device_stats"],
 	quick_send: ["get_context", "preview", "send"],
 	messages: ["get_outbound", "get_inbound", "get_inbound_summary", "get_conversation", "resend", "resend_many", "cancel"],
-	simulator: ["get_context", "simulate_inbound", "send_test", "dry_run_command", "list_conversations"],
+	simulator: ["get_context", "simulate_inbound", "send_test", "dry_run_command", "list_conversations", "get_identity"],
 	bulk_send: ["get_context", "estimate", "search_contacts", "send"],
 	queue: ["list_queue", "get_summary", "get_limits", "get_throughput", "pause_queue", "resume_queue", "set_rate", "pause_items", "resume_items", "delete_items", "retry_dead_letter"],
 	campaigns: ["start", "schedule", "get_overview", "unschedule", "pause", "resume", "cancel", "pause_many", "resume_many", "cancel_many", "get_progress", "get_sending_now", "get_recipients_page", "preview_message", "get_poll_results", "get_readiness", "get_failures", "get_message_stats", "get_timeline", "retry_failed"],

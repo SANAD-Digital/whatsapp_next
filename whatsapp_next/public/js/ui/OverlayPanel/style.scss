@@ -162,6 +162,34 @@
 		flex-direction: column;
 		gap: 12px;
 	}
+	// the prototype's rows layout: a 17 px title, then label · value rows with a rule under each
+	&__section--rows { gap: 4px; }
+	&__rows-title { margin: 0; padding-block-end: 6px; font-size: 17px; font-weight: 700; color: var(--wa-ink); }
+	&__rows { display: flex; flex-direction: column; }
+	&__rows > .sanad-op__field {
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px 24px;
+		padding-block: 14px;
+		border-block-end: 1px solid var(--wa-border);
+
+		.wa-field__label { font-size: 14px; font-weight: 400; color: var(--wa-ink); margin: 0; }
+		.sanad-op__readonly {
+			min-block-size: 36px;
+			display: flex;
+			align-items: center;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			font-size: 14px;
+			font-weight: 400;
+			color: var(--wa-ink);
+			text-align: end;
+		}
+		> :not(.wa-field__label) { margin-inline-start: auto; max-inline-size: 60%; }
+	}
 	&__note {
 		padding: 10px 12px;
 		border-radius: 8px;
