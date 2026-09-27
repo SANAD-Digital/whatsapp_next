@@ -582,3 +582,8 @@
 	color: var(--ink-gray-6);
 	font-size: var(--text-sm, 12px);
 }
+
+// The list column Desk pads at the bottom; the card already reaches the bottom of the screen.
+.layout-main-section.sanad-list-card-host {
+	padding-block-end: 0;
+}

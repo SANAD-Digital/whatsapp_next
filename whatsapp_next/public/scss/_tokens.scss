@@ -214,6 +214,6 @@ $wa-bridge: ();
 	--awesomplete-hover-bg: var(--wa-pri-s);
 	--btn-primary-bg: var(--wa-pri);
 	--fg-color: var(--wa-surface);
-	--bg-color: var(--wa-bg);
+	// the page background stays Frappe's own (owner, 2026-09-27): no --bg-color here
 	--card-bg: var(--wa-surface);
 }

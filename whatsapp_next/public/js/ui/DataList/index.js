@@ -78,6 +78,10 @@ sanad.ui.DataList = class DataList {
 		lv.$result.addClass("sanad-datalist-host");
 		// the list owns its page edge to edge: no card frame, no outer margin
 		lv.$frappe_list.addClass("sanad-list-card");
+		// Desk pads the list column 40px at the bottom; the card already fills the screen, so that
+		// padding only added scroll: the toolbar slid under the sticky head and a strip stayed
+		// under the footer. The host loses it while this card is mounted.
+		lv.$frappe_list.parent().addClass("sanad-list-card-host");
 		this.$table = $(`<div class="sanad-kit sanad-datalist__wrap${this.opts.mobile === "cards" ? " sanad-datalist__wrap--cards" : ""}"></div>`);
 		lv.$result.find(".list-row-container, .list-row-head").remove();
 		lv.$result.prepend(this.$table);
@@ -963,7 +967,10 @@ sanad.ui.DataList = class DataList {
 	destroy() {
 		$(window).off(`resize.${this.id}`);
 		this._card_observer && this._card_observer.disconnect();
-		if (this.lv) this.lv.$frappe_list.removeClass("sanad-list-card");
+		if (this.lv) {
+			this.lv.$frappe_list.removeClass("sanad-list-card");
+			this.lv.$frappe_list.parent().removeClass("sanad-list-card-host");
+		}
 		if (this.$root) this.$root.off(`.${this.id}`);
 		this.$footer.off(`.${this.id}`).remove();
 		this.$table.remove();

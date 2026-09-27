@@ -124,7 +124,32 @@
 			const refresh = () => listview.refresh();
 			const open = (doc) => open_drawer(doc, refresh, listview);
 
+			whatsapp_next.screens.message_list(listview, {
+				open,
+				realtime: "wa:inbound:received",
+				search: { fields: ["phone_e164", "display_name", "body"], placeholder: __("Search name, number or message text…") },
+				filters: [
+					{ fieldname: "command_status", type: "select", label: __("Matched command") },
+					{ fieldname: "command", type: "select" },
+					{ fieldname: "contact", type: "select", label: __("Contact link") },
+					{ fieldname: "device", type: "select" },
+					{ fieldname: "message_type", type: "select" },
+					{ fieldname: "is_simulated", type: "select", label: __("On behalf") },
+				],
+				columns: [
+					whatsapp_next.columns.party({ label: __("Sender") }),
+					{ fieldname: "body", label: __("Incoming text"), format: (v) => ui.escape(frappe.utils.html2text ? frappe.utils.html2text(v || "") : v || "") },
+					{ fieldname: "command_status", type: "status", label: __("Matched command"), sortable: true, format: (v, doc) => match_chip(doc) },
+					{ fieldname: "contact", label: __("Contact link"), sortable: true, format: (v) => ui.StatusBadge.html(v ? { label: __("Linked"), colour: "green" } : { label: __("Not linked"), colour: "gray", icon: false }) },
+					whatsapp_next.columns.device(),
+					whatsapp_next.columns.time({ fieldname: "received_at", label: __("Time") }),
+				],
+				mobile_columns: ["display_name", "command_status"],
+				buttons: [{ label: __("Quick send"), condition: is_agent, action: () => new ui.QuickSend({ on_sent: refresh }) }],
+			});
+
 			// 09 G-07, the prototype's four figures (owner, 2026-09-27): one call, shared by the cards.
+			// Mounted after the toolbar, because both prepend themselves: the figures end up on top.
 			let summary = null;
 			const figure = (pick) => () => {
 				if (!summary) summary = ui.call("messages.get_inbound_summary", { days: 30 }, { silent: true }).finally(() => setTimeout(() => (summary = null), 1000));
@@ -158,29 +183,6 @@
 				],
 			});
 
-			whatsapp_next.screens.message_list(listview, {
-				open,
-				realtime: "wa:inbound:received",
-				search: { fields: ["phone_e164", "display_name", "body"], placeholder: __("Search name, number or message text…") },
-				filters: [
-					{ fieldname: "command_status", type: "select", label: __("Matched command") },
-					{ fieldname: "command", type: "select" },
-					{ fieldname: "contact", type: "select", label: __("Contact link") },
-					{ fieldname: "device", type: "select" },
-					{ fieldname: "message_type", type: "select" },
-					{ fieldname: "is_simulated", type: "select", label: __("On behalf") },
-				],
-				columns: [
-					whatsapp_next.columns.party({ label: __("Sender") }),
-					{ fieldname: "body", label: __("Incoming text"), format: (v) => ui.escape(frappe.utils.html2text ? frappe.utils.html2text(v || "") : v || "") },
-					{ fieldname: "command_status", type: "status", label: __("Matched command"), sortable: true, format: (v, doc) => match_chip(doc) },
-					{ fieldname: "contact", label: __("Contact link"), sortable: true, format: (v) => ui.StatusBadge.html(v ? { label: __("Linked"), colour: "green" } : { label: __("Not linked"), colour: "gray", icon: false }) },
-					whatsapp_next.columns.device(),
-					whatsapp_next.columns.time({ fieldname: "received_at", label: __("Time") }),
-				],
-				mobile_columns: ["display_name", "command_status"],
-				buttons: [{ label: __("Quick send"), condition: is_agent, action: () => new ui.QuickSend({ on_sent: refresh }) }],
-			});
 		},
 	};
 })();

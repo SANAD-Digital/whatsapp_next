@@ -85,6 +85,13 @@ $wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-setting
 		padding-inline: var(--wa-list-gutter);
 		padding-block-end: var(--wa-page-bottom);
 	}
+
+	// …except under the kit's list card, which already reaches the bottom of the screen: the air
+	// only added scroll, sliding the toolbar under the sticky head and leaving a strip under the
+	// footer (owner, 2026-09-27)
+	.layout-main-section.sanad-list-card-host {
+		padding-block-end: 0;
+	}
 }
 
 // The product's Desk forms. Their sidebar — assignments, attachments, tags, share, "last edited

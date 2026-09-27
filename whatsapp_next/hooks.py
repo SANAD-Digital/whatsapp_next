@@ -11,6 +11,20 @@ app_license = "mit"
 
 required_apps = ["frappe", "erpnext"]
 
+# The app's tile on the Desk desktop (Frappe v16 `Desktop Icon`, type App). The route stays under
+# /app: Frappe hides an app's workspace tiles when its route leaves Desk.
+app_home = "/app/wa-home"
+app_logo_url = "/assets/whatsapp_next/images/whatsapp-next-logo.svg"
+add_to_apps_screen = [
+	{
+		"name": app_name,
+		"logo": app_logo_url,
+		"title": app_title,
+		"route": app_home,
+		"has_permission": "whatsapp_next.install.has_app_permission",
+	}
+]
+
 # Provider registry (architecture.md) — nothing outside providers/ imports a provider module.
 whatsapp_providers = {
 	"snd_platform": "whatsapp_next.providers.snd_platform.SndPlatformProvider",
