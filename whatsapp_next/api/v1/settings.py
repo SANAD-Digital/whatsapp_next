@@ -17,7 +17,7 @@ from whatsapp_next.api._common import api_endpoint, paginate
 from whatsapp_next.api.v1._roles import AGENT_UP, CONTACT_USER, MANAGER, SYSTEM_MANAGER, VIEWER_UP
 from whatsapp_next.exceptions import WANotSupportedError, WAProviderUnavailableError, WAValidationError
 from whatsapp_next.providers.schemas import CANONICAL_EVENTS
-from whatsapp_next.services import audit, onboarding, usage_sync, webhook_setup
+from whatsapp_next.services import audit, onboarding, permissions, usage_sync, webhook_setup
 
 SETTINGS = "WhatsApp Settings"
 
@@ -135,6 +135,8 @@ def _section_values(doc, section: str) -> dict[str, Any]:
 		out[fieldname] = value
 	for fieldname in SECRET_FIELDS.get(section, ()):
 		out[f"has_{fieldname}"] = onboarding.has_secret(doc, fieldname)
+	if section == "policy":
+		out.update(_policy_extras())
 	return out
 
 
@@ -146,6 +148,11 @@ def get_settings(section: str | None = None) -> dict[str, Any]:
 	if section:
 		return {section: _section_values(doc, section)}
 	return {s: _section_values(doc, s) for s in SECTIONS}
+
+
+def _policy_extras() -> dict[str, Any]:
+	"""Computed, read-only: what role `All` can still do on `Contact` (R-028, D-125)."""
+	return {"contact_open_to_all": permissions.contact_open_to_all()}
 
 
 @api_endpoint(roles=SYSTEM_MANAGER, schema={"section": {"enum": list(WRITABLE)}})

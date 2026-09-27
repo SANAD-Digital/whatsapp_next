@@ -819,7 +819,19 @@ class SettingsPage {
 	}
 
 	render_policy($el) {
-		return this.plain("policy", $el);
+		return this.plain("policy", $el, function ($wrap, values) {
+			// R-028 / D-125: Frappe ships `Contact` open to role All. Removing that is the site
+			// admin's step (never done by the app), so the page says so while it is still there.
+			const open = values.contact_open_to_all || [];
+			if (!open.length) return;
+			this.banner($wrap, {
+				tone: "amber",
+				icon: "es-line-alert-triangle",
+				title: __("Every user can open Contacts directly."),
+				text: __("Role All still has {0} on Contact, so a WhatsApp Contact User can bypass the scoped contact screens. Remove those rights for All in the Role Permission Manager.", [open.map((p) => __(frappe.unscrub(p))).join(", ")]),
+				action: IS_SM() ? { label: __("Open Role Permission Manager"), handler: () => frappe.set_route("permission-manager", "Contact") } : undefined,
+			});
+		});
 	}
 
 	render_retention($el) {

@@ -22,6 +22,7 @@ def after_install() -> None:
 	ensure_command_service_user()
 	ensure_settings_defaults()
 	add_indexes()
+	warn_contact_open_to_all()
 
 
 def after_migrate() -> None:
@@ -30,6 +31,24 @@ def after_migrate() -> None:
 	ensure_command_service_user()
 	ensure_settings_defaults()
 	add_indexes()
+	warn_contact_open_to_all()
+
+
+def warn_contact_open_to_all() -> None:
+	"""R-028 / D-125: say so, never fix it. Removing role All from `Contact` is the site admin's
+	step in the Role Permission Manager; the app does not change core permissions."""
+	from whatsapp_next.services.permissions import contact_open_to_all
+
+	try:
+		rights = contact_open_to_all()
+	except Exception:
+		return
+	if rights:
+		print(
+			f"whatsapp_next: role All still has {', '.join(rights)} on Contact, so a WhatsApp Contact "
+			"User can open Contacts directly. Remove those rights for All in the Role Permission "
+			"Manager (/app/permission-manager/Contact)."
+		)
 
 
 def ensure_roles() -> None:

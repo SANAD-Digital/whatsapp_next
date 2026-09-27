@@ -86,6 +86,18 @@ MAX_PAGE_LENGTH = 200
 # --------------------------------------------------------------------------------------------
 
 
+def contact_open_to_all() -> list[str]:
+	"""The rights role `All` still holds on the core `Contact` DocType (level 0), in the effective
+	permissions (Custom DocPerm when the site customised them).
+
+	The contextual layer assumes a WhatsApp Contact User has no native Contact access, but Frappe
+	ships `Contact` with `All` read / write / create (R-028). Removing that row is the site
+	admin's step in the Role Permission Manager, never the app's (owner, D-125); this only
+	reports it, for the Settings banner and the install / migrate warning."""
+	rows = [p for p in frappe.get_meta("Contact").permissions if p.role == "All" and not cint(p.permlevel)]
+	return [ptype for ptype in ("read", "write", "create", "delete") if any(cint(p.get(ptype)) for p in rows)]
+
+
 def is_contact_user(user: str | None = None) -> bool:
 	"""True when the (session) user holds the contextual role."""
 	return ELEVATED_ROLE in frappe.get_roles(user or frappe.session.user)

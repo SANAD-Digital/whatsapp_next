@@ -202,3 +202,35 @@ class TestApiSettings(IntegrationTestCase):
 				api.get_doctype_fields(document_type="Contact Phone")
 			with self.assertRaises(WAValidationError):
 				api.get_doctype_fields(document_type="No Such DocType")
+
+
+class TestContactOpenToAll(IntegrationTestCase):
+	"""R-028 / D-125: the app reports role All's rights on the core Contact, it never removes them."""
+
+	def test_reports_the_rights_of_role_all_only(self):
+		from unittest.mock import patch
+
+		from whatsapp_next.services import permissions
+
+		def perm(role, **rights):
+			return frappe._dict(role=role, permlevel=0, **rights)
+
+		meta = frappe._dict(
+			permissions=[
+				perm("All", read=1, write=1, create=0),
+				perm("System Manager", read=1, write=1, create=1, delete=1),
+				frappe._dict(role="All", permlevel=1, read=1, delete=1),  # other levels do not count
+			]
+		)
+		with patch.object(frappe, "get_meta", return_value=meta):
+			self.assertEqual(permissions.contact_open_to_all(), ["read", "write"])
+		meta.permissions = [perm("Sales User", read=1)]
+		with patch.object(frappe, "get_meta", return_value=meta):
+			self.assertEqual(permissions.contact_open_to_all(), [])
+
+	def test_policy_section_carries_it(self):
+		with as_user("System Manager"):
+			out = api.get_settings(section="policy")["policy"]
+		from whatsapp_next.services import permissions
+
+		self.assertEqual(out["contact_open_to_all"], permissions.contact_open_to_all())
