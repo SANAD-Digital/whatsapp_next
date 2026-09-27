@@ -58,3 +58,10 @@ def dry_run_command(text: str, sender_phone: str, device: str | None = None) -> 
 	inbound — nothing persisted, nothing sent → `{matched, status, command, block_reason, args,
 	reply_body, replies[], error, function_ms}`."""
 	return simulator.dry_run_command(text, sender_phone, device)
+
+
+@api_endpoint(roles=AGENT_UP, methods=("GET", "POST"))
+def list_conversations(txt: str | None = None, limit: int = 30) -> dict[str, Any]:
+	"""The conversation list: individual numbers with party type and last-message preview →
+	`{rows[{phone_e164, display_name, contact, link_status, party_type, last_body, last_at}], total}`."""
+	return simulator.conversations(txt, limit)

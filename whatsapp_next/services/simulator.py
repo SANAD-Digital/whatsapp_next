@@ -145,7 +145,7 @@ def get_context() -> dict[str, Any]:
 	commands = frappe.get_all(
 		"WhatsApp Command",
 		filters={"status": "Active"},
-		fields=["name", "code", "title", "function", "description", "requires_linked_contact"],
+		fields=["name", "code", "title", "function", "synonyms", "description", "requires_linked_contact"],
 		order_by="code asc",
 	)
 	sample_contacts = frappe.get_all(
@@ -182,3 +182,73 @@ def dry_run_command(text: str, sender: str, device: str | None = None) -> dict[s
 		"error": res.error,
 		"function_ms": res.elapsed_ms,
 	}
+
+
+CONVERSATION_FIELDS: tuple[str, ...] = (
+	"name",
+	"phone_e164",
+	"display_name",
+	"contact",
+	"link_status",
+	"last_seen",
+	"last_direction",
+	"outbound_count",
+	"inbound_count",
+)
+
+
+def _last_message(doctype: str, phone: str) -> dict[str, Any] | None:
+	rows = frappe.get_all(
+		doctype,
+		filters={"phone_e164": phone},
+		fields=["body", "message_type", "creation"],
+		order_by="creation desc",
+		limit=1,
+	)
+	return rows[0] if rows else None
+
+
+def conversations(txt: str | None = None, limit: int = 30) -> dict[str, Any]:
+	"""The simulator's conversation list (the prototype's rail): individual numbers, newest first,
+	each with its party type (the contact's first account link: `Customer`, `Supplier`, …, `None`
+	for a contact with no account, absent for an unsaved number) and a one-line preview of the last
+	message either way. `{rows, total}`."""
+	from whatsapp_next.services.permissions import PARTY_TYPES
+
+	filters: list = [["number_type", "=", "Individual"]]
+	or_filters: dict[str, Any] = {}
+	if txt and txt.strip():
+		like = f"%{txt.strip()}%"
+		or_filters = {"phone_e164": ("like", like), "display_name": ("like", like)}
+	rows = frappe.get_all(
+		"WhatsApp Number",
+		filters=filters,
+		or_filters=or_filters,
+		fields=list(CONVERSATION_FIELDS),
+		order_by="last_seen desc, name asc",
+		limit=max(1, min(cint(limit) or 30, 100)),
+	)
+	total = len(frappe.get_all("WhatsApp Number", filters=filters, or_filters=or_filters, pluck="name"))
+	contacts = sorted({r.contact for r in rows if r.contact})
+	party: dict[str, str] = {}
+	if contacts:
+		for link in frappe.get_all(
+			"Dynamic Link",
+			filters={
+				"parenttype": "Contact",
+				"parent": ("in", contacts),
+				"link_doctype": ("in", list(PARTY_TYPES)),
+			},
+			fields=["parent", "link_doctype"],
+			order_by="idx asc",
+		):
+			party.setdefault(link.parent, link.link_doctype)
+	for r in rows:
+		r["party_type"] = party.get(r.contact) if r.contact else None
+		last_out = _last_message("WhatsApp Log", r.phone_e164)
+		last_in = _last_message("WhatsApp Inbound Message", r.phone_e164)
+		picks = [m for m in (last_out, last_in) if m]
+		last = max(picks, key=lambda m: m.creation) if picks else None
+		r["last_body"] = ((last.body or last.message_type or "") if last else "")[:120]
+		r["last_at"] = last.creation if last else r.last_seen
+	return {"rows": rows, "total": total}

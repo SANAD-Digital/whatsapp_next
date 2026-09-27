@@ -4,208 +4,179 @@
 //   • "Message on behalf" (`simulator.simulate_inbound`) writes a message *as if the contact had
 //     sent it*, runs the command router over it and stores the reply — all marked simulated, and
 //     nothing ever leaves the site. This is how an operator checks what a customer would get.
-//   • "Send test" (`simulator.send_test`) sends one real WhatsApp message from a chosen device.
-//     It is confirmed first, because it cannot be recalled.
+//   • The composer's send (`simulator.send_test`) sends one real WhatsApp message from the chosen
+//     device. It is confirmed first, because it cannot be recalled.
 //
-// Anatomy, from the prototype (`docs/screen/Hub Screen - WhatsApp Simulator.dc.html`): the
-// conversation rail with its search on the inline-start, the identity header with the device
-// picker, the thread (the kit's `ChatThread` over `messages.get_conversation`), the result strip
-// and the composer. Page-local: SimulatorComposer; everything else is kit or API.
+// Anatomy, value for value from the prototype (`docs/screen/Hub Screen - WhatsApp Simulator.dc.html`,
+// D-134): edge to edge, the conversation list (330 px) on the inline-start — "Conversations" with
+// the "Bulk message" button, a pill search, rows with avatar, name, time, last message and the
+// party-type badge (which opens "who is this") — and the thread on the rest: the green header with
+// the device picker, the note line, the kit's `ChatThread` over `messages.get_conversation`, and
+// the prototype's composer (the "#" message-on-behalf button above "+", the rounded field, the round
+// send). Under 900 px the list and the thread take the screen in turn, with a way back.
 
 (() => {
 	const ROUTE = "wa-simulator";
 	const esc = (v) => sanad.ui.escape(v);
 	const fmt_int = (v) => sanad.ui.format_int(v);
 	const PAGE_LENGTH = 50;
-	const RAIL_LENGTH = 30;
+	const LIST_LENGTH = 60;
+	const SEND_ICON =
+		'<svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 10.5l13-6-5 13-2-5-6-2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path></svg>';
+	const SEARCH_ICON =
+		'<svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.6"></circle><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>';
 
-	const device_tone = (status) => (status === "Connected" ? "green" : status === "Disconnected" ? "amber" : "red");
-	/**
-	 * Most numbers a site has ever messaged are not linked to an account, so "Not Linked" is the
-	 * ordinary case, not a warning: it stays gray and the rail reads as a list of names again
-	 * (design critique, 2026-09-24). Only "Linked" earns a colour, because it is the fact that
-	 * lets a command answer about an account.
-	 */
-	const link_tone = (status) => (status === "Linked" ? "green" : "gray");
-
-	/** The rail row title: a name when the number has one, the number itself otherwise. */
+	/** The list row title: a name when the number has one, the number itself otherwise. */
 	const title_of = (row) => cstr(row.display_name) || cstr(row.phone_e164) || cstr(row.name);
+	const hhmm = (ts) => (ts ? frappe.datetime.str_to_obj(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "");
 
-	// ---- the "message on behalf" dialog --------------------------------------------------------
+	/** The badge the prototype puts on a row: the party type, or what the number is not. */
+	const badge_of = (row) => {
+		if (!row.contact) return { text: __("Unknown number", null, "Simulator"), tone: "nf" };
+		if (!row.party_type) return { text: __("No classification"), tone: "wn" };
+		return { text: __(row.party_type), tone: "muted" };
+	};
+
+	// ---- the "message on behalf" panel ---------------------------------------------------------
 
 	/**
-	 * A message written in the contact's name. The commands the site runs are offered as a grid —
-	 * the words a real sender would write — and anything else can be typed by hand; the note says
-	 * plainly that nothing is sent.
+	 * The prototype's panel: a searchable grid of the commands the site answers (the words a real
+	 * sender writes) or a message typed by hand; nothing is sent.
 	 */
-	function on_behalf_dialog({ contact, device, commands, commands_enabled, on_done }) {
-		const dialog = new frappe.ui.Dialog({
-			title: __("Message on behalf"),
-			size: "large",
-			fields: [
-				{ fieldtype: "HTML", fieldname: "intro" },
-				{ fieldtype: "HTML", fieldname: "commands" },
-				{
-					fieldtype: "Small Text",
-					fieldname: "body",
-					label: __("Message text"),
-					reqd: 1,
-					description: __("Typing here clears the chosen command. A text that matches no command gets the default reply."),
-				},
-				{
-					fieldtype: "Check",
-					fieldname: "run_commands",
-					label: __("Run the commands over this message"),
-					default: commands_enabled ? 1 : 0,
-					read_only: commands_enabled ? 0 : 1,
-				},
-			],
-			primary_action_label: __("Send on behalf"),
-			primary_action: (values) => {
-				const text = cstr(values.body).trim();
-				if (!text) return sanad.ui.Toast.warning(__("Write the message the contact would send."));
-				const $btn = dialog.get_primary_btn().prop("disabled", true);
-				sanad.ui
-					.call("simulator.simulate_inbound", {
-						device,
-						sender_phone: contact.phone_e164,
-						text,
-						run_commands: values.run_commands ? 1 : 0,
-					})
-					.then((r) => {
-						dialog.hide();
-						on_done(r, text);
-					})
-					.catch((err) => {
-						$btn.prop("disabled", false);
-						sanad.ui.Toast.error(err);
-					});
-			},
-		});
-		dialog.$wrapper.addClass("sanad-kit sanad-sheet wa-sim-behalf");
-		dialog.get_field("intro").$wrapper.html(`
-			<p class="wa-sim-behalf__intro">${esc(
-				__("Simulate a message from {0} to see the reply it would get.", [title_of(contact)])
-			)}</p>
-			<span class="sanad-chip sanad-chip--sm sanad-tone--blue">${esc(__("Nothing is sent"))}</span>`);
-		const $commands = dialog.get_field("commands").$wrapper;
-		if (!commands_enabled) {
-			$commands.html(
-				`<p class="wa-sim-behalf__note" role="status">${esc(
-					__("Commands are switched off in the settings, so the message is only stored.")
-				)}</p>`
-			);
-		} else if (!commands.length) {
-			new sanad.ui.EmptyState({
-				wrapper: $commands,
-				state: "empty",
-				size: "sm",
-				title: __("No active command"),
-				description: __("A command carries the word a sender writes. Create one to test a reply."),
-				action: { label: __("Open commands"), on_click: () => frappe.set_route("List", "WhatsApp Command") },
-			});
-		} else {
-			$commands.html(`
-				<span class="wa-sim-behalf__label">${esc(__("A command the site answers"))}</span>
-				<div class="wa-sim-behalf__grid">${commands
-					.map(
-						(c) =>
-							`<button type="button" class="wa-sim-behalf__cmd" data-code="${esc(c.code)}" aria-pressed="false">
-								<code>${esc(c.code)}</code>
-								<span>${esc(c.title || c.function || "")}</span>
-								${c.synonyms ? `<span class="wa-sim-behalf__syn">${esc(cstr(c.synonyms).split("\n").slice(0, 2).join(" / "))}</span>` : ""}
-							</button>`
-					)
-					.join("")}</div>`);
-			$commands.find("[data-code]").on("click", (ev) => {
-				const code = $(ev.currentTarget).data("code");
-				dialog.set_value("body", code);
-				$commands.find("[data-code]").attr("aria-pressed", "false");
-				$(ev.currentTarget).attr("aria-pressed", "true");
+	function on_behalf_panel({ contact, device, commands, commands_enabled, draft, on_done }) {
+		const sections = [];
+		if (commands_enabled && commands.length) {
+			sections.push({
+				title: __("A command from the available commands"),
+				cols: 1,
+				fields: [
+					{
+						key: "cmd",
+						label: __("Command"),
+						type: "choice",
+						cols: 2,
+						placeholder: __("Search the commands…"),
+						empty: __("No command matches the search."),
+						options: commands.map((c) => ({
+							value: c.code,
+							label: c.code,
+							mono: true,
+							note: [c.title && c.title !== c.code ? c.title : c.function, cstr(c.synonyms).split("\n").filter(Boolean).slice(0, 2).join(" / ")].filter(Boolean).join(" · "),
+						})),
+					},
+				],
 			});
 		}
-		dialog.show();
-		return dialog;
+		sections.push({
+			title: commands_enabled && commands.length ? __("Or an ordinary message that is not a command") : __("The message"),
+			note: commands_enabled
+				? __("It is recorded in the conversation and in the outbound and inbound logs marked «message on behalf», without a real send.")
+				: __("Commands are switched off in the settings, so the message is only stored."),
+			note_tone: "info",
+			cols: 1,
+			fields: [
+				{
+					key: "body",
+					label: __("Message text"),
+					type: "textarea",
+					rows: 3,
+					value: draft || "",
+					placeholder: __("Write the message as the customer would…"),
+					hint: __("Typing here clears the chosen command; a text that matches no command gets the default reply."),
+				},
+			],
+		});
+		const panel = new sanad.ui.OverlayPanel({
+			type: "modal",
+			width: "46%",
+			title: __("Message on behalf"),
+			subtitle: __("Simulate an incoming message from «{0}» to see the reply it would get", [title_of(contact)]),
+			badge: { text: __("Nothing is really sent"), tone: "info" },
+			sections,
+			on_change: (key, value, p) => {
+				if (key === "body" && cstr(value).trim() && p.get_value("cmd")) p.set_value("cmd", "");
+			},
+			actions: [
+				{ key: "cancel", label: __("Cancel"), close: true },
+				{
+					key: "send",
+					label: __("Send on behalf"),
+					variant: "primary",
+					handler: (values) => {
+						const text = cstr(values.body).trim() || cstr(values.cmd).trim();
+						if (!text) {
+							sanad.ui.Toast.warning(__("Pick a command or write the message the contact would send."));
+							return false;
+						}
+						return sanad.ui
+							.call("simulator.simulate_inbound", { device, sender_phone: contact.phone_e164, text, run_commands: commands_enabled ? 1 : 0 }, { silent: true })
+							.then((r) => on_done(r, text));
+					},
+				},
+			],
+		});
+		panel.show();
+		return panel;
 	}
 
-	// ---- the identity panel --------------------------------------------------------------------
+	// ---- the "who is this" panel ---------------------------------------------------------------
 
-	/** "Who is this?" — the number, what it is linked to, and what has passed between us. */
-	function identity_dialog(row) {
-		const dialog = new frappe.ui.Dialog({
-			title: title_of(row),
-			fields: [{ fieldtype: "HTML", fieldname: "body" }],
-		});
-		dialog.$wrapper.addClass("sanad-kit sanad-sheet wa-sim-who");
-		const $body = dialog.get_field("body").$wrapper;
-		const state = new sanad.ui.EmptyState({ wrapper: $body, state: "loading", rows: 3 });
-		dialog.show();
-		const render = (number, contact) => {
-			const facts = [
-				[__("Number"), `<span dir="ltr" class="sanad-tabular">${esc(number.phone_e164 || number.name)}</span>`],
-				[__("Name"), esc(number.display_name || (contact && contact.full_name) || __("Not saved in contacts"))],
-				[
-					__("Linked to an account"),
-					sanad.ui.StatusBadge.html({
-						label: __(number.link_status || "Not Linked"),
-						colour: link_tone(number.link_status),
-					}),
-				],
-				[
-					__("Messages"),
-					`<span class="sanad-tabular">${esc(
-						__("{0} sent · {1} received", [fmt_int(number.outbound_count), fmt_int(number.inbound_count)])
-					)}</span>`,
-				],
-				[
-					__("Last message"),
-					esc(number.last_seen ? frappe.datetime.str_to_user(number.last_seen) : __("None yet")),
-				],
-				[
-					__("Conversation confirmed"),
-					esc(number.conversation_confirmed ? __("Yes") : __("No")),
-				],
-			];
-			const links = (contact && contact.links) || [];
-			const linked_html = links.length
-				? `<ul class="wa-sim-who__links">${links
-						.map(
-							(l) =>
-								`<li><span class="sanad-chip sanad-chip--sm">${esc(__(l.link_doctype))}</span> ${esc(
-									l.link_title || l.link_name
-								)}</li>`
-						)
-						.join("")}</ul>`
-				: `<p class="wa-sim-who__muted">${esc(
-						number.contact
-							? __("This contact is not linked to any account.")
-							: __("This number is not saved as a contact, so commands that need an account will refuse it.")
-				  )}</p>`;
-			$body.html(`
-				<dl class="wa-sim-who__facts">${facts
-					.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`)
-					.join("")}</dl>
-				<h3 class="wa-sim-who__title">${esc(__("What it is linked to"))}</h3>
-				${linked_html}`);
-		};
+	/** The prototype's contact panel: who the number is, and what it is linked to. */
+	function identity_panel(row) {
 		sanad.ui
 			.call("numbers.get_number", { phone_e164: row.phone_e164 || row.name })
 			.then((number) => {
-				const contact = number.contact_summary;
-				state.hide();
-				if (!number.contact || !contact) return render(number, null);
-				return sanad.ui
-					.call("contacts.get_contact", { name: number.contact }, { silent: true })
-					.then((full) => render(number, full))
-					.catch(() => render(number, contact));
+				const load_contact = number.contact ? sanad.ui.call("contacts.get_contact", { name: number.contact }, { silent: true }).catch(() => null) : Promise.resolve(null);
+				return load_contact.then((contact) => ({ number, contact }));
 			})
-			.catch((err) =>
-				state.error(err, {
-					title: __("Could not read this number"),
-					description: __("It has not been seen in a message yet."),
-				})
-			);
-		return dialog;
+			.then(({ number, contact }) => {
+				const links = (contact && contact.links) || [];
+				const badge = !number.contact
+					? { text: __("Unknown number", null, "Simulator"), tone: "info" }
+					: row.party_type
+					? { text: __(row.party_type), tone: "muted" }
+					: { text: __("No classification"), tone: "warn" };
+				sanad.ui.OverlayPanel.open({
+					type: "modal",
+					width: "44%",
+					title: title_of(row),
+					subtitle: row.phone_e164,
+					subtitle_mono: true,
+					badge,
+					detail: {
+						blocks: [
+							{
+								label: __("Who this is"),
+								list: [
+									{ text: __("Name"), sub: number.display_name || (contact && contact.full_name) || (number.contact ? __("No name") : __("Not saved in contacts")) },
+									{
+										text: __("Classification"),
+										sub: !number.contact ? __("Not saved") : row.party_type ? __(row.party_type) : __("No classification — neither a customer nor a supplier"),
+									},
+									{ text: __("Linked to an account"), sub: number.link_status === "Linked" ? __("Linked to an account in the system") : __("Not linked") },
+									{ text: __("Messages"), sub: __("{0} sent · {1} received", [fmt_int(number.outbound_count), fmt_int(number.inbound_count)]) },
+									{ text: __("Last message"), sub: number.last_seen ? frappe.datetime.str_to_user(number.last_seen) : __("None yet") },
+								],
+							},
+							{
+								label: __("What it is linked to"),
+								list: links.length
+									? links.map((l) => ({ text: l.link_title || l.link_name, sub: __("Account in the system"), badge: __(l.link_doctype), badge_tone: "info" }))
+									: [
+											{
+												text: number.contact ? __("Nothing linked") : __("A number not saved as a contact"),
+												sub: number.contact
+													? __("No accounts and no groups are linked to this contact yet")
+													: __("No accounts and no groups — commands that need a linked account will refuse it"),
+											},
+									  ],
+							},
+						],
+					},
+					actions: [{ key: "close", label: __("Close"), variant: "primary", close: true }],
+				});
+			})
+			.catch((err) => sanad.ui.Toast.error(err));
 	}
 
 	// ---- the page ------------------------------------------------------------------------------
@@ -225,41 +196,38 @@
 
 		build() {
 			this.$main.html(`
-				<div class="wa-sim__rail">
-					<div class="wa-sim__rail-head">
-						<div class="wa-sim__rail-line">
-							<h2 class="wa-sim__rail-title">${esc(__("Conversations"))}</h2>
-							<span class="wa-sim__rail-count sanad-tabular" role="status" aria-atomic="true"></span>
+				<section class="wa-sim__list-pane" aria-label="${esc(__("Conversations"))}">
+					<div class="wa-sim__list-head">
+						<div class="wa-sim__list-line">
+							<h2 class="wa-sim__list-title">${esc(__("Conversations"))}</h2>
+							<button type="button" class="wa-sim__bulk">${SEND_ICON}<span>${esc(__("Send a bulk message"))}</span></button>
 						</div>
-						<input type="search" class="form-control wa-sim__search" dir="auto"
-							placeholder="${esc(__("Search a name or a number…"))}"
-							aria-label="${esc(__("Search a name or a number"))}" />
+						<label class="wa-sim__search">
+							${SEARCH_ICON}
+							<input type="search" dir="auto" placeholder="${esc(__("Search by name or number…"))}" aria-label="${esc(__("Search by name or number"))}" />
+						</label>
 					</div>
-					<div class="wa-sim__list"></div>
-				</div>
-				<div class="wa-sim__main">
+					<div class="wa-sim__list" role="list"></div>
+				</section>
+				<section class="wa-sim__main" aria-label="${esc(__("Conversation"))}">
 					<div class="wa-sim__head"></div>
-					<div class="wa-sim__hint" role="status"></div>
-					<div class="wa-sim__result" role="status" hidden></div>
+					<div class="wa-sim__note" role="status"></div>
 					<div class="wa-sim__thread"></div>
 					<div class="wa-sim__composer"></div>
-				</div>`);
-			this.$rail = this.$main.find(".wa-sim__rail");
+				</section>`);
 			this.$list = this.$main.find(".wa-sim__list");
 			this.$head = this.$main.find(".wa-sim__head");
-			this.$hint = this.$main.find(".wa-sim__hint");
-			this.$result = this.$main.find(".wa-sim__result");
+			this.$note = this.$main.find(".wa-sim__note");
 			this.$thread = this.$main.find(".wa-sim__thread");
 			this.$composer = this.$main.find(".wa-sim__composer");
-			this.$search = this.$main.find(".wa-sim__search");
-			this.$rail_count = this.$main.find(".wa-sim__rail-count");
+			this.$search = this.$main.find(".wa-sim__search input");
 			this.list_state = new sanad.ui.EmptyState({ wrapper: this.$list, state: "loading", rows: 5 });
-			this.thread_state = new sanad.ui.EmptyState({ wrapper: this.$thread, state: "loading", rows: 4 });
+			this.$main.find(".wa-sim__bulk").on("click", () => frappe.new_doc("WhatsApp Campaign"));
 			this.$search.on(
 				"input",
 				sanad.ui.debounce(() => {
 					this.search = cstr(this.$search.val()).trim();
-					this.load_rail();
+					this.load_list();
 				}, 300)
 			);
 		}
@@ -272,15 +240,17 @@
 				.then((context) => {
 					this.context = context;
 					const devices = context.devices || [];
-					this.device = context.default_device || (devices[0] || {}).name || null;
+					const connected = devices.find((d) => d.status === "Connected");
+					this.device = context.default_device || (connected || devices[0] || {}).name || null;
 					this.render_head();
 					this.render_composer();
-					this.load_rail();
+					this.load_list();
 					this.load_thread();
 					this.subscribe();
 				})
 				.catch((err) => {
-					this.thread_state.error(err, {
+					this.$thread.empty();
+					new sanad.ui.EmptyState({ wrapper: this.$thread, state: "error" }).error(err, {
 						title: __("Could not open the simulator"),
 						action: { label: __("Retry"), on_click: () => this.load_context() },
 					});
@@ -295,21 +265,22 @@
 			return this.devices().find((d) => d.name === this.device) || null;
 		}
 
-		// ---- the rail --------------------------------------------------------------------------
+		// ---- the conversation list -------------------------------------------------------------
 
-		load_rail() {
+		load_list() {
 			this.list_state.loading({ rows: 5 });
 			return sanad.ui
-				.call("numbers.search_numbers", { txt: this.search || null, page: 1, page_length: RAIL_LENGTH })
+				.call("simulator.list_conversations", { txt: this.search || null, limit: LIST_LENGTH })
 				.then((r) => {
 					this.rows = (r && r.rows) || [];
+					this.total = r && r.total;
 					this.list_state.hide();
-					this.render_rail(r && r.total);
+					this.render_list();
 				})
 				.catch((err) =>
 					this.list_state.error(err, {
 						title: __("Could not load the numbers"),
-						action: { label: __("Retry"), on_click: () => this.load_rail() },
+						action: { label: __("Retry"), on_click: () => this.load_list() },
 					})
 				);
 		}
@@ -320,79 +291,59 @@
 			const guess = sanad.ui.PhoneField.normalize(this.search);
 			if (!guess.valid) return null;
 			if (this.rows.some((r) => r.phone_e164 === guess.phone_e164)) return null;
-			return { name: guess.phone_e164, phone_e164: guess.phone_e164, display_name: "", link_status: "Not Linked" };
+			return { name: guess.phone_e164, phone_e164: guess.phone_e164, display_name: "", link_status: "Not Linked", typed: true };
 		}
 
-		render_rail(total) {
+		render_list() {
 			const typed = this.typed_number();
 			const rows = typed ? [typed].concat(this.rows) : this.rows;
-			if (total != null) this.rail_total = cint(total);
-			this.$rail_count.text(
-				this.rail_total == null
-					? ""
-					: sanad.ui.plural(this.rail_total, { one: __("{0} number"), other: __("{0} numbers") })
-			);
 			if (!rows.length) {
-				this.$list.empty();
-				new sanad.ui.EmptyState({
-					wrapper: this.$list,
-					state: "empty",
-					size: "sm",
-					title: this.search ? __("No number matches") : __("No number yet"),
-					description: this.search
-						? __("Type a full number with its country code to message it anyway.")
-						: __("Numbers appear here once a message has been exchanged with them."),
-				});
+				this.$list.html(`<span class="wa-sim__none">${esc(this.search ? __("No results match the search.") : __("No conversation yet. Numbers appear here once a message has been exchanged with them."))}</span>`);
 				return;
 			}
 			this.$list.html(
 				rows
 					.map((row) => {
 						const on = this.contact && this.contact.phone_e164 === row.phone_e164;
-						const name = title_of(row);
 						const unsaved = !row.display_name;
-						return `<button type="button" class="wa-sim__row${on ? " wa-sim__row--on" : ""}"
-							data-key="${esc(row.phone_e164)}" aria-current="${on ? "true" : "false"}">
-							<span class="wa-sim__avatar" aria-hidden="true">${esc(unsaved ? "#" : sanad.ui.initials(name))}</span>
-							<span class="wa-sim__row-text">
-								<span class="wa-sim__row-line">
-									<span class="wa-sim__row-name"${unsaved ? ' dir="ltr"' : ""}>${esc(name)}</span>
-									<span class="wa-sim__row-at">${esc(
-										row.last_seen ? frappe.datetime.prettyDate(row.last_seen, true) : ""
-									)}</span>
+						const b = badge_of(row);
+						const preview = row.typed ? __("A new number — type a message to start") : cstr(row.last_body).split("\n")[0] || row.phone_e164;
+						return `<div class="wa-sim__row${on ? " is-on" : ""}" role="listitem">
+							<button type="button" class="wa-sim__row-main" data-key="${esc(row.phone_e164)}" aria-current="${on ? "true" : "false"}">
+								<span class="wa-sim__avatar${!row.contact ? " wa-sim__avatar--nf" : ""}" aria-hidden="true">${esc(unsaved ? "#" : sanad.ui.initials(title_of(row)))}</span>
+								<span class="wa-sim__row-text">
+									<span class="wa-sim__row-line">
+										<span class="wa-sim__row-name"${unsaved ? ' dir="ltr"' : ""}>${esc(title_of(row))}</span>
+										<span class="wa-sim__row-at" dir="ltr">${esc(hhmm(row.last_at))}</span>
+									</span>
+									<span class="wa-sim__row-sub" dir="auto">${esc(preview)}</span>
 								</span>
-								<span class="wa-sim__row-line">
-									<span class="wa-sim__row-sub" dir="ltr">${esc(row.phone_e164)}</span>
-									${sanad.ui.StatusBadge.html({
-										label: __(row.link_status || "Not Linked"),
-										colour: link_tone(row.link_status),
-										icon: false,
-									})}
-								</span>
-							</span>
-						</button>`;
+							</button>
+							${row.typed ? "" : `<button type="button" class="wa-sim__badge wa-sim__badge--${b.tone}" data-who="${esc(row.phone_e164)}" title="${esc(__("Contact details"))}">${esc(b.text)}</button>`}
+						</div>`;
 					})
-					.join("")
+					.join("") +
+					(this.total != null && this.total > rows.length
+						? `<p class="wa-sim__more">${esc(__("Showing {0} of {1}. Search to narrow the list.", [fmt_int(this.rows.length), fmt_int(this.total)]))}</p>`
+						: "")
 			);
 			this.$list.find("[data-key]").on("click", (ev) => {
-				const key = $(ev.currentTarget).data("key");
-				const row = rows.find((r) => r.phone_e164 === key);
+				const row = rows.find((r) => r.phone_e164 === $(ev.currentTarget).data("key"));
 				if (row) this.select(row);
 			});
-			if (total != null && total > rows.length) {
-				$(`<p class="wa-sim__more">${esc(
-					__("Showing {0} of {1}. Search to narrow the list.", [fmt_int(rows.length), fmt_int(total)])
-				)}</p>`).appendTo(this.$list);
-			}
+			this.$list.find("[data-who]").on("click", (ev) => {
+				ev.stopPropagation();
+				const row = rows.find((r) => r.phone_e164 === $(ev.currentTarget).data("who"));
+				if (row) identity_panel(row);
+			});
 		}
 
 		select(row) {
 			this.contact = row;
 			this.$main.addClass("wa-sim--open");
-			this.render_rail();
+			this.render_list();
 			this.render_head();
 			this.render_composer();
-			this.hide_result();
 			this.load_thread();
 			sanad.ui.announce(__("Conversation with {0} opened.", [title_of(row)]));
 		}
@@ -400,140 +351,103 @@
 		back() {
 			this.contact = null;
 			this.$main.removeClass("wa-sim--open");
-			this.render_rail();
+			this.render_list();
 			this.render_head();
 			this.render_composer();
 			this.load_thread();
 		}
 
-		// ---- the header ------------------------------------------------------------------------
+		// ---- the green header ------------------------------------------------------------------
 
 		render_head() {
 			const c = this.contact;
 			const devices = this.devices();
 			const device = this.current_device();
-			const options = devices
-				.map(
-					(d) =>
-						`<option value="${esc(d.name)}" ${d.name === this.device ? "selected" : ""}>${esc(
-							d.status === "Connected"
-								? d.device_name || d.name
-								: __("{0} — not connected", [d.device_name || d.name])
-						)}</option>`
-				)
-				.join("");
+			const sub = c
+				? `${c.phone_e164}${c.link_status === "Linked" ? ` · ${__("Linked to an account", null, "Command Editor")}` : ""}`
+				: __("Pick a contact from the list, then write the message");
 			this.$head.html(`
-				<button type="button" class="wa-sim__back btn btn-default btn-xs">${esc(__("Back to the list"))}</button>
-				<div class="wa-sim__identity">
-					${
-						c
-							? `<span class="wa-sim__avatar wa-sim__avatar--lg" aria-hidden="true">${esc(
-									c.display_name ? sanad.ui.initials(title_of(c)) : "#"
-							  )}</span>`
-							: ""
-					}
-					<span class="wa-sim__identity-text">
-						<span class="wa-sim__identity-name">${esc(c ? title_of(c) : __("WhatsApp simulator"))}</span>
-						<span class="wa-sim__identity-sub"${c ? ' dir="ltr"' : ""}>${esc(
-							c ? c.phone_e164 : __("Pick a contact from the list, then write the message.")
-						)}</span>
-					</span>
-					${
-						c
-							? `<button type="button" class="btn btn-default btn-xs wa-sim__who">${esc(__("Who is this?"))}</button>`
-							: ""
-					}
-				</div>
-				<div class="wa-sim__device">
-					${
-						devices.length
-							? `<span class="wa-sim__dot sanad-tone--${device_tone(device && device.status)}" aria-hidden="true"></span>
-								<label class="sanad-visually-hidden" for="wa-sim-device">${esc(__("Device"))}</label>
-								<select class="form-control wa-sim__device-select" id="wa-sim-device">${options}</select>
-								<button type="button" class="btn btn-default btn-xs wa-sim__devices">${esc(__("Devices"))}</button>`
-							: `<button type="button" class="btn btn-primary btn-xs wa-sim__devices">${esc(__("Pair a device"))}</button>`
-					}
-				</div>`);
+				${c ? `<button type="button" class="wa-sim__back" title="${esc(__("All conversations"))}" aria-label="${esc(__("All conversations"))}">→</button>` : ""}
+				<span class="wa-sim__head-icon" aria-hidden="true">${SEND_ICON.replace('width="14" height="14"', 'width="18" height="18"')}</span>
+				<button type="button" class="wa-sim__head-text"${c ? "" : " disabled"}>
+					<span class="wa-sim__head-title">${esc(c ? title_of(c) : __("WhatsApp simulator"))}</span>
+					<span class="wa-sim__head-sub"${c ? ' dir="auto"' : ""}>${esc(sub)}</span>
+				</button>
+				${
+					devices.length
+						? `<span class="wa-sim__device">
+								<span class="wa-sim__dot${device && device.status === "Connected" ? " is-on" : ""}" aria-hidden="true"></span>
+								<select class="wa-sim__device-select" title="${esc(__("Sending device"))}" aria-label="${esc(__("Sending device"))}">${devices
+									.map((d) => `<option value="${esc(d.name)}" ${d.name === this.device ? "selected" : ""}>${esc((d.device_name || d.name) + (d.status === "Connected" ? "" : ` — ${__("not connected")}`))}</option>`)
+									.join("")}</select>
+							</span>`
+						: `<button type="button" class="wa-sim__device wa-sim__pair">${esc(__("Pair a device"))}</button>`
+				}`);
 			this.$head.find(".wa-sim__back").on("click", () => this.back());
-			this.$head.find(".wa-sim__who").on("click", () => identity_dialog(this.contact));
-			this.$head.find(".wa-sim__devices").on("click", () => frappe.set_route("wa-devices"));
+			this.$head.find(".wa-sim__head-text").on("click", () => c && identity_panel(c));
+			this.$head.find(".wa-sim__pair").on("click", () => frappe.set_route("wa-devices"));
 			this.$head.find(".wa-sim__device-select").on("change", (ev) => {
 				this.device = $(ev.currentTarget).val();
 				this.render_head();
-				this.render_hint();
 			});
-			this.render_hint();
+			this.render_note();
 		}
 
-		/** One line that says what this screen will do next — the prototype's note strip. */
-		render_hint() {
+		/** The prototype's note line: what this screen will do next. */
+		render_note() {
 			const device = this.current_device();
-			if (!this.devices().length) {
-				this.$hint.html(esc(__("No device is set up yet. Pair a phone to send a test message.")));
-				return;
-			}
-			if (!this.contact) {
-				this.$hint.html(esc(__("Pick a contact to open its conversation and enable sending.")));
-				return;
-			}
-			if (device && device.status !== "Connected") {
-				this.$hint.html(
-					esc(__("{0} is not connected. A test send needs a connected device; a message on behalf does not.", [
-						device.device_name || device.name,
-					]))
-				);
-				return;
-			}
-			this.$hint.html(
-				esc(__("Sending is real. “Message on behalf” only simulates an incoming message and sends nothing."))
-			);
+			let text;
+			if (!this.devices().length) text = __("No device is set up yet. Pair a phone to send a test message.");
+			else if (!this.contact) text = __("Pick a contact to enable sending, or use «Send a bulk message» for several groups and numbers at once.");
+			else if (device && device.status !== "Connected")
+				text = __("{0} is not connected. A real send needs a connected device; a message on behalf does not.", [device.device_name || device.name]);
+			else text = __("Sending is real — the «Message on behalf» button simulates a message from the contact without sending.");
+			this.$note.html(`<span class="wa-sim__note-dot" aria-hidden="true"></span><span>${esc(text)}</span>`);
 		}
 
 		// ---- the thread ------------------------------------------------------------------------
+
+		empty_thread(title, text) {
+			this.$thread.html(`<div class="wa-sim__empty"><strong>${esc(title)}</strong><span>${esc(text)}</span></div>`);
+		}
 
 		load_thread() {
 			this.thread = null;
 			this.next_cursor = null;
 			if (!this.contact) {
-				this.$thread.empty();
-				this.thread_state = new sanad.ui.EmptyState({
-					wrapper: this.$thread,
-					state: "empty",
-					title: __("Pick a conversation"),
-					description: __("The numbers on the side are the ones this site has messaged. Pick one to see its thread."),
-				});
+				this.empty_thread(__("Pick a conversation"), __("The contacts are in the list beside. To send to several groups and numbers at once use «Send a bulk message»."));
+				return Promise.resolve();
+			}
+			if (this.contact.typed) {
+				this.empty_thread(__("No messages yet"), __("Write in the box below to start the conversation — it shows here as the recipient gets it."));
 				return Promise.resolve();
 			}
 			this.$thread.empty();
-			this.thread_state = new sanad.ui.EmptyState({ wrapper: this.$thread, state: "loading", rows: 4 });
+			const state = new sanad.ui.EmptyState({ wrapper: this.$thread, state: "loading", rows: 4 });
 			return this.fetch_page()
 				.then((page) => {
 					const rows = ((page && page.rows) || []).slice().reverse();
 					this.next_cursor = page && page.has_more ? page.next_cursor : null;
-					this.thread_state.hide();
+					state.hide();
 					this.$thread.empty();
+					if (!rows.length) {
+						this.empty_thread(__("No messages yet"), __("Write in the box below to start the conversation — it shows here as the recipient gets it."));
+						return;
+					}
 					this.thread = new sanad.ui.ChatThread({
 						wrapper: this.$thread,
 						rows,
 						has_more: !!this.next_cursor,
 						on_load_more: () => this.load_older(),
-						on_row_click: (row) =>
-							frappe.set_route(
-								"Form",
-								row.direction === "Outbound" ? "WhatsApp Log" : "WhatsApp Inbound Message",
-								row.name
-							),
-						empty_text: __("No message yet"),
-						empty_description: __("Write below to send a test, or simulate one on behalf of this contact."),
+						on_row_click: (row) => frappe.set_route("Form", row.direction === "Outbound" ? "WhatsApp Log" : "WhatsApp Inbound Message", row.name),
+						empty_text: __("No messages yet"),
 					});
 				})
 				.catch((err) => {
 					const forbidden = err && (err.http_status === 403 || /PermissionError/.test(err.exc_type || ""));
-					this.thread_state.set("error", {
+					state.set("error", {
 						title: forbidden ? __("No access to conversations") : __("Could not load the conversation"),
-						description: forbidden
-							? __("You do not have permission to read messages. Ask an administrator for access.")
-							: err.message,
+						description: forbidden ? __("You do not have permission to read messages. Ask an administrator for access.") : err.message,
 						action: forbidden ? null : { label: __("Retry"), on_click: () => this.load_thread() },
 					});
 				});
@@ -552,10 +466,7 @@
 				this.next_cursor = page && page.has_more ? page.next_cursor : null;
 				const added = this.thread.prepend(rows);
 				this.thread.set_has_more(!!this.next_cursor);
-				if (added)
-					sanad.ui.announce(
-						sanad.ui.plural(added, { one: __("{0} older message loaded."), other: __("{0} older messages loaded.") })
-					);
+				if (added) sanad.ui.announce(sanad.ui.plural(added, { one: __("{0} older message loaded."), other: __("{0} older messages loaded.") }));
 			});
 		}
 
@@ -567,12 +478,8 @@
 			this._refreshing = true;
 			return this.fetch_page()
 				.then((page) => {
-					const rows = ((page && page.rows) || []).slice().reverse();
-					const added = this.thread.append(rows);
-					if (added)
-						sanad.ui.announce(
-							sanad.ui.plural(added, { one: __("{0} new message."), other: __("{0} new messages.") })
-						);
+					const added = this.thread.append(((page && page.rows) || []).slice().reverse());
+					if (added) sanad.ui.announce(sanad.ui.plural(added, { one: __("{0} new message."), other: __("{0} new messages.") }));
 				})
 				.catch(() => {})
 				.then(() => {
@@ -583,43 +490,26 @@
 		// ---- the composer ----------------------------------------------------------------------
 
 		/**
-		 * The prototype's composer is one line, not a form: the text field, the clear inside it,
-		 * and the verbs at its inline-end (`docs/component/Chat Thread.dc.html`). The attachment
-		 * button the prototype also draws is Gap G-04 — `simulator.send_test` takes a body only —
-		 * so it is not drawn at all rather than drawn dead.
-		 *
-		 * The field carries no `dir="auto"`: an empty one resolves to LTR, which in Arabic would
-		 * lay the placeholder under the clear button. It follows the page instead, and the bidi
-		 * algorithm still sets a mixed line correctly.
+		 * The prototype's composer (`docs/component/Chat Thread.dc.html`): the round "#" (message on
+		 * behalf) above the round "+", the rounded two-line field with its clear, and the round send.
+		 * "+" chooses the kind of message in the prototype; `simulator.send_test` takes a text body
+		 * only (Gap G-04), so it is drawn disabled with that reason rather than drawn dead.
 		 */
 		render_composer() {
 			const enabled = !!this.contact;
 			this.$composer.html(`
-				<div class="wa-sim__composer-row">
-					<div class="wa-sim__field">
-						<label class="sanad-visually-hidden" for="wa-sim-body">${esc(__("Message"))}</label>
-						<textarea id="wa-sim-body" class="form-control wa-sim__input" rows="1"
-							placeholder="${esc(
-								enabled ? __("Write the message…") : __("Pick a contact from the list first…")
-							)}"></textarea>
-						<button type="button" class="wa-sim__clear" aria-label="${esc(__("Clear text"))}"
-							title="${esc(__("Clear text"))}">&times;</button>
-					</div>
-					<div class="wa-sim__actions">
-						${
-							enabled
-								? `<button type="button" class="btn btn-default btn-sm wa-sim__behalf">${esc(
-										__("Message on behalf")
-								  )}</button>`
-								: ""
-						}
-						<button type="button" class="btn btn-primary btn-sm wa-sim__send">${esc(__("Send test"))}</button>
-					</div>
-				</div>`);
+				<span class="wa-sim__tools">
+					${enabled ? `<button type="button" class="wa-sim__round wa-sim__round--info wa-sim__behalf" title="${esc(__("Message on behalf — simulate a message from the contact without a real send"))}" aria-label="${esc(__("Message on behalf"))}">#</button>` : ""}
+					<button type="button" class="wa-sim__round wa-sim__round--plain" disabled title="${esc(__("Attachments are not supported in a test send yet"))}" aria-label="${esc(__("Message type"))}">+</button>
+				</span>
+				<span class="wa-sim__field">
+					<label class="sanad-visually-hidden" for="wa-sim-body">${esc(__("Message"))}</label>
+					<textarea id="wa-sim-body" class="wa-sim__input" rows="2" placeholder="${esc(enabled ? __("Write your message…") : __("Pick a contact from the list first…"))}"${enabled ? "" : " disabled"}></textarea>
+					<button type="button" class="wa-sim__clear" aria-label="${esc(__("Clear the text"))}" title="${esc(__("Clear the text"))}">×</button>
+				</span>
+				<button type="button" class="wa-sim__round wa-sim__round--pri wa-sim__send" title="${esc(__("Send"))}" aria-label="${esc(__("Send"))}">${SEND_ICON}</button>`);
 			this.$input = this.$composer.find(".wa-sim__input");
-			this.$composer.find(".wa-sim__clear").on("click", () => {
-				this.$input.val("").focus();
-			});
+			this.$composer.find(".wa-sim__clear").on("click", () => this.$input.val("").trigger("focus"));
 			this.$composer.find(".wa-sim__send").on("click", () => this.ask_send());
 			this.$composer.find(".wa-sim__behalf").on("click", () => this.ask_behalf());
 			// Ctrl / Cmd + Enter sends, so a multi-line message can still be written comfortably
@@ -634,42 +524,23 @@
 		/** The three guards the prototype states, each naming what to do about it. */
 		guard({ need_device = true } = {}) {
 			if (!this.contact) {
-				new sanad.ui.Toast({
-					tone: "warning",
-					title: __("No conversation is open"),
-					message: __("Pick a contact from the list."),
-				});
+				new sanad.ui.Toast({ tone: "warning", title: __("No conversation is open"), message: __("Pick a contact from the list.") });
 				return false;
 			}
-			const body = cstr(this.$input.val()).trim();
-			if (!body && need_device) {
-				new sanad.ui.Toast({
-					tone: "warning",
-					title: __("The message is empty"),
-					message: __("Write the message text."),
-				});
+			if (!need_device) return true;
+			if (!cstr(this.$input.val()).trim()) {
+				new sanad.ui.Toast({ tone: "warning", title: __("The message is empty"), message: __("Write the message text.") });
 				return false;
 			}
-			if (need_device) {
-				const device = this.current_device();
-				if (!device) {
-					new sanad.ui.Toast({
-						tone: "warning",
-						title: __("No device is set up yet"),
-						message: __("Pair a phone before sending a test."),
-						action: { label: __("Open devices"), on_click: () => frappe.set_route("wa-devices") },
-					});
-					return false;
-				}
-				if (device.status !== "Connected") {
-					new sanad.ui.Toast({
-						tone: "warning",
-						title: __("The device is not connected"),
-						message: __("Pick a connected device above the conversation."),
-						action: { label: __("Open devices"), on_click: () => frappe.set_route("wa-devices") },
-					});
-					return false;
-				}
+			const device = this.current_device();
+			if (!device || device.status !== "Connected") {
+				new sanad.ui.Toast({
+					tone: "warning",
+					title: device ? __("The device is not connected") : __("No device is set up yet"),
+					message: device ? __("Pick a connected device from the list at the top of the conversation.") : __("Pair a phone before sending a test."),
+					action: { label: __("Open devices"), on_click: () => frappe.set_route("wa-devices") },
+				});
+				return false;
 			}
 			return true;
 		}
@@ -686,19 +557,17 @@
 					{ label: __("Device"), value: device.device_name || device.name },
 					{ label: __("Message"), value: body.length > 60 ? `${body.slice(0, 60)}…` : body },
 				],
-				ack_checkbox: __("I understand a real message will be sent."),
 				confirm_label: __("Send message"),
-				on_confirm: () =>
-					sanad.ui.call("simulator.send_test", {
-						device: this.device,
-						phone: this.contact.phone_e164,
-						body,
-					}),
+				on_confirm: () => sanad.ui.call("simulator.send_test", { device: this.device, phone: this.contact.phone_e164, body }),
 			})
 				.then((r) => {
 					this.$input.val("");
+					this.sent_outbound = r && r.outbound;
 					sanad.ui.Toast.success(__("Test message queued"));
-					this.show_send_result(r && r.outbound);
+					if (this.contact.typed) {
+						this.contact.typed = false;
+						this.load_list();
+					}
 					this.refresh_newest();
 				})
 				.catch(() => {});
@@ -706,8 +575,7 @@
 
 		ask_behalf() {
 			if (!this.guard({ need_device: false })) return;
-			const device = this.current_device();
-			if (!device) {
+			if (!this.current_device()) {
 				new sanad.ui.Toast({
 					tone: "warning",
 					title: __("No device is set up yet"),
@@ -717,68 +585,30 @@
 				return;
 			}
 			const context = this.context || {};
-			const dialog = on_behalf_dialog({
+			on_behalf_panel({
 				contact: this.contact,
 				device: this.device,
 				commands: context.commands || [],
 				commands_enabled: !!context.commands_enabled,
-				on_done: (r, text) => {
+				draft: cstr(this.$input.val()).trim(),
+				on_done: (r) => {
 					this.$input.val("");
-					this.show_behalf_result(r, text);
-					this.refresh_newest();
+					this.behalf_toast(r);
+					if (this.contact.typed) this.contact.typed = false;
+					this.load_list();
+					this.load_thread();
 				},
 			});
-			const draft = cstr(this.$input.val()).trim();
-			if (draft) dialog.set_value("body", draft);
 		}
 
-		// ---- the result strip --------------------------------------------------------------------
-
-		hide_result() {
-			this.$result.attr("hidden", true).empty();
-			this.result_outbound = null;
-		}
-
-		strip({ tone, title, lines, open }) {
-			this.$result.removeAttr("hidden").html(`
-				<div class="wa-sim__strip sanad-tone--${tone}">
-					<span class="wa-sim__strip-title">${esc(title)}</span>
-					${(lines || []).map((l) => `<span class="wa-sim__strip-line">${esc(l)}</span>`).join("")}
-					<span class="wa-sim__strip-actions">
-						${open ? `<button type="button" class="btn btn-default btn-xs wa-sim__open">${esc(__("Open in the log"))}</button>` : ""}
-						<button type="button" class="btn btn-default btn-xs wa-sim__hide">${esc(__("Hide"))}</button>
-					</span>
-				</div>`);
-			this.$result.find(".wa-sim__hide").on("click", () => this.hide_result());
-			if (open) this.$result.find(".wa-sim__open").on("click", () => frappe.set_route("Form", open.doctype, open.name));
-		}
-
-		show_send_result(outbound) {
-			this.result_outbound = outbound;
-			this.strip({
-				tone: "blue",
-				title: __("Test message queued"),
-				lines: [__("Status: {0}", [__("Queued")])],
-				open: outbound ? { doctype: "WhatsApp Log", name: outbound } : null,
-			});
-		}
-
-		/** The simulation's own answer: which command matched, why it was blocked, what it replied. */
-		show_behalf_result(r, text) {
-			const blocked = !!r.block_reason;
-			const matched = !!r.command;
-			const lines = [__("Sent on behalf: {0}", [text.length > 60 ? `${text.slice(0, 60)}…` : text])];
-			if (blocked) lines.push(__("Blocked: {0}", [__(r.block_reason)]));
-			else if (matched) lines.push(__("Command: {0}", [r.command]));
-			else lines.push(__("No command matched this message."));
-			if (r.reply_body) lines.push(__("Reply: {0}", [r.reply_body.split("\n")[0]]));
-			else if (r.error) lines.push(__("Error: {0}", [r.error]));
-			this.strip({
-				tone: blocked ? "amber" : matched ? "green" : "gray",
-				title: __("Simulated — nothing was sent"),
-				lines,
-				open: r.inbound ? { doctype: "WhatsApp Inbound Message", name: r.inbound } : null,
-			});
+		/** The simulation's own answer, said once: which command matched, or why it was refused. */
+		behalf_toast(r) {
+			const detail = r.block_reason
+				? __("Refused: {0}", [__(r.block_reason)])
+				: r.command
+				? __("Command: {0}", [r.command])
+				: __("No command matched this message.");
+			new sanad.ui.Toast({ tone: r.block_reason ? "warning" : "success", title: __("Simulated — nothing was sent"), message: detail });
 		}
 
 		// ---- realtime ----------------------------------------------------------------------------
@@ -789,17 +619,13 @@
 			this._on_status = (p) => {
 				if (!p || !p.outbound) return;
 				if (this.thread) this.thread.update_status(p.outbound, p.status);
-				if (this.result_outbound && p.outbound === this.result_outbound) {
-					this.strip({
-						tone: p.status === "Failed" ? "red" : "green",
-						title: __("Test message {0}", [__(p.status)]),
-						lines: p.error_code ? [__("Error: {0}", [p.error_code])] : [],
-						open: { doctype: "WhatsApp Log", name: p.outbound },
-					});
-					this.result_outbound = p.outbound;
-				}
+				if (this.sent_outbound && p.outbound === this.sent_outbound && p.status === "Failed")
+					new sanad.ui.Toast({ tone: "error", title: __("Test message {0}", [__(p.status)]), message: p.error_code ? __("Error: {0}", [p.error_code]) : "" });
 			};
-			this._on_inbound = sanad.ui.throttle(() => this.refresh_newest(), 1500);
+			this._on_inbound = sanad.ui.throttle(() => {
+				this.refresh_newest();
+				this.load_list();
+			}, 1500);
 			this._on_device = (p) => {
 				if (!p || !p.device) return;
 				const device = this.devices().find((d) => d.name === p.device);
@@ -826,11 +652,7 @@
 	}
 
 	frappe.pages[ROUTE].on_page_load = function (wrapper) {
-		const page = frappe.ui.make_app_page({
-			parent: wrapper,
-			title: __("WhatsApp Simulator"),
-			single_column: true,
-		});
+		const page = frappe.ui.make_app_page({ parent: wrapper, title: __("WhatsApp Simulator"), single_column: true });
 		wrapper.whatsapp_next = new Simulator(page);
 		frappe.provide("whatsapp_next.pages");
 		whatsapp_next.pages.simulator = wrapper.whatsapp_next;

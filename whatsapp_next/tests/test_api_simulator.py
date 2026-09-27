@@ -166,6 +166,21 @@ class TestApiSimulator(IntegrationTestCase):
 			with self.assertRaises(WAValidationError):
 				api.simulate_inbound(device=self.device, sender_phone=P1, text="  ")
 
+	def test_list_conversations(self):
+		from whatsapp_next.services import numbers_materializer
+
+		with as_user("WhatsApp Agent"):
+			api.simulate_inbound(device=self.device, sender_phone=P1, text=f"{TAG} list me", run_commands="0")
+		numbers_materializer.refresh_keys([P1])
+		with as_user("WhatsApp Agent"):
+			out = api.list_conversations(txt="920301")
+		row = next(r for r in out["rows"] if r["phone_e164"] == P1)
+		self.assertEqual(row["last_body"], f"{TAG} list me")
+		self.assertIsNone(row["party_type"])  # an unsaved number: no contact, no party
+		self.assertGreaterEqual(out["total"], 1)
+		with as_user("_none"), self.assertRaises(WAPermissionError):
+			api.list_conversations()
+
 	def test_send_test(self):
 		with as_user("WhatsApp Agent"), patch.object(frappe, "enqueue") as enq:
 			res = api.send_test(device=self.device, phone="0500920301", body=f"{TAG} test send")

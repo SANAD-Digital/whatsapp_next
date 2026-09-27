@@ -166,6 +166,7 @@ class TestCommandRouter(IntegrationTestCase):
 			seen["dry_run"] = ctx.dry_run
 			return original(ctx)
 
+		replies_before = frappe.db.count("WhatsApp Log", {"source_type": "Command Reply"})
 		with patch.dict(registry.FUNCTION_HANDLERS, {"ping": spy}):
 			res = simulator.simulate_inbound(self.device, P_UNLINKED, "#ping hello world")
 		self.assertEqual(res.status, "Executed")
@@ -174,7 +175,8 @@ class TestCommandRouter(IntegrationTestCase):
 		self.assertEqual(res.args, {"text": "hello world"})
 		self.assertTrue(res.replies[0]["body"].startswith("pong: hello world"))
 		self.assertEqual(res.outbound, [])  # dry run: nothing stored
-		self.assertEqual(frappe.db.count("WhatsApp Log", {"source_type": "Command Reply"}), 0)
+		# the site's own simulated replies stay; this run adds none (R-041)
+		self.assertEqual(frappe.db.count("WhatsApp Log", {"source_type": "Command Reply"}), replies_before)
 		self.assertGreaterEqual(frappe.db.get_value("WhatsApp Function", "ping", "call_count"), 1)
 
 	def test_unknown_help_and_blocks(self):
