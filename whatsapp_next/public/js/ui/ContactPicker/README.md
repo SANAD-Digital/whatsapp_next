@@ -35,7 +35,15 @@ new sanad.ui.ContactPicker({ target_doctype, target_name, preselect: { source: "
 new sanad.ui.ContactPicker({ target_doctype, target_name, preselect: { source: "phonebook", kind: "csv" }, on_commit });
 ```
 
-Options: `target_doctype`, `target_name`, `operation` (`"add"` | `"remove"`), `sources?`
+**Local mode** — a host that keeps its own list (an alert's recipients, a draft) passes
+`on_pick(rows)` instead of a target: the tray classifies against the keys it passes as `existing`
+(`picker.classify`, nothing written), and "Continue" hands back the available rows:
+
+```js
+new sanad.ui.ContactPicker({ title: __("Choose recipients"), existing: ["+9665…"], on_pick: (rows) => keep(rows) });
+```
+
+Options: `on_pick?(rows, picker)` and `existing?: string[]` (local mode), `target_doctype`, `target_name`, `operation` (`"add"` | `"remove"`), `sources?`
 (keys or aliases: `groups`, `contacts`, `doctype`, `excel`, `phonebook`, `manual`),
 `preselect?: {source, ref?, kind?}`, `on_commit(result, picker)`, `on_close?(committed)`,
 `title?`, `group_doctype?` (default `sanad.ui.config.defaults.group_doctype`; kind chips from its `kind` Select; excluded as a source when it is

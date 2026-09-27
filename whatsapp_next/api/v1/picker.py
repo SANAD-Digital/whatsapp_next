@@ -101,6 +101,13 @@ def preview(target_doctype: str, target_name: str, rows: list[dict] | None = Non
 	return picker.preview(target_doctype, target_name, rows or []).as_dict()
 
 
+@api_endpoint(roles=PICKER_ROLES)
+def classify(rows: list[dict] | None = None, existing: list[str] | None = None) -> dict[str, Any]:
+	"""Classify `rows` with no target document — the host keeps the list and passes the E.164 keys it
+	already holds as `existing` → the same shape as `preview`. Writes nothing."""
+	return picker.classify_rows(rows or [], [str(k) for k in existing or []][:5000]).as_dict()
+
+
 @api_endpoint(roles=None, schema={"source_type": {"enum": list(picker.SOURCE_TYPES)}})
 def commit_add(
 	target_doctype: str,

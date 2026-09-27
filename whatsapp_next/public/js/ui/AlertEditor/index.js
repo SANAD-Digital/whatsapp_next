@@ -24,7 +24,6 @@ frappe.provide("sanad.ui");
 	const esc = (v) => sanad.ui.escape(v == null ? "" : v);
 	const WEEK_ORDER = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 	const JS_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-	const QUICK_TIMES = ["07:00", "08:00", "12:00", "17:00", "20:00"];
 	const PERIOD_LABEL = () => ({
 		Daily: __("Every day"),
 		Weekly: __("Every week"),
@@ -58,7 +57,6 @@ frappe.provide("sanad.ui");
 		constructor(opts = {}) {
 			this.opts = opts;
 			this.ui = {
-				add_type: "User",
 				add_q: "",
 				results: [],
 				pick_open: null, // "report" | "recipient" | "print_format" | "letter_head" | "language"
@@ -110,6 +108,7 @@ frappe.provide("sanad.ui");
 				if (this.ui.pick_open && !$(e.target).closest(".sanad-ae__pick").length) this.close_pick();
 			});
 			this.untrap = sanad.ui.trap_focus(this.$root);
+			this.install_report_shim();
 			this.refresh_preview = sanad.ui.debounce(() => this.run_preview(), 600);
 			this.search_later = sanad.ui.debounce(() => this.run_search(), 250);
 		}
@@ -120,6 +119,7 @@ frappe.provide("sanad.ui");
 				return;
 			}
 			this.untrap && this.untrap();
+			frappe.query_report = this._prev_query_report;
 			$("body").removeClass("sanad-ae-open");
 			this.$root.remove();
 			if (this.previous_focus && this.previous_focus.focus) this.previous_focus.focus();
@@ -136,7 +136,10 @@ frappe.provide("sanad.ui");
 				const $name = this.$root.find("[data-in=alert_name]");
 				if (!this.draft.name) $name.trigger("focus");
 				this.run_preview();
-				if (this.draft.report) this.load_columns();
+				if (this.draft.report) {
+					this.load_report_filters();
+					this.load_columns();
+				}
 			} catch (err) {
 				this.$dlg.html(`
 					<div class="sanad-ae__loading" role="alert">
@@ -161,6 +164,8 @@ frappe.provide("sanad.ui");
 				report: a.report || null,
 				filters: filters.rows,
 				filters_raw: filters.raw,
+				rf: this.parse_report_filters(a.filters_json, a.dynamic_filters_json),
+				builder: this.parse_builder(a.filters_json),
 				template: a.template || null,
 				message: a.message || "",
 				body_mode: a.template ? "template" : "custom",
@@ -177,6 +182,29 @@ frappe.provide("sanad.ui");
 					report_column: r.report_column || null,
 				})),
 			};
+		}
+
+		/** A report's own filters: `{values{field: value}, tokens{field: "today" | "last_days:7"}}`. */
+		parse_report_filters(static_json, dynamic_json) {
+			const parse = (t) => {
+				try {
+					const v = typeof t === "string" ? JSON.parse(t) : t;
+					return v && typeof v === "object" && !Array.isArray(v) ? v : {};
+				} catch (e) {
+					return {};
+				}
+			};
+			return { values: parse(static_json), tokens: parse(dynamic_json) };
+		}
+
+		/** A Report Builder report's filters, as Frappe list filters, or null. */
+		parse_builder(static_json) {
+			try {
+				const v = typeof static_json === "string" ? JSON.parse(static_json) : static_json;
+				return Array.isArray(v) ? v : null;
+			} catch (e) {
+				return null;
+			}
 		}
 
 		/** Filters as rows `{field, mode: "value"|"token", value, token, n}`; `raw` when they do not fit rows. */
@@ -228,7 +256,19 @@ frappe.provide("sanad.ui");
 				recipients: d.recipients.filter((r) => d.content_type === "Report" || r.recipient_type !== "Report Column"),
 			};
 			if (d.name) out.name = d.name;
-			if (this.ui.json_mode || d.filters_raw) {
+			const mode = this.ui.filter_mode;
+			if (mode === "builder") {
+				out.filters_json = d.builder && d.builder.length ? JSON.stringify(d.builder) : null;
+				out.dynamic_filters_json = null;
+			} else if (mode === "report") {
+				const values = {};
+				Object.entries(d.rf.values || {}).forEach(([k, v]) => {
+					if (d.rf.tokens[k] || v === "" || v == null || (Array.isArray(v) && !v.length)) return;
+					values[k] = v;
+				});
+				out.filters_json = Object.keys(values).length ? JSON.stringify(values) : null;
+				out.dynamic_filters_json = Object.keys(d.rf.tokens || {}).length ? JSON.stringify(d.rf.tokens) : null;
+			} else if (this.ui.json_mode || d.filters_raw) {
 				const raw = d.filters_raw || {};
 				out.filters_json = raw.filters_json || null;
 				out.dynamic_filters_json = raw.dynamic_filters_json || null;
@@ -341,41 +381,40 @@ frappe.provide("sanad.ui");
 			const d = this.draft;
 			const o = this.data.options || {};
 			const labels = PERIOD_LABEL();
-			let detail = "";
+			const select = (key, options, value, label) =>
+				`<select class="wa-select sanad-ae__inline" data-ch="${esc(key)}" aria-label="${esc(label)}">${options
+					.map((opt) => `<option value="${esc(opt.value)}"${String(opt.value) === String(value) ? " selected" : ""}>${esc(opt.label)}</option>`)
+					.join("")}</select>`;
+			const days = Array.from({ length: 28 }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
+			const parts = [
+				`<span class="sanad-ae__word">${esc(__("Send it", null, "alert schedule"))}</span>`,
+				select("periodicity", (o.periodicity || Object.keys(labels)).map((p) => ({ value: p, label: labels[p] || __(p) })), d.periodicity, __("Periodicity")),
+			];
 			if (d.periodicity === "Weekly") {
-				detail = `<div class="sanad-ae__row"><span class="sanad-ae__label">${esc(__("On"))}</span><div class="sanad-ae__chips">${WEEK_ORDER.filter((w) => (o.day_of_week || WEEK_ORDER).includes(w))
-					.map((w) => this.chip(__(w), { act: "weekday", value: w, on: d.day_of_week === w }))
-					.join("")}</div></div>`;
-			}
-			if (d.periodicity === "Yearly") {
-				detail += `<div class="sanad-ae__row"><span class="sanad-ae__label">${esc(__("Month"))}</span><div class="sanad-ae__grid sanad-ae__grid--months">${(o.month_of_year || [])
-					.map((m) => this.chip(__(m), { act: "month", value: m, on: d.month_of_year === m }))
-					.join("")}</div></div>`;
+				parts.push(`<span class="sanad-ae__word">${esc(__("on", null, "alert schedule"))}</span>`);
+				parts.push(select("day_of_week", WEEK_ORDER.filter((w) => (o.day_of_week || WEEK_ORDER).includes(w)).map((w) => ({ value: w, label: __(w) })), d.day_of_week, __("Day of the week")));
 			}
 			if (["Monthly", "Quarterly", "Yearly"].includes(d.periodicity)) {
-				const days = Array.from({ length: 28 }, (_, i) => i + 1);
-				detail += `<div class="sanad-ae__row"><span class="sanad-ae__label">${esc(__("Day"))}</span><div class="sanad-ae__grid sanad-ae__grid--days" role="group" aria-label="${esc(__("Day of the month"))}">${days
-					.map((n) => this.chip(String(n), { act: "day", value: n, on: d.day_of_month === n, title: __("Day {0}", [n]) }))
-					.join("")}</div></div>
-					<p class="sanad-ae__hint">${esc(
-						d.periodicity === "Quarterly"
-							? __("In the first month of each quarter. Days 29–31 are left out so that every month has the day.")
-							: __("Days 29–31 are left out so that every month has the day.")
-					)}</p>`;
+				parts.push(`<span class="sanad-ae__word">${esc(__("on day", null, "alert schedule"))}</span>`);
+				parts.push(select("day_of_month", days, d.day_of_month, __("Day of the month")));
 			}
-			const done = !!d.notification_time;
+			if (d.periodicity === "Yearly") {
+				parts.push(`<span class="sanad-ae__word">${esc(__("of", null, "alert schedule"))}</span>`);
+				parts.push(select("month_of_year", (o.month_of_year || []).map((m) => ({ value: m, label: __(m) })), d.month_of_year, __("Month")));
+			}
+			parts.push(`<span class="sanad-ae__word">${esc(__("at", null, "alert schedule"))}</span>`);
+			parts.push(`<input type="time" class="wa-input sanad-ae__inline sanad-ae__time-in" data-in="notification_time" value="${esc(d.notification_time)}" aria-label="${esc(__("Time"))}">`);
+			const note =
+				d.periodicity === "Quarterly"
+					? __("In the first month of each quarter. Days 29–31 are left out so that every month has the day.")
+					: ["Monthly", "Yearly"].includes(d.periodicity)
+						? __("Days 29–31 are left out so that every month has the day.")
+						: "";
 			this.$root.find("[data-step=when]").html(`
-				${this.step_head(1, "when", __("When does it go out?"), done)}
+				${this.step_head(1, "when", __("When does it go out?"), !!d.notification_time)}
 				<div class="sanad-ae__step-body">
-					${this.seg("period", (o.periodicity || Object.keys(labels)).map((p) => ({ value: p, label: labels[p] || __(p) })), d.periodicity, __("Periodicity"))}
-					${detail}
-					<div class="sanad-ae__row">
-						<span class="sanad-ae__label">${esc(__("At"))}</span>
-						<div class="sanad-ae__time">
-							<input type="time" class="wa-input sanad-ae__time-in" data-in="notification_time" value="${esc(d.notification_time)}" aria-label="${esc(__("Time"))}">
-							<div class="sanad-ae__chips">${QUICK_TIMES.map((t) => this.chip(t, { act: "time", value: t, on: d.notification_time === t })).join("")}</div>
-						</div>
-					</div>
+					<div class="sanad-ae__sentence-line">${parts.join("")}</div>
+					${note ? `<p class="sanad-ae__hint">${esc(note)}</p>` : ""}
 					<div class="sanad-ae__next" data-slot="next"></div>
 				</div>`);
 			this.draw_next();
@@ -461,7 +500,11 @@ frappe.provide("sanad.ui");
 						<div class="sanad-ae__field">
 							<div class="sanad-ae__field-line">
 								<span class="sanad-ae__label">${esc(__("Filters"))}</span>
-								<button type="button" class="sanad-ae__link" data-act="json">${esc(this.ui.json_mode || d.filters_raw ? __("Edit as rows") : __("Edit as JSON"))}</button>
+								${
+									["report", "builder", "loading"].includes(this.ui.filter_mode)
+										? `<span class="sanad-ae__sub">${esc(this.ui.filter_mode === "builder" ? __("The report's list filters") : this.ui.filter_mode === "report" ? __("The report's own filters") : "")}</span>`
+										: `<button type="button" class="sanad-ae__link" data-act="json">${esc(this.ui.json_mode || d.filters_raw ? __("Edit as rows") : __("Edit as JSON"))}</button>`
+								}
 							</div>
 							<div data-slot="filters"></div>
 						</div>
@@ -531,11 +574,183 @@ frappe.provide("sanad.ui");
 			this.draw_sentence();
 		}
 
+		/** The report's filters: its own controls (script / query report), Frappe's filter component
+		 * (Report Builder — a list of one DocType), or key / value rows when it defines none. */
 		draw_filters() {
+			const $f = this.$root.find("[data-slot=filters]");
+			if (!$f.length) return;
+			const mode = this.ui.filter_mode;
+			if (mode === "loading") return $f.html(`<p class="sanad-ae__hint">${esc(__("Reading the report's filters…"))}</p>`);
+			if (mode === "builder") return this.draw_builder($f);
+			if (mode === "report") return this.draw_report_controls($f);
+			return this.draw_filter_rows();
+		}
+
+		draw_builder($f) {
+			const d = this.draft;
+			const info = this.ui.report_info || {};
+			$f.html(`<div class="sanad-ae__fg"></div><p class="sanad-ae__hint">${esc(
+				__("Filters on {0}. For a date that moves, choose the \"Timespan\" condition (today, this week, last month…).", [__(info.ref_doctype)])
+			)}</p>`);
+			try {
+				this.fg = new frappe.ui.FilterGroup({
+					parent: $f.find(".sanad-ae__fg"),
+					doctype: info.ref_doctype,
+					on_change: () => {
+						d.builder = this.fg.get_filters().map((f) => f.slice(0, 4));
+						this.changed();
+					},
+				});
+				this.fg.wrapper.find(".apply-filters").hide();
+				this.fg.add_filters_to_filter_group(d.builder || []);
+			} catch (e) {
+				$f.html(`<p class="sanad-ae__hint">${esc(__("The filters of this report could not be shown."))}</p>`);
+			}
+		}
+
+		draw_report_controls($f) {
+			const d = this.draft;
+			const tokens = this.data.tokens || [];
+			const defs = (this.ui.report_defs || []).filter((df) => df.fieldname && !["Section Break", "Column Break", "Tab Break", "HTML", "Button"].includes(df.fieldtype) && !df.hidden);
+			$f.html(`<div class="sanad-ae__rfs"></div>`);
+			const $wrap = $f.find(".sanad-ae__rfs");
+			this.rf_controls = {};
+			defs.forEach((def) => {
+				const field = def.fieldname;
+				const is_date = ["Date", "Datetime"].includes(def.fieldtype);
+				const token = d.rf.tokens[field];
+				const m = token ? /^(\w+):(\d+)$/.exec(token) : null;
+				const token_key = m ? `${m[1]}:N` : token;
+				const $row = $(`<div class="sanad-ae__rf${token ? " is-moving" : ""}" data-field="${esc(field)}">
+					<div class="sanad-ae__rf-head">
+						<span class="sanad-ae__rf-label">${esc(__(def.label || field))}${def.reqd ? '<span class="wa-field__req"> *</span>' : ""}</span>
+						${is_date ? this.seg(`rf_mode:${field}`, [{ value: "fixed", label: __("Fixed") }, { value: "moving", label: __("Moves") }], token ? "moving" : "fixed", __("Date kind")) : ""}
+					</div>
+					<div class="sanad-ae__rf-in"></div>
+				</div>`).appendTo($wrap);
+				const $in = $row.find(".sanad-ae__rf-in");
+				if (token) {
+					$in.html(`<span class="sanad-ae__token">
+						<select class="wa-select" data-ch="rf_token" data-field="${esc(field)}" aria-label="${esc(__(def.label || field))}">${tokens
+							.map((t) => `<option value="${esc(t.name)}"${t.name === token_key ? " selected" : ""}>${esc(this.token_label(t.name))} — ${esc(t.example)}</option>`)
+							.join("")}</select>
+						${token_key && token_key.endsWith(":N") ? `<input type="number" min="1" max="3660" class="wa-input sanad-ae__n" data-in="rf_n" data-field="${esc(field)}" value="${esc(m ? m[2] : 7)}" aria-label="${esc(__("Number of days"))}">` : ""}
+					</span>`);
+					return;
+				}
+				const df = Object.assign({}, def, { label: "", reqd: 0, on_change: null, onchange: null });
+				delete df.default;
+				df.change = () => {
+					d.rf.values[field] = control.get_value();
+					this.changed();
+				};
+				const control = frappe.ui.form.make_control({ df, parent: $in, render_input: true, only_input: def.fieldtype !== "Check" });
+				control.refresh();
+				if (d.rf.values[field] != null) control.set_value(d.rf.values[field]);
+				if (control.$input) control.$input.attr("aria-label", __(def.label || field));
+				this.rf_controls[field] = control;
+			});
+			if (!defs.length) $wrap.html(`<p class="sanad-ae__hint">${esc(__("This report has no filters."))}</p>`);
+		}
+
+		/** Load the picked report's filter definitions and draw them. */
+		async load_report_filters() {
+			const d = this.draft;
+			if (!d.report || !this.opts.report_info) {
+				this.ui.filter_mode = null;
+				return this.draw_filters();
+			}
+			const report = d.report;
+			this.ui.filter_mode = "loading";
+			this.draw_filters();
+			try {
+				const info = await this.opts.report_info(report);
+				if (this.draft.report !== report) return;
+				this.ui.report_info = info;
+				if (info.report_type === "Report Builder") {
+					await new Promise((resolve) => frappe.model.with_doctype(info.ref_doctype, resolve));
+					if (!d.builder) d.builder = info.saved_filters || [];
+					this.ui.filter_mode = "builder";
+				} else {
+					const defs = await this.report_defs(report, info);
+					if (this.draft.report !== report) return;
+					this.ui.report_defs = defs;
+					this.ui.filter_mode = defs.length ? "report" : "rows";
+					if (defs.length && !this.draft.name) this.apply_defaults(defs);
+				}
+			} catch (e) {
+				this.ui.filter_mode = "rows";
+			}
+			this.draw_what();
+			this.run_preview();
+		}
+
+		/** A script / query report's filter definitions, from its own script (as Frappe's report view loads it). */
+		async report_defs(report, info) {
+			const known = frappe.query_reports && frappe.query_reports[report];
+			if (known && known.filters) return known.filters;
+			const r = await frappe.xcall("frappe.desk.query_report.get_script", { report_name: report });
+			const before = new Set(Object.keys(frappe.query_reports || {}));
+			try {
+				frappe.dom.eval((r && r.script) || "");
+			} catch (e) {
+				// a script that needs its report page around it: fall back to the filters saved on the report
+			}
+			frappe.query_reports = frappe.query_reports || {};
+			const added = Object.keys(frappe.query_reports).filter((k) => !before.has(k));
+			const settings = frappe.query_reports[report] || (added.length ? frappe.query_reports[added[added.length - 1]] : null);
+			const defs = (settings && settings.filters) || (r && r.filters) || [];
+			return defs.map((f) => Object.assign({}, f, { fieldtype: f.fieldtype || "Data", reqd: f.reqd || f.mandatory }));
+		}
+
+		apply_defaults(defs) {
+			const d = this.draft;
+			defs.forEach((def) => {
+				if (!def.fieldname || d.rf.values[def.fieldname] != null || d.rf.tokens[def.fieldname]) return;
+				let v = def.default;
+				try {
+					if (typeof v === "function") v = v();
+				} catch (e) {
+					v = null;
+				}
+				if (v == null || v === "") return;
+				// a date the report defaults to today keeps moving with the alert
+				if (["Date", "Datetime"].includes(def.fieldtype) && v === frappe.datetime.get_today()) d.rf.tokens[def.fieldname] = "today";
+				else d.rf.values[def.fieldname] = v;
+			});
+		}
+
+		/** Report filter scripts ask `frappe.query_report` for each other's values (`get_query`); answer from the draft. */
+		install_report_shim() {
+			const me = this;
+			this._prev_query_report = frappe.query_report;
+			frappe.query_report = {
+				get_filter_value: (f) => me.draft && me.draft.rf.values[f],
+				get_filter: (f) => ({ get_value: () => me.draft && me.draft.rf.values[f], set_value: () => {}, set_input: () => {}, refresh: () => {}, df: {} }),
+				set_filter_value: () => {},
+				get_values: () => Object.assign({}, me.draft && me.draft.rf.values),
+				refresh: () => {},
+				filters: [],
+			};
+		}
+
+		draw_filter_rows() {
 			const d = this.draft;
 			const $f = this.$root.find("[data-slot=filters]");
 			if (!$f.length) return;
-			if (this.ui.json_mode || d.filters_raw) {
+			const mode = this.ui.filter_mode;
+			if (mode === "builder") {
+				out.filters_json = d.builder && d.builder.length ? JSON.stringify(d.builder) : null;
+				out.dynamic_filters_json = null;
+			} else if (mode === "report") {
+				const values = {};
+				Object.entries(d.rf.values || {}).forEach(([k, v]) => {
+					if (d.rf.tokens[k] || v === "" || v == null || (Array.isArray(v) && !v.length)) return;
+					values[k] = v;
+				});
+				out.filters_json = Object.keys(values).length ? JSON.stringify(values) : null;
+				out.dynamic_filters_json = Object.keys(d.rf.tokens || {}).length ? JSON.stringify(d.rf.tokens) : null;
+			} else if (this.ui.json_mode || d.filters_raw) {
 				const raw = d.filters_raw || { filters_json: "", dynamic_filters_json: "" };
 				$f.html(`
 					<div class="sanad-ae__cols">
@@ -631,77 +846,116 @@ frappe.provide("sanad.ui");
 			const d = this.draft;
 			const meta = TYPE_META();
 			const is_report = d.content_type === "Report";
-			const types = (this.data.options.recipient_type || Object.keys(meta)).filter((t) => t !== "Report Column" || is_report);
-			if (!types.includes(this.ui.add_type)) this.ui.add_type = types[0];
-			const t = this.ui.add_type;
 			const chips = d.recipients
 				.map((r, i) => {
 					if (!is_report && r.recipient_type === "Report Column") return "";
 					const m = meta[r.recipient_type] || meta.Phone;
 					const value = r.user || r.role || r.phone || r.report_column || "";
 					const label = this.ui.labels[`${r.recipient_type}:${value}`] || (r.recipient_type === "Role" ? __(value) : value);
+					const sub = r.recipient_type === "Phone" && label !== value ? value : m.label;
 					return `<li class="sanad-ae__who sanad-ae__who--${esc(frappe.scrub(r.recipient_type))}">
 						<span class="sanad-ae__who-ico" aria-hidden="true">${sanad.ui.ico(m.icon, "sm")}</span>
-						<span class="sanad-ae__who-text"><strong${r.recipient_type === "Phone" ? ' dir="ltr"' : ""}>${esc(label)}</strong><span>${esc(m.label)}</span></span>
+						<span class="sanad-ae__who-text"><strong>${esc(label)}</strong><span dir="auto">${esc(sub)}</span></span>
 						<button type="button" class="sanad-ae__icon sanad-ae__icon--sm" data-act="r_remove" data-i="${i}" aria-label="${esc(__("Remove {0}", [label]))}">${sanad.ui.ico("x", "sm")}</button>
 					</li>`;
 				})
 				.join("");
-			let input = "";
-			if (t === "Phone") {
-				input = `<div class="sanad-ae__addline">
-					<input type="tel" class="wa-input wa-input--mono" data-in="phone_q" dir="ltr" placeholder="+9665…" aria-label="${esc(__("WhatsApp number"))}" value="${esc(this.ui.phone_q || "")}">
-					<button type="button" class="sanad-ae__btn" data-act="add_phone">${esc(__("Add"))}</button>
-				</div>`;
-			} else if (t === "Report Column") {
+			const phones = d.recipients.filter((r) => r.recipient_type === "Phone").length;
+			let columns = "";
+			if (is_report) {
 				const cols = this.ui.columns;
-				input = !d.report
-					? `<p class="sanad-ae__hint">${esc(__("Choose the report first; its columns are listed here."))}</p>`
-					: cols === null
-						? `<p class="sanad-ae__hint">${esc(__("Reading the report's columns…"))}</p>`
-						: cols.length
-							? `<div class="sanad-ae__chips">${cols
-									.map((c) => this.chip(__(c.label || c.fieldname), { act: "add_column", value: c.fieldname, on: d.recipients.some((r) => r.report_column === c.fieldname) }))
-									.join("")}</div>`
-							: `<p class="sanad-ae__hint">${esc(__("The report returned no columns with these filters."))}</p>`;
-			} else {
-				input = this.picker("recipient", null, t === "User" ? __("Search users by name or number…") : __("Search roles…"));
+				columns = `<div class="sanad-ae__colpick">
+					<span class="sanad-ae__sub">${esc(__("Or one message per number in a report column"))}</span>
+					${
+						!d.report
+							? `<p class="sanad-ae__hint">${esc(__("Choose the report first; its columns are listed here."))}</p>`
+							: cols === null
+								? `<p class="sanad-ae__hint">${esc(__("Reading the report's columns…"))}</p>`
+								: cols.length
+									? `<div class="sanad-ae__chips">${cols
+											.map((c) => this.chip(__(c.label || c.fieldname), { act: "add_column", value: c.fieldname, on: d.recipients.some((r) => r.report_column === c.fieldname) }))
+											.join("")}</div>`
+									: `<p class="sanad-ae__hint">${esc(__("The report returned no columns with these filters."))}</p>`
+					}
+				</div>`;
 			}
-			const count = this.ui.preview && this.ui.preview.recipients_count;
 			this.$root.find("[data-step=who]").html(`
-				${this.step_head(3, "who", __("Who gets it?"), d.recipients.length > 0, count != null && d.recipients.length ? sanad.ui.plural(count, { one: __("Reaches {0} number"), other: __("Reaches {0} numbers") }) : null)}
+				${this.step_head(3, "who", __("Who gets it?"), d.recipients.length > 0)}
 				<div class="sanad-ae__step-body">
-					${d.recipients.length ? `<ul class="sanad-ae__whos">${chips}</ul>` : `<p class="sanad-ae__empty">${esc(__("Nobody yet. Add users, a role, numbers or a report column."))}</p>`}
-					<div class="sanad-ae__adder">
-						${this.seg("add_type", types.map((k) => ({ value: k, label: meta[k].label, icon: meta[k].icon })), t, __("Recipient type"))}
-						<p class="sanad-ae__hint">${esc(meta[t].hint)}</p>
-						${input}
+					<div class="sanad-ae__who-bar">
+						<button type="button" class="sanad-ae__btn sanad-ae__btn--pri" data-act="pick_contacts"${this.opts.pick_recipients ? "" : " disabled"}>${sanad.ui.ico("users", "sm")}${esc(__("Choose from contacts"))}</button>
+						<span class="sanad-ae__hint">${esc(__("Contact groups, contacts, system screens, a file or typed numbers."))}</span>
+						${phones ? `<button type="button" class="sanad-ae__link" data-act="r_clear">${esc(__("Remove all numbers"))}</button>` : ""}
 					</div>
+					${d.recipients.length ? `<ul class="sanad-ae__whos">${chips}</ul>` : `<p class="sanad-ae__empty">${esc(__("Nobody yet."))}</p>`}
+					${columns}
 				</div>`);
 			this.draw_sentence();
 		}
 
+		async pick_contacts() {
+			if (!this.opts.pick_recipients) return;
+			const d = this.draft;
+			const existing = d.recipients.filter((r) => r.recipient_type === "Phone").map((r) => r.phone);
+			const rows = (await this.opts.pick_recipients({ existing })) || [];
+			let added = 0;
+			rows.forEach((row) => {
+				const phone = row.phone_e164 || row.phone;
+				if (!phone || d.recipients.some((r) => r.recipient_type === "Phone" && r.phone === phone)) return;
+				d.recipients.push({ recipient_type: "Phone", phone });
+				if (row.display_name) this.ui.labels[`Phone:${phone}`] = row.display_name;
+				added += 1;
+			});
+			if (added) {
+				frappe.show_alert({ message: sanad.ui.plural(added, { one: __("{0} number added"), other: __("{0} numbers added") }), indicator: "green" });
+				this.changed({ redraw: ["who"] });
+			}
+		}
+
 		// 4 — from -------------------------------------------------------------------------------------
 
+		/** The device as a Link field (the host sets the DocType and which records it offers). */
 		draw_from() {
 			const d = this.draft;
-			const tone = { Connected: "ok", Disconnected: "warn", "Logged Out": "danger", "Pending QR": "info" };
-			const devices = this.data.devices || [];
+			const cfg = this.opts.device_link || {};
+			const dev = (this.data.devices || []).find((x) => x.name === d.device);
 			this.$root.find("[data-step=from]").html(`
 				${this.step_head(4, "from", __("From which device?"), !!d.device, d.device ? null : __("Without one, the default device sends it"))}
 				<div class="sanad-ae__step-body">
-					<div class="sanad-ae__devices" role="radiogroup" aria-label="${esc(__("Device"))}">
-						${devices
-							.map(
-								(dv) => `<button type="button" role="radio" aria-checked="${dv.name === d.device}" class="sanad-ae__device${dv.name === d.device ? " is-on" : ""}" data-act="device" data-value="${esc(dv.name)}">
-									<span class="sanad-ae__device-dot sanad-ae__device-dot--${tone[dv.status] || "muted"}" title="${esc(__(dv.status))}"></span>
-									<span class="sanad-ae__device-text"><strong>${esc(dv.device_name || dv.name)}</strong><span dir="ltr">${esc(dv.phone_e164 || __(dv.status))}</span></span>
-									${cint(dv.is_default) ? `<span class="wa-badge wa-badge--muted wa-badge--nodot">${esc(__("Default"))}</span>` : ""}
-								</button>`
-							)
-							.join("") || `<p class="sanad-ae__empty">${esc(__("No device yet."))}</p>`}
-					</div>
+					<div class="sanad-ae__device-link"></div>
+					${
+						dev
+							? `<p class="sanad-ae__hint sanad-ae__device-state"><span class="sanad-ae__device-dot sanad-ae__device-dot--${dev.status === "Connected" ? "ok" : "warn"}"></span>${esc(__(dev.status))}${dev.phone_e164 ? ` · <span dir="ltr">${esc(dev.phone_e164)}</span>` : ""}</p>`
+							: ""
+					}
 				</div>`);
+			if (!cfg.doctype) return;
+			const control = frappe.ui.form.make_control({
+				df: {
+					fieldtype: "Link",
+					fieldname: "device",
+					options: cfg.doctype,
+					placeholder: cfg.placeholder || __("Choose a connected device…"),
+					get_query: () => ({ filters: cfg.filters || {} }),
+					change: () => {
+						const v = control.get_value() || null;
+						if (v === d.device) return;
+						d.device = v;
+						this.changed();
+						this.draw_from();
+					},
+				},
+				parent: this.$root.find(".sanad-ae__device-link"),
+				render_input: true,
+				only_input: true,
+			});
+			control.refresh();
+			if (d.device) control.set_value(d.device);
+			if (control.$input) {
+				control.$input.attr("aria-label", __("Device"));
+				// its list opens under it: bring the field up so the choices are in sight
+				control.$input.on("focus", () => control.$input.get(0).scrollIntoView({ block: "center", behavior: "smooth" }));
+			}
 		}
 
 		// ---- the side: preview, test, history -------------------------------------------------------
@@ -815,6 +1069,14 @@ frappe.provide("sanad.ui");
 			const value = $t.attr("data-value");
 			const i = cint($t.attr("data-i"));
 			const d = this.draft;
+			if (act.startsWith("rf_mode:")) {
+				const field = act.slice(8);
+				if (value === "moving") {
+					d.rf.tokens[field] = "today";
+					delete d.rf.values[field];
+				} else delete d.rf.tokens[field];
+				return this.changed({ redraw: ["filters"] });
+			}
 			if (act.startsWith("f_mode:")) {
 				d.filters[cint(act.split(":")[1])].mode = value;
 				return this.changed({ redraw: ["filters"] });
@@ -822,21 +1084,6 @@ frappe.provide("sanad.ui");
 			switch (act) {
 				case "close":
 					return this.close();
-				case "period":
-					d.periodicity = value;
-					return this.changed({ redraw: ["when"] });
-				case "weekday":
-					d.day_of_week = value;
-					return this.changed({ redraw: ["when"] });
-				case "month":
-					d.month_of_year = value;
-					return this.changed({ redraw: ["when"] });
-				case "day":
-					d.day_of_month = cint(value);
-					return this.changed({ redraw: ["when"] });
-				case "time":
-					d.notification_time = value;
-					return this.changed({ redraw: ["when"] });
 				case "content":
 					d.content_type = value;
 					return this.changed({ redraw: ["what", "who"] });
@@ -847,7 +1094,19 @@ frappe.provide("sanad.ui");
 					d.body_mode = value;
 					return this.changed({ redraw: ["what"] });
 				case "json":
-					if (this.ui.json_mode || d.filters_raw) {
+					const mode = this.ui.filter_mode;
+			if (mode === "builder") {
+				out.filters_json = d.builder && d.builder.length ? JSON.stringify(d.builder) : null;
+				out.dynamic_filters_json = null;
+			} else if (mode === "report") {
+				const values = {};
+				Object.entries(d.rf.values || {}).forEach(([k, v]) => {
+					if (d.rf.tokens[k] || v === "" || v == null || (Array.isArray(v) && !v.length)) return;
+					values[k] = v;
+				});
+				out.filters_json = Object.keys(values).length ? JSON.stringify(values) : null;
+				out.dynamic_filters_json = Object.keys(d.rf.tokens || {}).length ? JSON.stringify(d.rf.tokens) : null;
+			} else if (this.ui.json_mode || d.filters_raw) {
 						const back = this.parse_filters((d.filters_raw || {}).filters_json, (d.filters_raw || {}).dynamic_filters_json);
 						if (back.raw) return frappe.show_alert({ message: __("These filters use operators that rows cannot show; keep them as JSON."), indicator: "orange" });
 						d.filters = back.rows;
@@ -873,6 +1132,7 @@ frappe.provide("sanad.ui");
 					if ($t.data("kind") === "report") {
 						this.ui.columns = null;
 						this.ui.columns_for = null;
+						this.ui.filter_mode = null;
 					}
 					this.ui.pick_open = $t.data("kind");
 					this.ui.add_q = "";
@@ -882,26 +1142,19 @@ frappe.provide("sanad.ui");
 					return this.run_search();
 				case "pick":
 					return this.pick($t.data("kind"), this.ui.results[i]);
-				case "add_type":
-					this.ui.add_type = value;
-					this.ui.pick_open = null;
-					this.ui.add_q = "";
-					this.changed({ redraw: ["who"], preview: false });
-					if (value === "Report Column") this.load_columns();
-					return this.$root.find("[data-step=who] input").first().trigger("focus");
-				case "add_phone":
-					return this.add_phone();
 				case "add_column":
 					if (d.recipients.some((r) => r.report_column === value)) return;
 					d.recipients.push({ recipient_type: "Report Column", report_column: value });
 					this.ui.labels[`Report Column:${value}`] = __(((this.ui.columns || []).find((c) => c.fieldname === value) || {}).label || value);
 					return this.changed({ redraw: ["who"] });
+				case "pick_contacts":
+					return this.pick_contacts();
+				case "r_clear":
+					d.recipients = d.recipients.filter((r) => r.recipient_type !== "Phone");
+					return this.changed({ redraw: ["who"] });
 				case "r_remove":
 					d.recipients.splice(i, 1);
 					return this.changed({ redraw: ["who"] });
-				case "device":
-					d.device = value;
-					return this.changed({ redraw: ["from"] });
 				case "test":
 					return this.send_test();
 				case "run_now":
@@ -925,7 +1178,6 @@ frappe.provide("sanad.ui");
 					return this.changed();
 				case "notification_time":
 					d.notification_time = v;
-					this.$root.find("[data-act=time]").each((_, b) => $(b).toggleClass("is-on", $(b).attr("data-value") === v));
 					this.draw_sentence();
 					return this.changed();
 				case "message":
@@ -937,6 +1189,11 @@ frappe.provide("sanad.ui");
 				case "f_value":
 					d.filters[i].value = v;
 					return this.changed();
+				case "rf_n": {
+					const field = $t.data("field");
+					d.rf.tokens[field] = String(d.rf.tokens[field] || "last_days:7").replace(/:\d+$/, `:${Math.max(1, cint(v))}`);
+					return this.changed();
+				}
 				case "f_n":
 					d.filters[i].n = cint(v);
 					return this.changed();
@@ -946,13 +1203,10 @@ frappe.provide("sanad.ui");
 					d.filters_raw[key === "raw_static" ? "filters_json" : "dynamic_filters_json"] = v;
 					return this.changed();
 				case "pick_q":
-					this.ui.pick_open = $t.data("kind") === "recipient" ? "recipient" : $t.data("kind");
+					this.ui.pick_open = $t.data("kind");
 					this.ui.add_q = v;
 					this.ui.searching = true;
 					return this.search_later();
-				case "phone_q":
-					this.ui.phone_q = v;
-					return;
 				case "test_phone":
 					this.ui.test_phone = v;
 					return;
@@ -963,6 +1217,11 @@ frappe.provide("sanad.ui");
 			const $t = $(e.currentTarget);
 			const key = $t.data("ch");
 			const d = this.draft;
+			if (["periodicity", "day_of_week", "day_of_month", "month_of_year"].includes(key)) {
+				d[key] = key === "day_of_month" ? cint($t.val()) : $t.val();
+				this.changed({ redraw: key === "periodicity" ? ["when"] : [] });
+				return this.draw_sentence();
+			}
 			if (key === "enabled") {
 				d.enabled = $t.is(":checked") ? 1 : 0;
 				return this.changed({ preview: false });
@@ -970,6 +1229,11 @@ frappe.provide("sanad.ui");
 			if (key === "template") {
 				d.template = $t.val() || null;
 				return this.changed({ redraw: ["what"] });
+			}
+			if (key === "rf_token") {
+				const v = $t.val();
+				d.rf.tokens[$t.data("field")] = v.endsWith(":N") ? v.replace(":N", ":7") : v;
+				return this.changed({ redraw: ["filters"] });
 			}
 			if (key === "f_token") {
 				d.filters[cint($t.attr("data-i"))].token = $t.val();
@@ -989,10 +1253,6 @@ frappe.provide("sanad.ui");
 			}
 			if (e.key === "Enter") {
 				const $t = $(e.target);
-				if ($t.is("[data-in=phone_q]")) {
-					e.preventDefault();
-					return this.add_phone();
-				}
 				if ($t.is("[data-in=pick_q]") && this.ui.results.length) {
 					e.preventDefault();
 					return this.pick($t.data("kind"), this.ui.results[0]);
@@ -1024,7 +1284,7 @@ frappe.provide("sanad.ui");
 		async run_search() {
 			const kind = this.ui.pick_open;
 			if (!kind) return;
-			const search_kind = kind === "recipient" ? (this.ui.add_type === "Role" ? "role" : "user") : kind;
+			const search_kind = kind;
 			const q = this.ui.add_q;
 			try {
 				const rows = await this.opts.search(search_kind, q);
@@ -1046,19 +1306,18 @@ frappe.provide("sanad.ui");
 			this.ui.pick_open = null;
 			this.ui.results = [];
 			this.ui.add_q = "";
-			if (kind === "recipient") {
-				const type = this.ui.add_type;
-				const field = type === "Role" ? "role" : "user";
-				if (!d.recipients.some((r) => r.recipient_type === type && r[field] === row.value)) {
-					d.recipients.push({ recipient_type: type, [field]: row.value });
-					this.ui.labels[`${type}:${row.value}`] = row.label;
-				}
-				this.changed({ redraw: ["who"] });
-				return this.$root.find("[data-in=pick_q][data-kind=recipient]").trigger("focus");
-			}
 			d[kind] = row.value;
 			this.ui.labels[`${kind}:${row.value}`] = row.description;
 			if (kind === "report") {
+				// a new report brings its own filters
+				d.rf = { values: {}, tokens: {} };
+				d.builder = null;
+				d.filters = [];
+				d.filters_raw = null;
+				this.ui.json_mode = false;
+				this.ui.report_defs = null;
+				this.ui.filter_mode = "loading";
+				this.load_report_filters();
 				if (!d.alert_name.trim()) {
 					d.alert_name = row.label;
 					this.$root.find("[data-in=alert_name]").val(row.label);
@@ -1066,18 +1325,6 @@ frappe.provide("sanad.ui");
 				this.load_columns();
 			}
 			this.changed({ redraw: ["what", "who"] });
-		}
-
-		add_phone() {
-			const v = (this.ui.phone_q || "").trim();
-			if (!v) return;
-			if (!/^\+?[\d\s()-]{6,20}$/.test(v)) return frappe.show_alert({ message: __("Enter a valid phone number"), indicator: "orange" });
-			if (!this.draft.recipients.some((r) => r.recipient_type === "Phone" && r.phone === v)) {
-				this.draft.recipients.push({ recipient_type: "Phone", phone: v });
-			}
-			this.ui.phone_q = "";
-			this.changed({ redraw: ["who"] });
-			this.$root.find("[data-in=phone_q]").trigger("focus");
 		}
 
 		insert_var(v) {
@@ -1105,7 +1352,7 @@ frappe.provide("sanad.ui");
 			} catch (err) {
 				this.ui.columns = [];
 			}
-			if (this.ui.add_type === "Report Column") this.draw_who();
+			this.draw_who();
 		}
 
 		async run_preview() {
@@ -1187,8 +1434,10 @@ frappe.provide("sanad.ui");
 				this.draft = this.seed(this.data.alert);
 				this.clean = JSON.stringify(this.draft);
 				this.ui.saving = false;
+				this.ui.filter_mode = null;
 				this.render();
 				this.run_preview();
+				if (this.draft.report) this.load_report_filters();
 			} catch (err) {
 				this.ui.saving = false;
 				this.draw_foot();

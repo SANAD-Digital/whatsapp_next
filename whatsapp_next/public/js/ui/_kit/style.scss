@@ -287,11 +287,9 @@
 		linear-gradient(135deg, currentColor 50%, transparent 50%);
 	background-size: 5px 5px, 5px 5px;
 	background-repeat: no-repeat;
-	background-position: right 14px center, right 19px center;
-
-	[dir="rtl"] & {
-		background-position: left 19px center, left 14px center;
-	}
+	// Frappe's RTL bundle (rtlcss) mirrors this to the left side on its own; a `[dir="rtl"]` rule
+	// here would be mirrored too and put the caret back over the text
+	background-position: right 19px center, right 14px center;
 	// the empty value is a prompt, not a value
 	&:invalid,
 	&[data-empty="true"] { color: var(--wa-ink-4); }

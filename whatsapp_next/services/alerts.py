@@ -21,6 +21,7 @@ from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.phone import normalize
 
 MAX_COLUMN_RECIPIENTS = 200
+MAX_BUILDER_ROWS = 1000
 PNG_BINARY = "wkhtmltoimage"
 
 
@@ -187,9 +188,60 @@ def _rows_for(recipient: Recipient, rows: list[Any], columns: list[Any], column:
 # ---- run ---------------------------------------------------------------------------------
 
 
+def report_kind(report: str | None) -> frappe._dict | None:
+	"""`{report_type, ref_doctype, json}` of a Report, or None."""
+	if not report:
+		return None
+	return frappe.db.get_value("Report", report, ["report_type", "ref_doctype", "json"], as_dict=True)
+
+
+def builder_filters(alert, saved: Any = None) -> list[list[Any]]:
+	"""A Report Builder alert's filters as Frappe list filters `[doctype, field, operator, value]`:
+	the alert's own `filters_json` when it is a list (Frappe's filter component writes that — moving
+	dates are its own `Timespan` operator), else the report's saved filters."""
+	own = _load_json(getattr(alert, "filters_json", None))
+	rows = own if isinstance(own, list) else (saved or [])
+	return [list(f[:4]) for f in rows if isinstance(f, list | tuple) and len(f) >= 4]
+
+
+def _run_report_builder(kind, alert) -> tuple[list[Any], list[Any]]:
+	"""A Report Builder report is a saved list of one DocType: run it with `frappe.get_list`, so the
+	caller's permissions apply; its own columns of that DocType, at most MAX_BUILDER_ROWS rows."""
+	data = _load_json(kind.json) or {}
+	doctype = kind.ref_doctype
+	meta = frappe.get_meta(doctype)
+	fields = [c[0] for c in data.get("columns") or [] if isinstance(c, list | tuple) and len(c) >= 2 and c[1] == doctype]
+	fields = [f for f in fields if f == "name" or meta.get_field(f) or f in frappe.model.default_fields] or ["name"]
+	order_by = data.get("order_by") or "modified desc"
+	if isinstance(order_by, dict):
+		order_by = f"{order_by.get('order_by', 'modified')} {order_by.get('sort_order', 'desc')}"
+	rows = frappe.get_list(
+		doctype,
+		fields=fields,
+		filters=builder_filters(alert, data.get("filters")),
+		order_by=order_by,
+		limit_page_length=MAX_BUILDER_ROWS,
+	)
+	columns = []
+	for f in fields:
+		df = meta.get_field(f)
+		columns.append(
+			{
+				"fieldname": f,
+				"label": _(df.label) if df else (_("ID") if f == "name" else _(frappe.unscrub(f))),
+				"fieldtype": df.fieldtype if df else "Data",
+				"options": df.options if df else None,
+			}
+		)
+	return columns, [dict(r) for r in rows]
+
+
 def _run_report(alert, filters: dict[str, Any]) -> tuple[list[Any], list[Any]]:
 	from frappe.desk.query_report import run
 
+	kind = report_kind(alert.report)
+	if kind and kind.report_type == "Report Builder":
+		return _run_report_builder(kind, alert)
 	result = run(alert.report, filters=filters, ignore_prepared_report=True)
 	return list(result.get("columns") or []), list(result.get("result") or [])
 
@@ -329,16 +381,21 @@ def execute(alert, *, preview: bool = False, test_phone: str | None = None) -> A
 	return run
 
 
-def report_columns(report: str, filters: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+def report_columns(report: str, filters: dict[str, Any] | list | None = None) -> list[dict[str, Any]]:
 	"""Column choices for the Report Column recipient type (runs the report with `filters`, or
 	none); an unrunnable report yields an empty list."""
 	from frappe.desk.query_report import run
 
 	try:
-		result = run(report, filters=filters or {}, ignore_prepared_report=True)
+		kind = report_kind(report)
+		if kind and kind.report_type == "Report Builder":
+			draft = frappe._dict(filters_json=filters if isinstance(filters, list) else None)
+			columns, _rows = _run_report_builder(kind, draft)
+		else:
+			columns = run(report, filters=filters or {}, ignore_prepared_report=True).get("columns") or []
 	except Exception:
 		return []
 	return [
 		{"fieldname": c["fieldname"], "label": c["label"], "fieldtype": c["fieldtype"]}
-		for c in report_render.normalize_columns(result.get("columns") or [])
+		for c in report_render.normalize_columns(columns)
 	]

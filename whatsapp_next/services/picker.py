@@ -466,7 +466,14 @@ def preview(target_doctype: str, target_name: str, rows: list[dict[str, Any]]) -
 	duplicates within the selection; `known_count` from the read layer."""
 	doc = _target(target_doctype, target_name, "read")
 	child_field, _child_dt = TARGETS[target_doctype]
-	existing = _existing_keys(doc, child_field)
+	return classify_rows(rows, _existing_keys(doc, child_field))
+
+
+def classify_rows(rows: list[dict[str, Any]], existing: Any = ()) -> Preview:
+	"""Sort candidate rows into available / already there (`existing`: E.164 keys) / invalid /
+	duplicates within the selection, with `known_count` from the read layer. No target document:
+	a host that keeps the list itself (an alert's recipients) asks this."""
+	existing = set(existing or ())
 	p = Preview()
 	seen: set[str] = set()
 	for raw in rows or []:

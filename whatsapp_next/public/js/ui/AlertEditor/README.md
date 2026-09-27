@@ -4,16 +4,21 @@ One window to create, edit, look at and try a scheduled alert — a report or a 
 out daily, weekly, monthly, quarterly or yearly. The alert is written as four short answers, each
 in its own card that ticks itself green once it is complete:
 
-1. **When** — every day / week / month / quarter / year; weekday chips, a 28-day grid, month
-   chips, a time with quick picks; read back as one sentence in the header, with the next three
-   runs under the card.
-2. **What** — a report (searched as you type), its filters as rows (a fixed value, or a date that
-   moves: today, start of the month, N days back…; "Edit as JSON" for anything rows cannot hold)
-   and the file it attaches (none, PDF, image) with print format, letter head and language; or a
-   message only. The text is written with insertable variables, or taken from a saved template.
-3. **To whom** — users, roles, numbers, or a column of the report (one message per number in it,
-   with only that number's rows), as chips.
-4. **From** — the sending device, as cards with their state.
+1. **When** — one sentence of fields: "Send it [every week] on [Sunday] at [08:00]" (the day of the
+   month and the month join it when the period needs them), read back in the header with the next
+   three runs under it.
+2. **What** — a report (searched as you type) with **its own filters**: a script / query report's
+   filter definitions from its script, drawn as Frappe controls, a date either fixed or moving
+   (today, start of the month, N days back…); a Report Builder report — a list of one DocType —
+   with **Frappe's filter component** (its Timespan condition is the moving date); key / value
+   rows only when the report defines none. The file it attaches (none, PDF, image) with print
+   format, letter head and language; or a message only. The text is written with insertable
+   variables, or taken from a saved template.
+3. **To whom** — "Choose from contacts" opens the host's contact picker (groups, contacts, system
+   screens, a file, typed numbers); or a column of the report (one message per number in it, with
+   only that number's rows). Chips, each removable.
+4. **From** — the sending device as a Link field; the host decides which records it offers
+   (connected devices only).
 
 Beside the cards, a live preview of the unsaved draft — the message as the first recipient gets
 it, the file it would attach, how many rows and numbers, the next run, and what is still missing —
@@ -33,6 +38,9 @@ new sanad.ui.AlertEditor({
   run_now: (name) => api("run_now", { name }),
   search: (kind, txt) => api("search", { kind, txt }),   // report · user · role · print_format · letter_head · language
   report_columns: (report, filters) => api("get_report_columns", { report, filters }),
+  report_info: (report) => api("get_report_info", { report }),  // {report_type, ref_doctype, saved_filters}
+  pick_recipients: ({ existing }) => promise_of_rows,             // [{phone_e164, display_name}]
+  device_link: { doctype: "Device", filters: { status: "Connected" } },
   on_saved: () => list.refresh(),
 });
 ```

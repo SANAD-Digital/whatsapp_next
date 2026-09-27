@@ -352,6 +352,25 @@ def delete(name: str) -> None:
 	frappe.delete_doc(DOCTYPE, doc.name)
 
 
+# ---- reports -------------------------------------------------------------------------------
+
+
+def report_info(report: str) -> dict[str, Any]:
+	"""`{name, report_type, ref_doctype, saved_filters}` — what the editor needs to draw the report's
+	own filters: a Script / Query / Custom report brings its filter definitions in its script (the
+	editor loads it with Frappe's `get_script`); a Report Builder report is a list of `ref_doctype`,
+	filtered with Frappe's filter component, starting from the filters saved with it."""
+	if not frappe.db.exists("Report", report):
+		frappe.throw(_("Report {0} not found").format(report), WANotFoundError)
+	frappe.has_permission("Report", "read", report, throw=True)
+	kind = alerts.report_kind(report)
+	saved = []
+	if kind.report_type == "Report Builder":
+		data = alerts._load_json(kind.json) or {}
+		saved = alerts.builder_filters(frappe._dict(), data.get("filters"))
+	return {"name": report, "report_type": kind.report_type, "ref_doctype": kind.ref_doctype, "saved_filters": saved}
+
+
 # ---- pickers -------------------------------------------------------------------------------
 
 

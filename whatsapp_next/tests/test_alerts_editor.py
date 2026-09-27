@@ -124,3 +124,62 @@ class TestAlertsEditor(IntegrationTestCase):
 		self.assertEqual(frappe.db.get_value("WhatsApp Notification Alert", NAME, "send_count"), 0)
 		with as_user("WhatsApp Manager"), self.assertRaises(WAValidationError):
 			api.send_test(payload=self.payload(name=NAME), phone="not a phone")
+
+
+BUILDER = "EditorTest Builder Report"
+
+
+class TestAlertsEditorReports(IntegrationTestCase):
+	"""A Report Builder report runs as a filtered list of its DocType; the editor learns how to draw
+	a report's filters; the contact picker classifies without a target."""
+
+	def setUp(self):
+		frappe.delete_doc("Report", BUILDER, force=True, ignore_missing=True)
+		frappe.get_doc(
+			{
+				"doctype": "Report",
+				"report_name": BUILDER,
+				"ref_doctype": "ToDo",
+				"report_type": "Report Builder",
+				"is_standard": "No",
+				"module": "Desk",
+				"json": frappe.as_json(
+					{"columns": [["name", "ToDo"], ["description", "ToDo"]], "filters": [["ToDo", "status", "=", "Open", False]]}
+				),
+			}
+		).insert(ignore_permissions=True)
+		self.todo = frappe.get_doc({"doctype": "ToDo", "description": "editor-builder-probe", "status": "Open"}).insert(
+			ignore_permissions=True
+		)
+
+	def tearDown(self):
+		frappe.delete_doc("ToDo", self.todo.name, force=True, ignore_missing=True)
+		frappe.delete_doc("Report", BUILDER, force=True, ignore_missing=True)
+
+	def test_report_builder_runs_with_its_list_filters(self):
+		with as_user("WhatsApp Manager"):
+			info = api.get_report_info(report=BUILDER)
+		self.assertEqual((info["report_type"], info["ref_doctype"]), ("Report Builder", "ToDo"))
+		self.assertEqual(info["saved_filters"], [["ToDo", "status", "=", "Open"]])
+		alert = frappe._dict(filters_json=frappe.as_json([["ToDo", "description", "=", "editor-builder-probe"]]))
+		columns, rows = alerts._run_report_builder(alerts.report_kind(BUILDER), alert)
+		self.assertEqual([c["fieldname"] for c in columns], ["name", "description"])
+		self.assertEqual([r["name"] for r in rows], [self.todo.name])
+		# no own filters: the report's saved ones apply
+		columns, rows = alerts._run_report_builder(alerts.report_kind(BUILDER), frappe._dict(filters_json=None))
+		self.assertIn(self.todo.name, [r["name"] for r in rows])
+		self.assertEqual(
+			[c["fieldname"] for c in alerts.report_columns(BUILDER, [["ToDo", "status", "=", "Open"]])], ["name", "description"]
+		)
+
+	def test_picker_classify_without_a_target(self):
+		from whatsapp_next.api.v1 import picker as picker_api
+
+		with as_user("WhatsApp Manager"):
+			out = picker_api.classify(
+				rows=[{"phone": "+966500931501"}, {"phone": "+966500931502"}, {"phone": "+966500931501"}, {"phone": "x"}],
+				existing=["+966500931502"],
+			)
+		self.assertEqual([r["phone_e164"] for r in out["available"]], ["+966500931501"])
+		self.assertEqual([r["phone_e164"] for r in out["already_added"]], ["+966500931502"])
+		self.assertEqual((len(out["duplicates_in_selection"]), len(out["invalid"])), (1, 1))

@@ -48,9 +48,11 @@ def run_now(name: str) -> dict[str, str | None]:
 
 
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))
-def get_report_columns(report: str, filters: dict | None = None) -> list[dict[str, Any]]:
+def get_report_columns(report: str, filters: dict | list | str | None = None) -> list[dict[str, Any]]:
 	"""`[{fieldname, label, fieldtype}]` of `report` run with `filters` (empty when the report
 	cannot run or the caller may not run it — `query_report.run` checks). P: Manager."""
+	if isinstance(filters, str):
+		filters = frappe.parse_json(filters) if filters.strip() else None
 	return alerts.report_columns(report, filters=filters)
 
 
@@ -112,3 +114,9 @@ def delete_alert(name: str) -> dict[str, bool]:
 def search(kind: str, txt: str | None = None) -> list[dict[str, Any]]:
 	"""The editor's pickers (`alerts_editor.search`). P: Manager; the caller's own permissions."""
 	return alerts_editor.search(kind, txt)
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+def get_report_info(report: str) -> dict[str, Any]:
+	"""How the editor draws a report's filters (`alerts_editor.report_info`). P: Manager + report read."""
+	return alerts_editor.report_info(report)

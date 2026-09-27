@@ -132,6 +132,8 @@ $wa-surfaces:
 	".modal.sanad-sheet",
 	// the settings window (D-138) mounts on <body> too
 	".sanad-sw.wa-settings-window",
+	// the alert editor (D-139) mounts on <body>
+	".sanad-ae-layer",
 	// the prototype's overlay panel mounts on <body>, outside every page, and is always ours
 	".sanad-op";
 

@@ -18,6 +18,23 @@ whatsapp_next.alerts.open = function (name, { on_saved } = {}) {
 		run_now: (n) => call("run_now", { name: n }),
 		search: (kind, txt) => call("search", { kind, txt: txt || "" }),
 		report_columns: (report, filters) => call("get_report_columns", { report, filters: filters || {} }),
+		report_info: (report) => call("get_report_info", { report }),
+		// only a connected device can send
+		device_link: { doctype: "WhatsApp Device", filters: { status: "Connected", disabled: 0 } },
+		// the product's contact picker, in its local mode: the picks come back, nothing is written
+		pick_recipients: ({ existing }) =>
+			new Promise((resolve) => {
+				let done = false;
+				new sanad.ui.ContactPicker({
+					title: __("Choose who gets the alert"),
+					existing,
+					on_pick: (rows) => {
+						done = true;
+						resolve(rows);
+					},
+					on_close: () => !done && resolve([]),
+				});
+			}),
 		on_saved: (r) => {
 			if (typeof on_saved === "function") on_saved(r);
 			const list = cur_list && cur_list.doctype === "WhatsApp Notification Alert" ? cur_list : null;

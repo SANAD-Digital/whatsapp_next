@@ -74,7 +74,13 @@ export class SelectedTab {
 			this.picker.set_progress(__("Checking {0} numbers against the list…", [ui.format_int(rows.length)]));
 		}, SLOW);
 		return this.picker
-			.call("picker.preview", { target_doctype: this.picker.target_doctype, target_name: this.picker.target_name, rows }, { silent: true })
+			.call(
+				this.picker.is_local() ? "picker.classify" : "picker.preview",
+				this.picker.is_local()
+					? { rows, existing: this.picker.opts.existing || [] }
+					: { target_doctype: this.picker.target_doctype, target_name: this.picker.target_name, rows },
+				{ silent: true }
+			)
 			.finally(() => window.clearTimeout(slow))
 			.then((p) => {
 				if (rev !== this.picker.revision) return this.preview; // stale — a newer preview is on its way

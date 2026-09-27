@@ -93,6 +93,9 @@ sanad.ui.ContactPicker = class ContactPicker {
 	 * @param {{method: string, args: Function, server_filters?: boolean, source_types?: string[], status_field?: string}} [opts.current]
 	 *   — remove mode: how to page the target's current rows (defaults by target)
 	 * @param {Object<string,string>} [opts.api] — API key overrides, e.g. `{"picker.preview": "my.app.preview"}`
+	 * @param {Function} [opts.on_pick] — local mode: no target document; "Add" hands the available rows to
+	 *   `on_pick(rows, picker)` and nothing is written (the host keeps the list). Needs `title`.
+	 * @param {string[]} [opts.existing] — local mode: E.164 keys the host already has (shown as "already added")
 	 */
 	constructor(opts = {}) {
 		const defaults = ui.config.defaults || {};
@@ -174,7 +177,13 @@ sanad.ui.ContactPicker = class ContactPicker {
 		}
 	}
 
+	/** Local mode: the host keeps the list; nothing is committed to a document. */
+	is_local() {
+		return typeof this.opts.on_pick === "function";
+	}
+
 	default_title() {
+		if (this.is_local()) return __("Choose recipients");
 		const target = this.opts.target_label || this.target_name;
 		const remove = this.operation === "remove";
 		if (this.target_is_group()) return remove ? __("Remove members from {0}", [target]) : __("Add members to {0}", [target]);
@@ -570,6 +579,17 @@ sanad.ui.ContactPicker = class ContactPicker {
 			.ensure_preview()
 			.then(() => {
 				const c = this.selected.counts();
+				if (this.is_local() && !remove) {
+					const rows = (this.selected.preview && this.selected.preview.available) || [];
+					if (!rows.length) {
+						this.selected.show_alert(__("Every selected number is already in the list or invalid, so there is nothing to add."));
+						return;
+					}
+					this.committed = true;
+					this.opts.on_pick(rows, this);
+					this.dialog.hide();
+					return;
+				}
 				if (!c.action) {
 					this.selected.show_alert(remove ? __("None of the selected numbers is in the list, so there is nothing to remove.") : __("Every selected number is already in the list or invalid, so there is nothing to add."));
 					return;

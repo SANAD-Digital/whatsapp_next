@@ -4526,3 +4526,30 @@ value,القيمة,
 {{ report }}: {{ row_count }} rows,{{ report }}: {{ row_count }} صف,
 Role,دور,alert recipient
 "The report file could not be built: wkhtmltopdf is not installed on the server. Send the test with ""No file"", or install it.",تعذّر إنشاء ملف التقرير: wkhtmltopdf غير مثبّت على الخادم. أرسل التجربة بخيار «بلا ملف» أو ثبّته.,
+Choose a connected device…,اختر جهازاً متصلاً…,
+Choose from contacts,اختر من جهات الاتصال,
+Choose recipients,اختر المستلمين,
+Choose who gets the alert,اختر من يصله التنبيه,
+"Contact groups, contacts, system screens, a file or typed numbers.",مجموعات جهات الاتصال، جهات الاتصال، شاشات النظام، ملف، أو أرقام تكتبها.,
+Date kind,نوع التاريخ,
+Day of the week,يوم الأسبوع,
+"Filters on {0}. For a date that moves, choose the ""Timespan"" condition (today, this week, last month…).",فلاتر على {0}. للتاريخ المتحرك اختر شرط «الفترة الزمنية» (اليوم، هذا الأسبوع، الشهر الماضي…).,
+Fixed,ثابت,
+Moves,متحرك,
+Nobody yet.,لا أحد بعد.,
+Or one message per number in a report column,أو رسالة لكل رقم في عمود من التقرير,
+Reading the report's filters…,جارٍ قراءة فلاتر التقرير…,
+Remove all numbers,إزالة كل الأرقام,
+Report {0},التقرير {0},
+Report {0} not found,التقرير {0} غير موجود,
+The filters of this report could not be shown.,تعذّر عرض فلاتر هذا التقرير.,
+The report's list filters,فلاتر قائمة التقرير,
+The report's own filters,فلاتر التقرير نفسه,
+This report has no filters.,لا فلاتر لهذا التقرير.,
+{0} number added,أُضيف {0} رقم,
+{0} numbers added,أُضيفت {0} أرقام,
+Send it,يُرسل,alert schedule
+on,يوم,alert schedule
+on day,في اليوم,alert schedule
+of,من,alert schedule
+at,الساعة,alert schedule

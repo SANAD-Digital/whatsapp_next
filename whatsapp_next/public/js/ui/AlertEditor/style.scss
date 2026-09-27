@@ -283,6 +283,46 @@ body.sanad-ae-open { overflow: hidden; }
 	&__dot { inline-size: 7px; block-size: 7px; border-radius: 50%; background: var(--wa-border-2); }
 	&__runs li.is-first &__dot { background: var(--wa-pri); box-shadow: 0 0 0 3px var(--wa-pri-s); }
 
+	// the schedule as one sentence of fields
+	&__sentence-line { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; }
+	&__word { font-size: 14px; font-weight: 600; color: var(--wa-ink-2); }
+	&__inline { inline-size: auto; min-inline-size: 110px; }
+	select.sanad-ae__inline { font-weight: 500; }
+
+	// the report's own filters
+	&__rfs { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px 14px; }
+	&__rf {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		min-inline-size: 0;
+		padding: 10px 12px;
+		border: 1px solid var(--wa-border);
+		border-radius: 10px;
+		background: var(--wa-bg);
+
+		&.is-moving { border-color: var(--wa-nf-sb); background: var(--wa-nf-s); }
+		.frappe-control { margin: 0; }
+		.form-group { margin: 0; }
+		.wa-seg { padding: 2px; }
+		.wa-seg__opt { min-block-size: 24px; padding-inline: 8px; font-size: 11px; }
+	}
+	&__rf-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+	&__rf-label { font-size: 12px; font-weight: 700; color: var(--wa-ink-2); }
+	&__fg {
+		padding: 8px 10px;
+		border: 1px solid var(--wa-border);
+		border-radius: 10px;
+		background: var(--wa-bg);
+	}
+
+	// recipients from the contact picker
+	&__who-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+	&__colpick { display: flex; flex-direction: column; gap: 8px; padding-block-start: 10px; border-block-start: 1px dashed var(--wa-border-2); }
+
+	&__device-link { max-inline-size: 420px; .frappe-control, .form-group { margin: 0; } }
+	&__device-state { display: flex; align-items: center; gap: 6px; }
+
 	// ---- pickers ---------------------------------------------------------------------------------------
 
 	&__pick {
