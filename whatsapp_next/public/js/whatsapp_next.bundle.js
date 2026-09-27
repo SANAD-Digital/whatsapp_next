@@ -9,3 +9,4 @@ import "./screens/numbers.js";
 import "./screens/queue.js";
 import "./screens/campaigns.js";
 import "./screens/campaign/index.js";
+import "./screens/settings.js";

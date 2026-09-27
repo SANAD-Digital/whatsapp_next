@@ -376,7 +376,7 @@
 					</div>
 				</section>`);
 
-			$el.find("[data-go=billing]").on("click", () => frappe.set_route("wa-settings", { tab: "billing" }));
+			$el.find("[data-go=billing]").on("click", () => whatsapp_next.settings.open("subscription"));
 			$el.find("[data-status]").on("click", function () {
 				const status = $(this).data("status");
 				const on = $(this).attr("aria-pressed") === "true";

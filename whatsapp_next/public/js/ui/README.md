@@ -35,6 +35,7 @@ loading (skeleton) / empty / error states, and every panel is keyboard-accessibl
 | `CommandEditor` | the prototype's command editor: setup · per-type lists · live dry-run preview | Commands list and form |
 | `FunctionDetail` | the prototype's function window: details · version log · live dry-run preview | Functions screen |
 | `AttachMenu` | the composer's "+": image · video · document · voice note · location · contact card | Simulator, BulkSend |
+| `SettingsWindow` | claude.ai-style settings window: search, grouped sections, a scrolling pane, rows | Settings, subscription and usage |
 | `BulkSend` | the prototype's bulk message window: groups · contacts · numbers, settings, preview, send | Simulator |
 | `PagedChildTable` | paged read table replacing a large child grid | Campaign recipients, Group members |
 | `DashboardBlock` | Custom HTML Block rendering Number Cards / Dashboard Charts | Workspace "WhatsApp" |

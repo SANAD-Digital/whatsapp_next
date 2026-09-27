@@ -35,6 +35,7 @@ import "./TemplateEditor/index.js";
 import "./CommandEditor/index.js";
 import "./FunctionDetail/index.js";
 import "./AttachMenu/index.js";
+import "./SettingsWindow/index.js";
 import "./BulkSend/index.js";
 import "./MessageComposer/index.js";
 import "./PagedChildTable/index.js";

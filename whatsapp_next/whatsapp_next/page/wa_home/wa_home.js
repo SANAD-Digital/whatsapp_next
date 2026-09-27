@@ -462,7 +462,7 @@ frappe.provide("whatsapp_next.home");
 						}),
 					format: (v) => (v ? __("Healthy") : __("Unreachable")),
 					sub: (v, raw) => (v ? __("Credentials accepted") : raw.detail || __("Check the credentials in settings")),
-					onclick: () => frappe.set_route("wa-settings", "provider"),
+					onclick: () => whatsapp_next.settings.open("provider"),
 				},
 				{
 					key: "webhook",
@@ -483,7 +483,7 @@ frappe.provide("whatsapp_next.home");
 								? __("Last event {0}", [ago(raw.at)])
 								: __("No event received yet")
 							: __("Delivery updates do not arrive"),
-					onclick: () => frappe.set_route("wa-settings", "webhook"),
+					onclick: () => whatsapp_next.settings.open("webhook"),
 				},
 				{
 					key: "plan",
@@ -501,7 +501,7 @@ frappe.provide("whatsapp_next.home");
 					format: (v) => (v == null ? __("Not read") : __("{0}%", [int(v)])),
 					sub: (v, raw) =>
 						raw.limit ? __("{0} of {1} messages", [int(raw.used), int(raw.limit)]) : __("Sync the subscription to see it"),
-					onclick: () => frappe.set_route("wa-settings", "subscription"),
+					onclick: () => whatsapp_next.settings.open("subscription"),
 				},
 			];
 		}
@@ -1177,7 +1177,7 @@ frappe.provide("whatsapp_next.home");
 					const share = limit ? Math.min(100, Math.round((used * 100) / limit)) : 0;
 					head($p, __("Plan and wallet"), plan.plan_name || __("No plan read yet"), {
 						label: __("Manage plan"),
-						handler: () => frappe.set_route("wa-settings", "subscription"),
+						handler: () => whatsapp_next.settings.open("subscription"),
 					});
 					if (!limit && !plan.subscription_end && !cint(plan.wallet_balance)) {
 						return state.set("empty", {

@@ -1,11 +1,12 @@
-// The settings page (phase 6). Espresso tokens only, logical properties only.
+// Screen 15 — subscription, usage and settings, drawn inside `sanad.ui.SettingsWindow` (D-138).
+// Espresso names resolve to the product's tokens (the window is a palette surface); logical
+// properties only.
 //
-// Screen 15 — the claude.ai shape the binding spec asks for (§5.7): a section rail on the
-// inline-start that stays put, one content pane on the inline-end that changes. The prototype's
-// own tabs (`docs/screen/Hub Screen - Settings.dc.html`) would not hold ten sections; its content
-// blocks — the state banner, the two-column panels with label/value rows, the event checklist, the
-// usage bars and the audit table — are what this file draws. Under 900 px the rail becomes a
-// scrollable row of chips above the pane.
+// The window is claude.ai's settings, so the content reads like it: section headings over rows
+// with a hairline between them — the title and its explanation on the start side, the value or
+// the control on the end side — rather than framed cards inside a framed page. What the prototype
+// draws and Claude has no equivalent for (the state banner, the plan meter, the usage bars, the
+// event checklist, the audit table) keeps its shape, set on the same rhythm.
 
 .wa-settings {
 	display: flex;
@@ -21,88 +22,6 @@
 		min-block-size: var(--sanad-ctl-h);
 	}
 
-	&__body {
-		display: grid;
-		gap: var(--sanad-gap-lg);
-		align-items: start;
-		@media (min-width: 900px) {
-			grid-template-columns: 232px minmax(0, 1fr);
-		}
-	}
-
-	// ---- the section rail ---------------------------------------------------------------------
-
-	&__nav {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		padding: var(--sanad-gap-sm);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-card-radius);
-		background: var(--surface-white);
-		@media (min-width: 900px) {
-			position: sticky;
-			inset-block-start: var(--sanad-gap-lg);
-		}
-		@media (max-width: 899px) {
-			flex-direction: row;
-			overflow-x: auto;
-			-webkit-overflow-scrolling: touch;
-			scrollbar-width: thin;
-		}
-	}
-
-	&__nav-item {
-		display: flex;
-		align-items: center;
-		gap: var(--sanad-gap-sm);
-		min-block-size: var(--sanad-target);
-		padding-inline: var(--sanad-gap-md);
-		border: 0;
-		border-radius: var(--sanad-radius);
-		background: none;
-		color: var(--ink-gray-7);
-		font-size: var(--text-sm, 13px);
-		text-align: start;
-		white-space: nowrap;
-		cursor: pointer;
-		&:hover {
-			background: var(--surface-gray-2);
-			color: var(--ink-gray-9);
-		}
-		&--on {
-			background: var(--sanad-accent-soft);
-			color: var(--sanad-accent-ink);
-			font-weight: 600;
-		}
-	}
-	&__nav-icon {
-		display: inline-flex;
-		flex: none;
-		opacity: 0.85;
-	}
-
-	// ---- the content pane -----------------------------------------------------------------------
-
-	// The prototype stacks its cards straight on the canvas; the pane is only the column that
-	// holds them, so the section reads as blocks rather than one framed box inside another.
-	&__pane {
-		min-inline-size: 0;
-	}
-	&__pane-head {
-		padding-block-end: var(--sanad-gap-sm);
-		h3 {
-			margin: 0;
-			font-size: var(--text-lg, 16px);
-			font-weight: 600;
-			color: var(--ink-gray-9);
-		}
-		p {
-			margin: var(--sanad-gap-xs) 0 0;
-			font-size: var(--text-sm, 13px);
-			color: var(--ink-gray-6);
-		}
-	}
 	&__pane-body {
 		display: flex;
 		flex-direction: column;
@@ -358,20 +277,6 @@
 
 	// ---- the usage bars ----------------------------------------------------------------------------
 
-	&__kpis {
-		display: block;
-	}
-	&__chart-head {
-		display: flex;
-		align-items: baseline;
-		gap: var(--sanad-gap-sm);
-		margin-block-end: var(--sanad-gap-md);
-	}
-	&__chart-total {
-		font-size: var(--text-2xl, 22px);
-		font-weight: 600;
-		color: var(--ink-gray-9);
-	}
 	&__chart {
 		display: flex;
 		align-items: flex-end;
@@ -387,11 +292,6 @@
 		gap: var(--sanad-gap-xs);
 		block-size: 100%;
 		min-inline-size: 0;
-	}
-	&__bar-fill {
-		inline-size: 100%;
-		border-radius: var(--border-radius-md, 8px) var(--border-radius-md, 8px) 0 0;
-		background: var(--sanad-accent);
 	}
 	&__bar-label {
 		font-size: var(--text-xs, 11px);
@@ -429,5 +329,248 @@
 	}
 	&__audit-open {
 		align-self: flex-start;
+	}
+}
+
+// ---- inside the window: Claude's rows (D-138) -------------------------------------------------------
+
+.wa-settings-window .wa-settings {
+	gap: 0;
+
+	// a panel is a titled group of rows, not a framed card
+	.wa-settings__cols { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+	.wa-settings__panel {
+		border: 0;
+		border-radius: 0;
+		background: none;
+		overflow: visible;
+		> header {
+			padding: 28px 0 4px;
+			strong { font-size: 17px; }
+			span span { font-size: 13px; color: var(--wa-ink-3); }
+		}
+	}
+	.wa-settings__panel-body { padding: 0; }
+
+	.wa-settings__subhead {
+		margin: 28px 0 4px;
+		font-size: 17px;
+		font-weight: 600;
+		letter-spacing: 0;
+		text-transform: none;
+		color: var(--wa-ink);
+	}
+
+	.wa-settings__rows li {
+		min-block-size: 52px;
+		padding-block: 14px;
+		gap: 24px;
+		border-block-end-color: var(--wa-border);
+		font-size: 14px;
+	}
+	.wa-settings__row-label { font-size: 15px; color: var(--wa-ink); > span { font-size: 13px; color: var(--wa-ink-3); } }
+	.wa-settings__row-value { color: var(--wa-ink-2); }
+
+	// read-only facts as rows
+	.wa-settings__facts {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		> div {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 24px;
+			padding-block: 14px;
+			border-block-end: 1px solid var(--wa-border);
+		}
+		dt { font-size: 15px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--wa-ink); }
+		dd { font-size: 14px; color: var(--wa-ink-2); text-align: end; }
+	}
+
+	// writable fields as rows: title and explanation on the start side, the control on the end side
+	.wa-settings__form {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		.frappe-control { border-block-end: 1px solid var(--wa-border); }
+		.form-group {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(200px, 300px);
+			column-gap: 24px;
+			align-items: center;
+			margin: 0;
+			padding-block: 14px;
+		}
+		.clearfix { grid-column: 1; grid-row: 1; }
+		.control-label { margin: 0; padding: 0 !important; font-size: 15px; font-weight: 500; color: var(--wa-ink); }
+		.form-group > .help-box { grid-column: 1; grid-row: 2; margin: 3px 0 0; font-size: 13px; line-height: 1.6; color: var(--wa-ink-3); }
+		.control-input-wrapper { grid-column: 2; grid-row: 1 / span 2; }
+		.frappe-control:is([data-fieldtype="Small Text"], [data-fieldtype="Text"], [data-fieldtype="Long Text"], [data-fieldtype="Code"], [data-fieldtype="JSON"]) .form-group {
+			grid-template-columns: minmax(0, 1fr);
+			.control-input-wrapper { grid-column: 1; grid-row: 3; margin-block-start: 8px; }
+		}
+
+		// a check is a switch at the end of its row
+		// a Check's wrapper is itself the `.form-group`
+		.form-group:has(> .checkbox) { display: block; }
+		.checkbox {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			column-gap: 24px;
+			align-items: center;
+			margin: 0;
+			label { display: contents; }
+			.label-area { grid-column: 1; grid-row: 1; font-size: 15px; font-weight: 500; color: var(--wa-ink); }
+			.help-box { grid-column: 1; grid-row: 2; margin: 3px 0 0; font-size: 13px; color: var(--wa-ink-3); }
+			.input-area { grid-column: 2; grid-row: 1 / span 2; display: inline-flex; }
+			.disp-area, .help { display: none; }
+			input[type="checkbox"] {
+				appearance: none;
+				-webkit-appearance: none;
+				flex: none;
+				min-inline-size: 38px;
+				background-image: none !important;
+				position: relative;
+				inline-size: 38px;
+				block-size: 22px;
+				margin: 0;
+				border: 0;
+				border-radius: 999px;
+				background: var(--wa-border-2);
+				box-shadow: none;
+				cursor: pointer;
+				transition: background 160ms;
+				&::after {
+					content: "";
+					position: absolute;
+					inset-block-start: 3px;
+					inset-inline-start: 3px;
+					inline-size: 16px;
+					block-size: 16px;
+					border-radius: 50%;
+					background: var(--wa-surface);
+					box-shadow: var(--wa-shadow-sm);
+					transition: inset-inline-start 160ms;
+				}
+				&:checked { background: var(--wa-pri); border: 0; }
+				&:checked::after { inset-inline-start: 19px; }
+				&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: 2px; }
+			}
+		}
+	}
+
+	.wa-settings__actions { justify-content: flex-end; padding-block-start: 16px; }
+
+	.wa-settings__banner { margin-block-end: 4px; padding: 14px 16px; border-radius: 12px; }
+	.wa-settings__note { margin-block-start: 12px; font-size: 13px; color: var(--wa-ink-3); }
+
+	// ---- subscription: the plan meter and three facts ------------------------------------------------
+
+	.wa-settings__meter {
+		padding: 20px;
+		border: 1px solid var(--wa-border);
+		border-radius: 14px;
+		background: var(--wa-bg);
+	}
+	.wa-settings__meter-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+	.wa-settings__meter-title { font-size: 14px; font-weight: 600; color: var(--wa-ink-2); }
+	.wa-settings__meter-value {
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 10px;
+		margin-block: 8px 12px;
+		strong { font-size: 32px; font-weight: 700; line-height: 1.1; color: var(--wa-ink); }
+		span { font-size: 13px; color: var(--wa-ink-3); }
+	}
+	.wa-settings__meter-track {
+		block-size: 8px;
+		border-radius: 999px;
+		background: var(--wa-sunken);
+		overflow: hidden;
+		span { display: block; block-size: 100%; border-radius: inherit; background: var(--wa-pri); }
+		&.is-high span { background: var(--wa-wn); }
+	}
+
+	.wa-settings__facts3 {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 12px;
+		margin-block-start: 12px;
+		> div {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+			min-inline-size: 0;
+			padding: 14px 16px;
+			border: 1px solid var(--wa-border);
+			border-radius: 12px;
+		}
+		span { font-size: 13px; color: var(--wa-ink-3); }
+		strong { font-size: 20px; font-weight: 700; color: var(--wa-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+		strong.is-bad { color: var(--wa-dg-i); }
+		em { font-style: normal; font-size: 12px; color: var(--wa-ink-4); }
+		@media (max-width: 719px) { grid-template-columns: minmax(0, 1fr); }
+	}
+
+	.wa-settings__plan .wa-settings__rows li:last-child { border-block-end: 1px solid var(--wa-border); }
+
+	// ---- usage: the period, the bars ----------------------------------------------------------------
+
+	.wa-settings__period {
+		display: inline-flex;
+		align-self: flex-start;
+		gap: 2px;
+		margin-block-end: 4px;
+		padding: 3px;
+		border-radius: 10px;
+		background: var(--wa-sunken);
+		button {
+			min-block-size: 32px;
+			padding-inline: 14px;
+			border: 0;
+			border-radius: 8px;
+			background: transparent;
+			color: var(--wa-ink-3);
+			font-size: 13px;
+			font-weight: 600;
+			cursor: pointer;
+			&.is-on { background: var(--wa-surface); color: var(--wa-ink); box-shadow: var(--wa-shadow-sm); }
+			&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: 1px; }
+		}
+	}
+
+	.wa-settings__chart { block-size: 220px; gap: 6px; margin-block-start: 12px; }
+	.wa-settings__bar { gap: 6px; }
+	.wa-settings__bar-col {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-start;
+		inline-size: 100%;
+		max-inline-size: 44px;
+		border-radius: 6px 6px 2px 2px;
+		background: var(--wa-pri);
+		overflow: hidden;
+	}
+	.wa-settings__bar:hover .wa-settings__bar-col { background: var(--wa-pri-d); }
+	.wa-settings__bar-fail { display: block; inline-size: 100%; background: var(--wa-dg); }
+	.wa-settings__legend {
+		display: flex;
+		gap: 16px;
+		margin-block-start: 10px;
+		font-size: 12px;
+		color: var(--wa-ink-3);
+		span { display: inline-flex; align-items: center; gap: 6px; }
+		i { inline-size: 10px; block-size: 10px; border-radius: 3px; }
+		.is-sent { background: var(--wa-pri); }
+		.is-fail { background: var(--wa-dg); }
+	}
+
+	@media (max-width: 719px) {
+		.wa-settings__form .form-group { grid-template-columns: minmax(0, 1fr); }
+		.wa-settings__form .control-input-wrapper { grid-column: 1; grid-row: 3; margin-block-start: 8px; }
+		.wa-settings__chart { block-size: 160px; gap: 3px; }
 	}
 }
