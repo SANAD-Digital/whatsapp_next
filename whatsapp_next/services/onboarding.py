@@ -199,11 +199,6 @@ def complete_signup(
 	stored = store_signup_credentials(state, user=user)
 	out = {"ok": state.status == "Completed", "status": state.status, "credentials_stored": stored}
 	if stored:
-		if not frappe.db.get_single_value("WhatsApp Settings", "platform_base_url"):
-			frappe.db.set_single_value(
-				"WhatsApp Settings", "platform_base_url", registry.platform_base_url(), update_modified=False
-			)
-			frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 		out.update(link_site(user=user))
 	return out
 
@@ -251,10 +246,6 @@ def login(platform_base_url: str, email: str, password: str, user: str | None = 
 	values = {f: returned.get(f) for f in CREDENTIAL_FIELDS if returned.get(f)}
 	if not values:
 		frappe.throw(_("The platform returned no credentials for this account"), WAValidationError)
-	# The address is a default (D-103): a site that signed in against the bench's platform keeps
-	# that address in Settings, so the credentials step reads complete and an operator sees it.
-	if not frappe.db.get_single_value("WhatsApp Settings", "platform_base_url"):
-		values["platform_base_url"] = registry.platform_base_url()
 	written = save_credentials(user=user, **values)
 	return {
 		"ok": True,
@@ -272,6 +263,14 @@ def link_site(user: str | None = None) -> dict[str, Any]:
 	half-linked site still signs in and the Settings page offers the step that failed.
 
 	`{connection{ok, error}, webhook{ok, status, error}, devices{ok, adopted, error}}`."""
+	# The address is a default (D-103): a linked site keeps the bench's platform address in
+	# Settings, so the credentials step reads complete and an operator sees where it points.
+	if not frappe.db.get_single_value("WhatsApp Settings", "platform_base_url"):
+		frappe.db.set_single_value(
+			"WhatsApp Settings", "platform_base_url", registry.platform_base_url(), update_modified=False
+		)
+		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+		registry.clear_cache()
 	connection = test_connection(user=user)
 	out: dict[str, Any] = {"connection": {"ok": connection["ok"], "error": connection.get("error")}}
 	if not connection["ok"]:

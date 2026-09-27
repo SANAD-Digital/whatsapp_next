@@ -11,7 +11,7 @@ from frappe.utils import get_datetime, nowdate
 
 from whatsapp_next.api._common import api_endpoint
 from whatsapp_next.api.v1._roles import VIEWER_UP
-from whatsapp_next.services import campaign_runner, dispatch, onboarding, usage_sync, webhook_setup
+from whatsapp_next.services import campaign_runner, dispatch, home, onboarding, usage_sync, webhook_setup
 
 DEVICE_FIELDS = (
 	"name",
@@ -64,3 +64,12 @@ def get_dashboard() -> dict[str, Any]:
 		"last_webhook_event_at": webhook.last_event_at,
 		"setup": onboarding.status(),
 	}
+
+
+@api_endpoint(
+	roles=VIEWER_UP, methods=("GET", "POST"), schema={"period": {"enum": list(home.PERIODS)}}
+)
+def get_activity(period: str = "today") -> dict[str, Any]:
+	"""One period of the Home page: `{period, traffic{from, now, previous, errors}, series[{key,
+	status, count}], scheduled, last_sent, feed}` — grouped in the database (A-3)."""
+	return home.activity(period)

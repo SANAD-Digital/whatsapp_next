@@ -46,8 +46,6 @@ frappe.provide("whatsapp_next.home");
 	const FEED_LIMIT = 5;
 	const PANEL_LIMIT = 5;
 	const FAIL_LIMIT = 6;
-	/** The shape of a period is drawn from the rows themselves; this bounds the read. */
-	const SERIES_CAP = 4000;
 
 	const PERIODS = [
 		{ key: "today", days: 0, grain: "hour", label: () => __("Today"), window: () => __("today") },
@@ -151,21 +149,6 @@ frappe.provide("whatsapp_next.home");
 	// ---------------------------------------------------------------------------------------
 
 	/** Counts of `WhatsApp Log` by one field inside a window, as `{value: count}`. */
-	const group_count = (field, filters) =>
-		frappe
-			.xcall("frappe.desk.listview.get_group_by_count", { doctype: OUT, current_filters: filters, field })
-			.then((rows) => {
-				const out = {};
-				(rows || []).forEach((r) => (out[r.name == null ? "" : r.name] = cint(r.count)));
-				return out;
-			});
-
-	const window_filters = (from, to) => {
-		const f = [[OUT, "creation", ">=", from]];
-		if (to) f.push([OUT, "creation", "<", to]);
-		return f;
-	};
-
 	// ---- the period, as buckets -------------------------------------------------------------
 
 	/**
@@ -309,6 +292,7 @@ frappe.provide("whatsapp_next.home");
 		set_period(key) {
 			if (key === this.period || !PERIODS.some((p) => p.key === key)) return;
 			this.period = key;
+			this._activity = null;
 			this._traffic = null;
 			this._series = null;
 			this.render_period();
@@ -327,113 +311,68 @@ frappe.provide("whatsapp_next.home");
 			return this._dashboard;
 		}
 
+		/**
+		 * Everything that depends on the period, in one call (`home.get_activity`, A-3): exact
+		 * status / error totals for it and the period before, its shape per hour or day (grouped in
+		 * the database), the scheduled campaigns, the last send and the live feed.
+		 */
+		activity() {
+			if (!this._activity) this._activity = ui.call("home.get_activity", { period: this.period });
+			return this._activity;
+		}
+
 		/** Exact per-status and per-error totals for the chosen period, and the one before it. */
 		traffic() {
-			if (this._traffic) return this._traffic;
-			const p = period_of(this.period);
-			const today = frappe.datetime.get_today();
-			const from = frappe.datetime.add_days(today, -p.days);
-			const previous_from = frappe.datetime.add_days(from, -(p.days + 1));
-			this._traffic = Promise.all([
-				group_count("status", window_filters(from)),
-				group_count("status", window_filters(previous_from, from)),
-				group_count("error_code", window_filters(from).concat([[OUT, "status", "=", "Failed"]])),
-			]).then(([now, previous, errors]) => ({ from, now, previous, errors }));
+			if (!this._traffic) this._traffic = this.activity().then((a) => a.traffic);
 			return this._traffic;
 		}
 
-		/**
-		 * The shape of the period: how the same messages fall across its hours or days. Frappe's
-		 * list API cannot group by a date expression, so the rows are counted here — bounded by
-		 * `SERIES_CAP` and only ever used for the drawing, never for a headline number (those
-		 * come from `traffic()`, which is exact).
-		 */
+		/** The shape of the period: its hours (today) or days, each with its status bands. */
 		series() {
 			if (this._series) return this._series;
-			const p = period_of(this.period);
-			const today = frappe.datetime.get_today();
-			const from = frappe.datetime.add_days(today, -p.days);
-			this._series = frappe.db
-				.get_list(OUT, {
-					fields: ["status", "creation"],
-					filters: { creation: [">=", from] },
-					order_by: "creation desc",
-					limit: SERIES_CAP,
-				})
-				.then((rows) => {
-					const buckets = bucket_defs(this.period);
-					const index = {};
-					buckets.forEach((b) => (index[b.key] = b));
-					(rows || []).forEach((r) => {
-						const band = band_of(r.status);
-						if (!band) return;
-						const key = p.grain === "hour" ? cstr(r.creation).slice(11, 13) : cstr(r.creation).slice(0, 10);
-						const bucket = index[key];
-						if (!bucket) return;
-						bucket.counts[band] = cint(bucket.counts[band]) + 1;
-					});
-					buckets.forEach((b) => {
-						b.total = BANDS.reduce((n, band) => n + cint(b.counts[band.key]), 0);
-					});
-					return { buckets, partial: (rows || []).length >= SERIES_CAP };
+			this._series = this.activity().then((a) => {
+				const buckets = bucket_defs(this.period);
+				const index = {};
+				buckets.forEach((b) => (index[b.key] = b));
+				(a.series || []).forEach((r) => {
+					const band = band_of(r.status);
+					const bucket = index[r.key];
+					if (!band || !bucket) return;
+					bucket.counts[band] = cint(bucket.counts[band]) + cint(r.count);
 				});
+				buckets.forEach((b) => {
+					b.total = BANDS.reduce((n, band) => n + cint(b.counts[band.key]), 0);
+				});
+				return { buckets };
+			});
 			return this._series;
 		}
 
 		/** Campaigns waiting for their hour — `campaigns_sending` only returns the live ones. */
 		scheduled() {
-			if (!this._scheduled) {
-				this._scheduled = frappe.db.get_list(CAMP, {
-					fields: ["name", "campaign_name", "status", "total_recipients", "scheduled_at"],
-					filters: { status: "Scheduled" },
-					order_by: "scheduled_at asc",
-					limit: PANEL_LIMIT,
-				});
-			}
+			if (!this._scheduled) this._scheduled = this.activity().then((a) => a.scheduled || []);
 			return this._scheduled;
 		}
 
 		/** When a message last left, whatever period is on screen. */
 		last_sent() {
-			if (!this._last_sent) {
-				this._last_sent = frappe.db
-					.get_list(OUT, {
-						fields: ["sent_at"],
-						filters: { sent_at: ["is", "set"] },
-						order_by: "sent_at desc",
-						limit: 1,
-					})
-					.then((rows) => (rows && rows.length ? rows[0].sent_at : null));
-			}
+			if (!this._last_sent) this._last_sent = this.activity().then((a) => a.last_sent || null);
 			return this._last_sent;
 		}
 
 		/** The last five movements in both directions — the prototype's live flow. */
 		feed() {
-			if (this._feed) return this._feed;
-			this._feed = Promise.all([
-				frappe.db.get_list(OUT, {
-					fields: ["name", "display_name", "phone_e164", "status", "device", "creation", "sent_at"],
-					order_by: "creation desc",
-					limit: FEED_LIMIT,
-				}),
-				frappe.db.get_list(IN, {
-					fields: ["name", "display_name", "phone_e164", "device", "received_at", "creation"],
-					order_by: "creation desc",
-					limit: FEED_LIMIT,
-				}),
-			]).then(([out, inbound]) =>
-				out
-					.map((r) => Object.assign({ doctype: OUT, _direction: "out", _at: r.creation }, r))
-					.concat(inbound.map((r) => Object.assign({ doctype: IN, _direction: "in", _at: r.received_at || r.creation }, r)))
-					.sort((a, b) => (a._at < b._at ? 1 : -1))
-					.slice(0, FEED_LIMIT)
-			);
+			if (!this._feed) {
+				this._feed = this.activity().then((a) =>
+					(a.feed || []).map((r) => Object.assign({ _direction: r.direction, _at: r.at }, r))
+				);
+			}
 			return this._feed;
 		}
 
 		refresh() {
 			this._dashboard = null;
+			this._activity = null;
 			this._traffic = null;
 			this._series = null;
 			this._feed = null;
@@ -993,13 +932,6 @@ frappe.provide("whatsapp_next.home");
 					<figcaption class="sanad-visually-hidden">${esc(
 						__("{0} messages over {1} columns; the busiest column holds {2}.", [int(total), int(buckets.length), int(peak)])
 					)}</figcaption>
-					${
-						s.partial
-							? `<p class="wa-home__plot-note">${esc(
-									__("Drawn from the most recent {0} messages; the totals above are exact.", [int(SERIES_CAP)])
-								)}</p>`
-							: ""
-					}
 				</figure>`).appendTo($el);
 
 			$fig.find(".wa-home__col-btn").on("click", function () {
