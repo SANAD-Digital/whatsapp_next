@@ -25,6 +25,7 @@ from whatsapp_next.providers.schemas import (
 	SignupState,
 	UsageReport,
 	WebhookEndpointState,
+	WebhookEnvelope,
 	WebhookEvent,
 )
 
@@ -200,6 +201,17 @@ class BaseProvider(ABC):
 	@abstractmethod
 	def parse_webhook(self, headers: Mapping[str, str], body: dict) -> WebhookEvent:
 		"""Wire payload → `WebhookEvent`; pure; unknown events keep their name and `is_known` False."""
+
+	def webhook_envelope(self, headers: Mapping[str, str]) -> WebhookEnvelope:
+		"""Event id, event name and whether a signature is present, read from the delivery's
+		headers (their names are the provider's, never the receiver's). Default: nothing, so a
+		provider that does not deliver webhooks is refused at step 1."""
+		return WebhookEnvelope(event_id=None, event_name=None, signed=False)
+
+	def replay_headers(self, event_name: str, event_id: str | None) -> dict[str, str]:
+		"""Headers that let `parse_webhook` re-read a stored event (the stored row keeps the body
+		and the id / name, not the wire headers)."""
+		return {}
 
 	@abstractmethod
 	def get_webhook_secret(self) -> str:

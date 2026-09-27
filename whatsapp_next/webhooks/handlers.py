@@ -125,8 +125,8 @@ def process_event(event: str) -> str:
 	started = time.perf_counter()
 	try:
 		body = json.loads(row.payload) if row.payload else {}
-		headers = {"X-SND-Event": row.event_name, "X-SND-Event-ID": row.event_id}
-		parsed = registry.get_provider().parse_webhook(headers, body)
+		provider = registry.get_provider()
+		parsed = provider.parse_webhook(provider.replay_headers(row.event_name, row.event_id), body)
 		device = row.device or devices.by_platform_device(parsed.platform_device)
 		status, links = handle_event(parsed, webhook_event_name=row.name, device=device)
 		values: dict[str, Any] = {

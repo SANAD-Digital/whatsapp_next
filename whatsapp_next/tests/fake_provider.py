@@ -358,6 +358,12 @@ class FakeProvider(BaseProvider):
 	def parse_webhook(self, headers: Mapping[str, str], body: dict) -> WebhookEvent:
 		return self._snd.parse_webhook(headers, body)
 
+	def webhook_envelope(self, headers: Mapping[str, str]):
+		return self._snd.webhook_envelope(headers)
+
+	def replay_headers(self, event_name: str, event_id: str | None) -> dict[str, str]:
+		return self._snd.replay_headers(event_name, event_id)
+
 	def get_webhook_secret(self) -> str:
 		self._record("get_webhook_secret")
 		return self.secret

@@ -45,6 +45,7 @@ from whatsapp_next.providers.schemas import (
 	UsageReport,
 	UsageRow,
 	WebhookEndpointState,
+	WebhookEnvelope,
 	WebhookEvent,
 )
 
@@ -872,6 +873,17 @@ class SndPlatformProvider(BaseProvider):
 		valid = hmac.compare_digest(expected, signature.strip().lower())
 		reason = None if valid and fresh else ("stale" if valid else "signature")
 		return SignatureCheck(valid=valid, fresh=fresh, event_timestamp=event_ts, reason=reason)
+
+	def webhook_envelope(self, headers: Mapping[str, str]) -> WebhookEnvelope:
+		h = _ci_headers(headers)
+		return WebhookEnvelope(
+			event_id=h.get(HEADER_EVENT_ID.lower()) or None,
+			event_name=h.get(HEADER_EVENT.lower()) or None,
+			signed=bool(h.get(HEADER_SIGNATURE.lower())),
+		)
+
+	def replay_headers(self, event_name: str, event_id: str | None) -> dict[str, str]:
+		return {HEADER_EVENT: event_name or "", HEADER_EVENT_ID: event_id or ""}
 
 	def parse_webhook(self, headers: Mapping[str, str], body: dict) -> WebhookEvent:
 		"""Platform payload + headers → `WebhookEvent` (pure). Unknown events keep their name."""

@@ -16,7 +16,6 @@ from frappe.utils import now_datetime
 
 from whatsapp_next.api._common import api_endpoint
 from whatsapp_next.providers import registry
-from whatsapp_next.providers.snd_platform import HEADER_EVENT, HEADER_EVENT_ID, HEADER_SIGNATURE
 from whatsapp_next.webhooks import idempotency, verify
 
 RATE_LIMIT_PER_MINUTE = 600  # per source IP (D-029 OQ-P6: a constant, not a setting)
@@ -29,10 +28,6 @@ class Outcome:
 	http_status: int
 	body: dict[str, Any]
 	event: str | None = None
-
-
-def _ci(headers: Mapping[str, str]) -> dict[str, str]:
-	return {str(k).lower(): str(v) for k, v in (headers or {}).items()}
 
 
 def _rate_limited(ip: str | None) -> bool:
@@ -55,11 +50,10 @@ def _secret() -> str | None:
 
 def handle(headers: Mapping[str, str], raw_body: bytes, *, remote_ip: str | None = None) -> Outcome:
 	"""Pure-ish core of the receiver (tests call it directly). Returns HTTP status + JSON body."""
-	h = _ci(headers)
-	event_id = h.get(HEADER_EVENT_ID.lower()) or None
-	event_name = h.get(HEADER_EVENT.lower()) or None
-	# 1. required headers
-	if not event_id or not h.get(HEADER_SIGNATURE.lower()):
+	envelope = registry.get_provider().webhook_envelope(headers)
+	event_id, event_name = envelope.event_id, envelope.event_name
+	# 1. required headers (their names are the provider's: A-1)
+	if not event_id or not envelope.signed:
 		return Outcome(401, {"ok": False, "error": "missing headers"})
 	if _rate_limited(remote_ip):
 		return Outcome(429, {"ok": False, "error": "rate limited"})

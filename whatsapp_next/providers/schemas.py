@@ -336,6 +336,15 @@ class SignatureCheck:
 
 
 @dataclass(frozen=True)
+class WebhookEnvelope:
+	"""What the receiver needs from a delivery's headers before it trusts the body (A-1)."""
+
+	event_id: str | None
+	event_name: str | None
+	signed: bool
+
+
+@dataclass(frozen=True)
 class SignupState:
 	request_key: str | None
 	status: str
