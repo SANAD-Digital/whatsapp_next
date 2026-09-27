@@ -701,7 +701,7 @@ sanad.ui.OverlayPanel = class OverlayPanel {
 	render_choice(df, $f, entry, set) {
 		const $wrap = $(`<div class="sanad-op__choice"></div>`).appendTo($f);
 		const $q = df.searchable !== false
-			? $(`<label class="sanad-op__search">${kit.ico("search", "xs")}<input type="text" placeholder="${esc(df.placeholder || __("Search…"))}" aria-label="${esc(df.label || __("Search"))}" autocomplete="off"></label>`).appendTo($wrap)
+			? $(`<label class="sanad-op__search">${kit.ico("search", "xs")}<input type="text" data-sanad-bare placeholder="${esc(df.placeholder || __("Search…"))}" aria-label="${esc(df.label || __("Search"))}" autocomplete="off"></label>`).appendTo($wrap)
 			: null;
 		const $grid = $(`<div class="sanad-op__choices" role="listbox" aria-label="${esc(df.label || "")}" style="--sanad-op-cols:${cint(df.cols) || 2}"></div>`).appendTo($wrap);
 		let items = df.options || [];

@@ -204,7 +204,7 @@
 						</div>
 						<label class="wa-sim__search">
 							${SEARCH_ICON}
-							<input type="search" dir="auto" placeholder="${esc(__("Search by name or number…"))}" aria-label="${esc(__("Search by name or number"))}" />
+							<input type="search" dir="auto" data-sanad-bare placeholder="${esc(__("Search by name or number…"))}" aria-label="${esc(__("Search by name or number"))}" />
 						</label>
 					</div>
 					<div class="wa-sim__list" role="list"></div>
@@ -370,7 +370,7 @@
 				${c ? `<button type="button" class="wa-sim__back" title="${esc(__("All conversations"))}" aria-label="${esc(__("All conversations"))}">→</button>` : ""}
 				<span class="wa-sim__head-icon" aria-hidden="true">${SEND_ICON.replace('width="14" height="14"', 'width="18" height="18"')}</span>
 				<button type="button" class="wa-sim__head-text"${c ? "" : " disabled"}>
-					<span class="wa-sim__head-title">${esc(c ? title_of(c) : __("WhatsApp simulator"))}</span>
+					<span class="wa-sim__head-title">${c && !c.display_name ? `<bdi dir="ltr">${esc(title_of(c))}</bdi>` : esc(c ? title_of(c) : __("WhatsApp simulator"))}</span>
 					<span class="wa-sim__head-sub"${c ? ' dir="auto"' : ""}>${esc(sub)}</span>
 				</button>
 				${

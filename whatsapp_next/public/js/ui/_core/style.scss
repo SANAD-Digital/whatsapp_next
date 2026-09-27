@@ -106,10 +106,17 @@
 }
 // A text control already has a border: focus is that border turning to the accent with a soft
 // halo, the same as the product's own fields — an outline on top of it drew two rings at once.
-.sanad-kit :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea):focus-visible {
+.sanad-kit :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([data-sanad-bare]), select, textarea):focus-visible {
 	outline: none;
 	border-color: var(--sanad-accent);
 	box-shadow: 0 0 0 3px var(--sanad-accent-soft);
+}
+// A field drawn inside a box that shows the focus itself (a search pill, a picker's box) marks
+// itself `data-sanad-bare`: the box turns to the accent, the field inside draws nothing.
+.sanad-kit [data-sanad-bare]:is(:focus, :focus-visible) {
+	outline: none;
+	border-color: transparent;
+	box-shadow: none;
 }
 
 // Chip / pill control (filters, group-by, period, kind tabs): one height, one look.
