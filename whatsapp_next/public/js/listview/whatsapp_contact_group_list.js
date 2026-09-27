@@ -1,6 +1,6 @@
 // WhatsApp Contact Group list (09 row 14, D-064 option A — prototype-faithful): PageHeader (title,
-// description, "New group", KPIs Groups · Total members · Blacklists), FilterBar (search, kind,
-// source), DataList columns as the prototype (group + description, kind chip, members, source,
+// description, "New group", "Import CSV", KPIs Groups · Total members · Blacklists), FilterBar
+// (search, kind tabs, source, state), DataList columns as the prototype (group + description, kind chip, members, source,
 // last updated, Edit, View) with an expandable row showing the first 10 members
 // (`picker.get_group_members`) and the description note. The kind indicator here is the one
 // colour source (read through `sanad.ui.indicator_for`). Until `sanad.ui.DataList` lands, the
@@ -64,6 +64,19 @@ frappe.listview_settings["WhatsApp Contact Group"] = {
 			title: __("Contact groups"),
 			description: __("Lists used as campaign audiences and in command permissions. A blacklist is blocked from every send."),
 			primary: { label: __("New group"), icon: "es-line-add", perm: "create", handler: () => frappe.new_doc("WhatsApp Contact Group") },
+			// 09 row 14: «استيراد من ملف CSV» → a new group whose first save opens the picker on the
+			// phone-export source with CSV chosen (the form's `import=csv` path).
+			secondary: [
+				{
+					label: __("Import CSV"),
+					icon: "es-line-file-upload",
+					perm: "create",
+					handler: () => {
+						frappe.flags.wa_group_import_csv = true;
+						frappe.new_doc("WhatsApp Contact Group", { source: "Import" });
+					},
+				},
+			],
 			stats: [
 				{ key: "groups", label: __("Groups"), icon: "es-line-people", count: { doctype: "WhatsApp Contact Group", filters: { disabled: 0 } }, sub: __("All lists defined in the system") },
 				{ key: "members", label: __("Total members"), icon: "es-line-people", tone: "blue", sum: { doctype: "WhatsApp Contact Group", field: "member_count", filters: { disabled: 0 } }, sub: __("Members across all groups") },
@@ -85,8 +98,19 @@ frappe.listview_settings["WhatsApp Contact Group"] = {
 				actions: ["group_by", "export"],
 				presets: [
 					{ fieldname: "group_name", type: "search", fields: ["group_name", "description"], placeholder: __("Group name…") },
-					{ fieldname: "kind", type: "select" },
+					// 09 row 14: kind is a tab row (All + the five kinds), not a dropdown
+					{ fieldname: "kind", type: "tabs", all_label: __("All") },
 					{ fieldname: "source", type: "select" },
+					{
+						fieldname: "disabled",
+						type: "select",
+						label: __("State"),
+						multiple: false,
+						options: [
+							{ value: "0", label: __("Active") },
+							{ value: "1", label: __("Disabled") },
+						],
+					},
 				],
 			});
 		}

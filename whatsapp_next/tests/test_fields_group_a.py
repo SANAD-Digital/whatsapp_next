@@ -345,7 +345,7 @@ class TestFieldsGroupA(IntegrationTestCase):
 					self.assertEqual(df.options, options, f"{doctype}.{fieldname} options")
 
 	def test_no_unplanned_value_fields(self) -> None:
-		layout = {"Section Break", "Column Break", "Tab Break"}
+		layout = {"Section Break", "Column Break", "Tab Break", "HTML"}  # HTML: display only, no value
 		for doctype, fields in EXPECTED.items():
 			meta = frappe.get_meta(doctype)
 			actual = {df.fieldname for df in meta.fields if df.fieldtype not in layout}

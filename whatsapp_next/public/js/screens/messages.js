@@ -322,7 +322,7 @@ frappe.provide("whatsapp_next.fmt");
 		(opts.filters || []).forEach((f) => presets.push(f));
 		if (opts.date !== false) presets.push(Object.assign({ type: "date", label: __("Date"), default_op: "between" }, opts.date || {}));
 
-		new ui.FilterBar({ listview, actions: ["group_by", "columns", "export"], presets });
+		new ui.FilterBar(Object.assign({ listview, actions: ["group_by", "columns", "export"], presets }, opts.max_inline ? { max_inline: opts.max_inline } : {}));
 
 		const list = new ui.DataList(
 			Object.assign(

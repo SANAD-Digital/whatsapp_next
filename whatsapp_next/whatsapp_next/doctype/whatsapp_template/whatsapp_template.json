@@ -6,31 +6,40 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "template_tab",
   "template_name",
   "category",
+  "description",
   "template_column",
   "message_type",
   "disabled",
   "body_section",
   "body",
-  "attachment_section",
+  "usage_section",
+  "use_count",
+  "usage_column",
+  "last_used_at",
+  "attachment_tab",
   "attachment",
   "print_format",
   "attachment_column",
   "letter_head",
   "file_name_template",
+  "preview_tab",
   "context_section",
   "reference_doctype",
   "language",
-  "description",
   "context_column",
   "sample_context",
-  "usage_section",
-  "use_count",
-  "usage_column",
-  "last_used_at"
+  "preview_section",
+  "preview_html"
  ],
  "fields": [
+  {
+   "fieldname": "template_tab",
+   "fieldtype": "Tab Break",
+   "label": "Template"
+  },
   {
    "fieldname": "template_name",
    "fieldtype": "Data",
@@ -47,6 +56,11 @@
    "in_standard_filter": 1,
    "label": "Category",
    "search_index": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
   },
   {
    "fieldname": "template_column",
@@ -83,10 +97,34 @@
    "reqd": 1
   },
   {
-   "depends_on": "eval:[\"Document\",\"Image\"].includes(doc.message_type)",
-   "fieldname": "attachment_section",
+   "fieldname": "usage_section",
    "fieldtype": "Section Break",
-   "label": "Attachment"
+   "label": "Usage"
+  },
+  {
+   "default": "0",
+   "description": "How many times the template has been used.",
+   "fieldname": "use_count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Uses",
+   "read_only": 1
+  },
+  {
+   "fieldname": "usage_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "last_used_at",
+   "fieldtype": "Datetime",
+   "label": "Last Used At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "attachment_tab",
+   "fieldtype": "Tab Break",
+   "label": "Attachment",
+   "depends_on": "eval:[\"Document\",\"Image\"].includes(doc.message_type)"
   },
   {
    "depends_on": "eval:doc.message_type==\"Image\"",
@@ -120,6 +158,11 @@
    "label": "File Name Template"
   },
   {
+   "fieldname": "preview_tab",
+   "fieldtype": "Tab Break",
+   "label": "Preview"
+  },
+  {
    "fieldname": "context_section",
    "fieldtype": "Section Break",
    "label": "Context"
@@ -139,11 +182,6 @@
    "options": "Language"
   },
   {
-   "fieldname": "description",
-   "fieldtype": "Small Text",
-   "label": "Description"
-  },
-  {
    "fieldname": "context_column",
    "fieldtype": "Column Break"
   },
@@ -154,28 +192,13 @@
    "label": "Sample Context"
   },
   {
-   "fieldname": "usage_section",
-   "fieldtype": "Section Break",
-   "label": "Usage"
+   "fieldname": "preview_section",
+   "fieldtype": "Section Break"
   },
   {
-   "default": "0",
-   "description": "How many times the template has been used.",
-   "fieldname": "use_count",
-   "fieldtype": "Int",
-   "in_list_view": 1,
-   "label": "Uses",
-   "read_only": 1
-  },
-  {
-   "fieldname": "usage_column",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "last_used_at",
-   "fieldtype": "Datetime",
-   "label": "Last Used At",
-   "read_only": 1
+   "fieldname": "preview_html",
+   "fieldtype": "HTML",
+   "label": "Preview"
   }
  ],
  "links": [
@@ -195,7 +218,7 @@
    "link_fieldname": "template"
   }
  ],
- "modified": "2026-09-26 21:00:00.000000",
+ "modified": "2026-09-27 13:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Template",

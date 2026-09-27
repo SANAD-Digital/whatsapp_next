@@ -4051,3 +4051,7 @@ The sent message this event updates.,الرسالة الصادرة التي يح
 The event's content as received. Deleted after the retention period in Settings.,محتوى الحدث كما وصل. يُحذف بعد مدة الاحتفاظ المحددة في الإعدادات.,
 Updated automatically as the event is processed.,تُحدَّث تلقائيًا أثناء معالجة الحدث.,
 Why processing failed.,سبب فشل المعالجة.,
+Import CSV,استيراد CSV,
+State,الحالة,
+Sent on behalf,مرسلة بالنيابة,
+Sent by the user,مرسلة من المستخدم,

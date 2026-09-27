@@ -1,5 +1,7 @@
-// WhatsApp Template form (09 row 10a): mounts the TemplateEditor (variables sidebar, sample
-// record picker, live preview) under the Jinja body and adds "Use in a message" → QuickSend.
+// WhatsApp Template form (09 row 10a): tabs Template · Attachment · Preview. The TemplateEditor
+// (variables sidebar, sample record picker, live preview) lives in the Preview tab next to what
+// drives it (reference DocType, sample context); a variable clicked there is inserted into the
+// body on the Template tab. Adds "Use in a message" → QuickSend.
 
 frappe.ui.form.on("WhatsApp Template", {
 	refresh(frm) {
@@ -8,6 +10,7 @@ frappe.ui.form.on("WhatsApp Template", {
 			body_field: "body",
 			reference_doctype_field: "reference_doctype",
 			sample_field: "sample_context",
+			preview_field: "preview_html",
 		});
 
 		if (!frm.is_new() && !frm.doc.disabled && typeof sanad.ui.QuickSend === "function") {

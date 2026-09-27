@@ -10,6 +10,18 @@
 	const M = whatsapp_next.messages;
 	const is_agent = M.is_agent;
 
+	/** Options of a Link filter: the records the log points at, labelled by their title field. */
+	const link_options = (doctype, title_field) => (txt) =>
+		frappe.db
+			.get_list(doctype, {
+				fields: ["name", title_field],
+				or_filters: txt ? [["name", "like", `%${txt}%`], [title_field, "like", `%${txt}%`]] : undefined,
+				order_by: "modified desc",
+				limit: 50,
+			})
+			.then((rows) => (rows || []).map((r) => ({ value: r.name, label: r[title_field] || r.name })))
+			.catch(() => []);
+
 	frappe.listview_settings[DT] = {
 		hide_name_column: true,
 		// every field the table, the badges and the actions read (the columns are explicit below)
@@ -29,6 +41,7 @@
 				open,
 				realtime: "wa:message:status",
 				search: { fields: ["phone_e164", "display_name", "reference_name"], placeholder: __("Search name, number or document…") },
+				max_inline: 8,
 				filters: [
 					{ fieldname: "status", type: "select" },
 					{ fieldname: "reference_doctype", type: "select", label: __("Document type") },
@@ -43,6 +56,21 @@
 								.get_list(DT, { fields: ["error_code"], filters: [["error_code", "is", "set"]].concat(txt ? [["error_code", "like", `%${txt}%`]] : []), group_by: "error_code", order_by: "error_code asc", limit: 50 })
 								.then((rows) => Array.from(new Set((rows || []).map((r) => r.error_code).filter(Boolean))))
 								.catch(() => []),
+					},
+					// Owner, Gate 2: the matrix's four remaining filters. They render like the others;
+					// what does not fit the row moves behind the bar's "More" (`max_inline` below).
+					{ fieldname: "source_type", type: "select", label: __("Source") },
+					{ fieldname: "campaign", type: "select", label: __("Campaign"), options: link_options("WhatsApp Campaign", "campaign_name") },
+					{ fieldname: "command", type: "select", label: __("Command"), options: link_options("WhatsApp Command", "title") },
+					{
+						fieldname: "is_simulated",
+						type: "select",
+						label: __("On behalf"),
+						multiple: false,
+						options: [
+							{ value: "1", label: __("Sent on behalf") },
+							{ value: "0", label: __("Sent by the user") },
+						],
 					},
 				],
 				columns: [

@@ -245,12 +245,15 @@ sanad.ui.TemplateEditor = class TemplateEditor {
 		if (!name) return;
 		const token = `{{ ${name} }}`;
 		const field = this.get_field(this.opts.body_field);
-		if (field && field.editor && typeof field.editor.insert === "function") {
+		// Only a body the person can see has a caret worth honouring; when the editor is mounted
+		// on another tab (`preview_field`) the variable goes at the end of the text.
+		const visible = !!(field && field.$wrapper && field.$wrapper.is(":visible"));
+		if (visible && field.editor && typeof field.editor.insert === "function") {
 			field.editor.insert(token);
 			field.editor.focus();
 			return;
 		}
-		const $input = field && field.$input;
+		const $input = visible && field.$input;
 		const el = $input && $input.get(0);
 		if (el && typeof el.selectionStart === "number") {
 			const value = cstr(el.value);

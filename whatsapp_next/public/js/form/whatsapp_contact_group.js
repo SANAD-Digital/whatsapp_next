@@ -1,7 +1,8 @@
 // WhatsApp Contact Group form (09 row 14): the members child table becomes a PagedChildTable fed
 // by `picker.get_group_members {group, page, page_length}` with ContactPicker add / remove; a
-// Blacklist group shows an amber banner; the `?import=csv` route opens the picker on the phone
-// export source with CSV preselected.
+// Blacklist group shows an amber banner; the `?import=csv` route (or the list's "Import CSV",
+// through `frappe.flags.wa_group_import_csv`) opens the picker on the phone export source with
+// CSV preselected once the new group is saved. Tabs: Group · Members.
 
 function is_blacklist(frm) {
 	return frm.doc.kind === "Blacklist";
@@ -65,7 +66,8 @@ frappe.ui.form.on("WhatsApp Contact Group", {
 	onload(frm) {
 		const ro = frappe.route_options || {};
 		const params = frappe.utils.get_query_params ? frappe.utils.get_query_params() : {};
-		if (ro.import === "csv" || params.import === "csv") {
+		if (ro.import === "csv" || params.import === "csv" || (frm.is_new() && frappe.flags.wa_group_import_csv)) {
+			frappe.flags.wa_group_import_csv = false;
 			frm.sanad_import_csv = true;
 			if (ro.import) delete frappe.route_options.import;
 		}
