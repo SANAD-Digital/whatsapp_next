@@ -1356,7 +1356,6 @@ frappe.provide("whatsapp_next.onboarding");
 
 		unbind() {
 			this.stop_timers();
-			this.stop_pairing_watch();
 			this.stop_signup_watch();
 			if (this.on_doc_down) document.removeEventListener("mousedown", this.on_doc_down);
 			if (this.on_doc_esc) document.removeEventListener("keydown", this.on_doc_esc, true);

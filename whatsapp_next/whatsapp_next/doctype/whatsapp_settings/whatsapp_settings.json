@@ -617,7 +617,7 @@
    "fieldtype": "Column Break"
   },
   {
-   "default": "0",
+   "default": "1",
    "fieldname": "redirect_unregistered_to_wizard",
    "fieldtype": "Check",
    "label": "Redirect to Wizard when not set up"
@@ -625,7 +625,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-27 15:00:00.000000",
+ "modified": "2026-09-28 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Settings",

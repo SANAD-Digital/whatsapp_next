@@ -41,6 +41,7 @@ FIELDS = (
 	"webhook_events",
 	"webhook_max_retries",
 	"webhook_synced_at",
+	"redirect_unregistered_to_wizard",
 )
 # Signing in runs `link_site`, which stores the platform's webhook secret: put the site's back.
 RESTORED_SECRETS = (*SECRETS, "webhook_secret")
@@ -86,6 +87,34 @@ class TestApiOnboarding(IntegrationTestCase):
 		self.assertIn("setup_completed", out)
 		self.assertIn("redirect_enabled", out)
 		self.assertTrue(out["webhook_url"].endswith("receiver.receive"))
+
+	def test_home_sends_only_an_unregistered_system_manager_to_the_wizard(self):
+		from whatsapp_next.boot import boot_session
+
+		frappe.db.set_single_value(SETTINGS, "redirect_unregistered_to_wizard", 1)
+		for f in SECRETS:
+			remove_encrypted_password(SETTINGS, SETTINGS, f)
+		frappe.clear_document_cache(SETTINGS, SETTINGS)
+		with as_user("System Manager"):
+			self.assertTrue(svc.should_redirect_to_wizard())
+			boot = frappe._dict()
+			boot_session(boot)
+			self.assertTrue(boot.whatsapp_next.setup_redirect)
+		with as_user("WhatsApp Manager"):
+			self.assertFalse(svc.should_redirect_to_wizard(), "a Manager cannot finish the wizard")
+
+		frappe.db.set_single_value(SETTINGS, "redirect_unregistered_to_wizard", 0)
+		frappe.clear_document_cache(SETTINGS, SETTINGS)
+		with as_user("System Manager"):
+			self.assertFalse(svc.should_redirect_to_wizard(), "the setting switches it off")
+
+		frappe.db.set_single_value(SETTINGS, "redirect_unregistered_to_wizard", 1)
+		frappe.db.set_single_value(SETTINGS, "platform_base_url", "https://platform.example.com")
+		for f in svc.REQUIRED_CREDENTIALS:
+			set_encrypted_password(SETTINGS, SETTINGS, "k-" + f, f)
+		frappe.clear_document_cache(SETTINGS, SETTINGS)
+		with as_user("System Manager"):
+			self.assertFalse(svc.should_redirect_to_wizard(), "a registered site stays on Home")
 
 	def test_signup_flow_stores_credentials(self):
 		for f in SECRETS:
