@@ -38,6 +38,9 @@ whatsapp_function_catalogs = ["whatsapp_next.functions.catalog"]
 after_install = "whatsapp_next.install.after_install"
 after_migrate = "whatsapp_next.install.after_migrate"
 
+# Desk boot: `frappe.boot.whatsapp_next.setup_redirect` drives Home → Onboarding Wizard (spec #1).
+boot_session = "whatsapp_next.boot.boot_session"
+
 # Fixtures: the four product roles and the single custom field on a core DocType (D-028).
 fixtures = [
 	{

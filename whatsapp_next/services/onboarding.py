@@ -334,6 +334,18 @@ def status() -> dict[str, Any]:
 	}
 
 
+def should_redirect_to_wizard(user: str | None = None) -> bool:
+	"""`True` when Home should send `user` to the wizard: the redirect is on, the site is not
+	registered with its platform yet (no credentials, the wizard's first step), and the user is a
+	System Manager, the only role that can finish the wizard. A site that has credentials but an
+	offline device or no webhook stays on Home, where the setup band names the missing step."""
+	user = user or frappe.session.user
+	if user == "Guest" or "System Manager" not in frappe.get_roles(user):
+		return False
+	s = _settings()
+	return bool(cint(s.redirect_unregistered_to_wizard)) and not has_credentials(s)
+
+
 def complete_setup(user: str | None = None) -> bool:
 	"""Flag `setup_completed` once every step is done; otherwise `WAStateConflictError` naming
 	the first missing step."""

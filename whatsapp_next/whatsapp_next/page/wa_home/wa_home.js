@@ -572,7 +572,12 @@ frappe.provide("whatsapp_next.home");
 							note: __("Every message goes out through a device. Pair a phone to start sending."),
 							action: is_manager() ? { label: __("Pair a device"), primary: true, handler: () => frappe.set_route("wa-devices") } : null,
 						});
-					} else if (!setup.setup_completed && is_manager()) {
+					} else if (
+						!setup.setup_completed &&
+						is_manager() &&
+						(setup.steps || []).some((s) => !s.done)
+					) {
+						// no screen sets `setup_completed` yet, so the steps themselves decide (D-140)
 						const steps = setup.steps || [];
 						const done = steps.filter((s) => s.done).length;
 						alerts.push({
@@ -1281,13 +1286,41 @@ frappe.provide("whatsapp_next.home");
 
 	whatsapp_next.home.HomeScreen = HomeScreen;
 
+	// Spec #1: a System Manager on a site that is not registered with its platform yet is sent
+	// to the Onboarding Wizard (`frappe.boot.whatsapp_next.setup_redirect`, computed by
+	// `services.onboarding.should_redirect_to_wizard`). Once per browser session, so Home stays
+	// reachable after they leave the wizard; the setup band on Home keeps pointing back.
+	const REDIRECT_KEY = "whatsapp_next:setup_redirected";
+	let redirected = false;
+	const redirect_to_wizard = () => {
+		if (redirected || !(frappe.boot.whatsapp_next || {}).setup_redirect) return false;
+		redirected = true;
+		try {
+			if (sessionStorage.getItem(REDIRECT_KEY)) return false;
+			sessionStorage.setItem(REDIRECT_KEY, "1");
+		} catch (e) {
+			// storage blocked: the in-memory flag still limits it to once per page load
+		}
+		frappe.set_route("wa-onboarding");
+		return true;
+	};
+
 	frappe.pages["wa-home"].on_page_load = function (wrapper) {
-		const page = frappe.ui.make_app_page({ parent: wrapper, title: __("Home"), single_column: true });
-		wrapper.wa_home = new HomeScreen({ page, wrapper });
+		wrapper.wa_page = frappe.ui.make_app_page({ parent: wrapper, title: __("Home"), single_column: true });
+		// the screen is built on the next show instead, so its reads never run behind the redirect
+		if (redirect_to_wizard()) wrapper.wa_skip_show = true;
+		else wrapper.wa_home = new HomeScreen({ page: wrapper.wa_page, wrapper });
 	};
 
 	frappe.pages["wa-home"].on_page_show = function (wrapper) {
-		if (!wrapper.wa_home) return;
+		if (wrapper.wa_skip_show) {
+			wrapper.wa_skip_show = false;
+			return;
+		}
+		if (!wrapper.wa_home) {
+			wrapper.wa_home = new HomeScreen({ page: wrapper.wa_page, wrapper });
+			return;
+		}
 		wrapper.wa_home.bind_realtime();
 		wrapper.wa_home.refresh();
 	};
