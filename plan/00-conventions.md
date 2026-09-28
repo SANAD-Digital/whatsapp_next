@@ -104,8 +104,8 @@ branch `phase-<n>-<slug>` off `version-16` and merges back at the end of the pha
   `api/` layer; behaviour from `frappe.get_meta`, never hard-coded field lists.
 - Pages: `frappe.pages["wa-x"].on_page_load` creates the page, mounts kit components, subscribes
   to realtime, and unsubscribes in `on_page_hide`.
-- Colours only from Espresso variables (`--surface-*`, `--ink-*`, `--outline-*`); the prototype's
-  own palette (`--pri`, `--ok`…) is mapped to Espresso equivalents at build time, never copied.
+- Colours only from the product's `--wa-*` tokens, which are the prototype's palette (D-100, which
+  supersedes the earlier "Espresso variables only" rule); never a literal colour in a component.
 - No dead buttons: every action either calls the API or is not rendered.
 
 ## Test layout
@@ -117,9 +117,9 @@ whatsapp_next/tests/
   test_read_layer.py
   test_permissions_contextual.py
   test_providers_base.py        # contract test every provider must pass, run against a FakeProvider
-  test_webhook.py               # signature, idempotency, rate limit
+  test_webhooks.py              # signature, idempotency, rate limit
   test_numbers_materializer.py  # watermark, idempotent re-run
-  test_queue.py                 # state machine, pause/resume, dead-letter
+  test_dispatch.py              # state machine, pause/resume, dead-letter
   fixtures/                     # sample payloads (json), sample vcf/csv/xlsx
 whatsapp_next/whatsapp_next/doctype/<dt>/test_<dt>.py   # Frappe's per-DocType tests
 ```

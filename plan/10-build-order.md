@@ -14,7 +14,7 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [x] Phase 1 analysis (`01-snd-whatsapp-summary.md`, `05-platform-summary.md`, D-010..D-024)
 - [x] Phase 2 plans (`02`, `06`, `fields`, `fields-platform`, `backend-plan`, `backend-plan-platform`, `09`, this file)
 - [x] **Gate 1 approved** (D-027..D-029) — all open questions resolved as the planners' defaults
-- [ ] Design phases 5–7 (phase 5 done — `plan/13-design-gate-phase-5.md`; 6–7 pending): design quality gate per `.claude/rules/ui.md` — `ui-ux-pro-max` (ux/product/chart/icons domains) + `design:design-critique` + `design:accessibility-review` + `design:ux-copy` on each component/page before ticking it (D-029c, D-030)
+- [x] Design phases 5–7 (phase 5 `plan/13-design-gate-phase-5.md`, phase 6 commit `3eeaa4f`, phase 7 Gate 2 `plan/14-gate-2.md`): design quality gate per `.claude/rules/ui.md` — `ui-ux-pro-max` (ux/product/chart/icons domains) + `design:design-critique` + `design:accessibility-review` + `design:ux-copy` on each component/page before ticking it (D-029c, D-030)
 
 ## Phase 3 — Scaffold & schema (exit: `bench migrate` clean on both sites) — **done 2026-09-22** (client 138 tests, platform 100 tests, both migrates clean; branch `phase-3-schema`, platform commits 1447cef + 7cb522a)
 
@@ -150,10 +150,10 @@ Legend: `B-n` = `backend-plan.md` §15 step · `P-n` = `backend-plan-platform.md
 - [x] Suite run on `whatsapp.localhost` (cloud dev site; R-041 closed by D-126): 352 tests, 345 pass, 5 need `wkhtmltopdf`, 2 skipped — repeatable; fixes A-1/A-2/A-3; `plan/12-test-report.md` (2026-09-27)
 - [x] Platform suite green on `platform-test.localhost` (PostgreSQL): 163 tests incl. `test_patches.py` (P-12); PostgreSQL test fixes in platform `1a944c9`
 
-## Phase 10 — Documentation & release prep
-- [ ] `developer-docs/`: README, architecture + diagram, install/configure, "Add a new provider" guide, API reference, events & hooks, kit reference, permission model incl. §4 layer, troubleshooting, CONTRIBUTING, LICENSE
-- [ ] `../snd_whatsapp_platform/docs/` complete per `platform.md` (curl/Python/JS, webhook contract, pairing, errors, rate limits, sandbox, quickstart)
-- [ ] Platform merge path `whatsapp-next-integration` → `feat/link-webhook-secret` → `main` (R-014); migrate rehearsal on a prod copy (PR-12/PR-18)
-- [ ] Enable Home → Wizard redirect for unregistered users (last step)
-- [ ] `decisions.md` updated, CHANGELOG written, deferred review (Wizard as modal? Home on Insights?) recorded as open items
-- [ ] Final report in Arabic against the Definition of done
+## Phase 10 — Documentation & release prep — **done 2026-09-28** (release 0.1.0; suite 374 tests OK on `whatsapp.dev.sanad.digital`; D-140..D-142, R-042..R-046)
+- [x] `developer-docs/`: README, architecture + diagram, install/configure, "Add a new provider" guide, API reference, events & hooks, kit reference, permission model incl. §4 layer, troubleshooting, CONTRIBUTING, LICENSE
+- [x] `../snd_whatsapp_platform/docs/` complete per `platform.md` (curl/Python/JS, webhook contract, pairing, errors, rate limits, sandbox, quickstart)
+- [ ] Platform merge path `whatsapp-next-integration` → `feat/link-webhook-secret` → `main` (R-014); migrate rehearsal on a prod copy (PR-12/PR-18) — **held by the owner (D-129 d)**, open item OPEN-1 in `decisions.md`
+- [x] Enable Home → Wizard redirect for unregistered users (last step) — D-140
+- [x] `decisions.md` updated, CHANGELOG written, deferred review (Wizard as modal? Home on Insights?) recorded as open items
+- [x] Final report in Arabic against the Definition of done (D-142)
