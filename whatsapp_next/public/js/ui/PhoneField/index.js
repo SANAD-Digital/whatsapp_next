@@ -159,7 +159,8 @@ sanad.ui.PhoneField = class PhoneField {
 		// the seed answers immediately so nothing flashes empty; the full catalogue arrives a tick
 		// later and the field redraws on the region it then resolves to
 		load_catalog().then(() => {
-			if (!this.$el || !this.$el.closest("body").length) return;
+			const $node = this.$root || this.$hint;
+			if (!$node || !$node.closest("body").length) return;
 			const better = sanad.ui.PhoneField.resolve_country(this.opts.country_default);
 			const same = better && this.country && better.iso === this.country.iso;
 			this.country = same ? Object.assign({}, better) : this.country.iso ? sanad.ui.PhoneField.resolve_country(this.country.iso) : better;
@@ -203,7 +204,7 @@ sanad.ui.PhoneField = class PhoneField {
 	/** Group a national number into its country's own groups: `559021177` → `559 021 177`. */
 	static mask(digits, country) {
 		const d = cstr(digits);
-		const groups = (country && country.groups) || groups_for(0);
+		const groups = (country && country.groups) || [3, 3, 3, 3, 3];
 		const out = [];
 		let i = 0;
 		groups.forEach((g) => {
