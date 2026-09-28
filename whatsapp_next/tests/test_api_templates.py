@@ -74,6 +74,15 @@ class TestApiTemplates(IntegrationTestCase):
 			runtime = api.preview(body="{{ 1 / 0 }}")
 			self.assertIn("ZeroDivisionError", runtime["errors"][0])
 
+	def test_preview_without_a_record_never_shows_one_the_user_cannot_read(self):
+		hidden = frappe.get_doc({"doctype": "ToDo", "description": "ApiTest todo hidden"}).insert(
+			ignore_permissions=True
+		)
+		frappe.db.set_value("ToDo", hidden.name, {"owner": "Administrator", "assigned_by": "Administrator"})
+		with as_user("WhatsApp Agent"):
+			out = api.preview(body="{{ doc.description }}", reference_doctype="ToDo")
+		self.assertNotIn("hidden", out["body"])
+
 	def test_variables_and_sample(self):
 		with as_user("WhatsApp Manager"):
 			rows = api.list_variables(reference_doctype="ToDo")

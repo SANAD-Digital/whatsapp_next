@@ -145,7 +145,7 @@ def context_for(
 
 
 def sample_context(reference_doctype: str | None, sample_json: str | dict | None = None) -> dict[str, Any]:
-	"""Preview context: the latest record of `reference_doctype` (if any) overlaid with
+	"""Preview context: the latest record of `reference_doctype` the session user can read (if any) overlaid with
 	`sample_context` JSON values from the template."""
 	import json
 
@@ -155,9 +155,8 @@ def sample_context(reference_doctype: str | None, sample_json: str | dict | None
 		and frappe.db.exists("DocType", reference_doctype)
 		and not frappe.get_meta(reference_doctype).issingle
 	):
-		latest = frappe.get_all(
-			reference_doctype, pluck="name", order_by="modified desc", limit=1, ignore_permissions=True
-		)
+		# the caller's own permissions: a preview must never show a record they cannot read
+		latest = frappe.get_list(reference_doctype, pluck="name", order_by="modified desc", limit=1)
 		if latest:
 			doc = frappe.get_doc(reference_doctype, latest[0])
 	extra: dict[str, Any] = {}
