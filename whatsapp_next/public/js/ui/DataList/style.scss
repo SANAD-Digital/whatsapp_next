@@ -67,7 +67,8 @@
 			position: sticky;
 			inset-inline-end: 0;
 			box-shadow: inset 1px 0 0 var(--outline-gray-1);
-			[dir="rtl"] & { box-shadow: inset -1px 0 0 var(--outline-gray-1); }
+			// rtlcss mirrors the inset in the RTL bundle on its own; a `[dir=rtl]` twin was mirrored too
+			// and put the line back on the LTR edge in Arabic
 		}
 	}
 	// Stacking ladder inside the table (it has its own stacking context, see `__wrap`):
@@ -113,6 +114,7 @@
 	&__td--end { text-align: end; }
 	&__td--center { text-align: center; }
 	&__td--end &__cell { align-items: flex-end; }
+	&__td--center &__cell { align-items: center; }
 
 	// one line, or a 600-weight title over an 11 px tabular sub-line (prototype "two" cell)
 	&__cell { display: flex; flex-direction: column; gap: 1px; min-width: 0; line-height: 1.25; }
@@ -140,6 +142,8 @@
 	&__date { color: var(--ink-gray-7); white-space: nowrap; font-size: var(--text-xs, 12px); unicode-bidi: isolate; }
 	&__sub { unicode-bidi: plaintext; }
 	&__avatar-text { overflow: hidden; text-overflow: ellipsis; }
+	// a name followed by a tag (e.g. "Group"): the name gives way, the tag stays whole
+	&__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
 	// in-row action: the prototype's small bordered "View" button, accent-tinted on hover
 	&__action {
@@ -265,7 +269,7 @@
 		cursor: pointer;
 		transition: transform 150ms;
 		.icon { width: 14px; height: 14px; }
-		&[aria-expanded="false"] { transform: rotate(-90deg); [dir="rtl"] & { transform: rotate(90deg); } }
+		&[aria-expanded="false"] { transform: rotate(-90deg); } // rtlcss turns it to 90deg in Arabic
 	}
 	&__group-field { color: var(--ink-gray-5); font-size: var(--text-tiny, 11px); }
 	&__group-label { font-weight: 700; color: var(--ink-gray-9); }
@@ -314,7 +318,7 @@
 	&__row:has(.list-row-checkbox:checked) td.sanad-datalist__td--pinned {
 		background-image: linear-gradient(var(--sanad-accent-soft), var(--sanad-accent-soft));
 	}
-	&__cell--pin-edge { box-shadow: inset -1px 0 0 var(--outline-gray-2); [dir="rtl"] & { box-shadow: inset 1px 0 0 var(--outline-gray-2); } }
+	&__cell--pin-edge { box-shadow: inset -1px 0 0 var(--outline-gray-2); } // mirrored by rtlcss
 
 	// pin toggle in the header
 	&__pin {
@@ -456,18 +460,19 @@
 	}
 }
 
-// mobile: one card per row (label: value pairs)
+// mobile: one row per record, stacked as Frappe's own list does — a single column of lines with a
+// rule under each, no card around a row and no gap between rows (owner, 2026-09-30)
 @media (max-width: 767px) {
 	.sanad-list-card {
 		.sanad-filterbar--list,
 		.result-container,
 		.sanad-datalist__footer { border-inline: 0; border-radius: 0; }
-		.result-container { padding-inline: 14px; }
+		.result-container { padding-inline: 0; }
 		.sanad-datalist__footer { padding-inline: 14px; gap: var(--sanad-gap-xs); }
 	}
 	.sanad-datalist__wrap--cards {
 		border: 0;
-		background: transparent;
+		background: var(--surface-white);
 		// pinning is a desktop affordance; on a card there is nothing to scroll past
 		.sanad-datalist__td--pinned, .sanad-datalist__th--pinned,
 		.sanad-datalist__td--action, .sanad-datalist__th--action,
@@ -481,9 +486,9 @@
 			gap: var(--sanad-gap-xs) 10px;
 			min-height: 56px;
 			padding: var(--sanad-gap-md) 14px;
-			margin-block-end: var(--sanad-gap-sm);
-			border: var(--sanad-border);
-			border-radius: var(--sanad-card-radius);
+			border: 0;
+			border-block-end: var(--sanad-border);
+			border-radius: 0;
 			background: var(--surface-white);
 		}
 		.sanad-datalist__row td { display: block; border: 0; padding: 0; height: auto; background: transparent !important; }
@@ -498,8 +503,9 @@
 			grid-row: 1;
 			min-width: 0;
 		}
-		// beats the :not() chain above, which would otherwise pull the badge onto the title's line
-		.sanad-datalist__td--status.sanad-datalist__td--status { grid-column: 3; grid-row: 1; justify-self: end; }
+		// must outweigh the :not() chain above (four class-weights), or the badge lands in the
+		// title's own cell and paints over a long name; two class names did not, so it did
+		.sanad-datalist__td--status.sanad-datalist__td--status.sanad-datalist__td--status.sanad-datalist__td--status.sanad-datalist__td--status { grid-column: 3; grid-row: 1; justify-self: end; }
 		// Anything else a screen keeps in the card starts a line of its own rather than painting over
 		// the title. Two class names lost to the five-name `:not()` chain above, so every extra
 		// column landed on the title's cell: the rule needs at least as much weight as the chain.
@@ -536,7 +542,7 @@
 			[dir="rtl"] &::after { content: "‹"; }
 		}
 		// grouping stays readable: one indented strip per level
-		.sanad-datalist__group { display: block; margin-block: var(--sanad-gap-sm) var(--sanad-gap-xs); }
+		.sanad-datalist__group { display: block; padding-inline: 14px; border-block-end: var(--sanad-border); }
 		.sanad-datalist__group td { display: block; background: transparent; border: 0; }
 		.sanad-datalist__group-inner { min-height: 32px; }
 		.sanad-datalist__main, .sanad-datalist__sub { max-width: none; white-space: normal; }

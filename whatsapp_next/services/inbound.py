@@ -78,7 +78,7 @@ def record_inbound(
 		"doctype": "WhatsApp Inbound Message",
 		"device": device,
 		**fields,
-		"display_name": p.push_name,
+		"display_name": p.push_name or _known_name(fields, contact),
 		"contact": contact,
 		"message_type": p.message_type or "Text",
 		"body": p.body,
@@ -146,12 +146,38 @@ def record_reaction(
 			doc.insert(ignore_permissions=True)
 	except frappe.DuplicateEntryError:
 		return _existing(device, values["provider_message_id"])
-	_publish(
-		doc.name,
-		device,
-		key_for(fields["phone_e164"], fields["chat_jid"] if fields["is_group"] else fields["sender_jid"]),
-	)
+	_publish(doc.name, device, _conversation_key(fields))
 	return doc.name
+
+
+def _conversation_key(fields: dict[str, Any]) -> str | None:
+	"""The Number key the message is filed under — the read layer's own expression, so a LID sender
+	whose number is known is keyed by the number and an open conversation drawer (keyed by the
+	number) matches the realtime `key_hash`."""
+	from whatsapp_next.services.numbers_materializer import message_key
+
+	return message_key({**fields, "doctype": "WhatsApp Inbound Message"})
+
+
+def _known_name(fields: dict[str, Any], contact: str | None) -> str | None:
+	"""A name for a sender WhatsApp delivered without a push name — the linked contact's, else the
+	one on the sender's WhatsApp Number row (as `dispatch._recipient_name` does for outbound). In a
+	group the sender, not the group, is named."""
+	if contact:
+		name = frappe.db.get_value("Contact", contact, "full_name")
+		if name:
+			return name
+	key = fields["phone_e164"] or key_for(None, fields["sender_jid"])
+	if not key:
+		return None
+	row = frappe.db.get_value("WhatsApp Number", key, ["display_name", "contact"], as_dict=True)
+	if not row:
+		return None
+	if row.contact and not contact:
+		name = frappe.db.get_value("Contact", row.contact, "full_name")
+		if name:
+			return name
+	return row.display_name or None
 
 
 def _device_for(event: WebhookEvent) -> str | None:
@@ -163,17 +189,9 @@ def _device_for(event: WebhookEvent) -> str | None:
 def _after_insert(
 	name: str, device: str, fields: dict[str, Any], message_type: str, body: str | None
 ) -> None:
-	key = key_for(fields["phone_e164"], fields["chat_jid"] if fields["is_group"] else fields["sender_jid"])
-	frappe.enqueue(
-		"whatsapp_next.services.numbers_materializer.upsert_from_message",
-		doctype="WhatsApp Inbound Message",
-		name=name,
-		queue="short",
-		job_id=f"wa-num-{key}",
-		deduplicate=True,
-		enqueue_after_commit=True,
-	)
-	_publish(name, device, key)
+	# The Numbers upsert is enqueued by the `after_insert` doc hook
+	# (`numbers_materializer.on_message_insert`); only the realtime event and the router go here.
+	_publish(name, device, _conversation_key(fields))
 	if should_route(message_type, body, bool(fields["is_group"])):
 		frappe.enqueue(
 			"whatsapp_next.services.command_router.route",
@@ -251,7 +269,9 @@ def summary(days: int | None = 30) -> dict[str, Any]:
 	"""The Inbound screen's figures (09 G-07) over the last `days` (all time when falsy):
 	`{total, by_status{}, matched, executed, unmatched, match_rate, avg_reply_seconds,
 	replies_measured}`. `matched` = a command recognised the message (whatever happened next);
-	the average runs from `received_at` to `replied_at` over the newest replied rows."""
+	the average runs from `creation` (the site clock at intake) to `replied_at` (also the site
+	clock) over the newest replied rows — `received_at` is the gateway's clock and only picks the
+	window."""
 	from frappe.utils import add_days, get_datetime, nowdate
 
 	msg = frappe.qb.DocType("WhatsApp Inbound Message")
@@ -272,14 +292,14 @@ def summary(days: int | None = 30) -> dict[str, Any]:
 	pairs = frappe.get_all(
 		"WhatsApp Inbound Message",
 		filters=filters,
-		fields=["received_at", "replied_at"],
+		fields=["creation", "replied_at"],
 		order_by="received_at desc",
 		limit=REPLY_SAMPLE,
 	)
 	gaps = [
-		(get_datetime(p.replied_at) - get_datetime(p.received_at)).total_seconds()
+		(get_datetime(p.replied_at) - get_datetime(p.creation)).total_seconds()
 		for p in pairs
-		if p.replied_at and p.received_at and get_datetime(p.replied_at) >= get_datetime(p.received_at)
+		if p.replied_at and p.creation and get_datetime(p.replied_at) >= get_datetime(p.creation)
 	]
 	return {
 		"days": cint(days) or None,

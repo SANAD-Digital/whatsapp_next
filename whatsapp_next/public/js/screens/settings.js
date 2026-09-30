@@ -35,6 +35,9 @@ const OWNED_ELSEWHERE = {
 	queue_pause_reason: "long_text",
 };
 
+/** Today in the site's (system) time zone, `YYYY-MM-DD`. */
+const SITE_TODAY = () => frappe.datetime.system_datetime().slice(0, 10);
+
 // the section a link from before the window asked for, by its old key
 const ALIASES = { billing: "subscription", plan: "subscription" };
 
@@ -688,7 +691,7 @@ class SettingsView {
 						<input type="checkbox" id="${id}" value="${esc(row.event_name)}"
 							${row.subscribed ? "checked" : ""} ${row.enabled === false || !IS_SM() ? "disabled" : ""}>
 						<span>${esc(row.event_name)}${
-						row.disabled_reason ? `<span>${esc(row.disabled_reason)}</span>` : ""
+						row.disabled_reason ? `<span>${esc(__(row.disabled_reason))}</span>` : ""
 					}</span>
 					</label>`).appendTo($list);
 				});
@@ -961,7 +964,8 @@ class SettingsView {
 			$el.append(SW.section_html(__("Plan details"), values.plan_name || values.plan_code || __("Not synced yet")));
 			const $plan = $('<div class="wa-settings__plan"></div>').appendTo($el);
 			this.rows($plan, [
-				{ label: __("Monthly allowance"), value: sanad.ui.format_int(values.message_limit), ltr: true },
+				// the allowance is per billing cycle, which is not always a month (a trial runs 14 days)
+				{ label: __("Allowance per cycle"), value: sanad.ui.format_int(values.message_limit), ltr: true },
 				{ label: __("Used this cycle"), value: sanad.ui.format_int(values.messages_used), ltr: true },
 				{ label: __("Remaining"), value: sanad.ui.format_int(values.messages_remaining), ltr: true },
 				{ label: __("Devices allowed"), value: sanad.ui.format_int(values.device_limit), ltr: true },
@@ -1022,15 +1026,27 @@ class SettingsView {
 				<div><span>${esc(__("Messages left"))}</span><strong class="sanad-tabular" dir="ltr">${esc(
 					sanad.ui.format_int(left)
 				)}</strong><em>${esc(__("Before the plan runs out"))}</em></div>
-				<div><span>${esc(__("Wallet"))}</span><strong class="sanad-tabular">${frappe.format(
-					values.wallet_balance || 0,
-					{ fieldtype: "Currency", options: values.wallet_currency },
-					{ inline: true }
-				)}</strong><em>${esc(__("Covers the messages beyond the plan"))}</em></div>
+				<div><span>${esc(__("Wallet"))}</span><strong class="sanad-tabular">${
+					// no wallet reported is not a wallet of 0: the Single stores a missing balance as 0,
+					// so a zero with no currency is read as "not reported"
+					values.wallet_balance == null || (!values.wallet_currency && !flt(values.wallet_balance))
+						? "—"
+						: frappe.format(values.wallet_balance, { fieldtype: "Currency", options: values.wallet_currency }, { inline: true })
+				}</strong><em>${esc(__("Covers the messages beyond the plan"))}</em></div>
 				<div><span>${esc(__("Renewal"))}</span><strong>${esc(
 					values.subscription_end ? frappe.datetime.str_to_user(values.subscription_end) : "—"
-				)}</strong><em>${esc(values.subscription_end ? __("The next cycle starts then") : __("No renewal date yet"))}</em></div>
+				)}</strong><em>${esc(this.renewal_note(values.subscription_end))}</em></div>
 			</div>`);
+	}
+
+	/** How far the cycle end is from today, in days — the site's date, as the platform counts it. */
+	renewal_note(end) {
+		if (!end) return __("No renewal date yet");
+		const days = frappe.datetime.get_day_diff(end, SITE_TODAY());
+		if (days > 1) return __("In {0} days — the next cycle starts then", [days]);
+		if (days === 1) return __("Tomorrow — the next cycle starts then");
+		if (days === 0) return __("Today — the next cycle starts then");
+		return __("The cycle ended {0} days ago", [-days]);
 	}
 
 	sync_subscription() {
@@ -1069,7 +1085,8 @@ class SettingsView {
 	/** Counted from this site's own outbound log, so it is there whether or not the platform reports. */
 	load_usage($el, days) {
 		const state = new sanad.ui.EmptyState({ wrapper: $el, state: "loading", rows: 4, size: "sm" });
-		const to_date = frappe.datetime.now_date();
+		// the site's day, not the viewer's: the log is counted by the day it was written on the server
+		const to_date = SITE_TODAY();
 		const from_date = frappe.datetime.add_days(to_date, -(days - 1));
 		return sanad.ui
 			.call("settings.get_site_usage", { from_date, to_date })

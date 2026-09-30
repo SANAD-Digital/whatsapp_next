@@ -1,5 +1,5 @@
 // WhatsApp Number list (09 row 13, D-064 option A: the prototype "WhatsApp contacts" screen):
-// PageHeader (title, "Open contacts", four KPIs) → FilterBar (grouped by `link_status`) →
+// PageHeader ("Open contacts" in the page bar, four KPIs) → FilterBar (grouped by `link_status`) →
 // DataList (avatar name, number, link status, contact, last message, since, View → conversation
 // drawer). PageHeader / DataList are guarded with `typeof` — until they land the native rows,
 // RowActions and the FilterBar intro render instead. Numbers are materialised from messages, so
@@ -11,19 +11,26 @@ const DOCTYPE = "WhatsApp Number";
 
 const has_kit = (name) => typeof sanad.ui[name] === "function";
 
-const { open_conversation, quick_send, confirm_conversation, unlink_number, link_convert_dialog } = whatsapp_next.numbers;
+const { open_conversation, quick_send, confirm_conversation, unlink_number, link_convert_dialog, sync_from_whatsapp, listen_for_sync } = whatsapp_next.numbers;
 
 const ROW_ACTIONS = (listview) => [
 	{
 		label: __("Open contact"),
 		icon: "es-line-customer",
 		condition: (doc) => !!doc.contact,
-		handler: (doc) => frappe.set_route("Form", "Contact", doc.contact),
+		handler: (doc) => sanad.ui.ConversationDrawer.open_contact(doc.contact),
 	},
 	{
 		label: __("Add as contact"),
 		icon: "es-line-add-people",
 		condition: (doc) => !doc.contact && doc.number_type === "Individual" && frappe.user.has_role(CONTACT_ROLES),
+		handler: (doc) => link_convert_dialog(doc, () => listview.refresh()),
+	},
+	{
+		// a group has no phone to put on a new contact, but can belong to one (a customer's chat)
+		label: __("Link to a contact"),
+		icon: "es-line-link",
+		condition: (doc) => !doc.contact && doc.number_type === "Group" && frappe.user.has_role(CONTACT_ROLES),
 		handler: (doc) => link_convert_dialog(doc, () => listview.refresh()),
 	},
 	{
@@ -47,7 +54,7 @@ const ROW_ACTIONS = (listview) => [
 	{
 		label: __("Unlink"),
 		icon: sanad.ui.icons.cancel,
-		condition: (doc) => !!doc.contact && frappe.user.has_role("WhatsApp Manager"),
+		condition: (doc) => !!doc.contact && frappe.user.has_role(["WhatsApp Manager", "System Manager"]),
 		handler: (doc) => unlink_number(doc, listview),
 	},
 ];
@@ -59,7 +66,7 @@ const STATS = () => [
 		label: __("WhatsApp conversations"),
 		icon: "es-line-chat-alt",
 		count: { doctype: DOCTYPE },
-		sub: __("Numbers that exchanged at least one message with us"),
+		sub: __("From messages and from the phone's contacts"),
 	},
 	{
 		key: "registered",
@@ -84,9 +91,10 @@ const STATS = () => [
 		tone: "blue",
 		value: () =>
 			Promise.all([frappe.db.count(DOCTYPE), frappe.db.count(DOCTYPE, { filters: { link_status: "Linked" } })]).then(
-				([total, linked]) => (total ? Math.round((linked / total) * 100) : 0)
+				([total, linked]) => (total ? (linked / total) * 100 : 0)
 			),
-		format: (v) => __("{0}%", [sanad.ui.format_int(v || 0)]),
+		// 5 of 1 190 is not "0%": a share above zero but under one per cent reads "<1%"
+		format: (v) => (v > 0 && v < 1 ? `\u2066${__("<1%")}\u2069` : __("{0}%", [sanad.ui.format_int(Math.round(v || 0))])),
 		sub: __("Of WhatsApp conversations"),
 	},
 ];
@@ -98,14 +106,16 @@ const COLUMNS = () => [
 		label: __("Name in WhatsApp"),
 		type: "avatar",
 		sortable: true,
-		format: (value, doc) => frappe.utils.escape_html(value || doc.phone_e164 || doc.jid || doc.name),
+		format: (value, doc) => `<span class="sanad-datalist__name">${frappe.utils.escape_html(value || sanad.ui.phone(doc.phone_e164 || doc.jid || doc.name))}</span>${sanad.ui.group_tag(doc.phone_e164 || doc.jid || doc.name)}`,
 	},
 	{
 		fieldname: "phone_e164",
 		label: __("Number"),
 		sortable: true,
-		format: (value, doc) => `<span class="sanad-tabular" dir="ltr">${frappe.utils.escape_html(value || doc.jid || "")}</span>`,
+		format: (value, doc) => `<span class="sanad-tabular" dir="ltr">${frappe.utils.escape_html(sanad.ui.phone(value || doc.jid || ""))}</span>`,
 	},
+	// a Select: shown on each row and offered as a grouping level
+	{ fieldname: "number_type", label: __("Number type"), sortable: true, hidden_xs: true, format: (v) => (v ? frappe.utils.escape_html(__(v)) : "") },
 	{
 		fieldname: "link_status",
 		label: __("Link status"),
@@ -126,7 +136,7 @@ const COLUMNS = () => [
 
 frappe.listview_settings[DOCTYPE] = {
 	hide_name_column: true,
-	add_fields: ["phone_e164", "jid", "display_name", "contact", "link_status", "number_type", "last_device", "last_seen", "conversation_confirmed"],
+	add_fields: ["phone_e164", "jid", "display_name", "saved_name", "synced_device", "contact", "link_status", "number_type", "last_device", "last_seen", "conversation_confirmed"],
 
 	get_indicator(doc) {
 		// "Not linked" is a neutral state, not a warning → gray.
@@ -136,8 +146,8 @@ frappe.listview_settings[DOCTYPE] = {
 	},
 
 	onload(listview) {
-		// Numbers are materialised from messages — never created by hand. `can_create = false`
-		// makes Desk's own `set_primary_action()` clear the button on every refresh / unselect.
+		// Numbers are materialised from messages — never created by hand, so Desk's "+ Add" is
+		// replaced by "Open contacts" (the header's primary; without the kit, it is simply cleared).
 		listview.can_create = false;
 		listview.page.clear_primary_action();
 		if (!listview.view_user_settings.sort_by) {
@@ -145,24 +155,26 @@ frappe.listview_settings[DOCTYPE] = {
 			listview.sort_order = "desc";
 		}
 
+		listen_for_sync(listview);
 		const has_header = has_kit("PageHeader");
 		if (has_header) {
 			listview._sanad_header = new sanad.ui.PageHeader({
 				listview,
-				title: __("WhatsApp contacts"),
-				description: __("Numbers that exchanged at least one message with us: linked to a contact in the system, or unknown and suggested for creation."),
 				primary: {
 					label: __("Open contacts"),
 					icon: "es-line-people",
 					handler: () => frappe.set_route((sanad.ui.config.defaults || {}).contacts_route || "wa-contacts"),
 				},
+				secondary: [
+					{ label: __("Fetch from WhatsApp"), icon: "es-line-download", roles: ["WhatsApp Manager"], handler: () => sync_from_whatsapp(listview) },
+				],
 				stats: STATS(),
 				events: { "wa:inbound:received": (data, header) => header.refresh(true) },
 			});
 		}
 
 		if (has_kit("FilterBar")) {
-			new sanad.ui.FilterBar({
+			listview._sanad_filterbar = new sanad.ui.FilterBar({
 				listview,
 				actions: ["group_by", "export"],
 				intro: has_header ? null : __("Every number you have exchanged messages with. Link it to a contact or open the conversation."),
@@ -171,6 +183,7 @@ frappe.listview_settings[DOCTYPE] = {
 					{ fieldname: "link_status", type: "select", label: __("Link status") },
 					{ fieldname: "number_type", type: "select" },
 					{ fieldname: "last_device", type: "select" },
+					{ fieldname: "synced_device", type: "select", label: __("Synced from") },
 					{ fieldname: "last_direction", type: "select" },
 					{ fieldname: "conversation_confirmed", type: "select", label: __("Confirmed") },
 					{ fieldname: "last_seen", type: "period", label: __("Last seen") },
@@ -190,7 +203,7 @@ frappe.listview_settings[DOCTYPE] = {
 				footer: { count: (total) => sanad.ui.plural(total, { one: __("{0} number"), other: __("{0} numbers") }) },
 				empty: {
 					title: __("No numbers yet"),
-					description: __("Numbers appear here after the first message is sent or received."),
+					description: __("Numbers appear here after the first message, or fetch the phone's contacts with “Fetch from WhatsApp”."),
 				},
 				mobile: "cards",
 			});
@@ -233,10 +246,6 @@ frappe.listview_settings[DOCTYPE] = {
 
 		// Realtime: a new inbound message may add or move a row — throttled, only while this list is shown.
 		sanad.ui.bind_list_realtime(listview, "wa:inbound:received", 3000);
-	},
-
-	refresh(listview) {
-		listview.page.clear_primary_action();
 	},
 };
 

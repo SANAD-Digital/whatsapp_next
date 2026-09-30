@@ -224,7 +224,7 @@ Error classes (`whatsapp_next/exceptions.py`) and their HTTP codes: `WAPermissio
 `WANotFoundError` 404, `WAStateConflictError` 409 (and `WADeviceOfflineError`,
 `WAQueuePausedError`), `WAValidationError` 417 (and `WAInvalidPhoneError`, `WABlacklistedError`,
 `WAUnknownNumberPolicyError`, `WAFileError`), `WAProviderRejectedError` 422,
-`WANotSupportedError` 422, `WARateLimitError` 429, `WAProviderAuthError` 502,
+`WANotSupportedError` 422, `WARateLimitError` 429, `WAProviderAuthError` 424,
 `WAProviderUnavailableError` 503.
 
 ---

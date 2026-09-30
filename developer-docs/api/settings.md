@@ -151,7 +151,7 @@ Arguments: none.
 }
 ```
 
-**Errors:** Provider errors are raised here and mapped: `WAProviderAuthError` (502) for bad keys,
+**Errors:** Provider errors are raised here and mapped: `WAProviderAuthError` (424) for bad keys,
 `WAProviderUnavailableError` (503), `WARateLimitError` (429), and so on.
 
 ```js
@@ -263,7 +263,7 @@ Arguments: none.
 }
 ```
 
-**Errors:** Provider errors (mapped) such as `WAProviderAuthError` (502) and
+**Errors:** Provider errors (mapped) such as `WAProviderAuthError` (424) and
 `WAProviderUnavailableError` (503). `WAPermissionError` (403).
 
 ```bash

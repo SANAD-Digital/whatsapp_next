@@ -26,7 +26,7 @@ new sanad.ui.DataList({
       format: (v, doc) => v ? frappe.utils.get_form_link(doc.reference_doctype, v, true, sanad.ui.escape(v)) : "" },
     { fieldname: "device", type: "avatar" },                         // initials chip + Link title
     { fieldname: "sent_at", type: "date", label: __("Sent at"), format: (v, doc) => … },
-    { fieldname: "attempts", type: "number" },                        // tabular digits, aligned end
+    { fieldname: "attempts", type: "number" },                        // tabular digits; an Int sits in the middle
   ],
   selectable: true,
   row_action: { label: __("View"), handler: (doc) => open_drawer(doc) },
@@ -41,12 +41,21 @@ new sanad.ui.DataList({
 Options: `listview`, `columns[]` (`fieldname`, `label`, `width`, `align`, `sortable` — default
 true for plain fields, false for `format` / `sub` columns, `format(value, doc)`, `sub(doc)`,
 `type` = `status` | `avatar` | `number` | `date` | `link` | `text` (inferred from the docfield),
-`hidden_xs`), `selectable`, `row_action {label, handler}` | `false`, `on_row_click`,
+`hidden_xs`, `fieldtype` — for a computed column, the fieldtype it shows), `selectable`, `row_action {label, handler}` | `false`, `on_row_click`,
 `expand($el, doc, list)`, `page_length`, `footer {count, extra}`, `empty {title, description,
 action}`, `mobile` (`cards` | `scroll`).
+
+Number columns are placed by their fieldtype, over any `align` the caller passes, so every list
+reads the same (`ui.num_align`): **Int in the middle; Float, Currency and Percent at the end** —
+the left in Arabic, the right in English. A computed column says what it shows with `fieldtype`.
 Methods: `refresh()`, `set_columns(cols)`, `get_selected()`, `expand_row(name)`, `destroy()`;
 static `DataList.format(type, value, df, doc, display, doctype)`. Helper: `sanad.ui.initials(text)`.
 Keep every rendered field in `listview_settings.add_fields`.
+
+Page mode (a custom page with no list view): pass `wrapper` (and `doctype` for labels) instead of
+`listview`; the page fetches and calls `set_rows(rows, total, page?)`. Pass `page` (0-based)
+whenever the host moved the page itself (a new filter or search), so the pager's "2 / 5" follows;
+`on_page(page, list)` asks the host for another page, `on_sort(fieldname, order, list)` re-sorts.
 
 ## Live use
 Outbound list — `public/js/listview/whatsapp_log_list.js`; Inbound list —

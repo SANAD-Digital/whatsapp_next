@@ -1,7 +1,7 @@
 {
  "actions": [],
  "autoname": "hash",
- "creation": "2026-09-22 00:00:00.000000",
+ "creation": "2026-09-22 00:00:00",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
@@ -325,9 +325,9 @@
   {
    "fieldname": "sent_at",
    "fieldtype": "Datetime",
+   "in_list_view": 1,
    "label": "Sent At",
-   "read_only": 1,
-   "in_list_view": 1
+   "read_only": 1
   },
   {
    "fieldname": "delivered_at",
@@ -381,10 +381,10 @@
    "description": "Why the message failed, e.g. the number is not on WhatsApp, the device is disconnected, or the balance is too low.",
    "fieldname": "error_code",
    "fieldtype": "Data",
+   "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Error Code",
-   "read_only": 1,
-   "in_list_view": 1
+   "read_only": 1
   },
   {
    "description": "The error reported when sending, with numbers hidden.",
@@ -520,9 +520,9 @@
    "description": "Not really sent; created in the Simulator.",
    "fieldname": "is_simulated",
    "fieldtype": "Check",
+   "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Simulated",
-   "in_list_view": 1
+   "label": "Simulated"
   },
   {
    "fieldname": "provider_tab",
@@ -583,8 +583,9 @@
    "read_only": 1
   }
  ],
+ "in_create": 1,
  "links": [],
- "modified": "2026-09-26 21:00:00.000000",
+ "modified": "2026-09-30 05:26:45.071644",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Log",
@@ -626,6 +627,5 @@
  "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
- "title_field": "display_name",
- "track_changes": 0
+ "title_field": "display_name"
 }

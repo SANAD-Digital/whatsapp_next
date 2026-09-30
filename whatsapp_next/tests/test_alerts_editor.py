@@ -104,11 +104,21 @@ class TestAlertsEditor(IntegrationTestCase):
 		with as_user("WhatsApp Manager"):
 			out = api.preview_draft(payload=self.payload(recipients=[]))
 		self.assertTrue(out["problem"])
-		# a report draft reports rows and the file it would attach, without building it
+		report_draft = self.payload(content_type="Report", report="ToDo", attachment_format="PDF")
+		# a report the user may not run is refused: the scheduler would run it as Administrator
+		with as_user("WhatsApp Manager"), self.assertRaises(frappe.PermissionError):
+			api.preview_draft(payload=report_draft)
+		# a saved alert whose report the user may not run can still be previewed while its report is
+		# unchanged — as `save` accepts it: the access check is made when the report is picked
+		with as_user("System Manager"), patch.object(alerts, "_run_report", return_value=(COLUMNS, ROWS)):
+			api.save_editor(payload=report_draft)
 		with as_user("WhatsApp Manager"), patch.object(alerts, "_run_report", return_value=(COLUMNS, ROWS)):
-			out = api.preview_draft(
-				payload=self.payload(content_type="Report", report="ToDo", attachment_format="PDF")
-			)
+			out = api.preview_draft(payload={**report_draft, "name": NAME, "message": "changed"})
+		self.assertIsNone(out["problem"])
+		frappe.delete_doc("WhatsApp Notification Alert", NAME, ignore_permissions=True)
+		# a report draft reports rows and the file it would attach, without building it
+		with as_user("System Manager"), patch.object(alerts, "_run_report", return_value=(COLUMNS, ROWS)):
+			out = api.preview_draft(payload=report_draft)
 		self.assertEqual((out["row_count"], out["attachment"]["mime_type"]), (3, "application/pdf"))
 
 	def test_send_test_to_one_number(self):

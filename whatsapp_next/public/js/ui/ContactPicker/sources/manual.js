@@ -27,13 +27,13 @@ export class ManualSource extends BaseSource {
 		const hint_id = `${id}-hint`;
 		// The example comes from PhoneField (country default of the host) when the kit ships it.
 		const PhoneField = sanad.ui.PhoneField;
-		const example = typeof PhoneField === "function" && typeof PhoneField.example === "function" ? PhoneField.example() : "+966 5X XXX XXXX";
+		const example = typeof PhoneField === "function" && typeof PhoneField.example === "function" ? PhoneField.example() : "966 5X XXX XXXX";
 		this.pending = []; // lines the server refused, each `{raw, phone, display_name, error}`
 		const $field = $(`
 			<div class="sanad-picker__field sanad-picker__manual">
 				<label for="${id}">${ui.escape(__("Numbers, one per line"))}</label>
 				<textarea id="${id}" class="form-control sanad-picker__numbers" rows="6" dir="ltr" inputmode="tel" aria-describedby="${hint_id}" placeholder="${ui.escape(example)}"></textarea>
-				<div id="${hint_id}" class="sanad-picker__note">${ui.escape(__("One number per line, with the country code (e.g. {0}). Digits and + only.", [example]))}</div>
+				<div id="${hint_id}" class="sanad-picker__note">${ui.escape(__("One number per line, with the country code (e.g. {0}). Digits only.", [example]))}</div>
 			</div>`);
 		this.$text = $field.find("textarea");
 		this.$error = $('<div class="sanad-picker__alert" role="alert" hidden></div>');

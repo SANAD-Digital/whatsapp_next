@@ -180,3 +180,8 @@
 	}
 	&__scale-zone { color: var(--ink-green-3); }
 }
+
+// the failure under a row's status (`whatsapp_queue_item_list.js`): said in words, in the danger ink
+.wa-queue__error {
+	color: var(--wa-dg-i);
+}

@@ -93,6 +93,14 @@ class WhatsAppCommand(Document):
 	def check_uniqueness(self) -> None:
 		"""No word of this command may equal the `code` or a synonym of any other command."""
 		mine = self.words()
+		from whatsapp_next.services.command_router import help_tokens
+
+		taken = mine & help_tokens()
+		if taken:
+			frappe.throw(
+				_("Word {0} asks for help and cannot be a command word").format(", ".join(sorted(taken))),
+				WAValidationError,
+			)
 		for other in frappe.get_all("WhatsApp Command", fields=["name", "code", "synonyms"]):
 			if other.name == self.name:
 				continue

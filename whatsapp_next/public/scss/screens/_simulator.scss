@@ -188,6 +188,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		&--muted { background: var(--wa-sunken); color: var(--wa-ink-3); }
 		&--nf { background: var(--wa-nf-s); color: var(--wa-nf-i); }
 		&--wn { background: var(--wa-wn-s); color: var(--wa-wn-i); }
+		&--grp { background: var(--wa-pri-s); color: var(--wa-pri-d); }
 	}
 
 	&__none {

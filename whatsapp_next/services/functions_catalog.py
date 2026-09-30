@@ -137,6 +137,11 @@ def load_catalog(*, use_cache: bool = True) -> Catalog:
 				catalog.errors.append(f"{source}: {exc}")
 				frappe.log_error(title="WhatsApp functions: catalog unreadable", message=f"{path}: {exc}")
 				continue
+			# a catalog over another app's data (`functions/integrations/*`) names that app: on a
+			# site without it the functions are not offered at all
+			missing = [a for a in data.get("requires_apps") or [] if a not in frappe.get_installed_apps()]
+			if missing:
+				continue
 			catalog.sources.append(source)
 			for fn in data.get("functions") or []:
 				key = str(fn.get("function_key") or "").strip()
@@ -302,6 +307,7 @@ def _apply_manifest(
 	)
 	doc.checksum = checksum(manifest)
 	doc.latest_version = fn.latest_version()
+	doc.update_available = 1 if version_tuple(doc.latest_version or "0") > version_tuple(version) else 0
 	doc.latest_version_date = (fn.versions.get(fn.latest_version()) or {}).get("released") or nowdate()
 	doc.set("party_types", [])
 	for pt in fn.party_types or manifest.get("party_types") or []:

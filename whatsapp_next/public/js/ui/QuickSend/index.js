@@ -89,13 +89,21 @@ sanad.ui.QuickSend = class QuickSend {
 			this.clear_error("body");
 			if (this.opts.reference_doctype) preview();
 		});
-		this.dialog.fields_dict.message_type.$input.on("change", () => this.clear_error("attachment"));
+		this.dialog.fields_dict.message_type.$input.on("change", () => {
+			this.clear_error("attachment");
+			this.sync_body_required();
+		});
 		if (!has_recipient) {
 			// country hint + loose E.164 normalisation; the example number is never hard-coded here
 			if (typeof sanad.ui.PhoneField === "function") {
 				this.phone_field = new sanad.ui.PhoneField({ control: this.dialog.fields_dict.phone });
 			}
 			this.dialog.fields_dict.phone.$input.on("blur", () => this.resolve_phone());
+			// a number edited after it was looked up is no longer that recipient: Send must not
+			// go to the number that was resolved before the edit
+			this.dialog.fields_dict.phone.$input.on("input", () => {
+				if (this.recipient) this.set_recipient(null);
+			});
 		}
 		if (o.body) this.dialog.set_value("body", o.body);
 		if (o.device) this.dialog.set_value("device", o.device);
@@ -166,6 +174,8 @@ sanad.ui.QuickSend = class QuickSend {
 	/** Render the recipient line: name, phone, known / blacklisted badges. */
 	set_recipient(recipient) {
 		this.recipient = recipient || null;
+		// a blacklisted recipient disabled Send; any other one (or none yet) enables it again
+		this.dialog.get_primary_btn().prop("disabled", !!(recipient && recipient.blacklisted));
 		if (!recipient) {
 			this.$recipient.html(`<div class="sanad-quicksend__recipient sanad-quicksend__recipient--empty">${ui.escape(__("Enter a phone number to look up the recipient."))}</div>`);
 			return;
@@ -180,15 +190,14 @@ sanad.ui.QuickSend = class QuickSend {
 			<div class="sanad-quicksend__recipient">
 				<span class="sanad-quicksend__avatar" aria-hidden="true">${ui.icon(recipient.jid ? "es-line-people" : "es-line-customer", "md")}</span>
 				<span class="sanad-quicksend__who">
-					<span class="sanad-quicksend__name">${ui.escape(recipient.display_name || key)}</span>
-					${recipient.display_name ? `<span class="sanad-quicksend__phone sanad-tabular">${ui.escape(key)}</span>` : ""}
+					<span class="sanad-quicksend__name">${ui.escape(recipient.display_name || ui.phone(key))}</span>
+					${recipient.display_name ? `<span class="sanad-quicksend__phone sanad-tabular">${ui.escape(ui.phone(key))}</span>` : ""}
 				</span>
 				<span class="sanad-quicksend__badges">${badges.join(" ")}</span>
 			</div>`);
 		if (recipient.blacklisted) {
 			this.$recipient.append(`<div class="sanad-quicksend__error" role="alert">${ui.escape(__("This number is blacklisted, so the message cannot be sent."))}</div>`);
 		}
-		this.dialog.get_primary_btn().prop("disabled", !!recipient.blacklisted);
 	}
 
 	resolve_phone() {
@@ -198,13 +207,17 @@ sanad.ui.QuickSend = class QuickSend {
 		const guess = this.phone_field ? this.phone_field.get_value() : null;
 		const phone = guess && guess.phone_e164 ? guess.phone_e164 : raw;
 		this.clear_error("phone");
+		const seq = (this._resolve_seq = (this._resolve_seq || 0) + 1);
 		return ui.call(this.api.get_context, { phone, reference_doctype: this.opts.reference_doctype, reference_name: this.opts.reference_name }, { silent: true })
 			.then((ctx) => {
+				// the field changed while this was in flight: the newer lookup decides
+				if (seq !== this._resolve_seq || (this.dialog.get_value("phone") || "").trim() !== raw) return;
 				this.opts.phone = phone;
 				this.context = Object.assign(this.context || {}, ctx || {});
 				this.set_recipient(this.context.recipient);
 			})
 			.catch((err) => {
+				if (seq !== this._resolve_seq) return;
 				this.set_recipient(null);
 				this.set_error("phone", err.message);
 			});
@@ -218,13 +231,25 @@ sanad.ui.QuickSend = class QuickSend {
 		if (template) {
 			const t = (this.context && this.context.templates || []).find((x) => x.name === template);
 			if (t && t.message_type && MESSAGE_TYPES.includes(t.message_type)) this.dialog.set_value("message_type", t.message_type);
-			body.df.reqd = 0;
 			body.df.description = __("The template text is sent. Leave this empty, or type to replace it.");
 		} else {
-			body.df.reqd = 1;
 			body.df.description = "";
 			this.$preview.empty();
 		}
+		this.sync_body_required();
+	}
+
+	/** The text is required only for a text message without a template — a file needs none (the server's rule). */
+	sync_body_required() {
+		const body = this.dialog.fields_dict.body;
+		// read from the inputs: this runs from their own change event, before the model is set
+		const now = (name) => {
+			const f = this.dialog.fields_dict[name];
+			return (f.get_input_value ? f.get_input_value() : f.get_value()) || "";
+		};
+		const reqd = !now("template") && (now("message_type") || "Text") === "Text" ? 1 : 0;
+		if (body.df.reqd === reqd) return;
+		body.df.reqd = reqd;
 		body.refresh();
 	}
 
@@ -286,7 +311,7 @@ sanad.ui.QuickSend = class QuickSend {
 		["phone", "device", "body", "attachment"].forEach((f) => this.clear_error(f));
 		if (!this.recipient && !values.phone) errors.push(["phone", __("Enter the recipient's phone number.")]);
 		if (!values.device) errors.push(["device", __("Choose the device that sends the message.")]);
-		if (!values.template && !(values.body || "").trim()) errors.push(["body", __("Write a message or pick a template.")]);
+		if ((values.message_type || "Text") === "Text" && !values.template && !(values.body || "").trim()) errors.push(["body", __("Write a message or pick a template.")]);
 		if (values.message_type !== "Text" && !values.attachment) errors.push(["attachment", __("Attach a file for a {0} message.", [__(values.message_type)])]);
 		// every error is shown inline; only the first invalid field takes focus
 		errors.forEach(([f, msg], i) => this.set_error(f, msg, { focus: i === 0 }));

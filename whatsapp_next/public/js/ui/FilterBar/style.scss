@@ -195,6 +195,10 @@
 		min-width: 0;
 		gap: var(--sanad-gap-sm);
 		margin-inline-start: auto;
+		// …and only when there is one: a segmented period cannot elide, so a cluster without a date
+		// filter that shrank pushed its own icons past the screen's edge (the Numbers list at 1280)
+		// while the filters beside it never wrapped and never moved behind "More"
+		&:not(:has(.sanad-filterbar__datefilter)) { flex-shrink: 0; }
 	}
 	&__datefilter { flex: 1 1 auto; min-width: 0; }
 
@@ -527,6 +531,13 @@
 		&--list { padding: var(--sanad-gap-md) 14px; gap: var(--sanad-gap-sm); }
 		// one row: search · Filters · the date icon — the date filter used to take a row of its own
 		&__row--toolbar { flex-wrap: nowrap; gap: var(--sanad-gap-sm); align-items: center; }
+		// a segmented period does not fit beside search · Filters on a phone: it squeezed the
+		// search to a sliver and the Filters button slid under it. It takes the second row.
+		&__row--toolbar:has(.sanad-filterbar__period) {
+			flex-wrap: wrap;
+			> .sanad-filterbar__main { flex: 1 0 100%; }
+			> .sanad-filterbar__end { flex: 1 0 100%; }
+		}
 		&__main { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; }
 		&__field, &__field--range { flex: 1 0 100%; max-width: none; }
 		&__field--search { flex: 1 1 auto; min-width: 80px; max-width: none; }

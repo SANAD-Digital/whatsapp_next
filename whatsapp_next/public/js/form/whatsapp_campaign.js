@@ -51,12 +51,17 @@ const sync = (frm) => frm.wa_builder && frm.wa_builder.sync();
 
 function subscribe(frm) {
 	unsubscribe(frm);
-	frm.sanad_realtime = (data) => {
-		if (!data || data.campaign !== frm.doc.name) return;
-		if (data.status && data.status !== frm.doc.status) return frm.reload_doc();
+	// The runner publishes each change twice — to the document's room and to everyone — and a busy
+	// campaign publishes on every status callback: one progress read per burst, not one per event.
+	const catch_up = sanad.ui.debounce(() => {
 		if (!frm.wa_builder) return;
 		frm.wa_builder.sync();
 		if (frm.wa_builder.pane && frm.wa_builder.pane.load_progress) frm.wa_builder.pane.load_progress();
+	}, 400);
+	frm.sanad_realtime = (data) => {
+		if (!data || data.campaign !== frm.doc.name) return;
+		if (data.status && data.status !== frm.doc.status) return frm.is_dirty() ? null : frm.reload_doc();
+		catch_up();
 	};
 	frappe.realtime.on("wa:campaign:status", frm.sanad_realtime);
 }

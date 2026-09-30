@@ -51,6 +51,24 @@ frappe.provide("whatsapp_next.fmt");
 	/** A time cell: left-to-right and tabular, falling back to when the row was created. */
 	fmt.time_cell = (v, doc) => (v || (doc && doc.creation) ? `<span class="sanad-tabular sanad-datalist__date" dir="ltr">${ui.escape(fmt.short(v || doc.creation))}</span>` : "");
 
+	/** What a failure code means to the person reading it, not to the dispatcher. */
+	const ERROR_TEXT = {
+		recipient_not_registered: () => __("The number is not on WhatsApp"),
+		device_disconnected: () => __("The device was disconnected"),
+		timeout: () => __("The provider did not answer in time"),
+		platform_rejected: () => __("The provider refused the message"),
+		invalid_template: () => __("The message could not be rendered"),
+		insufficient_balance: () => __("The subscription has no balance left"),
+		invalid_phone: () => __("The number could not be read"),
+		blacklisted: () => __("The number is blacklisted"),
+		unknown_number_policy: () => __("Excluded: never had a conversation"),
+		rate_limited: () => __("The provider rate-limited the sending"),
+		auth: () => __("The connection to the provider was refused"),
+		unknown: () => __("An unknown error"),
+	};
+	/** `raw` is the provider's own text: shown when the code says nothing more than "unknown". */
+	fmt.error_text = (code, raw) => (code === "unknown" && raw ? raw : ERROR_TEXT[code] ? ERROR_TEXT[code]() : code ? __(code) : raw || "");
+
 	// ---- columns every message screen shares --------------------------------------------------
 
 	const columns = whatsapp_next.columns;
@@ -61,8 +79,8 @@ frappe.provide("whatsapp_next.fmt");
 		label: label || __("Contact"),
 		sortable,
 		width,
-		format: (v) => ui.escape(v || fallback || __("Unknown")),
-		sub: (doc) => `<span dir="ltr">${ui.escape(doc.phone_e164 || doc.phone || doc.jid || "")}</span>`,
+		format: (v, doc) => `<span class="sanad-datalist__name">${ui.escape(v || fallback || __("Unknown"))}</span>${ui.group_tag(doc && (doc.phone_e164 || doc.jid))}`,
+		sub: (doc) => `<span dir="ltr">${ui.escape(ui.phone(doc.phone_e164 || doc.phone || doc.jid || ""))}</span>`,
 	});
 
 	/** The device that carried it. */
@@ -103,7 +121,7 @@ frappe.provide("whatsapp_next.fmt");
 			title: __("Cancel this message?"),
 			message: __("The message leaves the queue and its status becomes Cancelled."),
 			impact: [
-				{ label: __("Recipient"), value: doc.display_name || doc.phone_e164 || doc.jid || "" },
+				{ label: __("Recipient"), value: doc.display_name || ui.phone(doc.phone_e164 || doc.jid || "") },
 				{ label: __("Status now"), value: __(doc.status || "") },
 			],
 			reason_field: true,
@@ -131,7 +149,8 @@ frappe.provide("whatsapp_next.fmt");
 
 	/** The contact behind a message — its Contact when linked, else its number in the phonebook. */
 	whatsapp_next.messages.open_contact = function (doc, after) {
-		if (doc.contact) return frappe.set_route("Form", "Contact", doc.contact);
+		// The kit's helper: a Contact User without native Contact read lands on the Contacts page.
+		if (doc.contact) return ui.ConversationDrawer.open_contact(doc.contact);
 		// Unknown number: link it to a contact or create one, in place (09 row 5 → `numbers.link_number`).
 		if (doc.phone_e164 && whatsapp_next.numbers && whatsapp_next.numbers.link_convert_dialog) {
 			return whatsapp_next.numbers.link_convert_dialog({ phone_e164: doc.phone_e164, name: doc.phone_e164, display_name: doc.display_name }, after);
@@ -207,8 +226,11 @@ frappe.provide("whatsapp_next.fmt");
 			push(q.paused_at, __("Paused by {0}: {1}", [q.paused_by || "", q.pause_reason || ""]), "amber");
 			push(q.next_attempt_at, __("Retry scheduled ({0})", [q.last_error_code || q.last_error || ""]), "amber");
 			push(q.deleted_at, __("Removed from the queue by {0}: {1}", [q.deleted_by || "", q.delete_reason || ""]), "red");
-			if (q.status === "Dead Letter") push(q.modified, __("Gave up after retries: {0}", [q.dead_letter_reason || q.last_error || ""]), "red");
-			push(q.completed_at, __("Handed to the sending platform ({0})", [q.platform_queue_id || q.batch_id || ""]), "green");
+			// `completed_at` is the hand-over only when the platform took the message: a row given up
+			// before that carries its give-up time there instead
+			const handed = q.status === "Completed" || !!q.platform_queue_id;
+			if (q.status === "Dead Letter") push(handed ? q.modified : q.completed_at || q.modified, __("Gave up after retries: {0}", [q.dead_letter_reason || q.last_error || ""]), "red");
+			if (handed) push(q.completed_at, __("Handed to the sending platform ({0})", [q.platform_queue_id || q.batch_id || ""]), "green");
 		}
 		push(doc.sent_at, __("Sent"), "green");
 		push(doc.delivered_at, __("Delivered"), "green");
@@ -244,6 +266,9 @@ frappe.provide("whatsapp_next.fmt");
 		);
 	};
 
+	/** How the message text renders: the body field's own definition, as a field highlight used it. */
+	const body_df = () => ((frappe.get_meta(OUT) || {}).fields || []).find((f) => f.fieldname === "body") || { fieldname: "body", fieldtype: "Small Text" };
+
 	/** Record drawer of one outbound row (used by the Outbound list, the Queue list and the form). */
 	whatsapp_next.messages.open_outbound_drawer = function (name, { after_change, listview, extra_actions = [] } = {}) {
 		const refresh = () => after_change && after_change();
@@ -256,7 +281,17 @@ frappe.provide("whatsapp_next.fmt");
 			listview,
 			// document layout: the message says itself first, then the facts that explain it,
 			// then who it went to, then everything else, then what happened to it.
-			highlight: { field: "body", label: __("Message"), icon: ui.icons.quick_send },
+			// the text, else the caption a document or a photo carries, else what kind of message it
+			// was: a PDF alert has no body, and its "Message" block read as an empty box
+			highlight: ($el, d) => {
+				const text = d.body || d.caption;
+				$el.html(
+					text
+						? `<div class="sanad-doc__highlight" dir="auto">${ui.Render.value(text, body_df(), d, { density: "card", doctype: OUT })}</div>`
+						: `<div class="sanad-doc__highlight text-muted">${ui.escape(__(d.message_type || "Text"))}</div>`
+				);
+			},
+			highlight_label: __("Message"),
 			facts: [
 				{ field: "message_type", icon: "es-line-chat" },
 				{ field: "recipient_type", icon: "es-line-people" },
@@ -281,9 +316,11 @@ frappe.provide("whatsapp_next.fmt");
 				{ label: __("Reference"), icon: "es-line-article", condition: (d) => d.reference && d.reference.doctype && d.reference.name, render: whatsapp_next.messages.render_reference },
 			],
 			actions: [
-				{ label: __("Resend"), icon: ui.icons.resend, condition: (d) => is_agent() && TERMINAL.includes(d.status), handler: (d) => whatsapp_next.messages.resend(d.name, refresh) },
+				{ label: __("Resend"), icon: ui.icons.resend, primary: true, condition: (d) => is_agent() && TERMINAL.includes(d.status), handler: (d) => whatsapp_next.messages.resend(d.name, refresh) },
 				{ label: __("Quick send"), icon: ui.icons.quick_send, condition: () => is_agent(), handler: (d) => whatsapp_next.messages.quick_send(d, refresh) },
-				{ label: __("Contact"), icon: "es-line-customer", handler: (d) => whatsapp_next.messages.open_contact(d) },
+				// the queue adds its own verb (Pause · Resume · Retry): Contact then moves to "More", so
+				// the footer keeps three verbs
+				{ label: __("Contact"), icon: "es-line-customer", menu: extra_actions.length > 0, handler: (d) => whatsapp_next.messages.open_contact(d) },
 				{ label: __("Cancel"), icon: ui.icons.cancel, danger: true, condition: (d) => is_manager() && d.status === "Queued", handler: (d) => whatsapp_next.messages.cancel(d, () => { drawer.refresh(); refresh(); }) },
 			].concat(extra_actions),
 		});

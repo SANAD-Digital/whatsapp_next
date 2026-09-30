@@ -57,7 +57,9 @@ class TestPhone(IntegrationTestCase):
 
 	def test_mask_hides_digits(self):
 		masked = phone.mask("+966501234567")
-		self.assertTrue(masked.startswith("+966"))
+		# the country code shows, the "+" does not (numbers are never shown with one)
+		self.assertTrue(masked.startswith("966"))
+		self.assertNotIn("+", masked)
 		self.assertTrue(masked.endswith("67"))
 		self.assertNotIn("50123", masked)
 		self.assertIn("***", phone.mask("966501234567@s.whatsapp.net"))

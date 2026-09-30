@@ -14,6 +14,9 @@
   "number_column",
   "number_type",
   "display_name",
+  "saved_name",
+  "synced_device",
+  "synced_at",
   "contact_section",
   "contact",
   "contact_column",
@@ -92,6 +95,27 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "WhatsApp Name"
+  },
+  {
+   "fieldname": "saved_name",
+   "fieldtype": "Data",
+   "label": "Saved Name",
+   "read_only": 1,
+   "description": "The name this number is saved under in the phone's contacts, from the last sync."
+  },
+  {
+   "fieldname": "synced_device",
+   "fieldtype": "Link",
+   "options": "WhatsApp Device",
+   "label": "Synced From",
+   "read_only": 1,
+   "in_standard_filter": 1
+  },
+  {
+   "fieldname": "synced_at",
+   "fieldtype": "Datetime",
+   "label": "Synced At",
+   "read_only": 1
   },
   {
    "fieldname": "contact_section",

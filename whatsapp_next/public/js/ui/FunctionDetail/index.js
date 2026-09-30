@@ -450,7 +450,7 @@ frappe.provide("sanad.ui");
 								? `<span class="sanad-ce__pop" role="listbox">
 									${(pv.results || [])
 										.map(
-											(r) => `<button type="button" role="option" class="sanad-ce__opt${c && r.name === c.name ? " is-sel" : ""}" data-act="pv-pick" data-name="${esc(r.name)}">${esc(r.label || __("Unnamed"))}<span class="sanad-ce__opt-sub sanad-ce__mono" dir="ltr">${esc(r.phone || "")}</span></button>`
+											(r) => `<button type="button" role="option" class="sanad-ce__opt${c && r.name === c.name ? " is-sel" : ""}" data-act="pv-pick" data-name="${esc(r.name)}">${esc(r.label || __("Unnamed"))}<span class="sanad-ce__opt-sub sanad-ce__mono" dir="ltr">${esc(sanad.ui.phone(r.phone || ""))}</span></button>`
 										)
 										.join("")}
 									${pv.loading ? `<span class="sanad-ce__none">${esc(__("Loading…"))}</span>` : (pv.results || []).length ? "" : `<span class="sanad-ce__none">${esc(pv.error || __("No matching contacts."))}</span>`}
@@ -492,7 +492,7 @@ frappe.provide("sanad.ui");
 						${
 							is_doc
 								? `<input type="text" class="sanad-ce__input sanad-ce__input--sm" data-f="pvf-${esc(key)}" data-in="pv-file" data-key="${esc(key)}" value="${esc(file)}" aria-label="${esc(__("Attached file name"))}" />`
-								: `<textarea class="sanad-ce__textarea" rows="${Math.min(7, Math.max(3, Math.ceil(String(text).length / 52)))}" data-f="pvo-${esc(key)}" data-in="pv-out" data-key="${esc(key)}" aria-label="${esc(__(o.label || key))}">${esc(text)}</textarea>`
+								: `<textarea class="sanad-ce__textarea sanad-fd__tpl" dir="auto" rows="${Math.min(7, Math.max(3, Math.ceil(String(text).length / 52)))}" data-f="pvo-${esc(key)}" data-in="pv-out" data-key="${esc(key)}" aria-label="${esc(__(o.label || key))}">${esc(text)}</textarea>`
 						}
 					</div>`
 				)
@@ -504,7 +504,7 @@ frappe.provide("sanad.ui");
 				<div class="sanad-ce__phone">
 					<div class="sanad-ce__phone-head">
 						<span class="sanad-ce__avatar" aria-hidden="true">${esc(String((c && c.label) || "?").trim().slice(0, 2))}</span>
-						<span class="sanad-ce__switch-text"><span class="sanad-ce__card-name">${esc(c_label)}</span><span class="sanad-ce__opt-sub sanad-ce__mono" dir="ltr">${esc((c && c.phone) || "")}</span></span>
+						<span class="sanad-ce__switch-text"><span class="sanad-ce__card-name">${esc(c_label)}</span><span class="sanad-ce__opt-sub sanad-ce__mono" dir="ltr">${esc(sanad.ui.phone((c && c.phone) || ""))}</span></span>
 						<span class="sanad-ce__tag ${linked ? "sanad-ce__tag--ok" : "sanad-ce__tag--warn"}">${esc(linked ? __("Linked to an account", null, "Command Editor") : __("Not linked"))}</span>
 					</div>
 					<span class="sanad-ce__phone-note">${esc(__("The reply comes from the function's output texts, run for real without sending."))}</span>

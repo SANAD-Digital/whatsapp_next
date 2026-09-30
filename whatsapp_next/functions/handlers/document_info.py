@@ -29,14 +29,23 @@ def handle(ctx: FunctionContext) -> FunctionResult:
 	fields = [f for f in READ_FIELDS if f == "name" or meta.has_field(f)]
 	if party_field and meta.has_field(party_field):
 		fields.append(party_field)
-	row = frappe.db.get_value(doctype, name, fields, as_dict=True)
-	if not row:
-		return FunctionResult(error=_("{0} {1} not found").format(_(doctype), name))
 	if require_party:
+		# Without a party field there is nothing to prove the document is the sender's: refuse,
+		# never answer every linked sender about every document of the type.
+		if not party_field or not meta.has_field(party_field):
+			return FunctionResult(error=_("Function is not configured: party_field"))
 		if not ctx.sender.party_name:
 			return FunctionResult(error=_("Your number is not linked to a party"))
-		if party_field and row.get(party_field) != ctx.sender.party_name:
-			return FunctionResult(error=_("{0} {1} does not belong to you").format(_(doctype), name))
+	row = frappe.db.get_value(doctype, name, fields, as_dict=True)
+	# one answer for "no such document" and "not yours", so a sender cannot probe which exist
+	not_found = FunctionResult(error=_("{0} {1} not found").format(_(doctype), name))
+	if not row:
+		return not_found
+	if require_party:
+		field = meta.get_field(party_field)
+		wrong_type = field.fieldtype == "Link" and field.options and field.options != ctx.sender.party_type
+		if wrong_type or row.get(party_field) != ctx.sender.party_name:
+			return not_found
 	status = row.get("status") or {0: _("Draft"), 1: _("Submitted"), 2: _("Cancelled")}.get(
 		cint(row.get("docstatus"))
 	)

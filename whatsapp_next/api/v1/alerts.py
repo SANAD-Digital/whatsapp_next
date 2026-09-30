@@ -6,12 +6,15 @@
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import frappe
+from frappe import _
 
 from whatsapp_next.api._common import api_endpoint
 from whatsapp_next.api.v1._roles import MANAGER
+from whatsapp_next.exceptions import WAValidationError
 from whatsapp_next.services import alerts, alerts_dates, alerts_editor
 
 
@@ -33,8 +36,10 @@ def preview(name: str) -> dict[str, Any]:
 
 @api_endpoint(roles=MANAGER)
 def run_now(name: str) -> dict[str, str | None]:
-	"""Enqueue `alerts.run_alert` on the `long` queue; returns `{job_id}`. P: Manager."""
-	frappe.has_permission("WhatsApp Notification Alert", "read", name, throw=True)
+	"""Enqueue `alerts.run_alert` on the `long` queue; returns `{job_id}`. P: Manager.
+
+	Running an alert sends messages, so it takes write on the alert, not read."""
+	frappe.has_permission("WhatsApp Notification Alert", "write", name, throw=True)
 	job = frappe.enqueue(
 		"whatsapp_next.services.alerts.run_alert",
 		name=name,
@@ -52,7 +57,12 @@ def get_report_columns(report: str, filters: dict | list | str | None = None) ->
 	"""`[{fieldname, label, fieldtype}]` of `report` run with `filters` (empty when the report
 	cannot run or the caller may not run it — `query_report.run` checks). P: Manager."""
 	if isinstance(filters, str):
-		filters = frappe.parse_json(filters) if filters.strip() else None
+		try:
+			filters = json.loads(filters) if filters.strip() else None
+		except ValueError:
+			frappe.throw(_("Invalid value for {0}").format("filters"), WAValidationError)
+	if filters is not None and not isinstance(filters, dict | list):
+		frappe.throw(_("Invalid value for {0}").format("filters"), WAValidationError)
 	return alerts.report_columns(report, filters=filters)
 
 

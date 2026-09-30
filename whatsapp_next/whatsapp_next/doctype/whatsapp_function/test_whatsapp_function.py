@@ -78,6 +78,36 @@ class TestWhatsAppFunction(IntegrationTestCase):
 		doc.latest_version = "1.0.0"
 		doc.save()
 		self.assertEqual(doc.update_available, 0)
+		# semantic order: a site ahead of its catalog is not outdated; 1.10 is newer than 1.9
+		doc.installed_version, doc.latest_version = "1.2.0", "1.1.0"
+		doc.save()
+		self.assertEqual(doc.update_available, 0)
+		doc.installed_version, doc.latest_version = "1.9.0", "1.10.0"
+		doc.save()
+		self.assertEqual(doc.update_available, 1)
+
+	def test_hook_registered_handler_counts_in_a_fresh_worker(self) -> None:
+		"""`handler_exists` loads the `whatsapp_function_handlers` hook before answering."""
+		from unittest.mock import patch
+
+		from whatsapp_next.functions import registry
+
+		saved = (dict(registry.FUNCTION_HANDLERS), registry._hooks_loaded)
+		try:
+			registry.FUNCTION_HANDLERS.pop("_wa_test_hooked", None)
+			registry._hooks_loaded = False  # as in a worker that has not resolved the hook yet
+			hooks = {"_wa_test_hooked": "whatsapp_next.functions.handlers.ping.handle"}
+			real = frappe.get_hooks
+
+			def get_hooks(name=None, *args, **kwargs):
+				return hooks if name == "whatsapp_function_handlers" else real(name, *args, **kwargs)
+
+			with patch.object(frappe, "get_hooks", side_effect=get_hooks):
+				self.assertTrue(handler_exists("_wa_test_hooked"))
+		finally:
+			registry.FUNCTION_HANDLERS.clear()
+			registry.FUNCTION_HANDLERS.update(saved[0])
+			registry._hooks_loaded = saved[1]
 
 	def test_duplicate_setting_key_rejected(self) -> None:
 		with self.assertRaises(WAValidationError):

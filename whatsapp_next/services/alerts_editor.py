@@ -212,6 +212,10 @@ def _draft(payload: dict):
 	name = payload.get("name")
 	# a saved alert is loaded and changed in memory only — nothing here calls save
 	doc = _get(name) if name else frappe.new_doc(DOCTYPE)
+	if name:
+		# what `save` compares against: without it every field reads as changed, and the report
+		# access check (made only when the report changes) refused a draft `save` would accept
+		doc._doc_before_save = frappe.get_doc(DOCTYPE, name)
 	_apply(doc, payload)
 	return doc
 
@@ -368,7 +372,20 @@ def report_info(report: str) -> dict[str, Any]:
 	if kind.report_type == "Report Builder":
 		data = alerts._load_json(kind.json) or {}
 		saved = alerts.builder_filters(frappe._dict(), data.get("filters"))
-	return {"name": report, "report_type": kind.report_type, "ref_doctype": kind.ref_doctype, "saved_filters": saved}
+	return {
+		"name": report,
+		"report_type": kind.report_type,
+		"ref_doctype": kind.ref_doctype,
+		"saved_filters": saved,
+		"can_run": _can_run(report),
+	}
+
+
+def _can_run(report: str) -> bool:
+	"""Whether the caller may run the report — the two checks `frappe.desk.query_report` makes, so
+	the editor does not ask Frappe for a script it will refuse (with its own "Not permitted" popup)."""
+	doc = frappe.get_doc("Report", report)
+	return bool(doc.is_permitted() and (not doc.ref_doctype or frappe.has_permission(doc.ref_doctype, "report")))
 
 
 # ---- pickers -------------------------------------------------------------------------------

@@ -3,6 +3,9 @@
 
 import "./ui/index.js";
 import "./whatsapp_next_setup.js";
+import "./desk/phone_formatter.js";
+import "./desk/beta_badge.js";
+import "./desk/icon_sizes.js";
 import "./screens/console.js";
 import "./screens/messages.js";
 import "./screens/numbers.js";
@@ -11,3 +14,7 @@ import "./screens/campaigns.js";
 import "./screens/campaign/index.js";
 import "./screens/settings.js";
 import "./screens/alerts.js";
+import "./screens/templates.js";
+import "./screens/notifications.js";
+import "./screens/groups.js";
+import "./screens/device_link.js";

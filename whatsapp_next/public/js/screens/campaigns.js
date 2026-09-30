@@ -22,6 +22,8 @@ frappe.provide("whatsapp_next.campaigns");
 	C.STOPPABLE = ["Scheduled", "Queued", "Running"];
 	/** Open for editing. */
 	C.EDITABLE = ["Draft", "Paused"];
+	/** What `campaign_runner.start` accepts (a paused campaign resumes, it does not start). */
+	C.STARTABLE = ["Draft", "Scheduled"];
 	C.INDICATOR = {
 		Draft: "gray",
 		Scheduled: "blue",
@@ -53,9 +55,23 @@ frappe.provide("whatsapp_next.campaigns");
 	/** The same rule over a campaign document, whose counters are the four disjoint fields. */
 	C.handed_of_doc = (doc) => cint(doc.sent_count) + cint(doc.delivered_count) + cint(doc.read_count);
 
-	/** What is still to go out: the recipients that have neither left, failed nor been cancelled. */
+	/**
+	 * Every message the campaign has, in any state: one per recipient × message, all created when it
+	 * starts. The counters count messages, so their denominator is this, never the recipients — a
+	 * campaign of three messages to three people is "9 / 9" when done, not "9 / 3". 0 before start.
+	 */
+	C.messages_of_doc = (doc) =>
+		cint(doc.queued_count) + C.handed_of_doc(doc) + cint(doc.failed_count) + cint(doc.cancelled_count);
+
+	/** What is still to go out: the messages that have neither left, failed nor been cancelled
+	 * (before the messages exist, the recipients not reached yet). */
 	C.remaining_of_doc = (doc) =>
-		Math.max(0, cint(doc.total_recipients) - C.handed_of_doc(doc) - cint(doc.failed_count) - cint(doc.cancelled_count));
+		C.messages_of_doc(doc)
+			? cint(doc.queued_count)
+			: Math.max(0, cint(doc.total_recipients) - C.handed_of_doc(doc) - cint(doc.failed_count) - cint(doc.cancelled_count));
+
+	/** "sent / messages", kept left to right inside an Arabic line ("9 / 3" must not read "3 / 9"). */
+	C.progress_text = (doc) => `\u2066${fmt_int(C.handed_of_doc(doc))} / ${fmt_int(C.messages_of_doc(doc))}\u2069`;
 
 	/** A device shows by its own name; Frappe caches the link title after a list has fetched it. */
 	C.device_title = (name) => {
@@ -69,10 +85,12 @@ frappe.provide("whatsapp_next.campaigns");
 		const c = row.counters || {};
 		return {
 			total_recipients: cint(row.total_recipients) || cint(c.total),
+			queued_count: cint(c.queued),
 			sent_count: cint(c.sent),
 			delivered_count: cint(c.delivered),
 			read_count: cint(c.read),
 			failed_count: cint(c.failed) || cint(row.failed_count),
+			cancelled_count: cint(c.cancelled),
 			messages_per_minute: row.messages_per_minute,
 			device: row.device,
 		};
@@ -88,15 +106,15 @@ frappe.provide("whatsapp_next.campaigns");
 
 	/**
 	 * The prototype's four-segment bar (`docs/screen/Hub Screen - Campaigns.dc.html`): read, then
-	 * delivered, then sent-but-not-yet-delivered, then failed — each as a share of the recipients,
+	 * delivered, then sent-but-not-yet-delivered, then failed — each as a share of the messages,
 	 * so the bar is the campaign's funnel and the empty tail is what has not gone out yet.
 	 */
 	C.bar_html = (doc, { paused } = {}) => {
-		const total = Math.max(cint(doc.total_recipients), 1);
+		const total = Math.max(C.messages_of_doc(doc), 1);
 		const w = (n) => `${Math.max(0, (cint(n) * 100) / total).toFixed(2)}%`;
 		return `<span class="wa-strip__bar${paused ? " wa-strip__bar--paused" : ""}" role="img"
-				aria-label="${esc(__("{0} sent, {1} delivered, {2} read, {3} failed, of {4} recipients", [
-					fmt_int(C.handed_of_doc(doc)), fmt_int(doc.delivered_count), fmt_int(doc.read_count), fmt_int(doc.failed_count), fmt_int(doc.total_recipients),
+				aria-label="${esc(__("{0} sent, {1} delivered, {2} read, {3} failed, of {4} messages", [
+					fmt_int(C.handed_of_doc(doc)), fmt_int(doc.delivered_count), fmt_int(doc.read_count), fmt_int(doc.failed_count), fmt_int(C.messages_of_doc(doc)),
 				]))}">
 			<span class="wa-strip__seg wa-strip__seg--read" style="inline-size:${w(doc.read_count)}"></span>
 			<span class="wa-strip__seg wa-strip__seg--delivered" style="inline-size:${w(doc.delivered_count)}"></span>
@@ -105,11 +123,11 @@ frappe.provide("whatsapp_next.campaigns");
 		</span>`;
 	};
 
-	/** The same bar inside a table cell, with the prototype's "sent / recipients" label above it. */
+	/** The same bar inside a table cell, with a "sent / messages" label above it. */
 	C.progress_html = (doc, { tone } = {}) => {
-		if (!cint(doc.total_recipients)) return `<span class="text-muted">—</span>`;
-		return `<span class="wa-strip__cell">
-			<span class="wa-strip__cell-label sanad-tabular">${esc(fmt_int(C.handed_of_doc(doc)))} / ${esc(fmt_int(doc.total_recipients))}</span>
+		if (!C.messages_of_doc(doc)) return `<span class="text-muted">—</span>`;
+		return `<span class="wa-strip__cell" title="${esc(__("Messages sent out of all the campaign's messages"))}">
+			<span class="wa-strip__cell-label sanad-tabular">${esc(C.progress_text(doc))}</span>
 			${C.bar_html(doc, { paused: tone === "amber" })}
 		</span>`;
 	};
@@ -140,10 +158,17 @@ frappe.provide("whatsapp_next.campaigns");
 		const remaining = Math.max(cint(counters.open), C.remaining_of_doc(doc));
 		const rate = cint(rates.messages_per_minute) || cint(doc.messages_per_minute) || 20;
 		if (!remaining) return __("Everything has been handed to the queue.");
-		const minutes = remaining / Math.max(rate, 1);
+		// whole minutes, rounded up: 3 messages at 20/min are "about 1 min", never "about 0 min",
+		// and 90 minutes are "1 h 30 min", not "2 h"
+		const minutes = Math.max(1, Math.ceil(remaining / Math.max(rate, 1)));
+		const hours = Math.floor(minutes / 60);
 		return __("{0} left — about {1} at {2}/min from device {3}.", [
 			ui.plural(remaining, { one: __("{0} message"), other: __("{0} messages") }),
-			minutes < 60 ? __("{0} min", [fmt_int(Math.round(minutes))]) : __("{0} h", [fmt_int(Math.round(minutes / 60))]),
+			minutes < 60
+				? __("{0} min", [fmt_int(minutes)])
+				: minutes % 60
+					? __("{0} h {1} min", [fmt_int(hours), fmt_int(minutes % 60)])
+					: __("{0} h", [fmt_int(hours)]),
 			fmt_int(rate),
 			C.device_title(doc.device) || "—",
 		]);
@@ -215,7 +240,9 @@ frappe.provide("whatsapp_next.campaigns");
 						fieldname: "scheduled_at",
 						label: __("Start at"),
 						reqd: 1,
-						default: doc.scheduled_at || frappe.datetime.add_days(frappe.datetime.now_datetime(), 1),
+						// the control holds system time and shows it in the reader's zone: a default
+						// built from the reader's clock would land hours off when the two differ
+						default: doc.scheduled_at || frappe.datetime.add_days(frappe.datetime.system_datetime(), 1),
 						description: __("The campaign starts by itself at this time."),
 					},
 				],
@@ -262,26 +289,44 @@ frappe.provide("whatsapp_next.campaigns");
 			{ after }
 		);
 
-	/** Stop it in order to change it, then open the campaign. */
+	/** Stop it in order to change it, then open the campaign. A scheduled campaign is stopped by
+	 * dropping its schedule (it goes back to Draft) — `pause` refuses anything that is not sending. */
 	C.stop_to_edit = (doc, { after } = {}) =>
-		ask(
-			{
-				title: __("Stop {0} to edit it?", [title_of(doc)]),
-				message: __("Nothing is deleted. Unsent messages stay saved and sending resumes from the same point."),
-				impact: [{ label: __("Messages that will stop"), value: fmt_int(C.remaining_of_doc(doc)) }],
-				reason_field: { label: __("Reason"), required: false },
-				confirm_label: __("Stop and edit"),
-				success: __("Campaign paused"),
-			},
-			"campaigns.pause",
-			doc,
-			{
-				after: () => {
-					after && after();
-					frappe.set_route("Form", C.DOCTYPE, doc.name);
+		doc.status === "Scheduled"
+			? ask(
+				{
+					title: __("Stop {0} to edit it?", [title_of(doc)]),
+					message: __("The schedule is removed and the campaign goes back to draft. Schedule or start it again when you are done."),
+					confirm_label: __("Stop and edit"),
+					success: __("Schedule removed"),
 				},
-			}
-		);
+				"campaigns.unschedule",
+				doc,
+				{
+					after: () => {
+						after && after();
+						frappe.set_route("Form", C.DOCTYPE, doc.name);
+					},
+				}
+			)
+			: ask(
+				{
+					title: __("Stop {0} to edit it?", [title_of(doc)]),
+					message: __("Nothing is deleted. Unsent messages stay saved and sending resumes from the same point."),
+					impact: [{ label: __("Messages that will stop"), value: fmt_int(C.remaining_of_doc(doc)) }],
+					reason_field: { label: __("Reason"), required: false },
+					confirm_label: __("Stop and edit"),
+					success: __("Campaign paused"),
+				},
+				"campaigns.pause",
+				doc,
+				{
+					after: () => {
+						after && after();
+						frappe.set_route("Form", C.DOCTYPE, doc.name);
+					},
+				}
+			);
 
 	/** Cancel: the one verb that cannot be undone, so it asks for a reason and an acknowledgement. */
 	C.cancel = (doc, { after } = {}) =>
@@ -309,7 +354,7 @@ frappe.provide("whatsapp_next.campaigns");
 		if (!C.is_manager()) return [];
 		const s = doc.status;
 		const out = [];
-		if (C.EDITABLE.includes(s)) out.push({ key: "start", label: __("Start"), tone: "primary", run: () => C.start(doc, { after, messages }) });
+		if (C.STARTABLE.includes(s)) out.push({ key: "start", label: __("Start"), tone: "primary", run: () => C.start(doc, { after, messages }) });
 		if (s === "Draft") out.push({ key: "schedule", label: __("Schedule"), run: () => C.schedule(doc, { after }) });
 		if (s === "Scheduled") out.push({ key: "unschedule", label: __("Unschedule"), run: () => C.unschedule(doc, { after }) });
 		if (["Running", "Queued"].includes(s)) out.push({ key: "pause", label: __("Pause"), run: () => C.pause(doc, { after }) });

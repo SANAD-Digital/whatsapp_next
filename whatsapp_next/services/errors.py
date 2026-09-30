@@ -66,6 +66,8 @@ _TEXT_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
 	(
 		re.compile(
 			r"not (a )?(registered|valid) (whatsapp )?(user|number)|not on whatsapp|recipient.*not.*registered|jid.*not.*found"
+			# the platform's own wording: "WhatsApp Personal ID is Not Registered"
+			r"|(personal id|number|phone|account)\b.{0,12}\bnot registered"
 		),
 		"recipient_not_registered",
 	),

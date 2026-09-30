@@ -172,8 +172,11 @@ sanad.ui.Collection = class Collection {
 		}
 		this._columns = list.map((c) => {
 			const df = (meta && (meta.fields || []).find((f) => f.fieldname === c.fieldname)) || c.df || { fieldname: c.fieldname, fieldtype: "Data" };
-			const numeric = ["Currency", "Int", "Float", "Percent"].includes(df.fieldtype);
-			return Object.assign({ align: numeric ? "end" : "start" }, c, { df, label: c.label || __(df.label || frappe.unscrub(c.fieldname)) });
+			// whole numbers in the middle, amounts and decimals at the end (`ui.num_align`)
+			const num_align = ui.num_align(c.fieldtype || df.fieldtype);
+			const col = Object.assign({ align: "start" }, c, { df, label: c.label || __(df.label || frappe.unscrub(c.fieldname)) });
+			if (num_align) col.align = num_align;
+			return col;
 		});
 		return this._columns;
 	}
@@ -233,7 +236,7 @@ sanad.ui.Collection = class Collection {
 			const cells = cols
 				.map((c) => {
 					const html = typeof c.format === "function" ? c.format(doc[c.fieldname], doc) : this.cell(c, doc);
-					return `<td class="sanad-table__${c.align}${c.align === "end" ? " sanad-tabular" : ""}" data-label="${ui.escape(c.label)}">${html == null || html === "" ? '<span class="sanad-muted">—</span>' : html}</td>`;
+					return `<td class="sanad-table__${c.align}${c.align !== "start" && ui.num_align(c.df && c.df.fieldtype) ? " sanad-tabular" : ""}" data-label="${ui.escape(c.label)}">${html == null || html === "" ? '<span class="sanad-muted">—</span>' : html}</td>`;
 				})
 				.join("");
 			const $tr = $(`<tr>${cells}${has_actions ? `<td class="sanad-table__end">${action_buttons(this.row_actions(doc))}</td>` : ""}</tr>`).appendTo($tbody);

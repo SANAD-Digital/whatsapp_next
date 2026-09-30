@@ -205,6 +205,7 @@ def dry_run_command(text: str, sender: str, device: str | None = None) -> dict[s
 CONVERSATION_FIELDS: tuple[str, ...] = (
 	"name",
 	"phone_e164",
+	"number_type",
 	"display_name",
 	"contact",
 	"link_status",
@@ -215,25 +216,50 @@ CONVERSATION_FIELDS: tuple[str, ...] = (
 )
 
 
-def _last_message(doctype: str, phone: str) -> dict[str, Any] | None:
-	rows = frappe.get_all(
-		doctype,
-		filters={"phone_e164": phone},
-		fields=["body", "message_type", "creation"],
-		order_by="creation desc",
-		limit=1,
+def _last_messages(doctype: str, keys: list[str], *, group: bool = False) -> dict[str, dict[str, Any]]:
+	"""`{key: newest message}` for many conversations of one table in two grouped reads (the
+	newest `creation` per key, then the rows at it). A group's inbound rows carry the member who
+	wrote as `phone_e164` and the group as `chat_jid`: they belong to the group's conversation,
+	never to that member's own."""
+	if not keys:
+		return {}
+	from frappe.query_builder.functions import Max
+
+	t = frappe.qb.DocType(doctype)
+	if doctype == "WhatsApp Inbound Message":
+		col = t.chat_jid if group else t.phone_e164
+		cond = t.is_group == (1 if group else 0)
+	else:
+		col = t.phone_e164
+		cond = None
+	newest = frappe.qb.from_(t).select(col.as_("k"), Max(t.creation).as_("at")).where(col.isin(keys))
+	if cond is not None:
+		newest = newest.where(cond)
+	newest = newest.groupby(col)
+	query = (
+		frappe.qb.from_(t)
+		.join(newest)
+		.on((col == newest.k) & (t.creation == newest.at))
+		.select(col.as_("k"), t.body, t.message_type, t.creation)
+		.orderby(t.name, order=frappe.qb.desc)
 	)
-	return rows[0] if rows else None
+	if cond is not None:
+		query = query.where(cond)
+	out: dict[str, dict[str, Any]] = {}
+	for row in query.run(as_dict=True):
+		out.setdefault(row.k, row)
+	return out
 
 
 def conversations(txt: str | None = None, limit: int = 30) -> dict[str, Any]:
-	"""The simulator's conversation list (the prototype's rail): individual numbers, newest first,
+	"""The simulator's conversation list (the prototype's rail): individual numbers and groups
+	(`number_type`), newest first,
 	each with its party type (the contact's first account link: `Customer`, `Supplier`, …, `None`
 	for a contact with no account, absent for an unsaved number) and a one-line preview of the last
 	message either way. `{rows, total}`."""
 	from whatsapp_next.services.permissions import PARTY_TYPES
 
-	filters: list = [["number_type", "=", "Individual"]]
+	filters: list = [["number_type", "in", ["Individual", "Group"]]]
 	or_filters: dict[str, Any] = {}
 	if txt and txt.strip():
 		like = f"%{txt.strip()}%"
@@ -246,7 +272,14 @@ def conversations(txt: str | None = None, limit: int = 30) -> dict[str, Any]:
 		order_by="last_seen desc, name asc",
 		limit=max(1, min(cint(limit) or 30, 100)),
 	)
-	total = len(frappe.get_all("WhatsApp Number", filters=filters, or_filters=or_filters, pluck="name"))
+	total = cint(
+		frappe.get_all(
+			"WhatsApp Number",
+			filters=filters,
+			or_filters=or_filters,
+			fields=[{"COUNT": "*", "as": "total"}],
+		)[0].total
+	)
 	contacts = sorted({r.contact for r in rows if r.contact})
 	party: dict[str, str] = {}
 	if contacts:
@@ -261,13 +294,19 @@ def conversations(txt: str | None = None, limit: int = 30) -> dict[str, Any]:
 			order_by="idx asc",
 		):
 			party.setdefault(link.parent, link.link_doctype)
+	singles = [r.phone_e164 for r in rows if r.number_type != "Group"]
+	groups = [r.phone_e164 for r in rows if r.number_type == "Group"]
+	last_out = _last_messages("WhatsApp Log", singles + groups)
+	last_in = {
+		**_last_messages("WhatsApp Inbound Message", singles),
+		**_last_messages("WhatsApp Inbound Message", groups, group=True),
+	}
 	for r in rows:
 		r["party_type"] = party.get(r.contact) if r.contact else None
-		last_out = _last_message("WhatsApp Log", r.phone_e164)
-		last_in = _last_message("WhatsApp Inbound Message", r.phone_e164)
-		picks = [m for m in (last_out, last_in) if m]
+		picks = [m for m in (last_out.get(r.phone_e164), last_in.get(r.phone_e164)) if m]
 		last = max(picks, key=lambda m: m.creation) if picks else None
-		r["last_body"] = ((last.body or last.message_type or "") if last else "")[:120]
+		# a message with no text reads as its kind, in the reader's language ("نص", not "Text")
+		r["last_body"] = ((last.body or _(last.message_type or "")) if last else "")[:120]
 		r["last_at"] = last.creation if last else r.last_seen
 	return {"rows": rows, "total": total}
 
@@ -276,11 +315,12 @@ def identity(phone_e164: str) -> dict[str, Any]:
 	"""The simulator's "who is this" panel for one number: `{phone_e164, name, contact, party_type,
 	link_status, outbound_count, inbound_count, last_seen, accounts[{doctype, name, title}],
 	groups[{name, label, kind, member_count}]}` — the contact's own account links and the contact
-	groups the number is a member of. E: `WAInvalidPhoneError`."""
+	groups the number is a member of; `is_group` for a WhatsApp group, whose contact is only the
+	one it was linked to. E: `WAInvalidPhoneError`."""
 	from whatsapp_next.services.permissions import PARTY_TYPES
 
 	kind, key = classify(phone_e164)
-	if kind != "Individual":
+	if kind not in ("Individual", "Group"):
 		frappe.throw(_("Invalid phone number: {0}").format(phone_e164), WAInvalidPhoneError)
 	number = (
 		frappe.db.get_value(
@@ -291,7 +331,7 @@ def identity(phone_e164: str) -> dict[str, Any]:
 		)
 		or frappe._dict()
 	)
-	contact = number.contact or resolve_contact_by_phone(key)
+	contact = number.contact or (resolve_contact_by_phone(key) if kind == "Individual" else None)
 	accounts = (
 		frappe.get_all(
 			"Dynamic Link",
@@ -319,6 +359,7 @@ def identity(phone_e164: str) -> dict[str, Any]:
 	)
 	return {
 		"phone_e164": key,
+		"is_group": kind == "Group",
 		"name": number.display_name
 		or (frappe.db.get_value("Contact", contact, "full_name") if contact else None),
 		"contact": contact,

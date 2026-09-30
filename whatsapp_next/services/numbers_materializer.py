@@ -26,6 +26,7 @@ NUMBER_FIELDS = (
 	"contact",
 	"link_status",
 	"display_name",
+	"saved_name",
 	"number_type",
 	"outbound_count",
 	"inbound_count",
@@ -55,27 +56,51 @@ def _job_id(key: str) -> str:
 
 def on_message_insert(doc, method: str | None = None) -> None:
 	"""`after_insert` of WhatsApp Log / WhatsApp Inbound Message: enqueue the incremental upsert
-	(after commit, deduplicated per key). Campaign materialization skips this and refreshes
-	all keys in one call."""
+	once the row is committed (`_enqueue_refresh`). Campaign materialization skips this and
+	refreshes all keys in one call."""
 	if getattr(doc.flags, "skip_numbers_upsert", False):
 		return
 	key = message_key(doc)
 	if not key:
 		return
+	frappe.db.after_commit.add(lambda: _enqueue_refresh(key, doc.doctype, doc.name))
+
+
+def _enqueue_refresh(key: str, doctype: str, name: str) -> None:
+	"""Enqueue the refresh of `key` unless one that has not started yet is waiting — that one reads
+	this committed row too. Decided after commit: plain `deduplicate` also skips while a job for
+	the key is *running*, and that job may have read its aggregate before this row existed, so a
+	burst of messages left the counters short until the nightly run. A running job gets a follow-up
+	in a second slot; only when both slots are busy does the refresh take a one-off id."""
+	from frappe.utils.background_jobs import get_job
+	from rq.job import JobStatus
+
+	base = _job_id(key)
+	job_id: str | None = None
+	for slot in (base, base + "-next"):
+		job = get_job(slot)
+		status = job.get_status(refresh=False) if job else None
+		if status == JobStatus.QUEUED:
+			return
+		if status != JobStatus.STARTED:
+			job_id = slot
+			break
 	frappe.enqueue(
 		"whatsapp_next.services.numbers_materializer.upsert_from_message",
-		doctype=doc.doctype,
-		name=doc.name,
+		doctype=doctype,
+		name=name,
 		queue="short",
-		job_id=_job_id(key),
-		deduplicate=True,
-		enqueue_after_commit=True,
+		job_id=job_id,
+		deduplicate=bool(job_id),
 		timeout=60,
 	)
 
 
 def message_key(row) -> str | None:
-	"""The Number key of a message row / dict of either table."""
+	"""The Number key of a message row / dict of either table — the same expression the read
+	layer groups by (`read_layer._outbound_key` / `_inbound_key`), so the incremental refresh
+	visits the key the aggregate is filed under: a LID sender whose number is known is the
+	number's, not the LID's."""
 	get = row.get if hasattr(row, "get") else lambda k: getattr(row, k, None)
 	if (
 		get("doctype") == "WhatsApp Inbound Message"
@@ -84,8 +109,10 @@ def message_key(row) -> str | None:
 	):
 		if cint(get("is_group")) and get("chat_jid"):
 			return key_for(None, get("chat_jid"))
-		return key_for(get("phone_e164"), get("sender_jid"))
-	return key_for(get("phone_e164"), get("jid"))
+		return get("phone_e164") or key_for(None, get("sender_jid"))
+	if get("recipient_type") == "Group":
+		return key_for(None, get("jid"))
+	return get("phone_e164") or None
 
 
 def upsert_from_message(doctype: str, name: str) -> RefreshStats:
@@ -95,7 +122,7 @@ def upsert_from_message(doctype: str, name: str) -> RefreshStats:
 		name,
 		["phone_e164", "jid", "sender_jid", "chat_jid", "is_group"]
 		if doctype == "WhatsApp Inbound Message"
-		else ["phone_e164", "jid"],
+		else ["phone_e164", "jid", "recipient_type"],
 		as_dict=True,
 	)
 	if not row:
@@ -116,7 +143,8 @@ def refresh_keys(keys: Iterable[str]) -> RefreshStats:
 	"""Recompute every given key from the message tables and write only the differences.
 
 	Existing rows: counters, first/last seen, last direction / device, display name (Contact
-	name when linked, else the latest inbound push name, else unchanged). Missing rows are
+	name when linked, else the name the phone saves it under, else the latest inbound push name,
+	else unchanged). Missing rows are
 	inserted with `contact` resolved once (D-029 02-OQ-5); `contact` is never changed here."""
 	from whatsapp_next.services.permissions import resolve_contact_by_phone
 
@@ -172,8 +200,8 @@ def refresh_keys(keys: Iterable[str]) -> RefreshStats:
 			continue
 		display = (
 			_contact_name(row.contact)
-			if row.contact
-			else (agg.display_name if agg and agg.display_name else None)
+			if row.contact and row.number_type != "Group"  # a linked group keeps its subject
+			else row.saved_name or (agg.display_name if agg and agg.display_name else None)
 		)
 		if display:
 			values["display_name"] = display
@@ -250,14 +278,16 @@ def nightly_reconcile(full: bool = False, batch: int = NIGHTLY_BATCH) -> dict[st
 
 def _drift_check() -> dict[str, int]:
 	"""Fix `contact` set but `link_status != Linked`; count (never delete) rows with both
-	counters at zero."""
+	counters at zero that no device sync brought in (a synced address-book number has none yet)."""
 	fixed = 0
 	for name in frappe.get_all(
 		"WhatsApp Number", filters={"contact": ("is", "set"), "link_status": ("!=", "Linked")}, pluck="name"
 	):
 		frappe.db.set_value("WhatsApp Number", name, "link_status", "Linked", update_modified=False)
 		fixed += 1
-	empty = frappe.db.count("WhatsApp Number", {"outbound_count": 0, "inbound_count": 0})
+	empty = frappe.db.count(
+		"WhatsApp Number", {"outbound_count": 0, "inbound_count": 0, "synced_device": ("is", "not set")}
+	)
 	if empty:
 		frappe.log_error(
 			title="WhatsApp Numbers: rows without messages",

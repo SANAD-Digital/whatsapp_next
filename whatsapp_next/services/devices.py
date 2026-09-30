@@ -219,15 +219,27 @@ def create(
 	return doc.name
 
 
-def start_pairing(device: str, mode: str = "QR") -> PairingPayload:
+def start_pairing(device: str, mode: str = "QR", phone: str | None = None) -> PairingPayload:
 	"""Fetch a QR or 8-digit code from the provider and cache it for 60 s under
 	`wa:pair:{platform_device}` (never persisted, D-014). Re-calls within the TTL return the
-	cached payload; `Connected` devices are refused."""
+	cached payload; `Connected` devices are refused.
+
+	An 8-digit code is issued for the number stored on the device. A device added for QR has
+	none, so `phone` (Code only) is saved on it first — through the provider, like a re-phone —
+	and any cached code for the old number is dropped."""
 	if mode not in PAIRING_MODES:
 		frappe.throw(_("Pairing mode must be QR or Code"), WAValidationError)
+	if mode == "Code" and phone:
+		update(device, phone=phone)
+		clear_pairing(device)
 	row = frappe.db.get_value(
-		"WhatsApp Device", device, ["status", "platform_device", "phone_e164", "disabled"], as_dict=True
+		"WhatsApp Device",
+		device,
+		["status", "platform_device", "phone_e164", "phone", "disabled"],
+		as_dict=True,
 	)
+	if row and mode == "Code" and not (row.phone or row.phone_e164):
+		frappe.throw(_("Enter the WhatsApp number that will receive the 8-digit code."), WAValidationError)
 	if not row:
 		frappe.throw(_("WhatsApp Device {0} not found").format(device), WANotFoundError)
 	if cint(row.disabled):
@@ -240,6 +252,13 @@ def start_pairing(device: str, mode: str = "QR") -> PairingPayload:
 	cached = frappe.cache.get_value(key)
 	# The cache TTL is the expiry; provider timestamps are not compared (clock/timezone drift).
 	if cached and cached.get("mode") == mode:
+		# A re-call serves the same QR / code with the seconds it actually has left, so the page's
+		# countdown does not restart at 60 on a payload about to expire.
+		cached = dict(cached)  # the cache may hand back its request-local object
+		cached_at = cached.pop("cached_at", None)
+		if cached_at:
+			age = int((now_datetime() - get_datetime(cached_at)).total_seconds())
+			cached["expires_in"] = max(1, min(cint(cached.get("expires_in")) or PAIR_CACHE_TTL, PAIR_CACHE_TTL - age))
 		return PairingPayload(
 			**{
 				k: (get_datetime(v) if k in ("generated_at", "expires_at") and v else v)
@@ -260,7 +279,9 @@ def start_pairing(device: str, mode: str = "QR") -> PairingPayload:
 	if row.status == "Logged Out":
 		apply_state(device, "Pending QR", source="pairing")
 	data = {k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in asdict(payload).items()}
-	frappe.cache.set_value(key, data, expires_in_sec=PAIR_CACHE_TTL)
+	frappe.cache.set_value(
+		key, {**data, "cached_at": now_datetime().isoformat()}, expires_in_sec=PAIR_CACHE_TTL
+	)
 	frappe.publish_realtime(
 		"wa:pairing:status",
 		{"device": device, "mode": mode, "expires_at": data.get("expires_at")},

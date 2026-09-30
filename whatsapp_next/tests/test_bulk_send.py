@@ -73,6 +73,22 @@ class TestBulkSend(IntegrationTestCase):
 		with as_user("WhatsApp Agent"), self.assertRaises(WAPermissionError):
 			api.estimate(groups=[self.group])
 
+	def test_blacklist_member_with_a_raw_phone_still_blocks(self):
+		"""A member stored with only a local phone (imported, no E.164) blocks the same number picked
+		in E.164 — both sides are keyed the same way."""
+		row = frappe.get_all(
+			"WhatsApp Contact Group Member", filters={"parent": self.black}, fields=["name"], limit=1
+		)[0]
+		frappe.db.set_value(
+			"WhatsApp Contact Group Member", row.name, {"phone": "0500940002", "phone_e164": None}
+		)
+		try:
+			with as_user("WhatsApp Manager"):
+				out = api.estimate(numbers=[P2, P3])
+			self.assertEqual((out["total"], out["excluded"]), (1, 1))
+		finally:
+			frappe.db.set_value("WhatsApp Contact Group Member", row.name, {"phone": P2, "phone_e164": P2})
+
 	def test_send_becomes_a_started_campaign(self):
 		with as_user("WhatsApp Manager"):
 			with self.assertRaises(WAValidationError):

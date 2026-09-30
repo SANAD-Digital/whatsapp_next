@@ -29,17 +29,19 @@ def get_signup_bootstrap() -> dict[str, Any]:
 
 @api_endpoint(roles=SYSTEM_MANAGER, schema={"channel": {"enum": ["whatsapp", "sms", "email"]}})
 def start_signup(
-	plan_code: str,
 	mobile: str,
 	full_name: str,
-	email: str,
+	email: str | None = None,
 	channel: str = "whatsapp",
 	coupon_code: str | None = None,
+	plan_code: str | None = None,
 ) -> dict[str, Any]:
 	"""Begin a tenant sign-up on the platform → `{request_key, status, code_ttl, coupon}`.
 
-	`coupon_code` is optional; the platform validates it here and applies it to the
-	subscription the sign-up creates."""
+	`email` is optional: without one the platform gives the account a placeholder address and
+	it signs in by mobile number or username. `coupon_code` is optional; the platform validates it here and applies it to the
+	subscription the sign-up creates. `plan_code` is the plan the free trial renews to; left
+	out (or not one the platform offers) it is the platform's first plan."""
 	state = onboarding.start_signup(plan_code, mobile, full_name, email, channel, coupon_code=coupon_code)
 	extra = state.extra or {}
 	return {
@@ -48,6 +50,7 @@ def start_signup(
 		"code_ttl": extra.get("code_ttl") or extra.get("code_ttl_minutes"),
 		"coupon": extra.get("coupon"),
 		"message": state.message,
+		**onboarding.verification_route(extra),
 	}
 
 
@@ -79,6 +82,7 @@ def complete_signup(
 @api_endpoint(roles=SYSTEM_MANAGER)
 def login(platform_base_url: str, email: str, password: str) -> dict[str, Any]:
 	"""Sign in to the platform and store what it returns → `{ok, customer, customer_name}`.
+	`email` takes any sign-in the account has: the email, the mobile number or the username.
 
 	The API keys the platform hands back are written with `set_password`; none of them is
 	ever part of this answer."""
@@ -89,7 +93,24 @@ def login(platform_base_url: str, email: str, password: str) -> dict[str, Any]:
 def start_password_reset(identifier: str) -> dict[str, Any]:
 	"""Begin a password reset for a platform user → `{ok, status, request_key}`."""
 	state = onboarding.start_password_reset(identifier)
-	return {"ok": True, "status": state.status, "request_key": state.request_key, "message": state.message}
+	extra = state.extra or {}
+	return {
+		"ok": True,
+		"status": state.status,
+		"request_key": state.request_key,
+		"message": state.message,
+		# how the person proves it is them, as for sign-up: `whatsapp` (the code is shown, and
+		# sent FROM the account's number to `platform_phone`) or `email` (typed here)
+		**onboarding.verification_route(extra),
+		"mobile_hint": extra.get("mobile_hint"),
+	}
+
+
+@api_endpoint(roles=SYSTEM_MANAGER)
+def finish_password_reset(request_key: str, password: str, code: str | None = None) -> dict[str, Any]:
+	"""Verify the reset (`code` from the email; a WhatsApp reset was confirmed by the reply), set
+	the new password and sign this site in with it → the `login` answer `{ok, customer, ...}`."""
+	return onboarding.finish_password_reset(request_key, password, code=code, user=frappe.session.user)
 
 
 @api_endpoint(roles=SYSTEM_MANAGER, methods=("GET", "POST"))

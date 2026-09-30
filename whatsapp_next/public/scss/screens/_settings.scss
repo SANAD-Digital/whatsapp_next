@@ -577,3 +577,123 @@
 		.wa-settings__chart { block-size: 160px; gap: 3px; }
 	}
 }
+
+// ---- compact, in the app's own card style (owner, 2026-09-30) -----------------------------------
+// Every section of the window reads the same way: a group of settings is one framed card — the
+// border and radius of the app's cards — with compact rows inside it, however the section builds
+// its rows (panels, facts, the Desk form, the window's own rows, the plan, the event list).
+.wa-settings-window {
+	.sanad-sw__pane { padding: 28px 32px 36px; }
+	.sanad-sw__head { margin-block-end: 14px; }
+	.sanad-sw__title { font-size: 19px; }
+	.sanad-sw__desc { margin-block-start: 4px; font-size: 13px; }
+
+	// section headings: small, close to what they head
+	.sanad-sw__h,
+	.wa-settings .wa-settings__subhead { margin-block: 20px 8px; }
+	.sanad-sw__h h3,
+	.wa-settings .wa-settings__subhead { font-size: 14px; font-weight: 600; }
+	.sanad-sw__h p { margin-block-start: 2px; font-size: 12px; }
+
+	.wa-settings {
+		// the framed groups
+		.wa-settings__panel,
+		.wa-settings__facts,
+		.wa-settings__form,
+		.wa-settings__plan,
+		.wa-settings__checks {
+			border: 1px solid var(--wa-border);
+			border-radius: 12px;
+			background: var(--wa-surface);
+			overflow: hidden;
+		}
+		.wa-settings__panel { margin-block-start: 16px; }
+		.wa-settings__panel > header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			padding: 10px 14px;
+			border-block-end: 1px solid var(--wa-border);
+			background: var(--wa-bg);
+			strong { font-size: 14px; }
+			span span { display: block; margin-block-start: 1px; font-size: 12px; }
+		}
+		// a group inside a panel is already framed by it
+		.wa-settings__panel .wa-settings__facts,
+		.wa-settings__panel .wa-settings__form,
+		.wa-settings__panel .wa-settings__checks { border: 0; border-radius: 0; }
+
+		// rows: compact, a rule between them, none under the last
+		.wa-settings__rows li,
+		.wa-settings__facts > div {
+			min-block-size: 40px;
+			padding: 9px 14px;
+			gap: 16px;
+			font-size: 13px;
+		}
+		.wa-settings__rows li:last-child,
+		.wa-settings__facts > div:last-child,
+		.wa-settings__plan .wa-settings__rows li:last-child { border-block-end: 0; }
+		.wa-settings__row-label { font-size: 13.5px; > span { font-size: 12px; } }
+		.wa-settings__facts dt { font-size: 13.5px; }
+		.wa-settings__facts dd { font-size: 13px; }
+
+		// the Desk form's fields as the same compact rows
+		.wa-settings__form .frappe-control:last-child { border-block-end: 0; }
+		.wa-settings__form .form-group { padding: 9px 14px; grid-template-columns: minmax(0, 1fr) minmax(180px, 260px); }
+		.wa-settings__form .control-label,
+		.wa-settings__form .checkbox .label-area { font-size: 13.5px; }
+		.wa-settings__form .form-group > .help-box,
+		.wa-settings__form .checkbox .help-box { font-size: 12px; line-height: 1.5; }
+		.wa-settings__form .checkbox { padding: 0; }
+		.wa-settings__form .frappe-control:has(.checkbox) .form-group { padding: 9px 14px; }
+		.wa-settings__actions { padding-block-start: 12px; }
+		// a text box starts at three lines; the handle still grows it
+		// (Desk writes the text box's height inline, so only `!important` reaches it)
+		.wa-settings__form textarea.form-control { min-block-size: 76px !important; block-size: 76px !important; resize: vertical; }
+
+		// the event list (webhook) as rows too
+		.wa-settings__checks { display: flex; flex-direction: column; gap: 0; padding: 0; }
+		.wa-settings__check { padding: 8px 14px; border-block-end: 1px solid var(--wa-border); font-size: 13px; }
+		.wa-settings__check:last-child { border-block-end: 0; }
+
+		// status banner and notes
+		.wa-settings__banner { padding: 10px 14px; border-radius: 12px; font-size: 13px; }
+		.wa-settings__note { margin-block-start: 8px; font-size: 12px; }
+
+		// subscription: the meter and the three facts, smaller
+		.wa-settings__meter { padding: 14px 16px; border-radius: 12px; }
+		.wa-settings__meter-title { font-size: 13px; }
+		.wa-settings__meter-value { margin-block: 4px 8px; strong { font-size: 24px; } span { font-size: 12px; } }
+		.wa-settings__meter-track { block-size: 6px; }
+		.wa-settings__facts3 {
+			gap: 8px;
+			margin-block-start: 8px;
+			> div { padding: 10px 12px; border-radius: 12px; gap: 2px; }
+			span { font-size: 12px; }
+			strong { font-size: 16px; }
+			em { font-size: 11px; }
+		}
+
+		// usage: the period switch and the chart, shorter
+		.wa-settings__period button { min-block-size: 28px; padding-inline: 12px; font-size: 12px; }
+		.wa-settings__chart { block-size: 170px; }
+	}
+
+	// the window's own rows (sync, links): each a small card of its own
+	.sanad-sw__row {
+		margin-block-start: 8px;
+		padding: 10px 14px;
+		gap: 16px;
+		border: 1px solid var(--wa-border);
+		border-radius: 12px;
+		&:last-child { border-block-end: 1px solid var(--wa-border); }
+	}
+	.sanad-sw__row-title { font-size: 13.5px; }
+	.sanad-sw__row-desc { font-size: 12px; line-height: 1.5; }
+
+	@media (max-width: 719px) {
+		.sanad-sw__pane { padding: 18px 16px 28px; }
+	}
+}

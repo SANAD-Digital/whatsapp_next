@@ -25,6 +25,20 @@ PICKER_SOURCE_FIELDS: tuple[str, ...] = (
 )
 
 
+def store_secret(fieldname: str, value: str) -> None:
+	"""Store one Settings password outside a document save (a sign-up, a fetched webhook secret).
+
+	`set_encrypted_password` alone fills `__Auth` but leaves the field itself empty in `tabSingles`;
+	Frappe's `_save_passwords` reads an empty Password field on the next ordinary save of Settings as
+	"cleared" and deletes the stored value. So the field also gets the masked placeholder a document
+	save would have written — which is how a sign-up's keys vanished the first time Settings was saved.
+	"""
+	from frappe.utils.password import set_encrypted_password
+
+	set_encrypted_password(SETTINGS, SETTINGS, value, fieldname)
+	frappe.db.set_single_value(SETTINGS, fieldname, "*" * len(value), update_modified=False)
+
+
 def save_fields(values: dict[str, Any], *, section: str, user: str | None = None) -> list[str]:
 	"""Write `values` (already allow-listed by the caller) into Settings; returns the fieldnames
 	that changed. `picker_sources` replaces the whole table."""

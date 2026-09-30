@@ -1,7 +1,7 @@
-// WhatsApp Contact Group list (09 row 14, D-064 option A — prototype-faithful): PageHeader (title,
-// description, "New group", "Import CSV", KPIs Groups · Total members · Blacklists), FilterBar
+// WhatsApp Contact Group list (09 row 14, D-064 option A — prototype-faithful): PageHeader
+// ("New group" and "Import CSV" in the page bar, KPIs Groups · Total members · Blacklists), FilterBar
 // (search, kind tabs, source, state), DataList columns as the prototype (group + description, kind chip, members, source,
-// last updated, Edit, View) with an expandable row showing the first 10 members
+// last updated, Edit → the group editor window `screens/groups.js`, View → the form) with an expandable row showing the first 10 members
 // (`picker.get_group_members`) and the description note. The kind indicator here is the one
 // colour source (read through `sanad.ui.indicator_for`). Until `sanad.ui.DataList` lands, the
 // native rows keep RowActions.
@@ -10,6 +10,7 @@ const KIND_COLOUR = { Blacklist: "red", Marketing: "blue", "Mailing List": "gree
 const MEMBER_PEEK = 10;
 const esc = (v) => sanad.ui.escape(v);
 const fmt_int = (v) => sanad.ui.format_int(v);
+const open_editor = (name, opts) => whatsapp_next.groups.open(name, opts);
 const can_send = () => frappe.user.has_role("WhatsApp Manager") || frappe.user.has_role("System Manager");
 
 function campaign_for_group(name, group_name) {
@@ -34,7 +35,7 @@ function expand_group($el, doc) {
 				const $wrap = $('<div class="sanad-table-wrap"></div>');
 				let html = `<table class="sanad-table"><thead><tr><th scope="col">${esc(__("Name"))}</th><th scope="col">${esc(__("Phone"))}</th><th scope="col">${esc(__("Contact"))}</th></tr></thead><tbody>`;
 				rows.forEach((m) => {
-					html += `<tr><td>${esc(m.display_name || "")}</td><td class="sanad-table__ltr sanad-tabular">${esc(m.phone_e164 || m.phone || "")}</td><td>${m.contact ? `<a href="/app/contact/${encodeURIComponent(m.contact)}">${esc(m.contact)}</a>` : ""}</td></tr>`;
+					html += `<tr><td>${esc(m.display_name || "")}${sanad.ui.group_tag(m.phone_e164 || m.phone)}</td><td class="sanad-table__ltr sanad-tabular">${esc(sanad.ui.phone(m.phone_e164 || m.phone || ""))}</td><td>${m.contact ? `<a href="/app/contact/${encodeURIComponent(m.contact)}">${esc(m.contact)}</a>` : ""}</td></tr>`;
 				});
 				html += "</tbody></table>";
 				$box.append($wrap.html(html));
@@ -61,20 +62,15 @@ frappe.listview_settings["WhatsApp Contact Group"] = {
 		const ui = sanad.ui;
 		listview.sanad_header = new ui.PageHeader({
 			listview,
-			title: __("Contact groups"),
-			description: __("Lists used as campaign audiences and in command permissions. A blacklist is blocked from every send."),
-			primary: { label: __("New group"), icon: "es-line-add", perm: "create", handler: () => frappe.new_doc("WhatsApp Contact Group") },
-			// 09 row 14: «استيراد من ملف CSV» → a new group whose first save opens the picker on the
-			// phone-export source with CSV chosen (the form's `import=csv` path).
+			primary: { label: __("New group"), icon: "es-line-add", perm: "create", handler: () => open_editor() },
+			// 09 row 14: «استيراد من ملف CSV» → the group editor for a new group, with the picker open
+			// on the phone-export source and CSV chosen.
 			secondary: [
 				{
 					label: __("Import CSV"),
 					icon: "es-line-file-upload",
 					perm: "create",
-					handler: () => {
-						frappe.flags.wa_group_import_csv = true;
-						frappe.new_doc("WhatsApp Contact Group", { source: "Import" });
-					},
+					handler: () => open_editor(null, { preselect: { source: "phonebook", kind: "csv" } }),
 				},
 			],
 			stats: [
@@ -118,10 +114,10 @@ frappe.listview_settings["WhatsApp Contact Group"] = {
 		const columns = [
 			{ fieldname: "group_name", label: __("Group"), sortable: true, format: (v, doc) => esc(v || doc.name), sub: (doc) => esc(doc.description || "") },
 			{ fieldname: "kind", label: __("Kind"), type: "status", sortable: true, format: (v, doc) => ui.StatusBadge.html({ label: __(v || "Other"), colour: ui.indicator_for("WhatsApp Contact Group", Object.assign({ doctype: "WhatsApp Contact Group" }, doc)).colour, icon: false }) },
-			{ fieldname: "member_count", label: __("Members"), type: "number", align: "end", sortable: true },
+			{ fieldname: "member_count", label: __("Members"), type: "number", sortable: true },
 			{ fieldname: "source", label: __("Source"), sortable: true, format: (v) => esc(v ? __(v) : "") },
 			{ fieldname: "members_changed_at", label: __("Last updated"), type: "date", sortable: true, format: (v, doc) => esc(frappe.datetime.str_to_user((v || doc.modified || "").split(" ")[0])) },
-			{ fieldname: "_edit", label: __("Edit"), sortable: false, format: (v, doc) => `<a class="btn btn-default btn-xs" href="/app/whatsapp-contact-group/${encodeURIComponent(doc.name)}">${esc(__("Edit"))}</a>` },
+			{ fieldname: "_edit", label: __("Edit"), sortable: false, format: (v, doc) => `<button type="button" class="btn btn-default btn-xs wa-group-edit" data-name="${esc(doc.name)}">${esc(__("Edit"))}</button>` },
 		];
 
 		if (typeof ui.DataList === "function") {
@@ -133,8 +129,14 @@ frappe.listview_settings["WhatsApp Contact Group"] = {
 				expand: expand_group,
 				page_length: 20,
 				footer: { count: (total) => ui.plural(total, { one: __("{0} group"), two: __("{0} groups"), few: __("{0} groups"), many: __("{0} groups"), other: __("{0} groups") }) },
-				empty: { title: __("No groups yet"), description: __("Create a group or import a CSV to target it from campaigns."), action: frappe.model.can_create("WhatsApp Contact Group") ? { label: __("New group"), onclick: () => frappe.new_doc("WhatsApp Contact Group") } : undefined },
+				empty: { title: __("No groups yet"), description: __("Create a group or import a CSV to target it from campaigns."), action: frappe.model.can_create("WhatsApp Contact Group") ? { label: __("New group"), onclick: () => open_editor() } : undefined },
 				mobile: "cards",
+			});
+			// "Edit" opens the quick editor window; "View" and the row keep the full form
+			listview.$result.on("click", ".wa-group-edit", (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				open_editor($(e.currentTarget).attr("data-name"));
 			});
 		} else if (typeof ui.RowActions === "function") {
 			new ui.RowActions({

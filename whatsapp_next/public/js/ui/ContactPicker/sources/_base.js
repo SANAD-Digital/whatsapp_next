@@ -185,7 +185,7 @@ export class BaseSource {
 		rows.forEach((row, i) => {
 			const disabled = disabled_when ? disabled_when(row) : !row.valid && !row.phone_e164;
 			const name = row.display_name || row.source_name || row.contact || "";
-			const phone = row.phone_e164 || row.phone || "";
+			const phone = ui.phone(row.phone_e164 || row.phone || "");
 			const badges = [];
 			if (show_source && row.source_type) badges.push(ui.escape(__(row.source_type)));
 			extra_columns.forEach((c) => {
@@ -196,7 +196,7 @@ export class BaseSource {
 				<div class="sanad-picker__row${disabled ? " sanad-picker__row--disabled" : ""}" data-idx="${i}"${selectable ? ` role="checkbox" aria-checked="false" tabindex="${disabled ? -1 : 0}"${disabled ? ' aria-disabled="true"' : ""}` : ' role="listitem"'}>
 					<span class="sanad-picker__av" aria-hidden="true">${ui.escape(ui.initials(name || phone) || "#")}</span>
 					<span class="sanad-picker__row-text">
-						<span class="sanad-picker__row-name" dir="auto">${ui.escape(name || phone)}</span>
+						<span class="sanad-picker__row-name" dir="auto">${ui.escape(name || phone)}${ui.group_tag(row.phone_e164 || row.phone)}</span>
 						${name && phone ? `<span class="sanad-picker__row-sub sanad-tabular" dir="ltr">${ui.escape(phone)}</span>` : ""}
 						${row.error ? `<span class="sanad-picker__row-error" dir="auto">${ui.escape(row.error)}</span>` : ""}
 					</span>
@@ -285,7 +285,7 @@ export class BaseSource {
 		const $box = $(`<details class="sanad-picker__invalid"><summary>${ui.escape(__("{0} invalid rows skipped", [ui.format_int(invalid.length)]))}</summary><ul></ul></details>`);
 		const $ul = $box.find("ul");
 		invalid.slice(0, PREVIEW_ROWS).forEach((r) => {
-			$ul.append(`<li><span dir="ltr" class="sanad-tabular">${ui.escape(r.phone || "")}</span> ${r.display_name ? ui.escape(r.display_name) + " — " : ""}<span class="sanad-picker__reason">${ui.escape(r.error || __("Invalid phone number"))}</span></li>`);
+			$ul.append(`<li><span dir="ltr" class="sanad-tabular">${ui.escape(ui.phone(r.phone || ""))}</span> ${r.display_name ? ui.escape(r.display_name) + " — " : ""}<span class="sanad-picker__reason">${ui.escape(r.error || __("Invalid phone number"))}</span></li>`);
 		});
 		if (invalid.length > PREVIEW_ROWS) $ul.append(`<li>${ui.escape(__("and {0} more", [ui.format_int(invalid.length - PREVIEW_ROWS)]))}</li>`);
 		return $box;

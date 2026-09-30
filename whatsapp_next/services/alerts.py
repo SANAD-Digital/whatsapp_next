@@ -142,10 +142,17 @@ def expand_recipients(
 		if row.recipient_type == "User" and row.user:
 			add(_user_phone(row.user), "User", frappe.db.get_value("User", row.user, "full_name"))
 		elif row.recipient_type == "Role" and row.role:
-			for user in frappe.get_all(
+			# one query for the role's enabled users (two lookups per user before)
+			members = frappe.get_all(
 				"Has Role", filters={"role": row.role, "parenttype": "User"}, pluck="parent"
+			)
+			for user in frappe.get_all(
+				"User",
+				filters={"name": ("in", members or [""]), "enabled": 1},
+				fields=["name", "full_name", "mobile_no", "phone"],
+				order_by="name asc",
 			):
-				add(_user_phone(user), "Role", frappe.db.get_value("User", user, "full_name"))
+				add(normalize(user.mobile_no) or normalize(user.phone), "Role", user.full_name)
 		elif row.recipient_type == "Phone":
 			add(row.phone_e164 or normalize(row.phone), "Phone")
 		elif row.recipient_type == "Report Column" and row.report_column and rows is not None:

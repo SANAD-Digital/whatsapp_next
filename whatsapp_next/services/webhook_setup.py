@@ -112,9 +112,9 @@ def fetch_secret(user: str | None = None) -> bool:
 	except pex.ProviderError as exc:
 		frappe.log_error(title="WhatsApp webhook: secret fetch failed", message=f"code={exc.code}")
 		return False
-	from frappe.utils.password import set_encrypted_password
+	from whatsapp_next.services.settings import store_secret
 
-	set_encrypted_password("WhatsApp Settings", "WhatsApp Settings", secret, "webhook_secret")
+	store_secret("webhook_secret", secret)
 	frappe.db.set_value(
 		"WhatsApp Settings",
 		"WhatsApp Settings",

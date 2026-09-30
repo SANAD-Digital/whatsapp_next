@@ -157,7 +157,7 @@ frappe.provide("whatsapp_next.campaign");
 					Location: [],
 					Poll: ["poll_question", "poll_options", "poll_allow_multiple"],
 				},
-				can_edit: () => this.ctx.can_edit(),
+				can_edit: () => this.ctx.can_edit_content(),
 				preview: { method: "campaigns.preview_message", args: (row) => ({ name: frm.doc.name, idx: row.idx }) },
 				// the campaign renders per recipient: these are the names that exist in that context
 				// (`services/campaign_runner._render_message_body`), said in the reader's words
@@ -244,7 +244,7 @@ frappe.provide("whatsapp_next.campaign");
 			ui.call("simulator.send_test", { device: this.ctx.doc.device, phone: phone.e164 || phone.phone_e164, body: this.test_body })
 				.then((r) => {
 					dialog.hide();
-					ui.Toast.success(__("Test message sent to {0}.", [phone.e164 || phone.phone_e164]), {
+					ui.Toast.success(__("Test message sent to {0}.", [ui.phone(phone.e164 || phone.phone_e164)]), {
 						action: r && r.outbound ? { label: __("Open it"), onclick: () => frappe.set_route("Form", "WhatsApp Log", r.outbound) } : undefined,
 					});
 				})

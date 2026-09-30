@@ -42,12 +42,15 @@ function amount(value, df, doc, { density, variant } = {}) {
 }
 
 function number(value, df, doc, { density, variant } = {}) {
-	const html = frappe.format(value, df || { fieldtype: "Float" }, { inline: true }, doc);
+	// Frappe prints an Int through `cint()` with no grouping ("12500"); counts read grouped
+	const plain_int = df && df.fieldtype === "Int" && cstr(df.options).trim() !== "File Size" && value != null && value !== "";
+	const html = plain_int ? ui.format_int(value) : frappe.format(value, df || { fieldtype: "Float" }, { inline: true }, doc);
 	const strong = variant === "strong" || BIG.includes(density);
 	return `<span class="sanad-number${strong ? " sanad-number--strong" : ""} sanad-tabular" dir="ltr">${html}</span>`;
 }
 
 function percent(value, df, doc, { density, variant } = {}) {
+	if (value == null || value === "") return ""; // unknown is not 0 %
 	const pct = flt(value);
 	if (variant === "number") return `<span class="sanad-tabular" dir="ltr">${flt(pct).toFixed(pct % 1 ? 1 : 0)}%</span>`;
 	if (variant === "progress" || BIG.includes(density) || density === "row") return progress(pct);
@@ -68,8 +71,12 @@ function datetime(value, df, doc, { variant } = {}) {
 	const full = frappe.datetime.str_to_user(value);
 	if (variant === "relative") return `<span class="sanad-when" title="${ui.escape(full)}">${ui.escape(frappe.datetime.prettyDate(value))}</span>`;
 	const today = frappe.datetime.get_today();
-	const day = cstr(value).split(" ")[0];
-	const time = frappe.datetime.str_to_user(value, true);
+	// the stamp is in the system zone and "today" in the user's: compare both in the user's. The
+	// time is read from the whole stamp — `str_to_user(value, true)` parses a datetime as
+	// `HH:mm:ss` and printed the year ("20:26") instead of the hour
+	const local = frappe.datetime.convert_to_user_tz ? frappe.datetime.convert_to_user_tz(value) : cstr(value);
+	const day = cstr(local).split(" ")[0];
+	const time = moment(local, frappe.defaultDatetimeFormat).format(frappe.datetime.get_user_time_fmt());
 	let text = full;
 	if (day === today) text = `${__("Today")}, ${time}`;
 	else if (day === frappe.datetime.add_days(today, -1)) text = `${__("Yesterday")}, ${time}`;
@@ -99,6 +106,8 @@ function link(value, df, doc, opts = {}) {
 	const target = (df && df.options) || opts.target;
 	const display = (doc && df && doc[`${df.fieldname}_title`]) || value;
 	if (!target) return ui.escape(display);
+	const own = ui.link_html(target, value, display, doc);
+	if (own != null) return own;
 	const Render = sanad.ui.Render;
 	if (Render && opts.density && opts.density !== "inline") {
 		return Render.entity({ doctype: target, name: value, title: display }, { density: opts.density, compact_fallback: true });
@@ -111,12 +120,17 @@ function dynamic_link(value, df, doc, opts = {}) {
 	return link(value, Object.assign({}, df, { options: target }), doc, opts);
 }
 
+/** A number as a person reads it (no "+"; the value itself stays E.164). */
+const show_phone = (value) => (ui.phone ? ui.phone(cstr(value)) : cstr(value));
+
 /** Phone / mobile: left-to-right, with call and WhatsApp affordances on the bigger densities. */
 function phone(value, df, doc, { density } = {}) {
 	if (!value) return "";
+	// a group's JID is not a number to call: the JID, left to right, and the tag that says so
+	if (ui.is_group && ui.is_group(value)) return `<span class="sanad-tabular" dir="ltr">${ui.escape(show_phone(value))}</span>${ui.group_tag(value)}`;
 	const clean = cstr(value).replace(/[^\d+]/g, "");
-	const text = chip({ icon: "es-line-call", text: cstr(value), ltr: true, href: `tel:${clean}` });
-	if (density === "inline" || density === "compact") return `<span class="sanad-tabular" dir="ltr">${ui.escape(value)}</span>`;
+	const text = chip({ icon: "es-line-call", text: show_phone(value), ltr: true, href: `tel:${clean}` });
+	if (density === "inline" || density === "compact") return `<span class="sanad-tabular" dir="ltr">${ui.escape(show_phone(value))}</span>`;
 	return text;
 }
 

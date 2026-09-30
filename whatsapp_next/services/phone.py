@@ -260,7 +260,8 @@ def mask(value: str | None) -> str:
 	digits = re.sub(r"\D", "", value)
 	if len(digits) <= 5:
 		return "*" * len(digits)
-	return f"+{digits[:3]}{'*' * (len(digits) - 5)}{digits[-2:]}"
+	# no "+": numbers are never shown with one (owner); the masked form is read by people too
+	return f"{digits[:3]}{'*' * (len(digits) - 5)}{digits[-2:]}"
 
 
 def set_phone_pair(

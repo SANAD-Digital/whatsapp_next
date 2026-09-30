@@ -81,7 +81,8 @@
 		return (entries || []).map((e) =>
 			Object.assign({}, e, {
 				name: e.function_key, // the table addresses a row by `name`, like any Desk list
-				calls_30d: calls[e.function_key] || 0,
+				// the API counts every bound command; the page's own sum only covers the commands it read
+				calls_30d: e.calls_30d != null ? cint(e.calls_30d) : calls[e.function_key] || 0,
 				linked_commands: linked[e.function_key] || [],
 				avg_ms: cint((by_key[e.function_key] || {}).avg_ms),
 				call_count: cint((by_key[e.function_key] || {}).call_count),
@@ -418,7 +419,11 @@
 	const SORT_VALUE = {
 		function_name: (e) => cstr(e.function_name).toLowerCase(),
 		category: (e) => cstr(e.category).toLowerCase(),
-		installed_version: (e) => cstr(e.installed_version || e.latest_version),
+		// by version, not by text: `1.10.0` after `1.9.0`
+		installed_version: (e) =>
+			version_tuple(e.installed_version || e.latest_version)
+				.map((p) => String(p).padStart(6, "0"))
+				.join("."),
 		update_available: (e) => (e.update_available ? 1 : 0),
 		commands_count: (e) => cint(e.commands_count),
 		calls_30d: (e) => cint(e.calls_30d),
@@ -443,6 +448,8 @@
 			this.$body = $('<div class="wa-functions__body"></div>').appendTo(this.$main);
 			this.state = new ui.EmptyState({ wrapper: this.$body, state: "loading", rows: 6 });
 			this.loaded = this.load();
+			// the title with its buttons and the filters stay while the functions scroll beneath
+			ui.pin_stack(this.$main, [".sanad-pagehead__row", ".wa-functions__toolbar"]);
 		}
 
 		// ---- data -----------------------------------------------------------------------------

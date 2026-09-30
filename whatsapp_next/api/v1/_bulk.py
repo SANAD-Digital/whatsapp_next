@@ -10,6 +10,23 @@ from typing import Any
 import frappe
 
 
+# A selection is a screen's checked rows (a page is at most 200): a request naming more is not a
+# selection, and one call must not hold a worker for minutes.
+MAX_BULK = 1000
+
+
+def require_bounded(names: Iterable[str] | None) -> list[str]:
+	"""Distinct non-empty names, refused past `MAX_BULK`."""
+	unique = list(dict.fromkeys(n for n in names or [] if n))
+	if len(unique) > MAX_BULK:
+		from frappe import _
+
+		from whatsapp_next.exceptions import WAValidationError
+
+		frappe.throw(_("At most {0} records per request").format(MAX_BULK), WAValidationError)
+	return unique
+
+
 class Skip(Exception):
 	"""Raised by a bulk callback to report a row whose state does not apply (not a failure)."""
 
@@ -21,7 +38,7 @@ def run_bulk(names: Iterable[str], fn: Callable[[str], Any]) -> dict[str, Any]:
 	done: list[str] = []
 	failed: list[dict[str, str]] = []
 	skipped: list[dict[str, str]] = []
-	for index, name in enumerate(dict.fromkeys(n for n in names or [] if n)):
+	for index, name in enumerate(require_bounded(names)):
 		point = f"wa_bulk_{index}"
 		frappe.db.savepoint(point)
 		try:

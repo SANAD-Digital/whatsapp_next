@@ -24,22 +24,7 @@ frappe.provide("whatsapp_next.campaign");
 
 	const TONE = { gray: "muted", blue: "info", green: "ok", orange: "warn", red: "danger" };
 
-	/** What each failure code means to the person reading it, not to the dispatcher. */
-	const ERROR_TEXT = {
-		recipient_not_registered: () => __("The number is not on WhatsApp"),
-		device_disconnected: () => __("The device was disconnected"),
-		timeout: () => __("The provider did not answer in time"),
-		platform_rejected: () => __("The provider refused the message"),
-		invalid_template: () => __("The message could not be rendered"),
-		insufficient_balance: () => __("The subscription has no balance left"),
-		invalid_phone: () => __("The number could not be read"),
-		blacklisted: () => __("The number is blacklisted"),
-		unknown_number_policy: () => __("Excluded: never had a conversation"),
-		rate_limited: () => __("The provider rate-limited the sending"),
-		auth: () => __("The connection to the provider was refused"),
-		unknown: () => __("An unknown error"),
-	};
-	const error_text = (code) => (ERROR_TEXT[code] || (() => code))();
+	const error_text = (code) => whatsapp_next.fmt.error_text(code);
 
 	/** What each timeline event says. */
 	const EVENT_TEXT = {
@@ -116,9 +101,29 @@ frappe.provide("whatsapp_next.campaign");
 			this.render_pane();
 		}
 
+		/**
+		 * The document with the live counters laid over its own. `get_progress` returns them as
+		 * `counters{queued, sent, …}`, not as the document's `*_count` fields, so they are mapped —
+		 * merged as they came, they changed nothing and the monitor kept the counts of the last
+		 * reload while messages moved.
+		 */
+		live_doc() {
+			const p = this.data.progress;
+			if (!p || !p.counters) return this.doc;
+			const c = p.counters;
+			return Object.assign({}, this.doc, {
+				queued_count: cint(c.queued),
+				sent_count: cint(c.sent),
+				delivered_count: cint(c.delivered),
+				read_count: cint(c.read),
+				failed_count: cint(c.failed),
+				cancelled_count: cint(c.cancelled),
+			});
+		}
+
 		/** Live counters overlay the document's own — `get_progress` answers with fresher ones. */
 		tallies() {
-			const d = Object.assign({}, this.doc, this.data.progress || {});
+			const d = this.live_doc();
 			const read = cint(d.read_count);
 			const delivered_only = cint(d.delivered_count);
 			const sent_only = cint(d.sent_count);
@@ -157,7 +162,7 @@ frappe.provide("whatsapp_next.campaign");
 						</span>
 						<span class="wa-cb__band-verbs" data-verbs></span>
 					</div>
-					<p class="wa-cb__band-line" aria-live="polite" dir="auto">${esc(t.produced ? K.eta_text(doc, this.data.progress) : __("Nothing has been produced yet."))}</p>
+					<p class="wa-cb__band-line" aria-live="polite" dir="auto">${esc(t.produced ? K.eta_text(this.live_doc(), this.data.progress) : __("Nothing has been produced yet."))}</p>
 				</div>`);
 			this.render_verbs();
 		}
@@ -204,7 +209,7 @@ frappe.provide("whatsapp_next.campaign");
 			if (doc.status === "Paused") return doc.pause_reason ? __("paused: {0}", [doc.pause_reason]) : __("paused — nothing is going out");
 			if (doc.status === "Cancelled") return doc.cancel_reason ? __("cancelled: {0}", [doc.cancel_reason]) : __("cancelled");
 			if (K.TERMINAL.includes(doc.status)) return doc.ended_at ? __("ended {0}", [whatsapp_next.fmt.dt(doc.ended_at)]) : __("ended");
-			if (doc.status === "Scheduled" && doc.scheduled_at) return __("starts {0}", [String(doc.scheduled_at).slice(0, 16)]);
+			if (doc.status === "Scheduled" && doc.scheduled_at) return __("starts {0}", [whatsapp_next.fmt.dt(doc.scheduled_at)]);
 			return __("handing messages to the queue");
 		}
 

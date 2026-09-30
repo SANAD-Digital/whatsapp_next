@@ -132,6 +132,17 @@ frappe.provide("whatsapp_next.campaign");
 			);
 		}
 
+		/**
+		 * Whether the campaign's content — its messages, device and send time — may change. The
+		 * server locks them outside Draft / Scheduled (`whatsapp_campaign.check_edit_lock`): a
+		 * paused campaign's messages already exist in the queue, so on a paused campaign only the
+		 * audience, the name and the rate stay open, and the wizard says so instead of letting a
+		 * save fail.
+		 */
+		can_edit_content() {
+			return this.can_edit() && this.doc.status !== "Paused";
+		}
+
 		estimate() {
 			return C.estimate(this.doc, this.cap);
 		}

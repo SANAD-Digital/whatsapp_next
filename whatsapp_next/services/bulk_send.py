@@ -17,6 +17,7 @@ from whatsapp_next.exceptions import WAValidationError
 from whatsapp_next.services import audit, campaign_runner, picker
 from whatsapp_next.services.attachments import message_parts
 from whatsapp_next.services.permissions import contact_phones
+from whatsapp_next.services.phone import classify
 from whatsapp_next.whatsapp_next.doctype.whatsapp_campaign.whatsapp_campaign import settings_rate_limit
 
 BLACKLIST_KIND = "Blacklist"
@@ -69,14 +70,18 @@ def _blocked_keys(picked_groups: set[str]) -> set[str]:
 		blocked_groups.add(settings.global_blacklist_group)
 	if not blocked_groups:
 		return set()
-	return {
-		m.phone_e164 or m.phone
+	# Keyed the way `picker.make_row` keys a recipient (`classify`), so a member stored with only
+	# a raw / local phone still blocks the same number picked in E.164.
+	keys = {
+		classify(m.phone_e164 or m.phone)[1]
 		for m in frappe.get_all(
 			"WhatsApp Contact Group Member",
 			filters={"parenttype": "WhatsApp Contact Group", "parent": ("in", list(blocked_groups))},
 			fields=["phone", "phone_e164"],
 		)
 	}
+	keys.discard(None)
+	return keys
 
 
 def resolve(

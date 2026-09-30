@@ -15,6 +15,8 @@ from typing import Any
 
 import frappe
 from frappe import _
+from frappe.query_builder import Order
+from frappe.query_builder.functions import Coalesce
 from frappe.utils import cint, now_datetime
 
 from whatsapp_next.exceptions import WAFileError, WAPermissionError, WAStateConflictError, WAValidationError
@@ -24,6 +26,7 @@ from whatsapp_next.services.phone import classify, normalize
 SOURCES = (
 	("Contact Group", "Contact Groups"),
 	("Contact", "Contacts"),
+	("WhatsApp Number", "WhatsApp contacts not in the system"),
 	("DocType", "System screen"),
 	("Excel", "Excel upload"),
 	("vCard", "Phone export (vCard / CSV)"),
@@ -195,6 +198,56 @@ def get_group_members(group: str, page: int = 1, page_length: int = 50) -> dict[
 		for m in members
 	]
 	return {"rows": rows, "total": frappe.db.count("WhatsApp Contact Group Member", filters)}
+
+
+def search_whatsapp_numbers(txt: str | None = None, page: int = 1, page_length: int = 20) -> dict[str, Any]:
+	"""WhatsApp contacts with no system Contact: `{rows, total}` of individual `WhatsApp Number`
+	rows that are not linked — numbers that messaged or were fetched from a device's address book —
+	searched by name (the saved one too) or number, named as the phone saves them."""
+	filters: dict[str, Any] = {"link_status": "Not Linked", "number_type": "Individual"}
+	or_filters = None
+	if txt and txt.strip():
+		like = f"%{txt.strip()}%"
+		or_filters = {
+			"display_name": ("like", like),
+			"saved_name": ("like", like),
+			"phone_e164": ("like", like),
+		}
+	start, length = _page(page, page_length)
+	N = frappe.qb.DocType("WhatsApp Number")
+	query = (
+		frappe.qb.from_(N)
+		.select(N.name, N.phone_e164, N.display_name, N.saved_name)
+		.where((N.link_status == "Not Linked") & (N.number_type == "Individual"))
+	)
+	if or_filters:
+		like = f"%{txt.strip()}%"
+		query = query.where(N.display_name.like(like) | N.saved_name.like(like) | N.phone_e164.like(like))
+	# named numbers first (a blank name sorts before every letter), then by name
+	named = Coalesce(N.saved_name, N.display_name, "")
+	found = (
+		query.orderby(named == "", order=Order.asc)
+		.orderby(named, order=Order.asc)
+		.limit(length)
+		.offset(start)
+		.run(as_dict=True)
+	)
+	total = (
+		len(frappe.get_all("WhatsApp Number", filters=filters, or_filters=or_filters, pluck="name"))
+		if or_filters
+		else frappe.db.count("WhatsApp Number", filters)
+	)
+	rows = [
+		make_row(
+			r.phone_e164,
+			r.saved_name or r.display_name,
+			source_type="WhatsApp Number",
+			source_doctype="WhatsApp Number",
+			source_name=r.name,
+		)
+		for r in found
+	]
+	return {"rows": rows, "total": total}
 
 
 def search_contacts(

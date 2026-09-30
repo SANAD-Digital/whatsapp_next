@@ -171,6 +171,13 @@ sanad.ui.FilterBar = class FilterBar {
 				return args;
 			};
 		}
+		// several values of a Select field are kept out of Frappe's filter row (see `select_in`)
+		// and added to every query the list makes — its rows, its count, its export
+		if (!lv._sanad_get_filters_for_args) {
+			lv._sanad_get_filters_for_args = lv.get_filters_for_args.bind(lv);
+			lv._sanad_select_in = {};
+			lv.get_filters_for_args = () => lv._sanad_get_filters_for_args().concat(Object.values(lv._sanad_select_in));
+		}
 		// keep buttons / pills in step with filters set elsewhere (Filter popover, URL, sidebar)
 		const orig = lv.on_filter_change.bind(lv);
 		lv.on_filter_change = (...a) => {
@@ -1041,7 +1048,7 @@ sanad.ui.FilterBar = class FilterBar {
 	render_columns() {
 		const $dd = $(`<div class="sanad-filterbar__dd sanad-filterbar__dd--columns"></div>`).appendTo(this.$actions);
 		const pop_id = `${this.id}-columns-pop`;
-		this.$columns_btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--icon" title="${ui.escape(__("Columns"))}" aria-label="${ui.escape(__("Columns"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-preview", "sm")}</button>`).appendTo($dd);
+		this.$columns_btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--icon" title="${ui.escape(__("Columns"))}" aria-label="${ui.escape(__("Columns"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("columns-3", "sm")}</button>`).appendTo($dd);
 		this.$columns_dd = $dd;
 		this.columns_pop_id = pop_id;
 		this.$columns_btn.on("click", () => (this.$columns ? this.close_columns() : this.open_columns()));
@@ -1364,8 +1371,11 @@ sanad.ui.FilterBar = class FilterBar {
 			const v = value.__date;
 			const df = this.df(fieldname);
 			const datetime = df.fieldtype === "Datetime";
-			const from = v.from && datetime ? `${v.from} ${v.fromTime || "00:00"}:00` : v.from;
-			const to = v.to && datetime ? `${v.to} ${v.toTime || "23:59"}:59` : v.to;
+			// a minute bound covers its whole minute: `<= 23:59:59` lost the last second's
+			// fractions, and "before 10:00" (exclusive) must stop at 10:00:00, not 10:00:59
+			const minute_end = ":59.999999";
+			const from = v.from && datetime ? `${v.from} ${v.fromTime || "00:00"}${v.exclusive ? minute_end : ":00"}` : v.from;
+			const to = v.to && datetime ? `${v.to} ${v.toTime || "23:59"}${v.exclusive ? ":00" : minute_end}` : v.to;
 			if (from && to) return [this.doctype, fieldname, "Between", [from, to]];
 			if (from) return [this.doctype, fieldname, v.exclusive ? ">" : ">=", from];
 			return [this.doctype, fieldname, v.exclusive ? "<" : "<=", to];
@@ -1386,11 +1396,31 @@ sanad.ui.FilterBar = class FilterBar {
 		const lv = this.listview;
 		const area = lv.filter_area;
 		const has = area.get().some((f) => f[1] === fieldname);
-		if (!has && value == null) return Promise.resolve();
+		const had_in = !!(lv._sanad_select_in && lv._sanad_select_in[fieldname]);
+		if (!has && !had_in && value == null) return Promise.resolve();
+		if (had_in) delete lv._sanad_select_in[fieldname];
+		let filter = value == null ? null : this.filter_of(fieldname, value);
+		if (filter && this.is_select(fieldname) && filter[2] === "in") {
+			// Frappe's filter row turns `in` on a Select into a MultiSelect that, in any language
+			// but English, cannot map its translated labels back to values and drops the filter
+			// (`Linked` shown as «مربوط» comes back empty). One value goes as `=`, which a plain
+			// Select holds fine; several go straight into the list's query instead.
+			if (filter[3].length === 1) filter = [filter[0], fieldname, "=", filter[3][0]];
+			else {
+				lv._sanad_select_in[fieldname] = filter;
+				filter = null;
+			}
+		}
 		return this.quietly(() => {
 			const removed = has ? area.remove(fieldname) : Promise.resolve();
-			return value == null ? removed : removed.then(() => area.add([this.filter_of(fieldname, value)], false));
+			return filter == null ? removed : removed.then(() => area.add([filter], false));
 		}).then(() => this.refresh_list());
+	}
+
+	/** Whether `fieldname` is a Select field of the list's DocType. */
+	is_select(fieldname) {
+		const df = this.df(fieldname);
+		return !!df && df.fieldtype === "Select";
 	}
 
 	/** Run `fn` with Frappe's own filter refresh suppressed (it is debounced by 300 ms). */
@@ -1499,8 +1529,8 @@ sanad.ui.FilterBar = class FilterBar {
 	/** Read the list's current filters into the bar (list mode). */
 	sync() {
 		if (!this.listview || !this.listview.filter_area) return;
-		const filters = this.listview.filter_area.get();
-		this.render_extra_filters(filters);
+		const filters = this.listview.filter_area.get().concat(Object.values(this.listview._sanad_select_in || {}));
+		this.render_extra_filters(this.listview.filter_area.get());
 		Object.keys(this.controls).forEach((fieldname) => {
 			if (fieldname.startsWith("__")) return;
 			const c = this.controls[fieldname];
@@ -1561,6 +1591,7 @@ sanad.ui.FilterBar = class FilterBar {
 			});
 			this.register_date_rows(this.date_control.preset, this.date_control.$el, kept);
 		}
+		if (this.listview && this.listview._sanad_select_in) this.listview._sanad_select_in = {};
 		if (this.controls.__search) {
 			this.controls.__search.$el.val("");
 			this.search_text = "";

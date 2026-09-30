@@ -21,7 +21,8 @@ $wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-setting
 :root {
 	--wa-page-gutter: 32px;
 	--wa-list-gutter: 16px;
-	--wa-page-top: 20px;
+	// the same air above a screen as beside it: 20 px left the title against the top (owner, 2026-09-30)
+	--wa-page-top: 32px;
 	--wa-page-bottom: 40px;
 	// What a screen that wants to fill the viewport takes off `100dvh`. The page strip is no longer
 	// in that sum — that is the point of it — and this product's Desk wears its navigation in the
@@ -34,7 +35,7 @@ $wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-setting
 	:root {
 		--wa-page-gutter: 16px;
 		--wa-list-gutter: 12px;
-		--wa-page-top: 14px;
+		--wa-page-top: 20px;
 		--wa-page-bottom: 28px;
 		// the strip survives at this width (see below), so a full-height screen loses its height too
 		--wa-viewport-offset: 46px;
@@ -141,5 +142,30 @@ body[data-route^="Form/WhatsApp "] {
 				display: flex;
 			}
 		}
+	}
+}
+
+// "Beta" beside the app's name in the sidebar header (`desk/beta_badge.js`): quiet on purpose —
+// a hint that the whole app is still in beta, not an alert.
+.wa-beta {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	margin-inline-start: 6px;
+	padding-inline: 5px 7px;
+	border: 1px solid var(--wa-pri-sb);
+	border-radius: 999px;
+	background: var(--wa-pri-s);
+	color: var(--wa-pri-d);
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 15px;
+	vertical-align: 1px;
+	letter-spacing: 0.02em;
+
+	&__mark {
+		flex: none;
+		inline-size: 11px;
+		block-size: 11px;
 	}
 }

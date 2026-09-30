@@ -10,6 +10,7 @@
 import ui from "../_core/index.js";
 import GroupsSource from "./sources/groups.js";
 import ContactsSource from "./sources/contacts.js";
+import WhatsAppNumbersSource from "./sources/whatsapp_numbers.js";
 import DoctypeSource from "./sources/doctype.js";
 import ExcelSource from "./sources/excel.js";
 import PhonebookSource from "./sources/phonebook.js";
@@ -73,7 +74,7 @@ sanad.ui.ContactPicker = class ContactPicker {
 	static get sources() {
 		if (!this._sources) {
 			this._sources = {};
-			[GroupsSource, ContactsSource, DoctypeSource, ExcelSource, PhonebookSource, ManualSource].forEach((S) => (this._sources[S.key] = S));
+			[GroupsSource, ContactsSource, WhatsAppNumbersSource, DoctypeSource, ExcelSource, PhonebookSource, ManualSource].forEach((S) => (this._sources[S.key] = S));
 		}
 		return this._sources;
 	}
@@ -624,32 +625,36 @@ sanad.ui.ContactPicker = class ContactPicker {
 	commit(counts) {
 		const remove = this.operation === "remove";
 		this.set_progress(remove ? __("Removing {0}…", [ui.format_int(counts.action)]) : __("Adding {0}…", [ui.format_int(counts.action)]));
-		// One call per source, so the audit row says where each batch came from and the target's
+		// One call per origin, so the audit row says where each batch came from and the target's
 		// rows carry their own origin — a campaign built from a group and a pasted list says so.
+		// Two groups picked in the same tab are two origins: one call per tab stamped every row
+		// with the first group's name.
+		let done = { added: 0, skipped_duplicates: 0, skipped_invalid: 0 };
 		const run = remove
 			? this.call("picker.commit_remove", { target_doctype: this.target_doctype, target_name: this.target_name, phone_e164s: counts.keys }, { silent: true })
-			: this.source_groups().reduce(
-					(chain, group) =>
-						chain.then((sum) => {
-							const rows = group.rows.map(([, row]) => row);
-							const first = rows[0] || {};
-							return this.call(
+			: this.commit_batches().reduce(
+					(chain, batch) =>
+						chain.then((sum) =>
+							this.call(
 								"picker.commit_add",
 								{
 									target_doctype: this.target_doctype,
 									target_name: this.target_name,
-									rows,
-									source_type: first.source_type || "Manual",
-									source_ref: first.source_ref || null,
+									rows: batch.rows,
+									source_type: batch.source_type,
+									source_ref: batch.source_ref,
 								},
 								{ silent: true }
-							).then((r) => ({
-								added: cint(sum.added) + cint(r.added),
-								skipped_duplicates: cint(sum.skipped_duplicates) + cint(r.skipped_duplicates),
-								skipped_invalid: cint(sum.skipped_invalid) + cint(r.skipped_invalid),
-							}));
-						}),
-					Promise.resolve({ added: 0, skipped_duplicates: 0, skipped_invalid: 0 })
+							).then((r) => {
+								done = {
+									added: cint(sum.added) + cint(r.added),
+									skipped_duplicates: cint(sum.skipped_duplicates) + cint(r.skipped_duplicates),
+									skipped_invalid: cint(sum.skipped_invalid) + cint(r.skipped_invalid),
+								};
+								return done;
+							})
+						),
+					Promise.resolve(done)
 			  );
 		return run
 			.then((result) => {
@@ -666,8 +671,24 @@ sanad.ui.ContactPicker = class ContactPicker {
 			})
 			.catch((err) => {
 				this.set_progress(null);
+				// an earlier batch already landed: the host's list must show those rows even though
+				// a later one failed (the dialog stays open on the error)
+				if (!remove && done.added && this.opts.on_commit) this.opts.on_commit(Object.assign({ partial: true }, done), this);
 				this.selected.show_alert(err.exc_type === "WAStateConflictError" ? __("The list changed while you were choosing. Reopen it and try again. ({0})", [err.message]) : err.message);
 			});
+	}
+
+	/** The selection cut by origin — tab, source type and source record — for `commit_add`. */
+	commit_batches() {
+		const by = new Map();
+		this.selection.forEach((row) => {
+			const source_type = row.source_type || "Manual";
+			const source_ref = row.source_ref || null;
+			const key = JSON.stringify([row.__source || "", source_type, source_ref]);
+			if (!by.has(key)) by.set(key, { source_type, source_ref, rows: [] });
+			by.get(key).rows.push(row);
+		});
+		return Array.from(by.values());
 	}
 
 	destroy() {

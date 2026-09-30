@@ -78,7 +78,8 @@ class TestPlatformOps(IntegrationTestCase):
 		cls.device = ensure_device("Ops Device", "WAD-TEST-OP01", phone="+966500000081")
 		# This site's webhook registration goes back afterwards (it may be a live dev site).
 		s = frappe.get_single("WhatsApp Settings")
-		cls._webhook = {f: s.get(f) for f in WEBHOOK_FIELDS}
+		# and its subscription cache: `test_usage_sync` writes the fake provider's plan over it
+		cls._webhook = {f: s.get(f) for f in (*WEBHOOK_FIELDS, *usage_sync.FIELDS)}
 		cls._webhook_secret = s.get_password("webhook_secret", raise_exception=False)
 
 	@classmethod

@@ -549,7 +549,7 @@ Every `api/` endpoint runs inside `api_endpoint` (D-039), which converts a `Prov
 | Provider exception | App exception | HTTP |
 |---|---|---|
 | `RateLimitError` | `WARateLimitError` | 429 |
-| `AuthError`, `PermissionDeniedError`, `WebhookSignatureError` | `WAProviderAuthError` | 502 |
+| `AuthError`, `PermissionDeniedError`, `WebhookSignatureError` | `WAProviderAuthError` | 424 |
 | `TransientError`, `DeviceOfflineError` | `WAProviderUnavailableError` | 503 |
 | `NotSupportedError` | `WANotSupportedError` | 422 (D-097) |
 | `BusinessRejectedError` (and subclasses) | `WAProviderRejectedError` (carries `reason`, `provider_code`) | 422 |

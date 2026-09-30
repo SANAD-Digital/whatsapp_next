@@ -1,16 +1,19 @@
 // WhatsApp Notification list (09 row 10b, D-064: the prototype "Notification templates" screen):
-// PageHeader (title, "+ New notification", KPIs Notifications · Enabled · Sent (30 days) · On a
+// PageHeader ("+ New notification" in the page bar, KPIs Notifications · Enabled · Sent (30 days) · On a
 // disconnected device) → FilterBar (search, document type, status, device, event) → DataList
 // (Notification · Document type · Status toggle · Device avatar · Variables · Sent · Last updated ·
-// View → form). The status chip toggles `enabled` through `frappe.client.set_value` after a
+// View → the notification editor window, `screens/notifications.js`; Open form → the Desk form). The status chip toggles `enabled` through `frappe.client.set_value` after a
 // ConfirmDialog. PageHeader / DataList are guarded with `typeof`; native rows render until they land.
 
 const DOCTYPE = "WhatsApp Notification";
 const has_kit = (name) => typeof sanad.ui[name] === "function";
-const days_ago = (n) => frappe.datetime.add_days(frappe.datetime.now_date(), -n);
+// a plain date: `add_days` returns an ISO string with the browser's offset, which the server reads as
+// another instant. "30 days" is today and the 29 before it, as the usage window counts them.
+const days_ago = (n) => frappe.datetime.add_days(frappe.datetime.now_date(), -n).slice(0, 10);
 
-function open_form(doc) {
-	frappe.set_route("Form", DOCTYPE, doc.name);
+/** The notification editor window; the Desk form stays one click away from inside it. */
+function open_editor(doc) {
+	whatsapp_next.notifications.open(doc ? doc.name : null);
 }
 
 /** Enable / disable one row with a confirmation, then refresh the list. */
@@ -86,7 +89,7 @@ const STATS = () => [
 		label: __("Sent (30 days)"),
 		icon: "es-line-chat",
 		tone: "blue",
-		count: { doctype: "WhatsApp Log", filters: { notification: ["is", "set"], creation: [">=", days_ago(30)] } },
+		count: { doctype: "WhatsApp Log", filters: { notification: ["is", "set"], creation: [">=", days_ago(29)] } },
 		sub: __("Messages sent through a notification"),
 		onclick: () => frappe.set_route("List", "WhatsApp Log", { notification: ["is", "set"] }),
 	},
@@ -105,9 +108,18 @@ const COLUMNS = (can_write) => [
 	{ fieldname: "document_type", label: __("Document type"), sortable: true, format: (v) => frappe.utils.escape_html(v ? __(v) : "") },
 	{ fieldname: "enabled", label: __("Status"), sortable: true, format: (v, doc) => status_chip(doc, can_write) },
 	{ fieldname: "device", label: __("Device"), type: "avatar", sortable: true },
-	{ fieldname: "variables_count", label: __("Variables"), type: "number", align: "end", sortable: true, hidden_xs: true },
-	{ fieldname: "send_count", label: __("Sent"), type: "number", align: "end", sortable: true },
+	{ fieldname: "variables_count", label: __("Variables"), type: "number", sortable: true, hidden_xs: true },
+	{ fieldname: "send_count", label: __("Sent"), type: "number", sortable: true },
 	{ fieldname: "modified", label: __("Last updated"), type: "date", sortable: true, hidden_xs: true, format: (v) => (v ? frappe.datetime.str_to_user(v, false, true) : "") },
+	{
+		fieldname: "_form",
+		label: __("Form", null, "Notification list"),
+		sortable: false,
+		hidden_xs: true,
+		// the Desk form beside the editor window that "View" opens: every field, the sidebar, the history
+		format: (v, doc) =>
+			`<button type="button" class="sanad-datalist__action wa-open-form" data-name="${frappe.utils.escape_html(doc.name)}" aria-label="${frappe.utils.escape_html(__("Open the form of {0}", [doc.notification_name || doc.name]))}">${frappe.utils.escape_html(__("Open form"))}</button>`,
+	},
 ];
 
 frappe.listview_settings[DOCTYPE] = {
@@ -128,9 +140,7 @@ frappe.listview_settings[DOCTYPE] = {
 		if (has_header) {
 			listview._sanad_header = new sanad.ui.PageHeader({
 				listview,
-				title: __("Notifications"),
-				description: __("Each notification ties a document event to a message sent automatically from a chosen device."),
-				primary: { label: __("New notification"), icon: "es-line-add", perm: "create", handler: () => frappe.new_doc(DOCTYPE) },
+				primary: { label: __("New notification"), icon: "es-line-add", perm: "create", handler: () => open_editor() },
 				stats: STATS(),
 				events: { "wa:device:status": (data, header) => header.refresh() },
 			});
@@ -157,13 +167,13 @@ frappe.listview_settings[DOCTYPE] = {
 				columns: COLUMNS(can_write),
 				selectable: true,
 				page_length: 20,
-				row_action: { label: __("View"), handler: open_form },
-				on_row_click: open_form,
+				row_action: { label: __("View"), handler: open_editor },
+				on_row_click: open_editor,
 				footer: { count: (total) => sanad.ui.plural(total, { one: __("{0} notification"), other: __("{0} notifications") }) },
 				empty: {
 					title: __("No notifications yet"),
 					description: __("Send a message automatically when a document is created, submitted or becomes due."),
-					action: frappe.perm.has_perm(DOCTYPE, 0, "create") ? { label: __("New notification"), onclick: () => frappe.new_doc(DOCTYPE) } : null,
+					action: frappe.perm.has_perm(DOCTYPE, 0, "create") ? { label: __("New notification"), onclick: () => open_editor() } : null,
 				},
 				mobile: "cards",
 			});
@@ -173,11 +183,19 @@ frappe.listview_settings[DOCTYPE] = {
 				actions: [
 					{ label: __("Enable"), icon: "es-line-success", condition: (doc) => can_write && !cint(doc.enabled), handler: (doc) => toggle_enabled(doc, listview) },
 					{ label: __("Disable"), icon: sanad.ui.icons.cancel, condition: (doc) => can_write && !!cint(doc.enabled), handler: (doc) => toggle_enabled(doc, listview) },
-					{ label: __("Open"), icon: sanad.ui.icons.open, handler: open_form },
+					{ label: __("Open"), icon: sanad.ui.icons.open, handler: open_editor },
+					{ label: __("Open form"), icon: "es-line-edit", handler: (doc) => frappe.set_route("Form", DOCTYPE, doc.name) },
 				],
-				on_row_click: open_form,
+				on_row_click: open_editor,
 			});
 		}
+
+		// "Open form" inside DataList rows: the Desk form, not the editor the row click opens.
+		listview.$result.off("click.wanotificationform").on("click.wanotificationform", ".wa-open-form", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			frappe.set_route("Form", DOCTYPE, $(e.currentTarget).data("name"));
+		});
 
 		// Status chip toggle inside DataList rows (delegated: rows re-render on every refresh).
 		listview.$result.off("click.wanotification").on("click.wanotification", ".wa-toggle-enabled", (e) => {

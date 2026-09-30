@@ -34,6 +34,7 @@ from whatsapp_next.providers.schemas import BatchResult, Location, NormalizedMes
 from whatsapp_next.services import attachments, audit, errors, polls, templates
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.services.phone import classify, is_group_or_lid, key_for, normalize
+from whatsapp_next.services.wa_format import tidy_markers
 
 # ---- vocabulary ---------------------------------------------------------------------------
 
@@ -120,6 +121,11 @@ class OutboundSpec:
 # ---- settings helpers ---------------------------------------------------------------------
 
 
+# A message is tried at most this many times by the dispatcher before it is dead-lettered, whatever
+# Settings or an older queue row says; a person can still retry it from the queue (owner, 2026-09-30).
+MAX_AUTOMATIC_ATTEMPTS = 3
+
+
 def _settings():
 	return frappe.get_cached_doc("WhatsApp Settings")
 
@@ -181,6 +187,25 @@ def _recipient_fields(spec: OutboundSpec) -> dict[str, Any]:
 	return {"recipient_type": "Individual", "phone": raw, "phone_e164": e164, "jid": None}
 
 
+def _recipient_name(spec: OutboundSpec, key: str | None) -> tuple[str | None, str | None]:
+	"""`(display_name, contact)` for the row: what the caller gave, else what the system already
+	knows about the number — its contact's name, else the name on its WhatsApp Number row (the
+	contact's, or the one the phone saves it under). A reply to a sender WhatsApp sent without a
+	push name must not read "no name" when the number is a known contact."""
+	name, contact = spec.display_name, spec.contact
+	if name and contact:
+		return name, contact
+	row = (
+		frappe.db.get_value("WhatsApp Number", key, ["display_name", "contact"], as_dict=True)
+		if key
+		else None
+	)
+	contact = contact or (row.contact if row else None)
+	if not name and contact:
+		name = frappe.db.get_value("Contact", contact, "full_name")
+	return name or (row.display_name if row else None), contact
+
+
 def _render_body(spec: OutboundSpec) -> tuple[str | None, str | None]:
 	"""`(body, template_error)` — template rendering never raises here (legacy F2)."""
 	if spec.body or not spec.template:
@@ -214,6 +239,7 @@ def create_outbound(spec: OutboundSpec, *, user: str | None = None) -> str:
 	):
 		frappe.throw(_("Sending is restricted to known WhatsApp numbers"), WAUnknownNumberPolicyError)
 
+	display_name, contact = _recipient_name(spec, key)
 	body, template_error = _render_body(spec)
 	if spec.message_type == "Text" and not (body or "").strip():
 		frappe.throw(
@@ -224,11 +250,12 @@ def create_outbound(spec: OutboundSpec, *, user: str | None = None) -> str:
 		"device": device,
 		"requested_device": spec.device or None,
 		**rec,
-		"display_name": spec.display_name,
-		"contact": spec.contact,
+		"display_name": display_name,
+		"contact": contact,
 		"message_type": spec.message_type,
-		"body": body,
-		"caption": spec.caption,
+		# WhatsApp draws *bold* only when the marker touches the text: repair `* text*` once, here
+		"body": tidy_markers(body),
+		"caption": tidy_markers(spec.caption),
 		"view_once": 1 if spec.view_once else 0,
 		"print_format": spec.print_format,
 		"letter_head": spec.letter_head,
@@ -331,7 +358,7 @@ def enqueue(
 		],
 	)
 	by_name = {r.name: r for r in rows}
-	max_attempts = cint(_settings().max_attempts) or 1
+	max_attempts = min(cint(_settings().max_attempts) or 1, MAX_AUTOMATIC_ATTEMPTS)
 	created: list[str] = []
 	now = now_datetime()
 	with status_writer():
@@ -595,7 +622,9 @@ def _retry_later(
 	item: frappe._dict, reason: str, code: str, *, at, count_attempt: bool = True, delay: int | None = None
 ) -> str:
 	attempts = cint(item.attempts) + (1 if count_attempt else 0)
-	max_attempts = cint(item.get("max_attempts")) or cint(_settings().max_attempts) or 1
+	max_attempts = min(
+		cint(item.get("max_attempts")) or cint(_settings().max_attempts) or 1, MAX_AUTOMATIC_ATTEMPTS
+	)
 	if count_attempt and attempts >= max_attempts:
 		_dead_letter(item, reason, code, at=at)
 		return "Dead Letter"
@@ -618,6 +647,7 @@ def _retry_later(
 		item.outbound_message,
 		{"status": "Queued", "attempts": attempts, "error_code": code, "error_message": reason[:500]},
 	)
+	return "Queued"
 
 
 def apply_batch_result(items: list[frappe._dict], result: BatchResult) -> dict[str, int]:
@@ -776,7 +806,10 @@ def apply_status(
 	if status not in OUTBOUND_STATUSES:
 		frappe.throw(_("Unknown outbound status {0}").format(status), WAValidationError)
 	row = frappe.db.get_value(
-		"WhatsApp Log", outbound, ["status", "campaign", "device", "provider_message_id"], as_dict=True
+		"WhatsApp Log",
+		outbound,
+		["status", "campaign", "device", "provider_message_id", "platform_message_log", "sent_at", "delivered_at"],
+		as_dict=True,
 	)
 	if not row:
 		return False
@@ -789,12 +822,23 @@ def apply_status(
 		and _DELIVERY_RANK[status] < _DELIVERY_RANK[current]
 	):
 		return False
-	if status == current and not provider_message_id:
-		return False
+	repeat = status == current
+	if repeat and not (
+		(provider_message_id and provider_message_id != row.provider_message_id)
+		or (platform_message_log and platform_message_log != row.platform_message_log)
+	):
+		return False  # the same receipt again (a platform retry under a new event id): nothing new
 	at = get_datetime(at) if at else now_datetime()
 	values: dict[str, Any] = {"status": status}
-	if status in _STATUS_TIMESTAMP:
+	# a repeated status only completes the ids: its time stays the first receipt's
+	if status in _STATUS_TIMESTAMP and not repeat:
 		values[_STATUS_TIMESTAMP[status]] = at
+	# read means delivered, and delivered means sent: a receipt that overtakes the one before it
+	# fills the gap, so "Sent at" is never empty on a message the recipient already has
+	if status == "Read" and not row.delivered_at:
+		values["delivered_at"] = at
+	if status in ("Delivered", "Read") and not row.sent_at:
+		values["sent_at"] = at
 	if provider_message_id:
 		values["provider_message_id"] = provider_message_id
 	if platform_message_log:
@@ -808,8 +852,40 @@ def apply_status(
 		values["held_reason"] = None
 	with status_writer():
 		_set("WhatsApp Log", outbound, values)
+		if status == "Failed":
+			_close_queue_item(outbound, values["error_code"], values["error_message"])
 	_publish_message_status(outbound, status, at, error_code, campaign=row.campaign, device=row.device)
+	if row.campaign:
+		# the batch hand-off counted these rows while still `Sending`: count them again now that
+		# the platform has answered, which also closes the campaign once nothing is left open
+		frappe.enqueue(
+			"whatsapp_next.services.campaign_runner.refresh_counters",
+			campaign=row.campaign,
+			queue="short",
+			job_id=f"wa-camp-cnt-{row.campaign}",
+			deduplicate=True,
+			enqueue_after_commit=True,
+			timeout=60,
+		)
 	return True
+
+
+def _close_queue_item(outbound: str, code: str, reason: str | None) -> None:
+	"""A message the platform took (its Queue Item `Completed`) and failed later: the Queue Item
+	goes to `Dead Letter` with the platform's own error, as a failure at hand-over already does
+	(`_dead_letter`), so the queue and the message never tell two different stories."""
+	item = frappe.db.get_value("WhatsApp Queue Item", {"outbound_message": outbound, "status": "Completed"})
+	if item:
+		_set(
+			"WhatsApp Queue Item",
+			item,
+			{
+				"status": "Dead Letter",
+				"dead_letter_reason": (reason or code)[:500],
+				"last_error_code": code,
+				"last_error": (reason or "")[:500] or None,
+			},
+		)
 
 
 def _publish_message_status(
@@ -836,8 +912,14 @@ def _publish_message_status(
 
 
 def send_test_message(outbound: str) -> SendResult:
-	"""Job (`short`, `wa-test-{outbound}`): one synchronous `send_message` for an `is_test` row,
-	bypassing the queue (D-024). Outbound goes `Sending → Sent | Failed`."""
+	"""Job (`short`, `wa-test-{outbound}`): `send_now` for an `is_test` row (D-024)."""
+	return send_now(outbound, source="test")
+
+
+def send_now(outbound: str, *, source: str = "direct") -> SendResult:
+	"""One synchronous `send_message`, bypassing the queue, its rate and its batching: test sends
+	(D-024) and the router's automatic replies (receipt, unknown command), which the sender must
+	get at once. Runs inside a job, never a web request. Outbound goes `Sending → Sent | Failed`."""
 	doc = frappe.get_doc("WhatsApp Log", outbound)
 	platform_device = frappe.db.get_value("WhatsApp Device", doc.device, "platform_device")
 	if not platform_device:
@@ -850,7 +932,7 @@ def send_test_message(outbound: str) -> SendResult:
 		result = registry.get_provider().send_message(build_message(doc, platform_device, priority=1))
 	except pex.ProviderError as exc:
 		cls = errors.classify(exc)
-		apply_status(outbound, "Failed", error_code=cls.code, reason=cls.message, source="test")
+		apply_status(outbound, "Failed", error_code=cls.code, reason=cls.message, source=source)
 		if isinstance(exc, pex.DeviceOfflineError):
 			from whatsapp_next.services import devices
 
@@ -862,7 +944,7 @@ def send_test_message(outbound: str) -> SendResult:
 			"Sent",
 			provider_message_id=result.provider_message_id,
 			platform_message_log=result.platform_message_log,
-			source="test",
+			source=source,
 		)
 		if result.device_fallback:
 			frappe.db.set_value("WhatsApp Log", outbound, {"device_fallback": 1}, update_modified=False)
@@ -874,7 +956,7 @@ def send_test_message(outbound: str) -> SendResult:
 			error_code=cls.code,
 			reason=cls.message,
 			platform_message_log=result.platform_message_log,
-			source="test",
+			source=source,
 		)
 	return result
 
@@ -883,15 +965,27 @@ def send_test_message(outbound: str) -> SendResult:
 
 
 def _select_items(filters: dict[str, Any] | list[str] | None, statuses: Iterable[str]) -> list[frappe._dict]:
+	"""The selection's rows still in `statuses`, locked until the request commits.
+
+	Every caller changes the status of what it reads. Without the lock a row `claim_batch` took
+	between this read and the write (`Queued → Sending`) was paused, or deleted and its message
+	marked Cancelled, while the platform was already sending it. `claim_batch` skips locked rows
+	and a locking read sees the claim once it commits, so neither side waits on the other for long."""
 	if isinstance(filters, list | tuple | set):
-		flt: dict[str, Any] = {"name": ("in", list(filters))}
+		names = list(filters)
+		if not names:
+			return []
+		flt: dict[str, Any] = {"name": ("in", names)}
 	else:
 		flt = dict(filters or {})
 	flt["status"] = ("in", list(statuses))
-	return frappe.get_all(
+	return frappe.db.get_values(
 		"WhatsApp Queue Item",
-		filters=flt,
-		fields=["name", "outbound_message", "campaign", "status", "device"],
+		flt,
+		["name", "outbound_message", "campaign", "status", "device"],
+		as_dict=True,
+		for_update=True,
+		order_by="creation asc",
 	)
 
 
@@ -916,6 +1010,7 @@ def pause_items(
 				},
 			)
 	audit.log("Queue Paused", count=len(rows), reason=reason, user=user, details={"scope": "items"})
+	publish_progress(None, force=True)
 	return len(rows)
 
 
@@ -938,6 +1033,7 @@ def resume_items(filters: dict[str, Any] | list[str], user: str | None = None) -
 				},
 			)
 	audit.log("Queue Resumed", count=len(rows), user=user, details={"scope": "items"})
+	publish_progress(None, force=True)
 	return len(rows)
 
 
@@ -989,6 +1085,7 @@ def delete_items(
 					update_modified=False,
 				)
 	audit.log("Queue Items Deleted", count=len(rows), reason=reason, user=user)
+	publish_progress(None, force=True)
 	return len(rows)
 
 
@@ -1011,6 +1108,9 @@ def retry_dead_letter(names: Iterable[str], user: str | None = None) -> int:
 					"last_error": None,
 					"job_id": None,
 					"claimed_at": None,
+					# `_dead_letter` stamps the give-up time here; a row back in the queue has not
+					# completed, and the drawer read the stale stamp as "handed to the platform"
+					"completed_at": None,
 				},
 			)
 			_set(
@@ -1018,7 +1118,9 @@ def retry_dead_letter(names: Iterable[str], user: str | None = None) -> int:
 				r.outbound_message,
 				{"status": "Queued", "error_code": None, "error_message": None, "failed_at": None},
 			)
+			_publish_message_status(r.outbound_message, "Queued", now_datetime(), campaign=r.campaign, device=r.device)
 	audit.log("Queue Items Retried", count=len(rows), user=user)
+	publish_progress(None, force=True)
 	return len(rows)
 
 

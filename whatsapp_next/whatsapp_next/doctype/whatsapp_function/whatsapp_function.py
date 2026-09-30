@@ -19,9 +19,7 @@ class WhatsAppFunction(Document):
 	def validate(self) -> None:
 		"""Compute derived flags and check child-table keys and values."""
 		self.handler_registered = 1 if handler_exists(self.function_key) else 0
-		self.update_available = (
-			1 if self.latest_version and self.latest_version != self.installed_version else 0
-		)
+		self.update_available = update_available(self.installed_version, self.latest_version)
 		check_unique_rows(self.get("settings"), "key", _("Setting key"))
 		check_unique_rows(self.get("outputs"), "output_key", _("Output key"))
 		for row in self.get("settings") or []:
@@ -29,15 +27,27 @@ class WhatsAppFunction(Document):
 		check_party_types(self.get("party_types"))
 
 
+def update_available(installed: str | None, latest: str | None) -> int:
+	"""1 when the catalog's `latest` is a newer version than `installed` (semantic order, so a site
+	ahead of its catalog — or `1.10.0` against `1.9.0` — is not "outdated")."""
+	if not latest:
+		return 0
+	from whatsapp_next.services.functions_catalog import version_tuple
+
+	return 1 if version_tuple(latest) > version_tuple(installed or "0") else 0
+
+
 def handler_exists(function_key: str | None) -> bool:
-	"""True when `function_key` is registered in `whatsapp_next.functions.registry.FUNCTION_HANDLERS`."""
+	"""True when a handler is registered for `function_key` — built in or declared by another app
+	through the `whatsapp_function_handlers` hook (`registry.is_registered` loads the hook first, so
+	a fresh worker does not mark a hook-registered function as missing)."""
 	if not function_key:
 		return False
 	try:
-		from whatsapp_next.functions.registry import FUNCTION_HANDLERS
+		from whatsapp_next.functions.registry import is_registered
 	except ImportError:
 		return False
-	return function_key in (FUNCTION_HANDLERS or {})
+	return is_registered(function_key)
 
 
 def check_unique_rows(rows: list | None, fieldname: str, label: str) -> None:

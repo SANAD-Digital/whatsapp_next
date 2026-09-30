@@ -265,6 +265,35 @@ class TestCommandEditor(IntegrationTestCase):
 				api.preview_command(payload={"code": CODE})
 		self.assertEqual(frappe.db.count("WhatsApp Log"), before)
 
+	def test_preview_party_must_be_the_contacts_own(self):
+		"""The client's `party_type` / `party_name` are checked against the contact's Dynamic Links;
+		without them the preview runs as the account the router would pick."""
+		from whatsapp_next.services import commands as svc
+
+		if not self.customer:
+			self.skipTest("no Customer on this site")
+		payload = {"code": CODE, "function": "ping", "allowed_party_types": ["Customer"]}
+		with as_user("WhatsApp Manager"):
+			with self.assertRaises(WAValidationError):
+				api.preview_command(
+					payload=payload,
+					sender={"contact": self.contact, "party_type": "Customer", "party_name": "EdTest Not Linked"},
+				)
+			with self.assertRaises(WAValidationError):
+				api.preview_command(
+					payload=payload,
+					sender={"contact": self.contact, "party_type": "User", "party_name": "Administrator"},
+				)
+			out = api.preview_command(
+				payload=payload,
+				sender={"contact": self.contact, "party_type": "Customer", "party_name": self.customer},
+				values={"text": "hi"},
+			)
+			self.assertEqual(out["status"], "Executed")
+		draft = frappe._dict(allowed_party_types=[frappe._dict(party_type="Customer")])
+		self.assertEqual(svc._preview_party(draft, self.contact, None, None), ("Customer", self.customer))
+		self.assertEqual(svc._preview_party(draft, None, "Customer", "anything"), (None, None))
+
 	def test_delete(self):
 		name = self._save()
 		with as_user("WhatsApp Manager"):

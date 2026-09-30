@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import frappe
 from frappe.tests import IntegrationTestCase
+from frappe.utils import add_to_date, now_datetime
 
 from whatsapp_next.exceptions import (
 	WAInvalidPhoneError,
@@ -64,6 +65,19 @@ class TestDevices(IntegrationTestCase):
 			as_dict=True,
 		)
 
+	def test_a_device_added_for_qr_pairs_with_a_code_once_it_has_a_number(self):
+		with fake_provider() as fp:
+			name = devices.create(NAME, pairing_mode="QR")  # no number
+			with self.assertRaises(WAValidationError):
+				devices.start_pairing(name, "Code")  # a code needs a number to go to
+			self.assertFalse([c for c in fp.calls if c[0] == "get_pair_code"])
+			code = devices.start_pairing(name, "Code", phone="0500000402")
+			self.assertEqual(code.pair_code, "ABCD-1234")
+			# the number is stored on the device (and on the provider, which issued the code for it)
+			self.assertEqual(frappe.db.get_value("WhatsApp Device", name, "phone_e164"), "+966500000402")
+			# after that the code comes without asking again
+			self.assertEqual(devices.start_pairing(name, "Code").pair_code, "ABCD-1234")
+
 	def test_create_and_pair_qr(self):
 		with fake_provider() as fp:
 			with self.assertRaises(WAInvalidPhoneError):
@@ -89,8 +103,14 @@ class TestDevices(IntegrationTestCase):
 			self.assertEqual((payload.mode, payload.qr_code[:10]), ("QR", "data:image"))
 			calls = [c[0] for c in fp.calls if c[0] == "get_qr"]
 			self.assertEqual(len(calls), 1)
-			devices.start_pairing(name, "QR")  # served from cache
+			# served from cache, with the seconds actually left
+			key = devices.PAIR_CACHE_KEY.format(platform_device=row.platform_device)
+			aged = {**frappe.cache.get_value(key), "cached_at": add_to_date(now_datetime(), seconds=-45).isoformat()}
+			frappe.cache.set_value(key, aged, expires_in_sec=devices.PAIR_CACHE_TTL)
+			again = devices.start_pairing(name, "QR")
 			self.assertEqual(len([c for c in fp.calls if c[0] == "get_qr"]), 1)
+			self.assertTrue(10 <= again.expires_in <= 15, again.expires_in)
+			self.assertEqual(again.qr_code, payload.qr_code)
 			code = devices.start_pairing(name, "Code")
 			self.assertEqual(code.pair_code, "ABCD-1234")
 			# nothing persisted

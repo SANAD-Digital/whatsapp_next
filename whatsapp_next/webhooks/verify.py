@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Mapping
 
 import frappe
@@ -23,6 +24,25 @@ def check(headers: Mapping[str, str], raw_body: bytes, secret: str | None) -> Si
 	if not secret:
 		return SignatureCheck(valid=False, fresh=False, reason="no secret")
 	return registry.get_provider().verify_webhook(headers, raw_body, secret, MAX_SKEW_SECONDS)
+
+
+SIGSEEN_KEY = "wa:webhook:sig:{digest}"
+
+
+def signature_reused(headers: Mapping[str, str], identity: str) -> bool:
+	"""True when this delivery's signature was already seen, within the freshness window, on a
+	delivery with another `event_name|event_id`. The same identity is a plain retry (the
+	idempotency row answers it as a duplicate); a new one is a replay with swapped headers."""
+	signature = next((v for k, v in headers.items() if k.lower().endswith("-signature")), "")
+	if not signature:
+		return False
+	digest = hashlib.sha256(signature.strip().lower().encode()).hexdigest()
+	key = frappe.cache.make_key(SIGSEEN_KEY.format(digest=digest))
+	if frappe.cache.set(key, identity.encode(), ex=2 * MAX_SKEW_SECONDS, nx=True):
+		return False
+	seen = frappe.cache.get(key) or b""
+	seen = seen.decode() if isinstance(seen, bytes) else str(seen)
+	return seen != identity
 
 
 def note_signature_failure() -> int:

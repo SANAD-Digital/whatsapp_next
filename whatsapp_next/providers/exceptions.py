@@ -45,6 +45,10 @@ class ValidationError(ProviderError):
 	"""400 / 413 / 417 validation."""
 
 
+class AccountExistsError(ValidationError):
+	"""Sign-up refused: the number or email belongs to a confirmed account (sign in instead)."""
+
+
 class BusinessRejectedError(ProviderError):
 	"""HTTP 200 `ok:false` / `rejected:true` — quota, feature, recipient. Carries `reason`."""
 

@@ -37,7 +37,8 @@ whatsapp_next.alerts.open = function (name, { on_saved } = {}) {
 			}),
 		on_saved: (r) => {
 			if (typeof on_saved === "function") on_saved(r);
-			const list = cur_list && cur_list.doctype === "WhatsApp Notification Alert" ? cur_list : null;
+			// `cur_list` is only declared once a list has been opened: the editor also opens from the form
+			const list = typeof cur_list !== "undefined" && cur_list && cur_list.doctype === "WhatsApp Notification Alert" ? cur_list : null;
 			if (list) {
 				list.refresh();
 				list._sanad_header && list._sanad_header.refresh();

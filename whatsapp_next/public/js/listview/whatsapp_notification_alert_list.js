@@ -1,5 +1,5 @@
 // WhatsApp Notification Alert list (09 row 10c, D-064: same anatomy as the prototype
-// "Notification templates" screen): PageHeader (title, "+ New alert", KPIs Alerts · Enabled ·
+// "Notification templates" screen): PageHeader ("+ New alert" in the page bar, KPIs Alerts · Enabled ·
 // Sent · Due in 24 hours) → FilterBar (search, periodicity, status, device, content type) →
 // DataList (Alert · Periodicity · Content · Status toggle · Device avatar · Sent · Next run ·
 // Last updated · View → the alert editor window, D-139). PageHeader / DataList are guarded with `typeof`.
@@ -47,6 +47,13 @@ function status_chip(doc, can_write) {
 	return `<button type="button" class="btn btn-link p-0 wa-toggle-enabled" data-name="${frappe.utils.escape_html(doc.name)}" aria-pressed="${enabled}" aria-label="${frappe.utils.escape_html(enabled ? __("Enabled — click to disable") : __("Disabled — click to enable"))}">${badge}</button>`;
 }
 
+/** `[now, now + 24 h]` in the system time zone, as `YYYY-MM-DD HH:mm:ss`. */
+function next_day_window() {
+	const fmt = "YYYY-MM-DD HH:mm:ss";
+	const now = moment(frappe.datetime.system_datetime(), fmt);
+	return [now.format(fmt), now.clone().add(1, "days").format(fmt)];
+}
+
 const STATS = () => [
 	{
 		key: "alerts",
@@ -85,7 +92,8 @@ const STATS = () => [
 		tone: "amber",
 		count: {
 			doctype: DOCTYPE,
-			filters: { enabled: 1, next_run_at: ["between", [frappe.datetime.now_datetime(), frappe.datetime.add_days(frappe.datetime.now_datetime(), 1)]] },
+			// `next_run_at` is stored in the system time zone: the window is measured there, not in the user's
+			filters: { enabled: 1, next_run_at: ["between", next_day_window()] },
 		},
 		sub: __("Scheduled to run within the next day"),
 	},
@@ -103,7 +111,7 @@ const COLUMNS = (can_write) => [
 	},
 	{ fieldname: "enabled", label: __("Status"), sortable: true, format: (v, doc) => status_chip(doc, can_write) },
 	{ fieldname: "device", label: __("Device"), type: "avatar", sortable: true },
-	{ fieldname: "send_count", label: __("Sent"), type: "number", align: "end", sortable: true },
+	{ fieldname: "send_count", label: __("Sent"), type: "number", sortable: true },
 	{ fieldname: "next_run_at", label: __("Next run"), type: "date", sortable: true, format: (v) => (v ? frappe.datetime.str_to_user(v) : "") },
 	{ fieldname: "modified", label: __("Last updated"), type: "date", sortable: true, hidden_xs: true, format: (v) => (v ? frappe.datetime.str_to_user(v, false, true) : "") },
 ];
@@ -126,8 +134,6 @@ frappe.listview_settings[DOCTYPE] = {
 		if (has_header) {
 			listview._sanad_header = new sanad.ui.PageHeader({
 				listview,
-				title: __("Notification alerts"),
-				description: __("Reports and messages sent on a schedule — daily, weekly, monthly — from a chosen device."),
 				primary: { label: __("New alert"), icon: "es-line-add", perm: "create", handler: new_alert },
 				stats: STATS(),
 			});

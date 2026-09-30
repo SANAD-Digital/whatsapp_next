@@ -8,8 +8,7 @@ import importlib
 import frappe
 from frappe.tests import IntegrationTestCase
 
-from whatsapp_next.install import PRODUCT_ROLES, command_service_user_email
-from whatsapp_next.patches.v0_1.add_indexes import expected_indexes
+from whatsapp_next.install import PRODUCT_ROLES, command_service_user_email, expected_indexes
 
 MODULES = (
 	"whatsapp_next.hooks",
@@ -29,8 +28,6 @@ MODULES = (
 	"whatsapp_next.services.audit",
 	"whatsapp_next.services.notifications",
 	"whatsapp_next.services.numbers_materializer",
-	"whatsapp_next.patches.v0_1.add_indexes",
-	"whatsapp_next.patches.v0_1.backfill_contact_phone_e164",
 )
 
 

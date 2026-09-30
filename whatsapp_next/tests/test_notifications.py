@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import inspect
 from unittest.mock import patch
 
 import frappe
@@ -17,6 +18,7 @@ from whatsapp_next.tests.conftest_frappe import (
 	ensure_contact,
 	ensure_device,
 	ensure_settings,
+	job_kwargs,
 )
 
 PHONE = "+966500000901"
@@ -77,7 +79,9 @@ class TestNotifications(IntegrationTestCase):
 			if c.args[0] == "whatsapp_next.services.notifications.send_for_document"
 		]
 		self.assertEqual(len(calls), 1)  # after_insert only; the on_update of the insert does not fire "New"
-		self.assertEqual(calls[0].kwargs["event"], "New")
+		self.assertEqual(calls[0].kwargs["doc_event"], "New")
+		# what reaches the job is what `frappe.enqueue` does not keep for itself (`event=` it does)
+		inspect.signature(svc.send_for_document).bind(**job_kwargs(calls[0]))
 		self.assertTrue(calls[0].kwargs["enqueue_after_commit"])
 		# Save fires on update, not on insert (reload: the document may have been touched since)
 		notif.reload()
@@ -86,7 +90,7 @@ class TestNotifications(IntegrationTestCase):
 		with patch.object(frappe, "enqueue") as enq:
 			todo.description = "notif-test changed"
 			todo.save(ignore_permissions=True)
-		self.assertEqual(len([c for c in enq.call_args_list if c.kwargs.get("event") == "Save"]), 1)
+		self.assertEqual(len([c for c in enq.call_args_list if c.kwargs.get("doc_event") == "Save"]), 1)
 		# a failing condition never blocks the document, and is recorded
 		notif.reload()
 		notif.condition = "doc.nonexistent.attr > 1"
@@ -108,8 +112,9 @@ class TestNotifications(IntegrationTestCase):
 			self.assertEqual(enq.call_count, 0)
 			todo.status = "Closed"
 			todo.save(ignore_permissions=True)
-		self.assertGreaterEqual(
-			len([c for c in enq.call_args_list if c.kwargs.get("event") == "Value Change"]), 1
+		# exactly once: `on_update` and `on_change` both run on a save, only `on_change` listens
+		self.assertEqual(
+			len([c for c in enq.call_args_list if c.kwargs.get("doc_event") == "Value Change"]), 1
 		)
 		notif.event = "Method"
 		notif.method = "on_update"
@@ -117,7 +122,20 @@ class TestNotifications(IntegrationTestCase):
 		with patch.object(frappe, "enqueue") as enq:
 			todo.description = "notif-test method"
 			todo.save(ignore_permissions=True)
-		self.assertEqual(len([c for c in enq.call_args_list if c.kwargs.get("event") == "Method"]), 1)
+		self.assertEqual(len([c for c in enq.call_args_list if c.kwargs.get("doc_event") == "Method"]), 1)
+		# a Method notification on `validate` fires too (it used to return before the loop)
+		notif.method = "validate"
+		notif.save(ignore_permissions=True)
+		with patch.object(frappe, "enqueue") as enq:
+			todo.description = "notif-test validate"
+			todo.save(ignore_permissions=True)
+		self.assertEqual(len([c for c in enq.call_args_list if c.kwargs.get("doc_event") == "Method"]), 1)
+		# `on_update_after_submit` (hooked in doc_events["*"]) reaches a Method notification set to it
+		notif.method = "on_update_after_submit"
+		notif.save(ignore_permissions=True)
+		with patch.object(frappe, "enqueue") as enq:
+			svc.on_doc_event(todo, "on_update_after_submit")
+		self.assertEqual(len([c for c in enq.call_args_list if c.kwargs.get("doc_event") == "Method"]), 1)
 
 	def test_send_for_document(self):
 		contact = ensure_contact("Notif Contact", PHONE)
@@ -174,6 +192,12 @@ class TestNotifications(IntegrationTestCase):
 		notif.save(ignore_permissions=True)
 		recips = svc.resolve_recipients(frappe.get_doc("WhatsApp Notification", notif.name), todo2)
 		self.assertEqual([(r.phone_e164, r.contact) for r in recips], [(PHONE, contact)])
+		# the body is rendered for each recipient: `{{ recipient.display_name }}` is filled, as in the preview
+		with patch.object(frappe, "enqueue"):
+			svc.send_for_document(notif.name, "ToDo", todo2.name, "New")
+		body = frappe.db.get_value("WhatsApp Log", {"notification": notif.name, "reference_name": todo2.name}, "body")
+		self.assertTrue(recips[0].display_name)
+		self.assertTrue(body.endswith(f"for {recips[0].display_name}"), body)
 		# missing document / disabled → skipped
 		self.assertEqual(svc.send_for_document(notif.name, "ToDo", "nope", "New")["skipped"], 1)
 		# a template render error is recorded and nothing is sent
@@ -202,6 +226,39 @@ class TestNotifications(IntegrationTestCase):
 		notif.datetime_changed = "modified"
 		notif.minutes_offset = 0
 		notif.save(ignore_permissions=True)
-		with patch.object(frappe, "enqueue") as enq:
+		# the run of the next 5-minute slot covers the slot both ToDos were modified in
+		from frappe.utils import add_to_date, now_datetime
+
+		later = add_to_date(now_datetime(), minutes=5)
+		with patch.object(frappe, "enqueue") as enq, patch.object(svc, "now_datetime", return_value=later):
 			n = svc.trigger_offset()
-		self.assertGreaterEqual(n, 2)  # both ToDos were modified within the last 5 minutes
+		self.assertGreaterEqual(n, 2)
+
+	def test_offset_windows_tile(self):
+		"""Cron runs that start a few seconds late still cover every minute exactly once; a second run
+		in the same slot sees the same window (the job dedup absorbs it), never a shifted one."""
+		from datetime import datetime
+
+		notif = frappe._dict(document_type="ToDo", event="Minutes After", datetime_changed="modified", minutes_offset=10)
+		seen = []
+		with patch.object(frappe, "get_all", side_effect=lambda *a, **k: seen.append(k["filters"]) or []):
+			for now in (
+				datetime(2026, 9, 30, 10, 0, 7),
+				datetime(2026, 9, 30, 10, 4, 58),
+				datetime(2026, 9, 30, 10, 5, 59),
+				datetime(2026, 9, 30, 10, 10, 1),
+			):
+				with patch.object(svc, "now_datetime", return_value=now):
+					svc.documents_due(notif)
+		bounds = [(str(f[0][2]), str(f[1][2])) for f in seen]
+		self.assertEqual(
+			bounds,
+			[
+				("2026-09-30 09:45:00", "2026-09-30 09:50:00"),
+				("2026-09-30 09:45:00", "2026-09-30 09:50:00"),  # the same slot: the same window
+				("2026-09-30 09:50:00", "2026-09-30 09:55:00"),
+				("2026-09-30 09:55:00", "2026-09-30 10:00:00"),
+			],
+		)
+		self.assertEqual([f[0][1] for f in seen], [">="] * 4)
+		self.assertEqual([f[1][1] for f in seen], ["<"] * 4)

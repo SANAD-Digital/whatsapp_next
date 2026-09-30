@@ -1,5 +1,5 @@
 // whatsapp_command list settings — the Commands screen (matrix row 8, spec §5.5, D-064 prototype
-// anatomy): PageHeader (title, "+ New command" → the command editor, "Functions Center N" with the
+// anatomy): PageHeader (page bar: "+ New command" → the command editor, "Functions Center N" with the
 // installed-functions count, KPIs Commands · Active · Runs (30d) · Inbound without a match),
 // FilterBar, DataList (Command word · Function · Synonyms · Allowed parties · Status · Runs (30d) ·
 // View → the command editor, D-132), row actions (edit, start / stop, restore
@@ -11,10 +11,11 @@ frappe.provide("whatsapp_next");
 (function () {
 	const ui = sanad.ui;
 	const DT = "WhatsApp Command";
-	const MANAGER = "WhatsApp Manager";
+	// the API gates writes on either role (`_roles.MANAGER`); a System Manager is not a viewer here
+	const MANAGERS = ["WhatsApp Manager", "System Manager"];
 	const FUNCTIONS_ROUTE = "wa-functions-center";
 
-	const is_manager = () => frappe.user.has_role(MANAGER);
+	const is_manager = () => frappe.user.has_role(MANAGERS);
 	const synonyms_of = (text) => cstr(text).split(/[\n,،]/).map((s) => s.trim()).filter(Boolean);
 
 	/** The form script holds the modal; lists do not load it, so evaluate it from the meta once. */
@@ -107,9 +108,7 @@ frappe.provide("whatsapp_next");
 			});
 		const header = new ui.PageHeader({
 			listview,
-			title: __("Commands"),
-			description: __("A command is a word the customer types. The function is what runs behind it and reads from the ledger."),
-			primary: is_manager() ? { label: __("New command"), icon: "es-line-add", roles: [MANAGER], handler: () => open_modal(listview) } : undefined,
+			primary: is_manager() ? { label: __("New command"), icon: "es-line-add", roles: MANAGERS, handler: () => open_modal(listview) } : undefined,
 			secondary: [
 				{
 					label: __("Functions Center"),
@@ -153,7 +152,7 @@ frappe.provide("whatsapp_next");
 			ui.call("commands.list_commands", { filters: {}, page: 1, page_length: 200 }, { silent: true }).catch(() => ({ rows: [] })),
 			// a child table is read through its parent DocType: Frappe 16 names that argument
 			// `parent_doctype` (`parent` reached `DatabaseQuery.execute()` and answered with a 500)
-			frappe.db.get_list("WhatsApp Command Party Type", { parent_doctype: DT, fields: ["parent", "party_type"], filters: { parenttype: DT, parent: ["in", names] }, limit: 500 }).catch(() => []),
+			frappe.db.get_list("WhatsApp Command Party Type", { parent_doctype: DT, fields: ["parent", "party_type"], filters: { parenttype: DT, parent: ["in", names] }, order_by: "idx asc", limit: 500 }).catch(() => []),
 		]).then(([api, parties]) => {
 			const by_name = {};
 			(api.rows || []).forEach((r) => (by_name[r.name] = r));
@@ -163,7 +162,7 @@ frappe.provide("whatsapp_next");
 				const r = by_name[d.name] || {};
 				d._extra = { function_name: r.function_name || d.function, function_status: r.function_status, run_count_30d: cint(r.run_count_30d), parties: party_map[d.name] || [] };
 			});
-			datalist && datalist.refresh && datalist.refresh();
+			datalist && datalist.render && datalist.render(); // redraw the rows in hand; `refresh()` refetches and drops the enrichment
 		});
 	};
 
@@ -180,14 +179,20 @@ frappe.provide("whatsapp_next");
 					sortable: true,
 					format: (v, doc) => {
 						const x = doc._extra || {};
-						const name = ui.escape(x.function_name || v || "—");
+						const name = ui.escape(x.function_name ? __(x.function_name) : v || "—");
 						return x.function_status && x.function_status !== "Active" ? `${name} <span class="text-muted">· ${ui.escape(__("stopped"))}</span>` : name;
 					},
 				},
 				{ fieldname: "synonyms", label: __("Synonyms"), sortable: false, format: (v) => `<span class="text-muted">${ui.escape(synonyms_of(v).join(__(", ")) || "—")}</span>` },
-				{ fieldname: "_parties", label: __("Allowed parties"), sortable: false, format: (v, doc) => `<span class="text-muted">${ui.escape(doc._extra && doc._extra.parties.length ? doc._extra.parties.join(__(", ")) : __("Everyone"))}</span>` },
+				{
+					fieldname: "_parties",
+					label: __("Allowed parties"),
+					sortable: false,
+					// a command gated by a contact group is for that group, whatever party types it lists
+					format: (v, doc) => `<span class="text-muted">${ui.escape(doc.allowed_group || (doc._extra && doc._extra.parties.length ? doc._extra.parties.join(__(", ")) : __("Everyone")))}</span>`,
+				},
 				{ fieldname: "status", label: __("Status"), type: "status", sortable: true },
-				{ fieldname: "_runs", label: __("Runs (30d)"), type: "number", align: "end", sortable: false, format: (v, doc) => ui.format_int(doc._extra ? doc._extra.run_count_30d : 0) },
+				{ fieldname: "_runs", label: __("Runs (30d)"), type: "number", fieldtype: "Int", sortable: false, format: (v, doc) => ui.format_int(doc._extra ? doc._extra.run_count_30d : 0) },
 			],
 			row_action: { label: __("View"), handler: (doc) => view_command(listview, doc) },
 			on_row_click: (doc) => view_command(listview, doc),
@@ -201,11 +206,11 @@ frappe.provide("whatsapp_next");
 		new ui.RowActions({
 			listview,
 			actions: [
-				{ label: __("Edit"), icon: ui.icons.edit, roles: [MANAGER], handler: (doc) => edit_command(listview, doc) },
-				{ label: __("Start"), icon: "es-line-check", roles: [MANAGER], condition: (doc) => doc.status !== "Active", handler: (doc) => set_status(listview, doc.name, "Active") },
-				{ label: __("Stop"), icon: "es-line-close", roles: [MANAGER], condition: (doc) => doc.status === "Active", handler: (doc) => set_status(listview, doc.name, "Inactive") },
-				{ label: __("Restore defaults"), icon: ui.icons.resend, roles: [MANAGER], condition: (doc) => doc.status !== "Active", handler: (doc) => restore_defaults(listview, doc) },
-				{ label: __("Test"), icon: ui.icons.quick_send, roles: [MANAGER], handler: (doc) => test_command(doc) },
+				{ label: __("Edit"), icon: ui.icons.edit, roles: MANAGERS, handler: (doc) => edit_command(listview, doc) },
+				{ label: __("Start"), icon: "es-line-check", roles: MANAGERS, condition: (doc) => doc.status !== "Active", handler: (doc) => set_status(listview, doc.name, "Active") },
+				{ label: __("Stop"), icon: "es-line-close", roles: MANAGERS, condition: (doc) => doc.status === "Active", handler: (doc) => set_status(listview, doc.name, "Inactive") },
+				{ label: __("Restore defaults"), icon: ui.icons.resend, roles: MANAGERS, condition: (doc) => doc.status !== "Active", handler: (doc) => restore_defaults(listview, doc) },
+				{ label: __("Test"), icon: ui.icons.quick_send, roles: MANAGERS, handler: (doc) => test_command(doc) },
 			],
 			on_row_click: (doc) => view_command(listview, doc),
 		});
@@ -216,15 +221,15 @@ frappe.provide("whatsapp_next");
 		new ui.BulkActions({
 			listview,
 			actions: [
-				{ label: __("Start selected"), method: "commands.set_status_many", args: () => ({ status: "Active" }), roles: [MANAGER] },
-				{ label: __("Stop selected"), method: "commands.set_status_many", args: () => ({ status: "Inactive" }), roles: [MANAGER] },
+				{ label: __("Start selected"), method: "commands.set_status_many", args: () => ({ status: "Active" }), roles: MANAGERS },
+				{ label: __("Stop selected"), method: "commands.set_status_many", args: () => ({ status: "Inactive" }), roles: MANAGERS },
 			],
 		});
 	}
 
 	frappe.listview_settings[DT] = {
 		hide_name_column: true,
-		add_fields: ["status", "code", "title", "function", "synonyms", "reply_device", "run_count", "last_run_at"],
+		add_fields: ["status", "code", "title", "function", "synonyms", "allowed_group", "run_count", "last_run_at"],
 		get_indicator(doc) {
 			return doc.status === "Active" ? [__("Active"), "green", "status,=,Active"] : [__("Inactive"), "gray", "status,=,Inactive"];
 		},

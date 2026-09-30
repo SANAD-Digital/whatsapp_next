@@ -83,11 +83,30 @@ export function dl(rows = [], { columns = 2 } = {}) {
 		.map((r) => {
 			if (!r || r.value == null || r.value === "") return "";
 			const is_html = typeof r.value === "string" && /^\s*</.test(r.value);
-			return `<div class="sanad-dl__row${r.wide ? " sanad-dl__row--wide" : ""}"><dt>${ui.escape(r.label || "")}</dt><dd${r.ltr ? ' dir="ltr"' : ' dir="auto"'}>${is_html ? r.value : ui.escape(r.value)}</dd></div>`;
+			return `<div class="sanad-dl__row${r.wide ? " sanad-dl__row--wide" : ""}"><dt>${ui.escape(r.label || "")}</dt><dd>${is_html ? r.value : `<span dir="${r.ltr ? "ltr" : "auto"}">${ui.escape(r.value)}</span>`}</dd></div>`;
 		})
 		.filter(Boolean)
 		.join("");
 	return body ? `<dl class="sanad-dl sanad-dl--cols-${columns}">${body}</dl>` : "";
+}
+
+/**
+ * Key / value rows — the drawer's data, one field per row: the key in a fixed column at the
+ * start, its value beside it, a hairline between rows. A long value (`wide`) takes the row's
+ * whole width under its key instead of squeezing into the value column.
+ */
+export function kv(rows = []) {
+	const body = rows
+		.map((r) => {
+			if (!r || r.value == null || r.value === "") return "";
+			const is_html = typeof r.value === "string" && /^\s*</.test(r.value);
+			const icon = r.icon ? `<span class="sanad-kv__icon" aria-hidden="true">${ui.icon(r.icon, "sm")}</span>` : "";
+			const value = is_html ? r.value : `<span dir="${r.ltr ? "ltr" : "auto"}">${ui.escape(r.value)}</span>`;
+			return `<div class="sanad-kv__row${r.wide ? " sanad-kv__row--wide" : ""}"><dt>${icon}<span>${ui.escape(r.label || "")}</span></dt><dd>${value}</dd></div>`;
+		})
+		.filter(Boolean)
+		.join("");
+	return body ? `<dl class="sanad-kv">${body}</dl>` : "";
 }
 
 /** Code / JSON preview with a copy button (`inline` truncates to one line). */

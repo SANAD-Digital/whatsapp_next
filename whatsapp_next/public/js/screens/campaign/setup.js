@@ -57,7 +57,7 @@ frappe.provide("whatsapp_next.campaign");
 		 */
 		mount_controls() {
 			const frm = this.frm;
-			const editable = this.ctx.can_edit();
+			const editable = this.ctx.can_edit_content();
 			const $el = this.$wrapper;
 			this.$device = $el.find('[data-field="device"]');
 
@@ -78,7 +78,8 @@ frappe.provide("whatsapp_next.campaign");
 					render_input: true,
 					only_input: true,
 				});
-			const at = this.doc.scheduled_at;
+			// `scheduled_at` is stored in system time; the date and the clock show the reader's own
+			const at = this.doc.scheduled_at ? frappe.datetime.convert_to_user_tz(this.doc.scheduled_at) : null;
 			this.date = control("date", { fieldtype: "Date", placeholder: __("Choose the date"), change: () => ready && this.commit_when() });
 			this.time = control("time", { fieldtype: "Time", placeholder: __("Choose the time"), change: () => ready && this.commit_when() });
 			if (at) {
@@ -269,6 +270,8 @@ frappe.provide("whatsapp_next.campaign");
 			const $el = this.$wrapper;
 			const editable = this.ctx.can_edit();
 			if (!editable) $el.find("input, select, textarea").prop("disabled", true);
+			// a paused campaign keeps its device and its send time (see `can_edit_content`)
+			else if (!this.ctx.can_edit_content()) $el.find('[data-field="device"], input[name="wa-cb-when"]').prop("disabled", true);
 
 
 			$el.on("click", ".wa-cb__card--fold .wa-cb__card-head", (e) => {
@@ -325,7 +328,7 @@ frappe.provide("whatsapp_next.campaign");
 			const $el = this.$wrapper;
 			const scheduled = $el.find('input[name="wa-cb-when"]:checked').val() === "scheduled";
 			const $error = $el.find("[data-when-error]");
-			this.set_when_enabled(scheduled && this.ctx.can_edit());
+			this.set_when_enabled(scheduled && this.ctx.can_edit_content());
 			const fail = (message) => {
 				$error.text(message).removeAttr("hidden");
 				return false;
@@ -346,7 +349,11 @@ frappe.provide("whatsapp_next.campaign");
 			if (frappe.datetime.str_to_obj(value) <= frappe.datetime.str_to_obj(frappe.datetime.now_datetime())) {
 				return fail(__("The time has already passed. Choose a time in the future."));
 			}
-			return this.frm.set_value("scheduled_at", value);
+			// typed on the reader's clock, stored in system time — the server compares it with its own
+			const stored = frappe.datetime.convert_to_system_tz(value);
+			// the round trip through the zones must not dirty an unchanged document
+			if (this.doc.scheduled_at && String(this.doc.scheduled_at).slice(0, 19) === stored) return true;
+			return this.frm.set_value("scheduled_at", stored);
 		}
 
 	};

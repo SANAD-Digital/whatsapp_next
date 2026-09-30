@@ -164,12 +164,12 @@ def get_progress(name: str) -> dict[str, Any]:
 	return runner.progress(name)
 
 
-@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
+@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"), schema={"days": {"min": 1, "max": 365}})
 def get_overview(days: int = 30) -> dict[str, Any]:
 	"""What every campaign together is doing — the console's metric row.
 
 	`states` counts campaigns by status; `in_flight` is the recipients of the active campaigns
-	that have neither been sent nor failed; `per_minute` is what campaign messages actually
+	still `Pending` or `Queued` (nothing of theirs has left yet); `per_minute` is what campaign messages actually
 	achieved over the last hour; `totals` are the recipients, sent, delivered, read and failed of
 	the campaigns started in the last `days` (1–365), which is what the delivery and read rates
 	are a share of.
@@ -182,13 +182,24 @@ def get_overview(days: int = 30) -> dict[str, Any]:
 	for row in frappe.qb.from_(C).select(C.status, Count("*").as_("n")).groupby(C.status).run(as_dict=True):
 		states[row["status"]] = cint(row["n"])
 
-	active = frappe.get_all(
-		"WhatsApp Campaign",
-		filters={"status": ("in", ("Running", "Queued", "Paused"))},
-		fields=["total_recipients", "sent_count", "failed_count"],
-		limit_page_length=0,
+	# The recipients of the active campaigns still waiting for a message. Counted on the recipient
+	# rows: the campaign counters count *messages* (recipients × messages) in disjoint buckets, so
+	# `total_recipients - sent_count - failed_count` mixed units and counted every delivered or read
+	# recipient as still in flight.
+	R = frappe.qb.DocType("WhatsApp Campaign Recipient")
+	in_flight = cint(
+		(
+			frappe.qb.from_(R)
+			.join(C)
+			.on(R.parent == C.name)
+			.select(Count("*"))
+			.where(
+				(R.parenttype == "WhatsApp Campaign")
+				& C.status.isin(["Running", "Queued", "Paused"])
+				& R.status.isin(["Pending", "Queued"])
+			)
+		).run()[0][0]
 	)
-	in_flight = sum(max(0, cint(r.total_recipients) - cint(r.sent_count) - cint(r.failed_count)) for r in active)
 
 	# The campaign counters are four disjoint buckets: a message that was read is not also counted
 	# as sent. The rates a console shows are stage shares, so the buckets are rolled up here —

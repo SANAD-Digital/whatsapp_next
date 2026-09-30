@@ -221,7 +221,7 @@ sanad.ui.ChatThread = class ChatThread {
 		const clickable = !!this.opts.on_row_click;
 		const highlight = this.opts.highlight && row.name === this.opts.highlight;
 		const type = row.message_type || "Text";
-		const who = row.display_name || row.key || "";
+		const who = row.display_name || ui.phone(row.key || "");
 		const status_label = STATUS[row.status] ? STATUS[row.status].label() : row.status || "";
 		const aria = out ? __("Sent message, {0}", [status_label]) : __("Received message from {0}", [who]);
 		let inner = "";

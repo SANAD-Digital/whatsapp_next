@@ -237,9 +237,9 @@ frappe.provide("sanad.ui");
 			const runs = sanad.ui.format_int(cint(this.data.command.runs_30d));
 			const fn = this.fn_row();
 			const tabs = [
-				{ key: "setup", label: __("Setup") },
-				{ key: "perms", label: __("Permissions"), count: d.allowed_party_types.length },
-				{ key: "preview", label: __("Preview") },
+				{ key: "setup", label: __("Setup", null, "Command Editor") },
+				{ key: "perms", label: __("Permissions", null, "Command Editor"), count: d.allowed_party_types.length },
+				{ key: "preview", label: __("Preview", null, "Command Editor") },
 			];
 			return `
 				<div class="sanad-ce__head">
@@ -268,7 +268,7 @@ frappe.provide("sanad.ui");
 						</span>
 						<span class="sanad-ce__meta">
 							<span class="sanad-ce__runs">${this.runs_html(runs)}</span>
-							<button type="button" class="sanad-ce__fnchip" data-act="open-fn" title="${esc(__("Change the function"))}">${esc(fn ? fn.function_name || fn.name : __("No function"))}</button>
+							<button type="button" class="sanad-ce__fnchip" data-act="open-fn" title="${esc(__("Change the function"))}">${esc(fn ? __(fn.function_name || fn.name) : __("No function"))}</button>
 						</span>
 					</div>
 				</div>`;
@@ -307,9 +307,9 @@ frappe.provide("sanad.ui");
 			const fn = this.fn_row();
 			const q = (this.ui.fn_q == null ? "" : this.ui.fn_q).trim().toLowerCase();
 			const matches = ((this.data && this.data.functions) || [])
-				.filter((f) => !q || `${f.function_name || ""} ${f.name} ${f.category || ""}`.toLowerCase().includes(q))
+				.filter((f) => !q || `${f.function_name || ""} ${__(f.function_name || "")} ${f.name} ${f.category || ""}`.toLowerCase().includes(q))
 				.slice(0, 40);
-			const fn_value = this.ui.fn_q == null ? (fn ? fn.function_name || fn.name : "") : this.ui.fn_q;
+			const fn_value = this.ui.fn_q == null ? (fn ? __(fn.function_name || fn.name) : "") : this.ui.fn_q;
 			const suggested = (spec && spec.suggested_commands) || [];
 			return `
 				<div class="sanad-ce__field">
@@ -322,7 +322,7 @@ frappe.provide("sanad.ui");
 									${matches
 										.map(
 											(f) => `<button type="button" role="option" class="sanad-ce__opt${f.name === d.function ? " is-sel" : ""}" aria-selected="${f.name === d.function}" data-act="pick-fn" data-key="${esc(f.name)}">
-												${esc(f.function_name || f.name)}<span class="sanad-ce__opt-sub">${esc(f.category || "")}${f.status === "Active" ? "" : ` · ${esc(__("paused"))}`}</span>
+												${esc(__(f.function_name || f.name))}<span class="sanad-ce__opt-sub">${esc(f.category ? __(f.category) : "")}${f.status === "Active" ? "" : ` · ${esc(__("paused"))}`}</span>
 											</button>`
 										)
 										.join("")}
@@ -331,7 +331,7 @@ frappe.provide("sanad.ui");
 								: ""
 						}
 					</span>
-					${spec && spec.when_to_use ? `<span class="sanad-ce__note">${esc(spec.when_to_use)}</span>` : ""}
+					${spec && spec.when_to_use ? `<span class="sanad-ce__note">${esc(__(spec.when_to_use))}</span>` : ""}
 				</div>
 				${
 					fn && fn.status !== "Active"
@@ -375,7 +375,7 @@ frappe.provide("sanad.ui");
 							)
 							.join("")}
 					</div>
-					${d.allowed_party_types.length ? "" : `<span class="sanad-ce__note sanad-ce__note--danger">${esc(__("No type allowed — the command will not run for any party."))}</span>`}
+					${d.allowed_party_types.length ? "" : `<span class="sanad-ce__note sanad-ce__note--danger">${esc(__("Pick at least one party type — the command cannot be saved without one."))}</span>`}
 					<span class="sanad-ce__note">${esc(__("Each type's white and black lists are in the Permissions tab."))}</span>
 				</div>
 				<label class="sanad-ce__switch-card">
@@ -397,15 +397,15 @@ frappe.provide("sanad.ui");
 						<div class="sanad-ce__card-row">
 							<span class="sanad-ce__card-title">
 								<span class="sanad-ce__mono" dir="ltr">#${esc(v.key)}</span>
-								<span class="sanad-ce__sub">${esc(v.label || "")}</span>
+								<span class="sanad-ce__sub">${esc(v.label ? __(v.label) : "")}</span>
 								<span class="sanad-ce__tag sanad-ce__mono" dir="ltr">${esc(v.type || "str")}</span>
 								${v.required ? `<span class="sanad-ce__tag sanad-ce__tag--warn">${esc(__("Required"))}</span>` : ""}
 							</span>
 							<input type="checkbox" class="sanad-ce__check" data-ch="var" data-key="${esc(v.key)}" ${on ? "checked" : ""} title="${esc(__("Enable the variable in this command"))}" aria-label="${esc(
-								__("Enable {0} in this command", [v.label || v.key])
+								__("Enable {0} in this command", [v.label ? __(v.label) : v.key])
 							)}" />
 						</div>
-						${v.details ? `<span class="sanad-ce__note">${esc(v.details)}</span>` : ""}
+						${v.details ? `<span class="sanad-ce__note">${esc(__(v.details))}</span>` : ""}
 						${v.example ? `<span class="sanad-ce__example sanad-ce__mono" dir="ltr">${esc(v.example)}</span>` : ""}
 					</div>`;
 				})
@@ -428,7 +428,7 @@ frappe.provide("sanad.ui");
 
 		setting_note(s) {
 			const def = s.fieldtype === "Check" ? (cint(s.default_value) ? __("Yes") : __("No")) : s.default_value == null || s.default_value === "" ? "—" : s.default_value;
-			return __("Default: {0}", [def]) + (s.notes ? ` — ${s.notes}` : "");
+			return __("Default: {0}", [def]) + (s.notes ? ` — ${__(s.notes)}` : "");
 		}
 
 		render_setting(s, layout) {
@@ -437,22 +437,22 @@ frappe.provide("sanad.ui");
 			const f = `set-${s.key}-${layout}`;
 			const type_label = { check: __("Yes / No"), number: __("Number"), select: __("List"), text: __("Text") }[kind];
 			let control;
-			if (kind === "check") control = `<input type="checkbox" class="sanad-ce__check" data-ch="setting" data-key="${esc(s.key)}" ${cint(value) ? "checked" : ""} aria-label="${esc(s.label)}" />`;
-			else if (kind === "number") control = `<input type="number" class="sanad-ce__input sanad-ce__input--num sanad-ce__mono" data-f="${esc(f)}" data-in="setting" data-key="${esc(s.key)}" value="${esc(value == null ? "" : value)}" aria-label="${esc(s.label)}" />`;
+			if (kind === "check") control = `<input type="checkbox" class="sanad-ce__check" data-ch="setting" data-key="${esc(s.key)}" ${cint(value) ? "checked" : ""} aria-label="${esc(__(s.label))}" />`;
+			else if (kind === "number") control = `<input type="number" class="sanad-ce__input sanad-ce__input--num sanad-ce__mono" data-f="${esc(f)}" data-in="setting" data-key="${esc(s.key)}" value="${esc(value == null ? "" : value)}" aria-label="${esc(__(s.label))}" />`;
 			else if (kind === "select")
-				control = `<select class="sanad-ce__input sanad-ce__select" data-ch="setting" data-key="${esc(s.key)}" aria-label="${esc(s.label)}">${(s.choices || [])
+				control = `<select class="sanad-ce__input sanad-ce__select" data-ch="setting" data-key="${esc(s.key)}" aria-label="${esc(__(s.label))}">${(s.choices || [])
 					.map((c) => `<option value="${esc(c)}" ${String(value) === String(c) ? "selected" : ""}>${esc(c)}</option>`)
 					.join("")}</select>`;
-			else control = `<input type="text" class="sanad-ce__input sanad-ce__input--text" data-f="${esc(f)}" data-in="setting" data-key="${esc(s.key)}" value="${esc(value == null ? "" : value)}" aria-label="${esc(s.label)}" />`;
+			else control = `<input type="text" class="sanad-ce__input sanad-ce__input--text" data-f="${esc(f)}" data-in="setting" data-key="${esc(s.key)}" value="${esc(value == null ? "" : value)}" aria-label="${esc(__(s.label))}" />`;
 			if (layout === "row") {
 				return `<div class="sanad-ce__card sanad-ce__card--row sanad-ce__card--surface">
-					<span class="sanad-ce__switch-text"><span class="sanad-ce__card-name">${esc(s.label)}</span><span class="sanad-ce__note">${esc(this.setting_note(s))}</span></span>
+					<span class="sanad-ce__switch-text"><span class="sanad-ce__card-name">${esc(__(s.label))}</span><span class="sanad-ce__note">${esc(this.setting_note(s))}</span></span>
 					<span class="sanad-ce__control">${control}</span>
 				</div>`;
 			}
 			return `<div class="sanad-ce__card">
 				<div class="sanad-ce__card-row">
-					<span class="sanad-ce__card-title"><span class="sanad-ce__card-name">${esc(s.label)}</span><span class="sanad-ce__tag">${esc(type_label)}</span></span>
+					<span class="sanad-ce__card-title"><span class="sanad-ce__card-name">${esc(__(s.label))}</span><span class="sanad-ce__tag">${esc(type_label)}</span></span>
 					<span class="sanad-ce__control">${control}</span>
 				</div>
 				<span class="sanad-ce__note">${esc(this.setting_note(s))}</span>
@@ -475,10 +475,10 @@ frappe.provide("sanad.ui");
 					const k = compact ? "pv" : "st";
 					return `<div class="sanad-ce__out">
 						<span class="sanad-ce__card-row sanad-ce__card-row--wrap">
-							<span class="sanad-ce__out-name">${esc(o.label || o.output_key)}</span>
+							<span class="sanad-ce__out-name">${esc(o.label ? __(o.label) : o.output_key)}</span>
 							<span class="sanad-ce__tag">${esc(is_doc ? __("Document", null, "Command Editor") : __("Text"))}</span>
 						</span>
-						${o.notes && !compact ? `<span class="sanad-ce__note">${esc(o.notes)}</span>` : ""}
+						${o.notes && !compact ? `<span class="sanad-ce__note">${esc(__(o.notes))}</span>` : ""}
 						${
 							is_doc
 								? `${compact ? "" : `<label class="sanad-ce__sub" for="${this.id}-pf-${i}">${esc(__("Print format"))}</label><input id="${this.id}-pf-${i}" type="text" dir="ltr" class="sanad-ce__input sanad-ce__mono sanad-ce__input--sm" data-f="out-pf-${i}-${k}" data-in="out-pf" data-key="${i}" value="${esc(o.print_format || "")}" placeholder="${esc(__("Standard"))}" />`}
@@ -558,7 +558,7 @@ frappe.provide("sanad.ui");
 								${results
 									.map(
 										(r) => `<button type="button" role="option" class="sanad-ce__opt" data-act="pick-add" data-key="${esc(k)}" data-name="${esc(r.name)}">${esc(r.label || r.name)}${
-											r.phone ? `<span class="sanad-ce__opt-sub sanad-ce__mono" dir="ltr">${esc(r.phone)}</span>` : ""
+											r.phone ? `<span class="sanad-ce__opt-sub sanad-ce__mono" dir="ltr">${esc(sanad.ui.phone(r.phone))}</span>` : ""
 										}</button>`
 									)
 									.join("")}
@@ -630,7 +630,7 @@ frappe.provide("sanad.ui");
 								? `<span class="sanad-ce__pop" role="listbox">
 									${(pv.results || [])
 										.map(
-											(r) => `<button type="button" role="option" class="sanad-ce__opt${c && r.name === c.name ? " is-sel" : ""}" data-act="pv-pick" data-name="${esc(r.name)}" data-keep>${esc(r.label || __("Unnamed"))}<span class="sanad-ce__opt-sub sanad-ce__mono" dir="ltr">${esc(r.phone || "")}</span></button>`
+											(r) => `<button type="button" role="option" class="sanad-ce__opt${c && r.name === c.name ? " is-sel" : ""}" data-act="pv-pick" data-name="${esc(r.name)}" data-keep>${esc(r.label || __("Unnamed"))}<span class="sanad-ce__opt-sub sanad-ce__mono" dir="ltr">${esc(sanad.ui.phone(r.phone || ""))}</span></button>`
 										)
 										.join("")}
 									${pv.loading ? `<span class="sanad-ce__none">${esc(__("Loading…"))}</span>` : (pv.results || []).length ? "" : `<span class="sanad-ce__none">${esc(pv.error || __("No matching contacts."))}</span>`}
@@ -679,7 +679,7 @@ frappe.provide("sanad.ui");
 				<div class="sanad-ce__phone">
 					<div class="sanad-ce__phone-head">
 						<span class="sanad-ce__avatar" aria-hidden="true">${esc(String((c && c.label) || "?").trim().slice(0, 2))}</span>
-						<span class="sanad-ce__switch-text"><span class="sanad-ce__card-name">${esc(c ? c.label || __("Unnamed") : __("Unknown number"))}</span><span class="sanad-ce__opt-sub sanad-ce__mono" dir="ltr">${esc((c && c.phone) || "")}</span></span>
+						<span class="sanad-ce__switch-text"><span class="sanad-ce__card-name">${esc(c ? c.label || __("Unnamed") : __("Unknown number"))}</span><span class="sanad-ce__opt-sub sanad-ce__mono" dir="ltr">${esc(sanad.ui.phone((c && c.phone) || ""))}</span></span>
 						<span class="sanad-ce__tag ${unlinked ? "sanad-ce__tag--warn" : "sanad-ce__tag--ok"}">${esc(unlinked ? __("Not linked") : __("Linked to an account", null, "Command Editor"))}</span>
 					</div>
 					<span class="sanad-ce__phone-note">${esc(__("The reply is built from the output texts and the function's options, run for real without sending."))}</span>
@@ -1123,8 +1123,10 @@ frappe.provide("sanad.ui");
 			this.touch();
 		}
 
+		/** The function's outputs as the site set them (its own text, else the catalog's) — what the
+		 * server's "restore defaults" copies, so the editor and the command agree. */
 		reset_outputs() {
-			this.draft.outputs = clone(((this.spec && this.spec.outputs) || []).map((o) => Object.assign({}, o, { template: o.default_template || o.template || "" })));
+			this.draft.outputs = clone(((this.spec && this.spec.outputs) || []).map((o) => Object.assign({}, o, { template: o.template || o.default_template || "" })));
 		}
 
 		fill_examples() {

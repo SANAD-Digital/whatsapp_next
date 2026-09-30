@@ -168,7 +168,9 @@ frappe.provide("whatsapp_next.campaign");
 			// the rows the server counted, once it has; the document's own figure until then
 			const status_counts = (this.counts && this.counts.status) || {};
 			const filtered = !!this.state.search || (this.state.filters.source_type || []).length > 0;
-			const total = status_counts.All !== undefined && !filtered ? cint(status_counts.All) : cint(this.ctx.doc.total_recipients);
+			// removed rows stay in the table (with status "Removed") but are not in the audience: the
+			// head says what `total_recipients` says, never the rows including the removed ones
+			const total = status_counts.All !== undefined && !filtered ? cint(status_counts.All) - cint(status_counts.Removed) : cint(this.ctx.doc.total_recipients);
 			this.$wrapper.find("[data-total]").text(fmt_int(total));
 			this.$wrapper.find("[data-total-label]").text(C.recipients_text(total).replace(/^[\d٠-٩,.\s ]+/, ""));
 			const by_source = (this.counts && this.counts.source_type) || {};
@@ -227,7 +229,7 @@ frappe.provide("whatsapp_next.campaign");
 						return row.contact ? frappe.utils.get_form_link("Contact", row.contact, true, name) : name;
 					},
 				},
-				{ fieldname: "phone_e164", label: __("Phone"), sortable: true, width: 160, format: (v, row) => `<span class="sanad-tabular" dir="ltr">${esc(v || row.phone || "")}</span>` },
+				{ fieldname: "phone_e164", label: __("Phone"), sortable: true, width: 160, format: (v, row) => `<span class="sanad-tabular" dir="ltr">${esc(ui.phone(v || row.phone || ""))}</span>${ui.group_tag(v || row.phone)}` },
 				{ fieldname: "source_type", label: __("Source"), sortable: true, groupable: true, width: 140, format: (v) => esc(v ? __(v) : "—") },
 				{ fieldname: "status", label: __("Status"), type: "status", sortable: true, groupable: true, width: 120 },
 			];
@@ -279,7 +281,7 @@ frappe.provide("whatsapp_next.campaign");
 					{ silent: true }
 				)
 				.then((r) => {
-					table.set_rows(r.rows || [], r.total);
+					table.set_rows(r.rows || [], r.total, this.state.page);
 					this.counts = r.counts || {};
 					this.render_head();
 					this.render_verbs();
@@ -307,7 +309,9 @@ frappe.provide("whatsapp_next.campaign");
 		}
 
 		remove_selected(rows) {
-			const keys = rows.map((r) => r.phone_e164).filter(Boolean);
+			// a row already removed is not removed twice, and the count says what will actually go
+			const keys = [...new Set(rows.filter((r) => r.status !== "Removed").map((r) => r.phone_e164).filter(Boolean))];
+			if (!keys.length) return ui.Toast.info(__("Nothing to remove: the selected recipients are already removed."));
 			ui.ConfirmDialog.ask({
 				title: __("Remove {0} recipients?", [fmt_int(keys.length)]),
 				message: __("They stop receiving this campaign. Nothing else changes."),

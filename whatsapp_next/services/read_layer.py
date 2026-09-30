@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import frappe
+from frappe import _
 from frappe.query_builder.functions import Coalesce, Count, Max, Min
 from frappe.utils import add_days, flt, get_datetime, now_datetime
 from pypika import Case, Field, Order
@@ -136,10 +137,16 @@ def decode_cursor(cursor: str | dt.datetime | None) -> tuple[dt.datetime, str | 
 	if isinstance(cursor, dt.datetime):
 		return cursor, None
 	text = str(cursor)
-	if "|" in text:
-		ts, _, name = text.partition("|")
-		return get_datetime(ts), name or None
-	return get_datetime(text), None
+	ts, _sep, name = text.partition("|")
+	try:
+		parsed = get_datetime(ts)
+	except Exception:
+		parsed = None
+	if not isinstance(parsed, dt.datetime):
+		from whatsapp_next.exceptions import WAValidationError
+
+		frappe.throw(_("Invalid cursor"), WAValidationError)
+	return parsed, name or None
 
 
 # --------------------------------------------------------------------------------------------
@@ -217,7 +224,9 @@ def _key_condition_outbound(L, keys: list[str]):
 	if jids:
 		c = L.jid.isin(jids)
 		cond = c if cond is None else (cond | c)
-	return cond
+	# The indexed columns only narrow the scan; the row belongs to a key only when its key
+	# expression is that key (a group row can carry a member's number in `phone_e164`).
+	return None if cond is None else cond & _outbound_key(L).isin(keys)
 
 
 def _key_condition_inbound(I, keys: list[str]):
@@ -229,7 +238,11 @@ def _key_condition_inbound(I, keys: list[str]):
 	if jids:
 		c = I.chat_jid.isin(jids) | I.sender_jid.isin(jids)
 		cond = c if cond is None else (cond | c)
-	return cond
+	# A member's message in a group matches `phone_e164` / `sender_jid` but is the group's
+	# (keyed by `chat_jid`), and a LID sender with a known number is keyed by that number: without
+	# this, a person's 1:1 thread showed their group messages and a LID key's aggregate overwrote
+	# the number's counters and last direction.
+	return None if cond is None else cond & _inbound_key(I).isin(keys)
 
 
 def _apply_filters(q, table, ts_col, key_cond, filters: dict[str, Any]):

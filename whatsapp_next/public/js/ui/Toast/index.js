@@ -47,7 +47,10 @@ sanad.ui.Toast = class Toast {
 	static info(message, opts = {}) { return new Toast(Object.assign({ message, tone: "info" }, opts)); }
 	static warning(message, opts = {}) { return new Toast(Object.assign({ message, tone: "warning" }, opts)); }
 	static error(message, opts = {}) {
-		const text = message && message.message ? message.message : message;
+		// a raw frappe response or xhr (no `.message`) printed "[object Object]": read its text
+		let text = message;
+		if (message && typeof message === "object") text = message.message || ui.error_from(message).message;
+		if (!text) text = __("Something went wrong. Please try again.");
 		return new Toast(Object.assign({ message: text, tone: "error" }, opts));
 	}
 	/** Show every warning code returned by an API (`warnings[]`) with a translated label. */

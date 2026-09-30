@@ -76,6 +76,12 @@ DocTypes, or `contact_link_doctypes`) → `picker.search_contacts {txt, link_doc
 page_length}` → `{rows, total}`; checkbox rows, contacts without a phone are listed disabled
 with the reason; "Select all on page"; "Add N"; pager "1–20 of N".
 
+### Source 2b · WhatsApp contacts not in the system (`sources/whatsapp_numbers.js`) — built
+Numbers the host knows from WhatsApp that no system Contact carries yet: search by name (the name
+the phone saves it under too) or number → `picker.search_whatsapp_numbers {txt, page, page_length}`
+→ `{rows, total}`, rows with `source_type = "WhatsApp Number"` and the number's row as
+`source_name`; checkbox rows, "Select all on page", "Add N", pager.
+
 ### Source 3 · System screen (`sources/doctype.js`) — built
 DocType select from the entry's `doctypes[{document_type, label}]`, then **Frappe's own
 `frappe.ui.FilterGroup({parent, doctype, on_change})`** (after `frappe.model.with_doctype`) →

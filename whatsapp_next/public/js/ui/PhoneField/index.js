@@ -224,7 +224,9 @@ sanad.ui.PhoneField = class PhoneField {
 	static normalize(raw, country) {
 		const phone = cstr(raw);
 		let s = phone.replace(/[٠-٩۰-۹]/g, (d) => ARABIC_DIGITS[d] || d);
-		s = s.replace(/[\s\-().]/g, "");
+		// a number copied from any screen carries the invisible left-to-right isolate `ui.phone`
+		// wraps it in (and pasted text often an LRM/RLM): those are not part of the number
+		s = s.replace(/[\s\-().\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, "");
 		if (!s) return { phone, phone_e164: null, valid: false, country, empty: true };
 		let e164 = null;
 		if (s.startsWith("00")) s = `+${s.slice(2)}`;
@@ -233,8 +235,8 @@ sanad.ui.PhoneField = class PhoneField {
 		} else if (/^\d+$/.test(s)) {
 			if (country) {
 				if (s.startsWith("0")) e164 = `+${country.dial}${s.replace(/^0+/, "")}`;
-				else if (s.startsWith(country.dial) && s.length >= country.dial.length + 9) e164 = `+${s}`;
-				else e164 = `+${country.dial}${s}`;
+				else if (country.len && s.length === country.len) e164 = `+${country.dial}${s}`;
+				else e164 = `+${sanad.ui.PhoneField.with_dial(s) || `${country.dial}${s}`}`;
 			} else if (s.length >= 10) {
 				e164 = `+${s}`;
 			}
@@ -243,9 +245,17 @@ sanad.ui.PhoneField = class PhoneField {
 		return { phone, phone_e164: valid ? e164 : null, valid, country, empty: false };
 	}
 
-	/** `+966 559 021 177` style grouping for display only. */
+	/**
+	 * `966 55 902 1177` — grouping for display only, and never with a "+" (owner: no "+" is shown
+	 * or typed anywhere; storage stays E.164). Takes E.164, bare international digits or a JID
+	 * (returned as it is).
+	 */
 	static format_display(e164, country) {
 		if (!e164) return "";
+		e164 = cstr(e164).trim();
+		if (e164.includes("@")) return e164;
+		if (/^\d{7,15}$/.test(e164)) e164 = `+${e164}`;
+		if (!/^\+\d{7,15}$/.test(e164)) return e164.replace(/^\+/, "");
 		const dial =
 			country && e164.startsWith(`+${country.dial}`)
 				? country.dial
@@ -255,13 +265,25 @@ sanad.ui.PhoneField = class PhoneField {
 		const rest = e164.slice(1 + dial.length);
 		// the country's own grouping when the number is the length that country uses
 		const hit = country || CATALOG.find((c) => c.dial === dial && c.len && c.len === rest.length);
-		if (hit && hit.len && hit.len === rest.length) return `+${dial} ${sanad.ui.PhoneField.mask(rest, hit)}`.trim();
+		if (hit && hit.len && hit.len === rest.length) return `${dial} ${sanad.ui.PhoneField.mask(rest, hit)}`.trim();
 		const groups = rest.match(/.{1,3}/g) || [];
 		if (groups.length > 1 && groups[groups.length - 1].length < 2) {
 			const last = groups.pop();
 			groups[groups.length - 1] += last;
 		}
-		return `+${dial} ${groups.join(" ")}`.trim();
+		return `${dial} ${groups.join(" ")}`.trim();
+	}
+
+	/**
+	 * `966551234567` (a country code typed without "+") → the same digits when they start with a
+	 * known dial code AND the rest is that country's length; otherwise null. Longest code first.
+	 */
+	static with_dial(digits) {
+		const d = cstr(digits);
+		const hit = CATALOG.slice()
+			.sort((a, b) => b.dial.length - a.dial.length || (b.main ? 1 : 0) - (a.main ? 1 : 0))
+			.find((c) => d.startsWith(c.dial) && (c.len ? d.length - c.dial.length === c.len : d.length - c.dial.length >= 6));
+		return hit ? d : null;
 	}
 
 	/**
@@ -478,7 +500,7 @@ sanad.ui.PhoneField = class PhoneField {
 				<li class="sanad-phone__opt${c.iso === current.iso ? " sanad-phone__opt--on" : ""}" role="option" tabindex="-1" aria-selected="${c.iso === current.iso}">
 					<span class="sanad-phone__opt-iso">${ui.escape(c.iso)}</span>
 					<span class="sanad-phone__opt-name">${ui.escape(__(c.name))}</span>
-					<span class="sanad-phone__opt-dial" dir="ltr">+${ui.escape(c.dial)}</span>
+					<span class="sanad-phone__opt-dial" dir="ltr">${ui.escape(c.dial)}</span>
 				</li>`)
 				.on("click", () => this.pick(c))
 				.appendTo(this.$list);
@@ -517,7 +539,21 @@ sanad.ui.PhoneField = class PhoneField {
 		const before = el.value.slice(0, el.selectionStart || 0);
 		const digits_before = to_digits(before).length;
 		const max = this.country.len || 14;
-		this.digits = to_digits(el.value).slice(0, max);
+		let all = to_digits(el.value);
+		// the whole international number typed or pasted (with or without "+" / "00"): switch to
+		// its country instead of cutting it to the national length (966551234567 → 966551234)
+		if (all.startsWith("00")) all = all.slice(2);
+		if (all.length > max) {
+			const intl = sanad.ui.PhoneField.with_dial(all);
+			const hit = intl && CATALOG.slice()
+				.sort((a, b) => b.dial.length - a.dial.length || (b.main ? 1 : 0) - (a.main ? 1 : 0))
+				.find((c) => all.startsWith(c.dial) && (!c.len || all.length - c.dial.length === c.len));
+			if (hit) {
+				this.country = hit;
+				all = all.slice(hit.dial.length);
+			}
+		}
+		this.digits = all.slice(0, this.country.len || 14);
 		this.state.touched = true;
 		const masked = sanad.ui.PhoneField.mask(this.digits, this.country);
 		el.value = masked;
@@ -582,15 +618,15 @@ sanad.ui.PhoneField = class PhoneField {
 				text: !start_ok
 					? __("Not a mobile number in {0} — check the first digits", [__(c.name)])
 					: c.len
-						? __("The number must be {0} digits after +{1}", [c.len, c.dial])
-						: __("The number must be at least 6 digits after +{0}", [c.dial]),
+						? __("The number must be {0} digits after the country code {1}", [c.len, c.dial])
+						: __("The number must be at least 6 digits after the country code {0}", [c.dial]),
 			};
 		}
 		if (this.opts.hint) return { error: false, text: this.opts.hint };
 		return {
 			error: false,
 			text: c.len
-				? __("A number WhatsApp works on — {0} digits after +{1}", [c.len, c.dial])
+				? __("A number WhatsApp works on — {0} digits after the country code {1}", [c.len, c.dial])
 				: __("A number WhatsApp works on in {0} — without the leading zero", [__(c.name)]),
 		};
 	}
@@ -602,7 +638,7 @@ sanad.ui.PhoneField = class PhoneField {
 		const { valid } = this.validity();
 		const msg = this.message();
 		this.$root.find('[data-slot="iso"]').text(c.iso);
-		this.$root.find('[data-slot="dial"]').text(`+${c.dial}`);
+		this.$root.find('[data-slot="dial"]').text(c.dial);
 		this.$root.find('[data-slot="caret"]').toggleClass("sanad-phone__caret--open", !!this.state.open);
 		// the placeholder is the region's own sample in national form, masked into its own groups —
 		// `501 234 5678` for Saudi Arabia, which is what the reader is about to type
@@ -629,12 +665,12 @@ sanad.ui.PhoneField = class PhoneField {
 		this.$hint.removeClass("sanad-phone__hint--ok sanad-phone__hint--error");
 		if (result.empty) {
 			$i.removeAttr("aria-invalid");
-			this.$hint.text(__("Numbers without a country code are sent as +{0} ({1})", [this.country.dial, __(this.country.name)]));
+			this.$hint.text(__("Numbers without a country code are sent with {0} ({1})", [this.country.dial, __(this.country.name)]));
 			return result;
 		}
 		if (result.valid) {
 			$i.removeAttr("aria-invalid");
-			this.$hint.addClass("sanad-phone__hint--ok").text(__("Will be sent to {0}", [sanad.ui.PhoneField.format_display(result.phone_e164, this.country)]));
+			this.$hint.addClass("sanad-phone__hint--ok").text(__("Will be sent to {0}", [`\u2066${sanad.ui.PhoneField.format_display(result.phone_e164, this.country)}\u2069`]));
 			return result;
 		}
 		if (this.touched) $i.attr("aria-invalid", "true");
@@ -682,8 +718,10 @@ sanad.ui.PhoneField = class PhoneField {
 			return this;
 		}
 		const raw = cstr(value).trim();
-		const digits = to_digits(raw);
-		if (raw.startsWith("+") || raw.startsWith("00")) {
+		let digits = to_digits(raw);
+		if (raw.startsWith("00")) digits = digits.slice(2);
+		// a stored or pasted international number without "+" is still international
+		if (raw.startsWith("+") || raw.startsWith("00") || (digits.length > (this.country.len || 14) && sanad.ui.PhoneField.with_dial(digits))) {
 			// Longest dial code first, so `+1` never swallows `+1246`; and among the regions that
 			// share one, the library's own main region wins — twenty-five share `+1`, and without
 			// this a US number resolved to whichever sorted first.
@@ -730,3 +768,27 @@ sanad.ui.PhoneField = class PhoneField {
 };
 
 export default sanad.ui.PhoneField;
+
+/**
+ * A phone number as a person reads it: grouped, never with "+" (owner's rule for the whole app;
+ * storage keeps E.164). Anything that is not a number — a name, a group JID — comes back as is.
+ *
+ * The grouped digits, and a group JID, come back inside a left-to-right isolate (U+2066 … U+2069).
+ * Without it an Arabic line lays the groups out right to left — `967 775 069 666` reads
+ * `666 069 775 967` — in a dialog title, a read-only Frappe field, a toast or a list cell, wherever no `dir="ltr"` wraps it.
+ * The marks are invisible and only ever reach the screen: nothing sends this text to the server.
+ */
+/** A WhatsApp group: its JID (`…@g.us`), which the app carries wherever a number goes. */
+sanad.ui.is_group = (value) => /@g\.us$/i.test(cstr(value).trim());
+
+/**
+ * The tag that tells a group from a person's number, to sit after its name or JID; "" for
+ * anything that is not a group. The same blue "Group" badge Quick Send has always shown.
+ */
+sanad.ui.group_tag = (value) =>
+	sanad.ui.is_group(value) ? `<span class="sanad-group-tag">${sanad.ui.StatusBadge.html({ label: __("Group"), colour: "blue", icon: false })}</span>` : "";
+
+sanad.ui.phone = (value) => {
+	const text = sanad.ui.PhoneField.format_display(value);
+	return /^[\d ]+$/.test(text) || /^[\w.+-]+@[\w.-]+$/.test(text) ? `\u2066${text}\u2069` : text;
+};

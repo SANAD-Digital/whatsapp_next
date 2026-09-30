@@ -12,7 +12,7 @@
 // is shared with the campaign form: `public/js/screens/campaigns.js`.
 const K = whatsapp_next.campaigns;
 const { metric, state_metric } = whatsapp_next.console;
-const { TERMINAL, STOPPABLE, EDITABLE, INDICATOR, is_manager, bar_html, progress_html, stats_html, eta_text, pct_text, handed_of_doc, device_title, counters_as_doc } = K;
+const { TERMINAL, STOPPABLE, EDITABLE, INDICATOR, is_manager, bar_html, progress_html, progress_text, messages_of_doc, stats_html, eta_text, pct_text, handed_of_doc, device_title, counters_as_doc } = K;
 const fmt_int = (v) => sanad.ui.format_int(v);
 const esc = (v) => sanad.ui.escape(v);
 
@@ -79,7 +79,7 @@ function live_strip(row, header) {
 				</span>
 				<span class="wa-strip__progress">
 					${bar_html(doc, { paused })}
-					<span class="wa-strip__progress-text sanad-tabular">${esc(fmt_int(handed_of_doc(doc)))} / ${esc(fmt_int(doc.total_recipients))} · ${esc(pct_text(handed_of_doc(doc), doc.total_recipients))}</span>
+					<span class="wa-strip__progress-text sanad-tabular">${esc(progress_text(doc))} · ${esc(pct_text(handed_of_doc(doc), messages_of_doc(doc)))}</span>
 				</span>
 				<span class="wa-strip__stats">${stats_html(doc)}</span>
 				<span class="wa-strip__actions"></span>
@@ -108,8 +108,11 @@ function live_strip(row, header) {
 
 /** A campaign waiting for its hour, as the prototype draws it. */
 function scheduled_strip(row, header) {
-	const when = row.scheduled_at ? `${frappe.datetime.str_to_user(row.scheduled_at).slice(0, 10)} ${row.scheduled_at.slice(11, 16)}` : "—";
-	const days = row.scheduled_at ? frappe.datetime.get_day_diff(row.scheduled_at, frappe.datetime.now_datetime()) : null;
+	// `scheduled_at` is system time: the date and the hour are both said in the reader's zone, and
+	// "tomorrow" is counted against the system clock the value was stored in
+	const local = row.scheduled_at ? frappe.datetime.convert_to_user_tz(row.scheduled_at) : null;
+	const when = local ? `${frappe.datetime.str_to_user(local.slice(0, 10))} ${local.slice(11, 16)}` : "—";
+	const days = row.scheduled_at ? frappe.datetime.get_day_diff(row.scheduled_at.slice(0, 10), frappe.datetime.system_datetime().slice(0, 10)) : null;
 	const relative =
 		days == null
 			? ""
@@ -227,7 +230,8 @@ function render_console($el, header) {
 			const live = (rows || []).filter((r) => ["Running", "Queued"].includes(r.status));
 			$el.html(`<section class="wa-ops">${metrics_html(o)}</section>
 				<div class="wa-strips"></div>`);
-			$el.find("[data-go=failed]").on("click", () => frappe.set_route("List", "WhatsApp Log", { status: "Failed" }));
+			// the campaigns' failures, not every failed message of the site
+		$el.find("[data-go=failed]").on("click", () => frappe.set_route("List", "WhatsApp Log", { status: "Failed", campaign: ["is", "set"] }));
 
 			// The console must not eat the table. The prototype shows the campaign that is sending
 			// and the next scheduled ones — not one strip per campaign in flight — so at most two
@@ -312,8 +316,7 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 	// Fallback (native rows) until DataList is present.
 	formatters: {
 		sent_count(value, df, doc) {
-			const total = cint(doc.total_recipients);
-			return total ? `<span class="sanad-tabular">${fmt_int(value)} / ${fmt_int(total)}</span>` : fmt_int(value);
+			return messages_of_doc(doc) ? `<span class="sanad-tabular">${esc(progress_text(doc))}</span>` : fmt_int(value);
 		},
 	},
 
@@ -366,41 +369,50 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 			cint(whole) ? `<span class="sanad-tabular${tone ? ` sanad-tone--${tone}` : ""}">${esc(pct(part, whole))}</span>` : dash();
 
 		/** How long a campaign needs at its own rate, and how long it actually took. */
+		// the queue sends messages, not recipients: once the campaign has its messages (recipients ×
+		// messages) they are what the rate drains; before that the recipients are all there is
 		const est_minutes = (doc) => {
 			const rate = cint(doc.messages_per_minute) || cint(frappe.boot.sanad_rate) || 20;
-			return cint(doc.total_recipients) / Math.max(rate, 1);
+			return (messages_of_doc(doc) || cint(doc.total_recipients)) / Math.max(rate, 1);
 		};
 		const act_minutes = (doc) => {
 			if (!doc.started_at) return null;
-			const end = doc.ended_at ? frappe.datetime.str_to_obj(doc.ended_at) : ["Running", "Paused", "Queued"].includes(doc.status) ? new Date() : null;
+			// both ends in system time: `new Date()` is the browser's clock, hours off the stored one
+			const end = doc.ended_at ? frappe.datetime.str_to_obj(doc.ended_at) : ["Running", "Paused", "Queued"].includes(doc.status) ? frappe.datetime.str_to_obj(frappe.datetime.system_datetime()) : null;
 			if (!end) return null;
 			return Math.max(0, (end - frappe.datetime.str_to_obj(doc.started_at)) / 60000);
 		};
-		const dur_text = (minutes) =>
-			minutes < 60
-				? __("{0} min", [fmt_int(Math.round(minutes))])
-				: __("{0} h {1} min", [fmt_int(Math.floor(minutes / 60)), fmt_int(Math.round(minutes % 60))]);
+		// rounded to whole minutes first, so 119.6 min reads "2 h 0 min", never "1 h 60 min"
+		const dur_text = (minutes) => {
+			const m = Math.round(minutes);
+			return m < 60 ? __("{0} min", [fmt_int(m)]) : __("{0} h {1} min", [fmt_int(Math.floor(m / 60)), fmt_int(m % 60)]);
+		};
+		// A start pressed by hand used to stamp `scheduled_at` with the start itself: such a row is
+		// an immediate start, whatever the field holds (campaign_runner.start no longer writes it)
+		const was_scheduled = (doc) =>
+			!!doc.scheduled_at &&
+			!(doc.started_at && Math.abs(frappe.datetime.str_to_obj(doc.scheduled_at) - frappe.datetime.str_to_obj(doc.started_at)) < 1000);
 
 		const columns = [
 			{ fieldname: "campaign_name", label: __("Campaign"), width: 240, sortable: true, format: (v, doc) => esc(v || doc.name), sub: (doc) => esc(frappe.user.full_name(doc.owner) || doc.owner || "") },
 			{ fieldname: "status", label: __("Status"), type: "status", width: 120, sortable: true },
 			{ fieldname: "_edit", label: __("Edit"), width: 104, sortable: false, format: (v, doc) => edit_chip(doc) },
-			{ fieldname: "sent_count", label: __("Progress"), width: 170, sortable: false, format: (v, doc) => progress_html(doc, { tone: doc.status === "Paused" ? "amber" : "" }) },
-			{ fieldname: "total_recipients", label: __("Recipients"), type: "number", width: 110, align: "end", sortable: true },
-			{ fieldname: "_handed", label: __("Sent"), width: 100, align: "end", sortable: false, format: (v, doc) => num(handed_of_doc(doc)) },
-			{ fieldname: "_ok_rate", label: __("Success %"), width: 110, align: "end", sortable: false, format: (v, doc) => rate_cell(handed_of_doc(doc), handed_of_doc(doc) + cint(doc.failed_count), "green") },
-			{ fieldname: "read_count", label: __("Read"), type: "number", width: 100, align: "end", sortable: true },
-			{ fieldname: "_read_rate", label: __("Read %"), width: 115, align: "end", sortable: false, format: (v, doc) => rate_cell(doc.read_count, cint(doc.delivered_count) + cint(doc.read_count), "blue") },
-			{ fieldname: "failed_count", label: __("Failures"), type: "number", width: 90, align: "end", sortable: true, format: (v) => (cint(v) ? `<span class="sanad-tone--red sanad-tabular">${fmt_int(v)}</span>` : num(0)) },
-			{ fieldname: "_fail_rate", label: __("Failure %"), width: 110, align: "end", sortable: false, format: (v, doc) => rate_cell(doc.failed_count, handed_of_doc(doc) + cint(doc.failed_count), cint(doc.failed_count) ? "red" : "") },
+			{ fieldname: "sent_count", label: __("Messages sent"), width: 170, fieldtype: "Percent", sortable: false, format: (v, doc) => progress_html(doc, { tone: doc.status === "Paused" ? "amber" : "" }) },
+			{ fieldname: "total_recipients", label: __("Recipients"), type: "number", width: 110, sortable: true },
+			{ fieldname: "_handed", label: __("Sent"), width: 100, fieldtype: "Int", sortable: false, format: (v, doc) => num(handed_of_doc(doc)) },
+			{ fieldname: "_ok_rate", label: __("Success %"), width: 110, fieldtype: "Percent", sortable: false, format: (v, doc) => rate_cell(handed_of_doc(doc), handed_of_doc(doc) + cint(doc.failed_count), "green") },
+			{ fieldname: "read_count", label: __("Read"), type: "number", width: 100, sortable: true },
+			{ fieldname: "_read_rate", label: __("Read %"), width: 115, fieldtype: "Percent", sortable: false, format: (v, doc) => rate_cell(doc.read_count, cint(doc.delivered_count) + cint(doc.read_count), "blue") },
+			{ fieldname: "failed_count", label: __("Failures"), type: "number", width: 90, sortable: true, format: (v) => (cint(v) ? `<span class="sanad-tone--red sanad-tabular">${fmt_int(v)}</span>` : num(0)) },
+			{ fieldname: "_fail_rate", label: __("Failure %"), width: 110, fieldtype: "Percent", sortable: false, format: (v, doc) => rate_cell(doc.failed_count, handed_of_doc(doc) + cint(doc.failed_count), cint(doc.failed_count) ? "red" : "") },
 			{ fieldname: "device", label: __("Device"), type: "avatar", width: 150, sortable: true },
-			{ fieldname: "_start_kind", label: __("Start type"), width: 110, sortable: false, format: (v, doc) => sanad.ui.StatusBadge.html({ label: doc.scheduled_at ? __("Scheduled") : __("Immediate"), colour: doc.scheduled_at ? "blue" : "gray" }) },
-			{ fieldname: "scheduled_at", label: __("Scheduled for"), width: 150, align: "end", sortable: true, format: (v) => (v ? dt(v) : `<span class="text-muted">${esc(__("Immediate"))}</span>`) },
+			{ fieldname: "_start_kind", label: __("Start type"), width: 110, sortable: false, format: (v, doc) => sanad.ui.StatusBadge.html({ label: was_scheduled(doc) ? __("Scheduled") : __("Immediate"), colour: was_scheduled(doc) ? "blue" : "gray" }) },
+			{ fieldname: "scheduled_at", label: __("Scheduled for"), width: 150, align: "end", sortable: true, format: (v, doc) => (was_scheduled(doc) ? dt(v) : `<span class="text-muted">${esc(__("Immediate"))}</span>`) },
 			{ fieldname: "creation", label: __("Created"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
 			{ fieldname: "started_at", label: __("Started"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
 			{ fieldname: "_edited", label: __("Edited after approval"), width: 145, sortable: false, format: (v, doc) => (cint(doc.pause_count) ? sanad.ui.StatusBadge.html({ label: sanad.ui.plural(cint(doc.pause_count), { one: __("Yes — once"), other: __("Yes — {0} times") }), colour: "orange" }) : sanad.ui.StatusBadge.html({ label: __("No"), colour: "gray" })) },
-			{ fieldname: "initial_recipients", label: __("Recipients at start"), type: "number", width: 140, align: "end", sortable: true, format: (v) => (cint(v) ? num(v) : dash()) },
-			{ fieldname: "_edit_pct", label: __("Change %"), width: 110, align: "end", sortable: false, format: (v, doc) => {
+			{ fieldname: "initial_recipients", label: __("Recipients at start"), type: "number", width: 140, sortable: true, format: (v) => (cint(v) ? num(v) : dash()) },
+			{ fieldname: "_edit_pct", label: __("Change %"), width: 110, fieldtype: "Percent", sortable: false, format: (v, doc) => {
 				const start = cint(doc.initial_recipients);
 				if (!start || start === cint(doc.total_recipients)) return dash();
 				const change = ((cint(doc.total_recipients) - start) * 100) / start;

@@ -141,3 +141,24 @@ class TestApiHomeActivity(IntegrationTestCase):
 		self.assertTrue(any(r["key"] == str(doc.creation)[:10] for r in after["series"]))
 		self.assertLessEqual(len(today["feed"]), 5)
 		self.assertTrue(all(r["direction"] in ("out", "in") for r in today["feed"]))
+
+	def test_previous_window_covers_the_same_elapsed_span(self):
+		"""Today so far is compared with yesterday up to the same time, not with all of yesterday."""
+		from unittest.mock import patch
+
+		import frappe
+		from frappe.utils import add_to_date, get_datetime, nowdate
+
+		from whatsapp_next.services import home
+
+		noon = get_datetime(f"{nowdate()} 12:00:00")
+		with patch.object(home, "now_datetime", return_value=noon):
+			before = home.traffic("today")["previous"]
+			earlier = self._log("Sent")
+			later = self._log("Sent")
+			for doc, hours in ((earlier, -1), (later, 1)):
+				frappe.db.set_value(
+					"WhatsApp Log", doc.name, "creation", add_to_date(noon, days=-1, hours=hours), update_modified=False
+				)
+			after = home.traffic("today")["previous"]
+		self.assertEqual(after.get("Sent", 0) - before.get("Sent", 0), 1)

@@ -103,7 +103,8 @@ class TestApiCommands(IntegrationTestCase):
 
 	def test_list_and_defaults(self):
 		name = self._command(status="Active")
-		for days_ago in (1, 40):
+		# one run in the window; one too old, one Blocked sender and one Simulator row are not runs
+		for days_ago, status, simulated in ((1, "Executed", 0), (40, "Executed", 0), (1, "Blocked", 0), (1, "Executed", 1)):
 			frappe.get_doc(
 				{
 					"doctype": "WhatsApp Inbound Message",
@@ -113,8 +114,9 @@ class TestApiCommands(IntegrationTestCase):
 					"body": f"#{CODE}",
 					"provider_message_id": frappe.generate_hash(length=12),
 					"received_at": add_days(now_datetime(), -days_ago),
-					"command_status": "Executed",
+					"command_status": status,
 					"command": name,
+					"is_simulated": simulated,
 				}
 			).insert(ignore_permissions=True)
 		with as_user("WhatsApp Viewer"):

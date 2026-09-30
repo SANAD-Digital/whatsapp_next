@@ -257,7 +257,7 @@ frappe.provide("sanad.ui");
 					key: c.name,
 					act: "toggle-contact",
 					name: c.label || __("Unnamed"),
-					sub: c.phone,
+					sub: sanad.ui.phone(c.phone || ""),
 					sub_ltr: true,
 					initials: sanad.ui.initials(c.label || "?"),
 					badge: c.party_type ? __(c.party_type) : "",
@@ -272,8 +272,8 @@ frappe.provide("sanad.ui");
 						const g = this.group(name);
 						return { key: name, act: "rm-group", name: g.group_name || name, sub: __("{0} contacts", [sanad.ui.format_int(g.member_count)]), initials: sanad.ui.initials(g.group_name || name), badge: __("Group", null, "Bulk Send"), badge_tone: "pri", remove: true };
 					}),
-					s.contacts.map((c) => ({ key: c.name, act: "rm-contact", name: c.label || c.name, sub: c.phone, sub_ltr: true, initials: sanad.ui.initials(c.label || "?"), badge: __("Picked contact"), badge_tone: "pri", remove: true })),
-					s.numbers.map((p) => ({ key: p, act: "rm-number", name: __("Number added by hand"), sub: p, sub_ltr: true, initials: "#", avatar_tone: "nf", badge: __("Manual number"), badge_tone: "nf", remove: true }))
+					s.contacts.map((c) => ({ key: c.name, act: "rm-contact", name: c.label || c.name, sub: sanad.ui.phone(c.phone || ""), sub_ltr: true, initials: sanad.ui.initials(c.label || "?"), badge: __("Picked contact"), badge_tone: "pri", remove: true })),
+					s.numbers.map((p) => ({ key: p, act: "rm-number", name: __("Number added by hand"), sub: sanad.ui.phone(p), sub_ltr: true, initials: "#", avatar_tone: "nf", badge: __("Manual number"), badge_tone: "nf", remove: true }))
 				)
 				.filter((r) => match(r.name, r.sub));
 		}
@@ -421,19 +421,38 @@ frappe.provide("sanad.ui");
 
 		refresh_estimate() {
 			clearTimeout(this._est);
+			// a slower answer to an older selection must not overwrite the newer one's count
+			const seq = (this._est_seq = (this._est_seq || 0) + 1);
 			this._est = setTimeout(async () => {
 				const s = this.state;
 				if (!this.picked_count()) {
 					s.estimate = { total: 0, excluded: 0 };
 					return this.render();
 				}
+				let estimate = null;
 				try {
-					s.estimate = await this.opts.estimate({ groups: s.groups, contacts: s.contacts.map((c) => c.name), numbers: s.numbers });
+					estimate = await this.opts.estimate({ groups: s.groups, contacts: s.contacts.map((c) => c.name), numbers: s.numbers });
 				} catch (err) {
-					s.estimate = null;
+					estimate = null;
 				}
+				if (seq !== this._est_seq || !this.$root) return;
+				s.estimate = estimate;
 				this.render();
 			}, 250);
+		}
+
+		/**
+		 * The start time as the server stores it. `datetime-local` gives the browser's wall clock;
+		 * the campaign's `scheduled_at` is system time, so a sender in another zone than the site
+		 * scheduled hours off (and "in the future" was judged against the wrong clock).
+		 */
+		scheduled_at() {
+			const at = this.state.at;
+			if (!at) return null;
+			const system = window.frappe && frappe.boot && frappe.boot.time_zone && frappe.boot.time_zone.system;
+			const m = window.moment && moment(at);
+			if (!m || !m.isValid()) return at.replace("T", " ");
+			return (system && m.tz ? m.clone().tz(system) : m).locale("en").format("YYYY-MM-DD HH:mm:ss");
 		}
 
 		// ---- events -------------------------------------------------------------------------------
@@ -618,7 +637,7 @@ frappe.provide("sanad.ui");
 						contact: s.attach ? s.attach.contact || null : null,
 						device: s.device,
 						rate: cint(s.rate) || null,
-						scheduled_at: later ? s.at.replace("T", " ") : null,
+						scheduled_at: later ? this.scheduled_at() : null,
 					}),
 			})
 				.then((r) => {

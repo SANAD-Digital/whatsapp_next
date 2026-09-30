@@ -125,8 +125,13 @@ def _check_startable(doc) -> None:
 		frappe.throw(_("Choose a device for the campaign"), WAValidationError)
 
 
-def start(campaign: str, user: str | None = None) -> str:
-	"""`Draft|Scheduled → Queued` now; materialization runs in a `long` job."""
+def start(campaign: str, user: str | None = None, *, scheduled: bool = False) -> str:
+	"""`Draft|Scheduled → Queued` now; materialization runs in a `long` job.
+
+	`scheduled` is the scheduler keeping its appointment (`promote_scheduled`): the campaign keeps
+	its `scheduled_at`. Anyone else starts it **now** — a scheduled time left on the document would
+	hold every message until that hour (`_materialize_recipients` staggers from a future
+	`scheduled_at`), and the list would call an immediate start "Scheduled"."""
 	doc = _doc(campaign)
 	if doc.status not in EDITABLE:
 		frappe.throw(_("Campaign {0} is {1}").format(campaign, _(doc.status)), WAStateConflictError)
@@ -136,7 +141,7 @@ def start(campaign: str, user: str | None = None) -> str:
 		"Queued",
 		started_at=now_datetime(),
 		started_by=user or frappe.session.user,
-		scheduled_at=doc.scheduled_at or now_datetime(),
+		scheduled_at=(doc.scheduled_at or now_datetime()) if scheduled else None,
 	)
 	audit.log(
 		"Campaign Started",
@@ -184,7 +189,7 @@ def promote_scheduled() -> list[str]:
 	)
 	for name in due:
 		try:
-			start(name, user="Administrator")
+			start(name, user="Administrator", scheduled=True)
 		except Exception:
 			frappe.log_error(title="WhatsApp campaign: promote failed", message=name)
 	return due
@@ -318,24 +323,23 @@ def materialize(campaign: str) -> dict[str, int]:
 	"""Job (`long`): one outbound + queue row per (recipient × message), inserted in batches
 	with commits; scheduled_at staggered by cumulative `delay_seconds`; `Queued → Running`."""
 	doc = _doc(campaign)
-	if doc.status != "Queued":
+	# A campaign paused before this job ran (`pause` moves `Queued` through `Running` to `Paused`)
+	# still needs its rows: skipping it left the campaign `Running` after resume with nothing to
+	# send, forever. Its rows are created held — the dispatcher claims nothing of a paused campaign.
+	if doc.status not in ("Queued", "Paused") or (doc.status == "Paused" and doc.first_message_at):
 		return {"skipped": 1}
-	set_status(campaign, "Running")
+	if doc.status == "Queued":
+		set_status(campaign, "Running")
 	counts = _materialize_recipients(
 		doc, [r for r in doc.recipients if r.status == "Pending" and not r.outbound_message]
 	)
-	frappe.db.set_value(
-		"WhatsApp Campaign",
-		campaign,
-		{
-			"initial_recipients": cint(
-				frappe.db.get_value("WhatsApp Campaign", campaign, "initial_recipients")
-			)
-			or counts["recipients"],
-			"first_message_at": now_datetime() if counts["created"] else None,
-		},
-		update_modified=False,
-	)
+	values: dict[str, Any] = {
+		"initial_recipients": cint(frappe.db.get_value("WhatsApp Campaign", campaign, "initial_recipients"))
+		or counts["recipients"],
+	}
+	if counts["created"] and not doc.first_message_at:
+		values["first_message_at"] = now_datetime()
+	frappe.db.set_value("WhatsApp Campaign", campaign, values, update_modified=False)
 	refresh_counters(campaign)
 	frappe.db.commit()
 	return counts
@@ -433,28 +437,57 @@ def _materialize_recipients(doc, recipients) -> dict[str, int]:
 		if len(created_batch) >= MATERIALIZE_BATCH:
 			frappe.db.commit()
 			created_batch = []
+			# a fresh snapshot after the commit: a cancel pressed while this job runs is seen here,
+			# and the rest of the audience is not turned into messages nobody may send
+			if frappe.db.get_value("WhatsApp Campaign", campaign, "status") == "Cancelled":
+				break
 	frappe.db.commit()
+	if frappe.db.get_value("WhatsApp Campaign", campaign, "status") == "Cancelled":
+		_cancel_late_rows(campaign)
 	numbers_materializer.refresh_keys([k for k in keys if k])
 	return counts
+
+
+def _cancel_late_rows(campaign: str) -> None:
+	"""Rows this job created after `cancel()` had already cleared the queue: cancelled the same way
+	(queue rows `Deleted`, outbound `Cancelled`, open recipients `Cancelled`)."""
+	dispatch.delete_items({"campaign": campaign}, reason=f"campaign {campaign} cancelled")
+	with status_writer():
+		frappe.db.set_value(
+			"WhatsApp Campaign Recipient",
+			{"parent": campaign, "parenttype": "WhatsApp Campaign", "status": ("in", ["Pending", "Queued"])},
+			"status",
+			"Cancelled",
+			update_modified=False,
+		)
+	frappe.db.commit()
 
 
 # ---- counters / finalization ------------------------------------------------------------
 
 
 def counters_for(campaign: str) -> Counters:
+	return counters_for_many([campaign]).get(campaign) or Counters()
+
+
+def counters_for_many(campaigns: list[str]) -> dict[str, Counters]:
+	"""`counters_for` of several campaigns from one grouped query (the list's live strips)."""
+	if not campaigns:
+		return {}
 	L = frappe.qb.DocType("WhatsApp Log")
 	rows = (
 		frappe.qb.from_(L)
-		.select(L.status, Count("*").as_("n"))
-		.where(L.campaign == campaign)
-		.groupby(L.status)
+		.select(L.campaign, L.status, Count("*").as_("n"))
+		.where(L.campaign.isin(list(campaigns)))
+		.groupby(L.campaign, L.status)
 		.run(as_dict=True)
 	)
-	c = Counters()
+	out: dict[str, Counters] = {}
 	for r in rows:
+		c = out.setdefault(r.campaign, Counters())
 		n = cint(r.n)
 		c.total += n
-		if r.status in ("Queued", "Sending", "Unsent", "Held"):
+		if r.status in OPEN_OUTBOUND:
 			c.queued += n
 			c.open += n
 		elif r.status == "Sent":
@@ -467,7 +500,7 @@ def counters_for(campaign: str) -> Counters:
 			c.failed += n
 		elif r.status == "Cancelled":
 			c.cancelled += n
-	return c
+	return out
 
 
 def refresh_counters(campaign: str) -> Counters:
@@ -517,22 +550,34 @@ def finalize_if_done(campaign: str, counters: Counters | None = None) -> bool:
 	if status not in ("Running", "Queued"):
 		return False
 	c = counters or counters_for(campaign)
-	if c.total == 0 or c.open:
+	if c.open:
 		return False
-	if frappe.db.count(
-		"WhatsApp Campaign Recipient",
-		{"parent": campaign, "parenttype": "WhatsApp Campaign", "status": "Pending"},
-	):
+	recipients = {
+		r.status: cint(r.n)
+		for r in frappe.get_all(
+			"WhatsApp Campaign Recipient",
+			filters={"parent": campaign, "parenttype": "WhatsApp Campaign"},
+			fields=["status", {"COUNT": "name", "as": "n"}],
+			group_by="status",
+		)
+	}
+	if recipients.get("Pending"):
 		return False
-	final = "Completed" if c.failed == 0 else "Partially Failed"
-	set_status(campaign, final, ended_at=now_datetime())
+	# No message at all is final only once the audience was worked through: every recipient set
+	# aside by the unknown-number policy, or none of their messages could be created. Without this
+	# such a campaign stayed `Running` for ever. Before materialization the recipients are `Pending`.
+	if c.total == 0 and (status != "Running" or not any(recipients.values())):
+		return False
+	failed = c.failed or (recipients.get("Failed", 0) if c.total == 0 else 0)
+	final = "Completed" if failed == 0 else "Partially Failed"
+	# the closing counts go down with the status: a closed campaign never shows stale numbers
+	set_status(campaign, final, ended_at=now_datetime(), **c.as_values())
 	return True
 
 
 def sending_now() -> list[dict[str, Any]]:
 	"""Campaigns `Running`/`Queued` with live counters (Home / list stats card)."""
-	out = []
-	for r in frappe.get_all(
+	rows = frappe.get_all(
 		"WhatsApp Campaign",
 		filters={"status": ("in", ["Running", "Queued", "Paused"])},
 		fields=[
@@ -545,10 +590,11 @@ def sending_now() -> list[dict[str, Any]]:
 			"failed_count",
 			"queued_count",
 			"started_at",
+			"messages_per_minute",
 		],
-	):
-		out.append({**r, "counters": counters_for(r.name).__dict__})
-	return out
+	)
+	live = counters_for_many([r.name for r in rows])
+	return [{**r, "counters": (live.get(r.name) or Counters()).__dict__} for r in rows]
 
 
 # ---- read helpers for api.campaigns --------------------------------------------------------

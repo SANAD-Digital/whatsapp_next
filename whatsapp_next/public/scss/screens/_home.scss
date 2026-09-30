@@ -116,6 +116,15 @@
 	}
 	.sanad-stats__chevron { align-self: center; }
 
+	// Six cards: the kit's `auto-fit` put five on a laptop row and left the sixth alone under
+	// them. Three by two, or all six in one row where there is room — never an orphan.
+	@media (min-width: 768px) {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+	@media (min-width: 1600px) {
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+	}
+
 	// the prototype keeps two state cards side by side on a phone; one per row reads as a stack
 	// of banners and pushes everything that matters below the fold
 	@media (max-width: 767px) {

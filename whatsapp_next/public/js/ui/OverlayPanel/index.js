@@ -962,17 +962,21 @@ sanad.ui.OverlayPanel = class OverlayPanel {
 		if (!this.open) return this;
 		this.open = false;
 		this.untrap && this.untrap();
+		this.untrap = null;
 		ui.overlay.close(this);
 		this.$root.removeClass("sanad-op--in");
 		window.setTimeout(() => {
+			// shown again during the exit transition: leave it on screen
+			if (this.open) return;
 			this.$root.prop("hidden", true);
 			this.$backdrop.prop("hidden", true);
-			if (!ui.overlay.current) $(document.body).removeClass("sanad-op-open");
+			// the page scrolls again unless another panel of this kind took over (a drawer that is
+			// "current" never releases this class, so waiting on it left the page locked)
+			const next = ui.overlay.current;
+			if (!next || !next.$root || !next.$root.hasClass("sanad-op")) $(document.body).removeClass("sanad-op-open");
 			// out of the document once closed, so a hidden panel's buttons never shadow a live one's
-			if (!this.open) {
-				this.$root.detach();
-				this.$backdrop.detach();
-			}
+			this.$root.detach();
+			this.$backdrop.detach();
 		}, 180);
 		if (this.opener && document.contains(this.opener) && this.opener.focus) this.opener.focus();
 		if (typeof this.opts.on_close === "function") this.opts.on_close(this);

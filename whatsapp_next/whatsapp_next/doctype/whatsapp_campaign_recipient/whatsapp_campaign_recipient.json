@@ -44,7 +44,6 @@
    "fieldname": "phone_e164",
    "label": "Phone (E.164)",
    "fieldtype": "Data",
-   "in_list_view": 1,
    "search_index": 1,
    "description": "The number in international format. Required for individuals and used to spot duplicates."
   },
@@ -71,7 +70,7 @@
    "fieldname": "source_type",
    "label": "Source",
    "fieldtype": "Select",
-   "options": "Contact Group\nContact\nDocType\nExcel\nvCard\nManual",
+   "options": "Contact Group\nContact\nWhatsApp Number\nDocType\nExcel\nvCard\nManual",
    "reqd": 1,
    "in_list_view": 1,
    "description": "Where this recipient was added from."

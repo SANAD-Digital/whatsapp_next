@@ -4,11 +4,13 @@
 
 from __future__ import annotations
 
+import json
 import re
 
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils.data import evaluate_filters
 
 from whatsapp_next.exceptions import WAValidationError
 from whatsapp_next.services.notifications import clear_cache
@@ -22,10 +24,9 @@ ALLOWED_METHODS = (
 	"after_insert",
 	"on_change",
 	"on_update_after_submit",
-	"before_insert",
-	"before_save",
-	"on_trash",
 )
+# Not offered: `before_insert` / `before_save` / `on_trash`. The send runs after commit and reloads
+# the document — before an insert it has no name yet, after a trash it is gone.
 VARIABLE_PATTERN = re.compile(r"\{\{\s*(.*?)\s*\}\}", re.DOTALL)
 
 
@@ -37,7 +38,9 @@ class WhatsAppNotification(Document):
 		self.check_document_type()
 		self.check_body()
 		self.check_method()
+		self.check_condition_type()
 		self.check_condition()
+		self.check_filters()
 		self.normalize_recipients()
 		self.variables_count = count_variables(self.body_source())
 
@@ -89,6 +92,42 @@ class WhatsAppNotification(Document):
 				WAValidationError,
 			)
 		self.method = method
+
+	def check_condition_type(self) -> None:
+		"""One condition at a time, as Frappe's Notification: Filters clear the Python condition and
+		the other way round."""
+		if self.condition_type == "Filters":
+			self.condition = None
+		else:
+			self.condition_type = "Python"
+			self.filters = None
+
+	def check_filters(self) -> None:
+		"""Filters are a JSON list of `[doctype, field, operator, value]` that Frappe can evaluate
+		against a record of the document type; an empty list means every record."""
+		if self.condition_type != "Filters" or not self.filters:
+			return
+		try:
+			filters = json.loads(self.filters)
+		except ValueError:
+			frappe.throw(_("Filters are not valid JSON"), WAValidationError)
+		if not isinstance(filters, list):
+			frappe.throw(_("Filters must be a list"), WAValidationError)
+		if not filters:
+			self.filters = None
+			return
+		# `evaluate_filters` compares a missing field as empty instead of failing, so a mistyped one
+		# would quietly stop every send: each field must exist on the document type
+		meta = frappe.get_meta(self.document_type)
+		standard = set(frappe.model.default_fields)
+		for f in filters:
+			fieldname = f[1] if isinstance(f, (list, tuple)) and len(f) > 2 else None
+			if fieldname and fieldname not in standard and not meta.has_field(fieldname):
+				frappe.throw(_("{0} has no field {1}").format(_(self.document_type), fieldname), WAValidationError)
+		try:
+			evaluate_filters(frappe.new_doc(self.document_type), filters)
+		except Exception as exc:
+			frappe.throw(_("The filters cannot be checked on {0}: {1}").format(_(self.document_type), exc), WAValidationError)
 
 	def check_condition(self) -> None:
 		"""The condition must be a compilable Python expression."""

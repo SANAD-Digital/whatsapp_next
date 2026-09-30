@@ -50,7 +50,6 @@ sanad.ui.DataList = class DataList {
 		this.sort_state = this.opts.sort || {};
 		this.page = 0;
 		this.page_length = cint(this.opts.page_length) || 20;
-		this.page = 0;
 		this.total = null;
 		this.expanded = new Set();
 		this.group_names = new Map(); // rendered group id → { path, names }
@@ -156,10 +155,23 @@ sanad.ui.DataList = class DataList {
 		} else this.render_skeleton();
 	}
 
-	/** The page hands over the rows it fetched and how many there are in all. */
-	set_rows(rows, total) {
+	/**
+	 * The page hands over the rows it fetched and how many there are in all; `page` (0-based)
+	 * when the host moved the page itself — a new filter or search starts again at the first one,
+	 * and the pager must say so rather than keep the page it last stepped to.
+	 */
+	set_rows(rows, total, page) {
 		this.rows = (rows || []).slice();
+		if (page != null) this.page = Math.max(0, cint(page));
 		if (total != null) this.total = cint(total);
+		// the last page emptied under the pager (rows deleted, a narrower filter kept the page
+		// number): step back to the last page that still has rows instead of showing "3 / 2"
+		const last = Math.max(0, Math.ceil((this.total || 0) / this.page_length) - 1);
+		if (!this.rows.length && this.page > last && this.opts.on_page) {
+			this.page = last;
+			this.opts.on_page(last, this);
+			return this;
+		}
 		this.set_loading(false);
 		this.render();
 		this.render_footer();
@@ -276,9 +288,17 @@ sanad.ui.DataList = class DataList {
 		const resolved = list.map((c) => {
 			const df = df_of(c.fieldname);
 			const type = c.type || (df.fieldtype === "Link" ? "link" : ["Int", "Float", "Currency", "Percent"].includes(df.fieldtype) ? "number" : ["Date", "Datetime"].includes(df.fieldtype) ? "date" : "text");
-			return Object.assign({ sortable: !c.format && !c.sub && !!df.fieldtype, align: type === "number" ? "end" : "start" }, c, { df, type, label: c.label || __(df.label || c.fieldname) });
+			// a number column's place comes from its fieldtype (`ui.num_align`) and wins over the
+			// caller's `align`, so every list lines its numbers up the same way; a column that shows
+			// something other than its field (a bar over a count) says so with its own `fieldtype`
+			const num_align = ui.num_align(c.fieldtype || df.fieldtype);
+			const col = Object.assign({ sortable: !c.format && !c.sub && !!df.fieldtype, align: type === "number" ? "center" : "start" }, c, { df, type, label: c.label || __(df.label || c.fieldname) });
+			if (num_align) col.align = num_align;
+			return col;
 		});
-		return this.ordered_columns(resolved);
+		// the host may drop or relabel columns across every list (`DataList.adjust_columns`)
+		const adjusted = typeof DataList.adjust_columns === "function" ? DataList.adjust_columns(resolved, this.doctype) || resolved : resolved;
+		return this.ordered_columns(adjusted);
 	}
 
 	set_columns(columns) {
@@ -606,11 +626,6 @@ sanad.ui.DataList = class DataList {
 		}
 	}
 
-	/**
-	 * Replace the grouping levels (outermost first); `[]` turns grouping off.
-	 * Grouping a single page would describe 20 rows out of hundreds, so while it is on the list
-	 * fetches up to `group_page_length` rows and the pager stands down.
-	 */
 	/** Forget the selection (filters changed, or the caller cleared it). */
 	clear_selection() {
 		this.selected.clear();
@@ -786,6 +801,12 @@ sanad.ui.DataList = class DataList {
 	static format(type, value, df, doc, display, doctype) {
 		if (value == null || value === "") return "";
 		display = display == null ? value : display;
+		// a link to a DocType the host gave its own look (`ui.link_renderers`) takes that look,
+		// whatever the column asked for
+		if (df && df.fieldtype === "Link") {
+			const own = ui.link_html(df.options, value, display, doc);
+			if (own != null) return own;
+		}
 		switch (type) {
 			case "status": {
 				const ind = ui.indicator_for(doctype || doc.doctype, Object.assign({ doctype: doctype || doc.doctype }, doc));
@@ -795,8 +816,12 @@ sanad.ui.DataList = class DataList {
 				return `<span class="sanad-avatar sanad-avatar--sm sanad-avatar--solid" aria-hidden="true">${ui.escape(ui.initials(display))}</span><span class="sanad-datalist__avatar-text">${ui.escape(display)}</span>`;
 			case "entity":
 				return sanad.ui.Render.entity(doc, { doctype: doctype || doc.doctype, density: "inline" });
-			case "number":
-				return `<span class="sanad-tabular">${frappe.format(value, df || { fieldtype: "Int" }, { inline: true }, doc)}</span>`;
+			case "number": {
+				// Frappe prints an Int through `cint()` with no grouping ("12500"): counts are grouped
+				// in the reader's locale like every other count of the kit
+				const int = df ? df.fieldtype === "Int" && cstr(df.options).trim() !== "File Size" : Number.isInteger(Number(value));
+				return `<span class="sanad-tabular">${int ? ui.format_int(value) : frappe.format(value, df || { fieldtype: "Float" }, { inline: true }, doc)}</span>`;
+			}
 			case "date":
 				// dates stay left-to-right inside an Arabic row, or the time jumps ahead of the date
 				return `<span class="sanad-tabular sanad-datalist__date" dir="ltr">${ui.escape(frappe.datetime.str_to_user(value))}</span>`;
@@ -807,7 +832,11 @@ sanad.ui.DataList = class DataList {
 			default:
 				// Everything else is drawn by the kit's one presentation layer, at cell density:
 				// a check reads "Yes", a percent gets its bar, an attachment gets its file chip.
-				return df && df.fieldtype && df.fieldtype !== "Data" ? sanad.ui.Render.value(value, df, doc, { density: "inline", doctype: doctype || doc.doctype }) : ui.escape(display);
+				if (df && df.fieldtype && df.fieldtype !== "Data") return sanad.ui.Render.value(value, df, doc, { density: "inline", doctype: doctype || doc.doctype });
+				// plain text still goes through Desk's formatter chain, so what an app registers
+				// there (a phone shown without its "+") reads the same here as in a form; the
+				// value is escaped first because the Data formatter does not escape
+				return df && frappe.form.formatters.Data ? frappe.form.formatters.Data(ui.escape(display), df, { inline: true }, doc) : ui.escape(display);
 		}
 	}
 
@@ -877,7 +906,10 @@ sanad.ui.DataList = class DataList {
 	count_for(rows) {
 		if (this.page_mode) return Promise.resolve(this.total == null ? rows.length : this.total);
 		const lv = this.listview;
-		const key = JSON.stringify(lv.get_filters_for_args() || []);
+		// a search is an `or_filters` list the toolbar adds beside the filters: it is part of what
+		// is being counted, or a new search would keep the previous search's total
+		const or_filters = lv._sanad_or_filters || [];
+		const key = JSON.stringify([lv.get_filters_for_args() || [], or_filters]);
 		// a page that came back short is the whole result; no extra request needed
 		if (rows.length < cint(lv.start) + cint(lv.page_length)) {
 			this.count_key = key;
@@ -885,7 +917,8 @@ sanad.ui.DataList = class DataList {
 			return Promise.resolve(this.total);
 		}
 		if (this.count_key === key && this.total != null) return Promise.resolve(this.total);
-		return frappe.db.count(this.doctype, { filters: lv.get_filters_for_args() }).then((n) => {
+		// `frappe.db.count` sends no `or_filters`; the endpoint behind it takes them
+		return frappe.xcall("frappe.desk.reportview.get_count", { doctype: this.doctype, filters: lv.get_filters_for_args(), or_filters, fields: [], distinct: false }).then((n) => {
 			this.count_key = key;
 			this.total = cint(n);
 			return this.total;
@@ -971,7 +1004,10 @@ sanad.ui.DataList = class DataList {
 			this.lv.$frappe_list.removeClass("sanad-list-card");
 			this.lv.$frappe_list.parent().removeClass("sanad-list-card-host");
 		}
+		// the delegated row / sort / checkbox handlers sit on the list view's own result area in
+		// list mode: left bound, a remount stacked a second set and every click ran twice
 		if (this.$root) this.$root.off(`.${this.id}`);
+		else if (this.lv) this.lv.$result.off(`.${this.id}`);
 		this.$footer.off(`.${this.id}`).remove();
 		this.$table.remove();
 	}

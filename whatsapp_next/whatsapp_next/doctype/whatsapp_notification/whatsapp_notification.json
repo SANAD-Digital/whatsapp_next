@@ -18,6 +18,9 @@
   "value_changed",
   "method",
   "condition_section",
+  "condition_type",
+  "filters_editor",
+  "filters",
   "condition",
   "message_tab",
   "device",
@@ -136,11 +139,34 @@
    "label": "Condition"
   },
   {
+   "fieldname": "condition_type",
+   "label": "Condition Type",
+   "fieldtype": "Select",
+   "options": "Python\nFilters",
+   "default": "Python",
+   "description": "Filters pick records by their fields, as in a list; Python takes an expression over doc."
+  },
+  {
+   "fieldname": "filters_editor",
+   "label": "Filters Editor",
+   "fieldtype": "HTML",
+   "depends_on": "eval:doc.condition_type==\"Filters\""
+  },
+  {
+   "fieldname": "filters",
+   "label": "Filters",
+   "fieldtype": "Code",
+   "options": "JSON",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
    "fieldname": "condition",
    "label": "Condition",
    "fieldtype": "Code",
    "options": "Python",
-   "description": "Send only when this is true, e.g. doc.grand_total > 1000."
+   "description": "Send only when this is true, e.g. doc.grand_total > 1000.",
+   "depends_on": "eval:doc.condition_type!=\"Filters\""
   },
   {
    "fieldname": "message_tab",

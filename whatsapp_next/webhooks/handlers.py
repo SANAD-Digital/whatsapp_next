@@ -12,7 +12,7 @@ import time
 from typing import Any
 
 import frappe
-from frappe.utils import cint, now_datetime
+from frappe.utils import add_to_date, cint, now_datetime
 
 from whatsapp_next.providers import registry
 from whatsapp_next.providers.schemas import WebhookEvent
@@ -110,11 +110,11 @@ def handle_event(
 	return "Ignored", {}
 
 
-def process_event(event: str) -> str:
+def process_event(webhook_event: str) -> str:
 	"""Job entry point: load the stored row, handle it, record the outcome. Returns the status."""
 	row = frappe.db.get_value(
 		"WhatsApp Webhook Event",
-		event,
+		webhook_event,
 		["name", "event_name", "status", "payload", "device", "error", "event_id"],
 		as_dict=True,
 	)
@@ -123,6 +123,9 @@ def process_event(event: str) -> str:
 	if row.status in ("Processed", "Ignored"):
 		return row.status
 	started = time.perf_counter()
+	# a handler that fails half-way (an inbound row inserted, then an error) must leave nothing
+	# behind: the retry would otherwise find its own first half and record the message twice
+	frappe.db.savepoint("wa_webhook_event")
 	try:
 		body = json.loads(row.payload) if row.payload else {}
 		provider = registry.get_provider()
@@ -139,15 +142,16 @@ def process_event(event: str) -> str:
 		if row.event_name in TERMINAL_MESSAGE_EVENTS and status == "Processed":
 			values["payload"] = None
 		with status_writer():
-			frappe.db.set_value("WhatsApp Webhook Event", event, values, update_modified=True)
+			frappe.db.set_value("WhatsApp Webhook Event", webhook_event, values, update_modified=True)
 		return status
 	except Exception as exc:
+		frappe.db.rollback(save_point="wa_webhook_event")
 		tries = _tries(row.error) + 1
 		message = f"[try {tries}] {type(exc).__name__}: {str(exc)[:300]}"
 		with status_writer():
 			frappe.db.set_value(
 				"WhatsApp Webhook Event",
-				event,
+				webhook_event,
 				{
 					"status": "Failed",
 					"error": message,
@@ -168,11 +172,22 @@ def _tries(error: str | None) -> int:
 	return cint(m.group(1)) if m else 0
 
 
+STUCK_MINUTES = 10
+
+
 def reprocess_failed(limit: int = 100) -> int:
-	"""Cron `*/10`: re-run `Failed` events that have fewer than 3 tries. Returns the count."""
+	"""Cron `*/10`: re-run `Failed` events that have fewer than 3 tries, and `Received` events
+	whose job never ran (> 10 min old: a lost or dropped job). Returns the count."""
 	rows = frappe.get_all(
 		"WhatsApp Webhook Event",
 		filters={"status": "Failed"},
+		fields=["name", "error"],
+		order_by="received_at asc",
+		limit=cint(limit) or 100,
+	)
+	rows += frappe.get_all(
+		"WhatsApp Webhook Event",
+		filters={"status": "Received", "received_at": ("<", add_to_date(now_datetime(), minutes=-STUCK_MINUTES))},
 		fields=["name", "error"],
 		order_by="received_at asc",
 		limit=cint(limit) or 100,

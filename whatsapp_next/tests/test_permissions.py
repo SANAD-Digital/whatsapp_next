@@ -164,6 +164,25 @@ class TestPermissions(IntegrationTestCase):
 				WANotFoundError, permissions.update_contact, "no-such-contact", {"designation": "x"}
 			)
 
+	def test_email_is_written_as_the_primary_email_row(self):
+		# Contact.validate derives email_id from email_ids; the scalar alone used to be dropped.
+		with as_user("WhatsApp Contact User"):
+			name = permissions.create_contact({"first_name": f"{PREFIX} Mail", "email_id": "a@example.com"})
+			doc = frappe.get_doc("Contact", name)
+			self.assertEqual(doc.email_id, "a@example.com")
+			self.assertEqual([(r.email_id, r.is_primary) for r in doc.email_ids], [("a@example.com", 1)])
+
+			doc.append("email_ids", {"email_id": "other@example.com", "is_primary": 0})
+			doc.save(ignore_permissions=True)
+			permissions.update_contact(name, {"email_id": "b@example.com"})
+			doc = frappe.get_doc("Contact", name)
+			self.assertEqual(doc.email_id, "b@example.com")
+			self.assertEqual(
+				sorted((r.email_id, r.is_primary) for r in doc.email_ids),
+				[("b@example.com", 1), ("other@example.com", 0)],
+			)
+			self.assertEqual(_audit_rows("Elevated Contact Write")[-1].fields_written, "email_id")
+
 	# -- reads -------------------------------------------------------------------------
 
 	def _seed(self) -> tuple[str, str]:

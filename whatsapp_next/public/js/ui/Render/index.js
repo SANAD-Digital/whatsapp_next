@@ -199,7 +199,13 @@ const Render = {
 			if (r.html) return r;
 			if (r.text != null) return r;
 			if (r.value == null || r.value === "") return null;
-			const html = r.df ? Render.value(r.value, r.df, doc, { density: d || "inline", doctype, variant: r.variant }) : ui.escape(r.value);
+			// a number reads without "+" (owner's rule); the value itself stays E.164
+			const phone_line = is_phone_field(r.field) && (!r.df || ["Data", "Phone"].includes(r.df.fieldtype));
+			const html = phone_line
+				? VALUE_HELPERS.phone(r.value, r.df, doc, { density: d || "inline" })
+				: r.df
+					? Render.value(r.value, r.df, doc, { density: d || "inline", doctype, variant: r.variant })
+					: ui.escape(r.value);
 			return Object.assign({}, r, { html, ltr: r.ltr != null ? r.ltr : is_ltr_field(r.df, r.field) });
 		};
 
@@ -209,7 +215,7 @@ const Render = {
 		const line_specs = profile.lines || (profile.subtitle ? [profile.subtitle] : auto_lines(doc, meta, kind, used));
 		const lines = line_specs
 			.map((e) => text_of(pick(e)))
-			.filter((l) => l && cstr(l.value != null ? l.value : l.text) !== title);
+			.filter((l) => l && ![cstr(l.value != null ? l.value : l.text), show_phone(l.value != null ? l.value : l.text)].includes(title));
 
 		// media
 		const image_entry = profile.image ? pick(profile.image) : auto_image(doc, meta, used);
@@ -433,6 +439,16 @@ function field_of(meta, fieldname) {
 	return (meta.fields || []).find((df) => df.fieldname === fieldname) || null;
 }
 
+/** Fields that hold a phone number (phone, phone_e164, wa_phone_e164, sender_phone, mobile_no…). */
+function is_phone_field(fieldname) {
+	return /phone|mobile_no/.test(cstr(fieldname));
+}
+
+/** A number as a person reads it: grouped, no "+". Names and JIDs come back unchanged. */
+function show_phone(value) {
+	return ui.phone ? ui.phone(cstr(value)) : cstr(value);
+}
+
 function is_ltr_field(df, fieldname) {
 	const name = cstr(fieldname || (df && df.fieldname));
 	if (/phone|mobile|email|url|jid|code|id$|_id/.test(name)) return true;
@@ -524,7 +540,7 @@ function file_vm(doc, vm) {
 		actions: vm.actions.length
 			? vm.actions
 			: [
-					{ icon: "es-line-preview", label: __("Preview"), href: url, target: "_blank" },
+					{ icon: "es-line-arrow-up-right", label: __("Preview"), href: url, target: "_blank" },
 					{ icon: "es-line-download", label: __("Download"), href: url, download: true },
 			  ],
 	};

@@ -1,7 +1,8 @@
 // WhatsApp Template list (09 row 10a, D-064: the prototype "Message templates" screen):
-// PageHeader (title, "+ New template", KPIs Templates · Uses (30d) · Categories) → FilterBar
-// (search, category) → DataList (Template · Text start · Category · Uses · Last updated · View →
-// form, plus "Use in a message" → QuickSend). PageHeader / DataList are guarded with `typeof`;
+// PageHeader ("+ New template" in the page bar, KPIs Templates · Uses (30d) · Categories) → FilterBar
+// (search, category) → DataList (Template · Text start · Category · Uses · Last updated · View,
+// plus "Use in a message" → QuickSend). "New template", a row and "View" open the editor window
+// (`whatsapp_next.templates.open` → `sanad.ui.TemplateWindow`). PageHeader / DataList are guarded with `typeof`;
 // the native rows render until they land.
 
 const DOCTYPE = "WhatsApp Template";
@@ -15,8 +16,15 @@ function list_categories() {
 		.then((rows) => (rows || []).map((r) => r.category).filter(Boolean));
 }
 
+/** The editor window when it is loaded, else Desk's own form. */
 function open_form(doc) {
-	frappe.set_route("Form", DOCTYPE, doc.name);
+	if (window.whatsapp_next && whatsapp_next.templates && whatsapp_next.templates.open) whatsapp_next.templates.open(doc.name);
+	else frappe.set_route("Form", DOCTYPE, doc.name);
+}
+
+function new_template() {
+	if (window.whatsapp_next && whatsapp_next.templates && whatsapp_next.templates.open) whatsapp_next.templates.open(null);
+	else frappe.new_doc(DOCTYPE);
 }
 
 function use_in_message(doc) {
@@ -37,7 +45,7 @@ const STATS = () => [
 		label: __("Uses (30 days)"),
 		icon: "es-line-chat",
 		tone: "blue",
-		count: { doctype: "WhatsApp Log", filters: { template: ["is", "set"], creation: [">=", days_ago(30)] } },
+		count: { doctype: "WhatsApp Log", filters: { template: ["is", "set"], is_simulated: 0, creation: [">=", days_ago(30)] } },
 		sub: __("Messages sent through a template"),
 	},
 	{
@@ -72,7 +80,7 @@ const COLUMNS = () => [
 		sortable: true,
 		format: (v) => (v ? sanad.ui.StatusBadge.html({ label: __(v), colour: "gray", icon: false }) : ""),
 	},
-	{ fieldname: "use_count", label: __("Uses"), type: "number", align: "end", sortable: true },
+	{ fieldname: "use_count", label: __("Uses"), type: "number", sortable: true },
 	{ fieldname: "modified", label: __("Last updated"), type: "date", sortable: true, format: (v) => (v ? frappe.datetime.str_to_user(v, false, true) : "") },
 ];
 
@@ -93,9 +101,7 @@ frappe.listview_settings[DOCTYPE] = {
 		if (has_header) {
 			listview._sanad_header = new sanad.ui.PageHeader({
 				listview,
-				title: __("Message templates"),
-				description: __("Ready-made texts to pick when sending. They support Jinja variables and conditions and render as soon as you choose one."),
-				primary: { label: __("New template"), icon: "es-line-add", perm: "create", handler: () => frappe.new_doc(DOCTYPE) },
+				primary: { label: __("New template"), icon: "es-line-add", perm: "create", handler: new_template },
 				stats: STATS(),
 			});
 		}
@@ -126,7 +132,7 @@ frappe.listview_settings[DOCTYPE] = {
 				empty: {
 					title: __("No templates yet"),
 					description: __("Create a template once and pick it every time you send."),
-					action: frappe.perm.has_perm(DOCTYPE, 0, "create") ? { label: __("New template"), onclick: () => frappe.new_doc(DOCTYPE) } : null,
+					action: frappe.perm.has_perm(DOCTYPE, 0, "create") ? { label: __("New template"), onclick: new_template } : null,
 				},
 				mobile: "cards",
 			});

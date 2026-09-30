@@ -11,7 +11,7 @@ from typing import Any
 
 import frappe
 from frappe import _
-from frappe.utils import cint
+from frappe.utils import add_days, cint, get_datetime, getdate
 
 from whatsapp_next.api._common import api_endpoint, paginate
 from whatsapp_next.api.v1._roles import AGENT_UP, CONTACT_USER, MANAGER, SYSTEM_MANAGER, VIEWER_UP
@@ -58,9 +58,10 @@ SECTIONS: dict[str, tuple[str, ...]] = {
 		"enable_commands",
 		"command_service_user",
 		"unknown_command_reply",
+		"command_help_token",
+		"command_reply_language",
 		"send_receipt_reply",
 		"receipt_reply",
-		"reply_device",
 	),
 	"policy": ("default_device", "default_country", "global_blacklist_group", "send_only_to_known_numbers"),
 	"picker": ("picker_sources",),
@@ -273,17 +274,20 @@ def list_audit_log(filters: dict | None = None, page: int = 1, page_length: int 
 	unknown = sorted(set(f) - {"action", "user", "from", "to"})
 	if unknown:
 		frappe.throw(_("Unknown filters: {0}").format(", ".join(unknown)), WAValidationError)
-	query: dict[str, Any] = {}
+	query: list[list[Any]] = []
 	if f.get("action"):
-		query["action"] = f["action"]
+		query.append(["action", "=", f["action"]])
 	if f.get("user"):
-		query["user"] = f["user"]
-	if f.get("from") and f.get("to"):
-		query["timestamp"] = ("between", [f["from"], f["to"]])
-	elif f.get("from"):
-		query["timestamp"] = (">=", f["from"])
-	elif f.get("to"):
-		query["timestamp"] = ("<=", f["to"])
+		query.append(["user", "=", f["user"]])
+	# `from` / `to` are days and `timestamp` a date-time: the period runs from the start of `from`
+	# to the end of `to` (a bare `<= to` stopped at its midnight and dropped the whole last day)
+	try:
+		if f.get("from"):
+			query.append(["timestamp", ">=", get_datetime(getdate(f["from"]))])
+		if f.get("to"):
+			query.append(["timestamp", "<", get_datetime(add_days(getdate(f["to"]), 1))])
+	except Exception:
+		frappe.throw(_("from and to must be dates"), WAValidationError)
 	start, length = paginate(page, page_length)
 	rows = frappe.get_all(
 		"WhatsApp Audit Log",

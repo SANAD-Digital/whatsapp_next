@@ -8,7 +8,7 @@
 
 import ui from "../_core/index.js";
 import Render from "../Render/index.js";
-import { fact, dl, avatar } from "../Render/parts.js";
+import { kv, avatar } from "../Render/parts.js";
 
 const LONG_TYPES = ["Text", "Small Text", "Long Text", "Text Editor", "Markdown Editor", "Code", "JSON", "HTML Editor"];
 // Fieldtypes that belong in the quick-facts grid: short enough to read at a glance.
@@ -68,15 +68,16 @@ sanad.ui.Drawer = class Drawer {
 		const width = this.opts.width ? (typeof this.opts.width === "number" ? `${this.opts.width}px` : this.opts.width) : "";
 		this.$backdrop = $(`<div class="sanad-backdrop sanad-drawer__backdrop" hidden></div>`).appendTo(document.body);
 		this.$root = $(`
-			<aside class="sanad-kit sanad-panel sanad-drawer sanad-drawer--${this.opts.mode}" role="dialog" aria-modal="true" aria-labelledby="${this.id}-title" hidden${width ? ` style="--sanad-panel-width:${ui.escape(width)}"` : ""}>
+			<aside class="sanad-kit wa sanad-panel sanad-drawer sanad-drawer--${this.opts.mode}" role="dialog" aria-modal="true" aria-labelledby="${this.id}-title" tabindex="-1" hidden${width ? ` style="--sanad-panel-width:${ui.escape(width)}"` : ""}>
 				<header class="sanad-panel__header">
+					${this.doctype ? `<span class="sanad-drawer__mark" aria-hidden="true">${ui.icon(Render.icon_for(this.doctype) || "es-line-file", "sm")}</span>` : ""}
 					<div class="sanad-panel__title sanad-drawer__heading">
 						<h2 class="sanad-drawer__title" id="${this.id}-title"></h2>
 						<div class="sanad-drawer__meta"></div>
 					</div>
 					<div class="sanad-drawer__tools">
-						<a class="btn btn-sm btn-default sanad-drawer__open" hidden>${ui.icon(ui.icons.open, "xs")} <span>${ui.escape(__("Open"))}</span></a>
-						<button type="button" class="btn btn-sm btn-default sanad-drawer__close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "sm")}</button>
+						<a class="wa-btn wa-btn--ghost wa-btn--sm sanad-drawer__open" hidden>${ui.icon(ui.icons.open, "xs")}<span>${ui.escape(__("Open", null, "Open the record in its form"))}</span></a>
+						<button type="button" class="wa-btn wa-btn--secondary wa-btn--sm wa-btn--icon sanad-drawer__close" aria-label="${ui.escape(__("Close"))}" title="${ui.escape(__("Close (Esc)"))}">${ui.icon("es-line-close", "sm")}</button>
 					</div>
 				</header>
 				<div class="sanad-panel__body sanad-drawer__body"></div>
@@ -87,6 +88,9 @@ sanad.ui.Drawer = class Drawer {
 		this.$body = this.$root.find(".sanad-drawer__body");
 		this.$footer = this.$root.find(".sanad-drawer__footer");
 		this.$root.find(".sanad-drawer__close").on("click", () => this.hide());
+		// the form replaces the list the drawer was opened from, so the drawer goes with it; Desk's
+		// router still takes the click and follows the link
+		this.$root.find(".sanad-drawer__open").on("click", () => this.hide());
 		this.$backdrop.on("click", () => this.hide());
 		this.$root.on("keydown", (e) => {
 			if (e.key === "Escape") {
@@ -104,15 +108,21 @@ sanad.ui.Drawer = class Drawer {
 	}
 
 	show() {
+		// a hide still running its exit transition must not hide the drawer shown again meanwhile
+		window.clearTimeout(this._hide_timer);
+		// shown again while open (the next record in the same drawer): one focus trap, not two
+		this.untrap && this.untrap();
 		// capture the opener before another panel is hidden (its focus would be inside that panel)
-		this.opener = document.activeElement;
+		if (this.$root.prop("hidden") || !this.$root[0].contains(document.activeElement)) this.opener = document.activeElement;
 		ui.overlay.open(this);
 		this.$backdrop.prop("hidden", false);
 		this.$root.prop("hidden", false);
 		$(document.body).addClass("sanad-drawer-open");
 		window.requestAnimationFrame(() => this.$root.addClass("sanad-panel--open"));
 		this.untrap = ui.trap_focus(this.$root);
-		this.$root.find(".sanad-drawer__close").trigger("focus");
+		// focus the panel itself, not its close button: the dialog is announced by its title and
+		// Tab still reaches the close first, but a ring no longer greets every mouse user
+		this.$root.trigger("focus");
 		if (this.opts.mode === "choice") {
 			this.render_choice();
 		} else if (this.doc) {
@@ -131,12 +141,16 @@ sanad.ui.Drawer = class Drawer {
 		if (this.$root.prop("hidden")) return this;
 		this.close_menu();
 		this.untrap && this.untrap();
+		this.untrap = null;
 		ui.overlay.close(this);
 		this.$root.removeClass("sanad-panel--open");
-		window.setTimeout(() => {
+		this._hide_timer = window.setTimeout(() => {
 			this.$root.prop("hidden", true);
 			this.$backdrop.prop("hidden", true);
-			if (!ui.overlay.current) $(document.body).removeClass("sanad-drawer-open");
+			// the page scrolls again unless another drawer took over: a form panel opened from
+			// this drawer is also "current", and waiting on it left the page locked after it closed
+			const next = ui.overlay.current;
+			if (!next || !next.$root || !next.$root.hasClass("sanad-drawer")) $(document.body).removeClass("sanad-drawer-open");
 		}, 160);
 		this.restore_focus();
 		if (!silent && typeof this.opts.on_close === "function") this.opts.on_close(this);
@@ -343,7 +357,7 @@ sanad.ui.Drawer = class Drawer {
 				<div class="sanad-doc__identity-text">
 					<h3 class="sanad-doc__identity-title" dir="auto">${ui.escape(vm.title || name)}</h3>
 					${lines}
-					${name ? `<div class="sanad-doc__identity-ref"><span>${ui.escape(__(this.doctype))}</span><span aria-hidden="true">·</span><code dir="ltr">${ui.escape(name)}</code></div>` : ""}
+					${name ? `<div class="sanad-doc__identity-ref"><span>${ui.escape(__(this.doctype))}</span><span aria-hidden="true">·</span><code dir="ltr">${ui.escape(this.doctype === "WhatsApp Number" && ui.phone ? ui.phone(name) : name)}</code></div>` : ""}
 				</div>
 			</div>
 			<div class="sanad-doc__identity-side">
@@ -366,21 +380,19 @@ sanad.ui.Drawer = class Drawer {
 		$body.html(`<div class="sanad-doc__highlight" dir="auto">${html}</div>`);
 	}
 
-	/** Quick facts: the short fields as a grid of tiles, label above and value below. */
+	/** Quick facts: the short fields as key / value rows, each key with its icon. */
 	render_facts(doc, facts) {
-		const $body = this.block({ label: __("Key facts"), icon: "es-line-details" });
-		const html = facts
-			.map((f) =>
-				fact({
-					label: f.label,
-					// inline density inside a tile: a link stays a chip, a percent still gets its bar
-					value: Render.value(doc[f.field], f.df, doc, { density: "inline", icon: false, doctype: this.doctype, variant: f.variant || (f.df && f.df.fieldtype === "Percent" ? "progress" : undefined) }),
-					icon: f.icon || Render.field_icon(f.df),
-					ltr: f.ltr,
-				})
-			)
-			.join("");
-		$body.html(`<div class="sanad-fact-grid">${html}</div>`);
+		const html = kv(
+			facts.map((f) => ({
+				label: f.label,
+				// inline density in a row: a link stays a chip, a percent still gets its bar
+				value: Render.value(doc[f.field], f.df, doc, { density: "inline", icon: false, doctype: this.doctype, variant: f.variant || (f.df && f.df.fieldtype === "Percent" ? "progress" : f.df && f.df.fieldtype === "Check" ? "text" : undefined) }),
+				icon: f.icon || Render.field_icon(f.df),
+				ltr: f.ltr,
+			}))
+		);
+		if (!html) return;
+		this.block({ label: __("Key facts"), icon: "es-line-details" }).html(html);
 	}
 
 	/** A linked record as itself — a person reads as a person, with their own quick actions. */
@@ -398,13 +410,14 @@ sanad.ui.Drawer = class Drawer {
 			const long = LONG_TYPES.includes(d.df && d.df.fieldtype);
 			return {
 				label: d.label,
-				// only the long fields get room; everything else stays one line, like its neighbours
-				value: Render.value(doc[d.field], d.df, doc, { density: long ? "card" : "inline", doctype: this.doctype }),
+				// only the long fields get room; everything else stays one line, like its neighbours.
+				// A yes/no here is a word, not a badge: a column of grey pills reads as noise.
+				value: Render.value(doc[d.field], d.df, doc, { density: long ? "card" : "inline", doctype: this.doctype, variant: d.df && d.df.fieldtype === "Check" ? "text" : d.variant }),
 				wide: long,
 				ltr: d.ltr,
 			};
 		});
-		const html = dl(rows);
+		const html = kv(rows);
 		if (!html) return;
 		$(`<details class="sanad-doc__details" open>
 			<summary class="sanad-doc__block-title"><span class="sanad-doc__block-icon" aria-hidden="true">${ui.icon("es-line-article", "sm")}</span><span>${ui.escape(__("More details"))}</span></summary>
@@ -576,13 +589,15 @@ sanad.ui.Drawer = class Drawer {
 		const inline = actions.filter((a) => !a.menu);
 		const more = actions.filter((a) => a.menu);
 		if (more.length) {
-			const $more = $(`<button type="button" class="btn btn-sm btn-default sanad-drawer__action sanad-drawer__more" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("More actions"))}" title="${ui.escape(__("More actions"))}">${ui.icon(ui.icons.more, "sm")}</button>`);
+			const $more = $(`<button type="button" class="wa-btn wa-btn--secondary wa-btn--icon sanad-drawer__action sanad-drawer__more" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("More actions"))}" title="${ui.escape(__("More actions"))}">${ui.icon(ui.icons.more, "sm")}</button>`);
 			$more.on("click", () => (this.$menu ? this.close_menu(true) : this.open_menu($more, more, run)));
 			this.$footer.append($more);
 		}
 		inline.forEach((a) => {
-			const cls = a.primary ? "btn-primary" : a.danger ? "btn-danger" : "btn-default";
-			const $btn = $(`<button type="button" class="btn btn-sm ${cls} sanad-drawer__action">${a.icon ? ui.icon(a.icon, "xs") + " " : ""}${ui.escape(a.label)}</button>`);
+			// the kit's own variants (`_kit/style.scss`): primary for the one main verb, danger for what
+			// cannot be undone, secondary for the rest
+			const cls = a.primary ? "wa-btn--primary" : a.danger ? "wa-btn--danger" : "wa-btn--secondary";
+			const $btn = $(`<button type="button" class="wa-btn ${cls} sanad-drawer__action" title="${ui.escape(a.label)}">${a.icon ? ui.icon(a.icon, "xs") : ""}<span class="sanad-drawer__action-label">${ui.escape(a.label)}</span></button>`);
 			$btn.on("click", () => run(a, $btn));
 			this.$footer.append($btn);
 		});

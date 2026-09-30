@@ -10,7 +10,7 @@ from typing import Any
 
 import frappe
 from frappe.query_builder.functions import Count, Date, Extract
-from frappe.utils import add_days, get_datetime, nowdate
+from frappe.utils import add_days, add_to_date, get_datetime, now_datetime, nowdate
 from pypika.enums import DatePart
 
 OUT = "WhatsApp Log"
@@ -43,12 +43,16 @@ def _group(field: str, start: datetime, end: datetime | None = None, **equals: A
 
 def traffic(period: str) -> dict[str, Any]:
 	"""`{from, now, previous, errors}` — status totals of the period and of the one before it,
-	and the error codes of its failures. Exact."""
-	start, previous_start, _days, _grain = _window(period)
+	and the error codes of its failures. Exact. The period runs to now, so "previous" covers the
+	same elapsed span one period earlier (today so far ↔ yesterday up to this time; the last N
+	days ↔ the N days ending at this time N days ago) — a full previous day against a partial
+	today would always read as a drop."""
+	start, previous_start, days, _grain = _window(period)
+	previous_end = add_to_date(now_datetime(), days=-(days + 1))
 	return {
 		"from": str(start.date()),
 		"now": _group("status", start),
-		"previous": _group("status", previous_start, start),
+		"previous": _group("status", previous_start, previous_end),
 		"errors": _group("error_code", start, status="Failed"),
 	}
 

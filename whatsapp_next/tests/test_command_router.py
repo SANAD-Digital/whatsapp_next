@@ -132,7 +132,8 @@ class TestCommandRouter(IntegrationTestCase):
 		g = frappe.get_doc("WhatsApp Contact Group", BLACKLIST)
 		g.set("members", [])
 		g.save(ignore_permissions=True)
-		ensure_settings(enable_commands=1, send_receipt_reply=0)
+		# the assertions read English replies, whatever language this site answers in
+		ensure_settings(enable_commands=1, send_receipt_reply=0, command_reply_language="en")
 		cr.clear_map()
 
 	# -- matching ----------------------------------------------------------------------
@@ -167,6 +168,7 @@ class TestCommandRouter(IntegrationTestCase):
 			return original(ctx)
 
 		replies_before = frappe.db.count("WhatsApp Log", {"source_type": "Command Reply"})
+		calls_before = frappe.db.get_value("WhatsApp Function", "ping", "call_count")
 		with patch.dict(registry.FUNCTION_HANDLERS, {"ping": spy}):
 			res = simulator.simulate_inbound(self.device, P_UNLINKED, "#ping hello world")
 		self.assertEqual(res.status, "Executed")
@@ -177,7 +179,8 @@ class TestCommandRouter(IntegrationTestCase):
 		self.assertEqual(res.outbound, [])  # dry run: nothing stored
 		# the site's own simulated replies stay; this run adds none (R-041)
 		self.assertEqual(frappe.db.count("WhatsApp Log", {"source_type": "Command Reply"}), replies_before)
-		self.assertGreaterEqual(frappe.db.get_value("WhatsApp Function", "ping", "call_count"), 1)
+		# a dry run is not a call: the function's figures describe what senders got
+		self.assertEqual(frappe.db.get_value("WhatsApp Function", "ping", "call_count"), calls_before)
 
 	def test_unknown_help_and_blocks(self):
 		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#xyz")
@@ -205,6 +208,63 @@ class TestCommandRouter(IntegrationTestCase):
 		with patch.object(cr, "check_access", return_value="Commands Disabled"):
 			res = simulator.simulate_inbound(self.device, P_LINKED, "#ping")
 		self.assertEqual(res.block_reason, "Commands Disabled")
+
+	def test_help_token_explains_one_command(self):
+		"""`؟` alone lists the commands; beside a command word it explains that command's variables."""
+		for text in ("#doc ?", "doc ؟", "؟ doc", "doc؟", "help doc"):
+			m = cr.match(text)
+			self.assertEqual((m.command, m.is_help, m.rest), ("doc", True, ""), text)
+		self.assertEqual((cr.match("؟").command, cr.match("؟").is_help), ("", True))
+		self.assertFalse(cr.match("#doc SINV-1").is_help)
+		usage = cr.usage_text(frappe.get_doc("WhatsApp Command", "doc"))
+		self.assertIn("doc <", usage)  # the required document name, in its place
+		self.assertEqual(usage.splitlines()[-1], "Example: doc SINV-0001")  # a ready example
+		self.assertNotIn("name=", usage)  # by-name sending is only worth showing for two variables or more
+		res = simulator.simulate_inbound(self.device, P_UNLINKED, "doc ؟")
+		self.assertEqual((res.status, res.replies[0]["output_key"]), ("Executed", "help"))
+		self.assertEqual(res.replies[0]["body"], usage)  # no access check: help reveals no data
+		self.assertIn("ping —", simulator.simulate_inbound(self.device, P_UNLINKED, "؟").replies[0]["body"])
+		# the token set in Settings, and the words it may not take
+		ensure_settings(command_help_token="تعريف")
+		try:
+			self.assertTrue(cr.match("ping تعريف").is_help)
+			with self.assertRaises(WAValidationError):
+				ensure_settings(command_help_token="ping")
+			with self.assertRaises(WAValidationError):
+				ensure_settings(command_help_token="two words")
+			cmd = frappe.get_doc("WhatsApp Command", "ping")
+			cmd.status = "Inactive"
+			cmd.save(ignore_permissions=True)
+			cmd.synonyms = "تعريف"
+			with self.assertRaises(WAValidationError):
+				cmd.save(ignore_permissions=True)
+		finally:
+			ensure_settings(command_help_token="؟")
+			frappe.db.set_value("WhatsApp Command", "ping", {"status": "Active", "synonyms": "بنق"})
+			cr.clear_map()
+
+	def test_replies_are_written_in_the_reply_language(self):
+		"""Settings' reply language, not the caller's; the caller's language comes back after."""
+		before = frappe.local.lang
+		ensure_settings(command_reply_language="ar")
+		try:
+			res = simulator.simulate_inbound(self.device, P_UNLINKED, "doc ؟")
+			self.assertIn("أرسل:", res.replies[0]["body"])
+			self.assertEqual(frappe.local.lang, before)
+			# a job resolves its user's language on its first `_()` and overwrites `frappe.local.lang`;
+			# when that first call falls inside the reply (a fresh worker), the reply must stay put
+			frappe.local.job = frappe._dict(user="Guest", lang_resolved=False)
+			try:
+				with cr.in_reply_language():
+					self.assertEqual(frappe._("Send: {0}"), "أرسل: {0}")
+					self.assertEqual(frappe._("Variables, in this order:"), "المتغيرات بهذا الترتيب:")
+			finally:
+				del frappe.local.job
+		finally:
+			ensure_settings(command_reply_language="en")
+		self.assertNotIn(
+			"أرسل:", simulator.simulate_inbound(self.device, P_UNLINKED, "doc ؟").replies[0]["body"]
+		)
 
 	def test_args_party_and_handler_errors(self):
 		if not self.customer:
@@ -280,6 +340,40 @@ class TestCommandRouter(IntegrationTestCase):
 		self.assertEqual(live.status, "Executed")
 		self.assertEqual(frappe.db.get_value("WhatsApp Log", live.outbound[0], "status"), "Queued")
 		self.assertEqual(frappe.db.count("WhatsApp Queue Item", {"outbound_message": live.outbound[0]}), 1)
+
+	def test_automatic_replies_skip_the_queue(self):
+		"""The receipt and the unknown-command reply go out at once (`dispatch.send_now`); the
+		function's own reply keeps the queue; a direct send that breaks falls back to the queue."""
+
+		def live(text):
+			res = simulator.simulate_inbound(self.device, P_UNLINKED, text, persist=True)
+			frappe.db.set_value("WhatsApp Inbound Message", res.inbound, "is_simulated", 0)
+			return res.inbound
+
+		queued = lambda name: frappe.db.count("WhatsApp Queue Item", {"outbound_message": name})  # noqa: E731
+		ensure_settings(send_receipt_reply=1, receipt_reply="got it")
+		inbound = live("#ping now")
+		with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now") as now:
+			result = cr.route(inbound)
+		self.assertEqual(result.status, "Executed")
+		receipt = frappe.get_all(
+			"WhatsApp Log", filters={"trigger_inbound": inbound, "body": "got it"}, pluck="name"
+		)
+		self.assertEqual(len(receipt), 1)
+		now.assert_called_once_with(receipt[0], source="direct")
+		self.assertEqual(queued(receipt[0]), 0)
+		self.assertEqual(queued(result.outbound[0]), 1)  # the function's reply
+		ensure_settings(send_receipt_reply=0)
+		inbound = live("#xyz")
+		with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now") as now:
+			result = cr.route(inbound)
+		self.assertEqual(result.status, "Not Matched")
+		now.assert_called_once_with(result.outbound[0], source="direct")
+		self.assertEqual(queued(result.outbound[0]), 0)
+		inbound = live("#xyz again")
+		with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now", side_effect=RuntimeError):
+			result = cr.route(inbound)
+		self.assertEqual(queued(result.outbound[0]), 1)
 
 	def test_render_outputs_and_send_test(self):
 		cmd = frappe.get_doc("WhatsApp Command", "doc")

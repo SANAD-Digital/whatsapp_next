@@ -27,7 +27,6 @@ SCALAR_KEYS: tuple[str, ...] = (
 	"requires_linked_contact",
 	"allowed_group",
 	"blocked_group",
-	"reply_device",
 	"description",
 )
 TABLE_KEYS: tuple[str, ...] = (
@@ -58,7 +57,7 @@ def require_inactive(doc) -> None:
 def save(payload: dict, user: str | None = None) -> str:
 	"""Create (`name` absent) or update a command from the allow-listed payload
 	`{name?, code, title, function, synonyms, requires_linked_contact, allowed_party_types[],
-	allowed_group, blocked_group, reply_device, settings_overrides{}, outputs[], description}`.
+	allowed_group, blocked_group, settings_overrides{}, outputs[], description}`.
 	E: `WAStateConflictError` (target Active), `WAValidationError` (unknown key, word collision,
 	unknown override key); audited `Command Changed`. Returns the command's name."""
 	if not isinstance(payload, dict):
@@ -434,11 +433,40 @@ def preview(payload: dict, sender: dict | None = None, values: dict | None = Non
 	# the preview reports refusals and errors in its result; a message a failed step queued
 	# (`frappe.throw` in argument parsing or in the handler) must not also pop up in the desk
 	queued = len(frappe.local.message_log or [])
+	from whatsapp_next.services.command_router import in_reply_language
+
 	try:
-		return _preview(doc, sender, values)
+		# written as the sender will get it, in the reply language, not the editor's
+		with in_reply_language():
+			return _preview(doc, sender, values)
 	finally:
 		if frappe.local.message_log:
 			del frappe.local.message_log[queued:]
+
+
+def _preview_party(
+	doc, contact: str | None, party_type: str | None, party_name: str | None
+) -> tuple[str | None, str | None]:
+	"""The account the preview runs "as": never taken on the client's word — it must be one of the
+	contact's own party links (else `WAValidationError`), and without one it is the account the
+	router itself would pick for a message from that contact (`command_router.sender_for`)."""
+	from whatsapp_next.services import command_router
+
+	if not contact:
+		return None, None
+	if party_type or party_name:
+		linked = party_type in command_router.PARTY_TYPES and frappe.db.exists(
+			"Dynamic Link",
+			{"parenttype": "Contact", "parent": contact, "link_doctype": party_type, "link_name": party_name},
+		)
+		if not linked:
+			frappe.throw(
+				_("{0} {1} is not linked to contact {2}").format(_(party_type or ""), party_name or "", contact),
+				WAValidationError,
+			)
+		return party_type, party_name
+	who = command_router.sender_for({"contact": contact}, command_router.allowed_party_types(doc))
+	return who.party_type, who.party_name
 
 
 def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
@@ -456,15 +484,14 @@ def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
 	if phone:
 		kind, key = classify(phone)
 		phone = key if kind == "Individual" else None
-	party_type = sender.get("party_type") or None
-	party_name = sender.get("party_name") or None
+	party_type, party_name = _preview_party(doc, contact, sender.get("party_type"), sender.get("party_name"))
 	who = Sender(
 		phone_e164=phone,
 		jid=None,
 		display_name=sender.get("label") or _("Preview"),
 		contact=contact,
-		party_type=party_type if contact else None,
-		party_name=party_name if contact else None,
+		party_type=party_type,
+		party_name=party_name,
 	)
 	spec = function_spec(doc.function)
 	off = command_router.disabled_inputs(doc)

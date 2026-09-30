@@ -11,10 +11,11 @@ import hmac
 import json
 import time
 from collections.abc import Mapping
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 import requests
+from frappe.utils import convert_utc_to_system_timezone
 
 from whatsapp_next.providers import exceptions as pex
 from whatsapp_next.providers.base import (
@@ -128,25 +129,81 @@ def _digits(value: str | None) -> str | None:
 	return "".join(ch for ch in value if ch.isdigit())
 
 
+def _site_time(moment: datetime) -> datetime:
+	"""An absolute instant as this site's own wall clock, naive like every Datetime Frappe stores.
+	`datetime.fromtimestamp()` alone gives the server OS's clock (Europe/Berlin here), and the
+	platform's own local times are another zone again (Asia/Aden), while the site may be neither."""
+	if moment.tzinfo is None:
+		return moment
+	return convert_utc_to_system_timezone(moment.astimezone(timezone.utc)).replace(tzinfo=None)
+
+
+# The zone the SND platform runs in (its System Settings): its API returns Datetime fields bare,
+# and its webhook `occurred_at` is that zone's wall clock with no offset.
+PLATFORM_TIME_ZONE = "Asia/Aden"
+
+
+def _platform_zone():
+	"""The zone the platform writes its zoneless times in: `whatsapp_platform_time_zone` from
+	site_config when set (an empty value keeps them as written), else `PLATFORM_TIME_ZONE`.
+	Taking them as written made a site in another zone read every `last_seen` / `sent_at` off by
+	the difference (2 h 30 min between Aden and Kolkata)."""
+	import frappe
+
+	conf = frappe.conf or {}
+	name = conf.get("whatsapp_platform_time_zone", PLATFORM_TIME_ZONE)
+	name = (name or "").strip()
+	if not name:
+		return None
+	try:
+		from zoneinfo import ZoneInfo
+
+		return ZoneInfo(name)
+	except Exception:
+		return None
+
+
 def _dt(value: Any) -> datetime | None:
+	"""A time from the platform as the site's wall clock. Unix times and ISO strings that carry a
+	zone are exact; a zoneless ISO string (the platform's `occurred_at`, its Datetime fields) is
+	the platform's wall clock (`_platform_zone`)."""
 	if value in (None, ""):
 		return None
 	if isinstance(value, datetime):
-		return value
-	if isinstance(value, int | float):
-		return datetime.fromtimestamp(float(value))
+		return _site_time(value)
+	if isinstance(value, int | float) or (isinstance(value, str) and value.strip().replace(".", "", 1).isdigit()):
+		number = float(value)
+		return _site_time(datetime.fromtimestamp(number / 1000 if number > 1e11 else number, timezone.utc))
 	text = str(value).strip()
-	if text.isdigit():
-		return datetime.fromtimestamp(int(text) if len(text) <= 10 else int(text) / 1000)
+	try:
+		parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+		return _site_time(parsed) if parsed.tzinfo is not None else _placed(parsed)
+	except ValueError:
+		pass
 	for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S"):
 		try:
-			return datetime.strptime(text.replace("Z", ""), fmt)
+			return _placed(datetime.strptime(text.replace("Z", ""), fmt))
 		except ValueError:
 			continue
 	return None
 
 
+def _placed(naive: datetime) -> datetime:
+	"""A zoneless platform time on the site's clock, when the platform's zone is known."""
+	zone = _platform_zone()
+	return _site_time(naive.replace(tzinfo=zone)) if zone else naive
+
+
 def _d(value: Any) -> date | None:
+	"""A calendar date. A bare `YYYY-MM-DD` is a day, not an instant: it is read as written (it
+	used to come back empty, which is why the subscription's start and end never showed)."""
+	if isinstance(value, date) and not isinstance(value, datetime):
+		return value
+	if isinstance(value, str) and len(value.strip()) == 10:
+		try:
+			return date.fromisoformat(value.strip())
+		except ValueError:
+			pass
 	dt = _dt(value)
 	return dt.date() if dt else None
 
@@ -235,18 +292,29 @@ class SndPlatformProvider(BaseProvider):
 			if data.get("ok") is False:
 				self._raise_business(data, status)
 			return data
-		self._raise_http(status, data if data else payload if isinstance(payload, dict) else {}, response)
+		# an error keeps the envelope's own keys (`exc_type`, `_server_messages`, `code`) beside the
+		# unwrapped `message`: reading only one of them lost the type (a 417 PermissionError read
+		# as a validation error) or, for a string `message`, the text itself
+		error = dict(payload) if isinstance(payload, dict) else {}
+		if isinstance(error.get("message"), dict):
+			error.pop("message")
+		error.update({k: v for k, v in data.items() if k != "value"})
+		self._raise_http(status, error, response)
 		return {}  # pragma: no cover
 
 	@staticmethod
 	def _message_text(data: dict, response: requests.Response | None = None) -> str:
-		text = data.get("error") or data.get("exception") or data.get("message") or ""
+		text = data.get("error") or data.get("message") or ""
 		if not text and data.get("_server_messages"):
 			try:
 				msgs = json.loads(data["_server_messages"])
 				text = " ".join(json.loads(m).get("message", "") for m in msgs)
 			except (ValueError, TypeError, AttributeError):
 				text = str(data.get("_server_messages"))
+		if not text and data.get("exception"):
+			# the platform's raw `module.ExceptionClass: message`: keep the message, not the
+			# platform's internals, since this text reaches the caller of our API
+			text = str(data["exception"]).split(": ", 1)[-1]
 		if not text and response is not None:
 			text = f"HTTP {response.status_code}"
 		return str(text)[:500]
@@ -305,6 +373,13 @@ class SndPlatformProvider(BaseProvider):
 			raise pex.BusinessRejectedError(
 				text, reason=text, platform_message_log=data.get("message_log"), **kwargs
 			)
+		if "AccountExistsError" in exc_type or code == "ACCOUNT_EXISTS":
+			raise pex.AccountExistsError(text, **kwargs)
+		# the platform refuses an account with no live subscription either with its code or, from
+		# older paths (`services/subscriptions.py`), with a plain `frappe.throw` of the same text
+		if code in ("SUBSCRIPTION_INACTIVE", "SUBSCRIPTION_EXPIRED") or "subscription is not active" in lower:
+			kwargs["code"] = code or "SUBSCRIPTION_INACTIVE"
+			raise pex.QuotaExceededError(text, reason=text, **kwargs)
 		if status in (400, 413, 415, 422) or (status == 417 and "ValidationError" in exc_type):
 			if any(t in lower for t in AUTH_TEXT) and status == 417:
 				raise pex.AuthError(text, **kwargs)
@@ -430,7 +505,7 @@ class SndPlatformProvider(BaseProvider):
 	) -> SignupState:
 		body: dict[str, Any] = {
 			"full_name": full_name,
-			"email": email,
+			"email": email or "",
 			"mobile_no": _digits(mobile_e164),
 			"plan_code": plan_code,
 		}
@@ -828,23 +903,35 @@ class SndPlatformProvider(BaseProvider):
 				ProviderContact(
 					jid=jid,
 					phone_e164=("+" + str(phone)) if phone and str(phone).isdigit() else phone,
-					name=row.get("name") or row.get("push_name"),
+					# the name saved in the phone's address book first, then what the person calls
+					# themselves; the platform sends each under its own key
+					name=_first(
+						row.get("full_name"),
+						row.get("name"),
+						row.get("business_name"),
+						row.get("push_name"),
+						row.get("first_name"),
+					),
 				)
 			)
 		return out
 
 	def list_device_groups(self, platform_device: str) -> list[ProviderGroup]:
 		data = self._request("GET", "list_device_groups_api", params={"device": platform_device})
-		return [
-			ProviderGroup(
-				jid=str(row.get("jid") or row.get("id") or ""),
-				name=row.get("name") or row.get("subject"),
-				participants_count=int(
-					row.get("participants_count") or len(row.get("participants") or []) or 0
-				),
+		out = []
+		for row in data.get("groups") or []:
+			# the platform passes the gateway's own keys through (`JID`, `Name`, `Participants`)
+			members = _first(row.get("participants"), row.get("Participants")) or []
+			out.append(
+				ProviderGroup(
+					jid=str(_first(row.get("jid"), row.get("JID"), row.get("id")) or ""),
+					name=_first(row.get("name"), row.get("Name"), row.get("subject")),
+					participants_count=int(
+						row.get("participants_count") or (len(members) if isinstance(members, list) else 0)
+					),
+				)
 			)
-			for row in data.get("groups") or []
-		]
+		return out
 
 	# ------------------------------------------------------------------ webhooks
 	@staticmethod
@@ -866,9 +953,11 @@ class SndPlatformProvider(BaseProvider):
 			return SignatureCheck(valid=False, fresh=False, reason="no secret")
 		try:
 			ts = int(float(timestamp))
-		except ValueError:
+			# the site's clock, like every other platform time (`fromtimestamp` alone is the OS's)
+			event_ts = _site_time(datetime.fromtimestamp(ts, timezone.utc))
+		except (ValueError, OverflowError, OSError):
+			# "inf", "1e30", a year past 9999: garbage from the sender, not a server fault
 			return SignatureCheck(valid=False, fresh=False, reason="bad timestamp")
-		event_ts = datetime.fromtimestamp(ts)
 		fresh = abs(int(time.time()) - ts) <= max_skew
 		expected = self.sign(secret, timestamp, raw_body)
 		valid = hmac.compare_digest(expected, signature.strip().lower())
@@ -894,7 +983,14 @@ class SndPlatformProvider(BaseProvider):
 			event_name = _status_alias(body)
 		event_id = h.get(HEADER_EVENT_ID.lower()) or str(body.get("event_id") or "")
 		ts_header = h.get(HEADER_TIMESTAMP.lower())
-		timestamp = _dt(ts_header) or _dt(body.get("occurred_at")) or _dt(body.get("timestamp"))
+		# the most exact first: the gateway's own event time and the platform's Unix time are
+		# absolute; the signing time is when it was delivered; `occurred_at` has no zone at all
+		timestamp = (
+			_dt(body.get("timestamp"))
+			or _dt(body.get("occurred_at_ts"))
+			or _dt(ts_header)
+			or _dt(body.get("occurred_at"))
+		)
 		platform_device = body.get("device") if isinstance(body.get("device"), str) else None
 		status = body.get("status")
 		reason = body.get("held_reason") or body.get("reason") or body.get("error")
@@ -1134,7 +1230,14 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 		body.get("from"),
 	)
 	from_jid = _first(body.get("from"), body.get("from_jid"), sender_jid)
-	sender_mobile = _first(body.get("sender_mobile_no"), body.get("sender_phone"), body.get("mobile_no"))
+	# a sender WhatsApp names by a privacy id (`…@lid`) carries no number in its jid; the platform
+	# sends the resolved number beside it as `sender_number`
+	sender_mobile = _first(
+		body.get("sender_number"),
+		body.get("sender_mobile_no"),
+		body.get("sender_phone"),
+		body.get("mobile_no"),
+	)
 	text = _first(
 		body.get("text"),
 		body.get("body"),

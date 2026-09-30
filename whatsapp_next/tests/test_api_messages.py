@@ -147,20 +147,22 @@ class TestApiMessages(IntegrationTestCase):
 
 	def test_inbound_summary(self):
 		"""09 G-07: exact counts (measured as the difference its own rows make) and the reply time."""
-		from frappe.utils import add_to_date, now_datetime
+		from frappe.utils import add_to_date
 
 		with as_user("WhatsApp Viewer"):
 			before = api.get_inbound_summary(days=30)
 		executed = self._inbound(body=f"{TAG} summary 1")
 		self._inbound(body=f"{TAG} summary 2")
-		received = now_datetime()
+		# `received_at` is the gateway's clock (hours off the site's); the reply time runs from
+		# `creation`, the site clock at intake, so the skew must not reach the average.
+		created = frappe.db.get_value("WhatsApp Inbound Message", executed, "creation")
 		frappe.db.set_value(
 			"WhatsApp Inbound Message",
 			executed,
 			{
 				"command_status": "Executed",
-				"received_at": received,
-				"replied_at": add_to_date(received, seconds=3),
+				"received_at": add_to_date(created, hours=-3),
+				"replied_at": add_to_date(created, seconds=3),
 			},
 		)
 		frappe.db.set_value(
@@ -175,6 +177,7 @@ class TestApiMessages(IntegrationTestCase):
 		self.assertEqual(after["executed"] - before["executed"], 1)
 		self.assertEqual(after["unmatched"] - before["unmatched"], 1)
 		self.assertIsNotNone(after["avg_reply_seconds"])
+		self.assertLess(after["avg_reply_seconds"], 3600)
 		self.assertGreaterEqual(after["replies_measured"], 1)
 		with as_user("_none"), self.assertRaises(WAPermissionError):
 			api.get_inbound_summary()
@@ -197,6 +200,9 @@ class TestApiMessages(IntegrationTestCase):
 			self.assertEqual(len(second["rows"]), 2)
 			self.assertNotIn(first["rows"][0]["name"], [r["name"] for r in second["rows"]])
 			self.assertEqual(api.get_conversation(key=P1, device="no-such-device")["rows"], [])
+			# a raw phone from a caller reads the same thread as its E.164 key
+			raw = api.get_conversation(key="00" + P1.lstrip("+"))
+			self.assertEqual({r["name"] for r in raw["rows"]}, {o1, i1, o2})
 
 	# -- resend / cancel ---------------------------------------------------------------
 

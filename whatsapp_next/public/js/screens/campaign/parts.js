@@ -91,17 +91,30 @@ frappe.provide("whatsapp_next.campaign");
 	 * forms are one English source string per category, told apart by the translation context, so
 	 * the source stays one sentence and the translator fills the grammar.
 	 */
-	const counted = (source) => (n) =>
+	// A language without a "one" form of its own (English) takes the plain singular: the
+	// untranslated context form is the plural source and read "1 recipients".
+	const counted = (source, singular) => (n) =>
 		ui.plural(cint(n), {
-			one: __(source, null, "one"),
+			one: (frappe._messages || {})[`${source}:one`] ? __(source, null, "one") : __(singular),
 			two: __(source, null, "two"),
 			few: __(source, null, "few"),
 			many: __(source, null, "many"),
 			other: __(source),
 		});
 
-	C.recipients_text = counted("{0} recipients");
-	C.messages_text = counted("{0} messages");
+	C.recipients_text = counted("{0} recipients", "{0} recipient");
+	C.messages_text = counted("{0} messages", "{0} message");
+
+	/**
+	 * A stored datetime (system time zone) as the reader reads a moment: their date format, the
+	 * hour and minute, in their own zone — "30-09-2026 · 14:05".
+	 */
+	C.when_text = (value) => {
+		if (!value) return "";
+		const local = frappe.datetime.convert_to_user_tz(String(value));
+		// isolated left to right: inside an Arabic sentence the date's dashes otherwise reorder it
+		return `\u2066${frappe.datetime.str_to_user(local.slice(0, 10))} · ${local.slice(11, 16)}\u2069`;
+	};
 
 	/** "20 messages/minute" — the rate, said in full where there is room for it. */
 	C.rate_text = (rate) => __("{0} messages/minute", [fmt_int(rate)]);

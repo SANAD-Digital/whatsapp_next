@@ -196,8 +196,13 @@ class TestApiCampaigns(IntegrationTestCase):
 			out = api.get_overview(days=30)
 		self.assertEqual(out["days"], 30)
 		self.assertGreaterEqual(out["states"]["Running"], 1)
-		# 10 recipients, 6 sent and 1 failed leaves 3 still to go
-		self.assertGreaterEqual(out["in_flight"], 3)
+		# in flight is counted on the recipient rows (both still Queued), never from the message
+		# counters: 10 recipients with 6 + 5 + 2 messages out would have read as "none left"
+		self.assertGreaterEqual(out["in_flight"], 2)
+		with status_writer():
+			frappe.db.set_value("WhatsApp Campaign Recipient", {"parent": running}, "status", "Read")
+		with as_user("WhatsApp Viewer"):
+			self.assertEqual(api.get_overview(days=30)["in_flight"], out["in_flight"] - 2)
 		# the four buckets are disjoint, so the totals roll up: sent = 6 + 5 + 2, delivered = 5 + 2
 		self.assertGreaterEqual(out["totals"]["sent"], 13)
 		self.assertGreaterEqual(out["totals"]["delivered"], 7)
@@ -207,8 +212,12 @@ class TestApiCampaigns(IntegrationTestCase):
 
 	def test_overview_window_is_bounded(self):
 		with as_user("WhatsApp Viewer"):
-			self.assertEqual(api.get_overview(days=9999)["days"], 365)
-			self.assertEqual(api.get_overview(days=0)["days"], 30)
+			self.assertEqual(api.get_overview(days=365)["days"], 365)
+			# the window the docstring promises (1–365) is the one the schema enforces
+			with self.assertRaises(WAValidationError):
+				api.get_overview(days=9999)
+			with self.assertRaises(WAValidationError):
+				api.get_overview(days=0)
 
 	def test_recipients_page(self):
 		name = self._running()

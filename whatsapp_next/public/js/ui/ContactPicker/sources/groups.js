@@ -206,12 +206,12 @@ export class GroupsSource extends BaseSource {
 			shown.slice(0, limit).forEach((r) => {
 				const key = key_of(r);
 				const person = r.display_name || r.source_name || r.contact || "";
-				const phone = r.phone_e164 || r.phone || "";
+				const phone = ui.phone(r.phone_e164 || r.phone || "");
 				const on = chosen.has(key);
 				html += `<div class="sanad-picker__row" role="checkbox" aria-checked="${on}" tabindex="0" data-key="${ui.escape(key)}">
 					<span class="sanad-picker__av" aria-hidden="true">${ui.escape(ui.initials(person || phone) || "#")}</span>
 					<span class="sanad-picker__row-text">
-						<span class="sanad-picker__row-name" dir="auto">${ui.escape(person || phone)}</span>
+						<span class="sanad-picker__row-name" dir="auto">${ui.escape(person || phone)}${ui.group_tag(r.phone_e164 || r.phone)}</span>
 						${person && phone ? `<span class="sanad-picker__row-sub sanad-tabular" dir="ltr">${ui.escape(phone)}</span>` : ""}
 					</span>
 					<span class="sanad-picker__mark" aria-hidden="true">${ui.icon("es-line-check", "xs")}</span>

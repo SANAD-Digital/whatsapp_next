@@ -2,23 +2,73 @@
 // `_core/style.scss` (`.sanad-panel`, `.sanad-backdrop`).
 .sanad-drawer {
 	&__backdrop[hidden], &[hidden] { display: none; }
-	&__heading { display: flex; flex-direction: column; gap: var(--sanad-gap-xs); white-space: normal; }
+	&:focus { outline: none; }
+	// ---- the shell, in the Overlay Panel's geometry (`OverlayPanel/style.scss`) ----------------
+	//
+	// One panel language across the product: the same header rhythm, the same close square, the
+	// same footer and the kit's own buttons (`_kit/style.scss`) instead of Desk's `.btn`.
+
+	.sanad-panel__header {
+		align-items: center;
+		gap: 12px;
+		min-height: 0;
+		padding: 14px 18px;
+		border-block-end: 1px solid var(--wa-border);
+	}
+	&__heading { flex: 1; min-inline-size: 0; display: flex; flex-direction: column; gap: 4px; white-space: normal; }
 	&__title {
 		margin: 0;
-		font-size: var(--text-lg, 16px);
-		font-weight: 600;
-		color: var(--ink-gray-9);
-		overflow-wrap: anywhere;
+		font-size: 16px;
+		font-weight: 700;
+		line-height: 1.4;
+		color: var(--wa-ink);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
-	&__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sanad-gap-sm); color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
-	&__tools { display: flex; gap: var(--sanad-gap-xs); flex: none; align-self: flex-start; }
-	&__close, &__open { min-width: var(--sanad-target); min-height: var(--sanad-target); display: inline-flex; align-items: center; justify-content: center; gap: var(--sanad-gap-xs); }
-	&__body { min-height: 160px; }
-	&__footer[hidden] { display: none; }
-	&__action { min-height: var(--sanad-target); }
-	// the "More" button sits at the footer's start; the verbs keep the end
+	&__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--wa-ink-3); font-size: 12px; &:empty { display: none; } }
+	&__tools { display: flex; align-items: center; gap: 6px; flex: none; }
+	// the kind of document, as the reference's header draws it: an icon before the panel's title
+	&__mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 34px;
+		block-size: 34px;
+		flex: none;
+		border-radius: 9px;
+		background: var(--wa-pri-s);
+		color: var(--wa-pri-d);
+		box-shadow: inset 0 0 0 1px var(--wa-pri-sb);
+	}
+	&__close { color: var(--wa-ink-3); &:hover { color: var(--wa-ink); } }
+	&__open { color: var(--wa-ink-2); &:hover { color: var(--wa-ink); text-decoration: none; } }
+	// the kit's button is drawn for the kit's 20 px icons; Espresso's carry their own size and
+	// Desk's icon rule centres them with auto margins, which would pull them off their word
+	.wa-btn svg { flex: none; margin: 0; }
+
+	&__body {
+		min-height: 160px;
+		padding: 16px 18px;
+		background: var(--wa-surface);
+		scrollbar-width: thin;
+		scrollbar-color: var(--wa-border-2) transparent;
+	}
+
+	// The reference ends in two or three verbs of one width that share the footer's whole row,
+	// not in buttons of whatever size their word happens to be, pushed to one side.
+	&__footer {
+		flex-wrap: nowrap;
+		gap: 8px;
+		padding: 12px 18px;
+		border-block-start: 1px solid var(--wa-border);
+		background: var(--wa-surface);
+		&[hidden] { display: none; }
+	}
+	&__footer .sanad-drawer__action:not(.sanad-drawer__more) { flex: 1 1 0; min-inline-size: 0; }
+	&__action-label { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; }
 	&__menu { z-index: 1060; }
-	&__more { margin-inline-end: auto; min-width: var(--sanad-target); padding-inline: var(--sanad-gap-sm); }
+	&__more { flex: none; }
 
 	// record mode — two-column definition list
 	&__dl {
@@ -98,7 +148,7 @@
 .sanad-drawer__body {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sanad-gap-lg);
+	gap: 20px;
 }
 
 .sanad-doc {
@@ -152,18 +202,20 @@
 		margin: 0;
 		font-size: var(--text-sm, 13px);
 		font-weight: 600;
-		color: var(--ink-gray-7);
+		color: var(--ink-gray-8);
 	}
-	&__block-icon { display: inline-flex; color: var(--ink-gray-5); }
+	// every block heading wears the same accent icon, so the eye finds the start of each block
+	// without any one of them shouting louder than the others
+	&__block-icon { display: inline-flex; color: var(--sanad-accent-ink); }
 	&__block-body { min-inline-size: 0; }
 
-	// the record's own content: a tinted panel, quiet enough to sit under the identity
-	&__block--highlight .sanad-doc__block-title { color: var(--sanad-accent-ink); }
+	// the record's own content: a quiet sunken panel — the same surface family as the tiles below it,
+	// so the message leads by its place and its size, not by a slab of colour
 	&__highlight {
 		padding: var(--sanad-gap-md);
-		border: 1px solid var(--sanad-accent-outline);
+		border: var(--sanad-border);
 		border-radius: var(--sanad-ent-radius);
-		background: var(--sanad-accent-soft);
+		background: var(--surface-gray-1);
 		color: var(--ink-gray-9);
 		font-size: var(--text-base, 14px);
 		line-height: 1.8;
@@ -174,8 +226,6 @@
 	}
 
 	&__details {
-		border-block-start: var(--sanad-border);
-		padding-block-start: var(--sanad-gap-md);
 		summary {
 			cursor: pointer;
 			list-style: none;
@@ -197,5 +247,7 @@
 		}
 		&[open] summary::after { transform: rotate(-135deg); }
 	}
-	&__details-body { padding-block-start: var(--sanad-gap-sm); }
+	// the rest of the fields sit in one bordered box, like the reference — one container for the
+	// lot, not a card per field and not loose text floating under a rule
+	&__details-body { margin-block-start: var(--sanad-gap-xs); }
 }

@@ -8,9 +8,11 @@ from dataclasses import asdict
 from typing import Any
 
 import frappe
+from frappe import _
 
 from whatsapp_next.api._common import api_endpoint
 from whatsapp_next.api.v1._roles import AGENT_UP, MANAGER, VIEWER_UP
+from whatsapp_next.exceptions import WANotFoundError
 from whatsapp_next.services import devices, read_layer
 
 DEVICE_FIELDS = (
@@ -56,9 +58,10 @@ def create_device(device_name: str, phone: str | None = None, pairing_mode: str 
 
 
 @api_endpoint(roles=MANAGER, schema={"mode": {"enum": ["QR", "Code"]}})
-def start_pairing(device: str, mode: str = "QR") -> dict[str, Any]:
-	"""QR image or 8-digit code for pairing (60 s cache, never persisted)."""
-	return asdict(devices.start_pairing(device, mode))
+def start_pairing(device: str, mode: str = "QR", phone: str | None = None) -> dict[str, Any]:
+	"""QR image or 8-digit code for pairing (60 s cache, never persisted). `phone` (Code only) is
+	saved on the device first, for a device that has no number yet."""
+	return asdict(devices.start_pairing(device, mode, phone=phone or None))
 
 
 @api_endpoint(roles=AGENT_UP)
@@ -106,3 +109,20 @@ def set_disabled(device: str, disabled: bool) -> dict[str, Any]:
 def get_device_stats(device: str, days: int = 30) -> dict[str, Any]:
 	"""`{sent, failed, fail_rate, outbound, inbound, last_message_at}` over the last `days`."""
 	return asdict(read_layer.device_stats(device, days))
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+def get_device_impact(device: str) -> dict[str, Any]:
+	"""What disconnecting or deleting `device` touches, for the confirm dialogs of the Devices
+	screen → `{queued, notifications, campaigns, messages}`: queue items still waiting for it
+	(Queued · Paused · Held), the templates and campaigns bound to it, and its logged messages."""
+	if not frappe.db.exists("WhatsApp Device", device):
+		frappe.throw(_("WhatsApp Device {0} not found").format(device), WANotFoundError)
+	return {
+		"queued": frappe.db.count(
+			"WhatsApp Queue Item", {"device": device, "status": ("in", ["Queued", "Paused", "Held"])}
+		),
+		"notifications": frappe.db.count("WhatsApp Notification", {"device": device}),
+		"campaigns": frappe.db.count("WhatsApp Campaign", {"device": device}),
+		"messages": frappe.db.count("WhatsApp Log", {"device": device}),
+	}

@@ -6,6 +6,8 @@ from __future__ import annotations
 import json
 from unittest.mock import patch
 
+from datetime import datetime, timezone
+
 import frappe
 import requests
 from frappe.tests import IntegrationTestCase
@@ -191,6 +193,27 @@ class TestSndPlatform(IntegrationTestCase):
 			)
 		except pex.RateLimitError as exc:
 			self.assertEqual(exc.retry_after, 7)
+
+	def test_error_keeps_the_envelope_beside_the_message(self):
+		provider = _provider()
+		# a dict `message` next to Frappe's own `exc_type`: the type still decides the class
+		with self.assertRaises(pex.PermissionDeniedError):
+			self._call(
+				provider,
+				"get_queue_status",
+				response=_Resp(403, {"message": {"ok": False, "error": "no"}, "exc_type": "PermissionError"}),
+			)
+		# a string `message` on an error keeps its text and the envelope's code
+		try:
+			self._call(
+				provider,
+				"get_queue_status",
+				response=_Resp(422, {"message": "Phone number is invalid", "code": "INVALID_PHONE"}),
+			)
+			self.fail("no error raised")
+		except pex.ValidationError as exc:
+			self.assertEqual(str(exc), "Phone number is invalid")
+			self.assertEqual(exc.code, "INVALID_PHONE")
 
 	def test_send_batch_payload_keys(self):
 		provider = _provider()
@@ -489,3 +512,49 @@ class TestConfigureWebhookEvents(IntegrationTestCase):
 		), patch.object(provider, "update_webhook_endpoint") as upd:
 			self.assertEqual(provider.configure_webhook(url, wanted, 3), updated)
 		upd.assert_not_called()
+
+
+class TestPlatformTimes(IntegrationTestCase):
+	"""Every time the platform sends lands as this site's wall clock, whatever zone the platform
+	and the server OS are in (a platform on Asia/Aden and a site on another zone read 2 h 24 min off)."""
+
+	def test_absolute_times_become_the_sites_clock(self):
+		from frappe.utils import convert_utc_to_system_timezone
+
+		from whatsapp_next.providers.snd_platform import _dt
+
+		utc = datetime(2026, 9, 30, 1, 24, 6, tzinfo=timezone.utc)
+		site = convert_utc_to_system_timezone(utc).replace(tzinfo=None)
+		self.assertEqual(_dt(1790731446), site)  # Unix seconds
+		self.assertEqual(_dt("1790731446000"), site)  # Unix milliseconds, as text
+		self.assertEqual(_dt("2026-09-30T04:24:06+03:00"), site)  # a zoned ISO string
+		self.assertEqual(_dt("2026-09-30T01:24:06Z"), site)
+		# a zoneless string is the platform's wall clock (Asia/Aden, +03:00)
+		self.assertEqual(_dt("2026-09-30T04:24:06"), site)
+		self.assertEqual(_dt("2026-09-30 04:24:06"), site)
+		# site_config can name another zone, or none (an empty value: taken as written)
+		conf = frappe.local.conf
+		try:
+			conf["whatsapp_platform_time_zone"] = ""
+			self.assertEqual(_dt("2026-09-30T04:24:06"), datetime(2026, 9, 30, 4, 24, 6))
+			conf["whatsapp_platform_time_zone"] = "UTC"
+			self.assertEqual(_dt("2026-09-30T01:24:06"), site)
+		finally:
+			conf.pop("whatsapp_platform_time_zone", None)
+
+	def test_a_bare_date_is_a_day(self):
+		from datetime import date
+
+		from whatsapp_next.providers.snd_platform import _d
+
+		self.assertEqual(_d("2026-10-12"), date(2026, 10, 12))  # the subscription's end date
+
+	def test_the_gateways_event_time_wins_over_the_zoneless_one(self):
+		from frappe.utils import convert_utc_to_system_timezone
+
+		event = _provider().parse_webhook(
+			{"X-SND-Event": "message.read", "X-SND-Event-ID": "e1"},
+			{"event": "message.read", "timestamp": 1790731446, "occurred_at": "2026-09-30T04:24:06.782148"},
+		)
+		utc = datetime(2026, 9, 30, 1, 24, 6, tzinfo=timezone.utc)
+		self.assertEqual(event.timestamp, convert_utc_to_system_timezone(utc).replace(tzinfo=None))

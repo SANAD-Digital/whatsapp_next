@@ -22,8 +22,8 @@
 // field for — the sector, and a recorded acceptance of the terms — carries a `TODO(backend)`
 // naming what it needs. Nothing here invents an endpoint or fakes a local path.
 //
-// The Home → wizard redirect stays governed by `WhatsApp Settings.redirect_unregistered_to_wizard`
-// and is deliberately not wired here (spec #1: it is enabled last, in phase 10).
+// The Home → wizard redirect is Home's (D-140): `wa-home` sends an unregistered System Manager
+// here once per browser session, governed by `WhatsApp Settings.redirect_unregistered_to_wizard`.
 
 frappe.provide("whatsapp_next.onboarding");
 
@@ -34,10 +34,13 @@ frappe.provide("whatsapp_next.onboarding");
 	const SETUP_ROLES = ["System Manager"];
 	const POLL_MS = 4000;
 	const SIGNUP_POLL_MS = 5000;
-	// The prototype signs every new tenant up on the free plan and says so on the ready panel.
-	// `onboarding.get_signup_bootstrap()` carries the platform's own plans, so the free one is
-	// looked up rather than assumed; this is only the fallback when the call has not answered yet.
-	const SIGNUP_PLAN = "free";
+	// how long a half-finished sign-up is kept in this browser for a reload to return to
+	const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
+	// The prototype signs every new tenant up on the free plan and says so on the ready panel. On
+	// the platform every new account starts on its free trial whatever is sent; the code sent
+	// names the plan the trial renews to, and the trial's own code is refused there. The page
+	// sends the first plan of `onboarding.get_signup_bootstrap()` (cheapest first); the server
+	// makes the same choice when nothing usable is sent (`services.onboarding.signup_plan_code`).
 	// The prototype's resend lock: resending opens 30 s after the code was sent. The code's own
 	// life comes from the bootstrap (`code_ttl_minutes`); this is the fallback.
 	const RESEND_LOCK_S = 30;
@@ -147,6 +150,11 @@ frappe.provide("whatsapp_next.onboarding");
 	}
 
 	/** Password strength, scored the way the prototype scores it (0–4). */
+	/** A number as the person types it: never with "+" (owner); an email or username as it is. */
+	function no_plus(value) {
+		return cstr(value).trim().replace(/^\+(?=\d)/, "");
+	}
+
 	function pw_score(pw) {
 		let n = 0;
 		if (!pw) return 0;
@@ -317,30 +325,98 @@ frappe.provide("whatsapp_next.onboarding");
 		 * an account that exists, so the rail is complete and the screen opens on "جاهز للعمل".
 		 */
 		resume() {
-			return this.set_state({ stage: this.step_done("credentials") ? "ready" : "signup" });
+			if (this.step_done("credentials")) {
+				this.clear_draft();
+				return this.set_state({ stage: "ready" });
+			}
+			// A reload returns to the step it left, with what was typed — like any sign-up flow.
+			const d = this.load_draft();
+			if (!d) return this.set_state({ stage: "signup" });
+			Object.assign(this.f, d.f || {});
+			Object.assign(this.ctx, d.ctx || {});
+			const stage = d.stage === "verify" && !this.ctx.request_key ? "signup" : d.stage || "signup";
+			const patch = { stage, read: !!d.read, channel: d.channel || this.s.channel, verify: "idle" };
+			if (stage === "verify") {
+				patch.left = Math.max(0, Math.round(((this.ctx.code_expires || 0) - Date.now()) / 1000));
+			}
+			this.set_state(patch);
+			if (stage === "verify") this.watch_signup();
+			return this;
 		}
 
-		/** The free plan the prototype signs up on, from the platform's own list when it answered. */
+		// ---- the draft: where the sign-up got to, kept across a reload ------------------------------
+		//
+		// Per site and per user, in this browser, for a day. Everything typed is kept EXCEPT the
+		// password, which never touches storage; a reload on the confirmation step asks for it again
+		// (only there, only if the finish needs it). `ctx` keeps the platform request so the same
+		// confirmation continues instead of a new one being opened.
+
+		draft_key() {
+			return `wa-onb:${(frappe.boot && frappe.boot.sitename) || location.host}:${frappe.session.user}`;
+		}
+
+		save_draft() {
+			try {
+				if (this.s.stage === "ready") return this.clear_draft();
+				const { password, password2, login_password, ...f } = this.f; // eslint-disable-line no-unused-vars
+				const ctx = {
+					request_key: this.ctx.request_key,
+					route: this.ctx.route,
+					code_ttl: this.ctx.code_ttl,
+					code_expires: this.ctx.code_expires,
+					reset: this.ctx.reset,
+				};
+				localStorage.setItem(
+					this.draft_key(),
+					JSON.stringify({ v: 1, at: Date.now(), stage: this.s.stage, read: this.s.read, channel: this.s.channel, f, ctx })
+				);
+			} catch (e) {
+				// storage full or blocked: the flow works without it
+			}
+		}
+
+		load_draft() {
+			try {
+				const d = JSON.parse(localStorage.getItem(this.draft_key()) || "null");
+				if (!d || d.v !== 1 || Date.now() - (d.at || 0) > DRAFT_TTL_MS) return null;
+				return d;
+			} catch (e) {
+				return null;
+			}
+		}
+
+		clear_draft() {
+			try {
+				localStorage.removeItem(this.draft_key());
+			} catch (e) {
+				// nothing to clear
+			}
+		}
+
+		/** The plan the free trial renews to: the platform's first (cheapest) plan. */
 		plan() {
 			const plans = (this.boot && this.boot.plans) || [];
-			const free = plans.find((p) => p.is_free || /free|مجان/i.test(`${p.code || ""} ${p.name || ""} ${p.label || ""}`));
-			return free || plans[0] || null;
+			return plans[0] || null;
 		}
 
 		plan_code() {
 			const p = this.plan();
-			return (p && (p.code || p.name)) || SIGNUP_PLAN;
+			return (p && (p.plan_code || p.code)) || undefined;
 		}
 
+		/** What the account is on right after sign-up: the free trial, whatever it renews to. */
 		plan_label() {
-			const p = this.plan();
-			return (p && (p.label || p.title || p.name || p.code)) || __("Free");
+			return __("Free trial");
 		}
 
 		set_state(patch, redraw = true) {
 			// An error belongs to the card that raised it; moving card clears it unless carried on.
 			if (patch.stage && patch.stage !== this.s.stage && patch.err === undefined) patch.err = "";
+			// so does "a check was attempted": the recovery card's failed attempt must not paint a
+			// fresh sign-up card red
+			if (patch.stage && patch.stage !== this.s.stage && patch.tried === undefined) patch.tried = false;
 			Object.assign(this.s, patch);
+			this.save_draft();
 			if (redraw) this.render();
 			return this;
 		}
@@ -480,7 +556,7 @@ frappe.provide("whatsapp_next.onboarding");
 			$grid.append(field_html({ id: "wa-onb-org", label: __("Company name"), placeholder: __("Sanad Trading Company"), value: this.f.org, autocomplete: "organization", required: true, extra: 'data-f="org"' }));
 			$grid.append(this.sector_html());
 			$grid.append(field_html({ id: "wa-onb-person", label: __("Owner's name"), placeholder: __("Abdullah Al-Fahd"), value: this.f.person, autocomplete: "name", required: true, extra: 'data-f="person"' }));
-			$grid.append(field_html({ id: "wa-onb-email", label: __("Email"), type: "email", dir: "ltr", placeholder: "email@company.com", value: this.f.email, autocomplete: "email", required: true, extra: 'data-f="email"' }));
+			$grid.append(field_html({ id: "wa-onb-email", label: __("Email (optional)"), type: "email", dir: "ltr", placeholder: "email@company.com", value: this.f.email, autocomplete: "email", extra: 'data-f="email"' }));
 			// the mobile takes the whole row: the country trigger, the hint and the line that says
 			// what this number is for need more than half a column
 			const $phone = $('<div class="wa-onb__field-wide"></div>').appendTo($grid);
@@ -493,6 +569,12 @@ frappe.provide("whatsapp_next.onboarding");
 				on_change: ({ phone_e164, valid }) => {
 					this.f.phone = phone_e164 || "";
 					this.f.phone_ok = !!valid;
+					this.save_draft();
+					// the error forced by "Next" goes as soon as the number is right
+					if (valid && this.phone && this.phone.opts.invalid) {
+						this.phone.opts.invalid = false;
+						this.phone.render();
+					}
 				},
 			});
 
@@ -500,24 +582,7 @@ frappe.provide("whatsapp_next.onboarding");
 			//
 			// The password the account is created with. It goes to the platform with the confirmation
 			// code (`onboarding.complete_signup(request_key, code, password)`), never to this site.
-			const $pw = $('<div class="wa-onb__group"></div>').appendTo($card);
-			$pw.append(ui.rule(__("Password"), __("Required")));
-			const $pwgrid = $('<div class="wa-onb__grid"></div>').appendTo($pw);
-			$pwgrid.append(`
-				<div class="wa-field" data-field="wa-onb-pw">
-					<span class="wa-onb__label-row">
-						<label class="wa-field__label" for="wa-onb-pw">${esc(__("Password"))} <span class="wa-field__req" aria-hidden="true">*</span></label>
-						${ui.btn({ label: __("Generate"), icon: "plus", variant: "tonal", size: "sm", title: __("Generate a strong password"), attrs: { "data-act": "genpw" } })}
-						${ui.btn({ label: this.s.show_pw ? __("Hide") : __("Show"), variant: "ghost", size: "sm", title: __("Show the password"), attrs: { "data-act": "showpw", "aria-pressed": String(this.s.show_pw) } })}
-					</span>
-					<input class="wa-input wa-input--mono" id="wa-onb-pw" data-f="password" type="${this.s.show_pw ? "text" : "password"}"
-						autocomplete="new-password" placeholder="••••••••" value="${esc(this.f.password)}" aria-describedby="wa-onb-pw-hint">
-					<span class="wa-onb__pwbars" data-slot="pwbars" aria-hidden="true">
-						<span class="wa-onb__pwbar"></span><span class="wa-onb__pwbar"></span><span class="wa-onb__pwbar"></span><span class="wa-onb__pwbar"></span>
-					</span>
-					<span class="wa-field__hint" id="wa-onb-pw-hint" data-slot="hint" aria-live="polite"></span>
-				</div>`);
-			$pwgrid.append(field_html({ id: "wa-onb-pw2", label: __("Confirm the password"), type: this.s.show_pw ? "text" : "password", placeholder: "••••••••", value: this.f.password2, mono: true, autocomplete: "new-password", required: true, extra: 'data-f="password2"' }));
+			this.password_group($card);
 
 			// ---- the invite coupon ---------------------------------------------------------------------
 			//
@@ -560,6 +625,56 @@ frappe.provide("whatsapp_next.onboarding");
 				</div>`;
 		}
 
+		/**
+		 * The password pair, exactly as sign-up draws it — the generator, show / hide, the strength
+		 * bars and hint, the match check — for any card that sets a password (sign-up, recovery).
+		 * It writes `this.f.password` / `password2`, which are never stored in the draft.
+		 */
+		password_group($card, { title = __("Password") } = {}) {
+			const $pw = $('<div class="wa-onb__group"></div>').appendTo($card);
+			$pw.append(ui.rule(title, __("Required")));
+			const $pwgrid = $('<div class="wa-onb__grid"></div>').appendTo($pw);
+			$pwgrid.append(`
+				<div class="wa-field" data-field="wa-onb-pw">
+					<span class="wa-onb__label-row">
+						<label class="wa-field__label" for="wa-onb-pw">${esc(__("Password"))} <span class="wa-field__req" aria-hidden="true">*</span></label>
+						${ui.btn({ label: __("Generate"), icon: "plus", variant: "tonal", size: "sm", title: __("Generate a strong password"), attrs: { "data-act": "genpw" } })}
+						${ui.btn({ label: this.s.show_pw ? __("Hide") : __("Show"), variant: "ghost", size: "sm", title: __("Show the password"), attrs: { "data-act": "showpw", "aria-pressed": String(this.s.show_pw) } })}
+					</span>
+					<input class="wa-input wa-input--mono" id="wa-onb-pw" data-f="password" type="${this.s.show_pw ? "text" : "password"}"
+						autocomplete="new-password" placeholder="••••••••" value="${esc(this.f.password)}" aria-describedby="wa-onb-pw-hint">
+					<span class="wa-onb__pwbars" data-slot="pwbars" aria-hidden="true">
+						<span class="wa-onb__pwbar"></span><span class="wa-onb__pwbar"></span><span class="wa-onb__pwbar"></span><span class="wa-onb__pwbar"></span>
+					</span>
+					<span class="wa-field__hint" id="wa-onb-pw-hint" data-slot="hint" aria-live="polite"></span>
+				</div>`);
+			$pwgrid.append(field_html({ id: "wa-onb-pw2", label: __("Confirm the password"), type: this.s.show_pw ? "text" : "password", placeholder: "••••••••", value: this.f.password2, mono: true, autocomplete: "new-password", required: true, extra: 'data-f="password2"' }));
+
+			return $pw;
+		}
+
+		/** Generate / show for the pair; inputs are handled by the card's own `[data-f]` binding. */
+		bind_password($card) {
+			$card.on("click", '[data-act="genpw"]', () => {
+				const pw = generate_password();
+				this.f.password = pw;
+				this.f.password2 = pw;
+				this.s.show_pw = true;
+				$card.find('[data-f="password"], [data-f="password2"]').val(pw).attr("type", "text");
+				$card.find('[data-act="showpw"] span').last().text(__("Hide"));
+				$card.find('[data-act="showpw"]').attr("aria-pressed", "true");
+				this.refresh_field($card, "password");
+				this.refresh_field($card, "password2");
+				ui.announce(__("A strong password was generated and filled into both fields."));
+			});
+			$card.on("click", '[data-act="showpw"]', () => {
+				this.s.show_pw = !this.s.show_pw;
+				$card.find('[data-f="password"], [data-f="password2"]').attr("type", this.s.show_pw ? "text" : "password");
+				$card.find('[data-act="showpw"] span').last().text(this.s.show_pw ? __("Hide") : __("Show"));
+				$card.find('[data-act="showpw"]').attr("aria-pressed", String(this.s.show_pw));
+			});
+		}
+
 		bind_signup($card) {
 			const self = this;
 
@@ -577,6 +692,7 @@ frappe.provide("whatsapp_next.onboarding");
 					}
 				}
 				self.f[key] = value;
+				self.save_draft();
 				self.show_error("");
 				self.refresh_field($card, key);
 			});
@@ -586,25 +702,7 @@ frappe.provide("whatsapp_next.onboarding");
 				self.refresh_field($card, "coupon");
 			});
 
-			$card.on("click", '[data-act="genpw"]', () => {
-				const pw = generate_password();
-				this.f.password = pw;
-				this.f.password2 = pw;
-				this.s.show_pw = true;
-				$card.find('[data-f="password"], [data-f="password2"]').val(pw).attr("type", "text");
-				$card.find('[data-act="showpw"] span').last().text(__("Hide"));
-				$card.find('[data-act="showpw"]').attr("aria-pressed", "true");
-				this.refresh_field($card, "password");
-				this.refresh_field($card, "password2");
-				ui.announce(__("A strong password was generated and filled into both fields."));
-			});
-
-			$card.on("click", '[data-act="showpw"]', () => {
-				this.s.show_pw = !this.s.show_pw;
-				$card.find('[data-f="password"], [data-f="password2"]').attr("type", this.s.show_pw ? "text" : "password");
-				$card.find('[data-act="showpw"] span').last().text(this.s.show_pw ? __("Hide") : __("Show"));
-				$card.find('[data-act="showpw"]').attr("aria-pressed", String(this.s.show_pw));
-			});
+			this.bind_password($card);
 
 			$card.on("click", '[data-act="devfill"]', () => {
 				Object.assign(this.f, {
@@ -648,7 +746,7 @@ frappe.provide("whatsapp_next.onboarding");
 			if (key === "org") return set(tried && !this.f.org ? "bad" : null, tried && !this.f.org ? __("Enter the company name as it stands in the commercial register") : "");
 			if (key === "person") return set(tried && !this.f.person ? "bad" : null, tried && !this.f.person ? __("Enter the name of the person who owns the account") : "");
 			if (key === "email") {
-				if (!this.f.email) return set(null, "");
+				if (!this.f.email) return set(null, __("Optional. You sign in with your mobile number; an email adds a second way to recover the account."));
 				const ok = EMAIL_RE.test(this.f.email);
 				return set(ok ? "ok" : "bad", ok ? __("The email format is valid") : __("The email format is not valid — for example email@company.com"));
 			}
@@ -668,12 +766,14 @@ frappe.provide("whatsapp_next.onboarding");
 							: score === 3
 								? __("Strong")
 								: __("Very strong");
-				set(!pw ? null : score <= 1 ? "bad" : score === 2 ? null : "ok", text);
+				// an empty required field reads as missing once "Next" was pressed, like the others
+				if (!pw && tried) set("bad", __("Choose a password for the account"));
+				else set(!pw ? null : score <= 1 ? "bad" : score === 2 ? null : "ok", text);
 				return this.refresh_field($card, "password2");
 			}
 			if (key === "password2") {
 				const p2 = this.f.password2;
-				if (!p2) return set(null, __("Type the password again to confirm it"));
+				if (!p2) return set(tried ? "bad" : null, __("Type the password again to confirm it"));
 				const ok = p2 === this.f.password;
 				return set(ok ? "ok" : "bad", ok ? __("They match") : __("The two passwords do not match"));
 			}
@@ -813,6 +913,9 @@ frappe.provide("whatsapp_next.onboarding");
 				}
 			});
 
+			// one pair of document listeners at a time: every redraw of this card (the demo data,
+			// "back" from the terms) added another pair and none was ever taken off
+			this.unbind_sector();
 			this.on_doc_down = (e) => {
 				if (!$(e.target).closest('[data-sec-root="1"]').length) close();
 			};
@@ -841,10 +944,16 @@ frappe.provide("whatsapp_next.onboarding");
 				[!this.f.org, '[data-f="org"]'],
 				[!this.f.person, '[data-f="person"]'],
 				[!this.f.phone_ok, ".sanad-phone__input"],
-				[!EMAIL_RE.test(this.f.email || ""), '[data-f="email"]'],
-				[(this.f.password || "").length < 8, '[data-f="password"]'],
+				[!!this.f.email && !EMAIL_RE.test(this.f.email), '[data-f="email"]'],
+				// the same rule as recovery: a password the strength bar calls weak does not pass
+				[(this.f.password || "").length < 8 || pw_score(this.f.password) <= 1, '[data-f="password"]'],
 				[this.f.password !== this.f.password2, '[data-f="password2"]'],
 			].filter(([bad]) => bad);
+			// the mobile is the kit's field: its error line is forced on, like the other fields'
+			if (this.phone) {
+				this.phone.opts.invalid = !this.f.phone_ok;
+				this.phone.render();
+			}
 			if (problems.length) {
 				this.show_error(__("Some fields still need attention before the terms."));
 				$card.find(problems[0][1]).trigger("focus");
@@ -932,14 +1041,16 @@ frappe.provide("whatsapp_next.onboarding");
 						email: this.f.email,
 						channel: this.s.channel,
 						coupon_code: (this.f.coupon || "").trim() || undefined,
-					})
+					}, { silent: true })
 					.then((r) => {
 						this.ctx.request_key = r.request_key;
 						this.ctx.code_ttl = cint(r.code_ttl) || DEFAULT_TTL_S;
+						this.ctx.route = this.route_of(r);
+						this._finishing = false;
 						this.set_state({ stage: "verify", verify: "idle", left: this.ctx.code_ttl });
 						this.watch_signup();
 					})
-					.catch((err) => this.show_error(err.message))
+					.catch((err) => this.signup_failed(err))
 			);
 		}
 
@@ -947,52 +1058,103 @@ frappe.provide("whatsapp_next.onboarding");
 		// Step 3 — the confirmation code
 		// =============================================================================================
 
+		/**
+		 * How the platform proves the number — its choice, not the form's (`api.onboarding.start_signup`
+		 * → `services.onboarding.verification_route`):
+		 * - `whatsapp`: nothing is sent to the user. The user sends the shown code FROM the registered
+		 *   number TO the platform's number; the sender is the proof, and `watch_signup` sees it land.
+		 * - `email`: the platform's signup device is offline and it mailed the code instead.
+		 */
+		route_of(r) {
+			// when the code dies, as a clock time: a reload recomputes the countdown from it
+			this.ctx.code_expires = Date.now() + (cint(this.ctx.code_ttl) || DEFAULT_TTL_S) * 1000;
+			return {
+				channel: (r && r.channel) || "email",
+				code: r && r.code,
+				platform_phone: r && r.platform_phone,
+				email: r && r.email,
+			};
+		}
+
 		card_verify() {
+			const route = this.ctx.route || this.route_of(null);
+			const by_whatsapp = route.channel === "whatsapp" && route.code && route.platform_phone;
+			const own = ui.PhoneField.format_display(this.f.phone) || this.f.phone;
 			const $card = this.card("md", {
 				title: __("Confirm the mobile number"),
-				sub: __("The platform sent a code to the number you registered. Enter it here and the account is activated."),
+				sub: by_whatsapp
+					? __("Send the code below from your WhatsApp on the number you registered. The account is activated as soon as it arrives.")
+					: __("The platform sent a code to your email. Enter it here and the account is activated."),
 			});
 
-			$card.append(`
-				<div class="wa-sunken wa-onb__route">
-					<span class="wa-onb__route-col">
-						<span class="wa-onb__route-k">${esc(__("From the platform"))}</span>
-						<span class="wa-onb__route-v">${esc(__("WhatsApp Next"))}</span>
-					</span>
-					<span class="wa-onb__route-arrow">${ico("chevronEnd", "sm")}</span>
-					<span class="wa-onb__route-col">
-						<span class="wa-onb__route-k">${esc(__("To your registered number"))}</span>
-						<span class="wa-onb__route-v wa-onb__route-v--mono" dir="ltr">${esc(ui.PhoneField.format_display(this.f.phone) || this.f.phone)}</span>
-					</span>
-				</div>
+			const col = (k, v, mono) =>
+				`<span class="wa-onb__route-col">
+					<span class="wa-onb__route-k">${esc(k)}</span>
+					<span class="wa-onb__route-v${mono ? " wa-onb__route-v--mono" : ""}" dir="ltr">${esc(v)}</span>
+				</span>`;
+			const route_box = by_whatsapp
+				? col(__("From your registered number"), own, true) +
+				  `<span class="wa-onb__route-arrow">${ico("chevronEnd", "sm")}</span>` +
+				  col(__("To the platform's number"), ui.PhoneField.format_display(route.platform_phone) || route.platform_phone, true)
+				: col(__("From the platform"), __("WhatsApp Next")) +
+				  `<span class="wa-onb__route-arrow">${ico("chevronEnd", "sm")}</span>` +
+				  col(__("To your email"), route.email || this.f.email, true);
 
-				<div class="wa-sunken wa-onb__codebox">
+			const text = by_whatsapp ? `SND ${route.code}` : "";
+			const wa_link = by_whatsapp
+				? `https://wa.me/${String(route.platform_phone).replace(/\D/g, "")}?text=${encodeURIComponent(text)}`
+				: "";
+			const codebox = by_whatsapp
+				? `<div class="wa-sunken wa-onb__codebox">
+					<span class="wa-field__label">${esc(__("The message to send"))}</span>
+					<div class="wa-onb__code-input" dir="ltr" aria-live="polite">${esc(text)}</div>
+					<p class="wa-onb__code-help">${esc(__("Send it from {0} exactly as written. Nothing is sent to you: the message you send is the confirmation.", [own]))}</p>
+					<div class="wa-btnbar">
+						<a class="btn btn-primary wa-onb__grow" href="${esc(wa_link)}" target="_blank" rel="noopener">${ico("whatsapp", "sm")} <span>${esc(__("Open WhatsApp and send"))}</span></a>
+						${ui.btn({ label: __("Copy the message"), variant: "secondary", attrs: { "data-act": "copy-code" } })}
+					</div>
+				</div>`
+				: `<div class="wa-sunken wa-onb__codebox">
 					<label class="wa-field__label" for="wa-onb-code">${esc(__("Confirmation code"))}</label>
 					<input class="wa-onb__code-input" id="wa-onb-code" type="text" dir="ltr" inputmode="numeric"
 						autocomplete="one-time-code" placeholder="••••••" aria-describedby="wa-onb-code-state">
-					<p class="wa-onb__code-help">${esc(__("The code arrives on the channel below. If it has not arrived, wait for the timer to run down and ask for it again."))}</p>
-					<div data-slot="channel"></div>
-				</div>
+					<p class="wa-onb__code-help">${esc(__("Check your inbox, and the spam folder, for a message from the platform. If it has not arrived, wait for the timer to run down and ask for it again."))}</p>
+				</div>`;
+
+			// the password is never stored: after a reload it is asked for here, once, to finish
+			const password_box = this.f.password
+				? ""
+				: `<div class="wa-sunken wa-onb__codebox">
+					<label class="wa-field__label" for="wa-onb-repw">${esc(__("Your password"))}</label>
+					<input class="wa-input wa-input--mono" id="wa-onb-repw" type="password" autocomplete="new-password" placeholder="••••••••">
+					<p class="wa-onb__code-help">${esc(__("The page was reloaded, so enter the password you chose once more. It is needed to finish creating the account."))}</p>
+					${by_whatsapp ? `<div class="wa-btnbar">${ui.btn({ label: __("Finish"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "finish" } })}</div>` : ""}
+				</div>`;
+
+			$card.append(`
+				<div class="wa-sunken wa-onb__route">${route_box}</div>
+				<div data-slot="change-number" hidden></div>
+				${codebox}
+				${password_box}
 				<div data-slot="state" id="wa-onb-code-state"></div>
 				<div class="wa-btnbar">
-					${ui.btn({ label: __("Verify now"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "verify" } })}
+					${by_whatsapp ? "" : ui.btn({ label: __("Verify now"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "verify" } })}
 					${ui.btn({ label: __("Resend the code"), variant: "secondary", attrs: { "data-act": "resend" } })}
 					${ui.btn({ label: __("Change the number"), variant: "ghost", attrs: { "data-act": "change" } })}
 				</div>`);
 
-			const $chan = $card.find('[data-slot="channel"]');
-			$chan.html(
-				ui.segmented(
-					[
-						{ value: "whatsapp", label: __("WhatsApp"), icon: "whatsapp" },
-						{ value: "sms", label: __("SMS"), icon: "chat" },
-						{ value: "email", label: __("Email"), icon: "send" },
-					],
-					this.s.channel,
-					{ label: __("How the code arrives") }
-				)
+			$card.on("input", "#wa-onb-repw", (e) => {
+				this.f.password = e.currentTarget.value;
+				this.f.password2 = e.currentTarget.value;
+			});
+			$card.on("click", '[data-act="finish"]', () => this.finish_verified());
+
+			$card.on("click", '[data-act="copy-code"]', () =>
+				navigator.clipboard
+					.writeText(text)
+					.then(() => ui.Toast.success(__("Copied")))
+					.catch(() => ui.Toast.warning(__("The browser did not allow copying. Select the code and copy it by hand.")))
 			);
-			ui.bind_segmented($chan.find(".wa-seg"), (value) => (this.s.channel = value));
 
 			this.draw_verify_state($card);
 			this.run_countdown($card);
@@ -1002,10 +1164,11 @@ frappe.provide("whatsapp_next.onboarding");
 				if (e.key === "Enter") $card.find('[data-act="verify"]').trigger("click");
 			});
 			$card.on("click", '[data-act="resend"]', (e) => this.resend_code($(e.currentTarget), $card));
-			$card.on("click", '[data-act="change"]', () => {
-				this.stop_timers();
-				this.set_state({ stage: "signup", verify: "idle" });
-			});
+			// The number is changed here, on this step: the rest of the sign-up (company, owner, email,
+			// password) stands. The platform ties a sign-up request to its number and has no way to
+			// re-point one, so the new number gets a new request with the same details; the old one
+			// simply expires unconfirmed (nothing exists on the platform until confirmation).
+			$card.on("click", '[data-act="change"]', () => this.open_change_number($card));
 		}
 
 		draw_verify_state($card) {
@@ -1015,7 +1178,14 @@ frappe.provide("whatsapp_next.onboarding");
 			const m = Math.floor(this.s.left / 60);
 			const sec = String(this.s.left % 60).padStart(2, "0");
 			return $slot.html(
-				strip_html("warn", this.s.left > 0 ? __("Waiting for the code — it expires in {0}:{1}", [m, sec]) : __("The code has expired. Ask for a new one."))
+				strip_html(
+					"warn",
+					this.s.left <= 0
+						? __("The code has expired. Ask for a new one.")
+						: this.ctx.route && this.ctx.route.channel === "whatsapp"
+							? __("Waiting for your message — the code expires in {0}:{1}", [m, sec])
+							: __("Waiting for the code — it expires in {0}:{1}", [m, sec])
+				)
 			);
 		}
 
@@ -1023,18 +1193,30 @@ frappe.provide("whatsapp_next.onboarding");
 			this.stop_timers();
 			const $resend = $card.find('[data-act="resend"]');
 			const tick = () => {
+				// counted from the code's own expiry, not decremented: a background tab runs its
+				// timers once a minute at best, and the count then fell behind the real code
+				if (this.ctx.code_expires) this.s.left = Math.max(0, Math.round((this.ctx.code_expires - Date.now()) / 1000));
 				const spent = this.ctx.code_ttl - this.s.left;
 				const locked = spent < RESEND_LOCK_S && this.s.left > 0;
 				$resend.prop("disabled", locked);
 				$resend.find("span").last().text(locked ? __("Resend in {0} s", [RESEND_LOCK_S - spent]) : __("Resend the code"));
 				if (this.s.verify === "idle") this.draw_verify_state($card);
-				if (this.s.left > 0) this.s.left -= 1;
+				if (!this.ctx.code_expires && this.s.left > 0) this.s.left -= 1;
 			};
 			tick();
 			this._tick = window.setInterval(tick, 1000);
 		}
 
+		/** `true` when a password is at hand to finish with; otherwise says so and points at the field. */
+		need_password() {
+			if ((this.f.password || "").length >= 8) return true;
+			this.show_error(__("Enter the password you chose to finish creating the account."));
+			this.$stage.find("#wa-onb-repw").trigger("focus");
+			return false;
+		}
+
 		verify_code($btn, $card) {
+			if (!this.need_password()) return;
 			const code = ($card.find("#wa-onb-code").val() || "").trim();
 			if (!code) {
 				this.show_error(__("Enter the code you received."));
@@ -1046,7 +1228,7 @@ frappe.provide("whatsapp_next.onboarding");
 				$btn,
 				__("Verifying…"),
 				ui
-					.call("onboarding.complete_signup", { request_key: this.ctx.request_key, code, password: this.f.password })
+					.call("onboarding.complete_signup", { request_key: this.ctx.request_key, code, password: this.f.password }, { silent: true })
 					.then((r) => {
 						if (!r || !r.ok) {
 							this.s.verify = "fail";
@@ -1073,8 +1255,11 @@ frappe.provide("whatsapp_next.onboarding");
 				this.status = status || {};
 				this.stop_timers();
 				if (!result.credentials_stored) {
-					this.set_state({ stage: "ready" });
-					ui.Toast.warning(__("The platform did not return the keys. Enter them here to finish."));
+					// The account exists, but this site holds no keys for it: "ready" would be a
+					// dead end (it has nowhere to enter keys, and a reload fell back to an empty
+					// sign-up). Signing in with the new account is what fetches and stores them.
+					this.f.login_id = no_plus(this.f.phone) || this.f.email;
+					this.set_state({ stage: "login", err: __("The account was created, but this site is not linked to it yet. Sign in with the password you just chose to finish.") });
 					return;
 				}
 				// `complete_signup` already tested the connection, registered the webhook and brought
@@ -1082,6 +1267,88 @@ frappe.provide("whatsapp_next.onboarding");
 				this.ctx.connection = result.connection;
 				this.set_state({ stage: "ready" });
 			});
+		}
+
+		/**
+		 * A refused sign-up. When the number or email belongs to a confirmed account
+		 * (`WAAccountExistsError`) the answer is the sign-in step; the reset there starts from the
+		 * number that was typed. Any other refusal is shown as it is.
+		 */
+		signup_failed(err) {
+			if (!err || err.exc_type !== "WAAccountExistsError") return this.show_error(err && err.message);
+			// The number or email belongs to a confirmed account: the answer is the way in, not an
+			// error — say so in a toast and open the sign-in step.
+			this.stop_timers();
+			this.stop_signup_watch();
+			this.f.reset_identifier = no_plus(this.f.phone) || this.f.email;
+			ui.Toast.info(__("You already have an account. Sign in to continue."));
+			this.set_state({ stage: "login" });
+		}
+
+		/** The inline number editor of the confirmation step. */
+		open_change_number($card) {
+			const $slot = $card.find('[data-slot="change-number"]');
+			if (!$slot.prop("hidden")) return $slot.find("input").first().trigger("focus");
+			let next = { phone_e164: "", valid: false };
+			$slot.prop("hidden", false).html(`
+				<div class="wa-sunken wa-onb__codebox">
+					<div data-slot="phone"></div>
+					<div class="wa-btnbar">
+						${ui.btn({ label: __("Send to this number"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "change-save" } })}
+						${ui.btn({ label: __("Cancel"), variant: "ghost", attrs: { "data-act": "change-cancel" } })}
+					</div>
+				</div>`);
+			new ui.PhoneField({
+				wrapper: $slot.find('[data-slot="phone"]'),
+				label: __("The new mobile number (WhatsApp)"),
+				required: true,
+				value: this.f.phone,
+				on_change: (v) => (next = v),
+			});
+			$slot.find("input").first().trigger("focus");
+			$slot.on("click", '[data-act="change-cancel"]', () => $slot.prop("hidden", true).off().empty());
+			$slot.on("click", '[data-act="change-save"]', (e) => {
+				if (!next.valid || !next.phone_e164) {
+					this.show_error(__("Enter a valid mobile number."));
+					return;
+				}
+				if (next.phone_e164 === this.f.phone) {
+					$slot.prop("hidden", true).off().empty();
+					return;
+				}
+				this.change_number($(e.currentTarget), next.phone_e164);
+			});
+		}
+
+		/** A new request for the new number, with everything else as entered; stays on this step. */
+		change_number($btn, phone) {
+			this.show_error("");
+			return this.busy_button(
+				$btn,
+				__("Sending…"),
+				ui
+					.call("onboarding.start_signup", {
+						plan_code: this.plan_code(),
+						mobile: phone,
+						full_name: this.f.person,
+						email: this.f.email,
+						channel: this.s.channel,
+						coupon_code: (this.f.coupon || "").trim() || undefined,
+					}, { silent: true })
+					.then((r) => {
+						this.f.phone = phone;
+						this.f.phone_ok = true;
+						this.ctx.request_key = r.request_key;
+						this.ctx.code_ttl = cint(r.code_ttl) || DEFAULT_TTL_S;
+						this.ctx.route = this.route_of(r);
+						this._finishing = false;
+						this.set_state({ stage: "verify", verify: "idle", left: this.ctx.code_ttl });
+						this.watch_signup();
+						ui.Toast.success(__("The number was changed."));
+					})
+					// the old number and its request stand when the platform refuses the new one
+					.catch((err) => this.signup_failed(err))
+			);
 		}
 
 		resend_code($btn, $card) {
@@ -1097,17 +1364,21 @@ frappe.provide("whatsapp_next.onboarding");
 						email: this.f.email,
 						channel: this.s.channel,
 						coupon_code: (this.f.coupon || "").trim() || undefined,
-					})
+					}, { silent: true })
 					.then((r) => {
 						this.ctx.request_key = r.request_key || this.ctx.request_key;
 						this.ctx.code_ttl = cint(r.code_ttl) || DEFAULT_TTL_S;
+						this.ctx.route = this.route_of(r);
 						this.s.left = this.ctx.code_ttl;
 						this.s.verify = "idle";
-						this.draw_verify_state($card);
-						this.run_countdown($card);
-						ui.Toast.success(__("A new code is on its way."));
+						// the platform may answer on another channel this time: redraw the panel
+						this.save_draft();
+						this.render();
+						ui.Toast.success(
+							this.ctx.route.channel === "whatsapp" ? __("A new code is ready. Send it from your number.") : __("A new code is on its way.")
+						);
 					})
-					.catch((err) => this.show_error(err.message))
+					.catch((err) => this.signup_failed(err))
 			);
 		}
 
@@ -1117,13 +1388,41 @@ frappe.provide("whatsapp_next.onboarding");
 				if (document.hidden || !this.ctx.request_key) return;
 				ui.call("onboarding.get_signup_status", { request_key: this.ctx.request_key }, { silent: true })
 					.then((r) => {
-						if (r && r.status === "Completed") {
+						if (r && r.status === "Verified" && this.s.stage === "verify" && !this._finishing) {
+							// WhatsApp route: the user's own message confirmed the number — finish here,
+							// there is no code to type
+							this.finish_verified();
+						} else if (r && r.status === "Completed") {
 							this.stop_signup_watch();
 							ui.announce(__("The sign-up was confirmed on the platform."));
 						}
 					})
 					.catch(() => {});
 			}, SIGNUP_POLL_MS);
+		}
+
+		/** The platform saw the confirming message: set the password and link the site. */
+		finish_verified() {
+			if (!this.need_password()) {
+				// the number is confirmed; only the password (not kept across a reload) is missing
+				this.stop_signup_watch();
+				return;
+			}
+			this._finishing = true;
+			this.stop_signup_watch();
+			return ui
+				.call("onboarding.complete_signup", { request_key: this.ctx.request_key, password: this.f.password }, { silent: true })
+				.then((r) => {
+					if (!r || !r.ok) throw new Error(__("The platform did not finish the sign-up. Try again."));
+					this.s.verify = "ok";
+					ui.announce(__("The number is confirmed."), { assertive: true });
+					return this.after_signup(r);
+				})
+				.catch((err) => {
+					this._finishing = false;
+					this.show_error(err.message);
+					this.watch_signup();
+				});
 		}
 
 		stop_signup_watch() {
@@ -1142,22 +1441,27 @@ frappe.provide("whatsapp_next.onboarding");
 		 * platform authenticates the person, and `onboarding.login` stores the keys server-side.
 		 */
 		card_login() {
+			// the field is drawn empty, so the model is too: a password typed on an earlier visit to
+			// this card is not sent behind an empty-looking field
+			this.f.login_password = "";
 			const $card = this.card("sm", {
 				title: __("Sign in"),
 				sub: __("Enter your account details to continue to the dashboard."),
 			});
 			$card.append(
-				field_html({ id: "wa-onb-login-email", label: __("Email"), type: "email", dir: "ltr", placeholder: "email@company.com", value: this.f.email, autocomplete: "email", extra: 'data-l="email"' })
+				field_html({ id: "wa-onb-login-email", label: __("Mobile number, username or email"), dir: "ltr", placeholder: "967 7XX XXX XXX", value: no_plus(this.f.login_id !== undefined ? this.f.login_id : this.f.phone || this.f.email), autocomplete: "username", extra: 'data-l="login_id"' })
 			);
 			$card.append(`
 				<div class="wa-field">
 					<label class="wa-field__label" for="wa-onb-login-pw">${esc(__("Password"))}</label>
-					<span class="wa-affix wa-onb__pwaffix">
-						<input class="wa-input" id="wa-onb-login-pw" data-l="password" type="password" dir="ltr"
+					<!-- the password is written left to right, so the field and its "Show" are too: the
+					     button takes the end the input reserves room at, not the page's end -->
+					<span class="wa-affix wa-onb__pwaffix" dir="ltr">
+						<input class="wa-input" id="wa-onb-login-pw" data-l="login_password" type="password" dir="ltr"
 							autocomplete="current-password" placeholder="••••••••">
 						<span class="wa-affix__in wa-affix__in--end wa-onb__reveal-slot">
 							<button type="button" class="wa-onb__reveal" data-act="reveal" aria-pressed="false"
-								aria-controls="wa-onb-login-pw">${esc(__("Show"))}</button>
+								aria-controls="wa-onb-login-pw" dir="auto">${esc(__("Show"))}</button>
 						</span>
 					</span>
 				</div>
@@ -1171,13 +1475,14 @@ frappe.provide("whatsapp_next.onboarding");
 
 			$card.on("input", "[data-l]", (e) => {
 				this.f[$(e.currentTarget).data("l")] = e.currentTarget.value;
+				this.save_draft(); // the email survives a reload; the password is never stored
 				this.show_error("");
 			});
 			$card.on("click", '[data-act="reveal"]', (e) => {
 				const $b = $(e.currentTarget);
 				const on = $b.attr("aria-pressed") !== "true";
 				$b.attr("aria-pressed", String(on)).text(on ? __("Hide") : __("Show"));
-				$card.find('[data-l="password"]').attr("type", on ? "text" : "password");
+				$card.find('[data-l="login_password"]').attr("type", on ? "text" : "password");
 			});
 			$card.on("keydown", "[data-l]", (e) => {
 				if (e.key === "Enter") $card.find('[data-act="login"]').trigger("click");
@@ -1193,10 +1498,15 @@ frappe.provide("whatsapp_next.onboarding");
 		 * customer is. Nothing is kept in the browser.
 		 */
 		do_login($btn) {
-			const email = (this.f.email || "").trim();
-			const password = this.f.password || "";
-			if (!email || !password) return this.show_error(__("Enter the email and the password."));
-			if (!EMAIL_RE.test(email)) return this.show_error(__("The email format is not valid — for example email@company.com"));
+			// the platform takes the mobile number (any format), the username or the email. The
+			// field opens on the sign-up's number or email; once it is edited, what it holds is the
+			// answer — an emptied field is empty, not silently the sign-up's number again.
+			const email = cstr(this.f.login_id !== undefined ? this.f.login_id : this.f.phone || this.f.email).trim();
+			// The sign-in password is its own field: it shared `f.password` with sign-up, so a
+			// password chosen on the sign-up card was sent as the sign-in password without being
+			// typed here, and a sign-in attempt overwrote the one chosen for the new account.
+			const password = this.f.login_password || "";
+			if (!email || !password) return this.show_error(__("Enter the mobile number, username or email, and the password."));
 			this.show_error("");
 			return this.busy_button(
 				$btn,
@@ -1217,7 +1527,7 @@ frappe.provide("whatsapp_next.onboarding");
 						{ silent: true }
 					)
 					.then((r) => {
-						if (r && r.ok === false) return this.show_error(r.message || __("The email or the password is not right."));
+						if (r && r.ok === false) return this.show_error(r.message || __("The sign-in details or the password are not right."));
 						if (r && r.customer_name) this.f.org = r.customer_name;
 						ui.Toast.success(__("Signed in."));
 						return this.load();
@@ -1226,38 +1536,248 @@ frappe.provide("whatsapp_next.onboarding");
 			);
 		}
 
+		/**
+		 * Password recovery, end to end, like a subscription platform: the account's email or
+		 * number → a code (by email, typed here; or on WhatsApp, where the person replies with it)
+		 * → a new password → signed in and this site linked (`onboarding.finish_password_reset`).
+		 * The open request is kept in the draft, so a reload returns to it.
+		 */
 		card_reset() {
-			const $card = this.card("sm", {
+			const reset = this.ctx.reset;
+			// the password step takes sign-up's width: its pair of fields needs the room
+			const $card = this.card(reset && reset.verified ? "md" : "sm", {
 				title: __("Recover the password"),
-				sub: __("Enter the email or the mobile the platform account was opened with, and the platform sends the recovery instructions to it."),
+				sub: !reset
+					? __("Enter the mobile number, username or email of the platform account, and the platform sends a recovery code to it.")
+					: reset.verified
+						? __("It is you. Choose the new password, and you are signed in.")
+						: __("First confirm it is you; the new password comes right after."),
 			});
-			$card.append('<div data-slot="sent"></div>');
-			$card.append(field_html({ id: "wa-onb-identifier", label: __("Email or mobile number"), dir: "ltr", placeholder: "email@company.com", value: this.f.email, required: true, extra: 'data-r="identifier"' }));
+			if (!reset) return this.reset_ask($card);
+			if (reset.verified) return this.reset_password($card, reset);
+
+			const by_email = reset.channel === "email" || !reset.code;
+			if (by_email) {
+				$card.append(`
+					<div class="wa-sunken wa-onb__codebox">
+						<p class="wa-onb__code-help">${esc(__("A recovery code was sent to {0}. Check the inbox and the spam folder.", [reset.email || __("the account's email")]))}</p>
+						<label class="wa-field__label" for="wa-onb-reset-code">${esc(__("Recovery code"))}</label>
+						<input class="wa-onb__code-input" id="wa-onb-reset-code" type="text" dir="ltr" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••">
+					</div>
+					<div class="wa-btnbar">
+						${ui.btn({ label: __("Verify the code"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "reset-verify" } })}
+						${ui.btn({ label: __("Send the code again"), variant: "secondary", attrs: { "data-act": "reset-again" } })}
+					</div>`);
+				$card.on("keydown", "#wa-onb-reset-code", (e) => {
+					if (e.key === "Enter") $card.find('[data-act="reset-verify"]').trigger("click");
+				});
+				$card.on("click", '[data-act="reset-verify"]', (e) => {
+					const code = ($card.find("#wa-onb-reset-code").val() || "").trim();
+					if (!code) return this.show_error(__("Enter the recovery code you received."));
+					this.show_error("");
+					return this.busy_button(
+						$(e.currentTarget),
+						__("Verifying…"),
+						ui
+							.call("onboarding.verify_code", { request_key: reset.request_key, code, purpose: "Password Reset" }, { silent: true })
+							.then((r) => {
+								if (!r || !r.ok) return this.show_error(__("That code was not accepted. Check it and try again, or ask for a new one."));
+								this.reset_verified();
+							})
+							.catch((err) => this.show_error(err.message))
+					);
+				});
+			} else {
+				// the sign-up's proof, for the same account: nothing arrives on WhatsApp — the person
+				// sends the shown message from the account's number, and the sender is the proof
+				const text = `SND ${reset.code}`;
+				const platform = ui.PhoneField.format_display(reset.platform_phone) || reset.platform_phone;
+				const link = `https://wa.me/${String(reset.platform_phone).replace(/\D/g, "")}?text=${encodeURIComponent(text)}`;
+				$card.append(`
+					<div class="wa-sunken wa-onb__route">
+						<span class="wa-onb__route-col">
+							<span class="wa-onb__route-k">${esc(__("From the account's number"))}</span>
+							<span class="wa-onb__route-v wa-onb__route-v--mono" dir="ltr">${esc(reset.mobile_hint || reset.identifier || "")}</span>
+						</span>
+						<span class="wa-onb__route-arrow">${ico("chevronEnd", "sm")}</span>
+						<span class="wa-onb__route-col">
+							<span class="wa-onb__route-k">${esc(__("To the platform's number"))}</span>
+							<span class="wa-onb__route-v wa-onb__route-v--mono" dir="ltr">${esc(platform)}</span>
+						</span>
+					</div>
+					<div class="wa-sunken wa-onb__codebox">
+						<span class="wa-field__label">${esc(__("The message to send"))}</span>
+						<div class="wa-onb__code-input" dir="ltr" aria-live="polite">${esc(text)}</div>
+						<p class="wa-onb__code-help">${esc(__("Send it from the account's WhatsApp number exactly as written. Nothing is sent to you: the message you send is the confirmation."))}</p>
+						<div class="wa-btnbar">
+							<a class="btn btn-primary wa-onb__grow" href="${esc(link)}" target="_blank" rel="noopener">${ico("whatsapp", "sm")} <span>${esc(__("Open WhatsApp and send"))}</span></a>
+							${ui.btn({ label: __("Copy the message"), variant: "secondary", attrs: { "data-act": "copy-reset" } })}
+						</div>
+					</div>
+					<div data-slot="reset-state">${strip_html("warn", __("Waiting for your message on WhatsApp… The next step opens by itself when it arrives."))}</div>
+					<div class="wa-btnbar">
+						${ui.btn({ label: __("Send the code again"), variant: "secondary", attrs: { "data-act": "reset-again" } })}
+					</div>`);
+				$card.on("click", '[data-act="copy-reset"]', () =>
+					navigator.clipboard
+						.writeText(text)
+						.then(() => ui.Toast.success(__("Copied")))
+						.catch(() => ui.Toast.warning(__("The browser did not allow copying. Select the code and copy it by hand.")))
+				);
+				this.watch_reset();
+			}
+
 			$card.append(`
 				<div class="wa-btnbar">
-					${ui.btn({ label: __("Send the recovery instructions"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "send" } })}
-					${ui.btn({ label: __("Back to signing in"), variant: "secondary", attrs: { "data-act": "back" } })}
-				</div>
-				<p class="wa-onb__foot-note">${esc(__("No longer have the registered email or number? Contact support on 8001234567."))}</p>`);
+					${ui.btn({ label: __("Use another email or number"), variant: "ghost", attrs: { "data-act": "reset-other" } })}
+					${ui.btn({ label: __("Back to signing in"), variant: "ghost", attrs: { "data-act": "back" } })}
+				</div>`);
+			this.bind_reset_nav($card, reset);
+		}
 
-			$card.on("click", '[data-act="back"]', () => this.set_state({ stage: "login" }));
-			$card.on("click", '[data-act="send"]', (e) => {
-				const $btn = $(e.currentTarget);
-				const identifier = ($card.find('[data-r="identifier"]').val() || "").trim();
-				if (!identifier) return this.show_error(__("Enter the email or the mobile number of the account."));
+		/** The code (email) or the person's message (WhatsApp) confirmed it: on to the password. */
+		reset_verified() {
+			this.stop_reset_watch();
+			if (!this.ctx.reset) return;
+			this.ctx.reset.verified = true;
+			this.f.password = "";
+			this.f.password2 = "";
+			ui.Toast.success(__("Confirmed. Choose the new password."));
+			this.set_state({ stage: "reset" });
+		}
+
+		/** Step two: the same password fields as sign-up, then save and sign in. */
+		reset_password($card, reset) {
+			$card.append(`<div>${strip_html("ok", __("Confirmed — this is your account."))}</div>`);
+			this.password_group($card, { title: __("New password") });
+			$card.append(`
+				<div class="wa-btnbar">
+					${ui.btn({ label: __("Set the password and sign in"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "reset-finish" } })}
+				</div>
+				<div class="wa-btnbar">
+					${ui.btn({ label: __("Use another email or number"), variant: "ghost", attrs: { "data-act": "reset-other" } })}
+					${ui.btn({ label: __("Back to signing in"), variant: "ghost", attrs: { "data-act": "back" } })}
+				</div>`);
+			// the same live checks as sign-up: strength bars and hint, the match line
+			$card.on("input", "[data-f]", (e) => {
+				const key = $(e.currentTarget).data("f");
+				this.f[key] = e.currentTarget.value;
 				this.show_error("");
-				this.busy_button(
-					$btn,
-					__("Sending…"),
+				this.refresh_field($card, key);
+			});
+			this.bind_password($card);
+			["password", "password2"].forEach((k) => this.refresh_field($card, k));
+			this.bind_reset_nav($card, reset);
+
+			$card.on("click", '[data-act="reset-finish"]', (e) => {
+				this.s.tried = true;
+				const pw = this.f.password || "";
+				if (pw.length < 8 || pw_score(pw) <= 1) {
+					this.refresh_field($card, "password");
+					$card.find('[data-f="password"]').trigger("focus");
+					return this.show_error(__("Choose a stronger password: at least 8 characters, with digits, capitals, small letters and a symbol."));
+				}
+				if (pw !== this.f.password2) {
+					this.refresh_field($card, "password2");
+					$card.find('[data-f="password2"]').trigger("focus");
+					return this.show_error(__("The two passwords do not match"));
+				}
+				this.show_error("");
+				return this.busy_button(
+					$(e.currentTarget),
+					__("Saving…"),
 					ui
-						.call("onboarding.start_password_reset", { identifier })
-						.then(() => {
-							$card.find('[data-slot="sent"]').html(strip_html("ok", __("The recovery instructions were sent. Follow them, then come back with the new keys.")));
-							$btn.find("span").last().text(__("Send them again"));
+						.call("onboarding.finish_password_reset", { request_key: reset.request_key, password: pw }, { silent: true })
+						.then((r) => {
+							if (r && r.ok === false) return this.show_error(r.message || __("The password was changed, but signing in failed. Sign in with it."));
+							this.ctx.reset = null;
+							if (r && r.customer_name) this.f.org = r.customer_name;
+							ui.Toast.success(__("The password was changed and you are signed in."));
+							return this.load();
 						})
 						.catch((err) => this.show_error(err.message))
 				);
 			});
+		}
+
+		bind_reset_nav($card, reset) {
+			$card.on("click", '[data-act="back"]', () => {
+				this.stop_reset_watch();
+				this.ctx.reset = null;
+				this.set_state({ stage: "login" });
+			});
+			$card.on("click", '[data-act="reset-other"]', () => {
+				this.stop_reset_watch();
+				this.ctx.reset = null;
+				this.set_state({ stage: "reset" });
+			});
+			$card.on("click", '[data-act="reset-again"]', (e) => this.send_reset($(e.currentTarget), reset.identifier));
+		}
+
+		/** The first half of recovery: which account. */
+		reset_ask($card) {
+			$card.append(field_html({ id: "wa-onb-identifier", label: __("Mobile number, username or email"), dir: "ltr", placeholder: "967 7XX XXX XXX", value: no_plus(this.f.reset_identifier || this.f.login_id || this.f.phone || this.f.email), required: true, extra: 'data-r="identifier"' }));
+			$card.append(`
+				<div class="wa-btnbar">
+					${ui.btn({ label: __("Send the recovery code"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "send" } })}
+					${ui.btn({ label: __("Back to signing in"), variant: "secondary", attrs: { "data-act": "back" } })}
+				</div>
+				<p class="wa-onb__foot-note">${esc(__("No longer have the registered email or number? Contact support on 8001234567."))}</p>`);
+			$card.on("input", '[data-r="identifier"]', (e) => {
+				this.f.reset_identifier = e.currentTarget.value;
+				this.save_draft();
+			});
+			$card.on("click", '[data-act="back"]', () => this.set_state({ stage: "login" }));
+			$card.on("click", '[data-act="send"]', (e) => {
+				const identifier = ($card.find('[data-r="identifier"]').val() || "").trim();
+				if (!identifier) return this.show_error(__("Enter the email or the mobile number of the account."));
+				this.send_reset($(e.currentTarget), identifier);
+			});
+		}
+
+		send_reset($btn, identifier) {
+			this.show_error("");
+			return this.busy_button(
+				$btn,
+				__("Sending…"),
+				ui
+					.call("onboarding.start_password_reset", { identifier }, { silent: true })
+					.then((r) => {
+						this.stop_reset_watch();
+						this.ctx.reset = {
+							request_key: r.request_key,
+							channel: r.channel,
+							email: r.email,
+							code: r.code,
+							platform_phone: r.platform_phone,
+							mobile_hint: r.mobile_hint,
+							identifier,
+						};
+						this.set_state({ stage: "reset" });
+						ui.Toast.success(r.channel === "whatsapp" ? __("Send the code shown from your WhatsApp.") : __("A recovery code was sent."));
+					})
+					.catch((err) => this.show_error(err.message))
+			);
+		}
+
+		/** WhatsApp recovery: the reply confirms the request; poll until it does. */
+		/** WhatsApp recovery: the person's message confirms the request; poll, then move on. */
+		watch_reset() {
+			this.stop_reset_watch();
+			this._reset_poll = window.setInterval(() => {
+				const reset = this.ctx.reset;
+				if (document.hidden || !reset || reset.verified) return;
+				ui.call("onboarding.get_password_reset_status", { request_key: reset.request_key }, { silent: true })
+					.then((r) => {
+						if (r && (r.status === "Verified" || r.status === "Completed")) this.reset_verified();
+					})
+					.catch(() => {});
+			}, SIGNUP_POLL_MS);
+		}
+
+		stop_reset_watch() {
+			if (this._reset_poll) window.clearInterval(this._reset_poll);
+			this._reset_poll = null;
 		}
 
 		// =============================================================================================
@@ -1300,6 +1820,24 @@ frappe.provide("whatsapp_next.onboarding");
 
 			$card.on("click", '[data-act="home"]', () => frappe.set_route("wa-home"));
 			this.load_referral($card);
+			this.mark_setup_complete();
+		}
+
+		/**
+		 * `WhatsApp Settings.setup_completed` is the site's record that setup is finished (R-042:
+		 * no screen ever set it, so the flag stayed empty on working sites). The ready panel is
+		 * where setup ends, so it is set here — only once all four steps are really done
+		 * (`onboarding.complete_setup` checks them again and refuses otherwise). Right after a
+		 * sign-up no device is paired yet; Home sets it later, the first time a System Manager
+		 * opens it with every step done. Quiet: nothing on this panel depends on it.
+		 */
+		mark_setup_complete() {
+			const status = this.status || {};
+			const steps = status.steps || [];
+			if (status.setup_completed || !steps.length || !steps.every((s) => s.done)) return;
+			ui.call("onboarding.complete_setup", {}, { silent: true })
+				.then(() => (status.setup_completed = true))
+				.catch(() => {});
 		}
 
 		/** The customer's own coupon, from the platform. Nothing about it is invented here. */
@@ -1357,6 +1895,11 @@ frappe.provide("whatsapp_next.onboarding");
 		unbind() {
 			this.stop_timers();
 			this.stop_signup_watch();
+			this.stop_reset_watch();
+			this.unbind_sector();
+		}
+
+		unbind_sector() {
 			if (this.on_doc_down) document.removeEventListener("mousedown", this.on_doc_down);
 			if (this.on_doc_esc) document.removeEventListener("keydown", this.on_doc_esc, true);
 			this.on_doc_down = null;
@@ -1373,5 +1916,20 @@ frappe.provide("whatsapp_next.onboarding");
 			single_column: true,
 		});
 		wrapper.wa_onboarding = new OnboardingScreen({ page, wrapper });
+	};
+
+	// Leaving the page stops its timers and polls (`unbind` on "hide"); coming back re-reads where
+	// the site stands and redraws, which restarts the countdown, the sign-up / recovery watch and
+	// the activity picker's listeners. Without it a return to the confirmation step sat on a
+	// frozen timer and never noticed the confirming message, and an account linked meanwhile (in
+	// Settings, or another tab) still showed the sign-up form.
+	frappe.pages["wa-onboarding"].on_page_show = function (wrapper) {
+		const screen = wrapper.wa_onboarding;
+		if (!screen) return;
+		if (!screen._shown) {
+			screen._shown = true; // the first show follows `on_page_load`, which already loaded
+			return;
+		}
+		screen.load();
 	};
 })();

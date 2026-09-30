@@ -11,7 +11,7 @@ import frappe
 
 from whatsapp_next.api._common import api_endpoint
 from whatsapp_next.api.v1._roles import AGENT_UP
-from whatsapp_next.services import quick_send
+from whatsapp_next.services import attachments, quick_send
 from whatsapp_next.services.dispatch import OutboundSpec
 
 MESSAGE_TYPES = ("Text", "Document", "Image", "Video", "Audio", "Sticker", "Location", "Poll")
@@ -74,6 +74,14 @@ def send(
 
 	`device_offline` / `queue_paused` come back as warnings (the row is queued anyway). Raises
 	`WAInvalidPhoneError`, `WABlacklistedError`, `WAUnknownNumberPolicyError`, `WAFileError`."""
+	# What the message carries leaves the site: the record it renders or prints and the file it
+	# attaches must be ones the sender may read (and print).
+	if reference_doctype and reference_name:
+		frappe.has_permission(reference_doctype, "read", reference_name, throw=True)
+		if print_format:
+			frappe.has_permission(reference_doctype, "print", reference_name, throw=True)
+	if attachment:
+		attachments.require_readable(attachment)
 	display_name = frappe.db.get_value("Contact", contact, "full_name") if contact else None
 	spec = OutboundSpec(
 		device=device,

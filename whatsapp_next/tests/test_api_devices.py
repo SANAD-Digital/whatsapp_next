@@ -130,3 +130,13 @@ class TestApiDevices(IntegrationTestCase):
 				self.assertIn(key, out)
 			with self.assertRaises(WAValidationError):
 				api.get_device_stats(device=self.anchor, days=0)
+
+	def test_device_impact(self):
+		with as_user("WhatsApp Agent"), self.assertRaises(WAPermissionError):
+			api.get_device_impact(device=self.anchor)
+		with as_user("WhatsApp Manager"):
+			out = api.get_device_impact(device=self.anchor)
+			self.assertEqual(set(out), {"queued", "notifications", "campaigns", "messages"})
+			self.assertEqual(out["messages"], frappe.db.count("WhatsApp Log", {"device": self.anchor}))
+			with self.assertRaises(WANotFoundError):
+				api.get_device_impact(device="WA-DEV-NOPE")

@@ -16,6 +16,7 @@ from whatsapp_next.api.v1._roles import AGENT_UP, MANAGER, VIEWER_UP
 from whatsapp_next.exceptions import WANotFoundError, WAPermissionError
 from whatsapp_next.services import dispatch, inbound, read_layer
 from whatsapp_next.services.dispatch import OUTBOUND_TERMINAL
+from whatsapp_next.services.phone import classify
 
 OUTBOUND_FIELDS: tuple[str, ...] = (
 	"name",
@@ -195,7 +196,12 @@ def get_outbound(name: str) -> dict[str, Any]:
 	row["reference"] = {
 		"doctype": row.reference_doctype,
 		"name": row.reference_name,
-		"amount": read_layer.reference_amount(row.reference_doctype, row.reference_name),
+		# the linked record's total only for a reader of that record
+		"amount": read_layer.reference_amount(row.reference_doctype, row.reference_name)
+		if row.reference_doctype
+		and row.reference_name
+		and frappe.has_permission(row.reference_doctype, "read", row.reference_name)
+		else None,
 	}
 	row["timeline"] = {"queue_item": queue_item, "webhook_events": events}
 	return row
@@ -235,6 +241,8 @@ def get_conversation(
 		and frappe.has_permission("WhatsApp Inbound Message", "read")
 	):
 		frappe.throw(_("Not permitted to read conversations"), WAPermissionError)
+	# A raw / local phone from a caller reads the same thread as its E.164 key.
+	key = classify(key)[1] or key
 	page = read_layer.conversation(key, device=device, before=before, limit=limit)
 	rows = []
 	for r in page.rows:
@@ -248,6 +256,8 @@ def get_conversation(
 def resend(name: str) -> dict[str, Any]:
 	"""New outbound row from a terminal one (`source_type` copied, `attempts` 0), queued →
 	`{outbound, queue_item}`. Non-terminal rows raise `WAStateConflictError`."""
+	if frappe.db.exists("WhatsApp Log", name):
+		_require_read("WhatsApp Log", name)
 	outbound, queue_item = dispatch.resend_outbound(name, user=frappe.session.user)
 	return {"outbound": outbound, "queue_item": queue_item}
 
@@ -256,6 +266,7 @@ def resend(name: str) -> dict[str, Any]:
 def resend_many(names: list[str]) -> dict[str, Any]:
 	"""Bulk resend (09 G-01): terminal rows are resent one by one, each in its own savepoint;
 	non-terminal rows are reported in `skipped` → `{count, done[], failed[], skipped[]}`."""
+	names = _bulk.require_bounded(names)
 	statuses = {
 		r.name: r.status
 		for r in frappe.get_all("WhatsApp Log", filters={"name": ("in", names)}, fields=["name", "status"])
@@ -267,6 +278,7 @@ def resend_many(names: list[str]) -> dict[str, Any]:
 			frappe.throw(_("WhatsApp Log {0} not found").format(name), WANotFoundError)
 		if status not in OUTBOUND_TERMINAL:
 			raise _bulk.Skip(status)
+		_require_read("WhatsApp Log", name)
 		dispatch.resend_outbound(name, user=frappe.session.user)
 
 	return _bulk.run_bulk(names, one)
@@ -276,10 +288,12 @@ def resend_many(names: list[str]) -> dict[str, Any]:
 def cancel(name: str, reason: str | None = None) -> dict[str, Any]:
 	"""Cancel a queued / paused message (`dispatch.delete_items`: queue row `Deleted`, outbound
 	`Cancelled`) → `{status}`. `WAStateConflictError` while `Sending` or when not queued."""
+	if frappe.db.exists("WhatsApp Log", name):
+		_require_read("WhatsApp Log", name)
 	return {"status": dispatch.cancel_outbound(name, user=frappe.session.user, reason=reason)}
 
 
-@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
+@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"), schema={"days": {"min": 0, "max": 3650}})
 def get_inbound_summary(days: int | None = 30) -> dict[str, Any]:
 	"""The Inbound screen's figures (09 G-07): total, match rate, unmatched, average reply time
 	over the last `days` (0 = all time). P: Viewer+."""

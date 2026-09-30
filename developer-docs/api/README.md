@@ -124,7 +124,7 @@ so the readable message also goes into `_server_messages`.
 | `WAProviderRejectedError` | 422 | The provider rejected the request as a business rule. The Python object carries `reason` and `provider_code`. |
 | `WANotSupportedError` | 422 | The active provider lacks the capability. It returns 422, not 501, because Frappe's `request.js` mishandles a 501. |
 | `WARateLimitError` | 429 | A provider or local rate limit |
-| `WAProviderAuthError` | 502 | The platform rejected the credentials (`AuthError`, `PermissionDeniedError`, `WebhookSignatureError`) |
+| `WAProviderAuthError` | 424 | The platform rejected the credentials (`AuthError`, `PermissionDeniedError`, `WebhookSignatureError`) |
 | `WAProviderUnavailableError` | 503 | A transient provider failure or offline device on the provider side, or any other provider error |
 | `PermissionError` (Frappe) | 403 | A disallowed HTTP method, or a Frappe document permission raised inside a service |
 
@@ -278,9 +278,10 @@ with `frappe.realtime.on("<event>", handler)`.
 | numbers | [numbers.md](numbers.md) | `api/v1/numbers.py` | WhatsApp Numbers: link, convert, conversation log |
 | contacts | [contacts.md](contacts.md) | `api/v1/contacts.py` | Contacts page through the contextual permission layer |
 | picker | [picker.md](picker.md) | `api/v1/picker.py` | ContactPicker sources, import, preview, commit |
+| groups | [groups.md](groups.md) | `api/v1/groups.py` | The contact group editor window: open, save with member changes |
 | campaigns | [campaigns.md](campaigns.md) | `api/v1/campaigns.py` | Campaign lifecycle, progress, results |
 | templates | [templates.md](templates.md) | `api/v1/templates.py` | Template preview and variables |
-| notifications | [notifications.md](notifications.md) | `api/v1/notifications.py` | Document-event notifications |
+| notifications | [notifications.md](notifications.md) | `api/v1/notifications.py` | Document-event notifications and the notification editor |
 | alerts | [alerts.md](alerts.md) | `api/v1/alerts.py` | Scheduled report alerts and the alert editor |
 | functions | [functions.md](functions.md) | `api/v1/functions.py` | Function catalog, install, update |
 | commands | [commands.md](commands.md) | `api/v1/commands.py` | Inbound commands, editor, test |
