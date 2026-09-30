@@ -130,7 +130,7 @@ class TestApiPicker(IntegrationTestCase):
 	def test_sources_groups_contacts_manual(self):
 		with as_user("WhatsApp Agent"):
 			keys = [s["key"] for s in api.list_sources(target_doctype="WhatsApp Campaign")]
-			self.assertEqual(keys, ["Contact Group", "Contact", "DocType", "Excel", "vCard", "Manual"])
+			self.assertEqual(keys, ["Contact Group", "Contact", "WhatsApp Number", "DocType", "Excel", "vCard", "Manual"])
 			groups = api.search_groups(txt="ApiTest Picker", kind="Marketing")
 			self.assertEqual((groups["total"], groups["rows"][0]["member_count"]), (1, 1))
 			self.assertEqual(api.search_groups(txt="ApiTest Picker", exclude=GROUP)["total"], 0)
@@ -273,6 +273,9 @@ class TestApiPicker(IntegrationTestCase):
 
 	def test_commit_campaign(self):
 		campaign = self._campaign()
+		# a deleted campaign's name comes back (Frappe reverts the series), and so would the audit
+		# rows another module left on it: count only the rows written from here on
+		started = frappe.utils.now_datetime()
 		with as_user("WhatsApp Manager"):
 			res = api.commit_add(
 				target_doctype="WhatsApp Campaign",
@@ -303,7 +306,12 @@ class TestApiPicker(IntegrationTestCase):
 			self.assertEqual(frappe.db.count("WhatsApp Campaign Recipient", {"parent": campaign}), 1)
 		self.assertEqual(
 			frappe.db.count(
-				"WhatsApp Audit Log", {"action": "Campaign Recipients Changed", "reference_name": campaign}
+				"WhatsApp Audit Log",
+				{
+					"action": "Campaign Recipients Changed",
+					"reference_name": campaign,
+					"creation": (">=", started),
+				},
 			),
 			2,
 		)

@@ -168,8 +168,8 @@ export class SelectedTab {
 			const name = row.display_name || row.source_name || row.contact || "";
 			const b = this.buckets.get(key);
 			html += `<tr class="${b && b.bucket !== "available" && b.bucket !== "already_added" ? "sanad-picker__row--flagged" : ""}" data-key="${ui.escape(key)}">
-				<td>${ui.escape(name)}</td>
-				<td class="sanad-tabular" dir="ltr">${ui.escape(row.phone_e164 || row.phone || "")}</td>
+				<td>${ui.escape(name)}${ui.group_tag(row.phone_e164 || row.phone)}</td>
+				<td class="sanad-tabular" dir="ltr">${ui.escape(ui.phone(row.phone_e164 || row.phone || ""))}</td>
 				<td>${row.source_type ? sanad.ui.StatusBadge.html({ label: __(row.source_type), colour: "gray", icon: false }) : ""}</td>
 				<td>${this.chip_for(key, row)}</td>
 				<td class="sanad-picker__td-remove"><button type="button" class="btn btn-xs btn-default sanad-picker__remove" data-key="${ui.escape(key)}" aria-label="${ui.escape(__("Remove {0} from the selection", [name || row.phone || ""]))}" title="${ui.escape(__("Remove"))}">${ui.icon("es-line-close", "xs")}</button></td>
@@ -206,7 +206,7 @@ export class SelectedTab {
 			const b = this.buckets.get(key);
 			const bucket = b ? b.bucket : "available";
 			const name = row.display_name || row.source_name || row.contact || "";
-			const phone = row.phone_e164 || row.phone || "";
+			const phone = ui.phone(row.phone_e164 || row.phone || "");
 			const word = (b && b.error) || words[bucket] || "";
 			const manual = (row.source_type || row.__source) === "Manual" || row.__source === "manual";
 			const source = row.source_type ? __(row.source_type) : "";
@@ -214,7 +214,7 @@ export class SelectedTab {
 			html += `<div class="sanad-picker__row sanad-picker__row--chosen${tone ? ` sanad-picker__row--${tone}` : ""}" data-key="${ui.escape(key)}" role="listitem">
 				<span class="sanad-picker__av${manual ? " sanad-picker__av--manual" : " sanad-picker__av--on"}" aria-hidden="true">${manual && !name ? "#" : ui.escape(ui.initials(name || phone) || "#")}</span>
 				<span class="sanad-picker__row-text">
-					<span class="sanad-picker__row-name" dir="auto">${ui.escape(name || phone)}</span>
+					<span class="sanad-picker__row-name" dir="auto">${ui.escape(name || phone)}${ui.group_tag(row.phone_e164 || row.phone)}</span>
 					${name && phone ? `<span class="sanad-picker__row-sub sanad-tabular" dir="ltr">${ui.escape(phone)}</span>` : ""}
 				</span>
 				${word ? `<span class="sanad-picker__row-badge sanad-picker__row-badge--${tone || "muted"}">${ui.escape(word)}</span>` : source ? `<span class="sanad-picker__row-badge">${ui.escape(source)}</span>` : ""}

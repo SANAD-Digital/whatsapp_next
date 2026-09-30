@@ -7,7 +7,7 @@ response**. Almost every endpoint here is **admin-only** (`SYSTEM_MANAGER`).
 
 Conventions are in [README.md](README.md). Provider exceptions that escape an endpoint are
 mapped as described in README §5. The most common are `WAValidationError` (417) for a provider
-validation or not-found error, `WAProviderAuthError` (502), `WAProviderUnavailableError` (503),
+validation or not-found error, `WAProviderAuthError` (424), `WAProviderUnavailableError` (503),
 and `WARateLimitError` (429).
 
 Kit keys: `get_status`, `start_signup`, `get_signup_status`, `complete_signup`,
@@ -269,7 +269,7 @@ part of the response.**
 | Exception | HTTP | When |
 |---|---|---|
 | `WAValidationError` | 417 | `Missing argument: platform_base_url` when it is omitted; "This site does not know where the WhatsApp platform is…"; "The platform returned no credentials for this account"; an invalid URL rejected by the Settings controller |
-| `WAProviderAuthError` | 502 | Wrong e-mail or password (mapped from the provider) |
+| `WAProviderAuthError` | 424 | Wrong e-mail or password (mapped from the provider) |
 
 ```js
 await sanad.ui.call("onboarding.login", { platform_base_url: "", email, password });
@@ -397,7 +397,7 @@ Arguments: none.
 ```
 
 **Errors:** Provider errors are mapped. On a site without credentials, expect
-`WAProviderAuthError` (502).
+`WAProviderAuthError` (424).
 
 ```js
 const ref = await sanad.ui.call("onboarding.get_referral_coupon");

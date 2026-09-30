@@ -18,7 +18,7 @@ frappe.ui.form.on("WhatsApp Number", {
 		}
 
 		if (doc.contact) {
-			frm.add_custom_button(__("Open contact"), () => frappe.set_route("Form", "Contact", doc.contact));
+			frm.add_custom_button(__("Open contact"), () => sanad.ui.ConversationDrawer.open_contact(doc.contact));
 			if (frappe.user.has_role(["WhatsApp Manager", "System Manager"])) {
 				frm.add_custom_button(__("Unlink"), () => N.unlink_number(doc, reload));
 			}

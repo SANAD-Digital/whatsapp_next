@@ -258,7 +258,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 		const type = row[this.opts.type_field] || this.types[0];
 		const $head = $(`<div class="sanad-mc__etop"></div>`).appendTo(this.$editor);
 		this.render_type_control($head, row);
-		$(`<button type="button" class="sanad-mc__toggle-preview" aria-pressed="${this.show_preview}">${ui.icon("es-line-preview", "xs")} <span>${ui.escape(this.show_preview ? __("Hide preview") : __("Show preview"))}</span></button>`)
+		$(`<button type="button" class="sanad-mc__toggle-preview" aria-pressed="${this.show_preview}">${ui.icon("es-line-chat-alt", "xs")} <span>${ui.escape(this.show_preview ? __("Hide preview") : __("Show preview"))}</span></button>`)
 			.on("click", () => {
 				this.show_preview = !this.show_preview;
 				this.render_editor();

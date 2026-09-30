@@ -14,11 +14,11 @@ from whatsapp_next.exceptions import (
 	WAInvalidPhoneError,
 	WANotSupportedError,
 	WAPermissionError,
-	WAProviderAuthError,
 	WAStateConflictError,
 	WAValidationError,
 )
 from whatsapp_next.services import onboarding as svc
+from whatsapp_next.services import usage_sync
 from whatsapp_next.tests.conftest_frappe import (
 	as_user,
 	delete_all,
@@ -42,6 +42,9 @@ FIELDS = (
 	"webhook_max_retries",
 	"webhook_synced_at",
 	"redirect_unregistered_to_wizard",
+	# `test_connection` runs `sync_subscription` against the fake provider: without these the
+	# committed tearDown left "Fake" as the dev site's plan
+	*usage_sync.FIELDS,
 )
 # Signing in runs `link_site`, which stores the platform's webhook secret: put the site's back.
 RESTORED_SECRETS = (*SECRETS, "webhook_secret")
@@ -66,6 +69,8 @@ class TestApiOnboarding(IntegrationTestCase):
 			else:
 				remove_encrypted_password(SETTINGS, SETTINGS, f)
 		frappe.clear_document_cache(SETTINGS, SETTINGS)
+		# committed: the runner's rollback must not undo the restore (it wiped the dev site's keys)
+		frappe.db.commit()
 		delete_all("WhatsApp Device", {"platform_device": DEVICE})
 		delete_all("WhatsApp Audit Log", {"action": "Credentials Changed", "user": "wa-test-sm@example.com"})
 		super().tearDownClass()
@@ -230,6 +235,8 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 			else:
 				remove_encrypted_password(SETTINGS, SETTINGS, f)
 		frappe.clear_document_cache(SETTINGS, SETTINGS)
+		# committed: the runner's rollback must not undo the restore (it wiped the dev site's keys)
+		frappe.db.commit()
 		super().tearDownClass()
 
 	def test_bootstrap_carries_the_platform_plans_and_no_second_country_list(self):
@@ -240,6 +247,72 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		self.assertIn("device_ready", out)
 		# Countries are api.v1.phone.get_countries' job; two answers would drift apart.
 		self.assertNotIn("countries", out)
+
+	def test_signup_without_an_email(self):
+		"""The email is optional: the platform gives the account a placeholder, and it signs in by
+		mobile number or username."""
+		with fake_provider() as provider, as_user("System Manager"):
+			out = api.start_signup(mobile="0500910009", full_name="No Mail Tenant", channel="sms")
+			self.assertEqual(out["request_key"], "req-1")
+			self.assertIn("start_signup", dict(provider.calls))
+
+	def test_password_recovery_ends_signed_in(self):
+		"""The recovery card used to stop at "instructions sent": no code, no new password. Now one
+		call verifies, sets the password and signs the site in."""
+		for f in SECRETS:
+			remove_encrypted_password(SETTINGS, SETTINGS, f)
+		with fake_provider() as provider, as_user("System Manager"):
+			started = api.start_password_reset(identifier="+966500910001")
+			# nothing is sent on WhatsApp: the page shows the code and the person sends it
+			self.assertEqual(
+				{k: started.get(k) for k in ("request_key", "channel", "code", "platform_phone", "mobile_hint")},
+				{
+					"request_key": "reset-1",
+					"channel": "whatsapp",
+					"code": "504312",
+					"platform_phone": "+967782309999",
+					"mobile_hint": "96777****938",
+				},
+			)
+			with self.assertRaises(WAValidationError):  # too short
+				api.finish_password_reset(request_key="reset-1", password="short", code="123456")
+			with self.assertRaises(WAValidationError):  # wrong code
+				api.finish_password_reset(request_key="reset-1", password="right-password", code="000000")
+			with self.assertRaises(WAValidationError):  # WhatsApp reply not in yet
+				api.finish_password_reset(request_key="reset-1", password="right-password")
+			self.assertNotIn("complete_password_reset", dict(provider.calls))
+			out = api.finish_password_reset(request_key="reset-1", password="right-password", code="123456")
+			self.assertTrue(out["ok"])
+			self.assertEqual(dict(provider.calls)["login"]["email"], "tenant@example.test")
+			self.assertEqual(frappe.get_doc(SETTINGS).get_password("api_key", raise_exception=False), "k")
+
+	def test_verification_route_says_what_the_platform_did(self):
+		"""The page claimed a code was sent to the number, while the platform either expects the
+		user to SEND the code from that number (WhatsApp) or mailed it (its device offline)."""
+		self.assertEqual(
+			svc.verification_route({"verification_channel": "WhatsApp", "code": "123456", "device_phone": "967779770054"}),
+			{"channel": "whatsapp", "code": "123456", "platform_phone": "+967779770054"},
+		)
+		self.assertEqual(
+			svc.verification_route({"verification_channel": "Email", "code_sent": True, "email": "a***@gmail.com"}),
+			{"channel": "email", "email": "a***@gmail.com"},
+		)
+		# a WhatsApp answer without the platform's number cannot be followed: no code leaks out
+		self.assertNotIn("code", svc.verification_route({"verification_channel": "WhatsApp", "code": "1"}))
+
+	def test_signup_sends_a_plan_the_platform_offers(self):
+		"""The page used to send "free", which no platform plan is: every sign-up failed with "The
+		selected plan is not available". A code off the bootstrap list, or none, becomes the first
+		plan offered (the one the free trial renews to)."""
+		for f in SECRETS:
+			remove_encrypted_password(SETTINGS, SETTINGS, f)
+		for sent in ("free", "free_trial", None):
+			with fake_provider() as provider, as_user("System Manager"):
+				args = {"mobile": "0500910008", "full_name": "Plan Tenant", "email": "p@b.c", "channel": "sms"}
+				if sent:
+					args["plan_code"] = sent
+				api.start_signup(**args)
+				self.assertEqual(dict(provider.calls)["start_signup"]["plan_code"], "trial", sent)
 
 	def test_signup_carries_a_coupon_and_a_password(self):
 		for f in SECRETS:
@@ -276,12 +349,16 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		for f in SECRETS:
 			remove_encrypted_password(SETTINGS, SETTINGS, f)
 		with fake_provider(), as_user("System Manager") as sm:
-			with self.assertRaises(WAProviderAuthError):
-				api.login(
-					platform_base_url="https://api.example.test",
-					email="tenant@example.test",
-					password="wrong-password",
-				)
+			# a wrong password is an answer for the card (HTTP 200), not a 502 the client
+			# reports without its text
+			wrong = api.login(
+				platform_base_url="https://api.example.test",
+				email="tenant@example.test",
+				password="wrong-password",
+			)
+			self.assertEqual(wrong["ok"], False)
+			self.assertTrue(wrong["message"])
+			self.assertNotIn("credentials_stored", wrong)
 			out = api.login(
 				platform_base_url="https://api.example.test",
 				email="tenant@example.test",

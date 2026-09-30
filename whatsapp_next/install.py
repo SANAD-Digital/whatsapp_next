@@ -34,6 +34,10 @@ def has_app_permission() -> bool:
 	return bool(roles & {*PRODUCT_ROLES, "System Manager"})
 
 
+# The WhatsApp sidebar icon with the beta mark (`public/images/whatsapp-beta-icon.svg`).
+SIDEBAR_ICON = "/assets/whatsapp_next/images/whatsapp-beta-icon.svg"
+
+
 def ensure_desktop_icons() -> None:
 	"""The app's desktop tile (from `add_to_apps_screen`) and the WhatsApp workspace's tile inside
 	it. Frappe creates both only at install time, so a site that installed the app before the hook
@@ -41,9 +45,8 @@ def ensure_desktop_icons() -> None:
 	if not frappe.db.table_exists("Desktop Icon"):
 		return
 	try:
-		from frappe.desk.doctype.desktop_icon.desktop_icon import get_app_desktop_icon
-
-		app_icon = get_app_desktop_icon("whatsapp_next")
+		# Frappe 16 has no public helper for this lookup (`get_app_desktop_icon` is gone), so ask directly
+		app_icon = frappe.db.get_value("Desktop Icon", {"app": "whatsapp_next", "icon_type": "App"})
 		details = (frappe.get_hooks("add_to_apps_screen", app_name="whatsapp_next") or [None])[0]
 		title = frappe.get_hooks("app_title", app_name="whatsapp_next")[0]
 		# only this app's tile — Frappe's own install-time pass over every app is not ours to rerun
@@ -61,10 +64,27 @@ def ensure_desktop_icons() -> None:
 			)
 			icon.insert(ignore_permissions=True, ignore_if_duplicate=True)
 			app_icon = icon.name
+		# The sidebar header draws the Desktop Icon whose label is the sidebar's title ("WhatsApp"):
+		# its `logo_url` when it names an app, else a grey initial. So the workspace tile carries
+		# the WhatsApp icon the sidebar has always shown, with the beta mark on it.
+		installed = set(frappe.get_installed_apps())
 		for ws in frappe.get_all(
 			"Workspace", filters={"app": "whatsapp_next", "public": 1}, fields=["name", "icon"]
 		):
-			if frappe.db.exists("Desktop Icon", ws.name):
+			logo = SIDEBAR_ICON
+			existing = frappe.db.get_value("Desktop Icon", ws.name, ["app", "logo_url"], as_dict=True)
+			if existing:
+				owner = existing.app
+				# ours, or left behind by an app that is no longer on this site (the legacy
+				# snd_whatsapp tile shares the label): point it at this app's logo. An icon that
+				# belongs to an installed app is not ours to touch.
+				if logo and existing.logo_url != logo and (owner == "whatsapp_next" or owner not in installed):
+					frappe.db.set_value(
+						"Desktop Icon", ws.name, {"app": "whatsapp_next", "logo_url": logo}, update_modified=False
+					)
+					# every user's cached icons and boot, not only the migrating session's
+					frappe.cache.delete_key("desktop_icons")
+					frappe.cache.delete_key("bootinfo")
 				continue
 			icon = frappe.new_doc("Desktop Icon")
 			icon.update(
@@ -74,7 +94,8 @@ def ensure_desktop_icons() -> None:
 					"link_type": "Workspace Sidebar",
 					"link_to": ws.name,
 					"icon": ws.icon,
-					"app_name": "whatsapp_next",
+					"app": "whatsapp_next",
+					"logo_url": logo,
 					"parent_icon": app_icon,
 				}
 			)
@@ -179,8 +200,45 @@ def ensure_settings_defaults() -> None:
 		settings.save(ignore_permissions=True)
 
 
-def add_indexes() -> None:
-	"""Create the composite indexes that DocType JSON cannot express (idempotent)."""
-	from whatsapp_next.patches.v0_1.add_indexes import execute
+# Composite (and composite-unique) indexes that DocType JSON cannot express (fields.md F-11,
+# RC-02; 02 §3). Single-column indexes live in the JSON (`search_index` / `unique`).
+COMPOSITE_INDEXES: tuple[tuple[str, tuple[str, ...]], ...] = (
+	("WhatsApp Log", ("device", "creation")),
+	("WhatsApp Log", ("reference_doctype", "reference_name")),
+	("WhatsApp Log", ("status", "scheduled_at")),
+	("WhatsApp Log", ("command", "creation")),
+	("WhatsApp Log", ("notification", "creation")),
+	("WhatsApp Inbound Message", ("device", "received_at")),
+	("WhatsApp Inbound Message", ("command", "received_at")),
+	("WhatsApp Queue Item", ("status", "scheduled_at", "priority")),
+	("WhatsApp Queue Item", ("device", "status")),
+	("WhatsApp Audit Log", ("reference_doctype", "reference_name")),
+	("WhatsApp Audit Log", ("user", "creation")),
+	("WhatsApp Notification", ("document_type", "event", "enabled")),
+	("WhatsApp Notification Alert", ("enabled", "next_run_at")),
+	("WhatsApp Webhook Event", ("event_name", "received_at")),
+)
 
-	execute()
+# Composite UNIQUE constraints (fields.md OQ-B, decided D-029).
+COMPOSITE_UNIQUE: tuple[tuple[str, tuple[str, ...]], ...] = (
+	("WhatsApp Inbound Message", ("device", "provider_message_id")),
+	# The platform reuses one event id across message.sent/delivered/read (D-029 OQ-P3, D-047).
+	("WhatsApp Webhook Event", ("event_name", "event_id")),
+)
+
+
+def add_indexes() -> None:
+	"""Create every composite index / unique constraint that is missing (idempotent)."""
+	for doctype, fields in COMPOSITE_INDEXES:
+		if frappe.db.table_exists(doctype):
+			frappe.db.add_index(doctype, list(fields))
+	for doctype, fields in COMPOSITE_UNIQUE:
+		if frappe.db.table_exists(doctype):
+			frappe.db.add_unique(doctype, list(fields))
+
+
+def expected_indexes() -> list[tuple[str, str]]:
+	"""`(doctype, index_name)` pairs the test suite asserts on."""
+	out = [(dt, frappe.db.get_index_name(list(fields))) for dt, fields in COMPOSITE_INDEXES]
+	out += [(dt, "unique_" + "_".join(fields)) for dt, fields in COMPOSITE_UNIQUE]
+	return out

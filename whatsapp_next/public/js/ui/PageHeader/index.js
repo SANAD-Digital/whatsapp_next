@@ -3,8 +3,9 @@
 // secondary button row, a KPI row (ListStatsCard inside — icon in a tinted square, label, big
 // tabular number, sub-text; 4 / 2 / 1 per row), an optional banner (tone + text + action) and
 // custom blocks (strips, cards) rendered by the caller. Mounted as the first child of
-// `listview.$frappe_list`, above the FilterBar. When `primary` is given, Frappe's own "+ Add"
-// primary action is cleared and kept cleared across list refreshes.
+// `listview.$frappe_list`, above the FilterBar. Above a list, Desk's breadcrumb already names the
+// screen and its page bar is where a list's verbs live: `primary` replaces Frappe's "+ Add" there
+// and `secondary` become page-bar buttons, so the header itself is the KPI row, banner and blocks.
 
 import ui from "../_core/index.js";
 
@@ -58,7 +59,8 @@ sanad.ui.PageHeader = class PageHeader {
 		this.$stats = this.$el.find(".sanad-pagehead__stats");
 		this.$banner = this.$el.find(".sanad-pagehead__banner");
 		this.$blocks = this.$el.find(".sanad-pagehead__blocks");
-		this.render_actions();
+		if (!this.listview) this.render_actions();
+		else this.$actions.remove();
 		// a header may carry nothing but a banner and its blocks (a screen whose console names
 		// itself): an empty title row would then reserve space and draw a stray margin
 		if (!o.title && !o.description) this.$el.find(".sanad-pagehead__text").remove();
@@ -75,11 +77,8 @@ sanad.ui.PageHeader = class PageHeader {
 				if (this.$el.parent().length && !this.$el.is(":first-child")) this.$el.prependTo(this.listview.$frappe_list);
 			};
 			window.setTimeout(this.keep_first, 0);
-			this.unhook_render = ui.on_list_render(this.listview, () => {
-				this.keep_first();
-				this.clear_frappe_primary();
-			});
-			this.clear_frappe_primary();
+			this.unhook_render = ui.on_list_render(this.listview, this.keep_first);
+			this.mount_page_actions();
 			// Desk fires `show` immediately after mount; without this guard every banner, block and
 			// KPI was fetched twice on each visit to the list.
 			this.listview.page.wrapper.on("show.sanadpagehead", () => this.refresh());
@@ -88,11 +87,32 @@ sanad.ui.PageHeader = class PageHeader {
 		}
 	}
 
-	/** Frappe's "+ Add" is cleared for good when the header owns the primary action. */
-	clear_frappe_primary() {
-		if (!this.opts.primary || !this.listview) return;
-		this.listview.can_create = false;
-		this.listview.page.clear_primary_action();
+	/**
+	 * Above a list the actions go to Desk's page bar. Desk re-draws "+ Add" after each load and
+	 * whenever the selection clears (`ListView.set_primary_action`), so that method is replaced on
+	 * this list rather than the button being cleared after the fact.
+	 */
+	mount_page_actions() {
+		const lv = this.listview;
+		const page = lv.page;
+		const p = this.opts.primary;
+		if (p) {
+			lv.can_create = false;
+			lv.set_primary_action = () => {
+				if (this.allowed(p)) page.set_primary_action(p.label, () => p.handler(this), p.icon);
+				else page.clear_primary_action();
+			};
+			lv.set_primary_action();
+		}
+		(this.opts.secondary || []).forEach((a) => {
+			if (!this.allowed(a)) return;
+			const $btn = page.add_button(ui.escape(a.label), () => a.handler(this), { icon: a.icon });
+			if (a.count == null) return;
+			Promise.resolve(typeof a.count === "function" ? a.count() : a.count).then((n) => {
+				if (n == null) return;
+				$btn.append(` <span class="sanad-pagehead__count sanad-tabular">${ui.escape(ui.format_int(n))}</span>`);
+			});
+		});
 	}
 
 	allowed(action) {

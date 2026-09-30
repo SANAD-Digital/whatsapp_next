@@ -11,7 +11,11 @@ frappe.ui.form.on("WhatsApp Notification", {
 
 	refresh(frm) {
 		load_field_choices(frm);
+		set_up_filters_editor(frm);
 		if (frm.is_new() || !frappe.user.has_role(["WhatsApp Manager", "System Manager"])) return;
+		if (whatsapp_next.notifications && whatsapp_next.notifications.open) {
+			frm.add_custom_button(__("Open in the editor"), () => whatsapp_next.notifications.open(frm.doc.name, { on_saved: (r) => (r && r.deleted ? frappe.set_route("List", frm.doctype) : frm.reload_doc()) }));
+		}
 		frm.add_custom_button(__("Preview"), () => pick_document(frm, __("Preview for a document"), __("Preview")).then((ref) => ref && preview(frm, ref)));
 		frm.add_custom_button(__("Send now"), () => pick_document(frm, __("Send for a document"), __("Continue")).then((ref) => ref && send_now(frm, ref)));
 	},
@@ -24,8 +28,33 @@ frappe.ui.form.on("WhatsApp Notification", {
 			frappe.model.set_value(row.doctype, row.name, "linked_document_field", "");
 		});
 		load_field_choices(frm);
+		frm.set_value("filters", "");
+		set_up_filters_editor(frm);
+	},
+
+	condition_type(frm) {
+		frm.set_value(frm.doc.condition_type === "Filters" ? "condition" : "filters", "");
+		set_up_filters_editor(frm);
 	},
 });
+
+/** Frappe's filter component in `filters_editor`, stored as JSON in `filters` — as Frappe's own
+ * Notification does for its "Filters" condition type. */
+function set_up_filters_editor(frm) {
+	const field = frm.get_field("filters_editor");
+	if (!field) return;
+	const $parent = field.$wrapper.empty();
+	if (!frm.doc.document_type || frm.doc.condition_type !== "Filters") return;
+	const filters = frm.doc.filters && frm.doc.filters !== "[]" ? JSON.parse(frm.doc.filters) : [];
+	frappe.model.with_doctype(frm.doc.document_type, () => {
+		const group = new frappe.ui.FilterGroup({
+			parent: $parent,
+			doctype: frm.doc.document_type,
+			on_change: () => frm.set_value("filters", JSON.stringify(group.get_filters())),
+		});
+		group.add_filters_to_filter_group(filters);
+	});
+}
 
 /** `{value, label}` options with an empty first choice; a saved value outside the list is kept. */
 function options_of(rows, current) {

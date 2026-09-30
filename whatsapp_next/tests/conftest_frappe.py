@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import contextlib
+import inspect
 import unittest
 from collections.abc import Iterator
 
@@ -18,6 +19,15 @@ ROLE_USERS: dict[str, str] = {
 	"WhatsApp Contact User": "wa-test-cu@example.com",
 	"_none": "wa-test-none@example.com",
 }
+
+
+def job_kwargs(call) -> dict:
+	"""The keyword arguments a mocked `frappe.enqueue` call hands to the job itself: everything
+	`frappe.enqueue` does not take as its own parameter (`event`, `queue`, `job_id`, ...)."""
+	from frappe.utils.background_jobs import enqueue
+
+	own = {n for n, p in inspect.signature(enqueue).parameters.items() if p.kind is not p.VAR_KEYWORD}
+	return {k: v for k, v in call.kwargs.items() if k not in own}
 
 
 def ensure_test_user(role: str) -> str:
@@ -123,6 +133,46 @@ def ensure_settings(**values) -> "frappe.model.document.Document":
 	return settings
 
 
+_DEVICE_CLEANUP_REGISTERED: list[bool] = []
+
+# What sits on a device and goes with it; configuration that only points at one loses the link.
+_DEVICE_ROWS = (
+	"WhatsApp Queue Item",
+	"WhatsApp Log",
+	"WhatsApp Inbound Message",
+	"WhatsApp Webhook Event",
+	"WhatsApp Campaign",
+)
+_DEVICE_LINKS = (
+	("WhatsApp Number", "last_device"),
+	("WhatsApp Number", "synced_device"),
+	("WhatsApp Notification", "device"),
+	("WhatsApp Notification Alert", "device"),
+)
+
+
+def _drop_test_devices() -> None:
+	"""Module cleanup: the fixture devices this suite made, and what sits on them, leave the site.
+	They used to stay behind after every run and fill the Devices screen with "Test Device" and
+	"Campaign Device" beside the real one (owner, 2026-09-30). Only rows on a test-prefixed
+	device are touched (R-041)."""
+	_DEVICE_CLEANUP_REGISTERED.clear()
+	devices = test_devices()
+	if not devices:
+		return
+	for doctype in _DEVICE_ROWS:
+		delete_all(doctype, {"device": ("in", devices)})
+	for doctype, fieldname in _DEVICE_LINKS:
+		for name in frappe.get_all(doctype, {fieldname: ("in", devices)}, pluck="name"):
+			frappe.db.set_value(doctype, name, fieldname, None, update_modified=False)
+	for settings_field in ("default_device", "reply_device"):
+		if frappe.db.get_single_value("WhatsApp Settings", settings_field) in devices:
+			frappe.db.set_single_value("WhatsApp Settings", settings_field, None)
+	for name in devices:
+		frappe.delete_doc("WhatsApp Device", name, ignore_permissions=True, force=True, ignore_missing=True)
+	frappe.db.commit()
+
+
 def ensure_device(
 	device_name: str = "Test Device",
 	platform_device: str = "WAD-TEST-0001",
@@ -130,10 +180,14 @@ def ensure_device(
 	phone: str = "+966500000001",
 ) -> str:
 	"""Insert (once) a WhatsApp Device row bypassing the platform; returns its name. The platform
-	id must carry a test prefix, so clean-ups can tell fixture rows from site data (R-041)."""
+	id must carry a test prefix, so clean-ups can tell fixture rows from site data (R-041); the
+	device and what sits on it are removed when the test module finishes."""
 	assert platform_device.startswith(TEST_DEVICE_PREFIXES), (
 		f"test device id must start with {TEST_DEVICE_PREFIXES}"
 	)
+	if not _DEVICE_CLEANUP_REGISTERED:
+		unittest.addModuleCleanup(_drop_test_devices)
+		_DEVICE_CLEANUP_REGISTERED.append(True)
 	name = frappe.db.get_value("WhatsApp Device", {"platform_device": platform_device}, "name")
 	if name:
 		if frappe.db.get_value("WhatsApp Device", name, "status") != status:

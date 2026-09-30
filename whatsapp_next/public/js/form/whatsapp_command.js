@@ -44,7 +44,8 @@ whatsapp_next.render_command_tester = function ($el, { note, initial = {} } = {}
 	const device = make({ fieldtype: "Link", fieldname: "device", label: __("Device"), options: "WhatsApp Device" });
 	[text, phone, device].forEach((c) => c.refresh());
 	if (initial.text) text.set_value(initial.text);
-	if (initial.sender_phone) phone.set_value(initial.sender_phone);
+	// typed and shown without "+" like every number in the app; the server normalises either way
+	if (initial.sender_phone) phone.set_value(String(initial.sender_phone).replace(/^\+(?=\d)/, ""));
 	if (initial.device) device.set_value(initial.device);
 	const $run = $(`<button type="button" class="btn btn-sm btn-primary mt-2 wa-command-tester__run">${sanad.ui.escape(__("Run test"))}</button>`).appendTo($form);
 	const state = new sanad.ui.EmptyState({ wrapper: $result, state: "empty", size: "sm", title: __("No test run yet"), description: __("Dry run — nothing is sent and nothing is saved.") });
@@ -78,7 +79,7 @@ whatsapp_next.command_test_dialog = function (doc = {}) {
 	});
 	dialog.$wrapper.addClass("sanad-kit");
 	whatsapp_next.render_command_tester(dialog.get_field("tester").$wrapper, {
-		initial: { text: doc.code || "", device: doc.reply_device || "" },
+		initial: { text: doc.code || "", device: "" },
 	});
 	dialog.show();
 	return dialog;
@@ -93,7 +94,7 @@ whatsapp_next.command_modal = function (name, opts = {}) {
 	const call = (method, args) => sanad.ui.call(`commands.${method}`, args);
 	return new sanad.ui.CommandEditor({
 		name: name || null,
-		read_only: !!opts.read_only || !frappe.user.has_role("WhatsApp Manager"),
+		read_only: !!opts.read_only || !frappe.user.has_role(["WhatsApp Manager", "System Manager"]),
 		load: (n) => call("get_editor", { name: n }),
 		load_function: (fn) => call("get_function_spec", { function: fn }),
 		save: (payload) => call("save_editor", { payload }),
@@ -117,7 +118,7 @@ frappe.ui.form.on("WhatsApp Command", {
 			return;
 		}
 		const active = frm.doc.status === "Active";
-		const manager = frappe.user.has_role("WhatsApp Manager");
+		const manager = frappe.user.has_role(["WhatsApp Manager", "System Manager"]);
 		frm.set_intro(__('Edit this command with "Open editor".'), "blue");
 		if (active) frm.disable_form();
 		const open = () =>

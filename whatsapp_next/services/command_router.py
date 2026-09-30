@@ -11,12 +11,13 @@ import json
 import re
 import shlex
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
 import frappe
 from frappe import _
-from frappe.utils import cint, getdate, now_datetime
+from frappe.utils import cint, getdate, now_datetime, nowdate
 
 from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
 from whatsapp_next.functions import registry
@@ -27,7 +28,7 @@ from whatsapp_next.services.guards import status_writer
 from whatsapp_next.services.permissions import PARTY_TYPES
 
 MAP_CACHE_KEY = "wa:commands:map"
-HELP_TOKENS = ("*", "?", "help", "مساعدة")
+HELP_TOKENS = ("*", "?", "؟", "help", "مساعدة")
 COMMAND_PREFIXES = ("#", "/", "!")
 BLOCK_REASONS = (
 	"Blacklist",
@@ -89,19 +90,39 @@ def clear_map() -> None:
 	frappe.cache.delete_value(MAP_CACHE_KEY)
 
 
+def help_tokens() -> set[str]:
+	"""The built-in help words plus the one set in Settings (`command_help_token`)."""
+	own = (frappe.get_cached_doc("WhatsApp Settings").get("command_help_token") or "").strip().casefold()
+	return {*HELP_TOKENS, own} if own else set(HELP_TOKENS)
+
+
 def match(text: str | None) -> Match | None:
-	"""First token (optionally prefixed with `#`, `/`, `!`) against the map; help tokens too."""
+	"""First token (optionally prefixed with `#`, `/`, `!`) against the map; help tokens too.
+	A help token alone asks for the command list; beside a command word (`كشف ؟`, `؟ كشف`,
+	`كشف؟`) it asks how to use that command (`Match.is_help` with `command` set)."""
 	text = (text or "").strip()
 	if not text:
 		return None
 	head, _sep, rest = text.partition(" ")
-	word = head.strip().casefold().lstrip("".join(COMMAND_PREFIXES))
-	if word in HELP_TOKENS:
-		return Match(command="", word=word, rest=rest.strip(), is_help=True)
-	command = command_map().get(word)
+	prefixes = "".join(COMMAND_PREFIXES)
+	word = head.strip().casefold().lstrip(prefixes)
+	rest = rest.strip()
+	tokens = help_tokens()
+	words = command_map()
+	if word in tokens:
+		target = words.get(rest.split(" ")[0].casefold().lstrip(prefixes)) if rest else None
+		return Match(command=target or "", word=word, rest="" if target else rest, is_help=True)
+	command = words.get(word)
 	if not command:
-		return None
-	return Match(command=command, word=word, rest=rest.strip())
+		# the token typed against the word: `كشف؟`
+		stuck = next((t for t in tokens if len(word) > len(t) and word.endswith(t)), None)
+		command = words.get(word[: -len(stuck)]) if stuck else None
+		if not command:
+			return None
+		return Match(command=command, word=word[: -len(stuck)], rest="", is_help=True)
+	if rest.casefold() in tokens:
+		return Match(command=command, word=word, rest="", is_help=True)
+	return Match(command=command, word=word, rest=rest)
 
 
 def help_text(sender_key: str | None = None) -> str:
@@ -117,6 +138,68 @@ def help_text(sender_key: str | None = None) -> str:
 	return "\n".join(
 		f"{r.code} — {r.title or r.code}" + (f": {r.description}" if r.description else "") for r in rows
 	)
+
+
+_TYPE_LABELS = {"str": "text", "int": "number", "date": "date", "link": "name"}
+
+
+def usage_text(command) -> str:
+	"""How to send `command`: its word, then each variable it reads in the order `parse_args`
+	reads them (required in `<>`, optional in `[]`), its type and notes, and a ready example.
+	Built from the function's manifest, so it follows the installed version."""
+	off = disabled_inputs(command)
+	inputs = sorted(
+		(i for i in _manifest_inputs(command.function) if i["key"] not in off),
+		key=lambda i: cint(i.get("position")) or 99,
+	)
+	word = command.code
+	lines = [f"*{word}* — {command.title or word}"]
+	if command.get("description"):
+		lines.append(command.description)
+	if not inputs:
+		lines += ["", _("This command takes no variables. Send: {0}").format(word)]
+		return "\n".join(lines)
+
+	def label(i):
+		return _(i.get("label") or i["key"])
+
+	shape = " ".join(f"<{label(i)}>" if i.get("required") else f"[{label(i)}]" for i in inputs)
+	lines += ["", _("Send: {0}").format(f"{word} {shape}"), "", _("Variables, in this order:")]
+	for n, i in enumerate(inputs, start=1):
+		kind = _(_TYPE_LABELS.get(str(i.get("type") or "str").lower(), "text"))
+		if str(i.get("type") or "").lower() == "link" and i.get("options"):
+			kind = _(i["options"])
+		need = _("required") if i.get("required") else _("optional")
+		line = f"{n}. {label(i)} ({_('{0}, {1}').format(kind, need)})"
+		if i.get("rest"):
+			line += " — " + _("takes the rest of the message")
+		lines.append(line)
+		details = i.get("details") or i.get("description")
+		if details:
+			lines.append(f"   {_(details)}")
+	lines += ["", _("Example: {0}").format(_example(command, inputs))]
+	if len(inputs) > 1:
+		lines.append(_("Or by name, in any order: {0}").format(f"{word} {inputs[0]['key']}=…"))
+	return "\n".join(lines)
+
+
+def _example(command, inputs: list[dict[str, Any]]) -> str:
+	"""The manifest's example with this command's word, or one made from the inputs' examples."""
+	raw = frappe.db.get_value("WhatsApp Function", command.function, "manifest")
+	try:
+		example = (json.loads(raw) if raw else {}).get("example") or ""
+	except ValueError:
+		example = ""
+	_head, _sep, tail = str(example).strip().partition(" ")
+	if tail.strip():
+		return f"{command.code} {tail.strip()}"
+	samples = {"int": "3", "date": str(getdate(nowdate()))}
+	parts = []
+	for i in inputs:
+		sample = i.get("example") or samples.get(str(i.get("type") or "").lower())
+		if sample or i.get("required"):
+			parts.append(str(sample or _(i.get("label") or i["key"])))
+	return " ".join([command.code, *parts]).strip()
 
 
 # ---- access --------------------------------------------------------------------------------
@@ -386,22 +469,31 @@ def execute(
 		frappe.set_user(previous)
 		frappe.session.sid, frappe.session.data, frappe.local.form_dict = saved_sid, saved_data, saved_form
 	elapsed = int((time.perf_counter() - started) * 1000)
-	_record_metrics(command.function, elapsed, error=result.error)
+	# a preview, the editor's test or the Simulator is not a call: the function's figures (and
+	# its "last error") describe what senders got, and a dry run persists nothing
+	if not dry_run:
+		_record_metrics(command.function, elapsed, error=result.error)
 	return result
 
 
 def _record_metrics(function: str, elapsed_ms: int, *, error: str | None) -> None:
-	row = frappe.db.get_value(
-		"WhatsApp Function", function, ["call_count", "avg_ms", "error_count"], as_dict=True
+	"""Count one call and fold its time into the average in a single UPDATE, so two workers
+	finishing at once never overwrite each other's count. MariaDB assigns left to right: the
+	average is computed from the count before it is incremented."""
+	from frappe.query_builder.functions import Coalesce
+
+	fn = frappe.qb.DocType("WhatsApp Function")
+	calls = Coalesce(fn.call_count, 0)
+	query = (
+		frappe.qb.update(fn)
+		.set(fn.avg_ms, (Coalesce(fn.avg_ms, 0) * calls + int(elapsed_ms)) / (calls + 1))
+		.set(fn.call_count, calls + 1)
+		.set(fn.last_called_at, now_datetime())
+		.where(fn.name == function)
 	)
-	if not row:
-		return
-	count = cint(row.call_count) + 1
-	avg = int(((cint(row.avg_ms) * cint(row.call_count)) + elapsed_ms) / count)
-	values: dict[str, Any] = {"call_count": count, "avg_ms": avg, "last_called_at": now_datetime()}
 	if error:
-		values.update({"error_count": cint(row.error_count) + 1, "last_error": error[:500]})
-	frappe.db.set_value("WhatsApp Function", function, values, update_modified=False)
+		query = query.set(fn.error_count, Coalesce(fn.error_count, 0) + 1).set(fn.last_error, error[:500])
+	query.run()
 
 
 def _condition_passes(condition: str | None, data: dict[str, Any]) -> bool:
@@ -514,9 +606,16 @@ def _set_status(inbound_name: str | None, status: str, **values: Any) -> None:
 
 
 def _reply_device(command, inbound) -> str | None:
-	settings = frappe.get_cached_doc("WhatsApp Settings")
+	"""A command is answered from the device that received it — the number the sender wrote to.
+	The per-command and settings-wide "Reply Device" were removed from the product; a value left
+	in either column is ignored."""
 	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
-	return command.reply_device or settings.reply_device or get("device")
+	return get("device")
+
+
+# the automatic replies go out at once, not behind the queue's tick: the receipt is only worth
+# sending before the function's answer; the unknown-command and help replies are instant echoes
+IMMEDIATE_OUTPUTS = frozenset({"receipt", "unknown", "help"})
 
 
 def _send_replies(command, inbound, replies: list[dict[str, Any]], *, is_simulated: bool) -> list[str]:
@@ -542,9 +641,47 @@ def _send_replies(command, inbound, replies: list[dict[str, Any]], *, is_simulat
 		)
 		outbound = dispatch.create_outbound(spec)
 		if not is_simulated:
-			dispatch.enqueue([outbound], priority=1)
+			if r.get("output_key") in IMMEDIATE_OUTPUTS:
+				_send_now_or_queue(outbound)
+			else:
+				dispatch.enqueue([outbound], priority=1)
 		names.append(outbound)
 	return names
+
+
+def _send_now_or_queue(outbound: str) -> None:
+	"""`dispatch.send_now`; a send that breaks before the provider answers falls back to the queue,
+	so an automatic reply is never lost and never stops the command behind it."""
+	try:
+		dispatch.send_now(outbound, source="direct")
+	except Exception as exc:
+		frappe.log_error(
+			title="WhatsApp automatic reply: direct send failed",
+			message=f"outbound={outbound} {type(exc).__name__}",
+		)
+		dispatch.enqueue([outbound], priority=1)
+
+
+def reply_language() -> str:
+	"""The language every command reply is written in: Settings' `command_reply_language`, else
+	the site's. Not the user's: a reply is read by the sender, not by whoever runs the job."""
+	return (
+		frappe.get_cached_doc("WhatsApp Settings").get("command_reply_language")
+		or frappe.db.get_single_value("System Settings", "language")
+		or "en"
+	)
+
+
+@contextmanager
+def in_reply_language():
+	"""Write everything inside in `reply_language()`, then give the caller's language back."""
+	from frappe.translate import print_language
+
+	# a background job resolves its user's language lazily, on its first `_()`, and that
+	# overwrites `frappe.local.lang`: let it happen now, or it would switch a reply back mid-way
+	_("")
+	with print_language(reply_language()):
+		yield
 
 
 def route(
@@ -555,7 +692,21 @@ def route(
 	create_simulated_rows: bool = False,
 ) -> RouteResult:
 	"""Steps 4–11 for one inbound. Live routing (`dry_run=False`) only runs in a job; the
-	Simulator passes `dry_run=True` with an unsaved `inbound` doc/dict."""
+	Simulator passes `dry_run=True` with an unsaved `inbound` doc/dict. Replies are written in
+	`reply_language()`; the caller's language is restored afterwards."""
+	with in_reply_language():
+		return _route(
+			inbound_name, inbound=inbound, dry_run=dry_run, create_simulated_rows=create_simulated_rows
+		)
+
+
+def _route(
+	inbound_name: str | None,
+	*,
+	inbound,
+	dry_run: bool,
+	create_simulated_rows: bool,
+) -> RouteResult:
 	if not dry_run and getattr(frappe.local, "request", None) is not None and not frappe.flags.in_test:
 		frappe.throw(_("Commands are routed by the worker, not in a web request"), WAStateConflictError)
 	if inbound is None:
@@ -583,14 +734,13 @@ def route(
 		return _finish(result, inbound, dry_run, create_simulated_rows, command=None)
 	if m.is_help:
 		result.status = "Executed"
-		result.replies = [
-			{
-				"output_key": "help",
-				"message_type": "Text",
-				"body": help_text(get("phone_e164")),
-				"attachment": None,
-			}
-		]
+		result.command = m.command or None
+		body = (
+			usage_text(frappe.get_cached_doc("WhatsApp Command", m.command))
+			if m.command
+			else help_text(get("phone_e164"))
+		)
+		result.replies = [{"output_key": "help", "message_type": "Text", "body": body, "attachment": None}]
 		_set_status(inbound_name, "Executed", command_text=text[:140])
 		return _finish(result, inbound, dry_run, create_simulated_rows, command=None)
 	command = frappe.get_cached_doc("WhatsApp Command", m.command)
@@ -659,15 +809,16 @@ def route(
 		result.status = "Executed"
 		_set_status(inbound_name, "Executed")
 	if not dry_run:
-		frappe.db.set_value(
-			"WhatsApp Command",
-			command.name,
-			{
-				"run_count": cint(frappe.db.get_value("WhatsApp Command", command.name, "run_count")) + 1,
-				"last_run_at": now_datetime(),
-			},
-			update_modified=False,
-		)
+		# one UPDATE: concurrent runs of the same command each count
+		from frappe.query_builder.functions import Coalesce
+
+		cmd = frappe.qb.DocType("WhatsApp Command")
+		(
+			frappe.qb.update(cmd)
+			.set(cmd.run_count, Coalesce(cmd.run_count, 0) + 1)
+			.set(cmd.last_run_at, now_datetime())
+			.where(cmd.name == command.name)
+		).run()
 	result.elapsed_ms = int((time.perf_counter() - started) * 1000)
 	return _finish(result, inbound, dry_run, create_simulated_rows, command=command)
 
@@ -682,7 +833,7 @@ def _finish(
 		return result
 	if command is None:
 		# help / unknown-command replies use the inbound device only
-		command = frappe._dict(name=None, reply_device=None)
+		command = frappe._dict(name=None)
 	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
 	try:
 		result.outbound = _send_replies(command, inbound, result.replies, is_simulated=dry_run)
@@ -742,7 +893,8 @@ def dry_run(text: str, sender_phone: str, device: str | None = None) -> RouteRes
 
 
 def recent_run_counts(commands: list[str], days: int = 30) -> dict[str, int]:
-	"""`{command → inbound messages that matched it in the last `days` days}` (by `received_at`)."""
+	"""`{command → runs in the last `days` days}` (by `received_at`): inbound messages that matched
+	the command and reached it — a Blocked sender is not a run, and Simulator rows are not traffic."""
 	if not commands:
 		return {}
 	from frappe.utils import add_days
@@ -751,6 +903,8 @@ def recent_run_counts(commands: list[str], days: int = 30) -> dict[str, int]:
 		"WhatsApp Inbound Message",
 		filters={
 			"command": ("in", list(commands)),
+			"command_status": ("!=", "Blocked"),
+			"is_simulated": 0,
 			"received_at": (">=", add_days(now_datetime(), -abs(cint(days)))),
 		},
 		fields=["command", {"COUNT": "name", "as": "run_count"}],

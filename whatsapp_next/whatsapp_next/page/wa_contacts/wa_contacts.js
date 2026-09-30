@@ -32,6 +32,9 @@ const CAN_READ_CONVERSATION = () =>
 	frappe.user.has_role(["WhatsApp Viewer", "WhatsApp Agent", "WhatsApp Manager", "System Manager"]);
 const CAN_WRITE = () =>
 	frappe.user.has_role("WhatsApp Contact User") || frappe.perm.has_perm("Contact", 0, "write");
+/** `contacts.toggle_blacklist` is for these roles only: a native Contact right does not open it. */
+const CAN_BLOCK = () =>
+	frappe.user.has_role(["WhatsApp Contact User", "WhatsApp Agent", "WhatsApp Manager", "System Manager"]);
 const CAN_CREATE = () =>
 	frappe.user.has_role("WhatsApp Contact User") || frappe.perm.has_perm("Contact", 0, "create");
 
@@ -55,6 +58,22 @@ class ContactsPage {
 		this.make();
 		this.bind_realtime();
 		this.load();
+		this.open_from_route();
+	}
+
+	/**
+	 * `frappe.route_options = {contact}` opens that contact's detail: how a Number, a group member
+	 * or a conversation sends a user without native Contact read to the record
+	 * (`ConversationDrawer.open_contact`), since the Contact form would refuse them.
+	 */
+	open_from_route() {
+		const name = frappe.route_options && frappe.route_options.contact;
+		if (!name) return;
+		frappe.route_options = null;
+		sanad.ui
+			.call("contacts.get_contact", { name }, { silent: true })
+			.then((row) => row && this.open_detail(row))
+			.catch((err) => sanad.ui.Toast.error(err));
 	}
 
 	// ---- layout ---------------------------------------------------------------------------
@@ -75,6 +94,8 @@ class ContactsPage {
 		this.make_header();
 		this.make_toolbar();
 		this.make_table();
+		// the title with its buttons and the filters stay while the rows scroll beneath
+		sanad.ui.pin_stack(this.$el, [".sanad-pagehead__row", ".wa-contacts__toolbar"]);
 	}
 
 	/**
@@ -137,9 +158,9 @@ class ContactsPage {
 					tone: "blue",
 					value: () =>
 						this.stats().then((s) =>
-							cint(s && s.total) ? Math.round((cint(s.linked) / cint(s.total)) * 100) : 0
+							cint(s && s.total) ? (cint(s.linked) / cint(s.total)) * 100 : 0
 						),
-					format: (v) => `${sanad.ui.format_int(v)}%`,
+					format: (v) => (v > 0 && v < 1 ? `\u2066${__("<1%")}\u2069` : `${sanad.ui.format_int(Math.round(v))}%`),
 					sub: __("Share of contacts ready for notifications"),
 					onclick: () => this.apply({}, ""),
 				},
@@ -324,7 +345,7 @@ class ContactsPage {
 				sub: (doc) => {
 					const phone = ContactsPage.phone_of(doc);
 					return phone
-						? `<span class="wa-contacts__card-only sanad-tabular" dir="ltr">${esc(phone)}</span>`
+						? `<span class="wa-contacts__card-only sanad-tabular" dir="ltr">${esc(sanad.ui.phone(phone))}</span>`
 						: "";
 				},
 			},
@@ -334,7 +355,7 @@ class ContactsPage {
 				format: (v, doc) => {
 					const phone = ContactsPage.phone_of(doc);
 					return phone
-						? `<span class="sanad-tabular" dir="ltr">${esc(phone)}</span>`
+						? `<span class="sanad-tabular" dir="ltr">${esc(sanad.ui.phone(phone))}</span>`
 						: `<span class="wa-contacts__muted">${esc(__("None"))}</span>`;
 				},
 			},
@@ -902,7 +923,7 @@ class ContactsPage {
 		if (CAN_WRITE()) {
 			list.push({ key: "edit", label: __("Edit"), icon: "es-line-edit", handler: () => this.open_form(row) });
 		}
-		if (phone && CAN_WRITE()) {
+		if (phone && CAN_BLOCK()) {
 			list.push({
 				key: "block",
 				label: cint(row.blacklisted) ? __("Unblock") : __("Block"),
@@ -942,7 +963,7 @@ class ContactsPage {
 	link_one(row) {
 		this.ask_party({
 			title: __("Link «{0}» to an account", [ContactsPage.title_of(row)]),
-			subtitle: ContactsPage.phone_of(row) || undefined,
+			subtitle: sanad.ui.phone(ContactsPage.phone_of(row) || "") || undefined,
 		})
 			.then(({ link_doctype, link_name, link_title }) =>
 				sanad.ui
@@ -968,7 +989,7 @@ class ContactsPage {
 			type: "modal",
 			width: "520px",
 			title: __("Change conversation state"),
-			subtitle: __("{0} · {1}", [ContactsPage.title_of(row), phone]),
+			subtitle: __("{0} · {1}", [ContactsPage.title_of(row), sanad.ui.phone(phone)]),
 			badge: { text: current.text, tone: current.tone },
 			sections: [
 				{
@@ -1064,7 +1085,7 @@ class ContactsPage {
 			type: "modal",
 			width: "520px",
 			title: blocked ? __("Unblock the number") : __("Block the number"),
-			subtitle: __("{0} · {1}", [ContactsPage.title_of(row), phone]),
+			subtitle: __("{0} · {1}", [ContactsPage.title_of(row), sanad.ui.phone(phone)]),
 			badge: blocked ? { text: __("Blocked"), tone: "danger" } : { text: __("Not blocked"), tone: "ok" },
 			sections: [
 				{
@@ -1244,7 +1265,7 @@ class ContactsPage {
 					variant: "primary",
 					requires_dirty: editing,
 					handler: (values) => {
-						const payload = this.form_payload(values);
+						const payload = this.form_payload(values, editing ? r : null);
 						const call = editing
 							? sanad.ui.call("contacts.update_contact", { name: r.name, payload }, { silent: true })
 							: sanad.ui.call("contacts.create_contact", { payload }, { silent: true });
@@ -1266,14 +1287,24 @@ class ContactsPage {
 		this.form.show();
 	}
 
-	/** The WRITE payload, and nothing else: the scalars that have a value, the phone, the links. */
-	form_payload(values) {
+	/**
+	 * The WRITE payload, and nothing else: the scalars that have a value (and, on an edit, the ones
+	 * the operator emptied), the phones, the links. The server replaces `phone_nos` as a set and the
+	 * modal edits only the primary number, so the contact's other numbers ride along unchanged —
+	 * sending the edited one alone deleted every other phone of the contact.
+	 */
+	form_payload(values, row) {
 		const out = {};
 		["first_name", "last_name", "company_name", "designation", "email_id"].forEach((k) => {
 			const v = values[k];
-			if (v !== undefined && v !== null && String(v).trim() !== "") out[k] = String(v).trim();
+			const text = v === undefined || v === null ? "" : String(v).trim();
+			if (text !== "") out[k] = text;
+			else if (row && row[k]) out[k] = "";
 		});
-		out.phone_nos = values.phone ? [{ phone: values.phone, is_primary_mobile_no: 1 }] : [];
+		const phones = (row && row.phone_nos) || [];
+		const primary = phones.find((p) => cint(p.is_primary_mobile_no)) || phones[0];
+		const others = phones.filter((p) => p !== primary && p.phone).map((p) => ({ phone: p.phone, is_primary_mobile_no: 0 }));
+		out.phone_nos = values.phone ? [{ phone: values.phone, is_primary_mobile_no: 1 }, ...others] : others;
 		const seen = new Set();
 		out.links = (values.links || [])
 			.filter((l) => l.link_doctype && l.link_name && !seen.has(`${l.link_doctype}:${l.link_name}`) && seen.add(`${l.link_doctype}:${l.link_name}`))
@@ -1294,7 +1325,10 @@ class ContactsPage {
 		const subscribe = () => frappe.realtime.on("wa:inbound:received", this.on_inbound);
 		const unsubscribe = () => frappe.realtime.off("wa:inbound:received", this.on_inbound);
 		subscribe();
-		$(this.wrapper).on("show", subscribe);
+		$(this.wrapper).on("show", () => {
+			subscribe();
+			this.open_from_route();
+		});
 		$(this.wrapper).on("hide", () => {
 			unsubscribe();
 			this.close_overlays();

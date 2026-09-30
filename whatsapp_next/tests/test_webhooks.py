@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import inspect
 import json
 import time
 from pathlib import Path
@@ -11,6 +12,7 @@ from unittest.mock import patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
+from frappe.utils import add_to_date, now_datetime
 
 from whatsapp_next.providers.snd_platform import SndPlatformProvider
 from whatsapp_next.services import dispatch, inbound
@@ -21,6 +23,7 @@ from whatsapp_next.tests.conftest_frappe import (
 	ensure_device,
 	ensure_settings,
 	fake_provider,
+	job_kwargs,
 )
 from whatsapp_next.webhooks import handlers, verify
 from whatsapp_next.webhooks.v1 import receiver
@@ -90,7 +93,17 @@ class TestWebhooks(IntegrationTestCase):
 	def setUp(self):
 		self._clean()
 		verify.reset_signature_failures()
+		# two tests signing the same fixture in the same second share a signature
+		frappe.cache.delete_keys("wa:webhook:sig:")
 		frappe.cache.delete_value(receiver.SECRET_MISSING_LOG_KEY)
+		# No test here may reach a real worker. Five refused signatures enqueue
+		# `webhook_setup.fetch_secret`; a worker that ran it mid-module pulled the site's real
+		# secret over the fixture one, and every later delivery failed its signature (the flaky
+		# `test_verified_retry_takes_over_a_rejected_delivery`). Tests that assert on the queue
+		# patch `frappe.enqueue` again inside themselves.
+		enqueue = patch.object(frappe, "enqueue")
+		enqueue.start()
+		self.addCleanup(enqueue.stop)
 
 	def tearDown(self):
 		self._clean()
@@ -136,15 +149,8 @@ class TestWebhooks(IntegrationTestCase):
 			headers, raw = signed(body, secret="wrong")
 			out = receiver.handle(headers, raw)
 			self.assertEqual((out.http_status, out.body["error"]), (401, "invalid signature"))
-			row = frappe.get_all(
-				"WhatsApp Webhook Event",
-				filters={"event_id": body["event_id"]},
-				fields=["status", "payload", "signature_valid", "error"],
-			)[0]
-			self.assertEqual(
-				(row.status, row.payload, row.signature_valid, row.error),
-				("Ignored", None, 0, "invalid signature"),
-			)
+			# an unsigned request is not stored: a guest could otherwise grow the table at will
+			self.assertFalse(frappe.db.exists("WhatsApp Webhook Event", {"event_id": body["event_id"]}))
 			headers, raw = signed(body, ts=int(time.time()) - 3600, event_id="stale-1")
 			out = receiver.handle(headers, raw)
 			self.assertEqual((out.http_status, out.body["error"]), (401, "stale timestamp"))
@@ -160,11 +166,36 @@ class TestWebhooks(IntegrationTestCase):
 			headers, raw = signed(body)
 			self.assertEqual(receiver.handle(headers, raw).http_status, 503)
 			self.assertEqual(receiver.handle(headers, raw).http_status, 503)
-		# only the invalid-signature Ignored row exists for this id; the 503 path stored nothing
-		self.assertEqual(
-			frappe.get_all("WhatsApp Webhook Event", filters={"event_id": body["event_id"]}, pluck="status"),
-			["Ignored"],
-		)
+		# neither the invalid signature nor the 503 path stored anything for this id
+		self.assertFalse(frappe.db.exists("WhatsApp Webhook Event", {"event_id": body["event_id"]}))
+
+	def test_receiver_refuses_malformed_headers_without_a_server_error(self):
+		body = fixture("message.received")
+		with fake_provider():
+			for ts in ("inf", "-inf", "1e30", "99999999999999", "nan", "abc"):
+				headers, raw = signed(body)
+				headers["X-SND-Timestamp"] = ts
+				out = receiver.handle(headers, raw)
+				self.assertEqual((out.http_status, out.body["error"]), (401, "invalid signature"), ts)
+			for event_id in ("x" * 141, "evt\x00nul", "evt\nline"):
+				headers, raw = signed(body, event_id=event_id)
+				self.assertEqual(receiver.handle(headers, raw).http_status, 400, repr(event_id))
+		self.assertFalse(frappe.db.exists("WhatsApp Webhook Event", {"event_id": ("like", "xxxx%")}))
+
+	def test_a_signature_is_bound_to_one_event(self):
+		"""The HMAC covers `<ts>.<body>` only: a captured delivery re-sent with another event id
+		or name inside the freshness window is refused; the same delivery again is a duplicate."""
+		body = fixture("message.received")
+		with fake_provider(), patch.object(frappe, "enqueue"):
+			headers, raw = signed(body)
+			self.assertEqual(receiver.handle(headers, raw).http_status, 200)
+			self.assertEqual(receiver.handle(headers, raw).body, {"ok": True, "duplicate": True})
+			swapped = {**headers, "X-SND-Event-ID": "evt-nope"}
+			out = receiver.handle(swapped, raw)
+			self.assertEqual((out.http_status, out.body["error"]), (401, "replayed signature"))
+			renamed = {**headers, "X-SND-Event": "message.failed"}
+			self.assertEqual(receiver.handle(renamed, raw).http_status, 401)
+		self.assertFalse(frappe.db.exists("WhatsApp Webhook Event", {"event_id": "evt-nope"}))
 
 	def test_verified_retry_takes_over_a_rejected_delivery(self):
 		"""A delivery refused for its signature (e.g. mid secret rotation) must not make the
@@ -215,9 +246,11 @@ class TestWebhooks(IntegrationTestCase):
 			row = self._event(out.event)
 			self.assertEqual((row.status, row.device, row.duplicate_count), ("Received", self.device, 0))
 			self.assertEqual(json.loads(row.payload)["event_id"], body["event_id"])
-			self.assertTrue(
-				any(c.args[0] == "whatsapp_next.webhooks.handlers.process_event" for c in enq.call_args_list)
-			)
+			jobs = [c for c in enq.call_args_list if c.args[0] == "whatsapp_next.webhooks.handlers.process_event"]
+			self.assertEqual(len(jobs), 1)
+			# what reaches the job is what `frappe.enqueue` does not keep for itself (`event=` it does)
+			inspect.signature(handlers.process_event).bind(**job_kwargs(jobs[0]))
+			self.assertEqual(job_kwargs(jobs[0]), {"webhook_event": out.event})
 			self.assertIsNotNone(frappe.db.get_single_value("WhatsApp Settings", "webhook_last_event_at"))
 			# duplicate delivery
 			out2 = receiver.handle(headers, raw)
@@ -322,6 +355,26 @@ class TestWebhooks(IntegrationTestCase):
 			self.assertEqual(handlers.process_event(out.event), "Ignored")
 			self.assertIsNotNone(self._event(out.event).payload)
 
+	def test_delivered_and_read_of_one_message_are_two_jobs(self):
+		"""The platform sends a message's id as the event id, so `delivered` and `read` share it:
+		the job is named after the stored row, or the `read` was dropped as a duplicate job."""
+		with fake_provider(), patch.object(frappe, "enqueue") as enq:
+			a = receiver.handle(*signed(fixture("message.delivered")))
+			b = receiver.handle(*signed(fixture("message.read", event_id="3EB0SENT0001")))
+		self.assertNotEqual(a.event, b.event)
+		jobs = [c.kwargs["job_id"] for c in enq.call_args_list if c.args[0] == "whatsapp_next.webhooks.handlers.process_event"]
+		self.assertEqual(jobs, [f"wa-webhook-{a.event}", f"wa-webhook-{b.event}"])
+
+	def test_a_received_event_whose_job_never_ran_is_swept(self):
+		with fake_provider(), patch.object(frappe, "enqueue"):
+			out = receiver.handle(*signed(fixture("message.received")))
+			self.assertEqual(handlers.reprocess_failed(), 0)  # fresh: its job may still run
+			frappe.db.set_value(
+				"WhatsApp Webhook Event", out.event, "received_at", add_to_date(now_datetime(), minutes=-30)
+			)
+			self.assertEqual(handlers.reprocess_failed(), 1)
+		self.assertEqual(self._event(out.event).status, "Processed")
+
 	def test_handler_failure_retries_three_times(self):
 		with fake_provider(), patch.object(frappe, "enqueue"):
 			headers, raw = signed(fixture("message.received"))
@@ -341,7 +394,54 @@ class TestWebhooks(IntegrationTestCase):
 			)
 			self.assertEqual(handlers.process_event(out.event), "Processed")
 
+	def test_a_handler_that_fails_half_way_leaves_nothing_behind(self):
+		"""The inbound row a failing handler already inserted goes with the failure, so the retry
+		records the message once and not twice."""
+		real = handlers.handle_event
+
+		def half(*args, **kwargs):
+			real(*args, **kwargs)
+			raise RuntimeError("after the insert")
+
+		with fake_provider():
+			headers, raw = signed(fixture("message.received"))
+			out = receiver.handle(headers, raw)
+			with patch.object(handlers, "handle_event", side_effect=half):
+				self.assertEqual(handlers.process_event(out.event), "Failed")
+			pmid = fixture("message.received")["provider_message_id"]
+			self.assertFalse(frappe.db.exists("WhatsApp Inbound Message", {"provider_message_id": pmid}))
+			self.assertEqual(handlers.reprocess_failed(), 1)
+			self.assertEqual(
+				frappe.db.count("WhatsApp Inbound Message", {"provider_message_id": pmid}), 1
+			)
+
 	# -- inbound service ---------------------------------------------------------------
+	def test_inbound_key_and_known_name(self):
+		"""A LID sender whose number is known is published under the number (the key an open
+		conversation drawer hashes), the Numbers upsert comes from the after_insert doc hook, and a
+		sender without a push name takes the name the site already knows for the number."""
+		key = "+966500000077"
+		delete_all("WhatsApp Number", {"phone_e164": key})
+		frappe.get_doc(
+			{"doctype": "WhatsApp Number", "phone_e164": key, "display_name": "Webhook Known"}
+		).insert(ignore_permissions=True)
+		self.addCleanup(lambda: (delete_all("WhatsApp Number", {"phone_e164": key}), frappe.db.commit()))
+		with (
+			fake_provider(),
+			patch.object(frappe, "publish_realtime") as pub,
+			patch("whatsapp_next.services.numbers_materializer.on_message_insert") as hook,
+		):
+			provider = frappe.get_attr("whatsapp_next.providers.registry.get_provider")()
+			ev = provider.parse_webhook({}, fixture("message.received.lid_number"))
+			name = inbound.record_inbound(ev, device=self.device)
+		self.assertEqual(hook.call_count, 1)
+		payloads = [c.args[1] for c in pub.call_args_list if c.args[0] == "wa:inbound:received"]
+		self.assertEqual([p["key_hash"] for p in payloads], [inbound.key_hash(key)])
+		self.assertEqual(
+			frappe.db.get_value("WhatsApp Inbound Message", name, "display_name"), "Webhook Known"
+		)
+
+
 
 	def test_inbound_rules(self):
 		with fake_provider(), patch.object(frappe, "enqueue") as enq:
@@ -360,6 +460,14 @@ class TestWebhooks(IntegrationTestCase):
 			)
 			self.assertIsNone(row.phone_e164)
 			self.assertTrue(row.sender_jid.endswith("@lid"))
+			# the platform resolves a privacy id to the number and sends it as `sender_number`
+			lid_number = provider.parse_webhook({}, fixture("message.received.lid_number"))
+			name = inbound.record_inbound(lid_number, device=self.device)
+			row = frappe.db.get_value(
+				"WhatsApp Inbound Message", name, ["phone_e164", "sender_jid"], as_dict=True
+			)
+			self.assertEqual(row.phone_e164, "+966500000077")
+			self.assertTrue(row.sender_jid.endswith("@lid"))
 			react = provider.parse_webhook({}, fixture("message.reaction"))
 			name = inbound.record_reaction(react, device=self.device)
 			row = frappe.db.get_value(
@@ -373,7 +481,8 @@ class TestWebhooks(IntegrationTestCase):
 			self.assertEqual(inbound.record_reaction(react, device=self.device), name)  # dedupe
 			# routing gate: commands disabled → nothing enqueued to the router
 			self.assertFalse(any(c.args[0].endswith("command_router.route") for c in enq.call_args_list))
-			self.assertTrue(
+			# the Numbers upsert is the after_insert doc hook's alone (enqueued after commit)
+			self.assertFalse(
 				any(
 					c.args[0].endswith("numbers_materializer.upsert_from_message") for c in enq.call_args_list
 				)

@@ -37,6 +37,15 @@ whatsapp_function_catalogs = ["my_app.whatsapp_functions"]
 # → my_app/whatsapp_functions/__init__.py + my_app/whatsapp_functions/v1/catalog.json
 ```
 
+A catalog file may name the apps its functions read, with a top-level
+`"requires_apps": ["other_app"]`. On a site where one of them is not installed the file is
+skipped, so its functions are never offered. This is how whatsapp_next ships functions over
+another app's data without that app depending on it:
+`whatsapp_next/functions/integrations/snd_accounting/` holds the accounting functions
+(customer balance and statement for the sender's own customer; customer, supplier, cash and bank
+balances for staff) over snd_accounting's reports. Its handlers import snd_accounting only when
+called, and snd_accounting itself is not changed.
+
 ### `whatsapp_function_handlers`: register the code behind a function
 
 A dict of `function_key` → dotted path of a handler. `functions.registry` merges it with the

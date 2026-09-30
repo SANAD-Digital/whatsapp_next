@@ -18,7 +18,7 @@ import frappe
 from frappe import _
 from frappe.utils import cstr
 
-from whatsapp_next.exceptions import WAFileError
+from whatsapp_next.exceptions import WAFileError, WAPermissionError
 from whatsapp_next.providers.schemas import AttachmentRef
 
 MAX_ATTACHMENT_BYTES = 64 * 1024 * 1024  # provider hard limit is lower per type; guard runaway files
@@ -80,6 +80,15 @@ def _file_doc(file_url: str):
 	if not name:
 		frappe.throw(_("File {0} not found").format(file_url), WAFileError)
 	return frappe.get_doc("File", name)
+
+
+def require_readable(file_url: str) -> None:
+	"""Refuse a file the session user may not open. Sending a File hands its bytes to whoever
+	the message goes to, so a user-composed message may only carry files its author can read
+	(Frappe's File rules: public, owned, or attached to a record the user can read)."""
+	doc = _file_doc(file_url)
+	if not frappe.has_permission("File", "read", doc=doc):
+		frappe.throw(_("Not permitted to send file {0}").format(file_url), WAPermissionError)
 
 
 def as_bytes(file_url: str | None) -> bytes:
@@ -328,6 +337,7 @@ def message_parts(
 		return out
 	if not attachment:
 		frappe.throw(_("Upload the file to send"), WAValidationError)
+	require_readable(attachment)
 	meta = file_meta(attachment)
 	check_mime_for_type(message_type, meta["mime_type"])
 	out.update(

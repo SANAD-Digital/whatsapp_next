@@ -40,10 +40,10 @@ function mount_members(frm) {
 		page_method: "picker.get_group_members",
 		args: (s) => ({ group: frm.doc.name, page: s.page, page_length: s.page_length }),
 		page_length: 50,
-		columns: [{ fieldname: "display_name" }, { fieldname: "phone_e164" }, { fieldname: "contact" }, { fieldname: "source_type" }],
+		columns: [{ fieldname: "display_name" }, { fieldname: "phone_e164", label: __("Phone") }, { fieldname: "contact" }, { fieldname: "source_type" }],
 		status_field: null,
 		search: false,
-		row_actions: [{ label: __("Open contact"), icon: "es-line-people", condition: (row) => !!row.contact, handler: (row) => frappe.set_route("Form", "Contact", row.contact) }],
+		row_actions: [{ label: __("Open contact"), icon: "es-line-people", condition: (row) => !!row.contact, handler: (row) => sanad.ui.ConversationDrawer.open_contact(row.contact) }],
 		toolbar_actions,
 		empty_text: __("No members yet"),
 	});

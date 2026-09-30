@@ -47,10 +47,25 @@ class WhatsAppNotificationAlert(Document):
 		self.normalize_recipients()
 		self.next_run_at = self.compute_next_run()
 
+	def check_report_access(self) -> None:
+		"""The scheduler runs the alert's report as Administrator and sends its rows out, so
+		whoever picks the report must be allowed to open it themselves (the report's roles and
+		read on it) — otherwise an alert is a way around the report's permissions."""
+		if frappe.session.user == "Administrator" or frappe.flags.in_install or frappe.flags.in_migrate:
+			return
+		if not frappe.db.exists("Report", self.report):
+			frappe.throw(_("Report {0} not found").format(self.report), WAValidationError)
+		# the same two checks `frappe.desk.query_report` makes before running a report
+		report = frappe.get_doc("Report", self.report)
+		if not (report.is_permitted() and (not report.ref_doctype or frappe.has_permission(report.ref_doctype, "report"))):
+			frappe.throw(_("You are not permitted to use the report {0}").format(self.report), frappe.PermissionError)
+
 	def check_content(self) -> None:
 		"""Report required for Report content; a Template or an inline Message always."""
 		if self.content_type == "Report" and not self.report:
 			frappe.throw(_("Report is required when Content is Report"), WAValidationError)
+		if self.report and (self.is_new() or self.has_value_changed("report")):
+			self.check_report_access()
 		if not self.template and not (self.message or "").strip():
 			frappe.throw(_("Choose a Template or write a Message"), WAValidationError)
 

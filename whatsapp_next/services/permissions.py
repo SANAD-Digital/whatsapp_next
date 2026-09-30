@@ -110,7 +110,30 @@ def can_elevate(ptype: str = "read", user: str | None = None) -> bool:
 		return False
 	if is_contact_user(user):
 		return True
-	return bool(frappe.has_permission("Contact", ptype, user=user))
+	return has_unrestricted_contact_access(ptype, user)
+
+
+def has_unrestricted_contact_access(ptype: str, user: str) -> bool:
+	"""Native `ptype` on **every** Contact, the only native right the elevated queries may stand
+	in for: they read and write across all contacts, so a narrower right must not open them.
+
+	`frappe.has_permission("Contact", ptype)` without a document says yes to a right limited to
+	the user's own records (`if_owner`) — and Frappe ships `All` with exactly that, so every
+	logged-in user, website users included, passed. A right narrowed by User Permissions is
+	refused for the same reason, and so is a website user."""
+	if frappe.db.get_value("User", user, "user_type") != "System User":
+		return False
+	roles = set(frappe.get_roles(user))
+	granted = [
+		p
+		for p in frappe.get_meta("Contact").permissions
+		if p.role in roles and not cint(p.permlevel) and cint(p.get(ptype)) and not cint(p.if_owner)
+	]
+	if not granted:
+		return False
+	from frappe.permissions import get_user_permissions
+
+	return not get_user_permissions(user).get("Contact")
 
 
 def require(ptype: str = "read") -> None:
@@ -323,7 +346,9 @@ def _contact_query(
 		any_link = (
 			frappe.qb.from_(D)
 			.select(D.name)
-			.where((D.parenttype == "Contact") & (D.parent == C.name) & (D.link_doctype.isin(list(PARTY_TYPES))))
+			.where(
+				(D.parenttype == "Contact") & (D.parent == C.name) & (D.link_doctype.isin(list(PARTY_TYPES)))
+			)
 		)
 		q = q.where(ExistsCriterion(any_link) if linked else ~ExistsCriterion(any_link))
 	if status:
@@ -417,10 +442,7 @@ def contact_stats() -> dict[str, int]:
 	names = {row["parent"] for row in links}
 	multi = {row["parent"] for row in links if cint(row["n"]) > 1}
 	# a link row may point at a contact this user cannot see: count only the ones in the query
-	visible = {
-		row[0]
-		for row in _contact_query()[0].select(C.name).run()
-	}
+	visible = {row[0] for row in _contact_query()[0].select(C.name).run()}
 	stats = {
 		"total": total_of(),
 		"linked": len(names & visible),
@@ -546,6 +568,53 @@ def validate_filters(meta, filters: Any) -> list[list[Any]]:
 	return out
 
 
+# Field types never filterable through the elevated read: a range filter on them would reveal
+# values the picker never returns (a salary, a birth date) one count at a time.
+_UNFILTERABLE_TYPES = frozenset(
+	{
+		"Currency",
+		"Float",
+		"Int",
+		"Percent",
+		"Date",
+		"Datetime",
+		"Password",
+		"Small Text",
+		"Text",
+		"Long Text",
+		"Code",
+		"JSON",
+	}
+)
+
+
+def _require_listable_filters(meta, source, filters: list[list[Any]]) -> None:
+	"""A user who reads the DocType only through the picker (no native read) may filter on what
+	the picker shows — name, title, phone, contact — and on the fields the DocType itself puts in
+	its list view or standard filters, never on anything else."""
+	allowed = {"name", "modified", "creation"}
+	allowed.update(
+		f
+		for f in (
+			source.name_fieldname,
+			meta.get_title_field(),
+			source.phone_fieldname,
+			source.contact_fieldname,
+		)
+		if f
+	)
+	allowed.update(
+		df.fieldname
+		for df in meta.fields
+		if (df.in_list_view or df.in_standard_filter)
+		and not cint(df.permlevel)
+		and df.fieldtype not in _UNFILTERABLE_TYPES
+	)
+	for field, _op, _value in filters:
+		if field not in allowed:
+			frappe.throw(_("Filtering on {0} is not allowed").format(field), WAPermissionError)
+
+
 def _picker_source(document_type: str):
 	settings = frappe.get_cached_doc("WhatsApp Settings")
 	for row in settings.get("picker_sources") or []:
@@ -574,6 +643,8 @@ def list_doctype_rows(
 		)
 	except (ValueError, TypeError) as exc:
 		frappe.throw(_("Invalid filters: {0}").format(exc), WAValidationError)
+	if not frappe.has_permission(document_type, "read"):
+		_require_listable_filters(meta, source, client_filters)
 	merged = [[document_type, *f] for f in server_filters + client_filters]
 
 	title_field = source.name_fieldname or meta.get_title_field()
@@ -724,6 +795,19 @@ def _apply_tables(doc, phones: list[dict] | None, links: list[dict] | None) -> l
 	return written
 
 
+def _apply_email(doc, email: str | None, previous: str | None = None) -> None:
+	"""Write `email` as the primary `email_ids` row. `Contact.validate` derives `email_id` from that
+	table (and clears it when the table is empty), so setting the scalar alone is silently dropped.
+	The previous primary address is replaced; any other addresses stay as non-primary rows."""
+	email = (email or "").strip()
+	drop = {e for e in (email, (previous or "").strip()) if e}
+	rows = [r.email_id for r in doc.get("email_ids") or [] if r.email_id and r.email_id.strip() not in drop]
+	doc.set("email_ids", [{"email_id": e, "is_primary": 0} for e in rows])
+	if email:
+		doc.append("email_ids", {"email_id": email, "is_primary": 1})
+	doc.email_id = email
+
+
 def create_contact(payload: dict[str, Any]) -> str:
 	"""Insert a Contact from the WRITE sets only, as the session user; audited."""
 	require("create")
@@ -731,6 +815,8 @@ def create_contact(payload: dict[str, Any]) -> str:
 	if not scalars.get("first_name"):
 		frappe.throw(_("first_name is required"), WAValidationError)
 	doc = frappe.get_doc({"doctype": "Contact", **scalars})
+	if "email_id" in scalars:
+		_apply_email(doc, scalars["email_id"])
 	written = list(scalars) + _apply_tables(doc, phones, links)
 	doc.flags.ignore_permissions = True
 	doc.insert(ignore_permissions=True)
@@ -747,8 +833,11 @@ def update_contact(name: str, payload: dict[str, Any]) -> str:
 		frappe.throw(_("Contact {0} not found").format(name), WANotFoundError)
 	doc = frappe.get_doc("Contact", name)
 	written = [k for k, v in scalars.items() if (doc.get(k) or None) != (v or None)]
+	previous_email = doc.email_id
 	for k in written:
 		doc.set(k, scalars[k])
+	if "email_id" in written:
+		_apply_email(doc, scalars["email_id"], previous_email)
 	written += _apply_tables(doc, phones, links)
 	if not written:
 		return name
@@ -773,7 +862,10 @@ def link_number(phone_e164: str, contact: str, user: str | None = None) -> str:
 		"link_status": "Linked",
 		"linked_by": user or frappe.session.user,
 		"linked_at": now_datetime(),
-		"display_name": full_name or frappe.db.get_value("WhatsApp Number", key, "display_name"),
+		# a group keeps its own subject: it belongs to the contact, it is not the contact
+		"display_name": frappe.db.get_value("WhatsApp Number", key, "display_name")
+		if kind == "Group"
+		else full_name or frappe.db.get_value("WhatsApp Number", key, "display_name"),
 	}
 	frappe.db.set_value("WhatsApp Number", key, values, update_modified=True)
 	audit.log(
@@ -795,12 +887,14 @@ def convert_number(
 	user: str | None = None,
 ) -> str:
 	"""Create a Contact from a `WhatsApp Number` (phone row from the number, optional party link)
-	and link the number to it; audited `Number Converted` + `Elevated Contact Write`."""
+	and link the number to it; audited `Number Converted` + `Elevated Contact Write`. A group has
+	no phone to copy: its Contact is created without one and reaches the group through the link."""
 	require("create")
 	kind, key = classify(phone_e164)
-	if kind != "Individual" or not frappe.db.exists("WhatsApp Number", key):
+	if kind not in ("Individual", "Group") or not frappe.db.exists("WhatsApp Number", key):
 		frappe.throw(
-			_("WhatsApp Number {0} not found or not an individual number").format(phone_e164), WANotFoundError
+			_("WhatsApp Number {0} not found or not an individual number or group").format(phone_e164),
+			WANotFoundError,
 		)
 	existing = frappe.db.get_value("WhatsApp Number", key, "contact")
 	if existing:
@@ -808,8 +902,9 @@ def convert_number(
 	payload: dict[str, Any] = {
 		"first_name": first_name,
 		"last_name": last_name,
-		"phone_nos": [{"phone": key, "is_primary_mobile_no": 1}],
 	}
+	if kind == "Individual":
+		payload["phone_nos"] = [{"phone": key, "is_primary_mobile_no": 1}]
 	if party_type or party_name:
 		payload["links"] = [{"link_doctype": party_type, "link_name": party_name}]
 	contact = create_contact({k: v for k, v in payload.items() if v is not None})
@@ -892,7 +987,11 @@ def conversation_log(phone_e164: str, limit: int = 50) -> list[dict[str, Any]]:
 		frappe.throw(_("WhatsApp Number {0} not found").format(phone_e164), WANotFoundError)
 	rows = frappe.get_all(
 		"WhatsApp Audit Log",
-		filters={"action": "Conversation Confirmed", "reference_doctype": "WhatsApp Number", "reference_name": key},
+		filters={
+			"action": "Conversation Confirmed",
+			"reference_doctype": "WhatsApp Number",
+			"reference_name": key,
+		},
 		fields=["timestamp", "creation", "user", "reason", "details"],
 		order_by="creation desc",
 		limit=cint(limit) or 50,

@@ -151,6 +151,25 @@ class TestReadLayer(IntegrationTestCase):
 		self.assertEqual(len(rows), 1)
 		self.assertEqual(rows[0].key, LID)
 
+	def test_group_message_of_a_member_stays_out_of_the_member_thread(self):
+		"""A member's message in a group carries their number but belongs to the group's key."""
+		o1 = _outbound(self.device, ts=self._t(1))
+		_inbound(self.device, phone=KEY_A, chat_jid=GROUP, sender_jid=LID, ts=self._t(2))
+		self.assertEqual([r.name for r in read_layer.conversation(KEY_A).rows], [o1])
+		self.assertEqual(len(read_layer.conversation(GROUP).rows), 1)
+		self.assertEqual(read_layer.stats_by_key([KEY_A])[KEY_A].inbound_count, 0)
+
+	def test_lid_key_does_not_overwrite_the_number_stats(self):
+		"""A LID sender whose number is known is keyed by the number: asking for both keys in one
+		batch must not let the LID's match rewrite the number's counters or last direction."""
+		_inbound(self.device, phone=KEY_A, sender_jid=LID, ts=self._t(1))
+		_outbound(self.device, ts=self._t(5))
+		stats = read_layer.stats_by_key([KEY_A, LID])
+		self.assertNotIn(LID, stats)
+		a = stats[KEY_A]
+		self.assertEqual((a.outbound_count, a.inbound_count, a.last_direction), (1, 1, "Outbound"))
+		self.assertEqual(read_layer.known_keys([KEY_A, LID]), {KEY_A})
+
 	# -- cross_direction_rows ---------------------------------------------------------
 
 	def test_cross_direction_rows_direction_and_order(self):
@@ -232,6 +251,7 @@ class TestReadLayer(IntegrationTestCase):
 		q = read_layer._union({}, keys=[KEY_A], limit=5)
 		sql = str(q)
 		self.assertEqual(sql.count("UNION ALL"), 1)
-		self.assertEqual(sql.count(KEY_A), 2)
+		# per branch: the indexed column and the key expression
+		self.assertEqual(sql.count(KEY_A), 4)
 		self.assertIn("`tabWhatsApp Log`", sql)
 		self.assertIn("`tabWhatsApp Inbound Message`", sql)

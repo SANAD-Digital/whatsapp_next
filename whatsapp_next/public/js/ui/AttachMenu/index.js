@@ -204,7 +204,7 @@ frappe.provide("sanad.ui");
 						rows.length
 							? rows
 									.slice(0, 20)
-									.map((c) => `<button type="button" role="option" class="sanad-am__opt" data-name="${esc(c.name)}">${esc(c.label || c.name)}<span dir="ltr">${esc(c.phone || "")}</span></button>`)
+									.map((c) => `<button type="button" role="option" class="sanad-am__opt" data-name="${esc(c.name)}">${esc(c.label || c.name)}<span dir="ltr">${esc(sanad.ui.phone(c.phone || ""))}</span></button>`)
 									.join("")
 							: `<span class="sanad-am__none">${esc(__("No matching contacts."))}</span>`
 					);

@@ -672,6 +672,8 @@ frappe.provide("sanad.ui");
 					if (!d.builder) d.builder = info.saved_filters || [];
 					this.ui.filter_mode = "builder";
 				} else {
+					// a report the user may not run: Frappe would refuse its script with a popup of its own
+					if (info.can_run === false) throw new Error("not permitted");
 					const defs = await this.report_defs(report, info);
 					if (this.draft.report !== report) return;
 					this.ui.report_defs = defs;
@@ -855,7 +857,7 @@ frappe.provide("sanad.ui");
 					const sub = r.recipient_type === "Phone" && label !== value ? value : m.label;
 					return `<li class="sanad-ae__who sanad-ae__who--${esc(frappe.scrub(r.recipient_type))}">
 						<span class="sanad-ae__who-ico" aria-hidden="true">${sanad.ui.ico(m.icon, "sm")}</span>
-						<span class="sanad-ae__who-text"><strong>${esc(label)}</strong><span dir="auto">${esc(sub)}</span></span>
+						<span class="sanad-ae__who-text"><strong>${esc(label)}${r.recipient_type === "Phone" ? sanad.ui.group_tag(value) : ""}</strong><span dir="auto">${esc(sub)}</span></span>
 						<button type="button" class="sanad-ae__icon sanad-ae__icon--sm" data-act="r_remove" data-i="${i}" aria-label="${esc(__("Remove {0}", [label]))}">${sanad.ui.ico("x", "sm")}</button>
 					</li>`;
 				})
@@ -976,7 +978,7 @@ frappe.provide("sanad.ui");
 				bubble = `<p class="sanad-ae__pv-empty">${esc(d.content_type === "Report" && !d.report ? __("Choose a report to see the message.") : __("Write the message to see it here."))}</p>`;
 			else {
 				const file = p.attachment
-					? `<div class="sanad-ae__file"><span class="sanad-ae__file-ico" aria-hidden="true">${sanad.ui.ico(p.attachment.message_type === "Image" ? "eye" : "doc", "md")}</span><span><strong dir="ltr">${esc(p.attachment.file_name)}</strong><span>${esc(p.attachment.message_type === "Image" ? __("Image") : "PDF")} · ${esc(__("built when it runs"))}</span></span></div>`
+					? `<div class="sanad-ae__file"><span class="sanad-ae__file-ico" aria-hidden="true">${sanad.ui.ico(p.attachment.message_type === "Image" ? "image" : "doc", "md")}</span><span><strong dir="ltr">${esc(p.attachment.file_name)}</strong><span>${esc(p.attachment.message_type === "Image" ? __("Image") : "PDF")} · ${esc(__("built when it runs"))}</span></span></div>`
 					: "";
 				bubble = `<div class="sanad-ae__bubble">${file}${p.message ? `<div class="sanad-ae__bubble-text" dir="auto">${esc(p.message)}</div>` : ""}<span class="sanad-ae__bubble-time">${esc(d.notification_time || "")} ${sanad.ui.ico("read", "xs")}</span></div>`;
 			}
@@ -995,7 +997,7 @@ frappe.provide("sanad.ui");
 				<div class="sanad-ae__phone">
 					<div class="sanad-ae__phone-bar">
 						<span class="sanad-ae__phone-av" aria-hidden="true">${sanad.ui.ico("whatsapp", "sm")}</span>
-						<span><strong>${esc(dev.device_name || __("Device"))}</strong><span dir="ltr">${esc(first ? first.phone_e164 : __("to the first recipient"))}</span></span>
+						<span><strong>${esc(dev.device_name || __("Device"))}</strong><span dir="ltr">${esc(first ? sanad.ui.phone(first.phone_e164) : __("to the first recipient"))}</span></span>
 					</div>
 					<div class="sanad-ae__chat">${bubble}</div>
 				</div>
@@ -1012,7 +1014,7 @@ frappe.provide("sanad.ui");
 					<strong>${esc(__("Try it"))}</strong>
 					<p>${esc(__("Sends this draft once to one number — nothing is saved, the schedule and the counters do not change."))}</p>
 					<div class="sanad-ae__addline">
-						<input type="tel" class="wa-input wa-input--mono" data-in="test_phone" dir="ltr" placeholder="+9665…" value="${esc(this.ui.test_phone)}" aria-label="${esc(__("Number for the test"))}">
+						<input type="tel" class="wa-input wa-input--mono" data-in="test_phone" dir="ltr" placeholder="9665…" value="${esc(this.ui.test_phone)}" aria-label="${esc(__("Number for the test"))}">
 						<button type="button" class="sanad-ae__btn sanad-ae__btn--pri" data-act="test"${this.ui.testing ? " disabled" : ""}>${sanad.ui.ico("send", "sm")}${esc(this.ui.testing ? __("Sending…") : __("Send a test"))}</button>
 					</div>
 					${d.name && this.opts.run_now ? `<button type="button" class="sanad-ae__link" data-act="run_now">${esc(__("Run it now for every recipient"))}</button>` : ""}
@@ -1036,7 +1038,7 @@ frappe.provide("sanad.ui");
 						recent.length
 							? `<ul class="sanad-ae__recent">${recent
 									.map(
-										(r) => `<li><span dir="ltr">${esc(r.display_name || r.phone_e164)}</span>${sanad.ui.badge(__(r.status), tone[r.status] || "muted")}<time>${esc(frappe.datetime.comment_when(r.creation, true))}</time></li>`
+										(r) => `<li><span dir="ltr">${esc(r.display_name || sanad.ui.phone(r.phone_e164))}</span>${sanad.ui.group_tag(r.phone_e164)}${sanad.ui.badge(__(r.status), tone[r.status] || "muted")}<time>${esc(frappe.datetime.comment_when(r.creation, true))}</time></li>`
 									)
 									.join("")}</ul>`
 							: ""
@@ -1391,7 +1393,7 @@ frappe.provide("sanad.ui");
 			this.draw_test();
 			try {
 				const r = await this.opts.send_test(this.payload(), phone);
-				frappe.show_alert({ message: __("Test sent to {0}", [r && r.phone_e164 ? r.phone_e164 : phone]), indicator: "green" });
+				frappe.show_alert({ message: __("Test sent to {0}", [sanad.ui.phone(r && r.phone_e164 ? r.phone_e164 : phone)]), indicator: "green" });
 			} catch (err) {
 				frappe.show_alert({ message: err && err.message ? err.message : __("The test could not be sent"), indicator: "red" });
 			}

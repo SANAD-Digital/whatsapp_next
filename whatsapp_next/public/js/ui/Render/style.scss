@@ -208,7 +208,70 @@
 	&__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sanad-gap-xs); flex-direction: row-reverse; }
 	&__label { flex: 1; font-size: var(--text-xs, 11px); color: var(--ink-gray-6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	&__icon { display: inline-flex; flex: none; color: var(--ink-gray-4); }
-	&__value { font-size: var(--text-sm, 13px); font-weight: 600; color: var(--ink-gray-9); overflow-wrap: anywhere; text-align: match-parent; }
+	&__value { font-size: var(--text-sm, 13px); font-weight: 600; color: var(--ink-gray-9); overflow-wrap: anywhere; text-align: -webkit-match-parent; text-align: match-parent; }
+	// a linked record inside a tile reads as the tile's value, not as a green link among black
+	// ones; it is still a link, and says so on hover
+	&__value .sanad-chipline--link { color: inherit; }
+	&__value .sanad-chipline--link:hover { color: var(--sanad-accent-ink); text-decoration: underline; }
+}
+
+// Key / value rows — the drawer's data. One bordered box, one field per row, the keys in one
+// column so the eye runs down them and across to the value; a hairline between rows, none after
+// the last. The key column is a share of the row with a floor, so a long key wraps rather than
+// pushing its value off the row.
+.sanad-kv {
+	margin: 0;
+	padding-inline: var(--sanad-gap-md);
+	border: var(--sanad-border);
+	border-radius: var(--sanad-ent-radius);
+	background: var(--surface-white);
+
+	&__row {
+		display: grid;
+		grid-template-columns: minmax(110px, 38%) minmax(0, 1fr);
+		// centre, not baseline: a key that carries an icon would otherwise sit higher than its value
+		align-items: center;
+		gap: var(--sanad-gap-md);
+		padding-block: 10px;
+		border-block-end: var(--sanad-border);
+		min-inline-size: 0;
+		&:last-child { border-block-end: 0; }
+		// a long value gets the whole row under its key
+		&--wide {
+			grid-template-columns: minmax(0, 1fr);
+			gap: var(--sanad-gap-xs);
+		}
+	}
+	dt {
+		display: flex;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		min-inline-size: 0;
+		margin: 0;
+		font-size: var(--text-sm, 13px);
+		font-weight: 400;
+		color: var(--ink-gray-6);
+		overflow-wrap: anywhere;
+	}
+	&__icon { display: inline-flex; flex: none; color: var(--ink-gray-5); }
+	dd {
+		margin: 0;
+		min-inline-size: 0;
+		font-size: var(--text-sm, 13px);
+		font-weight: 500;
+		color: var(--ink-gray-9);
+		overflow-wrap: anywhere;
+		text-align: start;
+		// a value in another language keeps its own rendering but stays on the key's side
+		> [dir="auto"], .sanad-clamp, .sanad-rich {
+			unicode-bidi: isolate;
+			text-align: -webkit-match-parent;
+			text-align: match-parent;
+		}
+		// a linked record reads as the value, not as a green link among black ones
+		.sanad-chipline--link { color: inherit; }
+		.sanad-chipline--link:hover { color: var(--sanad-accent-ink); text-decoration: underline; }
+	}
 }
 
 // Key / value list — the "additional details" block.
@@ -234,7 +297,12 @@
 	// text's own rendering is left to `dir="auto"`.
 	// `start` would resolve against the value's own `dir="auto"` and throw an Arabic value to the
 	// other side of its English label; `match-parent` resolves it against the list instead.
-	dd .sanad-clamp, dd .sanad-rich { unicode-bidi: isolate; text-align: match-parent; }
+	dd .sanad-clamp, dd .sanad-rich, dd > [dir="auto"] {
+		unicode-bidi: isolate;
+		// Chrome knows only the prefixed keyword and drops the standard one; Firefox the reverse
+		text-align: -webkit-match-parent;
+		text-align: match-parent;
+	}
 	@media (max-width: 520px) {
 		&--cols-2 { grid-template-columns: minmax(0, 1fr); }
 	}
@@ -311,6 +379,14 @@
 	&__text { display: flex; flex-direction: column; gap: 1px; min-inline-size: 0; flex: 1; }
 	&__title { font-size: var(--text-sm, 13px); font-weight: 600; color: var(--ink-gray-9); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	&__sub { font-size: var(--text-xs, 11px); color: var(--ink-gray-6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	// A title or a line keeps its own direction for its own text (an English name, a number in an
+	// Arabic card) but lines up with the card, not with that direction: with `start` an English
+	// title sat at the far side of an Arabic card from the Arabic line under it.
+	&__title, &__sub {
+		unicode-bidi: isolate;
+		text-align: -webkit-match-parent;
+		text-align: match-parent;
+	}
 	&__desc { font-size: var(--text-sm, 13px); color: var(--ink-gray-7); line-height: 1.7; }
 	&__trail { display: inline-flex; align-items: center; gap: var(--sanad-gap-sm); flex: none; margin-inline-start: auto; }
 	&__value { font-size: var(--text-sm, 13px); font-weight: 700; color: var(--ink-gray-9); white-space: nowrap; }

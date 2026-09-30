@@ -1,0 +1,162 @@
+// NotificationEditor — the AlertEditor's shell and cards (`.sanad-ae*`); only what a notification
+// adds is here: the template cards, the inline "N days before [field]" lines, the record the
+// preview is tried on and the optional "afterwards" card. Product tokens, logical properties.
+
+.sanad-ne {
+	// the template cards: the document type's templates first, "New template" as the first card
+	&__tpls {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		gap: 8px;
+		max-block-size: 320px;
+		overflow: auto;
+		padding: 2px;
+	}
+	&__tpl {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 6px;
+		min-block-size: 112px;
+		padding: 10px 12px;
+		border: 1px solid var(--wa-border);
+		border-radius: 10px;
+		background: var(--wa-surface);
+		color: var(--wa-ink);
+		text-align: start;
+		cursor: pointer;
+		transition: border-color 0.15s, background 0.15s;
+		&:hover { border-color: var(--wa-pri-sb); }
+		&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: 2px; }
+		&.is-on {
+			border-color: var(--wa-pri);
+			background: var(--wa-pri-s);
+			box-shadow: inset 0 0 0 1px var(--wa-pri);
+		}
+		&--new {
+			align-items: center;
+			justify-content: center;
+			text-align: center;
+			border-style: dashed;
+			border-color: var(--wa-border-2);
+			background: var(--wa-bg);
+			color: var(--wa-pri-d);
+			span { font-size: 11px; color: var(--wa-ink-4); }
+		}
+	}
+	&__tpl-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 6px;
+		strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	}
+	&__tpl-tick {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 18px;
+		block-size: 18px;
+		border-radius: 50%;
+		background: var(--wa-pri);
+		color: var(--wa-on-pri);
+		flex: none;
+	}
+	&__tpl-meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+		font-size: 11px;
+		color: var(--wa-ink-4);
+	}
+	&__tpl-body {
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		font-size: 12px;
+		line-height: 1.7;
+		color: var(--wa-ink-3);
+		white-space: pre-line;
+	}
+	&__tpl-actions { display: flex; gap: 12px; margin-block-start: 6px; }
+
+	&__filter { max-inline-size: 260px; margin-block-end: 8px; }
+	&__vars-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		flex-wrap: wrap;
+		.sanad-ne__filter { margin: 0; }
+	}
+
+	// "3 days before [Due date]": numbers, words and selects on one line
+	&__line {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-block-start: 8px;
+		font-size: 13px;
+		color: var(--wa-ink-2);
+		.wa-select, .wa-input { inline-size: auto; min-inline-size: 180px; flex: 1 1 180px; }
+	}
+	&__num.wa-input { flex: 0 0 84px; min-inline-size: 0; inline-size: 84px; }
+	&__code { font-size: 12px; }
+
+	&__record {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		margin-block-end: 12px;
+	}
+	&__after {
+		padding: 12px 14px;
+		border: 1px solid var(--wa-border);
+		border-radius: 12px;
+		background: var(--wa-surface);
+	}
+
+	// "Send it when" and "For which records?": a fieldset each, events in two labelled groups
+	&__block {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		min-inline-size: 0;
+		margin: 0;
+		padding: 14px 0 0;
+		border: 0;
+		border-block-start: 1px solid var(--wa-border);
+		&[disabled] { opacity: 0.6; }
+		// floated, a legend leaves the border line and sits inside the block like any label
+		legend { float: inline-start; inline-size: 100%; margin: 0; padding: 0; border: 0; }
+	}
+	&__group {
+		display: grid;
+		grid-template-columns: 150px minmax(0, 1fr);
+		align-items: start;
+		gap: 10px;
+	}
+	&__group-label {
+		padding-block-start: 7px;
+		font-size: 12px;
+		color: var(--wa-ink-4);
+	}
+	&__other { align-self: flex-start; font-size: 12px; }
+	// Frappe's FilterGroup inside the card: its rows on the card's rhythm, no stray margins
+	&__fg {
+		padding: 10px 12px;
+		border: 1px solid var(--wa-border);
+		border-radius: 10px;
+		background: var(--wa-bg);
+		.filter-area, .filter-edit-area { margin: 0; }
+		.filter-box { margin-block-end: 8px; }
+		.filter-action-buttons { display: flex; gap: 8px; margin-block-start: 4px; }
+	}
+	@media (max-width: 719px) {
+		&__group { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+		&__group-label { padding: 0; }
+	}
+}

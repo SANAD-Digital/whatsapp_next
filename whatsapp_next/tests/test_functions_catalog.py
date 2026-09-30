@@ -110,7 +110,9 @@ class TestFunctionsCatalog(IntegrationTestCase):
 		fc.install("ping")
 		frappe.db.set_value("WhatsApp Function", "ping", "installed_version", "0.9.0", update_modified=False)
 		counts = fc.check_updates()
-		self.assertEqual(counts["updates"], 1)
+		# other installed functions on the site may be behind too: count them, not a fixed 1
+		self.assertEqual(counts["updates"], frappe.db.count("WhatsApp Function", {"update_available": 1}))
+		self.assertGreaterEqual(counts["updates"], 1)
 		self.assertEqual(
 			frappe.db.get_value(
 				"WhatsApp Function", "ping", ["update_available", "latest_version"], as_dict=True

@@ -25,7 +25,7 @@ frappe.provide("whatsapp_next.campaign");
 		when_text() {
 			const at = this.ctx.doc.scheduled_at;
 			if (!at) return __("As soon as you start it");
-			return `${String(at).slice(0, 10)} · ${String(at).slice(11, 16)}`;
+			return C.when_text(at);
 		}
 
 		plan_text() {
@@ -108,9 +108,12 @@ frappe.provide("whatsapp_next.campaign");
 
 		/** When it should be over, from now or from the scheduled moment. */
 		ends_text(minutes) {
-			const from = this.ctx.doc.scheduled_at ? frappe.datetime.str_to_obj(this.ctx.doc.scheduled_at) : new Date();
+			// all in system time (what `scheduled_at` is stored in), said once in the reader's zone:
+			// the browser's clock mixed with the stored value put the end hours off, and the hour
+			// itself was lost (`obj_to_str` is a date)
+			const from = frappe.datetime.str_to_obj(this.ctx.doc.scheduled_at || frappe.datetime.system_datetime());
 			const end = new Date(from.getTime() + minutes * 60000);
-			return frappe.datetime.str_to_user(frappe.datetime.obj_to_str(end)) + " " + String(frappe.datetime.obj_to_str(end)).slice(11, 16);
+			return C.when_text(moment(end).locale("en").format(frappe.defaultDatetimeFormat));
 		}
 
 		/**
@@ -215,7 +218,7 @@ frappe.provide("whatsapp_next.campaign");
 				title: __("Schedule {0}?", [doc.campaign_name || doc.name]),
 				message: __("The campaign starts by itself at that time and sends at its own rate."),
 				impact: [
-					{ label: __("Starts at"), value: String(doc.scheduled_at).slice(0, 16) },
+					{ label: __("Starts at"), value: C.when_text(doc.scheduled_at) },
 					{ label: __("Recipients"), value: C.fmt_int(doc.total_recipients) },
 					{ label: __("Messages in total"), value: C.fmt_int(e.total) },
 				],
@@ -233,7 +236,7 @@ frappe.provide("whatsapp_next.campaign");
 		thread() {
 			const rows = (this.ctx.doc.messages || []).slice().sort((a, b) => cint(a.idx) - cint(b.idx));
 			if (!rows.length) return `<p class="wa-cb__readings-foot">${esc(__("No message yet."))}</p>`;
-			const TYPE_ICON = { Text: "chat", Image: "eye", Video: "eye", Document: "doc", Audio: "chat", Poll: "table", Location: "pin", Contact: "user" };
+			const TYPE_ICON = { Text: "chat", Image: "image", Video: "image", Document: "doc", Audio: "chat", Poll: "table", Location: "pin", Contact: "user" };
 			return `<div class="wa-cb__thread">${rows
 				.map((m) => {
 					const delay = cint(m.delay_seconds);

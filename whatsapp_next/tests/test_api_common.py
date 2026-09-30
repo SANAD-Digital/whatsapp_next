@@ -27,6 +27,14 @@ def _open(x: int = 1) -> int:
 	return x
 
 
+@api_endpoint(roles=None)
+def _provider_fails(kind: str = "validation") -> None:
+	"""Endpoint whose provider call fails (the platform refuses a sign-up)."""
+	if kind == "validation":
+		raise pex.ValidationError("This mobile number already has an account. Please log in.")
+	raise wex.WANotSupportedError("Renaming devices is not supported by this provider yet")
+
+
 class TestApiCommon(IntegrationTestCase):
 	def test_registered_as_whitelisted(self):
 		self.assertIn(_sample, frappe.whitelisted)
@@ -50,6 +58,12 @@ class TestApiCommon(IntegrationTestCase):
 		# an optional argument sent as `null` arrives as "" over a form-encoded request: unset,
 		# not False — otherwise a screen filters on something nobody asked for
 		self.assertIsNone(coerce_value("x", "", bool | None))
+		# a float that is not a number is refused, not read as 0; inf / nan are not numbers here
+		self.assertEqual(coerce_value("x", "1,250.5", float), 1250.5)
+		self.assertEqual(coerce_value("x", 3, float), 3.0)
+		for bad in ("abc", "inf", "nan"):
+			with self.assertRaises(wex.WAValidationError):
+				coerce_value("x", bad, float)
 		self.assertIsNone(coerce_value("x", "  ", str | None))
 		self.assertIsNone(coerce_value("x", "", int | None))
 		self.assertFalse(coerce_value("x", "", bool))  # a required bool keeps the old reading
@@ -72,6 +86,30 @@ class TestApiCommon(IntegrationTestCase):
 		self.assertIsInstance(mapped, wex.WAProviderRejectedError)
 		self.assertEqual(mapped.provider_code, "QUOTA_EXCEEDED")
 		self.assertIsInstance(map_provider_error(pex.ValidationError("v")), wex.WAValidationError)
+		# the wizard turns this one into "sign in", so it keeps its own type
+		exists = map_provider_error(pex.AccountExistsError("has an account"))
+		self.assertIsInstance(exists, wex.WAAccountExistsError)
+		self.assertIsInstance(exists, wex.WAValidationError)
+
+	def test_error_text_reaches_the_browser(self):
+		"""A provider error, or an app exception raised without `frappe.throw`, must put its text
+		in `_server_messages`: the browser gets nothing else, and showed "Something went wrong"."""
+		for kind, exc_type, text in (
+			("validation", wex.WAValidationError, "already has an account"),
+			("unsupported", wex.WANotSupportedError, "not supported"),
+		):
+			frappe.local.message_log = []
+			with self.assertRaises(exc_type) as ctx:
+				_provider_fails(kind=kind)
+			self.assertIn(text, str(ctx.exception))
+			self.assertEqual(len(frappe.local.message_log), 1)
+			self.assertIn(text, frappe.local.message_log[0]["message"])
+		# an error already thrown with `frappe.throw` is not reported twice
+		frappe.local.message_log = []
+		with as_user("WhatsApp Manager"), self.assertRaises(wex.WAValidationError):
+			_sample(count=1, mode="zzz")
+		self.assertEqual(len(frappe.local.message_log), 1)
+		frappe.local.message_log = []
 
 	def test_paginate(self):
 		self.assertEqual(paginate(None, None), (0, 20))

@@ -27,6 +27,12 @@ class WAValidationError(WANextError):
 	code = "validation"
 
 
+class WAAccountExistsError(WAValidationError):
+	"""Sign-up refused because the account already exists; the wizard offers sign-in (417)."""
+
+	code = "account_exists"
+
+
 class WANotFoundError(WANextError):
 	"""Record or key unknown (404)."""
 
@@ -72,9 +78,11 @@ class WAQueuePausedError(WAStateConflictError):
 
 
 class WAProviderAuthError(WANextError):
-	"""Credentials rejected by the platform (502)."""
+	"""Credentials missing or rejected by the platform (424 Failed Dependency: the platform this
+	depends on refused us). Not 502 — Frappe's client answers every 502 with a bare "Internal Server
+	Error" pop-up, even for a `silent` call, which hid the real reason from the user."""
 
-	http_status_code = 502
+	http_status_code = 424
 	code = "provider_auth"
 
 

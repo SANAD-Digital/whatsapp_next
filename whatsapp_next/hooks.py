@@ -32,7 +32,25 @@ whatsapp_providers = {
 }
 
 # Function catalogs (backend-plan §13); other apps may append their own dotted module path.
-whatsapp_function_catalogs = ["whatsapp_next.functions.catalog"]
+whatsapp_function_catalogs = [
+	"whatsapp_next.functions.catalog",
+	# shown only where snd_accounting is installed (`requires_apps` in its catalog)
+	"whatsapp_next.functions.integrations.snd_accounting",
+]
+
+# The code behind catalog functions that are not built in (`functions/registry.py`).
+_ACC = "whatsapp_next.functions.integrations.snd_accounting.handlers"
+whatsapp_function_handlers = {
+	key: f"{_ACC}.{key}"
+	for key in (
+		"customer_balance",
+		"customer_statement",
+		"customer_trial_balance",
+		"supplier_trial_balance",
+		"cash_balances",
+		"bank_balances",
+	)
+}
 
 # Installation / migration
 after_install = "whatsapp_next.install.after_install"
@@ -76,6 +94,8 @@ doc_events = {
 		"on_update": "whatsapp_next.services.notifications.on_doc_event",
 		"on_submit": "whatsapp_next.services.notifications.on_doc_event",
 		"on_cancel": "whatsapp_next.services.notifications.on_doc_event",
+		# a Method notification may pick it (the controller offers it)
+		"on_update_after_submit": "whatsapp_next.services.notifications.on_doc_event",
 		"after_insert": "whatsapp_next.services.notifications.on_doc_event",
 		"on_change": "whatsapp_next.services.notifications.on_doc_event",
 	},

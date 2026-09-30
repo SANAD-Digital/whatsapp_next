@@ -8,6 +8,7 @@ from datetime import date
 
 import frappe
 from frappe.tests import IntegrationTestCase
+from frappe.utils import nowdate
 from frappe.utils.password import remove_encrypted_password, set_encrypted_password
 
 from whatsapp_next.api.v1 import settings as api
@@ -18,6 +19,7 @@ from whatsapp_next.exceptions import (
 	WAValidationError,
 )
 from whatsapp_next.providers import exceptions as pex
+from whatsapp_next.services import audit, usage_sync
 from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_settings, fake_provider
 from whatsapp_next.tests.fake_provider import FakeProvider
 
@@ -42,7 +44,19 @@ class TestApiSettings(IntegrationTestCase):
 		super().setUpClass()
 		ensure_settings()
 		s = frappe.get_doc(SETTINGS)
-		cls._saved = {f: s.get(f) for f in (*WEBHOOK_FIELDS, "audit_retention_days", "connection_status")}
+		# the subscription cache too: `sync_subscription` writes the fake provider's plan over it,
+		# and the commit in tearDownClass kept "Fake" on the dev site's Settings window
+		cls._saved = {
+			f: s.get(f)
+			for f in (
+				*WEBHOOK_FIELDS,
+				*usage_sync.FIELDS,
+				"audit_retention_days",
+				"connection_status",
+				"last_connection_error",
+				"messages_per_minute",
+			)
+		}
 		cls._secrets = {f: s.get_password(f, raise_exception=False) for f in SECRETS}
 
 	@classmethod
@@ -54,6 +68,8 @@ class TestApiSettings(IntegrationTestCase):
 			else:
 				remove_encrypted_password(SETTINGS, SETTINGS, f)
 		frappe.clear_document_cache(SETTINGS, SETTINGS)
+		# committed: the runner's rollback must not undo the restore (it wiped the dev site's keys)
+		frappe.db.commit()
 		delete_all(
 			"WhatsApp Audit Log", {"action": "Settings Changed", "fields_written": "audit_retention_days"}
 		)
@@ -210,6 +226,13 @@ class TestApiSettings(IntegrationTestCase):
 				api.list_audit_log(filters={"details": "x"})
 			ranged = api.list_audit_log(filters={"from": "2000-01-01", "to": "2000-01-02"})
 			self.assertEqual(ranged["rows"], [])
+			# `to` is a day: everything logged on it is inside the period
+			audit.log("Settings Changed", fields_written=["audit_retention_days"], details={"section": "test"})
+			today = api.list_audit_log(filters={"from": nowdate(), "to": nowdate()})
+			self.assertGreaterEqual(today["total"], 1)
+			self.assertEqual(today["total"], frappe.db.count("WhatsApp Audit Log", {"timestamp": (">=", nowdate())}))
+			with self.assertRaises(WAValidationError):
+				api.list_audit_log(filters={"to": "not a date"})
 
 	def test_list_picker_sources_and_doctype_fields(self):
 		with as_user("WhatsApp Contact User"):

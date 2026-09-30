@@ -8,12 +8,14 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any
 
 import frappe
 from frappe import _
 from frappe.utils import add_days, add_to_date, cint, get_datetime, now_datetime, nowdate
+from frappe.utils.data import evaluate_filters
 
 from whatsapp_next.exceptions import WANotFoundError, WAValidationError
 from whatsapp_next.services import attachments, dispatch, templates
@@ -22,10 +24,22 @@ from whatsapp_next.services.guards import field_changed
 from whatsapp_next.services.phone import normalize
 
 CACHE_PREFIX = "wa:notif:"
-HANDLED_EVENTS = ("validate", "on_update", "on_submit", "on_cancel", "after_insert", "on_change")
+HANDLED_EVENTS = (
+	"validate",
+	"on_update",
+	"on_submit",
+	"on_cancel",
+	"after_insert",
+	"on_change",
+	"on_update_after_submit",  # only a Method notification listens there
+)
+# "Value Change" listens to `on_change` only, as Frappe's own Notification: a save runs both
+# `on_update` and `on_change`, and matching both queued the same job twice after commit (the
+# `deduplicate` check runs before either is in the queue), so the message went out twice.
+# `on_change` also fires on `db_set` and on an update after submit.
 EVENT_BY_METHOD = {
 	"after_insert": ("New",),
-	"on_update": ("Save", "Value Change"),
+	"on_update": ("Save",),
 	"on_change": ("Value Change",),
 	"on_submit": ("Submit",),
 	"on_cancel": ("Cancel",),
@@ -76,7 +90,12 @@ def clear_cache(doctype: str | None = None) -> None:
 # ---- hook --------------------------------------------------------------------------------
 
 
-def _record_error(notification: str, error: str) -> None:
+def _record_error(notification: str, error: str, errors: list[str] | None = None) -> None:
+	"""Store `error` on the notification — or, when the caller collects them (a preview, which must
+	leave the saved notification alone), append it to `errors` instead."""
+	if errors is not None:
+		errors.append(error[:500])
+		return
 	frappe.db.set_value(
 		"WhatsApp Notification",
 		notification,
@@ -85,9 +104,13 @@ def _record_error(notification: str, error: str) -> None:
 	)
 
 
-def evaluate(notification, doc, event: str) -> bool:
-	"""`condition` (Python expression over `doc`) with `frappe.safe_eval`; any failure is stored
-	on the notification and counts as False — the document is never blocked."""
+def evaluate(notification, doc, event: str, errors: list[str] | None = None) -> bool:
+	"""The notification's condition: `filters` (Frappe's `evaluate_filters`, as its own
+	Notification) when `condition_type` is Filters, else `condition` (a Python expression over
+	`doc`) with `frappe.safe_eval`. Any failure is stored on the notification and counts as False —
+	the document is never blocked."""
+	if notification.get("condition_type") == "Filters":
+		return _filters_hold(notification, doc, errors)
 	condition = (notification.condition or "").strip()
 	if not condition:
 		return True
@@ -96,11 +119,28 @@ def evaluate(notification, doc, event: str) -> bool:
 			frappe.safe_eval(condition, None, {"doc": doc.as_dict() if hasattr(doc, "as_dict") else doc})
 		)
 	except Exception as exc:
-		_record_error(notification.name, f"condition: {type(exc).__name__}: {str(exc)[:200]}")
+		_record_error(notification.name, f"condition: {type(exc).__name__}: {str(exc)[:200]}", errors)
+		if errors is not None:
+			return False
 		frappe.log_error(
 			title="WhatsApp notification: condition failed",
 			message=f"notification={notification.name} doctype={doc.doctype}",
 		)
+		return False
+
+
+def _filters_hold(notification, doc, errors: list[str] | None = None) -> bool:
+	raw = notification.get("filters")
+	if not raw:
+		return True
+	try:
+		filters = json.loads(raw) if isinstance(raw, str) else raw
+		return bool(evaluate_filters(doc, filters)) if filters else True
+	except Exception as exc:
+		_record_error(notification.name, f"filters: {type(exc).__name__}: {str(exc)[:200]}", errors)
+		if errors is not None:
+			return False
+		frappe.log_error(title="WhatsApp notification: filters failed", message=f"notification={notification.name} doctype={doc.doctype}")
 		return False
 
 
@@ -134,8 +174,6 @@ def on_doc_event(doc, method: str | None = None) -> None:
 	names = active_for(doc.doctype)
 	if not names:
 		return
-	if method == "validate":
-		return  # validate is handled only by explicit Method notifications
 	for name in names:
 		try:
 			notification = frappe.get_cached_doc("WhatsApp Notification", name)
@@ -143,6 +181,9 @@ def on_doc_event(doc, method: str | None = None) -> None:
 			clear_cache(doc.doctype)
 			continue
 		if not cint(notification.enabled) or notification.event in SCHEDULED_EVENTS:
+			continue
+		# `validate` has no event of its own: only a Method notification set to it listens there
+		if method == "validate" and notification.event != "Method":
 			continue
 		if not _event_matches(notification, doc, method):
 			continue
@@ -153,7 +194,8 @@ def on_doc_event(doc, method: str | None = None) -> None:
 			notification=name,
 			doctype=doc.doctype,
 			name=doc.name,
-			event=notification.event,
+			# not `event=`: `frappe.enqueue` keeps that keyword for itself and the job got none
+			doc_event=notification.event,
 			queue="short",
 			job_id=f"wa-notif-{name}-{doc.name}-{notification.event}",
 			deduplicate=True,
@@ -201,15 +243,16 @@ def _phone_from_field(doc, fieldname: str | None) -> tuple[str | None, str | Non
 	return normalize(str(value)), None
 
 
-def resolve_recipients(notification, doc) -> list[Recipient]:
-	"""Recipients per row type (row `condition` honoured); invalid numbers are skipped and the
-	last one is recorded on the notification. De-duplicated on `phone_e164`."""
+def resolve_recipients(notification, doc, errors: list[str] | None = None) -> list[Recipient]:
+	"""Recipients per row type (row `condition` honoured); invalid numbers are skipped and recorded
+	on the notification (or appended to `errors` when the caller collects them — a preview).
+	De-duplicated on `phone_e164`."""
 	out: list[Recipient] = []
 	seen: set[str] = set()
-	errors: list[str] = []
+	missing: list[str] = []
 	for row in notification.get("recipients") or []:
 		if row.condition and not evaluate(
-			frappe._dict(name=notification.name, condition=row.condition), doc, "recipient"
+			frappe._dict(name=notification.name, condition=row.condition), doc, "recipient", errors
 		):
 			continue
 		phone = contact = None
@@ -229,7 +272,7 @@ def resolve_recipients(notification, doc) -> list[Recipient]:
 		elif row.recipient_type == "Fixed Number":
 			phone = row.phone_e164 or normalize(row.phone)
 		if not phone:
-			errors.append(f"row {row.idx}: no valid number")
+			missing.append(f"row {row.idx}: no valid number")
 			continue
 		if phone in seen:
 			continue
@@ -242,8 +285,8 @@ def resolve_recipients(notification, doc) -> list[Recipient]:
 				display_name=frappe.db.get_value("Contact", contact, "full_name") if contact else None,
 			)
 		)
-	if errors:
-		_record_error(notification.name, "; ".join(errors))
+	if missing:
+		_record_error(notification.name, "; ".join(missing), errors)
 	return out
 
 
@@ -290,7 +333,7 @@ def _attachment(notification, doc) -> dict[str, Any]:
 	return {"message_type": "Text"}
 
 
-def send_for_document(notification: str, doctype: str, name: str, event: str) -> dict[str, Any]:
+def send_for_document(notification: str, doctype: str, name: str, doc_event: str) -> dict[str, Any]:
 	"""Job (`short`): re-load, re-check the condition, render, attach, resolve recipients and
 	queue one outbound per recipient at priority 3. Returns `{sent, skipped, error}`."""
 	notif = frappe.get_doc("WhatsApp Notification", notification)
@@ -298,9 +341,9 @@ def send_for_document(notification: str, doctype: str, name: str, event: str) ->
 		return {"sent": 0, "skipped": 1, "error": None}
 	doc = frappe.get_doc(doctype, name)
 	doc.flags.in_wa_notification = True
-	if not evaluate(notif, doc, event):
+	if not evaluate(notif, doc, doc_event):
 		return {"sent": 0, "skipped": 1, "error": None}
-	ctx = templates.context_for(doctype, name, {"event": event, "notification": notif.name}, doc=doc)
+	ctx = templates.context_for(doctype, name, {"event": doc_event, "notification": notif.name}, doc=doc)
 	body, render_error = _body(notif, ctx)
 	if render_error or not (body or "").strip():
 		_record_error(notification, f"template: {render_error or 'empty body'}")
@@ -315,14 +358,19 @@ def send_for_document(notification: str, doctype: str, name: str, event: str) ->
 	last_error = None
 	outbounds: list[str] = []
 	for r in recipients:
+		# rendered for each recipient: `{{ recipient.display_name }}` is theirs, as the preview shows
 		ctx["recipient"] = frappe._dict(
 			phone_e164=r.phone_e164, display_name=r.display_name, contact=r.contact
 		)
+		text, render_error = _body(notif, ctx)
+		if render_error or not (text or "").strip():
+			last_error = f"template: {render_error or 'empty body'}"
+			continue
 		spec = OutboundSpec(
 			device=notif.device or None,
 			phone=r.phone_e164,
-			body=body if attach["message_type"] == "Text" else None,
-			caption=body if attach["message_type"] != "Text" else None,
+			body=text if attach["message_type"] == "Text" else None,
+			caption=text if attach["message_type"] != "Text" else None,
 			source_type="Notification",
 			notification=notif.name,
 			reference_doctype=doctype,
@@ -418,8 +466,10 @@ def preview_for_document(notification: str, reference_name: str) -> dict[str, An
 	if not frappe.db.exists(notif.document_type, reference_name):
 		frappe.throw(_("{0} {1} not found").format(_(notif.document_type), reference_name), WANotFoundError)
 	doc = frappe.get_doc(notif.document_type, reference_name)
-	meets = evaluate(notif, doc, notif.event)
-	recipients = resolve_recipients(notif, doc)
+	# a dry run: what goes wrong is reported here, never written on the notification (and an
+	# error an earlier real send left there is not this record's)
+	meets = evaluate(notif, doc, notif.event, errors)
+	recipients = resolve_recipients(notif, doc, errors)
 	ctx = templates.context_for(
 		notif.document_type, reference_name, {"event": notif.event, "notification": notif.name}, doc=doc
 	)
@@ -431,9 +481,6 @@ def preview_for_document(notification: str, reference_name: str) -> dict[str, An
 	body, render_error = _body(notif, ctx)
 	if render_error:
 		errors.append(f"template: {render_error}")
-	last_error = frappe.db.get_value("WhatsApp Notification", notification, "last_error")
-	if last_error and last_error.startswith(("condition:", "row ")):
-		errors.append(last_error)
 	return {
 		"meets_condition": bool(meets),
 		"message": body or "",
@@ -454,17 +501,22 @@ def documents_due(notification) -> list[str]:
 			return []
 		delta = cint(notification.days_in_advance) * (1 if notification.event == "Days Before" else -1)
 		target = add_days(nowdate(), delta)
-		filters = {field: target}
+		filters: list[list[Any]] = [[field, "=", target]]
 	else:
 		field = notification.datetime_changed
 		if not field:
 			return []
 		offset = cint(notification.minutes_offset) * (1 if notification.event == "Minutes Before" else -1)
-		upper = add_to_date(now_datetime(), minutes=offset)
+		# the window ends on the 5-minute slot the cron run belongs to, half-open: consecutive runs
+		# tile time exactly, whatever second each starts at. A window measured from `now` let a
+		# late run overlap the previous one (a second message) or an early one leave a gap (none).
+		now = now_datetime()
+		slot = now.replace(minute=now.minute - now.minute % OFFSET_WINDOW_MINUTES, second=0, microsecond=0)
+		upper = add_to_date(slot, minutes=offset)
 		lower = add_to_date(upper, minutes=-OFFSET_WINDOW_MINUTES)
-		filters = {field: ("between", [get_datetime(lower), get_datetime(upper)])}
+		filters = [[field, ">=", get_datetime(lower)], [field, "<", get_datetime(upper)]]
 	if frappe.get_meta(doctype).is_submittable:
-		filters["docstatus"] = 1
+		filters.append(["docstatus", "=", 1])
 	return frappe.get_all(
 		doctype, filters=filters, pluck="name", limit=BATCH_PER_RUN, ignore_permissions=True
 	)
@@ -482,7 +534,7 @@ def _trigger(events: tuple[str, ...]) -> int:
 				notification=notif.name,
 				doctype=notif.document_type,
 				name=name,
-				event=notif.event,
+				doc_event=notif.event,
 				queue="short",
 				job_id=f"wa-notif-{notif.name}-{name}-{notif.event}",
 				deduplicate=True,

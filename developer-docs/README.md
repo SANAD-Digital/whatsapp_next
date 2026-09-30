@@ -98,7 +98,6 @@ whatsapp_next/                      # the app repo (apps/whatsapp_next)
 │   ├── public/js/ui/               # portable kit (sanad.ui), never imports whatsapp_next
 │   ├── public/js/{screens,form,listview}/  # app-specific screens, form and list scripts
 │   ├── public/scss/_tokens.scss    # the product palette (--wa-*)
-│   ├── patches/v0_1/               # composite indexes, Contact Phone backfill
 │   ├── fixtures/                   # roles, custom field, Number Cards, Dashboard Charts, Custom HTML Block
 │   ├── translations/ar.csv         # Arabic
 │   └── tests/                      # the app test suite

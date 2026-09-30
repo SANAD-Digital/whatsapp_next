@@ -178,13 +178,14 @@ Create a Contact from a number (its phone row, optional party link) and link the
 
 | Argument | Type | Required | Meaning |
 |---|---|---|---|
-| `phone_e164` | str | yes | Must classify as an **Individual** number. |
+| `phone_e164` | str | yes | An **Individual** number or a **Group** JID. |
 | `first_name` | str | yes | Contact first name. |
 | `last_name` | str | optional | |
 | `party_type` | str | optional | `Customer`, `Supplier`, `Employee` or `Sales Person`. |
 | `party_name` | str | optional | Name of the party record (must exist). |
 
-The Contact gets one `phone_nos` row (`phone` = the key, `is_primary_mobile_no = 1`). Audited
+The Contact gets one `phone_nos` row (`phone` = the key, `is_primary_mobile_no = 1`); a group's
+Contact gets none — a group has no phone, the link carries it. Audited
 `Elevated Contact Write`, `Number Linked` and `Number Converted`.
 
 **Returns**
@@ -198,7 +199,7 @@ The Contact gets one `phone_nos` row (`phone` = the key, `is_primary_mobile_no =
 | Exception | HTTP | When |
 |---|---|---|
 | `WAPermissionError` | 403 | No create permission. |
-| `WANotFoundError` | 404 | Number unknown, or not an individual number (group / LID). |
+| `WANotFoundError` | 404 | Number unknown, or a LID (neither an individual number nor a group). A group gets a Contact with no phone row. |
 | `WAStateConflictError` | 409 | The number is already linked to a contact. |
 | `WAValidationError` | 417 | Unsupported `party_type`, or `party_name` not found. |
 

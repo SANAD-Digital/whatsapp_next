@@ -44,6 +44,8 @@
   "enable_commands",
   "command_service_user",
   "unknown_command_reply",
+  "command_help_token",
+  "command_reply_language",
   "commands_column",
   "send_receipt_reply",
   "receipt_reply",
@@ -275,7 +277,7 @@
   },
   {
    "default": "3",
-   "description": "How many times a message is tried before it fails.",
+   "description": "How many times a message is tried automatically before it fails (1 to 3).",
    "fieldname": "max_attempts",
    "fieldtype": "Int",
    "label": "Max Attempts",
@@ -356,6 +358,23 @@
    "label": "Unknown Command Reply"
   },
   {
+   "fieldname": "command_help_token",
+   "fieldtype": "Data",
+   "label": "Command Help Token",
+   "default": "؟",
+   "length": 20,
+   "depends_on": "eval:doc.enable_commands",
+   "description": "Sent alone it lists the commands; after a command word (كشف ؟) it explains how to send that command's variables. ? and help always work too."
+  },
+  {
+   "fieldname": "command_reply_language",
+   "fieldtype": "Link",
+   "options": "Language",
+   "label": "Reply Language",
+   "depends_on": "eval:doc.enable_commands",
+   "description": "The language of the replies the site writes itself (help, refusals, errors). Empty: the site's language. The texts you write in templates are sent as written."
+  },
+  {
    "fieldname": "commands_column",
    "fieldtype": "Column Break"
   },
@@ -375,11 +394,12 @@
   },
   {
    "depends_on": "eval:doc.enable_commands",
-   "description": "Empty replies from the device that received the message.",
+   "description": "Not used: a command is answered from the device that received it.",
    "fieldname": "reply_device",
    "fieldtype": "Link",
    "label": "Reply Device",
-   "options": "WhatsApp Device"
+   "options": "WhatsApp Device",
+   "hidden": 1
   },
   {
    "fieldname": "policy_tab",

@@ -36,7 +36,14 @@ const add_months = (k, n) => {
 };
 /** Inclusive day count between two keys. */
 const span_days = (a, b) => Math.round((to_date(b) - to_date(a)) / 864e5) + 1;
-const today_key = () => to_key(new Date());
+/** "Now" as a wall-clock Date in the user's time zone (Frappe's `now_datetime`), not the
+ * browser's: a user whose laptop sits in another zone saw "Today" roll over at the wrong hour. */
+const now_wall = () => {
+	const text = window.frappe && frappe.datetime && frappe.datetime.now_datetime ? frappe.datetime.now_datetime() : "";
+	const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(text || "");
+	return m ? new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) : new Date();
+};
+const today_key = () => to_key(now_wall());
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
 /** Latin digits from Arabic-Indic input, so a typed date parses either way. */
@@ -198,7 +205,7 @@ sanad.ui.DateFilter = class DateFilter {
 	}
 
 	current_fiscal_year(fs) {
-		const now = new Date();
+		const now = now_wall();
 		if (fs === 0) return now.getFullYear();
 		return now.getMonth() >= fs ? now.getFullYear() + 1 : now.getFullYear();
 	}
@@ -284,7 +291,7 @@ sanad.ui.DateFilter = class DateFilter {
 		const past = s.span_dir === "past";
 		const inc = !!s.span_inc;
 		if (s.span_unit === "hour") {
-			const now = new Date();
+			const now = now_wall();
 			const other = new Date(now.getTime() + (past ? -1 : 1) * n * 36e5);
 			const a = past ? other : now;
 			const b = past ? now : other;
@@ -320,7 +327,9 @@ sanad.ui.DateFilter = class DateFilter {
 		} else if (s.op === "after") {
 			out.from = wt ? s.date : add_days(s.date, 1);
 			out.from_time = wt ? s.time : null;
-			out.exclusive = true;
+			// without a time the day is already shifted, so the bound is inclusive: "after 1 Sep"
+			// read as `> 2 Sep` and dropped the 2nd too
+			out.exclusive = wt;
 			out.ready = !!s.date;
 		} else if (s.op === "onOrAfter") {
 			out.from = s.date;
@@ -329,7 +338,7 @@ sanad.ui.DateFilter = class DateFilter {
 		} else if (s.op === "before") {
 			out.to = wt ? s.date : add_days(s.date, -1);
 			out.to_time = wt ? s.time : null;
-			out.exclusive = true;
+			out.exclusive = wt;
 			out.ready = !!s.date;
 		} else if (s.op === "onOrBefore") {
 			out.to = s.date;
@@ -722,21 +731,31 @@ sanad.ui.DateFilter = class DateFilter {
 		window.setTimeout(() => {
 			const el = $pop && $pop[0];
 			if (!el || !el.isConnected) return;
-			$pop.css({ "inset-inline-start": "", "inset-inline-end": "", position: "", left: "", top: "" });
+			$pop.css({ "inset-inline-start": "", "inset-inline-end": "", position: "", left: "", right: "", top: "", "min-width": "" });
 			const margin = 12;
+			const anchor = this.$el[0].getBoundingClientRect();
+			// a trigger that itself sits closer to the edge than the margin (the first control of an
+			// Arabic toolbar, 8 px from the right) still lets a popup that lines up with it stay there
+			const lo = Math.min(margin, Math.max(0, anchor.left));
+			const hi = Math.max(window.innerWidth - margin, Math.min(window.innerWidth, anchor.right));
+			const fits = (b) => b.left >= lo && b.right <= hi;
 			let box = el.getBoundingClientRect();
-			if (box.right <= window.innerWidth - margin && box.left >= margin) return;
+			if (fits(box)) return;
 			$pop.css({ "inset-inline-start": "auto", "inset-inline-end": "0" });
 			box = el.getBoundingClientRect();
-			if (box.left >= margin && box.right <= window.innerWidth - margin) return;
-			const anchor = this.$el[0].getBoundingClientRect();
+			if (fits(box)) return;
+			// pinned to the viewport: only `left` places it (the stylesheet's logical start is the
+			// right edge in Arabic and fought it), and `min-width: 100%` would now mean the viewport
 			$pop.css({
-				"inset-inline-start": "",
-				"inset-inline-end": "",
+				"inset-inline-start": "auto",
+				"inset-inline-end": "auto",
+				right: "auto",
 				position: "fixed",
+				"min-width": `${Math.round(anchor.width)}px`,
 				top: `${Math.round(anchor.bottom + 5)}px`,
-				left: `${Math.round(Math.max(margin, Math.min(window.innerWidth - box.width - margin, anchor.left)))}px`,
 			});
+			box = el.getBoundingClientRect();
+			$pop.css("left", `${Math.round(Math.max(margin, Math.min(window.innerWidth - box.width - margin, anchor.left)))}px`);
 		}, 0);
 		return this;
 	}
@@ -1080,7 +1099,7 @@ sanad.ui.DateFilter = class DateFilter {
 		const page = this.state.picker_page == null ? current - 5 : this.state.picker_page;
 		const years = [];
 		for (let i = 0; i < 12; i++) years.push(page + i);
-		const this_year = new Date().getFullYear();
+		const this_year = now_wall().getFullYear();
 		return this.grid_picker($body, {
 			wide: o.wide,
 			on_back: o.on_back,
@@ -1110,7 +1129,7 @@ sanad.ui.DateFilter = class DateFilter {
 				label: name,
 				value: i,
 				on: i === this.view_month && y === this.view_year,
-				now: i === new Date().getMonth() && y === new Date().getFullYear(),
+				now: i === now_wall().getMonth() && y === now_wall().getFullYear(),
 			})),
 			on_pick: (it) => {
 				this.view_year = y;
@@ -1203,7 +1222,7 @@ sanad.ui.DateFilter = class DateFilter {
 				wide: true,
 				on_back: back,
 				head: { text: __("Starts in") },
-				items: this.month_names().map((name, i) => ({ label: name, value: i, on: i === s.fiscal_start, now: i === new Date().getMonth() })),
+				items: this.month_names().map((name, i) => ({ label: name, value: i, on: i === s.fiscal_start, now: i === now_wall().getMonth() })),
 				on_pick: (it) => this.set({ fiscal_start: it.value, pick: null }),
 			});
 		}

@@ -8,7 +8,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 from collections.abc import Mapping
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from whatsapp_next.providers import exceptions as pex
 from whatsapp_next.providers.base import DEFAULT_MAX_SKEW, BaseProvider
@@ -43,6 +43,14 @@ _STATUS_EVENTS = {
 def _not_implemented(what: str):
 	raise NotImplementedError(f"MetaCloudProvider.{what} is a skeleton — not implemented yet")
 
+
+
+def _site_clock(seconds: int) -> datetime:
+	"""A Unix time as the site's naive wall clock (Meta sends epoch seconds); `fromtimestamp`
+	alone gives the server OS's zone, which is neither the site's nor UTC."""
+	from frappe.utils import convert_utc_to_system_timezone
+
+	return convert_utc_to_system_timezone(datetime.fromtimestamp(seconds, timezone.utc)).replace(tzinfo=None)
 
 class MetaCloudProvider(BaseProvider):
 	"""Meta WhatsApp Cloud API skeleton."""
@@ -207,7 +215,7 @@ class MetaCloudProvider(BaseProvider):
 				body=text,
 				reaction=(m.get("reaction") or {}).get("emoji"),
 				reaction_to=(m.get("reaction") or {}).get("message_id"),
-				received_at=datetime.fromtimestamp(int(m["timestamp"]))
+				received_at=_site_clock(int(m["timestamp"]))
 				if str(m.get("timestamp") or "").isdigit()
 				else None,
 			)
@@ -227,7 +235,7 @@ class MetaCloudProvider(BaseProvider):
 			return WebhookEvent(
 				event_id=f"{s.get('id')}:{s.get('status')}",
 				event_name=name,
-				timestamp=datetime.fromtimestamp(int(s["timestamp"]))
+				timestamp=_site_clock(int(s["timestamp"]))
 				if str(s.get("timestamp") or "").isdigit()
 				else None,
 				platform_device=platform_device,

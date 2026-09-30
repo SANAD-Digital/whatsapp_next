@@ -138,6 +138,32 @@ class TestApiContacts(IntegrationTestCase):
 			same = api.list_contacts(status=status, page_length=50)["rows"]
 			self.assertIn(name, [r["name"] for r in same])
 
+	def test_activity_is_scoped_to_the_contact(self):
+		"""Audit rows of another DocType that shares the contact's name stay out of its timeline."""
+		from whatsapp_next.services import audit
+
+		name = self._seed()
+		audit.log("Number Linked", reference=("WhatsApp Number", P1), target=("Contact", name))
+		stranger = frappe.get_doc(
+			{
+				"doctype": "WhatsApp Audit Log",
+				"action": "Elevated Contact Write",
+				"reference_doctype": "Customer",
+				"reference_name": name,
+				"reason": "stranger",
+				"summary": "stranger",
+				"timestamp": frappe.utils.now_datetime(),
+			}
+		)
+		stranger.flags.ignore_links = True
+		stranger.insert(ignore_permissions=True)
+		with as_user("WhatsApp Contact User"):
+			rows = api.get_activity(name=name)
+		reasons = [r["reason"] for r in rows]
+		self.assertNotIn("stranger", reasons)
+		self.assertIn("Number Linked", [r["action"] for r in rows])
+		self.assertIn("create", reasons)  # the elevated create of the contact itself
+
 	def test_link_many(self):
 		if not self.customer:
 			self.skipTest("no Customer on this site")

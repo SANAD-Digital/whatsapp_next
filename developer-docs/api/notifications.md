@@ -145,3 +145,28 @@ field of the document is set to `property_value`. Updates `send_count`, `last_se
 ```js
 const r = await sanad.ui.call("notifications.send_now", { name: "Invoice submitted", reference_name: "ACC-SINV-2026-00001" });
 ```
+
+---
+
+## The editor window
+
+`sanad.ui.NotificationEditor` (opened by `whatsapp_next.notifications.open(name)`) reads and
+writes through the endpoints below — thin wrappers over `services/notifications_editor.py`.
+Every one is **Manager** (`MANAGER`) plus the document permission it names. The payload is an
+allow-list: the notification's own fields (`notification_name`, `enabled`, `document_type`,
+`event`, `date_changed`, `days_in_advance`, `datetime_changed`, `minutes_offset`,
+`value_changed`, `method`, `condition_type` (`Python` | `Filters`), `filters` (Frappe's filter list, stored as JSON; each field must exist on the document type), `condition`, `device`, `template`, `message`, `message_type`,
+`attach_print`, `print_format`, `letter_head`, `attach_field`, `set_property_after_alert`,
+`property_value`), `recipients` rows (`recipient_type`, `receiver_by_document_field`,
+`linked_document_field`, `linked_mobile_fieldname`, `phone`, `condition`) and `name` when
+editing. Any other key → `WAValidationError`.
+
+| Endpoint | Methods | Arguments | Returns |
+|---|---|---|---|
+| `get_editor` | GET, POST | `name?` | `{notification, stats, recent[], options{event, message_type, recipient_type, method}, devices[], templates[], fields, me{phone}, can_write, can_delete}` — a new one's defaults without `name` (needs **create**). |
+| `get_document_setup` | GET, POST | `document_type` | `{fields, templates}` — the type's field choices (as `get_document_fields`) and the enabled templates it can use: its own first, then those written for no type. |
+| `preview_draft` | POST | `payload`, `reference_name?` | `{problem, reference_name, meets_condition, message, attachment, recipients[{phone_e164 (masked), source}], recipients_count, error, no_access?}` on the given record or the latest one. Nothing is saved or sent; the saved notification's error fields are not touched. `no_access` when the reader cannot read the document type. |
+| `send_test` | POST | `payload`, `phone`, `reference_name?` | `{outbound, phone_e164}` — the draft rendered for one record, queued once to `phone`; the condition is not required and no counter or property changes. Audited `Test Send`. |
+| `save_editor` | POST | `payload` | `{name}` — create (needs **create**) or update (**write**); a changed `notification_name` renames it. The controller validates everything. |
+| `delete_notification` | POST | `name` | `{deleted: true}` (needs **delete**); sent messages stay in the log. |
+| `search` | GET, POST | `kind` (`document_type` \| `print_format` \| `letter_head`), `txt?`, `document_type?` | `[{value, label, description}]` through `frappe.get_list`. Document types exclude child tables, singles and this app's own. |

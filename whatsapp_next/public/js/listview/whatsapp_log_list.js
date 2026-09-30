@@ -78,8 +78,12 @@
 					{ fieldname: "status", type: "status", label: __("Status"), sortable: true },
 					whatsapp_next.columns.reference(),
 					whatsapp_next.columns.device(),
-					whatsapp_next.columns.time({ fieldname: "sent_at", label: __("Sent at") }),
-					{ fieldname: "error_code", label: __("Error"), sortable: true, format: (v, doc) => (v ? `<span class="sanad-cell__error" title="${ui.escape(doc.error_message || v)}">${ui.escape(v)}</span>` : "") },
+					// a failed or cancelled message was never sent: no creation time standing in for it
+					Object.assign(whatsapp_next.columns.time({ fieldname: "sent_at", label: __("Sent at") }), {
+						format: (v, doc) => (!v && ["Failed", "Cancelled"].includes(doc.status) ? "—" : whatsapp_next.fmt.time_cell(v, doc)),
+					}),
+					// the reason in words ("The number is not on WhatsApp"), the raw code and text on hover
+					{ fieldname: "error_code", label: __("Error"), sortable: true, format: (v, doc) => (v ? `<span class="sanad-cell__error" dir="auto" title="${ui.escape(doc.error_message || v)}">${ui.escape(whatsapp_next.fmt.error_text(v, doc.error_message))}</span>` : "") },
 					whatsapp_next.columns.flag({ fieldname: "is_simulated", label: __("On behalf") }),
 				],
 				mobile_columns: ["display_name", "status"],

@@ -12,6 +12,7 @@ from frappe import _
 from frappe.utils import add_to_date, cint, get_datetime, now_datetime
 
 from whatsapp_next.api._common import api_endpoint, paginate
+from whatsapp_next.api.v1 import _bulk
 from whatsapp_next.api.v1._roles import MANAGER, VIEWER_UP
 from whatsapp_next.exceptions import WAValidationError
 from whatsapp_next.services import dispatch
@@ -67,7 +68,7 @@ def _list_query(filters: dict | None) -> dict[str, Any]:
 def _selection(names: list[str] | None, filters: dict | None) -> list[str] | dict[str, Any]:
 	"""`names[]` wins; otherwise a filter dict restricted to `SELECTION_FILTERS`."""
 	if names:
-		return list(names)
+		return _bulk.require_bounded(names)
 	f = dict(filters or {})
 	unknown = sorted(set(f) - set(SELECTION_FILTERS))
 	if unknown or not f:
@@ -221,4 +222,4 @@ def retry_dead_letter(names: list[str]) -> dict[str, Any]:
 	"""`Dead Letter → Queued` with `attempts = 0` → `{count}`; audited `Queue Items Retried`."""
 	if not names:
 		frappe.throw(_("names[] is required"), WAValidationError)
-	return {"count": dispatch.retry_dead_letter(names, user=frappe.session.user)}
+	return {"count": dispatch.retry_dead_letter(_bulk.require_bounded(names), user=frappe.session.user)}

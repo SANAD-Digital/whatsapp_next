@@ -4553,3 +4553,458 @@ on,يوم,alert schedule
 on day,في اليوم,alert schedule
 of,من,alert schedule
 at,الساعة,alert schedule
+Free trial,تجربة مجانية,
+Send the code below from your WhatsApp on the number you registered. The account is activated as soon as it arrives.,أرسل الرمز أدناه من واتساب على الرقم الذي سجّلته. يُفعَّل الحساب فور وصوله.,
+The platform sent a code to your email. Enter it here and the account is activated.,أرسلت المنصة رمزاً إلى بريدك الإلكتروني. أدخله هنا ليُفعَّل الحساب.,
+From your registered number,من رقمك المسجّل,
+To the platform's number,إلى رقم المنصة,
+To your email,إلى بريدك الإلكتروني,
+The message to send,الرسالة المطلوب إرسالها,
+Send it from {0} exactly as written. Nothing is sent to you: the message you send is the confirmation.,أرسلها من {0} كما هي تماماً. لن يصلك شيء: الرسالة التي ترسلها هي التأكيد.,
+Open WhatsApp and send,افتح واتساب وأرسل,
+Copy the message,نسخ الرسالة,
+"Check your inbox, and the spam folder, for a message from the platform. If it has not arrived, wait for the timer to run down and ask for it again.",ابحث في بريدك الوارد، وفي مجلد الرسائل غير المرغوبة، عن رسالة من المنصة. إن لم تصل فانتظر انتهاء المؤقت ثم اطلبها مجدداً.,
+Waiting for your message — the code expires in {0}:{1},بانتظار رسالتك — تنتهي صلاحية الرمز خلال {0}:{1},
+A new code is ready. Send it from your number.,رمز جديد جاهز. أرسله من رقمك.,
+The platform did not finish the sign-up. Try again.,لم تُكمل المنصة التسجيل. حاول مرة أخرى.,
+The new mobile number (WhatsApp),رقم الجوال الجديد (واتساب),
+Send to this number,أرسل إلى هذا الرقم,
+Enter a valid mobile number.,أدخل رقم جوال صحيحاً.,
+The number was changed.,تم تغيير الرقم.,
+You already have an account,لديك حساب بالفعل,
+Reset the password,إعادة تعيين كلمة المرور,
+The platform offers no plan to sign up on. Try again later.,لا تعرض المنصة أي باقة للتسجيل عليها. حاول لاحقاً.,
+You already have an account. Sign in to continue.,لديك حساب بالفعل. سجّل الدخول للمتابعة.,
+Your password,كلمة المرور,
+"The page was reloaded, so enter the password you chose once more. It is needed to finish creating the account.",أُعيد تحميل الصفحة، فأدخل كلمة المرور التي اخترتها مرة أخرى. هي مطلوبة لإكمال إنشاء الحساب.,
+Enter the password you chose to finish creating the account.,أدخل كلمة المرور التي اخترتها لإكمال إنشاء الحساب.,
+"Confirm it is you, choose a new password, and you are signed in.",أكّد أنك صاحب الحساب، واختر كلمة مرور جديدة، وستُسجَّل دخولك مباشرة.,
+"Enter the email or the mobile the platform account was opened with, and the platform sends a recovery code to it.",أدخل البريد أو رقم الجوال الذي فُتح به حساب المنصة، وسترسل المنصة رمز استعادة إليه.,
+A recovery code was sent to {0}. Check the inbox and the spam folder.,أُرسل رمز الاستعادة إلى {0}. تحقق من البريد الوارد ومجلد الرسائل غير المرغوبة.,
+the account's email,بريد الحساب,
+A recovery code was sent on WhatsApp to the account's number. Reply to that message with the same code.,أُرسل رمز الاستعادة عبر واتساب إلى رقم الحساب. ردّ على تلك الرسالة بنفس الرمز.,
+Recovery code,رمز الاستعادة,
+New password,كلمة المرور الجديدة,
+Set the password and sign in,احفظ كلمة المرور وسجّل الدخول,
+Send the code again,أرسل الرمز مرة أخرى,
+Use another email or number,استخدم بريداً أو رقماً آخر,
+Your reply arrived. Choose the new password.,وصل ردّك. اختر كلمة المرور الجديدة.,
+Waiting for your reply on WhatsApp…,بانتظار ردّك على واتساب…,
+Enter the recovery code you received.,أدخل رمز الاستعادة الذي وصلك.,
+The password must be at least 8 characters.,يجب ألا تقل كلمة المرور عن 8 أحرف.,
+"The password was changed, but signing in failed. Sign in with it.",تم تغيير كلمة المرور، لكن تسجيل الدخول فشل. سجّل الدخول بها.,
+The password was changed and you are signed in.,تم تغيير كلمة المرور وتسجيل دخولك.,
+Send the recovery code,أرسل رمز الاستعادة,
+A recovery code was sent.,أُرسل رمز الاستعادة.,
+The code has not been confirmed yet.,لم يُؤكَّد الرمز بعد.,
+The password was changed. Sign in with it.,تم تغيير كلمة المرور. سجّل الدخول بها.,
+From the account's number,من رقم الحساب,
+Send it from the account's WhatsApp number exactly as written. Nothing is sent to you: the message you send is the confirmation.,أرسلها من رقم واتساب الخاص بالحساب كما هي تماماً. لن يصلك شيء: الرسالة التي ترسلها هي التأكيد.,
+Send the code shown from your WhatsApp.,أرسل الرمز الظاهر من واتساب.,
+Your message arrived. Choose the new password.,وصلت رسالتك. اختر كلمة المرور الجديدة.,
+Waiting for your message on WhatsApp…,بانتظار رسالتك على واتساب…,
+"It is you. Choose the new password, and you are signed in.",تم التأكد أنه أنت. اختر كلمة المرور الجديدة وسيُسجَّل دخولك.,
+First confirm it is you; the new password comes right after.,أكّد أولاً أنه أنت، ثم تختار كلمة المرور الجديدة مباشرة.,
+Verify the code,تحقق من الرمز,
+Waiting for your message on WhatsApp… The next step opens by itself when it arrives.,بانتظار رسالتك على واتساب… تفتح الخطوة التالية تلقائياً عند وصولها.,
+Confirmed. Choose the new password.,تم التأكيد. اختر كلمة المرور الجديدة.,
+Confirmed — this is your account.,تم التأكيد — هذا حسابك.,
+"Choose a stronger password: at least 8 characters, with digits, capitals, small letters and a symbol.",اختر كلمة مرور أقوى: 8 أحرف على الأقل، فيها أرقام وأحرف كبيرة وصغيرة ورمز.,
+Email (optional),البريد الإلكتروني (اختياري),
+Optional. You sign in with your mobile number; an email adds a second way to recover the account.,اختياري. تسجّل دخولك برقم جوالك، والبريد يضيف طريقة ثانية لاستعادة الحساب.,
+"Mobile number, username or email",رقم الجوال أو اسم المستخدم أو البريد,
+"Enter the mobile number, username or email, and the password.",أدخل رقم الجوال أو اسم المستخدم أو البريد، وكلمة المرور.,
+The sign-in details or the password are not right.,بيانات الدخول أو كلمة المرور غير صحيحة.,
+"Enter the mobile number, username or email of the platform account, and the platform sends a recovery code to it.",أدخل رقم الجوال أو اسم المستخدم أو البريد الخاص بحساب المنصة، وسترسل المنصة رمز استعادة.,
+No account,لا يوجد حساب,
+Create an account or sign in,أنشئ حساباً أو سجّل الدخول,
+This site is not connected to a WhatsApp account,هذا الموقع غير مربوط بحساب واتساب,
+"Create a free account (a full month, no card) or sign in to the one you have, and this site starts sending.",أنشئ حساباً مجانياً (شهر كامل بلا بطاقة) أو سجّل الدخول إلى حسابك، وسيبدأ هذا الموقع بالإرسال.,
+This site is not linked to a WhatsApp account yet. Create a free account or sign in.,هذا الموقع غير مربوط بحساب واتساب بعد. أنشئ حساباً مجانياً أو سجّل الدخول.,
+No account linked,لا يوجد حساب مربوط,
+"This account's subscription has ended (the free trial is over), so the platform does not accept new devices or messages. Renew it from Subscription, usage and settings.",انتهى اشتراك هذا الحساب (انتهت التجربة المجانية)، لذلك لا تقبل المنصة أجهزة أو رسائل جديدة. جدّده من صفحة الاشتراك والاستخدام والإعدادات.,
+The number must be {0} digits after the country code {1},يجب أن يكون الرقم {0} أرقام بعد رمز الدولة {1},
+The number must be at least 6 digits after the country code {0},يجب أن يكون الرقم 6 أرقام على الأقل بعد رمز الدولة {0},
+A number WhatsApp works on — {0} digits after the country code {1},رقم يعمل عليه واتساب — {0} أرقام بعد رمز الدولة {1},
+Numbers without a country code are sent with {0} ({1}),الأرقام بدون رمز دولة تُرسل برمز {0} ({1}),
+Open,فتح,Open the record in its form
+(the text renders empty),(النص يظهر فارغًا)
+A template named {0} already exists,يوجد قالب باسم {0} بالفعل
+Any document,أي مستند
+Create template,إنشاء القالب
+Delete the template {0}? This cannot be undone.,حذف القالب {0}؟ لا يمكن التراجع عن ذلك.
+Document fields,حقول المستند
+Document it is about,المستند الذي تتحدث عنه
+Editor,المحرّر
+Extra sample values (JSON),قيم تجريبية إضافية (JSON)
+"Extra sample values must be a JSON object, like {""discount"": 10}.","يجب أن تكون القيم التجريبية الإضافية كائن JSON، مثل {""discount"": 10}."
+Fields of {0},حقول {0}
+Filter variables…,تصفية المتغيرات…
+Formatting,التنسيق
+Give the template a name,أعطِ القالب اسمًا
+Give the template a name.,أعطِ القالب اسمًا.
+"Hello {{ doc.customer_name }}, …",مرحبًا {{ doc.customer_name }}، …
+No image,لا توجد صورة
+No variable matches “{0}”.,لا يوجد متغير يطابق «{0}».
+Not offered,غير معروض
+Offered when sending,يظهر عند الإرسال
+Only for the preview: values the text uses that no document has.,للمعاينة فقط: قيم يستخدمها النص ولا توجد في أي مستند.
+"Optional. Pick the document the message is sent about, such as Sales Invoice, to insert its fields.",اختياري. اختر المستند الذي تُرسل الرسالة بشأنه، مثل فاتورة المبيعات، لتُدرج حقوله.
+Pick a record…,اختر سجلًا…
+"Pick the document it is about first, to see its print formats.",اختر المستند أولًا لتظهر تنسيقات طباعته.
+Pick the document it is about to see its fields here.,اختر المستند الذي تتحدث عنه لتظهر حقوله هنا.
+Pick the print format the document is printed with.,اختر تنسيق الطباعة الذي يُطبع به المستند.
+Preview — as the recipient sees it,المعاينة — كما يراها المستلم
+Remove the image,إزالة الصورة
+Rendered with general sample values. Pick the document it is about to preview with a real record.,معروضة بقيم تجريبية عامة. اختر المستند الذي تتحدث عنه لتعاينها بسجل حقيقي.
+Replace,استبدال
+Sections,الأقسام
+Show a part only when a condition holds,إظهار جزء فقط عند تحقق شرط
+Someone else saved this template after you opened it. Close it and open it again to see their changes.,حفظ شخص آخر هذا القالب بعد أن فتحته. أغلقه وافتحه من جديد لترى تعديلاته.
+Start writing and the message appears here.,ابدأ الكتابة وستظهر الرسالة هنا.
+Template created,تم إنشاء القالب
+Template deleted,تم حذف القالب
+Template name,اسم القالب
+Template saved,تم حفظ القالب
+Template {0} not found,القالب {0} غير موجود
+The PDF is printed from the document with this format.,يُطبع ملف PDF من المستند بهذا التنسيق.
+The preview could not be rendered.,تعذّر عرض المعاينة.
+The template could not be deleted.,تعذّر حذف القالب.
+The template could not be saved.,تعذّر حفظ القالب.
+The user's language,لغة المستخدم
+Unsaved,غير محفوظ
+Upload the image the message is sent with,ارفع الصورة التي تُرسل مع الرسالة
+Upload the image the message is sent with.,ارفع الصورة التي تُرسل مع الرسالة.
+Use the latest {0},استخدم أحدث {0}
+Used {0} times,استُخدم {0} مرة
+Variables go in {{ … }} and conditions in {% if … %} … {% endif %}.,المتغيرات تُكتب داخل {{ … }} والشروط داخل {% if … %} … {% endif %}.
+Variables — click to insert,المتغيرات — اضغط للإدراج
+When to use it — shown to whoever picks it,متى يُستخدم — يظهر لمن يختاره
+With {0},مع {0}
+You can switch it off under More options instead.,يمكنك إيقافه من «خيارات أخرى» بدلًا من ذلك.
+e.g. Sales,مثل: المبيعات
+otherwise,وإلا
+shown only then,يظهر فقط عندها
+{0} characters,{0} حرف
+"You cannot read {0} records, so the preview fills its fields with nothing.",لا تملك صلاحية قراءة سجلات {0}، لذا تظهر حقوله فارغة في المعاينة.
+Preview,معاينة,Template preview tab
+Pair with,الاقتران عبر
+Get the code,احصل على الرمز
+"The code is issued for a WhatsApp number. Enter the number of the phone you will pair, then enter the code on that phone.",يُصدر الرمز لرقم واتساب. أدخل رقم الهاتف الذي ستقرنه، ثم اكتب الرمز على ذلك الهاتف.
+"The connection to the platform is not set up, so the pairing cannot be checked: {0}",الربط بالمنصة غير مضبوط، لذا لا يمكن التحقق من الاقتران: {0}
+The connection to the platform is not set up.,الربط بالمنصة غير مضبوط.
+Open settings,فتح الإعدادات
+"Pair it with a QR code or an 8-digit code, then start sending.",اقرنه برمز QR أو برمز من 8 أرقام، ثم ابدأ الإرسال.
+"This site is not connected to the WhatsApp platform: its keys are missing. Enter them in Settings → Credentials, or sign in again from the setup wizard.",هذا الموقع غير مربوط بمنصة واتساب: مفاتيح الربط غير موجودة. أدخلها من الإعدادات ← بيانات الاعتماد، أو سجّل الدخول من جديد من معالج الإعداد.
+"A blacklist blocks its members from every command, campaign and quick send.",القائمة السوداء تحجب أعضاءها من كل الأوامر والحملات والإرسال السريع.,
+A group named {0} already exists,توجد مجموعة باسم {0} بالفعل,
+"Add members from contacts, another group, a file or typed numbers.",أضف الأعضاء من جهات الاتصال، أو من مجموعة أخرى، أو من ملف، أو بكتابة الأرقام.,
+Another group,مجموعة أخرى,
+Contact group {0} not found,مجموعة جهات الاتصال {0} غير موجودة,
+Create group,إنشاء المجموعة,
+Disabled — not offered when choosing recipients,معطّلة — لا تُعرض عند اختيار المستلمين,
+Do not add,عدم الإضافة,
+Example: Riyadh customers,مثال: عملاء الرياض,
+Excel or CSV file,ملف Excel أو CSV,
+Give the group a name,اكتب اسمًا للمجموعة,
+Group created,تم إنشاء المجموعة,
+Group kind,نوع المجموعة,
+Group name,اسم المجموعة,
+Group saved,تم حفظ المجموعة,
+Keep this member,إبقاء هذا العضو,
+Members now,الأعضاء الآن,
+Members summary,ملخّص الأعضاء,
+More sources,مصادر أخرى,
+No member matches this search.,لا يوجد عضو يطابق هذا البحث.,
+"No members yet. Add them from contacts, another group, a file or typed numbers.",لا أعضاء بعد. أضفهم من جهات الاتصال، أو من مجموعة أخرى، أو من ملف، أو بكتابة الأرقام.,
+Note (optional),ملاحظة (اختياري),
+Open full form,فتح النموذج الكامل,
+Remove from the group,إزالة من المجموعة,
+Search the members,البحث في الأعضاء,
+Search the members by name or number…,ابحث في الأعضاء بالاسم أو الرقم…,
+Show more members ({0} of {1}),عرض المزيد من الأعضاء ({0} من {1}),
+Someone else saved this group after you opened it. Close it and open it again to see their changes.,حفظ شخص آخر هذه المجموعة بعد أن فتحتها. أغلقها وافتحها من جديد لترى تعديلاته.,
+To add,للإضافة,
+To remove,للإزالة,
+Type numbers,كتابة أرقام,
+Up to {0} numbers can change in one save,يمكن تغيير {0} رقم كحد أقصى في حفظة واحدة,
+Why this group exists and when it is used.,لماذا أُنشئت هذه المجموعة ومتى تُستخدم.,
+{0} added,أُضيف {0},
+{0} skipped (already in the group or invalid),تُخطّي {0} (موجود في المجموعة أو غير صالح),
+{0} to add,{0} للإضافة,
+{0} to remove,{0} للإزالة,
+A Python expression over doc; empty means every record.,تعبير بايثون على doc؛ اتركه فارغًا ليشمل كل السجلات.,
+A field changes,عند تغيّر حقل,
+A file in the document,ملف في المستند,
+A fixed number,رقم ثابت,
+A notification named {0} already exists,يوجد إشعار باسم {0} بالفعل,
+A number in the document,رقم في المستند,
+A print of the document,طباعة المستند,
+Add a recipient,إضافة مستلم,
+Afterwards: set a field of the document (optional),بعد الإرسال: عيّن قيمة حقل في المستند (اختياري),
+Another document event,حدث آخر للمستند,
+Attach,المرفق,
+Attachment field,حقل المرفق,
+Check the notification,راجع الإشعار,
+Choose a date and time field…,اختر حقل تاريخ ووقت…,
+Choose a date field…,اختر حقل تاريخ…,
+Choose a field…,اختر حقلًا…,
+Choose a template to see the message.,اختر قالبًا لترى الرسالة.,
+Choose an event…,اختر حدثًا…,
+Choose the document type to see its templates.,اختر نوع المستند لترى قوالبه.,
+Choose the document type to see the message.,اختر نوع المستند لترى الرسالة.,
+Choose the field that holds the file…,اختر الحقل الذي يحمل الملف…,
+Choose the field with the number…,اختر الحقل الذي فيه الرقم…,
+Choose the linked record field first,اختر حقل السجل المرتبط أولًا,
+"Choose what it is about, then what it says.",اختر المستند الذي يخصه، ثم ما يقوله.,
+Choose who gets the notification,اختر من يستلم الإشعار,
+Could not read the document type,تعذّرت قراءة نوع المستند,
+Create notification,إنشاء الإشعار,
+Date and time field,حقل التاريخ والوقت,
+Days after a date,بعد تاريخ بأيام,
+Days before a date,قبل تاريخ بأيام,
+Document event,حدث المستند,
+Edit notification,تعديل الإشعار,
+Edit this template,تعديل هذا القالب,
+Field to set,الحقل المراد تعيينه,
+Filter fields,تصفية الحقول,
+Filter fields…,تصفية الحقول…,
+Filter templates,تصفية القوالب,
+Filter templates…,تصفية القوالب…,
+For {0},لـ {0},
+From a template,من قالب,
+Insert a field of the document,أدرج حقلًا من المستند,
+It is cancelled,عند الإلغاء,
+It is created,عند الإنشاء,
+It is saved,عند الحفظ,
+It is submitted,عند الاعتماد,
+Linked record field,حقل السجل المرتبط,
+Linked record field…,حقل السجل المرتبط…,
+Minutes,دقائق,
+Minutes after a time,بعد وقت بدقائق,
+Minutes before a time,قبل وقت بدقائق,
+Name the notification first,سمِّ الإشعار أولًا,
+Name this notification…,سمِّ هذا الإشعار…,
+No field,بلا حقل,
+No file in this record,لا يوجد ملف في هذا السجل,
+"No template is written for {0} yet. Create one, or write the message here.",لا يوجد قالب مكتوب لـ {0} بعد. أنشئ قالبًا، أو اكتب الرسالة هنا.,
+No template matches.,لا يوجد قالب مطابق.,
+Notification created,تم إنشاء الإشعار,
+Notification deleted,تم حذف الإشعار,
+Notification name,اسم الإشعار,
+Notification saved,تم حفظ الإشعار,
+Notification {0} not found,الإشعار {0} غير موجود,
+Number field on the linked record,حقل الرقم في السجل المرتبط,
+On the document event,عند حدث المستند,
+Only when a condition holds,فقط عند تحقق شرط,
+Opens the template editor,يفتح محرر القوالب,
+Record to try the notification on,السجل الذي يُجرَّب عليه الإشعار,
+Save this text as a template,حفظ هذا النص كقالب,
+Search document types…,ابحث في أنواع المستندات…,
+Send it when,أرسله,
+"Sends this draft once to one number, for the record above — nothing is saved and the condition is not checked.",يرسل هذه المسودة مرة واحدة إلى رقم واحد، للسجل أعلاه — لا يُحفظ شيء ولا يُفحص الشرط.,
+Submittable,قابل للاعتماد,
+Templates,القوالب,
+"The condition does not hold for this record, so nothing would be sent for it.",الشرط لا يتحقق في هذا السجل، فلن يُرسل له شيء.,
+The document type has no attachment field,نوع المستند لا يحوي حقل مرفقات,
+The latest {0},أحدث {0},
+The message could not be rendered: {0},تعذّر تكوين الرسالة: {0},
+The notification sends only when it is on,لا يُرسل الإشعار إلا وهو مفعّل,
+There is no {0} to try it on yet.,لا يوجد {0} لتجربته عليه بعد.,
+There is no {0} to try the notification on yet,لا يوجد {0} لتجربة الإشعار عليه بعد,
+Through a linked record,عبر سجل مرتبط,
+Tried on,يُجرَّب على,
+Uses {0},يستخدم {0},
+Value to set,القيمة المراد تعيينها,
+What the message says… e.g. Invoice {{ doc.name }} is ready,ماذا تقول الرسالة… مثال: الفاتورة {{ doc.name }} جاهزة,
+When is it sent?,متى يُرسل؟,
+When this field changes,عند تغيّر هذا الحقل,
+Written for {0},مكتوب لـ {0},
+Written here,مكتوبة هنا,
+days after,أيام بعد,
+days before,أيام قبل,
+empty in this record,فارغ في هذا السجل,
+it is empty,إنها فارغة,
+minutes after,دقائق بعد,
+minutes before,دقائق قبل,
+to,إلى,
+with a condition,بشرط,
+{0} more — filter to find them,{0} أخرى — صفِّ لتجدها,
+"You cannot read {0} records, so there is nothing to try the message on. It still works when saved.",لا تملك صلاحية قراءة سجلات {0}، فلا يوجد ما تُجرَّب عليه الرسالة. سيعمل الإشعار بعد الحفظ.,
+Something happens to it,يحدث له شيء,
+On a schedule,في موعد,
+Another document event…,حدث آخر للمستند…,
+For which records?,لأي السجلات؟,
+Every record,كل السجلات,
+Matching filters,المطابقة للمرشحات,
+An expression,تعبير برمجي,
+"Only records that match every filter get the message, as in a list's filters.",تصل الرسالة للسجلات المطابقة لكل المرشحات فقط، كما في مرشحات القوائم.,
+A Python expression over doc; the message goes out only when it is true.,تعبير بايثون على doc؛ تُرسل الرسالة فقط عندما يكون صحيحًا.,
+The filters could not be shown for this document type.,تعذّر عرض المرشحات لنوع المستند هذا.,
+Condition Type,نوع الشرط,
+Filters Editor,محرر المرشحات,
+"Filters pick records by their fields, as in a list; Python takes an expression over doc.",المرشحات تختار السجلات بحقولها كما في القوائم؛ وبايثون يأخذ تعبيرًا على doc.,
+Filters are not valid JSON,المرشحات ليست JSON صالحًا,
+Filters must be a list,يجب أن تكون المرشحات قائمة,
+The filters cannot be checked on {0}: {1},لا يمكن فحص المرشحات على {0}: {1},
+{0} has no field {1},لا يحوي {0} الحقل {1},
+Ping,اختبار الاتصال,
+Replies with an echo of the text you sent. Use it to verify that commands reach the site and replies go out.,يرد بصدى النص الذي أرسلته. استخدمه للتأكد من أن الأوامر تصل إلى النظام وأن الردود تخرج.,
+First function to install on a new site; safe for any sender.,أول دالة تُثبَّت على موقع جديد؛ آمنة لأي مرسل.,
+Document Status,حالة مستند,
+Documents,المستندات,
+"Returns the status, date and amount of one document (Sales Invoice by default) that belongs to the sender's linked party.",يعيد حالة مستند واحد وتاريخه ومبلغه (فاتورة مبيعات افتراضيًا) بشرط أن يخص الطرف المرتبط بالمرسل.,
+Customers or suppliers asking about the state of an invoice or order by its number.,عملاء أو موردون يسألون عن حالة فاتورة أو طلب برقمه.,
+Document name,رقم المستند,
+DocType to look up.,نوع المستند المطلوب البحث فيه.,
+Party field,حقل الطرف,
+Field on the DocType that must equal the sender's party.,الحقل في المستند الذي يجب أن يساوي طرف المرسل.,
+Require linked party,يتطلب طرفًا مرتبطًا,
+Refuse senders whose number is not linked to a party.,رفض المرسلين الذين لا يرتبط رقمهم بطرف.,
+Document PDF,المستند PDF,
+Customer Balance,رصيد العميل,
+Accounting,المحاسبة,
+"Replies with the balance of the customer linked to the sender's number, from the Customer Trial Balance report, as on today or a date the sender gives.",يرد برصيد العميل المرتبط برقم المرسل من تقرير ميزان مراجعة العملاء، حتى اليوم أو حتى تاريخ يحدده المرسل.,
+Customers asking how much they owe. Only the customer linked to the sender's contact is answered.,عملاء يسألون كم عليهم. لا يُجاب إلا العميل المرتبط بجهة اتصال المرسل.,
+As on,حتى تاريخ,
+Empty: the site's default company.,فارغ: الشركة الافتراضية للموقع.,
+Balance,الرصيد,
+Customer Statement,كشف حساب العميل,
+"Replies with the last entries of the sender's customer ledger (Customer Ledger report) over the last months, with the closing balance.",يرد بآخر حركات حساب العميل المرتبط بالمرسل (تقرير دفتر العملاء) خلال الأشهر الأخيرة مع الرصيد الختامي.,
+Customers asking for their account statement. Only the customer linked to the sender's contact is answered.,عملاء يطلبون كشف حسابهم. لا يُجاب إلا العميل المرتبط بجهة اتصال المرسل.,
+Months back,عدد الأشهر,
+Used when the message gives no number (1–24).,يُستخدم إذا لم تحدد الرسالة رقمًا (1–24).,
+Entries,الحركات,
+Last entries listed (1–30).,عدد آخر الحركات المعروضة (1–30).,
+Statement,كشف الحساب,
+Customer Balances,أرصدة العملاء,
+Reports,التقارير,
+Replies with the largest customer balances of the company (Customer Trial Balance) and their total.,يرد بأكبر أرصدة العملاء في الشركة (ميزان مراجعة العملاء) وإجماليها.,
+Staff only: restrict the command to an allowed contact group.,للموظفين فقط: قيّد الأمر بمجموعة جهات اتصال مسموحة.,
+Lines,الأسطر,
+Largest balances listed (1–30).,عدد أكبر الأرصدة المعروضة (1–30).,
+Balances,الأرصدة,
+Supplier Balances,أرصدة الموردين,
+Replies with the largest supplier balances of the company (Supplier Trial Balance) and their total.,يرد بأكبر أرصدة الموردين في الشركة (ميزان مراجعة الموردين) وإجماليها.,
+Cash Balances,أرصدة الصناديق,
+Treasury,الخزينة,
+Replies with the balance of every cash account (Cash Trial Balance) and their total.,يرد برصيد كل حساب صندوق (ميزان مراجعة الصناديق) وإجماليها.,
+Accounts listed (1–30).,عدد الحسابات المعروضة (1–30).,
+Bank Balances,أرصدة البنوك,
+Replies with the balance of every bank account (Bank Trial Balance) and their total.,يرد برصيد كل حساب بنكي (ميزان مراجعة البنوك) وإجماليها.,
+Your number is not linked to a customer account,رقمك غير مرتبط بحساب عميل,
+Function is not configured: company,الدالة غير مهيأة: الشركة,
+Customer balances,أرصدة العملاء,
+Supplier balances,أرصدة الموردين,
+Cash balances,أرصدة الصناديق,
+Bank balances,أرصدة البنوك,
+Setup,الإعداد,Command Editor
+Permissions,الصلاحيات,Command Editor
+Preview,المعاينة,Command Editor
+Pick at least one party type — the command cannot be saved without one.,اختر نوع جهة واحداً على الأقل — لا يُحفظ الأمر بدونه.,
+Command Help Token,رمز التعريف بالأوامر,
+"Sent alone it lists the commands; after a command word (كشف ؟) it explains how to send that command's variables. ? and help always work too.",يُرسل وحده فيعرض قائمة الأوامر، وبعد كلمة أمر (كشف ؟) يشرح طريقة إرسال متغيرات ذلك الأمر. ويعمل ? و help دائمًا أيضًا.,
+This command takes no variables. Send: {0},هذا الأمر لا يحتاج متغيرات. أرسل: {0},
+Send: {0},أرسل: {0},
+"Variables, in this order:",المتغيرات بهذا الترتيب:,
+number,رقم,
+date,تاريخ,
+name,معرّف,
+required,إلزامي,
+optional,اختياري,
+takes the rest of the message,يأخذ بقية الرسالة,
+Example: {0},مثال: {0},
+"Or by name, in any order: {0}",أو بالاسم وبأي ترتيب: {0},
+Command Help Token must be a single word,رمز التعريف بالأوامر يجب أن يكون كلمة واحدة,
+Command Help Token {0} is already a word of command {1},رمز التعريف {0} مستخدم كلمةً للأمر {1},
+"Word {0} asks for help and cannot be a command word",الكلمة {0} مخصصة لطلب التعريف ولا يمكن أن تكون كلمة أمر,
+"{0}, {1}",{0}، {1},
+Reply Language,لغة الرد,
+"The language of the replies the site writes itself (help, refusals, errors). Empty: the site's language. The texts you write in templates are sent as written.",لغة الردود التي يكتبها النظام بنفسه (التعريف بالأوامر، الرفض، الأخطاء). فارغ: لغة الموقع. النصوص التي تكتبها في القوالب تُرسل كما كتبتها.,
+Saved Name,الاسم المحفوظ في الهاتف,
+"The name this number is saved under in the phone's contacts, from the last sync.",الاسم الذي حُفظ به هذا الرقم في جهات اتصال الهاتف، من آخر جلب.,
+Synced From,جُلب من,
+Synced At,وقت الجلب,
+Numbers Synced,جلب جهات الاتصال,
+Fetch,جلب,
+Fetch from WhatsApp,جلب من الواتساب,
+Fetch contacts from WhatsApp,جلب جهات الاتصال من الواتساب,
+"The contacts saved on the device's phone are brought into this list: a number already here gets the name it is saved under, a new one is added, and one that a system contact already carries is linked to it. Messages and links you made are kept.",تُجلب جهات الاتصال المحفوظة في هاتف الجهاز إلى هذه القائمة: الرقم الموجود يأخذ الاسم المحفوظ به، والجديد يُضاف، والرقم الذي تحمله جهة اتصال في النظام يُربط بها. الرسائل والروابط التي أنشأتها تبقى كما هي.,
+Last fetched {0},آخر جلب {0},
+Never fetched from this device,لم يُجلب من هذا الجهاز بعد,
+"{0} is not connected. Connect it first, then fetch.",{0} غير متصل. اربطه أولاً ثم أعد الجلب.,
+Fetching the contacts of {0}… you will be told when it is done.,يجري جلب جهات اتصال {0}… سيصلك إشعار عند الانتهاء.,
+Fetching the contacts failed: {0},فشل جلب جهات الاتصال: {0},
+{0} fetched,جُلب {0},
+{0} added,أُضيف {0},
+{0} updated,حُدّث {0},
+{0} linked to a contact,رُبط {0} بجهة اتصال,
+{0} matching contacts were not linked: you may not edit contacts.,لم تُربط {0} جهة مطابقة: لا تملك صلاحية تعديل جهات الاتصال.,
+No device is registered on the platform yet. Link a device first.,لا يوجد جهاز مسجّل على المنصة بعد. اربط جهازاً أولاً.,
+Synced from,جُلب من,
+From messages and from the phone's contacts,من الرسائل ومن جهات اتصال الهاتف,
+"Numbers appear here after the first message, or fetch the phone's contacts with “Fetch from WhatsApp”.",تظهر الأرقام هنا بعد أول رسالة، أو اجلب جهات اتصال الهاتف عبر «جلب من الواتساب».,
+The fetch is taking long. Refresh the list later to see the numbers.,الجلب يستغرق وقتاً. حدّث القائمة لاحقاً لرؤية الأرقام.,
+"{0} fetched: {1} added, {2} updated, {3} linked to a contact.",جُلب {0}: أُضيف {1}، وحُدّث {2}، ورُبط {3} بجهة اتصال.,Numbers sync
+Open form,فتح النموذج,
+Open the form of {0},فتح نموذج {0},
+Form,النموذج,Notification list
+Beta,بيتا,
+This app is in beta: screens and features may still change.,التطبيق في مرحلة بيتا: قد تتغيّر الشاشات والميزات.,
+This event is not included in the subscription,هذا الحدث غير مشمول في الباقة,
+Last received,آخر استلام,
+The webhook is active,رابط الويب نشط,
+Attempt {0} of {1},المحاولة {0} من {1},
+Max Attempts must be between 1 and {0},الحد الأقصى للمحاولات يجب أن يكون بين 1 و{0},
+How many times a message is tried automatically before it fails (1 to 3).,عدد مرات محاولة إرسال الرسالة تلقائياً قبل اعتبارها فاشلة (من 1 إلى 3).,
+"{0} contacts and {4} groups fetched: {1} added, {2} updated, {3} linked to a contact.",جُلبت {0} جهة اتصال و{4} مجموعة: أُضيف {1}، وحُدّث {2}، ورُبط {3} بجهة اتصال.,Numbers sync
+WhatsApp contacts not in the system,جهات واتساب غير مسجلة في النظام,
+No WhatsApp contacts outside the system,لا توجد جهات واتساب خارج النظام,
+Every number known from WhatsApp is already a system contact.,كل رقم معروف من الواتساب مسجّل أصلاً كجهة اتصال في النظام.,
+Number type,نوع الرقم,
+Link to a contact,ربط بجهة اتصال,
+Link {0} to a contact,ربط {0} بجهة اتصال,
+WhatsApp group,مجموعة واتساب,
+Link,ربط,Link a number to a contact
+The last connection test failed. Open Settings to see why and test it again.,فشل آخر اختبار للاتصال. افتح الإعدادات لمعرفة السبب وأعد الاختبار.,
+The connection has not been tested yet.,لم يُختبر الاتصال بعد.,
+WhatsApp Number {0} not found or not an individual number or group,رقم واتساب {0} غير موجود أو ليس رقمًا فرديًا ولا مجموعة,
+"{0} sent, {1} delivered, {2} read, {3} failed, of {4} messages",{0} مُرسلة، {1} مستلمة، {2} مقروءة، {3} فاشلة، من {4} رسالة,
+Messages sent out of all the campaign's messages,الرسائل المُرسلة من إجمالي رسائل الحملة,
+Linked to a contact,مرتبطة بجهة اتصال,
+The linked contact has no accounts,جهة الاتصال المرتبطة ليس لها حسابات,
+Link the group to a contact from WhatsApp numbers,اربط المجموعة بجهة اتصال من شاشة أرقام الواتساب,
+Which group this is,أي مجموعة هذه,
+Paused in the queue,موقوفة مؤقتاً في الطابور,
+Commands that need a linked account will refuse it.,الأوامر التي تحتاج ربطاً بحساب سترفضه.,
+"The schedule is removed and the campaign goes back to draft. Schedule or start it again when you are done.","تُزال الجدولة وتعود الحملة مسودةً. جدولها أو ابدأها من جديد عندما تنتهي.",""
+"Nothing to remove: the selected recipients are already removed.","لا شيء لإزالته: المستلمون المحددون أُزيلوا من قبل.",""
+"Search by name, email or number.","ابحث بالاسم أو البريد الإلكتروني أو الرقم.",""
+"Could not search contacts.","تعذّر البحث في جهات الاتصال.",""
+"<1%","أقل من 1%",""
+"{0} received over the last {1} days","{0} رسالة واردة خلال آخر {1} يومًا",""
+"Initial release.","الإصدار الأول.",""
+"Port of the snd_accounting customer_balance API: the customer comes from the sender's linked contact and the reply is a template.","نقلٌ لواجهة customer_balance من snd_accounting: العميل يُؤخذ من جهة الاتصال المرتبطة برقم المرسل، والرد قالب.",""
+"Port of the snd_accounting customer_statement API as data and a reply template.","نقلٌ لواجهة customer_statement من snd_accounting إلى بيانات وقالب رد.",""
+"Each entry shows its debit and credit beside the balance, with a count line; the default period is 6 months instead of 3.","كل حركة تعرض المدين والدائن بجانب الرصيد مع سطر بعدد الحركات؛ والفترة الافتراضية 6 أشهر بدل 3.",""
+"Port of the snd_accounting customer_trial_balance API.","نقلٌ لواجهة customer_trial_balance من snd_accounting.",""
+"Port of the snd_accounting supplier_trial_balance API.","نقلٌ لواجهة supplier_trial_balance من snd_accounting.",""
+"Port of the snd_accounting cash_balances API.","نقلٌ لواجهة cash_balances من snd_accounting.",""
+"Port of the snd_accounting bank_balances API.","نقلٌ لواجهة bank_balances من snd_accounting.",""
+"{0} device is not paired yet","{0} جهاز لم يُربط بعد",""
+"{0} devices are not paired yet","{0} أجهزة لم تُربط بعد",""
+"The account was created, but this site is not linked to it yet. Sign in with the password you just chose to finish.","أُنشئ الحساب، لكن هذا الموقع لم يُربط به بعد. سجّل الدخول بكلمة المرور التي اخترتها للتو لإكمال الربط.",""
+"Choose a password for the account","اختر كلمة مرور للحساب",""
+"{0} min {1} s","{0} د {1} ث",""
+"Empty message","رسالة فارغة",""
+"Nothing changed: the message is no longer in that state.","لم يتغيّر شيء: الرسالة لم تعد في هذه الحالة.",""
+"Allowance per cycle","حصة الدورة",""
+"In {0} days — the next cycle starts then","بعد {0} يومًا — تبدأ الدورة التالية حينها",""
+"Tomorrow — the next cycle starts then","غدًا — تبدأ الدورة التالية حينها",""
+"Today — the next cycle starts then","اليوم — تبدأ الدورة التالية حينها",""
+"The cycle ended {0} days ago","انتهت الدورة منذ {0} يومًا",""
+"A usage period is at most {0} days","فترة الاستهلاك {0} يومًا على الأكثر",""
+"from and to must be dates","يجب أن تكون قيمتا من وإلى تاريخين",""
+"{0} {1} not found","{0} {1} غير موجود",""
+"You are not permitted to use the report {0}","غير مسموح لك باستخدام التقرير {0}",""
+"{0} {1} is not linked to contact {2}","{0} {1} غير مرتبط بجهة الاتصال {2}",""

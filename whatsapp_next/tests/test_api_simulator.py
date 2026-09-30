@@ -20,6 +20,7 @@ SERVICE_USER = "wa-test-apisvc@example.com"
 CODE = "apitestping"
 P1 = "+966500920301"
 TAG = "ApiTest sim"
+GROUP = "120363000000920301@g.us"
 SETTINGS_KEYS = ("enable_commands", "command_service_user", "unknown_command_reply", "send_receipt_reply")
 
 
@@ -96,6 +97,7 @@ class TestApiSimulator(IntegrationTestCase):
 			delete_all("WhatsApp Log", {"trigger_inbound": ("in", inbound)})
 			delete_all("WhatsApp Inbound Message", {"name": ("in", inbound)})
 		delete_all("WhatsApp Command", {"code": CODE})
+		delete_all("WhatsApp Number", {"name": GROUP})
 		delete_all("WhatsApp Audit Log", {"action": "Test Send", "reference_name": ("in", names or ["-"])})
 
 	def setUp(self):
@@ -180,6 +182,50 @@ class TestApiSimulator(IntegrationTestCase):
 		self.assertGreaterEqual(out["total"], 1)
 		with as_user("_none"), self.assertRaises(WAPermissionError):
 			api.list_conversations()
+
+	def test_groups_are_conversations_too(self):
+		from whatsapp_next.services import numbers_materializer
+
+		with as_user("WhatsApp Agent"):
+			api.simulate_inbound(device=self.device, sender_phone=GROUP, text=f"{TAG} to the group", run_commands="0")
+		numbers_materializer.refresh_keys([GROUP])
+		frappe.db.set_value("WhatsApp Number", GROUP, "number_type", "Group", update_modified=False)
+		with as_user("WhatsApp Agent"):
+			out = api.list_conversations(txt="120363000000920301")
+			row = next(r for r in out["rows"] if r["phone_e164"] == GROUP)
+			self.assertEqual((row["number_type"], row["last_body"]), ("Group", f"{TAG} to the group"))
+			who = api.get_identity(phone_e164=GROUP)
+			self.assertEqual((who["phone_e164"], who["is_group"], who["contact"]), (GROUP, True, None))
+
+	def test_conversations_read_in_a_fixed_number_of_queries(self):
+		"""The rail's previews come from grouped reads, not two queries per row, and the total is a
+		COUNT that agrees with the filters."""
+		from whatsapp_next.services import simulator
+
+		def queries(limit):
+			"""The call's reads of the two message tables (metadata / translation loads aside)."""
+			real = frappe.db.sql
+			calls = []
+
+			def counting(*args, **kwargs):
+				calls.append(str(args[0]) if args else "")
+				return real(*args, **kwargs)
+
+			with patch.object(frappe.db, "sql", side_effect=counting):
+				out = simulator.conversations(limit=limit)
+			tables = ("`tabWhatsApp Log`", "`tabWhatsApp Inbound Message`")
+			return out, len([q for q in calls if any(t in q for t in tables)])
+
+		one, _ = queries(1)
+		many, reads = queries(30)
+		self.assertGreater(len(many["rows"]), 1)
+		self.assertLessEqual(reads, 3)  # outbound, inbound 1:1, inbound groups — whatever the row count
+		self.assertEqual(
+			many["total"],
+			frappe.db.count("WhatsApp Number", {"number_type": ("in", ["Individual", "Group"])}),
+		)
+		self.assertEqual(one["total"], many["total"])
+		self.assertTrue(all("last_body" in r and "last_at" in r for r in many["rows"]))
 
 	def test_get_identity(self):
 		with as_user("WhatsApp Agent"):

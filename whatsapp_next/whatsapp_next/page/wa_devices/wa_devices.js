@@ -14,6 +14,8 @@ frappe.provide("whatsapp_next.devices");
 	const OFFLINE = ["Disconnected", "Logged Out"];
 	const STATS_DAYS = 30;
 	const POLL_MS = 4000;
+	// the full path until `devices.get_device_impact` joins the key map in whatsapp_next_setup.js
+	const IMPACT_API = "whatsapp_next.api.v1.devices.get_device_impact";
 	// above this share of attempts the failure reading turns red and the delivery bar with it
 	const FAIL_ALERT = 0.08;
 
@@ -29,15 +31,12 @@ frappe.provide("whatsapp_next.devices");
 	};
 	const status_of = (row) => STATUS[row.status] || { tone: "gray", label: () => __("Unknown") };
 	const ago = (value) => (value ? frappe.datetime.prettyDate(value) : null);
+	// when an offline device went offline: a sign-out is stamped `logged_out_at`, a dropped
+	// connection `disconnected_at` — an older stamp of the other kind must not win
+	const offline_since = (row) =>
+		(row.status === "Logged Out" ? row.logged_out_at || row.disconnected_at : row.disconnected_at || row.logged_out_at) || row.last_seen;
 	const percent = (rate) => `${(Number(rate || 0) * 100).toFixed(1)}%`;
 
-	/** Two letters for the card's avatar: one per word, or the first two of a single word. */
-	function initials(name) {
-		const words = String(name || "").trim().split(/\s+/).filter(Boolean);
-		if (!words.length) return "؟";
-		if (words.length === 1) return words[0].slice(0, 2);
-		return words[0][0] + words[1][0];
-	}
 
 	/** Overflow menu next to a card's status, drawn with the kit's menu styles. */
 	function open_menu($btn, items) {
@@ -139,7 +138,7 @@ frappe.provide("whatsapp_next.devices");
 	// and the `wa:device:status` event; the payload is never stored (60 s server cache).
 	// -------------------------------------------------------------------------------------------
 	class PairingDialog {
-		/** @param {{device?: string, device_name?: string, on_done?: Function}} opts */
+		/** @param {{device?: string, device_name?: string, phone?: string, on_done?: Function}} opts */
 		constructor(opts = {}) {
 			this.opts = opts;
 			this.ctx = {
@@ -147,6 +146,8 @@ frappe.provide("whatsapp_next.devices");
 				device_name: opts.device_name || "",
 				mode: "QR",
 				phone: null,
+				// the number the device already has on the platform (an 8-digit code goes to it)
+				device_phone: opts.phone || null,
 				paired: false,
 			};
 		}
@@ -160,7 +161,7 @@ frappe.provide("whatsapp_next.devices");
 			this.dialog.$wrapper.addClass("sanad-sheet wa-pairing-dialog");
 			this.dialog.onhide = () => this.destroy();
 			const $body = $(this.dialog.body).empty();
-			$(`<p class="wa-pairing__lead">${ui.escape(__("Three steps: name the device, scan the code from WhatsApp, then start sending."))}</p>`).appendTo($body);
+			$(`<p class="wa-pairing__lead">${ui.escape(repair ? __("Pair it with a QR code or an 8-digit code, then start sending.") : __("Three steps: name the device, scan the code from WhatsApp, then start sending."))}</p>`).appendTo($body);
 			const $mount = $('<div class="wa-pairing"></div>').appendTo($body);
 			const steps = [];
 			if (!repair) steps.push(this.step_name());
@@ -239,7 +240,13 @@ frappe.provide("whatsapp_next.devices");
 						},
 					});
 				},
+				// once the device exists (Back from the code step), its name is fixed here: going
+				// forward again must not register a second device on the platform
+				on_show: (_$body, ctx) => {
+					if (ctx.device && this.name_control) this.name_control.$input.prop("disabled", true);
+				},
 				validate: (ctx) => {
+					if (ctx.device) return true;
 					const name = (this.name_control.get_value() || "").trim();
 					if (!name) return __("Name the device first.");
 					if (ctx.mode === "Code" && !ctx.phone) {
@@ -251,7 +258,7 @@ frappe.provide("whatsapp_next.devices");
 							device_name: name,
 							phone: ctx.mode === "Code" ? ctx.phone : null,
 							pairing_mode: ctx.mode,
-						})
+						}, { silent: true })
 						.then((r) => {
 							ctx.device = r.name;
 							return true;
@@ -267,33 +274,93 @@ frappe.provide("whatsapp_next.devices");
 				key: "pair",
 				label: __("Pair"),
 				render: ($body) => {
-					this.$pair = $body;
+					// the method can be changed right here, so a device added for QR can still be
+					// paired with a code (and the other way round) without starting over
+					$body.html(`
+						<div class="wa-pairing__switch">
+							<span class="wa-pairing__label" id="wa-pair-switch">${ui.escape(__("Pair with"))}</span>
+							<div class="sanad-chip-row" role="radiogroup" aria-labelledby="wa-pair-switch" data-slot="switch"></div>
+						</div>
+						<div data-slot="pair-body"></div>`);
+					const $switch = $body.find('[data-slot="switch"]');
+					[
+						{ value: "QR", label: __("QR code") },
+						{ value: "Code", label: __("8-digit code") },
+					].forEach((m) => {
+						$(`<button type="button" class="sanad-chip" role="radio" aria-checked="${this.ctx.mode === m.value}" data-mode="${m.value}">${ui.escape(m.label)}</button>`)
+							.on("click", () => {
+								if (this.ctx.mode === m.value) return;
+								this.ctx.mode = m.value;
+								$switch.find("[data-mode]").attr("aria-checked", "false");
+								$switch.find(`[data-mode="${m.value}"]`).attr("aria-checked", "true");
+								this.start_pairing();
+							})
+							.appendTo($switch);
+					});
+					bind_radio_group($switch, ($btn) => $btn.trigger("click"));
+					this.$switch = $switch;
+					this.$pair = $body.find('[data-slot="pair-body"]');
 				},
 				on_show: () => this.start_pairing(),
 				validate: (ctx) => {
 					if (ctx.paired) return true;
 					return ui
-						.call("devices.poll_status", { device: ctx.device })
+						.call("devices.poll_status", { device: ctx.device }, { silent: true })
 						.then((r) => (r.status === "Connected" ? true : __("The device is not paired yet. Scan the code with WhatsApp on the phone.")));
 				},
 			};
 		}
 
-		start_pairing() {
+		start_pairing(phone) {
 			const $el = this.$pair.empty();
 			this.stop_watch();
+			const ctx = this.ctx;
+			// the method may have been chosen on the step before
+			if (this.$switch) this.$switch.find("[data-mode]").each((_, b) => b.setAttribute("aria-checked", String(b.dataset.mode === ctx.mode)));
+			// a code goes to the device's number: a device without one is asked for it first
+			if (ctx.mode === "Code" && !phone && !ctx.phone && !ctx.device_phone) {
+				this._pair_seq = (this._pair_seq || 0) + 1;
+				return this.ask_phone($el);
+			}
 			const state = new ui.EmptyState({ wrapper: $el, state: "loading", rows: 2 });
+			const args = { device: ctx.device, mode: ctx.mode };
+			if (ctx.mode === "Code" && (phone || ctx.phone)) args.phone = phone || ctx.phone;
+			// switching QR ⇄ code quickly leaves an older request in flight: only the newest draws
+			const seq = (this._pair_seq = (this._pair_seq || 0) + 1);
 			return ui
-				.call("devices.start_pairing", { device: this.ctx.device, mode: this.ctx.mode })
+				.call("devices.start_pairing", args, { silent: true })
 				.then((payload) => {
+					if (seq !== this._pair_seq || this.destroyed) return;
+					if (args.phone) ctx.device_phone = args.phone;
 					this.render_pairing($el, payload || {});
 					this.watch();
 				})
-				.catch((err) =>
+				.catch((err) => {
+					if (seq !== this._pair_seq || this.destroyed) return;
 					state.error(err, {
-						action: { label: __("Try again"), on_click: () => this.start_pairing() },
-					})
-				);
+						action: { label: __("Try again"), on_click: () => this.start_pairing(phone) },
+					});
+				});
+		}
+
+		/** The number the 8-digit code is issued for, when the device has none yet. */
+		ask_phone($el) {
+			$el.html(`
+				<p class="wa-pairing__hint">${ui.escape(__("The code is issued for a WhatsApp number. Enter the number of the phone you will pair, then enter the code on that phone."))}</p>
+				<div class="wa-pairing__field" data-slot="phone"></div>
+				<button type="button" class="btn btn-primary btn-sm" data-act="get-code" disabled>${ui.escape(__("Get the code"))}</button>`);
+			let value = null;
+			const $go = $el.find('[data-act="get-code"]');
+			new ui.PhoneField({
+				wrapper: $el.find('[data-slot="phone"]'),
+				label: __("WhatsApp number"),
+				required: true,
+				on_change: ({ phone_e164, valid }) => {
+					value = valid ? phone_e164 : null;
+					$go.prop("disabled", !value);
+				},
+			});
+			$go.on("click", () => value && this.start_pairing(value));
 		}
 
 		render_pairing($el, payload) {
@@ -342,6 +409,10 @@ frappe.provide("whatsapp_next.devices");
 				}
 				if (left <= 0) {
 					window.clearInterval(this._countdown);
+					// an expired code can no longer be scanned: stop asking the platform every few
+					// seconds (the realtime event still lands if the scan raced the expiry)
+					if (this._poll) window.clearInterval(this._poll);
+					this._poll = null;
 					$el.empty()
 						.removeClass("sanad-tone--amber")
 						.addClass("sanad-tone--gray")
@@ -366,12 +437,29 @@ frappe.provide("whatsapp_next.devices");
 				if (document.hidden) return;
 				ui.call("devices.poll_status", { device: this.ctx.device }, { silent: true })
 					.then((r) => this.apply_status(r && r.status))
-					.catch(() => {});
+					.catch((err) => this.poll_failed(err));
 			}, POLL_MS);
 			this._realtime = (data) => {
 				if (data && data.device === this.ctx.device) this.apply_status(data.status);
 			};
 			frappe.realtime.on("wa:device:status", this._realtime);
+		}
+
+		/**
+		 * A poll that fails because the platform connection itself is broken (no key, a key it
+		 * refuses) will fail every time: stop asking and say so once, instead of a traceback every
+		 * few seconds. Anything else (a timeout, a hiccup) is left to the next poll.
+		 */
+		poll_failed(err) {
+			if (!/Auth|NotConfigured/i.test((err && err.exc_type) || "")) return;
+			this.stop_watch();
+			this.$pair
+				.find('[data-slot="countdown"]')
+				.removeClass("sanad-tone--amber")
+				.addClass("sanad-tone--red")
+				.html(`<span>${ui.escape(__("The connection to the platform is not set up, so the pairing cannot be checked: {0}", [err.message || ""]))}</span>`)
+				.append($(`<a class="btn btn-default btn-xs" href="/app/wa-settings">${ui.escape(__("Open settings"))}</a>`));
+			ui.announce(__("The connection to the platform is not set up."), { assertive: true });
 		}
 
 		stop_watch(keep_countdown) {
@@ -427,6 +515,7 @@ frappe.provide("whatsapp_next.devices");
 		}
 
 		destroy() {
+			this.destroyed = true;
 			this.stop_watch();
 			this.stepper && this.stepper.destroy();
 		}
@@ -438,9 +527,8 @@ frappe.provide("whatsapp_next.devices");
 	// sent, how fresh it is, what you can do about it. The fixed order is what makes a wall of ten
 	// cards scannable — the eye learns the shape once and afterwards only reads what moved.
 	//
-	// The state is never carried by colour alone (WCAG 1.4.1). A device says it three times over:
-	// the rail down its inline-start edge, the ring around its avatar, and the pill that carries
-	// both a dot and the word itself.
+	// The state is never carried by colour alone (WCAG 1.4.1). A device says it twice over: the
+	// ring around its avatar, and the pill that carries both a dot and the word itself.
 	// -------------------------------------------------------------------------------------------
 	class DeviceCard {
 		constructor(screen, row) {
@@ -455,12 +543,10 @@ frappe.provide("whatsapp_next.devices");
 			const number = row.phone_e164 ? ui.PhoneField.format_display(row.phone_e164) : __("No number yet");
 			this.$el = $(`
 				<article class="wa-device wa-device--${status.tone}" data-device="${ui.escape(row.name)}" aria-label="${ui.escape(title)}">
-					<span class="wa-device__rail" aria-hidden="true"></span>
 					<header class="wa-device__head">
-						<span class="wa-device__avatar" aria-hidden="true">${ui.escape(initials(row.device_name))}</span>
 						<span class="wa-device__identity">
 							<h3 class="wa-device__name" dir="auto" title="${ui.escape(title)}">${ui.escape(title)}</h3>
-							<span class="wa-device__phone sanad-tabular" dir="ltr" title="${ui.escape(row.phone_e164 || "")}">${ui.escape(number)}</span>
+							<span class="wa-device__phone sanad-tabular" dir="ltr" title="${ui.escape(ui.phone(row.phone_e164 || ""))}">${ui.escape(number)}</span>
 						</span>
 						<span class="wa-device__head-end" data-slot="more"></span>
 					</header>
@@ -538,7 +624,9 @@ frappe.provide("whatsapp_next.devices");
 			const $panel = this.$el.find('[data-slot="panel"]');
 			const title = this.row.device_name || this.row.name;
 			const readings = [
-				{ key: "sent", label: __("Sent · {0}d", [STATS_DAYS]), route: {}, name: __("Open the outbound log of {0}", [title]) },
+				// the log opens on the rows the reading counted (`read_layer.device_stats`): the same
+				// statuses, over the same window — not the device's whole history
+				{ key: "sent", label: __("Sent · {0}d", [STATS_DAYS]), route: { status: ["in", ["Sent", "Delivered", "Read"]] }, name: __("Open the outbound log of {0}", [title]) },
 				{ key: "failed", label: __("Failures"), route: { status: "Failed" }, name: __("Open the failed messages of {0}", [title]) },
 				{ key: "rate", label: __("Failure rate") },
 			];
@@ -548,7 +636,13 @@ frappe.provide("whatsapp_next.devices");
 				const tag = clickable ? "button" : "span";
 				const $stat = $(`<${tag} class="wa-device__stat" data-stat="${r.key}"${clickable ? ` type="button" aria-label="${ui.escape(r.name)}" title="${ui.escape(r.name)}"` : ""}><span class="wa-device__stat-label">${ui.escape(r.label)}</span><span class="wa-device__stat-value sanad-tabular" data-slot="value">${ui.skeleton(1, { lines: 1 })}</span></${tag}>`);
 				if (clickable) {
-					$stat.on("click", () => frappe.set_route("List", "WhatsApp Log", Object.assign({ device: this.row.name }, r.route)));
+					$stat.on("click", () =>
+						frappe.set_route(
+							"List",
+							"WhatsApp Log",
+							Object.assign({ device: this.row.name, creation: [">=", moment(frappe.datetime.now_datetime()).subtract(STATS_DAYS, "days").format(frappe.defaultDatetimeFormat)] }, r.route)
+						)
+					);
 				}
 				$row.append($stat);
 			});
@@ -595,6 +689,7 @@ frappe.provide("whatsapp_next.devices");
 			this.$el
 				.find('[data-verb="inbound"] [data-slot="count"]')
 				.text(inbound ? ui.format_int(inbound) : "")
+				.attr("title", inbound ? __("{0} received over the last {1} days", [ui.format_int(inbound), STATS_DAYS]) : null)
 				.toggleClass("wa-device__btn-count--empty", !inbound);
 		}
 
@@ -610,7 +705,7 @@ frappe.provide("whatsapp_next.devices");
 		render_meta() {
 			const row = this.row;
 			const offline = OFFLINE.includes(row.status);
-			const since = offline ? row.disconnected_at || row.logged_out_at || row.last_seen : row.last_seen;
+			const since = offline ? offline_since(row) : row.last_seen;
 			const pairs = [
 				{
 					key: "seen",
@@ -715,6 +810,8 @@ frappe.provide("whatsapp_next.devices");
 				],
 			});
 			this.mark_header();
+			// the title with its buttons and the state tabs stay while the cards scroll beneath
+			ui.pin_stack(this.$screen, [".sanad-pagehead__row", ".wa-devices__rail"]);
 			this.bind_realtime();
 			$(wrapper).on("hide", () => this.unbind_realtime());
 		}
@@ -791,7 +888,7 @@ frappe.provide("whatsapp_next.devices");
 				const signed_out = offline.some((row) => row.status === "Logged Out");
 				const tone = signed_out ? "red" : "amber";
 				const one = offline.length === 1 ? offline[0] : null;
-				const since = one && ago(one.disconnected_at || one.logged_out_at || one.last_seen);
+				const since = one && ago(offline_since(one));
 				const title = one
 					? since
 						? __("Device {0} has been offline since {1}.", [one.device_name || one.name, since])
@@ -853,8 +950,7 @@ frappe.provide("whatsapp_next.devices");
 			for (let i = 0; i < 3; i++) {
 				$grid.append(`
 					<div class="wa-device wa-device--skeleton" aria-hidden="true">
-						<span class="wa-device__rail"></span>
-						<div class="wa-device__head"><span class="wa-device__avatar"></span><span class="wa-device__identity"><span class="sanad-skeleton__line" style="inline-size:55%"></span><span class="sanad-skeleton__line" style="inline-size:38%;block-size:9px"></span></span></div>
+						<div class="wa-device__head"><span class="wa-device__identity"><span class="sanad-skeleton__line" style="inline-size:55%"></span><span class="sanad-skeleton__line" style="inline-size:38%;block-size:9px"></span></span></div>
 						<div class="wa-device__tags"><span class="sanad-skeleton__line" style="inline-size:82px;block-size:22px;border-radius:999px"></span></div>
 						<div class="wa-device__panel"><div class="wa-device__stats"><span class="wa-device__stat"></span><span class="wa-device__stat"></span><span class="wa-device__stat"></span></div><div class="wa-device__bar wa-device__bar--idle"></div></div>
 						<div class="wa-device__meta"><span class="sanad-skeleton__line" style="inline-size:70%"></span><span class="sanad-skeleton__line" style="inline-size:70%"></span></div>
@@ -949,6 +1045,7 @@ frappe.provide("whatsapp_next.devices");
 			new PairingDialog({
 				device: row ? row.name : null,
 				device_name: row ? row.device_name : "",
+				phone: row ? row.phone_e164 : null,
 				on_done: () => this.refresh(),
 			}).show();
 		}
@@ -985,11 +1082,7 @@ frappe.provide("whatsapp_next.devices");
 				title: __("Disconnect {0}?", [title]),
 				message: __("Sending from this number stops at once. Queued messages stay in the queue until the device is paired again; nothing is deleted."),
 				load_impact: () =>
-					Promise.all([
-						frappe.db.count("WhatsApp Queue Item", { filters: { device: row.name, status: ["in", ["Queued", "Paused", "Held"]] } }),
-						frappe.db.count("WhatsApp Notification", { filters: { device: row.name } }),
-						frappe.db.count("WhatsApp Campaign", { filters: { device: row.name } }),
-					]).then(([queued, notifications, campaigns]) => [
+					ui.call(IMPACT_API, { device: row.name }, { silent: true }).then(({ queued, notifications, campaigns }) => [
 						{ label: __("Messages that stop being sent"), value: ui.format_int(queued), tone: "amber" },
 						{ label: __("Templates bound to this device"), value: ui.format_int(notifications) },
 						{ label: __("Campaigns bound to this device"), value: ui.format_int(campaigns) },
@@ -1013,11 +1106,7 @@ frappe.provide("whatsapp_next.devices");
 				danger: true,
 				ack_checkbox: __("I understand this device will be removed from the platform."),
 				load_impact: () =>
-					Promise.all([
-						frappe.db.count("WhatsApp Log", { filters: { device: row.name } }),
-						frappe.db.count("WhatsApp Notification", { filters: { device: row.name } }),
-						frappe.db.count("WhatsApp Campaign", { filters: { device: row.name } }),
-					]).then(([messages, notifications, campaigns]) => [
+					ui.call(IMPACT_API, { device: row.name }, { silent: true }).then(({ messages, notifications, campaigns }) => [
 						{ label: __("Messages kept in the log"), value: ui.format_int(messages) },
 						{ label: __("Templates that lose their device"), value: ui.format_int(notifications), tone: "red" },
 						{ label: __("Campaigns that stop working"), value: ui.format_int(campaigns), tone: "red" },
@@ -1047,7 +1136,9 @@ frappe.provide("whatsapp_next.devices");
 	frappe.pages["wa-devices"].on_page_show = function (wrapper) {
 		if (!wrapper.wa_devices) return;
 		wrapper.wa_devices.bind_realtime();
-		wrapper.wa_devices.refresh();
+		// the first show follows the load, which has just read everything: only a return reloads
+		if (wrapper.wa_devices._shown) wrapper.wa_devices.refresh();
+		wrapper.wa_devices._shown = true;
 		// `frappe.route_options = {pair: <device>}` (the native Device form's Pair button) opens the
 		// pairing dialog for that device once the page is showing.
 		const pair = frappe.route_options && frappe.route_options.pair;

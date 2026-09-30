@@ -12,10 +12,11 @@ from typing import Any
 import frappe
 from frappe import _
 from frappe.utils import cstr, get_url_to_form
-from frappe.utils.jinja import get_jenv, validate_template
+from frappe.utils.jinja import validate_template
 from jinja2 import TemplateError
 
 from whatsapp_next.exceptions import WAValidationError
+from whatsapp_next.services.wa_format import tidy_markers
 
 # Fieldtypes offered as `doc.<fieldname>` hints in the editor (layout / table / code excluded).
 _HINT_EXCLUDED_TYPES = frozenset(
@@ -66,6 +67,49 @@ class RenderResult:
 		return self.error is None
 
 
+# Callables a template may use on a Document (`doc`, its child rows). Everything else that is
+# callable — `save`, `db_set`, `delete`, `run_method`, `submit` … — would let whoever writes the
+# text (an Agent's quick-send body) write the record, so the sandbox refuses it.
+_DOC_READ_METHODS = frozenset({"get", "get_formatted", "is_new", "as_dict", "get_title", "get_url"})
+# Frappe's safe data utils minus the two that read beyond the message's own data.
+_UTILS_EXCLUDED = frozenset({"get_thumbnail_base64_for_image", "get_user_info_for_avatar"})
+
+
+def _message_jenv():
+	"""The Jinja environment every message body renders in.
+
+	Frappe's `get_jenv()` hands a template `frappe.get_doc`, `frappe.get_all`, `frappe.db.*`
+	(and, unless `disable_render_safe_exec` is set, `frappe.db.set_value`, `frappe.call` …):
+	fine for a System Manager's print format, not for a message body an Agent types in quick
+	send. A message needs what the documented context gives (`BASE_VARIABLES`): `doc`,
+	`recipient`, dates, links, `_`, `frappe.utils` and `frappe.format_value` — nothing that reads
+	another record or writes."""
+	env = getattr(frappe.local, "wa_message_jenv", None)
+	if env is not None:
+		return env
+	from frappe.model.document import Document
+	from frappe.utils.jinja import _get_jenv
+	from frappe.utils.safe_exec import SAFE_DATA_UTILS, NamespaceDict
+
+	base = _get_jenv()  # the sandboxed environment and Frappe's filters, before any globals
+
+	class MessageEnvironment(type(base)):
+		def is_safe_attribute(self, obj, attr, value):
+			if isinstance(obj, Document) and callable(value) and attr not in _DOC_READ_METHODS:
+				return False
+			return super().is_safe_attribute(obj, attr, value)
+
+	env = MessageEnvironment(undefined=base.undefined, cache_size=0)
+	env.filters = base.filters.copy()
+	utils = NamespaceDict({k: v for k, v in SAFE_DATA_UTILS.items() if k not in _UTILS_EXCLUDED})
+	env.globals.update(
+		frappe=NamespaceDict(utils=utils, format_value=frappe.format_value, format=frappe.format_value, _=_),
+		_=_,
+	)
+	frappe.local.wa_message_jenv = env
+	return env
+
+
 def compile_check(source: str | None) -> list[str]:
 	"""Return a list of compile errors (empty when the Jinja source compiles)."""
 	if not (source or "").strip():
@@ -90,17 +134,18 @@ def render(
 		return RenderResult(text="")
 	ctx = dict(context or {})
 	try:
-		# Same sandbox as `frappe.render_template` (SandboxedEnvironment + Frappe globals), but the
-		# raw Jinja exception is kept instead of Frappe's HTML-wrapped ValidationError.
+		# Frappe's sandbox, but with the message globals only (see `_message_jenv`); the raw
+		# Jinja exception is kept instead of Frappe's HTML-wrapped ValidationError.
 		if ".__" in source:
 			raise TemplateError(_("Illegal template"))
-		text = get_jenv().from_string(source).render(ctx)
+		text = _message_jenv().from_string(source).render(ctx)
 	except Exception as exc:
 		message = f"{type(exc).__name__}: {cstr(exc)}"[:_MAX_ERROR]
 		if strict:
 			frappe.throw(_("Template render failed: {0}").format(message), WAValidationError)
 		return RenderResult(text="", error=message)
-	return RenderResult(text=(text or "").strip())
+	# what the preview shows is what is sent: markers repaired as `dispatch.create_outbound` does
+	return RenderResult(text=tidy_markers((text or "").strip()) or "")
 
 
 def render_text(source: str | None, context: dict[str, Any] | None = None, *, fallback: str = "") -> str:
@@ -154,6 +199,8 @@ def sample_context(reference_doctype: str | None, sample_json: str | dict | None
 		reference_doctype
 		and frappe.db.exists("DocType", reference_doctype)
 		and not frappe.get_meta(reference_doctype).issingle
+		# a caller who may not read the DocType at all gets the general sample, not an error
+		and frappe.has_permission(reference_doctype, "read")
 	):
 		# the caller's own permissions: a preview must never show a record they cannot read
 		latest = frappe.get_list(reference_doctype, pluck="name", order_by="modified desc", limit=1)

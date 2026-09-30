@@ -26,7 +26,9 @@
 	const run = (method, args, message, after) =>
 		ui.call(method, args)
 			.then((r) => {
-				ui.Toast.success(typeof message === "function" ? message(r) : message);
+				// the row moved on between the drawer opening and the click (sent, paused elsewhere…)
+				if (r && r.count === 0) ui.Toast.info(__("Nothing changed: the message is no longer in that state."));
+				else ui.Toast.success(typeof message === "function" ? message(r) : message);
 				after && after(r);
 				return r;
 			})
@@ -34,12 +36,13 @@
 				if (err && err.message !== "cancelled") ui.Toast.error(err);
 			});
 
-	/** The queue's own verbs on one row, shown inside the message drawer the row opens. */
+	/** The queue's own verbs on one row, shown inside the message drawer the row opens. Cancelling is
+	 * the message's own "Cancel" there; the queue does not add a second one that marks the row
+	 * Deleted (owner, 2026-09-30). Bulk cancel stays on the list. */
 	const queue_actions = (doc, refresh) => [
 		{ label: __("Pause"), icon: "es-line-time", condition: () => is_manager() && doc.status === "Queued", handler: () => run("queue.pause_items", { names: [doc.name] }, __("Message paused"), refresh) },
 		{ label: __("Resume"), icon: "es-line-zap", condition: () => is_manager() && doc.status === "Paused", handler: () => run("queue.resume_items", { names: [doc.name] }, __("Message resumed"), refresh) },
 		{ label: __("Retry"), icon: ui.icons.resend, condition: () => is_manager() && doc.status === "Dead Letter", handler: () => run("queue.retry_dead_letter", { names: [doc.name] }, __("Message re-queued"), refresh) },
-		{ label: __("Cancel this message"), icon: ui.icons.cancel, danger: true, condition: () => is_manager() && ["Queued", "Paused", "Dead Letter"].includes(doc.status), handler: () => whatsapp_next.queue.cancel_item(doc, refresh) },
 	];
 
 	const open_drawer = (doc, refresh, listview) => {
@@ -72,6 +75,12 @@
 	const queued_of = (s) => cint(s && s.counts_by_status && s.counts_by_status.Queued);
 	const rate_of = (s) => cint(s && s.rate) || RATE_MIN;
 	const per_minute = (rate) => __("{0} / minute", [ui.format_int(rate)]);
+	/** An achieved rate: whole numbers from 10 up, one decimal below, so a trickle of 20 messages in
+	 * the hour reads 0.3/min and not a flat 0. */
+	const achieved_text = (v) => {
+		const n = Number(v) || 0;
+		return n >= 10 || Number.isInteger(n) ? ui.format_int(Math.round(n)) : n.toLocaleString(frappe.boot.lang, { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+	};
 
 	/** "Nothing to send" · "Less than a minute" · "18 minutes" · "1 h 20 min". */
 	const eta_text = (queued, rate) => {
@@ -317,7 +326,7 @@
 				</div>
 				<p class="wa-ops__rate-note" id="${id}-note">
 					<span class="wa-ops__verdict">${sanad.ui.StatusBadge.html({ label: verdict.label, colour: verdict.tone })}</span>
-					${ui.escape(achieved == null ? __("A higher rate raises the platform's ban risk.") : __("Achieving {0}/min over the last hour.", [ui.format_int(Math.round(achieved))]))}
+					${ui.escape(achieved == null ? __("A higher rate raises the platform's ban risk.") : __("Achieving {0}/min over the last hour.", [achieved_text(achieved)]))}
 				</p>
 			</div>`;
 		};
@@ -339,7 +348,7 @@
 			const paused = !!s.paused;
 			const failed = count_by(s, "Dead Letter");
 			const remaining = s.platform_queue && s.platform_queue.messages_remaining;
-			const achieved = t && t.per_minute != null ? Math.round(t.per_minute) : null;
+			const achieved = t && t.per_minute != null ? t.per_minute : null;
 			const clock = paused || !depth ? "—" : drain_clock(depth, rate) || __("now");
 
 			const state_cell = `
@@ -359,7 +368,7 @@
 					<div class="wa-ops__metrics">
 						${state_cell}
 						${metric(__("In queue"), ui.escape(ui.format_int(depth)), `<span class="wa-ops__parts">${breakdown_html(s)}</span>`, { wide: true })}
-						${metric(__("Throughput"), achieved == null ? "—" : ui.escape(__("{0}/min", [ui.format_int(achieved)])), ui.escape(__("last hour, actual")))}
+						${metric(__("Throughput"), achieved == null ? "—" : ui.escape(__("{0}/min", [achieved_text(achieved)])), ui.escape(__("last hour, actual")))}
 						${metric(__("Drains by"), ui.escape(clock), ui.escape(paused ? __("sending is paused") : depth ? __("in {0}", [eta_phrase(depth, rate)]) : __("queue is empty")))}
 						${metric(__("Given up"), ui.escape(ui.format_int(failed)), failed ? `<button type="button" class="wa-ops__link" data-status="Dead Letter">${ui.escape(__("Review and retry"))}</button>` : ui.escape(__("no failures")), { tone: failed ? "red" : "" })}
 						${metric(
@@ -443,18 +452,19 @@
 
 	// ---- rows: enrich with the linked outbound's document + open the drawer -----------------
 
-	/** Document type / no. live on the linked outbound: fetch them for the page once per render. */
+	/** Document type / no. and the message's own status live on the linked outbound: fetch them
+	 * for the page once per render. */
 	const enrich_rows = (listview, datalist) => {
 		const rows = (listview.data || []).filter((d) => d.outbound_message && d._ref === undefined);
 		if (!rows.length) return;
 		rows.forEach((d) => (d._ref = null));
 		frappe.db
-			.get_list("WhatsApp Log", { fields: ["name", "reference_doctype", "reference_name"], filters: { name: ["in", rows.map((d) => d.outbound_message)] }, limit: rows.length })
+			.get_list("WhatsApp Log", { fields: ["name", "reference_doctype", "reference_name", "status"], filters: { name: ["in", rows.map((d) => d.outbound_message)] }, limit: rows.length })
 			.then((logs) => {
 				const map = {};
 				(logs || []).forEach((l) => (map[l.name] = l));
 				rows.forEach((d) => (d._ref = map[d.outbound_message] || {}));
-				datalist && datalist.refresh && datalist.refresh();
+				datalist && datalist.render && datalist.render(); // redraw the rows in hand; `refresh()` refetches and drops the enrichment
 			})
 			.catch(() => {});
 	};
@@ -476,11 +486,35 @@
 			],
 			date: { label: __("Expected send"), fieldname: "scheduled_at" },
 			columns: [
-				{ fieldname: "name", label: "#", width: 40, align: "end", sortable: false, type: "number", format: (v, doc) => ui.format_int(page_start() + (listview.data || []).indexOf(doc) + 1) },
-				whatsapp_next.columns.party({ width: 200, fallback: __("No name — from the device directory") }),
+				{ fieldname: "name", label: "#", width: 40, fieldtype: "Int", sortable: false, type: "number", format: (v, doc) => ui.format_int(page_start() + (listview.data || []).indexOf(doc) + 1) },
+				whatsapp_next.columns.party({ width: 200, fallback: __("No name") }),
 				{ fieldname: "_ref_doctype", label: __("Document type"), width: 110, sortable: false, format: (v, doc) => (doc._ref && doc._ref.reference_doctype ? ui.escape(__(doc._ref.reference_doctype)) : "—") },
 				{ fieldname: "_ref_name", label: __("Document no."), width: 100, sortable: false, format: (v, doc) => (doc._ref && doc._ref.reference_name ? frappe.utils.get_form_link(doc._ref.reference_doctype, doc._ref.reference_name, true) : "—") },
-				{ fieldname: "status", label: __("Status"), width: 100, type: "status", sortable: true },
+				{
+					// The message's own status (Sent · Delivered · Read · Failed …), not the queue row's:
+					// "Completed" only ever meant "handed to the platform". It lives on the linked
+					// outbound, so it arrives with the document columns (`enrich_rows`).
+					fieldname: "status",
+					label: __("Status"),
+					width: 150,
+					sortable: false,
+					format: (v, doc) => {
+						if (doc._ref && doc._ref.status) return whatsapp_next.fmt.badge("WhatsApp Log", { status: doc._ref.status }, doc._ref.status);
+						if (doc.outbound_message && !doc._ref) return `<span class="sanad-skeleton__line" style="inline-size:64px" aria-hidden="true"></span>`;
+						return whatsapp_next.fmt.badge(listview.doctype, doc, doc.status);
+					},
+					// what went wrong, how far the automatic retries have gone, and a queue hold
+					sub: (doc) => {
+						const parts = [];
+						if (doc.status === "Paused") parts.push(ui.escape(__("Paused in the queue")));
+						// a row that went out in the end keeps its earlier failed try on record (the form
+						// shows it), but under a green "Sent" it only reads as a live error
+						const error = doc.status === "Completed" ? "" : doc.last_error_code ? whatsapp_next.fmt.error_text(doc.last_error_code, doc.last_error) : doc.dead_letter_reason || doc.last_error;
+						if (error) parts.push(`<span class="wa-queue__error" title="${ui.escape(doc.last_error || error)}">${ui.escape(error)}</span>`);
+						if (cint(doc.attempts) && doc.status !== "Completed") parts.push(ui.escape(__("Attempt {0} of {1}", [cint(doc.attempts), cint(doc.max_attempts) || 3])));
+						return parts.join(" · ");
+					},
+				},
 				whatsapp_next.columns.device({ width: 130 }),
 				{
 					fieldname: "scheduled_at",
@@ -551,7 +585,7 @@
 
 	frappe.listview_settings[DT] = {
 		hide_name_column: true,
-		add_fields: ["status", "outbound_message", "device", "campaign", "phone_e164", "display_name", "priority", "scheduled_at", "attempts", "max_attempts", "last_error_code"],
+		add_fields: ["status", "outbound_message", "device", "campaign", "phone_e164", "display_name", "priority", "scheduled_at", "attempts", "max_attempts", "last_error_code", "last_error", "dead_letter_reason"],
 
 		// The one status → colour rule; badges read it through `sanad.ui.indicator_for`.
 		get_indicator(doc) {

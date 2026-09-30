@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import add_to_date, now_datetime
@@ -240,6 +242,23 @@ class TestDispatch(IntegrationTestCase):
 	def _queued(self, n=2):
 		return [dispatch.create_and_enqueue(_spec(phone=p)) for p in (P1, P2, P3)[:n]]
 
+	def test_automatic_attempts_stop_at_three(self):
+		"""Whatever a row or Settings says, the dispatcher gives up after the third try."""
+		_out, item = self._queued(1)[0]
+		frappe.db.set_value("WhatsApp Queue Item", item, {"max_attempts": 9, "attempts": 2})
+		row = frappe.db.get_value(
+			"WhatsApp Queue Item",
+			item,
+			["name", "outbound_message", "campaign", "attempts", "max_attempts", "status", "device"],
+			as_dict=True,
+		)
+		self.assertEqual(
+			dispatch._retry_later(row, "gateway timeout", "timeout", at=now_datetime()), "Dead Letter"
+		)
+		self.assertEqual(self._item(item).status, "Dead Letter")
+		with self.assertRaises(WAValidationError):
+			ensure_settings(max_attempts=5)
+
 	def test_batch_accepted_and_held(self):
 		rows = self._queued(2)
 		with fake_provider() as fp:
@@ -276,6 +295,10 @@ class TestDispatch(IntegrationTestCase):
 			(self._item(item).status, self._item(item).attempts, self._log(out).status),
 			("Queued", 0, "Queued"),
 		)
+		# the give-up stamp goes with it: a row back in the queue has not completed anything
+		self.assertIsNone(self._item(item).completed_at)
+		# a second click (or a second manager) finds nothing left to retry
+		self.assertEqual(dispatch.retry_dead_letter([item]), 0)
 
 	def test_batch_transient_backs_off_then_dead_letters(self):
 		out, item = self._queued(1)[0]
@@ -336,6 +359,88 @@ class TestDispatch(IntegrationTestCase):
 		dispatch.apply_status(held, "Sent")
 		self.assertEqual((self._log(held).status, self._log(held).held_reason), ("Sent", None))
 		self.assertFalse(dispatch.apply_status("no-such-row", "Sent"))
+
+	def test_a_read_that_overtakes_delivered_fills_delivered_at(self):
+		out = dispatch.create_outbound(_spec())
+		dispatch.apply_status(out, "Sent", provider_message_id="pm-read")
+		self.assertTrue(dispatch.apply_status(out, "Read"))
+		self.assertFalse(dispatch.apply_status(out, "Delivered"))  # backwards, but not lost:
+		row = frappe.db.get_value("WhatsApp Log", out, ["delivered_at", "read_at"], as_dict=True)
+		self.assertEqual(row.delivered_at, row.read_at)
+
+	def test_a_repeated_receipt_keeps_the_first_time(self):
+		"""The platform retries a receipt under a new event id: the second copy changes nothing,
+		and a `delivered` that arrives with no `sent` before it still says when it was sent."""
+		out = dispatch.create_outbound(_spec())
+		first = add_to_date(now_datetime(), minutes=-5)
+		self.assertTrue(dispatch.apply_status(out, "Delivered", at=first, provider_message_id="pm-rep"))
+		self.assertFalse(dispatch.apply_status(out, "Delivered", at=now_datetime(), provider_message_id="pm-rep"))
+		row = frappe.db.get_value("WhatsApp Log", out, ["sent_at", "delivered_at"], as_dict=True)
+		self.assertEqual((row.sent_at, row.delivered_at), (first, first))
+		# a repeat that brings an id the row lacked completes it, still without moving the time
+		self.assertTrue(dispatch.apply_status(out, "Delivered", at=now_datetime(), platform_message_log="PML-rep"))
+		self.assertEqual(frappe.db.get_value("WhatsApp Log", out, "delivered_at"), first)
+
+	def test_a_late_failure_closes_its_queue_item(self):
+		"""Taken by the platform (`Completed`), failed later: the queue item says so, with the
+		platform's error, instead of `Completed` beside a failed message."""
+		out, item = self._queued(1)[0]
+		frappe.db.set_value(
+			"WhatsApp Queue Item", item, {"status": "Completed", "last_error_code": "timeout"}, update_modified=False
+		)
+		self.assertTrue(
+			dispatch.apply_status(
+				out, "Failed", error_code="recipient_not_registered", reason="Personal ID is Not Registered"
+			)
+		)
+		row = self._item(item)
+		self.assertEqual(
+			(row.status, row.last_error_code, row.dead_letter_reason),
+			("Dead Letter", "recipient_not_registered", "Personal ID is Not Registered"),
+		)
+		self.assertEqual(reconcile.assert_coherence(), [])
+
+	def test_status_of_a_campaign_message_recounts_its_campaign(self):
+		"""The hand-off counts rows still `Sending`; the platform's answer must count them again."""
+		refresh = "whatsapp_next.services.campaign_runner.refresh_counters"
+		out = dispatch.create_outbound(_spec())
+		frappe.db.set_value("WhatsApp Log", out, "campaign", "WA-CAMP-TEST-CNT", update_modified=False)
+		with patch.object(frappe, "enqueue") as enq:
+			self.assertTrue(dispatch.apply_status(out, "Sent", provider_message_id="pm-cnt"))
+		calls = [c for c in enq.call_args_list if c.args and c.args[0] == refresh]
+		self.assertEqual(len(calls), 1)
+		self.assertEqual(calls[0].kwargs["campaign"], "WA-CAMP-TEST-CNT")
+		self.assertTrue(calls[0].kwargs["enqueue_after_commit"])
+		plain = dispatch.create_outbound(_spec(phone=P2))
+		with patch.object(frappe, "enqueue") as enq:
+			dispatch.apply_status(plain, "Sent")
+		self.assertFalse([c for c in enq.call_args_list if c.args and c.args[0] == refresh])
+
+	def test_a_nameless_message_takes_the_name_the_system_knows(self):
+		"""A reply to a sender WhatsApp sent without a push name: the number's contact names it."""
+		from whatsapp_next.services.guards import status_writer
+		from whatsapp_next.tests.conftest_frappe import delete_all, ensure_contact
+
+		contact = ensure_contact("Dispatch Named Contact", P3)
+		delete_all("WhatsApp Number", {"name": P3})
+		with status_writer():
+			frappe.get_doc(
+				{
+					"doctype": "WhatsApp Number",
+					"phone_e164": P3,
+					"contact": contact,
+					"display_name": "Dispatch Named Contact",
+				}
+			).insert(ignore_permissions=True)
+		try:
+			out = dispatch.create_outbound(_spec(phone=P3, source_type="Command Reply", skip_policy=True))
+			row = frappe.db.get_value("WhatsApp Log", out, ["display_name", "contact"], as_dict=True)
+			self.assertEqual((row.display_name, row.contact), ("Dispatch Named Contact", contact))
+			given = dispatch.create_outbound(_spec(phone=P3, display_name="Given Name"))
+			self.assertEqual(frappe.db.get_value("WhatsApp Log", given, "display_name"), "Given Name")
+		finally:
+			delete_all("WhatsApp Number", {"name": P3})
+			delete_all("Contact", {"first_name": "Dispatch Named Contact"})
 
 	def test_send_test_message(self):
 		out = dispatch.create_outbound(_spec(is_test=True))

@@ -92,7 +92,7 @@ class TestPicker(IntegrationTestCase):
 
 	def test_sources_and_manual(self):
 		keys = [s["key"] for s in picker.list_sources("WhatsApp Campaign")]
-		self.assertEqual(keys, ["Contact Group", "Contact", "DocType", "Excel", "vCard", "Manual"])
+		self.assertEqual(keys, ["Contact Group", "Contact", "WhatsApp Number", "DocType", "Excel", "vCard", "Manual"])
 		self.assertEqual(picker.search_groups("PickerTest")["rows"][0]["name"], GROUP)
 		members = picker.get_group_members(GROUP)
 		self.assertEqual(
@@ -154,6 +154,40 @@ class TestPicker(IntegrationTestCase):
 		with patch.object(picker, "MAX_UPLOAD_BYTES", 10):
 			with self.assertRaises(WAFileError):
 				picker.parse_upload(url, "vcf")
+
+	def test_whatsapp_numbers_source(self):
+		"""Unlinked individual WhatsApp Numbers, found by their saved name, added as their own source."""
+		w1, w2, g = "+966500000851", "+966500000852", "120363000000000851@g.us"
+		delete_all("WhatsApp Number", {"name": ("in", [w1, w2, g])})
+		contact = frappe.get_all("Contact", limit=1, pluck="name")[0]
+		with status_writer():
+			for key, kind, extra in (
+				(w1, "Individual", {"saved_name": "PickerTest Saved Friend", "display_name": "Push One"}),
+				(w2, "Individual", {"contact": contact, "display_name": "Linked Two"}),
+				(g, "Group", {"display_name": "PickerTest Group Chat"}),
+			):
+				frappe.get_doc(
+					{"doctype": "WhatsApp Number", "phone_e164": key, "number_type": kind, **extra}
+				).insert(ignore_permissions=True)
+		try:
+			self.assertIn("WhatsApp Number", [s["key"] for s in picker.list_sources()])
+			found = picker.search_whatsapp_numbers("PickerTest Saved")
+			self.assertEqual([r["phone_e164"] for r in found["rows"]], [w1])  # linked and group rows stay out
+			self.assertEqual(found["rows"][0]["display_name"], "PickerTest Saved Friend")
+			self.assertEqual(found["rows"][0]["source_type"], "WhatsApp Number")
+			self.assertEqual(picker.search_whatsapp_numbers("966500000851")["total"], 1)
+			res = picker.commit_add(
+				"WhatsApp Contact Group", GROUP, found["rows"], source_type="WhatsApp Number"
+			)
+			self.assertEqual(res["added"], 1)
+			self.assertEqual(
+				frappe.db.get_value(
+					"WhatsApp Contact Group Member", {"parent": GROUP, "phone_e164": w1}, "source_type"
+				),
+				"WhatsApp Number",
+			)
+		finally:
+			delete_all("WhatsApp Number", {"name": ("in", [w1, w2, g])})
 
 	def test_preview_and_commit_group(self):
 		rows = [

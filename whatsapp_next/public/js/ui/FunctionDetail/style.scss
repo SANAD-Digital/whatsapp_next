@@ -149,7 +149,11 @@ $fd-mono: "IBM Plex Mono", ui-monospace, monospace;
 		&--sm { padding-block: 8px; }
 	}
 
-	&__copytext { font-size: 12px; color: var(--wa-ink-2); line-height: 1.9; white-space: pre-wrap; user-select: text; overflow-wrap: anywhere; }
+	// a template mixes Jinja and Arabic: each line takes the direction of its own first letter,
+	// so `*{{ data.name }}*` reads left to right and an Arabic line right to left
+	// the same for a template being edited in the preview
+	&__tpl { unicode-bidi: plaintext; text-align: start; }
+	&__copytext { display: block; font-size: 12px; color: var(--wa-ink-2); line-height: 1.9; white-space: pre-wrap; unicode-bidi: plaintext; text-align: start; user-select: text; overflow-wrap: anywhere; }
 
 	&__copy {
 		position: absolute;

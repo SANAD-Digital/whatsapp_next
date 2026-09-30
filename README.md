@@ -32,7 +32,6 @@ whatsapp_next/
   services/                 business logic (phone, dispatch, read layer, audit, ...)
   api/v1/                   whitelisted endpoints, one module per area (D-031)
   webhooks/v1/              inbound receiver (guest), verify, idempotency
-  patches/v0_1/             composite indexes, one-time backfills
   fixtures/                 roles, custom field
   tests/                    app-level tests (run with `bench run-tests --app whatsapp_next`)
   translations/ar.csv       Arabic UI strings

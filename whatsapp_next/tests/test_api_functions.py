@@ -79,6 +79,29 @@ class TestApiFunctions(IntegrationTestCase):
 			with self.assertRaises(WANotFoundError):
 				api.remove(function_key="document_info")
 
+	def test_update_state_is_read_against_the_catalog(self):
+		with as_user("WhatsApp Manager"):
+			api.install(function_key="ping")
+			# the daily flag is stale both ways: the storefront compares the versions itself
+			frappe.db.set_value(
+				"WhatsApp Function",
+				"ping",
+				{"installed_version": "0.9.0", "update_available": 0},
+				update_modified=False,
+			)
+			entry = {e["function_key"]: e for e in api.get_catalog()["entries"]}["ping"]
+			self.assertTrue(entry["update_available"])
+			frappe.db.set_value(
+				"WhatsApp Function",
+				"ping",
+				{"installed_version": "1.0.0", "update_available": 1},
+				update_modified=False,
+			)
+			entry = {e["function_key"]: e for e in api.get_catalog()["entries"]}["ping"]
+			self.assertFalse(entry["update_available"])
+			not_installed = {e["function_key"]: e for e in api.get_catalog()["entries"]}["document_info"]
+			self.assertFalse(not_installed["update_available"])
+
 	def test_get_manifest(self):
 		with as_user("WhatsApp Viewer"):
 			m = api.get_manifest(function_key="document_info")
@@ -129,6 +152,14 @@ class TestApiFunctions(IntegrationTestCase):
 				(1, ["ping"], "document_info", "nope"),
 			)
 			self.assertEqual(frappe.db.get_value("WhatsApp Function", "ping", "installed_version"), "1.0.0")
+			# a site ahead of the catalog is never moved back by "update to latest"
+			frappe.db.set_value(
+				"WhatsApp Function", "ping", "installed_version", "1.10.0", update_modified=False
+			)
+			res = api.update_many(function_keys=["ping"])
+			self.assertEqual((res["count"], res["skipped"][0]["name"]), (0, "ping"))
+			self.assertEqual(frappe.db.get_value("WhatsApp Function", "ping", "installed_version"), "1.10.0")
+			frappe.db.set_value("WhatsApp Function", "ping", "installed_version", "1.0.0", update_modified=False)
 			res = api.set_status_many(function_keys=["ping", "document_info"], status="Inactive")
 			self.assertEqual((res["count"], res["skipped"]), (2, []))
 			res = api.set_status_many(function_keys=["ping"], status="Inactive")

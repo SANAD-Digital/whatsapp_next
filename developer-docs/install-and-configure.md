@@ -23,7 +23,7 @@ Python dependencies (`openpyxl`, `vobject`) come from `pyproject.toml`. `phonenu
 | Roles | `ensure_roles` | `WhatsApp Manager`, `WhatsApp Agent`, `WhatsApp Viewer`, `WhatsApp Contact User` (desk access). They are also shipped as fixtures. |
 | Command service user | `ensure_command_service_user` | `wa-commands@<site>`, a System User that is **disabled, with no roles and no welcome mail**. Commands run as this user, never as Administrator (D-012). To use commands, enable it and grant only what your functions need. It must not be a System Manager. |
 | Settings defaults | `ensure_settings_defaults` | `default_country` from System Settings, and `command_service_user` = the service user |
-| Composite indexes | `add_indexes` → `patches/v0_1/add_indexes.py` | Composite indexes on Log, Inbound, Queue Item, Audit Log, Notification, Notification Alert and Webhook Event. Composite **unique** keys on `(device, provider_message_id)` for Inbound (D-035) and `(event_name, event_id)` for Webhook Event (D-047). |
+| Composite indexes | `add_indexes` in `install.py` (after install and after every migrate) | Composite indexes on Log, Inbound, Queue Item, Audit Log, Notification, Notification Alert and Webhook Event. Composite **unique** keys on `(device, provider_message_id)` for Inbound (D-035) and `(event_name, event_id)` for Webhook Event (D-047). |
 | Contact warning | `warn_contact_open_to_all` | Prints a warning while role `All` still has rights on `Contact` (see §7) |
 | Desktop tile | `ensure_desktop_icons` | The app tile (`/app/wa-home`) and the WhatsApp workspace tile (D-131) |
 

@@ -129,7 +129,8 @@
    "label": "Reply Device",
    "fieldtype": "Link",
    "options": "WhatsApp Device",
-   "description": "The device that sends the reply, instead of the one in Settings."
+   "description": "Not used: a command is answered from the device that received it.",
+   "hidden": 1
   },
   {
    "fieldname": "access_modes",
@@ -280,7 +281,7 @@
    "select": 1
   }
  ],
- "sort_field": "creation",
+ "sort_field": "run_count",
  "sort_order": "DESC",
  "states": [],
  "track_changes": 1,

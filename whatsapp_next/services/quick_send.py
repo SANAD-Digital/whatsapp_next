@@ -95,6 +95,9 @@ def preview(
 		source = frappe.db.get_value("WhatsApp Template", template, "body")
 		if source is None:
 			return {"body": "", "errors": [_("WhatsApp Template {0} not found").format(template)]}
+	if reference_doctype and reference_name and not context:
+		# the rendered body shows the record's fields: only to someone who may read it
+		frappe.has_permission(reference_doctype, "read", reference_name, throw=True)
 	ctx = context or (
 		templates.context_for(reference_doctype, reference_name)
 		if reference_doctype and reference_name

@@ -11,8 +11,9 @@ frappe.ui.form.on("WhatsApp Queue Item", {
 		const run = (method, message) =>
 			ui
 				.call(method, { names: [doc.name] })
-				.then(() => {
-					ui.Toast.success(message);
+				.then((r) => {
+					if (r && r.count === 0) ui.Toast.info(__("Nothing changed: the message is no longer in that state."));
+					else ui.Toast.success(message);
 					reload();
 				})
 				.catch((err) => ui.Toast.error(err));
@@ -24,7 +25,9 @@ frappe.ui.form.on("WhatsApp Queue Item", {
 		if (doc.status === "Queued") frm.add_custom_button(__("Pause"), () => run("queue.pause_items", __("Message paused")));
 		if (doc.status === "Paused") frm.add_custom_button(__("Resume"), () => run("queue.resume_items", __("Message resumed")));
 		if (doc.status === "Dead Letter") frm.add_custom_button(__("Retry"), () => run("queue.retry_dead_letter", __("Message re-queued")));
-		if (["Queued", "Paused", "Dead Letter"].includes(doc.status)) {
+		// `delete_items` only takes a row that has not been sent or given up: offering it on a dead
+		// letter ended in "Message cancelled" while nothing changed
+		if (["Queued", "Paused"].includes(doc.status)) {
 			frm.add_custom_button(__("Cancel this message"), () => whatsapp_next.queue.cancel_item(doc, reload));
 		}
 	},

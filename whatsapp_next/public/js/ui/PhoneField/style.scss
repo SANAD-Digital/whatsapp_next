@@ -325,3 +325,11 @@
 		inline-size: 100%;
 	}
 }
+
+// `sanad.ui.group_tag()`: the "Group" badge after a group's name or JID, on its line.
+.sanad-group-tag {
+	display: inline-flex;
+	vertical-align: middle;
+	margin-inline-start: 6px;
+	flex: none;
+}

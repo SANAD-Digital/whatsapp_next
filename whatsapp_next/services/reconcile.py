@@ -272,13 +272,15 @@ def resolve_expired_holds(days: int = HELD_EXPIRY_DAYS) -> int:
 
 
 def finalize_campaigns() -> int:
-	"""`Running` campaigns with no open outbound → `campaign_runner.finalize_if_done`."""
+	"""`Running` campaigns: recount (`campaign_runner.refresh_counters`, which writes the counters
+	and recipient statuses, then closes a campaign with no open outbound). Returns how many closed."""
 	try:
 		from whatsapp_next.services import campaign_runner
 	except ImportError:  # phase order: campaign_runner lands in B-15
 		return 0
 	n = 0
 	for name in frappe.get_all("WhatsApp Campaign", filters={"status": "Running"}, pluck="name"):
-		if campaign_runner.finalize_if_done(name):
+		campaign_runner.refresh_counters(name)
+		if frappe.db.get_value("WhatsApp Campaign", name, "status") != "Running":
 			n += 1
 	return n

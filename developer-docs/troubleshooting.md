@@ -16,7 +16,7 @@ list (`last_error`, attempts), `WhatsApp Log.error_code`, `WhatsApp Audit Log`, 
 | A batch fails and the device flips to **Disconnected** | The provider raised `DeviceOfflineError` on the whole call. Every claimed row went back to `Queued` with back-off | Reconnect the device. The rows are then sent on the next tick |
 | Items stuck in **Sending** | A worker died after claiming them | `reconcile.requeue_stale_claims` (every 5 minutes) puts claims older than 10 minutes back in the queue |
 | Items in **Dead Letter** | `max_attempts` was used up, or the error is not retryable | Read `error_code` (table below), fix the cause, then **Retry** (`dispatch.retry_dead_letter`) |
-| `connection_status = Failed`, sends fail with `auth` | Credentials rejected (`AuthError` → `WAProviderAuthError` 502), or the link is suspended or revoked | Sign in again in the wizard, or check the keys in Settings and run **Test connection** |
+| `connection_status = Failed`, sends fail with `auth` | Credentials rejected (`AuthError` → `WAProviderAuthError` 424), or the link is suspended or revoked | Sign in again in the wizard, or check the keys in Settings and run **Test connection** |
 | "Platform base URL is not configured" (`AuthError NOT_CONFIGURED`) | Neither `WhatsApp Settings.platform_base_url` nor `whatsapp_platform_base_url` is set (R-027) | `bench --site <site> set-config whatsapp_platform_base_url https://…` (D-103) |
 | "This site does not know where the WhatsApp platform is" on sign-in | Same as above | Same as above |
 | Status stays **Sent** or **Sending**, never Delivered / Read | Webhooks are not arriving: `webhook_status` is not `Active`, the endpoint is `Locked` after failed deliveries, or the site URL is not public https | Settings → Webhook → **Register** (`settings.setup_webhook`). Set `whatsapp_webhook_base_url` when the site sits behind a private host or tunnel (D-119). `reconcile_statuses` catches missed statuses every 5 minutes in the meantime |
@@ -59,7 +59,7 @@ JSON error carries `exc_type` and the class `code`.
 | `WAProviderRejectedError` | 422 | `provider_rejected` | Platform business rejection (`reason`, `provider_code`) |
 | `WANotSupportedError` | 422 | `not_supported` | The active provider lacks the capability (422, not 501: Desk's `request.js` breaks on 501) |
 | `WARateLimitError` | 429 | `rate_limit` | Provider or local rate limit |
-| `WAProviderAuthError` | 502 | `provider_auth` | Credentials rejected by the platform |
+| `WAProviderAuthError` | 424 | `provider_auth` | Credentials rejected by the platform |
 | `WAProviderUnavailableError` | 503 | `provider_unavailable` | Transient provider failure |
 
 Provider-side exceptions (`providers/exceptions.py`): `AuthError`, `PermissionDeniedError`,

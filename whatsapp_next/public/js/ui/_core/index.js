@@ -43,15 +43,33 @@ ui.api = function (key) {
  */
 ui.call = function (method, args = {}, { silent = false, freeze = false, freeze_message } = {}) {
 	return new Promise((resolve, reject) => {
-		frappe.call({
+		const req = frappe.call({
 			method: ui.api(method),
 			args,
 			freeze,
 			freeze_message,
 			silent,
 			callback: (r) => resolve(r.message),
-			error: (r) => reject(ui.error_from(r)),
+			// Frappe hands the body only for some statuses; on 500 / 502 / 503 / 504 it calls this
+			// with nothing, which left every such error as "Something went wrong" — the body is
+			// read from the request below instead (a promise settles once, so no double reject).
+			error: (r) => r && reject(ui.error_from(r)),
 		});
+		if (req && typeof req.fail === "function") {
+			req.fail((xhr) => {
+				let body = xhr && xhr.responseJSON;
+				if (!body && xhr && xhr.responseText) {
+					try {
+						body = JSON.parse(xhr.responseText);
+					} catch (e) {
+						body = null;
+					}
+				}
+				const err = ui.error_from(body || xhr);
+				err.http_status = xhr && xhr.status;
+				reject(err);
+			});
+		}
 	});
 };
 
@@ -75,6 +93,14 @@ ui.error_from = function (r) {
 	}
 	const exc_type = (r && (r.exc_type || (r.responseJSON && r.responseJSON.exc_type))) || "";
 	if (!message) {
+		// an exception raised without `frappe.throw` carries its text only here:
+		// "<app>.exceptions.WAValidationError: <text>"
+		const exception = r && (r.exception || (r.responseJSON && r.responseJSON.exception));
+		if (typeof exception === "string" && exception.includes(": ")) {
+			message = exception.slice(exception.indexOf(": ") + 2);
+		}
+	}
+	if (!message) {
 		message =
 			r && r.status === 0 ? __("You are offline") : __("Something went wrong. Please try again.");
 	}
@@ -95,6 +121,98 @@ ui.is_rtl = () =>
 ui.uid = (prefix = "sanad") => `${prefix}-${frappe.utils.get_random(8)}`;
 
 ui.debounce = (fn, wait = 250) => frappe.utils.debounce(fn, wait);
+
+/**
+ * Where a number column sits in every list and table of the kit: a whole number (Int) in the
+ * middle, a decimal / amount / percentage (Float, Currency, Percent) at the end — the left in
+ * Arabic, the right in English, where the digits line up. `null` for anything that is not a
+ * number, so the column keeps its own alignment.
+ */
+ui.link_renderers = ui.link_renderers || {};
+
+/**
+ * A link's own look, when the host app gave its DocType one: `ui.link_renderers[doctype] =
+ * (name, display, doc) => html`. Every list cell, table and drawer value that shows a link to that
+ * DocType goes through it, so one kind of record reads the same everywhere. `null` when there is
+ * none and the caller draws its default.
+ */
+ui.link_html = (doctype, name, display, doc) => {
+	const fn = doctype && ui.link_renderers[doctype];
+	return fn && name ? fn(name, display, doc) : null;
+};
+
+/**
+ * Pin a page's header band while the page scrolls: `ui.pin_stack($root, [".sanad-pagehead__row",
+ * ".my-toolbar"])`. Each element found under `$root` sticks under the ones before it (its offset is
+ * their heights, re-measured whenever any of them changes size), on the page's own background so
+ * the cards scroll away beneath it. The total height is published on `$root` as `--sanad-pin-h`,
+ * and a table under the band scrolls inside itself below it, so its sticky head stays in view too.
+ * Returns a function that unpins.
+ */
+ui.pin_stack = function ($root, selectors) {
+	const root = $($root)[0];
+	if (!root) return () => {};
+	root.classList.add("sanad-pinned-page");
+	const items = () => selectors.map((s) => root.querySelector(s)).filter((el) => el && el.offsetParent !== null);
+	// the band is painted with whatever the page is painted with, so nothing shows through it
+	const backdrop = () => {
+		for (let el = root; el; el = el.parentElement) {
+			const bg = getComputedStyle(el).backgroundColor;
+			if (bg && bg !== "transparent" && !/rgba\(.*,\s*0\)$/.test(bg)) return bg;
+		}
+		return "var(--surface-white)";
+	};
+	const layout = () => {
+		let top = 0;
+		const bg = backdrop();
+		items().forEach((el) => {
+			el.classList.add("sanad-pin");
+			el.style.insetBlockStart = `${top}px`;
+			el.style.setProperty("--sanad-pin-bg", bg);
+			top += el.getBoundingClientRect().height;
+		});
+		root.style.setProperty("--sanad-pin-h", `${Math.round(top)}px`);
+		fit_tables(top);
+	};
+	// The page scrolls inside Desk's `.main-section`, not the window. A table under the band is
+	// given exactly the room left between the band and what follows it (its pager, the page's own
+	// bottom padding), so scrolled to the end it sits right under the band and scrolls inside
+	// itself — with its sticky head in view — instead of sliding its head under the band.
+	const scroller = (() => {
+		for (let el = root.parentElement; el; el = el.parentElement) {
+			if (/(auto|scroll)/.test(getComputedStyle(el).overflowY)) return el;
+		}
+		return document.scrollingElement;
+	})();
+	const fit_tables = (band) => {
+		root.querySelectorAll(".sanad-datalist__wrap").forEach((wrap) => {
+			if (!wrap.offsetParent) return;
+			const view = scroller.getBoundingClientRect();
+			const content_end = view.top + scroller.scrollHeight - scroller.scrollTop;
+			const after = Math.max(0, content_end - wrap.getBoundingClientRect().bottom);
+			const room = scroller.clientHeight - band - after - 12;
+			wrap.style.maxBlockSize = `${Math.max(240, Math.round(room))}px`;
+		});
+	};
+	const ro = typeof ResizeObserver === "function" ? new ResizeObserver(() => layout()) : null;
+	const watch = () => items().forEach((el) => ro && ro.observe(el));
+	layout();
+	watch();
+	// elements drawn later (a filter bar that loads its options) join the band when they appear
+	const mo = new MutationObserver(ui.debounce(() => {
+		layout();
+		watch();
+	}, 100));
+	mo.observe(root, { childList: true, subtree: true });
+	$(window).on("resize.sanadpin", layout);
+	return () => {
+		ro && ro.disconnect();
+		mo.disconnect();
+		$(window).off("resize.sanadpin", layout);
+	};
+};
+
+ui.num_align = (fieldtype) => ({ Int: "center", Float: "end", Currency: "end", Percent: "end" })[fieldtype] || null;
 
 ui.throttle = (fn, wait = 1000) => frappe.utils.throttle(fn, wait);
 

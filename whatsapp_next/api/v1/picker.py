@@ -68,6 +68,12 @@ def search_contacts(
 
 
 @api_endpoint(roles=PICKER_ROLES, methods=("GET", "POST"))
+def search_whatsapp_numbers(txt: str | None = None, page: int = 1, page_length: int = 20) -> dict[str, Any]:
+	"""WhatsApp contacts not in the system: `{rows, total}` of unlinked individual WhatsApp Numbers."""
+	return picker.search_whatsapp_numbers(txt, page=page, page_length=page_length)
+
+
+@api_endpoint(roles=PICKER_ROLES, methods=("GET", "POST"))
 def list_doctype_rows(
 	document_type: str, filters: list | None = None, page: int = 1, page_length: int = 50
 ) -> dict[str, Any]:

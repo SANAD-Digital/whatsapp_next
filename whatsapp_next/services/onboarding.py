@@ -13,13 +13,13 @@ from typing import Any
 import frappe
 from frappe import _
 from frappe.utils import cint, now_datetime
-from frappe.utils.password import set_encrypted_password
 
 from whatsapp_next.exceptions import WAInvalidPhoneError, WAStateConflictError, WAValidationError
 from whatsapp_next.providers import exceptions as pex
 from whatsapp_next.providers import registry
 from whatsapp_next.providers.schemas import SignupState
 from whatsapp_next.services import audit, usage_sync, webhook_setup
+from whatsapp_next.services import settings as settings_service
 from whatsapp_next.services.phone import normalize
 
 # What sign-in / sign-up hand back and Settings stores; the first three are required to call the
@@ -131,7 +131,7 @@ def store_signup_credentials(state: SignupState, user: str | None = None) -> boo
 	if not values:
 		return False
 	for fieldname, value in values.items():
-		set_encrypted_password("WhatsApp Settings", "WhatsApp Settings", value, fieldname)
+		settings_service.store_secret(fieldname, value)
 	frappe.db.set_single_value(
 		"WhatsApp Settings",
 		"credentials_updated_at",
@@ -165,10 +165,10 @@ def signup_bootstrap() -> dict[str, Any]:
 
 
 def start_signup(
-	plan_code: str,
+	plan_code: str | None,
 	mobile: str,
 	full_name: str,
-	email: str,
+	email: str | None,
 	channel: str,
 	coupon_code: str | None = None,
 ) -> SignupState:
@@ -180,8 +180,49 @@ def start_signup(
 	if not e164:
 		frappe.throw(_("Invalid phone number: {0}").format(mobile), WAInvalidPhoneError)
 	return registry.get_provider().start_signup(
-		plan_code, e164, full_name, email, channel, coupon_code=coupon_code
+		signup_plan_code(plan_code), e164, full_name, email, channel, coupon_code=coupon_code
 	)
+
+
+def verification_route(extra: dict[str, Any]) -> dict[str, Any]:
+	"""How the platform proves the number, which it — not the form — decides:
+
+	- `whatsapp`: nothing is sent to the user. The platform hands back a code and its own number;
+	  the user sends the code **from the registered number** to that number, and the sender is
+	  the proof. The code is only useful from that number, so showing it on the page is the flow.
+	- `email`: the platform's signup device is not connected and it fell back to e-mail; the code
+	  went to the masked address and is typed in here.
+
+	`{channel, code?, platform_phone?, email?}`."""
+	channel = str(extra.get("verification_channel") or "").strip().lower()
+	if channel == "email" or (not channel and extra.get("code_sent")):
+		return {"channel": "email", "email": extra.get("email")}
+	if extra.get("code") and extra.get("device_phone"):
+		phone = str(extra["device_phone"]).strip()
+		return {
+			"channel": "whatsapp",
+			"code": str(extra["code"]),
+			"platform_phone": phone if phone.startswith("+") else f"+{phone}",
+		}
+	return {"channel": channel or None}
+
+
+def signup_plan_code(requested: str | None) -> str:
+	"""The plan code to send with a sign-up.
+
+	Every new account starts on the platform's free trial whatever is sent; the code names the
+	plan the subscription renews to after it, and the platform refuses the trial's own code
+	there ("The selected plan is not available"). The bootstrap lists exactly the codes it
+	accepts, cheapest first, so a code not on that list — the page's old "free" default, or
+	"free_trial" — becomes the first one."""
+	plans = signup_bootstrap().get("plans") or []
+	codes = [p.get("plan_code") or p.get("code") for p in plans]
+	codes = [c for c in codes if c]
+	if requested in codes:
+		return requested
+	if not codes:
+		frappe.throw(_("The platform offers no plan to sign up on. Try again later."), WAValidationError)
+	return codes[0]
 
 
 def get_signup_status(request_key: str) -> SignupState:
@@ -225,6 +266,32 @@ def complete_password_reset(request_key: str, password: str) -> SignupState:
 	return registry.get_provider().complete_password_reset(request_key, password)
 
 
+PASSWORD_RESET_PURPOSE = "Password Reset"
+
+
+def finish_password_reset(
+	request_key: str, password: str, code: str | None = None, user: str | None = None
+) -> dict[str, Any]:
+	"""The whole end of a password recovery, the way subscription platforms do it: verify the
+	code (an email reset; a WhatsApp reset is verified by the user's reply), set the new
+	password, then sign this site in with it so the person lands on a linked account instead of
+	a second form. Returns what `login` returns."""
+	if len(password or "") < 8:
+		frappe.throw(_("The password must be at least 8 characters."), WAValidationError)
+	provider = registry.get_provider()
+	if code:
+		provider.verify_signup_code(request_key, code.strip(), purpose=PASSWORD_RESET_PURPOSE)
+	else:
+		status = provider.get_password_reset_status(request_key).status
+		if status not in ("Verified", "Completed"):
+			frappe.throw(_("The code has not been confirmed yet."), WAValidationError)
+	state = provider.complete_password_reset(request_key, password)
+	email = (state.extra or {}).get("email")
+	if not email:
+		frappe.throw(_("The password was changed. Sign in with it."), WAValidationError)
+	return login("", email, password, user=user)
+
+
 def login(platform_base_url: str, email: str, password: str, user: str | None = None) -> dict[str, Any]:
 	"""Sign in against the platform and store the credentials it hands back.
 
@@ -245,10 +312,18 @@ def login(platform_base_url: str, email: str, password: str, user: str | None = 
 		save_credentials(platform_base_url=platform_base_url, user=user)
 	if not registry.platform_base_url():
 		frappe.throw(
-			_("This site does not know where the WhatsApp platform is. Set it in WhatsApp Settings, or set `whatsapp_platform_base_url` in the site config."),
+			_(
+				"This site does not know where the WhatsApp platform is. Set it in WhatsApp Settings, or set `whatsapp_platform_base_url` in the site config."
+			),
 			WAValidationError,
 		)
-	result = registry.get_provider().login(email, password) or {}
+	try:
+		result = registry.get_provider().login(email, password) or {}
+	except (pex.AuthError, pex.PermissionDeniedError):
+		# A wrong email or password is the person's answer to fix in the card, not a server
+		# fault: as an error it went out as HTTP 502, which Frappe's client reports without a
+		# body, so the card could only say "Something went wrong".
+		return {"ok": False, "message": _("The sign-in details or the password are not right.")}
 	returned = result.get("credentials") or {}
 	values = {f: returned.get(f) for f in CREDENTIAL_FIELDS if returned.get(f)}
 	if not values:
@@ -292,7 +367,9 @@ def link_site(user: str | None = None) -> dict[str, Any]:
 
 
 def _step_error(exc: Exception) -> str:
-	return (str(exc) if isinstance(exc, (pex.ProviderError, frappe.ValidationError)) else "") or exc.__class__.__name__
+	return (
+		str(exc) if isinstance(exc, (pex.ProviderError, frappe.ValidationError)) else ""
+	) or exc.__class__.__name__
 
 
 def validate_coupon(code: str, email: str | None = None, mobile: str | None = None) -> dict[str, Any]:
@@ -310,16 +387,34 @@ def steps(settings=None) -> list[Step]:
 	"""The four onboarding steps with their current state (no provider call)."""
 	s = settings or _settings()
 	connected = frappe.db.count("WhatsApp Device", {"status": "Connected"})
+	linked = has_credentials(s)
 	return [
 		Step(
 			"credentials",
-			has_credentials(s),
-			None if has_credentials(s) else _("Platform URL and API credentials are required"),
+			linked,
+			None
+			if linked
+			else _("This site is not linked to a WhatsApp account yet. Create a free account or sign in."),
 		),
-		Step("connection", s.connection_status == "OK", s.last_connection_error or s.connection_status),
+		# a connection test passed with keys that are gone since says nothing about now
+		Step(
+			"connection",
+			linked and s.connection_status == "OK",
+			_connection_detail(s) if linked else _("No account linked"),
+		),
 		Step("device", connected > 0, _("{0} connected device(s)").format(connected)),
-		Step("webhook", s.webhook_status == "Active", s.webhook_status or _("Not registered")),
+		Step("webhook", s.webhook_status == "Active", _(s.webhook_status) if s.webhook_status else _("Not registered")),
 	]
+
+
+def _connection_detail(s) -> str:
+	"""The step's note, in the user's language. The provider's own error (`last_connection_error`,
+	English, e.g. "invalid key") stays on Settings under "Last error", where it is read as a detail."""
+	if s.connection_status == "OK":
+		return _("Connected")
+	if s.connection_status == "Failed":
+		return _("The last connection test failed. Open Settings to see why and test it again.")
+	return _("The connection has not been tested yet.")
 
 
 def status() -> dict[str, Any]:

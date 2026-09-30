@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
@@ -149,13 +149,50 @@ class TestNumbersMaterializer(IntegrationTestCase):
 		nm.upsert_from_message("WhatsApp Log", name)
 		self.assertEqual(_numbers()[K3].outbound_count, 1)
 		self.assertEqual(nm.upsert_from_message("WhatsApp Log", "no-such-row").visited, 0)
-		# the after_insert hook enqueues (deduplicated per key) unless the flag is set
-		with patch.object(frappe, "enqueue") as enq:
+		# the after_insert hook enqueues after commit (deduplicated per key) unless the flag is set
+		with patch.object(frappe.db, "after_commit") as after_commit:
 			_out(self.device, phone=K3, ts=self._t(2), skip_hook=False)
 			_out(self.device, phone=K3, ts=self._t(3), skip_hook=True)
+		callbacks = [
+			c.args[0] for c in after_commit.add.call_args_list if "on_message_insert" in c.args[0].__qualname__
+		]
+		self.assertEqual(len(callbacks), 1)
+		with (
+			patch("frappe.utils.background_jobs.get_job", return_value=None),
+			patch.object(frappe, "enqueue") as enq,
+		):
+			callbacks[0]()
 		self.assertEqual(enq.call_count, 1)
 		self.assertEqual(enq.call_args.kwargs["job_id"], nm._job_id(K3))
 		self.assertTrue(enq.call_args.kwargs["deduplicate"])
+
+	def test_refresh_is_not_lost_while_a_job_runs(self):
+		"""A queued job reads the new row too (skip); a running one may not have (follow-up)."""
+		from rq.job import JobStatus
+
+		def job(status):
+			j = MagicMock()
+			j.get_status.return_value = status
+			return j
+
+		base = nm._job_id(K1)
+		for jobs, expected in (
+			({base: job(JobStatus.QUEUED)}, "skip"),
+			({base: job(JobStatus.FINISHED)}, base),
+			({base: job(JobStatus.STARTED)}, base + "-next"),
+			({base: job(JobStatus.STARTED), base + "-next": job(JobStatus.QUEUED)}, "skip"),
+			({base: job(JobStatus.STARTED), base + "-next": job(JobStatus.STARTED)}, None),
+		):
+			with (
+				patch("frappe.utils.background_jobs.get_job", side_effect=jobs.get),
+				patch.object(frappe, "enqueue") as enq,
+			):
+				nm._enqueue_refresh(K1, "WhatsApp Log", "x")
+			if expected == "skip":
+				enq.assert_not_called()
+				continue
+			self.assertEqual(enq.call_args.kwargs["job_id"], expected)
+			self.assertEqual(enq.call_args.kwargs["deduplicate"], expected is not None)
 
 	def test_group_rows_and_display_name(self):
 		_out(self.device, phone=None, jid=GROUP, recipient_type="Group", ts=self._t(1))
@@ -181,6 +218,24 @@ class TestNumbersMaterializer(IntegrationTestCase):
 			GROUP,
 		)
 		self.assertEqual(nm.message_key({"doctype": "WhatsApp Log", "phone_e164": K1, "jid": None}), K1)
+		# the read layer's key: a LID sender with a known number is the number's
+		lid = "123456789012501@lid"
+		self.assertEqual(
+			nm.message_key({"doctype": "WhatsApp Inbound Message", "phone_e164": K1, "sender_jid": lid}), K1
+		)
+		self.assertEqual(
+			nm.message_key({"doctype": "WhatsApp Inbound Message", "phone_e164": None, "sender_jid": lid}), lid
+		)
+		self.assertEqual(
+			nm.message_key(
+				{"doctype": "WhatsApp Log", "phone_e164": K1, "jid": lid, "recipient_type": "Individual"}
+			),
+			K1,
+		)
+		self.assertEqual(
+			nm.message_key({"doctype": "WhatsApp Log", "phone_e164": GROUP, "jid": GROUP, "recipient_type": "Group"}),
+			GROUP,
+		)
 
 	def test_nightly_watermark_and_idempotency(self):
 		_out(self.device, ts=self._t(1))

@@ -23,6 +23,9 @@ NUMBER_FIELDS: tuple[str, ...] = (
 	"jid",
 	"number_type",
 	"display_name",
+	"saved_name",
+	"synced_device",
+	"synced_at",
 	"contact",
 	"link_status",
 	"linked_by",
@@ -127,10 +130,14 @@ def search_numbers(
 	filters: dict[str, Any] = {}
 	if link_status:
 		filters["link_status"] = link_status
-	or_filters: dict[str, Any] = {}
+	or_filters: list[list[Any]] = []
 	if txt and txt.strip():
 		like = f"%{txt.strip()}%"
-		or_filters = {"phone_e164": ("like", like), "display_name": ("like", like)}
+		or_filters = [["phone_e164", "like", like], ["display_name", "like", like]]
+		# a number typed the local way (`0501234567`, Arabic digits) finds its E.164 key
+		kind, key = classify(txt)
+		if kind == "Individual" and key != txt.strip():
+			or_filters.append(["phone_e164", "like", f"%{key}%"])
 	start, length = paginate(page, page_length)
 	rows = frappe.get_all(
 		"WhatsApp Number",
@@ -141,7 +148,12 @@ def search_numbers(
 		start=start,
 		page_length=length,
 	)
-	total = len(frappe.get_all("WhatsApp Number", filters=filters, or_filters=or_filters, pluck="name"))
+	total = frappe.get_all(
+		"WhatsApp Number",
+		filters=filters,
+		or_filters=or_filters,
+		fields=[{"COUNT": "*", "as": "total"}],
+	)[0].total
 	return {"rows": rows, "total": total}
 
 
@@ -171,3 +183,66 @@ def get_conversation_log(phone_e164: str) -> dict[str, Any]:
 	"""The number's conversation-state history (09 G-06): `{rows[{at, user, user_name, confirmed,
 	note}]}`, newest first. P: Contact User | Contact read."""
 	return {"rows": permissions.conversation_log(phone_e164)}
+
+
+# ---- fetching the phone's contacts ---------------------------------------------------------
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+def list_sync_devices() -> list[dict[str, Any]]:
+	"""Devices a contacts fetch can read: registered on the platform and not disabled — connected
+	first, then the default device, then the one heard from most recently: `[{name, device_name,
+	phone, status, is_default, synced_at}]`. P: Manager."""
+	default = frappe.db.get_single_value("WhatsApp Settings", "default_device")
+	rows = frappe.get_all(
+		"WhatsApp Device",
+		filters={"platform_device": ("is", "set"), "disabled": 0},
+		fields=["name", "device_name", "phone", "status"],
+		# the device heard from most recently first: a live session hears from the platform often
+		order_by="last_status_event_at desc",
+	)
+	last = {
+		r.synced_device: r.synced_at
+		for r in frappe.get_all(
+			"WhatsApp Number",
+			filters={"synced_device": ("in", [r.name for r in rows] or [""])},
+			fields=["synced_device", {"MAX": "synced_at", "as": "synced_at"}],
+			group_by="synced_device",
+		)
+	}
+	out = [{**r, "is_default": r.name == default, "synced_at": last.get(r.name)} for r in rows]
+	# stable: within each band the most recently heard-from device stays first
+	return sorted(out, key=lambda r: (r["status"] != "Connected", not r["is_default"]))
+
+
+@api_endpoint(roles=MANAGER)
+def sync_from_device(device: str) -> dict[str, Any]:
+	"""Start fetching `device`'s WhatsApp contacts into the Numbers table (`numbers_sync`, a `long`
+	job); the counts arrive on `wa:numbers:synced` for the caller. P: Manager."""
+	if not frappe.db.exists("WhatsApp Device", device):
+		frappe.throw(_("WhatsApp Device {0} not found").format(device), WANotFoundError)
+	from frappe.utils import now_datetime
+
+	from whatsapp_next.services import numbers_sync
+
+	numbers_sync.set_state(device, {"status": "running", "at": str(now_datetime())})
+	frappe.enqueue(
+		"whatsapp_next.services.numbers_sync.run_sync_job",
+		device=device,
+		user=frappe.session.user,
+		queue="long",
+		job_id=f"wa-numbers-sync-{device}",
+		deduplicate=True,
+		enqueue_after_commit=True,
+		timeout=900,
+	)
+	return {"queued": True, "device": device}
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+def get_sync_state(device: str) -> dict[str, Any]:
+	"""Where the last fetch of `device` stands: `{status: running|done|failed|none, stats?, error?,
+	at?}` — what a page polls when the realtime event does not reach it. P: Manager."""
+	from whatsapp_next.services import numbers_sync
+
+	return numbers_sync.state_of(device) or {"status": "none"}

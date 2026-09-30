@@ -15,7 +15,7 @@ class TestErrors(IntegrationTestCase):
 		self.assertEqual(wex.WAValidationError.http_status_code, 417)
 		self.assertEqual(wex.WANotFoundError.http_status_code, 404)
 		self.assertEqual(wex.WAStateConflictError.http_status_code, 409)
-		self.assertEqual(wex.WAProviderAuthError.http_status_code, 502)
+		self.assertEqual(wex.WAProviderAuthError.http_status_code, 424)
 		self.assertEqual(wex.WAProviderUnavailableError.http_status_code, 503)
 		self.assertEqual(wex.WAProviderRejectedError.http_status_code, 422)
 		self.assertEqual(wex.WARateLimitError.http_status_code, 429)
@@ -51,6 +51,10 @@ class TestErrors(IntegrationTestCase):
 		self.assertEqual(classify("Request timed out").code, "timeout")
 		self.assertEqual(classify("Invalid template variables").code, "invalid_template")
 		self.assertEqual(classify("Invalid phone number").code, "invalid_phone")
+		# the platform's own wording, behind an HTTP status
+		self.assertEqual(
+			classify("HTTP 500: WhatsApp Personal ID is Not Registered").code, "recipient_not_registered"
+		)
 		self.assertEqual(classify("").code, "unknown")
 		self.assertEqual(classify("something odd").code, "unknown")
 		for code in ERROR_CODES:

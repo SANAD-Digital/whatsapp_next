@@ -183,6 +183,36 @@ class TestCampaignRunner(IntegrationTestCase):
 		with self.assertRaises(WAStateConflictError):
 			runner.cancel(name)
 
+	def test_reconcile_closes_with_the_final_counts(self):
+		"""The periodic close writes the counts and recipient statuses, not only the status: a
+		campaign whose messages all went out must not end `Completed` with zero sent."""
+		from whatsapp_next.services import reconcile
+
+		name = _campaign(
+			self.device,
+			recipients=(P1,),
+			messages=[{"message_type": "Text", "body": "campaign-test hi"}],
+			scheduled_at=None,
+		)
+		with patch.object(frappe, "enqueue"):
+			runner.start(name)
+			runner.materialize(name)
+			with fake_provider():
+				dispatch.dispatch_device_batch(self.device)
+			for r in self._outbound(name):
+				dispatch.apply_status(r.name, "Delivered")
+		self.assertEqual(
+			frappe.db.get_value("WhatsApp Campaign", name, "sent_count"), 0
+		)  # counted at hand-off
+		reconcile.finalize_campaigns()
+		row = frappe.db.get_value(
+			"WhatsApp Campaign", name, ["status", "delivered_count", "queued_count"], as_dict=True
+		)
+		self.assertEqual((row.status, row.delivered_count, row.queued_count), ("Completed", 1, 0))
+		self.assertEqual(
+			frappe.db.get_value("WhatsApp Campaign Recipient", {"parent": name}, "status"), "Delivered"
+		)
+
 	def test_cancel_running_and_exclude_unknown(self):
 		name = _campaign(self.device, recipients=(P1, P3), exclude_unknown_numbers=1)
 		# P1 is known (an earlier message exists), P3 is not
@@ -225,6 +255,81 @@ class TestCampaignRunner(IntegrationTestCase):
 			runner.pause(name)
 		self.assertFalse(runner.finalize_if_done(name))
 		self.assertTrue(any(r["name"] == name for r in runner.sending_now()) is False)
+
+	def test_start_now_drops_the_schedule(self):
+		"""A scheduled campaign started by hand goes now: its messages are due now and the list
+		reads it as an immediate start. Only the scheduler's own start keeps `scheduled_at`."""
+		name = _campaign(self.device)
+		runner.schedule(name, add_to_date(now_datetime(), hours=3))
+		with patch.object(frappe, "enqueue"):
+			runner.start(name)
+		self.assertIsNone(frappe.db.get_value("WhatsApp Campaign", name, "scheduled_at"))
+		runner.materialize(name)
+		first = min(r.scheduled_at for r in self._outbound(name))
+		self.assertLess(first, add_to_date(now_datetime(), minutes=1))
+
+	def test_paused_before_materialization_still_gets_its_rows(self):
+		name = _campaign(self.device)
+		with patch.object(frappe, "enqueue"):
+			runner.start(name)
+		runner.pause(name, reason="early")  # the materialize job has not run yet
+		self.assertEqual(self._status(name), "Paused")
+		counts = runner.materialize(name)
+		self.assertEqual(counts["created"], 4)
+		self.assertEqual(self._status(name), "Paused")
+		self.assertEqual(dispatch.claim_batch(self.device, 10), [])  # held while paused
+		self.assertEqual(runner.materialize(name), {"skipped": 1})
+		runner.resume(name)
+		self.assertEqual(runner.counters_for(name).open, 4)
+
+	def test_cancel_during_materialization_stops_it(self):
+		name = _campaign(self.device, recipients=(P1, P2, P3))
+		with patch.object(frappe, "enqueue"):
+			runner.start(name)
+		# the cancel lands between two batches of the job
+		with patch.object(runner, "MATERIALIZE_BATCH", 2):
+			real = runner.dispatch.enqueue
+
+			def enqueue_then_cancel(names, **kw):
+				out = real(names, **kw)
+				if runner.counters_for(name).total == 2:
+					with status_writer():
+						frappe.db.set_value("WhatsApp Campaign", name, "status", "Cancelled")
+				return out
+
+			with patch.object(runner.dispatch, "enqueue", side_effect=enqueue_then_cancel):
+				runner.materialize(name)
+		c = runner.counters_for(name)
+		self.assertEqual(c.open, 0)
+		self.assertLess(c.total, 6)  # the third recipient was never materialized
+		self.assertFalse(
+			frappe.db.count(
+				"WhatsApp Campaign Recipient", {"parent": name, "status": ("in", ["Pending", "Queued"])}
+			)
+		)
+
+	def test_all_excluded_campaign_closes(self):
+		"""Every recipient set aside by the unknown-number policy: nothing to send, so it ends."""
+		name = _campaign(self.device, exclude_unknown_numbers=1)
+		with patch.object(frappe, "enqueue"), patch(
+			"whatsapp_next.services.read_layer.known_keys", return_value=set()
+		):
+			runner.start(name)
+			counts = runner.materialize(name)
+		self.assertEqual(counts["created"], 0)
+		self.assertEqual(self._status(name), "Completed")
+
+	def test_counters_for_many_matches_counters_for(self):
+		a = _campaign(self.device)
+		b = _campaign(self.device, recipients=(P3,))
+		for n in (a, b):
+			with patch.object(frappe, "enqueue"):
+				runner.start(n)
+			runner.materialize(n)
+		many = runner.counters_for_many([a, b])
+		self.assertEqual(many[a], runner.counters_for(a))
+		self.assertEqual((many[a].total, many[b].total), (4, 2))
+		self.assertEqual(runner.counters_for("no-such-campaign").total, 0)
 
 	def test_promote_scheduled(self):
 		name = _campaign(self.device)

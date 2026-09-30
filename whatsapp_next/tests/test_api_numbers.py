@@ -93,6 +93,8 @@ class TestApiNumbers(IntegrationTestCase):
 			self.assertEqual((res["total"], len(res["rows"])), (2, 1))
 			self.assertEqual(set(res["rows"][0]), set(api.SEARCH_FIELDS))
 			self.assertEqual(api.search_numbers(txt="ApiTest Group")["rows"][0]["name"], GROUP)
+			# typed the local way, the number still finds its E.164 key
+			self.assertEqual([r["name"] for r in api.search_numbers(txt="0500930101")["rows"]], [N1])
 			with self.assertRaises(WAValidationError):
 				api.search_numbers(link_status="Bogus")
 
@@ -150,6 +152,15 @@ class TestApiNumbers(IntegrationTestCase):
 				api.get_conversation_log(phone_e164=N3)
 		with as_user("WhatsApp Contact User"), self.assertRaises(WANotFoundError):
 			api.get_conversation_log(phone_e164="+966500939999")
+
+	def test_convert_a_group(self):
+		"""A group gets its own Contact, named after it, with no phone row: a group has no phone."""
+		with as_user("WhatsApp Contact User"):
+			out = api.convert_number(phone_e164=GROUP, first_name=f"{PREFIX} Group Contact")
+		self.assertEqual(frappe.db.get_value("WhatsApp Number", GROUP, "contact"), out["contact"])
+		self.assertEqual(frappe.get_doc("Contact", out["contact"]).phone_nos, [])
+		# the group keeps its own subject: it belongs to the contact, it is not the contact
+		self.assertEqual(frappe.db.get_value("WhatsApp Number", GROUP, "display_name"), "ApiTest Group")
 
 	def test_convert_many(self):
 		contact = self._contact()

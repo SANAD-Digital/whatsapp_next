@@ -8,10 +8,12 @@ from __future__ import annotations
 from typing import Any
 
 import frappe
+from frappe import _
 
 from whatsapp_next.api._common import api_endpoint
 from whatsapp_next.api.v1._roles import AGENT_UP, MANAGER
-from whatsapp_next.services import simulator
+from whatsapp_next.exceptions import WAPermissionError
+from whatsapp_next.services import permissions, simulator
 
 
 @api_endpoint(roles=AGENT_UP, methods=("GET", "POST"))
@@ -20,12 +22,33 @@ def get_context() -> dict[str, Any]:
 	return simulator.get_context()
 
 
+def _require_manager_to_act_as_party(sender_phone: str) -> None:
+	"""A command answers its sender with that sender's own records (`#doc` shows the customer's
+	invoice) and runs as the command service user, not as the caller. Simulating a number linked
+	to a Customer, Supplier, Employee or Sales Person would hand an Agent that party's data
+	without any read right on it, so only a Manager — who may already dry-run commands — can."""
+	if frappe.session.user == "Administrator" or set(MANAGER) & set(frappe.get_roles()):
+		return
+	contact = permissions.resolve_contact_by_phone(sender_phone)
+	if contact and frappe.db.exists(
+		"Dynamic Link",
+		{"parenttype": "Contact", "parent": contact, "link_doctype": ("in", list(permissions.PARTY_TYPES))},
+	):
+		frappe.throw(
+			_("Running commands as a customer's, supplier's or employee's number needs WhatsApp Manager"),
+			WAPermissionError,
+		)
+
+
 @api_endpoint(roles=AGENT_UP)
 def simulate_inbound(device: str, sender_phone: str, text: str, run_commands: bool = True) -> dict[str, Any]:
 	"""Store `text` as an `is_simulated` inbound from `sender_phone` on `device`, optionally run
 	the command router (dry-run, replies stored as `is_simulated` outbound rows, never sent) →
 	`{inbound, command_status, command, block_reason, reply_outbound, reply_body, replies[], error,
-	function_ms}`. `WAInvalidPhoneError` for a bad sender."""
+	function_ms}`. `WAInvalidPhoneError` for a bad sender; `WAPermissionError` when an Agent runs
+	commands as a number linked to a party."""
+	if run_commands:
+		_require_manager_to_act_as_party(sender_phone)
 	res = simulator.simulate_inbound(
 		device, sender_phone, text, run_commands=run_commands, persist=True, user=frappe.session.user
 	)
@@ -83,8 +106,9 @@ def dry_run_command(text: str, sender_phone: str, device: str | None = None) -> 
 
 @api_endpoint(roles=AGENT_UP, methods=("GET", "POST"))
 def list_conversations(txt: str | None = None, limit: int = 30) -> dict[str, Any]:
-	"""The conversation list: individual numbers with party type and last-message preview →
-	`{rows[{phone_e164, display_name, contact, link_status, party_type, last_body, last_at}], total}`."""
+	"""The conversation list: individual numbers and groups with party type and last-message
+	preview → `{rows[{phone_e164, number_type, display_name, contact, link_status, party_type,
+	last_body, last_at}], total}`."""
 	return simulator.conversations(txt, limit)
 
 

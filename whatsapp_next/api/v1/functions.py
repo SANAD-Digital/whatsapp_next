@@ -14,32 +14,58 @@ from whatsapp_next.api._common import api_endpoint
 from whatsapp_next.api.v1 import _bulk
 from whatsapp_next.api.v1._roles import MANAGER, VIEWER_UP
 from whatsapp_next.exceptions import WANotFoundError, WAValidationError
-from whatsapp_next.services import functions_catalog
+from whatsapp_next.services import command_router, functions_catalog
 
 STATUS_SCHEMA = {"status": {"enum": ["Active", "Inactive"]}}
+# catalog text is written in English and read in the user's language: these keys go through `_()`
+ENTRY_TEXT = ("function_name", "category", "description", "when_to_use")
+ROW_TEXT = ("label", "notes")
+
+
+def _t(value):
+	return _(value) if isinstance(value, str) and value else value
+
+
+def _localized_rows(rows) -> list[dict[str, Any]]:
+	return [{**row, **{k: _t(row.get(k)) for k in ROW_TEXT if k in row}} for row in rows or []]
 
 
 @api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
 def get_catalog() -> dict[str, Any]:
 	"""`{entries[], catalog_source[], checked_at}`: every catalog function merged with its install
-	state (`installed_version`, `update_available`, `handler_registered`, `commands_count`).
+	state (`installed_version`, `update_available`, `handler_registered`, `commands_count`,
+	`calls_30d`).
 	P: Viewer+."""
 	entries = functions_catalog.storefront()
-	counts = {
-		r.function: r.n
-		for r in frappe.get_all(
-			"WhatsApp Command", fields=["function", {"COUNT": "name", "as": "n"}], group_by="function"
-		)
-	}
+	# one read of the catalog for every entry (each `get_function` would re-read the cache)
+	catalog = functions_catalog.load_catalog()
+	counts: dict[str, int] = {}
+	calls: dict[str, int] = {}
+	commands = frappe.get_all("WhatsApp Command", fields=["name", "function"])
+	runs = command_router.recent_run_counts([c.name for c in commands], days=30)
+	for c in commands:
+		counts[c.function] = counts.get(c.function, 0) + 1
+		calls[c.function] = calls.get(c.function, 0) + runs.get(c.name, 0)
 	for e in entries:
+		e.update({k: _t(e.get(k)) for k in ENTRY_TEXT})
 		e["commands_count"] = counts.get(e["function_key"], 0)
-		versions = functions_catalog.get_function(e["function_key"]).versions
-		e["changelog"] = {v: (m or {}).get("changelog") for v, m in versions.items()}
+		# the prototype's "Calls (30 days)": runs of every command bound to the function
+		e["calls_30d"] = calls.get(e["function_key"], 0)
+		# read against the catalog now, not the daily `check_updates` flag: a version shipped
+		# since the last check shows at once, and an installed one never reads as outdated
+		e["update_available"] = bool(
+			e["installed"]
+			and e["latest_version"]
+			and functions_catalog.version_tuple(e["latest_version"])
+			> functions_catalog.version_tuple(e["installed_version"] or "0")
+		)
+		fn = catalog.functions.get(e["function_key"])
+		versions = fn.versions if fn else {}
+		e["changelog"] = {v: _t((m or {}).get("changelog")) for v, m in versions.items()}
 		e["releases"] = {
-			v: {"released": (m or {}).get("released"), "changelog": (m or {}).get("changelog")}
+			v: {"released": (m or {}).get("released"), "changelog": _t((m or {}).get("changelog"))}
 			for v, m in versions.items()
 		}
-	catalog = functions_catalog.load_catalog()
 	return {
 		"entries": entries,
 		"catalog_source": catalog.sources,
@@ -84,9 +110,10 @@ def get_manifest(function_key: str, version: str | None = None) -> dict[str, Any
 		"version": version,
 		"released": manifest.get("released"),
 		"changelog": manifest.get("changelog"),
-		"inputs": list(manifest.get("inputs") or []),
-		"settings": settings,
-		"outputs": list(manifest.get("outputs") or []),
+		"changelog_localized": _t(manifest.get("changelog")),
+		"inputs": _localized_rows(manifest.get("inputs")),
+		"settings": _localized_rows(settings),
+		"outputs": _localized_rows(manifest.get("outputs")),
 		"example": manifest.get("example"),
 		"suggested_commands": list(manifest.get("suggested_commands") or []),
 		"party_types": list(manifest.get("party_types") or fn.party_types or []),
@@ -165,7 +192,10 @@ def update_many(function_keys: list[str]) -> dict[str, Any]:
 		if not row:
 			frappe.throw(_("Function {0} is not installed").format(function_key), WANotFoundError)
 		latest = functions_catalog.get_function(function_key).latest_version()
-		if row.installed_version == latest:
+		# never a silent downgrade: a site ahead of the catalog (a rolled-back file) is skipped too
+		if functions_catalog.version_tuple(row.installed_version or "0") >= functions_catalog.version_tuple(
+			latest
+		):
 			raise _bulk.Skip("already latest")
 		functions_catalog.update(function_key, latest)
 

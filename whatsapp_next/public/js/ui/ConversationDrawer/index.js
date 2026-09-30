@@ -23,9 +23,6 @@ const DEFAULT_ROLES = {
 
 const sha1_cache = new Map();
 
-/** Wrap a phone / id in a bidi isolate so it reads LTR inside Arabic sentences and escaped text. */
-const ltr = (text) => `⁦${cstr(text)}⁩`;
-
 /** sha1(text) as hex through WebCrypto; resolves `null` when the API is unavailable (http). */
 async function sha1_hex(text) {
 	if (sha1_cache.has(text)) return sha1_cache.get(text);
@@ -90,7 +87,7 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 					<div class="sanad-convo__avatar" aria-hidden="true"></div>
 					<div class="sanad-panel__title">
 						<h2 class="sanad-convo__title" id="${title_id}"></h2>
-						<div class="sanad-panel__subtitle sanad-convo__sub sanad-tabular" dir="ltr"></div>
+						<div class="sanad-panel__subtitle sanad-convo__sub sanad-tabular"></div>
 					</div>
 					<div class="sanad-convo__badge"></div>
 					<button type="button" class="btn btn-sm btn-default sanad-convo__close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "sm")}</button>
@@ -160,9 +157,9 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 		const n = this.number;
 		const linked = !!(n && n.link_status === "Linked");
 		const known = !!n;
-		const name = this.opts.title || (n && n.display_name) || (known ? this.key : __("Unknown number"));
-		this.$title.text(name);
-		this.$sub.text(this.key !== name ? this.key : "");
+		const name = this.opts.title || (n && n.display_name) || (known ? ui.phone(this.key) : __("Unknown number"));
+		this.$title.text(name).append(ui.group_tag(this.key));
+		this.$sub.text(ui.phone(this.key) !== name ? ui.phone(this.key) : "");
 		this.$avatar.text(cstr(name).trim().slice(0, 2).toUpperCase());
 		if (n === undefined) {
 			this.$badge.html(`<span class="sanad-skeleton__line sanad-convo__badge-skeleton" aria-hidden="true"></span>`);
@@ -170,6 +167,18 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 			this.$badge.html(sanad.ui.ConversationDrawer.link_badge(linked));
 		}
 		this.render_actions();
+	}
+
+	/**
+	 * Open a Contact where the user can read it: its form for a user with native Contact read, the
+	 * product's Contacts page (which reads through the contextual layer) for a WhatsApp Contact User
+	 * without it — the form would only answer "not permitted".
+	 */
+	static open_contact(name) {
+		if (!name) return;
+		if (frappe.perm.has_perm("Contact", 0, "read")) return frappe.set_route("Form", "Contact", name);
+		frappe.route_options = { contact: name };
+		frappe.set_route((sanad.ui.config.defaults || {}).contacts_route || "wa-contacts");
 	}
 
 	/** Linked (green, icon) / Not linked (neutral gray, no icon — it is a state, not a warning). */
@@ -212,8 +221,9 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 			link: {
 				label: n.contact ? __("Open contact") : __("Add as contact"),
 				icon: n.contact ? "es-line-customer" : "es-line-add-people",
-				condition: () => (n.contact ? true : !!this.number && individual && typeof this.opts.on_link === "function"),
-				handler: () => (n.contact ? frappe.set_route("Form", "Contact", n.contact) : this.opts.on_link(this.number, this)),
+				// a group can belong to a contact too; only an LID has nothing to link
+				condition: () => (n.contact ? true : !!this.number && (individual || n.number_type === "Group") && typeof this.opts.on_link === "function"),
+				handler: () => (n.contact ? sanad.ui.ConversationDrawer.open_contact(n.contact) : this.opts.on_link(this.number, this)),
 			},
 			quick_send: {
 				label: __("Quick send"),
@@ -222,7 +232,8 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 				condition: () => typeof sanad.ui.QuickSend === "function",
 				handler: () => {
 					if (typeof sanad.ui.QuickSend !== "function") return;
-					const args = { device: this.opts.device || n.last_device || undefined };
+					// the message just sent joins the thread; a status event only patches rows it has
+					const args = { device: this.opts.device || n.last_device || undefined, on_sent: () => this.refresh_newest() };
 					if (this.key.includes("@")) args.jid = this.key;
 					else args.phone = this.key;
 					new sanad.ui.QuickSend(args);
@@ -263,13 +274,13 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 		const n = number || {};
 		const key = n.phone_e164 || n.name;
 		const confirmed = !cint(n.conversation_confirmed);
-		const who = n.display_name || ltr(key);
+		const who = n.display_name || ui.phone(key);
 		return sanad.ui.ConfirmDialog.ask({
 			title: confirmed ? __("Confirm this conversation?") : __("Remove the confirmation?"),
 			message: confirmed
 				? __("Marks {0} as a real, ongoing conversation. Agents rely on this flag.", [who])
 				: __("The number will no longer be marked as a confirmed conversation."),
-			impact: [{ label: __("Number"), value: ltr(key) }],
+			impact: [{ label: __("Number"), value: ui.phone(key) }],
 			reason_field: { label: __("Note"), required: true, description: __("Saved on the number and in the audit log.") },
 			confirm_label: confirmed ? __("Confirm conversation") : __("Remove confirmation"),
 			on_confirm: ({ reason }) =>

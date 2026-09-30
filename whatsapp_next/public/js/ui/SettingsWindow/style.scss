@@ -160,7 +160,6 @@ body.sanad-sw-open { overflow: hidden; }
 
 		// the caret points at the start side: the way back
 		.wa-ico { transform: rotate(90deg); }
-		[dir="rtl"] & .wa-ico { transform: rotate(-90deg); }
 	}
 
 	&__pane {

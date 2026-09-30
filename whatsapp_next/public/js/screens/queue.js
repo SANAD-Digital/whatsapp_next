@@ -12,7 +12,7 @@ frappe.provide("whatsapp_next.queue");
 			title: __("Cancel this message?"),
 			message: __("It will not be sent. The row stays in the queue as Deleted and the message is marked Cancelled."),
 			impact: [
-				{ label: __("Recipient"), value: doc.display_name || doc.phone_e164 || doc.name },
+				{ label: __("Recipient"), value: doc.display_name || ui.phone(doc.phone_e164 || doc.name) },
 				{ label: __("Status"), value: __(doc.status) },
 			],
 			reason_field: { label: __("Reason"), required: true },
@@ -21,8 +21,10 @@ frappe.provide("whatsapp_next.queue");
 			danger: true,
 			on_confirm: ({ reason }) => ui.call("queue.delete_items", { names: [doc.name], reason }),
 		})
-			.then(() => {
-				ui.Toast.success(__("Message cancelled"));
+			.then((r) => {
+				// the row was sent or given up while the dialog was open: say so, not "cancelled"
+				if (r && r.count === 0) ui.Toast.info(__("Nothing changed: the message is no longer in that state."));
+				else ui.Toast.success(__("Message cancelled"));
 				after && after();
 			})
 			.catch(() => {});

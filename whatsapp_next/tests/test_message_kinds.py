@@ -14,7 +14,13 @@ from whatsapp_next.api.v1 import bulk_send as bulk_api
 from whatsapp_next.api.v1 import simulator as sim_api
 from whatsapp_next.exceptions import WAFileError, WAValidationError
 from whatsapp_next.services import attachments
-from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_contact, ensure_device
+from whatsapp_next.tests.conftest_frappe import (
+	as_user,
+	delete_all,
+	ensure_contact,
+	ensure_device,
+	ensure_test_user,
+)
 
 PHONE = "+966500950001"
 PNG = bytes.fromhex(
@@ -31,6 +37,9 @@ class TestMessageKinds(IntegrationTestCase):
 		frappe.db.set_value("WhatsApp Device", cls.device, "status", "Connected")
 		cls.contact = ensure_contact("KindsTest Contact", PHONE)
 		cls.image = attachments.save_private_file(PNG, "kinds-test.png")
+		# a user may only send a file they can open (`attachments.require_readable`): the private
+		# image is the sending manager's own, as a file they uploaded themselves would be
+		frappe.db.set_value("File", {"file_url": cls.image}, "owner", ensure_test_user("WhatsApp Manager"))
 
 	@classmethod
 	def tearDownClass(cls):

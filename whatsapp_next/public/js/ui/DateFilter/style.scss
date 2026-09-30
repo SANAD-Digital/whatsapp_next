@@ -441,8 +441,8 @@
 		&--band { background: var(--sanad-accent-soft); border-radius: var(--sanad-band-radius, 0); }
 		&--band-start { background: linear-gradient(to right, transparent 50%, var(--sanad-accent-soft) 50%); }
 		&--band-end { background: linear-gradient(to right, var(--sanad-accent-soft) 50%, transparent 50%); }
-		[dir="rtl"] &--band-start { background: linear-gradient(to left, transparent 50%, var(--sanad-accent-soft) 50%); }
-		[dir="rtl"] &--band-end { background: linear-gradient(to left, var(--sanad-accent-soft) 50%, transparent 50%); }
+		// rtlcss turns `to right` into `to left` in the RTL bundle; the `[dir="rtl"]` twins that
+		// sat here were turned back and painted the band's half-cells on the wrong side in Arabic
 	}
 	&__pill {
 		appearance: none;

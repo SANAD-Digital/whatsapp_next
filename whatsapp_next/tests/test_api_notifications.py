@@ -76,7 +76,7 @@ class TestApiNotifications(IntegrationTestCase):
 		with as_user("WhatsApp Manager"):
 			out = api.preview(name=NAME, reference_name=self.todo.name)
 		self.assertEqual(out["message"], f"apitest apitest notif body -> {PHONE}")
-		self.assertEqual(out["recipients"], [{"phone_e164": "+966*******01", "source": "Fixed Number"}])
+		self.assertEqual(out["recipients"], [{"phone_e164": "966*******01", "source": "Fixed Number"}])
 		self.assertEqual(out["errors"], [])
 		frappe.db.set_value("ToDo", self.todo.name, "status", "Closed")
 		with as_user("WhatsApp Manager"):
@@ -84,6 +84,20 @@ class TestApiNotifications(IntegrationTestCase):
 			with self.assertRaises(WANotFoundError):
 				api.preview(name=NAME, reference_name="no-such-todo")
 		self.assertEqual(frappe.db.count("WhatsApp Log", {"phone_e164": PHONE}), 0)
+
+	def test_preview_reports_errors_without_writing_them(self):
+		# an error an earlier real send left on the notification is not this record's
+		frappe.db.set_value("WhatsApp Notification", NAME, "last_error", "condition: stale")
+		with as_user("WhatsApp Manager"):
+			self.assertEqual(api.preview(name=NAME, reference_name=self.todo.name)["errors"], [])
+		# a condition that fails is reported by the preview and left off the notification
+		frappe.db.set_value("WhatsApp Notification", NAME, {"condition": "doc.no_such.attr", "last_error": None})
+		frappe.clear_document_cache("WhatsApp Notification", NAME)
+		with as_user("WhatsApp Manager"):
+			out = api.preview(name=NAME, reference_name=self.todo.name)
+		self.assertFalse(out["meets_condition"])
+		self.assertTrue(out["errors"] and out["errors"][0].startswith("condition:"))
+		self.assertIsNone(frappe.db.get_value("WhatsApp Notification", NAME, "last_error"))
 
 	def test_document_fields(self):
 		with as_user("WhatsApp Manager"):

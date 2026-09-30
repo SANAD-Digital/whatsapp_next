@@ -28,11 +28,25 @@
 		'<svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.6"></circle><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>';
 
 	/** The list row title: a name when the number has one, the number itself otherwise. */
-	const title_of = (row) => cstr(row.display_name) || cstr(row.phone_e164) || cstr(row.name);
-	const hhmm = (ts) => (ts ? frappe.datetime.str_to_obj(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "");
+	const title_of = (row) => cstr(row.display_name) || sanad.ui.phone(cstr(row.phone_e164) || cstr(row.name));
+	/**
+	 * The row's time in the reader's time zone, as the thread draws it (`ChatThread.moment_of`):
+	 * the prototype's `hhmm` for a message of today; an older one would read as today's under a
+	 * bare time, so it carries "Yesterday" or its date instead.
+	 */
+	const when = (ts) => {
+		const m = ts ? sanad.ui.ChatThread.moment_of(ts) : null;
+		if (!m || !m.isValid()) return "";
+		const day = sanad.ui.ChatThread.day_of(ts);
+		return day.key === moment().format("YYYY-MM-DD") ? m.format("HH:mm") : day.label;
+	};
+	/** A stored datetime in the reader's time zone and date format (the panel's "Last message"). */
+	const user_datetime = (ts) => frappe.datetime.str_to_user(frappe.datetime.convert_to_user_tz(cstr(ts)));
 
 	/** The badge the prototype puts on a row: the party type, or what the number is not. */
 	const badge_of = (row) => {
+		// a group is carried like a number, but it is never an "unknown number"
+		if (row.number_type === "Group" || sanad.ui.is_group(row.phone_e164)) return { text: __("Group"), tone: "grp" };
 		if (!row.contact) return { text: __("Unknown number", null, "Simulator"), tone: "nf" };
 		if (!row.party_type) return { text: __("No classification"), tone: "wn" };
 		return { text: __(row.party_type), tone: "muted" };
@@ -123,58 +137,85 @@
 	// ---- the "who is this" panel ---------------------------------------------------------------
 
 	/**
-	 * The prototype's contact panel (`contactPanel`): who the number is — name, classification,
-	 * account link, messages, last message — and what it is linked to (its accounts and the contact
-	 * groups it belongs to), both in the rows layout: the label at the start, the value at the end.
+	 * Who the number is, in the compact record layout (owner, 2026-10-01: the prototype's
+	 * `contactPanel` rows were a tall list of one fact per line): its facts two to a row, then what
+	 * it is linked to — its accounts and the contact groups it belongs to — as one short list.
 	 */
 	function identity_panel(row) {
 		sanad.ui
 			.call("simulator.get_identity", { phone_e164: row.phone_e164 || row.name })
 			.then((who) => {
+				if (who.is_group) return group_panel(who);
 				const unknown = !who.contact;
 				const badge = unknown
 					? { text: __("Unknown number", null, "Simulator"), tone: "info" }
 					: who.party_type
 					? { text: __(who.party_type), tone: "muted" }
 					: { text: __("No classification"), tone: "warn" };
-				const ro = (key, label, value, extra = {}) => Object.assign({ key, label, type: "readonly", value }, extra);
 				const facts = [
-					ro("name", __("Name", null, "Simulator"), who.name || (unknown ? __("Not saved in contacts") : __("No name"))),
-					ro("type", __("Classification"), unknown ? __("Not saved") : who.party_type ? __(who.party_type) : __("No classification — neither a customer nor a supplier")),
-					ro("linked", __("Linked to an account"), who.link_status === "Linked" ? __("Linked to an account in the system") : __("Not linked")),
-					ro("msgs", __("Messages", null, "Simulator"), __("{0} sent · {1} received", [fmt_int(who.outbound_count), fmt_int(who.inbound_count)])),
+					{ k: __("Classification"), v: unknown ? __("Not saved") : who.party_type ? __(who.party_type) : __("No classification") },
+					{ k: __("Linked to an account"), v: who.link_status === "Linked" ? __("Linked") : __("Not linked"), tone: who.link_status === "Linked" ? "ok" : "" },
+					{ k: __("Messages", null, "Simulator"), v: __("{0} sent · {1} received", [fmt_int(who.outbound_count), fmt_int(who.inbound_count)]) },
+					...(who.last_seen ? [{ k: __("Last message"), v: user_datetime(who.last_seen) }] : []),
 				];
-				if (who.last_seen) facts.push(ro("last", __("Last message"), frappe.datetime.str_to_user(who.last_seen)));
-				const links = []
+				const list = []
 					.concat(
-						(who.accounts || []).map((a, i) => ro(`acc${i}`, a.title, __("{0} in the system", [__(a.doctype)]))),
-						(who.groups || []).map((g, i) =>
-							ro(`grp${i}`, g.label, g.kind === "Blacklist" ? __("Blacklist") : __("Contact group · {0} contacts", [fmt_int(g.member_count)]))
-						)
-					);
-				if (!links.length)
-					links.push(
-						ro(
-							"none",
-							unknown ? __("A number not saved as a contact") : __("Nothing linked"),
-							unknown ? __("No accounts and no groups — commands that need a linked account will refuse it") : __("No accounts and no groups are linked to this contact yet")
-						)
+						(who.accounts || []).map((a) => ({ avatar: sanad.ui.initials(a.title), text: a.title, sub: __("{0} in the system", [__(a.doctype)]) })),
+						(who.groups || []).map((g) => ({
+							avatar: sanad.ui.initials(g.label),
+							text: g.label,
+							sub: g.kind === "Blacklist" ? __("Blacklist") : __("Contact group · {0} contacts", [fmt_int(g.member_count)]),
+							badge: g.kind === "Blacklist" ? __("Blacklist") : "",
+							badge_tone: "danger",
+						}))
 					);
 				new sanad.ui.OverlayPanel({
 					type: "modal",
-					width: "44%",
-					title: who.name || who.phone_e164,
-					subtitle: who.phone_e164,
+					width: "420px",
+					compact: true,
+					title: who.name || sanad.ui.phone(who.phone_e164),
+					subtitle: sanad.ui.phone(who.phone_e164),
 					subtitle_mono: true,
 					badge,
-					sections: [
-						{ title: __("Who this is"), layout: "rows", fields: facts },
-						{ title: __("What it is linked to"), layout: "rows", fields: links },
-					],
+					detail: {
+						alert: unknown ? { tone: "info", title: __("A number not saved as a contact"), text: __("Commands that need a linked account will refuse it.") } : null,
+						facts,
+						blocks: [{ label: __("What it is linked to"), list, empty: __("No accounts and no groups are linked to this contact yet") }],
+					},
 					actions: [{ key: "close", label: __("Close"), variant: "primary", close: true }],
 				}).show();
 			})
 			.catch((err) => sanad.ui.Toast.error(err));
+	}
+
+	/** The same panel for a WhatsApp group: the contact it is linked to, its messages, its accounts. */
+	function group_panel(who) {
+		const facts = [
+			{ k: __("Linked to a contact"), v: who.contact || __("Not linked"), tone: who.contact ? "ok" : "" },
+			{ k: __("Messages", null, "Simulator"), v: __("{0} sent · {1} received", [fmt_int(who.outbound_count), fmt_int(who.inbound_count)]) },
+			...(who.last_seen ? [{ k: __("Last message"), v: user_datetime(who.last_seen) }] : []),
+		];
+		const list = (who.accounts || []).map((a) => ({ avatar: sanad.ui.initials(a.title), text: a.title, sub: __("{0} in the system", [__(a.doctype)]) }));
+		new sanad.ui.OverlayPanel({
+			type: "modal",
+			width: "420px",
+			compact: true,
+			title: who.name || sanad.ui.phone(who.phone_e164),
+			subtitle: sanad.ui.phone(who.phone_e164),
+			subtitle_mono: true,
+			badge: { text: __("Group"), tone: "info" },
+			detail: {
+				facts,
+				blocks: [
+					{
+						label: __("What it is linked to"),
+						list,
+						empty: who.contact ? __("The linked contact has no accounts") : __("Link the group to a contact from WhatsApp numbers"),
+					},
+				],
+			},
+			actions: [{ key: "close", label: __("Close"), variant: "primary", close: true }],
+		}).show();
 	}
 
 	// ---- the page ------------------------------------------------------------------------------
@@ -258,6 +299,8 @@
 					this.load_list();
 					this.load_thread();
 					this.subscribe();
+					if (this._pending_open) this.open_number(this._pending_open);
+					this._pending_open = null;
 				})
 				.catch((err) => {
 					this.$thread.empty();
@@ -276,24 +319,60 @@
 			return this.devices().find((d) => d.name === this.device) || null;
 		}
 
+		/**
+		 * `frappe.route_options = {phone}` — QuickSend's "Open in the simulator" and the Contacts
+		 * screen's menu — opens that number's conversation. A route read back from the address bar
+		 * carries the value JSON-quoted, so it is unquoted first.
+		 */
+		open_from_route() {
+			const opts = frappe.route_options;
+			if (!opts || !opts.phone) return;
+			frappe.route_options = null;
+			let key = cstr(opts.phone);
+			try {
+				const parsed = JSON.parse(key);
+				if (typeof parsed === "string") key = parsed;
+			} catch (e) {
+				// already a bare value
+			}
+			if (!this.context) this._pending_open = key;
+			else this.open_number(key);
+		}
+
+		/** Open one number's conversation: its list row when it has one, else a new conversation. */
+		open_number(key) {
+			const guess = sanad.ui.is_group(key) ? { valid: true, phone_e164: key } : sanad.ui.PhoneField.normalize(key);
+			if (!guess || !guess.valid) return Promise.resolve();
+			const phone = guess.phone_e164;
+			return sanad.ui
+				.call("simulator.list_conversations", { txt: phone, limit: 5 }, { silent: true })
+				.then((r) => ((r && r.rows) || []).find((row) => row.phone_e164 === phone))
+				.catch(() => null)
+				.then((row) => this.select(row || { name: phone, phone_e164: phone, display_name: "", link_status: "Not Linked", typed: true }));
+		}
+
 		// ---- the conversation list -------------------------------------------------------------
 
 		load_list() {
 			this.list_state.loading({ rows: 5 });
+			// a search typed on while an older one is in flight: only the newest answer draws
+			const seq = (this._list_seq = (this._list_seq || 0) + 1);
 			return sanad.ui
 				.call("simulator.list_conversations", { txt: this.search || null, limit: LIST_LENGTH })
 				.then((r) => {
+					if (seq !== this._list_seq) return;
 					this.rows = (r && r.rows) || [];
 					this.total = r && r.total;
 					this.list_state.hide();
 					this.render_list();
 				})
-				.catch((err) =>
+				.catch((err) => {
+					if (seq !== this._list_seq) return;
 					this.list_state.error(err, {
 						title: __("Could not load the numbers"),
 						action: { label: __("Retry"), on_click: () => this.load_list() },
-					})
-				);
+					});
+				});
 		}
 
 		/** A number typed into the search is a valid conversation even when it was never seen. */
@@ -318,14 +397,14 @@
 						const on = this.contact && this.contact.phone_e164 === row.phone_e164;
 						const unsaved = !row.display_name;
 						const b = badge_of(row);
-						const preview = row.typed ? __("A new number — type a message to start") : cstr(row.last_body).split("\n")[0] || row.phone_e164;
+						const preview = row.typed ? __("A new number — type a message to start") : cstr(row.last_body).split("\n")[0] || sanad.ui.phone(row.phone_e164);
 						return `<div class="wa-sim__row${on ? " is-on" : ""}" role="listitem">
 							<button type="button" class="wa-sim__row-main" data-key="${esc(row.phone_e164)}" aria-current="${on ? "true" : "false"}">
 								<span class="wa-sim__avatar${!row.contact ? " wa-sim__avatar--nf" : ""}" aria-hidden="true">${esc(unsaved ? "#" : sanad.ui.initials(title_of(row)))}</span>
 								<span class="wa-sim__row-text">
 									<span class="wa-sim__row-line">
 										<span class="wa-sim__row-name"${unsaved ? ' dir="ltr"' : ""}>${esc(title_of(row))}</span>
-										<span class="wa-sim__row-at" dir="ltr">${esc(hhmm(row.last_at))}</span>
+										<span class="wa-sim__row-at" dir="ltr">${esc(when(row.last_at))}</span>
 									</span>
 									<span class="wa-sim__row-sub" dir="auto">${esc(preview)}</span>
 								</span>
@@ -376,13 +455,13 @@
 			const devices = this.devices();
 			const device = this.current_device();
 			const sub = c
-				? `${c.phone_e164}${c.link_status === "Linked" ? ` · ${__("Linked to an account", null, "Command Editor")}` : ""}`
+				? `${sanad.ui.phone(c.phone_e164)}${c.link_status === "Linked" ? ` · ${__("Linked to an account", null, "Command Editor")}` : ""}`
 				: __("Pick a contact from the list, then write the message");
 			this.$head.html(`
-				${c ? `<button type="button" class="wa-sim__back" title="${esc(__("All conversations"))}" aria-label="${esc(__("All conversations"))}">→</button>` : ""}
+				${c ? `<button type="button" class="wa-sim__back" title="${esc(__("All conversations"))}" aria-label="${esc(__("All conversations"))}">${sanad.ui.is_rtl() ? "→" : "←"}</button>` : ""}
 				<span class="wa-sim__head-icon" aria-hidden="true">${SEND_ICON.replace('width="14" height="14"', 'width="18" height="18"')}</span>
 				<button type="button" class="wa-sim__head-text"${c ? "" : " disabled"}>
-					<span class="wa-sim__head-title">${c && !c.display_name ? `<bdi dir="ltr">${esc(title_of(c))}</bdi>` : esc(c ? title_of(c) : __("WhatsApp simulator"))}</span>
+					<span class="wa-sim__head-title">${c && !c.display_name ? `<bdi dir="ltr">${esc(title_of(c))}</bdi>` : esc(c ? title_of(c) : __("WhatsApp simulator"))}${c ? sanad.ui.group_tag(c.phone_e164) : ""}</span>
 					<span class="wa-sim__head-sub"${c ? ' dir="auto"' : ""}>${esc(sub)}</span>
 				</button>
 				${
@@ -426,6 +505,8 @@
 		load_thread() {
 			this.thread = null;
 			this.next_cursor = null;
+			// a conversation picked while the previous one is still loading: only its own page draws
+			const seq = (this._thread_seq = (this._thread_seq || 0) + 1);
 			if (!this.contact) {
 				this.empty_thread(__("Pick a conversation"), __("The contacts are in the list beside. To send to several groups and numbers at once use «Send a bulk message»."));
 				return Promise.resolve();
@@ -438,6 +519,7 @@
 			const state = new sanad.ui.EmptyState({ wrapper: this.$thread, state: "loading", rows: 4 });
 			return this.fetch_page()
 				.then((page) => {
+					if (seq !== this._thread_seq) return;
 					const rows = ((page && page.rows) || []).slice().reverse();
 					this.next_cursor = page && page.has_more ? page.next_cursor : null;
 					state.hide();
@@ -456,6 +538,7 @@
 					});
 				})
 				.catch((err) => {
+					if (seq !== this._thread_seq) return;
 					const forbidden = err && (err.http_status === 403 || /PermissionError/.test(err.exc_type || ""));
 					state.set("error", {
 						title: forbidden ? __("No access to conversations") : __("Could not load the conversation"),
@@ -473,7 +556,9 @@
 
 		load_older() {
 			if (!this.next_cursor || !this.thread) return Promise.resolve();
+			const thread = this.thread;
 			return this.fetch_page(this.next_cursor).then((page) => {
+				if (thread !== this.thread) return;
 				const rows = ((page && page.rows) || []).slice().reverse();
 				this.next_cursor = page && page.has_more ? page.next_cursor : null;
 				const added = this.thread.prepend(rows);
@@ -488,8 +573,10 @@
 			if (!this.thread) return this.load_thread();
 			if (this._refreshing) return Promise.resolve();
 			this._refreshing = true;
+			const thread = this.thread;
 			return this.fetch_page()
 				.then((page) => {
+					if (thread !== this.thread) return;
 					const added = this.thread.append(((page && page.rows) || []).slice().reverse());
 					if (added) sanad.ui.announce(sanad.ui.plural(added, { one: __("{0} new message."), other: __("{0} new messages.") }));
 				})
@@ -711,10 +798,23 @@
 	};
 
 	frappe.pages[ROUTE].on_page_show = function (wrapper) {
-		if (wrapper.whatsapp_next && wrapper.whatsapp_next.context) wrapper.whatsapp_next.subscribe();
+		const sim = wrapper.whatsapp_next;
+		if (!sim) return;
+		if (sim.context) {
+			// back on the page: what arrived while it was hidden (realtime was off) is read again
+			if (sim._hidden) {
+				sim.load_list();
+				sim.refresh_newest();
+			}
+			sim.subscribe();
+		}
+		sim._hidden = false;
+		sim.open_from_route();
 	};
 
 	frappe.pages[ROUTE].on_page_hide = function (wrapper) {
-		if (wrapper.whatsapp_next) wrapper.whatsapp_next.unsubscribe();
+		if (!wrapper.whatsapp_next) return;
+		wrapper.whatsapp_next.unsubscribe();
+		wrapper.whatsapp_next._hidden = true;
 	};
 })();

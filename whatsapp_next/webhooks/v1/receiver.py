@@ -40,6 +40,13 @@ def _rate_limited(ip: str | None) -> bool:
 	return count > RATE_LIMIT_PER_MINUTE
 
 
+MAX_HEADER_ID = 140  # the Webhook Event's event_id / event_name are Data (140) columns
+
+
+def _well_formed(value: str) -> bool:
+	return len(value) <= MAX_HEADER_ID and value.isprintable()
+
+
 def _secret() -> str | None:
 	settings = frappe.get_cached_doc("WhatsApp Settings")
 	try:
@@ -55,6 +62,8 @@ def handle(headers: Mapping[str, str], raw_body: bytes, *, remote_ip: str | None
 	# 1. required headers (their names are the provider's: A-1)
 	if not event_id or not envelope.signed:
 		return Outcome(401, {"ok": False, "error": "missing headers"})
+	if not _well_formed(event_id) or (event_name and not _well_formed(event_name)):
+		return Outcome(400, {"ok": False, "error": "malformed event headers"})
 	if _rate_limited(remote_ip):
 		return Outcome(429, {"ok": False, "error": "rate limited"})
 	# 2. secret
@@ -66,9 +75,12 @@ def handle(headers: Mapping[str, str], raw_body: bytes, *, remote_ip: str | None
 		return Outcome(503, {"ok": False, "error": "webhook secret not configured"})
 	# 3–4. freshness + signature
 	sig = verify.check(headers, raw_body, secret)
-	if not sig.valid or not sig.fresh:
-		if not sig.valid:
-			verify.note_signature_failure()
+	if not sig.valid:
+		# Not stored: anyone can send an unsigned request, and a row per request would let a
+		# guest grow the table without limit. The counter is enough to notice a rotated secret.
+		verify.note_signature_failure()
+		return Outcome(401, {"ok": False, "error": "invalid signature"})
+	if not sig.fresh:
 		idempotency.store_ignored(
 			event_id,
 			event_name,
@@ -76,7 +88,12 @@ def handle(headers: Mapping[str, str], raw_body: bytes, *, remote_ip: str | None
 			signature_valid=sig.valid,
 			timestamp_fresh=sig.fresh,
 		)
-		return Outcome(401, {"ok": False, "error": "stale timestamp" if sig.valid else "invalid signature"})
+		return Outcome(401, {"ok": False, "error": "stale timestamp"})
+	# The signature covers `<ts>.<body>`, not the event id / name headers: a captured delivery
+	# re-sent inside the freshness window with another id would be processed twice, and with
+	# another event name would be read as a different event. One signature, one (name, id).
+	if verify.signature_reused(headers, f"{event_name or ''}|{event_id}"):
+		return Outcome(401, {"ok": False, "error": "replayed signature"})
 	# 5. parse
 	try:
 		body = json.loads(raw_body.decode("utf-8") if isinstance(raw_body, bytes) else raw_body)
@@ -127,9 +144,13 @@ def handle(headers: Mapping[str, str], raw_body: bytes, *, remote_ip: str | None
 	# 9. process in a job
 	frappe.enqueue(
 		"whatsapp_next.webhooks.handlers.process_event",
-		event=c.name,
+		# not `event=`: `frappe.enqueue` keeps that keyword for itself and the job got no row
+		webhook_event=c.name,
 		queue="short",
-		job_id=f"wa-webhook-{event.event_id or event_id}",
+		# the stored row, not the event id: the platform sends a message's id as the event id, so
+		# its `delivered` and `read` share one, and a `read` arriving while `delivered` was still
+		# queued was dropped as a duplicate job and never handled
+		job_id=f"wa-webhook-{c.name}",
 		deduplicate=True,
 		enqueue_after_commit=True,
 		timeout=120,

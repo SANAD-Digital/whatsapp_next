@@ -10,6 +10,7 @@ from typing import Any
 
 import frappe
 from frappe import _
+from pypika import Order
 
 from whatsapp_next.api._common import api_endpoint
 from whatsapp_next.api.v1 import _bulk
@@ -126,38 +127,37 @@ def get_activity(name: str) -> list[dict[str, Any]]:
 	— never the IP address, never another record's rows. P: Contact User | Contact read."""
 	permissions.require("read")
 	phones = permissions.contact_phones(name)
-	or_filters: list[list[Any]] = [
-		["reference_doctype", "=", "Contact"],
-		["target_doctype", "=", "Contact"],
-	]
-	rows = frappe.get_all(
-		"WhatsApp Audit Log",
-		filters=[["WhatsApp Audit Log", "name", "!=", ""]],
-		or_filters=[
-			[
-				"WhatsApp Audit Log",
-				"reference_name",
-				"=",
-				name,
-			],
-			["WhatsApp Audit Log", "target_name", "=", name],
-			*([["WhatsApp Audit Log", "reference_name", "in", phones]] if phones else []),
-		],
-		fields=list(ACTIVITY_FIELDS),
-		order_by="timestamp desc, name desc",
-		limit=ACTIVITY_LIMIT,
+	A = frappe.qb.DocType("WhatsApp Audit Log")
+	# each name is matched with its DocType: a Customer or a group that happens to share the
+	# contact's name must not bring its own rows into this contact's timeline
+	scope = ((A.reference_doctype == "Contact") & (A.reference_name == name)) | (
+		(A.target_doctype == "Contact") & (A.target_name == name)
 	)
-	del or_filters
-	# a block / unblock is written on the blacklist group, with the number inside `details`
 	if phones:
-		for key in phones:
-			rows += frappe.get_all(
-				"WhatsApp Audit Log",
-				filters={"action": "Contact Group Members Changed", "details": ("like", f'%"key": "{key}"%')},
-				fields=list(ACTIVITY_FIELDS),
-				order_by="timestamp desc",
-				limit=ACTIVITY_LIMIT,
-			)
+		scope |= (A.reference_doctype == "WhatsApp Number") & A.reference_name.isin(phones)
+	rows = (
+		frappe.qb.from_(A)
+		.select(*[getattr(A, f) for f in ACTIVITY_FIELDS])
+		.where(scope)
+		.orderby(A.timestamp, order=Order.desc)
+		.orderby(A.name, order=Order.desc)
+		.limit(ACTIVITY_LIMIT)
+		.run(as_dict=True)
+	)
+	# a block / unblock is written on the blacklist group, with the number inside `details`
+	for key in phones:
+		rows += frappe.get_all(
+			"WhatsApp Audit Log",
+			filters={
+				"action": "Contact Group Members Changed",
+				"reference_doctype": "WhatsApp Contact Group",
+				"details": ("like", f'%"key": "{key}"%'),
+			},
+			fields=list(ACTIVITY_FIELDS),
+			order_by="timestamp desc",
+			limit=ACTIVITY_LIMIT,
+		)
+	rows = [frappe._dict(r) for r in rows]
 	seen: set[str] = set()
 	out: list[dict[str, Any]] = []
 	for r in sorted(rows, key=lambda r: (str(r.timestamp or ""), r.name), reverse=True):

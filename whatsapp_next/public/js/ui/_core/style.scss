@@ -186,7 +186,9 @@
 	z-index: 1041;
 	transform: translateX(100%);
 	transition: transform var(--sanad-motion) ease-out;
-	[dir="rtl"] & { transform: translateX(-100%); }
+	// LTR only: the Arabic stylesheet is built through rtlcss, which mirrors this translate on its
+	// own. A second `[dir="rtl"]` rule here flipped it back, so in Arabic the drawer started over
+	// the page and slid across it from the right instead of in from its own (left) edge.
 	&--open { transform: none !important; }
 	&__header {
 		display: flex;
@@ -224,3 +226,22 @@
 }
 
 .sanad-tabular { font-variant-numeric: tabular-nums; }
+
+// ---- the pinned header band (`ui.pin_stack`) ------------------------------------------------
+// The title with its buttons, the filters and the tabs stay while the cards and rows scroll away
+// beneath them. The band sits above the page's content (a table's own sticky head included) and
+// below every menu, dialog and drawer.
+.sanad-pin {
+	position: sticky;
+	z-index: 20;
+	background: var(--sanad-pin-bg, var(--surface-white));
+}
+// the last pinned element closes the band with a hairline once there is something under it
+.sanad-pinned-page .sanad-pin:has(+ :not(.sanad-pin)) { box-shadow: 0 1px 0 var(--outline-gray-1); }
+// A sticky element only sticks inside its parent's box. Where a screen wraps its header in a box
+// of its own (Contacts, Functions), that box and the header give up theirs, so the title row sticks
+// against the whole screen instead of the header's few lines.
+.sanad-pinned-page > [class$="__head"]:has(.sanad-pagehead__row.sanad-pin),
+.sanad-pinned-page > [class$="__head"] > .sanad-pagehead:has(> .sanad-pagehead__row.sanad-pin) {
+	display: contents;
+}

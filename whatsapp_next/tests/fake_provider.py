@@ -126,14 +126,25 @@ class FakeProvider(BaseProvider):
 		)
 
 	def start_password_reset(self, identifier) -> SignupState:
-		return SignupState(request_key="reset-1", status="Pending")
+		# the platform's WhatsApp answer: the code to show, its number, the account's masked one
+		return SignupState(
+			request_key="reset-1",
+			status="Pending",
+			extra={
+				"verification_channel": "WhatsApp",
+				"code": "504312",
+				"device_phone": "967782309999",
+				"mobile_hint": "96777****938",
+			},
+		)
 
 	def get_password_reset_status(self, request_key) -> SignupState:
 		return SignupState(request_key=request_key, status="Pending")
 
 	def complete_password_reset(self, request_key, password) -> SignupState:
 		self._record("complete_password_reset", request_key=request_key)
-		return SignupState(request_key=request_key, status="Completed")
+		# the platform answers `{ok, email, portal_url}`: the account the password now opens
+		return SignupState(request_key=request_key, status="Completed", extra={"ok": True, "email": "tenant@example.test"})
 
 	def login(self, email, password) -> dict:
 		self._record("login", email=email)

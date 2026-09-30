@@ -31,7 +31,6 @@ LIST_FIELDS: tuple[str, ...] = (
 	"requires_linked_contact",
 	"allowed_group",
 	"blocked_group",
-	"reply_device",
 	"description",
 	"run_count",
 	"last_run_at",

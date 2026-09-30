@@ -29,6 +29,7 @@ class WhatsAppSettings(Document):
 		self._validate_platform_base_url()
 		self._validate_queue_bounds()
 		self._validate_command_service_user()
+		self._validate_command_help_token()
 		self._validate_global_blacklist_group()
 		self._validate_picker_sources()
 
@@ -76,8 +77,12 @@ class WhatsAppSettings(Document):
 				_("Messages per Minute cannot exceed the plan rate limit ({0})").format(plan_rate),
 				WAValidationError,
 			)
-		if cint(self.max_attempts) < 1:
-			frappe.throw(_("Max Attempts must be at least 1"), WAValidationError)
+		from whatsapp_next.services.dispatch import MAX_AUTOMATIC_ATTEMPTS
+
+		if not 1 <= cint(self.max_attempts) <= MAX_AUTOMATIC_ATTEMPTS:
+			frappe.throw(
+				_("Max Attempts must be between 1 and {0}").format(MAX_AUTOMATIC_ATTEMPTS), WAValidationError
+			)
 		if cint(self.retry_backoff_seconds) < MIN_RETRY_BACKOFF_SECONDS:
 			frappe.throw(
 				_("Retry Backoff must be at least {0} seconds").format(MIN_RETRY_BACKOFF_SECONDS),
@@ -100,6 +105,23 @@ class WhatsAppSettings(Document):
 		if "System Manager" in frappe.get_roles(user):
 			frappe.throw(
 				_("Command Service User {0} must not hold the System Manager role").format(user),
+				WAValidationError,
+			)
+
+	def _validate_command_help_token(self) -> None:
+		"""One word that no command answers to, or a command word would be read as a help request."""
+		token = (self.command_help_token or "").strip().casefold()
+		self.command_help_token = token or None
+		if not token:
+			return
+		if any(ch.isspace() for ch in token):
+			frappe.throw(_("Command Help Token must be a single word"), WAValidationError)
+		from whatsapp_next.services.command_router import command_map
+
+		owner = command_map(refresh=True).get(token.lstrip("#/!"))
+		if owner:
+			frappe.throw(
+				_("Command Help Token {0} is already a word of command {1}").format(token, owner),
 				WAValidationError,
 			)
 

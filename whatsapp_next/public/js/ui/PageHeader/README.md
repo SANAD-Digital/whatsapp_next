@@ -34,6 +34,12 @@ frappe.listview_settings["Sales Order"] = {
 };
 ```
 
+**Above a Desk list** the header draws no title row: Desk's breadcrumb already names the list, so
+lists pass no `title` / `description`. `primary` replaces Frappe's "+ Add" in the page bar (the
+list's `set_primary_action` is swapped, so it survives refreshes and selection changes) and each
+`secondary` becomes a page-bar button (`page.add_button`; `count` may be a number or a function
+returning a promise). On a custom page (`wrapper`) the actions stay in the header's title row.
+
 A header given neither `title` nor `description` drops its whole title row (with no actions it
 drops the row entirely), so a screen whose own console names it can still use the header for its
 banner and blocks.
@@ -49,9 +55,9 @@ Shared primitives shipped with the component's stylesheet: `.sanad-strip` / `.sa
 with a tabular label) — used by campaign strips and by DataList progress cells.
 
 ## Live use
-`WhatsApp Campaign` list — `public/js/listview/whatsapp_campaign_list.js` (title, "New campaign",
+`WhatsApp Campaign` list — `public/js/listview/whatsapp_campaign_list.js` ("New campaign" in the page bar,
 "Sending now" and "Scheduled" strips as blocks); `WhatsApp Contact Group` list —
-`public/js/listview/whatsapp_contact_group_list.js` (title, "New group", three KPIs);
+`public/js/listview/whatsapp_contact_group_list.js` ("New group" and "Import CSV" in the page bar, three KPIs);
 `WhatsApp Queue Item` list — `public/js/listview/whatsapp_queue_item_list.js` (no title —
 the pause banner and the whole operations console, whose Status cell carries the Pause / Resume
 verb — metric row, throughput sparkline and rate control — as one block that
