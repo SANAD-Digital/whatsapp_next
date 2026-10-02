@@ -215,6 +215,54 @@ class TestDispatch(IntegrationTestCase):
 
 	# -- claim -------------------------------------------------------------------------
 
+	def test_enqueue_asks_for_the_device_batch_at_once(self):
+		# a message due now does not wait for the minute tick; a scheduled one does
+		frappe.flags.wa_kick_dispatch_in_test = True
+		try:
+			with patch.object(frappe, "enqueue") as enqueue:
+				now_name = dispatch.create_outbound(_spec(body="dispatch-test now"))
+				dispatch.enqueue([now_name])
+				device = frappe.db.get_value("WhatsApp Log", now_name, "device")
+				self.assertEqual(enqueue.call_count, 1)
+				kwargs = enqueue.call_args.kwargs
+				self.assertEqual(kwargs["device"], device)
+				self.assertEqual(kwargs["queue"], "short")
+				self.assertEqual(kwargs["job_id"], f"wa-dispatch-{device}")
+				self.assertTrue(kwargs["deduplicate"] and kwargs["enqueue_after_commit"])
+
+				enqueue.reset_mock()
+				later = dispatch.create_outbound(_spec(body="dispatch-test later"))
+				dispatch.enqueue([later], scheduled_at=add_to_date(now_datetime(), hours=1))
+				enqueue.assert_not_called()
+		finally:
+			frappe.flags.wa_kick_dispatch_in_test = False
+
+	def test_batch_asks_for_another_when_a_message_arrived_meanwhile(self):
+		"""A row queued while a batch runs cannot start one (the job id is taken): the batch asks for
+		a follow-up when it sent something and a non-campaign row is due — and only then."""
+		frappe.flags.wa_kick_dispatch_in_test = True
+		try:
+			with patch.object(frappe, "enqueue") as enqueue:
+				first = dispatch.create_and_enqueue(_spec(body="dispatch-test first"))
+				device = frappe.db.get_value("WhatsApp Log", first[0], "device")
+				enqueue.reset_mock()
+				dispatch._kick_followup(device, {"claimed": 0})  # sent nothing: the tick's business
+				dispatch._kick_followup(device, {"claimed": 1, "call_failure": 1})  # the call failed: no loop
+				enqueue.assert_not_called()
+				dispatch._kick_followup(device, {"claimed": 1})  # `first` is still waiting
+				self.assertEqual(enqueue.call_count, 1)
+				kwargs = enqueue.call_args.kwargs
+				self.assertEqual((kwargs["device"], kwargs["job_id"]), (device, f"wa-dispatch-{device}-next"))
+				self.assertTrue(kwargs["deduplicate"] and kwargs["enqueue_after_commit"])
+				delete_test_rows("WhatsApp Queue Item")
+				later = dispatch.create_outbound(_spec(body="dispatch-test later"))
+				dispatch.enqueue([later], scheduled_at=add_to_date(now_datetime(), hours=1))
+				enqueue.reset_mock()
+				dispatch._kick_followup(device, {"claimed": 1})  # nothing due now
+				enqueue.assert_not_called()
+		finally:
+			frappe.flags.wa_kick_dispatch_in_test = False
+
 	def test_claim_orders_and_gates(self):
 		low = dispatch.create_and_enqueue(_spec(source_type="Notification"))
 		high = dispatch.create_and_enqueue(_spec(phone=P2))
@@ -341,6 +389,39 @@ class TestDispatch(IntegrationTestCase):
 		ensure_settings(connection_status="Untested")
 
 	# -- status application ----------------------------------------------------------
+
+	def test_apply_status_reads_the_row_under_a_lock(self):
+		"""Live E2E 2026-10-01: `message.sent` and `message.delivered` landed 100 ms apart on two
+		workers, both read `Sending`, and the later write put a delivered message back to `Sent`.
+		The status is read with `FOR UPDATE`, so the second receipt waits and sees the first."""
+		out = dispatch.create_outbound(_spec())
+		seen = []
+		real = frappe.db.get_value
+
+		def spy(doctype, *args, **kwargs):
+			if doctype == "WhatsApp Log" and "status" in (args[1] if len(args) > 1 else []):
+				seen.append(bool(kwargs.get("for_update")))
+			return real(doctype, *args, **kwargs)
+
+		with patch.object(frappe.db, "get_value", side_effect=spy):
+			self.assertTrue(dispatch.apply_status(out, "Delivered"))
+			self.assertFalse(dispatch.apply_status(out, "Sent"))  # the overtaken receipt
+		self.assertEqual(seen, [True, True])
+		row = frappe.db.get_value("WhatsApp Log", out, ["status", "sent_at", "delivered_at"], as_dict=True)
+		self.assertEqual(row.status, "Delivered")
+		self.assertTrue(row.sent_at and row.delivered_at)
+
+	def test_poll_keeps_the_id_its_results_are_asked_by(self):
+		"""The provider message id of a poll is the poll's id: stored on `Sent`, so the campaign's
+		poll results find the polls that went out (nothing wrote it before; results read "sent 0")."""
+		out = dispatch.create_outbound(
+			_spec(message_type="Poll", body=None, poll_question="dispatch-test?", poll_options=["a", "b"])
+		)
+		self.assertTrue(dispatch.apply_status(out, "Sent", provider_message_id="poll-pm-1"))
+		self.assertEqual(frappe.db.get_value("WhatsApp Log", out, "poll_id"), "poll-pm-1")
+		text = dispatch.create_outbound(_spec())
+		dispatch.apply_status(text, "Sent", provider_message_id="pm-text")
+		self.assertFalse(frappe.db.get_value("WhatsApp Log", text, "poll_id"))
 
 	def test_apply_status_forward_only(self):
 		out = dispatch.create_outbound(_spec())

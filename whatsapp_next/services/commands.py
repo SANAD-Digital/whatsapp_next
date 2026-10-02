@@ -509,7 +509,7 @@ def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
 	]
 	inbound = frappe._dict(
 		name=None,
-		device=frappe.get_cached_doc("WhatsApp Settings").default_device,
+		device=_default_device(),
 		phone_e164=phone,
 		contact=contact,
 		display_name=who.display_name,
@@ -551,3 +551,10 @@ def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
 		replies=command_router.render_outputs(doc, result, who, dry_run=True),
 	)
 	return out
+
+
+def _default_device() -> str | None:
+	"""The default sending device (`services.devices.default_device`)."""
+	from whatsapp_next.services.devices import default_device
+
+	return default_device()

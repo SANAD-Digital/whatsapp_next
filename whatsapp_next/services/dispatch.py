@@ -151,7 +151,10 @@ def _known(key: str | None) -> bool:
 
 
 def _resolve_device(name: str | None) -> str:
-	name = name or _settings().default_device
+	if not name:
+		from whatsapp_next.services.devices import default_device
+
+		name = default_device()
 	if not name:
 		devices = frappe.get_all(
 			"WhatsApp Device",
@@ -192,7 +195,16 @@ def _recipient_name(spec: OutboundSpec, key: str | None) -> tuple[str | None, st
 	knows about the number — its contact's name, else the name on its WhatsApp Number row (the
 	contact's, or the one the phone saves it under). A reply to a sender WhatsApp sent without a
 	push name must not read "no name" when the number is a known contact."""
-	name, contact = spec.display_name, spec.contact
+	return recipient_identity(key, spec.display_name, spec.contact)
+
+
+def recipient_identity(
+	key: str | None, display_name: str | None = None, contact: str | None = None
+) -> tuple[str | None, str | None]:
+	"""`(display_name, contact)` of the number `key`: what the caller already has, completed from
+	the number's Contact and its WhatsApp Number row. Whoever renders a body for a recipient asks
+	here, so the text greets by the same name the log row will carry."""
+	name = display_name
 	if name and contact:
 		return name, contact
 	row = (
@@ -206,8 +218,9 @@ def _recipient_name(spec: OutboundSpec, key: str | None) -> tuple[str | None, st
 	return name or (row.display_name if row else None), contact
 
 
-def _render_body(spec: OutboundSpec) -> tuple[str | None, str | None]:
-	"""`(body, template_error)` — template rendering never raises here (legacy F2)."""
+def _render_body(spec: OutboundSpec, recipient: dict[str, Any] | None = None) -> tuple[str | None, str | None]:
+	"""`(body, template_error)` — template rendering never raises here (legacy F2). `recipient`
+	is who the row goes to, so a template can greet them by name."""
 	if spec.body or not spec.template:
 		return spec.body, None
 	tpl = frappe.db.get_value("WhatsApp Template", spec.template, ["body", "disabled"], as_dict=True)
@@ -215,7 +228,9 @@ def _render_body(spec: OutboundSpec) -> tuple[str | None, str | None]:
 		frappe.throw(_("WhatsApp Template {0} not found").format(spec.template), WANotFoundError)
 	if cint(tpl.disabled):
 		frappe.throw(_("WhatsApp Template {0} is disabled").format(spec.template), WAValidationError)
-	ctx = spec.template_context or templates.context_for(spec.reference_doctype, spec.reference_name)
+	ctx = spec.template_context or templates.context_for(
+		spec.reference_doctype, spec.reference_name, recipient=recipient
+	)
 	result = templates.render(tpl.body, ctx)
 	return (result.text if result.ok else None), result.error
 
@@ -240,7 +255,10 @@ def create_outbound(spec: OutboundSpec, *, user: str | None = None) -> str:
 		frappe.throw(_("Sending is restricted to known WhatsApp numbers"), WAUnknownNumberPolicyError)
 
 	display_name, contact = _recipient_name(spec, key)
-	body, template_error = _render_body(spec)
+	body, template_error = _render_body(
+		spec,
+		{"phone_e164": rec["phone_e164"], "jid": rec["jid"], "display_name": display_name, "contact": contact},
+	)
 	if spec.message_type == "Text" and not (body or "").strip():
 		frappe.throw(
 			_("Message body is empty") + (f" ({template_error})" if template_error else ""), WAValidationError
@@ -360,6 +378,7 @@ def enqueue(
 	by_name = {r.name: r for r in rows}
 	max_attempts = min(cint(_settings().max_attempts) or 1, MAX_AUTOMATIC_ATTEMPTS)
 	created: list[str] = []
+	due_devices: set[str] = set()
 	now = now_datetime()
 	with status_writer():
 		for name in dict.fromkeys(names):  # input order, duplicates dropped
@@ -400,7 +419,30 @@ def enqueue(
 				update_modified=True,
 			)
 			created.append(item.name)
+			if row.device and when <= now:
+				due_devices.add(row.device)
+	_kick_dispatch(due_devices)
 	return created
+
+
+def _kick_dispatch(devices: Iterable[str]) -> None:
+	"""Ask for a device's batch as soon as the transaction commits, instead of leaving a message
+	that is due now to wait for the next `dispatch_tick`: that cron runs once a minute on the
+	`default` queue, behind every other scheduled job of the bench. Same job id as the tick, so a
+	batch already waiting is not doubled; the batch itself honours the pause, the rate and the
+	device's state. Not from a test run: its jobs would reach the bench's real workers."""
+	if frappe.flags.in_test and not frappe.flags.wa_kick_dispatch_in_test:
+		return
+	for device in sorted(set(devices)):
+		frappe.enqueue(
+			"whatsapp_next.services.dispatch.dispatch_device_batch",
+			device=device,
+			queue="short",
+			job_id=f"wa-dispatch-{device}",
+			deduplicate=True,
+			enqueue_after_commit=True,
+			timeout=300,
+		)
 
 
 def create_and_enqueue(
@@ -773,7 +815,45 @@ def dispatch_device_batch(device: str) -> dict[str, int]:
 			deduplicate=True,
 			timeout=60,
 		)
+	_kick_followup(device, counts)
 	return counts
+
+
+def _due_now(device: str) -> bool:
+	"""Whether a non-campaign row of `device` is due and waiting. Campaign rows are left to the
+	tick: their `messages_per_minute` is a cap per batch, and a batch after a batch would lift it."""
+	now = now_datetime()
+	Q = frappe.qb.DocType("WhatsApp Queue Item")
+	return bool(
+		frappe.qb.from_(Q)
+		.select(Q.name)
+		.where((Q.status == "Queued") & (Q.device == device) & (Q.scheduled_at <= now) & Q.campaign.isnull())
+		.where(Q.next_attempt_at.isnull() | (Q.next_attempt_at <= now))
+		.limit(1)
+		.run()
+	)
+
+
+def _kick_followup(device: str, counts: dict[str, int]) -> None:
+	"""A message queued while this batch was running asked for a batch and was refused — the job
+	id was taken by the very batch that had already claimed its rows — so it waited for the next
+	tick: a receipt went out 171 s after its row, beside a thank-you sent in 4 s (live business
+	test 2026-10-01). When this batch did send and such a row is waiting, one more batch is asked
+	for. It stops by itself: a batch that claims nothing (the rate is used up, the queue is
+	paused, the device is down) or whose call failed asks for nothing."""
+	if frappe.flags.in_test and not frappe.flags.wa_kick_dispatch_in_test:
+		return
+	if not counts.get("claimed") or counts.get("call_failure") or not _due_now(device):
+		return
+	frappe.enqueue(
+		"whatsapp_next.services.dispatch.dispatch_device_batch",
+		device=device,
+		queue="short",
+		job_id=f"wa-dispatch-{device}-next",
+		deduplicate=True,
+		enqueue_after_commit=True,
+		timeout=300,
+	)
 
 
 # ---- status application (webhooks / reconcile / test send) --------------------------------
@@ -805,11 +885,18 @@ def apply_status(
 	`Sending`/`Queued`; a later `Sent`/`Failed` resolves it."""
 	if status not in OUTBOUND_STATUSES:
 		frappe.throw(_("Unknown outbound status {0}").format(status), WAValidationError)
+	# A locking read: `message.sent` and `message.delivered` arrive within milliseconds and are
+	# handled by different workers. Read without the lock, both saw `Sending`, and whichever
+	# wrote last won — a delivered message went back to `Sent` with its `delivered_at` filled.
 	row = frappe.db.get_value(
 		"WhatsApp Log",
 		outbound,
-		["status", "campaign", "device", "provider_message_id", "platform_message_log", "sent_at", "delivered_at"],
+		[
+			"status", "campaign", "device", "provider_message_id", "platform_message_log", "sent_at", "delivered_at",
+			"message_type", "poll_id",
+		],
 		as_dict=True,
+		for_update=True,
 	)
 	if not row:
 		return False
@@ -841,6 +928,10 @@ def apply_status(
 		values["sent_at"] = at
 	if provider_message_id:
 		values["provider_message_id"] = provider_message_id
+		# a poll is asked for by the id of the message that carried it: nothing ever wrote `poll_id`,
+		# so a campaign's poll results read "sent to 0" and could not collect a vote
+		if row.message_type == "Poll" and not row.poll_id:
+			values["poll_id"] = provider_message_id
 	if platform_message_log:
 		values["platform_message_log"] = platform_message_log
 	if status == "Failed":

@@ -124,6 +124,33 @@ def file_meta(file_url: str) -> dict[str, Any]:
 	}
 
 
+def print_language(doctype: str, name: str, print_format: str | None = None) -> str | None:
+	"""The language a document prints in, as the Desk's print view picks it: the Print Format's
+	default print language, else the document's own `language` (ERPNext copies the customer's
+	there), else `None` — the caller's language. Without it a PDF sent from a background job came
+	out in the language of whoever happened to submit the document."""
+	meta = frappe.get_meta(doctype)
+	print_format = print_format or meta.default_print_format
+	language = frappe.db.get_value("Print Format", print_format, "default_print_language") if print_format else None
+	if not language and meta.has_field("language"):
+		language = frappe.db.get_value(doctype, name, "language")
+	return language or None
+
+
+def _render_error(exc: Exception) -> str:
+	"""What went wrong in a print, in one line: Frappe wraps a print format's failure in an HTML
+	traceback, and its last line is the only part a reader can act on."""
+	import html
+
+	from frappe.utils import strip_html
+
+	text = html.unescape(strip_html(cstr(exc)))
+	lines = [line.strip() for line in text.splitlines() if line.strip()]
+	if "Traceback" in text and lines:
+		return lines[-1][:300]
+	return " ".join(lines)[:300]
+
+
 def render_print_pdf(
 	doctype: str,
 	name: str,
@@ -134,11 +161,13 @@ def render_print_pdf(
 ) -> RenderedPdf:
 	"""Render a document's Print Format to PDF bytes (wkhtmltopdf via `frappe.get_print`).
 
-	`language` switches `frappe.local.lang` for the render only; `letter_head=None` means the
-	document/default letter head, `""` means none."""
+	`language` switches `frappe.local.lang` for the render only; without one the print's own
+	language is used (`print_language`). `letter_head=None` means the document/default letter
+	head, `""` means none."""
 	if not frappe.db.exists(doctype, name):
 		frappe.throw(_("{0} {1} not found").format(doctype, name), WAFileError)
 	previous_lang = frappe.local.lang
+	language = language or print_language(doctype, name, print_format)
 	if language:
 		frappe.local.lang = language
 	try:
@@ -153,7 +182,7 @@ def render_print_pdf(
 		)
 	except Exception as exc:
 		frappe.throw(
-			_("PDF rendering failed for {0} {1}: {2}").format(doctype, name, cstr(exc)[:300]), WAFileError
+			_("PDF rendering failed for {0} {1}: {2}").format(doctype, name, _render_error(exc)), WAFileError
 		)
 	finally:
 		frappe.local.lang = previous_lang

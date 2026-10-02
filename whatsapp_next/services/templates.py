@@ -154,6 +154,15 @@ def render_text(source: str | None, context: dict[str, Any] | None = None, *, fa
 	return result.text if result.ok else fallback
 
 
+def _recipient(recipient: dict[str, Any] | None) -> frappe._dict:
+	"""The `recipient` a body may name. Its usual fields are always there and never `None`: a
+	template saying `{{ recipient.display_name }}` to a number nobody has named must print
+	nothing, not the word "None" (which a real customer received, live E2E 2026-10-01)."""
+	who = frappe._dict(phone_e164="", display_name="", contact="")
+	who.update({k: ("" if v is None else v) for k, v in (recipient or {}).items()})
+	return who
+
+
 def context_for(
 	reference_doctype: str | None = None,
 	reference_name: str | None = None,
@@ -176,7 +185,7 @@ def context_for(
 			doc = None
 	ctx: dict[str, Any] = {
 		"doc": doc if doc is not None else frappe._dict(),
-		"recipient": frappe._dict(recipient or {}),
+		"recipient": _recipient(recipient),
 		"now": now_datetime(),
 		"today": nowdate(),
 		"site_url": get_url(),
@@ -220,7 +229,8 @@ def sample_context(reference_doctype: str | None, sample_json: str | dict | None
 				doc = frappe._dict(base)
 			extra = parsed
 	ctx = context_for(reference_doctype, getattr(doc, "name", None), extra, doc=doc)
-	if not ctx.get("recipient"):  # `context_for` always sets an (empty) recipient; fill the sample one
+	# `context_for` always sets a recipient with blank fields; a sample has nobody, so name one
+	if not any((ctx.get("recipient") or {}).values()):
 		ctx["recipient"] = frappe._dict(phone_e164="+966500000000", display_name=_("Recipient"))
 	return ctx
 

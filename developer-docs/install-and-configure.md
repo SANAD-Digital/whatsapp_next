@@ -110,6 +110,16 @@ delivers only to public **https** addresses.
   bench --site <site> scheduler resume
   bench doctor
   ```
+- **The scheduler must tick every minute.** Frappe's scheduler wakes every **240 s** by default
+  (`DEFAULT_SCHEDULER_TICK` in `frappe/utils/scheduler.py`), so a `* * * * *` job such as
+  `dispatch_tick` or `promote_scheduled` really runs once every four minutes: a quick send waits
+  up to 4 min before it leaves, a scheduled campaign starts up to 4 min late, and the queue's
+  messages-per-minute rate is spent once per tick. Set the tick to 60 s for the bench and restart
+  the scheduler process (the platform's own queue runs on the same kind of job and needs it too):
+  ```bash
+  bench set-config -g scheduler_tick_interval 60
+  sudo supervisorctl restart <bench>-workers:   # or however `frappe schedule` is supervised
+  ```
 - **Workers** must consume the `short` queue (sends, webhook processing, command routing, Numbers
   upsert) and the `long` queue (campaign materialisation, alerts). The standard bench Procfile or
   supervisor configuration runs both.

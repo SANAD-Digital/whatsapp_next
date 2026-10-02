@@ -594,7 +594,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 			.then((p) => {
 				if (this.active !== row.name) return;
 				const local = this.local_preview(row);
-				this.draw_bubble($chat, { type: p.message_type || row[this.opts.type_field], body: p.body, attachment: p.attachment_name || local.attachment, image: local.image, poll: this.poll_of(row) });
+				this.draw_bubble($chat, { type: p.message_type || row[this.opts.type_field], body: p.body || p.caption, attachment: p.attachment_name || local.attachment, image: local.image, poll: this.poll_of(row) });
 				const errors = p.errors || [];
 				this.$editor.find(".sanad-mc__errors").html(errors.length ? `<ul>${errors.map((e) => `<li>${ui.escape(e)}</li>`).join("")}</ul>` : "");
 			})

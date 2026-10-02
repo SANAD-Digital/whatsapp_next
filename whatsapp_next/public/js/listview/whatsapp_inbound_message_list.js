@@ -160,6 +160,7 @@
 		},
 
 		onload(listview) {
+			whatsapp_next.drop_unreadable_link_titles(listview);
 			const refresh = () => listview.refresh();
 			const open = (doc) => open_drawer(doc, refresh, listview);
 

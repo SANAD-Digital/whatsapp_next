@@ -198,6 +198,37 @@ class TestNotifications(IntegrationTestCase):
 		body = frappe.db.get_value("WhatsApp Log", {"notification": notif.name, "reference_name": todo2.name}, "body")
 		self.assertTrue(recips[0].display_name)
 		self.assertTrue(body.endswith(f"for {recips[0].display_name}"), body)
+		# a recipient from a plain number (a phone field, a fixed number) is named like its log row:
+		# by the number's own contact — and a number nobody knows prints nothing, never "None"
+		notif.set(
+			"recipients",
+			[
+				{"recipient_type": "Fixed Number", "phone": PHONE},
+				{"recipient_type": "Fixed Number", "phone": "+966500000977"},
+			],
+		)
+		notif.save(ignore_permissions=True)
+		if frappe.db.exists("WhatsApp Number", PHONE):
+			frappe.db.set_value("WhatsApp Number", PHONE, "contact", contact)
+		else:
+			frappe.get_doc(
+				{"doctype": "WhatsApp Number", "phone_e164": PHONE, "phone": PHONE, "contact": contact}
+			).insert(ignore_permissions=True)
+		todo3 = frappe.get_doc({"doctype": "ToDo", "description": "notif-test named"}).insert(ignore_permissions=True)
+		named = svc.resolve_recipients(frappe.get_doc("WhatsApp Notification", notif.name), todo3)
+		self.assertEqual([(r.phone_e164, r.contact) for r in named], [(PHONE, contact), ("+966500000977", None)])
+		self.assertEqual(named[0].display_name, recips[0].display_name)
+		with patch.object(frappe, "enqueue"):
+			svc.send_for_document(notif.name, "ToDo", todo3.name, "New")
+		bodies = {
+			r.phone_e164: r.body
+			for r in frappe.get_all(
+				"WhatsApp Log", filters={"notification": notif.name, "reference_name": todo3.name}, fields=["phone_e164", "body"]
+			)
+		}
+		self.assertTrue(bodies[PHONE].endswith(f"for {recips[0].display_name}"), bodies)
+		self.assertTrue(bodies["+966500000977"].endswith("for"), bodies)
+		self.assertNotIn("None", "".join(bodies.values()))
 		# missing document / disabled → skipped
 		self.assertEqual(svc.send_for_document(notif.name, "ToDo", "nope", "New")["skipped"], 1)
 		# a template render error is recorded and nothing is sent

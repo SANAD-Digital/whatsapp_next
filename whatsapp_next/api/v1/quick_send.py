@@ -42,11 +42,17 @@ def preview(
 	body: str | None = None,
 	reference_doctype: str | None = None,
 	reference_name: str | None = None,
+	phone: str | None = None,
 ) -> dict[str, Any]:
 	"""`{body, errors[]}` — the template (or ad-hoc body) rendered over the reference document
-	or a sample context; render errors are returned, never raised."""
+	or a sample context, for the recipient `phone` when given; render errors are returned,
+	never raised."""
 	return quick_send.preview(
-		template=template, body=body, reference_doctype=reference_doctype, reference_name=reference_name
+		template=template,
+		body=body,
+		reference_doctype=reference_doctype,
+		reference_name=reference_name,
+		phone=phone,
 	)
 
 

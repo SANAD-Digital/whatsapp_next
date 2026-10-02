@@ -12,6 +12,7 @@ from frappe.utils import cint
 
 from whatsapp_next.exceptions import WAInvalidPhoneError, WAValidationError
 from whatsapp_next.services import dispatch, templates
+from whatsapp_next.services.devices import default_device
 from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.phone import classify, is_group_or_lid, normalize
 
@@ -88,8 +89,11 @@ def preview(
 	reference_doctype: str | None = None,
 	reference_name: str | None = None,
 	context: dict[str, Any] | None = None,
+	phone: str | None = None,
 ) -> dict[str, Any]:
-	"""`{body, errors[]}` for the composer preview (template body or ad-hoc body)."""
+	"""`{body, errors[]}` for the composer preview (template body or ad-hoc body). `phone` is
+	the recipient in the composer: with a reference document the body is rendered for them, as
+	the send will (`recipient.display_name` used to preview — and send — as "None")."""
 	source = body
 	if template and not body:
 		source = frappe.db.get_value("WhatsApp Template", template, "body")
@@ -98,11 +102,21 @@ def preview(
 	if reference_doctype and reference_name and not context:
 		# the rendered body shows the record's fields: only to someone who may read it
 		frappe.has_permission(reference_doctype, "read", reference_name, throw=True)
+	recipient = None
+	if phone and not context:
+		kind, key = classify(phone)
+		if kind:  # else still being typed: the preview renders without a name
+			# the same name the send will resolve: the contact's, else the WhatsApp Number row's
+			name, contact = dispatch._recipient_name(frappe._dict(display_name=None, contact=None), key)
+			jid = key if is_group_or_lid(key) else None
+			recipient = {"phone_e164": None if jid else key, "jid": jid, "display_name": name, "contact": contact}
 	ctx = context or (
-		templates.context_for(reference_doctype, reference_name)
+		templates.context_for(reference_doctype, reference_name, recipient=recipient)
 		if reference_doctype and reference_name
 		else templates.sample_context(reference_doctype)
 	)
+	if recipient and not context and not (reference_doctype and reference_name):
+		ctx["recipient"] = templates.context_for(recipient=recipient)["recipient"]
 	result = templates.render(source, ctx)
 	return {"body": result.text, "errors": [result.error] if result.error else []}
 
@@ -135,7 +149,7 @@ def get_context(
 	recipient = resolve_recipient(phone, contact, number) if (phone or contact or number) else None
 	return {
 		"devices": devices,
-		"default_device": settings.default_device,
+		"default_device": default_device(),
 		"templates": rows,
 		"recipient": recipient,
 		"reference": {"doctype": reference_doctype, "name": reference_name}

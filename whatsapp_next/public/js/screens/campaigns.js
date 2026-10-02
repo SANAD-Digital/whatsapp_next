@@ -242,7 +242,8 @@ frappe.provide("whatsapp_next.campaigns");
 						reqd: 1,
 						// the control holds system time and shows it in the reader's zone: a default
 						// built from the reader's clock would land hours off when the two differ
-						default: doc.scheduled_at || frappe.datetime.add_days(frappe.datetime.system_datetime(), 1),
+						// (`frappe.datetime.add_days` returns a date: the default was midnight, shown without a time)
+						default: doc.scheduled_at || moment(frappe.datetime.system_datetime()).add(1, "days").seconds(0).format("YYYY-MM-DD HH:mm:ss"),
 						description: __("The campaign starts by itself at this time."),
 					},
 				],

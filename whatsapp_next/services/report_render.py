@@ -137,9 +137,9 @@ def report_html(
 		filter_line = (
 			"<p class='filters'>"
 			+ " · ".join(
-				f"{html.escape(str(k))}: {html.escape(cstr(v))}"
+				f"{html.escape(_(frappe.unscrub(str(k))))}: {html.escape(_filter_value(v))}"
 				for k, v in filters.items()
-				if v not in (None, "")
+				if v not in (None, "", [])
 			)
 			+ "</p>"
 		)
@@ -148,23 +148,40 @@ def report_html(
 		if rows and len(rows) > MAX_ROWS
 		else ""
 	)
+	# a wide report keeps all its columns on the page: smaller type, tighter cells, words may break
+	size, pad = (11, 6) if len(cols) <= 8 else (9, 4) if len(cols) <= 13 else (8, 3)
+	heading = title or getattr(alert, "report", None) or getattr(alert, "alert_name", "") or ""
+	# every rule is scoped to the report's own table: the letter head is a table too
 	return f"""<!DOCTYPE html><html lang="{lang}" dir="{"rtl" if rtl else "ltr"}"><head><meta charset="utf-8">
 <style>
 body {{ font-family: "Noto Sans Arabic", "Noto Sans", Arial, sans-serif; font-size: 11px; color: #1f272e; }}
 h2 {{ font-size: 16px; margin: 0 0 4px; }}
 .meta, .filters {{ color: #6c7680; font-size: 10px; margin: 0 0 8px; }}
-table {{ border-collapse: collapse; width: 100%; }}
-th, td {{ border: 1px solid #d1d8dd; padding: 4px 6px; vertical-align: top; }}
-th {{ background: #f4f5f6; font-weight: 600; }}
-tr:nth-child(even) td {{ background: #fafbfc; }}
+table.wa-report {{ border-collapse: collapse; width: 100%; table-layout: auto; font-size: {size}px; }}
+table.wa-report th, table.wa-report td {{ border: 1px solid #d1d8dd; padding: {pad}px; vertical-align: top; word-wrap: break-word; overflow-wrap: anywhere; }}
+table.wa-report th {{ background: #f4f5f6; font-weight: 600; }}
+table.wa-report tr:nth-child(even) td {{ background: #fafbfc; }}
 </style></head><body>
 {_letter_head_html(getattr(alert, "letter_head", None))}
-<h2>{html.escape(title or getattr(alert, "report", None) or getattr(alert, "alert_name", "") or "")}</h2>
-<p class="meta">{html.escape(_("Generated"))}: {now_datetime().strftime("%Y-%m-%d %H:%M")}</p>
+<h2>{html.escape(_(heading))}</h2>
+<p class="meta">{html.escape(_("Generated"))}: <span dir="ltr">{now_datetime().strftime("%Y-%m-%d %H:%M")}</span></p>
 {filter_line}
-<table><thead><tr>{head}</tr></thead><tbody>{"".join(body_rows) or f'<tr><td colspan="{max(len(cols), 1)}">{html.escape(_("No data"))}</td></tr>'}</tbody></table>
+<table class="wa-report"><thead><tr>{head}</tr></thead><tbody>{"".join(body_rows) or f'<tr><td colspan="{max(len(cols), 1)}">{html.escape(_("No data"))}</td></tr>'}</tbody></table>
 {truncated}
 </body></html>"""
+
+
+def _filter_value(value: Any) -> str:
+	"""A filter's value as a reader says it: a list joined, a date in the site's format, a word
+	translated."""
+	if isinstance(value, list | tuple):
+		return "، ".join(_filter_value(v) for v in value)
+	if isinstance(value, bool):
+		return _("Yes") if value else _("No")
+	text = cstr(value)
+	if re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+		return cstr(format_value(text, {"fieldtype": "Date"}))
+	return _(text)
 
 
 def report_pdf(html_text: str, alert=None) -> bytes:
@@ -173,6 +190,22 @@ def report_pdf(html_text: str, alert=None) -> bytes:
 
 	options = {"orientation": "Landscape"} if html_text.count("<th") > 6 else None
 	return get_pdf(html_text, options=options)
+
+
+def _compact_png(data: bytes) -> bytes:
+	"""wkhtmltoimage writes a barely compressed RGBA file — 1.4 MB for a five-row statement, which
+	every recipient's phone then downloads. Re-encoded (opaque, optimized) the same picture is a
+	few dozen KB. The original is kept when Pillow cannot read it."""
+	try:
+		import io
+
+		from PIL import Image
+
+		out = io.BytesIO()
+		Image.open(io.BytesIO(data)).convert("RGB").save(out, "PNG", optimize=True)
+		return out.getvalue() if 0 < out.tell() < len(data) else data
+	except Exception:
+		return data
 
 
 def report_png(html_text: str, *, width: int = 1200) -> bytes | None:
@@ -192,7 +225,7 @@ def report_png(html_text: str, *, width: int = 1200) -> bytes | None:
 			capture_output=True,
 		)
 		with open(out_path, "rb") as fh:
-			return fh.read()
+			return _compact_png(fh.read())
 	except (subprocess.SubprocessError, OSError):
 		return None
 	finally:

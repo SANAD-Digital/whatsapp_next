@@ -11,6 +11,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import add_to_date, now_datetime
 
+from whatsapp_next.services import dispatch
 from whatsapp_next.api.v1 import campaigns as api
 from whatsapp_next.exceptions import (
 	WANotFoundError,
@@ -263,7 +264,8 @@ class TestApiCampaigns(IntegrationTestCase):
 		for r in frappe.get_all(
 			"WhatsApp Log", filters={"campaign": name, "message_type": "Poll"}, pluck="name"
 		):
-			frappe.db.set_value("WhatsApp Log", r, "poll_id", f"poll-{r}", update_modified=False)
+			# as the provider's `message.sent` leaves it: the poll's id is its provider message id
+			dispatch.apply_status(r, "Sent", provider_message_id=f"poll-{r}")
 		with as_user("WhatsApp Manager"):
 			self.assertEqual(api.get_poll_results(name=plain)["results"], [])
 			with fake_provider():
@@ -372,7 +374,16 @@ class TestApiCampaigns(IntegrationTestCase):
 			out = api.retry_failed(name=name)
 		self.assertEqual(out["retried"], 1)
 		self.assertEqual(out["refused"], 0)
-		self.assertEqual(out["remaining"], 2)  # the failed rows stay; the retry is a new row
+		self.assertEqual(out["remaining"], 1)  # the one not sent again; the retried row stays in the log
+		self.assertEqual(frappe.db.count("WhatsApp Log", {"campaign": name}), 3)
+		# a failure sent again is history: not counted, not listed, and never sent a second time
+		with as_user("WhatsApp Manager"):
+			f = api.get_failures(name=name)
+			self.assertEqual((f["total"], [r["error_code"] for r in f["rows"]]), (1, ["recipient_not_registered"]))
+			counters = api.get_progress(name=name)["counters"]
+			self.assertEqual((counters["total"], counters["failed"], counters["queued"]), (2, 1, 1))
+			again = api.retry_failed(name=name)
+		self.assertEqual((again["retried"], again["remaining"]), (0, 1))
 		self.assertEqual(frappe.db.count("WhatsApp Log", {"campaign": name}), 3)
 		self.assertTrue(
 			frappe.db.exists("WhatsApp Audit Log", {"reference_name": name, "action": "Queue Items Retried"})

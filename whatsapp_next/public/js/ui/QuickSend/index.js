@@ -262,7 +262,11 @@ sanad.ui.QuickSend = class QuickSend {
 			return;
 		}
 		this.$preview.html(`<div class="sanad-quicksend__preview" aria-busy="true"><div class="sanad-quicksend__preview-label">${ui.escape(__("Preview"))}</div>${ui.skeleton(1, { lines: 2 })}</div>`);
-		return ui.call(this.api.preview, { template, body, reference_doctype, reference_name }, { silent: true })
+		// the recipient too: a body that greets them by name previews with the name the send will use
+		const who = (this.recipient && (this.recipient.phone_e164 || this.recipient.jid)) || this.dialog.get_value("phone");
+		const args = { template, body, reference_doctype, reference_name };
+		if (who) args.phone = who;
+		return ui.call(this.api.preview, args, { silent: true })
 			.then((r) => {
 				const errors = (r && r.errors) || [];
 				this.$preview.html(`

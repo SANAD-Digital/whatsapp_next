@@ -31,9 +31,13 @@ class WhatsAppDevice(Document):
 		assert_status_writer(self, ("status",))
 
 	def on_update(self) -> None:
-		"""Keep exactly one default device: this one wins when flagged."""
+		"""Keep exactly one default device: this one wins when flagged, and Settings → Default
+		Device names it (the first device is flagged on insert, and senders read Settings)."""
 		if self.is_default:
 			self._clear_other_defaults()
+			if frappe.db.get_single_value("WhatsApp Settings", "default_device") != self.name:
+				frappe.db.set_single_value("WhatsApp Settings", "default_device", self.name)
+				frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 
 	def _clear_other_defaults(self) -> None:
 		others = frappe.get_all(

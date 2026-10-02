@@ -255,7 +255,7 @@ def _render(notif, doc) -> dict[str, Any]:
 		ctx = templates.context_for(doc.doctype, doc.name, {"event": notif.event, "notification": notif.name}, doc=doc)
 		if recipients:
 			first = recipients[0]
-			ctx["recipient"] = frappe._dict(phone_e164=first.phone_e164, display_name=first.display_name, contact=first.contact)
+			ctx["recipient"] = notifications.recipient_context(first.phone_e164, first.display_name, first.contact)
 		body, error = notifications._body(notif, ctx)
 	finally:
 		if frappe.local.message_log:
@@ -332,7 +332,8 @@ def send_test(payload: dict, phone: str, reference_name: str | None = None) -> d
 	saved_name = None if notif.is_new() else notif.name
 	notif.name = saved_name or None
 	ctx = templates.context_for(doc.doctype, doc.name, {"event": "Test", "notification": saved_name}, doc=doc)
-	ctx["recipient"] = frappe._dict(phone_e164=phone_e164, display_name=None, contact=None)
+	# the tester's own number: named when the system knows it, never "None"
+	ctx["recipient"] = notifications.recipient_context(phone_e164, *dispatch.recipient_identity(phone_e164))
 	body, error = notifications._body(notif, ctx)
 	if error or not (body or "").strip():
 		frappe.throw(_("The message could not be rendered: {0}").format(error or _("it is empty")), WAValidationError)
