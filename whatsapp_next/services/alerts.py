@@ -273,7 +273,20 @@ def execute(alert, *, preview: bool = False, test_phone: str | None = None) -> A
 	"""Run one alert document — saved or a draft the editor built — and return what it did.
 	`preview` renders everything without creating outbound rows. `test_phone` sends to that one
 	number only, what the first recipient would receive (their rows, when the recipient is a report
-	column). Never touches the alert's counters; `run_alert` does that for a scheduled run."""
+	column). Never touches the alert's counters; `run_alert` does that for a scheduled run.
+
+	Everything is written in the alert's own `language` when it has one — column labels, the
+	report's title and filters, `_()` in the message: the scheduler runs the job as whoever, and an
+	Arabic alert came out half in the language of that user."""
+	if alert.get("language"):
+		from frappe.translate import print_language
+
+		with print_language(alert.language):
+			return _execute(alert, preview=preview, test_phone=test_phone)
+	return _execute(alert, preview=preview, test_phone=test_phone)
+
+
+def _execute(alert, *, preview: bool = False, test_phone: str | None = None) -> AlertRun:
 	name = alert.name if not alert.is_new() else None
 	run = AlertRun(alert=name or alert.alert_name, preview=preview)
 	try:

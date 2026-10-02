@@ -146,6 +146,7 @@ frappe.listview_settings[DOCTYPE] = {
 	},
 
 	onload(listview) {
+		whatsapp_next.drop_unreadable_link_titles(listview);
 		// Numbers are materialised from messages — never created by hand, so Desk's "+ Add" is
 		// replaced by "Open contacts" (the header's primary; without the kit, it is simply cleared).
 		listview.can_create = false;

@@ -66,6 +66,55 @@ class TestAttachments(IntegrationTestCase):
 		with self.assertRaises(WAFileError):
 			attachments.save_private_file(b"", "x.bin")
 
+	def test_print_language_and_render_error(self):
+		"""A print goes out in its own language — the format's default, else the document's — and a
+		broken format is reported in one readable line, not as Frappe's HTML traceback."""
+		from unittest.mock import patch
+
+		self.assertIsNone(attachments.print_language("Role", "System Manager"))
+		name = "wa-test-print-language"
+		if not frappe.db.exists("Print Format", name):
+			frappe.get_doc(
+				{
+					"doctype": "Print Format",
+					"name": name,
+					"doc_type": "Role",
+					"standard": "No",
+					"custom_format": 1,
+					"print_format_type": "Jinja",
+					"html": "<p>{{ doc.name }}</p>",
+					"default_print_language": "ar",
+				}
+			).insert(ignore_permissions=True)
+		self.addCleanup(lambda: frappe.delete_doc("Print Format", name, force=True))
+		self.assertEqual(attachments.print_language("Role", "System Manager", name), "ar")
+		seen = {}
+
+		def fake_print(*args, **kwargs):
+			seen["lang"] = frappe.local.lang
+			return b"%PDF-1.4 fake"
+
+		previous = frappe.local.lang
+		with patch.object(frappe, "get_print", fake_print):
+			attachments.render_print_pdf("Role", "System Manager", print_format=name)
+			self.assertEqual(seen["lang"], "ar")
+			attachments.render_print_pdf("Role", "System Manager", print_format=name, language="en")
+			self.assertEqual(seen["lang"], "en")  # an explicit language still wins
+		self.assertEqual(frappe.local.lang, previous)
+
+		def broken(*args, **kwargs):
+			raise frappe.ValidationError(
+				"Error in print format on line 19: <pre>Traceback (most recent call last):\n"
+				"  File &quot;jinja.py&quot;, line 156\njinja2.exceptions.UndefinedError: &#x27;x&#x27; is undefined</pre>"
+			)
+
+		with patch.object(frappe, "get_print", broken), self.assertRaises(WAFileError) as caught:
+			attachments.render_print_pdf("Role", "System Manager")
+		message = str(caught.exception)
+		self.assertIn("jinja2.exceptions.UndefinedError: 'x' is undefined", message)
+		self.assertNotIn("<pre>", message)
+		self.assertNotIn("Traceback", message)
+
 	def test_render_print_pdf_and_png(self):
 		pdf = attachments.render_print_pdf("Role", "System Manager", language="ar", file_name="wa-test-role")
 		self.assertTrue(pdf.content.startswith(b"%PDF"))

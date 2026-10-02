@@ -270,7 +270,7 @@ class TestSndPlatform(IntegrationTestCase):
 		self.assertEqual(m2["recipient_type"], "Group")
 		self.assertEqual(m2["media_base64"], "QUJD")
 		self.assertEqual(m2["media_filename"], "a.pdf")
-		self.assertEqual(m3["poll_options"], ["a", "b"])
+		self.assertEqual(m3["poll_options"], '["a", "b"]')  # JSON text: the platform's log field is text
 		self.assertEqual(m3["poll_allow_multiple_answers"], 1)
 		self.assertEqual(len(result.accepted), 2)
 		self.assertEqual(result.accepted[1].status, "Held")

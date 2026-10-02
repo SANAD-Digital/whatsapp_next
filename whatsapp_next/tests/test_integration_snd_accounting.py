@@ -81,6 +81,24 @@ class TestSndAccountingFunctions(IntegrationTestCase):
 		self.assertEqual(r.data["months"], 6)
 		self.assertIsInstance(r.data["entries"], list)
 
+	def test_statement_closing_does_not_depend_on_the_reply_language(self):
+		"""The ledger labels its closing line in the reply language; the closing balance is read by
+		position. Matching the English word gave 0.00 in every Arabic reply."""
+		rows = [
+			{"account": "'الافتتاحي'", "debit": 20000.0, "balance": 20000.0, "account_currency": "YER"},
+			{"posting_date": frappe.utils.getdate(), "voucher_no": "ACC-SINV-X", "debit": 500.0, "credit": 0.0, "balance": 20500.0},
+			{"account": "'المجموع'", "debit": 500.0, "account_currency": "YER"},
+			{"account": "'الإغلاق (الافتتاحي + الإجمالي)'", "debit": 20500.0, "balance": 20500.0, "account_currency": "YER"},
+		]
+		with patch.object(handlers, "_ledger_rows", return_value=rows):
+			r = handlers.customer_statement(_ctx("customer_statement", party=CUSTOMER))
+		self.assertTrue(r.ok, r.error)
+		self.assertEqual(r.data["closing"], 20500.0)
+		self.assertEqual(r.data["count"], 1)
+		# no closing line at all (an empty ledger) is still a zero, not an error
+		with patch.object(handlers, "_ledger_rows", return_value=[]):
+			self.assertEqual(handlers.customer_statement(_ctx("customer_statement", party=CUSTOMER)).data["closing"], 0)
+
 	def test_staff_summaries(self):
 		for key in ("customer_trial_balance", "supplier_trial_balance", "cash_balances", "bank_balances"):
 			r = getattr(handlers, key)(_ctx(key, args={"limit": 3}))

@@ -183,6 +183,41 @@ class TestCampaignRunner(IntegrationTestCase):
 		with self.assertRaises(WAStateConflictError):
 			runner.cancel(name)
 
+	def test_file_caption_is_rendered_per_recipient(self):
+		"""The composer offers the variables over a file's caption too: each recipient gets theirs,
+		and the preview shows it (the caption went out as typed, live business test 2026-10-01)."""
+		from whatsapp_next.services import attachments
+
+		png = (
+			b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
+			b"\x00\x00\x00\rIDATx\x9cc\xf8\xff\xff?\x00\x05\xfe\x02\xfe\xa75\x81\x84\x00\x00\x00\x00IEND\xaeB`\x82"
+		)
+		url = attachments.save_private_file(png, "campaign-test-offer.png")
+		self.addCleanup(lambda: frappe.delete_doc("File", frappe.db.get_value("File", {"file_url": url}), force=True))
+		name = _campaign(
+			self.device,
+			messages=[
+				{
+					"message_type": "Image",
+					"attachment": url,
+					"caption": "campaign-test Offer for {{ recipient.display_name }}",
+					"delay_seconds": 0,
+				}
+			],
+		)
+		row = frappe.db.get_value("WhatsApp Campaign Recipient", {"parent": name, "phone_e164": P1}, "name")
+		preview = runner.preview_message(name, 1, row)
+		self.assertEqual((preview["body"], preview["caption"]), (None, "campaign-test Offer for R1"))
+		self.assertEqual(preview["errors"], [])
+		with patch.object(frappe, "enqueue"):
+			runner.start(name)
+		runner.materialize(name)
+		captions = {
+			r.phone_e164: r.caption
+			for r in frappe.get_all("WhatsApp Log", filters={"campaign": name}, fields=["phone_e164", "caption"])
+		}
+		self.assertEqual(captions, {P1: "campaign-test Offer for R1", P2: "campaign-test Offer for R2"})
+
 	def test_reconcile_closes_with_the_final_counts(self):
 		"""The periodic close writes the counts and recipient statuses, not only the status: a
 		campaign whose messages all went out must not end `Completed` with zero sent."""
@@ -212,6 +247,10 @@ class TestCampaignRunner(IntegrationTestCase):
 		self.assertEqual(
 			frappe.db.get_value("WhatsApp Campaign Recipient", {"parent": name}, "status"), "Delivered"
 		)
+		# "first message" is when the first one really left, not when its row was built
+		times = frappe.db.get_value("WhatsApp Campaign", name, ["first_message_at", "last_message_at"], as_dict=True)
+		sent_at = frappe.db.get_value("WhatsApp Log", {"campaign": name}, "sent_at")
+		self.assertEqual((times.first_message_at, times.last_message_at), (sent_at, sent_at))
 
 	def test_cancel_running_and_exclude_unknown(self):
 		name = _campaign(self.device, recipients=(P1, P3), exclude_unknown_numbers=1)

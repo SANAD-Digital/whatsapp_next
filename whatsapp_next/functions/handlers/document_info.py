@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
-from frappe.utils import cint
+from frappe.utils import cint, fmt_money, formatdate
 
 from whatsapp_next.functions.context import FunctionContext, FunctionResult
 from whatsapp_next.services import read_layer
@@ -49,13 +49,23 @@ def handle(ctx: FunctionContext) -> FunctionResult:
 	status = row.get("status") or {0: _("Draft"), 1: _("Submitted"), 2: _("Cancelled")}.get(
 		cint(row.get("docstatus"))
 	)
+	amount = read_layer.reference_amount(doctype, row["name"])
+	date = str(row.get("posting_date") or row.get("transaction_date") or "")[:10]
+	currency = frappe.db.get_value(doctype, name, "currency") if meta.has_field("currency") else None
 	return FunctionResult(
 		data={
 			"doctype": doctype,
 			"name": row["name"],
 			"status": status,
-			"amount": read_layer.reference_amount(doctype, row["name"]),
-			"date": str(row.get("posting_date") or row.get("transaction_date") or "")[:10],
+			"amount": amount,
+			"date": date,
 			"party": row.get(party_field) if party_field else None,
+			# the same values as a reader writes them, in the reply's language: a template printing
+			# the raw ones answered "Amount: 67000.0 / Date: 2026-12-07" beside Arabic replies
+			"doctype_label": _(doctype),
+			"status_label": _(status) if status else status,
+			"amount_formatted": fmt_money(amount, currency=currency) if amount is not None else None,
+			"date_formatted": formatdate(date) if date else "",
+			"currency": currency,
 		}
 	)

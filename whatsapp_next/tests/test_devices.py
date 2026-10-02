@@ -186,6 +186,36 @@ class TestDevices(IntegrationTestCase):
 			frappe.db.count("Error Log", {"method": ("like", "%unexpected transition%")}), before + 1
 		)
 
+	def test_default_device_when_settings_lost_it(self):
+		"""Live E2E 2026-09-30: the only device was flagged `is_default` but Settings → Default
+		Device was empty, so every sender reading Settings found no device (the composer
+		preselected nothing, a bulk send without a device was refused)."""
+		from whatsapp_next.services import quick_send
+
+		with fake_provider():
+			a = devices.create(NAME + " A", phone="+966500000405")
+			b = devices.create(NAME + " B", phone="+966500000406")
+		# the drifted state: the flag without Settings
+		frappe.db.set_value("WhatsApp Device", {"name": ("!=", a)}, "is_default", 0)
+		frappe.db.set_value("WhatsApp Device", a, "is_default", 1)
+		frappe.db.set_single_value("WhatsApp Settings", "default_device", None)
+		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+		self.assertEqual(devices.default_device(), a)
+		self.assertEqual(quick_send.get_context()["default_device"], a)
+		# Settings naming a disabled device does not win over the flag
+		frappe.db.set_value("WhatsApp Device", b, "disabled", 1)
+		frappe.db.set_single_value("WhatsApp Settings", "default_device", b)
+		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+		self.assertEqual(devices.default_device(), a)
+		frappe.db.set_value("WhatsApp Device", b, "disabled", 0)
+		# flagging a device through its document writes Settings too
+		doc = frappe.get_doc("WhatsApp Device", b)
+		doc.is_default = 1
+		doc.save(ignore_permissions=True)
+		self.assertEqual(frappe.db.get_single_value("WhatsApp Settings", "default_device"), b)
+		self.assertEqual(frappe.db.get_value("WhatsApp Device", a, "is_default"), 0)
+		self.assertEqual(devices.default_device(), b)
+
 	def test_disconnect_delete_default_disabled(self):
 		with fake_provider() as fp:
 			a = devices.create(NAME + " A", phone="+966500000403")

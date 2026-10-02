@@ -75,6 +75,18 @@ def _ledger_rows(filters) -> list:
 		return execute(frappe._dict(filters, presentation_currency=None))[1]
 
 
+def _closing_row(rows) -> frappe._dict:
+	"""The ledger's closing line: the last line that is not a voucher and carries a balance.
+
+	Its label is translated — "Closing (Opening + Total)" in the language of the reply — so it
+	cannot be found by the English word: an Arabic reply matched nothing and told a customer
+	who owed 20,000 that their closing balance was 0.00 (live E2E, 2026-10-01)."""
+	for row in reversed(rows or []):
+		if isinstance(row, dict) and not row.get("voucher_no") and row.get("balance") is not None:
+			return frappe._dict(row)
+	return frappe._dict()
+
+
 # ---- the sender's own customer -------------------------------------------------------------
 
 
@@ -122,7 +134,7 @@ def customer_statement(ctx: FunctionContext) -> FunctionResult:
 	)
 	rows = _ledger_rows(filters)
 	entries = [r for r in rows if r.get("posting_date") and r.get("voucher_no")][-_limit(ctx, 10) :]
-	closing = next((r for r in reversed(rows) if "Closing" in str(r.get("remarks") or r.get("account") or "")), frappe._dict())
+	closing = _closing_row(rows)
 	currency = _currency(customer, company, closing.get("presentation_currency") or closing.get("account_currency"))
 	return FunctionResult(
 		data={

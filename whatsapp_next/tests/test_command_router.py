@@ -300,6 +300,31 @@ class TestCommandRouter(IntegrationTestCase):
 		self.assertEqual(cr.settings_for(cmd)["document_type"], "Sales Invoice")
 		self.assertEqual(cr.settings_for(cmd)["require_party"], 1)
 
+	def test_document_info_gives_the_values_as_a_reader_writes_them(self):
+		"""Beside the raw status / amount / date the handler gives them formatted and translated, so a
+		reply need not print `67000.0` and `2026-12-07` (live business test 2026-10-01)."""
+		from whatsapp_next.functions.context import FunctionContext, Sender
+		from whatsapp_next.functions.handlers import document_info
+
+		todo = frappe.get_doc({"doctype": "ToDo", "description": "cmd-test doc info"}).insert(ignore_permissions=True)
+		self.addCleanup(lambda: frappe.delete_doc("ToDo", todo.name, force=True))
+		ctx = FunctionContext(
+			function_key="document_info",
+			command=None,
+			args={"name": todo.name},
+			settings={"document_type": "ToDo", "party_field": "", "require_party": 0},
+			sender=Sender(phone_e164=None, jid=None, display_name=None, contact=None),
+			device=None,
+			inbound=None,
+		)
+		data = document_info.handle(ctx).data
+		self.assertEqual((data["status"], data["status_label"], data["doctype_label"]), ("Open", frappe._("Open"), frappe._("ToDo")))
+		self.assertEqual((data["amount"], data["amount_formatted"], data["date_formatted"]), (None, None, ""))
+		with patch.object(document_info.read_layer, "reference_amount", return_value=67000.0):
+			data = document_info.handle(ctx).data
+		self.assertEqual(data["amount_formatted"], frappe.utils.fmt_money(67000.0))
+		self.assertNotEqual(data["amount_formatted"], "67000.0")
+
 	def test_persisted_simulation_and_live_guard(self):
 		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#ping persisted", persist=True)
 		self.assertEqual(res.status, "Executed")
@@ -374,6 +399,26 @@ class TestCommandRouter(IntegrationTestCase):
 		with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now", side_effect=RuntimeError):
 			result = cr.route(inbound)
 		self.assertEqual(queued(result.outbound[0]), 1)
+
+	def test_a_contact_of_several_accounts_answers_for_its_primary_one(self):
+		links = [
+			frappe._dict(link_doctype="Customer", link_name="First Linked"),
+			frappe._dict(link_doctype="Customer", link_name="Primary Of"),
+		]
+		primary = {"First Linked": "Somebody Else", "Primary Of": self.contact}
+		with (
+			patch.object(cr.frappe, "get_all", return_value=links),
+			patch.object(cr.frappe.db, "get_value", side_effect=lambda dt, name, field: primary[name]),
+		):
+			sender = cr.sender_for({"phone_e164": P_LINKED, "contact": self.contact})
+			self.assertEqual((sender.party_type, sender.party_name), ("Customer", "Primary Of"))
+		# nobody's primary contact: the first link, as before
+		with (
+			patch.object(cr.frappe, "get_all", return_value=links),
+			patch.object(cr.frappe.db, "get_value", return_value=None),
+		):
+			sender = cr.sender_for({"phone_e164": P_LINKED, "contact": self.contact})
+			self.assertEqual(sender.party_name, "First Linked")
 
 	def test_render_outputs_and_send_test(self):
 		cmd = frappe.get_doc("WhatsApp Command", "doc")

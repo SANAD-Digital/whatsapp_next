@@ -775,7 +775,10 @@ class SndPlatformProvider(BaseProvider):
 			payload.update(
 				{
 					"poll_question": message.poll.question,
-					"poll_options": list(message.poll.options),
+					# as JSON text, which the platform parses back: it files the payload into its
+					# Message Log, whose `poll_options` is a text field — a list there failed every
+					# queued poll with "Value for Poll Options cannot be a list" (live test 2026-10-01)
+					"poll_options": json.dumps(list(message.poll.options), ensure_ascii=False),
 					"poll_allow_multiple_answers": 1 if message.poll.allow_multiple else 0,
 				}
 			)

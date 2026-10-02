@@ -31,6 +31,7 @@ Statuses: `Draft`, `Scheduled`, `Queued`, `Running`, `Paused`, `Completed`, `Par
 | Queued | Running, Cancelled, Completed, Partially Failed |
 | Running | Paused, Completed, Partially Failed, Cancelled |
 | Paused | Running, Cancelled |
+| Partially Failed | Running (only through `retry_failed`, while its new rows are sent) |
 
 Any other transition raises `WAStateConflictError` (409). A campaign becomes `Completed` (no
 failures) or `Partially Failed` by itself when no outbound row is open and no recipient is
@@ -464,12 +465,13 @@ Message `idx` of the campaign rendered for one recipient.
 **Returns**
 
 ```json
-{ "idx": 1, "message_type": "Document", "body": "Dear Ahmed, …", "attachment_name": "INV-0001.pdf", "errors": [] }
+{ "idx": 1, "message_type": "Document", "body": null, "caption": "Dear Ahmed, …", "attachment_name": "INV-0001.pdf", "errors": [] }
 ```
 
-`attachment_name` is the attachment's file name, or for a `Document` message built from a print
-format the rendered `file_name_template`. `errors` are Jinja compile errors of the message body
-(or its template's body).
+`body` is the rendered text of a text message and `caption` the rendered caption of a file
+message — both per recipient, with the same variables. `attachment_name` is the attachment's file
+name, or for a `Document` message built from a print format the rendered `file_name_template`.
+`errors` are Jinja compile errors of the message body (or its template's body) and of the caption.
 
 **Errors:** `WAValidationError` (417) — `Campaign has no message <idx>`; `Recipient row … not found`.
 
@@ -681,7 +683,9 @@ await sanad.ui.call("campaigns.get_timeline", { name: "CAMP-0001" });
 ## retry_failed
 
 Resend the campaign's failed messages. Each resend is a **new** outbound row
-(`dispatch.resend_outbound`); the failed one stays in the log.
+(`dispatch.resend_outbound`); the failed one stays in the log, but once it has been sent again it
+is history: it is not counted in `counters` / `get_failures`, and it is never sent a second time.
+A `Partially Failed` campaign goes back to `Running` until the new rows are done.
 
 - **Path:** `whatsapp_next.api.v1.campaigns.retry_failed`
 - **Methods:** POST
@@ -703,7 +707,7 @@ least one row was resent; counters are refreshed.
 ```
 
 `refused` counts rows the dispatcher would not resend (logged to the Error Log); `remaining` is
-the campaign's `Failed` rows after the call.
+the campaign's failed messages that have not been sent again.
 
 **Errors:** `WAStateConflictError` (409) — `A cancelled campaign cannot send again`.
 

@@ -221,9 +221,23 @@ def allowed_party_types(command) -> list[str]:
 	return [r.party_type for r in command.get("allowed_party_types") or [] if r.party_type]
 
 
+# the field a party names its primary contact in
+PRIMARY_CONTACT_FIELD = {"Customer": "customer_primary_contact", "Supplier": "supplier_primary_contact"}
+
+
+def _is_primary_contact_of(contact: str, link) -> bool:
+	"""Whether `contact` is the primary contact of the linked party. A contact linked to several
+	accounts answers for the one it is the primary contact of, not for whichever was linked first."""
+	field = PRIMARY_CONTACT_FIELD.get(link.link_doctype)
+	if not field or not frappe.get_meta(link.link_doctype).has_field(field):
+		return False
+	return frappe.db.get_value(link.link_doctype, link.link_name, field) == contact
+
+
 def sender_for(inbound, allowed_types: list[str] | None = None) -> Sender:
 	"""Sender facts for access checks and the handler context. The party comes from the linked
-	Contact's Dynamic Links: the first one of an `allowed_types` type when given, else the first."""
+	Contact's Dynamic Links, among those of an `allowed_types` type when given: the one whose
+	primary contact the sender is, else the first."""
 	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
 	contact = get("contact")
 	party_type = party_name = None
@@ -235,7 +249,10 @@ def sender_for(inbound, allowed_types: list[str] | None = None) -> Sender:
 			order_by="idx asc",
 		)
 		preferred = [link for link in links if link.link_doctype in (allowed_types or ())]
-		chosen = (preferred or links or [None])[0]
+		candidates = preferred or links
+		chosen = next((link for link in candidates if _is_primary_contact_of(contact, link)), None) or (
+			candidates[0] if candidates else None
+		)
 		if chosen:
 			party_type, party_name = chosen.link_doctype, chosen.link_name
 	return Sender(
@@ -870,7 +887,7 @@ def dry_run(text: str, sender_phone: str, device: str | None = None) -> RouteRes
 		frappe.throw(_("Invalid sender number: {0}").format(sender_phone), WAInvalidPhoneError)
 	if not (text or "").strip():
 		frappe.throw(_("Message text is required"), WAValidationError)
-	device = device or frappe.get_cached_doc("WhatsApp Settings").default_device
+	device = device or _default_device()
 	inbound = frappe._dict(
 		name=None,
 		doctype="WhatsApp Inbound Message",
@@ -911,3 +928,10 @@ def recent_run_counts(commands: list[str], days: int = 30) -> dict[str, int]:
 		group_by="command",
 	)
 	return {r.command: cint(r.run_count) for r in rows}
+
+
+def _default_device() -> str | None:
+	"""The default sending device (`services.devices.default_device`)."""
+	from whatsapp_next.services.devices import default_device
+
+	return default_device()

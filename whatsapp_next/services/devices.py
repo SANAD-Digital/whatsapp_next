@@ -383,6 +383,18 @@ def _release_device_links(device: str) -> None:
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 
 
+def default_device() -> str | None:
+	"""The default sending device: Settings → Default Device when it names an enabled device,
+	else the enabled device flagged `is_default`. The two are kept in step by the device
+	controller, but a site whose first device was created or adopted before that had only the
+	flag, and every sender reading Settings alone found no device (a bulk send asked for one,
+	a campaign would not start, the composers preselected nothing)."""
+	name = frappe.get_cached_doc("WhatsApp Settings").default_device
+	if name and frappe.db.get_value("WhatsApp Device", name, "disabled") == 0:
+		return name
+	return frappe.db.get_value("WhatsApp Device", {"is_default": 1, "disabled": 0}, "name")
+
+
 def set_default(device: str, user: str | None = None) -> None:
 	"""Flag `device` as the default (the controller clears the others)."""
 	doc = _doc(device)

@@ -50,7 +50,7 @@ def context() -> dict[str, Any]:
 		"groups": groups,
 		"templates": templates,
 		"devices": devices,
-		"default_device": settings.default_device,
+		"default_device": _default_device(),
 		# the campaign may not go faster than the site's queue rate, so that is the default and the cap
 		"rate": min(20, settings_rate_limit()) if settings_rate_limit() else 20,
 		"max_rate": settings_rate_limit() or None,
@@ -194,7 +194,7 @@ def send(payload: dict, user: str | None = None) -> dict[str, Any]:
 			kind, body=body, attachment=payload.get("attachment"), contact=payload.get("contact")
 		)
 	)
-	device = payload.get("device") or frappe.get_cached_doc("WhatsApp Settings").default_device
+	device = payload.get("device") or _default_device()
 	if not device:
 		frappe.throw(_("Pick a sending device"), WAValidationError)
 	scheduled_at = payload.get("scheduled_at") or None
@@ -249,3 +249,10 @@ def send(payload: dict, user: str | None = None) -> dict[str, Any]:
 		"excluded": r["excluded"],
 		"invalid": r["invalid"],
 	}
+
+
+def _default_device() -> str | None:
+	"""The default sending device (`services.devices.default_device`)."""
+	from whatsapp_next.services.devices import default_device
+
+	return default_device()

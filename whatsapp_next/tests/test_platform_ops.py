@@ -233,6 +233,8 @@ class TestPlatformOps(IntegrationTestCase):
 					"phone_e164": "+966500000082",
 				}
 			).insert(ignore_permissions=True)
+			# a run that failed before its cleanup leaves the event behind (it commits)
+			delete_all("WhatsApp Webhook Event", {"event_id": "ret-1"})
 			ev = frappe.get_doc(
 				{
 					"doctype": "WhatsApp Webhook Event",
@@ -254,7 +256,8 @@ class TestPlatformOps(IntegrationTestCase):
 			audit_retention_days=365,
 		)
 		report = retention.purge(commit=False)
-		self.assertEqual(report.payloads_blanked, 1)
+		# the purge covers the whole site: this test's event, plus whatever real ones are past retention
+		self.assertGreaterEqual(report.payloads_blanked, 1)
 		self.assertIsNone(frappe.db.get_value("WhatsApp Webhook Event", ev.name, "payload"))
 		self.assertEqual(report.deleted["WhatsApp Queue Item"], 1)
 		self.assertEqual(report.deleted["WhatsApp Log"], 1)

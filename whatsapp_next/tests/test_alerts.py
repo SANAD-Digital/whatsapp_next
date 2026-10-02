@@ -117,9 +117,22 @@ class TestAlerts(IntegrationTestCase):
 		html_text = report_render.report_html(
 			REPORT_COLUMNS, REPORT_ROWS, alert, filters={"status": "Open"}, title="AlertTest"
 		)
-		self.assertIn("<table>", html_text)
+		self.assertIn('<table class="wa-report">', html_text)
 		self.assertIn("AlertTest", html_text)
-		self.assertIn("status: Open", html_text)
+		self.assertIn("Status: Open", html_text)  # the filter's name as a label, not a fieldname
+		# the rules touch the report's table only (the letter head is a table too), a filter reads
+		# as its value does on screen, and a wide report shrinks to keep its last column on the page
+		self.assertNotIn("\nth, td {", html_text)
+		wide = report_render.report_html(
+			[{"label": f"C{i}", "fieldname": f"c{i}", "fieldtype": "Data"} for i in range(16)],
+			[],
+			alert,
+			filters={"report_date": "2026-10-01", "party": ["A", "B"], "empty": []},
+		)
+		self.assertIn("font-size: 8px", wide)
+		self.assertIn("Report Date: " + frappe.format_value("2026-10-01", {"fieldtype": "Date"}), wide)
+		self.assertIn("Party: A، B", wide)
+		self.assertNotIn("Empty", wide)
 		tbody = html_text.rsplit("<tbody>", 1)[1].split("</tbody>")[0]  # the report table is last
 		self.assertEqual(tbody.count("<td"), 9)  # 3 rows × 3 columns
 		self.assertNotIn('src="/files/', html_text)  # letter head images are inlined
@@ -129,8 +142,32 @@ class TestAlerts(IntegrationTestCase):
 		)
 		pdf = report_render.report_pdf(html_text, alert)
 		self.assertTrue(pdf.startswith(b"%PDF"))
+		png = report_render.report_png(html_text)
+		if png is not None:  # wkhtmltoimage is optional
+			self.assertTrue(png.startswith(b"\x89PNG"))
+			self.assertLess(len(png), 300_000)  # re-encoded: the raw render of this small table is over 1 MB
+		self.assertEqual(report_render._compact_png(b"not a png"), b"not a png")
 		empty = report_render.report_html(REPORT_COLUMNS, [], alert)
 		self.assertIn("No data", empty)
+
+	def test_alert_speaks_its_own_language(self):
+		"""The alert's `language` writes the run — `_()` in the message, labels, the title — whoever the
+		job runs as; the caller's language is back afterwards."""
+		alert = _alert(language="ar", attachment_format="None", message="alert-test {{ _('Yes') }}")
+		before = frappe.local.lang
+		frappe.local.lang = "en"
+		try:
+			with patch.object(alerts, "_run_report", return_value=(REPORT_COLUMNS, REPORT_ROWS)):
+				preview = alerts.run_alert(alert.name, preview=True)
+			self.assertEqual(frappe.local.lang, "en")
+		finally:
+			frappe.local.lang = before
+		from frappe.translate import print_language
+
+		with print_language("ar"):
+			yes = frappe._("Yes")
+		self.assertNotEqual(yes, "Yes")
+		self.assertEqual(preview.recipients[0]["body"], f"alert-test {yes}")
 
 	def test_run_preview_and_real(self):
 		alert = _alert(
@@ -199,5 +236,6 @@ class TestAlerts(IntegrationTestCase):
 			update_modified=False,
 		)
 		with patch.object(frappe, "enqueue") as enq:
-			self.assertEqual(alerts.run_due_alerts(), [alert.name])
-		self.assertEqual(enq.call_args.kwargs["name"], alert.name)
+			# the site may have alerts of its own that are due as well
+			self.assertIn(alert.name, alerts.run_due_alerts())
+		self.assertIn(alert.name, [call.kwargs["name"] for call in enq.call_args_list])

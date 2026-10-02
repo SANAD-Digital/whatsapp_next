@@ -111,3 +111,21 @@ sanad.ui.configure({
 
 frappe.provide("whatsapp_next");
 whatsapp_next.api = api;
+
+// A Link to a doctype that shows its title in links (Contact) makes Desk join its title
+// (`contact.full_name`) into the list query, and the joined doctype's read restrictions then
+// filter the whole list. The product's roles read Contact only as its owner (the `All` role's
+// if-owner rule; spec §4), so the join added "contact owner = me" and WhatsApp Log, Inbound and
+// Numbers came back empty. Drop only the joins the reader cannot read without such a rule; the
+// cell then shows the linked name itself.
+whatsapp_next.drop_unreadable_link_titles = (listview) => {
+	const get_fields = listview.get_fields.bind(listview);
+	listview.get_fields = () => {
+		const titles = listview.link_field_title_fields || {};
+		Object.keys(titles).forEach((fieldname) => {
+			const df = frappe.meta.get_docfield(listview.doctype, fieldname);
+			if (df && df.options && (!frappe.model.can_read(df.options) || frappe.perm.get_match_rules(df.options).length)) delete titles[fieldname];
+		});
+		return get_fields();
+	};
+};

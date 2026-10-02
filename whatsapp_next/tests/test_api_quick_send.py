@@ -67,6 +67,38 @@ class TestApiQuickSend(IntegrationTestCase):
 			self.assertEqual(api.preview(body="{{ x ")["errors"][0][:19], "TemplateSyntaxError")
 			self.assertIn("not found", api.preview(template="no-such-ApiTest-template")["errors"][0])
 
+	def test_template_names_the_recipient_and_never_prints_none(self):
+		"""Live E2E 2026-10-01: a template greeting `{{ recipient.display_name }}` previewed and was
+		SENT as "مرحباً None" — the quick-send render had no recipient at all."""
+		tpl = "ApiTest quick tpl"
+		delete_all("WhatsApp Template", {"name": tpl})
+		delete_all("WhatsApp Number", {"name": ("in", [P1, P2])})
+		frappe.get_doc(
+			{"doctype": "WhatsApp Template", "template_name": tpl, "message_type": "Text", "reference_doctype": "ToDo", "body": f"{TAG} hi [{{{{ recipient.display_name }}}}] {{{{ doc.description }}}}"}
+		).insert(ignore_permissions=True)
+		todo = frappe.get_doc({"doctype": "ToDo", "description": "ApiTest todo"}).insert(ignore_permissions=True)
+		number = frappe.get_doc({"doctype": "WhatsApp Number", "phone_e164": P1, "number_type": "Individual", "display_name": "Salem ApiTest"})
+		number.flags.wa_system_writer = True
+		number.insert(ignore_permissions=True)
+		try:
+			ref = {"reference_doctype": "ToDo", "reference_name": todo.name}
+			# a number the system knows by name: the preview and the sent body both say it
+			self.assertEqual(api.preview(template=tpl, phone=P1, **ref)["body"], f"{TAG} hi [Salem ApiTest] ApiTest todo")
+			res = api.send(device=self.device, phone=P1, template=tpl, **ref)
+			self.assertEqual(frappe.db.get_value("WhatsApp Log", res["outbound"], "body"), f"{TAG} hi [Salem ApiTest] ApiTest todo")
+			# a number nobody has named: nothing, never the word None
+			self.assertEqual(api.preview(template=tpl, phone=P2, **ref)["body"], f"{TAG} hi [] ApiTest todo")
+			self.assertEqual(api.preview(template=tpl, **ref)["body"], f"{TAG} hi [] ApiTest todo")
+			res = api.send(device=self.device, phone=P2, template=tpl, **ref)
+			self.assertEqual(frappe.db.get_value("WhatsApp Log", res["outbound"], "body"), f"{TAG} hi [] ApiTest todo")
+			# a number still being typed does not break the preview
+			self.assertEqual(api.preview(template=tpl, phone="05", **ref)["errors"], [])
+		finally:
+			self._clean()
+			delete_all("WhatsApp Template", {"name": tpl})
+			delete_all("WhatsApp Number", {"name": ("in", [P1, P2])})
+			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
+
 	def test_send(self):
 		with as_user("WhatsApp Agent"):
 			res = api.send(device=self.device, phone="0500920101", body=f"{TAG} hello")

@@ -14,6 +14,7 @@ from frappe.utils import cint, now_datetime
 
 from whatsapp_next.exceptions import WAInvalidPhoneError, WAValidationError
 from whatsapp_next.services import command_router, dispatch
+from whatsapp_next.services.devices import default_device
 from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.services.permissions import resolve_contact_by_phone
@@ -175,7 +176,7 @@ def get_context() -> dict[str, Any]:
 	)
 	return {
 		"devices": devices,
-		"default_device": settings.default_device,
+		"default_device": default_device(),
 		"commands": commands,
 		"commands_enabled": bool(cint(settings.enable_commands)),
 		"sample_contacts": sample_contacts,

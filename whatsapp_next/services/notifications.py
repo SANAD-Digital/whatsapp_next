@@ -277,17 +277,24 @@ def resolve_recipients(notification, doc, errors: list[str] | None = None) -> li
 		if phone in seen:
 			continue
 		seen.add(phone)
+		# a plain phone field or a fixed number carries no Contact: the number's own name and
+		# contact are looked up, as the log row will have them — the body greeted "None" while
+		# the row beside it knew the name (live business test 2026-10-01)
+		display_name, contact = dispatch.recipient_identity(phone, None, contact)
 		out.append(
-			Recipient(
-				phone_e164=phone,
-				contact=contact,
-				source=row.recipient_type,
-				display_name=frappe.db.get_value("Contact", contact, "full_name") if contact else None,
-			)
+			Recipient(phone_e164=phone, contact=contact, source=row.recipient_type, display_name=display_name)
 		)
 	if missing:
 		_record_error(notification.name, "; ".join(missing), errors)
 	return out
+
+
+def recipient_context(phone_e164: str, display_name: str | None = None, contact: str | None = None):
+	"""The `recipient` a notification body is rendered with: never a `None` field (a missing name
+	prints nothing)."""
+	return templates.context_for(
+		recipient={"phone_e164": phone_e164, "display_name": display_name, "contact": contact}
+	)["recipient"]
 
 
 # ---- job -----------------------------------------------------------------------------------
@@ -359,9 +366,7 @@ def send_for_document(notification: str, doctype: str, name: str, doc_event: str
 	outbounds: list[str] = []
 	for r in recipients:
 		# rendered for each recipient: `{{ recipient.display_name }}` is theirs, as the preview shows
-		ctx["recipient"] = frappe._dict(
-			phone_e164=r.phone_e164, display_name=r.display_name, contact=r.contact
-		)
+		ctx["recipient"] = recipient_context(r.phone_e164, r.display_name, r.contact)
 		text, render_error = _body(notif, ctx)
 		if render_error or not (text or "").strip():
 			last_error = f"template: {render_error or 'empty body'}"
@@ -475,9 +480,7 @@ def preview_for_document(notification: str, reference_name: str) -> dict[str, An
 	)
 	if recipients:  # render as the job would for the first recipient
 		first = recipients[0]
-		ctx["recipient"] = frappe._dict(
-			phone_e164=first.phone_e164, display_name=first.display_name, contact=first.contact
-		)
+		ctx["recipient"] = recipient_context(first.phone_e164, first.display_name, first.contact)
 	body, render_error = _body(notif, ctx)
 	if render_error:
 		errors.append(f"template: {render_error}")
