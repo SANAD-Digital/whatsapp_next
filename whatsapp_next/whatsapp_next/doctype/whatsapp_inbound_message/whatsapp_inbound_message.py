@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import frappe
 from frappe.model.document import Document
 from frappe.utils import now_datetime
 
@@ -24,3 +25,23 @@ class WhatsAppInboundMessage(Document):
 		if self.chat_jid:
 			self.is_group = 1 if self.chat_jid.strip().lower().endswith(GROUP_SUFFIX) else 0
 		assert_status_writer(self, ("command_status",))
+
+
+# Composite indexes the DocType JSON cannot express (fields.md F-11); single-column ones are
+# `search_index` / `unique` in the JSON.
+COMPOSITE_INDEXES: tuple[tuple[str, ...], ...] = (
+	("device", "received_at"),
+	("command", "received_at"),
+)
+COMPOSITE_UNIQUE: tuple[tuple[str, ...], ...] = (
+	("device", "provider_message_id"),
+)  # D-029 OQ-B, D-035
+
+
+def on_doctype_update() -> None:
+	"""Called by Frappe whenever it syncs this DocType (install, and a migrate that changes it):
+	create the composite indexes that are missing. Idempotent."""
+	for fields in COMPOSITE_INDEXES:
+		frappe.db.add_index("WhatsApp Inbound Message", list(fields))
+	for fields in COMPOSITE_UNIQUE:
+		frappe.db.add_unique("WhatsApp Inbound Message", list(fields))

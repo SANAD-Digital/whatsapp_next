@@ -61,3 +61,18 @@ def find_secret_keys(value: Any) -> set[str]:
 		for child in value:
 			found |= find_secret_keys(child)
 	return found
+
+
+# Composite indexes the DocType JSON cannot express (fields.md F-11); single-column ones are
+# `search_index` / `unique` in the JSON.
+COMPOSITE_INDEXES: tuple[tuple[str, ...], ...] = (
+	("reference_doctype", "reference_name"),
+	("user", "creation"),
+)
+
+
+def on_doctype_update() -> None:
+	"""Called by Frappe whenever it syncs this DocType (install, and a migrate that changes it):
+	create the composite indexes that are missing. Idempotent."""
+	for fields in COMPOSITE_INDEXES:
+		frappe.db.add_index("WhatsApp Audit Log", list(fields))

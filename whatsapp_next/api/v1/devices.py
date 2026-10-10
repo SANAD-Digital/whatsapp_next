@@ -32,6 +32,12 @@ DEVICE_FIELDS = (
 	"webhook_registered",
 	"last_error",
 	"last_status_event_at",
+	"history_status",
+	"history_imported",
+	"history_total",
+	"history_started_at",
+	"history_finished_at",
+	"history_error",
 	"creation",
 	"modified",
 )
@@ -46,7 +52,9 @@ def list_devices(refresh: bool = False) -> dict[str, Any]:
 	"""Local device rows; `refresh=1` first mirrors the provider's live state (`sync_from_provider`)."""
 	synced = devices.sync_from_provider() if refresh else None
 	rows = frappe.get_all("WhatsApp Device", fields=list(DEVICE_FIELDS), order_by="is_default desc, name")
-	return {"rows": rows, "total": len(rows), "synced": synced}
+	from whatsapp_next.services import history_import
+
+	return {"rows": rows, "total": len(rows), "synced": synced, "history_allowed": history_import.allowed()}
 
 
 @api_endpoint(roles=MANAGER, schema={"pairing_mode": {"enum": ["QR", "Code"]}})
@@ -126,3 +134,33 @@ def get_device_impact(device: str) -> dict[str, Any]:
 		"campaigns": frappe.db.count("WhatsApp Campaign", {"device": device}),
 		"messages": frappe.db.count("WhatsApp Log", {"device": device}),
 	}
+
+
+@api_endpoint(roles=MANAGER)
+def import_history(device: str, restart: bool = False) -> dict[str, Any]:
+	"""Bring in `device`'s past conversations (services.history_import); `restart` reads them from
+	the start again, skipping what is already here. Audited."""
+	from whatsapp_next.services import audit, history_import
+
+	if not frappe.db.exists("WhatsApp Device", device):
+		frappe.throw(_("WhatsApp Device {0} not found").format(device), WANotFoundError)
+	history_import.start(device, restart=bool(restart))
+	audit.log("Settings Changed", reference=("WhatsApp Device", device), details={"action": "import_history", "restart": bool(restart)},
+		user=frappe.session.user)
+	return {"ok": True, **_history(device)}
+
+
+@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
+def get_history_status(device: str) -> dict[str, Any]:
+	"""Progress of `device`'s history import → `{status, imported, total, started_at, finished_at, error}`."""
+	if not frappe.db.exists("WhatsApp Device", device):
+		frappe.throw(_("WhatsApp Device {0} not found").format(device), WANotFoundError)
+	return _history(device)
+
+
+def _history(device: str) -> dict[str, Any]:
+	row = frappe.db.get_value("WhatsApp Device", device, ["history_status", "history_imported", "history_total",
+		"history_started_at", "history_finished_at", "history_error"], as_dict=True)
+	return {"status": row.history_status or "Not Started", "imported": row.history_imported or 0,
+		"total": row.history_total or 0, "started_at": row.history_started_at,
+		"finished_at": row.history_finished_at, "error": row.history_error}

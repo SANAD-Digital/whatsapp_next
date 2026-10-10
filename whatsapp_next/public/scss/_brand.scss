@@ -1,0 +1,50 @@
+// The WhatsappNext identity (`brand/BRAND.md`): its two typefaces and the wordmark.
+//
+// The typefaces dress the product's name and logo only — the wordmark in the sidebar header and on
+// the onboarding console. Body text stays Desk's (owner, 2026-10-07). A browser fetches a face only
+// when something on the page uses it, so these declarations cost nothing on the other screens.
+
+$wn-fonts: "/assets/whatsapp_next/fonts";
+
+@font-face {
+	font-family: "Sora";
+	src: url("#{$wn-fonts}/Sora-Variable.woff2") format("woff2");
+	font-weight: 100 800;
+	font-display: swap;
+}
+@font-face {
+	font-family: "IBM Plex Sans Arabic";
+	src: url("#{$wn-fonts}/IBMPlexSansArabic-Light.woff2") format("woff2");
+	font-weight: 300;
+	font-display: swap;
+}
+@font-face {
+	font-family: "IBM Plex Sans Arabic";
+	src: url("#{$wn-fonts}/IBMPlexSansArabic-Bold.woff2") format("woff2");
+	font-weight: 700;
+	font-display: swap;
+}
+
+// «Whatsapp» 300 and «Next» 700 in Sora; «واتساب» 300 and «نكست» 700 in IBM Plex Sans Arabic.
+.wn-wordmark {
+	font-family: "Sora", "IBM Plex Sans Arabic", system-ui, sans-serif;
+	letter-spacing: -0.032em;
+	white-space: nowrap;
+
+	&:lang(ar) {
+		font-family: "IBM Plex Sans Arabic", "Sora", system-ui, sans-serif;
+		letter-spacing: 0;
+	}
+
+	.wn-w1 {
+		font-weight: 300;
+	}
+	.wn-w2 {
+		font-weight: 700;
+	}
+}
+
+.wn-mark {
+	display: block;
+	flex: none;
+}

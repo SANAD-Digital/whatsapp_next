@@ -87,7 +87,155 @@
 		text-decoration: none;
 		&:hover, &:focus-visible { color: var(--ink-blue-3); text-decoration: none; }
 		&--plain { cursor: default; }
+		// a past message's file, fetched when asked: the same row, as a button
+		&.sanad-chat__fetch {
+			width: 100%;
+			font: inherit;
+			text-align: start;
+			cursor: pointer;
+			&:disabled { cursor: progress; opacity: 0.7; }
+		}
 	}
+	&__preview-link {
+		display: block;
+		margin-block-end: var(--sanad-gap-xs);
+		line-height: 0;
+		> .sanad-chat__preview { margin-block-end: 0; }
+	}
+	&__preview {
+		display: block;
+		max-width: min(280px, 100%);
+		max-height: 320px;
+		margin-block-end: var(--sanad-gap-xs);
+		border-radius: var(--sanad-radius);
+		border: var(--sanad-border);
+		background: var(--surface-gray-2);
+		object-fit: cover;
+		&--sticker { max-width: 140px; max-height: 140px; border: 0; background: transparent; object-fit: contain; }
+	}
+	&__poll { margin-block: var(--sanad-gap-xs); min-width: min(240px, 100%); }
+	&__poll-question { font-weight: 600; margin-block-end: var(--sanad-gap-xs); }
+	&__poll-options { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+	&__poll-option {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: 2px var(--sanad-gap-sm);
+		align-items: center;
+	}
+	&__poll-label { overflow-wrap: anywhere; }
+	&__poll-count { color: var(--ink-gray-7); font-size: var(--text-xs, 12px); font-variant-numeric: tabular-nums; }
+	&__poll-bar {
+		grid-column: 1 / -1;
+		block-size: 4px;
+		border-radius: 999px;
+		background: var(--surface-gray-3, #e5e7eb);
+		overflow: hidden;
+	}
+	&__poll-fill { display: block; block-size: 100%; inline-size: 0; background: var(--wa-pri, var(--ink-green-3, #16a34a)); transition: inline-size 0.3s; }
+	&__quote {
+		display: grid;
+		gap: 2px;
+		margin-block-end: var(--sanad-gap-xs);
+		padding: 4px var(--sanad-gap-sm);
+		border-inline-start: 3px solid var(--wa-pri, var(--ink-green-3, #16a34a));
+		border-radius: 6px;
+		background: var(--surface-gray-2);
+		font-size: var(--text-xs, 12px);
+	}
+	&__quote-lead { color: var(--wa-pri, var(--ink-green-3, #16a34a)); font-weight: 600; }
+	&__quote-text { color: var(--ink-gray-7); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__ia-title { font-weight: 600; margin-block-end: 2px; }
+	&__ia-footer { margin-block-start: 4px; color: var(--ink-gray-6); font-size: var(--text-xs, 12px); }
+	&__ia-buttons { display: grid; gap: 4px; margin-block-start: var(--sanad-gap-xs); }
+	&__ia-button {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		min-height: 32px;
+		padding-inline: var(--sanad-gap-sm);
+		border-block-start: var(--sanad-border);
+		color: var(--ink-blue-3, #1f5a97);
+		font-weight: 500;
+		cursor: default;
+		list-style: none;
+		--icon-stroke: currentColor;
+		// the kit's svg icons carry an auto inline margin: keep the icon beside its label
+		> svg { margin: 0; flex: none; }
+		&::-webkit-details-marker { display: none; }
+	}
+	&__ia-list {
+		margin-block-start: var(--sanad-gap-xs);
+		> summary { cursor: pointer; }
+		ul { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 2px; }
+	}
+	&__ia-section { margin-block-start: 4px; color: var(--ink-gray-6); font-size: var(--text-xs, 12px); font-weight: 600; }
+	&__ia-row { display: grid; padding: 4px var(--sanad-gap-sm); border-radius: 6px; background: var(--surface-gray-2); small { color: var(--ink-gray-6); } }
+	&__deleted { display: flex; align-items: center; gap: 6px; color: var(--ink-gray-6); font-style: italic; }
+	&__history {
+		margin-block-start: var(--sanad-gap-xs);
+		summary { cursor: pointer; color: var(--ink-gray-6); font-size: var(--text-xs, 12px); }
+		> .sanad-chat__text { margin-block-start: 4px; padding-inline-start: var(--sanad-gap-sm); border-inline-start: 2px solid var(--outline-gray-2, #ddd); }
+	}
+	&__edited { color: var(--ink-gray-6); font-size: var(--text-xs, 12px); font-style: italic; }
+	&__poll { cursor: pointer; }
+	&__poll-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sanad-gap-sm); margin-block-start: var(--sanad-gap-xs); }
+	&__poll-total { color: var(--ink-gray-6); font-size: var(--text-xs, 12px); }
+	&__poll-open {
+		border: 0;
+		background: none;
+		padding: 2px 0;
+		color: var(--ink-blue-3, var(--wa-pri));
+		font-size: var(--text-xs, 12px);
+		font-weight: 600;
+		cursor: pointer;
+		&:hover, &:focus-visible { text-decoration: underline; }
+	}
+	&__poll-options--drawer { gap: var(--sanad-gap-sm); }
+	&__poll-group { padding-block: var(--sanad-gap-xs); border-block-end: var(--sanad-border); &:last-child { border-block-end: 0; } }
+	&__poll-group-title { display: flex; justify-content: space-between; font-weight: 600; margin-block-end: 4px; }
+	&__poll-voters { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; li { display: flex; justify-content: space-between; gap: var(--sanad-gap-sm); } }
+	&__poll-voter { font-weight: 500; }
+	&__poll-note { margin: var(--sanad-gap-xs) 0 0; color: var(--ink-gray-6); font-size: var(--text-xs, 12px); }
+	&__poll-answers { list-style: none; margin: 0; padding: 0; }
+	&__poll-answer {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: var(--sanad-gap-sm);
+		padding-block: var(--sanad-gap-xs);
+		border-block-end: var(--sanad-border);
+		&:last-child { border-block-end: 0; }
+	}
+	&__poll-chips { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+	&__poll-chip {
+		padding: 2px 8px;
+		border-radius: 999px;
+		background: var(--wa-pri-s, var(--surface-green-1, #e7f6ec));
+		color: var(--ink-gray-8);
+		font-size: var(--text-xs, 12px);
+	}
+	&__poll-voter-meta { color: var(--ink-gray-6); font-size: var(--text-xs, 12px); direction: ltr; }
+	&__reactions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+		margin-block: var(--sanad-gap-xs);
+	}
+	&__reaction {
+		display: inline-flex;
+		align-items: center;
+		gap: 2px;
+		padding-inline: 6px;
+		min-height: 24px;
+		border: var(--sanad-border);
+		border-radius: 999px;
+		background: var(--surface-white, #fff);
+		font-size: var(--text-sm, 13px);
+		line-height: 1;
+	}
+	&__reaction-count { color: var(--ink-gray-6); font-size: var(--text-xs, 12px); }
+	&__audio { display: block; width: min(280px, 100%); margin-block-end: var(--sanad-gap-xs); }
 	&__media-icon { display: inline-flex; flex: none; color: var(--ink-gray-6); }
 	&__media-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
 	&__media-type { color: var(--ink-gray-6); font-size: var(--text-xs, 12px); margin-inline-start: auto; }
@@ -121,8 +269,11 @@
 		align-items: center;
 		gap: 2px;
 		.icon { width: 14px; height: 14px; }
+		// the kit's icons draw with --icon-stroke, not the text colour: tie them to the tick's tone
+		--icon-stroke: currentColor;
 		&--gray { color: var(--ink-gray-6); }
-		&--blue { color: var(--ink-blue-3); }
+		// read: WhatsApp's own blue ticks, readable on the green outgoing bubble
+		&--blue { color: var(--wa-read, #53bdeb); }
 		&--red { color: var(--ink-red-4); }
 		&--amber { color: var(--ink-amber-3); }
 	}

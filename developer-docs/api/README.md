@@ -273,6 +273,7 @@ with `frappe.realtime.on("<event>", handler)`.
 | messages | [messages.md](messages.md) | `api/v1/messages.py` | Outbound and inbound drawers, conversation, resend, cancel |
 | bulk_send | [bulk-send.md](bulk-send.md) | `api/v1/bulk_send.py` | "Send a bulk message" window (becomes a campaign) |
 | simulator | [simulator.md](simulator.md) | `api/v1/simulator.py` | Simulated inbound, test send, command dry run |
+| testlab | [testlab.md](testlab.md) | `api/v1/testlab.py` | Test Lab: health checks, real test runs, run history |
 | queue | [queue.md](queue.md) | `api/v1/queue.py` | Queue list, summary, global pause and rate, item actions |
 | phone | [phone.md](phone.md) | `api/v1/phone.py` | Calling-region metadata |
 | numbers | [numbers.md](numbers.md) | `api/v1/numbers.py` | WhatsApp Numbers: link, convert, conversation log |

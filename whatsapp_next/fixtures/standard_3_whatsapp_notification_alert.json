@@ -1,0 +1,95 @@
+[
+ {
+  "alert_name": "أرصدة العملاء المدينة",
+  "attachment_format": "PDF",
+  "content_type": "Report",
+  "day_of_month": 1,
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification Alert",
+  "dynamic_filters_json": "{\"report_date\": \"today\"}",
+  "enabled": 0,
+  "filters_json": "{\"company\": \"__default_company__\", \"party_type\": \"Customer\", \"ageing_based_on\": \"Due Date\", \"range\": \"30, 60, 90, 120\"}",
+  "language": "ar",
+  "message": "📊 *أرصدة العملاء المدينة* حتى {{ frappe.utils.formatdate(filters.report_date) }}\n{% set due = rows | selectattr(\"party\") | selectattr(\"outstanding\", \"gt\", 0) | sort(attribute=\"outstanding\", reverse=true) | list %}{% if due %}عدد العملاء المدينين: {{ due | length }}\nالإجمالي: *{{ frappe.utils.fmt_money(due | sum(attribute=\"outstanding\"), currency=due[0].currency) }}*\n\nأعلى الأرصدة:\n{% for r in due[:10] %}• {{ r.party }}: {{ frappe.utils.fmt_money(r.outstanding, currency=r.currency) }}\n{% endfor %}\nالتفاصيل وأعمار الديون في الملف المرفق.{% else %}لا توجد أرصدة مدينة على العملاء حتى هذا التاريخ.{% endif %}",
+  "name": "أرصدة العملاء المدينة",
+  "notification_time": "08:00:00",
+  "periodicity": "Daily",
+  "recipients": [
+   {
+    "recipient_type": "Role",
+    "role": "Accounts Manager"
+   }
+  ],
+  "report": "Accounts Receivable Summary"
+ },
+ {
+  "alert_name": "أرصدة الموردين الدائنة",
+  "attachment_format": "PDF",
+  "content_type": "Report",
+  "day_of_month": 1,
+  "day_of_week": "Sunday",
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification Alert",
+  "dynamic_filters_json": "{\"report_date\": \"today\"}",
+  "enabled": 0,
+  "filters_json": "{\"company\": \"__default_company__\", \"party_type\": \"Supplier\", \"ageing_based_on\": \"Due Date\", \"range\": \"30, 60, 90, 120\"}",
+  "language": "ar",
+  "message": "📊 *أرصدة الموردين الدائنة* حتى {{ frappe.utils.formatdate(filters.report_date) }}\n{% set due = rows | selectattr(\"party\") | selectattr(\"outstanding\", \"gt\", 0) | sort(attribute=\"outstanding\", reverse=true) | list %}{% if due %}عدد الموردين الدائنين: {{ due | length }}\nالإجمالي: *{{ frappe.utils.fmt_money(due | sum(attribute=\"outstanding\"), currency=due[0].currency) }}*\n\nأعلى الأرصدة:\n{% for r in due[:10] %}• {{ r.party }}: {{ frappe.utils.fmt_money(r.outstanding, currency=r.currency) }}\n{% endfor %}\nالتفاصيل وأعمار الديون في الملف المرفق.{% else %}لا توجد أرصدة مستحقة للموردين حتى هذا التاريخ.{% endif %}",
+  "name": "أرصدة الموردين الدائنة",
+  "notification_time": "09:00:00",
+  "periodicity": "Weekly",
+  "recipients": [
+   {
+    "recipient_type": "Role",
+    "role": "Accounts Manager"
+   }
+  ],
+  "report": "Accounts Payable Summary"
+ },
+ {
+  "alert_name": "ملخص المبيعات اليومي",
+  "attachment_format": "PDF",
+  "content_type": "Report",
+  "day_of_month": 1,
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification Alert",
+  "dynamic_filters_json": "{\"from_date\": \"today\", \"to_date\": \"today\"}",
+  "enabled": 0,
+  "filters_json": "{\"company\": \"__default_company__\"}",
+  "language": "ar",
+  "message": "🧾 *ملخص مبيعات يوم* {{ frappe.utils.formatdate(filters.to_date) }}\n{% set inv = rows | selectattr(\"voucher_no\") | list %}{% if inv %}عدد الفواتير: {{ inv | length }}\nإجمالي المبيعات: *{{ frappe.utils.fmt_money(inv | sum(attribute=\"grand_total\"), currency=inv[0].currency) }}*\nغير المحصَّل منها: {{ frappe.utils.fmt_money(inv | sum(attribute=\"outstanding_amount\"), currency=inv[0].currency) }}\n\n{% for r in inv[:10] %}• {{ r.voucher_no }} — {{ r.customer_name }}: {{ frappe.utils.fmt_money(r.grand_total, currency=r.currency) }}\n{% endfor %}{% if inv | length > 10 %}… و{{ inv | length - 10 }} فاتورة أخرى\n{% endif %}\nالتفاصيل في الملف المرفق.{% else %}لم تُسجَّل فواتير مبيعات في هذا اليوم.{% endif %}",
+  "name": "ملخص المبيعات اليومي",
+  "notification_time": "20:00:00",
+  "periodicity": "Daily",
+  "recipients": [
+   {
+    "recipient_type": "Role",
+    "role": "Sales Manager"
+   }
+  ],
+  "report": "Sales Register"
+ },
+ {
+  "alert_name": "حركة الحسابات لليوم السابق",
+  "attachment_format": "PDF",
+  "content_type": "Report",
+  "day_of_month": 1,
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification Alert",
+  "dynamic_filters_json": "{\"from_date\": \"yesterday\", \"to_date\": \"yesterday\"}",
+  "enabled": 0,
+  "filters_json": "{\"company\": \"__default_company__\", \"group_by\": \"Group by Voucher (Consolidated)\"}",
+  "language": "ar",
+  "message": "📒 *حركة الحسابات ليوم* {{ frappe.utils.formatdate(filters.from_date) }}\n{% set v = rows | selectattr(\"voucher_no\") | list %}{% if v %}عدد المستندات المرحَّلة: {{ v | map(attribute=\"voucher_no\") | unique | list | length }}\nإجمالي الحركة المدينة: *{{ frappe.utils.fmt_money(v | sum(attribute=\"debit\")) }}*\n\nدفتر الأستاذ التفصيلي في الملف المرفق.{% else %}لا توجد قيود مرحَّلة في هذا اليوم.{% endif %}",
+  "name": "حركة الحسابات لليوم السابق",
+  "notification_time": "08:30:00",
+  "periodicity": "Daily",
+  "recipients": [
+   {
+    "recipient_type": "Role",
+    "role": "Accounts Manager"
+   }
+  ],
+  "report": "General Ledger"
+ }
+]

@@ -7,7 +7,6 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
-from whatsapp_next.install import ensure_roles
 from whatsapp_next.tests.conftest_frappe import delete_all, ensure_test_user
 
 DT = "WhatsApp Command"
@@ -28,7 +27,6 @@ class TestWhatsAppCommand(IntegrationTestCase):
 
 	def setUp(self) -> None:
 		super().setUp()
-		ensure_roles()
 		frappe.set_user("Administrator")
 		if not frappe.db.exists("WhatsApp Function", FUNCTION_KEY):
 			frappe.get_doc(

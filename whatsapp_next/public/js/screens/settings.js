@@ -86,6 +86,7 @@ class SettingsView {
 			{ key: "policy", group: "settings", label: __("Policy"), icon: "gear", manager: true, keywords: __("blacklist country device") },
 			{ key: "picker", group: "settings", label: __("Picker sources"), icon: "users", manager: true },
 			{ key: "retention", group: "settings", label: __("Retention"), icon: "clock", manager: true },
+			{ key: "backup", group: "settings", label: __("Backup"), icon: "doc", manager: true, keywords: __("export import json restore") },
 		];
 		return all.filter((s) => !s.manager || IS_MGR());
 	}
@@ -130,10 +131,11 @@ class SettingsView {
 			credentials: __("Stored encrypted and shown once when they are generated. They are never displayed again."),
 			webhook: __("Without it no inbound message and no status update reaches this site."),
 			queue: __("How fast messages leave, how often a failure is retried, and whether sending is paused."),
-			commands: __("Replies to keywords arriving on WhatsApp."),
+			commands: __("Replies to keywords arriving on WhatsApp, and the main menu offered with them."),
 			policy: __("The default device and country, the global blacklist and who may be messaged."),
 			picker: __("The system screens the contact picker may select recipients from."),
 			retention: __("How long messages, queue rows, webhook events and the audit log are kept."),
+			backup: __("Download what this site set up as a JSON file, or bring a backup file in."),
 			subscription: __("Messages come out of the plan first; what goes beyond it comes out of the wallet. Billing is handled on the platform."),
 			usage: __("What this site sent day by day: delivered, read and failed."),
 			audit: __("Every elevated write: who did it, to what, and when."),
@@ -201,17 +203,42 @@ class SettingsView {
 				$el.append(`<h4 class="wa-settings__subhead">${esc(__("Editable"))}</h4>`);
 			}
 			$el.append($form);
-			const $save = $(
-				`<div class="wa-settings__actions"><button type="button" class="btn btn-sm btn-primary">${esc(
-					__("Save changes")
-				)}</button></div>`
-			).appendTo($el);
-			$save.find("button").on("click", () => {
-				const payload = {};
-				Object.entries(controls).forEach(([f, c]) => (payload[f] = c.get_value()));
+			// The save bar (owner, 2026-10-08): pinned to the bottom of the pane so it is always in
+			// reach, quiet until something changes, then the one primary action of the section.
+			const $bar = $(`
+				<div class="wa-settings__savebar" role="region" aria-label="${esc(__("Save changes"))}">
+					<span class="wa-settings__savebar-text" aria-live="polite"></span>
+					<button type="button" class="btn btn-default wa-settings__discard" hidden>${esc(__("Discard changes"))}</button>
+					<button type="button" class="btn btn-primary wa-settings__save" disabled>${esc(__("Save changes"))}</button>
+				</div>`).appendTo($el);
+			const read_all = () => {
+				const out = {};
+				Object.entries(controls).forEach(([f, c]) => (out[f] = c.get_value()));
+				return out;
+			};
+			let saved = JSON.stringify(read_all());
+			const refresh_bar = () => {
+				const dirty = JSON.stringify(read_all()) !== saved;
+				$bar.toggleClass("is-dirty", dirty);
+				$bar.find(".wa-settings__save").prop("disabled", !dirty);
+				$bar.find(".wa-settings__discard").prop("hidden", !dirty);
+				$bar.find(".wa-settings__savebar-text").text(dirty ? __("You have unsaved changes") : "");
+			};
+			// a Frappe control reports a change on its own schedule (debounced, on blur, on a pick):
+			// ask again a moment after any of them
+			$form.on("input change click keyup", () => window.setTimeout(refresh_bar, 350));
+			$bar.find(".wa-settings__discard").on("click", () => {
+				const before = JSON.parse(saved);
+				Object.entries(controls).forEach(([f, c]) => c.set_value(before[f] == null ? "" : before[f]));
+				window.setTimeout(refresh_bar, 350);
+			});
+			$bar.find(".wa-settings__save").on("click", () => {
+				const payload = read_all();
 				sanad.ui
 					.call("settings.save_settings", { section, values: payload }, { freeze: true })
-					.then((r) =>
+					.then((r) => {
+						saved = JSON.stringify(payload);
+						refresh_bar();
 						sanad.ui.Toast.success(
 							r && r.changed && r.changed.length
 								? sanad.ui.plural(r.changed.length, {
@@ -219,8 +246,8 @@ class SettingsView {
 										other: __("Saved {0} settings"),
 								  })
 								: __("Nothing to save")
-						)
-					)
+						);
+					})
 					.catch((err) => sanad.ui.Toast.error(err));
 			});
 		}
@@ -758,13 +785,13 @@ class SettingsView {
 
 	// ---- 4–8. the plain sections ------------------------------------------------------------------
 
-	plain(section, $el, extra) {
+	plain(section, $el, extra, skip = []) {
 		return sanad.ui.call("settings.get_settings", { section }).then((data) => {
 			this.state.hide();
 			$el.empty();
 			const values = data[section] || {};
 			if (extra) extra.call(this, $el, values);
-			this.render_fields($el, section, values, SKIP_IN_FORM);
+			this.render_fields($el, section, values, SKIP_IN_FORM.concat(skip));
 		});
 	}
 
@@ -783,7 +810,190 @@ class SettingsView {
 	}
 
 	render_commands($el) {
-		return this.plain("commands", $el);
+		// the main menu is sent as buttons or a list, so it is offered only when the plan has them
+		const interactive = !!((frappe.boot.whatsapp_next || {}).features || {}).interactive;
+		const menu_fields = ["main_menu_mode", "main_menu_text", "main_menu_button", "main_menu_words"];
+		return this.plain("commands", $el, null, interactive ? [] : menu_fields).then(() => {
+			this.draw_link_panel($('<div class="wa-settings__menu"></div>').appendTo($el));
+			const $menu = $('<div class="wa-settings__menu"></div>').appendTo($el);
+			if (!interactive) {
+				this.banner($menu, {
+					tone: "gray",
+					icon: "es-line-info",
+					title: __("Your plan does not include buttons and lists."),
+					text: __("The main menu and choice questions use them. Until the plan includes them, commands ask for missing values as numbered text."),
+					action: { label: __("Subscription and plan"), handler: () => frappe.set_route("wa-settings", "subscription") },
+				});
+				return;
+			}
+			return this.load_menu($menu);
+		});
+	}
+
+	// ---- a chat link and its QR code for printed documents (print formats: whatsapp_qr) ---------
+
+	draw_link_panel($el) {
+		const esc = frappe.utils.escape_html;
+		const $panel = this.panel($el, {
+			title: __("WhatsApp link on invoices"),
+			note: __("A QR code on a printed document opens a chat with your number and a message already typed."),
+		});
+		$panel.html(`<div class="wa-settings__qr">
+			<div class="wa-settings__qr-form">
+				<label class="control-label" for="wa-qr-text">${esc(__("Message typed in the chat"))}</label>
+				<input id="wa-qr-text" class="form-control" maxlength="500" value="${esc(__("Menu"))}">
+				<p class="help-box small text-muted">${esc(__("Paste this in a print format; doc fields work too, e.g. «كشف » ~ doc.customer."))}</p>
+				<div class="wa-settings__qr-snippet"><code dir="ltr"></code>
+					<button type="button" class="btn btn-xs btn-default wa-settings__qr-copy">${esc(__("Copy"))}</button></div>
+				<a class="wa-settings__qr-link" target="_blank" rel="noopener" dir="ltr"></a>
+			</div>
+			<img class="wa-settings__qr-img" width="140" height="140" alt="${esc(__("Scan to chat on WhatsApp"))}">
+		</div>`);
+		const $text = $panel.find("#wa-qr-text");
+		const draw = () => {
+			const text = ($text.val() || "").trim();
+			const literal = JSON.stringify(text);
+			$panel.find(".wa-settings__qr-snippet code").text(`{{ whatsapp_qr(${literal}) }}`);
+			sanad.ui.call("settings.get_whatsapp_link", { text }, { silent: true }).then((r) => {
+				$panel.find(".wa-settings__qr-img").attr("src", r.qr);
+				$panel.find(".wa-settings__qr-link").attr("href", r.url).text(r.url);
+			}).catch(() => $panel.find(".wa-settings__qr-link").text(__("No WhatsApp device has a number yet")));
+		};
+		$text.on("input", frappe.utils.debounce(draw, 400));
+		$panel.find(".wa-settings__qr-copy").on("click", () => frappe.utils.copy_to_clipboard($panel.find(".wa-settings__qr-snippet code").text()));
+		draw();
+	}
+
+	// ---- the main menu: which commands it offers, in what order --------------------------------
+
+	load_menu($el) {
+		return sanad.ui.call("settings.get_main_menu").then((data) => {
+			const all = (data && data.commands) || [];
+			this.menu_max = (data && data.max) || 10;
+			this.menu_all = all;
+			this.menu = all
+				.filter((c) => cint(c.show_in_menu))
+				.map((c) => ({ command: c.name, menu_description: c.menu_description || "" }));
+			this.draw_menu($el);
+		});
+	}
+
+	menu_command(name) {
+		return (this.menu_all || []).find((c) => c.name === name) || { name, code: name };
+	}
+
+	draw_menu($el) {
+		const esc = frappe.utils.escape_html;
+		$el.empty();
+		const can_add = IS_SM() && this.menu.length < this.menu_max && this.menu.length < (this.menu_all || []).length;
+		const $panel = this.panel($el, {
+			title: __("Commands in the main menu"),
+			note: __("Offered to the sender in this order, up to {0}. Three or fewer show as buttons under the reply.", [this.menu_max]),
+			action: can_add ? { label: __("Add a command"), handler: () => this.menu_dialog(null, $el) } : null,
+		});
+		if (!this.menu.length) {
+			new sanad.ui.EmptyState({
+				wrapper: $panel,
+				state: "empty",
+				size: "sm",
+				title: __("The main menu is empty"),
+				description: __("Until a command is added, no menu is sent."),
+				action: can_add ? { label: __("Add a command"), onclick: () => this.menu_dialog(null, $el) } : undefined,
+			});
+			return;
+		}
+		$panel.html(`<div class="sanad-table-wrap"><table class="sanad-table">
+			<thead><tr>
+				<th scope="col">#</th>
+				<th scope="col">${esc(__("Command"))}</th>
+				<th scope="col">${esc(__("Shown as"))}</th>
+				<th scope="col">${esc(__("Menu description"))}</th>
+				<th scope="col"><span class="sanad-visually-hidden">${esc(__("Actions"))}</span></th>
+			</tr></thead><tbody></tbody></table></div>`);
+		const $body = $panel.find("tbody");
+		this.menu.forEach((row, i) => {
+			const c = this.menu_command(row.command);
+			const $tr = $(`<tr>
+				<td class="sanad-table__num">${i + 1}</td>
+				<td><bdi>${esc(c.code || row.command)}</bdi></td>
+				<td>${esc(__(c.title || c.code || row.command))}</td>
+				<td>${row.menu_description ? esc(row.menu_description) : '<span class="wa-settings__muted">&mdash;</span>'}</td>
+				<td class="sanad-table__num"></td>
+			</tr>`).appendTo($body);
+			if (!IS_SM()) return;
+			const $actions = $tr.find("td").last();
+			const button = (label, disabled, handler) =>
+				$(`<button type="button" class="btn btn-xs btn-default">${esc(label)}</button>`)
+					.prop("disabled", disabled)
+					.on("click", handler)
+					.appendTo($actions);
+			button(__("Up"), i === 0, () => this.move_menu(i, -1, $el)).attr("aria-label", __("Move {0} up", [c.code]));
+			button(__("Down"), i === this.menu.length - 1, () => this.move_menu(i, 1, $el)).attr("aria-label", __("Move {0} down", [c.code]));
+			button(__("Edit"), false, () => this.menu_dialog(i, $el));
+			button(__("Remove"), false, () => {
+				this.menu.splice(i, 1);
+				this.save_menu($el);
+			});
+		});
+	}
+
+	move_menu(i, step, $el) {
+		const j = i + step;
+		if (j < 0 || j >= this.menu.length) return;
+		[this.menu[i], this.menu[j]] = [this.menu[j], this.menu[i]];
+		this.save_menu($el);
+	}
+
+	menu_dialog(index, $el) {
+		const row = index == null ? {} : this.menu[index];
+		const taken = this.menu.map((r) => r.command).filter((n) => n !== row.command);
+		const options = (this.menu_all || [])
+			.filter((c) => !taken.includes(c.name))
+			.map((c) => ({ value: c.name, label: `${c.code} — ${__(c.title || c.code)}` }));
+		const dialog = new frappe.ui.Dialog({
+			title: index == null ? __("Add a command to the main menu") : __("Edit the menu entry"),
+			fields: [
+				{
+					fieldname: "command",
+					label: __("Command"),
+					fieldtype: "Select",
+					options,
+					reqd: 1,
+					default: row.command || (options[0] && options[0].value),
+					read_only: index != null,
+				},
+				{
+					fieldname: "menu_description",
+					label: __("Menu description"),
+					fieldtype: "Data",
+					length: 72,
+					default: row.menu_description,
+					description: __("A short line under the command in the menu list. At most 72 characters."),
+				},
+			],
+			primary_action_label: index == null ? __("Add") : __("Save"),
+			primary_action: (values) => {
+				const entry = { command: values.command, menu_description: (values.menu_description || "").trim() };
+				if (index == null) this.menu.push(entry);
+				else this.menu[index] = entry;
+				dialog.hide();
+				this.save_menu($el);
+			},
+		});
+		dialog.show();
+	}
+
+	save_menu($el) {
+		return sanad.ui
+			.call("settings.save_main_menu", { commands: this.menu }, { freeze: true })
+			.then(() => {
+				sanad.ui.Toast.success(__("Main menu saved"));
+				return this.load_menu($el);
+			})
+			.catch((err) => {
+				sanad.ui.Toast.error(err);
+				return this.load_menu($el);
+			});
 	}
 
 	render_policy($el) {
@@ -804,6 +1014,30 @@ class SettingsView {
 
 	render_retention($el) {
 		return this.plain("retention", $el);
+	}
+
+	// ---- backup: download and import (owner, 2026-10-10) ------------------------------------------
+
+	render_backup($el) {
+		const esc = frappe.utils.escape_html;
+		this.state.hide();
+		$el.empty();
+		const $down = this.panel($el, {
+			title: __("Download a backup"),
+			note: __("Settings, templates, document notifications, notification alerts, functions, commands and contact groups. No keys, no devices and no messages."),
+		});
+		$(`<button type="button" class="btn btn-primary btn-sm">${esc(__("Download a backup"))}</button>`)
+			.on("click", (e) => whatsapp_next.backup.download($(e.currentTarget)))
+			.appendTo($down);
+		if (!IS_SM()) return;
+		const $up = this.panel($el, {
+			title: __("Import from a backup file"),
+			note: __("Records of the same name are replaced by the file's version; the others are added. Nothing is deleted."),
+		});
+		$(`<button type="button" class="btn btn-default btn-sm">${esc(__("Choose a JSON file…"))}</button>`)
+			.on("click", (e) => whatsapp_next.backup.import_file($(e.currentTarget), $result))
+			.appendTo($up);
+		const $result = $('<div class="wa-settings__backup-result"></div>').appendTo($up);
 	}
 
 	// ---- 7. picker sources -------------------------------------------------------------------------

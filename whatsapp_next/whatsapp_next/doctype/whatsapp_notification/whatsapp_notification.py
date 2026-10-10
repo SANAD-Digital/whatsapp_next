@@ -13,6 +13,7 @@ from frappe.model.document import Document
 from frappe.utils.data import evaluate_filters
 
 from whatsapp_next.exceptions import WAValidationError
+from whatsapp_next.services import standards
 from whatsapp_next.services.notifications import clear_cache
 from whatsapp_next.services.phone import set_phone_pair
 
@@ -51,6 +52,21 @@ class WhatsAppNotification(Document):
 	def on_trash(self) -> None:
 		"""Invalidate the per-DocType cache."""
 		self.invalidate_cache()
+
+	# ---- standard content (`services/standards.py`): what a fixture sync may change ----------
+
+	@staticmethod
+	def prepare_for_import(docdict: dict) -> None:
+		"""Frappe import hook: a shipped record keeps what the site owns."""
+		standards.prepare_for_import(docdict)
+
+	def before_import(self) -> None:
+		"""Frappe import hook: a record kept as the owner's is re-inserted as it is."""
+		standards.before_import(self)
+
+	def after_insert(self) -> None:
+		"""Finish a fixture import of a shipped record (no-op for any other insert)."""
+		standards.after_insert(self)
 
 	def invalidate_cache(self) -> None:
 		"""Clear the cache for the current and (when changed) the previous `document_type`."""
@@ -158,3 +174,17 @@ class WhatsAppNotification(Document):
 def count_variables(source: str) -> int:
 	"""Number of distinct `{{ … }}` tokens in `source`."""
 	return len({m.strip() for m in VARIABLE_PATTERN.findall(source or "")})
+
+
+# Composite indexes the DocType JSON cannot express (fields.md F-11); single-column ones are
+# `search_index` / `unique` in the JSON.
+COMPOSITE_INDEXES: tuple[tuple[str, ...], ...] = (
+	("document_type", "event", "enabled"),
+)
+
+
+def on_doctype_update() -> None:
+	"""Called by Frappe whenever it syncs this DocType (install, and a migrate that changes it):
+	create the composite indexes that are missing. Idempotent."""
+	for fields in COMPOSITE_INDEXES:
+		frappe.db.add_index("WhatsApp Notification", list(fields))

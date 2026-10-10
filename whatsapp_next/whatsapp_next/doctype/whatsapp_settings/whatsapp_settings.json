@@ -50,12 +50,30 @@
   "send_receipt_reply",
   "receipt_reply",
   "reply_device",
+  "changes_reply_section",
+  "reply_on_edit",
+  "edit_reply_text",
+  "changes_reply_column",
+  "reply_on_delete",
+  "delete_reply_text",
+  "changes_reply_scope",
+  "main_menu_section",
+  "main_menu_mode",
+  "main_menu_words",
+  "main_menu_column",
+  "main_menu_text",
+  "main_menu_button",
+  "receipts_section",
+  "mark_read_mode",
+  "receipts_column",
+  "typing_indicator",
   "policy_tab",
   "default_device",
   "default_country",
   "policy_column",
   "global_blacklist_group",
   "send_only_to_known_numbers",
+  "import_past_messages",
   "picker_tab",
   "picker_sources",
   "retention_tab",
@@ -358,21 +376,21 @@
    "label": "Unknown Command Reply"
   },
   {
+   "default": "؟",
+   "depends_on": "eval:doc.enable_commands",
+   "description": "Sent alone it lists the commands; after a command word (كشف ؟) it explains how to send that command's variables. ? and help always work too.",
    "fieldname": "command_help_token",
    "fieldtype": "Data",
    "label": "Command Help Token",
-   "default": "؟",
-   "length": 20,
-   "depends_on": "eval:doc.enable_commands",
-   "description": "Sent alone it lists the commands; after a command word (كشف ؟) it explains how to send that command's variables. ? and help always work too."
+   "length": 20
   },
   {
+   "depends_on": "eval:doc.enable_commands",
+   "description": "The language of the replies the site writes itself (help, refusals, errors). Empty: the site's language. The texts you write in templates are sent as written.",
    "fieldname": "command_reply_language",
    "fieldtype": "Link",
-   "options": "Language",
    "label": "Reply Language",
-   "depends_on": "eval:doc.enable_commands",
-   "description": "The language of the replies the site writes itself (help, refusals, errors). Empty: the site's language. The texts you write in templates are sent as written."
+   "options": "Language"
   },
   {
    "fieldname": "commands_column",
@@ -397,9 +415,121 @@
    "description": "Not used: a command is answered from the device that received it.",
    "fieldname": "reply_device",
    "fieldtype": "Link",
+   "hidden": 1,
    "label": "Reply Device",
-   "options": "WhatsApp Device",
-   "hidden": 1
+   "options": "WhatsApp Device"
+  },
+  {
+   "description": "Answer in the chat when a sender edits or deletes a message: your text, then what the message said.",
+   "fieldname": "changes_reply_section",
+   "fieldtype": "Section Break",
+   "label": "Edited and deleted messages"
+  },
+  {
+   "default": "0",
+   "description": "Sent as a reply to the edited message: the text below, then the message's original text.",
+   "fieldname": "reply_on_edit",
+   "fieldtype": "Check",
+   "label": "Reply when a message is edited"
+  },
+  {
+   "default": "عدّل المرسل هذه الرسالة. النص الأصلي:",
+   "depends_on": "reply_on_edit",
+   "fieldname": "edit_reply_text",
+   "fieldtype": "Small Text",
+   "label": "Text sent on an edit"
+  },
+  {
+   "fieldname": "changes_reply_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Sent in the same chat: the text below, then the deleted message's text.",
+   "fieldname": "reply_on_delete",
+   "fieldtype": "Check",
+   "label": "Reply when a message is deleted"
+  },
+  {
+   "default": "حذف المرسل رسالة. نصها كان:",
+   "depends_on": "reply_on_delete",
+   "fieldname": "delete_reply_text",
+   "fieldtype": "Small Text",
+   "label": "Text sent on a deletion"
+  },
+  {
+   "default": "All chats",
+   "depends_on": "eval:doc.reply_on_edit || doc.reply_on_delete",
+   "fieldname": "changes_reply_scope",
+   "fieldtype": "Select",
+   "label": "Where to reply",
+   "options": "All chats\nGroups only\nPrivate chats only"
+  },
+  {
+   "depends_on": "eval:doc.enable_commands",
+   "description": "The commands marked «Show in main menu», offered to the sender as a list or as buttons.",
+   "fieldname": "main_menu_section",
+   "fieldtype": "Section Break",
+   "label": "Main menu"
+  },
+  {
+   "default": "Off",
+   "description": "«Buttons on the reply» works like WhatsApp Business: up to three commands as buttons under the reply, or one «Main menu» button that opens the list.",
+   "fieldname": "main_menu_mode",
+   "fieldtype": "Select",
+   "label": "Offer the menu",
+   "options": "Off\nList after every reply\nButtons on the reply"
+  },
+  {
+   "depends_on": "eval:doc.main_menu_mode!='Off'",
+   "description": "One per line, e.g. القائمة or menu. Sending one of them shows the menu.",
+   "fieldname": "main_menu_words",
+   "fieldtype": "Small Text",
+   "label": "Words that open the menu"
+  },
+  {
+   "fieldname": "main_menu_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "eval:doc.main_menu_mode!='Off'",
+   "description": "Shown above the menu. Empty uses «How can we help?».",
+   "fieldname": "main_menu_text",
+   "fieldtype": "Small Text",
+   "label": "Menu text"
+  },
+  {
+   "depends_on": "eval:doc.main_menu_mode!='Off'",
+   "description": "The button that opens the list. Empty uses «Main menu». At most 20 characters.",
+   "fieldname": "main_menu_button",
+   "fieldtype": "Data",
+   "label": "Menu button",
+   "length": 20
+  },
+  {
+   "description": "What the sender sees while their message is handled.",
+   "fieldname": "receipts_section",
+   "fieldtype": "Section Break",
+   "label": "Read receipts and typing"
+  },
+  {
+   "default": "When a command replies",
+   "description": "The blue ticks on the sender's side. «When a command replies»: only messages a command answered.",
+   "fieldname": "mark_read_mode",
+   "fieldtype": "Select",
+   "label": "Mark received messages as read",
+   "options": "Never\nWhen a command replies\nEvery received message"
+  },
+  {
+   "fieldname": "receipts_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "1",
+   "description": "The sender sees that an answer is being prepared, until it arrives.",
+   "fieldname": "typing_indicator",
+   "fieldtype": "Check",
+   "label": "Show «typing…» while a command runs"
   },
   {
    "fieldname": "policy_tab",
@@ -438,6 +568,13 @@
    "fieldname": "send_only_to_known_numbers",
    "fieldtype": "Check",
    "label": "Send Only to Known Numbers"
+  },
+  {
+   "default": "0",
+   "description": "Bring in the messages a linked number exchanged before it was linked, and keep them current every hour. Off: nothing is read from a number's past conversations.",
+   "fieldname": "import_past_messages",
+   "fieldtype": "Check",
+   "label": "Import Past Messages"
   },
   {
    "fieldname": "picker_tab",
@@ -645,7 +782,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-09-28 12:00:00.000000",
+ "modified": "2026-10-08 23:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Settings",

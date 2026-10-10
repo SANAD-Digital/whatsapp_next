@@ -10,6 +10,7 @@ from collections.abc import Iterable
 
 import frappe
 import phonenumbers
+from frappe.utils import cstr
 from phonenumbers import PhoneMetadata
 
 from whatsapp_next.exceptions import WAInvalidPhoneError
@@ -307,4 +308,12 @@ def sync_contact_phones(doc, method: str | None = None) -> None:
 	for row in doc.get("phone_nos") or []:
 		if not row.meta.get_field("wa_phone_e164"):
 			return
+		# a WhatsApp group saved for the contact: `phone` holds the group's id (a phone field takes
+		# digits only) and the key keeps the group's address, as long as the two still agree
+		if (
+			row.phone
+			and cstr(row.wa_phone_e164).endswith(GROUP_SUFFIX)
+			and cstr(row.wa_phone_e164).split("@")[0] == re.sub(r"\D", "", cstr(row.phone))
+		):
+			continue
 		row.wa_phone_e164 = normalize(row.phone) if row.phone else None

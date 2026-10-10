@@ -13,27 +13,89 @@ bench build --app whatsapp_next
 Python dependencies (`openpyxl`, `vobject`) come from `pyproject.toml`. `phonenumbers` and
 `requests` are provided by Frappe.
 
-## 2. What install and migrate seed
+## 2. What install and migrate do
 
-`after_install` and `after_migrate` (`whatsapp_next/install.py`) run the same steps. Each one is
-**idempotent**:
+Nearly everything the app needs on a site is a **file in the folder Frappe syncs it from**. The
+hooks in `whatsapp_next/install.py` do only what has no such folder.
 
-| Step | Function | Result |
+### Files Frappe syncs by itself
+
+| What | File | Frappe handler |
 |---|---|---|
-| Roles | `ensure_roles` | `WhatsApp Manager`, `WhatsApp Agent`, `WhatsApp Viewer`, `WhatsApp Contact User` (desk access). They are also shipped as fixtures. |
-| Command service user | `ensure_command_service_user` | `wa-commands@<site>`, a System User that is **disabled, with no roles and no welcome mail**. Commands run as this user, never as Administrator (D-012). To use commands, enable it and grant only what your functions need. It must not be a System Manager. |
-| Settings defaults | `ensure_settings_defaults` | `default_country` from System Settings, and `command_service_user` = the service user |
-| Composite indexes | `add_indexes` in `install.py` (after install and after every migrate) | Composite indexes on Log, Inbound, Queue Item, Audit Log, Notification, Notification Alert and Webhook Event. Composite **unique** keys on `(device, provider_message_id)` for Inbound (D-035) and `(event_name, event_id)` for Webhook Event (D-047). |
-| Contact warning | `warn_contact_open_to_all` | Prints a warning while role `All` still has rights on `Contact` (see §7) |
-| Desktop tile | `ensure_desktop_icons` | The app tile (`/app/wa-home`) and the WhatsApp workspace tile (D-131) |
+| DocTypes, Pages, the `WhatsApp` Workspace | `whatsapp_next/whatsapp_next/{doctype,page,workspace}/` | `frappe.model.sync.sync_for` |
+| Roles | Named in the DocTypes' permissions: Frappe creates a role when it syncs a DocType that names it (`make_module_and_roles`). All four product roles are named by a DocType. `fixtures/role.json` then sets their properties. | `sync_for`, then `sync_fixtures` |
+| Composite indexes | `on_doctype_update()` in the controller module of each DocType that has one (Log, Inbound Message, Queue Item, Audit Log, Notification, Notification Alert, Webhook Event). It also adds the composite **unique** keys `(device, provider_message_id)` on Inbound (D-035) and `(event_name, event_id)` on Webhook Event (D-047). | Called by Frappe when it syncs the DocType |
+| The desktop tile | `whatsapp_next/desktop_icon/whatsapp.json`: a standard Desktop Icon (`Link` → Workspace Sidebar `WhatsApp`) whose `logo_url` is `/assets/whatsapp_next/images/whatsapp-beta-icon.svg`. The sidebar header draws the same icon: it looks up the Desktop Icon whose label is the sidebar's title. | `sync_for` (app-level folder) |
+| The sidebar | `whatsapp_next/workspace_sidebar/whatsapp.json` | `sync_for` (app-level folder) |
+| Number Cards, Dashboard Charts (`WA …`) | `whatsapp_next/whatsapp_next/number_card/<name>/`, `dashboard_chart/<name>/` — standard module documents | `frappe.utils.dashboard.sync_dashboards` |
+| The custom field **`Contact Phone.wa_phone_e164`** (Data, indexed, hidden, read-only, D-028) | `whatsapp_next/whatsapp_next/custom/contact_phone.json`, the file Customize Form → *Export Customizations* writes (`custom_fields`, `custom_perms`, `property_setters`, `links`, `doctype`, `sync_on_migrate: 1`) | `frappe.modules.utils.sync_customizations` |
+| `WA Dashboard Block` (Custom HTML Block — Frappe has no module folder for it) | `fixtures/custom_html_block.json` | `frappe.utils.fixtures.sync_fixtures` |
+| Standard templates, notifications, alerts | `fixtures/standard_*.json`. See [standard-content.md](standard-content.md) | `sync_fixtures`, under the rules of `services/standards.py` |
 
-Fixtures (`hooks.py → fixtures`) install the four roles, the custom field
-**`Contact Phone.wa_phone_e164`** (Data, indexed, read-only, after `is_primary_mobile_no`, D-028),
-the Number Cards and Dashboard Charts named `WA %`, and the `WA Dashboard Block` Custom HTML Block.
+A standard Desktop Icon or Workspace Sidebar **without** a file is deleted by every migrate
+(`remove_orphan_entities`). That is why the tile must be a file and not a row made in code.
 
-Patches (`patches.txt`, post model sync): `add_indexes`, `backfill_contact_phone_e164`
-(normalises existing Contact phones, and creates the custom field if the fixture has not synced
-yet), and `enable_wizard_redirect`.
+`add_to_apps_screen` is not declared in `hooks.py`. With it, Frappe adds an App icon of its own
+when the app is installed, which would be a second tile for the same product.
+
+### What the hooks do (`whatsapp_next/install.py`)
+
+| Hook | Does | Why it is code |
+|---|---|---|
+| `after_install` | Creates the command service user `wa-commands@<site>`: a System User that is **disabled, with no roles and no welcome mail**, and names it in WhatsApp Settings → `command_service_user`. Commands run as this user, never as Administrator (D-012). To use commands, enable it and grant only what your functions need. It must not be a System Manager. | The user's name carries the site, and a User fixture would be replaced on every migrate together with what the admin granted it |
+| `after_install`, `after_migrate` | Prints a warning while role `All` still has rights on `Contact` (see §7). Creates and changes nothing. | It reads the site's own permissions |
+| `before_uninstall` | Deletes the standard-content fingerprints the app keeps in `tabDefaultValue` | They belong to no DocType of the app |
+
+Nothing is created or re-asserted on migrate. The default country is not copied into WhatsApp
+Settings any more: `services.phone.default_region` reads Settings first and falls back to System
+Settings → Country, so an empty field means "the site's country".
+
+### `bench --site <site> install-app whatsapp_next`, step by step
+
+1. `sync_for`: DocTypes are created. For each one Frappe creates the roles its permissions name
+   and calls `on_doctype_update()`, which builds the composite indexes. Then the Pages, the
+   Workspace, `desktop_icon/whatsapp.json` and `workspace_sidebar/whatsapp.json`.
+2. `after_install`: the disabled command service user, named in Settings; the Contact warning.
+3. Frappe's own `after_app_install`: it would create a Desktop Icon for a public workspace that
+   has none. Ours exists from step 1, so it creates nothing.
+4. `sync_fixtures`: the role properties, the HTML block, the standard content (26 records, all
+   notifications and alerts switched off).
+5. `sync_customizations`: the custom field and its column.
+6. `sync_dashboards`: the Number Cards and Dashboard Charts.
+
+Until step 5 the `Contact.validate` hook does nothing (`services/phone.py` checks the field
+first), so a Contact saved in between is never refused.
+
+### `bench --site <site> migrate`, step by step
+
+1. Patches: none (`patches.txt` is empty).
+2. `sync_for`: only files that changed. A DocType whose JSON changed is re-synced and its
+   `on_doctype_update()` runs again (an index that exists is skipped).
+3. `sync_fixtures`: role properties and the HTML block are rewritten from the files; standard
+   content follows [its own rules](standard-content.md) (your on/off, device, recipients and edits
+   are kept).
+4. `sync_dashboards`, `sync_customizations`: the custom field's row is updated in place.
+5. `remove_orphan_entities`: finds nothing of this app to delete, because every standard record
+   has its file.
+6. `after_migrate`: the Contact warning.
+
+**The custom field's column is never dropped or emptied.** `sync_customizations` looks the Custom
+Field up by DocType and fieldname and updates that one row in place. It does not touch the custom
+fields other apps have on the same DocType, and the schema sync that follows adds columns and
+never removes one. Checked on the development site: the column, its index and the existing
+`wa_phone_e164` values were identical before and after.
+
+`wa_phone_e164` is filled when a Contact is saved; Contacts that existed before the app was
+installed have it empty until their next save.
+
+### Changing one of these files
+
+- Desktop Icon, Workspace, Workspace Sidebar, Number Card, Dashboard Chart: edit the record on a
+  site in **developer mode**; Frappe writes the file when you save a standard record.
+- Custom field: Customize Form → *Actions → Export Customizations*, module **WhatsApp Next**,
+  "Sync on Migrate" ticked. Do not add `Custom Field` or `Property Setter` to `hooks.py → fixtures`.
+- A composite index: add it to `COMPOSITE_INDEXES` in the DocType's controller. It is built the
+  next time that DocType is synced.
 
 ## 3. Connect the platform
 
@@ -62,15 +124,17 @@ Setup counts as complete (`onboarding.complete_setup` → `setup_completed`) onc
 empty even on sites that work. Do not rely on the flag. Use `onboarding.get_status` (the steps)
 or `has_credentials()` instead, which is what the redirect and the Home setup band do (D-140).
 
-### Home → Wizard redirect
+### Redirect to the wizard
 
 `WhatsApp Settings.redirect_unregistered_to_wizard` is **on by default** (D-140). The field default is `1`,
 and the patch `enable_wizard_redirect` switches it on for existing sites. The `boot_session` hook
 (`whatsapp_next/boot.py`) sets `frappe.boot.whatsapp_next.setup_redirect` from
 `onboarding.should_redirect_to_wizard()`. That is true only when the redirect is on, the user is a
-**System Manager**, and the site has **no platform credentials** yet. Home (`wa-home`) then routes
-to `wa-onboarding` **once per browser session** (a `sessionStorage` key), so Home stays reachable
-afterwards. A site that has credentials but no device or webhook stays on Home. To turn the
+**System Manager**, and the site has **no platform credentials** yet. Entering any screen of the app
+then routes to `wa-onboarding` **once per browser session** (a `sessionStorage` key), so the app stays
+reachable afterwards. "Any screen" is a `wa-*` Page, the `WhatsApp` workspace, or a list or form of a
+`WhatsApp …` DocType (`public/js/desk/setup_redirect.js`): a theme's app rail may open the workspace
+rather than Home, so the redirect does not depend on Home being opened. A site that has credentials but no device or webhook stays on Home. To turn the
 redirect off, clear the field (Settings → Onboarding).
 
 ### Manual path (no wizard)
@@ -87,7 +151,7 @@ redirect off, clear the field (Settings → Onboarding).
 
 | Key | Where | Default | Meaning |
 |---|---|---|---|
-| `whatsapp_platform_base_url` | site or common config | none | The platform address used when `WhatsApp Settings.platform_base_url` is empty (D-103). Every site of the product talks to the same platform, so set it once per bench. Settings wins when set (for example to point one site at staging). The address is never copied into Settings (D-128). |
+| `whatsapp_platform_base_url` | site or common config | `https://w-platform.dev.sanad.digital` (`registry.DEFAULT_PLATFORM_BASE_URL`) | The platform address used when `WhatsApp Settings.platform_base_url` is empty (D-103). Every site of the product talks to the same platform, so set it once per bench. Settings wins when set (for example to point one site at staging). The address is never copied into Settings (D-128). |
 | `whatsapp_webhook_base_url` | site config | `frappe.utils.get_url()` | The public https base the platform should deliver webhooks to, when the site's own URL is private or behind a tunnel (D-119) |
 
 ```bash

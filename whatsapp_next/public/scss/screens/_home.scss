@@ -12,14 +12,15 @@
 	flex-direction: column;
 	padding-block-end: var(--sanad-gap-lg);
 
-	// The five bands of the volume chart. They are derived from Espresso ink tokens, so dark
-	// mode and any future theme move them with everything else; `Sent` is the one band with no
-	// token of its own, mixed from the delivered blue so the two read as one family.
-	// `--ink-cyan-1` is only 2.1:1 against white; darkened toward the ink it clears the 3:1 that
-	// WCAG 1.4.11 asks of a graphic that carries meaning, and stays a teal beside the blue
-	--wa-band-read: color-mix(in srgb, var(--ink-cyan-1) 70%, var(--ink-gray-9));
-	--wa-band-delivered: var(--ink-blue-3);
-	--wa-band-sent: color-mix(in srgb, var(--ink-blue-3) 45%, var(--surface-white));
+	// The five bands of the volume chart. The message's journey is one family in the brand's
+	// Petrol (`brand/BRAND.md`), deepening as it goes: sent, then delivered, then read — the read
+	// band, the one that matters, is Petrol itself. Mixed toward the card's own surface, so dark
+	// mode (where `--wa-pri` is the brand's #5FB8A9) moves them with everything else. Delivered
+	// stays above the 3:1 WCAG 1.4.11 asks of a graphic that carries meaning; waiting and failed
+	// keep their status tones.
+	--wa-band-read: var(--wa-pri);
+	--wa-band-delivered: color-mix(in srgb, var(--wa-pri) 62%, var(--wa-surface));
+	--wa-band-sent: color-mix(in srgb, var(--wa-pri) 26%, var(--wa-surface));
 	--wa-band-waiting: var(--ink-amber-2);
 	--wa-band-failed: var(--ink-red-3);
 

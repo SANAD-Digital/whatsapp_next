@@ -549,6 +549,32 @@ class TestPlatformTimes(IntegrationTestCase):
 
 		self.assertEqual(_d("2026-10-12"), date(2026, 10, 12))  # the subscription's end date
 
+	def test_a_group_message_carries_the_senders_name_and_the_groups(self):
+		"""The gateway now sends the sender's WhatsApp name and, in a group, the group's name
+		(owner, 2026-10-08): both reach the inbound payload; a direct chat has no group name."""
+		event = _provider().parse_webhook(
+			{"X-SND-Event": "message.received", "X-SND-Event-ID": "g1"},
+			{
+				"event": "message.received",
+				"message_id": "3EB0GROUP1",
+				"chat_jid": "120363041363364876@g.us",
+				"sender_jid": "186998698545250@lid",
+				"sender_mobile_no": "967777999579",
+				"is_group": True,
+				"push_name": "أحمد",
+				"group_name": "فريق المبيعات",
+				"text": "#ping",
+			},
+		)
+		self.assertTrue(event.inbound.is_group)
+		self.assertEqual((event.inbound.push_name, event.inbound.group_name), ("أحمد", "فريق المبيعات"))
+		direct = _provider().parse_webhook(
+			{"X-SND-Event": "message.received", "X-SND-Event-ID": "d1"},
+			{"event": "message.received", "message_id": "3EB0DIRECT", "chat_jid": "967777999579@s.whatsapp.net",
+			 "sender_mobile_no": "967777999579", "push_name": "أحمد", "group_name": "x", "text": "hi"},
+		)
+		self.assertIsNone(direct.inbound.group_name)
+
 	def test_the_gateways_event_time_wins_over_the_zoneless_one(self):
 		from frappe.utils import convert_utc_to_system_timezone
 

@@ -144,6 +144,18 @@ frappe.listview_settings["WhatsApp Contact Group"] = {
 				actions: [
 					{ label: __("Members"), icon: "es-line-people", handler: (doc) => frappe.set_route("Form", "WhatsApp Contact Group", doc.name) },
 					{ label: __("Campaign for this group"), icon: "es-line-email", condition: (doc) => !cint(doc.disabled) && doc.kind !== "Blacklist" && can_send(), handler: (doc) => campaign_for_group(doc.name, doc.group_name) },
+					{
+						label: __("Check on WhatsApp"),
+						icon: "es-line-search",
+						condition: () => frappe.user.has_role(["WhatsApp Agent", "WhatsApp Manager", "System Manager"]),
+						handler: (doc) => whatsapp_next.check_numbers("WhatsApp Contact Group", [doc.name]),
+					},
+					{
+						label: __("Create WhatsApp group"),
+						icon: "es-line-people",
+						condition: (doc) => doc.kind !== "Blacklist" && whatsapp_next.wa_groups && whatsapp_next.wa_groups.can_create(),
+						handler: (doc) => whatsapp_next.wa_groups.open({ source: { doctype: "WhatsApp Contact Group", names: [doc.name] }, name: doc.group_name || doc.name }),
+					},
 				],
 			});
 		}

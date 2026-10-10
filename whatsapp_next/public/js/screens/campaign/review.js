@@ -66,6 +66,7 @@ frappe.provide("whatsapp_next.campaign");
 				{ label: __("Sending device"), value: K.device_title(doc.device) || __("Not chosen") },
 				{ label: __("Send time"), value: this.when_text() },
 				{ label: __("Unknown numbers"), value: cint(doc.exclude_unknown_numbers) ? __("Excluded") : __("Included") },
+				{ label: __("Numbers not on WhatsApp"), value: cint(doc.exclude_not_on_whatsapp) ? __("Skipped") : __("Included") },
 			];
 			const ends = e.minutes ? this.ends_text(e.minutes) : "";
 			const plan = [

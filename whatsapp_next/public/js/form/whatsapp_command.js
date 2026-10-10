@@ -104,6 +104,7 @@ whatsapp_next.command_modal = function (name, opts = {}) {
 		search_contacts: (txt, party_type) => call("search_contacts", { txt, party_type }),
 		on_saved: opts.on_saved,
 		on_close: opts.on_close,
+		function: opts.function || null,
 	});
 };
 
@@ -112,8 +113,11 @@ frappe.ui.form.on("WhatsApp Command", {
 		if (frm.is_new()) {
 			// A command is created in the command editor only (D-029): `/new` goes back to the list with
 			// the editor open, so defaults, suggestions and the allow-listed save always apply.
+			// the function a new command was opened with (the Functions Center's "Link a command")
+			// goes into the editor with it
+			const fn = frm.doc.function || null;
 			frappe.set_route("List", "WhatsApp Command").then(() =>
-				whatsapp_next.command_modal(null, { on_saved: () => window.cur_list && cur_list.refresh() })
+				whatsapp_next.command_modal(null, { function: fn, on_saved: () => window.cur_list && cur_list.refresh() })
 			);
 			return;
 		}

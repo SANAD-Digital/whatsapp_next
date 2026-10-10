@@ -23,6 +23,8 @@ frappe.provide("sanad.ui");
 		audio: SV('<path d="M12 4.5a2.4 2.4 0 0 1 2.4 2.4v4.6a2.4 2.4 0 0 1-4.8 0V6.9A2.4 2.4 0 0 1 12 4.5z"></path><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v3M9.5 20h5"></path>'),
 		location: SV('<path d="M12 21s6.5-6 6.5-11a6.5 6.5 0 1 0-13 0C5.5 15 12 21 12 21z"></path><circle cx="12" cy="10" r="2.3"></circle>'),
 		contact: SV('<circle cx="12" cy="9" r="3.2"></circle><path d="M5.5 19.5c1-3.2 3.6-4.8 6.5-4.8s5.5 1.6 6.5 4.8"></path>'),
+		buttons: SV('<rect x="3.5" y="5" width="17" height="5" rx="2.5"></rect><rect x="3.5" y="14" width="17" height="5" rx="2.5"></rect>'),
+		list: SV('<path d="M9 6.5h11M9 12h11M9 17.5h11"></path><circle cx="4.8" cy="6.5" r="1"></circle><circle cx="4.8" cy="12" r="1"></circle><circle cx="4.8" cy="17.5" r="1"></circle>'),
 	};
 	// the prototype's order and tones
 	const KINDS = [
@@ -32,6 +34,9 @@ frappe.provide("sanad.ui");
 		{ key: "audio", tone: "ok", accept: ["audio/*"] },
 		{ key: "location", tone: "dg" },
 		{ key: "contact", tone: "muted" },
+		// opt-in: shown only to a host that lists them in `kinds` (it must be able to send them)
+		{ key: "buttons", tone: "pri", opt_in: true },
+		{ key: "list", tone: "nf", opt_in: true },
 	];
 	const label_of = (key) =>
 		({
@@ -41,6 +46,8 @@ frappe.provide("sanad.ui");
 			audio: __("Voice note"),
 			location: __("Location"),
 			contact: __("Contact card"),
+			buttons: __("Buttons"),
+			list: __("List"),
 		})[key] || key;
 
 	class AttachMenu {
@@ -70,7 +77,7 @@ frappe.provide("sanad.ui");
 		/** The chip above the field for a picked value (the host binds `[data-attach-clear]`). */
 		static chip_html(v) {
 			if (!v) return "";
-			const detail = v.file_name || v.contact_label || (v.location ? v.location.name || `${v.location.latitude}, ${v.location.longitude}` : "");
+			const detail = v.file_name || v.contact_label || v.summary || (v.location ? v.location.name || `${v.location.latitude}, ${v.location.longitude}` : "");
 			const tone = (KINDS.find((k) => k.key === v.kind) || {}).tone || "muted";
 			return `<span class="sanad-am__chip sanad-am__chip--${tone}">
 				<span class="sanad-am__chip-icon">${ICONS[v.kind] || ""}</span>
@@ -130,7 +137,7 @@ frappe.provide("sanad.ui");
 		render() {
 			const $p = this.$pop;
 			if (this.step === "menu") {
-				$p.html(`<div class="sanad-am__grid">${KINDS.map((k) => {
+				$p.html(`<div class="sanad-am__grid">${KINDS.filter((k) => !k.opt_in || (this.opts.kinds || []).includes(k.key)).map((k) => {
 					const ok = this.allowed(k.key);
 					const reason = !ok && this.opts.reasons ? this.opts.reasons[k.key] : "";
 					return `<button type="button" class="sanad-am__item" data-kind="${k.key}"${ok ? "" : ` disabled title="${esc(reason || __("Not available here"))}"`}>
@@ -228,6 +235,7 @@ frappe.provide("sanad.ui");
 
 		pick(kind) {
 			if (kind === "location" || kind === "contact") return this.go(kind);
+			if (kind === "buttons" || kind === "list") return this.define(kind);
 			const spec = KINDS.find((k) => k.key === kind);
 			this.close();
 			new frappe.ui.FileUploader({
@@ -239,6 +247,62 @@ frappe.provide("sanad.ui");
 					this.opts.on_pick({ kind, attachment: file.file_url, file_name: file.file_name || file.file_url.split("/").pop() });
 				},
 			});
+		}
+
+		/**
+		 * Buttons or a list, defined line by line (the message text is the composer's own field):
+		 * buttons `text | type | value` (type reply · url · call · copy), list `title | description`
+		 * with a `# heading` line starting a section.
+		 */
+		define(kind) {
+			this.close();
+			const is_list = kind === "list";
+			const d = new frappe.ui.Dialog({
+				title: is_list ? __("List") : __("Buttons"),
+				fields: [
+					{ fieldtype: "Data", fieldname: "title", label: __("Title"), description: __("Optional, above the text.") },
+					is_list ? { fieldtype: "Data", fieldname: "button_text", label: __("List button"), default: __("Options"), reqd: 1 } : null,
+					{
+						fieldtype: "Small Text",
+						fieldname: "lines",
+						reqd: 1,
+						label: is_list ? __("Options") : __("Buttons"),
+						description: is_list
+							? __("One option per line: title | description. A line starting with # starts a section. Up to 10 options.")
+							: __("One button per line: text, or text | url | https://…, text | call | +967…, text | copy | CODE. Up to 10."),
+					},
+					{ fieldtype: "Data", fieldname: "footer", label: __("Footer"), description: __("Optional, small text under the message.") },
+				].filter(Boolean),
+				primary_action_label: __("Use"),
+				primary_action: (v) => {
+					const lines = String(v.lines || "").split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+					const interactive = { title: v.title || "", footer: v.footer || "" };
+					let summary;
+					if (is_list) {
+						const sections = [];
+						lines.forEach((l) => {
+							if (l.startsWith("#")) return sections.push({ title: l.replace(/^#+/, "").trim(), rows: [] });
+							if (!sections.length) sections.push({ title: "", rows: [] });
+							const [title, description] = l.split("|").map((p) => p.trim());
+							sections[sections.length - 1].rows.push({ title, description: description || "" });
+						});
+						interactive.button_text = v.button_text;
+						interactive.sections = sections.filter((s) => s.rows.length);
+						const n = interactive.sections.reduce((a, s) => a + s.rows.length, 0);
+						summary = __("{0} options", [n]);
+					} else {
+						interactive.buttons = lines.map((l) => {
+							const [text, type, value] = l.split("|").map((p) => (p || "").trim());
+							const t = (type || "reply").toLowerCase();
+							return { text, type: t, url: t === "url" ? value : undefined, phone: t === "call" ? value : undefined, code: t === "copy" ? value : undefined };
+						});
+						summary = __("{0} buttons", [interactive.buttons.length]);
+					}
+					d.hide();
+					this.opts.on_pick({ kind, interactive, summary });
+				},
+			});
+			d.show();
 		}
 
 		done(value) {

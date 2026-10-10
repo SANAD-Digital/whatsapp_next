@@ -447,7 +447,11 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 					doc.currency ? format_currency(value, doc.currency) : frappe.format(value, df, { always_show_decimals: df.fieldtype !== "Int", inline: true }),
 			},
 		};
+		// A chart's own colour wins; otherwise the host app's palette, read from the
+		// `--sanad-chart-palette` custom property (a comma list), so the kit never names a colour.
+		const palette = getComputedStyle(chart.$canvas[0]).getPropertyValue("--sanad-chart-palette").split(",").map((c) => c.trim()).filter(Boolean);
 		if (doc.color) args.colors = [doc.color];
+		else if (palette.length) args.colors = palette;
 		if (doc.show_values_over_chart) args.valuesOverPoints = true;
 		// One stable container per chart: refresh through `update(data)`; circular charts (whose
 		// slice count can change) are rebuilt, but only after the previous instance released its

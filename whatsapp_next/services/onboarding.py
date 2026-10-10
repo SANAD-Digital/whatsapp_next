@@ -18,7 +18,7 @@ from whatsapp_next.exceptions import WAInvalidPhoneError, WAStateConflictError, 
 from whatsapp_next.providers import exceptions as pex
 from whatsapp_next.providers import registry
 from whatsapp_next.providers.schemas import SignupState
-from whatsapp_next.services import audit, usage_sync, webhook_setup
+from whatsapp_next.services import audit, backup, usage_sync, webhook_setup
 from whatsapp_next.services import settings as settings_service
 from whatsapp_next.services.phone import normalize
 
@@ -190,13 +190,14 @@ def verification_route(extra: dict[str, Any]) -> dict[str, Any]:
 	- `whatsapp`: nothing is sent to the user. The platform hands back a code and its own number;
 	  the user sends the code **from the registered number** to that number, and the sender is
 	  the proof. The code is only useful from that number, so showing it on the page is the flow.
-	- `email`: the platform's signup device is not connected and it fell back to e-mail; the code
-	  went to the masked address and is typed in here.
+	- `email`: the platform's signup device is not connected and it fell back to e-mail. A sign-up
+	  gets a link there (`link_sent`), opened on any device while this page waits; otherwise the
+	  code went to the masked address and is typed in here.
 
-	`{channel, code?, platform_phone?, email?}`."""
+	`{channel, code?, platform_phone?, email?, link_sent?}`."""
 	channel = str(extra.get("verification_channel") or "").strip().lower()
-	if channel == "email" or (not channel and extra.get("code_sent")):
-		return {"channel": "email", "email": extra.get("email")}
+	if channel == "email" or (not channel and (extra.get("code_sent") or extra.get("link_sent"))):
+		return {"channel": "email", "email": extra.get("email"), "link_sent": bool(extra.get("link_sent"))}
 	if extra.get("code") and extra.get("device_phone"):
 		phone = str(extra["device_phone"]).strip()
 		return {
@@ -244,9 +245,11 @@ def complete_signup(
 	`password` sets the tenant's portal password, which is what makes the
 	account real on the platform."""
 	state = registry.get_provider().complete_signup(request_key, code or "", password=password)
+	previous = backup.account_key()
 	stored = store_signup_credentials(state, user=user)
 	out = {"ok": state.status == "Completed", "status": state.status, "credentials_stored": stored}
 	if stored:
+		out["account_switched"] = _left_account(previous, user=user)
 		out.update(link_site(user=user))
 	return out
 
@@ -328,14 +331,29 @@ def login(platform_base_url: str, email: str, password: str, user: str | None = 
 	values = {f: returned.get(f) for f in CREDENTIAL_FIELDS if returned.get(f)}
 	if not values:
 		frappe.throw(_("The platform returned no credentials for this account"), WAValidationError)
+	previous = backup.account_key()
 	written = save_credentials(user=user, **values)
+	switched = _left_account(previous, user=user)
 	return {
 		"ok": True,
 		"customer": result.get("customer"),
 		"customer_name": result.get("customer_name"),
 		"credentials_stored": bool(written),
+		"account_switched": switched,
 		**link_site(user=user),
 	}
+
+
+def _left_account(previous: str | None, user: str | None = None) -> bool:
+	"""After new keys are stored: when they belong to another account than `previous`, that
+	account's devices, messages, queue and numbers are deleted (owner, 2026-10-10) — before
+	`link_site` brings the new account's devices in. Signing in again to the same account
+	changes nothing."""
+	current = backup.account_key()
+	if not previous or not current or previous == current:
+		return False
+	backup.purge_account_data(user=user)
+	return True
 
 
 def link_site(user: str | None = None) -> dict[str, Any]:

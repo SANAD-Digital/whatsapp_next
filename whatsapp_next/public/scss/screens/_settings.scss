@@ -462,6 +462,29 @@
 
 	.wa-settings__actions { justify-content: flex-end; padding-block-start: 16px; }
 
+	// The save bar: stuck to the bottom of the scrolling pane, so Save is in reach wherever the
+	// section is scrolled to; it lights up (and says why) once something has changed.
+	.wa-settings__savebar {
+		position: sticky;
+		inset-block-end: 0;
+		z-index: 2;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 10px;
+		margin-block-start: 24px;
+		padding: 12px 14px;
+		border: 1px solid var(--wa-border);
+		border-radius: 14px;
+		background: var(--wa-surface);
+		box-shadow: var(--wa-shadow-md);
+
+		.btn { min-block-size: 38px; padding-inline: 18px; font-size: 14px; font-weight: 600; border-radius: 10px; }
+		.wa-settings__save:disabled { opacity: 0.45; }
+	}
+	.wa-settings__savebar-text { margin-inline-end: auto; font-size: 13px; font-weight: 600; color: var(--wa-wn-i); }
+	.wa-settings__savebar.is-dirty { background: var(--wa-wn-s); border-color: var(--wa-wn-sb); }
+
 	.wa-settings__banner { margin-block-end: 4px; padding: 14px 16px; border-radius: 12px; }
 	.wa-settings__note { margin-block-start: 12px; font-size: 13px; color: var(--wa-ink-3); }
 
@@ -695,5 +718,88 @@
 
 	@media (max-width: 719px) {
 		.sanad-sw__pane { padding: 18px 16px 28px; }
+	}
+}
+
+// the main menu panel: a row's four actions stay on one line; the table scrolls on a phone
+.wa-settings__menu {
+	margin-top: var(--padding-lg);
+
+	td:last-child {
+		white-space: nowrap;
+	}
+}
+
+// the WhatsApp link panel: what to type, the snippet to paste, and the code it prints
+.wa-settings__qr {
+	padding: var(--padding-md);
+	display: flex;
+	align-items: flex-start;
+	gap: var(--padding-lg);
+	flex-wrap: wrap;
+	&-form { flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: var(--padding-xs); }
+	&-snippet {
+		display: flex;
+		align-items: center;
+		gap: var(--padding-sm);
+		code { flex: 1 1 auto; overflow-wrap: anywhere; }
+	}
+	&-link { overflow-wrap: anywhere; font-size: var(--text-sm, 13px); }
+	&-img { flex: none; border: 1px solid var(--border-color); border-radius: var(--border-radius); background: var(--surface-white, var(--wa-surface)); }
+}
+
+// Backup: the import's outcome under its button
+.wa-settings__backup-result {
+	margin-block-start: 10px;
+	font-size: 13px;
+
+	p {
+		margin: 0;
+	}
+}
+.wa-settings__backup-failed {
+	margin: 6px 0 0;
+	padding-inline-start: 18px;
+	color: var(--wa-dg-i, var(--wa-ink));
+}
+
+// The backup buttons (Settings and the account switch): a spinner while the file is prepared,
+// a tick once it is saved. Top level: the switch dialog sits outside every screen's root.
+.wa-backup-btn--busy,
+.wa-backup-btn--done {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+.wa-backup-btn--busy {
+	cursor: progress;
+	opacity: 0.85;
+
+	&::before {
+		content: "";
+		inline-size: 12px;
+		block-size: 12px;
+		border: 2px solid currentColor;
+		border-inline-end-color: transparent;
+		border-radius: 50%;
+		animation: wa-backup-spin 0.7s linear infinite;
+	}
+	svg {
+		display: none;
+	}
+}
+.wa-backup-btn--done::before {
+	content: "✓";
+	font-weight: 700;
+	color: var(--wa-ok, currentColor);
+}
+@keyframes wa-backup-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.wa-backup-btn--busy::before {
+		animation-duration: 2s;
 	}
 }

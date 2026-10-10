@@ -198,8 +198,8 @@ comparison between phones goes through `normalize(raw, region=None)`:
 - `to_provider()` strips the `+` only at the provider boundary.
 
 Core Contacts are matched through the custom field `Contact Phone.wa_phone_e164`. The
-`Contact.validate` hook (`sync_contact_phones`) keeps it filled, and the patch
-`backfill_contact_phone_e164` backfilled existing rows (D-028). Phone fields in the app's own
+`Contact.validate` hook (`sync_contact_phones`) keeps it filled (D-028); a Contact that existed
+before the app was installed gets the value at its next save. Phone fields in the app's own
 DocTypes are always named `phone` (raw) and `phone_e164` (normalised, indexed).
 
 ## WhatsApp Numbers materialisation

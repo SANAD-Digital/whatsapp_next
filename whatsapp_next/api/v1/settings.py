@@ -17,7 +17,7 @@ from whatsapp_next.api._common import api_endpoint, paginate
 from whatsapp_next.api.v1._roles import AGENT_UP, CONTACT_USER, MANAGER, SYSTEM_MANAGER, VIEWER_UP
 from whatsapp_next.exceptions import WANotSupportedError, WAProviderUnavailableError, WAValidationError
 from whatsapp_next.providers.schemas import CANONICAL_EVENTS
-from whatsapp_next.services import audit, onboarding, permissions, usage_sync, webhook_setup
+from whatsapp_next.services import audit, command_menu, onboarding, permissions, usage_sync, webhook_setup
 from whatsapp_next.services import settings as settings_service
 from whatsapp_next.services.settings import PICKER_SOURCE_FIELDS
 
@@ -62,8 +62,25 @@ SECTIONS: dict[str, tuple[str, ...]] = {
 		"command_reply_language",
 		"send_receipt_reply",
 		"receipt_reply",
+		"reply_on_edit",
+		"edit_reply_text",
+		"reply_on_delete",
+		"delete_reply_text",
+		"changes_reply_scope",
+		"main_menu_mode",
+		"main_menu_text",
+		"main_menu_button",
+		"main_menu_words",
+		"mark_read_mode",
+		"typing_indicator",
 	),
-	"policy": ("default_device", "default_country", "global_blacklist_group", "send_only_to_known_numbers"),
+	"policy": (
+		"default_device",
+		"default_country",
+		"global_blacklist_group",
+		"send_only_to_known_numbers",
+		"import_past_messages",
+	),
 	"picker": ("picker_sources",),
 	"retention": (
 		"outbound_retention_days",
@@ -122,7 +139,9 @@ USAGE_CACHE_SECONDS = 600
 def _section_values(doc, section: str) -> dict[str, Any]:
 	out: dict[str, Any] = {}
 	for fieldname in SECTIONS[section]:
-		value = doc.get(fieldname)
+		# a field added after the Settings row was saved shows its default, which is also what
+		# the services act on (`settings.stored_or_default`)
+		value = settings_service.stored_or_default(fieldname)
 		if fieldname == "picker_sources":
 			value = [{f: row.get(f) for f in PICKER_SOURCE_FIELDS} for row in (value or [])]
 		out[fieldname] = value
@@ -159,6 +178,28 @@ def save_settings(section: str, values: dict) -> dict[str, Any]:
 			_("Fields not allowed in section {0}: {1}").format(section, ", ".join(unknown)), WAValidationError
 		)
 	changed = settings_service.save_fields(values, section=section, user=frappe.session.user)
+	return {"ok": True, "changed": changed}
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"), schema={"text": {"max_length": 500}})
+def get_whatsapp_link(text: str | None = None, device: str | None = None) -> dict[str, Any]:
+	"""The wa.me link and its QR code (data URI) for a message typed in advance — the preview of
+	the print-format functions `whatsapp_link` / `whatsapp_qr`."""
+	from whatsapp_next.services import wa_links
+
+	return {"url": wa_links.link(text, device), "qr": wa_links.qr_data_uri(text, device)}
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+def get_main_menu() -> dict[str, Any]:
+	"""Every Active command with its main-menu fields, the menu's own first and in order."""
+	return {"commands": command_menu.editable_items(), "max": command_menu.MAX_ROWS}
+
+
+@api_endpoint(roles=SYSTEM_MANAGER)
+def save_main_menu(commands: list) -> dict[str, Any]:
+	"""The main menu becomes `commands` (`[{command, menu_description}]`, in order); audited."""
+	changed = command_menu.save_items(commands, user=frappe.session.user)
 	return {"ok": True, "changed": changed}
 
 
@@ -328,3 +369,22 @@ def get_doctype_fields(document_type: str) -> list[dict[str, Any]]:
 				}
 			)
 	return out
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+def export_backup() -> dict[str, Any]:
+	"""The app's backup (Settings without keys or devices, templates, notifications, alerts,
+	functions, commands, contact groups) as a dict; the client saves it as a JSON file."""
+	from whatsapp_next.services import audit, backup
+
+	data = backup.export_backup()
+	audit.log("Settings Changed", user=frappe.session.user, details={"action": "export_backup"})
+	return data
+
+
+@api_endpoint(roles=SYSTEM_MANAGER)
+def import_backup(data: str) -> dict[str, Any]:
+	"""Bring a backup file in → `{settings, created, updated, failed[]}` (services.backup)."""
+	from whatsapp_next.services import backup
+
+	return backup.import_backup(data, user=frappe.session.user)

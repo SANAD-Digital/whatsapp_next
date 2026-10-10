@@ -70,6 +70,7 @@ frappe.provide("sanad.ui");
 				saving: false,
 				testing: false,
 				test_phone: "",
+				who_open: null,
 				ref: null, // the record the preview is tried on; null → the latest
 				var_q: "",
 				tpl_q: "",
@@ -615,6 +616,31 @@ frappe.provide("sanad.ui");
 			return this.ui.labels[`phone:${r.phone}`] || sanad.ui.phone(r.phone || "");
 		}
 
+		/** The open recipient's details (owner, 2026-10-08): what it is and where its number comes from. */
+		who_detail_html() {
+			const r = this.draft.recipients[this.ui.who_open];
+			if (!r) return "";
+			const m = RECIPIENT_META()[r.recipient_type] || RECIPIENT_META()["Fixed Number"];
+			const rows = [[__("Recipient type"), esc(m.label)]];
+			if (r.recipient_type === "Fixed Number") {
+				const name = this.ui.labels[`phone:${r.phone}`];
+				if (name) rows.push([__("Name"), `<span dir="auto">${esc(name)}</span>`]);
+				rows.push([__("Number"), `<span dir="ltr">${esc(sanad.ui.phone(r.phone || ""))}</span>${sanad.ui.group_tag(r.phone)}`]);
+			} else if (r.recipient_type === "Document Field") {
+				rows.push([__("Number field"), esc(this.field_label(r.receiver_by_document_field))]);
+				rows.push([__("Field name"), `<code dir="ltr">${esc(r.receiver_by_document_field || "")}</code>`]);
+			} else {
+				const link = this.fields("link_fields").find((f) => f.fieldname === r.linked_document_field);
+				rows.push([__("Linked record field"), esc(this.field_label(r.linked_document_field))]);
+				if (link && link.options) rows.push([__("Linked record type"), esc(__(link.options))]);
+				rows.push([__("Number field on the linked record"), `<code dir="ltr">${esc(r.linked_mobile_fieldname || "")}</code>`]);
+			}
+			rows.push([__("Send condition"), r.condition ? `<code dir="ltr">${esc(r.condition)}</code>` : esc(__("Always"))]);
+			return `<div class="sanad-ae__who-detail" id="sanad-ne-who-detail" role="region" aria-label="${esc(__("Recipient details"))}">
+				<dl>${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join("")}</dl>
+			</div>`;
+		}
+
 		draw_who() {
 			const d = this.draft;
 			const meta = RECIPIENT_META();
@@ -623,9 +649,12 @@ frappe.provide("sanad.ui");
 					const m = meta[r.recipient_type] || meta["Fixed Number"];
 					const label = this.recipient_text(r);
 					const sub = r.recipient_type === "Fixed Number" && this.ui.labels[`phone:${r.phone}`] ? sanad.ui.phone(r.phone) : m.label;
-					return `<li class="sanad-ae__who">
-						<span class="sanad-ae__who-ico" aria-hidden="true">${sanad.ui.ico(m.icon, "sm")}</span>
-						<span class="sanad-ae__who-text"><strong dir="auto">${esc(label)}${r.recipient_type === "Fixed Number" ? sanad.ui.group_tag(r.phone) : ""}</strong><span dir="auto">${esc(sub)}${r.condition ? ` · ${esc(__("with a condition"))}` : ""}</span></span>
+					const open = this.ui.who_open === i;
+					return `<li class="sanad-ae__who${open ? " is-open" : ""}">
+						<button type="button" class="sanad-ae__who-open" data-act="r_open" data-i="${i}" aria-expanded="${open}" aria-controls="sanad-ne-who-detail" title="${esc(__("Show the details"))}">
+							<span class="sanad-ae__who-ico" aria-hidden="true">${sanad.ui.ico(m.icon, "sm")}</span>
+							<span class="sanad-ae__who-text"><strong dir="auto">${esc(label)}${r.recipient_type === "Fixed Number" ? sanad.ui.group_tag(r.phone) : ""}</strong><span dir="auto">${esc(sub)}${r.condition ? ` · ${esc(__("with a condition"))}` : ""}</span></span>
+						</button>
 						<button type="button" class="sanad-ae__icon sanad-ae__icon--sm" data-act="r_remove" data-i="${i}" aria-label="${esc(__("Remove {0}", [label]))}">${sanad.ui.ico("x", "sm")}</button>
 					</li>`;
 				})
@@ -654,7 +683,7 @@ frappe.provide("sanad.ui");
 			this.$root.find("[data-step=who]").html(`
 				${this.step_head(3, __("Who gets it?"), d.recipients.length > 0)}
 				<div class="sanad-ae__step-body">
-					${d.recipients.length ? `<ul class="sanad-ae__whos">${chips}</ul>` : `<p class="sanad-ae__empty">${esc(__("Nobody yet."))}</p>`}
+					${d.recipients.length ? `<ul class="sanad-ae__whos">${chips}</ul>${this.who_detail_html()}` : `<p class="sanad-ae__empty">${esc(__("Nobody yet."))}</p>`}
 					<div class="sanad-ae__field">
 						${this.seg(
 							"adder",
@@ -838,10 +867,21 @@ frappe.provide("sanad.ui");
 					<strong>${esc(__("Try it"))}</strong>
 					<p>${esc(__("Sends this draft once to one number, for the record above — nothing is saved and the condition is not checked."))}</p>
 					<div class="sanad-ae__addline">
-						<input type="tel" class="wa-input wa-input--mono" data-in="test_phone" dir="ltr" placeholder="9665…" value="${esc(this.ui.test_phone)}" aria-label="${esc(__("Number for the test"))}">
+						<div class="sanad-ae__test-phone" data-slot="test-phone"></div>
 						<button type="button" class="sanad-ae__btn sanad-ae__btn--pri" data-act="test"${this.ui.testing ? " disabled" : ""}>${sanad.ui.ico("send", "sm")}${esc(this.ui.testing ? __("Sending…") : __("Send a test"))}</button>
 					</div>
 				</div>`);
+			// The kit's phone field: its country opens on the site's default (WhatsApp Settings →
+			// default country), so a local number takes that key without it being typed (owner,
+			// 2026-10-08); a number written with its own key keeps it.
+			new sanad.ui.PhoneField({
+				wrapper: this.$root.find("[data-slot=test-phone]"),
+				label: "",
+				value: this.ui.test_phone,
+				on_change: (v) => {
+					this.ui.test_phone = (v && (v.phone_e164 || v.phone)) || "";
+				},
+			});
 		}
 
 		draw_history() {
@@ -965,8 +1005,12 @@ frappe.provide("sanad.ui");
 				}
 				case "pick_contacts":
 					return this.pick_contacts();
+				case "r_open":
+					this.ui.who_open = this.ui.who_open === i ? null : i;
+					return this.draw_who();
 				case "r_remove":
 					d.recipients.splice(i, 1);
+					this.ui.who_open = null;
 					return this.changed({ redraw: ["who"] });
 				case "test":
 					return this.send_test();

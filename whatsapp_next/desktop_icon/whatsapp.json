@@ -1,0 +1,21 @@
+{
+ "app": "whatsapp_next",
+ "bg_color": "gray",
+ "creation": "2026-07-22 18:17:52.930541",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "Link",
+ "idx": 0,
+ "label": "WhatsApp",
+ "link_to": "WhatsApp",
+ "link_type": "Workspace Sidebar",
+ "logo_url": "/assets/whatsapp_next/images/whatsapp-next-icon.svg",
+ "modified": "2026-10-03 00:14:46.262801",
+ "modified_by": "Administrator",
+ "name": "WhatsApp",
+ "owner": "Administrator",
+ "restrict_removal": 0,
+ "roles": [],
+ "standard": 1
+}

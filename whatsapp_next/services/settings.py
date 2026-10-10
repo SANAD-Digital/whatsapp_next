@@ -65,3 +65,19 @@ def save_fields(values: dict[str, Any], *, section: str, user: str | None = None
 		doc.save(ignore_permissions=True)
 		audit.log("Settings Changed", fields_written=changed, details={"section": section}, user=user)
 	return changed
+
+
+def stored_or_default(fieldname: str):
+	"""A Settings value, or the field's default when the Settings row was saved before the field
+	existed. Frappe hands a never-saved Check back as 0 (not empty), so the stored row is asked."""
+	singles = frappe.qb.DocType("Singles")
+	stored = (
+		frappe.qb.from_(singles)
+		.select(singles.value)
+		.where((singles.doctype == SETTINGS) & (singles.field == fieldname))
+		.run()
+	)
+	if stored:
+		return frappe.get_cached_doc(SETTINGS).get(fieldname)
+	df = frappe.get_meta(SETTINGS).get_field(fieldname)
+	return df.default if df else None

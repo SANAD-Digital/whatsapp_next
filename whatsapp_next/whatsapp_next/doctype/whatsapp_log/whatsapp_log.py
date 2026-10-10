@@ -37,3 +37,21 @@ class WhatsAppLog(Document):
 			frappe.throw(_("Source must be Campaign when a Campaign is linked"), WAValidationError)
 		if self.reference_name and not self.reference_doctype:
 			frappe.throw(_("Reference DocType is required with a Reference Name"), WAValidationError)
+
+
+# Composite indexes the DocType JSON cannot express (fields.md F-11); single-column ones are
+# `search_index` / `unique` in the JSON.
+COMPOSITE_INDEXES: tuple[tuple[str, ...], ...] = (
+	("device", "creation"),
+	("reference_doctype", "reference_name"),
+	("status", "scheduled_at"),
+	("command", "creation"),
+	("notification", "creation"),
+)
+
+
+def on_doctype_update() -> None:
+	"""Called by Frappe whenever it syncs this DocType (install, and a migrate that changes it):
+	create the composite indexes that are missing. Idempotent."""
+	for fields in COMPOSITE_INDEXES:
+		frappe.db.add_index("WhatsApp Log", list(fields))

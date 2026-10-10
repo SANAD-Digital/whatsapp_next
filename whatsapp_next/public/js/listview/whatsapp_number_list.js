@@ -136,7 +136,7 @@ const COLUMNS = () => [
 
 frappe.listview_settings[DOCTYPE] = {
 	hide_name_column: true,
-	add_fields: ["phone_e164", "jid", "display_name", "saved_name", "synced_device", "contact", "link_status", "number_type", "last_device", "last_seen", "conversation_confirmed"],
+	add_fields: ["phone_e164", "jid", "display_name", "saved_name", "synced_device", "contact", "link_status", "number_type", "last_device", "last_seen", "conversation_confirmed", "on_whatsapp"],
 
 	get_indicator(doc) {
 		// "Not linked" is a neutral state, not a warning → gray.
@@ -168,6 +168,9 @@ frappe.listview_settings[DOCTYPE] = {
 				},
 				secondary: [
 					{ label: __("Fetch from WhatsApp"), icon: "es-line-download", roles: ["WhatsApp Manager"], handler: () => sync_from_whatsapp(listview) },
+					...(whatsapp_next.wa_groups && whatsapp_next.wa_groups.can_create()
+						? [{ label: __("Create WhatsApp group"), icon: "es-line-people", handler: () => whatsapp_next.wa_groups.open({ on_created: () => listview.refresh() }) }]
+						: []),
 				],
 				stats: STATS(),
 				events: { "wa:inbound:received": (data, header) => header.refresh(true) },
@@ -183,6 +186,7 @@ frappe.listview_settings[DOCTYPE] = {
 					{ fieldname: "phone_e164", type: "search", fields: ["phone_e164", "display_name"], placeholder: __("Search name or number…") },
 					{ fieldname: "link_status", type: "select", label: __("Link status") },
 					{ fieldname: "number_type", type: "select" },
+					{ fieldname: "on_whatsapp", type: "select", label: __("Registered on WhatsApp") },
 					{ fieldname: "last_device", type: "select" },
 					{ fieldname: "synced_device", type: "select", label: __("Synced from") },
 					{ fieldname: "last_direction", type: "select" },
@@ -213,12 +217,39 @@ frappe.listview_settings[DOCTYPE] = {
 		}
 
 		// Bulk convert (09 G-01): one Contact per unknown individual number, named after its WhatsApp name.
-		if (has_kit("BulkActions") && frappe.user.has_role(CONTACT_ROLES)) {
+		const can_group = whatsapp_next.wa_groups && whatsapp_next.wa_groups.can_create();
+		if (has_kit("BulkActions") && (frappe.user.has_role(CONTACT_ROLES) || frappe.user.has_role(AGENT_ROLES) || can_group)) {
 			const unknown = (docs) => docs.filter((d) => !d.contact && d.number_type === "Individual");
+			const people = (docs) => docs.filter((d) => d.number_type === "Individual");
 			new sanad.ui.BulkActions({
 				listview,
 				actions: [
 					{
+						label: (n) => (n ? __("Check on WhatsApp ({0})", [sanad.ui.format_int(n)]) : __("Check on WhatsApp")),
+						condition: (docs) => people(docs).length > 0,
+						handler: (names, docs) =>
+							whatsapp_next.check_numbers("WhatsApp Number", people(docs).map((d) => d.name), { on_done: () => listview.refresh() }),
+					},
+					{
+						label: (n) => (n ? __("Refresh WhatsApp profile ({0})", [sanad.ui.format_int(n)]) : __("Refresh WhatsApp profile")),
+						condition: (docs) => people(docs).length > 0,
+						handler: (names, docs) =>
+							whatsapp_next.refresh_profiles("WhatsApp Number", people(docs).map((d) => d.name), { on_done: () => listview.refresh() }),
+					},
+					...(can_group
+						? [{
+							label: (n) => (n ? __("Create WhatsApp group ({0})", [sanad.ui.format_int(n)]) : __("Create WhatsApp group")),
+							condition: (docs) => people(docs).length > 0,
+							handler: (names, docs) => {
+								whatsapp_next.wa_groups.open({
+									members: people(docs).map((d) => ({ phone_e164: d.phone_e164 || d.name, display_name: d.display_name })),
+									on_created: () => listview.refresh(),
+								});
+								return Promise.resolve();
+							},
+						}]
+						: []),
+					...(!frappe.user.has_role(CONTACT_ROLES) ? [] : [{
 						label: (n) => (n ? __("Create contacts ({0})", [sanad.ui.format_int(n)]) : __("Create contacts")),
 						condition: (docs) => unknown(docs).length > 0,
 						confirm: (names, docs) => {
@@ -240,7 +271,7 @@ frappe.listview_settings[DOCTYPE] = {
 								{ freeze: true, freeze_message: __("Creating contacts…") }
 							),
 						success: (r) => sanad.ui.plural(r.count || 0, { one: __("{0} contact created"), other: __("{0} contacts created") }),
-					},
+					}]),
 				],
 			});
 		}

@@ -165,7 +165,7 @@ frappe.provide("whatsapp_next.devices");
 			const $mount = $('<div class="wa-pairing"></div>').appendTo($body);
 			const steps = [];
 			if (!repair) steps.push(this.step_name());
-			steps.push(this.step_pair(), this.step_done());
+			steps.push(this.step_pair());
 			this.stepper = new ui.Stepper({
 				wrapper: $mount,
 				ctx: this.ctx,
@@ -474,44 +474,23 @@ frappe.provide("whatsapp_next.devices");
 			if (status !== "Connected" || this.ctx.paired) return;
 			this.ctx.paired = true;
 			this.stop_watch();
+			// Paired: the window has done its work and closes itself (owner, 2026-10-08); the device
+			// and its number show on the screen behind it, and a toast says which one it was.
+			this.dialog.hide();
+			this.announce_paired();
+			Promise.resolve(this.opts.on_done && this.opts.on_done(this.ctx));
+		}
+
+		announce_paired() {
 			ui.announce(__("The device is paired."), { assertive: true });
-			this.stepper.set_step_valid(true);
-			this.stepper.go(this.stepper.steps.length - 1);
-		}
-
-		// ---- step 3: paired ---------------------------------------------------------------------
-
-		step_done() {
-			return {
-				key: "done",
-				label: __("Done"),
-				render: ($body) => {
-					this.$done = $body;
-				},
-				on_show: () => this.render_done(),
-			};
-		}
-
-		render_done() {
-			const $el = this.$done.empty();
-			const state = new ui.EmptyState({ wrapper: $el, state: "loading", rows: 1 });
-			return ui
-				.call("devices.list_devices")
+			ui.call("devices.list_devices")
 				.then((r) => {
 					const row = (r.rows || []).find((d) => d.name === this.ctx.device) || {};
-					const number = row.phone_e164 ? ui.PhoneField.format_display(row.phone_e164) : __("Not read yet");
-					$el.html(`
-						<div class="wa-pairing__done">
-							<span class="wa-pairing__done-icon sanad-tone--green" aria-hidden="true">${ui.icon("es-line-success", "lg")}</span>
-							<h3 class="wa-pairing__done-title">${ui.escape(__("The device is paired"))}</h3>
-							<p class="wa-pairing__done-sub">${ui.escape(__("It can now be chosen in templates, campaigns and quick sends."))}</p>
-							<dl class="wa-pairing__rows">
-								<div><dt>${ui.escape(__("Name"))}</dt><dd>${ui.escape(row.device_name || this.ctx.device_name)}</dd></div>
-								<div><dt>${ui.escape(__("Number read"))}</dt><dd class="sanad-tabular" dir="ltr">${ui.escape(number)}</dd></div>
-							</dl>
-						</div>`);
+					const name = row.device_name || this.ctx.device_name || "";
+					const number = row.phone_e164 ? ui.PhoneField.format_display(row.phone_e164) : "";
+					ui.Toast.success(number ? __("{0} is paired on {1}.", [name, number]) : __("{0} is paired.", [name]));
 				})
-				.catch((err) => state.error(err));
+				.catch(() => ui.Toast.success(__("The device is paired.")));
 		}
 
 		destroy() {
@@ -585,6 +564,12 @@ frappe.provide("whatsapp_next.devices");
 			if (row.disabled) {
 				$(`<span class="wa-device__flag wa-device__flag--muted" title="${ui.escape(__("Nothing is sent from this device until it is enabled again."))}">${ui.icon("es-line-slash", "xs")}${ui.escape(__("Sending paused"))}</span>`).appendTo($tags);
 			}
+			if (row.history_status === "Running") {
+				const progress = row.history_total
+					? __("{0} of {1}", [ui.format_int(row.history_imported || 0), ui.format_int(row.history_total)])
+					: ui.format_int(row.history_imported || 0);
+				$(`<span class="wa-device__flag" title="${ui.escape(__("Messages this number exchanged before it was linked are being brought in."))}">${ui.icon("es-line-reload", "xs")}${ui.escape(__("Importing past conversations: {0}", [progress]))}</span>`).appendTo($tags);
+			}
 			const items = this.menu_items();
 			if (!items.length) return;
 			$(`<button type="button" class="wa-device__more" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("Actions for {0}", [row.device_name || row.name]))}">${ui.icon(ui.icons.more, "sm")}</button>`)
@@ -608,6 +593,9 @@ frappe.provide("whatsapp_next.devices");
 				icon: row.disabled ? "es-line-success" : "es-line-slash",
 				handler: () => screen.set_disabled(row, !row.disabled),
 			});
+			if (screen.history_allowed) {
+				items.push({ label: __("Import past conversations"), icon: "es-line-download", handler: () => screen.import_history(row) });
+			}
 			items.push({ label: __("Delete device"), icon: "es-line-delete", danger: true, handler: () => screen.remove(row) });
 			return items;
 		}
@@ -831,6 +819,8 @@ frappe.provide("whatsapp_next.devices");
 				this._remote = false;
 				this._rows = ui.call("devices.list_devices", remote ? { refresh: 1 } : {}).then((r) => {
 					this.rows = r.rows || [];
+					// Settings → Policy «Import Past Messages» (off by default) offers the import
+					this.history_allowed = !!r.history_allowed;
 					return this.rows;
 				});
 			}
@@ -1056,6 +1046,23 @@ frappe.provide("whatsapp_next.devices");
 				ui.Toast.success(__("{0} is {1}", [row.device_name || row.name, label]));
 				if (r.changed) this.refresh();
 			});
+		}
+
+		/** Past conversations: what the last import did, and a fresh one (rows already here are skipped). */
+		import_history(row) {
+			const title = row.device_name || row.name;
+			const done = row.history_status === "Done" || row.history_status === "Failed";
+			const facts = row.history_status && row.history_status !== "Not Started"
+				? __("Last import: {0} messages brought in of {1} found.", [ui.format_int(row.history_imported || 0), ui.format_int(row.history_total || 0)])
+				: __("Nothing has been imported for this number yet.");
+			frappe.confirm(
+				`${ui.escape(__("Bring in the messages {0} exchanged before it was linked, as far back as the inbound retention period. They show in conversations and run no commands or replies.", [title]))}<br><br>${ui.escape(facts)}`,
+				() =>
+					ui.call("devices.import_history", { device: row.name, restart: done ? 1 : 0 }, { freeze: true }).then(() => {
+						ui.Toast.success(__("Importing the past conversations of {0}", [title]));
+						this.refresh();
+					})
+			);
 		}
 
 		set_default(row) {

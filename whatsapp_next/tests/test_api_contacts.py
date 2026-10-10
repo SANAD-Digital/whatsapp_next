@@ -182,3 +182,11 @@ class TestApiContacts(IntegrationTestCase):
 		with as_user("WhatsApp Contact User"):
 			again = api.link_many(names=[a], link_doctype="Customer", link_name=self.customer)
 		self.assertEqual((again["count"], again["skipped"][0]["name"]), (0, a))
+		# unlinking takes that one link away and keeps the contact (owner, 2026-10-08)
+		with as_user("WhatsApp Contact User"):
+			self.assertEqual(api.unlink_account(name=b, link_doctype="Customer", link_name=self.customer), {"removed": True})
+			self.assertEqual(api.unlink_account(name=b, link_doctype="Customer", link_name=self.customer), {"removed": False})
+		self.assertFalse(frappe.get_all("Dynamic Link", filters={"parent": b, "link_doctype": "Customer"}))
+		self.assertTrue(frappe.db.exists("Contact", b))
+		with as_user("_none"), self.assertRaises(WAPermissionError):
+			api.unlink_account(name=a, link_doctype="Customer", link_name=self.customer)

@@ -64,3 +64,10 @@ Home page KPI strip.
   (locale sign and placement); "Not available" instead of "N/A".
 - Mobile: 2 columns under 992 px, 1 column under 576 px, charts stack; a wide series scrolls
   inside its card.
+
+## Chart colours
+
+A Dashboard Chart's own `color` wins. Without one, the charts take the host app's palette from the
+`--sanad-chart-palette` custom property, a comma-separated list of colours, so the kit never names
+a colour itself. Set it on `:root` (and again under `[data-theme="dark"]`) in the app's own bundle;
+leave it unset and frappe-charts uses its default colours.

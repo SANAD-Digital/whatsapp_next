@@ -850,3 +850,14 @@ body.sanad-ce-open { overflow: hidden; }
 
 	&--readonly .sanad-ce__status, &--readonly .sanad-ce__fnchip { cursor: default; }
 }
+
+.sanad-ce__ask {
+	display: flex;
+	align-items: center;
+	gap: var(--sanad-gap-xs);
+	margin-block-start: var(--sanad-gap-xs);
+	font-size: var(--text-sm, 13px);
+	color: var(--ink-gray-7);
+}
+.sanad-ce__ask-choices { margin-block-start: 4px; }
+

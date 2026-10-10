@@ -12,17 +12,17 @@ import re
 import shlex
 import time
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 import frappe
 from frappe import _
-from frappe.utils import cint, getdate, now_datetime, nowdate
+from frappe.utils import cint, cstr, getdate, now_datetime, nowdate
 
 from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
 from whatsapp_next.functions import registry
 from whatsapp_next.functions.context import FunctionContext, FunctionResult, Sender
-from whatsapp_next.services import attachments, dispatch, templates
+from whatsapp_next.services import attachments, command_menu, dispatch, templates
 from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.services.permissions import PARTY_TYPES
@@ -94,6 +94,30 @@ def help_tokens() -> set[str]:
 	"""The built-in help words plus the one set in Settings (`command_help_token`)."""
 	own = (frappe.get_cached_doc("WhatsApp Settings").get("command_help_token") or "").strip().casefold()
 	return {*HELP_TOKENS, own} if own else set(HELP_TOKENS)
+
+
+def match_inbound(inbound) -> Match | None:
+	"""The command an inbound asks for. A tapped button or list row is read by its id when the
+	id is itself a command line (`كشف -3m`), else by its title as a bare command word — a title's
+	other words are a label, never arguments. A tap that answers a session question is no command."""
+	from whatsapp_next.services import command_sessions
+
+	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
+	text = get("body") or ""
+	selected = cstr(get("selected_option_id")).strip()
+	if get("message_type") != "Interactive Reply" or not selected:
+		return match(text)
+	if selected in (command_sessions.TYPE_IT, command_sessions.CANCEL) or selected.startswith(
+		command_sessions.ARG_PREFIX
+	):
+		return None
+	by_id = match(selected)
+	if by_id is not None and not by_id.is_help:
+		return by_id
+	by_title = match(text)
+	if by_title is not None and not by_title.is_help:
+		return replace(by_title, rest="")
+	return by_title
 
 
 def match(text: str | None) -> Match | None:
@@ -295,7 +319,7 @@ def check_access(command, inbound, sender: Sender | None = None) -> str | None:
 	if not cint(settings.enable_commands):
 		return "Commands Disabled"
 	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
-	if (get("message_type") or "Text") != "Text":
+	if (get("message_type") or "Text") not in ("Text", "Interactive Reply"):
 		return "Not Allowed"
 	allowed_types = allowed_party_types(command)
 	sender = sender or sender_for(inbound, allowed_types)
@@ -343,6 +367,11 @@ def _coerce(value: str, kind: str, spec: dict[str, Any]) -> Any:
 			raise ValueError(_("{0} must be a whole number").format(spec.get("label") or spec["key"]))
 		return int(value)
 	if kind == "date":
+		from whatsapp_next.services.command_sessions import relative_date
+
+		relative = relative_date(value)
+		if relative:
+			return str(relative)
 		try:
 			return str(getdate(value.strip()))
 		except Exception as exc:
@@ -360,11 +389,12 @@ def disabled_inputs(command) -> set[str]:
 	return {k.strip() for k in (command.get("disabled_inputs") or "").splitlines() if k.strip()}
 
 
-def parse_args(command, text: str) -> dict[str, Any]:
+def parse_args(command, text: str, *, partial: bool = False) -> dict[str, Any]:
 	"""Arguments after the command word per manifest `inputs`: `key=value` tokens first, then
 	positional order; the input flagged `rest` swallows the remaining text. Typed by
 	`type ∈ str|int|date|link`; missing `required` inputs raise `WAValidationError`. Inputs the
-	command disabled are not read."""
+	command disabled are not read. `partial` returns only what the text gave: no defaults, and a
+	missing required input is not an error (the router asks for it)."""
 	declared = _manifest_inputs(command.function)
 	if not declared:
 		return {"text": text.strip()} if text.strip() else {}
@@ -394,6 +424,8 @@ def parse_args(command, text: str) -> dict[str, Any]:
 			else:
 				raw = positional.pop(0)
 		if raw is None or raw == "":
+			if partial:
+				continue
 			if spec.get("default") not in (None, ""):
 				out[key] = spec["default"]
 			elif spec.get("required"):
@@ -635,34 +667,81 @@ def _reply_device(command, inbound) -> str | None:
 IMMEDIATE_OUTPUTS = frozenset({"receipt", "unknown", "help"})
 
 
+def _contact_numbers(contact: str | None, asker: str | None) -> list[str]:
+	"""The contact's other WhatsApp numbers (individuals, primary first), without the asker's."""
+	if not contact:
+		return []
+	from whatsapp_next.services.phone import classify
+
+	rows = frappe.get_all(
+		"Contact Phone",
+		filters={"parenttype": "Contact", "parent": contact, "wa_phone_e164": ("is", "set")},
+		pluck="wa_phone_e164",
+		order_by="is_primary_mobile_no desc, idx asc",
+		ignore_permissions=True,
+	)
+	others: list[str] = []
+	for value in rows:
+		kind, key = classify(value)
+		if kind == "Individual" and key != asker and key not in others:
+			others.append(key)
+	return others
+
+
 def _send_replies(command, inbound, replies: list[dict[str, Any]], *, is_simulated: bool) -> list[str]:
+	"""Each reply to the number that asked, then to every other WhatsApp number of its contact
+	(owner, 2026-10-08): the whole contact reads the answer, not only the phone that asked. A group
+	is answered in the group; the receipt and the Simulator stay with the asker. The asker's rows
+	come first, so `[0]` is still the reply to the message itself."""
 	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
+	is_group = cint(get("is_group"))
+	asker = get("phone_e164")
+	others = [] if is_group or is_simulated else _contact_numbers(get("contact"), asker)
 	names: list[str] = []
-	for r in replies:
-		spec = OutboundSpec(
-			device=_reply_device(command, inbound),
-			phone=get("phone_e164"),
-			jid=get("chat_jid") if cint(get("is_group")) else None,
-			message_type=r["message_type"],
-			body=r.get("body"),
-			attachment=r.get("attachment"),
-			file_name=r.get("file_name"),
-			mime_type=r.get("mime_type"),
-			source_type="Command Reply",
-			command=command.name,
-			trigger_inbound=get("name"),
-			display_name=get("display_name"),
-			contact=get("contact"),
-			is_simulated=is_simulated,
-			skip_policy=True,
-		)
-		outbound = dispatch.create_outbound(spec)
-		if not is_simulated:
-			if r.get("output_key") in IMMEDIATE_OUTPUTS:
-				_send_now_or_queue(outbound)
+	for phone in [asker, *others]:
+		own = phone == asker
+		for r in replies:
+			if not own and r.get("output_key") == "receipt":
+				continue
+			spec = OutboundSpec(
+				device=_reply_device(command, inbound),
+				phone=phone,
+				jid=get("chat_jid") if is_group else None,
+				message_type=r["message_type"],
+				body=r.get("body"),
+				interactive=r.get("interactive"),
+				attachment=r.get("attachment"),
+				file_name=r.get("file_name"),
+				mime_type=r.get("mime_type"),
+				source_type="Command Reply",
+				command=command.name,
+				trigger_inbound=get("name"),
+				display_name=get("display_name") if own else None,
+				contact=get("contact"),
+				is_simulated=is_simulated,
+				skip_policy=True,
+				# the answer quotes the message that asked (owner, 2026-10-08): WhatsApp shows it as a
+				# reply to that command, which matters in a group where several people ask at once.
+				# Only in the asker's chat: the other numbers never saw that message
+				extra={"reply_to_provider_message_id": get("provider_message_id")}
+				if own and get("provider_message_id")
+				else {},
+			)
+			if own:
+				outbound = dispatch.create_outbound(spec)
 			else:
-				dispatch.enqueue([outbound], priority=1)
-		names.append(outbound)
+				# a blocked or invalid extra number is skipped; the asker's answer still goes
+				try:
+					outbound = dispatch.create_outbound(spec)
+				except frappe.ValidationError:
+					frappe.clear_last_message()
+					continue
+			if not is_simulated:
+				if r.get("output_key") in IMMEDIATE_OUTPUTS:
+					_send_now_or_queue(outbound)
+				else:
+					dispatch.enqueue([outbound], priority=1)
+			names.append(outbound)
 	return names
 
 
@@ -734,7 +813,28 @@ def _route(
 	settings = frappe.get_cached_doc("WhatsApp Settings")
 	result = RouteResult(inbound=inbound_name, status="None")
 	text = get("body") or ""
-	m = match(text)
+	m = match_inbound(inbound)
+	if not cint(get("is_group")) and command_menu.is_menu_request(inbound):
+		menu = command_menu.menu_list()
+		if menu:
+			from whatsapp_next.services import command_sessions
+
+			if not dry_run:
+				command_sessions.clear(get("device"), command_sessions.chat_key(inbound))
+			result.status = "Executed"
+			result.replies = [menu]
+			_set_status(inbound_name, "Executed", command_text=text[:140])
+			return _finish(result, inbound, dry_run, create_simulated_rows, command=None)
+	if not dry_run and not cint(get("is_group")):
+		from whatsapp_next.services import command_sessions
+
+		session = command_sessions.load(get("device"), command_sessions.chat_key(inbound))
+		if session:
+			# a new command typed instead of an answer starts over; anything else answers
+			if m is not None:
+				command_sessions.clear(get("device"), command_sessions.chat_key(inbound))
+			else:
+				return _continue_session(session, inbound, inbound_name, result, settings, started)
 	if m is None:
 		result.status = "Not Matched"
 		_set_status(inbound_name, "Not Matched", command_text=text[:140])
@@ -780,6 +880,14 @@ def _route(
 			]
 		return _finish(result, inbound, dry_run, create_simulated_rows, command=command)
 	try:
+		provided = parse_args(command, m.rest, partial=True)
+		missing = (
+			[]
+			if dry_run or cint(get("is_group"))
+			else _missing_inputs(command, provided)
+		)
+		if missing:
+			return _ask_first(command, inbound, inbound_name, provided, missing, text, result)
 		args = parse_args(command, m.rest)
 	except WAValidationError as exc:
 		result.status, result.error = "Failed", str(exc)
@@ -794,6 +902,11 @@ def _route(
 			{"output_key": "error", "message_type": "Text", "body": str(exc), "attachment": None}
 		]
 		return _finish(result, inbound, dry_run, create_simulated_rows, command=command)
+	return _run(command, inbound, inbound_name, args, sender, text, settings, started, result, dry_run, create_simulated_rows)
+
+
+def _run(command, inbound, inbound_name, args, sender, text, settings, started, result, dry_run, create_simulated_rows):
+	"""Steps 9–11: mark Matched, the receipt reply, the function, its outputs, the run counter."""
 	result.args = args
 	_set_status(
 		inbound_name,
@@ -816,6 +929,10 @@ def _route(
 			],
 			is_simulated=False,
 		)
+	if not dry_run:
+		from whatsapp_next.services import receipts
+
+		receipts.typing(inbound_name)  # "typing…" while the function prepares the answer
 	fn_result = execute(command, inbound, args, sender=sender, dry_run=dry_run)
 	result.data = fn_result.data
 	result.replies = render_outputs(command, fn_result, sender, dry_run=dry_run and not create_simulated_rows)
@@ -840,12 +957,110 @@ def _route(
 	return _finish(result, inbound, dry_run, create_simulated_rows, command=command)
 
 
+def _missing_inputs(command, provided: dict[str, Any]) -> list[str]:
+	from whatsapp_next.services import command_sessions
+
+	off = disabled_inputs(command)
+	inputs = [i for i in _manifest_inputs(command.function) if i["key"] not in off]
+	return command_sessions.missing_inputs(command, inputs, provided)
+
+
+def _input_spec(command, key: str) -> dict[str, Any]:
+	return next((i for i in _manifest_inputs(command.function) if i["key"] == key), {"key": key})
+
+
+def _ask_first(command, inbound, inbound_name, provided, missing, text, result) -> RouteResult:
+	"""Keep a session for the chat and ask for the first missing input."""
+	from whatsapp_next.services import command_sessions
+
+	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
+	command_sessions.save(
+		get("device"),
+		command_sessions.chat_key(inbound),
+		{"command": command.name, "args": provided, "pending": missing, "text": text[:140], "inbound": inbound_name},
+	)
+	result.status = "Awaiting Input"
+	_set_status(inbound_name, "Awaiting Input", command=command.name, command_text=text[:140])
+	result.replies = [command_sessions.question(command, _input_spec(command, missing[0]))]
+	return _finish(result, inbound, False, False, command=command)
+
+
+def _continue_session(session, inbound, inbound_name, result, settings, started) -> RouteResult:
+	"""One answer in a running session: fill the pending input, ask the next, or run the command."""
+	from whatsapp_next.services import command_sessions
+
+	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
+	device, chat = get("device"), command_sessions.chat_key(inbound)
+	if not frappe.db.exists("WhatsApp Command", session.get("command")):
+		command_sessions.clear(device, chat)
+		return result
+	command = frappe.get_cached_doc("WhatsApp Command", session["command"])
+	result.command = command.name
+	pending = list(session.get("pending") or [])
+	if not pending:
+		command_sessions.clear(device, chat)
+		return result
+	spec = _input_spec(command, pending[0])
+	kind, raw = command_sessions.answer_of(inbound)
+	if kind == "cancel":
+		command_sessions.clear(device, chat)
+		result.status = "Executed"
+		_set_status(inbound_name, "Executed", command=command.name, command_text=_("cancelled"))
+		result.replies = [{"output_key": "prompt", "message_type": "Text", "body": _("Cancelled."), "attachment": None}]
+		return _finish(result, inbound, False, False, command=command)
+	if kind == "type":
+		command_sessions.save(device, chat, session)
+		result.status = "Awaiting Input"
+		_set_status(inbound_name, "Awaiting Input", command=command.name)
+		result.replies = [command_sessions.type_it(spec)]
+		return _finish(result, inbound, False, False, command=command)
+	from whatsapp_next.services import plan_features
+
+	if not plan_features.interactive():
+		raw = command_sessions.numbered_answer(command, spec, raw)
+	try:
+		value = _coerce(cstr(raw), spec.get("type") or "str", spec)
+	except ValueError as exc:
+		command_sessions.save(device, chat, session)
+		result.status = "Awaiting Input"
+		_set_status(inbound_name, "Awaiting Input", command=command.name, command_error=str(exc)[:500])
+		result.replies = [
+			{"output_key": "prompt", "message_type": "Text", "body": str(exc), "attachment": None},
+			command_sessions.question(command, spec),
+		]
+		return _finish(result, inbound, False, False, command=command)
+	args = dict(session.get("args") or {})
+	args[pending.pop(0)] = value
+	if pending:
+		session.update({"args": args, "pending": pending})
+		command_sessions.save(device, chat, session)
+		result.status = "Awaiting Input"
+		_set_status(inbound_name, "Awaiting Input", command=command.name)
+		result.replies = [command_sessions.question(command, _input_spec(command, pending[0]))]
+		return _finish(result, inbound, False, False, command=command)
+	command_sessions.clear(device, chat)
+	# the inputs nobody asked for take their defaults, as a typed command would
+	for spec_ in _manifest_inputs(command.function):
+		if spec_["key"] not in args and spec_.get("default") not in (None, ""):
+			args[spec_["key"]] = spec_["default"]
+	sender = sender_for(inbound, allowed_party_types(command))
+	reason = check_access(command, inbound, sender)
+	if reason:
+		result.status, result.block_reason = "Blocked", reason
+		_set_status(inbound_name, "Blocked", command=command.name, block_reason=reason)
+		return _finish(result, inbound, False, False, command=command)
+	return _run(command, inbound, inbound_name, args, sender, session.get("text") or "", settings, started, result, False, False)
+
+
 def _finish(
 	result: RouteResult, inbound, dry_run: bool, create_simulated_rows: bool, *, command
 ) -> RouteResult:
 	"""Send (or, for the Simulator, optionally persist `is_simulated`) the replies."""
 	if not result.replies or (command is None and result.status not in ("Executed", "Not Matched")):
 		return result
+	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
+	if not cint(get("is_group")):
+		result.replies = command_menu.decorate(result.replies, result.status)
 	if dry_run and not create_simulated_rows:
 		return result
 	if command is None:
@@ -860,6 +1075,10 @@ def _finish(
 			title="WhatsApp command reply failed", message=f"inbound={get('name')} {type(exc).__name__}"
 		)
 		return result
+	if result.outbound and get("name") and not dry_run:
+		from whatsapp_next.services import receipts
+
+		receipts.on_command_replied(get("name"))
 	if result.outbound and get("name") and result.status == "Executed":
 		with status_writer():
 			frappe.db.set_value(

@@ -8,6 +8,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from datetime import date
 
+from whatsapp_next.providers import exceptions as pex
 from whatsapp_next.providers.schemas import (
 	AccountInfo,
 	BatchResult,
@@ -27,6 +28,10 @@ from whatsapp_next.providers.schemas import (
 	WebhookEndpointState,
 	WebhookEnvelope,
 	WebhookEvent,
+	HistoryPage,
+	GroupCreated,
+	NumberCheck,
+	ContactProfile,
 )
 
 MAX_BATCH = 200
@@ -181,6 +186,71 @@ class BaseProvider(ABC):
 	@abstractmethod
 	def get_poll_results(self, platform_device: str, poll_ids: list[str]) -> dict[str, dict]:
 		"""Poll results keyed by poll id (≤ MAX_POLL_IDS)."""
+
+	def download_media(self, url: str, max_bytes: int | None = None) -> tuple[bytes, str]:
+		"""The file behind a received message's `media_url`, as `(content, content_type)`.
+
+		Not abstract: a provider whose webhooks carry no downloadable media keeps this default."""
+		raise pex.NotSupportedError("This provider does not serve received media", code="NOT_SUPPORTED")
+
+	def post_status(self, platform_device: str, payload: dict) -> str:
+		"""Post a status (story) → its WhatsApp id. `payload`: `{kind: text, text, background_color,
+		font}` or `{kind: image|video, media_base64, caption}`.
+
+		Not abstract: a provider without status keeps this default."""
+		raise pex.NotSupportedError("This provider cannot post status", code="NOT_SUPPORTED")
+
+	def delete_status(self, platform_device: str, status_id: str) -> None:
+		"""Take a posted status down."""
+		raise pex.NotSupportedError("This provider cannot delete status", code="NOT_SUPPORTED")
+
+	def get_status_views(self, platform_device: str, status_ids: list[str]) -> dict[str, dict]:
+		"""`{status_id: {count, viewers[{jid, number, viewed_at}]}}` for the device's own posts."""
+		raise pex.NotSupportedError("This provider cannot read status views", code="NOT_SUPPORTED")
+
+	def mark_read(self, platform_device: str, chat_jid: str, message_ids: list[str], sender_jid: str | None = None) -> None:
+		"""Read receipts for received messages of one chat (JIDs as they came in).
+
+		Not abstract: a provider without read receipts keeps this default."""
+		raise pex.NotSupportedError("This provider cannot send read receipts", code="NOT_SUPPORTED")
+
+	def send_presence(self, platform_device: str, chat_jid: str, state: str = "composing") -> None:
+		"""Show "typing…" (`composing`) or stop it (`paused`) in a chat.
+
+		Not abstract: a provider without presence keeps this default."""
+		raise pex.NotSupportedError("This provider cannot show typing", code="NOT_SUPPORTED")
+
+	def check_numbers(self, platform_device: str, numbers: list[str]) -> list[NumberCheck]:
+		"""Which of `numbers` (E.164, ≤ 1000) are on WhatsApp, asked through the device.
+
+		Not abstract: a provider that cannot tell keeps this default."""
+		raise pex.NotSupportedError("This provider cannot check numbers", code="NOT_SUPPORTED")
+
+	def get_contact_profiles(
+		self, platform_device: str, numbers: list[str], known_pictures: dict[str, str] | None = None
+	) -> list[ContactProfile]:
+		"""WhatsApp profiles of up to 50 numbers (E.164); `known_pictures` maps a number to the photo
+		id already held, so an unchanged photo is not linked again.
+
+		Not abstract: a provider that cannot read profiles keeps this default."""
+		raise pex.NotSupportedError("This provider cannot read contact profiles", code="NOT_SUPPORTED")
+
+	def create_group(
+		self, platform_device: str, name: str, participants: list[str], description: str | None = None
+	) -> GroupCreated:
+		"""Create a group with the device as its admin and `participants` (numbers) as members.
+
+		Not abstract: a provider that cannot create groups keeps this default."""
+		raise pex.NotSupportedError("This provider cannot create groups", code="NOT_SUPPORTED")
+
+	def list_history(
+		self, platform_device: str, *, after: int = 0, limit: int = 200, since: int | None = None, total: bool = False
+	) -> HistoryPage:
+		"""A batch of the device's past messages, both directions, oldest stored first: those after
+		cursor `after`, sent at or after unix time `since`. `total` asks for the count as well.
+
+		Not abstract: a provider that keeps no history keeps this default."""
+		raise pex.NotSupportedError("This provider keeps no message history", code="NOT_SUPPORTED")
 
 	# --- contacts / groups ---
 	@abstractmethod

@@ -118,13 +118,18 @@ def send_test(
 	attachment: str | None = None,
 	contact: str | None = None,
 	location: dict | None = None,
+	interactive: dict | None = None,
 ) -> str:
 	"""Create an `is_test` outbound and start `dispatch.send_test_message` (D-010, D-024). `kind`
 	is what the composer's "+" picked (text · image · video · document · audio · location ·
 	contact, D-137); the typed text is a file's caption."""
 	from whatsapp_next.services.attachments import message_parts
 
-	parts = message_parts(kind, body=body, attachment=attachment, contact=contact, location=location)
+	if (kind or "").lower() in ("buttons", "list"):
+		# buttons / a list: the typed text is the message, the definition comes with it
+		parts = {"message_type": kind.capitalize(), "body": body, "interactive": interactive}
+	else:
+		parts = message_parts(kind, body=body, attachment=attachment, contact=contact, location=location)
 	outbound = dispatch.create_outbound(
 		OutboundSpec(
 			device=device, phone=phone, source_type="Simulator", is_test=True, skip_policy=True, **parts

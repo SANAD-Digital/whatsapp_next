@@ -12,6 +12,9 @@
   "column_break_12",
   "status",
   "synonyms",
+  "show_in_menu",
+  "menu_description",
+  "menu_order",
   "access_section",
   "requires_linked_contact",
   "allowed_party_types",
@@ -23,6 +26,7 @@
   "access_entries",
   "overrides_section",
   "disabled_inputs",
+  "ask_inputs",
   "settings_overrides",
   "outputs",
   "notes_section",
@@ -85,6 +89,28 @@
    "fieldtype": "Small Text",
    "in_list_view": 1,
    "description": "Other words that run the same command, one per line. Each must be unique across all commands."
+  },
+  {
+   "default": "0",
+   "fieldname": "show_in_menu",
+   "fieldtype": "Check",
+   "label": "Show in main menu",
+   "description": "Offer this command in the main menu (Settings → Commands → Main menu)."
+  },
+  {
+   "depends_on": "eval:doc.show_in_menu",
+   "fieldname": "menu_description",
+   "fieldtype": "Data",
+   "length": 72,
+   "label": "Menu description",
+   "description": "A short line under the command in the menu list. At most 72 characters."
+  },
+  {
+   "depends_on": "eval:doc.show_in_menu",
+   "fieldname": "menu_order",
+   "fieldtype": "Int",
+   "label": "Menu order",
+   "description": "Lower comes first."
   },
   {
    "fieldname": "access_section",
@@ -158,6 +184,12 @@
    "description": "Function input keys this command does not read, one per line."
   },
   {
+   "fieldname": "ask_inputs",
+   "fieldtype": "Small Text",
+   "label": "Ask for inputs",
+   "description": "Inputs to ask the sender for when the command arrives without them, one per line: key, or key: value, value=Label, … for ready answers. Required inputs are always asked. Direct chats only."
+  },
+  {
    "fieldname": "settings_overrides",
    "label": "Settings Overrides",
    "fieldtype": "JSON",
@@ -222,7 +254,7 @@
    "link_fieldname": "command"
   }
  ],
- "modified": "2026-09-27 12:00:00.000000",
+ "modified": "2026-10-06 23:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Command",
@@ -281,7 +313,7 @@
    "select": 1
   }
  ],
- "sort_field": "run_count",
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
  "track_changes": 1,

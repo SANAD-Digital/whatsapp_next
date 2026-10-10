@@ -7,7 +7,6 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.exceptions import WAValidationError
-from whatsapp_next.install import ensure_roles
 from whatsapp_next.tests.conftest_frappe import delete_all, ensure_test_user
 from whatsapp_next.whatsapp_next.doctype.whatsapp_function.whatsapp_function import handler_exists
 
@@ -21,7 +20,6 @@ class TestWhatsAppFunction(IntegrationTestCase):
 
 	def setUp(self) -> None:
 		super().setUp()
-		ensure_roles()
 		frappe.set_user("Administrator")
 
 	def tearDown(self) -> None:

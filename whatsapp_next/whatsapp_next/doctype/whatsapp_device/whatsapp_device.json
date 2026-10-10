@@ -26,7 +26,16 @@
   "webhook_registered_at",
   "diagnostics_tab",
   "last_error",
-  "last_status_event_at"
+  "last_status_event_at",
+  "history_section",
+  "history_status",
+  "history_imported",
+  "history_total",
+  "history_column",
+  "history_started_at",
+  "history_finished_at",
+  "history_cursor",
+  "history_error"
  ],
  "fields": [
   {
@@ -176,6 +185,63 @@
    "fieldtype": "Datetime",
    "label": "Last Status Event At",
    "read_only": 1
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "history_section",
+   "fieldtype": "Section Break",
+   "label": "Past conversations",
+   "description": "Messages this number exchanged before it was linked, brought in from the platform. The window follows the inbound retention setting."
+  },
+  {
+   "default": "Not Started",
+   "fieldname": "history_status",
+   "fieldtype": "Select",
+   "label": "Import status",
+   "options": "Not Started\nRunning\nDone\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "history_imported",
+   "fieldtype": "Int",
+   "label": "Messages imported",
+   "read_only": 1
+  },
+  {
+   "fieldname": "history_total",
+   "fieldtype": "Int",
+   "label": "Messages found",
+   "read_only": 1
+  },
+  {
+   "fieldname": "history_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "history_started_at",
+   "fieldtype": "Datetime",
+   "label": "Import started",
+   "read_only": 1
+  },
+  {
+   "fieldname": "history_finished_at",
+   "fieldtype": "Datetime",
+   "label": "Import finished",
+   "read_only": 1
+  },
+  {
+   "fieldname": "history_cursor",
+   "fieldtype": "Int",
+   "label": "Import position",
+   "read_only": 1,
+   "hidden": 1,
+   "description": "The platform's id of the last message read; the next run continues after it."
+  },
+  {
+   "fieldname": "history_error",
+   "fieldtype": "Small Text",
+   "label": "Import error",
+   "read_only": 1
   }
  ],
  "links": [
@@ -210,7 +276,7 @@
    "link_fieldname": "device"
   }
  ],
- "modified": "2026-09-26 21:00:00.000000",
+ "modified": "2026-10-07 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Device",
@@ -252,7 +318,7 @@
  ],
  "row_format": "Dynamic",
  "search_fields": "device_name,phone_e164",
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
  "title_field": "device_name",

@@ -109,6 +109,9 @@ frappe.provide("sanad.ui");
 				this.draft = this.seed(this.data.command);
 				this.clean = JSON.stringify(this.draft);
 				this.render();
+				// a new command opened from a function (`opts.function`, the Functions Center's "Link a
+				// command"): it arrives with that function and its suggested words, not blank
+				if (!name && this.opts.function) await this.pick_function(this.opts.function, { defaults: true });
 				const first = this.$root.find("[data-f=code]").get(0);
 				first && first.focus();
 			} catch (err) {
@@ -130,6 +133,7 @@ frappe.provide("sanad.ui");
 				allowed_party_types: (c.allowed_party_types || []).slice(),
 				requires_linked_contact: cint(c.requires_linked_contact),
 				disabled_inputs: (c.disabled_inputs || []).slice(),
+				ask_inputs: c.ask_inputs || "",
 				settings_overrides: Object.assign({}, c.settings_overrides || {}),
 				outputs: clone(c.outputs || []),
 				access: clone(c.access || {}),
@@ -187,6 +191,7 @@ frappe.provide("sanad.ui");
 				requires_linked_contact: d.requires_linked_contact,
 				allowed_party_types: d.allowed_party_types.slice(),
 				disabled_inputs: d.disabled_inputs.slice(),
+				ask_inputs: d.ask_inputs || "",
 				settings_overrides: Object.assign({}, d.settings_overrides),
 				outputs: clone(d.outputs),
 				access,
@@ -407,6 +412,7 @@ frappe.provide("sanad.ui");
 						</div>
 						${v.details ? `<span class="sanad-ce__note">${esc(__(v.details))}</span>` : ""}
 						${v.example ? `<span class="sanad-ce__example sanad-ce__mono" dir="ltr">${esc(v.example)}</span>` : ""}
+						${on ? this.render_ask(v) : ""}
 					</div>`;
 				})
 				.join("");
@@ -992,6 +998,45 @@ frappe.provide("sanad.ui");
 			else o[key] = norm;
 		}
 
+		/** The command's `ask_inputs` lines as `{key: "choices text"}` (choices may be empty). */
+		ask_map() {
+			const out = {};
+			String(this.draft.ask_inputs || "")
+				.split(/\r?\n/)
+				.forEach((line) => {
+					const [key, ...rest] = line.split(":");
+					if (key && key.trim()) out[key.trim()] = rest.join(":").trim();
+				});
+			return out;
+		}
+
+		set_ask(key, enabled, choices) {
+			const map = this.ask_map();
+			if (enabled) map[key] = choices == null ? map[key] || "" : choices;
+			else delete map[key];
+			this.draft.ask_inputs = Object.entries(map)
+				.map(([k, c]) => (c ? `${k}: ${c}` : k))
+				.join("\n");
+		}
+
+		/** Ask the sender for this variable over WhatsApp when the command arrives without it. */
+		render_ask(v) {
+			if (v.required)
+				return `<span class="sanad-ce__note">${esc(__("Asked for over WhatsApp when the command arrives without it."))}</span>`;
+			const map = this.ask_map();
+			const asked = Object.prototype.hasOwnProperty.call(map, v.key);
+			const hint = v.type === "date" ? __("Empty: a list of dates (today, start of the month …)") : __("e.g. 1, 3=Three months, 6");
+			return `<label class="sanad-ce__ask">
+					<input type="checkbox" class="sanad-ce__check" data-ch="ask" data-key="${esc(v.key)}" ${asked ? "checked" : ""}${this.read_only ? " disabled" : ""} />
+					<span>${esc(__("Ask the sender when it is missing"))}</span>
+				</label>
+				${
+					asked
+						? `<input type="text" class="form-control sanad-ce__ask-choices" data-ch="ask-choices" data-key="${esc(v.key)}" value="${esc(map[v.key] || "")}" placeholder="${esc(hint)}" aria-label="${esc(__("Ready answers for {0}", [v.label ? __(v.label) : v.key]))}"${this.read_only ? " disabled" : ""} />`
+						: ""
+				}`;
+		}
+
 		on_change(e) {
 			const el = e.target;
 			if (this.read_only) return;
@@ -1000,6 +1045,8 @@ frappe.provide("sanad.ui");
 			const d = this.draft;
 			if (kind === "link") d.requires_linked_contact = el.checked ? 1 : 0;
 			else if (kind === "var") d.disabled_inputs = el.checked ? d.disabled_inputs.filter((k) => k !== key) : d.disabled_inputs.concat([key]);
+			else if (kind === "ask") this.set_ask(key, el.checked);
+			else if (kind === "ask-choices") this.set_ask(key, true, el.value.trim());
 			else if (kind === "setting") this.set_setting(key, el.type === "checkbox" ? (el.checked ? 1 : 0) : el.value);
 			this.render();
 			this.touch();
@@ -1145,7 +1192,8 @@ frappe.provide("sanad.ui");
 			});
 		}
 
-		async pick_function(name) {
+		/** `defaults`: also take the function's suggested words — the first as the command, the rest as its synonyms. */
+		async pick_function(name, { defaults = false } = {}) {
 			const d = this.draft;
 			if (!name || name === d.function) return this.render();
 			try {
@@ -1157,6 +1205,7 @@ frappe.provide("sanad.ui");
 				this.reset_outputs();
 				if (!d.allowed_party_types.length && (spec.party_types || []).length) d.allowed_party_types = spec.party_types.slice();
 				if (!d.code && (spec.suggested_commands || []).length) d.code = spec.suggested_commands[0];
+				if (defaults && !d.synonyms.length) d.synonyms = (spec.suggested_commands || []).filter((w) => w && w !== d.code);
 				this.ui.pv.values = {};
 				this.ui.result = null;
 			} catch (err) {

@@ -802,6 +802,7 @@
 			});
 		}
 
+		/** A new command for this function: the command form hands it to the editor with its suggested words. */
 		new_command(entry) {
 			frappe.new_doc("WhatsApp Command", { function: entry.function_key });
 		}

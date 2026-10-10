@@ -229,3 +229,11 @@ def link_many(names: list[str], link_doctype: str, link_name: str) -> dict[str, 
 			raise _bulk.Skip("already linked")
 
 	return _bulk.run_bulk(names, one)
+
+
+@api_endpoint(roles=None)
+def unlink_account(name: str, link_doctype: str, link_name: str) -> dict[str, Any]:
+	"""Remove one party link from a contact (owner, 2026-10-08); the contact and its other links
+	stay. Returns `{removed}`. P: Contact User | Contact write."""
+	permissions.require("write")
+	return {"removed": bool(permissions.remove_contact_link(name, link_doctype, link_name))}

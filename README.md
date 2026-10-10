@@ -16,23 +16,53 @@ bench get-app $URL_OF_THIS_REPO --branch version-16
 bench --site <site> install-app whatsapp_next
 ```
 
-`bench migrate` creates the composite indexes and the `Contact Phone.wa_phone_e164` custom field.
-The install seeds four roles (`WhatsApp Manager`, `WhatsApp Agent`, `WhatsApp Viewer`,
+`bench migrate` applies the `Contact Phone.wa_phone_e164` custom field
+(`whatsapp_next/custom/contact_phone.json`, Frappe's Export Customizations format), and syncs the
+standard content: Arabic templates, notifications and report alerts for a trading company
+(`fixtures/standard_*.json`). Standard notifications and alerts arrive **switched off**; what you
+enable or edit survives every later migrate. See `developer-docs/standard-content.md`.
+The install creates four roles (`WhatsApp Manager`, `WhatsApp Agent`, `WhatsApp Viewer`,
 `WhatsApp Contact User`) and a **disabled** command service user (`wa-commands@<site>`).
+
+### Fonts
+
+The WhatsappNext identity uses two fonts: **IBM Plex Sans Arabic** (Arabic) and **Sora** (Latin).
+Both are under the SIL Open Font License 1.1.
+
+- **In the browser, nothing to install.** The app ships them itself as woff2 in
+  `whatsapp_next/public/fonts/` (the originals are in `brand/fonts/`), and `bench build` serves them.
+- **On the server, install them once.** The server draws PDFs without a browser: the invoices,
+  statements and print formats it attaches to WhatsApp messages. Without the fonts installed, an
+  Arabic PDF falls back to whatever font the server happens to have.
+
+```bash
+# as the user the bench runs as (the one that renders PDFs)
+apps/whatsapp_next/scripts/install_fonts.sh            # → ~/.local/share/fonts/whatsappnext
+# or for every user on the machine
+sudo apps/whatsapp_next/scripts/install_fonts.sh --system   # → /usr/local/share/fonts/whatsappnext
+```
+
+The script downloads the TTF files and their licences from the official Google Fonts repository,
+installs them, and refreshes the font cache (`fc-cache`). It needs `curl` and `fontconfig`, and
+it is safe to run again. Check with `fc-list | grep -E "IBM Plex Sans Arabic|Sora"`. Restart the
+bench afterwards if PDFs were generated earlier, so the PDF renderer picks up the new fonts.
 
 ## Layout
 
 ```
 whatsapp_next/
   hooks.py                  provider registry, fixtures, doc events
-  install.py                roles, service user, indexes
+  install.py                the command service user; everything else is a file Frappe syncs
   exceptions.py             API error hierarchy (HTTP codes)
   whatsapp_next/doctype/    module "WhatsApp Next" — thin controllers
   providers/                base contract, registry, snd_platform, meta_cloud skeleton
   services/                 business logic (phone, dispatch, read layer, audit, ...)
   api/v1/                   whitelisted endpoints, one module per area (D-031)
   webhooks/v1/              inbound receiver (guest), verify, idempotency
-  fixtures/                 roles, custom field
+  whatsapp_next/custom/     customizations of core DocTypes (Contact Phone.wa_phone_e164)
+  desktop_icon/             the desktop tile (standard Desktop Icon)
+  workspace_sidebar/        the sidebar
+  fixtures/                 roles, one HTML block, standard templates / notifications / alerts
   tests/                    app-level tests (run with `bench run-tests --app whatsapp_next`)
   translations/ar.csv       Arabic UI strings
 ```

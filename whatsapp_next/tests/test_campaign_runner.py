@@ -252,6 +252,20 @@ class TestCampaignRunner(IntegrationTestCase):
 		sent_at = frappe.db.get_value("WhatsApp Log", {"campaign": name}, "sent_at")
 		self.assertEqual((times.first_message_at, times.last_message_at), (sent_at, sent_at))
 
+	def test_numbers_not_on_whatsapp_are_skipped(self):
+		from whatsapp_next.services import number_check
+
+		name = _campaign(self.device, recipients=(P1, P3), exclude_not_on_whatsapp=1)
+		with patch.object(frappe, "enqueue"), patch.object(number_check, "check", return_value={P1: True, P3: False}) as check:
+			runner.start(name)
+			counts = runner.materialize(name)
+		self.assertEqual(check.call_args.kwargs.get("device"), self.device)
+		self.assertEqual(counts["skipped_not_on_whatsapp"], 1)
+		self.assertEqual(
+			frappe.db.get_value("WhatsApp Campaign Recipient", {"parent": name, "phone_e164": P3}, ["status", "error_code"]),
+			("Cancelled", "recipient_not_registered"),
+		)
+
 	def test_cancel_running_and_exclude_unknown(self):
 		name = _campaign(self.device, recipients=(P1, P3), exclude_unknown_numbers=1)
 		# P1 is known (an earlier message exists), P3 is not

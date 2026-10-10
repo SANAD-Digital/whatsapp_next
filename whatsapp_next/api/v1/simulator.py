@@ -77,6 +77,7 @@ def send_test(
 	attachment: str | None = None,
 	contact: str | None = None,
 	location: dict | None = None,
+	interactive: dict | None = None,
 ) -> dict[str, Any]:
 	"""Create an `is_test` outbound and start `dispatch.send_test_message` (job) → `{outbound}`;
 	audited `Test Send`. `kind` text · image · video · document · audio · location · contact
@@ -92,6 +93,7 @@ def send_test(
 			attachment=attachment,
 			contact=contact,
 			location=location,
+			interactive=frappe.parse_json(interactive) if isinstance(interactive, str) else interactive,
 		)
 	}
 

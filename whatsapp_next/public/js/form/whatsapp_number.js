@@ -11,6 +11,11 @@ frappe.ui.form.on("WhatsApp Number", {
 		const individual = !doc.number_type || doc.number_type === "Individual";
 
 		frm.add_custom_button(__("Open conversation"), () => N.open_conversation(doc, reload));
+		if (doc.number_type === "Individual" && frappe.user.has_role(["WhatsApp Agent", "WhatsApp Manager", "System Manager"])) {
+			frm.add_custom_button(__("Refresh WhatsApp profile"), () =>
+				whatsapp_next.refresh_profiles("WhatsApp Number", [doc.name], { on_done: () => frm.reload_doc() })
+			);
+		}
 
 		const can_send = frappe.user.has_role(["WhatsApp Agent", "WhatsApp Manager", "System Manager"]);
 		if (typeof sanad.ui.QuickSend === "function" && can_send && doc.number_type !== "LID") {

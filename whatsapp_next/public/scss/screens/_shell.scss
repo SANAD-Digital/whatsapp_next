@@ -16,7 +16,7 @@
 // Desk lists this product owns ask for the same gutter by the route Desk names their page after.
 
 // Every screen of this product, by the id Desk gives its page container (`#page-<route>`).
-$wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-settings, #page-wa-onboarding, #page-wa-functions-center, #page-wa-simulator";
+$wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-settings, #page-wa-onboarding, #page-wa-functions-center, #page-wa-simulator, #page-wa-test-lab";
 
 :root {
 	--wa-page-gutter: 32px;
@@ -42,7 +42,47 @@ $wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-setting
 	}
 }
 
+// The canvas. Every screen stands on one ground from edge to edge: the page container, and behind
+// it `<body>` and `<html>` — Desk paints both white, and they showed as white strips beside and
+// under a screen whose container stopped short (owner, 2026-10-07). The route Desk writes on
+// `<body>` is the page's name, so these reach this product's screens and nothing else.
+$wa-routes: wa-home, wa-devices, wa-onboarding, wa-contacts, wa-settings, wa-functions-center, wa-simulator, wa-test-lab;
+
+@each $route in $wa-routes {
+	html:has(body[data-route="#{$route}"]),
+	body[data-route="#{$route}"],
+	body[data-route="#{$route}"] .main-section {
+		background: var(--wa-canvas);
+	}
+}
+
+// The product's workspace stands on the same ground, its cards white on it.
+html:has(body[data-route="Workspaces/WhatsApp"]),
+body[data-route="Workspaces/WhatsApp"],
+body[data-route="Workspaces/WhatsApp"] .main-section,
+body[data-route="Workspaces/WhatsApp"] #page-Workspaces {
+	background: var(--wa-canvas);
+
+	// Desk paints the workspace's column, its header and its spacers white; only its cards stay so
+	> .page-head,
+	.layout-main-section,
+	.widget.spacer,
+	// the custom block holding the dashboard is a frame, not a card: its own cards sit on the canvas
+	.widget.custom-block-widget-box {
+		background: transparent;
+	}
+}
+
+// The Desk lists keep their layout; only their primary verb takes the product's colour, like the
+// accent around it (owner, 2026-10-07).
+[id^="page-List/WhatsApp "] {
+	--btn-primary: var(--sanad-accent);
+}
+
 #{$wa-pages} {
+	background: var(--wa-canvas);
+	min-block-size: calc(100dvh - var(--wa-viewport-offset));
+
 	> .page-head {
 		display: none;
 	}
@@ -55,6 +95,12 @@ $wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-setting
 		max-inline-size: 1680px;
 		margin-inline: auto;
 	}
+}
+
+// The setup screen is the platform's sign-in, edge to edge: no gutter, no cap.
+#page-wa-onboarding .layout-main-section {
+	padding: 0;
+	max-inline-size: none;
 }
 
 // The product's Desk lists: the same gutter. Every DocType this app ships is named "WhatsApp …"
@@ -150,9 +196,8 @@ body[data-route^="Form/WhatsApp "] {
 .wa-beta {
 	display: inline-flex;
 	align-items: center;
-	gap: 3px;
 	margin-inline-start: 6px;
-	padding-inline: 5px 7px;
+	padding-inline: 7px;
 	border: 1px solid var(--wa-pri-sb);
 	border-radius: 999px;
 	background: var(--wa-pri-s);
@@ -162,10 +207,4 @@ body[data-route^="Form/WhatsApp "] {
 	line-height: 15px;
 	vertical-align: 1px;
 	letter-spacing: 0.02em;
-
-	&__mark {
-		flex: none;
-		inline-size: 11px;
-		block-size: 11px;
-	}
 }

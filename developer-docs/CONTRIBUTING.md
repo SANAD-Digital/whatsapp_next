@@ -36,7 +36,7 @@ ui, platform, layout). Where the two disagree, the rules win. Record every desig
 | Secrets live in `Password` fields, are read with `get_password()`, and are never logged or returned. Message bodies and phones stay out of error logs | review, `services/errors._strip_pii` |
 | Every elevated write is audited under the real user (`services/audit.py`) | review |
 | Public functions have type hints and a docstring. Every module starts with a `# Module role: …` header comment | review |
-| Names: DocTypes are `WhatsApp <Noun>`; fieldnames are `snake_case` with no `wa_` prefix inside our own DocTypes; custom fields on core DocTypes get the `wa_` prefix and ship as fixtures; pages are `wa-<name>`; realtime events are `wa:<entity>:<event>` | review |
+| Names: DocTypes are `WhatsApp <Noun>`; fieldnames are `snake_case` with no `wa_` prefix inside our own DocTypes; custom fields on core DocTypes get the `wa_` prefix and ship in the module's `custom/` folder (Export Customizations, "Sync on Migrate"), never as fixtures; pages are `wa-<name>`; realtime events are `wa:<entity>:<event>` | review |
 
 ## Lint and format
 

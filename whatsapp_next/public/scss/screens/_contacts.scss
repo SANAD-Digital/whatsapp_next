@@ -176,3 +176,19 @@
 	li { padding: 8px 0; border-bottom: 1px solid var(--wa-border); font-size: 13px; }
 	li:last-child { border-bottom: 0; }
 }
+
+// A linked account in the detail drawer, with its own "Unlink" at the inline-end.
+.wa-contacts__link {
+	display: flex;
+	align-items: center;
+	gap: var(--sanad-gap-sm);
+}
+
+.wa-contacts__link-card {
+	flex: 1 1 auto;
+	min-inline-size: 0;
+}
+
+.wa-contacts__unlink {
+	flex: none;
+}

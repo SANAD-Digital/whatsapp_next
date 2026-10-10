@@ -248,6 +248,12 @@ frappe.provide("whatsapp_next.campaign");
 							note: __("Do not send to numbers that are not in the WhatsApp account's contacts."),
 						})}
 						${option({
+							field: "exclude_not_on_whatsapp",
+							on: !!cint(this.doc.exclude_not_on_whatsapp),
+							label: __("Skip numbers not on WhatsApp"),
+							note: __("Check every recipient's number with WhatsApp before sending; numbers that are not on it are marked and skipped."),
+						})}
+						${option({
 							design_only: true,
 							on: false,
 							label: __("Stop the campaign when errors rise"),
@@ -292,6 +298,7 @@ frappe.provide("whatsapp_next.campaign");
 
 			$el.on("change", '[data-field="description"]', (e) => frm.set_value("description", $(e.currentTarget).val()));
 			$el.on("change", '[data-field="exclude_unknown_numbers"]', (e) => frm.set_value("exclude_unknown_numbers", e.currentTarget.checked ? 1 : 0));
+			$el.on("change", '[data-field="exclude_not_on_whatsapp"]', (e) => frm.set_value("exclude_not_on_whatsapp", e.currentTarget.checked ? 1 : 0));
 
 			// rate — the two controls are one value; each moves the other, the estimate follows
 			const $n = $el.find('[data-rate="number"]');

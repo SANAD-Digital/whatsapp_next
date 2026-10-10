@@ -1,0 +1,22 @@
+{
+ "creation": "2026-10-02 23:56:47.097447",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "WhatsApp Device",
+ "filters_json": "[[\"WhatsApp Device\", \"status\", \"=\", \"Connected\", false]]",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Connected devices",
+ "modified": "2026-10-03 00:14:46.577006",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WA Connected Devices",
+ "owner": "Administrator",
+ "report_function": "Sum",
+ "show_full_number": 0,
+ "show_percentage_stats": 0,
+ "stats_time_interval": "Daily",
+ "type": "Document Type"
+}

@@ -479,6 +479,33 @@ body.sanad-ae-open { overflow: hidden; }
 	&__who--user &__who-ico { background: var(--wa-nf-s); color: var(--wa-nf-i); }
 	&__who--role &__who-ico { background: var(--wa-wn-s); color: var(--wa-wn-i); }
 	&__who--report_column &__who-ico { background: var(--wa-ok-s); color: var(--wa-ok-i); }
+	// the chip opens its recipient's details: the icon and the words are one button
+	&__who-open {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		min-inline-size: 0;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		text-align: start;
+		cursor: pointer;
+		&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: 3px; border-radius: 999px; }
+	}
+	&__who.is-open { border-color: var(--wa-pri); box-shadow: 0 0 0 2px var(--wa-pri-s); }
+	&__who-detail {
+		margin-block-start: 10px;
+		padding: 12px 14px;
+		border: 1px solid var(--wa-border);
+		border-radius: 12px;
+		background: var(--wa-bg);
+		dl { display: grid; gap: 6px; margin: 0; }
+		dl > div { display: grid; grid-template-columns: minmax(120px, 34%) 1fr; gap: 10px; align-items: baseline; }
+		dt { font-size: 12px; font-weight: 500; color: var(--wa-ink-3); }
+		dd { margin: 0; font-size: 13px; color: var(--wa-ink); overflow-wrap: anywhere; }
+		code { font-size: 12px; padding: 1px 6px; border-radius: 6px; background: var(--wa-sunken); color: var(--wa-ink-2); }
+	}
 	&__who-text {
 		display: flex;
 		flex-direction: column;
@@ -497,7 +524,9 @@ body.sanad-ae-open { overflow: hidden; }
 		border-radius: 12px;
 		background: var(--wa-bg);
 	}
-	&__addline { display: flex; gap: 8px; .wa-input { flex: 1; min-inline-size: 0; } }
+	&__addline { display: flex; gap: 8px; align-items: flex-start; .wa-input { flex: 1; min-inline-size: 0; } }
+	// the test's phone field takes the line's room beside its button
+	&__test-phone { flex: 1; min-inline-size: 0; }
 
 	// ---- devices --------------------------------------------------------------------------------------------
 

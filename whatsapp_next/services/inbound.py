@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import re
 from typing import Any
 
 import frappe
-from frappe.utils import cint, now_datetime
+from frappe.utils import cint, cstr, now_datetime
 
 from whatsapp_next.providers.schemas import WebhookEvent
 from whatsapp_next.services.guards import status_writer
@@ -78,7 +80,10 @@ def record_inbound(
 		"doctype": "WhatsApp Inbound Message",
 		"device": device,
 		**fields,
+		# the sender's own WhatsApp name, else a name this site knows them by; in a group, the
+		# group's name beside it (owner, 2026-10-08)
 		"display_name": p.push_name or _known_name(fields, contact),
+		"group_name": p.group_name if fields.get("is_group") else None,
 		"contact": contact,
 		"message_type": p.message_type or "Text",
 		"body": p.body,
@@ -87,6 +92,7 @@ def record_inbound(
 		"media_mime_type": p.media_mime_type,
 		"provider_message_id": p.provider_message_id or event.event_id,
 		"quoted_provider_message_id": p.quoted_id,
+		"selected_option_id": p.selected_id,
 		"received_at": p.received_at or event.timestamp or now_datetime(),
 		"webhook_event": webhook_event_name,
 		"command_status": "None",
@@ -107,7 +113,155 @@ def record_inbound(
 	except frappe.DuplicateEntryError:
 		return _existing(device, values["provider_message_id"])
 	_after_insert(doc.name, device, fields, p.message_type or "Text", p.body)
+	if p.media_url:
+		frappe.enqueue(
+			"whatsapp_next.services.inbound.fetch_media",
+			inbound_name=doc.name,
+			file_name=p.media_file_name,
+			queue="short",
+			job_id=f"wa-media-{doc.name}",
+			deduplicate=True,
+			enqueue_after_commit=True,
+			timeout=300,
+		)
 	return doc.name
+
+
+#: Extensions a received file may keep. The sender names the file and Frappe serves a private
+#: file inline with a type guessed from that name, so anything a browser could run (`.xhtml`,
+#: `.svg`, `.html` …) would execute in Desk when opened; every other name gets `.bin` appended.
+SAFE_MEDIA_EXTENSIONS = frozenset(
+	"jpg jpeg png gif webp heic heif bmp tif tiff "
+	"mp4 3gp mov webm mkv avi m4v "
+	"mp3 ogg oga opus m4a aac amr wav flac "
+	"pdf doc docx xls xlsx ppt pptx odt ods odp rtf "
+	"txt csv vcf zip rar 7z gz tar apk".split()
+)
+
+
+def safe_file_name(name: str | None, fallback: str = "attachment") -> str:
+	"""The sender's file name without path or control characters, ≤ 140 characters, with `.bin`
+	appended unless its extension is in `SAFE_MEDIA_EXTENSIONS`."""
+	name = os.path.basename(str(name or "").replace("\\", "/"))
+	name = re.sub(r"[\x00-\x1f\x7f]", "", name).strip().strip(".") or str(fallback or "attachment")
+	stem, ext = os.path.splitext(name)
+	if ext.lower().lstrip(".") not in SAFE_MEDIA_EXTENSIONS:
+		stem, ext = name, ".bin"
+	return stem[: 140 - len(ext)] + ext
+
+
+def fetch_media(inbound_name: str, file_name: str | None = None) -> str | None:
+	"""Download a received file from the provider and attach it to the Inbound (`attachment`).
+
+	Runs as a job after the insert; a failure is logged and leaves `media_url` for a retry."""
+	from whatsapp_next.providers import registry
+
+	row = frappe.db.get_value(
+		"WhatsApp Inbound Message", inbound_name, ["media_url", "attachment", "provider_message_id"], as_dict=True
+	)
+	if not row or not row.media_url or row.attachment:
+		return row.attachment if row else None
+	try:
+		content, _content_type = registry.get_provider().download_media(row.media_url)
+	except Exception:
+		frappe.log_error(title="WhatsApp inbound media download failed", message=frappe.get_traceback())
+		return None
+	file_doc = frappe.get_doc(
+		{
+			"doctype": "File",
+			"file_name": safe_file_name(file_name, fallback=row.provider_message_id or inbound_name),
+			"attached_to_doctype": "WhatsApp Inbound Message",
+			"attached_to_name": inbound_name,
+			"attached_to_field": "attachment",
+			"is_private": 1,
+			"content": content,
+		}
+	)
+	file_doc.flags.ignore_permissions = True
+	file_doc.insert(ignore_permissions=True)
+	frappe.db.set_value("WhatsApp Inbound Message", inbound_name, "attachment", file_doc.file_url, update_modified=False)
+	return file_doc.file_url
+
+
+def record_change(event: WebhookEvent, *, device: str) -> str | None:
+	"""Apply a gateway `message.edited` / `message.deleted` to the Inbound it names.
+
+	An edit replaces `body` with the new text and keeps the first text in `original_body`; a delete
+	stamps `deleted_at` / `deleted_by` and keeps the text, so the conversation can show what was
+	removed and by whom. Returns the Inbound name, or `None` when the message is not stored here
+	(sent from this device, or before this site existed)."""
+	raw = event.raw if isinstance(event.raw, dict) else {}
+	message_id = raw.get("message_id")
+	name = _existing(device, message_id) if message_id else None
+	if not name:
+		return None
+	row = frappe.db.get_value("WhatsApp Inbound Message", name, ["body", "original_body"], as_dict=True)
+	at = event.timestamp or now_datetime()
+	if event.event_name == "message.edited":
+		values = {"body": raw.get("new_text") or row.body, "edited_at": at}
+		if not row.original_body:
+			values["original_body"] = raw.get("original_text") or row.body
+	else:
+		values = {
+			"deleted_at": at,
+			"deleted_by": raw.get("deleted_by_number") or raw.get("deleted_by") or "",
+		}
+		if raw.get("original_text") and not row.body:
+			values["body"] = raw.get("original_text")
+	with status_writer():
+		frappe.db.set_value("WhatsApp Inbound Message", name, values, update_modified=True)
+	fields = frappe.db.get_value("WhatsApp Inbound Message", name, ["is_group", "chat_jid", "jid", "phone_e164"], as_dict=True)
+	_publish(name, device, _conversation_key(dict(fields)))
+	# what the message said before this change (`row` was read before the update)
+	original = raw.get("original_text") or row.original_body or row.body or ""
+	_reply_to_change(name, device, event.event_name, original, message_id)
+	return name
+
+
+def _reply_to_change(inbound_name: str, device: str, event_name: str, original: str, message_id: str) -> str | None:
+	"""The settings' answer to an edit or a deletion: the configured text, then what the message
+	said — an edit as a reply quoting the edited message, a deletion as a message in the same chat.
+	Returns the outbound name, or `None` when the setting is off, out of scope, or there is no text."""
+	from whatsapp_next.services import dispatch
+
+	settings = frappe.get_cached_doc("WhatsApp Settings")
+	edit = event_name == "message.edited"
+	if not cint(settings.get("reply_on_edit" if edit else "reply_on_delete")):
+		return None
+	lead = cstr(settings.get("edit_reply_text" if edit else "delete_reply_text")).strip()
+	original = cstr(original).strip()
+	if not lead and not original:
+		return None
+	row = frappe.db.get_value(
+		"WhatsApp Inbound Message",
+		inbound_name,
+		["is_group", "chat_jid", "jid", "phone_e164", "display_name", "contact"],
+		as_dict=True,
+	)
+	scope = settings.get("changes_reply_scope") or "All chats"
+	if (scope == "Groups only" and not row.is_group) or (scope == "Private chats only" and row.is_group):
+		return None
+	body = "\n\n".join(p for p in (lead, original) if p)
+	spec = dispatch.OutboundSpec(
+		device=device,
+		phone=None if row.is_group else row.phone_e164,
+		jid=row.chat_jid if row.is_group else (None if row.phone_e164 else row.jid),
+		message_type="Text",
+		body=body,
+		source_type="Command Reply",
+		trigger_inbound=inbound_name,
+		display_name=row.display_name,
+		contact=row.contact,
+		skip_policy=True,
+		extra={"reply_to_provider_message_id": message_id} if edit else {},
+	)
+	try:
+		outbound = dispatch.create_outbound(spec)
+		dispatch.enqueue([outbound], priority=1)
+	except Exception:
+		frappe.log_error(title="WhatsApp edit/delete reply not sent", message=frappe.get_traceback())
+		return None
+	return outbound
 
 
 def record_reaction(
@@ -202,6 +356,9 @@ def _after_insert(
 			enqueue_after_commit=True,
 			timeout=120,
 		)
+	from whatsapp_next.services import receipts
+
+	receipts.on_received(name)
 
 
 def should_route(message_type: str, body: str | None, is_group: bool, *, enabled: bool | None = None) -> bool:
@@ -211,7 +368,8 @@ def should_route(message_type: str, body: str | None, is_group: bool, *, enabled
 		enabled = bool(cint(frappe.get_cached_doc("WhatsApp Settings").enable_commands))
 	if not enabled:
 		return False
-	if message_type != "Text" or not (body or "").strip():
+	# a tap on buttons / a list carries its title as the text: it routes like a typed keyword
+	if message_type not in ("Text", "Interactive Reply") or not (body or "").strip():
 		return False
 	if is_group:
 		return (body or "").lstrip().startswith(COMMAND_TOKENS)

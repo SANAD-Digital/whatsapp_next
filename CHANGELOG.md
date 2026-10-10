@@ -4,6 +4,45 @@ All notable changes to `whatsapp_next`. The format follows [Keep a Changelog](ht
 versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D-nnn`) point to
 `plan/decisions.md`, which holds the reasoning behind each change.
 
+## [Unreleased]
+
+### Added
+
+- **Standard content, shipped as fixtures** (`fixtures/standard_*.json`, declared in
+  `hooks.py → fixtures`): 12 Arabic message templates, 10 notifications on ERPNext documents (sales
+  invoice, receipt, full payment, due and overdue reminders, sales order, delivery reminder,
+  delivery note, quotation, purchase order) and 4 report alerts (receivables, payables, daily
+  sales, yesterday's ledger). Notifications and alerts arrive switched off, with no device and no
+  phone number; recipients are document fields and roles.
+- `services/standards.py`: the rules of a fixture sync for that content. What the site owns
+  (on/off, device, recipients, print format, letter head, an alert's report filters, counters and
+  timestamps) always survives a migrate. Shipped text and rules are updated only while the owner
+  has not edited the record; a record he edited is never overwritten. `standards.restore` brings
+  the shipped content back on request, `standards.overview` lists the state of every record.
+- `developer-docs/standard-content.md`.
+
+### Changed
+
+- The custom field `Contact Phone.wa_phone_e164` moved from `fixtures/custom_field.json` to
+  `whatsapp_next/custom/contact_phone.json`, the file Frappe's *Export Customizations* writes and
+  `sync_customizations` applies on install and migrate. The field, its index and its data are
+  unchanged.
+- `before_uninstall` removes the standard-content fingerprints the app keeps in `tabDefaultValue`.
+- **`install.py` no longer creates what Frappe syncs from files.**
+  - The desktop tile is `whatsapp_next/desktop_icon/whatsapp.json` (a standard Desktop Icon).
+    `ensure_desktop_icons` is gone: it made the rows in code on every install and migrate, and a
+    standard icon without a file is deleted by each migrate's orphan sweep. One tile is shown; the
+    separate "WhatsApp Next" app tile is gone (`add_to_apps_screen` is not declared).
+  - Composite indexes moved to `on_doctype_update()` in the seven controllers they belong to;
+    `add_indexes` is gone.
+  - `ensure_roles` is gone: every product role is named in a DocType's permissions, so Frappe
+    creates it with the DocType; `fixtures/role.json` sets the properties.
+  - Number Cards and Dashboard Charts are standard module documents
+    (`whatsapp_next/{number_card,dashboard_chart}/`) instead of fixtures.
+  - `after_install` creates the disabled command service user and names it in Settings;
+    `after_migrate` only prints the Contact warning. The default country is no longer copied
+    into WhatsApp Settings (the phone service already falls back to System Settings).
+
 ## [0.1.0] — 2026-09-28
 
 First release. A WhatsApp integration for ERPNext on Frappe v16, built on a provider abstraction.
