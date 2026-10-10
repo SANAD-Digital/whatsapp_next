@@ -216,6 +216,16 @@ class TestApiSimulator(IntegrationTestCase):
 			tables = ("`tabWhatsApp Log`", "`tabWhatsApp Inbound Message`")
 			return out, len([q for q in calls if any(t in q for t in tables)])
 
+		# its own conversations, whatever the site holds (WN-002): the test once failed only
+		# because the site's messages were gone
+		keys = [f"+96650099{i:04d}" for i in range(3)]
+		for key in keys:
+			if not frappe.db.exists("WhatsApp Number", key):
+				frappe.get_doc(
+					{"doctype": "WhatsApp Number", "phone_e164": key, "number_type": "Individual", "display_name": f"Sim test {key}"}
+				).insert(ignore_permissions=True)
+		self.addCleanup(lambda: frappe.db.delete("WhatsApp Number", {"phone_e164": ("in", keys)}))
+
 		one, _ = queries(1)
 		many, reads = queries(30)
 		self.assertGreater(len(many["rows"]), 1)

@@ -42,12 +42,19 @@ class TestBackup(IntegrationTestCase):
 
 	def test_an_import_adds_what_is_missing_and_replaces_what_is_there(self):
 		self._group("first")
-		data = backup.export_backup()
+		# only this test's record goes back in: importing the whole export re-saved every real
+		# template, notification and command of the site (WN-002)
+		full = backup.export_backup()
+		data = {
+			**full,
+			"settings": {},
+			"records": {"WhatsApp Contact Group": [r for r in full["records"]["WhatsApp Contact Group"] if r["name"] == GROUP]},
+		}
 		frappe.db.delete("WhatsApp Contact Group", {"name": GROUP})
 		out = backup.import_backup(json.dumps(data))
 		self.assertEqual(out["failed"], [])
 		self.assertTrue(frappe.db.exists("WhatsApp Contact Group", GROUP))
-		self.assertGreaterEqual(out["created"], 1)
+		self.assertEqual((out["created"], out["updated"]), (1, 0))
 
 		frappe.db.set_value("WhatsApp Contact Group", GROUP, "description", "changed here")
 		backup.import_backup(data)

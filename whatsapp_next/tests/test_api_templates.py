@@ -99,6 +99,9 @@ class TestApiTemplates(IntegrationTestCase):
 	def test_preview_hides_fields_above_the_callers_permission_level(self):
 		from frappe.custom.doctype.property_setter.property_setter import make_property_setter
 
+		# a Property Setter the site already had is restored afterwards, never deleted (WN-002)
+		ps_filters = {"doc_type": "ToDo", "field_name": "description", "property": "permlevel"}
+		before = frappe.db.get_value("Property Setter", ps_filters, ["name", "value"], as_dict=True)
 		make_property_setter("ToDo", "description", "permlevel", "1", "Int", validate_fields_for_doctype=False)
 		frappe.clear_cache(doctype="ToDo")
 		try:
@@ -110,7 +113,10 @@ class TestApiTemplates(IntegrationTestCase):
 				out = api.preview(body="B {{ doc.description }}", reference_doctype="ToDo")
 				self.assertEqual(out["body"], "B")
 		finally:
-			frappe.db.delete("Property Setter", {"doc_type": "ToDo", "field_name": "description", "property": "permlevel"})
+			if before:
+				frappe.db.set_value("Property Setter", before.name, "value", before.value)
+			else:
+				frappe.db.delete("Property Setter", ps_filters)
 			frappe.clear_cache(doctype="ToDo")
 
 	def test_variables_and_sample(self):
