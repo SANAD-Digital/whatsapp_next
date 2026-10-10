@@ -28,6 +28,27 @@ class TestAttachments(IntegrationTestCase):
 		for name in frappe.get_all("File", filters={"file_name": ("like", "%wa-test-%")}, pluck="name"):
 			frappe.delete_doc("File", name, ignore_permissions=True, force=True)
 
+	def test_a_file_shared_by_several_records_is_readable_through_any(self):
+		"""WN-005: one row the user can read is enough, whichever row the database returns first."""
+		from unittest.mock import patch
+
+		from whatsapp_next.exceptions import WAPermissionError
+
+		second = frappe.get_doc(
+			{"doctype": "File", "file_url": self.file_url, "file_name": "pixel-copy.png", "is_private": 1}
+		)
+		second.insert(ignore_permissions=True)
+		# the same upload attached to a second record: Frappe's rows then share the file_url
+		second.db_set("file_url", self.file_url)
+		self.assertEqual(len(frappe.get_all("File", filters={"file_url": self.file_url})), 2)
+		readable = {second.name}
+		allow = lambda doctype, ptype=None, doc=None, **kw: getattr(doc, "name", None) in readable  # noqa: E731
+		with patch.object(attachments.frappe, "has_permission", side_effect=allow):
+			attachments.require_readable(self.file_url)  # the first row is not readable, the second is
+			readable.clear()
+			with self.assertRaises(WAPermissionError):
+				attachments.require_readable(self.file_url)
+
 	def test_helpers(self):
 		self.assertEqual(attachments.mime_for("a.pdf"), "application/pdf")
 		self.assertEqual(attachments.mime_for("a.webp"), "image/webp")

@@ -86,8 +86,15 @@ def require_readable(file_url: str) -> None:
 	"""Refuse a file the session user may not open. Sending a File hands its bytes to whoever
 	the message goes to, so a user-composed message may only carry files its author can read
 	(Frappe's File rules: public, owned, or attached to a record the user can read)."""
-	doc = _file_doc(file_url)
-	if not frappe.has_permission("File", "read", doc=doc):
+	# Frappe keeps one File row per attachment, and several rows share a file_url (the same
+	# upload attached to more than one record). Reading any of them is reading the bytes, so the
+	# file is readable when one of its rows is (WN-005): picking a single row at random refused
+	# legitimate sends whenever that row was attached to a record the user cannot read — or one
+	# that no longer exists.
+	names = frappe.get_all("File", filters={"file_url": file_url}, pluck="name", order_by="creation asc")
+	if not names:
+		frappe.throw(_("File {0} not found").format(file_url), WAFileError)
+	if not any(frappe.has_permission("File", "read", doc=frappe.get_doc("File", n)) for n in names):
 		frappe.throw(_("Not permitted to send file {0}").format(file_url), WAPermissionError)
 
 
