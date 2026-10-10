@@ -667,6 +667,13 @@ def _reply_device(command, inbound) -> str | None:
 IMMEDIATE_OUTPUTS = frozenset({"receipt", "unknown", "help"})
 
 
+def _reply_to_all() -> bool:
+	"""Settings' `reply_to_all_contact_numbers` (on by default; a site not migrated yet has no
+	such field and keeps the owner's 2026-10-08 behaviour)."""
+	value = frappe.get_cached_doc("WhatsApp Settings").get("reply_to_all_contact_numbers")
+	return True if value is None else bool(cint(value))
+
+
 def _contact_numbers(contact: str | None, asker: str | None) -> list[str]:
 	"""The contact's other WhatsApp numbers (individuals, primary first), without the asker's."""
 	if not contact:
@@ -696,7 +703,7 @@ def _send_replies(command, inbound, replies: list[dict[str, Any]], *, is_simulat
 	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
 	is_group = cint(get("is_group"))
 	asker = get("phone_e164")
-	others = [] if is_group or is_simulated else _contact_numbers(get("contact"), asker)
+	others = [] if is_group or is_simulated or not _reply_to_all() else _contact_numbers(get("contact"), asker)
 	names: list[str] = []
 	for phone in [asker, *others]:
 		own = phone == asker
@@ -719,7 +726,9 @@ def _send_replies(command, inbound, replies: list[dict[str, Any]], *, is_simulat
 				display_name=get("display_name") if own else None,
 				contact=get("contact"),
 				is_simulated=is_simulated,
-				skip_policy=True,
+				# the asker wrote first, so may always be answered; the contact's other numbers did
+				# not, and follow "Send Only to Known Numbers" like any other send (WN-006)
+				skip_policy=own,
 				# the answer quotes the message that asked (owner, 2026-10-08): WhatsApp shows it as a
 				# reply to that command, which matters in a group where several people ask at once.
 				# Only in the asker's chat: the other numbers never saw that message
@@ -730,14 +739,19 @@ def _send_replies(command, inbound, replies: list[dict[str, Any]], *, is_simulat
 			if own:
 				outbound = dispatch.create_outbound(spec)
 			else:
-				# a blocked or invalid extra number is skipped; the asker's answer still goes
+				# a blocked, unknown or invalid extra number is skipped — and said so in the log —
+				# while the asker's answer still goes
 				try:
 					outbound = dispatch.create_outbound(spec)
-				except frappe.ValidationError:
+				except frappe.ValidationError as exc:
 					frappe.clear_last_message()
+					frappe.logger("whatsapp_next").info(
+						f"command reply not copied to {phone}: {type(exc).__name__} (inbound {get('name')})"
+					)
 					continue
 			if not is_simulated:
-				if r.get("output_key") in IMMEDIATE_OUTPUTS:
+				# only the asker's own answer is sent at once; the copies go through the queue
+				if own and r.get("output_key") in IMMEDIATE_OUTPUTS:
 					_send_now_or_queue(outbound)
 				else:
 					dispatch.enqueue([outbound], priority=1)

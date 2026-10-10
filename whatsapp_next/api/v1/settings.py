@@ -62,6 +62,7 @@ SECTIONS: dict[str, tuple[str, ...]] = {
 		"command_reply_language",
 		"send_receipt_reply",
 		"receipt_reply",
+		"reply_to_all_contact_numbers",
 		"reply_on_edit",
 		"edit_reply_text",
 		"reply_on_delete",

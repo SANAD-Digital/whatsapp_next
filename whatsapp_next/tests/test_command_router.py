@@ -439,6 +439,33 @@ class TestCommandRouter(IntegrationTestCase):
 			c.set("phone_nos", [p for p in c.phone_nos if p.wa_phone_e164 != other])
 			c.save(ignore_permissions=True)
 
+	def test_the_copies_follow_the_setting_and_the_known_numbers_policy(self):
+		"""WN-006: off → the asker only; on → the copies respect "Send Only to Known Numbers"."""
+		other = "+966500000610"
+		c = frappe.get_doc("Contact", self.contact)
+		c.append("phone_nos", {"phone": other})
+		c.save(ignore_permissions=True)
+
+		def answered(to_all):
+			res = simulator.simulate_inbound(self.device, P_LINKED, "#ping now", persist=True)
+			frappe.db.set_value("WhatsApp Inbound Message", res.inbound, "is_simulated", 0)
+			with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now"), patch.object(
+				cr, "_reply_to_all", return_value=to_all
+			):
+				result = cr.route(res.inbound)
+			return {frappe.db.get_value("WhatsApp Log", n, "phone_e164") for n in result.outbound}
+
+		try:
+			self.assertEqual(answered(False), {P_LINKED})
+			with patch.object(cr.dispatch, "_known", return_value=False), patch.object(
+				cr.dispatch, "_settings", return_value=frappe._dict(send_only_to_known_numbers=1, provider="snd_platform")
+			):
+				self.assertEqual(answered(True), {P_LINKED})
+		finally:
+			c.reload()
+			c.set("phone_nos", [p for p in c.phone_nos if p.wa_phone_e164 != other])
+			c.save(ignore_permissions=True)
+
 	def test_a_contact_of_several_accounts_answers_for_its_primary_one(self):
 		links = [
 			frappe._dict(link_doctype="Customer", link_name="First Linked"),
