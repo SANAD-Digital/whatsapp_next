@@ -60,12 +60,26 @@ class TestBackup(IntegrationTestCase):
 			backup.import_backup({"format": "something else"})
 
 	def test_the_purge_deletes_the_account_tables_and_empties_references(self):
-		deleted, emptied = [], []
+		deleted, emptied, served = [], [], set()
+		real_get_all = frappe.get_all
+
+		def one_batch(doctype, *args, **kwargs):
+			# every account table answers one batch, then is empty; anything else is the real one
+			if doctype not in backup.ACCOUNT_DOCTYPES:
+				return real_get_all(doctype, *args, **kwargs)
+			if doctype in served:
+				return []
+			served.add(doctype)
+			return [f"{doctype}-row"]
+
 		with (
 			patch.object(backup.frappe.db, "delete", side_effect=lambda dt, *a, **k: deleted.append(dt)),
 			patch.object(backup.frappe.db, "set_value", side_effect=lambda dt, f, field, *a, **k: emptied.append((dt, field))),
 			patch.object(backup.frappe.db, "set_single_value"),
-			patch.object(backup.audit, "log"),
+			patch.object(backup.frappe.db, "commit"),
+			patch.object(backup.frappe, "get_all", side_effect=one_batch),
+			patch.object(backup.frappe, "enqueue") as enqueue,
+			patch.object(backup.audit, "log") as audit_log,
 		):
 			frappe.flags.wa_allow_purge = True
 			try:
@@ -77,15 +91,25 @@ class TestBackup(IntegrationTestCase):
 		self.assertEqual(deleted, [dt for dt in backup.ACCOUNT_DOCTYPES if frappe.db.table_exists(dt)])
 		self.assertEqual(set(counts), set(deleted))
 		self.assertIn(("WhatsApp Notification", "device"), emptied)
+		audit_log.assert_called_once()  # on record before anything goes
+		self.assertEqual(enqueue.call_args.args[0], "whatsapp_next.services.backup.delete_account_files")
 		# what a backup carries is never deleted
 		self.assertFalse(set(backup.DOCTYPES) & set(deleted))
 
 	def test_only_another_account_triggers_the_purge(self):
-		with patch.object(backup, "purge_account_data") as purge:
-			with patch.object(backup, "account_key", return_value="KEY-A"):
-				self.assertFalse(onboarding._left_account("KEY-A"))  # the same account again
-			self.assertFalse(onboarding._left_account(None))  # a first sign-in
+		same, other = ("CUST-A", "KEY-A"), ("CUST-B", "KEY-B")
+		self.assertFalse(backup.is_another_account(None, "CUST-A", None, "KEY-A"))  # a first link
+		self.assertFalse(backup.is_another_account("CUST-A", "CUST-A", "KEY-A", "KEY-ROTATED"))  # key rotated
+		self.assertTrue(backup.is_another_account("CUST-A", "CUST-B", "KEY-A", "KEY-A"))
+		self.assertTrue(backup.is_another_account(None, "CUST-B", "KEY-A", "KEY-B"))  # linked before the id was kept
+		with (
+			patch.object(backup, "purge_account_data") as purge,
+			patch.object(backup, "remember_customer") as remember,
+		):
+			with patch.object(backup, "account_key", return_value=same[1]):
+				self.assertFalse(onboarding._left_account(same, "CUST-A"))
 			purge.assert_not_called()
-			with patch.object(backup, "account_key", return_value="KEY-B"):
-				self.assertTrue(onboarding._left_account("KEY-A"))
+			with patch.object(backup, "account_key", return_value=other[1]):
+				self.assertTrue(onboarding._left_account(same, "CUST-B"))
 			purge.assert_called_once()
+			remember.assert_called_with("CUST-B")

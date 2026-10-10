@@ -183,25 +183,66 @@ def _message(exc: Exception) -> str:
 
 # ---- switching account --------------------------------------------------------------------------------
 
+#: the platform account this site is linked to, as the platform names its customer (stable,
+#: unlike a key the platform may rotate) — kept in Frappe's defaults, no field needed (WN-003)
+ACCOUNT_DEFAULT = "whatsapp_next_platform_customer"
+PURGE_BATCH = 5000
+
 
 def account_key() -> str | None:
-	"""The platform account this site is linked to, by its customer key (stable per account)."""
+	"""The customer key of the account this site is linked to — the fallback identity."""
 	try:
 		return frappe.get_doc("WhatsApp Settings").get_password("customer_api_key", raise_exception=False) or None
 	except Exception:
 		return None
 
 
+def linked_customer() -> str | None:
+	"""The platform customer this site was last linked to, when known."""
+	return frappe.db.get_default(ACCOUNT_DEFAULT) or None
+
+
+def remember_customer(customer: str | None) -> None:
+	"""Keep `customer` as the site's platform account. Never from a test unless it asks: a
+	stand-in provider's customer kept here would make the next real sign-in look like another
+	account, and delete the site's data."""
+	if not customer or (frappe.flags.in_test and not frappe.flags.wa_allow_purge):
+		return
+	frappe.db.set_default(ACCOUNT_DEFAULT, customer)
+
+
+def is_another_account(
+	previous_customer: str | None, new_customer: str | None, previous_key: str | None, new_key: str | None
+) -> bool:
+	"""Whether the site now belongs to another platform account. The customer the platform names
+	decides when both sides are known; only a site linked before that was remembered falls back
+	to comparing customer keys. A first link (nothing before) is never a switch."""
+	if previous_customer and new_customer:
+		return previous_customer != new_customer
+	if not previous_key or not new_key:
+		return False
+	return previous_key != new_key
+
+
 def purge_account_data(user: str | None = None) -> dict[str, int]:
 	"""Delete what belonged to the account this site leaves: devices, messages both ways, the
 	queue, the WhatsApp Numbers and their traces. References to them are emptied first.
-	Returns the count deleted per DocType; audited as the credential change it follows.
+
+	The audit row is written and committed before anything goes, so the deletion is on record
+	even if it stops halfway; tables are emptied in batches, each committed, so no single
+	statement holds the request (WN-004). The files attached to those rows are removed by a
+	background job, through Frappe, so their disk files go too. Runs before the new account's
+	devices are brought in, which is why it is not itself a background job.
 
 	Never during tests unless a test asks for it (`frappe.flags.wa_allow_purge`): the test site's
 	messages and devices are real data, and a sign-in test with a stand-in provider changes the
 	keys like a real switch does (that deleted whatsapp.dev's messages once, 2026-10-10)."""
 	if frappe.flags.in_test and not frappe.flags.wa_allow_purge:
 		return {}
+	counts = {dt: frappe.db.count(dt) for dt in ACCOUNT_DOCTYPES if frappe.db.table_exists(dt)}
+	audit.log("Credentials Changed", user=user, details={"account_switched": 1, "deleting": counts})
+	frappe.db.commit()
+
 	for doctype, fieldname in ACCOUNT_REFERENCES:
 		if frappe.db.table_exists(doctype) and frappe.get_meta(doctype).has_field(fieldname):
 			frappe.db.set_value(doctype, {fieldname: ("is", "set")}, fieldname, None, update_modified=False)
@@ -209,13 +250,28 @@ def purge_account_data(user: str | None = None) -> dict[str, int]:
 	for fieldname in ("default_device", "reply_device", "numbers_watermark"):
 		if settings.meta.has_field(fieldname):
 			frappe.db.set_single_value("WhatsApp Settings", fieldname, None, update_modified=False)
-	counts: dict[str, int] = {}
-	for doctype in ACCOUNT_DOCTYPES:
-		if not frappe.db.table_exists(doctype):
-			continue
-		counts[doctype] = frappe.db.count(doctype)
-		frappe.db.delete(doctype)
+	for doctype in counts:
+		while names := frappe.get_all(doctype, pluck="name", limit=PURGE_BATCH, order_by="creation asc"):
+			frappe.db.delete(doctype, {"name": ("in", names)})
+			frappe.db.commit()
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 	frappe.cache.delete_keys("wa:")
-	audit.log("Credentials Changed", user=user, details={"account_switched": 1, "deleted": counts})
+	frappe.enqueue(
+		"whatsapp_next.services.backup.delete_account_files",
+		queue="long",
+		timeout=3600,
+		enqueue_after_commit=True,
+	)
 	return counts
+
+
+def delete_account_files() -> int:
+	"""Background: the File rows (and disk files) attached to the deleted account's records."""
+	names = frappe.get_all("File", filters={"attached_to_doctype": ("in", list(ACCOUNT_DOCTYPES))}, pluck="name")
+	for name in names:
+		try:
+			frappe.delete_doc("File", name, ignore_permissions=True, force=True)
+		except Exception:
+			frappe.log_error(title="WhatsApp account switch: a file was not removed", message=f"File {name}")
+	frappe.db.commit()
+	return len(names)

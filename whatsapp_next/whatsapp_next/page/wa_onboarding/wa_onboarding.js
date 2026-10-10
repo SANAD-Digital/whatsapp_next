@@ -1320,6 +1320,9 @@ frappe.provide("whatsapp_next.onboarding");
 					this.set_state({ stage: "login", err: __("The account was created, but this site is not linked to it yet. Sign in with the password you just chose to finish.") });
 					return;
 				}
+				if (result.account_switched) {
+					ui.Toast.info(__("This site now works with the new account. The previous account's devices, messages, queue and WhatsApp numbers were removed from it."));
+				}
 				// `complete_signup` already tested the connection, registered the webhook and brought
 				// the account's devices in (`services.onboarding.link_site`); the status shows the result.
 				this.ctx.connection = result.connection;
@@ -1591,6 +1594,10 @@ frappe.provide("whatsapp_next.onboarding");
 						if (r && r.ok === false) return this.show_error(r.message || __("The mobile number, email or password is not correct."));
 						if (r && r.customer_name) this.f.org = r.customer_name;
 						ui.Toast.success(__("Signed in."));
+						// said out loud: the previous account's records are gone from this site (WN-003)
+						if (r && r.account_switched) {
+							ui.Toast.info(__("This site now works with the new account. The previous account's devices, messages, queue and WhatsApp numbers were removed from it."));
+						}
 						// An account that already exists has nothing left to set up here: straight to the
 						// app's own workspace, not back through this screen (owner, 2026-10-08).
 						this.mark_linked();

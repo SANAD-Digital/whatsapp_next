@@ -245,11 +245,11 @@ def complete_signup(
 	`password` sets the tenant's portal password, which is what makes the
 	account real on the platform."""
 	state = registry.get_provider().complete_signup(request_key, code or "", password=password)
-	previous = backup.account_key()
+	previous = (backup.linked_customer(), backup.account_key())
 	stored = store_signup_credentials(state, user=user)
 	out = {"ok": state.status == "Completed", "status": state.status, "credentials_stored": stored}
 	if stored:
-		out["account_switched"] = _left_account(previous, user=user)
+		out["account_switched"] = _left_account(previous, (state.extra or {}).get("customer"), user=user)
 		out.update(link_site(user=user))
 	return out
 
@@ -331,9 +331,9 @@ def login(platform_base_url: str, email: str, password: str, user: str | None = 
 	values = {f: returned.get(f) for f in CREDENTIAL_FIELDS if returned.get(f)}
 	if not values:
 		frappe.throw(_("The platform returned no credentials for this account"), WAValidationError)
-	previous = backup.account_key()
+	previous = (backup.linked_customer(), backup.account_key())
 	written = save_credentials(user=user, **values)
-	switched = _left_account(previous, user=user)
+	switched = _left_account(previous, result.get("customer"), user=user)
 	return {
 		"ok": True,
 		"customer": result.get("customer"),
@@ -344,16 +344,18 @@ def login(platform_base_url: str, email: str, password: str, user: str | None = 
 	}
 
 
-def _left_account(previous: str | None, user: str | None = None) -> bool:
-	"""After new keys are stored: when they belong to another account than `previous`, that
-	account's devices, messages, queue and numbers are deleted (owner, 2026-10-10) — before
-	`link_site` brings the new account's devices in. Signing in again to the same account
-	changes nothing."""
-	current = backup.account_key()
-	if not previous or not current or previous == current:
-		return False
-	backup.purge_account_data(user=user)
-	return True
+def _left_account(previous: tuple[str | None, str | None], customer: str | None, user: str | None = None) -> bool:
+	"""After new keys are stored: when they belong to another account than before — by the
+	platform's customer, else by key (`backup.is_another_account`) — that account's devices,
+	messages, queue and numbers are deleted (owner, 2026-10-10), before `link_site` brings the
+	new account's devices in. Signing in again to the same account changes nothing. The account
+	signed in to is remembered for the next comparison."""
+	previous_customer, previous_key = previous
+	switched = backup.is_another_account(previous_customer, customer, previous_key, backup.account_key())
+	if switched:
+		backup.purge_account_data(user=user)
+	backup.remember_customer(customer)
+	return switched
 
 
 def link_site(user: str | None = None) -> dict[str, Any]:
