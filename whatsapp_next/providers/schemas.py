@@ -119,6 +119,7 @@ class NormalizedMessage:
 	interactive: dict | None = None
 	source: Source = field(default_factory=Source)
 	priority: int = 5
+	reply_to: str | None = None  # WhatsApp id of the message this text replies to
 
 
 @dataclass(frozen=True)
@@ -210,16 +211,91 @@ class InboundPayload:
 	from_jid: str | None = None
 	is_group: bool = False
 	push_name: str | None = None
+	group_name: str | None = None  # a group's own name, for a message sent in a group
 	message_type: str = "Text"
 	body: str | None = None
 	caption: str | None = None
 	media_url: str | None = None
 	media_mime_type: str | None = None
+	media_file_name: str | None = None
 	location: Location | None = None
 	reaction: str | None = None
 	reaction_to: str | None = None
 	quoted_id: str | None = None
+	selected_id: str | None = None  # a tap on buttons / a list: the id of what was tapped
 	received_at: datetime | None = None
+
+
+@dataclass(frozen=True)
+class NumberCheck:
+	"""Whether a number is on WhatsApp (`BaseProvider.check_numbers`)."""
+
+	phone_e164: str
+	on_whatsapp: bool
+	jid: str | None = None
+	verified_name: str | None = None
+
+
+@dataclass(frozen=True)
+class ContactProfile:
+	"""What WhatsApp shows about a number (`BaseProvider.get_contact_profiles`). `picture_state`:
+	`set` (with `picture_url`, WhatsApp's short-lived link), `unchanged` (the id given is current),
+	`none`, `hidden` or `error`."""
+
+	phone_e164: str
+	on_whatsapp: bool
+	jid: str | None = None
+	about: str | None = None
+	verified_name: str | None = None
+	is_business: bool = False
+	picture_state: str | None = None
+	picture_id: str | None = None
+	picture_url: str | None = None
+	business: dict = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class GroupMember:
+	"""A number asked for when a group was created, and what became of it: `added`,
+	`invite_required` (their privacy settings refuse being added), `not_on_whatsapp` or `failed`."""
+
+	phone: str
+	status: str
+	jid: str | None = None
+
+
+@dataclass(frozen=True)
+class GroupCreated:
+	jid: str
+	name: str
+	members: list[GroupMember] = field(default_factory=list)
+	invite_link: str | None = None
+
+
+@dataclass(frozen=True)
+class HistoryMessage:
+	"""One message of a device's past conversations (`BaseProvider.list_history`).
+
+	`kind` is the provider's own type, so an edit, a deletion or a reaction is told from a message;
+	`original_id` names the message an edit or deletion changes. `counterpart_phone` is the other
+	side of a private chat, whoever sent the message."""
+
+	kind: str
+	from_me: bool
+	inbound: InboundPayload
+	counterpart_phone: str | None = None
+	original_id: str | None = None
+	raw: dict = field(default_factory=dict, repr=False)
+
+
+@dataclass(frozen=True)
+class HistoryPage:
+	"""A batch of `HistoryMessage`s; `next_after` resumes after it, `has_more` says whether to."""
+
+	messages: list[HistoryMessage]
+	next_after: int
+	has_more: bool
+	total: int | None = None
 
 
 @dataclass(frozen=True)

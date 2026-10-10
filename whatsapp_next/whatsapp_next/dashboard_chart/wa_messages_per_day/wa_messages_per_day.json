@@ -1,0 +1,38 @@
+{
+ "based_on": "creation",
+ "chart_name": "WA Messages per Day",
+ "chart_type": "Count",
+ "creation": "2026-10-02 23:56:47.054338",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "document_type": "WhatsApp Log",
+ "filters_json": "[]",
+ "group_by_type": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "modified": "2026-10-03 00:14:46.655507",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WA Messages per Day",
+ "number_of_groups": 0,
+ "owner": "Administrator",
+ "roles": [
+  {
+   "role": "WhatsApp Manager"
+  },
+  {
+   "role": "WhatsApp Agent"
+  },
+  {
+   "role": "WhatsApp Viewer"
+  }
+ ],
+ "show_values_over_chart": 0,
+ "time_interval": "Daily",
+ "timeseries": 1,
+ "timespan": "Last Month",
+ "type": "Line",
+ "use_report_chart": 0,
+ "y_axis": []
+}

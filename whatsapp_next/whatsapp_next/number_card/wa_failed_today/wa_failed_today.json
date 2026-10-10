@@ -1,0 +1,23 @@
+{
+ "creation": "2026-10-02 23:56:47.112856",
+ "docstatus": 0,
+ "doctype": "Number Card",
+ "document_type": "WhatsApp Log",
+ "dynamic_filters_json": "[[\"WhatsApp Log\", \"failed_at\", \">=\", \"frappe.datetime.get_today()\", false]]",
+ "filters_json": "[[\"WhatsApp Log\", \"status\", \"=\", \"Failed\", false]]",
+ "function": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "label": "Failed today",
+ "modified": "2026-10-03 00:14:46.527986",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WA Failed Today",
+ "owner": "Administrator",
+ "report_function": "Sum",
+ "show_full_number": 0,
+ "show_percentage_stats": 0,
+ "stats_time_interval": "Daily",
+ "type": "Document Type"
+}

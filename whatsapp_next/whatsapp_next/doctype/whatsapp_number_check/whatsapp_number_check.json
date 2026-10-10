@@ -1,0 +1,116 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "field:phone_e164",
+ "naming_rule": "By fieldname",
+ "creation": "2026-10-07 15:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "description": "Whether a number is on WhatsApp, as last asked. Written by the number check only.",
+ "field_order": [
+  "phone_e164",
+  "on_whatsapp",
+  "jid",
+  "column_break_1",
+  "verified_name",
+  "checked_at",
+  "device"
+ ],
+ "fields": [
+  {
+   "fieldname": "phone_e164",
+   "fieldtype": "Data",
+   "label": "Number",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "on_whatsapp",
+   "fieldtype": "Select",
+   "label": "Registered on WhatsApp",
+   "options": "Yes\nNo",
+   "reqd": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "jid",
+   "fieldtype": "Data",
+   "label": "WhatsApp ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "verified_name",
+   "fieldtype": "Data",
+   "label": "Verified business name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "checked_at",
+   "fieldtype": "Datetime",
+   "label": "Checked",
+   "reqd": 1,
+   "in_list_view": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "device",
+   "fieldtype": "Link",
+   "label": "Asked through",
+   "options": "WhatsApp Device",
+   "read_only": 1
+  }
+ ],
+ "in_create": 1,
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-10-07 15:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Number Check",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "report": 1,
+   "select": 1,
+   "export": 1,
+   "role": "System Manager"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "select": 1,
+   "export": 1,
+   "role": "WhatsApp Manager"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "select": 1,
+   "export": 1,
+   "role": "WhatsApp Agent"
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "select": 1,
+   "export": 1,
+   "role": "WhatsApp Viewer"
+  }
+ ],
+ "read_only": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "phone_e164",
+ "track_changes": 0
+}

@@ -13,16 +13,6 @@
 // mode are the same code. Geometry is pinned in px because it is geometry: 12 px
 // card radius, 32 px verbs, a 10 px rhythm between the bands.
 
-// White cards on a tinted page, never white on white: Desk paints its page container white, and
-// a wall of white cards on it leaves the eye nothing to hold on to. The prototype's `--bg` is too
-// close to white to separate them on a real monitor, so the page takes its next step, `--sunken`.
-#page-wa-devices {
-	background: var(--wa-sunken);
-	// one tone from the top of the screen to the bottom, however few cards there are: the tone
-	// used to stop under the last card and leave the rest of the screen white
-	min-block-size: calc(100dvh - var(--wa-viewport-offset));
-}
-
 .wa-devices {
 	--wa-device-gap: 10px;
 

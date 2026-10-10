@@ -411,6 +411,33 @@ class TestDispatch(IntegrationTestCase):
 		self.assertEqual(row.status, "Delivered")
 		self.assertTrue(row.sent_at and row.delivered_at)
 
+	def test_the_document_a_message_is_about_gets_a_comment(self):
+		"""The reference document's timeline says the message went out — once, not per receipt —
+		and says so when it fails; a test send writes nothing there (owner, 2026-10-08)."""
+		todo = frappe.get_doc({"doctype": "ToDo", "description": "dispatch-test comment"}).insert(ignore_permissions=True)
+		comments = lambda: frappe.get_all(  # noqa: E731
+			"Comment", filters={"reference_doctype": "ToDo", "reference_name": todo.name, "comment_type": "Info"}, pluck="content"
+		)
+		try:
+			out = dispatch.create_outbound(_spec(reference_doctype="ToDo", reference_name=todo.name))
+			dispatch.apply_status(out, "Sent", provider_message_id="pm-comment")
+			dispatch.apply_status(out, "Delivered")
+			dispatch.apply_status(out, "Read")
+			self.assertEqual(len(comments()), 1)
+			self.assertIn(out, comments()[0])
+
+			failed = dispatch.create_outbound(_spec(reference_doctype="ToDo", reference_name=todo.name))
+			dispatch.apply_status(failed, "Failed", error_code="x", reason="number is not on WhatsApp")
+			self.assertEqual(len(comments()), 2)
+			self.assertTrue(any("number is not on WhatsApp" in c for c in comments()))
+
+			test = dispatch.create_outbound(_spec(reference_doctype="ToDo", reference_name=todo.name, is_test=True))
+			dispatch.apply_status(test, "Sent", provider_message_id="pm-comment-test")
+			self.assertEqual(len(comments()), 2)
+		finally:
+			frappe.db.delete("Comment", {"reference_doctype": "ToDo", "reference_name": todo.name})
+			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
+
 	def test_poll_keeps_the_id_its_results_are_asked_by(self):
 		"""The provider message id of a poll is the poll's id: stored on `Sent`, so the campaign's
 		poll results find the polls that went out (nothing wrote it before; results read "sent 0")."""

@@ -14,6 +14,7 @@
   "scheduled_at",
   "messages_per_minute",
   "exclude_unknown_numbers",
+  "exclude_not_on_whatsapp",
   "messages_tab",
   "messages",
   "recipients_tab",
@@ -113,6 +114,13 @@
    "fieldtype": "Check",
    "default": "0",
    "description": "Skip recipients who have never had a conversation on WhatsApp."
+  },
+  {
+   "default": "0",
+   "fieldname": "exclude_not_on_whatsapp",
+   "fieldtype": "Check",
+   "label": "Skip Numbers Not on WhatsApp",
+   "description": "Check every recipient's number with WhatsApp before sending and skip the ones that are not on it."
   },
   {
    "fieldname": "messages_tab",
@@ -351,7 +359,7 @@
    "link_fieldname": "campaign"
   }
  ],
- "modified": "2026-09-26 18:30:00.000000",
+ "modified": "2026-10-07 15:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Campaign",
@@ -410,7 +418,7 @@
    "select": 1
   }
  ],
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
  "track_changes": 1,

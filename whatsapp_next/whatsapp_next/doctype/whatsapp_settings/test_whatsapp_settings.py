@@ -7,7 +7,6 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.exceptions import WAValidationError
-from whatsapp_next.install import ensure_roles
 from whatsapp_next.tests.conftest_frappe import ensure_settings, ensure_test_user
 
 IGNORE_TEST_RECORD_DEPENDENCIES = [
@@ -26,7 +25,6 @@ class TestWhatsAppSettings(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
 		super().setUpClass()
-		ensure_roles()
 		ensure_settings()
 
 	def _settings(self):
@@ -68,6 +66,20 @@ class TestWhatsAppSettings(IntegrationTestCase):
 		settings.platform_base_url = "http://insecure.example.com"
 		with self.assertRaises(WAValidationError):
 			settings.save(ignore_permissions=True)
+
+	def test_empty_default_country_takes_the_site_country(self) -> None:
+		# a fresh site never chose one, and the field is mandatory: the first save must not fail
+		site_country = frappe.db.get_single_value("System Settings", "country")
+		settings = self._settings()
+		previous = settings.default_country
+		try:
+			settings.default_country = None
+			settings.save(ignore_permissions=True)
+			self.assertEqual(
+				frappe.db.get_single_value(DOCTYPE, "default_country"), site_country or "Saudi Arabia"
+			)
+		finally:
+			frappe.db.set_single_value(DOCTYPE, "default_country", previous)
 
 	def test_queue_bounds(self) -> None:
 		settings = self._settings()

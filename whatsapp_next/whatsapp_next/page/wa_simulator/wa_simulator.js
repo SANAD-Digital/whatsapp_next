@@ -18,12 +18,19 @@
 
 (() => {
 	const ROUTE = "wa-simulator";
+	// how often the open conversation is read again while realtime is unavailable
+	const POLL_MS = 5000;
 	const esc = (v) => sanad.ui.escape(v);
 	const fmt_int = (v) => sanad.ui.format_int(v);
 	const PAGE_LENGTH = 50;
 	const LIST_LENGTH = 60;
 	const SEND_ICON =
 		'<svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 10.5l13-6-5 13-2-5-6-2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path></svg>';
+	// the send button tells what happened to the press (owner, 2026-10-08): a spinner while the
+	// message is handed over, a tick once it is, then the arrow again for the next one
+	const SENDING_ICON = '<span class="wa-sim__spinner" aria-hidden="true"></span>';
+	const SENT_ICON =
+		'<svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4.5 10.5l3.5 3.5 7.5-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
 	const SEARCH_ICON =
 		'<svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.6"></circle><path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>';
 
@@ -353,8 +360,9 @@
 
 		// ---- the conversation list -------------------------------------------------------------
 
-		load_list() {
-			this.list_state.loading({ rows: 5 });
+		load_list({ quiet = false } = {}) {
+			// a timed re-read keeps what is on screen instead of flashing the loading rows
+			if (!quiet) this.list_state.loading({ rows: 5 });
 			// a search typed on while an older one is in flight: only the newest answer draws
 			const seq = (this._list_seq = (this._list_seq || 0) + 1);
 			return sanad.ui
@@ -533,7 +541,7 @@
 						rows,
 						has_more: !!this.next_cursor,
 						on_load_more: () => this.load_older(),
-						on_row_click: (row) => frappe.set_route("Form", row.direction === "Outbound" ? "WhatsApp Log" : "WhatsApp Inbound Message", row.name),
+						// no `on_row_click`: the simulator is a conversation, not a way into the message logs
 						empty_text: __("No messages yet"),
 					});
 				})
@@ -577,7 +585,7 @@
 			return this.fetch_page()
 				.then((page) => {
 					if (thread !== this.thread) return;
-					const added = this.thread.append(((page && page.rows) || []).slice().reverse());
+					const { added } = this.thread.merge(((page && page.rows) || []).slice().reverse());
 					if (added) sanad.ui.announce(sanad.ui.plural(added, { one: __("{0} new message."), other: __("{0} new messages.") }));
 				})
 				.catch(() => {})
@@ -606,7 +614,13 @@
 					<span class="wa-sim__field">
 						<label class="sanad-visually-hidden" for="wa-sim-body">${esc(__("Message"))}</label>
 						<textarea id="wa-sim-body" class="wa-sim__input" rows="2" placeholder="${esc(
-							enabled ? (this.attach && this.attach.kind !== "location" ? __("Caption (optional)…") : __("Write your message…")) : __("Pick a contact from the list first…")
+							enabled
+								? this.attach && ["buttons", "list"].includes(this.attach.kind)
+									? __("The message text, above the buttons…")
+									: this.attach && this.attach.kind !== "location"
+										? __("Caption (optional)…")
+										: __("Write your message…")
+								: __("Pick a contact from the list first…")
 						)}"${enabled ? "" : " disabled"}></textarea>
 						<button type="button" class="wa-sim__clear" aria-label="${esc(__("Clear the text"))}" title="${esc(__("Clear the text"))}">×</button>
 					</span>
@@ -620,6 +634,10 @@
 			this.$composer.find(".wa-sim__plus").on("click", (ev) =>
 				new sanad.ui.AttachMenu({
 					anchor: ev.currentTarget,
+					// buttons and lists only when the plan includes them
+					kinds: ["image", "video", "document", "audio", "location", "contact"].concat(
+						((frappe.boot.whatsapp_next || {}).features || {}).interactive ? ["buttons", "list"] : []
+					),
 					search_contacts: (txt) =>
 						sanad.ui.call("contacts.list_contacts", { search: txt || null, page_length: 20 }, { silent: true }).then((r) =>
 							((r && r.rows) || []).map((c) => ({
@@ -680,7 +698,7 @@
 		ask_send() {
 			if (!this.guard() || this._sending) return;
 			const body = cstr(this.$input.val()).trim();
-			const $send = this.$composer.find(".wa-sim__send").prop("disabled", true);
+			const $send = this.$composer.find(".wa-sim__send").prop("disabled", true).attr("aria-busy", "true").html(SENDING_ICON);
 			this._sending = true;
 			const a = this.attach || {};
 			sanad.ui
@@ -692,12 +710,16 @@
 					attachment: a.attachment || null,
 					contact: a.contact || null,
 					location: a.location || null,
+					interactive: a.interactive || null,
 				})
 				.then((r) => {
 					this.$input.val("");
 					if (this.attach) this.set_attach(null);
 					this.sent_outbound = r && r.outbound;
-					sanad.ui.Toast.success(__("Message queued"));
+					// no toast: it covered the composer and its button, and "queued" read as "not sent";
+					// the button's tick and the message in the thread say it was handed over
+					$send.addClass("is-sent").attr("aria-label", __("Sent")).html(SENT_ICON);
+					sanad.ui.announce(__("The message was sent to the device."));
 					if (this.contact.typed) {
 						this.contact.typed = false;
 						this.load_list();
@@ -707,7 +729,9 @@
 				.catch((err) => sanad.ui.Toast.error(err))
 				.then(() => {
 					this._sending = false;
-					$send.prop("disabled", false);
+					$send.prop("disabled", false).removeAttr("aria-busy");
+					// the tick stays a moment, long enough to be seen, then the button is ready again
+					window.setTimeout(() => $send.removeClass("is-sent").attr("aria-label", __("Send")).html(SEND_ICON), $send.hasClass("is-sent") ? 1400 : 0);
 				});
 		}
 
@@ -774,6 +798,14 @@
 			frappe.realtime.on("wa:message:status", this._on_status);
 			frappe.realtime.on("wa:inbound:received", this._on_inbound);
 			frappe.realtime.on("wa:device:status", this._on_device);
+			// Realtime does not reach this site (socket.io), so the thread and the list are also read
+			// again on a timer: ticks move to Delivered / Read, edits, deletions and new messages appear.
+			this._poll = window.setInterval(() => {
+				if (document.hidden) return;
+				this.refresh_newest();
+				this._poll_ticks = (this._poll_ticks || 0) + 1;
+				if (this._poll_ticks % 3 === 0) this.load_list({ quiet: true });
+			}, POLL_MS);
 		}
 
 		unsubscribe() {
@@ -781,6 +813,8 @@
 			frappe.realtime.off("wa:message:status", this._on_status);
 			frappe.realtime.off("wa:inbound:received", this._on_inbound);
 			frappe.realtime.off("wa:device:status", this._on_device);
+			window.clearInterval(this._poll);
+			this._poll = null;
 			this._subscribed = false;
 		}
 

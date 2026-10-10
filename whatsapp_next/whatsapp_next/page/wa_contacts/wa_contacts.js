@@ -545,7 +545,21 @@ class ContactsPage {
 			</span>
 			<button type="button" class="btn btn-sm sanad-accent-soft wa-contacts__bulk">${esc(
 				__("Link to an account")
-			)}</button>`);
+			)}</button>
+			<button type="button" class="btn btn-sm btn-default wa-contacts__check">${esc(__("Check on WhatsApp"))}</button>
+			<button type="button" class="btn btn-sm btn-default wa-contacts__profiles">${esc(__("Refresh WhatsApp profile"))}</button>
+			${whatsapp_next.wa_groups && whatsapp_next.wa_groups.can_create()
+				? `<button type="button" class="btn btn-sm btn-default wa-contacts__group">${esc(__("Create WhatsApp group"))}</button>`
+				: ""}`);
+		this.$selection.find(".wa-contacts__check").on("click", () =>
+			whatsapp_next.check_numbers("Contact", rows.map((d) => d.name))
+		);
+		this.$selection.find(".wa-contacts__profiles").on("click", () =>
+			whatsapp_next.refresh_profiles("Contact", rows.map((d) => d.name), { on_done: () => this.reload() })
+		);
+		this.$selection.find(".wa-contacts__group").on("click", () =>
+			whatsapp_next.wa_groups.open({ source: { doctype: "Contact", names: rows.map((d) => d.name) } })
+		);
 		this.$selection.find(".wa-contacts__selected-clear").on("click", () => this.table.clear_selection());
 		this.$selection.find(".wa-contacts__bulk").on("click", () => this.link_selected(rows));
 	}
@@ -798,14 +812,20 @@ class ContactsPage {
 			links.forEach((l) => {
 				const title_field = ContactsPage.PARTY_TITLE[l.link_doctype] || "title";
 				const doc = { doctype: l.link_doctype, name: l.link_name, [title_field]: l.link_title || l.link_name };
-				const $item = $('<div class="sanad-ent-list__item"></div>').appendTo($list);
-				sanad.ui.Render.mount($item, doc, {
+				const $item = $('<div class="sanad-ent-list__item wa-contacts__link"></div>').appendTo($list);
+				const $card = $('<div class="wa-contacts__link-card"></div>').appendTo($item);
+				sanad.ui.Render.mount($card, doc, {
 					doctype: l.link_doctype,
 					density: "row",
 					profile: { title: title_field, lines: [], status: false, value: false, facts: [] },
 					vm: { lines: [{ text: __(l.link_doctype) }] },
 					href: frappe.perm.has_perm(l.link_doctype, 0, "read") ? undefined : null,
 				});
+				if (CAN_WRITE()) {
+					$(`<button type="button" class="btn btn-default btn-xs wa-contacts__unlink">${esc(__("Unlink"))}</button>`)
+						.appendTo($item)
+						.on("click", () => this.unlink_account(row, l));
+				}
 				void esc;
 			});
 		});
@@ -910,6 +930,16 @@ class ContactsPage {
 		if (!linked && CAN_WRITE()) {
 			list.push({ key: "link", label: __("Link to an account"), icon: "es-line-link", primary: true, handler: () => this.link_one(row) });
 		}
+		if (linked && CAN_WRITE()) {
+			list.push({
+				key: "unlink",
+				label: __("Unlink from an account"),
+				icon: "es-line-close-circle",
+				danger: true,
+				menu: true,
+				handler: () => this.unlink_account(row),
+			});
+		}
 		if (phone && CAN_SEND() && !cint(row.blacklisted)) {
 			list.push({
 				key: "send",
@@ -936,6 +966,21 @@ class ContactsPage {
 		if (phone && CAN_CONFIRM() && !cint(row.inbound_count)) {
 			list.push({ key: "chat", label: __("Change conversation state"), icon: "es-line-chat-alt", menu: true, handler: () => this.change_conversation(row, phone) });
 		}
+		if (phone && whatsapp_next.wa_groups && whatsapp_next.wa_groups.can_create()) {
+			list.push({
+				key: "group",
+				label: __("Create WhatsApp group"),
+				icon: "es-line-people",
+				menu: true,
+				handler: () =>
+					whatsapp_next.wa_groups.open({
+						source: { doctype: "Contact", names: [row.name] },
+						contact: row.name,
+						name: row.full_name || row.name,
+						on_created: () => this.after_change(row.name),
+					}),
+			});
+		}
 		if (phone && CAN_SEND()) {
 			list.push({
 				key: "simulator",
@@ -958,6 +1003,61 @@ class ContactsPage {
 			});
 		}
 		return list;
+	}
+
+	/**
+	 * Remove one account link from the contact (owner, 2026-10-08). `link` names it; without one,
+	 * the contact's only link is taken, or the operator picks among several.
+	 */
+	unlink_account(row, link) {
+		const links = row.links || [];
+		const pick = link
+			? Promise.resolve(link)
+			: links.length === 1
+				? Promise.resolve(links[0])
+				: new Promise((resolve, reject) => {
+						const label = (l) => `${__(l.link_doctype)}: ${l.link_title || l.link_name}`;
+						const dialog = new frappe.ui.Dialog({
+							title: __("Unlink from an account"),
+							size: "small",
+							fields: [
+								{
+									fieldtype: "Select",
+									fieldname: "link",
+									label: __("Account"),
+									reqd: 1,
+									options: links.map((l, i) => ({ value: String(i), label: label(l) })),
+									default: "0",
+								},
+							],
+							primary_action_label: __("Next"),
+							primary_action: (values) => {
+								dialog.hide();
+								resolve(links[cint(values.link)]);
+							},
+						});
+						dialog.onhide = () => reject(new Error("cancelled"));
+						dialog.show();
+					});
+		pick
+			.then((l) =>
+				sanad.ui.ConfirmDialog.ask({
+					title: __("Unlink «{0}» from {1}?", [ContactsPage.title_of(row), l.link_title || l.link_name]),
+					message: __("The contact and its numbers stay. Notifications for this account no longer reach it, and commands that need the link are refused."),
+					impact: [
+						{ label: __("Contact"), value: ContactsPage.title_of(row) },
+						{ label: __(l.link_doctype), value: l.link_title || l.link_name },
+					],
+					danger: true,
+					confirm_label: __("Unlink"),
+					on_confirm: () =>
+						sanad.ui.call("contacts.unlink_account", { name: row.name, link_doctype: l.link_doctype, link_name: l.link_name }, { freeze: true }),
+				}).then(() => {
+					sanad.ui.Toast.success(__("Unlinked from {0}", [l.link_title || l.link_name]));
+					this.after_change(row.name);
+				})
+			)
+			.catch(() => this.back_to_detail(row.name));
 	}
 
 	link_one(row) {

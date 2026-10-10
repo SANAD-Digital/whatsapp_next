@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import json
 import random
 import uuid
 from collections.abc import Iterable
@@ -97,6 +98,7 @@ class OutboundSpec:
 	poll_question: str | None = None
 	poll_options: Any = None
 	poll_allow_multiple: bool = False
+	interactive: dict[str, Any] | None = None  # Buttons / List definition (services/interactive)
 	template: str | None = None  # WhatsApp Template name; body rendered when `body` is empty
 	template_context: dict[str, Any] | None = None
 	source_type: str = "API"
@@ -321,6 +323,12 @@ def create_outbound(spec: OutboundSpec, *, user: str | None = None) -> str:
 				"location_address": loc.get("address"),
 			}
 		)
+	elif spec.message_type in ("Buttons", "List"):
+		from whatsapp_next.services import interactive, plan_features
+
+		plan_features.require_interactive()
+		definition = interactive.normalize(spec.message_type, spec.interactive, values.get("body"))
+		values.update({"interactive": json.dumps(definition, ensure_ascii=False), "body": definition["text"]})
 	elif spec.message_type == "Poll":
 		poll = polls.validate(spec.poll_question, spec.poll_options, spec.poll_allow_multiple)
 		values.update(
@@ -589,7 +597,17 @@ def build_message(
 			site=frappe.local.site,
 		),
 		priority=priority,
+		reply_to=get("reply_to_provider_message_id"),
+		interactive=_interactive_payload(mt, get("interactive")),
 	)
+
+
+def _interactive_payload(message_type: str, value: Any) -> dict | None:
+	if message_type not in ("Buttons", "List") or not value:
+		return None
+	from whatsapp_next.services import interactive
+
+	return interactive.to_provider(message_type, value)
 
 
 def build_messages(
@@ -946,6 +964,10 @@ def apply_status(
 		if status == "Failed":
 			_close_queue_item(outbound, values["error_code"], values["error_message"])
 	_publish_message_status(outbound, status, at, error_code, campaign=row.campaign, device=row.device)
+	# the document the message was about says so on its own timeline: once when it first went out,
+	# and once if it failed (owner, 2026-10-08)
+	if (status in ("Sent", "Delivered", "Read") and not row.sent_at) or (status == "Failed" and current != "Failed"):
+		comment_on_reference(outbound, "Failed" if status == "Failed" else "Sent", reason=values.get("error_message"))
 	if row.campaign:
 		# the batch hand-off counted these rows while still `Sending`: count them again now that
 		# the platform has answered, which also closes the campaign once nothing is left open
@@ -959,6 +981,44 @@ def apply_status(
 			timeout=60,
 		)
 	return True
+
+
+def comment_on_reference(outbound: str, outcome: str, *, reason: str | None = None) -> None:
+	"""A line on the timeline of the document a message was about: "WhatsApp message sent to …"
+	or "… could not be sent", linking the message. Tests and simulations write none, a message
+	about no document writes none, and a comment never stands in the way of a status: it never
+	raises."""
+	try:
+		log = frappe.db.get_value(
+			"WhatsApp Log",
+			outbound,
+			["reference_doctype", "reference_name", "phone_e164", "phone", "display_name", "is_test", "is_simulated"],
+			as_dict=True,
+		)
+		if not log or log.is_test or log.is_simulated or not log.reference_doctype or not log.reference_name:
+			return
+		if not frappe.db.exists(log.reference_doctype, log.reference_name):
+			return
+		to = log.phone_e164 or log.phone or ""
+		who = f"{log.display_name} ({to})" if log.display_name and to else (log.display_name or to)
+		link = frappe.utils.get_link_to_form("WhatsApp Log", outbound, _("view the message"))
+		if outcome == "Failed":
+			text = _("WhatsApp message to {0} could not be sent: {1}. {2}").format(
+				frappe.utils.escape_html(who), frappe.utils.escape_html(reason or _("unknown reason")), link
+			)
+		else:
+			text = _("WhatsApp message sent to {0}. {1}").format(frappe.utils.escape_html(who), link)
+		frappe.get_doc(
+			{
+				"doctype": "Comment",
+				"comment_type": "Info",
+				"reference_doctype": log.reference_doctype,
+				"reference_name": log.reference_name,
+				"content": text,
+			}
+		).insert(ignore_permissions=True)
+	except Exception:
+		frappe.log_error(title="WhatsApp document comment")
 
 
 def _close_queue_item(outbound: str, code: str, reason: str | None) -> None:

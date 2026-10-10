@@ -81,6 +81,14 @@ frappe.ui.form.on("WhatsApp Contact Group", {
 				frappe.flags.wa_picker_group = frm.doc.name;
 				frappe.new_doc("WhatsApp Campaign", { campaign_name: __("Campaign for {0}", [frm.doc.group_name || frm.doc.name]) });
 			}, __("Actions"));
+			if (frappe.user.has_role(["WhatsApp Agent", "WhatsApp Manager", "System Manager"])) {
+				frm.add_custom_button(__("Check on WhatsApp"), () => whatsapp_next.check_numbers(frm.doctype, [frm.doc.name]), __("Actions"));
+			}
+			if (whatsapp_next.wa_groups && whatsapp_next.wa_groups.can_create()) {
+				frm.add_custom_button(__("Create WhatsApp group"), () =>
+					whatsapp_next.wa_groups.open({ source: { doctype: frm.doctype, names: [frm.doc.name] }, name: frm.doc.group_name || frm.doc.name }),
+				__("Actions"));
+			}
 		}
 		if (frm.sanad_import_csv && can_change_members(frm)) {
 			frm.sanad_import_csv = false;

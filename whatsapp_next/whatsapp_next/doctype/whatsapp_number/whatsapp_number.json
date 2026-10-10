@@ -13,6 +13,8 @@
   "jid",
   "number_column",
   "number_type",
+  "on_whatsapp",
+  "whatsapp_checked_at",
   "display_name",
   "saved_name",
   "synced_device",
@@ -35,7 +37,20 @@
   "conversation_confirmed_by",
   "conversation_column",
   "conversation_confirmed_at",
-  "conversation_note"
+  "conversation_note",
+  "profile_section",
+  "profile_picture",
+  "picture_state",
+  "picture_id",
+  "about",
+  "profile_column",
+  "is_business",
+  "verified_name",
+  "business_categories",
+  "business_email",
+  "business_address",
+  "business_hours",
+  "profile_synced_at"
  ],
  "fields": [
   {
@@ -88,6 +103,21 @@
    "options": "Individual\nGroup\nLID",
    "reqd": 1,
    "search_index": 1
+  },
+  {
+   "fieldname": "on_whatsapp",
+   "fieldtype": "Select",
+   "label": "Registered on WhatsApp",
+   "options": "\nYes\nNo",
+   "read_only": 1,
+   "in_standard_filter": 1,
+   "description": "From the last number check; empty until the number is checked."
+  },
+  {
+   "fieldname": "whatsapp_checked_at",
+   "fieldtype": "Datetime",
+   "label": "WhatsApp checked",
+   "read_only": 1
   },
   {
    "description": "The name shown on WhatsApp, or the contact name once linked.",
@@ -242,6 +272,87 @@
    "fieldname": "conversation_note",
    "fieldtype": "Small Text",
    "label": "Confirmation Note"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "profile_section",
+   "fieldtype": "Section Break",
+   "label": "WhatsApp profile",
+   "description": "What WhatsApp shows about this number: refreshed weekly for active numbers, or on demand."
+  },
+  {
+   "fieldname": "profile_picture",
+   "fieldtype": "Attach Image",
+   "label": "Profile photo",
+   "read_only": 1
+  },
+  {
+   "fieldname": "picture_state",
+   "fieldtype": "Select",
+   "label": "Profile photo state",
+   "options": "\nShown\nNo Photo\nHidden",
+   "read_only": 1,
+   "description": "Hidden: the number shows its photo only to its contacts."
+  },
+  {
+   "fieldname": "picture_id",
+   "fieldtype": "Data",
+   "label": "Photo ID",
+   "read_only": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "about",
+   "fieldtype": "Small Text",
+   "label": "WhatsApp about",
+   "read_only": 1
+  },
+  {
+   "fieldname": "profile_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_business",
+   "fieldtype": "Check",
+   "label": "Business account",
+   "read_only": 1
+  },
+  {
+   "fieldname": "verified_name",
+   "fieldtype": "Data",
+   "label": "Business name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "business_categories",
+   "fieldtype": "Data",
+   "label": "Business category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "business_email",
+   "fieldtype": "Data",
+   "label": "Business email",
+   "read_only": 1
+  },
+  {
+   "fieldname": "business_address",
+   "fieldtype": "Small Text",
+   "label": "Business address",
+   "read_only": 1
+  },
+  {
+   "fieldname": "business_hours",
+   "fieldtype": "Small Text",
+   "label": "Business hours",
+   "read_only": 1
+  },
+  {
+   "fieldname": "profile_synced_at",
+   "fieldtype": "Datetime",
+   "label": "Profile refreshed",
+   "read_only": 1
   }
  ],
  "links": [
@@ -256,7 +367,7 @@
    "link_fieldname": "phone_e164"
   }
  ],
- "modified": "2026-09-26 21:00:00.000000",
+ "modified": "2026-10-07 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Number",
@@ -300,9 +411,10 @@
  ],
  "row_format": "Dynamic",
  "search_fields": "phone_e164,display_name",
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
  "title_field": "display_name",
- "track_changes": 0
+ "track_changes": 0,
+ "image_field": "profile_picture"
 }

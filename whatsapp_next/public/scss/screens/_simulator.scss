@@ -372,6 +372,9 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		flex: none;
 
 		&:disabled { opacity: 0.55; cursor: not-allowed; }
+		// sending: the button stays at full strength, it is busy rather than unavailable
+		&[aria-busy="true"]:disabled { opacity: 1; cursor: progress; }
+		&.is-sent { background: var(--wa-ok); border-color: var(--wa-ok); color: var(--wa-surface); }
 		&--info { inline-size: 34px; block-size: 34px; margin-inline: 3px; font-size: 16px; background: var(--wa-nf-s); border: 1px solid var(--wa-nf-sb); color: var(--wa-nf-i); }
 		&--plain { background: var(--wa-surface); border: 1px solid var(--wa-border-2); color: var(--wa-ink-3); }
 		&--pri { background: var(--wa-pri); border: 0; color: var(--wa-on-pri); }
@@ -426,4 +429,20 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		&.wa-sim--open .wa-sim__main { display: flex; }
 		.wa-sim__back { display: flex; }
 	}
+}
+
+// The send button's spinner while a message is handed over (`wa_simulator.js`).
+@keyframes wa-sim-spin {
+	to { transform: rotate(360deg); }
+}
+.wa-sim__spinner {
+	inline-size: 16px;
+	block-size: 16px;
+	border: 2px solid currentColor;
+	border-inline-end-color: transparent;
+	border-radius: 50%;
+	animation: wa-sim-spin 0.7s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+	.wa-sim__spinner { animation-duration: 2s; }
 }

@@ -22,8 +22,8 @@ See [api/README.md](api/README.md) for per-endpoint details and
 ## 1. Roles
 
 The four product roles ship as fixtures (`hooks.py` → `fixtures`, `whatsapp_next/fixtures/role.json`).
-`install.ensure_roles()` also creates them on `after_install` / `after_migrate`, because the
-fixture sync runs after `after_install`. All four have `desk_access = 1`.
+Frappe also creates each of them when it syncs the DocTypes, because every one is named in a
+DocType's permissions; nothing in the install depends on a role existing earlier. All four have `desk_access = 1`.
 
 | Role | Intended user | In one line |
 |---|---|---|
@@ -334,9 +334,9 @@ step; see [install-and-configure.md](install-and-configure.md).
 Inbound WhatsApp commands run allow-listed handlers from a registry, never a configurable dotted
 path, and they run as a dedicated service user, never as Administrator (D-012).
 
-- `install.ensure_command_service_user()` seeds `wa-commands@<site>` on install and migrate:
+- `install.ensure_command_service_user()` seeds `wa-commands@<site>` on install:
   **disabled**, `System User`, no welcome mail, and **all auto-assigned roles removed** (D-029
-  02 OQ-4). `ensure_settings_defaults()` puts it in `WhatsApp Settings.command_service_user`.
+  02 OQ-4). `after_install` puts it in `WhatsApp Settings.command_service_user`.
 - The Settings controller (`_validate_command_service_user`) runs only when `enable_commands` is
   on. It requires a user that exists, is enabled, is not `Administrator` and does not hold
   `System Manager`.

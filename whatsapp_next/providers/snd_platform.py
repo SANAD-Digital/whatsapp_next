@@ -14,6 +14,7 @@ from collections.abc import Mapping
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
+import frappe
 import requests
 from frappe.utils import convert_utc_to_system_timezone
 
@@ -48,6 +49,12 @@ from whatsapp_next.providers.schemas import (
 	WebhookEndpointState,
 	WebhookEnvelope,
 	WebhookEvent,
+	HistoryMessage,
+	HistoryPage,
+	GroupCreated,
+	GroupMember,
+	NumberCheck,
+	ContactProfile,
 )
 
 API_PREFIX = "/api/method/snd_whatsapp_platform.snd_whatsapp_platform.api."
@@ -113,11 +120,19 @@ _PAYLOAD_KEYS = (
 	"poll_question",
 	"poll_options",
 	"poll_allow_multiple_answers",
+	"reply_to_message_id",
+	"interactive",
 	"source_type",
 	"source_site",
 	"source_doctype",
 	"source_docname",
 )
+
+
+def _language() -> str:
+	"""This request's language as the platform names it: "ar" or "en"."""
+	lang = str(getattr(frappe.local, "lang", None) or "en").split("-")[0].split("_")[0].lower()
+	return lang if lang in ("ar", "en") else "en"
 
 
 def _digits(value: str | None) -> str | None:
@@ -265,6 +280,9 @@ class SndPlatformProvider(BaseProvider):
 				params=params or None,
 				json=body if body is not None and method.upper() != "GET" else None,
 				headers=headers,
+				# A guest call (sign-up, sign-in, recovery) carries this user's language the way the
+				# platform's own switcher does, so the account it opens or signs into speaks it too.
+				cookies={"preferred_language": _language()} if guest else None,
 				timeout=self.settings.timeout,
 				allow_redirects=False,
 			)
@@ -748,8 +766,13 @@ class SndPlatformProvider(BaseProvider):
 			payload["group_id"] = message.jid
 		else:
 			payload["recipient_no"] = _digits(message.phone_e164)
-		if message.message_type == "Text":
+		if message.message_type in ("Buttons", "List"):
 			payload["message_body"] = message.body or ""
+			payload["interactive"] = message.interactive or {}
+		elif message.message_type == "Text":
+			payload["message_body"] = message.body or ""
+			if message.reply_to:
+				payload["reply_to_message_id"] = message.reply_to
 		elif message.message_type in ("Document", "Image", "Video", "Audio", "Sticker"):
 			att = message.attachment
 			payload["caption"] = message.caption or message.body or ""
@@ -890,6 +913,143 @@ class SndPlatformProvider(BaseProvider):
 		for row in data.get("results") or []:
 			out[str(row.get("poll_id"))] = row.get("result") if row.get("ok") else {"error": row.get("error")}
 		return out
+
+	def post_status(self, platform_device: str, payload: dict) -> str:
+		data = self._request("POST", "post_status_api", body={"device": platform_device, **payload})
+		return str(data.get("status_id") or "")
+
+	def delete_status(self, platform_device: str, status_id: str) -> None:
+		self._request("POST", "delete_status_api", body={"device": platform_device, "status_id": status_id})
+
+	def get_status_views(self, platform_device: str, status_ids: list[str]) -> dict[str, dict]:
+		data = self._request("POST", "get_status_views_api", body={"device": platform_device, "status_ids": list(status_ids)[:100]})
+		views = data.get("views")
+		return views if isinstance(views, dict) else {}
+
+	def mark_read(self, platform_device: str, chat_jid: str, message_ids: list[str], sender_jid: str | None = None) -> None:
+		self._request("POST", "mark_read_api", body={"device": platform_device, "chat_jid": chat_jid,
+			"message_ids": list(message_ids)[:50], "sender_jid": sender_jid or ""})
+
+	def send_presence(self, platform_device: str, chat_jid: str, state: str = "composing") -> None:
+		self._request("POST", "send_presence_api", body={"device": platform_device, "chat_jid": chat_jid, "state": state})
+
+	def check_numbers(self, platform_device: str, numbers: list[str]) -> list[NumberCheck]:
+		data = self._request("POST", "check_numbers_api", body={"device": platform_device,
+			"numbers": [str(n).lstrip("+") for n in numbers]})
+		out = []
+		for row in data.get("results") or []:
+			digits = "".join(ch for ch in str(row.get("phone") or "") if ch.isdigit())
+			if digits:
+				out.append(NumberCheck(phone_e164="+" + digits, on_whatsapp=bool(row.get("on_whatsapp")),
+					jid=row.get("jid"), verified_name=row.get("verified_name")))
+		return out
+
+	def get_contact_profiles(
+		self, platform_device: str, numbers: list[str], known_pictures: dict[str, str] | None = None
+	) -> list[ContactProfile]:
+		digits = lambda n: "".join(ch for ch in str(n or "") if ch.isdigit())
+		data = self._request("POST", "get_contact_profiles_api", body={
+			"device": platform_device,
+			"numbers": [digits(n) for n in numbers],
+			"known_pictures": {digits(k): v for k, v in (known_pictures or {}).items() if v},
+		})
+		out = []
+		for row in data.get("profiles") or []:
+			if not isinstance(row, dict) or not digits(row.get("phone")):
+				continue
+			picture = row.get("picture") if isinstance(row.get("picture"), dict) else {}
+			out.append(ContactProfile(
+				phone_e164="+" + digits(row.get("phone")),
+				on_whatsapp=bool(row.get("on_whatsapp")),
+				jid=row.get("jid"),
+				about=row.get("about") or None,
+				verified_name=row.get("verified_name") or None,
+				is_business=bool(row.get("is_business")),
+				picture_state=picture.get("state"),
+				picture_id=picture.get("id"),
+				picture_url=picture.get("url"),
+				business=row.get("business") if isinstance(row.get("business"), dict) else {},
+			))
+		return out
+
+	def create_group(
+		self, platform_device: str, name: str, participants: list[str], description: str | None = None
+	) -> GroupCreated:
+		body: dict[str, Any] = {"device": platform_device, "name": name,
+			"participants": [str(p).lstrip("+") for p in participants]}
+		if description:
+			body["description"] = description
+		data = self._request("POST", "create_group_api", body=body)
+		return GroupCreated(
+			jid=str(data.get("group_jid") or ""),
+			name=str(data.get("name") or name),
+			members=[
+				GroupMember(phone=str(m.get("phone") or ""), status=str(m.get("status") or "failed"), jid=m.get("jid"))
+				for m in data.get("members") or []
+				if isinstance(m, dict)
+			],
+			invite_link=data.get("invite_link"),
+		)
+
+	def list_history(
+		self, platform_device: str, *, after: int = 0, limit: int = 200, since: int | None = None, total: bool = False
+	) -> HistoryPage:
+		params: dict[str, Any] = {"device": platform_device, "after": int(after or 0), "limit": int(limit or 200)}
+		if since:
+			params["since"] = int(since)
+		if total:
+			params["total"] = 1
+		data = self._request("GET", "get_history_messages_api", params=params)
+		messages = []
+		for row in data.get("messages") or []:
+			if not isinstance(row, dict):
+				continue
+			kind = str(row.get("kind") or row.get("message_type") or "").strip().lower()
+			messages.append(
+				HistoryMessage(
+					kind=kind,
+					from_me=bool(row.get("is_from_me")),
+					inbound=_parse_inbound(row, None),
+					counterpart_phone=_first(row.get("chat_number")),
+					original_id=_first(row.get("original_message_id")),
+					raw=row,
+				)
+			)
+		return HistoryPage(
+			messages=messages,
+			next_after=int(data.get("next_after") or after or 0),
+			has_more=bool(data.get("has_more")),
+			total=data.get("total"),
+		)
+
+	def download_media(self, url: str, max_bytes: int | None = None) -> tuple[bytes, str]:
+		# Only from the configured platform: the request carries the integration's credentials.
+		base = (self.settings.base_url or "").rstrip("/") + "/"
+		if not base.strip("/") or not str(url or "").startswith(base):
+			raise pex.ValidationError("Media URL is not on the configured platform", code="MEDIA_URL_FOREIGN")
+		headers = {k: v for k, v in self._headers().items() if k != "Content-Type"}
+		headers["Accept"] = "*/*"
+		limit = max_bytes or MAX_MEDIA_BYTES
+		try:
+			response = self._session.get(
+				url, headers=headers, timeout=max(self.settings.timeout, 60), allow_redirects=False, stream=True
+			)
+		except requests.RequestException as exc:
+			raise pex.TransientError(f"Media download failed: {exc.__class__.__name__}", code="MEDIA_DOWNLOAD") from exc
+		with response:
+			if response.status_code != 200:
+				self._unwrap(response)  # raises the typed error
+				raise pex.ProviderError(f"Media download answered {response.status_code}", code="MEDIA_DOWNLOAD")
+			# read in chunks and stop past the limit: a huge file must not fill a worker's memory
+			if int(response.headers.get("Content-Length") or 0) > limit:
+				raise pex.ValidationError(f"Media is larger than {limit} bytes", code="MEDIA_TOO_LARGE")
+			chunks, total = [], 0
+			for chunk in response.iter_content(chunk_size=1024 * 1024):
+				total += len(chunk)
+				if total > limit:
+					raise pex.ValidationError(f"Media is larger than {limit} bytes", code="MEDIA_TOO_LARGE")
+				chunks.append(chunk)
+		return b"".join(chunks), response.headers.get("Content-Type", "")
 
 	# ------------------------------------------------------------------ contacts / groups
 	def list_device_contacts(self, platform_device: str) -> list[ProviderContact]:
@@ -1178,7 +1338,13 @@ def _status_from_event(event_name: str) -> str:
 	}.get(event_name, "Pending QR")
 
 
+#: Largest received file fetched from the platform (per call `max_bytes` can lower it).
+MAX_MEDIA_BYTES = 100 * 1024 * 1024
+
 _INBOUND_TYPE_MAP = {
+	# the gateway's `interactive_reply`, and the platform's own word for it
+	"interactivereply": "Interactive Reply",
+	"interactive reply": "Interactive Reply",
 	"text": "Text",
 	"conversation": "Text",
 	"extendedtextmessage": "Text",
@@ -1217,7 +1383,11 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 	msg = body.get("message") if isinstance(body.get("message"), dict) else {}
 	data = body.get("data") if isinstance(body.get("data"), dict) else {}
 	nested = msg or data or {}
+	# a reaction names two messages: its own (`reaction_message_id`) and the one reacted to
+	# (`message_id`); its sender is `reacted_by`
+	is_reaction = body.get("event") == "message.reaction" or bool(body.get("reaction_message_id"))
 	sender_jid = _first(
+		body.get("reacted_by") if is_reaction else None,
 		body.get("sender_jid"),
 		body.get("from"),
 		body.get("participant"),
@@ -1236,11 +1406,15 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 	# a sender WhatsApp names by a privacy id (`…@lid`) carries no number in its jid; the platform
 	# sends the resolved number beside it as `sender_number`
 	sender_mobile = _first(
+		body.get("reacted_by_number") if is_reaction else None,
 		body.get("sender_number"),
 		body.get("sender_mobile_no"),
 		body.get("sender_phone"),
 		body.get("mobile_no"),
 	)
+	# the gateway's file of an image / video / audio / document / sticker: the platform keeps it and
+	# sends `media.download_url` (its `get_inbound_media_api`, same credentials as every call)
+	media = body.get("media") if isinstance(body.get("media"), dict) else {}
 	text = _first(
 		body.get("text"),
 		body.get("body"),
@@ -1257,6 +1431,7 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 	if body.get("event") == "message.reaction" or body.get("reaction"):
 		message_type = "Reaction"
 	provider_message_id = _first(
+		body.get("reaction_message_id") if is_reaction else None,
 		body.get("provider_message_id"),
 		body.get("message_id"),
 		body.get("messageId"),
@@ -1289,33 +1464,44 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 		from_jid=str(from_jid) if from_jid else None,
 		is_group=is_group,
 		push_name=_first(
+			body.get("reacted_by_name") if is_reaction else None,
 			body.get("push_name"),
 			body.get("pushName"),
 			body.get("sender_name"),
 			nested.get("pushName"),
 			nested.get("push_name"),
 		),
+		group_name=_first(body.get("group_name"), body.get("chat_name"), nested.get("group_name")) if is_group else None,
 		message_type=message_type,
 		body=str(text) if text is not None else None,
-		caption=_first(body.get("caption"), nested.get("caption")),
-		media_url=_first(body.get("media_url"), body.get("url"), nested.get("url"), nested.get("media_url")),
+		caption=_first(body.get("caption"), media.get("caption"), nested.get("caption")),
+		media_url=_first(
+			media.get("download_url"), body.get("media_url"), body.get("url"), nested.get("url"), nested.get("media_url")
+		),
 		media_mime_type=_first(
+			media.get("mime_type"),
 			body.get("media_mime_type"),
 			body.get("mime_type"),
 			nested.get("mimetype"),
 			nested.get("mime_type"),
 		),
+		media_file_name=_first(media.get("file_name")),
 		location=location,
 		reaction=str(reaction) if reaction else None,
 		reaction_to=_first(
+			body.get("message_id") if is_reaction else None,
 			body.get("reaction_to"),
 			body.get("reacted_message_id"),
 			nested.get("reacted_message_id"),
 			body.get("quoted_message_id") if message_type == "Reaction" else None,
 		),
 		quoted_id=_first(
-			body.get("quoted_message_id"), body.get("quoted_provider_message_id"), nested.get("quoted_id")
+			body.get("quoted_message_id"),
+			body.get("quoted_provider_message_id"),
+			body.get("reply_to_message_id"),
+			nested.get("quoted_id"),
 		),
+		selected_id=_first(body.get("selected_id")),
 		received_at=_dt(body.get("received_at"))
 		or _dt(body.get("timestamp"))
 		or _dt(nested.get("timestamp"))

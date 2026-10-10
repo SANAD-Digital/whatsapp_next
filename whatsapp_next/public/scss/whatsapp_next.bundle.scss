@@ -2,6 +2,7 @@
 // blocks that belong to one screen only.
 // the product's palette comes first: everything below is drawn in it
 @import "tokens";
+@import "brand";
 @import "../js/ui/style";
 @import "screens/shell";
 @import "screens/console";
@@ -16,30 +17,36 @@
 @import "screens/simulator";
 @import "screens/contacts";
 @import "screens/settings";
+@import "screens/status";
 @import "screens/groups";
+@import "screens/test_lab";
 
 // ---------------------------------------------------------------------------------------------
 // Brand accent. The kit (`public/js/ui/`) never names a colour: it drives every active, selected
 // and primary state from five `--sanad-accent*` custom properties that default to Desk's Espresso
-// blue. This block — the app's own stylesheet, not the portable kit — repoints them at the teal of
-// the design prototype (`docs/component/List View.dc.html`: `--pri` / `--pri-d` / `--pri-s` /
-// `--pri-sb` / `--on-pri`), with the prototype's own dark-mode pair so Desk's theme switch keeps
-// working. It is the single place this product's colour is written down.
+// blue. This block — the app's own stylesheet, not the portable kit — repoints them at the brand's
+// Petrol (`brand/BRAND.md`: Petrol / Petrol Deep / Mist / Paper, and #5FB8A9 on dark grounds), so
+// Desk's theme switch keeps working. It is set on :root so the accent in the Desk lists follows too:
+// only the colour, never their layout (owner, 2026-10-07).
 // ---------------------------------------------------------------------------------------------
 :root {
-	--sanad-accent: #0f7a63;
-	--sanad-accent-ink: #0a6250;
-	--sanad-accent-soft: #dff1ec;
-	--sanad-accent-outline: #b6ddd2;
-	--sanad-accent-on: #ffffff;
+	--sanad-accent: #0b4f4a;
+	--sanad-accent-ink: #0e3e3a;
+	--sanad-accent-soft: #dce7e4;
+	--sanad-accent-outline: #b9d0ca;
+	--sanad-accent-on: #f7f7f4;
+	// the kit's charts (DashboardBlock): Petrol first, then its light tone, Apricot, Mist's ink,
+	// and the danger and info tones for the series beyond
+	--sanad-chart-palette: #0b4f4a, #5fb8a9, #ff8a4c, #8fa9a4, #c9524b, #2568af;
 }
 
 [data-theme="dark"] {
-	--sanad-accent: #17a184;
-	--sanad-accent-ink: #63d3b8;
-	--sanad-accent-soft: #0d3730;
-	--sanad-accent-outline: #1a5347;
-	--sanad-accent-on: #04201a;
+	--sanad-accent: #5fb8a9;
+	--sanad-accent-ink: #7fcbbe;
+	--sanad-accent-soft: #13302d;
+	--sanad-accent-outline: #1f4a45;
+	--sanad-accent-on: #0e1a1a;
+	--sanad-chart-palette: #5fb8a9, #2f7d73, #ff8a4c, #9aaaa6, #d9736c, #4a8ed0;
 }
 
 // Desk's own `.btn-primary` is near-black. The prototype's primary verb is the product's teal

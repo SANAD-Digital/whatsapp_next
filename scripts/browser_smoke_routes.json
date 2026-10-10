@@ -16,4 +16,5 @@
  {"name":"campaign-picker","route":"whatsapp-campaign/WA-CAMP-2026-00003","pre":[".form-tabs .nav-link:has-text(\"Recipients\")"],"click":"button:has-text(\"Add recipients\")"},
  {"name":"template-form","route":"whatsapp-template/Smoke Template"},
  {"name":"log-form","route":"whatsapp-log/vm5iksuasj"},
- {"name":"workspace","route":"whatsapp"}]
+ {"name":"workspace","route":"whatsapp"},
+ {"name":"test-lab","route":"wa-test-lab"}]

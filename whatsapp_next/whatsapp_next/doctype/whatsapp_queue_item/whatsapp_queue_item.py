@@ -25,3 +25,18 @@ class WhatsAppQueueItem(Document):
 		if not self.status:
 			self.status = "Queued"
 		assert_status_writer(self, ("status",))
+
+
+# Composite indexes the DocType JSON cannot express (fields.md F-11); single-column ones are
+# `search_index` / `unique` in the JSON.
+COMPOSITE_INDEXES: tuple[tuple[str, ...], ...] = (
+	("status", "scheduled_at", "priority"),
+	("device", "status"),
+)
+
+
+def on_doctype_update() -> None:
+	"""Called by Frappe whenever it syncs this DocType (install, and a migrate that changes it):
+	create the composite indexes that are missing. Idempotent."""
+	for fields in COMPOSITE_INDEXES:
+		frappe.db.add_index("WhatsApp Queue Item", list(fields))

@@ -400,6 +400,45 @@ class TestCommandRouter(IntegrationTestCase):
 			result = cr.route(inbound)
 		self.assertEqual(queued(result.outbound[0]), 1)
 
+	def test_a_reply_quotes_the_message_that_asked(self):
+		"""A command's answer is a WhatsApp reply to the message that asked for it (owner, 2026-10-08)."""
+		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#ping now", persist=True)
+		frappe.db.set_value(
+			"WhatsApp Inbound Message", res.inbound, {"is_simulated": 0, "provider_message_id": "ASKED-1"}
+		)
+		with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now"):
+			result = cr.route(res.inbound)
+		self.assertTrue(result.outbound)
+		for name in result.outbound:
+			self.assertEqual(frappe.db.get_value("WhatsApp Log", name, "reply_to_provider_message_id"), "ASKED-1")
+
+	def test_the_reply_reaches_every_number_of_the_contact(self):
+		"""A command's answer goes to the number that asked and to the contact's other WhatsApp
+		numbers (owner, 2026-10-08); only the asker's copy quotes the message."""
+		other = "+966500000609"
+		c = frappe.get_doc("Contact", self.contact)
+		c.append("phone_nos", {"phone": other})
+		c.save(ignore_permissions=True)
+		try:
+			res = simulator.simulate_inbound(self.device, P_LINKED, "#ping now", persist=True)
+			frappe.db.set_value(
+				"WhatsApp Inbound Message", res.inbound, {"is_simulated": 0, "provider_message_id": "ASKED-2"}
+			)
+			with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now"):
+				result = cr.route(res.inbound)
+			rows = [
+				frappe.db.get_value("WhatsApp Log", n, ["phone_e164", "reply_to_provider_message_id"], as_dict=True)
+				for n in result.outbound
+			]
+			self.assertEqual(rows[0].phone_e164, P_LINKED)
+			self.assertEqual({r.phone_e164 for r in rows}, {P_LINKED, other})
+			for r in rows:
+				self.assertEqual(r.reply_to_provider_message_id, "ASKED-2" if r.phone_e164 == P_LINKED else None)
+		finally:
+			c.reload()
+			c.set("phone_nos", [p for p in c.phone_nos if p.wa_phone_e164 != other])
+			c.save(ignore_permissions=True)
+
 	def test_a_contact_of_several_accounts_answers_for_its_primary_one(self):
 		links = [
 			frappe._dict(link_doctype="Customer", link_name="First Linked"),

@@ -1,0 +1,256 @@
+{
+ "actions": [],
+ "autoname": "WA-STATUS-.YYYY.-.#####",
+ "creation": "2026-10-08 10:00:00",
+ "description": "A WhatsApp status (story) posted from a device, now or on a schedule, with its views.",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "post_section",
+  "title",
+  "kind",
+  "text",
+  "background_color",
+  "font",
+  "media",
+  "caption",
+  "column_break_post",
+  "device",
+  "state",
+  "scheduled_at",
+  "repeat",
+  "preview_html",
+  "results_section",
+  "posted_at",
+  "expires_at",
+  "column_break_results",
+  "view_count",
+  "viewers",
+  "views_synced_at",
+  "viewers_html",
+  "status_id",
+  "repeated_from",
+  "error"
+ ],
+ "fields": [
+  {
+   "fieldname": "post_section",
+   "fieldtype": "Section Break",
+   "label": "Status"
+  },
+  {
+   "description": "For you only: how this post is named in the list.",
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Title",
+   "reqd": 1
+  },
+  {
+   "default": "Text",
+   "fieldname": "kind",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Kind",
+   "options": "Text\nImage\nVideo",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.kind=='Text'",
+   "description": "At most 700 characters.",
+   "fieldname": "text",
+   "fieldtype": "Small Text",
+   "label": "Text",
+   "mandatory_depends_on": "eval:doc.kind=='Text'"
+  },
+  {
+   "default": "#128C7E",
+   "depends_on": "eval:doc.kind=='Text'",
+   "fieldname": "background_color",
+   "fieldtype": "Color",
+   "label": "Background colour"
+  },
+  {
+   "default": "Standard",
+   "depends_on": "eval:doc.kind=='Text'",
+   "fieldname": "font",
+   "fieldtype": "Select",
+   "label": "Font",
+   "options": "Standard\nScript\nBold\nRounded\nDisplay\nTypewriter"
+  },
+  {
+   "depends_on": "eval:doc.kind!='Text'",
+   "description": "At most 16 MB.",
+   "fieldname": "media",
+   "fieldtype": "Attach",
+   "label": "Image or video",
+   "mandatory_depends_on": "eval:doc.kind!='Text'"
+  },
+  {
+   "depends_on": "eval:doc.kind!='Text'",
+   "fieldname": "caption",
+   "fieldtype": "Small Text",
+   "label": "Caption"
+  },
+  {
+   "fieldname": "column_break_post",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The number whose status shows the post.",
+   "fieldname": "device",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Device",
+   "options": "WhatsApp Device",
+   "reqd": 1
+  },
+  {
+   "default": "Draft",
+   "fieldname": "state",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Post state",
+   "no_copy": 1,
+   "options": "Draft\nScheduled\nPosting\nPosted\nFailed\nDeleted",
+   "read_only": 1
+  },
+  {
+   "fieldname": "scheduled_at",
+   "fieldtype": "Datetime",
+   "label": "Post at"
+  },
+  {
+   "description": "Post it again at the same time; each repeat is its own post.",
+   "fieldname": "repeat",
+   "fieldtype": "Select",
+   "label": "Repeat",
+   "options": "\nDaily\nWeekly"
+  },
+  {
+   "fieldname": "preview_html",
+   "fieldtype": "HTML",
+   "label": "Preview"
+  },
+  {
+   "depends_on": "eval:doc.status_id",
+   "fieldname": "results_section",
+   "fieldtype": "Section Break",
+   "label": "Results"
+  },
+  {
+   "fieldname": "posted_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Posted",
+   "read_only": 1
+  },
+  {
+   "description": "A status stays up for 24 hours.",
+   "fieldname": "expires_at",
+   "fieldtype": "Datetime",
+   "label": "Disappears",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_results",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "view_count",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Views",
+   "read_only": 1
+  },
+  {
+   "fieldname": "viewers",
+   "fieldtype": "JSON",
+   "hidden": 1,
+   "label": "Viewers",
+   "read_only": 1
+  },
+  {
+   "fieldname": "views_synced_at",
+   "fieldtype": "Datetime",
+   "label": "Views read",
+   "read_only": 1
+  },
+  {
+   "fieldname": "viewers_html",
+   "fieldtype": "HTML",
+   "label": "Viewers"
+  },
+  {
+   "fieldname": "status_id",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "WhatsApp ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "repeated_from",
+   "fieldtype": "Link",
+   "label": "Repeat of",
+   "options": "WhatsApp Status Post",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.error",
+   "fieldname": "error",
+   "fieldtype": "Small Text",
+   "label": "Error",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-07 05:55:57.333310",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Status Post",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "select": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Manager",
+   "select": 1,
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Agent",
+   "select": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "WhatsApp Viewer",
+   "select": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "title",
+ "track_changes": 1
+}

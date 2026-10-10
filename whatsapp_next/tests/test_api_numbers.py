@@ -104,6 +104,8 @@ class TestApiNumbers(IntegrationTestCase):
 			self.assertEqual(
 				api.link_number(phone_e164=N1, contact=contact), {"contact": contact, "link_status": "Linked"}
 			)
+			# linking writes the number among the contact's numbers (owner, 2026-10-08)
+			self.assertIn(N1, _contact_numbers(contact))
 			out = api.convert_number(phone_e164=N2, first_name=f"{PREFIX} Conv", last_name="X")
 			self.assertEqual(out["link_status"], "Linked")
 			self.assertEqual(frappe.db.get_value("WhatsApp Number", N2, "contact"), out["contact"])
@@ -113,7 +115,8 @@ class TestApiNumbers(IntegrationTestCase):
 				"WhatsApp Number", N1, ["contact", "linked_by", "linked_at"], as_dict=True
 			)
 			self.assertEqual((row.contact, row.linked_by, row.linked_at), (None, None, None))
-			self.assertTrue(frappe.db.exists("Contact", contact))  # the Contact is untouched
+			self.assertTrue(frappe.db.exists("Contact", contact))  # the Contact is kept
+			self.assertNotIn(N1, _contact_numbers(contact))  # ...without the unlinked number
 			rows = _audit("Number Linked", N1)
 			self.assertEqual(len(rows), 2)
 			self.assertEqual(json.loads(rows[-1].details)["unlinked"], 1)
@@ -154,11 +157,12 @@ class TestApiNumbers(IntegrationTestCase):
 			api.get_conversation_log(phone_e164="+966500939999")
 
 	def test_convert_a_group(self):
-		"""A group gets its own Contact, named after it, with no phone row: a group has no phone."""
+		"""A group gets its own Contact, named after it; its only number is the group's address,
+		written by the link as `add_group_to_contact` writes it (owner, 2026-10-08)."""
 		with as_user("WhatsApp Contact User"):
 			out = api.convert_number(phone_e164=GROUP, first_name=f"{PREFIX} Group Contact")
 		self.assertEqual(frappe.db.get_value("WhatsApp Number", GROUP, "contact"), out["contact"])
-		self.assertEqual(frappe.get_doc("Contact", out["contact"]).phone_nos, [])
+		self.assertEqual(_contact_numbers(out["contact"]), [GROUP])
 		# the group keeps its own subject: it belongs to the contact, it is not the contact
 		self.assertEqual(frappe.db.get_value("WhatsApp Number", GROUP, "display_name"), "ApiTest Group")
 
@@ -175,3 +179,9 @@ class TestApiNumbers(IntegrationTestCase):
 			self.assertEqual(
 				frappe.db.get_value("Contact", c, "first_name"), key
 			)  # no display name → the key
+
+
+def _contact_numbers(contact: str) -> list[str]:
+	return frappe.get_all(
+		"Contact Phone", filters={"parenttype": "Contact", "parent": contact}, pluck="wa_phone_e164"
+	)

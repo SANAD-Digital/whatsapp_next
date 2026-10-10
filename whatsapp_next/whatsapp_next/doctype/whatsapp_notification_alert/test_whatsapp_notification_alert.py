@@ -10,7 +10,6 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.exceptions import WAInvalidPhoneError, WAValidationError
-from whatsapp_next.install import ensure_roles
 from whatsapp_next.tests.conftest_frappe import delete_all, ensure_settings, ensure_test_user
 
 DT = "WhatsApp Notification Alert"
@@ -32,7 +31,6 @@ class TestWhatsAppNotificationAlert(IntegrationTestCase):
 
 	def setUp(self) -> None:
 		super().setUp()
-		ensure_roles()
 		frappe.set_user("Administrator")
 		ensure_settings()
 

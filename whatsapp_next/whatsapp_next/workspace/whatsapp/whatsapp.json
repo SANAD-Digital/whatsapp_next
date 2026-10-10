@@ -99,7 +99,7 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Campaigns",
-   "link_count": 1,
+   "link_count": 2,
    "onboard": 0,
    "type": "Card Break"
   },
@@ -109,6 +109,16 @@
    "label": "Campaigns",
    "link_count": 0,
    "link_to": "WhatsApp Campaign",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Status posts",
+   "link_count": 0,
+   "link_to": "WhatsApp Status Post",
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
@@ -134,7 +144,7 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Notification Templates",
+   "label": "Document Notifications",
    "link_count": 0,
    "link_to": "WhatsApp Notification",
    "link_type": "DocType",
@@ -228,7 +238,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-09-26 18:00:00.000000",
+ "modified": "2026-10-08 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp",

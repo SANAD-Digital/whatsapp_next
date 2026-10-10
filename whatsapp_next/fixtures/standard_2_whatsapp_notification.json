@@ -1,0 +1,269 @@
+[
+ {
+  "attach_print": 1,
+  "condition": "not doc.is_return",
+  "condition_type": "Python",
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification",
+  "document_type": "Sales Invoice",
+  "enabled": 0,
+  "event": "Submit",
+  "message_type": "Document",
+  "name": "فاتورة مبيعات عند الاعتماد",
+  "notification_name": "فاتورة مبيعات عند الاعتماد",
+  "recipients": [
+   {
+    "condition": "doc.contact_mobile",
+    "receiver_by_document_field": "contact_mobile",
+    "recipient_type": "Document Field"
+   },
+   {
+    "condition": "not doc.contact_mobile",
+    "receiver_by_document_field": "customer",
+    "recipient_type": "Document Field"
+   }
+  ],
+  "template": "إشعار فاتورة مبيعات"
+ },
+ {
+  "attach_print": 1,
+  "condition": "doc.payment_type == \"Receive\" and doc.party_type == \"Customer\"",
+  "condition_type": "Python",
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification",
+  "document_type": "Payment Entry",
+  "enabled": 0,
+  "event": "Submit",
+  "message_type": "Document",
+  "name": "سند قبض عند الاعتماد",
+  "notification_name": "سند قبض عند الاعتماد",
+  "recipients": [
+   {
+    "condition": "doc.contact_person",
+    "receiver_by_document_field": "contact_person",
+    "recipient_type": "Document Field"
+   },
+   {
+    "condition": "not doc.contact_person",
+    "receiver_by_document_field": "party",
+    "recipient_type": "Document Field"
+   }
+  ],
+  "template": "إشعار سند قبض"
+ },
+ {
+  "attach_print": 0,
+  "condition": "doc.status == \"Paid\" and not doc.is_return and not doc.is_pos",
+  "condition_type": "Python",
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification",
+  "document_type": "Sales Invoice",
+  "enabled": 0,
+  "event": "Value Change",
+  "message_type": "Text",
+  "name": "شكر عند سداد الفاتورة كاملة",
+  "notification_name": "شكر عند سداد الفاتورة كاملة",
+  "recipients": [
+   {
+    "condition": "doc.contact_mobile",
+    "receiver_by_document_field": "contact_mobile",
+    "recipient_type": "Document Field"
+   },
+   {
+    "condition": "not doc.contact_mobile",
+    "receiver_by_document_field": "customer",
+    "recipient_type": "Document Field"
+   }
+  ],
+  "template": "شكر على سداد فاتورة",
+  "value_changed": "status"
+ },
+ {
+  "attach_print": 0,
+  "condition": "doc.outstanding_amount > 0 and not doc.is_return",
+  "condition_type": "Python",
+  "date_changed": "due_date",
+  "days_in_advance": 2,
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification",
+  "document_type": "Sales Invoice",
+  "enabled": 0,
+  "event": "Days Before",
+  "message_type": "Text",
+  "name": "تذكير قبل استحقاق الفاتورة",
+  "notification_name": "تذكير قبل استحقاق الفاتورة",
+  "recipients": [
+   {
+    "condition": "doc.contact_mobile",
+    "receiver_by_document_field": "contact_mobile",
+    "recipient_type": "Document Field"
+   },
+   {
+    "condition": "not doc.contact_mobile",
+    "receiver_by_document_field": "customer",
+    "recipient_type": "Document Field"
+   }
+  ],
+  "template": "تذكير قبل استحقاق فاتورة"
+ },
+ {
+  "attach_print": 0,
+  "condition": "doc.outstanding_amount > 0 and not doc.is_return",
+  "condition_type": "Python",
+  "date_changed": "due_date",
+  "days_in_advance": 3,
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification",
+  "document_type": "Sales Invoice",
+  "enabled": 0,
+  "event": "Days After",
+  "message_type": "Text",
+  "name": "تذكير بعد استحقاق الفاتورة",
+  "notification_name": "تذكير بعد استحقاق الفاتورة",
+  "recipients": [
+   {
+    "condition": "doc.contact_mobile",
+    "receiver_by_document_field": "contact_mobile",
+    "recipient_type": "Document Field"
+   },
+   {
+    "condition": "not doc.contact_mobile",
+    "receiver_by_document_field": "customer",
+    "recipient_type": "Document Field"
+   }
+  ],
+  "template": "تذكير بفاتورة متأخرة"
+ },
+ {
+  "attach_print": 1,
+  "condition": null,
+  "condition_type": "Python",
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification",
+  "document_type": "Sales Order",
+  "enabled": 0,
+  "event": "Submit",
+  "message_type": "Document",
+  "name": "تأكيد طلب بيع عند الاعتماد",
+  "notification_name": "تأكيد طلب بيع عند الاعتماد",
+  "recipients": [
+   {
+    "condition": "doc.contact_mobile",
+    "receiver_by_document_field": "contact_mobile",
+    "recipient_type": "Document Field"
+   },
+   {
+    "condition": "not doc.contact_mobile",
+    "receiver_by_document_field": "customer",
+    "recipient_type": "Document Field"
+   }
+  ],
+  "template": "تأكيد طلب بيع"
+ },
+ {
+  "attach_print": 0,
+  "condition": "doc.status not in (\"Completed\", \"Closed\", \"On Hold\") and doc.per_delivered < 100",
+  "condition_type": "Python",
+  "date_changed": "delivery_date",
+  "days_in_advance": 1,
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification",
+  "document_type": "Sales Order",
+  "enabled": 0,
+  "event": "Days Before",
+  "message_type": "Text",
+  "name": "تذكير قبل تسليم الطلب",
+  "notification_name": "تذكير قبل تسليم الطلب",
+  "recipients": [
+   {
+    "condition": "doc.contact_mobile",
+    "receiver_by_document_field": "contact_mobile",
+    "recipient_type": "Document Field"
+   },
+   {
+    "condition": "not doc.contact_mobile",
+    "receiver_by_document_field": "customer",
+    "recipient_type": "Document Field"
+   }
+  ],
+  "template": "تذكير بموعد تسليم طلب"
+ },
+ {
+  "attach_print": 0,
+  "condition": "not doc.is_return",
+  "condition_type": "Python",
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification",
+  "document_type": "Delivery Note",
+  "enabled": 0,
+  "event": "Submit",
+  "message_type": "Text",
+  "name": "إشعار تسليم عند الاعتماد",
+  "notification_name": "إشعار تسليم عند الاعتماد",
+  "recipients": [
+   {
+    "condition": "doc.contact_mobile",
+    "receiver_by_document_field": "contact_mobile",
+    "recipient_type": "Document Field"
+   },
+   {
+    "condition": "not doc.contact_mobile",
+    "receiver_by_document_field": "customer",
+    "recipient_type": "Document Field"
+   }
+  ],
+  "template": "إشعار تسليم بضاعة"
+ },
+ {
+  "attach_print": 1,
+  "condition": null,
+  "condition_type": "Python",
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification",
+  "document_type": "Quotation",
+  "enabled": 0,
+  "event": "Submit",
+  "message_type": "Document",
+  "name": "عرض سعر عند الاعتماد",
+  "notification_name": "عرض سعر عند الاعتماد",
+  "recipients": [
+   {
+    "condition": "doc.contact_mobile",
+    "receiver_by_document_field": "contact_mobile",
+    "recipient_type": "Document Field"
+   },
+   {
+    "condition": "not doc.contact_mobile",
+    "receiver_by_document_field": "party_name",
+    "recipient_type": "Document Field"
+   }
+  ],
+  "template": "عرض سعر"
+ },
+ {
+  "attach_print": 1,
+  "condition": null,
+  "condition_type": "Python",
+  "docstatus": 0,
+  "doctype": "WhatsApp Notification",
+  "document_type": "Purchase Order",
+  "enabled": 0,
+  "event": "Submit",
+  "message_type": "Document",
+  "name": "أمر شراء للمورد عند الاعتماد",
+  "notification_name": "أمر شراء للمورد عند الاعتماد",
+  "recipients": [
+   {
+    "condition": "doc.contact_mobile",
+    "receiver_by_document_field": "contact_mobile",
+    "recipient_type": "Document Field"
+   },
+   {
+    "condition": "not doc.contact_mobile",
+    "receiver_by_document_field": "supplier",
+    "recipient_type": "Document Field"
+   }
+  ],
+  "template": "أمر شراء للمورد"
+ }
+]

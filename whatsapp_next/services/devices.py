@@ -141,6 +141,10 @@ def apply_state(
 			clear_pairing(device)
 	with status_writer():
 		frappe.db.set_value("WhatsApp Device", device, values, update_modified=True)
+	if changed and status == "Connected":
+		from whatsapp_next.services import history_import
+
+		history_import.on_connected(device)
 	if changed:
 		action = _AUDIT_BY_STATUS.get(status)
 		if action:

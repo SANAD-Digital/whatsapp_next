@@ -7,7 +7,6 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.exceptions import WAInvalidPhoneError
-from whatsapp_next.install import ensure_roles
 from whatsapp_next.tests.conftest_frappe import (
 	delete_all,
 	ensure_contact,
@@ -31,7 +30,6 @@ class TestWhatsAppNumber(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
 		super().setUpClass()
-		ensure_roles()
 		ensure_settings()
 
 	def tearDown(self) -> None:

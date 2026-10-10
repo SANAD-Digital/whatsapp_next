@@ -384,13 +384,24 @@ def _materialize_recipients(doc, recipients) -> dict[str, int]:
 		if doc.scheduled_at and get_datetime(doc.scheduled_at) > now_datetime()
 		else now_datetime()
 	)
-	counts = {"recipients": len(recipients), "created": 0, "skipped_unknown": 0, "failed": 0}
+	counts = {"recipients": len(recipients), "created": 0, "skipped_unknown": 0, "skipped_not_on_whatsapp": 0, "failed": 0}
 	keys = [key_for(r.phone_e164, r.jid) for r in recipients]
 	known: set[str] = set()
 	if exclude_unknown:
 		from whatsapp_next.services import read_layer
 
 		known = read_layer.known_keys([k for k in keys if k])
+	# numbers WhatsApp says it does not know; a check that cannot run skips nobody
+	not_on_whatsapp: set[str] = set()
+	if cint(doc.get("exclude_not_on_whatsapp")):
+		from whatsapp_next.services import number_check
+
+		individual = [r.phone_e164 for r in recipients if r.recipient_type != "Group" and r.phone_e164]
+		try:
+			answers = number_check.check(individual, device=device)
+			not_on_whatsapp = {k for k, on in answers.items() if not on}
+		except Exception:
+			frappe.log_error(title="WhatsApp campaign: number check failed", message=f"campaign={campaign}\n{frappe.get_traceback()}")
 	created_batch: list[str] = []
 	for idx, recipient in enumerate(recipients):
 		key = keys[idx]
@@ -403,6 +414,16 @@ def _materialize_recipients(doc, recipients) -> dict[str, int]:
 					update_modified=False,
 				)
 			counts["skipped_unknown"] += 1
+			continue
+		if recipient.recipient_type != "Group" and key in not_on_whatsapp:
+			with status_writer():
+				frappe.db.set_value(
+					"WhatsApp Campaign Recipient",
+					recipient.name,
+					{"status": "Cancelled", "error_code": "recipient_not_registered"},
+					update_modified=False,
+				)
+			counts["skipped_not_on_whatsapp"] += 1
 			continue
 		offset = 0
 		first_outbound = None
@@ -796,8 +817,9 @@ def poll_results(campaign: str, *, refresh: bool = False) -> dict[str, Any]:
 	)
 	ids_by_idx: dict[int, list[str]] = {}
 	for r in rows:
-		# rows sent before `poll_id` was stored carry the same id as their provider message id
-		poll_id = r.poll_id or r.provider_message_id
+		# WhatsApp's own message id is the poll's id at the gateway; `poll_id` can hold a stand-in the
+		# platform made up when a send answer carried none (and rows sent before it was stored have none)
+		poll_id = r.provider_message_id or r.poll_id
 		if poll_id:
 			ids_by_idx.setdefault(cint(r.campaign_message_idx) or 1, []).append(poll_id)
 	for idx, msg in poll_messages.items():

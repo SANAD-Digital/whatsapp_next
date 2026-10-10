@@ -1,9 +1,12 @@
 // The WhatsApp setup screen (`page/wa_onboarding`) — the sign-up console.
 //
 // `docs/screen/Hub Page - Onboarding.html` draws one instrument, not a form on a page: a brand
-// rail in the product's own green down the inline-start edge, carrying the pitch, the free month
-// and the three steps of the flow; and beside it a single card at a time, centred, on a quiet
-// field. This file is that instrument.
+// rail carrying the pitch, the free month and the three steps of the flow, and beside it a single
+// step at a time. Its look is the WhatsappNext identity as the platform's own sign-in draws it
+// (`snd_whatsapp_platform/frontend/src/platform/components/AuthLayout.vue`, owner 2026-10-08):
+// the form first, on white, with no card around it; the Petrol panel at the end, with the
+// eyebrow and its Apricot dot, a large headline, the numbered steps, the promises at the foot and
+// the mark as a watermark. This file is that instrument.
 //
 // It styles only what the ported control layer does not already give. Buttons, badges, fields,
 // inputs, the section rule, the segmented control, the card and the sunken surface all come from
@@ -38,14 +41,17 @@
 
 .wa-onb {
 	--wa-onb-gap: 14px;
+	// compact fields (owner, 2026-10-08): 38 px at 13.5 px, through the kit's own variables
+	--wa-h: 38px;
+	--wa-fs: 13.5px;
+	--wa-px: 12px;
 
 	display: flex;
 	align-items: stretch;
-	min-block-size: calc(100dvh - var(--wa-viewport-offset) - var(--wa-page-top) - var(--wa-page-bottom));
-	border: 1px solid var(--wa-border);
-	border-radius: 14px;
-	overflow: hidden;
-	background: var(--wa-bg);
+	// edge to edge, like the platform's sign-in: the screen is the console (`_shell.scss` drops the
+	// page's gutter for it)
+	min-block-size: calc(100dvh - var(--wa-viewport-offset));
+	background: var(--wa-surface);
 	color: var(--wa-ink);
 
 	// screen-reader-only text: the state of a rail step, which is otherwise a shape and a colour
@@ -67,118 +73,105 @@
 
 	&__brand {
 		display: none; // ≥ 900 px only — the narrow shape wears the top bar instead
-		inline-size: 280px;
+		position: relative;
+		order: 2; // the form comes first, on screen as in the document; the panel takes the end
+		inline-size: clamp(360px, 40%, 600px);
 		flex: none;
 		flex-direction: column;
-		gap: 22px;
-		padding: 26px;
-		background: var(--wa-pri);
-		color: var(--wa-on-pri);
+		gap: 32px;
+		padding: 48px;
+		overflow: hidden;
+		background: var(--wa-brand);
+		color: var(--wa-on-brand);
 
 		// The rail's blocks never shrink. A column flex item shrinks by default, which let the
 		// pitch and the foot squeeze themselves instead of making the console taller — and since
-		// the console clips its rounded corners, the squeezed foot simply vanished.
+		// the console clips its corners, the squeezed foot simply vanished.
 		> * {
+			position: relative;
 			flex: none;
 		}
 	}
+	// the mark as a watermark at the panel's far corner, under everything else
+	&__watermark {
+		position: absolute !important;
+		inset-block-end: -144px;
+		inset-inline-end: -112px;
+		pointer-events: none;
 
-	&__brand-id {
-		display: flex;
-		align-items: center;
-		gap: 11px;
-	}
-	&__brand-logo {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		inline-size: 38px;
-		block-size: 38px;
-		flex: none;
-		border-radius: 11px;
-		background: color-mix(in srgb, var(--wa-on-pri) 16%, transparent);
-	}
-	&__brand-names {
-		display: flex;
-		flex-direction: column;
-		min-inline-size: 0;
-	}
-	&__brand-name {
-		font-size: 15px;
-		font-weight: 700;
-	}
-	&__brand-tag {
-		font-size: 11px;
-		// 0.92 is the floor: the rail's ink at that alpha over the green still clears 4.5:1
-		opacity: 0.92;
+		.wn-mark {
+			max-inline-size: none;
+		}
 	}
 
 	&__pitch {
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
+		align-items: flex-start;
+		gap: 18px;
 	}
+	// the eyebrow: a quiet pill on Petrol, its dot the screen's one Apricot
 	&__badge {
 		display: inline-flex;
 		align-items: center;
-		align-self: flex-start;
-		gap: 7px;
-		min-block-size: 26px;
-		padding-inline: 11px;
+		gap: 8px;
+		padding: 4px 12px;
 		border-radius: 999px;
-		background: var(--wa-surface);
-		color: var(--wa-pri-d);
-		font-size: 11.5px;
-		font-weight: 700;
+		background: color-mix(in srgb, #fff 10%, transparent);
+		color: var(--wa-on-brand);
+		font-size: 13px;
+		font-weight: 600;
 	}
 	&__badge-dot {
 		inline-size: 6px;
 		block-size: 6px;
 		flex: none;
 		border-radius: 50%;
-		background: var(--wa-pri);
+		background: var(--wa-accent);
 	}
 	&__pitch-title {
 		margin: 0;
-		// Desk gives every `h2` its own dark ink; on the rail the heading is the rail's own ink
-		color: inherit;
-		font-size: 20px;
+		color: #fff;
+		font-size: 34px;
 		font-weight: 700;
-		line-height: 1.5;
-		text-wrap: pretty;
+		line-height: 1.3;
+		text-wrap: balance;
 	}
 	&__pitch-body {
+		max-inline-size: 28rem;
 		margin: 0;
-		font-size: 12.5px;
-		line-height: 1.9;
-		opacity: 0.92;
+		font-size: 15px;
+		line-height: 1.8;
+		color: color-mix(in srgb, var(--wa-on-brand) 78%, transparent);
 	}
 	&__ticks {
 		display: flex;
 		flex-direction: column;
-		gap: 7px;
+		gap: 12px;
 		margin: 0;
 		padding: 0;
 		list-style: none;
-		opacity: 0.92;
+		color: color-mix(in srgb, var(--wa-on-brand) 84%, transparent);
 	}
 	&__tick {
 		display: flex;
 		align-items: flex-start;
-		gap: 8px;
-		font-size: 12px;
-		line-height: 1.7;
+		gap: 10px;
+		font-size: 14.5px;
+		line-height: 1.6;
 
 		.wa-ico {
-			margin-block-start: 3px;
+			margin-block-start: 4px;
+			color: var(--wa-brand-bright);
 		}
 	}
 
-	// the flow, as the rail tells it: one row per step, the current one on a lifted plate
+	// The steps, as the platform's sign-up numbers them: a ring per step on one vertical line, the
+	// current one solid Paper with a Petrol numeral, a done one ticked.
 	&__flow {
 		display: flex;
 		flex-direction: column;
-		gap: 1px;
+		gap: 22px;
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -186,55 +179,61 @@
 	&__flow-item {
 		position: relative;
 		display: flex;
-		align-items: center;
-		gap: 9px;
-		padding: 7px 9px;
-		border-radius: 8px;
-	}
-	// A step still ahead is told apart by its numeral and its hollow ring, never by a dimmer ink:
-	// below 0.92 the rail's own text stops clearing 4.5:1 against the green.
-	&__flow-item--current {
-		background: color-mix(in srgb, var(--wa-on-pri) 14%, transparent);
+		align-items: flex-start;
+		gap: 14px;
+
+		// the line down to the next ring
+		&:not(:last-child)::after {
+			content: "";
+			position: absolute;
+			inset-inline-start: 15px;
+			inset-block: 34px -20px;
+			inline-size: 1px;
+			background: color-mix(in srgb, var(--wa-on-brand) 28%, transparent);
+		}
 	}
 	&__flow-num {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 20px;
-		block-size: 20px;
+		inline-size: 32px;
+		block-size: 32px;
 		flex: none;
 		border-radius: 50%;
-		border: 1px solid color-mix(in srgb, var(--wa-on-pri) 40%, transparent);
-		font-size: 10px;
+		border: 1.5px solid color-mix(in srgb, var(--wa-on-brand) 40%, transparent);
+		font-size: 13px;
 		font-weight: 700;
 		line-height: 1;
 	}
 	&__flow-item--current &__flow-num {
-		background: var(--wa-on-pri);
-		border-color: var(--wa-on-pri);
-		color: var(--wa-pri);
+		background: var(--wa-on-brand);
+		border-color: var(--wa-on-brand);
+		color: var(--wa-brand);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--wa-on-brand) 22%, transparent);
 	}
 	&__flow-item--done &__flow-num {
-		background: color-mix(in srgb, var(--wa-on-pri) 28%, transparent);
+		background: var(--wa-brand-bright);
+		border-color: var(--wa-brand-bright);
+		color: var(--wa-ink);
 	}
 	&__flow-text {
 		display: flex;
 		flex-direction: column;
+		gap: 2px;
 		min-inline-size: 0;
+		padding-block-start: 4px;
 	}
 	&__flow-label {
-		font-size: 12.5px;
-		font-weight: 600;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		font-size: 15px;
+		font-weight: 700;
+		color: #fff;
 	}
 	&__flow-sub {
-		font-size: 11px;
-		opacity: 0.92;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		font-size: 13px;
+		color: color-mix(in srgb, var(--wa-on-brand) 74%, transparent);
+	}
+	&__flow-item:not(&__flow-item--current):not(&__flow-item--done) &__flow-label {
+		color: color-mix(in srgb, var(--wa-on-brand) 82%, transparent);
 	}
 
 	&__brand-foot {
@@ -258,15 +257,15 @@
 		min-block-size: 30px;
 		padding-inline: 11px;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--wa-on-pri) 14%, transparent);
-		color: var(--wa-on-pri);
+		background: color-mix(in srgb, var(--wa-on-brand) 14%, transparent);
+		color: var(--wa-on-brand);
 		font-size: 11.5px;
 		font-weight: 600;
 
 		&:hover,
 		&:focus {
-			background: color-mix(in srgb, var(--wa-on-pri) 26%, transparent);
-			color: var(--wa-on-pri);
+			background: color-mix(in srgb, var(--wa-on-brand) 26%, transparent);
+			color: var(--wa-on-brand);
 			text-decoration: none;
 		}
 	}
@@ -285,24 +284,39 @@
 		min-inline-size: 0;
 		display: flex;
 		flex-direction: column;
-		background: var(--wa-bg);
+		background: var(--wa-surface);
 	}
 
 	&__topbar {
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		min-block-size: 48px;
+		min-block-size: 64px;
 		flex: none;
-		padding-inline: 16px;
+		padding-inline: 20px;
 	}
 	&__topmark {
 		display: inline-flex;
 		align-items: center;
-		gap: 9px;
-		font-size: 14px;
-		font-weight: 700;
-		color: var(--wa-ink);
+		gap: 10px;
+		min-inline-size: 0;
+		font-size: 19px;
+		font-weight: 400;
+		color: var(--wa-brand);
+
+		> b {
+			font-weight: inherit;
+		}
+	}
+	// the tagline beside the lockup, behind a hairline, as the platform's logo carries one
+	&__topmark-tag {
+		display: none;
+		padding-inline-start: 12px;
+		border-inline-start: 1px solid var(--wa-border-2);
+		font-size: 12.5px;
+		font-weight: 500;
+		color: var(--wa-ink-3);
+		white-space: nowrap;
 	}
 	&__topmark-logo {
 		display: inline-flex;
@@ -311,15 +325,12 @@
 		inline-size: 30px;
 		block-size: 30px;
 		flex: none;
-		border-radius: 9px;
-		background: var(--wa-pri-s);
-		color: var(--wa-pri-d);
 	}
 	&__topbar-spacer {
 		flex: 1;
 	}
 	&__counter {
-		font-size: 12px;
+		font-size: 13px;
 		font-weight: 600;
 		color: var(--wa-ink-3);
 	}
@@ -365,42 +376,59 @@
 	}
 
 	&__stage {
-		// grows into spare height, never shrinks below the card it holds
+		// grows into spare height, never shrinks below the step it holds
 		flex: 1 0 auto;
 		display: flex;
 		align-items: flex-start;
 		justify-content: center;
-		padding: 4px 14px 16px;
+		padding: 12px 20px 24px;
+	}
+
+	// "We never ask for your WhatsApp password." — the platform's sign-in foot
+	&__trust {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		flex: none;
+		margin: 0;
+		padding: 0 20px 22px;
+		font-size: 13px;
+		color: var(--wa-ink-3);
 	}
 
 	// =============================================================================================
 	// The card
 	// =============================================================================================
 
-	&__card {
+	// A step is not a card: the platform's sign-in sets the form straight on the white column,
+	// so the kit's card surface, border and shadow are taken off here.
+	&__card.wa-card {
 		inline-size: 100%;
 		display: flex;
 		flex-direction: column;
 		gap: var(--wa-onb-gap);
-		padding: 16px 14px;
-		box-shadow: var(--wa-shadow-md);
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
 		animation: wa-onb-in 0.22s ease-out;
-
-		&--sm {
-			max-inline-size: 430px;
-		}
-		&--md {
-			max-inline-size: 560px;
-		}
-		&--lg {
-			max-inline-size: 680px;
-		}
-		&--ready {
-			max-inline-size: 520px;
-			align-items: center;
-			text-align: center;
-			gap: 16px;
-		}
+	}
+	// the platform's form widths: 27rem for a short step, 36rem for the long sign-up
+	&__card--sm {
+		max-inline-size: 432px;
+	}
+	&__card--md {
+		max-inline-size: 576px;
+	}
+	&__card--lg {
+		max-inline-size: 680px;
+	}
+	&__card--ready.wa-card {
+		max-inline-size: 520px;
+		align-items: center;
+		text-align: center;
+		gap: 16px;
 	}
 
 	&__card-head {
@@ -408,6 +436,7 @@
 		align-items: flex-start;
 		gap: 12px;
 		flex-wrap: wrap;
+		margin-block-end: 6px;
 	}
 	&__card-heading {
 		display: flex;
@@ -424,34 +453,39 @@
 	}
 	&__card-title {
 		margin: 0;
-		font-size: 17px;
+		font-size: 24px;
 		font-weight: 700;
+		line-height: 1.3;
 		color: var(--wa-ink);
 	}
 	&__card-sub {
 		margin: 0;
-		font-size: 12px;
+		font-size: 13.5px;
 		line-height: 1.7;
 		color: var(--wa-ink-3);
 	}
-	// The prototype's "تعبئة بيانات تجريبية" chip is a dashed amber one, which is exactly what a
-	// control that fills the form with fictional data should look like: obviously not part of the
-	// form. It only renders in developer mode.
-	&__card-aside {
-		flex: none;
 
-		.wa-btn {
-			border-style: dashed;
-			border-color: var(--wa-wn-sb);
-			background: var(--wa-wn-s);
-			color: var(--wa-wn-i);
-
-			&:hover {
-				background: var(--wa-wn-sb);
-			}
-		}
+	// the platform's form controls: labels in the ink, the step's verb a full 52 px Petrol bar
+	.wa-field {
+		gap: 4px;
 	}
-
+	.wa-field__label {
+		// a <label> carries Desk's 8 px bottom margin and a <span> label does not: the company
+		// name sat 8 px lower than the activity beside it (owner, 2026-10-10)
+		margin: 0;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--wa-ink);
+	}
+	.wa-btn--block {
+		min-block-size: 42px;
+		font-size: 14px;
+	}
+	// the kit's phone field draws its own 40 px box; here it matches the other fields
+	.sanad-phone__box {
+		min-block-size: var(--wa-h);
+		font-size: var(--wa-fs);
+	}
 	&__fail {
 		align-items: center;
 		text-align: center;
@@ -499,6 +533,29 @@
 		flex: 1;
 		min-inline-size: 0;
 	}
+	// a button that is a link (share on WhatsApp): Desk's link underline stays off it
+	a.wa-btn,
+	a.wa-btn:hover,
+	a.wa-btn:focus {
+		text-decoration: none;
+	}
+	// "Send it on WhatsApp" inside a waiting strip: the strip's own ink, underlined, never a button
+	&__strip-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		margin-inline-start: 4px;
+		font-weight: 700;
+		color: inherit;
+		text-decoration: underline;
+		text-underline-offset: 3px;
+		white-space: nowrap;
+
+		&:hover,
+		&:focus {
+			color: inherit;
+		}
+	}
 	&__strip--ok {
 		background: var(--wa-ok-s);
 		border-color: var(--wa-ok-sb);
@@ -523,19 +580,89 @@
 	&__group {
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
+		gap: 8px;
 	}
 
 	&__grid,
 	&__stack {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
-		gap: 10px 14px;
+		gap: 8px 12px;
 	}
 	&__field-wide {
 		min-inline-size: 0;
 	}
 
+	// ---- the sign-up on one screen (owner, 2026-10-08) -------------------------------------------
+	//
+	// One grid, no section rules, the coupon folded: the whole form and its verbs fit a laptop
+	// window. Should a short window still cut it, the verbs stay pinned to the window's foot.
+	&__card--lg.wa-card {
+		gap: 12px;
+
+		.wa-onb__card-head {
+			margin-block-end: 0;
+		}
+		.wa-onb__card-title {
+			font-size: 21px;
+		}
+		.wa-onb__card-sub {
+			line-height: 1.5;
+		}
+	}
+	&__grid--signup {
+		gap: 10px 14px;
+	}
+	&__coupon {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 6px;
+
+		> [id] {
+			align-self: stretch;
+		}
+	}
+	&__coupon-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 2px 0;
+		border: 0;
+		background: none;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--wa-pri-d);
+		cursor: pointer;
+
+		&:hover {
+			text-decoration: underline;
+		}
+		&[aria-expanded="true"] svg {
+			transform: rotate(45deg);
+		}
+	}
+	&__pinned.wa-btnbar {
+		position: sticky;
+		inset-block-end: 0;
+		z-index: 2;
+		margin-block-start: 2px;
+		padding-block: 10px 12px;
+		background: var(--wa-surface);
+		box-shadow: 0 -10px 12px -10px rgba(14, 26, 26, 0.12);
+	}
+
+	// the password's label row carries "Generate" and "Show" and is taller than a plain label: the
+	// field beside it takes the same height, so both inputs sit on one line
+	&__label-row,
+	[data-field="wa-onb-pw2"] > .wa-field__label {
+		min-block-size: 30px;
+	}
+	[data-field="wa-onb-pw2"] > .wa-field__label {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
 	&__label-row {
 		display: flex;
 		align-items: center;
@@ -929,13 +1056,14 @@
 	}
 	&__ready-title {
 		margin: 0;
-		font-size: 17px;
+		font-size: 24px; // the same heading as every other step
+		line-height: 1.3;
 		font-weight: 700;
 		color: var(--wa-ink);
 	}
 	&__ready-sub {
 		margin: 0;
-		font-size: 12.5px;
+		font-size: 13.5px;
 		line-height: 1.9;
 		color: var(--wa-ink-3);
 	}
@@ -1106,23 +1234,77 @@
 	}
 
 	@media (min-width: 900px) {
+		// The panel holds still while the form scrolls past it, as the platform's sign-up does
+		// (`lg:sticky lg:top-0 lg:h-dvh`): one screen tall, pinned to the top of the scroller, and
+		// on a short screen its own words scroll inside it rather than being cut.
 		&__brand {
 			display: flex;
-		}
-		&__topmark {
-			display: none;
+			position: sticky;
+			inset-block-start: 0;
+			align-self: flex-start;
+			block-size: calc(100dvh - var(--wa-viewport-offset));
+			// never a scroller of its own (owner, 2026-10-10): the shorter the window, the less it
+			// says (below), so nothing in it moves while the form is used
+			overflow: hidden;
 		}
 		&__mbar {
 			display: none;
 		}
 		&__topbar {
-			padding-inline: 20px;
+			min-block-size: 80px;
+			padding-inline: 48px;
+		}
+		&__topmark-tag {
+			display: inline;
+		}
+		// the step stands in the middle of the column, as on the platform
+		&__stage {
+			align-items: center;
+			padding: 16px 48px 40px;
+		}
+		&__trust {
+			padding: 0 48px 28px;
 		}
 	}
 
-	@media (min-width: 1180px) {
+	@media (min-width: 1280px) {
 		&__brand {
-			inline-size: 340px;
+			padding: 64px;
+		}
+		&__pitch-title {
+			font-size: 40px;
+			line-height: 1.25;
+		}
+	}
+
+	// a short screen tightens the panel rather than cutting it
+	@media (min-width: 900px) and (max-height: 900px) {
+		&__brand {
+			gap: 22px;
+			padding-block: 36px;
+		}
+		&__pitch-title {
+			font-size: 30px;
+		}
+	}
+	// shorter still: the three selling points go first, the steps and the pitch stay
+	@media (min-width: 900px) and (max-height: 880px) {
+		&__brand {
+			gap: 18px;
+			padding-block: 28px;
+		}
+		&__pitch-title {
+			font-size: 26px;
+		}
+		&__ticks {
+			display: none;
+		}
+	}
+	// a laptop at 768 px or less: the pitch keeps its title only, the foot its two lines
+	@media (min-width: 900px) and (max-height: 780px) {
+		&__pitch-body,
+		&__chips {
+			display: none;
 		}
 	}
 }
@@ -1132,4 +1314,36 @@
 // stated rather than assumed.
 html[dir="rtl"] .wa-onb__route-arrow {
 	transform: scaleX(-1);
+}
+
+// "Sign in with another account?" — what goes, what stays, and the backup before it
+.wa-onb__switch {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	font-size: 13.5px;
+	line-height: 1.7;
+	color: var(--wa-ink-2, var(--wa-ink));
+
+	p,
+	ul {
+		margin: 0;
+	}
+	ul {
+		padding-inline-start: 18px;
+		font-weight: 600;
+		color: var(--wa-dg-i, var(--wa-ink));
+	}
+}
+.wa-onb__switch-backup {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	flex-wrap: wrap;
+	margin-block-start: 4px;
+	padding: 10px 12px;
+	border-radius: 10px;
+	background: var(--wa-sunken);
+	font-size: 13px;
 }

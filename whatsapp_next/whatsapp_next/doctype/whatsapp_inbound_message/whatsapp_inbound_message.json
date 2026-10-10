@@ -11,6 +11,7 @@
   "phone_e164",
   "jid",
   "chat_jid",
+  "group_name",
   "sender_column",
   "sender_jid",
   "is_group",
@@ -29,7 +30,14 @@
   "location_name",
   "reaction",
   "reaction_to_provider_message_id",
+  "selected_option_id",
   "quoted_provider_message_id",
+  "changes_section",
+  "edited_at",
+  "original_body",
+  "changes_column",
+  "deleted_at",
+  "deleted_by",
   "provider_section",
   "provider_message_id",
   "received_at",
@@ -46,7 +54,8 @@
   "reply_outbound",
   "replied_at",
   "flags_section",
-  "is_simulated"
+  "is_simulated",
+  "is_history"
  ],
  "fields": [
   {
@@ -89,6 +98,13 @@
    "fieldname": "chat_jid",
    "fieldtype": "Data",
    "label": "Chat JID"
+  },
+  {
+   "fieldname": "group_name",
+   "fieldtype": "Data",
+   "label": "Group name",
+   "read_only": 1,
+   "description": "For a message sent in a group: the group's name on WhatsApp."
   },
   {
    "fieldname": "sender_column",
@@ -134,7 +150,7 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Message Type",
-   "options": "Text\nDocument\nImage\nVideo\nAudio\nSticker\nLocation\nPoll\nReaction\nContact\nOther",
+   "options": "Text\nDocument\nImage\nVideo\nAudio\nSticker\nLocation\nPoll\nReaction\nContact\nOther\nInteractive Reply",
    "reqd": 1
   },
   {
@@ -153,7 +169,8 @@
    "description": "Link to the media file. It expires after a while.",
    "fieldname": "media_url",
    "fieldtype": "Data",
-   "label": "Media URL"
+   "label": "Media URL",
+   "length": 1000
   },
   {
    "fieldname": "media_mime_type",
@@ -202,10 +219,56 @@
    "label": "Reacted To"
   },
   {
+   "fieldname": "selected_option_id",
+   "fieldtype": "Data",
+   "label": "Selected option",
+   "read_only": 1,
+   "description": "The id of the button or list option the sender tapped (the text is its title)."
+  },
+  {
    "description": "The message this one replies to.",
    "fieldname": "quoted_provider_message_id",
    "fieldtype": "Data",
    "label": "Quoted Message ID"
+  },
+  {
+   "collapsible": 1,
+   "depends_on": "eval:doc.edited_at || doc.deleted_at",
+   "fieldname": "changes_section",
+   "fieldtype": "Section Break",
+   "label": "Edited or deleted"
+  },
+  {
+   "fieldname": "edited_at",
+   "fieldtype": "Datetime",
+   "label": "Edited at",
+   "read_only": 1,
+   "description": "When the sender last edited this message."
+  },
+  {
+   "fieldname": "original_body",
+   "fieldtype": "Text",
+   "label": "Original text",
+   "read_only": 1,
+   "description": "The text as first received, kept when the sender edits it."
+  },
+  {
+   "fieldname": "changes_column",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "deleted_at",
+   "fieldtype": "Datetime",
+   "label": "Deleted at",
+   "read_only": 1,
+   "description": "When the message was deleted for everyone."
+  },
+  {
+   "fieldname": "deleted_by",
+   "fieldtype": "Data",
+   "label": "Deleted by",
+   "read_only": 1,
+   "description": "The number that deleted it (the sender, or a group admin)."
   },
   {
    "fieldname": "provider_section",
@@ -251,7 +314,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Command Status",
-   "options": "None\nMatched\nExecuted\nFailed\nNot Matched\nBlocked",
+   "options": "None\nMatched\nExecuted\nFailed\nNot Matched\nBlocked\nAwaiting Input",
    "read_only": 1,
    "reqd": 1,
    "search_index": 1
@@ -322,6 +385,14 @@
    "fieldtype": "Check",
    "in_standard_filter": 1,
    "label": "Simulated"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_history",
+   "fieldtype": "Check",
+   "label": "Imported from history",
+   "read_only": 1,
+   "description": "Brought in from the device's past conversations; it ran no command and sent no reply."
   }
  ],
  "links": [
@@ -331,7 +402,7 @@
    "link_fieldname": "trigger_inbound"
   }
  ],
- "modified": "2026-09-26 21:00:00.000000",
+ "modified": "2026-10-07 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Inbound Message",
@@ -370,7 +441,7 @@
  "row_format": "Dynamic",
  "search_fields": "phone_e164,display_name",
  "show_title_field_in_link": 1,
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
  "title_field": "display_name",

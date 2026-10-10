@@ -248,3 +248,132 @@ def fetch_results(
 				result.counts[s] = result.counts.get(s, 0) + 1
 			result.by_poll_id[poll_id] = {"selected": selected, "error": None, "raw": raw}
 	return result
+
+
+# --------------------------------------------------------------------------------------------
+# One poll, everyone it was sent to
+# --------------------------------------------------------------------------------------------
+
+SENT_STATUSES = ("Sent", "Delivered", "Read")
+SUMMARY_MAX_ROWS = 2000
+
+
+def _digits(value: Any) -> str:
+	return re.sub(r"\D", "", cstr(value))
+
+
+def summary_for_log(name: str) -> dict[str, Any]:
+	"""Results of the poll in WhatsApp Log `name` across every recipient it went to.
+
+	"Everyone it went to" is the campaign message it belongs to (same campaign, same message
+	index), else every sent poll with the same question and options. Each poll's live tally comes
+	from the provider; the device's own votes are left out, so a response is a recipient's answer.
+	→ `{scope, question, options, multiple_answers, recipients, responded, response_rate,
+	counts[{option, votes}], responses[{recipient, phone, voter, voter_number, options, voted_at}],
+	not_responded[{recipient, phone}], voters_hidden, errors}`."""
+	from whatsapp_next.providers import registry
+
+	base = frappe.db.get_value(
+		"WhatsApp Log",
+		name,
+		["name", "campaign", "campaign_message_idx", "poll_question", "poll_options", "poll_allow_multiple", "message_type"],
+		as_dict=True,
+	)
+	if not base or base.message_type != "Poll":
+		frappe.throw(_("This message is not a poll"), WAValidationError)
+	filters: dict[str, Any] = {"message_type": "Poll", "status": ("in", SENT_STATUSES)}
+	if base.campaign:
+		filters.update({"campaign": base.campaign, "campaign_message_idx": base.campaign_message_idx})
+		scope = {
+			"kind": "campaign",
+			"campaign": base.campaign,
+			"campaign_name": frappe.db.get_value("WhatsApp Campaign", base.campaign, "campaign_name"),
+			"message_idx": base.campaign_message_idx,
+		}
+	else:
+		filters.update({"poll_question": base.poll_question, "poll_options": base.poll_options})
+		scope = {"kind": "question"}
+	rows = frappe.get_all(
+		"WhatsApp Log",
+		filters=filters,
+		fields=["name", "device", "phone_e164", "jid", "display_name", "provider_message_id", "poll_id"],
+		order_by="creation asc",
+		limit=SUMMARY_MAX_ROWS,
+	)
+	options = parse_options(base.poll_options)
+	counts = {o: 0 for o in options}
+	responses: list[dict[str, Any]] = []
+	not_responded: list[dict[str, Any]] = []
+	errors = 0
+	voters_hidden = False
+	provider = registry.get_provider()
+
+	by_device: dict[str, list] = {}
+	for r in rows:
+		by_device.setdefault(r.device, []).append(r)
+	for device, logs in by_device.items():
+		dev = frappe.db.get_value("WhatsApp Device", device, ["platform_device", "phone_e164"], as_dict=True) or {}
+		own = _digits(dev.get("phone_e164"))
+		ids = {r.name: (r.provider_message_id or r.poll_id) for r in logs}
+		raw_by_id: dict[str, Any] = {}
+		wanted = [i for i in dict.fromkeys(ids.values()) if i]
+		for start in range(0, len(wanted), RESULT_BATCH):
+			batch = wanted[start : start + RESULT_BATCH]
+			try:
+				raw_by_id.update(provider.get_poll_results(dev.get("platform_device"), batch) or {})
+			except Exception:
+				frappe.log_error(title="WhatsApp poll summary", message=frappe.get_traceback())
+		for r in logs:
+			recipient = {"recipient": r.display_name or r.phone_e164 or r.jid, "phone": r.phone_e164}
+			raw = raw_by_id.get(ids[r.name])
+			if not isinstance(raw, dict) or raw.get("error") or not raw.get("options"):
+				errors += 1
+				not_responded.append(recipient)
+				continue
+			answered = False
+			by_voter: dict[str, dict[str, Any]] = {}
+			for option in raw.get("options") or []:
+				label = cstr(option.get("option"))
+				voters = option.get("voters") or []
+				if not voters and cint(option.get("votes")):
+					# the platform hides who voted: count the votes, nobody to name
+					voters_hidden = True
+					counts[label] = counts.get(label, 0) + cint(option.get("votes"))
+					answered = True
+					continue
+				for v in voters:
+					if own and _digits(v.get("number")) == own:
+						continue  # the device's own vote is not a response
+					key = cstr(v.get("number") or v.get("jid") or v.get("name"))
+					entry = by_voter.setdefault(
+						key,
+						{**recipient, "voter": v.get("name") or "", "voter_number": v.get("number") or "", "options": [], "voted_at": v.get("voted_at")},
+					)
+					entry["options"].append(label)
+					counts[label] = counts.get(label, 0) + 1
+					answered = True
+			responses.extend(by_voter.values())
+			if not answered:
+				not_responded.append(recipient)
+	recipients = len(rows)
+	responded = recipients - len(not_responded)
+	order = options or list(counts)
+	responses.sort(key=lambda x: cint(x.get("voted_at")), reverse=True)
+	return {
+		"scope": scope,
+		"question": base.poll_question,
+		"options": order,
+		"multiple_answers": bool(cint(base.poll_allow_multiple)),
+		"recipients": recipients,
+		"responded": responded,
+		"response_rate": round(responded * 100 / recipients) if recipients else 0,
+		"counts": [{"option": o, "votes": counts.get(o, 0)} for o in order],
+		"total_votes": sum(counts.values()),
+		"responses": responses,
+		"not_responded": not_responded[:200],
+		"not_responded_count": len(not_responded),
+		"voters_hidden": voters_hidden,
+		"errors": errors,
+		"truncated": recipients >= SUMMARY_MAX_ROWS,
+	}
+

@@ -19,8 +19,11 @@
 // coloured word on a coloured card passes AA here, which it could not with Espresso's three-step
 // tone inks.
 //
-// `docs/screen/*.dc.html` is the source. If the prototype's palette changes, this file changes,
-// and nothing else does.
+// `docs/screen/*.dc.html` is the source of the structure. The brand pack (`brand/BRAND.md`,
+// `brand/tokens/tokens.json`) is the source of the primary and the ink: Petrol, Petrol Deep, Mist,
+// Paper and Ink replace the prototype's teal (owner, 2026-10-07), with the brand's #5FB8A9 as the
+// primary on dark grounds. Apricot is the one accent a screen may carry — never small text.
+// If the palette changes, this file changes, and nothing else does.
 
 :root {
 	--wa-bg: #f5f7f6;
@@ -29,17 +32,34 @@
 	--wa-border: #e3e8e6;
 	--wa-border-2: #c9d2cf;
 
-	--wa-ink: #0f1a18;
+	--wa-ink: #0e1a1a; // brand Ink
 	--wa-ink-2: #33423f;
-	--wa-ink-3: #55645f;
-	--wa-ink-4: #62716d;
+	--wa-ink-3: #4a5656; // brand muted text, 7.4:1 on white
+	--wa-ink-4: #5e6b6a;
 
-	// primary — the product's green
-	--wa-pri: #0f7a63;
-	--wa-pri-d: #0a6250;
-	--wa-pri-s: #dff1ec;
-	--wa-pri-sb: #b6ddd2;
-	--wa-on-pri: #ffffff;
+	// primary — the brand's Petrol (9.6:1 on white), Petrol Deep for hover and pressed, Mist for
+	// tinted surfaces, Paper on Petrol
+	--wa-pri: #0b4f4a;
+	--wa-pri-d: #0e3e3a;
+	--wa-pri-s: #dce7e4;
+	--wa-pri-sb: #b9d0ca;
+	--wa-on-pri: #f7f7f4;
+	// the one accent: Apricot — one prominent element per screen, never small text
+	--wa-accent: #ff8a4c;
+	--wa-on-accent: #0e1a1a;
+	// The brand itself, the same in both themes: a Petrol panel stays Petrol in dark mode, as the
+	// platform's sign-in keeps it, with Paper on it and the brand's light Petrol for its marks.
+	--wa-brand: #0b4f4a;
+	--wa-brand-deep: #0e3e3a;
+	--wa-on-brand: #f7f7f4;
+	--wa-brand-bright: #5fb8a9;
+	// the canvas every screen of the product stands on, edge to edge: white cards on a Petrol-tinted
+	// ground, never white on white (owner, 2026-10-07)
+	--wa-canvas: #eef2f0;
+	// a status is drawn as WhatsApp draws it: white text on the post's own colour, in both themes
+	--wa-status-ink: #ffffff;
+	--wa-status-stage: #111b21;
+	--wa-status-scrim: rgb(0 0 0 / 45%);
 
 	// ok · warn · danger · info — each with a strong, a soft surface, a readable ink and a border
 	--wa-ok: #1a8b50;
@@ -79,11 +99,13 @@
 	--wa-ink-3: #9aaaa6;
 	--wa-ink-4: #7e8f8b;
 
-	--wa-pri: #2fa98c;
-	--wa-pri-d: #49c3a5;
-	--wa-pri-s: #16302a;
-	--wa-pri-sb: #23493f;
-	--wa-on-pri: #04150f;
+	// the brand's Petrol for dark grounds, Ink on it
+	--wa-pri: #5fb8a9;
+	--wa-pri-d: #7fcbbe;
+	--wa-pri-s: #13302d;
+	--wa-pri-sb: #1f4a45;
+	--wa-on-pri: #0e1a1a;
+	--wa-canvas: #0e1513;
 
 	--wa-ok: #35a96a;
 	--wa-ok-s: #132a1e;
@@ -128,7 +150,10 @@ $wa-surfaces:
 	"#page-wa-onboarding",
 	"#page-wa-functions-center",
 	"#page-wa-simulator",
+	"#page-wa-test-lab",
 	'body[data-route^="Form/WhatsApp "] .page-container',
+	// the product's own workspace (`/app/whatsapp`): its number cards, charts and shortcuts
+	'body[data-route="Workspaces/WhatsApp"] #page-Workspaces',
 	".modal.sanad-sheet",
 	// the settings window (D-138) mounts on <body> too
 	".sanad-sw.wa-settings-window",
@@ -216,7 +241,8 @@ $wa-bridge: ();
 	// the page itself, and the controls Desk draws inside our screens
 	--control-bg: var(--wa-sunken);
 	--awesomplete-hover-bg: var(--wa-pri-s);
-	--btn-primary-bg: var(--wa-pri);
+	// Desk's primary button (a form's Save, a dialog's verb) — Desk reads `--btn-primary`
+	--btn-primary: var(--wa-pri);
 	--fg-color: var(--wa-surface);
 	// the page background stays Frappe's own (owner, 2026-09-27): no --bg-color here
 	--card-bg: var(--wa-surface);

@@ -32,7 +32,8 @@ frappe.provide("whatsapp_next.campaign");
 				try {
 					options = JSON.parse(options || "[]");
 				} catch (e) {
-					options = [];
+					// plain lines (one answer per line) are read the same way the editor reads them
+					options = options.split(/\r?\n/);
 				}
 			}
 			return (options || []).filter((o) => String(o || "").trim()).length >= 2 ? null : "few_options";

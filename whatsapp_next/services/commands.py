@@ -28,6 +28,8 @@ SCALAR_KEYS: tuple[str, ...] = (
 	"allowed_group",
 	"blocked_group",
 	"description",
+	# inputs asked for over WhatsApp when missing (services/command_sessions), one per line
+	"ask_inputs",
 )
 TABLE_KEYS: tuple[str, ...] = (
 	"allowed_party_types",
@@ -366,6 +368,7 @@ def editor(name: str | None = None) -> dict[str, Any]:
 		"requires_linked_contact": 0,
 		"allowed_party_types": [],
 		"disabled_inputs": [],
+		"ask_inputs": "",
 		"settings_overrides": {},
 		"outputs": [],
 		"access": {},
@@ -385,6 +388,7 @@ def editor(name: str | None = None) -> dict[str, Any]:
 				"requires_linked_contact": cint(doc.requires_linked_contact),
 				"allowed_party_types": [r.party_type for r in doc.get("allowed_party_types") or []],
 				"disabled_inputs": [k for k in (doc.disabled_inputs or "").splitlines() if k.strip()],
+				"ask_inputs": doc.ask_inputs or "",
 				"settings_overrides": _overrides(doc),
 				"outputs": [{f: row.get(f) for f in OUTPUT_COPY_FIELDS} for row in doc.get("outputs") or []],
 				"access": _access(doc),

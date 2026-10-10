@@ -46,6 +46,33 @@ const icon_of = (type) => (TYPES[type] && TYPES[type].icon) || TYPE_ICON_FALLBAC
 const IMAGE_FILE = /\.(png|jpe?g|gif|webp|bmp|avif|svg)(\?|#|$)/i;
 const is_image_file = (url) => !!url && IMAGE_FILE.test(String(url));
 
+
+
+// JSON-list fields the composer edits as one item per line, with the hint shown under them.
+const LIST_FIELDS = {
+	poll_options: () => __("One answer per line — at least two."),
+};
+
+function list_from_lines(text) {
+	return String(text || "")
+		.split(/\r?\n/)
+		.map((line) => line.trim())
+		.filter(Boolean);
+}
+
+/** A stored list value (JSON text, an array, or plain lines) → its non-empty items. */
+function list_from_value(value) {
+	if (Array.isArray(value)) return value.map((v) => String(v == null ? "" : v).trim()).filter(Boolean);
+	const text = String(value == null ? "" : value).trim();
+	if (!text) return [];
+	try {
+		const parsed = JSON.parse(text);
+		if (Array.isArray(parsed)) return parsed.map((v) => String(v == null ? "" : v).trim()).filter(Boolean);
+	} catch (e) {
+		// not JSON: lines typed before this editor existed
+	}
+	return list_from_lines(text);
+}
 sanad.ui.MessageComposer = class MessageComposer {
 	/**
 	 * @param {object} opts
@@ -391,6 +418,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 	}
 
 	field($host, row, fieldname, controls) {
+		if (LIST_FIELDS[fieldname] && this.field_map[fieldname].fieldtype === "JSON") return this.list_field($host, row, fieldname, controls);
 		const df = this.field_map[fieldname];
 		const is_body = fieldname === this.opts.body_field || (df.fieldtype === "Small Text" && fieldname === "caption");
 		const $wrap = $(`<div class="sanad-mc__field sanad-mc__field--${ui.escape(df.fieldtype.toLowerCase().replace(/\s+/g, "-"))}"></div>`).appendTo($host);
@@ -419,6 +447,41 @@ sanad.ui.MessageComposer = class MessageComposer {
 			control.$input.attr("rows", 7);
 			this.render_toolbar($wrap, row, fieldname, control);
 		}
+	}
+
+	/**
+	 * A JSON list edited as plain lines: one item per line, stored as the JSON list the
+	 * doctype expects. A stored value that is not valid JSON (typed into the old code editor)
+	 * is read as lines too.
+	 */
+	list_field($host, row, fieldname, controls) {
+		const df = this.field_map[fieldname];
+		const $wrap = $(`<div class="sanad-mc__field sanad-mc__field--list"></div>`).appendTo($host);
+		let ready = false;
+		const control = frappe.ui.form.make_control({
+			df: {
+				fieldtype: "Small Text",
+				fieldname,
+				label: df.label,
+				description: LIST_FIELDS[fieldname](),
+				read_only: this.can_edit() ? df.read_only : 1,
+				change: () => {
+					if (!ready) return;
+					const items = list_from_lines(control.get_value());
+					const value = items.length ? JSON.stringify(items) : "";
+					if (value === String(row[fieldname] == null ? "" : row[fieldname])) return;
+					frappe.model.set_value(row.doctype, row.name, fieldname, value);
+					this.touch(row);
+				},
+			},
+			parent: $wrap,
+			render_input: true,
+			only_input: false,
+		});
+		control.set_value(list_from_value(row[fieldname]).join("\n"));
+		if (control.$input) control.$input.attr("rows", 5);
+		window.setTimeout(() => (ready = true), 0);
+		controls[fieldname] = control;
 	}
 
 	/** The writing toolbar: WhatsApp's marks, and the variables, over the field they act on. */
@@ -562,12 +625,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 	}
 
 	poll_options(row) {
-		try {
-			const parsed = typeof row.poll_options === "string" ? JSON.parse(row.poll_options || "[]") : row.poll_options || [];
-			return Array.isArray(parsed) ? parsed.filter((o) => String(o || "").trim()) : [];
-		} catch (e) {
-			return [];
-		}
+		return list_from_value(row.poll_options);
 	}
 
 	duration(seconds) {

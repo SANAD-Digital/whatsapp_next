@@ -48,6 +48,23 @@ COLUMNS: tuple[str, ...] = (
 	"attachment",
 	"reference_doctype",
 	"reference_name",
+	# a reaction row names the message it reacts to and who reacted (several people in a group)
+	"reaction_to",
+	"sender",
+	# a sent poll: what the bubble shows before its results are fetched
+	"poll_question",
+	"poll_options",
+	# a received message the sender edited or deleted
+	"edited_at",
+	"original_body",
+	"deleted_at",
+	"deleted_by",
+	# buttons / a list sent, and a recipient's tap on them
+	"interactive",
+	"selected_id",
+	"quoted_id",
+	# a received file not fetched yet (past messages are fetched when opened)
+	"media_pending",
 )
 
 # `reference_amount`: first present field wins; never stored (backend-plan §3).
@@ -77,6 +94,18 @@ class MessageRow:
 	attachment: str | None
 	reference_doctype: str | None
 	reference_name: str | None
+	reaction_to: str | None = None
+	sender: str | None = None
+	poll_question: str | None = None
+	poll_options: str | None = None
+	edited_at: dt.datetime | None = None
+	original_body: str | None = None
+	deleted_at: dt.datetime | None = None
+	deleted_by: str | None = None
+	interactive: str | None = None
+	selected_id: str | None = None
+	quoted_id: str | None = None
+	media_pending: int | None = None
 
 	@property
 	def cursor(self) -> str:
@@ -190,6 +219,18 @@ def _outbound_branch(L):
 		L.attachment.as_("attachment"),
 		L.reference_doctype.as_("reference_doctype"),
 		L.reference_name.as_("reference_name"),
+		_null("reaction_to"),
+		_null("sender"),
+		L.poll_question.as_("poll_question"),
+		L.poll_options.as_("poll_options"),
+		_null("edited_at"),
+		_null("original_body"),
+		_null("deleted_at"),
+		_null("deleted_by"),
+		L.interactive.as_("interactive"),
+		_null("selected_id"),
+		L.reply_to_provider_message_id.as_("quoted_id"),
+		_null("media_pending"),
 	)
 
 
@@ -208,9 +249,22 @@ def _inbound_branch(I):
 		I.display_name.as_("display_name"),
 		I.contact.as_("contact"),
 		I.provider_message_id.as_("provider_message_id"),
-		Coalesce(I.attachment, I.media_url).as_("attachment"),
+		# the platform's link needs this site's credentials, so a browser is never given it
+		I.attachment.as_("attachment"),
 		_null("reference_doctype"),
 		_null("reference_name"),
+		I.reaction_to_provider_message_id.as_("reaction_to"),
+		I.sender_jid.as_("sender"),
+		_null("poll_question"),
+		_null("poll_options"),
+		I.edited_at.as_("edited_at"),
+		I.original_body.as_("original_body"),
+		I.deleted_at.as_("deleted_at"),
+		I.deleted_by.as_("deleted_by"),
+		_null("interactive"),
+		I.selected_option_id.as_("selected_id"),
+		I.quoted_provider_message_id.as_("quoted_id"),
+		Case().when(I.media_url.notnull() & (I.media_url != "") & I.attachment.isnull(), 1).else_(0).as_("media_pending"),
 	)
 
 
@@ -475,14 +529,20 @@ def stats_by_key(keys: Iterable[str]) -> dict[str, KeyStats]:
 					latest[g["key"]] = (last, direction)
 			if not maxima:
 				continue
-			# Detail rows for the latest message per key: device + display name.
+			# Detail rows for the latest message per key: device + display name. A group's
+			# conversation is named after the group, not after whoever wrote last in it.
+			name_expr = (
+				Case().when(T.is_group == 1, Coalesce(T.group_name, T.display_name)).else_(T.display_name)
+				if T is I and _has_group_name()
+				else T.display_name
+			)
 			detail = (
 				frappe.qb.from_(T)
 				.select(
 					key_expr.as_("key"),
 					ts_col.as_("ts"),
 					T.device.as_("device"),
-					T.display_name.as_("display_name"),
+					name_expr.as_("display_name"),
 				)
 				.where(cond & ts_col.isin(sorted(set(maxima.values()))))
 				.run(as_dict=True)
@@ -500,6 +560,14 @@ def stats_by_key(keys: Iterable[str]) -> dict[str, KeyStats]:
 		for k, (_ts, direction) in latest.items():
 			out[k].last_direction = direction
 	return out
+
+
+def _has_group_name() -> bool:
+	"""`WhatsApp Inbound Message.group_name` exists on this site: the code is shared by every site
+	of a bench, and one not migrated yet must keep naming its conversations as before."""
+	if not hasattr(frappe.local, "wa_has_group_name"):
+		frappe.local.wa_has_group_name = frappe.db.has_column("WhatsApp Inbound Message", "group_name")
+	return frappe.local.wa_has_group_name
 
 
 def device_stats(device: str, days: int = 30) -> DeviceStats:

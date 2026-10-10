@@ -847,6 +847,29 @@ def update_contact(name: str, payload: dict[str, Any]) -> str:
 	return name
 
 
+def add_group_to_contact(contact: str, group_jid: str, user: str | None = None) -> bool:
+	"""Save a WhatsApp group's address among `contact`'s numbers (a `phone_nos` row; its
+	`wa_phone_e164` is the group key) and link the group's WhatsApp Number to the contact. Writes
+	`phone_nos` only; audited `Elevated Contact Write`. Returns False when it was already there."""
+	require("write")
+	kind, key = classify(group_jid)
+	if kind != "Group":
+		frappe.throw(_("{0} is not a WhatsApp group").format(group_jid), WAValidationError)
+	if not frappe.db.exists("Contact", contact):
+		frappe.throw(_("Contact {0} not found").format(contact), WANotFoundError)
+	doc = frappe.get_doc("Contact", contact)
+	added = not any(r.wa_phone_e164 == key for r in doc.get("phone_nos") or [])
+	if added:
+		# a phone field takes digits only: the group's id there, its address as the WhatsApp key
+		doc.append("phone_nos", {"phone": key.split("@")[0], "wa_phone_e164": key})
+		doc.flags.ignore_permissions = True
+		doc.save(ignore_permissions=True)
+		_audit_write(contact, ["phone_nos"], reason=_("WhatsApp group {0}").format(key))
+	if frappe.db.exists("WhatsApp Number", key) and frappe.db.get_value("WhatsApp Number", key, "contact") != contact:
+		link_number(key, contact, user=user)
+	return added
+
+
 def link_number(phone_e164: str, contact: str, user: str | None = None) -> str:
 	"""Link a `WhatsApp Number` row to a Contact (`contact, link_status, linked_by, linked_at,
 	display_name`); audited `Number Linked`."""
@@ -868,6 +891,7 @@ def link_number(phone_e164: str, contact: str, user: str | None = None) -> str:
 		else full_name or frappe.db.get_value("WhatsApp Number", key, "display_name"),
 	}
 	frappe.db.set_value("WhatsApp Number", key, values, update_modified=True)
+	_add_number_to_contact(contact, key, kind)
 	audit.log(
 		"Number Linked",
 		reference=("WhatsApp Number", key),
@@ -876,6 +900,45 @@ def link_number(phone_e164: str, contact: str, user: str | None = None) -> str:
 		user=user,
 	)
 	return key
+
+
+def _add_number_to_contact(contact: str, key: str, kind: str) -> bool:
+	"""Linking a number writes it among the contact's numbers (owner, 2026-10-08), so the contact
+	reaches it like any number it has. Writes `phone_nos` only; audited `Elevated Contact Write`.
+	False when the contact already had it. A group's row carries its id as the phone."""
+	doc = frappe.get_doc("Contact", contact)
+	if any(r.wa_phone_e164 == key for r in doc.get("phone_nos") or []):
+		return False
+	first = not any(r.phone for r in doc.get("phone_nos") or [])
+	if kind == "Group":
+		row = {"phone": key.split("@")[0], "wa_phone_e164": key}
+	else:
+		row = {"phone": key, "is_primary_mobile_no": 1 if first else 0}
+	doc.append("phone_nos", row)
+	doc.flags.ignore_permissions = True
+	doc.save(ignore_permissions=True)
+	_audit_write(contact, ["phone_nos"], reason=_("WhatsApp number {0} linked").format(key))
+	return True
+
+
+def _remove_number_from_contact(contact: str, key: str) -> bool:
+	"""Unlinking a number takes it off the contact's numbers (owner, 2026-10-08) — left there, the
+	numbers sync would link it again. Writes `phone_nos` only; audited `Elevated Contact Write`."""
+	if not frappe.db.exists("Contact", contact):
+		return False
+	doc = frappe.get_doc("Contact", contact)
+	rows = doc.get("phone_nos") or []
+	kept = [r for r in rows if r.wa_phone_e164 != key]
+	if len(kept) == len(rows):
+		return False
+	doc.set("phone_nos", kept)
+	# the contact keeps a primary mobile when it still has a number
+	if kept and not any(cint(r.is_primary_mobile_no) for r in kept):
+		kept[0].is_primary_mobile_no = 1
+	doc.flags.ignore_permissions = True
+	doc.save(ignore_permissions=True)
+	_audit_write(contact, ["phone_nos"], reason=_("WhatsApp number {0} unlinked").format(key))
+	return True
 
 
 def convert_number(
@@ -929,16 +992,35 @@ def add_contact_link(name: str, link_doctype: str, link_name: str) -> list[str]:
 	return ["links"]
 
 
+def remove_contact_link(name: str, link_doctype: str, link_name: str) -> list[str]:
+	"""Remove one party link from a Contact through `update_contact`; returns the fieldnames
+	written (empty when the contact did not carry that link)."""
+	require("write")
+	if not frappe.db.exists("Contact", name):
+		frappe.throw(_("Contact {0} not found").format(name), WANotFoundError)
+	current = [
+		{"link_doctype": r["link_doctype"], "link_name": r["link_name"]}
+		for r in _links_for([name]).get(name, [])
+	]
+	kept = [r for r in current if not (r["link_doctype"] == link_doctype and r["link_name"] == link_name)]
+	if len(kept) == len(current):
+		return []
+	update_contact(name, {"links": kept})
+	return ["links"]
+
+
 def unlink_number(phone_e164: str, user: str | None = None) -> str:
 	"""Detach a `WhatsApp Number` from its Contact (`contact`, `linked_by`, `linked_at` cleared,
-	`link_status` = Not Linked); audited `Number Linked` with `details.unlinked=1`. The role gate
-	(Manager) is the API's; the Contact itself is not touched."""
+	`link_status` = Not Linked) and take it off the contact's numbers; audited `Number Linked` with
+	`details.unlinked=1`. The role gate (Manager) is the API's; the Contact is kept."""
 	kind, key = classify(phone_e164)
 	if not kind or not frappe.db.exists("WhatsApp Number", key):
 		frappe.throw(_("WhatsApp Number {0} not found").format(phone_e164), WANotFoundError)
 	previous = frappe.db.get_value("WhatsApp Number", key, "contact")
 	values = {"contact": None, "link_status": "Not Linked", "linked_by": None, "linked_at": None}
 	frappe.db.set_value("WhatsApp Number", key, values, update_modified=True)
+	if previous:
+		_remove_number_from_contact(previous, key)
 	audit.log(
 		"Number Linked",
 		reference=("WhatsApp Number", key),

@@ -82,6 +82,11 @@ def handle_event(
 			return "Ignored", {}
 		inbound_name = inbound.record_inbound(event, webhook_event_name, device=device)
 		return ("Processed", {"inbound_message": inbound_name}) if inbound_name else ("Ignored", {})
+	if name in ("message.edited", "message.deleted"):
+		if not device:
+			return "Ignored", {}
+		inbound_name = inbound.record_change(event, device=device)
+		return ("Processed", {"inbound_message": inbound_name}) if inbound_name else ("Ignored", {})
 	if name == "message.reaction":
 		if not device:
 			return "Ignored", {}

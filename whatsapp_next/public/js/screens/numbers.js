@@ -47,7 +47,7 @@ frappe.provide("whatsapp_next.numbers");
 	function unlink_number(doc, listview) {
 		return sanad.ui.ConfirmDialog.ask({
 			title: __("Unlink {0}?", [sanad.ui.phone(doc.phone_e164)]),
-			message: __("The number stays in the list as not linked. The contact is not deleted."),
+			message: __("The number stays in the list as not linked, and it is removed from the contact's numbers. The contact itself is kept."),
 			impact: [
 				{ label: __("Contact"), value: doc.contact },
 				{ label: __("Number"), value: sanad.ui.phone(doc.phone_e164) },

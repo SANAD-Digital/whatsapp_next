@@ -295,7 +295,7 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		)
 		self.assertEqual(
 			svc.verification_route({"verification_channel": "Email", "code_sent": True, "email": "a***@gmail.com"}),
-			{"channel": "email", "email": "a***@gmail.com"},
+			{"channel": "email", "email": "a***@gmail.com", "link_sent": False},
 		)
 		# a WhatsApp answer without the platform's number cannot be followed: no code leaks out
 		self.assertNotIn("code", svc.verification_route({"verification_channel": "WhatsApp", "code": "1"}))

@@ -7,7 +7,6 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.exceptions import WAValidationError
-from whatsapp_next.install import ensure_roles
 from whatsapp_next.tests.conftest_frappe import delete_all, ensure_test_user
 
 IGNORE_TEST_RECORD_DEPENDENCIES = ["Print Format", "Letter Head", "DocType", "Language"]
@@ -30,7 +29,6 @@ class TestWhatsAppTemplate(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
 		super().setUpClass()
-		ensure_roles()
 
 	def tearDown(self) -> None:
 		delete_all(DOCTYPE, {"template_name": ("like", f"{PREFIX}%")})

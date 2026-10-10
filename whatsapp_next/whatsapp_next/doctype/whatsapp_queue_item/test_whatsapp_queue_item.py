@@ -7,7 +7,6 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.exceptions import WAStateConflictError
-from whatsapp_next.install import ensure_roles
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.tests.conftest_frappe import delete_all, ensure_device, ensure_settings, ensure_test_user
 
@@ -43,7 +42,6 @@ class TestWhatsAppQueueItem(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls) -> None:
 		super().setUpClass()
-		ensure_roles()
 		ensure_settings(max_attempts=3)
 		cls.device = ensure_device()
 
