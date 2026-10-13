@@ -1,6 +1,8 @@
-# Tests for the command editor (D-132): the per-party-type black / white lists and disabled inputs
-# (controller validation and router enforcement), the editor read, the save that keeps an Active
-# command Active, the draft preview (nothing saved, nothing sent) and delete.
+# Tests for the command editor (D-132, WHATSAPP_NEXT_INTEGRATION §3.2): the per-party-type black / white
+# lists and disabled inputs (controller validation and router enforcement), the command's own message
+# texts per language and switched-off replies, the editor read, the save that keeps an Active command
+# Active, the draft preview (nothing saved, nothing sent) and delete. The commands run the fixture
+# function `_test_echo` (function_fixtures.py).
 
 from __future__ import annotations
 
@@ -11,9 +13,9 @@ from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.api.v1 import commands as api
 from whatsapp_next.exceptions import WAPermissionError, WAStateConflictError, WAValidationError
-from whatsapp_next.functions.context import Sender
 from whatsapp_next.services import command_router as cr
-from whatsapp_next.services import functions_catalog as fc
+from whatsapp_next.services.function_runner import Sender
+from whatsapp_next.tests import function_fixtures as ff
 from whatsapp_next.tests.conftest_frappe import (
 	as_user,
 	delete_all,
@@ -22,40 +24,24 @@ from whatsapp_next.tests.conftest_frappe import (
 	ensure_settings,
 )
 
-SERVICE_USER = "wa-test-edsvc@example.com"
+FUNCTION = "_test_echo"
 CODE = "edtestping"
 PHONE = "+966500930501"
 GROUP = "EdTest Group"
 CUSTOMER = "EdTest Customer"
 
 
-def _service_user() -> str:
-	if not frappe.db.exists("User", SERVICE_USER):
-		u = frappe.get_doc(
-			{
-				"doctype": "User",
-				"email": SERVICE_USER,
-				"first_name": "WA Editor Svc",
-				"user_type": "System User",
-				"enabled": 1,
-				"send_welcome_email": 0,
-			}
-		)
-		u.flags.no_welcome_mail = True
-		u.insert(ignore_permissions=True)
-		frappe.db.delete("Has Role", {"parent": SERVICE_USER, "parenttype": "User"})
-	frappe.clear_cache(user=SERVICE_USER)
-	return SERVICE_USER
-
-
 class TestCommandEditor(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
-		ensure_settings(enable_commands=1, command_service_user=_service_user(), send_receipt_reply=0)
-		fc.clear_cache()
-		if not frappe.db.exists("WhatsApp Function", "ping"):
-			fc.install("ping")
+		ensure_settings(
+			enable_commands=1,
+			command_service_user=ff.ensure_service_user(),
+			send_receipt_reply=0,
+			command_reply_language="en",
+		)
+		ff.ensure_function(FUNCTION)
 		cls.customer = cls._customer()
 		cls.contact = ensure_contact("EdTest Contact", PHONE)
 		if cls.customer:
@@ -111,7 +97,7 @@ class TestCommandEditor(IntegrationTestCase):
 	def _save(self, **payload) -> str:
 		base = {
 			"code": CODE,
-			"function": "ping",
+			"function": FUNCTION,
 			"allowed_party_types": ["Customer"],
 			"requires_linked_contact": 0,
 		}
@@ -194,10 +180,18 @@ class TestCommandEditor(IntegrationTestCase):
 			empty = api.get_editor()
 			self.assertIsNone(empty["command"]["name"])
 			self.assertIn("Customer", [p["key"] for p in empty["party_types"]])
-			self.assertIn("ping", [f["name"] for f in empty["functions"]])
-			spec = api.get_function_spec(function="ping")
-			self.assertEqual((spec["inputs"][0]["key"], spec["inputs"][0]["rest"]), ("text", True))
-			self.assertIn("ping", spec["suggested_commands"])
+			self.assertIn(FUNCTION, [f["name"] for f in empty["functions"]])
+			spec = api.get_function_spec(function=FUNCTION)
+			# read from the header: what the sender types, the texts the command may change, the replies
+			self.assertEqual([i["key"] for i in spec["inputs"]], ["text"])
+			self.assertEqual([s["key"] for s in spec["settings"]], ["text"])
+			template = spec["templates"][0]
+			self.assertEqual((template["key"], template["default"]), ("msg_result", "pong: {{ echo }}"))
+			self.assertEqual([v["name"] for v in template["vars"]], ["echo", "party"])
+			self.assertEqual([r["key"] for r in spec["replies"]], ["result_text"])
+			self.assertEqual((spec["party_types_text"], spec["available"], spec["server_script"]), ("All", True, "wa_fn__test_echo"))
+			with self.assertRaises(frappe.ValidationError):
+				api.get_function_spec(function="_test_nope")
 		name = self._save(
 			synonyms="edtestping2", access={"Customer": {"mode": "Deny All", "contacts": [self.contact]}}
 		)
@@ -207,7 +201,7 @@ class TestCommandEditor(IntegrationTestCase):
 		self.assertEqual((cmd["synonyms"], cmd["allowed_party_types"]), (["edtestping2"], ["Customer"]))
 		self.assertEqual(cmd["access"]["Customer"]["mode"], "Deny All")
 		self.assertEqual(cmd["access"]["Customer"]["contacts"][0]["label"], "EdTest Contact")
-		self.assertEqual(out["function"]["name"], "ping")
+		self.assertEqual(out["function"]["name"], FUNCTION)
 
 	def test_save_keeps_an_active_command_active(self):
 		name = self._save(status="Active")
@@ -229,7 +223,7 @@ class TestCommandEditor(IntegrationTestCase):
 		before = frappe.db.count("WhatsApp Log")
 		payload = {
 			"code": CODE,
-			"function": "ping",
+			"function": FUNCTION,
 			"allowed_party_types": ["Customer"],
 			"requires_linked_contact": 0,
 		}
@@ -241,8 +235,8 @@ class TestCommandEditor(IntegrationTestCase):
 			# running the handler as the service user leaves the caller's web session intact
 			self.assertEqual((frappe.session.sid, frappe.session.data.get("marker")), ("edtest-sid", 1))
 			self.assertEqual(
-				(out["status"], out["text"], out["args"]),
-				("Executed", f"{CODE} hello there", {"text": "hello there"}),
+				(out["status"], out["text"], out["args"]["text"]),
+				("Executed", f"{CODE} hello there", "hello there"),
 			)
 			self.assertTrue(out["replies"][0]["body"].startswith("pong: hello there"))
 			self.assertFalse(frappe.db.exists("WhatsApp Command", CODE))
@@ -272,7 +266,7 @@ class TestCommandEditor(IntegrationTestCase):
 
 		if not self.customer:
 			self.skipTest("no Customer on this site")
-		payload = {"code": CODE, "function": "ping", "allowed_party_types": ["Customer"]}
+		payload = {"code": CODE, "function": FUNCTION, "allowed_party_types": ["Customer"]}
 		with as_user("WhatsApp Manager"):
 			with self.assertRaises(WAValidationError):
 				api.preview_command(
@@ -293,6 +287,56 @@ class TestCommandEditor(IntegrationTestCase):
 		draft = frappe._dict(allowed_party_types=[frappe._dict(party_type="Customer")])
 		self.assertEqual(svc._preview_party(draft, self.contact, None, None), ("Customer", self.customer))
 		self.assertEqual(svc._preview_party(draft, None, "Customer", "anything"), (None, None))
+
+	def test_templates_and_disabled_replies(self):
+		"""The command's own message text per language (else the function's, else the header's) and the
+		replies it switches off; names outside the header are refused."""
+		name = self._save(
+			templates=[
+				{"param": "msg_result", "language": "en", "text": "hi {{ echo }}"},
+				{"param": "msg_result", "language": "ar", "text": ""},  # emptied: falls back
+			],
+		)
+		doc = frappe.get_doc("WhatsApp Command", name)
+		self.assertEqual([(r.param, r.language, r.text) for r in doc.templates], [("msg_result", "en", "hi {{ echo }}")])
+		with as_user("WhatsApp Manager"):
+			cmd = api.get_editor(name=name)["command"]
+			self.assertEqual(cmd["templates"], [{"param": "msg_result", "language": "en", "text": "hi {{ echo }}"}])
+			out = api.preview_command(payload={"name": name, "code": CODE, "function": FUNCTION, "templates": cmd["templates"], "requires_linked_contact": 0}, sender={"phone": PHONE}, values={"text": "there"})
+			self.assertEqual([r["body"] for r in out["replies"]], ["hi there"])
+			for bad in (
+				{"templates": [{"param": "text", "language": "en", "text": "x"}]},  # not a template
+				{"templates": [{"param": "msg_result", "language": "en", "text": "a"}, {"param": "msg_result", "language": "en", "text": "b"}]},
+				{"templates": [{"param": "msg_result", "text": "x", "owner": "y"}]},  # unknown field
+				{"disabled_replies": ["nope"]},
+				{"disabled_inputs": ["party"]},  # the party is never an input
+				{"ask_inputs": "msg_result"},
+			):
+				with self.subTest(payload=bad), self.assertRaises(WAValidationError):
+					api.save_editor(payload={"name": name, **bad})
+			# a text for every language (no language) stays so, and is used in any reply language
+			api.save_editor(payload={"name": name, "templates": [{"param": "msg_result", "language": "", "text": "all {{ echo }}"}]})
+			self.assertEqual(
+				api.get_editor(name=name)["command"]["templates"],
+				[{"param": "msg_result", "language": None, "text": "all {{ echo }}"}],
+			)
+			from whatsapp_next.services import function_runner
+
+			ensure_settings(command_reply_language="ar")
+			try:
+				params, _missing = function_runner.prepare(frappe.get_doc("WhatsApp Command", name), self._sender())
+			finally:
+				ensure_settings(command_reply_language="en")
+			self.assertEqual(params["msg_result"], "all {{ echo }}")
+			api.save_editor(payload={"name": name, "disabled_replies": ["result_text"]})
+			self.assertEqual(api.get_editor(name=name)["command"]["disabled_replies"], ["result_text"])
+			out = api.preview_command(payload={"code": CODE, "function": FUNCTION, "disabled_replies": ["result_text"], "requires_linked_contact": 0}, sender={"phone": PHONE})
+			self.assertEqual((out["status"], out["replies"]), ("Executed", []))
+			# restoring the defaults drops the command's own texts and values
+			api.save_editor(payload={"name": name, "settings_overrides": {"text": "fixed"}})
+			self.assertEqual(api.restore_defaults(name=name), {"templates": [], "settings_overrides": {}})
+		doc.reload()
+		self.assertEqual((doc.templates, doc.settings_overrides), ([], None))
 
 	def test_delete(self):
 		name = self._save()

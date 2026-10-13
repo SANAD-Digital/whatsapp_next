@@ -10,8 +10,7 @@ CHILD_DOCTYPES = {
 	"WhatsApp Contact Group Member",
 	"WhatsApp Campaign Message",
 	"WhatsApp Campaign Recipient",
-	"WhatsApp Function Setting",
-	"WhatsApp Function Output",
+	"WhatsApp Command Template",
 	"WhatsApp Command Party Type",
 	"WhatsApp Notification Recipient",
 	"WhatsApp Notification Alert Recipient",
@@ -188,53 +187,26 @@ EXPECTED: dict[str, list[tuple[str, str, list[str] | None]]] = {
 		("removed_by", "Link", None),
 		("removed_at", "Datetime", None),
 	],
+	# a function is a Server Script with a WA-FUNCTION header (WHATSAPP_NEXT_INTEGRATION §3.1): the
+	# header as installed is `manifest`, the site's values of its parameters are `values`
 	"WhatsApp Function": [
 		("function_key", "Data", None),
 		("function_name", "Data", None),
-		("category", "Data", None),
 		("status", "Select", ["Active", "Inactive"]),
 		("description", "Small Text", None),
-		("when_to_use", "Small Text", None),
-		("party_types", "Table MultiSelect", None),
+		("server_script", "Link", None),
 		("installed_version", "Data", None),
 		("installed_at", "Datetime", None),
 		("installed_by", "Link", None),
-		("latest_version", "Data", None),
-		("latest_version_date", "Date", None),
 		("update_available", "Check", None),
-		("catalog_source", "Data", None),
-		("catalog_checked_at", "Datetime", None),
-		("checksum", "Data", None),
-		("handler_registered", "Check", None),
+		("manifest_checksum", "Data", None),
 		("manifest", "JSON", None),
-		("settings", "Table", None),
-		("outputs", "Table", None),
+		("values", "JSON", None),
 		("call_count", "Int", None),
 		("last_called_at", "Datetime", None),
 		("avg_ms", "Int", None),
 		("error_count", "Int", None),
 		("last_error", "Small Text", None),
-	],
-	"WhatsApp Function Setting": [
-		("key", "Data", None),
-		("label", "Data", None),
-		("fieldtype", "Select", ["Check", "Int", "Data", "Select"]),
-		("choices", "Small Text", None),
-		("default_value", "Data", None),
-		("value", "Data", None),
-		("notes", "Small Text", None),
-	],
-	"WhatsApp Function Output": [
-		("output_key", "Data", None),
-		("label", "Data", None),
-		("output_type", "Select", ["Text", "Document"]),
-		("default_template", "Text", None),
-		("template", "Text", None),
-		("condition", "Code", None),
-		("print_format", "Link", None),
-		("file_name_template", "Data", None),
-		("variables", "Small Text", None),
-		("notes", "Small Text", None),
 	],
 	"WhatsApp Command": [
 		("code", "Data", None),
@@ -247,8 +219,11 @@ EXPECTED: dict[str, list[tuple[str, str, list[str] | None]]] = {
 		("allowed_group", "Link", None),
 		("blocked_group", "Link", None),
 		("reply_device", "Link", None),
+		("disabled_inputs", "Small Text", None),
+		("ask_inputs", "Small Text", None),
 		("settings_overrides", "JSON", None),
-		("outputs", "Table", None),
+		("templates", "Table", None),
+		("disabled_replies", "Small Text", None),
 		("description", "Small Text", None),
 		("run_count", "Int", None),
 		("last_run_at", "Datetime", None),
@@ -256,6 +231,11 @@ EXPECTED: dict[str, list[tuple[str, str, list[str] | None]]] = {
 	],
 	"WhatsApp Command Party Type": [
 		("party_type", "Link", None),
+	],
+	"WhatsApp Command Template": [
+		("param", "Data", None),
+		("language", "Link", None),
+		("text", "Code", None),
 	],
 	"WhatsApp Notification": [
 		("notification_name", "Data", None),
@@ -380,6 +360,27 @@ class TestFieldsGroupB(IntegrationTestCase):
 					self.assertEqual(df.fieldtype, fieldtype)
 					if options is not None:
 						self.assertEqual((df.options or "").split("\n"), options)
+
+	def test_removed_fields_and_doctypes_are_gone(self) -> None:
+		"""The catalog-era fields and the per-function child tables left with the Server Scripts."""
+		function = frappe.get_meta("WhatsApp Function")
+		for fieldname in (
+			"category",
+			"when_to_use",
+			"party_types",
+			"latest_version",
+			"catalog_source",
+			"checksum",
+			"handler_registered",
+			"settings",
+			"outputs",
+		):
+			self.assertIsNone(function.get_field(fieldname), fieldname)
+		self.assertIsNone(frappe.get_meta("WhatsApp Command").get_field("outputs"))
+		self.assertEqual(frappe.get_meta("WhatsApp Command").get_field("templates").options, "WhatsApp Command Template")
+		self.assertEqual(function.get_field("server_script").options, "Server Script")
+		for doctype in ("WhatsApp Function Setting", "WhatsApp Function Output"):
+			self.assertFalse(frappe.db.exists("DocType", doctype), doctype)
 
 	def test_children_are_tables(self) -> None:
 		for doctype in EXPECTED:

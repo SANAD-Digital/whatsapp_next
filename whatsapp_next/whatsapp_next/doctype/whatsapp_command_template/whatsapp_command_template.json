@@ -1,0 +1,52 @@
+{
+ "actions": [],
+ "creation": "2026-10-13 00:41:11.618217",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "row_format": "Dynamic",
+ "field_order": [
+  "param",
+  "language",
+  "text"
+ ],
+ "fields": [
+  {
+   "fieldname": "param",
+   "label": "Message",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "The function's Template parameter this text replaces (e.g. msg_result)."
+  },
+  {
+   "fieldname": "language",
+   "label": "Language",
+   "fieldtype": "Link",
+   "options": "Language",
+   "in_list_view": 1,
+   "description": "Empty: every language without a text of its own."
+  },
+  {
+   "fieldname": "text",
+   "label": "Text",
+   "fieldtype": "Code",
+   "options": "Jinja",
+   "reqd": 1,
+   "in_list_view": 1,
+   "description": "Jinja over the values the function gives this message (its @var lines)."
+  }
+ ],
+ "links": [],
+ "modified": "2026-10-13 00:41:11.618217",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Command Template",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0,
+ "istable": 1,
+ "editable_grid": 1
+}

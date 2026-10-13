@@ -28,7 +28,8 @@
   "disabled_inputs",
   "ask_inputs",
   "settings_overrides",
-  "outputs",
+  "templates",
+  "disabled_replies",
   "notes_section",
   "description",
   "stats_section",
@@ -181,26 +182,32 @@
    "fieldname": "disabled_inputs",
    "label": "Disabled Inputs",
    "fieldtype": "Small Text",
-   "description": "Function input keys this command does not read, one per line."
+   "description": "Parameters of the function the sender may not give in this command, one per line."
   },
   {
    "fieldname": "ask_inputs",
    "fieldtype": "Small Text",
    "label": "Ask for inputs",
-   "description": "Inputs to ask the sender for when the command arrives without them, one per line: key, or key: value, value=Label, … for ready answers. Required inputs are always asked. Direct chats only."
+   "description": "Parameters to ask the sender for when the command arrives without them, one per line: name, or name: value, value=Label, … for ready answers. Required parameters are always asked. Direct chats only."
   },
   {
    "fieldname": "settings_overrides",
    "label": "Settings Overrides",
    "fieldtype": "JSON",
-   "description": "Setting values for this command only, as JSON, e.g. {\"key\": \"value\"}. Keys must be settings of the function."
+   "description": "Values of the function's parameters for this command only, as JSON, e.g. {\"timespan\": \"this month\", \"show_zero_values\": 0}. Keys must be parameters of the function."
   },
   {
-   "fieldname": "outputs",
-   "label": "Outputs",
+   "fieldname": "templates",
+   "label": "Message Texts",
    "fieldtype": "Table",
-   "options": "WhatsApp Function Output",
-   "description": "The replies the command sends. They start as the function's defaults, and Restore Defaults copies them again."
+   "options": "WhatsApp Command Template",
+   "description": "This command's own texts for the function's messages, per language. A message without a row here uses the function's value, then the header's default."
+  },
+  {
+   "fieldname": "disabled_replies",
+   "label": "Disabled Replies",
+   "fieldtype": "Small Text",
+   "description": "Replies of the function (@reply keys) this command does not send, one per line — e.g. the text without the file."
   },
   {
    "fieldname": "notes_section",
@@ -254,7 +261,7 @@
    "link_fieldname": "command"
   }
  ],
- "modified": "2026-10-06 23:00:00.000000",
+ "modified": "2026-10-13 00:41:11.618217",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Command",

@@ -142,10 +142,19 @@ def _label(spec: dict[str, Any]) -> str:
 def options(command, spec: dict[str, Any]) -> list[tuple[str, str]]:
 	"""The ready answers offered for an input, `[(value, label)]`: the command's own choices, or
 	the date presets for a date input without them."""
-	choices = ask_specs(command).get(spec["key"]) or []
+	choices = ask_specs(command).get(spec["key"]) or _own_choices(spec)
 	if not choices and (spec.get("type") or "str").lower() == "date":
 		return [(v, _(t)) for v, t in DATE_PRESETS]
 	return choices
+
+
+def _own_choices(spec: dict[str, Any]) -> list[tuple[str, str]]:
+	"""A Select parameter's `@options` (or a Check's yes / no) when the command offers none."""
+	if spec.get("choices"):
+		return [(c, _(c)) for c in spec["choices"]]
+	if (spec.get("type") or "").lower() == "check":
+		return [("1", _("Yes")), ("0", _("No"))]
+	return []
 
 
 def text_question(command, spec: dict[str, Any]) -> dict[str, Any]:
@@ -187,7 +196,7 @@ def question(command, spec: dict[str, Any]) -> dict[str, Any]:
 		return text_question(command, spec)
 	label = _label(spec)
 	kind = (spec.get("type") or "str").lower()
-	choices = ask_specs(command).get(spec["key"]) or []
+	choices = ask_specs(command).get(spec["key"]) or _own_choices(spec)
 	title = _(command.get("title") or command.get("code") or "")
 	if kind == "date" and not choices:
 		rows = [{"id": ARG_PREFIX + v, "title": _(t)} for v, t in DATE_PRESETS]

@@ -157,3 +157,31 @@
 		}
 	}
 }
+
+// "Try": each message the function would send, under the @reply key it answers with
+.wa-fn-try {
+	&__msg {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		& + & {
+			margin-block-start: var(--sanad-gap-sm);
+		}
+	}
+	&__key {
+		font-family: var(--sanad-font-mono, monospace);
+		font-size: 11px;
+		color: var(--wa-ink-3);
+	}
+	&__text {
+		margin: 0;
+		padding: 8px 10px;
+		border-radius: 8px;
+		background: var(--wa-sunken);
+		color: var(--wa-ink);
+		font-family: inherit;
+		font-size: 13px;
+		white-space: pre-wrap;
+		unicode-bidi: plaintext;
+	}
+}

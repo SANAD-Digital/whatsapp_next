@@ -26,7 +26,7 @@ const areas = {
 	groups: ["get_editor", "save_editor"],
 	notifications: ["preview", "get_document_fields", "send_now", "get_editor", "get_document_setup", "preview_draft", "send_test", "save_editor", "delete_notification", "search"],
 	alerts: ["preview", "run_now", "get_report_columns", "get_dynamic_filter_reference", "get_editor", "preview_draft", "send_test", "save_editor", "set_enabled", "delete_alert", "search", "get_report_info"],
-	functions: ["get_catalog", "get_manifest", "preview_install", "install", "update", "update_many", "remove", "set_status", "set_status_many", "save_settings"],
+	functions: ["get_catalog", "get_manifest", "preview_install", "install", "update", "update_many", "remove", "set_status", "set_status_many", "save_values", "try_function", "check_updates"],
 	commands: ["list_commands", "get_defaults", "save_command", "set_status", "set_status_many", "restore_defaults", "test_command", "get_editor", "get_function_spec", "save_editor", "preview_command", "delete_command", "search_groups", "search_contacts"],
 	testlab: ["get_context", "get_health", "identify", "search_documents", "preview", "start_run", "run_check", "get_status", "list_runs"],
 	// the calling regions, out of the library the server validates with

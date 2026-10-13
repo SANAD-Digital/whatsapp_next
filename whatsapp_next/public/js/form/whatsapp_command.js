@@ -92,14 +92,38 @@ whatsapp_next.command_test_dialog = function (doc = {}) {
  */
 whatsapp_next.command_modal = function (name, opts = {}) {
 	const call = (method, args) => sanad.ui.call(`commands.${method}`, args);
+	const fx = whatsapp_next.functions;
+	// a tab opened before the last build holds the old bundle: load the new one
+	if (!fx || !fx.editor_spec) return window.location.reload();
+	// the function's header drawn as the editor's variables · options · outputs (`function_spec.js`):
+	// the command's own message texts become output rows, and go back as `templates` on save
+	let original = [];
+	let spec_outputs = [];
+	const adapt_spec = (spec) => {
+		const shaped = fx.editor_spec(spec, original);
+		spec_outputs = (shaped && fx.editor_spec(spec, []).outputs) || [];
+		return shaped;
+	};
 	return new sanad.ui.CommandEditor({
 		name: name || null,
 		read_only: !!opts.read_only || !frappe.user.has_role(["WhatsApp Manager", "System Manager"]),
-		load: (n) => call("get_editor", { name: n }),
-		load_function: (fn) => call("get_function_spec", { function: fn }),
-		save: (payload) => call("save_editor", { payload }),
+		load: (n) =>
+			call("get_editor", { name: n }).then((r) => {
+				original = (r.command && r.command.templates) || [];
+				r.function = r.function ? adapt_spec(r.function) : r.function;
+				r.command.outputs = r.function ? r.function.outputs : [];
+				return r;
+			}),
+		load_function: (fn) =>
+			call("get_function_spec", { function: fn }).then((spec) => {
+				// another function: the command's texts for the old one's messages do not carry over
+				const keys = new Set((spec.templates || []).map((t) => t.key));
+				original = original.filter((r) => keys.has(r.param));
+				return adapt_spec(spec);
+			}),
+		save: (payload) => call("save_editor", { payload: fx.payload_of(payload, spec_outputs, original) }),
 		remove: (n) => call("delete_command", { name: n }),
-		preview: ({ payload, sender, values }) => call("preview_command", { payload, sender, values }),
+		preview: ({ payload, sender, values }) => call("preview_command", { payload: fx.payload_of(payload, spec_outputs, original), sender, values }),
 		search_groups: (txt) => call("search_groups", { txt }),
 		search_contacts: (txt, party_type) => call("search_contacts", { txt, party_type }),
 		on_saved: opts.on_saved,
@@ -151,7 +175,7 @@ frappe.ui.form.on("WhatsApp Command", {
 			frm.add_custom_button(__("Restore defaults"), () =>
 				sanad.ui.ConfirmDialog.ask({
 					title: __("Restore defaults for {0}?", [frm.doc.code || frm.doc.name]),
-					message: __("Outputs are re-copied from the function and the settings overrides are cleared."),
+					message: __("The command's own message texts and option values are cleared: it uses the function's again."),
 					impact: [{ label: __("Function"), value: frm.doc.function || "—" }],
 					confirm_label: __("Restore defaults"),
 					on_confirm: () => sanad.ui.call("commands.restore_defaults", { name: frm.doc.name }),

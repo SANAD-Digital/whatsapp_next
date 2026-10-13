@@ -16,7 +16,9 @@ from frappe.utils import cint, now_datetime
 
 from whatsapp_next.exceptions import WANotFoundError, WAStateConflictError, WAValidationError
 from whatsapp_next.services import audit
-from whatsapp_next.whatsapp_next.doctype.whatsapp_command.whatsapp_command import OUTPUT_COPY_FIELDS
+from whatsapp_next.services import function_header as fh
+
+TEMPLATE_FIELDS: tuple[str, ...] = ("param", "language", "text")
 
 # Payload keys accepted by `save_command` (backend-plan §4.10) — never a client fieldname beyond these.
 SCALAR_KEYS: tuple[str, ...] = (
@@ -34,8 +36,9 @@ SCALAR_KEYS: tuple[str, ...] = (
 TABLE_KEYS: tuple[str, ...] = (
 	"allowed_party_types",
 	"settings_overrides",
-	"outputs",
+	"templates",
 	"disabled_inputs",
+	"disabled_replies",
 	"access",
 )
 ALLOWED_KEYS: frozenset[str] = frozenset({"name", *SCALAR_KEYS, *TABLE_KEYS})
@@ -59,9 +62,10 @@ def require_inactive(doc) -> None:
 def save(payload: dict, user: str | None = None) -> str:
 	"""Create (`name` absent) or update a command from the allow-listed payload
 	`{name?, code, title, function, synonyms, requires_linked_contact, allowed_party_types[],
-	allowed_group, blocked_group, settings_overrides{}, outputs[], description}`.
+	allowed_group, blocked_group, settings_overrides{}, templates[{param, language, text}],
+	disabled_inputs[], disabled_replies[], ask_inputs, access{}, description}`.
 	E: `WAStateConflictError` (target Active), `WAValidationError` (unknown key, word collision,
-	unknown override key); audited `Command Changed`. Returns the command's name."""
+	a name not in the function's header); audited `Command Changed`. Returns the command's name."""
 	if not isinstance(payload, dict):
 		frappe.throw(_("payload must be an object"), WAValidationError)
 	unknown = sorted(set(payload) - ALLOWED_KEYS)
@@ -111,26 +115,27 @@ def _apply(doc, payload: dict) -> list[str]:
 			frappe.throw(_("settings_overrides must be an object"), WAValidationError)
 		doc.settings_overrides = json.dumps(overrides, ensure_ascii=False) if overrides else None
 		written.append("settings_overrides")
-	if "outputs" in payload:
-		doc.set("outputs", [])
-		for i, row in enumerate(payload.get("outputs") or [], start=1):
+	if "templates" in payload:
+		doc.set("templates", [])
+		for i, row in enumerate(payload.get("templates") or [], start=1):
 			if not isinstance(row, dict):
-				frappe.throw(_("outputs[{0}] must be an object").format(i), WAValidationError)
-			bad = sorted(set(row) - set(OUTPUT_COPY_FIELDS))
+				frappe.throw(_("templates[{0}] must be an object").format(i), WAValidationError)
+			bad = sorted(set(row) - set(TEMPLATE_FIELDS))
 			if bad:
-				frappe.throw(
-					_("outputs[{0}]: unknown fields {1}").format(i, ", ".join(bad)), WAValidationError
-				)
-			doc.append("outputs", {f: row.get(f) for f in OUTPUT_COPY_FIELDS if f in row})
-		written.append("outputs")
-	if "disabled_inputs" in payload:
-		value = payload.get("disabled_inputs") or []
-		if isinstance(value, str):
-			value = value.splitlines()
-		if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
-			frappe.throw(_("disabled_inputs must be a list of input keys"), WAValidationError)
-		doc.disabled_inputs = "\n".join(v.strip() for v in value if v.strip()) or None
-		written.append("disabled_inputs")
+				frappe.throw(_("templates[{0}]: unknown fields {1}").format(i, ", ".join(bad)), WAValidationError)
+			if not str(row.get("text") or "").strip():
+				continue  # an emptied text falls back to the function's
+			doc.append("templates", {f: row.get(f) or None for f in TEMPLATE_FIELDS})
+		written.append("templates")
+	for key in ("disabled_inputs", "disabled_replies"):
+		if key in payload:
+			value = payload.get(key) or []
+			if isinstance(value, str):
+				value = value.splitlines()
+			if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
+				frappe.throw(_("{0} must be a list of names").format(key), WAValidationError)
+			doc.set(key, "\n".join(v.strip() for v in value if v.strip()) or None)
+			written.append(key)
 	if "access" in payload:
 		_apply_access(doc, payload.get("access"))
 		written.append("access")
@@ -176,24 +181,21 @@ def set_status(name: str, status: str) -> str:
 
 
 def restore_defaults(name: str, user: str | None = None) -> dict[str, Any]:
-	"""Re-copy `outputs` from the Function and clear `settings_overrides`.
+	"""Drop the command's own message texts and parameter values, so it uses the function's again.
 	E: `WANotFoundError`, `WAStateConflictError` (Active); audited `Command Defaults Restored`."""
 	doc = get(name)
 	require_inactive(doc)
-	doc.copy_outputs_from_function()
+	doc.set("templates", [])
 	doc.settings_overrides = None
 	doc.defaults_restored_at = now_datetime()
 	doc.save()
 	audit.log(
 		"Command Defaults Restored",
 		reference=("WhatsApp Command", doc.name),
-		fields_written=("outputs", "settings_overrides", "defaults_restored_at"),
+		fields_written=("templates", "settings_overrides", "defaults_restored_at"),
 		user=user,
 	)
-	return {
-		"outputs": [{f: row.get(f) for f in OUTPUT_COPY_FIELDS} for row in doc.get("outputs") or []],
-		"settings_overrides": {},
-	}
+	return {"templates": [], "settings_overrides": {}}
 
 
 # ---- the command editor (D-132) --------------------------------------------------------------
@@ -240,62 +242,62 @@ def delete(name: str, user: str | None = None) -> None:
 	frappe.delete_doc("WhatsApp Command", name)
 
 
-def _manifest(function_doc) -> dict[str, Any]:
-	raw = function_doc.manifest
-	if isinstance(raw, dict):
-		return raw
-	try:
-		return json.loads(raw) if raw else {}
-	except ValueError:
-		return {}
-
-
 def function_spec(function: str) -> dict[str, Any]:
-	"""What the editor shows for one installed Function: `{name, function_name, category, status,
-	when_to_use, example, inputs[], settings[], outputs[], party_types[], suggested_commands[]}`.
-	E: `WANotFoundError`."""
+	"""What the editor shows for one installed function, from its header: `{name, function_name,
+	description, status, version, server_script, available, reasons, party_types{mode, types},
+	party_types_text, inputs[], settings[], templates[], replies[]}`. `inputs` are the values a sender
+	may write; `settings` the other parameters (with the site's value as `default_value`);
+	`templates` the message texts (with their per-language defaults, the site's text and the values
+	they may use). E: `WANotFoundError`."""
+	from whatsapp_next.services import functions_catalog
+	from whatsapp_next.services.command_router import _as_input
+
 	if not frappe.db.exists("WhatsApp Function", function):
 		frappe.throw(_("Function {0} is not installed").format(function), WANotFoundError)
 	doc = frappe.get_doc("WhatsApp Function", function)
-	manifest = _manifest(doc)
-	inputs = sorted(
-		(i for i in manifest.get("inputs") or [] if isinstance(i, dict) and i.get("key")),
-		key=lambda i: cint(i.get("position")) or 99,
-	)
+	spec = functions_catalog.manifest_of(doc)
+	site = functions_catalog.values_of(doc)
+	available, reasons = fh.function_availability(spec)
+	typed = fh.typed_params(spec)
 	return {
 		"name": doc.name,
 		"function_name": doc.function_name or doc.name,
-		"category": doc.category,
+		"description": doc.description,
 		"status": doc.status,
-		"when_to_use": doc.when_to_use,
-		"example": manifest.get("example"),
-		"inputs": [
-			{
-				"key": i["key"],
-				"label": i.get("label") or i["key"],
-				"type": i.get("type") or "str",
-				"required": bool(i.get("required")),
-				"rest": bool(i.get("rest")),
-				"options": i.get("options"),
-				"details": i.get("details") or i.get("description"),
-				"example": i.get("example"),
-			}
-			for i in inputs
-		],
+		"version": doc.installed_version,
+		"server_script": doc.server_script,
+		"available": available,
+		"reasons": reasons,
+		"party_types": spec.get("party_types") or {"mode": "all", "types": []},
+		"party_types_text": fh.party_types_text(spec),
+		"inputs": [_as_input(p, n) for n, p in enumerate(typed, start=1)],
 		"settings": [
 			{
-				"key": row.key,
-				"label": row.label or row.key,
-				"fieldtype": row.fieldtype,
-				"choices": [c for c in (row.choices or "").splitlines() if c.strip()],
-				"default_value": row.value if row.value not in (None, "") else row.default_value,
-				"notes": row.notes,
+				"key": p["name"],
+				"label": p["label"] or p["name"],
+				"fieldtype": p["fieldtype"],
+				"options": p["options"],
+				"choices": list(p["select_options"] or []),
+				"required": p["required"],
+				"depends_on": p["depends_on"],
+				"header_default": p["default"],
+				"default_value": site.get(p["name"]) if not fh.is_empty(site.get(p["name"])) else p["default"],
 			}
-			for row in doc.get("settings") or []
+			for p in typed
 		],
-		"outputs": [{f: row.get(f) for f in OUTPUT_COPY_FIELDS} for row in doc.get("outputs") or []],
-		"party_types": [row.party_type for row in doc.get("party_types") or []],
-		"suggested_commands": list(manifest.get("suggested_commands") or []),
+		"templates": [
+			{
+				"key": p["name"],
+				"label": p["label"] or p["name"],
+				"default": p["default"],
+				"defaults_by_lang": p["defaults_by_lang"],
+				"site": site.get(p["name"]),
+				"vars": fh.vars_for(spec, p["name"]),
+			}
+			for p in fh.command_params(spec)
+			if p["fieldtype"] == "Template"
+		],
+		"replies": spec.get("replies") or [],
 	}
 
 
@@ -367,10 +369,13 @@ def editor(name: str | None = None) -> dict[str, Any]:
 		"synonyms": [],
 		"requires_linked_contact": 0,
 		"allowed_party_types": [],
+		"allowed_group": None,
+		"blocked_group": None,
 		"disabled_inputs": [],
 		"ask_inputs": "",
 		"settings_overrides": {},
-		"outputs": [],
+		"templates": [],
+		"disabled_replies": [],
 		"access": {},
 		"runs_30d": 0,
 		"has_history": False,
@@ -387,10 +392,13 @@ def editor(name: str | None = None) -> dict[str, Any]:
 				"synonyms": doc.synonym_list(),
 				"requires_linked_contact": cint(doc.requires_linked_contact),
 				"allowed_party_types": [r.party_type for r in doc.get("allowed_party_types") or []],
+				"allowed_group": doc.allowed_group,
+				"blocked_group": doc.blocked_group,
 				"disabled_inputs": [k for k in (doc.disabled_inputs or "").splitlines() if k.strip()],
 				"ask_inputs": doc.ask_inputs or "",
 				"settings_overrides": _overrides(doc),
-				"outputs": [{f: row.get(f) for f in OUTPUT_COPY_FIELDS} for row in doc.get("outputs") or []],
+				"templates": [{f: row.get(f) for f in TEMPLATE_FIELDS} for row in doc.get("templates") or []],
+				"disabled_replies": [k for k in (doc.disabled_replies or "").splitlines() if k.strip()],
 				"access": _access(doc),
 				"runs_30d": recent_run_counts([doc.name], days=30).get(doc.name, 0),
 				"has_history": bool(frappe.db.exists("WhatsApp Inbound Message", {"command": doc.name})),
@@ -398,7 +406,7 @@ def editor(name: str | None = None) -> dict[str, Any]:
 		)
 	functions = frappe.get_all(
 		"WhatsApp Function",
-		fields=["name", "function_name", "category", "status"],
+		fields=["name", "function_name", "server_script", "status"],
 		order_by="function_name asc",
 	)
 	return {
@@ -417,8 +425,6 @@ def _draft(payload: dict):
 	doc = frappe.new_doc("WhatsApp Command")
 	fields = {k: v for k, v in payload.items() if k not in ("name", "status")}
 	_apply(doc, fields)
-	if not fields.get("outputs") and doc.function:
-		doc.copy_outputs_from_function()
 	doc.name = payload.get("name") or _("(unsaved command)")
 	doc.code = (doc.code or "").strip().casefold()
 	return doc
@@ -475,8 +481,8 @@ def _preview_party(
 
 def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
 	"""`preview` after the payload checks: access, arguments, handler, outputs — all dry."""
-	from whatsapp_next.functions.context import Sender
-	from whatsapp_next.services import command_router
+	from whatsapp_next.services import command_router, function_runner
+	from whatsapp_next.services.function_runner import Sender
 	from whatsapp_next.services.phone import classify
 
 	sender = sender if isinstance(sender, dict) else {}
@@ -497,19 +503,18 @@ def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
 		party_type=party_type,
 		party_name=party_name,
 	)
-	spec = function_spec(doc.function)
-	off = command_router.disabled_inputs(doc)
+	inputs = command_router.command_inputs(doc)
 	parts = [doc.code]
-	for item in spec["inputs"]:
+	for item in inputs:
 		raw = str(values.get(item["key"]) or "").strip()
-		if item["key"] in off or not raw:
+		if not raw:
 			continue
-		parts.append(raw if item["rest"] or " " not in raw else json.dumps(raw, ensure_ascii=False))
+		parts.append(raw if item.get("rest") or " " not in raw else json.dumps(raw, ensure_ascii=False))
 	text = " ".join(p for p in parts if p)
 	missing = [
 		{"key": i["key"], "label": i["label"]}
-		for i in spec["inputs"]
-		if i["required"] and i["key"] not in off and not str(values.get(i["key"]) or "").strip()
+		for i in inputs
+		if i["required"] and not str(values.get(i["key"]) or "").strip()
 	]
 	inbound = frappe._dict(
 		name=None,
@@ -538,14 +543,22 @@ def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
 			block_reason=reason,
 			reply_sent=bool(cint(frappe.get_cached_doc("WhatsApp Settings").send_receipt_reply)),
 			replies=[
-				{"message_type": "Text", "body": _("You cannot use this command ({0})").format(_(reason))}
+				{"message_type": "Text", "body": command_router.block_message(doc, reason, who)}
 			],
 		)
 		return out
 	try:
-		args = command_router.parse_args(doc, text[len(doc.code) :])
-	except WAValidationError as exc:
+		given = command_router.parse_args(doc, text[len(doc.code) :])
+		args, absent = function_runner.prepare(doc, who, given)
+	except (WAValidationError, ValueError) as exc:
 		out.update(status="Failed", error=str(exc), replies=[{"message_type": "Text", "body": str(exc)}])
+		return out
+	if any(m["source"] == "sender" for m in absent):
+		out.update(status="Blocked", block_reason="Not Linked", replies=[])
+		return out
+	if absent:
+		error = _("{0} is required").format(", ".join(_(m["label"]) for m in absent))
+		out.update(status="Failed", error=error, args=args, replies=[{"message_type": "Text", "body": error}])
 		return out
 	result = command_router.execute(doc, inbound, args, sender=who, dry_run=True)
 	out.update(

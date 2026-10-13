@@ -1,23 +1,20 @@
-// Functions Center (09 row 7, spec §5.6) — the storefront over the function catalog. A function is
-// the logic behind a command; this screen is where its versions are reviewed, installed, updated,
-// switched on and off. The catalog is a JSON file read by `functions.get_catalog`; the installed
-// record is the `WhatsApp Function` DocType, so every row carries two states at once: what the
-// catalog offers (latest version, change log) and what this site runs (installed version, status).
+// Functions Center (09 row 7, spec §5.6, WHATSAPP_NEXT_INTEGRATION §4) — the functions of this site. A
+// function is a Server Script (type API, method `wa_fn_…`) that carries a WA-FUNCTION header: what it
+// does, who it serves, what it needs on the site (@requires), the values it takes (@param), the texts
+// it writes (@default) and the replies it sends (@reply). This screen lists every such script —
+// available, unavailable (with the reasons), with an invalid header (with its line), installed, or
+// changed since it was installed — and installs, updates, configures, tries and switches them.
 //
 // Anatomy, from the prototype (`docs/screen/Hub Screen - Functions.dc.html`) drawn with the kit:
-// the product's `PageHeader` (title, the sentence that says what a function is, the "Commands · N"
-// button at the inline-end), the prototype's four `Cards` (compact `stat`: functions, active,
-// calls, updates), the shared `FilterBar` and the kit's `DataList` in page mode with the
-// prototype's nine columns. The catalog is a file, so this screen owns the rows, the filtering,
-// the sorting and the paging and hands the table one page at a time.
+// the product's `PageHeader`, the four `Cards`, the shared `FilterBar` and the kit's `DataList` in
+// page mode. The scripts come whole from `functions.get_catalog`, so this screen owns the rows, the
+// filtering, the sorting and the paging and hands the table one page at a time.
 //
-// The function itself opens as the prototype's function window (`sanad.ui.FunctionDetail`, D-133):
-// Details (what it does, when, who, four figures, words, linked commands · variables and options ·
-// outputs), the version log, and a live preview — Update / Install / Linked commands in the footer,
-// the rest behind "More".
-// A form is an `OverlayPanel`: the dry-run preview, the diff shown before install or update, and
-// the settings editor. Every read and write goes through `sanad.ui.call` to `functions.*` /
-// `commands.*`; no business logic lives here.
+// The function opens as the prototype's function window (`sanad.ui.FunctionDetail`, D-133); its
+// header is drawn as variables · options · outputs by `whatsapp_next.functions` (screens/
+// function_spec.js). A form is an `OverlayPanel`: the diff before install or update, the values
+// form (built from the header's parameters, a message text per language) and the "Try" run. Every
+// read and write goes through `sanad.ui.call` to `functions.*` / `commands.*`.
 
 (() => {
 	const ROUTE = "wa-functions-center";
@@ -53,10 +50,13 @@
 			? ui.StatusBadge.html({ label: __(e.status || "Active"), colour: e.status === "Active" ? "green" : "gray" })
 			: `<span class="text-muted" aria-hidden="true">—</span><span class="sanad-visually-hidden">${esc(__("Not installed"))}</span>`;
 
-	const install_badge = (e) =>
-		e.installed
-			? ui.StatusBadge.html({ label: __("Installed"), colour: "blue" })
-			: ui.StatusBadge.html({ label: __("Not installed"), colour: "gray" });
+	/** Installed, or why it cannot be: an invalid header, a site that lacks what it needs, a lost script. */
+	const install_badge = (e) => {
+		if (e.state === "invalid") return ui.StatusBadge.html({ label: __("Invalid header"), colour: "red" });
+		if (e.state === "missing") return ui.StatusBadge.html({ label: __("Script missing"), colour: "red" });
+		if (e.state === "unavailable") return ui.StatusBadge.html({ label: __("Unavailable"), colour: "orange" });
+		return e.installed ? ui.StatusBadge.html({ label: __("Installed"), colour: "blue" }) : ui.StatusBadge.html({ label: __("Not installed"), colour: "gray" });
+	};
 
 	/** "12 ms" — the average run of the installed handler; a dash while it has never run. */
 	const ms_text = (value) => (cint(value) ? __("{0} ms", [fmt_int(value)]) : "—");
@@ -80,7 +80,7 @@
 		});
 		return (entries || []).map((e) =>
 			Object.assign({}, e, {
-				name: e.function_key, // the table addresses a row by `name`, like any Desk list
+				name: e.function_key || e.server_script, // the table addresses a row by `name`, like any Desk list
 				// the API counts every bound command; the page's own sum only covers the commands it read
 				calls_30d: e.calls_30d != null ? cint(e.calls_30d) : calls[e.function_key] || 0,
 				linked_commands: linked[e.function_key] || [],
@@ -94,31 +94,22 @@
 	// ---- the diff before install / update ----------------------------------------------------
 
 	/**
-	 * What install / update will change, from `functions.preview_install`, as the prototype's
-	 * confirmation with facts («تحديث «X»؟» — دوال ستُحدَّث · أوامر ستستفيد): the two versions,
-	 * the rows that move (settings · outputs · manifest keys, each added / removed / changed) and
-	 * the commands that run on this function. It is the preview *and* the confirmation — the diff
-	 * is the impact, so the screen never asks twice for one decision.
+	 * What install / update will change, from `functions.preview_install`: the two versions, the
+	 * parameters and replies that move (added / removed / changed) and the commands that run on this
+	 * function. It is the preview *and* the confirmation. A script the site cannot run (its
+	 * `@requires`) shows why and cannot be installed.
 	 */
-	function confirm_change(entry, version, { on_close } = {}) {
+	function confirm_change(entry, { on_close } = {}) {
 		const installing = !entry.installed;
-		const target = version || entry.latest_version;
-		const rollback = !installing && version_cmp(target, entry.installed_version) < 0;
 		let changed = false;
-		const title = installing
-			? __("Install {0}?", [entry.function_name])
-			: rollback
-			? __("Move {0} back to {1}?", [entry.function_name, target])
-			: __("Update {0} to {1}?", [entry.function_name, target]);
+		const title = installing ? __("Install {0}?", [entry.function_name]) : __("Update {0}?", [entry.function_name]);
 		const chips = (keys, tone) => (keys || []).map((k) => kit.badge(k, tone, { dot: false })).join("");
-		const moved = (label, rows, key) =>
-			(rows || []).map((r) => kit.badge(`${r[key]} · ${Object.keys(r.fields || {}).join(", ")}`, "warn", { dot: false })).join("");
-		/** One manifest area: three lines at most, each naming the keys that move. */
+		const moved = (rows, key) => (rows || []).map((r) => kit.badge(`${r[key]} · ${Object.keys(r.fields || {}).join(", ")}`, "warn", { dot: false })).join("");
 		const area = (label, d, key) => {
 			const lines = [
 				[__("Added"), chips(d.added, "ok")],
 				[__("Removed"), chips(d.removed, "danger")],
-				[__("Changed"), key ? moved(__("Changed"), d.changed, key) : chips(d.changed, "warn")],
+				[__("Changed"), moved(d.changed, key)],
 			].filter((l) => l[1]);
 			if (!lines.length) return null;
 			return {
@@ -132,16 +123,14 @@
 			};
 		};
 		return ui
-			.call("functions.preview_install", { function_key: entry.function_key, version: target })
+			.call("functions.preview_install", { server_script: entry.server_script })
 			.then((diff) => {
-				const d = diff.diff || {};
 				const impacted = diff.commands_impacted || [];
 				const count = (x) => (x.added || []).length + (x.removed || []).length + (x.changed || []).length;
-				const moving = count(d.settings || {}) + count(d.outputs || {}) + count(d.manifest || {});
+				const moving = count(diff.params || {}) + count(diff.replies || {});
 				const blocks = [
-					area(__("Settings"), d.settings || {}, "key"),
-					area(__("Outputs"), d.outputs || {}, "output_key"),
-					area(__("Manifest"), d.manifest || {}, null),
+					area(__("Parameters"), diff.params || {}, "name"),
+					area(__("Replies"), diff.replies || {}, "key"),
 					{
 						label: __("Commands that use this function"),
 						list: impacted.map((c) => ({ text: c, badge: __("Command"), badge_tone: "muted" })),
@@ -152,57 +141,47 @@
 					type: "modal",
 					width: "600px",
 					title,
-					subtitle: `${entry.installed_version || "—"} → ${target}`,
+					subtitle: `${entry.installed_version || "—"} → ${diff.target_version || "—"}`,
 					subtitle_mono: true,
-					badge: installing
-						? { text: __("New install"), tone: "info" }
-						: rollback
-						? { text: __("Rollback"), tone: "warn" }
-						: { text: __("Update"), tone: "ok" },
+					badge: installing ? { text: __("New install"), tone: "info" } : { text: __("Update"), tone: "ok" },
 					detail: {
-						alert: diff.handler_registered
+						alert: diff.available
 							? {
 									tone: "info",
-									title: installing
-										? __("Installing copies the settings and outputs below into this site.")
-										: __("The function's logic moves to the chosen version."),
-									lines: [__("Nothing is sent. Commands, their words and their permissions stay as they are.")],
+									title: installing ? __("Installing reads the header of {0}.", [entry.server_script]) : __("The function takes the script's new header."),
+									lines: [__("Nothing is sent. Commands, their words and their permissions stay as they are; the site's values stay for the parameters that kept their name.")],
 							  }
 							: {
 									tone: "danger",
-									title: __("No handler is registered for this function."),
-									lines: [__("It cannot be installed until the app that provides it is installed on this site.")],
+									title: __("This site cannot run the function."),
+									lines: diff.reasons || [],
 							  },
 						facts: [
+							{ k: __("Server Script"), v: entry.server_script, mono: true },
 							{ k: __("Installed version"), v: entry.installed_version || __("None"), mono: !!entry.installed_version },
-							{ k: __("Target version"), v: target, mono: true },
+							{ k: __("Version in the script"), v: diff.target_version || "—", mono: true },
 							{ k: __("Commands that benefit"), v: fmt_int(impacted.length), mono: true, tone: impacted.length ? "ok" : undefined },
-							{ k: __("Changes"), v: fmt_int(moving), mono: true, tone: moving ? "warn" : undefined },
 						],
-						blocks: moving ? blocks : blocks.slice(-1).concat([{ label: __("Settings and outputs"), text: __("Nothing changes in the settings or the outputs.") }]),
+						blocks: moving ? blocks : blocks.slice(-1).concat([{ label: __("Parameters and replies"), text: __("Nothing changes in the parameters or the replies.") }]),
 					},
 					actions: [
 						{ key: "cancel", label: __("Cancel"), close: true },
 						{
 							key: "go",
-							label: installing ? __("Install") : rollback ? __("Move back") : __("Update"),
+							label: installing ? __("Install") : __("Update"),
 							variant: "primary",
 							handler: () =>
 								ui
-									.call(installing ? "functions.install" : "functions.update", { function_key: entry.function_key, version: target }, { silent: true })
+									.call(installing ? "functions.install" : "functions.update", installing ? { server_script: entry.server_script } : { function_key: entry.function_key }, { silent: true })
 									.then((r) => {
 										changed = true;
-										ui.Toast.success(
-											installing
-												? __("{0} installed", [entry.function_name])
-												: __("{0} is now on {1}", [entry.function_name, (r && r.installed_version) || target])
-										);
+										ui.Toast.success(installing ? __("{0} installed", [entry.function_name]) : __("{0} is now on {1}", [entry.function_name, (r && r.installed_version) || diff.target_version]));
 									}),
 						},
 					],
 					on_close: () => on_close && on_close(changed),
 				}).show();
-				if (!diff.handler_registered) panel.set_action_disabled("go", true);
+				if (!diff.available) panel.set_action_disabled("go", true);
 				return panel;
 			})
 			.catch((err) => {
@@ -211,61 +190,109 @@
 			});
 	}
 
-	// ---- settings editor ----------------------------------------------------------------------
+	// ---- the site's values -----------------------------------------------------------------------
+
+	/** The languages a message text can be written in: the header's own, the site's and the reader's. */
+	const text_languages = (p) => {
+		const langs = Object.keys((p && p.defaults_by_lang) || {});
+		[frappe.boot.lang, frappe.boot.sysdefaults && frappe.boot.sysdefaults.language].forEach((l) => l && !langs.includes(l) && langs.push(l));
+		return langs;
+	};
 
 	/**
-	 * The values an installed function exposes (`functions.save_settings`), as the prototype's
-	 * overlay form. Field types come from the function's own setting rows — Check, Select with
-	 * choices, a number, or text — never from a hard-coded list.
+	 * The site's values of an installed function (`functions.save_values`), built from its header's
+	 * parameters: a Check as a toggle, a Select with its `@options`, a number, a date word or a date,
+	 * a name — and each message text once for every language (empty = the header's text, shown as the
+	 * placeholder) with the values it may use as the hint. Symbols such as `@default_company` are
+	 * shown in the hint, never written as a value.
 	 */
-	function edit_settings(entry, manifest, { on_close } = {}) {
-		const rows = (manifest && manifest.settings) || [];
+	function edit_values(entry, manifest, { on_close } = {}) {
+		const params = (manifest && manifest.params) || [];
 		let changed = false;
-		if (!rows.length) {
-			ui.Toast.info(__("This function has no settings."));
+		if (!params.length) {
+			ui.Toast.info(__("This function has no values to set."));
 			on_close && on_close(false);
 			return null;
 		}
-		const fields = rows.map((r) => {
-			const raw = r.value != null && r.value !== "" ? r.value : r.default_value;
-			const df = { key: r.key, label: __(r.label || r.key), hint: r.notes ? __(r.notes) : undefined };
-			if (r.fieldtype === "Check") return Object.assign(df, { type: "toggle", value: cint(raw) });
-			if (r.choices)
-				return Object.assign(df, {
-					type: "select",
-					value: cstr(raw),
-					options: cstr(r.choices)
-						.split("\n")
-						.map((v) => v.trim())
-						.filter(Boolean)
-						.map((v) => ({ value: v, label: __(v) })),
+		const hint_of = (p) => {
+			const bits = [];
+			if (p.default) bits.push(__("Default: {0}", [p.default]));
+			if (p.depends_on) bits.push(__("Only when {0} is {1}", [p.depends_on.param, p.depends_on.value]));
+			if (p.required) bits.push(__("Required"));
+			return bits.join(" · ") || undefined;
+		};
+		const fields = [];
+		params.forEach((p) => {
+			const raw = p.value;
+			const df = { key: p.name, label: __(p.label || p.name), hint: hint_of(p) };
+			if (p.fieldtype === "Template") {
+				const vars = (p.vars || []).map((v) => `{{ ${v.name} }}`).join(" ");
+				const by_lang = raw && typeof raw === "object" ? raw : { "": raw || "" };
+				fields.push({
+					key: `${p.name}::`,
+					label: __("{0} — every language", [__(p.label || p.name)]),
+					type: "textarea",
+					rows: 5,
+					value: by_lang[""] || "",
+					placeholder: p.default || "",
+					hint: vars ? __("Values: {0}", [vars]) : undefined,
 				});
-			if (r.fieldtype === "Int" || r.fieldtype === "Float") return Object.assign(df, { type: "number", value: raw === "" || raw == null ? "" : Number(raw) });
-			return Object.assign(df, { type: "text", value: cstr(raw) });
+				text_languages(p).forEach((lang) =>
+					fields.push({
+						key: `${p.name}::${lang}`,
+						label: __("{0} — {1}", [__(p.label || p.name), lang]),
+						type: "textarea",
+						rows: 5,
+						value: by_lang[lang] || "",
+						placeholder: (p.defaults_by_lang || {})[lang] || p.default || "",
+					})
+				);
+				return;
+			}
+			if (p.fieldtype === "Check") return fields.push(Object.assign(df, { type: "toggle", value: raw == null || raw === "" ? cint(p.default) : cint(raw) }));
+			if (p.fieldtype === "Select")
+				return fields.push(
+					Object.assign(df, {
+						type: "select",
+						value: cstr(raw),
+						options: [{ value: "", label: __("Default") }].concat((p.select_options || []).map((v) => ({ value: v, label: __(v) }))),
+					})
+				);
+			if (p.fieldtype === "Int") return fields.push(Object.assign(df, { type: "number", value: raw === "" || raw == null ? "" : Number(raw) }));
+			return fields.push(Object.assign(df, { type: "text", value: cstr(raw), placeholder: p.default || "", mono: ["Date", "Link", "Dynamic"].includes(p.fieldtype) }));
 		});
 		return new ui.OverlayPanel({
 			type: "modal",
-			width: "560px",
-			title: __("Settings of {0}", [entry.function_name]),
-			subtitle: entry.installed_version,
+			width: "640px",
+			title: __("Values of {0}", [entry.function_name]),
+			subtitle: entry.server_script,
 			subtitle_mono: true,
 			sections: [{ cols: 1, fields }],
 			actions: [
 				{ key: "cancel", label: __("Cancel"), close: true },
 				{
 					key: "save",
-					label: __("Save settings"),
+					label: __("Save values"),
 					variant: "primary",
 					requires_dirty: true,
 					handler: (values) => {
 						const payload = {};
-						rows.forEach((r) => {
-							const v = values[r.key];
-							payload[r.key] = r.fieldtype === "Check" ? (v ? 1 : 0) : v == null ? "" : v;
+						params.forEach((p) => {
+							if (p.fieldtype === "Template") {
+								const texts = {};
+								["", ...text_languages(p)].forEach((lang) => {
+									const v = values[`${p.name}::${lang}`];
+									if (cstr(v).trim()) texts[lang] = v;
+								});
+								payload[p.name] = Object.keys(texts).length ? texts : null;
+								return;
+							}
+							const v = values[p.name];
+							payload[p.name] = p.fieldtype === "Check" ? (v ? 1 : 0) : v == null ? "" : v;
 						});
-						return ui.call("functions.save_settings", { function_key: entry.function_key, values: payload }, { silent: true }).then(() => {
+						return ui.call("functions.save_values", { function_key: entry.function_key, values: payload }, { silent: true }).then(() => {
 							changed = true;
-							ui.Toast.success(__("Settings saved"));
+							ui.Toast.success(__("Values saved"));
 						});
 					},
 				},
@@ -274,52 +301,141 @@
 		}).show();
 	}
 
-	// ---- the dry-run preview ------------------------------------------------------------------
+	// ---- "Try" (§4): the run a command would make, step by step ------------------------------------
 
-	/** Every version the catalog holds, newest first, to pick one to move to. */
-	function pick_version(entry, { on_pick, on_close } = {}) {
-		const versions = (entry.versions || []).slice().sort((a, b) => version_cmp(b, a));
-		const releases = entry.releases || {};
-		let picked = false;
-		return new ui.Drawer({
-			mode: "choice",
-			title: __("Versions of {0}", [entry.function_name]),
-			choices: versions.map((v) => {
-				const marks = [];
-				if (v === entry.latest_version) marks.push(__("Latest"));
-				if (v === entry.installed_version) marks.push(__("Installed"));
-				const note = ((releases[v] || {}).changelog || (entry.changelog || {})[v] || "").trim();
-				return {
-					label: marks.length ? `${v} — ${marks.join(" · ")}` : v,
-					description: note || __("No note for this version."),
-					value: v,
-					icon: v === entry.installed_version ? "es-line-check" : "es-line-tag",
-				};
-			}),
-			on_choose: (v) => {
-				picked = true;
-				on_pick && on_pick(v);
+	const PREVIEW_PARTY_TYPES = ["Customer", "Supplier", "Employee", "Sales Person"];
+
+	/** Ask who the run is for, then show each step and the messages — nothing sent, nothing kept. */
+	function try_function(entry, manifest, { on_close } = {}) {
+		const needs_party = ((manifest && manifest.sender_params) || []).length > 0;
+		let shown = false;
+		return new ui.OverlayPanel({
+			type: "modal",
+			width: "560px",
+			title: __("Try {0}", [entry.function_name]),
+			subtitle: __("Runs as a command would. Nothing is sent and nothing is kept."),
+			sections: [
+				{
+					cols: 1,
+					fields: needs_party
+						? [
+								{ key: "party_type", label: __("Party type"), type: "select", value: "Customer", options: PREVIEW_PARTY_TYPES.map((k) => ({ value: k, label: __(k) })) },
+								{ key: "party", label: __("Party"), type: "text", mono: true, hint: __("The record's name, as a linked contact would have it") },
+						  ]
+						: [{ key: "note", type: "readonly", label: __("Party"), value: __("This function does not read the sender's party.") }],
+				},
+			],
+			actions: [
+				{ key: "cancel", label: __("Close"), close: true },
+				{
+					key: "run",
+					label: __("Try"),
+					variant: "primary",
+					handler: (values) =>
+						ui
+							.call("functions.try_function", { function_key: entry.function_key, party_type: needs_party ? values.party_type : null, party: needs_party ? values.party : null }, { silent: true })
+							.then((r) => {
+								shown = true;
+								show_trial(entry, r, { on_close });
+							}),
+				},
+			],
+			on_close: () => !shown && on_close && on_close(false),
+		}).show();
+	}
+
+	function show_trial(entry, r, { on_close } = {}) {
+		const ok = (r.steps || []).every((st) => st.ok) && !r.error;
+		return new ui.OverlayPanel({
+			type: "modal",
+			width: "620px",
+			title: __("Try {0}", [entry.function_name]),
+			badge: ok ? { text: __("Passed"), tone: "ok" } : { text: __("Stopped"), tone: "danger" },
+			detail: {
+				blocks: [
+					{
+						label: __("Steps"),
+						list: (r.steps || []).map((st) => ({ text: `${st.name}${st.detail ? " — " + st.detail : ""}`, badge: st.ok ? __("OK") : __("Failed"), badge_tone: st.ok ? "ok" : "danger" })),
+					},
+					{
+						label: __("Messages"),
+						render: ($el) =>
+							$el.html(
+								(r.messages || []).length
+									? r.messages
+											.map((m) =>
+												m.type === "text"
+													? `<div class="wa-fn-try__msg"><span class="wa-fn-try__key">${esc(m.reply)}</span><pre class="wa-fn-try__text">${esc(m.text)}</pre></div>`
+													: `<div class="wa-fn-try__msg"><span class="wa-fn-try__key">${esc(m.reply)}</span><span>${esc(__("File {0} from report {1}", [m.file_name || "", m.report_name]))}</span></div>`
+											)
+											.join("")
+									: `<span class="text-muted">${esc(r.error || __("No message."))}</span>`
+							),
+					},
+				],
 			},
-			on_close: () => !picked && on_close && on_close(false),
+			actions: [{ key: "close", label: __("Close"), close: true }],
+			on_close: () => on_close && on_close(false),
 		}).show();
 	}
 
 	// ---- the function, as a document ---------------------------------------------------------
 
-	/**
-	 * The function itself (`docs/component/Function Detail.dc.html`) in the kit's document
-	 * drawer: who it is (name, category, the two versions, its state), what it does and when to
-	 * use it, the six facts, the manifest's variables · settings · outputs, the commands that
-	 * run on it as themselves, the record's details, and every version as a timeline.
-	 */
-	/** Fields a command output row may carry (`commands.save_editor` / `preview_command` allow-list). */
-	const OUTPUT_FIELDS = ["output_key", "label", "output_type", "default_template", "template", "condition", "print_format", "file_name_template", "variables", "notes"];
-	const PREVIEW_PARTY_TYPES = ["Customer", "Supplier", "Employee", "Sales Person"];
+	/** The header from `functions.get_manifest` in the shape `sanad.ui.FunctionDetail` draws. */
+	function window_data(entry, detail) {
+		const params = detail.params || [];
+		const typed = params.filter((p) => p.fieldtype !== "Template");
+		const spec = whatsapp_next.functions.editor_spec(
+			{
+				party_types: detail.party_types,
+				party_types_text: detail.party_types_text,
+				inputs: typed.map((p, i) => ({
+					key: p.name,
+					label: p.label || p.name,
+					type: { Date: "date", Int: "int", Link: "link", Check: "check", Select: "select" }[p.fieldtype] || "str",
+					required: !!(p.required && !p.default),
+					options: p.options,
+					position: i + 1,
+				})),
+				settings: typed.map((p) => ({
+					key: p.name,
+					label: p.label || p.name,
+					fieldtype: p.fieldtype,
+					choices: p.select_options || [],
+					depends_on: p.depends_on,
+					default_value: p.value != null && p.value !== "" ? p.value : p.default,
+					value: p.value,
+				})),
+				templates: params
+					.filter((p) => p.fieldtype === "Template")
+					.map((p) => ({ key: p.name, label: p.label || p.name, default: p.default, defaults_by_lang: p.defaults_by_lang, site: p.value, vars: p.vars })),
+			},
+			[]
+		);
+		const reasons = (detail.reasons || []).length ? __("Not available here: {0}", [detail.reasons.join(" · ")]) : "";
+		return {
+			entry: Object.assign({}, entry, {
+				category: entry.server_script,
+				latest_version: detail.version || entry.version,
+				versions: [detail.version || entry.version].filter(Boolean),
+				releases: {},
+				when_to_use: [spec.when_to_use, reasons].filter(Boolean).join(" — "),
+				party_types: spec.party_types,
+			}),
+			manifest: Object.assign({}, spec, {
+				suggested_commands: [],
+				example: null,
+				installed: detail.installed || {},
+				params,
+				sender_params: detail.sender_params || [],
+			}),
+		};
+	}
 
 	/**
-	 * The function as the prototype's window (`sanad.ui.FunctionDetail`, D-133): the manifest read
-	 * once, the verbs mapped onto this screen's forms. The preview runs the installed handler on a
-	 * throw-away command draft through `commands.preview_command` — nothing saved, nothing sent.
+	 * The function as the prototype's window (`sanad.ui.FunctionDetail`, D-133): the header read
+	 * once, the verbs mapped onto this screen's forms. The preview runs the function on a throw-away
+	 * command draft through `commands.preview_command` — nothing saved, nothing sent.
 	 */
 	class FunctionWindow {
 		constructor(page, entry) {
@@ -331,27 +447,31 @@
 			const e = this.entry;
 			const page = this.page;
 			const manager = is_manager();
+			if (e.state === "invalid" || e.state === "missing") return Promise.resolve(page.show_problem(e));
+			const args = e.installed ? { function_key: e.function_key } : { server_script: e.server_script };
 			return ui
-				.call("functions.get_manifest", { function_key: e.function_key }, { silent: true })
+				.call("functions.get_manifest", args, { silent: true })
 				.catch(() => null)
-				.then((manifest) => {
-					this.manifest = manifest || { inputs: [], settings: [], outputs: [], installed: {} };
+				.then((detail) => {
+					const data = window_data(e, detail || { params: [] });
+					this.manifest = data.manifest;
 					const linked = (e.linked_commands || []).length;
 					const more = [];
 					if (manager && e.installed) {
 						more.push({ label: e.status === "Active" ? __("Deactivate") : __("Activate"), handler: () => page.set_status(e, e.status === "Active" ? "Inactive" : "Active") });
-						if ((this.manifest.settings || []).length) more.push({ label: __("Edit settings"), handler: () => page.edit_settings(e, this.manifest) });
-						if ((e.versions || []).length > 1) more.push({ label: __("Another version…"), handler: () => page.pick_version(e) });
+						if ((this.manifest.params || []).length) more.push({ label: __("Edit values"), handler: () => page.edit_values(e, this.manifest) });
+						more.push({ label: __("Try"), handler: () => page.try_function(e, this.manifest) });
 						if (!linked) more.push({ label: __("Link a command"), handler: () => page.new_command(e) });
 					}
+					more.push({ label: __("Open the Server Script"), handler: () => frappe.set_route("Form", "Server Script", e.server_script) });
 					this.view = new ui.FunctionDetail({
-						entry: e,
+						entry: data.entry,
 						manifest: this.manifest,
 						party_types: PREVIEW_PARTY_TYPES.map((k) => ({ key: k, label: __(k) })),
-						preview: manager && e.installed ? (args) => this.preview(args) : null,
+						preview: manager && e.installed ? (a) => this.preview(a) : null,
 						search_contacts: manager ? (txt, party_type) => ui.call("commands.search_contacts", { txt, party_type }) : null,
-						on_update: manager ? () => page.change(e, e.latest_version) : null,
-						on_toggle_install: manager ? () => (e.installed ? page.remove(e) : page.change(e, null)) : null,
+						on_update: manager && e.update_available ? () => page.change(e) : null,
+						on_toggle_install: manager && (e.installed || e.available) ? () => (e.installed ? page.remove(e) : page.change(e)) : null,
 						on_open_commands: () => {
 							this.view && this.view.close();
 							command_list(e);
@@ -367,18 +487,11 @@
 		}
 
 		preview({ code, settings, outputs, values, sender }) {
-			const payload = {
-				code,
-				function: this.entry.function_key,
-				allowed_party_types: [],
-				requires_linked_contact: 0,
-				settings_overrides: settings,
-				outputs: outputs.map((o) => {
-					const row = {};
-					OUTPUT_FIELDS.forEach((f) => o[f] !== undefined && (row[f] = o[f]));
-					return row;
-				}),
-			};
+			const payload = whatsapp_next.functions.payload_of(
+				{ code, function: this.entry.function_key, allowed_party_types: [], requires_linked_contact: 0, settings_overrides: settings, outputs },
+				this.manifest.outputs,
+				[]
+			);
 			return ui.call("commands.preview_command", { payload, sender, values });
 		}
 
@@ -399,15 +512,15 @@
 	 */
 	const columns = () => [
 		{ fieldname: "function_name", label: __("Function"), width: 160, sortable: true, format: (v) => `<strong>${esc(v || "")}</strong>` },
-		{ fieldname: "category", label: __("Category"), width: 108, sortable: true, format: (v) => esc(v || "") },
+		{ fieldname: "server_script", label: __("Server Script"), width: 150, sortable: true, format: (v) => `<span class="sanad-tabular" dir="ltr">${esc(v || "")}</span>` },
 		{
 			fieldname: "installed_version",
 			label: __("Version"),
 			width: 84,
 			sortable: true,
-			format: (v, doc) => `<span class="sanad-tabular" dir="ltr">${esc(v || doc.latest_version || "")}</span>`,
+			format: (v, doc) => `<span class="sanad-tabular" dir="ltr">${esc(v || doc.version || "")}</span>`,
 		},
-		{ fieldname: "update_available", label: __("Update"), width: 112, sortable: true, format: (v, doc) => (doc.installed ? update_badge(doc) : "") },
+		{ fieldname: "update_available", label: __("Update"), width: 112, sortable: true, format: (v, doc) => (doc.installed && doc.state !== "missing" ? update_badge(doc) : "") },
 		{ fieldname: "commands_count", label: __("Linked commands"), type: "number", align: "end", width: 104, sortable: true, format: (v) => fmt_int(v) },
 		{ fieldname: "calls_30d", label: __("Calls (30d)"), type: "number", align: "end", width: 96, sortable: true, format: (v) => fmt_int(v) },
 		{ fieldname: "avg_ms", label: __("Average run"), type: "number", align: "end", width: 98, sortable: true, hidden_xs: true, format: (v) => (cint(v) ? esc(ms_text(v)) : "") },
@@ -418,10 +531,10 @@
 	/** How each column is compared when the reader sorts by it. */
 	const SORT_VALUE = {
 		function_name: (e) => cstr(e.function_name).toLowerCase(),
-		category: (e) => cstr(e.category).toLowerCase(),
+		server_script: (e) => cstr(e.server_script).toLowerCase(),
 		// by version, not by text: `1.10.0` after `1.9.0`
 		installed_version: (e) =>
-			version_tuple(e.installed_version || e.latest_version)
+			version_tuple(e.installed_version || e.version)
 				.map((p) => String(p).padStart(6, "0"))
 				.join("."),
 		update_available: (e) => (e.update_available ? 1 : 0),
@@ -476,7 +589,7 @@
 				.catch((err) => {
 					if (this.table) return ui.Toast.error(err);
 					this.state.error(err, {
-						title: __("Could not load the catalog"),
+						title: __("Could not load the functions"),
 						action: { label: __("Retry"), on_click: () => this.load() },
 					});
 				});
@@ -497,7 +610,7 @@
 			const all = this.entries;
 			return {
 				total: all.length,
-				categories: Array.from(new Set(all.map((e) => e.category).filter(Boolean))).length,
+				problems: all.filter((e) => ["invalid", "unavailable", "missing"].includes(e.state)).length,
 				installed: all.filter((e) => e.installed).length,
 				active: all.filter((e) => e.installed && e.status === "Active").length,
 				inactive: all.filter((e) => e.installed && e.status !== "Active").length,
@@ -548,7 +661,7 @@
 								icon: "sigma",
 								label: __("Functions"),
 								value: fmt_int(c.total),
-								note: ui.plural(c.categories, { one: __("{0} category"), other: __("{0} categories") }),
+								note: c.problems ? ui.plural(c.problems, { one: __("{0} cannot run here"), other: __("{0} cannot run here") }) : __("Every script can run here"),
 							},
 							{
 								kind: "stat",
@@ -573,7 +686,7 @@
 								tone: c.outdated ? "warn" : undefined,
 								label: __("Updates available"),
 								value: fmt_int(c.outdated),
-								note: c.outdated ? __("Newer versions ready to install") : __("Every function is on its latest version"),
+								note: c.outdated ? __("Scripts whose header changed since install") : __("Every function matches its script"),
 								action: c.outdated ? "show_updates" : undefined,
 							},
 						],
@@ -582,18 +695,22 @@
 			});
 		}
 
-		/** The one state the operator must not miss: a catalog file that could not be read. */
+		/** The states the operator must not miss: installed functions that lost their script, scripts that cannot be read. */
 		banner() {
-			const errors = (this.catalog && this.catalog.catalog_errors) || [];
-			if (errors.length) return { tone: "red", text: __("A catalog file could not be read: {0}", [errors.join(" · ")]) };
-			const missing = this.entries.filter((e) => e.installed && !e.handler_registered);
+			const missing = this.entries.filter((e) => e.state === "missing");
 			if (missing.length)
 				return {
-					tone: "amber",
+					tone: "red",
 					text: ui.plural(missing.length, {
-						one: __("{0} installed function has no handler and will not run."),
-						other: __("{0} installed functions have no handler and will not run."),
+						one: __("{0} installed function lost its Server Script and will not run."),
+						other: __("{0} installed functions lost their Server Script and will not run."),
 					}),
+				};
+			const invalid = this.entries.filter((e) => e.state === "invalid");
+			if (invalid.length)
+				return {
+					tone: "amber",
+					text: ui.plural(invalid.length, { one: __("{0} script has an invalid WA-FUNCTION header."), other: __("{0} scripts have an invalid WA-FUNCTION header.") }),
 				};
 			return null;
 		}
@@ -602,7 +719,6 @@
 
 		render_toolbar() {
 			if (this.filter_bar) return;
-			const categories = Array.from(new Set(this.entries.map((e) => e.category).filter(Boolean))).sort();
 			this.filter_bar = new ui.FilterBar({
 				page: this.page,
 				wrapper: this.$toolbar,
@@ -611,10 +727,21 @@
 					{
 						fieldname: "function_name",
 						type: "search",
-						fields: ["function_name", "category", "description"],
-						placeholder: __("Search a function, its category or its description…"),
+						fields: ["function_name", "server_script", "description"],
+						placeholder: __("Search a function, its script or its description…"),
 					},
-					{ fieldname: "category", type: "select", label: __("Category"), options: categories.map((v) => ({ value: v, label: __(v) })) },
+					{
+						fieldname: "state",
+						type: "select",
+						label: __("State"),
+						multiple: false,
+						options: [
+							{ value: "available", label: __("Available") },
+							{ value: "unavailable", label: __("Unavailable") },
+							{ value: "invalid", label: __("Invalid header") },
+							{ value: "missing", label: __("Script missing") },
+						],
+					},
 					{
 						fieldname: "update_state",
 						type: "select",
@@ -666,14 +793,14 @@
 				return !list.length || list.map(cstr).includes(cstr(value));
 			};
 			const rows = this.entries.filter((e) => {
-				if (!has(e.category, f.category)) return false;
+				if (f.state && !(f.state === "available" ? ["available", "update"].includes(e.state) : e.state === f.state)) return false;
 				if (f.update_state === "available" && !e.update_available) return false;
 				if (f.update_state === "current" && e.update_available) return false;
 				if (f.status && (!e.installed || e.status !== f.status)) return false;
 				if (f.install_state === "installed" && !e.installed) return false;
 				if (f.install_state === "not_installed" && e.installed) return false;
 				if (this.search) {
-					const hay = [e.function_name, e.function_key, e.category, e.description, e.when_to_use].map(cstr).join(" ").toLowerCase();
+					const hay = [e.function_name, e.function_key, e.server_script, e.description, e.error].map(cstr).join(" ").toLowerCase();
 					if (!hay.includes(this.search)) return false;
 				}
 				return true;
@@ -702,7 +829,7 @@
 					sort: this.sort,
 					// what the prototype's phone card carries: the name, its group and version, the
 					// update state, the commands behind it and the two state badges
-					mobile_columns: ["function_name", "category", "installed_version", "update_available", "commands_count", "calls_30d", "status", "installed"],
+					mobile_columns: ["function_name", "server_script", "installed_version", "update_available", "commands_count", "calls_30d", "status", "installed"],
 					pinnable: false,
 					// the prototype's storefront has no "view" column: the row is the control, and
 					// DataList keeps it focusable with Enter — nine columns of state need the width
@@ -716,10 +843,10 @@
 					on_select: (rows) => this.render_bulk(rows),
 					footer: { count: (total) => ui.plural(total, { one: __("{0} function"), other: __("{0} functions") }) },
 					empty: {
-						title: this.entries.length ? __("No function matches") : __("The catalog is empty"),
+						title: this.entries.length ? __("No function matches") : __("No function on this site"),
 						description: this.entries.length
-							? __("Change the search or the filters to see more of the catalog.")
-							: __("No function is published for this site yet. A function comes from an installed app that ships a catalog file."),
+							? __("Change the search or the filters to see more functions.")
+							: __("A function is a Server Script of type API whose method starts with wa_fn_ and that carries a WA-FUNCTION header."),
 						action: this.entries.length ? { label: __("Clear filters"), on_click: () => this.filter_bar && this.filter_bar.clear() } : null,
 					},
 				});
@@ -787,19 +914,36 @@
 		}
 
 		/** A drawer verb that opens a form: the form takes the overlay, and the drawer returns after it. */
-		change(entry, version) {
-			return confirm_change(entry, version, { on_close: (changed) => this.back(changed) });
+		change(entry) {
+			return confirm_change(entry, { on_close: (changed) => this.back(changed) });
 		}
 
-		edit_settings(entry, manifest) {
-			return edit_settings(entry, manifest, { on_close: (changed) => this.back(changed) });
+		edit_values(entry, manifest) {
+			return edit_values(entry, manifest, { on_close: (changed) => this.back(changed) });
 		}
 
-		pick_version(entry) {
-			return pick_version(entry, {
-				on_pick: (v) => (v === entry.installed_version ? this.back(false) : this.change(entry, v)),
-				on_close: () => this.back(false),
-			});
+		try_function(entry, manifest) {
+			return try_function(entry, manifest, { on_close: () => this.back(false) });
+		}
+
+		/** A script that cannot be read (its header error, with the line) or an installed function that lost it. */
+		show_problem(entry) {
+			const remove = entry.state === "missing" && entry.installed && is_manager();
+			return new ui.OverlayPanel({
+				type: "modal",
+				width: "560px",
+				title: entry.function_name || entry.server_script,
+				subtitle: entry.server_script,
+				subtitle_mono: true,
+				badge: { text: entry.state === "missing" ? __("Script missing") : __("Invalid header"), tone: "danger" },
+				detail: { alert: { tone: "danger", title: entry.error || "", lines: [__("Fix the Server Script, then come back: the list reads it again.")] } },
+				actions: [
+					{ key: "close", label: __("Close"), close: true },
+					remove
+						? { key: "remove", label: __("Remove"), variant: "danger", close: true, handler: () => this.remove(entry) }
+						: { key: "open", label: __("Open the Server Script"), variant: "primary", close: true, handler: () => frappe.set_route("Form", "Server Script", entry.server_script) },
+				],
+			}).show();
 		}
 
 		/** A new command for this function: the command form hands it to the editor with its suggested words. */
@@ -822,7 +966,7 @@
 			const linked = (entry.linked_commands || []).length;
 			return ui.ConfirmDialog.ask({
 				title: __("Remove {0}?", [entry.function_name]),
-				message: __("The installed record, its settings and its outputs are deleted. The catalog keeps the function, so it can be installed again."),
+				message: __("The installed record and the site's values are deleted. The Server Script stays, so the function can be installed again."),
 				impact: [
 					{ label: __("Installed version"), value: entry.installed_version || "—" },
 					{ label: __("Linked commands"), value: fmt_int(linked), tone: linked ? "red" : null },
@@ -849,7 +993,7 @@
 				const left = this.entries.filter((e) => e.update_available).length - targets.length;
 				ui.ConfirmDialog.ask({
 					title: ui.plural(targets.length, { one: __("Update {0} function?"), other: __("Update {0} functions?") }),
-					message: __("Each function moves to its latest version. Commands, their words and their permissions stay as they are."),
+					message: __("Each function takes its script's current header. Commands, their words and their permissions stay as they are."),
 					impact: [
 						{ label: __("Functions to update"), value: fmt_int(targets.length) },
 						{ label: __("Commands that benefit"), value: fmt_int(impacted), tone: "green" },
@@ -914,6 +1058,23 @@
 	}
 
 	frappe.pages[ROUTE].on_page_load = function (wrapper) {
+		// a tab opened before the last build holds the old bundle without `whatsapp_next.functions`:
+		// load the new one once instead of failing on every row
+		if (!(window.whatsapp_next && whatsapp_next.functions && whatsapp_next.functions.editor_spec)) {
+			let first = true;
+			try {
+				first = !sessionStorage.getItem("wa-functions-reloaded");
+				sessionStorage.setItem("wa-functions-reloaded", "1");
+			} catch (e) {
+				first = true;
+			}
+			if (first) return window.location.reload();
+		}
+		try {
+			sessionStorage.removeItem("wa-functions-reloaded");
+		} catch (e) {
+			// storage blocked: nothing to forget
+		}
 		const page = frappe.ui.make_app_page({ parent: wrapper, title: __("Functions Center"), single_column: true });
 		wrapper.whatsapp_next = new FunctionsCenter(page);
 		frappe.provide("whatsapp_next.pages");
@@ -933,7 +1094,7 @@
 		Promise.resolve(ready).then(() => {
 			const entry = screen.entry(key);
 			if (entry) screen.open(entry);
-			else ui.Toast.info(__("Function {0} is not in the catalog.", [key]));
+			else ui.Toast.info(__("Function {0} is not on this site.", [key]));
 		});
 	};
 })();

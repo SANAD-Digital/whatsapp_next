@@ -13,8 +13,10 @@ What it does:
   system of record, not the platform (D-011, D-021)
 - runs campaigns, templates, notifications fired by document events (`WhatsApp Notification`) and
   report digests (`WhatsApp Notification Alert`)
-- answers inbound **commands** through an allow-listed registry of functions. A command never runs
-  a dotted path taken from data, and it never runs as Administrator (D-012)
+- answers inbound **commands** with **functions**: Frappe Server Scripts (API, method `wa_fn_…`)
+  that carry a `WA-FUNCTION` header and are installed in the Functions Center. A command runs only
+  its installed function's script, never a path taken from data, and never as Administrator; the
+  script's direct URL is refused by a guard (D-012)
 - ships Desk pages (`wa-*`) and a portable UI kit (`sanad.ui`)
 
 | | |
@@ -41,8 +43,9 @@ What it does:
    normalises numbers. Group and LID JIDs pass through unchanged.
 5. **Only one module reads outbound and inbound together**: `services/read_layer.py`, which holds
    the codebase's only `UNION` (D-043).
-6. **Extend through hooks.** Other apps add providers (`whatsapp_providers`), function catalogs
-   (`whatsapp_function_catalogs`) and command handlers (`whatsapp_function_handlers`).
+6. **Extend through hooks and Server Scripts.** Other apps add providers through the
+   `whatsapp_providers` hook. Command functions are not hooks: they are `wa_fn_` Server Scripts on
+   the site ([commands-and-functions.md](commands-and-functions.md)).
 
 ## Index
 
@@ -72,7 +75,8 @@ What it does:
 | [api/templates.md](api/templates.md) | Message templates and rendering |
 | [api/notifications.md](api/notifications.md) | Notifications fired by document events |
 | [api/alerts.md](api/alerts.md) | Report digests (Notification Alerts) |
-| [api/functions.md](api/functions.md) | Function catalog, install and update |
+| [commands-and-functions.md](commands-and-functions.md) | Commands and functions end to end (Arabic): the `WA-FUNCTION` header, the run contract, the Server Script sandbox, routing step by step, security |
+| [api/functions.md](api/functions.md) | The Functions Center: function scripts, install, update, values, Try |
 | [api/commands.md](api/commands.md) | Inbound commands |
 | [api/webhooks.md](api/webhooks.md) | The inbound webhook receiver contract |
 | [events-and-hooks.md](events-and-hooks.md) | Hooks the app defines and uses, realtime `wa:*` events, webhook event names |
@@ -92,8 +96,8 @@ whatsapp_next/                      # the app repo (apps/whatsapp_next)
 │   ├── boot.py                     # boot_session → frappe.boot.whatsapp_next
 │   ├── exceptions.py               # WA* error hierarchy (HTTP codes)
 │   ├── providers/                  # base.py registry.py snd_platform.py meta_cloud.py exceptions.py schemas.py
-│   ├── services/                   # business logic (dispatch, inbound, command_router, read_layer, phone, …)
-│   ├── functions/                  # command function registry, built-in handlers, catalog/v1/catalog.json
+│   ├── services/                   # business logic (dispatch, inbound, command_router, function_header,
+│   │                               # functions_catalog, function_runner, report_file, read_layer, phone, …)
 │   ├── api/_common.py, api/v1/     # whitelisted endpoints, one module per area
 │   ├── webhooks/v1/receiver.py     # the only guest endpoint; verify.py, idempotency.py, handlers.py
 │   ├── whatsapp_next/doctype/      # 26 DocTypes (module "WhatsApp Next")
@@ -108,6 +112,7 @@ whatsapp_next/                      # the app repo (apps/whatsapp_next)
 │   └── tests/                      # the app test suite
 ├── plan/                           # design plan; decisions.md has the "why" (D-###)
 ├── docs/                           # read-only HTML design prototype
-├── scripts/                        # demo seeds, browser smoke checks
+├── scripts/                        # demo seeds, browser smoke checks; functions/wa_fn_*.py (repo copies of
+│                                   # the function Server Scripts), setup_functions.py, setup_commands.py
 └── developer-docs/                 # this documentation
 ```

@@ -22,52 +22,15 @@ whatsapp_providers = {
 This app registers `snd_platform` and `meta_cloud`. The full contract is in
 [add-a-provider.md](add-a-provider.md).
 
-### `whatsapp_function_catalogs`: ship command functions
+### Command functions: no hook
 
-A list of **module paths**. Each module directory holds `vN/catalog.json` manifests
-(`{catalog_version, functions[{function_key, function_name, category, description, when_to_use,
-party_types[], versions{"x.y.z": {released, changelog, inputs, settings, outputs, example,
-suggested_commands}}}]}`, D-048). `services.functions_catalog.load_catalog` merges this app's
-catalog (`whatsapp_next.functions.catalog`) with every hooked module. Later sources and versions
-extend earlier ones per `function_key`. The merged catalog is cached under `wa:functions:catalog`.
-
-```python
-# my_app/hooks.py
-whatsapp_function_catalogs = ["my_app.whatsapp_functions"]
-# → my_app/whatsapp_functions/__init__.py + my_app/whatsapp_functions/v1/catalog.json
-```
-
-A catalog file may name the apps its functions read, with a top-level
-`"requires_apps": ["other_app"]`. On a site where one of them is not installed the file is
-skipped, so its functions are never offered. This is how whatsapp_next ships functions over
-another app's data without that app depending on it:
-`whatsapp_next/functions/integrations/snd_accounting/` holds the accounting functions
-(customer balance and statement for the sender's own customer; customer, supplier, cash and bank
-balances for staff) over snd_accounting's reports. Its handlers import snd_accounting only when
-called, and snd_accounting itself is not changed.
-
-### `whatsapp_function_handlers`: register the code behind a function
-
-A dict of `function_key` → dotted path of a handler. `functions.registry` merges it with the
-built-in handlers (`ping`, `document_info`) once per process. An inbound command can only run a
-handler from this registry, never a dotted path from data (D-012). A key that cannot be resolved
-is logged as "WhatsApp functions: handler hook unresolved".
-
-```python
-# my_app/hooks.py
-whatsapp_function_handlers = {"order_status": "my_app.whatsapp_functions.order_status.handle"}
-
-# my_app/whatsapp_functions/order_status.py
-from whatsapp_next.functions.context import FunctionContext, FunctionResult
-
-def handle(ctx: FunctionContext) -> FunctionResult:
-	# ctx.args (parsed from the manifest inputs), ctx.settings, ctx.sender, ctx.device, ctx.dry_run
-	# runs as WhatsApp Settings.command_service_user, never Administrator
-	return FunctionResult(data={"status": "Shipped"})   # or FunctionResult(error="…")
-```
-
-`FunctionResult` also takes `files: list[tuple[str, bytes, str]]`. The command's output templates
-render `data.*`. Handlers are cached per process, so reload the workers after adding one.
+Command functions are **not** registered through hooks. The former `whatsapp_function_catalogs`
+and `whatsapp_function_handlers` hooks are gone, and nothing reads them. A function is a Frappe
+**Server Script** (Script Type API, API Method starting with `wa_fn_`, enabled) whose script opens
+with a `WA-FUNCTION` header; `services.functions_catalog.discover` finds it on the site and the
+Functions Center installs it. Another app ships functions by creating such Server Scripts on the
+site (for example from its own setup script), not from its `hooks.py`. The header, the run
+contract and an example are in [commands-and-functions.md](commands-and-functions.md) §2.
 
 ## Frappe hooks this app uses
 
@@ -92,6 +55,7 @@ render `data.*`. Handlers are cached per process, so reload the workers after ad
 | `Contact` | `validate` | `services.phone.sync_contact_phones` | Keeps `Contact Phone.wa_phone_e164` normalised |
 | `*` | `validate`, `on_update`, `on_submit`, `on_cancel`, `after_insert`, `on_change` | `services.notifications.on_doc_event` | Fires `WhatsApp Notification`. Returns at once during install, migrate or patch, for `WhatsApp *` DocTypes, and when no notification is configured for the DocType (a cached per-DocType list under `wa:notif:*`, R-023). `after_insert` → `New`; `on_update` → `Save` (existing docs only) and `Value Change`; `on_submit` → `Submit`; `on_cancel` → `Cancel`. `validate` is handled only for `Method` notifications (D-049) |
 | `WhatsApp Log`, `WhatsApp Inbound Message` | `after_insert` | `services.numbers_materializer.on_message_insert` | Enqueues the incremental Numbers upsert after commit |
+| `Server Script` | `on_update`, `on_trash` | `services.functions_catalog.clear_cache` | Drops the cached read of the function scripts (`wa:functions:scripts`), so the Functions Center sees a saved, disabled or deleted `wa_fn_` script at once |
 
 ### `scheduler_events`
 
@@ -104,7 +68,7 @@ render `data.*`. Handlers are cached per process, so reload the workers after ad
 | `cron 30 2 * * *` | `services.numbers_materializer.nightly_reconcile` |
 | `cron 0 3 * * *` | `services.retention.purge` |
 | `hourly` | `services.devices.sync_from_provider`, `services.usage_sync.sync_subscription`, `services.webhook_setup.sync_status` |
-| `daily` | `services.notifications.trigger_daily`, `services.functions_catalog.check_updates` |
+| `daily` | `services.notifications.trigger_daily`, `services.functions_catalog.check_updates` (flags installed functions whose script header changed) |
 
 All handlers are under `whatsapp_next.`. What each job does is in
 [architecture.md](architecture.md#scheduler-jobs).

@@ -15,7 +15,6 @@ from whatsapp_next.api.v1 import _bulk
 from whatsapp_next.api.v1 import quick_send as quick_send_api
 from whatsapp_next.api.v1 import simulator as simulator_api
 from whatsapp_next.exceptions import WAPermissionError, WAValidationError
-from whatsapp_next.functions.handlers import document_info
 from whatsapp_next.services import attachments, permissions, quick_send, read_layer, templates
 from whatsapp_next.tests.conftest_frappe import as_user, ensure_contact
 
@@ -155,22 +154,51 @@ class TestSimulatorImpersonation(IntegrationTestCase):
 
 
 class TestDocumentInfoOwnership(IntegrationTestCase):
-	def _run(self, settings: dict, party_name: str | None, name: str):
-		ctx = frappe._dict(
-			settings=settings,
-			args={"name": name},
-			sender=frappe._dict(party_type="Customer", party_name=party_name),
-		)
-		return document_info.handle(ctx)
+	"""The shipped `document_info` function (the repo's `scripts/functions/wa_fn_document_info.py`, run
+	here as a fixture script under its own key — never the site's script): one answer for "not yours"
+	and "does not exist", and no answer at all without a party field to prove ownership."""
 
-	def test_blank_party_field_is_refused_not_open(self):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		import os
+
+		from whatsapp_next.tests import function_fixtures as ff
+
+		path = os.path.realpath(
+			frappe.get_app_path("whatsapp_next", "..", "scripts", "functions", "wa_fn_document_info.py")
+		)
+		with open(path, encoding="utf-8") as fp:
+			script = fp.read().replace("@function     document_info", "@function     _test_document_info")
+		cls.script = ff.ensure_script("wa_fn__test_document_info", script)
+
+	def _run(self, party_name: str | None, name: str, **values):
+		from whatsapp_next.services import function_header as fh
+		from whatsapp_next.services import function_runner
+
+		spec = fh.parse_function_header(frappe.db.get_value("Server Script", self.script, "script"))
+		params = {"party_type": "Customer", "party": party_name, "document_name": name, **values}
+		return function_runner.run_function(self.script, params, spec)
+
+	def test_ownership_is_proved_or_refused(self):
 		invoice = frappe.db.get_value("Sales Invoice", {}, ["name", "customer"], as_dict=True)
 		if not invoice:
 			self.skipTest("no Sales Invoice on this site")
-		base = {"document_type": "Sales Invoice", "require_party": 1}
-		self.assertIn("party_field", self._run({**base, "party_field": ""}, "Someone", invoice.name).error)
-		other = self._run({**base, "party_field": "customer"}, "Someone Else", invoice.name)
-		missing = self._run({**base, "party_field": "customer"}, "Someone Else", "NO-SUCH-DOC")
+		# a party field the document does not have: refused, never "every document of the type"
+		refused = self._run("Someone", invoice.name, party_field="no_such_field")
+		self.assertTrue(refused["error"])
+		self.assertEqual(refused["messages"], [])
+		other = self._run("Someone Else", invoice.name)
+		missing = self._run("Someone Else", "NO-SUCH-DOC")
 		# one answer for "not yours" and "does not exist"
-		self.assertEqual(other.error.replace(invoice.name, "?"), missing.error.replace("NO-SUCH-DOC", "?"))
-		self.assertIsNone(self._run({**base, "party_field": "customer"}, invoice.customer, invoice.name).error)
+		self.assertEqual([m["reply"] for m in other["messages"]], ["not_found_text"])
+		self.assertEqual(
+			other["messages"][0]["text"].replace(invoice.name, "?"),
+			missing["messages"][0]["text"].replace("NO-SUCH-DOC", "?"),
+		)
+		self.assertNotIn("status", other["data"])  # nothing of the document is read out
+		own = self._run(invoice.customer, invoice.name)
+		self.assertIsNone(own["error"])
+		self.assertEqual([m["reply"] for m in own["messages"]], ["result_text"])
+		# no party at all: the script refuses
+		self.assertTrue(self._run(None, invoice.name)["error"])

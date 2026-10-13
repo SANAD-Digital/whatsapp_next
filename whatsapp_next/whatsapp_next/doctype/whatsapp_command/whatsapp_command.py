@@ -1,6 +1,7 @@
-# Module role: WhatsApp Command controller — a command word bound to a Function (fields.md §14).
-# Validation only: casefolded code / synonyms, cross-command uniqueness, settings-override keys, party
-# types, the edit lock while Active (D-029 09 OQ-3), and the output copy on create. Activation and
+# Module role: WhatsApp Command controller — a command word bound to a Function (fields.md §14,
+# WHATSAPP_NEXT_INTEGRATION §3.2). Validation only: casefolded code / synonyms, cross-command
+# uniqueness, the override, input, template and reply names against the function's header, party types
+# (within the header's `@party_types`), and the edit lock while Active (D-029 09 OQ-3). Activation and
 # "restore defaults" are whitelisted actions in `api/v1/commands.py`.
 
 from __future__ import annotations
@@ -14,24 +15,9 @@ from frappe.model.document import Document
 
 from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
 from whatsapp_next.services.guards import field_changed
-from whatsapp_next.whatsapp_next.doctype.whatsapp_function.whatsapp_function import (
-	check_party_types,
-	check_unique_rows,
-)
+from whatsapp_next.whatsapp_next.doctype.whatsapp_function.whatsapp_function import check_party_types
 
 UNLOCKED_FIELDS = frozenset({"status", "run_count", "last_run_at", "defaults_restored_at"})
-OUTPUT_COPY_FIELDS = (
-	"output_key",
-	"label",
-	"output_type",
-	"default_template",
-	"template",
-	"condition",
-	"print_format",
-	"file_name_template",
-	"variables",
-	"notes",
-)
 
 
 class WhatsAppCommand(Document):
@@ -42,17 +28,15 @@ class WhatsAppCommand(Document):
 		self.normalize_words()
 
 	def validate(self) -> None:
-		"""Normalize, check uniqueness and overrides, enforce the Active edit lock, copy outputs on create."""
+		"""Normalize, check uniqueness, overrides and header names, and enforce the Active edit lock."""
 		self.normalize_words()
 		self.check_uniqueness()
 		self.check_settings_overrides()
 		check_party_types(self.get("allowed_party_types"))
 		self.check_access_lists()
 		self.normalize_disabled_inputs()
-		check_unique_rows(self.get("outputs"), "output_key", _("Output key"))
+		self.check_against_header()
 		self.check_edit_lock()
-		if self.is_new() and not self.get("outputs"):
-			self.copy_outputs_from_function()
 
 	def on_update(self) -> None:
 		"""Invalidate the router's word map (`wa:commands:map`)."""
@@ -151,12 +135,64 @@ class WhatsAppCommand(Document):
 			seen.add(key)
 
 	def normalize_disabled_inputs(self) -> None:
-		"""`disabled_inputs` one input key per line, deduped."""
-		keys: list[str] = []
-		for line in (self.disabled_inputs or "").splitlines():
-			if line.strip() and line.strip() not in keys:
-				keys.append(line.strip())
-		self.disabled_inputs = "\n".join(keys) or None
+		"""`disabled_inputs` and `disabled_replies` one name per line, deduped."""
+		for fieldname in ("disabled_inputs", "disabled_replies"):
+			keys: list[str] = []
+			for line in (self.get(fieldname) or "").splitlines():
+				if line.strip() and line.strip() not in keys:
+					keys.append(line.strip())
+			self.set(fieldname, "\n".join(keys) or None)
+
+	def spec(self) -> dict[str, Any]:
+		"""The header spec of the linked function (empty when it is not installed)."""
+		from whatsapp_next.services.function_runner import spec_of
+
+		return spec_of(self.function)
+
+	def check_against_header(self) -> None:
+		"""Disabled inputs and asked inputs name parameters the sender may give; disabled replies
+		name `@reply` keys; template rows name Template parameters, once per language; the allowed
+		party types stay within `@party_types`."""
+		from whatsapp_next.services import function_header as fh
+
+		spec = self.spec()
+		if not spec:
+			return
+		typed = {p["name"] for p in fh.typed_params(spec)}
+		templates = {p["name"] for p in fh.command_params(spec) if p["fieldtype"] == "Template"}
+		replies = {r["key"] for r in spec.get("replies") or []}
+		asked = [line.partition(":")[0].strip() for line in (self.ask_inputs or "").splitlines() if line.strip()]
+		checks = (
+			(_("Disabled inputs"), (self.disabled_inputs or "").splitlines(), typed),
+			(_("Ask for inputs"), asked, typed),
+			(_("Disabled replies"), (self.disabled_replies or "").splitlines(), replies),
+		)
+		for label, names, allowed in checks:
+			unknown = sorted({n.strip() for n in names if n.strip()} - allowed)
+			if unknown:
+				frappe.throw(
+					_("{0}: {1} is not in the header of function {2}").format(label, ", ".join(unknown), self.function),
+					WAValidationError,
+				)
+		seen: set[tuple[str, str]] = set()
+		for row in self.get("templates") or []:
+			if row.param not in templates:
+				frappe.throw(
+					_("Message text row {0}: {1} is not a message template of function {2}").format(row.idx, row.param, self.function),
+					WAValidationError,
+				)
+			key = (row.param, row.language or "")
+			if key in seen:
+				frappe.throw(_("Message text row {0} repeats {1} in the same language").format(row.idx, row.param), WAValidationError)
+			seen.add(key)
+		for row in self.get("allowed_party_types") or []:
+			if not fh.party_type_allowed(spec, row.party_type):
+				frappe.throw(
+					_("Party type {0} is not one function {1} serves ({2})").format(
+						_(row.party_type), self.function, fh.party_types_text(spec)
+					),
+					WAValidationError,
+				)
 
 	def overrides_dict(self) -> dict[str, Any]:
 		"""`settings_overrides` parsed as a dict (empty when unset)."""
@@ -173,23 +209,18 @@ class WhatsAppCommand(Document):
 		return value
 
 	def check_settings_overrides(self) -> None:
-		"""Every override key must be a setting key of the linked Function."""
+		"""Every override key must be a parameter of the linked function's header (not the party)."""
+		from whatsapp_next.services import function_header as fh
+
 		overrides = self.overrides_dict()
-		if not overrides or not self.function:
+		spec = self.spec()
+		if not overrides or not spec:
 			return
-		if not frappe.db.table_exists("WhatsApp Function Setting"):
-			return
-		keys = set(
-			frappe.get_all(
-				"WhatsApp Function Setting",
-				filters={"parent": self.function, "parenttype": "WhatsApp Function"},
-				pluck="key",
-			)
-		)
+		keys = {p["name"] for p in fh.command_params(spec)} | {"language"}
 		unknown = sorted(set(overrides) - keys)
 		if unknown:
 			frappe.throw(
-				_("Unknown setting keys for function {0}: {1}").format(self.function, ", ".join(unknown)),
+				_("Unknown parameters for function {0}: {1}").format(self.function, ", ".join(unknown)),
 				WAValidationError,
 			)
 
@@ -221,18 +252,6 @@ class WhatsAppCommand(Document):
 			elif field_changed(before, self, df.fieldname):
 				changed.add(df.fieldname)
 		return changed
-
-	def copy_outputs_from_function(self) -> None:
-		"""Replace `outputs` with the linked Function's rows (used on create and by "restore defaults")."""
-		self.set("outputs", [])
-		if not self.function or not frappe.db.exists("WhatsApp Function", self.function):
-			return
-		function = frappe.get_doc("WhatsApp Function", self.function)
-		for row in function.get("outputs") or []:
-			values = {f: row.get(f) for f in OUTPUT_COPY_FIELDS}
-			if not values.get("template"):
-				values["template"] = values.get("default_template")
-			self.append("outputs", values)
 
 
 def _rows(doc: Document, fieldname: str) -> list[tuple]:

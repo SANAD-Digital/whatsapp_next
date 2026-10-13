@@ -1,5 +1,6 @@
-# Module role: tests for WhatsApp Function — permission matrix (02 §6: no Desk create/delete), derived flags,
-# unique setting / output keys, setting value checks and party-type validation.
+# Module role: tests for WhatsApp Function — permission matrix (02 §6: no Desk create/delete), the
+# Server Script it is bound to must be a function script (`wa_fn_` method), `values` names only the
+# header's parameters (never the sender's party), and the party-type helper commands use.
 
 from __future__ import annotations
 
@@ -7,49 +8,30 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.exceptions import WAValidationError
-from whatsapp_next.tests.conftest_frappe import delete_all, ensure_test_user
-from whatsapp_next.whatsapp_next.doctype.whatsapp_function.whatsapp_function import handler_exists
+from whatsapp_next.tests import function_fixtures as ff
+from whatsapp_next.tests.conftest_frappe import ensure_test_user
+from whatsapp_next.whatsapp_next.doctype.whatsapp_function.whatsapp_function import (
+	ALLOWED_PARTY_TYPES,
+	check_party_types,
+)
 
 DT = "WhatsApp Function"
 # Link targets are real site data (or sibling DocTypes); no fixture generation needed.
-IGNORE_TEST_RECORD_DEPENDENCIES = ["DocType", "User", "Print Format"]
+IGNORE_TEST_RECORD_DEPENDENCIES = ["DocType", "User", "Print Format", "Server Script"]
 
 
 class TestWhatsAppFunction(IntegrationTestCase):
-	"""Installed functions: derived flags and child-table integrity."""
+	"""An installed function is bound to a function script and holds the site's values."""
+
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		ff.drop_all()
+		cls.key = ff.ensure_function("_test_echo")
 
 	def setUp(self) -> None:
 		super().setUp()
 		frappe.set_user("Administrator")
-
-	def tearDown(self) -> None:
-		frappe.set_user("Administrator")
-		delete_all(DT, {"function_key": ["like", "_wa_test%"]})
-		super().tearDown()
-
-	def _insert(self, key: str = "_wa_test_fn", **values):
-		payload = {
-			"doctype": DT,
-			"function_key": key,
-			"function_name": "Test Function",
-			"installed_version": "1.0.0",
-			"settings": [
-				{"key": "limit", "label": "Limit", "fieldtype": "Int", "default_value": "5", "value": "5"},
-				{
-					"key": "mode",
-					"label": "Mode",
-					"fieldtype": "Select",
-					"choices": "fast\nslow",
-					"value": "fast",
-				},
-				{"key": "flag", "label": "Flag", "fieldtype": "Check", "value": "1"},
-			],
-			"outputs": [
-				{"output_key": "reply", "label": "Reply", "default_template": "Hi {{ data.name }}"},
-			],
-		}
-		payload.update(values)
-		return frappe.get_doc(payload).insert(ignore_permissions=True)
 
 	def test_permission_matrix(self) -> None:
 		expected = {
@@ -65,80 +47,37 @@ class TestWhatsAppFunction(IntegrationTestCase):
 				with self.subTest(role=role, ptype=ptype):
 					self.assertEqual(bool(frappe.has_permission(DT, ptype, user=user)), allowed)
 
-	def test_derived_flags(self) -> None:
-		doc = self._insert()
-		self.assertEqual(doc.name, "_wa_test_fn")
-		self.assertEqual(doc.handler_registered, 1 if handler_exists("_wa_test_fn") else 0)
-		self.assertEqual(doc.update_available, 0)
-		doc.latest_version = "1.1.0"
-		doc.save()
-		self.assertEqual(doc.update_available, 1)
-		doc.latest_version = "1.0.0"
-		doc.save()
-		self.assertEqual(doc.update_available, 0)
-		# semantic order: a site ahead of its catalog is not outdated; 1.10 is newer than 1.9
-		doc.installed_version, doc.latest_version = "1.2.0", "1.1.0"
-		doc.save()
-		self.assertEqual(doc.update_available, 0)
-		doc.installed_version, doc.latest_version = "1.9.0", "1.10.0"
-		doc.save()
-		self.assertEqual(doc.update_available, 1)
-
-	def test_hook_registered_handler_counts_in_a_fresh_worker(self) -> None:
-		"""`handler_exists` loads the `whatsapp_function_handlers` hook before answering."""
-		from unittest.mock import patch
-
-		from whatsapp_next.functions import registry
-
-		saved = (dict(registry.FUNCTION_HANDLERS), registry._hooks_loaded)
-		try:
-			registry.FUNCTION_HANDLERS.pop("_wa_test_hooked", None)
-			registry._hooks_loaded = False  # as in a worker that has not resolved the hook yet
-			hooks = {"_wa_test_hooked": "whatsapp_next.functions.handlers.ping.handle"}
-			real = frappe.get_hooks
-
-			def get_hooks(name=None, *args, **kwargs):
-				return hooks if name == "whatsapp_function_handlers" else real(name, *args, **kwargs)
-
-			with patch.object(frappe, "get_hooks", side_effect=get_hooks):
-				self.assertTrue(handler_exists("_wa_test_hooked"))
-		finally:
-			registry.FUNCTION_HANDLERS.clear()
-			registry.FUNCTION_HANDLERS.update(saved[0])
-			registry._hooks_loaded = saved[1]
-
-	def test_duplicate_setting_key_rejected(self) -> None:
-		with self.assertRaises(WAValidationError):
-			self._insert(
-				settings=[
-					{"key": "limit", "label": "A", "fieldtype": "Data"},
-					{"key": "limit", "label": "B", "fieldtype": "Data"},
-				]
-			)
-
-	def test_duplicate_output_key_rejected(self) -> None:
-		with self.assertRaises(WAValidationError):
-			self._insert(
-				outputs=[
-					{"output_key": "reply", "label": "A"},
-					{"output_key": "reply", "label": "B"},
-				]
-			)
-
-	def test_setting_values_validated(self) -> None:
-		bad = (
-			{"key": "limit", "label": "Limit", "fieldtype": "Int", "value": "abc"},
-			{"key": "mode", "label": "Mode", "fieldtype": "Select", "choices": "fast\nslow", "value": "warp"},
-			{"key": "flag", "label": "Flag", "fieldtype": "Check", "value": "yes"},
+	def test_server_script_must_be_a_function(self) -> None:
+		ff.ensure_script(
+			"wa_fn__test_plain",
+			ff.FUNCTIONS["_test_echo"][1].replace("_test_echo", "_test_plain"),
+			api_method="plain_api",
 		)
-		for row in bad:
-			with self.subTest(row=row), self.assertRaises(WAValidationError):
-				self._insert(settings=[row])
-		doc = self._insert(settings=[{"key": "limit", "label": "Limit", "fieldtype": "Int", "value": " 7 "}])
-		self.assertEqual(doc.settings[0].value, "7")
-
-	def test_party_types_validated(self) -> None:
-		doc = self._insert(party_types=[{"party_type": "Customer"}, {"party_type": "Employee"}])
-		self.assertEqual([r.party_type for r in doc.party_types], ["Customer", "Employee"])
+		doc = frappe.get_doc(DT, self.key)
+		doc.server_script = "wa_fn__test_plain"
 		with self.assertRaises(WAValidationError):
-			self._insert(key="_wa_test_fn2", party_types=[{"party_type": "ToDo"}])
+			doc.save(ignore_permissions=True)
+		doc.reload()
+		doc.function_name = "Renamed"
+		doc.save(ignore_permissions=True)  # its own function script: fine
+
+	def test_values_are_header_parameters(self) -> None:
+		doc = frappe.get_doc(DT, self.key)
+		for bad in ('{"party": "X"}', '{"nope": 1}', "[1, 2]", "{not json"):
+			with self.subTest(values=bad):
+				doc.values = bad
+				with self.assertRaises(WAValidationError):
+					doc.save(ignore_permissions=True)
+				doc.reload()
+		doc.values = '{"text": "hi", "msg_result": {"en": "x"}}'
+		doc.save(ignore_permissions=True)
+		self.assertEqual(
+			frappe.parse_json(frappe.db.get_value(DT, self.key, "values")),
+			{"text": "hi", "msg_result": {"en": "x"}},
+		)
+
+	def test_party_types_helper(self) -> None:
+		self.assertEqual(ALLOWED_PARTY_TYPES, ("Customer", "Supplier", "Employee", "Sales Person", "User"))
+		check_party_types([frappe._dict(party_type="Customer"), frappe._dict(party_type="Employee")])
+		with self.assertRaises(WAValidationError):
+			check_party_types([frappe._dict(party_type="ToDo")])

@@ -1,6 +1,6 @@
 """Demo data for the Functions Center.
 
-Gives the storefront the life the prototype draws it with: both catalog functions installed and
+Gives the storefront the life the prototype draws it with: both functions (`wa_fn_ping`, `wa_fn_document_info`) installed and
 active, a handful of commands bound to them, and a month of inbound messages that ran those
 commands — so the readings (active, calls in 30 days, average run) and the drawer's facts and
 linked commands show numbers instead of dashes.
@@ -16,7 +16,7 @@ Dev sites only — it writes real documents. Run it from the bench:
 
 Every inbound row it creates carries `DEMOF-` in `provider_message_id` and every command it
 creates carries `DEMOF-` in `description`, so `clear()` can take it all back out. The functions
-themselves are left installed: they are the catalog's own, not demo data.
+themselves are left installed: they come from their Server Scripts, not demo data.
 """
 
 import random
@@ -69,8 +69,9 @@ def _device():
 
 
 def _install(key: str) -> None:
+	# a function is installed from its Server Script (`scripts/setup_functions.py` puts it on the site)
 	if not frappe.db.exists("WhatsApp Function", key):
-		functions_catalog.install(key, user="Administrator")
+		functions_catalog.install(f"wa_fn_{key}", user="Administrator")
 	frappe.db.set_value("WhatsApp Function", key, "status", "Active", update_modified=False)
 
 

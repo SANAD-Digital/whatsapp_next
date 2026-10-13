@@ -13,24 +13,45 @@ Returns are shown as the value of the response's `message` key.
 ## How commands work
 
 A `WhatsApp Command` maps a **word** (`code`, stored casefolded; the document name) plus optional
-`synonyms` to an installed **function key**. When an inbound text message arrives, a background
-job (`command_router.route`, never inside a web request) matches the first token against the
-cached word map of `Active` commands, checks access, parses typed arguments from the function's
-manifest `inputs`, runs the handler, renders the command's `outputs` and queues the replies at
+`synonyms` to an installed **function** — a Server Script with a `WA-FUNCTION` header (see
+[functions.md](functions.md#how-functions-work) and
+[commands-and-functions.md](../commands-and-functions.md)). When an inbound text message arrives, a
+background job (`command_router.route`, never inside a web request) matches the first token against
+the cached word map of `Active` commands, checks access, reads typed values from the text by the
+function's header parameters, merges and fills them (`function_runner.prepare`), asks for what is
+still missing, runs the script, checks its messages against `@reply` and queues the replies at
 priority 1.
 
-**No arbitrary code (D-012).** The command's `function` field is a key into the handler allow-list
-in `whatsapp_next/functions/registry.py` (built-ins plus the `whatsapp_function_handlers` hook).
-The router resolves the key there and nowhere else; it never runs a dotted path taken from a
-request or a record. A key with no registered handler, or an `Inactive` function, blocks the
-command with `Function Inactive`. See [functions.md](functions.md#how-functions-work).
+**No arbitrary code (D-012).** The command's `function` field is the key of an installed
+`WhatsApp Function`; the router runs that row's `server_script` and nothing else, never a path
+taken from a request or a record. The script runs as the Command Service User, and its direct URL
+is refused by the `wa_fn_` guard every function script starts with.
 
 **Access checks, in order** (first failure wins → `block_reason`): commands disabled in Settings
 (`Commands Disabled`) → not a text message (`Not Allowed`) → sender in the global blacklist group
 or the command's `blocked_group` (`Blacklist`) → not in `allowed_group` (`Not Allowed`) →
-`requires_linked_contact` without a contact (`Not Linked`) → party type not allowed
-(`Party Type`) → the party type's list: `Deny All` and not listed (`Not Allowed`), `Allow All` and
-listed (`Blacklist`) → function inactive / unregistered (`Function Inactive`).
+`requires_linked_contact` without a contact (`Not Linked`) → party type not in the command's
+`allowed_party_types` (`Party Type`) → the party type's list: `Deny All` and not listed
+(`Not Allowed`), `Allow All` and listed (`Blacklist`) → the function: not installed, `Inactive`,
+without a `server_script`, or an `@requires` not met on this site (`Function Inactive`; the reasons
+go to `command_error`) → the sender's party type not allowed by `@party_types` (`Party Type`).
+A function that needs the sender's party (`source=sender`) when the number is linked to none ends
+`Blocked` with `Not Linked`.
+
+**Values of a run.** The sender may write only the header's `source=command` parameters that are
+not Templates, not in `disabled_inputs` and not fixed in `settings_overrides`: `key=value` first,
+then by position, the last text parameter taking the rest of the message. Any other `key=value` is
+ignored — the party comes only from the Contact, and a message template never from the sender's
+text. Priority per parameter: the sender's value → the command's `settings_overrides` → the
+function's site `values` → the header default. A Template comes from the command's `templates`
+rows in the run's language (exact, then base language, then the row without a language), else the
+function's value, else the header's `@default <param> [lang]`. The run's language is
+`settings_overrides.language` when set, else Settings' `command_reply_language`.
+
+**Replies.** Each message the script returns must name a declared `@reply`; the keys in the
+command's `disabled_replies` are dropped. A `text` message becomes a Text reply; a `report` message
+is printed (`services/report_file.py`, PDF or Excel) and sent as a Document with its caption. A
+script error sends its `error` text alone; an exception sends a generic text and is logged.
 
 **Edit lock.** While a command is `Active`, only its status and counters may change: `save_command`
 and `restore_defaults` raise `WAStateConflictError` (409); `save_editor` stops, saves and
@@ -44,18 +65,22 @@ restarts it in one request.
 | `code` | The command word (casefolded, stripped; required). |
 | `title` | Defaults to `code`. |
 | `function` | Installed `WhatsApp Function` key. |
-| `synonyms` | Newline-separated words; casefolded, de-duplicated; may not equal `code` or any word of another command. |
+| `synonyms` | Newline-separated words; casefolded, de-duplicated; may not equal `code`, a help word, or any word of another command. |
 | `requires_linked_contact` | 0 / 1. |
 | `allowed_group`, `blocked_group` | `WhatsApp Contact Group` names. |
-| `reply_device` | Device used for replies. |
 | `description` | Free text. |
-| `allowed_party_types` | List of party types (`Customer`, `Supplier`, `Employee`, `Sales Person`, `User`). |
-| `settings_overrides` | Object `{setting_key: value}`; every key must be a setting of the function. |
-| `outputs` | List of output rows with only `output_key, label, output_type, default_template, template, condition, print_format, file_name_template, variables, notes`. On create with no outputs, they are copied from the function. |
-| `disabled_inputs` | List (or newline text) of input keys the command does not accept. |
+| `ask_inputs` | One parameter per line, `key` or `key: v1=Label, v2=Label`: asked over WhatsApp when the text did not give it. |
+| `allowed_party_types` | List of party types (`Customer`, `Supplier`, `Employee`, `Sales Person`, `User`); each must be one the function's `@party_types` allows. |
+| `settings_overrides` | Object `{param: value}`; every key must be a `source=command` parameter of the function's header, or `language`. A parameter set here is fixed: the sender cannot give it. |
+| `templates` | List of `{param, language, text}` rows (only these keys): the command's own text for a Template parameter, one row per parameter and language (`language` empty = any). A row with an empty `text` is skipped, so the function's text applies. |
+| `disabled_inputs` | List (or newline text) of parameters the sender may not give in this command. |
+| `disabled_replies` | List (or newline text) of `@reply` keys this command never sends. |
 | `access` | `{party_type: {mode: "Allow All" \| "Deny All", groups: [group], contacts: [contact]}}`; types not in `allowed_party_types` are dropped. Without `access`, changing `allowed_party_types` drops list rows of removed types. |
 
-`save_editor` / `preview_command` accept the same keys plus `status`.
+The controller checks every name against the function's installed header: `disabled_inputs` and
+`ask_inputs` against the parameters a sender may give, `disabled_replies` against `@reply`,
+`templates[].param` against the Template parameters. `save_editor` / `preview_command` accept the
+same keys plus `status`.
 
 ---
 
@@ -78,17 +103,17 @@ Command rows with their function's status and 30-day run count.
 ```json
 {
   "rows": [
-    { "name": "ping", "code": "ping", "title": "ping", "function": "ping", "status": "Active", "synonyms": "بنق",
-      "requires_linked_contact": 0, "allowed_group": null, "blocked_group": null, "reply_device": null,
-      "description": null, "run_count": 40, "last_run_at": "…", "defaults_restored_at": null, "modified": "…",
-      "function_status": "Active", "function_name": "Ping", "run_count_30d": 12 }
+    { "name": "فحص", "code": "فحص", "title": "فحص الاتصال", "function": "ping", "status": "Active", "synonyms": "ping\nبنق",
+      "requires_linked_contact": 0, "allowed_group": null, "blocked_group": null,
+      "description": "…", "run_count": 40, "last_run_at": "…", "defaults_restored_at": null, "modified": "…",
+      "function_status": "Active", "function_name": "فحص الاتصال", "run_count_30d": 12 }
   ],
   "total": 1
 }
 ```
 
 `run_count_30d` counts `WhatsApp Inbound Message` rows matched to the command with `received_at`
-in the last 30 days.
+in the last 30 days, leaving out `Blocked` and simulated rows.
 
 **Realtime:** none.
 
@@ -100,8 +125,9 @@ const { rows } = await sanad.ui.call("commands.list_commands", { filters: { stat
 
 ## get_defaults
 
-Outputs, settings, party types and suggested words of an installed function (to prefill a new
-command).
+What a new command on a function starts from, read from the function's installed header: the
+values a sender may write, the other parameters, the message templates, the replies and the party
+types.
 
 - **Path:** `whatsapp_next.api.v1.commands.get_defaults`
 - **Methods:** GET, POST
@@ -111,16 +137,18 @@ command).
 |---|---|---|---|
 | `function` | str | yes | Installed function key. |
 
-**Returns**
+**Returns** — the `inputs, settings, templates, replies, party_types, party_types_text` keys of
+[get_function_spec](#get_function_spec):
 
 ```json
 {
-  "outputs": [{ "output_key": "summary", "label": "Summary", "output_type": "Text", "default_template": "…", "template": "…",
-                "condition": "", "print_format": null, "file_name_template": null, "variables": "…", "notes": null }],
-  "settings": [{ "key": "document_type", "label": "Document Type", "fieldtype": "Data", "choices": null,
-                 "default_value": "Sales Invoice", "value": "Sales Invoice", "notes": "DocType to look up." }],
-  "party_types": ["Customer", "Supplier"],
-  "suggested_commands": ["doc", "فاتورة"]
+  "inputs": [{ "key": "document_name", "label": "رقم المستند", "type": "str", "required": true, "options": null, "choices": [], "position": 1 }],
+  "settings": [{ "key": "document_type", "label": "نوع المستند", "fieldtype": "Link", "options": "DocType", "choices": [],
+                 "required": false, "depends_on": null, "header_default": null, "default_value": null }],
+  "templates": [{ "key": "msg_result", "label": "رسالة حالة المستند", "default": "…", "defaults_by_lang": {}, "site": null, "vars": [{ "name": "status", "label": "…", "messages": ["msg_result"] }] }],
+  "replies": [{ "key": "result_text", "type": "text", "report_name": null, "format": null, "label": "…" }],
+  "party_types": { "mode": "only", "types": ["Customer", "Supplier"] },
+  "party_types_text": "Customer, Supplier"
 }
 ```
 
@@ -152,14 +180,14 @@ map cache.
 **Returns**
 
 ```json
-{ "name": "doc" }
+{ "name": "فاتورة" }
 ```
 
 **Errors**
 
 | Exception | HTTP | When |
 |---|---|---|
-| `WAValidationError` | 417 | `payload must be an object`; `Unknown payload keys`; `Command Word is required`; word already used by another command; synonym equals the word; unknown override key; bad `outputs` / `disabled_inputs` / `access` shape or list rows. |
+| `WAValidationError` | 417 | `payload must be an object`; `Unknown payload keys`; `Command Word is required`; word already used by another command or a help word; synonym equals the word; an override key that is not a header parameter; a `disabled_inputs` / `ask_inputs` / `disabled_replies` name not in the header; a `templates` row with unknown fields, a `param` that is not a Template parameter, or the same parameter and language twice; a party type outside `@party_types`; bad `access` shape or list rows. |
 | `WAStateConflictError` | 409 | The target command is `Active`. |
 | `WANotFoundError` | 404 | `payload.name` unknown. |
 
@@ -168,8 +196,10 @@ map cache.
 ```bash
 curl -X POST "https://site/api/method/whatsapp_next.api.v1.commands.save_command" \
   -H "Authorization: token <api_key>:<api_secret>" -H "Content-Type: application/json" \
-  -d '{"payload": {"code": "doc", "function": "document_info", "synonyms": "فاتورة",
-       "requires_linked_contact": 1, "allowed_party_types": ["Customer"]}}'
+  -d '{"payload": {"code": "فاتورة", "function": "document_info", "synonyms": "invoice",
+       "requires_linked_contact": 1, "allowed_party_types": ["Customer"],
+       "disabled_inputs": ["document_type", "party_field"],
+       "templates": [{"param": "msg_result", "language": "ar", "text": "فاتورتك {{ name }}: {{ status }}"}]}}'
 ```
 
 ---
@@ -198,7 +228,7 @@ Start or stop a command.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("commands.set_status", { name: "doc", status: "Active" });
+await sanad.ui.call("commands.set_status", { name: "فاتورة", status: "Active" });
 ```
 
 ---
@@ -222,14 +252,15 @@ Bulk start / stop.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("commands.set_status_many", { names: ["doc", "ping"], status: "Inactive" });
+await sanad.ui.call("commands.set_status_many", { names: ["فاتورة", "فحص"], status: "Inactive" });
 ```
 
 ---
 
 ## restore_defaults
 
-Re-copy `outputs` from the function and clear `settings_overrides`.
+Drop the command's own message texts (`templates`) and parameter values (`settings_overrides`), so
+it uses the function's again.
 
 - **Path:** `whatsapp_next.api.v1.commands.restore_defaults`
 - **Methods:** POST
@@ -239,12 +270,13 @@ Re-copy `outputs` from the function and clear `settings_overrides`.
 |---|---|---|---|
 | `name` | str | yes | Command name. |
 
-Sets `defaults_restored_at`. Audited `Command Defaults Restored`.
+Sets `defaults_restored_at`. Audited `Command Defaults Restored`. `disabled_inputs`,
+`disabled_replies` and `ask_inputs` are kept.
 
 **Returns**
 
 ```json
-{ "outputs": [{ "output_key": "summary", "label": "Summary", "output_type": "Text", "template": "…" }], "settings_overrides": {} }
+{ "templates": [], "settings_overrides": {} }
 ```
 
 **Errors:** `WANotFoundError` (404); `WAStateConflictError` (409) — the command is `Active`.
@@ -252,7 +284,7 @@ Sets `defaults_restored_at`. Audited `Command Defaults Restored`.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("commands.restore_defaults", { name: "doc" });
+await sanad.ui.call("commands.restore_defaults", { name: "فاتورة" });
 ```
 
 ---
@@ -268,7 +300,7 @@ message tables, nothing sent.
 
 | Argument | Type | Required | Meaning |
 |---|---|---|---|
-| `text` | str | yes | The message, e.g. `#doc SINV-0001`. |
+| `text` | str | yes | The message, e.g. `فاتورة SINV-0001`. |
 | `sender_phone` | str | yes | Number or JID the message is "from"; its Contact is resolved by phone. |
 | `device` | str | optional | Default: the Settings default device. |
 
@@ -278,24 +310,29 @@ message tables, nothing sent.
 {
   "matched": true,
   "status": "Executed",
-  "command": "doc",
+  "command": "فاتورة",
   "block_reason": null,
-  "args": { "name": "SINV-0001" },
-  "reply_body": "Sales Invoice SINV-0001\nStatus: Paid\nDate: 2026-09-01",
-  "replies": [{ "output_key": "summary", "message_type": "Text", "body": "Sales Invoice SINV-0001\n…", "attachment": null }],
+  "args": { "party_type": "Customer", "party": "CUST-0001", "document_name": "SINV-0001" },
+  "reply_body": "فاتورة SINV-0001\nالحالة: Paid\n…",
+  "replies": [{ "output_key": "result_text", "message_type": "Text", "body": "فاتورة SINV-0001\n…", "attachment": null }],
   "error": null,
   "function_ms": 42
 }
 ```
 
-- `status`: `None`, `Not Matched`, `Blocked`, `Matched`, `Executed` or `Failed`; `matched` is
-  true for anything but `None` / `Not Matched` (a `Blocked` command is matched).
+- `status`: `None`, `Not Matched`, `Blocked`, `Executed` or `Failed`; `matched` is true for
+  anything but `None` / `Not Matched` (a `Blocked` command is matched). A dry run never asks for a
+  missing value: a required one still empty is `Failed` (`… is required`).
 - `block_reason`: one of the access-check reasons above.
+- `args`: every value the script received, after merging and defaults.
 - `reply_body`: the first reply with a body; `replies` may include the unknown-command reply when
-  Settings define one.
+  Settings define one. Each reply's `output_key` is its `@reply` key (or `error`, `blocked`,
+  `help`, `unknown`).
+- A `report` reply is not printed: it comes back as `message_type: "Document"` with
+  `attachment: null` and `report_name, filters, format, file_name`.
 - `function_ms`: elapsed routing time in ms.
-- The handler really runs (as the Command Service User, with `dry_run=True` in its context), and
-  its call is counted in the function's `call_count` / `avg_ms` / `error_count`.
+- The script really runs (as the Command Service User), but the run is **not** counted in the
+  function's `call_count` / `avg_ms` / `error_count`.
 
 **Errors**
 
@@ -303,7 +340,7 @@ message tables, nothing sent.
 |---|---|---|
 | `WAInvalidPhoneError` | 417 | `sender_phone` is not a valid number / JID. |
 | `WAValidationError` | 417 | `Message text is required`. |
-| `WAStateConflictError` | 409 | The Command Service User is not configured, disabled, or a System Manager (raised when a matched command reaches its handler). |
+| `WAStateConflictError` | 409 | The Command Service User is not configured, disabled, or a System Manager (raised when a matched command reaches its function). |
 
 **Realtime:** none.
 
@@ -332,13 +369,15 @@ Everything the command editor opens with.
 ```json
 {
   "command": {
-    "name": "doc", "code": "doc", "title": "doc", "function": "document_info", "status": "Inactive",
-    "synonyms": ["فاتورة"], "requires_linked_contact": 1, "allowed_party_types": ["Customer"],
-    "disabled_inputs": [], "settings_overrides": {}, "outputs": [{ "output_key": "summary", "…": "…" }],
+    "name": "فاتورة", "code": "فاتورة", "title": "حالة الفاتورة", "function": "document_info", "status": "Inactive",
+    "synonyms": ["invoice"], "requires_linked_contact": 1, "allowed_party_types": ["Customer"],
+    "disabled_inputs": ["document_type", "party_field"], "ask_inputs": "",
+    "settings_overrides": {}, "templates": [{ "param": "msg_result", "language": "ar", "text": "…" }],
+    "disabled_replies": [],
     "access": { "Customer": { "mode": "Deny All", "groups": [{ "name": "VIP", "label": "VIP" }], "contacts": [{ "name": "Ahmed Ali", "label": "Ahmed Ali", "phone": "+966500000002" }] } },
     "runs_30d": 12, "has_history": true
   },
-  "functions": [{ "name": "document_info", "function_name": "Document Status", "category": "Documents", "status": "Active" }],
+  "functions": [{ "name": "document_info", "function_name": "حالة مستند", "server_script": "wa_fn_document_info", "status": "Active" }],
   "party_types": [{ "key": "Customer", "label": "Customer" }, { "key": "Supplier", "label": "Supplier" }, { "key": "Employee", "label": "Employee" }, { "key": "Sales Person", "label": "Sales Person" }, { "key": "User", "label": "User" }],
   "function": { /* get_function_spec of the command's function, or null */ }
 }
@@ -352,14 +391,14 @@ already point at the command (it can then only be stopped, not deleted).
 **Realtime:** none.
 
 ```js
-const ed = await sanad.ui.call("commands.get_editor", { name: "doc" });
+const ed = await sanad.ui.call("commands.get_editor", { name: "فاتورة" });
 ```
 
 ---
 
 ## get_function_spec
 
-Inputs, settings, outputs and suggested words of one installed function, for the editor.
+What the editor shows for one installed function, read from its installed header.
 
 - **Path:** `whatsapp_next.api.v1.commands.get_function_spec`
 - **Methods:** GET, POST
@@ -373,18 +412,25 @@ Inputs, settings, outputs and suggested words of one installed function, for the
 
 ```json
 {
-  "name": "document_info", "function_name": "Document Status", "category": "Documents", "status": "Active",
-  "when_to_use": "Customers or suppliers asking about …", "example": "#doc SINV-0001",
-  "inputs": [{ "key": "name", "label": "Document name", "type": "str", "required": true, "rest": false, "options": null, "details": null, "example": null }],
-  "settings": [{ "key": "document_type", "label": "Document Type", "fieldtype": "Data", "choices": [], "default_value": "Sales Invoice", "notes": "DocType to look up." }],
-  "outputs": [{ "output_key": "summary", "…": "…" }],
-  "party_types": ["Customer", "Supplier"],
-  "suggested_commands": ["doc", "فاتورة"]
+  "name": "document_info", "function_name": "حالة مستند", "description": "…", "status": "Active",
+  "version": "1.0.0", "server_script": "wa_fn_document_info", "available": true, "reasons": [],
+  "party_types": { "mode": "only", "types": ["Customer", "Supplier"] }, "party_types_text": "Customer, Supplier",
+  "inputs": [{ "key": "document_name", "label": "رقم المستند", "type": "str", "required": true, "options": null, "choices": [], "position": 1 }],
+  "settings": [{ "key": "document_type", "label": "نوع المستند", "fieldtype": "Link", "options": "DocType", "choices": [],
+                 "required": false, "depends_on": null, "header_default": null, "default_value": null }],
+  "templates": [{ "key": "msg_result", "label": "رسالة حالة المستند", "default": "…", "defaults_by_lang": {}, "site": null, "vars": [] }],
+  "replies": [{ "key": "result_text", "type": "text", "report_name": null, "format": null, "label": "…" }]
 }
 ```
 
-`inputs` are sorted by `position`; a setting's `default_value` is the site's current value when
-set, else the manifest default; `choices` is split into a list.
+- `inputs` and `settings` both list the typed `source=command` parameters (not the party, not a
+  Template), in header order: `inputs` as the router reads them (`type` is `str`, `int`, `date`,
+  `link`, `check` or `select`; `required` is true only for a required parameter with no default),
+  `settings` as the editor's value form (`default_value` is the site's value when set, else the
+  header default).
+- `templates` are the Template parameters: the header's `default` and `defaults_by_lang`, the
+  site's text (`site`: a text or `{language: text}`) and the `@var` values the text may use.
+- `available` / `reasons` come from `@requires`.
 
 **Errors:** `WANotFoundError` (404) — function not installed.
 
@@ -412,7 +458,7 @@ chosen status (default: back to `Active`) in one request.
 **Returns**
 
 ```json
-{ "name": "doc", "status": "Active" }
+{ "name": "فاتورة", "status": "Active" }
 ```
 
 **Errors:** `WAValidationError` (417) — `Unknown payload keys`, `Unknown status …`, and every
@@ -421,7 +467,7 @@ chosen status (default: back to `Active`) in one request.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("commands.save_editor", { payload: { name: "doc", synonyms: "فاتورة\ninvoice", status: "Active" } });
+await sanad.ui.call("commands.save_editor", { payload: { name: "فاتورة", synonyms: "فاتورتي\ninvoice", status: "Active" } });
 ```
 
 ---
@@ -436,50 +482,53 @@ Dry-run the editor's draft (saved or not) for an assumed sender — nothing save
 
 | Argument | Type | Required | Meaning |
 |---|---|---|---|
-| `payload` | dict | yes | Editor payload (`name` and `status` are ignored for the draft). A draft without `outputs` gets the function's. |
-| `sender` | dict | optional | `{contact, party_type, party_name, phone, label}`; `party_*` count only with a `contact`. |
-| `values` | dict | optional | `{input_key: text}` used to build the message text. |
+| `payload` | dict | yes | Editor payload (`name` and `status` are ignored for the draft). |
+| `sender` | dict | optional | `{contact, party_type, party_name, phone, label}`. `party_*` count only with a `contact`, and must be one of that contact's own links; without them the party is the one the router would pick for that contact. |
+| `values` | dict | optional | `{param: text}` for the inputs, used to build the message text. |
 
-The text is built as `<code> <value> …` in input order (disabled inputs and empty values
-skipped); then the access checks, argument parsing, handler and output rendering run with
-`dry_run`. Messages Frappe would otherwise queue for the Desk are discarded; failures are in the
-result.
+The text is built as `<code> <value> …` in input order (disabled, fixed and empty inputs
+skipped); then the access checks, argument parsing, value merging, the script and the replies run
+with `dry_run`, in the reply language. Messages Frappe would otherwise queue for the Desk are
+discarded; failures are in the result.
 
 **Returns**
 
 ```json
 {
-  "text": "doc SINV-0001",
+  "text": "فاتورة SINV-0001",
   "status": "Executed",
   "block_reason": null,
   "reply_sent": true,
-  "args": { "name": "SINV-0001" },
+  "args": { "party_type": "Customer", "party": "CUST-0001", "document_name": "SINV-0001" },
   "missing": [],
-  "replies": [{ "output_key": "summary", "message_type": "Text", "body": "…", "attachment": null }],
+  "replies": [{ "output_key": "result_text", "message_type": "Text", "body": "…", "attachment": null }],
   "error": null
 }
 ```
 
-- `status`: `Blocked`, `Failed` (argument or handler error) or `Executed`.
-- `missing`: required inputs with no value, `[{key, label}]`.
+- `status`: `Blocked`, `Failed` (a value not allowed, a required value missing, or the script's
+  error) or `Executed`. `Blocked` with `Not Linked` when the function needs a party and the sender
+  has none.
+- `missing`: required inputs with no value and no default, `[{key, label}]`.
 - On `Blocked`, `replies` holds the refusal text and `reply_sent` says whether a live route would
   send it (Settings `send_receipt_reply`).
+- A `report` reply is not printed (see `test_command`).
 
 **Errors**
 
 | Exception | HTTP | When |
 |---|---|---|
-| `WAValidationError` | 417 | `payload must be an object`; `Unknown payload keys`; `Pick a function first`. |
+| `WAValidationError` | 417 | `payload must be an object`; `Unknown payload keys`; `Pick a function first`; `sender.party_*` not linked to `sender.contact`. |
 | `WANotFoundError` | 404 | `sender.contact` or the function does not exist. |
-| `WAStateConflictError` | 409 | Command Service User not usable (when the handler is reached). |
+| `WAStateConflictError` | 409 | Command Service User not usable (when the script is reached). |
 
-**Realtime:** none. As with `test_command`, the handler call is counted in the function's metrics.
+**Realtime:** none. As with `test_command`, the run is not counted in the function's metrics.
 
 ```js
 const p = await sanad.ui.call("commands.preview_command", {
-  payload: { code: "doc", function: "document_info", allowed_party_types: ["Customer"] },
+  payload: { code: "فاتورة", function: "document_info", allowed_party_types: ["Customer"] },
   sender: { contact: "Ahmed Ali", party_type: "Customer", party_name: "CUST-0001" },
-  values: { name: "SINV-0001" },
+  values: { document_name: "SINV-0001" },
 });
 ```
 
@@ -511,7 +560,7 @@ command (`… has run history; stop it instead of deleting it`).
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("commands.delete_command", { name: "doc" });
+await sanad.ui.call("commands.delete_command", { name: "فاتورة" });
 ```
 
 ---

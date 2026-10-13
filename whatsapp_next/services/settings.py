@@ -39,6 +39,10 @@ def store_secret(fieldname: str, value: str) -> None:
 	frappe.db.set_single_value(SETTINGS, fieldname, "*" * len(value), update_modified=False)
 
 
+# the platform account's keys: a change to any of them is a change of account
+PLATFORM_KEYS: tuple[str, ...] = ("customer_api_key", "customer_api_secret", "api_key", "api_secret")
+
+
 def save_fields(values: dict[str, Any], *, section: str, user: str | None = None) -> list[str]:
 	"""Write `values` (already allow-listed by the caller) into Settings; returns the fieldnames
 	that changed. `picker_sources` replaces the whole table."""
@@ -64,6 +68,17 @@ def save_fields(values: dict[str, Any], *, section: str, user: str | None = None
 		doc.flags.ignore_permissions = True
 		doc.save(ignore_permissions=True)
 		audit.log("Settings Changed", fields_written=changed, details={"section": section}, user=user)
+		if set(changed) & set(PLATFORM_KEYS):
+			# new keys may be another account's: the webhook secret kept from the old one would fail
+			# every signature, so the account's own secret is fetched again (as the onboarding does)
+			frappe.enqueue(
+				"whatsapp_next.services.webhook_setup.fetch_secret",
+				queue="short",
+				job_id="wa-webhook-refetch-secret",
+				deduplicate=True,
+				enqueue_after_commit=True,
+				user=user,
+			)
 	return changed
 
 

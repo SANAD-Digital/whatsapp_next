@@ -17,6 +17,7 @@ import "./screens/campaign/index.js";
 import "./screens/settings.js";
 import "./screens/backup.js";
 import "./screens/alerts.js";
+import "./screens/function_spec.js";
 import "./screens/templates.js";
 import "./screens/notifications.js";
 import "./screens/groups.js";

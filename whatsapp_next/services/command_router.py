@@ -1,7 +1,9 @@
-# Module role: inbound command routing (D-012, backend-plan §7.3 steps 4–11). Matches the first
-# token of an inbound text against the cached command map, checks access in a fixed order,
-# parses typed arguments from the function manifest, runs the registered handler **as the command
-# service user** (restored in `finally`), renders the command's outputs and hands them to the
+# Module role: inbound command routing (D-012, backend-plan §7.3 steps 4–11, WHATSAPP_NEXT_INTEGRATION
+# §5). Matches the first token of an inbound text against the cached command map, checks access in a
+# fixed order (the function's `@requires` and `@party_types` included), reads typed values from the
+# text by the function's header parameters, merges and fills them (`function_runner.prepare`), asks
+# for what is still missing, runs the function's Server Script **as the command service user**
+# (restored in `finally`), checks its messages against `@reply` and hands the replies to the
 # dispatcher at priority 1. The **status writer** for `WhatsApp Inbound Message.command_status`.
 # Never `frappe.get_attr` on data; never runs a live route inside a web request.
 
@@ -20,10 +22,10 @@ from frappe import _
 from frappe.utils import cint, cstr, getdate, now_datetime, nowdate
 
 from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
-from whatsapp_next.functions import registry
-from whatsapp_next.functions.context import FunctionContext, FunctionResult, Sender
-from whatsapp_next.services import attachments, command_menu, dispatch, templates
+from whatsapp_next.services import command_menu, dispatch, function_runner
+from whatsapp_next.services import function_header as fh
 from whatsapp_next.services.dispatch import OutboundSpec
+from whatsapp_next.services.function_runner import FunctionRun, Sender
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.services.permissions import PARTY_TYPES
 
@@ -164,18 +166,14 @@ def help_text(sender_key: str | None = None) -> str:
 	)
 
 
-_TYPE_LABELS = {"str": "text", "int": "number", "date": "date", "link": "name"}
+_TYPE_LABELS = {"str": "text", "int": "number", "date": "date", "link": "name", "check": "yes or no", "select": "choice"}
 
 
 def usage_text(command) -> str:
-	"""How to send `command`: its word, then each variable it reads in the order `parse_args`
-	reads them (required in `<>`, optional in `[]`), its type and notes, and a ready example.
-	Built from the function's manifest, so it follows the installed version."""
-	off = disabled_inputs(command)
-	inputs = sorted(
-		(i for i in _manifest_inputs(command.function) if i["key"] not in off),
-		key=lambda i: cint(i.get("position")) or 99,
-	)
+	"""How to send `command`: its word, then each value the sender may write in the order
+	`parse_args` reads them (required in `<>`, optional in `[]`), its type and a ready example.
+	Built from the function's header, so it follows the installed version."""
+	inputs = command_inputs(command)
 	word = command.code
 	lines = [f"*{word}* — {command.title or word}"]
 	if command.get("description"):
@@ -190,17 +188,16 @@ def usage_text(command) -> str:
 	shape = " ".join(f"<{label(i)}>" if i.get("required") else f"[{label(i)}]" for i in inputs)
 	lines += ["", _("Send: {0}").format(f"{word} {shape}"), "", _("Variables, in this order:")]
 	for n, i in enumerate(inputs, start=1):
-		kind = _(_TYPE_LABELS.get(str(i.get("type") or "str").lower(), "text"))
-		if str(i.get("type") or "").lower() == "link" and i.get("options"):
+		kind = _(_TYPE_LABELS.get(i["type"], "text"))
+		if i["type"] == "link" and i.get("options"):
 			kind = _(i["options"])
 		need = _("required") if i.get("required") else _("optional")
 		line = f"{n}. {label(i)} ({_('{0}, {1}').format(kind, need)})"
 		if i.get("rest"):
 			line += " — " + _("takes the rest of the message")
+		if i.get("choices"):
+			line += " — " + ", ".join(i["choices"])
 		lines.append(line)
-		details = i.get("details") or i.get("description")
-		if details:
-			lines.append(f"   {_(details)}")
 	lines += ["", _("Example: {0}").format(_example(command, inputs))]
 	if len(inputs) > 1:
 		lines.append(_("Or by name, in any order: {0}").format(f"{word} {inputs[0]['key']}=…"))
@@ -208,20 +205,12 @@ def usage_text(command) -> str:
 
 
 def _example(command, inputs: list[dict[str, Any]]) -> str:
-	"""The manifest's example with this command's word, or one made from the inputs' examples."""
-	raw = frappe.db.get_value("WhatsApp Function", command.function, "manifest")
-	try:
-		example = (json.loads(raw) if raw else {}).get("example") or ""
-	except ValueError:
-		example = ""
-	_head, _sep, tail = str(example).strip().partition(" ")
-	if tail.strip():
-		return f"{command.code} {tail.strip()}"
+	"""The command's word with a sample of every required value and of the first optional one."""
 	samples = {"int": "3", "date": str(getdate(nowdate()))}
 	parts = []
-	for i in inputs:
-		sample = i.get("example") or samples.get(str(i.get("type") or "").lower())
-		if sample or i.get("required"):
+	for n, i in enumerate(inputs):
+		sample = (i.get("choices") or [None])[0] or samples.get(i["type"])
+		if i.get("required") or (n == 0 and sample):
 			parts.append(str(sample or _(i.get("label") or i["key"])))
 	return " ".join([command.code, *parts]).strip()
 
@@ -238,6 +227,23 @@ def _member(group: str | None, key: str | None) -> bool:
 			{"parent": group, "parenttype": "WhatsApp Contact Group", "phone_e164": key},
 		)
 	)
+
+
+def block_message(command, reason: str, sender: Sender | None = None) -> str:
+	"""What a refused sender reads: the reason in words they can act on, not the status code."""
+	key = (sender.phone_e164 or sender.jid) if sender else None
+	if reason == "Not Allowed" and command.get("allowed_group") and not _member(command.allowed_group, key):
+		title = frappe.db.get_value("WhatsApp Contact Group", command.allowed_group, "title") if frappe.get_meta("WhatsApp Contact Group").has_field("title") else None
+		return _("This command is for the members of «{0}» only.").format(title or command.allowed_group)
+	messages = {
+		"Not Allowed": _("This command is not open to your number."),
+		"Blacklist": _("Your number cannot use this command."),
+		"Not Linked": _("Your number is not linked to an account with us, so this command cannot answer you."),
+		"Party Type": _("This command is not for {0} accounts.").format(_(sender.party_type)) if sender and sender.party_type else _("This command is not for your account type."),
+		"Commands Disabled": _("Commands are switched off right now."),
+		"Function Inactive": _("This command is not available right now."),
+	}
+	return messages.get(reason) or _("You cannot use this command ({0})").format(_(reason))
 
 
 def allowed_party_types(command) -> list[str]:
@@ -342,64 +348,103 @@ def check_access(command, inbound, sender: Sender | None = None) -> str | None:
 			return "Not Allowed"
 		if mode == "Allow All" and listed:
 			return "Blacklist"
-	fn = frappe.db.get_value("WhatsApp Function", command.function, ["status", "function_key"], as_dict=True)
-	if not fn or fn.status != "Active" or not registry.is_registered(fn.function_key):
+	return function_block(command, sender)
+
+
+def function_block(command, sender: Sender | None = None) -> str | None:
+	"""The function's part of the access check: installed, Active and bound to its Server Script;
+	every `@requires` met on this site; the sender's party type one `@party_types` allows."""
+	fn = frappe.db.get_value("WhatsApp Function", command.function, ["status", "server_script", "manifest"], as_dict=True)
+	if not fn or fn.status != "Active" or not fn.server_script:
 		return "Function Inactive"
+	spec = function_runner.functions_catalog.manifest_of(fn)
+	available, _reasons = fh.function_availability(spec)
+	if not available:
+		return "Function Inactive"
+	if sender is not None and sender.party_type and not fh.party_type_allowed(spec, sender.party_type):
+		return "Party Type"
 	return None
+
+
+def function_reasons(command) -> list[str]:
+	"""Why the command's function cannot run here (`@requires`), for the status log."""
+	spec = function_spec(command)
+	return fh.function_availability(spec)[1] if spec else []
 
 
 # ---- arguments -----------------------------------------------------------------------------
 
-
-def _manifest_inputs(function: str) -> list[dict[str, Any]]:
-	raw = frappe.db.get_value("WhatsApp Function", function, "manifest")
-	try:
-		manifest = json.loads(raw) if raw else {}
-	except ValueError:
-		manifest = {}
-	return [i for i in manifest.get("inputs") or [] if isinstance(i, dict) and i.get("key")]
+_INPUT_TYPES = {"Date": "date", "Int": "int", "Link": "link", "Check": "check", "Select": "select"}
 
 
-def _coerce(value: str, kind: str, spec: dict[str, Any]) -> Any:
-	kind = (kind or "str").lower()
-	if kind == "int":
-		if not re.fullmatch(r"-?\d+", value.strip()):
-			raise ValueError(_("{0} must be a whole number").format(spec.get("label") or spec["key"]))
-		return int(value)
-	if kind == "date":
-		from whatsapp_next.services.command_sessions import relative_date
+def _as_input(p: dict[str, Any], position: int | None = None) -> dict[str, Any]:
+	"""A header parameter as the router's input: `{key, label, type, required, options, choices}`."""
+	return {
+		"key": p["name"],
+		"label": p["label"] or p["name"],
+		"type": _INPUT_TYPES.get(p["fieldtype"], "str"),
+		"required": bool(p["required"] and not p.get("default")),
+		"options": p.get("options"),
+		"choices": list(p.get("select_options") or []),
+		"position": position,
+	}
 
-		relative = relative_date(value)
-		if relative:
-			return str(relative)
-		try:
-			return str(getdate(value.strip()))
-		except Exception as exc:
-			raise ValueError(_("{0} must be a date").format(spec.get("label") or spec["key"])) from exc
-	if kind == "link":
-		target = spec.get("options")
-		if target and not frappe.db.exists(target, value.strip()):
-			raise ValueError(_("{0} {1} not found").format(_(target), value.strip()))
-		return value.strip()
-	return value.strip()
+
+def function_spec(command) -> dict[str, Any]:
+	"""The header spec of the command's function (empty when it is not installed)."""
+	return function_runner.spec_of(command.get("function"))
 
 
 def disabled_inputs(command) -> set[str]:
-	"""Input keys the command switched off (`disabled_inputs`, one per line)."""
+	"""Parameter names the command switched off for the sender (`disabled_inputs`, one per line)."""
 	return {k.strip() for k in (command.get("disabled_inputs") or "").splitlines() if k.strip()}
 
 
-def parse_args(command, text: str, *, partial: bool = False) -> dict[str, Any]:
-	"""Arguments after the command word per manifest `inputs`: `key=value` tokens first, then
-	positional order; the input flagged `rest` swallows the remaining text. Typed by
-	`type ∈ str|int|date|link`; missing `required` inputs raise `WAValidationError`. Inputs the
-	command disabled are not read. `partial` returns only what the text gave: no defaults, and a
-	missing required input is not an error (the router asks for it)."""
-	declared = _manifest_inputs(command.function)
-	if not declared:
-		return {"text": text.strip()} if text.strip() else {}
+def _open_params(command, spec: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+	"""The parameters a sender may give: typed ones (not the party, not a template) that the command
+	neither switched off nor fixed in its `settings_overrides`."""
+	spec = function_spec(command) if spec is None else spec
 	off = disabled_inputs(command)
-	inputs = sorted((i for i in declared if i["key"] not in off), key=lambda i: cint(i.get("position")) or 99)
+	fixed = set(function_runner.command_overrides(command))
+	return [p for p in fh.typed_params(spec) if p["name"] not in off and p["name"] not in fixed]
+
+
+def command_inputs(command, spec: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+	"""The values a sender writes after the command word, in the header's order; the last text one
+	takes the rest of the message."""
+	inputs = [_as_input(p, n) for n, p in enumerate(_open_params(command, spec), start=1)]
+	if inputs and inputs[-1]["type"] == "str":
+		inputs[-1]["rest"] = True
+	return inputs
+
+
+def _input_spec(command, key: str) -> dict[str, Any]:
+	p = fh.param(function_spec(command), key)
+	return _as_input(p) if p else {"key": key, "label": key, "type": "str"}
+
+
+def _coerce(value: str, key: str, command) -> Any:
+	"""A sender's value in its parameter's type. E: `ValueError` with a message for the sender."""
+	p = fh.param(function_spec(command), key)
+	if not p:
+		return cstr(value).strip()
+	if p["fieldtype"] == "Date":
+		from whatsapp_next.services.command_sessions import relative_date
+
+		relative = relative_date(cstr(value))
+		if relative:
+			return str(relative)
+	return fh.coerce(p, cstr(value))
+
+
+def parse_args(command, text: str, *, partial: bool = False) -> dict[str, Any]:
+	"""The values the sender wrote after the command word: `key=value` tokens for any parameter the
+	sender may give, then the rest by position (`command_inputs`). Typed by the header; a value of
+	the wrong type or not allowed raises `WAValidationError`. Defaults are not applied here (the
+	header fills them in `function_runner.prepare`); `partial` is kept for callers and changes
+	nothing."""
+	inputs = command_inputs(command)
+	open_names = {i["key"].casefold(): i["key"] for i in inputs}
 	try:
 		tokens = shlex.split(text) if text.strip() else []
 	except ValueError:
@@ -408,31 +453,26 @@ def parse_args(command, text: str, *, partial: bool = False) -> dict[str, Any]:
 	positional: list[str] = []
 	for tok in tokens:
 		m = _ARG_RE.match(tok)
-		if m:
-			named[m.group(1).casefold()] = m.group(2)
+		if m and m.group(1).casefold() in open_names:
+			named[open_names[m.group(1).casefold()]] = m.group(2)
+		elif m:
+			continue  # the party, a template, or a value the command fixed: never the sender's
 		else:
 			positional.append(tok)
 	out: dict[str, Any] = {}
 	errors: list[str] = []
 	for spec in inputs:
 		key = spec["key"]
-		raw: str | None = named.get(key.casefold())
+		raw: str | None = named.get(key)
 		if raw is None and positional:
 			if spec.get("rest"):
-				raw = " ".join(positional)
-				positional = []
+				raw, positional = " ".join(positional), []
 			else:
 				raw = positional.pop(0)
 		if raw is None or raw == "":
-			if partial:
-				continue
-			if spec.get("default") not in (None, ""):
-				out[key] = spec["default"]
-			elif spec.get("required"):
-				errors.append(_("{0} is required").format(spec.get("label") or key))
 			continue
 		try:
-			out[key] = _coerce(raw, spec.get("type") or "str", spec)
+			out[key] = _coerce(raw, key, command)
 		except ValueError as exc:
 			errors.append(str(exc))
 	if errors:
@@ -440,25 +480,21 @@ def parse_args(command, text: str, *, partial: bool = False) -> dict[str, Any]:
 	return out
 
 
-def settings_for(command) -> dict[str, Any]:
-	"""Function setting values merged with the command's `settings_overrides`."""
-	rows = frappe.get_all(
-		"WhatsApp Function Setting",
-		filters={"parent": command.function, "parenttype": "WhatsApp Function"},
-		fields=["key", "value", "default_value", "fieldtype"],
-	)
-	out: dict[str, Any] = {}
-	for r in rows:
-		v = r.value if r.value not in (None, "") else r.default_value
-		out[r.key] = cint(v) if r.fieldtype in ("Check", "Int") and v not in (None, "") else v
-	overrides = command.settings_overrides
-	if overrides:
-		try:
-			parsed = json.loads(overrides) if isinstance(overrides, str) else dict(overrides)
-		except ValueError:
-			parsed = {}
-		out.update(parsed)
-	return out
+def ask_keys(command) -> list[str]:
+	"""Parameters the command asks the sender for when the text did not give them (`ask_inputs`)."""
+	from whatsapp_next.services import command_sessions
+
+	return list(command_sessions.ask_specs(command))
+
+
+def to_ask(command, provided: dict[str, Any], missing: list[dict[str, Any]]) -> list[str]:
+	"""What to ask, in the header's order: required parameters still empty (not the party) and the
+	ones the command asks for that the text did not give."""
+	spec = function_spec(command)
+	wanted = {m["name"] for m in missing if m["source"] != "sender"}
+	open_names = {p["name"] for p in _open_params(command, spec)}
+	wanted |= {k for k in ask_keys(command) if k in open_names and k not in provided}
+	return [p["name"] for p in spec.get("params") or [] if p["name"] in wanted]
 
 
 # ---- execution -----------------------------------------------------------------------------
@@ -477,25 +513,10 @@ def _service_user() -> str:
 	return user
 
 
-def execute(
-	command, inbound, args: dict[str, Any], *, sender: Sender | None = None, dry_run: bool = False
-) -> FunctionResult:
-	"""Run the handler as the service user; the previous session user is always restored."""
-	fn = frappe.db.get_value("WhatsApp Function", command.function, ["function_key", "status"], as_dict=True)
-	handler = registry.get_handler(fn.function_key) if fn else None
-	if not handler:
-		return FunctionResult(error=_("Function is inactive"))
+def execute(command, inbound, params: dict[str, Any], *, sender: Sender | None = None, dry_run: bool = False) -> FunctionRun:
+	"""Run the command's function with ready `params` as the service user; the previous session
+	user (and the request's session and form_dict) is always restored."""
 	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
-	ctx = FunctionContext(
-		function_key=fn.function_key,
-		command=command.name,
-		args=args,
-		settings=settings_for(command),
-		sender=sender or sender_for(inbound),
-		device=get("device"),
-		inbound=get("name"),
-		dry_run=dry_run,
-	)
 	service_user = _service_user()
 	previous = frappe.session.user
 	# `frappe.set_user` also overwrites the session id and data and the request's form_dict;
@@ -505,15 +526,7 @@ def execute(
 	started = time.perf_counter()
 	try:
 		frappe.set_user(service_user)
-		result = handler(ctx)
-		if not isinstance(result, FunctionResult):
-			result = FunctionResult(data=dict(result or {}))
-	except Exception as exc:
-		frappe.log_error(
-			title=f"WhatsApp function {fn.function_key} failed",
-			message=f"command={command.name} inbound={get('name')} {type(exc).__name__}",
-		)
-		result = FunctionResult(error=f"{type(exc).__name__}: {str(exc)[:200]}")
+		run = function_runner.execute(command, params, disabled=function_runner.disabled_replies(command))
 	finally:
 		frappe.set_user(previous)
 		frappe.session.sid, frappe.session.data, frappe.local.form_dict = saved_sid, saved_data, saved_form
@@ -521,8 +534,10 @@ def execute(
 	# a preview, the editor's test or the Simulator is not a call: the function's figures (and
 	# its "last error") describe what senders got, and a dry run persists nothing
 	if not dry_run:
-		_record_metrics(command.function, elapsed, error=result.error)
-	return result
+		_record_metrics(command.function, elapsed, error=run.detail or run.error)
+	if run.error and get("name"):
+		run.data.setdefault("inbound", get("name"))
+	return run
 
 
 def _record_metrics(function: str, elapsed_ms: int, *, error: str | None) -> None:
@@ -545,98 +560,9 @@ def _record_metrics(function: str, elapsed_ms: int, *, error: str | None) -> Non
 	query.run()
 
 
-def _condition_passes(condition: str | None, data: dict[str, Any]) -> bool:
-	condition = (condition or "").strip()
-	if not condition:
-		return True
-	try:
-		return bool(frappe.safe_eval(condition, None, {"data": frappe._dict(data)}))
-	except Exception:
-		return False
-
-
-def render_outputs(
-	command, result: FunctionResult, sender: Sender, *, dry_run: bool = False
-) -> list[dict[str, Any]]:
-	"""Rendered replies for every output row whose condition passes: `Text` → template over
-	`data`; `Document` → Print Format PDF (or a handler file) saved as a private File."""
-	if result.error:
-		return [{"output_key": "error", "message_type": "Text", "body": result.error, "attachment": None}]
-	ctx = {"data": frappe._dict(result.data), "sender": sender, "args": {}, "now": now_datetime()}
-	replies: list[dict[str, Any]] = []
-	for row in command.get("outputs") or []:
-		if not _condition_passes(row.condition, result.data):
-			continue
-		if row.output_type == "Text":
-			rendered = templates.render(row.template or row.default_template, ctx)
-			if rendered.ok and rendered.text:
-				replies.append(
-					{
-						"output_key": row.output_key,
-						"message_type": "Text",
-						"body": rendered.text,
-						"attachment": None,
-					}
-				)
-			elif not rendered.ok:
-				replies.append(
-					{
-						"output_key": row.output_key,
-						"message_type": "Text",
-						"body": _("Reply template error: {0}").format(rendered.error),
-						"attachment": None,
-					}
-				)
-			continue
-		# Document output: handler files first, else a Print Format render of data.doctype/name
-		files = list(result.files)
-		if not files and result.data.get("doctype") and result.data.get("name"):
-			try:
-				pdf = attachments.render_print_pdf(
-					result.data["doctype"],
-					result.data["name"],
-					print_format=row.print_format or None,
-					file_name=templates.render_text(
-						row.file_name_template, ctx, fallback=str(result.data["name"])
-					),
-				)
-				files = [(pdf.file_name, pdf.content, pdf.mime_type)]
-			except Exception as exc:
-				replies.append(
-					{
-						"output_key": row.output_key,
-						"message_type": "Text",
-						"body": _("Could not render the document: {0}").format(str(exc)[:120]),
-						"attachment": None,
-					}
-				)
-				continue
-		for file_name, content, mime in files:
-			if dry_run:
-				replies.append(
-					{
-						"output_key": row.output_key,
-						"message_type": "Document",
-						"body": None,
-						"attachment": None,
-						"file_name": file_name,
-						"size": len(content),
-						"mime_type": mime,
-					}
-				)
-				continue
-			url = attachments.save_private_file(content, file_name)
-			replies.append(
-				{
-					"output_key": row.output_key,
-					"message_type": "Document",
-					"body": None,
-					"attachment": url,
-					"file_name": file_name,
-					"mime_type": mime,
-				}
-			)
-	return replies
+def render_outputs(command, result: FunctionRun, sender: Sender | None = None, *, dry_run: bool = False) -> list[dict[str, Any]]:
+	"""The replies of a run, in its messages' order (`function_runner.replies_of`)."""
+	return function_runner.replies_of(result, dry_run=dry_run)
 
 
 # ---- route ---------------------------------------------------------------------------------
@@ -866,43 +792,50 @@ def _route(
 	reason = check_access(command, inbound, sender)
 	if reason:
 		result.status, result.block_reason = "Blocked", reason
+		detail = "; ".join(function_reasons(command)) if reason == "Function Inactive" else None
 		_set_status(
-			inbound_name, "Blocked", command=command.name, command_text=text[:140], block_reason=reason
+			inbound_name,
+			"Blocked",
+			command=command.name,
+			command_text=text[:140],
+			block_reason=reason,
+			**({"command_error": detail[:500]} if detail else {}),
 		)
 		if cint(settings.send_receipt_reply):
 			result.replies = [
 				{
 					"output_key": "blocked",
 					"message_type": "Text",
-					"body": _("You cannot use this command ({0})").format(_(reason)),
+					"body": block_message(command, reason, sender),
 					"attachment": None,
 				}
 			]
 		return _finish(result, inbound, dry_run, create_simulated_rows, command=command)
 	try:
-		provided = parse_args(command, m.rest, partial=True)
-		missing = (
-			[]
-			if dry_run or cint(get("is_group"))
-			else _missing_inputs(command, provided)
-		)
-		if missing:
-			return _ask_first(command, inbound, inbound_name, provided, missing, text, result)
-		args = parse_args(command, m.rest)
-	except WAValidationError as exc:
-		result.status, result.error = "Failed", str(exc)
-		_set_status(
-			inbound_name,
-			"Failed",
-			command=command.name,
-			command_text=text[:140],
-			command_error=str(exc)[:500],
-		)
-		result.replies = [
-			{"output_key": "error", "message_type": "Text", "body": str(exc), "attachment": None}
-		]
+		provided = parse_args(command, m.rest)
+		params, missing = function_runner.prepare(command, sender, provided)
+	except (WAValidationError, ValueError) as exc:
+		return _failed(command, inbound, inbound_name, text, result, str(exc), dry_run, create_simulated_rows)
+	if any(m_["source"] == "sender" for m_ in missing):
+		# the function needs the sender's party and the number is linked to none
+		result.status, result.block_reason = "Blocked", "Not Linked"
+		_set_status(inbound_name, "Blocked", command=command.name, command_text=text[:140], block_reason="Not Linked")
 		return _finish(result, inbound, dry_run, create_simulated_rows, command=command)
-	return _run(command, inbound, inbound_name, args, sender, text, settings, started, result, dry_run, create_simulated_rows)
+	asking = to_ask(command, provided, missing)
+	if asking and not dry_run and not cint(get("is_group")):
+		return _ask_first(command, inbound, inbound_name, provided, asking, text, result)
+	if missing:
+		labels = ", ".join(_(m_["label"]) for m_ in missing)
+		return _failed(command, inbound, inbound_name, text, result, _("{0} is required").format(labels), dry_run, create_simulated_rows)
+	return _run(command, inbound, inbound_name, params, sender, text, settings, started, result, dry_run, create_simulated_rows)
+
+
+def _failed(command, inbound, inbound_name, text, result, error, dry_run, create_simulated_rows) -> RouteResult:
+	"""A value the sender gave that the function cannot take: the reason is the reply."""
+	result.status, result.error = "Failed", error
+	_set_status(inbound_name, "Failed", command=command.name, command_text=text[:140], command_error=error[:500])
+	result.replies = [{"output_key": "error", "message_type": "Text", "body": error, "attachment": None}]
+	return _finish(result, inbound, dry_run, create_simulated_rows, command=command)
 
 
 def _run(command, inbound, inbound_name, args, sender, text, settings, started, result, dry_run, create_simulated_rows):
@@ -938,7 +871,7 @@ def _run(command, inbound, inbound_name, args, sender, text, settings, started, 
 	result.replies = render_outputs(command, fn_result, sender, dry_run=dry_run and not create_simulated_rows)
 	if fn_result.error:
 		result.status, result.error = "Failed", fn_result.error
-		_set_status(inbound_name, "Failed", command_error=fn_result.error[:500])
+		_set_status(inbound_name, "Failed", command_error=(fn_result.detail or fn_result.error)[:500])
 	else:
 		result.status = "Executed"
 		_set_status(inbound_name, "Executed")
@@ -955,18 +888,6 @@ def _run(command, inbound, inbound_name, args, sender, text, settings, started, 
 		).run()
 	result.elapsed_ms = int((time.perf_counter() - started) * 1000)
 	return _finish(result, inbound, dry_run, create_simulated_rows, command=command)
-
-
-def _missing_inputs(command, provided: dict[str, Any]) -> list[str]:
-	from whatsapp_next.services import command_sessions
-
-	off = disabled_inputs(command)
-	inputs = [i for i in _manifest_inputs(command.function) if i["key"] not in off]
-	return command_sessions.missing_inputs(command, inputs, provided)
-
-
-def _input_spec(command, key: str) -> dict[str, Any]:
-	return next((i for i in _manifest_inputs(command.function) if i["key"] == key), {"key": key})
 
 
 def _ask_first(command, inbound, inbound_name, provided, missing, text, result) -> RouteResult:
@@ -1019,7 +940,7 @@ def _continue_session(session, inbound, inbound_name, result, settings, started)
 	if not plan_features.interactive():
 		raw = command_sessions.numbered_answer(command, spec, raw)
 	try:
-		value = _coerce(cstr(raw), spec.get("type") or "str", spec)
+		value = _coerce(cstr(raw), spec["key"], command)
 	except ValueError as exc:
 		command_sessions.save(device, chat, session)
 		result.status = "Awaiting Input"
@@ -1039,17 +960,22 @@ def _continue_session(session, inbound, inbound_name, result, settings, started)
 		result.replies = [command_sessions.question(command, _input_spec(command, pending[0]))]
 		return _finish(result, inbound, False, False, command=command)
 	command_sessions.clear(device, chat)
-	# the inputs nobody asked for take their defaults, as a typed command would
-	for spec_ in _manifest_inputs(command.function):
-		if spec_["key"] not in args and spec_.get("default") not in (None, ""):
-			args[spec_["key"]] = spec_["default"]
 	sender = sender_for(inbound, allowed_party_types(command))
 	reason = check_access(command, inbound, sender)
 	if reason:
 		result.status, result.block_reason = "Blocked", reason
 		_set_status(inbound_name, "Blocked", command=command.name, block_reason=reason)
 		return _finish(result, inbound, False, False, command=command)
-	return _run(command, inbound, inbound_name, args, sender, session.get("text") or "", settings, started, result, False, False)
+	text = session.get("text") or ""
+	try:
+		# the values nobody asked for take their defaults, as a typed command would
+		params, missing = function_runner.prepare(command, sender, args)
+	except ValueError as exc:
+		return _failed(command, inbound, inbound_name, text, result, str(exc), False, False)
+	if missing:
+		labels = ", ".join(_(m_["label"]) for m_ in missing)
+		return _failed(command, inbound, inbound_name, text, result, _("{0} is required").format(labels), False, False)
+	return _run(command, inbound, inbound_name, params, sender, text, settings, started, result, False, False)
 
 
 def _finish(

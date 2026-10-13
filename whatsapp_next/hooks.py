@@ -33,26 +33,8 @@ whatsapp_providers = {
 	"meta_cloud": "whatsapp_next.providers.meta_cloud.MetaCloudProvider",
 }
 
-# Function catalogs (backend-plan §13); other apps may append their own dotted module path.
-whatsapp_function_catalogs = [
-	"whatsapp_next.functions.catalog",
-	# shown only where snd_accounting is installed (`requires_apps` in its catalog)
-	"whatsapp_next.functions.integrations.snd_accounting",
-]
-
-# The code behind catalog functions that are not built in (`functions/registry.py`).
-_ACC = "whatsapp_next.functions.integrations.snd_accounting.handlers"
-whatsapp_function_handlers = {
-	key: f"{_ACC}.{key}"
-	for key in (
-		"customer_balance",
-		"customer_statement",
-		"customer_trial_balance",
-		"supplier_trial_balance",
-		"cash_balances",
-		"bank_balances",
-	)
-}
+# Functions are Server Scripts (API, method `wa_fn_…`) with a WA-FUNCTION header
+# (services/functions_catalog.py); a saved or deleted script drops the read cache.
 
 # Installation / migration
 after_install = "whatsapp_next.install.after_install"
@@ -178,6 +160,10 @@ doc_events = {
 	},
 	"WhatsApp Inbound Message": {
 		"after_insert": "whatsapp_next.services.numbers_materializer.on_message_insert",
+	},
+	"Server Script": {
+		"on_update": "whatsapp_next.services.functions_catalog.clear_cache",
+		"on_trash": "whatsapp_next.services.functions_catalog.clear_cache",
 	},
 }
 

@@ -1,6 +1,8 @@
-# Tests for services/command_router.py and services/simulator.py (build order B-14): word map
-# and matching, access order, typed argument parsing, execution as the service user with the
-# session restored, output rendering, dry-run vs persisted simulation, metrics, test send.
+# Tests for services/command_router.py and services/simulator.py (build order B-14,
+# WHATSAPP_NEXT_INTEGRATION §5): word map and matching, access order, typed argument parsing from the
+# function's header, execution of the function's Server Script as the service user with the session
+# restored, replies, dry-run vs persisted simulation, metrics, test send. The commands run fixture
+# functions (function_fixtures.py): `tping` on `_test_echo`, `tdoc` on `_test_typed`.
 
 from __future__ import annotations
 
@@ -10,11 +12,10 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
-from whatsapp_next.functions import registry
-from whatsapp_next.functions.context import FunctionResult
 from whatsapp_next.services import command_router as cr
-from whatsapp_next.services import functions_catalog as fc
 from whatsapp_next.services import simulator
+from whatsapp_next.services.function_runner import FunctionRun
+from whatsapp_next.tests import function_fixtures as ff
 from whatsapp_next.tests.conftest_frappe import (
 	delete_all,
 	delete_test_rows,
@@ -23,29 +24,10 @@ from whatsapp_next.tests.conftest_frappe import (
 	ensure_settings,
 )
 
-SERVICE_USER = "wa-test-svc@example.com"
+SERVICE_USER = ff.SERVICE_USER
 P_LINKED = "+966500000601"
 P_UNLINKED = "+966500000602"
 BLACKLIST = "RouterTest Blacklist"
-
-
-def _service_user() -> str:
-	if not frappe.db.exists("User", SERVICE_USER):
-		u = frappe.get_doc(
-			{
-				"doctype": "User",
-				"email": SERVICE_USER,
-				"first_name": "WA Svc",
-				"user_type": "System User",
-				"enabled": 1,
-				"send_welcome_email": 0,
-			}
-		)
-		u.flags.no_welcome_mail = True
-		u.insert(ignore_permissions=True)
-		frappe.db.delete("Has Role", {"parent": SERVICE_USER, "parenttype": "User"})
-	frappe.clear_cache(user=SERVICE_USER)
-	return SERVICE_USER
 
 
 class TestCommandRouter(IntegrationTestCase):
@@ -64,36 +46,20 @@ class TestCommandRouter(IntegrationTestCase):
 			).insert(ignore_permissions=True)
 		ensure_settings(
 			enable_commands=1,
-			command_service_user=_service_user(),
+			command_service_user=ff.ensure_service_user(),
 			global_blacklist_group=BLACKLIST,
 			unknown_command_reply="Unknown command, send ? for help",
 			send_receipt_reply=0,
 			default_device=cls.device,
+			main_menu_mode="Off",
 		)
 		cls._reset()
-		fc.clear_cache()
-		fc.install("ping")
-		fc.install("document_info")
-		frappe.get_doc(
-			{
-				"doctype": "WhatsApp Command",
-				"code": "ping",
-				"synonyms": "بنق",
-				"function": "ping",
-				"status": "Active",
-				"requires_linked_contact": 0,
-			}
-		).insert(ignore_permissions=True)
-		frappe.get_doc(
-			{
-				"doctype": "WhatsApp Command",
-				"code": "doc",
-				"function": "document_info",
-				"status": "Active",
-				"requires_linked_contact": 1,
-				"allowed_party_types": [{"party_type": "Customer"}],
-			}
-		).insert(ignore_permissions=True)
+		ff.ensure_function("_test_echo")
+		ff.ensure_function("_test_typed")
+		ff.make_command("tping", "_test_echo", synonyms="tبنق")
+		ff.make_command(
+			"tdoc", "_test_typed", requires_linked_contact=1, allowed_party_types=[{"party_type": "Customer"}]
+		)
 		cls.contact = ensure_contact("Router Linked Contact", P_LINKED)
 		customer = frappe.get_all("Customer", limit=1, pluck="name")
 		if customer:
@@ -121,8 +87,7 @@ class TestCommandRouter(IntegrationTestCase):
 		delete_test_rows("WhatsApp Queue Item")
 		delete_test_rows("WhatsApp Log", {"source_type": ("in", ["Command Reply", "Simulator"])})
 		delete_test_rows("WhatsApp Inbound Message", {"is_simulated": 1})
-		delete_all("WhatsApp Command", {"function": ("in", ["ping", "document_info"])})
-		delete_all("WhatsApp Function", {"name": ("in", ["ping", "document_info"])})
+		ff.drop_all()
 		cr.clear_map()
 
 	def setUp(self):
@@ -133,54 +98,46 @@ class TestCommandRouter(IntegrationTestCase):
 		g.set("members", [])
 		g.save(ignore_permissions=True)
 		# the assertions read English replies, whatever language this site answers in
-		ensure_settings(enable_commands=1, send_receipt_reply=0, command_reply_language="en")
+		ensure_settings(enable_commands=1, send_receipt_reply=0, command_reply_language="en", main_menu_mode="Off")
 		cr.clear_map()
 
 	# -- matching ----------------------------------------------------------------------
 
 	def test_map_and_match(self):
 		m = cr.command_map(refresh=True)
-		self.assertEqual((m["ping"], m["بنق"], m["doc"]), ("ping", "ping", "doc"))
-		self.assertEqual(cr.match("#PING hello there").rest, "hello there")
-		self.assertEqual(cr.match("/doc SINV-1").command, "doc")
+		self.assertEqual((m["tping"], m["tبنق"], m["tdoc"]), ("tping", "tping", "tdoc"))
+		self.assertEqual(cr.match("#TPING hello there").rest, "hello there")
+		self.assertEqual(cr.match("/tdoc SINV-1").command, "tdoc")
 		self.assertTrue(cr.match("?").is_help)
 		self.assertIsNone(cr.match("nothing here"))
 		self.assertIsNone(cr.match(""))
 		# saving a command invalidates the map
-		cmd = frappe.get_doc("WhatsApp Command", "ping")
+		cmd = frappe.get_doc("WhatsApp Command", "tping")
 		cmd.status = "Inactive"
 		cmd.save(ignore_permissions=True)
-		self.assertIsNone(cr.match("#ping"))
+		self.assertIsNone(cr.match("#tping"))
 		cmd.status = "Active"
 		cmd.save(ignore_permissions=True)
-		self.assertIsNotNone(cr.match("#ping"))
-		self.assertIn("ping —", cr.help_text())
+		self.assertIsNotNone(cr.match("#tping"))
+		self.assertIn("tping —", cr.help_text())
 
 	# -- route via simulator -------------------------------------------------------------
 
 	def test_ping_executes_as_service_user_and_restores_session(self):
-		seen = {}
-		original = registry.FUNCTION_HANDLERS["ping"]
-
-		def spy(ctx):
-			seen["user"] = frappe.session.user
-			seen["dry_run"] = ctx.dry_run
-			return original(ctx)
-
 		replies_before = frappe.db.count("WhatsApp Log", {"source_type": "Command Reply"})
-		calls_before = frappe.db.get_value("WhatsApp Function", "ping", "call_count")
-		with patch.dict(registry.FUNCTION_HANDLERS, {"ping": spy}):
-			res = simulator.simulate_inbound(self.device, P_UNLINKED, "#ping hello world")
+		calls_before = frappe.db.get_value("WhatsApp Function", "_test_echo", "call_count")
+		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#tping hello world")
 		self.assertEqual(res.status, "Executed")
-		self.assertEqual(seen, {"user": SERVICE_USER, "dry_run": True})
+		self.assertEqual(res.data["user"], SERVICE_USER)  # the script saw the service user
 		self.assertEqual(frappe.session.user, "Administrator")
-		self.assertEqual(res.args, {"text": "hello world"})
+		# the run's parameters: the sender's text and the header's default message
+		self.assertEqual(res.args, {"text": "hello world", "msg_result": "pong: {{ echo }}"})
 		self.assertTrue(res.replies[0]["body"].startswith("pong: hello world"))
 		self.assertEqual(res.outbound, [])  # dry run: nothing stored
 		# the site's own simulated replies stay; this run adds none (R-041)
 		self.assertEqual(frappe.db.count("WhatsApp Log", {"source_type": "Command Reply"}), replies_before)
 		# a dry run is not a call: the function's figures describe what senders got
-		self.assertEqual(frappe.db.get_value("WhatsApp Function", "ping", "call_count"), calls_before)
+		self.assertEqual(frappe.db.get_value("WhatsApp Function", "_test_echo", "call_count"), calls_before)
 
 	def test_unknown_help_and_blocks(self):
 		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#xyz")
@@ -189,50 +146,58 @@ class TestCommandRouter(IntegrationTestCase):
 		)
 		res = simulator.simulate_inbound(self.device, P_UNLINKED, "?")
 		self.assertEqual(res.status, "Executed")
-		self.assertIn("doc —", res.replies[0]["body"])
+		self.assertIn("tdoc —", res.replies[0]["body"])
 		# not linked
-		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#doc SINV-1")
+		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#tdoc SINV-1")
 		self.assertEqual((res.status, res.block_reason, res.replies), ("Blocked", "Not Linked", []))
 		# receipt reply on blocks
 		ensure_settings(send_receipt_reply=1, receipt_reply="got it")
-		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#doc SINV-1")
-		self.assertIn("Not Linked", res.replies[0]["body"])
+		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#tdoc SINV-1")
+		self.assertEqual(res.block_reason, "Not Linked")
+		self.assertIn("not linked to an account", res.replies[0]["body"])  # the reason in words, not the code
 		ensure_settings(send_receipt_reply=0)
 		# blacklist wins over everything after the enabled/text checks
 		g = frappe.get_doc("WhatsApp Contact Group", BLACKLIST)
 		g.append("members", {"phone": P_UNLINKED, "source_type": "Manual"})
 		g.save(ignore_permissions=True)
-		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#ping")
+		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#tping")
 		self.assertEqual(res.block_reason, "Blacklist")
 		# commands disabled → Blocked (the router still records it)
 		with patch.object(cr, "check_access", return_value="Commands Disabled"):
-			res = simulator.simulate_inbound(self.device, P_LINKED, "#ping")
+			res = simulator.simulate_inbound(self.device, P_LINKED, "#tping")
 		self.assertEqual(res.block_reason, "Commands Disabled")
 
 	def test_help_token_explains_one_command(self):
-		"""`؟` alone lists the commands; beside a command word it explains that command's variables."""
-		for text in ("#doc ?", "doc ؟", "؟ doc", "doc؟", "help doc"):
+		"""`؟` alone lists the commands; beside a command word it explains that command's variables,
+		read from the function's header."""
+		for text in ("#tdoc ?", "tdoc ؟", "؟ tdoc", "tdoc؟", "help tdoc"):
 			m = cr.match(text)
-			self.assertEqual((m.command, m.is_help, m.rest), ("doc", True, ""), text)
+			self.assertEqual((m.command, m.is_help, m.rest), ("tdoc", True, ""), text)
 		self.assertEqual((cr.match("؟").command, cr.match("؟").is_help), ("", True))
-		self.assertFalse(cr.match("#doc SINV-1").is_help)
-		usage = cr.usage_text(frappe.get_doc("WhatsApp Command", "doc"))
-		self.assertIn("doc <", usage)  # the required document name, in its place
-		self.assertEqual(usage.splitlines()[-1], "Example: doc SINV-0001")  # a ready example
-		self.assertNotIn("name=", usage)  # by-name sending is only worth showing for two variables or more
-		res = simulator.simulate_inbound(self.device, P_UNLINKED, "doc ؟")
+		self.assertFalse(cr.match("#tdoc SINV-1").is_help)
+		usage = cr.usage_text(frappe.get_doc("WhatsApp Command", "tdoc"))
+		# the required document first, then the optional values, in the header's order
+		self.assertIn("Send: tdoc <Document> [Days] [Since]", usage)
+		self.assertIn("Example: tdoc Document", usage)  # a ready example
+		self.assertIn("tdoc doc_name=…", usage)  # by name, shown for two variables or more
+		self.assertNotIn("party", usage)  # the party is never the sender's to give
+		ping = cr.usage_text(frappe.get_doc("WhatsApp Command", "tping"))
+		self.assertIn("takes the rest of the message", ping)
+		self.assertNotIn("=…", ping)
+		self.assertNotIn("msg_result", ping)  # a message template is not a variable
+		res = simulator.simulate_inbound(self.device, P_UNLINKED, "tdoc ؟")
 		self.assertEqual((res.status, res.replies[0]["output_key"]), ("Executed", "help"))
 		self.assertEqual(res.replies[0]["body"], usage)  # no access check: help reveals no data
-		self.assertIn("ping —", simulator.simulate_inbound(self.device, P_UNLINKED, "؟").replies[0]["body"])
+		self.assertIn("tping —", simulator.simulate_inbound(self.device, P_UNLINKED, "؟").replies[0]["body"])
 		# the token set in Settings, and the words it may not take
 		ensure_settings(command_help_token="تعريف")
 		try:
-			self.assertTrue(cr.match("ping تعريف").is_help)
+			self.assertTrue(cr.match("tping تعريف").is_help)
 			with self.assertRaises(WAValidationError):
-				ensure_settings(command_help_token="ping")
+				ensure_settings(command_help_token="tping")
 			with self.assertRaises(WAValidationError):
 				ensure_settings(command_help_token="two words")
-			cmd = frappe.get_doc("WhatsApp Command", "ping")
+			cmd = frappe.get_doc("WhatsApp Command", "tping")
 			cmd.status = "Inactive"
 			cmd.save(ignore_permissions=True)
 			cmd.synonyms = "تعريف"
@@ -240,7 +205,7 @@ class TestCommandRouter(IntegrationTestCase):
 				cmd.save(ignore_permissions=True)
 		finally:
 			ensure_settings(command_help_token="؟")
-			frappe.db.set_value("WhatsApp Command", "ping", {"status": "Active", "synonyms": "بنق"})
+			frappe.db.set_value("WhatsApp Command", "tping", {"status": "Active", "synonyms": "tبنق"})
 			cr.clear_map()
 
 	def test_replies_are_written_in_the_reply_language(self):
@@ -248,7 +213,7 @@ class TestCommandRouter(IntegrationTestCase):
 		before = frappe.local.lang
 		ensure_settings(command_reply_language="ar")
 		try:
-			res = simulator.simulate_inbound(self.device, P_UNLINKED, "doc ؟")
+			res = simulator.simulate_inbound(self.device, P_UNLINKED, "tdoc ؟")
 			self.assertIn("أرسل:", res.replies[0]["body"])
 			self.assertEqual(frappe.local.lang, before)
 			# a job resolves its user's language on its first `_()` and overwrites `frappe.local.lang`;
@@ -263,70 +228,58 @@ class TestCommandRouter(IntegrationTestCase):
 		finally:
 			ensure_settings(command_reply_language="en")
 		self.assertNotIn(
-			"أرسل:", simulator.simulate_inbound(self.device, P_UNLINKED, "doc ؟").replies[0]["body"]
+			"أرسل:", simulator.simulate_inbound(self.device, P_UNLINKED, "tdoc ؟").replies[0]["body"]
 		)
 
 	def test_args_party_and_handler_errors(self):
 		if not self.customer:
 			self.skipTest("no Customer on this site")
 		# missing required arg → Failed with a reply
-		res = simulator.simulate_inbound(self.device, P_LINKED, "#doc")
+		res = simulator.simulate_inbound(self.device, P_LINKED, "#tdoc")
 		self.assertEqual(res.status, "Failed")
 		self.assertIn("required", res.error)
-		# handler error (document does not exist) → Failed, error reply
-		res = simulator.simulate_inbound(self.device, P_LINKED, "#doc NOPE-1")
+		# the script's error (document does not exist) → Failed, error reply
+		res = simulator.simulate_inbound(self.device, P_LINKED, "#tdoc NOPE-1")
 		self.assertEqual(res.status, "Failed")
 		self.assertIn("not found", res.error)
 		self.assertEqual(res.replies[0]["output_key"], "error")
-		# typed parsing
-		cmd = frappe.get_doc("WhatsApp Command", "doc")
-		with patch.object(
-			cr,
-			"_manifest_inputs",
-			return_value=[
-				{"key": "name", "type": "str", "required": True, "position": 1},
-				{"key": "days", "type": "int", "position": 2},
-				{"key": "from", "type": "date", "position": 3},
-			],
-		):
-			self.assertEqual(
-				cr.parse_args(cmd, "SINV-1 days=7 2026-01-05"),
-				{"name": "SINV-1", "days": 7, "from": "2026-01-05"},
-			)
-			with self.assertRaises(WAValidationError):
-				cr.parse_args(cmd, "SINV-1 days=seven")
-			with self.assertRaises(WAValidationError):
-				cr.parse_args(cmd, "")
-		self.assertEqual(cr.settings_for(cmd)["document_type"], "Sales Invoice")
-		self.assertEqual(cr.settings_for(cmd)["require_party"], 1)
+		# a run for the linked party
+		res = simulator.simulate_inbound(self.device, P_LINKED, "#tdoc SINV-1 2 -3d")
+		self.assertEqual((res.status, res.replies[0]["body"]), ("Executed", f"doc SINV-1 of {self.customer}"))
+		self.assertEqual(res.data["days"], 2)
 
-	def test_document_info_gives_the_values_as_a_reader_writes_them(self):
-		"""Beside the raw status / amount / date the handler gives them formatted and translated, so a
-		reply need not print `67000.0` and `2026-12-07` (live business test 2026-10-01)."""
-		from whatsapp_next.functions.context import FunctionContext, Sender
-		from whatsapp_next.functions.handlers import document_info
-
-		todo = frappe.get_doc({"doctype": "ToDo", "description": "cmd-test doc info"}).insert(ignore_permissions=True)
-		self.addCleanup(lambda: frappe.delete_doc("ToDo", todo.name, force=True))
-		ctx = FunctionContext(
-			function_key="document_info",
-			command=None,
-			args={"name": todo.name},
-			settings={"document_type": "ToDo", "party_field": "", "require_party": 0},
-			sender=Sender(phone_e164=None, jid=None, display_name=None, contact=None),
-			device=None,
-			inbound=None,
+	def test_typed_parsing_follows_the_header(self):
+		cmd = frappe.get_doc("WhatsApp Command", "tdoc")
+		self.assertEqual(
+			[(i["key"], i["type"], i["required"], i["position"]) for i in cr.command_inputs(cmd)],
+			[("doc_name", "str", True, 1), ("days", "int", False, 2), ("since", "date", False, 3)],
 		)
-		data = document_info.handle(ctx).data
-		self.assertEqual((data["status"], data["status_label"], data["doctype_label"]), ("Open", frappe._("Open"), frappe._("ToDo")))
-		self.assertEqual((data["amount"], data["amount_formatted"], data["date_formatted"]), (None, None, ""))
-		with patch.object(document_info.read_layer, "reference_amount", return_value=67000.0):
-			data = document_info.handle(ctx).data
-		self.assertEqual(data["amount_formatted"], frappe.utils.fmt_money(67000.0))
-		self.assertNotEqual(data["amount_formatted"], "67000.0")
+		self.assertEqual(
+			cr.parse_args(cmd, "SINV-1 days=7 2026-01-05"),
+			{"doc_name": "SINV-1", "days": 7, "since": "2026-01-05"},
+		)
+		# named values in any order, a relative date, quotes keep spaces
+		self.assertEqual(
+			cr.parse_args(cmd, 'since=month_start "SINV 1" DAYS=3'),
+			{"doc_name": "SINV 1", "days": 3, "since": str(frappe.utils.get_first_day(frappe.utils.nowdate()))},
+		)
+		# the party and a template are never the sender's: their key=value is dropped
+		self.assertEqual(cr.parse_args(cmd, "SINV-1 party=OTHER party_type=Supplier"), {"doc_name": "SINV-1"})
+		with self.assertRaises(WAValidationError):
+			cr.parse_args(cmd, "SINV-1 days=seven")
+		frappe.clear_last_message()
+		self.assertEqual(cr.parse_args(cmd, ""), {})  # required values are checked when the run is built
+		# the last text input takes the rest of the message
+		ping = frappe.get_doc("WhatsApp Command", "tping")
+		self.assertEqual(cr.parse_args(ping, "hello  there world"), {"text": "hello there world"})
+		self.assertEqual(cr.parse_args(ping, "msg_result=x hi"), {"text": "hi"})
+		# a value the command fixes, or switched off, is no input
+		draft = frappe._dict(function="_test_typed", settings_overrides='{"days": 9}', disabled_inputs="since")
+		self.assertEqual([i["key"] for i in cr.command_inputs(draft)], ["doc_name"])
+		self.assertEqual(cr.parse_args(draft, "SINV-1 days=1 2026-01-01"), {"doc_name": "SINV-1 2026-01-01"})
 
 	def test_persisted_simulation_and_live_guard(self):
-		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#ping persisted", persist=True)
+		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#tping persisted", persist=True)
 		self.assertEqual(res.status, "Executed")
 		self.assertIsNotNone(res.inbound)
 		row = frappe.db.get_value(
@@ -335,7 +288,7 @@ class TestCommandRouter(IntegrationTestCase):
 			["is_simulated", "command_status", "command", "reply_outbound"],
 			as_dict=True,
 		)
-		self.assertEqual((row.is_simulated, row.command_status, row.command), (1, "Executed", "ping"))
+		self.assertEqual((row.is_simulated, row.command_status, row.command), (1, "Executed", "tping"))
 		self.assertEqual(row.reply_outbound, res.outbound[0])
 		out = frappe.db.get_value(
 			"WhatsApp Log",
@@ -358,7 +311,7 @@ class TestCommandRouter(IntegrationTestCase):
 			frappe.flags.in_test = True
 			del frappe.local.request  # a `None` request breaks frappe.get_url() in later tests
 		# live route from a job: enqueues the reply
-		res2 = simulator.simulate_inbound(self.device, P_UNLINKED, "#ping live", persist=True)
+		res2 = simulator.simulate_inbound(self.device, P_UNLINKED, "#tping live", persist=True)
 		frappe.db.set_value("WhatsApp Inbound Message", res2.inbound, "is_simulated", 0)
 		with patch.object(frappe, "enqueue"):
 			live = cr.route(res2.inbound)
@@ -377,7 +330,7 @@ class TestCommandRouter(IntegrationTestCase):
 
 		queued = lambda name: frappe.db.count("WhatsApp Queue Item", {"outbound_message": name})  # noqa: E731
 		ensure_settings(send_receipt_reply=1, receipt_reply="got it")
-		inbound = live("#ping now")
+		inbound = live("#tping now")
 		with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now") as now:
 			result = cr.route(inbound)
 		self.assertEqual(result.status, "Executed")
@@ -402,7 +355,7 @@ class TestCommandRouter(IntegrationTestCase):
 
 	def test_a_reply_quotes_the_message_that_asked(self):
 		"""A command's answer is a WhatsApp reply to the message that asked for it (owner, 2026-10-08)."""
-		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#ping now", persist=True)
+		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#tping now", persist=True)
 		frappe.db.set_value(
 			"WhatsApp Inbound Message", res.inbound, {"is_simulated": 0, "provider_message_id": "ASKED-1"}
 		)
@@ -420,7 +373,7 @@ class TestCommandRouter(IntegrationTestCase):
 		c.append("phone_nos", {"phone": other})
 		c.save(ignore_permissions=True)
 		try:
-			res = simulator.simulate_inbound(self.device, P_LINKED, "#ping now", persist=True)
+			res = simulator.simulate_inbound(self.device, P_LINKED, "#tping now", persist=True)
 			frappe.db.set_value(
 				"WhatsApp Inbound Message", res.inbound, {"is_simulated": 0, "provider_message_id": "ASKED-2"}
 			)
@@ -460,24 +413,33 @@ class TestCommandRouter(IntegrationTestCase):
 			self.assertEqual(sender.party_name, "First Linked")
 
 	def test_render_outputs_and_send_test(self):
-		cmd = frappe.get_doc("WhatsApp Command", "doc")
+		cmd = frappe.get_doc("WhatsApp Command", "tdoc")
 		sender = cr.sender_for({"phone_e164": P_LINKED, "contact": self.contact})
-		result = FunctionResult(
-			data={
-				"doctype": "Role",
-				"name": "System Manager",
-				"status": "Submitted",
-				"amount": None,
-				"date": "",
-				"party": None,
-			}
+		result = FunctionRun(
+			messages=[
+				{"reply": "summary", "type": "text", "text": "Role System Manager"},
+				{
+					"reply": "document",
+					"type": "report",
+					"report_name": "Some Report",
+					"filters": {"name": "System Manager"},
+					"format": "PDF",
+					"file_name": "statement.pdf",
+					"caption": "your statement",
+				},
+			]
 		)
 		replies = cr.render_outputs(cmd, result, sender, dry_run=True)
+		self.assertEqual([r["output_key"] for r in replies], ["summary", "document"])  # in the run's order
 		kinds = {r["output_key"]: r for r in replies}
-		self.assertIn("Role System Manager", kinds["summary"]["body"])
+		self.assertEqual((kinds["summary"]["message_type"], kinds["summary"]["body"]), ("Text", "Role System Manager"))
 		self.assertEqual(kinds["document"]["message_type"], "Document", kinds["document"].get("body"))
-		self.assertIsNone(kinds["document"]["attachment"])  # dry run: not stored
-		self.assertTrue(kinds["document"]["file_name"].endswith(".pdf"))
+		self.assertIsNone(kinds["document"]["attachment"])  # dry run: not printed, not stored
+		self.assertEqual((kinds["document"]["file_name"], kinds["document"]["body"]), ("statement.pdf", "your statement"))
+		# an error is the only reply
+		self.assertEqual(
+			[r["body"] for r in cr.render_outputs(cmd, FunctionRun(error="no"), sender, dry_run=True)], ["no"]
+		)
 		with patch.object(frappe, "enqueue") as enq:
 			out = simulator.send_test(self.device, P_UNLINKED, "hello test")
 		self.assertEqual(

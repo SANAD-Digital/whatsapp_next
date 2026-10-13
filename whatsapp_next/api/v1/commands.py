@@ -18,7 +18,6 @@ from whatsapp_next.api.v1 import _bulk
 from whatsapp_next.api.v1._roles import MANAGER, VIEWER_UP
 from whatsapp_next.exceptions import WANotFoundError, WAStateConflictError, WAValidationError
 from whatsapp_next.services import command_router, commands, permissions
-from whatsapp_next.whatsapp_next.doctype.whatsapp_command.whatsapp_command import OUTPUT_COPY_FIELDS
 
 STATUS_SCHEMA = {"status": {"enum": ["Active", "Inactive"]}}
 LIST_FIELDS: tuple[str, ...] = (
@@ -78,32 +77,11 @@ def list_commands(filters: dict | None = None, page: int = 1, page_length: int =
 
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))
 def get_defaults(function: str) -> dict[str, Any]:
-	"""`{outputs[], settings[], party_types[], suggested_commands[]}` from the installed Function
-	(suggested words come from the catalog manifest snapshot). P: Manager. E: `WANotFoundError`."""
-	if not frappe.db.exists("WhatsApp Function", function):
-		frappe.throw(_("Function {0} is not installed").format(function), WANotFoundError)
-	doc = frappe.get_doc("WhatsApp Function", function)
-	try:
-		manifest = json.loads(doc.manifest) if doc.manifest else {}
-	except ValueError:
-		manifest = {}
-	return {
-		"outputs": [{f: row.get(f) for f in OUTPUT_COPY_FIELDS} for row in doc.get("outputs") or []],
-		"settings": [
-			{
-				"key": row.key,
-				"label": row.label,
-				"fieldtype": row.fieldtype,
-				"choices": row.choices,
-				"default_value": row.default_value,
-				"value": row.value,
-				"notes": row.notes,
-			}
-			for row in doc.get("settings") or []
-		],
-		"party_types": [row.party_type for row in doc.get("party_types") or []],
-		"suggested_commands": list(manifest.get("suggested_commands") or []),
-	}
+	"""What a new command on `function` starts from, read from its header: `{inputs[], settings[],
+	templates[], replies[], party_types{}}` (`services.commands.function_spec`). P: Manager.
+	E: `WANotFoundError`."""
+	spec = commands.function_spec(function)
+	return {k: spec[k] for k in ("inputs", "settings", "templates", "replies", "party_types", "party_types_text")}
 
 
 @api_endpoint(roles=MANAGER)
@@ -120,8 +98,8 @@ def set_status(name: str, status: str) -> dict[str, str]:
 
 @api_endpoint(roles=MANAGER)
 def restore_defaults(name: str) -> dict[str, Any]:
-	"""Re-copy `outputs` from the Function and clear `settings_overrides`
-	(`services.commands.restore_defaults`). P: Manager."""
+	"""Drop the command's own message texts and parameter values (`services.commands.restore_defaults`).
+	P: Manager."""
 	return commands.restore_defaults(name, user=frappe.session.user)
 
 

@@ -1,6 +1,7 @@
-# Module role: API of the Functions Center (backend-plan §4.10, screen 7): catalog storefront,
-# diff-before-install, install / update / remove, status and setting values of installed
-# `WhatsApp Function` rows. Thin wrappers over `services/functions_catalog.py`.
+# Module role: API of the Functions Center (backend-plan §4.10, screen 7, WHATSAPP_NEXT_INTEGRATION §4):
+# the function scripts of the site with their install state, one function's header for the detail and
+# its settings form, diff-before-install, install / update / remove, status, the site's values and the
+# "Try" run. Thin wrappers over `services/functions_catalog.py` and `services/function_runner.py`.
 
 from __future__ import annotations
 
@@ -13,32 +14,18 @@ from frappe.utils import now_datetime
 from whatsapp_next.api._common import api_endpoint
 from whatsapp_next.api.v1 import _bulk
 from whatsapp_next.api.v1._roles import MANAGER, VIEWER_UP
-from whatsapp_next.exceptions import WANotFoundError, WAValidationError
-from whatsapp_next.services import command_router, functions_catalog
+from whatsapp_next.services import command_router, function_runner, functions_catalog
+from whatsapp_next.services import function_header as fh
 
 STATUS_SCHEMA = {"status": {"enum": ["Active", "Inactive"]}}
-# catalog text is written in English and read in the user's language: these keys go through `_()`
-ENTRY_TEXT = ("function_name", "category", "description", "when_to_use")
-ROW_TEXT = ("label", "notes")
-
-
-def _t(value):
-	return _(value) if isinstance(value, str) and value else value
-
-
-def _localized_rows(rows) -> list[dict[str, Any]]:
-	return [{**row, **{k: _t(row.get(k)) for k in ROW_TEXT if k in row}} for row in rows or []]
 
 
 @api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
 def get_catalog() -> dict[str, Any]:
-	"""`{entries[], catalog_source[], checked_at}`: every catalog function merged with its install
-	state (`installed_version`, `update_available`, `handler_registered`, `commands_count`,
-	`calls_30d`).
-	P: Viewer+."""
+	"""`{entries[], checked_at}`: every function script of the site with its state (`available`,
+	`unavailable` with reasons, `invalid` with the header error, `update`, `missing`), merged with its
+	install state, `commands_count` and `calls_30d`. P: Viewer+."""
 	entries = functions_catalog.storefront()
-	# one read of the catalog for every entry (each `get_function` would re-read the cache)
-	catalog = functions_catalog.load_catalog()
 	counts: dict[str, int] = {}
 	calls: dict[str, int] = {}
 	commands = frappe.get_all("WhatsApp Command", fields=["name", "function"])
@@ -47,100 +34,85 @@ def get_catalog() -> dict[str, Any]:
 		counts[c.function] = counts.get(c.function, 0) + 1
 		calls[c.function] = calls.get(c.function, 0) + runs.get(c.name, 0)
 	for e in entries:
-		e.update({k: _t(e.get(k)) for k in ENTRY_TEXT})
 		e["commands_count"] = counts.get(e["function_key"], 0)
-		# the prototype's "Calls (30 days)": runs of every command bound to the function
 		e["calls_30d"] = calls.get(e["function_key"], 0)
-		# read against the catalog now, not the daily `check_updates` flag: a version shipped
-		# since the last check shows at once, and an installed one never reads as outdated
-		e["update_available"] = bool(
-			e["installed"]
-			and e["latest_version"]
-			and functions_catalog.version_tuple(e["latest_version"])
-			> functions_catalog.version_tuple(e["installed_version"] or "0")
-		)
-		fn = catalog.functions.get(e["function_key"])
-		versions = fn.versions if fn else {}
-		e["changelog"] = {v: _t((m or {}).get("changelog")) for v, m in versions.items()}
-		e["releases"] = {
-			v: {"released": (m or {}).get("released"), "changelog": _t((m or {}).get("changelog"))}
-			for v, m in versions.items()
-		}
+	return {"entries": entries, "checked_at": now_datetime()}
+
+
+def _detail(spec: dict[str, Any], values: dict[str, Any]) -> dict[str, Any]:
+	"""A header as the detail and its settings form read it."""
 	return {
-		"entries": entries,
-		"catalog_source": catalog.sources,
-		"catalog_errors": catalog.errors,
-		"checked_at": now_datetime(),
+		"function_key": spec["function"],
+		"function_name": spec.get("title") or spec["function"],
+		"description": spec.get("description"),
+		"version": spec.get("version"),
+		"party_types": spec.get("party_types"),
+		"party_types_text": fh.party_types_text(spec),
+		"requires": spec.get("requires") or [],
+		"params": [
+			{
+				**p,
+				"value": values.get(p["name"]),
+				"vars": fh.vars_for(spec, p["name"]) if p["fieldtype"] == "Template" else [],
+			}
+			for p in fh.command_params(spec)
+		],
+		"sender_params": [p for p in spec.get("params") or [] if p["source"] == "sender"],
+		"replies": spec.get("replies") or [],
+		"vars": spec.get("vars") or [],
 	}
 
 
 @api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
-def get_manifest(function_key: str, version: str | None = None) -> dict[str, Any]:
-	"""What one version of a catalog function is made of, for the storefront's detail:
-	`{version, released, changelog, inputs[], settings[], outputs[], example, suggested_commands[],
-	party_types[], installed{}}`. `version` defaults to the installed version, else the latest.
-	When the function is installed, each setting row carries its site `value` and `installed`
-	holds the record's own facts (`installed_at`, `installed_by`, `call_count`, `avg_ms`,
-	`error_count`, `last_error`). P: Viewer+. E: `WANotFoundError`."""
-	installed: dict[str, Any] = {}
-	values: dict[str, str] = {}
-	if frappe.db.exists("WhatsApp Function", function_key):
-		doc = frappe.get_doc("WhatsApp Function", function_key)
-		version = version or doc.installed_version
-		values = {r.key: r.value for r in doc.get("settings") or []}
-		installed = {
-			"installed_version": doc.installed_version,
-			"installed_at": doc.installed_at,
-			"installed_by": doc.installed_by,
-			"catalog_source": doc.catalog_source,
-			"call_count": doc.call_count,
-			"avg_ms": doc.avg_ms,
-			"error_count": doc.error_count,
-			"last_called_at": doc.last_called_at,
-			"last_error": doc.last_error,
-		}
-	version, manifest = functions_catalog.manifest_for(function_key, version)
-	fn = functions_catalog.get_function(function_key)
-	settings = [dict(row) for row in manifest.get("settings") or []]
-	for row in settings:
-		if row.get("key") in values:
-			row["value"] = values[row["key"]]
-	return {
-		"function_key": function_key,
-		"version": version,
-		"released": manifest.get("released"),
-		"changelog": manifest.get("changelog"),
-		"changelog_localized": _t(manifest.get("changelog")),
-		"inputs": _localized_rows(manifest.get("inputs")),
-		"settings": _localized_rows(settings),
-		"outputs": _localized_rows(manifest.get("outputs")),
-		"example": manifest.get("example"),
-		"suggested_commands": list(manifest.get("suggested_commands") or []),
-		"party_types": list(manifest.get("party_types") or fn.party_types or []),
-		"installed": installed,
-	}
+def get_manifest(function_key: str | None = None, server_script: str | None = None) -> dict[str, Any]:
+	"""One function's header for the detail: an installed function by `function_key` (its saved
+	header, with the site's `value` of each parameter and its own figures under `installed`), or a
+	script not installed yet by `server_script`. P: Viewer+. E: `WANotFoundError`, `WAValidationError`."""
+	if function_key and frappe.db.exists("WhatsApp Function", function_key):
+		doc = functions_catalog.installed(function_key)
+		spec = functions_catalog.manifest_of(doc)
+		out = _detail(spec, functions_catalog.values_of(doc))
+		available, reasons = fh.function_availability(spec)
+		out.update(
+			server_script=doc.server_script,
+			available=available,
+			reasons=reasons,
+			installed={
+				"installed_version": doc.installed_version,
+				"installed_at": doc.installed_at,
+				"installed_by": doc.installed_by,
+				"status": doc.status,
+				"update_available": bool(doc.update_available),
+				"call_count": doc.call_count,
+				"avg_ms": doc.avg_ms,
+				"error_count": doc.error_count,
+				"last_called_at": doc.last_called_at,
+				"last_error": doc.last_error,
+			},
+		)
+		return out
+	if not server_script:
+		frappe.throw(_("Function {0} is not installed").format(function_key or ""), frappe.DoesNotExistError)
+	spec, _checksum = functions_catalog.script_spec(server_script)
+	out = _detail(spec, {})
+	available, reasons = fh.function_availability(spec)
+	out.update(server_script=server_script, available=available, reasons=reasons, installed={})
+	return out
 
 
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))
-def preview_install(function_key: str, version: str | None = None) -> dict[str, Any]:
-	"""`{diff{settings, outputs, manifest}, commands_impacted[], handler_registered, installed_version,
-	target_version}` for installing / moving to `version` (default latest). P: Manager.
-	E: `WANotFoundError`."""
-	d = functions_catalog.diff(function_key, version)
-	return {
-		"diff": {"settings": d.settings, "outputs": d.outputs, "manifest": d.manifest},
-		"commands_impacted": d.commands_impacted,
-		"handler_registered": d.handler_registered,
-		"installed_version": d.installed_version,
-		"target_version": d.target_version,
-	}
+def preview_install(server_script: str) -> dict[str, Any]:
+	"""What installing / updating from `server_script` changes: `{params{added, removed, changed},
+	replies{…}, commands_impacted[], available, reasons[], installed_version, target_version}`.
+	P: Manager."""
+	return functions_catalog.diff(server_script)
 
 
 @api_endpoint(roles=MANAGER)
-def install(function_key: str, version: str | None = None) -> dict[str, str]:
-	"""Install from the catalog. P: Manager. E: `WANotFoundError`, `WAValidationError` (no
-	handler), `WAStateConflictError` (already installed); audited `Function Installed`."""
-	name = functions_catalog.install(function_key, version)
+def install(server_script: str) -> dict[str, str]:
+	"""Install the function the script declares. P: Manager. E: `WAValidationError` (not a
+	function, header, availability, guard, duplicate), `WAStateConflictError` (installed); audited."""
+	name = functions_catalog.install(server_script)
 	return {
 		"name": name,
 		"installed_version": frappe.db.get_value("WhatsApp Function", name, "installed_version"),
@@ -148,11 +120,11 @@ def install(function_key: str, version: str | None = None) -> dict[str, str]:
 
 
 @api_endpoint(roles=MANAGER)
-def update(function_key: str, version: str | None = None) -> dict[str, str | None]:
-	"""Move to `version` (default latest; an older version is a rollback). P: Manager.
-	E: `WANotFoundError`; audited `Function Updated`."""
+def update(function_key: str) -> dict[str, str | None]:
+	"""Re-read the function's script header; the site's values stay for parameters that kept their
+	name. P: Manager. E: `WANotFoundError`, `WAValidationError`; audited `Function Updated`."""
 	previous = frappe.db.get_value("WhatsApp Function", function_key, "installed_version")
-	name = functions_catalog.update(function_key, version)
+	name = functions_catalog.update(function_key)
 	return {
 		"installed_version": frappe.db.get_value("WhatsApp Function", name, "installed_version"),
 		"previous_version": previous,
@@ -174,30 +146,39 @@ def set_status(function_key: str, status: str) -> dict[str, str]:
 
 
 @api_endpoint(roles=MANAGER)
-def save_settings(function_key: str, values: dict) -> dict[str, Any]:
-	"""Write setting values by key; unknown keys are rejected. Returns `{values}`. P: Manager.
+def save_values(function_key: str, values: dict) -> dict[str, Any]:
+	"""Write the site's values of the function's parameters (a template: a text or
+	`{language: text}`); an empty value returns to the header's default. P: Manager.
 	E: `WANotFoundError`, `WAValidationError`."""
-	return {"values": functions_catalog.save_settings(function_key, values)}
+	return {"values": functions_catalog.save_values(function_key, values)}
+
+
+@api_endpoint(roles=MANAGER)
+def try_function(
+	function_key: str, party_type: str | None = None, party: str | None = None, values: dict | None = None
+) -> dict[str, Any]:
+	"""Run the function as a command would — nothing sent, nothing kept — and show each step and the
+	messages it would send. P: Manager."""
+	return function_runner.trial(function_key, party_type=party_type, party=party, values=values)
+
+
+@api_endpoint(roles=MANAGER)
+def check_updates() -> dict[str, int]:
+	"""Re-read every installed function's script now. P: Manager."""
+	functions_catalog.clear_cache()
+	return functions_catalog.check_updates()
 
 
 @api_endpoint(roles=MANAGER)
 def update_many(function_keys: list[str]) -> dict[str, Any]:
-	"""Bulk update to the latest version; functions already on the latest version are `skipped`.
-	P: Manager."""
+	"""Bulk update from the scripts; functions whose header did not change are `skipped`. P: Manager."""
 
 	def one(function_key: str) -> None:
-		row = frappe.db.get_value(
-			"WhatsApp Function", function_key, ["installed_version", "latest_version"], as_dict=True
-		)
-		if not row:
-			frappe.throw(_("Function {0} is not installed").format(function_key), WANotFoundError)
-		latest = functions_catalog.get_function(function_key).latest_version()
-		# never a silent downgrade: a site ahead of the catalog (a rolled-back file) is skipped too
-		if functions_catalog.version_tuple(row.installed_version or "0") >= functions_catalog.version_tuple(
-			latest
-		):
+		doc = functions_catalog.installed(function_key)
+		_spec, checksum = functions_catalog.script_spec(doc.server_script)
+		if checksum == doc.manifest_checksum:
 			raise _bulk.Skip("already latest")
-		functions_catalog.update(function_key, latest)
+		functions_catalog.update(function_key)
 
 	return _bulk.run_bulk(function_keys, one)
 

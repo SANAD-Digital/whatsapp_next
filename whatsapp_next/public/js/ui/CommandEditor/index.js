@@ -132,6 +132,8 @@ frappe.provide("sanad.ui");
 				synonyms: (c.synonyms || []).slice(),
 				allowed_party_types: (c.allowed_party_types || []).slice(),
 				requires_linked_contact: cint(c.requires_linked_contact),
+				allowed_group: c.allowed_group || null,
+				blocked_group: c.blocked_group || null,
 				disabled_inputs: (c.disabled_inputs || []).slice(),
 				ask_inputs: c.ask_inputs || "",
 				settings_overrides: Object.assign({}, c.settings_overrides || {}),
@@ -189,6 +191,8 @@ frappe.provide("sanad.ui");
 				function: d.function,
 				synonyms: d.synonyms.join("\n"),
 				requires_linked_contact: d.requires_linked_contact,
+				allowed_group: d.allowed_group || null,
+				blocked_group: d.blocked_group || null,
 				allowed_party_types: d.allowed_party_types.slice(),
 				disabled_inputs: d.disabled_inputs.slice(),
 				ask_inputs: d.ask_inputs || "",
@@ -505,10 +509,30 @@ frappe.provide("sanad.ui");
 
 		// ---- permissions --------------------------------------------------------------------------
 
+		/**
+		 * The command-wide gate, above the per-type lists: only the members of one contact group may use
+		 * the command (whatever their party type), and one group may be kept out. Checked before the lists.
+		 */
+		render_gate() {
+			const d = this.draft;
+			const one = (field, items) => (d[field] ? [{ name: d[field], label: d[field] }] : items);
+			return `<div class="sanad-ce__perm">
+				<span class="sanad-ce__switch-text"><span class="sanad-ce__perm-title">${esc(__("The whole command"))}</span><span class="sanad-ce__note">${esc(
+					d.allowed_group
+						? __("Only the members of «{0}» may use it, whatever their party type; the lists below apply to them.", [d.allowed_group])
+						: __("Not limited to a group: the party types and their lists below decide who may use it.")
+				)}</span></span>
+				<div class="sanad-ce__pickers">
+					${this.render_picker("allow", "g", __("Only the members of"), __("Search contact groups…"), one("allowed_group", []), "pri", __("No matching groups."), __("Any number (no group)."))}
+					${this.render_picker("block", "g", __("Never the members of"), __("Search contact groups…"), one("blocked_group", []), "dg", __("No matching groups."), __("No group kept out."))}
+				</div>
+			</div>`;
+		}
+
 		render_perms() {
 			const keys = this.draft.allowed_party_types;
 			if (!keys.length) {
-				return `<div class="sanad-ce__pane" data-scroll="perms"><span class="sanad-ce__empty sanad-ce__empty--surface">${esc(
+				return `<div class="sanad-ce__pane" data-scroll="perms">${this.render_gate()}<span class="sanad-ce__empty sanad-ce__empty--surface">${esc(
 					__("No party is allowed yet. Pick party types in the Setup tab to manage their lists here.")
 				)}</span></div>`;
 			}
@@ -532,6 +556,7 @@ frappe.provide("sanad.ui");
 				.map((m) => `<button type="button" class="sanad-ce__pill${a.mode === m.key ? " is-on" : ""}" aria-pressed="${a.mode === m.key}" data-act="perm-mode" data-key="${esc(m.key)}">${esc(m.label)}</button>`)
 				.join("");
 			return `<div class="sanad-ce__pane" data-scroll="perms">
+				${this.render_gate()}
 				<span class="sanad-ce__segs" role="tablist">${tabs}</span>
 				<div class="sanad-ce__perm">
 					<span class="sanad-ce__card-row sanad-ce__card-row--wrap">
@@ -1127,6 +1152,12 @@ frappe.provide("sanad.ui");
 					const p = this.ui.pick[k] || { results: [] };
 					const row = (p.results || []).find((r) => r.name === $el.attr("data-name"));
 					if (!row) return;
+					if (type === "allow" || type === "block") {
+						// the command-wide gate holds one group each
+						d[type === "allow" ? "allowed_group" : "blocked_group"] = row.name;
+						this.ui.pick[k] = { q: "", open: false, results: [] };
+						break;
+					}
 					const a = this.access_of(type);
 					const field = kind === "g" ? "groups" : "contacts";
 					this.set_access(type, { [field]: a[field].concat([{ name: row.name, label: row.label, phone: row.phone }]) });
@@ -1136,6 +1167,10 @@ frappe.provide("sanad.ui");
 				case "pick-rm": {
 					const k = key;
 					const [type, kind] = [k.slice(0, k.lastIndexOf("-")), k.slice(k.lastIndexOf("-") + 1)];
+					if (type === "allow" || type === "block") {
+						d[type === "allow" ? "allowed_group" : "blocked_group"] = null;
+						break;
+					}
 					const a = this.access_of(type);
 					const field = kind === "g" ? "groups" : "contacts";
 					this.set_access(type, { [field]: a[field].filter((x) => x.name !== $el.attr("data-name")) });

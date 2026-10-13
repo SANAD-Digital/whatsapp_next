@@ -1,5 +1,7 @@
-# Tests for services/functions_catalog.py and functions/registry.py (build order B-14): catalog
-# loading and versions, diff-before-install, install / update / remove rules, update checks.
+# Tests for services/functions_catalog.py (WHATSAPP_NEXT_INTEGRATION §2–§4): discovery of function
+# scripts and its cache, `script_spec`, diff-before-install, install / update / remove rules with their
+# audit rows, status, the site's values, the daily update check and the storefront states. Uses the
+# fixture scripts of function_fixtures.py only.
 
 from __future__ import annotations
 
@@ -7,115 +9,182 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.exceptions import WANotFoundError, WAStateConflictError, WAValidationError
-from whatsapp_next.functions import registry
 from whatsapp_next.services import functions_catalog as fc
-from whatsapp_next.tests.conftest_frappe import delete_all
+from whatsapp_next.tests import function_fixtures as ff
 
 
 class TestFunctionsCatalog(IntegrationTestCase):
+	@classmethod
+	def setUpClass(cls):
+		super().setUpClass()
+		ff.drop_all()
+
 	def setUp(self):
-		self._clean()
-		fc.clear_cache()
+		ff.drop_all()
+		self._lang = frappe.local.lang
+		frappe.local.lang = "en"
 
 	def tearDown(self):
-		self._clean()
+		frappe.local.lang = self._lang
 
-	@staticmethod
-	def _clean():
-		delete_all("WhatsApp Command", {"function": ("in", ["ping", "document_info"])})
-		delete_all("WhatsApp Function", {"name": ("in", ["ping", "document_info"])})
-		delete_all(
+	def _audit(self, action: str, key: str) -> int:
+		return frappe.db.count(
 			"WhatsApp Audit Log",
-			{"action": ("in", ["Function Installed", "Function Updated", "Function Removed"])},
+			{"action": action, "reference_doctype": "WhatsApp Function", "reference_name": key},
 		)
 
-	def test_catalog_and_registry(self):
-		catalog = fc.load_catalog(use_cache=False)
-		self.assertIn("ping", catalog.functions)
-		self.assertIn("document_info", catalog.functions)
-		self.assertEqual(catalog.errors, [])
-		self.assertEqual(fc.versions("ping"), ["1.0.0"])
-		self.assertEqual(fc.sort_versions(["1.10.0", "1.2.0", "1.0.0"]), ["1.0.0", "1.2.0", "1.10.0"])
-		self.assertTrue(registry.is_registered("ping"))
-		self.assertFalse(registry.is_registered("nope"))
-		self.assertIsNotNone(registry.get_handler("document_info"))
+	def test_discover_reads_function_scripts_and_caches_them(self):
+		name, script = ff.FUNCTIONS["_test_echo"]
+		ff.ensure_script(name, script)
+		entry = {e["server_script"]: e for e in fc.discover()}[name]
+		self.assertEqual(
+			(entry["spec"]["function"], entry["error"], entry["guarded"]), ("_test_echo", None, True)
+		)
+		self.assertEqual(len(entry["checksum"]), 64)
+		cached = frappe.cache.get_value(fc._CACHE_KEY)
+		self.assertTrue(any(k.startswith(name + "|") for k in cached))
+		# saving the script drops the cache (doc_event), and the new header is read
+		ff.ensure_script(name, script.replace("@title        Test Echo", "@title        Test Echo 2"))
+		self.assertIsNone(frappe.cache.get_value(fc._CACHE_KEY))
+		self.assertEqual({e["server_script"]: e for e in fc.discover()}[name]["spec"]["title"], "Test Echo 2")
+
+	def test_script_spec(self):
+		name, script = ff.FUNCTIONS["_test_echo"]
+		ff.ensure_script(name, script)
+		spec, checksum = fc.script_spec(name)
+		self.assertEqual([p["name"] for p in spec["params"]], ["text", "party_type", "party", "msg_result"])
+		# the checksum is the header's: code below it does not change it
+		ff.ensure_script(name, script + "\n# a code comment\n")
+		self.assertEqual(fc.script_spec(name)[1], checksum)
 		with self.assertRaises(WANotFoundError):
-			fc.get_function("nope")
-		with self.assertRaises(WANotFoundError):
-			fc.manifest_for("ping", "9.9.9")
-		store = {r["function_key"]: r for r in fc.storefront()}
-		self.assertFalse(store["ping"]["installed"])
-		self.assertTrue(store["ping"]["handler_registered"])
+			fc.script_spec("wa_fn__test_nope")
+		ff.ensure_script("wa_fn__test_other", script, api_method="not_a_function")
+		with self.assertRaises(WAValidationError):
+			fc.script_spec("wa_fn__test_other")
+		ff.ensure_script("wa_fn__test_broken", "# no header at all\nx = 1\n")
+		with self.assertRaises(WAValidationError):
+			fc.script_spec("wa_fn__test_broken")
 
 	def test_install_diff_update_remove(self):
-		d = fc.diff("document_info")
-		self.assertEqual((d.installed_version, d.target_version), (None, "1.0.0"))
-		self.assertEqual(d.settings["added"], ["document_type", "party_field", "require_party"])
-		self.assertEqual(sorted(d.outputs["added"]), ["document", "summary"])
-		self.assertTrue(d.handler_registered)
+		name, script = ff.FUNCTIONS["_test_typed"]
+		ff.ensure_script(name, script)
+		d = fc.diff(name)
+		self.assertEqual(
+			(d["function_key"], d["installed_version"], d["target_version"], d["changed"], d["available"]),
+			("_test_typed", None, "1.0.0", True, True),
+		)
+		self.assertEqual(d["params"]["added"], sorted(["party_type", "party", "doc_name", "days", "since"]))
+		self.assertEqual(d["replies"]["added"], ["result_text"])
+		self.assertEqual(d["commands_impacted"], [])
 
-		name = fc.install("document_info")
-		doc = frappe.get_doc("WhatsApp Function", name)
-		self.assertEqual((doc.installed_version, doc.status, doc.handler_registered), ("1.0.0", "Active", 1))
-		self.assertEqual({r.key: r.value for r in doc.settings}["document_type"], "Sales Invoice")
-		self.assertEqual([r.party_type for r in doc.party_types], ["Customer", "Supplier"])
-		self.assertEqual(doc.outputs[0].template, doc.outputs[0].default_template)
-		self.assertEqual(len(doc.checksum), 64)
-		self.assertIn("inputs", frappe.parse_json(doc.manifest))
-		self.assertEqual(frappe.db.count("WhatsApp Audit Log", {"action": "Function Installed"}), 1)
+		key = fc.install(name)
+		doc = frappe.get_doc("WhatsApp Function", key)
+		self.assertEqual(
+			(doc.name, doc.server_script, doc.status, doc.installed_version, doc.function_name),
+			("_test_typed", name, "Active", "1.0.0", "Test Typed"),
+		)
+		self.assertEqual(doc.manifest_checksum, fc.script_spec(name)[1])
+		self.assertEqual(
+			fc.manifest_of(doc)["party_types"], {"mode": "only", "types": ["Customer", "Supplier"]}
+		)
+		self.assertEqual(doc.installed_by, frappe.session.user)
+		self.assertEqual(self._audit("Function Installed", key), 1)
 		with self.assertRaises(WAStateConflictError):
-			fc.install("document_info")
+			fc.install(name)
 
-		# site customisations survive an update of the same version
-		doc.settings[0].value = "Sales Order"
-		doc.outputs[0].template = "custom {{ data.name }}"
-		doc.save(ignore_permissions=True)
-		fc.update("document_info")
-		doc = frappe.get_doc("WhatsApp Function", name)
-		self.assertEqual(doc.settings[0].value, "Sales Order")
-		self.assertEqual(doc.outputs[0].template, "custom {{ data.name }}")
-		d = fc.diff("document_info")
-		self.assertEqual((d.installed_version, d.settings["added"], d.outputs["removed"]), ("1.0.0", [], []))
+		# same header: nothing changes, the update is still allowed and audited
+		self.assertFalse(fc.diff(name)["changed"])
+		fc.update(key)
+		self.assertEqual(self._audit("Function Updated", key), 1)
+
+		# a script that now declares another function cannot update this one
+		ff.ensure_script(name, script.replace("@function     _test_typed", "@function     _test_renamed"))
+		with self.assertRaises(WAValidationError):
+			fc.update(key)
+		ff.ensure_script(name, script)
 
 		# an Active command blocks removal
-		cmd = frappe.get_doc(
-			{
-				"doctype": "WhatsApp Command",
-				"code": "doc",
-				"function": "document_info",
-				"status": "Active",
-				"requires_linked_contact": 0,
-			}
-		).insert(ignore_permissions=True)
-		self.assertEqual(fc.diff("document_info").commands_impacted, [cmd.name])
+		cmd = ff.make_command("tfcdoc", key)
+		self.assertEqual(fc.diff(name)["commands_impacted"], [cmd])
 		with self.assertRaises(WAStateConflictError):
-			fc.remove("document_info")
-		cmd.delete(ignore_permissions=True)
-		fc.remove("document_info")
-		self.assertFalse(frappe.db.exists("WhatsApp Function", "document_info"))
+			fc.remove(key)
+		frappe.delete_doc("WhatsApp Command", cmd, ignore_permissions=True)
+		fc.remove(key)
+		self.assertFalse(frappe.db.exists("WhatsApp Function", key))
+		self.assertEqual(self._audit("Function Removed", key), 1)
 		with self.assertRaises(WANotFoundError):
-			fc.remove("document_info")
+			fc.remove(key)
 		with self.assertRaises(WANotFoundError):
-			fc.update("document_info")
+			fc.update(key)
 
-	def test_install_needs_handler_and_check_updates(self):
-		catalog = fc.load_catalog(use_cache=False)
-		catalog.functions["ghost"] = fc.CatalogFunction(
-			"ghost", "Ghost", None, None, None, [], {"1.0.0": {}}, "test"
-		)
-		frappe.cache.set_value(fc._CACHE_KEY, fc._to_cache(catalog), expires_in_sec=60)
+	def test_disabled_script_is_neither_listed_nor_installable(self):
+		name, script = ff.FUNCTIONS["_test_echo"]
+		ff.ensure_script(name, script, disabled=1)
+		self.assertNotIn(name, [e["server_script"] for e in fc.discover(use_cache=False)])
 		with self.assertRaises(WAValidationError):
-			fc.install("ghost")
-		fc.clear_cache()
-		fc.install("ping")
-		frappe.db.set_value("WhatsApp Function", "ping", "installed_version", "0.9.0", update_modified=False)
-		counts = fc.check_updates()
-		# other installed functions on the site may be behind too: count them, not a fixed 1
-		self.assertEqual(counts["updates"], frappe.db.count("WhatsApp Function", {"update_available": 1}))
-		self.assertGreaterEqual(counts["updates"], 1)
+			fc.install(name)
+
+	def test_status_and_values(self):
+		key = ff.ensure_function("_test_typed")
+		self.assertEqual(fc.set_status(key, "Inactive"), "Inactive")
+		self.assertEqual(fc.set_status(key, "Inactive"), "Inactive")
+		self.assertEqual(fc.set_status(key, "Active"), "Active")
+		with self.assertRaises(WANotFoundError):
+			fc.set_status("_test_nope", "Active")
+
 		self.assertEqual(
-			frappe.db.get_value(
-				"WhatsApp Function", "ping", ["update_available", "latest_version"], as_dict=True
-			),
-			{"update_available": 1, "latest_version": "1.0.0"},
+			fc.save_values(key, {"days": "7", "since": "month_start"}), {"days": 7, "since": "month_start"}
 		)
+		self.assertEqual(fc.values_of(key), {"days": 7, "since": "month_start"})
+		with self.assertRaises(WAValidationError):
+			fc.save_values(key, {"party": "Someone"})  # the sender's, never the site's
+		with self.assertRaises(WAValidationError):
+			fc.save_values(key, {"nope": 1})
+		with self.assertRaises(WAValidationError):
+			fc.save_values(key, {"days": "seven"})
+		with self.assertRaises(WAValidationError):
+			fc.save_values(key, ["days"])
+		# empty clears to the header's default
+		self.assertEqual(fc.save_values(key, {"days": ""}), {"since": "month_start"})
+
+		echo = ff.ensure_function("_test_echo")
+		out = fc.save_values(echo, {"msg_result": {"en": "hi {{ echo }}", "ar": "", "": "all"}})
+		self.assertEqual(out, {"msg_result": {"en": "hi {{ echo }}", "": "all"}})
+		self.assertEqual(fc.save_values(echo, {"msg_result": "one text"}), {"msg_result": "one text"})
+		self.assertEqual(fc.save_values(echo, {"msg_result": {}}), {})
+		# the controller refuses values that are not the header's parameters
+		doc = frappe.get_doc("WhatsApp Function", echo)
+		doc.values = '{"nope": 1}'
+		with self.assertRaises(WAValidationError):
+			doc.save(ignore_permissions=True)
+
+	def test_check_updates_and_storefront_states(self):
+		key = ff.ensure_function("_test_echo")
+		name, script = ff.FUNCTIONS["_test_echo"]
+		mine = lambda: {e["server_script"]: e for e in fc.storefront() if e["server_script"]}  # noqa: E731
+		self.assertEqual(mine()[name]["state"], "available")
+		self.assertTrue(mine()[name]["installed"])
+		counts = fc.check_updates()
+		self.assertGreaterEqual(counts["checked"], 1)
+		self.assertEqual(frappe.db.get_value("WhatsApp Function", key, "update_available"), 0)
+
+		ff.ensure_script(name, script.replace("@version      1.0.0", "@version      1.1.0"))
+		counts = fc.check_updates()
+		self.assertGreaterEqual(counts["updates"], 1)
+		self.assertEqual(frappe.db.get_value("WhatsApp Function", key, "update_available"), 1)
+		entry = mine()[name]
+		self.assertEqual(
+			(entry["state"], entry["update_available"], entry["version"]), ("update", True, "1.1.0")
+		)
+		self.assertEqual(entry["installed_version"], "1.0.0")
+		fc.update(key)
+		self.assertEqual(mine()[name]["state"], "available")
+
+		# the script goes away: the installed function is listed as missing
+		frappe.delete_doc("Server Script", name, ignore_permissions=True, force=True)
+		fc.clear_cache()
+		missing = {e["function_key"]: e for e in fc.storefront()}[key]
+		self.assertEqual(
+			(missing["state"], missing["installed"], missing["available"]), ("missing", True, False)
+		)
+		self.assertGreaterEqual(fc.check_updates()["missing"], 1)

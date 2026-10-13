@@ -1,8 +1,11 @@
-# Module role: WhatsApp Function controller — an installed catalog function (fields.md §16). Validation
-# only: registry check for `handler_registered`, `update_available`, unique setting / output keys, and
-# per-row value checks. Install / update / remove live in `api/v1/functions.py` + `services/functions_catalog.py`.
+# Module role: WhatsApp Function controller — an installed function: the Server Script that holds it and
+# its WA-FUNCTION header as installed (fields.md §16, WHATSAPP_NEXT_INTEGRATION §3.1). Validation only:
+# the script is a function script, `values` is an object of the header's parameters. Install / update /
+# remove live in `api/v1/functions.py` + `services/functions_catalog.py`.
 
 from __future__ import annotations
+
+import json
 
 import frappe
 from frappe import _
@@ -14,50 +17,45 @@ ALLOWED_PARTY_TYPES = ("Customer", "Supplier", "Employee", "Sales Person", "User
 
 
 class WhatsAppFunction(Document):
-	"""Catalog function with its installed settings and output templates."""
+	"""A function installed from its Server Script."""
 
 	def validate(self) -> None:
-		"""Compute derived flags and check child-table keys and values."""
-		self.handler_registered = 1 if handler_exists(self.function_key) else 0
-		self.update_available = update_available(self.installed_version, self.latest_version)
-		check_unique_rows(self.get("settings"), "key", _("Setting key"))
-		check_unique_rows(self.get("outputs"), "output_key", _("Output key"))
-		for row in self.get("settings") or []:
-			row.validate_value()
-		check_party_types(self.get("party_types"))
+		"""The script's API method starts with `wa_fn_`; `values` names header parameters only."""
+		from whatsapp_next.services import function_header as fh
 
+		method = (
+			frappe.db.get_value("Server Script", self.server_script, "api_method")
+			if self.server_script
+			else None
+		)
+		if not (method or "").startswith(fh.API_PREFIX):
+			frappe.throw(
+				_("Server Script {0} is not a function: its API method must start with {1}").format(
+					self.server_script, fh.API_PREFIX
+				),
+				WAValidationError,
+			)
+		self.check_values()
 
-def update_available(installed: str | None, latest: str | None) -> int:
-	"""1 when the catalog's `latest` is a newer version than `installed` (semantic order, so a site
-	ahead of its catalog — or `1.10.0` against `1.9.0` — is not "outdated")."""
-	if not latest:
-		return 0
-	from whatsapp_next.services.functions_catalog import version_tuple
+	def check_values(self) -> None:
+		from whatsapp_next.services import function_header as fh
+		from whatsapp_next.services.functions_catalog import manifest_of
 
-	return 1 if version_tuple(latest) > version_tuple(installed or "0") else 0
-
-
-def handler_exists(function_key: str | None) -> bool:
-	"""True when a handler is registered for `function_key` — built in or declared by another app
-	through the `whatsapp_function_handlers` hook (`registry.is_registered` loads the hook first, so
-	a fresh worker does not mark a hook-registered function as missing)."""
-	if not function_key:
-		return False
-	try:
-		from whatsapp_next.functions.registry import is_registered
-	except ImportError:
-		return False
-	return is_registered(function_key)
-
-
-def check_unique_rows(rows: list | None, fieldname: str, label: str) -> None:
-	"""Reject a repeated `fieldname` value within `rows`."""
-	seen: set[str] = set()
-	for row in rows or []:
-		value = (row.get(fieldname) or "").strip()
-		if value in seen:
-			frappe.throw(_("{0} {1} is repeated (row {2})").format(label, value, row.idx), WAValidationError)
-		seen.add(value)
+		if not self.get("values"):
+			return
+		try:
+			values = json.loads(self.values) if isinstance(self.values, str) else self.values
+		except ValueError:
+			frappe.throw(_("Values must be valid JSON"), WAValidationError)
+		if not isinstance(values, dict):
+			frappe.throw(_("Values must be a JSON object"), WAValidationError)
+		names = {p["name"] for p in fh.command_params(manifest_of(self))}
+		unknown = sorted(set(values) - names)
+		if unknown:
+			frappe.throw(
+				_("Unknown parameters for function {0}: {1}").format(self.name, ", ".join(unknown)),
+				WAValidationError,
+			)
 
 
 def check_party_types(rows: list | None) -> None:

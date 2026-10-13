@@ -8,30 +8,21 @@
   "function_tab",
   "function_key",
   "function_name",
-  "category",
   "status",
   "column_break_9",
   "description",
-  "when_to_use",
-  "party_types",
+  "server_script",
   "versions_tab",
   "installed_version",
   "installed_at",
   "installed_by",
-  "latest_version",
-  "latest_version_date",
-  "update_available",
   "column_break_10",
-  "catalog_source",
-  "catalog_checked_at",
-  "checksum",
-  "handler_registered",
+  "update_available",
+  "manifest_checksum",
   "manifest_section",
   "manifest",
-  "settings_tab",
-  "settings",
-  "outputs_tab",
-  "outputs",
+  "values_tab",
+  "values",
   "stats_tab",
   "call_count",
   "last_called_at",
@@ -51,22 +42,16 @@
    "label": "Function Key",
    "fieldtype": "Data",
    "reqd": 1,
-   "unique": 1
+   "unique": 1,
+   "description": "The header's @function: the function's key."
   },
   {
    "fieldname": "function_name",
    "label": "Function Name",
    "fieldtype": "Data",
    "reqd": 1,
-   "in_list_view": 1
-  },
-  {
-   "fieldname": "category",
-   "label": "Category",
-   "fieldtype": "Data",
    "in_list_view": 1,
-   "in_standard_filter": 1,
-   "search_index": 1
+   "description": "The header's @title."
   },
   {
    "fieldname": "status",
@@ -90,16 +75,14 @@
    "fieldtype": "Small Text"
   },
   {
-   "fieldname": "when_to_use",
-   "label": "When To Use",
-   "fieldtype": "Small Text"
-  },
-  {
-   "fieldname": "party_types",
-   "label": "Party Types",
-   "fieldtype": "Table MultiSelect",
-   "options": "WhatsApp Command Party Type",
-   "description": "The party types new commands allow by default."
+   "fieldname": "server_script",
+   "label": "Server Script",
+   "fieldtype": "Link",
+   "options": "Server Script",
+   "reqd": 1,
+   "in_list_view": 1,
+   "search_index": 1,
+   "description": "The Server Script (API, method starting with wa_fn_) that holds the function and its WA-FUNCTION header."
   },
   {
    "fieldname": "versions_tab",
@@ -128,17 +111,8 @@
    "read_only": 1
   },
   {
-   "fieldname": "latest_version",
-   "label": "Latest Version",
-   "fieldtype": "Data",
-   "read_only": 1,
-   "description": "The newest version available in the catalogue."
-  },
-  {
-   "fieldname": "latest_version_date",
-   "label": "Latest Version Date",
-   "fieldtype": "Date",
-   "read_only": 1
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "update_available",
@@ -149,37 +123,14 @@
    "in_standard_filter": 1,
    "read_only": 1,
    "search_index": 1,
-   "description": "A newer version is available."
+   "description": "The script's header changed since it was installed."
   },
   {
-   "fieldname": "column_break_10",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "catalog_source",
-   "label": "Catalog Source",
+   "fieldname": "manifest_checksum",
+   "label": "Header Checksum",
    "fieldtype": "Data",
-   "read_only": 1
-  },
-  {
-   "fieldname": "catalog_checked_at",
-   "label": "Catalog Checked At",
-   "fieldtype": "Datetime",
-   "read_only": 1
-  },
-  {
-   "fieldname": "checksum",
-   "label": "Checksum",
-   "fieldtype": "Data",
-   "read_only": 1
-  },
-  {
-   "fieldname": "handler_registered",
-   "label": "Handler Registered",
-   "fieldtype": "Check",
-   "default": "0",
    "read_only": 1,
-   "description": "Whether this site can run the function."
+   "description": "sha256 of the header when it was installed: a different header means an update is available."
   },
   {
    "fieldname": "manifest_section",
@@ -190,31 +141,18 @@
    "label": "Manifest",
    "fieldtype": "JSON",
    "read_only": 1,
-   "description": "The function's full definition as installed: inputs, outputs, example and change history."
+   "description": "The function's header as installed: parameters, replies, message values and requirements."
   },
   {
-   "fieldname": "settings_tab",
+   "fieldname": "values_tab",
    "fieldtype": "Tab Break",
-   "label": "Settings"
+   "label": "Values"
   },
   {
-   "fieldname": "settings",
-   "label": "Settings",
-   "fieldtype": "Table",
-   "options": "WhatsApp Function Setting",
-   "description": "The function's settings. You can change the values."
-  },
-  {
-   "fieldname": "outputs_tab",
-   "fieldtype": "Tab Break",
-   "label": "Outputs"
-  },
-  {
-   "fieldname": "outputs",
-   "label": "Outputs",
-   "fieldtype": "Table",
-   "options": "WhatsApp Function Output",
-   "description": "Default replies. New commands start with a copy of them."
+   "fieldname": "values",
+   "label": "Values",
+   "fieldtype": "JSON",
+   "description": "The site's values of the function's parameters (not the sender's party). Empty means the header's default."
   },
   {
    "fieldname": "stats_tab",
@@ -270,7 +208,7 @@
    "link_fieldname": "function"
   }
  ],
- "modified": "2026-09-26 21:00:00.000000",
+ "modified": "2026-10-13 00:40:57.601460",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Function",
@@ -337,5 +275,5 @@
  "naming_rule": "By fieldname",
  "allow_rename": 1,
  "title_field": "function_name",
- "search_fields": "function_name,category,installed_version"
+ "search_fields": "function_name,server_script,installed_version"
 }

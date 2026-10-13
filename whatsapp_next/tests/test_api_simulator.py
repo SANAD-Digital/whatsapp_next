@@ -12,8 +12,8 @@ from frappe.tests import IntegrationTestCase
 from whatsapp_next.api.v1 import simulator as api
 from whatsapp_next.exceptions import WAInvalidPhoneError, WAPermissionError, WAValidationError
 from whatsapp_next.services import command_router as cr
-from whatsapp_next.services import functions_catalog as fc
 from whatsapp_next.services import simulator
+from whatsapp_next.tests import function_fixtures as ff
 from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_device, ensure_settings
 
 SERVICE_USER = "wa-test-apisvc@example.com"
@@ -57,17 +57,14 @@ class TestApiSimulator(IntegrationTestCase):
 			unknown_command_reply="ApiTest unknown",
 			send_receipt_reply=0,
 		)
-		cls.installed_ping = False
-		if not frappe.db.exists("WhatsApp Function", "ping"):
-			fc.clear_cache()
-			fc.install("ping")
-			cls.installed_ping = True
+		# the command runs the fixture function `_test_echo` (function_fixtures.py), never the site's
+		ff.ensure_function("_test_echo")
 		cls._clean()
 		frappe.get_doc(
 			{
 				"doctype": "WhatsApp Command",
 				"code": CODE,
-				"function": "ping",
+				"function": "_test_echo",
 				"status": "Active",
 				"title": TAG,
 				"requires_linked_contact": 0,
@@ -78,8 +75,6 @@ class TestApiSimulator(IntegrationTestCase):
 	@classmethod
 	def tearDownClass(cls):
 		cls._clean()
-		if cls.installed_ping:
-			delete_all("WhatsApp Function", {"name": "ping"})
 		ensure_settings(**cls.previous)
 		cr.clear_map()
 		super().tearDownClass()
