@@ -438,6 +438,40 @@ class TestDispatch(IntegrationTestCase):
 			frappe.db.delete("Comment", {"reference_doctype": "ToDo", "reference_name": todo.name})
 			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
 
+	def test_the_document_hears_of_a_message_the_queue_sent_or_gave_up_on(self):
+		"""The queue path writes the same timeline lines as a webhook: a message sent through
+		`dispatch_device_batch` gets its "sent" line on the platform's receipt, and one the queue
+		dead-letters (rejected at hand-over) gets its "could not be sent" line, once."""
+		todo = frappe.get_doc({"doctype": "ToDo", "description": "dispatch-test queue comment"}).insert(
+			ignore_permissions=True
+		)
+		comments = lambda: frappe.get_all(  # noqa: E731
+			"Comment", filters={"reference_doctype": "ToDo", "reference_name": todo.name, "comment_type": "Info"}, pluck="content"
+		)
+		try:
+			ok, _item = dispatch.create_and_enqueue(_spec(phone=P1, reference_doctype="ToDo", reference_name=todo.name))
+			with fake_provider():
+				self.assertEqual(dispatch.dispatch_device_batch(self.device)["accepted"], 1)
+			self.assertEqual(comments(), [])  # handed over, not sent yet
+			dispatch.apply_status(ok, "Sent", provider_message_id="pm-queue-comment")
+			self.assertEqual(len(comments()), 1)
+			self.assertIn(ok, comments()[0])
+
+			bad, item = dispatch.create_and_enqueue(_spec(phone=P2, reference_doctype="ToDo", reference_name=todo.name))
+			with fake_provider() as fp:
+				fp.batch_mode = "error"
+				self.assertEqual(dispatch.dispatch_device_batch(self.device)["dead"], 1)
+			self.assertEqual(self._item(item).status, "Dead Letter")
+			self.assertEqual(len(comments()), 2)
+			failed = [c for c in comments() if bad in c]
+			self.assertEqual(len(failed), 1)
+			reason = frappe.db.get_value("WhatsApp Log", bad, "error_message")
+			self.assertIn(frappe.utils.escape_html(reason), failed[0])
+		finally:
+			frappe.db.delete("Comment", {"reference_doctype": "ToDo", "reference_name": todo.name})
+			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
+			frappe.db.commit()
+
 	def test_poll_keeps_the_id_its_results_are_asked_by(self):
 		"""The provider message id of a poll is the poll's id: stored on `Sent`, so the campaign's
 		poll results find the polls that went out (nothing wrote it before; results read "sent 0")."""
@@ -658,6 +692,32 @@ class TestDispatch(IntegrationTestCase):
 			[("Queued", "Sending", "Queued")],
 		)
 		self.assertEqual(reconcile.assert_coherence(), [])
+
+	def test_a_message_failed_by_the_coherence_fix_tells_its_document(self):
+		"""A dead-lettered queue item beside a message still `Sending` is fixed to `Failed`; the
+		document the message was about gets its "could not be sent" line, as for any failure."""
+		todo = frappe.get_doc({"doctype": "ToDo", "description": "dispatch-test coherence"}).insert(
+			ignore_permissions=True
+		)
+		try:
+			out, item = dispatch.create_and_enqueue(
+				_spec(phone=P3, reference_doctype="ToDo", reference_name=todo.name)
+			)
+			with status_writer():
+				frappe.db.set_value("WhatsApp Queue Item", item, "status", "Dead Letter")
+				frappe.db.set_value("WhatsApp Log", out, "status", "Sending")
+			drifts = reconcile.assert_coherence(fix=True)
+			self.assertIn(("Dead Letter", "Sending", "Failed"), [(d.queue_status, d.outbound_status, d.fixed_to) for d in drifts])
+			comments = frappe.get_all(
+				"Comment",
+				filters={"reference_doctype": "ToDo", "reference_name": todo.name, "comment_type": "Info"},
+				pluck="content",
+			)
+			self.assertEqual(len(comments), 1)
+			self.assertIn(out, comments[0])
+		finally:
+			frappe.db.delete("Comment", {"reference_doctype": "ToDo", "reference_name": todo.name})
+			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
 
 	# -- quick send ------------------------------------------------------------------
 

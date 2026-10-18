@@ -676,6 +676,9 @@ def _dead_letter(item: frappe._dict, reason: str, code: str, *, at) -> None:
 		},
 	)
 	_publish_message_status(item.outbound_message, "Failed", at, code)
+	# a message the queue gave up on (rejected at hand-over, a file that could not be built, the
+	# retries used up) failed as surely as one the platform reported: its document says so too
+	comment_on_reference(item.outbound_message, "Failed", reason=reason)
 
 
 def _retry_later(

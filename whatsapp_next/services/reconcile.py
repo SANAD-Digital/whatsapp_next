@@ -238,6 +238,9 @@ def assert_coherence(fix: bool = False) -> list[Drift]:
 				if target == "Failed":
 					values.update({"error_code": "unknown", "error_message": "reconciled from dead letter"})
 				frappe.db.set_value("WhatsApp Log", r.outbound, values, update_modified=True)
+			if target == "Failed":
+				# the message is failed now: the document it was about says so, as for any failure
+				dispatch.comment_on_reference(r.outbound, "Failed", reason=values["error_message"])
 	if drifts:
 		frappe.log_error(
 			title="WhatsApp reconcile: status drift",
