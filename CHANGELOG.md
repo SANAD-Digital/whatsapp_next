@@ -20,6 +20,18 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
   has not edited the record; a record he edited is never overwritten. `standards.restore` brings
   the shipped content back on request, `standards.overview` lists the state of every record.
 - `developer-docs/standard-content.md`.
+- **"Send message" on every business document's form** (`public/js/desk/form_send.js`, under the
+  "WhatsApp" button group): opens QuickSend with the document as the message's reference, the
+  recipient pre-filled from the document's contact number when it has one. Offered to Agents and
+  Managers, never on the app's own, single or child DocTypes. A message sent with a reference is
+  a `Form` message (`api.v1.quick_send.send`), which the platform files under the ERP.
+
+### Fixed
+
+- A message the queue gave up on (rejected at hand-over, a file that could not be built, the
+  retries used up — `dispatch._dead_letter`) now writes its "could not be sent" line on the
+  timeline of the document it was about, as a failure reported by the platform already did. So
+  does a message `reconcile.assert_coherence(fix=True)` moves to `Failed`.
 
 ### Changed
 

@@ -8,6 +8,7 @@ import "./desk/brand.js";
 import "./desk/setup_redirect.js";
 import "./desk/beta_badge.js";
 import "./desk/icon_sizes.js";
+import "./desk/form_send.js";
 import "./screens/console.js";
 import "./screens/messages.js";
 import "./screens/numbers.js";

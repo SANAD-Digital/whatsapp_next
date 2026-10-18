@@ -108,7 +108,9 @@ def send(
 		location=location,
 		contact=contact,
 		display_name=display_name,
-		source_type="Quick Send",
+		# a message about a document (the "Send message" button on its form) is a Form message: the
+		# platform files it under the ERP, and the document's timeline records it (dispatch)
+		source_type="Form" if reference_doctype and reference_name else "Quick Send",
 	)
 	outbound, queue_item = quick_send.compose(spec, user=frappe.session.user)
 	return {"outbound": outbound, "queue_item": queue_item, "warnings": quick_send.warnings_for(device)}

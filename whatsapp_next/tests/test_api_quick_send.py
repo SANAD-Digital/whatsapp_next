@@ -99,6 +99,25 @@ class TestApiQuickSend(IntegrationTestCase):
 			delete_all("WhatsApp Number", {"name": ("in", [P1, P2])})
 			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
 
+	def test_a_message_about_a_document_is_a_form_message(self):
+		"""The form's "Send message" button sends with the document as reference: the row is a
+		`Form` message (the platform files it under the ERP), and its document hears of it."""
+		todo = frappe.get_doc({"doctype": "ToDo", "description": "ApiTest form send"}).insert(ignore_permissions=True)
+		try:
+			# as the ToDo's owner: the send checks read on the document (ToDo is owner-only)
+			res = api.send(
+				device=self.device, phone=P1, body=f"{TAG} about a doc", reference_doctype="ToDo", reference_name=todo.name
+			)
+			row = frappe.db.get_value(
+				"WhatsApp Log", res["outbound"], ["source_type", "reference_doctype", "reference_name"], as_dict=True
+			)
+			self.assertEqual((row.source_type, row.reference_doctype, row.reference_name), ("Form", "ToDo", todo.name))
+			self.assertEqual(frappe.db.get_value("WhatsApp Queue Item", res["queue_item"], "priority"), 1)
+		finally:
+			self._clean()
+			frappe.db.delete("Comment", {"reference_doctype": "ToDo", "reference_name": todo.name})
+			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
+
 	def test_send(self):
 		with as_user("WhatsApp Agent"):
 			res = api.send(device=self.device, phone="0500920101", body=f"{TAG} hello")
