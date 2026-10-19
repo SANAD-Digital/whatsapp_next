@@ -182,9 +182,13 @@ frappe.provide("whatsapp_next.onboarding");
 	}
 
 	/** WhatsApp opened on the platform's number with the confirmation message already typed. */
+	// the word before the code in the message the person sends (owner, 2026-10-19: "WN", for
+	// WhatsappNext); the platform reads the six digits with or without it (`signup.CODE_PATTERN`)
+	const CODE_PREFIX = "WN";
+
 	function wa_send_link(platform_phone, code) {
 		const digits = cstr(platform_phone).replace(/\D/g, "");
-		return digits && code ? `https://wa.me/${digits}?text=${encodeURIComponent(`SND ${code}`)}` : "";
+		return digits && code ? `https://wa.me/${digits}?text=${encodeURIComponent(`${CODE_PREFIX} ${code}`)}` : "";
 	}
 
 	/** Password strength, scored the way the prototype scores it (0–4). */
@@ -234,16 +238,16 @@ frappe.provide("whatsapp_next.onboarding");
 	}
 
 	/**
-	 * The message to send, drawn as a code (owner, 2026-10-19): the "SND" word as a tag, each digit in
+	 * The message to send, drawn as a code (owner, 2026-10-19): the `CODE_PREFIX` word as a tag, each digit in
 	 * a tile of its own, and the whole of it one button that copies the message. `bind_code_copy`
 	 * gives it the click; the hint under the tiles says "Copied" for a moment after it.
 	 */
 	function code_html(code) {
 		const digits = cstr(code).split("");
-		return `<button type="button" class="wa-onb__code" data-copy="${esc(`SND ${code}`)}" dir="ltr"
-				aria-label="${esc(__("Copy the message {0}", [`SND ${code}`]))}">
+		return `<button type="button" class="wa-onb__code" data-copy="${esc(`${CODE_PREFIX} ${code}`)}" dir="ltr"
+				aria-label="${esc(__("Copy the message {0}", [`${CODE_PREFIX} ${code}`]))}">
 				<span class="wa-onb__code-tiles" dir="ltr">
-					<span class="wa-onb__code-tag">SND</span>
+					<span class="wa-onb__code-tag">${CODE_PREFIX}</span>
 					${digits.map((d) => `<span class="wa-onb__code-digit">${esc(d)}</span>`).join("")}
 				</span>
 				<span class="wa-onb__code-hint" aria-live="polite">${ico("copy", "xs")}<span class="wa-onb__code-hint-text">${esc(__("Click the code to copy it"))}</span></span>
@@ -1220,7 +1224,7 @@ frappe.provide("whatsapp_next.onboarding");
 				  `<span class="wa-onb__route-arrow">${ico("chevronEnd", "sm")}</span>` +
 				  col(__("To your email"), route.email || this.f.email, true);
 
-			const text = by_whatsapp ? `SND ${route.code}` : "";
+			const text = by_whatsapp ? `${CODE_PREFIX} ${route.code}` : "";
 			const wa_link = by_whatsapp ? wa_send_link(route.platform_phone, route.code) : "";
 			const codebox = by_whatsapp
 				? `<div class="wa-sunken wa-onb__codebox">
@@ -1729,7 +1733,7 @@ frappe.provide("whatsapp_next.onboarding");
 			} else {
 				// the sign-up's proof, for the same account: nothing arrives on WhatsApp — the person
 				// sends the shown message from the account's number, and the sender is the proof
-				const text = `SND ${reset.code}`;
+				const text = `${CODE_PREFIX} ${reset.code}`;
 				const platform = ui.PhoneField.format_display(reset.platform_phone) || reset.platform_phone;
 				const link = wa_send_link(reset.platform_phone, reset.code);
 				$card.append(`
