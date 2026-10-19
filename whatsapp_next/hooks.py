@@ -9,7 +9,7 @@ app_description = "WhatsApp integration for ERPNext built on a provider abstract
 app_email = "sanad@digital.info"
 app_license = "mit"
 
-required_apps = ["frappe"]
+required_apps = ["frappe", "erpnext"]
 
 # The app's tile on the Desk desktop is a file: `whatsapp_next/desktop_icon/whatsapp.json` (a
 # standard Desktop Icon that opens the WhatsApp sidebar; the sidebar header draws its `logo_url`).
