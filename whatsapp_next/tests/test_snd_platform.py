@@ -532,15 +532,6 @@ class TestPlatformTimes(IntegrationTestCase):
 		# a zoneless string is the platform's wall clock (Asia/Aden, +03:00)
 		self.assertEqual(_dt("2026-09-30T04:24:06"), site)
 		self.assertEqual(_dt("2026-09-30 04:24:06"), site)
-		# site_config can name another zone, or none (an empty value: taken as written)
-		conf = frappe.local.conf
-		try:
-			conf["whatsapp_platform_time_zone"] = ""
-			self.assertEqual(_dt("2026-09-30T04:24:06"), datetime(2026, 9, 30, 4, 24, 6))
-			conf["whatsapp_platform_time_zone"] = "UTC"
-			self.assertEqual(_dt("2026-09-30T01:24:06"), site)
-		finally:
-			conf.pop("whatsapp_platform_time_zone", None)
 
 	def test_a_bare_date_is_a_day(self):
 		from datetime import date

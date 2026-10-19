@@ -27,7 +27,6 @@ SETTINGS = "WhatsApp Settings"
 # they surface as `has_<field>` (see SECRET_FIELDS). permlevel-1 values are never returned.
 SECTIONS: dict[str, tuple[str, ...]] = {
 	"provider": (
-		"provider",
 		"platform_base_url",
 		"request_timeout",
 		"connection_status",
@@ -98,7 +97,7 @@ SECTIONS: dict[str, tuple[str, ...]] = {
 # Section → fieldnames `save_settings` may write. Credentials go through `onboarding.save_credentials`;
 # webhook events / status, queue pause / rate and the subscription cache have their own endpoints.
 WRITABLE: dict[str, tuple[str, ...]] = {
-	"provider": ("provider", "platform_base_url", "request_timeout"),
+	"provider": ("platform_base_url", "request_timeout"),
 	"webhook": ("webhook_max_retries",),
 	"queue": ("max_attempts", "retry_backoff_seconds"),
 	"commands": SECTIONS["commands"],
@@ -369,6 +368,30 @@ def get_doctype_fields(document_type: str) -> list[dict[str, Any]]:
 				}
 			)
 	return out
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+def list_picker_candidates() -> list[dict[str, Any]]:
+	"""The screens that can give the contact picker numbers, best first (`services.picker_sources`)."""
+	from whatsapp_next.services import picker_sources
+
+	return picker_sources.candidates()
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+def analyze_picker_doctype(document_type: str) -> dict[str, Any]:
+	"""A screen's number, name and contact fields, with how many records fill each and a best guess."""
+	from whatsapp_next.services import picker_sources
+
+	return picker_sources.analyze(document_type)
+
+
+@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+def preview_picker_source(source: str | dict) -> dict[str, Any]:
+	"""How a source being edited reaches people → `{total, with_number, sample[]}`."""
+	from whatsapp_next.services import picker_sources
+
+	return picker_sources.preview(source)
 
 
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))

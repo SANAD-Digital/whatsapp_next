@@ -468,8 +468,14 @@ def create_and_enqueue(
 def dispatch_tick() -> list[str]:
 	"""Cron `* * * * *`: fan out one `dispatch_device_batch` job per connected, enabled device.
 
-	Skipped entirely while `Settings.queue_paused`. Returns the devices enqueued."""
+	Skipped entirely while `Settings.queue_paused`, and while the site is signed out of its
+	platform account: with no keys every batch would fail, so the messages wait in the queue
+	until the site signs in again. Returns the devices enqueued."""
 	if cint(_settings().queue_paused):
+		return []
+	from whatsapp_next.services.onboarding import has_credentials
+
+	if not has_credentials():
 		return []
 	devices = frappe.get_all("WhatsApp Device", filters={"status": "Connected", "disabled": 0}, pluck="name")
 	for device in devices:

@@ -27,7 +27,7 @@ class TestRegistry(IntegrationTestCase):
 		provider = registry.get_provider("snd_platform")
 		self.assertIsInstance(provider, SndPlatformProvider)
 		self.assertIs(registry.get_provider("snd_platform"), provider)  # cached per request
-		self.assertEqual(provider.settings.base_url, "https://platform.invalid")
+		self.assertEqual(provider.settings.base_url, registry.platform_base_url())
 		with self.assertRaises(NotSupportedError):
 			registry.get_provider("does_not_exist")
 

@@ -48,39 +48,34 @@ def get_settings_doc():
 
 
 def credentials(settings=None) -> dict[str, str]:
-	"""Plaintext credentials via `get_password` — never logged, never returned by an API."""
-	settings = settings or frappe.get_doc("WhatsApp Settings")
+	"""Plaintext credentials (`services.secrets.read`) — never logged, never returned by an API.
+	A key this site cannot decrypt (a database from another site) counts as missing."""
+	from whatsapp_next.services import secrets
+
 	out: dict[str, str] = {}
 	for fieldname in CREDENTIAL_FIELDS:
-		try:
-			value = settings.get_password(fieldname, raise_exception=False)
-		except Exception:
-			value = None
+		value = secrets.read(fieldname)
 		if value:
 			out[fieldname] = value
 	return out
 
 
-# The product's own platform. A site that installs the app signs in against it with nothing to
-# configure (owner, 2026-10-08: a fresh site showed "the site does not know where the platform is").
-DEFAULT_PLATFORM_BASE_URL = "https://w-platform.dev.sanad.digital"
+# The product's own platform (owner, 2026-10-19): a site in developer mode talks to the development
+# platform, any other site to production — unless Settings names another address.
+DEV_PLATFORM_BASE_URL = "https://w-platform.dev.sanad.digital"
+PROD_PLATFORM_BASE_URL = "https://whatsappnext.sanad.digital"
 
 
 def platform_base_url(settings=None) -> str:
-	"""Where this product's platform lives.
-
-	It is not something a tenant knows or should be asked for — every site of
-	this product talks to the same platform — so a fresh site that has never
-	saved Settings still has an address to sign in against. Settings wins when
-	it holds one (an operator may point a site at a staging platform); then the
-	bench, through `whatsapp_platform_base_url` in the site or common site
-	config; and otherwise the product's own platform, `DEFAULT_PLATFORM_BASE_URL`.
-	"""
-	settings = settings or frappe.get_doc("WhatsApp Settings")
+	"""Where this product's platform lives: the address chosen in Settings (`platform_base_url`)
+	when there is one; left empty, the development platform on a site in Frappe's developer mode
+	and the production platform on any other. Nothing of this app is read from the site config
+	(owner, 2026-10-19)."""
+	settings = settings or frappe.get_cached_doc("WhatsApp Settings")
 	url = (settings.get("platform_base_url") or "").strip()
 	if not url:
-		url = (frappe.conf.get("whatsapp_platform_base_url") or "").strip()
-	return (url or DEFAULT_PLATFORM_BASE_URL).rstrip("/")
+		url = DEV_PLATFORM_BASE_URL if frappe.conf.get("developer_mode") else PROD_PLATFORM_BASE_URL
+	return url.rstrip("/")
 
 
 def build_settings(provider_key: str | None = None) -> ProviderSettings:

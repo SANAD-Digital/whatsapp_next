@@ -6,6 +6,12 @@
 // from the sidebar's "Settings" item and from every link that used to route to the page; the
 // `wa-settings` route itself only opens it.
 //
+// The window has a link of its own, the way claude.ai's settings do (owner, 2026-10-19): while it is
+// open the address of the screen underneath carries `#settings-<section>` (`#settings-webhook`), each
+// section rewrites it and closing removes it. A link with that hash opens the window on that section
+// over whatever screen the link points at — the person is never taken away from where they are.
+// (No `/` in the hash: a form hands its hash to jQuery as a selector, `form.js` scroll_to.)
+//
 // The window adds no storage: it is a presentation layer over the existing `WhatsApp Settings`
 // Single. Every value is read with `settings.get_settings(section)` and written with
 // `settings.save_settings(section, values)`; the labels, types and options of the fields come
@@ -41,6 +47,22 @@ const SITE_TODAY = () => frappe.datetime.system_datetime().slice(0, 10);
 // the section a link from before the window asked for, by its old key
 const ALIASES = { billing: "subscription", plan: "subscription" };
 
+// `#settings` or `#settings-<section>` in the address
+const HASH = /^#settings(?:-([a-z_]+))?$/;
+
+/** The section the address asks for: "" for `#settings`, null when it asks for none. */
+const hash_section = () => {
+	const m = HASH.exec(window.location.hash || "");
+	return m ? m[1] || "" : null;
+};
+
+/** Put `#settings-<key>` in the address (or take it out), without a step in the browser's history. */
+const write_hash = (key) => {
+	const hash = key ? `#settings-${key}` : "";
+	if (window.location.hash === hash || (!key && hash_section() === null)) return;
+	window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}${hash}`);
+};
+
 class SettingsView {
 	constructor() {
 		this.sections = this.section_list();
@@ -49,7 +71,9 @@ class SettingsView {
 			cls: "wa-settings-window",
 			groups: this.groups(),
 			render: (key, $pane) => this.draw(key, $pane),
+			on_show: (key) => write_hash(key),
 			on_close: () => {
+				write_hash(null);
 				this.unbind_realtime();
 				const after = this.after_close;
 				this.after_close = null;
@@ -444,8 +468,8 @@ class SettingsView {
 			);
 			const $form = $('<section class="wa-settings__panel"></section>').appendTo($el);
 			$form.append(
-				`<header><span><strong>${frappe.utils.escape_html(__("Provider"))}</strong><span>${frappe.utils.escape_html(
-					__("Which provider this site sends through, and where it lives.")
+				`<header><span><strong>${frappe.utils.escape_html(__("Platform"))}</strong><span>${frappe.utils.escape_html(
+					__("Where this site's platform is, and how long to wait for it.")
 				)}</span></span></header>`
 			);
 			this.render_fields(
@@ -540,12 +564,6 @@ class SettingsView {
 		const dialog = new frappe.ui.Dialog({
 			title: __("New platform credentials"),
 			fields: [
-				{
-					fieldname: "platform_base_url",
-					label: __("Platform address"),
-					fieldtype: "Data",
-					description: __("For example https://platform.example.com"),
-				},
 				{ fieldname: "customer_api_key", label: __("Customer API key"), fieldtype: "Password" },
 				{ fieldname: "customer_api_secret", label: __("Customer API secret"), fieldtype: "Password" },
 				{ fieldname: "api_key", label: __("API key"), fieldtype: "Password" },
@@ -1081,9 +1099,9 @@ class SettingsView {
 		const $body = $panel.find("tbody");
 		this.sources.forEach((row, i) => {
 			const $tr = $(`<tr>
-				<td>${esc(row.document_type || "")}</td>
+				<td>${esc(__(row.document_type || ""))}</td>
 				<td>${esc(row.label || "")}</td>
-				<td>${esc(row.phone_source === "Contact" ? __("Linked contact") : row.phone_fieldname || "")}</td>
+				<td>${esc(whatsapp_next.picker_source_label(row))}</td>
 				<td>${sanad.ui.StatusBadge.html({
 					label: cint(row.enabled) ? __("Enabled") : __("Disabled"),
 					colour: cint(row.enabled) ? "green" : "gray",
@@ -1103,75 +1121,17 @@ class SettingsView {
 		});
 	}
 
+	/** The smart editor (`screens/picker_source_editor.js`), for a new row or the row at `index`. */
 	source_dialog(index) {
-		const row = index == null ? {} : this.sources[index];
-		const dialog = new frappe.ui.Dialog({
-			title: index == null ? __("Add a picker source") : __("Edit the picker source"),
-			fields: [
-				{
-					fieldname: "document_type",
-					label: __("Document type"),
-					fieldtype: "Link",
-					options: "DocType",
-					reqd: 1,
-					default: row.document_type,
-					get_query: () => ({ filters: { issingle: 0, istable: 0 } }),
-					onchange: () => this.fill_source_fields(dialog),
-				},
-				{ fieldname: "label", label: __("Label"), fieldtype: "Data", default: row.label },
-				{
-					fieldname: "phone_source",
-					label: __("Where the number comes from"),
-					fieldtype: "Select",
-					options: ["Field", "Contact"],
-					default: row.phone_source || "Field",
-				},
-				{ fieldname: "phone_fieldname", label: __("Number field"), fieldtype: "Select", default: row.phone_fieldname },
-				{ fieldname: "name_fieldname", label: __("Name field"), fieldtype: "Select", default: row.name_fieldname },
-				{
-					fieldname: "contact_fieldname",
-					label: __("Contact field"),
-					fieldtype: "Select",
-					default: row.contact_fieldname,
-				},
-				{
-					fieldname: "filters_json",
-					label: __("Server filters"),
-					fieldtype: "Code",
-					options: "JSON",
-					default: row.filters_json,
-					description: __("Always applied on top of what the user chooses."),
-				},
-				{ fieldname: "enabled", label: __("Enabled"), fieldtype: "Check", default: cint(row.enabled) },
-			],
-			primary_action_label: index == null ? __("Add") : __("Save"),
-			primary_action: (values) => {
+		new whatsapp_next.PickerSourceEditor({
+			row: index == null ? {} : this.sources[index],
+			taken: this.sources.map((r) => r.document_type),
+			on_save: (values) => {
 				if (index == null) this.sources.push(values);
 				else this.sources[index] = Object.assign({}, this.sources[index], values);
-				dialog.hide();
 				this.save_sources(this.$content);
 			},
 		});
-		dialog.show();
-		if (row.document_type) this.fill_source_fields(dialog);
-	}
-
-	fill_source_fields(dialog) {
-		const document_type = dialog.get_value("document_type");
-		if (!document_type) return;
-		sanad.ui
-			.call("settings.get_doctype_fields", { document_type }, { silent: true })
-			.then((fields) => {
-				const options = (fields || []).map((f) => ({ value: f.fieldname, label: `${f.label} (${f.fieldname})` }));
-				["phone_fieldname", "name_fieldname", "contact_fieldname"].forEach((f) => {
-					const control = dialog.get_field(f);
-					const current = control.get_value();
-					control.df.options = [{ value: "", label: __("Not set") }].concat(options);
-					control.refresh();
-					if (current) control.set_value(current);
-				});
-			})
-			.catch(() => {});
 	}
 
 	save_sources($el) {
@@ -1555,6 +1515,22 @@ whatsapp_next.settings.open = function (section, opts) {
 	if (!whatsapp_next.settings.view) whatsapp_next.settings.view = new SettingsView();
 	return whatsapp_next.settings.view.open(section, opts);
 };
+
+// A link that carries `#settings-<section>` opens the window over the screen it points at: on load,
+// when the hash is typed or followed, and when the browser's Back/Forward reach such an address.
+// An address without it closes the window (Back from an opened section).
+function follow_hash() {
+	const section = hash_section();
+	const view = whatsapp_next.settings.view;
+	if (section !== null) {
+		if (!view || !view.win.open || (section && section !== view.current)) whatsapp_next.settings.open(section || null);
+	} else if (view && view.win.open && (frappe.get_route() || [])[0] !== "wa-settings") {
+		view.win.hide();
+	}
+}
+window.addEventListener("hashchange", follow_hash);
+window.addEventListener("popstate", () => window.setTimeout(follow_hash, 0));
+$(() => frappe.after_ajax && frappe.after_ajax(() => window.setTimeout(follow_hash, 0)));
 
 // The sidebar's "Settings" item is a link to the `wa-settings` page; it opens the window over the
 // screen the user is on instead of leaving it. Capture phase, so Desk's router never sees the click.

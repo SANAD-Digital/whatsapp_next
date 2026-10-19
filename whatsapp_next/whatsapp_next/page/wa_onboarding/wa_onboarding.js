@@ -219,12 +219,54 @@ frappe.provide("whatsapp_next.onboarding");
 		return out.sort(() => Math.random() - 0.5).join("");
 	}
 
+	// the support line, written the way a person dials it
+	const SUPPORT_PHONE = "967 777 103 456";
+
+	/** A number inside an Arabic sentence, kept left to right (a left-to-right isolate). */
+	const ltr = (text) => `\u2066${text}\u2069`;
+
 	function copy_to_clipboard(text) {
 		try {
 			return navigator.clipboard.writeText(text);
 		} catch (e) {
 			return Promise.reject(e);
 		}
+	}
+
+	/**
+	 * The message to send, drawn as a code (owner, 2026-10-19): the "SND" word as a tag, each digit in
+	 * a tile of its own, and the whole of it one button that copies the message. `bind_code_copy`
+	 * gives it the click; the hint under the tiles says "Copied" for a moment after it.
+	 */
+	function code_html(code) {
+		const digits = cstr(code).split("");
+		return `<button type="button" class="wa-onb__code" data-copy="${esc(`SND ${code}`)}" dir="ltr"
+				aria-label="${esc(__("Copy the message {0}", [`SND ${code}`]))}">
+				<span class="wa-onb__code-tiles" dir="ltr">
+					<span class="wa-onb__code-tag">SND</span>
+					${digits.map((d) => `<span class="wa-onb__code-digit">${esc(d)}</span>`).join("")}
+				</span>
+				<span class="wa-onb__code-hint" aria-live="polite">${ico("copy", "xs")}<span class="wa-onb__code-hint-text">${esc(__("Click the code to copy it"))}</span></span>
+			</button>`;
+	}
+
+	/** Copy the code on a click, and say so on the code itself. */
+	function bind_code_copy($card) {
+		$card.on("click", ".wa-onb__code", (e) => {
+			const $btn = $(e.currentTarget);
+			const $hint = $btn.find(".wa-onb__code-hint-text");
+			copy_to_clipboard($btn.attr("data-copy"))
+				.then(() => {
+					$btn.addClass("is-copied");
+					$hint.text(__("Copied — paste it in WhatsApp"));
+					clearTimeout($btn.data("t"));
+					$btn.data("t", setTimeout(() => {
+						$btn.removeClass("is-copied");
+						$hint.text(__("Click the code to copy it"));
+					}, 2200));
+				})
+				.catch(() => ui.Toast.warning(__("The browser did not allow copying. Select the code and copy it by hand.")));
+		});
 	}
 
 	// ---------------------------------------------------------------------------------------------
@@ -274,7 +316,7 @@ frappe.provide("whatsapp_next.onboarding");
 							<a class="wa-onb__chip" href="https://sanad.digital/whatsapp-erpnext" target="_blank" rel="noopener">${ico("link", "xs")}${esc(__("Website and documentation"))}</a>
 							<a class="wa-onb__chip" href="https://github.com/sanad-digital" target="_blank" rel="noopener">${ico("code", "xs")}${esc(__("Open source"))}</a>
 						</div>
-						<p class="wa-onb__support">${esc(__("Need help? Support is on 8001234567"))}</p>
+						<p class="wa-onb__support">${esc(__("Need help? Support is on {0}", [ltr(SUPPORT_PHONE)]))}</p>
 						<p class="wa-onb__rights">${esc(__("Sanad Digital · all rights reserved"))}</p>
 					</div>
 				</aside>
@@ -321,10 +363,39 @@ frappe.provide("whatsapp_next.onboarding");
 							this.boot = boot || {};
 							const ttl = cint(this.boot.code_ttl_minutes) * 60;
 							if (ttl) this.ctx.code_ttl = ttl;
+							this.prefill(this.boot.prefill);
 						})
 						.catch(() => {});
 				})
 				.catch((err) => this.render_error(err, () => this.load()));
+		}
+
+		/**
+		 * Fill the sign-up form from what the system already knows (`signup_bootstrap().prefill`: the
+		 * company, the person's user). Only fields still empty, so a draft or anything typed wins; the
+		 * form is drawn again when it is the one on screen.
+		 */
+		prefill(known) {
+			known = known || {};
+			let changed = false;
+			["org", "person", "email"].forEach((key) => {
+				if (known[key] && !cstr(this.f[key]).trim()) {
+					this.f[key] = known[key];
+					changed = true;
+				}
+			});
+			if (known.sector && !this.f.sector && SECTORS().includes(__(known.sector))) {
+				this.f.sector = __(known.sector);
+				changed = true;
+			}
+			if (known.phone && !this.f.phone) {
+				this.f.phone = known.phone;
+				this.f.phone_ok = true;
+				changed = true;
+			}
+			// the mobile field starts on the company's country
+			if (known.country && !this.f.phone) changed = true;
+			if (changed && this.s.stage === "signup") this.render();
 		}
 
 		render_error(err, retry) {
@@ -609,6 +680,8 @@ frappe.provide("whatsapp_next.onboarding");
 				label: __("WhatsApp number"),
 				required: true,
 				value: this.f.phone,
+				// the company's country, when the system knows it
+				country_default: ((this.boot || {}).prefill || {}).country || undefined,
 				tip: __("This is the account's own contact number: password recovery, subscription, payment and renewal notices, system alerts and support messages. It is not the device number your customers' messages go out from — that one is linked later, from the Devices screen."),
 				on_change: ({ phone_e164, valid }) => {
 					this.f.phone = phone_e164 || "";
@@ -1152,8 +1225,8 @@ frappe.provide("whatsapp_next.onboarding");
 			const codebox = by_whatsapp
 				? `<div class="wa-sunken wa-onb__codebox">
 					<span class="wa-field__label">${esc(__("The message to send"))}</span>
-					<div class="wa-onb__code-input" dir="ltr" aria-live="polite">${esc(text)}</div>
-					<p class="wa-onb__code-help">${esc(__("Send it from {0} exactly as written. Nothing is sent to you: the message you send is the confirmation.", [own]))}</p>
+					${code_html(route.code)}
+					<p class="wa-onb__code-help">${esc(__("Send it from {0} exactly as written. Nothing is sent to you: the message you send is the confirmation.", [ltr(own)]))}</p>
 					<div class="wa-btnbar">
 						<a class="btn btn-primary wa-onb__grow" href="${esc(wa_link)}" target="_blank" rel="noopener">${ico("whatsapp", "sm")} <span>${esc(__("Open WhatsApp and send the code"))}</span></a>
 						${ui.btn({ label: __("Copy the message"), variant: "secondary", attrs: { "data-act": "copy-code" } })}
@@ -1199,6 +1272,7 @@ frappe.provide("whatsapp_next.onboarding");
 			});
 			$card.on("click", '[data-act="finish"]', () => this.finish_verified());
 
+			bind_code_copy($card);
 			$card.on("click", '[data-act="copy-code"]', () =>
 				navigator.clipboard
 					.writeText(text)
@@ -1672,7 +1746,7 @@ frappe.provide("whatsapp_next.onboarding");
 					</div>
 					<div class="wa-sunken wa-onb__codebox">
 						<span class="wa-field__label">${esc(__("The message to send"))}</span>
-						<div class="wa-onb__code-input" dir="ltr" aria-live="polite">${esc(text)}</div>
+						${code_html(reset.code)}
 						<p class="wa-onb__code-help">${esc(__("Send it from the account's WhatsApp number exactly as written. Nothing is sent to you: the message you send is the confirmation."))}</p>
 						<div class="wa-btnbar">
 							<a class="btn btn-primary wa-onb__grow" href="${esc(link)}" target="_blank" rel="noopener">${ico("whatsapp", "sm")} <span>${esc(__("Open WhatsApp and send the code"))}</span></a>
@@ -1683,6 +1757,7 @@ frappe.provide("whatsapp_next.onboarding");
 					<div class="wa-btnbar">
 						${ui.btn({ label: __("Send the code again"), variant: "secondary", attrs: { "data-act": "reset-again" } })}
 					</div>`);
+				bind_code_copy($card);
 				$card.on("click", '[data-act="copy-reset"]', () =>
 					navigator.clipboard
 						.writeText(text)
@@ -1787,7 +1862,7 @@ frappe.provide("whatsapp_next.onboarding");
 					${ui.btn({ label: __("Continue"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "send" } })}
 					${ui.btn({ label: `${__("Remembered it?")} ${__("Sign in")}`, variant: "secondary", attrs: { "data-act": "back" } })}
 				</div>
-				<p class="wa-onb__foot-note">${esc(__("No longer have the registered email or number? Contact support on 8001234567."))}</p>`);
+				<p class="wa-onb__foot-note">${esc(__("No longer have the registered email or number? Contact support on {0}.", [ltr(SUPPORT_PHONE)]))}</p>`);
 			$card.on("input", '[data-r="identifier"]', (e) => {
 				this.f.reset_identifier = e.currentTarget.value;
 				this.save_draft();
@@ -1882,12 +1957,39 @@ frappe.provide("whatsapp_next.onboarding");
 				</div>
 
 				${ui.btn({ label: __("Go to the dashboard"), variant: "primary", block: true, attrs: { "data-act": "home" } })}
-				${can_setup() ? ui.btn({ label: __("Sign in with another account"), variant: "ghost", block: true, attrs: { "data-act": "switch" } }) : ""}`);
+				${can_setup() ? ui.btn({ label: __("Sign in with another account"), variant: "ghost", block: true, attrs: { "data-act": "switch" } }) : ""}
+				${can_setup() ? ui.btn({ label: __("Sign out"), variant: "ghost", block: true, attrs: { "data-act": "sign-out" } }) : ""}`);
 
 			$card.on("click", '[data-act="home"]', () => frappe.set_route("wa-home"));
 			$card.on("click", '[data-act="switch"]', () => this.switch_account());
+			$card.on("click", '[data-act="sign-out"]', () => this.sign_out());
 			this.load_referral($card);
 			this.mark_setup_complete();
+		}
+
+		/**
+		 * Sign this site out of its platform account (`onboarding.sign_out`): its keys and webhook
+		 * secret are deleted, so nothing is sent or received until it signs in again; devices,
+		 * messages and everything set up on the site stay. The product's screens then send everyone
+		 * back to this page until it is linked again.
+		 */
+		sign_out() {
+			return ui.ConfirmDialog.ask({
+				title: __("Sign out of the WhatsApp account?"),
+				message: __("This site stops sending and receiving WhatsApp messages until it signs in again. Devices, messages and what you set up stay on the site."),
+				confirm_label: __("Sign out"),
+				danger: true,
+				on_confirm: () => ui.call("onboarding.sign_out", {}, { freeze: true }),
+			}).then(
+				() => {
+					// every screen of the product sends back here until the site signs in again
+					frappe.boot.whatsapp_next = Object.assign({}, frappe.boot.whatsapp_next || {}, { setup_redirect: true });
+					ui.Toast.success(__("Signed out of the WhatsApp account"));
+					this.f.login_id = "";
+					this.set_state({ stage: "login", switching: false, err: "" });
+				},
+				() => null
+			);
 		}
 
 		/**

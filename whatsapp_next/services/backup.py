@@ -186,10 +186,9 @@ def _message(exc: Exception) -> str:
 
 def account_key() -> str | None:
 	"""The platform account this site is linked to, by its customer key (stable per account)."""
-	try:
-		return frappe.get_doc("WhatsApp Settings").get_password("customer_api_key", raise_exception=False) or None
-	except Exception:
-		return None
+	from whatsapp_next.services import secrets
+
+	return secrets.read("customer_api_key")
 
 
 def purge_account_data(user: str | None = None) -> dict[str, int]:

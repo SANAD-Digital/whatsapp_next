@@ -15,6 +15,7 @@ import "./screens/numbers.js";
 import "./screens/queue.js";
 import "./screens/campaigns.js";
 import "./screens/campaign/index.js";
+import "./screens/picker_source_editor.js";
 import "./screens/settings.js";
 import "./screens/backup.js";
 import "./screens/alerts.js";

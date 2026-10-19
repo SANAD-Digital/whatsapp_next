@@ -51,10 +51,9 @@ class EndpointSummary:
 
 
 def receiver_url() -> str:
-	"""Absolute URL of the versioned receiver (D-031). `whatsapp_webhook_base_url` in the site
-	config wins over the site URL: the platform delivers only to a public https address, which a
-	site behind a private host name (or a dev tunnel) reaches it through."""
-	base = (frappe.conf.get("whatsapp_webhook_base_url") or "").strip().rstrip("/") or get_url()
+	"""Absolute URL of the versioned receiver (D-031), on the site's own address (`get_url`).
+	Nothing of this app is read from the site config (owner, 2026-10-19)."""
+	base = get_url().rstrip("/")
 	return f"{base}/api/method/{RECEIVER_METHOD}"
 
 
@@ -164,7 +163,9 @@ def ensure_endpoint(
 	else:
 		state = provider.configure_webhook(url, wanted_events, retries)
 	_mirror(state)
-	if refresh_secret or not (s.get_password("webhook_secret", raise_exception=False) or ""):
+	from whatsapp_next.services import secrets
+
+	if refresh_secret or not secrets.read("webhook_secret"):
 		fetch_secret(user)
 	audit.log(
 		"Webhook Changed",

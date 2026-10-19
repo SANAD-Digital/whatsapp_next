@@ -66,6 +66,8 @@ class WhatsAppSettings(Document):
 			)
 
 	def _validate_platform_base_url(self) -> None:
+		"""An address chosen here must be https and is kept without a trailing slash; left empty, the
+		site's mode decides it (`registry.platform_base_url`)."""
 		url = (self.platform_base_url or "").strip()
 		if not url:
 			self.platform_base_url = None

@@ -159,17 +159,10 @@ PLATFORM_TIME_ZONE = "Asia/Aden"
 
 
 def _platform_zone():
-	"""The zone the platform writes its zoneless times in: `whatsapp_platform_time_zone` from
-	site_config when set (an empty value keeps them as written), else `PLATFORM_TIME_ZONE`.
-	Taking them as written made a site in another zone read every `last_seen` / `sent_at` off by
-	the difference (2 h 30 min between Aden and Kolkata)."""
-	import frappe
-
-	conf = frappe.conf or {}
-	name = conf.get("whatsapp_platform_time_zone", PLATFORM_TIME_ZONE)
-	name = (name or "").strip()
-	if not name:
-		return None
+	"""The zone the platform writes its zoneless times in, `PLATFORM_TIME_ZONE`. Taking them as
+	written made a site in another zone read every `last_seen` / `sent_at` off by the difference
+	(2 h 30 min between Aden and Kolkata). Nothing of this app is read from the site config."""
+	name = PLATFORM_TIME_ZONE
 	try:
 		from zoneinfo import ZoneInfo
 

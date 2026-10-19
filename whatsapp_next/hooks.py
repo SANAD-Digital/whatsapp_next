@@ -240,6 +240,7 @@ doctype_js = {
 	"WhatsApp Inbound Message": "public/js/form/whatsapp_inbound_message.js",
 	"WhatsApp Function": "public/js/form/whatsapp_function.js",
 	"WhatsApp Queue Item": "public/js/form/whatsapp_queue_item.js",
+	"WhatsApp Settings": "public/js/form/whatsapp_settings.js",
 }
 doctype_list_js = {
 	"WhatsApp Status Post": "public/js/listview/whatsapp_status_post_list.js",

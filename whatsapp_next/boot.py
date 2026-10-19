@@ -9,13 +9,14 @@ import frappe
 
 
 def boot_session(bootinfo) -> None:
-	"""`bootinfo.whatsapp_next = {"setup_redirect": bool, "features": {"interactive": bool}}`."""
-	redirect, features = False, {}
+	"""`bootinfo.whatsapp_next = {"setup_redirect": bool, "can_setup": bool, "features": {...}}`."""
+	redirect, can, features = False, False, {}
 	try:
 		from whatsapp_next.services import onboarding, plan_features
 
 		redirect = onboarding.should_redirect_to_wizard()
+		can = onboarding.can_setup()
 		features = plan_features.for_boot()
 	except Exception:
 		frappe.log_error(title="whatsapp_next boot_session")
-	bootinfo.whatsapp_next = frappe._dict(setup_redirect=redirect, features=features)
+	bootinfo.whatsapp_next = frappe._dict(setup_redirect=redirect, can_setup=can, features=features)

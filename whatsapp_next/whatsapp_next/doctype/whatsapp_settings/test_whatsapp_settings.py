@@ -55,17 +55,31 @@ class TestWhatsAppSettings(IntegrationTestCase):
 		manager_levels = {p.permlevel for p in meta.permissions if p.role == "WhatsApp Manager"}
 		self.assertEqual(manager_levels, {0})
 
-	def test_platform_base_url_normalized(self) -> None:
+	def test_the_platform_address_follows_the_site_mode(self) -> None:
+		from unittest.mock import patch
+
+		from whatsapp_next.providers import registry
+
 		settings = self._settings()
-		settings.platform_base_url = "  https://w-platform.example.com/  "
-		settings.save(ignore_permissions=True)
-		self.assertEqual(
-			frappe.db.get_single_value(DOCTYPE, "platform_base_url"), "https://w-platform.example.com"
-		)
-		settings = self._settings()
-		settings.platform_base_url = "http://insecure.example.com"
-		with self.assertRaises(WAValidationError):
+		previous = settings.platform_base_url
+		try:
+			# left empty: the site's mode decides, and nothing is read from the site config
+			settings.platform_base_url = ""
 			settings.save(ignore_permissions=True)
+			with patch.dict(frappe.conf, {"developer_mode": 1, "whatsapp_platform_base_url": "https://ignored.example.com"}):
+				self.assertEqual(registry.platform_base_url(settings), registry.DEV_PLATFORM_BASE_URL)
+			with patch.dict(frappe.conf, {"developer_mode": 0}):
+				self.assertEqual(registry.platform_base_url(settings), "https://whatsappnext.sanad.digital")
+			# an address chosen in Settings wins, kept https and without the trailing slash
+			settings.platform_base_url = "  https://w-platform.example.com/  "
+			settings.save(ignore_permissions=True)
+			self.assertEqual(frappe.db.get_single_value(DOCTYPE, "platform_base_url"), "https://w-platform.example.com")
+			self.assertEqual(registry.platform_base_url(settings), "https://w-platform.example.com")
+			settings.platform_base_url = "http://insecure.example.com"
+			with self.assertRaises(WAValidationError):
+				settings.save(ignore_permissions=True)
+		finally:
+			frappe.db.set_single_value(DOCTYPE, "platform_base_url", previous)
 
 	def test_empty_default_country_takes_the_site_country(self) -> None:
 		# a fresh site never chose one, and the field is mandatory: the first save must not fail

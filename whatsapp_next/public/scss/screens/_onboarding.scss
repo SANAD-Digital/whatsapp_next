@@ -966,6 +966,77 @@
 			box-shadow: 0 0 0 3px var(--wa-pri-s);
 		}
 	}
+	// the message to send: a tag and one tile per digit, the whole of it a copy button
+	&__code {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 10px;
+		inline-size: 100%;
+		padding: 16px 12px 12px;
+		border: 1px solid var(--wa-pri-sb);
+		border-radius: 12px;
+		background: var(--wa-surface);
+		color: var(--wa-ink);
+		cursor: copy;
+		transition: border-color 120ms ease, box-shadow 120ms ease;
+
+		&:hover { border-color: var(--wa-pri); }
+		&:focus-visible { outline: none; border-color: var(--wa-pri); box-shadow: 0 0 0 3px var(--wa-pri-s); }
+		&.is-copied { border-color: var(--wa-pri); background: var(--wa-pri-s); }
+	}
+	&__code-tiles {
+		// left to right on an Arabic page too: the markup's dir="ltr", never a `direction` here —
+		// the RTL build flips that declaration to rtl
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-wrap: nowrap;
+		gap: 6px;
+		max-inline-size: 100%;
+	}
+	&__code-tag {
+		display: inline-flex;
+		align-items: center;
+		block-size: 48px;
+		padding-inline: 12px;
+		margin-inline-end: 6px;
+		border-radius: 10px;
+		background: var(--wa-pri);
+		color: var(--wa-surface);
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: 17px;
+		font-weight: 700;
+		letter-spacing: 2px;
+	}
+	&__code-digit {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 40px;
+		block-size: 48px;
+		border: 1px solid var(--wa-border-2);
+		border-radius: 10px;
+		background: var(--wa-pri-s);
+		font-family: "IBM Plex Mono", ui-monospace, monospace;
+		font-size: 24px;
+		font-weight: 700;
+		color: var(--wa-ink);
+	}
+	&__code-hint {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 12px;
+		color: var(--wa-ink-3);
+	}
+	&__code.is-copied &__code-hint { color: var(--wa-pri); font-weight: 600; }
+	@media (max-width: 480px) {
+		&__code-tiles { gap: 4px; }
+		&__code-tag { block-size: 40px; padding-inline: 7px; margin-inline-end: 2px; font-size: 13px; letter-spacing: 1px; }
+		&__code-digit { inline-size: 30px; block-size: 40px; font-size: 18px; border-radius: 8px; }
+	}
+
 	&__code-help {
 		margin: 0;
 		font-size: 11.5px;

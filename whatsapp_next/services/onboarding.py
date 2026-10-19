@@ -41,16 +41,16 @@ def _settings():
 
 
 def has_secret(settings, fieldname: str) -> bool:
-	"""`True` when the Password field holds a value (read through `get_password`, never returned)."""
-	try:
-		return bool(settings.get_password(fieldname, raise_exception=False))
-	except Exception:
-		return False
+	"""`True` when the Password field holds a value this site can open (`services.secrets.read`;
+	the value is never returned). `settings` is accepted for the callers that pass it."""
+	from whatsapp_next.services import secrets
+
+	return bool(secrets.read(fieldname))
 
 
 def has_credentials(settings=None) -> bool:
 	"""All three platform credentials are present and the site knows its platform address — the
-	effective one (Settings, else the bench default `whatsapp_platform_base_url`, D-103): the
+	effective one (the site's mode decides it, `registry.platform_base_url`): the
 	address is a default, never copied into Settings (D-117)."""
 	s = settings or _settings()
 	return bool(registry.platform_base_url(s)) and all(has_secret(s, f) for f in REQUIRED_CREDENTIALS)
@@ -96,13 +96,11 @@ def save_credentials(
 	user: str | None = None,
 	customer_api_secret: str | None = None,
 ) -> list[str]:
-	"""Store the platform credentials with `set_password` (values never logged or returned) and
-	the base URL (validated by the Settings controller). Returns the fieldnames written."""
+	"""Store the platform credentials with `set_password` (values never logged or returned).
+	Returns the fieldnames written. `platform_base_url` is accepted from older callers and ignored:
+	the site's mode decides the address (`registry.platform_base_url`)."""
 	doc = _settings()
 	written: list[str] = []
-	if platform_base_url is not None:
-		doc.platform_base_url = platform_base_url
-		written.append("platform_base_url")
 	for fieldname, value in (
 		("customer_api_key", customer_api_key),
 		("customer_api_secret", customer_api_secret),
@@ -121,6 +119,61 @@ def save_credentials(
 	registry.clear_cache()
 	audit.log("Credentials Changed", user=user, fields_written=written, details={"what": "platform"})
 	return written
+
+
+# What a sign-out empties besides the keys: the state that described the link to the account. The
+# connection test, the webhook endpoint and the plan cache all spoke for the account the site left.
+SIGN_OUT_SECRETS: tuple[str, ...] = (*CREDENTIAL_FIELDS, "webhook_secret")
+SIGN_OUT_RESET: dict[str, Any] = {
+	"connection_status": "Untested",
+	"last_connection_test_at": None,
+	"last_connection_latency_ms": None,
+	"last_connection_error": None,
+	"webhook_endpoint": None,
+	"webhook_endpoint_url": None,
+	"webhook_status": None,
+	"webhook_synced_at": None,
+	"setup_completed": 0,
+	"setup_completed_at": None,
+	**{f: None for f in usage_sync.FIELDS},
+}
+
+
+def sign_out(user: str | None = None) -> dict[str, Any]:
+	"""Unlink this site from its platform account: the webhook endpoint is removed on the platform
+	(best effort — a platform that cannot be reached never keeps the site signed in), then the four
+	keys and the webhook secret are deleted and the link's state is reset, so the site reads as
+	never registered and the wizard opens on sign-in. Devices, messages, the queue and everything
+	the site set up stay: signing out deletes keys, not data. Audited `Credentials Changed`.
+
+	`{ok, webhook_removed}`."""
+	from frappe.utils.password import remove_encrypted_password
+
+	s = _settings()
+	webhook_removed = False
+	if s.webhook_endpoint and has_credentials(s):
+		try:
+			registry.get_provider().delete_webhook_endpoint(s.webhook_endpoint)
+			webhook_removed = True
+		except Exception:
+			frappe.log_error(title="WhatsApp sign-out: webhook endpoint not removed")
+	for fieldname in SIGN_OUT_SECRETS:
+		remove_encrypted_password("WhatsApp Settings", "WhatsApp Settings", fieldname)
+	meta = frappe.get_meta("WhatsApp Settings")
+	values = {f: v for f, v in SIGN_OUT_RESET.items() if meta.has_field(f)}
+	# the masked placeholder `store_secret` leaves in the field would read as "a key is stored"
+	values.update({f: None for f in SIGN_OUT_SECRETS})
+	values["credentials_updated_at"] = now_datetime()
+	frappe.db.set_single_value("WhatsApp Settings", values, update_modified=False)
+	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+	registry.clear_cache()
+	audit.log(
+		"Credentials Changed",
+		user=user,
+		fields_written=list(SIGN_OUT_SECRETS),
+		details={"what": "sign_out", "webhook_removed": int(webhook_removed)},
+	)
+	return {"ok": True, "webhook_removed": webhook_removed}
 
 
 def store_signup_credentials(state: SignupState, user: str | None = None) -> bool:
@@ -161,7 +214,75 @@ def signup_bootstrap() -> dict[str, Any]:
 		"code_ttl_minutes": cint(data.get("code_ttl_minutes")) or None,
 		"device_phone": data.get("device_phone"),
 		"device_ready": bool(data.get("device_ready")),
+		"prefill": signup_prefill(),
 	}
+
+
+# ERPNext's company domain → the sign-up form's activity (its English label, translated on the screen)
+DOMAIN_SECTORS = {
+	"Manufacturing": "Factories and manufacturing",
+	"Retail": "Trade and retail",
+	"Distribution": "Trade and retail",
+	"Education": "Education and training",
+	"Healthcare": "Health and clinics",
+	"Agriculture": "Agriculture and nurseries",
+	"Non Profit": "Associations and non-profits",
+}
+
+
+def signup_prefill(user: str | None = None) -> dict[str, str]:
+	"""What the system already knows for the sign-up form (owner, 2026-10-19): the company's name,
+	activity and country from the person's default company (ERPNext, when installed); the person's
+	name and email from their user; the WhatsApp number from the company's contact. Only what is
+	there; the form fills only the fields still empty, so anything typed wins. The `Administrator`
+	account names no real person."""
+	user = user or frappe.session.user
+	out: dict[str, str] = {}
+	company = None
+	if frappe.db.exists("DocType", "Company"):
+		name = frappe.defaults.get_user_default("Company", user) or frappe.defaults.get_global_default("company")
+		if name and frappe.db.exists("Company", name):
+			company = frappe.db.get_value("Company", name, ["name", "company_name", "domain", "country"], as_dict=True)
+	if company:
+		out["org"] = (company.company_name or "").strip()
+		out["sector"] = DOMAIN_SECTORS.get(company.domain or "", "")
+		# the country the mobile field starts on, as its ISO code (the field's first list has no names)
+		out["country"] = (frappe.db.get_value("Country", company.country, "code") or "").upper() if company.country else ""
+		out["phone"] = company_contact_mobile(company.name, out["country"] or None) or ""
+	if user not in ("Administrator", "Guest"):
+		person = frappe.db.get_value("User", user, ["full_name", "email"], as_dict=True) or {}
+		out["person"] = (person.get("full_name") or "").strip()
+		out["email"] = (person.get("email") or "").strip()
+	return {k: v for k, v in out.items() if v}
+
+
+def company_contact_mobile(company: str, region: str | None = None) -> str | None:
+	"""The first valid number (E.164) of the contacts linked to `company`: the primary contact
+	first, its primary mobile first, then its other numbers."""
+	contacts = frappe.get_all(
+		"Dynamic Link",
+		filters={"parenttype": "Contact", "link_doctype": "Company", "link_name": company},
+		pluck="parent",
+	)
+	if not contacts:
+		return None
+	for contact in frappe.get_all(
+		"Contact",
+		filters={"name": ("in", contacts)},
+		fields=["name", "mobile_no", "phone"],
+		order_by="is_primary_contact desc, modified desc",
+	):
+		rows = frappe.get_all(
+			"Contact Phone",
+			filters={"parenttype": "Contact", "parent": contact.name},
+			fields=["phone"],
+			order_by="is_primary_mobile_no desc, is_primary_phone desc, idx asc",
+		)
+		for raw in [contact.mobile_no] + [r.phone for r in rows] + [contact.phone]:
+			e164 = normalize(raw, region) if raw else None
+			if e164:
+				return e164
+	return None
 
 
 def start_signup(
@@ -298,28 +419,14 @@ def finish_password_reset(
 def login(platform_base_url: str, email: str, password: str, user: str | None = None) -> dict[str, Any]:
 	"""Sign in against the platform and store the credentials it hands back.
 
-	`platform_base_url` is optional and the sign-in card does not ask for it:
-	the address of this product's platform is not something a tenant knows.
-	When it is given it is saved first (an operator pointing a site at staging);
-	when it is not, `registry.platform_base_url` answers from Settings or from
-	the bench's own `whatsapp_platform_base_url`, so a site that has never saved
-	Settings can still sign in. What comes back is written with `set_password`
+	`platform_base_url` is accepted from older callers and ignored: the address of
+	this product's platform is not something a tenant knows, the site's mode decides
+	it (`registry.platform_base_url`), so a site that has never saved Settings can
+	still sign in. What comes back is written with `set_password`
 	exactly the way `save_credentials` writes it; only
 	`{ok, customer, customer_name}` goes to the caller - a key never reaches the
 	browser.
 	"""
-	# Only write the URL when it actually changes: a sign-in is not a reason to
-	# take a write lock on the Settings single, and a repeat sign-in never does.
-	wanted = (platform_base_url or "").strip().rstrip("/")
-	if wanted and wanted != (frappe.db.get_single_value("WhatsApp Settings", "platform_base_url") or ""):
-		save_credentials(platform_base_url=platform_base_url, user=user)
-	if not registry.platform_base_url():
-		frappe.throw(
-			_(
-				"This site does not know where the WhatsApp platform is. Set it in WhatsApp Settings, or set `whatsapp_platform_base_url` in the site config."
-			),
-			WAValidationError,
-		)
 	try:
 		result = registry.get_provider().login(email, password) or {}
 	except (pex.AuthError, pex.PermissionDeniedError):
@@ -443,20 +550,39 @@ def status() -> dict[str, Any]:
 		"setup_completed_at": s.setup_completed_at,
 		"steps": [step.__dict__ for step in steps(s)],
 		"redirect_enabled": bool(cint(s.redirect_unregistered_to_wizard)),
+		"needs_setup": needs_setup(s),
+		"can_setup": can_setup(),
 		"webhook_url": webhook_setup.receiver_url(),
 	}
 
 
-def should_redirect_to_wizard(user: str | None = None) -> bool:
-	"""`True` when Home should send `user` to the wizard: the redirect is on, the site is not
-	registered with its platform yet (no credentials, the wizard's first step), and the user is a
-	System Manager, the only role that can finish the wizard. A site that has credentials but an
-	offline device or no webhook stays on Home, where the setup band names the missing step."""
+# who can finish the setup: the wizard's sign-in, sign-up and sign-out are the System Manager's
+# (`api/v1/onboarding.py`); anyone else is told to ask them
+SETUP_ROLES = ("System Manager",)
+
+
+def needs_setup(settings=None) -> bool:
+	"""The product is not usable yet (owner, 2026-10-19): the redirect is on and the site is not
+	signed in to its platform (no credentials — never registered, or signed out since), or the
+	wizard was never finished (`setup_completed`)."""
+	s = settings or _settings()
+	return bool(cint(s.redirect_unregistered_to_wizard)) and (not has_credentials(s) or not cint(s.setup_completed))
+
+
+def can_setup(user: str | None = None) -> bool:
+	"""Whether `user` may run the wizard (a System Manager)."""
 	user = user or frappe.session.user
-	if user == "Guest" or "System Manager" not in frappe.get_roles(user):
+	return user != "Guest" and bool(set(SETUP_ROLES) & set(frappe.get_roles(user)))
+
+
+def should_redirect_to_wizard(user: str | None = None) -> bool:
+	"""`True` when any screen or document of the product sends `user` back to the setup: every
+	signed-in Desk user while the product needs setup (`needs_setup`). Whoever cannot run the wizard
+	is told so instead (the client reads `can_setup`)."""
+	user = user or frappe.session.user
+	if user == "Guest":
 		return False
-	s = _settings()
-	return bool(cint(s.redirect_unregistered_to_wizard)) and not has_credentials(s)
+	return needs_setup()
 
 
 def complete_setup(user: str | None = None) -> bool:

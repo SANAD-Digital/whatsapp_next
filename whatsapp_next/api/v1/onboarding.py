@@ -161,6 +161,13 @@ def save_credentials(
 
 
 @api_endpoint(roles=SYSTEM_MANAGER)
+def sign_out() -> dict[str, Any]:
+	"""Unlink the site from its platform account → `{ok, webhook_removed}`. The keys and the
+	webhook secret are deleted; devices and messages stay. Audited `Credentials Changed`."""
+	return onboarding.sign_out(user=frappe.session.user)
+
+
+@api_endpoint(roles=SYSTEM_MANAGER)
 def complete_setup() -> dict[str, Any]:
 	"""Flag `setup_completed` (requires connection OK, ≥ 1 Connected device, webhook Active)."""
 	return {"setup_completed": onboarding.complete_setup(user=frappe.session.user)}

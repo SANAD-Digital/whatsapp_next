@@ -17,6 +17,7 @@ from whatsapp_next.exceptions import (
 	WAStateConflictError,
 	WAValidationError,
 )
+from whatsapp_next.providers import registry
 from whatsapp_next.services import onboarding as svc
 from whatsapp_next.services import usage_sync
 from whatsapp_next.tests.conftest_frappe import (
@@ -93,10 +94,17 @@ class TestApiOnboarding(IntegrationTestCase):
 		self.assertIn("redirect_enabled", out)
 		self.assertTrue(out["webhook_url"].endswith("receiver.receive"))
 
-	def test_home_sends_only_an_unregistered_system_manager_to_the_wizard(self):
+	def test_every_screen_sends_back_to_the_setup_until_it_is_done(self):
+		"""Owner, 2026-10-19: while the site is not signed in to its platform or the wizard was never
+		finished, every user is sent back to the setup; whoever cannot run it is told instead."""
 		from whatsapp_next.boot import boot_session
 
-		frappe.db.set_single_value(SETTINGS, "redirect_unregistered_to_wizard", 1)
+		def state(**values):
+			frappe.db.set_single_value(SETTINGS, values)
+			frappe.clear_document_cache(SETTINGS, SETTINGS)
+
+		# never registered
+		state(redirect_unregistered_to_wizard=1, setup_completed=0)
 		for f in SECRETS:
 			remove_encrypted_password(SETTINGS, SETTINGS, f)
 		frappe.clear_document_cache(SETTINGS, SETTINGS)
@@ -105,21 +113,63 @@ class TestApiOnboarding(IntegrationTestCase):
 			boot = frappe._dict()
 			boot_session(boot)
 			self.assertTrue(boot.whatsapp_next.setup_redirect)
+			self.assertTrue(boot.whatsapp_next.can_setup)
 		with as_user("WhatsApp Manager"):
-			self.assertFalse(svc.should_redirect_to_wizard(), "a Manager cannot finish the wizard")
+			self.assertTrue(svc.should_redirect_to_wizard())
+			self.assertFalse(svc.can_setup(), "a Manager is told to ask a System Manager")
+		with as_user("WhatsApp Agent"):
+			self.assertTrue(svc.should_redirect_to_wizard(), "every user is sent back")
+			self.assertFalse(svc.can_setup(), "an Agent is told instead of taken to the wizard")
+			self.assertTrue(api.get_status()["needs_setup"])
 
-		frappe.db.set_single_value(SETTINGS, "redirect_unregistered_to_wizard", 0)
-		frappe.clear_document_cache(SETTINGS, SETTINGS)
+		# the setting switches it off
+		state(redirect_unregistered_to_wizard=0)
 		with as_user("System Manager"):
 			self.assertFalse(svc.should_redirect_to_wizard(), "the setting switches it off")
 
-		frappe.db.set_single_value(SETTINGS, "redirect_unregistered_to_wizard", 1)
-		frappe.db.set_single_value(SETTINGS, "platform_base_url", "https://platform.example.com")
+		# signed in, but the wizard never finished: still sent back
+		state(redirect_unregistered_to_wizard=1, platform_base_url="https://platform.example.com", setup_completed=0)
 		for f in svc.REQUIRED_CREDENTIALS:
 			set_encrypted_password(SETTINGS, SETTINGS, "k-" + f, f)
 		frappe.clear_document_cache(SETTINGS, SETTINGS)
-		with as_user("System Manager"):
-			self.assertFalse(svc.should_redirect_to_wizard(), "a registered site stays on Home")
+		with as_user("WhatsApp Agent"):
+			self.assertTrue(svc.should_redirect_to_wizard(), "an unfinished setup still sends back")
+
+		# signed in and finished: the product opens
+		state(setup_completed=1)
+		with as_user("WhatsApp Agent"):
+			self.assertFalse(svc.should_redirect_to_wizard(), "a finished setup lets everyone in")
+			self.assertFalse(api.get_status()["needs_setup"])
+
+	def test_a_key_from_another_site_reads_as_signed_out_without_a_dialog(self):
+		# a database restored from another site: its secrets are encrypted with that site's key
+		from cryptography.fernet import Fernet
+
+		from whatsapp_next.services import secrets
+
+		foreign = Fernet(Fernet.generate_key()).encrypt(b"other-site-key").decode()
+		saved = {f: secrets.read(f) for f in ("customer_api_key", "api_key", "api_secret", "customer_api_secret")}
+		try:
+			for f in saved:
+				frappe.db.sql(
+					"""insert into `__Auth` (doctype, name, fieldname, password, encrypted) values (%s, %s, %s, %s, 1)
+					on duplicate key update password = values(password), encrypted = 1""",
+					(SETTINGS, SETTINGS, f, foreign),
+				)
+			frappe.local.message_log = []
+			self.assertIsNone(secrets.read("customer_api_key"))
+			self.assertEqual(registry.credentials(), {})
+			self.assertFalse(svc.has_credentials())
+			with as_user("System Manager"):
+				self.assertTrue(api.get_status()["needs_setup"] or not frappe.db.get_single_value(SETTINGS, "redirect_unregistered_to_wizard"))
+			# Frappe's "Encryption key is invalid! Please check site_config.json" never reaches the screen
+			self.assertEqual(frappe.local.message_log, [])
+		finally:
+			for f, value in saved.items():
+				if value:
+					set_encrypted_password(SETTINGS, SETTINGS, value, f)
+				else:
+					remove_encrypted_password(SETTINGS, SETTINGS, f)
 
 	def test_signup_flow_stores_credentials(self):
 		for f in SECRETS:
@@ -162,13 +212,9 @@ class TestApiOnboarding(IntegrationTestCase):
 		with as_user("System Manager"):
 			with self.assertRaises(WAValidationError):
 				api.save_credentials()
-			with self.assertRaises(WAValidationError):
-				api.save_credentials(platform_base_url="http://insecure.example")
+			# the address is the site mode's, not the caller's: an old caller's value is ignored
 			out = api.save_credentials(platform_base_url="https://api.example.test/", api_secret="apitest-s")
-			self.assertEqual(out, {"ok": True, "fields_written": ["platform_base_url", "api_secret"]})
-			self.assertEqual(
-				frappe.db.get_single_value(SETTINGS, "platform_base_url"), "https://api.example.test"
-			)
+			self.assertEqual(out, {"ok": True, "fields_written": ["api_secret"]})
 			self.assertEqual(
 				frappe.get_doc(SETTINGS).get_password("api_secret", raise_exception=False), "apitest-s"
 			)
@@ -179,7 +225,7 @@ class TestApiOnboarding(IntegrationTestCase):
 				order_by="creation desc",
 				limit=1,
 			)[0]
-			self.assertEqual(row.fields_written, "api_secret, platform_base_url")
+			self.assertEqual(row.fields_written, "api_secret")
 			self.assertNotIn("apitest-s", row.details or "")
 
 	def test_complete_setup_guards(self):
@@ -247,6 +293,39 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		self.assertIn("device_ready", out)
 		# Countries are api.v1.phone.get_countries' job; two answers would drift apart.
 		self.assertNotIn("countries", out)
+
+	def test_the_form_starts_from_what_the_system_knows(self):
+		user = "wa-prefill-test@example.com"
+		if not frappe.db.exists("User", user):
+			frappe.get_doc({"doctype": "User", "email": user, "first_name": "Prefill", "last_name": "Person", "send_welcome_email": 0}).insert(ignore_permissions=True)
+		# the person's own number is not the account's: the number comes from the company's contact
+		frappe.db.set_value("User", user, "mobile_no", "+967777000111")
+		out = svc.signup_prefill(user)
+		self.assertEqual(out["person"], "Prefill Person")
+		self.assertEqual(out["email"], user)
+		self.assertNotEqual(out.get("phone"), "+967777000111")
+		# the Administrator account names no real person
+		self.assertNotIn("person", svc.signup_prefill("Administrator"))
+		with fake_provider(), as_user("System Manager"):
+			self.assertIn("prefill", api.get_signup_bootstrap())
+
+		company = frappe.defaults.get_user_default("Company", user) or frappe.defaults.get_global_default("company")
+		if not (frappe.db.exists("DocType", "Company") and company and frappe.db.exists("Company", company)):
+			return
+		self.assertEqual(out["org"], frappe.db.get_value("Company", company, "company_name"))
+		contact = frappe.get_doc(
+			{
+				"doctype": "Contact",
+				"first_name": "Prefill Company Desk",
+				"phone_nos": [{"phone": "12", "is_primary_phone": 1}, {"phone": "+967777667663", "is_primary_mobile_no": 1}],
+				"links": [{"link_doctype": "Company", "link_name": company}],
+			}
+		).insert(ignore_permissions=True)
+		try:
+			# the primary mobile, and a number that is not a real one is skipped
+			self.assertEqual(svc.signup_prefill(user)["phone"], "+967777667663")
+		finally:
+			contact.delete(ignore_permissions=True)
 
 	def test_signup_without_an_email(self):
 		"""The email is optional: the platform gives the account a placeholder, and it signs in by
@@ -374,7 +453,6 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		self.assertEqual(s.get_password("customer_api_key", raise_exception=False), "ck")
 		self.assertEqual(s.get_password("api_secret", raise_exception=False), "s")
 		self.assertEqual(s.get_password("customer_api_secret", raise_exception=False), "cs")
-		self.assertEqual(frappe.db.get_single_value(SETTINGS, "platform_base_url"), "https://api.example.test")
 		self.assertTrue(
 			frappe.db.exists("WhatsApp Audit Log", {"action": "Credentials Changed", "user": sm})
 		)

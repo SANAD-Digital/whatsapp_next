@@ -113,7 +113,7 @@
   {
    "fieldname": "provider_tab",
    "fieldtype": "Tab Break",
-   "label": "Provider"
+   "label": "Platform"
   },
   {
    "default": "snd_platform",
@@ -122,10 +122,11 @@
    "fieldtype": "Select",
    "label": "Provider",
    "options": "snd_platform\nmeta_cloud",
-   "reqd": 1
+   "reqd": 1,
+   "hidden": 1
   },
   {
-   "description": "Must start with https:// and have no slash at the end.",
+   "description": "Leave it empty to use the development platform in developer mode and the production platform otherwise. Must start with https://.",
    "fieldname": "platform_base_url",
    "fieldtype": "Data",
    "label": "Platform Base URL"

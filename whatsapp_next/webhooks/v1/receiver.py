@@ -48,11 +48,9 @@ def _well_formed(value: str) -> bool:
 
 
 def _secret() -> str | None:
-	settings = frappe.get_cached_doc("WhatsApp Settings")
-	try:
-		return settings.get_password("webhook_secret", raise_exception=False) or None
-	except Exception:
-		return None
+	from whatsapp_next.services import secrets
+
+	return secrets.read("webhook_secret")
 
 
 def handle(headers: Mapping[str, str], raw_body: bytes, *, remote_ip: str | None = None) -> Outcome:

@@ -247,7 +247,9 @@ def health(device: str | None = None, live: bool = False) -> dict[str, Any]:
 def _credentials_check(settings) -> dict[str, Any]:
 	title = _("Platform credentials")
 	route, label = "wa-settings", _("Open settings")
-	has_keys = any(settings.get_password(f, raise_exception=False) for f in ("customer_api_key", "api_key"))
+	from whatsapp_next.services import secrets
+
+	has_keys = any(secrets.read(f) for f in ("customer_api_key", "api_key"))
 	if not has_keys:
 		return _check("credentials", title, "fail", _("No API key is saved on this site."), _("Sign in to the platform from the setup wizard, or paste the API key and secret in Settings."), route, label)
 	if settings.connection_status == "OK":

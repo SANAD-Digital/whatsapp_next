@@ -209,9 +209,21 @@
    "link_type": "Page",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "rocket",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "WhatsApp setup",
+   "link_to": "wa-onboarding",
+   "link_type": "Page",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-10-08 10:00:00.000000",
+ "modified": "2026-10-19 01:59:47.980318",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp",

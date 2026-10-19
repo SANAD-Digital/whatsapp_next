@@ -25,6 +25,8 @@ sanad.ui.SettingsWindow = class SettingsWindow {
 	 * @param {string} [opts.cls] — extra class on the window (the host's palette scope)
 	 * @param {Function} [opts.on_show] — `(key, win)` after a section is drawn
 	 * @param {Function} [opts.on_close] — `(win)`
+	 * @param {Array<{label: string, icon?: string, danger?: boolean, handler: Function}>} [opts.footer]
+	 *   — actions pinned under the sections (Claude's \"Log out\"); `handler(win)`
 	 */
 	constructor(opts = {}) {
 		this.opts = Object.assign({ groups: [] }, opts);
@@ -50,6 +52,7 @@ sanad.ui.SettingsWindow = class SettingsWindow {
 					</label>
 					<nav class="sanad-sw__nav" aria-label="${esc(o.title || __("Settings"))}"></nav>
 					<p class="sanad-sw__none" hidden>${esc(__("No setting matches"))}</p>
+					<div class="sanad-sw__foot" hidden></div>
 				</aside>
 				<div class="sanad-sw__main">
 					<div class="sanad-sw__bar">

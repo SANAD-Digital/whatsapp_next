@@ -1332,16 +1332,16 @@ frappe.provide("whatsapp_next.home");
 
 	frappe.pages["wa-home"].on_page_load = function (wrapper) {
 		wrapper.wa_page = frappe.ui.make_app_page({ parent: wrapper, title: __("Home"), single_column: true });
-		// the screen is built on the next show instead, so its reads never run behind the redirect
-		if (redirect_to_wizard()) wrapper.wa_skip_show = true;
-		else wrapper.wa_home = new HomeScreen({ page: wrapper.wa_page, wrapper });
+		// the screen is built only once the redirect has answered, so its reads never run behind it
+		wrapper.wa_waiting = true;
+		redirect_to_wizard().then((sent) => {
+			wrapper.wa_waiting = false;
+			if (!sent && !wrapper.wa_home) wrapper.wa_home = new HomeScreen({ page: wrapper.wa_page, wrapper });
+		});
 	};
 
 	frappe.pages["wa-home"].on_page_show = function (wrapper) {
-		if (wrapper.wa_skip_show) {
-			wrapper.wa_skip_show = false;
-			return;
-		}
+		if (wrapper.wa_waiting) return;
 		if (!wrapper.wa_home) {
 			wrapper.wa_home = new HomeScreen({ page: wrapper.wa_page, wrapper });
 			return;
