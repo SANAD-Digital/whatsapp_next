@@ -1156,9 +1156,8 @@ class SndPlatformProvider(BaseProvider):
 			device = DeviceState(
 				platform_device=platform_device or "",
 				device_name=body.get("device_name"),
-				phone_e164=("+" + str(body["phone_number"]))
-				if str(body.get("phone_number") or "").isdigit()
-				else body.get("phone_number"),
+				# the gateway sends the linked account as a JID (`9677…:12@s.whatsapp.net`): its digits
+				phone_e164=_jid_phone(body.get("phone_number") or body.get("jid")),
 				status=STATUS_MAP.get(
 					str(status or "").lower(),
 					str(status)
@@ -1321,6 +1320,15 @@ def _status_alias(body: dict) -> str:
 		"held": "message.held",
 		"cancelled": "message.failed",
 	}.get(status, "message.status")
+
+
+def _jid_phone(value) -> str | None:
+	"""E.164 from a number or a WhatsApp JID; None when there are no digits (a LID is not a number)."""
+	text = str(value or "")
+	if not text or text.endswith("@lid"):
+		return None
+	digits = "".join(ch for ch in text.split("@", 1)[0].split(":", 1)[0] if ch.isdigit())
+	return "+" + digits if digits else None
 
 
 def _status_from_event(event_name: str) -> str:

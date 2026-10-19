@@ -74,9 +74,10 @@ def start_pairing(device: str, mode: str = "QR", phone: str | None = None) -> di
 
 @api_endpoint(roles=AGENT_UP)
 def poll_status(device: str) -> dict[str, Any]:
-	"""Ask the provider for the live state and apply it → `{status, changed, previous}`."""
+	"""Ask the provider for the live state and apply it → `{status, changed, previous, wrong_number}`;
+	`wrong_number` ({expected, connected}) when the platform unlinked another WhatsApp number."""
 	change = devices.poll(device)
-	return {"status": change.status, "changed": change.changed, "previous": change.previous}
+	return {"status": change.status, "changed": change.changed, "previous": change.previous, "wrong_number": change.wrong_number}
 
 
 @api_endpoint(roles=MANAGER)

@@ -434,6 +434,17 @@ def login(platform_base_url: str, email: str, password: str, user: str | None = 
 		# fault: as an error it went out as HTTP 502, which Frappe's client reports without a
 		# body, so the card could only say "Something went wrong".
 		return {"ok": False, "message": _("The sign-in details or the password are not right.")}
+	if result.get("verification_required"):
+		# an account created but never confirmed (owner, 2026-10-20): the platform opened a new
+		# confirmation for it, and the screen goes to that step instead of "wrong password"
+		signup = result.get("signup") or {}
+		return {
+			"ok": False,
+			"verification_required": True,
+			"request_key": signup.get("token"),
+			"message": _("This account was created but its number was never confirmed. Confirm it now to finish creating it."),
+			**verification_route(signup),
+		}
 	returned = result.get("credentials") or {}
 	values = {f: returned.get(f) for f in CREDENTIAL_FIELDS if returned.get(f)}
 	if not values:

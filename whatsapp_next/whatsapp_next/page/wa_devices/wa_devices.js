@@ -436,11 +436,11 @@ frappe.provide("whatsapp_next.devices");
 			this._poll = window.setInterval(() => {
 				if (document.hidden) return;
 				ui.call("devices.poll_status", { device: this.ctx.device }, { silent: true })
-					.then((r) => this.apply_status(r && r.status))
+					.then((r) => this.apply_status(r && r.status, r && r.wrong_number))
 					.catch((err) => this.poll_failed(err));
 			}, POLL_MS);
 			this._realtime = (data) => {
-				if (data && data.device === this.ctx.device) this.apply_status(data.status);
+				if (data && data.device === this.ctx.device) this.apply_status(data.status, data.wrong_number);
 			};
 			frappe.realtime.on("wa:device:status", this._realtime);
 		}
@@ -470,7 +470,8 @@ frappe.provide("whatsapp_next.devices");
 			this._realtime = null;
 		}
 
-		apply_status(status) {
+		apply_status(status, wrong_number) {
+			if (wrong_number && !this.ctx.paired) return this.show_wrong_number(wrong_number);
 			if (status !== "Connected" || this.ctx.paired) return;
 			this.ctx.paired = true;
 			this.stop_watch();
@@ -479,6 +480,27 @@ frappe.provide("whatsapp_next.devices");
 			this.dialog.hide();
 			this.announce_paired();
 			Promise.resolve(this.opts.on_done && this.opts.on_done(this.ctx));
+		}
+
+		/**
+		 * The platform unlinked the WhatsApp account that scanned: it is not the number this device is
+		 * registered for (owner, 2026-10-20). Say which number scanned and which one must, and offer a
+		 * new code — the old one is spent.
+		 */
+		show_wrong_number(info) {
+			this.stop_watch();
+			const fmt = (n) => ui.PhoneField.format_display(n) || n;
+			this.$pair.html(`
+				<div class="wa-pairing__wrong sanad-tone--red" role="alert">
+					<span class="wa-pairing__wrong-icon" aria-hidden="true">${ui.icon("es-line-alert-circle", "md")}</span>
+					<div>
+						<strong>${ui.escape(__("Another number was linked, so it was unlinked"))}</strong>
+						<p>${ui.escape(__("This device is registered for {0}, but WhatsApp {1} scanned the code. Scan the new code with WhatsApp on {0}.", [fmt(info.expected), fmt(info.connected)]))}</p>
+					</div>
+				</div>
+				<div class="wa-btnbar"><button type="button" class="btn btn-primary btn-sm" data-act="retry">${ui.escape(__("Show a new code"))}</button></div>`);
+			this.$pair.find('[data-act="retry"]').on("click", () => this.start_pairing());
+			ui.announce(__("Another number was linked, so it was unlinked"), { assertive: true });
 		}
 
 		announce_paired() {

@@ -279,6 +279,17 @@
 		gap: var(--sanad-gap-md);
 		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 		align-items: stretch;
+
+		// no device yet, or none in the chosen state: one card across the whole row (the prototype's
+		// info card), not a 280 px cell on the start side
+		> .sanad-empty {
+			grid-column: 1 / -1;
+			min-block-size: 260px;
+			padding: 40px 24px;
+			border: 1px dashed var(--wa-border-2);
+			border-radius: 14px;
+			background: var(--wa-surface);
+		}
 	}
 }
 
@@ -999,4 +1010,20 @@
 	.wa-devices__grid { grid-template-columns: minmax(0, 1fr); }
 	.wa-devices__segments { inline-size: 100%; }
 	.wa-pairing__qr { inline-size: 160px; block-size: 160px; }
+}
+
+// the pairing window: another WhatsApp number scanned the code and was unlinked
+.wa-pairing__wrong {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+	padding: 14px 16px;
+	margin-block-end: 12px;
+	border: 1px solid var(--wa-dg-sb);
+	border-radius: 12px;
+	background: var(--wa-dg-s);
+	color: var(--wa-ink);
+	strong { display: block; margin-block-end: 4px; color: var(--wa-dg); }
+	p { margin: 0; font-size: 13px; line-height: 1.7; }
+	.wa-pairing__wrong-icon { flex: none; color: var(--wa-dg); }
 }

@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass
 from typing import Any
 
@@ -64,6 +65,33 @@ class StateChange:
 	previous: str
 	status: str
 	changed: bool
+	# set when the platform unlinked a WhatsApp account that is not the device's number:
+	# {"expected": "+967…", "connected": "+967…"}
+	wrong_number: dict | None = None
+
+
+# ---- the linked number must be the device's own (owner, 2026-10-20) ----------------------------
+#
+# The platform compares the account that linked with the number registered on the device; another
+# number is unlinked at once and the device left Logged Out with the reason
+# "wrong_number: linked with <digits>, registered for <digits>; unlinked" (webhook and polling alike).
+
+WRONG_NUMBER = "wrong_number"
+_WRONG_RE = re.compile(r"wrong_number: linked with (\d+), registered for (\d+)")
+
+
+def wrong_number_info(reason: str | None) -> dict | None:
+	"""`{expected, connected}` (E.164) when `reason` says another number linked, else None."""
+	match = _WRONG_RE.search(str(reason or ""))
+	if not match:
+		return None
+	return {"connected": "+" + match.group(1), "expected": "+" + match.group(2)}
+
+
+def wrong_number_text(info: dict) -> str:
+	return _("This device is registered for {0}, but WhatsApp {1} scanned the code, so it was unlinked. Scan it with WhatsApp on {0}.").format(
+		info["expected"], info["connected"]
+	)
 
 
 # ---- helpers ------------------------------------------------------------------------------
@@ -116,10 +144,14 @@ def apply_state(
 	at = get_datetime(at) if at else now_datetime()
 	previous = row.status or "Pending QR"
 	values: dict[str, Any] = {"last_status_event_at": at}
+	wrong = wrong_number_info(reason) if status == "Logged Out" else None
+	if wrong:
+		reason = wrong_number_text(wrong)
+		values["last_error"] = reason[:500]
 	if state:
 		if state.wa_device_id:
 			values["wa_device_id"] = state.wa_device_id
-		if state.phone_e164 and not frappe.db.get_value("WhatsApp Device", device, "phone_e164"):
+		if state.phone_e164 and not wrong and not frappe.db.get_value("WhatsApp Device", device, "phone_e164"):
 			values["phone"] = state.phone_e164
 			values["phone_e164"] = normalize(state.phone_e164)
 		if state.last_seen:
@@ -145,6 +177,20 @@ def apply_state(
 		from whatsapp_next.services import history_import
 
 		history_import.on_connected(device)
+	if wrong:
+		audit.log(
+			"Device Disconnected",
+			reference=("WhatsApp Device", device),
+			reason=reason,
+			details={"wrong_number": wrong, "source": source},
+			user=_job_user(),
+		)
+	if changed or wrong:
+		payload = {"device": device, "status": status, "previous": previous, "at": str(at), "source": source, "wrong_number": wrong}
+		frappe.publish_realtime("wa:device:status", payload, after_commit=True)
+		frappe.publish_realtime(
+			"wa:device:status", payload, doctype="WhatsApp Device", docname=device, after_commit=True
+		)
 	if changed:
 		action = _AUDIT_BY_STATUS.get(status)
 		if action:
@@ -155,12 +201,7 @@ def apply_state(
 				details={"previous": previous, "status": status, "source": source},
 				user=_job_user(),
 			)
-		payload = {"device": device, "status": status, "previous": previous, "at": str(at), "source": source}
-		frappe.publish_realtime("wa:device:status", payload, after_commit=True)
-		frappe.publish_realtime(
-			"wa:device:status", payload, doctype="WhatsApp Device", docname=device, after_commit=True
-		)
-	return StateChange(device=device, previous=previous, status=status, changed=changed)
+	return StateChange(device=device, previous=previous, status=status, changed=changed, wrong_number=wrong)
 
 
 def apply_connection_event(event: WebhookEvent) -> StateChange | None:
@@ -177,9 +218,11 @@ def apply_connection_event(event: WebhookEvent) -> StateChange | None:
 			message=f"event={event.event_name} id={event.event_id}",
 		)
 		return None
-	return apply_state(
-		device, status, source="webhook", reason=event.reason, at=event.timestamp, state=event.device
-	)
+	reason = event.reason
+	raw = event.raw or {}
+	if reason == WRONG_NUMBER and raw.get("connected_number") and raw.get("expected_number"):
+		reason = f"{WRONG_NUMBER}: linked with {raw['connected_number']}, registered for {raw['expected_number']}; unlinked"
+	return apply_state(device, status, source="webhook", reason=reason, at=event.timestamp, state=event.device)
 
 
 # ---- lifecycle ----------------------------------------------------------------------------

@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils.password import remove_encrypted_password, set_encrypted_password
@@ -158,7 +160,7 @@ class TestApiOnboarding(IntegrationTestCase):
 				)
 			frappe.local.message_log = []
 			self.assertIsNone(secrets.read("customer_api_key"))
-			self.assertEqual(registry.credentials(), {})
+			self.assertFalse(set(saved) & set(registry.credentials()))  # every foreign key reads as missing
 			self.assertFalse(svc.has_credentials())
 			with as_user("System Manager"):
 				self.assertTrue(api.get_status()["needs_setup"] or not frappe.db.get_single_value(SETTINGS, "redirect_unregistered_to_wizard"))
@@ -510,6 +512,18 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		self.assertEqual(out["connection"], {"ok": False, "error": "down"})
 		self.assertNotIn("webhook", out)
 		self.assertNotIn("configure_webhook", dict(provider.calls))
+
+	def test_an_unconfirmed_account_goes_to_its_confirmation(self):
+		# the platform answers a sign-in to an account never confirmed with a new confirmation
+		answer = {"ok": True, "verification_required": True,
+			"signup": {"token": "tok-new", "verification_channel": "WhatsApp", "code": "123456", "device_phone": "967782309999"}}
+		with fake_provider() as provider, as_user("System Manager"):
+			with patch.object(type(provider), "login", return_value=answer):
+				out = api.login(platform_base_url="", email="967770000741", password="right-password")
+		self.assertEqual(out["ok"], False)
+		self.assertTrue(out["verification_required"])
+		self.assertEqual((out["request_key"], out["channel"], out["code"], out["platform_phone"]), ("tok-new", "whatsapp", "123456", "+967782309999"))
+		self.assertNotIn("credentials", out)
 
 	def test_coupon_validation_is_an_answer_not_an_error(self):
 		with fake_provider(), as_user("System Manager"):

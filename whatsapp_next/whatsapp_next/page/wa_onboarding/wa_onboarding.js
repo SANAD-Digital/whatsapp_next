@@ -1666,6 +1666,7 @@ frappe.provide("whatsapp_next.onboarding");
 						{ silent: true }
 					)
 					.then((r) => {
+						if (r && r.verification_required) return this.confirm_unfinished(r, email, password);
 						if (r && r.ok === false) return this.show_error(r.message || __("The mobile number, email or password is not correct."));
 						if (r && r.customer_name) this.f.org = r.customer_name;
 						ui.Toast.success(__("Signed in."));
@@ -1677,6 +1678,30 @@ frappe.provide("whatsapp_next.onboarding");
 					})
 					.catch((err) => this.show_error(err.message))
 			);
+		}
+
+		/**
+		 * The account was created but its number never confirmed (owner, 2026-10-20): the platform
+		 * opened a new confirmation for it, so this goes to the sign-up's confirmation step. The
+		 * password just typed is the one the account is finished with once the number is confirmed;
+		 * then the site is linked as after any sign-up.
+		 */
+		confirm_unfinished(r, identifier, password) {
+			if (!r.request_key) return this.show_error(r.message);
+			this.ctx.request_key = r.request_key;
+			this.ctx.route = this.route_of(r);
+			this.f.password = password;
+			this.f.password2 = password;
+			const digits = cstr(identifier).replace(/\D/g, "");
+			if (!cstr(identifier).includes("@") && digits.length >= 8) {
+				this.f.phone = `+${digits}`;
+				this.f.phone_ok = true;
+			}
+			this._finishing = false;
+			ui.Toast.info ? ui.Toast.info(r.message) : ui.Toast.success(r.message);
+			ui.announce(r.message, { assertive: true });
+			this.set_state({ stage: "verify", verify: "idle", left: this.ctx.code_ttl, err: "" });
+			this.watch_signup();
 		}
 
 		/**

@@ -186,6 +186,30 @@ class TestDevices(IntegrationTestCase):
 			frappe.db.count("Error Log", {"method": ("like", "%unexpected transition%")}), before + 1
 		)
 
+	def test_a_link_by_another_number_reads_as_unlinked(self):
+		# the platform unlinked a WhatsApp account that is not the device's number (owner, 2026-10-20)
+		with fake_provider():
+			name = devices.create(NAME, phone="+967777667663")
+			pd = frappe.db.get_value("WhatsApp Device", name, "platform_device")
+		self.assertEqual(
+			devices.wrong_number_info("wrong_number: linked with 967770788938, registered for 967777667663; unlinked"),
+			{"connected": "+967770788938", "expected": "+967777667663"},
+		)
+		self.assertIsNone(devices.wrong_number_info("connection.logged_out webhook"))
+		change = devices.apply_connection_event(
+			WebhookEvent(
+				event_id="e-wrong", event_name="connection.logged_out", platform_device=pd, reason="wrong_number",
+				raw={"reason": "wrong_number", "expected_number": "967777667663", "connected_number": "967770788938"},
+				device=DeviceState(platform_device=pd, phone_e164="+967770788938"),
+			)
+		)
+		self.assertEqual(change.wrong_number, {"connected": "+967770788938", "expected": "+967777667663"})
+		st = self._status(name)
+		self.assertEqual(st.status, "Logged Out")
+		self.assertIn("+967770788938", st.last_error)
+		# the number of the device stays its own, never the one that scanned
+		self.assertEqual(frappe.db.get_value("WhatsApp Device", name, "phone_e164"), "+967777667663")
+
 	def test_default_device_when_settings_lost_it(self):
 		"""Live E2E 2026-09-30: the only device was flagged `is_default` but Settings → Default
 		Device was empty, so every sender reading Settings found no device (the composer
