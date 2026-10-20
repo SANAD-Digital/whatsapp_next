@@ -56,9 +56,11 @@ def start_signup(
 
 @api_endpoint(roles=SYSTEM_MANAGER, methods=("GET", "POST"))
 def get_signup_status(request_key: str) -> dict[str, Any]:
-	"""Poll a sign-up request → `{status}`."""
+	"""Poll a sign-up request → `{status, expires_in}`: `expires_in` is the seconds left on the code (or,
+	once Verified, on finishing with a password), counted on the platform."""
 	state = onboarding.get_signup_status(request_key)
-	return {"status": state.status, "message": state.message}
+	extra = state.extra or {}
+	return {"status": state.status, "message": state.message, "expires_in": extra.get("expires_in")}
 
 
 @api_endpoint(roles=SYSTEM_MANAGER)

@@ -33,7 +33,9 @@ frappe.provide("whatsapp_next.onboarding");
 	const ico = (name, size) => ui.ico(name, size);
 	const SETUP_ROLES = ["System Manager"];
 	const POLL_MS = 4000;
-	const SIGNUP_POLL_MS = 5000;
+	// the platform tells this site the moment the number is confirmed (webhooks/v1/signup.py ->
+	// `wa:signup:status`); asking it is only the fallback, for a site it cannot reach
+	const SIGNUP_POLL_MS = 20000;
 	// how long a half-finished sign-up is kept in this browser for a reload to return to
 	const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 	// The prototype signs every new tenant up on the free plan and says so on the ready panel. On
@@ -1162,7 +1164,7 @@ frappe.provide("whatsapp_next.onboarding");
 					}, { silent: true })
 					.then((r) => {
 						this.ctx.request_key = r.request_key;
-						this.ctx.code_ttl = cint(r.code_ttl) || DEFAULT_TTL_S;
+						this.ctx.code_ttl = cint(r.code_ttl) || cint(this.ctx.code_ttl) || DEFAULT_TTL_S;
 						this.ctx.route = this.route_of(r);
 						this._finishing = false;
 						this.set_state({ stage: "verify", verify: "idle", left: this.ctx.code_ttl });
@@ -1302,6 +1304,8 @@ frappe.provide("whatsapp_next.onboarding");
 		draw_verify_state($card) {
 			const $slot = $card.find('[data-slot="state"]');
 			if (this.s.verify === "ok") return $slot.html(strip_html("ok", __("The code was accepted and the number is confirmed.")));
+			if (this.s.verify === "confirmed")
+				return $slot.html(strip_html("ok", this.f.password ? __("Your number is confirmed. Finishing your account…") : __("Your number is confirmed. Enter your password and press Finish.")));
 			if (this.s.verify === "fail") return $slot.html(strip_html("danger", __("That code was not accepted. Check it and try again, or ask for a new one."), { role: "alert" }));
 			const m = Math.floor(this.s.left / 60);
 			const sec = String(this.s.left % 60).padStart(2, "0");
@@ -1476,7 +1480,7 @@ frappe.provide("whatsapp_next.onboarding");
 						this.f.phone = phone;
 						this.f.phone_ok = true;
 						this.ctx.request_key = r.request_key;
-						this.ctx.code_ttl = cint(r.code_ttl) || DEFAULT_TTL_S;
+						this.ctx.code_ttl = cint(r.code_ttl) || cint(this.ctx.code_ttl) || DEFAULT_TTL_S;
 						this.ctx.route = this.route_of(r);
 						this._finishing = false;
 						this.set_state({ stage: "verify", verify: "idle", left: this.ctx.code_ttl });
@@ -1504,7 +1508,7 @@ frappe.provide("whatsapp_next.onboarding");
 					}, { silent: true })
 					.then((r) => {
 						this.ctx.request_key = r.request_key || this.ctx.request_key;
-						this.ctx.code_ttl = cint(r.code_ttl) || DEFAULT_TTL_S;
+						this.ctx.code_ttl = cint(r.code_ttl) || cint(this.ctx.code_ttl) || DEFAULT_TTL_S;
 						this.ctx.route = this.route_of(r);
 						this.s.left = this.ctx.code_ttl;
 						this.s.verify = "idle";
@@ -1521,21 +1525,38 @@ frappe.provide("whatsapp_next.onboarding");
 
 		watch_signup() {
 			this.stop_signup_watch();
+			const seen = (status, expires_in) => {
+				// the platform's own clock: the countdown follows what is really left
+				if (expires_in != null && status === "Pending Verification") this.ctx.code_expires = Date.now() + cint(expires_in) * 1000;
+				if (status === "Verified" && this.s.stage === "verify" && !this._finishing) {
+					// the number is confirmed: nothing more to wait for. With the password at hand the
+					// account is finished once, here; after a reload the strip says so and «Finish» waits
+					this.stop_signup_watch();
+					this.s.verify = "confirmed";
+					this.draw_verify_state(this.$stage);
+					if ((this.f.password || "").length >= 8) this.finish_verified();
+				} else if (status === "Completed") {
+					this.stop_signup_watch();
+					ui.announce(__("The sign-up was confirmed on the platform."));
+				}
+			};
+			// the platform's call, passed on the moment it arrives
+			this._signup_realtime = (data) => {
+				if (data && data.request_key === this.ctx.request_key) seen(data.status);
+			};
+			frappe.realtime.on("wa:signup:status", this._signup_realtime);
+			// the fallback: ask now and then, never while the tab is hidden
 			this._signup_poll = window.setInterval(() => {
 				if (document.hidden || !this.ctx.request_key) return;
 				ui.call("onboarding.get_signup_status", { request_key: this.ctx.request_key }, { silent: true })
-					.then((r) => {
-						if (r && r.status === "Verified" && this.s.stage === "verify" && !this._finishing) {
-							// WhatsApp route: the user's own message confirmed the number — finish here,
-							// there is no code to type
-							this.finish_verified();
-						} else if (r && r.status === "Completed") {
-							this.stop_signup_watch();
-							ui.announce(__("The sign-up was confirmed on the platform."));
-						}
-					})
+					.then((r) => seen(r && r.status, r && r.expires_in))
 					.catch(() => {});
 			}, SIGNUP_POLL_MS);
+			// once right away: after a reload the number may be confirmed already
+			if (this.ctx.request_key)
+				ui.call("onboarding.get_signup_status", { request_key: this.ctx.request_key }, { silent: true })
+					.then((r) => seen(r && r.status, r && r.expires_in))
+					.catch(() => {});
 		}
 
 		/** The platform saw the confirming message: set the password and link the site. */
@@ -1556,15 +1577,26 @@ frappe.provide("whatsapp_next.onboarding");
 					return this.after_signup(r);
 				})
 				.catch((err) => {
+					// The number is confirmed already: asking the platform again cannot change the
+					// answer, so nothing is retried on its own (it was every 5 s, without end). The
+					// reason is shown, and «Finish» tries once more when the person presses it.
 					this._finishing = false;
-					this.show_error(err.message);
-					this.watch_signup();
+					this.show_error((err && err.message) || __("The platform did not finish the sign-up. Try again."));
+					let $finish = this.$stage.find('[data-act="finish"]');
+					if (!$finish.length) {
+						// the password was at hand, so the card drew no «Finish»: give the one try back
+						$finish = $(ui.btn({ label: __("Finish"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "finish" } }));
+						this.$stage.find('[data-slot="state"]').after($('<div class="wa-btnbar"></div>').append($finish));
+					}
+					$finish.prop("disabled", false);
 				});
 		}
 
 		stop_signup_watch() {
 			if (this._signup_poll) window.clearInterval(this._signup_poll);
 			this._signup_poll = null;
+			if (this._signup_realtime) frappe.realtime.off("wa:signup:status", this._signup_realtime);
+			this._signup_realtime = null;
 		}
 
 		// =============================================================================================

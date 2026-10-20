@@ -6,13 +6,14 @@
 
 from __future__ import annotations
 
+import secrets
 import time
 from dataclasses import dataclass
 from typing import Any
 
 import frappe
 from frappe import _
-from frappe.utils import cint, now_datetime
+from frappe.utils import cint, get_url, now_datetime
 
 from whatsapp_next.exceptions import WAInvalidPhoneError, WAStateConflictError, WAValidationError
 from whatsapp_next.providers import exceptions as pex
@@ -34,6 +35,12 @@ class Step:
 	key: str
 	done: bool
 	detail: str | None = None
+
+
+# where the platform tells this site that a sign-up's number is confirmed, and how long it may
+SIGNUP_CALLBACK = "whatsapp_next.webhooks.v1.signup.confirmed"
+SIGNUP_CALLBACK_KEY = "wa:signup_callback"
+SIGNUP_CALLBACK_TTL_S = 2 * 60 * 60
 
 
 def _settings():
@@ -300,9 +307,20 @@ def start_signup(
 	e164 = normalize(mobile)
 	if not e164:
 		frappe.throw(_("Invalid phone number: {0}").format(mobile), WAInvalidPhoneError)
-	return registry.get_provider().start_signup(
-		signup_plan_code(plan_code), e164, full_name, email, channel, coupon_code=coupon_code
+	# the platform tells this site the moment the number is confirmed (webhooks/v1/signup.py):
+	# a one-time token, kept here with the user whose page waits for it
+	token = secrets.token_urlsafe(24)
+	callback = {"url": get_url(f"/api/method/{SIGNUP_CALLBACK}"), "token": token}
+	state = registry.get_provider().start_signup(
+		signup_plan_code(plan_code), e164, full_name, email, channel, coupon_code=coupon_code, callback=callback
 	)
+	if state.request_key:
+		frappe.cache.set_value(
+			f"{SIGNUP_CALLBACK_KEY}:{token}",
+			{"request_key": state.request_key, "user": frappe.session.user},
+			expires_in_sec=SIGNUP_CALLBACK_TTL_S,
+		)
+	return state
 
 
 def verification_route(extra: dict[str, Any]) -> dict[str, Any]:

@@ -80,8 +80,10 @@ class BaseProvider(ABC):
 		email: str,
 		channel: str,
 		coupon_code: str | None = None,
+		callback: dict | None = None,
 	) -> SignupState:
-		"""Begin a tenant sign-up; returns a request key. A coupon is validated here."""
+		"""Begin a tenant sign-up; returns a request key. A coupon is validated here. `callback`
+		(`{url, token}`) is where the provider tells this site the moment the number is confirmed."""
 
 	@abstractmethod
 	def get_signup_status(self, request_key: str) -> SignupState:

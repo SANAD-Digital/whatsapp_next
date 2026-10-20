@@ -513,6 +513,7 @@ class SndPlatformProvider(BaseProvider):
 		email: str,
 		channel: str,
 		coupon_code: str | None = None,
+		callback: dict | None = None,
 	) -> SignupState:
 		body: dict[str, Any] = {
 			"full_name": full_name,
@@ -523,7 +524,17 @@ class SndPlatformProvider(BaseProvider):
 		# Older platforms reject an unknown argument, so it is sent only when used.
 		if coupon_code:
 			body["coupon_code"] = coupon_code
-		data = self._request("POST", "start_signup", guest=True, body=body)
+		if callback and callback.get("url") and callback.get("token"):
+			body.update({"callback_url": callback["url"], "callback_token": callback["token"]})
+		try:
+			data = self._request("POST", "start_signup", guest=True, body=body)
+		except pex.ProviderError as exc:
+			# a platform from before the callback refuses the unknown arguments: ask again without
+			# them (the page then only asks for the status)
+			if "callback_url" not in body or "unexpected keyword" not in str(exc).lower():
+				raise
+			body.pop("callback_url"), body.pop("callback_token")
+			data = self._request("POST", "start_signup", guest=True, body=body)
 		return SignupState(
 			request_key=data.get("token") or data.get("request_key"),
 			status=str(data.get("status") or "Pending"),

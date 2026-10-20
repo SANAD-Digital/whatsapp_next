@@ -104,7 +104,7 @@ class FakeProvider(BaseProvider):
 			"code_ttl_minutes": 10,
 		}
 
-	def start_signup(self, plan_code, mobile_e164, full_name, email, channel, coupon_code=None) -> SignupState:
+	def start_signup(self, plan_code, mobile_e164, full_name, email, channel, coupon_code=None, callback=None) -> SignupState:
 		self._record("start_signup", plan_code=plan_code, coupon_code=coupon_code)
 		return SignupState(request_key="req-1", status="Pending")
 
