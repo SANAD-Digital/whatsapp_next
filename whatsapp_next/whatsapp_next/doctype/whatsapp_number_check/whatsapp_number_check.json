@@ -2,11 +2,10 @@
  "actions": [],
  "allow_rename": 0,
  "autoname": "field:phone_e164",
- "naming_rule": "By fieldname",
  "creation": "2026-10-07 15:00:00.000000",
+ "description": "Whether a number is on WhatsApp, as last asked. Written by the number check only.",
  "doctype": "DocType",
  "engine": "InnoDB",
- "description": "Whether a number is on WhatsApp, as last asked. Written by the number check only.",
  "field_order": [
   "phone_e164",
   "on_whatsapp",
@@ -20,21 +19,21 @@
   {
    "fieldname": "phone_e164",
    "fieldtype": "Data",
-   "label": "Number",
-   "reqd": 1,
-   "unique": 1,
    "in_list_view": 1,
-   "read_only": 1
+   "label": "Number",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
   },
   {
    "fieldname": "on_whatsapp",
    "fieldtype": "Select",
-   "label": "Registered on WhatsApp",
-   "options": "Yes\nNo",
-   "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "read_only": 1
+   "label": "Registered on WhatsApp",
+   "options": "Yes\nNo",
+   "read_only": 1,
+   "reqd": 1
   },
   {
    "fieldname": "jid",
@@ -55,10 +54,10 @@
   {
    "fieldname": "checked_at",
    "fieldtype": "Datetime",
-   "label": "Checked",
-   "reqd": 1,
    "in_list_view": 1,
+   "label": "Checked",
    "read_only": 1,
+   "reqd": 1,
    "search_index": 1
   },
   {
@@ -76,35 +75,36 @@
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Number Check",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
+   "export": 1,
    "read": 1,
    "report": 1,
-   "select": 1,
-   "export": 1,
-   "role": "System Manager"
+   "role": "System Manager",
+   "select": 1
   },
   {
+   "export": 1,
    "read": 1,
    "report": 1,
-   "select": 1,
-   "export": 1,
-   "role": "WhatsApp Manager"
+   "role": "WhatsApp Manager",
+   "select": 1
   },
   {
+   "export": 1,
    "read": 1,
    "report": 1,
-   "select": 1,
-   "export": 1,
-   "role": "WhatsApp Agent"
+   "role": "WhatsApp Agent",
+   "select": 1
   },
   {
+   "export": 1,
    "read": 1,
    "report": 1,
-   "select": 1,
-   "export": 1,
-   "role": "WhatsApp Viewer"
+   "role": "WhatsApp Viewer",
+   "select": 1
   }
  ],
  "read_only": 1,

@@ -98,6 +98,7 @@
    "in_standard_filter": 1,
    "label": "Device",
    "options": "WhatsApp Device",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -107,6 +108,7 @@
    "in_standard_filter": 1,
    "label": "Recipient Type",
    "options": "Individual\nGroup",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -114,13 +116,15 @@
    "description": "The number as it was given.",
    "fieldname": "phone",
    "fieldtype": "Data",
-   "label": "Phone"
+   "label": "Phone",
+   "read_only": 1
   },
   {
    "description": "The number in international format. Required when sending to a person.",
    "fieldname": "phone_e164",
    "fieldtype": "Data",
    "label": "Phone (E.164)",
+   "read_only": 1,
    "search_index": 1
   },
   {
@@ -128,7 +132,8 @@
    "description": "The WhatsApp group address. Required when sending to a group.",
    "fieldname": "jid",
    "fieldtype": "Data",
-   "label": "JID"
+   "label": "JID",
+   "read_only": 1
   },
   {
    "fieldname": "recipient_column",
@@ -139,7 +144,8 @@
    "fieldname": "display_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Display Name"
+   "label": "Display Name",
+   "read_only": 1
   },
   {
    "description": "Linked automatically when the number belongs to a contact.",
@@ -147,7 +153,8 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Contact",
-   "options": "Contact"
+   "options": "Contact",
+   "read_only": 1
   },
   {
    "default": "Text",
@@ -156,6 +163,7 @@
    "in_standard_filter": 1,
    "label": "Message Type",
    "options": "Text\nDocument\nImage\nVideo\nAudio\nSticker\nLocation\nPoll\nButtons\nList",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -167,36 +175,42 @@
    "description": "The final text the recipient receives. Deleted after the retention period in Settings.",
    "fieldname": "body",
    "fieldtype": "Text",
-   "label": "Body"
+   "label": "Body",
+   "read_only": 1
   },
   {
    "depends_on": "eval:[\"Document\",\"Image\",\"Video\"].includes(doc.message_type)",
    "fieldname": "caption",
    "fieldtype": "Small Text",
-   "label": "Caption"
+   "label": "Caption",
+   "read_only": 1
   },
   {
    "depends_on": "eval:[\"Document\",\"Image\",\"Video\",\"Audio\",\"Sticker\"].includes(doc.message_type)",
    "fieldname": "attachment",
    "fieldtype": "Attach",
-   "label": "Attachment"
+   "label": "Attachment",
+   "read_only": 1
   },
   {
    "description": "The file name the recipient sees.",
    "fieldname": "file_name",
    "fieldtype": "Data",
-   "label": "File Name"
+   "label": "File Name",
+   "read_only": 1
   },
   {
    "fieldname": "mime_type",
    "fieldtype": "Data",
-   "label": "MIME Type"
+   "label": "MIME Type",
+   "read_only": 1
   },
   {
    "default": "0",
    "fieldname": "view_once",
    "fieldtype": "Check",
-   "label": "View Once"
+   "label": "View Once",
+   "read_only": 1
   },
   {
    "fieldname": "content_column",
@@ -207,21 +221,24 @@
    "fieldname": "print_format",
    "fieldtype": "Link",
    "label": "Print Format",
-   "options": "Print Format"
+   "options": "Print Format",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.message_type==\"Document\"",
    "fieldname": "letter_head",
    "fieldtype": "Link",
    "label": "Letter Head",
-   "options": "Letter Head"
+   "options": "Letter Head",
+   "read_only": 1
   },
   {
    "description": "The language used to print the attached document.",
    "fieldname": "language",
    "fieldtype": "Link",
    "label": "Language",
-   "options": "Language"
+   "options": "Language",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.message_type==\"Location\"",
@@ -233,13 +250,15 @@
    "depends_on": "eval:doc.message_type==\"Location\"",
    "fieldname": "location_latitude",
    "fieldtype": "Float",
-   "label": "Latitude"
+   "label": "Latitude",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.message_type==\"Location\"",
    "fieldname": "location_longitude",
    "fieldtype": "Float",
-   "label": "Longitude"
+   "label": "Longitude",
+   "read_only": 1
   },
   {
    "fieldname": "location_column",
@@ -249,13 +268,15 @@
    "depends_on": "eval:doc.message_type==\"Location\"",
    "fieldname": "location_name",
    "fieldtype": "Data",
-   "label": "Location Name"
+   "label": "Location Name",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.message_type==\"Location\"",
    "fieldname": "location_address",
    "fieldtype": "Small Text",
-   "label": "Location Address"
+   "label": "Location Address",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.message_type==\"Poll\"",
@@ -267,13 +288,15 @@
    "depends_on": "eval:doc.message_type==\"Poll\"",
    "fieldname": "poll_question",
    "fieldtype": "Data",
-   "label": "Poll Question"
+   "label": "Poll Question",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.message_type==\"Poll\"",
    "fieldname": "poll_options",
    "fieldtype": "JSON",
-   "label": "Poll Options"
+   "label": "Poll Options",
+   "read_only": 1
   },
   {
    "fieldname": "poll_column",
@@ -284,7 +307,8 @@
    "depends_on": "eval:doc.message_type==\"Poll\"",
    "fieldname": "poll_allow_multiple",
    "fieldtype": "Check",
-   "label": "Allow Multiple Answers"
+   "label": "Allow Multiple Answers",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.message_type==\"Poll\"",
@@ -295,10 +319,11 @@
   },
   {
    "depends_on": "eval:['Buttons','List'].includes(doc.message_type)",
+   "description": "The buttons or the list sent with the text: {text, title, footer, buttons[] | button_text, sections[]}.",
    "fieldname": "interactive",
    "fieldtype": "JSON",
    "label": "Buttons / list",
-   "description": "The buttons or the list sent with the text: {text, title, footer, buttons[] | button_text, sections[]}."
+   "read_only": 1
   },
   {
    "fieldname": "delivery_tab",
@@ -323,7 +348,8 @@
    "fieldname": "scheduled_at",
    "fieldtype": "Datetime",
    "in_standard_filter": 1,
-   "label": "Scheduled At"
+   "label": "Scheduled At",
+   "read_only": 1
   },
   {
    "fieldname": "queued_at",
@@ -426,6 +452,7 @@
    "in_standard_filter": 1,
    "label": "Source",
    "options": "Quick Send\nForm\nCampaign\nNotification\nNotification Alert\nCommand Reply\nSimulator\nAPI\nHistory",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -434,7 +461,8 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Reference DocType",
-   "options": "DocType"
+   "options": "DocType",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.reference_doctype",
@@ -443,14 +471,16 @@
    "fieldtype": "Dynamic Link",
    "in_list_view": 1,
    "label": "Reference Name",
-   "options": "reference_doctype"
+   "options": "reference_doctype",
+   "read_only": 1
   },
   {
    "fieldname": "template",
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Template",
-   "options": "WhatsApp Template"
+   "options": "WhatsApp Template",
+   "read_only": 1
   },
   {
    "fieldname": "source_column",
@@ -462,34 +492,39 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Campaign",
-   "options": "WhatsApp Campaign"
+   "options": "WhatsApp Campaign",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.campaign",
    "fieldname": "campaign_recipient",
    "fieldtype": "Data",
-   "label": "Campaign Recipient Row"
+   "label": "Campaign Recipient Row",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.campaign",
    "description": "Which of the campaign's messages this is",
    "fieldname": "campaign_message_idx",
    "fieldtype": "Int",
-   "label": "Campaign Message #"
+   "label": "Campaign Message #",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.source_type==\"Notification\"",
    "fieldname": "notification",
    "fieldtype": "Link",
    "label": "Notification",
-   "options": "WhatsApp Notification"
+   "options": "WhatsApp Notification",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.source_type==\"Notification Alert\"",
    "fieldname": "notification_alert",
    "fieldtype": "Link",
    "label": "Notification Alert",
-   "options": "WhatsApp Notification Alert"
+   "options": "WhatsApp Notification Alert",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.source_type==\"Command Reply\"",
@@ -497,7 +532,8 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Command",
-   "options": "WhatsApp Command"
+   "options": "WhatsApp Command",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.source_type==\"Command Reply\"",
@@ -505,7 +541,8 @@
    "fieldname": "trigger_inbound",
    "fieldtype": "Link",
    "label": "Trigger Inbound",
-   "options": "WhatsApp Inbound Message"
+   "options": "WhatsApp Inbound Message",
+   "read_only": 1
   },
   {
    "fieldname": "flags_section",
@@ -518,7 +555,8 @@
    "fieldname": "is_test",
    "fieldtype": "Check",
    "in_standard_filter": 1,
-   "label": "Test Send"
+   "label": "Test Send",
+   "read_only": 1
   },
   {
    "fieldname": "flags_column",
@@ -531,7 +569,8 @@
    "fieldtype": "Check",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Simulated"
+   "label": "Simulated",
+   "read_only": 1
   },
   {
    "fieldname": "provider_tab",
@@ -559,11 +598,11 @@
    "search_index": 1
   },
   {
+   "description": "The WhatsApp id of the message this one replies to (shown quoted above it).",
    "fieldname": "reply_to_provider_message_id",
    "fieldtype": "Data",
    "label": "Reply to",
-   "read_only": 1,
-   "description": "The WhatsApp id of the message this one replies to (shown quoted above it)."
+   "read_only": 1
   },
   {
    "fieldname": "platform_queue_id",

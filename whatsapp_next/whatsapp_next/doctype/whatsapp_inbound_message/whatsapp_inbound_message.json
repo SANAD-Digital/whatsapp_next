@@ -71,13 +71,15 @@
    "in_standard_filter": 1,
    "label": "Device",
    "options": "WhatsApp Device",
+   "read_only": 1,
    "reqd": 1
   },
   {
    "description": "The sender's number as received.",
    "fieldname": "phone",
    "fieldtype": "Data",
-   "label": "Phone"
+   "label": "Phone",
+   "read_only": 1
   },
   {
    "description": "The sender's number in international format. Empty when WhatsApp hides the number.",
@@ -85,26 +87,29 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Phone (E.164)",
+   "read_only": 1,
    "search_index": 1
   },
   {
    "description": "The WhatsApp address the message came from.",
    "fieldname": "jid",
    "fieldtype": "Data",
-   "label": "From JID"
+   "label": "From JID",
+   "read_only": 1
   },
   {
    "description": "The chat the message was sent in, a group or a one-to-one chat.",
    "fieldname": "chat_jid",
    "fieldtype": "Data",
-   "label": "Chat JID"
+   "label": "Chat JID",
+   "read_only": 1
   },
   {
+   "description": "For a message sent in a group: the group's name on WhatsApp.",
    "fieldname": "group_name",
    "fieldtype": "Data",
    "label": "Group name",
-   "read_only": 1,
-   "description": "For a message sent in a group: the group's name on WhatsApp."
+   "read_only": 1
   },
   {
    "fieldname": "sender_column",
@@ -114,21 +119,24 @@
    "description": "In a group, the member who sent the message.",
    "fieldname": "sender_jid",
    "fieldtype": "Data",
-   "label": "Sender JID"
+   "label": "Sender JID",
+   "read_only": 1
   },
   {
    "default": "0",
    "fieldname": "is_group",
    "fieldtype": "Check",
    "in_standard_filter": 1,
-   "label": "Group Message"
+   "label": "Group Message",
+   "read_only": 1
   },
   {
    "description": "The sender's WhatsApp name, or the contact name when known.",
    "fieldname": "display_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Display Name"
+   "label": "Display Name",
+   "read_only": 1
   },
   {
    "description": "Linked automatically when the number belongs to a contact.",
@@ -136,7 +144,8 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Contact",
-   "options": "Contact"
+   "options": "Contact",
+   "read_only": 1
   },
   {
    "fieldname": "content_section",
@@ -151,6 +160,7 @@
    "in_standard_filter": 1,
    "label": "Message Type",
    "options": "Text\nDocument\nImage\nVideo\nAudio\nSticker\nLocation\nPoll\nReaction\nContact\nOther\nInteractive Reply",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -158,30 +168,35 @@
    "fieldname": "body",
    "fieldtype": "Text",
    "in_list_view": 1,
-   "label": "Body"
+   "label": "Body",
+   "read_only": 1
   },
   {
    "fieldname": "caption",
    "fieldtype": "Small Text",
-   "label": "Caption"
+   "label": "Caption",
+   "read_only": 1
   },
   {
    "description": "Link to the media file. It expires after a while.",
    "fieldname": "media_url",
    "fieldtype": "Data",
    "label": "Media URL",
-   "length": 1000
+   "length": 1000,
+   "read_only": 1
   },
   {
    "fieldname": "media_mime_type",
    "fieldtype": "Data",
-   "label": "Media MIME"
+   "label": "Media MIME",
+   "read_only": 1
   },
   {
    "description": "The downloaded file, when media download is turned on for this message type.",
    "fieldname": "attachment",
    "fieldtype": "Attach",
-   "label": "Attachment"
+   "label": "Attachment",
+   "read_only": 1
   },
   {
    "fieldname": "content_column",
@@ -191,45 +206,51 @@
    "depends_on": "eval:doc.message_type==\"Location\"",
    "fieldname": "location_latitude",
    "fieldtype": "Float",
-   "label": "Latitude"
+   "label": "Latitude",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.message_type==\"Location\"",
    "fieldname": "location_longitude",
    "fieldtype": "Float",
-   "label": "Longitude"
+   "label": "Longitude",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.message_type==\"Location\"",
    "fieldname": "location_name",
    "fieldtype": "Data",
-   "label": "Location Name"
+   "label": "Location Name",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.message_type==\"Reaction\"",
    "fieldname": "reaction",
    "fieldtype": "Data",
-   "label": "Reaction"
+   "label": "Reaction",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.message_type==\"Reaction\"",
    "description": "The message the sender reacted to.",
    "fieldname": "reaction_to_provider_message_id",
    "fieldtype": "Data",
-   "label": "Reacted To"
+   "label": "Reacted To",
+   "read_only": 1
   },
   {
+   "description": "The id of the button or list option the sender tapped (the text is its title).",
    "fieldname": "selected_option_id",
    "fieldtype": "Data",
    "label": "Selected option",
-   "read_only": 1,
-   "description": "The id of the button or list option the sender tapped (the text is its title)."
+   "read_only": 1
   },
   {
    "description": "The message this one replies to.",
    "fieldname": "quoted_provider_message_id",
    "fieldtype": "Data",
-   "label": "Quoted Message ID"
+   "label": "Quoted Message ID",
+   "read_only": 1
   },
   {
    "collapsible": 1,
@@ -239,36 +260,36 @@
    "label": "Edited or deleted"
   },
   {
+   "description": "When the sender last edited this message.",
    "fieldname": "edited_at",
    "fieldtype": "Datetime",
    "label": "Edited at",
-   "read_only": 1,
-   "description": "When the sender last edited this message."
+   "read_only": 1
   },
   {
+   "description": "The text as first received, kept when the sender edits it.",
    "fieldname": "original_body",
    "fieldtype": "Text",
    "label": "Original text",
-   "read_only": 1,
-   "description": "The text as first received, kept when the sender edits it."
+   "read_only": 1
   },
   {
    "fieldname": "changes_column",
    "fieldtype": "Column Break"
   },
   {
+   "description": "When the message was deleted for everyone.",
    "fieldname": "deleted_at",
    "fieldtype": "Datetime",
    "label": "Deleted at",
-   "read_only": 1,
-   "description": "When the message was deleted for everyone."
+   "read_only": 1
   },
   {
+   "description": "The number that deleted it (the sender, or a group admin).",
    "fieldname": "deleted_by",
    "fieldtype": "Data",
    "label": "Deleted by",
-   "read_only": 1,
-   "description": "The number that deleted it (the sender, or a group admin)."
+   "read_only": 1
   },
   {
    "fieldname": "provider_section",
@@ -279,6 +300,7 @@
    "fieldname": "provider_message_id",
    "fieldtype": "Data",
    "label": "Provider Message ID",
+   "read_only": 1,
    "reqd": 1,
    "search_index": 1
   },
@@ -287,6 +309,7 @@
    "fieldtype": "Datetime",
    "in_list_view": 1,
    "label": "Received At",
+   "read_only": 1,
    "reqd": 1,
    "search_index": 1
   },
@@ -299,7 +322,8 @@
    "fieldname": "webhook_event",
    "fieldtype": "Link",
    "label": "Webhook Event",
-   "options": "WhatsApp Webhook Event"
+   "options": "WhatsApp Webhook Event",
+   "read_only": 1
   },
   {
    "fieldname": "command_section",
@@ -325,21 +349,24 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Command",
-   "options": "WhatsApp Command"
+   "options": "WhatsApp Command",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.command",
    "description": "The command word or synonym that matched.",
    "fieldname": "command_text",
    "fieldtype": "Data",
-   "label": "Matched Text"
+   "label": "Matched Text",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.command",
    "description": "The values the sender gave with the command.",
    "fieldname": "command_args",
    "fieldtype": "JSON",
-   "label": "Command Arguments"
+   "label": "Command Arguments",
+   "read_only": 1
   },
   {
    "fieldname": "command_column",
@@ -350,7 +377,8 @@
    "description": "Why the command failed.",
    "fieldname": "command_error",
    "fieldtype": "Small Text",
-   "label": "Command Error"
+   "label": "Command Error",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.command_status==\"Blocked\"",
@@ -358,14 +386,16 @@
    "fieldtype": "Select",
    "in_standard_filter": 1,
    "label": "Block Reason",
-   "options": "\nBlacklist\nNot Allowed\nParty Type\nNot Linked\nCommands Disabled\nFunction Inactive"
+   "options": "\nBlacklist\nNot Allowed\nParty Type\nNot Linked\nCommands Disabled\nFunction Inactive",
+   "read_only": 1
   },
   {
    "description": "The first reply sent back to this message.",
    "fieldname": "reply_outbound",
    "fieldtype": "Link",
    "label": "Reply Outbound",
-   "options": "WhatsApp Log"
+   "options": "WhatsApp Log",
+   "read_only": 1
   },
   {
    "fieldname": "replied_at",
@@ -384,17 +414,19 @@
    "fieldname": "is_simulated",
    "fieldtype": "Check",
    "in_standard_filter": 1,
-   "label": "Simulated"
+   "label": "Simulated",
+   "read_only": 1
   },
   {
    "default": "0",
+   "description": "Brought in from the device's past conversations; it ran no command and sent no reply.",
    "fieldname": "is_history",
    "fieldtype": "Check",
    "label": "Imported from history",
-   "read_only": 1,
-   "description": "Brought in from the device's past conversations; it ran no command and sent no reply."
+   "read_only": 1
   }
  ],
+ "in_create": 1,
  "links": [
   {
    "group": "Replies",

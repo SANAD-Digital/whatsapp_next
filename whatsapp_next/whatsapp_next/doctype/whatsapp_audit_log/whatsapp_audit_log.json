@@ -1,9 +1,9 @@
 {
  "actions": [],
+ "autoname": "hash",
  "creation": "2026-09-22 00:00:00.000000",
  "doctype": "DocType",
  "engine": "InnoDB",
- "row_format": "Dynamic",
  "field_order": [
   "event_section",
   "action",
@@ -36,58 +36,64 @@
   },
   {
    "fieldname": "action",
-   "label": "Action",
    "fieldtype": "Select",
-   "options": "Device Created\nDevice Connected\nDevice Disconnected\nDevice Deleted\nCredentials Changed\nSettings Changed\nWebhook Changed\nConnection Tested\nQueue Paused\nQueue Resumed\nQueue Rate Changed\nQueue Items Deleted\nQueue Items Retried\nCampaign Started\nCampaign Paused\nCampaign Resumed\nCampaign Cancelled\nCampaign Recipients Changed\nContact Group Members Changed\nBulk Send\nTest Send\nElevated Contact Read\nElevated Contact Write\nNumber Linked\nNumber Converted\nNumbers Synced\nConversation Confirmed\nFunction Installed\nFunction Updated\nFunction Removed\nCommand Changed\nCommand Deleted\nCommand Defaults Restored\nRetention Purge\nAlert Test Sent\nWhatsApp Group Created\nStatus Posted\nStatus Deleted",
-   "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
+   "label": "Action",
+   "options": "Device Created\nDevice Connected\nDevice Disconnected\nDevice Deleted\nCredentials Changed\nSettings Changed\nWebhook Changed\nConnection Tested\nQueue Paused\nQueue Resumed\nQueue Rate Changed\nQueue Items Deleted\nQueue Items Retried\nCampaign Started\nCampaign Paused\nCampaign Resumed\nCampaign Cancelled\nCampaign Recipients Changed\nContact Group Members Changed\nBulk Send\nTest Send\nElevated Contact Read\nElevated Contact Write\nNumber Linked\nNumber Converted\nNumbers Synced\nConversation Confirmed\nFunction Installed\nFunction Updated\nFunction Removed\nCommand Changed\nCommand Deleted\nCommand Defaults Restored\nRetention Purge\nAlert Test Sent\nWhatsApp Group Created\nStatus Posted\nStatus Deleted",
+   "read_only": 1,
+   "reqd": 1,
    "search_index": 1
   },
   {
-   "fieldname": "severity",
-   "label": "Severity",
-   "fieldtype": "Select",
-   "options": "Info\nAction\nWarning\nDanger",
-   "reqd": 1,
    "default": "Action",
+   "fieldname": "severity",
+   "fieldtype": "Select",
    "in_list_view": 1,
-   "in_standard_filter": 1
+   "in_standard_filter": 1,
+   "label": "Severity",
+   "options": "Info\nAction\nWarning\nDanger",
+   "read_only": 1,
+   "reqd": 1
   },
   {
+   "description": "A short description of what happened.",
    "fieldname": "summary",
-   "label": "Summary",
    "fieldtype": "Data",
-   "reqd": 1,
    "in_list_view": 1,
-   "description": "A short description of what happened."
+   "label": "Summary",
+   "read_only": 1,
+   "reqd": 1
   },
   {
    "fieldname": "column_break_1",
    "fieldtype": "Column Break"
   },
   {
+   "description": "Who did it. Automatic actions show Administrator with the job name.",
    "fieldname": "user",
-   "label": "User",
    "fieldtype": "Link",
-   "options": "User",
-   "reqd": 1,
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "description": "Who did it. Automatic actions show Administrator with the job name."
+   "label": "User",
+   "options": "User",
+   "read_only": 1,
+   "reqd": 1
   },
   {
+   "description": "The automatic job that did it, when no person did.",
    "fieldname": "job_name",
-   "label": "Job Name",
    "fieldtype": "Data",
-   "description": "The automatic job that did it, when no person did."
+   "label": "Job Name",
+   "read_only": 1
   },
   {
    "fieldname": "timestamp",
-   "label": "Timestamp",
    "fieldtype": "Datetime",
-   "reqd": 1,
    "in_list_view": 1,
+   "label": "Timestamp",
+   "read_only": 1,
+   "reqd": 1,
    "search_index": 1
   },
   {
@@ -96,37 +102,41 @@
    "label": "References"
   },
   {
+   "description": "The type of record the action was taken on.",
    "fieldname": "reference_doctype",
-   "label": "Reference DocType",
    "fieldtype": "Link",
-   "options": "DocType",
    "in_standard_filter": 1,
-   "description": "The type of record the action was taken on."
+   "label": "Reference DocType",
+   "options": "DocType",
+   "read_only": 1
   },
   {
+   "depends_on": "eval:doc.reference_doctype",
    "fieldname": "reference_name",
-   "label": "Reference Name",
    "fieldtype": "Dynamic Link",
+   "label": "Reference Name",
    "options": "reference_doctype",
-   "depends_on": "eval:doc.reference_doctype"
+   "read_only": 1
   },
   {
    "fieldname": "column_break_2",
    "fieldtype": "Column Break"
   },
   {
+   "description": "Another record the action created or changed, e.g. a contact created from a number.",
    "fieldname": "target_doctype",
-   "label": "Target DocType",
    "fieldtype": "Link",
+   "label": "Target DocType",
    "options": "DocType",
-   "description": "Another record the action created or changed, e.g. a contact created from a number."
+   "read_only": 1
   },
   {
+   "depends_on": "eval:doc.target_doctype",
    "fieldname": "target_name",
-   "label": "Target Name",
    "fieldtype": "Dynamic Link",
+   "label": "Target Name",
    "options": "target_doctype",
-   "depends_on": "eval:doc.target_doctype"
+   "read_only": 1
   },
   {
    "fieldname": "details_section",
@@ -134,85 +144,90 @@
    "label": "Details"
   },
   {
+   "description": "The fields that were changed. Their values are not recorded.",
    "fieldname": "fields_written",
-   "label": "Fields Written",
    "fieldtype": "Small Text",
-   "description": "The fields that were changed. Their values are not recorded."
+   "label": "Fields Written",
+   "read_only": 1
   },
   {
+   "description": "The reason given for pausing, cancelling or deleting.",
    "fieldname": "reason",
-   "label": "Reason",
    "fieldtype": "Small Text",
-   "description": "The reason given for pausing, cancelling or deleting."
+   "label": "Reason",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_3",
    "fieldtype": "Column Break"
   },
   {
+   "description": "How many records a bulk action affected.",
    "fieldname": "count",
-   "label": "Count",
    "fieldtype": "Int",
-   "description": "How many records a bulk action affected."
+   "label": "Count",
+   "read_only": 1
   },
   {
    "fieldname": "ip_address",
+   "fieldtype": "Data",
    "label": "IP Address",
-   "fieldtype": "Data"
+   "read_only": 1
   },
   {
    "fieldname": "details_json_section",
    "fieldtype": "Section Break"
   },
   {
+   "description": "Extra details about the action. Secrets and personal data are never recorded.",
    "fieldname": "details",
-   "label": "Details",
    "fieldtype": "JSON",
-   "description": "Extra details about the action. Secrets and personal data are never recorded."
+   "label": "Details",
+   "read_only": 1
   }
  ],
+ "in_create": 1,
  "links": [],
  "modified": "2026-10-08 10:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Audit Log",
+ "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [
   {
-   "role": "System Manager",
-   "read": 1,
-   "write": 0,
    "create": 0,
    "delete": 0,
+   "email": 0,
    "export": 1,
    "print": 0,
+   "read": 1,
    "report": 1,
-   "email": 0,
+   "role": "System Manager",
+   "select": 1,
    "share": 0,
-   "select": 1
+   "write": 0
   },
   {
-   "role": "WhatsApp Manager",
-   "read": 1,
-   "write": 0,
    "create": 0,
    "delete": 0,
+   "email": 0,
    "export": 1,
    "print": 0,
+   "read": 1,
    "report": 1,
-   "email": 0,
+   "role": "WhatsApp Manager",
+   "select": 1,
    "share": 0,
-   "select": 1
+   "write": 0
   }
  ],
+ "row_format": "Dynamic",
+ "search_fields": "summary",
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
- "track_changes": 0,
- "autoname": "hash",
- "naming_rule": "Random",
  "title_field": "summary",
- "show_title_field_in_link": 1,
- "search_fields": "summary",
- "in_create": 1
+ "track_changes": 0
 }

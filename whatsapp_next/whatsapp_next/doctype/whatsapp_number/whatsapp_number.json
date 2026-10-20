@@ -76,6 +76,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Number",
+   "read_only": 1,
    "reqd": 1,
    "unique": 1
   },
@@ -83,12 +84,14 @@
    "description": "The number as it was last seen.",
    "fieldname": "phone",
    "fieldtype": "Data",
-   "label": "Phone (raw)"
+   "label": "Phone (raw)",
+   "read_only": 1
   },
   {
    "fieldname": "jid",
    "fieldtype": "Data",
-   "label": "JID"
+   "label": "JID",
+   "read_only": 1
   },
   {
    "fieldname": "number_column",
@@ -101,17 +104,18 @@
    "in_standard_filter": 1,
    "label": "Number Type",
    "options": "Individual\nGroup\nLID",
+   "read_only": 1,
    "reqd": 1,
    "search_index": 1
   },
   {
+   "description": "From the last number check; empty until the number is checked.",
    "fieldname": "on_whatsapp",
    "fieldtype": "Select",
+   "in_standard_filter": 1,
    "label": "Registered on WhatsApp",
    "options": "\nYes\nNo",
-   "read_only": 1,
-   "in_standard_filter": 1,
-   "description": "From the last number check; empty until the number is checked."
+   "read_only": 1
   },
   {
    "fieldname": "whatsapp_checked_at",
@@ -124,22 +128,23 @@
    "fieldname": "display_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "WhatsApp Name"
+   "label": "WhatsApp Name",
+   "read_only": 1
   },
   {
+   "description": "The name this number is saved under in the phone's contacts, from the last sync.",
    "fieldname": "saved_name",
    "fieldtype": "Data",
    "label": "Saved Name",
-   "read_only": 1,
-   "description": "The name this number is saved under in the phone's contacts, from the last sync."
+   "read_only": 1
   },
   {
    "fieldname": "synced_device",
    "fieldtype": "Link",
-   "options": "WhatsApp Device",
+   "in_standard_filter": 1,
    "label": "Synced From",
-   "read_only": 1,
-   "in_standard_filter": 1
+   "options": "WhatsApp Device",
+   "read_only": 1
   },
   {
    "fieldname": "synced_at",
@@ -159,7 +164,8 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Contact",
-   "options": "Contact"
+   "options": "Contact",
+   "read_only": 1
   },
   {
    "fieldname": "contact_column",
@@ -246,7 +252,8 @@
    "fieldname": "conversation_confirmed",
    "fieldtype": "Check",
    "in_standard_filter": 1,
-   "label": "Conversation Confirmed"
+   "label": "Conversation Confirmed",
+   "read_only": 1
   },
   {
    "depends_on": "eval:doc.conversation_confirmed",
@@ -271,14 +278,15 @@
    "depends_on": "eval:doc.conversation_confirmed",
    "fieldname": "conversation_note",
    "fieldtype": "Small Text",
-   "label": "Confirmation Note"
+   "label": "Confirmation Note",
+   "read_only": 1
   },
   {
    "collapsible": 1,
+   "description": "What WhatsApp shows about this number: refreshed weekly for active numbers, or on demand.",
    "fieldname": "profile_section",
    "fieldtype": "Section Break",
-   "label": "WhatsApp profile",
-   "description": "What WhatsApp shows about this number: refreshed weekly for active numbers, or on demand."
+   "label": "WhatsApp profile"
   },
   {
    "fieldname": "profile_picture",
@@ -287,19 +295,19 @@
    "read_only": 1
   },
   {
+   "description": "Hidden: the number shows its photo only to its contacts.",
    "fieldname": "picture_state",
    "fieldtype": "Select",
    "label": "Profile photo state",
    "options": "\nShown\nNo Photo\nHidden",
-   "read_only": 1,
-   "description": "Hidden: the number shows its photo only to its contacts."
+   "read_only": 1
   },
   {
    "fieldname": "picture_id",
    "fieldtype": "Data",
+   "hidden": 1,
    "label": "Photo ID",
-   "read_only": 1,
-   "hidden": 1
+   "read_only": 1
   },
   {
    "fieldname": "about",
@@ -355,6 +363,8 @@
    "read_only": 1
   }
  ],
+ "image_field": "profile_picture",
+ "in_create": 1,
  "links": [
   {
    "group": "Messages",
@@ -415,6 +425,5 @@
  "sort_order": "DESC",
  "states": [],
  "title_field": "display_name",
- "track_changes": 0,
- "image_field": "profile_picture"
+ "track_changes": 0
 }

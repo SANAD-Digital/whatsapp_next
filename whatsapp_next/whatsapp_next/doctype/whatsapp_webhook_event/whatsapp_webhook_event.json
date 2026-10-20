@@ -42,6 +42,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Event ID",
+   "read_only": 1,
    "reqd": 1,
    "search_index": 1
   },
@@ -52,6 +53,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Event",
+   "read_only": 1,
    "reqd": 1,
    "search_index": 1
   },
@@ -60,6 +62,7 @@
    "fieldtype": "Datetime",
    "in_list_view": 1,
    "label": "Received At",
+   "read_only": 1,
    "reqd": 1,
    "search_index": 1
   },
@@ -67,7 +70,8 @@
    "description": "When the platform sent the event.",
    "fieldname": "event_timestamp",
    "fieldtype": "Datetime",
-   "label": "Event Timestamp"
+   "label": "Event Timestamp",
+   "read_only": 1
   },
   {
    "fieldname": "event_column",
@@ -79,7 +83,8 @@
    "fieldname": "signature_valid",
    "fieldtype": "Check",
    "in_standard_filter": 1,
-   "label": "Signature Valid"
+   "label": "Signature Valid",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -87,14 +92,16 @@
    "fieldname": "timestamp_fresh",
    "fieldtype": "Check",
    "in_standard_filter": 1,
-   "label": "Timestamp Fresh"
+   "label": "Timestamp Fresh",
+   "read_only": 1
   },
   {
    "default": "0",
    "description": "How many more times the same event arrived. Repeats are not processed again.",
    "fieldname": "duplicate_count",
    "fieldtype": "Int",
-   "label": "Duplicate Deliveries"
+   "label": "Duplicate Deliveries",
+   "read_only": 1
   },
   {
    "fieldname": "routing_section",
@@ -107,17 +114,20 @@
    "fieldtype": "Link",
    "in_standard_filter": 1,
    "label": "Device",
-   "options": "WhatsApp Device"
+   "options": "WhatsApp Device",
+   "read_only": 1
   },
   {
    "fieldname": "platform_device",
    "fieldtype": "Data",
-   "label": "Platform Device"
+   "label": "Platform Device",
+   "read_only": 1
   },
   {
    "fieldname": "client_ref",
    "fieldtype": "Data",
    "label": "Client Ref",
+   "read_only": 1,
    "search_index": 1
   },
   {
@@ -127,21 +137,24 @@
   {
    "fieldname": "provider_message_id",
    "fieldtype": "Data",
-   "label": "Provider Message ID"
+   "label": "Provider Message ID",
+   "read_only": 1
   },
   {
    "description": "The received message created from this event.",
    "fieldname": "inbound_message",
    "fieldtype": "Link",
    "label": "Inbound Message",
-   "options": "WhatsApp Inbound Message"
+   "options": "WhatsApp Inbound Message",
+   "read_only": 1
   },
   {
    "description": "The sent message this event updates.",
    "fieldname": "outbound_message",
    "fieldtype": "Link",
    "label": "Outbound Message",
-   "options": "WhatsApp Log"
+   "options": "WhatsApp Log",
+   "read_only": 1
   },
   {
    "fieldname": "payload_section",
@@ -152,7 +165,8 @@
    "description": "The event's content as received. Deleted after the retention period in Settings.",
    "fieldname": "payload",
    "fieldtype": "JSON",
-   "label": "Payload"
+   "label": "Payload",
+   "read_only": 1
   },
   {
    "fieldname": "processing_section",
@@ -168,6 +182,7 @@
    "in_standard_filter": 1,
    "label": "Status",
    "options": "Received\nProcessed\nIgnored\nFailed",
+   "read_only": 1,
    "reqd": 1,
    "search_index": 1
   },
@@ -176,7 +191,8 @@
    "description": "Why processing failed.",
    "fieldname": "error",
    "fieldtype": "Small Text",
-   "label": "Error"
+   "label": "Error",
+   "read_only": 1
   },
   {
    "fieldname": "processing_column",
@@ -185,14 +201,17 @@
   {
    "fieldname": "processed_at",
    "fieldtype": "Datetime",
-   "label": "Processed At"
+   "label": "Processed At",
+   "read_only": 1
   },
   {
    "fieldname": "processing_ms",
    "fieldtype": "Int",
-   "label": "Processing (ms)"
+   "label": "Processing (ms)",
+   "read_only": 1
   }
  ],
+ "in_create": 1,
  "links": [],
  "modified": "2026-09-26 21:00:00.000000",
  "modified_by": "Administrator",
