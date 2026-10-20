@@ -299,8 +299,10 @@ def start_signup(
 	email: str | None,
 	channel: str,
 	coupon_code: str | None = None,
+	company: dict | None = None,
 ) -> SignupState:
-	"""Begin a tenant sign-up through the provider (`mobile` normalised to E.164 first).
+	"""Begin a tenant sign-up through the provider (`mobile` normalised to E.164 first). `company`
+	(`{name, activity}`) is what the account is for: the platform names the customer after it.
 
 	A `coupon_code` is validated by the platform at this moment, so a bad code
 	is refused while the user is still on the form."""
@@ -312,7 +314,8 @@ def start_signup(
 	token = secrets.token_urlsafe(24)
 	callback = {"url": get_url(f"/api/method/{SIGNUP_CALLBACK}"), "token": token}
 	state = registry.get_provider().start_signup(
-		signup_plan_code(plan_code), e164, full_name, email, channel, coupon_code=coupon_code, callback=callback
+		signup_plan_code(plan_code), e164, full_name, email, channel, coupon_code=coupon_code, callback=callback,
+		company={k: str(v).strip() for k, v in (company or {}).items() if v and str(v).strip()},
 	)
 	if state.request_key:
 		frappe.cache.set_value(

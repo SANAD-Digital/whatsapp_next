@@ -514,6 +514,7 @@ class SndPlatformProvider(BaseProvider):
 		channel: str,
 		coupon_code: str | None = None,
 		callback: dict | None = None,
+		company: dict | None = None,
 	) -> SignupState:
 		body: dict[str, Any] = {
 			"full_name": full_name,
@@ -524,16 +525,22 @@ class SndPlatformProvider(BaseProvider):
 		# Older platforms reject an unknown argument, so it is sent only when used.
 		if coupon_code:
 			body["coupon_code"] = coupon_code
+		optional: dict[str, Any] = {}
 		if callback and callback.get("url") and callback.get("token"):
-			body.update({"callback_url": callback["url"], "callback_token": callback["token"]})
+			optional.update({"callback_url": callback["url"], "callback_token": callback["token"]})
+		# the company the account is for, and what it does: the platform names the customer after it
+		company = company or {}
+		if company.get("name"):
+			optional["company_name"] = company["name"]
+		if company.get("activity"):
+			optional["business_activity"] = company["activity"]
 		try:
-			data = self._request("POST", "start_signup", guest=True, body=body)
+			data = self._request("POST", "start_signup", guest=True, body={**body, **optional})
 		except pex.ProviderError as exc:
-			# a platform from before the callback refuses the unknown arguments: ask again without
-			# them (the page then only asks for the status)
-			if "callback_url" not in body or "unexpected keyword" not in str(exc).lower():
+			# a platform from before these arguments refuses them: ask again without (the page then
+			# only asks for the status, and the customer is named after the person)
+			if not optional or "unexpected keyword" not in str(exc).lower():
 				raise
-			body.pop("callback_url"), body.pop("callback_token")
 			data = self._request("POST", "start_signup", guest=True, body=body)
 		return SignupState(
 			request_key=data.get("token") or data.get("request_key"),

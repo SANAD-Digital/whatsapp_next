@@ -35,6 +35,8 @@ def start_signup(
 	channel: str = "whatsapp",
 	coupon_code: str | None = None,
 	plan_code: str | None = None,
+	company_name: str | None = None,
+	business_activity: str | None = None,
 ) -> dict[str, Any]:
 	"""Begin a tenant sign-up on the platform → `{request_key, status, code_ttl, coupon}`.
 
@@ -42,7 +44,10 @@ def start_signup(
 	it signs in by mobile number or username. `coupon_code` is optional; the platform validates it here and applies it to the
 	subscription the sign-up creates. `plan_code` is the plan the free trial renews to; left
 	out (or not one the platform offers) it is the platform's first plan."""
-	state = onboarding.start_signup(plan_code, mobile, full_name, email, channel, coupon_code=coupon_code)
+	state = onboarding.start_signup(
+		plan_code, mobile, full_name, email, channel, coupon_code=coupon_code,
+		company={"name": company_name, "activity": business_activity},
+	)
 	extra = state.extra or {}
 	return {
 		"request_key": state.request_key,

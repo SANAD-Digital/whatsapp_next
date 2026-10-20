@@ -81,6 +81,7 @@ class MetaCloudProvider(BaseProvider):
 		channel: str,
 		coupon_code: str | None = None,
 		callback: dict | None = None,
+		company: dict | None = None,
 	) -> SignupState:
 		raise pex.NotSupportedError("Sign-up is handled in Meta Business Manager")
 

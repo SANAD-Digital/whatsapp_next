@@ -1161,6 +1161,8 @@ frappe.provide("whatsapp_next.onboarding");
 						email: this.f.email,
 						channel: this.s.channel,
 						coupon_code: (this.f.coupon || "").trim() || undefined,
+						company_name: (this.f.org || "").trim() || undefined,
+						business_activity: (this.f.sector === SECTOR_OTHER() ? this.f.sector_other : this.f.sector) || undefined,
 					}, { silent: true })
 					.then((r) => {
 						this.ctx.request_key = r.request_key;
@@ -1475,6 +1477,8 @@ frappe.provide("whatsapp_next.onboarding");
 						email: this.f.email,
 						channel: this.s.channel,
 						coupon_code: (this.f.coupon || "").trim() || undefined,
+						company_name: (this.f.org || "").trim() || undefined,
+						business_activity: (this.f.sector === SECTOR_OTHER() ? this.f.sector_other : this.f.sector) || undefined,
 					}, { silent: true })
 					.then((r) => {
 						this.f.phone = phone;
@@ -1505,6 +1509,8 @@ frappe.provide("whatsapp_next.onboarding");
 						email: this.f.email,
 						channel: this.s.channel,
 						coupon_code: (this.f.coupon || "").trim() || undefined,
+						company_name: (this.f.org || "").trim() || undefined,
+						business_activity: (this.f.sector === SECTOR_OTHER() ? this.f.sector_other : this.f.sector) || undefined,
 					}, { silent: true })
 					.then((r) => {
 						this.ctx.request_key = r.request_key || this.ctx.request_key;
