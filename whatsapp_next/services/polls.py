@@ -377,3 +377,72 @@ def summary_for_log(name: str) -> dict[str, Any]:
 		"truncated": recipients >= SUMMARY_MAX_ROWS,
 	}
 
+
+def live_results(names: list[str] | str) -> dict[str, Any]:
+	"""Live results of sent polls (WhatsApp Log names, ≤ 20) → `{results: {name: {options[{option,
+	votes}], total_voters} | {error}}}`, read from the provider each call: the gateway keeps each
+	voter's latest vote, so this is always the current tally. Rows the caller cannot read, or that
+	are not polls, are left out."""
+	from whatsapp_next.providers import registry
+
+
+	if isinstance(names, str):
+		names = frappe.parse_json(names) if names.strip().startswith("[") else [names]
+	names = list(dict.fromkeys(n for n in (names or []) if n))[:20]
+	by_device: dict[str, list[tuple[str, str, list[str]]]] = {}
+	for name in names:
+		if not frappe.has_permission("WhatsApp Log", "read", name):
+			continue
+		row = frappe.db.get_value(
+			"WhatsApp Log", name, ["message_type", "device", "poll_id", "provider_message_id", "poll_options"], as_dict=True
+		)
+		# WhatsApp's own message id is the poll's id at the gateway; `poll_id` can hold a stand-in
+		# the platform made up when a send answer carried none
+		poll_id = row and (row.provider_message_id or row.poll_id)
+		if not row or row.message_type != "Poll" or not poll_id or not row.device:
+			continue
+		platform_device = frappe.db.get_value("WhatsApp Device", row.device, "platform_device")
+		if platform_device:
+			by_device.setdefault(platform_device, []).append((name, poll_id, parse_options(row.poll_options)))
+	out: dict[str, Any] = {}
+	provider = registry.get_provider()
+	for platform_device, items in by_device.items():
+		try:
+			raw = provider.get_poll_results(platform_device, [poll_id for _, poll_id, _ in items]) or {}
+		except Exception as exc:
+			for name, _, _ in items:
+				out[name] = {"error": str(exc)[:200]}
+			continue
+		for name, poll_id, options in items:
+			out[name] = _poll_tally(raw.get(poll_id), options)
+	return {"results": out}
+
+
+def _poll_tally(raw: Any, options: list[str]) -> dict[str, Any]:
+	"""The gateway's result object reduced to `{question, multiple_answers, total_voters,
+	options[{option, votes, voters[{name, number, voted_at}]}]}` in the poll's own option order;
+	an error or an unknown shape becomes `{error}`. `voters` is empty when the platform hides who
+	voted (its `webhook_poll_voters` setting)."""
+	if not isinstance(raw, dict) or raw.get("error"):
+		return {"error": (raw or {}).get("error") if isinstance(raw, dict) else _("No result")}
+	by_option: dict[str, dict[str, Any]] = {}
+	for option in raw.get("options") or []:
+		if not isinstance(option, dict) or option.get("option") is None:
+			continue
+		try:
+			votes = int(option.get("votes") or 0)
+		except (TypeError, ValueError):
+			votes = 0
+		voters = [
+			{"name": v.get("name") or "", "number": v.get("number") or "", "voted_at": v.get("voted_at")}
+			for v in (option.get("voters") or [])
+			if isinstance(v, dict)
+		]
+		by_option[str(option["option"])] = {"votes": votes, "voters": voters}
+	order = options or list(by_option)
+	return {
+		"question": raw.get("question"),
+		"multiple_answers": bool(raw.get("multiple_answers")),
+		"options": [{"option": o, **by_option.get(o, {"votes": 0, "voters": []})} for o in order],
+		"total_voters": int(raw.get("total_voters") or 0),
+	}

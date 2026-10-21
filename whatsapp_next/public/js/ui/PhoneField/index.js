@@ -126,9 +126,9 @@ const to_digits = (raw) =>
 		.replace(/\D/g, "");
 
 // The search glyph is the shared one (`ui.ico`, the family ported from the prototype). The other
-// two are drawn here because that family has no caret, and its `check` is a circled tick where
-// this field wants the prototype's bare one — the same bare tick the sign-up rail uses.
-// TODO(kit): once `_kit/icons.js` gains a `caret` and a bare `tick`, these two go with them.
+// two stay drawn here at the field's own sizes (11 px caret, 15 px tick): the kit's `caret` is the
+// same path, but its bare `tick` is the hint's lighter one (`M5 10.5l3.5 3.5L15 7`), not the
+// prototype phone field's (`M4 10.5l4 4 8-9`).
 const SVG = {
 	caret: '<svg class="sanad-phone__svg" width="11" height="11" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 	tick: '<svg class="sanad-phone__svg" width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',

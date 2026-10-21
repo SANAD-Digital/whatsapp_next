@@ -1337,6 +1337,8 @@ frappe.provide("whatsapp_next.home");
 		redirect_to_wizard().then((sent) => {
 			wrapper.wa_waiting = false;
 			if (!sent && !wrapper.wa_home) wrapper.wa_home = new HomeScreen({ page: wrapper.wa_page, wrapper });
+			// the site was linked to another account and what the previous one left waits for a decision
+			if (!sent) whatsapp_next.account_switch.check();
 		});
 	};
 

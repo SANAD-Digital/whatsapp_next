@@ -65,22 +65,3 @@ def assert_status_writer(doc, fieldnames: tuple[str, ...] = ("status",)) -> None
 				WAStateConflictError,
 			)
 
-
-def assert_system_writer(doc, allow_flag: str = "wa_system_writer") -> None:
-	"""Reject any insert/update of a system-only DocType outside services (flag-gated)."""
-	if getattr(frappe.flags, allow_flag, False) or is_status_writer():
-		return
-	if frappe.flags.in_install or frappe.flags.in_migrate or frappe.flags.in_patch:
-		return
-	frappe.throw(_("{0} is written only by the system").format(_(doc.doctype)), WAStateConflictError)
-
-
-@contextmanager
-def system_writer() -> Iterator[None]:
-	"""Open a block in which system-only DocTypes may be inserted or updated."""
-	previous = getattr(frappe.flags, "wa_system_writer", False)
-	frappe.flags.wa_system_writer = True
-	try:
-		yield
-	finally:
-		frappe.flags.wa_system_writer = previous

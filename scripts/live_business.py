@@ -41,8 +41,8 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import live_e2e as base  # noqa: E402
-from live_e2e import ApiError, BudgetError, Engine, GuardError, Scenario  # noqa: E402
+import live_e2e as base
+from live_e2e import ApiError, BudgetError, Engine, GuardError, Scenario
 
 MARK = "E2E-BIZ"
 COMPANY = "SANAD Digital (Demo)"
@@ -407,7 +407,7 @@ class Biz(Engine):
 		if queue:
 			qi = row.get("queue_item")
 			q = self.fresh().db.get_value("WhatsApp Queue Item", qi, ["status", "attempts", "completed_at", "dead_letter_reason"], as_dict=True) if qi else None
-			sc.check(f"{label}: queue item Completed", bool(q) and q.status == "Completed", f"{qi} {q and q.status} {q and q.dead_letter_reason or ''}")
+			sc.check(f"{label}: queue item Completed", bool(q) and q.status == "Completed", f"{qi} {q and q.status} {(q and q.dead_letter_reason) or ''}")
 			if q and q.completed_at and c:
 				sc.check(f"{label}: queue completed_at not before creation", q.completed_at >= c - dt.timedelta(seconds=1), str(q.completed_at))
 		return row
@@ -1430,7 +1430,7 @@ class Biz(Engine):
 	def commands_plan(self) -> list[dict]:
 		"""What the owner sends from each phone to the device's number, with the reply the system would
 		give now (`commands.test_command` — the router's dry run; nothing is sent)."""
-		inv1, inv2 = self.kept("inv1"), self.kept("inv2")
+		inv2 = self.kept("inv2")
 		plan = []
 		texts = [
 			("B", "فحص تجربة"), ("B", "رصيد"), ("B", "كشف"), ("B", "فاتورة ACC-SINV-2026-00001"), ("B", f"فاتورة {inv2 or 'ACC-SINV-2026-00007'}"),
@@ -1621,7 +1621,7 @@ def main() -> int:
 	ap.add_argument("--out", required=True)
 	ap.add_argument("--pw-dir", default=os.environ.get("E2E_PW_DIR"))
 	ap.add_argument("--media", default=None, help="folder with the product pictures and the offer banner")
-	ap.add_argument("--only", nargs="*", default=None, help=f"scenarios: {' '.join(ALL + ['verify_inbound', 'cleanup'])}")
+	ap.add_argument("--only", nargs="*", default=None, help=f"scenarios: {' '.join([*ALL, 'verify_inbound', 'cleanup'])}")
 	ap.add_argument("--alert", default=None, choices=["receivable", "ledger", "trial"])
 	ap.add_argument("--since", default=None, help="verify_inbound: site-time start")
 	ap.add_argument("--keep-owner-off", action="store_true", help="cleanup: leave the owner's Sales Invoice notification disabled")
@@ -1631,7 +1631,7 @@ def main() -> int:
 	args.media = args.media or os.path.join(os.path.abspath(args.out), "media")
 	names = args.only or ALL
 	if "preflight" not in names and names != ["cleanup"]:
-		names = ["preflight"] + names
+		names = ["preflight", *names]
 	eng = Biz(args)
 	try:
 		eng.run(names)

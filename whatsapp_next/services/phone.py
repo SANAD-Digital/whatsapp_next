@@ -296,11 +296,6 @@ def set_phone_pair(
 	return e164
 
 
-def normalize_many(values: Iterable[str | None]) -> list[str | None]:
-	"""Normalize an iterable; positions are preserved so callers can flag invalid rows."""
-	return [normalize(v) for v in values]
-
-
 def sync_contact_phones(doc, method: str | None = None) -> None:
 	"""`Contact.validate` hook: keep `Contact Phone.wa_phone_e164` normalized (D-028)."""
 	if not doc.meta.get_field("phone_nos"):

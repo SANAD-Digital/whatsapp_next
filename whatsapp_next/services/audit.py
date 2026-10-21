@@ -20,6 +20,7 @@ _PHONE_VALUE_RE = re.compile(r"^\+?\d{7,15}(@[a-z.]+)?$")
 
 SEVERITY_BY_ACTION: dict[str, str] = {
 	"Device Deleted": "Danger",
+	"Account Data Deleted": "Danger",
 	"Credentials Changed": "Warning",
 	"Queue Items Deleted": "Warning",
 	"Campaign Cancelled": "Warning",

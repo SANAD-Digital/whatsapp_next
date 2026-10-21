@@ -17,7 +17,9 @@ from frappe.utils import cint, now_datetime
 from whatsapp_next.exceptions import WANotFoundError, WAValidationError
 from whatsapp_next.services import alerts, alerts_dates, audit
 from whatsapp_next.services.phone import normalize
-from whatsapp_next.whatsapp_next.doctype.whatsapp_notification_alert.whatsapp_notification_alert import _as_time
+from whatsapp_next.whatsapp_next.doctype.whatsapp_notification_alert.whatsapp_notification_alert import (
+	_as_time,
+)
 
 DOCTYPE = "WhatsApp Notification Alert"
 

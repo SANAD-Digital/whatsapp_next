@@ -15,6 +15,8 @@ paths:
   `frappe.only_for(...)`, typed argument validation, `allow_guest=False`.
 - The webhook receiver is the **only** guest endpoint. It must verify an HMAC/shared secret,
   enforce idempotency on the provider's message ID, and rate-limit.
+  The one other guest endpoint is the sign-up confirmation callback (`webhooks/v1/signup.py`,
+  D-143): a one-time token this site issued, rate-limited, returns nothing.
 - Roles: at least `WhatsApp Manager`, `WhatsApp Agent`, `WhatsApp Viewer`, plus the contextual
   role below. A permission matrix per DocType; per-account isolation through User Permissions so
   one tenant never sees another's data.

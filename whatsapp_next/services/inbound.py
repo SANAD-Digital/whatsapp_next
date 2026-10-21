@@ -388,16 +388,6 @@ def _publish(name: str, device: str, key: str | None) -> None:
 	)
 
 
-def link_display_name(inbound: str) -> str | None:
-	"""Contact full name when linked, else the push name (used by drawers and Numbers)."""
-	row = frappe.db.get_value("WhatsApp Inbound Message", inbound, ["contact", "display_name"], as_dict=True)
-	if not row:
-		return None
-	if row.contact:
-		return frappe.db.get_value("Contact", row.contact, "full_name") or row.display_name
-	return row.display_name
-
-
 def as_dict_for_ui(inbound: str) -> dict[str, Any]:
 	"""Safe projection for realtime consumers (no raw payload)."""
 	row = frappe.db.get_value(

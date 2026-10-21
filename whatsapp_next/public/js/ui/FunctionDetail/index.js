@@ -641,7 +641,10 @@ frappe.provide("sanad.ui");
 			pv.loading = true;
 			pv.error = null;
 			try {
-				pv.results = (await this.opts.search_contacts(q || "", this.pv_type())) || [];
+				const rows = await this.opts.search_contacts(q || "", this.pv_type());
+				// a slow answer to an earlier search must not replace the newer one (CommandEditor's guard)
+				if (pv.q !== q && q !== "") return;
+				pv.results = rows || [];
 			} catch (err) {
 				pv.results = [];
 				pv.error = err && err.message;

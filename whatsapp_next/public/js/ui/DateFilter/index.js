@@ -1241,7 +1241,7 @@ sanad.ui.DateFilter = class DateFilter {
 			$(`<button type="button" class="sanad-datefilter__stepper-value sanad-tabular" aria-label="${ui.escape(__("Pick a {0}", [aria]))}">${ui.escape(value)}${ui.icon("es-line-down", "xs")}</button>`)
 				.on("click", on_open)
 				.appendTo($s);
-			$(`<button type="button" class="sanad-datefilter__nav" aria-label="${ui.escape(__("Next {0}", [aria]))}">${ui.icon("es-line-right-chevron", "xs")}</button>`)
+			$(`<button type="button" class="sanad-datefilter__nav" aria-label="${ui.escape(__("Next {0}", [aria], "date navigation"))}">${ui.icon("es-line-right-chevron", "xs")}</button>`)
 				.on("click", () => on_step(1))
 				.appendTo($s);
 		};

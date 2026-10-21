@@ -19,8 +19,8 @@
 // control of its own.
 //
 // Every call goes through `api.v1.onboarding` with `sanad.ui.call`. What the API still has no
-// field for — the sector, and a recorded acceptance of the terms — carries a `TODO(backend)`
-// naming what it needs. Nothing here invents an endpoint or fakes a local path.
+// field for — a recorded acceptance of the terms — carries a `TODO(backend)` naming what it
+// needs. Nothing here invents an endpoint or fakes a local path.
 //
 // The Home → wizard redirect is Home's (D-140): `wa-home` sends an unregistered System Manager
 // here once per browser session, governed by `WhatsApp Settings.redirect_unregistered_to_wizard`.
@@ -1142,11 +1142,11 @@ frappe.provide("whatsapp_next.onboarding");
 		 * Ask the platform for an account. It is given what the endpoint takes: the plan, the mobile,
 		 * the name, the email and the channel the code should arrive on.
 		 *
-		 * The coupon rides along here; the password goes with the confirmation code.
+		 * The coupon, the company name and its activity ride along here; the password goes with the
+		 * confirmation code.
 		 *
-		 * TODO(backend): the sector (`f.sector` / `f.sector_other`) and the fact that the terms were
-		 * read and accepted still stop here — they want `onboarding.start_signup(..., sector)` and
-		 * `onboarding.accept_terms(version)`, or two fields on `WhatsApp Settings`.
+		 * TODO(backend): the fact that the terms were read and accepted still stops here — it wants
+		 * `onboarding.accept_terms(version)` or a field on the platform's sign-up request.
 		 */
 		start_signup($btn) {
 			this.show_error("");
@@ -1997,6 +1997,8 @@ frappe.provide("whatsapp_next.onboarding");
 		 * connecting the site to the platform is not part of signing up and is not drawn here.
 		 */
 		card_ready() {
+			// a sign-in to another account: what the previous one left is decided here, never deleted silently
+			whatsapp_next.account_switch.check({ force: true });
 			const plan = this.plan_label();
 			const org = this.f.org;
 			const $card = this.card("ready");

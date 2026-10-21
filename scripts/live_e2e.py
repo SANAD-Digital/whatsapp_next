@@ -445,7 +445,7 @@ class Engine:
 			qi = row.get("queue_item")
 			q = self.fresh().db.get_value("WhatsApp Queue Item", qi, ["status", "attempts", "completed_at", "dead_letter_reason"], as_dict=True) if qi else None
 			ok = bool(q) and q.status == "Completed"
-			sc.check(f"{label}: queue item Completed", ok, f"{qi} {q and q.status} {q and q.dead_letter_reason or ''}")
+			sc.check(f"{label}: queue item Completed", ok, f"{qi} {q and q.status} {(q and q.dead_letter_reason) or ''}")
 			if q and q.completed_at and c:
 				sc.check(f"{label}: queue completed_at not before creation", q.completed_at >= c - dt.timedelta(seconds=1), str(q.completed_at))
 		if st in ("Sent", "Delivered", "Read"):
@@ -853,7 +853,7 @@ class Engine:
 		if len(logs) == 2:
 			gap = (logs[1].scheduled_at - logs[0].scheduled_at).total_seconds()
 			sc.check("second message staggered ≥ 240 s after the first (a separate tick)", gap >= 240, gap)
-		for o, lbl in zip(outs, ("campaign-text", "campaign-poll")):
+		for o, lbl in zip(outs, ("campaign-text", "campaign-poll"), strict=False):
 			self.verify_message(sc, o, lbl)
 		rows = self.fresh().get_all("WhatsApp Log", filters={"campaign": camp}, fields=["sent_at"], order_by="sent_at asc")
 		if len(rows) == 2 and rows[0].sent_at and rows[1].sent_at:
@@ -1192,7 +1192,7 @@ class Engine:
 			"site": self.args.site,
 			"dry_run": self.args.dry_run,
 			"started": str(self.run_start),
-			"budget": dict(zip(("real", "pending"), self.used_budget())),
+			"budget": dict(zip(("real", "pending"), self.used_budget(), strict=True)),
 			"scenarios": [{**asdict(s), "checks": [asdict(c) for c in s.checks]} for s in self.results],
 		}
 		with open(base + ".json", "w") as fh:
@@ -1240,14 +1240,14 @@ def main() -> int:
 	ap.add_argument("--base", default="http://127.0.0.1:8000")
 	ap.add_argument("--out", required=True, help="results, state.json and shots/ go here")
 	ap.add_argument("--pw-dir", default=os.environ.get("E2E_PW_DIR"), help="folder with node_modules/playwright")
-	ap.add_argument("--only", nargs="*", default=None, help=f"scenarios: {' '.join(ALL + ['verify_inbound', 'cleanup'])}")
+	ap.add_argument("--only", nargs="*", default=None, help=f"scenarios: {' '.join([*ALL, 'verify_inbound', 'cleanup'])}")
 	ap.add_argument("--dry-run", action="store_true", help="reads only; stops each scenario at its first write")
 	ap.add_argument("--names", nargs="*", default=None, help="verify_existing: WhatsApp Log names")
 	ap.add_argument("--since", default=None, help="verify_inbound: site-time start (default: 3 h ago)")
 	args = ap.parse_args()
 	names = args.only or ALL
 	if "preflight" not in names and names != ["cleanup"]:
-		names = ["preflight"] + names
+		names = ["preflight", *names]
 	eng = Engine(args)
 	try:
 		eng.run(names)

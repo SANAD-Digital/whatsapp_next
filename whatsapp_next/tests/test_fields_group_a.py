@@ -1,7 +1,8 @@
 # Module role: schema regression test for the group-A DocTypes (fields.md RC-01): every fieldname
 # of the binding tables exists in the installed meta with the same fieldtype and, for Selects,
 # the same options. Expectations are Python literals transcribed from plan/fields.md §1-6, 10,
-# 11, 24 with the D-029 / D-031 refinements applied.
+# 11, 24 with the D-029 / D-031 refinements applied, plus the fields added since by the owner's
+# features (edit/delete replies, the command menu, history import, number profiles).
 
 from __future__ import annotations
 
@@ -75,6 +76,18 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"setup_completed": "Check",
 		"setup_completed_at": "Datetime",
 		"redirect_unregistered_to_wizard": "Check",
+		"reply_on_edit": "Check",
+		"edit_reply_text": "Small Text",
+		"reply_on_delete": "Check",
+		"delete_reply_text": "Small Text",
+		"changes_reply_scope": ("Select", "All chats\nGroups only\nPrivate chats only"),
+		"main_menu_mode": ("Select", "Off\nList after every reply\nButtons on the reply"),
+		"main_menu_words": "Small Text",
+		"main_menu_text": "Small Text",
+		"main_menu_button": "Data",
+		"mark_read_mode": ("Select", "Never\nWhen a command replies\nEvery received message"),
+		"typing_indicator": "Check",
+		"import_past_messages": "Check",
 	},
 	"WhatsApp Settings Picker Source": {
 		"document_type": ("Link", "DocType"),
@@ -104,6 +117,13 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"last_error": "Small Text",
 		"last_status_event_at": "Datetime",
 		"notes": "Small Text",
+		"history_status": ("Select", "Not Started\nRunning\nDone\nFailed"),
+		"history_imported": "Int",
+		"history_total": "Int",
+		"history_started_at": "Datetime",
+		"history_finished_at": "Datetime",
+		"history_cursor": "Int",
+		"history_error": "Small Text",
 	},
 	"WhatsApp Log": {
 		"device": ("Link", "WhatsApp Device"),
@@ -113,7 +133,7 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"jid": "Data",
 		"display_name": "Data",
 		"contact": ("Link", "Contact"),
-		"message_type": ("Select", "Text\nDocument\nImage\nVideo\nAudio\nSticker\nLocation\nPoll"),
+		"message_type": ("Select", "Text\nDocument\nImage\nVideo\nAudio\nSticker\nLocation\nPoll\nButtons\nList"),
 		"body": "Text",
 		"caption": "Small Text",
 		"attachment": "Attach",
@@ -146,7 +166,7 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"attempts": "Int",
 		"source_type": (
 			"Select",
-			"Quick Send\nForm\nCampaign\nNotification\nNotification Alert\nCommand Reply\nSimulator\nAPI",
+			"Quick Send\nForm\nCampaign\nNotification\nNotification Alert\nCommand Reply\nSimulator\nAPI\nHistory",
 		),
 		"reference_doctype": ("Link", "DocType"),
 		"reference_name": ("Dynamic Link", "reference_doctype"),
@@ -167,6 +187,8 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"device_fallback": "Check",
 		"is_test": "Check",
 		"is_simulated": "Check",
+		"interactive": "JSON",
+		"reply_to_provider_message_id": "Data",
 	},
 	"WhatsApp Inbound Message": {
 		"device": ("Link", "WhatsApp Device"),
@@ -180,7 +202,7 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"contact": ("Link", "Contact"),
 		"message_type": (
 			"Select",
-			"Text\nDocument\nImage\nVideo\nAudio\nSticker\nLocation\nPoll\nReaction\nContact\nOther",
+			"Text\nDocument\nImage\nVideo\nAudio\nSticker\nLocation\nPoll\nReaction\nContact\nOther\nInteractive Reply",
 		),
 		"body": "Text",
 		"caption": "Small Text",
@@ -196,7 +218,7 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"provider_message_id": "Data",
 		"received_at": "Datetime",
 		"webhook_event": ("Link", "WhatsApp Webhook Event"),
-		"command_status": ("Select", "None\nMatched\nExecuted\nFailed\nNot Matched\nBlocked"),
+		"command_status": ("Select", "None\nMatched\nExecuted\nFailed\nNot Matched\nBlocked\nAwaiting Input"),
 		"command": ("Link", "WhatsApp Command"),
 		"command_text": "Data",
 		"command_args": "JSON",
@@ -208,6 +230,13 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"reply_outbound": ("Link", "WhatsApp Log"),
 		"replied_at": "Datetime",
 		"is_simulated": "Check",
+		"group_name": "Data",
+		"selected_option_id": "Data",
+		"edited_at": "Datetime",
+		"original_body": "Text",
+		"deleted_at": "Datetime",
+		"deleted_by": "Data",
+		"is_history": "Check",
 	},
 	"WhatsApp Queue Item": {
 		"outbound_message": ("Link", "WhatsApp Log"),
@@ -277,6 +306,19 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"conversation_confirmed_by": ("Link", "User"),
 		"conversation_confirmed_at": "Datetime",
 		"conversation_note": "Small Text",
+		"on_whatsapp": ("Select", "\nYes\nNo"),
+		"whatsapp_checked_at": "Datetime",
+		"profile_picture": "Attach Image",
+		"picture_state": ("Select", "\nShown\nNo Photo\nHidden"),
+		"picture_id": "Data",
+		"about": "Small Text",
+		"is_business": "Check",
+		"verified_name": "Data",
+		"business_categories": "Data",
+		"business_email": "Data",
+		"business_address": "Small Text",
+		"business_hours": "Small Text",
+		"profile_synced_at": "Datetime",
 	},
 	"WhatsApp Webhook Event": {
 		"event_id": "Data",
@@ -376,7 +418,8 @@ class TestFieldsGroupA(IntegrationTestCase):
 			self.assertEqual(meta.title_field or None, title_field, doctype)
 			if autoname == "hash":
 				self.assertEqual(meta.show_title_field_in_link, 1, doctype)
-			self.assertEqual(meta.sort_field, "creation", doctype)
+			# lists open on the last change, not the creation (the owner's default sort)
+			self.assertEqual(meta.sort_field, "modified", doctype)
 			self.assertEqual(meta.sort_order, "DESC", doctype)
 		for doctype, flag in TRACK_CHANGES.items():
 			self.assertEqual(frappe.get_meta(doctype).track_changes or 0, flag, doctype)

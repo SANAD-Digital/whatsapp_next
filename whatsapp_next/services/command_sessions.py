@@ -80,19 +80,6 @@ def ask_specs(command) -> dict[str, list[tuple[str, str]]]:
 	return out
 
 
-def missing_inputs(command, inputs: list[dict[str, Any]], provided: dict[str, Any]) -> list[str]:
-	"""Keys still to ask, in the inputs' order: required ones and the ones in `ask_inputs`."""
-	asked = ask_specs(command)
-	keys = []
-	for spec in sorted(inputs, key=lambda i: int(i.get("position") or 99)):
-		key = spec["key"]
-		if key in provided:
-			continue
-		if spec.get("required") or key in asked:
-			keys.append(key)
-	return keys
-
-
 # ---- the session --------------------------------------------------------------------------
 
 

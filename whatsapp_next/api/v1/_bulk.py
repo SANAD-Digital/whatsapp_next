@@ -9,7 +9,6 @@ from typing import Any
 
 import frappe
 
-
 # A selection is a screen's checked rows (a page is at most 200): a request naming more is not a
 # selection, and one call must not hold a worker for minutes.
 MAX_BULK = 1000

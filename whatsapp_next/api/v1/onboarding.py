@@ -127,13 +127,6 @@ def get_password_reset_status(request_key: str) -> dict[str, Any]:
 	return {"status": state.status, "message": state.message}
 
 
-@api_endpoint(roles=SYSTEM_MANAGER)
-def complete_password_reset(request_key: str, password: str) -> dict[str, Any]:
-	"""Set the new password of a verified reset request → `{ok, status}`."""
-	state = onboarding.complete_password_reset(request_key, password)
-	return {"ok": state.status == "Completed", "status": state.status}
-
-
 @api_endpoint(roles=SYSTEM_MANAGER, methods=("GET", "POST"))
 def validate_coupon(code: str, email: str | None = None, mobile: str | None = None) -> dict[str, Any]:
 	"""Is a coupon usable and what does it give → `{ok, valid, code, message, reward_value?,
@@ -172,6 +165,28 @@ def sign_out() -> dict[str, Any]:
 	"""Unlink the site from its platform account → `{ok, webhook_removed}`. The keys and the
 	webhook secret are deleted; devices and messages stay. Audited `Credentials Changed`."""
 	return onboarding.sign_out(user=frappe.session.user)
+
+
+@api_endpoint(roles=SYSTEM_MANAGER, methods=("GET", "POST"))
+def get_account_switch() -> dict[str, Any]:
+	"""What the previous platform account left after the site was linked to another one →
+	`{pending, from, to, at, counts{doctype: n}}` (services.backup; nothing is deleted on a switch)."""
+	from whatsapp_next.services import backup
+
+	return backup.pending_switch()
+
+
+@api_endpoint(roles=SYSTEM_MANAGER, schema={"action": {"enum": ["delete", "keep"]}})
+def resolve_account_switch(action: str) -> dict[str, Any]:
+	"""A System Manager's decision on what the previous account left: `delete` queues the
+	deletion (background, audited `Account Data Deleted`) → `{queued, counts}`; `keep` keeps it
+	and stops asking → `{kept}`."""
+	from whatsapp_next.services import backup
+
+	if action == "delete":
+		return backup.delete_previous_account(user=frappe.session.user)
+	backup.keep_previous_account(user=frappe.session.user)
+	return {"kept": True}
 
 
 @api_endpoint(roles=SYSTEM_MANAGER)

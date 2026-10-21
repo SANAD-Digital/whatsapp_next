@@ -42,11 +42,6 @@ def list_providers() -> list[dict[str, str]]:
 	return rows
 
 
-def get_settings_doc():
-	"""Cached WhatsApp Settings document (secrets masked; use `credentials()` for plaintext)."""
-	return frappe.get_cached_doc("WhatsApp Settings")
-
-
 def credentials(settings=None) -> dict[str, str]:
 	"""Plaintext credentials (`services.secrets.read`) — never logged, never returned by an API.
 	A key this site cannot decrypt (a database from another site) counts as missing."""

@@ -24,6 +24,7 @@ from frappe.utils import cint, cstr, getdate, now_datetime, nowdate
 from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
 from whatsapp_next.services import command_menu, dispatch, function_runner
 from whatsapp_next.services import function_header as fh
+from whatsapp_next.services.devices import default_device
 from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.function_runner import FunctionRun, Sender
 from whatsapp_next.services.guards import status_writer
@@ -233,7 +234,7 @@ def block_message(command, reason: str, sender: Sender | None = None) -> str:
 	"""What a refused sender reads: the reason in words they can act on, not the status code."""
 	key = (sender.phone_e164 or sender.jid) if sender else None
 	if reason == "Not Allowed" and command.get("allowed_group") and not _member(command.allowed_group, key):
-		title = frappe.db.get_value("WhatsApp Contact Group", command.allowed_group, "title") if frappe.get_meta("WhatsApp Contact Group").has_field("title") else None
+		title = frappe.db.get_value("WhatsApp Contact Group", command.allowed_group, "group_name")
 		return _("This command is for the members of «{0}» only.").format(title or command.allowed_group)
 	messages = {
 		"Not Allowed": _("This command is not open to your number."),
@@ -1032,7 +1033,7 @@ def dry_run(text: str, sender_phone: str, device: str | None = None) -> RouteRes
 		frappe.throw(_("Invalid sender number: {0}").format(sender_phone), WAInvalidPhoneError)
 	if not (text or "").strip():
 		frappe.throw(_("Message text is required"), WAValidationError)
-	device = device or _default_device()
+	device = device or default_device()
 	inbound = frappe._dict(
 		name=None,
 		doctype="WhatsApp Inbound Message",
@@ -1074,9 +1075,3 @@ def recent_run_counts(commands: list[str], days: int = 30) -> dict[str, int]:
 	)
 	return {r.command: cint(r.run_count) for r in rows}
 
-
-def _default_device() -> str | None:
-	"""The default sending device (`services.devices.default_device`)."""
-	from whatsapp_next.services.devices import default_device
-
-	return default_device()

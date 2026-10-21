@@ -12,10 +12,14 @@ from whatsapp_next.providers import exceptions as pex
 from whatsapp_next.providers.schemas import (
 	AccountInfo,
 	BatchResult,
+	ContactProfile,
 	DeviceState,
+	GroupCreated,
 	HealthStatus,
+	HistoryPage,
 	MessageStatus,
 	NormalizedMessage,
+	NumberCheck,
 	PairingPayload,
 	ProviderContact,
 	ProviderGroup,
@@ -28,10 +32,6 @@ from whatsapp_next.providers.schemas import (
 	WebhookEndpointState,
 	WebhookEnvelope,
 	WebhookEvent,
-	HistoryPage,
-	GroupCreated,
-	NumberCheck,
-	ContactProfile,
 )
 
 MAX_BATCH = 200

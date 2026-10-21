@@ -129,7 +129,7 @@ def run(sent: int = 150, waiting: int = 46):
     weights = [max(0.05, 0.55 + 0.45 * math.sin(m / 7.0) + random.uniform(-0.2, 0.2)) for m in range(60)]
     total = sum(weights)
     for minute, weight in enumerate(weights):
-        for _ in range(int(round(sent * weight / total))):
+        for _ in range(round(sent * weight / total)):
             at = add_to_date(now, minutes=-(59 - minute), seconds=-random.randint(0, 59))
             _item(made, random.choice(devices), random.choice(campaigns), "Completed", at, completed_at=at)
             made += 1

@@ -14,6 +14,7 @@ Run it from the bench:
 Reference documents are only linked when they exist, because the Dynamic Link is validated.
 """
 import random
+
 import frappe
 from frappe.utils import add_to_date, now_datetime
 

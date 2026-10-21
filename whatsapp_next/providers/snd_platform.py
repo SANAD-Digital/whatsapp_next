@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import hmac
 import json
@@ -31,12 +30,18 @@ from whatsapp_next.providers.schemas import (
 	BatchAccepted,
 	BatchError,
 	BatchResult,
+	ContactProfile,
 	DeviceState,
+	GroupCreated,
+	GroupMember,
 	HealthStatus,
+	HistoryMessage,
+	HistoryPage,
 	InboundPayload,
 	Location,
 	MessageStatus,
 	NormalizedMessage,
+	NumberCheck,
 	PairingPayload,
 	ProviderContact,
 	ProviderGroup,
@@ -49,12 +54,6 @@ from whatsapp_next.providers.schemas import (
 	WebhookEndpointState,
 	WebhookEnvelope,
 	WebhookEvent,
-	HistoryMessage,
-	HistoryPage,
-	GroupCreated,
-	GroupMember,
-	NumberCheck,
-	ContactProfile,
 )
 
 API_PREFIX = "/api/method/snd_whatsapp_platform.snd_whatsapp_platform.api."
@@ -758,6 +757,8 @@ class SndPlatformProvider(BaseProvider):
 		"Command Reply": "External API",
 		"Simulator": "Simulator",
 		"API": "External API",
+		# past messages pulled from the gateway (`services.history_import`); never sent, mapped for completeness
+		"History": "Provider Webhook",
 	}
 
 	def _message_payload(self, message: NormalizedMessage) -> dict[str, Any]:
@@ -958,7 +959,9 @@ class SndPlatformProvider(BaseProvider):
 	def get_contact_profiles(
 		self, platform_device: str, numbers: list[str], known_pictures: dict[str, str] | None = None
 	) -> list[ContactProfile]:
-		digits = lambda n: "".join(ch for ch in str(n or "") if ch.isdigit())
+		def digits(n):
+			return "".join(ch for ch in str(n or "") if ch.isdigit())
+
 		data = self._request("POST", "get_contact_profiles_api", body={
 			"device": platform_device,
 			"numbers": [digits(n) for n in numbers],
@@ -1527,7 +1530,3 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 		or timestamp,
 	)
 
-
-def b64(content: bytes) -> str:
-	"""Base64 helper for attachment bytes (kept here so services never import base64 for the wire)."""
-	return base64.b64encode(content).decode("ascii")

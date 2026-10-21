@@ -87,7 +87,7 @@ class TestCommandSessions(IntegrationTestCase):
 
 	def test_typed_command_with_the_value_is_not_asked(self):
 		self._setup()
-		res, sent, runs = self._route(self._inbound(f"{CODE} 2026-01-31"))
+		res, _sent, runs = self._route(self._inbound(f"{CODE} 2026-01-31"))
 		self.assertEqual((res.status, runs), ("Executed", [{"as_on": "2026-01-31"}]))
 
 	def test_cancel_and_bad_value(self):
@@ -103,11 +103,11 @@ class TestCommandSessions(IntegrationTestCase):
 	def test_menu_tap_title_words_are_not_arguments(self):
 		self._setup()
 		# a menu row titled "tsess العميل": "العميل" is a label, so the date is asked, not refused
-		res, sent, runs = self._route(self._inbound(f"{CODE} العميل", selected="svc_balance"))
+		res, _sent, runs = self._route(self._inbound(f"{CODE} العميل", selected="svc_balance"))
 		self.assertEqual((res.status, runs), ("Awaiting Input", []))
 		command_sessions.clear(self.device, self.phone)
 		# a row whose id is a command line runs it with the id's arguments
-		res, sent, runs = self._route(self._inbound(f"{CODE} أول الشهر", selected=f"{CODE} month_start"))
+		res, _sent, runs = self._route(self._inbound(f"{CODE} أول الشهر", selected=f"{CODE} month_start"))
 		self.assertEqual((res.status, runs), ("Executed", [{"as_on": str(get_first_day(getdate(nowdate())))}]))
 
 	def test_without_the_plan_questions_are_numbered_text(self):

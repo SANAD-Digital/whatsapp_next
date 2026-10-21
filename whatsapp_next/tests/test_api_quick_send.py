@@ -78,7 +78,6 @@ class TestApiQuickSend(IntegrationTestCase):
 		).insert(ignore_permissions=True)
 		todo = frappe.get_doc({"doctype": "ToDo", "description": "ApiTest todo"}).insert(ignore_permissions=True)
 		number = frappe.get_doc({"doctype": "WhatsApp Number", "phone_e164": P1, "number_type": "Individual", "display_name": "Salem ApiTest"})
-		number.flags.wa_system_writer = True
 		number.insert(ignore_permissions=True)
 		try:
 			ref = {"reference_doctype": "ToDo", "reference_name": todo.name}

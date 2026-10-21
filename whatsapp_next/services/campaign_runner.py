@@ -24,6 +24,7 @@ from whatsapp_next.services import (
 	polls,
 	templates,
 )
+from whatsapp_next.services.devices import default_device
 from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.services.phone import key_for
@@ -122,7 +123,7 @@ def _check_startable(doc) -> None:
 	active = [r for r in doc.get("recipients") or [] if r.status != "Removed"]
 	if not active:
 		frappe.throw(_("Campaign has no recipients"), WAValidationError)
-	device = doc.device or _default_device()
+	device = doc.device or default_device()
 	if not device:
 		frappe.throw(_("Choose a device for the campaign"), WAValidationError)
 
@@ -377,7 +378,7 @@ def materialize_pending(campaign: str) -> dict[str, int]:
 
 def _materialize_recipients(doc, recipients) -> dict[str, int]:
 	campaign = doc.name
-	device = doc.device or _default_device()
+	device = doc.device or default_device()
 	exclude_unknown = cint(doc.exclude_unknown_numbers)
 	base = (
 		get_datetime(doc.scheduled_at)
@@ -806,7 +807,7 @@ def poll_results(campaign: str, *, refresh: bool = False) -> dict[str, Any]:
 	out: dict[str, Any] = {"campaign": campaign, "fetched_at": now_datetime(), "results": []}
 	if not poll_messages:
 		return out
-	device = doc.device or _default_device()
+	device = doc.device or default_device()
 	platform_device = frappe.db.get_value("WhatsApp Device", device, "platform_device") if device else None
 	if not platform_device:
 		frappe.throw(_("Campaign device is not registered on the platform"), WAValidationError)
@@ -889,7 +890,7 @@ def readiness(campaign: str) -> dict[str, Any]:
 	messages = doc.get("messages") or []
 	active = [r for r in doc.get("recipients") or [] if r.status != "Removed"]
 
-	device = doc.device or _default_device()
+	device = doc.device or default_device()
 	row = (
 		frappe.db.get_value(
 			"WhatsApp Device", device, ["name", "device_name", "status", "disabled"], as_dict=True
@@ -1151,9 +1152,3 @@ def retry_failed(
 	)
 	return {"retried": retried, "refused": refused, "remaining": cint(remaining)}
 
-
-def _default_device() -> str | None:
-	"""The default sending device (`services.devices.default_device`)."""
-	from whatsapp_next.services.devices import default_device
-
-	return default_device()

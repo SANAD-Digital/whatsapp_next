@@ -17,7 +17,7 @@ sanad.ui.ConfirmDialog = class ConfirmDialog {
 	 * @param {string} [opts.confirm_label] — default "Confirm"
 	 * @param {string} [opts.cancel_label] — default "Cancel"
 	 * @param {Function} [opts.on_confirm] — `({reason}) => Promise|void`; a rejected promise keeps the dialog open
-	 * @param {Function} [opts.on_cancel]
+	 * @param {Function} [opts.on_cancel] — `({dismissed})`: true when closed with ×/Escape/backdrop
 	 * @param {Function} [opts.load_impact] — `() => Promise<impact[]>` fetched after open (skeleton meanwhile)
 	 */
 	constructor(opts = {}) {
@@ -112,7 +112,8 @@ sanad.ui.ConfirmDialog = class ConfirmDialog {
 		if (this._resolved) return;
 		this._resolved = true;
 		if (!silent) this.dialog.hide();
-		this.opts.on_cancel && this.opts.on_cancel();
+		// `dismissed`: closed with ×, Escape or the backdrop rather than the cancel verb itself
+		this.opts.on_cancel && this.opts.on_cancel({ dismissed: silent });
 		this._reject && this._reject(new Error("cancelled"));
 	}
 

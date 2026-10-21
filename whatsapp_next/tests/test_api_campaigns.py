@@ -11,7 +11,6 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import add_to_date, now_datetime
 
-from whatsapp_next.services import dispatch
 from whatsapp_next.api.v1 import campaigns as api
 from whatsapp_next.exceptions import (
 	WANotFoundError,
@@ -20,6 +19,7 @@ from whatsapp_next.exceptions import (
 	WAValidationError,
 )
 from whatsapp_next.services import campaign_runner as runner
+from whatsapp_next.services import dispatch
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.tests.conftest_frappe import (
 	as_user,

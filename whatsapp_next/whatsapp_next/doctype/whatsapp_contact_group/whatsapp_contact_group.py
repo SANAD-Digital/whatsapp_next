@@ -63,10 +63,8 @@ class WhatsAppContactGroup(Document):
 			return
 		if not frappe.db.exists("DocType", "WhatsApp Settings"):
 			return
-		try:
-			global_group = frappe.db.get_single_value("WhatsApp Settings", "global_blacklist_group")
-		except Exception:
-			return
+		# a read error must stop the save, not wave the global blacklist through
+		global_group = frappe.db.get_single_value("WhatsApp Settings", "global_blacklist_group")
 		if global_group and global_group == self.name:
 			frappe.throw(
 				_("{0} is the global blacklist and cannot be disabled").format(self.name),

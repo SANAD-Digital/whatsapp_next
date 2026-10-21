@@ -25,4 +25,15 @@ new sanad.ui.GroupCreate({ members: [{ phone_e164: "+9677…", display_name: "Al
 Options: `members?`, `source?: {doctype, names}`, `contact?`, `name?`, `on_created?(result)`.
 API keys: `wa_groups.members_from`, `wa_groups.create_group`, `devices.list_devices`.
 The result is `{jid, name, members[{phone, status, jid}], invite_link, saved_to_contact}`.
-Live use: the Contacts page, the Contact form, the WhatsApp Numbers list and the contact group form.
+
+## Live use
+
+The Contacts page, the Contact form, the WhatsApp Numbers list and the contact group form.
+
+## Design gate
+- Both steps are Frappe dialogs (`frappe.ui.Dialog`): focus trap, Escape and the primary verb come
+  from Frappe; the form fields are Frappe controls with their own labels.
+- Every member chip's remove button carries an `aria-label` naming the member ("Remove {name}").
+- The report never uses colour alone: each number's state is a StatusBadge with its label
+  (added / needs an invitation / not on WhatsApp).
+- The invite link is plain selectable text beside a real `<button>` that copies it.

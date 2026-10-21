@@ -11,6 +11,7 @@ from frappe.tests import IntegrationTestCase
 from whatsapp_next.providers.schemas import ContactProfile
 from whatsapp_next.services import contact_profiles
 
+
 def _png() -> bytes:
 	import io
 

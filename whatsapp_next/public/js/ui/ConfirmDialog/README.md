@@ -34,7 +34,8 @@ sanad.ui.ConfirmDialog.ask({
 Options: `title`, `message`, `impact[]`, `load_impact()`, `reason_field` (`true` or
 `{label, required, description}`), `ack_checkbox`, `danger`, `confirm_label`, `cancel_label`,
 `on_confirm({reason})` (return a promise; rejection keeps the dialog open and toasts the error),
-`on_cancel`, `size`. `show()` returns a promise resolved with the confirm payload / rejected on cancel.
+`on_cancel({dismissed})` (`dismissed` is true when the dialog was closed with ×, Escape or the
+backdrop rather than the cancel verb), `size`. `show()` returns a promise resolved with the confirm payload / rejected on cancel.
 
 ## Live use
 Campaigns list bulk pause/cancel, Outbound `messages.cancel` (reason), ContactPicker confirm step.

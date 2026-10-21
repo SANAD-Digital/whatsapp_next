@@ -398,16 +398,27 @@ def preview_picker_source(source: str | dict) -> dict[str, Any]:
 def export_backup() -> dict[str, Any]:
 	"""The app's backup (Settings without keys or devices, templates, notifications, alerts,
 	functions, commands, contact groups) as a dict; the client saves it as a JSON file."""
-	from whatsapp_next.services import audit, backup
+	from whatsapp_next.services import backup
 
 	data = backup.export_backup()
-	audit.log("Settings Changed", user=frappe.session.user, details={"action": "export_backup"})
+	counts = {doctype: len(rows) for doctype, rows in data["records"].items()}
+	audit.log("Backup Exported", user=frappe.session.user, details={"records": counts})
 	return data
 
 
 @api_endpoint(roles=SYSTEM_MANAGER)
+def preview_backup(data: str) -> dict[str, Any]:
+	"""What importing this backup file would do, nothing written → `{site, exported_at, settings,
+	add[], replace[], keep[], switched_off}` (services.backup)."""
+	from whatsapp_next.services import backup
+
+	return backup.preview_backup(data)
+
+
+@api_endpoint(roles=SYSTEM_MANAGER)
 def import_backup(data: str) -> dict[str, Any]:
-	"""Bring a backup file in → `{settings, created, updated, failed[]}` (services.backup)."""
+	"""Bring a backup file in → `{settings, created, updated, kept, switched_off, failed[]}`
+	(services.backup)."""
 	from whatsapp_next.services import backup
 
 	return backup.import_backup(data, user=frappe.session.user)

@@ -178,9 +178,9 @@ class TestApiSettings(IntegrationTestCase):
 		self.assertEqual([r["key"] for r in out["rows"]], [str(add_days(start, i)) for i in range(3)])
 		row = out["rows"][-1]
 		since = f"{today} 00:00:00"
-		count = lambda statuses: frappe.db.count(
-			"WhatsApp Log", {"creation": (">=", since), "status": ("in", statuses)}
-		)
+		def count(statuses):
+			return frappe.db.count("WhatsApp Log", {"creation": (">=", since), "status": ("in", statuses)})
+
 		self.assertEqual(row["sent"], count(["Sent", "Delivered", "Read"]))
 		self.assertEqual(row["delivered"], count(["Delivered", "Read"]))
 		self.assertEqual(row["failed"], count(["Failed"]))
@@ -194,6 +194,9 @@ class TestApiSettings(IntegrationTestCase):
 	# --- webhook --------------------------------------------------------------------------
 
 	def test_webhook_lifecycle(self):
+		# a fresh endpoint subscribes to the default events; the site's own choice would be kept
+		frappe.db.set_single_value("WhatsApp Settings", "webhook_events", None)
+		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 		with fake_provider(), as_user("System Manager"):
 			out = api.setup_webhook()
 			self.assertEqual(out["status"], "Active")

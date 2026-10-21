@@ -13,13 +13,14 @@ from frappe import _
 from markupsafe import Markup, escape
 
 from whatsapp_next.exceptions import WAStateConflictError
+from whatsapp_next.services.devices import default_device
 
 MAX_TEXT = 500
 
 
 def _number(device: str | None) -> str:
 	"""The digits of the device's own number (the default device when none is named)."""
-	name = device or frappe.db.get_single_value("WhatsApp Settings", "default_device")
+	name = device or default_device()
 	phone = frappe.db.get_value("WhatsApp Device", name, "phone_e164") if name else None
 	if not phone:
 		phone = frappe.db.get_value("WhatsApp Device", {"disabled": 0, "phone_e164": ("is", "set")}, "phone_e164")

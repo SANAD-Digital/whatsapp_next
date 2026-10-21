@@ -129,7 +129,6 @@ def enable_commands() -> str:
 
 def run(days: int = 30):
 	"""Install and activate both catalog functions, bind three commands, seed a month of runs."""
-	frappe.flags.wa_system_writer = True
 	functions_catalog.clear_cache()
 	enable_commands()
 	device = _device()
@@ -168,7 +167,6 @@ def run(days: int = 30):
 
 def clear():
 	"""Take out every seeded run and command; the functions stay installed."""
-	frappe.flags.wa_system_writer = True
 	for row in frappe.get_all(
 		"WhatsApp Inbound Message", filters={"provider_message_id": ("like", f"{TAG}%")}, pluck="name"
 	):

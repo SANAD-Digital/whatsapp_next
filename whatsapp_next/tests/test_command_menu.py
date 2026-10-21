@@ -118,5 +118,5 @@ class TestCommandMenu(IntegrationTestCase):
 		replies = [_text("done")]
 		self.assertEqual(command_menu.mode(), "Off")
 		self.assertEqual(command_menu.decorate(replies, "Executed"), replies)
-		res, sent = self._route("menu")
+		_res, sent = self._route("menu")
 		self.assertNotIn("List", [r["message_type"] for r in sent])

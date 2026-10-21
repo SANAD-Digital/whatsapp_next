@@ -1,6 +1,8 @@
 // The app's backup file (owner, 2026-10-10), shared by the Settings window and the sign-up
 // screen's "Sign in with another account": `download` saves `settings.export_backup` as a JSON
-// file, `import_file` reads one the person picks and hands it to `settings.import_backup`.
+// file, `import_file` reads one the person picks, shows what it would add, replace and switch off
+// (`settings.preview_backup`, nothing written), and imports it on confirmation
+// (`settings.import_backup`).
 
 frappe.provide("whatsapp_next.backup");
 
@@ -64,7 +66,33 @@ frappe.provide("whatsapp_next.backup");
 		);
 	}
 
-	/** Pick a `.json` file and import it; the outcome is written into `$result` when given. */
+	/** The confirmation that states what the file would do before it is imported. */
+	function confirm_import(text, preview) {
+		const replaced = preview.replace || [];
+		const from = [preview.site, preview.exported_at && frappe.datetime.str_to_user(preview.exported_at)].filter(Boolean).join(" · ");
+		return sanad.ui.ConfirmDialog.ask({
+			title: __("Import this backup?"),
+			message: [
+				from ? __("Backup of {0}.", [from]) : "",
+				replaced.length ? __("Records with the same name are replaced by the file's version.") : "",
+				preview.switched_off ? __("Notifications and alerts come in switched off: turn on the ones you want after checking them.") : "",
+			]
+				.filter(Boolean)
+				.join(" "),
+			impact: [
+				{ label: __("Added"), value: (preview.add || []).length },
+				{ label: __("Replaced"), value: replaced.length, tone: replaced.length ? "orange" : undefined },
+				{ label: __("Campaigns already here, kept"), value: (preview.keep || []).length },
+				{ label: __("Switched off on import"), value: preview.switched_off || 0 },
+				{ label: __("Settings fields"), value: preview.settings || 0 },
+			],
+			confirm_label: __("Import the backup"),
+			on_confirm: () => sanad.ui.call("settings.import_backup", { data: text }, { freeze: true }),
+		});
+	}
+
+	/** Pick a `.json` file, show what it would do, and import it on confirmation; the outcome is
+	 * written into `$result` when given. */
 	function import_file($btn, $result) {
 		const input = document.createElement("input");
 		input.type = "file";
@@ -76,7 +104,8 @@ frappe.provide("whatsapp_next.backup");
 				busy(
 					$btn,
 					sanad.ui
-						.call("settings.import_backup", { data: text }, { freeze: true })
+						.call("settings.preview_backup", { data: text })
+						.then((preview) => confirm_import(text, preview))
 						.then((r) => {
 							const failed = r.failed || [];
 							const line = __("{0} added, {1} replaced, {2} failed.", [r.created || 0, r.updated || 0, failed.length]);
@@ -94,7 +123,8 @@ frappe.provide("whatsapp_next.backup");
 									}`);
 							}
 						})
-						.catch((err) => sanad.ui.Toast.error(err)),
+						// a cancelled confirmation is not an error
+						.catch((err) => err && err.message !== "cancelled" && sanad.ui.Toast.error(err)),
 					{ busy_label: __("Importing…"), done_label: __("Imported") }
 				)
 			);

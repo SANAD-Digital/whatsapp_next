@@ -96,9 +96,9 @@ def run():
         doc.append("phone_nos", {"phone": number.phone_e164, "is_primary_mobile_no": 1})
         # three in four carry a ledger account; one in six carries two (the "more than one" case)
         if parties and i % 4 != 3:
-            doc.append("links", dict(zip(("link_doctype", "link_name"), parties[i % len(parties)])))
+            doc.append("links", dict(zip(("link_doctype", "link_name"), parties[i % len(parties)], strict=True)))
             if i % 6 == 0 and len(parties) > 1:
-                doc.append("links", dict(zip(("link_doctype", "link_name"), parties[(i + 3) % len(parties)])))
+                doc.append("links", dict(zip(("link_doctype", "link_name"), parties[(i + 3) % len(parties)], strict=True)))
         doc.flags.ignore_permissions = True
         doc.insert(ignore_permissions=True)
         created.append(doc.name)
@@ -113,7 +113,7 @@ def run():
             numbers[1].phone_e164, True, note="Asked us to stop sending notifications."
         )
     frappe.db.commit()
-    print(f"seeded {len(created)} demo contacts")  # noqa: T201
+    print(f"seeded {len(created)} demo contacts")
     return created
 
 
@@ -124,11 +124,11 @@ def clear():
         for key in permissions.contact_phones(name):
             try:
                 permissions.toggle_blacklist(key, False, note="Demo data removed.")
-            except Exception:  # noqa: BLE001 — the blacklist group may be gone
+            except Exception:
                 pass
             if frappe.db.exists("WhatsApp Number", key):
                 permissions.unlink_number(key)
         frappe.delete_doc("Contact", name, force=True, ignore_permissions=True)
     frappe.db.commit()
-    print(f"removed {len(names)} demo contacts")  # noqa: T201
+    print(f"removed {len(names)} demo contacts")
     return names

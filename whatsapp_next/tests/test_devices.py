@@ -283,7 +283,6 @@ class TestDevices(IntegrationTestCase):
 					"last_device": a,
 				}
 			)
-			number.flags.wa_system_writer = True
 			number.insert(ignore_permissions=True)
 			notification = frappe.get_doc(
 				{

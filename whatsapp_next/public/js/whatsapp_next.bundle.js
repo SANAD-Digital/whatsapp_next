@@ -18,6 +18,7 @@ import "./screens/campaign/index.js";
 import "./screens/picker_source_editor.js";
 import "./screens/settings.js";
 import "./screens/backup.js";
+import "./screens/account_switch.js";
 import "./screens/alerts.js";
 import "./screens/function_spec.js";
 import "./screens/templates.js";

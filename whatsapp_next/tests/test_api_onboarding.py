@@ -545,8 +545,6 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 			started = api.start_password_reset(identifier="a@b.c")
 			self.assertEqual((started["ok"], started["request_key"]), (True, "reset-1"))
 			self.assertEqual(api.get_password_reset_status(request_key="reset-1")["status"], "Pending")
-			done = api.complete_password_reset(request_key="reset-1", password="a-real-Password-1!")
-			self.assertEqual(done, {"ok": True, "status": "Completed"})
 
 	def test_the_new_endpoints_are_closed_to_everyone_else(self):
 		with fake_provider(), as_user("WhatsApp Manager"):
@@ -554,7 +552,7 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 				lambda: api.get_signup_bootstrap(),
 				lambda: api.login(platform_base_url="", email="a@b.c", password="x"),
 				lambda: api.validate_coupon(code="BSHQ-FREE2"),
-				lambda: api.complete_password_reset(request_key="r", password="x"),
+				lambda: api.finish_password_reset(request_key="r", password="x"),
 			):
 				with self.assertRaises(WAPermissionError):
 					call()

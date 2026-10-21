@@ -44,12 +44,15 @@ def _delete_files_of(doctype: str, names: list[str]) -> int:
 	files = frappe.get_all(
 		"File", filters={"attached_to_doctype": doctype, "attached_to_name": ("in", names)}, pluck="name"
 	)
+	deleted = 0
 	for f in files:
 		try:
 			frappe.delete_doc("File", f, ignore_permissions=True, force=True, delete_permanently=True)
+			deleted += 1
 		except Exception:
-			pass
-	return len(files)
+			# counted only when gone; the file stays for the next run and the reason is on record
+			frappe.log_error(title="WhatsApp retention: file not deleted", message=f"File {f} of {doctype}")
+	return deleted
 
 
 def purge_table(

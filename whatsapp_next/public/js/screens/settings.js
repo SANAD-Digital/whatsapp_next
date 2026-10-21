@@ -1042,7 +1042,7 @@ class SettingsView {
 		$el.empty();
 		const $down = this.panel($el, {
 			title: __("Download a backup"),
-			note: __("Settings, templates, document notifications, notification alerts, functions, commands and contact groups. No keys, no devices and no messages."),
+			note: __("Settings, templates, document notifications, notification alerts, functions, commands, contact groups and campaigns. No keys, no devices and no messages."),
 		});
 		$(`<button type="button" class="btn btn-primary btn-sm">${esc(__("Download a backup"))}</button>`)
 			.on("click", (e) => whatsapp_next.backup.download($(e.currentTarget)))
@@ -1050,7 +1050,7 @@ class SettingsView {
 		if (!IS_SM()) return;
 		const $up = this.panel($el, {
 			title: __("Import from a backup file"),
-			note: __("Records of the same name are replaced by the file's version; the others are added. Nothing is deleted."),
+			note: __("You see what the file adds and replaces before anything is written. Notifications and alerts come in switched off, campaigns as new drafts. Nothing is deleted."),
 		});
 		$(`<button type="button" class="btn btn-default btn-sm">${esc(__("Choose a JSON file…"))}</button>`)
 			.on("click", (e) => whatsapp_next.backup.import_file($(e.currentTarget), $result))

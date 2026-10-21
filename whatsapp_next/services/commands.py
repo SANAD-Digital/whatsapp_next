@@ -17,6 +17,7 @@ from frappe.utils import cint, now_datetime
 from whatsapp_next.exceptions import WANotFoundError, WAStateConflictError, WAValidationError
 from whatsapp_next.services import audit
 from whatsapp_next.services import function_header as fh
+from whatsapp_next.services.devices import default_device
 
 TEMPLATE_FIELDS: tuple[str, ...] = ("param", "language", "text")
 
@@ -518,7 +519,7 @@ def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
 	]
 	inbound = frappe._dict(
 		name=None,
-		device=_default_device(),
+		device=default_device(),
 		phone_e164=phone,
 		contact=contact,
 		display_name=who.display_name,
@@ -569,9 +570,3 @@ def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
 	)
 	return out
 
-
-def _default_device() -> str | None:
-	"""The default sending device (`services.devices.default_device`)."""
-	from whatsapp_next.services.devices import default_device
-
-	return default_device()

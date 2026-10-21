@@ -21,7 +21,15 @@ from typing import Any
 
 import frappe
 from frappe import _
-from frappe.utils import add_to_date, cint, date_diff, get_datetime, now_datetime, nowdate, time_diff_in_seconds
+from frappe.utils import (
+	add_to_date,
+	cint,
+	date_diff,
+	get_datetime,
+	now_datetime,
+	nowdate,
+	time_diff_in_seconds,
+)
 
 from whatsapp_next.exceptions import (
 	WABlacklistedError,
