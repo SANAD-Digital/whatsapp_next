@@ -36,6 +36,7 @@ class SimResult:
 	dry_run: bool
 
 	def as_dict(self) -> dict[str, Any]:
+		"""The simulation result as the API returns it."""
 		return dict(self.__dict__)
 
 

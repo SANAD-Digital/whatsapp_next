@@ -502,6 +502,7 @@ def sent_this_minute(device: str) -> int:
 
 
 def paused_campaigns() -> set[str]:
+	"""Names of the campaigns that are `Paused` (their rows are not claimed)."""
 	return set(frappe.get_all("WhatsApp Campaign", filters={"status": "Paused"}, pluck="name"))
 
 
@@ -1305,6 +1306,7 @@ def pause_queue(user: str | None = None, reason: str | None = None) -> None:
 
 
 def resume_queue(user: str | None = None) -> None:
+	"""Lift the global queue pause; audited `Queue Resumed`, and the queue screens are told."""
 	frappe.db.set_single_value(
 		"WhatsApp Settings",
 		{"queue_paused": 0, "queue_paused_by": None, "queue_paused_at": None, "queue_pause_reason": None},
@@ -1508,3 +1510,37 @@ def cancel_outbound(outbound: str, *, user: str | None = None, reason: str | Non
 		)
 	delete_items(items, user=user, reason=reason)
 	return frappe.db.get_value("WhatsApp Log", outbound, "status")
+
+
+def throughput(minutes: int = 60) -> dict[str, Any]:
+	"""What actually left the queue, one bucket per minute over the last `minutes` (5–180),
+	zero-filled and oldest first (`api.queue.get_throughput`). Counted per minute in the
+	database, so a busy hour costs one small result, not every completed row."""
+	from frappe.query_builder.functions import Count, DateFormat
+
+	window = max(5, min(cint(minutes) or 60, 180))
+	now = now_datetime()
+	since = add_to_date(now, minutes=-window)
+	Q = frappe.qb.DocType("WhatsApp Queue Item")
+	minute = DateFormat(Q.completed_at, "%Y-%m-%d %H:%i")
+	rows = (
+		frappe.qb.from_(Q)
+		.select(minute.as_("minute"), Count("*").as_("n"))
+		.where((Q.status == "Completed") & (Q.completed_at >= since))
+		.groupby(minute)
+	).run(as_dict=True)
+	buckets = [0] * window
+	this_minute = now.replace(second=0, microsecond=0)
+	for row in rows:
+		index = int((this_minute - get_datetime(f"{row['minute']}:00")).total_seconds() // 60)
+		if 0 <= index < window:
+			buckets[window - 1 - index] += cint(row["n"])
+	sent = sum(buckets)
+	return {
+		"minutes": window,
+		"buckets": buckets,
+		"sent": sent,
+		"peak": max(buckets) if buckets else 0,
+		# the achieved rate over the window, which is what the sparkline is compared against
+		"per_minute": round(sent / window, 2),
+	}

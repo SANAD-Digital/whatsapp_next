@@ -20,8 +20,8 @@
 		margin-inline-end: var(--sanad-gap-xs);
 	}
 	&__chips { flex: 1 1 auto; min-width: 0; }
-	&__chip[aria-pressed="true"] .sanad-chip__count { color: var(--ink-blue-3); }
-	&__more { padding-inline: var(--sanad-gap-xs); color: var(--ink-blue-3); }
+	&__chip[aria-pressed="true"] .sanad-chip__count { color: var(--ink-blue-7); }
+	&__more { padding-inline: var(--sanad-gap-xs); color: var(--ink-blue-7); }
 	&__select { display: none; max-width: 100%; min-height: var(--sanad-target); }
 	&__state:empty { display: none; }
 	&__state { flex-basis: 100%; }

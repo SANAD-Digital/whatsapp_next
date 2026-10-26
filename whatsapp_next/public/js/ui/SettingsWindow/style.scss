@@ -1,5 +1,5 @@
-// sanad.ui.SettingsWindow — claude.ai's settings window: a 16 px-radius modal of at most
-// 1280 × 880 over the dimmed page, a 256 px rail (search, group labels, 40 px items) and a pane
+// sanad.ui.SettingsWindow — claude.ai's settings window, compact (owner, 2026-10-26): a 14 px-radius
+// modal of at most 980 × 680 over the dimmed page, a 224 px rail (search, group labels, 34 px items) and a pane
 // that scrolls by itself with the close button at its corner. Under 720 px it is the whole screen
 // and shows the list or one section. Product tokens only; logical properties throughout.
 
@@ -19,10 +19,10 @@ body.sanad-sw-open { overflow: hidden; }
 	margin: auto;
 	z-index: 1035;
 	display: grid;
-	grid-template-columns: 256px minmax(0, 1fr);
-	inline-size: min(1280px, calc(100vw - 48px));
-	block-size: min(880px, calc(100dvh - 32px));
-	border-radius: 16px;
+	grid-template-columns: 224px minmax(0, 1fr);
+	inline-size: min(980px, calc(100vw - 48px));
+	block-size: min(680px, calc(100dvh - 48px));
+	border-radius: 12px;
 	border: 1px solid var(--wa-border);
 	background: var(--wa-surface);
 	color: var(--wa-ink);
@@ -42,7 +42,7 @@ body.sanad-sw-open { overflow: hidden; }
 		display: flex;
 		flex-direction: column;
 		min-block-size: 0;
-		padding: 16px 12px;
+		padding: 12px 10px;
 		border-inline-end: 1px solid var(--wa-border);
 		overflow: auto;
 		scrollbar-width: thin;
@@ -52,11 +52,11 @@ body.sanad-sw-open { overflow: hidden; }
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		min-block-size: 40px;
-		margin: 0 0 12px;
-		padding-inline: 12px;
+		min-block-size: 34px;
+		margin: 0 0 10px;
+		padding-inline: 10px;
 		border: 1px solid var(--wa-border-2);
-		border-radius: 10px;
+		border-radius: 8px;
 		background: var(--wa-surface);
 		color: var(--wa-ink-4);
 		font-weight: 400;
@@ -67,7 +67,7 @@ body.sanad-sw-open { overflow: hidden; }
 			border: 0;
 			background: transparent;
 			color: var(--wa-ink);
-			font-size: 14px;
+			font-size: 13px;
 			outline: none;
 			box-shadow: none;
 			padding: 0;
@@ -78,12 +78,12 @@ body.sanad-sw-open { overflow: hidden; }
 
 	&__search-icon { display: inline-flex; flex: none; }
 
-	&__nav { display: flex; flex-direction: column; gap: 14px; }
+	&__nav { display: flex; flex-direction: column; gap: 10px; }
 	&__group { display: flex; flex-direction: column; gap: 2px; }
 
 	&__group-label {
-		margin: 0 0 4px;
-		padding-inline: 12px;
+		margin: 0 0 2px;
+		padding-inline: 10px;
 		font-size: 12px;
 		font-weight: 500;
 		color: var(--wa-ink-4);
@@ -92,14 +92,14 @@ body.sanad-sw-open { overflow: hidden; }
 	&__item {
 		display: flex;
 		align-items: center;
-		gap: 12px;
-		min-block-size: 40px;
-		padding-inline: 12px;
+		gap: 10px;
+		min-block-size: 34px;
+		padding-inline: 10px;
 		border: 0;
-		border-radius: 8px;
+		border-radius: 6px;
 		background: transparent;
 		color: var(--wa-ink-2);
-		font-size: 14px;
+		font-size: 13px;
 		font-weight: 500;
 		text-align: start;
 		cursor: pointer;
@@ -138,8 +138,8 @@ body.sanad-sw-open { overflow: hidden; }
 		align-items: center;
 		justify-content: center;
 		gap: 6px;
-		min-block-size: 36px;
-		min-inline-size: 36px;
+		min-block-size: 32px;
+		min-inline-size: 32px;
 		border: 0;
 		border-radius: 8px;
 		background: var(--wa-surface);
@@ -166,40 +166,40 @@ body.sanad-sw-open { overflow: hidden; }
 		flex: 1;
 		min-block-size: 0;
 		overflow: auto;
-		padding: 40px 40px 48px;
+		padding: 24px 28px 28px;
 		outline: none;
 		scrollbar-width: thin;
 
-		> * { max-inline-size: 920px; }
+		> * { max-inline-size: 720px; }
 	}
 
 	// ---- content: Claude's headings and rows --------------------------------------------------------
 
-	&__head { margin-block-end: 20px; padding-inline-end: 40px; }
-	&__title { margin: 0; font-size: 22px; font-weight: 600; line-height: 1.3; color: var(--wa-ink); }
-	&__desc { margin: 6px 0 0; font-size: 14px; line-height: 1.6; color: var(--wa-ink-3); }
+	&__head { margin-block-end: 12px; padding-inline-end: 36px; }
+	&__title { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--wa-ink); }
+	&__desc { margin: 4px 0 0; font-size: 13px; line-height: 1.55; color: var(--wa-ink-3); }
 
 	&__h {
-		margin-block: 28px 4px;
+		margin-block: 18px 2px;
 
-		h3 { margin: 0; font-size: 17px; font-weight: 600; color: var(--wa-ink); }
-		p { margin: 4px 0 0; font-size: 13px; color: var(--wa-ink-3); }
+		h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--wa-ink); }
+		p { margin: 2px 0 0; font-size: 13px; color: var(--wa-ink-3); }
 	}
 
 	&__row {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 24px;
-		padding-block: 16px;
+		gap: 20px;
+		padding-block: 10px;
 		border-block-end: 1px solid var(--wa-border);
 
 		&:last-child { border-block-end: 0; }
 	}
 
-	&__row-text { display: flex; flex-direction: column; gap: 3px; min-inline-size: 0; }
-	&__row-title { font-size: 15px; font-weight: 500; color: var(--wa-ink); }
-	&__row-desc { font-size: 13px; line-height: 1.6; color: var(--wa-ink-3); }
+	&__row-text { display: flex; flex-direction: column; gap: 2px; min-inline-size: 0; }
+	&__row-title { font-size: 13px; font-weight: 500; color: var(--wa-ink); }
+	&__row-desc { font-size: 12px; line-height: 1.5; color: var(--wa-ink-3); }
 	&__row-control { flex: none; display: flex; align-items: center; gap: 8px; max-inline-size: 55%; }
 
 	// ---- a phone: the whole screen, the list or one section ------------------------------------------

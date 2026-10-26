@@ -338,6 +338,8 @@ class AccountInfo:
 	wallet_balance: float | None = None
 	wallet_currency: str | None = None
 	webhook_events: dict[str, bool] = field(default_factory=dict)
+	# the platform account these keys belong to (its integration link); None where unknown
+	account_id: str | None = None
 
 
 @dataclass(frozen=True)

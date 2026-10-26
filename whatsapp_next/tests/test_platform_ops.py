@@ -259,7 +259,8 @@ class TestPlatformOps(IntegrationTestCase):
 		# the purge covers the whole site: this test's event, plus whatever real ones are past retention
 		self.assertGreaterEqual(report.payloads_blanked, 1)
 		self.assertIsNone(frappe.db.get_value("WhatsApp Webhook Event", ev.name, "payload"))
-		self.assertEqual(report.deleted["WhatsApp Queue Item"], 1)
+		self.assertGreaterEqual(report.deleted["WhatsApp Queue Item"], 1)
+		self.assertFalse(frappe.db.exists("WhatsApp Queue Item", item.name))
 		self.assertEqual(report.deleted["WhatsApp Log"], 1)
 		self.assertIn("WhatsApp Inbound Message", report.skipped)  # 0 = never
 		self.assertFalse(frappe.db.exists("WhatsApp Log", log.name))

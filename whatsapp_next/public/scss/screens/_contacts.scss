@@ -72,7 +72,7 @@
 	&__list {
 		border: var(--sanad-border);
 		border-radius: var(--sanad-card-radius);
-		background: var(--surface-white);
+		background: var(--surface-base);
 		overflow: hidden;
 		// a row opens its detail: say so with the pointer, as the prototype's rows do
 		.sanad-datalist__row[tabindex] { cursor: pointer; }
@@ -125,7 +125,7 @@
 	}
 	&__type {
 		font-weight: 500;
-		color: var(--ink-gray-8);
+		color: var(--ink-gray-7);
 	}
 	&__accounts {
 		display: block;
@@ -133,7 +133,7 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		color: var(--ink-gray-7);
+		color: var(--ink-gray-6);
 	}
 
 	// only the phone card shows the number under the name; the table has a column for it

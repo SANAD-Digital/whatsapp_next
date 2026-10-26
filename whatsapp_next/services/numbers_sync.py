@@ -15,7 +15,7 @@ from frappe.utils import now_datetime
 
 from whatsapp_next.exceptions import WANotFoundError, WAValidationError
 from whatsapp_next.providers import registry
-from whatsapp_next.services import audit, permissions
+from whatsapp_next.services import audit, devices, permissions
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.services.phone import classify
 
@@ -31,6 +31,7 @@ def set_state(device: str, state: dict) -> None:
 
 
 def state_of(device: str) -> dict | None:
+	"""The last known sync state of `device` (cache), or None."""
 	return frappe.cache.get_value(STATE_KEY.format(device=device))
 
 
@@ -44,15 +45,6 @@ class SyncStats:
 	groups: int = 0
 	link_skipped: int = 0
 	invalid: int = 0
-
-
-def _platform_device(device: str) -> str:
-	row = frappe.db.get_value("WhatsApp Device", device, ["platform_device", "status"], as_dict=True)
-	if not row:
-		frappe.throw(_("WhatsApp Device {0} not found").format(device), WANotFoundError)
-	if not row.platform_device:
-		frappe.throw(_("Device {0} is not registered on the platform").format(device), WAValidationError)
-	return row.platform_device
 
 
 def _contacts_by_key(keys: list[str]) -> dict[str, str]:
@@ -75,7 +67,7 @@ def sync_device_contacts(device: str, user: str | None = None) -> dict[str, int]
 	"""Fetch `device`'s contacts from the provider and upsert them into `WhatsApp Number`.
 	Returns the counts of what happened (`SyncStats`)."""
 	user = user or frappe.session.user
-	contacts = registry.get_provider().list_device_contacts(_platform_device(device))
+	contacts = registry.get_provider().list_device_contacts(devices.platform_device(device))
 	stats = SyncStats(fetched=len(contacts))
 	wanted: dict[str, tuple[str, object]] = {}
 	for c in contacts:
@@ -153,7 +145,7 @@ def sync_device_contacts(device: str, user: str | None = None) -> dict[str, int]
 def _sync_groups(device: str, stats: SyncStats, now) -> None:
 	"""The device's groups as `Group` rows: a group already here takes its current subject, a new
 	one is added. Groups are never linked to a Contact."""
-	groups = registry.get_provider().list_device_groups(_platform_device(device))
+	groups = registry.get_provider().list_device_groups(devices.platform_device(device))
 	keyed = {}
 	for g in groups:
 		kind, key = classify(g.jid)

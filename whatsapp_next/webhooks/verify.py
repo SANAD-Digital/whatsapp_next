@@ -65,5 +65,6 @@ def note_signature_failure() -> int:
 
 
 def reset_signature_failures() -> None:
+	"""Forget the counted signature failures (after a secret rotation or a manual check)."""
 	frappe.cache.delete(frappe.cache.make_key(SIGFAIL_KEY))
 	frappe.cache.delete_value(SIGFAIL_REFETCH_FLAG)

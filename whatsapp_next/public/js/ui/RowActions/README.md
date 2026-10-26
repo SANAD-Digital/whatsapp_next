@@ -39,7 +39,7 @@ Applied from the phase-5 audit:
 - Button: `aria-haspopup="menu"`, `aria-expanded`, `aria-controls`, an accessible name that
   includes the row title (WCAG 2.5.3); icon from the shared `sanad.ui.icons.more`.
 - Menu: `role="menu"` / `menuitem`, arrow / Home / End navigation, Escape and Tab close it,
-  focus returns to the button; the focused item shows a 2 px `--ink-blue-3` outline (WCAG 1.4.11
+  focus returns to the button; the focused item shows a 2 px `--ink-blue-7` outline (WCAG 1.4.11
   — the earlier inset light-blue shadow was replaced).
 - Rows are re-decorated through the shared `sanad.ui.on_list_render` hook; visibility rules
   (`roles` / `perm` / `condition`) go through `sanad.ui.visible_actions` so Drawer, BulkActions

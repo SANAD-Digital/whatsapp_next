@@ -84,6 +84,7 @@ def ensure_country(name: str = "Saudi Arabia", code: str = "sa") -> str:
 # so a suite run leaves the site's configuration as it found it (R-041).
 _SETTINGS_BEFORE: dict[str, object] = {}
 _RESTORE_REGISTERED: list[bool] = []
+_SETTINGS_AT_START: dict[str, object] = {}
 
 
 def _restore_settings() -> None:
@@ -114,6 +115,11 @@ def ensure_settings(**values) -> "frappe.model.document.Document":
 	if not _RESTORE_REGISTERED:
 		unittest.addModuleCleanup(_restore_settings)
 		_RESTORE_REGISTERED.append(True)
+		# the values the module found: a field changed later goes back to these, not to whatever an
+		# earlier test of the module had left (it put a deleted test device back, so the site's
+		# own default device came back empty)
+		_SETTINGS_AT_START.clear()
+		_SETTINGS_AT_START.update(settings.as_dict(no_default_fields=True))
 	# Tests assume Saudi Arabia as the default region regardless of the site's System Settings.
 	country = ensure_country()
 	if settings.default_country != country:
@@ -121,7 +127,7 @@ def ensure_settings(**values) -> "frappe.model.document.Document":
 		changed = True
 	for key, value in values.items():
 		if settings.get(key) != value:
-			_SETTINGS_BEFORE.setdefault(key, settings.get(key))
+			_SETTINGS_BEFORE.setdefault(key, _SETTINGS_AT_START.get(key, settings.get(key)))
 			settings.set(key, value)
 			changed = True
 	if changed:

@@ -448,6 +448,7 @@ class SndPlatformProvider(BaseProvider):
 				webhook_events=dict(data.get("webhook_events") or {}),
 				wallet_balance=(data.get("wallet") or {}).get("balance"),
 				wallet_currency=(data.get("wallet") or {}).get("currency") or link.get("currency"),
+				account_id=link.get("name"),
 			)
 		except (pex.NotFoundError, pex.NotSupportedError, pex.ValidationError):
 			pass
@@ -572,7 +573,8 @@ class SndPlatformProvider(BaseProvider):
 		public = {k: v for k, v in data.items() if k != "credentials"}
 		return SignupState(
 			request_key=request_key,
-			status=str(data.get("status") or "Completed"),
+			# only the call that set the password completes the account; a code alone verifies it
+			status=str(data.get("status") or ("Completed" if password else "Verified")),
 			credentials=creds or None,
 			extra=public,
 		)

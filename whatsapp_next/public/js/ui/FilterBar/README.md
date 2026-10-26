@@ -110,7 +110,7 @@ prototype (`docs/component/Toolbar.dc.html`) and the WCAG 2.1 AA review:
   segmented period control at the inline-end (Desk `.btn-group`, the active segment
   `btn-primary`); wraps only on narrow widths. Desk's standard-filter grid is hidden (the Filter
   popover and the sort selector stay), so there is no duplicate filter UI.
-- **Multi-select popovers** with native checkboxes (`accent-color: --ink-blue-3`, 32 px rows,
+- **Multi-select popovers** with native checkboxes (`accent-color: --ink-blue-7`, 32 px rows,
   hover `--surface-gray-2`), a title row with ×, a search box for Link targets or > 8 options,
   "Clear" in the footer; each toggle applies immediately (`in`, single → `=`). Chosen values stay
   listed even when a search hides them.

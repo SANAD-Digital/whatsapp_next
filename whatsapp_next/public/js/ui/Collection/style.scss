@@ -22,7 +22,7 @@
 		justify-content: center;
 		inline-size: 32px;
 		block-size: 32px;
-		border-radius: var(--border-radius-md, 8px);
+		border-radius: var(--sanad-radius);
 		background: var(--sanad-accent-soft);
 		color: var(--sanad-accent-ink);
 		flex: none;
@@ -65,7 +65,7 @@
 		align-items: center;
 		justify-content: center;
 		border-radius: var(--sanad-ent-radius);
-		background: var(--surface-gray-7);
+		background: var(--surface-gray-10);
 		opacity: 0.75;
 		color: var(--ink-white);
 		font-size: var(--text-lg, 16px);
@@ -123,7 +123,7 @@
 	display: inline-flex;
 	padding: 2px;
 	border: var(--sanad-border);
-	border-radius: var(--border-radius-full, 999px);
+	border-radius: var(--radius-full, 999px);
 	background: var(--surface-gray-1);
 	gap: 2px;
 	max-inline-size: 100%;
@@ -136,15 +136,15 @@
 		min-block-size: 28px;
 		padding-inline: var(--sanad-gap-md);
 		border: 0;
-		border-radius: var(--border-radius-full, 999px);
+		border-radius: var(--radius-full, 999px);
 		background: transparent;
-		color: var(--ink-gray-7);
+		color: var(--ink-gray-6);
 		font-size: var(--text-sm, 13px);
 		white-space: nowrap;
 		cursor: pointer;
 		&:hover { color: var(--ink-gray-9); }
 		&[aria-selected="true"] {
-			background: var(--surface-white);
+			background: var(--surface-base);
 			color: var(--sanad-accent-ink);
 			font-weight: 600;
 			box-shadow: var(--shadow-sm);
@@ -194,13 +194,13 @@
 		inline-size: 24px;
 		block-size: 24px;
 		border: 1px solid transparent;
-		border-radius: var(--border-radius-full, 999px);
+		border-radius: var(--radius-full, 999px);
 		margin-block-start: 2px;
 	}
 	&__body { flex: 1; min-inline-size: 0; padding-block-end: var(--sanad-gap-lg); }
 	&__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--sanad-gap-md); flex-wrap: wrap; }
 	&__title { font-size: var(--text-sm, 13px); font-weight: 500; color: var(--ink-gray-9); }
 	&__time { font-size: var(--text-xs, 11px); color: var(--ink-gray-5); white-space: nowrap; }
-	&__desc { font-size: var(--text-sm, 13px); color: var(--ink-gray-7); line-height: 1.7; }
+	&__desc { font-size: var(--text-sm, 13px); color: var(--ink-gray-6); line-height: 1.7; }
 	&__user { margin-block-start: var(--sanad-gap-xs); }
 }

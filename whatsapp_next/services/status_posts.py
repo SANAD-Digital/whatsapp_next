@@ -14,7 +14,7 @@ from frappe import _
 from frappe.utils import add_days, add_to_date, cint, get_datetime, now_datetime
 
 from whatsapp_next.exceptions import WANotSupportedError, WAStateConflictError, WAValidationError
-from whatsapp_next.services import audit
+from whatsapp_next.services import audit, devices
 
 POST = "WhatsApp Status Post"
 STATUS = "allow_status"
@@ -24,19 +24,11 @@ FONTS = {"Standard": 0, "Script": 2, "Bold": 6, "Rounded": 7, "Display": 8, "Typ
 
 
 def require_plan() -> None:
+	"""Refuse when the subscription's plan does not include status posts."""
 	from whatsapp_next.services import plan_features
 
 	if not plan_features.included(STATUS):
 		frappe.throw(_("Your plan does not include status posts"), WANotSupportedError)
-
-
-def _platform_device(device: str) -> str:
-	row = frappe.db.get_value("WhatsApp Device", device, ["platform_device", "status"], as_dict=True)
-	if not row:
-		frappe.throw(_("WhatsApp Device {0} not found").format(device), WAValidationError)
-	if row.status != "Connected":
-		frappe.throw(_("{0} is not connected").format(device), WAStateConflictError)
-	return row.platform_device
 
 
 def _payload(doc) -> dict[str, Any]:
@@ -61,7 +53,7 @@ def post_now(name: str, *, user: str | None = None) -> str:
 	doc = frappe.get_doc(POST, name)
 	if doc.state not in ("Draft", "Scheduled", "Failed", "Posting"):
 		frappe.throw(_("This status was already posted"), WAStateConflictError)
-	platform_device = _platform_device(doc.device)
+	platform_device = devices.platform_device(doc.device, connected=True)
 	doc.db_set("state", "Posting")
 	try:
 		status_id = registry.get_provider().post_status(platform_device, _payload(doc))
@@ -103,6 +95,7 @@ def schedule(name: str, at=None) -> None:
 
 
 def unschedule(name: str) -> None:
+	"""Take a `Scheduled` post back to `Draft`; any other state is left as it is."""
 	doc = frappe.get_doc(POST, name)
 	if doc.state == "Scheduled":
 		doc.db_set("state", "Draft")
@@ -116,7 +109,7 @@ def delete_post(name: str, *, user: str | None = None) -> None:
 	if doc.state != "Posted" or not doc.status_id:
 		frappe.throw(_("Only a posted status can be deleted from WhatsApp"), WAStateConflictError)
 	refresh_views([name])
-	registry.get_provider().delete_status(_platform_device(doc.device), doc.status_id)
+	registry.get_provider().delete_status(devices.platform_device(doc.device, connected=True), doc.status_id)
 	doc.db_set({"state": "Deleted", "expires_at": now_datetime()})
 	audit.log("Status Deleted", reference=(POST, name), details={"device": doc.device}, user=user)
 

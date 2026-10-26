@@ -72,7 +72,7 @@ body.sanad-tw-open { overflow: hidden; }
 		inline-size: 34px;
 		block-size: 34px;
 		flex: none;
-		border-radius: 9px;
+		border-radius: 8px;
 		background: var(--wa-pri-s);
 		color: var(--wa-pri-d);
 		box-shadow: inset 0 0 0 1px var(--wa-pri-sb);
@@ -409,7 +409,7 @@ body.sanad-tw-open { overflow: hidden; }
 		// shown as written because it did not render: the tokens stay visible, a little muted
 		&--raw { color: var(--wa-ink-3); }
 	}
-	&__bubble-time { align-self: flex-end; font-size: 10px; color: var(--wa-ink-4); }
+	&__bubble-time { align-self: flex-end; font-size: 11px; color: var(--wa-ink-4); }
 
 	&__errors {
 		display: flex;

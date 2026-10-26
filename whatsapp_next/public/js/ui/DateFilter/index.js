@@ -46,8 +46,8 @@ const now_wall = () => {
 const today_key = () => to_key(now_wall());
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
-/** Latin digits from Arabic-Indic input, so a typed date parses either way. */
-const latin_digits = (text) => String(text == null ? "" : text).replace(/[٠-٩]/g, (c) => String(c.charCodeAt(0) - 0x0660));
+/** Latin digits from Arabic-Indic or Persian input, so a typed date parses either way. */
+const latin_digits = (text) => ui.latin_digits(text);
 
 /** `DD/MM/YYYY`, `YYYY-M-D`, dots / dashes / slashes / spaces, two-digit years. */
 const parse_input = (text) => {

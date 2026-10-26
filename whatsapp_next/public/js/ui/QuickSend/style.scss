@@ -20,7 +20,7 @@
 		width: 32px;
 		height: 32px;
 		border-radius: 50%;
-		background: var(--surface-white);
+		background: var(--surface-base);
 		border: var(--sanad-border);
 		color: var(--ink-gray-6);
 		flex: none;
@@ -37,7 +37,7 @@
 		max-width: 100%;
 		padding-block: var(--sanad-gap-sm);
 		padding-inline: var(--sanad-gap-md);
-		border: 1px solid var(--outline-green-1);
+		border: 1px solid var(--outline-green-3);
 		border-radius: var(--sanad-radius-lg);
 		border-start-start-radius: 4px;
 		background: var(--surface-green-1);
@@ -49,11 +49,11 @@
 
 	&__error {
 		margin-block-start: var(--sanad-gap-xs);
-		color: var(--ink-red-4);
+		color: var(--ink-red-8);
 		font-size: var(--text-sm, 13px);
 	}
-	&__field--invalid .form-control { border-color: var(--outline-red-1); }
+	&__field--invalid .form-control { border-color: var(--outline-red-3); }
 	&__fix { margin-inline-start: var(--sanad-gap-sm); }
 	.modal-footer .custom-actions { margin-inline-end: auto; }
-	&__simulator { color: var(--ink-blue-3); }
+	&__simulator { color: var(--ink-blue-7); }
 }

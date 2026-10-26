@@ -121,7 +121,7 @@ function dynamic_link(value, df, doc, opts = {}) {
 }
 
 /** A number as a person reads it (no "+"; the value itself stays E.164). */
-const show_phone = (value) => (ui.phone ? ui.phone(cstr(value)) : cstr(value));
+export const show_phone = (value) => (ui.phone ? ui.phone(cstr(value)) : cstr(value));
 
 /** Phone / mobile: left-to-right, with call and WhatsApp affordances on the bigger densities. */
 function phone(value, df, doc, { density } = {}) {

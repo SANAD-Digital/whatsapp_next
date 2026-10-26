@@ -19,11 +19,12 @@
 $wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-settings, #page-wa-onboarding, #page-wa-functions-center, #page-wa-simulator, #page-wa-test-lab";
 
 :root {
-	--wa-page-gutter: 32px;
-	--wa-list-gutter: 16px;
+	// one gutter for the Pages and the Desk lists alike (owner, 2026-10-26: one design, compact)
+	--wa-page-gutter: 20px;
+	--wa-list-gutter: 20px;
 	// the same air above a screen as beside it: 20 px left the title against the top (owner, 2026-09-30)
-	--wa-page-top: 32px;
-	--wa-page-bottom: 40px;
+	--wa-page-top: 24px;
+	--wa-page-bottom: 28px;
 	// What a screen that wants to fill the viewport takes off `100dvh`. The page strip is no longer
 	// in that sum — that is the point of it — and this product's Desk wears its navigation in the
 	// sidebar, so the section starts at the top of the viewport and what is left to subtract is the
@@ -31,12 +32,55 @@ $wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-setting
 	--wa-viewport-offset: 8px;
 }
 
+// The product's one compact scale (owner, 2026-10-26: every screen the same sizes). The kit ships
+// its own defaults — 38 px fields in `.wa`, Espresso's 10 px `--radius-md` under `--sanad-radius` —
+// and this app pins them here, so a Page, a Desk list, a window and a drawer measure alike:
+//   controls 32 (small and in a row 28) · table rows 36, header 32 · radius 8 controls, 10 cards,
+//   12 windows · card padding 12 × 16 · type 11 / 12 / 13 / 14 / 16 / 20 / 24 — the compact level of
+//   snd_ui's design standard (`snd_ui/public/js/ui/DESIGN_STANDARD.md`), which the platform shares.
+:root {
+	--sanad-radius: 8px;
+	--sanad-radius-lg: 10px;
+	--sanad-card-radius: 10px;
+	--sanad-row-h: 36px;
+	--sanad-head-h: 32px;
+	--sanad-ctl-h: 32px;
+	--sanad-ctl-h-sm: 28px;
+}
+
+// the card vocabulary (`Cards`) at the same geometry as the stat cards (`ListStatsCard`), whichever
+// of its two densities a screen asked for
+.wa-cards,
+.wa-cards--compact {
+	--wa-cards-gap: 12px;
+	--wa-cards-secgap: 16px;
+	--wa-cards-headgap: 10px;
+	--wa-cards-pad: 12px 16px;
+	--wa-cards-panelpad: 16px;
+	--wa-cards-tile: 32px;
+	--wa-cards-stat: 20px;
+	--wa-cards-kpi: 24px;
+	--wa-cards-title: 16px;
+}
+
+.wa {
+	--wa-h: 32px;
+	--wa-h-sm: 28px;
+	--wa-fs: 13px;
+	--wa-fs-sm: 12px;
+	--wa-px: 10px;
+	--wa-row-gap: 8px 12px;
+	--wa-row-pad: 8px 0;
+	--wa-radius: 8px;
+	--wa-radius-lg: 10px;
+}
+
 @media (max-width: 991px) {
 	:root {
-		--wa-page-gutter: 16px;
+		--wa-page-gutter: 12px;
 		--wa-list-gutter: 12px;
-		--wa-page-top: 20px;
-		--wa-page-bottom: 28px;
+		--wa-page-top: 16px;
+		--wa-page-bottom: 24px;
 		// the strip survives at this width (see below), so a full-height screen loses its height too
 		--wa-viewport-offset: 46px;
 	}
@@ -103,6 +147,21 @@ body[data-route="Workspaces/WhatsApp"] #page-Workspaces {
 	max-inline-size: none;
 }
 
+// ...and to the bottom of the window: the air other screens keep under them showed here as a
+// strip under the panel (owner, 2026-10-26). Below 992 px Desk's strip is still above it, so the
+// offset there stays.
+@media (min-width: 992px) {
+	#page-wa-onboarding {
+		--wa-viewport-offset: 0px;
+	}
+	// Desk keeps a scrollbar's width free beside the page (`scrollbar-gutter: stable`, Frappe 16.53);
+	// on this screen that strip sits against the brand panel in either direction, so it takes the
+	// panel's colour instead of showing as a grey edge
+	body[data-route="wa-onboarding"] .main-section {
+		background: var(--wa-brand);
+	}
+}
+
 // The product's Desk lists: the same gutter. Every DocType this app ships is named "WhatsApp …"
 // and Desk names a list's page container after its route, so one selector reaches all ten of them
 // and no other app's — which a class set from a kit component could not, since four of these lists
@@ -164,6 +223,18 @@ body[data-route^="Form/WhatsApp "] {
 	.form-section:has(.sanad-mc, .wa-recipients, .sanad-datalist) .section-body {
 		max-width: none;
 	}
+
+	// the lists' gutter on the form too, its strip and its body on one edge (owner, 2026-10-26)
+	.page-head .container {
+		padding-inline: 0;
+	}
+	.page-head .page-head-content {
+		margin-inline: 0;
+		padding-inline: var(--wa-list-gutter);
+	}
+	.layout-main-section {
+		padding-inline: var(--wa-list-gutter);
+	}
 }
 
 // Under 992 px Desk draws the sidebar toggle inside the page strip and nowhere else, so on a phone
@@ -202,7 +273,7 @@ body[data-route^="Form/WhatsApp "] {
 	border-radius: 999px;
 	background: var(--wa-pri-s);
 	color: var(--wa-pri-d);
-	font-size: 10px;
+	font-size: 11px;
 	font-weight: 600;
 	line-height: 15px;
 	vertical-align: 1px;

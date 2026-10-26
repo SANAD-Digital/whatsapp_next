@@ -116,14 +116,10 @@ function load_catalog() {
 }
 
 const E164 = /^\+[1-9]\d{7,14}$/; // 8–15 digits: loose, the server is authoritative
-const ARABIC_DIGITS = { "٠": "0", "١": "1", "٢": "2", "٣": "3", "٤": "4", "٥": "5", "٦": "6", "٧": "7", "٨": "8", "٩": "9", "۰": "0", "۱": "1", "۲": "2", "۳": "3", "۴": "4", "۵": "5", "۶": "6", "۷": "7", "۸": "8", "۹": "9" };
 
 
 /** Latin and Arabic-Indic digits in, Latin digits only out. */
-const to_digits = (raw) =>
-	String(raw == null ? "" : raw)
-		.replace(/[٠-٩۰-۹]/g, (d) => ARABIC_DIGITS[d] || d)
-		.replace(/\D/g, "");
+const to_digits = (raw) => ui.latin_digits(raw).replace(/\D/g, "");
 
 // The search glyph is the shared one (`ui.ico`, the family ported from the prototype). The other
 // two stay drawn here at the field's own sizes (11 px caret, 15 px tick): the kit's `caret` is the
@@ -223,7 +219,7 @@ sanad.ui.PhoneField = class PhoneField {
 	 */
 	static normalize(raw, country) {
 		const phone = cstr(raw);
-		let s = phone.replace(/[٠-٩۰-۹]/g, (d) => ARABIC_DIGITS[d] || d);
+		let s = ui.latin_digits(phone);
 		// a number copied from any screen carries the invisible left-to-right isolate `ui.phone`
 		// wraps it in (and pasted text often an LRM/RLM): those are not part of the number
 		s = s.replace(/[\s\-().\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, "");

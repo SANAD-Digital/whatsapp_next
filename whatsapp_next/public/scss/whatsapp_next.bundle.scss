@@ -30,24 +30,15 @@
 // only the colour, never their layout (owner, 2026-10-07).
 // ---------------------------------------------------------------------------------------------
 :root {
-	--sanad-accent: #0b4f4a;
-	--sanad-accent-ink: #0e3e3a;
-	--sanad-accent-soft: #dce7e4;
-	--sanad-accent-outline: #b9d0ca;
-	--sanad-accent-on: #f7f7f4;
-	// the kit's charts (DashboardBlock): Petrol first, then its light tone, Apricot, Mist's ink,
-	// and the danger and info tones for the series beyond
-	--sanad-chart-palette: #0b4f4a, #5fb8a9, #ff8a4c, #8fa9a4, #c9524b, #2568af;
+	--sanad-accent: var(--wa-pri);
+	--sanad-accent-ink: var(--wa-pri-d);
+	--sanad-accent-soft: var(--wa-pri-s);
+	--sanad-accent-outline: var(--wa-pri-sb);
+	--sanad-accent-on: var(--wa-on-pri);
+	// the kit's charts (DashboardBlock); light and dark tones live in `_tokens.scss`
+	--sanad-chart-palette: var(--wa-chart-palette);
 }
 
-[data-theme="dark"] {
-	--sanad-accent: #5fb8a9;
-	--sanad-accent-ink: #7fcbbe;
-	--sanad-accent-soft: #13302d;
-	--sanad-accent-outline: #1f4a45;
-	--sanad-accent-on: #0e1a1a;
-	--sanad-chart-palette: #5fb8a9, #2f7d73, #ff8a4c, #9aaaa6, #d9736c, #4a8ed0;
-}
 
 // Desk's own `.btn-primary` is near-black. The prototype's primary verb is the product's teal
 // (`docs/screen/Hub Screen - Devices.dc.html`: `background: var(--pri)`), and a screen whose

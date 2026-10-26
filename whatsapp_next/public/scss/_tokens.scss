@@ -6,7 +6,7 @@
 // copied verbatim, and then a bridge.
 //
 // The bridge is the point. Every component in this app was written against Desk's Espresso
-// variables — `--surface-white`, `--ink-gray-9`, `--outline-gray-1`, `--surface-green-3` and the
+// variables — `--surface-base`, `--ink-gray-9`, `--outline-gray-1`, `--surface-green-7` and the
 // rest. Rather than rewrite hundreds of declarations, those variables are **redefined** on the
 // product's own surfaces to point at the palette above. One file, and every screen, card, badge,
 // table and dialog this app draws changes colour together; Desk's own chrome outside our pages is
@@ -48,6 +48,12 @@
 	--wa-read: #53bdeb;
 	// the one accent: Apricot — one prominent element per screen, never small text
 	--wa-accent: #ff8a4c;
+	// text on a solid tone (a count badge, a verdict mark, the brand panel): white in both themes
+	--wa-on-tone: #fff;
+	// the ink a pinned bar's shadow is cast in, the same in both themes
+	--wa-shadow-ink: #0e1a1a;
+	// charts: Petrol first, then its light tone, Apricot, Mist's ink, and the danger and info tones
+	--wa-chart-palette: #0b4f4a, #5fb8a9, #ff8a4c, #8fa9a4, #c9524b, #2568af;
 	--wa-on-accent: #0e1a1a;
 	// The brand itself, the same in both themes: a Petrol panel stays Petrol in dark mode, as the
 	// platform's sign-in keeps it, with Paper on it and the brand's light Petrol for its marks.
@@ -107,6 +113,7 @@
 	--wa-pri-s: #13302d;
 	--wa-pri-sb: #1f4a45;
 	--wa-on-pri: #0e1a1a;
+	--wa-chart-palette: #5fb8a9, #2f7d73, #ff8a4c, #9aaaa6, #d9736c, #4a8ed0;
 	--wa-read: #53bdeb;
 	--wa-canvas: #0e1513;
 
@@ -172,15 +179,16 @@ $wa-bridge: ();
 
 #{$wa-bridge} {
 	// surfaces
-	--surface-white: var(--wa-surface);
-	--surface-modal: var(--wa-surface);
+	--surface-base: var(--wa-surface);
+	--surface-elevation-1: var(--wa-surface);
+	--surface-elevation-2: var(--wa-surface);
 	--surface-gray-1: var(--wa-bg);
 	--surface-gray-2: var(--wa-sunken);
 	--surface-gray-3: var(--wa-border);
 	--surface-gray-4: var(--wa-border-2);
-	--surface-gray-5: var(--wa-ink-4);
-	--surface-gray-6: var(--wa-ink-3);
-	--surface-gray-7: var(--wa-ink-2);
+	--surface-gray-8: var(--wa-ink-4);
+	--surface-gray-9: var(--wa-ink-3);
+	--surface-gray-10: var(--wa-ink-2);
 
 	// outlines
 	--outline-gray-1: var(--wa-border);
@@ -190,8 +198,8 @@ $wa-bridge: ();
 
 	// inks
 	--ink-gray-9: var(--wa-ink);
-	--ink-gray-8: var(--wa-ink-2);
-	--ink-gray-7: var(--wa-ink-3);
+	--ink-gray-7: var(--wa-ink-2);
+	--ink-gray-8: var(--wa-ink); // Desk's body text
 	--ink-gray-6: var(--wa-ink-3);
 	--ink-gray-5: var(--wa-ink-4);
 	--ink-gray-4: var(--wa-ink-4);
@@ -199,34 +207,43 @@ $wa-bridge: ();
 	--text-color: var(--wa-ink);
 
 	// tones — strong / soft / readable ink / border, the four the prototype gives each of them
-	--surface-green-3: var(--wa-ok);
+	--surface-green-7: var(--wa-ok);
 	--surface-green-2: var(--wa-ok-sb);
 	--surface-green-1: var(--wa-ok-s);
-	--outline-green-1: var(--wa-ok-sb);
-	--ink-green-3: var(--wa-ok-i);
-	--ink-green-2: var(--wa-ok);
+	--outline-green-3: var(--wa-ok-sb);
+	--ink-green-7: var(--wa-ok-i);
+	--ink-green-8: var(--wa-ok-i); // Espresso's text on a soft fill
+	--ink-green-1: var(--wa-on-tone); // and on a solid one
+	--ink-green-6: var(--wa-ok);
 
-	--surface-blue-3: var(--wa-nf);
+	--surface-blue-8: var(--wa-nf);
+	--surface-blue-7: var(--wa-nf); // Espresso's solid fill
 	--surface-blue-2: var(--wa-nf-sb);
 	--surface-blue-1: var(--wa-nf-s);
-	--outline-blue-1: var(--wa-nf-sb);
-	--ink-blue-3: var(--wa-nf-i);
-	--ink-blue-2: var(--wa-nf);
+	--outline-blue-3: var(--wa-nf-sb);
+	--ink-blue-7: var(--wa-nf-i);
+	--ink-blue-8: var(--wa-nf-i); // Espresso's text on a soft fill
+	--ink-blue-1: var(--wa-on-tone); // and on a solid one
+	--ink-blue-6: var(--wa-nf);
 
-	--surface-amber-3: var(--wa-wn);
+	--surface-amber-7: var(--wa-wn);
 	--surface-amber-2: var(--wa-wn-sb);
 	--surface-amber-1: var(--wa-wn-s);
-	--outline-amber-1: var(--wa-wn-sb);
-	--ink-amber-3: var(--wa-wn-i);
-	--ink-amber-2: var(--wa-wn);
+	--outline-amber-3: var(--wa-wn-sb);
+	--ink-amber-7: var(--wa-wn-i);
+	--ink-amber-8: var(--wa-wn-i); // Espresso's text on a soft fill
+	--ink-amber-1: var(--wa-on-tone); // and on a solid one
+	--ink-amber-6: var(--wa-wn);
 
-	--surface-red-5: var(--wa-dg);
+	--surface-red-7: var(--wa-dg);
 	--surface-red-2: var(--wa-dg-sb);
 	--surface-red-1: var(--wa-dg-s);
-	--outline-red-1: var(--wa-dg-sb);
-	--outline-red-2: var(--wa-dg);
-	--ink-red-4: var(--wa-dg-i);
-	--ink-red-3: var(--wa-dg);
+	--outline-red-3: var(--wa-dg-sb);
+	--outline-red-4: var(--wa-dg);
+	--ink-red-8: var(--wa-dg-i);
+	--ink-red-7: var(--wa-dg-i);
+	--ink-red-1: var(--wa-on-tone);
+	--ink-red-6: var(--wa-dg);
 
 	// the kit's accent — the five properties every active, selected and primary state reads
 	--sanad-accent: var(--wa-pri);
@@ -237,6 +254,7 @@ $wa-bridge: ();
 
 	// shadows
 	--shadow-sm: var(--wa-shadow-sm);
+	--shadow: var(--wa-shadow-md);
 	--shadow-base: var(--wa-shadow-md);
 	--shadow-md: var(--wa-shadow-md);
 	--shadow-lg: var(--wa-shadow-lg);

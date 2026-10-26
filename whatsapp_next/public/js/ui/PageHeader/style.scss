@@ -16,7 +16,7 @@
 	&__text { min-width: 0; }
 	&__title {
 		margin: 0;
-		font-size: var(--text-xl, 18px);
+		font-size: 16px;
 		font-weight: 700;
 		letter-spacing: -0.01em;
 		color: var(--ink-gray-9);
@@ -32,21 +32,28 @@
 		flex: none;
 		flex-wrap: wrap;
 		gap: var(--sanad-gap-sm);
-		.btn {
-			min-height: 36px;
-			padding-inline: 14px;
-			border-radius: var(--sanad-radius);
-			font-size: var(--text-sm, 13px);
-			font-weight: 600;
-		}
+	}
+	// the header's verbs, wherever the screen put them: a toolbar control's height, the icon apart
+	// from its word. Frappe 16.53 pads every `.btn:not(.btn-md):not(.btn-lg):not(.btn-xs)` 4 × 8 px,
+	// so the same three `:not()`s are needed here to be heard.
+	:is(.sanad-pagehead__actions .btn, .sanad-pagehead__row > .btn, .sanad-pagehead__primary):not(.btn-md):not(.btn-lg):not(.btn-xs) {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		min-height: var(--sanad-ctl-h);
+		padding-inline: 12px;
+		border-radius: var(--sanad-radius);
+		font-size: var(--text-sm, 13px);
+		font-weight: 600;
+		.icon { flex: none; }
 	}
 	&__count {
 		display: inline-block;
 		min-width: 20px;
 		padding-inline: 6px;
-		border-radius: var(--border-radius-full, 999px);
+		border-radius: var(--radius-full, 999px);
 		background: var(--surface-gray-2);
-		color: var(--ink-gray-7);
+		color: var(--ink-gray-6);
 		font-size: var(--text-xs, 12px);
 		font-weight: 600;
 		text-align: center;
@@ -81,9 +88,9 @@
 	border: var(--sanad-border);
 	border-inline-start: 3px solid var(--sanad-accent);
 	border-radius: var(--sanad-radius);
-	background: var(--surface-white);
-	&--green { border-inline-start-color: var(--ink-green-3); }
-	&--amber { border-inline-start-color: var(--ink-amber-3); }
+	background: var(--surface-base);
+	&--green { border-inline-start-color: var(--ink-green-7); }
+	&--amber { border-inline-start-color: var(--ink-amber-7); }
 	&__title {
 		display: inline-flex;
 		align-items: center;
@@ -121,19 +128,19 @@
 		justify-content: space-between;
 		gap: var(--sanad-gap-sm);
 		font-size: var(--text-xs, 12px);
-		color: var(--ink-gray-7);
+		color: var(--ink-gray-6);
 		font-variant-numeric: tabular-nums;
 	}
 	&__bar {
 		display: flex;
 		height: 6px;
-		border-radius: var(--border-radius-full, 999px);
+		border-radius: var(--radius-full, 999px);
 		background: var(--surface-gray-3);
 		overflow: hidden;
 	}
-	&__fill { background: var(--ink-green-3); height: 100%; }
-	&__fail { background: var(--ink-red-4); height: 100%; }
-	&--amber &__fill { background: var(--ink-amber-3); }
+	&__fill { background: var(--ink-green-7); height: 100%; }
+	&__fail { background: var(--ink-red-8); height: 100%; }
+	&--amber &__fill { background: var(--ink-amber-7); }
 }
 
 @media (max-width: 767px) {

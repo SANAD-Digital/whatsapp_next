@@ -182,7 +182,9 @@ class SettingsView {
 			(f) => !f.startsWith("has_") && !skip.includes(f) && this.docfield(f)
 		);
 		const controls = {};
-		const $read = $('<dl class="wa-settings__facts"></dl>');
+		// one list of rows, read-only and editable alike: the app's own rows and controls
+		// (`sanad-sw__row`, `wa-input` / `wa-select` / `wa-toggle`), not Desk's form groups
+		const $read = $('<div class="wa-settings__facts"></div>');
 		const $form = $('<div class="wa-settings__form"></div>');
 		fieldnames.forEach((fieldname) => {
 			const df = this.docfield(fieldname);
@@ -199,18 +201,17 @@ class SettingsView {
 				);
 				return;
 			}
-			const control = frappe.ui.form.make_control({
-				df: Object.assign({}, df, { depends_on: null, read_only: 0 }),
-				parent: $form,
-				render_input: true,
-			});
-			control.set_value(values[fieldname] == null ? "" : values[fieldname]);
-			control.refresh();
-			// Desk draws the label as a plain <label> with no `for`, so the input has no
-			// accessible name of its own; it is given one here
-			if (control.$input) control.$input.attr("aria-label", __(df.label || fieldname));
-			// a row in Claude's shape: the explanation sits under the title, not under the input
-			control.$wrapper.find(".control-input-wrapper > .help-box").insertAfter(control.$wrapper.find(".clearfix"));
+			const control = this.setting_control(df, values[fieldname]);
+			const required = df.reqd ? ' <span class="wa-settings__req" aria-hidden="true">*</span>' : "";
+			const $row = $(`
+				<div class="sanad-sw__row wa-settings__field${control.stacked ? " wa-settings__field--stacked" : ""}" data-fieldname="${esc(fieldname)}">
+					<div class="sanad-sw__row-text">
+						<label class="sanad-sw__row-title" for="${esc(control.id)}">${esc(__(df.label || fieldname))}${required}</label>
+						${df.description ? `<span class="sanad-sw__row-desc">${esc(__(df.description))}</span>` : ""}
+					</div>
+					<div class="sanad-sw__row-control"></div>
+				</div>`).appendTo($form);
+			$row.find(".sanad-sw__row-control").append(control.$el);
 			controls[fieldname] = control;
 		});
 		const has_controls = Object.keys(controls).length > 0;
@@ -284,6 +285,70 @@ class SettingsView {
 			});
 		}
 		return controls;
+	}
+
+	/**
+	 * One setting's control in the app's own look, from its DocField: a switch for a Check, a
+	 * select for a Select, the kit's link search for a Link, a text area for long text and an
+	 * input for the rest. `{id, $el, stacked, get_value(), set_value(v)}` — the same two calls the
+	 * save bar uses, so saving does not care which control it is.
+	 */
+	setting_control(df, value) {
+		const esc = frappe.utils.escape_html;
+		const id = sanad.ui.uid("wa-set");
+		const type = df.fieldtype;
+		if (type === "Check") {
+			const $el = $(`<label class="wa-toggle"><input type="checkbox" id="${id}"><span class="wa-toggle__track" aria-hidden="true"></span></label>`);
+			const $in = $el.find("input").prop("checked", !!cint(value));
+			return { id, $el, get_value: () => ($in.prop("checked") ? 1 : 0), set_value: (v) => $in.prop("checked", !!cint(v)) };
+		}
+		if (type === "Select") {
+			const $el = $(`<select class="wa-select" id="${id}"></select>`);
+			(df.options || "").split("\n").forEach((o) => $el.append(`<option value="${esc(o)}">${esc(o ? __(o) : "")}</option>`));
+			$el.val(value == null ? "" : String(value));
+			return { id, $el, get_value: () => $el.val(), set_value: (v) => $el.val(v == null ? "" : String(v)) };
+		}
+		if (type === "Link") {
+			const $el = $('<div class="wa-settings__link"></div>');
+			let current = value || "";
+			const link = sanad.ui.OverlayPanel.link_input($el, {
+				id,
+				value: current,
+				display: current,
+				placeholder: __("Search…"),
+				search: (txt) =>
+					frappe
+						.xcall("frappe.desk.search.search_link", { doctype: df.options, txt: txt || "", page_length: 10 })
+						.then((rows) => (rows || []).map((r) => ({ value: r.value, label: r.label || r.value, note: r.description || "" }))),
+				on_pick: (item) => {
+					current = item ? item.value : "";
+					link.$input.trigger("change");
+				},
+			});
+			return {
+				id,
+				$el,
+				get_value: () => current,
+				set_value: (v) => {
+					current = v || "";
+					link.$input.val(current);
+				},
+			};
+		}
+		if (["Small Text", "Text", "Long Text"].includes(type)) {
+			const $el = $(`<textarea class="wa-textarea" id="${id}" rows="2"></textarea>`).val(value == null ? "" : value);
+			return { id, $el, stacked: true, get_value: () => $el.val(), set_value: (v) => $el.val(v == null ? "" : v) };
+		}
+		const numeric = ["Int", "Float", "Currency", "Percent"].includes(type);
+		const $el = $(`<input class="wa-input${numeric ? " wa-input--mono wa-settings__number" : ""}" id="${id}" type="${numeric ? "number" : "text"}"${
+			df.fieldtype === "Data" && /url/i.test(df.fieldname) ? ' dir="ltr"' : ""
+		}>`).val(value == null ? "" : value);
+		return {
+			id,
+			$el,
+			get_value: () => (numeric ? ($el.val() === "" ? null : type === "Int" ? cint($el.val()) : flt($el.val())) : $el.val()),
+			set_value: (v) => $el.val(v == null ? "" : v),
+		};
 	}
 
 	read_value(df, value, special) {
@@ -573,10 +638,12 @@ class SettingsView {
 			primary_action: (values) => {
 				sanad.ui
 					.call("onboarding.save_credentials", values, { freeze: true })
-					.then(() => {
+					.then((r) => {
 						dialog.hide();
 						sanad.ui.Toast.success(__("Credentials saved"));
 						this.show("credentials");
+						// keys of another account: what the previous one left waits for a decision (D-145)
+						if (r && r.account_switched) whatsapp_next.account_switch.check({ force: true });
 					})
 					.catch((err) => sanad.ui.Toast.error(err));
 			},

@@ -38,6 +38,7 @@ class WhatsAppFunction(Document):
 		self.check_values()
 
 	def check_values(self) -> None:
+		"""Validate the stored parameter values against the installed function's header."""
 		from whatsapp_next.services import function_header as fh
 		from whatsapp_next.services.functions_catalog import manifest_of
 

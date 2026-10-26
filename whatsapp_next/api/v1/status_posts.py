@@ -32,6 +32,7 @@ def schedule(name: str, scheduled_at: str | None = None) -> dict[str, Any]:
 
 @api_endpoint(roles=MANAGER)
 def unschedule(name: str) -> dict[str, Any]:
+	"""Take a scheduled status post back to draft → `{ok}`."""
 	_check(name)
 	status_posts.unschedule(name)
 	return {"ok": True}

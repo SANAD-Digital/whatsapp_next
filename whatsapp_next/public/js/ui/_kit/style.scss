@@ -373,7 +373,7 @@
 		min-block-size: var(--wa-h-sm, 32px);
 		padding-inline: 12px;
 		border: 1px solid transparent;
-		border-radius: 7px;
+		border-radius: 6px;
 		background: transparent;
 		color: var(--wa-ink-3);
 		font: inherit;
@@ -480,7 +480,7 @@
 	&--sq { border-radius: 12px; }
 	&--sm { inline-size: 32px; block-size: 32px; font-size: 12px; }
 	&--md { inline-size: 40px; block-size: 40px; font-size: 14px; }
-	&--lg { inline-size: 56px; block-size: 56px; font-size: 18px; }
+	&--lg { inline-size: 56px; block-size: 56px; font-size: 16px; }
 }
 
 // ---- a section rule with its caption at the end -----------------------------------------------

@@ -66,6 +66,7 @@ def _release(device: str) -> None:
 
 
 def is_running(device: str) -> bool:
+	"""True while a history import of `device` holds its lock."""
 	return bool(frappe.cache.exists(_lock_key(device)))
 
 

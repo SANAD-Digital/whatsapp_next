@@ -101,7 +101,7 @@
 	border-radius: 8px;
 	background: var(--wa-surface);
 	border: 1px solid var(--wa-border);
-	.wa-avatar { inline-size: 28px; block-size: 28px; border-radius: 7px; font-size: 11px; }
+	.wa-avatar { inline-size: 28px; block-size: 28px; border-radius: 6px; font-size: 11px; }
 	&--new { border-color: var(--wa-ok-sb); background: var(--wa-ok-s); }
 	&--removed {
 		background: var(--wa-sunken);

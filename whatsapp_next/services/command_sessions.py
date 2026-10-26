@@ -88,11 +88,13 @@ def _cache_key(device: str | None, chat: str | None) -> str:
 
 
 def chat_key(inbound) -> str | None:
+	"""The chat a session belongs to: the sender's number, else its JID."""
 	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
 	return get("phone_e164") or get("sender_jid") or get("jid")
 
 
 def load(device: str | None, chat: str | None) -> dict[str, Any] | None:
+	"""The open question session of this device and chat, or None."""
 	raw = frappe.cache.get_value(_cache_key(device, chat))
 	if not raw:
 		return None
@@ -103,10 +105,12 @@ def load(device: str | None, chat: str | None) -> dict[str, Any] | None:
 
 
 def save(device: str | None, chat: str | None, session: dict[str, Any]) -> None:
+	"""Keep a question session for `SESSION_TTL` seconds."""
 	frappe.cache.set_value(_cache_key(device, chat), json.dumps(session, default=str), expires_in_sec=SESSION_TTL)
 
 
 def clear(device: str | None, chat: str | None) -> None:
+	"""End the question session of this device and chat."""
 	frappe.cache.delete_value(_cache_key(device, chat))
 
 

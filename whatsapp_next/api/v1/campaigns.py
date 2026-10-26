@@ -13,8 +13,7 @@ from typing import Any
 
 import frappe
 from frappe import _
-from frappe.query_builder.functions import Count
-from frappe.utils import add_to_date, cint, now_datetime
+from frappe.utils import cint
 
 from whatsapp_next.api._common import api_endpoint, paginate
 from whatsapp_next.api.v1 import _bulk
@@ -173,73 +172,7 @@ def get_overview(days: int = 30) -> dict[str, Any]:
 	the campaigns started in the last `days` (1–365), which is what the delivery and read rates
 	are a share of.
 	"""
-	window = max(1, min(cint(days) or 30, 365))
-	since = add_to_date(now_datetime(), days=-window)
-
-	states: dict[str, int] = dict.fromkeys(runner.STATUSES, 0)
-	C = frappe.qb.DocType("WhatsApp Campaign")
-	for row in frappe.qb.from_(C).select(C.status, Count("*").as_("n")).groupby(C.status).run(as_dict=True):
-		states[row["status"]] = cint(row["n"])
-
-	# The recipients of the active campaigns still waiting for a message. Counted on the recipient
-	# rows: the campaign counters count *messages* (recipients × messages) in disjoint buckets, so
-	# `total_recipients - sent_count - failed_count` mixed units and counted every delivered or read
-	# recipient as still in flight.
-	R = frappe.qb.DocType("WhatsApp Campaign Recipient")
-	in_flight = cint(
-		(
-			frappe.qb.from_(R)
-			.join(C)
-			.on(R.parent == C.name)
-			.select(Count("*"))
-			.where(
-				(R.parenttype == "WhatsApp Campaign")
-				& C.status.isin(["Running", "Queued", "Paused"])
-				& R.status.isin(["Pending", "Queued"])
-			)
-		).run()[0][0]
-	)
-
-	# The campaign counters are four disjoint buckets: a message that was read is not also counted
-	# as sent. The rates a console shows are stage shares, so the buckets are rolled up here —
-	# `sent` is everything that left, `delivered` everything that arrived (read included).
-	totals = {"recipients": 0, "sent": 0, "delivered": 0, "read": 0, "failed": 0}
-	for row in frappe.get_all(
-		"WhatsApp Campaign",
-		filters={"started_at": (">=", since)},
-		fields=[
-			"total_recipients",
-			"sent_count",
-			"delivered_count",
-			"read_count",
-			"failed_count",
-		],
-		limit_page_length=0,
-	):
-		totals["recipients"] += cint(row.total_recipients)
-		totals["sent"] += cint(row.sent_count) + cint(row.delivered_count) + cint(row.read_count)
-		totals["delivered"] += cint(row.delivered_count) + cint(row.read_count)
-		totals["read"] += cint(row.read_count)
-		totals["failed"] += cint(row.failed_count)
-
-	# what campaign sending actually achieved in the last hour, not the rate someone configured
-	L = frappe.qb.DocType("WhatsApp Log")
-	sent_last_hour = cint(
-		(
-			frappe.qb.from_(L)
-			.select(Count("*"))
-			.where(L.campaign.notnull() & (L.sent_at >= add_to_date(now_datetime(), minutes=-60)))
-		).run()[0][0]
-	)
-
-	return {
-		"days": window,
-		"states": states,
-		"in_flight": in_flight,
-		"sent_last_hour": sent_last_hour,
-		"per_minute": round(sent_last_hour / 60, 2),
-		"totals": totals,
-	}
+	return runner.overview(days)
 
 
 @api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))

@@ -19,7 +19,7 @@
 	-webkit-overflow-scrolling: touch;
 	border: var(--sanad-border);
 	border-radius: var(--sanad-card-radius);
-	background: var(--surface-white);
+	background: var(--surface-base);
 }
 
 .sanad-datalist {
@@ -27,7 +27,7 @@
 	border-collapse: separate;
 	border-spacing: 0;
 	font-size: var(--text-sm, 13px);
-	color: var(--ink-gray-8);
+	color: var(--ink-gray-7);
 	transition: opacity var(--sanad-motion);
 	&--loading { opacity: 0.6; }
 
@@ -37,7 +37,7 @@
 		z-index: 8; // above every body cell, including the sticky group rows
 		height: var(--sanad-head-h);
 		background: var(--surface-gray-2);
-		color: var(--ink-gray-7);
+		color: var(--ink-gray-6);
 		font-weight: 600;
 		font-size: var(--text-xs, 12px);
 		text-align: start;
@@ -76,7 +76,7 @@
 	//   8 header · 9 pinned header · 10 checkbox/action header
 	// The sticky checkbox and action cells must stay BELOW a group row, or they float over it.
 	thead th.sanad-datalist__th--check, thead th.sanad-datalist__th--action { z-index: 10; background-color: var(--surface-gray-2); }
-	tbody td.sanad-datalist__td--check, tbody td.sanad-datalist__td--action { z-index: 3; background-color: var(--surface-white); }
+	tbody td.sanad-datalist__td--check, tbody td.sanad-datalist__td--action { z-index: 3; background-color: var(--surface-base); }
 	&__row:hover td.sanad-datalist__td--check, &__row:hover td.sanad-datalist__td--action { background-color: var(--surface-gray-1); }
 	&__row:has(.list-row-checkbox:checked) td.sanad-datalist__td--check,
 	&__row:has(.list-row-checkbox:checked) td.sanad-datalist__td--action { background-color: var(--sanad-accent-soft); }
@@ -139,7 +139,7 @@
 		max-width: 260px;
 	}
 	&__muted { color: var(--ink-gray-5); }
-	&__date { color: var(--ink-gray-7); white-space: nowrap; font-size: var(--text-xs, 12px); unicode-bidi: isolate; }
+	&__date { color: var(--ink-gray-6); white-space: nowrap; font-size: var(--text-xs, 12px); unicode-bidi: isolate; }
 	&__sub { unicode-bidi: plaintext; }
 	&__avatar-text { overflow: hidden; text-overflow: ellipsis; }
 	// a name followed by a tag (e.g. "Group"): the name gives way, the tag stays whole
@@ -154,9 +154,9 @@
 		min-height: var(--sanad-ctl-h-sm);
 		padding-inline: 10px;
 		border: 1px solid var(--outline-gray-2);
-		border-radius: var(--border-radius-md, 6px);
-		background: var(--surface-white);
-		color: var(--ink-gray-7);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-base);
+		color: var(--ink-gray-6);
 		font-size: var(--text-xs, 12px);
 		font-weight: 600;
 		line-height: 1;
@@ -198,15 +198,15 @@
 		// stray border in front of them
 		border-block-start: 1px solid var(--sanad-accent-outline);
 		border-block-end: 0;
-		background-color: color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-white));
+		background-color: color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-base));
 	}
 	// Only the outermost level stays under the header. Stacking every level meant a child's row —
 	// and its checkbox — piled on top of its parent's.
 	tbody tr.sanad-datalist__group--l1 td,
 	tbody tr.sanad-datalist__group--l2 td,
 	tbody tr.sanad-datalist__group--l3 td { position: static; }
-	tbody tr.sanad-datalist__group--l1 td { background-color: color-mix(in srgb, var(--sanad-accent) 4%, var(--surface-white)); }
-	tbody tr.sanad-datalist__group--l2 td, tbody tr.sanad-datalist__group--l3 td { background-color: color-mix(in srgb, var(--sanad-accent) 2%, var(--surface-white)); }
+	tbody tr.sanad-datalist__group--l1 td { background-color: color-mix(in srgb, var(--sanad-accent) 4%, var(--surface-base)); }
+	tbody tr.sanad-datalist__group--l2 td, tbody tr.sanad-datalist__group--l3 td { background-color: color-mix(in srgb, var(--sanad-accent) 2%, var(--surface-base)); }
 	&__group-inner {
 		position: sticky;
 		inset-inline-start: 0;
@@ -277,13 +277,13 @@
 	&__group-count {
 		padding-block: 2px;
 		padding-inline: 8px;
-		border-radius: var(--border-radius-full, 999px);
-		background: var(--surface-white);
+		border-radius: var(--radius-full, 999px);
+		background: var(--surface-base);
 		border: 1px solid var(--sanad-accent-outline);
-		color: var(--ink-gray-7);
+		color: var(--ink-gray-6);
 		font-size: var(--text-tiny, 11px);
 	}
-	&__group-sum { margin-inline-start: auto; color: var(--ink-gray-7); font-size: var(--text-xs, 12px); }
+	&__group-sum { margin-inline-start: auto; color: var(--ink-gray-6); font-size: var(--text-xs, 12px); }
 	&__group-sum-label { color: var(--ink-gray-5); }
 
 	// ---- pinned columns (sticky at the inline-start, accent-tinted, shadow on the last one)
@@ -292,10 +292,10 @@
 	tbody td.sanad-datalist__td--pinned {
 		position: sticky;
 		z-index: 2;
-		background-color: var(--surface-white);
+		background-color: var(--surface-base);
 		background-image: linear-gradient(
-			color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-white)),
-			color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-white))
+			color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-base)),
+			color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-base))
 		);
 		background-clip: padding-box;
 	}
@@ -329,13 +329,13 @@
 		height: 20px;
 		margin-inline-start: var(--sanad-gap-xs);
 		padding: 0;
-		border-radius: 5px;
+		border-radius: 6px;
 		color: var(--ink-gray-4, var(--ink-gray-5));
 		opacity: 0;
 		cursor: pointer;
 		vertical-align: middle;
 		.icon { width: 12px; height: 12px; }
-		&:hover { background: var(--outline-gray-2); color: var(--ink-gray-8); }
+		&:hover { background: var(--outline-gray-2); color: var(--ink-gray-7); }
 		&--on, &:focus-visible { opacity: 1; color: var(--sanad-accent); }
 	}
 	&__th:hover &__pin { opacity: 1; }
@@ -352,7 +352,7 @@
 
 // footer: count at the inline-start, pager at the inline-end (inside the card, not the viewport)
 .sanad-datalist__footer {
-	background: var(--surface-white);
+	background: var(--surface-base);
 	border-block-start: var(--sanad-border);
 	display: flex;
 	flex-wrap: wrap;
@@ -375,9 +375,9 @@
 		min-height: var(--sanad-ctl-h-sm);
 		padding-inline: 8px;
 		border: 1px solid var(--outline-gray-2);
-		border-radius: var(--border-radius-md, 6px);
-		background: var(--surface-white);
-		color: var(--ink-gray-7);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-base);
+		color: var(--ink-gray-6);
 		font-size: var(--text-xs, 12px);
 		font-weight: 600;
 		cursor: pointer;
@@ -394,13 +394,13 @@
 		padding: 0;
 		border: 0;
 		.level-left, .level-right { margin: 0; }
-		.btn { min-height: var(--sanad-ctl-h); border-radius: var(--border-radius-md, 6px); font-size: var(--text-xs, 12px); font-weight: 600; }
+		.btn { min-height: var(--sanad-ctl-h); border-radius: var(--sanad-radius); font-size: var(--text-xs, 12px); font-weight: 600; }
 	}
-	.sanad-datalist__page { color: var(--ink-gray-7); margin-inline-end: var(--sanad-gap-xs); }
+	.sanad-datalist__page { color: var(--ink-gray-6); margin-inline-end: var(--sanad-gap-xs); }
 	.btn {
 		min-height: var(--sanad-ctl-h);
 		padding-inline: var(--sanad-cell-px);
-		border-radius: var(--border-radius-md, 6px);
+		border-radius: var(--sanad-radius);
 		font-size: var(--text-xs, 12px);
 		font-weight: 600;
 	}
@@ -422,7 +422,7 @@
 	.sanad-filterbar--list {
 		margin-block-end: 0;
 		padding: var(--sanad-gap-md);
-		background: var(--surface-white);
+		background: var(--surface-base);
 		border: 0;
 		border-block-end: var(--sanad-border);
 	}
@@ -435,7 +435,7 @@
 		height: auto !important;
 		min-height: 0;
 		display: flex;
-		background: var(--surface-white);
+		background: var(--surface-base);
 		border: 0;
 	}
 	.result, .sanad-datalist-host { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; }
@@ -472,7 +472,7 @@
 	}
 	.sanad-datalist__wrap--cards {
 		border: 0;
-		background: var(--surface-white);
+		background: var(--surface-base);
 		// pinning is a desktop affordance; on a card there is nothing to scroll past
 		.sanad-datalist__td--pinned, .sanad-datalist__th--pinned,
 		.sanad-datalist__td--action, .sanad-datalist__th--action,
@@ -489,7 +489,7 @@
 			border: 0;
 			border-block-end: var(--sanad-border);
 			border-radius: 0;
-			background: var(--surface-white);
+			background: var(--surface-base);
 		}
 		.sanad-datalist__row td { display: block; border: 0; padding: 0; height: auto; background: transparent !important; }
 		.sanad-datalist__td--check { grid-column: 1; grid-row: 1; }
@@ -538,7 +538,7 @@
 			background: transparent;
 			color: var(--ink-gray-5);
 			font-size: 0;
-			&::after { content: "›"; font-size: 22px; line-height: 1; }
+			&::after { content: "›"; font-size: 20px; line-height: 1; }
 			[dir="rtl"] &::after { content: "‹"; }
 		}
 		// grouping stays readable: one indented strip per level

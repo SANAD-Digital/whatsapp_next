@@ -994,6 +994,15 @@ sanad.ui.OverlayPanel = class OverlayPanel {
 		window.setTimeout(remove, 220);
 	}
 
+	/**
+	 * The panel's link field on its own, for a screen that draws its own rows (the settings window):
+	 * `sanad.ui.OverlayPanel.link_input($host, {id, placeholder, value, display, search(txt), on_pick(item)})`
+	 * → `{$input, …}`. `search` answers `[{value, label, note}]`.
+	 */
+	static link_input($host, opts = {}) {
+		return OverlayPanel.prototype.make_link.call(null, $host, opts);
+	}
+
 	/** Open one and get it back — `sanad.ui.OverlayPanel.open({...})`. */
 	static open(opts) {
 		return new OverlayPanel(opts).show();

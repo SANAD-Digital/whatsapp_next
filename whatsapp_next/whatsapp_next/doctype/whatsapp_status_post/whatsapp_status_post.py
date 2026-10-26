@@ -22,6 +22,7 @@ class WhatsAppStatusPost(Document):
 			frappe.throw(_("A posted status cannot be changed; delete it and post a new one"), WAValidationError)
 
 	def has_value_changed_any(self) -> bool:
+		"""True when any field that shapes the post changed since it was last saved."""
 		before = self.get_doc_before_save()
 		if not before:
 			return False

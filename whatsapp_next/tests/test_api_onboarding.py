@@ -192,7 +192,7 @@ class TestApiOnboarding(IntegrationTestCase):
 			)
 			self.assertEqual(started["request_key"], "req-1")
 			self.assertEqual(api.get_signup_status(request_key="req-1")["status"], "Pending")
-			done = api.complete_signup(request_key="req-1", code="123456")
+			done = api.complete_signup(request_key="req-1", code="123456", password="a-real-Password-1!")
 			self.assertEqual(
 				{k: done[k] for k in ("ok", "status", "credentials_stored")},
 				{"ok": True, "status": "Completed", "credentials_stored": True},
@@ -216,7 +216,7 @@ class TestApiOnboarding(IntegrationTestCase):
 				api.save_credentials()
 			# the address is the site mode's, not the caller's: an old caller's value is ignored
 			out = api.save_credentials(platform_base_url="https://api.example.test/", api_secret="apitest-s")
-			self.assertEqual(out, {"ok": True, "fields_written": ["api_secret"]})
+			self.assertEqual(out, {"ok": True, "fields_written": ["api_secret"], "account_switched": False})
 			self.assertEqual(
 				frappe.get_doc(SETTINGS).get_password("api_secret", raise_exception=False), "apitest-s"
 			)

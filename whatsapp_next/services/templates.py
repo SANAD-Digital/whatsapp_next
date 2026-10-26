@@ -64,6 +64,7 @@ class RenderResult:
 
 	@property
 	def ok(self) -> bool:
+		"""True when the template rendered without an error."""
 		return self.error is None
 
 

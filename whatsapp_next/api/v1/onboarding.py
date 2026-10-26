@@ -148,8 +148,10 @@ def save_credentials(
 	api_secret: str | None = None,
 	customer_api_secret: str | None = None,
 ) -> dict[str, Any]:
-	"""Store the platform URL and credentials (`set_password`); audited `Credentials Changed`."""
-	written = onboarding.save_credentials(
+	"""Store the platform URL and credentials (`set_password`); audited `Credentials Changed`.
+	Keys of another account are a switch like a sign-in's (D-145): nothing is deleted, and
+	`account_switched` says a decision is waiting."""
+	written, switched = onboarding.save_credentials_by_hand(
 		platform_base_url=platform_base_url,
 		customer_api_key=customer_api_key,
 		customer_api_secret=customer_api_secret,
@@ -157,7 +159,7 @@ def save_credentials(
 		api_secret=api_secret,
 		user=frappe.session.user,
 	)
-	return {"ok": True, "fields_written": written}
+	return {"ok": True, "fields_written": written, "account_switched": switched}
 
 
 @api_endpoint(roles=SYSTEM_MANAGER)

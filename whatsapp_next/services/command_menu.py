@@ -25,6 +25,7 @@ MAX_BODY = 1024  # longest text a buttons message carries
 
 
 def mode() -> str:
+	"""The menu mode in force: Settings' choice, or `Off` when commands are off or the plan has no interactive messages."""
 	settings = frappe.get_cached_doc("WhatsApp Settings")
 	if not cint(settings.enable_commands):
 		return "Off"

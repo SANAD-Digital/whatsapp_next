@@ -75,7 +75,7 @@
 	min-inline-size: 0;
 	padding: var(--wa-cards-pad);
 	border: 1px solid var(--wa-border);
-	border-radius: 8px;
+	border-radius: var(--sanad-card-radius, 10px);
 	background: var(--wa-surface);
 	color: var(--wa-ink);
 	font: inherit;
@@ -207,7 +207,7 @@
 		flex-direction: column;
 		gap: 10px;
 		padding: var(--wa-cards-panelpad);
-		border-radius: 12px;
+		border-radius: var(--sanad-card-radius, 10px);
 	}
 	&__phead {
 		display: flex;
@@ -261,7 +261,7 @@
 		inline-size: 28px;
 		block-size: 28px;
 		flex: none;
-		border-radius: 7px;
+		border-radius: 6px;
 		background: var(--wa-card-soft);
 		color: var(--wa-card-ink);
 		font-size: 11px;

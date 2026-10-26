@@ -7,29 +7,29 @@
 	--sanad-gap-md: 12px;
 	--sanad-gap-lg: 16px;
 	--sanad-gap-xl: 24px;
-	--sanad-radius: var(--border-radius-md, 8px);
-	--sanad-radius-lg: var(--border-radius-lg, 12px);
+	--sanad-radius: 8px; // a control
+	--sanad-radius-lg: 10px;
 	--sanad-border: 1px solid var(--outline-gray-1);
 	--sanad-target: 32px; // ≥ 24 CSS px (WCAG 2.2 target size) with comfortable spacing
 	--sanad-motion: 160ms;
 
 	// Geometry of the design prototype (docs/component/List View.dc.html, "compact" density).
 	// These are sizes, not colours, so they are safe to pin in px.
-	--sanad-card-radius: var(--border-radius-lg, 12px);
-	--sanad-row-h: 38px; // table row
-	--sanad-head-h: 36px; // table header row
+	--sanad-card-radius: 10px; // a card, a panel
+	--sanad-row-h: 36px; // table row
+	--sanad-head-h: 32px; // table header row
 	--sanad-ctl-h: 32px; // toolbar control
-	--sanad-ctl-h-sm: 26px; // in-row button
+	--sanad-ctl-h-sm: 28px; // in-row button
 	--sanad-cell-px: 12px; // cell padding-inline
 
 	// Accent = the kit's "active / selected / primary" colour. It defaults to Desk's own Espresso
 	// blue, so a plain copy of `ui/` is theme-safe and native; a host app repoints these five
 	// tokens to its brand in its own bundle.
-	--sanad-accent: var(--ink-blue-3);
-	--sanad-accent-ink: var(--ink-blue-3);
+	--sanad-accent: var(--ink-blue-7);
+	--sanad-accent-ink: var(--ink-blue-7);
 	--sanad-accent-soft: var(--surface-blue-1);
-	--sanad-accent-outline: var(--outline-blue-1);
-	--sanad-accent-on: var(--surface-white);
+	--sanad-accent-outline: var(--outline-blue-3);
+	--sanad-accent-on: var(--surface-base);
 }
 
 // One accent-tinted surface (active filter button, selected row, chosen segment).
@@ -57,21 +57,21 @@
 	border: 0;
 }
 
-// Tone triplets — surface / ink / outline — used by badges, banners, chips and counts.
-@each $tone, $suffix in ("green": "green-1", "blue": "blue-1", "amber": "amber-1", "red": "red-1", "gray": "gray-2", "cyan": "cyan-1", "violet": "violet-1", "pink": "pink-1") {
+// Tone pairs — Espresso's soft surface and its border — used by badges, banners, chips and counts.
+@each $tone, $surface, $outline in ("green", "green-1", "green-3"), ("blue", "blue-1", "blue-3"), ("amber", "amber-1", "amber-3"), ("red", "red-1", "red-3"), ("gray", "gray-2", "gray-2"), ("cyan", "cyan-2", "cyan-3"), ("violet", "violet-1", "violet-3"), ("pink", "pink-2", "pink-3") {
 	.sanad-tone--#{$tone} {
-		background: var(--surface-#{$suffix});
-		border-color: var(--outline-#{$suffix});
+		background: var(--surface-#{$surface});
+		border-color: var(--outline-#{$outline});
 	}
 }
-.sanad-tone--green { color: var(--ink-green-3); }
-.sanad-tone--blue { color: var(--ink-blue-3); }
-.sanad-tone--amber { color: var(--ink-amber-3); }
-.sanad-tone--red { color: var(--ink-red-4); }
+.sanad-tone--green { color: var(--ink-green-7); }
+.sanad-tone--blue { color: var(--ink-blue-7); }
+.sanad-tone--amber { color: var(--ink-amber-7); }
+.sanad-tone--red { color: var(--ink-red-8); }
 .sanad-tone--gray { color: var(--ink-gray-6); }
-.sanad-tone--cyan { color: var(--ink-cyan-1); }
-.sanad-tone--violet { color: var(--ink-violet-1); }
-.sanad-tone--pink { color: var(--ink-pink-1); }
+.sanad-tone--cyan { color: var(--ink-cyan-6); }
+.sanad-tone--violet { color: var(--ink-violet-7); }
+.sanad-tone--pink { color: var(--ink-pink-6); }
 
 .sanad-skeleton {
 	display: flex;
@@ -86,7 +86,7 @@
 }
 .sanad-skeleton__line {
 	height: 12px;
-	border-radius: var(--border-radius-full, 999px);
+	border-radius: var(--radius-full, 999px);
 	background: var(--surface-gray-3);
 	animation: sanad-pulse 1.2s ease-in-out infinite;
 }
@@ -127,9 +127,9 @@
 	min-height: var(--sanad-target);
 	padding-inline: var(--sanad-gap-md);
 	border: 1px solid var(--outline-gray-2);
-	border-radius: var(--border-radius-full, 999px);
-	background: var(--surface-white);
-	color: var(--ink-gray-8);
+	border-radius: var(--radius-full, 999px);
+	background: var(--surface-base);
+	color: var(--ink-gray-7);
 	font-size: var(--text-sm, 13px);
 	line-height: 1.2;
 	cursor: pointer;
@@ -180,7 +180,7 @@
 	width: min(var(--sanad-panel-width, 520px), 100%);
 	display: flex;
 	flex-direction: column;
-	background: var(--surface-white);
+	background: var(--surface-base);
 	border-inline-start: var(--sanad-border);
 	box-shadow: var(--shadow-lg);
 	z-index: 1041;
@@ -203,7 +203,7 @@
 	&__subtitle { font-size: var(--text-sm, 13px); color: var(--ink-gray-6); font-weight: 400; }
 	&__actions { display: flex; flex-wrap: wrap; gap: var(--sanad-gap-sm); padding-block: var(--sanad-gap-sm); padding-inline: var(--sanad-gap-lg); border-block-end: var(--sanad-border); }
 	&__body { flex: 1; min-height: 0; overflow: auto; padding: var(--sanad-gap-lg); scroll-padding-block-end: 80px; }
-	&__footer { display: flex; flex-wrap: wrap; gap: var(--sanad-gap-sm); justify-content: flex-end; padding-block: var(--sanad-gap-md); padding-inline: var(--sanad-gap-lg); border-block-start: var(--sanad-border); background: var(--surface-white); }
+	&__footer { display: flex; flex-wrap: wrap; gap: var(--sanad-gap-sm); justify-content: flex-end; padding-block: var(--sanad-gap-md); padding-inline: var(--sanad-gap-lg); border-block-start: var(--sanad-border); background: var(--surface-base); }
 	@media (max-width: 767px) {
 		width: 100%;
 		height: 100dvh;
@@ -212,7 +212,7 @@
 .sanad-backdrop {
 	position: fixed;
 	inset: 0;
-	background: var(--surface-gray-7);
+	background: var(--surface-gray-10);
 	opacity: 0.45;
 	z-index: 1040;
 }
@@ -222,7 +222,7 @@
 	.sanad-sheet .modal-dialog { margin: 0; max-width: 100%; width: 100%; height: 100dvh; }
 	.sanad-sheet .modal-content { height: 100dvh; border-radius: 0; display: flex; flex-direction: column; }
 	.sanad-sheet .modal-body { flex: 1; min-height: 0; overflow: auto; scroll-padding-block-end: 96px; }
-	.sanad-sheet .modal-footer { position: sticky; inset-block-end: 0; background: var(--surface-modal, var(--surface-white)); }
+	.sanad-sheet .modal-footer { position: sticky; inset-block-end: 0; background: var(--surface-elevation-2, var(--surface-base)); }
 }
 
 .sanad-tabular { font-variant-numeric: tabular-nums; }
@@ -234,7 +234,7 @@
 .sanad-pin {
 	position: sticky;
 	z-index: 20;
-	background: var(--sanad-pin-bg, var(--surface-white));
+	background: var(--sanad-pin-bg, var(--surface-base));
 }
 // the last pinned element closes the band with a hairline once there is something under it
 .sanad-pinned-page .sanad-pin:has(+ :not(.sanad-pin)) { box-shadow: 0 1px 0 var(--outline-gray-1); }

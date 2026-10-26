@@ -32,10 +32,10 @@
 		margin: 0;
 		font-size: var(--text-sm, 12px);
 		font-weight: 600;
-		color: var(--ink-gray-8);
+		color: var(--ink-gray-7);
 	}
 	&__req {
-		color: var(--ink-red-4);
+		color: var(--ink-red-8);
 	}
 
 	// Unseen it is bigger and wears a ring, because a field whose number is not the obvious one has
@@ -82,8 +82,8 @@
 		padding: 10px 12px;
 		border-radius: 10px;
 		background: var(--ink-gray-9);
-		color: var(--surface-white);
-		font-size: 11.5px;
+		color: var(--surface-base);
+		font-size: 12px;
 		font-weight: 400;
 		line-height: 1.9;
 		box-shadow: var(--shadow-lg);
@@ -97,7 +97,7 @@
 		align-items: stretch;
 		min-block-size: 40px;
 		border: 1px solid var(--outline-gray-2);
-		border-radius: 9px;
+		border-radius: 8px;
 		background: var(--surface-gray-1);
 
 		&--focus {
@@ -105,7 +105,7 @@
 			box-shadow: 0 0 0 3px var(--sanad-accent-soft);
 		}
 		&--error {
-			border-color: var(--outline-red-2);
+			border-color: var(--outline-red-4);
 			box-shadow: 0 0 0 3px var(--surface-red-1);
 		}
 	}
@@ -121,7 +121,7 @@
 		border-start-start-radius: 8px;
 		border-end-start-radius: 8px;
 		background: transparent;
-		color: var(--ink-gray-8);
+		color: var(--ink-gray-7);
 		font: inherit;
 		cursor: pointer;
 
@@ -137,7 +137,7 @@
 		font-size: 11px;
 		font-weight: 700;
 		letter-spacing: 0.5px;
-		color: var(--ink-gray-7);
+		color: var(--ink-gray-6);
 	}
 	&__dial {
 		font-size: var(--text-base, 13px);
@@ -165,7 +165,7 @@
 		// country trigger and the digits, so the input inside it must not draw a second one
 		&:focus-visible { box-shadow: none !important; outline: none !important; }
 		padding: 0 12px;
-		font-size: 13.5px;
+		font-size: 13px;
 		letter-spacing: 0.6px;
 		font-family: var(--font-stack-mono, ui-monospace, monospace);
 		color: var(--ink-gray-9);
@@ -180,7 +180,7 @@
 		align-items: center;
 		padding-inline-end: 10px;
 		flex: none;
-		color: var(--ink-green-3);
+		color: var(--ink-green-7);
 
 		&[hidden] {
 			display: none;
@@ -201,7 +201,7 @@
 		padding: 6px;
 		border: var(--sanad-border);
 		border-radius: 10px;
-		background: var(--surface-white);
+		background: var(--surface-base);
 		box-shadow: var(--shadow-lg);
 	}
 	&__search {
@@ -240,7 +240,7 @@
 		align-items: center;
 		gap: 9px;
 		padding: 7px 9px;
-		border-radius: 7px;
+		border-radius: 6px;
 		font-size: var(--text-sm, 12.5px);
 		color: var(--ink-gray-9);
 		cursor: pointer;
@@ -258,7 +258,7 @@
 		flex: none;
 		font-size: 11px;
 		font-weight: 700;
-		color: var(--ink-gray-7);
+		color: var(--ink-gray-6);
 	}
 	&__opt-name {
 		flex: 1;
@@ -271,7 +271,7 @@
 		flex: none;
 		font-size: var(--text-sm, 12px);
 		font-family: var(--font-stack-mono, ui-monospace, monospace);
-		color: var(--ink-gray-7);
+		color: var(--ink-gray-6);
 	}
 	&__empty {
 		padding: 10px;
@@ -313,10 +313,10 @@
 		margin-block-start: 2px;
 	}
 	&--ok {
-		color: var(--ink-green-3);
+		color: var(--ink-green-7);
 	}
 	&--error {
-		color: var(--ink-red-4);
+		color: var(--ink-red-8);
 	}
 }
 

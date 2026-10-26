@@ -122,6 +122,13 @@ ui.uid = (prefix = "sanad") => `${prefix}-${frappe.utils.get_random(8)}`;
 
 ui.debounce = (fn, wait = 250) => frappe.utils.debounce(fn, wait);
 
+/** Latin digits for Arabic-Indic (٠-٩) and Persian (۰-۹) ones; everything else is kept. */
+ui.latin_digits = (text) =>
+	String(text == null ? "" : text).replace(/[٠-٩۰-۹]/g, (d) => String(d.charCodeAt(0) - (d >= "۰" ? 0x06f0 : 0x0660)));
+
+/** "3 hours ago" for a stored time, `fallback` when there is none. */
+ui.ago = (value, fallback = "") => (value ? frappe.datetime.prettyDate(value) : fallback);
+
 /**
  * Where a number column sits in every list and table of the kit: a whole number (Int) in the
  * middle, a decimal / amount / percentage (Float, Currency, Percent) at the end — the left in
@@ -160,7 +167,7 @@ ui.pin_stack = function ($root, selectors) {
 			const bg = getComputedStyle(el).backgroundColor;
 			if (bg && bg !== "transparent" && !/rgba\(.*,\s*0\)$/.test(bg)) return bg;
 		}
-		return "var(--surface-white)";
+		return "var(--surface-base)";
 	};
 	const layout = () => {
 		let top = 0;
@@ -204,10 +211,14 @@ ui.pin_stack = function ($root, selectors) {
 		watch();
 	}, 100));
 	mo.observe(root, { childList: true, subtree: true });
+	// a theme switched while the page is open repaints the page: the band takes the new background
+	const theme = new MutationObserver(() => layout());
+	theme.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 	$(window).on("resize.sanadpin", layout);
 	return () => {
 		ro && ro.disconnect();
 		mo.disconnect();
+		theme.disconnect();
 		$(window).off("resize.sanadpin", layout);
 	};
 };

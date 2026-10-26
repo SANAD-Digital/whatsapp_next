@@ -6,7 +6,7 @@
 		position: sticky;
 		inset-block-start: 0;
 		z-index: 2;
-		background: var(--surface-white);
+		background: var(--surface-base);
 	}
 
 	&__alert {
@@ -14,9 +14,9 @@
 	}
 	&__summary,
 	&__error {
-		border: 1px solid var(--outline-red-1);
+		border: 1px solid var(--outline-red-3);
 		background: var(--surface-red-1);
-		color: var(--ink-red-4);
+		color: var(--ink-red-8);
 		border-radius: var(--sanad-radius);
 		padding-block: var(--sanad-gap-sm);
 		padding-inline: var(--sanad-gap-md);
@@ -37,7 +37,7 @@
 		margin-inline-start: var(--sanad-gap-sm);
 	}
 	&__field-error {
-		color: var(--ink-red-4);
+		color: var(--ink-red-8);
 		font-size: var(--text-xs, 12px);
 		margin-block-start: var(--sanad-gap-xs);
 	}
@@ -45,7 +45,7 @@
 		input,
 		select,
 		textarea {
-			border-color: var(--outline-red-1) !important;
+			border-color: var(--outline-red-3) !important;
 		}
 	}
 

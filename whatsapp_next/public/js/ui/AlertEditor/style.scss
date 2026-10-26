@@ -160,7 +160,7 @@ body.sanad-ae-open { overflow: hidden; }
 
 	&__step {
 		border: 1px solid var(--wa-border);
-		border-radius: 14px;
+		border-radius: 12px;
 		background: var(--wa-surface);
 		transition: border-color 160ms, box-shadow 160ms;
 
@@ -198,7 +198,7 @@ body.sanad-ae-open { overflow: hidden; }
 		gap: 4px 10px;
 		min-inline-size: 0;
 
-		strong { font-size: 15px; font-weight: 700; }
+		strong { font-size: 14px; font-weight: 700; }
 		span { font-size: 12px; color: var(--wa-ink-3); }
 	}
 
@@ -210,8 +210,6 @@ body.sanad-ae-open { overflow: hidden; }
 		padding-inline-start: 58px;
 	}
 
-	&__row { display: flex; align-items: flex-start; gap: 12px; }
-	&__row > &__label { flex: none; min-inline-size: 52px; padding-block-start: 7px; }
 
 	&__label { font-size: 13px; font-weight: 600; color: var(--wa-ink-2); }
 	&__sub { font-size: 12px; font-weight: 600; color: var(--wa-ink-3); }
@@ -255,13 +253,6 @@ body.sanad-ae-open { overflow: hidden; }
 		&[disabled] { opacity: 0.5; cursor: not-allowed; }
 	}
 
-	&__grid {
-		display: grid;
-		gap: 6px;
-		.sanad-ae__chip { padding-inline: 0; border-radius: 8px; }
-		&--days { grid-template-columns: repeat(7, 38px); .sanad-ae__chip { font-variant-numeric: tabular-nums; } }
-		&--months { grid-template-columns: repeat(6, minmax(0, 1fr)); flex: 1; .sanad-ae__chip { padding-inline: 6px; } }
-	}
 
 	&__time { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 	&__time-in { inline-size: 130px; direction: ltr; font-variant-numeric: tabular-nums; }
@@ -515,22 +506,12 @@ body.sanad-ae-open { overflow: hidden; }
 		span { font-size: 11px; color: var(--wa-ink-4); }
 	}
 
-	&__adder {
-		display: flex;
-		flex-direction: column;
-		gap: 10px;
-		padding: 12px;
-		border: 1px dashed var(--wa-border-2);
-		border-radius: 12px;
-		background: var(--wa-bg);
-	}
 	&__addline { display: flex; gap: 8px; align-items: flex-start; .wa-input { flex: 1; min-inline-size: 0; } }
 	// the test's phone field takes the line's room beside its button
 	&__test-phone { flex: 1; min-inline-size: 0; }
 
 	// ---- devices --------------------------------------------------------------------------------------------
 
-	&__devices { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
 	&__device {
 		display: flex;
 		align-items: center;
@@ -556,14 +537,6 @@ body.sanad-ae-open { overflow: hidden; }
 		&--warn { background: var(--wa-wn); }
 		&--danger { background: var(--wa-dg); }
 		&--info { background: var(--wa-nf); }
-	}
-	&__device-text {
-		display: flex;
-		flex-direction: column;
-		flex: 1;
-		min-inline-size: 0;
-		strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-		span { font-size: 11px; color: var(--wa-ink-3); text-align: start; }
 	}
 
 	// ---- the preview ------------------------------------------------------------------------------------------
@@ -678,7 +651,7 @@ body.sanad-ae-open { overflow: hidden; }
 		gap: 8px;
 		padding: 14px;
 		border: 1px solid var(--wa-border);
-		border-radius: 14px;
+		border-radius: 12px;
 		background: var(--wa-surface);
 
 		> strong { font-size: 14px; }
@@ -770,10 +743,6 @@ body.sanad-ae-open { overflow: hidden; }
 		&__enabled { order: 3; margin-inline-start: auto; }
 		&__build, &__side { padding: 14px; }
 		&__step-body { padding-inline-start: 18px; }
-		&__row { flex-direction: column; gap: 6px; }
-		&__row > &__label { padding-block-start: 0; }
-		&__grid--days { grid-template-columns: repeat(7, minmax(0, 1fr)); inline-size: 100%; }
-		&__grid--months { grid-template-columns: repeat(4, minmax(0, 1fr)); inline-size: 100%; }
 		&__filter { grid-template-columns: minmax(0, 1fr) 28px; > .wa-seg, > .wa-input:not(:first-child), > .sanad-ae__token { grid-column: 1 / -1; } }
 		&__foot { flex-wrap: wrap; padding: 10px 14px; }
 		&__foot-hint { flex-basis: 100%; order: -1; }

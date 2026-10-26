@@ -40,6 +40,7 @@ def _short(value: Any, label: str) -> str:
 
 
 def parse(value: Any) -> dict[str, Any]:
+	"""A buttons or list definition from a dict or JSON text; `{}` when there is none. Raises on invalid JSON."""
 	if isinstance(value, dict):
 		return value
 	text = cstr(value).strip()

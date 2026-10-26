@@ -11,7 +11,7 @@ from typing import Any
 
 import frappe
 from frappe import _
-from frappe.query_builder.functions import Count, Max, Min
+from frappe.query_builder.functions import Count, Max, Min, Sum
 from frappe.utils import add_to_date, cint, get_datetime, now_datetime
 
 from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
@@ -70,6 +70,7 @@ class Counters:
 	open: int = 0
 
 	def as_values(self) -> dict[str, int]:
+		"""The counters as the campaign's own `*_count` fields."""
 		return {
 			"queued_count": self.queued,
 			"sent_count": self.sent,
@@ -178,6 +179,7 @@ def schedule(campaign: str, at, user: str | None = None) -> str:
 
 
 def unschedule(campaign: str, user: str | None = None) -> str:
+	"""A `Scheduled` campaign back to `Draft`, its time cleared; refuses any other status."""
 	if frappe.db.get_value("WhatsApp Campaign", campaign, "status") != "Scheduled":
 		frappe.throw(_("Campaign is not scheduled"), WAStateConflictError)
 	return set_status(campaign, "Draft", scheduled_at=None)
@@ -226,6 +228,7 @@ def pause(campaign: str, user: str | None = None, reason: str | None = None) -> 
 
 
 def resume(campaign: str, user: str | None = None) -> int:
+	"""Resume a `Paused` campaign: its queue rows go back to `Queued`; audited. Returns the rows resumed."""
 	if frappe.db.get_value("WhatsApp Campaign", campaign, "status") != "Paused":
 		frappe.throw(_("Campaign is not paused"), WAStateConflictError)
 	n = dispatch.resume_items({"campaign": campaign}, user=user)
@@ -534,6 +537,7 @@ def retried_failures(campaigns: list[str]) -> dict[str, list[str]]:
 
 
 def counters_for(campaign: str) -> Counters:
+	"""One campaign's message counters, from the outbound rows (see `counters_for_many`)."""
 	return counters_for_many([campaign]).get(campaign) or Counters()
 
 
@@ -1152,3 +1156,82 @@ def retry_failed(
 	)
 	return {"retried": retried, "refused": refused, "remaining": cint(remaining)}
 
+
+def overview(days: int = 30) -> dict[str, Any]:
+	"""What every campaign together is doing — the console's metric row (`api.campaigns.get_overview`).
+
+	`states` counts campaigns by status; `in_flight` is the recipients of the active campaigns
+	still `Pending` or `Queued` (nothing of theirs has left yet); `per_minute` is what campaign messages actually
+	achieved over the last hour; `totals` are the recipients, sent, delivered, read and failed of
+	the campaigns started in the last `days` (1–365), which is what the delivery and read rates
+	are a share of.
+	"""
+	window = max(1, min(cint(days) or 30, 365))
+	since = add_to_date(now_datetime(), days=-window)
+
+	states: dict[str, int] = dict.fromkeys(STATUSES, 0)
+	C = frappe.qb.DocType("WhatsApp Campaign")
+	for row in frappe.qb.from_(C).select(C.status, Count("*").as_("n")).groupby(C.status).run(as_dict=True):
+		states[row["status"]] = cint(row["n"])
+
+	# The recipients of the active campaigns still waiting for a message. Counted on the recipient
+	# rows: the campaign counters count *messages* (recipients × messages) in disjoint buckets, so
+	# `total_recipients - sent_count - failed_count` mixed units and counted every delivered or read
+	# recipient as still in flight.
+	R = frappe.qb.DocType("WhatsApp Campaign Recipient")
+	in_flight = cint(
+		(
+			frappe.qb.from_(R)
+			.join(C)
+			.on(R.parent == C.name)
+			.select(Count("*"))
+			.where(
+				(R.parenttype == "WhatsApp Campaign")
+				& C.status.isin(["Running", "Queued", "Paused"])
+				& R.status.isin(["Pending", "Queued"])
+			)
+		).run()[0][0]
+	)
+
+	# The campaign counters are four disjoint buckets: a message that was read is not also counted
+	# as sent. The rates a console shows are stage shares, so the buckets are rolled up here —
+	# `sent` is everything that left, `delivered` everything that arrived (read included).
+	# summed in the database: one row, however many campaigns the window holds
+	totals_row = (
+		frappe.qb.from_(C)
+		.select(
+			Sum(C.total_recipients).as_("recipients"),
+			Sum(C.sent_count).as_("sent"),
+			Sum(C.delivered_count).as_("delivered"),
+			Sum(C.read_count).as_("read"),
+			Sum(C.failed_count).as_("failed"),
+		)
+		.where(C.started_at >= since)
+	).run(as_dict=True)[0]
+	sent, delivered, read = (cint(totals_row[k]) for k in ("sent", "delivered", "read"))
+	totals = {
+		"recipients": cint(totals_row["recipients"]),
+		"sent": sent + delivered + read,
+		"delivered": delivered + read,
+		"read": read,
+		"failed": cint(totals_row["failed"]),
+	}
+
+	# what campaign sending actually achieved in the last hour, not the rate someone configured
+	L = frappe.qb.DocType("WhatsApp Log")
+	sent_last_hour = cint(
+		(
+			frappe.qb.from_(L)
+			.select(Count("*"))
+			.where(L.campaign.notnull() & (L.sent_at >= add_to_date(now_datetime(), minutes=-60)))
+		).run()[0][0]
+	)
+
+	return {
+		"days": window,
+		"states": states,
+		"in_flight": in_flight,
+		"sent_last_hour": sent_last_hour,
+		"per_minute": round(sent_last_hour / 60, 2),
+		"totals": totals,
+	}

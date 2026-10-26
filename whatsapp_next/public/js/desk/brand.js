@@ -8,19 +8,21 @@
 	const BUBBLE =
 		"M30 22H62C66 22 69.5 23.8 71.8 26.8L86 45C88.4 48 88.4 52 86 55L71.8 73.2C69.5 76.2 66 78 62 78H30C20 78 12 70 12 60V40C12 30 20 22 30 22Z";
 
-	// petrol (on light) · paper (on Petrol or Ink) · ghost (a watermark on Petrol, one tone)
+	// petrol (on light) · paper (on Petrol or Ink) · ghost (a watermark on Petrol, one tone). The
+	// colours are the brand tokens of `_tokens.scss` (the same in both themes), read through CSS.
 	const TONES = {
-		petrol: { bubble: "#0B4F4A", dot: "#F7F7F4", last: "#FF8A4C" },
-		paper: { bubble: "#F7F7F4", dot: "#0B4F4A", last: "#FF8A4C" },
-		ghost: { bubble: "#0E3E3A", dot: "#0B4F4A", last: "#0E3E3A" },
+		petrol: { bubble: "--wa-brand", dot: "--wa-on-brand", last: "--wa-accent" },
+		paper: { bubble: "--wa-on-brand", dot: "--wa-brand", last: "--wa-accent" },
+		ghost: { bubble: "--wa-brand-deep", dot: "--wa-brand", last: "--wa-brand-deep" },
 	};
+	const fill = (token) => `style="fill: var(${token})"`;
 
 	const is_rtl = () => document.documentElement.dir === "rtl" || frappe.utils.is_rtl?.();
 
 	function mark(size = 24, tone = "petrol") {
 		const c = TONES[tone] || TONES.petrol;
 		const flip = is_rtl() ? ' transform="translate(100 0) scale(-1 1)"' : "";
-		return `<svg class="wn-mark" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true" focusable="false"><g${flip}><path d="${BUBBLE}" fill="${c.bubble}"/><circle cx="27" cy="50" r="4.5" fill="${c.dot}"/><circle cx="42.5" cy="50" r="5.5" fill="${c.dot}"/><circle cx="59.5" cy="50" r="6.8" fill="${c.last}"/></g></svg>`;
+		return `<svg class="wn-mark" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true" focusable="false"><g${flip}><path d="${BUBBLE}" ${fill(c.bubble)}/><circle cx="27" cy="50" r="4.5" ${fill(c.dot)}/><circle cx="42.5" cy="50" r="5.5" ${fill(c.dot)}/><circle cx="59.5" cy="50" r="6.8" ${fill(c.last)}/></g></svg>`;
 	}
 
 	// «Whatsapp» light and «Next» bold; in Arabic «واتساب» light and «نكست» bold.

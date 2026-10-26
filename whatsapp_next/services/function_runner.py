@@ -48,6 +48,7 @@ class FunctionRun:
 
 	@property
 	def ok(self) -> bool:
+		"""True when the run raised no error."""
 		return self.error is None
 
 

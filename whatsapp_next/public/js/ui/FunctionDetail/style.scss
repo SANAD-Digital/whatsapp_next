@@ -13,7 +13,7 @@ $fd-mono: "IBM Plex Mono", ui-monospace, monospace;
 	&__identity { display: flex; flex-direction: column; gap: 3px; min-inline-size: 0; }
 
 	&__name {
-		font-size: 15px;
+		font-size: 14px;
 		font-weight: 700;
 		line-height: 1.35;
 		overflow: hidden;
@@ -27,7 +27,7 @@ $fd-mono: "IBM Plex Mono", ui-monospace, monospace;
 	&__badge {
 		padding: 2px 8px;
 		border-radius: 999px;
-		font-size: 10px;
+		font-size: 11px;
 		font-weight: 700;
 		white-space: nowrap;
 		border: 1px solid transparent;
@@ -86,7 +86,7 @@ $fd-mono: "IBM Plex Mono", ui-monospace, monospace;
 		border: 1px solid var(--wa-border);
 	}
 
-	&__stat-k { font-size: 10px; color: var(--wa-ink-4); }
+	&__stat-k { font-size: 11px; color: var(--wa-ink-4); }
 	&__stat-v { font-family: $fd-mono; font-size: 13px; font-weight: 700; color: var(--wa-ink); text-align: start; }
 
 	&__h { font-size: 12px; font-weight: 600; color: var(--wa-ink-2);
@@ -133,7 +133,7 @@ $fd-mono: "IBM Plex Mono", ui-monospace, monospace;
 	&__choices { text-align: end; font-size: 11px; color: var(--wa-ink-4); }
 
 	&__out-name { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--wa-ink); min-inline-size: 0; }
-	&__bar { inline-size: 3px; block-size: 15px; border-radius: 2px; background: var(--wa-pri); flex: none; }
+	&__bar { inline-size: 3px; block-size: 15px; border-radius: 4px; background: var(--wa-pri); flex: none; }
 
 	&__copybox {
 		position: relative;
@@ -174,7 +174,7 @@ $fd-mono: "IBM Plex Mono", ui-monospace, monospace;
 	}
 
 	&__field {
-		font-size: 10px;
+		font-size: 11px;
 		padding: 3px 8px;
 		border-radius: 6px;
 		background: var(--wa-bg);
@@ -214,7 +214,7 @@ $fd-mono: "IBM Plex Mono", ui-monospace, monospace;
 		text-align: start;
 	}
 
-	&__arrow { font-size: 10px; color: var(--wa-ink-4); flex: none; }
+	&__arrow { font-size: 11px; color: var(--wa-ink-4); flex: none; }
 	&__log-v { font-family: $fd-mono; font-size: 13px; font-weight: 700; color: var(--wa-ink); }
 	&__log-n { margin-inline-start: auto; font-size: 11px; color: var(--wa-ink-4); flex: none; }
 	&__changes { display: flex; flex-direction: column; gap: 4px; }

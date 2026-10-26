@@ -377,6 +377,7 @@ def should_route(message_type: str, body: str | None, is_group: bool, *, enabled
 
 
 def key_hash(key: str | None) -> str | None:
+	"""A short, non-reversible tag of a chat key, for realtime payloads that must not carry the number."""
 	return hashlib.sha1((key or "").encode("utf-8")).hexdigest() if key else None
 
 

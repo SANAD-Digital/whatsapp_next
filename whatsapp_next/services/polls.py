@@ -204,6 +204,7 @@ class PollResults:
 	by_poll_id: dict[str, dict[str, Any]] = field(default_factory=dict)
 
 	def as_dict(self) -> dict[str, Any]:
+		"""The tally as the API returns it: options in order, a count per option, responses and errors."""
 		return {
 			"options": self.options,
 			"counts": [{"option": o, "count": self.counts.get(o, 0)} for o in self.options],
@@ -258,8 +259,12 @@ SENT_STATUSES = ("Sent", "Delivered", "Read")
 SUMMARY_MAX_ROWS = 2000
 
 
-def _digits(value: Any) -> str:
-	return re.sub(r"\D", "", cstr(value))
+def _same_number(a: Any, b: Any) -> bool:
+	"""Two numbers compared the app's one way (`services.phone.normalize`, E.164)."""
+	from whatsapp_next.services.phone import normalize
+
+	na, nb = normalize(cstr(a)), normalize(cstr(b))
+	return bool(na) and na == nb
 
 
 def summary_for_log(name: str) -> dict[str, Any]:
@@ -313,7 +318,7 @@ def summary_for_log(name: str) -> dict[str, Any]:
 		by_device.setdefault(r.device, []).append(r)
 	for device, logs in by_device.items():
 		dev = frappe.db.get_value("WhatsApp Device", device, ["platform_device", "phone_e164"], as_dict=True) or {}
-		own = _digits(dev.get("phone_e164"))
+		own = dev.get("phone_e164")
 		ids = {r.name: (r.provider_message_id or r.poll_id) for r in logs}
 		raw_by_id: dict[str, Any] = {}
 		wanted = [i for i in dict.fromkeys(ids.values()) if i]
@@ -342,7 +347,7 @@ def summary_for_log(name: str) -> dict[str, Any]:
 					answered = True
 					continue
 				for v in voters:
-					if own and _digits(v.get("number")) == own:
+					if own and _same_number(v.get("number"), own):
 						continue  # the device's own vote is not a response
 					key = cstr(v.get("number") or v.get("jid") or v.get("name"))
 					entry = by_voter.setdefault(

@@ -21,7 +21,7 @@ $bs-mono: "IBM Plex Mono", ui-monospace, monospace;
 	}
 
 	&__top-text { display: flex; flex-direction: column; gap: 3px; min-inline-size: 0; }
-	&__title { font-size: 15px; font-weight: 700; }
+	&__title { font-size: 14px; font-weight: 700; }
 	&__subtitle { font-size: 11px; color: var(--wa-ink-3); line-height: 1.7; }
 	&__body { flex: 1; min-block-size: 0; display: flex; }
 
@@ -83,7 +83,7 @@ $bs-mono: "IBM Plex Mono", ui-monospace, monospace;
 		&.is-sel { background: var(--wa-surface); color: var(--wa-pri-d); }
 	}
 
-	&__seg-n { font-family: $bs-mono; font-size: 10px; color: var(--wa-ink-4); }
+	&__seg-n { font-family: $bs-mono; font-size: 11px; color: var(--wa-ink-4); }
 
 	&__search {
 		display: flex;
@@ -148,7 +148,7 @@ $bs-mono: "IBM Plex Mono", ui-monospace, monospace;
 	&__badge {
 		padding: 2px 8px;
 		border-radius: 999px;
-		font-size: 10px;
+		font-size: 11px;
 		font-weight: 600;
 		flex: none;
 		white-space: nowrap;
@@ -376,7 +376,7 @@ $bs-mono: "IBM Plex Mono", ui-monospace, monospace;
 	&__attach { flex: none; display: flex; padding: 8px 12px 0; background: var(--wa-bg); border-block-start: 1px solid var(--wa-border); }
 	&__attach + .sanad-bs__composer { border-block-start: 0; }
 
-	&__bubble-at { align-self: flex-end; font-size: 10px; color: var(--wa-ink-4); }
+	&__bubble-at { align-self: flex-end; font-size: 11px; color: var(--wa-ink-4); }
 
 	&__empty {
 		margin: auto;
@@ -410,7 +410,7 @@ $bs-mono: "IBM Plex Mono", ui-monospace, monospace;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 18px;
+		font-size: 16px;
 		font-weight: 700;
 		line-height: 1;
 		cursor: pointer;
@@ -439,7 +439,7 @@ $bs-mono: "IBM Plex Mono", ui-monospace, monospace;
 		&:focus { border-color: var(--wa-pri); }
 	}
 
-	&__clear-x { position: absolute; inset-inline-end: 16px; inset-block-end: 8px; border: 0; background: transparent; color: var(--wa-ink-4); font-size: 15px; cursor: pointer; }
+	&__clear-x { position: absolute; inset-inline-end: 16px; inset-block-end: 8px; border: 0; background: transparent; color: var(--wa-ink-4); font-size: 14px; cursor: pointer; }
 
 	&__bar {
 		flex: none;
@@ -454,7 +454,7 @@ $bs-mono: "IBM Plex Mono", ui-monospace, monospace;
 
 	&__estimates { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1; min-inline-size: 0; }
 	&__est { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
-	&__est-k { font-size: 10px; color: var(--wa-ink-4); }
+	&__est-k { font-size: 11px; color: var(--wa-ink-4); }
 	&__est-v { font-size: 12px; font-weight: 600; color: var(--wa-ink); }
 
 	&__send {

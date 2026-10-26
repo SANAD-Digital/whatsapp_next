@@ -25,7 +25,19 @@ class TestDevices(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
+		# the site's own default device: these tests move the flag and empty Settings' field, and the
+		# site's real device must come back as it was (it was left unflagged and Settings empty)
+		cls._site_default = frappe.db.get_single_value("WhatsApp Settings", "default_device", cache=False)
+		cls._site_flagged = frappe.get_all("WhatsApp Device", filters={"is_default": 1}, pluck="name")
 		ensure_settings()
+
+	@classmethod
+	def tearDownClass(cls):
+		frappe.db.set_value("WhatsApp Device", {"name": ("in", cls._site_flagged or [""])}, "is_default", 1, update_modified=False)
+		frappe.db.set_single_value("WhatsApp Settings", "default_device", cls._site_default, update_modified=False)
+		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+		frappe.db.commit()
+		super().tearDownClass()
 
 	def setUp(self):
 		self._clean()

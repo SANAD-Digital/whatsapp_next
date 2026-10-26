@@ -356,6 +356,7 @@ def note_account(previous_key: str | None, previous_account: str | None, new_acc
 
 
 def pending_switch_raw() -> dict[str, Any] | None:
+	"""The recorded account switch as stored (`{from, to, at, devices}`), or None."""
 	raw = frappe.db.get_default(SWITCH_DEFAULT)
 	if not raw:
 		return None

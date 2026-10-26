@@ -90,6 +90,7 @@ def command_map(*, refresh: bool = False) -> dict[str, str]:
 
 
 def clear_map() -> None:
+	"""Forget the cached command-word map; the next inbound message rebuilds it."""
 	frappe.cache.delete_value(MAP_CACHE_KEY)
 
 

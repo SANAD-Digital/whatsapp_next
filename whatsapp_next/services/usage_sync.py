@@ -67,6 +67,9 @@ def sync_subscription(*, raise_errors: bool = False) -> dict[str, Any] | None:
 		frappe.log_error(title="WhatsApp usage sync failed", message=f"code={exc.code}")
 		return None
 	values = _values(info)
+	# a site linked before it remembered its account learns it here, so a later switch is exact
+	if info.account_id and not frappe.db.get_default("whatsapp_next_platform_account"):
+		frappe.db.set_default("whatsapp_next_platform_account", info.account_id)
 	# Never let the local rate exceed the plan's rate (Settings validation would reject saves).
 	current_rate = cint(frappe.db.get_single_value("WhatsApp Settings", "messages_per_minute"))
 	if values["plan_messages_per_minute"] and current_rate > values["plan_messages_per_minute"]:

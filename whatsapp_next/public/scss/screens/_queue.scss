@@ -113,7 +113,7 @@
 			inset-block-start: 50%;
 			translate: 0 -50%;
 			block-size: 4px;
-			border-radius: var(--border-radius-full, 999px);
+			border-radius: var(--radius-full, 999px);
 			pointer-events: none;
 		}
 		&::before {
@@ -133,9 +133,9 @@
 		inset-inline-start: var(--wa-from, 0%);
 		inline-size: calc(var(--wa-to, 0%) - var(--wa-from, 0%));
 		block-size: 12px;
-		border-radius: 2px;
+		border-radius: 4px;
 		background: var(--surface-green-1);
-		border: 1px solid var(--outline-green-1);
+		border: 1px solid var(--outline-green-3);
 		pointer-events: none;
 	}
 	&__slider {
@@ -158,7 +158,7 @@
 			block-size: 16px;
 			margin-block-start: -6px;
 			border-radius: 50%;
-			border: 2px solid var(--surface-white);
+			border: 2px solid var(--surface-base);
 			background: var(--sanad-accent);
 			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 		}
@@ -166,7 +166,7 @@
 			inline-size: 16px;
 			block-size: 16px;
 			border-radius: 50%;
-			border: 2px solid var(--surface-white);
+			border: 2px solid var(--surface-base);
 			background: var(--sanad-accent);
 		}
 	}
@@ -178,7 +178,7 @@
 		font-size: 11px;
 		color: var(--ink-gray-5);
 	}
-	&__scale-zone { color: var(--ink-green-3); }
+	&__scale-zone { color: var(--ink-green-7); }
 }
 
 // the failure under a row's status (`whatsapp_queue_item_list.js`): said in words, in the danger ink

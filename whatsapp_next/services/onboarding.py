@@ -128,6 +128,19 @@ def save_credentials(
 	return written
 
 
+def save_credentials_by_hand(user: str | None = None, **values) -> tuple[list[str], bool]:
+	"""`save_credentials` for keys typed in Settings: the platform is then asked which account the
+	new keys belong to, and another account is recorded as a switch (`backup.note_account`), the
+	way a sign-in does. Returns `(fields_written, account_switched)`."""
+	previous_key, previous_account = backup.account_key(), backup.current_account()
+	written = save_credentials(user=user, **values)
+	try:
+		new_account = registry.get_provider().get_account().account_id
+	except Exception:
+		new_account = None  # the keys do not answer yet: the key comparison decides
+	return written, backup.note_account(previous_key, previous_account, new_account, user=user)
+
+
 # What a sign-out empties besides the keys: the state that described the link to the account. The
 # connection test, the webhook endpoint and the plan cache all spoke for the account the site left.
 SIGN_OUT_SECRETS: tuple[str, ...] = (*CREDENTIAL_FIELDS, "webhook_secret")
@@ -385,7 +398,12 @@ def complete_signup(
 
 	`code` verifies the request (skipped when it was verified already) and
 	`password` sets the tenant's portal password, which is what makes the
-	account real on the platform."""
+	account real on the platform.
+
+	Refused without a password of 8 characters or more: without one the platform is never asked
+	to create the account, and the person was later told their password was wrong (2026-10-25)."""
+	if len(password or "") < 8:
+		frappe.throw(_("Enter the password you chose to finish creating the account."), WAValidationError)
 	state = registry.get_provider().complete_signup(request_key, code or "", password=password)
 	previous_key, previous_account = backup.account_key(), backup.current_account()
 	stored = store_signup_credentials(state, user=user)

@@ -105,7 +105,7 @@ frappe.provide("whatsapp_next.home");
 	const is_agent = () => frappe.user.has_role(AGENT_UP);
 	const period_of = (key) => PERIODS.find((p) => p.key === key) || PERIODS[1];
 	const sum_of = (counts, keys) => keys.reduce((n, k) => n + cint(counts[k]), 0);
-	const ago = (value) => (value ? frappe.datetime.prettyDate(value) : "");
+	const ago = (value) => sanad.ui.ago(value);
 
 	/**
 	 * The site's own calendar day. Every period is cut by the server in the site's time zone

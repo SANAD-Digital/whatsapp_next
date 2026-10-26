@@ -47,11 +47,13 @@ def week_range(today: date | str | None = None, first_weekday: int = 0) -> tuple
 
 
 def month_range(today: date | str | None = None) -> tuple[date, date]:
+	"""First and last day of the calendar month of `today`."""
 	t = _today(today)
 	return t.replace(day=1), t.replace(day=calendar.monthrange(t.year, t.month)[1])
 
 
 def quarter_range(today: date | str | None = None) -> tuple[date, date]:
+	"""First and last day of the calendar quarter of `today`."""
 	t = _today(today)
 	q_start_month = ((t.month - 1) // 3) * 3 + 1
 	start = t.replace(month=q_start_month, day=1)
@@ -60,6 +62,7 @@ def quarter_range(today: date | str | None = None) -> tuple[date, date]:
 
 
 def year_range(today: date | str | None = None) -> tuple[date, date]:
+	"""1 January and 31 December of the year of `today`."""
 	t = _today(today)
 	return t.replace(month=1, day=1), t.replace(month=12, day=31)
 

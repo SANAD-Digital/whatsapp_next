@@ -120,6 +120,7 @@ class ConversationPage:
 
 	@property
 	def next_cursor(self) -> str | None:
+		"""The cursor of the next page, or None on the last one."""
 		return self.rows[-1].cursor if self.rows and self.has_more else None
 
 
@@ -156,6 +157,7 @@ class DeviceStats:
 
 
 def encode_cursor(ts: dt.datetime, name: str) -> str:
+	"""A page cursor from a row's time and name (`decode_cursor` reads it back)."""
 	return f"{get_datetime(ts).isoformat()}|{name}"
 
 

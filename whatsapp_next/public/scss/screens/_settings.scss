@@ -72,7 +72,7 @@
 		min-inline-size: 0;
 		border: var(--sanad-border);
 		border-radius: var(--sanad-radius);
-		background: var(--surface-white);
+		background: var(--surface-base);
 		overflow: hidden;
 		> header {
 			display: flex;
@@ -345,16 +345,16 @@
 		background: none;
 		overflow: visible;
 		> header {
-			padding: 28px 0 4px;
-			strong { font-size: 17px; }
+			padding: 18px 0 2px;
+			strong { font-size: 14px; }
 			span span { font-size: 13px; color: var(--wa-ink-3); }
 		}
 	}
 	.wa-settings__panel-body { padding: 0; }
 
 	.wa-settings__subhead {
-		margin: 28px 0 4px;
-		font-size: 17px;
+		margin: 18px 0 2px;
+		font-size: 14px;
 		font-weight: 600;
 		letter-spacing: 0;
 		text-transform: none;
@@ -362,13 +362,13 @@
 	}
 
 	.wa-settings__rows li {
-		min-block-size: 52px;
-		padding-block: 14px;
-		gap: 24px;
+		min-block-size: 40px;
+		padding-block: 9px;
+		gap: 20px;
 		border-block-end-color: var(--wa-border);
-		font-size: 14px;
+		font-size: 13px;
 	}
-	.wa-settings__row-label { font-size: 15px; color: var(--wa-ink); > span { font-size: 13px; color: var(--wa-ink-3); } }
+	.wa-settings__row-label { font-size: 13px; color: var(--wa-ink); > span { font-size: 12px; color: var(--wa-ink-3); } }
 	.wa-settings__row-value { color: var(--wa-ink-2); }
 
 	// read-only facts as rows
@@ -380,85 +380,39 @@
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
-			gap: 24px;
-			padding-block: 14px;
+			gap: 20px;
+			padding-block: 9px;
 			border-block-end: 1px solid var(--wa-border);
 		}
-		dt { font-size: 15px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--wa-ink); }
-		dd { font-size: 14px; color: var(--wa-ink-2); text-align: end; }
+		dt { font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--wa-ink); }
+		dd { font-size: 13px; color: var(--wa-ink-2); text-align: end; }
 	}
 
-	// writable fields as rows: title and explanation on the start side, the control on the end side
+	// writable fields as rows (the app's controls, `settings.js setting_control`): title and
+	// explanation on the start side, the control on the end side; long text under its title
 	.wa-settings__form {
 		display: flex;
 		flex-direction: column;
 		gap: 0;
-		.frappe-control { border-block-end: 1px solid var(--wa-border); }
-		.form-group {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr) minmax(200px, 300px);
-			column-gap: 24px;
-			align-items: center;
-			margin: 0;
-			padding-block: 14px;
-		}
-		.clearfix { grid-column: 1; grid-row: 1; }
-		.control-label { margin: 0; padding: 0 !important; font-size: 15px; font-weight: 500; color: var(--wa-ink); }
-		.form-group > .help-box { grid-column: 1; grid-row: 2; margin: 3px 0 0; font-size: 13px; line-height: 1.6; color: var(--wa-ink-3); }
-		.control-input-wrapper { grid-column: 2; grid-row: 1 / span 2; }
-		.frappe-control:is([data-fieldtype="Small Text"], [data-fieldtype="Text"], [data-fieldtype="Long Text"], [data-fieldtype="Code"], [data-fieldtype="JSON"]) .form-group {
-			grid-template-columns: minmax(0, 1fr);
-			.control-input-wrapper { grid-column: 1; grid-row: 3; margin-block-start: 8px; }
-		}
-
-		// a check is a switch at the end of its row
-		// a Check's wrapper is itself the `.form-group`
-		.form-group:has(> .checkbox) { display: block; }
-		.checkbox {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr) auto;
-			column-gap: 24px;
-			align-items: center;
-			margin: 0;
-			label { display: contents; }
-			.label-area { grid-column: 1; grid-row: 1; font-size: 15px; font-weight: 500; color: var(--wa-ink); }
-			.help-box { grid-column: 1; grid-row: 2; margin: 3px 0 0; font-size: 13px; color: var(--wa-ink-3); }
-			.input-area { grid-column: 2; grid-row: 1 / span 2; display: inline-flex; }
-			.disp-area, .help { display: none; }
-			input[type="checkbox"] {
-				appearance: none;
-				-webkit-appearance: none;
-				flex: none;
-				min-inline-size: 38px;
-				background-image: none !important;
-				position: relative;
-				inline-size: 38px;
-				block-size: 22px;
-				margin: 0;
-				border: 0;
-				border-radius: 999px;
-				background: var(--wa-border-2);
-				box-shadow: none;
-				cursor: pointer;
-				transition: background 160ms;
-				&::after {
-					content: "";
-					position: absolute;
-					inset-block-start: 3px;
-					inset-inline-start: 3px;
-					inline-size: 16px;
-					block-size: 16px;
-					border-radius: 50%;
-					background: var(--wa-surface);
-					box-shadow: var(--wa-shadow-sm);
-					transition: inset-inline-start 160ms;
-				}
-				&:checked { background: var(--wa-pri); border: 0; }
-				&:checked::after { inset-inline-start: 19px; }
-				&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: 2px; }
-			}
-		}
 	}
+	.wa-settings__field .sanad-sw__row-control {
+		inline-size: min(280px, 50%);
+		justify-content: flex-end;
+		> .wa-input,
+		> .wa-select,
+		> .wa-settings__link { inline-size: 100%; }
+		> .wa-toggle { margin-inline-start: auto; }
+	}
+	.wa-settings__field .wa-settings__number { inline-size: 120px !important; margin-inline-start: auto; }
+	.wa-settings__field--stacked {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 6px;
+		.sanad-sw__row-control { inline-size: 100%; max-inline-size: none; }
+		.wa-textarea { inline-size: 100%; min-block-size: 56px; resize: vertical; }
+	}
+	.wa-settings__field .sanad-sw__row-title { cursor: default; }
+	.wa-settings__req { color: var(--wa-dg-i); }
 
 	.wa-settings__actions { justify-content: flex-end; padding-block-start: 16px; }
 
@@ -471,29 +425,29 @@
 		display: flex;
 		align-items: center;
 		justify-content: flex-end;
-		gap: 10px;
-		margin-block-start: 24px;
-		padding: 12px 14px;
+		gap: 8px;
+		margin-block-start: 12px;
+		padding: 6px 8px;
 		border: 1px solid var(--wa-border);
-		border-radius: 14px;
+		border-radius: 10px;
 		background: var(--wa-surface);
 		box-shadow: var(--wa-shadow-md);
 
-		.btn { min-block-size: 38px; padding-inline: 18px; font-size: 14px; font-weight: 600; border-radius: 10px; }
+		.btn { min-block-size: 32px; padding-inline: 14px; font-size: 13px; font-weight: 600; border-radius: 8px; }
 		.wa-settings__save:disabled { opacity: 0.45; }
 	}
 	.wa-settings__savebar-text { margin-inline-end: auto; font-size: 13px; font-weight: 600; color: var(--wa-wn-i); }
 	.wa-settings__savebar.is-dirty { background: var(--wa-wn-s); border-color: var(--wa-wn-sb); }
 
-	.wa-settings__banner { margin-block-end: 4px; padding: 14px 16px; border-radius: 12px; }
+	.wa-settings__banner { margin-block-end: 4px; padding: 10px 12px; border-radius: 10px; }
 	.wa-settings__note { margin-block-start: 12px; font-size: 13px; color: var(--wa-ink-3); }
 
 	// ---- subscription: the plan meter and three facts ------------------------------------------------
 
 	.wa-settings__meter {
-		padding: 20px;
+		padding: 14px 16px;
 		border: 1px solid var(--wa-border);
-		border-radius: 14px;
+		border-radius: 10px;
 		background: var(--wa-bg);
 	}
 	.wa-settings__meter-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -504,7 +458,7 @@
 		flex-wrap: wrap;
 		gap: 10px;
 		margin-block: 8px 12px;
-		strong { font-size: 32px; font-weight: 700; line-height: 1.1; color: var(--wa-ink); }
+		strong { font-size: 24px; font-weight: 700; line-height: 1.1; color: var(--wa-ink); }
 		span { font-size: 13px; color: var(--wa-ink-3); }
 	}
 	.wa-settings__meter-track {
@@ -606,17 +560,42 @@
 // border and radius of the app's cards — with compact rows inside it, however the section builds
 // its rows (panels, facts, the Desk form, the window's own rows, the plan, the event list).
 .wa-settings-window {
-	.sanad-sw__pane { padding: 28px 32px 36px; }
-	.sanad-sw__head { margin-block-end: 14px; }
-	.sanad-sw__title { font-size: 19px; }
-	.sanad-sw__desc { margin-block-start: 4px; font-size: 13px; }
+	// the kit's controls at their compact size: 32 px fields at 13 px
+	--wa-h: 32px;
+	--wa-fs: 13px;
+	--wa-px: 10px;
+
+	// wider and denser (owner, 2026-10-26): the pane uses the whole width it is given, and two
+	// panels sit side by side once it is wide enough (the container query below)
+	// (from 720 px: under it the kit makes the window the whole screen)
+	@media (min-width: 720px) {
+		&.sanad-sw {
+			inline-size: min(1240px, calc(100vw - 48px));
+			block-size: min(780px, calc(100dvh - 40px));
+			grid-template-columns: 212px minmax(0, 1fr);
+		}
+	}
+	.sanad-sw__rail { padding: 10px 8px; }
+	.sanad-sw__search { min-block-size: 32px; margin-block-end: 8px; }
+	.sanad-sw__item { min-block-size: 31px; gap: 8px; font-size: 13px; }
+	.sanad-sw__group-label { font-size: 11px; }
+	.sanad-sw__nav { gap: 8px; }
+
+	.sanad-sw__pane {
+		padding: 18px 22px 24px;
+		container-type: inline-size;
+		> * { max-inline-size: none; }
+	}
+	.sanad-sw__head { margin-block-end: 10px; }
+	.sanad-sw__title { font-size: 16px; }
+	.sanad-sw__desc { margin-block-start: 2px; font-size: 13px; }
 
 	// section headings: small, close to what they head
 	.sanad-sw__h,
-	.wa-settings .wa-settings__subhead { margin-block: 20px 8px; }
+	.wa-settings .wa-settings__subhead { margin-block: 14px 6px; }
 	.sanad-sw__h h3,
-	.wa-settings .wa-settings__subhead { font-size: 14px; font-weight: 600; }
-	.sanad-sw__h p { margin-block-start: 2px; font-size: 12px; }
+	.wa-settings .wa-settings__subhead { font-size: 13px; font-weight: 600; }
+	.sanad-sw__h p { margin-block-start: 1px; font-size: 12px; }
 
 	.wa-settings {
 		// the framed groups
@@ -630,17 +609,17 @@
 			background: var(--wa-surface);
 			overflow: hidden;
 		}
-		.wa-settings__panel { margin-block-start: 16px; }
+		.wa-settings__panel { margin-block-start: 12px; border-radius: 10px; }
 		.wa-settings__panel > header {
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
 			gap: 12px;
-			padding: 10px 14px;
+			padding: 8px 12px;
 			border-block-end: 1px solid var(--wa-border);
 			background: var(--wa-bg);
-			strong { font-size: 14px; }
-			span span { display: block; margin-block-start: 1px; font-size: 12px; }
+			strong { font-size: 13px; }
+			span span { display: block; margin-block-start: 0; font-size: 12px; }
 		}
 		// a group inside a panel is already framed by it
 		.wa-settings__panel .wa-settings__facts,
@@ -650,16 +629,16 @@
 		// rows: compact, a rule between them, none under the last
 		.wa-settings__rows li,
 		.wa-settings__facts > div {
-			min-block-size: 40px;
-			padding: 9px 14px;
-			gap: 16px;
+			min-block-size: 34px;
+			padding: 6px 12px;
+			gap: 14px;
 			font-size: 13px;
 		}
 		.wa-settings__rows li:last-child,
 		.wa-settings__facts > div:last-child,
 		.wa-settings__plan .wa-settings__rows li:last-child { border-block-end: 0; }
-		.wa-settings__row-label { font-size: 13.5px; > span { font-size: 12px; } }
-		.wa-settings__facts dt { font-size: 13.5px; }
+		.wa-settings__row-label { font-size: 13px; > span { font-size: 12px; } }
+		.wa-settings__facts dt { font-size: 13px; }
 		.wa-settings__facts dd { font-size: 13px; }
 
 		// the Desk form's fields as the same compact rows
@@ -670,7 +649,7 @@
 			.wa-settings__form .form-group { grid-template-columns: minmax(0, 1fr); }
 		}
 		.wa-settings__form .control-label,
-		.wa-settings__form .checkbox .label-area { font-size: 13.5px; }
+		.wa-settings__form .checkbox .label-area { font-size: 13px; }
 		.wa-settings__form .form-group > .help-box,
 		.wa-settings__form .checkbox .help-box { font-size: 12px; line-height: 1.5; }
 		.wa-settings__form .checkbox { padding: 0; }
@@ -686,7 +665,7 @@
 		.wa-settings__check:last-child { border-block-end: 0; }
 
 		// status banner and notes
-		.wa-settings__banner { padding: 10px 14px; border-radius: 12px; font-size: 13px; }
+		.wa-settings__banner { padding: 8px 12px; border-radius: 10px; font-size: 13px; }
 		.wa-settings__note { margin-block-start: 8px; font-size: 12px; }
 
 		// subscription: the meter and the three facts, smaller
@@ -710,18 +689,40 @@
 
 	// the window's own rows (sync, links): each a small card of its own
 	.sanad-sw__row {
-		margin-block-start: 8px;
-		padding: 10px 14px;
-		gap: 16px;
+		margin-block-start: 6px;
+		padding: 7px 12px;
+		gap: 14px;
 		border: 1px solid var(--wa-border);
-		border-radius: 12px;
+		border-radius: 10px;
 		&:last-child { border-block-end: 1px solid var(--wa-border); }
 	}
-	.sanad-sw__row-title { font-size: 13.5px; }
-	.sanad-sw__row-desc { font-size: 12px; line-height: 1.5; }
+	.sanad-sw__row-title { font-size: 13px; }
+	.sanad-sw__row-desc { font-size: 12px; line-height: 1.45; }
+
+	// the settings themselves are one list of rows with a hairline between them, not a card each
+	.wa-settings__form .sanad-sw__row {
+		margin: 0;
+		padding: 7px 12px;
+		border: 0;
+		border-block-end: 1px solid var(--wa-border);
+		border-radius: 0;
+		&:last-child { border-block-end: 0; }
+	}
+
+	// a wide pane: the panels of a section side by side, each as tall as its own rows
+	@container (min-width: 760px) {
+		.wa-settings .wa-settings__cols {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			align-items: start;
+			column-gap: 12px;
+		}
+	}
 
 	@media (max-width: 719px) {
 		.sanad-sw__pane { padding: 18px 16px 28px; }
+		.wa-settings__field .sanad-sw__row-control { inline-size: 100%; }
+		.wa-settings__field:not(.wa-settings__field--stacked) { flex-wrap: wrap; }
 	}
 }
 
@@ -749,7 +750,7 @@
 		code { flex: 1 1 auto; overflow-wrap: anywhere; }
 	}
 	&-link { overflow-wrap: anywhere; font-size: var(--text-sm, 13px); }
-	&-img { flex: none; border: 1px solid var(--border-color); border-radius: var(--border-radius); background: var(--surface-white, var(--wa-surface)); }
+	&-img { flex: none; border: 1px solid var(--border-color); border-radius: var(--radius); background: var(--surface-base, var(--wa-surface)); }
 }
 
 // Backup: the import's outcome under its button
@@ -838,7 +839,7 @@
 		align-items: baseline;
 		gap: 8px;
 		margin-block-end: 6px;
-		strong { font-size: 22px; color: var(--wa-ink); }
+		strong { font-size: 20px; color: var(--wa-ink); }
 		span { font-size: 13px; color: var(--wa-ink-2); }
 	}
 	.wa-pse__sample {

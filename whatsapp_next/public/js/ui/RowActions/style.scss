@@ -26,7 +26,7 @@
 		min-width: 180px;
 		max-width: min(320px, calc(100vw - 16px));
 		padding: var(--sanad-gap-xs);
-		background: var(--surface-white);
+		background: var(--surface-base);
 		border: var(--sanad-border);
 		border-radius: var(--sanad-radius);
 		box-shadow: var(--shadow-md, 0 4px 12px var(--surface-gray-4));
@@ -45,14 +45,14 @@
 		border: 0;
 		border-radius: var(--sanad-radius);
 		background: transparent;
-		color: var(--ink-gray-8);
+		color: var(--ink-gray-7);
 		font-size: var(--text-sm, 13px);
 		text-align: start;
 		cursor: pointer;
 		&:hover, &:focus-visible { background: var(--surface-gray-2); color: var(--ink-gray-9); }
-		&:focus-visible { outline: 2px solid var(--ink-blue-3); outline-offset: -2px; }
-		&--danger { color: var(--ink-red-4); }
-		&--danger:hover, &--danger:focus-visible { background: var(--surface-red-1); color: var(--ink-red-4); }
+		&:focus-visible { outline: 2px solid var(--ink-blue-7); outline-offset: -2px; }
+		&--danger { color: var(--ink-red-8); }
+		&--danger:hover, &--danger:focus-visible { background: var(--surface-red-1); color: var(--ink-red-8); }
 	}
 	&__icon { display: inline-flex; color: var(--ink-gray-6); .icon { width: 16px; height: 16px; } }
 	&__item--danger &__icon { color: inherit; }
@@ -83,4 +83,4 @@
 .sanad-list--two-line .list-row { height: auto; min-height: 40px; padding-block: 6px; align-items: center; }
 .sanad-list--two-line .list-row-col.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sanad-cell__muted { color: var(--ink-gray-5); }
-.sanad-cell__error { color: var(--ink-red-4); } // ink only — the error text, no chip background
+.sanad-cell__error { color: var(--ink-red-8); } // ink only — the error text, no chip background

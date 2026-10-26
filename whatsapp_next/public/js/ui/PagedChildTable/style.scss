@@ -68,7 +68,7 @@
 	&__scroll {
 		border: var(--sanad-border);
 		border-radius: var(--sanad-radius);
-		background: var(--surface-white);
+		background: var(--surface-base);
 		&:has(table:empty) { display: none; }
 	}
 	&__table {

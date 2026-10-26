@@ -163,7 +163,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		white-space: nowrap;
 	}
 
-	&__row-at { font-family: $sim-mono; font-size: 10px; color: var(--wa-ink-4); flex: none; }
+	&__row-at { font-family: $sim-mono; font-size: 11px; color: var(--wa-ink-4); flex: none; }
 
 	&__row-sub {
 		font-size: 11px;
@@ -178,7 +178,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		padding: 2px 8px;
 		border-radius: 999px;
 		border: 1px solid transparent;
-		font-size: 10px;
+		font-size: 11px;
 		font-weight: 600;
 		flex: none;
 		white-space: nowrap;
@@ -236,7 +236,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		inline-size: 32px;
 		block-size: 32px;
 		border: 0;
-		font-size: 15px;
+		font-size: 14px;
 		font-weight: 700;
 		cursor: pointer;
 	}
@@ -365,7 +365,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 18px;
+		font-size: 16px;
 		font-weight: 700;
 		line-height: 1;
 		cursor: pointer;
@@ -412,7 +412,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		border: 0;
 		background: transparent;
 		color: var(--wa-ink-4);
-		font-size: 15px;
+		font-size: 14px;
 		cursor: pointer;
 	}
 

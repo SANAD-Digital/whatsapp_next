@@ -6,7 +6,7 @@
 	position: fixed;
 	z-index: 1070; // over the kit's modals (1040/1041) and Frappe's dialogs
 	padding: 8px;
-	border-radius: 14px;
+	border-radius: 12px;
 	background: var(--wa-surface);
 	border: 1px solid var(--wa-border);
 	box-shadow: 0 14px 34px color-mix(in srgb, var(--wa-ink) 18%, transparent);
@@ -79,7 +79,7 @@
 		gap: 1px;
 		padding: 7px 9px;
 		border: 0;
-		border-radius: 7px;
+		border-radius: 6px;
 		background: transparent;
 		font-size: 12px;
 		font-weight: 600;

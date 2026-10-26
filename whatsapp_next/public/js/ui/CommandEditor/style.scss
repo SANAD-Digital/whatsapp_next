@@ -105,7 +105,7 @@ body.sanad-ce-open { overflow: hidden; }
 		background: var(--wa-bg);
 		color: var(--wa-ink);
 		font-family: $ce-mono;
-		font-size: 17px;
+		font-size: 16px;
 		font-weight: 700;
 		text-align: end;
 		outline: none;
@@ -192,7 +192,7 @@ body.sanad-ce-open { overflow: hidden; }
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		font-size: 17px;
+		font-size: 16px;
 		line-height: 1;
 		color: var(--wa-ink-3);
 		flex: none;
@@ -222,7 +222,7 @@ body.sanad-ce-open { overflow: hidden; }
 
 	&__count {
 		font-family: $ce-mono;
-		font-size: 10px;
+		font-size: 11px;
 		min-inline-size: 17px;
 		block-size: 17px;
 		padding: 0 5px;
@@ -433,7 +433,7 @@ body.sanad-ce-open { overflow: hidden; }
 		gap: 2px;
 		padding: 7px 10px;
 		border: 0;
-		border-radius: 7px;
+		border-radius: 6px;
 		background: transparent;
 		font-size: 12px;
 		font-weight: 600;
@@ -548,7 +548,7 @@ body.sanad-ce-open { overflow: hidden; }
 		background: var(--wa-sunken);
 		border: 1px solid var(--wa-border);
 		color: var(--wa-ink-3);
-		font-size: 10px;
+		font-size: 11px;
 		font-weight: 600;
 		white-space: nowrap;
 
@@ -562,7 +562,7 @@ body.sanad-ce-open { overflow: hidden; }
 		background: var(--wa-pri-s);
 		border: 1px solid var(--wa-pri-sb);
 		color: var(--wa-pri-d);
-		font-size: 10px;
+		font-size: 11px;
 		cursor: pointer;
 	}
 
@@ -672,7 +672,7 @@ body.sanad-ce-open { overflow: hidden; }
 		gap: 6px;
 		padding: 0 12px;
 		border: 0;
-		border-radius: 7px;
+		border-radius: 6px;
 		background: transparent;
 		color: var(--wa-ink-3);
 		font-size: 12px;
@@ -683,7 +683,7 @@ body.sanad-ce-open { overflow: hidden; }
 		&.is-sel { background: var(--wa-surface); color: var(--wa-pri-d); }
 	}
 
-	&__seg-n { font-family: $ce-mono; font-size: 10px; color: var(--wa-ink-4); }
+	&__seg-n { font-family: $ce-mono; font-size: 11px; color: var(--wa-ink-4); }
 
 	&__perm {
 		display: flex;
@@ -742,7 +742,7 @@ body.sanad-ce-open { overflow: hidden; }
 		background: var(--wa-wn-s);
 		border: 1px solid var(--wa-wn-sb);
 		color: var(--wa-wn-i);
-		font-size: 10px;
+		font-size: 11px;
 		font-weight: 600;
 		flex: none;
 		white-space: nowrap;
@@ -857,7 +857,7 @@ body.sanad-ce-open { overflow: hidden; }
 	gap: var(--sanad-gap-xs);
 	margin-block-start: var(--sanad-gap-xs);
 	font-size: var(--text-sm, 13px);
-	color: var(--ink-gray-7);
+	color: var(--ink-gray-6);
 }
 .sanad-ce__ask-choices { margin-block-start: 4px; }
 

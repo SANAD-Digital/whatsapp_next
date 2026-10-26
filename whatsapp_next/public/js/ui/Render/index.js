@@ -17,7 +17,7 @@
 // A host app can pass all three through `sanad.ui.configure({ renderers: {…} })`.
 
 import ui from "../_core/index.js";
-import { VALUE_RENDERERS, VALUE_HELPERS, file_size, file_ext } from "./values.js";
+import { VALUE_RENDERERS, VALUE_HELPERS, file_size, file_ext, show_phone } from "./values.js";
 import { ENTITY_RENDERERS, KIND_BY_DOCTYPE, KIND_HINTS, BASE } from "./entities.js";
 import * as parts from "./parts.js";
 
@@ -445,10 +445,6 @@ function is_phone_field(fieldname) {
 }
 
 /** A number as a person reads it: grouped, no "+". Names and JIDs come back unchanged. */
-function show_phone(value) {
-	return ui.phone ? ui.phone(cstr(value)) : cstr(value);
-}
-
 function is_ltr_field(df, fieldname) {
 	const name = cstr(fieldname || (df && df.fieldname));
 	if (/phone|mobile|email|url|jid|code|id$|_id/.test(name)) return true;

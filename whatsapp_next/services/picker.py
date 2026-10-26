@@ -55,6 +55,8 @@ class ParseResult:
 	error: str | None = None
 
 	def as_dict(self) -> dict[str, Any]:
+		"""The parse result as the API returns it."""
+		"""The preview as the API returns it."""
 		return {
 			"rows": self.rows,
 			"invalid": self.invalid,

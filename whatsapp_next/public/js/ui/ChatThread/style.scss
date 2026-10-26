@@ -37,7 +37,7 @@
 			color: var(--ink-gray-6);
 			background: var(--surface-gray-2);
 			border: var(--sanad-border);
-			border-radius: var(--border-radius-full, 999px);
+			border-radius: var(--radius-full, 999px);
 			padding-inline: var(--sanad-gap-sm);
 			padding-block: 2px;
 		}
@@ -48,7 +48,7 @@
 		&--in { justify-content: flex-start; }
 		&--out { justify-content: flex-end; }
 		&--clickable { cursor: pointer; }
-		&--highlight .sanad-chat__bubble { box-shadow: 0 0 0 2px var(--outline-blue-1); }
+		&--highlight .sanad-chat__bubble { box-shadow: 0 0 0 2px var(--outline-blue-3); }
 	}
 	&__bubble {
 		max-width: min(78%, 60ch);
@@ -56,7 +56,7 @@
 		padding-block: var(--sanad-gap-sm);
 		border: 1px solid var(--outline-gray-1);
 		border-radius: var(--sanad-radius-lg);
-		background: var(--surface-white);
+		background: var(--surface-base);
 		color: var(--ink-gray-9);
 		font-size: var(--text-sm, 13px);
 		line-height: 1.5;
@@ -66,12 +66,12 @@
 			border-end-end-radius: 4px;
 			// the prototype's Chat Thread: an outgoing bubble in the product's own soft green
 			background: var(--wa-pri-s, var(--surface-blue-1));
-			border-color: var(--wa-pri-sb, var(--outline-blue-1));
+			border-color: var(--wa-pri-sb, var(--outline-blue-3));
 		}
 		code { font-size: 0.92em; }
 	}
 	&__text--muted { color: var(--ink-gray-6); font-style: italic; }
-	&__caption { margin-block-start: var(--sanad-gap-xs); color: var(--ink-gray-8); }
+	&__caption { margin-block-start: var(--sanad-gap-xs); color: var(--ink-gray-7); }
 	&__media {
 		display: flex;
 		align-items: center;
@@ -83,9 +83,9 @@
 		border: var(--sanad-border);
 		border-radius: var(--sanad-radius);
 		background: var(--surface-gray-2);
-		color: var(--ink-gray-8);
+		color: var(--ink-gray-7);
 		text-decoration: none;
-		&:hover, &:focus-visible { color: var(--ink-blue-3); text-decoration: none; }
+		&:hover, &:focus-visible { color: var(--ink-blue-7); text-decoration: none; }
 		&--plain { cursor: default; }
 		// a past message's file, fetched when asked: the same row, as a button
 		&.sanad-chat__fetch {
@@ -123,7 +123,7 @@
 		align-items: center;
 	}
 	&__poll-label { overflow-wrap: anywhere; }
-	&__poll-count { color: var(--ink-gray-7); font-size: var(--text-xs, 12px); font-variant-numeric: tabular-nums; }
+	&__poll-count { color: var(--ink-gray-6); font-size: var(--text-xs, 12px); font-variant-numeric: tabular-nums; }
 	&__poll-bar {
 		grid-column: 1 / -1;
 		block-size: 4px;
@@ -131,19 +131,19 @@
 		background: var(--surface-gray-3);
 		overflow: hidden;
 	}
-	&__poll-fill { display: block; block-size: 100%; inline-size: 0; background: var(--wa-pri, var(--ink-green-3)); transition: inline-size 0.3s; }
+	&__poll-fill { display: block; block-size: 100%; inline-size: 0; background: var(--wa-pri, var(--ink-green-7)); transition: inline-size 0.3s; }
 	&__quote {
 		display: grid;
 		gap: 2px;
 		margin-block-end: var(--sanad-gap-xs);
 		padding: 4px var(--sanad-gap-sm);
-		border-inline-start: 3px solid var(--wa-pri, var(--ink-green-3));
+		border-inline-start: 3px solid var(--wa-pri, var(--ink-green-7));
 		border-radius: 6px;
 		background: var(--surface-gray-2);
 		font-size: var(--text-xs, 12px);
 	}
-	&__quote-lead { color: var(--wa-pri, var(--ink-green-3)); font-weight: 600; }
-	&__quote-text { color: var(--ink-gray-7); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__quote-lead { color: var(--wa-pri, var(--ink-green-7)); font-weight: 600; }
+	&__quote-text { color: var(--ink-gray-6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	&__ia-title { font-weight: 600; margin-block-end: 2px; }
 	&__ia-footer { margin-block-start: 4px; color: var(--ink-gray-6); font-size: var(--text-xs, 12px); }
 	&__ia-buttons { display: grid; gap: 4px; margin-block-start: var(--sanad-gap-xs); }
@@ -155,7 +155,7 @@
 		min-height: 32px;
 		padding-inline: var(--sanad-gap-sm);
 		border-block-start: var(--sanad-border);
-		color: var(--ink-blue-3);
+		color: var(--ink-blue-7);
 		font-weight: 500;
 		cursor: default;
 		list-style: none;
@@ -185,7 +185,7 @@
 		border: 0;
 		background: none;
 		padding: 2px 0;
-		color: var(--ink-blue-3, var(--wa-pri));
+		color: var(--ink-blue-7, var(--wa-pri));
 		font-size: var(--text-xs, 12px);
 		font-weight: 600;
 		cursor: pointer;
@@ -212,7 +212,7 @@
 		padding: 2px 8px;
 		border-radius: 999px;
 		background: var(--wa-pri-s, var(--surface-green-1));
-		color: var(--ink-gray-8);
+		color: var(--ink-gray-7);
 		font-size: var(--text-xs, 12px);
 	}
 	&__poll-voter-meta { color: var(--ink-gray-6); font-size: var(--text-xs, 12px); direction: ltr; }
@@ -230,7 +230,7 @@
 		min-height: 24px;
 		border: var(--sanad-border);
 		border-radius: 999px;
-		background: var(--surface-white);
+		background: var(--surface-base);
 		font-size: var(--text-sm, 13px);
 		line-height: 1;
 	}
@@ -246,10 +246,10 @@
 		margin-block-start: var(--sanad-gap-xs);
 		padding-inline: var(--sanad-gap-sm);
 		padding-block: 2px;
-		border-radius: var(--border-radius-full, 999px);
+		border-radius: var(--radius-full, 999px);
 		background: var(--surface-gray-2);
 		border: var(--sanad-border);
-		color: var(--ink-blue-3);
+		color: var(--ink-blue-7);
 		font-size: var(--text-xs, 12px);
 		max-width: 100%;
 		span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -274,8 +274,8 @@
 		&--gray { color: var(--ink-gray-6); }
 		// read: WhatsApp's own blue ticks, readable on the green outgoing bubble
 		&--blue { color: var(--wa-read); }
-		&--red { color: var(--ink-red-4); }
-		&--amber { color: var(--ink-amber-3); }
+		&--red { color: var(--ink-red-8); }
+		&--amber { color: var(--ink-amber-7); }
 	}
 	&__status-text { font-weight: 500; }
 	&__open {

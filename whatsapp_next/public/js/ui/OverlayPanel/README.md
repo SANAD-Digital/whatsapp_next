@@ -82,6 +82,9 @@ Methods: `show()`, `hide()`, `destroy()`, `get_values()`, `get_value(key)`, `set
 text)`, `clear_error(key)`, `show_error(err)`, `is_dirty()`, `mark_clean()`, `set_badge(badge)`,
 `set_title(title, subtitle)`, `set_action_disabled(key, bool)`; static `open(opts)`.
 
+`sanad.ui.OverlayPanel.link_input($host, {value, display, search(txt), on_pick(item)})` draws the
+same link field outside a panel, for a screen that lays out its own rows (the settings window).
+
 ## Live use
 The host app's Contacts page (`page/wa_contacts/wa_contacts.js`): the row's detail drawer, the
 create / edit modal with its linked-accounts list, the "link to an account" chooser, and the

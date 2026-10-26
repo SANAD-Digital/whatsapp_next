@@ -48,12 +48,14 @@ LIST_MODES: tuple[str, ...] = ("Allow All", "Deny All")
 
 
 def get(name: str):
+	"""The WhatsApp Command `name`; `WANotFoundError` when it does not exist."""
 	if not frappe.db.exists("WhatsApp Command", name):
 		frappe.throw(_("Command {0} not found").format(name), WANotFoundError)
 	return frappe.get_doc("WhatsApp Command", name)
 
 
 def require_inactive(doc) -> None:
+	"""Refuse to edit an Active command: it must be deactivated first."""
 	if doc.status == "Active":
 		frappe.throw(
 			_("Command {0} is Active; deactivate it before editing").format(doc.name), WAStateConflictError

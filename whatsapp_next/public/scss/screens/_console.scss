@@ -11,7 +11,7 @@ $wa-tones: "blue" "cyan" "amber" "red" "green";
 .wa-ops {
 	border: var(--sanad-border);
 	border-radius: var(--sanad-radius);
-	background: var(--surface-white);
+	background: var(--surface-base);
 	overflow: hidden;
 
 	// ---- the metric row ------------------------------------------------------------------------
@@ -108,7 +108,7 @@ $wa-tones: "blue" "cyan" "amber" "red" "green";
 		background: none;
 		font-size: var(--text-xs, 11px);
 		color: var(--ink-gray-6);
-		span.sanad-tabular { font-weight: 600; color: var(--ink-gray-8); }
+		span.sanad-tabular { font-weight: 600; color: var(--ink-gray-7); }
 		&:hover { color: var(--ink-gray-9); text-decoration: underline; }
 		&[aria-pressed="true"] {
 			color: var(--sanad-accent-ink);

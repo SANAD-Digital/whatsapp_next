@@ -89,6 +89,7 @@ def wrong_number_info(reason: str | None) -> dict | None:
 
 
 def wrong_number_text(info: dict) -> str:
+	"""The sentence that says the device was unlinked because another number scanned its code."""
 	return _("This device is registered for {0}, but WhatsApp {1} scanned the code, so it was unlinked. Scan it with WhatsApp on {0}.").format(
 		info["expected"], info["connected"]
 	)
@@ -103,11 +104,18 @@ def _doc(device: str):
 	return frappe.get_doc("WhatsApp Device", device)
 
 
-def _platform_device(device: str) -> str:
-	pd = frappe.db.get_value("WhatsApp Device", device, "platform_device")
-	if not pd:
+def platform_device(device: str, *, connected: bool = False) -> str:
+	"""The platform's id of `device`. `WANotFoundError` when there is no such device,
+	`WADeviceOfflineError` when it was never registered on the platform, and with `connected`,
+	`WAStateConflictError` unless it is Connected now."""
+	row = frappe.db.get_value("WhatsApp Device", device, ["platform_device", "status"], as_dict=True) if device else None
+	if not row:
+		frappe.throw(_("WhatsApp Device {0} not found").format(device), WANotFoundError)
+	if connected and row.status != "Connected":
+		frappe.throw(_("{0} is not connected").format(device), WAStateConflictError)
+	if not row.platform_device:
 		frappe.throw(_("Device {0} is not registered on the platform").format(device), WADeviceOfflineError)
-	return pd
+	return row.platform_device
 
 
 def by_platform_device(platform_device: str | None) -> str | None:
@@ -347,7 +355,7 @@ def clear_pairing(device: str) -> None:
 
 def poll(device: str) -> StateChange:
 	"""Ask the provider for the live state and apply it (pairing page polling, `{status, changed}`)."""
-	pd = _platform_device(device)
+	pd = platform_device(device)
 	state = registry.get_provider().verify_device(pd)
 	return apply_state(
 		device,
@@ -360,7 +368,7 @@ def poll(device: str) -> StateChange:
 
 def disconnect(device: str, user: str | None = None) -> StateChange:
 	"""Provider logout (`disconnect_device`) → `Logged Out`; audited through `apply_state`."""
-	pd = _platform_device(device)
+	pd = platform_device(device)
 	state = registry.get_provider().disconnect_device(pd)
 	clear_pairing(device)
 	return apply_state(
@@ -423,9 +431,10 @@ def _release_device_links(device: str) -> None:
 	for doctype, fieldname in DEVICE_LINK_FIELDS:
 		for name in frappe.get_all(doctype, filters={fieldname: device}, pluck="name"):
 			frappe.db.set_value(doctype, name, fieldname, None, update_modified=False)
-	settings = frappe.get_cached_doc("WhatsApp Settings")
 	for fieldname in SETTINGS_DEVICE_FIELDS:
-		if settings.get(fieldname) == device:
+		# the stored value, never the cached document: a stale cache naming this device emptied a
+		# default that had already moved to another one (2026-10-26)
+		if frappe.db.get_single_value("WhatsApp Settings", fieldname, cache=False) == device:
 			frappe.db.set_single_value("WhatsApp Settings", fieldname, None)
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 

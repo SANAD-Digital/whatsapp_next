@@ -288,6 +288,7 @@ def typed_params(spec: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def param(spec: dict[str, Any], name: str) -> dict[str, Any] | None:
+	"""The parameter `name` of a function's header spec, or None."""
 	return next((p for p in spec.get("params") or [] if p["name"] == name), None)
 
 
@@ -362,6 +363,7 @@ def template_default(p: dict[str, Any], language: str | None) -> str | None:
 
 
 def is_empty(value: Any) -> bool:
+	"""True for None and for blank text."""
 	return value is None or (isinstance(value, str) and not value.strip())
 
 

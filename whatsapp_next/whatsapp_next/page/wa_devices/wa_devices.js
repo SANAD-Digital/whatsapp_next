@@ -30,7 +30,7 @@ frappe.provide("whatsapp_next.devices");
 		"Logged Out": { tone: "red", label: () => __("Signed out") },
 	};
 	const status_of = (row) => STATUS[row.status] || { tone: "gray", label: () => __("Unknown") };
-	const ago = (value) => (value ? frappe.datetime.prettyDate(value) : null);
+	const ago = (value) => sanad.ui.ago(value, null);
 	// when an offline device went offline: a sign-out is stamped `logged_out_at`, a dropped
 	// connection `disconnected_at` — an older stamp of the other kind must not win
 	const offline_since = (row) =>

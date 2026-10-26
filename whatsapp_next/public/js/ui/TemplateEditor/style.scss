@@ -2,7 +2,7 @@
 	margin-block: var(--sanad-gap-md);
 	border: var(--sanad-border);
 	border-radius: var(--sanad-radius-lg);
-	background: var(--surface-white);
+	background: var(--surface-base);
 
 	&__toolbar {
 		display: flex;
@@ -27,7 +27,7 @@
 		margin: 0 0 var(--sanad-gap-sm);
 		font-size: var(--text-sm, 13px);
 		font-weight: 600;
-		color: var(--ink-gray-7);
+		color: var(--ink-gray-6);
 		text-transform: none;
 	}
 	&__preview {
@@ -43,7 +43,7 @@
 		max-width: 60ch;
 		padding-inline: var(--sanad-gap-md);
 		padding-block: var(--sanad-gap-sm);
-		border: 1px solid var(--outline-blue-1);
+		border: 1px solid var(--outline-blue-3);
 		border-radius: var(--sanad-radius-lg);
 		border-end-end-radius: 4px;
 		background: var(--surface-blue-1);
@@ -67,10 +67,10 @@
 			gap: var(--sanad-gap-xs);
 			padding-inline: var(--sanad-gap-sm);
 			padding-block: var(--sanad-gap-xs);
-			border: 1px solid var(--outline-red-1);
+			border: 1px solid var(--outline-red-3);
 			border-radius: var(--sanad-radius);
 			background: var(--surface-red-1);
-			color: var(--ink-red-4);
+			color: var(--ink-red-8);
 			font-size: var(--text-xs, 12px);
 			.icon { flex: none; margin-block-start: 2px; }
 		}
@@ -109,10 +109,10 @@
 		border: 1px solid transparent;
 		border-radius: var(--sanad-radius);
 		background: transparent;
-		color: var(--ink-gray-8);
+		color: var(--ink-gray-7);
 		text-align: start;
 		cursor: pointer;
-		code { font-size: var(--text-xs, 12px); color: var(--ink-blue-3); background: var(--surface-gray-2); padding-inline: 4px; border-radius: 4px; direction: ltr; unicode-bidi: isolate; }
+		code { font-size: var(--text-xs, 12px); color: var(--ink-blue-7); background: var(--surface-gray-2); padding-inline: 4px; border-radius: 4px; direction: ltr; unicode-bidi: isolate; }
 		&:hover { background: var(--surface-gray-2); border-color: var(--outline-gray-1); }
 	}
 	&__var-label { font-size: var(--text-xs, 12px); color: var(--ink-gray-6); }
