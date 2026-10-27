@@ -94,7 +94,7 @@ class MetaCloudProvider(BaseProvider):
 	def complete_signup(self, request_key: str, code: str, password: str | None = None) -> SignupState:
 		raise pex.NotSupportedError("Sign-up is handled in Meta Business Manager")
 
-	def start_password_reset(self, identifier: str) -> SignupState:
+	def start_password_reset(self, identifier: str, callback: dict | None = None) -> SignupState:
 		raise pex.NotSupportedError("Password reset is handled in Meta Business Manager")
 
 	def get_password_reset_status(self, request_key: str) -> SignupState:

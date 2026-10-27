@@ -5645,7 +5645,7 @@ Confirm code,تأكيد الرمز,
 Change my number,تغيير الرقم,
 Welcome back,أهلاً بعودتك,
 "Sign in to see your messages, your balance and your numbers.",سجّل دخولك لمتابعة رسائلك ورصيدك وأرقامك.,
-"Mobile number with the country code, e.g. 967771234567",رقم الجوال مع رمز الدولة، مثل 967771234567,
+Mobile number with the country code,رقم الجوال مع رمز الدولة,
 Forgot password?,نسيت كلمة المرور؟,
 New to WhatsappNext?,جديد على واتساب نكست؟,
 Create a free account,أنشئ حساباً مجاناً,
@@ -6012,3 +6012,19 @@ Viewers,المشاهدون,
 WhatsApp Command Access,صلاحية أمر واتساب,
 WhatsApp Command Access Entry,بند صلاحية أمر واتساب,
 {0} is longer than {1} characters,{0} أطول من {1} حرفاً,
+"This site will work with the account you sign in with. Nothing is deleted when you sign in: the current account's devices are switched off, and its messages, queue and WhatsApp numbers stay on this site.","سيعمل هذا الموقع مع الحساب الذي تدخل به. لا يُحذف شيء عند الدخول: تُوقَف أجهزة الحساب الحالي، وتبقى رسائله وطابوره وأرقام الواتساب على هذا الموقع.",
+"Afterwards this site asks whether to delete what the previous account left or keep it. Templates, document notifications, alerts, commands and contact groups always stay.","بعدها يسألك الموقع: هل تحذف ما تركه الحساب السابق أم تبقيه؟ القوالب وإشعارات المستندات والتنبيهات والأوامر ومجموعات جهات الاتصال تبقى دائماً.",
+showing {0},يُعرض {0},
+"Send the code from your WhatsApp first. The account is finished by itself the moment your number is confirmed.","أرسل الرمز من واتسابك أولاً. يكتمل الحساب وحده لحظة تأكيد رقمك.",
+Begin typing for results.,ابدأ الكتابة لتظهر النتائج.
+Trial,تجربة
+Suspended,موقوف
+Near Expiry,قرب الانتهاء
+Expired,منتهي
+Starter,بداية
+Growth,نمو
+Business,أعمال
+Enterprise,مؤسسات
+Free Trial,تجربة مجانية
+Live Trial,التجربة الحية
+Invalid API key,مفتاح API غير صالح

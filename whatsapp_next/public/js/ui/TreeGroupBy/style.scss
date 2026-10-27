@@ -4,7 +4,7 @@
 	align-items: center;
 	gap: var(--sanad-gap-sm);
 	padding-block: var(--sanad-gap-sm);
-	min-height: 44px; // stable slot while counts load
+	min-height: 36px; // stable slot while counts load
 
 	&--list {
 		padding-inline: var(--sanad-gap-md);

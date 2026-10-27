@@ -23,9 +23,9 @@ body.sanad-ae-open { overflow: hidden; }
 	position: relative;
 	display: grid;
 	grid-template-rows: auto minmax(0, 1fr) auto;
-	inline-size: min(1280px, calc(100vw - 32px));
-	block-size: min(900px, calc(100dvh - 32px));
-	border-radius: 16px;
+	inline-size: min(1280px, calc(100vw - 28px));
+	block-size: min(900px, calc(100dvh - 28px));
+	border-radius: 12px;
 	border: 1px solid var(--wa-border);
 	background: var(--wa-surface);
 	color: var(--wa-ink);
@@ -49,11 +49,12 @@ body.sanad-ae-open { overflow: hidden; }
 
 	// ---- header ------------------------------------------------------------------------------------
 
+	// one line at Desk's modal header height (47 px): the mark, the name, then what it does
 	&__head {
 		display: flex;
 		align-items: center;
-		gap: 14px;
-		padding: 16px 20px;
+		gap: 12px;
+		padding: 9px 16px;
 		border-block-end: 1px solid var(--wa-border);
 	}
 
@@ -62,25 +63,32 @@ body.sanad-ae-open { overflow: hidden; }
 		align-items: center;
 		justify-content: center;
 		flex: none;
-		inline-size: 44px;
-		block-size: 44px;
-		border-radius: 12px;
+		inline-size: 28px;
+		block-size: 28px;
+		border-radius: 8px;
 		background: var(--wa-pri-s);
 		color: var(--wa-pri-d);
 	}
 
-	&__heading { flex: 1; min-inline-size: 0; display: flex; flex-direction: column; gap: 2px; }
+	&__heading { flex: 1; min-inline-size: 0; display: flex; align-items: center; gap: 10px; }
 
 	&__name {
-		inline-size: 100%;
-		padding: 2px 6px;
+		flex: 0 1 auto;
+		inline-size: auto;
+		min-inline-size: 12ch;
+		max-inline-size: 60%;
+		field-sizing: content;
+		block-size: 28px;
+		padding: 0 6px;
+		line-height: 26px;
 		margin-inline-start: -6px;
 		border: 1px solid transparent;
 		border-radius: 8px;
 		background: transparent;
 		color: var(--wa-ink);
-		font-size: 20px;
-		font-weight: 700;
+		// a window's title, at Desk's own title size
+		font-size: 16px;
+		font-weight: 600;
 		outline: none;
 
 		&::placeholder { color: var(--wa-ink-4); font-weight: 600; }
@@ -89,8 +97,10 @@ body.sanad-ae-open { overflow: hidden; }
 	}
 
 	&__sentence {
+		flex: 1;
+		min-inline-size: 0;
 		margin: 0;
-		font-size: 13px;
+		font-size: 12px;
 		color: var(--wa-ink-3);
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -114,8 +124,8 @@ body.sanad-ae-open { overflow: hidden; }
 		align-items: center;
 		justify-content: center;
 		flex: none;
-		inline-size: 36px;
-		block-size: 36px;
+		inline-size: 28px;
+		block-size: 28px;
 		border: 0;
 		border-radius: 8px;
 		background: transparent;
@@ -123,7 +133,7 @@ body.sanad-ae-open { overflow: hidden; }
 		cursor: pointer;
 
 		&:hover { background: var(--wa-sunken); color: var(--wa-ink); }
-		&--sm { inline-size: 28px; block-size: 28px; }
+		&--sm { inline-size: 22px; block-size: 22px; } // fits inside a 28 px chip
 	}
 
 	// ---- main: the cards and the preview -------------------------------------------------------------
@@ -137,7 +147,7 @@ body.sanad-ae-open { overflow: hidden; }
 	&__build {
 		min-block-size: 0;
 		overflow: auto;
-		padding: 20px;
+		padding: 16px;
 		display: flex;
 		flex-direction: column;
 		gap: 14px;
@@ -147,7 +157,7 @@ body.sanad-ae-open { overflow: hidden; }
 	&__side {
 		min-block-size: 0;
 		overflow: auto;
-		padding: 20px;
+		padding: 16px;
 		display: flex;
 		flex-direction: column;
 		gap: 16px;
@@ -171,7 +181,7 @@ body.sanad-ae-open { overflow: hidden; }
 		display: flex;
 		align-items: center;
 		gap: 12px;
-		padding: 14px 18px 0;
+		padding: 14px 16px 0;
 	}
 
 	&__num {
@@ -205,9 +215,9 @@ body.sanad-ae-open { overflow: hidden; }
 	&__step-body {
 		display: flex;
 		flex-direction: column;
-		gap: 14px;
-		padding: 14px 18px 18px;
-		padding-inline-start: 58px;
+		gap: 12px;
+		padding: 12px 16px;
+		padding-inline-start: 52px;
 	}
 
 
@@ -238,7 +248,7 @@ body.sanad-ae-open { overflow: hidden; }
 	&__chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
 	&__chip {
-		min-block-size: 32px;
+		min-block-size: 28px;
 		padding-inline: 12px;
 		border: 1px solid var(--wa-border-2);
 		border-radius: 999px;
@@ -311,7 +321,8 @@ body.sanad-ae-open { overflow: hidden; }
 	&__who-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
 	&__colpick { display: flex; flex-direction: column; gap: 8px; padding-block-start: 10px; border-block-start: 1px dashed var(--wa-border-2); }
 
-	&__device-link { max-inline-size: 420px; .frappe-control, .form-group { margin: 0; } }
+	// Desk gives a field an 8 px bottom margin; here the field is the whole line
+	&__device-link { max-inline-size: 420px; .frappe-control.form-group { margin: 0; } }
 	&__device-state { display: flex; align-items: center; gap: 6px; }
 
 	// ---- pickers ---------------------------------------------------------------------------------------
@@ -327,7 +338,7 @@ body.sanad-ae-open { overflow: hidden; }
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 34px;
+		inline-size: 28px;
 		color: var(--wa-ink-4);
 		pointer-events: none;
 	}
@@ -374,16 +385,18 @@ body.sanad-ae-open { overflow: hidden; }
 		align-items: center;
 		justify-content: space-between;
 		gap: 12px;
-		padding: 10px 12px;
+		min-block-size: var(--wa-h, 28px);
+		padding: 2px 4px 2px 12px;
 		border: 1px solid var(--wa-pri-sb);
-		border-radius: 10px;
+		border-radius: var(--wa-radius, 8px);
 		background: var(--wa-pri-s);
 	}
 	&__picked-text {
 		display: flex;
-		flex-direction: column;
+		align-items: baseline;
+		gap: 8px;
 		min-inline-size: 0;
-		strong { color: var(--wa-ink); }
+		strong { color: var(--wa-ink); font-size: 13px; }
 		span { font-size: 12px; color: var(--wa-ink-3); }
 	}
 
@@ -403,7 +416,7 @@ body.sanad-ae-open { overflow: hidden; }
 		align-items: center;
 		align-self: flex-start;
 		gap: 6px;
-		min-block-size: 32px;
+		min-block-size: 28px;
 		padding-inline: 10px;
 		border: 1px dashed var(--wa-border-2);
 		border-radius: 8px;
@@ -450,8 +463,9 @@ body.sanad-ae-open { overflow: hidden; }
 		align-items: center;
 		gap: 8px;
 		max-inline-size: 100%;
-		padding-block: 4px;
-		padding-inline: 4px 6px;
+		min-block-size: var(--wa-h, 28px);
+		padding-block: 2px;
+		padding-inline: 2px 6px;
 		border: 1px solid var(--wa-border);
 		border-radius: 999px;
 		background: var(--wa-surface);
@@ -461,8 +475,8 @@ body.sanad-ae-open { overflow: hidden; }
 		align-items: center;
 		justify-content: center;
 		flex: none;
-		inline-size: 28px;
-		block-size: 28px;
+		inline-size: 22px;
+		block-size: 22px;
 		border-radius: 50%;
 		background: var(--wa-pri-s);
 		color: var(--wa-pri-d);
@@ -497,9 +511,11 @@ body.sanad-ae-open { overflow: hidden; }
 		dd { margin: 0; font-size: 13px; color: var(--wa-ink); overflow-wrap: anywhere; }
 		code { font-size: 12px; padding: 1px 6px; border-radius: 6px; background: var(--wa-sunken); color: var(--wa-ink-2); }
 	}
+	// the name and its kind on one line, so the chip is a control's height
 	&__who-text {
 		display: flex;
-		flex-direction: column;
+		align-items: baseline;
+		gap: 6px;
 		min-inline-size: 0;
 		line-height: 1.25;
 		strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -556,7 +572,7 @@ body.sanad-ae-open { overflow: hidden; }
 
 	&__phone {
 		border: 1px solid var(--wa-border);
-		border-radius: 18px;
+		border-radius: 12px;
 		overflow: hidden;
 		background: var(--wa-surface);
 		box-shadow: var(--wa-shadow-md);
@@ -577,8 +593,8 @@ body.sanad-ae-open { overflow: hidden; }
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 30px;
-		block-size: 30px;
+		inline-size: 28px;
+		block-size: 28px;
 		border-radius: 50%;
 		background: color-mix(in srgb, var(--wa-on-pri) 20%, transparent);
 	}
@@ -684,7 +700,7 @@ body.sanad-ae-open { overflow: hidden; }
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		padding: 12px 20px;
+		padding: 12px 16px;
 		border-block-start: 1px solid var(--wa-border);
 		background: var(--wa-surface);
 	}
@@ -704,7 +720,7 @@ body.sanad-ae-open { overflow: hidden; }
 		align-items: center;
 		justify-content: center;
 		gap: 6px;
-		min-block-size: 36px;
+		min-block-size: 28px;
 		padding-inline: 14px;
 		border: 1px solid var(--wa-border-2);
 		border-radius: 8px;
@@ -736,7 +752,7 @@ body.sanad-ae-open { overflow: hidden; }
 		border: 0;
 		border-radius: 0;
 
-		&__head { flex-wrap: wrap; padding: 12px 14px; gap: 10px; }
+		&__head { flex-wrap: wrap; padding: 9px 12px; gap: 10px; }
 		&__mark { display: none; }
 		&__heading { flex-basis: calc(100% - 50px); order: 0; }
 		&__dirty { order: 2; }

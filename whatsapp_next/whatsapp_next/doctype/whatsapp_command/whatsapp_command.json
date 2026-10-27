@@ -261,7 +261,7 @@
    "link_fieldname": "command"
   }
  ],
- "modified": "2026-10-13 00:41:11.618217",
+ "modified": "2026-10-27 21:14:16.181352",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Command",
@@ -328,5 +328,6 @@
  "naming_rule": "By fieldname",
  "allow_rename": 1,
  "title_field": "title",
- "search_fields": "code,title"
+ "search_fields": "code,title",
+ "icon": "terminal"
 }

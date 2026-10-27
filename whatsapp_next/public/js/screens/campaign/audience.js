@@ -272,7 +272,8 @@ frappe.provide("whatsapp_next.campaign");
 					{
 						name: this.ctx.doc.name,
 						page: this.state.page + 1,
-						page_length: this.state.page_length,
+						// the table's own length: the footer's page size and "Load more" change it
+						page_length: (table && table.page_length) || this.state.page_length,
 						search: this.state.search || undefined,
 						status: this.state.filters.status && this.state.filters.status.length ? this.state.filters.status : undefined,
 						source_type: this.state.filters.source_type && this.state.filters.source_type.length ? this.state.filters.source_type : undefined,

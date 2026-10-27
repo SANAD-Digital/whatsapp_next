@@ -80,7 +80,7 @@
 	unicode-bidi: isolate;
 }
 // Lists whose cells carry a second line grow their rows (set on `listview.$result` by the list script).
-.sanad-list--two-line .list-row { height: auto; min-height: 40px; padding-block: 6px; align-items: center; }
+.sanad-list--two-line .list-row { height: auto; min-height: 32px; padding-block: 6px; align-items: center; }
 .sanad-list--two-line .list-row-col.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sanad-cell__muted { color: var(--ink-gray-5); }
 .sanad-cell__error { color: var(--ink-red-8); } // ink only — the error text, no chip background

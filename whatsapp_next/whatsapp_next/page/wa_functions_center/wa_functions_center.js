@@ -556,13 +556,15 @@
 			this.sort = { fieldname: "calls_30d", order: "desc" };
 			this.$main = $(page.main).addClass("sanad-kit wa-functions");
 			this.$head = $('<div class="wa-functions__head"></div>').appendTo(this.$main);
-			this.$toolbar = $('<div class="wa-functions__toolbar"></div>').appendTo(this.$main);
-			this.$bulk = $('<div class="wa-functions__bulk" hidden></div>').appendTo(this.$main);
-			this.$body = $('<div class="wa-functions__body"></div>').appendTo(this.$main);
+			// the toolbar, the selection and the table are one panel, exactly a Desk list's
+			this.$panel = $('<div class="wa-functions__panel sanad-list-card"></div>').appendTo(this.$main);
+			this.$toolbar = $('<div class="wa-functions__toolbar"></div>').appendTo(this.$panel);
+			this.$bulk = $('<div class="wa-functions__bulk" hidden></div>').appendTo(this.$panel);
+			this.$body = $('<div class="wa-functions__body"></div>').appendTo(this.$panel);
 			this.state = new ui.EmptyState({ wrapper: this.$body, state: "loading", rows: 6 });
 			this.loaded = this.load();
-			// the title with its buttons and the filters stay while the functions scroll beneath
-			ui.pin_stack(this.$main, [".sanad-pagehead__row", ".wa-functions__toolbar"]);
+			// the filters stay under Desk's strip while the functions scroll beneath, as on a list
+			ui.pin_stack(this.$main, [".wa-functions__toolbar"]);
 		}
 
 		// ---- data -----------------------------------------------------------------------------
@@ -627,8 +629,10 @@
 		render_header() {
 			if (this.header) this.header.destroy();
 			this.$head.empty();
+			// Desk's own strip, as on a list: the page's title and breadcrumb, "Commands" on its bar
 			this.header = new ui.PageHeader({
 				wrapper: this.$head,
+				page: this.page,
 				title: __("Functions Center"),
 				description: __("A function is the logic behind a command. Review its versions here, install it and keep it current."),
 				secondary: [
@@ -637,7 +641,6 @@
 				banner: () => this.banner(),
 				blocks: [{ key: "readings", render: ($el) => this.render_cards($el) }],
 			});
-			$(`<span class="wa-functions__mark" aria-hidden="true">${ui.icon("es-line-code", "md")}</span>`).prependTo(this.header.$el.find(".sanad-pagehead__row"));
 		}
 
 		/** The prototype's four `stat` cards, compact: functions · active · calls · updates. */
@@ -722,6 +725,7 @@
 			this.filter_bar = new ui.FilterBar({
 				page: this.page,
 				wrapper: this.$toolbar,
+				list_style: true,
 				doctype: "WhatsApp Function",
 				presets: [
 					{

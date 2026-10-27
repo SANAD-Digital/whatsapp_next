@@ -76,6 +76,20 @@ _DOC_READ_METHODS = frozenset({"get", "get_formatted", "is_new", "as_dict", "get
 _UTILS_EXCLUDED = frozenset({"get_thumbnail_base64_for_image", "get_user_info_for_avatar"})
 
 
+class SampleDoc(frappe._dict):
+	"""`doc` when a preview has no record to read: sample values only, read in a template the way a
+	record is read — `get_formatted` gives the value as text, and a field the dict type also names
+	(`items`, the usual child table) is the field, not the dict method (see `_message_jenv`)."""
+
+	def get_formatted(self, fieldname, *args, **kwargs):
+		value = self.get(fieldname)
+		return "" if value is None else cstr(value)
+
+
+# names a `dict` answers with a method but a record with a field (`doc.items` is a child table)
+_FIELD_NOT_METHOD = frozenset({"items", "values", "keys"})
+
+
 def _message_jenv():
 	"""The Jinja environment every message body renders in.
 
@@ -99,6 +113,12 @@ def _message_jenv():
 			if isinstance(obj, Document) and callable(value) and attr not in _DOC_READ_METHODS:
 				return False
 			return super().is_safe_attribute(obj, attr, value)
+
+		def getattr(self, obj, attribute):
+			# a sample's `doc.items` is its child table (empty without sample rows), never dict.items
+			if isinstance(obj, SampleDoc) and attribute in _FIELD_NOT_METHOD:
+				return obj.get(attribute) or []
+			return super().getattr(obj, attribute)
 
 	env = MessageEnvironment(undefined=base.undefined, cache_size=0)
 	env.filters = base.filters.copy()
@@ -172,7 +192,7 @@ def context_for(
 	doc=None,
 	recipient: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-	"""Build the render context: `doc` (loaded document or `frappe._dict`), `recipient`
+	"""Build the render context: `doc` (loaded document or a `SampleDoc`), `recipient`
 	(`{phone_e164, display_name, contact, ...}`), `now`, `today`, `site_url`, `doc_url` and the
 	Frappe Jinja globals (`frappe._`, `frappe.utils`, `frappe.format_value`, ...) come from the
 	sandboxed environment itself; the sandbox refuses attribute names starting with `_` on
@@ -185,7 +205,7 @@ def context_for(
 		except frappe.DoesNotExistError:
 			doc = None
 	ctx: dict[str, Any] = {
-		"doc": doc if doc is not None else frappe._dict(),
+		"doc": doc if doc is not None else SampleDoc(),
 		"recipient": _recipient(recipient),
 		"now": now_datetime(),
 		"today": nowdate(),
@@ -225,9 +245,11 @@ def sample_context(reference_doctype: str | None, sample_json: str | dict | None
 		if isinstance(parsed, dict):
 			doc_values = parsed.pop("doc", None)
 			if isinstance(doc_values, dict):
-				base = doc.as_dict() if doc is not None else {}
-				base.update(doc_values)
-				doc = frappe._dict(base)
+				if doc is not None:
+					# in memory only, never saved: the record keeps its methods and child tables
+					doc.update(doc_values)
+				else:
+					doc = SampleDoc(doc_values)
 			extra = parsed
 	ctx = context_for(reference_doctype, getattr(doc, "name", None), extra, doc=doc)
 	# `context_for` always sets a recipient with blank fields; a sample has nobody, so name one

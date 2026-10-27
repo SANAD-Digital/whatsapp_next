@@ -82,11 +82,13 @@ class ContactsPage {
 		this.$el = $(`
 			<div class="wa-contacts sanad-kit">
 				<div class="wa-contacts__head"></div>
-				<div class="wa-contacts__toolbar">
-					<div class="wa-contacts__filters"></div>
-					<div class="wa-contacts__selection" hidden></div>
+				<div class="wa-contacts__panel sanad-list-card">
+					<div class="wa-contacts__toolbar">
+						<div class="wa-contacts__filters"></div>
+						<div class="wa-contacts__selection" hidden></div>
+					</div>
+					<div class="wa-contacts__list"></div>
 				</div>
-				<div class="wa-contacts__list"></div>
 			</div>`);
 		this.$el.appendTo(this.page.main);
 		this.$selection = this.$el.find(".wa-contacts__selection");
@@ -94,8 +96,8 @@ class ContactsPage {
 		this.make_header();
 		this.make_toolbar();
 		this.make_table();
-		// the title with its buttons and the filters stay while the rows scroll beneath
-		sanad.ui.pin_stack(this.$el, [".sanad-pagehead__row", ".wa-contacts__toolbar"]);
+		// the filters stay under Desk's strip while the rows scroll beneath, as on a Desk list
+		sanad.ui.pin_stack(this.$el, [".wa-contacts__toolbar"]);
 	}
 
 	/**
@@ -113,8 +115,10 @@ class ContactsPage {
 	}
 
 	make_header() {
+		// Desk's own strip, as on a list: the page's title and breadcrumb, "New contact" on its bar
 		this.header = new sanad.ui.PageHeader({
 			wrapper: this.$el.find(".wa-contacts__head"),
+			page: this.page,
 			title: __("Contacts"),
 			description: __(
 				"WhatsApp numbers tied to their ledger accounts. A contact with no account receives no automatic notification."
@@ -171,6 +175,7 @@ class ContactsPage {
 	make_toolbar() {
 		this.filterbar = new sanad.ui.FilterBar({
 			wrapper: this.$el.find(".wa-contacts__filters"),
+			list_style: true,
 			doctype: "Contact",
 			// the matrix gives this screen five dropdowns; FilterBar shows four and drops the rest
 			max_inline: 5,
@@ -469,7 +474,9 @@ class ContactsPage {
 	 * then reads as `False`.
 	 */
 	args() {
-		const args = { page: this.current_page, page_length: PAGE_LENGTH, order_by: this.order_by };
+		// the table's own length: the footer's page size and "Load more" change it
+		const page_length = (this.table && this.table.page_length) || PAGE_LENGTH;
+		const args = { page: this.current_page, page_length, order_by: this.order_by };
 		const chosen = {
 			search: this.search,
 			link_doctype: this.filters.link_doctype,

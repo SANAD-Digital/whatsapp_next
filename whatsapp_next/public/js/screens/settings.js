@@ -1222,7 +1222,7 @@ class SettingsView {
 			$el.empty();
 			this.subscription_cards($el, values);
 
-			$el.append(SW.section_html(__("Plan details"), values.plan_name || values.plan_code || __("Not synced yet")));
+			$el.append(SW.section_html(__("Plan details"), values.plan_name ? __(values.plan_name) : values.plan_code || __("Not synced yet")));
 			const $plan = $('<div class="wa-settings__plan"></div>').appendTo($el);
 			this.rows($plan, [
 				// the allowance is per billing cycle, which is not always a month (a trial runs 14 days)

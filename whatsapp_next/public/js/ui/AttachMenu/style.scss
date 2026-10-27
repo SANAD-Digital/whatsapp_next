@@ -30,8 +30,8 @@
 	}
 
 	&__icon {
-		inline-size: 38px;
-		block-size: 38px;
+		inline-size: 32px;
+		block-size: 32px;
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
@@ -57,7 +57,7 @@
 
 	&__fld input,
 	&__search {
-		min-block-size: 34px;
+		min-block-size: 28px;
 		padding: 0 10px;
 		border-radius: 8px;
 		border: 1px solid var(--wa-border-2);
@@ -98,7 +98,7 @@
 	&__actions { display: flex; justify-content: flex-end; gap: 6px; }
 
 	&__btn {
-		min-block-size: 32px;
+		min-block-size: 28px;
 		padding: 0 12px;
 		border-radius: 8px;
 		border: 1px solid var(--wa-border-2);

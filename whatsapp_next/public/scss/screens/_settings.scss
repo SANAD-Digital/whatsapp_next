@@ -345,7 +345,7 @@
 		background: none;
 		overflow: visible;
 		> header {
-			padding: 18px 0 2px;
+			padding: 16px 0 2px;
 			strong { font-size: 14px; }
 			span span { font-size: 13px; color: var(--wa-ink-3); }
 		}
@@ -362,9 +362,9 @@
 	}
 
 	.wa-settings__rows li {
-		min-block-size: 40px;
+		min-block-size: 32px;
 		padding-block: 9px;
-		gap: 20px;
+		gap: 12px;
 		border-block-end-color: var(--wa-border);
 		font-size: 13px;
 	}
@@ -380,7 +380,7 @@
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
-			gap: 20px;
+			gap: 12px;
 			padding-block: 9px;
 			border-block-end: 1px solid var(--wa-border);
 		}
@@ -409,7 +409,7 @@
 		align-items: stretch;
 		gap: 6px;
 		.sanad-sw__row-control { inline-size: 100%; max-inline-size: none; }
-		.wa-textarea { inline-size: 100%; min-block-size: 56px; resize: vertical; }
+		.wa-textarea { inline-size: 100%; min-block-size: 44px; resize: vertical; }
 	}
 	.wa-settings__field .sanad-sw__row-title { cursor: default; }
 	.wa-settings__req { color: var(--wa-dg-i); }
@@ -433,7 +433,7 @@
 		background: var(--wa-surface);
 		box-shadow: var(--wa-shadow-md);
 
-		.btn { min-block-size: 32px; padding-inline: 14px; font-size: 13px; font-weight: 600; border-radius: 8px; }
+		.btn { min-block-size: 28px; padding-inline: 14px; font-size: 13px; font-weight: 600; border-radius: 8px; }
 		.wa-settings__save:disabled { opacity: 0.45; }
 	}
 	.wa-settings__savebar-text { margin-inline-end: auto; font-size: 13px; font-weight: 600; color: var(--wa-wn-i); }
@@ -506,7 +506,7 @@
 		border-radius: 10px;
 		background: var(--wa-sunken);
 		button {
-			min-block-size: 32px;
+			min-block-size: 28px;
 			padding-inline: 14px;
 			border: 0;
 			border-radius: 8px;
@@ -561,7 +561,7 @@
 // its rows (panels, facts, the Desk form, the window's own rows, the plan, the event list).
 .wa-settings-window {
 	// the kit's controls at their compact size: 32 px fields at 13 px
-	--wa-h: 32px;
+	--wa-h: 28px;
 	--wa-fs: 13px;
 	--wa-px: 10px;
 
@@ -570,19 +570,19 @@
 	// (from 720 px: under it the kit makes the window the whole screen)
 	@media (min-width: 720px) {
 		&.sanad-sw {
-			inline-size: min(1240px, calc(100vw - 48px));
-			block-size: min(780px, calc(100dvh - 40px));
+			inline-size: min(1240px, calc(100vw - 36px));
+			block-size: min(780px, calc(100dvh - 32px));
 			grid-template-columns: 212px minmax(0, 1fr);
 		}
 	}
 	.sanad-sw__rail { padding: 10px 8px; }
-	.sanad-sw__search { min-block-size: 32px; margin-block-end: 8px; }
-	.sanad-sw__item { min-block-size: 31px; gap: 8px; font-size: 13px; }
+	.sanad-sw__search { min-block-size: 28px; margin-block-end: 8px; }
+	.sanad-sw__item { min-block-size: 28px; gap: 8px; font-size: 13px; }
 	.sanad-sw__group-label { font-size: 11px; }
 	.sanad-sw__nav { gap: 8px; }
 
 	.sanad-sw__pane {
-		padding: 18px 22px 24px;
+		padding: 16px 16px 16px;
 		container-type: inline-size;
 		> * { max-inline-size: none; }
 	}
@@ -629,7 +629,7 @@
 		// rows: compact, a rule between them, none under the last
 		.wa-settings__rows li,
 		.wa-settings__facts > div {
-			min-block-size: 34px;
+			min-block-size: 28px;
 			padding: 6px 12px;
 			gap: 14px;
 			font-size: 13px;
@@ -720,7 +720,7 @@
 	}
 
 	@media (max-width: 719px) {
-		.sanad-sw__pane { padding: 18px 16px 28px; }
+		.sanad-sw__pane { padding: 16px 16px 20px; }
 		.wa-settings__field .sanad-sw__row-control { inline-size: 100%; }
 		.wa-settings__field:not(.wa-settings__field--stacked) { flex-wrap: wrap; }
 	}
@@ -826,7 +826,7 @@
 	.wa-pse__note--ok { background: var(--wa-pri-s); color: var(--wa-ink-2); }
 	.wa-pse__note--bad { background: var(--wa-dg-s); color: var(--wa-dg); }
 	.wa-pse__hint { margin: 0 0 8px; font-size: 12px; line-height: 1.6; color: var(--wa-ink-3); }
-	.wa-pse__fg { min-block-size: 32px; }
+	.wa-pse__fg { min-block-size: 28px; }
 	.wa-pse__preview {
 		padding: 12px 14px;
 		border: 1px solid var(--wa-border);

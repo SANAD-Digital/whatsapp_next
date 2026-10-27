@@ -99,17 +99,20 @@ def _sample_context(doctype: str | None, sample: str | dict | None) -> dict[str,
 	ctx = templates.sample_context(doctype, parsed or None)
 	_readable_only(ctx.get("doc"))
 	if isinstance(overlay, dict):
-		base = ctx["doc"].as_dict() if isinstance(ctx.get("doc"), Document) else dict(ctx.get("doc") or {})
-		base.update(overlay)
-		ctx["doc"] = frappe._dict(base)
+		if isinstance(ctx.get("doc"), Document):
+			# in memory only, never saved: the record keeps its methods and child tables
+			ctx["doc"].update(overlay)
+		else:
+			ctx["doc"] = {**(ctx.get("doc") or {}), **overlay}
 	if not isinstance(ctx.get("doc"), Document):
 		# no record to read: a field the sample does not give prints nothing, not "None"
 		ctx["doc"] = _Placeholder(ctx.get("doc") or {})
 	return ctx
 
 
-class _Placeholder(frappe._dict):
-	"""A sample `doc` without a record behind it: unknown fields read as empty text."""
+class _Placeholder(templates.SampleDoc):
+	"""A sample `doc` without a record behind it: unknown fields read as empty text, and it reads
+	like a record (`doc.items`, `doc.get_formatted(…)`; see `templates.SampleDoc`)."""
 
 	def __getattr__(self, key):
 		value = self.get(key)

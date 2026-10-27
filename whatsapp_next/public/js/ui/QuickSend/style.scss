@@ -4,7 +4,7 @@
 		align-items: center;
 		flex-wrap: wrap;
 		gap: var(--sanad-gap-md);
-		min-height: 48px; // reserved while the context loads
+		min-height: 36px; // reserved while the context loads
 		padding-block: var(--sanad-gap-sm);
 		padding-inline: var(--sanad-gap-md);
 		border: var(--sanad-border);
@@ -17,8 +17,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 32px;
-		height: 32px;
+		width: 28px;
+		height: 28px;
 		border-radius: 50%;
 		background: var(--surface-base);
 		border: var(--sanad-border);
@@ -30,7 +30,7 @@
 	&__phone { color: var(--ink-gray-6); font-size: var(--text-sm, 13px); direction: ltr; unicode-bidi: isolate; }
 	&__badges { display: inline-flex; gap: var(--sanad-gap-xs); flex-wrap: wrap; }
 
-	&__preview { margin-block-start: var(--sanad-gap-xs); min-height: 56px; }
+	&__preview { margin-block-start: var(--sanad-gap-xs); min-height: 44px; }
 	&__preview-label { font-size: var(--text-xs, 12px); font-weight: 600; color: var(--ink-gray-6); margin-block-end: var(--sanad-gap-xs); }
 	&__bubble {
 		display: inline-block;

@@ -46,7 +46,8 @@ frappe.provide("whatsapp_next.functions");
 			settings: (spec.settings || []).map((s) =>
 				Object.assign({}, s, {
 					fieldtype: SETTING_TYPE[s.fieldtype] || "Data",
-					choices: (s.choices || []).join("\n"),
+					// a list, as the editor draws it (CommandEditor README: `choices[]`)
+					choices: s.choices || [],
 					notes: s.depends_on ? __("Only when {0} is {1}", [s.depends_on.param, s.depends_on.value]) : "",
 				})
 			),

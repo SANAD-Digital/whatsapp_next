@@ -92,10 +92,13 @@
 	// ---- the box -------------------------------------------------------------------------------
 
 	&__box {
+		// left to right in every language — the country code first, then the digits (owner,
+		// 2026-10-26) — by `dir="ltr"` on the element: the RTL build flips a `direction` declaration
 		position: relative;
 		display: flex;
 		align-items: stretch;
-		min-block-size: 40px;
+		// a field's height, beside the fields around it
+		min-block-size: var(--wa-h, var(--sanad-ctl-h, 28px));
 		border: 1px solid var(--outline-gray-2);
 		border-radius: 8px;
 		background: var(--surface-gray-1);
@@ -172,6 +175,9 @@
 
 		&::placeholder {
 			color: var(--ink-gray-5);
+			// words, not digits: the text face, without the digits' tracking
+			font-family: var(--font-stack, inherit);
+			letter-spacing: normal;
 		}
 	}
 
@@ -208,7 +214,7 @@
 		display: flex;
 		align-items: center;
 		gap: 7px;
-		min-block-size: 32px;
+		min-block-size: 28px;
 		padding: 0 9px;
 		margin-block-end: 5px;
 		border: var(--sanad-border);

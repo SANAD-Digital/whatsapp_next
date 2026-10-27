@@ -59,7 +59,7 @@
 		justify-content: center;
 		gap: 6px;
 		inline-size: 100%;
-		min-block-size: 34px;
+		min-block-size: 28px;
 		padding-inline: var(--sanad-gap-sm);
 		border: 1px dashed var(--outline-gray-2);
 		border-radius: var(--sanad-radius);
@@ -317,7 +317,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--sanad-gap-sm);
-		min-block-size: 42px;
+		min-block-size: 36px;
 		padding-block: 4px;
 		padding-inline: 10px 8px;
 		border: 1px solid var(--outline-gray-2);

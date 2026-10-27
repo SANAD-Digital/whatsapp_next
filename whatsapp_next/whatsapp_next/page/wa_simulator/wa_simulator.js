@@ -19,7 +19,6 @@
 (() => {
 	const ROUTE = "wa-simulator";
 	// how often the open conversation is read again while realtime is unavailable
-	const POLL_MS = 5000;
 	const esc = (v) => sanad.ui.escape(v);
 	const fmt_int = (v) => sanad.ui.format_int(v);
 	const PAGE_LENGTH = 50;
@@ -795,26 +794,25 @@
 				device.status = p.status;
 				this.render_head();
 			};
-			frappe.realtime.on("wa:message:status", this._on_status);
-			frappe.realtime.on("wa:inbound:received", this._on_inbound);
-			frappe.realtime.on("wa:device:status", this._on_device);
-			// Realtime does not reach this site (socket.io), so the thread and the list are also read
-			// again on a timer: ticks move to Delivered / Read, edits, deletions and new messages appear.
-			this._poll = window.setInterval(() => {
-				if (document.hidden) return;
+			// every change on screen is announced: ticks (`wa:message:status`), new messages, edits and
+			// deletions (`wa:inbound:received`), the device. The thread and the list are read again only
+			// when the connection comes back or the person returns to the tab — never on a timer.
+			const reread = () => {
 				this.refresh_newest();
-				this._poll_ticks = (this._poll_ticks || 0) + 1;
-				if (this._poll_ticks % 3 === 0) this.load_list({ quiet: true });
-			}, POLL_MS);
+				this.load_list({ quiet: true });
+			};
+			this._stops = [
+				sanad.ui.listen("wa:message:status", this._on_status),
+				sanad.ui.listen("wa:inbound:received", this._on_inbound),
+				sanad.ui.listen("wa:device:status", this._on_device),
+				sanad.ui.on_reconnect(reread),
+			];
 		}
 
 		unsubscribe() {
 			if (!this._subscribed) return;
-			frappe.realtime.off("wa:message:status", this._on_status);
-			frappe.realtime.off("wa:inbound:received", this._on_inbound);
-			frappe.realtime.off("wa:device:status", this._on_device);
-			window.clearInterval(this._poll);
-			this._poll = null;
+			(this._stops || []).forEach((stop) => stop());
+			this._stops = null;
 			this._subscribed = false;
 		}
 

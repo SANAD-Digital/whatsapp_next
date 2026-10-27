@@ -15,6 +15,9 @@ sanad.ui.PageHeader = class PageHeader {
 	/**
 	 * @param {Object} opts
 	 * @param {Object} [opts.listview] — a Desk ListView
+	 * @param {Object} [opts.page] — on a custom page, its Desk page (`frappe.ui.make_app_page`): the
+	 *   screen then wears Desk's own strip as a list does — the page's title and breadcrumb, `primary`
+	 *   and `secondary` on its page bar — and the header is the KPI row, banner and blocks
 	 * @param {jQuery|HTMLElement} [opts.wrapper] — mount point on a custom page
 	 * @param {string} opts.title
 	 * @param {string} [opts.description]
@@ -29,6 +32,9 @@ sanad.ui.PageHeader = class PageHeader {
 	constructor(opts = {}) {
 		this.opts = Object.assign({ secondary: [], stats: [], blocks: [], events: {} }, opts);
 		this.listview = this.opts.listview;
+		// the Desk page whose bar carries the verbs: the list's, or a custom page's own
+		this.desk_page = this.listview ? this.listview.page : this.opts.page || null;
+		this.page_buttons = [];
 		this.handlers = {};
 		this.block_handlers = [];
 		this.make();
@@ -46,8 +52,8 @@ sanad.ui.PageHeader = class PageHeader {
 			<header class="sanad-kit sanad-pagehead">
 				<div class="sanad-pagehead__row">
 					<div class="sanad-pagehead__text">
-						${o.title ? `<h2 class="sanad-pagehead__title">${ui.escape(o.title)}</h2>` : ""}
-						${o.description ? `<p class="sanad-pagehead__desc">${ui.escape(o.description)}</p>` : ""}
+						${o.title && !this.desk_page ? `<h2 class="sanad-pagehead__title">${ui.escape(o.title)}</h2>` : ""}
+						${o.description && !this.desk_page ? `<p class="sanad-pagehead__desc">${ui.escape(o.description)}</p>` : ""}
 					</div>
 					<div class="sanad-pagehead__actions"></div>
 				</div>
@@ -59,11 +65,12 @@ sanad.ui.PageHeader = class PageHeader {
 		this.$stats = this.$el.find(".sanad-pagehead__stats");
 		this.$banner = this.$el.find(".sanad-pagehead__banner");
 		this.$blocks = this.$el.find(".sanad-pagehead__blocks");
-		if (!this.listview) this.render_actions();
+		if (!this.desk_page) this.render_actions();
 		else this.$actions.remove();
 		// a header may carry nothing but a banner and its blocks (a screen whose console names
-		// itself): an empty title row would then reserve space and draw a stray margin
-		if (!o.title && !o.description) this.$el.find(".sanad-pagehead__text").remove();
+		// itself, or one whose title is Desk's strip): an empty title row would then reserve space
+		// and draw a stray margin
+		if (this.desk_page || (!o.title && !o.description)) this.$el.find(".sanad-pagehead__text").remove();
 		if (!this.$el.find(".sanad-pagehead__row").children().length) this.$el.find(".sanad-pagehead__row").remove();
 		if (o.stats && o.stats.length) {
 			this.stats = new sanad.ui.ListStatsCard({ wrapper: this.$stats, cards: o.stats, refresh_seconds: o.refresh_seconds, layout: "kpi" });
@@ -84,6 +91,10 @@ sanad.ui.PageHeader = class PageHeader {
 			this.listview.page.wrapper.on("show.sanadpagehead", () => this.refresh());
 		} else {
 			$(this.opts.wrapper).prepend(this.$el);
+			if (this.desk_page) {
+				if (o.title) this.desk_page.set_title(o.title);
+				this.mount_page_actions();
+			}
 		}
 	}
 
@@ -94,19 +105,22 @@ sanad.ui.PageHeader = class PageHeader {
 	 */
 	mount_page_actions() {
 		const lv = this.listview;
-		const page = lv.page;
+		const page = this.desk_page;
 		const p = this.opts.primary;
-		if (p) {
+		if (p && lv) {
 			lv.can_create = false;
 			lv.set_primary_action = () => {
 				if (this.allowed(p)) page.set_primary_action(p.label, () => p.handler(this), p.icon);
 				else page.clear_primary_action();
 			};
 			lv.set_primary_action();
+		} else if (p && this.allowed(p)) {
+			page.set_primary_action(p.label, () => p.handler(this), p.icon);
 		}
 		(this.opts.secondary || []).forEach((a) => {
 			if (!this.allowed(a)) return;
 			const $btn = page.add_button(ui.escape(a.label), () => a.handler(this), { icon: a.icon });
+			this.page_buttons.push($btn);
 			if (a.count == null) return;
 			Promise.resolve(typeof a.count === "function" ? a.count() : a.count).then((n) => {
 				if (n == null) return;
@@ -232,6 +246,12 @@ sanad.ui.PageHeader = class PageHeader {
 		this.unhook_render && this.unhook_render();
 		this.stats && this.stats.destroy();
 		this.listview && this.listview.page.wrapper.off(".sanadpagehead");
+		// a custom page redraws its header: the buttons it put on Desk's bar go with it
+		if (this.desk_page && !this.listview) {
+			this.page_buttons.forEach(($b) => $b && $b.remove());
+			this.page_buttons = [];
+			if (this.opts.primary) this.desk_page.clear_primary_action();
+		}
 		this.$el.remove();
 	}
 };

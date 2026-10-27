@@ -17,7 +17,6 @@
 			justify-content: space-between;
 			gap: var(--sanad-gap-sm);
 		}
-		&--empty { justify-content: start; }
 	}
 	&__peak {
 		font-size: 11px;
@@ -28,7 +27,7 @@
 	}
 	&__plot {
 		position: relative;
-		block-size: 64px;
+		block-size: 48px;
 		svg {
 			inline-size: 100%;
 			block-size: 100%;

@@ -13,7 +13,6 @@ frappe.provide("whatsapp_next.devices");
 	const AGENT_UP = ["WhatsApp Agent", "WhatsApp Manager", "System Manager"];
 	const OFFLINE = ["Disconnected", "Logged Out"];
 	const STATS_DAYS = 30;
-	const POLL_MS = 4000;
 	// the full path until `devices.get_device_impact` joins the key map in whatsapp_next_setup.js
 	const IMPACT_API = "whatsapp_next.api.v1.devices.get_device_impact";
 	// above this share of attempts the failure reading turns red and the delivery bar with it
@@ -409,10 +408,8 @@ frappe.provide("whatsapp_next.devices");
 				}
 				if (left <= 0) {
 					window.clearInterval(this._countdown);
-					// an expired code can no longer be scanned: stop asking the platform every few
-					// seconds (the realtime event still lands if the scan raced the expiry)
-					if (this._poll) window.clearInterval(this._poll);
-					this._poll = null;
+					// an expired code can no longer be scanned; the realtime event still lands if the
+					// scan raced the expiry
 					$el.empty()
 						.removeClass("sanad-tone--amber")
 						.addClass("sanad-tone--gray")
@@ -431,24 +428,30 @@ frappe.provide("whatsapp_next.devices");
 			this._countdown = window.setInterval(tick, 1000);
 		}
 
+		/**
+		 * The scan is announced: the platform tells this site by webhook and the site publishes
+		 * `wa:device:status` (services/devices). The page waits for that, and reads the device once
+		 * when the connection comes back or the person returns to the tab — never on a timer.
+		 */
 		watch() {
 			this.stop_watch(true);
-			this._poll = window.setInterval(() => {
-				if (document.hidden) return;
+			const read = () =>
 				ui.call("devices.poll_status", { device: this.ctx.device }, { silent: true })
 					.then((r) => this.apply_status(r && r.status, r && r.wrong_number))
 					.catch((err) => this.poll_failed(err));
-			}, POLL_MS);
-			this._realtime = (data) => {
-				if (data && data.device === this.ctx.device) this.apply_status(data.status, data.wrong_number);
-			};
-			frappe.realtime.on("wa:device:status", this._realtime);
+			this._stop_listen = ui.listen(
+				"wa:device:status",
+				(data) => {
+					if (data && data.device === this.ctx.device) this.apply_status(data.status, data.wrong_number);
+				},
+				{ on_connect: read }
+			);
 		}
 
 		/**
-		 * A poll that fails because the platform connection itself is broken (no key, a key it
-		 * refuses) will fail every time: stop asking and say so once, instead of a traceback every
-		 * few seconds. Anything else (a timeout, a hiccup) is left to the next poll.
+		 * A read that fails because the platform connection itself is broken (no key, a key it
+		 * refuses) will fail every time: stop waiting and say so once. Anything else (a timeout, a
+		 * hiccup) is left to the announcement or the next read.
 		 */
 		poll_failed(err) {
 			if (!/Auth|NotConfigured/i.test((err && err.exc_type) || "")) return;
@@ -463,11 +466,9 @@ frappe.provide("whatsapp_next.devices");
 		}
 
 		stop_watch(keep_countdown) {
-			if (this._poll) window.clearInterval(this._poll);
-			this._poll = null;
 			if (!keep_countdown && this._countdown) window.clearInterval(this._countdown);
-			if (this._realtime) frappe.realtime.off("wa:device:status", this._realtime);
-			this._realtime = null;
+			if (this._stop_listen) this._stop_listen();
+			this._stop_listen = null;
 		}
 
 		apply_status(status, wrong_number) {

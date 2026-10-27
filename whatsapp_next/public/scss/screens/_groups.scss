@@ -3,7 +3,7 @@
 // pane on the page background beside it, each scrolling on its own. Logical properties only.
 
 .sanad-op.wa-ge {
-	block-size: min(760px, calc(100% - 32px));
+	block-size: min(760px, calc(100% - 28px));
 
 	.sanad-op__body {
 		display: grid;

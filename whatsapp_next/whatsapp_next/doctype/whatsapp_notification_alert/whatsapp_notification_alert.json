@@ -270,7 +270,7 @@
    "link_fieldname": "notification_alert"
   }
  ],
- "modified": "2026-09-26 21:00:00.000000",
+ "modified": "2026-10-27 21:14:16.181352",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Notification Alert",
@@ -336,5 +336,6 @@
  "autoname": "field:alert_name",
  "naming_rule": "By fieldname",
  "allow_rename": 1,
- "search_fields": "alert_name"
+ "search_fields": "alert_name",
+ "icon": "alarm-clock"
 }

@@ -202,7 +202,12 @@
 			new ui.ListStatsCard({
 				listview,
 				layout: "kpi",
-				refresh_seconds: 60,
+				// the figures move when a message arrives: re-read then, never on a timer
+				events: {
+					"wa:inbound:received": function () {
+						this.refresh();
+					},
+				},
 				cards: [
 					{ key: "total", label: __("Total inbound"), icon: "es-line-chat-alt", method: figure((s) => s.total), sub: __("Last 30 days") },
 					{

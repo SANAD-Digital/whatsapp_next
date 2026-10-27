@@ -12,7 +12,7 @@
 	z-index: 1036; // under Frappe's dialogs (confirmations and the file uploader open on top)
 	display: grid;
 	place-items: center;
-	padding: 28px;
+	padding: 20px;
 
 	@media (max-width: 719px) { padding: 0; }
 }
@@ -69,8 +69,8 @@ body.sanad-tw-open { overflow: hidden; }
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 34px;
-		block-size: 34px;
+		inline-size: 28px;
+		block-size: 28px;
 		flex: none;
 		border-radius: 8px;
 		background: var(--wa-pri-s);
@@ -82,7 +82,7 @@ body.sanad-tw-open { overflow: hidden; }
 	&__name {
 		flex: 0 1 420px;
 		min-inline-size: 0;
-		min-block-size: 36px;
+		min-block-size: 28px;
 		padding-inline: 11px;
 		border: 1px solid transparent;
 		border-radius: 6px;
@@ -121,7 +121,7 @@ body.sanad-tw-open { overflow: hidden; }
 	}
 	&__tab {
 		flex: 1;
-		min-block-size: 40px;
+		min-block-size: 28px;
 		border: 0;
 		border-radius: 8px;
 		background: transparent;
@@ -199,8 +199,8 @@ body.sanad-tw-open { overflow: hidden; }
 		.link-btn { inset-block-start: 6px; }
 		// Desk paints `.form-control` grey and borderless; here it is the kit's field like the rest
 		input.form-control.wa-input {
-			block-size: auto;
-			min-block-size: var(--wa-h, 38px);
+			block-size: var(--wa-h, 28px); // Desk's control height, not its padding's
+			padding-block: 0;
 			border: 1px solid var(--wa-border-2);
 			border-radius: var(--wa-radius, 8px);
 			background: var(--wa-surface);
@@ -271,7 +271,7 @@ body.sanad-tw-open { overflow: hidden; }
 		align-items: center;
 		justify-content: center;
 		gap: 10px;
-		min-block-size: 64px;
+		min-block-size: 48px;
 		padding: 12px;
 		border: 1.5px dashed var(--wa-border-2);
 		border-radius: 10px;
@@ -291,7 +291,7 @@ body.sanad-tw-open { overflow: hidden; }
 		border-radius: 10px;
 		background: var(--wa-bg);
 	}
-	&__file-thumb { inline-size: 48px; block-size: 48px; flex: none; border-radius: 6px; object-fit: cover; background: var(--wa-sunken); }
+	&__file-thumb { inline-size: 36px; block-size: 36px; flex: none; border-radius: 6px; object-fit: cover; background: var(--wa-sunken); }
 	&__file-name { flex: 1; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--wa-ink-2); }
 	&__doc {
 		display: grid;
@@ -312,7 +312,7 @@ body.sanad-tw-open { overflow: hidden; }
 			display: flex;
 			align-items: center;
 			gap: 8px;
-			min-block-size: 32px;
+			min-block-size: 28px;
 			font-size: 12px;
 			font-weight: 600;
 			color: var(--wa-ink-2);
@@ -449,7 +449,7 @@ body.sanad-tw-open { overflow: hidden; }
 		flex-direction: column;
 		align-items: stretch;
 		gap: 2px;
-		min-block-size: 44px;
+		min-block-size: 36px;
 		padding: 8px 12px;
 		border: 1px solid var(--wa-border);
 		border-radius: 8px;
@@ -502,7 +502,7 @@ body.sanad-tw-open { overflow: hidden; }
 		align-items: center;
 		gap: 8px;
 		flex-wrap: wrap;
-		.wa-btn { min-block-size: 40px; }
+		.wa-btn { min-block-size: 28px; }
 		.wa-btn--busy { opacity: 0.6; cursor: progress; }
 	}
 	&__delete { margin-inline-start: auto; }

@@ -206,7 +206,7 @@
   }
  ],
  "links": [],
- "modified": "2026-10-07 05:55:57.333310",
+ "modified": "2026-10-27 21:14:16.181352",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Status Post",
@@ -252,5 +252,6 @@
  "sort_order": "DESC",
  "states": [],
  "title_field": "title",
- "track_changes": 1
+ "track_changes": 1,
+ "icon": "circle-dashed"
 }

@@ -11,8 +11,8 @@
 		display: flex;
 		align-items: center;
 		gap: var(--sanad-gap-md);
-		min-height: 64px;
-		padding-block: var(--sanad-gap-md);
+		min-height: 44px;
+		padding-block: calc(var(--sanad-gap-sm) + 2px);
 		padding-inline: var(--sanad-gap-lg);
 		border: var(--sanad-border);
 		border-radius: var(--sanad-card-radius);
@@ -30,8 +30,8 @@
 		display: inline-flex;
 		order: 2; // the prototype puts the tile on the trailing edge
 		flex: none;
-		width: 32px;
-		height: 32px;
+		width: 28px;
+		height: 28px;
 		align-items: center;
 		justify-content: center;
 		border-radius: var(--sanad-radius);
@@ -80,6 +80,12 @@
 	.sanad-stats__icon.sanad-tone--amber { background: var(--surface-amber-1); color: var(--ink-amber-7); }
 	.sanad-stats__icon.sanad-tone--red { background: var(--surface-red-1); color: var(--ink-red-8); }
 	.sanad-stats__icon.sanad-tone--green { background: var(--surface-green-1); color: var(--ink-green-7); }
+}
+
+// KPI cards mounted straight on a list (no PageHeader around them) keep the header's step above
+// and below, so every list measures alike under Desk's strip (owner, 2026-10-26)
+.sanad-list-card > .sanad-stats--kpi {
+	margin-block: var(--sanad-gap-sm);
 }
 
 @media (max-width: 767px) {

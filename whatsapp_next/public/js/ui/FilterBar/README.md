@@ -125,3 +125,8 @@ prototype (`docs/component/Toolbar.dc.html`) and the WCAG 2.1 AA review:
   instead of new UI; the group-by rail is a chip rail with counts.
 - Reserved bar height, `--sanad-gap-*` spacing, global kit focus ring, full-width search and a
   wrapping toolbar under 768 px; announcements are sentences ("Filters cleared.").
+
+## `list_style`
+
+`list_style: true` gives a toolbar on a custom page the padding and the rule a Desk list's toolbar
+has, for a page whose rows are drawn exactly as a list's (inside a `.sanad-list-card` panel).

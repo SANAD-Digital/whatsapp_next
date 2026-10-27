@@ -11,7 +11,8 @@
 .wa-contacts {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sanad-gap-md);
+	// the header carries the step to the panel, as above a Desk list
+	gap: 0;
 
 	// The brief's minimum target is 32 px and Desk's small button is 29 px tall. Only this
 	// screen's own buttons are raised — Desk's chrome keeps its own metrics.
@@ -68,12 +69,20 @@
 		white-space: nowrap;
 	}
 
-	// the prototype's list sits in its own card, like every other block on the screen
-	&__list {
-		border: var(--sanad-border);
-		border-radius: var(--sanad-card-radius);
+	// The toolbar and the table are one panel, exactly a Desk list's (`.sanad-list-card`, owner
+	// 2026-10-26): the toolbar's rule runs under the selection too, and the table has no card of its
+	// own.
+	&__panel {
+		gap: 0;
 		background: var(--surface-base);
-		overflow: hidden;
+		.sanad-filterbar--list { border-block-end: 0; }
+	}
+	&__panel &__toolbar {
+		border-block-end: var(--sanad-border);
+		// the filters carry the list's own padding; the selection, when shown, keeps the same edge
+		&:has(> .wa-contacts__selection:not([hidden])) { padding-inline-end: var(--sanad-gap-md); }
+	}
+	&__list {
 		// a row opens its detail: say so with the pointer, as the prototype's rows do
 		.sanad-datalist__row[tabindex] { cursor: pointer; }
 	}
@@ -160,11 +169,6 @@
 }
 
 // ---- what this screen adds inside the prototype's panel -----------------------------------------
-
-// the recent-messages block: a message is a line of text with when it went and which way
-.wa-contacts-msgs {
-	&__when { flex: none; font-size: 11px; color: var(--wa-ink-4); white-space: nowrap; }
-}
 
 // the conversation-state history in the "Change conversation state" window (09 G-06)
 .wa-contacts__log {

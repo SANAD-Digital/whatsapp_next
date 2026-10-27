@@ -16,7 +16,11 @@
 // Desk lists this product owns ask for the same gutter by the route Desk names their page after.
 
 // Every screen of this product, by the id Desk gives its page container (`#page-<route>`).
-$wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-settings, #page-wa-onboarding, #page-wa-functions-center, #page-wa-simulator, #page-wa-test-lab";
+$wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-settings, #page-wa-onboarding, #page-wa-simulator, #page-wa-test-lab";
+// The Pages that are a list of rows (owner, 2026-10-26: "the header exactly Frappe's, the table exactly
+// a Desk list's — no difference in size, format or colour"): they wear Desk's strip, the lists' gutter
+// and Desk's palette, exactly like the product's Desk lists below, and none of the screens' own shell.
+$wa-list-pages: "#page-wa-contacts, #page-wa-functions-center";
 
 :root {
 	// one gutter for the Pages and the Desk lists alike (owner, 2026-10-26: one design, compact)
@@ -43,9 +47,13 @@ $wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-setting
 	--sanad-radius-lg: 10px;
 	--sanad-card-radius: 10px;
 	--sanad-row-h: 36px;
-	--sanad-head-h: 32px;
-	--sanad-ctl-h: 32px;
-	--sanad-ctl-h-sm: 28px;
+	// never above Frappe's own sizes (owner, 2026-10-26): Desk's controls are 28 px
+	--sanad-head-h: 28px;
+	--sanad-ctl-h: 28px;
+	--sanad-ctl-h-sm: 24px;
+	// the kit's buttons (`.wa-btn`): a control's height, the large one a step above
+	--wa-btn-h: 28px;
+	--wa-btn-h-lg: 32px;
 }
 
 // the card vocabulary (`Cards`) at the same geometry as the stat cards (`ListStatsCard`), whichever
@@ -64,8 +72,8 @@ $wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-setting
 }
 
 .wa {
-	--wa-h: 32px;
-	--wa-h-sm: 28px;
+	--wa-h: 28px;
+	--wa-h-sm: 24px;
 	--wa-fs: 13px;
 	--wa-fs-sm: 12px;
 	--wa-px: 10px;
@@ -90,7 +98,7 @@ $wa-pages: "#page-wa-home, #page-wa-devices, #page-wa-contacts, #page-wa-setting
 // it `<body>` and `<html>` — Desk paints both white, and they showed as white strips beside and
 // under a screen whose container stopped short (owner, 2026-10-07). The route Desk writes on
 // `<body>` is the page's name, so these reach this product's screens and nothing else.
-$wa-routes: wa-home, wa-devices, wa-onboarding, wa-contacts, wa-settings, wa-functions-center, wa-simulator, wa-test-lab;
+$wa-routes: wa-home, wa-devices, wa-onboarding, wa-settings, wa-simulator, wa-test-lab;
 
 @each $route in $wa-routes {
 	html:has(body[data-route="#{$route}"]),
@@ -151,8 +159,12 @@ body[data-route="Workspaces/WhatsApp"] #page-Workspaces {
 // strip under the panel (owner, 2026-10-26). Below 992 px Desk's strip is still above it, so the
 // offset there stays.
 @media (min-width: 992px) {
+	// exactly the height of what scrolls it — measured by the page (`--wa-onb-h`), never the window,
+	// which a scrollbar or a banner makes taller than the scroller
 	#page-wa-onboarding {
 		--wa-viewport-offset: 0px;
+		min-block-size: var(--wa-onb-h, 100dvh);
+		.wa-onb { min-block-size: var(--wa-onb-h, 100dvh); }
 	}
 	// Desk keeps a scrollbar's width free beside the page (`scrollbar-gutter: stable`, Frappe 16.53);
 	// on this screen that strip sits against the brand panel in either direction, so it takes the
@@ -172,7 +184,8 @@ body[data-route="Workspaces/WhatsApp"] #page-Workspaces {
 // Their gutter is the narrower one. A screen of cards can give 32 px away on each side; a table of
 // twelve columns cannot — every pixel taken from it is a column pushed behind a horizontal scroll —
 // and what was asked for is that nothing touch the glass, which 16 px settles.
-[id^="page-List/WhatsApp "] {
+[id^="page-List/WhatsApp "],
+#{$wa-list-pages} {
 	// the row inside the strip is a Bootstrap `.row`, whose negative side margins eat any padding
 	// put on the container around it, so the gutter goes on the row itself and the title gives up
 	// the 15 px it was carrying on its own
@@ -218,9 +231,9 @@ body[data-route^="Form/WhatsApp "] {
 
 	// Desk also caps a form section at `--page-max-width`, which is right for a column of fields
 	// and wrong for a panel that is two or three columns of its own — a message rail beside an
-	// editor beside a preview, or a table of recipients. Only the sections carrying one are freed;
+	// editor beside a preview, or a table of recipients (a DataList). Only the sections carrying one are freed;
 	// the ordinary field sections keep the measure that makes them readable.
-	.form-section:has(.sanad-mc, .wa-recipients, .sanad-datalist) .section-body {
+	.form-section:has(.sanad-mc, .sanad-datalist) .section-body {
 		max-width: none;
 	}
 
@@ -278,4 +291,11 @@ body[data-route^="Form/WhatsApp "] {
 	line-height: 15px;
 	vertical-align: 1px;
 	letter-spacing: 0.02em;
+}
+
+// (last in the file: the lists' rule above gives the column its bottom air)
+// The Pages that are lists end on their panel, as a Desk list does: the footer rests on the screen's
+// bottom edge, with no air under it
+#{$wa-list-pages} {
+	.layout-main-section { padding-block-end: 0; }
 }

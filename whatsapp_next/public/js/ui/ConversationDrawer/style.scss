@@ -3,8 +3,8 @@
 .sanad-convo {
 	&__avatar {
 		flex: none;
-		width: 36px;
-		height: 36px;
+		width: 28px;
+		height: 28px;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -24,8 +24,8 @@
 		white-space: nowrap;
 	}
 	&__sub { text-align: start; min-height: 1.2em; }
-	&__badge { flex: none; min-width: 64px; display: inline-flex; justify-content: flex-end; }
-	&__badge-skeleton { display: inline-block; width: 64px; height: 18px; }
+	&__badge { flex: none; min-width: 48px; display: inline-flex; justify-content: flex-end; }
+	&__badge-skeleton { display: inline-block; width: 48px; height: 18px; }
 	&__close {
 		flex: none;
 		min-width: var(--sanad-target);
@@ -36,7 +36,7 @@
 		padding: 0;
 	}
 	&__actions {
-		min-height: 48px; // reserved while the number loads
+		min-height: 36px; // reserved while the number loads
 		.sanad-skeleton { flex: 1 1 auto; padding-block: 0; }
 	}
 	&__action {

@@ -44,7 +44,7 @@
 	&--modal {
 		inset: 0;
 		margin: auto;
-		inline-size: min(var(--sanad-op-width), calc(100% - 32px));
+		inline-size: min(var(--sanad-op-width), calc(100% - 28px));
 		block-size: fit-content;
 		max-block-size: calc(100% - 32px);
 		border-radius: 12px;
@@ -64,8 +64,9 @@
 	&__head {
 		display: flex;
 		align-items: flex-start;
-		gap: 12px;
-		padding: 18px 18px 14px;
+		gap: 10px;
+		// compact, as the drawer and the settings window (owner, 2026-10-26)
+		padding: 12px 16px;
 		border-block-end: 1px solid var(--wa-border);
 		flex: none;
 	}
@@ -74,12 +75,12 @@
 		min-inline-size: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 6px;
+		gap: 2px;
 	}
 	&__title {
 		margin: 0;
 		font-size: 16px;
-		font-weight: 700;
+		font-weight: 600;
 		line-height: 1.4;
 		color: var(--wa-ink);
 		overflow: hidden;
@@ -110,8 +111,8 @@
 	}
 	&__close {
 		flex: none;
-		inline-size: 32px;
-		block-size: 32px;
+		inline-size: 28px;
+		block-size: 28px;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -130,10 +131,10 @@
 		flex: 1;
 		min-block-size: 0;
 		overflow: auto;
-		padding: 16px 18px;
+		padding: 12px 16px;
 		display: flex;
 		flex-direction: column;
-		gap: 20px;
+		gap: var(--sanad-gap-lg);
 		scroll-padding-block-end: 80px;
 		scrollbar-width: thin;
 	}
@@ -171,13 +172,13 @@
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
-		gap: 12px 24px;
+		gap: 12px 12px;
 		padding-block: 14px;
 		border-block-end: 1px solid var(--wa-border);
 
 		.wa-field__label { font-size: 14px; font-weight: 400; color: var(--wa-ink); margin: 0; }
 		.sanad-op__readonly {
-			min-block-size: 36px;
+			min-block-size: 28px;
 			display: flex;
 			align-items: center;
 			padding: 0;
@@ -220,7 +221,7 @@
 		.sanad-phone__label { font-size: 11px; font-weight: 600; color: var(--wa-ink-3); }
 	}
 	&__readonly {
-		min-block-size: var(--wa-h, 38px);
+		min-block-size: var(--wa-h, 28px);
 		display: flex;
 		align-items: center;
 		font-size: 13px;
@@ -303,7 +304,7 @@
 	}
 	&__tadd-input,
 	&__tadd-type {
-		block-size: 30px;
+		block-size: 28px;
 		border: 1px solid var(--wa-border-2);
 		border-radius: 6px;
 		background: var(--wa-surface);
@@ -327,7 +328,7 @@
 	}
 	&__tadd-btn {
 		flex: none;
-		block-size: 30px;
+		block-size: 28px;
 		padding-inline: 12px;
 		border: 0;
 		border-radius: 6px;
@@ -462,8 +463,8 @@
 		&.wa-field--invalid .wa-input { border-color: var(--wa-dg); }
 	}
 	&__row-remove {
-		inline-size: 32px;
-		block-size: 32px;
+		inline-size: 28px;
+		block-size: 28px;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -489,7 +490,7 @@
 		display: flex;
 		align-items: center;
 		gap: 7px;
-		min-block-size: 34px;
+		min-block-size: 28px;
 		margin: 0;
 		padding-inline: 10px;
 		border: 1px solid var(--wa-border-2);
@@ -653,7 +654,7 @@
 		align-items: center;
 		gap: 8px;
 		flex-wrap: wrap;
-		padding: 12px 18px;
+		padding: 8px 16px;
 		border-block-start: 1px solid var(--wa-border);
 		background: var(--wa-surface);
 		flex: none;

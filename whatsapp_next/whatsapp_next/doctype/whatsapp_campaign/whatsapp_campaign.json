@@ -359,7 +359,7 @@
    "link_fieldname": "campaign"
   }
  ],
- "modified": "2026-10-07 15:00:00.000000",
+ "modified": "2026-10-27 21:14:16.181352",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Campaign",
@@ -425,5 +425,6 @@
  "autoname": "WA-CAMP-.YYYY.-.#####",
  "naming_rule": "Expression (old style)",
  "title_field": "campaign_name",
- "search_fields": "campaign_name"
+ "search_fields": "campaign_name",
+ "icon": "megaphone"
 }

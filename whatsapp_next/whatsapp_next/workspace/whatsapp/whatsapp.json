@@ -1,7 +1,7 @@
 {
  "app": "whatsapp_next",
  "charts": [],
- "content": "[{\"id\": \"wa_header\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>WhatsApp</b></span>\", \"col\": 12}}, {\"id\": \"wa_block\", \"type\": \"custom_block\", \"data\": {\"custom_block_name\": \"WA Dashboard Block\", \"col\": 12}}, {\"id\": \"wa_spacer\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"wa_sc_0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Home\", \"col\": 3}}, {\"id\": \"wa_sc_1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Devices\", \"col\": 3}}, {\"id\": \"wa_sc_2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Simulator\", \"col\": 3}}, {\"id\": \"wa_sc_3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Settings\", \"col\": 3}}, {\"id\": \"wa_spacer_2\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"wa_card_0\", \"type\": \"card\", \"data\": {\"card_name\": \"Messages\", \"col\": 4}}, {\"id\": \"wa_card_1\", \"type\": \"card\", \"data\": {\"card_name\": \"Audience\", \"col\": 4}}, {\"id\": \"wa_card_2\", \"type\": \"card\", \"data\": {\"card_name\": \"Campaigns\", \"col\": 4}}, {\"id\": \"wa_card_3\", \"type\": \"card\", \"data\": {\"card_name\": \"Templates\", \"col\": 4}}, {\"id\": \"wa_card_4\", \"type\": \"card\", \"data\": {\"card_name\": \"Automation\", \"col\": 4}}, {\"id\": \"wa_card_5\", \"type\": \"card\", \"data\": {\"card_name\": \"System\", \"col\": 4}}]",
+ "content": "[{\"id\":\"wa_block\",\"type\":\"custom_block\",\"data\":{\"custom_block_name\":\"WA Dashboard Block\",\"col\":12}},{\"id\":\"wa_spacer\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"wa_sc_0\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Home\",\"col\":3}},{\"id\":\"wa_sc_1\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Devices\",\"col\":3}},{\"id\":\"wa_sc_2\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Simulator\",\"col\":3}},{\"id\":\"wa_sc_3\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Settings\",\"col\":3}},{\"id\":\"wa_spacer_2\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"wa_card_0\",\"type\":\"card\",\"data\":{\"card_name\":\"Messages\",\"col\":4}},{\"id\":\"wa_card_1\",\"type\":\"card\",\"data\":{\"card_name\":\"Audience\",\"col\":4}},{\"id\":\"wa_card_2\",\"type\":\"card\",\"data\":{\"card_name\":\"Campaigns\",\"col\":4}},{\"id\":\"wa_card_3\",\"type\":\"card\",\"data\":{\"card_name\":\"Templates\",\"col\":4}},{\"id\":\"wa_card_4\",\"type\":\"card\",\"data\":{\"card_name\":\"Automation\",\"col\":4}},{\"id\":\"wa_card_5\",\"type\":\"card\",\"data\":{\"card_name\":\"System\",\"col\":4}}]",
  "creation": "2026-09-23 05:47:46.870547",
  "custom_blocks": [
   {
@@ -238,7 +238,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-10-08 10:00:00.000000",
+ "modified": "2026-10-27 21:15:45.374690",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp",

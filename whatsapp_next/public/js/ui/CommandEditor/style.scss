@@ -18,7 +18,7 @@ body.sanad-ce-open { overflow: hidden; }
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 22px;
+	padding: 16px;
 	color: var(--wa-ink);
 
 	@media (max-width: $ce-mobile) { padding: 0; }
@@ -96,7 +96,7 @@ body.sanad-ce-open { overflow: hidden; }
 	&__word-label { font-size: 11px; color: var(--wa-ink-4); flex: none; margin: 0; font-weight: 400; }
 
 	&__code {
-		min-block-size: 38px;
+		min-block-size: 28px;
 		min-inline-size: 120px;
 		max-inline-size: 260px;
 		padding: 0 12px;
@@ -143,7 +143,7 @@ body.sanad-ce-open { overflow: hidden; }
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
-		min-block-size: 34px;
+		min-block-size: 28px;
 		padding: 0 11px;
 		border-radius: 8px;
 		border: 1px solid var(--wa-border-2);
@@ -159,7 +159,7 @@ body.sanad-ce-open { overflow: hidden; }
 
 	&__track {
 		position: relative;
-		inline-size: 34px;
+		inline-size: 28px;
 		block-size: 19px;
 		border-radius: 999px;
 		background: var(--wa-border-2);
@@ -183,8 +183,8 @@ body.sanad-ce-open { overflow: hidden; }
 	}
 
 	&__x {
-		inline-size: 32px;
-		block-size: 32px;
+		inline-size: 28px;
+		block-size: 28px;
 		border-radius: 8px;
 		border: 1px solid var(--wa-border);
 		background: transparent;
@@ -206,7 +206,7 @@ body.sanad-ce-open { overflow: hidden; }
 		display: inline-flex;
 		align-items: center;
 		gap: 7px;
-		min-block-size: 36px;
+		min-block-size: 28px;
 		padding: 0 12px;
 		border: 0;
 		background: transparent;
@@ -369,7 +369,7 @@ body.sanad-ce-open { overflow: hidden; }
 	&__hint { font-size: 11px; color: var(--wa-ink-3); line-height: 1.75; }
 
 	&__input {
-		min-block-size: 36px;
+		min-block-size: 28px;
 		padding: 0 11px;
 		border-radius: 8px;
 		border: 1px solid var(--wa-border-2);
@@ -380,13 +380,13 @@ body.sanad-ce-open { overflow: hidden; }
 		inline-size: 100%;
 
 		&:focus { border-color: var(--wa-pri); background: var(--wa-surface); }
-		&--surface { background: var(--wa-surface); font-size: 12px; min-block-size: 34px; }
-		&--sm { min-block-size: 34px; padding: 0 10px; font-size: 12px; }
-		&--num { inline-size: 82px; min-block-size: 34px; padding: 0 9px; font-size: 12px; background: var(--wa-surface); }
-		&--text { inline-size: 150px; min-block-size: 34px; padding: 0 9px; font-size: 12px; background: var(--wa-surface); }
+		&--surface { background: var(--wa-surface); font-size: 12px; min-block-size: 28px; }
+		&--sm { min-block-size: 28px; padding: 0 10px; font-size: 12px; }
+		&--num { inline-size: 82px; min-block-size: 28px; padding: 0 9px; font-size: 12px; background: var(--wa-surface); }
+		&--text { inline-size: 150px; min-block-size: 28px; padding: 0 9px; font-size: 12px; background: var(--wa-surface); }
 	}
 
-	&__select { inline-size: auto; min-block-size: 34px; padding-inline: 9px 26px; font-size: 12px; background: var(--wa-surface); }
+	&__select { inline-size: auto; min-block-size: 28px; padding-inline: 9px 20px; font-size: 12px; background: var(--wa-surface); }
 
 	&__textarea {
 		inline-size: 100%;
@@ -473,7 +473,7 @@ body.sanad-ce-open { overflow: hidden; }
 		display: inline-flex;
 		align-items: center;
 		gap: 7px;
-		min-block-size: 30px;
+		min-block-size: 28px;
 		padding: 0 11px;
 		border-radius: 999px;
 		font-size: 12px;
@@ -507,7 +507,7 @@ body.sanad-ce-open { overflow: hidden; }
 	}
 
 	&__syn {
-		min-block-size: 30px;
+		min-block-size: 28px;
 		min-inline-size: 170px;
 		padding: 0 12px;
 		border-radius: 999px;
@@ -524,7 +524,7 @@ body.sanad-ce-open { overflow: hidden; }
 		display: inline-flex;
 		align-items: center;
 		gap: 7px;
-		min-block-size: 32px;
+		min-block-size: 28px;
 		padding: 0 11px;
 		border-radius: 8px;
 		border: 1px solid var(--wa-border-2);
@@ -538,7 +538,7 @@ body.sanad-ce-open { overflow: hidden; }
 		&.is-on { border-color: var(--wa-pri-sb); background: var(--wa-pri-s); color: var(--wa-pri-d); }
 	}
 
-	.sanad-ce__perm &__pill { min-block-size: 34px; padding: 0 12px; }
+	.sanad-ce__perm &__pill { min-block-size: 28px; padding: 0 12px; }
 
 	&__mark { font-size: 13px; line-height: 1; }
 
@@ -666,7 +666,7 @@ body.sanad-ce-open { overflow: hidden; }
 	}
 
 	&__seg {
-		min-block-size: 32px;
+		min-block-size: 28px;
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
@@ -770,8 +770,8 @@ body.sanad-ce-open { overflow: hidden; }
 	&__phone-head .sanad-ce__switch-text { flex: 1; }
 
 	&__avatar {
-		inline-size: 34px;
-		block-size: 34px;
+		inline-size: 28px;
+		block-size: 28px;
 		border-radius: 50%;
 		background: var(--wa-pri-s);
 		color: var(--wa-pri-d);
@@ -821,7 +821,7 @@ body.sanad-ce-open { overflow: hidden; }
 	&__foot-hint { flex: 1; min-inline-size: 80px; font-size: 11px; color: var(--wa-ink-4); line-height: 1.7; }
 
 	&__btn {
-		min-block-size: 36px;
+		min-block-size: 28px;
 		padding: 0 14px;
 		border-radius: 8px;
 		border: 1px solid var(--wa-border-2);

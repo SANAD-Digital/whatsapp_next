@@ -45,6 +45,8 @@ sanad.ui.FilterBar = class FilterBar {
 	 * @param {Object} opts
 	 * @param {Object} [opts.listview] — a Desk ListView (`frappe.views.ListView`)
 	 * @param {Object} [opts.page] — a custom page (`frappe.ui.Page`) — needs `doctype` + `on_change`
+	 * @param {boolean} [opts.list_style] — on a custom page, the toolbar a Desk list wears (its padding
+	 *   and rule), for a page that shows its rows exactly as a list does
 	 * @param {jQuery|HTMLElement} [opts.wrapper] — explicit mount point (default: above the list / `page.main`)
 	 * @param {string} [opts.doctype] — defaults to `listview.doctype`
 	 * @param {Array<Object>} opts.presets — `{fieldname, type?: "select"|"tabs"|"daterange"|"search"|"period", label?,
@@ -92,7 +94,7 @@ sanad.ui.FilterBar = class FilterBar {
 
 	make() {
 		this.$wrapper = $(
-			`<div class="sanad-kit sanad-filterbar${this.listview ? " sanad-filterbar--list" : ""}" role="group" aria-label="${ui.escape(__("Filters"))}"></div>`
+			`<div class="sanad-kit sanad-filterbar${this.listview || this.opts.list_style ? " sanad-filterbar--list" : ""}" role="group" aria-label="${ui.escape(__("Filters"))}"></div>`
 		);
 		const $mount = this.opts.wrapper ? $(this.opts.wrapper) : null;
 		if ($mount) $mount.append(this.$wrapper);

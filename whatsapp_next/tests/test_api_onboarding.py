@@ -546,6 +546,16 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 			self.assertEqual((started["ok"], started["request_key"]), (True, "reset-1"))
 			self.assertEqual(api.get_password_reset_status(request_key="reset-1")["status"], "Pending")
 
+	def test_a_password_reset_is_confirmed_by_the_platform_calling_back(self):
+		"""The page waits for the platform's call, as a sign-up does, instead of asking on a timer
+		(owner, 2026-10-27): the reset hands the platform a one-time callback and keeps it here."""
+		with fake_provider() as provider, as_user("System Manager"):
+			api.start_password_reset(identifier="a@b.c")
+			callback = dict(provider.calls)["start_password_reset"]["callback"]
+			self.assertTrue(callback["url"].endswith(f"/api/method/{svc.SIGNUP_CALLBACK}"))
+			kept = frappe.cache.get_value(f"{svc.SIGNUP_CALLBACK_KEY}:{callback['token']}")
+			self.assertEqual(kept, {"request_key": "reset-1", "user": frappe.session.user})
+
 	def test_the_new_endpoints_are_closed_to_everyone_else(self):
 		with fake_provider(), as_user("WhatsApp Manager"):
 			for call in (

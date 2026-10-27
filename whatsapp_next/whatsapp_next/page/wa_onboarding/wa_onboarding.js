@@ -33,9 +33,6 @@ frappe.provide("whatsapp_next.onboarding");
 	const ico = (name, size) => ui.ico(name, size);
 	const SETUP_ROLES = ["System Manager"];
 	const POLL_MS = 4000;
-	// the platform tells this site the moment the number is confirmed (webhooks/v1/signup.py ->
-	// `wa:signup:status`); asking it is only the fallback, for a site it cannot reach
-	const SIGNUP_POLL_MS = 20000;
 	// how long a half-finished sign-up is kept in this browser for a reload to return to
 	const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 	// The prototype signs every new tenant up on the free plan and says so on the ready panel. On
@@ -1546,23 +1543,22 @@ frappe.provide("whatsapp_next.onboarding");
 					ui.announce(__("The sign-up was confirmed on the platform."));
 				}
 			};
-			// the platform's call, passed on the moment it arrives
-			this._signup_realtime = (data) => {
-				if (data && data.request_key === this.ctx.request_key) seen(data.status);
-			};
-			frappe.realtime.on("wa:signup:status", this._signup_realtime);
-			// the fallback: ask now and then, never while the tab is hidden
-			this._signup_poll = window.setInterval(() => {
-				if (document.hidden || !this.ctx.request_key) return;
+			const read = () =>
+				this.ctx.request_key &&
 				ui.call("onboarding.get_signup_status", { request_key: this.ctx.request_key }, { silent: true })
 					.then((r) => seen(r && r.status, r && r.expires_in))
 					.catch(() => {});
-			}, SIGNUP_POLL_MS);
+			// the platform's call (webhooks/v1/signup.py), passed on the moment it arrives; the page
+			// reads the request only when the connection comes back or the person returns to the tab
+			this._stop_signup_listen = ui.listen(
+				"wa:signup:status",
+				(data) => {
+					if (data && data.request_key === this.ctx.request_key) seen(data.status);
+				},
+				{ on_connect: read }
+			);
 			// once right away: after a reload the number may be confirmed already
-			if (this.ctx.request_key)
-				ui.call("onboarding.get_signup_status", { request_key: this.ctx.request_key }, { silent: true })
-					.then((r) => seen(r && r.status, r && r.expires_in))
-					.catch(() => {});
+			read();
 		}
 
 		/** The platform saw the confirming message: set the password and link the site. */
@@ -1570,6 +1566,13 @@ frappe.provide("whatsapp_next.onboarding");
 			if (!this.need_password()) {
 				// the number is confirmed; only the password (not kept across a reload) is missing
 				this.stop_signup_watch();
+				return;
+			}
+			if (this.s.verify !== "confirmed") {
+				// «Finish» after a reload, before the platform has the code: asking now could only be
+				// refused ("Verify your account first"). The password is kept and the page goes on
+				// waiting; the account is finished by itself the moment the number is confirmed.
+				this.show_error(__("Send the code from your WhatsApp first. The account is finished by itself the moment your number is confirmed."));
 				return;
 			}
 			this._finishing = true;
@@ -1599,10 +1602,8 @@ frappe.provide("whatsapp_next.onboarding");
 		}
 
 		stop_signup_watch() {
-			if (this._signup_poll) window.clearInterval(this._signup_poll);
-			this._signup_poll = null;
-			if (this._signup_realtime) frappe.realtime.off("wa:signup:status", this._signup_realtime);
-			this._signup_realtime = null;
+			if (this._stop_signup_listen) this._stop_signup_listen();
+			this._stop_signup_listen = null;
 		}
 
 		// =============================================================================================
@@ -1624,7 +1625,7 @@ frappe.provide("whatsapp_next.onboarding");
 				sub: __("Sign in to see your messages, your balance and your numbers."),
 			});
 			$card.append(
-				field_html({ id: "wa-onb-login-email", label: __("Mobile number or email"), hint: __("Mobile number with the country code, e.g. 967771234567"), dir: "ltr", placeholder: "967 7XX XXX XXX", value: no_plus(this.f.login_id !== undefined ? this.f.login_id : this.f.phone || this.f.email), autocomplete: "username", extra: 'data-l="login_id"' })
+				field_html({ id: "wa-onb-login-email", label: __("Mobile number or email"), hint: __("Mobile number with the country code"), dir: "ltr", placeholder: "967 7XX XXX XXX", value: no_plus(this.f.login_id !== undefined ? this.f.login_id : this.f.phone || this.f.email), autocomplete: "username", extra: 'data-l="login_id"' })
 			);
 			$card.append(`
 				<div class="wa-field">
@@ -1969,22 +1970,34 @@ frappe.provide("whatsapp_next.onboarding");
 
 		/** WhatsApp recovery: the reply confirms the request; poll until it does. */
 		/** WhatsApp recovery: the person's message confirms the request; poll, then move on. */
+		/** The reset is confirmed by the same call as a sign-up (services/onboarding.start_password_reset). */
 		watch_reset() {
 			this.stop_reset_watch();
-			this._reset_poll = window.setInterval(() => {
+			const confirmed = (status) => {
 				const reset = this.ctx.reset;
-				if (document.hidden || !reset || reset.verified) return;
-				ui.call("onboarding.get_password_reset_status", { request_key: reset.request_key }, { silent: true })
-					.then((r) => {
-						if (r && (r.status === "Verified" || r.status === "Completed")) this.reset_verified();
-					})
-					.catch(() => {});
-			}, SIGNUP_POLL_MS);
+				if (reset && !reset.verified && (status === "Verified" || status === "Completed")) this.reset_verified();
+			};
+			this._stop_reset_listen = ui.listen(
+				"wa:signup:status",
+				(data) => {
+					const reset = this.ctx.reset;
+					if (data && reset && data.request_key === reset.request_key) confirmed(data.status);
+				},
+				{
+					on_connect: () => {
+						const reset = this.ctx.reset;
+						if (!reset || reset.verified) return;
+						ui.call("onboarding.get_password_reset_status", { request_key: reset.request_key }, { silent: true })
+							.then((r) => confirmed(r && r.status))
+							.catch(() => {});
+					},
+				}
+			);
 		}
 
 		stop_reset_watch() {
-			if (this._reset_poll) window.clearInterval(this._reset_poll);
-			this._reset_poll = null;
+			if (this._stop_reset_listen) this._stop_reset_listen();
+			this._stop_reset_listen = null;
 		}
 
 		// =============================================================================================
@@ -2063,9 +2076,9 @@ frappe.provide("whatsapp_next.onboarding");
 
 		/**
 		 * Link this site to another platform account (owner, 2026-10-10): the sign-in card, with a
-		 * way back. Once the other account signs in, what belonged to this one — devices,
-		 * messages, the queue, WhatsApp numbers — is deleted (`services.backup.purge_account_data`);
-		 * templates, notifications, commands and groups stay. A backup can be downloaded first.
+		 * way back. Nothing is deleted when the other account signs in (D-145): the previous
+		 * account's devices are switched off, and a System Manager is then asked whether to delete
+		 * what it left or keep it (`account_switch.js`). A backup can be downloaded first.
 		 */
 		switch_account() {
 			const dialog = new frappe.ui.Dialog({
@@ -2081,16 +2094,13 @@ frappe.provide("whatsapp_next.onboarding");
 				secondary_action_label: __("Cancel"),
 				secondary_action: () => dialog.hide(),
 			});
-			// kept by reference: once it is red it no longer answers `get_primary_btn()` (.btn-primary)
-			const $go = dialog.get_primary_btn().removeClass("btn-primary").addClass("btn-danger");
+			// kept by reference: the sign-in waits on it while a backup downloads
+			const $go = dialog.get_primary_btn();
 			const $body = dialog.fields_dict.body.$wrapper;
 			$body.html(`
 				<div class="wa-onb__switch">
-					<p>${esc(__("This site will work with the account you sign in with. Once the sign-in succeeds, what belongs to the current account is deleted from this site:"))}</p>
-					<ul>
-						<li>${esc(__("Devices, sent and received messages, the queue and WhatsApp numbers."))}</li>
-					</ul>
-					<p>${esc(__("Templates, document notifications, alerts, commands and contact groups stay. The account itself is not deleted from the platform, and ERPNext's contacts are not touched."))}</p>
+					<p>${esc(__("This site will work with the account you sign in with. Nothing is deleted when you sign in: the current account's devices are switched off, and its messages, queue and WhatsApp numbers stay on this site."))}</p>
+					<p>${esc(__("Afterwards this site asks whether to delete what the previous account left or keep it. Templates, document notifications, alerts, commands and contact groups always stay."))}</p>
 					<div class="wa-onb__switch-backup">
 						<span>${esc(__("Keep a copy of what this site set up before you continue."))}</span>
 						${ui.btn({ label: __("Download a backup"), variant: "secondary", size: "sm", attrs: { "data-act": "backup" } })}
@@ -2190,6 +2200,23 @@ frappe.provide("whatsapp_next.onboarding");
 
 	whatsapp_next.onboarding.OnboardingScreen = OnboardingScreen;
 
+	// The screen is exactly as tall as what scrolls it (owner, 2026-10-26: a gap under it, over and
+	// over). `100dvh` is the window, not Desk's `.main-section`: a horizontal scrollbar, a banner or
+	// a zoom made them differ, and a strip of the page under the panel showed — or the page
+	// overflowed and opened scrolled down from the screen before it. The scroller's own height is
+	// measured instead (`--wa-onb-h`, read in `_onboarding.scss` and `_shell.scss`), kept on resize,
+	// and every show starts at the top.
+	function fit_to_scroller(wrapper) {
+		const scroller = $(wrapper).closest(".main-section")[0] || document.scrollingElement;
+		const set = () => wrapper.style.setProperty("--wa-onb-h", `${scroller.clientHeight}px`);
+		set();
+		scroller.scrollTop = 0;
+		if (!wrapper._wa_fit && typeof ResizeObserver === "function") {
+			wrapper._wa_fit = new ResizeObserver(set);
+			wrapper._wa_fit.observe(scroller);
+		}
+	}
+
 	frappe.pages["wa-onboarding"].on_page_load = function (wrapper) {
 		const page = frappe.ui.make_app_page({
 			parent: wrapper,
@@ -2197,6 +2224,7 @@ frappe.provide("whatsapp_next.onboarding");
 			single_column: true,
 		});
 		wrapper.wa_onboarding = new OnboardingScreen({ page, wrapper });
+		fit_to_scroller(wrapper);
 	};
 
 	// Leaving the page stops its timers and polls (`unbind` on "hide"); coming back re-reads where
@@ -2205,6 +2233,7 @@ frappe.provide("whatsapp_next.onboarding");
 	// frozen timer and never noticed the confirming message, and an account linked meanwhile (in
 	// Settings, or another tab) still showed the sign-up form.
 	frappe.pages["wa-onboarding"].on_page_show = function (wrapper) {
+		fit_to_scroller(wrapper);
 		const screen = wrapper.wa_onboarding;
 		if (!screen) return;
 		if (!screen._shown) {

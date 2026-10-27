@@ -71,7 +71,7 @@
  "in_create": 1,
  "index_web_pages_for_search": 0,
  "links": [],
- "modified": "2026-10-07 15:00:00.000000",
+ "modified": "2026-10-27 21:14:16.181352",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Number Check",
@@ -112,5 +112,6 @@
  "sort_order": "DESC",
  "states": [],
  "title_field": "phone_e164",
- "track_changes": 0
+ "track_changes": 0,
+ "icon": "badge-check"
 }

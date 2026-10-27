@@ -52,13 +52,13 @@
 		&.sanad-datalist__th--end, &.sanad-datalist__td--end { text-align: end; }
 		&.sanad-datalist__th--center, &.sanad-datalist__td--center { text-align: center; }
 		&.sanad-datalist__th--check, &.sanad-datalist__td--check {
-			width: 44px;
+			width: 36px;
 			text-align: center;
 			padding-inline: var(--sanad-gap-sm);
 			position: sticky;
 			inset-inline-start: 0; // the checkbox leads the sticky block
 		}
-		&.sanad-datalist__th--expand, &.sanad-datalist__td--expand { width: 32px; padding-inline: var(--sanad-gap-xs); }
+		&.sanad-datalist__th--expand, &.sanad-datalist__td--expand { width: 28px; padding-inline: var(--sanad-gap-xs); }
 		// the action column stays put when the table scrolls sideways, so "View" is never half-cut
 		&.sanad-datalist__th--action, &.sanad-datalist__td--action {
 			width: 1%;
@@ -192,7 +192,7 @@
 		position: sticky;
 		inset-block-start: var(--sanad-head-h);
 		z-index: 5; // above every body cell, below the header
-		height: 36px;
+		height: 28px;
 		padding: 0;
 		// only a rule above: the one below sat between the group and its own rows and read as a
 		// stray border in front of them
@@ -215,7 +215,7 @@
 		width: max-content;
 		max-width: 100%;
 		gap: var(--sanad-gap-sm);
-		min-height: 36px;
+		min-height: 28px;
 		padding-inline-end: var(--sanad-cell-px);
 		font-size: var(--text-sm, 13px);
 		> *:not(.sanad-datalist__rail) { align-self: center; }
@@ -223,7 +223,7 @@
 	// the group's checkbox lines up with the row checkboxes below it
 	&__group-check {
 		flex: none;
-		width: 44px;
+		width: 36px;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -421,7 +421,8 @@
 
 	.sanad-filterbar--list {
 		margin-block-end: 0;
-		padding: var(--sanad-gap-md);
+		// compact: a step above and below the controls, the list's gutter at the sides
+		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
 		background: var(--surface-base);
 		border: 0;
 		border-block-end: var(--sanad-border);
@@ -443,6 +444,11 @@
 	// wins by order: inside the card the table owns its height, so the rule is overruled from a
 	// stronger selector. Without this the table paints over the footer when a console sits above it.
 	&.frappe-list .result { min-height: 0; }
+	// Frappe 16.53 makes the list's `.result` a table box (`.layout-main-section-wrapper:not(...)
+	// .frappe-list .result-container .result { display: table }`), and a table grows with its rows:
+	// the table then ran under the footer. Said back here with as many classes, so the card keeps
+	// the height it measured and the table scrolls inside it.
+	&.frappe-list .result-container .result.sanad-datalist-host { display: flex; min-width: 0; width: auto; }
 	.sanad-datalist__wrap {
 		flex: 1 1 auto;
 		min-width: 0;
@@ -484,7 +490,7 @@
 			grid-template-columns: auto minmax(0, 1fr) auto auto;
 			align-items: center;
 			gap: var(--sanad-gap-xs) 10px;
-			min-height: 56px;
+			min-height: 44px;
 			padding: var(--sanad-gap-md) 14px;
 			border: 0;
 			border-block-end: var(--sanad-border);
@@ -544,7 +550,7 @@
 		// grouping stays readable: one indented strip per level
 		.sanad-datalist__group { display: block; padding-inline: 14px; border-block-end: var(--sanad-border); }
 		.sanad-datalist__group td { display: block; background: transparent; border: 0; }
-		.sanad-datalist__group-inner { min-height: 32px; }
+		.sanad-datalist__group-inner { min-height: 28px; }
 		.sanad-datalist__main, .sanad-datalist__sub { max-width: none; white-space: normal; }
 		.sanad-datalist__detail { display: block; }
 		.sanad-datalist__detail td { display: block; }
@@ -572,7 +578,7 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--sanad-gap-sm);
-		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
+		// its padding is the one footer's (below), as a Desk list's
 		border-block-start: var(--sanad-border);
 	}
 	.sanad-datalist__pager {
@@ -592,4 +598,85 @@
 // The list column Desk pads at the bottom; the card already reaches the bottom of the screen.
 .layout-main-section.sanad-list-card-host {
 	padding-block-end: 0;
+}
+
+// ---- the footer: one design under every list and every page's table (owner, 2026-10-26) -------
+// A compact bar: the count at the inline-start (the total plain, what is shown quieter), then the
+// page-size choice as one segmented control and its verb, all at the small control height.
+.sanad-datalist__footer {
+	min-block-size: 36px;
+	padding-block: 6px;
+	padding-inline: var(--sanad-gap-md);
+	gap: var(--sanad-gap-md);
+
+	.sanad-datalist__count {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 6px;
+		min-height: 0;
+		margin-inline-end: auto;
+		color: var(--ink-gray-6);
+		font-size: var(--text-xs, 12px);
+	}
+	.sanad-datalist__total { color: var(--ink-gray-8); font-weight: 600; }
+	.sanad-datalist__sep { color: var(--ink-gray-4); }
+
+	.sanad-datalist__pager,
+	.sanad-datalist__paging { gap: var(--sanad-gap-sm); }
+
+	// Desk's page-size radios (`frappe.ui.TabButtons`) as one segmented control
+	.es-tab-buttons {
+		display: inline-flex;
+		gap: 2px;
+		padding: 2px;
+		border-radius: var(--sanad-radius);
+		background: var(--surface-gray-2);
+	}
+	.es-tab-buttons .es-pill {
+		min-block-size: calc(var(--sanad-ctl-h-sm) - 4px);
+		padding-inline: 10px;
+		border: 0;
+		border-radius: calc(var(--sanad-radius) - 2px);
+		background: transparent;
+		box-shadow: none;
+		color: var(--ink-gray-6);
+		font-size: var(--text-xs, 12px);
+		font-weight: 500;
+		font-variant-numeric: tabular-nums;
+		&:hover { color: var(--ink-gray-8); }
+		&[data-state="active"] {
+			background: var(--surface-base);
+			box-shadow: var(--shadow-sm);
+			color: var(--ink-gray-9);
+			font-weight: 600;
+		}
+	}
+
+	// "Load more", Previous / Next: the small control, quiet until hovered
+	.sanad-datalist__paging .btn-more,
+	:is(.sanad-datalist__page-btn):not(.btn-md):not(.btn-lg):not(.btn-xs) {
+		display: inline-flex;
+		align-items: center;
+		min-block-size: var(--sanad-ctl-h-sm);
+		min-height: var(--sanad-ctl-h-sm);
+		padding-inline: 10px;
+		border: 1px solid var(--outline-gray-2);
+		border-radius: var(--sanad-radius);
+		background: var(--surface-base);
+		box-shadow: none;
+		color: var(--ink-gray-8);
+		font-size: var(--text-xs, 12px);
+		font-weight: 600;
+		&:hover:not([disabled]) { background: var(--surface-gray-1); border-color: var(--outline-gray-3); }
+	}
+	.sanad-datalist__page-state { margin-inline-end: 2px; color: var(--ink-gray-6); font-size: var(--text-xs, 12px); }
+}
+
+// The footer never leaves the screen (owner, 2026-10-26): inside a list panel — a Desk list's or a
+// page's — it is stuck to the bottom of the scroller while the rows scroll, and the panel reaches
+// the bottom of the screen, so a short table does not lift it to the middle of the page.
+.sanad-list-card .sanad-datalist__footer {
+	position: sticky;
+	inset-block-end: 0;
+	z-index: 6; // above the rows (0 – 5, D-076), under the table's header ladder's own context
 }

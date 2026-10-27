@@ -122,6 +122,35 @@ ui.uid = (prefix = "sanad") => `${prefix}-${frappe.utils.get_random(8)}`;
 
 ui.debounce = (fn, wait = 250) => frappe.utils.debounce(fn, wait);
 
+/**
+ * Wait for the server to say something changed, instead of asking it on a timer. `handler` runs
+ * on every `event` (`frappe.publish_realtime`); `on_connect`, when given, is the one read of the
+ * current state (see `ui.on_reconnect`). Returns a function that stops all of it.
+ */
+ui.listen = function (event, handler, { on_connect } = {}) {
+	frappe.realtime.on(event, handler);
+	const stop_reread = on_connect ? ui.on_reconnect(on_connect) : null;
+	return () => {
+		frappe.realtime.off(event, handler);
+		if (stop_reread) stop_reread();
+	};
+};
+
+/**
+ * `reread` runs when the realtime connection comes back and when the person returns to the tab —
+ * the moments an event may have been missed. Returns a function that stops it.
+ */
+ui.on_reconnect = function (reread) {
+	const sock = frappe.realtime.socket;
+	const on_visible = () => !document.hidden && reread();
+	if (sock) sock.on("connect", reread);
+	document.addEventListener("visibilitychange", on_visible);
+	return () => {
+		if (sock) sock.off("connect", reread);
+		document.removeEventListener("visibilitychange", on_visible);
+	};
+};
+
 /** Latin digits for Arabic-Indic (٠-٩) and Persian (۰-۹) ones; everything else is kept. */
 ui.latin_digits = (text) =>
 	String(text == null ? "" : text).replace(/[٠-٩۰-۹]/g, (d) => String(d.charCodeAt(0) - (d >= "۰" ? 0x06f0 : 0x0660)));
@@ -169,8 +198,14 @@ ui.pin_stack = function ($root, selectors) {
 		}
 		return "var(--surface-base)";
 	};
+	// Desk's own strip, where a page wears it, is sticky at the top of the scroller: the band
+	// starts under it rather than sliding beneath it
+	const strip = () => {
+		const head = root.closest(".page-container") && root.closest(".page-container").querySelector(":scope > .page-head");
+		return head && head.offsetParent !== null && getComputedStyle(head).position === "sticky" ? head.getBoundingClientRect().height : 0;
+	};
 	const layout = () => {
-		let top = 0;
+		let top = strip();
 		const bg = backdrop();
 		items().forEach((el) => {
 			el.classList.add("sanad-pin");
@@ -199,6 +234,20 @@ ui.pin_stack = function ($root, selectors) {
 			const after = Math.max(0, content_end - wrap.getBoundingClientRect().bottom);
 			const room = scroller.clientHeight - band - after - 12;
 			wrap.style.maxBlockSize = `${Math.max(240, Math.round(room))}px`;
+			// In a list panel the table also reaches the bottom of the screen, so a short one does not
+			// lift the footer to the middle of the page (owner, 2026-10-26): at the top of the page,
+			// the table ends where what follows it (the footer) still ends on the screen's bottom edge.
+			if (wrap.closest(".sanad-list-card")) {
+				const sc = root.closest(".main-section") || scroller;
+				const sv = sc.getBoundingClientRect();
+				const top_at_start = wrap.getBoundingClientRect().top - sv.top + sc.scrollTop;
+				// what follows the table inside its panel (the footer), not the page's own filler
+				const tail = wrap.closest(".sanad-list-card").getBoundingClientRect().bottom - wrap.getBoundingClientRect().bottom;
+				const fill = Math.round(sc.clientHeight - top_at_start - tail);
+				wrap.style.minBlockSize = `${Math.max(0, fill)}px`;
+			} else {
+				wrap.style.minBlockSize = "";
+			}
 		});
 	};
 	const ro = typeof ResizeObserver === "function" ? new ResizeObserver(() => layout()) : null;

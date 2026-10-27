@@ -281,7 +281,8 @@ def _subscription_check(settings) -> dict[str, Any]:
 	route, label = "wa-settings", _("Open subscription")
 	status = (settings.subscription_status or "").strip()
 	remaining, limit = settings.messages_remaining, cint(settings.message_limit)
-	plan = settings.plan_name or settings.plan_code or _("No plan")
+	# the platform names its plans in English; the plan name is one of its translated words
+	plan = _(settings.plan_name) if settings.plan_name else settings.plan_code or _("No plan")
 	facts = [plan]
 	if limit:
 		facts.append(_("{0} of {1} messages left").format(cint(remaining), limit))

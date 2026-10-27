@@ -10,16 +10,16 @@
 	--sanad-radius: 8px; // a control
 	--sanad-radius-lg: 10px;
 	--sanad-border: 1px solid var(--outline-gray-1);
-	--sanad-target: 32px; // ≥ 24 CSS px (WCAG 2.2 target size) with comfortable spacing
+	--sanad-target: 28px; // ≥ 24 CSS px (WCAG 2.2 target size) with comfortable spacing
 	--sanad-motion: 160ms;
 
 	// Geometry of the design prototype (docs/component/List View.dc.html, "compact" density).
 	// These are sizes, not colours, so they are safe to pin in px.
 	--sanad-card-radius: 10px; // a card, a panel
-	--sanad-row-h: 36px; // table row
-	--sanad-head-h: 32px; // table header row
-	--sanad-ctl-h: 32px; // toolbar control
-	--sanad-ctl-h-sm: 28px; // in-row button
+	--sanad-row-h: 36px; // table row (Desk's is 41)
+	--sanad-head-h: 28px; // table header row (Desk's is 30)
+	--sanad-ctl-h: 28px; // toolbar control — Desk's own control height
+	--sanad-ctl-h-sm: 24px; // in-row button
 	--sanad-cell-px: 12px; // cell padding-inline
 
 	// Accent = the kit's "active / selected / primary" colour. It defaults to Desk's own Espresso
@@ -197,7 +197,7 @@
 		padding-block: var(--sanad-gap-md);
 		padding-inline: var(--sanad-gap-lg);
 		border-block-end: var(--sanad-border);
-		min-height: 56px;
+		min-height: 44px;
 	}
 	&__title { flex: 1; min-width: 0; font-size: var(--text-base, 14px); font-weight: 600; color: var(--ink-gray-9); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	&__subtitle { font-size: var(--text-sm, 13px); color: var(--ink-gray-6); font-weight: 400; }

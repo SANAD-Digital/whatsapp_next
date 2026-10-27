@@ -579,8 +579,11 @@ class SndPlatformProvider(BaseProvider):
 			extra=public,
 		)
 
-	def start_password_reset(self, identifier: str) -> SignupState:
-		data = self._request("POST", "start_password_reset", guest=True, body={"identifier": identifier})
+	def start_password_reset(self, identifier: str, callback: dict | None = None) -> SignupState:
+		body = {"identifier": identifier}
+		if callback and callback.get("url") and callback.get("token"):
+			body.update({"callback_url": callback["url"], "callback_token": callback["token"]})
+		data = self._request("POST", "start_password_reset", guest=True, body=body)
 		return SignupState(
 			request_key=data.get("token"), status=str(data.get("status") or "Pending"), extra=data
 		)

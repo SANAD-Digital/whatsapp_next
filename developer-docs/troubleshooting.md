@@ -86,6 +86,22 @@ error text. It masks phone numbers in the stored message.
 | `blacklisted`, `unknown_number_policy` | no | Local policy checks |
 | `unknown` | no | Nothing matched |
 
+## Bench configuration: `developer_mode` lives in each site's config
+
+On the development bench `developer_mode` is **not** in `sites/common_site_config.json`. It was
+moved out (October 2026) because realtime (socket.io) authentication failed while it was set
+bench-wide, and moving it fixed the symptom. It is set to `1` in each site's own
+`sites/<site>/site_config.json` instead: 27 sites on 2026-10-26.
+
+- **A new site does not inherit it.** Turn it on for that site alone:
+  `bench --site <site> set-config developer_mode 1`.
+- **Do not put it back in `common_site_config.json`** without re-testing realtime: device status,
+  message ticks and queue progress all ride on socket.io.
+- **Check the state:** `grep -c developer_mode sites/common_site_config.json` gives `0`, and
+  `grep -l '"developer_mode": 1' sites/*/site_config.json | wc -l` counts the sites that have it.
+- **Root cause: not established.** Only the symptom (socket.io auth with the bench-wide flag) is
+  known. Look at it before the next Frappe upgrade.
+
 ## Useful commands
 
 ```bash

@@ -208,7 +208,7 @@
    "link_fieldname": "function"
   }
  ],
- "modified": "2026-10-13 00:40:57.601460",
+ "modified": "2026-10-27 21:14:16.181352",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Function",
@@ -275,5 +275,6 @@
  "naming_rule": "By fieldname",
  "allow_rename": 1,
  "title_field": "function_name",
- "search_fields": "function_name,server_script,installed_version"
+ "search_fields": "function_name,server_script,installed_version",
+ "icon": "square-function"
 }

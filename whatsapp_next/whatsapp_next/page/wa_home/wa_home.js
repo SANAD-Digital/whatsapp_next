@@ -1303,20 +1303,16 @@ frappe.provide("whatsapp_next.home");
 				"wa:campaign:status": () => refresh(),
 				"wa:inbound:received": () => refresh(),
 			};
-			Object.entries(this._handlers).forEach(([event, fn]) => frappe.realtime.on(event, fn));
-			// Not everything the board shows raises an event (plan usage, the platform's health,
-			// "last sent … ago"): the whole board is re-read once a minute, while it can be seen.
-			this._tick = window.setInterval(() => {
-				if (document.visibilityState === "visible") refresh();
-			}, 60 * 1000);
+			// every figure that moves with a message is re-read on its event; the rest (the platform's
+			// health) when the connection comes back or the person returns to the tab — never on a timer
+			this._stops = [...Object.entries(this._handlers).map(([event, fn]) => ui.listen(event, fn)), ui.on_reconnect(refresh)];
 		}
 
 		unbind_realtime() {
 			if (!this._handlers) return;
-			Object.entries(this._handlers).forEach(([event, fn]) => frappe.realtime.off(event, fn));
+			this._stops.forEach((stop) => stop());
+			this._stops = null;
 			this._handlers = null;
-			window.clearInterval(this._tick);
-			this._tick = null;
 		}
 
 		destroy() {

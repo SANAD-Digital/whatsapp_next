@@ -5,7 +5,8 @@
 	display: flex;
 	flex-direction: column;
 	gap: var(--sanad-gap-md);
-	margin-block: var(--sanad-gap-sm) var(--sanad-gap-md);
+	// one step above and below, the same between every block of a screen (owner, 2026-10-26)
+	margin-block: var(--sanad-gap-sm);
 
 	&__row {
 		display: flex;

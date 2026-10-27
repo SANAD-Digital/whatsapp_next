@@ -276,7 +276,7 @@
    "link_fieldname": "device"
   }
  ],
- "modified": "2026-10-07 12:00:00.000000",
+ "modified": "2026-10-27 21:14:16.181352",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Device",
@@ -323,5 +323,6 @@
  "states": [],
  "title_field": "device_name",
  "track_changes": 1,
- "show_title_field_in_link": 1
+ "show_title_field_in_link": 1,
+ "icon": "smartphone"
 }

@@ -322,21 +322,29 @@ def start_signup(
 	e164 = normalize(mobile)
 	if not e164:
 		frappe.throw(_("Invalid phone number: {0}").format(mobile), WAInvalidPhoneError)
-	# the platform tells this site the moment the number is confirmed (webhooks/v1/signup.py):
-	# a one-time token, kept here with the user whose page waits for it
-	token = secrets.token_urlsafe(24)
-	callback = {"url": get_url(f"/api/method/{SIGNUP_CALLBACK}"), "token": token}
+	callback = _new_callback()
 	state = registry.get_provider().start_signup(
 		signup_plan_code(plan_code), e164, full_name, email, channel, coupon_code=coupon_code, callback=callback,
 		company={k: str(v).strip() for k, v in (company or {}).items() if v and str(v).strip()},
 	)
-	if state.request_key:
+	_remember_callback(callback, state.request_key)
+	return state
+
+
+def _new_callback() -> dict[str, str]:
+	"""The platform tells this site the moment a request is confirmed (webhooks/v1/signup.py), so
+	the waiting page never asks on a timer: a one-time token for that call."""
+	return {"url": get_url(f"/api/method/{SIGNUP_CALLBACK}"), "token": secrets.token_urlsafe(24)}
+
+
+def _remember_callback(callback: dict[str, str], request_key: str | None) -> None:
+	"""Keep the token with the request and the user whose page waits for it."""
+	if request_key:
 		frappe.cache.set_value(
-			f"{SIGNUP_CALLBACK_KEY}:{token}",
-			{"request_key": state.request_key, "user": frappe.session.user},
+			f"{SIGNUP_CALLBACK_KEY}:{callback['token']}",
+			{"request_key": request_key, "user": frappe.session.user},
 			expires_in_sec=SIGNUP_CALLBACK_TTL_S,
 		)
-	return state
 
 
 def verification_route(extra: dict[str, Any]) -> dict[str, Any]:
@@ -416,12 +424,15 @@ def complete_signup(
 
 
 def start_password_reset(identifier: str) -> SignupState:
-	"""Begin a password reset for a tenant user."""
-	return registry.get_provider().start_password_reset(identifier)
+	"""Begin a password reset for a tenant user; the platform calls back when it is confirmed."""
+	callback = _new_callback()
+	state = registry.get_provider().start_password_reset(identifier, callback=callback)
+	_remember_callback(callback, state.request_key)
+	return state
 
 
 def get_password_reset_status(request_key: str) -> SignupState:
-	"""Poll a password-reset request."""
+	"""Read a password-reset request once (the page waits for the platform's call, not this)."""
 	return registry.get_provider().get_password_reset_status(request_key)
 
 

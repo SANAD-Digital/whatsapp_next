@@ -99,8 +99,9 @@ class BaseProvider(ABC):
 		"""Finish a sign-up; credentials (if returned) come back exactly once and are never logged."""
 
 	@abstractmethod
-	def start_password_reset(self, identifier: str) -> SignupState:
-		"""Begin a password reset for a tenant user."""
+	def start_password_reset(self, identifier: str, callback: dict | None = None) -> SignupState:
+		"""Begin a password reset for a tenant user. `callback` (`{url, token}`) is called by the
+		provider the moment the reset is confirmed, as for a sign-up."""
 
 	@abstractmethod
 	def get_password_reset_status(self, request_key: str) -> SignupState:

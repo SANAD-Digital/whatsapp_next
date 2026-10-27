@@ -157,7 +157,8 @@ try {
 			result.pages.push({ name, route, errors: errors.slice(before), facts });
 		};
 		const view = async () => {
-			await page.click(".sanad-datalist__view >> nth=0", { timeout: 6000 });
+			// the row opens the drawer (the duplicate «View» button is gone)
+			await page.click(".sanad-datalist__row >> nth=0", { timeout: 6000 });
 			await page.waitForTimeout(1500);
 		};
 		await shoot("home", "wa-home", async (f) => {

@@ -203,7 +203,6 @@ frappe.listview_settings[DOCTYPE] = {
 				columns: COLUMNS(),
 				selectable: true,
 				page_length: 20,
-				row_action: { label: __("View"), handler: (doc) => open_conversation(doc, listview) },
 				on_row_click: (doc) => open_conversation(doc, listview),
 				footer: { count: (total) => sanad.ui.plural(total, { one: __("{0} number"), other: __("{0} numbers") }) },
 				empty: {

@@ -125,7 +125,8 @@ class FakeProvider(BaseProvider):
 			credentials={"customer_api_key": "ck", "customer_api_secret": "cs", "api_key": "k", "api_secret": "s"},
 		)
 
-	def start_password_reset(self, identifier) -> SignupState:
+	def start_password_reset(self, identifier, callback=None) -> SignupState:
+		self._record("start_password_reset", callback=callback)
 		# the platform's WhatsApp answer: the code to show, its number, the account's masked one
 		return SignupState(
 			request_key="reset-1",

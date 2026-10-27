@@ -42,7 +42,7 @@
 .wa-onb {
 	--wa-onb-gap: 14px;
 	// the product's compact fields (owner, 2026-10-26: one scale everywhere — `_shell.scss`)
-	--wa-h: 32px;
+	--wa-h: 28px;
 	--wa-fs: 13px;
 	--wa-px: 10px;
 
@@ -78,8 +78,8 @@
 		inline-size: clamp(360px, 40%, 600px);
 		flex: none;
 		flex-direction: column;
-		gap: 32px;
-		padding: 48px;
+		gap: 16px;
+		padding: 24px;
 		overflow: hidden;
 		background: var(--wa-brand);
 		color: var(--wa-on-brand);
@@ -108,7 +108,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
-		gap: 18px;
+		gap: 12px;
 	}
 	// the eyebrow: a quiet pill on Petrol, its dot the screen's one Apricot
 	&__badge {
@@ -132,7 +132,7 @@
 	&__pitch-title {
 		margin: 0;
 		color: var(--wa-on-tone);
-		font-size: 34px;
+		font-size: 20px;
 		font-weight: 700;
 		line-height: 1.3;
 		text-wrap: balance;
@@ -171,7 +171,7 @@
 	&__flow {
 		display: flex;
 		flex-direction: column;
-		gap: 22px;
+		gap: 12px;
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -196,8 +196,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 32px;
-		block-size: 32px;
+		inline-size: 28px;
+		block-size: 28px;
 		flex: none;
 		border-radius: 50%;
 		border: 1.5px solid color-mix(in srgb, var(--wa-on-brand) 40%, transparent);
@@ -254,7 +254,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		min-block-size: 30px;
+		min-block-size: 28px;
 		padding-inline: 11px;
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--wa-on-brand) 14%, transparent);
@@ -291,16 +291,16 @@
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		min-block-size: 64px;
+		min-block-size: 48px;
 		flex: none;
-		padding-inline: 20px;
+		padding-inline: 16px;
 	}
 	&__topmark {
 		display: inline-flex;
 		align-items: center;
 		gap: 10px;
 		min-inline-size: 0;
-		font-size: 19px;
+		font-size: 16px;
 		font-weight: 400;
 		color: var(--wa-brand);
 
@@ -322,8 +322,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 30px;
-		block-size: 30px;
+		inline-size: 28px;
+		block-size: 28px;
 		flex: none;
 	}
 	&__topbar-spacer {
@@ -381,7 +381,7 @@
 		display: flex;
 		align-items: flex-start;
 		justify-content: center;
-		padding: 12px 20px 24px;
+		padding: 12px 16px 16px;
 	}
 
 	// "We never ask for your WhatsApp password." — the platform's sign-in foot
@@ -391,7 +391,7 @@
 		gap: 7px;
 		flex: none;
 		margin: 0;
-		padding: 0 20px 22px;
+		padding: 0 16px 16px;
 		font-size: 13px;
 		color: var(--wa-ink-3);
 	}
@@ -453,7 +453,7 @@
 	}
 	&__card-title {
 		margin: 0;
-		font-size: 24px;
+		font-size: 16px; // a step's heading, at Desk's own title size
 		font-weight: 700;
 		line-height: 1.3;
 		color: var(--wa-ink);
@@ -479,7 +479,7 @@
 	}
 	// the step's one verb: a little taller than a field, as every primary verb of the product
 	.wa-btn--block {
-		min-block-size: 36px;
+		min-block-size: 28px;
 		font-size: 13px;
 	}
 	// the kit's phone field draws its own 40 px box; here it matches the other fields
@@ -495,8 +495,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 48px;
-		block-size: 48px;
+		inline-size: 36px;
+		block-size: 36px;
 		border-radius: 50%;
 		background: var(--wa-dg-s);
 		color: var(--wa-dg-i);
@@ -652,7 +652,7 @@
 	// field beside it takes the same height, so both inputs sit on one line
 	&__label-row,
 	[data-field="wa-onb-pw2"] > .wa-field__label {
-		min-block-size: 30px;
+		min-block-size: 28px;
 	}
 	[data-field="wa-onb-pw2"] > .wa-field__label {
 		display: flex;
@@ -742,7 +742,7 @@
 		align-items: center;
 		gap: 8px;
 		inline-size: 100%;
-		min-block-size: var(--wa-h, 38px);
+		min-block-size: var(--wa-h, 28px);
 		padding-inline: var(--wa-px, 12px);
 		border: 1px solid var(--wa-border-2);
 		border-radius: var(--wa-radius, 8px);
@@ -792,7 +792,7 @@
 		display: flex;
 		align-items: center;
 		gap: 7px;
-		min-block-size: 32px;
+		min-block-size: 28px;
 		padding-inline: 9px;
 		margin-block-end: 5px;
 		border: 1px solid var(--wa-border);
@@ -939,7 +939,7 @@
 	}
 	&__code-input {
 		inline-size: 100%;
-		min-block-size: 52px;
+		min-block-size: 44px;
 		padding-inline: 14px;
 		border: 1px dashed var(--wa-pri-sb);
 		border-radius: 10px;
@@ -994,7 +994,7 @@
 	&__code-tag {
 		display: inline-flex;
 		align-items: center;
-		block-size: 48px;
+		block-size: 36px;
 		padding-inline: 12px;
 		margin-inline-end: 6px;
 		border-radius: 10px;
@@ -1009,8 +1009,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 40px;
-		block-size: 48px;
+		inline-size: 32px;
+		block-size: 36px;
 		border: 1px solid var(--wa-border-2);
 		border-radius: 10px;
 		background: var(--wa-pri-s);
@@ -1029,8 +1029,8 @@
 	&__code.is-copied &__code-hint { color: var(--wa-pri); font-weight: 600; }
 	@media (max-width: 480px) {
 		&__code-tiles { gap: 4px; }
-		&__code-tag { block-size: 40px; padding-inline: 7px; margin-inline-end: 2px; font-size: 13px; letter-spacing: 1px; }
-		&__code-digit { inline-size: 30px; block-size: 40px; font-size: 16px; border-radius: 8px; }
+		&__code-tag { block-size: 32px; padding-inline: 7px; margin-inline-end: 2px; font-size: 13px; letter-spacing: 1px; }
+		&__code-digit { inline-size: 28px; block-size: 32px; font-size: 16px; border-radius: 8px; }
 	}
 
 	&__code-help {
@@ -1052,7 +1052,7 @@
 		}
 	}
 	&__reveal-slot {
-		inline-size: 58px;
+		inline-size: 48px;
 	}
 	&__reveal {
 		padding: 4px 6px;
@@ -1114,8 +1114,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 54px;
-		block-size: 54px;
+		inline-size: 44px;
+		block-size: 44px;
 		border-radius: 50%;
 		border: 1px solid var(--wa-ok-sb);
 		background: var(--wa-ok-s);
@@ -1123,7 +1123,7 @@
 	}
 	&__ready-title {
 		margin: 0;
-		font-size: 24px; // the same heading as every other step
+		font-size: 16px; // the same heading as every other step
 		line-height: 1.3;
 		font-weight: 700;
 		color: var(--wa-ink);
@@ -1197,8 +1197,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 30px;
-		block-size: 30px;
+		inline-size: 28px;
+		block-size: 28px;
 		flex: none;
 		border-radius: 8px;
 		background: var(--wa-pri);
@@ -1222,7 +1222,7 @@
 		gap: 10px;
 		flex-wrap: wrap;
 		margin: 0;
-		min-block-size: var(--wa-h, 38px);
+		min-block-size: var(--wa-h, 28px);
 		padding-block: 5px;
 		padding-inline: 12px 6px;
 		border: 1px dashed var(--wa-pri-sb);
@@ -1287,7 +1287,7 @@
 
 	@media (min-width: 620px) {
 		&__card {
-			padding: 20px 22px;
+			padding: 16px 16px;
 		}
 		&__grid {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1296,7 +1296,7 @@
 			grid-column: 1 / -1;
 		}
 		&__stage {
-			padding: 6px 22px 20px;
+			padding: 6px 16px 16px;
 		}
 	}
 
@@ -1309,7 +1309,8 @@
 			position: sticky;
 			inset-block-start: 0;
 			align-self: flex-start;
-			block-size: calc(100dvh - var(--wa-viewport-offset));
+			// the scroller's measured height (`fit_to_scroller` in the page's JS), the window until then
+			block-size: var(--wa-onb-h, calc(100dvh - var(--wa-viewport-offset)));
 			// never a scroller of its own (owner, 2026-10-10): the shorter the window, the less it
 			// says (below), so nothing in it moves while the form is used
 			overflow: hidden;
@@ -1319,7 +1320,7 @@
 		}
 		&__topbar {
 			min-block-size: 80px;
-			padding-inline: 48px;
+			padding-inline: 24px;
 		}
 		&__topmark-tag {
 			display: inline;
@@ -1327,19 +1328,19 @@
 		// the step stands in the middle of the column, as on the platform
 		&__stage {
 			align-items: center;
-			padding: 16px 48px 40px;
+			padding: 16px 24px 20px;
 		}
 		&__trust {
-			padding: 0 48px 28px;
+			padding: 0 24px 20px;
 		}
 	}
 
 	@media (min-width: 1280px) {
 		&__brand {
-			padding: 64px;
+			padding: 24px;
 		}
 		&__pitch-title {
-			font-size: 40px;
+			font-size: 20px;
 			line-height: 1.25;
 		}
 	}
@@ -1347,21 +1348,21 @@
 	// a short screen tightens the panel rather than cutting it
 	@media (min-width: 900px) and (max-height: 900px) {
 		&__brand {
-			gap: 22px;
-			padding-block: 36px;
+			gap: 12px;
+			padding-block: 20px;
 		}
 		&__pitch-title {
-			font-size: 30px;
+			font-size: 20px;
 		}
 	}
 	// shorter still: the three selling points go first, the steps and the pitch stay
 	@media (min-width: 900px) and (max-height: 880px) {
 		&__brand {
-			gap: 18px;
-			padding-block: 28px;
+			gap: 12px;
+			padding-block: 20px;
 		}
 		&__pitch-title {
-			font-size: 26px;
+			font-size: 20px;
 		}
 		&__ticks {
 			display: none;

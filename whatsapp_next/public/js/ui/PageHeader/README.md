@@ -73,3 +73,14 @@ re-renders on `wa:queue:progress`).
 - Blocks render their own skeleton / empty / error through EmptyState and re-render on realtime
   events throttled (1.5 s), never on every message.
 - Title row stacks and buttons go full-width under 768 px; strips wrap their actions.
+
+## A custom page that is a list (`page`)
+
+Pass the page's Desk page (`frappe.ui.make_app_page`) as `page` and the screen wears Desk's own
+strip exactly as a Desk list does: the title goes to the strip (`page.set_title`), `primary` to its
+primary action and `secondary` to its bar; the header itself is then the KPI row, banner and blocks
+(no title row, no description). A header that is redrawn removes the buttons it put on the bar.
+
+```js
+new sanad.ui.PageHeader({ wrapper: $head, page: this.page, title: __("Contacts"), primary, stats });
+```

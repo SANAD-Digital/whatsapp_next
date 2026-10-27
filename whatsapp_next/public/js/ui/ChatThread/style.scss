@@ -10,7 +10,7 @@
 		display: flex;
 		justify-content: center;
 		padding-block: var(--sanad-gap-sm);
-		min-height: 44px; // reserved: the button appears / disappears without a jump
+		min-height: 36px; // reserved: the button appears / disappears without a jump
 		&:empty { min-height: 0; padding-block: 0; }
 	}
 	&__more { min-height: var(--sanad-target); }
@@ -152,7 +152,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: 6px;
-		min-height: 32px;
+		min-height: 28px;
 		padding-inline: var(--sanad-gap-sm);
 		border-block-start: var(--sanad-border);
 		color: var(--ink-blue-7);

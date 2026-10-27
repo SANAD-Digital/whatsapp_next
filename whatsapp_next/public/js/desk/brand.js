@@ -17,12 +17,13 @@
 	};
 	const fill = (token) => `style="fill: var(${token})"`;
 
-	const is_rtl = () => document.documentElement.dir === "rtl" || frappe.utils.is_rtl?.();
+	// The arrow points right to left in every language (owner, 2026-10-27): the bubble is drawn
+	// pointing right and mirrored in place, as the brand's files are.
+	const MIRROR = ' transform="translate(100 0) scale(-1 1)"';
 
 	function mark(size = 24, tone = "petrol") {
 		const c = TONES[tone] || TONES.petrol;
-		const flip = is_rtl() ? ' transform="translate(100 0) scale(-1 1)"' : "";
-		return `<svg class="wn-mark" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true" focusable="false"><g${flip}><path d="${BUBBLE}" ${fill(c.bubble)}/><circle cx="27" cy="50" r="4.5" ${fill(c.dot)}/><circle cx="42.5" cy="50" r="5.5" ${fill(c.dot)}/><circle cx="59.5" cy="50" r="6.8" ${fill(c.last)}/></g></svg>`;
+		return `<svg class="wn-mark" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true" focusable="false"><g${MIRROR}><path d="${BUBBLE}" ${fill(c.bubble)}/><circle cx="27" cy="50" r="4.5" ${fill(c.dot)}/><circle cx="42.5" cy="50" r="5.5" ${fill(c.dot)}/><circle cx="59.5" cy="50" r="6.8" ${fill(c.last)}/></g></svg>`;
 	}
 
 	// «Whatsapp» light and «Next» bold; in Arabic «واتساب» light and «نكست» bold.
@@ -33,10 +34,9 @@
 		return `<span class="wn-wordmark" lang="${ar ? "ar" : "en"}"><span class="wn-w1">${w1}</span>${sep}<span class="wn-w2">${w2}</span></span>`;
 	}
 
-	// The app icon is a file (`desktop_icon/whatsapp.json`, `app_logo_url`), drawn for left-to-right
-	// reading. In an Arabic Desk it is swapped for its mirrored twin wherever Desk draws it.
+	// The app icon is a file (`desktop_icon/whatsapp.json`, `app_logo_url`); its arrow points right
+	// to left in every language, so Desk draws the same file in Arabic and in English.
 	const ICON = "/assets/whatsapp_next/images/whatsapp-next-icon.svg";
-	const ICON_RTL = "/assets/whatsapp_next/images/whatsapp-next-icon-rtl.svg";
 
 	// The module's own workspace ("WhatsApp Next") has no Desktop Icon of its own, so Desk draws a
 	// grey letter in its sidebar header; it wears the app icon like every other screen of the product.
@@ -51,16 +51,11 @@
 		});
 	}
 
-	function mirror_icons() {
-		brand_headers();
-		if (!is_rtl()) return;
-		document.querySelectorAll(`img[src$="${ICON}"]`).forEach((img) => (img.src = ICON_RTL));
-	}
 
 	let pending = null;
 	const schedule = () => {
 		window.clearTimeout(pending);
-		pending = window.setTimeout(mirror_icons, 50);
+		pending = window.setTimeout(brand_headers, 50);
 	};
 	$(document).on("page-change", schedule);
 	$(() => {

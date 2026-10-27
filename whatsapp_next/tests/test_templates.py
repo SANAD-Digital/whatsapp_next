@@ -13,6 +13,16 @@ from whatsapp_next.tests.fake_provider import FakeProvider
 
 
 class TestTemplates(IntegrationTestCase):
+	def test_a_sample_without_a_record_reads_like_a_record(self):
+		"""A preview with no record to read failed on a correct template: `doc.items` was the dict
+		method and `doc.get_formatted` did not exist (2026-10-27)."""
+		body = '{% for i in doc.items[:8] %}{{ i.item_name }}{% endfor %}{{ doc.items | length }} · {{ doc.get_formatted("grand_total") }}'
+		empty = templates.render(body, templates.context_for("Quotation"))
+		self.assertTrue(empty.ok, empty.error)
+		self.assertEqual(empty.text, "0 ·")
+		sample = templates.render(body, {"doc": templates.SampleDoc(items=[{"item_name": "A"}], grand_total=120)})
+		self.assertEqual(sample.text, "A1 · 120")
+
 	def test_render_ok_and_errors_not_raised(self):
 		r = templates.render(
 			"Hello {{ doc.first_name }} / {{ recipient.display_name }}",
@@ -62,7 +72,10 @@ class TestTemplates(IntegrationTestCase):
 
 	def test_sample_context(self):
 		ctx = templates.sample_context("Role", '{"doc": {"role_name": "Sample"}, "code": "X1"}')
-		self.assertEqual(ctx["doc"]["role_name"], "Sample")
+		self.assertEqual(ctx["doc"].get("role_name"), "Sample")
+		# the sample overlays the record in memory: it stays a record (methods, child tables), unsaved
+		self.assertTrue(hasattr(ctx["doc"], "get_formatted"))
+		self.assertNotEqual(frappe.db.get_value("Role", ctx["doc"].name, "role_name"), "Sample")
 		self.assertEqual(ctx["code"], "X1")
 		self.assertIn("recipient", ctx)
 		self.assertEqual(templates.sample_context(None, "not json")["doc"], {})

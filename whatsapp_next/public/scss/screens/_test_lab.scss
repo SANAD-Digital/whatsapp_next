@@ -20,8 +20,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 36px;
-		block-size: 36px;
+		inline-size: 28px;
+		block-size: 28px;
 		flex: none;
 		border-radius: 10px;
 		background: var(--wa-pri-s);
@@ -453,7 +453,7 @@
 		min-inline-size: 0;
 	}
 	&__cmd-input {
-		min-block-size: var(--wa-h-sm, 32px);
+		min-block-size: var(--wa-h-sm, 24px);
 		font-weight: 600;
 	}
 	&__cmd-note {

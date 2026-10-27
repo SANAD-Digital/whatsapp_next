@@ -367,6 +367,8 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 				throw new Error(__("{0} charts are not supported in this block", [__(doc.chart_type)]));
 			}
 			const data = await frappe.xcall(METHODS.chart_get, this.chart_args(doc));
+			// a Group By chart is labelled with field values ("Failed", "Queued"): they are words to translate
+			if (data && doc.chart_type === "Group By" && Array.isArray(data.labels)) data.labels = data.labels.map((label) => __(label));
 			chart.data = data;
 			if (!data || !data.labels || !data.labels.length) {
 				this.dispose_chart(chart);

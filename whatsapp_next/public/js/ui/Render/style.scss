@@ -7,9 +7,9 @@
 	--sanad-ent-radius: var(--sanad-card-radius);
 	--sanad-media-xs: 20px;
 	--sanad-media-sm: 24px;
-	--sanad-media-md: 34px;
-	--sanad-media-lg: 44px;
-	--sanad-media-xl: 72px;
+	--sanad-media-md: 28px;
+	--sanad-media-lg: 36px;
+	--sanad-media-xl: 56px;
 }
 
 // An icon never grows to fill a flex row (a bare <svg> flex item would). Espresso icons carry
@@ -232,7 +232,9 @@
 		// centre, not baseline: a key that carries an icon would otherwise sit higher than its value
 		align-items: center;
 		gap: var(--sanad-gap-md);
-		padding-block: 10px;
+		// a fact is one compact line, 32 px with its rule (owner, 2026-10-26)
+		min-block-size: 28px;
+		padding-block: 6px;
 		border-block-end: var(--sanad-border);
 		min-inline-size: 0;
 		&:last-child { border-block-end: 0; }
@@ -362,7 +364,7 @@
 	cursor: pointer;
 	&:hover { background: var(--surface-gray-2); color: var(--ink-gray-9); text-decoration: none; }
 	&__label { font-size: var(--text-sm, 13px); }
-	&--md { block-size: 36px; }
+	&--md { block-size: 28px; }
 }
 
 // ---- entities ------------------------------------------------------------------------------
@@ -424,7 +426,7 @@
 		border: var(--sanad-border);
 		border-radius: var(--sanad-ent-radius);
 		background: var(--surface-base);
-		min-block-size: 52px;
+		min-block-size: 44px;
 		&:hover { background: var(--surface-gray-1); }
 	}
 

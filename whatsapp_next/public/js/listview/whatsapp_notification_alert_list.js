@@ -107,7 +107,8 @@ const COLUMNS = (can_write) => [
 		label: __("Content"),
 		sortable: true,
 		hidden_xs: true,
-		format: (v, doc) => frappe.utils.escape_html(doc.content_type === "Report" ? v || __("Report") : __("Static message")),
+		// a report is named in English; Desk translates the standard ones
+		format: (v, doc) => frappe.utils.escape_html(doc.content_type === "Report" ? (v ? __(v) : __("Report")) : __("Static message")),
 	},
 	{ fieldname: "enabled", label: __("Status"), sortable: true, format: (v, doc) => status_chip(doc, can_write) },
 	{ fieldname: "device", label: __("Device"), type: "avatar", sortable: true },
@@ -160,7 +161,6 @@ frappe.listview_settings[DOCTYPE] = {
 				columns: COLUMNS(can_write),
 				selectable: true,
 				page_length: 20,
-				row_action: { label: __("View"), handler: open_form },
 				on_row_click: open_form,
 				footer: { count: (total) => sanad.ui.plural(total, { one: __("{0} alert"), other: __("{0} alerts") }) },
 				empty: {

@@ -178,20 +178,40 @@ sanad.ui.DataList = class DataList {
 		return this;
 	}
 
-	/** Page mode's own footer buttons (a list view keeps Frappe's paging component instead). */
+	/**
+	 * Page mode's footer is a Desk list's own (owner, 2026-10-26: one footer everywhere): the
+	 * page-size choice 20 · 100 · 500 · 2500 (`frappe.ui.TabButtons`, as `BaseList` builds it) and
+	 * "Load more", which grows the page by the size chosen. The host fetches `list.page_length` rows
+	 * from page 0 each time, so it needs nothing new.
+	 */
 	render_page_buttons() {
 		const $pager = this.$footer.find(".sanad-datalist__pager");
-		if (!this.page_mode || $pager.find(".sanad-datalist__page-btn").length) return;
-		const step = (delta) => {
-			const pages = Math.max(1, Math.ceil((this.total || 0) / this.page_length));
-			const target = Math.max(0, Math.min(this.page + delta, pages - 1));
-			if (target === this.page) return;
-			this.page = target;
+		if (!this.page_mode || $pager.find(".sanad-datalist__paging").length) return;
+		const sizes = [20, 100, 500, 2500];
+		this.page_size = sizes.includes(this.page_length) ? this.page_length : sizes[0];
+		const reload = (length) => {
+			this.page_length = length;
+			this.page = 0;
 			this.set_loading(true);
-			if (this.opts.on_page) this.opts.on_page(target, this);
+			if (this.opts.on_page) this.opts.on_page(0, this);
 		};
-		$(`<button type="button" class="btn btn-default btn-sm sanad-datalist__page-btn" data-go="prev">${ui.escape(__("Previous"))}</button>`).on("click", () => step(-1)).appendTo($pager);
-		$(`<button type="button" class="btn btn-default btn-sm sanad-datalist__page-btn" data-go="next">${ui.escape(__("Next"))}</button>`).on("click", () => step(1)).appendTo($pager);
+		const $area = $('<div class="list-paging-area level sanad-datalist__paging"><div class="level-left"></div><div class="level-right"></div></div>').appendTo($pager);
+		if (frappe.ui.TabButtons) {
+			this.size_buttons = new frappe.ui.TabButtons({
+				label: __("Page Size"),
+				options: sizes.map((value) => ({ label: String(value), value })),
+				value: this.page_size,
+				on_change: (value) => {
+					this.page_size = cint(value);
+					reload(this.page_size);
+				},
+			});
+			$area.find(".level-left").append(this.size_buttons.$el);
+		}
+		const more = frappe.ui.button
+			? frappe.ui.button({ label: __("Load More"), css_class: "btn-more", onclick: () => reload(this.page_length + this.page_size) })
+			: $(`<button type="button" class="btn btn-default btn-more">${ui.escape(__("Load More"))}</button>`).on("click", () => reload(this.page_length + this.page_size));
+		this.$more = $(more).appendTo($area.find(".level-right"));
 	}
 
 	bind_events() {
@@ -705,7 +725,8 @@ sanad.ui.DataList = class DataList {
 				if (child === bar || child.contains(el)) break;
 				const style = window.getComputedStyle(child);
 				if (style.display === "none" || style.position === "absolute" || style.position === "fixed") continue;
-				above += child.getBoundingClientRect().height;
+				// with its margins: the card is a flex column, where they never collapse
+				above += child.getBoundingClientRect().height + parseFloat(style.marginTop) + parseFloat(style.marginBottom);
 			}
 		}
 		card.style.height = `${Math.round(room + above)}px`;
@@ -925,16 +946,10 @@ sanad.ui.DataList = class DataList {
 		});
 	}
 
-	/** Page mode: which page this is, and whether there is another one. */
+	/** Page mode: "Load more" only while there is more than is shown, as a Desk list. */
 	render_page_state() {
-		if (!this.page_mode) return;
-		const pages = Math.max(1, Math.ceil((this.total || 0) / this.page_length));
-		const $pager = this.$footer.find(".sanad-datalist__pager");
-		let $state = $pager.find(".sanad-datalist__page-state");
-		if (!$state.length) $state = $('<span class="sanad-datalist__page-state sanad-tabular" aria-live="polite"></span>').prependTo($pager);
-		$state.text(__("{0} / {1}", [ui.format_int(this.page + 1), ui.format_int(pages)]));
-		$pager.find('[data-go="prev"]').prop("disabled", this.page <= 0);
-		$pager.find('[data-go="next"]').prop("disabled", this.page + 1 >= pages);
+		if (!this.page_mode || !this.$more) return;
+		this.$more.toggle((this.rows || []).length < cint(this.total));
 	}
 
 	render_footer() {
@@ -945,7 +960,11 @@ sanad.ui.DataList = class DataList {
 		const paint = () => {
 			const total = this.total == null ? rows.length : this.total;
 			const text = typeof this.opts.footer.count === "function" ? this.opts.footer.count(total, rows) : ui.plural(total, { one: __("{0} record"), other: __("{0} records") });
-			$count.text(rows.length ? __("{0} · showing {1}", [text, ui.format_int(rows.length)]) : text);
+			// the total first and plain, what is on screen after it in the quieter tone
+			$count.html(
+				`<span class="sanad-datalist__total">${ui.escape(text)}</span>` +
+					(rows.length ? `<span class="sanad-datalist__sep" aria-hidden="true">·</span><span class="sanad-datalist__shown">${ui.escape(__("showing {0}", [ui.format_int(rows.length)]))}</span>` : "")
+			);
 			this.render_group_tools();
 			this.render_page_state();
 			if (typeof this.opts.footer.extra === "function") this.opts.footer.extra(this.$footer.find(".sanad-datalist__extra"), rows, this);

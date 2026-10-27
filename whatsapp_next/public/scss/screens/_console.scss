@@ -47,7 +47,7 @@ $wa-tones: "blue" "cyan" "amber" "red" "green";
 		white-space: nowrap;
 	}
 	&__value {
-		font-size: var(--text-2xl, 22px);
+		font-size: var(--text-2xl, 20px);
 		font-weight: 600;
 		line-height: 1.25;
 		color: var(--ink-gray-9);
@@ -140,10 +140,6 @@ $wa-tones: "blue" "cyan" "amber" "red" "green";
 		@media (min-width: 992px) {
 			grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
 			gap: var(--sanad-gap-xl);
-		}
-		&--single {
-			grid-template-columns: minmax(0, 1fr);
-			@media (min-width: 992px) { grid-template-columns: minmax(0, 1fr); }
 		}
 	}
 }

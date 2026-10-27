@@ -332,7 +332,7 @@ sanad.ui.PhoneField = class PhoneField {
 				<div class="sanad-phone__labelrow" data-slot="labelrow">
 					<label class="sanad-phone__label" for="${input_id}">${ui.escape(o.label)}${o.required ? ' <span class="sanad-phone__req" aria-hidden="true">*</span>' : ""}</label>
 				</div>
-				<div class="sanad-phone__box" data-slot="box">
+				<div class="sanad-phone__box" data-slot="box" dir="ltr">
 					<button type="button" class="sanad-phone__country" data-slot="trigger" aria-haspopup="listbox" aria-expanded="false">
 						<span class="sanad-phone__iso" data-slot="iso"></span>
 						<span class="sanad-phone__dial" dir="ltr" data-slot="dial"></span>

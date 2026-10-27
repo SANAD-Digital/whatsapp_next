@@ -105,7 +105,7 @@
 	.wa-affix .frappe-control { flex: 1; min-inline-size: 0; }
 	.frappe-control .form-control,
 	.frappe-control input[type="text"] {
-		min-block-size: var(--wa-h, 38px);
+		min-block-size: var(--wa-h, 28px);
 		padding-inline: var(--wa-px, 12px);
 		border: 1px solid var(--wa-border-2);
 		border-radius: var(--wa-radius, 8px);
@@ -136,7 +136,7 @@
 		.sanad-filterbar { min-height: 0; margin: 0; padding-block: 0; }
 	}
 	// the verbs beside the bar are the bar's own kind of button: the same height, the same border
-	.wa-cb__aud-verbs .wa-btn { min-block-size: var(--sanad-ctl-h, 32px); }
+	.wa-cb__aud-verbs .wa-btn { min-block-size: var(--sanad-ctl-h, 28px); }
 }
 
 // ---- menus that open inside the step ------------------------------------------------------------
@@ -163,7 +163,7 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: var(--cb-gap) 20px;
+	gap: var(--cb-gap) 12px;
 	flex-wrap: wrap;
 	padding: 10px 14px;
 	border: 1px solid var(--wa-border);
@@ -298,7 +298,7 @@
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		.wa-cb__stage:last-child:nth-child(odd) { grid-column: 1 / -1; }
 	}
-	.wa-cb__tab { padding-inline: 10px; min-block-size: 36px; }
+	.wa-cb__tab { padding-inline: 10px; min-block-size: 28px; }
 	.wa-cb__band-state { flex-wrap: wrap; }
 	.wa-cb__band-verbs { inline-size: 100%; justify-content: flex-end; }
 }
@@ -324,7 +324,7 @@
 	flex: 1 1 0;
 	min-inline-size: 0;
 	gap: 8px;
-	min-block-size: 32px;
+	min-block-size: 28px;
 
 	&-mark {
 		display: inline-flex;
@@ -453,7 +453,7 @@
 	.wa-field--wide { grid-column: 1 / -1; }
 	.wa-field__label { font-size: 12px; }
 	// one line, like its neighbours; it grows under the writer's hand
-	.wa-textarea { min-block-size: var(--wa-h, 32px); block-size: var(--wa-h, 32px); padding-block: 6px; line-height: 1.5; resize: vertical; }
+	.wa-textarea { min-block-size: var(--wa-h, 28px); block-size: var(--wa-h, 28px); padding-block: 6px; line-height: 1.5; resize: vertical; }
 
 	@media (max-width: 900px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	@media (max-width: 600px) { grid-template-columns: minmax(0, 1fr); }
@@ -524,7 +524,7 @@
 .wa-cb__when {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-	gap: 10px 20px;
+	gap: 10px 12px;
 	align-items: start;
 
 	&-choices {
@@ -571,7 +571,7 @@
 .wa-cb__options {
 	display: grid;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 6px 24px;
+	gap: 6px 12px;
 	align-items: start;
 
 	@media (max-width: 1000px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -844,7 +844,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	min-block-size: 32px;
+	min-block-size: 28px;
 }
 
 .wa-cb__aud-table {
@@ -907,8 +907,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 40px;
-		block-size: 40px;
+		inline-size: 32px;
+		block-size: 32px;
 		flex: none;
 		border-radius: 50%;
 		background: var(--verdict);
@@ -923,19 +923,6 @@
 		min-inline-size: 0;
 		b { font-size: 16px; font-weight: 700; color: var(--wa-ink); }
 		span { font-size: 12px; color: var(--wa-ink-3); line-height: 1.6; }
-	}
-	&-side {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		inline-size: 36px;
-		block-size: 36px;
-		flex: none;
-		border-radius: 10px;
-		background: var(--wa-surface);
-		border: 1px solid var(--wa-border);
-		color: var(--verdict);
-		@media (max-width: 640px) { display: none; }
 	}
 }
 
@@ -968,8 +955,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 34px;
-		block-size: 34px;
+		inline-size: 28px;
+		block-size: 28px;
 		flex: none;
 		border-radius: 50%;
 		background: var(--wa-surface);
@@ -1094,7 +1081,7 @@
 .wa-cb__pairs {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 0 24px;
+	gap: 0 12px;
 
 	@media (max-width: 700px) {
 		grid-template-columns: minmax(0, 1fr);
@@ -1252,7 +1239,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	min-block-size: 38px;
+	min-block-size: 32px;
 	padding-inline: 14px;
 	border: 0;
 	border-block-end: 2px solid transparent;
@@ -1358,7 +1345,7 @@
 		transition: inline-size var(--wa-motion, 160ms) ease-out;
 	}
 	&-value { font-size: 12px; font-weight: 700; color: var(--wa-ink); }
-	&-share { font-size: 11px; color: var(--wa-ink-4); min-inline-size: 34px; text-align: end; }
+	&-share { font-size: 11px; color: var(--wa-ink-4); min-inline-size: 28px; text-align: end; }
 }
 
 .wa-cb__dist {
@@ -1463,7 +1450,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		min-inline-size: 38px;
+		min-inline-size: 32px;
 		block-size: 26px;
 		padding-inline: 8px;
 		flex: none;

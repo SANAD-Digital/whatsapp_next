@@ -136,7 +136,7 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--sanad-gap-sm);
-		height: 32px;
+		height: 28px;
 		padding-inline: 10px;
 		border: 0;
 		border-radius: var(--sanad-radius);
@@ -184,7 +184,7 @@
 		align-items: center;
 		gap: var(--sanad-gap-sm);
 		width: 100%;
-		min-height: 44px;
+		min-height: 36px;
 		padding-inline: 12px;
 		border: 0;
 		background: transparent;
@@ -211,7 +211,7 @@
 		padding: 4px 8px 8px;
 		overflow: auto;
 		background: var(--surface-base);
-		.sanad-datefilter__menu-item { min-height: 40px; height: auto; }
+		.sanad-datefilter__menu-item { min-height: 32px; height: auto; }
 	}
 
 	// ---- the fields being filtered, one per rail item, each with its own dates ----
@@ -338,7 +338,7 @@
 		align-items: center;
 		flex: 1 1 140px;
 		min-width: 120px;
-		height: 30px;
+		height: 28px;
 		margin: 0;
 		border: 1px solid var(--outline-gray-2);
 		border-radius: var(--sanad-radius);
@@ -370,7 +370,7 @@
 	&__time {
 		flex: none;
 		width: 96px;
-		height: 30px;
+		height: 28px;
 		padding-inline: 8px;
 		border: 1px solid var(--outline-gray-2);
 		border-radius: var(--sanad-radius);
@@ -381,7 +381,7 @@
 	&__arrow { display: inline-flex; flex: none; color: var(--ink-gray-5); }
 
 	// calendar
-	&__cal { display: flex; gap: 20px; justify-content: center; padding: 10px 12px 8px; }
+	&__cal { display: flex; gap: 12px; justify-content: center; padding: 10px 12px 8px; }
 	&__month { width: 252px; max-width: 100%; }
 	&__month-head {
 		display: flex;
@@ -433,7 +433,7 @@
 
 	// one day: an outer band cell (the range wash) around a 32 px pill
 	&__day {
-		height: 32px;
+		height: 28px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -446,8 +446,8 @@
 	}
 	&__pill {
 		appearance: none;
-		width: 32px;
-		height: 32px;
+		width: 28px;
+		height: 28px;
 		border: 0;
 		border-radius: var(--sanad-radius);
 		background: transparent;
@@ -490,7 +490,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: var(--sanad-gap-sm);
-		height: 42px;
+		height: 36px;
 		padding-inline: 10px;
 	}
 	// the bar is only a bar where it spans the panel; inside the calendar it stays a plain title row
@@ -534,7 +534,7 @@
 	&__picker--wide &__picker-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 16px 14px; }
 	&__picker-cell {
 		appearance: none;
-		height: 36px;
+		height: 28px;
 		padding-inline: 4px;
 		border: 1px solid transparent;
 		border-radius: var(--sanad-radius);
@@ -608,8 +608,8 @@
 		&--on { background: var(--surface-base); color: var(--ink-gray-9); font-weight: 600; box-shadow: var(--shadow-sm); }
 	}
 	&__count {
-		width: 64px;
-		height: 30px;
+		width: 48px;
+		height: 28px;
 		padding-inline: 8px;
 		border: 1px solid var(--outline-gray-2);
 		border-radius: var(--sanad-radius);
@@ -622,7 +622,7 @@
 	&__stepper {
 		display: inline-flex;
 		align-items: center;
-		height: 30px;
+		height: 28px;
 		border: 1px solid var(--outline-gray-2);
 		border-radius: var(--sanad-radius);
 	}
@@ -697,7 +697,7 @@
 	&__apply {
 		appearance: none;
 		flex: none;
-		height: 30px;
+		height: 28px;
 		border-radius: var(--sanad-radius);
 		font-size: var(--text-xs, 12px);
 		cursor: pointer;

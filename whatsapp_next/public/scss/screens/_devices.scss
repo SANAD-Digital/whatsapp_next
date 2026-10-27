@@ -57,8 +57,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 36px;
-		block-size: 36px;
+		inline-size: 28px;
+		block-size: 28px;
 		flex: none;
 		border-radius: 10px;
 		background: var(--sanad-accent-soft);
@@ -107,8 +107,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 36px;
-		block-size: 36px;
+		inline-size: 28px;
+		block-size: 28px;
 		flex: none;
 		border-radius: 10px;
 		background: var(--surface-base);
@@ -280,7 +280,7 @@
 		> .sanad-empty {
 			grid-column: 1 / -1;
 			min-block-size: 260px;
-			padding: 40px 24px;
+			padding: 20px 16px;
 			border: 1px dashed var(--wa-border-2);
 			border-radius: 12px;
 			background: var(--wa-surface);
@@ -635,8 +635,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 36px;
-		block-size: 36px;
+		inline-size: 28px;
+		block-size: 28px;
 		flex: none;
 		border-radius: 10px;
 		background: var(--surface-base);
@@ -686,7 +686,7 @@
 		gap: 6px;
 		flex: 1 1 auto;
 		min-inline-size: 0;
-		min-block-size: 32px;
+		min-block-size: 28px;
 		padding-inline: 6px;
 		border: var(--sanad-border);
 		border-radius: var(--sanad-radius);
@@ -766,7 +766,7 @@
 			animation: sanad-pulse 1.2s ease-in-out infinite;
 		}
 		.wa-device__stat {
-			block-size: 34px;
+			block-size: 28px;
 			border-radius: 6px;
 			border-inline-start: 0;
 			margin-inline: 2px;
@@ -879,7 +879,7 @@
 		border: 1px solid var(--outline-gray-2);
 		border-radius: var(--sanad-radius-lg);
 		background: var(--surface-gray-1);
-		font-size: 28px;
+		font-size: 24px;
 		font-weight: 600;
 		letter-spacing: 0.14em;
 		color: var(--ink-gray-9);

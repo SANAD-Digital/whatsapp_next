@@ -22,7 +22,7 @@ $fd-mono: "IBM Plex Mono", ui-monospace, monospace;
 	}
 
 	&__sub { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-	&__x { inline-size: 30px; block-size: 30px; }
+	&__x { inline-size: 28px; block-size: 28px; }
 
 	&__badge {
 		padding: 2px 8px;
@@ -141,7 +141,7 @@ $fd-mono: "IBM Plex Mono", ui-monospace, monospace;
 		flex-direction: column;
 		gap: 6px;
 		padding-block: 9px;
-		padding-inline: 11px 42px;
+		padding-inline: 11px 24px;
 		border-radius: 8px;
 		background: var(--wa-bg);
 		border: 1px solid var(--wa-border);

@@ -29,8 +29,8 @@
 
 // DENSITY.compact — a table, a toolbar, a panel that has to fit more in
 .wa--compact {
-	--wa-h: 32px;
-	--wa-h-sm: 28px;
+	--wa-h: 28px;
+	--wa-h-sm: 24px;
 	--wa-fs: 13px;
 	--wa-fs-sm: 12px;
 	--wa-px: 10px;
@@ -82,7 +82,8 @@
 	align-items: center;
 	justify-content: center;
 	gap: 7px;
-	min-block-size: 36px;
+	// the button's height is the scale's (`--wa-btn-h`: 32 in the compact scale), 36 by default
+	min-block-size: var(--wa-btn-h, 28px);
 	padding-inline: 14px;
 	border: none;
 	border-radius: var(--wa-radius, 8px);
@@ -108,14 +109,14 @@
 
 	// BUTTON_SIZES
 	&--sm { min-block-size: 28px; padding-inline: 10px; font-size: 12px; }
-	&--lg { min-block-size: 42px; padding-inline: 18px; font-size: 14px; }
+	&--lg { min-block-size: var(--wa-btn-h-lg, 36px); padding-inline: 16px; font-size: 14px; }
 
 	// an icon on its own keeps the square the size gives it
 	&--icon {
 		padding-inline: 0;
-		inline-size: 36px;
+		inline-size: var(--wa-btn-h, 28px);
 		&.wa-btn--sm { inline-size: 28px; }
-		&.wa-btn--lg { inline-size: 42px; }
+		&.wa-btn--lg { inline-size: var(--wa-btn-h-lg, 36px); }
 	}
 	&--block { inline-size: 100%; }
 
@@ -241,7 +242,7 @@
 .wa-select,
 .wa-textarea {
 	inline-size: 100%;
-	min-block-size: var(--wa-h, 38px);
+	min-block-size: var(--wa-h, 28px);
 	padding-inline: var(--wa-px, 12px);
 	border: 1px solid var(--wa-border-2);
 	border-radius: var(--wa-radius, 8px);
@@ -308,7 +309,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 34px;
+		inline-size: 28px;
 		color: var(--wa-ink-4);
 		pointer-events: none;
 
@@ -357,10 +358,10 @@
 .wa-seg {
 	display: inline-flex;
 	align-items: center;
-	gap: 3px;
-	padding: 3px;
+	gap: 2px;
+	padding: 2px; // a control's height in all: 1 + 2 + 22 + 2 + 1, as Desk's tab buttons
 	border: 1px solid var(--wa-border);
-	border-radius: 10px;
+	border-radius: var(--wa-radius, 8px);
 	background: var(--wa-sunken);
 	max-inline-size: 100%;
 	flex-wrap: wrap;
@@ -370,7 +371,9 @@
 		align-items: center;
 		justify-content: center;
 		gap: 6px;
-		min-block-size: var(--wa-h-sm, 32px);
+		min-block-size: calc(var(--wa-h, 28px) - 6px);
+		padding-block: 0;
+		line-height: 18px;
 		padding-inline: 12px;
 		border: 1px solid transparent;
 		border-radius: 6px;
@@ -406,8 +409,9 @@
 
 	&__track {
 		position: relative;
-		inline-size: 38px;
-		block-size: 22px;
+		--wa-tg-knob: 14px;
+		inline-size: 32px;
+		block-size: 20px;
 		flex: none;
 		border-radius: 999px;
 		background: var(--wa-border-2);
@@ -418,8 +422,8 @@
 			position: absolute;
 			inset-block-start: 3px;
 			inset-inline-start: 3px;
-			inline-size: 16px;
-			block-size: 16px;
+			inline-size: var(--wa-tg-knob);
+			block-size: var(--wa-tg-knob);
 			border-radius: 50%;
 			background: var(--wa-surface);
 			box-shadow: var(--wa-shadow-sm);
@@ -432,7 +436,7 @@
 	input:checked + &__track,
 	&[aria-checked="true"] &__track {
 		background: var(--wa-pri);
-		&::after { inset-inline-start: 19px; }
+		&::after { inset-inline-start: calc(100% - var(--wa-tg-knob) - 3px); }
 	}
 	input:focus-visible + &__track {
 		outline: 2px solid var(--wa-pri);
@@ -464,8 +468,8 @@
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	inline-size: 48px;
-	block-size: 48px;
+	inline-size: 36px;
+	block-size: 36px;
 	flex: none;
 	border-radius: 50%;
 	background: var(--wa-pri-s);
@@ -478,9 +482,9 @@
 	img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 
 	&--sq { border-radius: 12px; }
-	&--sm { inline-size: 32px; block-size: 32px; font-size: 12px; }
-	&--md { inline-size: 40px; block-size: 40px; font-size: 14px; }
-	&--lg { inline-size: 56px; block-size: 56px; font-size: 16px; }
+	&--sm { inline-size: 28px; block-size: 28px; font-size: 12px; }
+	&--md { inline-size: 32px; block-size: 32px; font-size: 14px; }
+	&--lg { inline-size: 44px; block-size: 44px; font-size: 16px; }
 }
 
 // ---- a section rule with its caption at the end -----------------------------------------------

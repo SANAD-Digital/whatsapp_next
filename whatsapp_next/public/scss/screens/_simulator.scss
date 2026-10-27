@@ -52,7 +52,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		display: inline-flex;
 		align-items: center;
 		gap: 7px;
-		min-block-size: 32px;
+		min-block-size: 28px;
 		padding: 0 12px;
 		border-radius: 999px;
 		border: 1px solid var(--wa-pri);
@@ -71,7 +71,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		min-block-size: 36px;
+		min-block-size: 28px;
 		padding: 0 11px;
 		margin: 0;
 		border-radius: 999px;
@@ -134,8 +134,8 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 	}
 
 	&__avatar {
-		inline-size: 38px;
-		block-size: 38px;
+		inline-size: 32px;
+		block-size: 32px;
 		border-radius: 50%;
 		background: var(--wa-sunken);
 		color: var(--wa-ink-3);
@@ -220,8 +220,8 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 
 	&__back,
 	&__head-icon {
-		inline-size: 36px;
-		block-size: 36px;
+		inline-size: 28px;
+		block-size: 28px;
 		border-radius: 50%;
 		background: color-mix(in srgb, var(--wa-on-pri) 18%, transparent);
 		display: flex;
@@ -233,8 +233,8 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 
 	&__back {
 		display: none;
-		inline-size: 32px;
-		block-size: 32px;
+		inline-size: 28px;
+		block-size: 28px;
 		border: 0;
 		font-size: 14px;
 		font-weight: 700;
@@ -264,7 +264,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		min-block-size: 32px;
+		min-block-size: 28px;
 		padding-inline: 10px 6px;
 		border-radius: 999px;
 		border: 0;
@@ -334,7 +334,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		flex-direction: column;
 		gap: 6px;
 		text-align: center;
-		padding: 20px;
+		padding: 16px;
 
 		strong { font-size: 13px; color: var(--wa-ink); }
 		span { font-size: 12px; color: var(--wa-ink-3); line-height: 1.8; }
@@ -359,8 +359,8 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 	&__tools { display: flex; flex-direction: column; gap: 8px; flex: none; }
 
 	&__round {
-		inline-size: 40px;
-		block-size: 40px;
+		inline-size: 28px;
+		block-size: 28px;
 		border-radius: 50%;
 		display: flex;
 		align-items: center;
@@ -375,7 +375,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		// sending: the button stays at full strength, it is busy rather than unavailable
 		&[aria-busy="true"]:disabled { opacity: 1; cursor: progress; }
 		&.is-sent { background: var(--wa-ok); border-color: var(--wa-ok); color: var(--wa-surface); }
-		&--info { inline-size: 34px; block-size: 34px; margin-inline: 3px; font-size: 16px; background: var(--wa-nf-s); border: 1px solid var(--wa-nf-sb); color: var(--wa-nf-i); }
+		&--info { inline-size: 28px; block-size: 28px; margin-inline: 3px; font-size: 16px; background: var(--wa-nf-s); border: 1px solid var(--wa-nf-sb); color: var(--wa-nf-i); }
 		&--plain { background: var(--wa-surface); border: 1px solid var(--wa-border-2); color: var(--wa-ink-3); }
 		&--pri { background: var(--wa-pri); border: 0; color: var(--wa-on-pri); }
 	}
@@ -391,8 +391,8 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		flex: 1;
 		min-block-size: 72px;
 		padding: 12px 16px;
-		padding-block-end: 30px;
-		border-radius: 26px;
+		padding-block-end: 20px;
+		border-radius: 12px;
 		border: 1px solid var(--wa-border);
 		background: var(--wa-surface);
 		color: var(--wa-ink);
