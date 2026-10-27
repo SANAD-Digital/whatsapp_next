@@ -167,8 +167,6 @@ def sign_out(user: str | None = None) -> dict[str, Any]:
 	the site set up stay: signing out deletes keys, not data. Audited `Credentials Changed`.
 
 	`{ok, webhook_removed}`."""
-	from frappe.utils.password import remove_encrypted_password
-
 	s = _settings()
 	webhook_removed = False
 	if s.webhook_endpoint and has_credentials(s):
@@ -177,6 +175,23 @@ def sign_out(user: str | None = None) -> dict[str, Any]:
 			webhook_removed = True
 		except Exception:
 			frappe.log_error(title="WhatsApp sign-out: webhook endpoint not removed")
+	_forget_link()
+	audit.log(
+		"Credentials Changed",
+		user=user,
+		fields_written=list(SIGN_OUT_SECRETS),
+		details={"what": "sign_out", "webhook_removed": int(webhook_removed)},
+	)
+	return {"ok": True, "webhook_removed": webhook_removed}
+
+
+def _forget_link() -> None:
+	"""Delete every key and the webhook secret and reset the state that described the link, as a
+	sign-out does. A sign-in or a sign-up runs it first, so a new account's keys never mix with
+	the previous account's: a key the new account does not return, the old webhook secret and
+	endpoint, a stale "connection OK" — none of them is left behind."""
+	from frappe.utils.password import remove_encrypted_password
+
 	for fieldname in SIGN_OUT_SECRETS:
 		remove_encrypted_password("WhatsApp Settings", "WhatsApp Settings", fieldname)
 	meta = frappe.get_meta("WhatsApp Settings")
@@ -187,13 +202,6 @@ def sign_out(user: str | None = None) -> dict[str, Any]:
 	frappe.db.set_single_value("WhatsApp Settings", values, update_modified=False)
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 	registry.clear_cache()
-	audit.log(
-		"Credentials Changed",
-		user=user,
-		fields_written=list(SIGN_OUT_SECRETS),
-		details={"what": "sign_out", "webhook_removed": int(webhook_removed)},
-	)
-	return {"ok": True, "webhook_removed": webhook_removed}
 
 
 def store_signup_credentials(state: SignupState, user: str | None = None) -> bool:
@@ -203,6 +211,7 @@ def store_signup_credentials(state: SignupState, user: str | None = None) -> boo
 	values = {f: creds.get(f) for f in CREDENTIAL_FIELDS if creds.get(f)}
 	if not values:
 		return False
+	_forget_link()  # a new account: nothing of the previous link stays
 	for fieldname, value in values.items():
 		settings_service.store_secret(fieldname, value)
 	frappe.db.set_single_value(
@@ -496,6 +505,7 @@ def login(platform_base_url: str, email: str, password: str, user: str | None = 
 	if not values:
 		frappe.throw(_("The platform returned no credentials for this account"), WAValidationError)
 	previous_key, previous_account = backup.account_key(), backup.current_account()
+	_forget_link()  # the previous account's keys, webhook secret and state go before the new ones come
 	written = save_credentials(user=user, **values)
 	switched = backup.note_account(previous_key, previous_account, result.get("integration_link"), user=user)
 	return {

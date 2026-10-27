@@ -426,6 +426,32 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 				frappe.get_doc(SETTINGS).get_password("customer_api_key", raise_exception=False), "ck"
 			)
 
+	def test_signing_in_with_another_account_leaves_nothing_of_the_previous_one(self):
+		"""A sign-in without a sign-out first (owner, 2026-10-28): the new account's keys replace the
+		old link entirely — a key it does not return, the old webhook secret and endpoint and a
+		stale "connection OK" do not stay behind to mix the two accounts."""
+		for f in SECRETS:
+			set_encrypted_password(SETTINGS, SETTINGS, f"old-{f}", f)
+		set_encrypted_password(SETTINGS, SETTINGS, "old-webhook-secret", "webhook_secret")
+		frappe.db.set_single_value(
+			SETTINGS,
+			{"webhook_endpoint": "WEP-OLD", "connection_status": "OK", "last_connection_error": "invalid key"},
+			update_modified=False,
+		)
+		without_secret = {"customer_api_key": "ck", "api_key": "k", "api_secret": "s"}  # no customer_api_secret
+		with fake_provider() as provider, as_user("System Manager"):
+			base = provider.login
+			provider.login = lambda email, password: {**base(email, password), "credentials": without_secret}
+			with patch.object(svc, "link_site", return_value={}):
+				out = api.login(platform_base_url="", email="tenant@example.test", password="right-password")
+		self.assertTrue(out["ok"])
+		s = frappe.get_doc(SETTINGS)
+		self.assertEqual(s.get_password("customer_api_key", raise_exception=False), "ck")
+		self.assertFalse(s.get_password("customer_api_secret", raise_exception=False))  # not the old one
+		self.assertFalse(s.get_password("webhook_secret", raise_exception=False))
+		self.assertEqual((s.webhook_endpoint, s.last_connection_error), (None, None))
+		self.assertNotEqual(s.connection_status, "OK")
+
 	def test_login_stores_the_keys_and_returns_none_of_them(self):
 		for f in SECRETS:
 			remove_encrypted_password(SETTINGS, SETTINGS, f)
