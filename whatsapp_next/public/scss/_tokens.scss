@@ -266,3 +266,57 @@ $wa-bridge: ();
 	// the page background stays Frappe's own (owner, 2026-09-27): no --bg-color here
 	--card-bg: var(--wa-surface);
 }
+
+// ---- Espresso names that Frappe before 16.53 does not define ----------------------------------
+// The app runs on every Frappe 16 a customer has (a site on 16.36 has none of these). They are
+// defined here with 16.53's own values, at zero specificity (`:where`): on 16.53 Frappe's own
+// definitions win and nothing changes; on an older Frappe these fill the gap, so no colour,
+// surface or radius reads as empty.
+:where(:root) {
+	--radius: 8px;
+	--radius-full: 9999px;
+	--surface-base: #ffffff;
+	--surface-elevation-2: #ffffff;
+	--surface-gray-8: var(--gray-700);
+	--surface-gray-10: var(--gray-900);
+	--surface-amber-7: var(--amber-600);
+	--surface-blue-8: var(--blue-700);
+	--surface-cyan-2: var(--cyan-100);
+	--surface-green-7: var(--green-600);
+	--ink-amber-6: var(--amber-500);
+	--ink-amber-7: var(--amber-600);
+	--ink-blue-7: var(--blue-600);
+	--ink-cyan-6: var(--cyan-500);
+	--ink-green-7: var(--green-600);
+	--ink-pink-6: var(--pink-500);
+	--ink-red-6: var(--red-500);
+	--ink-red-8: var(--red-700);
+	--ink-violet-7: var(--violet-600);
+	--outline-amber-3: var(--amber-300);
+	--outline-blue-3: var(--blue-300);
+	--outline-green-3: var(--green-300);
+	--outline-red-4: var(--red-400);
+}
+:where([data-theme="dark"]) {
+	--surface-base: #171717;
+	--surface-elevation-2: var(--gray-800);
+	--surface-gray-8: var(--gray-200);
+	--surface-gray-10: var(--gray-50);
+	--surface-amber-7: var(--amber-400);
+	--surface-blue-8: var(--blue-300);
+	--surface-cyan-2: var(--cyan-900);
+	--surface-green-7: var(--green-400);
+	--ink-amber-6: var(--amber-400);
+	--ink-amber-7: var(--amber-300);
+	--ink-blue-7: var(--blue-300);
+	--ink-cyan-6: var(--cyan-400);
+	--ink-green-7: var(--green-300);
+	--ink-pink-6: var(--pink-400);
+	--ink-red-6: var(--red-400);
+	--ink-red-8: var(--red-200);
+	--ink-violet-7: var(--violet-300);
+	--outline-amber-3: var(--amber-700);
+	--outline-blue-3: var(--blue-700);
+	--outline-green-3: var(--green-700);
+	--outline-red-4: var(--red-600);
+}

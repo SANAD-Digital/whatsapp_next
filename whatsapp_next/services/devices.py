@@ -248,8 +248,10 @@ def create(
 	e164 = normalize(phone) if phone else None
 	if phone and not e164:
 		frappe.throw(_("Invalid phone number: {0}").format(phone), WAInvalidPhoneError)
-	if pairing_mode == "Code" and not e164:
-		frappe.throw(_("A phone number is required for pair-code pairing"), WAInvalidPhoneError)
+	# a device links only with its own number (the platform unlinks any other), so it is created
+	# with the number, whichever way it pairs
+	if not e164:
+		frappe.throw(_("Enter the device's WhatsApp number: only this number can be linked to it."), WAInvalidPhoneError)
 	state = registry.get_provider().create_device(name, e164, pairing_mode)
 	with status_writer():
 		doc = frappe.get_doc(
@@ -381,7 +383,12 @@ def disconnect(device: str, user: str | None = None) -> StateChange:
 
 def delete(device: str, delete_remote: bool = True, user: str | None = None) -> None:
 	"""Delete the device on the provider (optional) and locally. The default device cannot be
-	deleted while other devices exist; message history keeps its (now dangling) Link."""
+	deleted while other devices exist; message history keeps its (now dangling) Link.
+
+	The row is locked first: deleting on the platform makes it send this site a status webhook at
+	once, and that webhook writing the same row first left the delete refused as "being modified
+	by another user". Locked here, the webhook waits for the delete and then finds no device."""
+	frappe.db.get_value("WhatsApp Device", device, "name", for_update=True)
 	doc = _doc(device)
 	if doc.is_default and frappe.db.count("WhatsApp Device", {"name": ("!=", device)}):
 		frappe.throw(

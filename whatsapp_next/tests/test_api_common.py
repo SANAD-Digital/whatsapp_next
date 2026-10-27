@@ -35,6 +35,18 @@ def _provider_fails(kind: str = "validation") -> None:
 	raise wex.WANotSupportedError("Renaming devices is not supported by this provider yet")
 
 
+@api_endpoint(roles=None)
+def _fails_with(kind: str) -> None:
+	"""Endpoint failing the ways a live site does (2026-10-28): keys the platform dropped, a row
+	another operation holds, a fault in the app."""
+	if kind == "keys":
+		raise pex.AuthError("Invalid API key", code="AUTH_INVALID_KEY", http_status=401)
+	if kind == "busy":
+		frappe.msgprint("This document can not be deleted right now as it's being modified by another user.")
+		raise frappe.QueryTimeoutError("Lock wait timeout exceeded")
+	raise KeyError("platform_device")
+
+
 class TestApiCommon(IntegrationTestCase):
 	def test_registered_as_whitelisted(self):
 		self.assertIn(_sample, frappe.whitelisted)
@@ -109,6 +121,28 @@ class TestApiCommon(IntegrationTestCase):
 		with as_user("WhatsApp Manager"), self.assertRaises(wex.WAValidationError):
 			_sample(count=1, mode="zzz")
 		self.assertEqual(len(frappe.local.message_log), 1)
+		frappe.local.message_log = []
+
+	def test_every_failure_is_logged_and_said_plainly(self):
+		"""Nothing fails silently any more: each failure has an Error Log entry and one readable
+		message, never the platform's raw words or Frappe's generic one."""
+		for kind, exc_type, says in (
+			("keys", wex.WAProviderAuthError, "Sign in again"),
+			("busy", wex.WABusyError, "another operation"),
+			("fault", wex.WAUnexpectedError, "Error Log"),
+		):
+			frappe.local.message_log = []
+			before = frappe.db.count("Error Log")
+			with self.assertRaises(exc_type) as ctx:
+				_fails_with(kind=kind)
+			self.assertIn(says, str(ctx.exception))
+			self.assertEqual(len(frappe.local.message_log), 1, kind)  # Frappe's own line is gone
+			self.assertEqual(frappe.db.count("Error Log"), before + 1, kind)
+			title = frappe.get_all("Error Log", fields=["method"], order_by="creation desc", limit=1)[0].method
+			self.assertTrue(title.startswith("WhatsApp API _fails_with"), title)
+		# the fault's message names the entry, so the screen leads to the traceback
+		log = frappe.get_all("Error Log", pluck="name", order_by="creation desc", limit=1)[0]
+		self.assertIn(log, frappe.local.message_log[0]["message"])
 		frappe.local.message_log = []
 
 	def test_paginate(self):

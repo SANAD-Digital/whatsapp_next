@@ -93,6 +93,20 @@ class WAProviderUnavailableError(WANextError):
 	code = "provider_unavailable"
 
 
+class WABusyError(WANextError):
+	"""The record is held by another operation right now (a webhook, a background job) (409)."""
+
+	http_status_code = 409
+	code = "busy"
+
+
+class WAUnexpectedError(WANextError):
+	"""A fault in the app itself; its traceback is in the Error Log under `error_log` (500)."""
+
+	http_status_code = 500
+	code = "unexpected"
+
+
 class WAProviderRejectedError(WANextError):
 	"""Business rejection by the provider; `reason` and `provider_code` pass through (422)."""
 

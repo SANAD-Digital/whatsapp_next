@@ -63,7 +63,8 @@ frappe.provide("whatsapp_next.fmt");
 		blacklisted: () => __("The number is blacklisted"),
 		unknown_number_policy: () => __("Excluded: never had a conversation"),
 		rate_limited: () => __("The provider rate-limited the sending"),
-		auth: () => __("The connection to the provider was refused"),
+		// the platform refused the site's keys: say why and what to do, not "refused"
+		auth: () => __("The WhatsApp platform refused this site's keys: the account was deleted or its keys were changed. Sign in again from WhatsApp setup."),
 		unknown: () => __("An unknown error"),
 	};
 	/** `raw` is the provider's own text: shown when the code says nothing more than "unknown". */
@@ -236,7 +237,7 @@ frappe.provide("whatsapp_next.fmt");
 		push(doc.delivered_at, __("Delivered"), "green");
 		push(doc.read_at, __("Read"), "green");
 		push(doc.held_at, __("Held: {0}", [doc.held_reason || ""]), "amber");
-		push(doc.failed_at, __("Failed: {0}", [doc.error_message || doc.error_code || ""]), "red");
+		push(doc.failed_at, __("Failed: {0}", [fmt.error_text(doc.error_code, doc.error_message)]), "red");
 		push(doc.cancelled_at, __("Cancelled"), "red");
 		((doc.timeline && doc.timeline.webhook_events) || []).forEach((e) => {
 			const ok = e.status === "Processed";

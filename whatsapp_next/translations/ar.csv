@@ -6028,3 +6028,10 @@ Enterprise,مؤسسات
 Free Trial,تجربة مجانية
 Live Trial,التجربة الحية
 Invalid API key,مفتاح API غير صالح
+Enter the device's WhatsApp number: only this number can be linked to it.,أدخل رقم واتساب الجهاز: لا يمكن ربطه إلا بهذا الرقم.
+The name appears in the message log and wherever a device is chosen. Only the WhatsApp number entered here can be linked to the device.,يظهر الاسم في سجل الرسائل وحيثما يُختار جهاز. ولا يمكن ربط الجهاز إلا برقم الواتساب الذي تدخله هنا.
+"This device has no registered number, so WhatsApp {0} was not linked. Add the device's number on the platform, then scan again.",هذا الجهاز بلا رقم مسجّل، فلم يُربط واتساب {0}. أضف رقم الجهاز في المنصة ثم امسح الرمز من جديد.
+The WhatsApp platform no longer accepts this site's keys: the account was deleted or its keys were changed on the platform. Sign in again from WhatsApp setup to link an account.,منصة واتساب لم تعد تقبل مفاتيح هذا الموقع: الحساب حُذف أو غُيّرت مفاتيحه في المنصة. سجّل الدخول من جديد من «إعداد الواتساب» لربط حساب.
+This record is being changed by another operation right now (a webhook or a background job). Try again in a moment.,هذا السجل تعدّله الآن عملية أخرى (ويب هوك أو مهمة في الخلفية). حاول مرة أخرى بعد لحظات.
+Something went wrong in WhatsApp ({0}). It was recorded in the Error Log as {1}.,حدث خطأ في الواتساب ({0}). سُجّل في سجل الأخطاء برقم {1}.
+The WhatsApp platform refused this site's keys: the account was deleted or its keys were changed. Sign in again from WhatsApp setup.,منصة واتساب رفضت مفاتيح هذا الموقع: الحساب حُذف أو غُيّرت مفاتيحه. سجّل الدخول من جديد من «إعداد الواتساب».

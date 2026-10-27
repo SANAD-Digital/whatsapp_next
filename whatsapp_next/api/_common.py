@@ -20,6 +20,7 @@ from frappe.utils import cint, flt, get_datetime, getdate
 
 from whatsapp_next.exceptions import (
 	WAAccountExistsError,
+	WABusyError,
 	WANextError,
 	WANotSupportedError,
 	WAPermissionError,
@@ -27,6 +28,7 @@ from whatsapp_next.exceptions import (
 	WAProviderRejectedError,
 	WAProviderUnavailableError,
 	WARateLimitError,
+	WAUnexpectedError,
 	WAValidationError,
 )
 from whatsapp_next.providers import exceptions as pex
@@ -69,17 +71,43 @@ def api_endpoint(
 			try:
 				return fn(*args, **kwargs)
 			except pex.ProviderError as exc:
+				_log(fn, exc, f"code={exc.code or '-'} http={getattr(exc, 'http_status', None) or '-'}")
 				_raise_with_message(map_provider_error(exc))
 			except (WANextError, frappe.PermissionError) as exc:
 				if getattr(exc, "__frappe_exc_id", None) is None and str(exc):
 					_raise_with_message(exc)
 				raise
+			except (frappe.QueryTimeoutError, frappe.QueryDeadlockError) as exc:
+				# a row another operation holds (a webhook, a job): say so, and keep the trace
+				_log(fn, exc)
+				frappe.clear_messages()  # Frappe's own English line would show beside ours
+				_raise_with_message(WABusyError(_("This record is being changed by another operation right now (a webhook or a background job). Try again in a moment.")))
+			except frappe.ValidationError:
+				raise  # the app's or Frappe's own message to the user, already worded
+			except Exception as exc:
+				# a fault, not a message: recorded with its traceback, and the screen names the entry
+				log = _log(fn, exc)
+				frappe.clear_messages()
+				_raise_with_message(WAUnexpectedError(_("Something went wrong in WhatsApp ({0}). It was recorded in the Error Log as {1}.").format(type(exc).__name__, log or "—")))
 
 		wrapper.__wa_api_endpoint__ = True  # type: ignore[attr-defined]
 		wrapper.__wa_roles__ = role_tuple  # type: ignore[attr-defined]
 		return frappe.whitelist(allow_guest=allow_guest, methods=list(methods))(wrapper)
 
 	return decorator
+
+
+def _log(fn: Callable, exc: Exception, detail: str = "") -> str | None:
+	"""Record a failure in the Error Log — the endpoint, the kind and the provider's code, never
+	the request body (message texts and numbers are PII). Returns the entry's name."""
+	try:
+		entry = frappe.log_error(
+			title=f"WhatsApp API {fn.__name__}: {type(exc).__name__}"[:140],
+			message=f"{detail}\n\n{frappe.get_traceback()}".strip(),
+		)
+		return entry.name if entry else None
+	except Exception:
+		return None
 
 
 def _raise_with_message(exc: Exception) -> None:
@@ -232,7 +260,13 @@ def map_provider_error(exc: pex.ProviderError) -> Exception:
 	if isinstance(exc, pex.RateLimitError):
 		return WARateLimitError(message)
 	if isinstance(exc, pex.AuthError | pex.PermissionDeniedError | pex.WebhookSignatureError):
-		if exc.code in ("AUTH_KEY_MISSING", "NOT_CONFIGURED"):
+		if exc.code in ("AUTH_INVALID_KEY", "AUTH_KEY_REVOKED", "AUTH_EXPIRED"):
+			# "Invalid API key": the platform no longer knows this site's keys — the account was
+			# deleted on the platform or its keys were changed there
+			message = _(
+				"The WhatsApp platform no longer accepts this site's keys: the account was deleted or its keys were changed on the platform. Sign in again from WhatsApp setup to link an account."
+			)
+		elif exc.code in ("AUTH_KEY_MISSING", "NOT_CONFIGURED"):
 			# the provider's words ("Customer API Key is not configured") name a field, not the
 			# fix: the site has no link to the platform yet, or its keys were cleared
 			message = _(

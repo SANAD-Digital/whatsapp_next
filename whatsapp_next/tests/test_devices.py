@@ -77,17 +77,15 @@ class TestDevices(IntegrationTestCase):
 			as_dict=True,
 		)
 
-	def test_a_device_added_for_qr_pairs_with_a_code_once_it_has_a_number(self):
+	def test_a_device_is_created_with_its_number_and_pairs_either_way(self):
+		"""A device links only with its own number (owner, 2026-10-28): it is never created without
+		one, whichever way it pairs, and a code then goes to that number without asking again."""
 		with fake_provider() as fp:
-			name = devices.create(NAME, pairing_mode="QR")  # no number
-			with self.assertRaises(WAValidationError):
-				devices.start_pairing(name, "Code")  # a code needs a number to go to
-			self.assertFalse([c for c in fp.calls if c[0] == "get_pair_code"])
-			code = devices.start_pairing(name, "Code", phone="0500000402")
-			self.assertEqual(code.pair_code, "ABCD-1234")
-			# the number is stored on the device (and on the provider, which issued the code for it)
+			with self.assertRaises(WAInvalidPhoneError):
+				devices.create(NAME, pairing_mode="QR")  # no number
+			self.assertFalse([c for c in fp.calls if c[0] == "create_device"])
+			name = devices.create(NAME, phone="0500000402", pairing_mode="QR")
 			self.assertEqual(frappe.db.get_value("WhatsApp Device", name, "phone_e164"), "+966500000402")
-			# after that the code comes without asking again
 			self.assertEqual(devices.start_pairing(name, "Code").pair_code, "ABCD-1234")
 
 	def test_create_and_pair_qr(self):

@@ -168,6 +168,15 @@ def _resolve_device(name: str | None) -> str:
 		name = devices[0] if devices else None
 	if not name or not frappe.db.exists("WhatsApp Device", name):
 		frappe.throw(_("No WhatsApp device is configured"), WADeviceOfflineError)
+	# a switched-off device (the previous account's, after an account switch) belongs to no
+	# account the platform knows: it answered "Selected device does not exist" for every message
+	if cint(frappe.db.get_value("WhatsApp Device", name, "disabled")):
+		frappe.throw(
+			_("The device {0} is switched off (it belongs to the previous account). Choose a device of the current account.").format(
+				frappe.db.get_value("WhatsApp Device", name, "device_name") or name
+			),
+			WADeviceOfflineError,
+		)
 	return name
 
 

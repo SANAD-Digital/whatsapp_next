@@ -207,6 +207,17 @@ sanad.ui.DataList = class DataList {
 				},
 			});
 			$area.find(".level-left").append(this.size_buttons.$el);
+		} else {
+			// Frappe before 16.53 has no TabButtons: its own lists draw this button group instead
+			const $group = $('<div class="btn-group"></div>').appendTo($area.find(".level-left"));
+			const mark = () => $group.find(".btn-paging").each((_, b) => $(b).toggleClass("btn-info", cint(b.dataset.value) === this.page_size).prop("disabled", cint(b.dataset.value) === this.page_size));
+			sizes.forEach((value) => $(`<button type="button" class="btn btn-default btn-sm btn-paging" data-value="${value}">${value}</button>`).appendTo($group));
+			$group.on("click", ".btn-paging", (e) => {
+				this.page_size = cint(e.currentTarget.dataset.value);
+				mark();
+				reload(this.page_size);
+			});
+			mark();
 		}
 		const more = frappe.ui.button
 			? frappe.ui.button({ label: __("Load More"), css_class: "btn-more", onclick: () => reload(this.page_length + this.page_size) })

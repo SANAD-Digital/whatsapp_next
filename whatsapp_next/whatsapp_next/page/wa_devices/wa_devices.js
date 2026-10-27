@@ -190,13 +190,13 @@ frappe.provide("whatsapp_next.devices");
 				label: __("Device"),
 				render: ($body, ctx) => {
 					$body.html(`
-						<p class="wa-pairing__hint">${ui.escape(__("The name appears in the message log and wherever a device is chosen. The WhatsApp number is read automatically once the device is paired."))}</p>
+						<p class="wa-pairing__hint">${ui.escape(__("The name appears in the message log and wherever a device is chosen. Only the WhatsApp number entered here can be linked to the device."))}</p>
 						<div class="wa-pairing__field" data-slot="name"></div>
 						<div class="wa-pairing__field">
 							<span class="wa-pairing__label" id="wa-pair-mode">${ui.escape(__("Pairing method"))}</span>
 							<div class="sanad-chip-row" role="radiogroup" aria-labelledby="wa-pair-mode" data-slot="mode"></div>
 						</div>
-						<div class="wa-pairing__field" data-slot="phone" hidden></div>`);
+						<div class="wa-pairing__field" data-slot="phone"></div>`);
 					this.name_control = frappe.ui.form.make_control({
 						parent: $body.find('[data-slot="name"]'),
 						df: {
@@ -223,7 +223,6 @@ frappe.provide("whatsapp_next.devices");
 								ctx.mode = mode.value;
 								$modes.find("[data-mode]").attr("aria-checked", "false");
 								$modes.find(`[data-mode="${mode.value}"]`).attr("aria-checked", "true");
-								$phone.attr("hidden", ctx.mode !== "Code" ? true : null);
 								$mode_hint.text(mode.hint);
 							})
 							.appendTo($modes);
@@ -248,14 +247,14 @@ frappe.provide("whatsapp_next.devices");
 					if (ctx.device) return true;
 					const name = (this.name_control.get_value() || "").trim();
 					if (!name) return __("Name the device first.");
-					if (ctx.mode === "Code" && !ctx.phone) {
-						return __("Enter the WhatsApp number that will receive the 8-digit code.");
-					}
+					// the device links only with its own number (the platform unlinks any other), so the
+					// number is part of the device from the start, whichever way it pairs
+					if (!ctx.phone) return __("Enter the device's WhatsApp number: only this number can be linked to it.");
 					ctx.device_name = name;
 					return ui
 						.call("devices.create_device", {
 							device_name: name,
-							phone: ctx.mode === "Code" ? ctx.phone : null,
+							phone: ctx.phone,
 							pairing_mode: ctx.mode,
 						}, { silent: true })
 						.then((r) => {
@@ -496,7 +495,12 @@ frappe.provide("whatsapp_next.devices");
 					<span class="wa-pairing__wrong-icon" aria-hidden="true">${ui.icon("es-line-alert-circle", "md")}</span>
 					<div>
 						<strong>${ui.escape(__("Another number was linked, so it was unlinked"))}</strong>
-						<p>${ui.escape(__("This device is registered for {0}, but WhatsApp {1} scanned the code. Scan the new code with WhatsApp on {0}.", [fmt(info.expected), fmt(info.connected)]))}</p>
+						<p>${ui.escape(
+							info.expected
+								? __("This device is registered for {0}, but WhatsApp {1} scanned the code. Scan the new code with WhatsApp on {0}.", [fmt(info.expected), fmt(info.connected)])
+								: // a device from before the number was required: it accepts no account until it has one
+									__("This device has no registered number, so WhatsApp {0} was not linked. Add the device's number on the platform, then scan again.", [fmt(info.connected)])
+						)}</p>
 					</div>
 				</div>
 				<div class="wa-btnbar"><button type="button" class="btn btn-primary btn-sm" data-act="retry">${ui.escape(__("Show a new code"))}</button></div>`);
