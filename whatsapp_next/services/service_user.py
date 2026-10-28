@@ -14,11 +14,15 @@ from frappe.utils import cint
 
 
 def get() -> str | None:
-	"""The configured service user when it can act: set, not Administrator, enabled."""
+	"""The configured service user when it can act: set, not Administrator, enabled, and not a
+	System Manager (a role granted after the setting was saved included): work done on content
+	from the platform must never run with every right."""
 	user = frappe.db.get_single_value("WhatsApp Settings", "command_service_user")
 	if not user or user == "Administrator":
 		return None
-	return user if cint(frappe.db.get_value("User", user, "enabled")) else None
+	if not cint(frappe.db.get_value("User", user, "enabled")) or "System Manager" in frappe.get_roles(user):
+		return None
+	return user
 
 
 @contextmanager

@@ -30,8 +30,12 @@ def members_from(source_doctype: str, names: list[str]) -> list[dict[str, Any]]:
 	if source_doctype == "Contact":
 		from whatsapp_next.services import permissions
 
-		for row in frappe.get_all("Contact Phone", filters={"parenttype": "Contact", "parent": ("in", names)},
-				fields=["parent", "wa_phone_e164"], ignore_permissions=not permissions.can_elevate("read")):
+		# only the contacts this user may read: through the product's contact role (all of them),
+		# else one by one through Frappe's own permission (`get_all` itself checks nothing)
+		if not permissions.can_elevate("read"):
+			names = [n for n in names if frappe.has_permission("Contact", "read", n)]
+		for row in frappe.get_all("Contact Phone", filters={"parenttype": "Contact", "parent": ("in", names or [""])},
+				fields=["parent", "wa_phone_e164"]):
 			kind, key = classify(row.wa_phone_e164)
 			if kind == "Individual":
 				out.setdefault(key, frappe.db.get_value("Contact", row.parent, "full_name"))

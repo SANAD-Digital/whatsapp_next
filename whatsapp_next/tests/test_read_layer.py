@@ -253,5 +253,5 @@ class TestReadLayer(IntegrationTestCase):
 		self.assertEqual(sql.count("UNION ALL"), 1)
 		# per branch: the indexed column and the key expression
 		self.assertEqual(sql.count(KEY_A), 4)
-		self.assertIn("`tabWhatsApp Log`", sql)
-		self.assertIn("`tabWhatsApp Inbound Message`", sql)
+		self.assertIn("tabWhatsApp Log", sql)  # quoted per database: backticks or double quotes
+		self.assertIn("tabWhatsApp Inbound Message", sql)

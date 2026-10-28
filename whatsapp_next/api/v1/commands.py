@@ -6,17 +6,14 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
 import frappe
-from frappe import _
-from frappe.utils import cint, now_datetime
+from frappe.utils import cint
 
 from whatsapp_next.api._common import api_endpoint, paginate
 from whatsapp_next.api.v1 import _bulk
 from whatsapp_next.api.v1._roles import MANAGER, VIEWER_UP
-from whatsapp_next.exceptions import WANotFoundError, WAStateConflictError, WAValidationError
 from whatsapp_next.services import command_router, commands, permissions
 
 STATUS_SCHEMA = {"status": {"enum": ["Active", "Inactive"]}}

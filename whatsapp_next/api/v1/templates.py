@@ -45,7 +45,7 @@ def preview(
 	if reference_name and doctype:
 		frappe.has_permission(doctype, "read", reference_name, throw=True)
 		doc = frappe.get_doc(doctype, reference_name)
-		_readable_only(doc)
+		templates.readable_only(doc)
 		# a real record is the `doc`; the template's sample values fill only the other names
 		extra = {k: v for k, v in (_parsed(sample_context) or {}).items() if k != "doc"}
 		ctx = templates.context_for(
@@ -60,20 +60,6 @@ def preview(
 			_("You cannot read {0} records, so the preview fills its fields with nothing.").format(_(doctype))
 		)
 	return {"body": result.text, "errors": errors}
-
-
-def _readable_only(doc) -> None:
-	"""Drop the values of fields above the caller's permission levels (and mask masked ones), as
-	the form does: record-level read is not field-level read."""
-	if not isinstance(doc, Document):
-		return
-	doc.apply_fieldlevel_read_permissions()
-	# Frappe drops the attribute; a template reading it would print Jinja's "no such element":
-	# the hidden value reads as empty instead
-	for row in [doc, *(c for t in doc.meta.get_table_fields() for c in doc.get(t.fieldname) or [])]:
-		for df in row.meta.fields:
-			if df.fieldname and df.fieldtype not in frappe.model.table_fields and not hasattr(row, df.fieldname):
-				setattr(row, df.fieldname, "")
 
 
 def _sample_recipient() -> dict[str, str]:
@@ -97,7 +83,7 @@ def _sample_context(doctype: str | None, sample: str | dict | None) -> dict[str,
 	parsed = dict(_parsed(sample) or {})
 	overlay = parsed.pop("doc", None)
 	ctx = templates.sample_context(doctype, parsed or None)
-	_readable_only(ctx.get("doc"))
+	templates.readable_only(ctx.get("doc"))
 	if isinstance(overlay, dict):
 		if isinstance(ctx.get("doc"), Document):
 			# in memory only, never saved: the record keeps its methods and child tables

@@ -32,7 +32,7 @@ export function chip({ icon, text, title, ltr = false, tone, href, cls = "" } = 
 	const body = `${icon ? `<span class="sanad-chipline__icon" aria-hidden="true">${ui.icon(icon, "xs")}</span>` : ""}<span class="sanad-chipline__text"${ltr ? ' dir="ltr"' : ' dir="auto"'}>${ui.escape(text)}</span>`;
 	const classes = `sanad-chipline${tone ? ` sanad-tone--${ui.tone(tone)}` : ""}${cls ? ` ${cls}` : ""}`;
 	const attrs = title ? ` title="${ui.escape(title)}"` : "";
-	if (href) return `<a class="${classes}" href="${ui.escape(href)}"${attrs}>${body}</a>`;
+	if (href) return `<a class="${classes}" href="${ui.escape(ui.safe_url(href))}"${attrs}>${body}</a>`;
 	return `<span class="${classes}"${attrs}>${body}</span>`;
 }
 
@@ -46,9 +46,9 @@ export function chips(list = []) {
  * Fact tile — label above, value below, icon in the corner. The "quick facts" grid of the
  * document drawer (reference image 01) is a list of these.
  */
-export function fact({ label, value, icon, ltr = false, tone } = {}) {
+export function fact({ label, value, icon, ltr = false, tone, text = false } = {}) {
 	if (value == null || value === "") return "";
-	const is_html = typeof value === "string" && /^\s*</.test(value);
+	const is_html = !text && typeof value === "string" && /^\s*</.test(value);
 	return `<div class="sanad-fact${tone ? ` sanad-fact--${ui.tone(tone)}` : ""}">
 		<div class="sanad-fact__head">${icon ? `<span class="sanad-fact__icon" aria-hidden="true">${ui.icon(icon, "sm")}</span>` : ""}<span class="sanad-fact__label">${ui.escape(label || "")}</span></div>
 		<div class="sanad-fact__value"${ltr ? ' dir="ltr"' : ' dir="auto"'}>${is_html ? value : ui.escape(value)}</div>
@@ -77,12 +77,14 @@ export function stars(value, { max = 5 } = {}) {
 	return `<span class="sanad-stars" role="img" aria-label="${ui.escape(__("{0} out of {1}", [text, max]))}">${html}<span class="sanad-stars__value sanad-tabular" dir="ltr">${ui.escape(text)}</span></span>`;
 }
 
-/** Key/value description list — the "additional details" block. */
+/** Key/value description list — the "additional details" block. A value starting with "<" is
+ *  taken as markup the caller built; `text: true` marks one that is data (a message, an error)
+ *  and is always escaped — what a sender wrote may well start with "<". */
 export function dl(rows = [], { columns = 2 } = {}) {
 	const body = rows
 		.map((r) => {
 			if (!r || r.value == null || r.value === "") return "";
-			const is_html = typeof r.value === "string" && /^\s*</.test(r.value);
+			const is_html = !r.text && typeof r.value === "string" && /^\s*</.test(r.value);
 			return `<div class="sanad-dl__row${r.wide ? " sanad-dl__row--wide" : ""}"><dt>${ui.escape(r.label || "")}</dt><dd>${is_html ? r.value : `<span dir="${r.ltr ? "ltr" : "auto"}">${ui.escape(r.value)}</span>`}</dd></div>`;
 		})
 		.filter(Boolean)
@@ -99,7 +101,7 @@ export function kv(rows = []) {
 	const body = rows
 		.map((r) => {
 			if (!r || r.value == null || r.value === "") return "";
-			const is_html = typeof r.value === "string" && /^\s*</.test(r.value);
+			const is_html = !r.text && typeof r.value === "string" && /^\s*</.test(r.value);
 			const icon = r.icon ? `<span class="sanad-kv__icon" aria-hidden="true">${ui.icon(r.icon, "sm")}</span>` : "";
 			const value = is_html ? r.value : `<span dir="${r.ltr ? "ltr" : "auto"}">${ui.escape(r.value)}</span>`;
 			return `<div class="sanad-kv__row${r.wide ? " sanad-kv__row--wide" : ""}"><dt>${icon}<span>${ui.escape(r.label || "")}</span></dt><dd>${value}</dd></div>`;
@@ -149,7 +151,7 @@ export function actions(list = [], { size = "sm" } = {}) {
 			const label = a.label || a.title || "";
 			const body = `${a.icon ? ui.icon(a.icon, size === "sm" ? "xs" : "sm") : ""}${a.show_label && label ? `<span class="sanad-iconbtn__label">${ui.escape(label)}</span>` : ""}`;
 			const attrs = `class="sanad-iconbtn sanad-iconbtn--${size}${a.tone ? ` sanad-tone--${ui.tone(a.tone)}` : ""}" title="${ui.escape(label)}" aria-label="${ui.escape(label)}" data-action-index="${i}"`;
-			if (a.href) return `<a ${attrs} href="${ui.escape(a.href)}"${a.target ? ` target="${ui.escape(a.target)}" rel="noopener"` : ""}>${body}</a>`;
+			if (a.href) return `<a ${attrs} href="${ui.escape(ui.safe_url(a.href))}"${a.target ? ` target="${ui.escape(a.target)}" rel="noopener"` : ""}>${body}</a>`;
 			return `<button type="button" ${attrs}>${body}</button>`;
 		})
 		.filter(Boolean)

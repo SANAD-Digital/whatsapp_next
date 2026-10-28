@@ -272,7 +272,7 @@ frappe.provide("sanad.ui");
 				this.data.templates = r.templates || [];
 			} catch (err) {
 				this.data.fields = null;
-				frappe.show_alert({ message: err && err.message ? err.message : __("Could not read the document type"), indicator: "red" });
+				frappe.show_alert({ message: err && err.message ? esc(err.message) : __("Could not read the document type"), indicator: "red" });
 			}
 		}
 
@@ -1258,7 +1258,7 @@ frappe.provide("sanad.ui");
 				const r = await this.opts.send_test(this.payload(), phone, this.ui.ref || (this.ui.preview && this.ui.preview.reference_name) || null);
 				frappe.show_alert({ message: __("Test sent to {0}", [sanad.ui.phone(r && r.phone_e164 ? r.phone_e164 : phone)]), indicator: "green" });
 			} catch (err) {
-				frappe.show_alert({ message: err && err.message ? err.message : __("The test could not be sent"), indicator: "red" });
+				frappe.show_alert({ message: err && err.message ? esc(err.message) : __("The test could not be sent"), indicator: "red" });
 			}
 			this.ui.testing = false;
 			this.draw_test();
@@ -1287,20 +1287,20 @@ frappe.provide("sanad.ui");
 			} catch (err) {
 				this.ui.saving = false;
 				this.draw_foot();
-				frappe.show_alert({ message: err && err.message ? err.message : __("Could not save"), indicator: "red" });
+				frappe.show_alert({ message: err && err.message ? esc(err.message) : __("Could not save"), indicator: "red" });
 			}
 		}
 
 		remove() {
 			const d = this.draft;
-			frappe.confirm(__("Delete {0}? The messages it already sent stay in the log.", [d.notification_name]), async () => {
+			frappe.confirm(__("Delete {0}? The messages it already sent stay in the log.", [esc(d.notification_name)]), async () => {
 				try {
 					await this.opts.remove(d.name);
 					frappe.show_alert({ message: __("Notification deleted"), indicator: "green" });
 					this.opts.on_saved && this.opts.on_saved({ name: d.name, deleted: true });
 					this.close(true);
 				} catch (err) {
-					frappe.show_alert({ message: err && err.message ? err.message : __("Could not delete"), indicator: "red" });
+					frappe.show_alert({ message: err && err.message ? esc(err.message) : __("Could not delete"), indicator: "red" });
 				}
 			});
 		}

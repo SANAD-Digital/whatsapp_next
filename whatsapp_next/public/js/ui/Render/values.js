@@ -209,7 +209,9 @@ function rich_text(value, df, doc, { density } = {}) {
 
 function colour(value) {
 	if (!value) return "";
-	return `<span class="sanad-chipline"><span class="sanad-swatch" style="background:${ui.escape(value)}" aria-hidden="true"></span><span class="sanad-chipline__text" dir="ltr">${ui.escape(value)}</span></span>`;
+	// only a colour reaches `style`: a value with ";" or url() would add rules of its own
+	const safe = /^(#[0-9a-f]{3,8}|[a-z]+|rgba?\([\d\s.,%]+\))$/i.test(cstr(value).trim()) ? cstr(value).trim() : "transparent";
+	return `<span class="sanad-chipline"><span class="sanad-swatch" style="background:${ui.escape(safe)}" aria-hidden="true"></span><span class="sanad-chipline__text" dir="ltr">${ui.escape(value)}</span></span>`;
 }
 
 function duration(value, df, doc) {

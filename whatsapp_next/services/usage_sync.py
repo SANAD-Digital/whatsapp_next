@@ -77,7 +77,7 @@ def sync_subscription(*, raise_errors: bool = False) -> dict[str, Any] | None:
 	# the platform just answered with this site's keys: the connection works, whatever an earlier
 	# test or a failed send left in `connection_status` (Home kept saying "unavailable" for a day)
 	values.update({"connection_status": "OK", "last_connection_error": None})
-	frappe.db.set_value("WhatsApp Settings", "WhatsApp Settings", values, update_modified=False)
+	frappe.db.set_single_value("WhatsApp Settings", values, update_modified=False)
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 	return values
 

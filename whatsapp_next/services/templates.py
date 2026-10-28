@@ -184,6 +184,20 @@ def _recipient(recipient: dict[str, Any] | None) -> frappe._dict:
 	return who
 
 
+def readable_only(doc) -> None:
+	"""Drop the values of fields above the caller's permission levels (and mask masked ones), as
+	the form does: record-level read is not field-level read."""
+	if not isinstance(doc, frappe.model.document.Document):
+		return
+	doc.apply_fieldlevel_read_permissions()
+	# Frappe drops the attribute; a template reading it would print Jinja's "no such element":
+	# the hidden value reads as empty instead
+	for row in [doc, *(c for t in doc.meta.get_table_fields() for c in doc.get(t.fieldname) or [])]:
+		for df in row.meta.fields:
+			if df.fieldname and df.fieldtype not in frappe.model.table_fields and not hasattr(row, df.fieldname):
+				setattr(row, df.fieldname, "")
+
+
 def context_for(
 	reference_doctype: str | None = None,
 	reference_name: str | None = None,

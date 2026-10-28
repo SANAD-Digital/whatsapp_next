@@ -14,7 +14,7 @@ from whatsapp_next.api._common import api_endpoint
 from whatsapp_next.api.v1 import _bulk
 from whatsapp_next.api.v1._roles import AGENT_UP, MANAGER, VIEWER_UP
 from whatsapp_next.exceptions import WANotFoundError, WAPermissionError
-from whatsapp_next.services import dispatch, inbound, read_layer
+from whatsapp_next.services import dispatch, inbound, permissions, read_layer
 from whatsapp_next.services.dispatch import OUTBOUND_TERMINAL
 from whatsapp_next.services.phone import classify
 
@@ -221,7 +221,7 @@ def get_inbound(name: str) -> dict[str, Any]:
 	reply_name = row.pop("reply_outbound")
 	row["reply_outbound"] = (
 		frappe.db.get_value("WhatsApp Log", reply_name, list(REPLY_FIELDS), as_dict=True)
-		if reply_name
+		if reply_name and frappe.has_permission("WhatsApp Log", "read", doc=reply_name)
 		else None
 	)
 	row["ui"] = inbound.as_dict_for_ui(name)
@@ -243,6 +243,12 @@ def get_conversation(
 		frappe.throw(_("Not permitted to read conversations"), WAPermissionError)
 	# A raw / local phone from a caller reads the same thread as its E.164 key.
 	key = classify(key)[1] or key
+	# a user limited to some devices reads only their side of the thread
+	allowed = permissions.allowed_devices()
+	if allowed is not None:
+		if device and device not in allowed:
+			frappe.throw(_("Not permitted to read conversations of device {0}").format(device), WAPermissionError)
+		device = device or allowed
 	page = read_layer.conversation(key, device=device, before=before, limit=limit)
 	rows = []
 	for r in page.rows:

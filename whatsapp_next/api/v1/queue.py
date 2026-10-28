@@ -14,8 +14,8 @@ from frappe.utils import add_to_date, cint, now_datetime
 from whatsapp_next.api._common import api_endpoint, paginate
 from whatsapp_next.api.v1 import _bulk
 from whatsapp_next.api.v1._roles import MANAGER, VIEWER_UP
-from whatsapp_next.exceptions import WAValidationError
-from whatsapp_next.services import dispatch
+from whatsapp_next.exceptions import WAPermissionError, WAValidationError
+from whatsapp_next.services import dispatch, permissions
 
 QUEUE_FIELDS = (
 	"name",
@@ -62,6 +62,12 @@ def _list_query(filters: dict | None) -> dict[str, Any]:
 			query[key] = f[key]
 	if f.get("phone"):
 		query["phone_e164"] = ("like", f"%{f['phone']}%")
+	# a user a User Permission limits to some devices sees (and counts) only their queue
+	allowed = permissions.allowed_devices()
+	if allowed is not None:
+		if query.get("device") and query["device"] not in allowed:
+			frappe.throw(_("Not permitted to read the queue of device {0}").format(query["device"]), WAPermissionError)
+		query.setdefault("device", ("in", allowed))
 	return query
 
 

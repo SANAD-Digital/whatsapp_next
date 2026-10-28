@@ -10,6 +10,7 @@ from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.providers.schemas import NumberCheck
 from whatsapp_next.services import number_check
+from whatsapp_next.tests.conftest_frappe import ensure_device
 
 
 class Provider:
@@ -25,7 +26,7 @@ class Provider:
 class TestNumberCheck(IntegrationTestCase):
 	def setUp(self):
 		if not frappe.db.get_value("WhatsApp Device", {"status": "Connected"}, "name"):
-			self.skipTest("needs a connected device")
+			ensure_device()
 		self.tag = frappe.generate_hash(length=4).translate(str.maketrans("abcdef", "123456"))
 		self.a, self.b = f"+96771100{self.tag}", f"+96771200{self.tag}"
 

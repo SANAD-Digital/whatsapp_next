@@ -260,8 +260,7 @@ def nightly_reconcile(full: bool = False, batch: int = NIGHTLY_BATCH) -> dict[st
 		batches += 1
 		frappe.db.commit()
 	drift = _drift_check()
-	frappe.db.set_value(
-		"WhatsApp Settings",
+	frappe.db.set_single_value(
 		"WhatsApp Settings",
 		{"numbers_watermark": upper, "numbers_last_run_at": now_datetime()},
 		update_modified=False,

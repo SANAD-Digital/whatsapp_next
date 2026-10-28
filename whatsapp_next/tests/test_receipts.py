@@ -9,13 +9,12 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.services import receipts
+from whatsapp_next.tests.conftest_frappe import ensure_device
 
 
 class TestReceipts(IntegrationTestCase):
 	def setUp(self):
-		self.device = frappe.db.get_value("WhatsApp Device", {}, "name")
-		if not self.device:
-			self.skipTest("needs a device")
+		self.device = frappe.db.get_value("WhatsApp Device", {}, "name") or ensure_device()
 		self.provider = MagicMock()
 
 	def _inbound(self, **values):

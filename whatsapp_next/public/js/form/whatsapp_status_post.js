@@ -76,7 +76,7 @@ function draw_preview(frm) {
 	let body;
 	if (d.kind === "Text") {
 		const font = (FONT_CSS[d.font] || FONT_CSS.Standard).split(";");
-		body = `<div class="wa-status__card" style="background:${esc(d.background_color || "var(--wa-pri)")};font-family:${font[0]};${font[1] || ""}">
+		body = `<div class="wa-status__card" style="background:${esc(/^#[0-9a-f]{3,8}$/i.test(d.background_color || "") ? d.background_color : "var(--wa-pri)")};font-family:${font[0]};${font[1] || ""}">
 			<span>${esc(d.text || __("Your text appears here"))}</span></div>`;
 	} else if (d.media) {
 		const url = esc(d.media);

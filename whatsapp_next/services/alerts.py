@@ -414,6 +414,8 @@ def report_columns(report: str, filters: dict[str, Any] | list | None = None) ->
 		else:
 			columns = run(report, filters=filters or {}, ignore_prepared_report=True).get("columns") or []
 	except Exception:
+		# the editor shows no columns; the reason is kept, or a broken report looks like an empty one
+		frappe.log_error(title=f"WhatsApp alert: columns of report {report}")
 		return []
 	return [
 		{"fieldname": c["fieldname"], "label": c["label"], "fieldtype": c["fieldtype"]}

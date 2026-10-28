@@ -264,7 +264,7 @@
 		return new ui.OverlayPanel({
 			type: "modal",
 			width: "640px",
-			title: __("Values of {0}", [entry.function_name]),
+			title: __("Values of {0}", [frappe.utils.escape_html(entry.function_name)]),
 			subtitle: entry.server_script,
 			subtitle_mono: true,
 			sections: [{ cols: 1, fields }],
@@ -312,7 +312,7 @@
 		return new ui.OverlayPanel({
 			type: "modal",
 			width: "560px",
-			title: __("Try {0}", [entry.function_name]),
+			title: __("Try {0}", [frappe.utils.escape_html(entry.function_name)]),
 			subtitle: __("Runs as a command would. Nothing is sent and nothing is kept."),
 			sections: [
 				{
@@ -349,7 +349,7 @@
 		return new ui.OverlayPanel({
 			type: "modal",
 			width: "620px",
-			title: __("Try {0}", [entry.function_name]),
+			title: __("Try {0}", [frappe.utils.escape_html(entry.function_name)]),
 			badge: ok ? { text: __("Passed"), tone: "ok" } : { text: __("Stopped"), tone: "danger" },
 			detail: {
 				blocks: [
@@ -970,7 +970,7 @@
 		remove(entry) {
 			const linked = (entry.linked_commands || []).length;
 			return ui.ConfirmDialog.ask({
-				title: __("Remove {0}?", [entry.function_name]),
+				title: __("Remove {0}?", [frappe.utils.escape_html(entry.function_name)]),
 				message: __("The installed record and the site's values are deleted. The Server Script stays, so the function can be installed again."),
 				impact: [
 					{ label: __("Installed version"), value: entry.installed_version || "—" },

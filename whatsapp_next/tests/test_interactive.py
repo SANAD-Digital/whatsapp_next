@@ -12,6 +12,7 @@ from whatsapp_next.exceptions import WANotSupportedError, WAValidationError
 from whatsapp_next.providers.schemas import ProviderSettings
 from whatsapp_next.providers.snd_platform import SndPlatformProvider, _parse_inbound
 from whatsapp_next.services import dispatch, interactive
+from whatsapp_next.tests.conftest_frappe import ensure_device
 
 
 def plan(interactive: bool) -> None:
@@ -38,9 +39,7 @@ class TestInteractive(IntegrationTestCase):
 			interactive.normalize("List", {"text": "Pick", "sections": []})
 
 	def test_outbound_stores_and_sends_the_definition(self):
-		device = frappe.db.get_value("WhatsApp Device", {}, "name")
-		if not device:
-			self.skipTest("no device")
+		device = frappe.db.get_value("WhatsApp Device", {}, "name") or ensure_device()
 		name = dispatch.create_outbound(dispatch.OutboundSpec(device=device, phone="+967770000001", message_type="List", skip_policy=True,
 			interactive={"text": "Pick", "button_text": "Open", "sections": [{"rows": [{"id": "a", "title": "A"}]}]}))
 		row = frappe.get_doc("WhatsApp Log", name)
@@ -51,9 +50,7 @@ class TestInteractive(IntegrationTestCase):
 		self.assertEqual((payload["message_type"], payload["interactive"]["button_text"]), ("List", "Open"))
 
 	def test_a_plan_without_buttons_and_lists_refuses_them(self):
-		device = frappe.db.get_value("WhatsApp Device", {}, "name")
-		if not device:
-			self.skipTest("no device")
+		device = frappe.db.get_value("WhatsApp Device", {}, "name") or ensure_device()
 		plan(False)
 		with self.assertRaises(WANotSupportedError):
 			dispatch.create_outbound(dispatch.OutboundSpec(device=device, phone="+967770000001", message_type="Buttons", skip_policy=True,

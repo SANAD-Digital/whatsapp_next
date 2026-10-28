@@ -34,7 +34,6 @@
 	const phone_text = (v) => ui.PhoneField.format_display(v) || cstr(v);
 	const phone = (v) => `<bdi dir="ltr">${esc(phone_text(v))}</bdi>`;
 
-	const POLL_MS = 3000;
 	// how long a sent message is given to bring its delivery receipt back before the screen says so
 	const RECEIPT_TIMEOUT_MS = 180000;
 	const LISTEN_MS = 300000;
@@ -1058,7 +1057,10 @@
 				}
 				return;
 			}
-			this._poll = window.setTimeout(() => this.refresh_status().then(() => this.poll()), POLL_MS);
+			// No asking the server on a timer: realtime (message status, inbound, queue, campaign)
+			// brings every change. One local wake-up at the receipt deadline re-draws the rows that
+			// are still waiting, so "the receipt did not come back" shows without a request.
+			if (this.receipt_deadline) this._poll = window.setTimeout(() => this.poll(), Math.max(0, this.receipt_deadline - Date.now()) + 50);
 		}
 
 		refresh_status() {
@@ -1418,7 +1420,8 @@
 		subscribe() {
 			if (this._subscribed) return;
 			this._subscribed = true;
-			this._on_change = ui.throttle(() => this.run && !this.readonly && this.refresh_status(), 1500);
+			// a change re-reads the run, then settles it (the final render once nothing is pending)
+			this._on_change = ui.throttle(() => this.run && !this.readonly && this.refresh_status().then(() => this.poll()), 1500);
 			this._on_device = (p) => {
 				const d = p && this.devices().find((x) => x.name === p.device);
 				if (!d) return;

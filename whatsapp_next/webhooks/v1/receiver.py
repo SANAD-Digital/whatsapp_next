@@ -79,13 +79,8 @@ def handle(headers: Mapping[str, str], raw_body: bytes, *, remote_ip: str | None
 		verify.note_signature_failure()
 		return Outcome(401, {"ok": False, "error": "invalid signature"})
 	if not sig.fresh:
-		idempotency.store_ignored(
-			event_id,
-			event_name,
-			reason="stale timestamp" if sig.valid else "invalid signature",
-			signature_valid=sig.valid,
-			timestamp_fresh=sig.fresh,
-		)
+		# Not stored either: an old delivery replayed with a new event id each time would add a
+		# row per request (the id is not signed). The platform's own retries are fresh.
 		return Outcome(401, {"ok": False, "error": "stale timestamp"})
 	# The signature covers `<ts>.<body>`, not the event id / name headers: a captured delivery
 	# re-sent inside the freshness window with another id would be processed twice, and with
@@ -130,8 +125,7 @@ def handle(headers: Mapping[str, str], raw_body: bytes, *, remote_ip: str | None
 	)
 	if c.duplicate:
 		return Outcome(200, {"ok": True, "duplicate": True}, event=c.name)
-	frappe.db.set_value(
-		"WhatsApp Settings",
+	frappe.db.set_single_value(
 		"WhatsApp Settings",
 		"webhook_last_event_at",
 		now_datetime(),

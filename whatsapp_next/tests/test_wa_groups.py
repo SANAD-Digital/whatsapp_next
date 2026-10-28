@@ -11,6 +11,7 @@ from frappe.tests import IntegrationTestCase
 from whatsapp_next.exceptions import WANotSupportedError, WAValidationError
 from whatsapp_next.providers.schemas import GroupCreated, GroupMember
 from whatsapp_next.services import wa_groups
+from whatsapp_next.tests.conftest_frappe import ensure_device
 
 
 def plan(groups: bool) -> None:
@@ -31,9 +32,7 @@ class Provider:
 
 class TestWaGroups(IntegrationTestCase):
 	def setUp(self):
-		self.device = frappe.db.get_value("WhatsApp Device", {"status": "Connected"}, "name")
-		if not self.device:
-			self.skipTest("needs a connected device")
+		self.device = frappe.db.get_value("WhatsApp Device", {"status": "Connected"}, "name") or ensure_device()
 		plan(True)
 		self.provider = Provider()
 

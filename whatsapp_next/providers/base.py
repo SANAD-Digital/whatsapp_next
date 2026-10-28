@@ -46,6 +46,8 @@ class BaseProvider(ABC):
 	key: str = ""
 	display_name: str = ""
 	capabilities: frozenset[str] = frozenset()
+	#: the header that carries a webhook's signature (read by the replay check, `webhooks/verify.py`)
+	webhook_signature_header: str = ""
 
 	def __init__(self, settings: ProviderSettings) -> None:
 		self.settings = settings

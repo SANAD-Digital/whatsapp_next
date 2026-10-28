@@ -42,7 +42,8 @@ sanad.ui.ConfirmDialog = class ConfirmDialog {
 			fields.push({ fieldtype: "Check", fieldname: "ack", label: o.ack_checkbox });
 		}
 		this.dialog = new frappe.ui.Dialog({
-			title: o.title,
+			// a dialog title is HTML and callers put record names in it: text, always
+			title: ui.escape(o.title),
 			fields,
 			size: o.size || "small",
 			primary_action_label: o.confirm_label || __("Confirm"),

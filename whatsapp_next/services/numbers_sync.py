@@ -10,10 +10,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 
 import frappe
-from frappe import _
 from frappe.utils import now_datetime
 
-from whatsapp_next.exceptions import WANotFoundError, WAValidationError
 from whatsapp_next.providers import registry
 from whatsapp_next.services import audit, devices, permissions
 from whatsapp_next.services.guards import status_writer

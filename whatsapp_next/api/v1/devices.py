@@ -50,8 +50,11 @@ def _row(device: str) -> dict[str, Any]:
 @api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
 def list_devices(refresh: bool = False) -> dict[str, Any]:
 	"""Local device rows; `refresh=1` first mirrors the provider's live state (`sync_from_provider`)."""
-	synced = devices.sync_from_provider() if refresh else None
-	rows = frappe.get_all("WhatsApp Device", fields=list(DEVICE_FIELDS), order_by="is_default desc, name")
+	# the refresh writes the devices' state: never on a GET (a link or an image tag could send one)
+	by_get = bool(getattr(frappe.local, "request", None)) and frappe.request.method == "GET"
+	synced = devices.sync_from_provider() if refresh and not by_get else None
+	# `get_list`: a User Permission on WhatsApp Device limits which devices a user sees
+	rows = frappe.get_list("WhatsApp Device", fields=list(DEVICE_FIELDS), order_by="is_default desc, name")
 	from whatsapp_next.services import history_import
 
 	return {"rows": rows, "total": len(rows), "synced": synced, "history_allowed": history_import.allowed()}

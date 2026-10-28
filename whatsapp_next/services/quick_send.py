@@ -10,7 +10,7 @@ import frappe
 from frappe import _
 from frappe.utils import cint
 
-from whatsapp_next.exceptions import WAInvalidPhoneError, WAValidationError
+from whatsapp_next.exceptions import WAInvalidPhoneError, WAPermissionError, WAValidationError
 from whatsapp_next.services import dispatch, templates
 from whatsapp_next.services.devices import default_device
 from whatsapp_next.services.dispatch import OutboundSpec
@@ -58,6 +58,9 @@ def resolve_recipient(
 			frappe.throw(_("WhatsApp Number {0} not found").format(number), WAInvalidPhoneError)
 		key, display_name, contact = row.phone_e164, row.display_name, row.contact or contact
 	elif contact:
+		# a contact's numbers and name only to someone who may read that contact
+		if not (permissions.can_elevate("read") or frappe.has_permission("Contact", "read", contact)):
+			frappe.throw(_("Not permitted to read contact {0}").format(contact), WAPermissionError)
 		phones = permissions.contact_phones(contact)
 		if not phones and not phone:
 			frappe.throw(_("Contact {0} has no WhatsApp number").format(contact), WAInvalidPhoneError)
@@ -68,6 +71,9 @@ def resolve_recipient(
 		if not kind:
 			frappe.throw(_("Invalid WhatsApp number: {0}").format(phone), WAInvalidPhoneError)
 		contact = permissions.resolve_contact_by_phone(key) if kind == "Individual" else None
+		# which contact owns a typed number is itself contact data
+		if contact and not (permissions.can_elevate("read") or frappe.has_permission("Contact", "read", contact)):
+			contact = None
 		if contact:
 			display_name = frappe.db.get_value("Contact", contact, "full_name")
 	if not key:
@@ -115,6 +121,9 @@ def preview(
 		if reference_doctype and reference_name
 		else templates.sample_context(reference_doctype)
 	)
+	if not context and reference_doctype and reference_name:
+		# record-level read is not field-level read: a hidden field previews as empty, as it sends
+		templates.readable_only(ctx.get("doc"))
 	if recipient and not context and not (reference_doctype and reference_name):
 		ctx["recipient"] = templates.context_for(recipient=recipient)["recipient"]
 	result = templates.render(source, ctx)

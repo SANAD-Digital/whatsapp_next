@@ -123,7 +123,7 @@ function preview(frm, reference_name) {
 			const recipients = (r.recipients || []).map((x) => `<li><bdi dir="ltr">${esc(x.phone_e164)}</bdi> <span class="text-muted">· ${esc(__(x.source || ""))}</span></li>`).join("");
 			const errors = (r.errors || []).map((e) => `<li>${esc(e)}</li>`).join("");
 			const d = new frappe.ui.Dialog({
-				title: __("Preview: {0}", [reference_name]),
+				title: __("Preview: {0}", [frappe.utils.escape_html(reference_name)]),
 				size: "large",
 				fields: [
 					{

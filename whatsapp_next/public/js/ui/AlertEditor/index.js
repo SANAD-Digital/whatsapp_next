@@ -1398,7 +1398,7 @@ frappe.provide("sanad.ui");
 				const r = await this.opts.send_test(this.payload(), phone);
 				frappe.show_alert({ message: __("Test sent to {0}", [sanad.ui.phone(r && r.phone_e164 ? r.phone_e164 : phone)]), indicator: "green" });
 			} catch (err) {
-				frappe.show_alert({ message: err && err.message ? err.message : __("The test could not be sent"), indicator: "red" });
+				frappe.show_alert({ message: err && err.message ? esc(err.message) : __("The test could not be sent"), indicator: "red" });
 			}
 			this.ui.testing = false;
 			this.draw_test();
@@ -1407,12 +1407,12 @@ frappe.provide("sanad.ui");
 		run_now() {
 			const d = this.draft;
 			if (this.is_dirty()) return frappe.show_alert({ message: __("Save the changes first; a run uses the saved alert."), indicator: "orange" });
-			frappe.confirm(__("Run {0} now for every recipient? The schedule is not changed.", [d.alert_name]), async () => {
+			frappe.confirm(__("Run {0} now for every recipient? The schedule is not changed.", [esc(d.alert_name)]), async () => {
 				try {
 					await this.opts.run_now(d.name);
 					frappe.show_alert({ message: __("The alert is running in the background"), indicator: "green" });
 				} catch (err) {
-					frappe.show_alert({ message: err && err.message ? err.message : __("Something went wrong. Please try again."), indicator: "red" });
+					frappe.show_alert({ message: err && err.message ? esc(err.message) : __("Something went wrong. Please try again."), indicator: "red" });
 				}
 			});
 		}
@@ -1446,20 +1446,20 @@ frappe.provide("sanad.ui");
 			} catch (err) {
 				this.ui.saving = false;
 				this.draw_foot();
-				frappe.show_alert({ message: err && err.message ? err.message : __("Could not save"), indicator: "red" });
+				frappe.show_alert({ message: err && err.message ? esc(err.message) : __("Could not save"), indicator: "red" });
 			}
 		}
 
 		remove() {
 			const d = this.draft;
-			frappe.confirm(__("Delete {0}? The messages it already sent stay in the log.", [d.alert_name]), async () => {
+			frappe.confirm(__("Delete {0}? The messages it already sent stay in the log.", [esc(d.alert_name)]), async () => {
 				try {
 					await this.opts.remove(d.name);
 					frappe.show_alert({ message: __("Alert deleted"), indicator: "green" });
 					this.opts.on_saved && this.opts.on_saved({ name: d.name, deleted: true });
 					this.close(true);
 				} catch (err) {
-					frappe.show_alert({ message: err && err.message ? err.message : __("Could not delete"), indicator: "red" });
+					frappe.show_alert({ message: err && err.message ? esc(err.message) : __("Could not delete"), indicator: "red" });
 				}
 			});
 		}

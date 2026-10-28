@@ -41,12 +41,24 @@ def _resolve_outbound(event: WebhookEvent) -> str | None:
 	return None
 
 
+def _is_status_broadcast(raw: dict) -> bool:
+	"""True when the event is about WhatsApp statuses: its chat is `status@broadcast`."""
+	nested = raw.get("data") if isinstance(raw.get("data"), dict) else {}
+	chat = next((str(v) for v in (raw.get("chat"), raw.get("chat_jid"), raw.get("chat_id"), nested.get("chat"), nested.get("chat_jid")) if v), "")
+	return chat.strip().lower().endswith("@broadcast")
+
+
 def handle_event(
 	event: WebhookEvent, *, webhook_event_name: str, device: str | None
 ) -> tuple[str, dict[str, Any]]:
 	"""Dispatch one parsed event. Returns `(status, links)` where status is
 	`Processed` | `Ignored` and links may carry `outbound_message` / `inbound_message`."""
 	name = event.event_name
+	# A contact's WhatsApp status (story) is not a conversation: a platform that still forwards
+	# one (chat `status@broadcast`) is ignored here, so it is never stored as a message from that
+	# person nor answered by a command (owner, 2026-10-29)
+	if not name.startswith("connection.") and _is_status_broadcast(event.raw or {}):
+		return "Ignored", {}
 	if name in STATUS_EVENTS:
 		outbound = _resolve_outbound(event)
 		if not outbound:

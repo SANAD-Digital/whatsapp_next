@@ -1,6 +1,7 @@
 # Module role: whitelisted endpoint of the Home dashboard (backend-plan §4.2 `api.home`,
-# screen 2). Pure composition of existing service reads — devices, campaigns sending now, queue
-# summary, today's counters, plan cache, webhook state and onboarding status. No new logic.
+# screen 2). Composition of existing service reads — devices, campaigns sending now, queue
+# summary, plan cache, webhook state and onboarding status — plus today's counters
+# (`_today_counts`), the one query of its own.
 
 from __future__ import annotations
 

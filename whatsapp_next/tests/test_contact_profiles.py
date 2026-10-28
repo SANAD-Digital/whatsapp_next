@@ -10,6 +10,7 @@ from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.providers.schemas import ContactProfile
 from whatsapp_next.services import contact_profiles
+from whatsapp_next.tests.conftest_frappe import ensure_device
 
 
 def _png() -> bytes:
@@ -45,7 +46,7 @@ def _photo_response():
 class TestContactProfiles(IntegrationTestCase):
 	def setUp(self):
 		if not frappe.db.get_value("WhatsApp Device", {"status": "Connected"}, "name"):
-			self.skipTest("needs a connected device")
+			ensure_device()
 		tag = frappe.generate_hash(length=4).translate(str.maketrans("abcdef", "123456"))
 		self.key = f"+96773300{tag}"
 		self.contact = frappe.get_doc({"doctype": "Contact", "first_name": f"Profile {tag}",

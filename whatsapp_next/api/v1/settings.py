@@ -379,7 +379,8 @@ def list_picker_candidates() -> list[dict[str, Any]]:
 	return picker_sources.candidates()
 
 
-@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+# System Manager, as saving a source is: it reads records of any screen, past their permissions
+@api_endpoint(roles=SYSTEM_MANAGER, methods=("GET", "POST"))
 def analyze_picker_doctype(document_type: str) -> dict[str, Any]:
 	"""A screen's number, name and contact fields, with how many records fill each and a best guess."""
 	from whatsapp_next.services import picker_sources
@@ -387,7 +388,8 @@ def analyze_picker_doctype(document_type: str) -> dict[str, Any]:
 	return picker_sources.analyze(document_type)
 
 
-@api_endpoint(roles=MANAGER, methods=("GET", "POST"))
+# System Manager, as saving a source is: it reads records of any screen, past their permissions
+@api_endpoint(roles=SYSTEM_MANAGER, methods=("GET", "POST"))
 def preview_picker_source(source: str | dict) -> dict[str, Any]:
 	"""How a source being edited reaches people → `{total, with_number, sample[]}`."""
 	from whatsapp_next.services import picker_sources

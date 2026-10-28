@@ -526,10 +526,16 @@ def execute(command, inbound, params: dict[str, Any], *, sender: Sender | None =
 	# the browser's session replaced by a bogus one, so the caller's next call arrives as Guest.
 	saved_sid, saved_data, saved_form = frappe.session.sid, frappe.session.data, frappe.local.form_dict
 	started = time.perf_counter()
+	# a dry run (the Simulator, the editor's test) runs the function for real: what it writes is
+	# undone, as `function_runner.trial` undoes it, so trying a command changes no record
+	if dry_run:
+		frappe.db.savepoint("wa_cmd_dry_run")
 	try:
 		frappe.set_user(service_user)
 		run = function_runner.execute(command, params, disabled=function_runner.disabled_replies(command))
 	finally:
+		if dry_run:
+			frappe.db.rollback(save_point="wa_cmd_dry_run")
 		frappe.set_user(previous)
 		frappe.session.sid, frappe.session.data, frappe.local.form_dict = saved_sid, saved_data, saved_form
 	elapsed = int((time.perf_counter() - started) * 1000)

@@ -121,19 +121,35 @@ def has_unrestricted_contact_access(ptype: str, user: str) -> bool:
 	the user's own records (`if_owner`) — and Frappe ships `All` with exactly that, so every
 	logged-in user, website users included, passed. A right narrowed by User Permissions is
 	refused for the same reason, and so is a website user."""
+	return has_unrestricted_access("Contact", ptype, user)
+
+
+def has_unrestricted_access(doctype: str, ptype: str, user: str | None = None) -> bool:
+	"""Native `ptype` on every record of `doctype`: a System User whose right is not owner-only
+	and not narrowed by User Permissions (see `has_unrestricted_contact_access`)."""
+	user = user or frappe.session.user
 	if frappe.db.get_value("User", user, "user_type") != "System User":
 		return False
 	roles = set(frappe.get_roles(user))
 	granted = [
 		p
-		for p in frappe.get_meta("Contact").permissions
+		for p in frappe.get_meta(doctype).permissions
 		if p.role in roles and not cint(p.permlevel) and cint(p.get(ptype)) and not cint(p.if_owner)
 	]
 	if not granted:
 		return False
 	from frappe.permissions import get_user_permissions
 
-	return not get_user_permissions(user).get("Contact")
+	return not get_user_permissions(user).get(doctype)
+
+
+def allowed_devices(user: str | None = None) -> list[str] | None:
+	"""The WhatsApp Devices a User Permission limits this user to, or None when none does — the
+	per-device isolation the raw reads (read layer, counts) must apply themselves."""
+	from frappe.core.doctype.user_permission.user_permission import get_user_permissions
+
+	rows = get_user_permissions(user or frappe.session.user).get("WhatsApp Device") or []
+	return sorted({r.get("doc") for r in rows if r.get("doc")}) or None
 
 
 def require(ptype: str = "read") -> None:
@@ -632,7 +648,7 @@ def list_doctype_rows(
 	"""ContactPicker source 3: `{name, label, phone, phone_e164, contact}` rows of an enabled
 	picker DocType. Client filters are validated and **merged with the source's server filters**
 	(`filters_json`, gap G-1); the read is elevated (`ignore_permissions`) but limited to
-	`PICKER_ROW_FIELDS`."""
+	`PICKER_ROW_FIELDS`, and free filters are for unrestricted readers only."""
 	require("read")
 	source = _picker_source(document_type)
 	meta = frappe.get_meta(document_type)
@@ -643,7 +659,13 @@ def list_doctype_rows(
 		)
 	except (ValueError, TypeError) as exc:
 		frappe.throw(_("Invalid filters: {0}").format(exc), WAValidationError)
-	if not frappe.has_permission(document_type, "read"):
+	# Free filters only for whoever may read every record of the DocType anyway (or every
+	# contact, through the product's contact role). Anyone else filters on what the picker shows:
+	# the read is elevated, so a free filter (a salary, a date) would answer questions about
+	# records they cannot open. A document-less `has_permission` is not that test — it says yes
+	# to an owner-only or User-Permission-narrowed right.
+	free = has_unrestricted_access(document_type, "read") or (document_type == "Contact" and is_contact_user())
+	if not free:
 		_require_listable_filters(meta, source, client_filters)
 	merged = [[document_type, *f] for f in server_filters + client_filters]
 
@@ -673,7 +695,6 @@ def list_doctype_rows(
 		order_by=f"{title_field or 'name'} asc",
 		start=start,
 		page_length=length,
-		ignore_permissions=True,
 	)
 	if contact_field:
 		phones = _phones_for(sorted({r["contact"] for r in rows if r.get("contact")}))
@@ -1131,6 +1152,9 @@ def toggle_blacklist(key: str, blocked: bool, note: str | None = None, user: str
 	audit.log(
 		"Contact Group Members Changed",
 		reference=("WhatsApp Contact Group", group_name),
+		# the number as the row's target: a contact's activity finds it by column (the masked
+		# `details` copy of the number can never be matched)
+		target=("WhatsApp Number", norm),
 		count=1,
 		reason=note,
 		details={"blocked": bool(blocked), "key": norm},

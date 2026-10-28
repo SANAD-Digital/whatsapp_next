@@ -50,5 +50,9 @@ class TestPickerSources(IntegrationTestCase):
 	def test_the_endpoints_are_for_managers(self):
 		with as_user("WhatsApp Agent"), self.assertRaises(frappe.PermissionError):
 			api.list_picker_candidates()
-		with as_user("WhatsApp Manager"):
+		# analysing and previewing read records of any screen past their permissions: a System
+		# Manager's, as saving a source is (review 2026-10-29) — a WhatsApp Manager is refused
+		with as_user("WhatsApp Manager"), self.assertRaises(frappe.PermissionError):
+			api.analyze_picker_doctype(document_type="User")
+		with as_user("System Manager"):
 			self.assertTrue(api.analyze_picker_doctype(document_type="User")["phone_fields"])

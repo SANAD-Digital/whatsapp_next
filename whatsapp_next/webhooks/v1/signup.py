@@ -10,6 +10,8 @@
 
 from __future__ import annotations
 
+import re
+
 import frappe
 from frappe.rate_limiter import rate_limit
 
@@ -20,16 +22,19 @@ from whatsapp_next.services.onboarding import SIGNUP_CALLBACK_KEY
 @rate_limit(limit=60, seconds=60)
 def confirmed(callback_token: str | None = None, status: str | None = None) -> dict:
 	"""`POST {callback_token, status}` from the platform → `wa:signup:status` to the waiting user."""
+	# the same empty answer whatever the token (security.md D-143): a guest learns nothing from it
 	token = str(callback_token or "").strip()
 	key = f"{SIGNUP_CALLBACK_KEY}:{token}"
 	entry = frappe.cache.get_value(key) if token else None
 	if not entry:
-		return {"ok": False}
+		return {}
 	frappe.cache.delete_value(key)  # one call per sign-up
+	# the platform's request status: a plain word, never free text relayed to the page
+	status = str(status or "Verified").strip()
 	frappe.publish_realtime(
 		"wa:signup:status",
-		{"request_key": entry.get("request_key"), "status": str(status or "Verified")},
+		{"request_key": entry.get("request_key"), "status": status if re.fullmatch(r"[A-Za-z ]{1,30}", status) else "Verified"},
 		user=entry.get("user"),
 		after_commit=False,
 	)
-	return {"ok": True}
+	return {}

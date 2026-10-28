@@ -38,7 +38,12 @@ def _group(field: str, start: datetime, end: datetime | None = None, **equals: A
 		query = query.where(log.creation < end)
 	for fieldname, value in equals.items():
 		query = query.where(log[fieldname] == value)
-	return {(key if key is not None else ""): int(count) for key, count in query.run()}
+	# NULL and "" are one group here: added together, not the second overwriting the first
+	out: dict[str, int] = {}
+	for key, count in query.run():
+		k = key if key is not None else ""
+		out[k] = out.get(k, 0) + int(count)
+	return out
 
 
 def traffic(period: str) -> dict[str, Any]:

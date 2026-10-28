@@ -208,12 +208,14 @@ class TestApiSimulator(IntegrationTestCase):
 
 			with patch.object(frappe.db, "sql", side_effect=counting):
 				out = simulator.conversations(limit=limit)
-			tables = ("`tabWhatsApp Log`", "`tabWhatsApp Inbound Message`")
+			# the table names without their quotes: backticks on MariaDB, double quotes on PostgreSQL
+			tables = ("tabWhatsApp Log", "tabWhatsApp Inbound Message")
 			return out, len([q for q in calls if any(t in q for t in tables)])
 
 		one, _ = queries(1)
 		many, reads = queries(30)
 		self.assertGreater(len(many["rows"]), 1)
+		self.assertGreaterEqual(reads, 1)  # the count really sees the queries
 		self.assertLessEqual(reads, 3)  # outbound, inbound 1:1, inbound groups — whatever the row count
 		self.assertEqual(
 			many["total"],

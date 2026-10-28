@@ -14,7 +14,6 @@ from whatsapp_next.api.v1 import onboarding as api
 from whatsapp_next.api.v1 import settings as settings_api
 from whatsapp_next.exceptions import (
 	WAInvalidPhoneError,
-	WANotSupportedError,
 	WAPermissionError,
 	WAStateConflictError,
 	WAValidationError,
@@ -152,12 +151,11 @@ class TestApiOnboarding(IntegrationTestCase):
 		foreign = Fernet(Fernet.generate_key()).encrypt(b"other-site-key").decode()
 		saved = {f: secrets.read(f) for f in ("customer_api_key", "api_key", "api_secret", "customer_api_secret")}
 		try:
+			# written through the query builder (not MariaDB's ON DUPLICATE KEY), so it runs on both
+			auth = frappe.qb.Table("__Auth")
 			for f in saved:
-				frappe.db.sql(
-					"""insert into `__Auth` (doctype, name, fieldname, password, encrypted) values (%s, %s, %s, %s, 1)
-					on duplicate key update password = values(password), encrypted = 1""",
-					(SETTINGS, SETTINGS, f, foreign),
-				)
+				frappe.qb.from_(auth).delete().where((auth.doctype == SETTINGS) & (auth.name == SETTINGS) & (auth.fieldname == f)).run()
+				frappe.qb.into(auth).columns("doctype", "name", "fieldname", "password", "encrypted").insert(SETTINGS, SETTINGS, f, foreign, 1).run()
 			frappe.local.message_log = []
 			self.assertIsNone(secrets.read("customer_api_key"))
 			self.assertFalse(set(saved) & set(registry.credentials()))  # every foreign key reads as missing

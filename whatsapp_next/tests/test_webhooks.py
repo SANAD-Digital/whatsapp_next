@@ -38,7 +38,7 @@ PLATFORM_DEVICE = "WAD-TEST-WH01"
 TEST_EVENT_IDS: tuple[str, ...] = tuple(
 	sorted(
 		{json.loads(p.read_text()).get("event_id") for p in FIXTURES.glob("*.json")} - {None}
-		| {"stale-1", "bad-json", "evt-nope", "evt_unknown_ref"}
+		| {"stale-1", "bad-json", "evt-nope", "evt_unknown_ref", "evt-decoy", "odd-sig", "odd-body", "status-story-1"}
 	)
 )
 
@@ -154,9 +154,16 @@ class TestWebhooks(IntegrationTestCase):
 			headers, raw = signed(body, ts=int(time.time()) - 3600, event_id="stale-1")
 			out = receiver.handle(headers, raw)
 			self.assertEqual((out.http_status, out.body["error"]), (401, "stale timestamp"))
-			self.assertEqual(
-				frappe.db.get_value("WhatsApp Webhook Event", {"event_id": "stale-1"}, "timestamp_fresh"), 0
-			)
+			# not stored: the event id is not signed, so a stored replay could grow the table
+			self.assertFalse(frappe.db.exists("WhatsApp Webhook Event", {"event_id": "stale-1"}))
+			# a signature that is not 64 hex digits, or a body that is not UTF-8: refused, no fault
+			headers, raw = signed(body, event_id="odd-sig")
+			headers["X-SND-Signature"] = "\u00e9"
+			self.assertEqual(receiver.handle(headers, raw).http_status, 401)
+			headers, raw = signed(body, event_id="odd-body")
+			raw = b"\xff\xfe not utf-8"
+			headers["X-SND-Signature"] = SndPlatformProvider.sign(SECRET, headers["X-SND-Timestamp"], raw)
+			self.assertNotEqual(receiver.handle(headers, raw).http_status, 500)
 			headers, raw = signed(body, event_id="bad-json")
 			raw = b"not json"
 			headers["X-SND-Signature"] = SndPlatformProvider.sign(SECRET, headers["X-SND-Timestamp"], raw)
@@ -195,7 +202,10 @@ class TestWebhooks(IntegrationTestCase):
 			self.assertEqual((out.http_status, out.body["error"]), (401, "replayed signature"))
 			renamed = {**headers, "X-SND-Event": "message.failed"}
 			self.assertEqual(receiver.handle(renamed, raw).http_status, 401)
-		self.assertFalse(frappe.db.exists("WhatsApp Webhook Event", {"event_id": "evt-nope"}))
+			# a decoy "...-Signature" header put before the real one does not hide the reuse
+			decoy = {"A-Signature": "0" * 64, **headers, "X-SND-Event-ID": "evt-decoy"}
+			self.assertEqual(receiver.handle(decoy, raw).http_status, 401)
+		self.assertFalse(frappe.db.exists("WhatsApp Webhook Event", {"event_id": ("in", ["evt-nope", "evt-decoy"])}))
 
 	def test_verified_retry_takes_over_a_rejected_delivery(self):
 		"""A delivery refused for its signature (e.g. mid secret rotation) must not make the
@@ -280,6 +290,18 @@ class TestWebhooks(IntegrationTestCase):
 				),
 				1,
 			)
+
+	def test_a_contacts_status_is_not_a_message(self):
+		"""Someone's WhatsApp status (story) arrives in the chat `status@broadcast`: it is ignored,
+		never stored as a message from them nor answered (owner, 2026-10-29)."""
+		body = fixture("message.received", event_id="status-story-1", provider_message_id="status-story-1",
+			chat_jid="status@broadcast", chat="status@broadcast")
+		with fake_provider(), patch.object(frappe, "enqueue"):
+			headers, raw = signed(body)
+			out = receiver.handle(headers, raw)
+			self.assertEqual(handlers.process_event(out.event), "Ignored")
+			self.assertFalse(self._event(out.event).inbound_message)
+		self.assertFalse(frappe.db.exists("WhatsApp Inbound Message", {"provider_message_id": "status-story-1"}))
 
 	def test_status_events_apply_to_outbound(self):
 		out_name = dispatch.create_outbound(

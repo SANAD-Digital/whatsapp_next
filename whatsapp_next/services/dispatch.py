@@ -1560,7 +1560,10 @@ def throughput(minutes: int = 60) -> dict[str, Any]:
 	now = now_datetime()
 	since = add_to_date(now, minutes=-window)
 	Q = frappe.qb.DocType("WhatsApp Queue Item")
-	minute = DateFormat(Q.completed_at, "%Y-%m-%d %H:%i")
+	# Frappe maps DateFormat to TO_CHAR on PostgreSQL but passes the pattern as it is: each
+	# database gets its own spelling of "minute", or PostgreSQL returned garbage and this raised
+	pattern = "YYYY-MM-DD HH24:MI" if frappe.db.db_type == "postgres" else "%Y-%m-%d %H:%i"
+	minute = DateFormat(Q.completed_at, pattern)
 	rows = (
 		frappe.qb.from_(Q)
 		.select(minute.as_("minute"), Count("*").as_("n"))

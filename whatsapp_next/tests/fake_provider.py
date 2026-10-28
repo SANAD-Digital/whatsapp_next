@@ -41,6 +41,7 @@ class FakeProvider(BaseProvider):
 
 	key = "fake"
 	display_name = "Fake Provider"
+	webhook_signature_header = "X-SND-Signature"  # it verifies through the SND provider
 	capabilities = frozenset(
 		{"batch_send", "pair_code", "qr", "signup", "usage", "queue_cancel", "polls", "webhooks"}
 	)

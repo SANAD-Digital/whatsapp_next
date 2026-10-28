@@ -34,6 +34,15 @@ class TestServiceUser(IntegrationTestCase):
 		self.assertEqual(frappe.session.user, "Guest")
 		self.assertIs(frappe.local.form_dict, form)
 
+	def test_a_system_manager_is_never_used(self):
+		user = ff.ensure_service_user()
+		ensure_settings(command_service_user=user)
+		frappe.get_doc("User", user).add_roles("System Manager")
+		try:
+			self.assertIsNone(service_user.get())
+		finally:
+			frappe.get_doc("User", user).remove_roles("System Manager")
+
 	def test_a_disabled_user_is_not_used(self):
 		user = ff.ensure_service_user()
 		ensure_settings(command_service_user=user)

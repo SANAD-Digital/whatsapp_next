@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
 
 import frappe
 import phonenumbers
@@ -70,7 +69,7 @@ def country_catalog() -> list[dict[str, object]]:
 	"""
 	# the key carries a version: a cached copy outlives a change of shape (the `mobile` pattern was
 	# added after the first deploy), and a stale shape is exactly the bug nobody would look for
-	cached = frappe.cache().get_value("wa_country_catalog_v2")
+	cached = frappe.cache.get_value("wa_country_catalog_v2")
 	if cached:
 		return cached
 	rows: list[dict[str, object]] = []
@@ -115,7 +114,7 @@ def country_catalog() -> list[dict[str, object]]:
 		)
 	# a day: the metadata only changes when the library is upgraded, and a stale copy outliving a
 	# `pip install -U phonenumbers` is exactly the bug nobody would look for
-	frappe.cache().set_value("wa_country_catalog_v2", rows, expires_in_sec=86400)
+	frappe.cache.set_value("wa_country_catalog_v2", rows, expires_in_sec=86400)
 	return rows
 
 

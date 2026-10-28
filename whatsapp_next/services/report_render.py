@@ -55,6 +55,8 @@ def _letter_head_html(letter_head: str | None) -> str:
 	try:
 		content = frappe.render_template(content, {"company_logo": row.image, "doc": frappe._dict()})
 	except Exception:
+		# the PDF goes out without its letterhead; the template error is kept for whoever fixes it
+		frappe.log_error(title=f"WhatsApp report: letter head {letter_head}")
 		content = ""
 	return _inline_images(content)
 

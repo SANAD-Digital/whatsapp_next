@@ -120,6 +120,18 @@ ui.is_rtl = () =>
 
 ui.uid = (prefix = "sanad") => `${prefix}-${frappe.utils.get_random(8)}`;
 
+/**
+ * A link or media address safe to put in `href` / `src`: this site's own paths, http(s) and blob
+ * URLs; anything else (`javascript:`, `data:`, a protocol-relative `//host`) becomes "#". Attach
+ * fields are not sanitised by Frappe, so an address read from a record is data, not markup.
+ */
+ui.safe_url = (value) => {
+	const url = cstr(value == null ? "" : value).trim();
+	if (!url) return "#";
+	if (url.startsWith("/") && !url.startsWith("//")) return url;
+	return /^(https?:|blob:)/i.test(url) ? url : "#";
+};
+
 /** A window's «Open form» button (owner, 2026-10-28): `data-act="open_form"`, handled by `ui.open_form`. */
 ui.form_button_html = (cls = "") =>
 	`<button type="button" class="wa-btn wa-btn--secondary wa-btn--sm sanad-open-form ${cls}" data-act="open_form" title="${ui.escape(__("Open the record's full form"))}">${ui.escape(__("Open form"))}</button>`;

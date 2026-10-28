@@ -79,10 +79,10 @@
 			dl([
 				{ label: __("Result"), value: status_badge },
 				{ label: __("Command"), value: t.command ? frappe.utils.get_form_link("WhatsApp Command", t.command, true) : "" },
-				{ label: __("Matched text"), value: t.command_text },
-				{ label: __("Arguments"), value: args, wide: true },
+				{ label: __("Matched text"), value: t.command_text, text: true },
+				{ label: __("Arguments"), value: args, wide: true, text: true },
 				{ label: __("Block reason"), value: t.block_reason ? __(t.block_reason) : "" },
-				{ label: __("Error"), value: t.command_error, wide: true },
+				{ label: __("Error"), value: t.command_error, wide: true, text: true },
 			])
 		);
 	};
@@ -105,8 +105,8 @@
 				{ label: __("Status"), value: fmt.badge("WhatsApp Log", r, r.status) },
 				{ label: __("Sent at"), value: fmt.dt(r.sent_at) },
 				{ label: __("Response time"), value: gap },
-				{ label: __("Error"), value: r.error_code },
-				{ label: __("Text"), value: r.body, wide: true },
+				{ label: __("Error"), value: r.error_code, text: true },
+				{ label: __("Text"), value: r.body, wide: true, text: true },
 			])
 		);
 	};

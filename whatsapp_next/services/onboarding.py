@@ -651,8 +651,7 @@ def complete_setup(user: str | None = None) -> bool:
 			WAStateConflictError,
 		)
 	if not cint(s.setup_completed):
-		frappe.db.set_value(
-			"WhatsApp Settings",
+		frappe.db.set_single_value(
 			"WhatsApp Settings",
 			{"setup_completed": 1, "setup_completed_at": now_datetime()},
 			update_modified=False,

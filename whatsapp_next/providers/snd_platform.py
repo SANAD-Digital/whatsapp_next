@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import re
 import time
 from collections.abc import Mapping
 from datetime import date, datetime, timedelta, timezone
@@ -63,6 +64,7 @@ HEADER_EVENT = "X-SND-Event"
 HEADER_EVENT_ID = "X-SND-Event-ID"
 HEADER_TIMESTAMP = "X-SND-Timestamp"
 HEADER_SIGNATURE = "X-SND-Signature"
+SIGNATURE_RE = re.compile(r"[0-9a-f]{64}")
 
 STATUS_MAP: dict[str, str] = {
 	"connected": "Connected",
@@ -220,6 +222,7 @@ class SndPlatformProvider(BaseProvider):
 
 	key = "snd_platform"
 	display_name = "SND Platform"
+	webhook_signature_header = HEADER_SIGNATURE
 	capabilities = frozenset(
 		{"batch_send", "pair_code", "qr", "signup", "usage", "queue_cancel", "polls", "webhooks", "billing"}
 	)
@@ -1154,8 +1157,8 @@ class SndPlatformProvider(BaseProvider):
 	@staticmethod
 	def sign(secret: str, timestamp: str, raw_body: bytes | str) -> str:
 		"""hex(HMAC-SHA256(secret, f"{timestamp}.{raw_body}")) — the platform's signing rule."""
-		body = raw_body.decode("utf-8") if isinstance(raw_body, bytes) else raw_body
-		return hmac.new(secret.encode("utf-8"), f"{timestamp}.{body}".encode(), hashlib.sha256).hexdigest()
+		body = raw_body if isinstance(raw_body, bytes) else raw_body.encode("utf-8")
+		return hmac.new(secret.encode("utf-8"), f"{timestamp}.".encode() + body, hashlib.sha256).hexdigest()
 
 	def verify_webhook(
 		self, headers: Mapping[str, str], raw_body: bytes, secret: str, max_skew: int = DEFAULT_MAX_SKEW
@@ -1176,8 +1179,13 @@ class SndPlatformProvider(BaseProvider):
 			# "inf", "1e30", a year past 9999: garbage from the sender, not a server fault
 			return SignatureCheck(valid=False, fresh=False, reason="bad timestamp")
 		fresh = abs(int(time.time()) - ts) <= max_skew
+		given = signature.strip().lower()
+		# a signature is 64 hex digits: anything else (non-ASCII included) is refused here, as
+		# bytes, instead of failing the compare and reaching the Error Log as a server fault
+		if not SIGNATURE_RE.fullmatch(given):
+			return SignatureCheck(valid=False, fresh=fresh, event_timestamp=event_ts, reason="signature")
 		expected = self.sign(secret, timestamp, raw_body)
-		valid = hmac.compare_digest(expected, signature.strip().lower())
+		valid = hmac.compare_digest(expected.encode(), given.encode())
 		reason = None if valid and fresh else ("stale" if valid else "signature")
 		return SignatureCheck(valid=valid, fresh=fresh, event_timestamp=event_ts, reason=reason)
 

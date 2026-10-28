@@ -31,7 +31,8 @@ def provider_classes() -> dict[str, str]:
 
 
 def list_providers() -> list[dict[str, str]]:
-	"""`[{key, display_name}]` for the Settings Select and the onboarding page."""
+	"""`[{key, display_name}]` of the registered providers (no screen lists them yet: there is
+	one provider, chosen in Settings by its key)."""
 	rows = []
 	for key, path in provider_classes().items():
 		try:

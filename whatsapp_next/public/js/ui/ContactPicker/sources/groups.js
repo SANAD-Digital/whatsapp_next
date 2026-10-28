@@ -140,7 +140,7 @@ export class GroupsSource extends BaseSource {
 		let loaded = false;
 		const key_of = (r) => r.phone_e164 || (r.phone ? `raw:${String(r.phone).trim()}` : null) || r.source_name || r.contact || "";
 		const dialog = new frappe.ui.Dialog({
-			title: __("Members of {0}", [name]),
+			title: __("Members of {0}", [frappe.utils.escape_html(name)]),
 			size: "large",
 			fields: [{ fieldtype: "HTML", fieldname: "body" }],
 			primary_action_label: __("Add"),

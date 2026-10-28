@@ -46,7 +46,7 @@ def delete_post(name: str) -> dict[str, Any]:
 	return {"ok": True}
 
 
-@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))
+@api_endpoint(roles=VIEWER_UP)  # POST: it asks the platform and writes the counts
 def refresh_views(name: str) -> dict[str, Any]:
 	"""Read the views now → `{view_count, viewers}`."""
 	_check(name, "read")

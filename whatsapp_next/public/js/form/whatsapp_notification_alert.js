@@ -84,7 +84,7 @@ function preview(frm) {
 				.map(([k, v]) => `<tr><th class="text-muted" style="width: 30%">${esc(k)}</th><td><bdi dir="auto">${esc(v)}</bdi></td></tr>`)
 				.join("");
 			const d = new frappe.ui.Dialog({
-				title: __("Preview: {0}", [frm.doc.alert_name || frm.doc.name]),
+				title: __("Preview: {0}", [frappe.utils.escape_html(frm.doc.alert_name || frm.doc.name)]),
 				size: "large",
 				fields: [
 					{

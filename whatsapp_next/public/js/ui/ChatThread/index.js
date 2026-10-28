@@ -656,7 +656,7 @@ sanad.ui.ChatThread = class ChatThread {
 		const url = cstr(row.attachment);
 		const ext = (url.split("?")[0].split(".").pop() || "").toLowerCase();
 		if (!kind || !kind.ext.includes(ext)) return "";
-		const src = ui.escape(url);
+		const src = ui.escape(ui.safe_url(url));
 		if (kind.tag === "img") {
 			const img = `<img class="sanad-chat__preview sanad-chat__preview--${type === "Sticker" ? "sticker" : "image"}" src="${src}" alt="${ui.escape(__(type))}" loading="lazy">`;
 			return link ? `<a class="sanad-chat__preview-link" href="${src}" target="_blank" rel="noopener" aria-label="${ui.escape(__("Open {0}", [__(type)]))}">${img}</a>` : img;
@@ -675,7 +675,7 @@ sanad.ui.ChatThread = class ChatThread {
 			const preview = sanad.ui.ChatThread.preview_html(row, { link });
 			const body = `<span class="sanad-chat__media-icon" aria-hidden="true">${ui.icon(icon, "sm")}</span><span class="sanad-chat__media-name">${ui.escape(file)}</span><span class="sanad-chat__media-type">${ui.escape(label)}</span>`;
 			if (!link) return `${preview}<div class="sanad-chat__media sanad-chat__media--plain">${body}</div>`;
-			return `${preview}<a class="sanad-chat__media" href="${ui.escape(row.attachment)}" target="_blank" rel="noopener" aria-label="${ui.escape(__("Open {0}: {1}", [label, file]))}">${body}</a>`;
+			return `${preview}<a class="sanad-chat__media" href="${ui.escape(ui.safe_url(row.attachment))}" target="_blank" rel="noopener" aria-label="${ui.escape(__("Open {0}: {1}", [label, file]))}">${body}</a>`;
 		}
 		if (cint(row.media_pending) && row.name) {
 			return `<button type="button" class="sanad-chat__media sanad-chat__fetch" data-name="${ui.escape(row.name)}" aria-label="${ui.escape(__("Download {0}", [label]))}"><span class="sanad-chat__media-icon" aria-hidden="true">${ui.icon("es-line-download", "sm")}</span><span class="sanad-chat__media-name">${ui.escape(label)}</span><span class="sanad-chat__media-type">${ui.escape(__("Download"))}</span></button>`;

@@ -77,7 +77,7 @@ def _mirror(state: WebhookEndpointState | None, *, synced: bool = True) -> None:
 				else "3",
 			}
 		)
-	frappe.db.set_value("WhatsApp Settings", "WhatsApp Settings", values, update_modified=False)
+	frappe.db.set_single_value("WhatsApp Settings", values, update_modified=False)
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 
 
@@ -114,8 +114,7 @@ def fetch_secret(user: str | None = None) -> bool:
 	from whatsapp_next.services.settings import store_secret
 
 	store_secret("webhook_secret", secret)
-	frappe.db.set_value(
-		"WhatsApp Settings",
+	frappe.db.set_single_value(
 		"WhatsApp Settings",
 		"credentials_updated_at",
 		now_datetime(),

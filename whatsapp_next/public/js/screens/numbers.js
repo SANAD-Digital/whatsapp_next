@@ -71,7 +71,8 @@ frappe.provide("whatsapp_next.numbers");
 		const action_label = (mode) => (mode === "create" ? __("Add as contact") : __("Link", null, "Link a number to a contact"));
 		let party_search = null;
 		const dialog = new frappe.ui.Dialog({
-			title: __("Add {0} as a contact", [doc.display_name || sanad.ui.phone(phone_e164)]),
+			// a group's name is whatever its members called it: escaped, a dialog title is HTML
+			title: __("Add {0} as a contact", [frappe.utils.escape_html(doc.display_name || sanad.ui.phone(phone_e164))]),
 			size: "small",
 			fields: [
 				{ fieldtype: "HTML", fieldname: "error_html" },

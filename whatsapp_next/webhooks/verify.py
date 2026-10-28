@@ -33,7 +33,10 @@ def signature_reused(headers: Mapping[str, str], identity: str) -> bool:
 	"""True when this delivery's signature was already seen, within the freshness window, on a
 	delivery with another `event_name|event_id`. The same identity is a plain retry (the
 	idempotency row answers it as a duplicate); a new one is a replay with swapped headers."""
-	signature = next((v for k, v in headers.items() if k.lower().endswith("-signature")), "")
+	# the provider's own signature header — the one `verify_webhook` checked — never the first
+	# header that merely ends in "-signature" (a decoy put before it defeated this check)
+	name = (registry.get_provider().webhook_signature_header or "").lower()
+	signature = next((v for k, v in headers.items() if k.lower() == name), "") if name else ""
 	if not signature:
 		return False
 	digest = hashlib.sha256(signature.strip().lower().encode()).hexdigest()

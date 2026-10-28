@@ -7,16 +7,14 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.providers.schemas import WebhookEvent
-from whatsapp_next.services import inbound
+from whatsapp_next.tests.conftest_frappe import ensure_device
 from whatsapp_next.webhooks.handlers import handle_event
 
 
 class TestInboundChanges(IntegrationTestCase):
 	def setUp(self):
 		super().setUp()
-		self.device = frappe.db.get_value("WhatsApp Device", {}, "name")
-		if not self.device:
-			self.skipTest("no WhatsApp Device on this site")
+		self.device = frappe.db.get_value("WhatsApp Device", {}, "name") or ensure_device()
 		self.pid = f"CHG-{frappe.generate_hash(length=8)}"
 		doc = frappe.get_doc(
 			{

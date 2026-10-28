@@ -11,7 +11,7 @@ from unittest.mock import patch
 import frappe
 from frappe.tests import IntegrationTestCase
 
-from whatsapp_next.services import backup, onboarding
+from whatsapp_next.services import backup
 
 GROUP = "BackupTest Group"
 

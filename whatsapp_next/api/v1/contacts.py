@@ -135,6 +135,8 @@ def get_activity(name: str) -> list[dict[str, Any]]:
 	)
 	if phones:
 		scope |= (A.reference_doctype == "WhatsApp Number") & A.reference_name.isin(phones)
+		# a block / unblock is written on the blacklist group, with the number as its target
+		scope |= (A.target_doctype == "WhatsApp Number") & A.target_name.isin(phones)
 	rows = (
 		frappe.qb.from_(A)
 		.select(*[getattr(A, f) for f in ACTIVITY_FIELDS])
@@ -144,19 +146,6 @@ def get_activity(name: str) -> list[dict[str, Any]]:
 		.limit(ACTIVITY_LIMIT)
 		.run(as_dict=True)
 	)
-	# a block / unblock is written on the blacklist group, with the number inside `details`
-	for key in phones:
-		rows += frappe.get_all(
-			"WhatsApp Audit Log",
-			filters={
-				"action": "Contact Group Members Changed",
-				"reference_doctype": "WhatsApp Contact Group",
-				"details": ("like", f'%"key": "{key}"%'),
-			},
-			fields=list(ACTIVITY_FIELDS),
-			order_by="timestamp desc",
-			limit=ACTIVITY_LIMIT,
-		)
 	rows = [frappe._dict(r) for r in rows]
 	seen: set[str] = set()
 	out: list[dict[str, Any]] = []

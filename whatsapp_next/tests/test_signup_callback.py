@@ -25,9 +25,10 @@ class TestSignupCallback(IntegrationTestCase):
 	def test_a_known_token_wakes_the_page_once(self):
 		frappe.cache.set_value(f"{onboarding.SIGNUP_CALLBACK_KEY}:tok-1", {"request_key": "rk-1", "user": "Administrator"})
 		with patch.object(frappe, "publish_realtime") as publish:
-			self.assertEqual(callback.confirmed(callback_token="tok-1", status="Verified"), {"ok": True})
-			self.assertEqual(callback.confirmed(callback_token="tok-1", status="Verified"), {"ok": False})  # used up
-			self.assertEqual(callback.confirmed(callback_token="unknown", status="Verified"), {"ok": False})
+			# the same empty answer whether the token is known, used up or unknown
+			self.assertEqual(callback.confirmed(callback_token="tok-1", status="Verified"), {})
+			self.assertEqual(callback.confirmed(callback_token="tok-1", status="Verified"), {})  # used up
+			self.assertEqual(callback.confirmed(callback_token="unknown", status="Verified"), {})
 		publish.assert_called_once()
 		self.assertEqual(publish.call_args.args[:2], ("wa:signup:status", {"request_key": "rk-1", "status": "Verified"}))
 		self.assertEqual(publish.call_args.kwargs["user"], "Administrator")

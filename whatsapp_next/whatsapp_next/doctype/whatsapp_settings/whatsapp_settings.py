@@ -111,17 +111,18 @@ class WhatsAppSettings(Document):
 			)
 
 	def _validate_command_service_user(self) -> None:
-		if not cint(self.enable_commands):
-			return
+		# checked whenever one is set, not only with commands on: webhooks run as it too
 		user = self.command_service_user
 		if not user:
-			frappe.throw(_("Messaging Service User is required when commands are enabled"), WAValidationError)
+			if cint(self.enable_commands):
+				frappe.throw(_("Messaging Service User is required when commands are enabled"), WAValidationError)
+			return
 		if user == "Administrator":
 			frappe.throw(_("Messaging Service User cannot be Administrator"), WAValidationError)
 		row = frappe.db.get_value("User", user, ["enabled", "user_type"], as_dict=True)
 		if not row:
 			frappe.throw(_("Messaging Service User {0} does not exist").format(user), WAValidationError)
-		if not cint(row.enabled):
+		if not cint(row.enabled) and cint(self.enable_commands):
 			frappe.throw(_("Messaging Service User {0} is disabled").format(user), WAValidationError)
 		if "System Manager" in frappe.get_roles(user):
 			frappe.throw(
