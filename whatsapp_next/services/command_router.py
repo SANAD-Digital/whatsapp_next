@@ -506,12 +506,12 @@ def _service_user() -> str:
 	settings = frappe.get_cached_doc("WhatsApp Settings")
 	user = settings.command_service_user
 	if not user or user == "Administrator":
-		frappe.throw(_("Command Service User is not configured"), WAStateConflictError)
+		frappe.throw(_("Messaging Service User is not configured"), WAStateConflictError)
 	row = frappe.db.get_value("User", user, ["enabled"], as_dict=True)
 	if not row or not cint(row.enabled):
-		frappe.throw(_("Command Service User {0} is disabled").format(user), WAStateConflictError)
+		frappe.throw(_("Messaging Service User {0} is disabled").format(user), WAStateConflictError)
 	if "System Manager" in frappe.get_roles(user):
-		frappe.throw(_("Command Service User must not be a System Manager"), WAStateConflictError)
+		frappe.throw(_("Messaging Service User must not be a System Manager"), WAStateConflictError)
 	return user
 
 

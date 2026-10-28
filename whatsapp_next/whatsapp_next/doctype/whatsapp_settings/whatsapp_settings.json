@@ -362,11 +362,10 @@
    "label": "Enable Commands"
   },
   {
-   "depends_on": "eval:doc.enable_commands",
-   "description": "Commands run as this user. Required when commands are on; it must be enabled, not Administrator and not a System Manager.",
+   "description": "The user this site sends and receives WhatsApp messages as: commands run as it, incoming messages and statuses are recorded as it, and the lines on documents carry its name. Empty: Frappe's own user is used (commands need it). It must be enabled, not Administrator and not a System Manager.",
    "fieldname": "command_service_user",
    "fieldtype": "Link",
-   "label": "Command Service User",
+   "label": "Messaging Service User",
    "options": "User"
   },
   {
@@ -783,7 +782,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-10-27 21:14:16.181352",
+ "modified": "2026-10-28 20:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Settings",

@@ -438,6 +438,49 @@ class TestDispatch(IntegrationTestCase):
 			frappe.db.delete("Comment", {"reference_doctype": "ToDo", "reference_name": todo.name})
 			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
 
+	def test_the_comment_names_the_recipient_and_says_what_was_sent(self):
+		"""The line reads «<name>: <the message>» — the Contact's name, else the name WhatsApp
+		Numbers knows, else the number — with no "WhatsApp message sent to"; and it is the
+		messaging service user's when one is set (owner, 2026-10-28)."""
+		from whatsapp_next.tests import function_fixtures as ff
+
+		todo = frappe.get_doc({"doctype": "ToDo", "description": "dispatch-test named comment"}).insert(ignore_permissions=True)
+		rows = lambda: frappe.get_all(  # noqa: E731
+			"Comment",
+			filters={"reference_doctype": "ToDo", "reference_name": todo.name, "comment_type": "Info"},
+			fields=["content", "owner"],
+			order_by="creation asc",
+		)
+		number = frappe.db.get_value("WhatsApp Number", {"phone_e164": P2}, ["name", "saved_name", "display_name"], as_dict=True)
+		try:
+			ensure_settings(enable_commands=0, command_service_user=None)
+			out = dispatch.create_outbound(_spec(phone=P1, body="Your invoice is paid", reference_doctype="ToDo", reference_name=todo.name))
+			dispatch.apply_status(out, "Sent", provider_message_id="pm-named-1")
+			first = rows()[-1]
+			self.assertNotIn("WhatsApp message sent to", first.content)
+			self.assertIn("Your invoice is paid", first.content)
+			self.assertIn(P1, first.content)  # no contact and no known name: the number
+
+			if number:
+				frappe.db.set_value("WhatsApp Number", number.name, "saved_name", "Sanad Test")
+			else:
+				frappe.get_doc({"doctype": "WhatsApp Number", "phone_e164": P2, "phone": P2, "saved_name": "Sanad Test"}).insert(ignore_permissions=True)
+			user = ff.ensure_service_user()
+			ensure_settings(command_service_user=user)
+			named = dispatch.create_outbound(_spec(phone=P2, body="Second", reference_doctype="ToDo", reference_name=todo.name))
+			dispatch.apply_status(named, "Sent", provider_message_id="pm-named-2")
+			second = rows()[-1]
+			self.assertIn("<b>Sanad Test</b>: Second", second.content)
+			self.assertNotIn(P2, second.content)
+			self.assertEqual(second.owner, user)
+		finally:
+			if number:
+				frappe.db.set_value("WhatsApp Number", number.name, "saved_name", number.saved_name)
+			else:
+				frappe.db.delete("WhatsApp Number", {"phone_e164": P2, "saved_name": "Sanad Test"})
+			frappe.db.delete("Comment", {"reference_doctype": "ToDo", "reference_name": todo.name})
+			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
+
 	def test_the_document_hears_of_a_message_the_queue_sent_or_gave_up_on(self):
 		"""The queue path writes the same timeline lines as a webhook: a message sent through
 		`dispatch_device_batch` gets its "sent" line on the platform's receipt, and one the queue

@@ -1002,40 +1002,69 @@ def apply_status(
 	return True
 
 
+def _timeline_name(log) -> str:
+	"""Who a message went to, by name: the Contact, else the name WhatsApp Numbers knows the
+	number by (saved on the phone, then WhatsApp's own), else the number itself."""
+	if log.contact:
+		name = frappe.db.get_value("Contact", log.contact, "full_name") or ""
+		if name.strip():
+			return name.strip()
+	phone = log.phone_e164 or log.phone or ""
+	if phone:
+		row = frappe.db.get_value("WhatsApp Number", {"phone_e164": phone}, ["saved_name", "display_name"], as_dict=True)
+		if row and (row.saved_name or row.display_name):
+			return (row.saved_name or row.display_name).strip()
+	return phone
+
+
+def _timeline_text(log) -> str:
+	"""What the message said, for the timeline: its text, else its caption, else what it carried."""
+	text = (log.body or log.caption or "").strip()
+	if text:
+		return text if len(text) <= 500 else text[:500] + "…"
+	if log.file_name:
+		return f"📎 {log.file_name}"
+	return _(log.message_type) if log.message_type else ""
+
+
 def comment_on_reference(outbound: str, outcome: str, *, reason: str | None = None) -> None:
-	"""A line on the timeline of the document a message was about: "WhatsApp message sent to …"
-	or "… could not be sent", linking the message. Tests and simulations write none, a message
-	about no document writes none, and a comment never stands in the way of a status: it never
-	raises."""
+	"""A line on the timeline of the document a message was about (owner, 2026-10-28): the
+	recipient by name, then what the message said, linking the message; a failure adds why.
+	Written as the messaging service user when one is set. Tests and simulations write none, a
+	message about no document writes none, and a comment never stands in the way of a status:
+	it never raises."""
+	from whatsapp_next.services import service_user
+
 	try:
 		log = frappe.db.get_value(
 			"WhatsApp Log",
 			outbound,
-			["reference_doctype", "reference_name", "phone_e164", "phone", "display_name", "is_test", "is_simulated"],
+			["reference_doctype", "reference_name", "phone_e164", "phone", "contact", "body", "caption", "file_name", "message_type", "is_test", "is_simulated"],
 			as_dict=True,
 		)
 		if not log or log.is_test or log.is_simulated or not log.reference_doctype or not log.reference_name:
 			return
 		if not frappe.db.exists(log.reference_doctype, log.reference_name):
 			return
-		to = log.phone_e164 or log.phone or ""
-		who = f"{log.display_name} ({to})" if log.display_name and to else (log.display_name or to)
+		esc = frappe.utils.escape_html
+		who = f"<b>{esc(_timeline_name(log))}</b>"
+		said = esc(_timeline_text(log)).replace("\n", "<br>")
 		link = frappe.utils.get_link_to_form("WhatsApp Log", outbound, _("view the message"))
+		text = f"{who}: {said}" if said else who
 		if outcome == "Failed":
-			text = _("WhatsApp message to {0} could not be sent: {1}. {2}").format(
-				frappe.utils.escape_html(who), frappe.utils.escape_html(reason or _("unknown reason")), link
-			)
-		else:
-			text = _("WhatsApp message sent to {0}. {1}").format(frappe.utils.escape_html(who), link)
-		frappe.get_doc(
-			{
-				"doctype": "Comment",
-				"comment_type": "Info",
-				"reference_doctype": log.reference_doctype,
-				"reference_name": log.reference_name,
-				"content": text,
-			}
-		).insert(ignore_permissions=True)
+			text += "<br>" + _("Not sent: {0}").format(esc(reason or _("unknown reason")))
+		text += f" · {link}"
+		# the line is the service user's, whoever (or whatever job) noticed the status
+		with service_user.acting():
+			frappe.get_doc(
+				{
+					"doctype": "Comment",
+					"comment_type": "Info",
+					"reference_doctype": log.reference_doctype,
+					"reference_name": log.reference_name,
+					"content": text,
+				}
+			).insert(ignore_permissions=True)
 	except Exception:
 		frappe.log_error(title="WhatsApp document comment")
 

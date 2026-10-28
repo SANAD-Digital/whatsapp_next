@@ -33,6 +33,8 @@ SECTIONS: dict[str, tuple[str, ...]] = {
 		"last_connection_test_at",
 		"last_connection_latency_ms",
 		"last_connection_error",
+		# the user the site sends and receives as (`services/service_user.py`)
+		"command_service_user",
 	),
 	"credentials": (),
 	"webhook": (
@@ -55,7 +57,6 @@ SECTIONS: dict[str, tuple[str, ...]] = {
 	),
 	"commands": (
 		"enable_commands",
-		"command_service_user",
 		"unknown_command_reply",
 		"command_help_token",
 		"command_reply_language",

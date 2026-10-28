@@ -115,17 +115,17 @@ class WhatsAppSettings(Document):
 			return
 		user = self.command_service_user
 		if not user:
-			frappe.throw(_("Command Service User is required when commands are enabled"), WAValidationError)
+			frappe.throw(_("Messaging Service User is required when commands are enabled"), WAValidationError)
 		if user == "Administrator":
-			frappe.throw(_("Command Service User cannot be Administrator"), WAValidationError)
+			frappe.throw(_("Messaging Service User cannot be Administrator"), WAValidationError)
 		row = frappe.db.get_value("User", user, ["enabled", "user_type"], as_dict=True)
 		if not row:
-			frappe.throw(_("Command Service User {0} does not exist").format(user), WAValidationError)
+			frappe.throw(_("Messaging Service User {0} does not exist").format(user), WAValidationError)
 		if not cint(row.enabled):
-			frappe.throw(_("Command Service User {0} is disabled").format(user), WAValidationError)
+			frappe.throw(_("Messaging Service User {0} is disabled").format(user), WAValidationError)
 		if "System Manager" in frappe.get_roles(user):
 			frappe.throw(
-				_("Command Service User {0} must not hold the System Manager role").format(user),
+				_("Messaging Service User {0} must not hold the System Manager role").format(user),
 				WAValidationError,
 			)
 

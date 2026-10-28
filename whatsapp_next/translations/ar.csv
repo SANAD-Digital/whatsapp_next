@@ -443,14 +443,14 @@ Command Changed,تغيّر الأمر,
 Command Defaults Restored,تمت استعادة الإعدادات الافتراضية للأمر,
 Command Error,خطأ في الأمر,
 Command Reply,رد الأمر,
-Command Service User,مستخدم خدمة الأوامر,
-Command Service User cannot be Administrator,لا يمكن أن يكون مستخدم خدمة الأوامر هو Administrator,
-Command Service User is not configured,مستخدم خدمة الأوامر غير مضبوط,
-Command Service User is required when commands are enabled,مستخدم خدمة الأوامر مطلوب عند تفعيل الأوامر,
-Command Service User must not be a System Manager,يجب ألا يحمل مستخدم خدمة الأوامر دور System Manager,
-Command Service User {0} does not exist,مستخدم خدمة الأوامر {0} غير موجود,
-Command Service User {0} is disabled,مستخدم خدمة الأوامر {0} معطّل,
-Command Service User {0} must not hold the System Manager role,يجب ألا يحمل مستخدم خدمة الأوامر {0} دور System Manager,
+Messaging Service User,مستخدم إرسال واستقبال الرسائل,
+Messaging Service User cannot be Administrator,لا يمكن أن يكون مستخدم إرسال واستقبال الرسائل هو Administrator,
+Messaging Service User is not configured,مستخدم إرسال واستقبال الرسائل غير مضبوط,
+Messaging Service User is required when commands are enabled,مستخدم إرسال واستقبال الرسائل مطلوب عند تفعيل الأوامر,
+Messaging Service User must not be a System Manager,يجب ألا يحمل مستخدم إرسال واستقبال الرسائل دور System Manager,
+Messaging Service User {0} does not exist,مستخدم إرسال واستقبال الرسائل {0} غير موجود,
+Messaging Service User {0} is disabled,مستخدم إرسال واستقبال الرسائل {0} معطّل,
+Messaging Service User {0} must not hold the System Manager role,يجب ألا يحمل مستخدم إرسال واستقبال الرسائل {0} دور System Manager,
 Command Status,حالة الأمر,
 Command Word,كلمة الأمر,
 Command Word is required,كلمة الأمر مطلوبة,
@@ -6157,3 +6157,6 @@ Details,البيان,Statement
 Under review,قيد المراجعة
 Not accepted,لم تُقبل
 Open the record's full form,افتح النموذج الكامل لهذا السجل
+"The user this site sends and receives WhatsApp messages as: commands run as it, incoming messages and statuses are recorded as it, and the lines on documents carry its name. Empty: Frappe's own user is used (commands need it). It must be enabled, not Administrator and not a System Manager.","المستخدم الذي يرسل به هذا الموقع رسائل واتساب ويستقبلها: تعمل الأوامر باسمه، وتُسجَّل الرسائل الواردة وحالاتها باسمه، وتظهر باسمه الأسطر المكتوبة على المستندات. إذا تُرك فارغاً يُستخدم مستخدم فرابي المعتاد (والأوامر تحتاجه). يجب أن يكون مفعلاً، وألا يكون Administrator ولا مدير نظام."
+Not sent: {0},لم تُرسل: {0}
+WhatsApp Messaging,مستخدم إرسال واستقبال الرسائل

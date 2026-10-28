@@ -97,7 +97,7 @@ def ensure_command_service_user() -> str:
 		{
 			"doctype": "User",
 			"email": email,
-			"first_name": _("WhatsApp Commands"),
+			"first_name": _("WhatsApp Messaging"),
 			"user_type": "System User",
 			"enabled": 0,
 			"send_welcome_email": 0,

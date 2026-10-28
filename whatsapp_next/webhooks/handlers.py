@@ -16,7 +16,7 @@ from frappe.utils import add_to_date, cint, now_datetime
 
 from whatsapp_next.providers import registry
 from whatsapp_next.providers.schemas import WebhookEvent
-from whatsapp_next.services import devices, dispatch, errors, inbound
+from whatsapp_next.services import devices, dispatch, errors, inbound, service_user
 from whatsapp_next.services.guards import status_writer
 
 MAX_TRIES = 3
@@ -136,7 +136,9 @@ def process_event(webhook_event: str) -> str:
 		provider = registry.get_provider()
 		parsed = provider.parse_webhook(provider.replay_headers(row.event_name, row.event_id), body)
 		device = row.device or devices.by_platform_device(parsed.platform_device)
-		status, links = handle_event(parsed, webhook_event_name=row.name, device=device)
+		# as the messaging service user when one is set: what the event writes carries its name
+		with service_user.acting():
+			status, links = handle_event(parsed, webhook_event_name=row.name, device=device)
 		values: dict[str, Any] = {
 			"status": status,
 			"processed_at": now_datetime(),
