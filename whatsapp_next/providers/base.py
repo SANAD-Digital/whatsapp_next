@@ -173,6 +173,15 @@ class BaseProvider(ABC):
 		"""→ `{currency, from_date, to_date, opening, total_in, total_out, closing, rows[]}`."""
 		raise pex.NotSupportedError("This provider does not bill through this site", code="NOT_SUPPORTED")
 
+	# --- the WhatsApp hub: ready-made functions, commands, alerts and notifications ---
+	def list_hub(self, hub_type: str | None = None, txt: str | None = None) -> list[dict]:
+		"""`[{name, hub_name, hub_type, description, checksum, modified}]`, published entries."""
+		raise pex.NotSupportedError("This provider has no hub", code="NOT_SUPPORTED")
+
+	def get_hub_entry(self, name: str) -> dict:
+		"""One entry with its `payload`."""
+		raise pex.NotSupportedError("This provider has no hub", code="NOT_SUPPORTED")
+
 	# --- device lifecycle ---
 	@abstractmethod
 	def create_device(self, device_name: str, phone_e164: str | None, pairing_mode: str) -> DeviceState:

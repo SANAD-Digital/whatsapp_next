@@ -6160,3 +6160,39 @@ Open the record's full form,افتح النموذج الكامل لهذا الس
 "The user this site sends and receives WhatsApp messages as: commands run as it, incoming messages and statuses are recorded as it, and the lines on documents carry its name. Empty: Frappe's own user is used (commands need it). It must be enabled, not Administrator and not a System Manager.","المستخدم الذي يرسل به هذا الموقع رسائل واتساب ويستقبلها: تعمل الأوامر باسمه، وتُسجَّل الرسائل الواردة وحالاتها باسمه، وتظهر باسمه الأسطر المكتوبة على المستندات. إذا تُرك فارغاً يُستخدم مستخدم فرابي المعتاد (والأوامر تحتاجه). يجب أن يكون مفعلاً، وألا يكون Administrator ولا مدير نظام."
 Not sent: {0},لم تُرسل: {0}
 WhatsApp Messaging,مستخدم إرسال واستقبال الرسائل
+Hub,المستودع
+Functions hub,مستودع الوظائف
+Commands hub,مستودع الأوامر
+Alerts hub,مستودع التنبيهات
+Notifications hub,مستودع الإشعارات
+Search the hub…,ابحث في المستودع…
+Search the hub,ابحث في المستودع
+Nothing matches this search,لا شيء يطابق هذا البحث
+The hub has nothing of this kind yet,لا يوجد في المستودع شيء من هذا النوع بعد
+Install again,إعادة التنزيل
+Here as {0},موجود هنا باسم {0}
+Last changed,آخر تعديل
+What it sets up,ما يضبطه
+The code it runs on this site,الكود الذي يشغّله على هذا الموقع
+It is installed switched off: turn it on when its recipients and device are right.,يُنزَّل متوقفاً: شغّله بعد أن تتأكد من المستلمين والجهاز.
+Updated,تم التحديث
+"This installs code that runs on this site, as shown under «The code it runs on this site». Continue?",سيُنزَّل كود يعمل على هذا الموقع، كما يظهر تحت «الكود الذي يشغّله على هذا الموقع». هل تتابع؟
+Only a System Manager can install a function: it runs code on this site.,تنزيل الوظيفة لمدير النظام فقط، لأنها تشغّل كوداً على هذا الموقع.
+This hub function has no valid script.,هذه الوظيفة في المستودع ليس لها كود صالح.
+This hub entry has no data.,هذا العنصر في المستودع ليس له بيانات.
+This hub entry is not available.,هذا العنصر غير متاح في المستودع.
+Unknown hub type {0},نوع غير معروف في المستودع: {0}
+{0} {1} already exists here and was not installed from the hub.,{0} {1} موجود هنا ولم يُنزَّل من المستودع.
+Hub entry,عنصر المستودع
+Hub checksum,بصمة المستودع
+Hub Entry Installed,تنزيل من المستودع
+Installed from the hub,نُزّل من المستودع
+Updated from the hub,حُدّث من المستودع
+The WhatsApp hub entry this was installed from.,عنصر مستودع واتساب الذي نُزّل منه هذا السجل.
+The entry's checksum when it was installed: another one on the hub means an update is available.,بصمة العنصر عند تنزيله: إذا اختلفت في المستودع فهناك تحديث متاح.
+Not installed,غير منزّل,Hub
+Update available,متاح تحديث,Hub
+Installed,منزّل,Hub
+Entries,العناصر,Hub
+Checksum,البصمة,Hub
+Install,تنزيل,Hub

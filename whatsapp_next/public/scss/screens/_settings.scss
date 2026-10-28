@@ -1006,3 +1006,56 @@
 		.wa-bill__activity li .sanad-badge, .wa-bill__activity li [class*="badge"] { grid-column: 1; justify-self: start; }
 	}
 }
+
+// ---- the WhatsApp hub window (owner, 2026-10-29) ----------------------------------------------------
+
+.wa-hub {
+	.wa-hub__layout { display: grid; grid-template-columns: minmax(240px, 320px) minmax(0, 1fr); gap: 14px; min-block-size: 420px; }
+	.wa-hub__list { display: flex; flex-direction: column; gap: 8px; min-inline-size: 0; }
+	.wa-hub__search { inline-size: 100%; }
+	.wa-hub__rows { display: flex; flex-direction: column; gap: 4px; max-block-size: 60vh; overflow: auto; }
+	.wa-hub__row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		padding: 8px 10px;
+		border: 1px solid var(--wa-border);
+		border-radius: 10px;
+		background: var(--wa-surface);
+		text-align: start;
+		cursor: pointer;
+		&.is-on { border-color: var(--wa-pri); background: var(--wa-bg); }
+		&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: 1px; }
+	}
+	.wa-hub__row-text { display: flex; flex-direction: column; min-inline-size: 0; gap: 2px; }
+	.wa-hub__row-text b { font-size: 13px; color: var(--wa-ink); }
+	.wa-hub__row-text em { font-style: normal; font-size: 12px; color: var(--wa-ink-4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.wa-hub__detail { min-inline-size: 0; padding: 12px 14px; border: 1px solid var(--wa-border); border-radius: 12px; overflow: auto; max-block-size: 66vh; }
+	.wa-hub__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+	.wa-hub__head h3 { margin: 0 0 4px; font-size: 16px; font-weight: 700; color: var(--wa-ink); }
+	.wa-hub__head p { margin: 0; }
+	.wa-hub__desc { margin: 10px 0 0; font-size: 13px; color: var(--wa-ink-2); }
+	.wa-hub__muted { font-size: 12px; color: var(--wa-ink-4); }
+	.wa-hub__sub { margin: 14px 0 6px; font-size: 13px; font-weight: 600; color: var(--wa-ink-2); }
+	.wa-hub__facts, .wa-hub__fields {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+		gap: 8px 14px;
+		margin: 10px 0 0;
+		dt { font-size: 12px; font-weight: 400; color: var(--wa-ink-4); }
+		dd { margin: 0; font-size: 13px; color: var(--wa-ink); overflow-wrap: anywhere; }
+	}
+	.wa-btns, .wa-settings__btns { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+	.wa-hub__code {
+		margin: 0;
+		padding: 10px 12px;
+		border-radius: 10px;
+		background: var(--wa-sunken);
+		font-size: 12px;
+		max-block-size: 320px;
+		overflow: auto;
+		white-space: pre;
+	}
+	@media (max-width: 719px) { .wa-hub__layout { grid-template-columns: minmax(0, 1fr); } }
+}

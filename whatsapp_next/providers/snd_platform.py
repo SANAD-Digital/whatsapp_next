@@ -628,6 +628,14 @@ class SndPlatformProvider(BaseProvider):
 		"""`{ok, customer, redemption_count, coupon{...}}` for the configured tenant."""
 		return self._request("POST", "get_my_referral_coupon", v1=True)
 
+	# ------------------------------------------------------------------ hub
+	def list_hub(self, hub_type=None, txt=None) -> list[dict]:
+		body = {k: v for k, v in {"hub_type": hub_type, "txt": txt}.items() if v}
+		return self._request("POST", "list_hub_api", v1=True, body=body).get("entries") or []
+
+	def get_hub_entry(self, name: str) -> dict:
+		return self._request("POST", "get_hub_entry_api", v1=True, body={"name": name}).get("entry") or {}
+
 	# ------------------------------------------------------------------ billing
 	def get_wallet(self) -> dict:
 		"""`get_wallet_api` (A-03)."""

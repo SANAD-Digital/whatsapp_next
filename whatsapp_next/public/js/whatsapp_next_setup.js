@@ -6,6 +6,7 @@ const V1 = "whatsapp_next.api.v1";
 
 const api = {};
 const areas = {
+	hub: ["list_entries", "get_entry", "install"],
 	billing: ["get_billing", "renew", "change_plan", "request_topup", "start_paypal", "confirm_paypal", "statement"],
 	settings: ["get_settings", "save_settings", "get_main_menu", "save_main_menu", "get_whatsapp_link", "test_connection", "sync_subscription", "get_usage", "get_site_usage", "setup_webhook", "set_webhook_status", "set_webhook_events", "rotate_webhook_secret", "test_webhook", "list_webhook_events_available", "list_audit_log", "list_picker_sources", "get_doctype_fields", "list_picker_candidates", "analyze_picker_doctype", "preview_picker_source", "export_backup", "preview_backup", "import_backup"],
 	onboarding: ["sign_out", "get_status", "start_signup", "get_signup_status", "verify_code", "complete_signup", "start_password_reset", "get_password_reset_status", "finish_password_reset", "save_credentials", "complete_setup", "login", "validate_coupon", "get_referral_coupon", "get_signup_bootstrap", "get_account_switch", "resolve_account_switch"],

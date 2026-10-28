@@ -240,6 +240,9 @@ frappe.provide("whatsapp_next");
 			ensure_modal_loaded();
 			listview._sanad_header = make_header(listview);
 			set_primary(listview);
+			// the WhatsApp hub: ready-made commands from the platform (owner, 2026-10-29)
+			if (frappe.user.has_role(["WhatsApp Manager", "System Manager"]))
+				listview.page.add_inner_button(__("Hub"), () => whatsapp_next.hub.open("Command", { on_installed: () => listview.refresh() }));
 			if (typeof ui.FilterBar === "function") {
 				listview._sanad_filterbar = new ui.FilterBar({
 					listview,

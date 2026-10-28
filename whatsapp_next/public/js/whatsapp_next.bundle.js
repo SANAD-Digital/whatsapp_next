@@ -20,6 +20,7 @@ import "./screens/settings.js";
 import "./screens/backup.js";
 import "./screens/account_switch.js";
 import "./screens/alerts.js";
+import "./screens/hub.js";
 import "./screens/function_spec.js";
 import "./screens/templates.js";
 import "./screens/notifications.js";

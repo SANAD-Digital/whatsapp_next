@@ -68,6 +68,7 @@ EXPECTED: dict[str, list[tuple[str, str, list[str] | None]]] = {
 				"Plan Changed",
 				"Wallet Top-up Requested",
 				"Wallet Top-up Paid",
+				"Hub Entry Installed",
 			],
 		),
 		("severity", "Select", ["Info", "Action", "Warning", "Danger"]),

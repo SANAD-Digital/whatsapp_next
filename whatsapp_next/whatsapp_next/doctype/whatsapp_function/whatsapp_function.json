@@ -29,9 +29,35 @@
   "avg_ms",
   "column_break_11",
   "error_count",
-  "last_error"
+  "last_error",
+  "hub_section",
+  "hub_entry",
+  "hub_checksum"
  ],
  "fields": [
+  {
+   "collapsible": 1,
+   "fieldname": "hub_section",
+   "fieldtype": "Section Break",
+   "label": "Hub"
+  },
+  {
+   "description": "The WhatsApp hub entry this was installed from.",
+   "fieldname": "hub_entry",
+   "fieldtype": "Data",
+   "label": "Hub entry",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "description": "The entry's checksum when it was installed: another one on the hub means an update is available.",
+   "fieldname": "hub_checksum",
+   "fieldtype": "Data",
+   "label": "Hub checksum",
+   "read_only": 1,
+   "no_copy": 1,
+   "hidden": 1
+  },
   {
    "fieldname": "function_tab",
    "fieldtype": "Tab Break",
@@ -208,7 +234,7 @@
    "link_fieldname": "function"
   }
  ],
- "modified": "2026-10-27 21:14:16.181352",
+ "modified": "2026-10-29 12:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Function",

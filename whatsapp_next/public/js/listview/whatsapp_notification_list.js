@@ -131,6 +131,9 @@ frappe.listview_settings[DOCTYPE] = {
 
 	onload(listview) {
 		const can_write = frappe.perm.has_perm(DOCTYPE, 0, "write");
+		// the WhatsApp hub: ready-made notifications from the platform (owner, 2026-10-29)
+		if (frappe.user.has_role(["WhatsApp Manager", "System Manager"]))
+			listview.page.add_inner_button(__("Hub"), () => whatsapp_next.hub.open("Notification", { on_installed: () => listview.refresh() }));
 		if (!listview.view_user_settings.sort_by) {
 			listview.sort_by = "modified";
 			listview.sort_order = "desc";

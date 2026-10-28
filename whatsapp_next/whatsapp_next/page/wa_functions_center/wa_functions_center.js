@@ -564,6 +564,9 @@
 			this.$body = $('<div class="wa-functions__body"></div>').appendTo(this.$panel);
 			this.state = new ui.EmptyState({ wrapper: this.$body, state: "loading", rows: 6 });
 			this.loaded = this.load();
+			// the WhatsApp hub: ready-made functions from the platform (owner, 2026-10-29)
+			if (frappe.user.has_role(["WhatsApp Manager", "System Manager"]))
+				page.add_inner_button(__("Hub"), () => whatsapp_next.hub.open("Function", { on_installed: () => this.reload() }));
 			// the filters stay under Desk's strip while the functions scroll beneath, as on a list
 			ui.pin_stack(this.$main, [".wa-functions__toolbar"]);
 		}
