@@ -41,10 +41,10 @@
 
 .wa-onb {
 	--wa-onb-gap: 14px;
-	// the product's compact fields (owner, 2026-10-26: one scale everywhere — `_shell.scss`)
-	--wa-h: 28px;
-	--wa-fs: 13px;
-	--wa-px: 10px;
+	// compact fields (owner, 2026-10-08): 38 px at 13.5 px, through the kit's own variables
+	--wa-h: 38px;
+	--wa-fs: 13.5px;
+	--wa-px: 12px;
 
 	display: flex;
 	align-items: stretch;
@@ -78,8 +78,8 @@
 		inline-size: clamp(360px, 40%, 600px);
 		flex: none;
 		flex-direction: column;
-		gap: 16px;
-		padding: 24px;
+		gap: 32px;
+		padding: 48px;
 		overflow: hidden;
 		background: var(--wa-brand);
 		color: var(--wa-on-brand);
@@ -108,7 +108,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
-		gap: 12px;
+		gap: 18px;
 	}
 	// the eyebrow: a quiet pill on Petrol, its dot the screen's one Apricot
 	&__badge {
@@ -132,7 +132,7 @@
 	&__pitch-title {
 		margin: 0;
 		color: var(--wa-on-tone);
-		font-size: 20px;
+		font-size: 34px;
 		font-weight: 700;
 		line-height: 1.3;
 		text-wrap: balance;
@@ -140,7 +140,7 @@
 	&__pitch-body {
 		max-inline-size: 28rem;
 		margin: 0;
-		font-size: 14px;
+		font-size: 15px;
 		line-height: 1.8;
 		color: color-mix(in srgb, var(--wa-on-brand) 78%, transparent);
 	}
@@ -157,7 +157,7 @@
 		display: flex;
 		align-items: flex-start;
 		gap: 10px;
-		font-size: 14px;
+		font-size: 14.5px;
 		line-height: 1.6;
 
 		.wa-ico {
@@ -171,7 +171,7 @@
 	&__flow {
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
+		gap: 22px;
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -196,8 +196,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 28px;
-		block-size: 28px;
+		inline-size: 32px;
+		block-size: 32px;
 		flex: none;
 		border-radius: 50%;
 		border: 1.5px solid color-mix(in srgb, var(--wa-on-brand) 40%, transparent);
@@ -224,7 +224,7 @@
 		padding-block-start: 4px;
 	}
 	&__flow-label {
-		font-size: 14px;
+		font-size: 15px;
 		font-weight: 700;
 		color: var(--wa-on-tone);
 	}
@@ -254,12 +254,12 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		min-block-size: 28px;
+		min-block-size: 30px;
 		padding-inline: 11px;
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--wa-on-brand) 14%, transparent);
 		color: var(--wa-on-brand);
-		font-size: 12px;
+		font-size: 11.5px;
 		font-weight: 600;
 
 		&:hover,
@@ -291,16 +291,16 @@
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		min-block-size: 48px;
+		min-block-size: 64px;
 		flex: none;
-		padding-inline: 16px;
+		padding-inline: 20px;
 	}
 	&__topmark {
 		display: inline-flex;
 		align-items: center;
 		gap: 10px;
 		min-inline-size: 0;
-		font-size: 16px;
+		font-size: 19px;
 		font-weight: 400;
 		color: var(--wa-brand);
 
@@ -313,7 +313,7 @@
 		display: none;
 		padding-inline-start: 12px;
 		border-inline-start: 1px solid var(--wa-border-2);
-		font-size: 13px;
+		font-size: 12.5px;
 		font-weight: 500;
 		color: var(--wa-ink-3);
 		white-space: nowrap;
@@ -322,8 +322,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 28px;
-		block-size: 28px;
+		inline-size: 30px;
+		block-size: 30px;
 		flex: none;
 	}
 	&__topbar-spacer {
@@ -366,11 +366,11 @@
 		margin: 0;
 
 		b {
-			font-size: 13px;
+			font-size: 13.5px;
 			color: var(--wa-ink);
 		}
 		span {
-			font-size: 12px;
+			font-size: 11.5px;
 			color: var(--wa-ink-3);
 		}
 	}
@@ -381,7 +381,7 @@
 		display: flex;
 		align-items: flex-start;
 		justify-content: center;
-		padding: 12px 16px 16px;
+		padding: 12px 20px 24px;
 	}
 
 	// "We never ask for your WhatsApp password." — the platform's sign-in foot
@@ -391,7 +391,7 @@
 		gap: 7px;
 		flex: none;
 		margin: 0;
-		padding: 0 16px 16px;
+		padding: 0 20px 22px;
 		font-size: 13px;
 		color: var(--wa-ink-3);
 	}
@@ -453,14 +453,14 @@
 	}
 	&__card-title {
 		margin: 0;
-		font-size: 16px; // a step's heading, at Desk's own title size
+		font-size: 24px;
 		font-weight: 700;
 		line-height: 1.3;
 		color: var(--wa-ink);
 	}
 	&__card-sub {
 		margin: 0;
-		font-size: 13px;
+		font-size: 13.5px;
 		line-height: 1.7;
 		color: var(--wa-ink-3);
 	}
@@ -477,10 +477,9 @@
 		font-weight: 600;
 		color: var(--wa-ink);
 	}
-	// the step's one verb: a little taller than a field, as every primary verb of the product
 	.wa-btn--block {
-		min-block-size: 28px;
-		font-size: 13px;
+		min-block-size: 42px;
+		font-size: 14px;
 	}
 	// the kit's phone field draws its own 40 px box; here it matches the other fields
 	.sanad-phone__box {
@@ -495,8 +494,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 36px;
-		block-size: 36px;
+		inline-size: 48px;
+		block-size: 48px;
 		border-radius: 50%;
 		background: var(--wa-dg-s);
 		color: var(--wa-dg-i);
@@ -519,7 +518,7 @@
 		margin: 0;
 		padding: 10px 12px;
 		border: 1px solid var(--wa-border);
-		border-radius: 8px;
+		border-radius: 9px;
 		background: var(--wa-sunken);
 		font-size: 12px;
 		line-height: 1.7;
@@ -585,6 +584,11 @@
 	}
 
 	&__grid,
+	&__stack {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 8px 12px;
+	}
 	&__field-wide {
 		min-inline-size: 0;
 	}
@@ -600,7 +604,7 @@
 			margin-block-end: 0;
 		}
 		.wa-onb__card-title {
-			font-size: 20px;
+			font-size: 21px;
 		}
 		.wa-onb__card-sub {
 			line-height: 1.5;
@@ -652,7 +656,7 @@
 	// field beside it takes the same height, so both inputs sit on one line
 	&__label-row,
 	[data-field="wa-onb-pw2"] > .wa-field__label {
-		min-block-size: 28px;
+		min-block-size: 30px;
 	}
 	[data-field="wa-onb-pw2"] > .wa-field__label {
 		display: flex;
@@ -742,7 +746,7 @@
 		align-items: center;
 		gap: 8px;
 		inline-size: 100%;
-		min-block-size: var(--wa-h, 28px);
+		min-block-size: var(--wa-h, 38px);
 		padding-inline: var(--wa-px, 12px);
 		border: 1px solid var(--wa-border-2);
 		border-radius: var(--wa-radius, 8px);
@@ -792,7 +796,7 @@
 		display: flex;
 		align-items: center;
 		gap: 7px;
-		min-block-size: 28px;
+		min-block-size: 32px;
 		padding-inline: 9px;
 		margin-block-end: 5px;
 		border: 1px solid var(--wa-border);
@@ -823,8 +827,8 @@
 	&__sector-opt,
 	&__sector-none {
 		padding: 7px 9px;
-		border-radius: 6px;
-		font-size: 13px;
+		border-radius: 7px;
+		font-size: 12.5px;
 		color: var(--wa-ink);
 		cursor: pointer;
 
@@ -865,7 +869,7 @@
 	}
 	&__terms-h {
 		margin: 0;
-		font-size: 13px;
+		font-size: 12.5px;
 		font-weight: 700;
 		color: var(--wa-ink);
 	}
@@ -885,7 +889,7 @@
 	}
 	&__consent {
 		margin: 0;
-		font-size: 12px;
+		font-size: 11.5px;
 		line-height: 1.9;
 		color: var(--wa-ink-3);
 	}
@@ -939,7 +943,7 @@
 	}
 	&__code-input {
 		inline-size: 100%;
-		min-block-size: 44px;
+		min-block-size: 52px;
 		padding-inline: 14px;
 		border: 1px dashed var(--wa-pri-sb);
 		border-radius: 10px;
@@ -994,14 +998,14 @@
 	&__code-tag {
 		display: inline-flex;
 		align-items: center;
-		block-size: 36px;
+		block-size: 48px;
 		padding-inline: 12px;
 		margin-inline-end: 6px;
 		border-radius: 10px;
 		background: var(--wa-pri);
 		color: var(--wa-surface);
 		font-family: "IBM Plex Mono", ui-monospace, monospace;
-		font-size: 16px;
+		font-size: 17px;
 		font-weight: 700;
 		letter-spacing: 2px;
 	}
@@ -1009,8 +1013,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 32px;
-		block-size: 36px;
+		inline-size: 40px;
+		block-size: 48px;
 		border: 1px solid var(--wa-border-2);
 		border-radius: 10px;
 		background: var(--wa-pri-s);
@@ -1029,13 +1033,13 @@
 	&__code.is-copied &__code-hint { color: var(--wa-pri); font-weight: 600; }
 	@media (max-width: 480px) {
 		&__code-tiles { gap: 4px; }
-		&__code-tag { block-size: 32px; padding-inline: 7px; margin-inline-end: 2px; font-size: 13px; letter-spacing: 1px; }
-		&__code-digit { inline-size: 28px; block-size: 32px; font-size: 16px; border-radius: 8px; }
+		&__code-tag { block-size: 40px; padding-inline: 7px; margin-inline-end: 2px; font-size: 13px; letter-spacing: 1px; }
+		&__code-digit { inline-size: 30px; block-size: 40px; font-size: 18px; border-radius: 8px; }
 	}
 
 	&__code-help {
 		margin: 0;
-		font-size: 12px;
+		font-size: 11.5px;
 		line-height: 1.8;
 		color: var(--wa-ink-3);
 	}
@@ -1052,7 +1056,7 @@
 		}
 	}
 	&__reveal-slot {
-		inline-size: 48px;
+		inline-size: 58px;
 	}
 	&__reveal {
 		padding: 4px 6px;
@@ -1086,7 +1090,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 7px;
-		font-size: 12px;
+		font-size: 11.5px;
 		line-height: 1.7;
 		color: var(--wa-ink-3);
 	}
@@ -1114,8 +1118,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 44px;
-		block-size: 44px;
+		inline-size: 54px;
+		block-size: 54px;
 		border-radius: 50%;
 		border: 1px solid var(--wa-ok-sb);
 		background: var(--wa-ok-s);
@@ -1123,14 +1127,14 @@
 	}
 	&__ready-title {
 		margin: 0;
-		font-size: 16px; // the same heading as every other step
+		font-size: 24px; // the same heading as every other step
 		line-height: 1.3;
 		font-weight: 700;
 		color: var(--wa-ink);
 	}
 	&__ready-sub {
 		margin: 0;
-		font-size: 13px;
+		font-size: 13.5px;
 		line-height: 1.9;
 		color: var(--wa-ink-3);
 	}
@@ -1141,7 +1145,7 @@
 		inline-size: 100%;
 		padding: 12px 14px;
 		border: 1px solid var(--wa-ok-sb);
-		border-radius: 10px;
+		border-radius: 11px;
 		background: var(--wa-ok-s);
 		text-align: start;
 	}
@@ -1152,7 +1156,7 @@
 		inline-size: 28px;
 		block-size: 28px;
 		flex: none;
-		border-radius: 8px;
+		border-radius: 9px;
 		background: var(--wa-ok);
 		color: var(--wa-on-pri);
 	}
@@ -1162,11 +1166,11 @@
 		gap: 2px;
 
 		b {
-			font-size: 13px;
+			font-size: 12.5px;
 			color: var(--wa-ink);
 		}
 		span {
-			font-size: 12px;
+			font-size: 11.5px;
 			line-height: 1.7;
 			color: var(--wa-ink-3);
 		}
@@ -1197,16 +1201,16 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		inline-size: 28px;
-		block-size: 28px;
+		inline-size: 30px;
+		block-size: 30px;
 		flex: none;
-		border-radius: 8px;
+		border-radius: 9px;
 		background: var(--wa-pri);
 		color: var(--wa-on-pri);
 	}
 	&__invite-body {
 		margin: 0;
-		font-size: 13px;
+		font-size: 12.5px;
 		line-height: 2;
 		color: var(--wa-ink-2);
 	}
@@ -1222,7 +1226,7 @@
 		gap: 10px;
 		flex-wrap: wrap;
 		margin: 0;
-		min-block-size: var(--wa-h, 28px);
+		min-block-size: var(--wa-h, 38px);
 		padding-block: 5px;
 		padding-inline: 12px 6px;
 		border: 1px dashed var(--wa-pri-sb);
@@ -1235,7 +1239,7 @@
 	}
 	&__invite-code {
 		font-family: "IBM Plex Mono", ui-monospace, monospace;
-		font-size: 13px;
+		font-size: 13.5px;
 		font-weight: 700;
 		letter-spacing: 1px;
 		color: var(--wa-ink);
@@ -1287,7 +1291,7 @@
 
 	@media (min-width: 620px) {
 		&__card {
-			padding: 16px 16px;
+			padding: 20px 22px;
 		}
 		&__grid {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1296,7 +1300,7 @@
 			grid-column: 1 / -1;
 		}
 		&__stage {
-			padding: 6px 16px 16px;
+			padding: 6px 22px 20px;
 		}
 	}
 
@@ -1320,7 +1324,7 @@
 		}
 		&__topbar {
 			min-block-size: 80px;
-			padding-inline: 24px;
+			padding-inline: 48px;
 		}
 		&__topmark-tag {
 			display: inline;
@@ -1328,19 +1332,19 @@
 		// the step stands in the middle of the column, as on the platform
 		&__stage {
 			align-items: center;
-			padding: 16px 24px 20px;
+			padding: 16px 48px 40px;
 		}
 		&__trust {
-			padding: 0 24px 20px;
+			padding: 0 48px 28px;
 		}
 	}
 
 	@media (min-width: 1280px) {
 		&__brand {
-			padding: 24px;
+			padding: 64px;
 		}
 		&__pitch-title {
-			font-size: 20px;
+			font-size: 40px;
 			line-height: 1.25;
 		}
 	}
@@ -1348,21 +1352,21 @@
 	// a short screen tightens the panel rather than cutting it
 	@media (min-width: 900px) and (max-height: 900px) {
 		&__brand {
-			gap: 12px;
-			padding-block: 20px;
+			gap: 22px;
+			padding-block: 36px;
 		}
 		&__pitch-title {
-			font-size: 20px;
+			font-size: 30px;
 		}
 	}
 	// shorter still: the three selling points go first, the steps and the pitch stay
 	@media (min-width: 900px) and (max-height: 880px) {
 		&__brand {
-			gap: 12px;
-			padding-block: 20px;
+			gap: 18px;
+			padding-block: 28px;
 		}
 		&__pitch-title {
-			font-size: 20px;
+			font-size: 26px;
 		}
 		&__ticks {
 			display: none;
@@ -1389,7 +1393,7 @@ html[dir="rtl"] .wa-onb__route-arrow {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
-	font-size: 13px;
+	font-size: 13.5px;
 	line-height: 1.7;
 	color: var(--wa-ink-2, var(--wa-ink));
 
