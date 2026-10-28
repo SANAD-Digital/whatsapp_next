@@ -11,6 +11,7 @@ whatsapp_next.notifications.open = function (name, { on_saved } = {}) {
 	const call = (method, args) => sanad.ui.call(`notifications.${method}`, args || {}, { silent: true });
 	return new sanad.ui.NotificationEditor({
 		name: name || null,
+		form_doctype: "WhatsApp Notification",
 		load: (n) => call("get_editor", n ? { name: n } : {}),
 		setup: (document_type) => call("get_document_setup", { document_type }),
 		preview: (payload, reference_name) => call("preview_draft", { payload, reference_name: reference_name || null }),

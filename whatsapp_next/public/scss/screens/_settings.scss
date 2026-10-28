@@ -345,7 +345,7 @@
 		background: none;
 		overflow: visible;
 		> header {
-			padding: 16px 0 2px;
+			padding: 12px 0 2px;
 			strong { font-size: 14px; }
 			span span { font-size: 13px; color: var(--wa-ink-3); }
 		}
@@ -414,7 +414,7 @@
 	.wa-settings__field .sanad-sw__row-title { cursor: default; }
 	.wa-settings__req { color: var(--wa-dg-i); }
 
-	.wa-settings__actions { justify-content: flex-end; padding-block-start: 16px; }
+	.wa-settings__actions { justify-content: flex-end; padding-block-start: 12px; }
 
 	// The save bar: stuck to the bottom of the scrolling pane, so Save is in reach wherever the
 	// section is scrolled to; it lights up (and says why) once something has changed.
@@ -445,7 +445,7 @@
 	// ---- subscription: the plan meter and three facts ------------------------------------------------
 
 	.wa-settings__meter {
-		padding: 14px 16px;
+		padding: 10px 12px;
 		border: 1px solid var(--wa-border);
 		border-radius: 10px;
 		background: var(--wa-bg);
@@ -480,7 +480,7 @@
 			flex-direction: column;
 			gap: 4px;
 			min-inline-size: 0;
-			padding: 14px 16px;
+			padding: 10px 12px;
 			border: 1px solid var(--wa-border);
 			border-radius: 12px;
 		}
@@ -538,7 +538,7 @@
 	.wa-settings__bar-fail { display: block; inline-size: 100%; background: var(--wa-dg); }
 	.wa-settings__legend {
 		display: flex;
-		gap: 16px;
+		gap: 12px;
 		margin-block-start: 10px;
 		font-size: 12px;
 		color: var(--wa-ink-3);
@@ -582,7 +582,7 @@
 	.sanad-sw__nav { gap: 8px; }
 
 	.sanad-sw__pane {
-		padding: 16px 16px 16px;
+		padding: 12px 12px 12px;
 		container-type: inline-size;
 		> * { max-inline-size: none; }
 	}
@@ -592,7 +592,7 @@
 
 	// section headings: small, close to what they head
 	.sanad-sw__h,
-	.wa-settings .wa-settings__subhead { margin-block: 14px 6px; }
+	.wa-settings .wa-settings__subhead { margin-block: 10px 6px; }
 	.sanad-sw__h h3,
 	.wa-settings .wa-settings__subhead { font-size: 13px; font-weight: 600; }
 	.sanad-sw__h p { margin-block-start: 1px; font-size: 12px; }
@@ -631,7 +631,7 @@
 		.wa-settings__facts > div {
 			min-block-size: 28px;
 			padding: 6px 12px;
-			gap: 14px;
+			gap: 10px;
 			font-size: 13px;
 		}
 		.wa-settings__rows li:last-child,
@@ -643,7 +643,7 @@
 
 		// the Desk form's fields as the same compact rows
 		.wa-settings__form .frappe-control:last-child { border-block-end: 0; }
-		.wa-settings__form .form-group { padding: 9px 14px; grid-template-columns: minmax(0, 1fr) minmax(180px, 260px); }
+		.wa-settings__form .form-group { padding: 9px 10px; grid-template-columns: minmax(0, 1fr) minmax(180px, 260px); }
 		// a phone: the field under its label, the whole width
 		@media (max-width: 719px) {
 			.wa-settings__form .form-group { grid-template-columns: minmax(0, 1fr); }
@@ -653,7 +653,7 @@
 		.wa-settings__form .form-group > .help-box,
 		.wa-settings__form .checkbox .help-box { font-size: 12px; line-height: 1.5; }
 		.wa-settings__form .checkbox { padding: 0; }
-		.wa-settings__form .frappe-control:has(.checkbox) .form-group { padding: 9px 14px; }
+		.wa-settings__form .frappe-control:has(.checkbox) .form-group { padding: 9px 10px; }
 		.wa-settings__actions { padding-block-start: 12px; }
 		// a text box starts at three lines; the handle still grows it
 		// (Desk writes the text box's height inline, so only `!important` reaches it)
@@ -661,7 +661,7 @@
 
 		// the event list (webhook) as rows too
 		.wa-settings__checks { display: flex; flex-direction: column; gap: 0; padding: 0; }
-		.wa-settings__check { padding: 8px 14px; border-block-end: 1px solid var(--wa-border); font-size: 13px; }
+		.wa-settings__check { padding: 8px 10px; border-block-end: 1px solid var(--wa-border); font-size: 13px; }
 		.wa-settings__check:last-child { border-block-end: 0; }
 
 		// status banner and notes
@@ -669,7 +669,7 @@
 		.wa-settings__note { margin-block-start: 8px; font-size: 12px; }
 
 		// subscription: the meter and the three facts, smaller
-		.wa-settings__meter { padding: 14px 16px; border-radius: 12px; }
+		.wa-settings__meter { padding: 10px 12px; border-radius: 12px; }
 		.wa-settings__meter-title { font-size: 13px; }
 		.wa-settings__meter-value { margin-block: 4px 8px; strong { font-size: 24px; } span { font-size: 12px; } }
 		.wa-settings__meter-track { block-size: 6px; }
@@ -691,7 +691,7 @@
 	.sanad-sw__row {
 		margin-block-start: 6px;
 		padding: 7px 12px;
-		gap: 14px;
+		gap: 10px;
 		border: 1px solid var(--wa-border);
 		border-radius: 10px;
 		&:last-child { border-block-end: 1px solid var(--wa-border); }
@@ -720,7 +720,7 @@
 	}
 
 	@media (max-width: 719px) {
-		.sanad-sw__pane { padding: 16px 16px 20px; }
+		.sanad-sw__pane { padding: 12px 12px 12px; }
 		.wa-settings__field .sanad-sw__row-control { inline-size: 100%; }
 		.wa-settings__field:not(.wa-settings__field--stacked) { flex-wrap: wrap; }
 	}
@@ -815,8 +815,8 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: baseline;
-		gap: 6px 14px;
-		padding: 10px 14px;
+		gap: 6px 10px;
+		padding: 10px 10px;
 		border-radius: 10px;
 		background: var(--wa-sunken);
 		font-size: 13px;
@@ -828,7 +828,7 @@
 	.wa-pse__hint { margin: 0 0 8px; font-size: 12px; line-height: 1.6; color: var(--wa-ink-3); }
 	.wa-pse__fg { min-block-size: 28px; }
 	.wa-pse__preview {
-		padding: 12px 14px;
+		padding: 12px 10px;
 		border: 1px solid var(--wa-border);
 		border-radius: 12px;
 		&.is-ok { border-color: var(--wa-pri-sb); background: var(--wa-pri-s); }
@@ -855,5 +855,154 @@
 			font-size: 13px;
 		}
 		li span:last-child { font-family: "IBM Plex Mono", ui-monospace, monospace; color: var(--wa-ink-2); }
+	}
+}
+
+// ---- plans, wallet and statement: paying from this site (owner, 2026-10-28) --------------------------
+
+.wa-settings {
+	.wa-settings__btns { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+	.wa-bill__lead { margin-block: 0 12px; strong { color: var(--wa-ink); } }
+	.wa-bill__muted { font-size: 12px; color: var(--wa-ink-4); }
+
+	.wa-bill__plans {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		gap: 12px;
+	}
+	.wa-bill__plan {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		padding: 12px;
+		border: 1px solid var(--wa-border);
+		border-radius: 12px;
+		background: var(--wa-surface);
+		&.is-current { border-color: var(--wa-pri); box-shadow: 0 0 0 1px var(--wa-pri) inset; }
+		header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+		h4 { margin: 0; font-size: 15px; font-weight: 700; color: var(--wa-ink); }
+		ul { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+		li { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--wa-ink-3); b { color: var(--wa-ink); font-weight: 600; } }
+		footer { margin-block-start: auto; padding-block-start: 4px; }
+		footer .btn { inline-size: 100%; }
+	}
+	.wa-bill__price {
+		display: flex;
+		align-items: baseline;
+		gap: 6px;
+		margin: 0;
+		strong { font-size: 22px; font-weight: 700; color: var(--wa-ink); }
+		span { font-size: 12px; color: var(--wa-ink-4); }
+	}
+
+	.wa-bill__banner {
+		margin-block-end: 12px;
+		padding: 10px 12px;
+		border: 1px solid transparent;
+		border-radius: 10px;
+		font-size: 13px;
+		&--ok { background: var(--wa-ok-s); border-color: var(--wa-ok-sb); color: var(--wa-ok-i); }
+		&--warn { background: var(--wa-wn-s); border-color: var(--wa-wn-sb); color: var(--wa-wn-i); }
+		&--bad { background: var(--wa-dg-s); border-color: var(--wa-dg-sb); color: var(--wa-dg-i); }
+	}
+
+	.wa-bill__topup {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		max-inline-size: 560px;
+		.wa-input { inline-size: 100%; }
+		textarea.wa-input { resize: vertical; min-block-size: 56px; }
+	}
+	.wa-bill__amount { max-inline-size: 200px; }
+	.wa-bill__label { font-size: 13px; font-weight: 600; color: var(--wa-ink-2); }
+	.wa-bill__methods {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		gap: 8px;
+		margin: 4px 0 0;
+		padding: 0;
+		border: 0;
+		legend { margin-block-end: 6px; }
+	}
+	.wa-bill__method {
+		display: flex;
+		align-items: flex-start;
+		gap: 10px;
+		margin: 0;
+		padding: 10px 12px;
+		border: 1px solid var(--wa-border);
+		border-radius: 10px;
+		cursor: pointer;
+		input { margin-block-start: 3px; accent-color: var(--wa-pri); }
+		span { display: flex; flex-direction: column; gap: 2px; min-inline-size: 0; }
+		b { font-size: 13px; color: var(--wa-ink); }
+		em { font-style: normal; font-size: 12px; color: var(--wa-ink-4); }
+		&:has(input:checked) { border-color: var(--wa-pri); background: var(--wa-bg); }
+		&:has(input:focus-visible) { outline: 2px solid var(--wa-pri); outline-offset: 1px; }
+	}
+	.wa-bill__details { display: flex; flex-direction: column; gap: 8px; }
+	.wa-bill__payto {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+		gap: 8px 12px;
+		margin: 0;
+		padding: 12px;
+		border-radius: 10px;
+		background: var(--wa-sunken);
+		dt { font-size: 12px; font-weight: 400; color: var(--wa-ink-4); }
+		dd { margin: 0; font-size: 13px; font-weight: 600; color: var(--wa-ink); overflow-wrap: anywhere; }
+	}
+	.wa-bill__receipt { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+	.wa-bill__actions { padding-block-start: 4px; }
+
+	.wa-bill__activity {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		border: 1px solid var(--wa-border);
+		border-radius: 12px;
+		li {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto auto;
+			align-items: center;
+			gap: 12px;
+			padding: 10px 10px;
+			border-block-end: 1px solid var(--wa-border);
+			&:last-child { border-block-end: 0; }
+		}
+		li > span { display: flex; flex-direction: column; min-inline-size: 0; }
+		b { font-size: 13px; font-weight: 600; color: var(--wa-ink); }
+		em { font-style: normal; font-size: 12px; color: var(--wa-ink-4); }
+		strong { font-size: 14px; font-weight: 700; color: var(--wa-ink); white-space: nowrap; &.is-in { color: var(--wa-ok-i); } }
+	}
+
+	.wa-bill__bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+	.wa-bill__table-wrap {
+		margin-block-start: 12px;
+		overflow-x: auto;
+		border: 1px solid var(--wa-border);
+		border-radius: 12px;
+		&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: 1px; }
+	}
+	.wa-bill__table {
+		inline-size: 100%;
+		min-inline-size: 620px;
+		border-collapse: collapse;
+		font-size: 13px;
+		th, td { padding: 9px 12px; border-block-end: 1px solid var(--wa-border); text-align: start; vertical-align: top; color: var(--wa-ink-2); }
+		thead th { background: var(--wa-sunken); font-size: 12px; font-weight: 600; color: var(--wa-ink-3); }
+		td b { display: block; font-weight: 600; color: var(--wa-ink); }
+		td em { display: block; font-style: normal; font-size: 12px; color: var(--wa-ink-4); }
+		.is-num { text-align: end; white-space: nowrap; font-variant-numeric: tabular-nums; }
+		.is-in { color: var(--wa-ok-i); font-weight: 600; }
+		.is-opening td { background: var(--wa-bg); color: var(--wa-ink-3); }
+		tfoot th, tfoot td { border-block-end: 0; border-block-start: 2px solid var(--wa-border-2); font-weight: 700; color: var(--wa-ink); }
+	}
+	.wa-bill__empty { margin-block-start: 12px; }
+
+	@media (max-width: 719px) {
+		.wa-bill__activity li { grid-template-columns: minmax(0, 1fr) auto; }
+		.wa-bill__activity li .sanad-badge, .wa-bill__activity li [class*="badge"] { grid-column: 1; justify-self: start; }
 	}
 }

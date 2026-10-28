@@ -262,6 +262,7 @@ frappe.provide("sanad.ui");
 							<button type="button" class="sanad-ce__status${on ? " is-on" : ""}" data-act="toggle-status" role="switch" aria-checked="${on}" title="${esc(__("Turn the command on or off"))}">
 								${esc(on ? __("Enabled", null, "Command Editor") : __("Stopped"))}<span class="sanad-ce__track"><span class="sanad-ce__knob"></span></span>
 							</button>
+							${this.opts.form_doctype && d.name ? sanad.ui.form_button_html() : ""}
 							<button type="button" class="sanad-ce__x" data-act="close" data-keep title="${esc(__("Close (Esc)"))}" aria-label="${esc(__("Close"))}">×</button>
 						</span>
 					</div>
@@ -1087,6 +1088,8 @@ frappe.provide("sanad.ui");
 			switch (act) {
 				case "close":
 					return this.close();
+				case "open_form":
+					return sanad.ui.open_form(this, this.opts.form_doctype, d.name);
 				case "tab":
 					this.ui.tab = key;
 					this.ui.fn_open = false;

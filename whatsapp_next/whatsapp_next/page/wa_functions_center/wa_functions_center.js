@@ -467,6 +467,7 @@
 					this.view = new ui.FunctionDetail({
 						entry: data.entry,
 						manifest: this.manifest,
+						form: e.installed ? { doctype: "WhatsApp Function", name: e.function_key } : null,
 						party_types: PREVIEW_PARTY_TYPES.map((k) => ({ key: k, label: __(k) })),
 						preview: manager && e.installed ? (a) => this.preview(a) : null,
 						search_contacts: manager ? (txt, party_type) => ui.call("commands.search_contacts", { txt, party_type }) : null,

@@ -40,7 +40,7 @@
    "in_list_view": 1,
    "in_standard_filter": 1,
    "label": "Action",
-   "options": "Device Created\nDevice Connected\nDevice Disconnected\nDevice Deleted\nCredentials Changed\nSettings Changed\nWebhook Changed\nConnection Tested\nQueue Paused\nQueue Resumed\nQueue Rate Changed\nQueue Items Deleted\nQueue Items Retried\nCampaign Started\nCampaign Paused\nCampaign Resumed\nCampaign Cancelled\nCampaign Recipients Changed\nContact Group Members Changed\nBulk Send\nTest Send\nElevated Contact Read\nElevated Contact Write\nNumber Linked\nNumber Converted\nNumbers Synced\nConversation Confirmed\nFunction Installed\nFunction Updated\nFunction Removed\nCommand Changed\nCommand Deleted\nCommand Defaults Restored\nRetention Purge\nAlert Test Sent\nWhatsApp Group Created\nStatus Posted\nStatus Deleted\nBackup Exported\nBackup Imported\nAccount Data Deleted",
+   "options": "Device Created\nDevice Connected\nDevice Disconnected\nDevice Deleted\nCredentials Changed\nSettings Changed\nWebhook Changed\nConnection Tested\nQueue Paused\nQueue Resumed\nQueue Rate Changed\nQueue Items Deleted\nQueue Items Retried\nCampaign Started\nCampaign Paused\nCampaign Resumed\nCampaign Cancelled\nCampaign Recipients Changed\nContact Group Members Changed\nBulk Send\nTest Send\nElevated Contact Read\nElevated Contact Write\nNumber Linked\nNumber Converted\nNumbers Synced\nConversation Confirmed\nFunction Installed\nFunction Updated\nFunction Removed\nCommand Changed\nCommand Deleted\nCommand Defaults Restored\nRetention Purge\nAlert Test Sent\nWhatsApp Group Created\nStatus Posted\nStatus Deleted\nBackup Exported\nBackup Imported\nAccount Data Deleted\nSubscription Renewed\nPlan Changed\nWallet Top-up Requested\nWallet Top-up Paid",
    "read_only": 1,
    "reqd": 1,
    "search_index": 1
@@ -188,7 +188,7 @@
  ],
  "in_create": 1,
  "links": [],
- "modified": "2026-10-27 21:14:16.181352",
+ "modified": "2026-10-28 18:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Audit Log",

@@ -166,7 +166,7 @@ body.sanad-sw-open { overflow: hidden; }
 		flex: 1;
 		min-block-size: 0;
 		overflow: auto;
-		padding: 16px 16px 16px;
+		padding: 12px 12px 12px;
 		outline: none;
 		scrollbar-width: thin;
 		container-type: inline-size;
@@ -181,7 +181,7 @@ body.sanad-sw-open { overflow: hidden; }
 	&__desc { margin: 4px 0 0; font-size: 13px; line-height: 1.55; color: var(--wa-ink-3); }
 
 	&__h {
-		margin-block: 18px 2px;
+		margin-block: 12px 2px;
 
 		h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--wa-ink); }
 		p { margin: 2px 0 0; font-size: 13px; color: var(--wa-ink-3); }
@@ -213,7 +213,7 @@ body.sanad-sw-open { overflow: hidden; }
 		border-radius: 0;
 		transform: none !important;
 
-		&__rail { border-inline-end: 0; padding: 24px 12px 16px; }
+		&__rail { border-inline-end: 0; padding: 14px 12px 12px; }
 		&__main { display: none; }
 		&--pane &__rail { display: none; }
 		&--pane &__main { display: flex; }
@@ -229,7 +229,7 @@ body.sanad-sw-open { overflow: hidden; }
 		&:not(&--pane) &__pane,
 		&:not(&--pane) &__back { display: none; }
 
-		&__pane { padding: 12px 16px 20px; }
+		&__pane { padding: 12px 12px 12px; }
 		&__head { padding-inline-end: 0; }
 		&__row { flex-wrap: wrap; gap: 10px; }
 		&__row-control { max-inline-size: 100%; }

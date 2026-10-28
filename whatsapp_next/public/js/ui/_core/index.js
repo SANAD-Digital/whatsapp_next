@@ -120,6 +120,24 @@ ui.is_rtl = () =>
 
 ui.uid = (prefix = "sanad") => `${prefix}-${frappe.utils.get_random(8)}`;
 
+/** A window's «Open form» button (owner, 2026-10-28): `data-act="open_form"`, handled by `ui.open_form`. */
+ui.form_button_html = (cls = "") =>
+	`<button type="button" class="wa-btn wa-btn--secondary wa-btn--sm sanad-open-form ${cls}" data-act="open_form" title="${ui.escape(__("Open the record's full form"))}">${ui.escape(__("Open form"))}</button>`;
+
+/**
+ * Leave a window for the record's Desk form: the window closes first (asking before it drops
+ * unsaved changes), then the form opens. `win` has `close(force)` and may have `is_dirty()`.
+ */
+ui.open_form = (win, doctype, name) => {
+	if (!doctype || !name) return;
+	const go = () => {
+		win.close(true);
+		frappe.set_route("Form", doctype, name);
+	};
+	if (typeof win.is_dirty === "function" && win.is_dirty()) return frappe.confirm(__("Discard unsaved changes?"), go);
+	go();
+};
+
 ui.debounce = (fn, wait = 250) => frappe.utils.debounce(fn, wait);
 
 /**

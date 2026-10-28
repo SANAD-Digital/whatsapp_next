@@ -221,7 +221,7 @@ class SndPlatformProvider(BaseProvider):
 	key = "snd_platform"
 	display_name = "SND Platform"
 	capabilities = frozenset(
-		{"batch_send", "pair_code", "qr", "signup", "usage", "queue_cancel", "polls", "webhooks"}
+		{"batch_send", "pair_code", "qr", "signup", "usage", "queue_cancel", "polls", "webhooks", "billing"}
 	)
 
 	def __init__(self, settings) -> None:
@@ -624,6 +624,41 @@ class SndPlatformProvider(BaseProvider):
 	def get_referral_coupon(self) -> dict:
 		"""`{ok, customer, redemption_count, coupon{...}}` for the configured tenant."""
 		return self._request("POST", "get_my_referral_coupon", v1=True)
+
+	# ------------------------------------------------------------------ billing
+	def get_wallet(self) -> dict:
+		"""`get_wallet_api` (A-03)."""
+		return self._request("POST", "get_wallet_api", v1=True, body={"limit": 20})
+
+	def list_plans(self) -> dict:
+		"""`list_plans_api` (A-02)."""
+		return self._request("POST", "list_plans_api", v1=True, body={})
+
+	def get_payment_methods(self) -> dict:
+		return self._request("POST", "get_payment_methods_api", v1=True, body={})
+
+	def renew_subscription(self) -> dict:
+		return self._request("POST", "renew_subscription_api", v1=True, body={})
+
+	def change_plan(self, plan_code: str) -> dict:
+		return self._request("POST", "change_plan_api", v1=True, body={"plan_code": plan_code})
+
+	def request_topup(self, amount, payment_option=None, reference_no=None, remarks=None, receipt=None, plan_code=None) -> dict:
+		body: dict[str, Any] = {"amount": amount, "payment_option": payment_option, "reference_no": reference_no, "remarks": remarks, "plan_code": plan_code}
+		if receipt:
+			body.update({"receipt_filename": receipt[0], "receipt_mime": receipt[1], "receipt_base64": receipt[2]})
+		return self._request("POST", "request_wallet_topup_api", v1=True, body={k: v for k, v in body.items() if v})
+
+	def start_paypal_topup(self, amount, return_url, plan_code=None) -> dict:
+		body = {"amount": amount, "return_url": return_url, "plan_code": plan_code}
+		return self._request("POST", "start_paypal_topup_api", v1=True, body={k: v for k, v in body.items() if v})
+
+	def confirm_paypal_topup(self, order_id: str) -> dict:
+		return self._request("POST", "confirm_paypal_topup_api", v1=True, body={"order_id": order_id})
+
+	def get_account_statement(self, from_date=None, to_date=None) -> dict:
+		body = {"from_date": from_date, "to_date": to_date}
+		return self._request("POST", "get_account_statement_api", v1=True, body={k: v for k, v in body.items() if v})
 
 	# ------------------------------------------------------------------ devices
 	def _device_state(self, row: dict) -> DeviceState:

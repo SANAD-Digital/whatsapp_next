@@ -208,6 +208,7 @@ frappe.provide("sanad.ui");
 								<span class="sanad-fd__badge sanad-fd__badge--line ${e.installed ? "sanad-fd__badge--pri" : ""}">${esc(e.installed ? __("Installed", null, "Function Detail") : __("Not installed", null, "Function Detail"))}</span>
 							</span>
 						</span>
+						${this.opts.form ? sanad.ui.form_button_html() : ""}
 						<button type="button" class="sanad-ce__x sanad-fd__x" data-act="close" title="${esc(__("Close (Esc)"))}" aria-label="${esc(__("Close"))}">×</button>
 					</div>
 					<div class="sanad-ce__head-row sanad-ce__head-row--tabs sanad-fd__tabs-row">
@@ -791,6 +792,8 @@ frappe.provide("sanad.ui");
 			const key = $el.attr("data-key");
 			const o = this.opts;
 			switch (act) {
+				case "open_form":
+					return sanad.ui.open_form(this, this.opts.form.doctype, this.opts.form.name);
 				case "close":
 					return this.close();
 				case "tab":

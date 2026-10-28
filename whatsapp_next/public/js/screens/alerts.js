@@ -10,6 +10,7 @@ whatsapp_next.alerts.open = function (name, { on_saved } = {}) {
 	const call = (method, args) => sanad.ui.call(`alerts.${method}`, args || {}, { silent: true });
 	return new sanad.ui.AlertEditor({
 		name: name || null,
+		form_doctype: "WhatsApp Notification Alert",
 		load: (n) => call("get_editor", n ? { name: n } : {}),
 		preview: (payload) => call("preview_draft", { payload }),
 		save: (payload) => call("save_editor", { payload }),

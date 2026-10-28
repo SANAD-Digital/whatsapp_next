@@ -8,8 +8,8 @@ $fd-mono: "IBM Plex Mono", ui-monospace, monospace;
 .sanad-fd {
 	inline-size: min(1220px, 100%);
 
-	&__head-row { align-items: flex-start; padding: 13px 16px 8px; }
-	&__tabs-row { padding: 0 16px; }
+	&__head-row { align-items: flex-start; padding: 10px 12px 8px; }
+	&__tabs-row { padding: 0 12px; }
 	&__identity { display: flex; flex-direction: column; gap: 3px; min-inline-size: 0; }
 
 	&__name {
@@ -52,7 +52,7 @@ $fd-mono: "IBM Plex Mono", ui-monospace, monospace;
 
 	// ---- details ------------------------------------------------------------------------------
 
-	&__body { padding: 16px; }
+	&__body { padding: 12px; }
 	&__body--outs { gap: 10px; }
 
 	&__lede { margin: 0; font-size: 13px; color: var(--wa-ink-2); line-height: 1.9; text-wrap: pretty; }
@@ -187,13 +187,13 @@ $fd-mono: "IBM Plex Mono", ui-monospace, monospace;
 
 	// ---- version log --------------------------------------------------------------------------
 
-	&__pane { padding: 14px 16px; gap: 8px; }
+	&__pane { padding: 10px 12px; gap: 8px; }
 
 	&__log {
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-		padding: 13px 15px;
+		padding: 10px 10px;
 		border-radius: 8px;
 		background: var(--wa-surface);
 		border: 1px solid var(--wa-border);

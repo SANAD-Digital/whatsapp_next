@@ -6035,3 +6035,125 @@ The WhatsApp platform no longer accepts this site's keys: the account was delete
 This record is being changed by another operation right now (a webhook or a background job). Try again in a moment.,هذا السجل تعدّله الآن عملية أخرى (ويب هوك أو مهمة في الخلفية). حاول مرة أخرى بعد لحظات.
 Something went wrong in WhatsApp ({0}). It was recorded in the Error Log as {1}.,حدث خطأ في الواتساب ({0}). سُجّل في سجل الأخطاء برقم {1}.
 The WhatsApp platform refused this site's keys: the account was deleted or its keys were changed. Sign in again from WhatsApp setup.,منصة واتساب رفضت مفاتيح هذا الموقع: الحساب حُذف أو غُيّرت مفاتيحه. سجّل الدخول من جديد من «إعداد الواتساب».
+Plans,الباقات
+upgrade change plan price,ترقية تغيير الباقة السعر
+Wallet and payments,المحفظة والدفع
+top up paypal transfer receipt balance,شحن باي بال حوالة إيصال رصيد
+Account statement,كشف الحساب
+invoices payments report print,الفواتير المدفوعات تقرير طباعة
+Messages come out of the plan first; what goes beyond it comes out of the wallet. Renew and pay from here.,تُخصم الرسائل من الباقة أولاً، وما زاد عليها من المحفظة. جدّد وادفع من هنا.
+Prices are per month. A change starts today and is paid from your wallet; you see the amount before you confirm.,الأسعار شهرية. يبدأ التغيير اليوم ويُدفع من محفظتك، وترى المبلغ قبل أن تؤكد.
+Top up by PayPal or by a transfer with its receipt. Renewals and plan changes are paid from here.,اشحن عبر PayPal أو بحوالة مع إيصالها. التجديد وتغيير الباقة يُدفعان من هنا.
+"Every amount that came into your wallet or was charged, with the balance after each one.",كل مبلغ دخل محفظتك أو خُصم منها، والرصيد بعد كل حركة.
+"Top up the wallet, change the plan and read the account statement here.",اشحن المحفظة وغيّر الباقة واطّلع على كشف الحساب من هنا.
+Renew the plan,تجديد الباقة
+Your plan is due. Renewing starts a new cycle now and is paid from the wallet.,حان تجديد باقتك. التجديد يبدأ دورة جديدة الآن ويُدفع من المحفظة.
+Renewing is offered when the messages run out or the cycle ends.,يتاح التجديد عندما تنفد الرسائل أو تنتهي الدورة.
+Renew now,جدّد الآن
+Renew the plan now?,تجديد الباقة الآن؟
+A new cycle starts today and its price is paid from your wallet.,تبدأ دورة جديدة اليوم ويُدفع سعرها من محفظتك.
+Your plan is renewed,تم تجديد باقتك
+Not enough in the wallet,الرصيد غير كافٍ
+This costs {0} and your wallet has {1}. Top up {2} and try again.,السعر {0} ورصيد محفظتك {1}. اشحن {2} ثم حاول مرة أخرى.
+Top up the wallet,اشحن المحفظة
+No plans to choose from right now,لا توجد باقات متاحة الآن
+Your plan,باقتك
+Most popular,الأكثر طلباً
+per month,شهرياً
+Messages a month,الرسائل في الشهر
+Unused messages,الرسائل غير المستخدمة
+Carry over,تُرحَّل
+Don't carry over,لا تُرحَّل
+Features included,المزايا المشمولة
+You are on this plan,أنت على هذه الباقة
+Move to this plan,انتقل إلى هذه الباقة
+Move to {0}?,الانتقال إلى {0}؟
+The new plan starts today and its price is paid from your wallet.,تبدأ الباقة الجديدة اليوم ويُدفع سعرها من محفظتك.
+Price,السعر
+You are now on {0}.,أنت الآن على {0}.
+Confirming your PayPal payment…,جارٍ تأكيد دفعتك عبر PayPal…
+The PayPal payment was cancelled. Nothing was charged.,أُلغيت الدفعة عبر PayPal، ولم يُخصم أي مبلغ.
+Paid. {0} was added to your wallet.,تم الدفع، وأُضيف {0} إلى محفظتك.
+PayPal is still processing this payment. It is added to your wallet as soon as PayPal clears it.,ما زال PayPal يعالج هذه الدفعة، وتُضاف إلى محفظتك فور اعتمادها.
+PayPal did not take this payment. Nothing was charged; you can try again.,لم يقبل PayPal هذه الدفعة، ولم يُخصم أي مبلغ. يمكنك المحاولة مرة أخرى.
+Available now,متاح الآن
+Renewals are paid from here,منه يُدفع التجديد
+Top-ups under review,شحنات قيد المراجعة
+Added once the platform accepts them,تُضاف بعد أن تقبلها المنصة
+Nothing waiting,لا شيء بانتظار المراجعة
+Renewal price,سعر التجديد
+Renews by itself from the wallet,يتجدد تلقائياً من المحفظة
+Renewed when you choose,يتجدد عندما تختار
+Latest activity,آخر الحركات
+PayPal,PayPal
+Pay online now; the wallet is credited at once.,ادفع الآن عبر الإنترنت، ويُضاف المبلغ إلى المحفظة فوراً.
+No payment method is offered for your country yet,لا توجد طريقة دفع متاحة لبلدك بعد
+Contact the platform team to top up.,تواصل مع فريق المنصة لشحن المحفظة.
+Amount,المبلغ
+How you pay,طريقة الدفع
+Pay with PayPal,ادفع عبر PayPal
+You go to PayPal to pay and come back here; the amount is added to your wallet straight away.,تنتقل إلى PayPal لتدفع ثم تعود إلى هنا، ويُضاف المبلغ إلى محفظتك مباشرة.
+Send for review,أرسل للمراجعة
+Bank,البنك
+Account name,اسم الحساب
+Account number,رقم الحساب
+IBAN,الآيبان
+SWIFT,رمز السويفت
+Receiver's phone,هاتف المستلم
+City,المدينة
+PayPal account,حساب PayPal
+Transfer number,رقم الحوالة
+Receipt,الإيصال
+"PDF or image, up to 5 MB",ملف PDF أو صورة، حتى 5 ميجابايت
+Attach the receipt,أرفق الإيصال
+"The platform checks the transfer, then adds the amount to your wallet.",تتحقق المنصة من الحوالة، ثم تضيف المبلغ إلى محفظتك.
+Enter the amount to add.,أدخل المبلغ الذي تريد إضافته.
+Opening PayPal…,جارٍ فتح PayPal…
+Sent. The platform reviews it and adds it to your wallet.,تم الإرسال. تراجعه المنصة ثم تضيفه إلى محفظتك.
+No wallet activity yet,لا حركة في المحفظة بعد
+Wallet top-up,شحن المحفظة
+Refund to your wallet,مبلغ مُعاد إلى محفظتك
+Paid from your wallet,مدفوع من محفظتك
+Balance correction,تصحيح الرصيد
+Ref.,المرجع
+See the account statement,اعرض كشف الحساب
+Last 3 months,آخر 3 أشهر
+Print,طباعة
+bank transfer,حوالة بنكية
+cash,نقداً
+another way,طريقة أخرى
+Wallet top-up by {0},شحن المحفظة عبر {0}
+Payment by {0} for invoice {1},دفعة عبر {0} عن الفاتورة {1}
+Invoice {0} — {1},الفاتورة {0} — {1}
+Invoice {0},الفاتورة {0}
+From {0} to {1},من {0} إلى {1}
+Opening balance,الرصيد الافتتاحي
+Came in,الوارد
+Charged,المخصوم
+Closing balance,الرصيد الختامي
+Nothing in this period,لا حركات في هذه الفترة
+No money came in or was charged between these dates. Your balance stayed at {0}.,لم يدخل أو يُخصم أي مبلغ بين هذين التاريخين، وبقي رصيدك {0}.
+Money in,وارد
+Money out,مخصوم
+Allow pop-ups for this site to print.,اسمح بالنوافذ المنبثقة لهذا الموقع لتتمكن من الطباعة.
+Choose a plan.,اختر باقة.
+Upload the receipt again.,ارفع الإيصال مرة أخرى.
+"The receipt must be a PDF or an image (JPG, PNG or WebP).",يجب أن يكون الإيصال ملف PDF أو صورة (JPG أو PNG أو WebP).
+The receipt must be smaller than 5 MB.,يجب أن يكون حجم الإيصال أقل من 5 ميجابايت.
+Enter the amount you paid.,أدخل المبلغ الذي دفعته.
+Choose the payment method you used.,اختر طريقة الدفع التي استخدمتها.
+"Add the transfer number or attach the receipt, so the payment can be matched.",أضف رقم الحوالة أو أرفق الإيصال حتى تُطابَق الدفعة.
+This PayPal payment was not found.,لم يتم العثور على هذه الدفعة في PayPal.
+Renewed the plan from the wallet,جدّد الباقة من المحفظة
+Changed the plan,غيّر الباقة
+Sent a top-up for review,أرسل شحنة للمراجعة
+Topped up the wallet by PayPal,شحن المحفظة عبر PayPal
+Subscription Renewed,تجديد الاشتراك
+Plan Changed,تغيير الباقة
+Wallet Top-up Requested,طلب شحن المحفظة
+Wallet Top-up Paid,دفع شحن المحفظة
+Plans,الباقات,Billing
+Details,البيان,Statement
+Under review,قيد المراجعة
+Not accepted,لم تُقبل
+Open the record's full form,افتح النموذج الكامل لهذا السجل

@@ -204,6 +204,7 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 				<span class="sanad-tw__mark" aria-hidden="true">${kit.ico("doc", "sm")}</span>
 				<input type="text" class="sanad-tw__name" value="${esc(d.template_name)}" placeholder="${esc(__("Template name"))}" aria-label="${esc(__("Template name"))}" maxlength="140"${ro ? " readonly" : ""}>
 				<span class="sanad-tw__status" aria-live="polite"></span>
+				${this.opts.form_doctype && this.draft && this.draft.name ? sanad.ui.form_button_html() : ""}
 				${kit.btn({ icon: "x", variant: "secondary", title: __("Close (Esc)"), cls: "sanad-tw__close", attrs: { "data-act": "close" } })}
 			</header>
 			<div class="sanad-tw__tabs" role="tablist" aria-label="${esc(__("Sections"))}">
@@ -340,6 +341,7 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 	bind() {
 		const $d = this.$dlg;
 		$d.on("click", "[data-act=close]", () => this.close());
+		$d.on("click", "[data-act=open_form]", () => sanad.ui.open_form(this, this.opts.form_doctype, this.draft && this.draft.name));
 		$d.on("click", "[data-tab]", (e) => this.show_tab($(e.currentTarget).data("tab")));
 		kit.bind_segmented($d.find(".wa-seg"), (value) => this.set("message_type", value));
 		if (!this.data.can_write) $d.find(".wa-seg__opt").prop("disabled", true);

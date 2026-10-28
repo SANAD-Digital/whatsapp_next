@@ -12,7 +12,7 @@
 	z-index: 1036; // under Frappe's dialogs (confirmations and the file uploader open on top)
 	display: grid;
 	place-items: center;
-	padding: 20px;
+	padding: 12px;
 
 	@media (max-width: 719px) { padding: 0; }
 }
@@ -60,7 +60,7 @@ body.sanad-tw-open { overflow: hidden; }
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		padding: 12px 16px;
+		padding: 12px 12px;
 		background: var(--wa-surface);
 		border-block-end: 1px solid var(--wa-border);
 		flex: none;
@@ -148,10 +148,10 @@ body.sanad-tw-open { overflow: hidden; }
 		min-inline-size: 0;
 		overflow-y: auto;
 		overflow-x: hidden;
-		padding: 16px;
+		padding: 12px;
 		display: flex;
 		flex-direction: column;
-		gap: 14px;
+		gap: 10px;
 		border-inline-end: 1px solid var(--wa-border);
 		scrollbar-width: thin;
 		scrollbar-color: var(--wa-border-2) transparent;
@@ -349,7 +349,7 @@ body.sanad-tw-open { overflow: hidden; }
 	&__chat {
 		display: flex;
 		flex-direction: column;
-		padding: 14px 12px;
+		padding: 10px 12px;
 		border: 1px solid var(--wa-pri-sb);
 		border-radius: 12px;
 		background: var(--wa-pri-s);
@@ -436,7 +436,7 @@ body.sanad-tw-open { overflow: hidden; }
 
 	// ---- variables ------------------------------------------------------------------------------
 
-	&__vars-list { display: flex; flex-direction: column; gap: 6px; }
+	&__vars-list { display: flex; flex-direction: column; gap: 4px; }
 	&__vars-group {
 		margin-block-start: 6px;
 		font-size: 11px;
@@ -449,8 +449,8 @@ body.sanad-tw-open { overflow: hidden; }
 		flex-direction: column;
 		align-items: stretch;
 		gap: 2px;
-		min-block-size: 36px;
-		padding: 8px 12px;
+		min-block-size: 30px;
+		padding: 5px 10px;
 		border: 1px solid var(--wa-border);
 		border-radius: 8px;
 		background: var(--wa-bg);
@@ -483,7 +483,7 @@ body.sanad-tw-open { overflow: hidden; }
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-		padding: 12px 16px;
+		padding: 12px 12px;
 		background: var(--wa-surface);
 		border-block-start: 1px solid var(--wa-border);
 		flex: none;

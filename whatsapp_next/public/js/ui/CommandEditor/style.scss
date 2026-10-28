@@ -18,7 +18,7 @@ body.sanad-ce-open { overflow: hidden; }
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 16px;
+	padding: 12px;
 	color: var(--wa-ink);
 
 	@media (max-width: $ce-mobile) { padding: 0; }
@@ -87,9 +87,9 @@ body.sanad-ce-open { overflow: hidden; }
 		align-items: center;
 		gap: 12px;
 		flex-wrap: wrap;
-		padding: 12px 14px 8px;
+		padding: 12px 10px 8px;
 
-		&--tabs { gap: 10px; padding: 0 14px; }
+		&--tabs { gap: 10px; padding: 0 10px; }
 	}
 
 	&__word { display: flex; align-items: center; gap: 8px; min-inline-size: 0; flex: 1; flex-wrap: wrap; }
@@ -325,7 +325,7 @@ body.sanad-ce-open { overflow: hidden; }
 		align-items: center;
 		justify-content: space-between;
 		gap: 8px;
-		padding: 10px 14px;
+		padding: 10px 10px;
 		background: inherit;
 		border-block-end: 1px solid var(--wa-border);
 	}
@@ -333,10 +333,10 @@ body.sanad-ce-open { overflow: hidden; }
 	&__col-title { font-size: 11px; font-weight: 700; color: var(--wa-ink-2); letter-spacing: 0.02em; }
 
 	&__col-body {
-		padding: 14px;
+		padding: 10px;
 		display: flex;
 		flex-direction: column;
-		gap: 14px;
+		gap: 10px;
 
 		&--result { flex: 1; gap: 10px; }
 	}
@@ -619,7 +619,7 @@ body.sanad-ce-open { overflow: hidden; }
 	&__example { text-align: end; font-size: 11px; color: var(--wa-pri-d); }
 
 	&__empty {
-		padding: 14px;
+		padding: 10px;
 		border-radius: 8px;
 		background: var(--wa-bg);
 		border: 1px dashed var(--wa-border-2);
@@ -648,7 +648,7 @@ body.sanad-ce-open { overflow: hidden; }
 		flex: 1;
 		min-block-size: 0;
 		overflow: auto;
-		padding: 14px;
+		padding: 10px;
 		display: flex;
 		flex-direction: column;
 		gap: 12px;
@@ -689,7 +689,7 @@ body.sanad-ce-open { overflow: hidden; }
 		display: flex;
 		flex-direction: column;
 		gap: 10px;
-		padding: 13px;
+		padding: 10px;
 		border-radius: 8px;
 		background: var(--wa-surface);
 		border: 1px solid var(--wa-border);
@@ -813,7 +813,7 @@ body.sanad-ce-open { overflow: hidden; }
 		align-items: center;
 		gap: 8px;
 		flex-wrap: wrap;
-		padding: 10px 14px;
+		padding: 10px 10px;
 		background: var(--wa-surface);
 		border-block-start: 1px solid var(--wa-border);
 	}
@@ -822,7 +822,7 @@ body.sanad-ce-open { overflow: hidden; }
 
 	&__btn {
 		min-block-size: 28px;
-		padding: 0 14px;
+		padding: 0 10px;
 		border-radius: 8px;
 		border: 1px solid var(--wa-border-2);
 		background: var(--wa-surface);
@@ -834,7 +834,7 @@ body.sanad-ce-open { overflow: hidden; }
 		&:hover { background: var(--wa-sunken); }
 		&:disabled { opacity: 0.6; cursor: default; }
 
-		&--pri { border: 0; padding: 0 16px; background: var(--wa-pri); color: var(--wa-on-pri);
+		&--pri { border: 0; padding: 0 12px; background: var(--wa-pri); color: var(--wa-on-pri);
 			&:hover { background: var(--wa-pri-d); }
 		}
 

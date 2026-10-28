@@ -18,6 +18,7 @@ whatsapp_next.templates.open = function (name, { on_saved, defaults } = {}) {
 	};
 	return new sanad.ui.TemplateWindow({
 		name: name || null,
+		form_doctype: "WhatsApp Template",
 		load: (n) => (n ? call("get_editor", { name: n }) : call("get_editor").then(filled)),
 		save: (payload) => call("save_editor", { payload }),
 		remove: (n) => call("delete_template", { name: n }),

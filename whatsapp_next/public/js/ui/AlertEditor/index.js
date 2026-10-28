@@ -326,6 +326,7 @@ frappe.provide("sanad.ui");
 						<span class="wa-toggle__track"></span>
 						<span class="wa-toggle__label" data-slot="enabled-label"></span>
 					</label>
+					${this.opts.form_doctype && d.name ? sanad.ui.form_button_html() : ""}
 					<button type="button" class="sanad-ae__icon" data-act="close" aria-label="${esc(__("Close"))}" title="${esc(__("Close (Esc)"))}">${sanad.ui.ico("x", "md")}</button>
 				</header>
 				<div class="sanad-ae__main">
@@ -1086,6 +1087,8 @@ frappe.provide("sanad.ui");
 			switch (act) {
 				case "close":
 					return this.close();
+				case "open_form":
+					return sanad.ui.open_form(this, this.opts.form_doctype, this.draft && this.draft.name);
 				case "content":
 					d.content_type = value;
 					return this.changed({ redraw: ["what", "who"] });

@@ -106,6 +106,7 @@ whatsapp_next.command_modal = function (name, opts = {}) {
 	};
 	return new sanad.ui.CommandEditor({
 		name: name || null,
+		form_doctype: "WhatsApp Command",
 		read_only: !!opts.read_only || !frappe.user.has_role(["WhatsApp Manager", "System Manager"]),
 		load: (n) =>
 			call("get_editor", { name: n }).then((r) => {

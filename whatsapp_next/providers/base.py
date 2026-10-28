@@ -123,6 +123,54 @@ class BaseProvider(ABC):
 	def get_referral_coupon(self) -> dict:
 		"""This tenant's own referral coupon (NotSupportedError where there are none)."""
 
+	# --- billing: plan, wallet and payments (capability `billing`) ---
+	# Not abstract: a provider that bills elsewhere keeps these defaults, and the site says so.
+	def get_wallet(self) -> dict:
+		"""`{balance, currency, transactions[], billing_entries[], renewal{…}}`."""
+		raise pex.NotSupportedError("This provider does not bill through this site", code="NOT_SUPPORTED")
+
+	def list_plans(self) -> dict:
+		"""`{plans[{plan_code, plan_name, monthly_price, currency, message_limit, device_limit,
+		features, is_current, is_trial, …}], current_plan}`."""
+		raise pex.NotSupportedError("This provider does not bill through this site", code="NOT_SUPPORTED")
+
+	def get_payment_methods(self) -> dict:
+		"""`{paypal: {enabled, currency}, methods[{name, title, method_type, …account details}]}`."""
+		raise pex.NotSupportedError("This provider does not bill through this site", code="NOT_SUPPORTED")
+
+	def renew_subscription(self) -> dict:
+		"""Renew from the wallet now → `{done, subscription, payment_required?, amount?, …}`."""
+		raise pex.NotSupportedError("This provider does not bill through this site", code="NOT_SUPPORTED")
+
+	def change_plan(self, plan_code: str) -> dict:
+		"""Move to `plan_code` now, paid from the wallet; the same answer as `renew_subscription`."""
+		raise pex.NotSupportedError("This provider does not bill through this site", code="NOT_SUPPORTED")
+
+	def request_topup(
+		self,
+		amount: float,
+		payment_option: str | None = None,
+		reference_no: str | None = None,
+		remarks: str | None = None,
+		receipt: tuple[str, str, str] | None = None,
+		plan_code: str | None = None,
+	) -> dict:
+		"""A top-up paid by transfer, for the platform to approve. `receipt` is `(filename, mime,
+		base64)`. → `{transaction, status, amount, currency}`."""
+		raise pex.NotSupportedError("This provider does not bill through this site", code="NOT_SUPPORTED")
+
+	def start_paypal_topup(self, amount: float, return_url: str, plan_code: str | None = None) -> dict:
+		"""→ `{order_id, approve_url}`; the payer comes back to `return_url` with `token`."""
+		raise pex.NotSupportedError("This provider does not bill through this site", code="NOT_SUPPORTED")
+
+	def confirm_paypal_topup(self, order_id: str) -> dict:
+		"""→ `{state: completed|pending|not_approved|failed, transaction}`; safe to repeat."""
+		raise pex.NotSupportedError("This provider does not bill through this site", code="NOT_SUPPORTED")
+
+	def get_account_statement(self, from_date: str | None = None, to_date: str | None = None) -> dict:
+		"""→ `{currency, from_date, to_date, opening, total_in, total_out, closing, rows[]}`."""
+		raise pex.NotSupportedError("This provider does not bill through this site", code="NOT_SUPPORTED")
+
 	# --- device lifecycle ---
 	@abstractmethod
 	def create_device(self, device_name: str, phone_e164: str | None, pairing_mode: str) -> DeviceState:
