@@ -49,6 +49,16 @@ class TestCommandMenu(IntegrationTestCase):
 		for i, name in enumerate(self.commands):
 			frappe.db.set_value("WhatsApp Command", name, "show_in_menu", int(i < count))
 
+	def test_the_menu_lists_only_what_the_sender_may_use(self):
+		"""`allowed` (the sender's access) drops the commands that are not theirs (owner, 2026-10-29)."""
+		every = [r.name for r in command_menu.items()]
+		if not every:
+			return
+		hidden = every[0]
+		mine = [r.name for r in command_menu.items(lambda name: name != hidden)]
+		self.assertNotIn(hidden, mine)
+		self.assertEqual(len(mine), len(every) - 1)
+
 	def test_off_changes_nothing(self):
 		self._mode("Off")
 		replies = [_text("done")]

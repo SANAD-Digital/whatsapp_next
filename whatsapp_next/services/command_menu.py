@@ -12,6 +12,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 import frappe
@@ -36,16 +37,17 @@ def mode() -> str:
 	return settings.get("main_menu_mode") or "Off"
 
 
-def items() -> list[frappe._dict]:
-	"""Active commands shown in the menu, in `menu_order` then title."""
+def items(allowed: Callable[[str], bool] | None = None) -> list[frappe._dict]:
+	"""Active commands shown in the menu, in `menu_order` then title — only those `allowed`
+	(the sender's access, `command_router.allowed_for`) when given."""
 	rows = frappe.get_all(
 		"WhatsApp Command",
 		filters={"status": "Active", "show_in_menu": 1},
-		fields=["code", "title", "menu_description", "menu_order"],
+		fields=["name", "code", "title", "menu_description", "menu_order"],
 		order_by="menu_order asc, title asc, code asc",
-		limit=MAX_ROWS,
 	)
-	return [r for r in rows if (r.code or "").strip()]
+	rows = [r for r in rows if (r.code or "").strip() and (allowed is None or allowed(r.name))]
+	return rows[:MAX_ROWS]
 
 
 def is_menu_request(inbound) -> bool:
@@ -72,10 +74,10 @@ def _title(row) -> str:
 	return _(row.title or row.code)[:24]
 
 
-def menu_list(output_key: str = "help") -> dict[str, Any] | None:
+def menu_list(output_key: str = "help", allowed: Callable[[str], bool] | None = None) -> dict[str, Any] | None:
 	"""The menu as a list message, or `None` when no command is in it. `output_key` decides how it
 	is sent (a reply of its own goes at once, like help; one that follows replies goes with them)."""
-	rows = items()
+	rows = items(allowed)
 	if not rows:
 		return None
 	text = _text()
@@ -107,7 +109,7 @@ def _buttons(rows) -> list[dict[str, str]]:
 	return [{"type": "reply", "id": MENU_ID, "text": _button()}]
 
 
-def decorate(replies: list[dict[str, Any]], status: str) -> list[dict[str, Any]]:
+def decorate(replies: list[dict[str, Any]], status: str, allowed: Callable[[str], bool] | None = None) -> list[dict[str, Any]]:
 	"""The replies with the menu added per `main_menu_mode`. Unchanged when the mode is Off, no
 	command is in the menu, a question awaits an answer, or the replies already are the menu."""
 	current = mode()
@@ -115,12 +117,12 @@ def decorate(replies: list[dict[str, Any]], status: str) -> list[dict[str, Any]]
 		return replies
 	if any(r.get("is_menu") for r in replies):
 		return replies
-	rows = items()
+	rows = items(allowed)
 	if not rows:
 		return replies
 	after = replies[-1].get("output_key") or "menu"
 	if current == "List after every reply":
-		return [*replies, menu_list(after)]
+		return [*replies, menu_list(after, allowed)]
 	buttons = _buttons(rows)
 	last = replies[-1]
 	body = cstr(last.get("body"))

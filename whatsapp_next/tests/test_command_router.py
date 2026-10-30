@@ -146,7 +146,15 @@ class TestCommandRouter(IntegrationTestCase):
 		)
 		res = simulator.simulate_inbound(self.device, P_UNLINKED, "?")
 		self.assertEqual(res.status, "Executed")
-		self.assertIn("tdoc —", res.replies[0]["body"])
+		# help lists only what this sender may use (owner, 2026-10-29): `tdoc` is for linked
+		# customers, so an unknown number does not see it — not even how to use it
+		self.assertIn("tping —", res.replies[0]["body"])
+		self.assertNotIn("tdoc", res.replies[0]["body"])
+		res = simulator.simulate_inbound(self.device, P_UNLINKED, "? tdoc")
+		self.assertNotIn("tdoc", res.replies[0]["body"])
+		if self.customer:
+			res = simulator.simulate_inbound(self.device, P_LINKED, "?")
+			self.assertIn("tdoc —", res.replies[0]["body"])
 		# not linked
 		res = simulator.simulate_inbound(self.device, P_UNLINKED, "#tdoc SINV-1")
 		self.assertEqual((res.status, res.block_reason, res.replies), ("Blocked", "Not Linked", []))
@@ -185,9 +193,13 @@ class TestCommandRouter(IntegrationTestCase):
 		self.assertIn("takes the rest of the message", ping)
 		self.assertNotIn("=…", ping)
 		self.assertNotIn("msg_result", ping)  # a message template is not a variable
+		# explained only to a sender who may use it (owner, 2026-10-29): `tdoc` is for linked customers
 		res = simulator.simulate_inbound(self.device, P_UNLINKED, "tdoc ؟")
 		self.assertEqual((res.status, res.replies[0]["output_key"]), ("Executed", "help"))
-		self.assertEqual(res.replies[0]["body"], usage)  # no access check: help reveals no data
+		self.assertNotIn("tdoc", res.replies[0]["body"])
+		if self.customer:
+			res = simulator.simulate_inbound(self.device, P_LINKED, "tdoc ؟")
+			self.assertEqual(res.replies[0]["body"], usage)
 		self.assertIn("tping —", simulator.simulate_inbound(self.device, P_UNLINKED, "؟").replies[0]["body"])
 		# the token set in Settings, and the words it may not take
 		ensure_settings(command_help_token="تعريف")
@@ -213,7 +225,7 @@ class TestCommandRouter(IntegrationTestCase):
 		before = frappe.local.lang
 		ensure_settings(command_reply_language="ar")
 		try:
-			res = simulator.simulate_inbound(self.device, P_UNLINKED, "tdoc ؟")
+			res = simulator.simulate_inbound(self.device, P_UNLINKED, "tping ؟")
 			self.assertIn("أرسل:", res.replies[0]["body"])
 			self.assertEqual(frappe.local.lang, before)
 			# a job resolves its user's language on its first `_()` and overwrites `frappe.local.lang`;

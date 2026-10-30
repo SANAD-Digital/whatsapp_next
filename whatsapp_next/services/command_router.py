@@ -13,6 +13,7 @@ import json
 import re
 import shlex
 import time
+from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
 from typing import Any
@@ -153,14 +154,36 @@ def match(text: str | None) -> Match | None:
 	return Match(command=command, word=word, rest=rest)
 
 
-def help_text(sender_key: str | None = None) -> str:
-	"""One line per Active command: `word — title`."""
+def allowed_for(inbound) -> Callable[[str], bool]:
+	"""`allowed(command_name)` for this sender: the same access check that runs a command
+	(`check_access`), so help and the menu list only what the sender may use — a customer never
+	sees a supplier's or an employee's commands (owner, 2026-10-29). Each answer is kept for
+	the message."""
+	seen: dict[str, bool] = {}
+
+	def allowed(name: str) -> bool:
+		if name not in seen:
+			try:
+				seen[name] = check_access(frappe.get_cached_doc("WhatsApp Command", name), inbound) is None
+			except frappe.DoesNotExistError:
+				seen[name] = False
+		return seen[name]
+
+	return allowed
+
+
+def help_text(inbound=None) -> str:
+	"""One line per Active command the sender may use (all of them without `inbound`):
+	`word — title`."""
 	rows = frappe.get_all(
 		"WhatsApp Command",
 		filters={"status": "Active"},
-		fields=["code", "title", "description"],
+		fields=["name", "code", "title", "description"],
 		order_by="code asc",
 	)
+	if inbound is not None:
+		allowed = allowed_for(inbound)
+		rows = [r for r in rows if allowed(r.name)]
 	if not rows:
 		return _("No commands are available")
 	return "\n".join(
@@ -748,8 +771,9 @@ def _route(
 	result = RouteResult(inbound=inbound_name, status="None")
 	text = get("body") or ""
 	m = match_inbound(inbound)
+	allowed = allowed_for(inbound)
 	if not cint(get("is_group")) and command_menu.is_menu_request(inbound):
-		menu = command_menu.menu_list()
+		menu = command_menu.menu_list(allowed=allowed)
 		if menu:
 			from whatsapp_next.services import command_sessions
 
@@ -786,10 +810,11 @@ def _route(
 	if m.is_help:
 		result.status = "Executed"
 		result.command = m.command or None
+		# how to use one command only for a sender who may use it; anyone else gets their own list
 		body = (
 			usage_text(frappe.get_cached_doc("WhatsApp Command", m.command))
-			if m.command
-			else help_text(get("phone_e164"))
+			if m.command and allowed(m.command)
+			else help_text(inbound)
 		)
 		result.replies = [{"output_key": "help", "message_type": "Text", "body": body, "attachment": None}]
 		_set_status(inbound_name, "Executed", command_text=text[:140])
@@ -994,7 +1019,7 @@ def _finish(
 		return result
 	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
 	if not cint(get("is_group")):
-		result.replies = command_menu.decorate(result.replies, result.status)
+		result.replies = command_menu.decorate(result.replies, result.status, allowed=allowed_for(inbound))
 	if dry_run and not create_simulated_rows:
 		return result
 	if command is None:
