@@ -15,6 +15,7 @@ frappe.provide("whatsapp_next.hub");
 		Command: () => __("Commands hub"),
 		Alert: () => __("Alerts hub"),
 		Notification: () => __("Notifications hub"),
+		Template: () => __("Templates hub"),
 	};
 	const STATES = {
 		not_installed: () => ({ label: __("Not installed", null, "Hub"), colour: "gray" }),
@@ -136,12 +137,14 @@ frappe.provide("whatsapp_next.hub");
 				${
 					["Alert", "Notification"].includes(e.hub_type) && e.state === "not_installed"
 						? `<p class="wa-hub__muted">${esc(__("It is installed switched off: turn it on when its recipients and device are right."))}</p>`
+						: e.hub_type === "Command" && e.state === "not_installed"
+						? `<p class="wa-hub__muted">${esc(__("It is installed stopped: set who may use it (groups, account types), then turn it on."))}</p>`
 						: ""
 				}`);
 			this.$detail.find("[data-act=install]").on("click", () => this.install(e));
 			this.$detail.find("[data-act=open]").on("click", () => {
 				this.dialog.hide();
-				frappe.set_route("Form", { Function: "WhatsApp Function", Command: "WhatsApp Command", Alert: "WhatsApp Notification Alert", Notification: "WhatsApp Notification" }[e.hub_type], e.local);
+				frappe.set_route("Form", { Function: "WhatsApp Function", Template: "WhatsApp Template", Command: "WhatsApp Command", Alert: "WhatsApp Notification Alert", Notification: "WhatsApp Notification" }[e.hub_type], e.local);
 			});
 		}
 

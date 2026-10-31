@@ -6196,3 +6196,5 @@ Installed,منزّل,Hub
 Entries,العناصر,Hub
 Checksum,البصمة,Hub
 Install,تنزيل,Hub
+Templates hub,مستودع القوالب
+"It is installed stopped: set who may use it (groups, account types), then turn it on.",يُنزَّل متوقفاً: حدّد من يحق له استخدامه (المجموعات وأنواع الحسابات)، ثم شغّله.
