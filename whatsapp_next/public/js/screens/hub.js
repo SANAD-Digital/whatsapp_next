@@ -145,6 +145,7 @@ frappe.provide("whatsapp_next.hub");
 					<div><dt>${esc(__("Last changed"))}</dt><dd>${esc(frappe.datetime.str_to_user(e.modified))}</dd></div>
 					<div><dt>${esc(__("Checksum", null, "Hub"))}</dt><dd dir="ltr" class="sanad-tabular">${esc(e.checksum)}</dd></div>
 				</dl>
+				${["Template", "Notification", "Alert"].includes(e.hub_type) ? `<h4 class="wa-hub__sub">${esc(__("How it is sent"))}</h4><div class="wa-hub__preview" data-slot="preview"></div>` : ""}
 				${fields ? `<h4 class="wa-hub__sub">${esc(__("What it sets up"))}</h4><dl class="wa-hub__fields">${fields}</dl>` : ""}
 				${
 					e.payload && e.payload.script
@@ -159,10 +160,73 @@ frappe.provide("whatsapp_next.hub");
 						: ""
 				}`);
 			this.$detail.find("[data-act=install]").on("click", () => this.install(e));
+			this.preview(e);
 			this.$detail.find("[data-act=open]").on("click", () => {
 				this.dialog.hide();
 				frappe.set_route("Form", { Function: "WhatsApp Function", Template: "WhatsApp Template", Command: "WhatsApp Command", Alert: "WhatsApp Notification Alert", Notification: "WhatsApp Notification" }[e.hub_type], e.local);
 			});
+		}
+
+		/** The message as the recipient gets it on WhatsApp: the text rendered (on the server, as
+		 *  the send renders it) against the latest record of its document type here, in WhatsApp's
+		 *  formatting. A notification or alert without text of its own shows the template it needs. */
+		async preview(e) {
+			const $slot = this.$detail.find("[data-slot=preview]");
+			if (!$slot.length) return;
+			const p = e.payload || {};
+			let body = e.hub_type === "Template" ? p.body : p.message;
+			let sample_from = e.hub_type === "Template" ? p : null;
+			let doctype = e.hub_type === "Template" ? p.reference_doctype : p.document_type;
+			if (!body && p.template && (p.requires || []).length) {
+				try {
+					const tpl = await ui.call("hub.get_entry", { name: p.requires[0] }, { silent: true });
+					body = ((tpl && tpl.payload) || {}).body;
+					sample_from = (tpl && tpl.payload) || null;
+					doctype = doctype || ((tpl && tpl.payload) || {}).reference_doctype;
+				} catch (err) {
+					body = null;
+				}
+			}
+			if (this.current !== e.name) return;
+			if (!body) {
+				$slot.html(`<p class="wa-hub__muted">${esc(e.hub_type === "Alert" ? __("It sends the report itself, with no text of its own.") : __("Nothing to preview: it has no text."))}</p>`);
+				return;
+			}
+			$slot.html(`<div class="wa-hub__chat"><div class="wa-hub__bubble" aria-busy="true"><span class="wa-hub__muted">${esc(__("Preparing the preview…"))}</span></div></div>`);
+			let r;
+			try {
+				// the template's own sample values fill what no readable record gives
+				let sample = (sample_from || {}).sample_context;
+				try {
+					sample = typeof sample === "string" && sample.trim() ? JSON.parse(sample) : sample || null;
+				} catch (err) {
+					sample = null;
+				}
+				r = await ui.call("templates.preview", { body, reference_doctype: doctype || null, sample_context: sample }, { silent: true });
+			} catch (err) {
+				r = { body: "", errors: [(err && err.message) || __("The preview could not be rendered.")] };
+			}
+			if (this.current !== e.name) return;
+			// no record it could read (a permission, an empty site): the text as written, its
+			// variables visible, rather than a message with holes in it
+			const text = (r && r.errors && r.errors.length) || !(r && r.body) ? body : r.body;
+			const format = ui.ChatThread && ui.ChatThread.format ? ui.ChatThread.format : (t) => esc(t).replace(/\r?\n/g, "<br>");
+			const attachment = (p.message_type || "Text") !== "Text" || cint(p.attach_print) || (e.hub_type === "Alert" && p.content_type === "Report");
+			$slot.html(`
+				<div class="wa-hub__chat">
+					<div class="wa-hub__bubble">
+						${attachment ? `<span class="wa-hub__file">${ui.ico ? ui.ico("attach", "xs") : ""} ${esc(e.hub_type === "Alert" ? __("The report, as a file") : __("The document, as a file"))}</span>` : ""}
+						<div class="wa-hub__text" dir="auto">${format(text)}</div>
+						<span class="wa-hub__time" dir="ltr">${esc(frappe.datetime.now_time().slice(0, 5))} ✓✓</span>
+					</div>
+				</div>
+				<p class="wa-hub__muted">${esc(
+					(r && r.errors && r.errors.length)
+						? __("Shown as written: {0}", [r.errors[0]])
+						: doctype
+						? __("Filled from the latest {0} on this site.", [__(doctype)])
+						: __("As it is sent.")
+				)}</p>`);
 		}
 
 		install(e) {

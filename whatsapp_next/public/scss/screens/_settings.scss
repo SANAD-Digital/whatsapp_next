@@ -1061,3 +1061,32 @@
 	}
 	@media (max-width: 719px) { .wa-hub__layout { grid-template-columns: minmax(0, 1fr); } }
 }
+
+// the hub's preview: the message as the recipient sees it on WhatsApp (owner, 2026-10-31)
+.wa-hub {
+	.wa-hub__chat {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		padding: 14px;
+		border-radius: 12px;
+		background: var(--wa-sunken);
+	}
+	.wa-hub__bubble {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		max-inline-size: min(420px, 92%);
+		min-inline-size: 140px;
+		padding: 8px 12px 6px;
+		border: 1px solid var(--wa-pri-sb);
+		border-radius: 12px;
+		border-end-end-radius: 4px;
+		background: var(--wa-surface);
+		box-shadow: var(--wa-shadow-sm);
+	}
+	.wa-hub__text { font-size: 13px; line-height: 1.6; color: var(--wa-ink); white-space: normal; overflow-wrap: anywhere; }
+	.wa-hub__file { display: inline-flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 8px; background: var(--wa-bg); font-size: 12px; color: var(--wa-ink-3); }
+	.wa-hub__time { align-self: flex-end; font-size: 11px; color: var(--wa-ink-4); }
+	.wa-hub__preview + .wa-hub__sub { margin-block-start: 14px; }
+}

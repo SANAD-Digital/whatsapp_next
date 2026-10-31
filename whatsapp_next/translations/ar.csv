@@ -6198,3 +6198,12 @@ Checksum,البصمة,Hub
 Install,تنزيل,Hub
 Templates hub,مستودع القوالب
 "It is installed stopped: set who may use it (groups, account types), then turn it on.",يُنزَّل متوقفاً: حدّد من يحق له استخدامه (المجموعات وأنواع الحسابات)، ثم شغّله.
+How it is sent,كيف يُرسل
+"It sends the report itself, with no text of its own.",يرسل التقرير نفسه، دون نص خاص به.
+Nothing to preview: it has no text.,لا شيء للمعاينة: ليس له نص.
+Preparing the preview…,جارٍ تجهيز المعاينة…
+"The report, as a file",التقرير، كملف
+"The document, as a file",المستند، كملف
+Shown as written: {0},يظهر كما كُتب: {0}
+Filled from the latest {0} on this site.,مملوء من آخر {0} في هذا الموقع.
+As it is sent.,كما يُرسل.
