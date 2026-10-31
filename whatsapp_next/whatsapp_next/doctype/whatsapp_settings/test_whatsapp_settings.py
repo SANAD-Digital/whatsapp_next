@@ -69,7 +69,7 @@ class TestWhatsAppSettings(IntegrationTestCase):
 			with patch.dict(frappe.conf, {"developer_mode": 1, "whatsapp_platform_base_url": "https://ignored.example.com"}):
 				self.assertEqual(registry.platform_base_url(settings), registry.DEV_PLATFORM_BASE_URL)
 			with patch.dict(frappe.conf, {"developer_mode": 0}):
-				self.assertEqual(registry.platform_base_url(settings), "https://whatsappnext.sanad.digital")
+				self.assertEqual(registry.platform_base_url(settings), registry.PROD_PLATFORM_BASE_URL)
 			# an address chosen in Settings wins, kept https and without the trailing slash
 			settings.platform_base_url = "  https://w-platform.example.com/  "
 			settings.save(ignore_permissions=True)

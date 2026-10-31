@@ -59,7 +59,7 @@ def credentials(settings=None) -> dict[str, str]:
 # The product's own platform (owner, 2026-10-19): a site in developer mode talks to the development
 # platform, any other site to production — unless Settings names another address.
 DEV_PLATFORM_BASE_URL = "https://w-platform.dev.sanad.digital"
-PROD_PLATFORM_BASE_URL = "https://whatsappnext.sanad.digital"
+PROD_PLATFORM_BASE_URL = "https://whatsappnext.app"
 
 
 def platform_base_url(settings=None) -> str:
