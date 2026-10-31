@@ -1046,6 +1046,8 @@
 		dt { font-size: 12px; font-weight: 400; color: var(--wa-ink-4); }
 		dd { margin: 0; font-size: 13px; color: var(--wa-ink); overflow-wrap: anywhere; }
 	}
+	.wa-hub__fields > .is-wide { grid-column: 1 / -1; }
+	.wa-hub__table { margin: 2px 0 0; padding-inline-start: 16px; display: flex; flex-direction: column; gap: 2px; }
 	.wa-btns, .wa-settings__btns { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 	.wa-hub__code {
 		margin: 0;

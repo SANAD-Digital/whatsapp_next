@@ -22,6 +22,8 @@ frappe.provide("whatsapp_next.hub");
 		update_available: () => ({ label: __("Update available", null, "Hub"), colour: "orange" }),
 		installed: () => ({ label: __("Installed", null, "Hub"), colour: "green" }),
 	};
+	// a description the hub wrote from the record ("Sales Invoice · Submit"): each part translated
+	const describe = (text) => (text || "").split(" · ").map((part) => __(part.trim())).join(" · ");
 	const badge = (state) => ui.StatusBadge.html(STATES[state] ? STATES[state]() : { label: state, colour: "gray" });
 
 	class HubWindow {
@@ -83,7 +85,7 @@ frappe.provide("whatsapp_next.hub");
 				this.rows
 					.map(
 						(r) => `<button type="button" class="wa-hub__row${r.name === this.current ? " is-on" : ""}" data-entry="${esc(r.name)}" role="option" aria-selected="${r.name === this.current}">
-							<span class="wa-hub__row-text"><b>${esc(r.hub_name)}</b>${r.description ? `<em>${esc(r.description)}</em>` : ""}</span>
+							<span class="wa-hub__row-text"><b>${esc(r.hub_name)}</b>${r.description ? `<em>${esc(describe(r.description))}</em>` : ""}</span>
 							${badge(r.state)}
 						</button>`
 					)
@@ -107,9 +109,24 @@ frappe.provide("whatsapp_next.hub");
 
 		render_detail(e) {
 			const verb = { not_installed: __("Install", null, "Hub"), update_available: __("Update"), installed: __("Install again") }[e.state] || __("Install", null, "Hub");
+			// what an entry sets up, readably: empty values left out, a table (recipients, inputs)
+			// one line per row, the words a select stores in the user's language
+			const empty = (v) => v == null || v === "" || (Array.isArray(v) && !v.length);
+			const text = (v) => (typeof v === "string" ? __(v) : String(v));
+			const row_line = (r) =>
+				Object.entries(r || {})
+					.filter(([, v]) => !empty(v) && typeof v !== "object")
+					.map(([, v]) => text(v))
+					.join(" · ");
+			const value_html = (v) =>
+				Array.isArray(v)
+					? `<ul class="wa-hub__table">${v.map((r) => `<li dir="auto">${esc(typeof r === "object" ? row_line(r) : text(r))}</li>`).join("")}</ul>`
+					: typeof v === "object"
+					? esc(row_line(v))
+					: esc(text(v));
 			const fields = Object.entries(e.payload || {})
-				.filter(([k]) => k !== "script")
-				.map(([k, v]) => `<div><dt>${esc((e.labels || {})[k] || k)}</dt><dd dir="auto">${esc(typeof v === "object" ? JSON.stringify(v) : v)}</dd></div>`)
+				.filter(([k, v]) => !["script", "requires", "name"].includes(k) && !empty(v))
+				.map(([k, v]) => `<div${Array.isArray(v) ? ' class="is-wide"' : ""}><dt>${esc((e.labels || {})[k] || k)}</dt><dd dir="auto">${value_html(v)}</dd></div>`)
 				.join("");
 			this.$detail.html(`
 				<header class="wa-hub__head">
@@ -122,7 +139,7 @@ frappe.provide("whatsapp_next.hub");
 						<button type="button" class="btn btn-sm btn-primary" data-act="install">${esc(verb)}</button>
 					</span>
 				</header>
-				${e.description ? `<p class="wa-hub__desc">${esc(e.description)}</p>` : ""}
+				${e.description ? `<p class="wa-hub__desc">${esc(describe(e.description))}</p>` : ""}
 				<dl class="wa-hub__facts">
 					<div><dt>${esc(__("Type"))}</dt><dd>${esc(__(e.hub_type))}</dd></div>
 					<div><dt>${esc(__("Last changed"))}</dt><dd>${esc(frappe.datetime.str_to_user(e.modified))}</dd></div>
