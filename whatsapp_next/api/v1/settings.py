@@ -98,7 +98,9 @@ SECTIONS: dict[str, tuple[str, ...]] = {
 # Section → fieldnames `save_settings` may write. Credentials go through `onboarding.save_credentials`;
 # webhook events / status, queue pause / rate and the subscription cache have their own endpoints.
 WRITABLE: dict[str, tuple[str, ...]] = {
-	"provider": ("platform_base_url", "request_timeout"),
+	# the messaging service user is shown and saved here (owner, 2026-10-28: one user for sending
+	# and receiving, not only for commands)
+	"provider": ("platform_base_url", "request_timeout", "command_service_user"),
 	"webhook": ("webhook_max_retries",),
 	"queue": ("max_attempts", "retry_backoff_seconds"),
 	"commands": SECTIONS["commands"],

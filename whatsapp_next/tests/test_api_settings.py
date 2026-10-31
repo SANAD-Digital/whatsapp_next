@@ -130,6 +130,23 @@ class TestApiSettings(IntegrationTestCase):
 			same = api.save_settings(section="retention", values={"audit_retention_days": (before or 0) + 1})
 			self.assertEqual(same["changed"], [])
 
+	def test_every_field_a_section_shows_it_can_save(self):
+		"""The window draws a section's editable fields from what it reads; one it shows but may
+		not save refused the whole section (production, 2026-10-31: «command_service_user not
+		allowed in section provider»)."""
+		from whatsapp_next.tests import function_fixtures as ff
+
+		self.assertIn("command_service_user", api.WRITABLE["provider"])
+		user = ff.ensure_service_user()
+		previous = frappe.db.get_single_value(SETTINGS, "command_service_user")
+		try:
+			with as_user("System Manager"):
+				out = api.save_settings(section="provider", values={"command_service_user": user})
+			self.assertTrue(out["ok"])
+			self.assertEqual(frappe.db.get_single_value(SETTINGS, "command_service_user"), user)
+		finally:
+			frappe.db.set_single_value(SETTINGS, "command_service_user", previous)
+
 	# --- connection / subscription / usage ----------------------------------------------
 
 	def test_test_connection_and_sync(self):
