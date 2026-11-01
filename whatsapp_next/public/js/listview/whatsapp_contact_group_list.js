@@ -125,7 +125,7 @@ frappe.listview_settings["WhatsApp Contact Group"] = {
 				listview,
 				columns,
 				selectable: true,
-				row_action: { label: __("View"), handler: (doc) => frappe.set_route("Form", "WhatsApp Contact Group", doc.name) },
+				on_row_click: (doc) => frappe.set_route("Form", "WhatsApp Contact Group", doc.name),
 				expand: expand_group,
 				page_length: 20,
 				footer: { count: (total) => ui.plural(total, { one: __("{0} group"), two: __("{0} groups"), few: __("{0} groups"), many: __("{0} groups"), other: __("{0} groups") }) },

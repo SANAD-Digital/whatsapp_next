@@ -21,7 +21,7 @@ sanad.ui.DataList = class DataList {
 	 *   format?(value, doc) → html, sub?(doc) → html, type?: "status"|"avatar"|"number"|"date"|"link", hidden_xs?}`
 	 *   (default: `listview.columns`)
 	 * @param {boolean} [opts.selectable=true] — checkbox column
-	 * @param {{label: string, handler: Function}|false} [opts.row_action] — per-row button at the inline-end
+	 * @param {{label: string, handler: Function}|false} [opts.row_action] — per-row button at the inline-end, only when the row itself does not open on a click
 	 * @param {Function} [opts.on_row_click] — `(doc, $row) => void` (whole row except controls / links)
 	 * @param {Function} [opts.expand] — `($el, doc) => void|Promise` renders an expandable row
 	 * @param {number} [opts.page_length=20]
@@ -38,6 +38,8 @@ sanad.ui.DataList = class DataList {
 	 */
 	constructor(opts = {}) {
 		this.opts = Object.assign({ selectable: true, page_length: 20, mobile: "cards", groupable: true, pinnable: true, footer: {}, empty: {} }, opts);
+		// a row that opens on a click needs no button doing the same (owner, 2026-11-02)
+		if (this.opts.on_row_click) this.opts.row_action = false;
 		// Two hosts. A Desk list view (the table replaces its rows, which is every screen built so
 		// far) or, on a custom page that has no list view, a plain wrapper: the page then owns the
 		// data and hands it over with `set_rows`. Nothing about the list path changes.
