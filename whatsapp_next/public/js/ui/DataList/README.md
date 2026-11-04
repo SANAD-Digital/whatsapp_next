@@ -4,7 +4,7 @@ The prototype's data table on top of a Desk `ListView`: sortable headers with a 
 checkbox column (Desk's own `.list-row-checkbox[data-name]`, so `listview.get_checked_items()`
 and `BulkActions` keep working), dense rows with a muted second line, typed cells (status badge
 through the DocType's indicator rule, 2-letter avatar chip, tabular numbers, user-formatted dates,
-form links), a per-row "View" button, an optional expandable row and a footer with the count and a
+form links), an optional per-row button (only when the row does not open on a click), an optional expandable row and a footer with the count and a
 "Page 1 of 9 · Previous · Next" pager. `frappe.views.ListView` keeps doing data, filters, sorting
 and the URL; DataList only replaces how rows, the count and paging render (overrides on the list
 instance — nothing patched globally). Cards under 768 px through CSS alone. Portable: needs only a
@@ -29,7 +29,7 @@ new sanad.ui.DataList({
     { fieldname: "attempts", type: "number" },                        // tabular digits; an Int sits in the middle
   ],
   selectable: true,
-  row_action: { label: __("View"), handler: (doc) => open_drawer(doc) },
+  on_row_click: (doc) => open_drawer(doc), // a clickable row drops `row_action`: no second way to do the same
   on_row_click: (doc) => open_drawer(doc),
   expand: ($el, doc) => render_members($el, doc),                    // optional chevron column
   page_length: 20,
@@ -69,7 +69,7 @@ Applied from the prototype comparison (`proto-outbound.png`, `proto-inbound.png`
   whose name says the next direction ("Sort by Status, ascending"); the checkbox column keeps
   Desk's selection semantics (shift-click ranges, Actions menu, BulkActions).
 - Clickable rows are focusable (`tabindex="0"`, Enter opens) and never swallow clicks on
-  controls or links; the "View" button is a real button at the inline-end for touch / keyboard.
+  controls or links; `row_action` is a real button at the inline-end, shown only when the row itself does not open.
 - Status = StatusBadge (colour + label + icon); the avatar chip pairs initials with the name;
   numbers are `tabular-nums`; dates go through `frappe.datetime.str_to_user`.
 - Loading is a skeleton (initial) or a dimmed table with `aria-busy` (refresh); empty state through
