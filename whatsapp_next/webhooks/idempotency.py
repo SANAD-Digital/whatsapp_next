@@ -39,7 +39,7 @@ def claim(
 	error: str | None = None,
 ) -> Claim:
 	"""Insert the event row, or count a duplicate. Safe under concurrent deliveries: an insert
-	race surfaces as `DuplicateEntryError` and is treated as a duplicate."""
+	race surfaces as `DuplicateEntryError` or `UniqueValidationError` and is a duplicate."""
 	existing = _find(event_name, event_id)
 	if existing:
 		if signature_valid and timestamp_fresh and _was_rejected(existing):
@@ -86,7 +86,9 @@ def claim(
 			)
 			doc.flags.ignore_permissions = True
 			doc.insert(ignore_permissions=True)
-	except frappe.DuplicateEntryError:
+	# the same event delivered twice at once: Frappe names the clash either way (a unique column
+	# is `UniqueValidationError`), and either one answered the platform 417, so it kept retrying
+	except (frappe.DuplicateEntryError, frappe.UniqueValidationError):
 		existing = _find(event_name, event_id)
 		if existing:
 			_bump_duplicate(existing)
