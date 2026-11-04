@@ -1414,8 +1414,22 @@ html[dir="rtl"] .wa-onb__route-arrow {
 	cursor: pointer;
 	b { font-size: 14px; font-weight: 600; color: var(--wa-ink); }
 	span { font-size: 12px; color: var(--wa-ink-4); }
+	.wa-onb__account-site { color: var(--wa-ink-3); }
 	&[aria-pressed="true"] { border-color: var(--wa-pri); box-shadow: inset 0 0 0 1px var(--wa-pri); }
 	&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: 2px; }
+}
+
+// the account another site has: what moving it means, and the verb (owner, 2026-11-04)
+.wa-onb__inuse {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-block-end: 12px;
+	padding: 12px 14px;
+	border-radius: 10px;
+	background: var(--wa-wn-s);
+	color: var(--wa-wn-i);
+	p { margin: 0; font-size: 13px; line-height: 1.6; }
 }
 
 .wa-onb__switch {

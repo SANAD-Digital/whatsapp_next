@@ -6212,3 +6212,7 @@ As it is sent.,كما يُرسل.
 Your accounts,حساباتك
 Choose the account this site sends through.,اختر الحساب الذي يرسل عبره هذا الموقع.
 "Choose an account, then sign in.",اختر حساباً ثم سجّل الدخول.
+"This account is linked to the site {0}. Messages that arrive go to that site. Move it here and that site stops receiving them and sending through it.",هذا الحساب مربوط بالموقع {0}، والرسائل الواردة تصل إليه. إذا نقلته إلى هذا الموقع يتوقف ذلك الموقع عن استقبال الرسائل والإرسال عبره.
+Move the account to this site,نقل الحساب إلى هذا الموقع
+Not linked to a site yet,غير مربوط بموقع بعد
+Linked to {0},مربوط بالموقع {0},Account site

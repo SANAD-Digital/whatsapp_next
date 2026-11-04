@@ -148,10 +148,12 @@ class FakeProvider(BaseProvider):
 		# the platform answers `{ok, email, portal_url}`: the account the password now opens
 		return SignupState(request_key=request_key, status="Completed", extra={"ok": True, "email": "tenant@example.test"})
 
-	def login(self, email, password, integration_link=None, site_url=None) -> dict:
-		self._record("login", email=email, integration_link=integration_link, site_url=site_url)
+	def login(self, email, password, integration_link=None, site_url=None, move_site=False) -> dict:
+		self._record("login", email=email, integration_link=integration_link, site_url=site_url, move_site=move_site)
 		if password != "right-password":
 			raise pex.AuthError("Incorrect email or password", code="LOGIN_FAILED", http_status=401)
+		if email == "other-site@example.com" and not move_site:
+			return {"ok": True, "account_in_use": True, "customer_name": "Fake Tenant", "integration_link": "WAIL-FAKE-1", "site": "old.example.com"}
 		if email == "two-accounts@example.com" and not integration_link:
 			return {
 				"ok": True,

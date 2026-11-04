@@ -472,7 +472,12 @@ def finish_password_reset(
 
 
 def login(
-	platform_base_url: str, email: str, password: str, user: str | None = None, integration_link: str | None = None
+	platform_base_url: str,
+	email: str,
+	password: str,
+	user: str | None = None,
+	integration_link: str | None = None,
+	move_site: bool = False,
 ) -> dict[str, Any]:
 	"""Sign in against the platform and store the credentials it hands back.
 
@@ -486,7 +491,12 @@ def login(
 	"""
 	try:
 		# this site's address lets the platform pick the account already linked to it
-		result = registry.get_provider().login(email, password, integration_link=integration_link, site_url=frappe.utils.get_url()) or {}
+		result = (
+			registry.get_provider().login(
+				email, password, integration_link=integration_link, site_url=frappe.utils.get_url(), move_site=move_site
+			)
+			or {}
+		)
 	except (pex.AuthError, pex.PermissionDeniedError):
 		# A wrong email or password is the person's answer to fix in the card, not a server
 		# fault: as an error it went out as HTTP 502, which Frappe's client reports without a
@@ -511,9 +521,22 @@ def login(
 			"choose_account": True,
 			"customer_name": result.get("customer_name"),
 			"accounts": [
-				{k: a.get(k) for k in ("name", "site_name", "site_url", "plan")} for a in result.get("accounts") or []
+				{k: a.get(k) for k in ("name", "site_name", "site_url", "site", "plan")} for a in result.get("accounts") or []
 			],
+			"site": frappe.utils.get_url(),
 			"message": _("You have more than one account. Choose the one this site sends through."),
+		}
+	if result.get("account_in_use"):
+		# one account, one site (owner, 2026-11-04): its messages and receipts reach one site only,
+		# so taking it from the site that has it is the person's explicit choice
+		return {
+			"ok": False,
+			"account_in_use": True,
+			"integration_link": result.get("integration_link"),
+			"site": result.get("site"),
+			"message": _(
+				"This account is linked to the site {0}. Messages that arrive go to that site. Move it here and that site stops receiving them and sending through it."
+			).format(result.get("site")),
 		}
 	returned = result.get("credentials") or {}
 	values = {f: returned.get(f) for f in CREDENTIAL_FIELDS if returned.get(f)}

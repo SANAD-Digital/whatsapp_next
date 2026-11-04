@@ -1681,7 +1681,7 @@ frappe.provide("whatsapp_next.onboarding");
 		 * and stores the keys with `set_password`; it returns only whether it worked and who the
 		 * customer is. Nothing is kept in the browser.
 		 */
-		do_login($btn) {
+		do_login($btn, move = false) {
 			// the platform takes the mobile number (any format), the username or the email. The
 			// field opens on the sign-up's number or email; once it is edited, what it holds is the
 			// answer — an emptied field is empty, not silently the sign-up's number again.
@@ -1708,6 +1708,8 @@ frappe.provide("whatsapp_next.onboarding");
 							password,
 							// a customer with several accounts: the one picked in this card (owner, 2026-11-04)
 							integration_link: this.f.login_account || null,
+							// the person chose to take the account from the site that had it
+							move_site: move ? 1 : 0,
 						},
 						// a refusal belongs in this card, not in a Desk dialog over it
 						{ silent: true }
@@ -1715,6 +1717,7 @@ frappe.provide("whatsapp_next.onboarding");
 					.then((r) => {
 						if (r && r.verification_required) return this.confirm_unfinished(r, email, password);
 						if (r && r.choose_account) return this.choose_account($btn, r);
+						if (r && r.account_in_use) return this.account_in_use($btn, r);
 						if (r && r.ok === false) return this.show_error(r.message || __("The mobile number, email or password is not correct."));
 						if (r && r.customer_name) this.f.org = r.customer_name;
 						ui.Toast.success(__("Signed in."));
@@ -1743,17 +1746,37 @@ frappe.provide("whatsapp_next.onboarding");
 						(a) => `<button type="button" class="wa-onb__account" data-account="${esc(a.name)}" aria-pressed="${a.name === this.f.login_account}">
 							<b dir="auto">${esc(a.site_name || a.site_url || a.name)}</b>
 							<span dir="auto">${esc([a.name, a.plan].filter(Boolean).join(" · "))}</span>
+							${a.site ? `<span class="wa-onb__account-site" dir="auto">${esc(__("Linked to {0}", ["\u2066" + a.site + "\u2069"], "Account site"))}</span>` : `<span class="wa-onb__account-site">${esc(__("Not linked to a site yet"))}</span>`}
 						</button>`
 					)
 					.join("")}
 			</div>`).insertBefore($btn);
 			$list.on("click", "[data-account]", (e) => {
 				this.f.login_account = $(e.currentTarget).attr("data-account");
+				$btn.closest(".wa-onb__card").find(".wa-onb__inuse").remove();
 				$list.find("[data-account]").each((_, el) => el.setAttribute("aria-pressed", String(el.getAttribute("data-account") === this.f.login_account)));
 				this.show_error("");
 			});
 			$list.find("[data-account]").first().trigger("focus");
 			if (!this.f.login_account) this.show_error(__("Choose an account, then sign in."));
+		}
+
+		/**
+		 * The account is another site's (owner, 2026-11-04: one account, one site — its incoming
+		 * messages reach one site only). Said in the card, with the way to move it here or to pick
+		 * another account.
+		 */
+		account_in_use($btn, r) {
+			const $card = $btn.closest(".wa-onb__card");
+			$card.find(".wa-onb__inuse").remove();
+			// the site's address reads left to right inside the Arabic sentence
+			const message = r.site ? cstr(r.message).replace(r.site, "\u2066" + r.site + "\u2069") : r.message;
+			const $box = $(`<div class="wa-onb__inuse" role="alert">
+				<p>${esc(message)}</p>
+				${ui.btn({ label: __("Move the account to this site"), variant: "secondary", block: true, attrs: { "data-act": "move-site" } })}
+			</div>`).insertBefore($btn);
+			$box.on("click", '[data-act="move-site"]', (e) => this.do_login($(e.currentTarget), true).then(() => $box.remove()));
+			this.show_error("");
 		}
 
 		/**

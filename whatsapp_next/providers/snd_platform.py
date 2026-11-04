@@ -604,20 +604,25 @@ class SndPlatformProvider(BaseProvider):
 		)
 
 	# ------------------------------------------------------------------ sign-in and coupons
-	def login(self, email: str, password: str, integration_link: str | None = None, site_url: str | None = None) -> dict:
+	def login(
+		self, email: str, password: str, integration_link: str | None = None, site_url: str | None = None, move_site: bool = False
+	) -> dict:
 		"""Exchange an e-mail and password for this tenant's credentials.
 
 		Returns the platform's answer unchanged: `{ok, customer, customer_name,
 		integration_link, api_base_url, credentials{customer_api_key, customer_api_secret,
 		api_key, api_secret}}`. The caller stores `credentials` and never returns them.
 		A customer with several accounts names one (`integration_link`), or the platform matches
-		`site_url` to one, or it answers `{choose_account, accounts[]}` with no keys.
+		`site_url` to one, or it answers `{choose_account, accounts[]}` with no keys. An account
+		another site has answers `{account_in_use, site}` until `move_site` moves it here.
 		"""
 		body = {"email": email, "password": password}
 		if integration_link:
 			body["integration_link"] = integration_link
 		if site_url:
 			body["site_url"] = site_url
+		if move_site:
+			body["move_site"] = 1
 		return self._request("POST", "login_with_password", v1=True, guest=True, body=body)
 
 	def validate_coupon(self, code: str, email: str | None = None, mobile_e164: str | None = None) -> dict:
