@@ -114,7 +114,9 @@ class BaseProvider(ABC):
 		"""Set the new password of a verified password-reset request."""
 
 	@abstractmethod
-	def login(self, email: str, password: str, integration_link: str | None = None, site_url: str | None = None) -> dict:
+	def login(
+		self, email: str, password: str, integration_link: str | None = None, site_url: str | None = None, move_site: bool = False
+	) -> dict:
 		"""Authenticate a tenant user; returns their credentials once. Never logged. A tenant with
 		several accounts names one (`integration_link`) or gets `{choose_account, accounts}` back."""
 

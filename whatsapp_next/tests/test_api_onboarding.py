@@ -500,6 +500,20 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		last = [c for c in provider.calls if c[0] == "login"][-1][1]
 		self.assertEqual((last["integration_link"], last["site_url"]), ("WAIL-FAKE-2", frappe.utils.get_url()))
 
+	def test_an_account_another_site_has_moves_only_when_asked(self):
+		"""One account, one site (owner, 2026-11-04): the card says which site has it and stores
+		nothing; asked to move it, the sign-in goes through."""
+		for f in SECRETS:
+			remove_encrypted_password(SETTINGS, SETTINGS, f)
+		provider = FakeProvider()
+		with fake_provider(provider), as_user("System Manager"), patch.object(svc, "link_site", return_value={}):
+			held = api.login(platform_base_url="", email="other-site@example.com", password="right-password")
+			self.assertEqual((held["ok"], held["account_in_use"], held["site"]), (False, True, "old.example.com"))
+			self.assertFalse(frappe.get_doc(SETTINGS).get_password("customer_api_key", raise_exception=False))
+			moved = api.login(platform_base_url="", email="other-site@example.com", password="right-password", move_site=1)
+		self.assertTrue(moved["ok"])
+		self.assertTrue([c for c in provider.calls if c[0] == "login"][-1][1]["move_site"])
+
 	def test_login_links_the_site(self):
 		"""Owner, Gate 2: the keys, the connection test, the account's devices and the webhook all
 		come from signing in; the platform address is the default, saved into Settings."""
