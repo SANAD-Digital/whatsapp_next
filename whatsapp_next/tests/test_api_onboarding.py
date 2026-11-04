@@ -28,6 +28,7 @@ from whatsapp_next.tests.conftest_frappe import (
 	ensure_settings,
 	fake_provider,
 )
+from whatsapp_next.tests.fake_provider import FakeProvider
 
 SETTINGS = "WhatsApp Settings"
 SECRETS = ("customer_api_key", "customer_api_secret", "api_key", "api_secret")
@@ -439,7 +440,7 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		without_secret = {"customer_api_key": "ck", "api_key": "k", "api_secret": "s"}  # no customer_api_secret
 		with fake_provider() as provider, as_user("System Manager"):
 			base = provider.login
-			provider.login = lambda email, password: {**base(email, password), "credentials": without_secret}
+			provider.login = lambda email, password, **kw: {**base(email, password, **kw), "credentials": without_secret}
 			with patch.object(svc, "link_site", return_value={}):
 				out = api.login(platform_base_url="", email="tenant@example.test", password="right-password")
 		self.assertTrue(out["ok"])
@@ -482,6 +483,22 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		self.assertTrue(
 			frappe.db.exists("WhatsApp Audit Log", {"action": "Credentials Changed", "user": sm})
 		)
+
+	def test_a_tenant_with_two_accounts_chooses_one(self):
+		"""Several accounts: the card lists them and stores nothing until one is chosen; the site's
+		own address goes with every sign-in so the platform can pick it (owner, 2026-11-04)."""
+		for f in SECRETS:
+			remove_encrypted_password(SETTINGS, SETTINGS, f)
+		provider = FakeProvider()
+		with fake_provider(provider), as_user("System Manager"):
+			asked = api.login(platform_base_url="", email="two-accounts@example.com", password="right-password")
+			self.assertEqual((asked["ok"], asked["choose_account"]), (False, True))
+			self.assertEqual([a["name"] for a in asked["accounts"]], ["WAIL-FAKE-1", "WAIL-FAKE-2"])
+			self.assertFalse(frappe.get_doc(SETTINGS).get_password("customer_api_key", raise_exception=False))
+			chosen = api.login(platform_base_url="", email="two-accounts@example.com", password="right-password", integration_link="WAIL-FAKE-2")
+		self.assertTrue(chosen["ok"])
+		last = [c for c in provider.calls if c[0] == "login"][-1][1]
+		self.assertEqual((last["integration_link"], last["site_url"]), ("WAIL-FAKE-2", frappe.utils.get_url()))
 
 	def test_login_links_the_site(self):
 		"""Owner, Gate 2: the keys, the connection test, the account's devices and the webhook all
