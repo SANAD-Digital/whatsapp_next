@@ -291,6 +291,16 @@ class TestWebhooks(IntegrationTestCase):
 				1,
 			)
 
+	def test_two_copies_at_once_are_one_event(self):
+		"""The platform delivered one event twice at the same moment: the second insert met the
+		first one's unique id and answered 417, so the platform retried it (2026-11-04)."""
+		from whatsapp_next.webhooks import idempotency
+
+		first = idempotency.claim("race-1", "connection.connected", payload={}, device=None, platform_device=None, client_ref=None, provider_message_id=None)
+		with patch.object(idempotency, "_find", side_effect=[None, first.name, first.name]):
+			again = idempotency.claim("race-1", "connection.connected", payload={}, device=None, platform_device=None, client_ref=None, provider_message_id=None)
+		self.assertEqual((again.duplicate, again.name), (True, first.name))
+
 	def test_a_contacts_status_is_not_a_message(self):
 		"""Someone's WhatsApp status (story) arrives in the chat `status@broadcast`: it is ignored,
 		never stored as a message from them nor answered (owner, 2026-10-29)."""
