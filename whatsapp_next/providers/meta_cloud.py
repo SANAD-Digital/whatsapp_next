@@ -103,7 +103,7 @@ class MetaCloudProvider(BaseProvider):
 	def complete_password_reset(self, request_key: str, password: str) -> SignupState:
 		raise pex.NotSupportedError("Password reset is handled in Meta Business Manager")
 
-	def login(self, email: str, password: str) -> dict:
+	def login(self, email: str, password: str, integration_link: str | None = None, site_url: str | None = None) -> dict:
 		raise pex.NotSupportedError("Sign-in is handled in Meta Business Manager")
 
 	def validate_coupon(self, code: str, email: str | None = None, mobile_e164: str | None = None) -> dict:

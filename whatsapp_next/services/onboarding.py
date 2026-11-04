@@ -471,7 +471,9 @@ def finish_password_reset(
 	return login("", email, password, user=user)
 
 
-def login(platform_base_url: str, email: str, password: str, user: str | None = None) -> dict[str, Any]:
+def login(
+	platform_base_url: str, email: str, password: str, user: str | None = None, integration_link: str | None = None
+) -> dict[str, Any]:
 	"""Sign in against the platform and store the credentials it hands back.
 
 	`platform_base_url` is accepted from older callers and ignored: the address of
@@ -483,7 +485,8 @@ def login(platform_base_url: str, email: str, password: str, user: str | None = 
 	browser.
 	"""
 	try:
-		result = registry.get_provider().login(email, password) or {}
+		# this site's address lets the platform pick the account already linked to it
+		result = registry.get_provider().login(email, password, integration_link=integration_link, site_url=frappe.utils.get_url()) or {}
 	except (pex.AuthError, pex.PermissionDeniedError):
 		# A wrong email or password is the person's answer to fix in the card, not a server
 		# fault: as an error it went out as HTTP 502, which Frappe's client reports without a
@@ -499,6 +502,18 @@ def login(platform_base_url: str, email: str, password: str, user: str | None = 
 			"request_key": signup.get("token"),
 			"message": _("This account was created but its number was never confirmed. Confirm it now to finish creating it."),
 			**verification_route(signup),
+		}
+	if result.get("choose_account"):
+		# a customer with several accounts says which one this site sends through (owner,
+		# 2026-11-04); the accounts are named, no key has come back yet
+		return {
+			"ok": False,
+			"choose_account": True,
+			"customer_name": result.get("customer_name"),
+			"accounts": [
+				{k: a.get(k) for k in ("name", "site_name", "site_url", "plan")} for a in result.get("accounts") or []
+			],
+			"message": _("You have more than one account. Choose the one this site sends through."),
 		}
 	returned = result.get("credentials") or {}
 	values = {f: returned.get(f) for f in CREDENTIAL_FIELDS if returned.get(f)}

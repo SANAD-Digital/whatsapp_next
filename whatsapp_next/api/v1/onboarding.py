@@ -86,14 +86,15 @@ def complete_signup(
 	return onboarding.complete_signup(request_key, code, password=password, user=frappe.session.user)
 
 
-@api_endpoint(roles=SYSTEM_MANAGER)
-def login(platform_base_url: str, email: str, password: str) -> dict[str, Any]:
+@api_endpoint(roles=SYSTEM_MANAGER, schema={"integration_link": {"max_length": 140}})
+def login(platform_base_url: str, email: str, password: str, integration_link: str | None = None) -> dict[str, Any]:
 	"""Sign in to the platform and store what it returns → `{ok, customer, customer_name}`.
 	`email` takes any sign-in the account has: the email, the mobile number or the username.
+	With several accounts the answer is `{choose_account, accounts}` until `integration_link` names one.
 
 	The API keys the platform hands back are written with `set_password`; none of them is
 	ever part of this answer."""
-	return onboarding.login(platform_base_url, email, password, user=frappe.session.user)
+	return onboarding.login(platform_base_url, email, password, user=frappe.session.user, integration_link=integration_link or None)
 
 
 @api_endpoint(roles=SYSTEM_MANAGER)

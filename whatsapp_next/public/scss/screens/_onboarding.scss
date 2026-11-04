@@ -1389,6 +1389,35 @@ html[dir="rtl"] .wa-onb__route-arrow {
 }
 
 // "Sign in with another account?" — what goes, what stays, and the backup before it
+// a sign-in with several accounts: one button per account, the chosen one marked (owner, 2026-11-04)
+.wa-onb__accounts {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-block-end: 12px;
+}
+.wa-onb__accounts-lead {
+	margin: 0;
+	font-size: 13px;
+	color: var(--wa-ink-3);
+}
+.wa-onb__account {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 2px;
+	padding: 10px 12px;
+	border: 1px solid var(--wa-border);
+	border-radius: 10px;
+	background: var(--wa-surface);
+	text-align: start;
+	cursor: pointer;
+	b { font-size: 14px; font-weight: 600; color: var(--wa-ink); }
+	span { font-size: 12px; color: var(--wa-ink-4); }
+	&[aria-pressed="true"] { border-color: var(--wa-pri); box-shadow: inset 0 0 0 1px var(--wa-pri); }
+	&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: 2px; }
+}
+
 .wa-onb__switch {
 	display: flex;
 	flex-direction: column;

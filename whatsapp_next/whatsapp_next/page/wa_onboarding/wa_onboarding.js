@@ -1620,6 +1620,7 @@ frappe.provide("whatsapp_next.onboarding");
 			// the field is drawn empty, so the model is too: a password typed on an earlier visit to
 			// this card is not sent behind an empty-looking field
 			this.f.login_password = "";
+			this.f.login_account = null; // chosen again after each sign-in that lists the accounts
 			const $card = this.card("sm", {
 				title: __("Welcome back"),
 				sub: __("Sign in to see your messages, your balance and your numbers."),
@@ -1652,6 +1653,11 @@ frappe.provide("whatsapp_next.onboarding");
 
 			$card.on("input", "[data-l]", (e) => {
 				this.f[$(e.currentTarget).data("l")] = e.currentTarget.value;
+				if ($(e.currentTarget).data("l") === "login_id") {
+					// another person's sign-in: the accounts listed were the previous one's
+					this.f.login_account = null;
+					$card.find(".wa-onb__accounts").remove();
+				}
 				this.save_draft(); // the email survives a reload; the password is never stored
 				this.show_error("");
 			});
@@ -1700,12 +1706,15 @@ frappe.provide("whatsapp_next.onboarding");
 							platform_base_url: "",
 							email,
 							password,
+							// a customer with several accounts: the one picked in this card (owner, 2026-11-04)
+							integration_link: this.f.login_account || null,
 						},
 						// a refusal belongs in this card, not in a Desk dialog over it
 						{ silent: true }
 					)
 					.then((r) => {
 						if (r && r.verification_required) return this.confirm_unfinished(r, email, password);
+						if (r && r.choose_account) return this.choose_account($btn, r);
 						if (r && r.ok === false) return this.show_error(r.message || __("The mobile number, email or password is not correct."));
 						if (r && r.customer_name) this.f.org = r.customer_name;
 						ui.Toast.success(__("Signed in."));
@@ -1717,6 +1726,34 @@ frappe.provide("whatsapp_next.onboarding");
 					})
 					.catch((err) => this.show_error(err.message))
 			);
+		}
+
+		/**
+		 * Several accounts under one sign-in (owner, 2026-11-04): the card lists them above «Sign in»
+		 * and the next press signs this site in to the one picked. Nothing was stored yet.
+		 */
+		choose_account($btn, r) {
+			const accounts = r.accounts || [];
+			if (!accounts.some((a) => a.name === this.f.login_account)) this.f.login_account = null;
+			$btn.closest(".wa-onb__card").find(".wa-onb__accounts").remove();
+			const $list = $(`<div class="wa-onb__accounts" role="group" aria-label="${esc(__("Your accounts"))}">
+				<p class="wa-onb__accounts-lead">${esc(r.message || __("Choose the account this site sends through."))}</p>
+				${accounts
+					.map(
+						(a) => `<button type="button" class="wa-onb__account" data-account="${esc(a.name)}" aria-pressed="${a.name === this.f.login_account}">
+							<b dir="auto">${esc(a.site_name || a.site_url || a.name)}</b>
+							<span dir="auto">${esc([a.name, a.plan].filter(Boolean).join(" · "))}</span>
+						</button>`
+					)
+					.join("")}
+			</div>`).insertBefore($btn);
+			$list.on("click", "[data-account]", (e) => {
+				this.f.login_account = $(e.currentTarget).attr("data-account");
+				$list.find("[data-account]").each((_, el) => el.setAttribute("aria-pressed", String(el.getAttribute("data-account") === this.f.login_account)));
+				this.show_error("");
+			});
+			$list.find("[data-account]").first().trigger("focus");
+			if (!this.f.login_account) this.show_error(__("Choose an account, then sign in."));
 		}
 
 		/**
