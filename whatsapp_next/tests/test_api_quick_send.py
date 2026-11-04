@@ -98,8 +98,31 @@ class TestApiQuickSend(IntegrationTestCase):
 			delete_all("WhatsApp Number", {"name": ("in", [P1, P2])})
 			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
 
+	def test_a_message_about_a_document_needs_the_right_to_email_it(self):
+		"""The button sits beside «New Email» and follows the same right (owner, 2026-11-05): a
+		user who may read the document but not email it cannot send about it either."""
+		from unittest.mock import patch
+
+		todo = frappe.get_doc({"doctype": "ToDo", "description": "ApiTest no email"}).insert(ignore_permissions=True)
+		real = frappe.has_permission
+
+		def no_email(doctype=None, ptype="read", doc=None, *args, **kwargs):
+			if doctype == "ToDo" and ptype == "email":
+				if kwargs.get("throw"):
+					raise frappe.PermissionError
+				return False
+			return real(doctype, ptype, doc, *args, **kwargs)
+
+		try:
+			with patch.object(frappe, "has_permission", side_effect=no_email), self.assertRaises((frappe.PermissionError, WAPermissionError)):
+				api.send(device=self.device, phone=P1, body=f"{TAG} no email", reference_doctype="ToDo", reference_name=todo.name)
+			self.assertFalse(frappe.db.exists("WhatsApp Log", {"reference_name": todo.name}))
+		finally:
+			self._clean()
+			frappe.delete_doc("ToDo", todo.name, force=True, ignore_permissions=True)
+
 	def test_a_message_about_a_document_is_a_form_message(self):
-		"""The form's "Send message" button sends with the document as reference: the row is a
+		"""The form's "New WhatsApp message" button sends with the document as reference: the row is a
 		`Form` message (the platform files it under the ERP), and its document hears of it."""
 		todo = frappe.get_doc({"doctype": "ToDo", "description": "ApiTest form send"}).insert(ignore_permissions=True)
 		try:
