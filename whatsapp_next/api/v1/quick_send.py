@@ -81,9 +81,11 @@ def send(
 	`device_offline` / `queue_paused` come back as warnings (the row is queued anyway). Raises
 	`WAInvalidPhoneError`, `WABlacklistedError`, `WAUnknownNumberPolicyError`, `WAFileError`."""
 	# What the message carries leaves the site: the record it renders or prints and the file it
-	# attaches must be ones the sender may read (and print).
+	# attaches must be ones the sender may read (and print). A message about a record is the
+	# record's own correspondence, like an email from its form: it takes the right to email it.
 	if reference_doctype and reference_name:
 		frappe.has_permission(reference_doctype, "read", reference_name, throw=True)
+		frappe.has_permission(reference_doctype, "email", reference_name, throw=True)
 		if print_format:
 			frappe.has_permission(reference_doctype, "print", reference_name, throw=True)
 	if attachment:
