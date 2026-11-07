@@ -12,7 +12,7 @@
  "docstatus": 0,
  "doctype": "Workspace",
  "hide_custom": 0,
- "icon": "message",
+ "icon": "message-1",
  "idx": 0,
  "indicator_color": "green",
  "is_hidden": 0,
@@ -238,7 +238,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-10-27 21:15:45.374690",
+ "modified": "2026-11-07 19:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp",

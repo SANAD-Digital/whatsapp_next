@@ -1,0 +1,159 @@
+// Frappe 15 only: the product's navigation (`desk/shell_v15.js`) and what Frappe 16 gives this
+// product's screens and 15 does not. `body.wa-shell15` is set on this product's routes alone.
+
+$wa-nav15-w: 224px;
+
+.wa-nav15, .wa-nav15__scrim, .wa-nav15__toggle { display: none; }
+
+body.wa-shell15 {
+	.wa-nav15 {
+		position: fixed;
+		inset-block: var(--navbar-height, 48px) 0;
+		inset-inline-start: 0;
+		z-index: 1020; // under Desk's navbar and modals
+		display: flex;
+		flex-direction: column;
+		inline-size: $wa-nav15-w;
+		background: var(--wa-surface);
+		border-inline-end: 1px solid var(--wa-border);
+		overflow: hidden;
+	}
+
+	// a screen is the width that is left, whichever way the page reads
+	#body { padding-inline-start: $wa-nav15-w; }
+	.container.page-body, .page-head .container { max-inline-size: none; inline-size: 100%; }
+
+	// the menu stands where Desk's own column stood: on a list, its «Filter By»; on the workspace, every module
+	.layout-side-section, .sidebar-toggle-btn { display: none !important; }
+	.layout-main .layout-main-section-wrapper { flex: 1 1 100%; max-inline-size: 100%; }
+
+	// Desk 15 caps a page's title at a quarter of the screen: «قالب وا…» on a phone
+	.page-title .title-area .title-text { max-inline-size: 100%; }
+
+	--wa-viewport-offset: calc(var(--navbar-height, 48px) + 8px);
+}
+
+.wa-nav15__brand {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--wa-ink);
+	&:hover { color: var(--wa-ink); text-decoration: none; }
+	img { inline-size: 24px; block-size: 24px; border-radius: 6px; }
+}
+
+.wa-nav15__body {
+	flex: 1;
+	padding: 0 8px 16px;
+	overflow-y: auto;
+}
+
+.wa-nav15__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-block-size: 28px;
+	padding: 4px 8px;
+	border-radius: 8px;
+	font-size: 14px;
+	color: var(--wa-ink-2);
+	&:hover { background: var(--wa-bg); color: var(--wa-ink); text-decoration: none; }
+	&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: -2px; }
+	&.is-on { background: var(--wa-bg); color: var(--wa-ink); font-weight: 600; }
+}
+
+.wa-nav15__icon {
+	flex: none;
+	inline-size: 16px;
+	block-size: 16px;
+}
+
+.wa-nav15__section { margin-block-start: 12px; }
+
+.wa-nav15__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	inline-size: 100%;
+	min-block-size: 24px;
+	padding: 2px 8px;
+	border: 0;
+	background: none;
+	font-size: 12px;
+	color: var(--wa-ink-4);
+	cursor: pointer;
+	.wa-nav15__icon { inline-size: 12px; block-size: 12px; transition: transform 120ms ease; }
+	&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: -2px; border-radius: 6px; }
+}
+
+.wa-nav15__section.is-shut {
+	.wa-nav15__items { display: none; }
+	.wa-nav15__head .wa-nav15__icon { transform: rotate(90deg); }
+}
+
+// the workspace as Frappe 16 draws it: no column around it, the shortcuts as boxes, the groups of
+// links plain on the canvas
+body.wa-shell15[data-route="Workspaces/WhatsApp"] {
+	#page-Workspaces .layout-main-section {
+		border: 0;
+		padding-block: 8px;
+		max-inline-size: 900px;
+		margin-inline: auto;
+	}
+	.widget.shortcut-widget-box {
+		min-block-size: 43px;
+		padding: 10px 12px;
+		border: 1px solid var(--wa-border);
+		border-radius: 12px;
+		background: var(--wa-surface);
+		.widget-title { font-size: 16px; font-weight: 500; }
+	}
+	.widget.links-widget-box {
+		padding: 16px 8px 0;
+		background: transparent;
+		.widget-title { font-size: 13px; font-weight: 500; }
+		.link-item { padding-block: 3px; padding-inline: 0; font-size: 13px; color: var(--wa-ink-3); }
+		.link-item svg { display: none; }
+	}
+	.widget.spacer { padding: 0; block-size: 8px; }
+}
+
+// a narrow screen: the menu slides over the page, from a button in the navbar
+@media (max-width: 991px) {
+	body.wa-shell15 {
+		#body { padding-inline-start: 0; }
+		.wa-nav15 {
+			inline-size: min(280px, 82vw);
+			z-index: 1045;
+			box-shadow: var(--wa-shadow-sm);
+			transform: translateX(-110%); // the RTL build flips this one itself
+			transition: transform 160ms ease;
+		}
+		.wa-nav15__toggle {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			inline-size: 32px;
+			block-size: 32px;
+			margin-inline-start: 4px;
+			border: 0;
+			border-radius: 8px;
+			background: none;
+			color: var(--wa-ink-2);
+		}
+		--wa-viewport-offset: calc(var(--navbar-height, 48px) + 8px);
+	}
+	body.wa-shell15.wa-nav15-open {
+		.wa-nav15 { transform: none; }
+		.wa-nav15__scrim {
+			display: block;
+			position: fixed;
+			inset: 0;
+			z-index: 1040;
+			background: var(--wa-status-scrim);
+		}
+	}
+}

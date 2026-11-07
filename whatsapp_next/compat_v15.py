@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import frappe.tests
 import frappe.utils.jinja
+from frappe.desk import reportview
 from frappe.model import optional_fields
 from frappe.model.db_query import DatabaseQuery
 from frappe.utils.redis_wrapper import RedisWrapper
@@ -104,3 +105,18 @@ def _set_optional_columns(self):
 
 
 DatabaseQuery.set_optional_columns = _set_optional_columns
+
+
+_validate_fields = reportview.validate_fields
+
+
+def _validate_fields_with_aggregates(data):
+	"""The browser's own list reads carry Frappe 16's aggregates too (a list's number card asks
+	`frappe.desk.reportview.get_list` for `{"SUM": "member_count", "as": "value"}`): Frappe 15's
+	check of the fields stopped on them with `unhashable type: 'dict'`."""
+	if isinstance(data.fields, list | tuple):
+		data.fields = [_aggregate_field(f) for f in data.fields]
+	return _validate_fields(data)
+
+
+reportview.validate_fields = _validate_fields_with_aggregates
