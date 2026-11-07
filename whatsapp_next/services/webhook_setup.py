@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 import frappe
 from frappe import _
@@ -52,10 +53,23 @@ class EndpointSummary:
 	synced_at: Any = None
 
 
+def _public_address(base: str) -> str:
+	"""The site's address as the platform reaches it. Frappe 15 adds the bench's `webserver_port`
+	on any server not run by supervisor or systemd (Frappe 16 only in developer mode): that port
+	is inside the server, and a webhook registered at `https://site:8000` receives nothing while
+	sending goes on working. A port someone chose (`host_name`, `http_port`) stays."""
+	port = cint(frappe.conf.webserver_port)
+	chosen = urlsplit(frappe.local.conf.host_name or frappe.local.conf.hostname or "").port
+	address = urlsplit(base)
+	if not port or address.port != port or chosen or frappe.conf.http_port or frappe.conf.developer_mode:
+		return base
+	return urlunsplit(address._replace(netloc=address.hostname))
+
+
 def receiver_url() -> str:
 	"""Absolute URL of the versioned receiver (D-031), on the site's own address (`get_url`).
 	Nothing of this app is read from the site config (owner, 2026-10-19)."""
-	base = get_url().rstrip("/")
+	base = _public_address(get_url().rstrip("/"))
 	return f"{base}/api/method/{RECEIVER_METHOD}"
 
 
