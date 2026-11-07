@@ -43,6 +43,9 @@ Frappe 16 already has.
   makes the key again on both versions, so never pass it a key from `make_key`.
 - **Queries:** new `{"FUNC": ...}` fields only work through the shim for simple `COUNT`, `SUM`, `MAX`-style
   aggregates. Nested expressions need an addition to `_aggregate_field`.
+- **Addresses:** on a server not run by supervisor or systemd Frappe 15's `get_url` adds the bench's port.
+  Whatever the platform must reach goes through `webhook_setup._public_address`; outside a request `get_url`
+  cannot know the public address at all, so a job never registers one (it keeps the endpoint's own).
 - **Dates:** Frappe 15's `pretty_date` refuses a date string with a `T` in it. Pass it a `datetime`.
 - **Scrolling:** on 16 `.main-section` scrolls; on 15 the window does. Do not measure `.main-section` without
   checking its `overflow`.

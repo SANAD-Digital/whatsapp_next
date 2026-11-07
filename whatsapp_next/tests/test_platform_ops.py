@@ -109,6 +109,20 @@ class TestPlatformOps(IntegrationTestCase):
 			webhook_endpoint=None, webhook_endpoint_url=None, webhook_status=None, webhook_events=None
 		)
 
+	def test_the_webhook_address_never_carries_the_benchs_port(self):
+		"""Frappe 15 adds `webserver_port` to the address on a server not run by supervisor or
+		systemd: a webhook at `https://site:8000` receives nothing (2026-11-07)."""
+		conf = {"webserver_port": 8000, "http_port": None, "developer_mode": 0, "host_name": None, "hostname": None}
+		with patch.dict(frappe.local.conf, conf):
+			with patch.object(webhook_setup, "get_url", return_value="https://wn.example.test:8000"):
+				self.assertTrue(webhook_setup.receiver_url().startswith("https://wn.example.test/api/method/"))
+			with patch.object(webhook_setup, "get_url", return_value="https://wn.example.test:8443"):
+				self.assertTrue(webhook_setup.receiver_url().startswith("https://wn.example.test:8443/"))
+		with patch.dict(frappe.local.conf, {**conf, "host_name": "https://wn.example.test:8000"}), patch.object(webhook_setup, "get_url", return_value="https://wn.example.test:8000"):
+			self.assertTrue(webhook_setup.receiver_url().startswith("https://wn.example.test:8000/"))
+		with patch.dict(frappe.local.conf, {**conf, "developer_mode": 1}), patch.object(webhook_setup, "get_url", return_value="http://wn.example.test:8000"):
+			self.assertTrue(webhook_setup.receiver_url().startswith("http://wn.example.test:8000/"))
+
 	def test_webhook_setup_lifecycle(self):
 		provider = EndpointProvider()
 		with fake_provider(provider):
