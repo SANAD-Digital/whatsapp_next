@@ -23,6 +23,13 @@ clean.
 
 - `whatsapp_next/compat_v15.py`, and the line in `whatsapp_next/__init__.py` that loads it.
 - `pyproject.toml`: `frappe = ">=15.0.0,<16.0.0"`.
+- `public/js/desk/shell_v15.js` and `public/scss/screens/_shell_v15.scss`, with their one import line
+  in each bundle: the product's menu and the workspace's look, which 16 gets from the Workspace
+  Sidebar. The menu reads `workspace_sidebar/whatsapp.json`, so an item added on `main` appears on
+  15 by itself; a new icon also needs its drawing in `ICONS` in `shell_v15.js`.
+- `whatsapp_next/workspace/whatsapp/whatsapp.json`: the icon is `message-1`, because `message` is a bell
+  on 15. A merge may stop on this file's `modified` line: keep the newer date, or 15 will not take
+  the change.
 - This file's "known gaps" below are kept current on both branches.
 
 `compat_v15.py` makes Frappe 15 behave like 16 in these places. Each replaces Frappe's behaviour for
@@ -49,13 +56,10 @@ Frappe 16 already has.
 - **Dates:** Frappe 15's `pretty_date` refuses a date string with a `T` in it. Pass it a `datetime`.
 - **Scrolling:** on 16 `.main-section` scrolls; on 15 the window does. Do not measure `.main-section` without
   checking its `overflow`.
-- **Desk files:** `workspace_sidebar/`, `whatsapp_next/sidebar/` and the `Workspace Sidebar` link in
-  `desktop_icon/whatsapp.json` mean nothing on 15.
+- **Desk files:** `whatsapp_next/sidebar/` and the `Workspace Sidebar` link in `desktop_icon/whatsapp.json`
+  mean nothing on 15. `workspace_sidebar/whatsapp.json` is not a Desk record there either, but the
+  menu in `shell_v15.js` is drawn from it.
 
 ## Known gaps on Frappe 15
 
-- The app's own sidebar does not exist there. The Pages have no side navigation; users get back through the
-  breadcrumb to the WhatsApp workspace, which links to every screen.
-- Desk lists show Frappe's "Filter By" column, which 16 does not.
-- At phone width the template list overflows the window by a few pixels.
 - Not yet tried on 15 with a real WhatsApp device: sending, receiving and pairing.

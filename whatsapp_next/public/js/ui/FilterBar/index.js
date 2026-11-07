@@ -557,6 +557,19 @@ sanad.ui.FilterBar = class FilterBar {
 		// the cluster settles first: an icon row that has wrapped is as wrong as a filter row that has
 		this.hidden_actions = this.$amore_dd ? this.fit(this.$actions, actions, this.$amore_dd) : [];
 		this.hidden_filters = this.fit(this.$main, filters, this.$more_dd);
+		// The date filter elides its text but never its buttons. Once only the buttons are left the
+		// cluster is out of room, though the filter row beside it still fits on one line, so a filter
+		// gives way too, or the date filter's last button runs past the card's edge (Outbound at 1366).
+		const overrun = () => {
+			const trigger = this.$end.find(".sanad-datefilter__trigger")[0];
+			return !!trigger && trigger.scrollWidth > trigger.clientWidth + 1;
+		};
+		const shown = filters.filter((el) => !this.hidden_filters.includes(el));
+		while (shown.length && overrun()) {
+			$(shown.pop()).addClass("sanad-filterbar__hidden");
+			this.$more_dd.prop("hidden", false);
+		}
+		this.hidden_filters = filters.filter((el) => !shown.includes(el));
 		// the filters give way first; only once every one of them is behind "More" and the row is
 		// still cramped does the action cluster start handing its icons to the "…". Cramped is not
 		// only a wrap: a search box pinned to its 120 px floor is a row out of room too, and the

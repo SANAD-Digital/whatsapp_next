@@ -89,7 +89,7 @@
 }
 
 @media (max-width: 767px) {
-	.sanad-stats { grid-template-columns: 1fr 1fr; gap: var(--sanad-gap-sm); }
+	.sanad-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sanad-gap-sm); }
 	// two to a row in every layout (owner, 2026-10-26: compact): one a row made four cards a screen
 	.sanad-stats--kpi .sanad-stats__chevron { display: none; }
 	.sanad-stats__card { padding-inline: var(--sanad-gap-md); }
