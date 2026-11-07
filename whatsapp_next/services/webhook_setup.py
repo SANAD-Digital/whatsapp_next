@@ -135,15 +135,19 @@ def ensure_endpoint(
 	events: list[str] | None = None,
 	max_retries: int | None = None,
 	refresh_secret: bool = False,
+	url: str | None = None,
 ) -> EndpointSummary:
 	"""Register (or re-point) the provider endpoint at this site's receiver, fetch the secret
 	when none is stored (always with `refresh_secret`: new credentials may be another
-	account's, so a stored secret proves nothing), mirror the state. Idempotent."""
+	account's, so a stored secret proves nothing), mirror the state. Idempotent.
+
+	`url`: keep this address. A background job passes the endpoint's own: outside a request Frappe
+	cannot know the address people reach the site at (`http://`, and on Frappe 15 the bench's port)."""
 	s = _settings()
 	provider = registry.get_provider()
 	wanted_events = events or _events(s)
 	retries = cint(max_retries) or cint(s.webhook_max_retries) or 3
-	url = receiver_url()
+	url = url or receiver_url()
 	existing = None
 	for ep in provider.list_webhook_endpoints():
 		if ep.endpoint_id == s.webhook_endpoint or ep.url == url:
@@ -202,25 +206,49 @@ def set_status(status: str, user: str | None = None) -> EndpointSummary:
 	return summary()
 
 
-def sync_status() -> EndpointSummary | None:
-	"""Hourly: mirror the provider's endpoint state (lock, failures) into Settings."""
-	s = _settings()
-	if not s.webhook_endpoint:
+def _own_endpoint(endpoints: list[WebhookEndpointState]) -> WebhookEndpointState | None:
+	"""The account's endpoint on a site that never recorded one (its sign-in stopped half-way). An
+	account belongs to one site, so it is the one pointing at this app's receiver."""
+	ours = [ep for ep in endpoints if ep.status != "Revoked" and RECEIVER_METHOD in (ep.url or "")]
+	return ours[0] if len(ours) == 1 else None
+
+
+def _repair(ep: WebhookEndpointState) -> EndpointSummary | None:
+	"""Bring back what a sign-in left unfinished, keeping the endpoint's address: only the
+	device's connection events (the platform's seed, never a set-up this site chose: no message,
+	receipt or reply would arrive), or no signing secret (every delivery would be refused)."""
+	from whatsapp_next.services import secrets
+
+	seed_only = not any(not e.startswith("connection.") for e in ep.events)
+	if ep.status != "Active" or not (seed_only or not secrets.read("webhook_secret")):
 		return None
+	return ensure_endpoint(events=list(DEFAULT_EVENTS) if seed_only else list(ep.events), url=ep.url)
+
+
+def sync_status() -> EndpointSummary | None:
+	"""Hourly: mirror the provider's endpoint state (lock, failures) into Settings, and finish what
+	a sign-in left undone (`_repair`)."""
+	from whatsapp_next.services import secrets
+
+	s = _settings()
+	if not s.webhook_endpoint and not secrets.read("customer_api_key"):
+		return None  # not linked to an account
 	try:
-		for ep in registry.get_provider().list_webhook_endpoints():
-			if ep.endpoint_id == s.webhook_endpoint:
-				if ep.status == "Active" and not any(not e.startswith("connection.") for e in ep.events):
-					# only the device's connection events: the platform's seed, never a set-up this
-					# site chose — no message, receipt or reply would ever arrive (2026-11-01)
-					return ensure_endpoint(events=list(DEFAULT_EVENTS))
-				_mirror(ep)
-				if ep.status == "Locked" and s.webhook_status != "Locked":
-					frappe.log_error(
-						title="WhatsApp webhook endpoint locked",
-						message=f"reason={ep.lock_reason} failures={ep.consecutive_failures}",
-					)
-				return summary()
+		endpoints = registry.get_provider().list_webhook_endpoints()
+		ep = next((e for e in endpoints if e.endpoint_id == s.webhook_endpoint), None) if s.webhook_endpoint else _own_endpoint(endpoints)
+		if ep:
+			repaired = _repair(ep)
+			if repaired:
+				return repaired
+			_mirror(ep)
+			if ep.status == "Locked" and s.webhook_status != "Locked":
+				frappe.log_error(
+					title="WhatsApp webhook endpoint locked",
+					message=f"reason={ep.lock_reason} failures={ep.consecutive_failures}",
+				)
+			return summary()
+		if not s.webhook_endpoint:
+			return None
 		_mirror(None)
 		frappe.db.set_value(
 			"WhatsApp Settings", "WhatsApp Settings", "webhook_status", "Revoked", update_modified=False

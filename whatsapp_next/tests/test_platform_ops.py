@@ -12,7 +12,7 @@ from frappe.utils import add_days, now_datetime
 
 from whatsapp_next.exceptions import WAValidationError
 from whatsapp_next.providers.schemas import WebhookEndpointState
-from whatsapp_next.services import retention, usage_sync, webhook_setup
+from whatsapp_next.services import retention, secrets, usage_sync, webhook_setup
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.tests.conftest_frappe import delete_all, ensure_device, ensure_settings, fake_provider
 from whatsapp_next.tests.fake_provider import FakeProvider
@@ -158,8 +158,26 @@ class TestPlatformOps(IntegrationTestCase):
 				events=("connection.connected", "connection.disconnected", "connection.logged_out"),
 				max_retries=3,
 			)
-			self.assertEqual(set(webhook_setup.sync_status().events), set(webhook_setup.DEFAULT_EVENTS))
+			# ...and from a job, where Frappe cannot know the site's real address: the endpoint keeps
+			# its own, as a new one would have been refused and the repair lost (2026-11-07)
+			with patch.object(webhook_setup, "receiver_url", return_value="http://wn.example.test:8000/x"):
+				self.assertEqual(set(webhook_setup.sync_status().events), set(webhook_setup.DEFAULT_EVENTS))
 			self.assertEqual(set(provider.store[summary.endpoint_id].events), set(webhook_setup.DEFAULT_EVENTS))
+			self.assertEqual(provider.store[summary.endpoint_id].url, summary.url)
+			# a sign-in that stopped half-way: no endpoint recorded and no secret, so every delivery
+			# was refused; the job finds the account's endpoint and fetches the secret
+			from frappe.utils.password import remove_encrypted_password
+
+			remove_encrypted_password("WhatsApp Settings", "WhatsApp Settings", "webhook_secret")
+			ensure_settings(webhook_endpoint=None, webhook_endpoint_url=None)
+			stored = secrets.read
+			linked = lambda field: "a-key" if field == "customer_api_key" else stored(field)  # noqa: E731
+			with (
+				patch.object(webhook_setup, "receiver_url", return_value="http://wn.example.test:8000/x"),
+				patch.object(secrets, "read", side_effect=linked),
+			):
+				self.assertEqual(webhook_setup.sync_status().endpoint_id, summary.endpoint_id)
+			self.assertEqual(frappe.get_single("WhatsApp Settings").get_password("webhook_secret"), "provider-secret-1")
 			# endpoint vanished on the platform → Revoked
 			provider.store.clear()
 			self.assertEqual(webhook_setup.sync_status().status, "Revoked")
