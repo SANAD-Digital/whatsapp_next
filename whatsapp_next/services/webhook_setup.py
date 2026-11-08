@@ -232,7 +232,9 @@ def _drop_duplicates(provider, endpoints: list[WebhookEndpointState], kept: Webh
 		try:
 			provider.delete_webhook_endpoint(ep.endpoint_id)
 		except Exception:
-			frappe.log_error(title="WhatsApp webhook: a duplicate endpoint could not be removed", message=ep.endpoint_id)
+			frappe.log_error(
+				title="WhatsApp webhook: a duplicate endpoint could not be removed", message=ep.endpoint_id
+			)
 
 
 def _own_endpoint(endpoints: list[WebhookEndpointState]) -> WebhookEndpointState | None:
@@ -264,7 +266,11 @@ def sync_status() -> EndpointSummary | None:
 		return None  # not linked to an account
 	try:
 		endpoints = registry.get_provider().list_webhook_endpoints()
-		ep = next((e for e in endpoints if e.endpoint_id == s.webhook_endpoint), None) if s.webhook_endpoint else _own_endpoint(endpoints)
+		ep = (
+			next((e for e in endpoints if e.endpoint_id == s.webhook_endpoint), None)
+			if s.webhook_endpoint
+			else _own_endpoint(endpoints)
+		)
 		if ep:
 			repaired = _repair(ep)
 			if repaired:
@@ -318,7 +324,8 @@ def available_events() -> list[dict[str, Any]]:
 			{
 				"event_name": name,
 				"enabled": bool(row.get("enabled", True)) and handled,
-				"disabled_reason": row.get("disabled_reason") or ("" if handled else _("This app does not use this event yet.")),
+				"disabled_reason": row.get("disabled_reason")
+				or ("" if handled else _("This app does not use this event yet.")),
 				"subscribed": name in subscribed,
 			}
 		)

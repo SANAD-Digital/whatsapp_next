@@ -296,7 +296,8 @@ def remove(function_key: str, user: str | None = None) -> None:
 	bound = frappe.get_all("WhatsApp Command", filters={"function": function_key}, pluck="name")
 	if bound:
 		frappe.throw(
-			_("Move or delete commands {0} before removing the function").format(", ".join(bound)), WAStateConflictError
+			_("Move or delete commands {0} before removing the function").format(", ".join(bound)),
+			WAStateConflictError,
 		)
 	audit.log("Function Removed", reference=(DT, function_key), user=user)
 	frappe.delete_doc(DT, function_key, ignore_permissions=True)

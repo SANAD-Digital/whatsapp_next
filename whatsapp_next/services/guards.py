@@ -64,4 +64,3 @@ def assert_status_writer(doc, fieldnames: tuple[str, ...] = ("status",)) -> None
 				),
 				WAStateConflictError,
 			)
-

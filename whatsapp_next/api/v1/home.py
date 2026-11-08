@@ -67,9 +67,7 @@ def get_dashboard() -> dict[str, Any]:
 	}
 
 
-@api_endpoint(
-	roles=VIEWER_UP, methods=("GET", "POST"), schema={"period": {"enum": list(home.PERIODS)}}
-)
+@api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"), schema={"period": {"enum": list(home.PERIODS)}})
 def get_activity(period: str = "today") -> dict[str, Any]:
 	"""One period of the Home page: `{period, traffic{from, now, previous, errors}, series[{key,
 	status, count}], scheduled, last_sent, feed}` — grouped in the database (A-3)."""

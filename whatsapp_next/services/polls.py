@@ -281,7 +281,15 @@ def summary_for_log(name: str) -> dict[str, Any]:
 	base = frappe.db.get_value(
 		"WhatsApp Log",
 		name,
-		["name", "campaign", "campaign_message_idx", "poll_question", "poll_options", "poll_allow_multiple", "message_type"],
+		[
+			"name",
+			"campaign",
+			"campaign_message_idx",
+			"poll_question",
+			"poll_options",
+			"poll_allow_multiple",
+			"message_type",
+		],
 		as_dict=True,
 	)
 	if not base or base.message_type != "Poll":
@@ -317,7 +325,10 @@ def summary_for_log(name: str) -> dict[str, Any]:
 	for r in rows:
 		by_device.setdefault(r.device, []).append(r)
 	for device, logs in by_device.items():
-		dev = frappe.db.get_value("WhatsApp Device", device, ["platform_device", "phone_e164"], as_dict=True) or {}
+		dev = (
+			frappe.db.get_value("WhatsApp Device", device, ["platform_device", "phone_e164"], as_dict=True)
+			or {}
+		)
 		own = dev.get("phone_e164")
 		ids = {r.name: (r.provider_message_id or r.poll_id) for r in logs}
 		raw_by_id: dict[str, Any] = {}
@@ -352,7 +363,13 @@ def summary_for_log(name: str) -> dict[str, Any]:
 					key = cstr(v.get("number") or v.get("jid") or v.get("name"))
 					entry = by_voter.setdefault(
 						key,
-						{**recipient, "voter": v.get("name") or "", "voter_number": v.get("number") or "", "options": [], "voted_at": v.get("voted_at")},
+						{
+							**recipient,
+							"voter": v.get("name") or "",
+							"voter_number": v.get("number") or "",
+							"options": [],
+							"voted_at": v.get("voted_at"),
+						},
 					)
 					entry["options"].append(label)
 					counts[label] = counts.get(label, 0) + 1
@@ -390,7 +407,6 @@ def live_results(names: list[str] | str) -> dict[str, Any]:
 	are not polls, are left out."""
 	from whatsapp_next.providers import registry
 
-
 	if isinstance(names, str):
 		names = frappe.parse_json(names) if names.strip().startswith("[") else [names]
 	names = list(dict.fromkeys(n for n in (names or []) if n))[:20]
@@ -399,7 +415,10 @@ def live_results(names: list[str] | str) -> dict[str, Any]:
 		if not frappe.has_permission("WhatsApp Log", "read", name):
 			continue
 		row = frappe.db.get_value(
-			"WhatsApp Log", name, ["message_type", "device", "poll_id", "provider_message_id", "poll_options"], as_dict=True
+			"WhatsApp Log",
+			name,
+			["message_type", "device", "poll_id", "provider_message_id", "poll_options"],
+			as_dict=True,
 		)
 		# WhatsApp's own message id is the poll's id at the gateway; `poll_id` can hold a stand-in
 		# the platform made up when a send answer carried none

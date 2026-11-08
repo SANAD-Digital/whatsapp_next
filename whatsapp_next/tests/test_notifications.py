@@ -195,7 +195,9 @@ class TestNotifications(IntegrationTestCase):
 		# the body is rendered for each recipient: `{{ recipient.display_name }}` is filled, as in the preview
 		with patch.object(frappe, "enqueue"):
 			svc.send_for_document(notif.name, "ToDo", todo2.name, "New")
-		body = frappe.db.get_value("WhatsApp Log", {"notification": notif.name, "reference_name": todo2.name}, "body")
+		body = frappe.db.get_value(
+			"WhatsApp Log", {"notification": notif.name, "reference_name": todo2.name}, "body"
+		)
 		self.assertTrue(recips[0].display_name)
 		self.assertTrue(body.endswith(f"for {recips[0].display_name}"), body)
 		# a recipient from a plain number (a phone field, a fixed number) is named like its log row:
@@ -214,16 +216,22 @@ class TestNotifications(IntegrationTestCase):
 			frappe.get_doc(
 				{"doctype": "WhatsApp Number", "phone_e164": PHONE, "phone": PHONE, "contact": contact}
 			).insert(ignore_permissions=True)
-		todo3 = frappe.get_doc({"doctype": "ToDo", "description": "notif-test named"}).insert(ignore_permissions=True)
+		todo3 = frappe.get_doc({"doctype": "ToDo", "description": "notif-test named"}).insert(
+			ignore_permissions=True
+		)
 		named = svc.resolve_recipients(frappe.get_doc("WhatsApp Notification", notif.name), todo3)
-		self.assertEqual([(r.phone_e164, r.contact) for r in named], [(PHONE, contact), ("+966500000977", None)])
+		self.assertEqual(
+			[(r.phone_e164, r.contact) for r in named], [(PHONE, contact), ("+966500000977", None)]
+		)
 		self.assertEqual(named[0].display_name, recips[0].display_name)
 		with patch.object(frappe, "enqueue"):
 			svc.send_for_document(notif.name, "ToDo", todo3.name, "New")
 		bodies = {
 			r.phone_e164: r.body
 			for r in frappe.get_all(
-				"WhatsApp Log", filters={"notification": notif.name, "reference_name": todo3.name}, fields=["phone_e164", "body"]
+				"WhatsApp Log",
+				filters={"notification": notif.name, "reference_name": todo3.name},
+				fields=["phone_e164", "body"],
 			)
 		}
 		self.assertTrue(bodies[PHONE].endswith(f"for {recips[0].display_name}"), bodies)
@@ -270,7 +278,9 @@ class TestNotifications(IntegrationTestCase):
 		in the same slot sees the same window (the job dedup absorbs it), never a shifted one."""
 		from datetime import datetime
 
-		notif = frappe._dict(document_type="ToDo", event="Minutes After", datetime_changed="modified", minutes_offset=10)
+		notif = frappe._dict(
+			document_type="ToDo", event="Minutes After", datetime_changed="modified", minutes_offset=10
+		)
 		seen = []
 		with patch.object(frappe, "get_all", side_effect=lambda *a, **k: seen.append(k["filters"]) or []):
 			for now in (

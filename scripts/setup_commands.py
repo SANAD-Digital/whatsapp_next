@@ -163,7 +163,9 @@ def _install_functions(company: str | None) -> None:
 	for key, script in FUNCTION_SCRIPTS.items():
 		if not frappe.db.exists("Server Script", script):
 			frappe.throw(f"Server Script {script} is missing: run scripts/setup_functions.py first")
-		row = frappe.db.get_value("WhatsApp Function", key, ["server_script", "manifest_checksum"], as_dict=True)
+		row = frappe.db.get_value(
+			"WhatsApp Function", key, ["server_script", "manifest_checksum"], as_dict=True
+		)
 		if row and not row.server_script:
 			# the old catalog row: its commands are stopped and moved below, the row is re-made
 			for cmd in frappe.get_all(DT, filters={"function": key}, pluck="name"):

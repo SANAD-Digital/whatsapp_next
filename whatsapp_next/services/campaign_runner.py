@@ -388,7 +388,13 @@ def _materialize_recipients(doc, recipients) -> dict[str, int]:
 		if doc.scheduled_at and get_datetime(doc.scheduled_at) > now_datetime()
 		else now_datetime()
 	)
-	counts = {"recipients": len(recipients), "created": 0, "skipped_unknown": 0, "skipped_not_on_whatsapp": 0, "failed": 0}
+	counts = {
+		"recipients": len(recipients),
+		"created": 0,
+		"skipped_unknown": 0,
+		"skipped_not_on_whatsapp": 0,
+		"failed": 0,
+	}
 	keys = [key_for(r.phone_e164, r.jid) for r in recipients]
 	known: set[str] = set()
 	if exclude_unknown:
@@ -405,7 +411,10 @@ def _materialize_recipients(doc, recipients) -> dict[str, int]:
 			answers = number_check.check(individual, device=device)
 			not_on_whatsapp = {k for k, on in answers.items() if not on}
 		except Exception:
-			frappe.log_error(title="WhatsApp campaign: number check failed", message=f"campaign={campaign}\n{frappe.get_traceback()}")
+			frappe.log_error(
+				title="WhatsApp campaign: number check failed",
+				message=f"campaign={campaign}\n{frappe.get_traceback()}",
+			)
 	created_batch: list[str] = []
 	for idx, recipient in enumerate(recipients):
 		key = keys[idx]
@@ -817,7 +826,11 @@ def poll_results(campaign: str, *, refresh: bool = False) -> dict[str, Any]:
 		frappe.throw(_("Campaign device is not registered on the platform"), WAValidationError)
 	rows = frappe.get_all(
 		"WhatsApp Log",
-		filters={"campaign": campaign, "message_type": "Poll", "status": ("in", ["Sent", "Delivered", "Read"])},
+		filters={
+			"campaign": campaign,
+			"message_type": "Poll",
+			"status": ("in", ["Sent", "Delivered", "Read"]),
+		},
 		fields=["poll_id", "provider_message_id", "campaign_message_idx"],
 	)
 	ids_by_idx: dict[int, list[str]] = {}
@@ -945,7 +958,12 @@ def readiness(campaign: str) -> dict[str, Any]:
 
 	checks = [
 		device_check,
-		{"key": "messages", "ok": bool(messages) and not incomplete, "count": len(messages), "incomplete": incomplete},
+		{
+			"key": "messages",
+			"ok": bool(messages) and not incomplete,
+			"count": len(messages),
+			"incomplete": incomplete,
+		},
 		{"key": "attachments", "ok": not missing_files, "missing": missing_files},
 		{"key": "variables", "ok": not bad_variables, "invalid": bad_variables},
 		{
@@ -985,7 +1003,12 @@ def failures(campaign: str) -> dict[str, Any]:
 		sample = (
 			frappe.db.get_value(
 				"WhatsApp Log",
-				{"campaign": campaign, "status": "Failed", "error_code": r["error_code"], "name": ("not in", retried or [""])},
+				{
+					"campaign": campaign,
+					"status": "Failed",
+					"error_code": r["error_code"],
+					"name": ("not in", retried or [""]),
+				},
 				"error_message",
 			)
 			if r["error_code"]

@@ -76,7 +76,9 @@ def _meta_options(fieldname: str) -> list[str]:
 
 def _values(doc) -> dict[str, Any]:
 	out = {f: doc.get(f) for f in FIELDS}
-	out["notification_time"] = _as_time(doc.notification_time).strftime("%H:%M") if doc.notification_time else None
+	out["notification_time"] = (
+		_as_time(doc.notification_time).strftime("%H:%M") if doc.notification_time else None
+	)
 	out["recipients"] = [
 		{f: row.get(f) for f in (*RECIPIENT_FIELDS, "phone_e164")} for row in doc.get("recipients") or []
 	]
@@ -153,7 +155,8 @@ def editor(name: str | None = None) -> dict[str, Any]:
 		"devices": devices,
 		"templates": templates,
 		"tokens": [
-			{"name": t, "example": str(alerts_dates.resolve(t.replace(":N", ":7")))} for t in alerts_dates.TOKENS
+			{"name": t, "example": str(alerts_dates.resolve(t.replace(":N", ":7")))}
+			for t in alerts_dates.TOKENS
 		],
 		"variables": [{"code": code, "label": _(label)} for code, label in VARIABLES],
 		"png_available": bool(shutil.which(alerts.PNG_BINARY)),
@@ -204,7 +207,9 @@ def _apply(doc, payload: dict) -> None:
 		for row in rows:
 			if not isinstance(row, dict):
 				continue
-			doc.append("recipients", {f: row.get(f) for f in RECIPIENT_FIELDS if row.get(f) not in (None, "")})
+			doc.append(
+				"recipients", {f: row.get(f) for f in RECIPIENT_FIELDS if row.get(f) not in (None, "")}
+			)
 
 
 def _draft(payload: dict):
@@ -300,7 +305,9 @@ def send_test(payload: dict, phone: str) -> dict[str, Any]:
 	if run.error:
 		if "wkhtmlto" in run.error:
 			frappe.throw(
-				_("The report file could not be built: wkhtmltopdf is not installed on the server. Send the test with \"No file\", or install it."),
+				_(
+					'The report file could not be built: wkhtmltopdf is not installed on the server. Send the test with "No file", or install it.'
+				),
 				WAValidationError,
 			)
 		frappe.throw(_("The test could not be sent: {0}").format(run.error), WAValidationError)
@@ -387,7 +394,9 @@ def _can_run(report: str) -> bool:
 	"""Whether the caller may run the report — the two checks `frappe.desk.query_report` makes, so
 	the editor does not ask Frappe for a script it will refuse (with its own "Not permitted" popup)."""
 	doc = frappe.get_doc("Report", report)
-	return bool(doc.is_permitted() and (not doc.ref_doctype or frappe.has_permission(doc.ref_doctype, "report")))
+	return bool(
+		doc.is_permitted() and (not doc.ref_doctype or frappe.has_permission(doc.ref_doctype, "report"))
+	)
 
 
 # ---- pickers -------------------------------------------------------------------------------
@@ -406,7 +415,10 @@ def search(kind: str, txt: str | None = None) -> list[dict[str, Any]]:
 			order_by="name asc",
 			limit_page_length=20,
 		)
-		return [{"value": r.name, "label": _(r.name), "description": f"{_(r.ref_doctype)} · {_(r.report_type)}"} for r in rows]
+		return [
+			{"value": r.name, "label": _(r.name), "description": f"{_(r.ref_doctype)} · {_(r.report_type)}"}
+			for r in rows
+		]
 	if kind == "user":
 		or_filters = {"full_name": like, "name": like, "mobile_no": like} if like else None
 		rows = frappe.get_list(
@@ -418,7 +430,11 @@ def search(kind: str, txt: str | None = None) -> list[dict[str, Any]]:
 			limit_page_length=20,
 		)
 		return [
-			{"value": r.name, "label": r.full_name or r.name, "description": r.mobile_no or _("No mobile number")}
+			{
+				"value": r.name,
+				"label": r.full_name or r.name,
+				"description": r.mobile_no or _("No mobile number"),
+			}
 			for r in rows
 		]
 	if kind == "role":
@@ -443,8 +459,11 @@ def search(kind: str, txt: str | None = None) -> list[dict[str, Any]]:
 			filters["disabled"] = 0
 		or_filters = {"name": like, field: like} if like else None
 		rows = frappe.get_list(
-			doctype, filters=filters, or_filters=or_filters, fields=list({"name", field}), limit_page_length=20
+			doctype,
+			filters=filters,
+			or_filters=or_filters,
+			fields=list({"name", field}),
+			limit_page_length=20,
 		)
 		return [{"value": r.name, "label": r.get(field) or r.name, "description": None} for r in rows]
 	frappe.throw(_("Unknown picker {0}").format(kind), WAValidationError)
-

@@ -86,13 +86,23 @@ class TestSmoke(IntegrationTestCase):
 		path = frappe.get_app_path("whatsapp_next", "whatsapp_next", "custom", "contact_phone.json")
 		with open(path, encoding="utf-8") as f:
 			data = json.load(f)
-		self.assertEqual({"custom_fields", "custom_perms", "property_setters", "links", "doctype", "sync_on_migrate"}, set(data))
+		self.assertEqual(
+			{"custom_fields", "custom_perms", "property_setters", "links", "doctype", "sync_on_migrate"},
+			set(data),
+		)
 		self.assertEqual((data["doctype"], data["sync_on_migrate"]), ("Contact Phone", 1))
 		self.assertEqual((data["custom_perms"], data["property_setters"]), ([], []))
 		self.assertEqual([f["name"] for f in data["custom_fields"]], ["Contact Phone-wa_phone_e164"])
 		field = data["custom_fields"][0]
 		self.assertEqual(
-			(field["dt"], field["fieldname"], field["fieldtype"], field["module"], field["search_index"], field["hidden"]),
+			(
+				field["dt"],
+				field["fieldname"],
+				field["fieldtype"],
+				field["module"],
+				field["search_index"],
+				field["hidden"],
+			),
 			("Contact Phone", "wa_phone_e164", "Data", "WhatsApp Next", 1, 1),
 		)
 		# every Custom Field of this module on the site is shipped by a file in that folder
@@ -101,10 +111,17 @@ class TestSmoke(IntegrationTestCase):
 		for name in os.listdir(folder):
 			with open(os.path.join(folder, name), encoding="utf-8") as f:
 				shipped |= {row["name"] for row in json.load(f)["custom_fields"]}
-		self.assertEqual(set(frappe.get_all("Custom Field", {"module": "WhatsApp Next"}, pluck="name")), shipped)
+		self.assertEqual(
+			set(frappe.get_all("Custom Field", {"module": "WhatsApp Next"}, pluck="name")), shipped
+		)
 		# and nothing of it is left in the fixtures
-		self.assertFalse(os.path.exists(frappe.get_app_path("whatsapp_next", "fixtures", "custom_field.json")))
-		declared = [f.get("dt") or f.get("doctype") if isinstance(f, dict) else f for f in frappe.get_hooks("fixtures", app_name="whatsapp_next")]
+		self.assertFalse(
+			os.path.exists(frappe.get_app_path("whatsapp_next", "fixtures", "custom_field.json"))
+		)
+		declared = [
+			f.get("dt") or f.get("doctype") if isinstance(f, dict) else f
+			for f in frappe.get_hooks("fixtures", app_name="whatsapp_next")
+		]
 		self.assertFalse({"Custom Field", "Property Setter"} & set(declared))
 
 	def test_syncing_customizations_keeps_the_column_and_its_data(self):
@@ -124,7 +141,9 @@ class TestSmoke(IntegrationTestCase):
 		updatedb.assert_called_with("Contact Phone")
 		self.assertTrue(frappe.db.has_column("Contact Phone", "wa_phone_e164"))
 		self.assertEqual(filled(), before)
-		self.assertEqual(frappe.db.count("Custom Field", {"dt": "Contact Phone", "fieldname": "wa_phone_e164"}), 1)
+		self.assertEqual(
+			frappe.db.count("Custom Field", {"dt": "Contact Phone", "fieldname": "wa_phone_e164"}), 1
+		)
 
 	def test_custom_field_and_contact_hook(self):
 		self.assertTrue(frappe.db.exists("Custom Field", "Contact Phone-wa_phone_e164"))
@@ -163,10 +182,20 @@ class TestSmoke(IntegrationTestCase):
 		"""`install.py` holds no desktop icon, role, index or customization code: those are files."""
 		from whatsapp_next import install
 
-		for gone in ("ensure_desktop_icons", "ensure_roles", "add_indexes", "ensure_customizations", "ensure_settings_defaults"):
+		for gone in (
+			"ensure_desktop_icons",
+			"ensure_roles",
+			"add_indexes",
+			"ensure_customizations",
+			"ensure_settings_defaults",
+		):
 			self.assertFalse(hasattr(install, gone), gone)
 		# every product role is named by a DocType's permissions, so syncing the DocTypes creates it
-		named = set(frappe.get_all("DocPerm", {"parent": ("like", "WhatsApp %"), "role": ("in", PRODUCT_ROLES)}, pluck="role"))
+		named = set(
+			frappe.get_all(
+				"DocPerm", {"parent": ("like", "WhatsApp %"), "role": ("in", PRODUCT_ROLES)}, pluck="role"
+			)
+		)
 		self.assertEqual(named, set(PRODUCT_ROLES))
 
 

@@ -78,7 +78,9 @@ class TestAlertsEditor(IntegrationTestCase):
 		with as_user("WhatsApp Manager"):
 			saved = api.save_editor(payload=self.payload())
 			self.assertEqual(saved["name"], NAME)
-			self.assertEqual(frappe.utils.get_datetime(saved["next_run_at"]).strftime("%A %H:%M"), "Sunday 08:30")
+			self.assertEqual(
+				frappe.utils.get_datetime(saved["next_run_at"]).strftime("%A %H:%M"), "Sunday 08:30"
+			)
 			opened = api.get_editor(name=NAME)
 			self.assertEqual(opened["alert"]["notification_time"], "08:30")
 			self.assertEqual(opened["alert"]["recipients"][0]["phone_e164"], PHONE)
@@ -154,13 +156,16 @@ class TestAlertsEditorReports(IntegrationTestCase):
 				"is_standard": "No",
 				"module": "Desk",
 				"json": frappe.as_json(
-					{"columns": [["name", "ToDo"], ["description", "ToDo"]], "filters": [["ToDo", "status", "=", "Open", False]]}
+					{
+						"columns": [["name", "ToDo"], ["description", "ToDo"]],
+						"filters": [["ToDo", "status", "=", "Open", False]],
+					}
 				),
 			}
 		).insert(ignore_permissions=True)
-		self.todo = frappe.get_doc({"doctype": "ToDo", "description": "editor-builder-probe", "status": "Open"}).insert(
-			ignore_permissions=True
-		)
+		self.todo = frappe.get_doc(
+			{"doctype": "ToDo", "description": "editor-builder-probe", "status": "Open"}
+		).insert(ignore_permissions=True)
 
 	def tearDown(self):
 		frappe.delete_doc("ToDo", self.todo.name, force=True, ignore_missing=True)
@@ -171,15 +176,20 @@ class TestAlertsEditorReports(IntegrationTestCase):
 			info = api.get_report_info(report=BUILDER)
 		self.assertEqual((info["report_type"], info["ref_doctype"]), ("Report Builder", "ToDo"))
 		self.assertEqual(info["saved_filters"], [["ToDo", "status", "=", "Open"]])
-		alert = frappe._dict(filters_json=frappe.as_json([["ToDo", "description", "=", "editor-builder-probe"]]))
+		alert = frappe._dict(
+			filters_json=frappe.as_json([["ToDo", "description", "=", "editor-builder-probe"]])
+		)
 		columns, rows = alerts._run_report_builder(alerts.report_kind(BUILDER), alert)
 		self.assertEqual([c["fieldname"] for c in columns], ["name", "description"])
 		self.assertEqual([r["name"] for r in rows], [self.todo.name])
 		# no own filters: the report's saved ones apply
-		columns, rows = alerts._run_report_builder(alerts.report_kind(BUILDER), frappe._dict(filters_json=None))
+		columns, rows = alerts._run_report_builder(
+			alerts.report_kind(BUILDER), frappe._dict(filters_json=None)
+		)
 		self.assertIn(self.todo.name, [r["name"] for r in rows])
 		self.assertEqual(
-			[c["fieldname"] for c in alerts.report_columns(BUILDER, [["ToDo", "status", "=", "Open"]])], ["name", "description"]
+			[c["fieldname"] for c in alerts.report_columns(BUILDER, [["ToDo", "status", "=", "Open"]])],
+			["name", "description"],
 		)
 
 	def test_picker_classify_without_a_target(self):
@@ -187,7 +197,12 @@ class TestAlertsEditorReports(IntegrationTestCase):
 
 		with as_user("WhatsApp Manager"):
 			out = picker_api.classify(
-				rows=[{"phone": "+966500931501"}, {"phone": "+966500931502"}, {"phone": "+966500931501"}, {"phone": "x"}],
+				rows=[
+					{"phone": "+966500931501"},
+					{"phone": "+966500931502"},
+					{"phone": "+966500931501"},
+					{"phone": "x"},
+				],
 				existing=["+966500931502"],
 			)
 		self.assertEqual([r["phone_e164"] for r in out["available"]], ["+966500931501"])

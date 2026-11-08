@@ -191,7 +191,14 @@ def help_text(inbound=None) -> str:
 	)
 
 
-_TYPE_LABELS = {"str": "text", "int": "number", "date": "date", "link": "name", "check": "yes or no", "select": "choice"}
+_TYPE_LABELS = {
+	"str": "text",
+	"int": "number",
+	"date": "date",
+	"link": "name",
+	"check": "yes or no",
+	"select": "choice",
+}
 
 
 def usage_text(command) -> str:
@@ -263,8 +270,12 @@ def block_message(command, reason: str, sender: Sender | None = None) -> str:
 	messages = {
 		"Not Allowed": _("This command is not open to your number."),
 		"Blacklist": _("Your number cannot use this command."),
-		"Not Linked": _("Your number is not linked to an account with us, so this command cannot answer you."),
-		"Party Type": _("This command is not for {0} accounts.").format(_(sender.party_type)) if sender and sender.party_type else _("This command is not for your account type."),
+		"Not Linked": _(
+			"Your number is not linked to an account with us, so this command cannot answer you."
+		),
+		"Party Type": _("This command is not for {0} accounts.").format(_(sender.party_type))
+		if sender and sender.party_type
+		else _("This command is not for your account type."),
 		"Commands Disabled": _("Commands are switched off right now."),
 		"Function Inactive": _("This command is not available right now."),
 	}
@@ -379,7 +390,9 @@ def check_access(command, inbound, sender: Sender | None = None) -> str | None:
 def function_block(command, sender: Sender | None = None) -> str | None:
 	"""The function's part of the access check: installed, Active and bound to its Server Script;
 	every `@requires` met on this site; the sender's party type one `@party_types` allows."""
-	fn = frappe.db.get_value("WhatsApp Function", command.function, ["status", "server_script", "manifest"], as_dict=True)
+	fn = frappe.db.get_value(
+		"WhatsApp Function", command.function, ["status", "server_script", "manifest"], as_dict=True
+	)
 	if not fn or fn.status != "Active" or not fn.server_script:
 		return "Function Inactive"
 	spec = function_runner.functions_catalog.manifest_of(fn)
@@ -538,7 +551,9 @@ def _service_user() -> str:
 	return user
 
 
-def execute(command, inbound, params: dict[str, Any], *, sender: Sender | None = None, dry_run: bool = False) -> FunctionRun:
+def execute(
+	command, inbound, params: dict[str, Any], *, sender: Sender | None = None, dry_run: bool = False
+) -> FunctionRun:
 	"""Run the command's function with ready `params` as the service user; the previous session
 	user (and the request's session and form_dict) is always restored."""
 	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
@@ -591,7 +606,9 @@ def _record_metrics(function: str, elapsed_ms: int, *, error: str | None) -> Non
 	query.run()
 
 
-def render_outputs(command, result: FunctionRun, sender: Sender | None = None, *, dry_run: bool = False) -> list[dict[str, Any]]:
+def render_outputs(
+	command, result: FunctionRun, sender: Sender | None = None, *, dry_run: bool = False
+) -> list[dict[str, Any]]:
 	"""The replies of a run, in its messages' order (`function_runner.replies_of`)."""
 	return function_runner.replies_of(result, dry_run=dry_run)
 
@@ -852,26 +869,65 @@ def _route(
 	if any(m_["source"] == "sender" for m_ in missing):
 		# the function needs the sender's party and the number is linked to none
 		result.status, result.block_reason = "Blocked", "Not Linked"
-		_set_status(inbound_name, "Blocked", command=command.name, command_text=text[:140], block_reason="Not Linked")
+		_set_status(
+			inbound_name, "Blocked", command=command.name, command_text=text[:140], block_reason="Not Linked"
+		)
 		return _finish(result, inbound, dry_run, create_simulated_rows, command=command)
 	asking = to_ask(command, provided, missing)
 	if asking and not dry_run and not cint(get("is_group")):
 		return _ask_first(command, inbound, inbound_name, provided, asking, text, result)
 	if missing:
 		labels = ", ".join(_(m_["label"]) for m_ in missing)
-		return _failed(command, inbound, inbound_name, text, result, _("{0} is required").format(labels), dry_run, create_simulated_rows)
-	return _run(command, inbound, inbound_name, params, sender, text, settings, started, result, dry_run, create_simulated_rows)
+		return _failed(
+			command,
+			inbound,
+			inbound_name,
+			text,
+			result,
+			_("{0} is required").format(labels),
+			dry_run,
+			create_simulated_rows,
+		)
+	return _run(
+		command,
+		inbound,
+		inbound_name,
+		params,
+		sender,
+		text,
+		settings,
+		started,
+		result,
+		dry_run,
+		create_simulated_rows,
+	)
 
 
-def _failed(command, inbound, inbound_name, text, result, error, dry_run, create_simulated_rows) -> RouteResult:
+def _failed(
+	command, inbound, inbound_name, text, result, error, dry_run, create_simulated_rows
+) -> RouteResult:
 	"""A value the sender gave that the function cannot take: the reason is the reply."""
 	result.status, result.error = "Failed", error
-	_set_status(inbound_name, "Failed", command=command.name, command_text=text[:140], command_error=error[:500])
+	_set_status(
+		inbound_name, "Failed", command=command.name, command_text=text[:140], command_error=error[:500]
+	)
 	result.replies = [{"output_key": "error", "message_type": "Text", "body": error, "attachment": None}]
 	return _finish(result, inbound, dry_run, create_simulated_rows, command=command)
 
 
-def _run(command, inbound, inbound_name, args, sender, text, settings, started, result, dry_run, create_simulated_rows):
+def _run(
+	command,
+	inbound,
+	inbound_name,
+	args,
+	sender,
+	text,
+	settings,
+	started,
+	result,
+	dry_run,
+	create_simulated_rows,
+):
 	"""Steps 9–11: mark Matched, the receipt reply, the function, its outputs, the run counter."""
 	result.args = args
 	_set_status(
@@ -931,7 +987,13 @@ def _ask_first(command, inbound, inbound_name, provided, missing, text, result) 
 	command_sessions.save(
 		get("device"),
 		command_sessions.chat_key(inbound),
-		{"command": command.name, "args": provided, "pending": missing, "text": text[:140], "inbound": inbound_name},
+		{
+			"command": command.name,
+			"args": provided,
+			"pending": missing,
+			"text": text[:140],
+			"inbound": inbound_name,
+		},
 	)
 	result.status = "Awaiting Input"
 	_set_status(inbound_name, "Awaiting Input", command=command.name, command_text=text[:140])
@@ -960,7 +1022,9 @@ def _continue_session(session, inbound, inbound_name, result, settings, started)
 		command_sessions.clear(device, chat)
 		result.status = "Executed"
 		_set_status(inbound_name, "Executed", command=command.name, command_text=_("cancelled"))
-		result.replies = [{"output_key": "prompt", "message_type": "Text", "body": _("Cancelled."), "attachment": None}]
+		result.replies = [
+			{"output_key": "prompt", "message_type": "Text", "body": _("Cancelled."), "attachment": None}
+		]
 		return _finish(result, inbound, False, False, command=command)
 	if kind == "type":
 		command_sessions.save(device, chat, session)
@@ -1007,7 +1071,9 @@ def _continue_session(session, inbound, inbound_name, result, settings, started)
 		return _failed(command, inbound, inbound_name, text, result, str(exc), False, False)
 	if missing:
 		labels = ", ".join(_(m_["label"]) for m_ in missing)
-		return _failed(command, inbound, inbound_name, text, result, _("{0} is required").format(labels), False, False)
+		return _failed(
+			command, inbound, inbound_name, text, result, _("{0} is required").format(labels), False, False
+		)
 	return _run(command, inbound, inbound_name, params, sender, text, settings, started, result, False, False)
 
 
@@ -1106,4 +1172,3 @@ def recent_run_counts(commands: list[str], days: int = 30) -> dict[str, int]:
 		group_by="command",
 	)
 	return {r.command: cint(r.run_count) for r in rows}
-

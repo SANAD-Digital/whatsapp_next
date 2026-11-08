@@ -250,4 +250,3 @@ def send(payload: dict, user: str | None = None) -> dict[str, Any]:
 		"excluded": r["excluded"],
 		"invalid": r["invalid"],
 	}
-

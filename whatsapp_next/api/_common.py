@@ -81,14 +81,26 @@ def api_endpoint(
 				# a row another operation holds (a webhook, a job): say so, and keep the trace
 				_log(fn, exc)
 				frappe.clear_messages()  # Frappe's own English line would show beside ours
-				_raise_with_message(WABusyError(_("This record is being changed by another operation right now (a webhook or a background job). Try again in a moment.")))
+				_raise_with_message(
+					WABusyError(
+						_(
+							"This record is being changed by another operation right now (a webhook or a background job). Try again in a moment."
+						)
+					)
+				)
 			except frappe.ValidationError:
 				raise  # the app's or Frappe's own message to the user, already worded
 			except Exception as exc:
 				# a fault, not a message: recorded with its traceback, and the screen names the entry
 				log = _log(fn, exc)
 				frappe.clear_messages()
-				_raise_with_message(WAUnexpectedError(_("Something went wrong in WhatsApp ({0}). It was recorded in the Error Log as {1}.").format(type(exc).__name__, log or "—")))
+				_raise_with_message(
+					WAUnexpectedError(
+						_(
+							"Something went wrong in WhatsApp ({0}). It was recorded in the Error Log as {1}."
+						).format(type(exc).__name__, log or "—")
+					)
+				)
 
 		wrapper.__wa_api_endpoint__ = True  # type: ignore[attr-defined]
 		wrapper.__wa_roles__ = role_tuple  # type: ignore[attr-defined]
@@ -201,7 +213,9 @@ def coerce_value(name: str, value, hint):
 		if hint is float:
 			# `flt` reads any text it cannot parse as 0 and passes "inf"/"nan" through: a typo in
 			# a threshold became a silent zero instead of a 417
-			number = float(str(value).replace(",", "").strip()) if not isinstance(value, int | float) else value
+			number = (
+				float(str(value).replace(",", "").strip()) if not isinstance(value, int | float) else value
+			)
 			return flt(number) if math.isfinite(number) else _raise()
 		if hint is str:
 			return value if isinstance(value, str) else str(value)

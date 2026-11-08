@@ -161,7 +161,9 @@ class WhatsAppCommand(Document):
 		typed = {p["name"] for p in fh.typed_params(spec)}
 		templates = {p["name"] for p in fh.command_params(spec) if p["fieldtype"] == "Template"}
 		replies = {r["key"] for r in spec.get("replies") or []}
-		asked = [line.partition(":")[0].strip() for line in (self.ask_inputs or "").splitlines() if line.strip()]
+		asked = [
+			line.partition(":")[0].strip() for line in (self.ask_inputs or "").splitlines() if line.strip()
+		]
 		checks = (
 			(_("Disabled inputs"), (self.disabled_inputs or "").splitlines(), typed),
 			(_("Ask for inputs"), asked, typed),
@@ -171,19 +173,26 @@ class WhatsAppCommand(Document):
 			unknown = sorted({n.strip() for n in names if n.strip()} - allowed)
 			if unknown:
 				frappe.throw(
-					_("{0}: {1} is not in the header of function {2}").format(label, ", ".join(unknown), self.function),
+					_("{0}: {1} is not in the header of function {2}").format(
+						label, ", ".join(unknown), self.function
+					),
 					WAValidationError,
 				)
 		seen: set[tuple[str, str]] = set()
 		for row in self.get("templates") or []:
 			if row.param not in templates:
 				frappe.throw(
-					_("Message text row {0}: {1} is not a message template of function {2}").format(row.idx, row.param, self.function),
+					_("Message text row {0}: {1} is not a message template of function {2}").format(
+						row.idx, row.param, self.function
+					),
 					WAValidationError,
 				)
 			key = (row.param, row.language or "")
 			if key in seen:
-				frappe.throw(_("Message text row {0} repeats {1} in the same language").format(row.idx, row.param), WAValidationError)
+				frappe.throw(
+					_("Message text row {0} repeats {1} in the same language").format(row.idx, row.param),
+					WAValidationError,
+				)
 			seen.add(key)
 		for row in self.get("allowed_party_types") or []:
 			if not fh.party_type_allowed(spec, row.party_type):

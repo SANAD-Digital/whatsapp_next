@@ -115,7 +115,12 @@ class BaseProvider(ABC):
 
 	@abstractmethod
 	def login(
-		self, email: str, password: str, integration_link: str | None = None, site_url: str | None = None, move_site: bool = False
+		self,
+		email: str,
+		password: str,
+		integration_link: str | None = None,
+		site_url: str | None = None,
+		move_site: bool = False,
 	) -> dict:
 		"""Authenticate a tenant user; returns their credentials once. Never logged. A tenant with
 		several accounts names one (`integration_link`) or gets `{choose_account, accounts}` back."""
@@ -274,7 +279,9 @@ class BaseProvider(ABC):
 		"""`{status_id: {count, viewers[{jid, number, viewed_at}]}}` for the device's own posts."""
 		raise pex.NotSupportedError("This provider cannot read status views", code="NOT_SUPPORTED")
 
-	def mark_read(self, platform_device: str, chat_jid: str, message_ids: list[str], sender_jid: str | None = None) -> None:
+	def mark_read(
+		self, platform_device: str, chat_jid: str, message_ids: list[str], sender_jid: str | None = None
+	) -> None:
 		"""Read receipts for received messages of one chat (JIDs as they came in).
 
 		Not abstract: a provider without read receipts keeps this default."""
@@ -310,7 +317,13 @@ class BaseProvider(ABC):
 		raise pex.NotSupportedError("This provider cannot create groups", code="NOT_SUPPORTED")
 
 	def list_history(
-		self, platform_device: str, *, after: int = 0, limit: int = 200, since: int | None = None, total: bool = False
+		self,
+		platform_device: str,
+		*,
+		after: int = 0,
+		limit: int = 200,
+		since: int | None = None,
+		total: bool = False,
 	) -> HistoryPage:
 		"""A batch of the device's past messages, both directions, oldest stored first: those after
 		cursor `after`, sent at or after unix time `since`. `total` asks for the count as well.

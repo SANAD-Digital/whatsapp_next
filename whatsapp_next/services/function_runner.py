@@ -178,7 +178,10 @@ def execute(command, params: dict[str, Any], *, disabled: set[str] | None = None
 			message=f"command={command.name} {type(exc).__name__}: {str(exc)[:300]}",
 		)
 		return FunctionRun(
-			error=_(GENERIC_ERROR), detail=f"{type(exc).__name__}: {str(exc)[:300]}", params=params, data={"exception": type(exc).__name__}
+			error=_(GENERIC_ERROR),
+			detail=f"{type(exc).__name__}: {str(exc)[:300]}",
+			params=params,
+			data={"exception": type(exc).__name__},
 		)
 	if result["error"]:
 		return FunctionRun(error=str(result["error"]), data=result["data"], params=params)

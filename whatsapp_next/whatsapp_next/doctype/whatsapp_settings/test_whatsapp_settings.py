@@ -66,14 +66,19 @@ class TestWhatsAppSettings(IntegrationTestCase):
 			# left empty: the site's mode decides, and nothing is read from the site config
 			settings.platform_base_url = ""
 			settings.save(ignore_permissions=True)
-			with patch.dict(frappe.conf, {"developer_mode": 1, "whatsapp_platform_base_url": "https://ignored.example.com"}):
+			with patch.dict(
+				frappe.conf,
+				{"developer_mode": 1, "whatsapp_platform_base_url": "https://ignored.example.com"},
+			):
 				self.assertEqual(registry.platform_base_url(settings), registry.DEV_PLATFORM_BASE_URL)
 			with patch.dict(frappe.conf, {"developer_mode": 0}):
 				self.assertEqual(registry.platform_base_url(settings), registry.PROD_PLATFORM_BASE_URL)
 			# an address chosen in Settings wins, kept https and without the trailing slash
 			settings.platform_base_url = "  https://w-platform.example.com/  "
 			settings.save(ignore_permissions=True)
-			self.assertEqual(frappe.db.get_single_value(DOCTYPE, "platform_base_url"), "https://w-platform.example.com")
+			self.assertEqual(
+				frappe.db.get_single_value(DOCTYPE, "platform_base_url"), "https://w-platform.example.com"
+			)
 			self.assertEqual(registry.platform_base_url(settings), "https://w-platform.example.com")
 			settings.platform_base_url = "http://insecure.example.com"
 			with self.assertRaises(WAValidationError):

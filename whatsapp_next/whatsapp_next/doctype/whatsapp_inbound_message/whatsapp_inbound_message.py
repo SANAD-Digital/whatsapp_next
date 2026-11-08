@@ -33,9 +33,7 @@ COMPOSITE_INDEXES: tuple[tuple[str, ...], ...] = (
 	("device", "received_at"),
 	("command", "received_at"),
 )
-COMPOSITE_UNIQUE: tuple[tuple[str, ...], ...] = (
-	("device", "provider_message_id"),
-)  # D-029 OQ-B, D-035
+COMPOSITE_UNIQUE: tuple[tuple[str, ...], ...] = (("device", "provider_message_id"),)  # D-029 OQ-B, D-035
 
 
 def on_doctype_update() -> None:

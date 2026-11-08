@@ -154,7 +154,9 @@ class TestNumbersMaterializer(IntegrationTestCase):
 			_out(self.device, phone=K3, ts=self._t(2), skip_hook=False)
 			_out(self.device, phone=K3, ts=self._t(3), skip_hook=True)
 		callbacks = [
-			c.args[0] for c in after_commit.add.call_args_list if "on_message_insert" in c.args[0].__qualname__
+			c.args[0]
+			for c in after_commit.add.call_args_list
+			if "on_message_insert" in c.args[0].__qualname__
 		]
 		self.assertEqual(len(callbacks), 1)
 		with (
@@ -224,7 +226,8 @@ class TestNumbersMaterializer(IntegrationTestCase):
 			nm.message_key({"doctype": "WhatsApp Inbound Message", "phone_e164": K1, "sender_jid": lid}), K1
 		)
 		self.assertEqual(
-			nm.message_key({"doctype": "WhatsApp Inbound Message", "phone_e164": None, "sender_jid": lid}), lid
+			nm.message_key({"doctype": "WhatsApp Inbound Message", "phone_e164": None, "sender_jid": lid}),
+			lid,
 		)
 		self.assertEqual(
 			nm.message_key(
@@ -233,7 +236,9 @@ class TestNumbersMaterializer(IntegrationTestCase):
 			K1,
 		)
 		self.assertEqual(
-			nm.message_key({"doctype": "WhatsApp Log", "phone_e164": GROUP, "jid": GROUP, "recipient_type": "Group"}),
+			nm.message_key(
+				{"doctype": "WhatsApp Log", "phone_e164": GROUP, "jid": GROUP, "recipient_type": "Group"}
+			),
 			GROUP,
 		)
 

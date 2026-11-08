@@ -664,7 +664,9 @@ def list_doctype_rows(
 	# the read is elevated, so a free filter (a salary, a date) would answer questions about
 	# records they cannot open. A document-less `has_permission` is not that test — it says yes
 	# to an owner-only or User-Permission-narrowed right.
-	free = has_unrestricted_access(document_type, "read") or (document_type == "Contact" and is_contact_user())
+	free = has_unrestricted_access(document_type, "read") or (
+		document_type == "Contact" and is_contact_user()
+	)
 	if not free:
 		_require_listable_filters(meta, source, client_filters)
 	merged = [[document_type, *f] for f in server_filters + client_filters]
@@ -886,7 +888,10 @@ def add_group_to_contact(contact: str, group_jid: str, user: str | None = None) 
 		doc.flags.ignore_permissions = True
 		doc.save(ignore_permissions=True)
 		_audit_write(contact, ["phone_nos"], reason=_("WhatsApp group {0}").format(key))
-	if frappe.db.exists("WhatsApp Number", key) and frappe.db.get_value("WhatsApp Number", key, "contact") != contact:
+	if (
+		frappe.db.exists("WhatsApp Number", key)
+		and frappe.db.get_value("WhatsApp Number", key, "contact") != contact
+	):
 		link_number(key, contact, user=user)
 	return added
 

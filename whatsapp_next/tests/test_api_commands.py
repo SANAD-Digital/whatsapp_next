@@ -34,7 +34,9 @@ class TestApiCommands(IntegrationTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		cls.device = ensure_device("ApiTest Cmd Device", "WAD-APITEST-CM", phone="+966500930400")
-		ensure_settings(enable_commands=1, command_service_user=ff.ensure_service_user(), send_receipt_reply=0)
+		ensure_settings(
+			enable_commands=1, command_service_user=ff.ensure_service_user(), send_receipt_reply=0
+		)
 
 	@classmethod
 	def tearDownClass(cls):
@@ -87,7 +89,12 @@ class TestApiCommands(IntegrationTestCase):
 	def test_list_and_defaults(self):
 		name = self._command(status="Active")
 		# one run in the window; one too old, one Blocked sender and one Simulator row are not runs
-		for days_ago, status, simulated in ((1, "Executed", 0), (40, "Executed", 0), (1, "Blocked", 0), (1, "Executed", 1)):
+		for days_ago, status, simulated in (
+			(1, "Executed", 0),
+			(40, "Executed", 0),
+			(1, "Blocked", 0),
+			(1, "Executed", 1),
+		):
 			frappe.get_doc(
 				{
 					"doctype": "WhatsApp Inbound Message",

@@ -136,7 +136,10 @@ class TestApiHomeActivity(IntegrationTestCase):
 		self.assertEqual(delta(today["traffic"]["now"], before["traffic"]["now"], "Failed"), 1)
 		self.assertEqual(delta(today["traffic"]["errors"], before["traffic"]["errors"], "device_offline"), 1)
 		hour = str(doc.creation)[11:13]
-		count = lambda rows, status: sum(r["count"] for r in rows if r["key"] == hour and r["status"] == status)  # noqa: E731
+
+		def count(rows, status):
+			return sum(r["count"] for r in rows if r["key"] == hour and r["status"] == status)
+
 		self.assertEqual(count(today["series"], "Sent") - count(before["series"], "Sent"), 2)
 		self.assertTrue(any(r["key"] == str(doc.creation)[:10] for r in after["series"]))
 		self.assertLessEqual(len(today["feed"]), 5)
@@ -158,7 +161,11 @@ class TestApiHomeActivity(IntegrationTestCase):
 			later = self._log("Sent")
 			for doc, hours in ((earlier, -1), (later, 1)):
 				frappe.db.set_value(
-					"WhatsApp Log", doc.name, "creation", add_to_date(noon, days=-1, hours=hours), update_modified=False
+					"WhatsApp Log",
+					doc.name,
+					"creation",
+					add_to_date(noon, days=-1, hours=hours),
+					update_modified=False,
 				)
 			after = home.traffic("today")["previous"]
 		self.assertEqual(after.get("Sent", 0) - before.get("Sent", 0), 1)

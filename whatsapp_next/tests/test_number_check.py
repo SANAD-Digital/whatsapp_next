@@ -19,8 +19,15 @@ class Provider:
 
 	def check_numbers(self, platform_device, numbers):
 		self.calls.append(list(numbers))
-		return [NumberCheck(phone_e164=n, on_whatsapp=n in self.on, jid=f"{n[1:]}@s.whatsapp.net" if n in self.on else None)
-			for n in numbers if n != "+967711999999"]  # one number missing from the answer
+		return [
+			NumberCheck(
+				phone_e164=n,
+				on_whatsapp=n in self.on,
+				jid=f"{n[1:]}@s.whatsapp.net" if n in self.on else None,
+			)
+			for n in numbers
+			if n != "+967711999999"
+		]  # one number missing from the answer
 
 
 class TestNumberCheck(IntegrationTestCase):
@@ -41,8 +48,14 @@ class TestNumberCheck(IntegrationTestCase):
 		self.assertEqual(frappe.db.get_value("WhatsApp Number Check", self.a, "on_whatsapp"), "Yes")
 
 	def test_mirrors_onto_the_number_row(self):
-		frappe.get_doc({"doctype": "WhatsApp Number", "phone_e164": self.b, "number_type": "Individual",
-			"link_status": "Not Linked"}).insert(ignore_permissions=True)
+		frappe.get_doc(
+			{
+				"doctype": "WhatsApp Number",
+				"phone_e164": self.b,
+				"number_type": "Individual",
+				"link_status": "Not Linked",
+			}
+		).insert(ignore_permissions=True)
 		with patch("whatsapp_next.providers.registry.get_provider", return_value=Provider(set())):
 			number_check.check([self.b], force=True)
 		self.assertEqual(frappe.db.get_value("WhatsApp Number", self.b, "on_whatsapp"), "No")

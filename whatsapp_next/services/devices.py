@@ -90,9 +90,9 @@ def wrong_number_info(reason: str | None) -> dict | None:
 
 def wrong_number_text(info: dict) -> str:
 	"""The sentence that says the device was unlinked because another number scanned its code."""
-	return _("This device is registered for {0}, but WhatsApp {1} scanned the code, so it was unlinked. Scan it with WhatsApp on {0}.").format(
-		info["expected"], info["connected"]
-	)
+	return _(
+		"This device is registered for {0}, but WhatsApp {1} scanned the code, so it was unlinked. Scan it with WhatsApp on {0}."
+	).format(info["expected"], info["connected"])
 
 
 # ---- helpers ------------------------------------------------------------------------------
@@ -108,7 +108,11 @@ def platform_device(device: str, *, connected: bool = False) -> str:
 	"""The platform's id of `device`. `WANotFoundError` when there is no such device,
 	`WADeviceOfflineError` when it was never registered on the platform, and with `connected`,
 	`WAStateConflictError` unless it is Connected now."""
-	row = frappe.db.get_value("WhatsApp Device", device, ["platform_device", "status"], as_dict=True) if device else None
+	row = (
+		frappe.db.get_value("WhatsApp Device", device, ["platform_device", "status"], as_dict=True)
+		if device
+		else None
+	)
 	if not row:
 		frappe.throw(_("WhatsApp Device {0} not found").format(device), WANotFoundError)
 	if connected and row.status != "Connected":
@@ -159,7 +163,11 @@ def apply_state(
 	if state:
 		if state.wa_device_id:
 			values["wa_device_id"] = state.wa_device_id
-		if state.phone_e164 and not wrong and not frappe.db.get_value("WhatsApp Device", device, "phone_e164"):
+		if (
+			state.phone_e164
+			and not wrong
+			and not frappe.db.get_value("WhatsApp Device", device, "phone_e164")
+		):
 			values["phone"] = state.phone_e164
 			values["phone_e164"] = normalize(state.phone_e164)
 		if state.last_seen:
@@ -194,7 +202,14 @@ def apply_state(
 			user=_job_user(),
 		)
 	if changed or wrong:
-		payload = {"device": device, "status": status, "previous": previous, "at": str(at), "source": source, "wrong_number": wrong}
+		payload = {
+			"device": device,
+			"status": status,
+			"previous": previous,
+			"at": str(at),
+			"source": source,
+			"wrong_number": wrong,
+		}
 		frappe.publish_realtime("wa:device:status", payload, after_commit=True)
 		frappe.publish_realtime(
 			"wa:device:status", payload, doctype="WhatsApp Device", docname=device, after_commit=True
@@ -230,7 +245,9 @@ def apply_connection_event(event: WebhookEvent) -> StateChange | None:
 	raw = event.raw or {}
 	if reason == WRONG_NUMBER and raw.get("connected_number") and raw.get("expected_number"):
 		reason = f"{WRONG_NUMBER}: linked with {raw['connected_number']}, registered for {raw['expected_number']}; unlinked"
-	return apply_state(device, status, source="webhook", reason=reason, at=event.timestamp, state=event.device)
+	return apply_state(
+		device, status, source="webhook", reason=reason, at=event.timestamp, state=event.device
+	)
 
 
 # ---- lifecycle ----------------------------------------------------------------------------
@@ -251,7 +268,10 @@ def create(
 	# a device links only with its own number (the platform unlinks any other), so it is created
 	# with the number, whichever way it pairs
 	if not e164:
-		frappe.throw(_("Enter the device's WhatsApp number: only this number can be linked to it."), WAInvalidPhoneError)
+		frappe.throw(
+			_("Enter the device's WhatsApp number: only this number can be linked to it."),
+			WAInvalidPhoneError,
+		)
 	state = registry.get_provider().create_device(name, e164, pairing_mode)
 	with status_writer():
 		doc = frappe.get_doc(
@@ -315,7 +335,9 @@ def start_pairing(device: str, mode: str = "QR", phone: str | None = None) -> Pa
 		cached_at = cached.pop("cached_at", None)
 		if cached_at:
 			age = int((now_datetime() - get_datetime(cached_at)).total_seconds())
-			cached["expires_in"] = max(1, min(cint(cached.get("expires_in")) or PAIR_CACHE_TTL, PAIR_CACHE_TTL - age))
+			cached["expires_in"] = max(
+				1, min(cint(cached.get("expires_in")) or PAIR_CACHE_TTL, PAIR_CACHE_TTL - age)
+			)
 		return PairingPayload(
 			**{
 				k: (get_datetime(v) if k in ("generated_at", "expires_at") and v else v)

@@ -88,7 +88,14 @@ class TestCommandEditor(IntegrationTestCase):
 			return group
 		root = frappe.db.get_value("Customer Group", {"is_group": 1}, "name")
 		return (
-			frappe.get_doc({"doctype": "Customer Group", "customer_group_name": "WA Test Customers", "parent_customer_group": root, "is_group": 0})
+			frappe.get_doc(
+				{
+					"doctype": "Customer Group",
+					"customer_group_name": "WA Test Customers",
+					"parent_customer_group": root,
+					"is_group": 0,
+				}
+			)
 			.insert(ignore_permissions=True)
 			.name
 		)
@@ -209,7 +216,10 @@ class TestCommandEditor(IntegrationTestCase):
 			self.assertEqual((template["key"], template["default"]), ("msg_result", "pong: {{ echo }}"))
 			self.assertEqual([v["name"] for v in template["vars"]], ["echo", "party"])
 			self.assertEqual([r["key"] for r in spec["replies"]], ["result_text"])
-			self.assertEqual((spec["party_types_text"], spec["available"], spec["server_script"]), ("All", True, "wa_fn__test_echo"))
+			self.assertEqual(
+				(spec["party_types_text"], spec["available"], spec["server_script"]),
+				("All", True, "wa_fn__test_echo"),
+			)
 			with self.assertRaises(frappe.ValidationError):
 				api.get_function_spec(function="_test_nope")
 		name = self._save(
@@ -291,7 +301,11 @@ class TestCommandEditor(IntegrationTestCase):
 			with self.assertRaises(WAValidationError):
 				api.preview_command(
 					payload=payload,
-					sender={"contact": self.contact, "party_type": "Customer", "party_name": "EdTest Not Linked"},
+					sender={
+						"contact": self.contact,
+						"party_type": "Customer",
+						"party_name": "EdTest Not Linked",
+					},
 				)
 			with self.assertRaises(WAValidationError):
 				api.preview_command(
@@ -318,15 +332,34 @@ class TestCommandEditor(IntegrationTestCase):
 			],
 		)
 		doc = frappe.get_doc("WhatsApp Command", name)
-		self.assertEqual([(r.param, r.language, r.text) for r in doc.templates], [("msg_result", "en", "hi {{ echo }}")])
+		self.assertEqual(
+			[(r.param, r.language, r.text) for r in doc.templates], [("msg_result", "en", "hi {{ echo }}")]
+		)
 		with as_user("WhatsApp Manager"):
 			cmd = api.get_editor(name=name)["command"]
-			self.assertEqual(cmd["templates"], [{"param": "msg_result", "language": "en", "text": "hi {{ echo }}"}])
-			out = api.preview_command(payload={"name": name, "code": CODE, "function": FUNCTION, "templates": cmd["templates"], "requires_linked_contact": 0}, sender={"phone": PHONE}, values={"text": "there"})
+			self.assertEqual(
+				cmd["templates"], [{"param": "msg_result", "language": "en", "text": "hi {{ echo }}"}]
+			)
+			out = api.preview_command(
+				payload={
+					"name": name,
+					"code": CODE,
+					"function": FUNCTION,
+					"templates": cmd["templates"],
+					"requires_linked_contact": 0,
+				},
+				sender={"phone": PHONE},
+				values={"text": "there"},
+			)
 			self.assertEqual([r["body"] for r in out["replies"]], ["hi there"])
 			for bad in (
 				{"templates": [{"param": "text", "language": "en", "text": "x"}]},  # not a template
-				{"templates": [{"param": "msg_result", "language": "en", "text": "a"}, {"param": "msg_result", "language": "en", "text": "b"}]},
+				{
+					"templates": [
+						{"param": "msg_result", "language": "en", "text": "a"},
+						{"param": "msg_result", "language": "en", "text": "b"},
+					]
+				},
 				{"templates": [{"param": "msg_result", "text": "x", "owner": "y"}]},  # unknown field
 				{"disabled_replies": ["nope"]},
 				{"disabled_inputs": ["party"]},  # the party is never an input
@@ -335,7 +368,12 @@ class TestCommandEditor(IntegrationTestCase):
 				with self.subTest(payload=bad), self.assertRaises(WAValidationError):
 					api.save_editor(payload={"name": name, **bad})
 			# a text for every language (no language) stays so, and is used in any reply language
-			api.save_editor(payload={"name": name, "templates": [{"param": "msg_result", "language": "", "text": "all {{ echo }}"}]})
+			api.save_editor(
+				payload={
+					"name": name,
+					"templates": [{"param": "msg_result", "language": "", "text": "all {{ echo }}"}],
+				}
+			)
 			self.assertEqual(
 				api.get_editor(name=name)["command"]["templates"],
 				[{"param": "msg_result", "language": None, "text": "all {{ echo }}"}],
@@ -344,13 +382,23 @@ class TestCommandEditor(IntegrationTestCase):
 
 			ensure_settings(command_reply_language="ar")
 			try:
-				params, _missing = function_runner.prepare(frappe.get_doc("WhatsApp Command", name), self._sender())
+				params, _missing = function_runner.prepare(
+					frappe.get_doc("WhatsApp Command", name), self._sender()
+				)
 			finally:
 				ensure_settings(command_reply_language="en")
 			self.assertEqual(params["msg_result"], "all {{ echo }}")
 			api.save_editor(payload={"name": name, "disabled_replies": ["result_text"]})
 			self.assertEqual(api.get_editor(name=name)["command"]["disabled_replies"], ["result_text"])
-			out = api.preview_command(payload={"code": CODE, "function": FUNCTION, "disabled_replies": ["result_text"], "requires_linked_contact": 0}, sender={"phone": PHONE})
+			out = api.preview_command(
+				payload={
+					"code": CODE,
+					"function": FUNCTION,
+					"disabled_replies": ["result_text"],
+					"requires_linked_contact": 0,
+				},
+				sender={"phone": PHONE},
+			)
 			self.assertEqual((out["status"], out["replies"]), ("Executed", []))
 			# restoring the defaults drops the command's own texts and values
 			api.save_editor(payload={"name": name, "settings_overrides": {"text": "fixed"}})

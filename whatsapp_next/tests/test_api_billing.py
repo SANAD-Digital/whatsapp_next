@@ -29,19 +29,37 @@ class BillingProvider(FakeProvider):
 		return {"plans": [{"plan_code": "p1", "plan_name": "P1", "monthly_price": 1, "is_current": True}]}
 
 	def get_payment_methods(self):
-		return {"paypal": {"enabled": True, "currency": "USD"}, "methods": [{"name": "PM-1", "title": "Bank"}]}
+		return {
+			"paypal": {"enabled": True, "currency": "USD"},
+			"methods": [{"name": "PM-1", "title": "Bank"}],
+		}
 
 	def renew_subscription(self):
 		self.asked.append(("renew",))
 		if self.wallet_short:
-			return {"ok": True, "done": False, "payment_required": True, "amount": 9, "wallet_balance": 4, "currency": "USD"}
-		return {"ok": True, "done": True, "amount": 1, "currency": "USD", "subscription": {"status": "Active"}}
+			return {
+				"ok": True,
+				"done": False,
+				"payment_required": True,
+				"amount": 9,
+				"wallet_balance": 4,
+				"currency": "USD",
+			}
+		return {
+			"ok": True,
+			"done": True,
+			"amount": 1,
+			"currency": "USD",
+			"subscription": {"status": "Active"},
+		}
 
 	def change_plan(self, plan_code):
 		self.asked.append(("change", plan_code))
 		return {"ok": True, "done": True, "amount": 1}
 
-	def request_topup(self, amount, payment_option=None, reference_no=None, remarks=None, receipt=None, plan_code=None):
+	def request_topup(
+		self, amount, payment_option=None, reference_no=None, remarks=None, receipt=None, plan_code=None
+	):
 		self.asked.append(("topup", amount, payment_option, reference_no))
 		return {"ok": True, "transaction": "WAWT-1", "status": "Draft", "amount": amount}
 

@@ -86,8 +86,12 @@ class TestWhatsAppDevice(IntegrationTestCase):
 		provider first, by services/devices.py inside status_writer()."""
 		with self.assertRaises(WAValidationError):
 			frappe.get_doc(
-				{"doctype": DOCTYPE, "device_name": "Device WAD-UT-NEW", "platform_device": "WAD-UT-NEW", "status": "Pending QR"}
+				{
+					"doctype": DOCTYPE,
+					"device_name": "Device WAD-UT-NEW",
+					"platform_device": "WAD-UT-NEW",
+					"status": "Pending QR",
+				}
 			).insert(ignore_permissions=True)
 		self.assertFalse(frappe.db.exists(DOCTYPE, {"platform_device": "WAD-UT-NEW"}))
 		self.assertTrue(_insert("WAD-UT-SVC").name)
-

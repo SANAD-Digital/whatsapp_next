@@ -73,8 +73,13 @@ class WhatsAppNotificationAlert(Document):
 			frappe.throw(_("Report {0} not found").format(self.report), WAValidationError)
 		# the same two checks `frappe.desk.query_report` makes before running a report
 		report = frappe.get_doc("Report", self.report)
-		if not (report.is_permitted() and (not report.ref_doctype or frappe.has_permission(report.ref_doctype, "report"))):
-			frappe.throw(_("You are not permitted to use the report {0}").format(self.report), frappe.PermissionError)
+		if not (
+			report.is_permitted()
+			and (not report.ref_doctype or frappe.has_permission(report.ref_doctype, "report"))
+		):
+			frappe.throw(
+				_("You are not permitted to use the report {0}").format(self.report), frappe.PermissionError
+			)
 
 	def check_content(self) -> None:
 		"""Report required for Report content; a Template or an inline Message always."""
@@ -183,9 +188,7 @@ def _add_months(day1, months: int):
 
 # Composite indexes the DocType JSON cannot express (fields.md F-11); single-column ones are
 # `search_index` / `unique` in the JSON.
-COMPOSITE_INDEXES: tuple[tuple[str, ...], ...] = (
-	("enabled", "next_run_at"),
-)
+COMPOSITE_INDEXES: tuple[tuple[str, ...], ...] = (("enabled", "next_run_at"),)
 
 
 def on_doctype_update() -> None:

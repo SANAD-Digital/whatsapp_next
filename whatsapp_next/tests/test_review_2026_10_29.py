@@ -24,7 +24,11 @@ class TestReview20261029(IntegrationTestCase):
 	def setUpClass(cls):
 		super().setUpClass()
 		contact = frappe.get_doc(
-			{"doctype": "Contact", "first_name": "Review Hidden", "phone_nos": [{"phone": PHONE, "is_primary_mobile_no": 1}]}
+			{
+				"doctype": "Contact",
+				"first_name": "Review Hidden",
+				"phone_nos": [{"phone": PHONE, "is_primary_mobile_no": 1}],
+			}
 		).insert(ignore_permissions=True)
 		cls.contact = contact.name
 
@@ -35,7 +39,14 @@ class TestReview20261029(IntegrationTestCase):
 		super().tearDownClass()
 
 	def test_the_picker_preview_is_for_a_system_manager(self):
-		source = json.dumps({"document_type": "User", "phone_source": "Field", "phone_fieldname": "mobile_no", "name_fieldname": "api_key"})
+		source = json.dumps(
+			{
+				"document_type": "User",
+				"phone_source": "Field",
+				"phone_fieldname": "mobile_no",
+				"name_fieldname": "api_key",
+			}
+		)
 		with as_user("WhatsApp Manager"):
 			with self.assertRaises(frappe.PermissionError):
 				settings_api.preview_picker_source(source=source)
@@ -55,12 +66,16 @@ class TestReview20261029(IntegrationTestCase):
 	def test_a_preview_hides_the_fields_above_the_callers_level(self):
 		# `readable_only` empties what the caller's permission levels do not cover
 		doc = frappe.get_doc("Contact", self.contact)
-		with patch.object(type(doc), "apply_fieldlevel_read_permissions", lambda d: d.__dict__.pop("first_name", None)):
+		with patch.object(
+			type(doc), "apply_fieldlevel_read_permissions", lambda d: d.__dict__.pop("first_name", None)
+		):
 			templates.readable_only(doc)
 		self.assertEqual(doc.first_name, "")
 		with as_user("WhatsApp Agent"), patch.object(templates, "readable_only") as hide:
 			with patch.object(frappe, "has_permission", return_value=True):
-				quick_send_api.preview(body="{{ doc.first_name }}", reference_doctype="Contact", reference_name=self.contact)
+				quick_send_api.preview(
+					body="{{ doc.first_name }}", reference_doctype="Contact", reference_name=self.contact
+				)
 		hide.assert_called_once()
 
 	def test_the_signup_callback_says_nothing(self):

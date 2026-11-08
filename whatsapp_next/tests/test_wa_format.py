@@ -11,7 +11,9 @@ from whatsapp_next.services.wa_format import tidy_markers
 class TestWaFormat(unittest.TestCase):
 	def test_repairs_a_marker_spaced_on_one_side(self):
 		self.assertEqual(tidy_markers("رقم * ACC-SINV-2026-00001*"), "رقم *ACC-SINV-2026-00001*")
-		self.assertEqual(tidy_markers("_الاخوة :_  * Grant Plastics Ltd.*"), "_الاخوة :_  *Grant Plastics Ltd.*")
+		self.assertEqual(
+			tidy_markers("_الاخوة :_  * Grant Plastics Ltd.*"), "_الاخوة :_  *Grant Plastics Ltd.*"
+		)
 		self.assertEqual(tidy_markers("total *67000.0 *."), "total *67000.0*.")
 		self.assertEqual(tidy_markers("~ old~ and _ new_"), "~old~ and _new_")
 

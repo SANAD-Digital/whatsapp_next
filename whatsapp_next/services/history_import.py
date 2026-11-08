@@ -38,13 +38,28 @@ DEVICE = "WhatsApp Device"
 
 #: provider kinds → the Inbound / Log message type
 INBOUND_TYPES = {
-	"text": "Text", "image": "Image", "video": "Video", "audio": "Audio", "document": "Document",
-	"sticker": "Sticker", "location": "Location", "poll": "Poll", "contact": "Contact",
-	"interactive_reply": "Interactive Reply", "interactivereply": "Interactive Reply",
+	"text": "Text",
+	"image": "Image",
+	"video": "Video",
+	"audio": "Audio",
+	"document": "Document",
+	"sticker": "Sticker",
+	"location": "Location",
+	"poll": "Poll",
+	"contact": "Contact",
+	"interactive_reply": "Interactive Reply",
+	"interactivereply": "Interactive Reply",
 }
 OUTBOUND_TYPES = {
-	"text": "Text", "image": "Image", "video": "Video", "audio": "Audio", "document": "Document",
-	"sticker": "Sticker", "location": "Location", "poll": "Poll", "interactive": "Buttons",
+	"text": "Text",
+	"image": "Image",
+	"video": "Video",
+	"audio": "Audio",
+	"document": "Document",
+	"sticker": "Sticker",
+	"location": "Location",
+	"poll": "Poll",
+	"interactive": "Buttons",
 }
 
 
@@ -84,13 +99,21 @@ def start(device: str, *, restart: bool = False) -> None:
 	again; rows already here are skipped, so it only fills gaps. Refused while Settings forbid it."""
 	if not allowed():
 		frappe.throw(
-			_("Importing past messages is switched off. Switch on «Import Past Messages» in Settings → Policy first."),
+			_(
+				"Importing past messages is switched off. Switch on «Import Past Messages» in Settings → Policy first."
+			),
 			WAStateConflictError,
 		)
 	values: dict[str, Any] = {"history_status": "Running", "history_error": None}
 	if restart or not frappe.db.get_value(DEVICE, device, "history_started_at"):
-		values.update({"history_cursor": 0, "history_imported": 0, "history_started_at": now_datetime(),
-			"history_finished_at": None})
+		values.update(
+			{
+				"history_cursor": 0,
+				"history_imported": 0,
+				"history_started_at": now_datetime(),
+				"history_finished_at": None,
+			}
+		)
 	frappe.db.set_value(DEVICE, device, values, update_modified=False)
 	frappe.enqueue(
 		"whatsapp_next.services.history_import.run",
@@ -132,7 +155,13 @@ def run(device: str) -> dict[str, Any]:
 	"""One slice of the import of `device`; re-enqueues itself while the platform has more. A job
 	queued before the setting was switched off stops here."""
 	if not allowed():
-		frappe.db.set_value(DEVICE, device, "history_status", "Not Started" if not frappe.db.get_value(DEVICE, device, "history_imported") else "Done", update_modified=False)
+		frappe.db.set_value(
+			DEVICE,
+			device,
+			"history_status",
+			"Not Started" if not frappe.db.get_value(DEVICE, device, "history_imported") else "Done",
+			update_modified=False,
+		)
 		return {"ok": False, "off": True}
 	if not _acquire(device):
 		return {"ok": False, "busy": True}
@@ -149,7 +178,9 @@ def run(device: str) -> dict[str, Any]:
 def _run(device: str) -> dict[str, Any]:
 	from whatsapp_next.providers import registry
 
-	row = frappe.db.get_value(DEVICE, device, ["platform_device", "history_cursor", "history_imported"], as_dict=True)
+	row = frappe.db.get_value(
+		DEVICE, device, ["platform_device", "history_cursor", "history_imported"], as_dict=True
+	)
 	if not row:
 		return {"ok": False}
 	provider = registry.get_provider()
@@ -157,7 +188,9 @@ def _run(device: str) -> dict[str, Any]:
 	since = since_timestamp()
 	try:
 		for i in range(PAGES_PER_RUN):
-			page = provider.list_history(row.platform_device, after=cursor, limit=PAGE_SIZE, since=since, total=i == 0 and not cursor)
+			page = provider.list_history(
+				row.platform_device, after=cursor, limit=PAGE_SIZE, since=since, total=i == 0 and not cursor
+			)
 			for message in page.messages:
 				try:
 					frappe.db.savepoint("wa_history_row")
@@ -167,8 +200,10 @@ def _run(device: str) -> dict[str, Any]:
 					# refuses …) never stops the rest; the first such failure of a slice is logged
 					frappe.db.rollback(save_point="wa_history_row")
 					if not skipped:
-						frappe.log_error(title="WhatsApp history import: a message was skipped",
-							message=f"device={device} message={message.inbound.provider_message_id}\n{frappe.get_traceback()}")
+						frappe.log_error(
+							title="WhatsApp history import: a message was skipped",
+							message=f"device={device} message={message.inbound.provider_message_id}\n{frappe.get_traceback()}",
+						)
 					skipped += 1
 					continue
 				if key:
@@ -188,11 +223,21 @@ def _run(device: str) -> dict[str, Any]:
 			return {"ok": True, "imported": imported, "more": True}
 	except (pex.ProviderError, pex.NotSupportedError) as exc:
 		frappe.db.rollback()
-		frappe.db.set_value(DEVICE, device, {"history_status": "Failed", "history_error": str(exc)[:500]}, update_modified=False)
+		frappe.db.set_value(
+			DEVICE,
+			device,
+			{"history_status": "Failed", "history_error": str(exc)[:500]},
+			update_modified=False,
+		)
 		frappe.db.commit()
 		return {"ok": False, "error": str(exc)}
 	_refresh(keys)
-	frappe.db.set_value(DEVICE, device, {"history_status": "Done", "history_finished_at": now_datetime()}, update_modified=False)
+	frappe.db.set_value(
+		DEVICE,
+		device,
+		{"history_status": "Done", "history_finished_at": now_datetime()},
+		update_modified=False,
+	)
 	frappe.db.commit()
 	return {"ok": True, "imported": imported, "more": False}
 
@@ -236,8 +281,12 @@ def _text(value: str | None) -> str | None:
 
 
 def _event(device: str, message: HistoryMessage) -> WebhookEvent:
-	return WebhookEvent(event_id=message.inbound.provider_message_id, event_name="message.received",
-		inbound=message.inbound, raw=message.raw)
+	return WebhookEvent(
+		event_id=message.inbound.provider_message_id,
+		event_name="message.received",
+		inbound=message.inbound,
+		raw=message.raw,
+	)
 
 
 def _insert_inbound(device: str, message: HistoryMessage, message_type: str) -> str | None:
@@ -247,7 +296,11 @@ def _insert_inbound(device: str, message: HistoryMessage, message_type: str) -> 
 	if frappe.db.exists(INBOUND, {"device": device, "provider_message_id": p.provider_message_id}):
 		return None
 	fields = inbound._sender_fields(_event(device, message))
-	contact = inbound.resolve_contact(fields["phone_e164"]) if fields["phone_e164"] and not fields["is_group"] else None
+	contact = (
+		inbound.resolve_contact(fields["phone_e164"])
+		if fields["phone_e164"] and not fields["is_group"]
+		else None
+	)
 	values: dict[str, Any] = {
 		"doctype": INBOUND,
 		"device": device,
@@ -269,8 +322,13 @@ def _insert_inbound(device: str, message: HistoryMessage, message_type: str) -> 
 		"is_history": 1,
 	}
 	if p.location:
-		values.update({"location_latitude": p.location.latitude, "location_longitude": p.location.longitude,
-			"location_name": p.location.name})
+		values.update(
+			{
+				"location_latitude": p.location.latitude,
+				"location_longitude": p.location.longitude,
+				"location_name": p.location.name,
+			}
+		)
 	doc = frappe.get_doc(values)
 	doc.flags.ignore_permissions = True
 	doc.flags.skip_numbers_upsert = True
@@ -355,11 +413,20 @@ def _apply_revoke(device: str, message: HistoryMessage) -> bool | None:
 	target = message.original_id
 	if not target:
 		return None
-	name = frappe.db.get_value(INBOUND, {"device": device, "provider_message_id": target, "deleted_at": ("is", "not set")}, "name")
+	name = frappe.db.get_value(
+		INBOUND, {"device": device, "provider_message_id": target, "deleted_at": ("is", "not set")}, "name"
+	)
 	if not name:
 		return None
 	p = message.inbound
 	with status_writer():
-		frappe.db.set_value(INBOUND, name, {"deleted_at": p.received_at or now_datetime(),
-			"deleted_by": p.sender_phone or p.sender_jid or ""}, update_modified=False)
+		frappe.db.set_value(
+			INBOUND,
+			name,
+			{
+				"deleted_at": p.received_at or now_datetime(),
+				"deleted_by": p.sender_phone or p.sender_jid or "",
+			},
+			update_modified=False,
+		)
 	return True

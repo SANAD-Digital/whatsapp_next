@@ -33,7 +33,10 @@ def confirmed(callback_token: str | None = None, status: str | None = None) -> d
 	status = str(status or "Verified").strip()
 	frappe.publish_realtime(
 		"wa:signup:status",
-		{"request_key": entry.get("request_key"), "status": status if re.fullmatch(r"[A-Za-z ]{1,30}", status) else "Verified"},
+		{
+			"request_key": entry.get("request_key"),
+			"status": status if re.fullmatch(r"[A-Za-z ]{1,30}", status) else "Verified",
+		},
 		user=entry.get("user"),
 		after_commit=False,
 	)

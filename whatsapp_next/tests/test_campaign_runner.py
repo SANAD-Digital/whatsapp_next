@@ -193,7 +193,9 @@ class TestCampaignRunner(IntegrationTestCase):
 			b"\x00\x00\x00\rIDATx\x9cc\xf8\xff\xff?\x00\x05\xfe\x02\xfe\xa75\x81\x84\x00\x00\x00\x00IEND\xaeB`\x82"
 		)
 		url = attachments.save_private_file(png, "campaign-test-offer.png")
-		self.addCleanup(lambda: frappe.delete_doc("File", frappe.db.get_value("File", {"file_url": url}), force=True))
+		self.addCleanup(
+			lambda: frappe.delete_doc("File", frappe.db.get_value("File", {"file_url": url}), force=True)
+		)
 		name = _campaign(
 			self.device,
 			messages=[
@@ -214,7 +216,9 @@ class TestCampaignRunner(IntegrationTestCase):
 		runner.materialize(name)
 		captions = {
 			r.phone_e164: r.caption
-			for r in frappe.get_all("WhatsApp Log", filters={"campaign": name}, fields=["phone_e164", "caption"])
+			for r in frappe.get_all(
+				"WhatsApp Log", filters={"campaign": name}, fields=["phone_e164", "caption"]
+			)
 		}
 		self.assertEqual(captions, {P1: "campaign-test Offer for R1", P2: "campaign-test Offer for R2"})
 
@@ -248,7 +252,9 @@ class TestCampaignRunner(IntegrationTestCase):
 			frappe.db.get_value("WhatsApp Campaign Recipient", {"parent": name}, "status"), "Delivered"
 		)
 		# "first message" is when the first one really left, not when its row was built
-		times = frappe.db.get_value("WhatsApp Campaign", name, ["first_message_at", "last_message_at"], as_dict=True)
+		times = frappe.db.get_value(
+			"WhatsApp Campaign", name, ["first_message_at", "last_message_at"], as_dict=True
+		)
 		sent_at = frappe.db.get_value("WhatsApp Log", {"campaign": name}, "sent_at")
 		self.assertEqual((times.first_message_at, times.last_message_at), (sent_at, sent_at))
 
@@ -256,13 +262,18 @@ class TestCampaignRunner(IntegrationTestCase):
 		from whatsapp_next.services import number_check
 
 		name = _campaign(self.device, recipients=(P1, P3), exclude_not_on_whatsapp=1)
-		with patch.object(frappe, "enqueue"), patch.object(number_check, "check", return_value={P1: True, P3: False}) as check:
+		with (
+			patch.object(frappe, "enqueue"),
+			patch.object(number_check, "check", return_value={P1: True, P3: False}) as check,
+		):
 			runner.start(name)
 			counts = runner.materialize(name)
 		self.assertEqual(check.call_args.kwargs.get("device"), self.device)
 		self.assertEqual(counts["skipped_not_on_whatsapp"], 1)
 		self.assertEqual(
-			frappe.db.get_value("WhatsApp Campaign Recipient", {"parent": name, "phone_e164": P3}, ["status", "error_code"]),
+			frappe.db.get_value(
+				"WhatsApp Campaign Recipient", {"parent": name, "phone_e164": P3}, ["status", "error_code"]
+			),
 			("Cancelled", "recipient_not_registered"),
 		)
 
@@ -364,8 +375,9 @@ class TestCampaignRunner(IntegrationTestCase):
 	def test_all_excluded_campaign_closes(self):
 		"""Every recipient set aside by the unknown-number policy: nothing to send, so it ends."""
 		name = _campaign(self.device, exclude_unknown_numbers=1)
-		with patch.object(frappe, "enqueue"), patch(
-			"whatsapp_next.services.read_layer.known_keys", return_value=set()
+		with (
+			patch.object(frappe, "enqueue"),
+			patch("whatsapp_next.services.read_layer.known_keys", return_value=set()),
 		):
 			runner.start(name)
 			counts = runner.materialize(name)

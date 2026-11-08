@@ -52,4 +52,7 @@ def refresh_views(name: str) -> dict[str, Any]:
 	_check(name, "read")
 	status_posts.refresh_views([name])
 	row = frappe.db.get_value("WhatsApp Status Post", name, ["view_count", "viewers"], as_dict=True)
-	return {"view_count": row.view_count or 0, "viewers": frappe.parse_json(row.viewers) if row.viewers else []}
+	return {
+		"view_count": row.view_count or 0,
+		"viewers": frappe.parse_json(row.viewers) if row.viewers else [],
+	}

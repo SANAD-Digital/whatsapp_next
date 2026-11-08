@@ -29,8 +29,21 @@ def _typing_on() -> bool:
 def _row(inbound_name: str | None):
 	if not inbound_name:
 		return None
-	row = frappe.db.get_value(INBOUND, inbound_name, ["device", "chat_jid", "sender_jid", "jid", "is_group",
-		"provider_message_id", "is_simulated", "is_history"], as_dict=True)
+	row = frappe.db.get_value(
+		INBOUND,
+		inbound_name,
+		[
+			"device",
+			"chat_jid",
+			"sender_jid",
+			"jid",
+			"is_group",
+			"provider_message_id",
+			"is_simulated",
+			"is_history",
+		],
+		as_dict=True,
+	)
 	if not row or cint(row.is_simulated) or cint(row.is_history) or not row.provider_message_id:
 		return None
 	row.chat = row.chat_jid or row.sender_jid or row.jid
@@ -50,8 +63,12 @@ def mark_read(inbound_name: str) -> bool:
 	if not platform_device:
 		return False
 	try:
-		registry.get_provider().mark_read(platform_device, row.chat, [row.provider_message_id],
-			row.sender_jid if cint(row.is_group) else None)
+		registry.get_provider().mark_read(
+			platform_device,
+			row.chat,
+			[row.provider_message_id],
+			row.sender_jid if cint(row.is_group) else None,
+		)
 		return True
 	except Exception:
 		frappe.log_error(title="WhatsApp read receipt not sent", message=f"inbound={inbound_name}")
@@ -78,8 +95,14 @@ def typing(inbound_name: str, state: str = "composing") -> bool:
 def on_received(inbound_name: str) -> None:
 	"""After a message is stored: queue its receipt when every received message is marked read."""
 	if _mode() == "Every received message":
-		frappe.enqueue("whatsapp_next.services.receipts.mark_read", inbound_name=inbound_name, queue="short",
-			enqueue_after_commit=True, job_id=f"wa-read-{inbound_name}", deduplicate=True)
+		frappe.enqueue(
+			"whatsapp_next.services.receipts.mark_read",
+			inbound_name=inbound_name,
+			queue="short",
+			enqueue_after_commit=True,
+			job_id=f"wa-read-{inbound_name}",
+			deduplicate=True,
+		)
 
 
 def on_command_replied(inbound_name: str) -> None:

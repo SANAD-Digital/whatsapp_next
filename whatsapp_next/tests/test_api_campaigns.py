@@ -367,7 +367,10 @@ class TestApiCampaigns(IntegrationTestCase):
 			f = api.get_failures(name=name)
 		self.assertEqual(f["total"], 2)
 		self.assertEqual(f["retryable"], 1)  # only `timeout` is retryable
-		self.assertEqual({r["error_code"]: r["retryable"] for r in f["rows"]}, {"timeout": True, "recipient_not_registered": False})
+		self.assertEqual(
+			{r["error_code"]: r["retryable"] for r in f["rows"]},
+			{"timeout": True, "recipient_not_registered": False},
+		)
 		self.assertEqual({r["share"] for r in f["rows"]}, {50.0})
 
 		with as_user("WhatsApp Manager"):
@@ -379,7 +382,9 @@ class TestApiCampaigns(IntegrationTestCase):
 		# a failure sent again is history: not counted, not listed, and never sent a second time
 		with as_user("WhatsApp Manager"):
 			f = api.get_failures(name=name)
-			self.assertEqual((f["total"], [r["error_code"] for r in f["rows"]]), (1, ["recipient_not_registered"]))
+			self.assertEqual(
+				(f["total"], [r["error_code"] for r in f["rows"]]), (1, ["recipient_not_registered"])
+			)
 			counters = api.get_progress(name=name)["counters"]
 			self.assertEqual((counters["total"], counters["failed"], counters["queued"]), (2, 1, 1))
 			again = api.retry_failed(name=name)

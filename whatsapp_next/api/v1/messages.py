@@ -247,7 +247,9 @@ def get_conversation(
 	allowed = permissions.allowed_devices()
 	if allowed is not None:
 		if device and device not in allowed:
-			frappe.throw(_("Not permitted to read conversations of device {0}").format(device), WAPermissionError)
+			frappe.throw(
+				_("Not permitted to read conversations of device {0}").format(device), WAPermissionError
+			)
 		device = device or allowed
 	page = read_layer.conversation(key, device=device, before=before, limit=limit)
 	rows = []
@@ -329,7 +331,6 @@ def get_poll_summary(name: str) -> dict[str, Any]:
 	return polls.summary_for_log(name)
 
 
-
 @api_endpoint(roles=AGENT_UP)
 def fetch_media(name: str) -> dict[str, Any]:
 	"""Fetch the file of a received message that has none yet (a past message from the history
@@ -340,8 +341,12 @@ def fetch_media(name: str) -> dict[str, Any]:
 		frappe.throw(_("Message {0} not found").format(name), WANotFoundError)
 	if not frappe.has_permission("WhatsApp Inbound Message", "read", name):
 		frappe.throw(_("Not permitted"), WAPermissionError)
-	row = frappe.db.get_value("WhatsApp Inbound Message", name, ["attachment", "media_url", "media_mime_type",
-		"provider_message_id"], as_dict=True)
+	row = frappe.db.get_value(
+		"WhatsApp Inbound Message",
+		name,
+		["attachment", "media_url", "media_mime_type", "provider_message_id"],
+		as_dict=True,
+	)
 	if row.attachment:
 		return {"attachment": row.attachment}
 	if not row.media_url:

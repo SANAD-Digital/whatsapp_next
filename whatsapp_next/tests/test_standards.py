@@ -71,7 +71,12 @@ def sample_document(doctype: str):
 	if doctype == "Payment Entry":
 		doc.append(
 			"references",
-			{"reference_doctype": "Sales Invoice", "reference_name": "INV-1", "allocated_amount": 1000, "outstanding_amount": 500},
+			{
+				"reference_doctype": "Sales Invoice",
+				"reference_name": "INV-1",
+				"allocated_amount": 1000,
+				"outstanding_amount": 500,
+			},
 		)
 	return doc
 
@@ -98,10 +103,14 @@ class TestStandardFixtures(IntegrationTestCase):
 				self.assertEqual(f"{entry['prefix']}_{frappe.scrub(doctype)}.json", file_name)
 				self.assertEqual(entry["filters"], [["name", "in", standards.names(doctype)]])
 		# the three standard entries are last: Frappe's export carries a prefix over to later ones
-		order = [f.get("dt") for f in frappe.get_hooks("fixtures", app_name="whatsapp_next") if isinstance(f, dict)]
+		order = [
+			f.get("dt") for f in frappe.get_hooks("fixtures", app_name="whatsapp_next") if isinstance(f, dict)
+		]
 		self.assertEqual(order[-3:], list(standards.FILES))
 		# the import order: templates before what links to them, all after the roles
-		files = sorted(f for f in os.listdir(frappe.get_app_path("whatsapp_next", "fixtures")) if f.endswith(".json"))
+		files = sorted(
+			f for f in os.listdir(frappe.get_app_path("whatsapp_next", "fixtures")) if f.endswith(".json")
+		)
 		self.assertLess(files.index("role.json"), files.index(standards.FILES[T]))
 		self.assertLess(files.index(standards.FILES[T]), files.index(standards.FILES[N]))
 		self.assertLess(files.index(standards.FILES[T]), files.index(standards.FILES[A]))
@@ -122,12 +131,22 @@ class TestStandardFixtures(IntegrationTestCase):
 			for name, row in self.records(doctype).items():
 				with self.subTest(doctype=doctype, name=name):
 					self.assertEqual(row.get("enabled"), 0)
-					for field in ("device", "print_format", "letter_head", "last_sent_at", "next_run_at", "last_error", "last_error_at"):
+					for field in (
+						"device",
+						"print_format",
+						"letter_head",
+						"last_sent_at",
+						"next_run_at",
+						"last_error",
+						"last_error_at",
+					):
 						self.assertFalse(row.get(field), field)
 					self.assertFalse(row.get("send_count"))
 					self.assertTrue(row.get("recipients"))
 					for r in row["recipients"]:
-						self.assertIn(r["recipient_type"], ("Document Field", "Linked Document Field", "Role"))
+						self.assertIn(
+							r["recipient_type"], ("Document Field", "Linked Document Field", "Role")
+						)
 						for field in ("phone", "phone_e164", "user"):
 							self.assertFalse(r.get(field), field)
 		for name, row in self.records(T).items():
@@ -145,7 +164,9 @@ class TestStandardFixtures(IntegrationTestCase):
 		shipped_by = {"frappe", "erpnext"}
 
 		def app_of(doctype):
-			return frappe.db.get_value("Module Def", frappe.db.get_value("DocType", doctype, "module"), "app_name")
+			return frappe.db.get_value(
+				"Module Def", frappe.db.get_value("DocType", doctype, "module"), "app_name"
+			)
 
 		templates_shipped = set(standards.names(T))
 		for name, row in self.records(T).items():
@@ -163,10 +184,14 @@ class TestStandardFixtures(IntegrationTestCase):
 					if field:
 						self.assertTrue(meta.has_field(field), field)
 				for r in row["recipients"]:
-					self.assertTrue(meta.has_field(r["receiver_by_document_field"]), r["receiver_by_document_field"])
+					self.assertTrue(
+						meta.has_field(r["receiver_by_document_field"]), r["receiver_by_document_field"]
+					)
 		for name, row in self.records(A).items():
 			with self.subTest(alert=name):
-				report = frappe.db.get_value("Report", row["report"], ["is_standard", "module", "disabled"], as_dict=True)
+				report = frappe.db.get_value(
+					"Report", row["report"], ["is_standard", "module", "disabled"], as_dict=True
+				)
 				self.assertTrue(report, row["report"])
 				self.assertEqual((report.is_standard, report.disabled), ("Yes", 0))
 				self.assertIn(frappe.db.get_value("Module Def", report.module, "app_name"), shipped_by)
@@ -220,8 +245,28 @@ class TestStandardFixtures(IntegrationTestCase):
 
 	def test_alert_messages_render_with_and_without_rows(self):
 		rows = [
-			{"party": "عميل أ", "outstanding": 1200.0, "currency": "USD", "voucher_no": "V-1", "customer_name": "عميل أ", "grand_total": 1200.0, "outstanding_amount": 200.0, "debit": 1200.0, "credit": 0.0},
-			{"party": "عميل ب", "outstanding": 300.0, "currency": "USD", "voucher_no": "V-2", "customer_name": "عميل ب", "grand_total": 300.0, "outstanding_amount": 0.0, "debit": 0.0, "credit": 300.0},
+			{
+				"party": "عميل أ",
+				"outstanding": 1200.0,
+				"currency": "USD",
+				"voucher_no": "V-1",
+				"customer_name": "عميل أ",
+				"grand_total": 1200.0,
+				"outstanding_amount": 200.0,
+				"debit": 1200.0,
+				"credit": 0.0,
+			},
+			{
+				"party": "عميل ب",
+				"outstanding": 300.0,
+				"currency": "USD",
+				"voucher_no": "V-2",
+				"customer_name": "عميل ب",
+				"grand_total": 300.0,
+				"outstanding_amount": 0.0,
+				"debit": 0.0,
+				"credit": 300.0,
+			},
 			# reports end with a totals row that is a list, not a dict
 			["Total", "", "", 1500.0],
 		]
@@ -231,10 +276,21 @@ class TestStandardFixtures(IntegrationTestCase):
 					alert = frappe.get_doc(copy.deepcopy(row))
 					filters = alerts.resolve_filters(alert)
 					for token in json.loads(row["dynamic_filters_json"]).values():
-						self.assertIn(token.split(":")[0], [t.split(":")[0] for t in alerts.alerts_dates.TOKENS])
+						self.assertIn(
+							token.split(":")[0], [t.split(":")[0] for t in alerts.alerts_dates.TOKENS]
+						)
 					ctx = templates.context_for(
-						None, None, {"rows": data, "columns": [], "report": alert.report, "filters": filters, "row_count": len(data)},
-						doc=frappe._dict(), recipient={"phone_e164": PHONE},
+						None,
+						None,
+						{
+							"rows": data,
+							"columns": [],
+							"report": alert.report,
+							"filters": filters,
+							"row_count": len(data),
+						},
+						doc=frappe._dict(),
+						recipient={"phone_e164": PHONE},
 					)
 					result = templates.render(row["message"], ctx)
 					self.assertIsNone(result.error)
@@ -248,7 +304,10 @@ class TestStandardFixtures(IntegrationTestCase):
 			# the site's own filters stay; only a company it never chose is filled in
 			own = json.dumps({"company": "Other", "range": "60"})
 			self.assertEqual(standards._site_filters(shipped, own), own)
-			self.assertEqual(json.loads(standards._site_filters(shipped, json.dumps({"range": "60"}))), {"company": "ACME", "range": "60"})
+			self.assertEqual(
+				json.loads(standards._site_filters(shipped, json.dumps({"range": "60"}))),
+				{"company": "ACME", "range": "60"},
+			)
 		with patch.object(standards, "default_company", return_value=None):
 			self.assertEqual(json.loads(standards._site_filters(shipped)), {"range": "30"})
 
@@ -264,20 +323,50 @@ def shipped() -> dict[str, dict[str, dict]]:
 	"""A small standard set as a fixture file would hold it — deliberately shipped *enabled* with a
 	device and counters, which no file may do: the import must not trust it."""
 	return {
-		T: {TPL: {"doctype": T, "name": TPL, "template_name": TPL, "message_type": "Text", "body": "shipped v1 {{ doc.name }}", "category": "Test", "use_count": 9}},
+		T: {
+			TPL: {
+				"doctype": T,
+				"name": TPL,
+				"template_name": TPL,
+				"message_type": "Text",
+				"body": "shipped v1 {{ doc.name }}",
+				"category": "Test",
+				"use_count": 9,
+			}
+		},
 		N: {
 			NOTIF: {
-				"doctype": N, "name": NOTIF, "notification_name": NOTIF, "enabled": 1, "device": "WAD-TEST-STANDARDS",
-				"document_type": "ToDo", "event": "New", "condition_type": "Python", "condition": "doc.status == 'Open'",
-				"template": TPL, "message_type": "Text", "send_count": 4, "last_sent_at": "2026-01-01 10:00:00",
-				"recipients": [{"recipient_type": "Document Field", "receiver_by_document_field": "description"}],
+				"doctype": N,
+				"name": NOTIF,
+				"notification_name": NOTIF,
+				"enabled": 1,
+				"device": "WAD-TEST-STANDARDS",
+				"document_type": "ToDo",
+				"event": "New",
+				"condition_type": "Python",
+				"condition": "doc.status == 'Open'",
+				"template": TPL,
+				"message_type": "Text",
+				"send_count": 4,
+				"last_sent_at": "2026-01-01 10:00:00",
+				"recipients": [
+					{"recipient_type": "Document Field", "receiver_by_document_field": "description"}
+				],
 			}
 		},
 		A: {
 			ALERT: {
-				"doctype": A, "name": ALERT, "alert_name": ALERT, "enabled": 1, "device": "WAD-TEST-STANDARDS",
-				"periodicity": "Daily", "notification_time": "08:00:00", "content_type": "Static Message",
-				"message": "shipped alert v1", "attachment_format": "None", "send_count": 2,
+				"doctype": A,
+				"name": ALERT,
+				"alert_name": ALERT,
+				"enabled": 1,
+				"device": "WAD-TEST-STANDARDS",
+				"periodicity": "Daily",
+				"notification_time": "08:00:00",
+				"content_type": "Static Message",
+				"message": "shipped alert v1",
+				"attachment_format": "None",
+				"send_count": 2,
 				"recipients": [{"recipient_type": "Role", "role": "System Manager"}],
 			}
 		},
@@ -320,7 +409,9 @@ class TestStandardSync(IntegrationTestCase):
 	def test_a_new_record_is_created_switched_off(self):
 		self.sync()
 		notif = frappe.get_doc(N, NOTIF)
-		self.assertEqual((notif.enabled, notif.device, notif.send_count, notif.last_sent_at), (0, None, 0, None))
+		self.assertEqual(
+			(notif.enabled, notif.device, notif.send_count, notif.last_sent_at), (0, None, 0, None)
+		)
 		alert = frappe.get_doc(A, ALERT)
 		self.assertEqual((alert.enabled, alert.device, alert.send_count), (0, None, 0))
 		self.assertEqual(frappe.db.get_value(T, TPL, "use_count"), 0)
@@ -336,19 +427,41 @@ class TestStandardSync(IntegrationTestCase):
 		notif.enabled, notif.device = 1, self.device
 		notif.set("recipients", [{"recipient_type": "Fixed Number", "phone": PHONE}])
 		notif.save()
-		frappe.db.set_value(N, NOTIF, {"send_count": 7, "last_sent_at": "2026-02-02 10:00:00", "last_error": "x", "last_error_at": "2026-02-02 10:00:01"}, update_modified=False)
+		frappe.db.set_value(
+			N,
+			NOTIF,
+			{
+				"send_count": 7,
+				"last_sent_at": "2026-02-02 10:00:00",
+				"last_error": "x",
+				"last_error_at": "2026-02-02 10:00:01",
+			},
+			update_modified=False,
+		)
 		alert = frappe.get_doc(A, ALERT)
 		alert.enabled, alert.device = 1, self.device
 		alert.set("recipients", [{"recipient_type": "Phone", "phone": PHONE}])
 		alert.save()
-		frappe.db.set_value(A, ALERT, {"send_count": 3, "last_sent_at": "2026-02-02 08:00:00", "next_run_at": "2026-02-03 08:00:00"}, update_modified=False)
-		frappe.db.set_value(T, TPL, {"disabled": 1, "use_count": 5, "last_used_at": "2026-02-02 09:00:00"}, update_modified=False)
+		frappe.db.set_value(
+			A,
+			ALERT,
+			{"send_count": 3, "last_sent_at": "2026-02-02 08:00:00", "next_run_at": "2026-02-03 08:00:00"},
+			update_modified=False,
+		)
+		frappe.db.set_value(
+			T,
+			TPL,
+			{"disabled": 1, "use_count": 5, "last_used_at": "2026-02-02 09:00:00"},
+			update_modified=False,
+		)
 
 	def _state(self):
 		out = {}
 		for doctype, name in ((T, TPL), (N, NOTIF), (A, ALERT)):
 			doc = frappe.get_doc(doctype, name).as_dict()
-			doc["recipients"] = [(r.recipient_type, r.get("phone_e164"), r.get("role")) for r in doc.get("recipients") or []]
+			doc["recipients"] = [
+				(r.recipient_type, r.get("phone_e164"), r.get("role")) for r in doc.get("recipients") or []
+			]
 			out[name] = {k: str(v) for k, v in doc.items()}
 		return out
 
@@ -384,7 +497,9 @@ class TestStandardSync(IntegrationTestCase):
 		self.assertEqual((alert.message, alert.enabled, alert.send_count), ("shipped alert v2", 1, 3))
 		# the schedule did not change: the run the alert was waiting for is kept
 		self.assertEqual(str(alert.next_run_at), "2026-02-03 08:00:00")
-		self.assertEqual((frappe.db.get_value(T, TPL, "disabled"), frappe.db.get_value(T, TPL, "use_count")), (1, 5))
+		self.assertEqual(
+			(frappe.db.get_value(T, TPL, "disabled"), frappe.db.get_value(T, TPL, "use_count")), (1, 5)
+		)
 		self.assertFalse(standards.status(T, TPL)["customised"])
 
 	def test_a_record_the_owner_edited_is_never_overwritten(self):
@@ -408,12 +523,16 @@ class TestStandardSync(IntegrationTestCase):
 		frappe.db.set_value(N, NOTIF, "send_count", 11, update_modified=False)
 		standards.restore(N, NOTIF)
 		notif = frappe.get_doc(N, NOTIF)
-		self.assertEqual((notif.condition, notif.event, notif.send_count), ("doc.status != 'Closed'", "Save", 11))
+		self.assertEqual(
+			(notif.condition, notif.event, notif.send_count), ("doc.status != 'Closed'", "Save", 11)
+		)
 		self.assertFalse(standards.status(N, NOTIF)["customised"])
 
 	def test_a_record_that_only_shares_a_standard_name_is_the_owners(self):
 		"""No fingerprint: the site had this record before the app shipped one by that name."""
-		frappe.get_doc({"doctype": T, "template_name": TPL, "message_type": "Text", "body": "mine", "category": "Mine"}).insert()
+		frappe.get_doc(
+			{"doctype": T, "template_name": TPL, "message_type": "Text", "body": "mine", "category": "Mine"}
+		).insert()
 		self.sync()
 		self.assertEqual(frappe.db.get_value(T, TPL, ["body", "category"]), ("mine", "Mine"))
 		self.assertTrue(standards.status(T, TPL)["customised"])
@@ -427,7 +546,13 @@ class TestStandardSync(IntegrationTestCase):
 
 	def test_other_records_are_imported_as_frappe_does(self):
 		self.assertFalse(standards.is_standard(T, "WA-TEST Not Standard"))
-		row = {"doctype": T, "name": "WA-TEST Not Standard", "template_name": "WA-TEST Not Standard", "message_type": "Text", "body": "x"}
+		row = {
+			"doctype": T,
+			"name": "WA-TEST Not Standard",
+			"template_name": "WA-TEST Not Standard",
+			"message_type": "Text",
+			"body": "x",
+		}
 		before = copy.deepcopy(row)
 		standards.prepare_for_import(row)
 		self.assertEqual(row, before)

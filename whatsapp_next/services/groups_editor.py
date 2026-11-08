@@ -41,14 +41,31 @@ def editor(name: str | None = None) -> dict[str, Any]:
 	kinds = _kinds()
 	if not name:
 		frappe.has_permission(DOCTYPE, "create", throw=True)
-		group = {"name": None, "group_name": "", "kind": kinds[0] if kinds else "", "description": "", "disabled": 0}
+		group = {
+			"name": None,
+			"group_name": "",
+			"kind": kinds[0] if kinds else "",
+			"description": "",
+			"disabled": 0,
+		}
 		group.update({"member_count": 0, "modified": None, "source": "Picker"})
 		return {"group": group, "kinds": kinds, "can_write": True}
 	doc = _get(name)
 	doc.check_permission("read")
 	group = {f: doc.get(f) for f in FIELDS}
-	group.update({"name": doc.name, "member_count": cint(doc.member_count), "modified": str(doc.modified), "source": doc.source})
-	return {"group": group, "kinds": kinds, "can_write": bool(frappe.has_permission(DOCTYPE, "write", doc=doc))}
+	group.update(
+		{
+			"name": doc.name,
+			"member_count": cint(doc.member_count),
+			"modified": str(doc.modified),
+			"source": doc.source,
+		}
+	)
+	return {
+		"group": group,
+		"kinds": kinds,
+		"can_write": bool(frappe.has_permission(DOCTYPE, "write", doc=doc)),
+	}
 
 
 def _apply(doc, payload: dict) -> None:
@@ -80,7 +97,9 @@ def save(payload: dict) -> dict[str, Any]:
 		opened = payload.get("modified")
 		if opened and get_datetime(opened) != get_datetime(doc.modified):
 			frappe.throw(
-				_("Someone else saved this group after you opened it. Close it and open it again to see their changes."),
+				_(
+					"Someone else saved this group after you opened it. Close it and open it again to see their changes."
+				),
 				WAValidationError,
 			)
 		_apply(doc, payload)
@@ -100,7 +119,9 @@ def save(payload: dict) -> dict[str, Any]:
 
 	removed = 0
 	if remove:
-		removed = picker.commit_remove(DOCTYPE, doc.name, phone_e164s=remove, user=frappe.session.user)["removed"]
+		removed = picker.commit_remove(DOCTYPE, doc.name, phone_e164s=remove, user=frappe.session.user)[
+			"removed"
+		]
 	added = skipped = 0
 	# one commit per source, as the picker does, so the audit says where each batch came from
 	batches: dict[tuple, list[dict]] = defaultdict(list)
@@ -109,7 +130,9 @@ def save(payload: dict) -> dict[str, Any]:
 	for (source_type, source_ref), rows in batches.items():
 		if source_type not in picker.SOURCE_TYPES:
 			source_type = "Manual"
-		r = picker.commit_add(DOCTYPE, doc.name, rows, source_type=source_type, source_ref=source_ref, user=frappe.session.user)
+		r = picker.commit_add(
+			DOCTYPE, doc.name, rows, source_type=source_type, source_ref=source_ref, user=frappe.session.user
+		)
 		added += cint(r.get("added"))
 		skipped += cint(r.get("skipped_duplicates")) + cint(r.get("skipped_invalid"))
 	return {

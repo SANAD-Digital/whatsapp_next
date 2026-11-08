@@ -99,7 +99,19 @@ SCHEDULE_FIELDS = ("periodicity", "day_of_week", "day_of_month", "month_of_year"
 # A report filter the file cannot know: replaced by the site's default company on the site.
 COMPANY_TOKEN = "__default_company__"
 FINGERPRINT_PARENT = "__whatsapp_next_standards"
-_ROW_KEYS = ("name", "owner", "creation", "modified", "modified_by", "docstatus", "idx", "parent", "parentfield", "parenttype", "doctype")
+_ROW_KEYS = (
+	"name",
+	"owner",
+	"creation",
+	"modified",
+	"modified_by",
+	"docstatus",
+	"idx",
+	"parent",
+	"parentfield",
+	"parenttype",
+	"doctype",
+)
 
 
 # ---- the shipped set -----------------------------------------------------------------------
@@ -265,7 +277,9 @@ def _site_filters(shipped: Any, current: Any = None) -> str | None:
 
 def _rows(doc, fieldname: str) -> list[dict[str, Any]]:
 	"""A child table as plain rows a new parent can be built from."""
-	return [{k: v for k, v in row.as_dict().items() if k not in _ROW_KEYS} for row in doc.get(fieldname) or []]
+	return [
+		{k: v for k, v in row.as_dict().items() if k not in _ROW_KEYS} for row in doc.get(fieldname) or []
+	]
 
 
 def _value(doc, fieldname: str) -> Any:

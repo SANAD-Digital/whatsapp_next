@@ -23,9 +23,18 @@ MAX_PER_REQUEST = 5000  # what one screen action may ask
 def _device(device: str | None) -> tuple[str, str]:
 	"""(device, platform_device) of the given or default connected device."""
 	name = device or frappe.db.get_single_value("WhatsApp Settings", "default_device")
-	row = frappe.db.get_value("WhatsApp Device", name, ["name", "platform_device", "status"], as_dict=True) if name else None
+	row = (
+		frappe.db.get_value("WhatsApp Device", name, ["name", "platform_device", "status"], as_dict=True)
+		if name
+		else None
+	)
 	if not row or row.status != "Connected":
-		row = frappe.db.get_value("WhatsApp Device", {"status": "Connected", "disabled": 0}, ["name", "platform_device", "status"], as_dict=True)
+		row = frappe.db.get_value(
+			"WhatsApp Device",
+			{"status": "Connected", "disabled": 0},
+			["name", "platform_device", "status"],
+			as_dict=True,
+		)
 	if not row:
 		frappe.throw(_("No WhatsApp device is connected to check numbers with"), WAStateConflictError)
 	return row.name, row.platform_device
@@ -36,13 +45,15 @@ def cached(keys: list[str], max_age_days: int = MAX_AGE_DAYS) -> dict[str, bool]
 	if not keys:
 		return {}
 	since = add_days(now_datetime(), -max_age_days)
-	rows = frappe.get_all(CHECK, filters={"name": ("in", keys), "checked_at": (">=", since)},
-		fields=["name", "on_whatsapp"])
+	rows = frappe.get_all(
+		CHECK, filters={"name": ("in", keys), "checked_at": (">=", since)}, fields=["name", "on_whatsapp"]
+	)
 	return {r.name: r.on_whatsapp == "Yes" for r in rows}
 
 
-def check(numbers: list[str], *, device: str | None = None, force: bool = False,
-		max_age_days: int = MAX_AGE_DAYS) -> dict[str, bool]:
+def check(
+	numbers: list[str], *, device: str | None = None, force: bool = False, max_age_days: int = MAX_AGE_DAYS
+) -> dict[str, bool]:
 	"""`{e164: on_whatsapp}` for every individual number given (others are left out). Fresh answers
 	come from the cache unless `force`; the rest are asked through the device and remembered."""
 	keys = []
@@ -73,15 +84,24 @@ def check(numbers: list[str], *, device: str | None = None, force: bool = False,
 
 
 def _remember(key: str, on: bool, jid: str | None, verified_name: str | None, at, device: str) -> None:
-	values = {"on_whatsapp": "Yes" if on else "No", "jid": jid, "verified_name": verified_name,
-		"checked_at": at, "device": device}
+	values = {
+		"on_whatsapp": "Yes" if on else "No",
+		"jid": jid,
+		"verified_name": verified_name,
+		"checked_at": at,
+		"device": device,
+	}
 	if frappe.db.exists(CHECK, key):
 		frappe.db.set_value(CHECK, key, values, update_modified=False)
 	else:
 		frappe.get_doc({"doctype": CHECK, "phone_e164": key, **values}).insert(ignore_permissions=True)
 	if frappe.db.exists("WhatsApp Number", key):
-		frappe.db.set_value("WhatsApp Number", key, {"on_whatsapp": values["on_whatsapp"], "whatsapp_checked_at": at},
-			update_modified=False)
+		frappe.db.set_value(
+			"WhatsApp Number",
+			key,
+			{"on_whatsapp": values["on_whatsapp"], "whatsapp_checked_at": at},
+			update_modified=False,
+		)
 
 
 def check_for(source_doctype: str, names: list[str], *, force: bool = True) -> dict[str, Any]:

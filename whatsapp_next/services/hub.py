@@ -69,7 +69,9 @@ def entries(hub_type: str, txt: str | None = None) -> list[dict[str, Any]]:
 	out = []
 	for row in registry.get_provider().list_hub(hub_type, txt):
 		local = _local(doctype, row.get("name"), row.get("target"))
-		out.append({**row, "state": _state(local, row.get("checksum")), "local": local.name if local else None})
+		out.append(
+			{**row, "state": _state(local, row.get("checksum")), "local": local.name if local else None}
+		)
 	return out
 
 
@@ -108,7 +110,9 @@ def install(name: str, user: str | None = None, _seen: set[str] | None = None) -
 		local, created = _install_function(payload)
 	else:
 		local, created = _install_record(doctype, payload, row.get("local"))
-	frappe.db.set_value(doctype, local, {"hub_entry": name, "hub_checksum": row.get("checksum")}, update_modified=False)
+	frappe.db.set_value(
+		doctype, local, {"hub_entry": name, "hub_checksum": row.get("checksum")}, update_modified=False
+	)
 	audit.log(
 		"Hub Entry Installed",
 		reference=(doctype, local),
@@ -148,7 +152,10 @@ def _install_record(doctype: str, payload: dict[str, Any], local: str | None) ->
 	doc.flags.ignore_permissions = True
 	wanted = payload.get("name")
 	if wanted and frappe.db.exists(doctype, wanted):
-		frappe.throw(_("{0} {1} already exists here and was not installed from the hub.").format(_(doctype), wanted), WAValidationError)
+		frappe.throw(
+			_("{0} {1} already exists here and was not installed from the hub.").format(_(doctype), wanted),
+			WAValidationError,
+		)
 	doc.insert(ignore_permissions=True, set_name=wanted or None)
 	return doc.name, True
 
@@ -158,7 +165,9 @@ def _install_function(payload: dict[str, Any]) -> tuple[str, bool]:
 	replaced) from the entry, then the function is installed or updated from it. System Manager
 	only — the same right that writes a Server Script by hand."""
 	if "System Manager" not in frappe.get_roles():
-		frappe.throw(_("Only a System Manager can install a function: it runs code on this site."), WAPermissionError)
+		frappe.throw(
+			_("Only a System Manager can install a function: it runs code on this site."), WAPermissionError
+		)
 	script_name = str(payload.get("server_script") or "").strip()
 	code = str(payload.get("script") or "")
 	if not script_name.startswith(fh.API_PREFIX) or not code.strip():

@@ -141,7 +141,15 @@ def context() -> dict[str, Any]:
 		),
 		"alerts": frappe.get_list(
 			"WhatsApp Notification Alert",
-			fields=["name", "enabled", "content_type", "report", "attachment_format", "periodicity", "next_run_at"],
+			fields=[
+				"name",
+				"enabled",
+				"content_type",
+				"report",
+				"attachment_format",
+				"periodicity",
+				"next_run_at",
+			],
 			order_by="enabled desc, alert_name asc",
 			limit=200,
 		),
@@ -221,8 +229,24 @@ def _latest(doctype: str) -> str | None:
 # ---- health: is the setup able to send and to hear back -----------------------------------
 
 
-def _check(key: str, title: str, status: str, detail: str, fix: str | None = None, route: Any = None, route_label: str | None = None) -> dict[str, Any]:
-	return {"key": key, "title": title, "status": status, "detail": detail, "fix": fix, "route": route, "route_label": route_label}
+def _check(
+	key: str,
+	title: str,
+	status: str,
+	detail: str,
+	fix: str | None = None,
+	route: Any = None,
+	route_label: str | None = None,
+) -> dict[str, Any]:
+	return {
+		"key": key,
+		"title": title,
+		"status": status,
+		"detail": detail,
+		"fix": fix,
+		"route": route,
+		"route_label": route_label,
+	}
 
 
 def health(device: str | None = None, live: bool = False) -> dict[str, Any]:
@@ -261,21 +285,46 @@ def _credentials_check(settings) -> dict[str, Any]:
 
 	has_keys = any(secrets.read(f) for f in ("customer_api_key", "api_key"))
 	if not has_keys:
-		return _check("credentials", title, "fail", _("No API key is saved on this site."), _("Sign in to the platform from the setup wizard, or paste the API key and secret in Settings."), route, label)
+		return _check(
+			"credentials",
+			title,
+			"fail",
+			_("No API key is saved on this site."),
+			_("Sign in to the platform from the setup wizard, or paste the API key and secret in Settings."),
+			route,
+			label,
+		)
 	if settings.connection_status == "OK":
 		latency = cint(settings.last_connection_latency_ms)
-		return _check("credentials", title, "ok", _("The platform accepted the keys ({0} ms).").format(latency) if latency else _("The platform accepted the keys."))
+		return _check(
+			"credentials",
+			title,
+			"ok",
+			_("The platform accepted the keys ({0} ms).").format(latency)
+			if latency
+			else _("The platform accepted the keys."),
+		)
 	if settings.connection_status == "Failed":
 		return _check(
 			"credentials",
 			title,
 			"fail",
-			_("The last connection test failed: {0}").format(settings.last_connection_error or _("no reason given")),
-			_("Check the API key and secret in Settings and that the platform address is reachable, then run the checks again."),
+			_("The last connection test failed: {0}").format(
+				settings.last_connection_error or _("no reason given")
+			),
+			_(
+				"Check the API key and secret in Settings and that the platform address is reachable, then run the checks again."
+			),
 			route,
 			label,
 		)
-	return _check("credentials", title, "warn", _("The connection was never tested."), _("Press «Run the checks» to test it now."))
+	return _check(
+		"credentials",
+		title,
+		"warn",
+		_("The connection was never tested."),
+		_("Press «Run the checks» to test it now."),
+	)
 
 
 def _subscription_check(settings) -> dict[str, Any]:
@@ -293,13 +342,49 @@ def _subscription_check(settings) -> dict[str, Any]:
 		facts.append(_("ends {0}").format(frappe.format(settings.subscription_end, {"fieldtype": "Date"})))
 	detail = " · ".join(facts)
 	if not status and not settings.subscription_synced_at:
-		return _check("subscription", title, "warn", _("The subscription was never read from the platform."), _("Press «Run the checks» to read it now."), route, label)
+		return _check(
+			"subscription",
+			title,
+			"warn",
+			_("The subscription was never read from the platform."),
+			_("Press «Run the checks» to read it now."),
+			route,
+			label,
+		)
 	if status.lower() in ("expired", "inactive", "cancelled", "suspended") or (days is not None and days < 0):
-		return _check("subscription", title, "fail", detail, _("The subscription is not active, so the platform refuses every message. Renew it from the subscription screen."), route, label)
+		return _check(
+			"subscription",
+			title,
+			"fail",
+			detail,
+			_(
+				"The subscription is not active, so the platform refuses every message. Renew it from the subscription screen."
+			),
+			route,
+			label,
+		)
 	if limit and cint(remaining) <= 0:
-		return _check("subscription", title, "fail", detail, _("The plan's messages are used up, so nothing more is sent this period. Upgrade the plan or wait for the renewal."), route, label)
+		return _check(
+			"subscription",
+			title,
+			"fail",
+			detail,
+			_(
+				"The plan's messages are used up, so nothing more is sent this period. Upgrade the plan or wait for the renewal."
+			),
+			route,
+			label,
+		)
 	if (limit and cint(remaining) < CAP_DEFAULT) or (days is not None and days <= 3):
-		return _check("subscription", title, "warn", detail, _("Little is left on the plan: a full test run may use it up."), route, label)
+		return _check(
+			"subscription",
+			title,
+			"warn",
+			detail,
+			_("Little is left on the plan: a full test run may use it up."),
+			route,
+			label,
+		)
 	return _check("subscription", title, "ok", detail)
 
 
@@ -307,13 +392,25 @@ def _webhook_check(settings) -> dict[str, Any]:
 	title = _("Webhook endpoint")
 	route, label = "wa-settings", _("Open webhook settings")
 	if not settings.webhook_endpoint:
-		return _check("webhook", title, "fail", _("No webhook is registered on the platform for this site."), _("Without it the site never hears about deliveries, read receipts or incoming messages. Open Settings › Webhook and press «Set up»."), route, label)
+		return _check(
+			"webhook",
+			title,
+			"fail",
+			_("No webhook is registered on the platform for this site."),
+			_(
+				"Without it the site never hears about deliveries, read receipts or incoming messages. Open Settings › Webhook and press «Set up»."
+			),
+			route,
+			label,
+		)
 	if settings.webhook_status != "Active":
 		return _check(
 			"webhook",
 			title,
 			"fail",
-			_("The webhook is registered but its state is «{0}».").format(_(settings.webhook_status or "Unknown")),
+			_("The webhook is registered but its state is «{0}».").format(
+				_(settings.webhook_status or "Unknown")
+			),
 			_("The platform is not calling this site. Switch the webhook back on in Settings › Webhook."),
 			route,
 			label,
@@ -325,12 +422,26 @@ def _webhook_traffic_check(settings) -> dict[str, Any]:
 	title = _("Last event received")
 	at = settings.webhook_last_event_at
 	if not at:
-		return _check("webhook_traffic", title, "warn", _("No event has ever arrived from the platform."), _("Send one test message below: its delivery receipt is the proof that the way back works."))
+		return _check(
+			"webhook_traffic",
+			title,
+			"warn",
+			_("No event has ever arrived from the platform."),
+			_("Send one test message below: its delivery receipt is the proof that the way back works."),
+		)
 	at = get_datetime(at)
 	hours = time_diff_in_seconds(now_datetime(), at) / 3600
 	when = frappe.utils.pretty_date(at)
 	if hours > STALE_WEBHOOK_HOURS:
-		return _check("webhook_traffic", title, "warn", _("The last event arrived {0}.").format(when), _("Nothing was heard for more than a day. Send one test message below and watch for its delivery receipt."))
+		return _check(
+			"webhook_traffic",
+			title,
+			"warn",
+			_("The last event arrived {0}.").format(when),
+			_(
+				"Nothing was heard for more than a day. Send one test message below and watch for its delivery receipt."
+			),
+		)
 	return _check("webhook_traffic", title, "ok", _("The last event arrived {0}.").format(when))
 
 
@@ -346,19 +457,46 @@ def _device_check(device: str | None) -> dict[str, Any]:
 	title = _("Sending device")
 	route, label = "wa-devices", _("Open devices")
 	device = device or default_device()
-	row = frappe.db.get_value("WhatsApp Device", device, ["name", "device_name", "status", "disabled", "webhook_registered", "phone_e164"], as_dict=True) if device else None
+	row = (
+		frappe.db.get_value(
+			"WhatsApp Device",
+			device,
+			["name", "device_name", "status", "disabled", "webhook_registered", "phone_e164"],
+			as_dict=True,
+		)
+		if device
+		else None
+	)
 	if not row:
-		return _check("device", title, "fail", _("No device is set up on this site."), _("Pair a phone from the Devices screen."), route, label)
+		return _check(
+			"device",
+			title,
+			"fail",
+			_("No device is set up on this site."),
+			_("Pair a phone from the Devices screen."),
+			route,
+			label,
+		)
 	name = row.device_name or row.name
 	if cint(row.disabled):
-		return _check("device", title, "fail", _("{0} is switched off.").format(name), _("Switch the device on from the Devices screen."), route, label)
+		return _check(
+			"device",
+			title,
+			"fail",
+			_("{0} is switched off.").format(name),
+			_("Switch the device on from the Devices screen."),
+			route,
+			label,
+		)
 	if row.status != "Connected":
 		return _check(
 			"device",
 			title,
 			"fail",
 			_("{0} is not connected ({1}).").format(name, _(row.status)),
-			_("Messages wait in the queue until the phone is linked again. Open Devices and scan the QR code from the phone."),
+			_(
+				"Messages wait in the queue until the phone is linked again. Open Devices and scan the QR code from the phone."
+			),
 			route,
 			label,
 		)
@@ -388,28 +526,64 @@ def _scheduler_check() -> dict[str, Any]:
 			title,
 			"fail",
 			_("The scheduler is disabled on this site."),
-			_("Scheduled alerts, scheduled campaigns, delayed notifications and queue retries all stop silently while it is off. Ask the system administrator to run: {0}").format(fix_cmd),
+			_(
+				"Scheduled alerts, scheduled campaigns, delayed notifications and queue retries all stop silently while it is off. Ask the system administrator to run: {0}"
+			).format(fix_cmd),
 		)
-	last = frappe.db.get_value("Scheduled Job Type", {"method": "whatsapp_next.services.dispatch.dispatch_tick"}, ["last_execution", "stopped"], as_dict=True)
+	last = frappe.db.get_value(
+		"Scheduled Job Type",
+		{"method": "whatsapp_next.services.dispatch.dispatch_tick"},
+		["last_execution", "stopped"],
+		as_dict=True,
+	)
 	if last and cint(last.stopped):
-		return _check("scheduler", title, "fail", _("The sending job of this app is stopped."), _("Open «Scheduled Job Type», find dispatch_tick and clear «Stopped»."), ["List", "Scheduled Job Type", {"method": ("like", "%whatsapp_next%")}], _("Open scheduled jobs"))
+		return _check(
+			"scheduler",
+			title,
+			"fail",
+			_("The sending job of this app is stopped."),
+			_("Open «Scheduled Job Type», find dispatch_tick and clear «Stopped»."),
+			["List", "Scheduled Job Type", {"method": ("like", "%whatsapp_next%")}],
+			_("Open scheduled jobs"),
+		)
 	if not last or not last.last_execution:
-		return _check("scheduler", title, "warn", _("The scheduler is enabled, but this app's every-minute job has not run yet."), _("If this stays so for more than a few minutes the scheduler process is not running: ask the system administrator to check `bench doctor`."))
+		return _check(
+			"scheduler",
+			title,
+			"warn",
+			_("The scheduler is enabled, but this app's every-minute job has not run yet."),
+			_(
+				"If this stays so for more than a few minutes the scheduler process is not running: ask the system administrator to check `bench doctor`."
+			),
+		)
 	minutes = time_diff_in_seconds(now_datetime(), get_datetime(last.last_execution)) / 60
 	if minutes > STALE_SCHEDULER_MINUTES:
 		return _check(
 			"scheduler",
 			title,
 			"fail",
-			_("The scheduler is enabled, but its every-minute job last ran {0}.").format(frappe.utils.pretty_date(last.last_execution)),
-			_("The scheduler process is not running, so alerts and scheduled campaigns are late. Ask the system administrator to restart the bench and check `bench doctor`."),
+			_("The scheduler is enabled, but its every-minute job last ran {0}.").format(
+				frappe.utils.pretty_date(last.last_execution)
+			),
+			_(
+				"The scheduler process is not running, so alerts and scheduled campaigns are late. Ask the system administrator to restart the bench and check `bench doctor`."
+			),
 		)
-	return _check("scheduler", title, "ok", _("Enabled — the every-minute job last ran {0}.").format(frappe.utils.pretty_date(last.last_execution)))
+	return _check(
+		"scheduler",
+		title,
+		"ok",
+		_("Enabled — the every-minute job last ran {0}.").format(
+			frappe.utils.pretty_date(last.last_execution)
+		),
+	)
 
 
 def _workers_check() -> dict[str, Any]:
 	title = _("Background workers")
-	fix = _("Messages are sent by background workers. Ask the system administrator to restart the bench (`bench restart`) and check `bench doctor`.")
+	fix = _(
+		"Messages are sent by background workers. Ask the system administrator to restart the bench (`bench restart`) and check `bench doctor`."
+	)
 	try:
 		from frappe.utils.background_jobs import get_queue, get_workers
 
@@ -422,10 +596,18 @@ def _workers_check() -> dict[str, Any]:
 		return _check("workers", title, "fail", _("No background worker is running."), fix)
 	missing = [q for q in ("short", "long", "default") if q not in served]
 	if missing:
-		return _check("workers", title, "fail", _("No worker serves the queue: {0}.").format(", ".join(missing)), fix)
+		return _check(
+			"workers", title, "fail", _("No worker serves the queue: {0}.").format(", ".join(missing)), fix
+		)
 	backlog = sum(waiting.values())
 	if backlog > 50:
-		return _check("workers", title, "warn", _("{0} workers are running, {1} jobs are waiting.").format(len(workers), backlog), _("The workers are busy: messages may leave late."))
+		return _check(
+			"workers",
+			title,
+			"warn",
+			_("{0} workers are running, {1} jobs are waiting.").format(len(workers), backlog),
+			_("The workers are busy: messages may leave late."),
+		)
 	return _check("workers", title, "ok", _("{0} workers are running.").format(len(workers)))
 
 
@@ -445,14 +627,40 @@ def _queue_check(settings) -> dict[str, Any]:
 		)
 	stale = frappe.db.count(
 		"WhatsApp Queue Item",
-		{"status": "Queued", "scheduled_at": ("<", add_to_date(now_datetime(), minutes=-STALE_QUEUE_MINUTES))},
+		{
+			"status": "Queued",
+			"scheduled_at": ("<", add_to_date(now_datetime(), minutes=-STALE_QUEUE_MINUTES)),
+		},
 	)
 	dead = frappe.db.count("WhatsApp Queue Item", {"status": "Dead Letter"})
 	if stale:
-		return _check("queue", title, "warn", _("{0} messages have been waiting for more than {1} minutes.").format(stale, STALE_QUEUE_MINUTES), _("They wait for a connected device, a free slot in the rate, or a paused campaign. Open the queue to see which."), route, label)
+		return _check(
+			"queue",
+			title,
+			"warn",
+			_("{0} messages have been waiting for more than {1} minutes.").format(stale, STALE_QUEUE_MINUTES),
+			_(
+				"They wait for a connected device, a free slot in the rate, or a paused campaign. Open the queue to see which."
+			),
+			route,
+			label,
+		)
 	if dead:
-		return _check("queue", title, "warn", _("The queue is running. {0} messages gave up after their retries.").format(dead), _("Open the queue, read the reason and retry them."), route, label)
-	return _check("queue", title, "ok", _("Running at {0} messages a minute.").format(cint(settings.messages_per_minute) or "—"))
+		return _check(
+			"queue",
+			title,
+			"warn",
+			_("The queue is running. {0} messages gave up after their retries.").format(dead),
+			_("Open the queue, read the reason and retry them."),
+			route,
+			label,
+		)
+	return _check(
+		"queue",
+		title,
+		"ok",
+		_("Running at {0} messages a minute.").format(cint(settings.messages_per_minute) or "—"),
+	)
 
 
 def _commands_check(settings) -> dict[str, Any]:
@@ -460,11 +668,35 @@ def _commands_check(settings) -> dict[str, Any]:
 	route, label = "wa-settings", _("Open settings")
 	active = frappe.db.count("WhatsApp Command", {"status": "Active"})
 	if not cint(settings.enable_commands):
-		return _check("commands", title, "warn", _("Commands are switched off."), _("Incoming messages are stored but never answered. Switch commands on in Settings."), route, label)
+		return _check(
+			"commands",
+			title,
+			"warn",
+			_("Commands are switched off."),
+			_("Incoming messages are stored but never answered. Switch commands on in Settings."),
+			route,
+			label,
+		)
 	if not settings.command_service_user:
-		return _check("commands", title, "warn", _("No service user is set for commands."), _("Commands read the system as that user. Pick one in Settings › Commands."), route, label)
+		return _check(
+			"commands",
+			title,
+			"warn",
+			_("No service user is set for commands."),
+			_("Commands read the system as that user. Pick one in Settings › Commands."),
+			route,
+			label,
+		)
 	if not active:
-		return _check("commands", title, "warn", _("Commands are on, but no command is active."), _("Activate a command from the Commands list."), ["List", "WhatsApp Command"], _("Open commands"))
+		return _check(
+			"commands",
+			title,
+			"warn",
+			_("Commands are on, but no command is active."),
+			_("Activate a command from the Commands list."),
+			["List", "WhatsApp Command"],
+			_("Open commands"),
+		)
 	return _check("commands", title, "ok", _("On — {0} active commands.").format(active))
 
 
@@ -486,8 +718,13 @@ def _load(run: str, *, own: bool = False) -> dict[str, Any]:
 	return data
 
 
-def _audit_rows(run: str | None = None, summary: str | None = None, limit: int | None = None) -> list[dict[str, Any]]:
-	filters: dict[str, Any] = {"action": "Test Send", "summary": summary or ("in", [AUDIT_START, AUDIT_CHECK])}
+def _audit_rows(
+	run: str | None = None, summary: str | None = None, limit: int | None = None
+) -> list[dict[str, Any]]:
+	filters: dict[str, Any] = {
+		"action": "Test Send",
+		"summary": summary or ("in", [AUDIT_START, AUDIT_CHECK]),
+	}
 	if run:
 		# the run's id inside the JSON the audit row keeps
 		filters["details"] = ("like", f'%"run": "{run}"%')
@@ -524,7 +761,16 @@ def _archived(run: str | None) -> dict[str, Any] | None:
 				"archived": True,
 			}
 		elif details.get("step"):
-			steps.append({"result": {}, "outbounds": [], "real": [], "campaign": None, "error": None, **details["step"]})
+			steps.append(
+				{
+					"result": {},
+					"outbounds": [],
+					"real": [],
+					"campaign": None,
+					"error": None,
+					**details["step"],
+				}
+			)
 	if data is None:
 		return None
 	data["steps"] = sorted(steps, key=lambda s: cint(s.get("idx")))
@@ -537,7 +783,21 @@ def _audit_step(data: dict[str, Any], step: dict[str, Any], user: str) -> None:
 	keeps what the check made (the Log rows, the campaign) and its verdict — never a reply's text
 	or a rendered message, which stay in the Log under its own permissions."""
 	result = step.get("result") or {}
-	kept = {k: result[k] for k in ("status", "command", "block_reason", "function_ms", "reference_name", "real_recipients", "scheduled_at", "schedule_minutes", "recipients") if result.get(k) not in (None, "")}
+	kept = {
+		k: result[k]
+		for k in (
+			"status",
+			"command",
+			"block_reason",
+			"function_ms",
+			"reference_name",
+			"real_recipients",
+			"scheduled_at",
+			"schedule_minutes",
+			"recipients",
+		)
+		if result.get(k) not in (None, "")
+	}
 	if result.get("readiness"):
 		kept["readiness"] = result["readiness"]
 	reference = None
@@ -585,7 +845,9 @@ def normalize_targets(targets: list[str]) -> list[str]:
 		if kind != "Individual":
 			frappe.throw(_("Invalid WhatsApp number: {0}").format(raw), WAInvalidPhoneError)
 		if dispatch._blacklisted(key):
-			frappe.throw(_("{0} is on the blacklist and cannot be a test target.").format(key), WABlacklistedError)
+			frappe.throw(
+				_("{0} is on the blacklist and cannot be a test target.").format(key), WABlacklistedError
+			)
 		if key not in out:
 			out.append(key)
 	if not out:
@@ -595,11 +857,19 @@ def normalize_targets(targets: list[str]) -> list[str]:
 	return out
 
 
-def start_run(device: str, targets: list[str], cap: int | None = None, pacing: int | None = None, user: str | None = None) -> dict[str, Any]:
+def start_run(
+	device: str,
+	targets: list[str],
+	cap: int | None = None,
+	pacing: int | None = None,
+	user: str | None = None,
+) -> dict[str, Any]:
 	"""Open a run: `{id, device, targets[], cap, pacing, started_at}`. Every later `run_check`
 	names it, and may only write to these numbers, at most `cap` messages, `pacing` seconds apart.
 	Audited `Test Send`."""
-	row = frappe.db.get_value("WhatsApp Device", device, ["name", "disabled"], as_dict=True) if device else None
+	row = (
+		frappe.db.get_value("WhatsApp Device", device, ["name", "disabled"], as_dict=True) if device else None
+	)
 	if not row:
 		frappe.throw(_("Pick a sending device"), WAValidationError)
 	if cint(row.disabled):
@@ -623,16 +893,27 @@ def start_run(device: str, targets: list[str], cap: int | None = None, pacing: i
 		summary=AUDIT_START,
 		user=run["user"],
 		# the numbers are masked by the audit log itself
-		details={"run": run["id"], "device": run["device"], "targets": list(run["targets"]), "cap": run["cap"], "pacing": run["pacing"]},
+		details={
+			"run": run["id"],
+			"device": run["device"],
+			"targets": list(run["targets"]),
+			"cap": run["cap"],
+			"pacing": run["pacing"],
+		},
 	)
 	return _public(run)
 
 
 def _public(run: dict[str, Any]) -> dict[str, Any]:
-	return {**{k: run[k] for k in ("id", "user", "device", "targets", "cap", "pacing", "started_at", "used")}, "archived": bool(run.get("archived"))}
+	return {
+		**{k: run[k] for k in ("id", "user", "device", "targets", "cap", "pacing", "started_at", "used")},
+		"archived": bool(run.get("archived")),
+	}
 
 
-def run_check(run: str, kind: str, target: str | None = None, params: dict | None = None, user: str | None = None) -> dict[str, Any]:
+def run_check(
+	run: str, kind: str, target: str | None = None, params: dict | None = None, user: str | None = None
+) -> dict[str, Any]:
 	"""Run one check of the run → the recorded step `{idx, kind, target, label, at, dry, ok, error,
 	outbounds[], campaign, count, result{}}`, or `{wait: seconds}` when the run's pacing says the
 	next message may not leave yet (nothing is done; ask again after that long).
@@ -657,7 +938,12 @@ def run_check(run: str, kind: str, target: str | None = None, params: dict | Non
 	if sends:
 		left = data["cap"] - data["used"]
 		if left < need:
-			frappe.throw(_("The run's cap of {0} messages is reached. Start a new run to send more.").format(data["cap"]), WAValidationError)
+			frappe.throw(
+				_("The run's cap of {0} messages is reached. Start a new run to send more.").format(
+					data["cap"]
+				),
+				WAValidationError,
+			)
 		wait = data["pacing"] - (time.time() - data["last_send"])
 		if wait > 0:
 			return {"wait": round(wait, 1)}
@@ -683,7 +969,10 @@ def run_check(run: str, kind: str, target: str | None = None, params: dict | Non
 		frappe.db.rollback(save_point="wa_testlab_step")
 		step.update(ok=False, error=_reason(exc))
 		if not isinstance(exc, frappe.ValidationError | frappe.PermissionError):
-			frappe.log_error(title="WhatsApp Test Lab: check failed", message=f"kind={kind} {type(exc).__name__}\n{frappe.get_traceback()}")
+			frappe.log_error(
+				title="WhatsApp Test Lab: check failed",
+				message=f"kind={kind} {type(exc).__name__}\n{frappe.get_traceback()}",
+			)
 	finally:
 		# a refusal is the step's own result: it must not also pop up as a Desk message
 		if frappe.local.message_log:
@@ -711,7 +1000,9 @@ def _mark_test(names: list[str]) -> None:
 	"""`is_test` on rows a product service created without it (a notification's or an alert's
 	test, a campaign's messages), so a test is told apart from real traffic everywhere."""
 	if names:
-		frappe.db.set_value("WhatsApp Log", {"name": ("in", names), "is_test": 0}, "is_test", 1, update_modified=False)
+		frappe.db.set_value(
+			"WhatsApp Log", {"name": ("in", names), "is_test": 0}, "is_test", 1, update_modified=False
+		)
 
 
 # ---- the checks: each one is the product's own path ---------------------------------------
@@ -726,7 +1017,11 @@ def sample_file(kind: str) -> str:
 	file_name = SAMPLES[kind]
 	for row in frappe.get_all(
 		"File",
-		filters={"file_name": file_name, "attached_to_doctype": SAMPLE_OWNER[0], "attached_to_name": SAMPLE_OWNER[1]},
+		filters={
+			"file_name": file_name,
+			"attached_to_doctype": SAMPLE_OWNER[0],
+			"attached_to_name": SAMPLE_OWNER[1],
+		},
 		fields=["name", "file_url"],
 		order_by="creation desc",
 	):
@@ -736,7 +1031,9 @@ def sample_file(kind: str) -> str:
 		# every image and document check fail with "No such file"; it is replaced, not reused
 		frappe.db.delete("File", {"name": row.name})
 	# joined by hand: `get_app_path` scrubs every part it is given, and would rename the file
-	path = os.path.join(frappe.get_app_path("whatsapp_next"), "whatsapp_next", "page", "wa_test_lab", "samples", file_name)
+	path = os.path.join(
+		frappe.get_app_path("whatsapp_next"), "whatsapp_next", "page", "wa_test_lab", "samples", file_name
+	)
 	if not os.path.exists(path):
 		frappe.throw(_("The sample file {0} is missing from the app.").format(file_name), WAValidationError)
 	with open(path, "rb") as fh:
@@ -750,7 +1047,9 @@ def _quick(data: dict, target: str, params: dict, user: str, *, kind: str) -> di
 	if kind != "text":
 		attachment = params.get("attachment") or sample_file(kind)
 	parts = attachments.message_parts(kind, body=body, attachment=attachment)
-	spec = OutboundSpec(device=data["device"], phone=target, source_type="Quick Send", is_test=True, skip_policy=True, **parts)
+	spec = OutboundSpec(
+		device=data["device"], phone=target, source_type="Quick Send", is_test=True, skip_policy=True, **parts
+	)
 	outbound, _item = quick_send.compose(spec, user=user)
 	return {"outbounds": [outbound], "result": {"message": body, "file_name": parts.get("file_name")}}
 
@@ -762,7 +1061,17 @@ def _template_row(name: str | None):
 	row = frappe.db.get_value(
 		"WhatsApp Template",
 		name,
-		["name", "message_type", "reference_doctype", "print_format", "letter_head", "attachment", "file_name_template", "language", "disabled"],
+		[
+			"name",
+			"message_type",
+			"reference_doctype",
+			"print_format",
+			"letter_head",
+			"attachment",
+			"file_name_template",
+			"language",
+			"disabled",
+		],
 		as_dict=True,
 	)
 	if not row:
@@ -797,13 +1106,23 @@ def _template_attachment(tpl, reference: str | None) -> dict[str, Any]:
 			print_format=tpl.print_format,
 			letter_head=tpl.letter_head or None,
 			language=tpl.language or None,
-			file_name=templates.render_text(tpl.file_name_template, {"doc": frappe._dict(name=reference)}, fallback=reference),
+			file_name=templates.render_text(
+				tpl.file_name_template, {"doc": frappe._dict(name=reference)}, fallback=reference
+			),
 		)
 		url = attachments.save_private_file(pdf.content, pdf.file_name, (tpl.reference_doctype, reference))
-		return {"message_type": "Document", "attachment": url, "file_name": pdf.file_name, "mime_type": pdf.mime_type}
+		return {
+			"message_type": "Document",
+			"attachment": url,
+			"file_name": pdf.file_name,
+			"mime_type": pdf.mime_type,
+		}
 	if tpl.attachment:
 		return {"message_type": tpl.message_type, "attachment": tpl.attachment}
-	frappe.throw(_("This template sends a file but has neither a print format with a record nor an attachment."), WAValidationError)
+	frappe.throw(
+		_("This template sends a file but has neither a print format with a record nor an attachment."),
+		WAValidationError,
+	)
 
 
 def _template(data: dict, target: str, params: dict, user: str) -> dict[str, Any]:
@@ -814,7 +1133,15 @@ def _template(data: dict, target: str, params: dict, user: str) -> dict[str, Any
 	caption = None
 	if attach["message_type"] != "Text":
 		# a file's text is its caption: rendered the way the send renders a body
-		caption = quick_send.preview(template=tpl.name, reference_doctype=tpl.reference_doctype if reference else None, reference_name=reference, phone=target)["body"] or None
+		caption = (
+			quick_send.preview(
+				template=tpl.name,
+				reference_doctype=tpl.reference_doctype if reference else None,
+				reference_name=reference,
+				phone=target,
+			)["body"]
+			or None
+		)
 	spec = OutboundSpec(
 		device=data["device"],
 		phone=target,
@@ -829,7 +1156,10 @@ def _template(data: dict, target: str, params: dict, user: str) -> dict[str, Any
 		**attach,
 	)
 	outbound, _item = quick_send.compose(spec, user=user)
-	return {"outbounds": [outbound], "result": {"reference_name": reference, "file_name": attach.get("file_name")}}
+	return {
+		"outbounds": [outbound],
+		"result": {"reference_name": reference, "file_name": attach.get("file_name")},
+	}
 
 
 def _notification(data: dict, target: str, params: dict, user: str) -> dict[str, Any]:
@@ -844,7 +1174,9 @@ def _notification(data: dict, target: str, params: dict, user: str) -> dict[str,
 	document_type = frappe.db.get_value("WhatsApp Notification", name, "document_type")
 	reference = _reference(document_type, params.get("reference_name"))
 	if not reference:
-		frappe.throw(_("There is no {0} to try the notification on yet").format(_(document_type)), WAValidationError)
+		frappe.throw(
+			_("There is no {0} to try the notification on yet").format(_(document_type)), WAValidationError
+		)
 	if not params.get("real_recipients"):
 		r = notifications_editor.send_test({"name": name}, target, reference)
 		return {"outbounds": [r["outbound"]], "result": {"reference_name": reference}}
@@ -852,15 +1184,25 @@ def _notification(data: dict, target: str, params: dict, user: str) -> dict[str,
 		frappe.throw(_("Sending to the real recipients must be confirmed."), WAValidationError)
 	expected = len(notifications.preview_for_document(name, reference)["recipients"])
 	if expected > data["cap"] - data["used"]:
-		frappe.throw(_("This notification reaches {0} recipients, more than the run has left.").format(expected), WAValidationError)
+		frappe.throw(
+			_("This notification reaches {0} recipients, more than the run has left.").format(expected),
+			WAValidationError,
+		)
 	r = notifications.send_for_document(name, document_type, reference, doc_event="Manual")
 	if not r.get("sent"):
 		frappe.throw(
-			_("Nothing was sent: {0}").format(r.get("error") or _("the notification is disabled, or its condition does not hold for this record")),
+			_("Nothing was sent: {0}").format(
+				r.get("error")
+				or _("the notification is disabled, or its condition does not hold for this record")
+			),
 			WAValidationError,
 		)
 	# real customer traffic: counted against the cap, but not marked as a test
-	return {"real": r.get("outbounds") or [], "count": r["sent"], "result": {"reference_name": reference, "real_recipients": True}}
+	return {
+		"real": r.get("outbounds") or [],
+		"count": r["sent"],
+		"result": {"reference_name": reference, "real_recipients": True},
+	}
 
 
 def _alert(data: dict, target: str, params: dict, user: str) -> dict[str, Any]:
@@ -898,14 +1240,29 @@ def _command(data: dict, target: str, params: dict, user: str) -> dict[str, Any]
 		"function_ms": sim.elapsed_ms,
 	}
 	if len(sim.outbound) > data["cap"] - data["used"]:
-		frappe.throw(_("This command answers with {0} messages, more than the run has left.").format(len(sim.outbound)), WAValidationError)
+		frappe.throw(
+			_("This command answers with {0} messages, more than the run has left.").format(
+				len(sim.outbound)
+			),
+			WAValidationError,
+		)
 	outbounds: list[str] = []
 	now = now_datetime()
 	for i, name in enumerate(sim.outbound):
 		row = frappe.db.get_value(
 			"WhatsApp Log",
 			name,
-			["message_type", "body", "caption", "attachment", "file_name", "mime_type", "command", "interactive", *POLL_FIELDS],
+			[
+				"message_type",
+				"body",
+				"caption",
+				"attachment",
+				"file_name",
+				"mime_type",
+				"command",
+				"interactive",
+				*POLL_FIELDS,
+			],
 			as_dict=True,
 		)
 		# a menu's buttons and a poll's options are the reply as much as its text: without them a
@@ -940,7 +1297,12 @@ def _command_result(res: dict[str, Any]) -> dict[str, Any]:
 		"args": res.get("args") or {},
 		"function_ms": cint(res.get("function_ms")),
 		"replies": [
-			{"message_type": r.get("message_type"), "body": r.get("body"), "file_name": r.get("file_name"), "output_key": r.get("output_key")}
+			{
+				"message_type": r.get("message_type"),
+				"body": r.get("body"),
+				"file_name": r.get("file_name"),
+				"output_key": r.get("output_key"),
+			}
 			for r in res.get("replies") or []
 		],
 	}
@@ -954,12 +1316,20 @@ def _campaign(data: dict, target: None, params: dict, user: str) -> dict[str, An
 
 	rate = max(1, 60 // data["pacing"])
 	limit = settings_rate_limit()
-	payload: dict[str, Any] = {"numbers": list(data["targets"]), "device": data["device"], "rate": min(rate, limit) if limit else rate}
+	payload: dict[str, Any] = {
+		"numbers": list(data["targets"]),
+		"device": data["device"],
+		"rate": min(rate, limit) if limit else rate,
+	}
 	body = (params.get("body") or "").strip()
 	if params.get("template"):
 		payload["template"] = _template_row(params["template"]).name
 	elif params.get("with_image"):
-		payload.update(kind="image", attachment=params.get("attachment") or sample_file("image"), body=body or _("Test Lab · test campaign"))
+		payload.update(
+			kind="image",
+			attachment=params.get("attachment") or sample_file("image"),
+			body=body or _("Test Lab · test campaign"),
+		)
 	else:
 		payload["body"] = body or _("Test Lab · test campaign")
 	minutes = None
@@ -971,7 +1341,9 @@ def _campaign(data: dict, target: None, params: dict, user: str) -> dict[str, An
 		"WhatsApp Campaign",
 		r["campaign"],
 		{
-			"campaign_name": _("Test Lab · {0}").format(frappe.utils.format_datetime(now_datetime(), "dd-MM-yyyy HH:mm")),
+			"campaign_name": _("Test Lab · {0}").format(
+				frappe.utils.format_datetime(now_datetime(), "dd-MM-yyyy HH:mm")
+			),
 			"description": _("A test campaign created by the Test Lab."),
 		},
 		update_modified=False,
@@ -987,7 +1359,10 @@ def _campaign(data: dict, target: None, params: dict, user: str) -> dict[str, An
 			"invalid": cint(r["invalid"]),
 			"scheduled_at": payload.get("scheduled_at"),
 			"schedule_minutes": minutes,
-			"readiness": {"ok": readiness["ok"], "checks": [{"key": c["key"], "ok": c["ok"]} for c in readiness["checks"]]},
+			"readiness": {
+				"ok": readiness["ok"],
+				"checks": [{"key": c["key"], "ok": c["ok"]} for c in readiness["checks"]],
+			},
 		},
 	}
 
@@ -1017,18 +1392,35 @@ def preview(kind: str, params: dict | None = None, target: str | None = None) ->
 	if kind == "template":
 		tpl = _template_row(params.get("template"))
 		reference = _reference(tpl.reference_doctype, params.get("reference_name"))
-		r = quick_send.preview(template=tpl.name, reference_doctype=tpl.reference_doctype if reference else None, reference_name=reference, phone=target or None)
+		r = quick_send.preview(
+			template=tpl.name,
+			reference_doctype=tpl.reference_doctype if reference else None,
+			reference_name=reference,
+			phone=target or None,
+		)
 		carries = None
 		if tpl.message_type != "Text":
-			carries = {"message_type": tpl.message_type, "print_format": tpl.print_format, "file": bool(tpl.attachment)}
-		return {"message": r["body"], "errors": r["errors"], "reference_doctype": tpl.reference_doctype, "reference_name": reference, "attachment": carries}
+			carries = {
+				"message_type": tpl.message_type,
+				"print_format": tpl.print_format,
+				"file": bool(tpl.attachment),
+			}
+		return {
+			"message": r["body"],
+			"errors": r["errors"],
+			"reference_doctype": tpl.reference_doctype,
+			"reference_name": reference,
+			"attachment": carries,
+		}
 	if kind == "notification":
 		from whatsapp_next.services import notifications_editor
 
 		if not params.get("notification"):
 			frappe.throw(_("Pick a notification"), WAValidationError)
 		frappe.has_permission("WhatsApp Notification", "read", params["notification"], throw=True)
-		return notifications_editor.preview({"name": params["notification"]}, params.get("reference_name") or None)
+		return notifications_editor.preview(
+			{"name": params["notification"]}, params.get("reference_name") or None
+		)
 	if kind == "alert":
 		from whatsapp_next.services import alerts_editor
 
@@ -1037,7 +1429,10 @@ def preview(kind: str, params: dict | None = None, target: str | None = None) ->
 		frappe.has_permission("WhatsApp Notification Alert", "read", params["alert"], throw=True)
 		r = alerts_editor.preview({"name": params["alert"]})
 		# who the alert really reaches stays a count here: the test goes to the run's target only
-		r["recipients"] = [{"phone_e164": mask(x.get("phone_e164")), "source": x.get("source")} for x in (r.get("recipients") or [])[:20]]
+		r["recipients"] = [
+			{"phone_e164": mask(x.get("phone_e164")), "source": x.get("source")}
+			for x in (r.get("recipients") or [])[:20]
+		]
 		return r
 	if kind == "campaign":
 		from whatsapp_next.services import bulk_send
@@ -1092,7 +1487,11 @@ def status(run: str) -> dict[str, Any]:
 	data = _load(run)
 	campaigns = [s["campaign"] for s in data["steps"] if s.get("campaign")]
 	if campaigns:
-		_mark_test(frappe.get_all("WhatsApp Log", filters={"campaign": ("in", campaigns), "is_test": 0}, pluck="name"))
+		_mark_test(
+			frappe.get_all(
+				"WhatsApp Log", filters={"campaign": ("in", campaigns), "is_test": 0}, pluck="name"
+			)
+		)
 	names = [n for s in data["steps"] for n in (s.get("outbounds") or []) + (s.get("real") or [])]
 	logs: dict[str, dict[str, Any]] = {}
 	by_campaign: dict[str, list[dict[str, Any]]] = {}
@@ -1117,7 +1516,19 @@ def status(run: str) -> dict[str, Any]:
 			frappe.get_all(
 				"WhatsApp Campaign",
 				filters={"name": ("in", campaigns)},
-				fields=["name", "campaign_name", "status", "scheduled_at", "total_recipients", "sent_count", "delivered_count", "read_count", "failed_count", "started_at", "ended_at"],
+				fields=[
+					"name",
+					"campaign_name",
+					"status",
+					"scheduled_at",
+					"total_recipients",
+					"sent_count",
+					"delivered_count",
+					"read_count",
+					"failed_count",
+					"started_at",
+					"ended_at",
+				],
 			)
 			if campaigns
 			else []
@@ -1126,8 +1537,14 @@ def status(run: str) -> dict[str, Any]:
 	steps = []
 	for s in data["steps"]:
 		campaign = campaign_rows.get(s.get("campaign")) if s.get("campaign") else None
-		messages = by_campaign.get(s["campaign"], []) if s.get("campaign") else [logs[n] for n in (s.get("outbounds") or []) + (s.get("real") or []) if n in logs]
-		steps.append({**s, "state": _step_state(s, messages, campaign), "messages": messages, "campaign_row": campaign})
+		messages = (
+			by_campaign.get(s["campaign"], [])
+			if s.get("campaign")
+			else [logs[n] for n in (s.get("outbounds") or []) + (s.get("real") or []) if n in logs]
+		)
+		steps.append(
+			{**s, "state": _step_state(s, messages, campaign), "messages": messages, "campaign_row": campaign}
+		)
 	# an archived run knows its numbers only masked: there is nothing to match incoming messages on
 	inbound = [] if data.get("archived") else _inbound(data)
 	all_logs = list(logs.values())
@@ -1138,7 +1555,8 @@ def status(run: str) -> dict[str, Any]:
 		"receipts": _receipts(all_logs),
 		"inbound": inbound,
 		"webhook_last_event_at": frappe.db.get_single_value("WhatsApp Settings", "webhook_last_event_at"),
-		"finished": bool(steps) and all(s["state"] in ("failed", "blocked", "passed", "delivered", "read") for s in steps),
+		"finished": bool(steps)
+		and all(s["state"] in ("failed", "blocked", "passed", "delivered", "read") for s in steps),
 	}
 
 
@@ -1177,8 +1595,25 @@ def _inbound(data: dict[str, Any]) -> list[dict[str, Any]]:
 	command it matched and the state of the reply — the live half of the commands check."""
 	rows = frappe.get_all(
 		"WhatsApp Inbound Message",
-		filters={"phone_e164": ("in", data["targets"]), "creation": (">=", data["started_at"]), "is_simulated": 0, "is_group": 0},
-		fields=["name", "phone_e164", "display_name", "body", "message_type", "received_at", "creation", "command_status", "command", "block_reason", "command_error"],
+		filters={
+			"phone_e164": ("in", data["targets"]),
+			"creation": (">=", data["started_at"]),
+			"is_simulated": 0,
+			"is_group": 0,
+		},
+		fields=[
+			"name",
+			"phone_e164",
+			"display_name",
+			"body",
+			"message_type",
+			"received_at",
+			"creation",
+			"command_status",
+			"command",
+			"block_reason",
+			"command_error",
+		],
 		order_by="creation desc",
 		limit=20,
 	)
@@ -1187,14 +1622,24 @@ def _inbound(data: dict[str, Any]) -> list[dict[str, Any]]:
 		for r in frappe.get_all(
 			"WhatsApp Log",
 			filters={"trigger_inbound": ("in", [x.name for x in rows]), "is_simulated": 0},
-			fields=["name", "status", "trigger_inbound", "message_type", "sent_at", "delivered_at", "error_code"],
+			fields=[
+				"name",
+				"status",
+				"trigger_inbound",
+				"message_type",
+				"sent_at",
+				"delivered_at",
+				"error_code",
+			],
 			order_by="creation asc",
 		):
 			replies.setdefault(r.trigger_inbound, []).append(r)
 	for row in rows:
 		row["body"] = (row.body or "")[:140]
 		row["replies"] = replies.get(row.name, [])
-		row["answered"] = bool(row["replies"]) and all(r.status in ("Sent", *LOG_DONE) for r in row["replies"])
+		row["answered"] = bool(row["replies"]) and all(
+			r.status in ("Sent", *LOG_DONE) for r in row["replies"]
+		)
 		row["delivered"] = bool(row["replies"]) and all(r.status in LOG_DONE for r in row["replies"])
 	return rows
 
@@ -1214,7 +1659,9 @@ def runs() -> list[dict[str, Any]]:
 		if names:
 			statuses += frappe.get_all("WhatsApp Log", filters={"name": ("in", names)}, pluck="status")
 		if campaigns:
-			statuses += frappe.get_all("WhatsApp Log", filters={"campaign": ("in", campaigns)}, pluck="status")
+			statuses += frappe.get_all(
+				"WhatsApp Log", filters={"campaign": ("in", campaigns)}, pluck="status"
+			)
 		out.append(
 			{
 				"id": data["id"],
@@ -1226,7 +1673,8 @@ def runs() -> list[dict[str, Any]]:
 				"checks": len(data["steps"]),
 				"messages": len(statuses),
 				"delivered": sum(1 for s in statuses if s in LOG_DONE),
-				"failed": sum(1 for s in statuses if s in LOG_BROKEN) + sum(1 for s in data["steps"] if s.get("error") and not s.get("outbounds")),
+				"failed": sum(1 for s in statuses if s in LOG_BROKEN)
+				+ sum(1 for s in data["steps"] if s.get("error") and not s.get("outbounds")),
 			}
 		)
 	return out

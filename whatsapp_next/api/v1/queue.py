@@ -66,7 +66,9 @@ def _list_query(filters: dict | None) -> dict[str, Any]:
 	allowed = permissions.allowed_devices()
 	if allowed is not None:
 		if query.get("device") and query["device"] not in allowed:
-			frappe.throw(_("Not permitted to read the queue of device {0}").format(query["device"]), WAPermissionError)
+			frappe.throw(
+				_("Not permitted to read the queue of device {0}").format(query["device"]), WAPermissionError
+			)
 		query.setdefault("device", ("in", allowed))
 	return query
 

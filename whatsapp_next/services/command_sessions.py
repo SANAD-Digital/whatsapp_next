@@ -106,7 +106,9 @@ def load(device: str | None, chat: str | None) -> dict[str, Any] | None:
 
 def save(device: str | None, chat: str | None, session: dict[str, Any]) -> None:
 	"""Keep a question session for `SESSION_TTL` seconds."""
-	frappe.cache.set_value(_cache_key(device, chat), json.dumps(session, default=str), expires_in_sec=SESSION_TTL)
+	frappe.cache.set_value(
+		_cache_key(device, chat), json.dumps(session, default=str), expires_in_sec=SESSION_TTL
+	)
 
 
 def clear(device: str | None, chat: str | None) -> None:
@@ -157,7 +159,9 @@ def text_question(command, spec: dict[str, Any]) -> dict[str, Any]:
 	lines += [f"{i}. {t}" for i, (_v, t) in enumerate(options(command, spec), start=1)]
 	hint = _("e.g. 2026-10-31") if kind == "date" else _("a number") if kind == "int" else ""
 	if options(command, spec):
-		lines.append(_("Reply with the option number, or type another value") + (f" ({hint})" if hint else ""))
+		lines.append(
+			_("Reply with the option number, or type another value") + (f" ({hint})" if hint else "")
+		)
 	elif hint:
 		lines[0] += f" ({hint})"
 	lines.append(_("Send «{0}» to stop.").format(_("Cancel")))
@@ -197,7 +201,12 @@ def question(command, spec: dict[str, Any]) -> dict[str, Any]:
 			"output_key": "prompt",
 			"message_type": "List",
 			"body": _("Choose {0}").format(label),
-			"interactive": {"title": title, "text": _("Choose {0}").format(label), "button_text": _("Choose"), "sections": [{"title": label, "rows": rows}]},
+			"interactive": {
+				"title": title,
+				"text": _("Choose {0}").format(label),
+				"button_text": _("Choose"),
+				"sections": [{"title": label, "rows": rows}],
+			},
 			"attachment": None,
 		}
 	if choices:
@@ -218,7 +227,12 @@ def question(command, spec: dict[str, Any]) -> dict[str, Any]:
 			"output_key": "prompt",
 			"message_type": "List",
 			"body": _("Choose {0}").format(label),
-			"interactive": {"title": title, "text": _("Choose {0}").format(label), "button_text": _("Choose"), "sections": [{"title": label, "rows": rows}]},
+			"interactive": {
+				"title": title,
+				"text": _("Choose {0}").format(label),
+				"button_text": _("Choose"),
+				"sections": [{"title": label, "rows": rows}],
+			},
 			"attachment": None,
 		}
 	hint = _("a number") if kind == "int" else _("a date, e.g. 2026-10-31") if kind == "date" else ""
@@ -227,7 +241,11 @@ def question(command, spec: dict[str, Any]) -> dict[str, Any]:
 		"output_key": "prompt",
 		"message_type": "Buttons",
 		"body": text,
-		"interactive": {"title": title, "text": text, "buttons": [{"type": "reply", "id": CANCEL, "text": _("Cancel")}]},
+		"interactive": {
+			"title": title,
+			"text": text,
+			"buttons": [{"type": "reply", "id": CANCEL, "text": _("Cancel")}],
+		},
 		"attachment": None,
 	}
 

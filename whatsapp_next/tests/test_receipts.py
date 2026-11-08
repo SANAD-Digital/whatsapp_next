@@ -18,9 +18,20 @@ class TestReceipts(IntegrationTestCase):
 		self.provider = MagicMock()
 
 	def _inbound(self, **values):
-		doc = frappe.get_doc({"doctype": "WhatsApp Inbound Message", "device": self.device, "message_type": "Text",
-			"body": "hi", "provider_message_id": f"R-{frappe.generate_hash(length=8)}", "command_status": "None",
-			"chat_jid": "1203630001@g.us", "sender_jid": "39883435471066@lid", "is_group": 1, **values})
+		doc = frappe.get_doc(
+			{
+				"doctype": "WhatsApp Inbound Message",
+				"device": self.device,
+				"message_type": "Text",
+				"body": "hi",
+				"provider_message_id": f"R-{frappe.generate_hash(length=8)}",
+				"command_status": "None",
+				"chat_jid": "1203630001@g.us",
+				"sender_jid": "39883435471066@lid",
+				"is_group": 1,
+				**values,
+			}
+		)
 		doc.flags.ignore_mandatory = True
 		doc.insert(ignore_permissions=True)
 		return doc
@@ -48,7 +59,10 @@ class TestReceipts(IntegrationTestCase):
 	def test_modes(self):
 		doc = self._inbound()
 		self._settings(mark_read_mode="When a command replies", typing_indicator=0)
-		with patch("whatsapp_next.providers.registry.get_provider", return_value=self.provider), patch("frappe.enqueue") as enqueue:
+		with (
+			patch("whatsapp_next.providers.registry.get_provider", return_value=self.provider),
+			patch("frappe.enqueue") as enqueue,
+		):
 			receipts.on_received(doc.name)
 			enqueue.assert_not_called()
 			receipts.on_command_replied(doc.name)

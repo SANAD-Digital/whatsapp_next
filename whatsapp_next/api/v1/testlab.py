@@ -53,8 +53,16 @@ def preview(kind: str, params: dict | None = None, target: str | None = None) ->
 	return testlab.preview(kind, params, target)
 
 
-@api_endpoint(roles=MANAGER, schema={"cap": {"min": 1, "max": testlab.CAP_MAX}, "pacing": {"min": testlab.PACING_MIN, "max": testlab.PACING_MAX}})
-def start_run(device: str, targets: list[str], cap: int | None = None, pacing: int | None = None) -> dict[str, Any]:
+@api_endpoint(
+	roles=MANAGER,
+	schema={
+		"cap": {"min": 1, "max": testlab.CAP_MAX},
+		"pacing": {"min": testlab.PACING_MIN, "max": testlab.PACING_MAX},
+	},
+)
+def start_run(
+	device: str, targets: list[str], cap: int | None = None, pacing: int | None = None
+) -> dict[str, Any]:
 	"""Open a test run → `{id, user, device, targets[], cap, pacing, started_at, used}`; audited
 	`Test Send`. E: `WAInvalidPhoneError`, `WABlacklistedError`, `WAValidationError`. P: Manager."""
 	return testlab.start_run(device, targets, cap, pacing, user=frappe.session.user)

@@ -44,7 +44,20 @@ def _resolve_outbound(event: WebhookEvent) -> str | None:
 def _is_status_broadcast(raw: dict) -> bool:
 	"""True when the event is about WhatsApp statuses: its chat is `status@broadcast`."""
 	nested = raw.get("data") if isinstance(raw.get("data"), dict) else {}
-	chat = next((str(v) for v in (raw.get("chat"), raw.get("chat_jid"), raw.get("chat_id"), nested.get("chat"), nested.get("chat_jid")) if v), "")
+	chat = next(
+		(
+			str(v)
+			for v in (
+				raw.get("chat"),
+				raw.get("chat_jid"),
+				raw.get("chat_id"),
+				nested.get("chat"),
+				nested.get("chat_jid"),
+			)
+			if v
+		),
+		"",
+	)
 	return chat.strip().lower().endswith("@broadcast")
 
 
@@ -209,7 +222,10 @@ def reprocess_failed(limit: int = 100) -> int:
 	)
 	rows += frappe.get_all(
 		"WhatsApp Webhook Event",
-		filters={"status": "Received", "received_at": ("<", add_to_date(now_datetime(), minutes=-STUCK_MINUTES))},
+		filters={
+			"status": "Received",
+			"received_at": ("<", add_to_date(now_datetime(), minutes=-STUCK_MINUTES)),
+		},
 		fields=["name", "error"],
 		order_by="received_at asc",
 		limit=cint(limit) or 100,

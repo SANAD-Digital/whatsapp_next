@@ -51,21 +51,54 @@ DOCTYPES: tuple[str, ...] = (
 #: per DocType (and child table): fields that record what happened, not what was set up — never
 #: exported, never imported
 RUN_STATE: dict[str, frozenset[str]] = {
-	"WhatsApp Function": frozenset({"call_count", "last_called_at", "avg_ms", "error_count", "last_error", "update_available"}),
+	"WhatsApp Function": frozenset(
+		{"call_count", "last_called_at", "avg_ms", "error_count", "last_error", "update_available"}
+	),
 	"WhatsApp Template": frozenset({"use_count", "last_used_at"}),
 	"WhatsApp Contact Group": frozenset({"member_count", "members_changed_at"}),
 	"WhatsApp Command": frozenset({"run_count", "last_run_at"}),
 	"WhatsApp Notification": frozenset({"send_count", "last_sent_at", "last_error", "last_error_at"}),
 	"WhatsApp Notification Alert": frozenset({"send_count", "last_sent_at", "last_error", "next_run_at"}),
-	"WhatsApp Campaign": frozenset({
-		"status", "total_recipients", "initial_recipients", "added_count", "removed_count", "pause_count",
-		"queued_count", "sent_count", "delivered_count", "read_count", "failed_count", "cancelled_count",
-		"first_message_at", "last_message_at", "started_at", "ended_at", "last_batch_started_at", "started_by",
-		"paused_at", "paused_by", "cancelled_at", "cancelled_by", "scheduled_at", "pause_reason", "cancel_reason",
-	}),
-	"WhatsApp Campaign Recipient": frozenset({
-		"status", "outbound_message", "error_code", "added_by", "added_at", "removed_by", "removed_at",
-	}),
+	"WhatsApp Campaign": frozenset(
+		{
+			"status",
+			"total_recipients",
+			"initial_recipients",
+			"added_count",
+			"removed_count",
+			"pause_count",
+			"queued_count",
+			"sent_count",
+			"delivered_count",
+			"read_count",
+			"failed_count",
+			"cancelled_count",
+			"first_message_at",
+			"last_message_at",
+			"started_at",
+			"ended_at",
+			"last_batch_started_at",
+			"started_by",
+			"paused_at",
+			"paused_by",
+			"cancelled_at",
+			"cancelled_by",
+			"scheduled_at",
+			"pause_reason",
+			"cancel_reason",
+		}
+	),
+	"WhatsApp Campaign Recipient": frozenset(
+		{
+			"status",
+			"outbound_message",
+			"error_code",
+			"added_by",
+			"added_at",
+			"removed_by",
+			"removed_at",
+		}
+	),
 }
 
 #: imported switched off: they send by themselves
@@ -114,7 +147,8 @@ def _settings_values() -> dict[str, Any]:
 				continue
 			if fieldname == "picker_sources":
 				out[fieldname] = [
-					{f: row.get(f) for f in settings_service.PICKER_SOURCE_FIELDS} for row in doc.get("picker_sources") or []
+					{f: row.get(f) for f in settings_service.PICKER_SOURCE_FIELDS}
+					for row in doc.get("picker_sources") or []
 				]
 			else:
 				out[fieldname] = doc.get(fieldname)
@@ -143,7 +177,9 @@ def _clean(doctype: str, row: dict[str, Any]) -> dict[str, Any]:
 
 def _record(doctype: str, name: str) -> dict[str, Any]:
 	doc = frappe.get_doc(doctype, name)
-	data = _clean(doctype, doc.as_dict(no_default_fields=True, no_child_table_fields=True, convert_dates_to_str=True))
+	data = _clean(
+		doctype, doc.as_dict(no_default_fields=True, no_child_table_fields=True, convert_dates_to_str=True)
+	)
 	data["name"] = doc.name
 	return data
 
@@ -179,7 +215,11 @@ def _parse(payload: str | dict) -> dict[str, Any]:
 
 
 def _rows(data: dict[str, Any], doctype: str) -> list[dict[str, Any]]:
-	return [row for row in (data.get("records") or {}).get(doctype) or [] if isinstance(row, dict) and row.get("name")]
+	return [
+		row
+		for row in (data.get("records") or {}).get(doctype) or []
+		if isinstance(row, dict) and row.get("name")
+	]
 
 
 def preview_backup(payload: str | dict) -> dict[str, Any]:
@@ -189,8 +229,13 @@ def preview_backup(payload: str | dict) -> dict[str, Any]:
 	alerts that come in disabled."""
 	data = _parse(payload)
 	out: dict[str, Any] = {
-		"site": data.get("site"), "exported_at": data.get("exported_at"),
-		"settings": len(data.get("settings") or {}), "add": [], "replace": [], "keep": [], "switched_off": 0,
+		"site": data.get("site"),
+		"exported_at": data.get("exported_at"),
+		"settings": len(data.get("settings") or {}),
+		"add": [],
+		"replace": [],
+		"keep": [],
+		"switched_off": 0,
 	}
 	for doctype in DOCTYPES:
 		for row in _rows(data, doctype):
@@ -213,7 +258,14 @@ def import_backup(payload: str | dict, user: str | None = None) -> dict[str, Any
 	that fails is reported and the rest go on. Returns `{settings, created, updated, kept,
 	switched_off, failed[{doctype, name, error}]}`."""
 	data = _parse(payload)
-	out: dict[str, Any] = {"settings": [], "created": 0, "updated": 0, "kept": 0, "switched_off": 0, "failed": []}
+	out: dict[str, Any] = {
+		"settings": [],
+		"created": 0,
+		"updated": 0,
+		"kept": 0,
+		"switched_off": 0,
+		"failed": [],
+	}
 	values = data.get("settings") or {}
 	if isinstance(values, dict) and values:
 		from whatsapp_next.api.v1.settings import WRITABLE
@@ -226,7 +278,9 @@ def import_backup(payload: str | dict, user: str | None = None) -> dict[str, Any
 					out["settings"] += settings_service.save_fields(part, section=section, user=user)
 				except Exception as exc:
 					frappe.db.rollback()
-					out["failed"].append({"doctype": "WhatsApp Settings", "name": section, "error": _message(exc)})
+					out["failed"].append(
+						{"doctype": "WhatsApp Settings", "name": section, "error": _message(exc)}
+					)
 
 	for doctype in DOCTYPES:
 		for row in _rows(data, doctype):
@@ -311,7 +365,9 @@ def current_account() -> str | None:
 	return frappe.db.get_default(ACCOUNT_DEFAULT) or None
 
 
-def note_account(previous_key: str | None, previous_account: str | None, new_account: str | None, user: str | None = None) -> bool:
+def note_account(
+	previous_key: str | None, previous_account: str | None, new_account: str | None, user: str | None = None
+) -> bool:
 	"""Called once new keys are stored: remember the account, and when it is another one than
 	before, switch the previous account's devices off and record the switch for a decision.
 	True when the account changed. Nothing is deleted here.
@@ -343,14 +399,24 @@ def note_account(previous_key: str | None, previous_account: str | None, new_acc
 	}
 	frappe.db.set_default(SWITCH_DEFAULT, json.dumps(record))
 	if devices:
-		frappe.db.set_value("WhatsApp Device", {"name": ("in", devices)}, {"disabled": 1, "is_default": 0}, update_modified=False)
+		frappe.db.set_value(
+			"WhatsApp Device",
+			{"name": ("in", devices)},
+			{"disabled": 1, "is_default": 0},
+			update_modified=False,
+		)
 	for fieldname in ("default_device", "reply_device"):
 		frappe.db.set_single_value("WhatsApp Settings", fieldname, None, update_modified=False)
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 	audit.log(
 		"Credentials Changed",
 		user=user,
-		details={"account_switched": 1, "from": record["from"], "to": new_account, "devices_switched_off": len(devices)},
+		details={
+			"account_switched": 1,
+			"from": record["from"],
+			"to": new_account,
+			"devices_switched_off": len(devices),
+		},
 	)
 	return True
 
@@ -387,7 +453,13 @@ def pending_switch() -> dict[str, Any]:
 		for doctype, filters in _scope(pending).items()
 		if frappe.db.table_exists(doctype)
 	}
-	return {"pending": True, "from": pending.get("from"), "to": pending.get("to"), "at": pending["at"], "counts": counts}
+	return {
+		"pending": True,
+		"from": pending.get("from"),
+		"to": pending.get("to"),
+		"at": pending["at"],
+		"counts": counts,
+	}
 
 
 def keep_previous_account(user: str | None = None) -> None:
@@ -396,7 +468,11 @@ def keep_previous_account(user: str | None = None) -> None:
 	if not pending:
 		return
 	frappe.db.set_default(SWITCH_DEFAULT, "")
-	audit.log("Settings Changed", user=user, details={"action": "previous_account_kept", "from": pending.get("from")})
+	audit.log(
+		"Settings Changed",
+		user=user,
+		details={"action": "previous_account_kept", "from": pending.get("from")},
+	)
 
 
 def delete_previous_account(user: str | None = None) -> dict[str, Any]:
@@ -405,7 +481,11 @@ def delete_previous_account(user: str | None = None) -> dict[str, Any]:
 	info = pending_switch()
 	if not info.get("pending"):
 		return {"queued": False, "counts": {}}
-	audit.log("Account Data Deleted", user=user, details={"from": info.get("from"), "counts": info["counts"], "stage": "queued"})
+	audit.log(
+		"Account Data Deleted",
+		user=user,
+		details={"from": info.get("from"), "counts": info["counts"], "stage": "queued"},
+	)
 	frappe.enqueue(
 		"whatsapp_next.services.backup.purge_previous_account",
 		queue="long",
@@ -428,7 +508,9 @@ def purge_previous_account(pending: dict[str, Any], user: str | None = None) -> 
 			if fieldname == "outbound_message" or not frappe.db.table_exists(doctype):
 				continue
 			if frappe.get_meta(doctype).has_field(fieldname):
-				frappe.db.set_value(doctype, {fieldname: ("in", old_devices)}, fieldname, None, update_modified=False)
+				frappe.db.set_value(
+					doctype, {fieldname: ("in", old_devices)}, fieldname, None, update_modified=False
+				)
 	counts: dict[str, int] = {}
 	for doctype, filters in _scope(pending).items():
 		if not frappe.db.table_exists(doctype):
@@ -441,19 +523,38 @@ def purge_previous_account(pending: dict[str, Any], user: str | None = None) -> 
 			if not names:
 				break
 			if doctype == "WhatsApp Log":
-				frappe.db.set_value("WhatsApp Campaign Recipient", {"outbound_message": ("in", names)}, "outbound_message", None, update_modified=False)
+				frappe.db.set_value(
+					"WhatsApp Campaign Recipient",
+					{"outbound_message": ("in", names)},
+					"outbound_message",
+					None,
+					update_modified=False,
+				)
 			for child in children:
 				frappe.db.delete(child, {"parenttype": doctype, "parent": ("in", names)})
-			for file_name in frappe.get_all("File", filters={"attached_to_doctype": doctype, "attached_to_name": ("in", names)}, pluck="name"):
+			for file_name in frappe.get_all(
+				"File",
+				filters={"attached_to_doctype": doctype, "attached_to_name": ("in", names)},
+				pluck="name",
+			):
 				try:
-					frappe.delete_doc("File", file_name, ignore_permissions=True, force=True, delete_permanently=True)
+					frappe.delete_doc(
+						"File", file_name, ignore_permissions=True, force=True, delete_permanently=True
+					)
 				except Exception:
-					frappe.log_error(title="WhatsApp account switch: file not deleted", message=f"File {file_name} of {doctype}")
+					frappe.log_error(
+						title="WhatsApp account switch: file not deleted",
+						message=f"File {file_name} of {doctype}",
+					)
 			frappe.db.delete(doctype, {"name": ("in", names)})
 			counts[doctype] += len(names)
 			frappe.db.commit()  # nosemgrep - one batch at a time: a long purge never holds one huge transaction
 	frappe.db.set_default(SWITCH_DEFAULT, "")
 	frappe.cache.delete_keys("wa:")
-	audit.log("Account Data Deleted", user=user, details={"from": pending.get("from"), "deleted": counts, "stage": "done"})
+	audit.log(
+		"Account Data Deleted",
+		user=user,
+		details={"from": pending.get("from"), "deleted": counts, "stage": "done"},
+	)
 	frappe.db.commit()  # nosemgrep - the job's own end
 	return counts

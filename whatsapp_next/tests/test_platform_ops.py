@@ -91,7 +91,9 @@ class TestPlatformOps(IntegrationTestCase):
 
 		frappe.db.set_value("WhatsApp Settings", "WhatsApp Settings", cls._webhook, update_modified=False)
 		if cls._webhook_secret:
-			set_encrypted_password("WhatsApp Settings", "WhatsApp Settings", cls._webhook_secret, "webhook_secret")
+			set_encrypted_password(
+				"WhatsApp Settings", "WhatsApp Settings", cls._webhook_secret, "webhook_secret"
+			)
 		else:
 			remove_encrypted_password("WhatsApp Settings", "WhatsApp Settings", "webhook_secret")
 		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
@@ -115,15 +117,29 @@ class TestPlatformOps(IntegrationTestCase):
 	def test_the_webhook_address_never_carries_the_benchs_port(self):
 		"""Frappe 15 adds `webserver_port` to the address on a server not run by supervisor or
 		systemd: a webhook at `https://site:8000` receives nothing (2026-11-07)."""
-		conf = {"webserver_port": 8000, "http_port": None, "developer_mode": 0, "host_name": None, "hostname": None}
+		conf = {
+			"webserver_port": 8000,
+			"http_port": None,
+			"developer_mode": 0,
+			"host_name": None,
+			"hostname": None,
+		}
 		with patch.dict(frappe.local.conf, conf):
 			with patch.object(webhook_setup, "get_url", return_value="https://wn.example.test:8000"):
-				self.assertTrue(webhook_setup.receiver_url().startswith("https://wn.example.test/api/method/"))
+				self.assertTrue(
+					webhook_setup.receiver_url().startswith("https://wn.example.test/api/method/")
+				)
 			with patch.object(webhook_setup, "get_url", return_value="https://wn.example.test:8443"):
 				self.assertTrue(webhook_setup.receiver_url().startswith("https://wn.example.test:8443/"))
-		with patch.dict(frappe.local.conf, {**conf, "host_name": "https://wn.example.test:8000"}), patch.object(webhook_setup, "get_url", return_value="https://wn.example.test:8000"):
+		with (
+			patch.dict(frappe.local.conf, {**conf, "host_name": "https://wn.example.test:8000"}),
+			patch.object(webhook_setup, "get_url", return_value="https://wn.example.test:8000"),
+		):
 			self.assertTrue(webhook_setup.receiver_url().startswith("https://wn.example.test:8000/"))
-		with patch.dict(frappe.local.conf, {**conf, "developer_mode": 1}), patch.object(webhook_setup, "get_url", return_value="http://wn.example.test:8000"):
+		with (
+			patch.dict(frappe.local.conf, {**conf, "developer_mode": 1}),
+			patch.object(webhook_setup, "get_url", return_value="http://wn.example.test:8000"),
+		):
 			self.assertTrue(webhook_setup.receiver_url().startswith("http://wn.example.test:8000/"))
 
 	def test_a_second_endpoint_at_this_address_is_removed(self):
@@ -194,7 +210,9 @@ class TestPlatformOps(IntegrationTestCase):
 			# its own, as a new one would have been refused and the repair lost (2026-11-07)
 			with patch.object(webhook_setup, "receiver_url", return_value="http://wn.example.test:8000/x"):
 				self.assertEqual(set(webhook_setup.sync_status().events), set(webhook_setup.DEFAULT_EVENTS))
-			self.assertEqual(set(provider.store[summary.endpoint_id].events), set(webhook_setup.DEFAULT_EVENTS))
+			self.assertEqual(
+				set(provider.store[summary.endpoint_id].events), set(webhook_setup.DEFAULT_EVENTS)
+			)
 			self.assertEqual(provider.store[summary.endpoint_id].url, summary.url)
 			# a sign-in that stopped half-way: no endpoint recorded and no secret, so every delivery
 			# was refused; the job finds the account's endpoint and fetches the secret
@@ -209,7 +227,9 @@ class TestPlatformOps(IntegrationTestCase):
 				patch.object(secrets, "read", side_effect=linked),
 			):
 				self.assertEqual(webhook_setup.sync_status().endpoint_id, summary.endpoint_id)
-			self.assertEqual(frappe.get_single("WhatsApp Settings").get_password("webhook_secret"), "provider-secret-1")
+			self.assertEqual(
+				frappe.get_single("WhatsApp Settings").get_password("webhook_secret"), "provider-secret-1"
+			)
 			# endpoint vanished on the platform → Revoked
 			provider.store.clear()
 			self.assertEqual(webhook_setup.sync_status().status, "Revoked")

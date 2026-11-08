@@ -35,10 +35,17 @@ class TestPickerSources(IntegrationTestCase):
 	def test_the_preview_counts_usable_numbers_only(self):
 		user = "wa-picker-preview@example.com"
 		if not frappe.db.exists("User", user):
-			frappe.get_doc({"doctype": "User", "email": user, "first_name": "Picker Preview", "send_welcome_email": 0}).insert(ignore_permissions=True)
+			frappe.get_doc(
+				{"doctype": "User", "email": user, "first_name": "Picker Preview", "send_welcome_email": 0}
+			).insert(ignore_permissions=True)
 		frappe.db.set_value("User", user, "mobile_no", "+967777667663")
-		source = {"document_type": "User", "phone_source": "Field", "phone_fieldname": "mobile_no", "name_fieldname": "full_name",
-			"filters_json": '[["name", "=", "%s"]]' % user}
+		source = {
+			"document_type": "User",
+			"phone_source": "Field",
+			"phone_fieldname": "mobile_no",
+			"name_fieldname": "full_name",
+			"filters_json": '[["name", "=", "%s"]]' % user,
+		}
 		out = svc.preview(source)
 		self.assertEqual((out["total"], out["with_number"]), (1, 1))
 		self.assertEqual(out["sample"][0]["phone"], "+967777667663")

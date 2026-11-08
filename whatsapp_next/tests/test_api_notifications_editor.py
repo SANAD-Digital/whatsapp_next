@@ -27,9 +27,16 @@ class TestApiNotificationsEditor(IntegrationTestCase):
 
 	def setUp(self):
 		self._clean()
-		self.todo = frappe.get_doc({"doctype": "ToDo", "description": "apitest notifed body"}).insert(ignore_permissions=True)
+		self.todo = frappe.get_doc({"doctype": "ToDo", "description": "apitest notifed body"}).insert(
+			ignore_permissions=True
+		)
 		frappe.get_doc(
-			{"doctype": "WhatsApp Template", "template_name": TEMPLATE, "reference_doctype": "ToDo", "body": "tpl {{ doc.description }}"}
+			{
+				"doctype": "WhatsApp Template",
+				"template_name": TEMPLATE,
+				"reference_doctype": "ToDo",
+				"body": "tpl {{ doc.description }}",
+			}
 		).insert(ignore_permissions=True)
 
 	def tearDown(self):
@@ -73,7 +80,9 @@ class TestApiNotificationsEditor(IntegrationTestCase):
 		self.assertEqual(r["message"], "hi apitest notifed body")
 		self.assertEqual(r["recipients_count"], 1)
 		self.assertNotIn(PHONE, str(r["recipients"]))  # masked
-		r = api.preview_draft(payload=self._payload(template=TEMPLATE, message=None), reference_name=self.todo.name)
+		r = api.preview_draft(
+			payload=self._payload(template=TEMPLATE, message=None), reference_name=self.todo.name
+		)
 		self.assertEqual(r["message"], "tpl apitest notifed body")
 
 	def test_preview_reports_the_problem_and_writes_nothing(self):
@@ -84,7 +93,9 @@ class TestApiNotificationsEditor(IntegrationTestCase):
 	def test_save_then_rename(self):
 		r = api.save_editor(payload=self._payload())
 		self.assertEqual(r["name"], NAME)
-		r = api.save_editor(payload=self._payload(name=NAME, notification_name=RENAMED, template=TEMPLATE, message=None))
+		r = api.save_editor(
+			payload=self._payload(name=NAME, notification_name=RENAMED, template=TEMPLATE, message=None)
+		)
 		self.assertEqual(r["name"], RENAMED)
 		self.assertEqual(frappe.db.get_value("WhatsApp Notification", RENAMED, "template"), TEMPLATE)
 
@@ -95,10 +106,14 @@ class TestApiNotificationsEditor(IntegrationTestCase):
 	def test_filters_condition(self):
 		match = [["ToDo", "status", "=", "Open"]]
 		miss = [["ToDo", "status", "=", "Closed"]]
-		r = api.preview_draft(payload=self._payload(condition_type="Filters", filters=match), reference_name=self.todo.name)
+		r = api.preview_draft(
+			payload=self._payload(condition_type="Filters", filters=match), reference_name=self.todo.name
+		)
 		self.assertIsNone(r["problem"])
 		self.assertTrue(r["meets_condition"])
-		r = api.preview_draft(payload=self._payload(condition_type="Filters", filters=miss), reference_name=self.todo.name)
+		r = api.preview_draft(
+			payload=self._payload(condition_type="Filters", filters=miss), reference_name=self.todo.name
+		)
 		self.assertFalse(r["meets_condition"])
 		# saved as Frappe's Notification stores it; the Python condition is cleared
 		api.save_editor(payload=self._payload(condition_type="Filters", filters=match, condition="doc.name"))
@@ -109,7 +124,9 @@ class TestApiNotificationsEditor(IntegrationTestCase):
 
 	def test_bad_filters_refused(self):
 		with self.assertRaises(WAValidationError):
-			api.save_editor(payload=self._payload(condition_type="Filters", filters=[["ToDo", "no_such_field", "=", "x"]]))
+			api.save_editor(
+				payload=self._payload(condition_type="Filters", filters=[["ToDo", "no_such_field", "=", "x"]])
+			)
 
 	def test_document_type_search_matches_the_translated_name(self):
 		lang = frappe.local.lang

@@ -79,7 +79,15 @@ class TestWhatsAppNotification(IntegrationTestCase):
 
 	def test_method_allow_list(self) -> None:
 		# the send runs after commit on a reloaded doc: no name before insert, nothing after trash
-		for method in ("frappe.utils.now", "myapp.hooks.fn", "", "on update", "before_insert", "before_save", "on_trash"):
+		for method in (
+			"frappe.utils.now",
+			"myapp.hooks.fn",
+			"",
+			"on update",
+			"before_insert",
+			"before_save",
+			"on_trash",
+		):
 			with self.subTest(method=method), self.assertRaises(WAValidationError):
 				self._insert(event="Method", method=method)
 		doc = self._insert(event="Method", method=" on_update_after_submit ")

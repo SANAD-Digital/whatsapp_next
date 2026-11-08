@@ -92,7 +92,9 @@ class TestPicker(IntegrationTestCase):
 
 	def test_sources_and_manual(self):
 		keys = [s["key"] for s in picker.list_sources("WhatsApp Campaign")]
-		self.assertEqual(keys, ["Contact Group", "Contact", "WhatsApp Number", "DocType", "Excel", "vCard", "Manual"])
+		self.assertEqual(
+			keys, ["Contact Group", "Contact", "WhatsApp Number", "DocType", "Excel", "vCard", "Manual"]
+		)
 		self.assertEqual(picker.search_groups("PickerTest")["rows"][0]["name"], GROUP)
 		members = picker.get_group_members(GROUP)
 		self.assertEqual(

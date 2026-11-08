@@ -552,7 +552,9 @@ class Handler(BaseHTTPRequestHandler):
 		self._dispatch("DELETE")
 
 
-def make_server(host: str, port: int, admin_secret: str, state_file: str | None = None) -> ThreadingHTTPServer:
+def make_server(
+	host: str, port: int, admin_secret: str, state_file: str | None = None
+) -> ThreadingHTTPServer:
 	if host not in LOOPBACK_HOSTS:
 		raise SystemExit(f"refusing to bind wa-admin mock to non-loopback host {host!r}")
 	if not admin_secret:

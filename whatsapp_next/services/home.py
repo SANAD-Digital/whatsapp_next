@@ -94,7 +94,9 @@ def scheduled_campaigns() -> list[dict[str, Any]]:
 
 def last_sent():
 	"""When a message last left, whatever period is on screen."""
-	rows = frappe.get_all(OUT, fields=["sent_at"], filters={"sent_at": ("is", "set")}, order_by="sent_at desc", limit=1)
+	rows = frappe.get_all(
+		OUT, fields=["sent_at"], filters={"sent_at": ("is", "set")}, order_by="sent_at desc", limit=1
+	)
 	return rows[0].sent_at if rows else None
 
 

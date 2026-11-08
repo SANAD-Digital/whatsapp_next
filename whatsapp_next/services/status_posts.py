@@ -33,8 +33,12 @@ def require_plan() -> None:
 
 def _payload(doc) -> dict[str, Any]:
 	if doc.kind == "Text":
-		return {"kind": "text", "text": doc.text, "background_color": doc.background_color or "",
-			"font": FONTS.get(doc.font or "Standard", 0)}
+		return {
+			"kind": "text",
+			"text": doc.text,
+			"background_color": doc.background_color or "",
+			"font": FONTS.get(doc.font or "Standard", 0),
+		}
 	file_name = frappe.db.get_value("File", {"file_url": doc.media}, "name")
 	if not file_name:
 		frappe.throw(_("The image or video was not found"), WAValidationError)
@@ -42,7 +46,11 @@ def _payload(doc) -> dict[str, Any]:
 	content = content.encode() if isinstance(content, str) else content
 	if len(content) > MAX_MEDIA_BYTES:
 		frappe.throw(_("The image or video is larger than 16 MB"), WAValidationError)
-	return {"kind": doc.kind.lower(), "media_base64": base64.b64encode(content).decode(), "caption": doc.caption or ""}
+	return {
+		"kind": doc.kind.lower(),
+		"media_base64": base64.b64encode(content).decode(),
+		"caption": doc.caption or "",
+	}
 
 
 def post_now(name: str, *, user: str | None = None) -> str:
@@ -61,9 +69,19 @@ def post_now(name: str, *, user: str | None = None) -> str:
 		doc.db_set({"state": "Failed", "error": str(exc)[:500]})
 		raise
 	at = now_datetime()
-	doc.db_set({"state": "Posted", "status_id": status_id, "posted_at": at, "error": None,
-		"expires_at": add_to_date(at, hours=LIFETIME_HOURS), "view_count": 0})
-	audit.log("Status Posted", reference=(POST, name), details={"kind": doc.kind, "device": doc.device}, user=user)
+	doc.db_set(
+		{
+			"state": "Posted",
+			"status_id": status_id,
+			"posted_at": at,
+			"error": None,
+			"expires_at": add_to_date(at, hours=LIFETIME_HOURS),
+			"view_count": 0,
+		}
+	)
+	audit.log(
+		"Status Posted", reference=(POST, name), details={"kind": doc.kind, "device": doc.device}, user=user
+	)
 	_schedule_repeat(doc, at)
 	return status_id
 
@@ -77,8 +95,20 @@ def _schedule_repeat(doc, at) -> None:
 	while nxt <= now_datetime():
 		nxt = add_days(nxt, 1 if doc.repeat == "Daily" else 7)
 	copy = frappe.copy_doc(doc)
-	copy.update({"state": "Scheduled", "scheduled_at": nxt, "status_id": None, "posted_at": None, "expires_at": None,
-		"view_count": 0, "viewers": None, "views_synced_at": None, "error": None, "repeated_from": doc.name})
+	copy.update(
+		{
+			"state": "Scheduled",
+			"scheduled_at": nxt,
+			"status_id": None,
+			"posted_at": None,
+			"expires_at": None,
+			"view_count": 0,
+			"viewers": None,
+			"views_synced_at": None,
+			"error": None,
+			"repeated_from": doc.name,
+		}
+	)
 	copy.insert(ignore_permissions=True)
 
 
@@ -116,8 +146,13 @@ def delete_post(name: str, *, user: str | None = None) -> None:
 
 def post_due() -> None:
 	"""Minute tick: post every scheduled status whose time has come (a failure stays on its post)."""
-	for name in frappe.get_all(POST, filters={"state": "Scheduled", "scheduled_at": ("<=", now_datetime())},
-			pluck="name", order_by="scheduled_at asc", limit=20):
+	for name in frappe.get_all(
+		POST,
+		filters={"state": "Scheduled", "scheduled_at": ("<=", now_datetime())},
+		pluck="name",
+		order_by="scheduled_at asc",
+		limit=20,
+	):
 		try:
 			post_now(name)
 		except Exception:
@@ -131,9 +166,18 @@ def refresh_views(names: list[str] | None = None) -> int:
 	from whatsapp_next.providers import registry
 
 	if names is None:
-		names = frappe.get_all(POST, filters={"state": ("in", ["Posted", "Deleted"]), "status_id": ("is", "set"),
-			"expires_at": (">=", add_to_date(now_datetime(), hours=-1))}, pluck="name")
-	rows = frappe.get_all(POST, filters={"name": ("in", names or [""])}, fields=["name", "device", "status_id"])
+		names = frappe.get_all(
+			POST,
+			filters={
+				"state": ("in", ["Posted", "Deleted"]),
+				"status_id": ("is", "set"),
+				"expires_at": (">=", add_to_date(now_datetime(), hours=-1)),
+			},
+			pluck="name",
+		)
+	rows = frappe.get_all(
+		POST, filters={"name": ("in", names or [""])}, fields=["name", "device", "status_id"]
+	)
 	by_device: dict[str, list] = {}
 	for r in rows:
 		if r.status_id:
@@ -149,8 +193,15 @@ def refresh_views(names: list[str] | None = None) -> int:
 			continue
 		for p in posts:
 			v = views.get(p.status_id) or {}
-			frappe.db.set_value(POST, p.name, {"view_count": cint(v.get("count")),
-				"viewers": json.dumps(v.get("viewers") or [], ensure_ascii=False), "views_synced_at": now_datetime()},
-				update_modified=False)
+			frappe.db.set_value(
+				POST,
+				p.name,
+				{
+					"view_count": cint(v.get("count")),
+					"viewers": json.dumps(v.get("viewers") or [], ensure_ascii=False),
+					"views_synced_at": now_datetime(),
+				},
+				update_modified=False,
+			)
 			updated += 1
 	return updated

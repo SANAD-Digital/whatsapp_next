@@ -140,7 +140,10 @@ def _filters_hold(notification, doc, errors: list[str] | None = None) -> bool:
 		_record_error(notification.name, f"filters: {type(exc).__name__}: {str(exc)[:200]}", errors)
 		if errors is not None:
 			return False
-		frappe.log_error(title="WhatsApp notification: filters failed", message=f"notification={notification.name} doctype={doc.doctype}")
+		frappe.log_error(
+			title="WhatsApp notification: filters failed",
+			message=f"notification={notification.name} doctype={doc.doctype}",
+		)
 		return False
 
 

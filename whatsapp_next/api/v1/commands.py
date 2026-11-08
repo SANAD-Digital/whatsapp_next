@@ -78,7 +78,9 @@ def get_defaults(function: str) -> dict[str, Any]:
 	templates[], replies[], party_types{}}` (`services.commands.function_spec`). P: Manager.
 	E: `WANotFoundError`."""
 	spec = commands.function_spec(function)
-	return {k: spec[k] for k in ("inputs", "settings", "templates", "replies", "party_types", "party_types_text")}
+	return {
+		k: spec[k] for k in ("inputs", "settings", "templates", "replies", "party_types", "party_types_text")
+	}
 
 
 @api_endpoint(roles=MANAGER)

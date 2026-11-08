@@ -109,7 +109,13 @@ def normalize(message_type: str, value: Any, body: str | None = None) -> dict[st
 				title = _short(r.get("title"), _("Option"))
 				if not title:
 					continue
-				rows.append({"id": cstr(r.get("id")).strip() or _slug(title, used), "title": title, "description": _short(r.get("description"), _("Description"))})
+				rows.append(
+					{
+						"id": cstr(r.get("id")).strip() or _slug(title, used),
+						"title": title,
+						"description": _short(r.get("description"), _("Description")),
+					}
+				)
 			if rows:
 				sections.append({"title": _short(s.get("title"), _("Section")), "rows": rows})
 				rows_total += len(rows)

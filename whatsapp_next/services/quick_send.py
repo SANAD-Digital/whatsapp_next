@@ -72,7 +72,9 @@ def resolve_recipient(
 			frappe.throw(_("Invalid WhatsApp number: {0}").format(phone), WAInvalidPhoneError)
 		contact = permissions.resolve_contact_by_phone(key) if kind == "Individual" else None
 		# which contact owns a typed number is itself contact data
-		if contact and not (permissions.can_elevate("read") or frappe.has_permission("Contact", "read", contact)):
+		if contact and not (
+			permissions.can_elevate("read") or frappe.has_permission("Contact", "read", contact)
+		):
 			contact = None
 		if contact:
 			display_name = frappe.db.get_value("Contact", contact, "full_name")
@@ -115,7 +117,12 @@ def preview(
 			# the same name the send will resolve: the contact's, else the WhatsApp Number row's
 			name, contact = dispatch._recipient_name(frappe._dict(display_name=None, contact=None), key)
 			jid = key if is_group_or_lid(key) else None
-			recipient = {"phone_e164": None if jid else key, "jid": jid, "display_name": name, "contact": contact}
+			recipient = {
+				"phone_e164": None if jid else key,
+				"jid": jid,
+				"display_name": name,
+				"contact": contact,
+			}
 	ctx = context or (
 		templates.context_for(reference_doctype, reference_name, recipient=recipient)
 		if reference_doctype and reference_name

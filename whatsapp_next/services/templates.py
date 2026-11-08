@@ -194,7 +194,11 @@ def readable_only(doc) -> None:
 	# the hidden value reads as empty instead
 	for row in [doc, *(c for t in doc.meta.get_table_fields() for c in doc.get(t.fieldname) or [])]:
 		for df in row.meta.fields:
-			if df.fieldname and df.fieldtype not in frappe.model.table_fields and not hasattr(row, df.fieldname):
+			if (
+				df.fieldname
+				and df.fieldtype not in frappe.model.table_fields
+				and not hasattr(row, df.fieldname)
+			):
 				setattr(row, df.fieldname, "")
 
 
