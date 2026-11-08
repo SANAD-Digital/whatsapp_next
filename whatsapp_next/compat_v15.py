@@ -28,11 +28,10 @@ if not hasattr(frappe.tests, "__getattr__"):
 def _get_jenv():
 	"""Frappe 16's `frappe.utils.jinja._get_jenv`: the sandboxed environment with Frappe's filters
 	and no globals. Frappe 15 only has `get_jenv`, which adds the globals (and caches per request)."""
-	from jinja2 import DebugUndefined
-	from jinja2.sandbox import SandboxedEnvironment
-
 	from frappe.utils.jinja import get_jloader, set_filters
 	from frappe.utils.safe_exec import UNSAFE_ATTRIBUTES
+	from jinja2 import DebugUndefined
+	from jinja2.sandbox import SandboxedEnvironment
 
 	unsafe = UNSAFE_ATTRIBUTES - {"format", "format_map"}
 
@@ -55,7 +54,7 @@ def _aggregate_field(field):
 	if not isinstance(field, dict):
 		return field
 	alias = field.get("as")
-	(func, column), = ((k, v) for k, v in field.items() if k != "as")
+	((func, column),) = ((k, v) for k, v in field.items() if k != "as")
 	column = "*" if column == "*" else f"`{column}`"
 	return f"{func.lower()}({column})" + (f" as `{alias}`" if alias else "")
 
@@ -96,7 +95,9 @@ def _set_optional_columns(self):
 	for each in self.filters:
 		if isinstance(each, str):
 			each = [each]
-		to_remove.extend(each for element in each if element in optional_fields and element not in self.columns)
+		to_remove.extend(
+			each for element in each if element in optional_fields and element not in self.columns
+		)
 	for each in to_remove:
 		if isinstance(self.filters, dict):
 			del self.filters[each]
