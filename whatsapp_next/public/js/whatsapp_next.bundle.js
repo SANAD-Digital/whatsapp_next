@@ -10,6 +10,7 @@ import "./desk/beta_badge.js";
 import "./desk/icon_sizes.js";
 import "./desk/form_send.js";
 import "./desk/shell_v15.js"; // version-15 branch only
+import "./desk/icons_v15.js"; // version-15 branch only
 import "./screens/console.js";
 import "./screens/messages.js";
 import "./screens/numbers.js";

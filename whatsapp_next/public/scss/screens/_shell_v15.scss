@@ -107,6 +107,12 @@ body.wa-shell15 .list-paging-area .btn-paging:not(.btn-info) {
 	color: var(--ink-gray-5);
 }
 
+// Desk 15 fills its solid icons with the ink colour, so the date filter's calendar was a black
+// square; Frappe 16 gives it the button's colour
+body.wa-shell15 .sanad-datefilter__icon svg {
+	--icon-stroke: currentColor;
+}
+
 // the workspace as Frappe 16 draws it: no column around it, the shortcuts as boxes, the groups of
 // links plain on the canvas
 body.wa-shell15[data-route="Workspaces/WhatsApp"] {
