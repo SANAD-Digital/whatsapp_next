@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 from typing import Any
 
@@ -53,6 +54,7 @@ KINDS: tuple[str, ...] = (
 	"command",
 	"campaign",
 )
+POLL_FIELDS = ("poll_question", "poll_options", "poll_allow_multiple")
 QUICK_KINDS = {"quick_text": "text", "quick_image": "image", "quick_document": "document"}
 
 CAP_DEFAULT, CAP_MAX = 20, 50
@@ -715,18 +717,24 @@ def _mark_test(names: list[str]) -> None:
 # ---- the checks: each one is the product's own path ---------------------------------------
 
 
+def _on_disk(file_name: str) -> bool:
+	return os.path.exists(frappe.get_doc("File", file_name).get_full_path())
+
+
 def sample_file(kind: str) -> str:
 	"""The app's own sample image / document as a private File (created once, then reused)."""
-	import os
-
 	file_name = SAMPLES[kind]
-	url = frappe.db.get_value(
+	for row in frappe.get_all(
 		"File",
-		{"file_name": file_name, "attached_to_doctype": SAMPLE_OWNER[0], "attached_to_name": SAMPLE_OWNER[1]},
-		"file_url",
-	)
-	if url:
-		return url
+		filters={"file_name": file_name, "attached_to_doctype": SAMPLE_OWNER[0], "attached_to_name": SAMPLE_OWNER[1]},
+		fields=["name", "file_url"],
+		order_by="creation desc",
+	):
+		if _on_disk(row.name):
+			return row.file_url
+		# a record whose file is gone from the disk (a restored database, a cleaned folder) made
+		# every image and document check fail with "No such file"; it is replaced, not reused
+		frappe.db.delete("File", {"name": row.name})
 	# joined by hand: `get_app_path` scrubs every part it is given, and would rename the file
 	path = os.path.join(frappe.get_app_path("whatsapp_next"), "whatsapp_next", "page", "wa_test_lab", "samples", file_name)
 	if not os.path.exists(path):
@@ -894,7 +902,16 @@ def _command(data: dict, target: str, params: dict, user: str) -> dict[str, Any]
 	outbounds: list[str] = []
 	now = now_datetime()
 	for i, name in enumerate(sim.outbound):
-		row = frappe.db.get_value("WhatsApp Log", name, ["message_type", "body", "caption", "attachment", "file_name", "mime_type", "command"], as_dict=True)
+		row = frappe.db.get_value(
+			"WhatsApp Log",
+			name,
+			["message_type", "body", "caption", "attachment", "file_name", "mime_type", "command", "interactive", *POLL_FIELDS],
+			as_dict=True,
+		)
+		# a menu's buttons and a poll's options are the reply as much as its text: without them a
+		# command that answers with buttons was refused ("Buttons need 1 to 10 buttons")
+		row.interactive = frappe.parse_json(row.interactive) if row.interactive else None
+		row.poll_options = frappe.parse_json(row.poll_options) if row.poll_options else None
 		spec = OutboundSpec(
 			device=data["device"],
 			phone=target,
