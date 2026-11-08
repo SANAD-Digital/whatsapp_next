@@ -85,6 +85,24 @@ class TestAlerts(IntegrationTestCase):
 		fy = alerts_dates.fiscal_year_range(t)
 		self.assertTrue(fy[0] <= t <= fy[1])
 
+	def test_a_standard_alert_runs_for_the_default_company_before_a_migrate_writes_it(self):
+		"""A site that set its company after the last migrate: the standard ledger alert's filters
+		have no company yet, and General Ledger refuses to run without one."""
+		from whatsapp_next.services import standards
+
+		ledger = frappe._dict(
+			name="حركة الحسابات لليوم السابق",
+			filters_json='{"group_by": "Group by Voucher (Consolidated)"}',
+			dynamic_filters_json='{"from_date": "yesterday", "to_date": "yesterday"}',
+		)
+		with patch.object(standards, "default_company", return_value="AlertTest Co"):
+			self.assertEqual(alerts.resolve_filters(ledger)["company"], "AlertTest Co")
+			# a company the alert names is kept, and an alert of the site's own gets none added
+			named = frappe._dict(ledger, filters_json='{"company": "Other Co"}')
+			self.assertEqual(alerts.resolve_filters(named)["company"], "Other Co")
+			own = frappe._dict(ledger, name="AlertTest Own Ledger")
+			self.assertNotIn("company", alerts.resolve_filters(own))
+
 	def test_filters_and_recipients(self):
 		alert = _alert(
 			filters_json='{"status": "Open"}',
