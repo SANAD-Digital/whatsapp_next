@@ -59,6 +59,9 @@ class EndpointProvider(FakeProvider):
 	def test_webhook_endpoint(self, endpoint_id):
 		return {"ok": True, "http_status": 200}
 
+	def delete_webhook_endpoint(self, endpoint_id):
+		self.store.pop(endpoint_id)
+
 
 WEBHOOK_FIELDS = (
 	"webhook_endpoint",
@@ -122,6 +125,21 @@ class TestPlatformOps(IntegrationTestCase):
 			self.assertTrue(webhook_setup.receiver_url().startswith("https://wn.example.test:8000/"))
 		with patch.dict(frappe.local.conf, {**conf, "developer_mode": 1}), patch.object(webhook_setup, "get_url", return_value="http://wn.example.test:8000"):
 			self.assertTrue(webhook_setup.receiver_url().startswith("http://wn.example.test:8000/"))
+
+	def test_a_second_endpoint_at_this_address_is_removed(self):
+		"""Two endpoints of one account at one address: the second signs with a secret this site
+		does not hold, so all its deliveries were refused and retried for ever."""
+		provider = EndpointProvider()
+		with fake_provider(provider):
+			first = webhook_setup.ensure_endpoint(user="Administrator")
+			provider.configure_webhook(first.url, ["connection.connected"], 3)
+			other = provider.configure_webhook("https://elsewhere.example.test/hook", ["message.received"], 3)
+			self.assertEqual(len(provider.store), 3)
+
+			again = webhook_setup.ensure_endpoint()
+
+		self.assertEqual(sorted(provider.store), sorted([again.endpoint_id, other.endpoint_id]))
+		self.assertEqual(again.endpoint_id, first.endpoint_id)
 
 	def test_webhook_setup_lifecycle(self):
 		provider = EndpointProvider()

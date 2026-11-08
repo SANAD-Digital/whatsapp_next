@@ -163,7 +163,8 @@ def ensure_endpoint(
 	retries = cint(max_retries) or cint(s.webhook_max_retries) or 3
 	url = url or receiver_url()
 	existing = None
-	for ep in provider.list_webhook_endpoints():
+	endpoints = provider.list_webhook_endpoints()
+	for ep in endpoints:
 		if ep.endpoint_id == s.webhook_endpoint or ep.url == url:
 			existing = ep
 			break
@@ -182,6 +183,7 @@ def ensure_endpoint(
 	else:
 		state = provider.configure_webhook(url, wanted_events, retries)
 	_mirror(state)
+	_drop_duplicates(provider, endpoints, state)
 	from whatsapp_next.services import secrets
 
 	if refresh_secret or not secrets.read("webhook_secret"):
@@ -218,6 +220,19 @@ def set_status(status: str, user: str | None = None) -> EndpointSummary:
 	_mirror(state)
 	audit.log("Webhook Changed", user=user, details={"action": "set_status", "status": status})
 	return summary()
+
+
+def _drop_duplicates(provider, endpoints: list[WebhookEndpointState], kept: WebhookEndpointState) -> None:
+	"""Other endpoints of the account at this same address go. Each has its own signing secret and
+	this site keeps one, so a second endpoint's deliveries were refused (401) and retried for ever
+	(whatsapp.dev, 2026-11-08). One that cannot be removed is logged, never raised."""
+	for ep in endpoints:
+		if ep.endpoint_id == kept.endpoint_id or ep.url != kept.url or ep.status == "Revoked":
+			continue
+		try:
+			provider.delete_webhook_endpoint(ep.endpoint_id)
+		except Exception:
+			frappe.log_error(title="WhatsApp webhook: a duplicate endpoint could not be removed", message=ep.endpoint_id)
 
 
 def _own_endpoint(endpoints: list[WebhookEndpointState]) -> WebhookEndpointState | None:

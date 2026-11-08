@@ -68,7 +68,27 @@ class TestCommandEditor(IntegrationTestCase):
 		if not frappe.db.exists("DocType", "Customer"):
 			return None
 		return (
-			frappe.get_doc({"doctype": "Customer", "customer_name": CUSTOMER, "customer_type": "Individual"})
+			frappe.get_doc(
+				{
+					"doctype": "Customer",
+					"customer_name": CUSTOMER,
+					"customer_type": "Individual",
+					# a fresh site's default is the root group, which ERPNext refuses for a customer
+					"customer_group": TestCommandEditor._leaf_customer_group(),
+				}
+			)
+			.insert(ignore_permissions=True)
+			.name
+		)
+
+	@staticmethod
+	def _leaf_customer_group() -> str:
+		group = frappe.db.get_value("Customer Group", {"is_group": 0}, "name")
+		if group:
+			return group
+		root = frappe.db.get_value("Customer Group", {"is_group": 1}, "name")
+		return (
+			frappe.get_doc({"doctype": "Customer Group", "customer_group_name": "WA Test Customers", "parent_customer_group": root, "is_group": 0})
 			.insert(ignore_permissions=True)
 			.name
 		)
