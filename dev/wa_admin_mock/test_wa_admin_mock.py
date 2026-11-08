@@ -331,6 +331,8 @@ class TestStateFile(unittest.TestCase):
 		base = self._serve(path)  # a second process reading the same file
 		second = self._post(base, "/admin/api-keys", {"customer_email": "b@example.com"})
 		self.assertEqual(second["id"], first["id"] + 1)  # the counter continued
-		req = urllib.request.Request(f"{base}/admin/api-keys/{first['id']}/devices", headers={"X-Admin-Secret": ADMIN_SECRET})
+		req = urllib.request.Request(
+			f"{base}/admin/api-keys/{first['id']}/devices", headers={"X-Admin-Secret": ADMIN_SECRET}
+		)
 		with urllib.request.urlopen(req) as resp:
 			self.assertEqual(json.loads(resp.read())["data"], [])  # the first key is still known

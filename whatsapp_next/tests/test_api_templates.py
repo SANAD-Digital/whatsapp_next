@@ -99,7 +99,9 @@ class TestApiTemplates(IntegrationTestCase):
 	def test_preview_hides_fields_above_the_callers_permission_level(self):
 		from frappe.custom.doctype.property_setter.property_setter import make_property_setter
 
-		make_property_setter("ToDo", "description", "permlevel", "1", "Int", validate_fields_for_doctype=False)
+		make_property_setter(
+			"ToDo", "description", "permlevel", "1", "Int", validate_fields_for_doctype=False
+		)
 		frappe.clear_cache(doctype="ToDo")
 		try:
 			with as_user("WhatsApp Agent"):
@@ -110,7 +112,9 @@ class TestApiTemplates(IntegrationTestCase):
 				out = api.preview(body="B {{ doc.description }}", reference_doctype="ToDo")
 				self.assertEqual(out["body"], "B")
 		finally:
-			frappe.db.delete("Property Setter", {"doc_type": "ToDo", "field_name": "description", "property": "permlevel"})
+			frappe.db.delete(
+				"Property Setter", {"doc_type": "ToDo", "field_name": "description", "property": "permlevel"}
+			)
 			frappe.clear_cache(doctype="ToDo")
 
 	def test_variables_and_sample(self):

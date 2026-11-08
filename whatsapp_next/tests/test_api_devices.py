@@ -92,7 +92,10 @@ class TestApiDevices(IntegrationTestCase):
 			p.set_device_status(created["platform_device"], "Connected")
 			with as_user("WhatsApp Agent"):
 				polled = api.poll_status(device=name)
-			self.assertEqual(polled, {"status": "Connected", "changed": True, "previous": "Pending QR", "wrong_number": None})
+			self.assertEqual(
+				polled,
+				{"status": "Connected", "changed": True, "previous": "Pending QR", "wrong_number": None},
+			)
 			with as_user("WhatsApp Manager"):
 				self.assertEqual(api.disconnect_device(device=name), {"status": "Logged Out"})
 				row = api.update_device(device=name, device_name=NAME + " Renamed")

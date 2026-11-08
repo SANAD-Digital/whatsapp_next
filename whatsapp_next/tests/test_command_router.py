@@ -98,7 +98,9 @@ class TestCommandRouter(IntegrationTestCase):
 		g.set("members", [])
 		g.save(ignore_permissions=True)
 		# the assertions read English replies, whatever language this site answers in
-		ensure_settings(enable_commands=1, send_receipt_reply=0, command_reply_language="en", main_menu_mode="Off")
+		ensure_settings(
+			enable_commands=1, send_receipt_reply=0, command_reply_language="en", main_menu_mode="Off"
+		)
 		cr.clear_map()
 
 	# -- matching ----------------------------------------------------------------------
@@ -273,7 +275,11 @@ class TestCommandRouter(IntegrationTestCase):
 		# named values in any order, a relative date, quotes keep spaces
 		self.assertEqual(
 			cr.parse_args(cmd, 'since=month_start "SINV 1" DAYS=3'),
-			{"doc_name": "SINV 1", "days": 3, "since": str(frappe.utils.get_first_day(frappe.utils.nowdate()))},
+			{
+				"doc_name": "SINV 1",
+				"days": 3,
+				"since": str(frappe.utils.get_first_day(frappe.utils.nowdate())),
+			},
 		)
 		# the party and a template are never the sender's: their key=value is dropped
 		self.assertEqual(cr.parse_args(cmd, "SINV-1 party=OTHER party_type=Supplier"), {"doc_name": "SINV-1"})
@@ -286,7 +292,9 @@ class TestCommandRouter(IntegrationTestCase):
 		self.assertEqual(cr.parse_args(ping, "hello  there world"), {"text": "hello there world"})
 		self.assertEqual(cr.parse_args(ping, "msg_result=x hi"), {"text": "hi"})
 		# a value the command fixes, or switched off, is no input
-		draft = frappe._dict(function="_test_typed", settings_overrides='{"days": 9}', disabled_inputs="since")
+		draft = frappe._dict(
+			function="_test_typed", settings_overrides='{"days": 9}', disabled_inputs="since"
+		)
 		self.assertEqual([i["key"] for i in cr.command_inputs(draft)], ["doc_name"])
 		self.assertEqual(cr.parse_args(draft, "SINV-1 days=1 2026-01-01"), {"doc_name": "SINV-1 2026-01-01"})
 
@@ -375,7 +383,9 @@ class TestCommandRouter(IntegrationTestCase):
 			result = cr.route(res.inbound)
 		self.assertTrue(result.outbound)
 		for name in result.outbound:
-			self.assertEqual(frappe.db.get_value("WhatsApp Log", name, "reply_to_provider_message_id"), "ASKED-1")
+			self.assertEqual(
+				frappe.db.get_value("WhatsApp Log", name, "reply_to_provider_message_id"), "ASKED-1"
+			)
 
 	def test_the_reply_reaches_every_number_of_the_contact(self):
 		"""A command's answer goes to the number that asked and to the contact's other WhatsApp
@@ -392,13 +402,17 @@ class TestCommandRouter(IntegrationTestCase):
 			with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now"):
 				result = cr.route(res.inbound)
 			rows = [
-				frappe.db.get_value("WhatsApp Log", n, ["phone_e164", "reply_to_provider_message_id"], as_dict=True)
+				frappe.db.get_value(
+					"WhatsApp Log", n, ["phone_e164", "reply_to_provider_message_id"], as_dict=True
+				)
 				for n in result.outbound
 			]
 			self.assertEqual(rows[0].phone_e164, P_LINKED)
 			self.assertEqual({r.phone_e164 for r in rows}, {P_LINKED, other})
 			for r in rows:
-				self.assertEqual(r.reply_to_provider_message_id, "ASKED-2" if r.phone_e164 == P_LINKED else None)
+				self.assertEqual(
+					r.reply_to_provider_message_id, "ASKED-2" if r.phone_e164 == P_LINKED else None
+				)
 		finally:
 			c.reload()
 			c.set("phone_nos", [p for p in c.phone_nos if p.wa_phone_e164 != other])
@@ -444,10 +458,14 @@ class TestCommandRouter(IntegrationTestCase):
 		replies = cr.render_outputs(cmd, result, sender, dry_run=True)
 		self.assertEqual([r["output_key"] for r in replies], ["summary", "document"])  # in the run's order
 		kinds = {r["output_key"]: r for r in replies}
-		self.assertEqual((kinds["summary"]["message_type"], kinds["summary"]["body"]), ("Text", "Role System Manager"))
+		self.assertEqual(
+			(kinds["summary"]["message_type"], kinds["summary"]["body"]), ("Text", "Role System Manager")
+		)
 		self.assertEqual(kinds["document"]["message_type"], "Document", kinds["document"].get("body"))
 		self.assertIsNone(kinds["document"]["attachment"])  # dry run: not printed, not stored
-		self.assertEqual((kinds["document"]["file_name"], kinds["document"]["body"]), ("statement.pdf", "your statement"))
+		self.assertEqual(
+			(kinds["document"]["file_name"], kinds["document"]["body"]), ("statement.pdf", "your statement")
+		)
 		# an error is the only reply
 		self.assertEqual(
 			[r["body"] for r in cr.render_outputs(cmd, FunctionRun(error="no"), sender, dry_run=True)], ["no"]

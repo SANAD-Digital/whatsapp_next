@@ -71,7 +71,11 @@ class TestApiTestLab(IntegrationTestCase):
 				"recipients": [{"recipient_type": "Fixed Number", "phone": P3}],
 			}
 		).insert(ignore_permissions=True)
-		cls.todo = frappe.get_doc({"doctype": "ToDo", "description": "ApiTest lab todo"}).insert(ignore_permissions=True).name
+		cls.todo = (
+			frappe.get_doc({"doctype": "ToDo", "description": "ApiTest lab todo"})
+			.insert(ignore_permissions=True)
+			.name
+		)
 
 	@classmethod
 	def tearDownClass(cls):
@@ -118,7 +122,19 @@ class TestApiTestLab(IntegrationTestCase):
 		return frappe.db.get_value(
 			"WhatsApp Log",
 			name,
-			["phone_e164", "status", "is_test", "source_type", "message_type", "body", "queue_item", "attachment", "notification", "template", "reference_name"],
+			[
+				"phone_e164",
+				"status",
+				"is_test",
+				"source_type",
+				"message_type",
+				"body",
+				"queue_item",
+				"attachment",
+				"notification",
+				"template",
+				"reference_name",
+			],
 			as_dict=True,
 		)
 
@@ -158,7 +174,9 @@ class TestApiTestLab(IntegrationTestCase):
 	def test_identify_and_documents(self):
 		with as_user("WhatsApp Manager"):
 			rows = api.identify(phones=["0500930101", "nope"])
-			self.assertEqual((rows[0]["valid"], rows[0]["phone_e164"], rows[0]["blacklisted"]), (True, P1, False))
+			self.assertEqual(
+				(rows[0]["valid"], rows[0]["phone_e164"], rows[0]["blacklisted"]), (True, P1, False)
+			)
 			self.assertFalse(rows[1]["valid"])
 			with self.assertRaises(WAValidationError):
 				api.search_documents(doctype="No Such ApiTest DocType")
@@ -172,13 +190,26 @@ class TestApiTestLab(IntegrationTestCase):
 	def test_health_names_every_part(self):
 		# `live` asks the platform through the product's own connection test, which writes what it
 		# learns on Settings: it is only checked to be called, so the site's real plan stays as it is
-		with patch("whatsapp_next.services.onboarding.test_connection") as test_connection, as_user("System Manager"):
+		with (
+			patch("whatsapp_next.services.onboarding.test_connection") as test_connection,
+			as_user("System Manager"),
+		):
 			out = api.get_health(device=self.device, live=True)
 		test_connection.assert_called_once()
 		by_key = {c["key"]: c for c in out["checks"]}
 		self.assertEqual(
 			set(by_key),
-			{"credentials", "subscription", "webhook", "webhook_traffic", "device", "scheduler", "workers", "queue", "commands"},
+			{
+				"credentials",
+				"subscription",
+				"webhook",
+				"webhook_traffic",
+				"device",
+				"scheduler",
+				"workers",
+				"queue",
+				"commands",
+			},
 		)
 		self.assertTrue(out["live"])
 		# connected; a fixture device has no webhook registration, which is a warning, not a failure
@@ -192,7 +223,10 @@ class TestApiTestLab(IntegrationTestCase):
 	def test_health_reports_a_disabled_scheduler(self):
 		"""A disabled scheduler stops alerts and scheduled campaigns without an error anywhere
 		(2026-10-02: fifteen hours): the check fails and says how to switch it back on."""
-		with patch("frappe.utils.scheduler.is_scheduler_inactive", return_value=True), as_user("WhatsApp Manager"):
+		with (
+			patch("frappe.utils.scheduler.is_scheduler_inactive", return_value=True),
+			as_user("WhatsApp Manager"),
+		):
 			out = api.get_health(device=self.device)
 		check = next(c for c in out["checks"] if c["key"] == "scheduler")
 		self.assertEqual(check["status"], "fail")
@@ -246,11 +280,20 @@ class TestApiTestLab(IntegrationTestCase):
 		self.assertTrue(step["ok"], step)
 		self.assertEqual((step["count"], step["dry"]), (1, False))
 		log = self._log(step["outbounds"][0])
-		self.assertEqual((log.phone_e164, log.is_test, log.source_type, log.status), (P1, 1, "Quick Send", "Queued"))
+		self.assertEqual(
+			(log.phone_e164, log.is_test, log.source_type, log.status), (P1, 1, "Quick Send", "Queued")
+		)
 		self.assertEqual(log.body, f"{TAG} hello")
 		self.assertTrue(frappe.db.exists("WhatsApp Queue Item", log.queue_item))
 		self.assertTrue(
-			frappe.db.exists("WhatsApp Audit Log", {"action": "Test Send", "reference_doctype": "WhatsApp Log", "reference_name": step["outbounds"][0]})
+			frappe.db.exists(
+				"WhatsApp Audit Log",
+				{
+					"action": "Test Send",
+					"reference_doctype": "WhatsApp Log",
+					"reference_name": step["outbounds"][0],
+				},
+			)
 		)
 
 	def test_only_the_runs_own_numbers(self):
@@ -297,7 +340,9 @@ class TestApiTestLab(IntegrationTestCase):
 			with self.assertRaises(WAValidationError):
 				api.run_check(run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} two"})
 			# a dry run sends nothing, so the cap does not stop it
-			dry = api.run_check(run=run["id"], kind="command", target=P1, params={"text": "apitest-lab-no-such-word"})
+			dry = api.run_check(
+				run=run["id"], kind="command", target=P1, params={"text": "apitest-lab-no-such-word"}
+			)
 			self.assertTrue(dry["dry"])
 		self.assertEqual(frappe.db.count("WhatsApp Log", {"device": self.device}), 1)
 
@@ -305,12 +350,16 @@ class TestApiTestLab(IntegrationTestCase):
 		before = len(frappe.local.message_log or [])
 		with as_user("WhatsApp Manager"):
 			run = self._run()
-			step = api.run_check(run=run["id"], kind="template", target=P1, params={"template": "No Such ApiTest Template"})
+			step = api.run_check(
+				run=run["id"], kind="template", target=P1, params={"template": "No Such ApiTest Template"}
+			)
 			self.assertFalse(step["ok"])
 			self.assertTrue(step["error"])
 			self.assertEqual((step["outbounds"], step["count"]), ([], 0))
 			# nothing was sent, so neither the cap nor the pacing moved
-			again = api.run_check(run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} after"})
+			again = api.run_check(
+				run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} after"}
+			)
 			self.assertTrue(again["ok"])
 			status = api.get_status(run=run["id"])
 		self.assertEqual(len(frappe.local.message_log or []), before)  # no Desk pop-up for a recorded failure
@@ -322,26 +371,47 @@ class TestApiTestLab(IntegrationTestCase):
 	def test_template_over_a_real_record(self):
 		with as_user("System Manager"):
 			run = self._run()
-			shown = api.preview(kind="template", params={"template": TEMPLATE, "reference_name": self.todo}, target=P1)
+			shown = api.preview(
+				kind="template", params={"template": TEMPLATE, "reference_name": self.todo}, target=P1
+			)
 			self.assertEqual(shown["message"], f"{TAG} tpl ApiTest lab todo")
 			self.assertEqual((shown["reference_doctype"], shown["reference_name"]), ("ToDo", self.todo))
-			step = api.run_check(run=run["id"], kind="template", target=P1, params={"template": TEMPLATE, "reference_name": self.todo})
+			step = api.run_check(
+				run=run["id"],
+				kind="template",
+				target=P1,
+				params={"template": TEMPLATE, "reference_name": self.todo},
+			)
 		self.assertTrue(step["ok"], step)
 		log = self._log(step["outbounds"][0])
-		self.assertEqual((log.body, log.is_test, log.template, log.reference_name), (f"{TAG} tpl ApiTest lab todo", 1, TEMPLATE, self.todo))
+		self.assertEqual(
+			(log.body, log.is_test, log.template, log.reference_name),
+			(f"{TAG} tpl ApiTest lab todo", 1, TEMPLATE, self.todo),
+		)
 
 	def test_template_needs_read_on_the_record(self):
 		"""A manager who cannot read the record gets a failed step, not the record's fields."""
 		name = f"{TEMPLATE} user"
 		delete_all("WhatsApp Template", {"name": name})
 		frappe.get_doc(
-			{"doctype": "WhatsApp Template", "template_name": name, "message_type": "Text", "reference_doctype": "User", "body": f"{TAG} {{{{ doc.email }}}}"}
+			{
+				"doctype": "WhatsApp Template",
+				"template_name": name,
+				"message_type": "Text",
+				"reference_doctype": "User",
+				"body": f"{TAG} {{{{ doc.email }}}}",
+			}
 		).insert(ignore_permissions=True)
 		try:
 			with as_user("WhatsApp Manager"):
 				self.assertFalse(frappe.has_permission("User", "read", "Administrator"))
 				run = self._run()
-				step = api.run_check(run=run["id"], kind="template", target=P1, params={"template": name, "reference_name": "Administrator"})
+				step = api.run_check(
+					run=run["id"],
+					kind="template",
+					target=P1,
+					params={"template": name, "reference_name": "Administrator"},
+				)
 				with self.assertRaises(frappe.PermissionError):
 					api.preview(kind="template", params={"template": name, "reference_name": "Administrator"})
 		finally:
@@ -353,10 +423,17 @@ class TestApiTestLab(IntegrationTestCase):
 	def test_notification_goes_to_the_target_not_to_its_recipients(self):
 		with as_user("System Manager"):
 			run = self._run()
-			shown = api.preview(kind="notification", params={"notification": NOTIFICATION, "reference_name": self.todo})
+			shown = api.preview(
+				kind="notification", params={"notification": NOTIFICATION, "reference_name": self.todo}
+			)
 			self.assertEqual(shown["message"], f"{TAG} notif ApiTest lab todo")
 			self.assertEqual(shown["recipients_count"], 1)
-			step = api.run_check(run=run["id"], kind="notification", target=P1, params={"notification": NOTIFICATION, "reference_name": self.todo})
+			step = api.run_check(
+				run=run["id"],
+				kind="notification",
+				target=P1,
+				params={"notification": NOTIFICATION, "reference_name": self.todo},
+			)
 		self.assertTrue(step["ok"], step)
 		log = self._log(step["outbounds"][0])
 		self.assertEqual((log.phone_e164, log.is_test, log.source_type), (P1, 1, "Notification"))
@@ -365,14 +442,24 @@ class TestApiTestLab(IntegrationTestCase):
 	def test_real_recipients_must_be_confirmed(self):
 		with as_user("System Manager"):
 			run = self._run()
-			step = api.run_check(run=run["id"], kind="notification", target=P1, params={"notification": NOTIFICATION, "reference_name": self.todo, "real_recipients": 1})
+			step = api.run_check(
+				run=run["id"],
+				kind="notification",
+				target=P1,
+				params={"notification": NOTIFICATION, "reference_name": self.todo, "real_recipients": 1},
+			)
 			self.assertFalse(step["ok"])
 			self.assertEqual(frappe.db.count("WhatsApp Log", {"device": self.device}), 0)
 			step = api.run_check(
 				run=run["id"],
 				kind="notification",
 				target=P1,
-				params={"notification": NOTIFICATION, "reference_name": self.todo, "real_recipients": 1, "confirm_real": 1},
+				params={
+					"notification": NOTIFICATION,
+					"reference_name": self.todo,
+					"real_recipients": 1,
+					"confirm_real": 1,
+				},
 			)
 		self.assertTrue(step["ok"], step)
 		self.assertEqual(step["count"], 1)
@@ -383,7 +470,9 @@ class TestApiTestLab(IntegrationTestCase):
 	def test_image_uses_the_apps_sample_file(self):
 		with as_user("WhatsApp Manager"):
 			run = self._run()
-			step = api.run_check(run=run["id"], kind="quick_image", target=P1, params={"body": f"{TAG} image"})
+			step = api.run_check(
+				run=run["id"], kind="quick_image", target=P1, params={"body": f"{TAG} image"}
+			)
 		self.assertTrue(step["ok"], step)
 		log = self._log(step["outbounds"][0])
 		self.assertEqual((log.message_type, log.is_test), ("Image", 1))
@@ -394,11 +483,17 @@ class TestApiTestLab(IntegrationTestCase):
 		"""whatsapp.dev, 2026-11-08: the File rows were there and the files were not, so every image
 		and document check failed with "No such file"."""
 		stale = testlab.sample_file("image")
-		stale_rows = frappe.get_all("File", {"file_url": stale, "attached_to_doctype": testlab.SAMPLE_OWNER[0]}, pluck="name")
+		stale_rows = frappe.get_all(
+			"File", {"file_url": stale, "attached_to_doctype": testlab.SAMPLE_OWNER[0]}, pluck="name"
+		)
 		real = testlab._on_disk
-		with patch.object(testlab, "_on_disk", side_effect=lambda name: False if name in stale_rows else real(name)):
+		with patch.object(
+			testlab, "_on_disk", side_effect=lambda name: False if name in stale_rows else real(name)
+		):
 			url = testlab.sample_file("image")
-		fresh = frappe.get_all("File", {"file_url": url, "attached_to_doctype": testlab.SAMPLE_OWNER[0]}, pluck="name")
+		fresh = frappe.get_all(
+			"File", {"file_url": url, "attached_to_doctype": testlab.SAMPLE_OWNER[0]}, pluck="name"
+		)
 		self.assertTrue(fresh and all(real(name) for name in fresh), (url, fresh))
 		self.assertFalse(set(fresh) & set(stale_rows) and not real(fresh[0]))
 		for name in stale_rows:
@@ -411,15 +506,40 @@ class TestApiTestLab(IntegrationTestCase):
 		from whatsapp_next.services import dispatch, plan_features
 		from whatsapp_next.services.dispatch import OutboundSpec
 
-		menu = {"text": f"{TAG} balance", "buttons": [{"type": "reply", "text": "Statement"}, {"type": "reply", "text": "Invoice"}]}
+		menu = {
+			"text": f"{TAG} balance",
+			"buttons": [{"type": "reply", "text": "Statement"}, {"type": "reply", "text": "Invoice"}],
+		}
 		with patch.object(plan_features, "require_interactive"):
 			reply, _item = dispatch.create_and_enqueue(
-				OutboundSpec(device=self.device, phone=P1, message_type="Buttons", interactive=menu, source_type="Simulator", is_test=True, skip_policy=True)
+				OutboundSpec(
+					device=self.device,
+					phone=P1,
+					message_type="Buttons",
+					interactive=menu,
+					source_type="Simulator",
+					is_test=True,
+					skip_policy=True,
+				)
 			)
-			sim = SimpleNamespace(status="Executed", command="balance", block_reason=None, args={}, replies=[], error=None, elapsed_ms=1, outbound=[reply])
-			with as_user("WhatsApp Manager"), patch.object(testlab.simulator, "simulate_inbound", return_value=sim):
+			sim = SimpleNamespace(
+				status="Executed",
+				command="balance",
+				block_reason=None,
+				args={},
+				replies=[],
+				error=None,
+				elapsed_ms=1,
+				outbound=[reply],
+			)
+			with (
+				as_user("WhatsApp Manager"),
+				patch.object(testlab.simulator, "simulate_inbound", return_value=sim),
+			):
 				run = self._run()
-				step = api.run_check(run=run["id"], kind="command", target=P1, params={"text": "balance", "send_reply": 1})
+				step = api.run_check(
+					run=run["id"], kind="command", target=P1, params={"text": "balance", "send_reply": 1}
+				)
 		self.assertTrue(step["ok"], step)
 		sent = frappe.parse_json(frappe.db.get_value("WhatsApp Log", step["outbounds"][0], "interactive"))
 		self.assertEqual([b["text"] for b in sent["buttons"]], ["Statement", "Invoice"])
@@ -428,7 +548,9 @@ class TestApiTestLab(IntegrationTestCase):
 		inbound = frappe.db.count("WhatsApp Inbound Message", {"device": self.device})
 		with as_user("WhatsApp Manager"):
 			run = self._run()
-			step = api.run_check(run=run["id"], kind="command", target=P1, params={"text": "apitest-lab-no-such-word"})
+			step = api.run_check(
+				run=run["id"], kind="command", target=P1, params={"text": "apitest-lab-no-such-word"}
+			)
 			status = api.get_status(run=run["id"])
 		self.assertTrue(step["dry"])
 		self.assertEqual(step["result"]["status"], "Not Matched")
@@ -452,7 +574,10 @@ class TestApiTestLab(IntegrationTestCase):
 			self.assertTrue(step["result"]["readiness"]["ok"])
 			self.assertTrue(enqueue.called)  # materialisation is the campaign runner's job
 			# the campaign's messages hold the next check back for their own pacing
-			self.assertEqual(list(api.run_check(run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} x"})), ["wait"])
+			self.assertEqual(
+				list(api.run_check(run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} x"})),
+				["wait"],
+			)
 			status = api.get_status(run=run["id"])
 		self.assertEqual(status["run"]["used"], 2)
 		self.assertEqual(status["steps"][0]["campaign_row"]["name"], step["campaign"])
@@ -460,7 +585,11 @@ class TestApiTestLab(IntegrationTestCase):
 	def test_scheduled_campaign(self):
 		with as_user("WhatsApp Manager"), patch.object(frappe, "enqueue"):
 			run = self._run()
-			step = api.run_check(run=run["id"], kind="campaign", params={"body": f"{TAG} later", "scheduled": 1, "schedule_minutes": 3})
+			step = api.run_check(
+				run=run["id"],
+				kind="campaign",
+				params={"body": f"{TAG} later", "scheduled": 1, "schedule_minutes": 3},
+			)
 			status = api.get_status(run=run["id"])
 		self.assertTrue(step["ok"], step)
 		self.assertEqual(frappe.db.get_value("WhatsApp Campaign", step["campaign"], "status"), "Scheduled")
@@ -473,7 +602,12 @@ class TestApiTestLab(IntegrationTestCase):
 	def test_status_follows_a_message_to_its_receipt(self):
 		with as_user("WhatsApp Manager"):
 			run = self._run()
-			step = api.run_check(run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} follow", "label": "Quick text"})
+			step = api.run_check(
+				run=run["id"],
+				kind="quick_text",
+				target=P1,
+				params={"body": f"{TAG} follow", "label": "Quick text"},
+			)
 			status = api.get_status(run=run["id"])
 			self.assertEqual(status["steps"][0]["state"], "running")
 			self.assertEqual(status["steps"][0]["label"], "Quick text")
@@ -484,7 +618,11 @@ class TestApiTestLab(IntegrationTestCase):
 				frappe.db.set_value(
 					"WhatsApp Log",
 					step["outbounds"][0],
-					{"status": "Delivered", "sent_at": frappe.utils.add_to_date(now, seconds=2), "delivered_at": frappe.utils.add_to_date(now, seconds=5)},
+					{
+						"status": "Delivered",
+						"sent_at": frappe.utils.add_to_date(now, seconds=2),
+						"delivered_at": frappe.utils.add_to_date(now, seconds=5),
+					},
 				)
 			status = api.get_status(run=run["id"])
 		self.assertEqual(status["steps"][0]["state"], "delivered")
@@ -493,7 +631,10 @@ class TestApiTestLab(IntegrationTestCase):
 		# measured from when the row was written, a moment before `now` on a slow machine
 		self.assertAlmostEqual(message["send_seconds"], 2.0, delta=0.5)
 		self.assertAlmostEqual(message["deliver_seconds"], 5.0, delta=0.5)
-		self.assertEqual((status["summary"]["passed"], status["summary"]["failed"], status["summary"]["messages"]), (1, 0, 1))
+		self.assertEqual(
+			(status["summary"]["passed"], status["summary"]["failed"], status["summary"]["messages"]),
+			(1, 0, 1),
+		)
 		self.assertEqual((status["receipts"]["sent"], status["receipts"]["delivered"]), (1, 1))
 		self.assertTrue(status["finished"])
 		self.assertEqual(status["inbound"], [])
@@ -501,31 +642,55 @@ class TestApiTestLab(IntegrationTestCase):
 	def test_a_failed_message_fails_its_step_and_history_lists_the_run(self):
 		with as_user("WhatsApp Manager"):
 			run = self._run()
-			step = api.run_check(run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} broken"})
+			step = api.run_check(
+				run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} broken"}
+			)
 			with status_writer():
-				frappe.db.set_value("WhatsApp Log", step["outbounds"][0], {"status": "Failed", "error_code": "device_offline"})
+				frappe.db.set_value(
+					"WhatsApp Log", step["outbounds"][0], {"status": "Failed", "error_code": "device_offline"}
+				)
 			status = api.get_status(run=run["id"])
 			runs = api.list_runs()
 		self.assertEqual(status["steps"][0]["state"], "failed")
 		self.assertEqual(status["steps"][0]["messages"][0]["error_code"], "device_offline")
 		self.assertEqual(status["summary"]["failed"], 1)
 		listed = next(r for r in runs if r["id"] == run["id"])
-		self.assertEqual((listed["checks"], listed["messages"], listed["failed"], listed["targets"]), (1, 1, 1, 1))
+		self.assertEqual(
+			(listed["checks"], listed["messages"], listed["failed"], listed["targets"]), (1, 1, 1, 1)
+		)
 
 	def test_a_run_outlives_the_cache_as_an_archive(self):
 		"""`clear-cache` and migrate empty the cache: the run is read back from its audit rows —
 		numbers masked, nothing can be added — and its messages are still followed."""
 		with as_user("WhatsApp Manager"):
 			run = self._run(cap=7, pacing=5)
-			step = api.run_check(run=run["id"], kind="quick_text", target=P1, params={"body": f"{TAG} archive", "label": "Quick text"})
+			step = api.run_check(
+				run=run["id"],
+				kind="quick_text",
+				target=P1,
+				params={"body": f"{TAG} archive", "label": "Quick text"},
+			)
 			self._rewind(run["id"])
-			api.run_check(run=run["id"], kind="command", target=P1, params={"text": "apitest-lab-no-such-word"})
+			api.run_check(
+				run=run["id"], kind="command", target=P1, params={"text": "apitest-lab-no-such-word"}
+			)
 			frappe.cache.delete_value(testlab.RUN_KEY.format(run["id"]))
 			status = api.get_status(run=run["id"])
 			self.assertTrue(status["run"]["archived"])
-			self.assertEqual((status["run"]["cap"], status["run"]["pacing"], status["run"]["used"], status["run"]["device"]), (7, 5, 1, self.device))
+			self.assertEqual(
+				(
+					status["run"]["cap"],
+					status["run"]["pacing"],
+					status["run"]["used"],
+					status["run"]["device"],
+				),
+				(7, 5, 1, self.device),
+			)
 			self.assertNotIn(P1, status["run"]["targets"])  # masked, as the audit log keeps them
-			self.assertEqual([(s["kind"], s["dry"], s["label"]) for s in status["steps"]], [("quick_text", False, "Quick text"), ("command", True, None)])
+			self.assertEqual(
+				[(s["kind"], s["dry"], s["label"]) for s in status["steps"]],
+				[("quick_text", False, "Quick text"), ("command", True, None)],
+			)
 			self.assertEqual(status["steps"][0]["messages"][0]["name"], step["outbounds"][0])
 			self.assertEqual(status["steps"][1]["result"]["status"], "Not Matched")
 			self.assertEqual(status["inbound"], [])

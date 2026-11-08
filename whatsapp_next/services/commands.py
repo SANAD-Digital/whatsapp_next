@@ -125,7 +125,9 @@ def _apply(doc, payload: dict) -> list[str]:
 				frappe.throw(_("templates[{0}] must be an object").format(i), WAValidationError)
 			bad = sorted(set(row) - set(TEMPLATE_FIELDS))
 			if bad:
-				frappe.throw(_("templates[{0}]: unknown fields {1}").format(i, ", ".join(bad)), WAValidationError)
+				frappe.throw(
+					_("templates[{0}]: unknown fields {1}").format(i, ", ".join(bad)), WAValidationError
+				)
 			if not str(row.get("text") or "").strip():
 				continue  # an emptied text falls back to the function's
 			doc.append("templates", {f: row.get(f) or None for f in TEMPLATE_FIELDS})
@@ -284,7 +286,9 @@ def function_spec(function: str) -> dict[str, Any]:
 				"required": p["required"],
 				"depends_on": p["depends_on"],
 				"header_default": p["default"],
-				"default_value": site.get(p["name"]) if not fh.is_empty(site.get(p["name"])) else p["default"],
+				"default_value": site.get(p["name"])
+				if not fh.is_empty(site.get(p["name"]))
+				else p["default"],
 			}
 			for p in typed
 		],
@@ -474,7 +478,9 @@ def _preview_party(
 		)
 		if not linked:
 			frappe.throw(
-				_("{0} {1} is not linked to contact {2}").format(_(party_type or ""), party_name or "", contact),
+				_("{0} {1} is not linked to contact {2}").format(
+					_(party_type or ""), party_name or "", contact
+				),
 				WAValidationError,
 			)
 		return party_type, party_name
@@ -545,9 +551,7 @@ def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
 			status="Blocked",
 			block_reason=reason,
 			reply_sent=bool(cint(frappe.get_cached_doc("WhatsApp Settings").send_receipt_reply)),
-			replies=[
-				{"message_type": "Text", "body": command_router.block_message(doc, reason, who)}
-			],
+			replies=[{"message_type": "Text", "body": command_router.block_message(doc, reason, who)}],
 		)
 		return out
 	try:
@@ -571,4 +575,3 @@ def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
 		replies=command_router.render_outputs(doc, result, who, dry_run=True),
 	)
 	return out
-

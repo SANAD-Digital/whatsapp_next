@@ -194,7 +194,9 @@ def _one_or_many(name: str, value: Any, allowed: tuple[str, ...]) -> list[str]:
 	values = [value] if isinstance(value, str) else list(value)
 	bad = [v for v in values if v not in allowed]
 	if bad:
-		frappe.throw(_("Invalid value for {0}: {1}").format(name, ", ".join(map(str, bad))), WAValidationError)
+		frappe.throw(
+			_("Invalid value for {0}: {1}").format(name, ", ".join(map(str, bad))), WAValidationError
+		)
 	return values
 
 

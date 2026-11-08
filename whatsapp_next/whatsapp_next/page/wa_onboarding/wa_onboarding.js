@@ -68,6 +68,9 @@ frappe.provide("whatsapp_next.onboarding");
 		__("Government services and follow-up"), __("Associations and non-profits"),
 	];
 	const SECTOR_OTHER = () => __("Other");
+	// the terms shown on the terms step, named: kept with the account when it is created (WN-014).
+	// The platform's own sign-up names the same text the same way (`signup-content.js`).
+	const TERMS_VERSION = "2026-10";
 
 	// The terms panel, section by section. The prototype names a different product in §1; the name
 	// here is this product's own.
@@ -1160,6 +1163,9 @@ frappe.provide("whatsapp_next.onboarding");
 						coupon_code: (this.f.coupon || "").trim() || undefined,
 						company_name: (this.f.org || "").trim() || undefined,
 						business_activity: (this.f.sector === SECTOR_OTHER() ? this.f.sector_other : this.f.sector) || undefined,
+						// both calls come after the terms step, whose button accepts them (WN-014)
+						terms_accepted: 1,
+						terms_version: TERMS_VERSION,
 					}, { silent: true })
 					.then((r) => {
 						this.ctx.request_key = r.request_key;
@@ -1476,6 +1482,9 @@ frappe.provide("whatsapp_next.onboarding");
 						coupon_code: (this.f.coupon || "").trim() || undefined,
 						company_name: (this.f.org || "").trim() || undefined,
 						business_activity: (this.f.sector === SECTOR_OTHER() ? this.f.sector_other : this.f.sector) || undefined,
+						// both calls come after the terms step, whose button accepts them (WN-014)
+						terms_accepted: 1,
+						terms_version: TERMS_VERSION,
 					}, { silent: true })
 					.then((r) => {
 						this.f.phone = phone;
@@ -1508,6 +1517,9 @@ frappe.provide("whatsapp_next.onboarding");
 						coupon_code: (this.f.coupon || "").trim() || undefined,
 						company_name: (this.f.org || "").trim() || undefined,
 						business_activity: (this.f.sector === SECTOR_OTHER() ? this.f.sector_other : this.f.sector) || undefined,
+						// both calls come after the terms step, whose button accepts them (WN-014)
+						terms_accepted: 1,
+						terms_version: TERMS_VERSION,
 					}, { silent: true })
 					.then((r) => {
 						this.ctx.request_key = r.request_key || this.ctx.request_key;

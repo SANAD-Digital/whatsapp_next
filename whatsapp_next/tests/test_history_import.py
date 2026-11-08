@@ -17,10 +17,19 @@ AT = datetime(2026, 3, 1, 9, 30, tzinfo=timezone.utc).replace(tzinfo=None)
 
 
 def _msg(kind, mid, *, from_me=False, body="hello", phone="967711000001", original=None, **extra):
-	p = InboundPayload(provider_message_id=mid, sender_phone=None if from_me else phone,
-		sender_jid=f"{phone}@s.whatsapp.net", chat_jid=f"{phone}@s.whatsapp.net", message_type="Text",
-		body=body, received_at=AT, **extra)
-	return HistoryMessage(kind=kind, from_me=from_me, inbound=p, counterpart_phone=phone, original_id=original)
+	p = InboundPayload(
+		provider_message_id=mid,
+		sender_phone=None if from_me else phone,
+		sender_jid=f"{phone}@s.whatsapp.net",
+		chat_jid=f"{phone}@s.whatsapp.net",
+		message_type="Text",
+		body=body,
+		received_at=AT,
+		**extra,
+	)
+	return HistoryMessage(
+		kind=kind, from_me=from_me, inbound=p, counterpart_phone=phone, original_id=original
+	)
 
 
 class TestHistoryImport(IntegrationTestCase):
@@ -48,39 +57,82 @@ class TestHistoryImport(IntegrationTestCase):
 		enqueue.assert_not_called()
 
 	def test_received_and_sent_rows_keep_their_time_and_act_on_nothing(self):
-		with patch("whatsapp_next.services.inbound._after_insert") as after, patch("frappe.enqueue") as enqueue:
+		with (
+			patch("whatsapp_next.services.inbound._after_insert") as after,
+			patch("frappe.enqueue") as enqueue,
+		):
 			key = history_import.apply(self.device, _msg("text", f"H-in-{self.tag}"))
-			out = history_import.apply(self.device, _msg("image", f"H-out-{self.tag}", from_me=True, body="photo"))
+			out = history_import.apply(
+				self.device, _msg("image", f"H-out-{self.tag}", from_me=True, body="photo")
+			)
 		self.assertEqual(key, "+967711000001")
 		self.assertTrue(out)
 		after.assert_not_called()
 		enqueue.assert_not_called()
-		row = frappe.db.get_value("WhatsApp Inbound Message", {"provider_message_id": f"H-in-{self.tag}"},
-			["is_history", "command_status", "received_at", "phone_e164"], as_dict=True)
-		self.assertEqual((row.is_history, row.command_status, row.received_at, row.phone_e164), (1, "None", AT, "+967711000001"))
-		log = frappe.db.get_value("WhatsApp Log", {"provider_message_id": f"H-out-{self.tag}"},
-			["source_type", "status", "message_type", "creation", "phone_e164"], as_dict=True)
-		self.assertEqual((log.source_type, log.status, log.message_type, log.creation, log.phone_e164),
-			("History", "Sent", "Image", AT, "+967711000001"))
+		row = frappe.db.get_value(
+			"WhatsApp Inbound Message",
+			{"provider_message_id": f"H-in-{self.tag}"},
+			["is_history", "command_status", "received_at", "phone_e164"],
+			as_dict=True,
+		)
+		self.assertEqual(
+			(row.is_history, row.command_status, row.received_at, row.phone_e164),
+			(1, "None", AT, "+967711000001"),
+		)
+		log = frappe.db.get_value(
+			"WhatsApp Log",
+			{"provider_message_id": f"H-out-{self.tag}"},
+			["source_type", "status", "message_type", "creation", "phone_e164"],
+			as_dict=True,
+		)
+		self.assertEqual(
+			(log.source_type, log.status, log.message_type, log.creation, log.phone_e164),
+			("History", "Sent", "Image", AT, "+967711000001"),
+		)
 
 	def test_a_message_already_here_is_skipped(self):
 		history_import.apply(self.device, _msg("text", f"H-dup-{self.tag}"))
 		self.assertIsNone(history_import.apply(self.device, _msg("text", f"H-dup-{self.tag}")))
-		self.assertEqual(frappe.db.count("WhatsApp Inbound Message", {"provider_message_id": f"H-dup-{self.tag}"}), 1)
+		self.assertEqual(
+			frappe.db.count("WhatsApp Inbound Message", {"provider_message_id": f"H-dup-{self.tag}"}), 1
+		)
 
 	def test_edit_delete_and_reaction_apply_to_their_message(self):
 		target = f"H-t-{self.tag}"
 		history_import.apply(self.device, _msg("text", target, body="first"))
-		self.assertTrue(history_import.apply(self.device, _msg("edit", f"H-e-{self.tag}", body="second", original=target)))
-		row = frappe.db.get_value("WhatsApp Inbound Message", {"provider_message_id": target}, ["body", "original_body"], as_dict=True)
+		self.assertTrue(
+			history_import.apply(self.device, _msg("edit", f"H-e-{self.tag}", body="second", original=target))
+		)
+		row = frappe.db.get_value(
+			"WhatsApp Inbound Message",
+			{"provider_message_id": target},
+			["body", "original_body"],
+			as_dict=True,
+		)
 		self.assertEqual((row.body, row.original_body), ("second", "first"))
-		self.assertTrue(history_import.apply(self.device, _msg("revoke", f"H-r-{self.tag}", body=None, original=target)))
-		self.assertTrue(frappe.db.get_value("WhatsApp Inbound Message", {"provider_message_id": target}, "deleted_at"))
-		history_import.apply(self.device, _msg("reaction", f"H-x-{self.tag}", body=None, reaction="👍", reaction_to=target))
-		self.assertEqual(frappe.db.get_value("WhatsApp Inbound Message", {"provider_message_id": f"H-x-{self.tag}"},
-			["message_type", "reaction_to_provider_message_id"]), ("Reaction", target))
+		self.assertTrue(
+			history_import.apply(self.device, _msg("revoke", f"H-r-{self.tag}", body=None, original=target))
+		)
+		self.assertTrue(
+			frappe.db.get_value("WhatsApp Inbound Message", {"provider_message_id": target}, "deleted_at")
+		)
+		history_import.apply(
+			self.device, _msg("reaction", f"H-x-{self.tag}", body=None, reaction="👍", reaction_to=target)
+		)
+		self.assertEqual(
+			frappe.db.get_value(
+				"WhatsApp Inbound Message",
+				{"provider_message_id": f"H-x-{self.tag}"},
+				["message_type", "reaction_to_provider_message_id"],
+			),
+			("Reaction", target),
+		)
 		# the number's own reactions and plumbing are not messages
-		self.assertIsNone(history_import.apply(self.device, _msg("reaction", f"H-y-{self.tag}", from_me=True, reaction="👍")))
+		self.assertIsNone(
+			history_import.apply(
+				self.device, _msg("reaction", f"H-y-{self.tag}", from_me=True, reaction="👍")
+			)
+		)
 		self.assertIsNone(history_import.apply(self.device, _msg("unknown", f"H-z-{self.tag}")))
 
 	def test_the_job_pages_with_the_cursor(self):
@@ -96,11 +148,19 @@ class TestHistoryImport(IntegrationTestCase):
 				return pages[len(calls) - 1]
 
 		frappe.db.set_value("WhatsApp Device", self.device, {"history_cursor": 0, "history_imported": 0})
-		with patch("whatsapp_next.providers.registry.get_provider", return_value=Provider()), \
-			patch("frappe.db.commit"), patch.object(history_import, "_refresh"):
+		with (
+			patch("whatsapp_next.providers.registry.get_provider", return_value=Provider()),
+			patch("frappe.db.commit"),
+			patch.object(history_import, "_refresh"),
+		):
 			result = history_import.run(self.device)
 		self.assertEqual((calls, result["imported"], result["more"]), ([0, 10], 2, False))
-		row = frappe.db.get_value("WhatsApp Device", self.device, ["history_cursor", "history_status", "history_total"], as_dict=True)
+		row = frappe.db.get_value(
+			"WhatsApp Device",
+			self.device,
+			["history_cursor", "history_status", "history_total"],
+			as_dict=True,
+		)
 		self.assertEqual((row.history_cursor, row.history_status, row.history_total), (20, "Done", 2))
 
 	def test_a_full_slice_queues_the_next_after_the_lock_is_free(self):
@@ -111,9 +171,14 @@ class TestHistoryImport(IntegrationTestCase):
 				return page
 
 		seen = []
-		with patch("whatsapp_next.providers.registry.get_provider", return_value=Provider()), \
-			patch.object(history_import, "PAGES_PER_RUN", 1), patch("frappe.db.commit"), \
-			patch.object(history_import, "start", side_effect=lambda d, **k: seen.append(history_import.is_running(d))):
+		with (
+			patch("whatsapp_next.providers.registry.get_provider", return_value=Provider()),
+			patch.object(history_import, "PAGES_PER_RUN", 1),
+			patch("frappe.db.commit"),
+			patch.object(
+				history_import, "start", side_effect=lambda d, **k: seen.append(history_import.is_running(d))
+			),
+		):
 			result = history_import.run(self.device)
 			# a second run while one holds the lock does nothing
 			self.assertTrue(history_import._acquire(self.device))
@@ -131,8 +196,13 @@ class TestHistoryImport(IntegrationTestCase):
 				return HistoryPage(messages=[bad, good], next_after=3, has_more=False)
 
 		frappe.db.set_value("WhatsApp Device", self.device, {"history_cursor": 0, "history_imported": 0})
-		with patch("whatsapp_next.providers.registry.get_provider", return_value=Provider()), \
-			patch("frappe.db.commit"), patch.object(history_import, "_refresh"):
+		with (
+			patch("whatsapp_next.providers.registry.get_provider", return_value=Provider()),
+			patch("frappe.db.commit"),
+			patch.object(history_import, "_refresh"),
+		):
 			result = history_import.run(self.device)
 		self.assertEqual(result["imported"], 1)
-		self.assertTrue(frappe.db.exists("WhatsApp Inbound Message", {"provider_message_id": f"H-ok-{self.tag}"}))
+		self.assertTrue(
+			frappe.db.exists("WhatsApp Inbound Message", {"provider_message_id": f"H-ok-{self.tag}"})
+		)

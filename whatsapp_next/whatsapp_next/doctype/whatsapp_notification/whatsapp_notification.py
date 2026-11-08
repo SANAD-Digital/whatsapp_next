@@ -139,11 +139,16 @@ class WhatsAppNotification(Document):
 		for f in filters:
 			fieldname = f[1] if isinstance(f, (list, tuple)) and len(f) > 2 else None
 			if fieldname and fieldname not in standard and not meta.has_field(fieldname):
-				frappe.throw(_("{0} has no field {1}").format(_(self.document_type), fieldname), WAValidationError)
+				frappe.throw(
+					_("{0} has no field {1}").format(_(self.document_type), fieldname), WAValidationError
+				)
 		try:
 			evaluate_filters(frappe.new_doc(self.document_type), filters)
 		except Exception as exc:
-			frappe.throw(_("The filters cannot be checked on {0}: {1}").format(_(self.document_type), exc), WAValidationError)
+			frappe.throw(
+				_("The filters cannot be checked on {0}: {1}").format(_(self.document_type), exc),
+				WAValidationError,
+			)
 
 	def check_condition(self) -> None:
 		"""The condition must be a compilable Python expression."""
@@ -178,9 +183,7 @@ def count_variables(source: str) -> int:
 
 # Composite indexes the DocType JSON cannot express (fields.md F-11); single-column ones are
 # `search_index` / `unique` in the JSON.
-COMPOSITE_INDEXES: tuple[tuple[str, ...], ...] = (
-	("document_type", "event", "enabled"),
-)
+COMPOSITE_INDEXES: tuple[tuple[str, ...], ...] = (("document_type", "event", "enabled"),)
 
 
 def on_doctype_update() -> None:

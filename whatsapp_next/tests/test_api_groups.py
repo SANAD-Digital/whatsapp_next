@@ -34,7 +34,9 @@ class TestApiGroups(IntegrationTestCase):
 			delete_all("WhatsApp Contact Group", {"group_name": name})
 
 	def _members(self, name):
-		return sorted(frappe.get_all("WhatsApp Contact Group Member", filters={"parent": name}, pluck="phone_e164"))
+		return sorted(
+			frappe.get_all("WhatsApp Contact Group Member", filters={"parent": name}, pluck="phone_e164")
+		)
 
 	def test_new_group_defaults(self):
 		r = api.get_editor()
@@ -43,7 +45,14 @@ class TestApiGroups(IntegrationTestCase):
 		self.assertTrue(r["can_write"])
 
 	def test_create_with_members(self):
-		r = api.save_editor(payload={"group_name": GROUP, "kind": "Marketing", "description": "d", "add": [_row(P1, "One"), _row(P2, "Two")]})
+		r = api.save_editor(
+			payload={
+				"group_name": GROUP,
+				"kind": "Marketing",
+				"description": "d",
+				"add": [_row(P1, "One"), _row(P2, "Two")],
+			}
+		)
 		self.assertEqual(r["name"], GROUP)
 		self.assertEqual(r["added"], 2)
 		self.assertEqual(self._members(GROUP), [P1, P2])
@@ -57,7 +66,9 @@ class TestApiGroups(IntegrationTestCase):
 			api.save_editor(payload={"group_name": GROUP, "kind": "Other"})
 
 	def test_edit_fields_and_members_then_rename(self):
-		api.save_editor(payload={"group_name": GROUP, "kind": "Marketing", "add": [_row(P1, "One"), _row(P2, "Two")]})
+		api.save_editor(
+			payload={"group_name": GROUP, "kind": "Marketing", "add": [_row(P1, "One"), _row(P2, "Two")]}
+		)
 		opened = api.get_editor(name=GROUP)["group"]
 		r = api.save_editor(
 			payload={
@@ -77,7 +88,14 @@ class TestApiGroups(IntegrationTestCase):
 	def test_stale_edit_refused(self):
 		api.save_editor(payload={"group_name": GROUP, "kind": "Other"})
 		with self.assertRaises(WAValidationError):
-			api.save_editor(payload={"name": GROUP, "modified": "2000-01-01 00:00:00", "group_name": GROUP, "kind": "Other"})
+			api.save_editor(
+				payload={
+					"name": GROUP,
+					"modified": "2000-01-01 00:00:00",
+					"group_name": GROUP,
+					"kind": "Other",
+				}
+			)
 
 	def test_viewer_cannot_save(self):
 		with as_user("WhatsApp Viewer"):

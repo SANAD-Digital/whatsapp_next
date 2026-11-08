@@ -85,7 +85,7 @@
 # فيتوقف هنا أياً كان المستخدم (حتى Administrator).
 # عند run_script يكون cmd هو اسم المستدعي (المحرك أو شاشة الاختبار)، فتعمل.
 if (frappe.form_dict.get("cmd") or "").startswith("wa_fn_"):
-    frappe.throw("Not allowed", frappe.PermissionError)
+	frappe.throw("Not allowed", frappe.PermissionError)
 
 form = frappe.form_dict
 
@@ -100,10 +100,28 @@ COL_CLOSING_CR = "closing_credit"
 COL_CURRENCY = ("currency", "party_currency", "account_currency")
 
 TIMESPANS = (
-    "last 7 days", "last 14 days", "last 30 days", "last 90 days", "last week", "last month",
-    "last quarter", "last 6 months", "last year", "this week", "this month", "this quarter",
-    "this year", "next 7 days", "next 14 days", "next 30 days", "next week", "next month",
-    "next quarter", "next 6 months", "next year", "select date range",
+	"last 7 days",
+	"last 14 days",
+	"last 30 days",
+	"last 90 days",
+	"last week",
+	"last month",
+	"last quarter",
+	"last 6 months",
+	"last year",
+	"this week",
+	"this month",
+	"this quarter",
+	"this year",
+	"next 7 days",
+	"next 14 days",
+	"next 30 days",
+	"next week",
+	"next month",
+	"next quarter",
+	"next 6 months",
+	"next year",
+	"select date range",
 )
 DATE_RANGE = "select date range"
 
@@ -132,151 +150,162 @@ data = {}
 
 # ---------- التحقق ----------
 if not party_type or not party:
-    error = "رقمك غير مرتبط بحساب لدينا"
+	error = "رقمك غير مرتبط بحساب لدينا"
 elif not company:
-    error = "لم تُحدَّد الشركة"
+	error = "لم تُحدَّد الشركة"
 elif timespan not in TIMESPANS:
-    error = "الفترة «" + str(timespan) + "» غير مدعومة"
+	error = "الفترة «" + str(timespan) + "» غير مدعومة"
 elif timespan == DATE_RANGE:
-    if not from_date or not to_date:
-        error = "الرجاء تحديد من تاريخ وإلى تاريخ"
-    elif u.getdate(from_date) > u.getdate(to_date):
-        error = "تاريخ البداية بعد تاريخ النهاية"
+	if not from_date or not to_date:
+		error = "الرجاء تحديد من تاريخ وإلى تاريخ"
+	elif u.getdate(from_date) > u.getdate(to_date):
+		error = "تاريخ البداية بعد تاريخ النهاية"
 
 # ---------- الحساب (اختياري) ----------
 account_name = ""
 if not error and account:
-    acc = frappe.db.get_value("Account", account, ["account_name", "company", "is_group"], as_dict=True)
-    if not acc or acc.company != company:
-        error = "الحساب غير موجود في الشركة"
-    elif acc.is_group:
-        error = "لا يمكن استخدام حساب رئيسي"
-    else:
-        account_name = acc.account_name
+	acc = frappe.db.get_value("Account", account, ["account_name", "company", "is_group"], as_dict=True)
+	if not acc or acc.company != company:
+		error = "الحساب غير موجود في الشركة"
+	elif acc.is_group:
+		error = "لا يمكن استخدام حساب رئيسي"
+	else:
+		account_name = acc.account_name
 
 # ---------- اسم الطرف وحالته ----------
 party_name = party
 status = None
 if not error:
-    # كل أنواع الأطراف مسموحة: الاسم من title_field أو الحقول المعروفة
-    meta = frappe.get_meta(party_type)
-    name_fields = []
-    for f in (meta.title_field, "customer_name", "supplier_name", "employee_name", "title"):
-        if f and f not in name_fields and meta.has_field(f):
-            name_fields.append(f)
-    fields = ["name"] + name_fields
-    for f in ("disabled", "is_frozen", "status"):
-        if meta.has_field(f):
-            fields.append(f)
-    p = frappe.db.get_value(party_type, party, fields, as_dict=True)
-    if not p:
-        error = "لم يُعثر على حسابكم"
-    else:
-        for f in name_fields:
-            if p.get(f):
-                party_name = p.get(f)
-                break
-        if p.get("disabled"):
-            status = "معطّل"
-        elif p.get("is_frozen"):
-            status = "مجمّد"
-        elif party_type == "Employee" and p.get("status") and p.get("status") != "Active":
-            status = "معطّل"
+	# كل أنواع الأطراف مسموحة: الاسم من title_field أو الحقول المعروفة
+	meta = frappe.get_meta(party_type)
+	name_fields = []
+	for f in (meta.title_field, "customer_name", "supplier_name", "employee_name", "title"):
+		if f and f not in name_fields and meta.has_field(f):
+			name_fields.append(f)
+	fields = ["name"] + name_fields
+	for f in ("disabled", "is_frozen", "status"):
+		if meta.has_field(f):
+			fields.append(f)
+	p = frappe.db.get_value(party_type, party, fields, as_dict=True)
+	if not p:
+		error = "لم يُعثر على حسابكم"
+	else:
+		for f in name_fields:
+			if p.get(f):
+				party_name = p.get(f)
+				break
+		if p.get("disabled"):
+			status = "معطّل"
+		elif p.get("is_frozen"):
+			status = "مجمّد"
+		elif party_type == "Employee" and p.get("status") and p.get("status") != "Active":
+			status = "معطّل"
 
 # ---------- الحساب مجمّد أو معطّل: رسالة واحدة ولا تقرير ----------
 if not error and status:
-    ctx = {"party": party, "party_name": party_name, "party_type": party_type,
-           "company": company, "account": account or "", "account_name": account_name,
-           "timespan": timespan, "status": status}
-    messages.append({
-        "reply": "inactive_text",
-        "type": "text",
-        "text": frappe.render_template(msg_inactive, ctx).strip(),
-    })
-    data = ctx
+	ctx = {
+		"party": party,
+		"party_name": party_name,
+		"party_type": party_type,
+		"company": company,
+		"account": account or "",
+		"account_name": account_name,
+		"timespan": timespan,
+		"status": status,
+	}
+	messages.append(
+		{
+			"reply": "inactive_text",
+			"type": "text",
+			"text": frappe.render_template(msg_inactive, ctx).strip(),
+		}
+	)
+	data = ctx
 
 # ---------- الفترة ----------
 # select date range: التاريخان المرسَلان، ويُمرَّران للتقرير
 # غير ذلك: التقرير يحسب الفترة من timespan، والتاريخان هنا للعرض في الرسالة فقط
 if not error and not status:
-    if timespan == DATE_RANGE:
-        from_date = u.getdate(from_date)
-        to_date = u.getdate(to_date)
-    else:
-        date_range = u.get_timespan_date_range(timespan)
-        from_date = u.getdate(date_range[0])
-        to_date = u.getdate(date_range[1])
+	if timespan == DATE_RANGE:
+		from_date = u.getdate(from_date)
+		to_date = u.getdate(to_date)
+	else:
+		date_range = u.get_timespan_date_range(timespan)
+		from_date = u.getdate(date_range[0])
+		to_date = u.getdate(date_range[1])
 
 # ---------- استدعاء التقرير ----------
 if not error and not status:
-    report_filters = {
-        "company": company,
-        "party_type": party_type,
-        "party": party,
-        "timespan": timespan,
-        "show_zero_values": show_zero_values,
-    }
-    if timespan == DATE_RANGE:
-        report_filters["from_date"] = str(from_date)
-        report_filters["to_date"] = str(to_date)
-    if account:
-        report_filters["account"] = account
+	report_filters = {
+		"company": company,
+		"party_type": party_type,
+		"party": party,
+		"timespan": timespan,
+		"show_zero_values": show_zero_values,
+	}
+	if timespan == DATE_RANGE:
+		report_filters["from_date"] = str(from_date)
+		report_filters["to_date"] = str(to_date)
+	if account:
+		report_filters["account"] = account
 
-    report = frappe.call(
-        "frappe.desk.query_report.run",
-        report_name=REPORT_NAME,
-        filters=report_filters,
-    )
+	report = frappe.call(
+		"frappe.desk.query_report.run",
+		report_name=REPORT_NAME,
+		filters=report_filters,
+	)
 
-    row = {}
-    for r in (report or {}).get("result") or []:
-        if isinstance(r, dict) and r.get("party") == party:
-            row = r
-            break
+	row = {}
+	for r in (report or {}).get("result") or []:
+		if isinstance(r, dict) and r.get("party") == party:
+			row = r
+			break
 
-    currency = None
-    for c in COL_CURRENCY:
-        if row.get(c):
-            currency = row.get(c)
-            break
-    currency = currency or frappe.db.get_value("Company", company, "default_currency")
+	currency = None
+	for c in COL_CURRENCY:
+		if row.get(c):
+			currency = row.get(c)
+			break
+	currency = currency or frappe.db.get_value("Company", company, "default_currency")
 
-    opening = flt(flt(row.get(COL_OPENING_DR)) - flt(row.get(COL_OPENING_CR)), 2)
-    debit = flt(row.get(COL_DEBIT), 2)
-    credit = flt(row.get(COL_CREDIT), 2)
-    balance = flt(flt(row.get(COL_CLOSING_DR)) - flt(row.get(COL_CLOSING_CR)), 2)
+	opening = flt(flt(row.get(COL_OPENING_DR)) - flt(row.get(COL_OPENING_CR)), 2)
+	debit = flt(row.get(COL_DEBIT), 2)
+	credit = flt(row.get(COL_CREDIT), 2)
+	balance = flt(flt(row.get(COL_CLOSING_DR)) - flt(row.get(COL_CLOSING_CR)), 2)
 
-    ctx = {
-        "party": party,
-        "party_name": party_name,
-        "party_type": party_type,
-        "company": company,
-        "account": account or "",
-        "account_name": account_name,
-        "timespan": timespan,
-        "from_date": u.formatdate(from_date, "dd-MM-yyyy"),
-        "to_date": u.formatdate(to_date, "dd-MM-yyyy"),
-        "currency": currency,
-        "opening": opening,
-        "opening_formatted": u.fmt_money(abs(opening), currency=currency),
-        "opening_side": "مدين" if opening > 0 else ("دائن" if opening < 0 else ""),
-        "debit": debit,
-        "debit_formatted": u.fmt_money(debit, currency=currency),
-        "credit": credit,
-        "credit_formatted": u.fmt_money(credit, currency=currency),
-        "balance": balance,
-        "balance_formatted": u.fmt_money(abs(balance), currency=currency),
-        "side": "مدين" if balance > 0 else ("دائن" if balance < 0 else ""),
-        "is_debit": balance > 0,
-        "is_credit": balance < 0,
-        "is_zero": balance == 0,
-    }
+	ctx = {
+		"party": party,
+		"party_name": party_name,
+		"party_type": party_type,
+		"company": company,
+		"account": account or "",
+		"account_name": account_name,
+		"timespan": timespan,
+		"from_date": u.formatdate(from_date, "dd-MM-yyyy"),
+		"to_date": u.formatdate(to_date, "dd-MM-yyyy"),
+		"currency": currency,
+		"opening": opening,
+		"opening_formatted": u.fmt_money(abs(opening), currency=currency),
+		"opening_side": "مدين" if opening > 0 else ("دائن" if opening < 0 else ""),
+		"debit": debit,
+		"debit_formatted": u.fmt_money(debit, currency=currency),
+		"credit": credit,
+		"credit_formatted": u.fmt_money(credit, currency=currency),
+		"balance": balance,
+		"balance_formatted": u.fmt_money(abs(balance), currency=currency),
+		"side": "مدين" if balance > 0 else ("دائن" if balance < 0 else ""),
+		"is_debit": balance > 0,
+		"is_credit": balance < 0,
+		"is_zero": balance == 0,
+	}
 
-    messages.append({
-        "reply": "result_text",
-        "type": "text",
-        "text": frappe.render_template(msg_result, ctx).strip(),
-    })
-    data = ctx
+	messages.append(
+		{
+			"reply": "result_text",
+			"type": "text",
+			"text": frappe.render_template(msg_result, ctx).strip(),
+		}
+	)
+	data = ctx
 
 frappe.flags.wa_result = {"error": error, "messages": messages, "data": data}

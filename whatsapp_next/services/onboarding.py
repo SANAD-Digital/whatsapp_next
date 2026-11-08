@@ -269,14 +269,20 @@ def signup_prefill(user: str | None = None) -> dict[str, str]:
 	out: dict[str, str] = {}
 	company = None
 	if frappe.db.exists("DocType", "Company"):
-		name = frappe.defaults.get_user_default("Company", user) or frappe.defaults.get_global_default("company")
+		name = frappe.defaults.get_user_default("Company", user) or frappe.defaults.get_global_default(
+			"company"
+		)
 		if name and frappe.db.exists("Company", name):
-			company = frappe.db.get_value("Company", name, ["name", "company_name", "domain", "country"], as_dict=True)
+			company = frappe.db.get_value(
+				"Company", name, ["name", "company_name", "domain", "country"], as_dict=True
+			)
 	if company:
 		out["org"] = (company.company_name or "").strip()
 		out["sector"] = DOMAIN_SECTORS.get(company.domain or "", "")
 		# the country the mobile field starts on, as its ISO code (the field's first list has no names)
-		out["country"] = (frappe.db.get_value("Country", company.country, "code") or "").upper() if company.country else ""
+		out["country"] = (
+			(frappe.db.get_value("Country", company.country, "code") or "").upper() if company.country else ""
+		)
 		out["phone"] = company_contact_mobile(company.name, out["country"] or None) or ""
 	if user not in ("Administrator", "Guest"):
 		person = frappe.db.get_value("User", user, ["full_name", "email"], as_dict=True) or {}
@@ -322,6 +328,7 @@ def start_signup(
 	channel: str,
 	coupon_code: str | None = None,
 	company: dict | None = None,
+	terms: dict | None = None,
 ) -> SignupState:
 	"""Begin a tenant sign-up through the provider (`mobile` normalised to E.164 first). `company`
 	(`{name, activity}`) is what the account is for: the platform names the customer after it.
@@ -333,8 +340,15 @@ def start_signup(
 		frappe.throw(_("Invalid phone number: {0}").format(mobile), WAInvalidPhoneError)
 	callback = _new_callback()
 	state = registry.get_provider().start_signup(
-		signup_plan_code(plan_code), e164, full_name, email, channel, coupon_code=coupon_code, callback=callback,
+		signup_plan_code(plan_code),
+		e164,
+		full_name,
+		email,
+		channel,
+		coupon_code=coupon_code,
+		callback=callback,
 		company={k: str(v).strip() for k, v in (company or {}).items() if v and str(v).strip()},
+		terms=terms or None,
 	)
 	_remember_callback(callback, state.request_key)
 	return state
@@ -493,7 +507,11 @@ def login(
 		# this site's address lets the platform pick the account already linked to it
 		result = (
 			registry.get_provider().login(
-				email, password, integration_link=integration_link, site_url=frappe.utils.get_url(), move_site=move_site
+				email,
+				password,
+				integration_link=integration_link,
+				site_url=frappe.utils.get_url(),
+				move_site=move_site,
 			)
 			or {}
 		)
@@ -510,7 +528,9 @@ def login(
 			"ok": False,
 			"verification_required": True,
 			"request_key": signup.get("token"),
-			"message": _("This account was created but its number was never confirmed. Confirm it now to finish creating it."),
+			"message": _(
+				"This account was created but its number was never confirmed. Confirm it now to finish creating it."
+			),
 			**verification_route(signup),
 		}
 	if result.get("choose_account"):
@@ -521,7 +541,8 @@ def login(
 			"choose_account": True,
 			"customer_name": result.get("customer_name"),
 			"accounts": [
-				{k: a.get(k) for k in ("name", "site_name", "site_url", "site", "plan")} for a in result.get("accounts") or []
+				{k: a.get(k) for k in ("name", "site_name", "site_url", "site", "plan")}
+				for a in result.get("accounts") or []
 			],
 			"site": frappe.utils.get_url(),
 			"message": _("You have more than one account. Choose the one this site sends through."),
@@ -621,7 +642,11 @@ def steps(settings=None) -> list[Step]:
 			_connection_detail(s) if linked else _("No account linked"),
 		),
 		Step("device", connected > 0, _("{0} connected device(s)").format(connected)),
-		Step("webhook", s.webhook_status == "Active", _(s.webhook_status) if s.webhook_status else _("Not registered")),
+		Step(
+			"webhook",
+			s.webhook_status == "Active",
+			_(s.webhook_status) if s.webhook_status else _("Not registered"),
+		),
 	]
 
 
@@ -659,7 +684,9 @@ def needs_setup(settings=None) -> bool:
 	signed in to its platform (no credentials — never registered, or signed out since), or the
 	wizard was never finished (`setup_completed`)."""
 	s = settings or _settings()
-	return bool(cint(s.redirect_unregistered_to_wizard)) and (not has_credentials(s) or not cint(s.setup_completed))
+	return bool(cint(s.redirect_unregistered_to_wizard)) and (
+		not has_credentials(s) or not cint(s.setup_completed)
+	)
 
 
 def can_setup(user: str | None = None) -> bool:

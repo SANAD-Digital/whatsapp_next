@@ -23,7 +23,9 @@ def _number(device: str | None) -> str:
 	name = device or default_device()
 	phone = frappe.db.get_value("WhatsApp Device", name, "phone_e164") if name else None
 	if not phone:
-		phone = frappe.db.get_value("WhatsApp Device", {"disabled": 0, "phone_e164": ("is", "set")}, "phone_e164")
+		phone = frappe.db.get_value(
+			"WhatsApp Device", {"disabled": 0, "phone_e164": ("is", "set")}, "phone_e164"
+		)
 	digits = re.sub(r"\D", "", phone or "")
 	if not digits:
 		frappe.throw(_("No WhatsApp device has a number yet"), WAStateConflictError)
@@ -42,7 +44,9 @@ def qr_data_uri(text: str | None = None, device: str | None = None, scale: int =
 	import pyqrcode
 
 	code = pyqrcode.create(link(text, device), error="M")
-	return "data:image/png;base64," + code.png_as_base64_str(scale=max(1, min(int(scale or 4), 10)), quiet_zone=2)
+	return "data:image/png;base64," + code.png_as_base64_str(
+		scale=max(1, min(int(scale or 4), 10)), quiet_zone=2
+	)
 
 
 def whatsapp_link(text: str | None = None, device: str | None = None) -> str:
@@ -62,4 +66,6 @@ def whatsapp_qr(text: str | None = None, device: str | None = None, size: int = 
 		return Markup("")
 	px = max(48, min(int(size or 120), 600))
 	alt = escape(_("Scan to chat on WhatsApp"))
-	return Markup(f'<img src="{src}" width="{px}" height="{px}" alt="{alt}" style="image-rendering: pixelated;">')
+	return Markup(
+		f'<img src="{src}" width="{px}" height="{px}" alt="{alt}" style="image-rendering: pixelated;">'
+	)

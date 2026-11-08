@@ -44,13 +44,13 @@ def _not_implemented(what: str):
 	raise NotImplementedError(f"MetaCloudProvider.{what} is a skeleton — not implemented yet")
 
 
-
 def _site_clock(seconds: int) -> datetime:
 	"""A Unix time as the site's naive wall clock (Meta sends epoch seconds); `fromtimestamp`
 	alone gives the server OS's zone, which is neither the site's nor UTC."""
 	from frappe.utils import convert_utc_to_system_timezone
 
 	return convert_utc_to_system_timezone(datetime.fromtimestamp(seconds, timezone.utc)).replace(tzinfo=None)
+
 
 class MetaCloudProvider(BaseProvider):
 	"""Meta WhatsApp Cloud API skeleton."""
@@ -104,7 +104,12 @@ class MetaCloudProvider(BaseProvider):
 		raise pex.NotSupportedError("Password reset is handled in Meta Business Manager")
 
 	def login(
-		self, email: str, password: str, integration_link: str | None = None, site_url: str | None = None, move_site: bool = False
+		self,
+		email: str,
+		password: str,
+		integration_link: str | None = None,
+		site_url: str | None = None,
+		move_site: bool = False,
 	) -> dict:
 		raise pex.NotSupportedError("Sign-in is handled in Meta Business Manager")
 

@@ -362,7 +362,9 @@ class TestFunctionScripts(IntegrationTestCase):
 			self.assertEqual(res.status, "Failed", mode)
 			# the sender reads the generic failure; the status log keeps which reply was undeclared
 			self.assertNotIn("not declared", res.error)
-			self.assertIn("not declared", frappe.db.get_value("WhatsApp Inbound Message", res.inbound, "command_error"))
+			self.assertIn(
+				"not declared", frappe.db.get_value("WhatsApp Inbound Message", res.inbound, "command_error")
+			)
 			# none of the function's messages goes out: only the failure is reported
 			self.assertEqual([r["output_key"] for r in res.replies], ["error"], mode)
 			self.assertEqual(

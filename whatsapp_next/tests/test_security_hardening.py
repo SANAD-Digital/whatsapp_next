@@ -115,13 +115,19 @@ class TestUserComposedMessages(IntegrationTestCase):
 
 	def test_quick_send_preview_needs_read_on_the_record(self):
 		with as_user("WhatsApp Agent"), self.assertRaises(frappe.PermissionError):
-			quick_send.preview(body="{{ doc.name }}", reference_doctype="User", reference_name="Administrator")
+			quick_send.preview(
+				body="{{ doc.name }}", reference_doctype="User", reference_name="Administrator"
+			)
 
 	def test_quick_send_checks_record_and_file_before_queueing(self):
 		with as_user("WhatsApp Agent"), patch.object(quick_send, "compose") as compose:
 			with self.assertRaises(frappe.PermissionError):
 				quick_send_api.send(
-					device="x", phone="+966500000001", body="hi", reference_doctype="User", reference_name="Administrator"
+					device="x",
+					phone="+966500000001",
+					body="hi",
+					reference_doctype="User",
+					reference_name="Administrator",
 				)
 			with self.assertRaises(WAPermissionError):
 				quick_send_api.send(

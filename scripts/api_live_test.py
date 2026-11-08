@@ -329,7 +329,14 @@ def check_inputs(ctx: Ctx, eps: list[Endpoint]) -> None:
 					if p == pname or (writes and p == holdout):
 						continue
 					st = base_type(ep.params[p])
-					data[p] = {int: "1", bool: "0", list: "[]", dict: "{}", date: "2026-01-01", datetime: "2026-01-01 00:00:00"}.get(st, "x")
+					data[p] = {
+						int: "1",
+						bool: "0",
+						list: "[]",
+						dict: "{}",
+						date: "2026-01-01",
+						datetime: "2026-01-01 00:00:00",
+					}.get(st, "x")
 				data[pname] = junk
 				r = ctx.call(ep.path, "sysmgr", method, data)
 				ok = r.status_code in (417, 403) and r.status_code != 500
@@ -343,7 +350,14 @@ def check_inputs(ctx: Ctx, eps: list[Endpoint]) -> None:
 				data = {}
 				for p in ep.required:
 					st = base_type(ep.params[p])
-					data[p] = {int: "1", bool: "0", list: "[]", dict: "{}", date: "2026-01-01", datetime: "2026-01-01 00:00:00"}.get(st, "x")
+					data[p] = {
+						int: "1",
+						bool: "0",
+						list: "[]",
+						dict: "{}",
+						date: "2026-01-01",
+						datetime: "2026-01-01 00:00:00",
+					}.get(st, "x")
 				data[pname] = s
 				t0 = time.monotonic()
 				r = ctx.call(ep.path, "sysmgr", "POST" if "POST" in ep.methods else "GET", data)
@@ -369,7 +383,12 @@ def check_error_hygiene(ctx: Ctx, eps: list[Endpoint]) -> None:
 				data = {p: "does-not-exist-" + uuid.uuid4().hex[:6] for p in ep.required}
 			r = ctx.call(ep.path, ident, method, data)
 			ctx.add("errors", f"{ep.path} as {ident} no 5xx", r.status_code < 500, f"got {r.status_code}")
-			ctx.add("errors", f"{ep.path} as {ident} no traceback", not leaks_traceback(r), f"status {r.status_code}")
+			ctx.add(
+				"errors",
+				f"{ep.path} as {ident} no traceback",
+				not leaks_traceback(r),
+				f"status {r.status_code}",
+			)
 			break
 
 
@@ -417,7 +436,11 @@ def check_record_level(ctx: Ctx, eps: list[Endpoint], frappe) -> None:
 	group = frappe.db.get_value("WhatsApp Contact Group", {}, "name") or "none"
 	fill = {"{contact}": contact, "{number}": number, "{group}": group}
 	before = "untouched"
-	members_before = frappe.db.count("WhatsApp Contact Group Member", {"phone_e164": "+966500000001"}) if frappe.db.has_column("WhatsApp Contact Group Member", "phone_e164") else None
+	members_before = (
+		frappe.db.count("WhatsApp Contact Group Member", {"phone_e164": "+966500000001"})
+		if frappe.db.has_column("WhatsApp Contact Group Member", "phone_e164")
+		else None
+	)
 	for ep in eps:
 		if ep.roles or ep.allow_guest:
 			continue
@@ -436,11 +459,18 @@ def check_record_level(ctx: Ctx, eps: list[Endpoint], frappe) -> None:
 		method = "POST" if "POST" in ep.methods else ep.methods[0]
 		for ident in ("website", "desk_other"):
 			r = ctx.call(ep.path, ident, method, data)
-			ctx.add("record", f"{short} {ident} denied", r.status_code == 403, f"got {r.status_code} {r.text[:120]}")
+			ctx.add(
+				"record",
+				f"{short} {ident} denied",
+				r.status_code == 403,
+				f"got {r.status_code} {r.text[:120]}",
+			)
 	frappe.db.rollback()
 	after = frappe.db.get_value("Contact", contact, "designation")
 	ctx.add("record", "contact untouched by denied users", after == before, f"{before!r} -> {after!r}")
-	links = frappe.get_all("Dynamic Link", filters={"parenttype": "Contact", "parent": contact}, pluck="link_name")
+	links = frappe.get_all(
+		"Dynamic Link", filters={"parenttype": "Contact", "parent": contact}, pluck="link_name"
+	)
 	ctx.add("record", "no party link added by denied users", not links, f"links={links}")
 	created = frappe.get_all("Contact", filters={"first_name": "Live Probe"}, pluck="name")
 	ctx.add("record", "no contact created by denied users", not created, f"created={created}")
@@ -461,14 +491,14 @@ def check_rest(ctx: Ctx, frappe) -> None:
 		url = f"{ctx.base}/api/resource/{dt}"
 		for ident in ("website", "desk_other"):
 			key, secret = ctx.keys[ident]
-			r = requests.get(url, headers={"Host": ctx.host, "Authorization": f"token {key}:{secret}"}, timeout=30)
+			r = requests.get(
+				url, headers={"Host": ctx.host, "Authorization": f"token {key}:{secret}"}, timeout=30
+			)
 			rows = body(r).get("data") or []
 			ok = r.status_code == 403 or (r.status_code == 200 and not rows)
 			ctx.add("rest", f"{dt} list as {ident}", ok, f"got {r.status_code} rows={len(rows)}")
 		# password fields never serialized, even to a System Manager
-		pw_fields = [
-			d.fieldname for d in frappe.get_meta(dt).fields if d.fieldtype == "Password"
-		]
+		pw_fields = [d.fieldname for d in frappe.get_meta(dt).fields if d.fieldtype == "Password"]
 		if pw_fields:
 			key, secret = ctx.keys["sysmgr"]
 			target = dt if frappe.get_meta(dt).issingle else frappe.db.get_value(dt, {}, "name")
@@ -501,7 +531,9 @@ def check_webhook(ctx: Ctx, frappe) -> None:
 		h = {"Content-Type": "application/json", **headers}
 		return ctx.call(RECEIVER, None, method, headers=h, raw=raw)
 
-	def signed(event_id: str, payload: dict, ts: str | None = None, sec: str | None = None) -> tuple[dict, bytes]:
+	def signed(
+		event_id: str, payload: dict, ts: str | None = None, sec: str | None = None
+	) -> tuple[dict, bytes]:
 		raw = json.dumps(payload).encode()
 		ts = ts or str(int(time.time()))
 		created.append(event_id)
@@ -548,7 +580,9 @@ def check_webhook(ctx: Ctx, frappe) -> None:
 			"X-SND-Event": "live.test",
 			"X-SND-Event-ID": e,
 			"X-SND-Timestamp": ts,
-			"X-SND-Signature": P.sign(secret, ts, raw.decode("utf-8", "replace")) if label != "non-utf8" else "0" * 64,
+			"X-SND-Signature": P.sign(secret, ts, raw.decode("utf-8", "replace"))
+			if label != "non-utf8"
+			else "0" * 64,
 		}
 		r = send(h, raw)
 		ctx.add("webhook", f"{label} body -> 4xx", 400 <= r.status_code < 500, f"got {r.status_code}")
@@ -563,7 +597,9 @@ def check_webhook(ctx: Ctx, frappe) -> None:
 	h, raw = signed(e, payload)
 	r1 = send(h, raw)
 	r2 = send(h, raw)
-	ctx.add("webhook", "valid delivery accepted", r1.status_code == 200, f"got {r1.status_code} {r1.text[:100]}")
+	ctx.add(
+		"webhook", "valid delivery accepted", r1.status_code == 200, f"got {r1.status_code} {r1.text[:100]}"
+	)
 	ctx.add(
 		"webhook",
 		"replay is a duplicate",
@@ -630,7 +666,9 @@ def main() -> int:
 	ap = argparse.ArgumentParser()
 	ap.add_argument("--site", default="whatsapp.dev.sanad.digital")
 	ap.add_argument("--base", default="http://127.0.0.1:8000")
-	ap.add_argument("--only", nargs="*", default=None, help="sections: gates inputs errors record rest webhook csrf")
+	ap.add_argument(
+		"--only", nargs="*", default=None, help="sections: gates inputs errors record rest webhook csrf"
+	)
 	ap.add_argument("--keep-users", action="store_true")
 	ap.add_argument("--report", default=None, help="write the JSON result list here")
 	ap.add_argument("-v", "--verbose", action="store_true")

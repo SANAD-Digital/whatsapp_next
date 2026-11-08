@@ -65,7 +65,7 @@
 
 # ---------- حماية: لا تعمل من الرابط المباشر ----------
 if (frappe.form_dict.get("cmd") or "").startswith("wa_fn_"):
-    frappe.throw("Not allowed", frappe.PermissionError)
+	frappe.throw("Not allowed", frappe.PermissionError)
 
 form = frappe.form_dict
 u = frappe.utils
@@ -94,87 +94,93 @@ meta = None
 
 # ---------- التحقق ----------
 if not party_type or not party:
-    error = "رقمك غير مرتبط بحساب لدينا"
+	error = "رقمك غير مرتبط بحساب لدينا"
 elif not document_name:
-    error = "الرجاء إرسال رقم المستند"
+	error = "الرجاء إرسال رقم المستند"
 elif not frappe.db.exists("DocType", doctype):
-    error = "الدالة غير مُعدّة: نوع المستند «" + doctype + "» غير موجود"
+	error = "الدالة غير مُعدّة: نوع المستند «" + doctype + "» غير موجود"
 else:
-    meta = frappe.get_meta(doctype)
-    # بلا حقل طرف لا شيء يثبت أن المستند يخص المرسل: نرفض، ولا نجيب عن كل مستندات النوع
-    if not party_field or not meta.has_field(party_field):
-        error = "الدالة غير مُعدّة: حقل الطرف «" + party_field + "» غير موجود في " + doctype
+	meta = frappe.get_meta(doctype)
+	# بلا حقل طرف لا شيء يثبت أن المستند يخص المرسل: نرفض، ولا نجيب عن كل مستندات النوع
+	if not party_field or not meta.has_field(party_field):
+		error = "الدالة غير مُعدّة: حقل الطرف «" + party_field + "» غير موجود في " + doctype
 
 # ---------- اسم الأستاذ المساعد ----------
 party_name = party
 if not error:
-    pmeta = frappe.get_meta(party_type)
-    for f in (pmeta.title_field, "customer_name", "supplier_name"):
-        if f and pmeta.has_field(f):
-            v = frappe.db.get_value(party_type, party, f)
-            if v:
-                party_name = v
-                break
+	pmeta = frappe.get_meta(party_type)
+	for f in (pmeta.title_field, "customer_name", "supplier_name"):
+		if f and pmeta.has_field(f):
+			v = frappe.db.get_value(party_type, party, f)
+			if v:
+				party_name = v
+				break
 
 # ---------- قراءة المستند (حقول محددة فقط) ----------
 if not error:
-    fields = ["name", party_field]
-    for f in READ_FIELDS:
-        if meta.has_field(f) or f == "docstatus":
-            fields.append(f)
-    amount_fields = [f for f in AMOUNT_FIELDS if meta.has_field(f)]
-    fields = fields + amount_fields
-    if meta.has_field("currency"):
-        fields.append("currency")
-    row = frappe.db.get_value(doctype, document_name, fields, as_dict=True)
+	fields = ["name", party_field]
+	for f in READ_FIELDS:
+		if meta.has_field(f) or f == "docstatus":
+			fields.append(f)
+	amount_fields = [f for f in AMOUNT_FIELDS if meta.has_field(f)]
+	fields = fields + amount_fields
+	if meta.has_field("currency"):
+		fields.append("currency")
+	row = frappe.db.get_value(doctype, document_name, fields, as_dict=True)
 
-    base = {
-        "document_name": document_name,
-        "doctype": doctype,
-        "doctype_label": _(doctype),
-        "party": party,
-        "party_name": party_name,
-        "party_type": party_type,
-    }
+	base = {
+		"document_name": document_name,
+		"doctype": doctype,
+		"doctype_label": _(doctype),
+		"party": party,
+		"party_name": party_name,
+		"party_type": party_type,
+	}
 
-    # رد واحد لـ «غير موجود» و«ليس لك»
-    field = meta.get_field(party_field)
-    wrong_type = field.fieldtype == "Link" and field.options and field.options != party_type
-    if not row or wrong_type or row.get(party_field) != party:
-        messages.append({
-            "reply": "not_found_text",
-            "type": "text",
-            "text": frappe.render_template(msg_not_found, base).strip(),
-        })
-        data = base
-    else:
-        docstatus = u.cint(row.get("docstatus"))
-        status = row.get("status") or {0: "Draft", 1: "Submitted", 2: "Cancelled"}.get(docstatus)
-        amount = None
-        for f in amount_fields:
-            if row.get(f) is not None:
-                amount = flt(row.get(f))
-                break
-        currency = row.get("currency") or None
-        date = row.get("posting_date") or row.get("transaction_date")
+	# رد واحد لـ «غير موجود» و«ليس لك»
+	field = meta.get_field(party_field)
+	wrong_type = field.fieldtype == "Link" and field.options and field.options != party_type
+	if not row or wrong_type or row.get(party_field) != party:
+		messages.append(
+			{
+				"reply": "not_found_text",
+				"type": "text",
+				"text": frappe.render_template(msg_not_found, base).strip(),
+			}
+		)
+		data = base
+	else:
+		docstatus = u.cint(row.get("docstatus"))
+		status = row.get("status") or {0: "Draft", 1: "Submitted", 2: "Cancelled"}.get(docstatus)
+		amount = None
+		for f in amount_fields:
+			if row.get(f) is not None:
+				amount = flt(row.get(f))
+				break
+		currency = row.get("currency") or None
+		date = row.get("posting_date") or row.get("transaction_date")
 
-        ctx = dict(base)
-        ctx.update({
-            "document_name": row.get("name"),
-            "status": status,
-            "status_label": _(status) if status else "",
-            "is_draft": docstatus == 0,
-            "is_cancelled": docstatus == 2,
-            "amount": amount,
-            "amount_formatted": u.fmt_money(amount, currency=currency) if amount is not None else "",
-            "currency": currency or "",
-            "date": u.formatdate(date, "dd-MM-yyyy") if date else "",
-        })
-        messages.append({
-            "reply": "result_text",
-            "type": "text",
-            "text": frappe.render_template(msg_result, ctx).strip(),
-        })
-        data = ctx
+		ctx = dict(base)
+		ctx.update(
+			{
+				"document_name": row.get("name"),
+				"status": status,
+				"status_label": _(status) if status else "",
+				"is_draft": docstatus == 0,
+				"is_cancelled": docstatus == 2,
+				"amount": amount,
+				"amount_formatted": u.fmt_money(amount, currency=currency) if amount is not None else "",
+				"currency": currency or "",
+				"date": u.formatdate(date, "dd-MM-yyyy") if date else "",
+			}
+		)
+		messages.append(
+			{
+				"reply": "result_text",
+				"type": "text",
+				"text": frappe.render_template(msg_result, ctx).strip(),
+			}
+		)
+		data = ctx
 
 frappe.flags.wa_result = {"error": error, "messages": messages, "data": data}

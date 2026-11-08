@@ -85,9 +85,7 @@ def country_catalog() -> list[dict[str, object]]:
 		international = ""
 		if example is not None:
 			national = phonenumbers.format_number(example, phonenumbers.PhoneNumberFormat.NATIONAL)
-			international = phonenumbers.format_number(
-				example, phonenumbers.PhoneNumberFormat.INTERNATIONAL
-			)
+			international = phonenumbers.format_number(example, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
 			significant = phonenumbers.national_significant_number(example)
 		rows.append(
 			{

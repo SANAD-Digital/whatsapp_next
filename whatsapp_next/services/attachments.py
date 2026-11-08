@@ -137,7 +137,9 @@ def print_language(doctype: str, name: str, print_format: str | None = None) -> 
 	out in the language of whoever happened to submit the document."""
 	meta = frappe.get_meta(doctype)
 	print_format = print_format or meta.default_print_format
-	language = frappe.db.get_value("Print Format", print_format, "default_print_language") if print_format else None
+	language = (
+		frappe.db.get_value("Print Format", print_format, "default_print_language") if print_format else None
+	)
 	if not language and meta.has_field("language"):
 		language = frappe.db.get_value(doctype, name, "language")
 	return language or None

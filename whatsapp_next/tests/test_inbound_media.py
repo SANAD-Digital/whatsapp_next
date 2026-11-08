@@ -13,7 +13,10 @@ from whatsapp_next.providers.schemas import ProviderSettings
 from whatsapp_next.providers.snd_platform import SndPlatformProvider, _parse_inbound
 
 BASE = "https://platform.invalid/"
-MEDIA_URL = BASE + "api/method/snd_whatsapp_platform.snd_whatsapp_platform.api.v1.get_inbound_media_api?device=WAD-1&file_id=f1"
+MEDIA_URL = (
+	BASE
+	+ "api/method/snd_whatsapp_platform.snd_whatsapp_platform.api.v1.get_inbound_media_api?device=WAD-1&file_id=f1"
+)
 
 
 class _Resp:
@@ -42,7 +45,12 @@ def _provider():
 			provider_key="snd_platform",
 			base_url=BASE,
 			timeout=5,
-			credentials={"customer_api_key": "ck", "customer_api_secret": "cs", "api_key": "k", "api_secret": "s"},
+			credentials={
+				"customer_api_key": "ck",
+				"customer_api_secret": "cs",
+				"api_key": "k",
+				"api_secret": "s",
+			},
 		)
 	)
 
@@ -64,11 +72,16 @@ class TestInboundMedia(IntegrationTestCase):
 			},
 			None,
 		)
-		self.assertEqual((p.media_url, p.media_mime_type, p.media_file_name, p.caption), (MEDIA_URL, "image/jpeg", "M1.jpg", "look"))
+		self.assertEqual(
+			(p.media_url, p.media_mime_type, p.media_file_name, p.caption),
+			(MEDIA_URL, "image/jpeg", "M1.jpg", "look"),
+		)
 
 	def test_download_sends_credentials_only_to_the_platform(self):
 		provider = _provider()
-		with patch.object(provider._session, "get", return_value=_Resp(200, b"JPEGDATA", {"Content-Type": "image/jpeg"})) as get:
+		with patch.object(
+			provider._session, "get", return_value=_Resp(200, b"JPEGDATA", {"Content-Type": "image/jpeg"})
+		) as get:
 			content, ctype = provider.download_media(MEDIA_URL)
 		self.assertEqual((content, ctype), (b"JPEGDATA", "image/jpeg"))
 		headers = get.call_args.kwargs["headers"]
@@ -93,16 +106,23 @@ class TestInboundMedia(IntegrationTestCase):
 		doc.flags.ignore_mandatory = True
 		doc.insert(ignore_permissions=True)
 		provider = _provider()
-		with patch("whatsapp_next.providers.registry.get_provider", return_value=provider), patch.object(
-			provider, "download_media", return_value=(b"plain text file", "text/plain")
+		with (
+			patch("whatsapp_next.providers.registry.get_provider", return_value=provider),
+			patch.object(provider, "download_media", return_value=(b"plain text file", "text/plain")),
 		):
 			url = inbound.fetch_media(doc.name, file_name="note.txt")
 		self.assertTrue(url.startswith("/private/files/"))
 		self.assertEqual(frappe.db.get_value("WhatsApp Inbound Message", doc.name, "attachment"), url)
 		f = frappe.get_doc("File", {"file_url": url})
-		self.assertEqual((f.attached_to_doctype, f.attached_to_name, f.is_private), ("WhatsApp Inbound Message", doc.name, 1))
+		self.assertEqual(
+			(f.attached_to_doctype, f.attached_to_name, f.is_private),
+			("WhatsApp Inbound Message", doc.name, 1),
+		)
 		# a second run is a no-op
-		with patch("whatsapp_next.providers.registry.get_provider", return_value=provider), patch.object(provider, "download_media") as again:
+		with (
+			patch("whatsapp_next.providers.registry.get_provider", return_value=provider),
+			patch.object(provider, "download_media") as again,
+		):
 			inbound.fetch_media(doc.name)
 			again.assert_not_called()
 
@@ -111,7 +131,9 @@ class TestInboundMedia(IntegrationTestCase):
 		with patch.object(provider._session, "get", return_value=_Resp(200, b"x" * 2048)):
 			with self.assertRaises(pex.ValidationError):
 				provider.download_media(MEDIA_URL, max_bytes=1024)
-		with patch.object(provider._session, "get", return_value=_Resp(200, b"x", {"Content-Length": "999999"})):
+		with patch.object(
+			provider._session, "get", return_value=_Resp(200, b"x", {"Content-Length": "999999"})
+		):
 			with self.assertRaises(pex.ValidationError):
 				provider.download_media(MEDIA_URL, max_bytes=1024)
 

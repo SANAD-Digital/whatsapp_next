@@ -182,7 +182,9 @@ class TestApiSimulator(IntegrationTestCase):
 		from whatsapp_next.services import numbers_materializer
 
 		with as_user("WhatsApp Agent"):
-			api.simulate_inbound(device=self.device, sender_phone=GROUP, text=f"{TAG} to the group", run_commands="0")
+			api.simulate_inbound(
+				device=self.device, sender_phone=GROUP, text=f"{TAG} to the group", run_commands="0"
+			)
 		numbers_materializer.refresh_keys([GROUP])
 		frappe.db.set_value("WhatsApp Number", GROUP, "number_type", "Group", update_modified=False)
 		with as_user("WhatsApp Agent"):

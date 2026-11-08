@@ -40,6 +40,13 @@ def _provider(**creds) -> SndPlatformProvider:
 
 
 class TestSndPlatform(IntegrationTestCase):
+	def setUp(self):
+		# the requests here never leave (`requests` is replaced): a site's `wa_send_allowlist`
+		# does not apply to them (test_send_allowlist covers it)
+		conf = patch.dict(frappe.local.conf, {"wa_send_allowlist": None})
+		conf.start()
+		self.addCleanup(conf.stop)
+
 	def _call(self, provider, method, *args, response=None, exc=None, **kwargs):
 		with patch.object(provider._session, "request") as req:
 			if exc:
@@ -470,16 +477,32 @@ class TestPlatformSourceTypes(IntegrationTestCase):
 	"""Every outbound source maps to a value the platform's Message Log accepts (its Select),
 	otherwise the platform queues the message and then never delivers it."""
 
-	PLATFORM_OPTIONS = {"SANAD ERPNext", "External API", "Campaign", "Manual", "Simulator", "Scheduled Message", "Provider Webhook"}
+	PLATFORM_OPTIONS = {
+		"SANAD ERPNext",
+		"External API",
+		"Campaign",
+		"Manual",
+		"Simulator",
+		"Scheduled Message",
+		"Provider Webhook",
+	}
 
 	def test_every_client_source_maps_to_platform_vocabulary(self):
 		from whatsapp_next.providers.snd_platform import SndPlatformProvider
 
-		ours = [o for o in (frappe.get_meta("WhatsApp Log").get_field("source_type").options or "").split("\n") if o]
+		ours = [
+			o
+			for o in (frappe.get_meta("WhatsApp Log").get_field("source_type").options or "").split("\n")
+			if o
+		]
 		self.assertTrue(ours)
 		for source in ours:
-			self.assertIn(SndPlatformProvider.PLATFORM_SOURCE_TYPES.get(source), self.PLATFORM_OPTIONS, source)
-		self.assertEqual(SndPlatformProvider.PLATFORM_SOURCE_TYPES.get("Something new", "External API"), "External API")
+			self.assertIn(
+				SndPlatformProvider.PLATFORM_SOURCE_TYPES.get(source), self.PLATFORM_OPTIONS, source
+			)
+		self.assertEqual(
+			SndPlatformProvider.PLATFORM_SOURCE_TYPES.get("Something new", "External API"), "External API"
+		)
 
 
 class TestConfigureWebhookEvents(IntegrationTestCase):
@@ -498,17 +521,21 @@ class TestConfigureWebhookEvents(IntegrationTestCase):
 		updated = WebhookEndpointState(
 			endpoint_id="WAWE-1", url=url, status="Active", events=tuple(wanted), max_retries=3
 		)
-		with patch.object(provider, "_request", return_value={"ok": True}) as req, patch.object(
-			provider, "list_webhook_endpoints", return_value=[auto]
-		), patch.object(provider, "update_webhook_endpoint", return_value=updated) as upd:
+		with (
+			patch.object(provider, "_request", return_value={"ok": True}) as req,
+			patch.object(provider, "list_webhook_endpoints", return_value=[auto]),
+			patch.object(provider, "update_webhook_endpoint", return_value=updated) as upd,
+		):
 			state = provider.configure_webhook(url, wanted, 3)
 		self.assertEqual(state, updated)
 		upd.assert_called_once_with("WAWE-1", None, wanted, None)
 		self.assertEqual([c.args[1] for c in req.call_args_list], ["configure_integration_webhook_api"])
 		# already right: returned as is, nothing updated
-		with patch.object(provider, "_request", return_value={"ok": True}), patch.object(
-			provider, "list_webhook_endpoints", return_value=[updated]
-		), patch.object(provider, "update_webhook_endpoint") as upd:
+		with (
+			patch.object(provider, "_request", return_value={"ok": True}),
+			patch.object(provider, "list_webhook_endpoints", return_value=[updated]),
+			patch.object(provider, "update_webhook_endpoint") as upd,
+		):
 			self.assertEqual(provider.configure_webhook(url, wanted, 3), updated)
 		upd.assert_not_called()
 
@@ -560,8 +587,15 @@ class TestPlatformTimes(IntegrationTestCase):
 		self.assertEqual((event.inbound.push_name, event.inbound.group_name), ("أحمد", "فريق المبيعات"))
 		direct = _provider().parse_webhook(
 			{"X-SND-Event": "message.received", "X-SND-Event-ID": "d1"},
-			{"event": "message.received", "message_id": "3EB0DIRECT", "chat_jid": "967777999579@s.whatsapp.net",
-			 "sender_mobile_no": "967777999579", "push_name": "أحمد", "group_name": "x", "text": "hi"},
+			{
+				"event": "message.received",
+				"message_id": "3EB0DIRECT",
+				"chat_jid": "967777999579@s.whatsapp.net",
+				"sender_mobile_no": "967777999579",
+				"push_name": "أحمد",
+				"group_name": "x",
+				"text": "hi",
+			},
 		)
 		self.assertIsNone(direct.inbound.group_name)
 

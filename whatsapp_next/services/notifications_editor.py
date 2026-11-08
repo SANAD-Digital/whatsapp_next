@@ -58,7 +58,13 @@ RECIPIENT_FIELDS: tuple[str, ...] = (
 	"phone",
 	"condition",
 )
-STAT_FIELDS: tuple[str, ...] = ("send_count", "last_sent_at", "last_error", "last_error_at", "variables_count")
+STAT_FIELDS: tuple[str, ...] = (
+	"send_count",
+	"last_sent_at",
+	"last_error",
+	"last_error_at",
+	"variables_count",
+)
 PAYLOAD_KEYS = frozenset({"name", *FIELDS, "recipients"})
 RECENT_SENDS = 5
 
@@ -97,8 +103,12 @@ def templates_for(document_type: str | None = None) -> list[dict[str, Any]]:
 		order_by="modified desc",
 		limit_page_length=200,
 	)
-	rows = [r for r in rows if not r.reference_doctype or not document_type or r.reference_doctype == document_type]
-	rows.sort(key=lambda r: (0 if document_type and r.reference_doctype == document_type else 1))
+	rows = [
+		r
+		for r in rows
+		if not r.reference_doctype or not document_type or r.reference_doctype == document_type
+	]
+	rows.sort(key=lambda r: 0 if document_type and r.reference_doctype == document_type else 1)
 	for r in rows:
 		r.body = (r.body or "")[:280]
 	return rows
@@ -189,7 +199,13 @@ def _apply(doc, payload: dict) -> None:
 			value = cint(value)
 		elif f == "filters":
 			# the editor sends Frappe's filter list; the field stores it as JSON text
-			value = json.dumps(value) if isinstance(value, list) and value else (value or None) if isinstance(value, str) else None
+			value = (
+				json.dumps(value)
+				if isinstance(value, list) and value
+				else (value or None)
+				if isinstance(value, str)
+				else None
+			)
 		elif isinstance(value, str) and f not in ("message", "condition"):
 			value = value.strip() or None
 		doc.set(f, value)
@@ -202,7 +218,9 @@ def _apply(doc, payload: dict) -> None:
 		doc.set("recipients", [])
 		for row in rows:
 			if isinstance(row, dict):
-				doc.append("recipients", {f: row.get(f) for f in RECIPIENT_FIELDS if row.get(f) not in (None, "")})
+				doc.append(
+					"recipients", {f: row.get(f) for f in RECIPIENT_FIELDS if row.get(f) not in (None, "")}
+				)
 
 
 def _draft(payload: dict):
@@ -252,10 +270,14 @@ def _render(notif, doc) -> dict[str, Any]:
 	try:
 		meets = notifications.evaluate(notif, doc, notif.event, problems)
 		recipients = notifications.resolve_recipients(notif, doc, problems)
-		ctx = templates.context_for(doc.doctype, doc.name, {"event": notif.event, "notification": notif.name}, doc=doc)
+		ctx = templates.context_for(
+			doc.doctype, doc.name, {"event": notif.event, "notification": notif.name}, doc=doc
+		)
 		if recipients:
 			first = recipients[0]
-			ctx["recipient"] = notifications.recipient_context(first.phone_e164, first.display_name, first.contact)
+			ctx["recipient"] = notifications.recipient_context(
+				first.phone_e164, first.display_name, first.contact
+			)
 		body, error = notifications._body(notif, ctx)
 	finally:
 		if frappe.local.message_log:
@@ -264,16 +286,30 @@ def _render(notif, doc) -> dict[str, Any]:
 	broken = [p for p in problems if p.startswith(("condition:", "filters:"))]
 	if broken and not error:
 		error = broken[0]
-	return {"meets": bool(meets), "recipients": recipients, "body": body, "error": error, "problems": problems}
+	return {
+		"meets": bool(meets),
+		"recipients": recipients,
+		"body": body,
+		"error": error,
+		"problems": problems,
+	}
 
 
 def _attachment_hint(notif, doc) -> dict[str, Any] | None:
 	"""What the message would carry, without building it: a print of the record or a field's file."""
 	if cint(notif.attach_print):
-		return {"message_type": "Document", "file_name": f"{doc.name}.pdf", "print_format": notif.print_format}
+		return {
+			"message_type": "Document",
+			"file_name": f"{doc.name}.pdf",
+			"print_format": notif.print_format,
+		}
 	if notif.attach_field:
 		url = doc.get(notif.attach_field)
-		return {"message_type": notif.message_type or "Document", "file_name": (url or "").rsplit("/", 1)[-1] or None, "missing": not url}
+		return {
+			"message_type": notif.message_type or "Document",
+			"file_name": (url or "").rsplit("/", 1)[-1] or None,
+			"missing": not url,
+		}
 	return None
 
 
@@ -284,7 +320,13 @@ def preview(payload: dict, reference_name: str | None = None) -> dict[str, Any]:
 	fields are left alone."""
 	notif = _draft(payload)
 	problem = _problem(notif)
-	out: dict[str, Any] = {"problem": problem, "reference_name": None, "message": None, "recipients": [], "recipients_count": 0}
+	out: dict[str, Any] = {
+		"problem": problem,
+		"reference_name": None,
+		"message": None,
+		"recipients": [],
+		"recipients_count": 0,
+	}
 	dt = notif.document_type
 	if dt and frappe.db.exists("DocType", dt) and not frappe.has_permission(dt, "read"):
 		# the preview is a read of a record: say so instead of failing the whole window
@@ -303,7 +345,9 @@ def preview(payload: dict, reference_name: str | None = None) -> dict[str, Any]:
 			"meets_condition": r["meets"],
 			"message": r["body"],
 			"attachment": _attachment_hint(notif, doc),
-			"recipients": [{"phone_e164": mask(x.phone_e164), "source": x.source} for x in r["recipients"][:20]],
+			"recipients": [
+				{"phone_e164": mask(x.phone_e164), "source": x.source} for x in r["recipients"][:20]
+			],
 			"recipients_count": len(r["recipients"]),
 			"error": r["error"],
 			"warnings": r["problems"],
@@ -328,7 +372,10 @@ def send_test(payload: dict, phone: str, reference_name: str | None = None) -> d
 		frappe.throw(problem, WAValidationError)
 	doc = _document(notif, reference_name)
 	if doc is None:
-		frappe.throw(_("There is no {0} to try the notification on yet").format(_(notif.document_type)), WAValidationError)
+		frappe.throw(
+			_("There is no {0} to try the notification on yet").format(_(notif.document_type)),
+			WAValidationError,
+		)
 	saved_name = None if notif.is_new() else notif.name
 	notif.name = saved_name or None
 	ctx = templates.context_for(doc.doctype, doc.name, {"event": "Test", "notification": saved_name}, doc=doc)
@@ -336,7 +383,9 @@ def send_test(payload: dict, phone: str, reference_name: str | None = None) -> d
 	ctx["recipient"] = notifications.recipient_context(phone_e164, *dispatch.recipient_identity(phone_e164))
 	body, error = notifications._body(notif, ctx)
 	if error or not (body or "").strip():
-		frappe.throw(_("The message could not be rendered: {0}").format(error or _("it is empty")), WAValidationError)
+		frappe.throw(
+			_("The message could not be rendered: {0}").format(error or _("it is empty")), WAValidationError
+		)
 	attach = notifications._attachment(notif, doc)
 	spec = OutboundSpec(
 		device=notif.device or None,
@@ -430,9 +479,15 @@ def search(kind: str, txt: str | None = None, document_type: str | None = None) 
 				return 1
 			return None
 
-		ranked = sorted(((rank(r), _(r.name), r) for r in rows if rank(r) is not None), key=lambda x: (x[0], x[1]))
+		ranked = sorted(
+			((rank(r), _(r.name), r) for r in rows if rank(r) is not None), key=lambda x: (x[0], x[1])
+		)
 		return [
-			{"value": r.name, "label": label, "description": _(r.module) + (" · " + _("Submittable") if r.is_submittable else "")}
+			{
+				"value": r.name,
+				"label": label,
+				"description": _(r.module) + (" · " + _("Submittable") if r.is_submittable else ""),
+			}
 			for _rank, label, r in ranked[:20]
 		]
 	if kind == "print_format":
@@ -440,12 +495,20 @@ def search(kind: str, txt: str | None = None, document_type: str | None = None) 
 		if document_type:
 			filters["doc_type"] = document_type
 		rows = frappe.get_list(
-			"Print Format", filters=filters, or_filters={"name": like} if like else None, fields=["name"], limit_page_length=20
+			"Print Format",
+			filters=filters,
+			or_filters={"name": like} if like else None,
+			fields=["name"],
+			limit_page_length=20,
 		)
 		return [{"value": r.name, "label": r.name, "description": None} for r in rows]
 	if kind == "letter_head":
 		rows = frappe.get_list(
-			"Letter Head", filters={"disabled": 0}, or_filters={"name": like} if like else None, fields=["name"], limit_page_length=20
+			"Letter Head",
+			filters={"disabled": 0},
+			or_filters={"name": like} if like else None,
+			fields=["name"],
+			limit_page_length=20,
 		)
 		return [{"value": r.name, "label": r.name, "description": None} for r in rows]
 	frappe.throw(_("Unknown picker {0}").format(kind), WAValidationError)

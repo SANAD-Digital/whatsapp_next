@@ -51,7 +51,9 @@ def request_topup(
 	return billing.request_topup(amount, payment_option, reference_no, remarks, receipt_file, plan_code)
 
 
-@api_endpoint(roles=MANAGER, schema={"amount": {"min": 0.01, "max": 1000000}, "plan_code": {"max_length": 140}})
+@api_endpoint(
+	roles=MANAGER, schema={"amount": {"min": 0.01, "max": 1000000}, "plan_code": {"max_length": 140}}
+)
 def start_paypal(amount: float, plan_code: str | None = None) -> dict[str, Any]:
 	"""Start a PayPal payment → `{order_id, approve_url}`."""
 	return billing.start_paypal(amount, plan_code)

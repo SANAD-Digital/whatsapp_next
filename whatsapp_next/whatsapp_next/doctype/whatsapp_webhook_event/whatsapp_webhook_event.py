@@ -25,9 +25,7 @@ class WhatsAppWebhookEvent(Document):
 
 # Composite indexes the DocType JSON cannot express (fields.md F-11); single-column ones are
 # `search_index` / `unique` in the JSON.
-COMPOSITE_INDEXES: tuple[tuple[str, ...], ...] = (
-	("event_name", "received_at"),
-)
+COMPOSITE_INDEXES: tuple[tuple[str, ...], ...] = (("event_name", "received_at"),)
 COMPOSITE_UNIQUE: tuple[tuple[str, ...], ...] = (
 	("event_name", "event_id"),
 )  # one event id spans sent/delivered/read (D-047)

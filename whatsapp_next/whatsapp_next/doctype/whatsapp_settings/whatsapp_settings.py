@@ -115,7 +115,9 @@ class WhatsAppSettings(Document):
 		user = self.command_service_user
 		if not user:
 			if cint(self.enable_commands):
-				frappe.throw(_("Messaging Service User is required when commands are enabled"), WAValidationError)
+				frappe.throw(
+					_("Messaging Service User is required when commands are enabled"), WAValidationError
+				)
 			return
 		if user == "Administrator":
 			frappe.throw(_("Messaging Service User cannot be Administrator"), WAValidationError)

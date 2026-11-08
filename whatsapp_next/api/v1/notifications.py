@@ -88,7 +88,11 @@ def delete_notification(name: str) -> dict[str, bool]:
 	return {"deleted": True}
 
 
-@api_endpoint(roles=MANAGER, methods=("GET", "POST"), schema={"kind": {"enum": ["document_type", "print_format", "letter_head"]}})
+@api_endpoint(
+	roles=MANAGER,
+	methods=("GET", "POST"),
+	schema={"kind": {"enum": ["document_type", "print_format", "letter_head"]}},
+)
 def search(kind: str, txt: str | None = None, document_type: str | None = None) -> list[dict[str, Any]]:
 	"""The editor's pickers → `[{value, label, description}]`. P: Manager."""
 	return notifications_editor.search(kind, txt, document_type)

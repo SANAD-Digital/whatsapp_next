@@ -130,7 +130,9 @@ class TestApiPicker(IntegrationTestCase):
 	def test_sources_groups_contacts_manual(self):
 		with as_user("WhatsApp Agent"):
 			keys = [s["key"] for s in api.list_sources(target_doctype="WhatsApp Campaign")]
-			self.assertEqual(keys, ["Contact Group", "Contact", "WhatsApp Number", "DocType", "Excel", "vCard", "Manual"])
+			self.assertEqual(
+				keys, ["Contact Group", "Contact", "WhatsApp Number", "DocType", "Excel", "vCard", "Manual"]
+			)
 			groups = api.search_groups(txt="ApiTest Picker", kind="Marketing")
 			self.assertEqual((groups["total"], groups["rows"][0]["member_count"]), (1, 1))
 			self.assertEqual(api.search_groups(txt="ApiTest Picker", exclude=GROUP)["total"], 0)

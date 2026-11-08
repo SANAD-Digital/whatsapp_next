@@ -101,7 +101,11 @@ EXPECTED: dict[str, list[tuple[str, str, list[str] | None]]] = {
 		("phone_e164", "Data", None),
 		("display_name", "Data", None),
 		("contact", "Link", None),
-		("source_type", "Select", ["Contact Group", "Contact", "WhatsApp Number", "DocType", "Excel", "vCard", "Manual"]),
+		(
+			"source_type",
+			"Select",
+			["Contact Group", "Contact", "WhatsApp Number", "DocType", "Excel", "vCard", "Manual"],
+		),
 		("source_doctype", "Link", None),
 		("source_name", "Dynamic Link", None),
 		("added_by", "Link", None),
@@ -179,7 +183,11 @@ EXPECTED: dict[str, list[tuple[str, str, list[str] | None]]] = {
 		("jid", "Data", None),
 		("display_name", "Data", None),
 		("contact", "Link", None),
-		("source_type", "Select", ["Contact Group", "Contact", "WhatsApp Number", "DocType", "Excel", "vCard", "Manual"]),
+		(
+			"source_type",
+			"Select",
+			["Contact Group", "Contact", "WhatsApp Number", "DocType", "Excel", "vCard", "Manual"],
+		),
 		("contact_group", "Link", None),
 		("source_doctype", "Link", None),
 		("source_name", "Dynamic Link", None),
@@ -385,7 +393,9 @@ class TestFieldsGroupB(IntegrationTestCase):
 		):
 			self.assertIsNone(function.get_field(fieldname), fieldname)
 		self.assertIsNone(frappe.get_meta("WhatsApp Command").get_field("outputs"))
-		self.assertEqual(frappe.get_meta("WhatsApp Command").get_field("templates").options, "WhatsApp Command Template")
+		self.assertEqual(
+			frappe.get_meta("WhatsApp Command").get_field("templates").options, "WhatsApp Command Template"
+		)
 		self.assertEqual(function.get_field("server_script").options, "Server Script")
 		for doctype in ("WhatsApp Function Setting", "WhatsApp Function Output"):
 			self.assertFalse(frappe.db.exists("DocType", doctype), doctype)

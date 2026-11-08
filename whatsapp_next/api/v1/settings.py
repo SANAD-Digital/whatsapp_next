@@ -251,7 +251,9 @@ def get_site_usage(from_date: date, to_date: date) -> dict[str, Any]:
 	if from_date > to_date:
 		frappe.throw(_("from_date must not be after to_date"), WAValidationError)
 	if (to_date - from_date).days >= usage_sync.SITE_MAX_DAYS:
-		frappe.throw(_("A usage period is at most {0} days").format(usage_sync.SITE_MAX_DAYS), WAValidationError)
+		frappe.throw(
+			_("A usage period is at most {0} days").format(usage_sync.SITE_MAX_DAYS), WAValidationError
+		)
 	return {"rows": usage_sync.site_daily(from_date, to_date), "from": str(from_date), "to": str(to_date)}
 
 

@@ -74,22 +74,44 @@ class TestApiQuickSend(IntegrationTestCase):
 		delete_all("WhatsApp Template", {"name": tpl})
 		delete_all("WhatsApp Number", {"name": ("in", [P1, P2])})
 		frappe.get_doc(
-			{"doctype": "WhatsApp Template", "template_name": tpl, "message_type": "Text", "reference_doctype": "ToDo", "body": f"{TAG} hi [{{{{ recipient.display_name }}}}] {{{{ doc.description }}}}"}
+			{
+				"doctype": "WhatsApp Template",
+				"template_name": tpl,
+				"message_type": "Text",
+				"reference_doctype": "ToDo",
+				"body": f"{TAG} hi [{{{{ recipient.display_name }}}}] {{{{ doc.description }}}}",
+			}
 		).insert(ignore_permissions=True)
-		todo = frappe.get_doc({"doctype": "ToDo", "description": "ApiTest todo"}).insert(ignore_permissions=True)
-		number = frappe.get_doc({"doctype": "WhatsApp Number", "phone_e164": P1, "number_type": "Individual", "display_name": "Salem ApiTest"})
+		todo = frappe.get_doc({"doctype": "ToDo", "description": "ApiTest todo"}).insert(
+			ignore_permissions=True
+		)
+		number = frappe.get_doc(
+			{
+				"doctype": "WhatsApp Number",
+				"phone_e164": P1,
+				"number_type": "Individual",
+				"display_name": "Salem ApiTest",
+			}
+		)
 		number.insert(ignore_permissions=True)
 		try:
 			ref = {"reference_doctype": "ToDo", "reference_name": todo.name}
 			# a number the system knows by name: the preview and the sent body both say it
-			self.assertEqual(api.preview(template=tpl, phone=P1, **ref)["body"], f"{TAG} hi [Salem ApiTest] ApiTest todo")
+			self.assertEqual(
+				api.preview(template=tpl, phone=P1, **ref)["body"], f"{TAG} hi [Salem ApiTest] ApiTest todo"
+			)
 			res = api.send(device=self.device, phone=P1, template=tpl, **ref)
-			self.assertEqual(frappe.db.get_value("WhatsApp Log", res["outbound"], "body"), f"{TAG} hi [Salem ApiTest] ApiTest todo")
+			self.assertEqual(
+				frappe.db.get_value("WhatsApp Log", res["outbound"], "body"),
+				f"{TAG} hi [Salem ApiTest] ApiTest todo",
+			)
 			# a number nobody has named: nothing, never the word None
 			self.assertEqual(api.preview(template=tpl, phone=P2, **ref)["body"], f"{TAG} hi [] ApiTest todo")
 			self.assertEqual(api.preview(template=tpl, **ref)["body"], f"{TAG} hi [] ApiTest todo")
 			res = api.send(device=self.device, phone=P2, template=tpl, **ref)
-			self.assertEqual(frappe.db.get_value("WhatsApp Log", res["outbound"], "body"), f"{TAG} hi [] ApiTest todo")
+			self.assertEqual(
+				frappe.db.get_value("WhatsApp Log", res["outbound"], "body"), f"{TAG} hi [] ApiTest todo"
+			)
 			# a number still being typed does not break the preview
 			self.assertEqual(api.preview(template=tpl, phone="05", **ref)["errors"], [])
 		finally:
@@ -103,7 +125,9 @@ class TestApiQuickSend(IntegrationTestCase):
 		user who may read the document but not email it cannot send about it either."""
 		from unittest.mock import patch
 
-		todo = frappe.get_doc({"doctype": "ToDo", "description": "ApiTest no email"}).insert(ignore_permissions=True)
+		todo = frappe.get_doc({"doctype": "ToDo", "description": "ApiTest no email"}).insert(
+			ignore_permissions=True
+		)
 		real = frappe.has_permission
 
 		def no_email(doctype=None, ptype="read", doc=None, *args, **kwargs):
@@ -114,8 +138,17 @@ class TestApiQuickSend(IntegrationTestCase):
 			return real(doctype, ptype, doc, *args, **kwargs)
 
 		try:
-			with patch.object(frappe, "has_permission", side_effect=no_email), self.assertRaises((frappe.PermissionError, WAPermissionError)):
-				api.send(device=self.device, phone=P1, body=f"{TAG} no email", reference_doctype="ToDo", reference_name=todo.name)
+			with (
+				patch.object(frappe, "has_permission", side_effect=no_email),
+				self.assertRaises((frappe.PermissionError, WAPermissionError)),
+			):
+				api.send(
+					device=self.device,
+					phone=P1,
+					body=f"{TAG} no email",
+					reference_doctype="ToDo",
+					reference_name=todo.name,
+				)
 			self.assertFalse(frappe.db.exists("WhatsApp Log", {"reference_name": todo.name}))
 		finally:
 			self._clean()
@@ -124,16 +157,27 @@ class TestApiQuickSend(IntegrationTestCase):
 	def test_a_message_about_a_document_is_a_form_message(self):
 		"""The form's "New WhatsApp message" button sends with the document as reference: the row is a
 		`Form` message (the platform files it under the ERP), and its document hears of it."""
-		todo = frappe.get_doc({"doctype": "ToDo", "description": "ApiTest form send"}).insert(ignore_permissions=True)
+		todo = frappe.get_doc({"doctype": "ToDo", "description": "ApiTest form send"}).insert(
+			ignore_permissions=True
+		)
 		try:
 			# as the ToDo's owner: the send checks read on the document (ToDo is owner-only)
 			res = api.send(
-				device=self.device, phone=P1, body=f"{TAG} about a doc", reference_doctype="ToDo", reference_name=todo.name
+				device=self.device,
+				phone=P1,
+				body=f"{TAG} about a doc",
+				reference_doctype="ToDo",
+				reference_name=todo.name,
 			)
 			row = frappe.db.get_value(
-				"WhatsApp Log", res["outbound"], ["source_type", "reference_doctype", "reference_name"], as_dict=True
+				"WhatsApp Log",
+				res["outbound"],
+				["source_type", "reference_doctype", "reference_name"],
+				as_dict=True,
 			)
-			self.assertEqual((row.source_type, row.reference_doctype, row.reference_name), ("Form", "ToDo", todo.name))
+			self.assertEqual(
+				(row.source_type, row.reference_doctype, row.reference_name), ("Form", "ToDo", todo.name)
+			)
 			self.assertEqual(frappe.db.get_value("WhatsApp Queue Item", res["queue_item"], "priority"), 1)
 		finally:
 			self._clean()

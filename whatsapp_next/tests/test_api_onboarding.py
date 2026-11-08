@@ -130,7 +130,11 @@ class TestApiOnboarding(IntegrationTestCase):
 			self.assertFalse(svc.should_redirect_to_wizard(), "the setting switches it off")
 
 		# signed in, but the wizard never finished: still sent back
-		state(redirect_unregistered_to_wizard=1, platform_base_url="https://platform.example.com", setup_completed=0)
+		state(
+			redirect_unregistered_to_wizard=1,
+			platform_base_url="https://platform.example.com",
+			setup_completed=0,
+		)
 		for f in svc.REQUIRED_CREDENTIALS:
 			set_encrypted_password(SETTINGS, SETTINGS, "k-" + f, f)
 		frappe.clear_document_cache(SETTINGS, SETTINGS)
@@ -150,19 +154,28 @@ class TestApiOnboarding(IntegrationTestCase):
 		from whatsapp_next.services import secrets
 
 		foreign = Fernet(Fernet.generate_key()).encrypt(b"other-site-key").decode()
-		saved = {f: secrets.read(f) for f in ("customer_api_key", "api_key", "api_secret", "customer_api_secret")}
+		saved = {
+			f: secrets.read(f) for f in ("customer_api_key", "api_key", "api_secret", "customer_api_secret")
+		}
 		try:
 			# written through the query builder (not MariaDB's ON DUPLICATE KEY), so it runs on both
 			auth = frappe.qb.Table("__Auth")
 			for f in saved:
-				frappe.qb.from_(auth).delete().where((auth.doctype == SETTINGS) & (auth.name == SETTINGS) & (auth.fieldname == f)).run()
-				frappe.qb.into(auth).columns("doctype", "name", "fieldname", "password", "encrypted").insert(SETTINGS, SETTINGS, f, foreign, 1).run()
+				frappe.qb.from_(auth).delete().where(
+					(auth.doctype == SETTINGS) & (auth.name == SETTINGS) & (auth.fieldname == f)
+				).run()
+				frappe.qb.into(auth).columns("doctype", "name", "fieldname", "password", "encrypted").insert(
+					SETTINGS, SETTINGS, f, foreign, 1
+				).run()
 			frappe.local.message_log = []
 			self.assertIsNone(secrets.read("customer_api_key"))
 			self.assertFalse(set(saved) & set(registry.credentials()))  # every foreign key reads as missing
 			self.assertFalse(svc.has_credentials())
 			with as_user("System Manager"):
-				self.assertTrue(api.get_status()["needs_setup"] or not frappe.db.get_single_value(SETTINGS, "redirect_unregistered_to_wizard"))
+				self.assertTrue(
+					api.get_status()["needs_setup"]
+					or not frappe.db.get_single_value(SETTINGS, "redirect_unregistered_to_wizard")
+				)
 			# Frappe's "Encryption key is invalid! Please check site_config.json" never reaches the screen
 			self.assertEqual(frappe.local.message_log, [])
 		finally:
@@ -298,7 +311,15 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 	def test_the_form_starts_from_what_the_system_knows(self):
 		user = "wa-prefill-test@example.com"
 		if not frappe.db.exists("User", user):
-			frappe.get_doc({"doctype": "User", "email": user, "first_name": "Prefill", "last_name": "Person", "send_welcome_email": 0}).insert(ignore_permissions=True)
+			frappe.get_doc(
+				{
+					"doctype": "User",
+					"email": user,
+					"first_name": "Prefill",
+					"last_name": "Person",
+					"send_welcome_email": 0,
+				}
+			).insert(ignore_permissions=True)
 		# the person's own number is not the account's: the number comes from the company's contact
 		frappe.db.set_value("User", user, "mobile_no", "+967777000111")
 		out = svc.signup_prefill(user)
@@ -310,7 +331,9 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		with fake_provider(), as_user("System Manager"):
 			self.assertIn("prefill", api.get_signup_bootstrap())
 
-		company = frappe.defaults.get_user_default("Company", user) or frappe.defaults.get_global_default("company")
+		company = frappe.defaults.get_user_default("Company", user) or frappe.defaults.get_global_default(
+			"company"
+		)
 		if not (frappe.db.exists("DocType", "Company") and company and frappe.db.exists("Company", company)):
 			return
 		self.assertEqual(out["org"], frappe.db.get_value("Company", company, "company_name"))
@@ -318,7 +341,10 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 			{
 				"doctype": "Contact",
 				"first_name": "Prefill Company Desk",
-				"phone_nos": [{"phone": "12", "is_primary_phone": 1}, {"phone": "+967777667663", "is_primary_mobile_no": 1}],
+				"phone_nos": [
+					{"phone": "12", "is_primary_phone": 1},
+					{"phone": "+967777667663", "is_primary_mobile_no": 1},
+				],
 				"links": [{"link_doctype": "Company", "link_name": company}],
 			}
 		).insert(ignore_permissions=True)
@@ -345,7 +371,10 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 			started = api.start_password_reset(identifier="+966500910001")
 			# nothing is sent on WhatsApp: the page shows the code and the person sends it
 			self.assertEqual(
-				{k: started.get(k) for k in ("request_key", "channel", "code", "platform_phone", "mobile_hint")},
+				{
+					k: started.get(k)
+					for k in ("request_key", "channel", "code", "platform_phone", "mobile_hint")
+				},
 				{
 					"request_key": "reset-1",
 					"channel": "whatsapp",
@@ -370,11 +399,15 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		"""The page claimed a code was sent to the number, while the platform either expects the
 		user to SEND the code from that number (WhatsApp) or mailed it (its device offline)."""
 		self.assertEqual(
-			svc.verification_route({"verification_channel": "WhatsApp", "code": "123456", "device_phone": "967779770054"}),
+			svc.verification_route(
+				{"verification_channel": "WhatsApp", "code": "123456", "device_phone": "967779770054"}
+			),
 			{"channel": "whatsapp", "code": "123456", "platform_phone": "+967779770054"},
 		)
 		self.assertEqual(
-			svc.verification_route({"verification_channel": "Email", "code_sent": True, "email": "a***@gmail.com"}),
+			svc.verification_route(
+				{"verification_channel": "Email", "code_sent": True, "email": "a***@gmail.com"}
+			),
 			{"channel": "email", "email": "a***@gmail.com", "link_sent": False},
 		)
 		# a WhatsApp answer without the platform's number cannot be followed: no code leaks out
@@ -388,7 +421,12 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 			remove_encrypted_password(SETTINGS, SETTINGS, f)
 		for sent in ("free", "free_trial", None):
 			with fake_provider() as provider, as_user("System Manager"):
-				args = {"mobile": "0500910008", "full_name": "Plan Tenant", "email": "p@b.c", "channel": "sms"}
+				args = {
+					"mobile": "0500910008",
+					"full_name": "Plan Tenant",
+					"email": "p@b.c",
+					"channel": "sms",
+				}
 				if sent:
 					args["plan_code"] = sent
 				api.start_signup(**args)
@@ -410,7 +448,9 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 			self.assertEqual(started["coupon_code"], "BSHQ-FREE2")
 
 			# The code check is its own step now.
-			self.assertEqual(api.verify_code(request_key="req-1", code="123456"), {"ok": True, "status": "Verified"})
+			self.assertEqual(
+				api.verify_code(request_key="req-1", code="123456"), {"ok": True, "status": "Verified"}
+			)
 			with self.assertRaises(WAValidationError):
 				api.verify_code(request_key="req-1", code="000000")
 
@@ -434,13 +474,24 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		set_encrypted_password(SETTINGS, SETTINGS, "old-webhook-secret", "webhook_secret")
 		frappe.db.set_single_value(
 			SETTINGS,
-			{"webhook_endpoint": "WEP-OLD", "connection_status": "OK", "last_connection_error": "invalid key"},
+			{
+				"webhook_endpoint": "WEP-OLD",
+				"connection_status": "OK",
+				"last_connection_error": "invalid key",
+			},
 			update_modified=False,
 		)
-		without_secret = {"customer_api_key": "ck", "api_key": "k", "api_secret": "s"}  # no customer_api_secret
+		without_secret = {
+			"customer_api_key": "ck",
+			"api_key": "k",
+			"api_secret": "s",
+		}  # no customer_api_secret
 		with fake_provider() as provider, as_user("System Manager"):
 			base = provider.login
-			provider.login = lambda email, password, **kw: {**base(email, password, **kw), "credentials": without_secret}
+			provider.login = lambda email, password, **kw: {
+				**base(email, password, **kw),
+				"credentials": without_secret,
+			}
 			with patch.object(svc, "link_site", return_value={}):
 				out = api.login(platform_base_url="", email="tenant@example.test", password="right-password")
 		self.assertTrue(out["ok"])
@@ -480,9 +531,7 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		self.assertEqual(s.get_password("customer_api_key", raise_exception=False), "ck")
 		self.assertEqual(s.get_password("api_secret", raise_exception=False), "s")
 		self.assertEqual(s.get_password("customer_api_secret", raise_exception=False), "cs")
-		self.assertTrue(
-			frappe.db.exists("WhatsApp Audit Log", {"action": "Credentials Changed", "user": sm})
-		)
+		self.assertTrue(frappe.db.exists("WhatsApp Audit Log", {"action": "Credentials Changed", "user": sm}))
 
 	def test_a_tenant_with_two_accounts_chooses_one(self):
 		"""Several accounts: the card lists them and stores nothing until one is chosen; the site's
@@ -491,14 +540,23 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 			remove_encrypted_password(SETTINGS, SETTINGS, f)
 		provider = FakeProvider()
 		with fake_provider(provider), as_user("System Manager"):
-			asked = api.login(platform_base_url="", email="two-accounts@example.com", password="right-password")
+			asked = api.login(
+				platform_base_url="", email="two-accounts@example.com", password="right-password"
+			)
 			self.assertEqual((asked["ok"], asked["choose_account"]), (False, True))
 			self.assertEqual([a["name"] for a in asked["accounts"]], ["WAIL-FAKE-1", "WAIL-FAKE-2"])
 			self.assertFalse(frappe.get_doc(SETTINGS).get_password("customer_api_key", raise_exception=False))
-			chosen = api.login(platform_base_url="", email="two-accounts@example.com", password="right-password", integration_link="WAIL-FAKE-2")
+			chosen = api.login(
+				platform_base_url="",
+				email="two-accounts@example.com",
+				password="right-password",
+				integration_link="WAIL-FAKE-2",
+			)
 		self.assertTrue(chosen["ok"])
 		last = [c for c in provider.calls if c[0] == "login"][-1][1]
-		self.assertEqual((last["integration_link"], last["site_url"]), ("WAIL-FAKE-2", frappe.utils.get_url()))
+		self.assertEqual(
+			(last["integration_link"], last["site_url"]), ("WAIL-FAKE-2", frappe.utils.get_url())
+		)
 
 	def test_an_account_another_site_has_moves_only_when_asked(self):
 		"""One account, one site (owner, 2026-11-04): the card says which site has it and stores
@@ -506,11 +564,19 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		for f in SECRETS:
 			remove_encrypted_password(SETTINGS, SETTINGS, f)
 		provider = FakeProvider()
-		with fake_provider(provider), as_user("System Manager"), patch.object(svc, "link_site", return_value={}):
+		with (
+			fake_provider(provider),
+			as_user("System Manager"),
+			patch.object(svc, "link_site", return_value={}),
+		):
 			held = api.login(platform_base_url="", email="other-site@example.com", password="right-password")
-			self.assertEqual((held["ok"], held["account_in_use"], held["site"]), (False, True, "old.example.com"))
+			self.assertEqual(
+				(held["ok"], held["account_in_use"], held["site"]), (False, True, "old.example.com")
+			)
 			self.assertFalse(frappe.get_doc(SETTINGS).get_password("customer_api_key", raise_exception=False))
-			moved = api.login(platform_base_url="", email="other-site@example.com", password="right-password", move_site=1)
+			moved = api.login(
+				platform_base_url="", email="other-site@example.com", password="right-password", move_site=1
+			)
 		self.assertTrue(moved["ok"])
 		self.assertTrue([c for c in provider.calls if c[0] == "login"][-1][1]["move_site"])
 
@@ -523,14 +589,21 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 		from whatsapp_next.providers.schemas import DeviceState
 		from whatsapp_next.services import webhook_setup
 
-		frappe.db.set_single_value(SETTINGS, {"platform_base_url": None, "webhook_endpoint": None, "webhook_events": None})
+		frappe.db.set_single_value(
+			SETTINGS, {"platform_base_url": None, "webhook_endpoint": None, "webhook_events": None}
+		)
 		frappe.clear_document_cache(SETTINGS, SETTINGS)
 		set_encrypted_password(SETTINGS, SETTINGS, "stale-secret", "webhook_secret")
-		with fake_provider() as provider, as_user("System Manager"), patch.object(
-			registry, "platform_base_url", return_value="https://platform.example.test"
+		with (
+			fake_provider() as provider,
+			as_user("System Manager"),
+			patch.object(registry, "platform_base_url", return_value="https://platform.example.test"),
 		):
 			provider.devices["WAD-ONB-LINK1"] = DeviceState(
-				platform_device="WAD-ONB-LINK1", device_name="Front desk", phone_e164="+966500910077", status="Connected"
+				platform_device="WAD-ONB-LINK1",
+				device_name="Front desk",
+				phone_e164="+966500910077",
+				status="Connected",
 			)
 			try:
 				out = api.login(platform_base_url="", email="tenant@example.test", password="right-password")
@@ -547,11 +620,22 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 				# a stored secret proves nothing after new credentials: it is always refetched
 				self.assertEqual(s.get_password("webhook_secret", raise_exception=False), "fake-secret")
 				device = frappe.db.get_value(
-					"WhatsApp Device", {"platform_device": "WAD-ONB-LINK1"}, ["device_name", "status", "phone_e164"], as_dict=True
+					"WhatsApp Device",
+					{"platform_device": "WAD-ONB-LINK1"},
+					["device_name", "status", "phone_e164"],
+					as_dict=True,
 				)
-				self.assertEqual((device.device_name, device.status, device.phone_e164), ("Front desk", "Connected", "+966500910077"))
+				self.assertEqual(
+					(device.device_name, device.status, device.phone_e164),
+					("Front desk", "Connected", "+966500910077"),
+				)
 				# signing in again adopts nothing twice
-				self.assertEqual(api.login(platform_base_url="", email="tenant@example.test", password="right-password")["devices"]["adopted"], 0)
+				self.assertEqual(
+					api.login(platform_base_url="", email="tenant@example.test", password="right-password")[
+						"devices"
+					]["adopted"],
+					0,
+				)
 			finally:
 				delete_all("WhatsApp Device", {"platform_device": "WAD-ONB-LINK1"})
 
@@ -562,7 +646,11 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 
 		with fake_provider() as provider, as_user("System Manager"):
 			with patch.object(provider, "health_check", return_value=HealthStatus(ok=False, error="down")):
-				out = api.login(platform_base_url="https://api.example.test", email="t@example.test", password="right-password")
+				out = api.login(
+					platform_base_url="https://api.example.test",
+					email="t@example.test",
+					password="right-password",
+				)
 		self.assertTrue(out["ok"])
 		self.assertEqual(out["connection"], {"ok": False, "error": "down"})
 		self.assertNotIn("webhook", out)
@@ -570,14 +658,25 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 
 	def test_an_unconfirmed_account_goes_to_its_confirmation(self):
 		# the platform answers a sign-in to an account never confirmed with a new confirmation
-		answer = {"ok": True, "verification_required": True,
-			"signup": {"token": "tok-new", "verification_channel": "WhatsApp", "code": "123456", "device_phone": "967782309999"}}
+		answer = {
+			"ok": True,
+			"verification_required": True,
+			"signup": {
+				"token": "tok-new",
+				"verification_channel": "WhatsApp",
+				"code": "123456",
+				"device_phone": "967782309999",
+			},
+		}
 		with fake_provider() as provider, as_user("System Manager"):
 			with patch.object(type(provider), "login", return_value=answer):
 				out = api.login(platform_base_url="", email="967770000741", password="right-password")
 		self.assertEqual(out["ok"], False)
 		self.assertTrue(out["verification_required"])
-		self.assertEqual((out["request_key"], out["channel"], out["code"], out["platform_phone"]), ("tok-new", "whatsapp", "123456", "+967782309999"))
+		self.assertEqual(
+			(out["request_key"], out["channel"], out["code"], out["platform_phone"]),
+			("tok-new", "whatsapp", "123456", "+967782309999"),
+		)
 		self.assertNotIn("credentials", out)
 
 	def test_coupon_validation_is_an_answer_not_an_error(self):

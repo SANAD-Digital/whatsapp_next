@@ -23,7 +23,13 @@ class TestBackup(IntegrationTestCase):
 
 	def _group(self, notes="first"):
 		frappe.get_doc(
-			{"doctype": "WhatsApp Contact Group", "group_name": GROUP, "kind": "Other", "source": "Manual", "description": notes}
+			{
+				"doctype": "WhatsApp Contact Group",
+				"group_name": GROUP,
+				"kind": "Other",
+				"source": "Manual",
+				"description": notes,
+			}
 		).insert(ignore_permissions=True)
 
 	def test_the_file_carries_the_setup_and_no_keys_or_devices(self):
@@ -49,7 +55,9 @@ class TestBackup(IntegrationTestCase):
 		# as failed rather than raised (pos.dev holds one); nothing else may fail
 		broken = [
 			{"doctype": "WhatsApp Function", "name": name}
-			for name in frappe.get_all("WhatsApp Function", {"server_script": ("is", "not set")}, pluck="name", order_by="name")
+			for name in frappe.get_all(
+				"WhatsApp Function", {"server_script": ("is", "not set")}, pluck="name", order_by="name"
+			)
 		]
 		self.assertEqual([{"doctype": f["doctype"], "name": f["name"]} for f in out["failed"]], broken)
 		self.assertTrue(frappe.db.exists("WhatsApp Contact Group", GROUP))
@@ -75,7 +83,9 @@ class TestBackup(IntegrationTestCase):
 	def test_preview_says_what_would_happen_and_writes_nothing(self):
 		self._group()
 		data = backup.export_backup()
-		data["records"]["WhatsApp Contact Group"].append({"name": "BackupTest New", "group_name": "BackupTest New"})
+		data["records"]["WhatsApp Contact Group"].append(
+			{"name": "BackupTest New", "group_name": "BackupTest New"}
+		)
 		before = frappe.db.count("WhatsApp Contact Group")
 		out = backup.preview_backup(json.dumps(data))
 		self.assertIn({"doctype": "WhatsApp Contact Group", "name": "BackupTest New"}, out["add"])
@@ -89,7 +99,9 @@ class TestBackup(IntegrationTestCase):
 			out = backup.import_backup(data)
 			self.assertEqual(out["failed"], [])
 			self.assertEqual(out["switched_off"], 1)
-			self.assertEqual(frappe.db.get_value("WhatsApp Notification", name, ["enabled", "send_count"]), (0, 0))
+			self.assertEqual(
+				frappe.db.get_value("WhatsApp Notification", name, ["enabled", "send_count"]), (0, 0)
+			)
 		finally:
 			self._drop("WhatsApp Notification", name)
 
@@ -121,7 +133,9 @@ class TestBackup(IntegrationTestCase):
 		defaults, writes, deleted = {}, [], []
 		with (
 			patch.object(backup.frappe.db, "get_default", side_effect=lambda k: defaults.get(k)),
-			patch.object(backup.frappe.db, "set_default", side_effect=lambda k, v: defaults.__setitem__(k, v)),
+			patch.object(
+				backup.frappe.db, "set_default", side_effect=lambda k, v: defaults.__setitem__(k, v)
+			),
 			patch.object(backup.frappe, "get_all", return_value=["DEV-OLD"]),
 			patch.object(backup.frappe.db, "set_value", side_effect=lambda *a, **k: writes.append(a)),
 			patch.object(backup.frappe.db, "set_single_value"),
@@ -158,8 +172,12 @@ class TestBackup(IntegrationTestCase):
 		self.assertTrue(switched)
 		self.assertEqual(deleted, [])
 		pending = json.loads(defaults[backup.SWITCH_DEFAULT])
-		self.assertEqual((pending["from"], pending["to"], pending["devices"]), ("LINK-1", "LINK-2", ["DEV-OLD"]))
-		self.assertIn(("WhatsApp Device", {"name": ("in", ["DEV-OLD"])}, {"disabled": 1, "is_default": 0}), writes)
+		self.assertEqual(
+			(pending["from"], pending["to"], pending["devices"]), ("LINK-1", "LINK-2", ["DEV-OLD"])
+		)
+		self.assertIn(
+			("WhatsApp Device", {"name": ("in", ["DEV-OLD"])}, {"disabled": 1, "is_default": 0}), writes
+		)
 
 	def test_a_site_linked_before_the_account_was_remembered_compares_its_key(self):
 		self.assertFalse(self._switch("KEY-A", None, "LINK-1", current_key="KEY-A")[0])

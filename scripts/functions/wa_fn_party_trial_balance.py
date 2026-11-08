@@ -59,14 +59,18 @@
 
 # ---------- حماية: لا تعمل من الرابط المباشر ----------
 if (frappe.form_dict.get("cmd") or "").startswith("wa_fn_"):
-    frappe.throw("Not allowed", frappe.PermissionError)
+	frappe.throw("Not allowed", frappe.PermissionError)
 
 form = frappe.form_dict
 
 REPORT_NAME = "Trial Balance for Party"
 MAX_LINES = 30
-TITLES = {"Customer": "أرصدة العملاء", "Supplier": "أرصدة الموردين", "Employee": "أرصدة الموظفين",
-          "Shareholder": "أرصدة المساهمين"}
+TITLES = {
+	"Customer": "أرصدة العملاء",
+	"Supplier": "أرصدة الموردين",
+	"Employee": "أرصدة الموظفين",
+	"Shareholder": "أرصدة المساهمين",
+}
 
 FALLBACK_RESULT = "*{{ title }}* حتى {{ to_date }}\nالإجمالي ({{ of }}): *{{ total_formatted }}*"
 
@@ -84,17 +88,17 @@ data = {}
 
 # ---------- التحقق ----------
 if not party_type:
-    error = "الأمر لم يحدد نوع الأستاذ المساعد"
+	error = "الأمر لم يحدد نوع الأستاذ المساعد"
 elif not frappe.db.exists("Party Type", party_type):
-    error = "«" + party_type + "» ليس نوع أستاذ مساعد"
+	error = "«" + party_type + "» ليس نوع أستاذ مساعد"
 elif not company:
-    error = "لم تُحدَّد الشركة"
+	error = "لم تُحدَّد الشركة"
 
 # ---------- السنة المالية الحالية ----------
 fy = None
 if not error:
-    r = frappe.db.sql(
-        """
+	r = frappe.db.sql(
+		"""
         select fy.name, fy.year_start_date, fy.year_end_date
         from `tabFiscal Year` fy
         where fy.disabled = 0
@@ -105,91 +109,96 @@ if not error:
         order by fy.year_start_date desc
         limit 1
         """,
-        {"d": u.nowdate(), "company": company},
-        as_dict=True,
-    )
-    fy = r[0] if r else None
-    if not fy:
-        error = "لا توجد سنة مالية حالية"
+		{"d": u.nowdate(), "company": company},
+		as_dict=True,
+	)
+	fy = r[0] if r else None
+	if not fy:
+		error = "لا توجد سنة مالية حالية"
 
 
 def by_size(row):
-    return abs(row["balance"])
+	return abs(row["balance"])
 
 
 # ---------- استدعاء التقرير ----------
 if not error:
-    to_date = u.getdate(u.nowdate())
-    from_date = fy.year_start_date
-    report = frappe.call(
-        "frappe.desk.query_report.run",
-        report_name=REPORT_NAME,
-        filters={
-            "company": company,
-            "fiscal_year": fy.name,
-            "from_date": str(from_date),
-            "to_date": str(to_date),
-            "party_type": party_type,
-            "show_zero_values": 0,
-        },
-    )
-    currency = frappe.db.get_value("Company", company, "default_currency")
+	to_date = u.getdate(u.nowdate())
+	from_date = fy.year_start_date
+	report = frappe.call(
+		"frappe.desk.query_report.run",
+		report_name=REPORT_NAME,
+		filters={
+			"company": company,
+			"fiscal_year": fy.name,
+			"from_date": str(from_date),
+			"to_date": str(to_date),
+			"party_type": party_type,
+			"show_zero_values": 0,
+		},
+	)
+	currency = frappe.db.get_value("Company", company, "default_currency")
 
-    rows = []
-    for r in (report or {}).get("result") or []:
-        # سطر الإجمالي في التقرير اسمه بين علامتي ' (مثل 'Totals') وليس طرفاً
-        if not isinstance(r, dict) or not r.get("party") or str(r.get("party")).startswith("'"):
-            continue
-        balance = flt(flt(r.get("closing_debit")) - flt(r.get("closing_credit")), 2)
-        if not balance:
-            continue
-        rows.append({"party": r.get("party"), "balance": balance})
+	rows = []
+	for r in (report or {}).get("result") or []:
+		# سطر الإجمالي في التقرير اسمه بين علامتي ' (مثل 'Totals') وليس طرفاً
+		if not isinstance(r, dict) or not r.get("party") or str(r.get("party")).startswith("'"):
+			continue
+		balance = flt(flt(r.get("closing_debit")) - flt(r.get("closing_credit")), 2)
+		if not balance:
+			continue
+		rows.append({"party": r.get("party"), "balance": balance})
 
-    total = flt(sum([r["balance"] for r in rows]), 2)
-    top = sorted(rows, key=by_size, reverse=True)[:limit]
+	total = flt(sum([r["balance"] for r in rows]), 2)
+	top = sorted(rows, key=by_size, reverse=True)[:limit]
 
-    # أسماء الأطراف المعروضة فقط
-    meta = frappe.get_meta(party_type)
-    name_field = None
-    for f in (meta.title_field, "customer_name", "supplier_name", "employee_name", "title"):
-        if f and meta.has_field(f):
-            name_field = f
-            break
-    names = {}
-    if name_field and top:
-        for n in frappe.get_all(party_type, filters={"name": ["in", [r["party"] for r in top]]},
-                                fields=["name", name_field]):
-            names[n.name] = n.get(name_field)
+	# أسماء الأطراف المعروضة فقط
+	meta = frappe.get_meta(party_type)
+	name_field = None
+	for f in (meta.title_field, "customer_name", "supplier_name", "employee_name", "title"):
+		if f and meta.has_field(f):
+			name_field = f
+			break
+	names = {}
+	if name_field and top:
+		for n in frappe.get_all(
+			party_type, filters={"name": ["in", [r["party"] for r in top]]}, fields=["name", name_field]
+		):
+			names[n.name] = n.get(name_field)
 
-    shown = []
-    for r in top:
-        shown.append({
-            "name": names.get(r["party"]) or r["party"],
-            "party": r["party"],
-            "balance": r["balance"],
-            "amount": u.fmt_money(r["balance"], currency=currency),
-        })
+	shown = []
+	for r in top:
+		shown.append(
+			{
+				"name": names.get(r["party"]) or r["party"],
+				"party": r["party"],
+				"balance": r["balance"],
+				"amount": u.fmt_money(r["balance"], currency=currency),
+			}
+		)
 
-    ctx = {
-        "title": TITLES.get(party_type) or ("أرصدة " + _(party_type)),
-        "party_type": party_type,
-        "company": company,
-        "fiscal_year": fy.name,
-        "from_date": u.formatdate(from_date, "dd-MM-yyyy"),
-        "to_date": u.formatdate(to_date, "dd-MM-yyyy"),
-        "currency": currency,
-        "rows": shown,
-        "count": len(shown),
-        "of": len(rows),
-        "total": total,
-        "total_formatted": u.fmt_money(total, currency=currency),
-    }
+	ctx = {
+		"title": TITLES.get(party_type) or ("أرصدة " + _(party_type)),
+		"party_type": party_type,
+		"company": company,
+		"fiscal_year": fy.name,
+		"from_date": u.formatdate(from_date, "dd-MM-yyyy"),
+		"to_date": u.formatdate(to_date, "dd-MM-yyyy"),
+		"currency": currency,
+		"rows": shown,
+		"count": len(shown),
+		"of": len(rows),
+		"total": total,
+		"total_formatted": u.fmt_money(total, currency=currency),
+	}
 
-    messages.append({
-        "reply": "result_text",
-        "type": "text",
-        "text": frappe.render_template(msg_result, ctx).strip(),
-    })
-    data = ctx
+	messages.append(
+		{
+			"reply": "result_text",
+			"type": "text",
+			"text": frappe.render_template(msg_result, ctx).strip(),
+		}
+	)
+	data = ctx
 
 frappe.flags.wa_result = {"error": error, "messages": messages, "data": data}

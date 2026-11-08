@@ -33,8 +33,16 @@ class TestDevices(IntegrationTestCase):
 
 	@classmethod
 	def tearDownClass(cls):
-		frappe.db.set_value("WhatsApp Device", {"name": ("in", cls._site_flagged or [""])}, "is_default", 1, update_modified=False)
-		frappe.db.set_single_value("WhatsApp Settings", "default_device", cls._site_default, update_modified=False)
+		frappe.db.set_value(
+			"WhatsApp Device",
+			{"name": ("in", cls._site_flagged or [""])},
+			"is_default",
+			1,
+			update_modified=False,
+		)
+		frappe.db.set_single_value(
+			"WhatsApp Settings", "default_device", cls._site_default, update_modified=False
+		)
 		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 		frappe.db.commit()
 		super().tearDownClass()
@@ -115,7 +123,10 @@ class TestDevices(IntegrationTestCase):
 			self.assertEqual(len(calls), 1)
 			# served from cache, with the seconds actually left
 			key = devices.PAIR_CACHE_KEY.format(platform_device=row.platform_device)
-			aged = {**frappe.cache.get_value(key), "cached_at": add_to_date(now_datetime(), seconds=-45).isoformat()}
+			aged = {
+				**frappe.cache.get_value(key),
+				"cached_at": add_to_date(now_datetime(), seconds=-45).isoformat(),
+			}
 			frappe.cache.set_value(key, aged, expires_in_sec=devices.PAIR_CACHE_TTL)
 			again = devices.start_pairing(name, "QR")
 			self.assertEqual(len([c for c in fp.calls if c[0] == "get_qr"]), 1)
@@ -202,14 +213,23 @@ class TestDevices(IntegrationTestCase):
 			name = devices.create(NAME, phone="+967777667663")
 			pd = frappe.db.get_value("WhatsApp Device", name, "platform_device")
 		self.assertEqual(
-			devices.wrong_number_info("wrong_number: linked with 967770788938, registered for 967777667663; unlinked"),
+			devices.wrong_number_info(
+				"wrong_number: linked with 967770788938, registered for 967777667663; unlinked"
+			),
 			{"connected": "+967770788938", "expected": "+967777667663"},
 		)
 		self.assertIsNone(devices.wrong_number_info("connection.logged_out webhook"))
 		change = devices.apply_connection_event(
 			WebhookEvent(
-				event_id="e-wrong", event_name="connection.logged_out", platform_device=pd, reason="wrong_number",
-				raw={"reason": "wrong_number", "expected_number": "967777667663", "connected_number": "967770788938"},
+				event_id="e-wrong",
+				event_name="connection.logged_out",
+				platform_device=pd,
+				reason="wrong_number",
+				raw={
+					"reason": "wrong_number",
+					"expected_number": "967777667663",
+					"connected_number": "967770788938",
+				},
 				device=DeviceState(platform_device=pd, phone_e164="+967770788938"),
 			)
 		)

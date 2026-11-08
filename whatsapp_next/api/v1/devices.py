@@ -80,7 +80,12 @@ def poll_status(device: str) -> dict[str, Any]:
 	"""Ask the provider for the live state and apply it → `{status, changed, previous, wrong_number}`;
 	`wrong_number` ({expected, connected}) when the platform unlinked another WhatsApp number."""
 	change = devices.poll(device)
-	return {"status": change.status, "changed": change.changed, "previous": change.previous, "wrong_number": change.wrong_number}
+	return {
+		"status": change.status,
+		"changed": change.changed,
+		"previous": change.previous,
+		"wrong_number": change.wrong_number,
+	}
 
 
 @api_endpoint(roles=MANAGER)
@@ -149,8 +154,12 @@ def import_history(device: str, restart: bool = False) -> dict[str, Any]:
 	if not frappe.db.exists("WhatsApp Device", device):
 		frappe.throw(_("WhatsApp Device {0} not found").format(device), WANotFoundError)
 	history_import.start(device, restart=bool(restart))
-	audit.log("Settings Changed", reference=("WhatsApp Device", device), details={"action": "import_history", "restart": bool(restart)},
-		user=frappe.session.user)
+	audit.log(
+		"Settings Changed",
+		reference=("WhatsApp Device", device),
+		details={"action": "import_history", "restart": bool(restart)},
+		user=frappe.session.user,
+	)
 	return {"ok": True, **_history(device)}
 
 
@@ -163,8 +172,24 @@ def get_history_status(device: str) -> dict[str, Any]:
 
 
 def _history(device: str) -> dict[str, Any]:
-	row = frappe.db.get_value("WhatsApp Device", device, ["history_status", "history_imported", "history_total",
-		"history_started_at", "history_finished_at", "history_error"], as_dict=True)
-	return {"status": row.history_status or "Not Started", "imported": row.history_imported or 0,
-		"total": row.history_total or 0, "started_at": row.history_started_at,
-		"finished_at": row.history_finished_at, "error": row.history_error}
+	row = frappe.db.get_value(
+		"WhatsApp Device",
+		device,
+		[
+			"history_status",
+			"history_imported",
+			"history_total",
+			"history_started_at",
+			"history_finished_at",
+			"history_error",
+		],
+		as_dict=True,
+	)
+	return {
+		"status": row.history_status or "Not Started",
+		"imported": row.history_imported or 0,
+		"total": row.history_total or 0,
+		"started_at": row.history_started_at,
+		"finished_at": row.history_finished_at,
+		"error": row.history_error,
+	}

@@ -126,13 +126,19 @@ class TestApiContacts(IntegrationTestCase):
 			self.assertGreaterEqual(before["with_whatsapp"], 1)
 			unlinked = api.list_contacts(linked=False, page_length=50)
 			self.assertIn(name, [r["name"] for r in unlinked["rows"]])
-			self.assertNotIn(name, [r["name"] for r in api.list_contacts(linked=True, page_length=50)["rows"]])
+			self.assertNotIn(
+				name, [r["name"] for r in api.list_contacts(linked=True, page_length=50)["rows"]]
+			)
 
 			if self.customer:
-				api.update_contact(name=name, payload={"links": [{"link_doctype": "Customer", "link_name": self.customer}]})
+				api.update_contact(
+					name=name, payload={"links": [{"link_doctype": "Customer", "link_name": self.customer}]}
+				)
 				after = api.get_stats()
 				self.assertEqual(after["linked"], before["linked"] + 1)
-				self.assertIn(name, [r["name"] for r in api.list_contacts(linked=True, page_length=50)["rows"]])
+				self.assertIn(
+					name, [r["name"] for r in api.list_contacts(linked=True, page_length=50)["rows"]]
+				)
 
 			status = frappe.db.get_value("Contact", name, "status")
 			same = api.list_contacts(status=status, page_length=50)["rows"]
@@ -184,8 +190,14 @@ class TestApiContacts(IntegrationTestCase):
 		self.assertEqual((again["count"], again["skipped"][0]["name"]), (0, a))
 		# unlinking takes that one link away and keeps the contact (owner, 2026-10-08)
 		with as_user("WhatsApp Contact User"):
-			self.assertEqual(api.unlink_account(name=b, link_doctype="Customer", link_name=self.customer), {"removed": True})
-			self.assertEqual(api.unlink_account(name=b, link_doctype="Customer", link_name=self.customer), {"removed": False})
+			self.assertEqual(
+				api.unlink_account(name=b, link_doctype="Customer", link_name=self.customer),
+				{"removed": True},
+			)
+			self.assertEqual(
+				api.unlink_account(name=b, link_doctype="Customer", link_name=self.customer),
+				{"removed": False},
+			)
 		self.assertFalse(frappe.get_all("Dynamic Link", filters={"parent": b, "link_doctype": "Customer"}))
 		self.assertTrue(frappe.db.exists("Contact", b))
 		with as_user("_none"), self.assertRaises(WAPermissionError):

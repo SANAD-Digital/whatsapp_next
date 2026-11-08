@@ -157,7 +157,10 @@ def fetch_media(inbound_name: str, file_name: str | None = None) -> str | None:
 	from whatsapp_next.providers import registry
 
 	row = frappe.db.get_value(
-		"WhatsApp Inbound Message", inbound_name, ["media_url", "attachment", "provider_message_id"], as_dict=True
+		"WhatsApp Inbound Message",
+		inbound_name,
+		["media_url", "attachment", "provider_message_id"],
+		as_dict=True,
 	)
 	if not row or not row.media_url or row.attachment:
 		return row.attachment if row else None
@@ -179,7 +182,9 @@ def fetch_media(inbound_name: str, file_name: str | None = None) -> str | None:
 	)
 	file_doc.flags.ignore_permissions = True
 	file_doc.insert(ignore_permissions=True)
-	frappe.db.set_value("WhatsApp Inbound Message", inbound_name, "attachment", file_doc.file_url, update_modified=False)
+	frappe.db.set_value(
+		"WhatsApp Inbound Message", inbound_name, "attachment", file_doc.file_url, update_modified=False
+	)
 	return file_doc.file_url
 
 
@@ -210,7 +215,9 @@ def record_change(event: WebhookEvent, *, device: str) -> str | None:
 			values["body"] = raw.get("original_text")
 	with status_writer():
 		frappe.db.set_value("WhatsApp Inbound Message", name, values, update_modified=True)
-	fields = frappe.db.get_value("WhatsApp Inbound Message", name, ["is_group", "chat_jid", "jid", "phone_e164"], as_dict=True)
+	fields = frappe.db.get_value(
+		"WhatsApp Inbound Message", name, ["is_group", "chat_jid", "jid", "phone_e164"], as_dict=True
+	)
 	_publish(name, device, _conversation_key(dict(fields)))
 	# what the message said before this change (`row` was read before the update)
 	original = raw.get("original_text") or row.original_body or row.body or ""
@@ -218,7 +225,9 @@ def record_change(event: WebhookEvent, *, device: str) -> str | None:
 	return name
 
 
-def _reply_to_change(inbound_name: str, device: str, event_name: str, original: str, message_id: str) -> str | None:
+def _reply_to_change(
+	inbound_name: str, device: str, event_name: str, original: str, message_id: str
+) -> str | None:
 	"""The settings' answer to an edit or a deletion: the configured text, then what the message
 	said — an edit as a reply quoting the edited message, a deletion as a message in the same chat.
 	Returns the outbound name, or `None` when the setting is off, out of scope, or there is no text."""

@@ -36,7 +36,9 @@ def _is_phone_field(df) -> bool:
 	# a stored text field named like a number — "Read Only" too: ERPNext fetches the customer's
 	# `mobile_no` from its primary contact into one
 	name = df.fieldname or ""
-	return df.fieldtype in ("Data", "Read Only") and bool(PHONE_NAME.search(name)) and not name.endswith("_ext")
+	return (
+		df.fieldtype in ("Data", "Read Only") and bool(PHONE_NAME.search(name)) and not name.endswith("_ext")
+	)
 
 
 def _filled(doctype: str, fieldname: str) -> int:
@@ -62,7 +64,9 @@ def candidates() -> list[dict[str, Any]]:
 			contact = r.fieldtype == "Link" and r.options == "Contact"
 			if not (phone or contact) or r.doctype in SKIP_DOCTYPES:
 				continue
-			row = found.setdefault(r.doctype, {"document_type": r.doctype, "phone_fields": 0, "contact_link": False})
+			row = found.setdefault(
+				r.doctype, {"document_type": r.doctype, "phone_fields": 0, "contact_link": False}
+			)
 			row["phone_fields"] += 1 if phone else 0
 			row["contact_link"] = row["contact_link"] or contact
 	if not found:
@@ -72,7 +76,13 @@ def candidates() -> list[dict[str, Any]]:
 		for d in frappe.get_all(
 			"DocType",
 			# this app's own records (messages, logs, devices) are not people to pick
-			filters={"name": ("in", list(found)), "istable": 0, "issingle": 0, "is_virtual": 0, "module": ("!=", "WhatsApp Next")},
+			filters={
+				"name": ("in", list(found)),
+				"istable": 0,
+				"issingle": 0,
+				"is_virtual": 0,
+				"module": ("!=", "WhatsApp Next"),
+			},
 			fields=["name", "module"],
 		)
 	}
@@ -98,16 +108,33 @@ def analyze(document_type: str) -> dict[str, Any]:
 	title_field = meta.get_title_field()
 	phones, names, contacts = [], [], []
 	for df in meta.fields:
-		if df.fieldtype in ("Section Break", "Column Break", "Tab Break", "HTML", "Button") or cint(df.permlevel):
+		if df.fieldtype in ("Section Break", "Column Break", "Tab Break", "HTML", "Button") or cint(
+			df.permlevel
+		):
 			continue
 		label = _(df.label or df.fieldname)
 		if _is_phone_field(df):
-			phones.append({"fieldname": df.fieldname, "label": label, "fieldtype": "Phone" if df.options == "Phone" else df.fieldtype, "filled": _filled(document_type, df.fieldname) if total else 0})
+			phones.append(
+				{
+					"fieldname": df.fieldname,
+					"label": label,
+					"fieldtype": "Phone" if df.options == "Phone" else df.fieldtype,
+					"filled": _filled(document_type, df.fieldname) if total else 0,
+				}
+			)
 			continue
 		elif df.fieldtype == "Link" and df.options == "Contact":
-			contacts.append({"fieldname": df.fieldname, "label": label, "filled": _filled(document_type, df.fieldname) if total else 0})
-		if df.fieldtype in ("Data", "Link", "Small Text") and not _is_phone_field(df) and (
-			df.fieldname == title_field or NAME_NAME.search(df.fieldname or "") or df.in_list_view
+			contacts.append(
+				{
+					"fieldname": df.fieldname,
+					"label": label,
+					"filled": _filled(document_type, df.fieldname) if total else 0,
+				}
+			)
+		if (
+			df.fieldtype in ("Data", "Link", "Small Text")
+			and not _is_phone_field(df)
+			and (df.fieldname == title_field or NAME_NAME.search(df.fieldname or "") or df.in_list_view)
 		):
 			names.append({"fieldname": df.fieldname, "label": label, "title": df.fieldname == title_field})
 	names.sort(key=lambda f: (not f["title"], not NAME_NAME.search(f["fieldname"]), f["label"]))
@@ -165,7 +192,12 @@ def preview(source: dict[str, Any] | str) -> dict[str, Any]:
 		field = source.get("contact_fieldname")
 		if not (field and meta.has_field(field)):
 			return {"total": total, "with_number": 0, "sample": []}
-		rows = frappe.get_all(document_type, filters=[*filters, [document_type, field, "is", "set"]], fields=[f"`{name_field}` as label", f"`{field}` as contact"], limit_page_length=500)
+		rows = frappe.get_all(
+			document_type,
+			filters=[*filters, [document_type, field, "is", "set"]],
+			fields=[f"`{name_field}` as label", f"`{field}` as contact"],
+			limit_page_length=500,
+		)
 		phones = _phones_for(sorted({r.contact for r in rows}))
 		for r in rows:
 			first = next(iter(phones.get(r.contact) or []), None)
@@ -174,10 +206,23 @@ def preview(source: dict[str, Any] | str) -> dict[str, Any]:
 		field = source.get("phone_fieldname")
 		if not (field and meta.has_field(field)):
 			return {"total": total, "with_number": 0, "sample": []}
-		rows = frappe.get_all(document_type, filters=[*filters, [document_type, field, "is", "set"]], fields=[f"`{name_field}` as label", f"`{field}` as phone"], limit_page_length=500)
+		rows = frappe.get_all(
+			document_type,
+			filters=[*filters, [document_type, field, "is", "set"]],
+			fields=[f"`{name_field}` as label", f"`{field}` as phone"],
+			limit_page_length=500,
+		)
 	usable = [r for r in rows if r.get("phone") and normalize(r.phone)]
 	# counted on at most 500 records: enough to say whether the choice works, cheap on a big table
-	with_number = len(usable) if len(rows) < 500 else round(len(usable) / len(rows) * frappe.db.count(document_type, filters=[*filters, [document_type, field, "is", "set"]]))
+	with_number = (
+		len(usable)
+		if len(rows) < 500
+		else round(
+			len(usable)
+			/ len(rows)
+			* frappe.db.count(document_type, filters=[*filters, [document_type, field, "is", "set"]])
+		)
+	)
 	return {
 		"total": total,
 		"with_number": with_number,

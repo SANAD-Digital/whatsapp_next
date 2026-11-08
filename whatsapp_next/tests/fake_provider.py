@@ -105,8 +105,19 @@ class FakeProvider(BaseProvider):
 			"code_ttl_minutes": 10,
 		}
 
-	def start_signup(self, plan_code, mobile_e164, full_name, email, channel, coupon_code=None, callback=None, company=None) -> SignupState:
-		self._record("start_signup", plan_code=plan_code, coupon_code=coupon_code)
+	def start_signup(
+		self,
+		plan_code,
+		mobile_e164,
+		full_name,
+		email,
+		channel,
+		coupon_code=None,
+		callback=None,
+		company=None,
+		terms=None,
+	) -> SignupState:
+		self._record("start_signup", plan_code=plan_code, coupon_code=coupon_code, terms=terms)
 		return SignupState(request_key="req-1", status="Pending")
 
 	def get_signup_status(self, request_key) -> SignupState:
@@ -123,7 +134,12 @@ class FakeProvider(BaseProvider):
 		return SignupState(
 			request_key=request_key,
 			status="Completed",
-			credentials={"customer_api_key": "ck", "customer_api_secret": "cs", "api_key": "k", "api_secret": "s"},
+			credentials={
+				"customer_api_key": "ck",
+				"customer_api_secret": "cs",
+				"api_key": "k",
+				"api_secret": "s",
+			},
 		)
 
 	def start_password_reset(self, identifier, callback=None) -> SignupState:
@@ -146,20 +162,33 @@ class FakeProvider(BaseProvider):
 	def complete_password_reset(self, request_key, password) -> SignupState:
 		self._record("complete_password_reset", request_key=request_key)
 		# the platform answers `{ok, email, portal_url}`: the account the password now opens
-		return SignupState(request_key=request_key, status="Completed", extra={"ok": True, "email": "tenant@example.test"})
+		return SignupState(
+			request_key=request_key, status="Completed", extra={"ok": True, "email": "tenant@example.test"}
+		)
 
 	def login(self, email, password, integration_link=None, site_url=None, move_site=False) -> dict:
-		self._record("login", email=email, integration_link=integration_link, site_url=site_url, move_site=move_site)
+		self._record(
+			"login", email=email, integration_link=integration_link, site_url=site_url, move_site=move_site
+		)
 		if password != "right-password":
 			raise pex.AuthError("Incorrect email or password", code="LOGIN_FAILED", http_status=401)
 		if email == "other-site@example.com" and not move_site:
-			return {"ok": True, "account_in_use": True, "customer_name": "Fake Tenant", "integration_link": "WAIL-FAKE-1", "site": "old.example.com"}
+			return {
+				"ok": True,
+				"account_in_use": True,
+				"customer_name": "Fake Tenant",
+				"integration_link": "WAIL-FAKE-1",
+				"site": "old.example.com",
+			}
 		if email == "two-accounts@example.com" and not integration_link:
 			return {
 				"ok": True,
 				"choose_account": True,
 				"customer_name": "Fake Tenant",
-				"accounts": [{"name": "WAIL-FAKE-1", "site_name": "Main", "site_url": "", "plan": "Growth"}, {"name": "WAIL-FAKE-2", "site_name": "Branch", "site_url": "", "plan": "Growth"}],
+				"accounts": [
+					{"name": "WAIL-FAKE-1", "site_name": "Main", "site_url": "", "plan": "Growth"},
+					{"name": "WAIL-FAKE-2", "site_name": "Branch", "site_url": "", "plan": "Growth"},
+				],
 			}
 		return {
 			"ok": True,
@@ -167,7 +196,12 @@ class FakeProvider(BaseProvider):
 			"customer_name": "Fake Tenant",
 			"integration_link": "WAIL-FAKE-1",
 			"api_base_url": "https://fake.invalid/api/method/x",
-			"credentials": {"customer_api_key": "ck", "customer_api_secret": "cs", "api_key": "k", "api_secret": "s"},
+			"credentials": {
+				"customer_api_key": "ck",
+				"customer_api_secret": "cs",
+				"api_key": "k",
+				"api_secret": "s",
+			},
 		}
 
 	def validate_coupon(self, code, email=None, mobile_e164=None) -> dict:

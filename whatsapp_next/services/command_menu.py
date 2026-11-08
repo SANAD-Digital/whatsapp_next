@@ -74,7 +74,9 @@ def _title(row) -> str:
 	return _(row.title or row.code)[:24]
 
 
-def menu_list(output_key: str = "help", allowed: Callable[[str], bool] | None = None) -> dict[str, Any] | None:
+def menu_list(
+	output_key: str = "help", allowed: Callable[[str], bool] | None = None
+) -> dict[str, Any] | None:
 	"""The menu as a list message, or `None` when no command is in it. `output_key` decides how it
 	is sent (a reply of its own goes at once, like help; one that follows replies goes with them)."""
 	rows = items(allowed)
@@ -93,7 +95,11 @@ def menu_list(output_key: str = "help", allowed: Callable[[str], bool] | None = 
 				{
 					"title": _button(),
 					"rows": [
-						{"id": r.code.strip(), "title": _title(r), "description": cstr(r.menu_description)[:72]}
+						{
+							"id": r.code.strip(),
+							"title": _title(r),
+							"description": cstr(r.menu_description)[:72],
+						}
 						for r in rows
 					],
 				}
@@ -109,7 +115,9 @@ def _buttons(rows) -> list[dict[str, str]]:
 	return [{"type": "reply", "id": MENU_ID, "text": _button()}]
 
 
-def decorate(replies: list[dict[str, Any]], status: str, allowed: Callable[[str], bool] | None = None) -> list[dict[str, Any]]:
+def decorate(
+	replies: list[dict[str, Any]], status: str, allowed: Callable[[str], bool] | None = None
+) -> list[dict[str, Any]]:
 	"""The replies with the menu added per `main_menu_mode`. Unchanged when the mode is Off, no
 	command is in the menu, a question awaits an answer, or the replies already are the menu."""
 	current = mode()
@@ -155,7 +163,10 @@ MENU_FIELDS = ("name", "code", "title", "show_in_menu", "menu_order", "menu_desc
 def editable_items() -> list[dict[str, Any]]:
 	"""Every Active command with its menu fields: the ones in the menu first, in order."""
 	rows = frappe.get_all(
-		"WhatsApp Command", filters={"status": "Active"}, fields=list(MENU_FIELDS), order_by="title asc, code asc"
+		"WhatsApp Command",
+		filters={"status": "Active"},
+		fields=list(MENU_FIELDS),
+		order_by="title asc, code asc",
 	)
 	rows.sort(key=lambda r: (not cint(r.show_in_menu), cint(r.menu_order)))
 	return rows
@@ -179,13 +190,27 @@ def save_items(entries: list[dict[str, Any]], *, user: str | None = None) -> lis
 			frappe.throw(_("Command {0} not found").format(name), WAValidationError)
 		description = cstr(entry.get("menu_description")).strip()
 		if len(description) > 72:
-			frappe.throw(_("The menu description of {0} is longer than 72 characters").format(name), WAValidationError)
+			frappe.throw(
+				_("The menu description of {0} is longer than 72 characters").format(name), WAValidationError
+			)
 		wanted[name] = {"show_in_menu": 1, "menu_order": i, "menu_description": description}
 	changed: list[str] = []
 	for row in frappe.get_all("WhatsApp Command", fields=list(MENU_FIELDS)):
-		target = wanted.get(row.name) or {"show_in_menu": 0, "menu_order": row.menu_order, "menu_description": row.menu_description}
-		current = {"show_in_menu": cint(row.show_in_menu), "menu_order": cint(row.menu_order), "menu_description": row.menu_description or ""}
-		target = {**target, "menu_order": cint(target["menu_order"]), "menu_description": target["menu_description"] or ""}
+		target = wanted.get(row.name) or {
+			"show_in_menu": 0,
+			"menu_order": row.menu_order,
+			"menu_description": row.menu_description,
+		}
+		current = {
+			"show_in_menu": cint(row.show_in_menu),
+			"menu_order": cint(row.menu_order),
+			"menu_description": row.menu_description or "",
+		}
+		target = {
+			**target,
+			"menu_order": cint(target["menu_order"]),
+			"menu_description": target["menu_description"] or "",
+		}
 		if current != target:
 			frappe.db.set_value("WhatsApp Command", row.name, target)
 			frappe.clear_document_cache("WhatsApp Command", row.name)

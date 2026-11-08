@@ -109,7 +109,9 @@ def _was_rejected(name: str) -> bool:
 	return bool(row) and not (cint(row.signature_valid) and cint(row.timestamp_fresh))
 
 
-def _take_over(name: str, *, payload: dict[str, Any] | None, status: str, error: str | None, **fields) -> None:
+def _take_over(
+	name: str, *, payload: dict[str, Any] | None, status: str, error: str | None, **fields
+) -> None:
 	values = {
 		**fields,
 		"received_at": now_datetime(),

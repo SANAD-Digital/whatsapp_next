@@ -12,7 +12,9 @@ from whatsapp_next.services import hub
 TYPES = list(hub.DOCTYPES)
 
 
-@api_endpoint(roles=MANAGER, methods=("GET", "POST"), schema={"hub_type": {"enum": TYPES}, "txt": {"max_length": 100}})
+@api_endpoint(
+	roles=MANAGER, methods=("GET", "POST"), schema={"hub_type": {"enum": TYPES}, "txt": {"max_length": 100}}
+)
 def list_entries(hub_type: str, txt: str | None = None) -> list[dict[str, Any]]:
 	"""The hub's entries of one type, with `state` (not_installed / update_available / installed)."""
 	return hub.entries(hub_type, txt)

@@ -266,7 +266,10 @@ def _inbound_branch(I):
 		_null("interactive"),
 		I.selected_option_id.as_("selected_id"),
 		I.quoted_provider_message_id.as_("quoted_id"),
-		Case().when(I.media_url.notnull() & (I.media_url != "") & I.attachment.isnull(), 1).else_(0).as_("media_pending"),
+		Case()
+		.when(I.media_url.notnull() & (I.media_url != "") & I.attachment.isnull(), 1)
+		.else_(0)
+		.as_("media_pending"),
 	)
 
 

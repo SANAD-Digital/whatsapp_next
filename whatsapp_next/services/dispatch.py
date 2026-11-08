@@ -172,9 +172,9 @@ def _resolve_device(name: str | None) -> str:
 	# account the platform knows: it answered "Selected device does not exist" for every message
 	if cint(frappe.db.get_value("WhatsApp Device", name, "disabled")):
 		frappe.throw(
-			_("The device {0} is switched off (it belongs to the previous account). Choose a device of the current account.").format(
-				frappe.db.get_value("WhatsApp Device", name, "device_name") or name
-			),
+			_(
+				"The device {0} is switched off (it belongs to the previous account). Choose a device of the current account."
+			).format(frappe.db.get_value("WhatsApp Device", name, "device_name") or name),
 			WADeviceOfflineError,
 		)
 	return name
@@ -229,7 +229,9 @@ def recipient_identity(
 	return name or (row.display_name if row else None), contact
 
 
-def _render_body(spec: OutboundSpec, recipient: dict[str, Any] | None = None) -> tuple[str | None, str | None]:
+def _render_body(
+	spec: OutboundSpec, recipient: dict[str, Any] | None = None
+) -> tuple[str | None, str | None]:
 	"""`(body, template_error)` — template rendering never raises here (legacy F2). `recipient`
 	is who the row goes to, so a template can greet them by name."""
 	if spec.body or not spec.template:
@@ -268,7 +270,12 @@ def create_outbound(spec: OutboundSpec, *, user: str | None = None) -> str:
 	display_name, contact = _recipient_name(spec, key)
 	body, template_error = _render_body(
 		spec,
-		{"phone_e164": rec["phone_e164"], "jid": rec["jid"], "display_name": display_name, "contact": contact},
+		{
+			"phone_e164": rec["phone_e164"],
+			"jid": rec["jid"],
+			"display_name": display_name,
+			"contact": contact,
+		},
 	)
 	if spec.message_type == "Text" and not (body or "").strip():
 		frappe.throw(
@@ -929,8 +936,15 @@ def apply_status(
 		"WhatsApp Log",
 		outbound,
 		[
-			"status", "campaign", "device", "provider_message_id", "platform_message_log", "sent_at", "delivered_at",
-			"message_type", "poll_id",
+			"status",
+			"campaign",
+			"device",
+			"provider_message_id",
+			"platform_message_log",
+			"sent_at",
+			"delivered_at",
+			"message_type",
+			"poll_id",
 		],
 		as_dict=True,
 		for_update=True,
@@ -985,8 +999,12 @@ def apply_status(
 	_publish_message_status(outbound, status, at, error_code, campaign=row.campaign, device=row.device)
 	# the document the message was about says so on its own timeline: once when it first went out,
 	# and once if it failed (owner, 2026-10-08)
-	if (status in ("Sent", "Delivered", "Read") and not row.sent_at) or (status == "Failed" and current != "Failed"):
-		comment_on_reference(outbound, "Failed" if status == "Failed" else "Sent", reason=values.get("error_message"))
+	if (status in ("Sent", "Delivered", "Read") and not row.sent_at) or (
+		status == "Failed" and current != "Failed"
+	):
+		comment_on_reference(
+			outbound, "Failed" if status == "Failed" else "Sent", reason=values.get("error_message")
+		)
 	if row.campaign:
 		# the batch hand-off counted these rows while still `Sending`: count them again now that
 		# the platform has answered, which also closes the campaign once nothing is left open
@@ -1011,7 +1029,9 @@ def _timeline_name(log) -> str:
 			return name.strip()
 	phone = log.phone_e164 or log.phone or ""
 	if phone:
-		row = frappe.db.get_value("WhatsApp Number", {"phone_e164": phone}, ["saved_name", "display_name"], as_dict=True)
+		row = frappe.db.get_value(
+			"WhatsApp Number", {"phone_e164": phone}, ["saved_name", "display_name"], as_dict=True
+		)
 		if row and (row.saved_name or row.display_name):
 			return (row.saved_name or row.display_name).strip()
 	return phone
@@ -1039,7 +1059,19 @@ def comment_on_reference(outbound: str, outcome: str, *, reason: str | None = No
 		log = frappe.db.get_value(
 			"WhatsApp Log",
 			outbound,
-			["reference_doctype", "reference_name", "phone_e164", "phone", "contact", "body", "caption", "file_name", "message_type", "is_test", "is_simulated"],
+			[
+				"reference_doctype",
+				"reference_name",
+				"phone_e164",
+				"phone",
+				"contact",
+				"body",
+				"caption",
+				"file_name",
+				"message_type",
+				"is_test",
+				"is_simulated",
+			],
 			as_dict=True,
 		)
 		if not log or log.is_test or log.is_simulated or not log.reference_doctype or not log.reference_name:
@@ -1317,7 +1349,9 @@ def retry_dead_letter(names: Iterable[str], user: str | None = None) -> int:
 				r.outbound_message,
 				{"status": "Queued", "error_code": None, "error_message": None, "failed_at": None},
 			)
-			_publish_message_status(r.outbound_message, "Queued", now_datetime(), campaign=r.campaign, device=r.device)
+			_publish_message_status(
+				r.outbound_message, "Queued", now_datetime(), campaign=r.campaign, device=r.device
+			)
 	audit.log("Queue Items Retried", count=len(rows), user=user)
 	publish_progress(None, force=True)
 	return len(rows)

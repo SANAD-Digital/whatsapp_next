@@ -40,8 +40,16 @@ def refresh(numbers: list[str], *, device: str | None = None, force: bool = Fals
 		if kind == "Individual" and key not in keys:
 			keys.append(key)
 	if not force and keys:
-		fresh = set(frappe.get_all(NUMBER, filters={"name": ("in", keys),
-			"profile_synced_at": (">=", add_days(now_datetime(), -STALE_DAYS))}, pluck="name"))
+		fresh = set(
+			frappe.get_all(
+				NUMBER,
+				filters={
+					"name": ("in", keys),
+					"profile_synced_at": (">=", add_days(now_datetime(), -STALE_DAYS)),
+				},
+				pluck="name",
+			)
+		)
 		keys = [k for k in keys if k not in fresh]
 	stats = {"asked": len(keys), "updated": 0, "photos": 0}
 	if not keys:
@@ -56,13 +64,23 @@ def refresh(numbers: list[str], *, device: str | None = None, force: bool = Fals
 
 
 def _refresh(keys, stats, device, platform_device, provider) -> dict[str, int]:
-	known = dict(frappe.get_all(NUMBER, filters={"name": ("in", keys), "picture_id": ("is", "set")},
-		fields=["name", "picture_id"], as_list=True))
+	known = dict(
+		frappe.get_all(
+			NUMBER,
+			filters={"name": ("in", keys), "picture_id": ("is", "set")},
+			fields=["name", "picture_id"],
+			as_list=True,
+		)
+	)
 	now = now_datetime()
 	for start in range(0, len(keys), BATCH):
 		chunk = keys[start : start + BATCH]
-		for profile in provider.get_contact_profiles(platform_device, chunk, {k: known.get(k) for k in chunk if known.get(k)}):
-			number_check._remember(profile.phone_e164, profile.on_whatsapp, profile.jid, profile.verified_name, now, device)
+		for profile in provider.get_contact_profiles(
+			platform_device, chunk, {k: known.get(k) for k in chunk if known.get(k)}
+		):
+			number_check._remember(
+				profile.phone_e164, profile.on_whatsapp, profile.jid, profile.verified_name, now, device
+			)
 			if frappe.db.exists(NUMBER, profile.phone_e164):
 				stats["photos"] += _store(profile, now)
 				stats["updated"] += 1
@@ -90,7 +108,9 @@ def _store(profile: ContactProfile, at) -> int:
 	if state == "set" and profile.picture_url:
 		url = _save_photo(key, profile.picture_url)
 		if url:
-			values.update({"profile_picture": url, "picture_id": profile.picture_id, "picture_state": "Shown"})
+			values.update(
+				{"profile_picture": url, "picture_id": profile.picture_id, "picture_state": "Shown"}
+			)
 			saved = 1
 	elif state == "none":
 		_drop_photo(key)
@@ -103,8 +123,15 @@ def _store(profile: ContactProfile, at) -> int:
 	return saved
 
 
-DAYS = {"sun": "Sunday", "mon": "Monday", "tue": "Tuesday", "wed": "Wednesday", "thu": "Thursday",
-	"fri": "Friday", "sat": "Saturday"}
+DAYS = {
+	"sun": "Sunday",
+	"mon": "Monday",
+	"tue": "Tuesday",
+	"wed": "Wednesday",
+	"thu": "Thursday",
+	"fri": "Friday",
+	"sat": "Saturday",
+}
 MODES = {"open_24h": "Open 24 hours", "appointment_only": "By appointment only", "closed": "Closed"}
 
 
@@ -153,23 +180,32 @@ def _save_photo(key: str, url: str) -> str | None:
 	except requests.RequestException:
 		return None
 	_drop_photo(key)
-	file_doc = frappe.get_doc({
-		"doctype": "File",
-		"file_name": f"wa-{key.lstrip('+')}.jpg",
-		"attached_to_doctype": NUMBER,
-		"attached_to_name": key,
-		"attached_to_field": "profile_picture",
-		"is_private": 1,
-		"content": b"".join(chunks),
-	})
+	file_doc = frappe.get_doc(
+		{
+			"doctype": "File",
+			"file_name": f"wa-{key.lstrip('+')}.jpg",
+			"attached_to_doctype": NUMBER,
+			"attached_to_name": key,
+			"attached_to_field": "profile_picture",
+			"is_private": 1,
+			"content": b"".join(chunks),
+		}
+	)
 	file_doc.flags.ignore_permissions = True
 	file_doc.insert(ignore_permissions=True)
 	return file_doc.file_url
 
 
 def _drop_photo(key: str) -> None:
-	for name in frappe.get_all("File", filters={"attached_to_doctype": NUMBER, "attached_to_name": key,
-			"attached_to_field": "profile_picture"}, pluck="name"):
+	for name in frappe.get_all(
+		"File",
+		filters={
+			"attached_to_doctype": NUMBER,
+			"attached_to_name": key,
+			"attached_to_field": "profile_picture",
+		},
+		pluck="name",
+	):
 		frappe.delete_doc("File", name, ignore_permissions=True, force=True)
 
 
@@ -181,8 +217,12 @@ def _give_contact_the_photo(key: str, url: str) -> None:
 	if not contact or frappe.db.get_value("Contact", contact, "image"):
 		return
 	frappe.db.set_value("Contact", contact, "image", url, update_modified=False)
-	audit.log("Elevated Contact Write", reference=("Contact", contact), fields_written=["image"],
-		reason=_("WhatsApp profile photo of {0}").format(key))
+	audit.log(
+		"Elevated Contact Write",
+		reference=("Contact", contact),
+		fields_written=["image"],
+		reason=_("WhatsApp profile photo of {0}").format(key),
+	)
 
 
 def refresh_due() -> dict[str, int]:

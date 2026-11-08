@@ -61,7 +61,9 @@ def _device():
 	# a demo device first: a test fixture device (and every row on it) is deleted by its own test
 	rows = [
 		d.name
-		for d in frappe.get_all("WhatsApp Device", filters={"device_name": ("like", "DEMO%")}, fields=["name"], limit=1)
+		for d in frappe.get_all(
+			"WhatsApp Device", filters={"device_name": ("like", "DEMO%")}, fields=["name"], limit=1
+		)
 	] or [d.name for d in frappe.get_all("WhatsApp Device", fields=["name"], limit=1)]
 	if not rows:
 		frappe.throw("Seed a WhatsApp Device first.")
@@ -117,7 +119,10 @@ def enable_commands() -> str:
 	`frappe.db`, and Settings refuses Administrator or a System Manager (D-012)."""
 	from whatsapp_next.install import ensure_command_service_user
 
-	email = frappe.db.get_single_value("WhatsApp Settings", "command_service_user") or ensure_command_service_user()
+	email = (
+		frappe.db.get_single_value("WhatsApp Settings", "command_service_user")
+		or ensure_command_service_user()
+	)
 	frappe.db.set_value("User", email, "enabled", 1)
 	settings = frappe.get_single("WhatsApp Settings")
 	settings.command_service_user = email

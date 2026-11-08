@@ -133,7 +133,10 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"jid": "Data",
 		"display_name": "Data",
 		"contact": ("Link", "Contact"),
-		"message_type": ("Select", "Text\nDocument\nImage\nVideo\nAudio\nSticker\nLocation\nPoll\nButtons\nList"),
+		"message_type": (
+			"Select",
+			"Text\nDocument\nImage\nVideo\nAudio\nSticker\nLocation\nPoll\nButtons\nList",
+		),
 		"body": "Text",
 		"caption": "Small Text",
 		"attachment": "Attach",

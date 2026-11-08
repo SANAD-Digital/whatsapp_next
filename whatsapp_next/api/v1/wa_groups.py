@@ -12,18 +12,23 @@ from whatsapp_next.api.v1._roles import AGENT_UP, MANAGER
 from whatsapp_next.services import wa_groups
 
 
-@api_endpoint(roles=AGENT_UP, methods=("GET", "POST"),
-	schema={"source_doctype": {"enum": ["Contact", "WhatsApp Contact Group", "WhatsApp Number"]}})
+@api_endpoint(
+	roles=AGENT_UP,
+	methods=("GET", "POST"),
+	schema={"source_doctype": {"enum": ["Contact", "WhatsApp Contact Group", "WhatsApp Number"]}},
+)
 def members_from(source_doctype: str, names: list) -> dict[str, Any]:
 	"""`{members[{phone_e164, display_name}]}` behind the selected records, to prefill the dialog."""
 	return {"members": wa_groups.members_from(source_doctype, [str(n) for n in names or []])}
 
 
 @api_endpoint(roles=MANAGER, schema={"name": {"max_length": 100}})
-def create_group(device: str, name: str, members: list, description: str | None = None,
-		contact: str | None = None) -> dict[str, Any]:
+def create_group(
+	device: str, name: str, members: list, description: str | None = None, contact: str | None = None
+) -> dict[str, Any]:
 	"""Create a WhatsApp group on `device` with `members` (numbers); with `contact`, the group is
 	saved among that contact's numbers. → `{jid, name, members[{phone, status, jid}], invite_link,
 	saved_to_contact}`."""
-	return wa_groups.create(device, name, [str(m) for m in members or []], description, contact,
-		user=frappe.session.user)
+	return wa_groups.create(
+		device, name, [str(m) for m in members or []], description, contact, user=frappe.session.user
+	)

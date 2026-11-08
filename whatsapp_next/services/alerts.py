@@ -217,8 +217,14 @@ def _run_report_builder(kind, alert) -> tuple[list[Any], list[Any]]:
 	data = _load_json(kind.json) or {}
 	doctype = kind.ref_doctype
 	meta = frappe.get_meta(doctype)
-	fields = [c[0] for c in data.get("columns") or [] if isinstance(c, list | tuple) and len(c) >= 2 and c[1] == doctype]
-	fields = [f for f in fields if f == "name" or meta.get_field(f) or f in frappe.model.default_fields] or ["name"]
+	fields = [
+		c[0]
+		for c in data.get("columns") or []
+		if isinstance(c, list | tuple) and len(c) >= 2 and c[1] == doctype
+	]
+	fields = [f for f in fields if f == "name" or meta.get_field(f) or f in frappe.model.default_fields] or [
+		"name"
+	]
 	order_by = data.get("order_by") or "modified desc"
 	if isinstance(order_by, dict):
 		order_by = f"{order_by.get('order_by', 'modified')} {order_by.get('sort_order', 'desc')}"
@@ -299,9 +305,7 @@ def _execute(alert, *, preview: bool = False, test_phone: str | None = None) -> 
 		recipients = expand_recipients(alert, rows, columns)
 		if test_phone:
 			first = recipients[0] if recipients else Recipient(phone_e164=test_phone)
-			recipients = [
-				Recipient(phone_e164=test_phone, source="Test", column_value=first.column_value)
-			]
+			recipients = [Recipient(phone_e164=test_phone, source="Test", column_value=first.column_value)]
 			if first.source == "Report Column":
 				recipients[0].source = "Report Column"
 		column = next(

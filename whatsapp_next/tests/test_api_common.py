@@ -138,7 +138,9 @@ class TestApiCommon(IntegrationTestCase):
 			self.assertIn(says, str(ctx.exception))
 			self.assertEqual(len(frappe.local.message_log), 1, kind)  # Frappe's own line is gone
 			self.assertEqual(frappe.db.count("Error Log"), before + 1, kind)
-			title = frappe.get_all("Error Log", fields=["method"], order_by="creation desc", limit=1)[0].method
+			title = frappe.get_all("Error Log", fields=["method"], order_by="creation desc", limit=1)[
+				0
+			].method
 			self.assertTrue(title.startswith("WhatsApp API _fails_with"), title)
 		# the fault's message names the entry, so the screen leads to the traceback
 		log = frappe.get_all("Error Log", pluck="name", order_by="creation desc", limit=1)[0]

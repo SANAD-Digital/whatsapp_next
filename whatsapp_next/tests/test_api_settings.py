@@ -195,6 +195,7 @@ class TestApiSettings(IntegrationTestCase):
 		self.assertEqual([r["key"] for r in out["rows"]], [str(add_days(start, i)) for i in range(3)])
 		row = out["rows"][-1]
 		since = f"{today} 00:00:00"
+
 		def count(statuses):
 			return frappe.db.count("WhatsApp Log", {"creation": (">=", since), "status": ("in", statuses)})
 
@@ -247,10 +248,14 @@ class TestApiSettings(IntegrationTestCase):
 			ranged = api.list_audit_log(filters={"from": "2000-01-01", "to": "2000-01-02"})
 			self.assertEqual(ranged["rows"], [])
 			# `to` is a day: everything logged on it is inside the period
-			audit.log("Settings Changed", fields_written=["audit_retention_days"], details={"section": "test"})
+			audit.log(
+				"Settings Changed", fields_written=["audit_retention_days"], details={"section": "test"}
+			)
 			today = api.list_audit_log(filters={"from": nowdate(), "to": nowdate()})
 			self.assertGreaterEqual(today["total"], 1)
-			self.assertEqual(today["total"], frappe.db.count("WhatsApp Audit Log", {"timestamp": (">=", nowdate())}))
+			self.assertEqual(
+				today["total"], frappe.db.count("WhatsApp Audit Log", {"timestamp": (">=", nowdate())})
+			)
 			with self.assertRaises(WAValidationError):
 				api.list_audit_log(filters={"to": "not a date"})
 

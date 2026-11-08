@@ -91,7 +91,9 @@ class TestApiNotifications(IntegrationTestCase):
 		with as_user("WhatsApp Manager"):
 			self.assertEqual(api.preview(name=NAME, reference_name=self.todo.name)["errors"], [])
 		# a condition that fails is reported by the preview and left off the notification
-		frappe.db.set_value("WhatsApp Notification", NAME, {"condition": "doc.no_such.attr", "last_error": None})
+		frappe.db.set_value(
+			"WhatsApp Notification", NAME, {"condition": "doc.no_such.attr", "last_error": None}
+		)
 		frappe.clear_document_cache("WhatsApp Notification", NAME)
 		with as_user("WhatsApp Manager"):
 			out = api.preview(name=NAME, reference_name=self.todo.name)

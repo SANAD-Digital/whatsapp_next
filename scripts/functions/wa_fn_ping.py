@@ -42,7 +42,7 @@
 
 # ---------- حماية: لا تعمل من الرابط المباشر ----------
 if (frappe.form_dict.get("cmd") or "").startswith("wa_fn_"):
-    frappe.throw("Not allowed", frappe.PermissionError)
+	frappe.throw("Not allowed", frappe.PermissionError)
 
 form = frappe.form_dict
 u = frappe.utils
@@ -57,34 +57,36 @@ msg_result = form.get("msg_result") or FALLBACK_RESULT
 # ---------- اسم الأستاذ المساعد (إن كان الرقم مرتبطاً) ----------
 display_name = ""
 if party_type and party and frappe.db.exists("DocType", party_type):
-    meta = frappe.get_meta(party_type)
-    name_fields = []
-    for f in (meta.title_field, "customer_name", "supplier_name", "employee_name", "title"):
-        if f and f not in name_fields and meta.has_field(f):
-            name_fields.append(f)
-    p = frappe.db.get_value(party_type, party, ["name"] + name_fields, as_dict=True)
-    if p:
-        display_name = party
-        for f in name_fields:
-            if p.get(f):
-                display_name = p.get(f)
-                break
+	meta = frappe.get_meta(party_type)
+	name_fields = []
+	for f in (meta.title_field, "customer_name", "supplier_name", "employee_name", "title"):
+		if f and f not in name_fields and meta.has_field(f):
+			name_fields.append(f)
+	p = frappe.db.get_value(party_type, party, ["name"] + name_fields, as_dict=True)
+	if p:
+		display_name = party
+		for f in name_fields:
+			if p.get(f):
+				display_name = p.get(f)
+				break
 
 ctx = {
-    "echo": text or "pong",
-    "at": u.format_datetime(u.now_datetime(), "yyyy-MM-dd HH:mm"),
-    "sender_known": bool(display_name),
-    "display_name": display_name,
-    "party": party,
-    "party_type": party_type,
+	"echo": text or "pong",
+	"at": u.format_datetime(u.now_datetime(), "yyyy-MM-dd HH:mm"),
+	"sender_known": bool(display_name),
+	"display_name": display_name,
+	"party": party,
+	"party_type": party_type,
 }
 
 frappe.flags.wa_result = {
-    "error": None,
-    "messages": [{
-        "reply": "result_text",
-        "type": "text",
-        "text": frappe.render_template(msg_result, ctx).strip(),
-    }],
-    "data": ctx,
+	"error": None,
+	"messages": [
+		{
+			"reply": "result_text",
+			"type": "text",
+			"text": frappe.render_template(msg_result, ctx).strip(),
+		}
+	],
+	"data": ctx,
 }

@@ -38,6 +38,8 @@ def start_signup(
 	plan_code: str | None = None,
 	company_name: str | None = None,
 	business_activity: str | None = None,
+	terms_accepted: int | None = None,
+	terms_version: str | None = None,
 ) -> dict[str, Any]:
 	"""Begin a tenant sign-up on the platform → `{request_key, status, code_ttl, coupon}`.
 
@@ -46,8 +48,14 @@ def start_signup(
 	subscription the sign-up creates. `plan_code` is the plan the free trial renews to; left
 	out (or not one the platform offers) it is the platform's first plan."""
 	state = onboarding.start_signup(
-		plan_code, mobile, full_name, email, channel, coupon_code=coupon_code,
+		plan_code,
+		mobile,
+		full_name,
+		email,
+		channel,
+		coupon_code=coupon_code,
 		company={"name": company_name, "activity": business_activity},
+		terms={"version": str(terms_version or "")[:40]} if cint(terms_accepted) else None,
 	)
 	extra = state.extra or {}
 	return {
@@ -77,9 +85,7 @@ def verify_code(request_key: str, code: str, purpose: str | None = None) -> dict
 
 
 @api_endpoint(roles=SYSTEM_MANAGER)
-def complete_signup(
-	request_key: str, code: str | None = None, password: str | None = None
-) -> dict[str, Any]:
+def complete_signup(request_key: str, code: str | None = None, password: str | None = None) -> dict[str, Any]:
 	"""Finish the sign-up → `{ok, status, credentials_stored}`.
 
 	`code` verifies the request when it has not been verified yet and `password` sets the
@@ -89,7 +95,11 @@ def complete_signup(
 
 @api_endpoint(roles=SYSTEM_MANAGER, schema={"integration_link": {"max_length": 140}})
 def login(
-	platform_base_url: str, email: str, password: str, integration_link: str | None = None, move_site: int | None = None
+	platform_base_url: str,
+	email: str,
+	password: str,
+	integration_link: str | None = None,
+	move_site: int | None = None,
 ) -> dict[str, Any]:
 	"""Sign in to the platform and store what it returns → `{ok, customer, customer_name}`.
 	`email` takes any sign-in the account has: the email, the mobile number or the username.

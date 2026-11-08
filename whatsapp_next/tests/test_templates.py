@@ -20,7 +20,9 @@ class TestTemplates(IntegrationTestCase):
 		empty = templates.render(body, templates.context_for("Quotation"))
 		self.assertTrue(empty.ok, empty.error)
 		self.assertEqual(empty.text, "0 ·")
-		sample = templates.render(body, {"doc": templates.SampleDoc(items=[{"item_name": "A"}], grand_total=120)})
+		sample = templates.render(
+			body, {"doc": templates.SampleDoc(items=[{"item_name": "A"}], grand_total=120)}
+		)
 		self.assertEqual(sample.text, "A1 · 120")
 
 	def test_render_ok_and_errors_not_raised(self):

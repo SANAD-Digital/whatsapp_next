@@ -54,7 +54,11 @@ def renew() -> dict[str, Any]:
 	"""Renew the plan from the wallet now → `{done, subscription, payment_required?, amount?, …}`."""
 	result = registry.get_provider().renew_subscription()
 	if result.get("done"):
-		_record("Subscription Renewed", "Renewed the plan from the wallet", {"amount": result.get("amount"), "currency": result.get("currency")})
+		_record(
+			"Subscription Renewed",
+			"Renewed the plan from the wallet",
+			{"amount": result.get("amount"), "currency": result.get("currency")},
+		)
 	return _after_money_moved(result)
 
 
@@ -101,11 +105,22 @@ def request_topup(
 	if not payment_option:
 		raise WAValidationError(_("Choose the payment method you used."))
 	if not reference_no and not receipt_file:
-		raise WAValidationError(_("Add the transfer number or attach the receipt, so the payment can be matched."))
+		raise WAValidationError(
+			_("Add the transfer number or attach the receipt, so the payment can be matched.")
+		)
 	result = registry.get_provider().request_topup(
-		flt(amount, 2), payment_option=payment_option, reference_no=reference_no, remarks=remarks, receipt=_receipt(receipt_file), plan_code=plan_code
+		flt(amount, 2),
+		payment_option=payment_option,
+		reference_no=reference_no,
+		remarks=remarks,
+		receipt=_receipt(receipt_file),
+		plan_code=plan_code,
 	)
-	_record("Wallet Top-up Requested", "Sent a top-up for review", {"amount": flt(amount, 2), "transaction": result.get("transaction")})
+	_record(
+		"Wallet Top-up Requested",
+		"Sent a top-up for review",
+		{"amount": flt(amount, 2), "transaction": result.get("transaction")},
+	)
 	return result
 
 
@@ -113,7 +128,9 @@ def start_paypal(amount: float, plan_code: str | None = None) -> dict[str, Any]:
 	"""Start a PayPal payment → `{order_id, approve_url}`; the page sends the payer to `approve_url`."""
 	if flt(amount) <= 0:
 		raise WAValidationError(_("Enter the amount to add."))
-	return registry.get_provider().start_paypal_topup(flt(amount, 2), get_url(RETURN_PATH), plan_code=plan_code)
+	return registry.get_provider().start_paypal_topup(
+		flt(amount, 2), get_url(RETURN_PATH), plan_code=plan_code
+	)
 
 
 def confirm_paypal(order_id: str) -> dict[str, Any]:
@@ -123,7 +140,11 @@ def confirm_paypal(order_id: str) -> dict[str, Any]:
 	result = registry.get_provider().confirm_paypal_topup(order_id)
 	if result.get("state") == "completed":
 		txn = result.get("transaction") or {}
-		_record("Wallet Top-up Paid", "Topped up the wallet by PayPal", {"order_id": order_id, "transaction": txn.get("name"), "amount": txn.get("amount")})
+		_record(
+			"Wallet Top-up Paid",
+			"Topped up the wallet by PayPal",
+			{"order_id": order_id, "transaction": txn.get("name"), "amount": txn.get("amount")},
+		)
 	return _after_money_moved(result)
 
 

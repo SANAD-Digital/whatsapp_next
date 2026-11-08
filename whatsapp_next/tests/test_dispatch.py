@@ -414,9 +414,13 @@ class TestDispatch(IntegrationTestCase):
 	def test_the_document_a_message_is_about_gets_a_comment(self):
 		"""The reference document's timeline says the message went out — once, not per receipt —
 		and says so when it fails; a test send writes nothing there (owner, 2026-10-08)."""
-		todo = frappe.get_doc({"doctype": "ToDo", "description": "dispatch-test comment"}).insert(ignore_permissions=True)
+		todo = frappe.get_doc({"doctype": "ToDo", "description": "dispatch-test comment"}).insert(
+			ignore_permissions=True
+		)
 		comments = lambda: frappe.get_all(  # noqa: E731
-			"Comment", filters={"reference_doctype": "ToDo", "reference_name": todo.name, "comment_type": "Info"}, pluck="content"
+			"Comment",
+			filters={"reference_doctype": "ToDo", "reference_name": todo.name, "comment_type": "Info"},
+			pluck="content",
 		)
 		try:
 			out = dispatch.create_outbound(_spec(reference_doctype="ToDo", reference_name=todo.name))
@@ -431,7 +435,9 @@ class TestDispatch(IntegrationTestCase):
 			self.assertEqual(len(comments()), 2)
 			self.assertTrue(any("number is not on WhatsApp" in c for c in comments()))
 
-			test = dispatch.create_outbound(_spec(reference_doctype="ToDo", reference_name=todo.name, is_test=True))
+			test = dispatch.create_outbound(
+				_spec(reference_doctype="ToDo", reference_name=todo.name, is_test=True)
+			)
 			dispatch.apply_status(test, "Sent", provider_message_id="pm-comment-test")
 			self.assertEqual(len(comments()), 2)
 		finally:
@@ -444,17 +450,25 @@ class TestDispatch(IntegrationTestCase):
 		messaging service user's when one is set (owner, 2026-10-28)."""
 		from whatsapp_next.tests import function_fixtures as ff
 
-		todo = frappe.get_doc({"doctype": "ToDo", "description": "dispatch-test named comment"}).insert(ignore_permissions=True)
+		todo = frappe.get_doc({"doctype": "ToDo", "description": "dispatch-test named comment"}).insert(
+			ignore_permissions=True
+		)
 		rows = lambda: frappe.get_all(  # noqa: E731
 			"Comment",
 			filters={"reference_doctype": "ToDo", "reference_name": todo.name, "comment_type": "Info"},
 			fields=["content", "owner"],
 			order_by="creation asc",
 		)
-		number = frappe.db.get_value("WhatsApp Number", {"phone_e164": P2}, ["name", "saved_name", "display_name"], as_dict=True)
+		number = frappe.db.get_value(
+			"WhatsApp Number", {"phone_e164": P2}, ["name", "saved_name", "display_name"], as_dict=True
+		)
 		try:
 			ensure_settings(enable_commands=0, command_service_user=None)
-			out = dispatch.create_outbound(_spec(phone=P1, body="Your invoice is paid", reference_doctype="ToDo", reference_name=todo.name))
+			out = dispatch.create_outbound(
+				_spec(
+					phone=P1, body="Your invoice is paid", reference_doctype="ToDo", reference_name=todo.name
+				)
+			)
 			dispatch.apply_status(out, "Sent", provider_message_id="pm-named-1")
 			first = rows()[-1]
 			self.assertNotIn("WhatsApp message sent to", first.content)
@@ -464,10 +478,14 @@ class TestDispatch(IntegrationTestCase):
 			if number:
 				frappe.db.set_value("WhatsApp Number", number.name, "saved_name", "Sanad Test")
 			else:
-				frappe.get_doc({"doctype": "WhatsApp Number", "phone_e164": P2, "phone": P2, "saved_name": "Sanad Test"}).insert(ignore_permissions=True)
+				frappe.get_doc(
+					{"doctype": "WhatsApp Number", "phone_e164": P2, "phone": P2, "saved_name": "Sanad Test"}
+				).insert(ignore_permissions=True)
 			user = ff.ensure_service_user()
 			ensure_settings(command_service_user=user)
-			named = dispatch.create_outbound(_spec(phone=P2, body="Second", reference_doctype="ToDo", reference_name=todo.name))
+			named = dispatch.create_outbound(
+				_spec(phone=P2, body="Second", reference_doctype="ToDo", reference_name=todo.name)
+			)
 			dispatch.apply_status(named, "Sent", provider_message_id="pm-named-2")
 			second = rows()[-1]
 			self.assertIn("<b>Sanad Test</b>: Second", second.content)
@@ -489,10 +507,14 @@ class TestDispatch(IntegrationTestCase):
 			ignore_permissions=True
 		)
 		comments = lambda: frappe.get_all(  # noqa: E731
-			"Comment", filters={"reference_doctype": "ToDo", "reference_name": todo.name, "comment_type": "Info"}, pluck="content"
+			"Comment",
+			filters={"reference_doctype": "ToDo", "reference_name": todo.name, "comment_type": "Info"},
+			pluck="content",
 		)
 		try:
-			ok, _item = dispatch.create_and_enqueue(_spec(phone=P1, reference_doctype="ToDo", reference_name=todo.name))
+			ok, _item = dispatch.create_and_enqueue(
+				_spec(phone=P1, reference_doctype="ToDo", reference_name=todo.name)
+			)
 			with fake_provider():
 				self.assertEqual(dispatch.dispatch_device_batch(self.device)["accepted"], 1)
 			self.assertEqual(comments(), [])  # handed over, not sent yet
@@ -500,7 +522,9 @@ class TestDispatch(IntegrationTestCase):
 			self.assertEqual(len(comments()), 1)
 			self.assertIn(ok, comments()[0])
 
-			bad, item = dispatch.create_and_enqueue(_spec(phone=P2, reference_doctype="ToDo", reference_name=todo.name))
+			bad, item = dispatch.create_and_enqueue(
+				_spec(phone=P2, reference_doctype="ToDo", reference_name=todo.name)
+			)
 			with fake_provider() as fp:
 				fp.batch_mode = "error"
 				self.assertEqual(dispatch.dispatch_device_batch(self.device)["dead"], 1)
@@ -559,11 +583,15 @@ class TestDispatch(IntegrationTestCase):
 		out = dispatch.create_outbound(_spec())
 		first = add_to_date(now_datetime(), minutes=-5)
 		self.assertTrue(dispatch.apply_status(out, "Delivered", at=first, provider_message_id="pm-rep"))
-		self.assertFalse(dispatch.apply_status(out, "Delivered", at=now_datetime(), provider_message_id="pm-rep"))
+		self.assertFalse(
+			dispatch.apply_status(out, "Delivered", at=now_datetime(), provider_message_id="pm-rep")
+		)
 		row = frappe.db.get_value("WhatsApp Log", out, ["sent_at", "delivered_at"], as_dict=True)
 		self.assertEqual((row.sent_at, row.delivered_at), (first, first))
 		# a repeat that brings an id the row lacked completes it, still without moving the time
-		self.assertTrue(dispatch.apply_status(out, "Delivered", at=now_datetime(), platform_message_log="PML-rep"))
+		self.assertTrue(
+			dispatch.apply_status(out, "Delivered", at=now_datetime(), platform_message_log="PML-rep")
+		)
 		self.assertEqual(frappe.db.get_value("WhatsApp Log", out, "delivered_at"), first)
 
 	def test_a_late_failure_closes_its_queue_item(self):
@@ -571,7 +599,10 @@ class TestDispatch(IntegrationTestCase):
 		platform's error, instead of `Completed` beside a failed message."""
 		out, item = self._queued(1)[0]
 		frappe.db.set_value(
-			"WhatsApp Queue Item", item, {"status": "Completed", "last_error_code": "timeout"}, update_modified=False
+			"WhatsApp Queue Item",
+			item,
+			{"status": "Completed", "last_error_code": "timeout"},
+			update_modified=False,
 		)
 		self.assertTrue(
 			dispatch.apply_status(
@@ -750,7 +781,10 @@ class TestDispatch(IntegrationTestCase):
 				frappe.db.set_value("WhatsApp Queue Item", item, "status", "Dead Letter")
 				frappe.db.set_value("WhatsApp Log", out, "status", "Sending")
 			drifts = reconcile.assert_coherence(fix=True)
-			self.assertIn(("Dead Letter", "Sending", "Failed"), [(d.queue_status, d.outbound_status, d.fixed_to) for d in drifts])
+			self.assertIn(
+				("Dead Letter", "Sending", "Failed"),
+				[(d.queue_status, d.outbound_status, d.fixed_to) for d in drifts],
+			)
 			comments = frappe.get_all(
 				"Comment",
 				filters={"reference_doctype": "ToDo", "reference_name": todo.name, "comment_type": "Info"},
