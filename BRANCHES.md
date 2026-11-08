@@ -27,6 +27,10 @@ clean.
   in each bundle: the product's menu and the workspace's look, which 16 gets from the Workspace
   Sidebar. The menu reads `workspace_sidebar/whatsapp.json`, so an item added on `main` appears on
   15 by itself; a new icon also needs its drawing in `ICONS` in `shell_v15.js`.
+- `public/scss/_espresso_v15.scss`, imported first in the bundle: Frappe 16's `--surface-*`, `--ink-*` and
+  `--outline-*` tokens, generated from Frappe 16's `css/espresso/colors.css` without redefining anything 15 has.
+  The kit draws borders and backgrounds with them; on 15 they were empty. A new token used on `main` that 15
+  lacks shows as a missing border or background: regenerate the file.
 - `whatsapp_next/workspace/whatsapp/whatsapp.json`: the icon is `message-1`, because `message` is a bell
   on 15. A merge may stop on this file's `modified` line: keep the newer date, or 15 will not take
   the change.
