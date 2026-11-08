@@ -1,6 +1,7 @@
 // whatsapp_next Desk styles — the portable kit styles, this app's own branding, and the few
 // blocks that belong to one screen only.
 // the product's palette comes first: everything below is drawn in it
+@import "espresso_v15"; // version-15 branch only: Frappe 16's tokens the kit draws with
 @import "tokens";
 @import "brand";
 @import "../js/ui/style";

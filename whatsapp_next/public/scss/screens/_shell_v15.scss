@@ -94,6 +94,19 @@ body.wa-shell15 {
 	.wa-nav15__head .wa-nav15__icon { transform: rotate(90deg); }
 }
 
+// a list is the kit's card on the page, as on Frappe 16: Desk 15 framed it again in a bordered white box
+body.wa-shell15[data-route^="List/"] .layout-main-section {
+	border: 0;
+	background: transparent;
+}
+
+// the page-size buttons are Desk 15's own, painted `--gray-50` in both themes (white on white in
+// the dark one); Frappe 16 draws the ones not chosen plain
+body.wa-shell15 .list-paging-area .btn-paging:not(.btn-info) {
+	background: transparent;
+	color: var(--ink-gray-5);
+}
+
 // the workspace as Frappe 16 draws it: no column around it, the shortcuts as boxes, the groups of
 // links plain on the canvas
 body.wa-shell15[data-route="Workspaces/WhatsApp"] {
