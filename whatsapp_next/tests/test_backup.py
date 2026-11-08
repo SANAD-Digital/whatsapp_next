@@ -45,7 +45,13 @@ class TestBackup(IntegrationTestCase):
 		data = backup.export_backup()
 		frappe.db.delete("WhatsApp Contact Group", {"name": GROUP})
 		out = backup.import_backup(json.dumps(data))
-		self.assertEqual(out["failed"], [])
+		# a function whose Server Script is gone from this site cannot come back, and is reported
+		# as failed rather than raised (pos.dev holds one); nothing else may fail
+		broken = [
+			{"doctype": "WhatsApp Function", "name": name}
+			for name in frappe.get_all("WhatsApp Function", {"server_script": ("is", "not set")}, pluck="name", order_by="name")
+		]
+		self.assertEqual([{"doctype": f["doctype"], "name": f["name"]} for f in out["failed"]], broken)
 		self.assertTrue(frappe.db.exists("WhatsApp Contact Group", GROUP))
 		self.assertGreaterEqual(out["created"], 1)
 
