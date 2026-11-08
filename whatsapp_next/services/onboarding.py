@@ -328,6 +328,7 @@ def start_signup(
 	channel: str,
 	coupon_code: str | None = None,
 	company: dict | None = None,
+	terms: dict | None = None,
 ) -> SignupState:
 	"""Begin a tenant sign-up through the provider (`mobile` normalised to E.164 first). `company`
 	(`{name, activity}`) is what the account is for: the platform names the customer after it.
@@ -347,6 +348,7 @@ def start_signup(
 		coupon_code=coupon_code,
 		callback=callback,
 		company={k: str(v).strip() for k, v in (company or {}).items() if v and str(v).strip()},
+		terms=terms or None,
 	)
 	_remember_callback(callback, state.request_key)
 	return state

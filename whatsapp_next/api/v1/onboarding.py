@@ -38,6 +38,8 @@ def start_signup(
 	plan_code: str | None = None,
 	company_name: str | None = None,
 	business_activity: str | None = None,
+	terms_accepted: int | None = None,
+	terms_version: str | None = None,
 ) -> dict[str, Any]:
 	"""Begin a tenant sign-up on the platform → `{request_key, status, code_ttl, coupon}`.
 
@@ -53,6 +55,7 @@ def start_signup(
 		channel,
 		coupon_code=coupon_code,
 		company={"name": company_name, "activity": business_activity},
+		terms={"version": str(terms_version or "")[:40]} if cint(terms_accepted) else None,
 	)
 	extra = state.extra or {}
 	return {

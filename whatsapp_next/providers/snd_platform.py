@@ -537,6 +537,7 @@ class SndPlatformProvider(BaseProvider):
 		coupon_code: str | None = None,
 		callback: dict | None = None,
 		company: dict | None = None,
+		terms: dict | None = None,
 	) -> SignupState:
 		body: dict[str, Any] = {
 			"full_name": full_name,
@@ -556,6 +557,9 @@ class SndPlatformProvider(BaseProvider):
 			optional["company_name"] = company["name"]
 		if company.get("activity"):
 			optional["business_activity"] = company["activity"]
+		# the terms accepted on the wizard's terms step, kept with the account (WN-014)
+		if terms:
+			optional.update({"terms_accepted": 1, "terms_version": terms.get("version") or ""})
 		try:
 			data = self._request("POST", "start_signup", guest=True, body={**body, **optional})
 		except pex.ProviderError as exc:
