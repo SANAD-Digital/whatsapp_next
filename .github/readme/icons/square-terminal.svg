@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" role="img" aria-label="square-terminal">
+<!-- icon: Lucide "square-terminal" (ISC licence, lucide.dev), in the WhatsappNext palette -->
+<rect width="48" height="48" rx="12" fill="#DCE7E4"/>
+<g transform="translate(12 12)" fill="none" stroke="#0B4F4A" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<path d="m7 11 2-2-2-2" />
+  <path d="M11 13h4" />
+  <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+</g>
+</svg>

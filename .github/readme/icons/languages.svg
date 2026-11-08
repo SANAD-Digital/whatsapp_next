@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" role="img" aria-label="languages">
+<!-- icon: Lucide "languages" (ISC licence, lucide.dev), in the WhatsappNext palette -->
+<rect width="48" height="48" rx="12" fill="#DCE7E4"/>
+<g transform="translate(12 12)" fill="none" stroke="#0B4F4A" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+<path d="m5 8 6 6" />
+  <path d="m4 14 6-6 2-3" />
+  <path d="M2 5h12" />
+  <path d="M7 2h1" />
+  <path d="m22 22-5-10-5 10" />
+  <path d="M14 18h6" />
+</g>
+</svg>
