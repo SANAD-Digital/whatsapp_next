@@ -107,7 +107,30 @@ def resolve_filters(alert) -> dict[str, Any]:
 	if isinstance(dynamic, dict):
 		for k, v in dynamic.items():
 			filters[k] = alerts_dates.resolve(v)
+	if not filters.get("company"):
+		company = _standard_company(alert)
+		if company:
+			filters["company"] = company
 	return filters
+
+
+def _standard_company(alert) -> str | None:
+	"""The site's default company, for a standard alert shipped to run for it
+	(`standards.COMPANY_TOKEN`) whose filters do not name one yet. A migrate writes the company in
+	only when the site has one, so a site that set its company after the last migrate would
+	otherwise run the report without it ("Company is mandatory")."""
+	from whatsapp_next.services import standards
+
+	shipped = standards.records("WhatsApp Notification Alert").get(getattr(alert, "name", None) or "")
+	wanted = shipped.get("filters_json") if shipped else None
+	if isinstance(wanted, str):
+		try:
+			wanted = json.loads(wanted)
+		except ValueError:
+			return None
+	if isinstance(wanted, dict) and wanted.get("company") == standards.COMPANY_TOKEN:
+		return standards.default_company()
+	return None
 
 
 # ---- recipients --------------------------------------------------------------------------
