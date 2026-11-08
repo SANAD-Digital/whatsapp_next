@@ -28,7 +28,7 @@ from whatsapp_next.services import function_header as fh
 from whatsapp_next.services.devices import default_device
 from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.function_runner import FunctionRun, Sender
-from whatsapp_next.services.guards import status_writer
+from whatsapp_next.services.guards import rollback_to, status_writer
 from whatsapp_next.services.permissions import PARTY_TYPES
 
 MAP_CACHE_KEY = "wa:commands:map"
@@ -573,7 +573,7 @@ def execute(
 		run = function_runner.execute(command, params, disabled=function_runner.disabled_replies(command))
 	finally:
 		if dry_run:
-			frappe.db.rollback(save_point="wa_cmd_dry_run")
+			rollback_to("wa_cmd_dry_run")
 		frappe.set_user(previous)
 		frappe.session.sid, frappe.session.data, frappe.local.form_dict = saved_sid, saved_data, saved_form
 	elapsed = int((time.perf_counter() - started) * 1000)

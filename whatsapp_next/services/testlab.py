@@ -42,6 +42,7 @@ from whatsapp_next.exceptions import (
 from whatsapp_next.services import attachments, audit, dispatch, quick_send, simulator
 from whatsapp_next.services.devices import default_device
 from whatsapp_next.services.dispatch import OutboundSpec
+from whatsapp_next.services.guards import rollback_to
 from whatsapp_next.services.phone import classify, mask
 
 KINDS: tuple[str, ...] = (
@@ -966,7 +967,7 @@ def run_check(
 	try:
 		step.update(_HANDLERS[kind](data, target, params, user or frappe.session.user))
 	except Exception as exc:
-		frappe.db.rollback(save_point="wa_testlab_step")
+		rollback_to("wa_testlab_step")
 		step.update(ok=False, error=_reason(exc))
 		if not isinstance(exc, frappe.ValidationError | frappe.PermissionError):
 			frappe.log_error(

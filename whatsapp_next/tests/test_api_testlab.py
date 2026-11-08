@@ -366,6 +366,33 @@ class TestApiTestLab(IntegrationTestCase):
 		self.assertEqual([s["state"] for s in status["steps"]], ["failed", "running"])
 		self.assertEqual(status["run"]["used"], 1)
 
+	def test_a_check_whose_savepoint_was_committed_away_is_still_a_failed_step(self):
+		"""Rendering a print view commits (Frappe's Access Log), which ends the step's savepoint.
+		A check that then fails was a crash ("SAVEPOINT wa_testlab_step does not exist") that
+		stopped the run; it must be a failed step like any other refusal."""
+		real_rollback = frappe.db.rollback
+		full_rollbacks = []
+
+		def rollback(save_point=None, **kwargs):
+			if save_point:
+				return real_rollback(save_point=save_point, **kwargs)
+			full_rollbacks.append(1)  # the fallback; not run for real, so the test's rows stay
+
+		def commits_then_fails(data, target, params, user):
+			frappe.db.release_savepoint("wa_testlab_step")  # what a commit does to it
+			frappe.throw("PDF rendering failed", frappe.ValidationError)
+
+		with as_user("WhatsApp Manager"):
+			run = self._run()
+			with (
+				patch.dict(testlab._HANDLERS, {"template": commits_then_fails}),
+				patch.object(frappe.db, "rollback", side_effect=rollback),
+			):
+				step = api.run_check(run=run["id"], kind="template", target=P1, params={"template": "x"})
+		self.assertFalse(step["ok"])
+		self.assertIn("PDF rendering failed", step["error"])
+		self.assertEqual(full_rollbacks, [1])
+
 	# ---- each check is the product's own path -----------------------------------------------
 
 	def test_template_over_a_real_record(self):
