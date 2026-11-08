@@ -180,7 +180,9 @@ def _dt(value: Any) -> datetime | None:
 		return None
 	if isinstance(value, datetime):
 		return _site_time(value)
-	if isinstance(value, int | float) or (isinstance(value, str) and value.strip().replace(".", "", 1).isdigit()):
+	if isinstance(value, int | float) or (
+		isinstance(value, str) and value.strip().replace(".", "", 1).isdigit()
+	):
 		number = float(value)
 		return _site_time(datetime.fromtimestamp(number / 1000 if number > 1e11 else number, timezone.utc))
 	text = str(value).strip()
@@ -215,6 +217,23 @@ def _d(value: Any) -> date | None:
 			pass
 	dt = _dt(value)
 	return dt.date() if dt else None
+
+
+NOT_ALLOWED_CODE = "RECIPIENT_NOT_ALLOWED"
+NOT_ALLOWED_TEXT = "Not sent: this site sends only to the numbers in its wa_send_allowlist"
+
+
+def recipient_allowed(message: NormalizedMessage) -> bool:
+	"""A site with `wa_send_allowlist` (site_config, a list of numbers) sends to nothing else: no
+	other number and no group. For development and test sites, whichever platform they send
+	through (owner, 2026-11-08); a site without the list is unchanged."""
+	allowed = frappe.conf.get("wa_send_allowlist")
+	if not allowed:
+		return True
+	if message.recipient_type == "Group" or str(message.jid or "").endswith("@g.us"):
+		return False
+	digits = re.sub(r"\D", "", str(message.phone_e164 or str(message.jid or "").split("@", 1)[0]))
+	return digits in {re.sub(r"\D", "", str(n)) for n in allowed}
 
 
 class SndPlatformProvider(BaseProvider):
@@ -599,13 +618,16 @@ class SndPlatformProvider(BaseProvider):
 		data = self._request(
 			"POST", "complete_password_reset", guest=True, body={"token": request_key, "password": password}
 		)
-		return SignupState(
-			request_key=request_key, status=str(data.get("status") or "Completed"), extra=data
-		)
+		return SignupState(request_key=request_key, status=str(data.get("status") or "Completed"), extra=data)
 
 	# ------------------------------------------------------------------ sign-in and coupons
 	def login(
-		self, email: str, password: str, integration_link: str | None = None, site_url: str | None = None, move_site: bool = False
+		self,
+		email: str,
+		password: str,
+		integration_link: str | None = None,
+		site_url: str | None = None,
+		move_site: bool = False,
 	) -> dict:
 		"""Exchange an e-mail and password for this tenant's credentials.
 
@@ -664,22 +686,38 @@ class SndPlatformProvider(BaseProvider):
 	def change_plan(self, plan_code: str) -> dict:
 		return self._request("POST", "change_plan_api", v1=True, body={"plan_code": plan_code})
 
-	def request_topup(self, amount, payment_option=None, reference_no=None, remarks=None, receipt=None, plan_code=None) -> dict:
-		body: dict[str, Any] = {"amount": amount, "payment_option": payment_option, "reference_no": reference_no, "remarks": remarks, "plan_code": plan_code}
+	def request_topup(
+		self, amount, payment_option=None, reference_no=None, remarks=None, receipt=None, plan_code=None
+	) -> dict:
+		body: dict[str, Any] = {
+			"amount": amount,
+			"payment_option": payment_option,
+			"reference_no": reference_no,
+			"remarks": remarks,
+			"plan_code": plan_code,
+		}
 		if receipt:
-			body.update({"receipt_filename": receipt[0], "receipt_mime": receipt[1], "receipt_base64": receipt[2]})
-		return self._request("POST", "request_wallet_topup_api", v1=True, body={k: v for k, v in body.items() if v})
+			body.update(
+				{"receipt_filename": receipt[0], "receipt_mime": receipt[1], "receipt_base64": receipt[2]}
+			)
+		return self._request(
+			"POST", "request_wallet_topup_api", v1=True, body={k: v for k, v in body.items() if v}
+		)
 
 	def start_paypal_topup(self, amount, return_url, plan_code=None) -> dict:
 		body = {"amount": amount, "return_url": return_url, "plan_code": plan_code}
-		return self._request("POST", "start_paypal_topup_api", v1=True, body={k: v for k, v in body.items() if v})
+		return self._request(
+			"POST", "start_paypal_topup_api", v1=True, body={k: v for k, v in body.items() if v}
+		)
 
 	def confirm_paypal_topup(self, order_id: str) -> dict:
 		return self._request("POST", "confirm_paypal_topup_api", v1=True, body={"order_id": order_id})
 
 	def get_account_statement(self, from_date=None, to_date=None) -> dict:
 		body = {"from_date": from_date, "to_date": to_date}
-		return self._request("POST", "get_account_statement_api", v1=True, body={k: v for k, v in body.items() if v})
+		return self._request(
+			"POST", "get_account_statement_api", v1=True, body={k: v for k, v in body.items() if v}
+		)
 
 	# ------------------------------------------------------------------ devices
 	def _device_state(self, row: dict) -> DeviceState:
@@ -886,6 +924,8 @@ class SndPlatformProvider(BaseProvider):
 
 	def send_message(self, message: NormalizedMessage) -> SendResult:
 		"""Single synchronous send via `send_message_api` (test send only, D-024); `allow_fallback=0`."""
+		if not recipient_allowed(message):
+			raise pex.ValidationError(NOT_ALLOWED_TEXT, code=NOT_ALLOWED_CODE)
 		payload = self._message_payload(message)
 		payload["allow_fallback"] = 0
 		data = self._request("POST", "send_message_api", body=payload)
@@ -907,6 +947,14 @@ class SndPlatformProvider(BaseProvider):
 			raise pex.ValidationError("Batch is empty", code="BATCH_EMPTY")
 		if len(messages) > MAX_BATCH:
 			raise pex.ValidationError(f"A batch carries at most {MAX_BATCH} messages", code="BATCH_TOO_LARGE")
+		refused = tuple(
+			BatchError(client_ref=m.client_ref, error=NOT_ALLOWED_TEXT, code=NOT_ALLOWED_CODE, queue_id=None)
+			for m in messages
+			if not recipient_allowed(m)
+		)
+		messages = [m for m in messages if recipient_allowed(m)]
+		if not messages:
+			return BatchResult(batch_id=batch_id[:64], accepted=(), errors=refused)
 		body = {"messages": [self._message_payload(m) for m in messages], "batch_id": batch_id[:64]}
 		data = self._request("POST", "enqueue_messages_api", body=body)
 		accepted = tuple(
@@ -917,7 +965,7 @@ class SndPlatformProvider(BaseProvider):
 			)
 			for a in data.get("accepted") or []
 		)
-		errors = tuple(
+		errors = refused + tuple(
 			BatchError(
 				client_ref=e.get("client_ref"),
 				error=str(e.get("error") or ""),
@@ -995,26 +1043,53 @@ class SndPlatformProvider(BaseProvider):
 		self._request("POST", "delete_status_api", body={"device": platform_device, "status_id": status_id})
 
 	def get_status_views(self, platform_device: str, status_ids: list[str]) -> dict[str, dict]:
-		data = self._request("POST", "get_status_views_api", body={"device": platform_device, "status_ids": list(status_ids)[:100]})
+		data = self._request(
+			"POST",
+			"get_status_views_api",
+			body={"device": platform_device, "status_ids": list(status_ids)[:100]},
+		)
 		views = data.get("views")
 		return views if isinstance(views, dict) else {}
 
-	def mark_read(self, platform_device: str, chat_jid: str, message_ids: list[str], sender_jid: str | None = None) -> None:
-		self._request("POST", "mark_read_api", body={"device": platform_device, "chat_jid": chat_jid,
-			"message_ids": list(message_ids)[:50], "sender_jid": sender_jid or ""})
+	def mark_read(
+		self, platform_device: str, chat_jid: str, message_ids: list[str], sender_jid: str | None = None
+	) -> None:
+		self._request(
+			"POST",
+			"mark_read_api",
+			body={
+				"device": platform_device,
+				"chat_jid": chat_jid,
+				"message_ids": list(message_ids)[:50],
+				"sender_jid": sender_jid or "",
+			},
+		)
 
 	def send_presence(self, platform_device: str, chat_jid: str, state: str = "composing") -> None:
-		self._request("POST", "send_presence_api", body={"device": platform_device, "chat_jid": chat_jid, "state": state})
+		self._request(
+			"POST",
+			"send_presence_api",
+			body={"device": platform_device, "chat_jid": chat_jid, "state": state},
+		)
 
 	def check_numbers(self, platform_device: str, numbers: list[str]) -> list[NumberCheck]:
-		data = self._request("POST", "check_numbers_api", body={"device": platform_device,
-			"numbers": [str(n).lstrip("+") for n in numbers]})
+		data = self._request(
+			"POST",
+			"check_numbers_api",
+			body={"device": platform_device, "numbers": [str(n).lstrip("+") for n in numbers]},
+		)
 		out = []
 		for row in data.get("results") or []:
 			digits = "".join(ch for ch in str(row.get("phone") or "") if ch.isdigit())
 			if digits:
-				out.append(NumberCheck(phone_e164="+" + digits, on_whatsapp=bool(row.get("on_whatsapp")),
-					jid=row.get("jid"), verified_name=row.get("verified_name")))
+				out.append(
+					NumberCheck(
+						phone_e164="+" + digits,
+						on_whatsapp=bool(row.get("on_whatsapp")),
+						jid=row.get("jid"),
+						verified_name=row.get("verified_name"),
+					)
+				)
 		return out
 
 	def get_contact_profiles(
@@ -1023,35 +1098,44 @@ class SndPlatformProvider(BaseProvider):
 		def digits(n):
 			return "".join(ch for ch in str(n or "") if ch.isdigit())
 
-		data = self._request("POST", "get_contact_profiles_api", body={
-			"device": platform_device,
-			"numbers": [digits(n) for n in numbers],
-			"known_pictures": {digits(k): v for k, v in (known_pictures or {}).items() if v},
-		})
+		data = self._request(
+			"POST",
+			"get_contact_profiles_api",
+			body={
+				"device": platform_device,
+				"numbers": [digits(n) for n in numbers],
+				"known_pictures": {digits(k): v for k, v in (known_pictures or {}).items() if v},
+			},
+		)
 		out = []
 		for row in data.get("profiles") or []:
 			if not isinstance(row, dict) or not digits(row.get("phone")):
 				continue
 			picture = row.get("picture") if isinstance(row.get("picture"), dict) else {}
-			out.append(ContactProfile(
-				phone_e164="+" + digits(row.get("phone")),
-				on_whatsapp=bool(row.get("on_whatsapp")),
-				jid=row.get("jid"),
-				about=row.get("about") or None,
-				verified_name=row.get("verified_name") or None,
-				is_business=bool(row.get("is_business")),
-				picture_state=picture.get("state"),
-				picture_id=picture.get("id"),
-				picture_url=picture.get("url"),
-				business=row.get("business") if isinstance(row.get("business"), dict) else {},
-			))
+			out.append(
+				ContactProfile(
+					phone_e164="+" + digits(row.get("phone")),
+					on_whatsapp=bool(row.get("on_whatsapp")),
+					jid=row.get("jid"),
+					about=row.get("about") or None,
+					verified_name=row.get("verified_name") or None,
+					is_business=bool(row.get("is_business")),
+					picture_state=picture.get("state"),
+					picture_id=picture.get("id"),
+					picture_url=picture.get("url"),
+					business=row.get("business") if isinstance(row.get("business"), dict) else {},
+				)
+			)
 		return out
 
 	def create_group(
 		self, platform_device: str, name: str, participants: list[str], description: str | None = None
 	) -> GroupCreated:
-		body: dict[str, Any] = {"device": platform_device, "name": name,
-			"participants": [str(p).lstrip("+") for p in participants]}
+		body: dict[str, Any] = {
+			"device": platform_device,
+			"name": name,
+			"participants": [str(p).lstrip("+") for p in participants],
+		}
 		if description:
 			body["description"] = description
 		data = self._request("POST", "create_group_api", body=body)
@@ -1059,7 +1143,9 @@ class SndPlatformProvider(BaseProvider):
 			jid=str(data.get("group_jid") or ""),
 			name=str(data.get("name") or name),
 			members=[
-				GroupMember(phone=str(m.get("phone") or ""), status=str(m.get("status") or "failed"), jid=m.get("jid"))
+				GroupMember(
+					phone=str(m.get("phone") or ""), status=str(m.get("status") or "failed"), jid=m.get("jid")
+				)
 				for m in data.get("members") or []
 				if isinstance(m, dict)
 			],
@@ -1067,9 +1153,19 @@ class SndPlatformProvider(BaseProvider):
 		)
 
 	def list_history(
-		self, platform_device: str, *, after: int = 0, limit: int = 200, since: int | None = None, total: bool = False
+		self,
+		platform_device: str,
+		*,
+		after: int = 0,
+		limit: int = 200,
+		since: int | None = None,
+		total: bool = False,
 	) -> HistoryPage:
-		params: dict[str, Any] = {"device": platform_device, "after": int(after or 0), "limit": int(limit or 200)}
+		params: dict[str, Any] = {
+			"device": platform_device,
+			"after": int(after or 0),
+			"limit": int(limit or 200),
+		}
 		if since:
 			params["since"] = int(since)
 		if total:
@@ -1107,14 +1203,22 @@ class SndPlatformProvider(BaseProvider):
 		limit = max_bytes or MAX_MEDIA_BYTES
 		try:
 			response = self._session.get(
-				url, headers=headers, timeout=max(self.settings.timeout, 60), allow_redirects=False, stream=True
+				url,
+				headers=headers,
+				timeout=max(self.settings.timeout, 60),
+				allow_redirects=False,
+				stream=True,
 			)
 		except requests.RequestException as exc:
-			raise pex.TransientError(f"Media download failed: {exc.__class__.__name__}", code="MEDIA_DOWNLOAD") from exc
+			raise pex.TransientError(
+				f"Media download failed: {exc.__class__.__name__}", code="MEDIA_DOWNLOAD"
+			) from exc
 		with response:
 			if response.status_code != 200:
 				self._unwrap(response)  # raises the typed error
-				raise pex.ProviderError(f"Media download answered {response.status_code}", code="MEDIA_DOWNLOAD")
+				raise pex.ProviderError(
+					f"Media download answered {response.status_code}", code="MEDIA_DOWNLOAD"
+				)
 			# read in chunks and stop past the limit: a huge file must not fill a worker's memory
 			if int(response.headers.get("Content-Length") or 0) > limit:
 				raise pex.ValidationError(f"Media is larger than {limit} bytes", code="MEDIA_TOO_LARGE")
@@ -1559,12 +1663,18 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 			nested.get("pushName"),
 			nested.get("push_name"),
 		),
-		group_name=_first(body.get("group_name"), body.get("chat_name"), nested.get("group_name")) if is_group else None,
+		group_name=_first(body.get("group_name"), body.get("chat_name"), nested.get("group_name"))
+		if is_group
+		else None,
 		message_type=message_type,
 		body=str(text) if text is not None else None,
 		caption=_first(body.get("caption"), media.get("caption"), nested.get("caption")),
 		media_url=_first(
-			media.get("download_url"), body.get("media_url"), body.get("url"), nested.get("url"), nested.get("media_url")
+			media.get("download_url"),
+			body.get("media_url"),
+			body.get("url"),
+			nested.get("url"),
+			nested.get("media_url"),
 		),
 		media_mime_type=_first(
 			media.get("mime_type"),
@@ -1595,4 +1705,3 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 		or _dt(nested.get("timestamp"))
 		or timestamp,
 	)
-
