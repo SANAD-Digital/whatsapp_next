@@ -31,6 +31,9 @@ clean.
   `--outline-*` tokens, generated from Frappe 16's `css/espresso/colors.css` without redefining anything 15 has.
   The kit draws borders and backgrounds with them; on 15 they were empty. A new token used on `main` that 15
   lacks shows as a missing border or background: regenerate the file.
+- `public/js/desk/icons_v15.js`, imported in the bundle: the icons the app draws with that 15 does not ship
+  (Frappe 16's Lucide set; 15 has none), added to the page once. A new icon used on `main` that 15 lacks shows
+  as an empty square: regenerate the list.
 - `whatsapp_next/workspace/whatsapp/whatsapp.json`: the icon is `message-1`, because `message` is a bell
   on 15. A merge may stop on this file's `modified` line: keep the newer date, or 15 will not take
   the change.
