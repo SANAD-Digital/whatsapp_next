@@ -390,6 +390,40 @@ class TestApiTestLab(IntegrationTestCase):
 		self.assertEqual(log.attachment, testlab.sample_file("image"))  # one File, reused
 		self.assertTrue(testlab.sample_file("document").endswith(".pdf"))
 
+	def test_a_sample_whose_file_is_gone_is_made_again(self):
+		"""whatsapp.dev, 2026-11-08: the File rows were there and the files were not, so every image
+		and document check failed with "No such file"."""
+		stale = testlab.sample_file("image")
+		stale_rows = frappe.get_all("File", {"file_url": stale, "attached_to_doctype": testlab.SAMPLE_OWNER[0]}, pluck="name")
+		real = testlab._on_disk
+		with patch.object(testlab, "_on_disk", side_effect=lambda name: False if name in stale_rows else real(name)):
+			url = testlab.sample_file("image")
+		fresh = frappe.get_all("File", {"file_url": url, "attached_to_doctype": testlab.SAMPLE_OWNER[0]}, pluck="name")
+		self.assertTrue(fresh and all(real(name) for name in fresh), (url, fresh))
+		self.assertFalse(set(fresh) & set(stale_rows) and not real(fresh[0]))
+		for name in stale_rows:
+			self.assertFalse(frappe.db.exists("File", name))
+
+	def test_a_command_that_answers_with_buttons_sends_its_buttons(self):
+		"""The reply was copied without its buttons and refused: "Buttons need 1 to 10 buttons"."""
+		from types import SimpleNamespace
+
+		from whatsapp_next.services import dispatch, plan_features
+		from whatsapp_next.services.dispatch import OutboundSpec
+
+		menu = {"text": f"{TAG} balance", "buttons": [{"type": "reply", "text": "Statement"}, {"type": "reply", "text": "Invoice"}]}
+		with patch.object(plan_features, "require_interactive"):
+			reply, _item = dispatch.create_and_enqueue(
+				OutboundSpec(device=self.device, phone=P1, message_type="Buttons", interactive=menu, source_type="Simulator", is_test=True, skip_policy=True)
+			)
+			sim = SimpleNamespace(status="Executed", command="balance", block_reason=None, args={}, replies=[], error=None, elapsed_ms=1, outbound=[reply])
+			with as_user("WhatsApp Manager"), patch.object(testlab.simulator, "simulate_inbound", return_value=sim):
+				run = self._run()
+				step = api.run_check(run=run["id"], kind="command", target=P1, params={"text": "balance", "send_reply": 1})
+		self.assertTrue(step["ok"], step)
+		sent = frappe.parse_json(frappe.db.get_value("WhatsApp Log", step["outbounds"][0], "interactive"))
+		self.assertEqual([b["text"] for b in sent["buttons"]], ["Statement", "Invoice"])
+
 	def test_command_dry_run_stores_and_sends_nothing(self):
 		inbound = frappe.db.count("WhatsApp Inbound Message", {"device": self.device})
 		with as_user("WhatsApp Manager"):
