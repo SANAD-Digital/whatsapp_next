@@ -64,3 +64,17 @@ def assert_status_writer(doc, fieldnames: tuple[str, ...] = ("status",)) -> None
 				),
 				WAStateConflictError,
 			)
+
+
+def rollback_to(save_point: str) -> None:
+	"""Undo the work since `save_point`, even when something on the way committed.
+
+	A commit ends every savepoint, and Frappe commits behind a caller's back: rendering a print
+	view writes an Access Log and commits outside tests (`access_log._make_access_log`, Frappe 15
+	and 16). Rolling back to the lost savepoint would then fail with "SAVEPOINT does not exist"
+	and hide the error being handled. What came before that commit is kept by then; this undoes
+	what came after it."""
+	try:
+		frappe.db.rollback(save_point=save_point)
+	except Exception:
+		frappe.db.rollback()

@@ -16,6 +16,7 @@ from frappe import _
 
 from whatsapp_next.services import function_header as fh
 from whatsapp_next.services import functions_catalog
+from whatsapp_next.services.guards import rollback_to
 
 GENERIC_ERROR = "Could not complete the request."
 
@@ -324,7 +325,7 @@ def trial(
 		step(_("Run"), False, f"{type(exc).__name__}: {str(exc)[:300]}")
 		return out
 	finally:
-		frappe.db.rollback(save_point="wa_fn_trial")
+		rollback_to("wa_fn_trial")
 		frappe.set_user(previous)
 		frappe.session.sid, frappe.session.data, frappe.local.form_dict = saved_sid, saved_data, saved_form
 	ms = int((frappe.utils.now_datetime() - started).total_seconds() * 1000)
