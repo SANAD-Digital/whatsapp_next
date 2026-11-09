@@ -190,14 +190,15 @@ class FakeProvider(BaseProvider):
 					{"name": "WAIL-FAKE-2", "site_name": "Branch", "site_url": "", "plan": "Growth"},
 				],
 			}
+		account = integration_link or "WAIL-FAKE-1"
 		return {
 			"ok": True,
 			"customer": "WAC-FAKE-1",
 			"customer_name": "Fake Tenant",
-			"integration_link": "WAIL-FAKE-1",
+			"integration_link": account,
 			"api_base_url": "https://fake.invalid/api/method/x",
 			"credentials": {
-				"customer_api_key": "ck",
+				"customer_api_key": "ck" if account == "WAIL-FAKE-1" else f"ck-{account}",
 				"customer_api_secret": "cs",
 				"api_key": "k",
 				"api_secret": "s",
@@ -456,6 +457,7 @@ class FakeProvider(BaseProvider):
 		return {"ok": True, "http_status_code": 200}
 
 	def delete_webhook_endpoint(self, endpoint_id) -> None:
+		self._record("delete_webhook_endpoint", endpoint_id=endpoint_id)
 		self.endpoints.pop(endpoint_id, None)
 
 	def list_available_webhook_events(self) -> list[dict]:

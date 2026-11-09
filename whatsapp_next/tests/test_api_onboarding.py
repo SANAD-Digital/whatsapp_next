@@ -558,6 +558,53 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 			(last["integration_link"], last["site_url"]), ("WAIL-FAKE-2", frappe.utils.get_url())
 		)
 
+	def test_signing_in_to_another_account_removes_the_webhook_of_the_one_left(self):
+		"""Owner, 2026-11-10: a site that signs in to another account removes its webhook endpoint
+		from the account it leaves, with that account's keys, as a sign-out does. Left behind, the
+		old account kept posting its messages here, signed with a secret the site no longer held.
+		Signing in again to the same account removes nothing."""
+		from whatsapp_next.services import backup
+
+		previous = frappe.db.get_default(backup.ACCOUNT_DEFAULT)
+		self.addCleanup(lambda: frappe.db.set_default(backup.ACCOUNT_DEFAULT, previous))
+		frappe.db.set_default(backup.ACCOUNT_DEFAULT, "WAIL-FAKE-1")
+		provider = FakeProvider()
+
+		def holding_the_first_account():
+			set_encrypted_password(SETTINGS, SETTINGS, "ck", "customer_api_key")
+			frappe.db.set_single_value(SETTINGS, "webhook_endpoint", "WAWE-OF-THE-FIRST")
+			frappe.clear_document_cache(SETTINGS, SETTINGS)
+
+		def removed():
+			return [c[1]["endpoint_id"] for c in provider.calls if c[0] == "delete_webhook_endpoint"]
+
+		with (
+			fake_provider(provider),
+			as_user("System Manager"),
+			patch.object(svc, "link_site", return_value={}),
+		):
+			holding_the_first_account()
+			again = api.login(
+				platform_base_url="",
+				email="two-accounts@example.com",
+				password="right-password",
+				integration_link="WAIL-FAKE-1",
+			)
+			self.assertTrue(again["ok"])
+			self.assertEqual(removed(), [])
+			holding_the_first_account()
+			other = api.login(
+				platform_base_url="",
+				email="two-accounts@example.com",
+				password="right-password",
+				integration_link="WAIL-FAKE-2",
+			)
+		self.assertTrue(other["ok"])
+		self.assertEqual(removed(), ["WAWE-OF-THE-FIRST"])
+		self.assertEqual(
+			frappe.get_doc(SETTINGS).get_password("customer_api_key", raise_exception=False), "ck-WAIL-FAKE-2"
+		)
+
 	def test_an_account_another_site_has_moves_only_when_asked(self):
 		"""One account, one site (owner, 2026-11-04): the card says which site has it and stores
 		nothing; asked to move it, the sign-in goes through."""

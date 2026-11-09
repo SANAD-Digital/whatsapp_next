@@ -6,6 +6,15 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
 
 ## [Unreleased]
 
+### Fixed
+
+- **A site that signs in to another of the customer's accounts leaves the first one**
+  (`onboarding._release_webhook`): the sign-in, like a sign-up, removes this site's webhook endpoint
+  from the account it leaves, with that account's keys, before they are forgotten. Left behind,
+  the old account kept posting its messages here, signed with a secret the site no longer held
+  (HTTP 401 until the endpoint locked), and still read as "used by" this site. The platform does
+  the same on its side when the site registers its address on the new account.
+
 ### Added
 
 - **The print format's page size is kept in the PDF** (`attachments.page_options`): wkhtmltopdf
