@@ -371,6 +371,13 @@ def _pymupdf():
 
 		return fitz
 	except ImportError:
+		# a server updated by `git pull` alone has no PyMuPDF (`bench setup requirements` installs
+		# it): one-page PDFs then go out as PDFs, so it is said once per process in the log
+		if not getattr(_pymupdf, "_said", False):
+			_pymupdf._said = True
+			frappe.logger("whatsapp_next").warning(
+				"PyMuPDF is not installed: one-page PDFs are sent as PDFs. Run `bench setup requirements`."
+			)
 		return None
 
 
@@ -411,10 +418,15 @@ def is_pdf(file_name: str | None, mime_type: str | None) -> bool:
 
 
 def single_page_pdf_as_image_enabled() -> bool:
-	"""WhatsApp Settings → Policy → "Send a one-page PDF as an image"; on when never saved (its
-	default)."""
-	value = frappe.get_cached_doc("WhatsApp Settings").get("single_page_pdf_as_image")
-	return True if value is None else bool(int(value or 0))
+	"""WhatsApp Settings → Policy → "Send a one-page PDF as an image", on by default. Read through
+	`settings.stored_or_default`: a site that never saved Settings since the field came (every
+	customer server after the update) reads a Check as 0, which switched the feature off while the
+	Settings page, reading the same way, showed it on (owner, 2026-11-10)."""
+	from frappe.utils import cint
+
+	from whatsapp_next.services.settings import stored_or_default
+
+	return bool(cint(stored_or_default("single_page_pdf_as_image")))
 
 
 def _png_name(file_name: str | None) -> str:

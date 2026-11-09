@@ -194,6 +194,25 @@ class TestAttachments(IntegrationTestCase):
 		pdf = attachments.render_print_pdf("Role", "System Manager", print_format=name)
 		self.assertTrue(pdf.content.startswith(b"%PDF"))
 
+	def test_a_site_that_never_saved_the_option_has_it_on(self):
+		"""Customer servers after the update (owner, 2026-11-10): Settings were never saved with the
+		new field, and Frappe reads that Check as 0, so one-page PDFs went out as PDFs while the
+		Settings page showed the option on. Its default (on) is what counts until it is saved."""
+		frappe.db.savepoint("wa_never_saved")
+		self.addCleanup(
+			lambda: (
+				frappe.db.rollback(save_point="wa_never_saved"),
+				frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings"),
+			)
+		)
+		frappe.db.delete("Singles", {"doctype": "WhatsApp Settings", "field": "single_page_pdf_as_image"})
+		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+		self.assertEqual(frappe.get_cached_doc("WhatsApp Settings").get("single_page_pdf_as_image"), 0)
+		self.assertTrue(attachments.single_page_pdf_as_image_enabled())
+		frappe.db.set_single_value("WhatsApp Settings", "single_page_pdf_as_image", 0)
+		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+		self.assertFalse(attachments.single_page_pdf_as_image_enabled())
+
 	def test_the_print_formats_page_size_reaches_wkhtmltopdf(self):
 		"""wkhtmltopdf takes the page size from Print Settings only; the format's own size — its
 		"Paper size" (Frappe 16) or a CSS `@page { size }` — is handed to it (owner, 2026-11-10)."""
