@@ -9,8 +9,8 @@
 # to start"). The app falls back to wkhtmltopdf when that happens, but a format made for Chrome
 # looks right only in Chrome.
 #
-# Frappe Cloud installs the same packages from `pyproject.toml` → `[deploy.dependencies.apt]`.
-# A bench you run yourself does not, so:
+# Frappe Cloud (Press) needs none of this: its bench image installs these libraries and puts
+# Chromium in `frappe-bench/chromium` when the image is built. A bench you run yourself does not, so:
 #
 #   sudo apps/whatsapp_next/scripts/install_pdf_deps.sh        (from frappe-bench, as root)
 #
