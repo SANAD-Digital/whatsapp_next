@@ -170,6 +170,57 @@ class TestDispatch(IntegrationTestCase):
 			("Group", "120363000000000009@g.us", "120363000000000009@g.us"),
 		)
 
+	def test_a_one_page_pdf_goes_out_as_an_image(self):
+		"""Settings → Policy → "Send a one-page PDF as an image" (owner, 2026-11-09): one page
+		becomes a PNG sent as an Image; two pages, or the setting off, stay a PDF Document."""
+		from whatsapp_next.services import attachments
+
+		pymupdf = attachments._pymupdf()
+		if pymupdf is None:
+			self.skipTest("PyMuPDF is not installed")
+
+		def pdf(pages: int) -> str:
+			with pymupdf.open() as doc:
+				for i in range(pages):
+					doc.new_page().insert_text((72, 72), f"page {i + 1}")
+				content = doc.tobytes()
+			return attachments.save_private_file(
+				content, f"wa-test-pages-{pages}.pdf", ("Role", "System Manager")
+			)
+
+		def cleanup():
+			for name in frappe.get_all(
+				"File", filters={"file_name": ("like", "wa-test-pages-%")}, pluck="name"
+			):
+				frappe.delete_doc("File", name, ignore_permissions=True, force=True)
+
+		self.addCleanup(cleanup)
+		fields = ["message_type", "attachment", "file_name", "mime_type", "caption"]
+
+		def sent(name):
+			return frappe.db.get_value("WhatsApp Log", name, fields, as_dict=True)
+
+		one, two = pdf(1), pdf(2)
+		spec = dict(
+			message_type="Document",
+			caption="Invoice",
+			reference_doctype="Role",
+			reference_name="System Manager",
+		)
+		ensure_settings(single_page_pdf_as_image=1)
+		row = sent(dispatch.create_outbound(_spec(attachment=one, **spec)))
+		self.assertEqual(
+			(row.message_type, row.mime_type, row.file_name), ("Image", "image/png", "wa-test-pages-1.png")
+		)
+		self.assertTrue(attachments.as_bytes(row.attachment).startswith(b"\x89PNG"))
+		self.assertEqual(row.caption, "Invoice")
+		row = sent(dispatch.create_outbound(_spec(attachment=two, **spec)))
+		self.assertEqual((row.message_type, row.attachment), ("Document", two))
+		ensure_settings(single_page_pdf_as_image=0)
+		row = sent(dispatch.create_outbound(_spec(attachment=one, **spec)))
+		self.assertEqual((row.message_type, row.attachment), ("Document", one))
+		ensure_settings(single_page_pdf_as_image=1)
+
 	def test_create_with_template_poll_and_enqueue_priority(self):
 		tpl = frappe.get_doc(
 			{

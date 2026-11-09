@@ -285,11 +285,26 @@ class _css_imports_completed:
 		return False
 
 
+def _pymupdf():
+	"""PyMuPDF under its current name (`pymupdf`), else its old one (`fitz`); `None` when missing."""
+	try:
+		import pymupdf
+
+		return pymupdf
+	except ImportError:
+		pass
+	try:
+		import fitz
+
+		return fitz
+	except ImportError:
+		return None
+
+
 def pdf_first_page_png(pdf_bytes: bytes) -> bytes | None:
 	"""PNG of the first page (PyMuPDF). `None` when PyMuPDF is missing or the PDF is unreadable."""
-	try:
-		import fitz  # PyMuPDF — optional dependency
-	except ImportError:
+	fitz = _pymupdf()
+	if fitz is None:
 		return None
 	try:
 		with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
@@ -298,6 +313,53 @@ def pdf_first_page_png(pdf_bytes: bytes) -> bytes | None:
 			pix = doc[0].get_pixmap(matrix=fitz.Matrix(PNG_ZOOM, PNG_ZOOM), alpha=False)
 			return pix.tobytes("png")
 	except Exception:
+		return None
+
+
+def single_page_pdf_png(pdf_bytes: bytes) -> bytes | None:
+	"""PNG of a PDF that has exactly one page; `None` for a longer or unreadable PDF, or when
+	PyMuPDF is missing."""
+	fitz = _pymupdf()
+	if fitz is None:
+		return None
+	try:
+		with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+			if doc.page_count != 1:
+				return None
+			pix = doc[0].get_pixmap(matrix=fitz.Matrix(PNG_ZOOM, PNG_ZOOM), alpha=False)
+			return pix.tobytes("png")
+	except Exception:
+		return None
+
+
+def is_pdf(file_name: str | None, mime_type: str | None) -> bool:
+	"""A PDF by its type or, when the type is missing or generic, by its name."""
+	return (mime_type or "").lower() == "application/pdf" or (file_name or "").lower().endswith(".pdf")
+
+
+def pdf_as_image(
+	file_url: str, file_name: str | None, attached_to: tuple[str, str] | None = None
+) -> dict[str, str] | None:
+	"""A one-page PDF stored again as a PNG, so WhatsApp shows it in the chat instead of as a file
+	to open (WhatsApp Settings → Policy → "Send a one-page PDF as an image", owner 2026-11-09).
+	Returns `{attachment, file_name, mime_type}` of the new image, or `None` to send the PDF as it
+	is: a longer PDF, a PDF that cannot be read, PyMuPDF missing. Never raises — a PDF that goes
+	out beats a message that does not."""
+	try:
+		png = single_page_pdf_png(as_bytes(file_url))
+		if not png:
+			return None
+		stem = re.sub(r"\.pdf$", "", file_name or "", flags=re.IGNORECASE) or "document"
+		name = safe_file_name(stem, ext="png")
+		return {
+			"attachment": save_private_file(png, name, attached_to),
+			"file_name": name,
+			"mime_type": "image/png",
+		}
+	except Exception:
+		frappe.log_error(
+			title="WhatsApp: one-page PDF not turned into an image", message=frappe.get_traceback()
+		)
 		return None
 
 

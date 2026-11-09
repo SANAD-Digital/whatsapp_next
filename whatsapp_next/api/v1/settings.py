@@ -79,6 +79,7 @@ SECTIONS: dict[str, tuple[str, ...]] = {
 		"global_blacklist_group",
 		"send_only_to_known_numbers",
 		"import_past_messages",
+		"single_page_pdf_as_image",
 	),
 	"picker": ("picker_sources",),
 	"retention": (
