@@ -428,3 +428,37 @@ Each contact goes through `update_contact` (audited per contact), in its own sav
 ```js
 await sanad.ui.call("contacts.link_many", { names: ["Ahmed Ali", "Sara Omar"], link_doctype: "Customer", link_name: "CUST-0001" });
 ```
+
+---
+
+## unlink_account *(destructive)*
+
+Removes one party link from a contact. The contact, its phones and its other links stay.
+
+- **Path:** `whatsapp_next.api.v1.contacts.unlink_account`
+- **Methods:** POST
+- **Roles:** Contact User | Contact **write**
+
+| Argument | Type | Required | Meaning |
+|---|---|---|---|
+| `name` | str | yes | `Contact.name`. |
+| `link_doctype` | str | yes | Party type of the link to remove. |
+| `link_name` | str | yes | Party name of the link to remove. |
+
+The remaining party links are written back through `update_contact` (audited `Elevated Contact
+Write`, field `links`); links to non-party DocTypes are kept. When the contact does not carry that
+link, nothing is written.
+
+**Returns** — `removed` is `false` when the contact did not carry the link.
+
+```json
+{ "removed": true }
+```
+
+**Errors:** `WANotFoundError` (404) — contact missing.
+
+**Realtime:** none.
+
+```js
+await sanad.ui.call("contacts.unlink_account", { name: "Ahmed Ali", link_doctype: "Customer", link_name: "CUST-0001" });
+```

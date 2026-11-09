@@ -45,7 +45,7 @@ def _photo_response():
 
 class TestContactProfiles(IntegrationTestCase):
 	def setUp(self):
-		if not frappe.db.get_value("WhatsApp Device", {"status": "Connected"}, "name"):
+		if not frappe.db.get_value("WhatsApp Device", {"status": "Connected", "disabled": 0}, "name"):
 			ensure_device()
 		tag = frappe.generate_hash(length=4).translate(str.maketrans("abcdef", "123456"))
 		self.key = f"+96773300{tag}"

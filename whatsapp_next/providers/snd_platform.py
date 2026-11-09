@@ -278,8 +278,11 @@ class SndPlatformProvider(BaseProvider):
 		body: dict | None = None,
 		v1: bool = False,
 		guest: bool = False,
+		answer_not_ok: bool = False,
 	) -> dict:
-		"""Call one platform endpoint; unwrap Frappe's `message`; map failures to typed errors."""
+		"""Call one platform endpoint; unwrap Frappe's `message`; map failures to typed errors.
+		`answer_not_ok`: an HTTP 2xx `{ok: false, …}` is an answer of the endpoint (a PayPal order
+		still pending), returned as it is instead of raised."""
 		if not guest and not self.settings.credentials.get("customer_api_key"):
 			raise pex.AuthError("Customer API Key is not configured", code="AUTH_KEY_MISSING")
 		url = self._url(endpoint, v1=v1)
@@ -309,9 +312,9 @@ class SndPlatformProvider(BaseProvider):
 				f"Platform request error: {exc.__class__.__name__}", code="REQUEST"
 			) from exc
 		self._latency_ms = int((time.monotonic() - started) * 1000)
-		return self._unwrap(response)
+		return self._unwrap(response, answer_not_ok=answer_not_ok)
 
-	def _unwrap(self, response: requests.Response) -> dict:
+	def _unwrap(self, response: requests.Response, *, answer_not_ok: bool = False) -> dict:
 		status = response.status_code
 		try:
 			payload = response.json() if response.content else {}
@@ -321,7 +324,7 @@ class SndPlatformProvider(BaseProvider):
 		if not isinstance(data, dict):
 			data = {"value": data}
 		if 200 <= status < 300:
-			if data.get("ok") is False:
+			if data.get("ok") is False and not answer_not_ok:
 				self._raise_business(data, status)
 			return data
 		# an error keeps the envelope's own keys (`exc_type`, `_server_messages`, `code`) beside the
@@ -715,7 +718,12 @@ class SndPlatformProvider(BaseProvider):
 		)
 
 	def confirm_paypal_topup(self, order_id: str) -> dict:
-		return self._request("POST", "confirm_paypal_topup_api", v1=True, body={"order_id": order_id})
+		"""`{ok, state: completed | pending | not_approved | failed, transaction?}`: a payment PayPal
+		is still clearing or did not take comes back `ok: false` with its state, which the billing
+		screen says in words; it is not an error."""
+		return self._request(
+			"POST", "confirm_paypal_topup_api", v1=True, body={"order_id": order_id}, answer_not_ok=True
+		)
 
 	def get_account_statement(self, from_date=None, to_date=None) -> dict:
 		body = {"from_date": from_date, "to_date": to_date}

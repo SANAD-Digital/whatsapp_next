@@ -210,6 +210,39 @@ const { rows } = await sanad.ui.call("picker.search_contacts", { txt: "Ahmed", l
 
 ---
 
+## search_whatsapp_numbers
+
+Source "WhatsApp contacts not in the system": individual `WhatsApp Number` rows that are not linked
+to a Contact (`link_status = "Not Linked"`, `number_type = "Individual"`). These are numbers that
+messaged the site or were fetched from a device's address book.
+
+- **Path:** `whatsapp_next.api.v1.picker.search_whatsapp_numbers`
+- **Methods:** GET, POST
+- **Roles:** `PICKER_ROLES`
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `txt` | str | optional | Matched (`LIKE %txt%`) against `display_name`, `saved_name` or `phone_e164`. |
+| `page` | int | `1` | |
+| `page_length` | int | `20` | Capped at 200. |
+
+**Returns** — one picker row per number (`source_type = "WhatsApp Number"`). `display_name` is the
+name the phone saves it under (`saved_name`), else `display_name`. Named numbers come first, then
+by that name. `total` counts every match.
+
+```json
+{ "rows": [{ "phone": "+966500000009", "phone_e164": "+966500000009", "display_name": "Khalid Shop", "contact": null,
+  "source_type": "WhatsApp Number", "source_doctype": "WhatsApp Number", "source_name": "+966500000009", "valid": true, "error": null }], "total": 1 }
+```
+
+**Realtime:** none.
+
+```js
+const { rows, total } = await sanad.ui.call("picker.search_whatsapp_numbers", { txt: "Khalid", page: 1 });
+```
+
+---
+
 ## list_doctype_rows
 
 Source 3: rows of an enabled picker DocType.

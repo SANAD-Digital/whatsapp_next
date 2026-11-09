@@ -175,8 +175,13 @@ def preview(source: dict[str, Any] | str) -> dict[str, Any]:
 	from whatsapp_next.services.permissions import _phones_for, validate_filters
 
 	if isinstance(source, str):
-		source = json.loads(source or "{}")
-	document_type = (source or {}).get("document_type")
+		try:
+			source = json.loads(source or "{}")
+		except ValueError:
+			frappe.throw(_("The source is not valid JSON"), WAValidationError)
+	if not isinstance(source, dict):
+		frappe.throw(_("The source is not valid JSON"), WAValidationError)
+	document_type = source.get("document_type")
 	meta = _meta(document_type)
 	try:
 		filters = validate_filters(meta, source.get("filters_json") or [])

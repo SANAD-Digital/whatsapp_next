@@ -10,9 +10,9 @@ from typing import Any
 
 import frappe
 from frappe import _
-from frappe.utils import now_datetime
+from frappe.utils import cint, now_datetime
 
-from whatsapp_next.exceptions import WAStateConflictError, WAValidationError
+from whatsapp_next.exceptions import WANotFoundError, WAStateConflictError, WAValidationError
 from whatsapp_next.services import audit, plan_features
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.services.phone import classify
@@ -21,11 +21,17 @@ MAX_MEMBERS = 256
 MAX_NAME = 100
 
 
-def members_from(source_doctype: str, names: list[str]) -> list[dict[str, Any]]:
+def members_from(
+	source_doctype: str, names: list[str], max_records: int = MAX_MEMBERS
+) -> list[dict[str, Any]]:
 	"""The WhatsApp numbers behind a selection, to prefill the dialog: Contacts (their numbers),
 	WhatsApp Contact Groups (their members) or WhatsApp Numbers (individual ones). Read through the
-	caller's permissions; each row `{phone_e164, display_name}`."""
-	names = [n for n in names or [] if n][:MAX_MEMBERS]
+	caller's permissions; each row `{phone_e164, display_name}`. A selection of more than
+	`max_records` records is refused, never cut: the first 256 used to be read silently, so the
+	number check (5,000 numbers) left the rest of a large selection unchecked."""
+	names = [n for n in names or [] if n]
+	if len(names) > max_records:
+		frappe.throw(_("Select at most {0} records at a time").format(max_records), WAValidationError)
 	out: dict[str, str | None] = {}
 	if source_doctype == "Contact":
 		from whatsapp_next.services import permissions
@@ -98,8 +104,18 @@ def create(
 	)
 	if not row:
 		frappe.throw(_("WhatsApp Device {0} not found").format(device), WAValidationError)
+	if cint(row.disabled):
+		frappe.throw(_("{0} is disabled").format(device), WAStateConflictError)
 	if row.status != "Connected":
 		frappe.throw(_("{0} is not connected").format(device), WAStateConflictError)
+	if contact:
+		# checked before the group exists: a refusal after it left a group on WhatsApp that the
+		# site rolled back and no longer knew of
+		from whatsapp_next.services import permissions
+
+		permissions.require("write")
+		if not frappe.db.exists("Contact", contact):
+			frappe.throw(_("Contact {0} not found").format(contact), WANotFoundError)
 
 	created = registry.get_provider().create_group(
 		row.platform_device, name, keys, (description or "").strip() or None

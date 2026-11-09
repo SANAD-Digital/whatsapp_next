@@ -13,8 +13,8 @@ and `WARateLimitError` (429).
 Kit keys: `get_status`, `start_signup`, `get_signup_status`, `complete_signup`,
 `start_password_reset`, `save_credentials`, `complete_setup`, `login`, `validate_coupon`,
 `get_referral_coupon`, and `get_signup_bootstrap` are in the `sanad.ui` map (`"onboarding.<fn>"`).
-`verify_code`, `get_password_reset_status`, and `complete_password_reset` are not in the map, so
-call them by their full dotted path.
+`verify_code`, `get_password_reset_status`, `finish_password_reset`, `sign_out`,
+`get_account_switch` and `resolve_account_switch` are in the map as well.
 
 ### The link result
 
@@ -269,7 +269,8 @@ part of the response.**
 | Exception | HTTP | When |
 |---|---|---|
 | `WAValidationError` | 417 | `Missing argument: platform_base_url` when it is omitted; "This site does not know where the WhatsApp platform is…"; "The platform returned no credentials for this account"; an invalid URL rejected by the Settings controller |
-| `WAProviderAuthError` | 424 | Wrong e-mail or password (mapped from the provider) |
+| — | 200 | A wrong e-mail or password is an answer, not an error: `{ok: false, message}` for the card to show |
+| `WAProviderAuthError` | 424 | The platform refused this site's own credentials |
 
 ```js
 await sanad.ui.call("onboarding.login", { platform_base_url: "", email, password });
@@ -322,29 +323,48 @@ curl -s "https://<site>/api/method/whatsapp_next.api.v1.onboarding.get_password_
 
 ---
 
-## complete_password_reset  *(admin-only)*
+## finish_password_reset  *(admin-only)*
 
-Sets the new password on a verified reset request.
+Ends a password recovery in one step: verifies the reset, sets the new password on the platform,
+then signs this site in with it (`login`), so the person lands on a linked account.
 
-- **Path:** `whatsapp_next.api.v1.onboarding.complete_password_reset`
+- **Path:** `whatsapp_next.api.v1.onboarding.finish_password_reset`
 - **Methods:** POST
 - **Roles:** `SYSTEM_MANAGER`
 
 | Argument | Type | Required / default | Meaning |
 |---|---|---|---|
-| `request_key` | str | required | Reset request |
-| `password` | str | required | New password |
+| `request_key` | str | required | From `start_password_reset` |
+| `password` | str | required | New password, at least 8 characters |
+| `code` | str | optional | The code from the e-mail (`channel: "email"`). Without it, the request must already be `Verified` or `Completed` (a WhatsApp reset is verified by the person's reply). |
 
-**Returns.** `ok` is true when the status is `Completed`.
+**Returns.** Whatever `login` returns for the account's e-mail and the new password. On success:
 
 ```json
-{"ok": true, "status": "Completed"}
+{
+  "ok": true, "customer": "CUST-0001", "customer_name": "Acme",
+  "credentials_stored": true, "account_switched": false,
+  "connection": {"ok": true, "error": null},
+  "webhook": {"ok": true, "status": "Active"},
+  "devices": {"ok": true, "adopted": 2}
+}
 ```
 
-**Errors:** Provider errors are mapped.
+`login`'s other answers pass through unchanged, for example
+`{"ok": false, "choose_account": true, "accounts": [...], ...}` when the customer has several
+accounts.
+
+**Errors:**
+
+| Exception | HTTP | When |
+|---|---|---|
+| `WAValidationError` | 417 | "The password must be at least 8 characters."; no `code` and the request is not verified yet ("The code has not been confirmed yet."); the platform changed the password but returned no e-mail ("The password was changed. Sign in with it.") |
+| Provider errors (mapped) | 4xx/5xx | A wrong code, an unknown or expired request |
+
+**Realtime:** none.
 
 ```js
-await sanad.ui.call("whatsapp_next.api.v1.onboarding.complete_password_reset", { request_key, password });
+const r = await sanad.ui.call("onboarding.finish_password_reset", { request_key, password, code: "123456" });
 ```
 
 ---
@@ -432,6 +452,110 @@ invalid.
 curl -s -X POST "https://<site>/api/method/whatsapp_next.api.v1.onboarding.save_credentials" \
   -H "Authorization: token <api_key>:<api_secret>" \
   -d customer_api_key=ck_… -d api_key=ak_… -d api_secret=as_…
+```
+
+---
+
+## sign_out  *(admin-only)* *(destructive)*
+
+Unlinks the site from its platform account. First the site's webhook endpoint is removed on the
+platform with the current keys (best effort: an unreachable platform never keeps the site signed
+in). Then the four keys and the webhook secret are deleted, and the link's state is reset
+(connection status `Untested`, webhook endpoint and status, `setup_completed`, the usage cache), so
+the wizard opens on sign-in. Devices, messages, the queue, and everything the site set up stay.
+Audited as `Credentials Changed` with `details: {what: "sign_out", webhook_removed}`.
+
+- **Path:** `whatsapp_next.api.v1.onboarding.sign_out`
+- **Methods:** POST
+- **Roles:** `SYSTEM_MANAGER`
+
+Arguments: none.
+
+**Returns.** `webhook_removed` is `false` when the site had no endpoint or no keys, or the platform
+call failed (logged to the Error Log).
+
+```json
+{"ok": true, "webhook_removed": true}
+```
+
+**Realtime:** none.
+
+```js
+await sanad.ui.call("onboarding.sign_out");
+```
+
+---
+
+## get_account_switch  *(admin-only)*
+
+Says what the previous platform account left after the site was linked to another one. A switch
+deletes nothing: the previous account's devices are disabled and the switch is recorded until a
+System Manager decides (`resolve_account_switch`).
+
+- **Path:** `whatsapp_next.api.v1.onboarding.get_account_switch`
+- **Methods:** GET, POST
+- **Roles:** `SYSTEM_MANAGER`
+
+Arguments: none.
+
+**Returns.** `{"pending": false}` when no switch is waiting. Otherwise `from` / `to` are the
+platform accounts (integration links), `at` the moment of the switch, and `counts` the rows per
+DocType that existed before it: `WhatsApp Queue Item`, `WhatsApp Webhook Event`,
+`WhatsApp Number Check`, `WhatsApp Status Post`, `WhatsApp Log`, `WhatsApp Inbound Message`,
+`WhatsApp Number` (not modified since the switch), and the previous account's `WhatsApp Device`
+rows.
+
+```json
+{
+  "pending": true, "from": "INT-0007", "to": "INT-0012", "at": "2026-11-08 14:02:11",
+  "counts": {"WhatsApp Queue Item": 3, "WhatsApp Webhook Event": 5210, "WhatsApp Number Check": 0,
+             "WhatsApp Status Post": 1, "WhatsApp Log": 2400, "WhatsApp Inbound Message": 1730,
+             "WhatsApp Number": 512, "WhatsApp Device": 1}
+}
+```
+
+**Realtime:** none.
+
+```js
+const sw = await sanad.ui.call("onboarding.get_account_switch");
+```
+
+---
+
+## resolve_account_switch  *(admin-only)* *(destructive)*
+
+Records the System Manager's decision on what the previous account left.
+
+- **Path:** `whatsapp_next.api.v1.onboarding.resolve_account_switch`
+- **Methods:** POST
+- **Roles:** `SYSTEM_MANAGER`
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `action` | str | required | `delete` or `keep` |
+
+- `delete` queues a `long` job (timeout 3600 s) that empties the references to the old devices
+  (`device` on Campaigns, Notifications, and Notification Alerts, `reply_device` on Commands,
+  `outbound_message` on Campaign Recipients), then deletes every row counted by
+  `get_account_switch` in batches of 1 000, child rows and attached files included, and clears the
+  switch. ERPNext Contacts are never touched. Audited as `Account Data Deleted` when queued
+  (`stage: "queued"`) and when done (`stage: "done"`).
+- `keep` clears the switch and keeps the rows (the old devices stay disabled). Audited as
+  `Settings Changed` with `action: "previous_account_kept"`.
+
+**Returns.** For `delete`, `counts` is what `get_account_switch` counted at the call;
+`{"queued": false, "counts": {}}` when no switch was waiting. For `keep`, always
+`{"kept": true}`.
+
+```json
+{"queued": true, "counts": {"WhatsApp Log": 2400, "WhatsApp Device": 1, "…": "…"}}
+```
+
+**Errors:** `WAValidationError` (417) for an `action` other than `delete` or `keep`.
+**Realtime:** none.
+
+```js
+await sanad.ui.call("onboarding.resolve_account_switch", { action: "keep" });
 ```
 
 ---

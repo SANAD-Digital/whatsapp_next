@@ -13,8 +13,11 @@ import re
 from typing import Any
 
 import frappe
+from frappe import _
 from frappe.utils import cint, cstr, now_datetime
 
+from whatsapp_next.exceptions import WAProviderUnavailableError
+from whatsapp_next.providers import exceptions as pex
 from whatsapp_next.providers.schemas import WebhookEvent
 from whatsapp_next.services.guards import status_writer
 from whatsapp_next.services.phone import is_group_or_lid, key_for, normalize
@@ -150,10 +153,13 @@ def safe_file_name(name: str | None, fallback: str = "attachment") -> str:
 	return stem[: 140 - len(ext)] + ext
 
 
-def fetch_media(inbound_name: str, file_name: str | None = None) -> str | None:
+def fetch_media(inbound_name: str, file_name: str | None = None, *, asked: bool = False) -> str | None:
 	"""Download a received file from the provider and attach it to the Inbound (`attachment`).
 
-	Runs as a job after the insert; a failure is logged and leaves `media_url` for a retry."""
+	Runs as a job after the insert; a failure is logged and leaves `media_url` for a retry.
+	`asked` (a person pressed "Fetch the file"): a passing failure — the platform or the network
+	down, a rate limit — raises `WAProviderUnavailableError`, so it reads "try again" and not
+	"the file is gone"; `None` then means WhatsApp no longer has the file."""
 	from whatsapp_next.providers import registry
 
 	row = frappe.db.get_value(
@@ -166,8 +172,12 @@ def fetch_media(inbound_name: str, file_name: str | None = None) -> str | None:
 		return row.attachment if row else None
 	try:
 		content, _content_type = registry.get_provider().download_media(row.media_url)
-	except Exception:
+	except Exception as exc:
 		frappe.log_error(title="WhatsApp inbound media download failed", message=frappe.get_traceback())
+		if asked and isinstance(exc, pex.TransientError | pex.RateLimitError):
+			raise WAProviderUnavailableError(
+				_("The file could not be fetched just now. Try again in a moment.")
+			) from exc
 		return None
 	file_doc = frappe.get_doc(
 		{

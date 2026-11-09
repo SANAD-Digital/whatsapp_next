@@ -126,6 +126,20 @@ class TestWebhooks(IntegrationTestCase):
 		delete_all("WhatsApp Log", {"body": ("like", "webhook-test%")})
 		frappe.db.commit()
 
+	@staticmethod
+	def _reprocess(event: str) -> int:
+		"""`handlers.reprocess_failed` as the cron runs it, seeing this test's event only: the site
+		holds failed and stuck events of its own, and counting them made these tests flaky."""
+		real = frappe.get_all
+
+		def only_this(doctype, *args, filters=None, **kwargs):
+			if doctype == "WhatsApp Webhook Event":
+				filters = {**(filters or {}), "name": event}
+			return real(doctype, *args, filters=filters, **kwargs)
+
+		with patch.object(frappe, "get_all", side_effect=only_this):
+			return handlers.reprocess_failed()
+
 	def _event(self, name):
 		return frappe.db.get_value(
 			"WhatsApp Webhook Event",
@@ -460,11 +474,11 @@ class TestWebhooks(IntegrationTestCase):
 	def test_a_received_event_whose_job_never_ran_is_swept(self):
 		with fake_provider(), patch.object(frappe, "enqueue"):
 			out = receiver.handle(*signed(fixture("message.received")))
-			self.assertEqual(handlers.reprocess_failed(), 0)  # fresh: its job may still run
+			self.assertEqual(self._reprocess(out.event), 0)  # fresh: its job may still run
 			frappe.db.set_value(
 				"WhatsApp Webhook Event", out.event, "received_at", add_to_date(now_datetime(), minutes=-30)
 			)
-			self.assertEqual(handlers.reprocess_failed(), 1)
+			self.assertEqual(self._reprocess(out.event), 1)
 		self.assertEqual(self._event(out.event).status, "Processed")
 
 	def test_handler_failure_retries_three_times(self):
@@ -474,11 +488,11 @@ class TestWebhooks(IntegrationTestCase):
 			with patch.object(handlers, "handle_event", side_effect=RuntimeError("boom")):
 				self.assertEqual(handlers.process_event(out.event), "Failed")
 				self.assertTrue(self._event(out.event).error.startswith("[try 1] RuntimeError"))
-				self.assertEqual(handlers.reprocess_failed(), 1)
+				self.assertEqual(self._reprocess(out.event), 1)
 				self.assertTrue(self._event(out.event).error.startswith("[try 2]"))
-				handlers.reprocess_failed()
+				self._reprocess(out.event)
 				self.assertTrue(self._event(out.event).error.startswith("[try 3]"))
-				self.assertEqual(handlers.reprocess_failed(), 0)  # exhausted
+				self.assertEqual(self._reprocess(out.event), 0)  # exhausted
 			# a later successful reprocess is still possible manually
 			frappe.db.set_value("WhatsApp Webhook Event", out.event, "error", None)
 			frappe.db.set_value(
@@ -502,7 +516,7 @@ class TestWebhooks(IntegrationTestCase):
 				self.assertEqual(handlers.process_event(out.event), "Failed")
 			pmid = fixture("message.received")["provider_message_id"]
 			self.assertFalse(frappe.db.exists("WhatsApp Inbound Message", {"provider_message_id": pmid}))
-			self.assertEqual(handlers.reprocess_failed(), 1)
+			self.assertEqual(self._reprocess(out.event), 1)
 			self.assertEqual(frappe.db.count("WhatsApp Inbound Message", {"provider_message_id": pmid}), 1)
 
 	# -- inbound service ---------------------------------------------------------------

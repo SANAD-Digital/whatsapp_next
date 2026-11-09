@@ -250,7 +250,7 @@ def refresh_for(source_doctype: str, names: list[str]) -> dict[str, int]:
 	"""The screens' "Refresh WhatsApp profile": the numbers behind the selected records, read now."""
 	from whatsapp_next.services import wa_groups
 
-	members = wa_groups.members_from(source_doctype, names)
+	members = wa_groups.members_from(source_doctype, names, max_records=MAX_PER_REQUEST)
 	if len(members) > MAX_PER_REQUEST:
 		frappe.throw(_("Refresh at most {0} numbers at a time").format(MAX_PER_REQUEST), WAValidationError)
 	return refresh([m["phone_e164"] for m in members], force=True)

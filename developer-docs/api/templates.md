@@ -1,8 +1,9 @@
 # Templates API (`templates.*`)
 
 Module: `whatsapp_next/api/v1/templates.py` — the WhatsApp Template editor: sandboxed preview,
-variable hints and a sample record picker. Thin wrappers over `whatsapp_next/services/templates.py`
-(Frappe's sandboxed Jinja environment).
+variable hints, a sample record picker, and the editor window's open / save / delete. Thin wrappers
+over `whatsapp_next/services/templates.py` (Frappe's sandboxed Jinja environment) and
+`whatsapp_next/services/templates_editor.py`.
 
 URL form, authentication, the error envelope and the role groups are in [README.md](README.md).
 Every endpoint also answers **403** (`WAPermissionError`) for a missing role and **417**
@@ -129,4 +130,132 @@ Uses `frappe.get_list` (the caller's permissions), ordered `modified desc`.
 
 ```js
 const { name } = await sanad.ui.call("templates.pick_sample", { reference_doctype: "Sales Invoice" });
+```
+
+---
+
+## get_editor
+
+What the template editor window (`sanad.ui.TemplateWindow`) opens with: the template, or the
+defaults of a new one, plus the choices its controls offer.
+
+- **Path:** `whatsapp_next.api.v1.templates.get_editor`
+- **Methods:** GET, POST
+- **Roles:** `AGENT_UP` | `WhatsApp Template` **read** (with `name`) or **create** (without)
+
+| Argument | Type | Required | Meaning |
+|---|---|---|---|
+| `name` | str | optional | A `WhatsApp Template` name. Empty opens a new template. |
+
+**Returns.** `template` holds `name` and the editable fields (`template_name, category,
+description, message_type, disabled, body, attachment, print_format, letter_head,
+file_name_template, reference_doctype, language, sample_context`), plus `use_count`,
+`last_used_at` and `modified` for a saved one. `sample_context` comes back as indented JSON text.
+`categories` are the distinct categories of the templates the caller can list (at most 100);
+`message_types` are the `message_type` options. A new template has `name: null`,
+`message_type: "Text"`, `disabled: 0`, `body: ""`, `can_write: true`, `can_delete: false`.
+
+```json
+{
+  "template": { "name": "Invoice Ready", "template_name": "Invoice Ready", "category": "Billing",
+    "description": null, "message_type": "Document", "disabled": 0,
+    "body": "Dear {{ doc.customer_name }}, your invoice {{ doc.name }} is attached.",
+    "attachment": null, "print_format": "Standard Invoice", "letter_head": null,
+    "file_name_template": "{{ doc.name }}", "reference_doctype": "Sales Invoice", "language": "en",
+    "sample_context": null, "use_count": 42, "last_used_at": "2026-11-08 17:20:00", "modified": "2026-11-01 09:00:00.000000" },
+  "categories": ["Billing", "Sales"],
+  "message_types": ["Text", "Document", "Image"],
+  "can_write": true,
+  "can_delete": true
+}
+```
+
+**Errors**
+
+| Exception | HTTP | When |
+|---|---|---|
+| `WANotFoundError` | 404 | Unknown template ("Template … not found"). |
+| `frappe.PermissionError` | 403 | No read on the template, or no create permission when opening a new one. |
+
+**Realtime:** none.
+
+```js
+const ed = await sanad.ui.call("templates.get_editor", { name: "Invoice Ready" });
+```
+
+---
+
+## save_editor
+
+Creates or updates a template from the editor's payload. Only the editable fields listed under
+`get_editor` are taken; strings are trimmed (except `body` and `description`) and an empty string
+becomes `null`. A file belongs to one message type only: `attachment` is cleared unless the type is
+`Image`, and `print_format`, `letter_head`, `file_name_template` unless it is `Document`. The
+DocType controller validates the rest (the body compiles, a `Document` template has a print
+format). A changed `template_name` renames the template.
+
+- **Path:** `whatsapp_next.api.v1.templates.save_editor`
+- **Methods:** POST
+- **Roles:** `MANAGER` | `WhatsApp Template` **write** (update) or **create** (new)
+
+| Argument | Type | Required | Meaning |
+|---|---|---|---|
+| `payload` | dict | yes | The editable fields, plus `name` (the template being edited; omit for a new one) and `modified` (the value `get_editor` returned; guards against an edit saved elsewhere since). `template_name` is required. |
+
+**Returns** — the template's name after any rename, and its new `modified`.
+
+```json
+{ "name": "Invoice Ready", "modified": "2026-11-09 10:12:03.441210" }
+```
+
+**Errors**
+
+| Exception | HTTP | When |
+|---|---|---|
+| `WAValidationError` | 417 | `payload` is not an object; no `template_name` ("Give the template a name"); a template with the new name already exists; `modified` differs from the stored one ("Someone else saved this template after you opened it…"); a controller validation. |
+| `WANotFoundError` | 404 | `name` is given but unknown. |
+| `frappe.PermissionError` | 403 | No write (update) or create (new) permission. |
+
+**Realtime:** none.
+
+```js
+const { name, modified } = await sanad.ui.call("templates.save_editor", {
+  payload: { name: "Invoice Ready", modified: ed.template.modified, template_name: "Invoice Ready",
+             message_type: "Text", body: "Dear {{ doc.customer_name }}, invoice {{ doc.name }} is ready." },
+});
+```
+
+---
+
+## delete_template *(destructive)*
+
+Deletes a template. Frappe refuses while sent messages or campaigns still link to it, and its
+message names them; the window then suggests disabling the template instead.
+
+- **Path:** `whatsapp_next.api.v1.templates.delete_template`
+- **Methods:** POST
+- **Roles:** `MANAGER` | `WhatsApp Template` **delete**
+
+| Argument | Type | Required | Meaning |
+|---|---|---|---|
+| `name` | str | yes | `WhatsApp Template` name. |
+
+**Returns**
+
+```json
+{ "deleted": true }
+```
+
+**Errors**
+
+| Exception | HTTP | When |
+|---|---|---|
+| `WANotFoundError` | 404 | Unknown template. |
+| `frappe.PermissionError` | 403 | No delete permission. |
+| `frappe.LinkExistsError` | 417 | Other records still link to the template. |
+
+**Realtime:** none.
+
+```js
+await sanad.ui.call("templates.delete_template", { name: "Old Reminder" });
 ```

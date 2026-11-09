@@ -185,7 +185,9 @@ def _record(doctype: str, name: str) -> dict[str, Any]:
 
 
 def export_backup() -> dict[str, Any]:
-	"""The backup as a dict — the client saves it as a `.json` file."""
+	"""The backup as a dict — the client saves it as a `.json` file: `{format, version, site,
+	exported_at, settings, records{doctype: [rows]}}` with Settings (no keys, no devices) and every
+	function, template, contact group, command, notification, alert and campaign (`DOCTYPES`)."""
 	data: dict[str, Any] = {
 		"format": FORMAT,
 		"version": VERSION,
@@ -274,10 +276,15 @@ def import_backup(payload: str | dict, user: str | None = None) -> dict[str, Any
 			allowed = set(WRITABLE.get(section, ())) - DEVICE_FIELDS
 			part = {k: v for k, v in values.items() if k in allowed}
 			if part:
+				# one section's failure takes back that section only: a whole rollback took back
+				# the sections already saved too, while the answer still listed them
+				frappe.db.savepoint("wa_backup_settings")
 				try:
 					out["settings"] += settings_service.save_fields(part, section=section, user=user)
 				except Exception as exc:
-					frappe.db.rollback()
+					frappe.db.rollback(save_point="wa_backup_settings")
+					frappe.clear_last_message()
+					frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 					out["failed"].append(
 						{"doctype": "WhatsApp Settings", "name": section, "error": _message(exc)}
 					)

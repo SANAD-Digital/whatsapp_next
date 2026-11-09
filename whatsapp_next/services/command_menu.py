@@ -188,6 +188,10 @@ def save_items(entries: list[dict[str, Any]], *, user: str | None = None) -> lis
 		name = cstr((entry or {}).get("command")).strip()
 		if not name or not frappe.db.exists("WhatsApp Command", name):
 			frappe.throw(_("Command {0} not found").format(name), WAValidationError)
+		# the editor lists Active commands only, and the menu sends only those: an inactive one
+		# saved here was in the menu nobody could see or edit
+		if frappe.db.get_value("WhatsApp Command", name, "status") != "Active":
+			frappe.throw(_("Command {0} is not active").format(name), WAValidationError)
 		description = cstr(entry.get("menu_description")).strip()
 		if len(description) > 72:
 			frappe.throw(

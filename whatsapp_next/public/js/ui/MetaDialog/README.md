@@ -49,8 +49,9 @@ Table fields: rows are held on the control (`df.data`) — no form object is nee
 from `get_values()` as arrays; `set_values({outputs: rows})` re-renders the grid.
 
 ## Live use
-Commands list and form — `public/js/form/whatsapp_command.js` (`command_modal`, tabs Command ·
-Permissions · Preview), opened from `public/js/listview/whatsapp_command_list.js`.
+**None at the moment.** Its only screen, the command window, was replaced by the prototype's
+Command Editor (`c799f45`, D-132). It stays in the kit because `ui.md` lists it; a screen that
+needs a meta-driven dialog should use it, or the owner may drop it (TECH_DEBT.md).
 
 ## Design gate
 - Failed submit → a focusable summary (`role="alert"`, `tabindex="-1"`) listing the fields as links

@@ -28,9 +28,9 @@ Options: `listview` | `page` (+ `doctype`), `wrapper`, `group_by_field`, `label`
 Counts refresh after every list render (wraps `listview.render_list`, shared with RowActions).
 
 ## Live use
-Outbound and Inbound lists through the FilterBar "Group by ▾" action
-(`public/js/listview/whatsapp_log_list.js`, `whatsapp_inbound_message_list.js`); Functions
-Center page (`category`) and Contacts page (`link_doctype`) mount it directly.
+**None at the moment.** The lists group through `DataList`'s own group tree since the prototype
+toolbar (`f74b210`, D-066), and the Functions Center and Contacts pages were rebuilt without it.
+It stays in the kit because `ui.md` lists it; the owner may drop it (TECH_DEBT.md).
 
 ## Design gate
 Applied from the phase-5 audit:

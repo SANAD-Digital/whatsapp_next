@@ -9,7 +9,7 @@ import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import add_to_date, now_datetime
 
-from whatsapp_next.exceptions import WANotSupportedError, WAValidationError
+from whatsapp_next.exceptions import WANotSupportedError, WAStateConflictError, WAValidationError
 from whatsapp_next.services import status_posts
 
 
@@ -32,6 +32,10 @@ class TestStatusPosts(IntegrationTestCase):
 		self.patch = patch("whatsapp_next.providers.registry.get_provider", return_value=self.provider)
 		self.patch.start()
 		self.addCleanup(self.patch.stop)
+		# posting commits its state so a failure survives the request: kept inside the test here
+		self.commit = patch("frappe.db.commit")
+		self.commits = self.commit.start()
+		self.addCleanup(self.commit.stop)
 
 	def _post(self, **values):
 		return frappe.get_doc(
@@ -63,6 +67,33 @@ class TestStatusPosts(IntegrationTestCase):
 		status_posts.delete_post(doc.name)
 		self.assertEqual(frappe.db.get_value("WhatsApp Status Post", doc.name, "state"), "Deleted")
 		self.provider.delete_status.assert_called_once()
+
+	def test_a_failure_is_kept_and_a_post_is_never_posted_twice(self):
+		"""A failed post keeps `Failed` and its reason: both are committed before the error goes up,
+		since the request's rollback took them away. A post being posted is refused a second time;
+		one left in `Posting` by a run that died is taken again after a few minutes."""
+		doc = self._post()
+		self.provider.post_status.side_effect = RuntimeError("gateway down")
+		with self.assertRaises(RuntimeError):
+			status_posts.post_now(doc.name)
+		doc.reload()
+		self.assertEqual((doc.state, doc.error), ("Failed", "gateway down"))
+		self.assertEqual(self.commits.call_count, 2, "Posting, then Failed, each committed")
+
+		self.provider.post_status.side_effect = None
+		frappe.db.set_value("WhatsApp Status Post", doc.name, "state", "Posting")
+		with self.assertRaises(WAStateConflictError):
+			status_posts.post_now(doc.name)
+		self.provider.post_status.reset_mock()
+		frappe.db.set_value(
+			"WhatsApp Status Post",
+			doc.name,
+			"modified",
+			add_to_date(now_datetime(), minutes=-(status_posts.STUCK_MINUTES + 1)),
+			update_modified=False,
+		)
+		self.assertEqual(status_posts.post_now(doc.name), "STATUS-1")
+		self.provider.post_status.assert_called_once()
 
 	def test_due_posts_go_out_and_a_daily_one_queues_its_next(self):
 		doc = self._post(repeat="Daily")
