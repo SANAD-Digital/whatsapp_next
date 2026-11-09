@@ -167,14 +167,7 @@ def sign_out(user: str | None = None) -> dict[str, Any]:
 	the site set up stay: signing out deletes keys, not data. Audited `Credentials Changed`.
 
 	`{ok, webhook_removed}`."""
-	s = _settings()
-	webhook_removed = False
-	if s.webhook_endpoint and has_credentials(s):
-		try:
-			registry.get_provider().delete_webhook_endpoint(s.webhook_endpoint)
-			webhook_removed = True
-		except Exception:
-			frappe.log_error(title="WhatsApp sign-out: webhook endpoint not removed")
+	webhook_removed = _release_webhook()
 	_forget_link()
 	audit.log(
 		"Credentials Changed",
@@ -183,6 +176,32 @@ def sign_out(user: str | None = None) -> dict[str, Any]:
 		details={"what": "sign_out", "webhook_removed": int(webhook_removed)},
 	)
 	return {"ok": True, "webhook_removed": webhook_removed}
+
+
+def _release_webhook() -> bool:
+	"""Remove this site's webhook endpoint from the account it is linked to now, with that account's
+	keys, before they are forgotten (best effort: a platform that cannot be reached never keeps the
+	site linked). Left behind, the account kept posting its messages here, signed with a secret the
+	site no longer holds. True when it was removed."""
+	s = _settings()
+	if not (s.webhook_endpoint and has_credentials(s)):
+		return False
+	try:
+		registry.get_provider().delete_webhook_endpoint(s.webhook_endpoint)
+		return True
+	except Exception:
+		frappe.log_error(title="WhatsApp: webhook endpoint of the account left not removed")
+		return False
+
+
+def _leaving_account(
+	previous_key: str | None, previous_account: str | None, new_account: str | None, new_key: str | None
+) -> bool:
+	"""Whether new keys belong to another account than the one the site holds: by the account
+	when both are known, else by the customer key."""
+	if previous_account and new_account:
+		return previous_account != new_account
+	return bool(previous_key) and previous_key != new_key
 
 
 def _forget_link() -> None:
@@ -211,6 +230,7 @@ def store_signup_credentials(state: SignupState, user: str | None = None) -> boo
 	values = {f: creds.get(f) for f in CREDENTIAL_FIELDS if creds.get(f)}
 	if not values:
 		return False
+	_release_webhook()  # a new account: the one the site had stops posting here
 	_forget_link()  # a new account: nothing of the previous link stays
 	for fieldname, value in values.items():
 		settings_service.store_secret(fieldname, value)
@@ -564,6 +584,11 @@ def login(
 	if not values:
 		frappe.throw(_("The platform returned no credentials for this account"), WAValidationError)
 	previous_key, previous_account = backup.account_key(), backup.current_account()
+	if _leaving_account(
+		previous_key, previous_account, result.get("integration_link"), values.get("customer_api_key")
+	):
+		# another account (owner, 2026-11-10): the one left stops posting here, as on a sign-out
+		_release_webhook()
 	_forget_link()  # the previous account's keys, webhook secret and state go before the new ones come
 	written = save_credentials(user=user, **values)
 	switched = backup.note_account(previous_key, previous_account, result.get("integration_link"), user=user)
