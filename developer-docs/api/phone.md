@@ -19,7 +19,7 @@ Returns every calling region libphonenumber knows, and the site's default region
 
 Arguments: none.
 
-**Returns.** `default` is the site's region: System Settings → country, else `SA`. Every phone
+**Returns.** `default` is the site's region: Global Defaults → Country, else System Settings → Country, else `SA` (also in `frappe.boot.whatsapp_next.region`). Every phone
 field opens on it. The catalogue is cached for a day. Each country has these fields:
 
 | Field | Meaning |

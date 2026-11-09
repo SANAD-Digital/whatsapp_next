@@ -207,6 +207,25 @@ bench build --app whatsapp_next
 و`WhatsApp Contact User`)، ومستخدماً للأوامر **معطلاً** (`wa-commands@<site>`). فعّله وامنحه ما
 تحتاجه دوالك فقط قبل أن تستعمل الأوامر.
 
+### ملفات PDF التي يرسمها كروم
+
+قالب الطباعة الذي اختار كروم لإنشاء PDF يرسمه برنامج كروم الموجود في `frappe-bench/chromium`، وهذا
+البرنامج يحتاج مكتبات نظام لا تكون على خادم جديد. بدونها يظهر الخطأ
+`libnss3.so: cannot open shared object file` ثم «Chromium took too long to start». خدمة Frappe Cloud
+تثبّتها من `pyproject.toml`. وعلى خادمك:
+
+</div>
+
+```bash
+sudo apps/whatsapp_next/scripts/install_pdf_deps.sh   # بصلاحية root من مجلد frappe-bench
+bench setup-chrome && bench restart                    # بمستخدم الـ bench
+```
+
+<div dir="rtl">
+
+وبدونها يرسل التطبيق ملف PDF أيضاً، فهو يرجع إلى wkhtmltopdf، لكن القالب المصمم لكروم يظهر
+صحيحاً في كروم فقط.
+
 ### الخطوط
 
 هوية واتساب نكست بخطين: **IBM Plex Sans Arabic** للعربي و**Sora** للاتيني، وكلاهما برخصة

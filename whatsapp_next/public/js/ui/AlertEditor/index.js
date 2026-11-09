@@ -1015,11 +1015,21 @@ frappe.provide("sanad.ui");
 					<strong>${esc(__("Try it"))}</strong>
 					<p>${esc(__("Sends this draft once to one number — nothing is saved, the schedule and the counters do not change."))}</p>
 					<div class="sanad-ae__addline">
-						<input type="tel" class="wa-input wa-input--mono" data-in="test_phone" dir="ltr" placeholder="9665…" value="${esc(this.ui.test_phone)}" aria-label="${esc(__("Number for the test"))}">
+						<div class="sanad-ae__test-phone" data-slot="test-phone"></div>
 						<button type="button" class="sanad-ae__btn sanad-ae__btn--pri" data-act="test"${this.ui.testing ? " disabled" : ""}>${sanad.ui.ico("send", "sm")}${esc(this.ui.testing ? __("Sending…") : __("Send a test"))}</button>
 					</div>
 					${d.name && this.opts.run_now ? `<button type="button" class="sanad-ae__link" data-act="run_now">${esc(__("Run it now for every recipient"))}</button>` : ""}
 				</div>`);
+			// the kit's phone field, as in the notification editor: it opens on the site's country
+			// (Global Defaults), so a local number takes that key without it being typed
+			new sanad.ui.PhoneField({
+				wrapper: this.$root.find("[data-slot=test-phone]"),
+				label: "",
+				value: this.ui.test_phone,
+				on_change: (v) => {
+					this.ui.test_phone = (v && (v.phone_e164 || v.phone)) || "";
+				},
+			});
 		}
 
 		draw_history() {
@@ -1039,7 +1049,7 @@ frappe.provide("sanad.ui");
 						recent.length
 							? `<ul class="sanad-ae__recent">${recent
 									.map(
-										(r) => `<li><span dir="ltr">${esc(r.display_name || sanad.ui.phone(r.phone_e164))}</span>${sanad.ui.group_tag(r.phone_e164)}${sanad.ui.badge(__(r.status), tone[r.status] || "muted")}<time>${esc(frappe.datetime.comment_when(r.creation, true))}</time></li>`
+										(r) => `<li><span dir="ltr">${esc(r.display_name || sanad.ui.phone(r.phone_e164))}</span>${sanad.ui.group_tag(r.phone_e164)}${sanad.ui.badge(__(r.status), tone[r.status] || "muted")}<time title="${esc(frappe.datetime.str_to_user(r.creation))}">${esc(sanad.ui.ago(r.creation))}</time></li>`
 									)
 									.join("")}</ul>`
 							: ""

@@ -43,7 +43,7 @@ const SEED = [
 	{ iso: "QA", main: true, dial: 974, example: "3312 3456", international: "+974 3312 3456", trunk: "", len: 8 },
 	{ iso: "BH", main: true, dial: 973, example: "3600 1234", international: "+973 3600 1234", trunk: "", len: 8 },
 	{ iso: "OM", main: true, dial: 968, example: "9212 3456", international: "+968 9212 3456", trunk: "", len: 8 },
-	{ iso: "YE", main: true, dial: 967, example: "0712 345 678", international: "+967 712 345 678", trunk: "0", len: 9 },
+	{ iso: "YE", main: true, dial: 967, example: "0771 234 567", international: "+967 771 234 567", trunk: "0", len: 9 },
 	{ iso: "EG", main: true, dial: 20, example: "010 01234567", international: "+20 100 1234567", trunk: "0", len: 10 },
 	{ iso: "JO", main: true, dial: 962, example: "07 9012 3456", international: "+962 7 9012 3456", trunk: "0", len: 9 },
 	{ iso: "US", main: true, dial: 1, example: "(201) 555-0123", international: "+1 201-555-0123", trunk: "", len: 10 },
@@ -84,6 +84,23 @@ function groups_from_example(international) {
 	return sizes.length ? sizes : [3, 3, 3];
 }
 
+/** A region's English name, which is how a Country record is named on the site. */
+const english_name = (() => {
+	let dn = null;
+	try {
+		dn = new Intl.DisplayNames(["en"], { type: "region" });
+	} catch (e) {
+		dn = null;
+	}
+	return (iso) => {
+		try {
+			return (dn && dn.of(iso)) || iso;
+		} catch (e) {
+			return iso;
+		}
+	};
+})();
+
 /** Decorate a server row with what the browser can work out for itself. */
 const decorate = (row) =>
 	Object.assign({}, row, {
@@ -91,6 +108,8 @@ const decorate = (row) =>
 		// prefix is a string — `+1` must not swallow `+1246` because a sort compared `undefined`
 		dial: String(row.dial),
 		name: region_name(row.iso),
+		// the site names countries in English ("Yemen"); the reader's name may be Arabic ("اليمن")
+		name_en: english_name(row.iso),
 		groups: groups_from_example(row.international),
 	});
 
@@ -158,8 +177,11 @@ sanad.ui.PhoneField = class PhoneField {
 			const $node = this.$root || this.$hint;
 			if (!$node || !$node.closest("body").length) return;
 			const better = sanad.ui.PhoneField.resolve_country(this.opts.country_default);
-			const same = better && this.country && better.iso === this.country.iso;
-			this.country = same ? Object.assign({}, better) : this.country.iso ? sanad.ui.PhoneField.resolve_country(this.country.iso) : better;
+			// a country the user picked, or the one a typed international number named, stays;
+			// otherwise the field takes the region the full catalogue resolves to (it had opened
+			// on the seed's answer, which could not yet know the site's region)
+			const keep = this.chosen && this.country && this.country.iso;
+			this.country = keep ? sanad.ui.PhoneField.resolve_country(this.country.iso) : better;
 			this.render && this.render();
 		});
 		this.state = { open: false, touched: false, focus: false, q: "", tip: false, tip_seen: false };
@@ -191,6 +213,7 @@ sanad.ui.PhoneField = class PhoneField {
 			const hit =
 				CATALOG.find((c) => c.iso.toLowerCase() === wanted) ||
 				CATALOG.find((c) => c.name.toLowerCase() === wanted) ||
+				CATALOG.find((c) => cstr(c.name_en).toLowerCase() === wanted) ||
 				CATALOG.find((c) => wanted.startsWith(c.name.toLowerCase().slice(0, 6)));
 			if (hit) return hit;
 		}
@@ -520,6 +543,7 @@ sanad.ui.PhoneField = class PhoneField {
 	}
 
 	pick(country) {
+		this.chosen = true;
 		this.country = country;
 		this.digits = this.digits.slice(0, country.len || 14);
 		this.close_popup();
@@ -725,6 +749,7 @@ sanad.ui.PhoneField = class PhoneField {
 				.sort((a, b) => b.dial.length - a.dial.length || (b.main ? 1 : 0) - (a.main ? 1 : 0))
 				.find((c) => digits.startsWith(c.dial));
 			if (hit) {
+				this.chosen = true;
 				this.country = hit;
 				this.digits = digits.slice(hit.dial.length).slice(0, hit.len || 14);
 				this.render();
@@ -737,6 +762,7 @@ sanad.ui.PhoneField = class PhoneField {
 	}
 
 	set_country(iso_or_name) {
+		this.chosen = true;
 		this.country = sanad.ui.PhoneField.resolve_country(iso_or_name);
 		this.render();
 		return this;

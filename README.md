@@ -206,6 +206,21 @@ The install creates four roles (`WhatsApp Manager`, `WhatsApp Agent`, `WhatsApp 
 `WhatsApp Contact User`) and a **disabled** command service user (`wa-commands@<site>`). Enable it
 and grant it only what your functions need before you use commands.
 
+### PDFs drawn with Chrome
+
+A Print Format whose **PDF Generator** is Chrome is drawn by the Chromium Frappe keeps in
+`frappe-bench/chromium`, which needs system libraries a bare server lacks (`libnss3.so: cannot open
+shared object file`, then "Chromium took too long to start"). Frappe Cloud installs them from
+`pyproject.toml`. On a bench you run yourself:
+
+```bash
+sudo apps/whatsapp_next/scripts/install_pdf_deps.sh   # as root, from frappe-bench
+bench setup-chrome && bench restart                    # as the bench user
+```
+
+Without them the app still sends the PDF: it falls back to wkhtmltopdf, but a format made for
+Chrome looks right only in Chrome.
+
 ### Fonts
 
 The WhatsappNext identity uses **IBM Plex Sans Arabic** (Arabic) and **Sora** (Latin), both under

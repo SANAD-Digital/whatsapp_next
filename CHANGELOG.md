@@ -41,8 +41,11 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
   is completed before wkhtmltopdf sees it (it stopped there with "ProtocolUnknownError").
   `attachments.pdf_engine`, `attachments.complete_css_imports`.
 - **Phone fields open on the site's own country** (owner, 2026-11-09). The default region is
-  System Settings → Country; WhatsApp Settings no longer has a «Default Country» of its own (a
-  copy taken at the first save went stale: sites in Yemen opened every phone field on +966).
+  Global Defaults → Country, else System Settings → Country, and reaches the page with the boot
+  (`frappe.boot.whatsapp_next.region`). WhatsApp Settings no longer has a «Default Country» of its
+  own (a copy taken at the first save went stale), the kit setup no longer pins `SA`, and a field
+  takes the site's region once the country list loads unless the user chose another. The alert
+  editor's test number is the kit's phone field too. Yemen's placeholder is `771 234 567`.
 - **The last test number is remembered** (owner, 2026-11-09): a test run, a notification's or an
   alert's "Send a test", a campaign's test message and a template sent from its window offer the
   number last tested first (`sanad.ui.test_phone`, kept in the browser per user).

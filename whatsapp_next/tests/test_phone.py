@@ -39,6 +39,26 @@ class TestPhone(IntegrationTestCase):
 			with self.subTest(raw=raw, region=region):
 				self.assertEqual(phone.normalize(raw, region=region), expected)
 
+	def test_the_sites_country_and_yemens_example(self):
+		"""Every phone field opens on Global Defaults → Country, else System Settings (owner,
+		2026-11-09); Yemen's placeholder is 771 234 567, not the library's 712 …"""
+		from unittest.mock import patch
+
+		import frappe
+
+		from whatsapp_next.tests.conftest_frappe import REAL_REGION_FROM_SETTINGS
+
+		singles = {("Global Defaults", "country"): "Yemen", ("System Settings", "country"): "Saudi Arabia"}
+		with patch.object(
+			frappe.db, "get_single_value", side_effect=lambda dt, f, *a, **k: singles.get((dt, f))
+		):
+			self.assertEqual(REAL_REGION_FROM_SETTINGS(), "YE")
+			singles[("Global Defaults", "country")] = None
+			self.assertEqual(REAL_REGION_FROM_SETTINGS(), "SA")
+		frappe.cache.delete_value("wa_country_catalog_v3")
+		yemen = next(r for r in phone.country_catalog() if r["iso"] == "YE")
+		self.assertEqual((yemen["example"], yemen["international"]), ("0771 234 567", "+967 771 234 567"))
+
 	def test_classify(self):
 		self.assertEqual(phone.classify("+966501234567"), ("Individual", "+966501234567"))
 		self.assertEqual(phone.classify("120363000000000001@g.us"), ("Group", "120363000000000001@g.us"))
