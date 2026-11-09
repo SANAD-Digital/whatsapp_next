@@ -18,6 +18,7 @@ whatsapp_next.notifications.open = function (name, { on_saved } = {}) {
 		save: (payload) => call("save_editor", { payload }),
 		remove: (n) => call("delete_notification", { name: n }),
 		send_test: (payload, phone, reference_name) => call("send_test", { payload, phone, reference_name: reference_name || null }),
+		make_file: (payload, reference_name) => call("make_file", { payload, reference_name: reference_name || null }),
 		search: (kind, txt, document_type) => call("search", { kind, txt: txt || "", document_type: document_type || null }),
 		// only a connected device can send
 		device_link: { doctype: "WhatsApp Device", filters: { status: "Connected", disabled: 0 } },

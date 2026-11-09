@@ -96,6 +96,24 @@ class TestApiNotificationsEditor(IntegrationTestCase):
 			self.assertEqual(r["attachment"]["message_type"], "Document")
 			self.assertEqual(r["attachment"]["image_if_one_page"], bool(on))
 
+	def test_create_pdf_prints_the_record_and_keeps_nothing(self):
+		"""The editor's "Create PDF" (owner, 2026-11-10): the print of the preview's record, as bytes
+		to open in a new tab, whatever the message attaches; nothing is attached or sent."""
+		import base64
+
+		files_before = frappe.db.count("File")
+		out = api.make_file(
+			payload=self._payload(message_type="Document", attach_print=1), reference_name=self.todo.name
+		)
+		self.assertEqual((out["file_name"], out["mime_type"]), (f"{self.todo.name}.pdf", "application/pdf"))
+		self.assertTrue(base64.b64decode(out["content_b64"]).startswith(b"%PDF"))
+		self.assertEqual(frappe.db.count("File"), files_before)
+		# a text-only notification prints the record too, with the default print format
+		plain = api.make_file(payload=self._payload(), reference_name=self.todo.name)
+		self.assertTrue(base64.b64decode(plain["content_b64"]).startswith(b"%PDF"))
+		with self.assertRaises(WAValidationError):
+			api.make_file(payload=self._payload(document_type=None), reference_name=self.todo.name)
+
 	def test_preview_reports_the_problem_and_writes_nothing(self):
 		r = api.preview_draft(payload=self._payload(message="", recipients=[]))
 		self.assertTrue(r["problem"])

@@ -64,6 +64,31 @@ class TestAlertsEditor(IntegrationTestCase):
 		base.update(over)
 		return base
 
+	def test_create_pdf_makes_the_file_and_keeps_nothing(self):
+		"""The editor's "Create PDF" (owner, 2026-11-10): the report's file made now for the draft, as
+		bytes to open in a new tab; no file, no message, no alert is kept. An alert without a file,
+		or without its report, says so."""
+		import base64
+
+		files_before = frappe.db.count("File")
+		draft = self.payload(content_type="Report", report="ToDo", attachment_format="PDF")
+		with as_user("WhatsApp Manager"), patch.object(alerts, "_run_report", return_value=(COLUMNS, ROWS)):
+			out = api.make_file(payload=draft)
+		self.assertEqual((out["file_name"], out["mime_type"]), ("editortest_alert.pdf", "application/pdf"))
+		self.assertTrue(base64.b64decode(out["content_b64"]).startswith(b"%PDF"))
+		self.assertEqual(frappe.db.count("File"), files_before)
+		self.assertFalse(frappe.db.exists("WhatsApp Notification Alert", NAME))
+		self.assertFalse(frappe.db.exists("WhatsApp Log", {"phone_e164": PHONE}))
+		with as_user("WhatsApp Manager"):
+			with self.assertRaises(WAValidationError):
+				api.make_file(payload=self.payload())  # a message only
+			with self.assertRaises(WAValidationError):
+				api.make_file(
+					payload=self.payload(content_type="Report", report=None, attachment_format="PDF")
+				)
+		with as_user("WhatsApp Agent"), self.assertRaises(WAPermissionError):
+			api.make_file(payload=draft)
+
 	def test_open_new_and_role_gate(self):
 		with as_user("WhatsApp Manager"):
 			out = api.get_editor()

@@ -13,7 +13,12 @@ in its own card that ticks itself green once it is complete:
    with **Frappe's filter component** (its Timespan condition is the moving date); key / value
    rows only when the report defines none. The file it attaches (none, PDF, image) with print
    format, letter head and language; or a message only. The text is written with insertable
-   variables, or taken from a saved template.
+   variables, or taken from a saved template. Templates are the notification editor's cards
+   (`sanad.ui.template_cards`): a filter, "New template", "Edit this template", "Save this text as
+   a template", and a double click on a card opens it to edit, over this window. They need the
+   host's `open_template(name, {defaults, on_saved})`; without it the cards only choose.
+   "Create PDF" beside the file choice makes the file the draft attaches and opens it in a new tab
+   (host's `make_file(payload)` → `{file_name, mime_type, content_b64}`).
 3. **To whom** — "Choose from contacts" opens the host's contact picker (groups, contacts, system
    screens, a file, typed numbers); or a column of the report (one message per number in it, with
    only that number's rows). Chips, each removable.

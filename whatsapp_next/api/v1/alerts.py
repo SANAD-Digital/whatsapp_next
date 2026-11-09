@@ -92,6 +92,13 @@ def preview_draft(payload: dict) -> dict[str, Any]:
 
 
 @api_endpoint(roles=MANAGER)
+def make_file(payload: dict) -> dict[str, Any]:
+	"""The file the draft would attach, made now to open in a new tab (`alerts_editor.make_file`) →
+	`{file_name, mime_type, content_b64}`; nothing is saved or sent. P: Manager."""
+	return alerts_editor.make_file(payload)
+
+
+@api_endpoint(roles=MANAGER)
 def send_test(payload: dict, phone: str) -> dict[str, Any]:
 	"""Send the draft once to `phone`; audited `Alert Test Sent`. P: Manager."""
 	return alerts_editor.send_test(payload, phone)

@@ -403,17 +403,7 @@ def _execute(alert, *, preview: bool = False, test_phone: str | None = None) -> 
 					"mime_type": "image/png" if png else "application/pdf",
 				}
 			elif alert.content_type == "Report" and alert.attachment_format in ("PDF", "PNG"):
-				html_text = report_render.report_html(columns, r_rows, alert, filters=filters)
-				content = report_render.report_png(html_text) if alert.attachment_format == "PNG" else None
-				if content:
-					file_name, mime, mtype = f"{frappe.scrub(alert.alert_name)}.png", "image/png", "Image"
-				else:
-					content, file_name, mime, mtype = (
-						report_render.report_pdf(html_text, alert),
-						f"{frappe.scrub(alert.alert_name)}.pdf",
-						"application/pdf",
-						"Document",
-					)
+				content, file_name, mime, mtype = report_file(alert, columns, r_rows, filters)
 				if preview:
 					attach = {
 						"message_type": mtype,
@@ -464,6 +454,40 @@ def _execute(alert, *, preview: bool = False, test_phone: str | None = None) -> 
 		run.error = f"{type(exc).__name__}: {str(exc)[:300]}"
 		frappe.log_error(title="WhatsApp alert failed", message=f"alert={name} {type(exc).__name__}")
 	return run
+
+
+def report_file(
+	alert, columns: list[Any], rows: list[Any], filters: dict[str, Any]
+) -> tuple[bytes, str, str, str]:
+	"""The file an alert attaches for these rows → `(content, file_name, mime_type, message_type)`:
+	its PNG when it asks for one and `wkhtmltoimage` is there, else its PDF."""
+	html_text = report_render.report_html(columns, rows, alert, filters=filters)
+	stem = frappe.scrub(alert.alert_name or "alert")
+	content = report_render.report_png(html_text) if alert.attachment_format == "PNG" else None
+	if content:
+		return content, f"{stem}.png", "image/png", "Image"
+	return report_render.report_pdf(html_text, alert), f"{stem}.pdf", "application/pdf", "Document"
+
+
+def sample_file(alert) -> tuple[bytes, str, str]:
+	"""The file the alert would attach for its first recipient, made now and kept nowhere (the
+	editor's "Create PDF") → `(content, file_name, mime_type)`. E: `WAValidationError` when the
+	alert attaches no file."""
+	if alert.content_type != "Report" or alert.attachment_format not in ("PDF", "PNG"):
+		frappe.throw(_("This alert attaches no file"), WAValidationError)
+	if not alert.report:
+		frappe.throw(_("Choose the report first"), WAValidationError)
+	filters = resolve_filters(alert)
+	columns, rows = _run_report(alert, filters)
+	recipients = expand_recipients(alert, rows, columns)
+	column = next(
+		(r.report_column for r in alert.get("recipients") or [] if r.recipient_type == "Report Column"),
+		None,
+	)
+	if recipients:
+		rows = _rows_for(recipients[0], rows, columns, column)
+	content, file_name, mime, _mtype = report_file(alert, columns, rows, filters)
+	return content, file_name, mime
 
 
 def report_columns(report: str, filters: dict[str, Any] | list | None = None) -> list[dict[str, Any]]:
