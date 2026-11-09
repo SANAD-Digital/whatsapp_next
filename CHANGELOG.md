@@ -8,6 +8,10 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
 
 ### Fixed
 
+- **One-page PDFs went out as PDFs on customer servers**: Frappe reads a Check never saved in
+  Settings as 0, so on every server that had not saved Settings since the update the option was
+  off for the sending code while the Settings page (reading through `stored_or_default`) showed it
+  on. The sending code reads it the same way now. A server without PyMuPDF says so once in the log.
 - **A site that signs in to another of the customer's accounts leaves the first one**
   (`onboarding._release_webhook`): the sign-in, like a sign-up, removes this site's webhook endpoint
   from the account it leaves, with that account's keys, before they are forgotten. Left behind,
