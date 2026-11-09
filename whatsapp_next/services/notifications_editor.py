@@ -45,11 +45,12 @@ FIELDS: tuple[str, ...] = (
 	"attach_print",
 	"print_format",
 	"letter_head",
+	"attach_to_document",
 	"attach_field",
 	"set_property_after_alert",
 	"property_value",
 )
-INT_FIELDS = frozenset({"enabled", "days_in_advance", "minutes_offset", "attach_print"})
+INT_FIELDS = frozenset({"enabled", "days_in_advance", "minutes_offset", "attach_print", "attach_to_document"})
 RECIPIENT_FIELDS: tuple[str, ...] = (
 	"recipient_type",
 	"receiver_by_document_field",
@@ -143,6 +144,7 @@ def editor(name: str | None = None) -> dict[str, Any]:
 				"condition_type": "Filters",
 				"message_type": "Text",
 				"attach_print": 0,
+				"attach_to_document": 0,
 				"days_in_advance": 1,
 				"minutes_offset": 30,
 				"device": frappe.db.get_value("WhatsApp Device", {"is_default": 1, "disabled": 0}, "name"),

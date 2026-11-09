@@ -1101,19 +1101,21 @@ def _template_attachment(tpl, reference: str | None) -> dict[str, Any]:
 		frappe.has_permission(tpl.reference_doctype, "print", reference, throw=True)
 		from whatsapp_next.services import templates
 
-		pdf = attachments.render_print_pdf(
-			tpl.reference_doctype,
-			reference,
-			print_format=tpl.print_format,
-			letter_head=tpl.letter_head or None,
-			language=tpl.language or None,
-			file_name=templates.render_text(
-				tpl.file_name_template, {"doc": frappe._dict(name=reference)}, fallback=reference
-			),
+		pdf, message_type = attachments.as_sent(
+			attachments.render_print_pdf(
+				tpl.reference_doctype,
+				reference,
+				print_format=tpl.print_format,
+				letter_head=tpl.letter_head or None,
+				language=tpl.language or None,
+				file_name=templates.render_text(
+					tpl.file_name_template, {"doc": frappe._dict(name=reference)}, fallback=reference
+				),
+			)
 		)
 		url = attachments.save_private_file(pdf.content, pdf.file_name, (tpl.reference_doctype, reference))
 		return {
-			"message_type": "Document",
+			"message_type": message_type,
 			"attachment": url,
 			"file_name": pdf.file_name,
 			"mime_type": pdf.mime_type,

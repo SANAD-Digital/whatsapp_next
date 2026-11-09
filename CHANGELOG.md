@@ -8,6 +8,18 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
 
 ### Added
 
+- **The print format's page size is kept in the PDF** (`attachments.page_options`): wkhtmltopdf
+  takes its page size from Print Settings only, so an A5 or receipt format came out A4 whenever
+  wkhtmltopdf drew it (its own engine, or the fallback when Chrome does not start). The format's
+  "Paper size" (Frappe 16; a receipt is its width on an A4-high page) or a CSS
+  `@page { size: … }` in its CSS or HTML (a page name, two lengths in mm / cm / in, `landscape`)
+  is now handed to wkhtmltopdf. Chrome already reads it itself.
+- **"Keep the sent file on the document"** on each notification (`attach_to_document`, off by
+  default, a switch under the print format in the editor): off, a notification's print is no
+  longer attached to the document it is about — it is kept with the sent message only, so an
+  invoice's attachments no longer grow with every send. A one-page print is turned into its PNG
+  before it is stored (`attachments.as_sent`, also used by campaigns and template sends), so a
+  message keeps one file, not a PDF beside its picture.
 - **A one-page PDF goes out as an image** (WhatsApp Settings → Policy → "Send a one-page PDF as
   an image", on by default): `dispatch.create_outbound` stores a one-page PDF document again as a
   PNG (`attachments.pdf_as_image`, PyMuPDF) and sends it as an Image, so the recipient sees the

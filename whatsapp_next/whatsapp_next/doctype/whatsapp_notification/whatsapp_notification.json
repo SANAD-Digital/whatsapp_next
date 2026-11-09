@@ -32,6 +32,7 @@
   "print_format",
   "column_break_16",
   "letter_head",
+  "attach_to_document",
   "attach_field",
   "recipients_tab",
   "recipients",
@@ -263,6 +264,14 @@
    "depends_on": "eval:doc.attach_print"
   },
   {
+   "default": "0",
+   "depends_on": "eval:doc.attach_print",
+   "description": "Off: the printed file is kept with the sent message only, and the document's attachments stay as they were.",
+   "fieldname": "attach_to_document",
+   "fieldtype": "Check",
+   "label": "Keep the sent file on the document"
+  },
+  {
    "fieldname": "attach_field",
    "label": "Attach from Field",
    "fieldtype": "Data",
@@ -356,7 +365,7 @@
    "link_fieldname": "notification"
   }
  ],
- "modified": "2026-10-29 12:00:00.000000",
+ "modified": "2026-11-10 00:30:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Notification",
