@@ -87,12 +87,14 @@ class TestWhatsAppSettings(IntegrationTestCase):
 			frappe.db.set_single_value(DOCTYPE, "platform_base_url", previous)
 
 	def test_the_default_region_is_the_sites_own_country(self) -> None:
-		"""Phone fields and national numbers follow System Settings → Country (owner, 2026-11-09):
-		WhatsApp Settings has no country of its own, which went stale when the site's changed."""
+		"""Phone fields and national numbers follow Global Defaults → Country, else System Settings
+		(owner, 2026-11-09): WhatsApp Settings has no country of its own, which went stale."""
 		from whatsapp_next.tests.conftest_frappe import REAL_REGION_FROM_SETTINGS
 
 		self.assertFalse(frappe.get_meta(DOCTYPE).has_field("default_country"))
-		site_country = frappe.db.get_single_value("System Settings", "country")
+		site_country = frappe.db.get_single_value("Global Defaults", "country") or frappe.db.get_single_value(
+			"System Settings", "country"
+		)
 		expected = (frappe.db.get_value("Country", site_country, "code") or "").upper() or None
 		self.assertEqual(REAL_REGION_FROM_SETTINGS(), expected)
 

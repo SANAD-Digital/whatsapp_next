@@ -677,7 +677,7 @@ frappe.provide("sanad.ui");
 					: `<p class="sanad-ae__hint">${esc(__("Choose the document type first."))}</p>`;
 			else
 				adder = `<div class="sanad-ae__addline">
-					<input type="tel" class="wa-input wa-input--mono" data-in="add_phone" dir="ltr" placeholder="9665…" aria-label="${esc(__("Number"))}">
+					<input type="tel" class="wa-input wa-input--mono" data-in="add_phone" dir="ltr" placeholder="${esc(sanad.ui.PhoneField.example(null, { format: false }).replace("+", ""))}" aria-label="${esc(__("Number"))}">
 					<button type="button" class="sanad-ae__btn" data-act="add_phone">${esc(__("Add"))}</button>
 					${this.opts.pick_recipients ? `<button type="button" class="sanad-ae__btn sanad-ae__btn--pri" data-act="pick_contacts">${sanad.ui.ico("users", "sm")}${esc(__("Choose from contacts"))}</button>` : ""}
 				</div>`;
@@ -872,9 +872,9 @@ frappe.provide("sanad.ui");
 						<button type="button" class="sanad-ae__btn sanad-ae__btn--pri" data-act="test"${this.ui.testing ? " disabled" : ""}>${sanad.ui.ico("send", "sm")}${esc(this.ui.testing ? __("Sending…") : __("Send a test"))}</button>
 					</div>
 				</div>`);
-			// The kit's phone field: its country opens on the site's default (WhatsApp Settings →
-			// default country), so a local number takes that key without it being typed (owner,
-			// 2026-10-08); a number written with its own key keeps it.
+			// The kit's phone field: its country opens on the site's own (Global Defaults → Country),
+			// so a local number takes that key without it being typed (owner, 2026-10-08 and
+			// 2026-11-09); a number written with its own key keeps it.
 			new sanad.ui.PhoneField({
 				wrapper: this.$root.find("[data-slot=test-phone]"),
 				label: "",
@@ -901,7 +901,7 @@ frappe.provide("sanad.ui");
 					${
 						recent.length
 							? `<ul class="sanad-ae__recent">${recent
-									.map((r) => `<li><span dir="ltr">${esc(r.display_name || sanad.ui.phone(r.phone_e164))}</span>${sanad.ui.group_tag(r.phone_e164)}${sanad.ui.badge(__(r.status), tone[r.status] || "muted")}<time>${esc(frappe.datetime.comment_when(r.creation, true))}</time></li>`)
+									.map((r) => `<li><span dir="ltr">${esc(r.display_name || sanad.ui.phone(r.phone_e164))}</span>${sanad.ui.group_tag(r.phone_e164)}${sanad.ui.badge(__(r.status), tone[r.status] || "muted")}<time title="${esc(frappe.datetime.str_to_user(r.creation))}">${esc(sanad.ui.ago(r.creation))}</time></li>`)
 									.join("")}</ul>`
 							: ""
 					}

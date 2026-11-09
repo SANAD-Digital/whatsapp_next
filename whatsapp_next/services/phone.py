@@ -24,9 +24,9 @@ _ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "0123
 
 
 def default_region() -> str:
-	"""Return the ISO-3166 alpha-2 region used for national numbers: the country in the site's
-	System Settings (owner, 2026-11-09 — WhatsApp Settings no longer has a country of its own: a
-	copy taken once went stale when the site's country changed)."""
+	"""Return the ISO-3166 alpha-2 region used for national numbers and every phone field's
+	country: Global Defaults → Country, else System Settings → Country (owner, 2026-11-09 —
+	WhatsApp Settings no longer has a country of its own: a copy taken once went stale)."""
 	region = None
 	if getattr(frappe.local, "site", None) and frappe.db:
 		region = frappe.local.cache.get("wa_default_region") if hasattr(frappe.local, "cache") else None
@@ -39,13 +39,21 @@ def default_region() -> str:
 
 def _region_from_settings() -> str | None:
 	try:
-		country = frappe.db.get_single_value("System Settings", "country")
+		country = None
+		if frappe.db.exists("DocType", "Global Defaults"):
+			country = frappe.db.get_single_value("Global Defaults", "country")
+		country = country or frappe.db.get_single_value("System Settings", "country")
 	except Exception:
 		return None
 	if not country:
 		return None
 	code = frappe.db.get_value("Country", country, "code")
 	return (code or "").upper() or None
+
+
+# The sample a region's field shows as its placeholder, where the owner chose one over the
+# library's (2026-11-09: Yemen's mobiles start with 77, the library's sample with 71).
+EXAMPLE_NUMBERS: dict[str, str] = {"YE": "771234567"}
 
 
 def country_catalog() -> list[dict[str, object]]:
@@ -67,7 +75,7 @@ def country_catalog() -> list[dict[str, object]]:
 	"""
 	# the key carries a version: a cached copy outlives a change of shape (the `mobile` pattern was
 	# added after the first deploy), and a stale shape is exactly the bug nobody would look for
-	cached = frappe.cache.get_value("wa_country_catalog_v2")
+	cached = frappe.cache.get_value("wa_country_catalog_v3")
 	if cached:
 		return cached
 	rows: list[dict[str, object]] = []
@@ -75,7 +83,11 @@ def country_catalog() -> list[dict[str, object]]:
 		dial = phonenumbers.country_code_for_region(iso)
 		if not dial:
 			continue
-		example = phonenumbers.example_number_for_type(iso, phonenumbers.PhoneNumberType.MOBILE)
+		example = (
+			phonenumbers.parse(EXAMPLE_NUMBERS[iso], iso)
+			if iso in EXAMPLE_NUMBERS
+			else phonenumbers.example_number_for_type(iso, phonenumbers.PhoneNumberType.MOBILE)
+		)
 		if example is None:
 			example = phonenumbers.example_number_for_type(iso, phonenumbers.PhoneNumberType.FIXED_LINE)
 		national = ""
@@ -110,7 +122,7 @@ def country_catalog() -> list[dict[str, object]]:
 		)
 	# a day: the metadata only changes when the library is upgraded, and a stale copy outliving a
 	# `pip install -U phonenumbers` is exactly the bug nobody would look for
-	frappe.cache.set_value("wa_country_catalog_v2", rows, expires_in_sec=86400)
+	frappe.cache.set_value("wa_country_catalog_v3", rows, expires_in_sec=86400)
 	return rows
 
 
