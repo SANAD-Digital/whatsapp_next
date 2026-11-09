@@ -85,6 +85,17 @@ class TestApiNotificationsEditor(IntegrationTestCase):
 		)
 		self.assertEqual(r["message"], "tpl apitest notifed body")
 
+	def test_preview_says_a_one_page_print_goes_out_as_an_image(self):
+		"""The preview does not print the record, so it cannot count its pages: with Settings →
+		Policy → "Send a one-page PDF as an image" on, it says the print goes out as an image when
+		it is one page; off, it says nothing of the kind."""
+		print_payload = self._payload(message_type="Document", attach_print=1)
+		for on in (1, 0):
+			ensure_settings(single_page_pdf_as_image=on)
+			r = api.preview_draft(payload=print_payload, reference_name=self.todo.name)
+			self.assertEqual(r["attachment"]["message_type"], "Document")
+			self.assertEqual(r["attachment"]["image_if_one_page"], bool(on))
+
 	def test_preview_reports_the_problem_and_writes_nothing(self):
 		r = api.preview_draft(payload=self._payload(message="", recipients=[]))
 		self.assertTrue(r["problem"])

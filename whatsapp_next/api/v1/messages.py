@@ -352,7 +352,7 @@ def fetch_media(name: str) -> dict[str, Any]:
 	if not row.media_url:
 		frappe.throw(_("This message has no file"), WANotFoundError)
 	extension = mimetypes.guess_extension((row.media_mime_type or "").split(";")[0].strip()) or ""
-	url = inbound.fetch_media(name, file_name=f"{row.provider_message_id or name}{extension}")
+	url = inbound.fetch_media(name, file_name=f"{row.provider_message_id or name}{extension}", asked=True)
 	if not url:
 		frappe.throw(_("The file is no longer available on WhatsApp"), WANotFoundError)
 	return {"attachment": url}

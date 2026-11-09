@@ -40,14 +40,19 @@ is mirrored first.
 |---|---|---|---|
 | `refresh` | bool | `false` | Calls `sync_from_provider` first. It mirrors `last_seen`, `webhook_registered`, `wa_device_id`, and status drift for known devices. Unknown provider devices are counted, never created. |
 
-**Returns.** `synced` is `null` unless `refresh` is set.
+**Returns.** `synced` is `null` unless `refresh` is set. Each row carries the device's history
+import too (`history_status`, `history_imported`, `history_total`, `history_started_at`,
+`history_finished_at`, `history_error`; see `get_history_status`), and `history_allowed` says
+whether Settings → Policy → "Import Past Messages" is on.
 
 ```json
 {
   "rows": [{"name": "WA-DEV-001", "device_name": "Sales", "phone_e164": "+966501234567",
-            "status": "Connected", "is_default": 1, "disabled": 0, "…": "…"}],
+            "status": "Connected", "is_default": 1, "disabled": 0,
+            "history_status": "Done", "history_imported": 120, "history_total": 120, "…": "…"}],
   "total": 1,
-  "synced": {"seen": 1, "changed": 0, "unknown": 0}
+  "synced": {"seen": 1, "changed": 0, "unknown": 0},
+  "history_allowed": true
 }
 ```
 
@@ -334,4 +339,116 @@ Returns the device card's figures over the last `days`.
 
 ```js
 const stats = await sanad.ui.call("devices.get_device_stats", { device: "WA-DEV-001", days: 7 });
+```
+
+---
+
+## get_device_impact
+
+Counts what disconnecting or deleting the device touches, for the confirm dialogs of the Devices
+screen.
+
+- **Path:** `whatsapp_next.api.v1.devices.get_device_impact`
+- **Methods:** GET, POST
+- **Roles:** `MANAGER`
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `device` | str | required | `WhatsApp Device` name |
+
+**Returns:**
+
+- `queued`: `WhatsApp Queue Item` rows of the device in `Queued`, `Paused`, or `Held`.
+- `notifications`: `WhatsApp Notification` rows bound to the device.
+- `campaigns`: `WhatsApp Campaign` rows bound to the device.
+- `messages`: `WhatsApp Log` rows of the device.
+
+```json
+{"queued": 4, "notifications": 2, "campaigns": 1, "messages": 1830}
+```
+
+**Errors:** `WANotFoundError` (404) for an unknown device.
+**Realtime:** none.
+
+```js
+const impact = await sanad.ui.call("devices.get_device_impact", { device: "WA-DEV-002" });
+```
+
+---
+
+## import_history
+
+Queues the import of the device's past conversations (`services/history_import.py`). The platform
+serves the messages in batches. Received ones become `WhatsApp Inbound Message` rows
+(`is_history = 1`), the number's own become `WhatsApp Log` rows (`source_type = History`, status
+`Sent`). Past messages run no command, send no reply, and fetch no media. A message already stored
+(by its WhatsApp id) is skipped. The window is the inbound retention period. The job runs on the
+`long` queue in slices of up to 10 000 messages and re-queues itself until the platform has no more.
+One import per device runs at a time. Audited as `Settings Changed` with
+`details: {action: "import_history", restart}`.
+
+- **Path:** `whatsapp_next.api.v1.devices.import_history`
+- **Methods:** POST
+- **Roles:** `MANAGER`
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `device` | str | required | `WhatsApp Device` name |
+| `restart` | bool | `false` | Reads from the start again (cursor and `imported` reset to 0). Rows already here are skipped, so it only fills gaps. A device that never imported starts from the beginning anyway. |
+
+**Returns.** `ok` plus the progress fields of `get_history_status`, read right after the job is
+queued (`status` is `Running`).
+
+```json
+{"ok": true, "status": "Running", "imported": 0, "total": 0,
+ "started_at": "2026-11-09 10:00:00", "finished_at": null, "error": null}
+```
+
+**Errors:**
+
+| Exception | HTTP | When |
+|---|---|---|
+| `WANotFoundError` | 404 | Unknown device |
+| `WAStateConflictError` | 409 | Settings → Policy «Import Past Messages» (`import_past_messages`) is off |
+
+**Realtime:** none. The Devices screen reads the progress from the `history_*` fields of the
+device rows when it refreshes.
+
+```js
+await sanad.ui.call("devices.import_history", { device: "WA-DEV-001", restart: 0 });
+```
+
+---
+
+## get_history_status
+
+Returns the progress of the device's history import.
+
+- **Path:** `whatsapp_next.api.v1.devices.get_history_status`
+- **Methods:** GET, POST
+- **Roles:** `VIEWER_UP`
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `device` | str | required | `WhatsApp Device` name |
+
+**Returns:**
+
+- `status`: `Not Started` (also when empty), `Running`, `Done`, or `Failed`.
+- `imported`: messages written so far (`0` when empty).
+- `total`: messages the platform reported on the first page (`0` when unknown).
+- `started_at`, `finished_at`: datetimes or `null`.
+- `error`: the provider's error text (≤ 500 characters) when `Failed`, else `null`.
+
+```json
+{"status": "Running", "imported": 1500, "total": 4200,
+ "started_at": "2026-11-09 10:00:00", "finished_at": null, "error": null}
+```
+
+**Errors:** `WANotFoundError` (404) for an unknown device.
+**Realtime:** none. The import job publishes no event; read this endpoint (or the device row)
+again to follow it.
+
+```js
+const h = await sanad.ui.call("devices.get_history_status", { device: "WA-DEV-001" });
 ```

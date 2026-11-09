@@ -53,6 +53,14 @@ class TestReview20261029(IntegrationTestCase):
 			with self.assertRaises(frappe.PermissionError):
 				settings_api.analyze_picker_doctype(document_type="User")
 
+	def test_a_source_that_is_not_json_is_a_message_not_a_500(self):
+		from whatsapp_next.exceptions import WAValidationError
+		from whatsapp_next.services import picker_sources
+
+		for bad in ("{not json", "[1, 2]"):
+			with self.assertRaises(WAValidationError):
+				picker_sources.preview(bad)
+
 	def test_a_contacts_numbers_only_to_who_may_read_it(self):
 		with as_user("WhatsApp Agent"):
 			self.assertEqual(wa_groups.members_from("Contact", [self.contact]), [])

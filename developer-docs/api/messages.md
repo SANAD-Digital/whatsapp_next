@@ -294,3 +294,132 @@ Returns the Inbound screen's figures over the last `days`, bucketed by `received
 ```js
 const s = await sanad.ui.call("messages.get_inbound_summary", { days: 7 });
 ```
+
+---
+
+## get_poll_results
+
+Returns the live tally of sent polls, read from the provider on every call. The gateway keeps each
+voter's latest vote, so this is always the current count.
+
+- **Path:** `whatsapp_next.api.v1.messages.get_poll_results`
+- **Methods:** GET, POST
+- **Roles:** `VIEWER_UP`, plus **read** on each `WhatsApp Log`
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `names` | list[str] or str | required | `WhatsApp Log` names: a list, a JSON list, or one name. Duplicates are dropped; only the first 20 are read. |
+
+Rows the caller cannot read, rows that are not polls, rows with no poll id or device, and rows
+whose device has no `platform_device` are left out of `results`. The poll id sent to the provider
+is the row's `provider_message_id`, else its `poll_id`.
+
+**Returns.** One entry per kept name. `options` follows the poll's own option order. `voters` is
+empty when the platform hides who voted. When the provider call fails for a device, or returns
+nothing for a poll, that entry is `{"error": "…"}` instead (never raised).
+
+```json
+{"results": {
+  "a1b2c3d4e5": {"question": "Which day suits you?", "multiple_answers": false,
+                 "options": [{"option": "Sunday", "votes": 2,
+                              "voters": [{"name": "Ahmed", "number": "+966500000002", "voted_at": 1762682400}]},
+                             {"option": "Monday", "votes": 0, "voters": []}],
+                 "total_voters": 2},
+  "b2c3d4e5f6": {"error": "No result"}
+}}
+```
+
+**Realtime:** none.
+
+```js
+const r = await sanad.ui.call("messages.get_poll_results", { names: ["a1b2c3d4e5", "b2c3d4e5f6"] });
+```
+
+---
+
+## get_poll_summary
+
+Returns the results of one poll across everyone it was sent to (`services/polls.py`
+`summary_for_log`). The set is the campaign message the row belongs to (same campaign, same
+message index), or else every sent poll with the same question and options. Only rows in `Sent`,
+`Delivered`, or `Read` count, at most 2 000 (oldest first). Each poll's tally is read live from the
+provider. The sending device's own vote is left out, so a response is a recipient's answer.
+
+- **Path:** `whatsapp_next.api.v1.messages.get_poll_summary`
+- **Methods:** GET, POST
+- **Roles:** `VIEWER_UP` | `WhatsApp Log` **read**
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `name` | str | required | `WhatsApp Log` name of a poll message |
+
+**Returns:**
+
+- `scope`: `{"kind": "campaign", "campaign", "campaign_name", "message_idx"}` or `{"kind": "question"}`.
+- `recipients`: rows in the set. `responded`: recipients minus `not_responded_count`.
+  `response_rate`: whole percent.
+- `counts`: votes per option in the poll's option order. `total_votes`: their sum.
+- `responses`: one entry per voter, newest `voted_at` first.
+- `not_responded`: the first 200 recipients with no answer. A row whose result the provider could
+  not give is counted here and in `errors`.
+- `voters_hidden`: `true` when the platform counted votes without naming voters.
+- `truncated`: `true` when the set reached the 2 000-row cap.
+
+```json
+{"scope": {"kind": "campaign", "campaign": "WA-CMP-0004", "campaign_name": "November survey", "message_idx": 1},
+ "question": "Which day suits you?", "options": ["Sunday", "Monday"], "multiple_answers": false,
+ "recipients": 3, "responded": 1, "response_rate": 33,
+ "counts": [{"option": "Sunday", "votes": 1}, {"option": "Monday", "votes": 0}], "total_votes": 1,
+ "responses": [{"recipient": "Ahmed Ali", "phone": "+966500000002", "voter": "Ahmed",
+                "voter_number": "+966500000002", "options": ["Sunday"], "voted_at": 1762682400}],
+ "not_responded": [{"recipient": "+966500000003", "phone": "+966500000003"}],
+ "not_responded_count": 2, "voters_hidden": false, "errors": 1, "truncated": false}
+```
+
+**Errors:**
+
+| Exception | HTTP | When |
+|---|---|---|
+| `WAPermissionError` | 403 | No read on the row |
+| `WAValidationError` | 417 | The row is unknown or not a poll ("This message is not a poll") |
+
+**Realtime:** none.
+
+```js
+const s = await sanad.ui.call("messages.get_poll_summary", { name: "a1b2c3d4e5" });
+```
+
+---
+
+## fetch_media
+
+Downloads the file of a received message that has none yet (a past message from the history
+import, or a download that failed) and attaches it to the row as a private `File`
+(`attachment`). The download runs in the request. When the row already has an attachment, that
+URL is returned and nothing is fetched.
+
+- **Path:** `whatsapp_next.api.v1.messages.fetch_media`
+- **Methods:** POST
+- **Roles:** `AGENT_UP` | `WhatsApp Inbound Message` **read**
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `name` | str | required | `WhatsApp Inbound Message` name |
+
+The file is named `<provider_message_id><extension>`, the extension guessed from
+`media_mime_type`.
+
+**Returns:** `{"attachment": "/private/files/3EB0A1B2C3D4.jpg"}`
+
+**Errors:**
+
+| Exception | HTTP | When |
+|---|---|---|
+| `WANotFoundError` | 404 | Unknown row ("Message … not found"); the row has no `media_url` ("This message has no file"); the download failed ("The file is no longer available on WhatsApp", logged to the Error Log) |
+| `WAPermissionError` | 403 | No read on the row |
+
+**Realtime:** none.
+
+```js
+const { attachment } = await sanad.ui.call("messages.fetch_media", { name: "f6e5d4c3b2" });
+```

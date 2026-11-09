@@ -222,10 +222,9 @@ frappe.call({ method: "whatsapp_next.api.v1.home.get_dashboard" }).then((r) => r
 
 `sanad.ui.api(key)` throws for a two-segment key that isn't in the map. A **full dotted path**
 (three or more segments) passes through unchanged. Endpoints that aren't in the map can still be
-called through `sanad.ui.call` with their full path. In the part-A areas these are
-`onboarding.verify_code`, `onboarding.get_password_reset_status`,
-`onboarding.complete_password_reset`, and `onboarding.validate_coupon`, for example
-`sanad.ui.call("whatsapp_next.api.v1.onboarding.verify_code", {...})`.
+called through `sanad.ui.call` with their full path, for example
+`sanad.ui.call("whatsapp_next.api.v1.onboarding.verify_code", {...})`. Every endpoint of
+`api/v1` is in the map today (`public/js/whatsapp_next_setup.js`).
 
 ## 10. HTTP examples
 
@@ -286,4 +285,9 @@ with `frappe.realtime.on("<event>", handler)`.
 | alerts | [alerts.md](alerts.md) | `api/v1/alerts.py` | Scheduled report alerts and the alert editor |
 | functions | [functions.md](functions.md) | `api/v1/functions.py` | Function catalog, install, update |
 | commands | [commands.md](commands.md) | `api/v1/commands.py` | Inbound commands, editor, test |
+| billing | [billing.md](billing.md) | `api/v1/billing.py` | Wallet, plans, renew, change plan, top-ups (transfer and PayPal), account statement |
+| hub | [hub.md](hub.md) | `api/v1/hub.py` | The platform hub of ready-made content: list, details, install or update |
+| number_check | [number-check.md](number-check.md) | `api/v1/number_check.py` | "Check on WhatsApp" and profile refresh for a selection |
+| status_posts | [status-posts.md](status-posts.md) | `api/v1/status_posts.py` | Status post actions: post now, schedule, unschedule, delete, views |
+| wa_groups | [wa-groups.md](wa-groups.md) | `api/v1/wa_groups.py` | WhatsApp group creation: members behind a selection, create |
 | webhooks | [webhooks.md](webhooks.md) | `webhooks/v1/receiver.py` | The inbound receiver (the only guest endpoint) |

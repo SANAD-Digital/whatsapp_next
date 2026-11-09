@@ -97,6 +97,104 @@ await sanad.ui.call("settings.save_settings", { section: "queue", values: { max_
 
 ---
 
+## get_whatsapp_link
+
+Returns the `wa.me` link that opens a chat with the business number, with a message already typed,
+and its QR code. It is the Settings preview of the print-format functions `whatsapp_link` and
+`whatsapp_qr`.
+
+- **Path:** `whatsapp_next.api.v1.settings.get_whatsapp_link`
+- **Methods:** GET, POST
+- **Roles:** `MANAGER`
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `text` | str | optional | The message typed in the chat (trimmed; at most 500 characters). Empty gives the bare link. |
+| `device` | str | optional | `WhatsApp Device` whose `phone_e164` is used. Default: the default device. When that device has no number, the first enabled device with a number is used. |
+
+**Returns.** `qr` is a PNG data URI of the QR code of `url`.
+
+```json
+{"url": "https://wa.me/966501234567?text=%D9%83%D8%B4%D9%81",
+ "qr": "data:image/png;base64,iVBORw0KGgo…"}
+```
+
+**Errors:**
+
+| Exception | HTTP | When |
+|---|---|---|
+| `WAValidationError` | 417 | `text` longer than 500 characters |
+| `WAStateConflictError` | 409 | "No WhatsApp device has a number yet" |
+
+**Realtime:** none.
+
+```js
+const { url, qr } = await sanad.ui.call("settings.get_whatsapp_link", { text: "كشف" });
+```
+
+---
+
+## get_main_menu
+
+Returns the main-menu editor's rows (Settings → Commands): every `Active` command with its menu
+fields. Commands in the menu come first, in `menu_order`; the rest follow by title.
+
+- **Path:** `whatsapp_next.api.v1.settings.get_main_menu`
+- **Methods:** GET, POST
+- **Roles:** `MANAGER`
+
+Arguments: none.
+
+**Returns.** `max` is the most commands the menu holds (a WhatsApp list shows at most ten rows).
+
+```json
+{"commands": [
+  {"name": "CMD-0001", "code": "statement", "title": "Statement", "show_in_menu": 1, "menu_order": 0, "menu_description": "Your account statement"},
+  {"name": "CMD-0004", "code": "help", "title": "Help", "show_in_menu": 0, "menu_order": 0, "menu_description": null}
+ ],
+ "max": 10}
+```
+
+**Realtime:** none.
+
+```js
+const { commands, max } = await sanad.ui.call("settings.get_main_menu");
+```
+
+---
+
+## save_main_menu  *(admin-only)*
+
+Replaces the main menu. The listed commands get `show_in_menu = 1` and `menu_order` = their
+position; every other command leaves the menu (its order and description are kept). Audited as
+`Settings Changed` with `details: {section: "main_menu", commands: [...]}` when anything changed.
+
+- **Path:** `whatsapp_next.api.v1.settings.save_main_menu`
+- **Methods:** POST
+- **Roles:** `SYSTEM_MANAGER`
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `commands` | list[dict] | required | `[{command, menu_description}]` in menu order, at most 10. `command` is a `WhatsApp Command` name; `menu_description` is at most 72 characters. |
+
+**Returns.** `changed` lists the commands whose menu fields actually changed.
+
+```json
+{"ok": true, "changed": ["CMD-0001", "CMD-0004"]}
+```
+
+**Errors:** `WAValidationError` (417) for more than 10 entries, an unknown command
+("Command … not found"), or a description longer than 72 characters.
+**Realtime:** none.
+
+```js
+await sanad.ui.call("settings.save_main_menu", {
+  commands: [{ command: "CMD-0001", menu_description: "Your account statement" }],
+});
+```
+
+---
+
 ## test_connection
 
 Runs a health check on the provider. It records `connection_status` (`OK` / `Failed`),
@@ -486,4 +584,233 @@ translated.
 ```bash
 curl -s "https://<site>/api/method/whatsapp_next.api.v1.settings.get_doctype_fields?document_type=Customer" \
   -H "Authorization: token <api_key>:<api_secret>"
+```
+
+---
+
+## list_picker_candidates
+
+Returns the screens that can give the contact picker numbers, for the picker-source editor. A
+candidate is a regular DocType (not a child table, Single, virtual, or a `WhatsApp Next` DocType)
+with a phone field or a Link to `Contact`. A phone field is a `Phone` field, a `Data` field with
+options `Phone`, or a `Data` / `Read Only` field named like a number (`mobile`, `phone`,
+`whatsapp`, …; `*_ext` excluded). Custom fields count. `Contact`, `Address`, `Communication`,
+`Email Account`, `Comment`, `Version`, and `Activity Log` are skipped.
+
+- **Path:** `whatsapp_next.api.v1.settings.list_picker_candidates`
+- **Methods:** GET, POST
+- **Roles:** `MANAGER`
+
+Arguments: none.
+
+**Returns** — most phone fields first, then those with a contact link, then by label.
+
+```json
+[{"document_type": "Customer", "label": "Customer", "module": "Selling", "phone_fields": 2, "contact_link": true},
+ {"document_type": "Lead", "label": "Lead", "module": "CRM", "phone_fields": 3, "contact_link": false}]
+```
+
+**Realtime:** none.
+
+```js
+const screens = await sanad.ui.call("settings.list_picker_candidates");
+```
+
+---
+
+## analyze_picker_doctype  *(admin-only)*
+
+Reads one screen's meta and data and proposes how it gives numbers: its phone, name, and contact
+fields, how many records fill each, and a best guess. System Manager only, like saving a source,
+because it counts records of any screen past their permissions. Fields with a `permlevel` are
+skipped. Nothing is written.
+
+- **Path:** `whatsapp_next.api.v1.settings.analyze_picker_doctype`
+- **Methods:** GET, POST
+- **Roles:** `SYSTEM_MANAGER`
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `document_type` | str | required | A regular DocType |
+
+**Returns:**
+
+- `phone_fields`: busiest first (`filled`); on a tie, a field named for WhatsApp, then a mobile,
+  then a `Phone`-typed one.
+- `name_fields`: the title field first, then fields named like a name; `name` (ID) is always there.
+- `contact_fields`: Links to `Contact`, busiest first.
+- `suggestion`: `phone_source` is `Linked Contact` when the busiest contact field is filled more
+  often than the busiest phone field, else `Field`.
+
+```json
+{
+  "document_type": "Customer", "label": "Customer", "total": 840, "title_field": "customer_name",
+  "phone_fields": [{"fieldname": "mobile_no", "label": "Mobile No", "fieldtype": "Read Only", "filled": 610}],
+  "name_fields": [{"fieldname": "customer_name", "label": "Customer Name", "title": true},
+                  {"fieldname": "name", "label": "ID", "title": false}],
+  "contact_fields": [{"fieldname": "customer_primary_contact", "label": "Customer Primary Contact", "filled": 590}],
+  "suggestion": {"label": "Customer", "phone_source": "Field", "phone_fieldname": "mobile_no",
+                 "contact_fieldname": null, "name_fieldname": "customer_name"}
+}
+```
+
+**Errors:** `WAValidationError` (417) "DocType … not found", or "… must be a regular DocType".
+**Realtime:** none.
+
+```js
+const a = await sanad.ui.call("settings.analyze_picker_doctype", { document_type: "Customer" });
+```
+
+---
+
+## preview_picker_source  *(admin-only)*
+
+Says how a picker source, as it is being edited, reaches people: how many records its filters
+keep, how many of those have a number WhatsApp can use, and the first three. System Manager only,
+for the same reason as `analyze_picker_doctype`. Nothing is written.
+
+- **Path:** `whatsapp_next.api.v1.settings.preview_picker_source`
+- **Methods:** GET, POST
+- **Roles:** `SYSTEM_MANAGER`
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `source` | dict or JSON str | required | A picker-source row: `document_type`, `phone_source` (`Field` or `Linked Contact`), `phone_fieldname` or `contact_fieldname`, `name_fieldname` (default: the title field, else `name`), `filters_json` |
+
+With `Linked Contact`, a record's number is the first phone of its Contact (primary mobile first).
+`with_number` is exact up to 500 records with the field set; above that it is extrapolated from the
+first 500. When the phone or contact field is missing or unknown, the answer is `with_number: 0`
+and an empty `sample`.
+
+**Returns:**
+
+```json
+{"total": 840, "with_number": 598,
+ "sample": [{"label": "Acme Trading", "phone": "+966501234567"},
+            {"label": "Noor Stores", "phone": "+966551112222"}]}
+```
+
+**Errors:** `WAValidationError` (417) for an unknown or non-regular DocType, or "Invalid filters: …"
+(an unknown field or a disallowed operator). A `source` string that is not valid JSON fails as
+`WAUnexpectedError` (500).
+**Realtime:** none.
+
+```js
+const p = await sanad.ui.call("settings.preview_picker_source", {
+  source: { document_type: "Customer", phone_source: "Field", phone_fieldname: "mobile_no", name_fieldname: "customer_name" },
+});
+```
+
+---
+
+## export_backup
+
+Returns the app's backup as one object; the client saves it as a `.json` file. It holds Settings
+and every record of `WhatsApp Function`, `WhatsApp Template`, `WhatsApp Contact Group`,
+`WhatsApp Command`, `WhatsApp Notification`, `WhatsApp Notification Alert`, and
+`WhatsApp Campaign`, oldest first. Nothing tied to the platform account is in it: no keys, no
+devices (every `device`, `reply_device`, `default_device`, `requested_device` field is left out),
+no messages, queue, or numbers. Records carry only their DocType's own fields minus the run state
+(counters, last sent, errors, campaign statuses and figures). Audited as `Backup Exported` with
+the record count per DocType.
+
+- **Path:** `whatsapp_next.api.v1.settings.export_backup`
+- **Methods:** GET, POST
+- **Roles:** `MANAGER`
+
+Arguments: none.
+
+**Returns.** `settings` holds the writable fields of the `queue`, `commands`, `policy`, `picker`,
+`retention`, and `webhook` sections, without device fields.
+
+```json
+{
+  "format": "whatsapp_next.backup", "version": 1, "site": "acme.example.com",
+  "exported_at": "2026-11-09 10:00:00.123456",
+  "settings": {"max_attempts": 3, "retry_backoff_seconds": 60, "enable_commands": 1, "picker_sources": [], "…": "…"},
+  "records": {
+    "WhatsApp Template": [{"name": "Invoice Ready", "…": "…"}],
+    "WhatsApp Campaign": [],
+    "…": []
+  }
+}
+```
+
+**Realtime:** none.
+
+```js
+const backup = await sanad.ui.call("settings.export_backup");
+```
+
+---
+
+## preview_backup  *(admin-only)*
+
+Says what `import_backup` would do with a backup file. Nothing is written.
+
+- **Path:** `whatsapp_next.api.v1.settings.preview_backup`
+- **Methods:** POST
+- **Roles:** `SYSTEM_MANAGER`
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `data` | str | required | The backup file's text (JSON) |
+
+**Returns:**
+
+- `settings`: how many Settings values the file holds.
+- `add`: records not here yet. `replace`: records here that the file's version would replace.
+- `keep`: campaigns already here (a campaign is only ever created, never replaced).
+- `switched_off`: notifications and alerts in `add` or `replace`; they come in disabled.
+
+```json
+{"site": "acme.example.com", "exported_at": "2026-11-09 10:00:00.123456", "settings": 28,
+ "add": [{"doctype": "WhatsApp Template", "name": "Invoice Ready"}],
+ "replace": [{"doctype": "WhatsApp Notification", "name": "Sales Invoice Submitted"}],
+ "keep": [{"doctype": "WhatsApp Campaign", "name": "WA-CMP-0004"}],
+ "switched_off": 1}
+```
+
+**Errors:** `WAValidationError` (417) "The file is not a valid JSON file.", "This file is not a
+WhatsApp Next backup." (wrong `format`), or "This backup was made by a newer version of the app."
+**Realtime:** none.
+
+```js
+const plan = await sanad.ui.call("settings.preview_backup", { data: await file.text() });
+```
+
+---
+
+## import_backup  *(admin-only)*
+
+Brings a backup file in. Settings sections are written through the Settings service (device fields
+never). Every record is created, or, when one of the same name exists, replaced by the file's
+version; campaigns are only created, as a new `Draft` on this site's default device. Only the
+DocType's own set-up fields are taken, and notifications and alerts arrive disabled
+(`enabled = 0`). A record or a Settings section that fails is reported and the rest go on. Audited
+as `Backup Imported` with the counts.
+
+- **Path:** `whatsapp_next.api.v1.settings.import_backup`
+- **Methods:** POST
+- **Roles:** `SYSTEM_MANAGER`
+
+| Argument | Type | Required / default | Meaning |
+|---|---|---|---|
+| `data` | str | required | The backup file's text (JSON) |
+
+**Returns.** `settings` lists the Settings fields written. In `failed`, a Settings section appears
+as `{"doctype": "WhatsApp Settings", "name": "<section>"}`.
+
+```json
+{"settings": ["max_attempts", "enable_commands"], "created": 12, "updated": 3, "kept": 1,
+ "switched_off": 4,
+ "failed": [{"doctype": "WhatsApp Command", "name": "CMD-0009", "error": "Function F-0002 not found"}]}
+```
+
+**Errors:** `WAValidationError` (417), as in `preview_backup`, for a file that is not a valid
+backup.
+**Realtime:** none.
+
+```js
+const r = await sanad.ui.call("settings.import_backup", { data: await file.text() });
 ```

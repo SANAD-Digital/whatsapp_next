@@ -260,26 +260,43 @@ frappe.provide("whatsapp_next.numbers");
 	}
 
 	/**
-	 * The job's answer reaches the page twice over: the `wa:numbers:synced` event, and — for a page
-	 * whose realtime connection is down — `numbers.get_sync_state` polled every 3 s. Whichever
-	 * comes first is shown, once.
+	 * The job's answer reaches the page through the `wa:numbers:synced` event. Pages never ask the
+	 * server on a timer (owner: webhook + realtime, no polling): a page that may have missed the
+	 * event — its realtime connection came back, or the tab was in the background — asks
+	 * `numbers.get_sync_state` once at that moment, and once more after ten minutes before saying
+	 * the fetch is taking long. Whichever answer comes first is shown, once.
 	 */
 	function watch_sync(listview, device) {
 		const run = (listview._wa_sync_run = { device, shown: false });
-		const started = Date.now();
-		const tick = () => {
-			if (run.shown || listview._wa_sync_run !== run) return;
-			if (Date.now() - started > 10 * 60 * 1000) return sanad.ui.Toast.warning(__("The fetch is taking long. Refresh the list later to see the numbers."));
-			sanad.ui
+		const live = () => !run.shown && listview._wa_sync_run === run;
+		const ask = () => {
+			if (!live()) return Promise.resolve(null);
+			return sanad.ui
 				.call("numbers.get_sync_state", { device }, { silent: true })
 				.then((state) => {
+					if (!live()) return null;
 					if (state.status === "done") show_sync_result(listview, Object.assign({ device }, state.stats));
 					else if (state.status === "failed") show_sync_result(listview, { device, error: state.error });
-					else window.setTimeout(tick, 3000);
+					return state;
 				})
-				.catch(() => window.setTimeout(tick, 3000));
+				.catch(() => null);
 		};
-		window.setTimeout(tick, 3000);
+		const on_visible = () => document.visibilityState === "visible" && ask();
+		const socket = frappe.realtime && frappe.realtime.socket;
+		const stop = () => {
+			document.removeEventListener("visibilitychange", on_visible);
+			socket && socket.off && socket.off("connect", ask);
+		};
+		document.addEventListener("visibilitychange", on_visible);
+		socket && socket.on && socket.on("connect", ask);
+		run.stop = stop;
+		window.setTimeout(() => {
+			ask().then((state) => {
+				if (live() && state && state.status !== "done" && state.status !== "failed")
+					sanad.ui.Toast.warning(__("The fetch is taking long. Refresh the list later to see the numbers."));
+				stop();
+			});
+		}, 10 * 60 * 1000);
 	}
 
 	function show_sync_result(listview, data) {
@@ -287,6 +304,7 @@ frappe.provide("whatsapp_next.numbers");
 		if (run) {
 			if (run.shown) return;
 			run.shown = true;
+			run.stop && run.stop();
 		}
 		if (data.error) {
 			sanad.ui.Toast.error(__("Fetching the contacts failed: {0}", [data.error]));

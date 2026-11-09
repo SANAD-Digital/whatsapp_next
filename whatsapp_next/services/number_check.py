@@ -110,7 +110,7 @@ def check_for(source_doctype: str, names: list[str], *, force: bool = True) -> d
 	results[{phone_e164, display_name, on_whatsapp}]}`."""
 	from whatsapp_next.services import wa_groups
 
-	members = wa_groups.members_from(source_doctype, names)
+	members = wa_groups.members_from(source_doctype, names, max_records=MAX_PER_REQUEST)
 	if len(members) > MAX_PER_REQUEST:
 		frappe.throw(_("Check at most {0} numbers at a time").format(MAX_PER_REQUEST), WAValidationError)
 	answers = check([m["phone_e164"] for m in members], force=force)

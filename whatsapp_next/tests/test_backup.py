@@ -67,6 +67,30 @@ class TestBackup(IntegrationTestCase):
 		backup.import_backup(data)
 		self.assertEqual(frappe.db.get_value("WhatsApp Contact Group", GROUP, "description"), "first")
 
+	def test_a_settings_section_that_fails_takes_back_only_itself(self):
+		"""A section that fails is rolled back alone: the whole rollback took back the sections
+		already saved too, while the answer still listed them as written."""
+		from whatsapp_next.services import settings as settings_service
+		from whatsapp_next.tests.conftest_frappe import ensure_settings
+
+		ensure_settings()  # what this changes goes back when the module ends
+		before = frappe.db.get_single_value("WhatsApp Settings", "max_attempts")
+		wanted = 2 if before != 2 else 1  # Max Attempts takes 1 to 3
+		real = settings_service.save_fields
+
+		def commands_fail(values, section=None, user=None):
+			if section == "commands":
+				frappe.throw("commands section broken")
+			return real(values, section=section, user=user)
+
+		data = {**backup.export_backup(), "records": {}}
+		data["settings"] = {"max_attempts": wanted, "unknown_command_reply": "x"}
+		with patch.object(settings_service, "save_fields", side_effect=commands_fail):
+			out = backup.import_backup(data)
+		self.assertEqual(out["settings"], ["max_attempts"])
+		self.assertEqual([f["name"] for f in out["failed"]], ["commands"])
+		self.assertEqual(frappe.db.get_single_value("WhatsApp Settings", "max_attempts"), wanted)
+
 	def _file_with(self, doctype: str, name: str, **changes) -> dict:
 		"""A backup holding one record of `doctype`: an existing one, renamed, with `changes`."""
 		data = backup.export_backup()

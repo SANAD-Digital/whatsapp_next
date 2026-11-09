@@ -39,7 +39,8 @@ class Provider:
 class TestWaGroups(IntegrationTestCase):
 	def setUp(self):
 		self.device = (
-			frappe.db.get_value("WhatsApp Device", {"status": "Connected"}, "name") or ensure_device()
+			frappe.db.get_value("WhatsApp Device", {"status": "Connected", "disabled": 0}, "name")
+			or ensure_device()
 		)
 		plan(True)
 		self.provider = Provider()
@@ -91,3 +92,29 @@ class TestWaGroups(IntegrationTestCase):
 		plan(False)
 		with self.assertRaises(WANotSupportedError):
 			self._create()
+
+	def test_nothing_is_made_on_whatsapp_that_the_site_then_refuses(self):
+		"""A disabled device, or a contact the user may not write or that does not exist, is refused
+		before the group is made: refused after it, the group stayed on WhatsApp while the site
+		rolled its own row back."""
+		from whatsapp_next.exceptions import WANotFoundError, WAStateConflictError
+		from whatsapp_next.tests.conftest_frappe import as_user
+
+		frappe.db.set_value("WhatsApp Device", self.device, "disabled", 1)
+		self.addCleanup(frappe.db.set_value, "WhatsApp Device", self.device, "disabled", 0)
+		with self.assertRaises(WAStateConflictError):
+			self._create()
+		frappe.db.set_value("WhatsApp Device", self.device, "disabled", 0)
+		with self.assertRaises(WANotFoundError):
+			self._create(contact="No Such Contact 4f2a")
+		with as_user("WhatsApp Viewer"), self.assertRaises(frappe.PermissionError):
+			self._create(contact="No Such Contact 4f2a")
+		self.assertEqual(self.provider.calls, [], "nothing was asked of WhatsApp")
+
+	def test_a_selection_too_large_is_refused_not_cut(self):
+		"""More records than the action takes are refused with a message; the first 256 were read
+		silently, so a larger number check left the rest unchecked."""
+		names = [f"N-{i}" for i in range(wa_groups.MAX_MEMBERS + 1)]
+		with self.assertRaises(WAValidationError):
+			wa_groups.members_from("WhatsApp Number", names)
+		self.assertEqual(wa_groups.members_from("WhatsApp Number", names, max_records=5000), [])

@@ -156,6 +156,10 @@ class TestCommandMenu(IntegrationTestCase):
 		)
 		with self.assertRaises(frappe.ValidationError):
 			command_menu.save_items([{"command": "no-such-command"}])
+		# an inactive command is not taken into the menu: the editor lists Active ones only
+		frappe.db.set_value("WhatsApp Command", second, "status", "Inactive")
+		with self.assertRaises(frappe.ValidationError):
+			command_menu.save_items([{"command": second}])
 
 	def test_no_menu_without_the_plan(self):
 		plan(False)

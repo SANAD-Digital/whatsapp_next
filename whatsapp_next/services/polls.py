@@ -274,8 +274,9 @@ def summary_for_log(name: str) -> dict[str, Any]:
 	index), else every sent poll with the same question and options. Each poll's live tally comes
 	from the provider; the device's own votes are left out, so a response is a recipient's answer.
 	→ `{scope, question, options, multiple_answers, recipients, responded, response_rate,
-	counts[{option, votes}], responses[{recipient, phone, voter, voter_number, options, voted_at}],
-	not_responded[{recipient, phone}], voters_hidden, errors}`."""
+	total_votes, counts[{option, votes}], responses[{recipient, phone, voter, voter_number, options,
+	voted_at}], not_responded[{recipient, phone}], not_responded_count, voters_hidden, truncated,
+	errors}` — `truncated` when the recipients reached `SUMMARY_MAX_ROWS` and the rest were not read."""
 	from whatsapp_next.providers import registry
 
 	base = frappe.db.get_value(
@@ -401,10 +402,10 @@ def summary_for_log(name: str) -> dict[str, Any]:
 
 
 def live_results(names: list[str] | str) -> dict[str, Any]:
-	"""Live results of sent polls (WhatsApp Log names, ≤ 20) → `{results: {name: {options[{option,
-	votes}], total_voters} | {error}}}`, read from the provider each call: the gateway keeps each
-	voter's latest vote, so this is always the current tally. Rows the caller cannot read, or that
-	are not polls, are left out."""
+	"""Live results of sent polls (WhatsApp Log names, ≤ 20) → `{results: {name: {question,
+	multiple_answers, total_voters, options[{option, votes, voters[{name, number, voted_at}]}]} |
+	{error}}}`, read from the provider each call: the gateway keeps each voter's latest vote, so this
+	is always the current tally. Rows the caller cannot read, or that are not polls, are left out."""
 	from whatsapp_next.providers import registry
 
 	if isinstance(names, str):

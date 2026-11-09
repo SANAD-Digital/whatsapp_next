@@ -37,6 +37,15 @@ class TestWhatsAppNumber(IntegrationTestCase):
 		super().tearDown()
 
 	def test_permission_matrix(self) -> None:
+		"""The matrix the app ships. A site may change it in the Role Permission Manager (Custom
+		DocPerm: whatsapp.dev gave System Manager delete on 2026-10-28), so that is set aside for
+		the check and put back after it."""
+		frappe.db.savepoint("wa_number_perms")
+		self.addCleanup(
+			lambda: (frappe.db.rollback(save_point="wa_number_perms"), frappe.clear_cache(doctype=DOCTYPE))
+		)
+		frappe.db.delete("Custom DocPerm", {"parent": DOCTYPE})
+		frappe.clear_cache(doctype=DOCTYPE)
 		expected = {
 			"System Manager": (True, False, False, False),
 			"WhatsApp Manager": (True, False, False, False),

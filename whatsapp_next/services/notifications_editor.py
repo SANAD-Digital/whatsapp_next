@@ -300,10 +300,14 @@ def _render(notif, doc) -> dict[str, Any]:
 def _attachment_hint(notif, doc) -> dict[str, Any] | None:
 	"""What the message would carry, without building it: a print of the record or a field's file."""
 	if cint(notif.attach_print):
+		from whatsapp_next.services import attachments
+
 		return {
 			"message_type": "Document",
 			"file_name": f"{doc.name}.pdf",
 			"print_format": notif.print_format,
+			# the page count needs the print itself, which a preview does not make: it says so
+			"image_if_one_page": attachments.single_page_pdf_as_image_enabled(),
 		}
 	if notif.attach_field:
 		url = doc.get(notif.attach_field)

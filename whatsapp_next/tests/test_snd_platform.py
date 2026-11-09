@@ -437,6 +437,27 @@ class TestSndPlatform(IntegrationTestCase):
 			with self.assertRaises(pex.NotSupportedError):
 				provider.update_webhook_endpoint("WAWE-1", "Active", None, None)
 
+	def test_a_paypal_payment_still_clearing_is_an_answer_not_an_error(self):
+		"""The platform answers `{ok: false, state: pending | not_approved}` for a PayPal order it
+		could not capture yet: that reaches the billing screen as the state it names (its "PayPal is
+		still processing" banner), not as an error with no text. Any other endpoint's `ok: false`
+		still raises."""
+		provider = _provider()
+		for state in ("pending", "not_approved", "failed"):
+			answer, _req = self._call(
+				provider,
+				"confirm_paypal_topup",
+				"ORDER-1",
+				response=_Resp(200, {"message": {"ok": False, "state": state}}),
+			)
+			self.assertEqual(answer, {"ok": False, "state": state})
+		with self.assertRaises(pex.ProviderError):
+			self._call(
+				provider,
+				"renew_subscription",
+				response=_Resp(200, {"message": {"ok": False, "error": "Wallet too low"}}),
+			)
+
 	def test_account_fallback_to_legacy_calls(self):
 		provider = _provider()
 		responses = iter(

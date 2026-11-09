@@ -126,6 +126,33 @@ class TestInboundMedia(IntegrationTestCase):
 			inbound.fetch_media(doc.name)
 			again.assert_not_called()
 
+	def test_a_passing_failure_says_try_again_not_gone(self):
+		"""Asked by a person, a download that fails for a passing reason (network, platform, rate
+		limit) says "try again"; a file WhatsApp no longer has is `None` ("no longer available").
+		The background job never raises."""
+		from whatsapp_next.exceptions import WAProviderUnavailableError
+		from whatsapp_next.services import inbound
+
+		doc = frappe.get_doc(
+			{
+				"doctype": "WhatsApp Inbound Message",
+				"message_type": "Image",
+				"provider_message_id": f"MEDIA-{frappe.generate_hash(length=6)}",
+				"media_url": MEDIA_URL,
+				"command_status": "None",
+			}
+		)
+		doc.flags.ignore_mandatory = True
+		doc.insert(ignore_permissions=True)
+		provider = _provider()
+		with patch("whatsapp_next.providers.registry.get_provider", return_value=provider):
+			with patch.object(provider, "download_media", side_effect=pex.TransientError("down")):
+				self.assertIsNone(inbound.fetch_media(doc.name))
+				with self.assertRaises(WAProviderUnavailableError):
+					inbound.fetch_media(doc.name, asked=True)
+			with patch.object(provider, "download_media", side_effect=pex.NotFoundError("gone")):
+				self.assertIsNone(inbound.fetch_media(doc.name, asked=True))
+
 	def test_oversized_media_is_refused(self):
 		provider = _provider()
 		with patch.object(provider._session, "get", return_value=_Resp(200, b"x" * 2048)):

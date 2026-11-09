@@ -839,7 +839,7 @@ frappe.provide("sanad.ui");
 			else {
 				const a = p.attachment;
 				const file = a
-					? `<div class="sanad-ae__file"><span class="sanad-ae__file-ico" aria-hidden="true">${sanad.ui.ico(a.message_type === "Image" ? "image" : "doc", "md")}</span><span><strong dir="ltr">${esc(a.file_name || __("No file in this record"))}</strong><span>${esc(a.message_type === "Image" ? __("Image") : __("Document"))}${a.missing ? ` · ${esc(__("empty in this record"))}` : ""}</span></span></div>`
+					? `<div class="sanad-ae__file"><span class="sanad-ae__file-ico" aria-hidden="true">${sanad.ui.ico(a.message_type === "Image" ? "image" : "doc", "md")}</span><span><strong dir="ltr">${esc(a.file_name || __("No file in this record"))}</strong><span>${esc(a.message_type === "Image" ? __("Image") : __("Document"))}${a.image_if_one_page ? ` · ${esc(__("sent as an image when it is one page"))}` : ""}${a.missing ? ` · ${esc(__("empty in this record"))}` : ""}</span></span></div>`
 					: "";
 				bubble = `<div class="sanad-ae__bubble">${file}${p.message ? `<div class="sanad-ae__bubble-text" dir="auto">${esc(p.message)}</div>` : ""}<span class="sanad-ae__bubble-time">${sanad.ui.ico("read", "xs")}</span></div>`;
 			}

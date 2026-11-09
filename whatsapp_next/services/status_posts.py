@@ -19,6 +19,7 @@ from whatsapp_next.services import audit, devices
 POST = "WhatsApp Status Post"
 STATUS = "allow_status"
 LIFETIME_HOURS = 24
+STUCK_MINUTES = 5  # a post in `Posting` longer than this was left by a run that died
 MAX_MEDIA_BYTES = 16 * 1024 * 1024
 FONTS = {"Standard": 0, "Script": 2, "Bold": 6, "Rounded": 7, "Display": 8, "Typewriter": 10}
 
@@ -58,15 +59,25 @@ def post_now(name: str, *, user: str | None = None) -> str:
 	from whatsapp_next.providers import registry
 
 	require_plan()
-	doc = frappe.get_doc(POST, name)
+	doc = frappe.get_doc(POST, name, for_update=True)
 	if doc.state not in ("Draft", "Scheduled", "Failed", "Posting"):
 		frappe.throw(_("This status was already posted"), WAStateConflictError)
+	# a post being posted is not posted again (a second press posted it twice); one left in
+	# `Posting` by a run that died is taken again after a few minutes
+	if doc.state == "Posting" and get_datetime(doc.modified) > add_to_date(
+		now_datetime(), minutes=-STUCK_MINUTES
+	):
+		frappe.throw(_("This status is being posted now"), WAStateConflictError)
 	platform_device = devices.platform_device(doc.device, connected=True)
 	doc.db_set("state", "Posting")
+	# kept before the platform is asked, and the failure after it: a request that raises rolls
+	# its transaction back, which took the `Failed` state and its reason with it
+	frappe.db.commit()  # nosemgrep - the state must outlive the request's rollback
 	try:
 		status_id = registry.get_provider().post_status(platform_device, _payload(doc))
 	except Exception as exc:
 		doc.db_set({"state": "Failed", "error": str(exc)[:500]})
+		frappe.db.commit()  # nosemgrep - see above
 		raise
 	at = now_datetime()
 	doc.db_set(

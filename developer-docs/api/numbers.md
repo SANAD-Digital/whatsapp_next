@@ -349,3 +349,106 @@ rows; never the IP address or the raw row).
 ```js
 const { rows } = await sanad.ui.call("numbers.get_conversation_log", { phone_e164: "+966500000002" });
 ```
+
+---
+
+## list_sync_devices
+
+Devices a contacts fetch ("Fetch from WhatsApp") can read: registered on the platform
+(`platform_device` set) and not disabled.
+
+- **Path:** `whatsapp_next.api.v1.numbers.list_sync_devices`
+- **Methods:** GET, POST
+- **Roles:** `MANAGER`
+
+No arguments.
+
+**Returns** — `Connected` devices first, then the default device, then the rest; within each band
+the device heard from most recently (`last_status_event_at`) comes first. `phone` is the device's
+`phone` field as entered. `synced_at` is the latest `synced_at` of the `WhatsApp Number` rows this
+device synced, or `null`.
+
+```json
+[
+  { "name": "WA-DEV-001", "device_name": "Sales", "phone": "0501234567", "status": "Connected", "is_default": true, "synced_at": "2026-11-08 09:12:00" },
+  { "name": "WA-DEV-002", "device_name": "Support", "phone": "0507654321", "status": "Disconnected", "is_default": false, "synced_at": null }
+]
+```
+
+**Realtime:** none.
+
+```js
+const devices = await sanad.ui.call("numbers.list_sync_devices", {});
+```
+
+---
+
+## sync_from_device
+
+Starts fetching the device's WhatsApp address book and groups into the Numbers table
+(`services/numbers_sync.py`), as a `long` job (`wa-numbers-sync-<device>`, de-duplicated, 900 s
+timeout).
+
+- **Path:** `whatsapp_next.api.v1.numbers.sync_from_device`
+- **Methods:** POST
+- **Roles:** `MANAGER`
+
+| Argument | Type | Required | Meaning |
+|---|---|---|---|
+| `device` | str | yes | `WhatsApp Device` name. |
+
+The job, for each contact: a number already here gets `synced_device` / `synced_at` and the name
+it is saved under (`saved_name`; also `display_name` when it is not linked to a Contact); a new one
+is added as `Not Linked`. A number that matches a system Contact but is not linked yet is linked
+through `permissions.link_number` (audited `Number Linked`); one the caller may not link is counted
+in `link_skipped`. Groups become `Group` rows and take their current subject. Message counters are
+never touched. The run is audited `Numbers Synced` with the counts. The sync state is set to
+`running` before the job is queued.
+
+**Returns**
+
+```json
+{ "queued": true, "device": "WA-DEV-001" }
+```
+
+**Errors:** `WANotFoundError` (404) — device unknown. Provider failures happen in the job and
+arrive on the realtime event and in `get_sync_state`.
+
+**Realtime:** `wa:numbers:synced` to the caller when the job ends:
+`{device, fetched, added, updated, unchanged, linked, groups, link_skipped, invalid}`, or
+`{device, error}` on failure.
+
+```js
+await sanad.ui.call("numbers.sync_from_device", { device: "WA-DEV-001" });
+```
+
+---
+
+## get_sync_state
+
+Where the last fetch of the device stands, for a page that did not hear `wa:numbers:synced`. The
+state lives in the cache for one hour.
+
+- **Path:** `whatsapp_next.api.v1.numbers.get_sync_state`
+- **Methods:** GET, POST
+- **Roles:** `MANAGER`
+
+| Argument | Type | Required | Meaning |
+|---|---|---|---|
+| `device` | str | yes | `WhatsApp Device` name (not checked; an unknown name answers `none`). |
+
+**Returns** — one of:
+
+```json
+{ "status": "running", "at": "2026-11-09 10:00:00" }
+{ "status": "done", "at": "2026-11-09 10:00:40",
+  "stats": { "fetched": 412, "added": 30, "updated": 12, "unchanged": 368, "linked": 5, "groups": 6, "link_skipped": 0, "invalid": 2 } }
+{ "status": "failed", "at": "2026-11-09 10:00:40", "error": "Device is offline" }
+{ "status": "none" }
+```
+
+**Realtime:** none.
+
+```js
+const state = await sanad.ui.call("numbers.get_sync_state", { device: "WA-DEV-001" });
+```
