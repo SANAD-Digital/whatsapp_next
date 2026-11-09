@@ -211,8 +211,8 @@ bench build --app whatsapp_next
 
 قالب الطباعة الذي اختار كروم لإنشاء PDF يرسمه برنامج كروم الموجود في `frappe-bench/chromium`، وهذا
 البرنامج يحتاج مكتبات نظام لا تكون على خادم جديد. بدونها يظهر الخطأ
-`libnss3.so: cannot open shared object file` ثم «Chromium took too long to start». خدمة Frappe Cloud
-تثبّتها من `pyproject.toml`. وعلى خادمك:
+`libnss3.so: cannot open shared object file` ثم «Chromium took too long to start». على Frappe Cloud
+لا تفعل شيئاً: صورة الخادم عندهم فيها هذه المكتبات وكروم نفسه. وعلى خادمك:
 
 </div>
 

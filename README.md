@@ -210,8 +210,8 @@ and grant it only what your functions need before you use commands.
 
 A Print Format whose **PDF Generator** is Chrome is drawn by the Chromium Frappe keeps in
 `frappe-bench/chromium`, which needs system libraries a bare server lacks (`libnss3.so: cannot open
-shared object file`, then "Chromium took too long to start"). Frappe Cloud installs them from
-`pyproject.toml`. On a bench you run yourself:
+shared object file`, then "Chromium took too long to start"). On Frappe Cloud there is nothing to
+do: its bench image carries these libraries and Chromium itself. On a bench you run yourself:
 
 ```bash
 sudo apps/whatsapp_next/scripts/install_pdf_deps.sh   # as root, from frappe-bench
