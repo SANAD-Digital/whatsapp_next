@@ -321,20 +321,27 @@ def _recipient_attachment(msg, recipient, campaign_doc) -> dict[str, Any]:
 		and recipient.source_doctype
 		and recipient.source_name
 	):
-		pdf = attachments.render_print_pdf(
-			recipient.source_doctype,
-			recipient.source_name,
-			print_format=msg.print_format,
-			file_name=templates.render_text(
-				msg.file_name_template,
-				{"doc": frappe._dict(name=recipient.source_name), "recipient": recipient},
-				fallback=recipient.source_name,
-			),
+		pdf, message_type = attachments.as_sent(
+			attachments.render_print_pdf(
+				recipient.source_doctype,
+				recipient.source_name,
+				print_format=msg.print_format,
+				file_name=templates.render_text(
+					msg.file_name_template,
+					{"doc": frappe._dict(name=recipient.source_name), "recipient": recipient},
+					fallback=recipient.source_name,
+				),
+			)
 		)
 		url = attachments.save_private_file(
 			pdf.content, pdf.file_name, ("WhatsApp Campaign", campaign_doc.name)
 		)
-		return {"attachment": url, "file_name": pdf.file_name, "mime_type": pdf.mime_type}
+		return {
+			"message_type": message_type,
+			"attachment": url,
+			"file_name": pdf.file_name,
+			"mime_type": pdf.mime_type,
+		}
 	return {"attachment": msg.attachment}
 
 

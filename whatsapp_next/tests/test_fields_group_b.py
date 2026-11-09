@@ -287,6 +287,7 @@ EXPECTED: dict[str, list[tuple[str, str, list[str] | None]]] = {
 		("attach_print", "Check", None),
 		("print_format", "Link", None),
 		("letter_head", "Link", None),
+		("attach_to_document", "Check", None),
 		("attach_field", "Data", None),
 		("recipients", "Table", None),
 		("set_property_after_alert", "Select", None),

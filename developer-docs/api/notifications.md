@@ -156,10 +156,17 @@ Every one is **Manager** (`MANAGER`) plus the document permission it names. The 
 allow-list: the notification's own fields (`notification_name`, `enabled`, `document_type`,
 `event`, `date_changed`, `days_in_advance`, `datetime_changed`, `minutes_offset`,
 `value_changed`, `method`, `condition_type` (`Python` | `Filters`), `filters` (Frappe's filter list, stored as JSON; each field must exist on the document type), `condition`, `device`, `template`, `message`, `message_type`,
-`attach_print`, `print_format`, `letter_head`, `attach_field`, `set_property_after_alert`,
-`property_value`), `recipients` rows (`recipient_type`, `receiver_by_document_field`,
+`attach_print`, `print_format`, `letter_head`, `attach_to_document`, `attach_field`,
+`set_property_after_alert`, `property_value`), `recipients` rows (`recipient_type`, `receiver_by_document_field`,
 `linked_document_field`, `linked_mobile_fieldname`, `phone`, `condition`) and `name` when
 editing. Any other key → `WAValidationError`.
+
+`attach_to_document` ("Keep the sent file on the document", 0 by default): off, the print is
+stored attached to nothing and Frappe attaches it to the `WhatsApp Log` that sends it, so the
+document's attachments do not grow with every send and the file goes with the message when
+retention deletes it; on, it is attached to the document as before. A one-page print becomes its
+PNG before it is stored (Settings → Policy), so one file is kept per message, never a PDF beside
+its picture.
 
 | Endpoint | Methods | Arguments | Returns |
 |---|---|---|---|

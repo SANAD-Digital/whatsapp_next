@@ -194,6 +194,59 @@ class TestAttachments(IntegrationTestCase):
 		pdf = attachments.render_print_pdf("Role", "System Manager", print_format=name)
 		self.assertTrue(pdf.content.startswith(b"%PDF"))
 
+	def test_the_print_formats_page_size_reaches_wkhtmltopdf(self):
+		"""wkhtmltopdf takes the page size from Print Settings only; the format's own size — its
+		"Paper size" (Frappe 16) or a CSS `@page { size }` — is handed to it (owner, 2026-11-10)."""
+		from unittest.mock import patch
+
+		def fmt(**values):
+			return frappe._dict({"paper_size": None, "css": "", "html": "", **values})
+
+		cases = [
+			(fmt(paper_size="A5"), {"page-size": "A5"}),
+			(
+				fmt(paper_size="Receipt 80 mm"),
+				{"page-size": "Custom", "page-width": "80mm", "page-height": "297mm"},
+			),
+			(
+				fmt(css="@page { margin: 0; size: a5 landscape; }"),
+				{"page-size": "A5", "orientation": "Landscape"},
+			),
+			(
+				fmt(html="<style>@page{size:148mm 210mm}</style><p>x</p>"),
+				{"page-size": "Custom", "page-width": "148mm", "page-height": "210mm"},
+			),
+			(fmt(css="@page { size: auto; }"), {}),
+			(fmt(css=".print-format { color: red; }"), {}),
+		]
+		with patch.object(frappe.db, "exists", return_value=True):
+			for doc, expected in cases:
+				with patch.object(frappe, "get_cached_doc", return_value=doc):
+					self.assertEqual(attachments.page_options("Any"), expected, doc)
+		self.assertEqual(attachments.page_options(None), {})
+
+		# and a real render: an A5 format comes out A5 (420 × 595 pt), not the A4 of Print Settings
+		pymupdf = attachments._pymupdf()
+		name = "WA Test A5 Format"
+		if not frappe.db.exists("Print Format", name):
+			frappe.get_doc(
+				{
+					"doctype": "Print Format",
+					"name": name,
+					"doc_type": "Role",
+					"standard": "No",
+					"custom_format": 1,
+					"print_format_type": "Jinja",
+					"pdf_generator": "wkhtmltopdf",
+					"html": "<style>@page { size: A5; }</style><p>{{ doc.name }}</p>",
+				}
+			).insert(ignore_permissions=True)
+		self.addCleanup(lambda: frappe.delete_doc("Print Format", name, force=True))
+		pdf = attachments.render_print_pdf("Role", "System Manager", print_format=name)
+		if pymupdf is not None:
+			with pymupdf.open(stream=pdf.content, filetype="pdf") as doc:
+				self.assertEqual((round(doc[0].rect.width), round(doc[0].rect.height)), (420, 595))
+
 	def test_render_print_pdf_and_png(self):
 		pdf = attachments.render_print_pdf("Role", "System Manager", language="ar", file_name="wa-test-role")
 		self.assertTrue(pdf.content.startswith(b"%PDF"))

@@ -224,6 +224,8 @@ body.sanad-ae-open { overflow: hidden; }
 	&__label { font-size: 13px; font-weight: 600; color: var(--wa-ink-2); }
 	&__sub { font-size: 12px; font-weight: 600; color: var(--wa-ink-3); }
 	&__hint { margin: 0; font-size: 12px; line-height: 1.6; color: var(--wa-ink-3); }
+	&__keep { margin-top: 16px; }
+	&__keep + &__hint { margin-top: 8px; }
 	&__empty { margin: 0; font-size: 13px; color: var(--wa-ink-4); }
 
 	&__field { display: flex; flex-direction: column; gap: 8px; min-inline-size: 0; margin: 0; }

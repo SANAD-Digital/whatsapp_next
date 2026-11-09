@@ -15,8 +15,8 @@ four cards that tick themselves green once complete:
    written for this document type first, with a "New template" card and "Edit this template";
    both open the host's template editor, and a template saved there is chosen. Written text
    inserts the document's fields as `{{ doc.field }}` and can be saved as a template. Then what it
-   attaches: nothing, a print of the record (print format, letter head) or a file in one of its
-   Attach fields.
+   attaches: nothing, a print of the record (print format, letter head, and whether the sent
+   file is also kept on the record — off by default) or a file in one of its Attach fields.
 3. **To whom** — a number in the document (a phone field or a Contact link), a number through a
    linked record, a fixed number, or the host's contact picker; chips, each removable.
 4. **From** — the sending device as a Link field.

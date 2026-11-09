@@ -193,6 +193,10 @@ def render_print_pdf(
 		frappe.local.lang = language
 
 	def render(engine: str | None):
+		# wkhtmltopdf reads the page size only from Print Settings: the format's own size is
+		# handed to it here. Chrome reads the format's size itself.
+		wkhtmltopdf = (engine or pdf_engine(print_format)) == "wkhtmltopdf"
+		options = page_options(print_format) if wkhtmltopdf else {}
 		return frappe.get_print(
 			doctype,
 			name,
@@ -201,6 +205,7 @@ def render_print_pdf(
 			no_letterhead=1 if letter_head == "" else 0,
 			letterhead=letter_head or None,
 			**({"pdf_generator": engine} if engine else {}),
+			**({"pdf_options": options} if options else {}),
 		)
 
 	try:
@@ -228,6 +233,50 @@ def render_print_pdf(
 	if isinstance(pdf, str):
 		pdf = pdf.encode("latin-1")
 	return RenderedPdf(content=pdf, file_name=safe_file_name(file_name or name, ext="pdf"))
+
+
+# what wkhtmltopdf (Qt) knows by name, keyed by the lower-case spelling
+_PAGE_NAMES = {
+	n.lower(): n
+	for n in [f"A{i}" for i in range(10)]
+	+ [f"B{i}" for i in range(11)]
+	+ ["C5E", "Comm10E", "DLE", "Executive", "Folio", "Ledger", "Legal", "Letter", "Tabloid"]
+}
+_RECEIPT_WIDTHS = {"Receipt 80 mm": "80mm", "Receipt 58 mm": "58mm"}  # Frappe 16's paper sizes
+_PAGE_RULE = re.compile(r"@page\s*(?::[a-z-]+\s*)?\{([^}]*)\}", re.IGNORECASE)
+_PAGE_SIZE = re.compile(r"(?:^|;)\s*size\s*:\s*([^;!]+)", re.IGNORECASE)
+_LENGTH = re.compile(r"\d+(?:\.\d+)?(?:mm|cm|in)", re.IGNORECASE)
+
+
+def page_options(print_format: str | None) -> dict[str, str]:
+	"""The page size a Print Format sets, as wkhtmltopdf options (owner, 2026-11-10): its "Paper
+	size" (Frappe 16; a receipt is its width on an A4-high page), else a CSS `@page { size: … }`
+	in its own CSS or HTML — a page name (A5, Letter…), two lengths in mm / cm / in, and
+	`landscape`. `{}` when it sets none, and Print Settings decides as before."""
+	if not print_format or not frappe.db.exists("Print Format", print_format):
+		return {}
+	pf = frappe.get_cached_doc("Print Format", print_format)
+	paper = pf.get("paper_size")
+	if paper in _RECEIPT_WIDTHS:
+		return {"page-size": "Custom", "page-width": _RECEIPT_WIDTHS[paper], "page-height": "297mm"}
+	if paper and paper.lower() in _PAGE_NAMES:
+		return {"page-size": _PAGE_NAMES[paper.lower()]}
+	size = None
+	for rule in _PAGE_RULE.findall(f"{pf.get('css') or ''}\n{pf.get('html') or ''}"):
+		for value in _PAGE_SIZE.findall(rule):
+			size = value.strip()  # the last one wins, as in CSS
+	if not size:
+		return {}
+	options: dict[str, str] = {}
+	parts = size.lower().split()
+	lengths = [p for p in parts if _LENGTH.fullmatch(p)]
+	if lengths:
+		options = {"page-size": "Custom", "page-width": lengths[0], "page-height": lengths[-1]}
+	elif named := next((_PAGE_NAMES[p] for p in parts if p in _PAGE_NAMES), None):
+		options = {"page-size": named}
+	if "landscape" in parts:
+		options["orientation"] = "Landscape"
+	return options
 
 
 def pdf_engine(print_format: str | None) -> str:
@@ -337,20 +386,50 @@ def is_pdf(file_name: str | None, mime_type: str | None) -> bool:
 	return (mime_type or "").lower() == "application/pdf" or (file_name or "").lower().endswith(".pdf")
 
 
-def pdf_as_image(
-	file_url: str, file_name: str | None, attached_to: tuple[str, str] | None = None
-) -> dict[str, str] | None:
-	"""A one-page PDF stored again as a PNG, so WhatsApp shows it in the chat instead of as a file
-	to open (WhatsApp Settings → Policy → "Send a one-page PDF as an image", owner 2026-11-09).
-	Returns `{attachment, file_name, mime_type}` of the new image, or `None` to send the PDF as it
-	is: a longer PDF, a PDF that cannot be read, PyMuPDF missing. Never raises — a PDF that goes
-	out beats a message that does not."""
+def single_page_pdf_as_image_enabled() -> bool:
+	"""WhatsApp Settings → Policy → "Send a one-page PDF as an image"; on when never saved (its
+	default)."""
+	value = frappe.get_cached_doc("WhatsApp Settings").get("single_page_pdf_as_image")
+	return True if value is None else bool(int(value or 0))
+
+
+def _png_name(file_name: str | None) -> str:
+	stem = re.sub(r"\.pdf$", "", file_name or "", flags=re.IGNORECASE) or "document"
+	return safe_file_name(stem, ext="png")
+
+
+def as_sent(pdf: RenderedPdf) -> tuple[RenderedPdf, str]:
+	"""What a freshly printed PDF goes out as: `(file, message_type)`. A one-page PDF becomes a
+	PNG `Image` while the setting is on, before anything is stored, so the site keeps one file per
+	message and not a PDF beside its picture; anything else stays a PDF `Document`."""
+	if single_page_pdf_as_image_enabled():
+		png = single_page_pdf_png(pdf.content)
+		if png:
+			return RenderedPdf(
+				content=png, file_name=_png_name(pdf.file_name), mime_type="image/png"
+			), "Image"
+	return pdf, "Document"
+
+
+def pdf_as_image(file_url: str, file_name: str | None) -> dict[str, str] | None:
+	"""A stored one-page PDF (an uploaded file) stored again as a PNG, so WhatsApp shows it in the
+	chat instead of as a file to open (owner 2026-11-09). The PNG is attached where the PDF is, and
+	the PDF itself is left alone. Returns `{attachment, file_name, mime_type}` of the image, or
+	`None` to send the PDF as it is: a longer PDF, one that cannot be read, PyMuPDF missing. Never
+	raises — a PDF that goes out beats a message that does not."""
 	try:
 		png = single_page_pdf_png(as_bytes(file_url))
 		if not png:
 			return None
-		stem = re.sub(r"\.pdf$", "", file_name or "", flags=re.IGNORECASE) or "document"
-		name = safe_file_name(stem, ext="png")
+		source = frappe.db.get_value(
+			"File", {"file_url": file_url}, ["attached_to_doctype", "attached_to_name"], as_dict=True
+		)
+		attached_to = (
+			(source.attached_to_doctype, source.attached_to_name)
+			if source and source.attached_to_doctype and source.attached_to_name
+			else None
+		)
+		name = _png_name(file_name)
 		return {
 			"attachment": save_private_file(png, name, attached_to),
 			"file_name": name,

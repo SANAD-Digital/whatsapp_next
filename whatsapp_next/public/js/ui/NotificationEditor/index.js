@@ -172,6 +172,7 @@ frappe.provide("sanad.ui");
 				attach: cint(n.attach_print) ? "print" : n.attach_field ? "field" : "none",
 				print_format: n.print_format || null,
 				letter_head: n.letter_head || null,
+				attach_to_document: cint(n.attach_to_document) ? 1 : 0,
 				attach_field: n.attach_field || "",
 				message_type: n.message_type || "Text",
 				set_property_after_alert: n.set_property_after_alert || "",
@@ -212,6 +213,7 @@ frappe.provide("sanad.ui");
 				attach_print: d.attach === "print" ? 1 : 0,
 				print_format: d.attach === "print" ? d.print_format : null,
 				letter_head: d.attach === "print" ? d.letter_head : null,
+				attach_to_document: d.attach === "print" && d.attach_to_document ? 1 : 0,
 				attach_field: d.attach === "field" ? d.attach_field || null : null,
 				set_property_after_alert: d.set_property_after_alert || null,
 				property_value: d.set_property_after_alert ? d.property_value : null,
@@ -539,7 +541,13 @@ frappe.provide("sanad.ui");
 								? `<div class="sanad-ae__cols">
 									<div class="sanad-ae__field"><span class="sanad-ae__label">${esc(__("Print format"))}</span>${this.picker("print_format", d.print_format, __("Default"), d.print_format)}</div>
 									<div class="sanad-ae__field"><span class="sanad-ae__label">${esc(__("Letter head"))}</span>${this.picker("letter_head", d.letter_head, __("None"), d.letter_head)}</div>
-								</div>`
+								</div>
+								<label class="wa-toggle sanad-ae__keep">
+									<input type="checkbox" data-ch="attach_to_document" ${d.attach_to_document ? "checked" : ""}>
+									<span class="wa-toggle__track"></span>
+									<span class="wa-toggle__label">${esc(__("Keep the sent file on the document"))}</span>
+								</label>
+								<p class="sanad-ae__hint">${esc(__("Off: the printed file is kept with the sent message only, and the document's attachments stay as they were."))}</p>`
 								: d.attach === "field"
 									? this.select("attach_field", attach_fields, d.attach_field, __("Choose the field that holds the file…"), __("Attachment field"))
 									: ""
@@ -1086,6 +1094,10 @@ frappe.provide("sanad.ui");
 			const key = $t.data("ch");
 			const d = this.draft;
 			const v = $t.val();
+			if (key === "attach_to_document") {
+				d.attach_to_document = $t.is(":checked") ? 1 : 0;
+				return this.changed({ preview: false });
+			}
 			if (key === "enabled") {
 				d.enabled = $t.is(":checked") ? 1 : 0;
 				return this.changed({ preview: false });

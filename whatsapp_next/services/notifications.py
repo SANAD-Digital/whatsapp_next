@@ -315,16 +315,24 @@ def _body(notification, ctx: dict[str, Any]) -> tuple[str | None, str | None]:
 
 def _attachment(notification, doc) -> dict[str, Any]:
 	if cint(notification.attach_print):
-		pdf = attachments.render_print_pdf(
-			doc.doctype,
-			doc.name,
-			print_format=notification.print_format or None,
-			letter_head=notification.letter_head or None,
-			file_name=doc.name,
+		pdf, message_type = attachments.as_sent(
+			attachments.render_print_pdf(
+				doc.doctype,
+				doc.name,
+				print_format=notification.print_format or None,
+				letter_head=notification.letter_head or None,
+				file_name=doc.name,
+			)
 		)
-		url = attachments.save_private_file(pdf.content, pdf.file_name, (doc.doctype, doc.name))
+		# "Keep the sent file on the document" (off by default, owner 2026-11-10): off, the print is
+		# stored attached to nothing, and Frappe attaches it to the WhatsApp Log whose `attachment`
+		# field names it (`attach_files_to_document`), so it goes with the message on retention
+		keep_on_document = cint(notification.get("attach_to_document"))
+		url = attachments.save_private_file(
+			pdf.content, pdf.file_name, (doc.doctype, doc.name) if keep_on_document else None
+		)
 		return {
-			"message_type": "Document",
+			"message_type": message_type,
 			"attachment": url,
 			"file_name": pdf.file_name,
 			"mime_type": pdf.mime_type,

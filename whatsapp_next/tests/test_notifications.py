@@ -137,6 +137,63 @@ class TestNotifications(IntegrationTestCase):
 			svc.on_doc_event(todo, "on_update_after_submit")
 		self.assertEqual(len([c for c in enq.call_args_list if c.kwargs.get("doc_event") == "Method"]), 1)
 
+	def test_the_sent_print_stays_off_the_document_unless_asked(self):
+		"""Notification → "Keep the sent file on the document" (off by default, owner 2026-11-10):
+		off, the print is attached to the sent message and the document's attachments do not grow;
+		on, it is attached to the document. A one-page print goes out as one PNG, no PDF beside it."""
+		from whatsapp_next.services import attachments
+
+		def files_on(doctype, name):
+			return frappe.get_all(
+				"File",
+				filters={"attached_to_doctype": doctype, "attached_to_name": name},
+				fields=["file_name", "file_url"],
+			)
+
+		def cleanup(todo):
+			for f in frappe.get_all(
+				"File",
+				filters={"file_name": ("like", f"{todo}%")},
+				pluck="name",
+			):
+				frappe.delete_doc("File", f, ignore_permissions=True, force=True)
+
+		one_page = attachments._pymupdf() is not None
+		ensure_settings(single_page_pdf_as_image=1)
+		for keep in (0, 1):
+			delete_all("WhatsApp Notification", {"notification_name": ("like", "NotifTest%")})
+			notif = _notification(message_type="Document", attach_print=1, attach_to_document=keep)
+			self.assertEqual(
+				frappe.db.get_value("WhatsApp Notification", notif.name, "attach_to_document"), keep
+			)
+			todo = frappe.get_doc({"doctype": "ToDo", "description": f"notif-test keep {keep}"}).insert(
+				ignore_permissions=True
+			)
+			self.addCleanup(cleanup, todo.name)
+			with patch.object(frappe, "enqueue"):
+				svc.send_for_document(notif.name, "ToDo", todo.name, "New")
+			log = frappe.get_all(
+				"WhatsApp Log",
+				filters={"notification": notif.name, "reference_name": todo.name},
+				fields=["name", "attachment", "message_type", "file_name"],
+			)[0]
+			self.assertEqual(log.message_type, "Image" if one_page else "Document")
+			on_doc = files_on("ToDo", todo.name)
+			on_msg = files_on("WhatsApp Log", log.name)
+			if keep:
+				# Frappe also gives the message a File row pointing at the same stored file
+				self.assertEqual([f.file_url for f in on_doc], [log.attachment])
+			else:
+				self.assertEqual((on_doc, [f.file_url for f in on_msg]), ([], [log.attachment]))
+			# one stored file per message (the PNG of a one-page print), no PDF left beside it
+			stored = {
+				f.file_url
+				for f in frappe.get_all(
+					"File", filters={"file_name": ("like", f"{todo.name}%")}, fields=["file_url"]
+				)
+			}
+			self.assertEqual(stored, {log.attachment})
+
 	def test_send_for_document(self):
 		contact = ensure_contact("Notif Contact", PHONE)
 		notif = _notification(
