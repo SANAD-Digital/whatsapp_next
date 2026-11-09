@@ -203,6 +203,7 @@ frappe.provide("whatsapp_next.campaign");
 				wrapper: dialog.get_field("phone").$wrapper,
 				label: __("Send it to"),
 				required: true,
+				value: ui.test_phone.get() || undefined,
 				hint: __("Only this number receives it. Nothing is written to the campaign."),
 			});
 			const $preview = dialog.get_field("preview").$wrapper;
@@ -244,6 +245,7 @@ frappe.provide("whatsapp_next.campaign");
 			ui.call("simulator.send_test", { device: this.ctx.doc.device, phone: phone.e164 || phone.phone_e164, body: this.test_body })
 				.then((r) => {
 					dialog.hide();
+					ui.test_phone.set(phone.e164 || phone.phone_e164);
 					ui.Toast.success(__("Test message sent to {0}.", [ui.phone(phone.e164 || phone.phone_e164)]), {
 						action: r && r.outbound ? { label: __("Open it"), onclick: () => frappe.set_route("Form", "WhatsApp Log", r.outbound) } : undefined,
 					});

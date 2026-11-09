@@ -12,7 +12,7 @@ from frappe.utils import add_to_date, now_datetime
 
 from whatsapp_next.api.v1 import bulk_send as api
 from whatsapp_next.exceptions import WAPermissionError, WAValidationError
-from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_device
+from whatsapp_next.tests.conftest_frappe import as_user, delete_all, ensure_device, ensure_settings
 
 GROUP = "BulkTest Group"
 BLACK = "BulkTest Blacklist"
@@ -41,6 +41,7 @@ class TestBulkSend(IntegrationTestCase):
 	@classmethod
 	def setUpClass(cls):
 		super().setUpClass()
+		ensure_settings()  # the local numbers below are Saudi: the region is pinned, whatever the site's
 		cls.device = ensure_device("BulkTest Device", "WAD-TEST-BULK", phone="+966500940000")
 		frappe.db.set_value("WhatsApp Device", cls.device, "status", "Connected")
 		cls.group = _group(GROUP, "Other", [P1, P2])

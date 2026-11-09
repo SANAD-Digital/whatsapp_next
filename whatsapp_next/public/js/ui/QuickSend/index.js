@@ -28,6 +28,9 @@ sanad.ui.QuickSend = class QuickSend {
 	 */
 	constructor(opts = {}) {
 		this.opts = Object.assign({}, opts);
+		// sending a template from its own window is trying it: the number last tested fills the
+		// (still editable) phone field, and the number it goes to is remembered (owner, 2026-11-09)
+		this.trying = Boolean(opts.template && !opts.phone && !opts.contact && !opts.number && !opts.jid);
 		this.api = Object.assign({ get_context: "quick_send.get_context", preview: "quick_send.preview", send: "quick_send.send" }, opts.api || {});
 		this.context = null;
 		this.recipient = null;
@@ -104,6 +107,8 @@ sanad.ui.QuickSend = class QuickSend {
 			this.dialog.fields_dict.phone.$input.on("input", () => {
 				if (this.recipient) this.set_recipient(null);
 			});
+			const last = this.trying ? ui.test_phone.get() : "";
+			if (last) this.dialog.set_value("phone", last);
 		}
 		if (o.body) this.dialog.set_value("body", o.body);
 		if (o.device) this.dialog.set_value("device", o.device);
@@ -121,6 +126,8 @@ sanad.ui.QuickSend = class QuickSend {
 				this.context = ctx || {};
 				this.fill_options();
 				this.set_recipient(this.context.recipient);
+				// the remembered test number, looked up once the context is in (not before: it would be overwritten)
+				if (this.trying && (this.dialog.get_value("phone") || "").trim()) this.resolve_phone();
 				if (o.template) {
 					this.dialog.set_value("template", o.template);
 					this.on_template_change();
@@ -352,6 +359,7 @@ sanad.ui.QuickSend = class QuickSend {
 					queue_paused: __("The queue is paused; the message is sent after it resumes."),
 				});
 				sanad.ui.Toast.success(args.scheduled_at ? __("Message scheduled") : __("Message queued"));
+				if (this.trying && args.phone) ui.test_phone.set(args.phone);
 				typeof o.on_sent === "function" && o.on_sent(r);
 			})
 			.catch((err) => {

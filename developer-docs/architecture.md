@@ -192,8 +192,8 @@ comparison between phones goes through `normalize(raw, region=None)`:
   becomes `+`.
 - `@c.us` and `@s.whatsapp.net` JIDs become E.164. **Group (`@g.us`) and LID (`@lid`) JIDs are
   returned unchanged.**
-- A number with a leading `0` is parsed in the default region (`WhatsApp Settings.default_country`,
-  falling back to `SA`). A bare run of digits is tried as international first, then as national.
+- A number with a leading `0` is parsed in the default region: the country in System Settings,
+  falling back to `SA` (owner, 2026-11-09; WhatsApp Settings has no country of its own). A bare run of digits is tried as international first, then as national.
 - An invalid number returns `None`, and callers raise `WAInvalidPhoneError`.
 - `to_provider()` strips the `+` only at the provider boundary.
 

@@ -24,7 +24,9 @@ _ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "0123
 
 
 def default_region() -> str:
-	"""Return the ISO-3166 alpha-2 region used for national numbers (Settings → Country code)."""
+	"""Return the ISO-3166 alpha-2 region used for national numbers: the country in the site's
+	System Settings (owner, 2026-11-09 — WhatsApp Settings no longer has a country of its own: a
+	copy taken once went stale when the site's country changed)."""
 	region = None
 	if getattr(frappe.local, "site", None) and frappe.db:
 		region = frappe.local.cache.get("wa_default_region") if hasattr(frappe.local, "cache") else None
@@ -36,12 +38,8 @@ def default_region() -> str:
 
 
 def _region_from_settings() -> str | None:
-	country = None
 	try:
-		if frappe.db.exists("DocType", "WhatsApp Settings"):
-			country = frappe.db.get_single_value("WhatsApp Settings", "default_country")
-		if not country:
-			country = frappe.db.get_single_value("System Settings", "country")
+		country = frappe.db.get_single_value("System Settings", "country")
 	except Exception:
 		return None
 	if not country:

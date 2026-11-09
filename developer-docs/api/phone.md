@@ -19,8 +19,8 @@ Returns every calling region libphonenumber knows, and the site's default region
 
 Arguments: none.
 
-**Returns.** `default` is the site's region: WhatsApp Settings → `default_country`, else System
-Settings → country, else `SA`. The catalogue is cached for a day. Each country has these fields:
+**Returns.** `default` is the site's region: System Settings → country, else `SA`. Every phone
+field opens on it. The catalogue is cached for a day. Each country has these fields:
 
 | Field | Meaning |
 |---|---|

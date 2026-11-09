@@ -76,7 +76,6 @@ SECTIONS: dict[str, tuple[str, ...]] = {
 	),
 	"policy": (
 		"default_device",
-		"default_country",
 		"global_blacklist_group",
 		"send_only_to_known_numbers",
 		"import_past_messages",

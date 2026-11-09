@@ -48,7 +48,6 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"receipt_reply": "Small Text",
 		"reply_device": ("Link", "WhatsApp Device"),
 		"default_device": ("Link", "WhatsApp Device"),
-		"default_country": ("Link", "Country"),
 		"global_blacklist_group": ("Link", "WhatsApp Contact Group"),
 		"send_only_to_known_numbers": "Check",
 		"picker_sources": ("Table", "WhatsApp Settings Picker Source"),

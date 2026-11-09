@@ -68,8 +68,9 @@ bench --site <site> run-tests --app whatsapp_next --module whatsapp_next.tests.t
   `WAD-TEST-` / `WAD-APITEST-` (checked in `conftest_frappe.ensure_device`). Clean up with
   `conftest_frappe.delete_test_rows(doctype, filters)`, never a whole-table delete.
   `ensure_settings` restores any Settings field it changes.
-- `ensure_settings` also sets `default_country = Saudi Arabia`. Code must never assume a region
-  (D-037).
+- `ensure_settings` also pins the default region to Saudi Arabia for the test module (a patch of
+  `phone._region_from_settings`, undone when the module ends; System Settings are not touched).
+  A test with local numbers must call it. Code must never assume a region (D-037).
 - Five tests need `wkhtmltopdf` (PDF rendering). Without it they fail with `OSError`, which is an
   environment problem, not a code failure.
 - Browser checks: `scripts/browser_smoke.mjs` renders the screens headlessly. After touching the

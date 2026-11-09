@@ -131,7 +131,7 @@ frappe.provide("sanad.ui");
 				this.data = await this.opts.load(name);
 				this.draft = this.seed(this.data.alert);
 				this.clean = JSON.stringify(this.draft);
-				this.ui.test_phone = (this.data.me && this.data.me.phone) || "";
+				this.ui.test_phone = sanad.ui.test_phone.get() || (this.data.me && this.data.me.phone) || "";
 				this.render();
 				const $name = this.$root.find("[data-in=alert_name]");
 				if (!this.draft.name) $name.trigger("focus");
@@ -1396,6 +1396,7 @@ frappe.provide("sanad.ui");
 			this.draw_test();
 			try {
 				const r = await this.opts.send_test(this.payload(), phone);
+				sanad.ui.test_phone.set(r && r.phone_e164 ? r.phone_e164 : phone);
 				frappe.show_alert({ message: __("Test sent to {0}", [sanad.ui.phone(r && r.phone_e164 ? r.phone_e164 : phone)]), indicator: "green" });
 			} catch (err) {
 				frappe.show_alert({ message: err && err.message ? esc(err.message) : __("The test could not be sent"), indicator: "red" });
