@@ -8,6 +8,28 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
 
 ### Fixed
 
+- **The editor window no longer slides up when a drop-down opens near its bottom** (the device
+  picker): the window box clips its overflow (`overflow: clip`), which the browser cannot scroll,
+  and the column the drop-down is in scrolls it into view. Before, the header went off screen and
+  the footer sat mid-screen with blank space under it.
+- **"Create PDF" prints the record shown in the field** even when it was picked a moment before
+  (Frappe's Link control reports a pick only once the field is left), and its label no longer
+  overwrites its icon while the file is made.
+
+### Changed
+
+- **"Create PDF" in the alert and notification editors** (`alerts.make_file`,
+  `notifications.make_file`, `sanad.ui.open_file_in_tab`): the file the draft would attach — the
+  report's PDF or image for the first recipient, or the print of the preview's record — made now
+  and opened in a new tab. Nothing is saved or sent.
+- **Alert templates are the notification editor's cards** (`sanad.ui.template_cards`, shared): a
+  filter, "New template", "Edit this template" and "Save this text as a template", in place of a
+  drop-down. The alert editor gets the same template rows (`notifications_editor.templates_for`).
+- **A double click on a template card opens it to edit**, over the editor, in both editors; the
+  card stays chosen.
+
+### Fixed
+
 - **One-page PDFs went out as PDFs on customer servers**: Frappe reads a Check never saved in
   Settings as 0, so on every server that had not saved Settings since the update the option was
   off for the sending code while the Settings page (reading through `stored_or_default`) showed it

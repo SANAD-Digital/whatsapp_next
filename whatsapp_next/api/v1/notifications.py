@@ -70,6 +70,13 @@ def preview_draft(payload: dict, reference_name: str | None = None) -> dict[str,
 
 
 @api_endpoint(roles=MANAGER)
+def make_file(payload: dict, reference_name: str | None = None) -> dict[str, Any]:
+	"""The print the draft would attach, made now for one record to open in a new tab →
+	`{file_name, mime_type, content_b64}`; nothing is saved or sent. P: Manager + print."""
+	return notifications_editor.make_file(payload, reference_name)
+
+
+@api_endpoint(roles=MANAGER)
 def send_test(payload: dict, phone: str, reference_name: str | None = None) -> dict[str, Any]:
 	"""Send the draft once to `phone`, rendered for one record; audited `Test Send`. P: Manager."""
 	return notifications_editor.send_test(payload, phone, reference_name)

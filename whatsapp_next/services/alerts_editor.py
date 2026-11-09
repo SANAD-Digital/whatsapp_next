@@ -132,13 +132,11 @@ def editor(name: str | None = None) -> dict[str, Any]:
 		fields=["name", "device_name", "phone_e164", "status", "is_default"],
 		order_by="is_default desc, device_name asc",
 	)
-	templates = frappe.get_all(
-		"WhatsApp Template",
-		filters={"disabled": 0},
-		fields=["name", "template_name", "category"],
-		order_by="template_name asc",
-		limit=200,
-	)
+	# the cards the notification editor shows (owner, 2026-11-10): name, category, the document type
+	# it was written for, its kind and the start of its text
+	from whatsapp_next.services.notifications_editor import templates_for
+
+	templates = templates_for(None)
 	me = frappe.db.get_value("User", frappe.session.user, ["mobile_no", "phone"], as_dict=True) or {}
 	return {
 		"alert": alert,
@@ -285,6 +283,17 @@ def preview(payload: dict) -> dict[str, Any]:
 		}
 	)
 	return out
+
+
+def make_file(payload: dict) -> dict[str, Any]:
+	"""The editor's "Create PDF": the file the draft would attach for its first recipient, made now
+	from the report as it stands, to open in a new tab → `{file_name, mime_type, content_b64}`.
+	Nothing is saved or sent."""
+	import base64
+
+	doc = _draft(payload)
+	content, file_name, mime_type = alerts.sample_file(doc)
+	return {"file_name": file_name, "mime_type": mime_type, "content_b64": base64.b64encode(content).decode()}
 
 
 def send_test(payload: dict, phone: str) -> dict[str, Any]:

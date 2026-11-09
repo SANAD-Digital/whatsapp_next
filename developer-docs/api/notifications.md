@@ -173,7 +173,10 @@ its picture.
 | `get_editor` | GET, POST | `name?` | `{notification, stats, recent[], options{event, message_type, recipient_type, method}, devices[], templates[], fields, me{phone}, can_write, can_delete}` — a new one's defaults without `name` (needs **create**). |
 | `get_document_setup` | GET, POST | `document_type` | `{fields, templates}` — the type's field choices (as `get_document_fields`) and the enabled templates it can use: its own first, then those written for no type. |
 | `preview_draft` | POST | `payload`, `reference_name?` | `{problem, reference_name, meets_condition, message, attachment, recipients[{phone_e164 (masked), source}], recipients_count, error, no_access?}` on the given record or the latest one. Nothing is saved or sent; the saved notification's error fields are not touched. `no_access` when the reader cannot read the document type. |
+| `make_file` | POST | `payload`, `reference_name?` | `{file_name, mime_type, content_b64}` — the record the preview is tried on (else the latest), printed with the draft's print format and letter head, or the default ones when it attaches no print, to open in a new tab (`sanad.ui.open_file_in_tab`). The print as made, before a one-page one becomes its picture. Nothing is saved, attached or sent. `WAValidationError` without a document type; needs **print** on the record. |
 | `send_test` | POST | `payload`, `phone`, `reference_name?` | `{outbound, phone_e164}` — the draft rendered for one record, queued once to `phone`; the condition is not required and no counter or property changes. Audited `Test Send`. |
 | `save_editor` | POST | `payload` | `{name}` — create (needs **create**) or update (**write**); a changed `notification_name` renames it. The controller validates everything. |
 | `delete_notification` | POST | `name` | `{deleted: true}` (needs **delete**); sent messages stay in the log. |
 | `search` | GET, POST | `kind` (`document_type` \| `print_format` \| `letter_head`), `txt?`, `document_type?` | `[{value, label, description}]` through `frappe.get_list`. Document types exclude child tables, singles and this app's own. |
+
+

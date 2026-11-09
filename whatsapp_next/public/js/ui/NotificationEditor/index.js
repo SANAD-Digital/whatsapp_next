@@ -99,6 +99,12 @@ frappe.provide("sanad.ui");
 			this.$dlg = this.$root.find(".sanad-ae");
 			$("body").addClass("sanad-ae-open");
 			this.$root.on("click", "[data-act]", (e) => this.on_act(e));
+			// a Link drop-down that opens near the bottom (the device picker) is brought into view by
+			// scrolling the column it is in; the window itself never scrolls (owner, 2026-11-10)
+			this.$root.on("awesomplete-open", "input", (e) => {
+				const list = e.target.parentElement && e.target.parentElement.querySelector("ul");
+				if (list) window.requestAnimationFrame(() => list.scrollIntoView({ block: "nearest" }));
+			});
 			this.$root.on("input", "[data-in]", (e) => this.on_input(e));
 			this.$root.on("change", "[data-ch]", (e) => this.on_change(e));
 			this.$root.on("keydown", (e) => this.on_key(e));
@@ -566,34 +572,16 @@ frappe.provide("sanad.ui");
 		/** The templates the notification can use, as cards: the document type's own first. */
 		templates_html() {
 			const d = this.draft;
-			const q = this.ui.tpl_q.trim().toLowerCase();
-			const all = this.data.templates || [];
-			const rows = all.filter((t) => !q || `${t.template_name || t.name} ${t.category || ""} ${t.body || ""}`.toLowerCase().includes(q));
-			const can_new = !!this.opts.open_template;
-			const card = (t) => {
-				const on = t.name === d.template;
-				return `<button type="button" class="sanad-ne__tpl${on ? " is-on" : ""}" data-act="template" data-value="${esc(t.name)}" aria-pressed="${on}">
-					<span class="sanad-ne__tpl-head">
-						<strong>${esc(t.template_name || t.name)}</strong>
-						${on ? `<span class="sanad-ne__tpl-tick" aria-hidden="true">${sanad.ui.ico("tick", "xs")}</span>` : ""}
-					</span>
-					<span class="sanad-ne__tpl-meta">${t.category ? `<span class="wa-badge wa-badge--muted wa-badge--nodot">${esc(t.category)}</span>` : ""}${
-						t.reference_doctype ? `<span>${esc(__("For {0}", [__(t.reference_doctype)]))}</span>` : `<span>${esc(__("Any document"))}</span>`
-					}${t.message_type && t.message_type !== "Text" ? `<span>${esc(__(t.message_type))}</span>` : ""}</span>
-					<span class="sanad-ne__tpl-body" dir="auto">${esc(t.body || "")}</span>
-				</button>`;
-			};
-			const chosen = all.find((t) => t.name === d.template);
-			return `
-				${all.length > 6 ? `<input type="search" class="wa-input sanad-ne__filter" data-in="tpl_q" value="${esc(this.ui.tpl_q)}" placeholder="${esc(__("Filter templates…"))}" aria-label="${esc(__("Filter templates"))}">` : ""}
-				<div class="sanad-ne__tpls" role="group" aria-label="${esc(__("Templates"))}">
-					${can_new ? `<button type="button" class="sanad-ne__tpl sanad-ne__tpl--new" data-act="tpl_new">${sanad.ui.ico("plus", "sm")}<strong>${esc(__("New template"))}</strong><span>${esc(d.document_type ? __("Written for {0}", [__(d.document_type)]) : __("Opens the template editor"))}</span></button>` : ""}
-					${rows.map(card).join("")}
-				</div>
-				${!all.length ? `<p class="sanad-ae__hint">${esc(d.document_type ? __("No template is written for {0} yet. Create one, or write the message here.", [__(d.document_type)]) : __("Choose the document type to see its templates."))}</p>` : ""}
-				${all.length && !rows.length ? `<p class="sanad-ae__hint">${esc(__("No template matches."))}</p>` : ""}
-				${d.template && !chosen ? `<p class="sanad-ae__hint">${esc(__("Uses {0}", [d.template]))}</p>` : ""}
-				${d.template && can_new ? `<div class="sanad-ne__tpl-actions"><button type="button" class="sanad-ae__link" data-act="tpl_edit">${sanad.ui.ico("note", "xs")} ${esc(__("Edit this template"))}</button></div>` : ""}`;
+			return sanad.ui.template_cards({
+				templates: this.data.templates,
+				chosen: d.template,
+				query: this.ui.tpl_q,
+				can_open: !!this.opts.open_template,
+				new_note: d.document_type ? __("Written for {0}", [__(d.document_type)]) : __("Opens the template editor"),
+				empty_note: d.document_type
+					? __("No template is written for {0} yet. Create one, or write the message here.", [__(d.document_type)])
+					: __("Choose the document type to see its templates."),
+			});
 		}
 
 		/** The message written here, with the document's fields as insertable variables. */
@@ -792,8 +780,12 @@ frappe.provide("sanad.ui");
 			const d = this.draft;
 			const $s = this.$root.find("[data-slot=record]");
 			if (!d.document_type) return $s.html("");
+			// "Create PDF" sits with the record it prints (owner, 2026-11-10), whatever the message attaches
 			$s.html(`<div class="sanad-ne__record">
-				<span class="sanad-ae__sub">${esc(__("Tried on"))}</span>
+				<div class="sanad-ne__record-head">
+					<span class="sanad-ae__sub">${esc(__("Tried on"))}</span>
+					${this.opts.make_file ? `<button type="button" class="sanad-ae__btn sanad-ne__record-pdf" data-act="make_file">${sanad.ui.ico("doc", "sm")}<span class="sanad-ne__record-pdf-label">${esc(__("Create PDF"))}</span></button>` : ""}
+				</div>
 				<div class="sanad-ne__record-link"></div>
 			</div>`);
 			const control = frappe.ui.form.make_control({
@@ -816,6 +808,7 @@ frappe.provide("sanad.ui");
 				only_input: true,
 			});
 			control.refresh();
+			this.record_control = control;
 			if (this.ui.ref) control.set_value(this.ui.ref);
 			if (control.$input) control.$input.attr("aria-label", __("Record to try the notification on"));
 		}
@@ -975,7 +968,12 @@ frappe.provide("sanad.ui");
 				case "attach":
 					d.attach = value;
 					return this.changed({ redraw: ["what"] });
+				case "make_file":
+					return this.make_file();
 				case "template":
+					// the second click of a double click opens the card to edit (owner, 2026-11-10); the
+					// cards are redrawn after each click, so a `dblclick` would not reach them
+					if (e.originalEvent && e.originalEvent.detail === 2) return this.edit_template(value);
 					d.template = d.template === value ? null : value;
 					this.draw_body();
 					this.redraw_step_head("what");
@@ -1223,6 +1221,41 @@ frappe.provide("sanad.ui");
 		}
 
 		/** The host's template editor, on a saved template or a new one with `defaults`; a saved one is chosen. */
+		/** "Create PDF": the record the preview is tried on, printed with the draft's print format and
+		 * letter head (the default ones when it attaches no print), opened in a new tab. The tab opens in this click, before the server answers (later it would be
+		 * blocked as a pop-up). */
+		make_file() {
+			if (!this.opts.make_file || this.ui.making) return;
+			// what the field shows now: Frappe's Link control reports a pick only once it is left and
+			// checked, so a press right after picking read the record before it (owner, 2026-11-10)
+			const $in = this.record_control && this.record_control.$input;
+			const typed = $in ? String($in.val() || "").trim() : "";
+			const ref = typed || this.ui.ref || (this.ui.preview && this.ui.preview.reference_name) || null;
+			const $btn = this.$root.find('[data-act="make_file"]');
+			const busy = (on) => {
+				this.ui.making = on;
+				// the label only: the icon is a <span> too
+				$btn.prop("disabled", on).attr("aria-busy", on ? "true" : null).find(".sanad-ne__record-pdf-label").text(on ? __("Making the file…") : __("Create PDF"));
+			};
+			busy(true);
+			return sanad.ui
+				.open_file_in_tab(() => this.opts.make_file(this.payload(), ref))
+				.catch((err) => sanad.ui.Toast.error(err))
+				.finally(() => busy(false));
+		}
+
+		/** A double-clicked card is the one used (its first click may have toggled it off), and opens. */
+		edit_template(name) {
+			if (!name || !this.opts.open_template) return;
+			if (this.draft.template !== name) {
+				this.draft.template = name;
+				this.draw_body();
+				this.redraw_step_head("what");
+				this.changed();
+			}
+			this.open_template(name);
+		}
+
 		open_template(name, defaults) {
 			if (!this.opts.open_template) return;
 			this.opts.open_template(name, {

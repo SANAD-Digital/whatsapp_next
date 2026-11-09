@@ -16,12 +16,15 @@ whatsapp_next.alerts.open = function (name, { on_saved } = {}) {
 		save: (payload) => call("save_editor", { payload }),
 		remove: (n) => call("delete_alert", { name: n }),
 		send_test: (payload, phone) => call("send_test", { payload, phone }),
+		make_file: (payload) => call("make_file", { payload }),
 		run_now: (n) => call("run_now", { name: n }),
 		search: (kind, txt) => call("search", { kind, txt: txt || "" }),
 		report_columns: (report, filters) => call("get_report_columns", { report, filters: filters || {} }),
 		report_info: (report) => call("get_report_info", { report }),
 		// only a connected device can send
 		device_link: { doctype: "WhatsApp Device", filters: { status: "Connected", disabled: 0 } },
+		// the template window, over this one: "New template", "Edit this template", a double click
+		open_template: whatsapp_next.templates && whatsapp_next.templates.open ? (n, opts) => whatsapp_next.templates.open(n, opts) : null,
 		// the product's contact picker, in its local mode: the picks come back, nothing is written
 		pick_recipients: ({ existing }) =>
 			new Promise((resolve) => {

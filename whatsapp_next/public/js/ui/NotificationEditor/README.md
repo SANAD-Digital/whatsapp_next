@@ -13,7 +13,11 @@ four cards that tick themselves green once complete:
    an expression (`condition_type = "Python"`, a Python expression over `doc`).
 2. **What** — the message **from a template** or **written here**. Templates are cards, the ones
    written for this document type first, with a "New template" card and "Edit this template";
-   both open the host's template editor, and a template saved there is chosen. Written text
+   both open the host's template editor, and a template saved there is chosen. A double click on
+   a card chooses it and opens it to edit, over this window (`sanad.ui.template_cards`, shared with
+   the alert editor). "Create PDF", beside the record the preview is tried on, prints that
+   record and opens it in a new tab, whatever the message attaches (host's
+   `make_file(payload, reference_name)`). Written text
    inserts the document's fields as `{{ doc.field }}` and can be saved as a template. Then what it
    attaches: nothing, a print of the record (print format, letter head, and whether the sent
    file is also kept on the record — off by default) or a file in one of its Attach fields.

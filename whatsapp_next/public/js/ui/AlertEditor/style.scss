@@ -30,7 +30,12 @@ body.sanad-ae-open { overflow: hidden; }
 	background: var(--wa-surface);
 	color: var(--wa-ink);
 	box-shadow: var(--wa-shadow-lg);
+	// `clip`, not only `hidden`: a box that hides its overflow can still be scrolled by the browser,
+	// and a drop-down opening near the bottom (the device picker) scrolled the whole window up —
+	// the header gone, the footer mid-screen, blank below (owner, 2026-11-10). Only the build
+	// column and the side scroll.
 	overflow: hidden;
+	overflow: clip;
 	font-size: 14px;
 
 	[hidden] { display: none !important; }

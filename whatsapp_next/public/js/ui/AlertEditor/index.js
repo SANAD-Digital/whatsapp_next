@@ -58,6 +58,7 @@ frappe.provide("sanad.ui");
 			this.opts = opts;
 			this.ui = {
 				add_q: "",
+				tpl_q: "",
 				results: [],
 				pick_open: null, // "report" | "recipient" | "print_format" | "letter_head" | "language"
 				json_mode: false,
@@ -92,6 +93,12 @@ frappe.provide("sanad.ui");
 			this.$dlg = this.$root.find(".sanad-ae");
 			$("body").addClass("sanad-ae-open");
 			this.$root.on("click", "[data-act]", (e) => this.on_act(e));
+			// a Link drop-down that opens near the bottom (the device picker) is brought into view by
+			// scrolling the column it is in; the window itself never scrolls (owner, 2026-11-10)
+			this.$root.on("awesomplete-open", "input", (e) => {
+				const list = e.target.parentElement && e.target.parentElement.querySelector("ul");
+				if (list) window.requestAnimationFrame(() => list.scrollIntoView({ block: "nearest" }));
+			});
 			this.$root.on("input", "[data-in]", (e) => this.on_input(e));
 			this.$root.on("change", "[data-ch]", (e) => this.on_change(e));
 			this.$root.on("keydown", (e) => this.on_key(e));
@@ -527,6 +534,11 @@ frappe.provide("sanad.ui");
 								__("Attachment")
 							)}
 							${
+								d.attachment_format !== "None" && this.opts.make_file
+									? `<div class="sanad-ne__tpl-actions"><button type="button" class="sanad-ae__btn" data-act="make_file"${this.ui.making ? " disabled" : ""}${d.report ? "" : ` disabled title="${esc(__("Choose the report first"))}"`}>${sanad.ui.ico("doc", "sm")}${esc(this.ui.making ? __("Making the file…") : d.attachment_format === "PNG" ? __("Create the image") : __("Create PDF"))}</button></div>`
+									: ""
+							}
+							${
 								d.attachment_format !== "None"
 									? `<details class="sanad-ae__more"${d.print_format || d.letter_head || d.language ? " open" : ""}>
 										<summary>${esc(__("File options"))}</summary>
@@ -547,32 +559,91 @@ frappe.provide("sanad.ui");
 							${this.seg(
 								"body",
 								[
-									{ value: "custom", label: __("Write it") },
-									{ value: "template", label: __("Use a template"), disabled: !(this.data.templates || []).length },
+									{ value: "template", label: __("From a template"), icon: "cards" },
+									{ value: "custom", label: __("Written here"), icon: "note" },
 								],
 								d.body_mode,
 								__("Message source")
 							)}
 						</div>
-						${
-							d.body_mode === "template"
-								? `<select class="wa-select" data-ch="template" aria-label="${esc(__("Template"))}">
-									<option value="">${esc(__("Choose a template…"))}</option>
-									${(this.data.templates || [])
-										.map((t) => `<option value="${esc(t.name)}"${t.name === d.template ? " selected" : ""}>${esc(t.template_name || t.name)}${t.category ? ` · ${esc(t.category)}` : ""}</option>`)
-										.join("")}
-								</select>`
-								: `<div class="sanad-ae__vars" role="group" aria-label="${esc(__("Insert a variable"))}">
-									${(this.data.variables || [])
-										.map((v, i) => `<button type="button" class="sanad-ae__var" data-act="var" data-value="${i}" title="${esc(v.code)}">${sanad.ui.ico("plus", "xs")}${esc(v.label)}</button>`)
-										.join("")}
-								</div>
-								<textarea class="wa-textarea sanad-ae__msg" data-in="message" rows="4" dir="auto" placeholder="${esc(__("What the message says…"))}" aria-label="${esc(__("Message"))}">${esc(d.message)}</textarea>`
-						}
+						<div data-slot="body">${this.body_html()}</div>
 					</div>
 				</div>`);
 			this.draw_filters();
 			this.draw_sentence();
+		}
+
+		/** The message: a template, as the notification editor shows them (owner, 2026-11-10), or
+		 * text written here with the alert's variables. */
+		body_html() {
+			const d = this.draft;
+			if (d.body_mode === "template")
+				return sanad.ui.template_cards({
+					templates: this.data.templates,
+					chosen: d.template,
+					query: this.ui.tpl_q,
+					can_open: !!this.opts.open_template,
+					empty_note: __("No template yet. Create one, or write the message here."),
+				});
+			return `<div class="sanad-ae__vars" role="group" aria-label="${esc(__("Insert a variable"))}">
+					${(this.data.variables || [])
+						.map((v, i) => `<button type="button" class="sanad-ae__var" data-act="var" data-value="${i}" title="${esc(v.code)}">${sanad.ui.ico("plus", "xs")}${esc(v.label)}</button>`)
+						.join("")}
+				</div>
+				<textarea class="wa-textarea sanad-ae__msg" data-in="message" rows="4" dir="auto" placeholder="${esc(__("What the message says…"))}" aria-label="${esc(__("Message"))}">${esc(d.message)}</textarea>
+				${this.opts.open_template ? `<div class="sanad-ne__tpl-actions"><button type="button" class="sanad-ae__link" data-act="tpl_from_text"${(d.message || "").trim() ? "" : " disabled"}>${sanad.ui.ico("cards", "xs")} ${esc(__("Save this text as a template"))}</button></div>` : ""}`;
+		}
+
+		draw_body() {
+			this.$root.find("[data-slot=body]").html(this.body_html());
+		}
+
+		/** "Create PDF": the file the draft attaches, made now and opened in a new tab. The tab opens
+		 * in this click, before the server answers (later it would be blocked as a pop-up). */
+		make_file() {
+			if (!this.opts.make_file || this.ui.making) return;
+			this.ui.making = true;
+			this.draw_what();
+			return sanad.ui
+				.open_file_in_tab(() => this.opts.make_file(this.payload()))
+				.catch((err) => sanad.ui.Toast.error(err))
+				.finally(() => {
+					this.ui.making = false;
+					this.draw_what();
+				});
+		}
+
+		/** A double-clicked card is the one used (its first click may have toggled it off), and opens. */
+		edit_template(name) {
+			if (!name || !this.opts.open_template) return;
+			if (this.draft.template !== name) {
+				this.draft.template = name;
+				this.changed({ redraw: ["what"] });
+			}
+			this.open_template(name);
+		}
+
+		/** The template window, over this one; what it saved is chosen and the cards re-read. */
+		open_template(name, defaults) {
+			if (!this.opts.open_template) return;
+			this.opts.open_template(name, {
+				defaults,
+				on_saved: async (r) => {
+					if (!r || r.deleted) {
+						if (r && r.deleted && r.name === this.draft.template) this.draft.template = null;
+					} else {
+						this.draft.template = r.name;
+						this.draft.body_mode = "template";
+					}
+					try {
+						const fresh = await this.opts.load(this.draft.name || null);
+						this.data.templates = (fresh && fresh.templates) || this.data.templates;
+					} catch (err) {
+						// the cards keep what they had; the choice itself is saved with the alert
+					}
+					this.changed({ redraw: ["what"] });
+				},
+			});
 		}
 
 		/** The report's filters: its own controls (script / query report), Frappe's filter component
@@ -1108,6 +1179,20 @@ frappe.provide("sanad.ui");
 				case "body":
 					d.body_mode = value;
 					return this.changed({ redraw: ["what"] });
+				case "make_file":
+					return this.make_file();
+				case "template":
+					// the second click of a double click opens the card to edit (owner, 2026-11-10); the
+					// cards are redrawn after each click, so a `dblclick` would not reach them
+					if (e.originalEvent && e.originalEvent.detail === 2) return this.edit_template(value);
+					d.template = d.template === value ? null : value;
+					return this.changed({ redraw: ["what"] });
+				case "tpl_new":
+					return this.open_template(null, {});
+				case "tpl_edit":
+					return this.open_template(d.template);
+				case "tpl_from_text":
+					return this.open_template(null, { body: d.message, template_name: d.alert_name });
 				case "json":
 					const mode = this.ui.filter_mode;
 			if (mode === "builder") {
@@ -1197,7 +1282,15 @@ frappe.provide("sanad.ui");
 					return this.changed();
 				case "message":
 					d.message = v;
+					this.$root.find('[data-act="tpl_from_text"]').prop("disabled", !v.trim());
 					return this.changed();
+				case "tpl_q": {
+					this.ui.tpl_q = v;
+					this.draw_body();
+					const el = this.$root.find("[data-in=tpl_q]").trigger("focus").get(0);
+					if (el) el.selectionStart = el.selectionEnd = el.value.length;
+					return;
+				}
 				case "f_field":
 					d.filters[i].field = v;
 					return this.changed();
@@ -1240,10 +1333,6 @@ frappe.provide("sanad.ui");
 			if (key === "enabled") {
 				d.enabled = $t.is(":checked") ? 1 : 0;
 				return this.changed({ preview: false });
-			}
-			if (key === "template") {
-				d.template = $t.val() || null;
-				return this.changed({ redraw: ["what"] });
 			}
 			if (key === "rf_token") {
 				const v = $t.val();

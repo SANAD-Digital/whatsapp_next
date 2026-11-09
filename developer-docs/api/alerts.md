@@ -268,6 +268,35 @@ const p = await sanad.ui.call("alerts.preview_draft", { payload: { alert_name: "
 
 ---
 
+---
+
+## make_file
+
+The editor's "Create PDF": the file the draft would attach for its first recipient, made now from
+the report as it stands (`alerts.sample_file`), to open in a new tab. Nothing is saved or sent,
+and no File row is made.
+
+- **Path:** `whatsapp_next.api.v1.alerts.make_file`
+- **Methods:** POST
+- **Roles:** `MANAGER`
+
+| Argument | Type | Required | Meaning |
+|---|---|---|---|
+| `payload` | dict | yes | The editor's draft, as `preview_draft` takes it |
+
+**Returns** — the PNG when the alert asks for an image and `wkhtmltoimage` is there, else the PDF.
+
+```json
+{ "file_name": "daily_sales.pdf", "mime_type": "application/pdf", "content_b64": "JVBERi0xLjQK…" }
+```
+
+**Errors:** `WAValidationError` (417) when the draft attaches no file or has no report.
+**Realtime:** none.
+
+```js
+await sanad.ui.open_file_in_tab(() => sanad.ui.call("alerts.make_file", { payload }));
+```
+
 ## send_test
 
 Send the draft once to one number — what its first recipient would receive. No counters, no

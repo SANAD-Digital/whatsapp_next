@@ -185,8 +185,75 @@ ui.on_reconnect = function (reread) {
 ui.latin_digits = (text) =>
 	String(text == null ? "" : text).replace(/[٠-٩۰-۹]/g, (d) => String(d.charCodeAt(0) - (d >= "۰" ? 0x06f0 : 0x0660)));
 
+/**
+ * A file made on the server, opened in a new tab (the editors' "Create PDF", owner 2026-11-10).
+ * The tab is opened at the click, before the server answers — a tab opened after an `await` is
+ * blocked as a pop-up — and is given the file when it comes: `load()` resolves to
+ * `{file_name, mime_type, content_b64}`. Kept nowhere; a failure closes the tab and is thrown.
+ */
+ui.open_file_in_tab = async (load) => {
+	const tab = window.open("", "_blank");
+	if (tab) {
+		tab.document.title = __("Making the file…");
+		tab.document.body.innerHTML = `<p style="font:14px system-ui,sans-serif;padding:24px">${ui.escape(__("Making the file…"))}</p>`;
+	}
+	try {
+		const r = await load();
+		const bytes = Uint8Array.from(atob(r.content_b64 || ""), (c) => c.charCodeAt(0));
+		const url = URL.createObjectURL(new Blob([bytes], { type: r.mime_type || "application/pdf" }));
+		if (tab && !tab.closed) tab.location.href = url;
+		else window.open(url, "_blank");
+		// the tab has the file by then; the address is freed after a while
+		window.setTimeout(() => URL.revokeObjectURL(url), 60 * 1000);
+		return r;
+	} catch (err) {
+		if (tab && !tab.closed) tab.close();
+		throw err;
+	}
+};
+
 /** "3 hours ago" for a stored time, `fallback` when there is none. */
 ui.ago = (value, fallback = "") => (value ? frappe.datetime.prettyDate(value) : fallback);
+
+/**
+ * The templates an editor's message can come from, as cards (the notification and alert editors
+ * share it, owner 2026-11-10). A click (`data-act="template"`) picks a card, a double click opens it
+ * to edit; `tpl_new` / `tpl_edit` are the "New template" card and the "Edit this template" link,
+ * shown when the editor can open the template window (`can_open`). A filter box (`data-in="tpl_q"`)
+ * appears past six templates.
+ * @param {object} o — `{templates[{name, template_name, category, reference_doctype, message_type,
+ *   body}], chosen, query, can_open, new_note, empty_note}`
+ */
+ui.template_cards = (o) => {
+	const esc = ui.escape;
+	const all = o.templates || [];
+	const q = String(o.query || "").trim().toLowerCase();
+	const rows = all.filter((t) => !q || `${t.template_name || t.name} ${t.category || ""} ${t.body || ""}`.toLowerCase().includes(q));
+	const card = (t) => {
+		const on = t.name === o.chosen;
+		return `<button type="button" class="sanad-ne__tpl${on ? " is-on" : ""}" data-act="template" data-value="${esc(t.name)}" aria-pressed="${on}" title="${esc(o.can_open ? __("Double-click to edit the template") : "")}">
+			<span class="sanad-ne__tpl-head">
+				<strong>${esc(t.template_name || t.name)}</strong>
+				${on ? `<span class="sanad-ne__tpl-tick" aria-hidden="true">${ui.ico("tick", "xs")}</span>` : ""}
+			</span>
+			<span class="sanad-ne__tpl-meta">${t.category ? `<span class="wa-badge wa-badge--muted wa-badge--nodot">${esc(t.category)}</span>` : ""}${
+				t.reference_doctype ? `<span>${esc(__("For {0}", [__(t.reference_doctype)]))}</span>` : `<span>${esc(__("Any document"))}</span>`
+			}${t.message_type && t.message_type !== "Text" ? `<span>${esc(__(t.message_type))}</span>` : ""}</span>
+			<span class="sanad-ne__tpl-body" dir="auto">${esc(t.body || "")}</span>
+		</button>`;
+	};
+	const chosen = all.find((t) => t.name === o.chosen);
+	return `
+		${all.length > 6 ? `<input type="search" class="wa-input sanad-ne__filter" data-in="tpl_q" value="${esc(o.query || "")}" placeholder="${esc(__("Filter templates…"))}" aria-label="${esc(__("Filter templates"))}">` : ""}
+		<div class="sanad-ne__tpls" role="group" aria-label="${esc(__("Templates"))}">
+			${o.can_open ? `<button type="button" class="sanad-ne__tpl sanad-ne__tpl--new" data-act="tpl_new">${ui.ico("plus", "sm")}<strong>${esc(__("New template"))}</strong><span>${esc(o.new_note || __("Opens the template editor"))}</span></button>` : ""}
+			${rows.map(card).join("")}
+		</div>
+		${!all.length && o.empty_note ? `<p class="sanad-ae__hint">${esc(o.empty_note)}</p>` : ""}
+		${all.length && !rows.length ? `<p class="sanad-ae__hint">${esc(__("No template matches."))}</p>` : ""}
+		${o.chosen && !chosen ? `<p class="sanad-ae__hint">${esc(__("Uses {0}", [o.chosen]))}</p>` : ""}
+		${o.chosen && o.can_open ? `<div class="sanad-ne__tpl-actions"><button type="button" class="sanad-ae__link" data-act="tpl_edit">${ui.ico("note", "xs")} ${esc(__("Edit this template"))}</button></div>` : ""}`;
+};
 
 /**
  * The number this user last sent a test to — from a test run, a notification's or an alert's

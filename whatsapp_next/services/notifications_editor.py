@@ -15,7 +15,7 @@ from frappe import _
 from frappe.utils import cint
 
 from whatsapp_next.exceptions import WANotFoundError, WAValidationError
-from whatsapp_next.services import audit, dispatch, notifications, templates
+from whatsapp_next.services import attachments, audit, dispatch, notifications, templates
 from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.phone import mask, normalize
 from whatsapp_next.whatsapp_next.doctype.whatsapp_notification.whatsapp_notification import ALLOWED_METHODS
@@ -360,6 +360,39 @@ def preview(payload: dict, reference_name: str | None = None) -> dict[str, Any]:
 		}
 	)
 	return out
+
+
+def make_file(payload: dict, reference_name: str | None = None) -> dict[str, Any]:
+	"""The editor's "Create PDF": the record the preview is tried on, printed with the draft's
+	print format and letter head — the document type's default ones when the draft attaches no
+	print — to open in a new tab → `{file_name, mime_type, content_b64}`. It is the print as made,
+	before a one-page one becomes its picture. Nothing is saved or sent. E: `WAValidationError`
+	when there is no record to print."""
+	import base64
+
+	notif = _draft(payload)
+	if not notif.document_type:
+		frappe.throw(_("Choose the document type first"), WAValidationError)
+	doc = _document(notif, reference_name)
+	if doc is None:
+		frappe.throw(
+			_("There is no {0} to try the notification on yet").format(_(notif.document_type)),
+			WAValidationError,
+		)
+	frappe.has_permission(doc.doctype, "print", doc.name, throw=True)
+	printed = cint(notif.attach_print)
+	pdf = attachments.render_print_pdf(
+		doc.doctype,
+		doc.name,
+		print_format=(notif.print_format if printed else None) or None,
+		letter_head=(notif.letter_head if printed else None) or None,
+		file_name=doc.name,
+	)
+	return {
+		"file_name": pdf.file_name,
+		"mime_type": pdf.mime_type,
+		"content_b64": base64.b64encode(pdf.content).decode(),
+	}
 
 
 def send_test(payload: dict, phone: str, reference_name: str | None = None) -> dict[str, Any]:
