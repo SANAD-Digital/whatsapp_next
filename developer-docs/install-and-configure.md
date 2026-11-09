@@ -248,7 +248,6 @@ system writes the field.
 | Field | Type | Default | Meaning |
 |---|---|---|---|
 | `default_device` | Link WhatsApp Device | — | Used when a send names no device |
-| `default_country` | Link Country | System Settings country | Region for national numbers (required) |
 | `global_blacklist_group` | Link WhatsApp Contact Group | — | Must be a group of kind `Blacklist`. Its members never receive anything |
 | `send_only_to_known_numbers` | Check | 0 | Outside campaigns, send only to numbers that have messaged you or are confirmed |
 

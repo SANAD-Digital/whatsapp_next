@@ -8,8 +8,11 @@ import contextlib
 import inspect
 import unittest
 from collections.abc import Iterator
+from unittest.mock import patch
 
 import frappe
+
+from whatsapp_next.services import phone as _phone
 
 ROLE_USERS: dict[str, str] = {
 	"System Manager": "wa-test-sm@example.com",
@@ -85,10 +88,32 @@ def ensure_country(name: str = "Saudi Arabia", code: str = "sa") -> str:
 _SETTINGS_BEFORE: dict[str, object] = {}
 _RESTORE_REGISTERED: list[bool] = []
 _SETTINGS_AT_START: dict[str, object] = {}
+# Tests assume Saudi Arabia as the default region, whatever the site's System Settings say. The
+# region is the site's own country (`phone.default_region`), so it is pinned for the module by a
+# patch, not by changing System Settings on a shared site. The unpatched reader, for the test of
+# the region itself:
+REAL_REGION_FROM_SETTINGS = _phone._region_from_settings
+_REGION_PIN: list = []
+
+
+def _pin_test_region() -> None:
+	if _REGION_PIN:
+		return
+	pin = patch.object(_phone, "_region_from_settings", return_value="SA")
+	pin.start()
+	_REGION_PIN.append(pin)
+	_phone.clear_region_cache()
+
+
+def _unpin_test_region() -> None:
+	while _REGION_PIN:
+		_REGION_PIN.pop().stop()
+	_phone.clear_region_cache()
 
 
 def _restore_settings() -> None:
 	_RESTORE_REGISTERED.clear()
+	_unpin_test_region()
 	if not _SETTINGS_BEFORE:
 		return
 	settings = frappe.get_single("WhatsApp Settings")
@@ -108,8 +133,8 @@ def _restore_settings() -> None:
 
 
 def ensure_settings(**values) -> "frappe.model.document.Document":
-	"""Return WhatsApp Settings with `default_country` set and any overrides applied. Every field
-	changed here is restored when the test module finishes."""
+	"""Return WhatsApp Settings with any overrides applied, and the default region pinned to Saudi
+	Arabia. Every field changed here, and the pin, are undone when the test module finishes."""
 	settings = frappe.get_single("WhatsApp Settings")
 	changed = False
 	if not _RESTORE_REGISTERED:
@@ -120,11 +145,8 @@ def ensure_settings(**values) -> "frappe.model.document.Document":
 		# own default device came back empty)
 		_SETTINGS_AT_START.clear()
 		_SETTINGS_AT_START.update(settings.as_dict(no_default_fields=True))
-	# Tests assume Saudi Arabia as the default region regardless of the site's System Settings.
-	country = ensure_country()
-	if settings.default_country != country:
-		settings.default_country = country
-		changed = True
+	ensure_country()
+	_pin_test_region()
 	for key, value in values.items():
 		if settings.get(key) != value:
 			_SETTINGS_BEFORE.setdefault(key, _SETTINGS_AT_START.get(key, settings.get(key)))

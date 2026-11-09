@@ -189,6 +189,32 @@ ui.latin_digits = (text) =>
 ui.ago = (value, fallback = "") => (value ? frappe.datetime.prettyDate(value) : fallback);
 
 /**
+ * The number this user last sent a test to — from a test run, a notification's or an alert's
+ * "Send a test", a campaign's test message, a template sent from its window — offered first the
+ * next time any of them asks (owner, 2026-11-09). Kept in this browser, per user; a private window
+ * simply does not remember it.
+ */
+ui.test_phone = {
+	key: () => `sanad_test_phone:${(frappe.session && frappe.session.user) || ""}`,
+	get() {
+		try {
+			return window.localStorage.getItem(ui.test_phone.key()) || "";
+		} catch (e) {
+			return "";
+		}
+	},
+	set(phone) {
+		const value = cstr(phone).trim();
+		if (!value) return;
+		try {
+			window.localStorage.setItem(ui.test_phone.key(), value);
+		} catch (e) {
+			// not remembered
+		}
+	},
+};
+
+/**
  * Where a number column sits in every list and table of the kit: a whole number (Int) in the
  * middle, a decimal / amount / percentage (Float, Currency, Percent) at the end — the left in
  * Arabic, the right in English, where the digits line up. `null` for anything that is not a

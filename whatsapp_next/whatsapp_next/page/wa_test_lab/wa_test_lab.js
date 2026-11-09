@@ -195,7 +195,7 @@
 			this.render_run();
 			this.render_bar();
 			this.load_health(false);
-			const start = (saved.targets && saved.targets.length ? saved.targets : [c.me && c.me.phone]).filter(Boolean);
+			const start = (saved.targets && saved.targets.length ? saved.targets : [ui.test_phone.get() || (c.me && c.me.phone)]).filter(Boolean);
 			if (start.length) this.add_targets(start, { quiet: true });
 			this.subscribe();
 		}
@@ -330,6 +330,8 @@
 						if (this.targets.length >= max) return quiet || ui.Toast.warning(__("A test run takes at most {0} target numbers.", [fmt_int(max)]));
 						this.targets.push(r);
 						added += 1;
+						// a number the user typed is the one a test goes to: offered first everywhere else
+						if (!quiet) ui.test_phone.set(r.phone_e164);
 					});
 					if (added) this.targets_changed();
 					return added;

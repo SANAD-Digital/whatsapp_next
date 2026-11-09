@@ -18,8 +18,6 @@ SETTINGS_CACHE_KEY = "wa:settings"
 REQUEST_TIMEOUT_RANGE = (5, 120)
 MESSAGES_PER_MINUTE_RANGE = (5, 60)
 MIN_RETRY_BACKOFF_SECONDS = 30
-# the country of `phone.FALLBACK_REGION`, for a site whose System Settings name none
-DEFAULT_COUNTRY = "Saudi Arabia"
 
 
 class WhatsAppSettings(Document):
@@ -34,13 +32,6 @@ class WhatsAppSettings(Document):
 			if value and not frappe.db.exists("WhatsApp Device", value):
 				self.set(fieldname, None)
 		super()._validate_links()
-
-	def before_validate(self) -> None:
-		"""A fresh site never chose a country, and the field is mandatory: the first save (a sign-in
-		storing its keys) failed on it (owner, 2026-10-08). Take the site's own country, as the phone
-		rules already do (`phone.default_region`), and Saudi Arabia, their fallback, if it has none."""
-		if not self.default_country:
-			self.default_country = frappe.db.get_single_value("System Settings", "country") or DEFAULT_COUNTRY
 
 	def validate(self) -> None:
 		"""Run every settings rule; each helper raises `WAValidationError` on its own."""
