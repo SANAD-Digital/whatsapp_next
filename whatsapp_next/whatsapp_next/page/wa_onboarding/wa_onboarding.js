@@ -225,8 +225,13 @@ frappe.provide("whatsapp_next.onboarding");
 		return out.sort(() => Math.random() - 0.5).join("");
 	}
 
-	// the support line, written the way a person dials it
-	const SUPPORT_PHONE = "967 777 103 456";
+	// support is reached by email (owner, 2026-11-09)
+	const SUPPORT_EMAIL = "hello@whatsappnext.app";
+
+	/** A sentence translated with `SUPPORT_SLOT` for the address: escaped, then the address as a mail link. */
+	const SUPPORT_SLOT = "@@support@@";
+	const with_support = (translated) =>
+		esc(translated).replace(SUPPORT_SLOT, `<a href="mailto:${SUPPORT_EMAIL}" dir="ltr">${SUPPORT_EMAIL}</a>`);
 
 	/** A number inside an Arabic sentence, kept left to right (a left-to-right isolate). */
 	const ltr = (text) => `\u2066${text}\u2069`;
@@ -322,7 +327,7 @@ frappe.provide("whatsapp_next.onboarding");
 							<a class="wa-onb__chip" href="https://sanad.digital/whatsapp-erpnext" target="_blank" rel="noopener">${ico("link", "xs")}${esc(__("Website and documentation"))}</a>
 							<a class="wa-onb__chip" href="https://github.com/sanad-digital" target="_blank" rel="noopener">${ico("code", "xs")}${esc(__("Open source"))}</a>
 						</div>
-						<p class="wa-onb__support">${esc(__("Need help? Support is on {0}", [ltr(SUPPORT_PHONE)]))}</p>
+						<p class="wa-onb__support">${with_support(__("Need help? Write to support at {0}", [SUPPORT_SLOT]))}</p>
 						<p class="wa-onb__rights">${esc(__("Sanad Digital · all rights reserved"))}</p>
 					</div>
 				</aside>
@@ -2002,7 +2007,7 @@ frappe.provide("whatsapp_next.onboarding");
 					${ui.btn({ label: __("Continue"), variant: "primary", cls: "wa-onb__grow", attrs: { "data-act": "send" } })}
 					${ui.btn({ label: `${__("Remembered it?")} ${__("Sign in")}`, variant: "secondary", attrs: { "data-act": "back" } })}
 				</div>
-				<p class="wa-onb__foot-note">${esc(__("No longer have the registered email or number? Contact support on {0}.", [ltr(SUPPORT_PHONE)]))}</p>`);
+				<p class="wa-onb__foot-note">${with_support(__("No longer have the registered email or number? Write to support at {0}.", [SUPPORT_SLOT]))}</p>`);
 			$card.on("input", '[data-r="identifier"]', (e) => {
 				this.f.reset_identifier = e.currentTarget.value;
 				this.save_draft();

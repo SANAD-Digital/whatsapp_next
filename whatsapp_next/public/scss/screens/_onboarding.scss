@@ -274,6 +274,13 @@
 		margin: 0;
 		opacity: 0.92;
 	}
+	&__support a,
+	&__foot-note a {
+		color: inherit;
+		font-weight: 600;
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
 
 	// =============================================================================================
 	// The main column
