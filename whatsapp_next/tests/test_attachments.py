@@ -200,10 +200,16 @@ class TestAttachments(IntegrationTestCase):
 		from unittest.mock import patch
 
 		def fmt(**values):
-			return frappe._dict({"paper_size": None, "css": "", "html": "", **values})
+			return frappe._dict({"paper_size": None, "format_data": None, "css": "", "html": "", **values})
 
 		cases = [
 			(fmt(paper_size="A5"), {"page-size": "A5"}),
+			# the Frappe 16 builder keeps the paper size in the layout
+			(
+				fmt(format_data='{"page": {"size": "A5", "orientation": "Landscape"}, "sections": []}'),
+				{"page-size": "A5", "orientation": "Landscape"},
+			),
+			(fmt(format_data='[{"fieldname": "x"}]'), {}),
 			(
 				fmt(paper_size="Receipt 80 mm"),
 				{"page-size": "Custom", "page-width": "80mm", "page-height": "297mm"},

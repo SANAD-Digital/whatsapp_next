@@ -11,7 +11,8 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
 - **The print format's page size is kept in the PDF** (`attachments.page_options`): wkhtmltopdf
   takes its page size from Print Settings only, so an A5 or receipt format came out A4 whenever
   wkhtmltopdf drew it (its own engine, or the fallback when Chrome does not start). The format's
-  "Paper size" (Frappe 16; a receipt is its width on an A4-high page) or a CSS
+  "Paper size" (Frappe 16; a receipt is its width on an A4-high page), the size the Frappe 16
+  print format builder saves in its layout (`format_data` → `page`), or a CSS
   `@page { size: … }` in its CSS or HTML (a page name, two lengths in mm / cm / in, `landscape`)
   is now handed to wkhtmltopdf. Chrome already reads it itself.
 - **"Keep the sent file on the document"** on each notification (`attach_to_document`, off by
