@@ -35,6 +35,17 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
 
 ### Changed
 
+- **A PDF is sent on a server as it is** (owner, 2026-11-09). When a format's PDF engine is not
+  wkhtmltopdf and fails (Chromium not installed, or "Chromium took too long to start"), the
+  document is rendered again with wkhtmltopdf; and a CSS `@import` without a full `https://` link
+  is completed before wkhtmltopdf sees it (it stopped there with "ProtocolUnknownError").
+  `attachments.pdf_engine`, `attachments.complete_css_imports`.
+- **Phone fields open on the site's own country** (owner, 2026-11-09). The default region is
+  System Settings → Country; WhatsApp Settings no longer has a «Default Country» of its own (a
+  copy taken at the first save went stale: sites in Yemen opened every phone field on +966).
+- **The last test number is remembered** (owner, 2026-11-09): a test run, a notification's or an
+  alert's "Send a test", a campaign's test message and a template sent from its window offer the
+  number last tested first (`sanad.ui.test_phone`, kept in the browser per user).
 - **Ready-made content comes only from the platform's hub** (owner, 2026-11-09). The app no
   longer ships its 12 templates, 10 notifications and 4 alerts as fixtures
   (`fixtures/standard_*.json`, `services/standards.py`, `tests/test_standards.py` and

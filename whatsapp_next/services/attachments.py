@@ -168,11 +168,16 @@ def render_print_pdf(
 	language: str | None = None,
 	file_name: str | None = None,
 ) -> RenderedPdf:
-	"""Render a document's Print Format to PDF bytes through `frappe.get_print`, with the PDF
-	engine Frappe's own button uses: the Print Format's choice, else Print Settings', else
-	wkhtmltopdf. Pinning wkhtmltopdf broke formats made for Chrome: a CSS `@import` without a
-	full `https://` link fails there with "ProtocolUnknownError" (Frappe makes `src`/`href`
-	absolute, not `@import`).
+	"""Render a document's Print Format to PDF bytes through `frappe.get_print`, so it works on a
+	server as it is (owner, 2026-11-09):
+
+	* the PDF engine is the one Frappe's own button uses — the Print Format's choice, else Print
+	  Settings', else wkhtmltopdf;
+	* when that engine is not wkhtmltopdf and fails (Chromium not installed, or too slow to
+	  start: "Chromium took too long to start"), the document is rendered again with wkhtmltopdf;
+	* for wkhtmltopdf, a CSS `@import` whose link is not a full `https://` one is completed
+	  first (`complete_css_imports`). Frappe completes `src`/`href`/`url()` links but not those,
+	  and wkhtmltopdf stops on them with "ProtocolUnknownError".
 
 	`language` switches `frappe.local.lang` for the render only; without one the print's own
 	language is used (`print_language`). `letter_head=None` means the document/default letter
@@ -186,15 +191,34 @@ def render_print_pdf(
 	language = language or print_language(doctype, name, print_format)
 	if language:
 		frappe.local.lang = language
-	try:
-		pdf = frappe.get_print(
+
+	def render(engine: str | None):
+		return frappe.get_print(
 			doctype,
 			name,
 			print_format=print_format,
 			as_pdf=True,
 			no_letterhead=1 if letter_head == "" else 0,
 			letterhead=letter_head or None,
+			**({"pdf_generator": engine} if engine else {}),
 		)
+
+	try:
+		with _css_imports_completed():
+			try:
+				pdf = render(None)
+			except Exception as first:
+				if pdf_engine(print_format) == "wkhtmltopdf":
+					raise
+				frappe.logger("whatsapp_next").warning(
+					f"PDF engine of {print_format!r} failed ({_render_error(first)}); retried with wkhtmltopdf"
+				)
+				try:
+					pdf = render("wkhtmltopdf")
+				except Exception as second:
+					raise frappe.ValidationError(
+						f"{_render_error(first)} — wkhtmltopdf: {_render_error(second)}"
+					) from second
 	except Exception as exc:
 		frappe.throw(
 			_("PDF rendering failed for {0} {1}: {2}").format(doctype, name, _render_error(exc)), WAFileError
@@ -204,6 +228,61 @@ def render_print_pdf(
 	if isinstance(pdf, str):
 		pdf = pdf.encode("latin-1")
 	return RenderedPdf(content=pdf, file_name=safe_file_name(file_name or name, ext="pdf"))
+
+
+def pdf_engine(print_format: str | None) -> str:
+	"""The PDF engine Frappe uses for `print_format`: the format's own choice, else Print
+	Settings' (Frappe 16 only), else wkhtmltopdf."""
+	engine = None
+	if print_format and frappe.get_meta("Print Format").has_field("pdf_generator"):
+		engine = frappe.db.get_value("Print Format", print_format, "pdf_generator")
+	if not engine and frappe.get_meta("Print Settings").has_field("pdf_generator"):
+		engine = frappe.db.get_single_value("Print Settings", "pdf_generator")
+	return engine or "wkhtmltopdf"
+
+
+# `@import url("…")`, `@import url(…)` and `@import "…"`: group 2 is the link
+_CSS_IMPORT = re.compile(r"""(@import\s+(?:url\(\s*)?["']?)([^"')\s;]+)""", re.IGNORECASE)
+
+
+def complete_css_imports(html: str) -> str:
+	"""Make every CSS `@import` link a full one: `//host/x` → `https://host/x`, `/x` and `x` →
+	the site's own address. A full or `data:` link is left as it is."""
+	site = frappe.utils.get_url().rstrip("/")
+
+	def full(match: re.Match) -> str:
+		link = match.group(2)
+		if re.match(r"^[a-z][a-z0-9+.-]*:", link, re.IGNORECASE):
+			return match.group(0)
+		if link.startswith("//"):
+			link = "https:" + link
+		else:
+			link = f"{site}/{link.lstrip('/')}"
+		return match.group(1) + link
+
+	return _CSS_IMPORT.sub(full, html or "")
+
+
+class _css_imports_completed:
+	"""While rendering, Frappe's own link completion (`frappe.utils.pdf.scrub_urls`, which wkhtmltopdf
+	output goes through) also completes CSS `@import` links. Installed once per process and never
+	removed: two renders at once must not undo each other, and the extra step only fixes links."""
+
+	def __enter__(self):
+		import frappe.utils.pdf as pdf
+
+		if not getattr(pdf.scrub_urls, "_wa_css_imports", False):
+			original = pdf.scrub_urls
+
+			def scrub_urls(html):
+				return complete_css_imports(original(html))
+
+			scrub_urls._wa_css_imports = True
+			pdf.scrub_urls = scrub_urls
+		return self
+
+	def __exit__(self, *exc):
+		return False
 
 
 def pdf_first_page_png(pdf_bytes: bytes) -> bytes | None:

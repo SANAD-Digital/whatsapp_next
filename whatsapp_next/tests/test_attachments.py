@@ -137,6 +137,63 @@ class TestAttachments(IntegrationTestCase):
 		self.assertTrue(all("pdf_generator" not in kwargs for kwargs in calls))
 		self.assertEqual([kwargs["print_format"] for kwargs in calls], ["Given Format", "WN Chrome Format"])
 
+	def test_a_failed_chrome_falls_back_to_wkhtmltopdf(self):
+		"""A server whose Chromium does not start ("Chromium took too long to start") still sends the
+		PDF: the document is rendered again with wkhtmltopdf (owner, 2026-11-09)."""
+		from unittest.mock import patch
+
+		calls = []
+
+		def chrome_down(*args, **kwargs):
+			calls.append(kwargs.get("pdf_generator"))
+			if kwargs.get("pdf_generator") != "wkhtmltopdf":
+				raise TimeoutError("Chromium took too long to start.")
+			return b"%PDF-1.4 from wkhtmltopdf"
+
+		with patch.object(frappe, "get_print", chrome_down):
+			with patch.object(attachments, "pdf_engine", return_value="chrome"):
+				pdf = attachments.render_print_pdf("Role", "System Manager", print_format="Any")
+			self.assertEqual((calls, pdf.content), ([None, "wkhtmltopdf"], b"%PDF-1.4 from wkhtmltopdf"))
+			# a format that is wkhtmltopdf already has nothing to fall back to: one try, then the error
+			calls.clear()
+			with (
+				patch.object(attachments, "pdf_engine", return_value="wkhtmltopdf"),
+				patch.object(frappe, "get_print", side_effect=TimeoutError("x")),
+				self.assertRaises(WAFileError),
+			):
+				attachments.render_print_pdf("Role", "System Manager", print_format="Any")
+
+	def test_css_imports_are_completed_for_wkhtmltopdf(self):
+		"""Frappe completes `src`/`href`/`url()` links but not a CSS `@import`, and wkhtmltopdf stops
+		on one that is not a full link ("ProtocolUnknownError")."""
+		site = frappe.utils.get_url().rstrip("/")
+		html = (
+			"<style>@import url(\"/assets/a.css\"); @import url('//fonts.example.com/b.css');"
+			' @import "c.css"; @import url(https://cdn.example.com/d.css);</style>'
+		)
+		self.assertEqual(
+			attachments.complete_css_imports(html),
+			f"<style>@import url(\"{site}/assets/a.css\"); @import url('https://fonts.example.com/b.css');"
+			f' @import "{site}/c.css"; @import url(https://cdn.example.com/d.css);</style>',
+		)
+		# and a real render with one: wkhtmltopdf failed on it before
+		name = "WA Test Import Format"
+		if not frappe.db.exists("Print Format", name):
+			frappe.get_doc(
+				{
+					"doctype": "Print Format",
+					"name": name,
+					"doc_type": "Role",
+					"standard": "No",
+					"custom_format": 1,
+					"print_format_type": "Jinja",
+					"html": '<style>@import url("/assets/frappe/css/fonts/inter/inter.css");</style><p>{{ doc.name }}</p>',
+				}
+			).insert(ignore_permissions=True)
+		self.addCleanup(lambda: frappe.delete_doc("Print Format", name, force=True))
+		pdf = attachments.render_print_pdf("Role", "System Manager", print_format=name)
+		self.assertTrue(pdf.content.startswith(b"%PDF"))
+
 	def test_render_print_pdf_and_png(self):
 		pdf = attachments.render_print_pdf("Role", "System Manager", language="ar", file_name="wa-test-role")
 		self.assertTrue(pdf.content.startswith(b"%PDF"))
