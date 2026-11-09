@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import date
 from unittest.mock import patch
 
@@ -85,23 +86,37 @@ class TestAlerts(IntegrationTestCase):
 		fy = alerts_dates.fiscal_year_range(t)
 		self.assertTrue(fy[0] <= t <= fy[1])
 
-	def test_a_standard_alert_runs_for_the_default_company_before_a_migrate_writes_it(self):
-		"""A site that set its company after the last migrate: the standard ledger alert's filters
-		have no company yet, and General Ledger refuses to run without one."""
-		from whatsapp_next.services import standards
-
+	def test_a_ready_made_alert_runs_for_the_default_company(self):
+		"""The hub's alerts name the company as `COMPANY_TOKEN`; General Ledger refuses to run
+		without one. The alerts the app shipped itself until 2026-11-09 have no company on a site
+		that set its own after its last migrate: they run for it too."""
 		ledger = frappe._dict(
-			name="حركة الحسابات لليوم السابق",
-			filters_json='{"group_by": "Group by Voucher (Consolidated)"}',
+			name="AlertTest Ledger",
+			filters_json=json.dumps({"company": alerts.COMPANY_TOKEN, "group_by": "Group by Voucher"}),
 			dynamic_filters_json='{"from_date": "yesterday", "to_date": "yesterday"}',
 		)
-		with patch.object(standards, "default_company", return_value="AlertTest Co"):
+		key = "WhatsApp Notification Alert::AlertTest Shipped"
+		frappe.defaults.set_default(key, "{}", alerts.SHIPPED_PARENT)
+		self.addCleanup(frappe.defaults.set_default, key, None, alerts.SHIPPED_PARENT)
+		shipped = frappe._dict(ledger, name="AlertTest Shipped", filters_json='{"group_by": "x"}')
+		with patch.object(alerts, "default_company", return_value="AlertTest Co"):
 			self.assertEqual(alerts.resolve_filters(ledger)["company"], "AlertTest Co")
+			self.assertEqual(alerts.resolve_filters(shipped)["company"], "AlertTest Co")
 			# a company the alert names is kept, and an alert of the site's own gets none added
-			named = frappe._dict(ledger, filters_json='{"company": "Other Co"}')
+			named = frappe._dict(shipped, filters_json='{"company": "Other Co"}')
 			self.assertEqual(alerts.resolve_filters(named)["company"], "Other Co")
-			own = frappe._dict(ledger, name="AlertTest Own Ledger")
+			own = frappe._dict(shipped, name="AlertTest Own Ledger")
 			self.assertNotIn("company", alerts.resolve_filters(own))
+			# installed from the hub, the editor shows the real company
+			self.assertEqual(
+				json.loads(alerts.installed_filters(ledger.filters_json)),
+				{"company": "AlertTest Co", "group_by": "Group by Voucher"},
+			)
+			self.assertEqual(alerts.installed_filters('{"range": "30"}'), '{"range": "30"}')
+		with patch.object(alerts, "default_company", return_value=None):
+			# a site with no company yet: nothing to fill in, and no token reaches the report
+			self.assertNotIn("company", alerts.resolve_filters(ledger))
+			self.assertEqual(alerts.installed_filters(ledger.filters_json), ledger.filters_json)
 
 	def test_filters_and_recipients(self):
 		alert = _alert(

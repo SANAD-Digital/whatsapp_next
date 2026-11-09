@@ -40,7 +40,7 @@ contract and an example are in [commands-and-functions.md](commands-and-function
 | `app_home`, `app_logo_url` | `/app/wa-home` | `add_to_apps_screen` is off: the one desktop tile is the standard Desktop Icon in `whatsapp_next/desktop_icon/whatsapp.json`, shown to users whose sidebar has a visible item |
 | `after_install`, `after_migrate`, `before_uninstall` | `whatsapp_next.install.*` | Install seeds the command service user; migrate creates nothing; uninstall drops the standard records' fingerprints. See [install-and-configure.md](install-and-configure.md#2-what-install-and-migrate-seed) |
 | `boot_session` | `whatsapp_next.boot.boot_session` | Adds `frappe.boot.whatsapp_next = {setup_redirect: bool}`, which drives Home → Wizard. It never raises |
-| `fixtures` | Roles (the 4 product roles), the Custom HTML Block named `WA %`, and the standard Templates / Notifications / Alerts ([standard-content.md](standard-content.md)) | The custom field lives in `whatsapp_next/custom/`, Number Cards and Dashboard Charts in their module folders |
+| `fixtures` | Roles (the 4 product roles) and the Custom HTML Block named `WA %`. Ready-made content comes from the platform's hub ([ready-made-content.md](ready-made-content.md)) |
 | `doc_events` | see below | |
 | `ignore_links_on_delete` | Webhook Event, Queue Item, Audit Log, WhatsApp Log, Inbound Message, WhatsApp Number | History never blocks deleting a device, contact or campaign (D-061) |
 | `scheduler_events` | see below | |
