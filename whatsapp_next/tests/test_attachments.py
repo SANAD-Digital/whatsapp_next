@@ -115,6 +115,28 @@ class TestAttachments(IntegrationTestCase):
 		self.assertNotIn("<pre>", message)
 		self.assertNotIn("Traceback", message)
 
+	def test_the_pdf_engine_is_the_one_frappes_own_button_uses(self):
+		"""A format made for Chrome (Print Format → PDF Generator) failed when the app pinned
+		wkhtmltopdf ("ProtocolUnknownError" on a CSS `@import`). The app no longer names an engine,
+		and names the document type's default format, from which Frappe picks it."""
+		from unittest.mock import patch
+
+		calls = []
+
+		def fake_print(*args, **kwargs):
+			calls.append(kwargs)
+			return b"%PDF-1.4 fake"
+
+		meta = frappe._dict(default_print_format="WN Chrome Format", has_field=lambda fieldname: False)
+		with (
+			patch.object(frappe, "get_print", fake_print),
+			patch.object(frappe, "get_meta", return_value=meta),
+		):
+			attachments.render_print_pdf("Role", "System Manager", print_format="Given Format")
+			attachments.render_print_pdf("Role", "System Manager")
+		self.assertTrue(all("pdf_generator" not in kwargs for kwargs in calls))
+		self.assertEqual([kwargs["print_format"] for kwargs in calls], ["Given Format", "WN Chrome Format"])
+
 	def test_render_print_pdf_and_png(self):
 		pdf = attachments.render_print_pdf("Role", "System Manager", language="ar", file_name="wa-test-role")
 		self.assertTrue(pdf.content.startswith(b"%PDF"))

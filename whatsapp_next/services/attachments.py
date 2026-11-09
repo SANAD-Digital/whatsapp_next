@@ -1,6 +1,7 @@
 # Module role: attachment handling for outbound messages (backend-plan §3 `attachments.py`).
 # Reads File rows (private or public) as bytes, renders Print Formats to PDF with
-# `frappe.get_print(as_pdf=True)` (wkhtmltopdf; WeasyPrint dropped, D-029 OQ-2), makes a PNG of
+# `frappe.get_print(as_pdf=True)` (the engine the Print Format or Print Settings chose, as Frappe's
+# own PDF button; WeasyPrint dropped, D-029 OQ-2), makes a PNG of
 # the first PDF page with PyMuPDF when available, saves private files and builds the provider
 # `AttachmentRef`. Rendering is job-time work (campaign materialize, notification job, command
 # outputs) — never in a web request path.
@@ -167,13 +168,20 @@ def render_print_pdf(
 	language: str | None = None,
 	file_name: str | None = None,
 ) -> RenderedPdf:
-	"""Render a document's Print Format to PDF bytes (wkhtmltopdf via `frappe.get_print`).
+	"""Render a document's Print Format to PDF bytes through `frappe.get_print`, with the PDF
+	engine Frappe's own button uses: the Print Format's choice, else Print Settings', else
+	wkhtmltopdf. Pinning wkhtmltopdf broke formats made for Chrome: a CSS `@import` without a
+	full `https://` link fails there with "ProtocolUnknownError" (Frappe makes `src`/`href`
+	absolute, not `@import`).
 
 	`language` switches `frappe.local.lang` for the render only; without one the print's own
 	language is used (`print_language`). `letter_head=None` means the document/default letter
 	head, `""` means none."""
 	if not frappe.db.exists(doctype, name):
 		frappe.throw(_("{0} {1} not found").format(doctype, name), WAFileError)
+	# the document type's default format, named: Frappe picks the PDF engine from the format it
+	# is given, before the print view falls back to the default one
+	print_format = print_format or frappe.get_meta(doctype).default_print_format or None
 	previous_lang = frappe.local.lang
 	language = language or print_language(doctype, name, print_format)
 	if language:
@@ -182,11 +190,10 @@ def render_print_pdf(
 		pdf = frappe.get_print(
 			doctype,
 			name,
-			print_format=print_format or None,
+			print_format=print_format,
 			as_pdf=True,
 			no_letterhead=1 if letter_head == "" else 0,
 			letterhead=letter_head or None,
-			pdf_generator="wkhtmltopdf",
 		)
 	except Exception as exc:
 		frappe.throw(
