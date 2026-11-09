@@ -6217,3 +6217,5 @@ Move the account to this site,نقل الحساب إلى هذا الموقع
 Not linked to a site yet,غير مربوط بموقع بعد
 Linked to {0},مربوط بالموقع {0},Account site
 New WhatsApp message,رسالة واتساب جديدة
+Send a one-page PDF as an image,إرسال ملف PDF ذي الصفحة الواحدة صورةً,
+"A PDF of one page (an invoice, a receipt) goes out as a picture the recipient sees in the chat without opening a file. Longer PDFs stay PDFs.",ملف PDF من صفحة واحدة (فاتورة، سند) يُرسل صورةً يراها المستلم في المحادثة دون أن يفتح ملفاً. وما زاد على صفحة يبقى PDF.,

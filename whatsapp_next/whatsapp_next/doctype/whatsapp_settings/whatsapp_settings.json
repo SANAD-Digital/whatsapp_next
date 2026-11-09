@@ -73,6 +73,7 @@
   "global_blacklist_group",
   "send_only_to_known_numbers",
   "import_past_messages",
+  "single_page_pdf_as_image",
   "picker_tab",
   "picker_sources",
   "retention_tab",
@@ -568,6 +569,13 @@
    "label": "Import Past Messages"
   },
   {
+   "default": "1",
+   "description": "A PDF of one page (an invoice, a receipt) goes out as a picture the recipient sees in the chat without opening a file. Longer PDFs stay PDFs.",
+   "fieldname": "single_page_pdf_as_image",
+   "fieldtype": "Check",
+   "label": "Send a one-page PDF as an image"
+  },
+  {
    "fieldname": "picker_tab",
    "fieldtype": "Tab Break",
    "label": "Picker"
@@ -773,7 +781,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-11-09 18:00:00.000000",
+ "modified": "2026-11-09 21:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Settings",

@@ -132,6 +132,12 @@ def _settings():
 	return frappe.get_cached_doc("WhatsApp Settings")
 
 
+def _single_page_pdf_as_image() -> bool:
+	"""Settings → Policy → "Send a one-page PDF as an image"; on when never saved (its default)."""
+	value = _settings().get("single_page_pdf_as_image")
+	return True if value is None else bool(cint(value))
+
+
 def _blacklisted(key: str | None) -> bool:
 	if not key:
 		return False
@@ -326,7 +332,21 @@ def create_outbound(spec: OutboundSpec, *, user: str | None = None) -> str:
 				"mime_type": spec.mime_type or meta["mime_type"],
 			}
 		)
-		attachments.check_mime_for_type(spec.message_type, values["mime_type"])
+		# a report alert names its own format (PDF or PNG), so a PDF it asked for stays a PDF
+		if (
+			spec.message_type == "Document"
+			and not spec.notification_alert
+			and _single_page_pdf_as_image()
+			and attachments.is_pdf(values["file_name"], values["mime_type"])
+		):
+			image = attachments.pdf_as_image(
+				spec.attachment,
+				values["file_name"],
+				(spec.reference_doctype, spec.reference_name) if spec.reference_name else None,
+			)
+			if image:
+				values.update(image, message_type="Image")
+		attachments.check_mime_for_type(values["message_type"], values["mime_type"])
 	elif spec.message_type == "Location":
 		loc = spec.location or {}
 		if loc.get("latitude") is None or loc.get("longitude") is None:

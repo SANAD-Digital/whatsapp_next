@@ -250,6 +250,7 @@ system writes the field.
 | `default_device` | Link WhatsApp Device | — | Used when a send names no device |
 | `global_blacklist_group` | Link WhatsApp Contact Group | — | Must be a group of kind `Blacklist`. Its members never receive anything |
 | `send_only_to_known_numbers` | Check | 0 | Outside campaigns, send only to numbers that have messaged you or are confirmed |
+| `single_page_pdf_as_image` | Check | 1 | A PDF document of exactly one page (a printed invoice, a receipt, an uploaded file) is stored again as a PNG when the message is created and goes out as an Image. Longer PDFs, any PDF PyMuPDF cannot read, and a report alert's PDF (the alert picks PDF or PNG itself) go out as they are |
 
 ### Picker
 

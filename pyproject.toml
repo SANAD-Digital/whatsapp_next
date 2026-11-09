@@ -13,6 +13,7 @@ dependencies = [
     "openpyxl>=3.1",   # ContactPicker source 4 (Excel)
     "vobject>=0.9.7",  # ContactPicker source 5 (vCard)
     "pypng>=0.20220715",  # PNG output of the WhatsApp QR codes (pyqrcode comes with frappe)
+    "PyMuPDF>=1.24",   # a one-page PDF sent as an image (Settings → Policy)
 ]
 
 [build-system]

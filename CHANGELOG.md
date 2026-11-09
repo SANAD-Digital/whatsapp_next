@@ -8,6 +8,13 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
 
 ### Added
 
+- **A one-page PDF goes out as an image** (WhatsApp Settings → Policy → "Send a one-page PDF as
+  an image", on by default): `dispatch.create_outbound` stores a one-page PDF document again as a
+  PNG (`attachments.pdf_as_image`, PyMuPDF) and sends it as an Image, so the recipient sees the
+  invoice in the chat. Longer PDFs, any the conversion cannot read, and a report alert's PDF (the alert
+  has its own PDF / PNG choice) go out as PDFs. PyMuPDF is
+  now a declared dependency. The old app did this always; the helper had been ported but never
+  called.
 - **Standard content, shipped as fixtures** (`fixtures/standard_*.json`, declared in
   `hooks.py → fixtures`): 12 Arabic message templates, 10 notifications on ERPNext documents (sales
   invoice, receipt, full payment, due and overdue reminders, sales order, delivery reminder,

@@ -87,6 +87,7 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"mark_read_mode": ("Select", "Never\nWhen a command replies\nEvery received message"),
 		"typing_indicator": "Check",
 		"import_past_messages": "Check",
+		"single_page_pdf_as_image": "Check",
 	},
 	"WhatsApp Settings Picker Source": {
 		"document_type": ("Link", "DocType"),
