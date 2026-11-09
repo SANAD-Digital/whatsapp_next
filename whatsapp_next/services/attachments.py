@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import base64
+import json
 import mimetypes
 import os
 import re
@@ -250,7 +251,8 @@ _LENGTH = re.compile(r"\d+(?:\.\d+)?(?:mm|cm|in)", re.IGNORECASE)
 
 def page_options(print_format: str | None) -> dict[str, str]:
 	"""The page size a Print Format sets, as wkhtmltopdf options (owner, 2026-11-10): its "Paper
-	size" (Frappe 16; a receipt is its width on an A4-high page), else a CSS `@page { size: … }`
+	size" (Frappe 16; a receipt is its width on an A4-high page), else the size the Frappe 16
+	print format builder saved in its layout, else a CSS `@page { size: … }`
 	in its own CSS or HTML — a page name (A5, Letter…), two lengths in mm / cm / in, and
 	`landscape`. `{}` when it sets none, and Print Settings decides as before."""
 	if not print_format or not frappe.db.exists("Print Format", print_format):
@@ -261,6 +263,8 @@ def page_options(print_format: str | None) -> dict[str, str]:
 		return {"page-size": "Custom", "page-width": _RECEIPT_WIDTHS[paper], "page-height": "297mm"}
 	if paper and paper.lower() in _PAGE_NAMES:
 		return {"page-size": _PAGE_NAMES[paper.lower()]}
+	if builder := _builder_page(pf.get("format_data")):
+		return builder
 	size = None
 	for rule in _PAGE_RULE.findall(f"{pf.get('css') or ''}\n{pf.get('html') or ''}"):
 		for value in _PAGE_SIZE.findall(rule):
@@ -275,6 +279,26 @@ def page_options(print_format: str | None) -> dict[str, str]:
 	elif named := next((_PAGE_NAMES[p] for p in parts if p in _PAGE_NAMES), None):
 		options = {"page-size": named}
 	if "landscape" in parts:
+		options["orientation"] = "Landscape"
+	return options
+
+
+def _builder_page(format_data: str | None) -> dict[str, str]:
+	"""The paper size and orientation Frappe 16's print format builder saves in the layout
+	(`format_data` → `{"page": {"size": "A5", "orientation": "Landscape"}}`). Chrome reads it; a
+	wkhtmltopdf render (the fallback when Chrome does not start) does not."""
+	try:
+		layout = json.loads(format_data) if format_data else None
+	except ValueError:
+		return {}
+	page = layout.get("page") if isinstance(layout, dict) else None
+	if not isinstance(page, dict):
+		return {}
+	options: dict[str, str] = {}
+	size = str(page.get("size") or "").lower()
+	if size in _PAGE_NAMES:
+		options["page-size"] = _PAGE_NAMES[size]
+	if page.get("orientation") == "Landscape":
 		options["orientation"] = "Landscape"
 	return options
 
