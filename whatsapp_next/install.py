@@ -10,7 +10,9 @@
 #   the sidebar ............................ `whatsapp_next/workspace_sidebar/whatsapp.json`
 #   number cards, dashboard charts ......... `whatsapp_next/whatsapp_next/{number_card,dashboard_chart}/`
 #   the custom field on Contact Phone ...... `whatsapp_next/whatsapp_next/custom/contact_phone.json`
-#   standard templates / notifications ..... `fixtures/standard_*.json`
+#
+# Ready-made templates, notifications, alerts, commands and functions are not part of an install:
+# a site takes them from the platform's hub (`services/hub.py`).
 #
 # What is left needs code because it depends on the site: the command service user is named after
 # the site (D-012), and the Contact warning reads the site's own permissions (D-125).
@@ -44,12 +46,12 @@ def after_migrate() -> None:
 
 
 def before_uninstall() -> None:
-	"""Drop what the app keeps outside its own tables: the content fingerprints of the standard
-	records (`services/standards.py`). The Custom Field and its column are left in place, as
-	Frappe leaves every customization — the data in it is the site's."""
-	from whatsapp_next.services.standards import FINGERPRINT_PARENT
+	"""Drop what the app keeps outside its own tables: the fingerprints of the records it shipped
+	itself until 2026-11-09 (`alerts.SHIPPED_PARENT`). The Custom Field and its column are left in
+	place, as Frappe leaves every customization — the data in it is the site's."""
+	from whatsapp_next.services.alerts import SHIPPED_PARENT
 
-	frappe.db.delete("DefaultValue", {"parent": FINGERPRINT_PARENT})
+	frappe.db.delete("DefaultValue", {"parent": SHIPPED_PARENT})
 
 
 def has_app_permission() -> bool:

@@ -30,7 +30,6 @@ hooks in `whatsapp_next/install.py` do only what has no such folder.
 | Number Cards, Dashboard Charts (`WA …`) | `whatsapp_next/whatsapp_next/number_card/<name>/`, `dashboard_chart/<name>/` — standard module documents | `frappe.utils.dashboard.sync_dashboards` |
 | The custom field **`Contact Phone.wa_phone_e164`** (Data, indexed, hidden, read-only, D-028) | `whatsapp_next/whatsapp_next/custom/contact_phone.json`, the file Customize Form → *Export Customizations* writes (`custom_fields`, `custom_perms`, `property_setters`, `links`, `doctype`, `sync_on_migrate: 1`) | `frappe.modules.utils.sync_customizations` |
 | `WA Dashboard Block` (Custom HTML Block — Frappe has no module folder for it) | `fixtures/custom_html_block.json` | `frappe.utils.fixtures.sync_fixtures` |
-| Standard templates, notifications, alerts | `fixtures/standard_*.json`. See [standard-content.md](standard-content.md) | `sync_fixtures`, under the rules of `services/standards.py` |
 
 A standard Desktop Icon or Workspace Sidebar **without** a file is deleted by every migrate
 (`remove_orphan_entities`). That is why the tile must be a file and not a row made in code.
@@ -44,7 +43,7 @@ when the app is installed, which would be a second tile for the same product.
 |---|---|---|
 | `after_install` | Creates the command service user `wa-commands@<site>`: a System User that is **disabled, with no roles and no welcome mail**, and names it in WhatsApp Settings → `command_service_user`. Commands run as this user, never as Administrator (D-012). To use commands, enable it and grant only what your functions need. It must not be a System Manager. | The user's name carries the site, and a User fixture would be replaced on every migrate together with what the admin granted it |
 | `after_install`, `after_migrate` | Prints a warning while role `All` still has rights on `Contact` (see §7). Creates and changes nothing. | It reads the site's own permissions |
-| `before_uninstall` | Deletes the standard-content fingerprints the app keeps in `tabDefaultValue` | They belong to no DocType of the app |
+| `before_uninstall` | Deletes the fingerprints of the content the app shipped until 2026-11-09, kept in `tabDefaultValue` | They belong to no DocType of the app |
 
 Nothing is created or re-asserted on migrate. The default country is not copied into WhatsApp
 Settings any more: `services.phone.default_region` reads Settings first and falls back to System
@@ -58,8 +57,8 @@ Settings → Country, so an empty field means "the site's country".
 2. `after_install`: the disabled command service user, named in Settings; the Contact warning.
 3. Frappe's own `after_app_install`: it would create a Desktop Icon for a public workspace that
    has none. Ours exists from step 1, so it creates nothing.
-4. `sync_fixtures`: the role properties, the HTML block, the standard content (26 records, all
-   notifications and alerts switched off).
+4. `sync_fixtures`: the role properties and the HTML block. Ready-made templates, notifications,
+   alerts, commands and functions come from the platform's hub ([ready-made-content.md](ready-made-content.md)).
 5. `sync_customizations`: the custom field and its column.
 6. `sync_dashboards`: the Number Cards and Dashboard Charts.
 
@@ -71,12 +70,10 @@ first), so a Contact saved in between is never refused.
 1. Patches: none (`patches.txt` is empty).
 2. `sync_for`: only files that changed. A DocType whose JSON changed is re-synced and its
    `on_doctype_update()` runs again (an index that exists is skipped).
-3. `sync_fixtures`: role properties and the HTML block are rewritten from the files; standard
-   content follows [its own rules](standard-content.md) (your on/off, device, recipients and edits
-   are kept).
+3. `sync_fixtures`: role properties and the HTML block are rewritten from the files. Templates,
+   notifications and alerts the app shipped before 2026-11-09 are left as they are.
 4. `sync_dashboards`, `sync_customizations`: the custom field's row is updated in place.
-5. `remove_orphan_entities`: finds nothing of this app to delete, because every standard record
-   has its file.
+5. `remove_orphan_entities`: finds nothing of this app to delete.
 6. `after_migrate`: the Contact warning.
 
 **The custom field's column is never dropped or emptied.** `sync_customizations` looks the Custom

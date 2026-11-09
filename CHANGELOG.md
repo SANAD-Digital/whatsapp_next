@@ -35,6 +35,14 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
 
 ### Changed
 
+- **Ready-made content comes only from the platform's hub** (owner, 2026-11-09). The app no
+  longer ships its 12 templates, 10 notifications and 4 alerts as fixtures
+  (`fixtures/standard_*.json`, `services/standards.py`, `tests/test_standards.py` and
+  `developer-docs/standard-content.md` are gone; see `developer-docs/ready-made-content.md`). A
+  site keeps what it already has, and the hub offers each such record as an update. A hub alert
+  that names its company as `__default_company__` gets the site's default company when it is
+  installed, or when it runs on a site that had none then (`alerts.COMPANY_TOKEN`,
+  `alerts.installed_filters`).
 - The custom field `Contact Phone.wa_phone_e164` moved from `fixtures/custom_field.json` to
   `whatsapp_next/custom/contact_phone.json`, the file Frappe's *Export Customizations* writes and
   `sync_customizations` applies on install and migrate. The field, its index and its data are

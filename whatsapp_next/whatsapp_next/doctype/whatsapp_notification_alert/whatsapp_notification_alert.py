@@ -15,7 +15,6 @@ from frappe.model.document import Document
 from frappe.utils import cint, get_datetime, now_datetime
 
 from whatsapp_next.exceptions import WAValidationError
-from whatsapp_next.services import standards
 from whatsapp_next.services.phone import set_phone_pair
 
 WEEKDAYS = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
@@ -47,21 +46,6 @@ class WhatsAppNotificationAlert(Document):
 		self.check_attachment_format()
 		self.normalize_recipients()
 		self.next_run_at = self.compute_next_run()
-
-	# ---- standard content (`services/standards.py`): what a fixture sync may change ----------
-
-	@staticmethod
-	def prepare_for_import(docdict: dict) -> None:
-		"""Frappe import hook: a shipped record keeps what the site owns."""
-		standards.prepare_for_import(docdict)
-
-	def before_import(self) -> None:
-		"""Frappe import hook: a record kept as the owner's is re-inserted as it is."""
-		standards.before_import(self)
-
-	def after_insert(self) -> None:
-		"""Finish a fixture import of a shipped record (no-op for any other insert)."""
-		standards.after_insert(self)
 
 	def check_report_access(self) -> None:
 		"""The scheduler runs the alert's report as Administrator and sends its rows out, so

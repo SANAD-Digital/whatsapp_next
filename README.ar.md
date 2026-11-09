@@ -75,7 +75,7 @@
 <td valign="top">
 <img src=".github/readme/icons/file-text.svg" width="40" alt=""><br>
 <b>القوالب</b><br>
-رسائل تأخذ حقولها من المستند. وتأتي قوالب عربية جاهزة لشركة تجارية.
+رسائل تأخذ حقولها من المستند. وتُثبَّت قوالب عربية جاهزة لشركة تجارية من مستودع المنصة.
 </td>
 </tr>
 <tr>
@@ -198,10 +198,10 @@ bench build --app whatsapp_next
 بعدها افتح **الواتساب** في النظام. يفتح معالج الإعداد وحده حتى يرتبط الموقع: أنشئ حساباً أو
 سجّل دخولك، ووافق على الشروط، واربط رقمك الأول.
 
-يضيف `bench migrate` حقل `Contact Phone.wa_phone_e164`، ويجلب المحتوى الجاهز: قوالب وإشعارات
-وتنبيهات تقارير عربية لشركة تجارية. تصل الإشعارات والتنبيهات الجاهزة **مطفأة**، وما تشغّله أو
-تعدّله يبقى كما هو بعد كل تحديث. التفاصيل في
-[developer-docs/standard-content.md](developer-docs/standard-content.md).
+يضيف `bench migrate` حقل `Contact Phone.wa_phone_e164`. أما القوالب والإشعارات وتنبيهات التقارير
+والأوامر والدوال الجاهزة فليست جزءاً من التطبيق: افتح **المستودع** (Hub) من أي شاشة منها وثبّت ما
+تحتاجه من المنصة. تصل الإشعارات والتنبيهات **مطفأة**. التفاصيل في
+[developer-docs/ready-made-content.md](developer-docs/ready-made-content.md).
 
 ينشئ التثبيت أربعة أدوار (`WhatsApp Manager` و`WhatsApp Agent` و`WhatsApp Viewer`
 و`WhatsApp Contact User`)، ومستخدماً للأوامر **معطلاً** (`wa-commands@<site>`). فعّله وامنحه ما

@@ -76,8 +76,8 @@ happen. Schedule posts to your WhatsApp status too.
 <td valign="top">
 <img src=".github/readme/icons/file-text.svg" width="40" alt=""><br>
 <b>Templates</b><br>
-Messages with fields from the document. Arabic templates for a trading company come ready to
-use.
+Messages with fields from the document. Ready-made Arabic templates for a trading company
+install from the platform's hub.
 </td>
 </tr>
 <tr>
@@ -197,10 +197,10 @@ bench build --app whatsapp_next
 Then open **WhatsApp** on the Desk. The setup wizard opens by itself until the site is linked:
 create an account or sign in, accept the terms, and link your first number.
 
-`bench migrate` adds the `Contact Phone.wa_phone_e164` field and syncs the standard content:
-Arabic templates, notifications and report alerts for a trading company (`fixtures/standard_*.json`).
-Standard notifications and alerts arrive **switched off**; what you enable or edit survives every
-later migrate. See [developer-docs/standard-content.md](developer-docs/standard-content.md).
+`bench migrate` adds the `Contact Phone.wa_phone_e164` field. Ready-made templates, notifications,
+report alerts, commands and functions are not part of the app: open the **Hub** on any of those
+screens and install what you need from the platform. Notifications and alerts arrive **switched
+off**. See [developer-docs/ready-made-content.md](developer-docs/ready-made-content.md).
 
 The install creates four roles (`WhatsApp Manager`, `WhatsApp Agent`, `WhatsApp Viewer`,
 `WhatsApp Contact User`) and a **disabled** command service user (`wa-commands@<site>`). Enable it
@@ -268,7 +268,7 @@ whatsapp_next/
   whatsapp_next/doctype/    module "WhatsApp Next": thin controllers
   whatsapp_next/page/       the wa-* screens
   public/js/ui/             the portable component kit (sanad.ui)
-  fixtures/                 roles, standard templates, notifications and alerts
+  fixtures/                 roles and one HTML block
   translations/ar.csv       Arabic
   tests/                    the app test suite
 brand/                      logo, icon, fonts and colour tokens

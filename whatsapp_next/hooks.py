@@ -44,10 +44,12 @@ before_uninstall = "whatsapp_next.install.before_uninstall"
 # Desk boot: `frappe.boot.whatsapp_next.setup_redirect` drives Home → Onboarding Wizard (spec #1).
 boot_session = "whatsapp_next.boot.boot_session"
 
-# Fixtures: only what Frappe has no folder of its own for — the four product roles, one Custom HTML
-# Block and the standard content. Everything else is a file in the folder Frappe syncs it from
-# (the list is at the top of `install.py`); customizations of core DocTypes live in
-# `whatsapp_next/custom/<doctype>.json` (`Contact Phone.wa_phone_e164`, D-028).
+# Fixtures: only what Frappe has no folder of its own for — the four product roles and one Custom
+# HTML Block. Everything else is a file in the folder Frappe syncs it from (the list is at the top
+# of `install.py`); customizations of core DocTypes live in `whatsapp_next/custom/<doctype>.json`
+# (`Contact Phone.wa_phone_e164`, D-028). Ready-made templates, notifications, alerts, commands and
+# functions are not shipped with the app: a site installs them from the platform's hub
+# (`services/hub.py`, owner 2026-11-09).
 fixtures = [
 	{
 		"dt": "Role",
@@ -64,76 +66,6 @@ fixtures = [
 	# module documents (`whatsapp_next/{number_card,dashboard_chart}/`, synced by `sync_dashboards`),
 	# as the Workspace is (`whatsapp_next/workspace/whatsapp/`).
 	{"dt": "Custom HTML Block", "filters": [["name", "like", "WA %"]]},
-	# Standard content (developer-docs/standard-content.md): Arabic templates, notifications and
-	# report alerts for a trading company on ERPNext. Notifications and alerts ship switched off.
-	# The names are the records' identity for good — never rename one. `services/standards.py`
-	# decides what a sync may change on a site (the owner's on/off, device, recipients and edits
-	# survive every migrate). The `prefix` orders the files: templates before what links to them.
-	# Keep these three last: Frappe's export carries a prefix over to the entries after it.
-	# Do not run `bench export-fixtures` on a site in use: it would write that site's state
-	# (enabled, device, recipients, counters) into the files — `tests/test_standards.py` fails then.
-	{
-		"dt": "WhatsApp Template",
-		"prefix": "standard_1",
-		"filters": [
-			[
-				"name",
-				"in",
-				[
-					"إشعار فاتورة مبيعات",
-					"إشعار سند قبض",
-					"شكر على سداد فاتورة",
-					"تذكير قبل استحقاق فاتورة",
-					"تذكير بفاتورة متأخرة",
-					"تأكيد طلب بيع",
-					"تذكير بموعد تسليم طلب",
-					"إشعار تسليم بضاعة",
-					"عرض سعر",
-					"أمر شراء للمورد",
-					"رسالة ترحيب",
-					"عرض ترويجي",
-				],
-			]
-		],
-	},
-	{
-		"dt": "WhatsApp Notification",
-		"prefix": "standard_2",
-		"filters": [
-			[
-				"name",
-				"in",
-				[
-					"فاتورة مبيعات عند الاعتماد",
-					"سند قبض عند الاعتماد",
-					"شكر عند سداد الفاتورة كاملة",
-					"تذكير قبل استحقاق الفاتورة",
-					"تذكير بعد استحقاق الفاتورة",
-					"تأكيد طلب بيع عند الاعتماد",
-					"تذكير قبل تسليم الطلب",
-					"إشعار تسليم عند الاعتماد",
-					"عرض سعر عند الاعتماد",
-					"أمر شراء للمورد عند الاعتماد",
-				],
-			]
-		],
-	},
-	{
-		"dt": "WhatsApp Notification Alert",
-		"prefix": "standard_3",
-		"filters": [
-			[
-				"name",
-				"in",
-				[
-					"أرصدة العملاء المدينة",
-					"أرصدة الموردين الدائنة",
-					"ملخص المبيعات اليومي",
-					"حركة الحسابات لليوم السابق",
-				],
-			]
-		],
-	},
 ]
 
 # Document events.

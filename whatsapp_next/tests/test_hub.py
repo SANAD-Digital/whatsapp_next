@@ -15,6 +15,7 @@ from whatsapp_next.tests.fake_provider import FakeProvider
 
 CODE = "hubtest"
 TEMPLATE = "Hub test template"
+ALERT = "Hub test alert"
 
 
 class HubProvider(FakeProvider):
@@ -62,6 +63,27 @@ class HubProvider(FakeProvider):
 			},
 		}
 
+	def _alert(self):
+		return {
+			"name": "HUB-ALERT-1",
+			"hub_name": ALERT,
+			"hub_type": "Alert",
+			"description": "",
+			"checksum": "a1",
+			"modified": "2026-11-09 12:00:00",
+			"payload": {
+				"name": ALERT,
+				"alert_name": ALERT,
+				"periodicity": "Daily",
+				"notification_time": "08:00:00",
+				"content_type": "Static Message",
+				"message": "from the hub",
+				"attachment_format": "None",
+				"filters_json": '{"company": "__default_company__", "range": "30"}',
+				"recipients": [{"recipient_type": "Role", "role": "System Manager"}],
+			},
+		}
+
 	def list_hub(self, hub_type=None, txt=None):
 		# `target`: the record each entry installs as, as the platform lists it
 		return [
@@ -71,7 +93,7 @@ class HubProvider(FakeProvider):
 		]
 
 	def get_hub_entry(self, name):
-		return dict(self._entries()[name])
+		return dict({**self._entries(), "HUB-ALERT-1": self._alert()}[name])
 
 
 class TestHub(IntegrationTestCase):
@@ -79,6 +101,7 @@ class TestHub(IntegrationTestCase):
 		frappe.set_user("Administrator")
 		frappe.db.delete("WhatsApp Command", {"hub_entry": "HUB-CMD-1"})
 		frappe.db.delete("WhatsApp Template", {"name": TEMPLATE})
+		frappe.db.delete("WhatsApp Notification Alert", {"name": ALERT})
 
 	def test_states_install_and_update(self):
 		provider = HubProvider()
@@ -108,6 +131,25 @@ class TestHub(IntegrationTestCase):
 			with self.assertRaises(WAPermissionError):
 				hub.install("HUB-FN-1")
 		self.assertFalse(frappe.db.exists("Server Script", "wa_fn_hubtest"))
+
+	def test_an_alert_arrives_off_and_runs_for_this_sites_company(self):
+		"""Ready-made content comes only from the hub (owner, 2026-11-09). An alert's report
+		filters name the company as "the site's default"; installed, it names the real one."""
+		from unittest.mock import patch
+
+		from whatsapp_next.services import alerts
+
+		with (
+			fake_provider(HubProvider()),
+			as_user("WhatsApp Manager"),
+			patch.object(alerts, "default_company", return_value="Hub Test Co"),
+		):
+			hub.install("HUB-ALERT-1")
+		row = frappe.db.get_value(
+			"WhatsApp Notification Alert", ALERT, ["enabled", "filters_json", "hub_entry"], as_dict=True
+		)
+		self.assertEqual((row.enabled, row.hub_entry), (0, "HUB-ALERT-1"))
+		self.assertEqual(frappe.parse_json(row.filters_json), {"company": "Hub Test Co", "range": "30"})
 
 	def test_a_record_already_here_by_that_name_is_an_update(self):
 		"""A site that already has the record (made by hand, or by an older setup) sees the entry

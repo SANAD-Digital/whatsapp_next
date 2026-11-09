@@ -23,6 +23,14 @@ from whatsapp_next.services.phone import normalize
 MAX_COLUMN_RECIPIENTS = 200
 MAX_BUILDER_ROWS = 1000
 PNG_BINARY = "wkhtmltoimage"
+# A report filter a ready-made alert cannot know: "the site's default company". The hub's alerts
+# carry it; it becomes the company when the alert is installed, or when it runs on a site that had
+# none then.
+COMPANY_TOKEN = "__default_company__"
+# Until 2026-11-09 the app shipped four alerts itself (fixtures), each kept with a fingerprint under
+# this parent in `tabDefaultValue`. They all ran for the default company, and a site that set its
+# company after its last migrate has them without one.
+SHIPPED_PARENT = "__whatsapp_next_standards"
 
 
 @dataclass
@@ -94,7 +102,8 @@ def _load_json(value: Any) -> Any:
 
 def resolve_filters(alert) -> dict[str, Any]:
 	"""Static `filters_json` (object) merged with `dynamic_filters_json` (`{field: token}`,
-	tokens per `alerts_dates.TOKENS`); dynamic values win."""
+	tokens per `alerts_dates.TOKENS`); dynamic values win. A company left as `COMPANY_TOKEN`, or
+	missing from an alert the app used to ship, is the site's default company."""
 	filters: dict[str, Any] = {}
 	static = _load_json(getattr(alert, "filters_json", None))
 	if isinstance(static, dict):
@@ -107,30 +116,59 @@ def resolve_filters(alert) -> dict[str, Any]:
 	if isinstance(dynamic, dict):
 		for k, v in dynamic.items():
 			filters[k] = alerts_dates.resolve(v)
-	if not filters.get("company"):
-		company = _standard_company(alert)
+	if filters.get("company") == COMPANY_TOKEN:
+		filters.pop("company")
+		wants_company = True
+	else:
+		wants_company = not filters.get("company") and _shipped_by_the_app(alert)
+	if wants_company:
+		company = default_company()
 		if company:
 			filters["company"] = company
 	return filters
 
 
-def _standard_company(alert) -> str | None:
-	"""The site's default company, for a standard alert shipped to run for it
-	(`standards.COMPANY_TOKEN`) whose filters do not name one yet. A migrate writes the company in
-	only when the site has one, so a site that set its company after the last migrate would
-	otherwise run the report without it ("Company is mandatory")."""
-	from whatsapp_next.services import standards
-
-	shipped = standards.records("WhatsApp Notification Alert").get(getattr(alert, "name", None) or "")
-	wanted = shipped.get("filters_json") if shipped else None
-	if isinstance(wanted, str):
-		try:
-			wanted = json.loads(wanted)
-		except ValueError:
-			return None
-	if isinstance(wanted, dict) and wanted.get("company") == standards.COMPANY_TOKEN:
-		return standards.default_company()
+def default_company() -> str | None:
+	"""The company a ready-made report alert runs for: the site's default one, or its only one."""
+	company = None
+	if frappe.db.exists("DocType", "Global Defaults"):
+		company = frappe.db.get_single_value("Global Defaults", "default_company")
+	company = company or frappe.defaults.get_global_default("company")
+	if company and frappe.db.exists("Company", company):
+		return company
+	if frappe.db.exists("DocType", "Company"):
+		only = frappe.get_all("Company", pluck="name", limit=2)
+		if len(only) == 1:
+			return only[0]
 	return None
+
+
+def installed_filters(filters_json: Any) -> Any:
+	"""An alert's static filters as a site installs them from the hub: `COMPANY_TOKEN` becomes the
+	site's default company, so the alert's editor shows a real one. A site with none keeps the
+	token, and `resolve_filters` fills it in at run time once the site has a company."""
+	filters = filters_json
+	if isinstance(filters, str):
+		try:
+			filters = json.loads(filters) if filters.strip() else None
+		except ValueError:
+			return filters_json
+	if not isinstance(filters, dict) or filters.get("company") != COMPANY_TOKEN:
+		return filters_json
+	company = default_company()
+	if not company:
+		return filters_json
+	return json.dumps({**filters, "company": company}, ensure_ascii=False)
+
+
+def _shipped_by_the_app(alert) -> bool:
+	name = getattr(alert, "name", None)
+	return bool(
+		name
+		and frappe.db.exists(
+			"DefaultValue", {"parent": SHIPPED_PARENT, "defkey": f"WhatsApp Notification Alert::{name}"}
+		)
+	)
 
 
 # ---- recipients --------------------------------------------------------------------------

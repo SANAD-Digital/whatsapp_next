@@ -127,6 +127,10 @@ def _install_record(doctype: str, payload: dict[str, Any], local: str | None) ->
 	"""Create the record from the entry's fields, or update the one installed before; only the
 	DocType's own set-up fields are taken (`backup._clean`)."""
 	clean = backup._clean(doctype, payload)
+	if doctype == "WhatsApp Notification Alert" and clean.get("filters_json"):
+		from whatsapp_next.services import alerts
+
+		clean["filters_json"] = alerts.installed_filters(clean["filters_json"])
 	if local and frappe.db.exists(doctype, local):
 		doc = frappe.get_doc(doctype, local)
 		# an update brings the new set-up, not a switch: what this site turned on or off stays

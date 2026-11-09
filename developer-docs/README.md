@@ -53,7 +53,7 @@ What it does:
 |---|---|
 | [architecture.md](architecture.md) | The layers, component and sequence diagrams, DocTypes, read layer, E.164, Numbers materialisation, queue states, realtime, scheduler, API versioning |
 | [install-and-configure.md](install-and-configure.md) | Installing, what the install seeds, the onboarding wizard, every WhatsApp Settings field, site config keys, workers and scheduler |
-| [standard-content.md](standard-content.md) | The standard templates, notifications and alerts the app ships, and what a migrate keeps |
+| [ready-made-content.md](ready-made-content.md) | Templates, notifications, alerts, commands and functions come from the platform's hub, not with the app |
 | [test-lab.md](test-lab.md) | The Test Lab page: testing every part of the app with real messages |
 | [add-a-provider.md](add-a-provider.md) | Writing and registering a new `BaseProvider` |
 | [api/README.md](api/README.md) | API conventions: `api_endpoint`, roles, errors, paging, versioning |
@@ -105,7 +105,7 @@ whatsapp_next/                      # the app repo (apps/whatsapp_next)
 │   ├── public/js/ui/               # portable kit (sanad.ui), never imports whatsapp_next
 │   ├── public/js/{screens,form,listview}/  # app-specific screens, form and list scripts
 │   ├── public/scss/_tokens.scss    # the product palette (--wa-*)
-│   ├── fixtures/                   # roles, Custom HTML Block, standard templates / notifications / alerts
+│   ├── fixtures/                   # roles, Custom HTML Block
 │   ├── desktop_icon/, workspace_sidebar/   # app-level folders Frappe syncs itself
 │   ├── whatsapp_next/custom/       # customizations of core DocTypes (Contact Phone.wa_phone_e164)
 │   ├── translations/ar.csv         # Arabic
