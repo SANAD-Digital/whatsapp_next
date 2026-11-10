@@ -305,3 +305,47 @@ class TestContactOpenToAll(IntegrationTestCase):
 		from whatsapp_next.services import permissions
 
 		self.assertEqual(out["contact_open_to_all"], permissions.contact_open_to_all())
+
+
+class TestChatLists(IntegrationTestCase):
+	"""The chat lists (owner, 2026-11-10): "Reply on an edit / a deletion only to" and "Send only
+	to" are saved from the screen and read back by it. They are Table fields, whose rows are not in
+	the Singles table the other fields are read from: the screen showed them empty after a save."""
+
+	def setUp(self):
+		frappe.db.savepoint("chat_lists")
+
+	def tearDown(self):
+		frappe.db.rollback(save_point="chat_lists")
+		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+
+	def test_a_list_saved_is_read_back_canonical(self):
+		rows = [
+			{"phone_e164": "967777667663", "display_name": "Owner"},
+			{"phone_e164": "+967 777 667 663"},  # the same number again
+			{"phone_e164": "120363000000333@g.us", "display_name": "Team"},
+			{"phone_e164": "not a number"},
+		]
+		self.assertEqual(
+			api.save_settings(section="commands", values={"edit_reply_to": rows})["changed"],
+			["edit_reply_to"],
+		)
+		self.assertEqual(
+			api.save_settings(section="policy", values={"send_only_to": rows[:1]})["changed"],
+			["send_only_to"],
+		)
+		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+		back = api.get_settings(section="commands")["commands"]
+		self.assertEqual(
+			[(r["phone_e164"], r["display_name"]) for r in back["edit_reply_to"]],
+			[("+967777667663", "Owner"), ("120363000000333@g.us", "Team")],
+		)
+		self.assertEqual(back["delete_reply_to"], [])
+		self.assertEqual(
+			[r["phone_e164"] for r in api.get_settings(section="policy")["policy"]["send_only_to"]],
+			["+967777667663"],
+		)
+		# saving the same list again changes nothing
+		self.assertEqual(
+			api.save_settings(section="policy", values={"send_only_to": rows[:1]})["changed"], []
+		)

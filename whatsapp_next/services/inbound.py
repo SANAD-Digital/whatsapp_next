@@ -260,6 +260,12 @@ def _reply_to_change(
 	scope = settings.get("changes_reply_scope") or "All chats"
 	if (scope == "Groups only" and not row.is_group) or (scope == "Private chats only" and row.is_group):
 		return None
+	# the chats picked for it (owner, 2026-11-10): groups, contacts or numbers; none picked is all
+	from whatsapp_next.services.settings import chat_in
+
+	chat = row.chat_jid if row.is_group else (row.phone_e164 or row.jid)
+	if not chat_in("edit_reply_to" if edit else "delete_reply_to", chat):
+		return None
 	body = "\n\n".join(p for p in (lead, original) if p)
 	spec = dispatch.OutboundSpec(
 		device=device,

@@ -1106,3 +1106,57 @@
 	.wa-hub__time { align-self: flex-end; font-size: 11px; color: var(--wa-ink-4); }
 	.wa-hub__preview + .wa-hub__sub { margin-block-start: 14px; }
 }
+
+// a list of chats picked with the contact picker: chips, then "Choose…" (owner, 2026-11-10)
+.wa-settings__targets {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	inline-size: 100%;
+}
+.wa-settings__targets-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.wa-settings__target {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding-block: 4px;
+	padding-inline: 10px 4px;
+	border: 1px solid var(--wa-border);
+	border-radius: 999px;
+	background: var(--wa-sunken);
+	font-size: 13px;
+	color: var(--wa-ink);
+}
+.wa-settings__target-key {
+	font-size: 12px;
+	color: var(--wa-ink-3);
+}
+.wa-settings__target-x {
+	display: inline-grid;
+	place-items: center;
+	inline-size: 22px;
+	block-size: 22px;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: var(--wa-ink-3);
+	cursor: pointer;
+	&:hover,
+	&:focus-visible {
+		background: var(--wa-border);
+		color: var(--wa-ink);
+	}
+}
+.wa-settings__targets-all {
+	font-size: 13px;
+	color: var(--wa-ink-3);
+}
+.wa-settings__targets-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}

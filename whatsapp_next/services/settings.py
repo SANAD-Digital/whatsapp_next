@@ -8,11 +8,18 @@ from typing import Any
 
 import frappe
 from frappe import _
+from frappe.utils import cstr
 
 from whatsapp_next.exceptions import WAValidationError
 from whatsapp_next.services import audit
 
 SETTINGS = "WhatsApp Settings"
+# Lists of chats picked with the contact picker (owner, 2026-11-10): who an edit / deletion reply
+# goes to, and who the site may send to. Each row is a number (E.164) or a group (its JID).
+TARGET_TABLES: frozenset[str] = frozenset({"edit_reply_to", "delete_reply_to", "send_only_to"})
+TARGET_FIELDS: tuple[str, ...] = ("phone_e164", "display_name", "source")
+MAX_TARGETS = 500
+
 PICKER_SOURCE_FIELDS: tuple[str, ...] = (
 	"document_type",
 	"label",
@@ -61,6 +68,12 @@ def save_fields(values: dict[str, Any], *, section: str, user: str | None = None
 				)
 			changed.append(fieldname)
 			continue
+		if fieldname in TARGET_TABLES:
+			rows = target_rows(value)
+			if rows != target_keys(doc, fieldname, rows_only=True):
+				doc.set(fieldname, rows)
+				changed.append(fieldname)
+			continue
 		if doc.get(fieldname) != value:
 			doc.set(fieldname, value)
 			changed.append(fieldname)
@@ -96,3 +109,58 @@ def stored_or_default(fieldname: str):
 		return frappe.get_cached_doc(SETTINGS).get(fieldname)
 	df = frappe.get_meta(SETTINGS).get_field(fieldname)
 	return df.default if df else None
+
+
+def target_rows(value) -> list[dict[str, Any]]:
+	"""The rows of a chat list as sent by the screen, each key made canonical — a number in E.164,
+	a group by its JID — the unreadable and the repeated left out. E: `WAValidationError`."""
+	from whatsapp_next.services.phone import classify
+
+	if value in (None, ""):
+		return []
+	if isinstance(value, str):
+		value = frappe.parse_json(value)
+	if not isinstance(value, list):
+		frappe.throw(_("A list of chats is expected"), WAValidationError)
+	if len(value) > MAX_TARGETS:
+		frappe.throw(_("A list holds at most {0} chats").format(MAX_TARGETS), WAValidationError)
+	rows, seen = [], set()
+	for row in value:
+		row = row if isinstance(row, dict) else {"phone_e164": row}
+		_kind, key = classify(cstr(row.get("phone_e164") or row.get("jid") or "").strip())
+		if not key or key in seen:
+			continue
+		seen.add(key)
+		rows.append(
+			{
+				"phone_e164": key,
+				"display_name": cstr(row.get("display_name") or "").strip()[:140] or None,
+				"source": cstr(row.get("source") or row.get("source_type") or "").strip()[:140] or None,
+			}
+		)
+	return rows
+
+
+def target_keys(doc=None, fieldname: str = "send_only_to", rows_only: bool = False):
+	"""The chats a Settings list names: their keys (a set; empty means "everyone"), or with
+	`rows_only` the rows as `target_rows` writes them."""
+	doc = doc or frappe.get_cached_doc(SETTINGS)
+	rows = [
+		{
+			"phone_e164": row.phone_e164,
+			"display_name": row.display_name or None,
+			"source": row.source or None,
+		}
+		for row in doc.get(fieldname) or []
+	]
+	return rows if rows_only else {row["phone_e164"] for row in rows}
+
+
+def chat_in(fieldname: str, key: str | None) -> bool:
+	"""Whether a chat is among those a Settings list names; an empty list names every chat."""
+	from whatsapp_next.services.phone import classify
+
+	keys = target_keys(fieldname=fieldname)
+	if not keys:
+		return True
+	return classify(key)[1] in keys

@@ -166,13 +166,11 @@ class FakeProvider(BaseProvider):
 			request_key=request_key, status="Completed", extra={"ok": True, "email": "tenant@example.test"}
 		)
 
-	def login(self, email, password, integration_link=None, site_url=None, move_site=False) -> dict:
-		self._record(
-			"login", email=email, integration_link=integration_link, site_url=site_url, move_site=move_site
-		)
+	def login(self, email, password, integration_link=None, site_url=None) -> dict:
+		self._record("login", email=email, integration_link=integration_link, site_url=site_url)
 		if password != "right-password":
 			raise pex.AuthError("Incorrect email or password", code="LOGIN_FAILED", http_status=401)
-		if email == "other-site@example.com" and not move_site:
+		if email == "other-site@example.com":
 			return {
 				"ok": True,
 				"account_in_use": True,

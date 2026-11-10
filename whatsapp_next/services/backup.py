@@ -110,6 +110,8 @@ CREATE_ONLY = ("WhatsApp Campaign",)
 #: fields and are never read here; a device belongs to the account)
 SETTINGS_SECTIONS: tuple[str, ...] = ("queue", "commands", "policy", "picker", "retention", "webhook")
 DEVICE_FIELDS = frozenset({"device", "reply_device", "default_device", "requested_device"})
+#: a test site's guard: carried to a live site by an import, it would stop every send but to its list
+NOT_IN_A_BACKUP = frozenset({"send_only_to"})
 
 #: what belongs to the platform account, deleted children-first when the account changes
 ACCOUNT_DOCTYPES: tuple[str, ...] = (
@@ -143,12 +145,17 @@ def _settings_values() -> dict[str, Any]:
 	out: dict[str, Any] = {}
 	for section in SETTINGS_SECTIONS:
 		for fieldname in WRITABLE.get(section, ()):
-			if fieldname in DEVICE_FIELDS:
+			if fieldname in DEVICE_FIELDS or fieldname in NOT_IN_A_BACKUP:
 				continue
 			if fieldname == "picker_sources":
 				out[fieldname] = [
 					{f: row.get(f) for f in settings_service.PICKER_SOURCE_FIELDS}
 					for row in doc.get("picker_sources") or []
+				]
+			elif fieldname in settings_service.TARGET_TABLES:
+				out[fieldname] = [
+					{f: row.get(f) for f in settings_service.TARGET_FIELDS}
+					for row in doc.get(fieldname) or []
 				]
 			else:
 				out[fieldname] = doc.get(fieldname)
@@ -273,7 +280,7 @@ def import_backup(payload: str | dict, user: str | None = None) -> dict[str, Any
 		from whatsapp_next.api.v1.settings import WRITABLE
 
 		for section in SETTINGS_SECTIONS:
-			allowed = set(WRITABLE.get(section, ())) - DEVICE_FIELDS
+			allowed = set(WRITABLE.get(section, ())) - DEVICE_FIELDS - NOT_IN_A_BACKUP
 			part = {k: v for k, v in values.items() if k in allowed}
 			if part:
 				# one section's failure takes back that section only: a whole rollback took back

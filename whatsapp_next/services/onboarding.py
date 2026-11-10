@@ -511,7 +511,6 @@ def login(
 	password: str,
 	user: str | None = None,
 	integration_link: str | None = None,
-	move_site: bool = False,
 ) -> dict[str, Any]:
 	"""Sign in against the platform and store the credentials it hands back.
 
@@ -531,7 +530,6 @@ def login(
 				password,
 				integration_link=integration_link,
 				site_url=frappe.utils.get_url(),
-				move_site=move_site,
 			)
 			or {}
 		)
@@ -568,15 +566,16 @@ def login(
 			"message": _("You have more than one account. Choose the one this site sends through."),
 		}
 	if result.get("account_in_use"):
-		# one account, one site (owner, 2026-11-04): its messages and receipts reach one site only,
-		# so taking it from the site that has it is the person's explicit choice
+		# one account, one site (owner, 2026-11-04), never moved to another (owner, 2026-11-10: «اذا
+		# الحساب مربوط في موقع لا يسمح له ان يدخل على موقع اخر ابدا»): free again only when the site
+		# holding it signs out of it
 		return {
 			"ok": False,
 			"account_in_use": True,
 			"integration_link": result.get("integration_link"),
 			"site": result.get("site"),
 			"message": _(
-				"This account is linked to the site {0}. Messages that arrive go to that site. Move it here and that site stops receiving them and sending through it."
+				"This account is linked to the site {0} and cannot be used by another site. Sign out of it on that site first, or choose another account."
 			).format(result.get("site")),
 		}
 	returned = result.get("credentials") or {}

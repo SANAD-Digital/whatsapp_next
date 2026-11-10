@@ -220,20 +220,18 @@ def _d(value: Any) -> date | None:
 
 
 NOT_ALLOWED_CODE = "RECIPIENT_NOT_ALLOWED"
-NOT_ALLOWED_TEXT = "Not sent: this site sends only to the numbers in its wa_send_allowlist"
+NOT_ALLOWED_TEXT = "Not sent: this site sends only to the chats in Settings → Policy → Send only to"
 
 
 def recipient_allowed(message: NormalizedMessage) -> bool:
-	"""A site with `wa_send_allowlist` (site_config, a list of numbers) sends to nothing else: no
-	other number and no group. For development and test sites, whichever platform they send
-	through (owner, 2026-11-08); a site without the list is unchanged."""
-	allowed = frappe.conf.get("wa_send_allowlist")
-	if not allowed:
-		return True
-	if message.recipient_type == "Group" or str(message.jid or "").endswith("@g.us"):
-		return False
-	digits = re.sub(r"\D", "", str(message.phone_e164 or str(message.jid or "").split("@", 1)[0]))
-	return digits in {re.sub(r"\D", "", str(n)) for n in allowed}
+	"""A site whose Settings → Policy → "Send only to" names chats sends to nothing else (owner,
+	2026-11-10: the list belongs on a screen, not in site_config; test runs had sent real messages
+	to made-up numbers). Numbers and groups alike; an empty list sends to anyone."""
+	from whatsapp_next.services.settings import chat_in
+
+	group = message.recipient_type == "Group" or str(message.jid or "").endswith("@g.us")
+	key = message.jid if group else (message.phone_e164 or message.jid)
+	return chat_in("send_only_to", key)
 
 
 class SndPlatformProvider(BaseProvider):
@@ -634,7 +632,6 @@ class SndPlatformProvider(BaseProvider):
 		password: str,
 		integration_link: str | None = None,
 		site_url: str | None = None,
-		move_site: bool = False,
 	) -> dict:
 		"""Exchange an e-mail and password for this tenant's credentials.
 
@@ -643,15 +640,13 @@ class SndPlatformProvider(BaseProvider):
 		api_key, api_secret}}`. The caller stores `credentials` and never returns them.
 		A customer with several accounts names one (`integration_link`), or the platform matches
 		`site_url` to one, or it answers `{choose_account, accounts[]}` with no keys. An account
-		another site has answers `{account_in_use, site}` until `move_site` moves it here.
+		another site has answers `{account_in_use, site}` and is never moved here (owner, 2026-11-10).
 		"""
 		body = {"email": email, "password": password}
 		if integration_link:
 			body["integration_link"] = integration_link
 		if site_url:
 			body["site_url"] = site_url
-		if move_site:
-			body["move_site"] = 1
 		return self._request("POST", "login_with_password", v1=True, guest=True, body=body)
 
 	def validate_coupon(self, code: str, email: str | None = None, mobile_e164: str | None = None) -> dict:

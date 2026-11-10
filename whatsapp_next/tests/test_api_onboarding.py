@@ -605,9 +605,9 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 			frappe.get_doc(SETTINGS).get_password("customer_api_key", raise_exception=False), "ck-WAIL-FAKE-2"
 		)
 
-	def test_an_account_another_site_has_moves_only_when_asked(self):
-		"""One account, one site (owner, 2026-11-04): the card says which site has it and stores
-		nothing; asked to move it, the sign-in goes through."""
+	def test_an_account_another_site_has_is_never_taken(self):
+		"""One account, one site, never moved (owner, 2026-11-10): the card says which site has it
+		and stores nothing; `move_site` from a page opened before is ignored and sent to no one."""
 		for f in SECRETS:
 			remove_encrypted_password(SETTINGS, SETTINGS, f)
 		provider = FakeProvider()
@@ -621,11 +621,12 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 				(held["ok"], held["account_in_use"], held["site"]), (False, True, "old.example.com")
 			)
 			self.assertFalse(frappe.get_doc(SETTINGS).get_password("customer_api_key", raise_exception=False))
-			moved = api.login(
+			again = api.login(
 				platform_base_url="", email="other-site@example.com", password="right-password", move_site=1
 			)
-		self.assertTrue(moved["ok"])
-		self.assertTrue([c for c in provider.calls if c[0] == "login"][-1][1]["move_site"])
+			self.assertEqual((again["ok"], again["account_in_use"]), (False, True))
+			self.assertFalse(frappe.get_doc(SETTINGS).get_password("customer_api_key", raise_exception=False))
+		self.assertNotIn("move_site", [c for c in provider.calls if c[0] == "login"][-1][1])
 
 	def test_login_links_the_site(self):
 		"""Owner, Gate 2: the keys, the connection test, the account's devices and the webhook all

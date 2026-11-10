@@ -1,0 +1,46 @@
+{
+ "actions": [],
+ "creation": "2026-11-10 22:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "istable": 1,
+ "field_order": [
+  "phone_e164",
+  "display_name",
+  "source"
+ ],
+ "fields": [
+  {
+   "fieldname": "phone_e164",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Number or group",
+   "reqd": 1,
+   "description": "A number in international form, or a WhatsApp group's address (…@g.us)."
+  },
+  {
+   "fieldname": "display_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Name"
+  },
+  {
+   "fieldname": "source",
+   "fieldtype": "Data",
+   "label": "Picked from",
+   "read_only": 1
+  }
+ ],
+ "links": [],
+ "modified": "2026-11-10 22:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "WhatsApp Next",
+ "name": "WhatsApp Settings Target",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}

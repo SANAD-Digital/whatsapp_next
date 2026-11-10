@@ -151,3 +151,40 @@ class TestChangeReplies(TestInboundChanges):
 			self._event("message.deleted", original_text="b"), webhook_event_name=None, device=self.device
 		)
 		self.assertEqual(self._replies(), [])
+
+	def test_only_the_chats_picked_get_a_reply(self):
+		"""Owner, 2026-11-10: each reply has its own list of groups, contacts or numbers; a chat not
+		in it gets no reply, and an empty list answers every chat."""
+		from whatsapp_next.services import settings as settings_service
+
+		frappe.db.savepoint("reply_targets")
+		self.addCleanup(
+			lambda: (
+				frappe.db.rollback(save_point="reply_targets"),
+				frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings"),
+			)
+		)
+
+		def pick(fieldname, keys):
+			settings_service.save_fields({fieldname: [{"phone_e164": k} for k in keys]}, section="commands")
+			frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
+
+		pick("edit_reply_to", ["+967770000999", "120363000000222@g.us"])  # not this chat
+		handle_event(
+			self._event("message.edited", original_text="a", new_text="b"),
+			webhook_event_name=None,
+			device=self.device,
+		)
+		self.assertEqual(self._replies(), [])
+		pick("edit_reply_to", ["967770000001"])  # this chat, written without its +
+		handle_event(
+			self._event("message.edited", original_text="b", new_text="c"),
+			webhook_event_name=None,
+			device=self.device,
+		)
+		self.assertEqual(len(self._replies()), 1)
+		# the deletion has its own list: empty, so it answers every chat
+		handle_event(
+			self._event("message.deleted", original_text="c"), webhook_event_name=None, device=self.device
+		)
+		self.assertEqual(len(self._replies()), 2)

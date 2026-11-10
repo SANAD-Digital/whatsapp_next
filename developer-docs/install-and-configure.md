@@ -251,6 +251,7 @@ system writes the field.
 | `global_blacklist_group` | Link WhatsApp Contact Group | — | Must be a group of kind `Blacklist`. Its members never receive anything |
 | `send_only_to_known_numbers` | Check | 0 | Outside campaigns, send only to numbers that have messaged you or are confirmed |
 | `single_page_pdf_as_image` | Check | 1 | A PDF document of exactly one page (a printed invoice, a receipt, an uploaded file) is stored again as a PNG when the message is created and goes out as an Image. Longer PDFs, any PDF PyMuPDF cannot read, and a report alert's PDF (the alert picks PDF or PNG itself) go out as they are |
+| `send_only_to` | Table (WhatsApp Settings Target) | empty | Chats (numbers or group JIDs, picked with the contact picker) this site may send to; the provider refuses every other recipient. Empty: anyone. For a test or development site; never carried by a backup. Replaces the old `wa_send_allowlist` key in site_config |
 
 ### Picker
 

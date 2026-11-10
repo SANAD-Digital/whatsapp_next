@@ -109,7 +109,6 @@ class MetaCloudProvider(BaseProvider):
 		password: str,
 		integration_link: str | None = None,
 		site_url: str | None = None,
-		move_site: bool = False,
 	) -> dict:
 		raise pex.NotSupportedError("Sign-in is handled in Meta Business Manager")
 

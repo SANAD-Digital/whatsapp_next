@@ -1698,7 +1698,7 @@ frappe.provide("whatsapp_next.onboarding");
 		 * and stores the keys with `set_password`; it returns only whether it worked and who the
 		 * customer is. Nothing is kept in the browser.
 		 */
-		do_login($btn, move = false) {
+		do_login($btn) {
 			// the platform takes the mobile number (any format), the username or the email. The
 			// field opens on the sign-up's number or email; once it is edited, what it holds is the
 			// answer — an emptied field is empty, not silently the sign-up's number again.
@@ -1725,8 +1725,6 @@ frappe.provide("whatsapp_next.onboarding");
 							password,
 							// a customer with several accounts: the one picked in this card (owner, 2026-11-04)
 							integration_link: this.f.login_account || null,
-							// the person chose to take the account from the site that had it
-							move_site: move ? 1 : 0,
 						},
 						// a refusal belongs in this card, not in a Desk dialog over it
 						{ silent: true }
@@ -1780,8 +1778,8 @@ frappe.provide("whatsapp_next.onboarding");
 
 		/**
 		 * The account is another site's (owner, 2026-11-04: one account, one site — its incoming
-		 * messages reach one site only). Said in the card, with the way to move it here or to pick
-		 * another account.
+		 * messages reach one site only), and it is never moved here (owner, 2026-11-10). Said in
+		 * the card; the person signs out of it on that site, or picks another account.
 		 */
 		account_in_use($btn, r) {
 			const $card = $btn.closest(".wa-onb__card");
@@ -1790,9 +1788,7 @@ frappe.provide("whatsapp_next.onboarding");
 			const message = r.site ? cstr(r.message).replace(r.site, "\u2066" + r.site + "\u2069") : r.message;
 			const $box = $(`<div class="wa-onb__inuse" role="alert">
 				<p>${esc(message)}</p>
-				${ui.btn({ label: __("Move the account to this site"), variant: "secondary", block: true, attrs: { "data-act": "move-site" } })}
 			</div>`).insertBefore($btn);
-			$box.on("click", '[data-act="move-site"]', (e) => this.do_login($(e.currentTarget), true).then(() => $box.remove()));
 			this.show_error("");
 		}
 

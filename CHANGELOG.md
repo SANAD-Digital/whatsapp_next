@@ -6,6 +6,25 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
 
 ## [Unreleased]
 
+### Added
+
+- **Who an edit / a deletion is answered for** (Settings → Commands → "Reply on an edit only to",
+  "Reply on a deletion only to", owner 2026-11-10): groups, contacts or numbers picked with the
+  contact picker; a chat not in the list gets no reply, an empty list answers every chat.
+- **"Send only to"** (Settings → Policy): the chats a test or development site may send to, picked
+  the same way; `SndPlatformProvider` refuses every other recipient. It replaces the
+  `wa_send_allowlist` site_config key (the owner: «مكانها غلط»), and is never carried by a backup.
+  Settings shows a chat list as chips with "Choose…" (`targets_control`).
+
+### Changed
+
+- **An account linked to a site is never taken by another site** (owner 2026-11-10: «اذا الحساب
+  مربوط في موقع لا يسمح له ان يدخل على موقع اخر ابدا»). The sign-in card no longer offers "Move the
+  account to this site": it names the site that has the account and asks to sign out of it there,
+  or to pick another account. `move_site` is gone from the provider; the API still accepts it from
+  an open page and ignores it. The platform refuses the move at sign-in and at webhook
+  registration (`ACCOUNT_IN_USE`, 409), and frees the account when its site signs out.
+
 ### Fixed
 
 - **The editor window no longer slides up when a drop-down opens near its bottom** (the device
