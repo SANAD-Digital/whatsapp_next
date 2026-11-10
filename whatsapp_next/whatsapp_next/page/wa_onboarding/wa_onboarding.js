@@ -134,10 +134,10 @@ frappe.provide("whatsapp_next.onboarding");
 	// the brand panel's words, per stage, as the platform's AuthLayout carries them
 	const RAIL = () => ({
 		signup: {
-			eyebrow: __("First month free · no card"),
+			eyebrow: __("A professional presence in every message"),
 			headline: __("Your invoices reach your customers on WhatsApp."),
 			lead: __("Send invoices, reminders and statements from ERPNext as you do today, and they reach your customer on WhatsApp with their PDF. Your invoices stay in your system; we only deliver the message."),
-			points: [__("Your first month is free, no card needed"), __("Customers get the invoice and its PDF within seconds"), __("You decide what is sent, and when")],
+			points: [__("Your first month is free"), __("Customers get the invoice and its PDF within seconds"), __("You decide what is sent, and when")],
 		},
 		login: {
 			eyebrow: __("Your customers are waiting for your messages"),
@@ -328,7 +328,7 @@ frappe.provide("whatsapp_next.onboarding");
 							<a class="wa-onb__chip" href="https://github.com/sanad-digital" target="_blank" rel="noopener">${ico("code", "xs")}${esc(__("Open source"))}</a>
 						</div>
 						<p class="wa-onb__support">${with_support(__("Need help? Write to support at {0}", [SUPPORT_SLOT]))}</p>
-						<p class="wa-onb__rights">${esc(__("Sanad Digital · all rights reserved"))}</p>
+						<p class="wa-onb__rights">${esc(__("WhatsappNext · all rights reserved"))}</p>
 					</div>
 				</aside>
 
@@ -673,7 +673,7 @@ frappe.provide("whatsapp_next.onboarding");
 			const $card = this.card("lg", {
 				title: __("Create your account"),
 				sub: __("Start with a free trial. It takes about two minutes."),
-				badge: ui.badge(__("First month free · no card"), "ok"),
+				badge: ui.badge(__("A professional presence in every message"), "ok"),
 			});
 
 			// One screen, no scrolling (owner, 2026-10-08): every field sits in one two-column grid
@@ -2100,8 +2100,8 @@ frappe.provide("whatsapp_next.onboarding");
 				<div class="wa-onb__ready-note">
 					<span class="wa-onb__ready-note-mark">${ico("card", "sm")}</span>
 					<span class="wa-onb__ready-note-text">
-						<b>${esc(__("Your first month is free, no card needed"))}</b>
-						<span>${esc(__("No card. You can upgrade or stop at any time from the subscription page."))}</span>
+						<b>${esc(__("Your first month is free"))}</b>
+						<span>${esc(__("You can upgrade or stop at any time from the subscription page."))}</span>
 					</span>
 				</div>
 

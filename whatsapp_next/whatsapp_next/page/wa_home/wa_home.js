@@ -688,7 +688,7 @@ frappe.provide("whatsapp_next.home");
 							tone: "blue",
 							icon: "es-line-alert-circle",
 							title: __("This site is not connected to a WhatsApp account"),
-							note: __("Create a free account (a full month, no card) or sign in to the one you have, and this site starts sending."),
+							note: __("Create a free account (a full month) or sign in to the one you have, and this site starts sending."),
 							action: { label: __("Create an account or sign in"), handler: () => frappe.set_route("wa-onboarding") },
 						});
 						else alerts.push({
