@@ -104,7 +104,8 @@ def login(
 	"""Sign in to the platform and store what it returns → `{ok, customer, customer_name}`.
 	`email` takes any sign-in the account has: the email, the mobile number or the username.
 	With several accounts the answer is `{choose_account, accounts}` until `integration_link` names one;
-	an account another site has answers `{account_in_use, site}` until `move_site=1`.
+	an account another site has answers `{account_in_use, site}`: it is never moved here (owner,
+	2026-11-10). `move_site` is accepted from a page opened before that and ignored.
 
 	The API keys the platform hands back are written with `set_password`; none of them is
 	ever part of this answer."""
@@ -114,7 +115,6 @@ def login(
 		password,
 		user=frappe.session.user,
 		integration_link=integration_link or None,
-		move_site=bool(cint(move_site)),
 	)
 
 

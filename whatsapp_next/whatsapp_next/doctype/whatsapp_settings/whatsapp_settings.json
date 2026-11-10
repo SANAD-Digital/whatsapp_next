@@ -53,9 +53,11 @@
   "changes_reply_section",
   "reply_on_edit",
   "edit_reply_text",
+  "edit_reply_to",
   "changes_reply_column",
   "reply_on_delete",
   "delete_reply_text",
+  "delete_reply_to",
   "changes_reply_scope",
   "main_menu_section",
   "main_menu_mode",
@@ -74,6 +76,7 @@
   "send_only_to_known_numbers",
   "import_past_messages",
   "single_page_pdf_as_image",
+  "send_only_to",
   "picker_tab",
   "picker_sources",
   "retention_tab",
@@ -440,6 +443,14 @@
    "label": "Text sent on an edit"
   },
   {
+   "fieldname": "edit_reply_to",
+   "fieldtype": "Table",
+   "options": "WhatsApp Settings Target",
+   "label": "Reply on an edit only to",
+   "depends_on": "reply_on_edit",
+   "description": "Groups, contacts or numbers. Empty: every chat."
+  },
+  {
    "fieldname": "changes_reply_column",
    "fieldtype": "Column Break"
   },
@@ -456,6 +467,14 @@
    "fieldname": "delete_reply_text",
    "fieldtype": "Small Text",
    "label": "Text sent on a deletion"
+  },
+  {
+   "fieldname": "delete_reply_to",
+   "fieldtype": "Table",
+   "options": "WhatsApp Settings Target",
+   "label": "Reply on a deletion only to",
+   "depends_on": "reply_on_delete",
+   "description": "Groups, contacts or numbers. Empty: every chat."
   },
   {
    "default": "All chats",
@@ -574,6 +593,13 @@
    "fieldname": "single_page_pdf_as_image",
    "fieldtype": "Check",
    "label": "Send a one-page PDF as an image"
+  },
+  {
+   "fieldname": "send_only_to",
+   "fieldtype": "Table",
+   "options": "WhatsApp Settings Target",
+   "label": "Send only to",
+   "description": "Groups, contacts or numbers this site may send to; nothing goes to anyone else. Empty: anyone. For a test or development site."
   },
   {
    "fieldname": "picker_tab",
@@ -781,7 +807,7 @@
  ],
  "issingle": 1,
  "links": [],
- "modified": "2026-11-09 21:00:00.000000",
+ "modified": "2026-11-10 22:00:00.000000",
  "modified_by": "Administrator",
  "module": "WhatsApp Next",
  "name": "WhatsApp Settings",

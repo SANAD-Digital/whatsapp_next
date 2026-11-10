@@ -6212,8 +6212,7 @@ As it is sent.,كما يُرسل.
 Your accounts,حساباتك
 Choose the account this site sends through.,اختر الحساب الذي يرسل عبره هذا الموقع.
 "Choose an account, then sign in.",اختر حساباً ثم سجّل الدخول.
-"This account is linked to the site {0}. Messages that arrive go to that site. Move it here and that site stops receiving them and sending through it.",هذا الحساب مربوط بالموقع {0}، والرسائل الواردة تصل إليه. إذا نقلته إلى هذا الموقع يتوقف ذلك الموقع عن استقبال الرسائل والإرسال عبره.
-Move the account to this site,نقل الحساب إلى هذا الموقع
+"This account is linked to the site {0} and cannot be used by another site. Sign out of it on that site first, or choose another account.",هذا الحساب مربوط بالموقع {0} ولا يمكن لموقع آخر استخدامه. اخرج منه في ذلك الموقع أولاً، أو اختر حساباً آخر.
 Not linked to a site yet,غير مربوط بموقع بعد
 Linked to {0},مربوط بالموقع {0},Account site
 New WhatsApp message,رسالة واتساب جديدة
@@ -6240,3 +6239,17 @@ Your first month is free,شهرك الأول مجاني,
 WhatsappNext · all rights reserved,واتساب نكست · جميع الحقوق محفوظة,
 "Create a free account (a full month) or sign in to the one you have, and this site starts sending.",أنشئ حساباً مجانياً (شهر كامل) أو سجّل الدخول إلى حسابك، وسيبدأ هذا الموقع بالإرسال.,
 You can upgrade or stop at any time from the subscription page.,يمكنك الترقية أو الإيقاف في أي وقت من صفحة الاشتراك.,
+Reply on an edit only to,الرد عند التعديل على هؤلاء فقط,
+Reply on a deletion only to,الرد عند الحذف على هؤلاء فقط,
+"Groups, contacts or numbers. Empty: every chat.",مجموعات أو جهات اتصال أو أرقام. فارغة: كل المحادثات.,
+Send only to,لا ترسل إلا إلى,
+"Groups, contacts or numbers this site may send to; nothing goes to anyone else. Empty: anyone. For a test or development site.",مجموعات أو جهات اتصال أو أرقام يُسمح لهذا الموقع بالإرسال إليها، ولا يخرج شيء لغيرها. فارغة: الإرسال للجميع. لموقع تجربة أو تطوير.,
+Everyone,الكل,
+Choose…,اختر…,
+Clear the list,إفراغ القائمة,
+Number or group,رقم أو مجموعة,
+Picked from,اختير من,
+"A number in international form, or a WhatsApp group's address (…@g.us).",رقم بالصيغة الدولية، أو عنوان مجموعة واتساب (…@g.us).,
+A list of chats is expected,يُنتظر قائمة محادثات,
+A list holds at most {0} chats,القائمة تتسع لـ {0} محادثة على الأكثر,
+Not sent: this site sends only to the chats in Settings → Policy → Send only to,لم تُرسل: هذا الموقع لا يرسل إلا إلى المحادثات في الإعدادات ← السياسة ← لا ترسل إلا إلى,

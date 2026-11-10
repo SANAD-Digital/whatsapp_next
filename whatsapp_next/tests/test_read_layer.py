@@ -188,6 +188,9 @@ class TestReadLayer(IntegrationTestCase):
 	# -- iter_keys_since --------------------------------------------------------------
 
 	def test_iter_keys_since_batches_and_watermark(self):
+		# a window no real message reaches: it reads every key in it, and two days back met the
+		# site's own traffic on 2026-11-10 (6 batches instead of 3)
+		self.t0 = add_to_date(now_datetime(), days=-500)
 		for i in range(4):
 			_outbound(self.device, phone=KEY_A if i < 2 else KEY_B, ts=self._t(i))
 		_inbound(self.device, phone=KEY_B, ts=self._t(4))

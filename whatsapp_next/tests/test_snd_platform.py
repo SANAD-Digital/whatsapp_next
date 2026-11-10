@@ -12,6 +12,7 @@ import requests
 from frappe.tests import IntegrationTestCase
 
 from whatsapp_next.providers import exceptions as pex
+from whatsapp_next.providers import snd_platform as snd_platform_module
 from whatsapp_next.providers.schemas import AttachmentRef, NormalizedMessage, Poll, ProviderSettings, Source
 from whatsapp_next.providers.snd_platform import SndPlatformProvider
 
@@ -41,11 +42,11 @@ def _provider(**creds) -> SndPlatformProvider:
 
 class TestSndPlatform(IntegrationTestCase):
 	def setUp(self):
-		# the requests here never leave (`requests` is replaced): a site's `wa_send_allowlist`
-		# does not apply to them (test_send_allowlist covers it)
-		conf = patch.dict(frappe.local.conf, {"wa_send_allowlist": None})
-		conf.start()
-		self.addCleanup(conf.stop)
+		# the requests here never leave (`requests` is replaced): the site's Settings → Policy →
+		# "Send only to" does not apply to them (test_send_allowlist covers it)
+		guard = patch.object(snd_platform_module, "recipient_allowed", return_value=True)
+		guard.start()
+		self.addCleanup(guard.stop)
 
 	def _call(self, provider, method, *args, response=None, exc=None, **kwargs):
 		with patch.object(provider._session, "request") as req:

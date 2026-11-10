@@ -299,10 +299,79 @@ class SettingsView {
 	 * input for the rest. `{id, $el, stacked, get_value(), set_value(v)}` — the same two calls the
 	 * save bar uses, so saving does not care which control it is.
 	 */
+	/**
+	 * A list of chats picked with the product's contact picker (owner, 2026-11-10): groups, contacts
+	 * or numbers, shown as chips; empty means everyone. Used by "Reply on an edit / a deletion only
+	 * to" and "Send only to". The value is the rows, `[{phone_e164, display_name, source}]`.
+	 */
+	targets_control(df, value, id) {
+		const esc = frappe.utils.escape_html;
+		const key = (r) => String((r && (r.phone_e164 || r.jid)) || "").trim();
+		let rows = (value || []).map((r) => ({ phone_e164: key(r), display_name: r.display_name || "", source: r.source || "" })).filter((r) => r.phone_e164);
+		const $el = $(`<div class="wa-settings__targets" id="${esc(id)}" role="group" aria-label="${esc(__(df.label))}"></div>`);
+		const changed = () => {
+			draw();
+			$el.trigger("change");
+		};
+		const draw = () => {
+			const chips = rows
+				.map(
+					(r, i) => `<span class="wa-settings__target">
+						<span class="wa-settings__target-name" dir="auto">${esc(r.display_name || r.phone_e164)}</span>
+						${r.display_name ? `<span class="wa-settings__target-key" dir="ltr">${esc(r.phone_e164)}</span>` : ""}
+						<button type="button" class="wa-settings__target-x" data-i="${i}" aria-label="${esc(__("Remove {0}", [r.display_name || r.phone_e164]))}">${sanad.ui.ico("x", "xs")}</button>
+					</span>`
+				)
+				.join("");
+			$el.html(`
+				<div class="wa-settings__targets-list">${chips || `<span class="wa-settings__targets-all">${esc(__("Everyone"))}</span>`}</div>
+				<div class="wa-settings__targets-actions">
+					<button type="button" class="btn btn-default btn-sm" data-act="pick">${sanad.ui.ico("users", "sm")}${esc(__("Choose…"))}</button>
+					${rows.length ? `<button type="button" class="btn btn-link btn-sm" data-act="clear">${esc(__("Clear the list"))}</button>` : ""}
+				</div>`);
+		};
+		$el.on("click", ".wa-settings__target-x", (e) => {
+			rows.splice(cint(e.currentTarget.getAttribute("data-i")), 1);
+			changed();
+		});
+		$el.on("click", '[data-act="clear"]', () => {
+			rows = [];
+			changed();
+		});
+		$el.on("click", '[data-act="pick"]', () => {
+			new sanad.ui.ContactPicker({
+				title: __(df.label),
+				existing: rows.map((r) => r.phone_e164),
+				on_pick: (picked) => {
+					const have = new Set(rows.map((r) => r.phone_e164));
+					(picked || []).forEach((r) => {
+						const k = key(r);
+						if (!k || have.has(k)) return;
+						have.add(k);
+						rows.push({ phone_e164: k, display_name: r.display_name || r.full_name || "", source: r.source_type || r.__source || "" });
+					});
+					changed();
+				},
+			});
+		});
+		draw();
+		return {
+			id,
+			$el,
+			stacked: true,
+			get_value: () => rows.map((r) => Object.assign({}, r)),
+			set_value: (v) => {
+				rows = (v || []).map((r) => ({ phone_e164: key(r), display_name: r.display_name || "", source: r.source || "" })).filter((r) => r.phone_e164);
+				draw();
+			},
+		};
+	}
+
 	setting_control(df, value) {
 		const esc = frappe.utils.escape_html;
 		const id = sanad.ui.uid("wa-set");
 		const type = df.fieldtype;
+		if (type === "Table" && df.options === "WhatsApp Settings Target") return this.targets_control(df, value, id);
 		if (type === "Check") {
 			const $el = $(`<label class="wa-toggle"><input type="checkbox" id="${id}"><span class="wa-toggle__track" aria-hidden="true"></span></label>`);
 			const $in = $el.find("input").prop("checked", !!cint(value));

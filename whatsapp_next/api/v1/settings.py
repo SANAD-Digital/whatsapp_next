@@ -19,7 +19,7 @@ from whatsapp_next.exceptions import WANotSupportedError, WAProviderUnavailableE
 from whatsapp_next.providers.schemas import CANONICAL_EVENTS
 from whatsapp_next.services import audit, command_menu, onboarding, permissions, usage_sync, webhook_setup
 from whatsapp_next.services import settings as settings_service
-from whatsapp_next.services.settings import PICKER_SOURCE_FIELDS
+from whatsapp_next.services.settings import PICKER_SOURCE_FIELDS, TARGET_FIELDS, TARGET_TABLES
 
 SETTINGS = "WhatsApp Settings"
 
@@ -64,8 +64,10 @@ SECTIONS: dict[str, tuple[str, ...]] = {
 		"receipt_reply",
 		"reply_on_edit",
 		"edit_reply_text",
+		"edit_reply_to",
 		"reply_on_delete",
 		"delete_reply_text",
+		"delete_reply_to",
 		"changes_reply_scope",
 		"main_menu_mode",
 		"main_menu_text",
@@ -80,6 +82,7 @@ SECTIONS: dict[str, tuple[str, ...]] = {
 		"send_only_to_known_numbers",
 		"import_past_messages",
 		"single_page_pdf_as_image",
+		"send_only_to",
 	),
 	"picker": ("picker_sources",),
 	"retention": (
@@ -143,9 +146,17 @@ def _section_values(doc, section: str) -> dict[str, Any]:
 	for fieldname in SECTIONS[section]:
 		# a field added after the Settings row was saved shows its default, which is also what
 		# the services act on (`settings.stored_or_default`)
-		value = settings_service.stored_or_default(fieldname)
+		# a Table's rows are not in the Singles table that `stored_or_default` asks: they come from
+		# the document itself
+		value = (
+			doc.get(fieldname)
+			if fieldname in TARGET_TABLES
+			else settings_service.stored_or_default(fieldname)
+		)
 		if fieldname == "picker_sources":
 			value = [{f: row.get(f) for f in PICKER_SOURCE_FIELDS} for row in (value or [])]
+		elif fieldname in TARGET_TABLES:
+			value = [{f: row.get(f) for f in TARGET_FIELDS} for row in (value or [])]
 		out[fieldname] = value
 	for fieldname in SECRET_FIELDS.get(section, ()):
 		out[f"has_{fieldname}"] = onboarding.has_secret(doc, fieldname)

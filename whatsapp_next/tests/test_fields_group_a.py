@@ -88,6 +88,9 @@ EXPECTED: dict[str, dict[str, str | tuple[str, str]]] = {
 		"typing_indicator": "Check",
 		"import_past_messages": "Check",
 		"single_page_pdf_as_image": "Check",
+		"edit_reply_to": ("Table", "WhatsApp Settings Target"),
+		"delete_reply_to": ("Table", "WhatsApp Settings Target"),
+		"send_only_to": ("Table", "WhatsApp Settings Target"),
 	},
 	"WhatsApp Settings Picker Source": {
 		"document_type": ("Link", "DocType"),
