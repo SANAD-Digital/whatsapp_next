@@ -404,6 +404,18 @@ class TestApiOnboardingPlatformFlow(IntegrationTestCase):
 			),
 			{"channel": "whatsapp", "code": "123456", "platform_phone": "+967779770054"},
 		)
+		# the platform's WhatsApp username, when its settings name one, travels with the number
+		self.assertEqual(
+			svc.verification_route(
+				{
+					"verification_channel": "WhatsApp",
+					"code": "123456",
+					"device_phone": "967779770054",
+					"device_username": "@whatsappnext",
+				}
+			)["platform_username"],
+			"@whatsappnext",
+		)
 		self.assertEqual(
 			svc.verification_route(
 				{"verification_channel": "Email", "code_sent": True, "email": "a***@gmail.com"}

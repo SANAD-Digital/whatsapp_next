@@ -400,17 +400,22 @@ def verification_route(extra: dict[str, Any]) -> dict[str, Any]:
 	  gets a link there (`link_sent`), opened on any device while this page waits; otherwise the
 	  code went to the masked address and is typed in here.
 
-	`{channel, code?, platform_phone?, email?, link_sent?}`."""
+	`{channel, code?, platform_phone?, platform_username?, email?, link_sent?}`."""
 	channel = str(extra.get("verification_channel") or "").strip().lower()
 	if channel == "email" or (not channel and (extra.get("code_sent") or extra.get("link_sent"))):
 		return {"channel": "email", "email": extra.get("email"), "link_sent": bool(extra.get("link_sent"))}
 	if extra.get("code") and extra.get("device_phone"):
 		phone = str(extra["device_phone"]).strip()
-		return {
+		route = {
 			"channel": "whatsapp",
 			"code": str(extra["code"]),
 			"platform_phone": phone if phone.startswith("+") else f"+{phone}",
 		}
+		# the platform's WhatsApp username, shown instead of its number when it has one (owner,
+		# 2026-11-10); a platform that sends none leaves the number
+		if extra.get("device_username"):
+			route["platform_username"] = str(extra["device_username"])
+		return route
 	return {"channel": channel or None}
 
 

@@ -193,6 +193,25 @@ frappe.provide("whatsapp_next.onboarding");
 		return digits && code ? `https://wa.me/${digits}?text=${encodeURIComponent(`${CODE_PREFIX} ${code}`)}` : "";
 	}
 
+	/**
+	 * Where the code goes: the platform's account by its mark and name, then its WhatsApp username
+	 * when the platform's settings name one, else its number (owner, 2026-11-10). The "Open
+	 * WhatsApp" button opens that chat either way.
+	 */
+	function platform_contact(username, phone) {
+		const send_to = username || ui.PhoneField.format_display(phone) || phone || "";
+		return `<span class="wa-onb__route-col">
+			<span class="wa-onb__route-k">${esc(__("To", null, "Where the code is sent"))}</span>
+			<span class="wa-onb__route-contact">
+				<span class="wa-onb__route-avatar" aria-hidden="true">${whatsapp_next.brand.mark(22)}</span>
+				<span class="wa-onb__route-col">
+					<span class="wa-onb__route-v">${esc(__("WhatsappNext"))}</span>
+					<span class="wa-onb__route-on" dir="ltr">${esc(send_to)}</span>
+				</span>
+			</span>
+		</span>`;
+	}
+
 	/** Password strength, scored the way the prototype scores it (0–4). */
 	/** A number as the person types it: never with "+" (owner); an email or username as it is. */
 	function no_plus(value) {
@@ -1202,6 +1221,7 @@ frappe.provide("whatsapp_next.onboarding");
 				channel: (r && r.channel) || "email",
 				code: r && r.code,
 				platform_phone: r && r.platform_phone,
+				platform_username: r && r.platform_username,
 				email: r && r.email,
 				link_sent: !!(r && r.link_sent),
 			};
@@ -1231,7 +1251,7 @@ frappe.provide("whatsapp_next.onboarding");
 			const route_box = by_whatsapp
 				? col(__("From your registered number"), own, true) +
 				  `<span class="wa-onb__route-arrow">${ico("chevronEnd", "sm")}</span>` +
-				  col(__("To the platform's number"), ui.PhoneField.format_display(route.platform_phone) || route.platform_phone, true)
+				  platform_contact(route.platform_username, route.platform_phone)
 				: col(__("From the platform"), __("WhatsappNext")) +
 				  `<span class="wa-onb__route-arrow">${ico("chevronEnd", "sm")}</span>` +
 				  col(__("To your email"), route.email || this.f.email, true);
@@ -1871,7 +1891,6 @@ frappe.provide("whatsapp_next.onboarding");
 				// the sign-up's proof, for the same account: nothing arrives on WhatsApp — the person
 				// sends the shown message from the account's number, and the sender is the proof
 				const text = `${CODE_PREFIX} ${reset.code}`;
-				const platform = ui.PhoneField.format_display(reset.platform_phone) || reset.platform_phone;
 				const link = wa_send_link(reset.platform_phone, reset.code);
 				$card.append(`
 					<div class="wa-sunken wa-onb__route">
@@ -1880,10 +1899,7 @@ frappe.provide("whatsapp_next.onboarding");
 							<span class="wa-onb__route-v wa-onb__route-v--mono" dir="ltr">${esc(reset.mobile_hint || reset.identifier || "")}</span>
 						</span>
 						<span class="wa-onb__route-arrow">${ico("chevronEnd", "sm")}</span>
-						<span class="wa-onb__route-col">
-							<span class="wa-onb__route-k">${esc(__("To the platform's number"))}</span>
-							<span class="wa-onb__route-v wa-onb__route-v--mono" dir="ltr">${esc(platform)}</span>
-						</span>
+						${platform_contact(reset.platform_username, reset.platform_phone)}
 					</div>
 					<div class="wa-sunken wa-onb__codebox">
 						<span class="wa-field__label">${esc(__("The message to send"))}</span>
@@ -2031,6 +2047,7 @@ frappe.provide("whatsapp_next.onboarding");
 							email: r.email,
 							code: r.code,
 							platform_phone: r.platform_phone,
+							platform_username: r.platform_username,
 							mobile_hint: r.mobile_hint,
 							identifier,
 						};
