@@ -27,7 +27,7 @@ const PERIOD_DEFAULTS = () => [
 const short_period = (value, label) => {
 	if (value == null) return __("All");
 	if (cint(value) === 0) return __("Today");
-	return __("{0}d", [ui.format_int(value)]);
+	return __("{0}d", [ui.format_integer(value)]);
 };
 
 /** `"30d"` / `"7d"` / `"today"` / `"all"` / number → days or null. */
@@ -75,7 +75,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		this.search_text = "";
 		this.controls = {};
 		this.labels = {}; // fieldname → { value → label } (remembered Link titles)
-		this.id = ui.uid("filterbar");
+		this.id = ui.unique_dom_id("filterbar");
 		// Meta is already loaded on a list route: mount synchronously so the toolbar is painted in
 		// the same frame as the list (an async mount made the page jump and re-layout twice).
 		const cached = frappe.get_meta(this.doctype);
@@ -586,7 +586,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 			this.$amore_dd.prop("hidden", false);
 			this.hidden_filters = this.hide_overflowing_items(this.$main, filters, this.$more_dd);
 		}
-		this.$more_btn.find(".whatsapp-kit-filterbar__more-count").text(this.hidden_filters.length ? ui.format_int(this.hidden_filters.length) : "");
+		this.$more_btn.find(".whatsapp-kit-filterbar__more-count").text(this.hidden_filters.length ? ui.format_integer(this.hidden_filters.length) : "");
 		if (this.$more && this.hidden_filters.length) this.fill_more();
 		else if (this.$more) this.close_more();
 		if (this.$amore && !this.hidden_actions.length) this.close_amore();
@@ -610,7 +610,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 	reflect_mobile() {
 		if (!this.$mobile_btn) return;
 		const n = Object.keys(this.values).filter((k) => !k.startsWith("__") && this.controls[k] && this.controls[k].type === "select").length;
-		this.$mobile_btn.find(".whatsapp-kit-filterbar__mobile-count").prop("hidden", !n).text(ui.format_int(n));
+		this.$mobile_btn.find(".whatsapp-kit-filterbar__mobile-count").prop("hidden", !n).text(ui.format_integer(n));
 		this.$mobile_btn.toggleClass("whatsapp-kit-filterbar__btn--active", !!n);
 	}
 
@@ -829,7 +829,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 
 	paint_chosen($row, preset) {
 		const chosen = this.chosen(preset.fieldname);
-		const text = !chosen.length ? __("All") : chosen.length === 1 ? this.label_for_value(preset.fieldname, chosen[0]) : __("{0} selected", [ui.format_int(chosen.length)]);
+		const text = !chosen.length ? __("All") : chosen.length === 1 ? this.label_for_value(preset.fieldname, chosen[0]) : __("{0} selected", [ui.format_integer(chosen.length)]);
 		$row.find(".whatsapp-kit-filter-sheet__chosen").text(text).toggleClass("whatsapp-kit-filter-sheet__chosen--set", !!chosen.length);
 	}
 
@@ -1284,7 +1284,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		const $list = $(`<div class="whatsapp-kit-filterbar__levels-list"></div>`).appendTo($pop);
 		levels.forEach((f, i) => {
 			$(`<div class="whatsapp-kit-filterbar__level">
-				<span class="whatsapp-kit-filterbar__level-no whatsapp-kit-tabular">${ui.escape(ui.format_int(i + 1))}</span>
+				<span class="whatsapp-kit-filterbar__level-no whatsapp-kit-tabular">${ui.escape(ui.format_integer(i + 1))}</span>
 				<span class="whatsapp-kit-filterbar__level-label">${ui.escape(label_of(f))}</span>
 				<button type="button" class="whatsapp-kit-filterbar__level-move" data-dir="-1" ${i === 0 ? "disabled" : ""} aria-label="${ui.escape(__("Move {0} up", [label_of(f)]))}">${ui.icon("es-line-up", "xs")}</button>
 				<button type="button" class="whatsapp-kit-filterbar__level-move" data-dir="1" ${i === levels.length - 1 ? "disabled" : ""} aria-label="${ui.escape(__("Move {0} down", [label_of(f)]))}">${ui.icon("es-line-down", "xs")}</button>
@@ -1474,7 +1474,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 			const $value = c.$el.find(".whatsapp-kit-filterbar__btn-value");
 			if (!chosen.length) $value.text("").attr("hidden", true);
 			else if (chosen.length === 1) $value.text(this.label_for_value(fieldname, chosen[0])).removeAttr("hidden");
-			else $value.text(ui.format_int(chosen.length)).removeAttr("hidden");
+			else $value.text(ui.format_integer(chosen.length)).removeAttr("hidden");
 			c.$el.toggleClass("whatsapp-kit-filterbar__btn--active", chosen.length > 0);
 			c.$el.find(".whatsapp-kit-filterbar__btn-clear").prop("hidden", !chosen.length);
 		} else if (c.type === "period") {

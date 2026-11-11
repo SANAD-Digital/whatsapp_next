@@ -225,7 +225,7 @@ frappe.provide("whatsapp_next.hub");
 			$slot.html(`
 				<div class="whatsapp-hub__chat">
 					<div class="whatsapp-hub__bubble">
-						${attachment ? `<span class="whatsapp-hub__file">${ui.ico ? ui.ico("attach", "xs") : ""} ${escape_html(e.hub_type === "Alert" ? __("The report, as a file") : __("The document, as a file"))}</span>` : ""}
+						${attachment ? `<span class="whatsapp-hub__file">${ui.inline_icon_html ? ui.inline_icon_html("attach", "xs") : ""} ${escape_html(e.hub_type === "Alert" ? __("The report, as a file") : __("The document, as a file"))}</span>` : ""}
 						<div class="whatsapp-hub__text" dir="auto">${format(text)}</div>
 						<span class="whatsapp-hub__time" dir="ltr">${escape_html(frappe.datetime.now_time().slice(0, 5))} ✓✓</span>
 					</div>

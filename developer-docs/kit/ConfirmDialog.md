@@ -13,7 +13,7 @@ no server calls itself and holds no app-specific strings.
 |---|---|---|---|
 | `title` | string | — | Dialog title. |
 | `message` | string | — | One sentence shown above the impact list. |
-| `impact` | `Array<{label, value, tone?}>` | `[]` | Facts rendered as a `<dl>`. `tone` is passed through `ui.tone()` and added as `whatsapp-kit-tone--<tone>` on the value. |
+| `impact` | `Array<{label, value, tone?}>` | `[]` | Facts rendered as a `<dl>`. `tone` is passed through `ui.tone_for_colour()` and added as `whatsapp-kit-tone--<tone>` on the value. |
 | `load_impact` | `() => Promise<impact[]>` | — | Called on `show()`; a skeleton shows until it resolves, then the list re-renders. A rejection appends an inline `role="alert"` error. |
 | `reason_field` | `true` \| `{label?, required?, description?}` | — | Adds a `Small Text` field `reason`. Required unless `required === false`. Label defaults to "Reason", description to "Recorded in the audit log." |
 | `ack_checkbox` | string | — | Label of a Check field; the primary button stays disabled until it is ticked. |

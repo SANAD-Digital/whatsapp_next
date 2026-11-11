@@ -18,7 +18,7 @@ function open_editor(doc) {
 
 /** Enable / disable one row with a confirmation, then refresh the list. */
 function toggle_enabled(doc, listview) {
-	return whatsapp_next.enabled_toggle.ask(listview, DOCTYPE, doc, {
+	return whatsapp_next.enabled_toggle.confirm_and_toggle_enabled(listview, DOCTYPE, doc, {
 		title: doc.notification_name || doc.name,
 		enable_message: __("Messages will be sent automatically when the event happens."),
 		disable_message: __("No messages will be sent for this event until it is enabled again."),
@@ -33,7 +33,7 @@ function toggle_enabled(doc, listview) {
 
 /** Status chip that doubles as the enable / disable toggle (mouse + keyboard). */
 function status_chip(doc, can_write) {
-	return whatsapp_next.enabled_toggle.chip(doc, can_write);
+	return whatsapp_next.enabled_toggle.enabled_chip_html(doc, can_write);
 }
 
 /** Enabled notifications whose device is not Connected (their messages wait in the queue). */
@@ -187,6 +187,6 @@ frappe.listview_settings[DOCTYPE] = {
 		});
 
 		// Status chip toggle inside DataList rows
-		whatsapp_next.enabled_toggle.bind(listview, "wanotification", toggle_enabled);
+		whatsapp_next.enabled_toggle.bind_enabled_toggle(listview, "wanotification", toggle_enabled);
 	},
 };

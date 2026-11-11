@@ -64,5 +64,5 @@
 	});
 
 	frappe.provide("whatsapp_next.brand");
-	Object.assign(whatsapp_next.brand, { mark: brand_mark_svg, wordmark });
+	Object.assign(whatsapp_next.brand, { brand_mark_svg: brand_mark_svg, wordmark });
 })();

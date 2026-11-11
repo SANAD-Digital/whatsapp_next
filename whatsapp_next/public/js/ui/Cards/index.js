@@ -22,7 +22,7 @@
 // palette, so a card takes the product's colours wherever the palette applies.
 
 import ui from "../_core/index.js";
-import { ico } from "../_kit/icons.js";
+import { inline_icon_html } from "../_kit/icons.js";
 
 const escape_html = (v) => ui.escape(v == null ? "" : v);
 const TONES = ["ok", "warn", "danger", "info", "muted", "pri"];
@@ -108,7 +108,7 @@ whatsapp.ui.Cards = class Cards {
 	/** The icon tile a `stat` and a `kpi` wear at the end of their label. */
 	render_icon_tile(card) {
 		if (!card.icon) return "";
-		return `<span class="whatsapp-card__tile whatsapp-card__tile--${tone_of(card.tone)}" aria-hidden="true">${ico(card.icon, "sm")}</span>`;
+		return `<span class="whatsapp-card__tile whatsapp-card__tile--${tone_of(card.tone)}" aria-hidden="true">${inline_icon_html(card.icon, "sm")}</span>`;
 	}
 
 	stat_html(card) {
@@ -188,7 +188,7 @@ whatsapp.ui.Cards = class Cards {
 				: "";
 		const span = cint(card.span) > 1 ? ` style="--whatsapp-card-span:${cint(card.span)}"` : "";
 		return `<div class="whatsapp-card whatsapp-card--alert whatsapp-card--${tone}" role="${tone === "danger" ? "alert" : "status"}"${span}>
-			<span class="whatsapp-card__tile whatsapp-card__tile--${tone}" aria-hidden="true">${ico(card.icon || (tone === "danger" ? "error" : tone === "ok" ? "check" : "warn"), "sm")}</span>
+			<span class="whatsapp-card__tile whatsapp-card__tile--${tone}" aria-hidden="true">${inline_icon_html(card.icon || (tone === "danger" ? "error" : tone === "ok" ? "check" : "warn"), "sm")}</span>
 			<span class="whatsapp-card__body">
 				<b class="whatsapp-card__alert-label">${escape_html(card.label)}</b>
 				${card.note ? `<span class="whatsapp-card__note">${escape_html(card.note)}</span>` : ""}

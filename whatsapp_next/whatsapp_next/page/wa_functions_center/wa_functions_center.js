@@ -21,7 +21,7 @@
 	const ui = whatsapp.ui;
 	const kit = whatsapp.kit;
 	const escape_html = (v) => ui.escape(v == null ? "" : v);
-	const format_integer = (v) => ui.format_int(v);
+	const format_integer = (v) => ui.format_integer(v);
 	const is_manager = () => frappe.user.has_role("WhatsApp Manager") || frappe.user.has_role("System Manager");
 	const command_list = (entry) => frappe.set_route("List", "WhatsApp Command", entry ? { function: entry.function_key } : {});
 
@@ -876,11 +876,11 @@
 					<span role="status" aria-atomic="true">${escape_html(ui.plural(picked.length, { one: __("{0} selected"), other: __("{0} selected") }))}</span>
 					<button type="button" class="whatsapp-functions__bulk-clear" aria-label="${escape_html(__("Clear selection"))}">&times;</button>
 				</span>
-				${updatable ? kit.btn({ label: __("Update {0}", [format_integer(updatable)]), variant: "tonal", attrs: { "data-bulk": "update" } }) : ""}
+				${updatable ? kit.button_html({ label: __("Update {0}", [format_integer(updatable)]), variant: "tonal", attrs: { "data-bulk": "update" } }) : ""}
 				${
 					installed
-						? kit.btn({ label: __("Activate {0}", [format_integer(installed)]), variant: "tonal", attrs: { "data-bulk": "Active" } }) +
-						  kit.btn({ label: __("Deactivate {0}", [format_integer(installed)]), variant: "tonal", attrs: { "data-bulk": "Inactive" } })
+						? kit.button_html({ label: __("Activate {0}", [format_integer(installed)]), variant: "tonal", attrs: { "data-bulk": "Active" } }) +
+						  kit.button_html({ label: __("Deactivate {0}", [format_integer(installed)]), variant: "tonal", attrs: { "data-bulk": "Inactive" } })
 						: `<span class="whatsapp-functions__bulk-note">${escape_html(__("Install a function before activating or deactivating it."))}</span>`
 				}`);
 			this.$bulk.find("[data-bulk]").on("click", (ev) => this.run_bulk_action($(ev.currentTarget).data("bulk"), picked));

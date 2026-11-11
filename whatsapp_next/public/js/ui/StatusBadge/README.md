@@ -26,7 +26,7 @@ Options: `wrapper`, `doctype`, `fieldname` (default `status`), `doc` | `value`, 
 `icon` (default `true`), `size` (`sm` | `md`), `title`. `refresh(doc)` re-renders.
 
 Tones: Frappe colours map to the Espresso triplets green / blue / amber / red / gray / cyan /
-violet / pink (`whatsapp.ui.tone`). Only `--surface-*`, `--ink-*`, `--outline-*` tokens are used.
+violet / pink (`whatsapp.ui.tone_for_colour`). Only `--surface-*`, `--ink-*`, `--outline-*` tokens are used.
 
 ## Live use
 `WhatsApp Log` list (Outbound) — `public/js/listview/whatsapp_log_list.js` status column and the

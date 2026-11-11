@@ -45,7 +45,7 @@ whatsapp.ui.BulkActions = class BulkActions {
 
 	label_for(action, count) {
 		if (typeof action.label === "function") return action.label(count);
-		return count ? __("{0} ({1})", [action.label, ui.format_int(count)]) : action.label;
+		return count ? __("{0} ({1})", [action.label, ui.format_integer(count)]) : action.label;
 	}
 
 	update() {
@@ -60,7 +60,7 @@ whatsapp.ui.BulkActions = class BulkActions {
 			}
 			$item.parent().toggle(show);
 		});
-		if (count && count !== this._last_count) ui.announce(__("{0} selected", [ui.format_int(count)]));
+		if (count && count !== this._last_count) ui.announce(__("{0} selected", [ui.format_integer(count)]));
 		this._last_count = count;
 	}
 
@@ -76,7 +76,7 @@ whatsapp.ui.BulkActions = class BulkActions {
 		}
 		const cap = action.cap || this.opts.cap;
 		if (names.length > cap) {
-			whatsapp.ui.Toast.warning(__("Select at most {0} rows at a time ({1} selected).", [ui.format_int(cap), ui.format_int(names.length)]));
+			whatsapp.ui.Toast.warning(__("Select at most {0} rows at a time ({1} selected).", [ui.format_integer(cap), ui.format_integer(names.length)]));
 			return;
 		}
 		let payload = { reason: null };
@@ -115,7 +115,7 @@ whatsapp.ui.BulkActions = class BulkActions {
 	run_native(action, names, docs, payload) {
 		const extra = typeof action.args === "function" ? action.args(names, { docs, reason: payload.reason }) : {};
 		const args = Object.assign({ names }, payload.reason ? { reason: payload.reason } : {}, extra || {});
-		return ui.call(action.method, args, { freeze: true, freeze_message: __("Working on {0} rows…", [ui.format_int(names.length)]) });
+		return ui.call(action.method, args, { freeze: true, freeze_message: __("Working on {0} rows…", [ui.format_integer(names.length)]) });
 	}
 
 	/** Sequential loop with a progress dialog: `{count, done[], failed[], cancelled}`. */
@@ -151,8 +151,8 @@ whatsapp.ui.BulkActions = class BulkActions {
 			$meter.attr("aria-valuenow", i);
 			$status.text(
 				result.failed.length
-					? __("{0} of {1} done, {2} failed", [ui.format_int(i), ui.format_int(total), ui.format_int(result.failed.length)])
-					: __("{0} of {1} done", [ui.format_int(i), ui.format_int(total)])
+					? __("{0} of {1} done, {2} failed", [ui.format_integer(i), ui.format_integer(total), ui.format_integer(result.failed.length)])
+					: __("{0} of {1} done", [ui.format_integer(i), ui.format_integer(total)])
 			);
 		};
 		render(0);
@@ -193,12 +193,12 @@ whatsapp.ui.BulkActions = class BulkActions {
 		const failed = Array.isArray(r.failed) ? r.failed.length : 0;
 		const skipped = Array.isArray(r.skipped) ? r.skipped.length : 0;
 		if (failed) {
-			whatsapp.ui.Toast.warning(__("{0} done, {1} failed", [ui.format_int(count), ui.format_int(failed)]));
+			whatsapp.ui.Toast.warning(__("{0} done, {1} failed", [ui.format_integer(count), ui.format_integer(failed)]));
 		} else if (r.cancelled) {
-			whatsapp.ui.Toast.info(__("Stopped after {0} of {1}", [ui.format_int(count), ui.format_int(names.length)]));
+			whatsapp.ui.Toast.info(__("Stopped after {0} of {1}", [ui.format_integer(count), ui.format_integer(names.length)]));
 		} else {
-			const text = typeof action.success === "string" ? action.success : __("{0} of {1} done", [ui.format_int(count), ui.format_int(names.length)]);
-			whatsapp.ui.Toast.success(skipped ? __("{0} ({1} skipped)", [text, ui.format_int(skipped)]) : text);
+			const text = typeof action.success === "string" ? action.success : __("{0} of {1} done", [ui.format_integer(count), ui.format_integer(names.length)]);
+			whatsapp.ui.Toast.success(skipped ? __("{0} ({1} skipped)", [text, ui.format_integer(skipped)]) : text);
 		}
 	}
 

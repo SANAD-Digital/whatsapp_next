@@ -61,7 +61,7 @@ whatsapp.ui.ConversationDrawer = class ConversationDrawer {
 		this.api = Object.assign({}, DEFAULT_API, opts.api || {});
 		this.roles = Object.assign({}, DEFAULT_ROLES, opts.roles || {});
 		this.key = cstr(this.opts.key).trim();
-		this.id = ui.uid("convo");
+		this.id = ui.unique_dom_id("convo");
 		this.number = undefined; // undefined = loading, null = no Number row
 		this.next_cursor = null;
 		this.key_hash = null;

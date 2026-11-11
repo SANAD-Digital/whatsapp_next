@@ -192,7 +192,7 @@ whatsapp_next.refresh_profiles = (source_doctype, names, { on_done } = {}) =>
 // button over it for whoever may write, and the confirmed switch a click on it opens. The list
 // passes its own words; the flow, the write and the refresh are the same for every list.
 whatsapp_next.enabled_toggle = {
-	chip(doc, can_write) {
+	enabled_chip_html(doc, can_write) {
 		const enabled = !!cint(doc.enabled);
 		const badge = whatsapp.ui.StatusBadge.html({ label: enabled ? __("Enabled") : __("Disabled"), colour: enabled ? "green" : "gray" });
 		if (!can_write) return badge;
@@ -201,7 +201,7 @@ whatsapp_next.enabled_toggle = {
 
 	/** Ask, switch `enabled`, then refresh the list and its header.
 	 * `words`: `{title, enable_message, disable_message, impact[], enabled_toast, disabled_toast}`. */
-	ask(listview, doctype, doc, words) {
+	confirm_and_toggle_enabled(listview, doctype, doc, words) {
 		const enable = !cint(doc.enabled);
 		return whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 			title: enable ? __("Enable {0}?", [words.title]) : __("Disable {0}?", [words.title]),
@@ -220,7 +220,7 @@ whatsapp_next.enabled_toggle = {
 	},
 
 	/** A click on a row's chip opens `toggle(doc, listview)` (delegated: rows re-render on every refresh). */
-	bind(listview, namespace, toggle) {
+	bind_enabled_toggle(listview, namespace, toggle) {
 		listview.$result.off(`click.${namespace}`).on(`click.${namespace}`, ".whatsapp-toggle-enabled", (e) => {
 			e.preventDefault();
 			e.stopPropagation();

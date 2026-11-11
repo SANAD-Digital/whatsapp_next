@@ -170,7 +170,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 	 */
 	constructor(opts = {}) {
 		this.opts = Object.assign({ default_op: "between", layout: "auto", fiscal_start_month: 1 }, opts);
-		this.id = ui.uid("datefilter");
+		this.id = ui.unique_dom_id("datefilter");
 		// the field picker is optional: with no `fields` the control is the plain single-field filter
 		this.fields = normalise_fields(this.opts.fields);
 		this.fieldname = this.opts.fieldname || (this.fields[0] ? this.fields[0].value : null);
@@ -994,7 +994,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 		]
 			.filter(Boolean)
 			.join(" ");
-		const $cell = $(`<span class="${classes}"${radius ? ` style="--whatsapp-kit-band-radius:${radius}"` : ""}><button type="button" class="whatsapp-kit-datefilter__pill" data-key="${key}">${ui.escape(ui.format_int(n))}</button></span>`);
+		const $cell = $(`<span class="${classes}"${radius ? ` style="--whatsapp-kit-band-radius:${radius}"` : ""}><button type="button" class="whatsapp-kit-datefilter__pill" data-key="${key}">${ui.escape(ui.format_integer(n))}</button></span>`);
 		$cell.find("button")
 			.on("click", () => this.pick_day(key))
 			.on("mouseenter", () => {
@@ -1207,7 +1207,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 	 */
 	bar_label(month) {
 		const short = month_list("short")[month];
-		return short && short !== month_list("long")[month] ? short : ui.format_int(month + 1);
+		return short && short !== month_list("long")[month] ? short : ui.format_integer(month + 1);
 	}
 
 	render_fiscal($body) {
@@ -1513,7 +1513,7 @@ whatsapp.ui.DateFilterSet = class DateFilterSet {
 
 	field_caption() {
 		const n = this.rows.length;
-		if (n > 1) return { text: __("{0} fields", [ui.format_int(n)]), count: n };
+		if (n > 1) return { text: __("{0} fields", [ui.format_integer(n)]), count: n };
 		return { text: this.label_of((this.rows[0] || {}).fieldname), count: 1 };
 	}
 

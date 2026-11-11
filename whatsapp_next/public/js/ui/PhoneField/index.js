@@ -128,7 +128,7 @@ const E164 = /^\+[1-9]\d{7,14}$/; // 8–15 digits: loose, the server is authori
 /** Latin and Arabic-Indic digits in, Latin digits only out. */
 const to_digits = (raw) => ui.latin_digits(raw).replace(/\D/g, "");
 
-// The search glyph is the shared one (`ui.ico`, the family ported from the prototype). The other
+// The search glyph is the shared one (`ui.inline_icon_html`, the family ported from the prototype). The other
 // two stay drawn here at the field's own sizes (11 px caret, 15 px tick): the kit's `caret` is the
 // same path, but its bare `tick` is the hint's lighter one (`M5 10.5l3.5 3.5L15 7`), not the
 // prototype phone field's (`M4 10.5l4 4 8-9`).
@@ -157,7 +157,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 	constructor(opts = {}) {
 		this.opts = Object.assign({ show_country: true, required: false, invalid: false }, opts);
 		if (this.opts.label == null) this.opts.label = __("Mobile number (WhatsApp)");
-		this.id = ui.uid("phone");
+		this.id = ui.unique_dom_id("phone");
 		this.country = whatsapp.ui.PhoneField.resolve_country(this.opts.country_default);
 		// the seed answers immediately so nothing flashes empty; the full catalogue arrives a tick
 		// later and the field redraws on the region it then resolves to
@@ -451,7 +451,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 		this.$pop = $(`
 			<div class="whatsapp-kit-phone__pop">
 				<span class="whatsapp-kit-phone__search">
-					${ui.ico ? ui.ico("search", "xs") : ""}
+					${ui.inline_icon_html ? ui.inline_icon_html("search", "xs") : ""}
 					<input type="text" class="whatsapp-kit-phone__q" role="combobox" aria-expanded="true" aria-autocomplete="list"
 						aria-controls="${this.id}-list" placeholder="${ui.escape(__("Search for a country or a dialling code"))}"
 						aria-label="${ui.escape(__("Search for a country or a dialling code"))}">

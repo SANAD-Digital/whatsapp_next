@@ -9,7 +9,7 @@
 const KIND_COLOUR = { Blacklist: "red", Marketing: "blue", "Mailing List": "green", Professional: "green", Other: "green" };
 const MEMBER_PEEK = 10;
 const escape_html = (v) => whatsapp.ui.escape(v);
-const format_integer = (v) => whatsapp.ui.format_int(v);
+const format_integer = (v) => whatsapp.ui.format_integer(v);
 const open_editor = (name, opts) => whatsapp_next.groups.open(name, opts);
 const can_send = () => frappe.user.has_role("WhatsApp Manager") || frappe.user.has_role("System Manager");
 

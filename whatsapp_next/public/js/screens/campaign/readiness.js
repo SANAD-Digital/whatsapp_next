@@ -14,7 +14,7 @@ frappe.provide("whatsapp_next.campaign");
 (function () {
 	const campaign_builder = whatsapp_next.campaign;
 	const campaign_helpers = whatsapp_next.campaigns;
-	const escape_html = campaign_builder.esc;
+	const escape_html = campaign_builder.escape_html;
 
 	/** What is wrong with a message row, in the words of the person who wrote it. */
 	const PROBLEM = {
@@ -48,7 +48,7 @@ frappe.provide("whatsapp_next.campaign");
 				variables: __("Variables valid"),
 				audience: __("Audience ready"),
 			}[check.key];
-			return campaign_builder.check({
+			return campaign_builder.check_row_html({
 				key: check.key,
 				state,
 				label,
@@ -58,7 +58,7 @@ frappe.provide("whatsapp_next.campaign");
 		}
 
 		describe_check_result(check) {
-			const name = (idx) => __("Message {0}", [campaign_builder.fmt_int(idx)]);
+			const name = (idx) => __("Message {0}", [campaign_builder.format_integer(idx)]);
 			if (check.key === "device") {
 				if (!check.device) return __("No device chosen.");
 				const title = campaign_helpers.device_title(check.device) || check.device_name || check.device;
@@ -72,7 +72,7 @@ frappe.provide("whatsapp_next.campaign");
 					const why = (PROBLEM[first.problem] || (() => first.problem))();
 					const more = (check.incomplete || []).length - 1;
 					return more > 0
-						? __("{0}: {1}, and {2} more.", [name(first.idx), why, campaign_builder.fmt_int(more)])
+						? __("{0}: {1}, and {2} more.", [name(first.idx), why, campaign_builder.format_integer(more)])
 						: __("{0}: {1}.", [name(first.idx), why]);
 				}
 				return campaign_builder.messages_text(check.count);
@@ -89,7 +89,7 @@ frappe.provide("whatsapp_next.campaign");
 				if (!cint(check.count)) return __("No recipient yet.");
 				const excluded = cint(check.excluded_unknown);
 				return excluded
-					? __("{0} chosen — {1} excluded as unknown numbers.", [campaign_builder.recipients_text(check.count), campaign_builder.fmt_int(excluded)])
+					? __("{0} chosen — {1} excluded as unknown numbers.", [campaign_builder.recipients_text(check.count), campaign_builder.format_integer(excluded)])
 					: __("{0} chosen for sending.", [campaign_builder.recipients_text(check.count)]);
 			}
 			return "";
@@ -103,7 +103,7 @@ frappe.provide("whatsapp_next.campaign");
 			// four ticks long when everything is right, and never silent when something is not.
 			const checks = all.filter((c) => c.key !== "messages" || (this.ctx.readiness_is_fresh() && !c.ok));
 			this.$wrapper.html(
-				campaign_builder.card({
+				campaign_builder.card_html({
 					key: "readiness",
 					icon: "gear",
 					title: this.title,

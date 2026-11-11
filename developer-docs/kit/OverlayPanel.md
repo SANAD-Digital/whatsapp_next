@@ -34,7 +34,7 @@ Tones everywhere: `ok`, `warn`, `danger`, `info`, `muted`, `pri` (anything else 
 
 **Section** — `{title?, note?, note_tone? (default info), note_end?, cols? (default 2), layout?, fields[]}`.
 `layout: "rows"` draws a large title then one label/value row per field; otherwise a grid of
-`cols` columns with `kit.rule(title, note_end)` as heading.
+`cols` columns with `kit.section_rule_html(title, note_end)` as heading.
 
 **Field (common)** — `{key, type = "text", label?, value?, span?, required?, placeholder?, hint?, mono?, on_change?(value, panel)}`.
 

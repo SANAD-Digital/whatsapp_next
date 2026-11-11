@@ -184,11 +184,11 @@ export class GroupsSource extends BaseSource {
 		const visible = () => rows.filter((r) => (!only_chosen || chosen.has(key_of(r))) && matches(r));
 		const reflect = () => {
 			const n = chosen.size;
-			$primary.text(n ? __("Add {0}", [ui.format_int(n)]) : __("Add")).prop("disabled", !n);
-			$show.prop("hidden", !n && !only_chosen).attr("aria-pressed", only_chosen).find("[data-n]").text(n ? ui.format_int(n) : "");
+			$primary.text(n ? __("Add {0}", [ui.format_integer(n)]) : __("Add")).prop("disabled", !n);
+			$show.prop("hidden", !n && !only_chosen).attr("aria-pressed", only_chosen).find("[data-n]").text(n ? ui.format_integer(n) : "");
 			$body.find('[data-act="none"]').prop("hidden", !n);
 			$body.find('[data-act="matches"]').prop("hidden", !query);
-			$count.text(n ? __("{0} selected", [ui.format_int(n)]) : "");
+			$count.text(n ? __("{0} selected", [ui.format_integer(n)]) : "");
 		};
 		const render = () => {
 			if (!loaded) return;
@@ -220,7 +220,7 @@ export class GroupsSource extends BaseSource {
 			html += "</div></div>";
 			$list.html(html);
 			if (shown.length > limit) {
-				$(`<button type="button" class="btn btn-default btn-sm whatsapp-kit-picker__more">${ui.escape(__("Show {0} more", [ui.format_int(Math.min(RENDER_STEP, shown.length - limit))]))}</button>`)
+				$(`<button type="button" class="btn btn-default btn-sm whatsapp-kit-picker__more">${ui.escape(__("Show {0} more", [ui.format_integer(Math.min(RENDER_STEP, shown.length - limit))]))}</button>`)
 					.on("click", () => {
 						limit += RENDER_STEP;
 						render();
@@ -267,7 +267,7 @@ export class GroupsSource extends BaseSource {
 			let total = null;
 			try {
 				for (;;) {
-					$count.text(__("Loading members of {0}: {1} of {2}", [name, ui.format_int(rows.length), total != null ? ui.format_int(total) : "…"]));
+					$count.text(__("Loading members of {0}: {1} of {2}", [name, ui.format_integer(rows.length), total != null ? ui.format_integer(total) : "…"]));
 					const r = await this.call_picker_api("picker.get_group_members", { group: group.name, page, page_length: MEMBER_PAGE }, { silent: true });
 					const got = (r && r.rows) || [];
 					total = cint(r && r.total);
@@ -299,7 +299,7 @@ export class GroupsSource extends BaseSource {
 				let page = 1;
 				let total = null;
 				for (;;) {
-					this.$progress.text(__("Loading members of {0}: {1} of {2}", [this.names[group] || group, ui.format_int(total != null ? Math.min((page - 1) * MEMBER_PAGE, total) : 0), total != null ? ui.format_int(total) : "…"]));
+					this.$progress.text(__("Loading members of {0}: {1} of {2}", [this.names[group] || group, ui.format_integer(total != null ? Math.min((page - 1) * MEMBER_PAGE, total) : 0), total != null ? ui.format_integer(total) : "…"]));
 					const r = await this.call_picker_api("picker.get_group_members", { group, page, page_length: MEMBER_PAGE }, { silent: true });
 					const rows = (r && r.rows) || [];
 					total = cint(r && r.total);
@@ -308,7 +308,7 @@ export class GroupsSource extends BaseSource {
 					page += 1;
 				}
 			}
-			this.$progress.text(__("Added {0} members", [ui.format_int(added)]));
+			this.$progress.text(__("Added {0} members", [ui.format_integer(added)]));
 			this.picker.notify_added(added);
 			this.checked.clear();
 			this.$results.find(".whatsapp-kit-picker__row").attr("aria-checked", "false");

@@ -8,7 +8,7 @@
 
 import ui from "../_core/index.js";
 import Render from "../Render/index.js";
-import { kv, avatar } from "../Render/parts.js";
+import { key_value_rows_html, avatar } from "../Render/parts.js";
 
 const LONG_TYPES = ["Text", "Small Text", "Long Text", "Text Editor", "Markdown Editor", "Code", "JSON", "HTML Editor"];
 // Fieldtypes that belong in the quick-facts grid: short enough to read at a glance.
@@ -57,7 +57,7 @@ whatsapp.ui.Drawer = class Drawer {
 		if (!this.opts.doctype && this.opts.mode !== "choice") throw new Error("whatsapp.ui.Drawer: doctype is required");
 		this.doctype = this.opts.doctype;
 		this.doc = this.opts.doc || null;
-		this.id = ui.uid("drawer");
+		this.id = ui.unique_dom_id("drawer");
 		this.controls = {};
 		this.build_drawer_shell();
 	}
@@ -382,7 +382,7 @@ whatsapp.ui.Drawer = class Drawer {
 
 	/** Quick facts: the short fields as key / value rows, each key with its icon. */
 	render_facts(doc, facts) {
-		const html = kv(
+		const html = key_value_rows_html(
 			facts.map((f) => ({
 				label: f.label,
 				// inline density in a row: a link stays a chip, a percent still gets its bar
@@ -417,7 +417,7 @@ whatsapp.ui.Drawer = class Drawer {
 				ltr: d.ltr,
 			};
 		});
-		const html = kv(rows);
+		const html = key_value_rows_html(rows);
 		if (!html) return;
 		$(`<details class="whatsapp-kit-doc__details" open>
 			<summary class="whatsapp-kit-doc__block-title"><span class="whatsapp-kit-doc__block-icon" aria-hidden="true">${ui.icon("es-line-article", "sm")}</span><span>${ui.escape(__("More details"))}</span></summary>
@@ -606,7 +606,7 @@ whatsapp.ui.Drawer = class Drawer {
 
 	/** The "More" menu — the same menu RowActions draws on a list row, anchored to the button. */
 	open_menu($btn, actions, run) {
-		const id = ui.uid("drawermenu");
+		const id = ui.unique_dom_id("drawermenu");
 		// the list's menu sits under an open panel; this one belongs to the panel, so it sits above it
 		const $menu = $(`<div class="whatsapp-kit whatsapp-kit-rowactions__menu whatsapp-kit-drawer__menu" id="${id}" role="menu" aria-label="${ui.escape(__("More actions"))}"></div>`);
 		actions.forEach((a) => {

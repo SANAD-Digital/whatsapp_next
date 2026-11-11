@@ -12,8 +12,8 @@
 // is shared with the campaign form: `public/js/screens/campaigns.js`.
 const campaign_helpers = whatsapp_next.campaigns;
 const { metric, state_metric } = whatsapp_next.console;
-const { TERMINAL, STOPPABLE, EDITABLE, INDICATOR, is_manager, bar_html, progress_html, progress_text, messages_of_doc, stats_html, eta_text, pct_text, handed_of_doc, device_title, counters_as_doc } = campaign_helpers;
-const format_integer = (v) => whatsapp.ui.format_int(v);
+const { TERMINAL, STOPPABLE, EDITABLE, INDICATOR, is_manager, bar_html, progress_html, progress_text, messages_of_doc, stats_html, eta_text, percent_text: percent_text, handed_of_doc, device_title, counters_as_doc } = campaign_helpers;
+const format_integer = (v) => whatsapp.ui.format_integer(v);
 const escape_html = (v) => whatsapp.ui.escape(v);
 
 /** A share as plain text, one decimal, never Frappe's wrapped HTML (it would be escaped). */
@@ -79,7 +79,7 @@ function live_strip(row, header) {
 				</span>
 				<span class="whatsapp-strip__progress">
 					${bar_html(doc, { paused })}
-					<span class="whatsapp-strip__progress-text whatsapp-kit-tabular">${escape_html(progress_text(doc))} · ${escape_html(pct_text(handed_of_doc(doc), messages_of_doc(doc)))}</span>
+					<span class="whatsapp-strip__progress-text whatsapp-kit-tabular">${escape_html(progress_text(doc))} · ${escape_html(percent_text(handed_of_doc(doc), messages_of_doc(doc)))}</span>
 				</span>
 				<span class="whatsapp-strip__stats">${stats_html(doc)}</span>
 				<span class="whatsapp-strip__actions"></span>
@@ -197,12 +197,12 @@ function metrics_html(o) {
 			)}
 			${metric(
 				__("Delivery rate"),
-				escape_html(pct_text(totals.delivered, totals.sent)),
+				escape_html(percent_text(totals.delivered, totals.sent)),
 				escape_html(__("of {0} sent", [format_integer(totals.sent)])),
 			)}
 			${metric(
 				__("Read rate"),
-				escape_html(pct_text(totals.read, totals.sent)),
+				escape_html(percent_text(totals.read, totals.sent)),
 				escape_html(__("last {0} days", [format_integer(o.days || OVERVIEW_DAYS)])),
 			)}
 			${metric(
@@ -362,7 +362,7 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 
 		// ---- the table: every column the prototype draws (09 §1C row 6) ------------------------
 
-		const dt = (v) => (v ? escape_html(whatsapp_next.fmt.dt(v)) : dash());
+		const dt = (v) => (v ? escape_html(whatsapp_next.message_formatters.format_datetime(v)) : dash());
 		const dash = () => `<span class="text-muted">—</span>`;
 		const num = (v) => `<span class="whatsapp-kit-tabular">${escape_html(format_integer(v))}</span>`;
 		const rate_cell = (part, whole, tone) =>

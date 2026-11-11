@@ -13,7 +13,7 @@ frappe.provide("whatsapp_next.campaign");
 	const ui = whatsapp.ui;
 	const campaign_builder = whatsapp_next.campaign;
 	const campaign_helpers = whatsapp_next.campaigns;
-	const escape_html = campaign_builder.esc;
+	const escape_html = campaign_builder.escape_html;
 
 	campaign_builder.Review = class CampaignReview {
 		constructor({ wrapper, ctx }) {
@@ -33,9 +33,9 @@ frappe.provide("whatsapp_next.campaign");
 			if (!e.total) return __("There is nothing to send yet — the campaign has no recipients or no messages.");
 			return __("{0} will be created and handed to the queue at {1}/min from {2}. That takes about {3}.", [
 				campaign_builder.messages_text(e.total),
-				campaign_builder.fmt_int(e.rate),
+				campaign_builder.format_integer(e.rate),
 				campaign_helpers.device_title(this.ctx.doc.device) || __("no device"),
-				campaign_builder.dur_text(e.minutes),
+				campaign_builder.duration_text(e.minutes),
 			]);
 		}
 
@@ -46,14 +46,14 @@ frappe.provide("whatsapp_next.campaign");
 			const scheduled = !!doc.scheduled_at;
 			const cap = cint(this.ctx.cap);
 			const tiles = [
-				{ tone: "pri", icon: "users", label: __("Recipients"), value: campaign_builder.fmt_int(doc.total_recipients), of: __("chosen for sending"), badge: cint(doc.total_recipients) ? __("ready") : __("none") },
-				{ tone: "info", icon: "chat", label: __("Messages", null, "campaign"), value: campaign_builder.fmt_int(per), of: __("{0} in total", [campaign_builder.fmt_int(e.total)]), badge: __("per recipient") },
-				{ tone: "warn", icon: "bolt", label: __("Sending rate"), value: __("{0}/min", [campaign_builder.fmt_int(e.rate)]), of: cap ? __("the queue allows {0}", [campaign_builder.fmt_int(cap)]) : "", badge: cap && e.rate >= cap ? __("at the cap") : __("steady") },
-				{ tone: "ok", icon: "clock", label: __("Estimated duration"), value: campaign_builder.dur_text(e.minutes), of: scheduled ? __("from {0}", [this.when_text()]) : __("from the moment it starts"), badge: scheduled ? __("scheduled") : __("on start") },
+				{ tone: "pri", icon: "users", label: __("Recipients"), value: campaign_builder.format_integer(doc.total_recipients), of: __("chosen for sending"), badge: cint(doc.total_recipients) ? __("ready") : __("none") },
+				{ tone: "info", icon: "chat", label: __("Messages", null, "campaign"), value: campaign_builder.format_integer(per), of: __("{0} in total", [campaign_builder.format_integer(e.total)]), badge: __("per recipient") },
+				{ tone: "warn", icon: "bolt", label: __("Sending rate"), value: __("{0}/min", [campaign_builder.format_integer(e.rate)]), of: cap ? __("the queue allows {0}", [campaign_builder.format_integer(cap)]) : "", badge: cap && e.rate >= cap ? __("at the cap") : __("steady") },
+				{ tone: "ok", icon: "clock", label: __("Estimated duration"), value: campaign_builder.duration_text(e.minutes), of: scheduled ? __("from {0}", [this.when_text()]) : __("from the moment it starts"), badge: scheduled ? __("scheduled") : __("on start") },
 			];
 			const tile = (t) => `
 				<div class="whatsapp-campaign-builder__tile whatsapp-campaign-builder__tile--${escape_html(t.tone)}">
-					<span class="whatsapp-campaign-builder__tile-icon" aria-hidden="true">${ui.ico(t.icon, "sm")}</span>
+					<span class="whatsapp-campaign-builder__tile-icon" aria-hidden="true">${ui.inline_icon_html(t.icon, "sm")}</span>
 					<span class="whatsapp-campaign-builder__tile-text">
 						<span class="whatsapp-campaign-builder__tile-label">${escape_html(t.label)}</span>
 						<span class="whatsapp-campaign-builder__tile-value whatsapp-kit-tabular">${escape_html(t.value)}</span>
@@ -70,7 +70,7 @@ frappe.provide("whatsapp_next.campaign");
 			];
 			const ends = e.minutes ? this.ends_text(e.minutes) : "";
 			const plan = [
-				{ key: "created", label: __("The campaign was created"), when: doc.creation ? whatsapp_next.fmt.dt(doc.creation) : "", done: true },
+				{ key: "created", label: __("The campaign was created"), when: doc.creation ? whatsapp_next.message_formatters.format_datetime(doc.creation) : "", done: true },
 				{ key: "start", label: scheduled ? __("Starts by itself") : __("Starts when you press the button"), when: scheduled ? this.when_text() : "", done: false },
 				{ key: "end", label: __("Expected to finish"), when: ends, done: false },
 			];
@@ -84,10 +84,10 @@ frappe.provide("whatsapp_next.campaign");
 							<div data-block="checks"></div>
 							<div class="whatsapp-campaign-builder__rcard-foot" data-block="verbs"></div>
 						</section>
-						${campaign_builder.card({ key: "sequence", icon: "chat", title: __("As the recipient will receive it"), note: campaign_builder.messages_text(per), body: this.thread(), cls: "whatsapp-campaign-builder__rcard" })}
+						${campaign_builder.card_html({ key: "sequence", icon: "chat", title: __("As the recipient will receive it"), note: campaign_builder.messages_text(per), body: this.thread(), cls: "whatsapp-campaign-builder__rcard" })}
 						<section class="whatsapp-campaign-builder__rcard">
-							${campaign_builder.card({ key: "details", icon: "doc", title: __("Campaign details"), body: `<div class="whatsapp-campaign-builder__pairs whatsapp-campaign-builder__pairs--one">${details.map(campaign_builder.pair).join("")}</div>` })}
-							${campaign_builder.card({
+							${campaign_builder.card_html({ key: "details", icon: "doc", title: __("Campaign details"), body: `<div class="whatsapp-campaign-builder__pairs whatsapp-campaign-builder__pairs--one">${details.map(campaign_builder.key_value_line_html).join("")}</div>` })}
+							${campaign_builder.card_html({
 								key: "plan",
 								icon: "calendar",
 								title: __("Timeline"),
@@ -97,7 +97,7 @@ frappe.provide("whatsapp_next.campaign");
 									)
 									.join("")}</ol>`,
 							})}
-							${cint(doc.exclude_unknown_numbers) ? campaign_builder.note({ tone: "warn", icon: "warn", text: __("Unknown numbers are excluded: a recipient who has never had a conversation on WhatsApp is marked and counted, and nothing is sent to them.") }) : ""}
+							${cint(doc.exclude_unknown_numbers) ? campaign_builder.note_html({ tone: "warn", icon: "warn", text: __("Unknown numbers are excluded: a recipient who has never had a conversation on WhatsApp is marked and counted, and nothing is sent to them.") }) : ""}
 						</section>
 					</div>
 				</div>`);
@@ -188,12 +188,12 @@ frappe.provide("whatsapp_next.campaign");
 
 			const $band = $(`
 				<div class="whatsapp-campaign-builder__verdict whatsapp-campaign-builder__verdict--${tone}">
-					<span class="whatsapp-campaign-builder__verdict-mark" aria-hidden="true">${ui.ico(icon, "sm")}</span>
+					<span class="whatsapp-campaign-builder__verdict-mark" aria-hidden="true">${ui.inline_icon_html(icon, "sm")}</span>
 					<span class="whatsapp-campaign-builder__verdict-text">
 						<b>${escape_html(title)}</b>
 						<span dir="auto">${escape_html(line)}</span>
 					</span>
-					${campaign_helpers.is_manager() ? `<span class="whatsapp-campaign-builder__verdict-verbs">${verbs.map((v) => ui.btn({ label: v.label, icon: v.icon, variant: v.variant, size: "sm", disabled: !!v.disabled, attrs: { "data-verb": v.key, "data-step": v.step === undefined ? "" : String(v.step) } })).join("")}</span>` : ""}
+					${campaign_helpers.is_manager() ? `<span class="whatsapp-campaign-builder__verdict-verbs">${verbs.map((v) => ui.button_html({ label: v.label, icon: v.icon, variant: v.variant, size: "sm", disabled: !!v.disabled, attrs: { "data-verb": v.key, "data-step": v.step === undefined ? "" : String(v.step) } })).join("")}</span>` : ""}
 				</div>`);
 			this.$wrapper.find('[data-block="verdict"]').empty().append($band);
 			this.$wrapper.find('[data-block="verbs"]').empty();
@@ -220,8 +220,8 @@ frappe.provide("whatsapp_next.campaign");
 				message: __("The campaign starts by itself at that time and sends at its own rate."),
 				impact: [
 					{ label: __("Starts at"), value: campaign_builder.when_text(doc.scheduled_at) },
-					{ label: __("Recipients"), value: campaign_builder.fmt_int(doc.total_recipients) },
-					{ label: __("Messages in total"), value: campaign_builder.fmt_int(e.total) },
+					{ label: __("Recipients"), value: campaign_builder.format_integer(doc.total_recipients) },
+					{ label: __("Messages in total"), value: campaign_builder.format_integer(e.total) },
 				],
 				confirm_label: __("Schedule", null, "campaign"),
 				on_confirm: () => ui.call("campaigns.schedule", { name: doc.name, scheduled_at: doc.scheduled_at }),
@@ -253,10 +253,10 @@ frappe.provide("whatsapp_next.campaign");
 						}
 					}
 					return `
-					${delay ? `<div class="whatsapp-campaign-builder__thread-wait"><span>${escape_html(__("wait {0}", [delay < 60 ? __("{0}s", [campaign_builder.fmt_int(delay)]) : campaign_builder.dur_text(Math.round(delay / 60))]))}</span></div>` : ""}
+					${delay ? `<div class="whatsapp-campaign-builder__thread-wait"><span>${escape_html(__("wait {0}", [delay < 60 ? __("{0}s", [campaign_builder.format_integer(delay)]) : campaign_builder.duration_text(Math.round(delay / 60))]))}</span></div>` : ""}
 					<div class="whatsapp-campaign-builder__bubble">
-						<span class="whatsapp-campaign-builder__bubble-type">${ui.ico(TYPE_ICON[m.message_type] || "chat", "xs")}<span>${escape_html(__(m.message_type))}</span><span class="whatsapp-campaign-builder__bubble-num whatsapp-kit-tabular" dir="ltr">${escape_html(campaign_builder.fmt_int(m.idx))}</span></span>
-						${m.attachment ? `<span class="whatsapp-campaign-builder__bubble-file">${ui.ico("attach", "xs")}<span dir="ltr">${escape_html(String(m.attachment).split("/").pop())}</span></span>` : ""}
+						<span class="whatsapp-campaign-builder__bubble-type">${ui.inline_icon_html(TYPE_ICON[m.message_type] || "chat", "xs")}<span>${escape_html(__(m.message_type))}</span><span class="whatsapp-campaign-builder__bubble-num whatsapp-kit-tabular" dir="ltr">${escape_html(campaign_builder.format_integer(m.idx))}</span></span>
+						${m.attachment ? `<span class="whatsapp-campaign-builder__bubble-file">${ui.inline_icon_html("attach", "xs")}<span dir="ltr">${escape_html(String(m.attachment).split("/").pop())}</span></span>` : ""}
 						<span class="whatsapp-campaign-builder__bubble-body" dir="auto">${escape_html(body || (m.attachment ? "" : __("(empty)")))}</span>
 						${options.length ? `<span class="whatsapp-campaign-builder__bubble-options">${options.map((o) => `<span>${escape_html(o)}</span>`).join("")}</span>` : ""}
 					</div>`;

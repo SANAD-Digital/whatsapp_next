@@ -19,12 +19,12 @@ frappe.provide("whatsapp_next.campaign");
 	const ui = whatsapp.ui;
 	const campaign_builder = whatsapp_next.campaign;
 	const campaign_helpers = whatsapp_next.campaigns;
-	const escape_html = campaign_builder.esc;
-	const format_integer = campaign_builder.fmt_int;
+	const escape_html = campaign_builder.escape_html;
+	const format_integer = campaign_builder.format_integer;
 
 	const TONE = { gray: "muted", blue: "info", green: "ok", orange: "warn", red: "danger" };
 
-	const error_text = (code) => whatsapp_next.fmt.error_text(code);
+	const error_text = (code) => whatsapp_next.message_formatters.error_text(code);
 
 	/** What each timeline event says. */
 	const EVENT_TEXT = {
@@ -69,7 +69,7 @@ frappe.provide("whatsapp_next.campaign");
 				.map(
 					(t) => `
 					<button type="button" role="tab" class="whatsapp-campaign-builder__tab${t.key === this.tab ? " whatsapp-campaign-builder__tab--on" : ""}" data-tab="${escape_html(t.key)}" aria-selected="${t.key === this.tab}">
-						${ui.ico(t.icon, "sm")}<span>${escape_html(t.label)}</span>
+						${ui.inline_icon_html(t.icon, "sm")}<span>${escape_html(t.label)}</span>
 						${t.count ? `<span class="whatsapp-campaign-builder__tab-count whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(t.count))}</span>` : ""}
 					</button>`
 				)
@@ -180,14 +180,14 @@ frappe.provide("whatsapp_next.campaign");
 			const dirty = ctx.frm.is_dirty();
 			// a paused campaign may still be edited — its messages, its audience — before it resumes
 			if (this.doc.status === "Paused" && campaign_helpers.is_manager() && ctx.can_edit()) {
-				$(ui.btn({ label: __("Edit the campaign"), icon: "doc", variant: "secondary", size: "sm", disabled: dirty }))
+				$(ui.button_html({ label: __("Edit the campaign"), icon: "doc", variant: "secondary", size: "sm", disabled: dirty }))
 					.on("click", () => ctx.set_editing_mode(true))
 					.appendTo($host);
 			}
-			campaign_helpers.verbs(this.doc, { after, messages: Math.max(1, campaign_builder.messages_of(this.doc)) })
+			campaign_helpers.available_verbs(this.doc, { after, messages: Math.max(1, campaign_builder.messages_of(this.doc)) })
 				.filter((v) => !["start", "schedule", "unschedule"].includes(v.key))
 				.forEach((v) => {
-					$(ui.btn({
+					$(ui.button_html({
 						label: v.label,
 						variant: v.key === "resume" ? "primary" : v.tone === "danger" ? "danger" : "secondary",
 						size: "sm",
@@ -198,7 +198,7 @@ frappe.provide("whatsapp_next.campaign");
 						.appendTo($host);
 				});
 			if (cint(this.doc.total_recipients)) {
-				$(ui.btn({ label: __("Outbound log"), icon: "table", size: "sm" }))
+				$(ui.button_html({ label: __("Outbound log"), icon: "table", size: "sm" }))
 					.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: this.doc.name }))
 					.appendTo($host);
 			}
@@ -208,8 +208,8 @@ frappe.provide("whatsapp_next.campaign");
 			const doc = this.doc;
 			if (doc.status === "Paused") return doc.pause_reason ? __("paused: {0}", [doc.pause_reason]) : __("paused — nothing is going out");
 			if (doc.status === "Cancelled") return doc.cancel_reason ? __("cancelled: {0}", [doc.cancel_reason]) : __("cancelled");
-			if (campaign_helpers.TERMINAL.includes(doc.status)) return doc.ended_at ? __("ended {0}", [whatsapp_next.fmt.dt(doc.ended_at)]) : __("ended");
-			if (doc.status === "Scheduled" && doc.scheduled_at) return __("starts {0}", [whatsapp_next.fmt.dt(doc.scheduled_at)]);
+			if (campaign_helpers.TERMINAL.includes(doc.status)) return doc.ended_at ? __("ended {0}", [whatsapp_next.message_formatters.format_datetime(doc.ended_at)]) : __("ended");
+			if (doc.status === "Scheduled" && doc.scheduled_at) return __("starts {0}", [whatsapp_next.message_formatters.format_datetime(doc.scheduled_at)]);
 			return __("handing messages to the queue");
 		}
 
@@ -300,7 +300,7 @@ frappe.provide("whatsapp_next.campaign");
 
 			$pane.html(`
 				<div class="whatsapp-campaign-builder__stack">
-					${campaign_builder.card({
+					${campaign_builder.card_html({
 						key: "stages",
 						icon: "chart",
 						title: __("How far each message got"),
@@ -308,8 +308,8 @@ frappe.provide("whatsapp_next.campaign");
 						body: `<div class="whatsapp-campaign-builder__stages">${readings}</div>`,
 					})}
 					<div class="whatsapp-campaign-builder__two">
-						${campaign_builder.card({ key: "funnel", icon: "sigma", title: __("Delivery funnel"), note: __("each step of the one above it"), body: `<div class="whatsapp-campaign-builder__funnel">${funnel}</div>` })}
-						${campaign_builder.card({
+						${campaign_builder.card_html({ key: "funnel", icon: "sigma", title: __("Delivery funnel"), note: __("each step of the one above it"), body: `<div class="whatsapp-campaign-builder__funnel">${funnel}</div>` })}
+						${campaign_builder.card_html({
 							key: "dist",
 							icon: "cards",
 							title: __("Where they stand now"),
@@ -321,7 +321,7 @@ frappe.provide("whatsapp_next.campaign");
 					</div>
 					${
 						t.failed
-							? campaign_builder.note({
+							? campaign_builder.note_html({
 									tone: "danger",
 									icon: "error",
 									text: __("{0} failed — {1} of everything produced.", [campaign_builder.messages_text(t.failed), pct(share(t.failed, t.produced))]),
@@ -364,7 +364,7 @@ frappe.provide("whatsapp_next.campaign");
 						})
 						.join("");
 					$pane.html(
-						campaign_builder.card({
+						campaign_builder.card_html({
 							key: "messages",
 							icon: "chat",
 							title: __("Each message, and what became of it"),
@@ -390,7 +390,7 @@ frappe.provide("whatsapp_next.campaign");
 					if (!$pane.closest("body").length) return;
 					this.data.failures = r;
 					if (!cint(r.total)) {
-						$pane.html(campaign_builder.card({ key: "failures", icon: "tick", title: __("Failures", null, "campaign"), body: `<p class="whatsapp-campaign-builder__readings-foot">${escape_html(__("Nothing has failed."))}</p>` }));
+						$pane.html(campaign_builder.card_html({ key: "failures", icon: "tick", title: __("Failures", null, "campaign"), body: `<p class="whatsapp-campaign-builder__readings-foot">${escape_html(__("Nothing has failed."))}</p>` }));
 						return;
 					}
 					const rows = (r.rows || [])
@@ -410,7 +410,7 @@ frappe.provide("whatsapp_next.campaign");
 					const can_retry = cint(r.retryable) && campaign_helpers.is_manager() && this.doc.status !== "Cancelled";
 					$pane.html(`
 						<div class="whatsapp-campaign-builder__stack">
-							${campaign_builder.card({
+							${campaign_builder.card_html({
 								key: "failures",
 								icon: "warn",
 								title: __("Why they failed"),
@@ -419,13 +419,13 @@ frappe.provide("whatsapp_next.campaign");
 							})}
 							${
 								can_retry
-									? campaign_builder.card({
+									? campaign_builder.card_html({
 											key: "retry",
 											icon: "queue",
 											title: __("Send them again"),
 											body: `
 												<p class="whatsapp-campaign-builder__readings-foot">${escape_html(__("{0} failed for a passing reason — a disconnected device, a timeout, a rate limit. Sending again creates a new message for each of them; the failed one stays in the log.", [campaign_builder.messages_text(r.retryable)]))}</p>
-												<div class="whatsapp-campaign-builder__row-actions">${ui.btn({ label: __("Retry {0}", [format_integer(r.retryable)]), variant: "primary", size: "sm", attrs: { "data-retry": "1" } })}</div>`,
+												<div class="whatsapp-campaign-builder__row-actions">${ui.button_html({ label: __("Retry {0}", [format_integer(r.retryable)]), variant: "primary", size: "sm", attrs: { "data-retry": "1" } })}</div>`,
 										})
 									: ""
 							}
@@ -478,13 +478,13 @@ frappe.provide("whatsapp_next.campaign");
 								<span class="whatsapp-campaign-builder__event-dot" aria-hidden="true"></span>
 								<span class="whatsapp-campaign-builder__event-text">
 									<span class="whatsapp-campaign-builder__event-label">${escape_html((EVENT_TEXT[e.key] || EVENT_TEXT.event)())}${e.reason ? ` — ${escape_html(e.reason)}` : ""}</span>
-									<span class="whatsapp-campaign-builder__event-when whatsapp-kit-tabular">${escape_html(whatsapp_next.fmt.dt(e.at))}${e.user && e.user !== "Administrator" ? ` · ${escape_html(e.user)}` : ""}</span>
+									<span class="whatsapp-campaign-builder__event-when whatsapp-kit-tabular">${escape_html(whatsapp_next.message_formatters.format_datetime(e.at))}${e.user && e.user !== "Administrator" ? ` · ${escape_html(e.user)}` : ""}</span>
 								</span>
 							</li>`
 						)
 						.join("");
 					$host.html(
-						campaign_builder.card({
+						campaign_builder.card_html({
 							key: "timeline",
 							icon: "clock",
 							title: __("What happened"),

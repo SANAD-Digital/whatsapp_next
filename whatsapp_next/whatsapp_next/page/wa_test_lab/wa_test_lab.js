@@ -27,7 +27,7 @@
 	const ui = whatsapp.ui;
 	const kit = whatsapp.kit;
 	const escape_html = (v) => ui.escape(v == null ? "" : v);
-	const format_integer = (v) => ui.format_int(v);
+	const format_integer = (v) => ui.format_integer(v);
 	const call_test_lab_api = (fn, args, opts) => ui.call(`testlab.${fn}`, args, opts);
 	const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
 	// a number is shown the way the rest of the product shows it: grouped, left to right, no "+"
@@ -128,7 +128,7 @@
 					text: __("These are real WhatsApp messages. They are sent only to the target numbers you set below, and they count against your plan."),
 				},
 			});
-			$(`<span class="whatsapp-test-lab__mark" aria-hidden="true">${kit.ico("shield", "md")}</span>`).prependTo(this.header.$el.find(".whatsapp-kit-page-header__row"));
+			$(`<span class="whatsapp-test-lab__mark" aria-hidden="true">${kit.inline_icon_html("shield", "md")}</span>`).prependTo(this.header.$el.find(".whatsapp-kit-page-header__row"));
 			this.state = new ui.EmptyState({ wrapper: this.$body, state: "loading", rows: 6 });
 		}
 
@@ -235,7 +235,7 @@
 						<div class="whatsapp-test-lab__targets" role="list" aria-labelledby="whatsapp-lab-targets-l"></div>
 						<div class="whatsapp-test-lab__target-add">
 							<div class="whatsapp-test-lab__target-field"></div>
-							${kit.btn({ label: __("Add"), icon: "plus", variant: "tonal", attrs: { "data-act": "add-target" } })}
+							${kit.button_html({ label: __("Add"), icon: "plus", variant: "tonal", attrs: { "data-act": "add-target" } })}
 						</div>
 						<span class="whatsapp-field__hint">${escape_html(__("Your own numbers. Up to {0}; nothing is ever sent to anyone else.", [format_integer(l.max_targets)]))}</span>
 					</div>
@@ -362,7 +362,7 @@
 						const who = [t.name, t.party ? `${__(t.party_type)}: ${t.party}` : t.contact ? __("Not linked to an account") : __("Not saved as a contact")].filter(Boolean).join(" · ");
 						return `<span class="whatsapp-test-lab__target" role="listitem">
 							<span class="whatsapp-test-lab__target-text"><strong>${phone(t.phone_e164)}</strong><span>${escape_html(who)}</span></span>
-							<button type="button" class="whatsapp-test-lab__target-x" data-remove="${escape_html(t.phone_e164)}" aria-label="${escape_html(__("Remove {0}", [phone_text(t.phone_e164)]))}" title="${escape_html(__("Remove"))}">${kit.ico("x", "xs")}</button>
+							<button type="button" class="whatsapp-test-lab__target-x" data-remove="${escape_html(t.phone_e164)}" aria-label="${escape_html(__("Remove {0}", [phone_text(t.phone_e164)]))}" title="${escape_html(__("Remove"))}">${kit.inline_icon_html("x", "xs")}</button>
 						</span>`;
 					})
 					.join("")
@@ -405,7 +405,7 @@
 				<div class="whatsapp-test-lab__health-head">
 					<label class="whatsapp-check"><input type="checkbox" data-check="health"${this.health_on === false ? "" : " checked"} /><span>${escape_html(__("Run these checks first"))}</span></label>
 					<span class="whatsapp-test-lab__health-line">${kit.badge(HEALTH[overall].label(), HEALTH[overall].tone)}<strong>${escape_html(headline)}</strong></span>
-					${kit.btn({ label: __("Run the checks"), icon: "scan", variant: "tonal", size: "sm", attrs: { "data-act": "health" } })}
+					${kit.button_html({ label: __("Run the checks"), icon: "scan", variant: "tonal", size: "sm", attrs: { "data-act": "health" } })}
 				</div>
 				<ul class="whatsapp-test-lab__health-list">${h.checks.map((c) => this.health_row(c)).join("")}</ul>
 				<p class="whatsapp-test-lab__health-foot">${escape_html(
@@ -433,13 +433,13 @@
 		health_row(c) {
 			const s = HEALTH[c.status] || HEALTH.warn;
 			return `<li class="whatsapp-test-lab__health-row whatsapp-test-lab__health-row--${c.status}">
-				<span class="whatsapp-test-lab__health-ico whatsapp-test-lab__tone--${s.tone}" aria-hidden="true">${kit.ico(s.icon, "sm")}</span>
+				<span class="whatsapp-test-lab__health-ico whatsapp-test-lab__tone--${s.tone}" aria-hidden="true">${kit.inline_icon_html(s.icon, "sm")}</span>
 				<span class="whatsapp-test-lab__health-text">
 					<span class="whatsapp-test-lab__health-title">${escape_html(c.title)}<span class="whatsapp-kit-visually-hidden"> — ${escape_html(s.label())}</span></span>
 					<span class="whatsapp-test-lab__health-detail">${escape_html(c.detail)}</span>
 					${c.fix ? `<span class="whatsapp-test-lab__health-fix">${escape_html(c.fix)}</span>` : ""}
 				</span>
-				${c.route && c.status !== "ok" ? kit.btn({ label: c.route_label || __("Open"), variant: "secondary", size: "sm", attrs: { "data-route": c.key } }) : ""}
+				${c.route && c.status !== "ok" ? kit.button_html({ label: c.route_label || __("Open"), variant: "secondary", size: "sm", attrs: { "data-route": c.key } }) : ""}
 			</li>`;
 		}
 
@@ -472,10 +472,10 @@
 			const file_row = (kind) => `
 				<div class="whatsapp-test-lab__file" data-file="${kind}">
 					<span class="whatsapp-test-lab__file-name" data-file-name>${escape_html(__("The app's sample file ({0})", [c.samples[kind].file_name]))}</span>
-					${kit.btn({ label: __("Pick another file"), icon: "attach", variant: "ghost", size: "sm", attrs: { "data-act": "pick-file", "data-kind": kind } })}
+					${kit.button_html({ label: __("Pick another file"), icon: "attach", variant: "ghost", size: "sm", attrs: { "data-act": "pick-file", "data-kind": kind } })}
 				</div>`;
 			const preview_box = (key) => `
-				<div class="whatsapp-test-lab__actions">${kit.btn({ label: __("Preview"), icon: "search", variant: "tonal", size: "sm", attrs: { "data-act": "preview", "data-kind": key } })}</div>
+				<div class="whatsapp-test-lab__actions">${kit.button_html({ label: __("Preview"), icon: "search", variant: "tonal", size: "sm", attrs: { "data-act": "preview", "data-kind": key } })}</div>
 				<div class="whatsapp-test-lab__preview" data-preview="${key}" hidden></div>`;
 			const doc_field = (key) => `
 				<label class="whatsapp-field" data-doc-field="${key}" hidden>
@@ -582,7 +582,7 @@
 				<p class="whatsapp-test-lab__check-note" data-phone-hint></p>
 				<div class="whatsapp-test-lab__check-body">
 					<div class="whatsapp-test-lab__words">${commands.map((cmd) => `<code class="whatsapp-test-lab__word" dir="auto">${escape_html(cmd.code)}</code>`).join("")}</div>
-					<div class="whatsapp-test-lab__actions">${kit.btn({ label: __("Listen for my message"), icon: "chat", variant: "tonal", size: "sm", attrs: { "data-act": "listen" } })}</div>
+					<div class="whatsapp-test-lab__actions">${kit.button_html({ label: __("Listen for my message"), icon: "chat", variant: "tonal", size: "sm", attrs: { "data-act": "listen" } })}</div>
 					<div class="whatsapp-test-lab__inbound" data-inbound aria-live="polite"></div>
 				</div>
 			</article>`;
@@ -869,8 +869,8 @@
 			if (!this.$bar.children().length) {
 				this.$bar.html(`
 					<span class="whatsapp-test-lab__bar-text" role="status"></span>
-					${kit.btn({ label: __("Stop"), icon: "pause", variant: "danger", attrs: { "data-act": "stop" } })}
-					${kit.btn({ label: __("Run selected"), icon: "send", variant: "primary", attrs: { "data-act": "run" } })}`);
+					${kit.button_html({ label: __("Stop"), icon: "pause", variant: "danger", attrs: { "data-act": "stop" } })}
+					${kit.button_html({ label: __("Run selected"), icon: "send", variant: "primary", attrs: { "data-act": "run" } })}`);
 				this.$bar.find('[data-act="run"]').on("click", () => this.confirm_and_start_run());
 				this.$bar.find('[data-act="stop"]').on("click", () => {
 					this.stopped = true;
@@ -1166,9 +1166,9 @@
 				<div class="whatsapp-test-lab__run-head">
 					<span class="whatsapp-test-lab__run-title">${escape_html(this.readonly ? __("An earlier run") : __("This run"))}${meta ? ` · <span dir="ltr">${escape_html(frappe.datetime.str_to_user(meta.started_at))}</span>` : ""}</span>
 					<span class="whatsapp-test-lab__run-actions">
-						${kit.btn({ label: __("Refresh", null, "Test Lab"), icon: "clock", variant: "ghost", size: "sm", attrs: { "data-act": "refresh" } })}
-						${kit.btn({ label: __("Copy report"), icon: "copy", variant: "tonal", size: "sm", attrs: { "data-act": "copy" } })}
-						${kit.btn({ label: __("Download"), icon: "doc", variant: "ghost", size: "sm", attrs: { "data-act": "download" } })}
+						${kit.button_html({ label: __("Refresh", null, "Test Lab"), icon: "clock", variant: "ghost", size: "sm", attrs: { "data-act": "refresh" } })}
+						${kit.button_html({ label: __("Copy report"), icon: "copy", variant: "tonal", size: "sm", attrs: { "data-act": "copy" } })}
+						${kit.button_html({ label: __("Download"), icon: "doc", variant: "ghost", size: "sm", attrs: { "data-act": "download" } })}
 					</span>
 				</div>`;
 			if (!this.rows.length) {

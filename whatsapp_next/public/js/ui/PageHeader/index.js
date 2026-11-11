@@ -124,7 +124,7 @@ whatsapp.ui.PageHeader = class PageHeader {
 			if (a.count == null) return;
 			Promise.resolve(typeof a.count === "function" ? a.count() : a.count).then((n) => {
 				if (n == null) return;
-				$btn.append(` <span class="whatsapp-kit-page-header__count whatsapp-kit-tabular">${ui.escape(ui.format_int(n))}</span>`);
+				$btn.append(` <span class="whatsapp-kit-page-header__count whatsapp-kit-tabular">${ui.escape(ui.format_integer(n))}</span>`);
 			});
 		});
 	}
@@ -140,7 +140,7 @@ whatsapp.ui.PageHeader = class PageHeader {
 		this.$actions.empty();
 		(this.opts.secondary || []).forEach((a) => {
 			if (!this.allowed(a)) return;
-			const count = a.count != null ? ` <span class="whatsapp-kit-page-header__count whatsapp-kit-tabular">${ui.escape(ui.format_int(a.count))}</span>` : "";
+			const count = a.count != null ? ` <span class="whatsapp-kit-page-header__count whatsapp-kit-tabular">${ui.escape(ui.format_integer(a.count))}</span>` : "";
 			$(`<button type="button" class="btn btn-default btn-sm">${a.icon ? ui.icon(a.icon, "xs") + " " : ""}${ui.escape(a.label)}${count}</button>`)
 				.on("click", () => a.handler(this))
 				.appendTo(this.$actions);
@@ -161,7 +161,7 @@ whatsapp.ui.PageHeader = class PageHeader {
 			this.$banner.attr("hidden", true).empty().removeAttr("role");
 			return this;
 		}
-		const tone = ui.tone(banner.tone || "amber");
+		const tone = ui.tone_for_colour(banner.tone || "amber");
 		const icon = banner.icon || BANNER_ICON[tone] || "es-line-info";
 		this.$banner
 			.attr("role", tone === "red" ? "alert" : "status")

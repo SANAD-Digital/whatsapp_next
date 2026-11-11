@@ -9,7 +9,7 @@ import ui from "../_core/index.js";
 
 /** Avatar: the record's image when there is one, else its initials, else a fieldtype icon. */
 export function avatar({ image, initials, icon, tone = "gray", size = "md", alt = "" } = {}) {
-	const cls = `whatsapp-kit-avatar whatsapp-kit-avatar--${size} whatsapp-kit-tone--${ui.tone(tone)}`;
+	const cls = `whatsapp-kit-avatar whatsapp-kit-avatar--${size} whatsapp-kit-tone--${ui.tone_for_colour(tone)}`;
 	if (image) {
 		return `<span class="${cls} whatsapp-kit-avatar--image"><img src="${ui.escape(image)}" alt="${ui.escape(alt)}" loading="lazy"></span>`;
 	}
@@ -27,10 +27,10 @@ export function thumb({ src, alt = "", size = "md", icon = "es-line-image" } = {
 }
 
 /** Small icon + text pair used for secondary facts (phone, branch, group, date). */
-export function chip({ icon, text, title, ltr = false, tone, href, cls = "" } = {}) {
+export function icon_text_chip_html({ icon, text, title, ltr = false, tone, href, cls = "" } = {}) {
 	if (text == null || text === "") return "";
 	const body = `${icon ? `<span class="whatsapp-kit-chipline__icon" aria-hidden="true">${ui.icon(icon, "xs")}</span>` : ""}<span class="whatsapp-kit-chipline__text"${ltr ? ' dir="ltr"' : ' dir="auto"'}>${ui.escape(text)}</span>`;
-	const classes = `whatsapp-kit-chipline${tone ? ` whatsapp-kit-tone--${ui.tone(tone)}` : ""}${cls ? ` ${cls}` : ""}`;
+	const classes = `whatsapp-kit-chipline${tone ? ` whatsapp-kit-tone--${ui.tone_for_colour(tone)}` : ""}${cls ? ` ${cls}` : ""}`;
 	const attrs = title ? ` title="${ui.escape(title)}"` : "";
 	if (href) return `<a class="${classes}" href="${ui.escape(ui.safe_url(href))}"${attrs}>${body}</a>`;
 	return `<span class="${classes}"${attrs}>${body}</span>`;
@@ -38,7 +38,7 @@ export function chip({ icon, text, title, ltr = false, tone, href, cls = "" } = 
 
 /** A row of chips, empty ones dropped. */
 export function chips(list = []) {
-	const html = list.map((c) => (typeof c === "string" ? c : chip(c))).filter(Boolean).join("");
+	const html = list.map((c) => (typeof c === "string" ? c : icon_text_chip_html(c))).filter(Boolean).join("");
 	return html ? `<span class="whatsapp-kit-chipline-row">${html}</span>` : "";
 }
 
@@ -46,10 +46,10 @@ export function chips(list = []) {
  * Fact tile — label above, value below, icon in the corner. The "quick facts" grid of the
  * document drawer (reference image 01) is a list of these.
  */
-export function fact({ label, value, icon, ltr = false, tone, text = false } = {}) {
+export function fact_tile_html({ label, value, icon, ltr = false, tone, text = false } = {}) {
 	if (value == null || value === "") return "";
 	const is_html = !text && typeof value === "string" && /^\s*</.test(value);
-	return `<div class="whatsapp-kit-fact${tone ? ` whatsapp-kit-fact--${ui.tone(tone)}` : ""}">
+	return `<div class="whatsapp-kit-fact${tone ? ` whatsapp-kit-fact--${ui.tone_for_colour(tone)}` : ""}">
 		<div class="whatsapp-kit-fact__head">${icon ? `<span class="whatsapp-kit-fact__icon" aria-hidden="true">${ui.icon(icon, "sm")}</span>` : ""}<span class="whatsapp-kit-fact__label">${ui.escape(label || "")}</span></div>
 		<div class="whatsapp-kit-fact__value"${ltr ? ' dir="ltr"' : ' dir="auto"'}>${is_html ? value : ui.escape(value)}</div>
 	</div>`;
@@ -58,7 +58,7 @@ export function fact({ label, value, icon, ltr = false, tone, text = false } = {
 /** Progress bar with the percentage beside it (never colour alone — the number is always there). */
 export function progress(percent, { tone, label } = {}) {
 	const pct = Math.max(0, Math.min(100, cint(percent)));
-	const t = ui.tone(tone || (pct >= 100 ? "green" : pct >= 50 ? "blue" : pct > 0 ? "amber" : "gray"));
+	const t = ui.tone_for_colour(tone || (pct >= 100 ? "green" : pct >= 50 ? "blue" : pct > 0 ? "amber" : "gray"));
 	return `<span class="whatsapp-kit-progress" role="img" aria-label="${ui.escape(label || __("{0}%", [pct]))}">
 		<span class="whatsapp-kit-progress__track"><span class="whatsapp-kit-progress__bar whatsapp-kit-progress--${t}" style="inline-size:${pct}%"></span></span>
 		<span class="whatsapp-kit-progress__value whatsapp-kit-tabular" dir="ltr">${pct}%</span>
@@ -80,7 +80,7 @@ export function stars(value, { max = 5 } = {}) {
 /** Key/value description list — the "additional details" block. A value starting with "<" is
  *  taken as markup the caller built; `text: true` marks one that is data (a message, an error)
  *  and is always escaped — what a sender wrote may well start with "<". */
-export function dl(rows = [], { columns = 2 } = {}) {
+export function definition_list_html(rows = [], { columns = 2 } = {}) {
 	const body = rows
 		.map((r) => {
 			if (!r || r.value == null || r.value === "") return "";
@@ -97,7 +97,7 @@ export function dl(rows = [], { columns = 2 } = {}) {
  * start, its value beside it, a hairline between rows. A long value (`wide`) takes the row's
  * whole width under its key instead of squeezing into the value column.
  */
-export function kv(rows = []) {
+export function key_value_rows_html(rows = []) {
 	const body = rows
 		.map((r) => {
 			if (!r || r.value == null || r.value === "") return "";
@@ -112,7 +112,7 @@ export function kv(rows = []) {
 }
 
 /** Code / JSON preview with a copy button (`inline` truncates to one line). */
-export function code(value, { density = "card", language = "" } = {}) {
+export function code_preview_html(value, { density = "card", language = "" } = {}) {
 	let text = cstr(value);
 	if (typeof value === "object") text = JSON.stringify(value, null, 2);
 	if (!text) return "";
@@ -121,7 +121,7 @@ export function code(value, { density = "card", language = "" } = {}) {
 		const cut = one.length > 60 ? `${one.slice(0, 60)}…` : one;
 		return `<code class="whatsapp-kit-code whatsapp-kit-code--inline" dir="ltr" title="${ui.escape(one.slice(0, 400))}">${ui.escape(cut)}</code>`;
 	}
-	const id = ui.uid("code");
+	const id = ui.unique_dom_id("code");
 	return `<div class="whatsapp-kit-code-block">
 		<button type="button" class="whatsapp-kit-code-block__copy" data-copy="${id}" aria-label="${ui.escape(__("Copy"))}" title="${ui.escape(__("Copy"))}">${ui.icon("es-line-copy", "xs")}</button>
 		<pre class="whatsapp-kit-code-block__pre" id="${id}" dir="ltr"${language ? ` data-language="${ui.escape(language)}"` : ""}><code>${ui.escape(text)}</code></pre>
@@ -150,7 +150,7 @@ export function actions(list = [], { size = "sm" } = {}) {
 			if (!a) return "";
 			const label = a.label || a.title || "";
 			const body = `${a.icon ? ui.icon(a.icon, size === "sm" ? "xs" : "sm") : ""}${a.show_label && label ? `<span class="whatsapp-kit-icon-button__label">${ui.escape(label)}</span>` : ""}`;
-			const attrs = `class="whatsapp-kit-icon-button whatsapp-kit-icon-button--${size}${a.tone ? ` whatsapp-kit-tone--${ui.tone(a.tone)}` : ""}" title="${ui.escape(label)}" aria-label="${ui.escape(label)}" data-action-index="${i}"`;
+			const attrs = `class="whatsapp-kit-icon-button whatsapp-kit-icon-button--${size}${a.tone ? ` whatsapp-kit-tone--${ui.tone_for_colour(a.tone)}` : ""}" title="${ui.escape(label)}" aria-label="${ui.escape(label)}" data-action-index="${i}"`;
 			if (a.href) return `<a ${attrs} href="${ui.escape(ui.safe_url(a.href))}"${a.target ? ` target="${ui.escape(a.target)}" rel="noopener"` : ""}>${body}</a>`;
 			return `<button type="button" ${attrs}>${body}</button>`;
 		})
@@ -172,4 +172,4 @@ export function bind_actions($root, list = [], doc) {
 	});
 }
 
-export default { avatar, thumb, chip, chips, fact, progress, stars, dl, code, bind_copy, actions, bind_actions };
+export default { avatar, thumb, icon_text_chip_html, chips, fact_tile_html, progress, stars, definition_list_html, code_preview_html, bind_copy, actions, bind_actions };

@@ -64,7 +64,7 @@ whatsapp.ui.ChatThread = class ChatThread {
 		this.opts = Object.assign({ rows: [], has_more: true }, opts);
 		this.$wrapper = $(this.opts.wrapper);
 		this.rows = [];
-		this.id = ui.uid("chat");
+		this.id = ui.unique_dom_id("chat");
 		this.build_thread_shell();
 		this.set_rows(this.opts.rows || []);
 	}
@@ -461,7 +461,7 @@ whatsapp.ui.ChatThread = class ChatThread {
 				value: false,
 				status: (d) =>
 					d.summary
-						? { label: __("{0} of {1} answered", [ui.format_int(d.responded), ui.format_int(d.recipients)]), colour: cint(d.responded) ? "green" : "gray" }
+						? { label: __("{0} of {1} answered", [ui.format_integer(d.responded), ui.format_integer(d.recipients)]), colour: cint(d.responded) ? "green" : "gray" }
 						: null,
 			},
 			facts: [
@@ -486,7 +486,7 @@ whatsapp.ui.ChatThread = class ChatThread {
 					const top = (sm.counts || []).reduce((a, b) => (cint(b.votes) > cint(a.votes) ? b : a), { votes: 0 });
 					const scope =
 						sm.scope && sm.scope.kind === "campaign"
-							? __("Campaign {0} · message {1}", [sm.scope.campaign_name || sm.scope.campaign, ui.format_int(sm.scope.message_idx)])
+							? __("Campaign {0} · message {1}", [sm.scope.campaign_name || sm.scope.campaign, ui.format_integer(sm.scope.message_idx)])
 							: __("Every poll with this question");
 					dr.set_doc(
 						Object.assign({}, base, {
@@ -512,17 +512,17 @@ whatsapp.ui.ChatThread = class ChatThread {
 		const rows = (sm.counts || [])
 			.map((o) => {
 				const pct = Math.round((cint(o.votes) / total) * 100);
-				return `<li class="whatsapp-kit-chat__poll-option" aria-label="${ui.escape(__("{0}: {1} votes", [o.option, ui.format_int(o.votes)]))}">
+				return `<li class="whatsapp-kit-chat__poll-option" aria-label="${ui.escape(__("{0}: {1} votes", [o.option, ui.format_integer(o.votes)]))}">
 					<span class="whatsapp-kit-chat__poll-label">${ui.escape(o.option)}</span>
-					<span class="whatsapp-kit-chat__poll-count">${ui.format_int(o.votes)} · ${pct}%</span>
+					<span class="whatsapp-kit-chat__poll-count">${ui.format_integer(o.votes)} · ${pct}%</span>
 					<span class="whatsapp-kit-chat__poll-bar"><span class="whatsapp-kit-chat__poll-fill" style="inline-size:${pct}%"></span></span>
 				</li>`;
 			})
 			.join("");
 		const notes = [];
 		if (sm.voters_hidden) notes.push(__("The platform subscription does not share who voted, so some votes have no name."));
-		if (sm.errors) notes.push(__("{0} sent polls could not be read; they count as not answered.", [ui.format_int(sm.errors)]));
-		if (sm.truncated) notes.push(__("Only the first {0} recipients are counted.", [ui.format_int(sm.recipients)]));
+		if (sm.errors) notes.push(__("{0} sent polls could not be read; they count as not answered.", [ui.format_integer(sm.errors)]));
+		if (sm.truncated) notes.push(__("Only the first {0} recipients are counted.", [ui.format_integer(sm.recipients)]));
 		$el.html(
 			`<ul class="whatsapp-kit-chat__poll-options whatsapp-kit-chat__poll-options--drawer">${rows}</ul>` +
 				notes.map((n) => `<p class="whatsapp-kit-chat__poll-note">${ui.escape(n)}</p>`).join("")
@@ -554,7 +554,7 @@ whatsapp.ui.ChatThread = class ChatThread {
 			.map((r) => `<li><span class="whatsapp-kit-chat__poll-voter">${ui.escape(r.recipient || "")}</span><span class="whatsapp-kit-chat__poll-voter-meta">${ui.escape(ui.phone(r.phone || ""))}</span></li>`)
 			.join("");
 		const more = cint(sm.not_responded_count) - (sm.not_responded || []).length;
-		$el.html(`<ul class="whatsapp-kit-chat__poll-voters">${items}</ul>${more > 0 ? `<p class="whatsapp-kit-chat__poll-note">${ui.escape(__("And {0} more", [ui.format_int(more)]))}</p>` : ""}`);
+		$el.html(`<ul class="whatsapp-kit-chat__poll-voters">${items}</ul>${more > 0 ? `<p class="whatsapp-kit-chat__poll-note">${ui.escape(__("And {0} more", [ui.format_integer(more)]))}</p>` : ""}`);
 	}
 
 	static poll_options(value) {
@@ -578,9 +578,9 @@ whatsapp.ui.ChatThread = class ChatThread {
 		(tally.options || []).forEach((o) => {
 			const $li = $poll.find(".whatsapp-kit-chat__poll-option").filter((i, el) => el.dataset.option === cstr(o.option));
 			const votes = cint(o.votes);
-			$li.find(".whatsapp-kit-chat__poll-count").text(ui.format_int(votes));
+			$li.find(".whatsapp-kit-chat__poll-count").text(ui.format_integer(votes));
 			$li.find(".whatsapp-kit-chat__poll-fill").css("inline-size", `${Math.round((votes / max) * 100)}%`);
-			$li.attr("aria-label", __("{0}: {1} votes", [cstr(o.option), ui.format_int(votes)]));
+			$li.attr("aria-label", __("{0}: {1} votes", [cstr(o.option), ui.format_integer(votes)]));
 		});
 		$poll.find(".whatsapp-kit-chat__poll-total").text(
 			total ? ui.plural(total, { one: __("{0} voter"), other: __("{0} voters") }) : __("No votes yet")

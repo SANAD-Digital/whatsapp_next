@@ -100,12 +100,12 @@ frappe.provide("whatsapp_next.home");
 	};
 
 	const escape_html = ui.escape;
-	const format_integer = ui.format_int;
+	const format_integer = ui.format_integer;
 	const is_manager = () => frappe.user.has_role(MANAGER);
 	const is_agent = () => frappe.user.has_role(AGENT_UP);
 	const period_of = (key) => PERIODS.find((p) => p.key === key) || PERIODS[1];
 	const sum_of = (counts, keys) => keys.reduce((n, k) => n + cint(counts[k]), 0);
-	const format_time_ago = (value) => whatsapp.ui.ago(value);
+	const format_time_ago = (value) => whatsapp.ui.format_time_ago(value);
 
 	/**
 	 * The site's own calendar day. Every period is cut by the server in the site's time zone
@@ -1334,7 +1334,7 @@ frappe.provide("whatsapp_next.home");
 			wrapper.wa_waiting = false;
 			if (!sent && !wrapper.wa_home) wrapper.wa_home = new HomeScreen({ page: wrapper.wa_page, wrapper });
 			// the site was linked to another account and what the previous one left waits for a decision
-			if (!sent) whatsapp_next.account_switch.check();
+			if (!sent) whatsapp_next.account_switch.check_pending_account_switch();
 		});
 	};
 

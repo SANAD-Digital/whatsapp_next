@@ -9,7 +9,7 @@
 
 import ui from "../_core/index.js";
 import Render from "../Render/index.js";
-import { avatar, thumb, chip, bind_actions, actions as action_buttons } from "../Render/parts.js";
+import { avatar, thumb, icon_text_chip_html, bind_actions, actions as action_buttons } from "../Render/parts.js";
 
 const VIEW_META = {
 	table: { label: () => __("Table"), icon: "es-line-table-view", density: null },
@@ -66,7 +66,7 @@ whatsapp.ui.Collection = class Collection {
 	// ---- shell -----------------------------------------------------------------------------
 
 	build_collection_shell() {
-		this.id = ui.uid("coll");
+		this.id = ui.unique_dom_id("coll");
 		this.$root = $(`
 			<section class="whatsapp-kit whatsapp-kit-collection" aria-labelledby="${this.id}-title">
 				<header class="whatsapp-kit-collection__head"${this.opts.title ? "" : " hidden"}>
@@ -172,8 +172,8 @@ whatsapp.ui.Collection = class Collection {
 		}
 		this._columns = list.map((c) => {
 			const df = (meta && (meta.fields || []).find((f) => f.fieldname === c.fieldname)) || c.df || { fieldname: c.fieldname, fieldtype: "Data" };
-			// whole numbers in the middle, amounts and decimals at the end (`ui.num_align`)
-			const num_align = ui.num_align(c.fieldtype || df.fieldtype);
+			// whole numbers in the middle, amounts and decimals at the end (`ui.number_alignment`)
+			const num_align = ui.number_alignment(c.fieldtype || df.fieldtype);
 			const col = Object.assign({ align: "start" }, c, { df, label: c.label || __(df.label || frappe.unscrub(c.fieldname)) });
 			if (num_align) col.align = num_align;
 			return col;
@@ -236,7 +236,7 @@ whatsapp.ui.Collection = class Collection {
 			const cells = cols
 				.map((c) => {
 					const html = typeof c.format === "function" ? c.format(doc[c.fieldname], doc) : this.render_table_cell(c, doc);
-					return `<td class="whatsapp-kit-table__${c.align}${c.align !== "start" && ui.num_align(c.df && c.df.fieldtype) ? " whatsapp-kit-tabular" : ""}" data-label="${ui.escape(c.label)}">${html == null || html === "" ? '<span class="whatsapp-kit-muted">—</span>' : html}</td>`;
+					return `<td class="whatsapp-kit-table__${c.align}${c.align !== "start" && ui.number_alignment(c.df && c.df.fieldtype) ? " whatsapp-kit-tabular" : ""}" data-label="${ui.escape(c.label)}">${html == null || html === "" ? '<span class="whatsapp-kit-muted">—</span>' : html}</td>`;
 				})
 				.join("");
 			const $tr = $(`<tr>${cells}${has_actions ? `<td class="whatsapp-kit-table__end">${action_buttons(this.row_actions(doc))}</td>` : ""}</tr>`).appendTo($tbody);
@@ -276,7 +276,7 @@ whatsapp.ui.Collection = class Collection {
 		rows.slice(0, max).forEach((doc, i) => {
 			const vm = Render.vm(doc, { doctype: this.doctype, kind: this.kind, profile: this.opts.profile, density: "card" });
 			const rest = rows.length - max;
-			const overlay = i === max - 1 && rest > 0 ? `<span class="whatsapp-kit-collection__more">+${ui.format_int(rest)}</span>` : "";
+			const overlay = i === max - 1 && rest > 0 ? `<span class="whatsapp-kit-collection__more">+${ui.format_integer(rest)}</span>` : "";
 			const $item = $(`<div class="whatsapp-kit-collection__tile" title="${ui.escape(vm.title)}">${thumb({ src: vm.image, alt: vm.title, size: "cover", icon: vm.icon })}${overlay}<span class="whatsapp-kit-collection__caption" dir="auto">${ui.escape(vm.title)}</span></div>`).appendTo($grid);
 			this.bind_row($item, doc);
 		});
@@ -292,7 +292,7 @@ whatsapp.ui.Collection = class Collection {
 		const $list = $('<ol class="whatsapp-kit-timeline"></ol>').appendTo(this.$body);
 		rows.forEach((doc) => {
 			const r = map(doc) || {};
-			const tone = ui.tone(r.tone || "gray");
+			const tone = ui.tone_for_colour(r.tone || "gray");
 			const $item = $(`<li class="whatsapp-kit-timeline__item">
 				<span class="whatsapp-kit-timeline__rail" aria-hidden="true"><span class="whatsapp-kit-timeline__dot whatsapp-kit-tone--${tone}">${r.icon ? ui.icon(r.icon, "xs") : ""}</span></span>
 				<div class="whatsapp-kit-timeline__body">
@@ -301,7 +301,7 @@ whatsapp.ui.Collection = class Collection {
 						${r.time ? `<span class="whatsapp-kit-timeline__time">${Render.value(r.time, { fieldtype: "Datetime", fieldname: "time" }, doc, { density: "inline" })}</span>` : ""}
 					</div>
 					${r.description ? `<div class="whatsapp-kit-timeline__desc" dir="auto">${r.html ? r.description : ui.escape(r.description)}</div>` : ""}
-					${r.user ? `<div class="whatsapp-kit-timeline__user">${chip({ icon: "es-line-customer", text: r.user })}</div>` : ""}
+					${r.user ? `<div class="whatsapp-kit-timeline__user">${icon_text_chip_html({ icon: "es-line-customer", text: r.user })}</div>` : ""}
 				</div>
 			</li>`).appendTo($list);
 			this.bind_row($item, doc);
@@ -324,11 +324,11 @@ whatsapp.ui.Collection = class Collection {
 		}
 		if (hidden) {
 			const rest = this.rows.length - this.opts.limit;
-			$(`<button type="button" class="btn btn-sm btn-default whatsapp-kit-collection__more-btn">${ui.escape(__("Show all {0}", [ui.format_int(this.rows.length)]))}</button>`)
+			$(`<button type="button" class="btn btn-sm btn-default whatsapp-kit-collection__more-btn">${ui.escape(__("Show all {0}", [ui.format_integer(this.rows.length)]))}</button>`)
 				.on("click", () => {
 					this.expanded = true;
 					this.render();
-					ui.announce(__("{0} more rows shown", [ui.format_int(rest)]));
+					ui.announce(__("{0} more rows shown", [ui.format_integer(rest)]));
 				})
 				.appendTo(this.$foot);
 		}

@@ -20,7 +20,7 @@
 	const ROUTE = "wa-simulator";
 	// how often the open conversation is read again while realtime is unavailable
 	const escape_html = (v) => whatsapp.ui.escape(v);
-	const format_integer = (v) => whatsapp.ui.format_int(v);
+	const format_integer = (v) => whatsapp.ui.format_integer(v);
 	const PAGE_LENGTH = 50;
 	const LIST_LENGTH = 60;
 	const SEND_ICON =

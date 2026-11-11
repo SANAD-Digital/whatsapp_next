@@ -12,7 +12,7 @@ frappe.provide("whatsapp_next.groups");
 	const DOCTYPE = "WhatsApp Contact Group";
 	const PAGE = 100;
 	const escape_html = (v) => whatsapp.ui.escape(v == null ? "" : v);
-	const format_integer = (n) => whatsapp.ui.format_int(n);
+	const format_integer = (n) => whatsapp.ui.format_integer(n);
 	const key_of = (row) => row.phone_e164 || row.phone || "";
 	const call_groups_api = (method, args) => whatsapp.ui.call(`groups.${method}`, args || {}, { silent: true });
 
@@ -116,11 +116,11 @@ frappe.provide("whatsapp_next.groups");
 				</div>`);
 			const $sources = $el.find(".whatsapp-group-editor__sources");
 			SOURCES.forEach((s) => {
-				$(whatsapp.kit.btn({ label: s.label, icon: s.icon, variant: "tonal", size: "sm", disabled: !this.can_write }))
+				$(whatsapp.kit.button_html({ label: s.label, icon: s.icon, variant: "tonal", size: "sm", disabled: !this.can_write }))
 					.on("click", () => this.open_member_picker({ source: s.source }))
 					.appendTo($sources);
 			});
-			$(whatsapp.kit.btn({ label: __("More sources"), variant: "ghost", size: "sm", disabled: !this.can_write }))
+			$(whatsapp.kit.button_html({ label: __("More sources"), variant: "ghost", size: "sm", disabled: !this.can_write }))
 				.on("click", () => this.open_member_picker())
 				.appendTo($sources);
 			this.$list = $el.find(".whatsapp-group-editor__list");
@@ -216,13 +216,13 @@ frappe.provide("whatsapp_next.groups");
 						? { act: "undo", label: __("Undo"), title: __("Keep this member") }
 						: { act: "remove", icon: "trash", title: __("Remove from the group") };
 			return `<div class="whatsapp-group-editor__row whatsapp-group-editor__row--${state}" role="listitem" data-key="${escape_html(key_of(m))}">
-				${name ? whatsapp.kit.avatar({ name, size: "sm", square: true }) : `<span class="whatsapp-avatar whatsapp-avatar--sm whatsapp-avatar--sq" aria-hidden="true">${whatsapp.kit.ico("user", "sm")}</span>`}
+				${name ? whatsapp.kit.avatar({ name, size: "sm", square: true }) : `<span class="whatsapp-avatar whatsapp-avatar--sm whatsapp-avatar--sq" aria-hidden="true">${whatsapp.kit.inline_icon_html("user", "sm")}</span>`}
 				<span class="whatsapp-group-editor__row-main">
 					${name ? `<span class="whatsapp-group-editor__row-name">${escape_html(name)}${whatsapp.ui.group_tag(key_of(m))}</span>` : ""}
 					<span class="whatsapp-group-editor__row-phone${name ? "" : " whatsapp-group-editor__row-phone--main"} whatsapp-kit-tabular" dir="ltr">${escape_html(phone)}${name ? "" : whatsapp.ui.group_tag(key_of(m))}</span>
 				</span>
 				${tag}
-				${this.can_write ? whatsapp.kit.btn({ label: act.label, icon: act.icon, title: act.title, variant: "ghost", size: "sm", attrs: { "data-act": act.act } }) : ""}
+				${this.can_write ? whatsapp.kit.button_html({ label: act.label, icon: act.icon, title: act.title, variant: "ghost", size: "sm", attrs: { "data-act": act.act } }) : ""}
 			</div>`;
 		}
 
@@ -241,7 +241,7 @@ frappe.provide("whatsapp_next.groups");
 			} else if (this.load_error) {
 				new whatsapp.ui.EmptyState({ wrapper: $('<div class="whatsapp-group-editor__more"></div>').appendTo(this.$list), state: "error", size: "sm", description: this.load_error.message, action: { label: __("Retry"), onclick: () => ((this.load_error = null), this.load_more()) } });
 			} else if (this.existing.length < this.total) {
-				$(`<div class="whatsapp-group-editor__more">${whatsapp.kit.btn({ label: __("Show more members ({0} of {1})", [format_integer(this.existing.length), format_integer(this.total)]), variant: "secondary", size: "sm" })}</div>`)
+				$(`<div class="whatsapp-group-editor__more">${whatsapp.kit.button_html({ label: __("Show more members ({0} of {1})", [format_integer(this.existing.length), format_integer(this.total)]), variant: "secondary", size: "sm" })}</div>`)
 					.on("click", "button", () => this.load_more())
 					.appendTo(this.$list);
 			} else if (!added.length && !saved.length) {
@@ -263,7 +263,7 @@ frappe.provide("whatsapp_next.groups");
 			this.$note.text(parts.join(" · "));
 			this.$foot_actions.empty();
 			if (this.can_write && after > 0 && this.existing.length >= this.total) {
-				$(whatsapp.kit.btn({ label: __("Remove all"), variant: "ghost", size: "sm", cls: "whatsapp-group-editor__clear" }))
+				$(whatsapp.kit.button_html({ label: __("Remove all"), variant: "ghost", size: "sm", cls: "whatsapp-group-editor__clear" }))
 					.on("click", () => this.clear_all())
 					.appendTo(this.$foot_actions);
 			}

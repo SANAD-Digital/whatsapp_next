@@ -66,7 +66,7 @@ frappe.provide("whatsapp.ui");
 		// ---- shell ---------------------------------------------------------------------------------
 
 		build_editor_layer() {
-			this.id = whatsapp.ui.uid("whatsapp-kit-command-editor");
+			this.id = whatsapp.ui.unique_dom_id("whatsapp-kit-command-editor");
 			this.previous_focus = document.activeElement;
 			this.$root = $(`
 				<div class="whatsapp-kit whatsapp-kit-command-editor-layer" role="presentation">
@@ -223,7 +223,7 @@ frappe.provide("whatsapp.ui");
 		render_header() {
 			const d = this.draft;
 			const on = d.status === "Active";
-			const runs = whatsapp.ui.format_int(cint(this.data.command.runs_30d));
+			const runs = whatsapp.ui.format_integer(cint(this.data.command.runs_30d));
 			const fn = this.selected_function_row();
 			const tabs = [
 				{ key: "setup", label: __("Setup", null, "Command Editor") },
@@ -251,7 +251,7 @@ frappe.provide("whatsapp.ui");
 							${tabs
 								.map(
 									(t) => `<button type="button" role="tab" class="whatsapp-kit-command-editor__tab${this.ui.tab === t.key ? " is-sel" : ""}" aria-selected="${this.ui.tab === t.key}" data-act="tab" data-key="${t.key}" data-keep>
-										${escape_html(t.label)}${t.count != null ? `<span class="whatsapp-kit-command-editor__count" dir="ltr">${whatsapp.ui.format_int(t.count)}</span>` : ""}
+										${escape_html(t.label)}${t.count != null ? `<span class="whatsapp-kit-command-editor__count" dir="ltr">${whatsapp.ui.format_integer(t.count)}</span>` : ""}
 									</button>`
 								)
 								.join("")}
@@ -525,7 +525,7 @@ frappe.provide("whatsapp.ui");
 			const tabs = keys
 				.map((k) => {
 					const x = this.access_of(k);
-					return `<button type="button" role="tab" class="whatsapp-kit-command-editor__seg${k === key ? " is-sel" : ""}" aria-selected="${k === key}" data-act="perm-tab" data-key="${escape_html(k)}" data-keep>${escape_html(this.type_label(k))}<span class="whatsapp-kit-command-editor__seg-n" dir="ltr">${whatsapp.ui.format_int(
+					return `<button type="button" role="tab" class="whatsapp-kit-command-editor__seg${k === key ? " is-sel" : ""}" aria-selected="${k === key}" data-act="perm-tab" data-key="${escape_html(k)}" data-keep>${escape_html(this.type_label(k))}<span class="whatsapp-kit-command-editor__seg-n" dir="ltr">${whatsapp.ui.format_integer(
 						x.groups.length + x.contacts.length
 					)}</span></button>`;
 				})

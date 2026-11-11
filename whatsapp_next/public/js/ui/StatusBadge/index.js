@@ -40,7 +40,7 @@ whatsapp.ui.StatusBadge = class StatusBadge {
 			out.colour = ind.colour;
 			if (!label && ind.label) out.label = __(ind.label);
 		}
-		out.tone = ui.tone(out.colour);
+		out.tone = ui.tone_for_colour(out.colour);
 		return out;
 	}
 
@@ -56,7 +56,7 @@ whatsapp.ui.StatusBadge = class StatusBadge {
 
 	/** Static renderer: `whatsapp.ui.StatusBadge.html({label, colour|tone, icon, size, title})`. */
 	static html({ label = "", colour, tone, icon = true, size = "sm", title } = {}) {
-		const t = tone || ui.tone(colour);
+		const t = tone || ui.tone_for_colour(colour);
 		const show_icon = icon && TONE_ICON[t];
 		const icon_html = show_icon ? `<span class="whatsapp-kit-badge__icon" aria-hidden="true">${ui.icon(TONE_ICON[t], "xs")}</span>` : `<span class="whatsapp-kit-badge__dot" aria-hidden="true"></span>`;
 		return `<span class="whatsapp-kit-badge whatsapp-kit-badge--${size} whatsapp-kit-tone--${t}"${title ? ` title="${ui.escape(title)}"` : ""}>${icon_html}<span class="whatsapp-kit-badge__label">${ui.escape(label)}</span></span>`;

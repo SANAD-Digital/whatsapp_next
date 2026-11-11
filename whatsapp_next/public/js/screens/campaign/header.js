@@ -9,7 +9,7 @@ frappe.provide("whatsapp_next.campaign");
 	const ui = whatsapp.ui;
 	const campaign_builder = whatsapp_next.campaign;
 	const campaign_helpers = whatsapp_next.campaigns;
-	const escape_html = campaign_builder.esc;
+	const escape_html = campaign_builder.escape_html;
 
 	const TONE = { gray: "muted", blue: "info", green: "ok", orange: "warn", red: "danger" };
 
@@ -28,7 +28,7 @@ frappe.provide("whatsapp_next.campaign");
 				{ icon: "device", label: __("Sending device"), value: campaign_helpers.device_title(doc.device) || __("Not chosen"), muted: !doc.device },
 				{ icon: "chat", label: __("Message count"), value: campaign_builder.messages_text(campaign_builder.messages_of(doc)) },
 				{ icon: "users", label: __("Recipient count"), value: campaign_builder.recipients_text(doc.total_recipients) },
-				{ icon: "clock", label: __("Estimated duration"), value: campaign_builder.dur_text(e.minutes) },
+				{ icon: "clock", label: __("Estimated duration"), value: campaign_builder.duration_text(e.minutes) },
 			];
 		}
 
@@ -43,7 +43,7 @@ frappe.provide("whatsapp_next.campaign");
 							<span class="whatsapp-campaign-builder__metric-label">${escape_html(m.label)}</span>
 							<span class="whatsapp-campaign-builder__metric-value">${escape_html(m.value)}</span>
 						</span>
-						<span class="whatsapp-campaign-builder__metric-icon" aria-hidden="true">${ui.ico(m.icon, "sm")}</span>
+						<span class="whatsapp-campaign-builder__metric-icon" aria-hidden="true">${ui.inline_icon_html(m.icon, "sm")}</span>
 					</div>`
 				)
 				.join("");

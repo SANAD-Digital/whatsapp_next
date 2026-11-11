@@ -16,7 +16,7 @@ frappe.provide("whatsapp_next");
 
 (function () {
 	const escape_html = (v) => frappe.utils.escape_html(v == null ? "" : String(v));
-	const format_integer = (n) => (whatsapp.ui.format_int ? whatsapp.ui.format_int(n) : String(n));
+	const format_integer = (n) => (whatsapp.ui.format_integer ? whatsapp.ui.format_integer(n) : String(n));
 	let candidates_promise = null;
 
 	const candidates = () =>

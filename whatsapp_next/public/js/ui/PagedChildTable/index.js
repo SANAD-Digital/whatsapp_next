@@ -59,7 +59,7 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 
 	build_table_markup() {
 		const field = this.frm.get_field(this.fieldname);
-		const id = ui.uid("pct");
+		const id = ui.unique_dom_id("pct");
 		this.$el = $(`
 			<div class="whatsapp-kit whatsapp-kit-paged-child-table" data-fieldname="${ui.escape(this.fieldname)}" id="${id}">
 				<div class="whatsapp-kit-paged-child-table__head">
@@ -250,7 +250,7 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 				$chip.find(".whatsapp-kit-paged-child-table__chip-count").remove();
 				if (!field) return;
 				const n = value === "" ? cint(field.All) : cint(field[value]);
-				$chip.append(`<span class="whatsapp-kit-paged-child-table__chip-count whatsapp-kit-tabular">${ui.escape(ui.format_int(n))}</span>`);
+				$chip.append(`<span class="whatsapp-kit-paged-child-table__chip-count whatsapp-kit-tabular">${ui.escape(ui.format_integer(n))}</span>`);
 				$chip.attr("hidden", !n && !active && value !== "" ? "hidden" : null);
 				if (value !== "" && (n || active)) offered += 1;
 			});
@@ -304,7 +304,7 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 		const { page, page_length, total } = this.state;
 		const start = total ? (page - 1) * page_length + 1 : 0;
 		const end = Math.min(page * page_length, total);
-		this.$range.text(total ? __("{0}–{1} of {2}", [ui.format_int(start), ui.format_int(end), ui.format_int(total)]) : __("No rows"));
+		this.$range.text(total ? __("{0}–{1} of {2}", [ui.format_integer(start), ui.format_integer(end), ui.format_integer(total)]) : __("No rows"));
 		this.$el.find(".whatsapp-kit-paged-child-table__prev").prop("disabled", page <= 1);
 		this.$el.find(".whatsapp-kit-paged-child-table__next").prop("disabled", end >= total);
 		this.$el.find(".whatsapp-kit-paged-child-table__pager").toggle(total > page_length);

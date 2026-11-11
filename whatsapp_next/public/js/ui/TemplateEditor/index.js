@@ -32,7 +32,7 @@ whatsapp.ui.TemplateEditor = class TemplateEditor {
 		this.api = Object.assign({}, DEFAULT_API, opts.api || {});
 		this.frm = this.opts.frm;
 		if (!this.frm) throw new Error(__("TemplateEditor needs a form"));
-		this.id = ui.uid("tpl");
+		this.id = ui.unique_dom_id("tpl");
 		this.reference_name = null;
 		this.variables = [];
 		this.schedule_preview = ui.debounce(() => this.render_template_preview(), this.opts.debounce);

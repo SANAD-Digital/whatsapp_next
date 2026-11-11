@@ -59,7 +59,7 @@ whatsapp.ui.DataList = class DataList {
 		this.group_by = (this.opts.group_by || []).slice(); // grouping reads the rows it has, from either host
 		this.collapsed = new Set(); // group paths the user folded away
 		this.pinned = (this.opts.pinned || []).slice();
-		this.id = ui.uid("datalist");
+		this.id = ui.unique_dom_id("datalist");
 		this.declared = (this.opts.columns || []).slice(); // the screen's own default column set
 		this.columns = this.resolve_columns(this.apply_saved_columns(this.opts.columns));
 		this.mount();
@@ -321,10 +321,10 @@ whatsapp.ui.DataList = class DataList {
 		const resolved = list.map((c) => {
 			const df = df_of(c.fieldname);
 			const type = c.type || (df.fieldtype === "Link" ? "link" : ["Int", "Float", "Currency", "Percent"].includes(df.fieldtype) ? "number" : ["Date", "Datetime"].includes(df.fieldtype) ? "date" : "text");
-			// a number column's place comes from its fieldtype (`ui.num_align`) and wins over the
+			// a number column's place comes from its fieldtype (`ui.number_alignment`) and wins over the
 			// caller's `align`, so every list lines its numbers up the same way; a column that shows
 			// something other than its field (a bar over a count) says so with its own `fieldtype`
-			const num_align = ui.num_align(c.fieldtype || df.fieldtype);
+			const num_align = ui.number_alignment(c.fieldtype || df.fieldtype);
 			const col = Object.assign({ sortable: !c.format && !c.sub && !!df.fieldtype, align: type === "number" ? "center" : "start" }, c, { df, type, label: c.label || __(df.label || c.fieldname) });
 			if (num_align) col.align = num_align;
 			return col;
@@ -569,7 +569,7 @@ whatsapp.ui.DataList = class DataList {
 				this.group_names.set(gid, { path: node.path, names });
 				const label = `${label_col ? label_col.label : __(node.fieldname)}: ${node.label}`;
 				const check = this.opts.selectable
-					? `<span class="whatsapp-kit-datalist__group-check"><input type="checkbox" class="whatsapp-kit-datalist__group-checkbox" data-gid="${gid}" aria-label="${ui.escape(__("Select the {0} rows in {1}", [ui.format_int(node.count), label]))}"></span>`
+					? `<span class="whatsapp-kit-datalist__group-check"><input type="checkbox" class="whatsapp-kit-datalist__group-checkbox" data-gid="${gid}" aria-label="${ui.escape(__("Select the {0} rows in {1}", [ui.format_integer(node.count), label]))}"></span>`
 					: "";
 				let html = `<tr class="whatsapp-kit-datalist__group whatsapp-kit-datalist__group--l${node.level}" data-gid="${gid}">
 					<td class="whatsapp-kit-datalist__group-cell" colspan="${this.colspan()}">
@@ -579,7 +579,7 @@ whatsapp.ui.DataList = class DataList {
 							<button type="button" class="whatsapp-kit-datalist__group-toggle" aria-expanded="${open}" aria-label="${ui.escape(open ? __("Collapse {0}", [node.label]) : __("Expand {0}", [node.label]))}">${ui.icon("es-line-down", "xs")}</button>
 							<span class="whatsapp-kit-datalist__group-field">${ui.escape(label_col ? label_col.label : __(node.fieldname))}</span>
 							<span class="whatsapp-kit-datalist__group-label">${ui.escape(node.label)}</span>
-							<span class="whatsapp-kit-datalist__group-count whatsapp-kit-tabular">${ui.escape(ui.format_int(node.count))}</span>
+							<span class="whatsapp-kit-datalist__group-count whatsapp-kit-tabular">${ui.escape(ui.format_integer(node.count))}</span>
 							${sum_col && node.sum ? `<span class="whatsapp-kit-datalist__group-sum"><span class="whatsapp-kit-datalist__group-sum-label">${ui.escape(__("Total {0}", [sum_col.label]))}</span> <span class="whatsapp-kit-tabular" dir="ltr">${frappe.format(node.sum, sum_col.df, { inline: true })}</span></span>` : ""}
 						</div>
 					</td>
@@ -854,7 +854,7 @@ whatsapp.ui.DataList = class DataList {
 				// Frappe prints an Int through `cint()` with no grouping ("12500"): counts are grouped
 				// in the reader's locale like every other count of the kit
 				const int = df ? df.fieldtype === "Int" && cstr(df.options).trim() !== "File Size" : Number.isInteger(Number(value));
-				return `<span class="whatsapp-kit-tabular">${int ? ui.format_int(value) : frappe.format(value, df || { fieldtype: "Float" }, { inline: true }, doc)}</span>`;
+				return `<span class="whatsapp-kit-tabular">${int ? ui.format_integer(value) : frappe.format(value, df || { fieldtype: "Float" }, { inline: true }, doc)}</span>`;
 			}
 			case "date":
 				// dates stay left-to-right inside an Arabic row, or the time jumps ahead of the date
@@ -976,7 +976,7 @@ whatsapp.ui.DataList = class DataList {
 			// the total first and plain, what is on screen after it in the quieter tone
 			$count.html(
 				`<span class="whatsapp-kit-datalist__total">${ui.escape(text)}</span>` +
-					(rows.length ? `<span class="whatsapp-kit-datalist__sep" aria-hidden="true">·</span><span class="whatsapp-kit-datalist__shown">${ui.escape(__("showing {0}", [ui.format_int(rows.length)]))}</span>` : "")
+					(rows.length ? `<span class="whatsapp-kit-datalist__sep" aria-hidden="true">·</span><span class="whatsapp-kit-datalist__shown">${ui.escape(__("showing {0}", [ui.format_integer(rows.length)]))}</span>` : "")
 			);
 			this.render_group_tools();
 			this.render_page_state();

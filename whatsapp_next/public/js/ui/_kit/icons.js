@@ -6,7 +6,7 @@
 // as it was drawn — `currentColor` throughout, so a glyph takes the colour of whatever it sits in,
 // and `width`/`height` are overridden by the `.whatsapp-icon` class rather than by editing the markup.
 //
-// `ui.ico(name, size)` returns the markup; an unknown name returns an empty string rather than a
+// `ui.inline_icon_html(name, size)` returns the markup; an unknown name returns an empty string rather than a
 // broken glyph, so a typo never paints a box.
 
 const ICONS = {
@@ -66,7 +66,7 @@ const ICONS = {
  * @param {"xs"|"sm"|"md"|"lg"} [size="sm"] — 14 · 16 · 20 · 26 px, set by the class not the markup
  * @param {string} [cls] — extra classes on the wrapper
  */
-export function ico(name, size = "sm", cls = "") {
+export function inline_icon_html(name, size = "sm", cls = "") {
 	const glyph = ICONS[name];
 	if (!glyph) return "";
 	return `<span class="whatsapp-icon whatsapp-icon--${size}${cls ? ` ${cls}` : ""}" aria-hidden="true">${glyph}</span>`;

@@ -7,8 +7,8 @@
 	const ui = whatsapp.ui;
 	const DT = "WhatsApp Inbound Message";
 	const message_helpers = whatsapp_next.messages;
-	const message_formatters = whatsapp_next.fmt;
-	const definition_list_html = ui.Render.parts.dl;
+	const message_formatters = whatsapp_next.message_formatters;
+	const definition_list_html = ui.Render.parts.definition_list_html;
 	const is_agent = message_helpers.is_agent;
 	const DRAWER_FIELDS = ["device", "phone_e164", "display_name", "contact", "is_group", "message_type", "body", "caption", "attachment", "received_at", "is_simulated", "creation"];
 
@@ -49,8 +49,8 @@
 		const s = Number(v) || 0;
 		if (s < 60) return __("{0} s", [(Math.round(s * 10) / 10).toLocaleString(frappe.boot.lang)]);
 		const total = Math.round(s);
-		if (total < 3600) return __("{0} min {1} s", [ui.format_int(Math.floor(total / 60)), ui.format_int(total % 60)]);
-		return __("{0} h {1} min", [ui.format_int(Math.floor(total / 3600)), ui.format_int(Math.round((total % 3600) / 60))]);
+		if (total < 3600) return __("{0} min {1} s", [ui.format_integer(Math.floor(total / 60)), ui.format_integer(total % 60)]);
+		return __("{0} h {1} min", [ui.format_integer(Math.floor(total / 3600)), ui.format_integer(Math.round((total % 3600) / 60))]);
 	};
 
 	/** "Matched command" cell: green "code — function" chip or an amber "No match" chip. */
@@ -103,7 +103,7 @@
 			definition_list_html([
 				{ label: __("Reply"), value: frappe.utils.get_form_link("WhatsApp Log", r.name, true) },
 				{ label: __("Status"), value: message_formatters.badge("WhatsApp Log", r, r.status) },
-				{ label: __("Sent at"), value: message_formatters.dt(r.sent_at) },
+				{ label: __("Sent at"), value: message_formatters.format_datetime(r.sent_at) },
 				{ label: __("Response time"), value: gap },
 				{ label: __("Error"), value: r.error_code, text: true },
 				{ label: __("Text"), value: r.body, wide: true, text: true },

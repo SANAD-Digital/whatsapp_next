@@ -10,7 +10,7 @@
 // Nothing here reads anything outside the kit, so `public/js/ui/` stays copy-pasteable.
 
 import ui from "../_core/index.js";
-import ICONS, { ico, ICON_NAMES } from "./icons.js";
+import ICONS, { inline_icon_html, ICON_NAMES } from "./icons.js";
 
 const escape_html = (v) => ui.escape(v == null ? "" : v);
 
@@ -32,7 +32,7 @@ export const VARIANTS = ["primary", "secondary", "danger", "ghost", "tonal"];
  * @param {string} [o.title] — also the accessible name of an icon-only button
  * @param {object} [o.attrs] — extra attributes, e.g. `{"data-key": "save"}`
  */
-export function btn(o = {}) {
+export function button_html(o = {}) {
 	const label = o.label ? `<span>${escape_html(o.label)}</span>` : "";
 	const only = !o.label && o.icon;
 	const cls = [
@@ -49,7 +49,7 @@ export function btn(o = {}) {
 	const attrs = Object.entries(o.attrs || {})
 		.map(([k, v]) => ` ${k}="${escape_html(v)}"`)
 		.join("");
-	return `<button type="button" class="${cls}"${o.disabled ? " disabled" : ""}${name ? ` title="${escape_html(name)}"` : ""}${only && name ? ` aria-label="${escape_html(name)}"` : ""}${attrs}>${o.icon ? ico(o.icon, o.size === "lg" ? "md" : "sm") : ""}${label}</button>`;
+	return `<button type="button" class="${cls}"${o.disabled ? " disabled" : ""}${name ? ` title="${escape_html(name)}"` : ""}${only && name ? ` aria-label="${escape_html(name)}"` : ""}${attrs}>${o.icon ? inline_icon_html(o.icon, o.size === "lg" ? "md" : "sm") : ""}${label}</button>`;
 }
 
 /**
@@ -60,7 +60,7 @@ export function btn(o = {}) {
  */
 export function badge(label, tone = "muted", o = {}) {
 	const cls = `whatsapp-badge whatsapp-badge--${tone}${o.dot === false ? " whatsapp-badge--nodot" : ""}`;
-	return `<span class="${cls}">${o.icon ? ico(o.icon, "xs") : ""}${escape_html(label)}</span>`;
+	return `<span class="${cls}">${o.icon ? inline_icon_html(o.icon, "xs") : ""}${escape_html(label)}</span>`;
 }
 
 /**
@@ -74,14 +74,14 @@ export function segmented(options, value, o = {}) {
 	const opts = (options || [])
 		.map(
 			(opt) =>
-				`<button type="button" class="whatsapp-segmented__opt" role="radio" aria-checked="${opt.value === value}" tabindex="${opt.value === value ? 0 : -1}" data-value="${escape_html(opt.value)}"${opt.disabled ? " disabled" : ""}>${opt.icon ? ico(opt.icon, "xs") : ""}<span>${escape_html(opt.label)}</span></button>`
+				`<button type="button" class="whatsapp-segmented__opt" role="radio" aria-checked="${opt.value === value}" tabindex="${opt.value === value ? 0 : -1}" data-value="${escape_html(opt.value)}"${opt.disabled ? " disabled" : ""}>${opt.icon ? inline_icon_html(opt.icon, "xs") : ""}<span>${escape_html(opt.label)}</span></button>`
 		)
 		.join("");
 	return `<div class="whatsapp-segmented" role="radiogroup"${o.label ? ` aria-label="${escape_html(o.label)}"` : ""}>${opts}</div>`;
 }
 
 /** The rule that titles a form section: its name at the start, what it costs at the end. */
-export function rule(label, note) {
+export function section_rule_html(label, note) {
 	return `<div class="whatsapp-rule"><span class="whatsapp-rule__label">${escape_html(label)}</span><span class="whatsapp-rule__line"></span>${note ? `<span class="whatsapp-rule__note">${escape_html(note)}</span>` : ""}</div>`;
 }
 
@@ -125,9 +125,9 @@ export function bind_segmented(el, on_pick) {
 	return $el;
 }
 
-const kit = { ICONS, ICON_NAMES, ico, btn, badge, segmented, rule, avatar, initials, bind_segmented, TONES, VARIANTS };
+const kit = { ICONS, ICON_NAMES, inline_icon_html, button_html, badge, segmented, section_rule_html, avatar, initials, bind_segmented, TONES, VARIANTS };
 
-// the kit hangs off the same namespace as the components, so a screen writes `ui.ico(…)`
+// the kit hangs off the same namespace as the components, so a screen writes `ui.inline_icon_html(…)`
 Object.assign(whatsapp.ui, kit);
 whatsapp.kit = kit;
 

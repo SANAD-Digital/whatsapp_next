@@ -11,7 +11,7 @@ frappe.provide("whatsapp_next.campaign");
 (function () {
 	const ui = whatsapp.ui;
 	const campaign_builder = whatsapp_next.campaign;
-	const escape_html = campaign_builder.esc;
+	const escape_html = campaign_builder.escape_html;
 
 	campaign_builder.STEPS = [
 		{ key: "setup", label: () => __("Campaign setup") },
@@ -38,9 +38,9 @@ frappe.provide("whatsapp_next.campaign");
 				const errors = this.ctx.step_errors(i);
 				return `
 					<button type="button" class="whatsapp-segmented__opt whatsapp-campaign-builder__wtab whatsapp-campaign-builder__wtab--${state}" role="tab" id="whatsapp-campaign-builder-tab-${i}" data-index="${i}" aria-selected="${state === "current"}" tabindex="${state === "current" ? 0 : -1}">
-						<span class="whatsapp-campaign-builder__wtab-mark" aria-hidden="true">${state === "done" && !errors ? ui.ico("tick", "xs") : `<span class="whatsapp-kit-tabular" dir="ltr">${i + 1}</span>`}</span>
+						<span class="whatsapp-campaign-builder__wtab-mark" aria-hidden="true">${state === "done" && !errors ? ui.inline_icon_html("tick", "xs") : `<span class="whatsapp-kit-tabular" dir="ltr">${i + 1}</span>`}</span>
 						<span class="whatsapp-campaign-builder__wtab-label">${escape_html(step.label())}</span>
-						${errors ? `<span class="whatsapp-campaign-builder__step-flag whatsapp-kit-tabular" dir="ltr" title="${escape_html(__("{0} to fix", [campaign_builder.fmt_int(errors)]))}">${escape_html(campaign_builder.fmt_int(errors))}</span>` : ""}
+						${errors ? `<span class="whatsapp-campaign-builder__step-flag whatsapp-kit-tabular" dir="ltr" title="${escape_html(__("{0} to fix", [campaign_builder.format_integer(errors)]))}">${escape_html(campaign_builder.format_integer(errors))}</span>` : ""}
 					</button>`;
 			}).join("");
 

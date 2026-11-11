@@ -88,7 +88,7 @@ export class BaseSource {
 	 */
 	select_field(label, options, on_change, { all = true, searchable = null } = {}) {
 		const list = (all ? [{ value: "", label: __("All") }] : []).concat(options.map((o) => (typeof o === "string" ? { value: o, label: __(o) } : o)));
-		const id = ui.uid("pdd");
+		const id = ui.unique_dom_id("pdd");
 		const with_search = searchable === null ? list.length > 7 : !!searchable;
 		const $dd = $(`<div class="whatsapp-kit-picker__dd"></div>`);
 		const $btn = $(`<button type="button" class="whatsapp-kit-picker__dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="${id}">
@@ -189,7 +189,7 @@ export class BaseSource {
 	 * one the sources already use: `selected_rows()`, `select_all(on)`, the `selection-change` event.
 	 */
 	candidate_table(rows, { selectable = true, show_source = false, extra_columns = [], disabled_when = null } = {}) {
-		const id = ui.uid("cands");
+		const id = ui.unique_dom_id("cands");
 		const $el = $(`<div class="whatsapp-kit-picker__list" id="${id}" role="${selectable ? "group" : "list"}"></div>`);
 		if (selectable && rows.length > 1) {
 			$el.append(`<label class="whatsapp-kit-picker__all"><input type="checkbox" class="whatsapp-kit-picker__check-all"><span>${ui.escape(__("Select all on page"))}</span></label>`);
@@ -257,7 +257,7 @@ export class BaseSource {
 		const $btn = $(`<button type="button" class="btn btn-primary btn-sm whatsapp-kit-picker__add-btn"></button>`);
 		const update = () => {
 			const n = $table.selected_rows ? $table.selected_rows().length : 0;
-			$btn.text(label ? label(n) : __("Add {0}", [ui.format_int(n)])).prop("disabled", !n);
+			$btn.text(label ? label(n) : __("Add {0}", [ui.format_integer(n)])).prop("disabled", !n);
 		};
 		$table.on("selection-change", update);
 		update();
@@ -284,7 +284,7 @@ export class BaseSource {
 		$pager.update = (rows_on_page, total) => {
 			const start = rows_on_page ? (this.page - 1) * this.page_length + 1 : 0;
 			const end = (this.page - 1) * this.page_length + rows_on_page;
-			$pager.find(".whatsapp-kit-picker__page-text").text(total != null ? __("{0}–{1} of {2}", [ui.format_int(start), ui.format_int(end), ui.format_int(total)]) : __("{0}–{1}", [ui.format_int(start), ui.format_int(end)]));
+			$pager.find(".whatsapp-kit-picker__page-text").text(total != null ? __("{0}–{1} of {2}", [ui.format_integer(start), ui.format_integer(end), ui.format_integer(total)]) : __("{0}–{1}", [ui.format_integer(start), ui.format_integer(end)]));
 			$pager.find(".whatsapp-kit-picker__prev").prop("disabled", this.page <= 1);
 			$pager.find(".whatsapp-kit-picker__next").prop("disabled", total != null ? end >= total : rows_on_page < this.page_length);
 			$pager.toggle(this.page > 1 || (total != null ? total > this.page_length : rows_on_page >= this.page_length));
@@ -295,12 +295,12 @@ export class BaseSource {
 	/** Invalid rows list with reasons (uploads and manual entry). */
 	invalid_list(invalid) {
 		if (!invalid || !invalid.length) return $("");
-		const $box = $(`<details class="whatsapp-kit-picker__invalid"><summary>${ui.escape(__("{0} invalid rows skipped", [ui.format_int(invalid.length)]))}</summary><ul></ul></details>`);
+		const $box = $(`<details class="whatsapp-kit-picker__invalid"><summary>${ui.escape(__("{0} invalid rows skipped", [ui.format_integer(invalid.length)]))}</summary><ul></ul></details>`);
 		const $ul = $box.find("ul");
 		invalid.slice(0, PREVIEW_ROWS).forEach((r) => {
 			$ul.append(`<li><span dir="ltr" class="whatsapp-kit-tabular">${ui.escape(ui.phone(r.phone || ""))}</span> ${r.display_name ? ui.escape(r.display_name) + " — " : ""}<span class="whatsapp-kit-picker__reason">${ui.escape(r.error || __("Invalid phone number"))}</span></li>`);
 		});
-		if (invalid.length > PREVIEW_ROWS) $ul.append(`<li>${ui.escape(__("and {0} more", [ui.format_int(invalid.length - PREVIEW_ROWS)]))}</li>`);
+		if (invalid.length > PREVIEW_ROWS) $ul.append(`<li>${ui.escape(__("and {0} more", [ui.format_integer(invalid.length - PREVIEW_ROWS)]))}</li>`);
 		return $box;
 	}
 }

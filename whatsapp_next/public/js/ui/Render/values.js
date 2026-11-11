@@ -7,7 +7,7 @@
 // A host app overrides or adds one with `whatsapp.ui.Render.field("Currency", fn)`.
 
 import ui from "../_core/index.js";
-import { chip, progress, stars, code } from "./parts.js";
+import { icon_text_chip_html, progress, stars, code_preview_html } from "./parts.js";
 
 const BIG = ["card", "hero"];
 
@@ -44,7 +44,7 @@ function amount(value, df, doc, { density, variant } = {}) {
 function number(value, df, doc, { density, variant } = {}) {
 	// Frappe prints an Int through `cint()` with no grouping ("12500"); counts read grouped
 	const plain_int = df && df.fieldtype === "Int" && cstr(df.options).trim() !== "File Size" && value != null && value !== "";
-	const html = plain_int ? ui.format_int(value) : frappe.format(value, df || { fieldtype: "Float" }, { inline: true }, doc);
+	const html = plain_int ? ui.format_integer(value) : frappe.format(value, df || { fieldtype: "Float" }, { inline: true }, doc);
 	const strong = variant === "strong" || BIG.includes(density);
 	return `<span class="whatsapp-kit-number${strong ? " whatsapp-kit-number--strong" : ""} whatsapp-kit-tabular" dir="ltr">${html}</span>`;
 }
@@ -129,20 +129,20 @@ function phone(value, df, doc, { density } = {}) {
 	// a group's JID is not a number to call: the JID, left to right, and the tag that says so
 	if (ui.is_group && ui.is_group(value)) return `<span class="whatsapp-kit-tabular" dir="ltr">${ui.escape(show_phone(value))}</span>${ui.group_tag(value)}`;
 	const clean = cstr(value).replace(/[^\d+]/g, "");
-	const text = chip({ icon: "es-line-call", text: show_phone(value), ltr: true, href: `tel:${clean}` });
+	const text = icon_text_chip_html({ icon: "es-line-call", text: show_phone(value), ltr: true, href: `tel:${clean}` });
 	if (density === "inline" || density === "compact") return `<span class="whatsapp-kit-tabular" dir="ltr">${ui.escape(show_phone(value))}</span>`;
 	return text;
 }
 
 function email(value) {
 	if (!value) return "";
-	return chip({ icon: "es-line-email", text: cstr(value), ltr: true, href: `mailto:${encodeURIComponent(value)}` });
+	return icon_text_chip_html({ icon: "es-line-email", text: cstr(value), ltr: true, href: `mailto:${encodeURIComponent(value)}` });
 }
 
 function render_url_value(value, df, doc, { density } = {}) {
 	if (!value) return "";
 	const text = cstr(value).replace(/^https?:\/\//, "");
-	return chip({ icon: "es-line-link", text: density === "inline" ? text.slice(0, 40) : text, ltr: true, href: value, title: value });
+	return icon_text_chip_html({ icon: "es-line-link", text: density === "inline" ? text.slice(0, 40) : text, ltr: true, href: value, title: value });
 }
 
 /** Attach / Attach Image: a file chip, a thumbnail card or a row depending on the density. */
@@ -152,7 +152,7 @@ function attach(value, df, doc, opts = {}) {
 	const is_image = (df && df.fieldtype === "Attach Image") || /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(cstr(value));
 	return Render
 		? Render.entity({ doctype: "File", file_url: value, file_name: cstr(value).split("/").pop(), is_image }, { kind: "file", density: opts.density || "compact" })
-		: chip({ icon: "es-line-attachment", text: cstr(value).split("/").pop(), href: value, ltr: true });
+		: icon_text_chip_html({ icon: "es-line-attachment", text: cstr(value).split("/").pop(), href: value, ltr: true });
 }
 
 /** Tags / Table MultiSelect: small chips that never dominate the row. */
@@ -168,7 +168,7 @@ function render_tags_value(value, df, doc, { density } = {}) {
 			return `<span class="whatsapp-kit-tag">${ui.escape(__(cstr(label)))}</span>`;
 		})
 		.join("");
-	return `<span class="whatsapp-kit-tag-row">${html}${rest > 0 ? `<span class="whatsapp-kit-tag whatsapp-kit-tag--rest">+${ui.format_int(rest)}</span>` : ""}</span>`;
+	return `<span class="whatsapp-kit-tag-row">${html}${rest > 0 ? `<span class="whatsapp-kit-tag whatsapp-kit-tag--rest">+${ui.format_integer(rest)}</span>` : ""}</span>`;
 }
 
 /** Geolocation / address: the place, with coordinates and a map link when there is room. */
@@ -186,9 +186,9 @@ function location(value, df, doc, { density } = {}) {
 	} catch (e) {
 		// a plain address string
 	}
-	const line = chip({ icon: "es-line-location", text, ltr: !!coords });
+	const line = icon_text_chip_html({ icon: "es-line-location", text, ltr: !!coords });
 	if (!coords || density === "inline" || density === "compact") return line;
-	return `${line} ${chip({ icon: "es-line-location", text: __("View on map"), href: `https://www.google.com/maps?q=${coords[0]},${coords[1]}` })}`;
+	return `${line} ${icon_text_chip_html({ icon: "es-line-location", text: __("View on map"), href: `https://www.google.com/maps?q=${coords[0]},${coords[1]}` })}`;
 }
 
 function long_text(value, df, doc, { density } = {}) {
@@ -244,8 +244,8 @@ export const VALUE_RENDERERS = {
 	"Attach Image": attach,
 	"Table MultiSelect": render_tags_value,
 	Geolocation: location,
-	Code: (value, df, doc, opts) => code(value, { density: (opts && opts.density) || "card", language: (df && df.options) || "" }),
-	JSON: (value, df, doc, opts) => code(value, { density: (opts && opts.density) || "card", language: "json" }),
+	Code: (value, df, doc, opts) => code_preview_html(value, { density: (opts && opts.density) || "card", language: (df && df.options) || "" }),
+	JSON: (value, df, doc, opts) => code_preview_html(value, { density: (opts && opts.density) || "card", language: "json" }),
 	"Text Editor": rich_text,
 	HTML: rich_text,
 	"Markdown Editor": long_text,

@@ -26,13 +26,13 @@ the card specs.
 | Key | Type | Meaning |
 |---|---|---|
 | `key`, `label` | string | Identity and visible label (required). |
-| `icon`, `tone` | string | Icon name; tone for icon square and value (`ui.tone()` maps it to `whatsapp-kit-tone--*`). |
+| `icon`, `tone` | string | Icon name; tone for icon square and value (`ui.tone_for_colour()` maps it to `whatsapp-kit-tone--*`). |
 | `method` | string \| `() => Promise` | API key (called with `args`, silent) or a function — lets several cards share one call. Resolves to a number, `{value, tone}` or an array (its length). |
 | `args` | object \| `() => object` | Arguments for a string `method`. |
 | `count` | `{doctype, filters}` | `frappe.db.count`. |
 | `sum` | `{doctype, field, filters}` | `SUM(field)` via `frappe.db.get_list`. |
 | `value` | any \| `() => any` | Fallback static value (not in the JSDoc). |
-| `format` | `(value, raw) => string` | Display text; default `ui.format_int(value \|\| 0)`. |
+| `format` | `(value, raw) => string` | Display text; default `ui.format_integer(value \|\| 0)`. |
 | `sub` | string \| `(value, raw) => string` | Line under the value. |
 | `onclick` | `(card, value, raw) => void` | Makes the card interactive. |
 | `modal` | object | Makes the card open a rows dialog (below). `onclick` wins if both are set. |

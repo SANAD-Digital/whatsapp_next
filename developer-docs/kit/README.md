@@ -130,17 +130,17 @@ accept a per-instance `api` override.
 | `icon(name, size, cls)` | Espresso / Frappe icon (`frappe.utils.icon`) |
 | `icons` | Standard icons for common verbs: `quick_send`, `conversation`, `resend`, `cancel`, `open`, `edit`, `remove`, `link`, `more` |
 | `is_rtl()` | Current direction |
-| `uid(prefix)` | Random DOM id |
+| `unique_dom_id(prefix)` | Random DOM id |
 | `debounce(fn, 250)`, `throttle(fn, 1000)` | Frappe's debounce and throttle |
 | `plural(n, forms)` | Picks the CLDR plural category (`Intl.PluralRules`; Arabic has six) and fills `{0}` |
-| `format_int(n)` | Integer with locale grouping ("3,540") |
+| `format_integer(n)` | Integer with locale grouping ("3,540") |
 | `initials(text)` | Avatar initials |
 | `on_list_render(listview, fn)` | Runs `fn` after every `render_list`; returns an unsubscribe function |
 | `bind_list_realtime(listview, event, 2000)` | Throttled list refresh on a realtime event, only while that list is the current route |
 | `visible_actions(actions, doc, doctype)` | Filters action specs by `roles`, `perm` and `condition(doc)`; shared by RowActions, BulkActions, Drawer and ConversationDrawer |
 | `overlay.open(inst)` / `overlay.close(inst)` | Allows one drawer or panel at a time; opening one hides the previous |
 | `roving_index(e, items, i)` | RTL-aware arrow, Home and End navigation |
-| `tone(colour)`, `indicator_for(doctype, doc)` | Maps a Frappe indicator colour to a `.whatsapp-kit-tone--*` tone; returns a document's `{label, colour, tone}` |
+| `tone_for_colour(colour)`, `indicator_for(doctype, doc)` | Maps a Frappe indicator colour to a `.whatsapp-kit-tone--*` tone; returns a document's `{label, colour, tone}` |
 | `announce(text, {assertive})` | Writes to a shared `aria-live` region without moving focus |
 | `trap_focus($root)` | Keeps Tab inside a drawer or sheet; returns a release function |
 | `skeleton(rows, {lines})` | Skeleton markup for loading states |
@@ -151,12 +151,12 @@ accept a per-instance `api` override.
 
 | Helper | Returns |
 |---|---|
-| `btn({label, icon, variant, size, block, disabled, title, attrs, cls})` | `<button class="whatsapp-button whatsapp-button--{primary\|secondary\|danger\|ghost\|tonal}">`. With `icon` and no `label` it is an icon-only square, and `title` becomes its `aria-label` |
+| `button_html({label, icon, variant, size, block, disabled, title, attrs, cls})` | `<button class="whatsapp-button whatsapp-button--{primary\|secondary\|danger\|ghost\|tonal}">`. With `icon` and no `label` it is an icon-only square, and `title` becomes its `aria-label` |
 | `badge(label, tone, {dot, icon})` | `.whatsapp-badge--{ok\|warn\|danger\|info\|muted\|pri}` |
 | `segmented(options, value, {label, name})` + `bind_segmented(el, on_pick)` | A `role="radiogroup"` segmented control with arrow-key selection |
-| `rule(label, note)` | A form-section rule |
+| `section_rule_html(label, note)` | A form-section rule |
 | `avatar({name, text, src, size, square})`, `initials(name)` | An avatar |
-| `ico(name, size, cls)`, `ICONS`, `ICON_NAMES` | The prototype's SVG icon set (`currentColor`). An unknown name returns `""` |
+| `inline_icon_html(name, size, cls)`, `ICONS`, `ICON_NAMES` | The prototype's SVG icon set (`currentColor`). An unknown name returns `""` |
 | `TONES`, `VARIANTS` | The allowed tone and variant names |
 
 Component-level helpers that other components reuse: [Toast](Toast.md) (the only way to notify),
@@ -204,7 +204,7 @@ Component-level helpers that other components reuse: [Toast](Toast.md) (the only
   which is already a live region. Toasts never carry a decision; decisions use ConfirmDialog.
 - Targets are at least `--whatsapp-kit-target` (32 px) with 8 px or more between them. Icon-only buttons
   have an `aria-label`. Hidden text uses `.whatsapp-kit-visually-hidden`.
-- Copy is sentence case and goes through `__()`. Counts use `plural()` and `format_int()`. Bulk
+- Copy is sentence case and goes through `__()`. Counts use `plural()` and `format_integer()`. Bulk
   verbs carry the count ("Resend 12").
 
 ## Copy the kit into another app

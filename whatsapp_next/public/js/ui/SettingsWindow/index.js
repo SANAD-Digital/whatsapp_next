@@ -11,7 +11,7 @@
 // Nothing here knows the host app: every colour is a token, every label goes through `__()`.
 
 import ui from "../_core/index.js";
-import { ico } from "../_kit/icons.js";
+import { inline_icon_html } from "../_kit/icons.js";
 
 const escape_html = (v) => ui.escape(v);
 
@@ -30,7 +30,7 @@ whatsapp.ui.SettingsWindow = class SettingsWindow {
 	 */
 	constructor(opts = {}) {
 		this.opts = Object.assign({ groups: [] }, opts);
-		this.id = ui.uid("whatsapp-kit-settings-window");
+		this.id = ui.unique_dom_id("whatsapp-kit-settings-window");
 		this.items = [];
 		(this.opts.groups || []).forEach((g) => (g.items || []).forEach((it) => this.items.push(it)));
 		this.current = null;
@@ -47,7 +47,7 @@ whatsapp.ui.SettingsWindow = class SettingsWindow {
 			<section class="whatsapp-kit whatsapp-kit-settings-window ${escape_html(o.cls || "")}" role="dialog" aria-modal="true" aria-label="${escape_html(o.title || __("Settings"))}" hidden>
 				<aside class="whatsapp-kit-settings-window__rail">
 					<label class="whatsapp-kit-settings-window__search">
-						<span class="whatsapp-kit-settings-window__search-icon" aria-hidden="true">${ico("search", "sm")}</span>
+						<span class="whatsapp-kit-settings-window__search-icon" aria-hidden="true">${inline_icon_html("search", "sm")}</span>
 						<input type="search" data-whatsapp-bare autocomplete="off" placeholder="${escape_html(__("Search"))}" aria-label="${escape_html(__("Search settings"))}">
 					</label>
 					<nav class="whatsapp-kit-settings-window__nav" aria-label="${escape_html(o.title || __("Settings"))}"></nav>
@@ -56,8 +56,8 @@ whatsapp.ui.SettingsWindow = class SettingsWindow {
 				</aside>
 				<div class="whatsapp-kit-settings-window__main">
 					<div class="whatsapp-kit-settings-window__bar">
-						<button type="button" class="whatsapp-kit-settings-window__back" aria-label="${escape_html(__("Back"))}">${ico("caret", "sm")}<span class="whatsapp-kit-settings-window__back-label">${escape_html(o.title || __("Settings"))}</span></button>
-						<button type="button" class="whatsapp-kit-settings-window__close" aria-label="${escape_html(__("Close"))}" title="${escape_html(__("Close (Esc)"))}">${ico("x", "md")}</button>
+						<button type="button" class="whatsapp-kit-settings-window__back" aria-label="${escape_html(__("Back"))}">${inline_icon_html("caret", "sm")}<span class="whatsapp-kit-settings-window__back-label">${escape_html(o.title || __("Settings"))}</span></button>
+						<button type="button" class="whatsapp-kit-settings-window__close" aria-label="${escape_html(__("Close"))}" title="${escape_html(__("Close (Esc)"))}">${inline_icon_html("x", "md")}</button>
 					</div>
 					<div class="whatsapp-kit-settings-window__pane" role="region" tabindex="-1"></div>
 				</div>
@@ -102,12 +102,12 @@ whatsapp.ui.SettingsWindow = class SettingsWindow {
 		(this.opts.groups || []).forEach((g) => {
 			const $group = $(`<div class="whatsapp-kit-settings-window__group" role="group"></div>`).appendTo(this.$nav);
 			if (g.label) {
-				const gid = ui.uid("whatsapp-kit-settings-window-g");
+				const gid = ui.unique_dom_id("whatsapp-kit-settings-window-g");
 				$group.attr("aria-labelledby", gid).append(`<p class="whatsapp-kit-settings-window__group-label" id="${gid}">${escape_html(g.label)}</p>`);
 			}
 			(g.items || []).forEach((it) => {
 				$(`<button type="button" class="whatsapp-kit-settings-window__item" data-key="${escape_html(it.key)}">
-					<span class="whatsapp-kit-settings-window__item-icon" aria-hidden="true">${it.icon ? ico(it.icon, "sm") : ""}</span>
+					<span class="whatsapp-kit-settings-window__item-icon" aria-hidden="true">${it.icon ? inline_icon_html(it.icon, "sm") : ""}</span>
 					<span class="whatsapp-kit-settings-window__item-label">${escape_html(it.label)}</span>
 				</button>`)
 					.on("click", () => this.show(it.key))

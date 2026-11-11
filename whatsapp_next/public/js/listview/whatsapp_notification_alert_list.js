@@ -17,7 +17,7 @@ function new_alert() {
 }
 
 function toggle_enabled(doc, listview) {
-	return whatsapp_next.enabled_toggle.ask(listview, DOCTYPE, doc, {
+	return whatsapp_next.enabled_toggle.confirm_and_toggle_enabled(listview, DOCTYPE, doc, {
 		title: doc.alert_name || doc.name,
 		enable_message: __("The alert will run on its schedule and send its report or message."),
 		disable_message: __("The alert will not run until it is enabled again."),
@@ -31,7 +31,7 @@ function toggle_enabled(doc, listview) {
 }
 
 function status_chip(doc, can_write) {
-	return whatsapp_next.enabled_toggle.chip(doc, can_write);
+	return whatsapp_next.enabled_toggle.enabled_chip_html(doc, can_write);
 }
 
 /** `[now, now + 24 h]` in the system time zone, as `YYYY-MM-DD HH:mm:ss`. */
@@ -172,6 +172,6 @@ frappe.listview_settings[DOCTYPE] = {
 			});
 		}
 
-		whatsapp_next.enabled_toggle.bind(listview, "waalert", toggle_enabled);
+		whatsapp_next.enabled_toggle.bind_enabled_toggle(listview, "waalert", toggle_enabled);
 	},
 };

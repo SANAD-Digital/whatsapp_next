@@ -71,7 +71,7 @@ whatsapp.ui.ConfirmDialog = class ConfirmDialog {
 		if (impact && impact.length) {
 			html += '<dl class="whatsapp-kit-confirm__impact">';
 			impact.forEach((row) => {
-				const tone = row.tone ? ` whatsapp-kit-tone--${ui.tone(row.tone)}` : "";
+				const tone = row.tone ? ` whatsapp-kit-tone--${ui.tone_for_colour(row.tone)}` : "";
 				html += `<div class="whatsapp-kit-confirm__row"><dt>${ui.escape(row.label)}</dt><dd class="whatsapp-kit-tabular${tone}">${ui.escape(row.value)}</dd></div>`;
 			});
 			html += "</dl>";

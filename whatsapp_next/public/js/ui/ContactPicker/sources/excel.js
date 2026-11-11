@@ -194,8 +194,8 @@ export class UploadSource extends BaseSource {
 			return;
 		}
 		const columns = (this.result && this.result.columns) || this.columns || [];
-		const phone_id = ui.uid("map-phone");
-		const name_id = ui.uid("map-name");
+		const phone_id = ui.unique_dom_id("map-phone");
+		const name_id = ui.unique_dom_id("map-name");
 		const control = (id) => {
 			if (columns.length) {
 				const $s = $(`<select class="form-control" id="${id}"><option value="">${ui.escape(__("Detect automatically"))}</option></select>`);
@@ -238,7 +238,7 @@ export class UploadSource extends BaseSource {
 		const rows = (r && r.rows) || [];
 		const invalid = (r && r.invalid) || [];
 		const state = this.state_for($body);
-		stepper.set_finish_label(rows.length ? __("Add {0} rows", [ui.format_int(rows.length)]) : __("Add rows"));
+		stepper.set_finish_label(rows.length ? __("Add {0} rows", [ui.format_integer(rows.length)]) : __("Add rows"));
 		if (!r) {
 			state.empty({ title: __("Nothing to preview yet"), description: __("Upload a file first."), action: { label: __("Back to upload"), onclick: () => stepper.go_to_step(UPLOAD) } });
 			stepper.set_step_valid(false);
@@ -256,9 +256,9 @@ export class UploadSource extends BaseSource {
 			return;
 		}
 		state.hide();
-		$body.append(`<div class="whatsapp-kit-picker__counts"><span class="whatsapp-kit-tone--green">${ui.escape(__("{0} valid", [ui.format_int(rows.length)]))}</span><span class="whatsapp-kit-tone--amber">${ui.escape(__("{0} invalid", [ui.format_int(invalid.length)]))}</span><span>${ui.escape(__("{0} rows in file", [ui.format_int(r.total || rows.length + invalid.length)]))}</span></div>`);
+		$body.append(`<div class="whatsapp-kit-picker__counts"><span class="whatsapp-kit-tone--green">${ui.escape(__("{0} valid", [ui.format_integer(rows.length)]))}</span><span class="whatsapp-kit-tone--amber">${ui.escape(__("{0} invalid", [ui.format_integer(invalid.length)]))}</span><span>${ui.escape(__("{0} rows in file", [ui.format_integer(r.total || rows.length + invalid.length)]))}</span></div>`);
 		$body.append(this.candidate_table(rows.slice(0, PREVIEW_ROWS), { selectable: false }));
-		if (rows.length > PREVIEW_ROWS) $body.append(`<div class="whatsapp-kit-picker__note">${ui.escape(__("Showing the first {0} of {1} valid rows", [PREVIEW_ROWS, ui.format_int(rows.length)]))}</div>`);
+		if (rows.length > PREVIEW_ROWS) $body.append(`<div class="whatsapp-kit-picker__note">${ui.escape(__("Showing the first {0} of {1} valid rows", [PREVIEW_ROWS, ui.format_integer(rows.length)]))}</div>`);
 		$body.append(this.invalid_list(invalid));
 	}
 
@@ -268,7 +268,7 @@ export class UploadSource extends BaseSource {
 		if (!rows.length) return;
 		this.picker.add_rows(rows, { source_type: this.key, source_ref: this.file_name });
 		this.stepper.set_step_valid(false);
-		this.stepper.set_finish_label(__("Added {0} rows", [ui.format_int(rows.length)]));
+		this.stepper.set_finish_label(__("Added {0} rows", [ui.format_integer(rows.length)]));
 	}
 
 	preselect(pre) {

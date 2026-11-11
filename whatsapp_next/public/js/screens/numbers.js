@@ -310,12 +310,12 @@ frappe.provide("whatsapp_next.numbers");
 			whatsapp.ui.Toast.error(__("Fetching the contacts failed: {0}", [data.error]));
 			return;
 		}
-		const n = (v) => whatsapp.ui.format_int(v || 0);
+		const n = (v) => whatsapp.ui.format_integer(v || 0);
 		// one sentence with its own context: Frappe's own "{0} added" / "{0} updated" would win otherwise
 		whatsapp.ui.Toast.success(
 			__("{0} contacts and {4} groups fetched: {1} added, {2} updated, {3} linked to a contact.", [n(data.fetched), n(data.added), n(data.updated), n(data.linked), n(data.groups)], "Numbers sync")
 		);
-		if (data.link_skipped) whatsapp.ui.Toast.warning(__("{0} matching contacts were not linked: you may not edit contacts.", [whatsapp.ui.format_int(data.link_skipped)]));
+		if (data.link_skipped) whatsapp.ui.Toast.warning(__("{0} matching contacts were not linked: you may not edit contacts.", [whatsapp.ui.format_integer(data.link_skipped)]));
 		listview._whatsapp_header && listview._whatsapp_header.refresh(true);
 		// show what was just fetched: a filter left on (a "last 7 days" on the last message) would
 		// hide every address-book number, since none has exchanged a message yet

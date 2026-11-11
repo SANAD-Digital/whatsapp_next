@@ -76,5 +76,5 @@ frappe.provide("whatsapp_next.account_switch");
 			.catch(() => null);
 	}
 
-	Object.assign(whatsapp_next.account_switch, { check: check_pending_account_switch });
+	Object.assign(whatsapp_next.account_switch, { check_pending_account_switch: check_pending_account_switch });
 })();

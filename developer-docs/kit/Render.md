@@ -90,9 +90,9 @@ Records:
 Registries (mutable): `fields`, `kinds`, `doctype_kinds`, `profiles`, `DENSITIES`, `parts`.
 
 **Parts** (`Render.parts`, pure HTML builders): `avatar({image, initials, icon, tone, size, alt})`,
-`thumb({src, alt, size, icon})`, `chip({icon, text, title, ltr, tone, href, cls})`, `chips(list)`,
-`fact({label, value, icon, ltr, tone})`, `progress(pct, {tone, label})`, `stars(value, {max})`,
-`dl(rows, {columns})`, `code(value, {density, language})`, `actions(list, {size})`,
+`thumb({src, alt, size, icon})`, `icon_text_chip_html({icon, text, title, ltr, tone, href, cls})`, `chips(list)`,
+`fact_tile_html({label, value, icon, ltr, tone})`, `progress(pct, {tone, label})`, `stars(value, {max})`,
+`definition_list_html(rows, {columns})`, `code_preview_html(value, {density, language})`, `actions(list, {size})`,
 `bind_actions($root, list, doc)`, `bind_copy()`.
 
 ## Events and callbacks

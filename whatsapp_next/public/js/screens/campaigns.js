@@ -13,7 +13,7 @@ frappe.provide("whatsapp_next.campaigns");
 	const ui = whatsapp.ui;
 	const campaign_helpers = whatsapp_next.campaigns;
 	const escape_html = (v) => ui.escape(v);
-	const format_integer = (v) => ui.format_int(v);
+	const format_integer = (v) => ui.format_integer(v);
 
 	campaign_helpers.DOCTYPE = "WhatsApp Campaign";
 	/** Ended: nothing can change any more. */
@@ -39,10 +39,10 @@ frappe.provide("whatsapp_next.campaigns");
 
 	// ---- reading a campaign -----------------------------------------------------------------
 
-	campaign_helpers.share = (part, whole) => (cint(whole) ? Math.round((cint(part) * 100) / cint(whole)) : null);
+	campaign_helpers.share_percent = (part, whole) => (cint(whole) ? Math.round((cint(part) * 100) / cint(whole)) : null);
 
-	campaign_helpers.pct_text = (part, whole) => {
-		const value = campaign_helpers.share(part, whole);
+	campaign_helpers.percent_text = (part, whole) => {
+		const value = campaign_helpers.share_percent(part, whole);
 		return value == null ? "—" : `${format_integer(value)}%`;
 	};
 
@@ -96,7 +96,7 @@ frappe.provide("whatsapp_next.campaigns");
 		};
 	};
 
-	campaign_helpers.badge = (doc) =>
+	campaign_helpers.status_badge_html = (doc) =>
 		ui.StatusBadge.html({
 			label: __(doc.status),
 			colour: ui.indicator_for(campaign_helpers.DOCTYPE, Object.assign({ doctype: campaign_helpers.DOCTYPE }, doc)).colour,
@@ -351,7 +351,7 @@ frappe.provide("whatsapp_next.campaigns");
 	 * (`{key, label, tone, run}`) — the list strip and the form console render the same set, so a
 	 * campaign never offers a verb on one screen and hides it on the other.
 	 */
-	campaign_helpers.verbs = (doc, { after, messages = 1 } = {}) => {
+	campaign_helpers.available_verbs = (doc, { after, messages = 1 } = {}) => {
 		if (!campaign_helpers.is_manager()) return [];
 		const s = doc.status;
 		const out = [];

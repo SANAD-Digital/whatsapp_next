@@ -29,7 +29,7 @@ whatsapp.ui.Toast = class Toast {
 			.join("<br>");
 		let html = body;
 		if (action && (action.on_click || action.onclick)) {
-			const id = ui.uid("toast-action");
+			const id = ui.unique_dom_id("toast-action");
 			html += ` <a href="#" class="whatsapp-kit-toast__action" data-id="${id}">${ui.escape(action.label)}</a>`;
 			window.setTimeout(() => {
 				$(`.whatsapp-kit-toast__action[data-id="${id}"]`).on("click", (e) => {

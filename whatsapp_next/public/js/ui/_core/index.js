@@ -118,7 +118,7 @@ ui.icon = (name, size = "sm", cls = "") => (name ? frappe.utils.icon(name, size,
 ui.is_rtl = () =>
 	typeof frappe.utils.is_rtl === "function" ? frappe.utils.is_rtl() : document.dir === "rtl";
 
-ui.uid = (prefix = "whatsapp") => `${prefix}-${frappe.utils.get_random(8)}`;
+ui.unique_dom_id = (prefix = "whatsapp") => `${prefix}-${frappe.utils.get_random(8)}`;
 
 /**
  * A link or media address safe to put in `href` / `src`: this site's own paths, http(s) and blob
@@ -213,7 +213,7 @@ ui.open_file_in_tab = async (load) => {
 };
 
 /** "3 hours ago" for a stored time, `fallback` when there is none. */
-ui.ago = (value, fallback = "") => (value ? frappe.datetime.prettyDate(value) : fallback);
+ui.format_time_ago = (value, fallback = "") => (value ? frappe.datetime.prettyDate(value) : fallback);
 
 /**
  * The templates an editor's message can come from, as cards (the notification and alert editors
@@ -234,7 +234,7 @@ ui.template_cards = (o) => {
 		return `<button type="button" class="whatsapp-kit-notification-editor__tpl${on ? " is-on" : ""}" data-act="template" data-value="${esc(t.name)}" aria-pressed="${on}" title="${esc(o.can_open ? __("Double-click to edit the template") : "")}">
 			<span class="whatsapp-kit-notification-editor__tpl-head">
 				<strong>${esc(t.template_name || t.name)}</strong>
-				${on ? `<span class="whatsapp-kit-notification-editor__tpl-tick" aria-hidden="true">${ui.ico("tick", "xs")}</span>` : ""}
+				${on ? `<span class="whatsapp-kit-notification-editor__tpl-tick" aria-hidden="true">${ui.inline_icon_html("tick", "xs")}</span>` : ""}
 			</span>
 			<span class="whatsapp-kit-notification-editor__tpl-meta">${t.category ? `<span class="whatsapp-badge whatsapp-badge--muted whatsapp-badge--nodot">${esc(t.category)}</span>` : ""}${
 				t.reference_doctype ? `<span>${esc(__("For {0}", [__(t.reference_doctype)]))}</span>` : `<span>${esc(__("Any document"))}</span>`
@@ -246,13 +246,13 @@ ui.template_cards = (o) => {
 	return `
 		${all.length > 6 ? `<input type="search" class="whatsapp-input whatsapp-kit-notification-editor__filter" data-in="tpl_q" value="${esc(o.query || "")}" placeholder="${esc(__("Filter templates…"))}" aria-label="${esc(__("Filter templates"))}">` : ""}
 		<div class="whatsapp-kit-notification-editor__tpls" role="group" aria-label="${esc(__("Templates"))}">
-			${o.can_open ? `<button type="button" class="whatsapp-kit-notification-editor__tpl whatsapp-kit-notification-editor__tpl--new" data-act="tpl_new">${ui.ico("plus", "sm")}<strong>${esc(__("New template"))}</strong><span>${esc(o.new_note || __("Opens the template editor"))}</span></button>` : ""}
+			${o.can_open ? `<button type="button" class="whatsapp-kit-notification-editor__tpl whatsapp-kit-notification-editor__tpl--new" data-act="tpl_new">${ui.inline_icon_html("plus", "sm")}<strong>${esc(__("New template"))}</strong><span>${esc(o.new_note || __("Opens the template editor"))}</span></button>` : ""}
 			${rows.map(card).join("")}
 		</div>
 		${!all.length && o.empty_note ? `<p class="whatsapp-kit-alert-editor__hint">${esc(o.empty_note)}</p>` : ""}
 		${all.length && !rows.length ? `<p class="whatsapp-kit-alert-editor__hint">${esc(__("No template matches."))}</p>` : ""}
 		${o.chosen && !chosen ? `<p class="whatsapp-kit-alert-editor__hint">${esc(__("Uses {0}", [o.chosen]))}</p>` : ""}
-		${o.chosen && o.can_open ? `<div class="whatsapp-kit-notification-editor__tpl-actions"><button type="button" class="whatsapp-kit-alert-editor__link" data-act="tpl_edit">${ui.ico("note", "xs")} ${esc(__("Edit this template"))}</button></div>` : ""}`;
+		${o.chosen && o.can_open ? `<div class="whatsapp-kit-notification-editor__tpl-actions"><button type="button" class="whatsapp-kit-alert-editor__link" data-act="tpl_edit">${ui.inline_icon_html("note", "xs")} ${esc(__("Edit this template"))}</button></div>` : ""}`;
 };
 
 /**
@@ -395,7 +395,7 @@ ui.pin_stack = function ($root, selectors) {
 	};
 };
 
-ui.num_align = (fieldtype) => ({ Int: "center", Float: "end", Currency: "end", Percent: "end" })[fieldtype] || null;
+ui.number_alignment = (fieldtype) => ({ Int: "center", Float: "end", Currency: "end", Percent: "end" })[fieldtype] || null;
 
 ui.throttle = (fn, wait = 1000) => frappe.utils.throttle(fn, wait);
 
@@ -411,7 +411,7 @@ ui.plural = function (n, forms) {
 		category = cint(n) === 1 ? "one" : "other";
 	}
 	const form = forms[category] || forms.other || forms.one || "";
-	return form.replace("{0}", ui.format_int(n));
+	return form.replace("{0}", ui.format_integer(n));
 };
 
 /** Run `fn(listview)` after every list render (paging, filters, realtime) — one wrapper per list. */
@@ -513,7 +513,7 @@ ui.icons = {
 
 // Frappe's Int formatter is `cint()` — no separator — and this product prints large counts on
 // every screen ("3,540 of 6,000"), so the kit groups them in the reader's own locale.
-ui.format_int = (value) => (typeof format_number === "function" ? format_number(cint(value), null, 0) : String(cint(value)));
+ui.format_integer = (value) => (typeof format_number === "function" ? format_number(cint(value), null, 0) : String(cint(value)));
 
 /** Avatar initials: first letter of the first two words, upper-cased (`"Sales device"` → `"SD"`). */
 ui.initials = (text) => {
@@ -551,7 +551,7 @@ const TONES = {
 	pink: "pink",
 };
 
-ui.tone = (colour) => TONES[String(colour || "gray").toLowerCase()] || "gray";
+ui.tone_for_colour = (colour) => TONES[String(colour || "gray").toLowerCase()] || "gray";
 
 /** `{label, colour, tone}` for a document, from `frappe.get_indicator` (listview_settings aware). */
 ui.indicator_for = (doctype, doc) => {
@@ -566,7 +566,7 @@ ui.indicator_for = (doctype, doc) => {
 	} catch (e) {
 		// meta not loaded yet — neutral badge
 	}
-	return { label: label || "", colour, tone: ui.tone(colour) };
+	return { label: label || "", colour, tone: ui.tone_for_colour(colour) };
 };
 
 /** Announce a message to assistive technology without moving focus. */

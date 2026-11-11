@@ -21,7 +21,7 @@
 
 	const is_manager = () => frappe.user.has_role(MANAGER_ROLES);
 	const count_of = (docs, statuses) => docs.filter((d) => statuses.includes(d.status)).length;
-	const format_datetime = whatsapp_next.fmt.dt;
+	const format_datetime = whatsapp_next.message_formatters.format_datetime;
 
 	const run_queue_action = (method, args, message, after) =>
 		ui.call(method, args)
@@ -74,12 +74,12 @@
 	};
 	const queued_of = (s) => cint(s && s.counts_by_status && s.counts_by_status.Queued);
 	const rate_of = (s) => cint(s && s.rate) || RATE_MIN;
-	const per_minute = (rate) => __("{0} / minute", [ui.format_int(rate)]);
+	const per_minute = (rate) => __("{0} / minute", [ui.format_integer(rate)]);
 	/** An achieved rate: whole numbers from 10 up, one decimal below, so a trickle of 20 messages in
 	 * the hour reads 0.3/min and not a flat 0. */
 	const achieved_text = (v) => {
 		const n = Number(v) || 0;
-		return n >= 10 || Number.isInteger(n) ? ui.format_int(Math.round(n)) : n.toLocaleString(frappe.boot.lang, { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+		return n >= 10 || Number.isInteger(n) ? ui.format_integer(Math.round(n)) : n.toLocaleString(frappe.boot.lang, { maximumFractionDigits: 1, minimumFractionDigits: 1 });
 	};
 
 	/** "Nothing to send" · "Less than a minute" · "18 minutes" · "1 h 20 min". */
@@ -88,7 +88,7 @@
 		const minutes = queued / Math.max(rate, 1);
 		if (minutes < 1) return __("Less than a minute");
 		if (minutes < 60) return ui.plural(Math.round(minutes), { one: __("{0} minute"), other: __("{0} minutes") });
-		return __("{0} h {1} min", [ui.format_int(Math.floor(minutes / 60)), ui.format_int(Math.round(minutes % 60))]);
+		return __("{0} h {1} min", [ui.format_integer(Math.floor(minutes / 60)), ui.format_integer(Math.round(minutes % 60))]);
 	};
 
 	const rate_verdict = (rate) => {
@@ -105,7 +105,7 @@
 				title: __("Pause sending?"),
 				message: __("Pausing deletes nothing. Messages keep their order and resume from the same point."),
 				impact: [
-					{ label: __("Messages that stop immediately"), value: ui.format_int(queued_of(s)), tone: "amber" },
+					{ label: __("Messages that stop immediately"), value: ui.format_integer(queued_of(s)), tone: "amber" },
 					{ label: __("Current rate"), value: per_minute(rate_of(s)) },
 					{ label: __("Time left to drain"), value: eta_text(queued_of(s), rate_of(s)) },
 				],
@@ -124,11 +124,11 @@
 		fetch_queue_summary(true).then((s) => {
 			const remaining = s.platform_queue && s.platform_queue.messages_remaining;
 			const impact = [
-				{ label: __("Messages sent immediately"), value: ui.format_int(queued_of(s)) },
+				{ label: __("Messages sent immediately"), value: ui.format_integer(queued_of(s)) },
 				{ label: __("Send rate"), value: per_minute(rate_of(s)) },
-				{ label: __("Charged from the plan"), value: ui.format_int(queued_of(s)), tone: "amber" },
+				{ label: __("Charged from the plan"), value: ui.format_integer(queued_of(s)), tone: "amber" },
 			];
-			if (remaining != null) impact.push({ label: __("Balance after sending"), value: ui.format_int(Math.max(0, cint(remaining) - queued_of(s))) });
+			if (remaining != null) impact.push({ label: __("Balance after sending"), value: ui.format_integer(Math.max(0, cint(remaining) - queued_of(s))) });
 			return ui.ConfirmDialog.ask_for_confirmation({
 				title: __("Resume sending?"),
 				message: __("Resuming starts from the oldest pending message. You can pause again at any time."),
@@ -178,7 +178,7 @@
 		const minutes = queued / Math.max(rate, 1);
 		if (minutes < 1) return __("under a minute");
 		if (minutes < 60) return ui.plural(Math.round(minutes), { one: __("{0} minute"), other: __("{0} minutes") });
-		return __("{0} h {1} min", [ui.format_int(Math.floor(minutes / 60)), ui.format_int(Math.round(minutes % 60))]);
+		return __("{0} h {1} min", [ui.format_integer(Math.floor(minutes / 60)), ui.format_integer(Math.round(minutes % 60))]);
 	};
 
 	// ---- throughput (its own cache: heavier than the summary and it moves slower) ---------------
@@ -254,7 +254,7 @@
 			const parts = FLOW.filter((f) => count_by(s, f.status) || is_on(f.status)).map(
 				(f) => `<button type="button" class="whatsapp-operations-console__part" data-status="${ui.escape(f.status)}" aria-pressed="${is_on(f.status)}">
 					<span class="whatsapp-operations-console__dot whatsapp-kit-tone--${f.tone}" aria-hidden="true"></span>${ui.escape(f.label())}
-					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_int(count_by(s, f.status)))}</span>
+					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_integer(count_by(s, f.status)))}</span>
 				</button>`
 			);
 			return parts.length ? parts.join("") : `<span class="whatsapp-operations-console__sub">${ui.escape(__("Nothing is waiting."))}</span>`;
@@ -266,7 +266,7 @@
 			const buckets = (t && t.buckets) || [];
 			const peak = Math.max(cint(t && t.peak), 1);
 			const scale = Math.max(peak, rate);
-			const caption = __("Sent per minute — last {0} minutes", [ui.format_int(t && t.minutes ? t.minutes : THROUGHPUT_WINDOW)]);
+			const caption = __("Sent per minute — last {0} minutes", [ui.format_integer(t && t.minutes ? t.minutes : THROUGHPUT_WINDOW)]);
 			// an empty window still gets its plot: a panel that collapses when nothing happened
 			// reads as broken, and the baseline plus the target line are the answer to "how fast?"
 			const empty = !buckets.length || !cint(t && t.sent);
@@ -277,7 +277,7 @@
 			return `<figure class="whatsapp-operations-console__chart">
 				<figcaption class="whatsapp-operations-console__label">
 					${ui.escape(caption)}
-					${empty ? "" : `<span class="whatsapp-operations-console__peak whatsapp-kit-tabular">${ui.escape(__("peak {0}/min", [ui.format_int(peak)]))}</span>`}
+					${empty ? "" : `<span class="whatsapp-operations-console__peak whatsapp-kit-tabular">${ui.escape(__("peak {0}/min", [ui.format_integer(peak)]))}</span>`}
 				</figcaption>
 				<div class="whatsapp-operations-console__plot" style="--whatsapp-target:${Math.min((rate / scale) * 100, 96).toFixed(2)}%">
 					<svg viewBox="0 0 ${series.length} 100" preserveAspectRatio="none" aria-hidden="true">${bars}</svg>
@@ -285,15 +285,15 @@
 				</div>
 				<p class="whatsapp-kit-visually-hidden">${ui.escape(
 					empty
-						? __("Nothing has left the queue in the last {0} minutes.", [ui.format_int(t && t.minutes ? t.minutes : THROUGHPUT_WINDOW)])
+						? __("Nothing has left the queue in the last {0} minutes.", [ui.format_integer(t && t.minutes ? t.minutes : THROUGHPUT_WINDOW)])
 						: __("{0} messages left the queue in the last {1} minutes; the busiest minute sent {2}.", [
-								ui.format_int(cint(t.sent)),
-								ui.format_int(t.minutes || THROUGHPUT_WINDOW),
-								ui.format_int(peak),
+								ui.format_integer(cint(t.sent)),
+								ui.format_integer(t.minutes || THROUGHPUT_WINDOW),
+								ui.format_integer(peak),
 							])
 				)}</p>
 				<div class="whatsapp-operations-console__axis" aria-hidden="true">
-					<span>${ui.escape(__("{0} min ago", [ui.format_int(t && t.minutes ? t.minutes : THROUGHPUT_WINDOW)]))}</span>
+					<span>${ui.escape(__("{0} min ago", [ui.format_integer(t && t.minutes ? t.minutes : THROUGHPUT_WINDOW)]))}</span>
 					<span class="whatsapp-operations-console__axis-note">${ui.escape(empty ? __("nothing sent in this window") : __("dashed line: the rate you set"))}</span>
 					<span>${ui.escape(__("now"))}</span>
 				</div>
@@ -303,7 +303,7 @@
 		// ---- the one control ---------------------------------------------------------------------
 
 		const rate_html = (s, rate, max, t) => {
-			const id = ui.uid("whatsapp-rate");
+			const id = ui.unique_dom_id("whatsapp-rate");
 			const span = Math.max(max - RATE_MIN, 1);
 			const zone_from = ((Math.max(RECOMMENDED.low, RATE_MIN) - RATE_MIN) / span) * 100;
 			const zone_to = ((Math.min(RECOMMENDED.high, max) - RATE_MIN) / span) * 100;
@@ -312,7 +312,7 @@
 			return `<div class="whatsapp-operations-console__rate">
 				<div class="whatsapp-operations-console__rate-head">
 					<label class="whatsapp-operations-console__label" for="${id}">${ui.escape(__("Send rate"))}</label>
-					<output class="whatsapp-operations-console__rate-value whatsapp-kit-tabular" for="${id}">${ui.escape(__("{0}/min", [ui.format_int(rate)]))}</output>
+					<output class="whatsapp-operations-console__rate-value whatsapp-kit-tabular" for="${id}">${ui.escape(__("{0}/min", [ui.format_integer(rate)]))}</output>
 				</div>
 				<div class="whatsapp-operations-console__track">
 					<span class="whatsapp-operations-console__zone" style="--whatsapp-from:${zone_from.toFixed(2)}%;--whatsapp-to:${zone_to.toFixed(2)}%" aria-hidden="true"></span>
@@ -320,9 +320,9 @@
 						aria-describedby="${id}-note" aria-valuetext="${ui.escape(per_minute(rate))}" ${is_manager() ? "" : "disabled"}>
 				</div>
 				<div class="whatsapp-operations-console__scale" aria-hidden="true">
-					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_int(RATE_MIN))}</span>
-					<span class="whatsapp-operations-console__scale-zone">${ui.escape(__("Recommended {0}–{1}", [ui.format_int(RECOMMENDED.low), ui.format_int(RECOMMENDED.high)]))}</span>
-					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_int(max))}</span>
+					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_integer(RATE_MIN))}</span>
+					<span class="whatsapp-operations-console__scale-zone">${ui.escape(__("Recommended {0}–{1}", [ui.format_integer(RECOMMENDED.low), ui.format_integer(RECOMMENDED.high)]))}</span>
+					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_integer(max))}</span>
 				</div>
 				<p class="whatsapp-operations-console__rate-note" id="${id}-note">
 					<span class="whatsapp-operations-console__verdict">${whatsapp.ui.StatusBadge.html({ label: verdict.label, colour: verdict.tone })}</span>
@@ -367,13 +367,13 @@
 				<section class="whatsapp-operations-console${paused ? " whatsapp-operations-console--paused" : ""}" aria-label="${ui.escape(__("Queue status"))}">
 					<div class="whatsapp-operations-console__metrics">
 						${state_cell}
-						${metric(__("In queue"), ui.escape(ui.format_int(depth)), `<span class="whatsapp-operations-console__parts">${breakdown_html(s)}</span>`, { wide: true })}
+						${metric(__("In queue"), ui.escape(ui.format_integer(depth)), `<span class="whatsapp-operations-console__parts">${breakdown_html(s)}</span>`, { wide: true })}
 						${metric(__("Throughput"), achieved == null ? "—" : ui.escape(__("{0}/min", [achieved_text(achieved)])), ui.escape(__("last hour, actual")))}
 						${metric(__("Drains by"), ui.escape(clock), ui.escape(paused ? __("sending is paused") : depth ? __("in {0}", [eta_phrase(depth, rate)]) : __("queue is empty")))}
-						${metric(__("Given up"), ui.escape(ui.format_int(failed)), failed ? `<button type="button" class="whatsapp-operations-console__link" data-status="Dead Letter">${ui.escape(__("Review and retry"))}</button>` : ui.escape(__("no failures")), { tone: failed ? "red" : "" })}
+						${metric(__("Given up"), ui.escape(ui.format_integer(failed)), failed ? `<button type="button" class="whatsapp-operations-console__link" data-status="Dead Letter">${ui.escape(__("Review and retry"))}</button>` : ui.escape(__("no failures")), { tone: failed ? "red" : "" })}
 						${metric(
 							__("Plan left"),
-							remaining == null ? "—" : ui.escape(ui.format_int(Math.max(0, cint(remaining) - depth))),
+							remaining == null ? "—" : ui.escape(ui.format_integer(Math.max(0, cint(remaining) - depth))),
 							`<button type="button" class="whatsapp-operations-console__link" data-go="billing">${ui.escape(
 								remaining == null ? __("plan reading unavailable") : depth ? __("after this queue sends") : __("messages available")
 							)}</button>`
@@ -415,7 +415,7 @@
 			const fill = (value) => track && track.style.setProperty("--whatsapp-fill", `${(((value - RATE_MIN) / Math.max(max - RATE_MIN, 1)) * 100).toFixed(2)}%`);
 			const paint_rate = (value) => {
 				const v = rate_verdict(value);
-				$value.text(__("{0}/min", [ui.format_int(value)]));
+				$value.text(__("{0}/min", [ui.format_integer(value)]));
 				$verdict.html(whatsapp.ui.StatusBadge.html({ label: v.label, colour: v.tone }));
 				$input.attr("aria-valuetext", per_minute(value));
 				fill(value);
@@ -486,7 +486,7 @@
 			],
 			date: { label: __("Expected send"), fieldname: "scheduled_at" },
 			columns: [
-				{ fieldname: "name", label: "#", width: 40, fieldtype: "Int", sortable: false, type: "number", format: (v, doc) => ui.format_int(page_start() + (listview.data || []).indexOf(doc) + 1) },
+				{ fieldname: "name", label: "#", width: 40, fieldtype: "Int", sortable: false, type: "number", format: (v, doc) => ui.format_integer(page_start() + (listview.data || []).indexOf(doc) + 1) },
 				whatsapp_next.columns.party({ width: 200, fallback: __("No name") }),
 				{ fieldname: "_ref_doctype", label: __("Document type"), width: 110, sortable: false, format: (v, doc) => (doc._ref && doc._ref.reference_doctype ? ui.escape(__(doc._ref.reference_doctype)) : "—") },
 				{ fieldname: "_ref_name", label: __("Document no."), width: 100, sortable: false, format: (v, doc) => (doc._ref && doc._ref.reference_name ? frappe.utils.get_form_link(doc._ref.reference_doctype, doc._ref.reference_name, true) : "—") },
@@ -499,9 +499,9 @@
 					width: 150,
 					sortable: false,
 					format: (v, doc) => {
-						if (doc._ref && doc._ref.status) return whatsapp_next.fmt.badge("WhatsApp Log", { status: doc._ref.status }, doc._ref.status);
+						if (doc._ref && doc._ref.status) return whatsapp_next.message_formatters.badge("WhatsApp Log", { status: doc._ref.status }, doc._ref.status);
 						if (doc.outbound_message && !doc._ref) return `<span class="whatsapp-kit-skeleton__line" style="inline-size:64px" aria-hidden="true"></span>`;
-						return whatsapp_next.fmt.badge(listview.doctype, doc, doc.status);
+						return whatsapp_next.message_formatters.badge(listview.doctype, doc, doc.status);
 					},
 					// what went wrong, how far the automatic retries have gone, and a queue hold
 					sub: (doc) => {
@@ -509,7 +509,7 @@
 						if (doc.status === "Paused") parts.push(ui.escape(__("Paused in the queue")));
 						// a row that went out in the end keeps its earlier failed try on record (the form
 						// shows it), but under a green "Sent" it only reads as a live error
-						const error = doc.status === "Completed" ? "" : doc.last_error_code ? whatsapp_next.fmt.error_text(doc.last_error_code, doc.last_error) : doc.dead_letter_reason || doc.last_error;
+						const error = doc.status === "Completed" ? "" : doc.last_error_code ? whatsapp_next.message_formatters.error_text(doc.last_error_code, doc.last_error) : doc.dead_letter_reason || doc.last_error;
 						if (error) parts.push(`<span class="whatsapp-queue__error" title="${ui.escape(doc.last_error || error)}">${ui.escape(error)}</span>`);
 						if (cint(doc.attempts) && doc.status !== "Completed") parts.push(ui.escape(__("Attempt {0} of {1}", [cint(doc.attempts), cint(doc.max_attempts) || 3])));
 						return parts.join(" · ");
@@ -537,28 +537,28 @@
 		const plural = (n, one, other) => ui.plural(n, { one, other });
 		return [
 			{
-				label: (n) => (n ? __("Pause ({0})", [ui.format_int(n)]) : __("Pause")),
+				label: (n) => (n ? __("Pause ({0})", [ui.format_integer(n)]) : __("Pause")),
 				method: "queue.pause_items",
 				condition: (docs) => count_of(docs, ["Queued"]) > 0,
 				args: (names, { docs }) => ({ names: docs.filter((d) => d.status === "Queued").map((d) => d.name) }),
 				success: (r) => plural(r.count || 0, __("{0} message paused"), __("{0} messages paused")),
 			},
 			{
-				label: (n) => (n ? __("Resume ({0})", [ui.format_int(n)]) : __("Resume")),
+				label: (n) => (n ? __("Resume ({0})", [ui.format_integer(n)]) : __("Resume")),
 				method: "queue.resume_items",
 				condition: (docs) => count_of(docs, ["Paused"]) > 0,
 				args: (names, { docs }) => ({ names: docs.filter((d) => d.status === "Paused").map((d) => d.name) }),
 				success: (r) => plural(r.count || 0, __("{0} message resumed"), __("{0} messages resumed")),
 			},
 			{
-				label: (n) => (n ? __("Retry after giving up ({0})", [ui.format_int(n)]) : __("Retry after giving up")),
+				label: (n) => (n ? __("Retry after giving up ({0})", [ui.format_integer(n)]) : __("Retry after giving up")),
 				method: "queue.retry_dead_letter",
 				condition: (docs) => count_of(docs, ["Dead Letter"]) > 0,
 				args: (names, { docs }) => ({ names: docs.filter((d) => d.status === "Dead Letter").map((d) => d.name) }),
 				success: (r) => plural(r.count || 0, __("{0} message re-queued"), __("{0} messages re-queued")),
 			},
 			{
-				label: (n) => (n ? __("Cancel ({0})", [ui.format_int(n)]) : __("Cancel")),
+				label: (n) => (n ? __("Cancel ({0})", [ui.format_integer(n)]) : __("Cancel")),
 				method: "queue.delete_items",
 				condition: (docs) => count_of(docs, ["Queued", "Paused"]) > 0,
 				confirm: (names, docs) => {
@@ -567,8 +567,8 @@
 						title: plural(n, __("Cancel {0} message?"), __("Cancel {0} messages?")),
 						message: __("The messages leave the queue and their status becomes Cancelled."),
 						impact: [
-							{ label: __("Will be cancelled"), value: ui.format_int(n), tone: "red" },
-							{ label: __("Ignored (already sent or removed)"), value: ui.format_int(names.length - n) },
+							{ label: __("Will be cancelled"), value: ui.format_integer(n), tone: "red" },
+							{ label: __("Ignored (already sent or removed)"), value: ui.format_integer(names.length - n) },
 						],
 						reason_field: true,
 						ack_checkbox: __("I understand these messages will not be sent."),

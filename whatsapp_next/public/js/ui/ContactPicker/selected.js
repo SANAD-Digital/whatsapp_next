@@ -71,7 +71,7 @@ export class SelectedTab {
 		}
 		const slow = window.setTimeout(() => {
 			if (this.$counts) this.$counts.html(ui.skeleton(1, { lines: 1 }));
-			this.picker.set_progress(__("Checking {0} numbers against the list…", [ui.format_int(rows.length)]));
+			this.picker.set_progress(__("Checking {0} numbers against the list…", [ui.format_integer(rows.length)]));
 		}, SLOW);
 		return this.picker
 			.call_picker_api(
@@ -125,12 +125,12 @@ export class SelectedTab {
 		const c = this.counts();
 		const remove = this.picker.operation === "remove";
 		const parts = [
-			{ label: remove ? __("{0} will be removed", [ui.format_int(c.action)]) : __("{0} will be added", [ui.format_int(c.action)]), tone: remove ? "red" : "green" },
-			{ label: remove ? __("{0} not in the list", [ui.format_int(c.skipped)]) : __("{0} already added", [ui.format_int(c.skipped)]), tone: remove ? "gray" : "red" },
-			{ label: __("{0} invalid", [ui.format_int(c.invalid)]), tone: "amber" },
+			{ label: remove ? __("{0} will be removed", [ui.format_integer(c.action)]) : __("{0} will be added", [ui.format_integer(c.action)]), tone: remove ? "red" : "green" },
+			{ label: remove ? __("{0} not in the list", [ui.format_integer(c.skipped)]) : __("{0} already added", [ui.format_integer(c.skipped)]), tone: remove ? "gray" : "red" },
+			{ label: __("{0} invalid", [ui.format_integer(c.invalid)]), tone: "amber" },
 		];
-		if (c.duplicates) parts.push({ label: __("{0} duplicates in selection", [ui.format_int(c.duplicates)]), tone: "red" });
-		if (!remove) parts.push({ label: __("{0} with a conversation", [ui.format_int(c.known)]), tone: "blue" });
+		if (c.duplicates) parts.push({ label: __("{0} duplicates in selection", [ui.format_integer(c.duplicates)]), tone: "red" });
+		if (!remove) parts.push({ label: __("{0} with a conversation", [ui.format_integer(c.known)]), tone: "blue" });
 		this.$counts.html(parts.map((p) => `<span class="whatsapp-kit-picker__count whatsapp-kit-tone--${p.tone}">${ui.escape(p.label)}</span>`).join('<span class="whatsapp-kit-picker__dot" aria-hidden="true">·</span>'));
 	}
 
@@ -178,7 +178,7 @@ export class SelectedTab {
 		html += "</tbody></table></div>";
 		this.$list.html(html);
 		if (visible.length > this.limit) {
-			const $more = $(`<button type="button" class="btn btn-default btn-sm whatsapp-kit-picker__more">${ui.escape(__("Show {0} more", [ui.format_int(Math.min(RENDER_STEP, visible.length - this.limit))]))}</button>`).on("click", () => {
+			const $more = $(`<button type="button" class="btn btn-default btn-sm whatsapp-kit-picker__more">${ui.escape(__("Show {0} more", [ui.format_integer(Math.min(RENDER_STEP, visible.length - this.limit))]))}</button>`).on("click", () => {
 				this.limit += RENDER_STEP;
 				this.render();
 			});
@@ -224,7 +224,7 @@ export class SelectedTab {
 		html += "</div>";
 		this.$list.html(html);
 		if (visible.length > this.limit) {
-			$(`<button type="button" class="btn btn-default btn-sm whatsapp-kit-picker__more">${ui.escape(__("Show {0} more", [ui.format_int(Math.min(RENDER_STEP, visible.length - this.limit))]))}</button>`)
+			$(`<button type="button" class="btn btn-default btn-sm whatsapp-kit-picker__more">${ui.escape(__("Show {0} more", [ui.format_integer(Math.min(RENDER_STEP, visible.length - this.limit))]))}</button>`)
 				.on("click", () => {
 					this.limit += RENDER_STEP;
 					this.render();

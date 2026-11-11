@@ -18,7 +18,7 @@ scope goes.
 |---|---|---|---|
 | `title` | string | `__("Settings")` | Accessible name of the dialog and nav, and the back label on the list step. |
 | `groups` | `Array<{label?, items[]}>` | `[]` | Rail groups; a group without `label` is unlabelled. |
-| `groups[].items[]` | `{key, label, icon?, keywords?}` | — | One section. `icon` is a `_kit` `ico()` name; `keywords` widen the search. |
+| `groups[].items[]` | `{key, label, icon?, keywords?}` | — | One section. `icon` is a `_kit` `inline_icon_html()` name; `keywords` widen the search. |
 | `render` | `(key, $pane, win) => Promise\|void` | — | Draws one section into the (emptied) pane. |
 | `active` | string | first item | Section to open on the first `show_window()` without a key. |
 | `cls` | string | — | Extra class on the window root (host palette scope). |

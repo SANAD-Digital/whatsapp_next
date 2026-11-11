@@ -295,7 +295,7 @@ whatsapp.ui.QuickSend = class QuickSend {
 		const field = this.dialog.get_field(fieldname);
 		if (!field) return whatsapp.ui.Toast.error(message);
 		this.clear_error(fieldname);
-		const id = `${ui.uid("qs-err")}`;
+		const id = `${ui.unique_dom_id("qs-err")}`;
 		field.$wrapper.addClass("whatsapp-kit-quicksend__field--invalid");
 		field.$wrapper.append(`<div class="whatsapp-kit-quicksend__error" id="${id}" role="alert">${ui.escape(message)}</div>`);
 		field.$input && field.$input.attr("aria-invalid", "true").attr("aria-describedby", [field.$input.attr("aria-describedby"), id].filter(Boolean).join(" "));

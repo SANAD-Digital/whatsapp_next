@@ -319,14 +319,14 @@ class SettingsView {
 					(r, i) => `<span class="whatsapp-settings__target">
 						<span class="whatsapp-settings__target-name" dir="auto">${esc(r.display_name || r.phone_e164)}</span>
 						${r.display_name ? `<span class="whatsapp-settings__target-key" dir="ltr">${esc(r.phone_e164)}</span>` : ""}
-						<button type="button" class="whatsapp-settings__target-x" data-i="${i}" aria-label="${esc(__("Remove {0}", [r.display_name || r.phone_e164]))}">${whatsapp.ui.ico("x", "xs")}</button>
+						<button type="button" class="whatsapp-settings__target-x" data-i="${i}" aria-label="${esc(__("Remove {0}", [r.display_name || r.phone_e164]))}">${whatsapp.ui.inline_icon_html("x", "xs")}</button>
 					</span>`
 				)
 				.join("");
 			$el.html(`
 				<div class="whatsapp-settings__targets-list">${chips || `<span class="whatsapp-settings__targets-all">${esc(__("Everyone"))}</span>`}</div>
 				<div class="whatsapp-settings__targets-actions">
-					<button type="button" class="btn btn-default btn-sm" data-act="pick">${whatsapp.ui.ico("users", "sm")}${esc(__("Choose…"))}</button>
+					<button type="button" class="btn btn-default btn-sm" data-act="pick">${whatsapp.ui.inline_icon_html("users", "sm")}${esc(__("Choose…"))}</button>
 					${rows.length ? `<button type="button" class="btn btn-link btn-sm" data-act="clear">${esc(__("Clear the list"))}</button>` : ""}
 				</div>`);
 		};
@@ -369,7 +369,7 @@ class SettingsView {
 
 	setting_control(df, value) {
 		const esc = frappe.utils.escape_html;
-		const id = whatsapp.ui.uid("whatsapp-set");
+		const id = whatsapp.ui.unique_dom_id("whatsapp-set");
 		const type = df.fieldtype;
 		if (type === "Table" && df.options === "WhatsApp Settings Target") return this.targets_control(df, value, id);
 		if (type === "Check") {
@@ -451,7 +451,7 @@ class SettingsView {
 
 	banner($el, { tone, icon, title, text, action }) {
 		const esc = frappe.utils.escape_html;
-		const $b = $(`<div class="whatsapp-settings__banner whatsapp-kit-tone--${whatsapp.ui.tone(tone)}" role="${
+		const $b = $(`<div class="whatsapp-settings__banner whatsapp-kit-tone--${whatsapp.ui.tone_for_colour(tone)}" role="${
 			tone === "red" ? "alert" : "status"
 		}">
 			<span class="whatsapp-settings__banner-icon" aria-hidden="true">${whatsapp.ui.icon(icon, "md")}</span>
@@ -534,7 +534,7 @@ class SettingsView {
 					? values.last_connection_latency_ms
 						? __("Last check {0} · answered in {1} ms", [
 								frappe.datetime.str_to_user(tested),
-								whatsapp.ui.format_int(values.last_connection_latency_ms),
+								whatsapp.ui.format_integer(values.last_connection_latency_ms),
 						  ])
 						: __("Last check {0}", [frappe.datetime.str_to_user(tested)])
 					: __("Run a check to see whether the credentials and the address work."),
@@ -579,7 +579,7 @@ class SettingsView {
 				{
 					label: __("Response time"),
 					value: values.last_connection_latency_ms
-						? __("{0} ms", [whatsapp.ui.format_int(values.last_connection_latency_ms)])
+						? __("{0} ms", [whatsapp.ui.format_integer(values.last_connection_latency_ms)])
 						: null,
 				},
 				{ label: __("Last error"), value: values.last_connection_error },
@@ -718,7 +718,7 @@ class SettingsView {
 						whatsapp.ui.Toast.success(__("Credentials saved"));
 						this.show("credentials");
 						// keys of another account: what the previous one left waits for a decision (D-145)
-						if (r && r.account_switched) whatsapp_next.account_switch.check({ force: true });
+						if (r && r.account_switched) whatsapp_next.account_switch.check_pending_account_switch({ force: true });
 					})
 					.catch((err) => whatsapp.ui.Toast.error(err));
 			},
@@ -873,7 +873,7 @@ class SettingsView {
 					)}</legend></fieldset>`
 				).appendTo($el);
 				rows.forEach((row) => {
-					const id = whatsapp.ui.uid("ev");
+					const id = whatsapp.ui.unique_dom_id("ev");
 					$(`<label class="whatsapp-settings__check" for="${id}">
 						<input type="checkbox" id="${id}" value="${esc(row.event_name)}"
 							${row.subscribed ? "checked" : ""} ${row.enabled === false || !IS_SM() ? "disabled" : ""}>
@@ -1301,13 +1301,13 @@ class SettingsView {
 			const $plan = $('<div class="whatsapp-settings__plan"></div>').appendTo($el);
 			this.render_label_value_rows($plan, [
 				// the allowance is per billing cycle, which is not always a month (a trial runs 14 days)
-				{ label: __("Allowance per cycle"), value: whatsapp.ui.format_int(values.message_limit), ltr: true },
-				{ label: __("Used this cycle"), value: whatsapp.ui.format_int(values.messages_used), ltr: true },
-				{ label: __("Remaining"), value: whatsapp.ui.format_int(values.messages_remaining), ltr: true },
-				{ label: __("Devices allowed"), value: whatsapp.ui.format_int(values.device_limit), ltr: true },
+				{ label: __("Allowance per cycle"), value: whatsapp.ui.format_integer(values.message_limit), ltr: true },
+				{ label: __("Used this cycle"), value: whatsapp.ui.format_integer(values.messages_used), ltr: true },
+				{ label: __("Remaining"), value: whatsapp.ui.format_integer(values.messages_remaining), ltr: true },
+				{ label: __("Devices allowed"), value: whatsapp.ui.format_integer(values.device_limit), ltr: true },
 				{
 					label: __("Rate limit"),
-					value: __("{0} per minute", [whatsapp.ui.format_int(values.plan_messages_per_minute)]),
+					value: __("{0} per minute", [whatsapp.ui.format_integer(values.plan_messages_per_minute)]),
 				},
 				{ label: __("Cycle starts"), value: values.subscription_start ? frappe.datetime.str_to_user(values.subscription_start) : null },
 				{ label: __("Cycle ends"), value: values.subscription_end ? frappe.datetime.str_to_user(values.subscription_end) : null },
@@ -1425,7 +1425,7 @@ class SettingsView {
 					${whatsapp.ui.StatusBadge.html({ label: __(status), colour: tone })}
 				</div>
 				<div class="whatsapp-settings__meter-value"><strong class="whatsapp-kit-tabular" dir="ltr">${pct}%</strong><span>${esc(
-					__("{0} of {1} messages", [whatsapp.ui.format_int(used), whatsapp.ui.format_int(limit)])
+					__("{0} of {1} messages", [whatsapp.ui.format_integer(used), whatsapp.ui.format_integer(limit)])
 				)}</span></div>
 				<div class="whatsapp-settings__meter-track${pct > 80 ? " is-high" : ""}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="${esc(
 					__("Plan used")
@@ -1433,7 +1433,7 @@ class SettingsView {
 			</section>
 			<div class="whatsapp-settings__facts3">
 				<div><span>${esc(__("Messages left"))}</span><strong class="whatsapp-kit-tabular" dir="ltr">${esc(
-					whatsapp.ui.format_int(left)
+					whatsapp.ui.format_integer(left)
 				)}</strong><em>${esc(__("Before the plan runs out"))}</em></div>
 				<div><span>${esc(__("Wallet"))}</span><strong class="whatsapp-kit-tabular">${
 					// no wallet reported is not a wallet of 0: the Single stores a missing balance as 0,
@@ -1494,10 +1494,10 @@ class SettingsView {
 						</header>
 						<p class="whatsapp-billing__price"><strong class="whatsapp-kit-tabular">${this.money(p.monthly_price, p.currency)}</strong><span>${esc(__("per month"))}</span></p>
 						<ul>
-							<li><span>${esc(__("Messages a month"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_int(p.message_limit)}</b></li>
-							<li><span>${esc(__("WhatsApp numbers"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_int(p.device_limit)}</b></li>
+							<li><span>${esc(__("Messages a month"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_integer(p.message_limit)}</b></li>
+							<li><span>${esc(__("WhatsApp numbers"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_integer(p.device_limit)}</b></li>
 							<li><span>${esc(__("Unused messages"))}</span><b>${esc(p.cumulative_messages ? __("Carry over") : __("Don't carry over"))}</b></li>
-							<li><span>${esc(__("Features included"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_int(features)}</b></li>
+							<li><span>${esc(__("Features included"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_integer(features)}</b></li>
 						</ul>
 						<footer>${
 							p.is_current
@@ -1591,7 +1591,7 @@ class SettingsView {
 		const plan_code = this.topup_plan || "";
 		this.topup_amount = null;
 		this.topup_plan = null;
-		const id = whatsapp.ui.uid("whatsapp-topup");
+		const id = whatsapp.ui.unique_dom_id("whatsapp-topup");
 		const $form = $(`
 			<form class="whatsapp-billing__topup" novalidate>
 				<label class="whatsapp-billing__label" for="${id}-amount">${esc(__("Amount"))} <span class="whatsapp-billing__muted">(${esc(wallet.currency || "")})</span></label>
@@ -1914,16 +1914,16 @@ class SettingsView {
 		$el.html(`
 			<div class="whatsapp-settings__facts3 whatsapp-settings__facts3--4">
 				<div><span>${esc(__("Sent"))}</span><strong class="whatsapp-kit-tabular" dir="ltr">${esc(
-					whatsapp.ui.format_int(total)
-				)}</strong><em>${esc(__("{0} a day on average", [whatsapp.ui.format_int(average)]))}</em></div>
+					whatsapp.ui.format_integer(total)
+				)}</strong><em>${esc(__("{0} a day on average", [whatsapp.ui.format_integer(average)]))}</em></div>
 				<div><span>${esc(__("Delivered", null, "campaign"))}</span><strong class="whatsapp-kit-tabular" dir="ltr">${esc(
 					pct(delivered)
-				)}</strong><em>${esc(__("{0} messages", [whatsapp.ui.format_int(delivered)]))}</em></div>
+				)}</strong><em>${esc(__("{0} messages", [whatsapp.ui.format_integer(delivered)]))}</em></div>
 				<div><span>${esc(__("Read", null, "campaign"))}</span><strong class="whatsapp-kit-tabular" dir="ltr">${esc(
 					pct(read)
-				)}</strong><em>${esc(__("{0} messages", [whatsapp.ui.format_int(read)]))}</em></div>
+				)}</strong><em>${esc(__("{0} messages", [whatsapp.ui.format_integer(read)]))}</em></div>
 				<div><span>${esc(__("Failed"))}</span><strong class="whatsapp-kit-tabular${failed ? " is-bad" : ""}" dir="ltr">${esc(
-					whatsapp.ui.format_int(failed)
+					whatsapp.ui.format_integer(failed)
 				)}</strong><em>${esc(total + failed ? __("{0}% of attempts", [Math.round((failed / (total + failed)) * 100)]) : "—")}</em></div>
 			</div>
 			<p class="whatsapp-settings__note">${esc(
@@ -1932,9 +1932,9 @@ class SettingsView {
 			${whatsapp.ui.SettingsWindow.section_html(__("Messages per day"))}
 			<div class="whatsapp-settings__chart" role="img" aria-label="${esc(
 				__("{0} messages over {1} days, {2} a day on average", [
-					whatsapp.ui.format_int(total),
+					whatsapp.ui.format_integer(total),
 					rows.length,
-					whatsapp.ui.format_int(average),
+					whatsapp.ui.format_integer(average),
 				])
 			)}">
 				${rows

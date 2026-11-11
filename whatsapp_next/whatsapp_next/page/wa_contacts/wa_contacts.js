@@ -164,7 +164,7 @@ class ContactsPage {
 						this.stats().then((s) =>
 							cint(s && s.total) ? (cint(s.linked) / cint(s.total)) * 100 : 0
 						),
-					format: (v) => (v > 0 && v < 1 ? `\u2066${__("<1%")}\u2069` : `${whatsapp.ui.format_int(Math.round(v))}%`),
+					format: (v) => (v > 0 && v < 1 ? `\u2066${__("<1%")}\u2069` : `${whatsapp.ui.format_integer(Math.round(v))}%`),
 					sub: __("Share of contacts ready for notifications"),
 					onclick: () => this.apply_filters_and_reload({}, ""),
 				},
@@ -387,7 +387,7 @@ class ContactsPage {
 				align: "end",
 				hidden_xs: true,
 				format: (v, doc) =>
-					`<span class="whatsapp-kit-tabular">${whatsapp.ui.format_int((doc.links || []).length)}</span>`,
+					`<span class="whatsapp-kit-tabular">${whatsapp.ui.format_integer((doc.links || []).length)}</span>`,
 			},
 			{
 				fieldname: "accounts",
@@ -542,7 +542,7 @@ class ContactsPage {
 		const rows = this.table.get_selected();
 		if (!rows.length || !CAN_WRITE()) return this.$selection.prop("hidden", true).empty();
 		const esc = frappe.utils.escape_html;
-		const count = `<span class="whatsapp-kit-tabular">${esc(whatsapp.ui.format_int(rows.length))}</span>`;
+		const count = `<span class="whatsapp-kit-tabular">${esc(whatsapp.ui.format_integer(rows.length))}</span>`;
 		this.$selection.prop("hidden", false).html(`
 			<span class="whatsapp-contacts__selected" role="status">
 				<span>${__("{0} selected", [count])}</span>

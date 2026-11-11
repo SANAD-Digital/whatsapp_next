@@ -10,7 +10,7 @@
 frappe.provide("whatsapp_next.messages");
 frappe.provide("whatsapp_next.screens");
 frappe.provide("whatsapp_next.columns");
-frappe.provide("whatsapp_next.fmt");
+frappe.provide("whatsapp_next.message_formatters");
 
 (function () {
 	const ui = whatsapp.ui;
@@ -34,13 +34,13 @@ frappe.provide("whatsapp_next.fmt");
 
 	// ---- formatters -------------------------------------------------------------------------
 
-	const message_formatters = whatsapp_next.fmt;
+	const message_formatters = whatsapp_next.message_formatters;
 
 	/** Full date and time in the user's format. */
-	message_formatters.dt = (v) => (v ? frappe.datetime.str_to_user(v) : "");
+	message_formatters.format_datetime = (v) => (v ? frappe.datetime.str_to_user(v) : "");
 
 	/** Table cell: user date + HH:mm, no seconds, as the prototype's time column shows it. */
-	message_formatters.short = (v) => (v ? moment(frappe.datetime.convert_to_user_tz ? frappe.datetime.convert_to_user_tz(v, false) : v).format(`${frappe.datetime.get_user_date_fmt().toUpperCase()} HH:mm`) : "");
+	message_formatters.format_short_datetime = (v) => (v ? moment(frappe.datetime.convert_to_user_tz ? frappe.datetime.convert_to_user_tz(v, false) : v).format(`${frappe.datetime.get_user_date_fmt().toUpperCase()} HH:mm`) : "");
 
 	/** A badge coloured by a DocType's own indicator rule. */
 	message_formatters.badge = (doctype, doc, label) => {
@@ -49,7 +49,7 @@ frappe.provide("whatsapp_next.fmt");
 	};
 
 	/** A time cell: left-to-right and tabular, falling back to when the row was created. */
-	message_formatters.time_cell = (v, doc) => (v || (doc && doc.creation) ? `<span class="whatsapp-kit-tabular whatsapp-kit-datalist__date" dir="ltr">${ui.escape(message_formatters.short(v || doc.creation))}</span>` : "");
+	message_formatters.time_cell = (v, doc) => (v || (doc && doc.creation) ? `<span class="whatsapp-kit-tabular whatsapp-kit-datalist__date" dir="ltr">${ui.escape(message_formatters.format_short_datetime(v || doc.creation))}</span>` : "");
 
 	/** What a failure code means to the person reading it, not to the dispatcher. */
 	const ERROR_TEXT = {
@@ -220,10 +220,10 @@ frappe.provide("whatsapp_next.fmt");
 		const push = (at, text, tone) => at && rows.push({ at, text, tone });
 		push(doc.creation, __("Created ({0})", [__(doc.source_type || "API")]), "gray");
 		push(doc.queued_at, __("Queued"), "blue");
-		push(doc.scheduled_at, __("Scheduled for {0}", [message_formatters.dt(doc.scheduled_at)]), "blue");
+		push(doc.scheduled_at, __("Scheduled for {0}", [message_formatters.format_datetime(doc.scheduled_at)]), "blue");
 		const q = doc.timeline && doc.timeline.queue_item;
 		if (q) {
-			push(q.claimed_at, __("Picked up for sending (attempt {0} of {1})", [ui.format_int(q.attempts || 1), ui.format_int(q.max_attempts || 0)]), "blue");
+			push(q.claimed_at, __("Picked up for sending (attempt {0} of {1})", [ui.format_integer(q.attempts || 1), ui.format_integer(q.max_attempts || 0)]), "blue");
 			push(q.paused_at, __("Paused by {0}: {1}", [q.paused_by || "", q.pause_reason || ""]), "amber");
 			push(q.next_attempt_at, __("Retry scheduled ({0})", [q.last_error_code || q.last_error || ""]), "amber");
 			push(q.deleted_at, __("Removed from the queue by {0}: {1}", [q.deleted_by || "", q.delete_reason || ""]), "red");

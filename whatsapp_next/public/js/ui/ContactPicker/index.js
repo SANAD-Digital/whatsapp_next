@@ -120,7 +120,7 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 		this.tabs = [];
 		this.instances = {};
 		this.selected = new SelectedTab(this);
-		this.announce_count = ui.debounce((n) => ui.announce(__("{0} selected", [ui.format_int(n)])), 600);
+		this.announce_count = ui.debounce((n) => ui.announce(__("{0} selected", [ui.format_integer(n)])), 600);
 		this.open();
 	}
 
@@ -194,7 +194,7 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 	row_key(row) {
 		if (row.phone_e164) return row.phone_e164;
 		if (row.phone) return `raw:${String(row.phone).trim()}`;
-		return `invalid:${row.source_name || row.contact || row.display_name || ui.uid("row")}`;
+		return `invalid:${row.source_name || row.contact || row.display_name || ui.unique_dom_id("row")}`;
 	}
 
 	// ---- selection ------------------------------------------------------------------------
@@ -231,7 +231,7 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 	}
 
 	notify_added(added, merged = 0) {
-		const msg = merged ? __("Added {0} to the selection. {1} were already selected.", [ui.format_int(added), ui.format_int(merged)]) : __("Added {0} to the selection", [ui.format_int(added)]);
+		const msg = merged ? __("Added {0} to the selection. {1} were already selected.", [ui.format_integer(added), ui.format_integer(merged)]) : __("Added {0} to the selection", [ui.format_integer(added)]);
 		whatsapp.ui.Toast.success(msg, { seconds: 3 });
 	}
 
@@ -257,9 +257,9 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 	on_selection_change() {
 		this.revision += 1;
 		const n = this.selection.size;
-		this.$badge.text(ui.format_int(n)).toggleClass("whatsapp-kit-picker__badge--empty", !n);
-		this.$root.find("[data-zone-count]").text(n ? ui.format_int(n) : "");
-		this.$counter.text(n ? __("{0} selected", [ui.format_int(n)]) : __("Nothing selected"));
+		this.$badge.text(ui.format_integer(n)).toggleClass("whatsapp-kit-picker__badge--empty", !n);
+		this.$root.find("[data-zone-count]").text(n ? ui.format_integer(n) : "");
+		this.$counter.text(n ? __("{0} selected", [ui.format_integer(n)]) : __("Nothing selected"));
 		this.dialog.get_primary_btn().prop("disabled", !n);
 		this.render_source_counts();
 		this.selected.clear_alert();
@@ -289,7 +289,7 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 		this.source_groups().forEach((g) => (counts[g.source] = g.rows.length));
 		this.$tabs.find(".whatsapp-kit-picker__tab-count").each((i, el) => {
 			const n = counts[el.getAttribute("data-count")] || 0;
-			$(el).text(n ? ui.format_int(n) : "").toggleClass("whatsapp-kit-picker__tab-count--on", !!n);
+			$(el).text(n ? ui.format_integer(n) : "").toggleClass("whatsapp-kit-picker__tab-count--on", !!n);
 		});
 		if (!this.$tray_sources) return;
 		const groups = this.source_groups();
@@ -298,7 +298,7 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 		groups.forEach((g) => {
 			const $chip = $(`<span class="whatsapp-kit-picker__srcchip">
 					<span>${ui.escape(g.label)}</span>
-					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_int(g.rows.length))}</span>
+					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_integer(g.rows.length))}</span>
 					<button type="button" class="whatsapp-kit-picker__srcchip-x" aria-label="${ui.escape(__("Remove everything from {0}", [g.label]))}">${ui.icon("es-line-close", "xs")}</button>
 				</span>`);
 			$chip.find(".whatsapp-kit-picker__srcchip-x").on("click", () => this.remove_rows(g.rows.map(([key]) => key)));
@@ -374,7 +374,7 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 				this.set_progress(null);
 				const rows = (r.rows || []).map((row) => Object.assign({}, row, { source_type: "Manual", __source: "manual" }));
 				this.add_rows(rows, { source_type: "Manual" });
-				if ((r.invalid || []).length) whatsapp.ui.Toast.warning(__("{0} of them could not be read as a number.", [ui.format_int(r.invalid.length)]));
+				if ((r.invalid || []).length) whatsapp.ui.Toast.warning(__("{0} of them could not be read as a number.", [ui.format_integer(r.invalid.length)]));
 			})
 			.catch((err) => {
 				this.set_progress(null);
@@ -497,7 +497,7 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 	}
 
 	add_tab(key, label, mount, $badge) {
-		const id = ui.uid("ptab");
+		const id = ui.unique_dom_id("ptab");
 		const icon = ContactPicker.SOURCE_ICON[key] || "es-line-list";
 		const $tab = $(`<button type="button" class="whatsapp-kit-picker__tab" role="tab" id="${id}" data-key="${ui.escape(key)}" aria-selected="false" aria-controls="${id}-pane" tabindex="-1">
 			<span class="whatsapp-kit-picker__tab-icon" aria-hidden="true">${ui.icon(icon, "sm")}</span>
@@ -565,9 +565,9 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 	on_import_progress(data) {
 		if (!data || !data.stage) return;
 		if (data.stage === "parsing") return this.set_progress(__("Reading the {0} file…", [String(data.kind || "").toUpperCase()]));
-		if (data.stage === "parsed") return this.set_progress(__("Read {0} rows: {1} valid, {2} invalid", [ui.format_int(data.total), ui.format_int(data.valid || 0), ui.format_int(data.invalid || 0)]));
+		if (data.stage === "parsed") return this.set_progress(__("Read {0} rows: {1} valid, {2} invalid", [ui.format_integer(data.total), ui.format_integer(data.valid || 0), ui.format_integer(data.invalid || 0)]));
 		const label = ContactPicker.stage_label(data.stage) || data.stage;
-		this.set_progress(__("{0}: {1} rows so far…", [label, ui.format_int(data.total || 0)]));
+		this.set_progress(__("{0}: {1} rows so far…", [label, ui.format_integer(data.total || 0)]));
 	}
 
 	// ---- confirm + commit ------------------------------------------------------------------
@@ -597,22 +597,22 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 				}
 				const impact = remove
 					? [
-							{ label: __("Will be removed"), value: ui.format_int(c.action), tone: "red" },
-							{ label: __("Not in the list (ignored)"), value: ui.format_int(c.skipped) },
+							{ label: __("Will be removed"), value: ui.format_integer(c.action), tone: "red" },
+							{ label: __("Not in the list (ignored)"), value: ui.format_integer(c.skipped) },
 					  ]
 					: [
-							{ label: __("Will be added"), value: ui.format_int(c.action), tone: "green" },
-							{ label: __("Already added (skipped)"), value: ui.format_int(c.skipped), tone: c.skipped ? "red" : undefined },
-							{ label: __("Invalid (skipped)"), value: ui.format_int(c.invalid), tone: c.invalid ? "amber" : undefined },
-							{ label: __("With a conversation"), value: ui.format_int(c.known) },
+							{ label: __("Will be added"), value: ui.format_integer(c.action), tone: "green" },
+							{ label: __("Already added (skipped)"), value: ui.format_integer(c.skipped), tone: c.skipped ? "red" : undefined },
+							{ label: __("Invalid (skipped)"), value: ui.format_integer(c.invalid), tone: c.invalid ? "amber" : undefined },
+							{ label: __("With a conversation"), value: ui.format_integer(c.known) },
 					  ];
-				if (c.duplicates) impact.push({ label: __("Duplicates in selection (merged)"), value: ui.format_int(c.duplicates) });
+				if (c.duplicates) impact.push({ label: __("Duplicates in selection (merged)"), value: ui.format_integer(c.duplicates) });
 				return whatsapp.ui.ConfirmDialog.ask_for_confirmation({
-					title: remove ? __("Remove {0} numbers?", [ui.format_int(c.action)]) : __("Add {0} numbers?", [ui.format_int(c.action)]),
+					title: remove ? __("Remove {0} numbers?", [ui.format_integer(c.action)]) : __("Add {0} numbers?", [ui.format_integer(c.action)]),
 					message: __("Changes apply to {0} {1}.", [__(this.target_doctype), this.opts.target_label || this.target_name]),
 					impact,
 					danger: remove,
-					confirm_label: remove ? __("Remove {0}", [ui.format_int(c.action)]) : __("Add {0}", [ui.format_int(c.action)]),
+					confirm_label: remove ? __("Remove {0}", [ui.format_integer(c.action)]) : __("Add {0}", [ui.format_integer(c.action)]),
 				}).then(
 					() => this.commit(c),
 					() => {}
@@ -624,7 +624,7 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 
 	commit(counts) {
 		const remove = this.operation === "remove";
-		this.set_progress(remove ? __("Removing {0}…", [ui.format_int(counts.action)]) : __("Adding {0}…", [ui.format_int(counts.action)]));
+		this.set_progress(remove ? __("Removing {0}…", [ui.format_integer(counts.action)]) : __("Adding {0}…", [ui.format_integer(counts.action)]));
 		// One call per origin, so the audit row says where each batch came from and the target's
 		// rows carry their own origin — a campaign built from a group and a pasted list says so.
 		// Two groups picked in the same tab are two origins: one call per tab stamped every row
@@ -660,11 +660,11 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 			.then((result) => {
 				this.set_progress(null);
 				this.committed = true;
-				if (remove) whatsapp.ui.Toast.success(__("Removed {0}", [ui.format_int(result.removed)]));
+				if (remove) whatsapp.ui.Toast.success(__("Removed {0}", [ui.format_integer(result.removed)]));
 				else if (result.skipped_duplicates || result.skipped_invalid) {
-					whatsapp.ui.Toast.success(__("Added {0}. Skipped {1} already added and {2} invalid.", [ui.format_int(result.added), ui.format_int(result.skipped_duplicates), ui.format_int(result.skipped_invalid)]));
+					whatsapp.ui.Toast.success(__("Added {0}. Skipped {1} already added and {2} invalid.", [ui.format_integer(result.added), ui.format_integer(result.skipped_duplicates), ui.format_integer(result.skipped_invalid)]));
 				} else {
-					whatsapp.ui.Toast.success(__("Added {0}", [ui.format_int(result.added)]));
+					whatsapp.ui.Toast.success(__("Added {0}", [ui.format_integer(result.added)]));
 				}
 				this.opts.on_commit && this.opts.on_commit(result, this);
 				this.dialog.hide();

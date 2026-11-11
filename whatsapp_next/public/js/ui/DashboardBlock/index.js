@@ -233,9 +233,9 @@ whatsapp.ui.DashboardBlock = class DashboardBlock {
 		const doc = card.doc;
 		if (doc.currency) return format_currency(flt(number), doc.currency);
 		const is_count = doc.function === "Count" || !df;
-		if (doc.show_full_number) return is_count ? ui.format_int(number) : frappe.format(number, df, { inline: true });
+		if (doc.show_full_number) return is_count ? ui.format_integer(number) : frappe.format(number, df, { inline: true });
 		const short = frappe.utils.shorten_number(number, frappe.sys_defaults.country, 5);
-		return is_count && !/[A-Za-z]/.test(short) ? ui.format_int(number) : short;
+		return is_count && !/[A-Za-z]/.test(short) ? ui.format_integer(number) : short;
 	}
 
 	async render_card_stats(card) {
@@ -327,7 +327,7 @@ whatsapp.ui.DashboardBlock = class DashboardBlock {
 
 	make_chart(name) {
 		const height = cint(this.opts.chart_height) || 240;
-		const id = ui.uid("whatsapp-kit-chart");
+		const id = ui.unique_dom_id("whatsapp-kit-chart");
 		const $el = $(`
 			<section class="whatsapp-kit-dashboard__chart" aria-busy="true" aria-labelledby="${id}-title" aria-describedby="${id}-summary">
 				<h3 class="whatsapp-kit-dashboard__chart-title" id="${id}-title"></h3>
@@ -422,9 +422,9 @@ whatsapp.ui.DashboardBlock = class DashboardBlock {
 		const last = labels.length - 1;
 		const title = __(doc.chart_name || doc.name);
 		if (doc.timeseries) {
-			return __("{0}: {1} data points, latest {2} on {3}.", [title, ui.format_int(labels.length), frappe.format(values[last], { fieldtype: "Float" }, { inline: true }), labels[last]]);
+			return __("{0}: {1} data points, latest {2} on {3}.", [title, ui.format_integer(labels.length), frappe.format(values[last], { fieldtype: "Float" }, { inline: true }), labels[last]]);
 		}
-		return __("{0}: {1} groups, largest {2} with {3}.", [title, ui.format_int(labels.length), labels[0], frappe.format(values[0], { fieldtype: "Float" }, { inline: true })]);
+		return __("{0}: {1} groups, largest {2} with {3}.", [title, ui.format_integer(labels.length), labels[0], frappe.format(values[0], { fieldtype: "Float" }, { inline: true })]);
 	}
 
 	async draw_chart(chart, data) {

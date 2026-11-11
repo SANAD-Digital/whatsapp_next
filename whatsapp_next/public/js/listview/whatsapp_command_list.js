@@ -119,8 +119,8 @@ frappe.provide("whatsapp_next");
 			],
 			stats: [
 				{ key: "total", label: __("Commands"), icon: "es-line-code", count: { doctype: DT }, sub: () => (extra.synonyms == null ? "" : ui.plural(extra.synonyms, { one: __("{0} synonym registered"), other: __("{0} synonyms registered") })) },
-				{ key: "active", label: __("Active"), icon: "es-line-check", tone: "green", count: { doctype: DT, filters: { status: "Active" } }, sub: () => (extra.stopped == null ? "" : __("{0} stopped", [ui.format_int(extra.stopped)])) },
-				{ key: "runs", label: __("Runs (30d)"), icon: "es-line-chart", tone: "blue", method: "commands.list_commands", args: { filters: {}, page: 1, page_length: 200 }, format: (v, r) => ui.format_int((r.rows || []).reduce((n, row) => n + cint(row.run_count_30d), 0)), sub: __("Function calls from an inbound command") },
+				{ key: "active", label: __("Active"), icon: "es-line-check", tone: "green", count: { doctype: DT, filters: { status: "Active" } }, sub: () => (extra.stopped == null ? "" : __("{0} stopped", [ui.format_integer(extra.stopped)])) },
+				{ key: "runs", label: __("Runs (30d)"), icon: "es-line-chart", tone: "blue", method: "commands.list_commands", args: { filters: {}, page: 1, page_length: 200 }, format: (v, r) => ui.format_integer((r.rows || []).reduce((n, row) => n + cint(row.run_count_30d), 0)), sub: __("Function calls from an inbound command") },
 				{
 					key: "unmatched",
 					label: __("Inbound without a match"),
@@ -192,7 +192,7 @@ frappe.provide("whatsapp_next");
 					format: (v, doc) => `<span class="text-muted">${ui.escape(doc.allowed_group || (doc._extra && doc._extra.parties.length ? doc._extra.parties.join(__(", ")) : __("Everyone")))}</span>`,
 				},
 				{ fieldname: "status", label: __("Status"), type: "status", sortable: true },
-				{ fieldname: "_runs", label: __("Runs (30d)"), type: "number", fieldtype: "Int", sortable: false, format: (v, doc) => ui.format_int(doc._extra ? doc._extra.run_count_30d : 0) },
+				{ fieldname: "_runs", label: __("Runs (30d)"), type: "number", fieldtype: "Int", sortable: false, format: (v, doc) => ui.format_integer(doc._extra ? doc._extra.run_count_30d : 0) },
 			],
 			on_row_click: (doc) => view_command(listview, doc),
 			footer: { count: (total) => ui.plural(total, { one: __("{0} command"), other: __("{0} commands") }) },

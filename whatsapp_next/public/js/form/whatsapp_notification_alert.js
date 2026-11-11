@@ -77,8 +77,8 @@ function show_alert_preview_dialog(frm) {
 		.then((r) => {
 			const esc = whatsapp.ui.escape;
 			const facts = [
-				[__("Rows"), whatsapp.ui.format_int(r.row_count || 0)],
-				[__("Recipients"), whatsapp.ui.format_int(r.recipients_count || 0)],
+				[__("Rows"), whatsapp.ui.format_integer(r.row_count || 0)],
+				[__("Recipients"), whatsapp.ui.format_integer(r.recipients_count || 0)],
 				[__("Attachment"), r.attachment_name || "—"],
 			]
 				.map(([k, v]) => `<tr><th class="text-muted" style="width: 30%">${esc(k)}</th><td><bdi dir="auto">${esc(v)}</bdi></td></tr>`)

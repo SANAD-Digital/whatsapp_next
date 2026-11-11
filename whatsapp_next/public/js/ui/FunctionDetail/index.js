@@ -72,7 +72,7 @@ frappe.provide("whatsapp.ui");
 		// ---- shell ---------------------------------------------------------------------------------
 
 		show() {
-			this.id = whatsapp.ui.uid("whatsapp-kit-function-detail");
+			this.id = whatsapp.ui.unique_dom_id("whatsapp-kit-function-detail");
 			this.previous_focus = document.activeElement;
 			this.$root = $(`
 				<div class="whatsapp-kit whatsapp-kit-command-editor-layer whatsapp-kit-function-detail-layer" role="presentation">
@@ -196,7 +196,7 @@ frappe.provide("whatsapp.ui");
 							${tabs
 								.map(
 									(t) => `<button type="button" role="tab" class="whatsapp-kit-command-editor__tab${this.ui.tab === t.key ? " is-sel" : ""}" aria-selected="${this.ui.tab === t.key}" data-act="tab" data-key="${t.key}">
-										${escape_html(t.label)}${t.count != null ? `<span class="whatsapp-kit-command-editor__count" dir="ltr">${whatsapp.ui.format_int(t.count)}</span>` : ""}
+										${escape_html(t.label)}${t.count != null ? `<span class="whatsapp-kit-command-editor__count" dir="ltr">${whatsapp.ui.format_integer(t.count)}</span>` : ""}
 									</button>`
 								)
 								.join("")}
@@ -220,10 +220,10 @@ frappe.provide("whatsapp.ui");
 			const party = (m.party_types && m.party_types.length ? m.party_types : e.party_types) || [];
 			const words = m.suggested_commands || [];
 			const stats = [
-				[__("Calls (30d)", null, "Function Detail"), whatsapp.ui.format_int(cint(e.calls_30d))],
-				[__("Average run time"), cint(e.avg_ms) ? `${whatsapp.ui.format_int(e.avg_ms)} ms` : "—"],
-				[__("Linked commands"), whatsapp.ui.format_int(linked.length)],
-				[__("Active of them"), whatsapp.ui.format_int(linked.filter((c) => c.status === "Active").length)],
+				[__("Calls (30d)", null, "Function Detail"), whatsapp.ui.format_integer(cint(e.calls_30d))],
+				[__("Average run time"), cint(e.avg_ms) ? `${whatsapp.ui.format_integer(e.avg_ms)} ms` : "—"],
+				[__("Linked commands"), whatsapp.ui.format_integer(linked.length)],
+				[__("Active of them"), whatsapp.ui.format_integer(linked.filter((c) => c.status === "Active").length)],
 			];
 			const about = `
 				<p class="whatsapp-kit-function-detail__lede" dir="auto">${escape_html(e.description || __("No description in the catalog."))}</p>

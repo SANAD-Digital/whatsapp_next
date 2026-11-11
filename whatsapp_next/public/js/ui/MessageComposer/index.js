@@ -95,7 +95,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 		this.opts = Object.assign({ type_field: "message_type", body_field: "body", debounce: 400 }, opts);
 		this.frm = this.opts.frm;
 		this.fieldname = this.opts.fieldname;
-		this.id = ui.uid("mc");
+		this.id = ui.unique_dom_id("mc");
 		this.active = null; // the message being written
 		this.show_preview = true;
 		this.controls = new Map();
@@ -194,7 +194,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 		const $wrap = $('<span class="whatsapp-kit-message-composer__addwrap"></span>').appendTo($host);
 		const $btn = $(`<button type="button" class="${cls}" aria-haspopup="menu" aria-expanded="false">${ui.icon("es-line-add", "xs")}<span>${ui.escape(__("Add message"))}</span>${ui.icon("es-line-down", "xs")}</button>`)
 			.prop("disabled", !!full)
-			.attr("title", full ? __("This record may carry {0} messages.", [ui.format_int(this.opts.max)]) : __("Choose what the next message is"))
+			.attr("title", full ? __("This record may carry {0} messages.", [ui.format_integer(this.opts.max)]) : __("Choose what the next message is"))
 			.on("click", (e) => {
 				e.stopPropagation();
 				this.open_type_menu($wrap, $btn, null, (type) => this.add_message(type));
@@ -226,7 +226,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 			const $item = $(`
 				<li class="whatsapp-kit-message-composer__railitem${on ? " whatsapp-kit-message-composer__railitem--on" : ""}${problem ? " whatsapp-kit-message-composer__railitem--problem" : ""}">
 					<span class="whatsapp-kit-message-composer__railtop">
-						<span class="whatsapp-kit-message-composer__order whatsapp-kit-tabular">${ui.escape(ui.format_int(index + 1))}</span>
+						<span class="whatsapp-kit-message-composer__order whatsapp-kit-tabular">${ui.escape(ui.format_integer(index + 1))}</span>
 						<span class="whatsapp-kit-message-composer__railtype">${ui.icon(icon_of(type), "xs")} ${ui.escape(__(type || ""))}</span>
 						${problem ? `<span class="whatsapp-kit-message-composer__raildot" title="${ui.escape(problem)}" aria-label="${ui.escape(problem)}"></span>` : ""}
 						<span class="whatsapp-kit-message-composer__railactions"></span>
@@ -630,9 +630,9 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 
 	duration(seconds) {
 		const n = cint(seconds);
-		if (n < 60) return __("{0} s", [ui.format_int(n)]);
-		if (n < 3600) return __("{0} min", [ui.format_int(Math.round(n / 60))]);
-		return __("{0} h", [ui.format_int(Math.round(n / 360) / 10)]);
+		if (n < 60) return __("{0} s", [ui.format_integer(n)]);
+		if (n < 3600) return __("{0} min", [ui.format_integer(Math.round(n / 60))]);
+		return __("{0} h", [ui.format_integer(Math.round(n / 360) / 10)]);
 	}
 
 	touch(row) {
@@ -797,7 +797,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 		};
 		if (this.problem_of(row) === __("The text is empty") || this.summary_of(row) === __("Nothing to send yet")) return doit();
 		whatsapp.ui.ConfirmDialog.ask_for_confirmation({
-			title: __("Remove message {0}?", [ui.format_int(rows.findIndex((r) => r.name === row.name) + 1)]),
+			title: __("Remove message {0}?", [ui.format_integer(rows.findIndex((r) => r.name === row.name) + 1)]),
 			message: this.summary_of(row),
 			danger: true,
 			confirm_label: __("Remove"),
@@ -819,7 +819,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 		this.frm.refresh_field(this.fieldname);
 		this.frm.dirty();
 		this.render();
-		ui.announce(__("Message moved to position {0}", [ui.format_int(to + 1)]));
+		ui.announce(__("Message moved to position {0}", [ui.format_integer(to + 1)]));
 	}
 
 	refresh() {

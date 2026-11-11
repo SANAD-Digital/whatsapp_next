@@ -22,8 +22,8 @@ frappe.provide("whatsapp_next.campaign");
 (function () {
 	const ui = whatsapp.ui;
 	const campaign_builder = whatsapp_next.campaign;
-	const escape_html = campaign_builder.esc;
-	const format_integer = campaign_builder.fmt_int;
+	const escape_html = campaign_builder.escape_html;
+	const format_integer = campaign_builder.format_integer;
 
 	const SOURCE_TYPES = ["Contact Group", "Contact", "DocType", "Excel", "vCard", "Manual"];
 
@@ -71,7 +71,7 @@ frappe.provide("whatsapp_next.campaign");
 					<div data-block="gate"></div>
 					<section class="whatsapp-campaign-builder__aud">
 						<div class="whatsapp-campaign-builder__aud-head">
-							<span class="whatsapp-campaign-builder__card-icon" aria-hidden="true">${ui.ico("users", "sm")}</span>
+							<span class="whatsapp-campaign-builder__card-icon" aria-hidden="true">${ui.inline_icon_html("users", "sm")}</span>
 							<span class="whatsapp-campaign-builder__card-title">${escape_html(__("Where the recipients come from"))}</span>
 							<span class="whatsapp-campaign-builder__aud-add" data-sources></span>
 							<span class="whatsapp-campaign-builder__aud-tags" aria-live="polite">
@@ -114,7 +114,7 @@ frappe.provide("whatsapp_next.campaign");
 						? __("The campaign has ended, so its recipients can no longer change.")
 						: __("You do not have permission to change this campaign.");
 			const savable = (this.frm.is_new() || this.frm.is_dirty()) && this.ctx.can_edit();
-			$gate.html(campaign_builder.note({ tone: savable ? "warn" : "info", icon: savable ? "warn" : "info", text: reason, cta: savable ? { key: "save", label: __("Save as draft") } : null }));
+			$gate.html(campaign_builder.note_html({ tone: savable ? "warn" : "info", icon: savable ? "warn" : "info", text: reason, cta: savable ? { key: "save", label: __("Save as draft") } : null }));
 			$gate.find("[data-note-cta]").on("click", () => this.ctx.save_campaign());
 		}
 
@@ -134,7 +134,7 @@ frappe.provide("whatsapp_next.campaign");
 					usable
 						.map(
 							(e) =>
-								`<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--sm whatsapp-campaign-builder__aud-source" data-source="${escape_html(e.key)}" title="${escape_html(SOURCE[e.key].hint())}"${open ? "" : " disabled"}>${ui.ico(SOURCE[e.key].icon, "sm")}<span>${escape_html(e.label || LABEL[e.key]())}</span></button>`
+								`<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--sm whatsapp-campaign-builder__aud-source" data-source="${escape_html(e.key)}" title="${escape_html(SOURCE[e.key].hint())}"${open ? "" : " disabled"}>${ui.inline_icon_html(SOURCE[e.key].icon, "sm")}<span>${escape_html(e.label || LABEL[e.key]())}</span></button>`
 						)
 						.join("")
 				);
@@ -180,7 +180,7 @@ frappe.provide("whatsapp_next.campaign");
 			const excluded = this.ctx.excluded_unknown();
 			if (excluded) {
 				parts.push(
-					`<span class="whatsapp-campaign-builder__chip whatsapp-campaign-builder__chip--warn" title="${escape_html(__("They have never had a conversation on WhatsApp and this campaign excludes unknown numbers."))}">${ui.ico("warn", "xs")}<b class="whatsapp-kit-tabular">${escape_html(format_integer(excluded))}</b>${escape_html(__("will not be sent to"))}</span>`
+					`<span class="whatsapp-campaign-builder__chip whatsapp-campaign-builder__chip--warn" title="${escape_html(__("They have never had a conversation on WhatsApp and this campaign excludes unknown numbers."))}">${ui.inline_icon_html("warn", "xs")}<b class="whatsapp-kit-tabular">${escape_html(format_integer(excluded))}</b>${escape_html(__("will not be sent to"))}</span>`
 				);
 			}
 			// one source and nothing excluded says nothing the total does not
@@ -299,12 +299,12 @@ frappe.provide("whatsapp_next.campaign");
 			const open = this.can_change();
 			const selected = this.table ? this.table.get_selected() : [];
 			if (selected.length && open) {
-				$(ui.btn({ label: __("Remove {0}", [format_integer(selected.length)]), icon: "trash", variant: "danger", size: "sm" }))
+				$(ui.button_html({ label: __("Remove {0}", [format_integer(selected.length)]), icon: "trash", variant: "danger", size: "sm" }))
 					.on("click", () => this.remove_selected(selected))
 					.appendTo(this.$verbs);
 				return;
 			}
-			$(ui.btn({ label: __("Remove recipients"), icon: "trash", variant: "secondary", size: "sm", disabled: !open || !cint(this.ctx.doc.total_recipients) }))
+			$(ui.button_html({ label: __("Remove recipients"), icon: "trash", variant: "secondary", size: "sm", disabled: !open || !cint(this.ctx.doc.total_recipients) }))
 				.on("click", () => this.open_picker("remove"))
 				.appendTo(this.$verbs);
 		}

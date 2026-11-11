@@ -43,7 +43,7 @@ whatsapp.ui.Stepper = class Stepper {
 	}
 
 	build_stepper_markup() {
-		const id = ui.uid("stepper");
+		const id = ui.unique_dom_id("stepper");
 		this.id = id;
 		this.$el = $(`
 			<div class="whatsapp-kit whatsapp-kit-stepper" id="${id}">

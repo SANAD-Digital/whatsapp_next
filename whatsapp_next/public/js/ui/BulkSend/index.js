@@ -67,7 +67,7 @@ frappe.provide("whatsapp.ui");
 		// ---- shell ---------------------------------------------------------------------------------
 
 		show() {
-			this.id = whatsapp.ui.uid("whatsapp-kit-bulk-send");
+			this.id = whatsapp.ui.unique_dom_id("whatsapp-kit-bulk-send");
 			this.previous_focus = document.activeElement;
 			this.$root = $(`
 				<div class="whatsapp-kit whatsapp-kit-command-editor-layer whatsapp-kit-bulk-send-layer" role="presentation">
@@ -190,7 +190,7 @@ frappe.provide("whatsapp.ui");
 					<span class="whatsapp-kit-bulk-send__segs" role="tablist">${tabs
 						.map(
 							(t) => `<button type="button" role="tab" class="whatsapp-kit-bulk-send__seg${s.src === t.key ? " is-sel" : ""}" aria-selected="${s.src === t.key}" data-act="src" data-key="${t.key}">${escape_html(t.label)}${
-								t.count ? `<span class="whatsapp-kit-bulk-send__seg-n" dir="ltr">${whatsapp.ui.format_int(t.count)}</span>` : ""
+								t.count ? `<span class="whatsapp-kit-bulk-send__seg-n" dir="ltr">${whatsapp.ui.format_integer(t.count)}</span>` : ""
 							}</button>`
 						)
 						.join("")}</span>
@@ -202,7 +202,7 @@ frappe.provide("whatsapp.ui");
 				</div>
 				<div class="whatsapp-kit-bulk-send__list" data-scroll="list" role="list">${body}</div>
 				<div class="whatsapp-kit-bulk-send__list-foot">
-					<span class="whatsapp-kit-bulk-send__picked">${escape_html(__("Selected", null, "Bulk Send"))} <span dir="ltr" class="whatsapp-kit-bulk-send__picked-n">${whatsapp.ui.format_int(this.total())}</span></span>
+					<span class="whatsapp-kit-bulk-send__picked">${escape_html(__("Selected", null, "Bulk Send"))} <span dir="ltr" class="whatsapp-kit-bulk-send__picked-n">${whatsapp.ui.format_integer(this.total())}</span></span>
 					${
 						n
 							? `<button type="button" class="whatsapp-kit-bulk-send__show${selected ? " is-on" : ""}" data-act="show-selected">${escape_html(selected ? __("Back to picking") : __("Show the selected"))}</button>
@@ -230,7 +230,7 @@ frappe.provide("whatsapp.ui");
 							name: g.group_name || g.name,
 							sub: g.description || __(g.source || ""),
 							initials: whatsapp.ui.initials(g.group_name || g.name),
-							badge: black ? __("Blacklist") : __("{0} contacts", [whatsapp.ui.format_int(g.member_count)]),
+							badge: black ? __("Blacklist") : __("{0} contacts", [whatsapp.ui.format_integer(g.member_count)]),
 							badge_tone: black ? "wn" : "muted",
 							on,
 						};
@@ -254,7 +254,7 @@ frappe.provide("whatsapp.ui");
 				.concat(
 					s.groups.map((name) => {
 						const g = this.group(name);
-						return { key: name, act: "rm-group", name: g.group_name || name, sub: __("{0} contacts", [whatsapp.ui.format_int(g.member_count)]), initials: whatsapp.ui.initials(g.group_name || name), badge: __("Group", null, "Bulk Send"), badge_tone: "pri", remove: true };
+						return { key: name, act: "rm-group", name: g.group_name || name, sub: __("{0} contacts", [whatsapp.ui.format_integer(g.member_count)]), initials: whatsapp.ui.initials(g.group_name || name), badge: __("Group", null, "Bulk Send"), badge_tone: "pri", remove: true };
 					}),
 					s.contacts.map((c) => ({ key: c.name, act: "rm-contact", name: c.label || c.name, sub: whatsapp.ui.phone(c.phone || ""), sub_ltr: true, initials: whatsapp.ui.initials(c.label || "?"), badge: __("Picked contact"), badge_tone: "pri", remove: true })),
 					s.numbers.map((p) => ({ key: p, act: "rm-number", name: __("Number added by hand"), sub: whatsapp.ui.phone(p), sub_ltr: true, initials: "#", avatar_tone: "nf", badge: __("Manual number"), badge_tone: "nf", remove: true }))
@@ -281,19 +281,19 @@ frappe.provide("whatsapp.ui");
 			const tpl = this.template();
 			const e = s.estimate || {};
 			const parts = [
-				s.groups.length ? __("{0} groups", [whatsapp.ui.format_int(s.groups.length)]) : "",
-				s.contacts.length ? __("{0} contacts", [whatsapp.ui.format_int(s.contacts.length)]) : "",
-				s.numbers.length ? __("{0} numbers", [whatsapp.ui.format_int(s.numbers.length)]) : "",
-				cint(e.excluded) ? __("{0} excluded", [whatsapp.ui.format_int(e.excluded)]) : "",
+				s.groups.length ? __("{0} groups", [whatsapp.ui.format_integer(s.groups.length)]) : "",
+				s.contacts.length ? __("{0} contacts", [whatsapp.ui.format_integer(s.contacts.length)]) : "",
+				s.numbers.length ? __("{0} numbers", [whatsapp.ui.format_integer(s.numbers.length)]) : "",
+				cint(e.excluded) ? __("{0} excluded", [whatsapp.ui.format_integer(e.excluded)]) : "",
 			].filter(Boolean);
-			const head_title = total ? __("Broadcast to {0} recipients", [whatsapp.ui.format_int(total)]) : __("Send a message");
+			const head_title = total ? __("Broadcast to {0} recipients", [whatsapp.ui.format_integer(total)]) : __("Send a message");
 			const head_sub = total ? `${parts.join(" · ")} · ${dev ? dev.device_name || dev.name : "—"}` : __("Pick the recipients from the list, then write the message");
-			const first = s.contacts[0] || (s.numbers[0] ? { label: __("Number added by hand"), phone: s.numbers[0] } : null) || (s.groups[0] ? { label: this.group(s.groups[0]).group_name, phone: __("{0} contacts", [whatsapp.ui.format_int(this.group(s.groups[0]).member_count)]) } : null);
+			const first = s.contacts[0] || (s.numbers[0] ? { label: __("Number added by hand"), phone: s.numbers[0] } : null) || (s.groups[0] ? { label: this.group(s.groups[0]).group_name, phone: __("{0} contacts", [whatsapp.ui.format_integer(this.group(s.groups[0]).member_count)]) } : null);
 			const remaining = this.ctx.messages_remaining;
 			const mins = total / Math.max(1, cint(s.rate) || 20);
 			const eta = !total ? "—" : mins < 1 ? __("under a minute") : mins < 60 ? __("{0} minutes", [Math.round(mins)]) : __("{0} hours", [Math.round(mins / 60)]);
 			const ready = total > 0 && (!!s.body.trim() || !!s.attach) && dev && dev.status === "Connected";
-			const send_label = s.when === "later" ? __("Schedule the send") : total ? __("Send to {0}", [whatsapp.ui.format_int(total)]) : __("Send", null, "Bulk Send");
+			const send_label = s.when === "later" ? __("Schedule the send") : total ? __("Send to {0}", [whatsapp.ui.format_integer(total)]) : __("Send", null, "Bulk Send");
 			return `<section class="whatsapp-kit-bulk-send__main" aria-label="${escape_html(__("The message"))}">
 				<div class="whatsapp-kit-bulk-send__head">
 					<span class="whatsapp-kit-bulk-send__head-icon" aria-hidden="true">${SEND_ICON.replace('width="14" height="14"', 'width="18" height="18"')}</span>
@@ -332,9 +332,9 @@ frappe.provide("whatsapp.ui");
 				</div>
 				<div class="whatsapp-kit-bulk-send__bar">
 					<span class="whatsapp-kit-bulk-send__estimates">
-						<span class="whatsapp-kit-bulk-send__est"><span class="whatsapp-kit-bulk-send__est-k">${escape_html(__("Recipients", null, "Bulk Send"))}</span><span class="whatsapp-kit-bulk-send__est-v whatsapp-kit-command-editor__mono" dir="ltr">${whatsapp.ui.format_int(total)}</span></span>
+						<span class="whatsapp-kit-bulk-send__est"><span class="whatsapp-kit-bulk-send__est-k">${escape_html(__("Recipients", null, "Bulk Send"))}</span><span class="whatsapp-kit-bulk-send__est-v whatsapp-kit-command-editor__mono" dir="ltr">${whatsapp.ui.format_integer(total)}</span></span>
 						<span class="whatsapp-kit-bulk-send__est"><span class="whatsapp-kit-bulk-send__est-k">${escape_html(__("Expected time"))}</span><span class="whatsapp-kit-bulk-send__est-v">${escape_html(eta)}</span></span>
-						<span class="whatsapp-kit-bulk-send__est"><span class="whatsapp-kit-bulk-send__est-k">${escape_html(__("From the plan"))}</span><span class="whatsapp-kit-bulk-send__est-v whatsapp-kit-command-editor__mono" dir="ltr">${remaining == null ? "—" : whatsapp.ui.format_int(Math.min(total, cint(remaining)))}</span></span>
+						<span class="whatsapp-kit-bulk-send__est"><span class="whatsapp-kit-bulk-send__est-k">${escape_html(__("From the plan"))}</span><span class="whatsapp-kit-bulk-send__est-v whatsapp-kit-command-editor__mono" dir="ltr">${remaining == null ? "—" : whatsapp.ui.format_integer(Math.min(total, cint(remaining)))}</span></span>
 					</span>
 					<button type="button" class="whatsapp-kit-bulk-send__send${ready ? " is-ready" : ""}" data-act="send">${escape_html(send_label)}</button>
 				</div>
@@ -586,18 +586,18 @@ frappe.provide("whatsapp.ui");
 			const e = s.estimate || {};
 			const remaining = this.ctx.messages_remaining;
 			const impact = [
-				{ label: __("Recipients", null, "Bulk Send"), value: whatsapp.ui.format_int(total) },
+				{ label: __("Recipients", null, "Bulk Send"), value: whatsapp.ui.format_integer(total) },
 				{ label: __("Device"), value: dev.device_name || dev.name },
 			];
-			if (remaining != null) impact.push({ label: __("Counted against the plan"), value: whatsapp.ui.format_int(Math.min(total, cint(remaining))) });
-			if (cint(e.excluded)) impact.push({ label: __("Excluded (blacklist)"), value: whatsapp.ui.format_int(e.excluded) });
+			if (remaining != null) impact.push({ label: __("Counted against the plan"), value: whatsapp.ui.format_integer(Math.min(total, cint(remaining))) });
+			if (cint(e.excluded)) impact.push({ label: __("Excluded (blacklist)"), value: whatsapp.ui.format_integer(e.excluded) });
 			whatsapp.ui.ConfirmDialog.ask_for_confirmation({
-				title: later ? __("Schedule {0} messages?", [whatsapp.ui.format_int(total)]) : __("Send {0} messages?", [whatsapp.ui.format_int(total)]),
+				title: later ? __("Schedule {0} messages?", [whatsapp.ui.format_integer(total)]) : __("Send {0} messages?", [whatsapp.ui.format_integer(total)]),
 				message: later
 					? __("The messages are scheduled for the chosen time and can be cancelled from the queue before they start.")
 					: __("The messages enter the queue now and go out at {0} messages a minute. What is sent cannot be recalled.", [cint(s.rate) || 20]),
 				impact,
-				ack_checkbox: total > 200 ? __("I understand that {0} messages will really be sent and counted against the balance", [whatsapp.ui.format_int(total)]) : undefined,
+				ack_checkbox: total > 200 ? __("I understand that {0} messages will really be sent and counted against the balance", [whatsapp.ui.format_integer(total)]) : undefined,
 				confirm_label: later ? __("Schedule the send") : __("Send now"),
 				on_confirm: () =>
 					this.opts.send({
@@ -617,7 +617,7 @@ frappe.provide("whatsapp.ui");
 				.then((r) => {
 					new whatsapp.ui.Toast({
 						tone: "success",
-						title: later ? __("{0} messages scheduled", [whatsapp.ui.format_int(r.recipients)]) : __("{0} messages added to the queue", [whatsapp.ui.format_int(r.recipients)]),
+						title: later ? __("{0} messages scheduled", [whatsapp.ui.format_integer(r.recipients)]) : __("{0} messages added to the queue", [whatsapp.ui.format_integer(r.recipients)]),
 						message: later ? __("They start at the chosen time.") : __("They go out at {0} messages a minute — follow them from the queue.", [cint(s.rate) || 20]),
 					});
 					this.opts.on_sent && this.opts.on_sent(r);

@@ -55,7 +55,7 @@ badge.refresh(updated_doc);
 
 ## Notes
 
-- Tone mapping is `ui.tone(colour)`. For example, `orange` / `yellow` map to `amber` and `purple` maps to `violet`. Unknown colours map to `gray`.
+- Tone mapping is `ui.tone_for_colour(colour)`. For example, `orange` / `yellow` map to `amber` and `purple` maps to `violet`. Unknown colours map to `gray`.
 - If the meta is not loaded yet, `ui.indicator_for` swallows the error and returns a neutral gray badge.
 - The icons and dot are `aria-hidden`. The label is the accessible text.
 - Live use outside the kit:

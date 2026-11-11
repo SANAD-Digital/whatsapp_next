@@ -113,7 +113,7 @@ const Render = {
 	/** An inline chip for a link target: the DocType's icon, the name, and a route. */
 	doc_link(doctype, name, display, opts = {}) {
 		if (!doctype || !name) return ui.escape(display || name || "");
-		return parts.chip({
+		return parts.icon_text_chip_html({
 			icon: opts.icon === false ? null : Render.icon_for(doctype),
 			text: cstr(display || name),
 			href: frappe.utils.get_form_link(doctype, name),

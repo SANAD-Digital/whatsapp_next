@@ -22,6 +22,18 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
   `audit.log` → `record_audit_entry`, `phone.normalize` → `normalize_phone_to_e164`,
   `secrets.read` → `read_password_field`, `campaign_runner.start` → `start_campaign` … The
   published API endpoints (`api/v1/*`), the provider contract and Frappe's hooks keep their names.
+- **JavaScript names say what they do** (same rule). 420 file-local helpers and class methods
+  (`esc` → `escape_html`, `C` / `K` → `campaign_builder` / `campaign_helpers`, `load()` →
+  `load_command()`, `go()` → `go_to_step()` …) and the kit's shared names:
+  `whatsapp.ui.ico` / `btn` / `rule` → `inline_icon_html` / `button_html` / `section_rule_html`,
+  `format_int` → `format_integer`, `uid` → `unique_dom_id`, `ago` → `format_time_ago`,
+  `num_align` → `number_alignment`, `tone` → `tone_for_colour`; `Render.parts.chip` / `fact` /
+  `dl` / `kv` / `code` → `*_html`; `ConfirmDialog.ask` → `ask_for_confirmation`,
+  `ChatThread.format` → `format_whatsapp_text`, `PhoneField.normalize` / `mask` →
+  `normalize_phone_number` / `group_national_digits`, `EmptyState.set` → `set_state`,
+  `FilterBar.set` → `set_filter_value`, `Stepper.go` / `next` / `back` → `go_to_step` /
+  `go_to_next_step` / `go_to_previous_step`; `whatsapp_next.fmt` → `whatsapp_next.message_formatters`.
+  Another app that called the old kit names calls the new ones.
 - **Removed** the unused kit components `MetaDialog` and `TreeGroupBy`, and dead code across the
   app; duplicated code folded into shared helpers (see TECH_DEBT.md, 2026-11-11).
 

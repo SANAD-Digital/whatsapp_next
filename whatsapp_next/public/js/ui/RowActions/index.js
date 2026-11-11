@@ -101,7 +101,7 @@ whatsapp.ui.RowActions = class RowActions {
 		if (!doc) return;
 		const actions = this.visible_actions(doc);
 		if (!actions.length) return;
-		const id = ui.uid("rowmenu");
+		const id = ui.unique_dom_id("rowmenu");
 		const $menu = $(`<div class="whatsapp-kit whatsapp-kit-rowactions__menu" id="${id}" role="menu" aria-label="${ui.escape(this.opts.label || __("Actions"))}"></div>`);
 		actions.forEach((a) => {
 			$(`<button type="button" class="whatsapp-kit-rowactions__item${a.danger ? " whatsapp-kit-rowactions__item--danger" : ""}" role="menuitem" tabindex="-1">${a.icon ? `<span class="whatsapp-kit-rowactions__icon" aria-hidden="true">${ui.icon(a.icon, "sm")}</span>` : ""}<span>${ui.escape(a.label)}</span></button>`)

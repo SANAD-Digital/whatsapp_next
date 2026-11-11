@@ -23,7 +23,7 @@ export class ManualSource extends BaseSource {
 	}
 
 	render() {
-		const id = ui.uid("manual");
+		const id = ui.unique_dom_id("manual");
 		const hint_id = `${id}-hint`;
 		// The example comes from PhoneField (country default of the host) when the kit ships it.
 		const PhoneField = whatsapp.ui.PhoneField;
@@ -56,7 +56,7 @@ export class ManualSource extends BaseSource {
 				}
 			}
 			const n = this.$text.val().split(/\r?\n/).filter((l) => l.trim()).length;
-			this.$count.text(n ? __("{0} lines", [ui.format_int(n)]) : "");
+			this.$count.text(n ? __("{0} lines", [ui.format_integer(n)]) : "");
 			this.$add.prop("disabled", !n);
 		});
 		this.$text.on("keydown", (e) => {

@@ -45,7 +45,7 @@ frappe.provide("whatsapp_next.campaign");
 		constructor({ frm, wrapper }) {
 			this.frm = frm;
 			this.$wrapper = $(wrapper);
-			this.id = ui.uid("cb");
+			this.id = ui.unique_dom_id("cb");
 			this.cap = 0;
 			this.retry_policy = null;
 			this.readiness = null;
@@ -189,7 +189,7 @@ frappe.provide("whatsapp_next.campaign");
 						no_question: __("has no question"),
 						few_options: __("needs at least two answers"),
 					}[message_problem(bad)];
-					return __("Message {0} {1}.", [campaign_builder.fmt_int(bad.idx), why]);
+					return __("Message {0} {1}.", [campaign_builder.format_integer(bad.idx), why]);
 				}
 				return "";
 			}

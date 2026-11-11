@@ -94,7 +94,7 @@ const STATS = () => [
 				([total, linked]) => (total ? (linked / total) * 100 : 0)
 			),
 		// 5 of 1 190 is not "0%": a share above zero but under one per cent reads "<1%"
-		format: (v) => (v > 0 && v < 1 ? `\u2066${__("<1%")}\u2069` : __("{0}%", [whatsapp.ui.format_int(Math.round(v || 0))])),
+		format: (v) => (v > 0 && v < 1 ? `\u2066${__("<1%")}\u2069` : __("{0}%", [whatsapp.ui.format_integer(Math.round(v || 0))])),
 		sub: __("Of WhatsApp conversations"),
 	},
 ];
@@ -224,20 +224,20 @@ frappe.listview_settings[DOCTYPE] = {
 				listview,
 				actions: [
 					{
-						label: (n) => (n ? __("Check on WhatsApp ({0})", [whatsapp.ui.format_int(n)]) : __("Check on WhatsApp")),
+						label: (n) => (n ? __("Check on WhatsApp ({0})", [whatsapp.ui.format_integer(n)]) : __("Check on WhatsApp")),
 						condition: (docs) => people(docs).length > 0,
 						handler: (names, docs) =>
 							whatsapp_next.check_numbers("WhatsApp Number", people(docs).map((d) => d.name), { on_done: () => listview.refresh() }),
 					},
 					{
-						label: (n) => (n ? __("Refresh WhatsApp profile ({0})", [whatsapp.ui.format_int(n)]) : __("Refresh WhatsApp profile")),
+						label: (n) => (n ? __("Refresh WhatsApp profile ({0})", [whatsapp.ui.format_integer(n)]) : __("Refresh WhatsApp profile")),
 						condition: (docs) => people(docs).length > 0,
 						handler: (names, docs) =>
 							whatsapp_next.refresh_profiles("WhatsApp Number", people(docs).map((d) => d.name), { on_done: () => listview.refresh() }),
 					},
 					...(can_group
 						? [{
-							label: (n) => (n ? __("Create WhatsApp group ({0})", [whatsapp.ui.format_int(n)]) : __("Create WhatsApp group")),
+							label: (n) => (n ? __("Create WhatsApp group ({0})", [whatsapp.ui.format_integer(n)]) : __("Create WhatsApp group")),
 							condition: (docs) => people(docs).length > 0,
 							handler: (names, docs) => {
 								whatsapp_next.wa_groups.open({
@@ -249,7 +249,7 @@ frappe.listview_settings[DOCTYPE] = {
 						}]
 						: []),
 					...(!frappe.user.has_role(CONTACT_ROLES) ? [] : [{
-						label: (n) => (n ? __("Create contacts ({0})", [whatsapp.ui.format_int(n)]) : __("Create contacts")),
+						label: (n) => (n ? __("Create contacts ({0})", [whatsapp.ui.format_integer(n)]) : __("Create contacts")),
 						condition: (docs) => unknown(docs).length > 0,
 						confirm: (names, docs) => {
 							const count = unknown(docs).length;
@@ -257,8 +257,8 @@ frappe.listview_settings[DOCTYPE] = {
 								title: whatsapp.ui.plural(count, { one: __("Create a contact for {0} unknown number?"), other: __("Create contacts for {0} unknown numbers?") }),
 								message: __("Each contact is named after the name the number uses on WhatsApp; you can rename it later."),
 								impact: [
-									{ label: __("Contacts to create"), value: whatsapp.ui.format_int(count), tone: "green" },
-									{ label: __("Skipped (already linked or not a person)"), value: whatsapp.ui.format_int(names.length - count) },
+									{ label: __("Contacts to create"), value: whatsapp.ui.format_integer(count), tone: "green" },
+									{ label: __("Skipped (already linked or not a person)"), value: whatsapp.ui.format_integer(names.length - count) },
 								],
 								confirm_label: __("Create contacts"),
 							};

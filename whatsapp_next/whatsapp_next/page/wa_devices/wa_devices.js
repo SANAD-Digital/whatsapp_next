@@ -29,7 +29,7 @@ frappe.provide("whatsapp_next.devices");
 		"Logged Out": { tone: "red", label: () => __("Signed out") },
 	};
 	const status_of = (row) => STATUS[row.status] || { tone: "gray", label: () => __("Unknown") };
-	const format_time_ago = (value) => whatsapp.ui.ago(value, null);
+	const format_time_ago = (value) => whatsapp.ui.format_time_ago(value, null);
 	// when an offline device went offline: a sign-out is stamped `logged_out_at`, a dropped
 	// connection `disconnected_at` — an older stamp of the other kind must not win
 	const offline_since = (row) =>
@@ -593,8 +593,8 @@ frappe.provide("whatsapp_next.devices");
 			}
 			if (row.history_status === "Running") {
 				const progress = row.history_total
-					? __("{0} of {1}", [ui.format_int(row.history_imported || 0), ui.format_int(row.history_total)])
-					: ui.format_int(row.history_imported || 0);
+					? __("{0} of {1}", [ui.format_integer(row.history_imported || 0), ui.format_integer(row.history_total)])
+					: ui.format_integer(row.history_imported || 0);
 				$(`<span class="whatsapp-device__flag" title="${ui.escape(__("Messages this number exchanged before it was linked are being brought in."))}">${ui.icon("es-line-reload", "xs")}${ui.escape(__("Importing past conversations: {0}", [progress]))}</span>`).appendTo($tags);
 			}
 			const items = this.menu_items();
@@ -676,10 +676,10 @@ frappe.provide("whatsapp_next.devices");
 			const rate = Number(stats.fail_rate || 0);
 			const attempted = sent + failed;
 			const high = rate > FAIL_ALERT;
-			this.$el.find('[data-stat="sent"] [data-slot="value"]').text(ui.format_int(sent));
+			this.$el.find('[data-stat="sent"] [data-slot="value"]').text(ui.format_integer(sent));
 			this.$el
 				.find('[data-stat="failed"] [data-slot="value"]')
-				.text(ui.format_int(failed))
+				.text(ui.format_integer(failed))
 				.toggleClass("whatsapp-device__stat-value--alert", high);
 			this.$el
 				.find('[data-stat="rate"] [data-slot="value"]')
@@ -694,7 +694,7 @@ frappe.provide("whatsapp_next.devices");
 			$bar.attr(
 				"aria-label",
 				attempted
-					? __("{0} of {1} messages arrived over the last {2} days; {3} failed.", [ui.format_int(sent), ui.format_int(attempted), STATS_DAYS, ui.format_int(failed)])
+					? __("{0} of {1} messages arrived over the last {2} days; {3} failed.", [ui.format_integer(sent), ui.format_integer(attempted), STATS_DAYS, ui.format_integer(failed)])
 					: __("Nothing was sent over the last {0} days.", [STATS_DAYS])
 			);
 			this.$el
@@ -703,8 +703,8 @@ frappe.provide("whatsapp_next.devices");
 			const inbound = Number(stats.inbound || 0);
 			this.$el
 				.find('[data-verb="inbound"] [data-slot="count"]')
-				.text(inbound ? ui.format_int(inbound) : "")
-				.attr("title", inbound ? __("{0} received over the last {1} days", [ui.format_int(inbound), STATS_DAYS]) : null)
+				.text(inbound ? ui.format_integer(inbound) : "")
+				.attr("title", inbound ? __("{0} received over the last {1} days", [ui.format_integer(inbound), STATS_DAYS]) : null)
 				.toggleClass("whatsapp-device__btn-count--empty", !inbound);
 		}
 
@@ -910,7 +910,7 @@ frappe.provide("whatsapp_next.devices");
 					? since
 						? __("Device {0} has been offline since {1}.", [one.device_name || one.name, since])
 						: __("Device {0} is offline.", [one.device_name || one.name])
-					: __("{0} devices are not connected.", [ui.format_int(offline.length)]);
+					: __("{0} devices are not connected.", [ui.format_integer(offline.length)]);
 				const line = one
 					? __("Messages addressed to it stay in the queue and are not sent until it is paired again.")
 					: __("Messages addressed to them stay in the queue and are not sent until they are paired again.");
@@ -1003,7 +1003,7 @@ frappe.provide("whatsapp_next.devices");
 				{ key: "offline", label: __("Not connected"), tone: "amber" },
 			].forEach((seg) => {
 				const count = counts[seg.key];
-				$(`<button type="button" class="whatsapp-devices__segment whatsapp-devices__segment--${seg.tone}" aria-pressed="${this.filter === seg.key}"${count ? "" : " disabled"}>${seg.key === "all" ? "" : '<span class="whatsapp-devices__segment-dot" aria-hidden="true"></span>'}<span class="whatsapp-devices__segment-label">${ui.escape(seg.label)}</span><span class="whatsapp-devices__segment-count whatsapp-kit-tabular">${ui.escape(ui.format_int(count))}</span></button>`)
+				$(`<button type="button" class="whatsapp-devices__segment whatsapp-devices__segment--${seg.tone}" aria-pressed="${this.filter === seg.key}"${count ? "" : " disabled"}>${seg.key === "all" ? "" : '<span class="whatsapp-devices__segment-dot" aria-hidden="true"></span>'}<span class="whatsapp-devices__segment-label">${ui.escape(seg.label)}</span><span class="whatsapp-devices__segment-count whatsapp-kit-tabular">${ui.escape(ui.format_integer(count))}</span></button>`)
 					.on("click", () => this.set_filter(seg.key))
 					.appendTo($group);
 			});
@@ -1053,7 +1053,7 @@ frappe.provide("whatsapp_next.devices");
 					.then((stats) => card.set_stats(stats || {}))
 					.catch(() => card.set_stats_error());
 			});
-			ui.announce(__("Showing {0} of {1} devices", [ui.format_int(shown.length), ui.format_int(rows.length)]));
+			ui.announce(__("Showing {0} of {1} devices", [ui.format_integer(shown.length), ui.format_integer(rows.length)]));
 		}
 
 		// ---- actions ----------------------------------------------------------------------------
@@ -1080,7 +1080,7 @@ frappe.provide("whatsapp_next.devices");
 			const title = row.device_name || row.name;
 			const done = row.history_status === "Done" || row.history_status === "Failed";
 			const facts = row.history_status && row.history_status !== "Not Started"
-				? __("Last import: {0} messages brought in of {1} found.", [ui.format_int(row.history_imported || 0), ui.format_int(row.history_total || 0)])
+				? __("Last import: {0} messages brought in of {1} found.", [ui.format_integer(row.history_imported || 0), ui.format_integer(row.history_total || 0)])
 				: __("Nothing has been imported for this number yet.");
 			frappe.confirm(
 				`${ui.escape(__("Bring in the messages {0} exchanged before it was linked, as far back as the inbound retention period. They show in conversations and run no commands or replies.", [title]))}<br><br>${ui.escape(facts)}`,
@@ -1117,9 +1117,9 @@ frappe.provide("whatsapp_next.devices");
 				message: __("Sending from this number stops at once. Queued messages stay in the queue until the device is paired again; nothing is deleted."),
 				load_impact: () =>
 					ui.call(IMPACT_API, { device: row.name }, { silent: true }).then(({ queued, notifications, campaigns }) => [
-						{ label: __("Messages that stop being sent"), value: ui.format_int(queued), tone: "amber" },
-						{ label: __("Templates bound to this device"), value: ui.format_int(notifications) },
-						{ label: __("Campaigns bound to this device"), value: ui.format_int(campaigns) },
+						{ label: __("Messages that stop being sent"), value: ui.format_integer(queued), tone: "amber" },
+						{ label: __("Templates bound to this device"), value: ui.format_integer(notifications) },
+						{ label: __("Campaigns bound to this device"), value: ui.format_integer(campaigns) },
 					]),
 				confirm_label: __("Disconnect"),
 				on_confirm: () =>
@@ -1141,9 +1141,9 @@ frappe.provide("whatsapp_next.devices");
 				ack_checkbox: __("I understand this device will be removed from the platform."),
 				load_impact: () =>
 					ui.call(IMPACT_API, { device: row.name }, { silent: true }).then(({ messages, notifications, campaigns }) => [
-						{ label: __("Messages kept in the log"), value: ui.format_int(messages) },
-						{ label: __("Templates that lose their device"), value: ui.format_int(notifications), tone: "red" },
-						{ label: __("Campaigns that stop working"), value: ui.format_int(campaigns), tone: "red" },
+						{ label: __("Messages kept in the log"), value: ui.format_integer(messages) },
+						{ label: __("Templates that lose their device"), value: ui.format_integer(notifications), tone: "red" },
+						{ label: __("Campaigns that stop working"), value: ui.format_integer(campaigns), tone: "red" },
 					]),
 				confirm_label: __("Delete device"),
 				on_confirm: () =>
