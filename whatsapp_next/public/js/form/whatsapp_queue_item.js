@@ -5,7 +5,7 @@
 frappe.ui.form.on("WhatsApp Queue Item", {
 	refresh(frm) {
 		if (frm.is_new()) return;
-		const ui = sanad.ui;
+		const ui = whatsapp.ui;
 		const doc = frm.doc;
 		const reload = () => frm.reload_doc();
 		const run = (method, message) =>

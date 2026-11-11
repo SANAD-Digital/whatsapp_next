@@ -21,7 +21,7 @@ the kit's `style.scss` imports both.
 ## Usage
 
 ```js
-const detail = new sanad.ui.FunctionDetail({
+const detail = new whatsapp.ui.FunctionDetail({
   entry,                                   // catalog row + install state + linked_commands[]
   manifest,                                // {inputs[], settings[], outputs[], suggested_commands[], example}
   party_types: [{ key: "Customer", label: __("Customer") }],
@@ -46,7 +46,7 @@ another version) take the screen and the window comes back after them.
 
 ## Design gate
 - `role="dialog"` + `aria-modal`, focus kept inside, Esc closes the open dropdown / menu first and
-  the window last, focus returns to the opener. Registered with `sanad.ui.overlay`, so one overlay
+  the window last, focus returns to the opener. Registered with `whatsapp.ui.overlay`, so one overlay
   shows at a time.
 - Tabs are `role="tab"` with `aria-selected`; version cards are buttons with `aria-expanded`; the
   "More" button has `aria-haspopup="menu"`.

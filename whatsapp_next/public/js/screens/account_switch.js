@@ -44,7 +44,7 @@ frappe.provide("whatsapp_next.account_switch");
 	function check({ force = false } = {}) {
 		if (!frappe.user.has_role("System Manager")) return Promise.resolve(null);
 		if (!force && asked_this_session()) return Promise.resolve(null);
-		return sanad.ui
+		return whatsapp.ui
 			.call("onboarding.get_account_switch", {}, { silent: true })
 			.then((info) => (info && info.pending ? ask(info) : null))
 			.catch(() => null);
@@ -53,7 +53,7 @@ frappe.provide("whatsapp_next.account_switch");
 	function ask(info) {
 		mark_asked();
 		const counts = info.counts || {};
-		return sanad.ui.ConfirmDialog.ask({
+		return whatsapp.ui.ConfirmDialog.ask({
 			title: __("This site is now linked to another account"),
 			message: __(
 				"Nothing was deleted. The previous account's devices are switched off; its messages, queue and numbers are still here. Delete them, or keep them for reference. Download a backup first if you want its setup (Settings ▸ Backup) — messages are not in a backup."
@@ -63,16 +63,16 @@ frappe.provide("whatsapp_next.account_switch");
 			danger: true,
 			confirm_label: __("Delete the previous account's data"),
 			cancel_label: __("Keep them"),
-			on_confirm: () => sanad.ui.call("onboarding.resolve_account_switch", { action: "delete" }),
+			on_confirm: () => whatsapp.ui.call("onboarding.resolve_account_switch", { action: "delete" }),
 			on_cancel: ({ dismissed } = {}) => {
 				if (dismissed) return; // closed: decide later
-				sanad.ui
+				whatsapp.ui
 					.call("onboarding.resolve_account_switch", { action: "keep" })
-					.then(() => sanad.ui.Toast.success(__("The previous account's data is kept.")))
-					.catch((err) => sanad.ui.Toast.error(err));
+					.then(() => whatsapp.ui.Toast.success(__("The previous account's data is kept.")))
+					.catch((err) => whatsapp.ui.Toast.error(err));
 			},
 		})
-			.then(() => sanad.ui.Toast.success(__("Deleting the previous account's data. It runs in the background.")))
+			.then(() => whatsapp.ui.Toast.success(__("Deleting the previous account's data. It runs in the background.")))
 			.catch(() => null);
 	}
 

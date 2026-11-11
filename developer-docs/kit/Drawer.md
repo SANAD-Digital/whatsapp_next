@@ -1,13 +1,13 @@
-# `sanad.ui.Drawer`
+# `whatsapp.ui.Drawer`
 
 An inline-end side panel that inspects (`record`), edits (`form`) or picks (`choice`) without
 leaving the list. Meta-driven: in `record` mode the default **document layout** reads the record as
 a document — identity (avatar, title, lines, status, time) · highlight (the main text) · key facts
 grid · related records · caller sections · collapsible "More details" · activity timeline — built
-from `sanad.ui.Render`; the plain `fields` layout is a two-column definition list. `form` fields are
+from `whatsapp.ui.Render`; the plain `fields` layout is a two-column definition list. `form` fields are
 real Frappe controls (`frappe.ui.form.make_control`) built from meta docfields. The payload comes
 from a configured API key (`method`) or `frappe.db.get_value` with an explicit field list. Built on
-the shared `.sanad-panel` / `.sanad-backdrop` shell; one overlay at a time through `ui.overlay`.
+the shared `.whatsapp-kit-panel` / `.whatsapp-kit-backdrop` shell; one overlay at a time through `ui.overlay`.
 
 **Portability:** fully generic — needs only a DocType name and, optionally, an API key whose
 return shape is the record as a flat object. Relations default to link fields whose target Render
@@ -19,7 +19,7 @@ classifies as a `person`.
 |---|---|---|---|
 | `doctype` | string | required (except `choice`) | Throws without it. |
 | `name` | string | — | Record to fetch; also drives the header "Open" link. |
-| `mode` | `"record"` \| `"form"` \| `"choice"` | `"record"` | Adds `sanad-drawer--{mode}`. |
+| `mode` | `"record"` \| `"form"` \| `"choice"` | `"record"` | Adds `whatsapp-kit-drawer--{mode}`. |
 | `layout` | `"document"` \| `"fields"` | `"document"` | `record` mode only. |
 | `fields` | `Array<string \| df-like>` | `ui.meta.preview_fields(meta)` | Fieldnames or docfield overrides merged over meta; layout fields dropped; `"name"` allowed. |
 | `method` | API key | — | `ui.call(method, args)` replaces `frappe.db.get_value`. |
@@ -37,7 +37,7 @@ classifies as a `person`.
 | `relations` | `Array<string \| {field, label?, doctype?, icon?, actions?, on_click?}>` | link fields to a `person` kind | Each rendered with `Render.load_into(..., {density: "row"})`. |
 | `details` | `Array<string \| spec>` | every remaining non-empty field | "More details" `<details>` block (open). |
 | `time_field` | fieldname | `sent_at` / `received_at` / `creation`, else `modified` | Timestamp in the identity block. |
-| `activity` | `rows[]` \| `(doc, drawer) => rows \| Promise<rows>` | — | Timeline rows `{title, description?, time, user?, icon?, tone?}` rendered by `sanad.ui.Collection` (`view: "timeline"`). |
+| `activity` | `rows[]` \| `(doc, drawer) => rows \| Promise<rows>` | — | Timeline rows `{title, description?, time, user?, icon?, tone?}` rendered by `whatsapp.ui.Collection` (`view: "timeline"`). |
 | `activity_label` | string | "Activity" | |
 | `timeline` | object | — | Passed through as Collection's `timeline` option. |
 | `on_save` | `(values, doc, drawer) => Promise` | — | `form` mode: adds a primary Save action; closes on resolve. |
@@ -45,7 +45,7 @@ classifies as a `person`.
 | `choices` | `[{label, description?, value, icon?}]` | `[]` | `choice` mode. |
 | `on_choose` | `(value, choice) => void` | — | Called after the drawer hides. |
 | `on_close` | `(drawer) => void` | — | Not called on `hide({silent: true})` / `destroy()`. |
-| `width` | number \| CSS string | 520px (shell) | Sets `--sanad-panel-width`. |
+| `width` | number \| CSS string | 520px (shell) | Sets `--whatsapp-kit-panel-width`. |
 | `open_link` | boolean | `true` | Header "Open" link to the form when a name is known. |
 | `listview` | list view | `cur_list` | Focus fallback target on close. |
 
@@ -71,7 +71,7 @@ footer's start. The button is disabled while the handler's promise runs; a rejec
 
 `on_close`, `on_save`, `on_choose`, action `handler`s, section `render`s, `activity` function,
 relation `actions` / `on_click`. No custom DOM events; no realtime subscriptions. Adds
-`sanad-drawer-open` to `<body>` while open.
+`whatsapp-kit-drawer-open` to `<body>` while open.
 
 ## Server calls
 
@@ -84,7 +84,7 @@ relation `actions` / `on_click`. No custom DOM events; no realtime subscriptions
 ## Usage
 
 ```js
-sanad.ui.Drawer.open({
+whatsapp.ui.Drawer.open({
   doctype: "ToDo", name: row.name, listview,
   highlight: "description",
   facts: ["status", "priority", { field: "date", icon: "es-line-calender" }],
@@ -96,7 +96,7 @@ sanad.ui.Drawer.open({
   ],
 });
 
-new sanad.ui.Drawer({
+new whatsapp.ui.Drawer({
   mode: "choice", title: __("Pick a version"),
   choices: [{ label: "1.2.0", description: __("Latest"), value: "1.2.0" }],
   on_choose: (v) => install(v),
@@ -105,12 +105,12 @@ new sanad.ui.Drawer({
 
 ## CSS hooks
 
-- Root `aside.sanad-kit.sanad-panel.sanad-drawer.sanad-drawer--{record|form|choice}`, `.sanad-panel--open` when visible; `.sanad-drawer__backdrop`.
-- Header: `__heading`, `__title`, `__meta` (badge + `.sanad-panel__subtitle`), `__tools`, `__open`, `__close`.
-- Body / footer: `__body`, `__footer`, `__action`, `__more`, `__menu` (reuses `.sanad-rowactions__menu` / `__item`).
+- Root `aside.whatsapp-kit.whatsapp-kit-panel.whatsapp-kit-drawer.whatsapp-kit-drawer--{record|form|choice}`, `.whatsapp-kit-panel--open` when visible; `.whatsapp-kit-drawer__backdrop`.
+- Header: `__heading`, `__title`, `__meta` (badge + `.whatsapp-kit-panel__subtitle`), `__tools`, `__open`, `__close`.
+- Body / footer: `__body`, `__footer`, `__action`, `__more`, `__menu` (reuses `.whatsapp-kit-rowactions__menu` / `__item`).
 - `fields` layout: `__dl`, `__field`, `__field--wide`. Form: `__form`, `__summary`. Choice: `__choices`, `__choice`, `__choice-icon|-text|-label|-desc`.
-- Document layout: `.sanad-doc__identity` (`-main`, `-text`, `-title`, `-sub`, `-ref`, `-side`, `-time`, `-value`), `.sanad-doc__block` (`--highlight`), `__block-title`, `__block-icon`, `__block-body`, `.sanad-doc__highlight`, `.sanad-doc__details`, `__details-body`; facts use `.sanad-fact-grid` / `.sanad-fact`, details `.sanad-dl`.
-- Menu position via `--sanad-menu-x` / `--sanad-menu-y`.
+- Document layout: `.whatsapp-kit-doc__identity` (`-main`, `-text`, `-title`, `-sub`, `-ref`, `-side`, `-time`, `-value`), `.whatsapp-kit-doc__block` (`--highlight`), `__block-title`, `__block-icon`, `__block-body`, `.whatsapp-kit-doc__highlight`, `.whatsapp-kit-doc__details`, `__details-body`; facts use `.whatsapp-kit-fact-grid` / `.whatsapp-kit-fact`, details `.whatsapp-kit-dl`.
+- Menu position via `--whatsapp-kit-menu-x` / `--whatsapp-kit-menu-y`.
 
 ## Notes
 

@@ -1,4 +1,4 @@
-// sanad.ui.TemplateEditor — a live Jinja preview mounted into any form with a template body
+// whatsapp.ui.TemplateEditor — a live Jinja preview mounted into any form with a template body
 // field: a variables sidebar (from `templates.list_variables`, click inserts `{{ name }}` at the
 // caret of the body control — Ace editor, textarea or plain input), a sample-record picker
 // (Link control on the reference DocType + "Use latest" via `templates.pick_sample`) and a
@@ -13,7 +13,7 @@ const DEFAULT_API = {
 	sample: "templates.pick_sample",
 };
 
-sanad.ui.TemplateEditor = class TemplateEditor {
+whatsapp.ui.TemplateEditor = class TemplateEditor {
 	/**
 	 * @param {Object} opts
 	 * @param {Object} opts.frm — the form (`frappe.ui.form.Form`)
@@ -37,7 +37,7 @@ sanad.ui.TemplateEditor = class TemplateEditor {
 		this.variables = [];
 		this.schedule_preview = ui.debounce(() => this.preview(), this.opts.debounce);
 		this.make();
-		sanad.ui.TemplateEditor.bind_form_events(this.frm.doctype, this.opts);
+		whatsapp.ui.TemplateEditor.bind_form_events(this.frm.doctype, this.opts);
 		this.refresh();
 	}
 
@@ -45,19 +45,19 @@ sanad.ui.TemplateEditor = class TemplateEditor {
 	static mount(opts = {}) {
 		const frm = opts.frm;
 		if (!frm) return null;
-		if (frm.__sanad_template_editor && document.contains(frm.__sanad_template_editor.$root.get(0))) {
-			return frm.__sanad_template_editor.refresh();
+		if (frm.__whatsapp_template_editor && document.contains(frm.__whatsapp_template_editor.$root.get(0))) {
+			return frm.__whatsapp_template_editor.refresh();
 		}
-		frm.__sanad_template_editor = new sanad.ui.TemplateEditor(opts);
-		return frm.__sanad_template_editor;
+		frm.__whatsapp_template_editor = new whatsapp.ui.TemplateEditor(opts);
+		return frm.__whatsapp_template_editor;
 	}
 
 	/** Route the form's field events to the mounted editor (registered once per DocType). */
 	static bind_form_events(doctype, opts) {
-		const bound = (sanad.ui.TemplateEditor._bound = sanad.ui.TemplateEditor._bound || {});
+		const bound = (whatsapp.ui.TemplateEditor._bound = whatsapp.ui.TemplateEditor._bound || {});
 		if (bound[doctype]) return;
 		bound[doctype] = true;
-		const editor_of = (frm) => frm.__sanad_template_editor;
+		const editor_of = (frm) => frm.__whatsapp_template_editor;
 		const handlers = {};
 		handlers[opts.body_field] = (frm) => editor_of(frm) && editor_of(frm).schedule_preview();
 		if (opts.reference_doctype_field) {
@@ -77,36 +77,36 @@ sanad.ui.TemplateEditor = class TemplateEditor {
 		const preview_id = `${this.id}-preview`;
 		const vars_id = `${this.id}-vars`;
 		this.$root = $(`
-			<div class="sanad-kit sanad-tpl" id="${this.id}">
-				<div class="sanad-tpl__toolbar">
-					<div class="sanad-tpl__sample"></div>
-					<button type="button" class="btn btn-sm btn-default sanad-tpl__latest">${ui.icon("es-line-reload", "xs")} ${ui.escape(__("Use latest"))}</button>
-					<span class="sanad-tpl__sample-note"></span>
+			<div class="whatsapp-kit whatsapp-kit-tpl" id="${this.id}">
+				<div class="whatsapp-kit-tpl__toolbar">
+					<div class="whatsapp-kit-tpl__sample"></div>
+					<button type="button" class="btn btn-sm btn-default whatsapp-kit-tpl__latest">${ui.icon("es-line-reload", "xs")} ${ui.escape(__("Use latest"))}</button>
+					<span class="whatsapp-kit-tpl__sample-note"></span>
 				</div>
-				<div class="sanad-tpl__grid">
-					<section class="sanad-tpl__preview" aria-labelledby="${preview_id}">
-						<h3 class="sanad-tpl__h" id="${preview_id}">${ui.escape(__("Preview"))}</h3>
-						<div class="sanad-tpl__state"></div>
-						<div class="sanad-tpl__bubble"></div>
-						<ul class="sanad-tpl__errors" role="alert" hidden></ul>
+				<div class="whatsapp-kit-tpl__grid">
+					<section class="whatsapp-kit-tpl__preview" aria-labelledby="${preview_id}">
+						<h3 class="whatsapp-kit-tpl__h" id="${preview_id}">${ui.escape(__("Preview"))}</h3>
+						<div class="whatsapp-kit-tpl__state"></div>
+						<div class="whatsapp-kit-tpl__bubble"></div>
+						<ul class="whatsapp-kit-tpl__errors" role="alert" hidden></ul>
 					</section>
-					<aside class="sanad-tpl__vars" aria-labelledby="${vars_id}">
-						<h3 class="sanad-tpl__h" id="${vars_id}">${ui.escape(__("Variables"))}</h3>
-						<input type="search" class="form-control input-sm sanad-tpl__search" placeholder="${ui.escape(__("Filter variables"))}" aria-label="${ui.escape(__("Filter variables"))}">
-						<div class="sanad-tpl__vars-state"></div>
-						<ul class="sanad-tpl__list" role="list"></ul>
+					<aside class="whatsapp-kit-tpl__vars" aria-labelledby="${vars_id}">
+						<h3 class="whatsapp-kit-tpl__h" id="${vars_id}">${ui.escape(__("Variables"))}</h3>
+						<input type="search" class="form-control input-sm whatsapp-kit-tpl__search" placeholder="${ui.escape(__("Filter variables"))}" aria-label="${ui.escape(__("Filter variables"))}">
+						<div class="whatsapp-kit-tpl__vars-state"></div>
+						<ul class="whatsapp-kit-tpl__list" role="list"></ul>
 					</aside>
 				</div>
 			</div>`);
-		this.$sample = this.$root.find(".sanad-tpl__sample");
-		this.$latest = this.$root.find(".sanad-tpl__latest");
-		this.$sample_note = this.$root.find(".sanad-tpl__sample-note");
-		this.$bubble = this.$root.find(".sanad-tpl__bubble");
-		this.$errors = this.$root.find(".sanad-tpl__errors");
-		this.$list = this.$root.find(".sanad-tpl__list");
-		this.$search = this.$root.find(".sanad-tpl__search");
-		this.state = new sanad.ui.EmptyState({ wrapper: this.$root.find(".sanad-tpl__state"), state: "loading", rows: 2, size: "sm" });
-		this.vars_state = new sanad.ui.EmptyState({ wrapper: this.$root.find(".sanad-tpl__vars-state"), state: "loading", rows: 3, size: "sm" });
+		this.$sample = this.$root.find(".whatsapp-kit-tpl__sample");
+		this.$latest = this.$root.find(".whatsapp-kit-tpl__latest");
+		this.$sample_note = this.$root.find(".whatsapp-kit-tpl__sample-note");
+		this.$bubble = this.$root.find(".whatsapp-kit-tpl__bubble");
+		this.$errors = this.$root.find(".whatsapp-kit-tpl__errors");
+		this.$list = this.$root.find(".whatsapp-kit-tpl__list");
+		this.$search = this.$root.find(".whatsapp-kit-tpl__search");
+		this.state = new whatsapp.ui.EmptyState({ wrapper: this.$root.find(".whatsapp-kit-tpl__state"), state: "loading", rows: 2, size: "sm" });
+		this.vars_state = new whatsapp.ui.EmptyState({ wrapper: this.$root.find(".whatsapp-kit-tpl__vars-state"), state: "loading", rows: 3, size: "sm" });
 
 		const mount = this.get_field(this.opts.preview_field);
 		if (mount && mount.$wrapper) {
@@ -119,7 +119,7 @@ sanad.ui.TemplateEditor = class TemplateEditor {
 
 		this.$latest.on("click", () => this.use_latest());
 		this.$search.on("input", ui.debounce(() => this.render_variables(), 120));
-		this.$list.on("click", ".sanad-tpl__var", (e) => this.insert_variable($(e.currentTarget).data("name")));
+		this.$list.on("click", ".whatsapp-kit-tpl__var", (e) => this.insert_variable($(e.currentTarget).data("name")));
 	}
 
 	// ---- state from the form --------------------------------------------------------------
@@ -176,7 +176,7 @@ sanad.ui.TemplateEditor = class TemplateEditor {
 			parent: this.$sample,
 			df: {
 				fieldtype: "Link",
-				fieldname: "sanad_sample_record",
+				fieldname: "whatsapp_sample_record",
 				label: __("Sample record"),
 				options: doctype,
 				placeholder: __("Search {0}", [__(doctype)]),
@@ -187,25 +187,25 @@ sanad.ui.TemplateEditor = class TemplateEditor {
 			},
 			render_input: true,
 		});
-		this.sample_control.$wrapper.addClass("sanad-tpl__sample-control");
+		this.sample_control.$wrapper.addClass("whatsapp-kit-tpl__sample-control");
 	}
 
 	use_latest() {
 		if (!this._doctype) return Promise.resolve();
 		this.$latest.prop("disabled", true).attr("aria-busy", "true");
-		return sanad.ui
+		return whatsapp.ui
 			.call(this.api.sample, { reference_doctype: this._doctype })
 			.then((r) => {
 				const name = r && r.name;
 				if (!name) {
-					sanad.ui.Toast.info(__("There are no {0} records to preview with yet.", [__(this._doctype)]));
+					whatsapp.ui.Toast.info(__("There are no {0} records to preview with yet.", [__(this._doctype)]));
 					return;
 				}
 				this.reference_name = name;
 				if (this.sample_control) this.sample_control.set_value(name);
 				this.schedule_preview();
 			})
-			.catch((err) => sanad.ui.Toast.error(err))
+			.catch((err) => whatsapp.ui.Toast.error(err))
 			.then(() => this.$latest.prop("disabled", false).removeAttr("aria-busy"));
 	}
 
@@ -215,7 +215,7 @@ sanad.ui.TemplateEditor = class TemplateEditor {
 		this.vars_state.loading({ rows: 3 });
 		this.$list.empty();
 		const args = this._doctype ? { reference_doctype: this._doctype } : {};
-		return sanad.ui
+		return whatsapp.ui
 			.call(this.api.variables, args, { silent: true })
 			.then((rows) => {
 				this.variables = Array.isArray(rows) ? rows : [];
@@ -236,7 +236,7 @@ sanad.ui.TemplateEditor = class TemplateEditor {
 		rows.forEach((v) => {
 			const token = `{{ ${v.name} }}`;
 			const label = v.label && v.label !== v.name ? v.label : "";
-			$(`<li><button type="button" class="sanad-tpl__var" data-name="${ui.escape(v.name)}" aria-label="${ui.escape(__("Insert {0}", [token]))}" title="${ui.escape(__("Insert at the cursor"))}"><code>${ui.escape(token)}</code>${label ? `<span class="sanad-tpl__var-label">${ui.escape(__(label))}${v.fieldtype ? ` · ${ui.escape(__(v.fieldtype))}` : ""}</span>` : ""}</button></li>`).appendTo(this.$list);
+			$(`<li><button type="button" class="whatsapp-kit-tpl__var" data-name="${ui.escape(v.name)}" aria-label="${ui.escape(__("Insert {0}", [token]))}" title="${ui.escape(__("Insert at the cursor"))}"><code>${ui.escape(token)}</code>${label ? `<span class="whatsapp-kit-tpl__var-label">${ui.escape(__(label))}${v.fieldtype ? ` · ${ui.escape(__(v.fieldtype))}` : ""}</span>` : ""}</button></li>`).appendTo(this.$list);
 		});
 	}
 
@@ -287,14 +287,14 @@ sanad.ui.TemplateEditor = class TemplateEditor {
 		this.$bubble.attr("aria-busy", "true");
 		const args = { body, reference_doctype: this._doctype || null, reference_name: this.reference_name || null };
 		if (sample.value) args.sample_context = sample.value;
-		return sanad.ui
+		return whatsapp.ui
 			.call(this.api.preview, args, { silent: true })
 			.then((r) => {
 				if (seq !== this._seq) return;
 				this.state.hide();
 				const rendered = cstr((r && r.body) || "");
-				const format = sanad.ui.ChatThread && sanad.ui.ChatThread.format ? sanad.ui.ChatThread.format : (t) => ui.escape(t).replace(/\r?\n/g, "<br>");
-				this.$bubble.html(rendered ? format(rendered) : `<span class="sanad-tpl__muted">${ui.escape(__("The template renders to an empty message."))}</span>`).show();
+				const format = whatsapp.ui.ChatThread && whatsapp.ui.ChatThread.format ? whatsapp.ui.ChatThread.format : (t) => ui.escape(t).replace(/\r?\n/g, "<br>");
+				this.$bubble.html(rendered ? format(rendered) : `<span class="whatsapp-kit-tpl__muted">${ui.escape(__("The template renders to an empty message."))}</span>`).show();
 				this.render_errors([].concat(sample.error ? [sample.error] : [], (r && r.errors) || []));
 			})
 			.catch((err) => {
@@ -323,8 +323,8 @@ sanad.ui.TemplateEditor = class TemplateEditor {
 
 	destroy() {
 		this.$root.remove();
-		if (this.frm.__sanad_template_editor === this) delete this.frm.__sanad_template_editor;
+		if (this.frm.__whatsapp_template_editor === this) delete this.frm.__whatsapp_template_editor;
 	}
 };
 
-export default sanad.ui.TemplateEditor;
+export default whatsapp.ui.TemplateEditor;

@@ -7,16 +7,16 @@ aria-live region, one optional inline action. Position follows Desk (bottom-star
 ## Usage
 
 ```js
-sanad.ui.Toast.success(__("Message queued"));
-sanad.ui.Toast.error(err);                                  // accepts an Error or a string
-sanad.ui.Toast.warning(__("Device offline — message stays queued"), {
+whatsapp.ui.Toast.success(__("Message queued"));
+whatsapp.ui.Toast.error(err);                                  // accepts an Error or a string
+whatsapp.ui.Toast.warning(__("Device offline — message stays queued"), {
   action: { label: __("Open devices"), on_click: () => frappe.set_route("wa-devices") },
 });
-sanad.ui.Toast.warnings(r.warnings, {
+whatsapp.ui.Toast.warnings(r.warnings, {
   device_offline: __("The device is offline; the message will be sent when it reconnects."),
   queue_paused: __("The queue is paused; the message will be sent after it resumes."),
 });
-new sanad.ui.Toast({ title: __("Campaign started"), message: name, tone: "success", seconds: 3 });
+new whatsapp.ui.Toast({ title: __("Campaign started"), message: name, tone: "success", seconds: 3 });
 ```
 
 ## Live use

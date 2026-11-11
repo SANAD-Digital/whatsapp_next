@@ -14,7 +14,7 @@
 // the rail, the flow list, the terms panel, the code plate, the activity combobox, the ready
 // panel — is the screen's own, and is written here in the same idiom.
 //
-// Two rules hold it together. Every colour is a `--wa-*` token from `public/scss/_tokens.scss`,
+// Two rules hold it together. Every colour is a `--whatsapp-*` token from `public/scss/_tokens.scss`,
 // which is the prototype's own `:root` block, so light and dark are one set of rules. And every
 // offset is a logical property, so Arabic mirrors with no second stylesheet.
 //
@@ -22,7 +22,7 @@
 // and two `min-width` queries open it out — 620 px gives the form its second column, 900 px brings
 // the rail in.
 
-@keyframes wa-onb-in {
+@keyframes whatsapp-onb-in {
 	from {
 		opacity: 0;
 		transform: translateY(6px);
@@ -33,26 +33,26 @@
 	}
 }
 
-@keyframes wa-onb-spin {
+@keyframes whatsapp-onb-spin {
 	to {
 		transform: rotate(360deg);
 	}
 }
 
-.wa-onb {
-	--wa-onb-gap: 14px;
+.whatsapp-onb {
+	--whatsapp-onb-gap: 14px;
 	// compact fields (owner, 2026-10-08): 38 px at 13.5 px, through the kit's own variables
-	--wa-h: 38px;
-	--wa-fs: 13.5px;
-	--wa-px: 12px;
+	--whatsapp-h: 38px;
+	--whatsapp-fs: 13.5px;
+	--whatsapp-px: 12px;
 
 	display: flex;
 	align-items: stretch;
 	// edge to edge, like the platform's sign-in: the screen is the console (`_shell.scss` drops the
 	// page's gutter for it)
-	min-block-size: calc(100dvh - var(--wa-viewport-offset));
-	background: var(--wa-surface);
-	color: var(--wa-ink);
+	min-block-size: calc(100dvh - var(--whatsapp-viewport-offset));
+	background: var(--whatsapp-surface);
+	color: var(--whatsapp-ink);
 
 	// screen-reader-only text: the state of a rail step, which is otherwise a shape and a colour
 	&__sr {
@@ -81,8 +81,8 @@
 		gap: 32px;
 		padding: 48px;
 		overflow: hidden;
-		background: var(--wa-brand);
-		color: var(--wa-on-brand);
+		background: var(--whatsapp-brand);
+		color: var(--whatsapp-on-brand);
 
 		// The rail's blocks never shrink. A column flex item shrinks by default, which let the
 		// pitch and the foot squeeze themselves instead of making the console taller — and since
@@ -117,8 +117,8 @@
 		gap: 8px;
 		padding: 4px 12px;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--wa-on-tone) 10%, transparent);
-		color: var(--wa-on-brand);
+		background: color-mix(in srgb, var(--whatsapp-on-tone) 10%, transparent);
+		color: var(--whatsapp-on-brand);
 		font-size: 13px;
 		font-weight: 600;
 	}
@@ -127,11 +127,11 @@
 		block-size: 6px;
 		flex: none;
 		border-radius: 50%;
-		background: var(--wa-accent);
+		background: var(--whatsapp-accent);
 	}
 	&__pitch-title {
 		margin: 0;
-		color: var(--wa-on-tone);
+		color: var(--whatsapp-on-tone);
 		font-size: 34px;
 		font-weight: 700;
 		line-height: 1.3;
@@ -142,7 +142,7 @@
 		margin: 0;
 		font-size: 15px;
 		line-height: 1.8;
-		color: color-mix(in srgb, var(--wa-on-brand) 78%, transparent);
+		color: color-mix(in srgb, var(--whatsapp-on-brand) 78%, transparent);
 	}
 	&__ticks {
 		display: flex;
@@ -151,7 +151,7 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-		color: color-mix(in srgb, var(--wa-on-brand) 84%, transparent);
+		color: color-mix(in srgb, var(--whatsapp-on-brand) 84%, transparent);
 	}
 	&__tick {
 		display: flex;
@@ -160,9 +160,9 @@
 		font-size: 14.5px;
 		line-height: 1.6;
 
-		.wa-ico {
+		.whatsapp-ico {
 			margin-block-start: 4px;
-			color: var(--wa-brand-bright);
+			color: var(--whatsapp-brand-bright);
 		}
 	}
 
@@ -189,7 +189,7 @@
 			inset-inline-start: 15px;
 			inset-block: 34px -20px;
 			inline-size: 1px;
-			background: color-mix(in srgb, var(--wa-on-brand) 28%, transparent);
+			background: color-mix(in srgb, var(--whatsapp-on-brand) 28%, transparent);
 		}
 	}
 	&__flow-num {
@@ -200,21 +200,21 @@
 		block-size: 32px;
 		flex: none;
 		border-radius: 50%;
-		border: 1.5px solid color-mix(in srgb, var(--wa-on-brand) 40%, transparent);
+		border: 1.5px solid color-mix(in srgb, var(--whatsapp-on-brand) 40%, transparent);
 		font-size: 13px;
 		font-weight: 700;
 		line-height: 1;
 	}
 	&__flow-item--current &__flow-num {
-		background: var(--wa-on-brand);
-		border-color: var(--wa-on-brand);
-		color: var(--wa-brand);
-		box-shadow: 0 0 0 4px color-mix(in srgb, var(--wa-on-brand) 22%, transparent);
+		background: var(--whatsapp-on-brand);
+		border-color: var(--whatsapp-on-brand);
+		color: var(--whatsapp-brand);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--whatsapp-on-brand) 22%, transparent);
 	}
 	&__flow-item--done &__flow-num {
-		background: var(--wa-brand-bright);
-		border-color: var(--wa-brand-bright);
-		color: var(--wa-ink);
+		background: var(--whatsapp-brand-bright);
+		border-color: var(--whatsapp-brand-bright);
+		color: var(--whatsapp-ink);
 	}
 	&__flow-text {
 		display: flex;
@@ -226,14 +226,14 @@
 	&__flow-label {
 		font-size: 15px;
 		font-weight: 700;
-		color: var(--wa-on-tone);
+		color: var(--whatsapp-on-tone);
 	}
 	&__flow-sub {
 		font-size: 13px;
-		color: color-mix(in srgb, var(--wa-on-brand) 74%, transparent);
+		color: color-mix(in srgb, var(--whatsapp-on-brand) 74%, transparent);
 	}
 	&__flow-item:not(&__flow-item--current):not(&__flow-item--done) &__flow-label {
-		color: color-mix(in srgb, var(--wa-on-brand) 82%, transparent);
+		color: color-mix(in srgb, var(--whatsapp-on-brand) 82%, transparent);
 	}
 
 	&__brand-foot {
@@ -257,15 +257,15 @@
 		min-block-size: 30px;
 		padding-inline: 11px;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--wa-on-brand) 14%, transparent);
-		color: var(--wa-on-brand);
+		background: color-mix(in srgb, var(--whatsapp-on-brand) 14%, transparent);
+		color: var(--whatsapp-on-brand);
 		font-size: 11.5px;
 		font-weight: 600;
 
 		&:hover,
 		&:focus {
-			background: color-mix(in srgb, var(--wa-on-brand) 26%, transparent);
-			color: var(--wa-on-brand);
+			background: color-mix(in srgb, var(--whatsapp-on-brand) 26%, transparent);
+			color: var(--whatsapp-on-brand);
 			text-decoration: none;
 		}
 	}
@@ -291,7 +291,7 @@
 		min-inline-size: 0;
 		display: flex;
 		flex-direction: column;
-		background: var(--wa-surface);
+		background: var(--whatsapp-surface);
 	}
 
 	&__topbar {
@@ -309,7 +309,7 @@
 		min-inline-size: 0;
 		font-size: 19px;
 		font-weight: 400;
-		color: var(--wa-brand);
+		color: var(--whatsapp-brand);
 
 		> b {
 			font-weight: inherit;
@@ -319,10 +319,10 @@
 	&__topmark-tag {
 		display: none;
 		padding-inline-start: 12px;
-		border-inline-start: 1px solid var(--wa-border-2);
+		border-inline-start: 1px solid var(--whatsapp-border-2);
 		font-size: 12.5px;
 		font-weight: 500;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 		white-space: nowrap;
 	}
 	&__topmark-logo {
@@ -339,7 +339,7 @@
 	&__counter {
 		font-size: 13px;
 		font-weight: 600;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 
 	// the rail's narrow shape: one segment per step, then the step's own name
@@ -360,10 +360,10 @@
 		flex: 1;
 		block-size: 4px;
 		border-radius: 999px;
-		background: var(--wa-border-2);
+		background: var(--whatsapp-border-2);
 	}
 	&__mbar-seg--on {
-		background: var(--wa-pri);
+		background: var(--whatsapp-pri);
 	}
 	&__mbar-line {
 		display: flex;
@@ -374,11 +374,11 @@
 
 		b {
 			font-size: 13.5px;
-			color: var(--wa-ink);
+			color: var(--whatsapp-ink);
 		}
 		span {
 			font-size: 11.5px;
-			color: var(--wa-ink-3);
+			color: var(--whatsapp-ink-3);
 		}
 	}
 
@@ -400,7 +400,7 @@
 		margin: 0;
 		padding: 0 20px 22px;
 		font-size: 13px;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 
 	// =============================================================================================
@@ -409,17 +409,17 @@
 
 	// A step is not a card: the platform's sign-in sets the form straight on the white column,
 	// so the kit's card surface, border and shadow are taken off here.
-	&__card.wa-card {
+	&__card.whatsapp-card {
 		inline-size: 100%;
 		display: flex;
 		flex-direction: column;
-		gap: var(--wa-onb-gap);
+		gap: var(--whatsapp-onb-gap);
 		padding: 0;
 		border: 0;
 		border-radius: 0;
 		background: transparent;
 		box-shadow: none;
-		animation: wa-onb-in 0.22s ease-out;
+		animation: whatsapp-onb-in 0.22s ease-out;
 	}
 	// the platform's form widths: 27rem for a short step, 36rem for the long sign-up
 	&__card--sm {
@@ -431,7 +431,7 @@
 	&__card--lg {
 		max-inline-size: 680px;
 	}
-	&__card--ready.wa-card {
+	&__card--ready.whatsapp-card {
 		max-inline-size: 520px;
 		align-items: center;
 		text-align: center;
@@ -463,35 +463,35 @@
 		font-size: 24px;
 		font-weight: 700;
 		line-height: 1.3;
-		color: var(--wa-ink);
+		color: var(--whatsapp-ink);
 	}
 	&__card-sub {
 		margin: 0;
 		font-size: 13.5px;
 		line-height: 1.7;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 
 	// the platform's form controls: labels in the ink, the step's verb a full 52 px Petrol bar
-	.wa-field {
+	.whatsapp-field {
 		gap: 4px;
 	}
-	.wa-field__label {
+	.whatsapp-field__label {
 		// a <label> carries Desk's 8 px bottom margin and a <span> label does not: the company
 		// name sat 8 px lower than the activity beside it (owner, 2026-10-10)
 		margin: 0;
 		font-size: 13px;
 		font-weight: 600;
-		color: var(--wa-ink);
+		color: var(--whatsapp-ink);
 	}
-	.wa-btn--block {
+	.whatsapp-btn--block {
 		min-block-size: 42px;
 		font-size: 14px;
 	}
 	// the kit's phone field draws its own 40 px box; here it matches the other fields
-	.sanad-phone__box {
-		min-block-size: var(--wa-h);
-		font-size: var(--wa-fs);
+	.whatsapp-kit-phone__box {
+		min-block-size: var(--whatsapp-h);
+		font-size: var(--whatsapp-fs);
 	}
 	&__fail {
 		align-items: center;
@@ -504,8 +504,8 @@
 		inline-size: 48px;
 		block-size: 48px;
 		border-radius: 50%;
-		background: var(--wa-dg-s);
-		color: var(--wa-dg-i);
+		background: var(--whatsapp-dg-s);
+		color: var(--whatsapp-dg-i);
 	}
 
 	// =============================================================================================
@@ -524,12 +524,12 @@
 		gap: 8px;
 		margin: 0;
 		padding: 10px 12px;
-		border: 1px solid var(--wa-border);
+		border: 1px solid var(--whatsapp-border);
 		border-radius: 9px;
-		background: var(--wa-sunken);
+		background: var(--whatsapp-sunken);
 		font-size: 12px;
 		line-height: 1.7;
-		color: var(--wa-ink-2);
+		color: var(--whatsapp-ink-2);
 	}
 	&__strip-icon {
 		display: inline-flex;
@@ -541,9 +541,9 @@
 		min-inline-size: 0;
 	}
 	// a button that is a link (share on WhatsApp): Desk's link underline stays off it
-	a.wa-btn,
-	a.wa-btn:hover,
-	a.wa-btn:focus {
+	a.whatsapp-btn,
+	a.whatsapp-btn:hover,
+	a.whatsapp-btn:focus {
 		text-decoration: none;
 	}
 	// "Send it on WhatsApp" inside a waiting strip: the strip's own ink, underlined, never a button
@@ -564,24 +564,24 @@
 		}
 	}
 	&__strip--ok {
-		background: var(--wa-ok-s);
-		border-color: var(--wa-ok-sb);
-		color: var(--wa-ok-i);
+		background: var(--whatsapp-ok-s);
+		border-color: var(--whatsapp-ok-sb);
+		color: var(--whatsapp-ok-i);
 	}
 	&__strip--warn {
-		background: var(--wa-wn-s);
-		border-color: var(--wa-wn-sb);
-		color: var(--wa-wn-i);
+		background: var(--whatsapp-wn-s);
+		border-color: var(--whatsapp-wn-sb);
+		color: var(--whatsapp-wn-i);
 	}
 	&__strip--danger {
-		background: var(--wa-dg-s);
-		border-color: var(--wa-dg-sb);
-		color: var(--wa-dg-i);
+		background: var(--whatsapp-dg-s);
+		border-color: var(--whatsapp-dg-sb);
+		color: var(--whatsapp-dg-i);
 	}
 	&__strip--info {
-		background: var(--wa-nf-s);
-		border-color: var(--wa-nf-sb);
-		color: var(--wa-nf-i);
+		background: var(--whatsapp-nf-s);
+		border-color: var(--whatsapp-nf-sb);
+		color: var(--whatsapp-nf-i);
 	}
 
 	&__group {
@@ -603,16 +603,16 @@
 	//
 	// One grid, no section rules, the coupon folded: the whole form and its verbs fit a laptop
 	// window. Should a short window still cut it, the verbs stay pinned to the window's foot.
-	&__card--lg.wa-card {
+	&__card--lg.whatsapp-card {
 		gap: 12px;
 
-		.wa-onb__card-head {
+		.whatsapp-onb__card-head {
 			margin-block-end: 0;
 		}
-		.wa-onb__card-title {
+		.whatsapp-onb__card-title {
 			font-size: 21px;
 		}
-		.wa-onb__card-sub {
+		.whatsapp-onb__card-sub {
 			line-height: 1.5;
 		}
 	}
@@ -638,7 +638,7 @@
 		background: none;
 		font-size: 13px;
 		font-weight: 600;
-		color: var(--wa-pri-d);
+		color: var(--whatsapp-pri-d);
 		cursor: pointer;
 
 		&:hover {
@@ -648,23 +648,23 @@
 			transform: rotate(45deg);
 		}
 	}
-	&__pinned.wa-btnbar {
+	&__pinned.whatsapp-btnbar {
 		position: sticky;
 		inset-block-end: 0;
 		z-index: 2;
 		margin-block-start: 2px;
 		padding-block: 10px 12px;
-		background: var(--wa-surface);
-		box-shadow: 0 -10px 12px -10px color-mix(in srgb, var(--wa-shadow-ink) 12%, transparent);
+		background: var(--whatsapp-surface);
+		box-shadow: 0 -10px 12px -10px color-mix(in srgb, var(--whatsapp-shadow-ink) 12%, transparent);
 	}
 
 	// the password's label row carries "Generate" and "Show" and is taller than a plain label: the
 	// field beside it takes the same height, so both inputs sit on one line
 	&__label-row,
-	[data-field="wa-onb-pw2"] > .wa-field__label {
+	[data-field="whatsapp-onb-pw2"] > .whatsapp-field__label {
 		min-block-size: 30px;
 	}
-	[data-field="wa-onb-pw2"] > .wa-field__label {
+	[data-field="whatsapp-onb-pw2"] > .whatsapp-field__label {
 		display: flex;
 		align-items: center;
 		gap: 4px;
@@ -675,39 +675,39 @@
 		gap: 8px;
 		flex-wrap: wrap;
 
-		.wa-field__label {
+		.whatsapp-field__label {
 			flex: 1;
 			min-inline-size: 70px;
 		}
 	}
 
-	// The kit marks a required field with `--wa-dg`, which is 4.38:1 on the card's white and just
-	// under the bar. `--wa-dg-i` is the palette's *readable* danger ink and measures 6.28:1, which
+	// The kit marks a required field with `--whatsapp-dg`, which is 4.38:1 on the card's white and just
+	// under the bar. `--whatsapp-dg-i` is the palette's *readable* danger ink and measures 6.28:1, which
 	// is what a 13 px glyph needs. Worth fixing in `_kit/style.scss` for every screen, not only
 	// this one.
-	.wa-field__req {
-		color: var(--wa-dg-i);
+	.whatsapp-field__req {
+		color: var(--whatsapp-dg-i);
 	}
 
 	// the field's own state, said twice: the frame and the hint's icon
-	&__ok .wa-input {
-		border-color: var(--wa-ok);
+	&__ok .whatsapp-input {
+		border-color: var(--whatsapp-ok);
 	}
-	&__bad .wa-input {
-		border-color: var(--wa-dg);
+	&__bad .whatsapp-input {
+		border-color: var(--whatsapp-dg);
 	}
 	&__hint--ok {
-		color: var(--wa-ok-i);
+		color: var(--whatsapp-ok-i);
 	}
 	&__hint--bad {
-		color: var(--wa-dg-i);
+		color: var(--whatsapp-dg-i);
 	}
 	&__hint-icon {
 		display: inline-flex;
 		flex: none;
 		margin-block-start: 1px;
 	}
-	.wa-field__hint {
+	.whatsapp-field__hint {
 		display: flex;
 		align-items: flex-start;
 		gap: 5px;
@@ -729,16 +729,16 @@
 		flex: 1;
 		block-size: 4px;
 		border-radius: 999px;
-		background: var(--wa-border-2);
+		background: var(--whatsapp-border-2);
 
 		&--danger {
-			background: var(--wa-dg);
+			background: var(--whatsapp-dg);
 		}
 		&--warn {
-			background: var(--wa-wn);
+			background: var(--whatsapp-wn);
 		}
 		&--ok {
-			background: var(--wa-ok);
+			background: var(--whatsapp-ok);
 		}
 	}
 
@@ -752,24 +752,24 @@
 		align-items: center;
 		gap: 8px;
 		inline-size: 100%;
-		min-block-size: var(--wa-h, 38px);
-		padding-inline: var(--wa-px, 12px);
-		border: 1px solid var(--wa-border-2);
-		border-radius: var(--wa-radius, 8px);
-		background: var(--wa-surface);
-		color: var(--wa-ink);
+		min-block-size: var(--whatsapp-h, 38px);
+		padding-inline: var(--whatsapp-px, 12px);
+		border: 1px solid var(--whatsapp-border-2);
+		border-radius: var(--whatsapp-radius, 8px);
+		background: var(--whatsapp-surface);
+		color: var(--whatsapp-ink);
 		font: inherit;
-		font-size: var(--wa-fs, 14px);
+		font-size: var(--whatsapp-fs, 14px);
 		text-align: start;
 		cursor: pointer;
 
 		&:hover {
-			border-color: var(--wa-ink-4);
+			border-color: var(--whatsapp-ink-4);
 		}
 		&:focus-visible {
 			outline: none;
-			border-color: var(--wa-pri);
-			box-shadow: 0 0 0 3px var(--wa-pri-s);
+			border-color: var(--whatsapp-pri);
+			box-shadow: 0 0 0 3px var(--whatsapp-pri-s);
 		}
 	}
 	&__sector-value {
@@ -782,7 +782,7 @@
 	&__sector-caret {
 		display: inline-flex;
 		flex: none;
-		color: var(--wa-ink-4);
+		color: var(--whatsapp-ink-4);
 	}
 	&__sector-pop {
 		position: absolute;
@@ -793,10 +793,10 @@
 		display: flex;
 		flex-direction: column;
 		padding: 6px;
-		border: 1px solid var(--wa-border);
+		border: 1px solid var(--whatsapp-border);
 		border-radius: 10px;
-		background: var(--wa-surface);
-		box-shadow: var(--wa-shadow-lg);
+		background: var(--whatsapp-surface);
+		box-shadow: var(--whatsapp-shadow-lg);
 	}
 	&__sector-search {
 		display: flex;
@@ -805,10 +805,10 @@
 		min-block-size: 32px;
 		padding-inline: 9px;
 		margin-block-end: 5px;
-		border: 1px solid var(--wa-border);
+		border: 1px solid var(--whatsapp-border);
 		border-radius: 8px;
-		background: var(--wa-bg);
-		color: var(--wa-ink-4);
+		background: var(--whatsapp-bg);
+		color: var(--whatsapp-ink-4);
 
 		input {
 			flex: 1;
@@ -818,7 +818,7 @@
 			outline: none;
 			font: inherit;
 			font-size: 12px;
-			color: var(--wa-ink);
+			color: var(--whatsapp-ink);
 		}
 	}
 	&__sector-list {
@@ -835,19 +835,19 @@
 		padding: 7px 9px;
 		border-radius: 7px;
 		font-size: 12.5px;
-		color: var(--wa-ink);
+		color: var(--whatsapp-ink);
 		cursor: pointer;
 
 		&:hover {
-			background: var(--wa-sunken);
+			background: var(--whatsapp-sunken);
 		}
 	}
 	&__sector-opt--on,
 	&__sector-opt--cursor {
-		background: var(--wa-pri-s);
+		background: var(--whatsapp-pri-s);
 	}
 	&__sector-none {
-		color: var(--wa-pri-d);
+		color: var(--whatsapp-pri-d);
 		line-height: 1.7;
 	}
 
@@ -864,7 +864,7 @@
 		padding: 14px 16px;
 
 		&:focus-visible {
-			outline: 2px solid var(--wa-pri);
+			outline: 2px solid var(--whatsapp-pri);
 			outline-offset: 2px;
 		}
 	}
@@ -877,30 +877,30 @@
 		margin: 0;
 		font-size: 12.5px;
 		font-weight: 700;
-		color: var(--wa-ink);
+		color: var(--whatsapp-ink);
 	}
 	&__terms-p {
 		margin: 0;
 		font-size: 12px;
 		line-height: 2;
-		color: var(--wa-ink-2);
+		color: var(--whatsapp-ink-2);
 	}
 	&__terms-foot {
 		margin: 0;
 		padding-block-start: 10px;
-		border-block-start: 1px solid var(--wa-border);
+		border-block-start: 1px solid var(--whatsapp-border);
 		font-size: 11px;
 		line-height: 1.9;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 	&__consent {
 		margin: 0;
 		font-size: 11.5px;
 		line-height: 1.9;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 	// the gate that stands in for the create button until the terms have been read
-	&__gate.wa-btn {
+	&__gate.whatsapp-btn {
 		border-style: dashed;
 		white-space: normal;
 		text-align: center;
@@ -925,12 +925,12 @@
 	}
 	&__route-k {
 		font-size: 11px;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 	&__route-v {
 		font-size: 14px;
 		font-weight: 700;
-		color: var(--wa-ink);
+		color: var(--whatsapp-ink);
 	}
 	&__route-v--mono {
 		font-family: "IBM Plex Mono", ui-monospace, monospace;
@@ -949,17 +949,17 @@
 		inline-size: 32px;
 		block-size: 32px;
 		border-radius: 50%;
-		background: var(--wa-pri-s);
+		background: var(--whatsapp-pri-s);
 	}
 	&__route-on {
 		font-weight: 600;
 		font-size: 12px;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 	&__route-arrow {
 		display: inline-flex;
 		flex: none;
-		color: var(--wa-ink-4);
+		color: var(--whatsapp-ink-4);
 	}
 
 	&__codebox {
@@ -972,10 +972,10 @@
 		inline-size: 100%;
 		min-block-size: 52px;
 		padding-inline: 14px;
-		border: 1px dashed var(--wa-pri-sb);
+		border: 1px dashed var(--whatsapp-pri-sb);
 		border-radius: 10px;
-		background: var(--wa-pri-s);
-		color: var(--wa-ink);
+		background: var(--whatsapp-pri-s);
+		color: var(--whatsapp-ink);
 		font-family: "IBM Plex Mono", ui-monospace, monospace;
 		font-size: 20px;
 		font-weight: 700;
@@ -983,14 +983,14 @@
 		text-align: center;
 
 		&::placeholder {
-			color: var(--wa-ink-4);
+			color: var(--whatsapp-ink-4);
 			letter-spacing: 4px;
 		}
 		&:focus {
 			outline: none;
 			border-style: solid;
-			border-color: var(--wa-pri);
-			box-shadow: 0 0 0 3px var(--wa-pri-s);
+			border-color: var(--whatsapp-pri);
+			box-shadow: 0 0 0 3px var(--whatsapp-pri-s);
 		}
 	}
 	// the message to send: a tag and one tile per digit, the whole of it a copy button
@@ -1001,16 +1001,16 @@
 		gap: 10px;
 		inline-size: 100%;
 		padding: 16px 12px 12px;
-		border: 1px solid var(--wa-pri-sb);
+		border: 1px solid var(--whatsapp-pri-sb);
 		border-radius: 12px;
-		background: var(--wa-surface);
-		color: var(--wa-ink);
+		background: var(--whatsapp-surface);
+		color: var(--whatsapp-ink);
 		cursor: copy;
 		transition: border-color 120ms ease, box-shadow 120ms ease;
 
-		&:hover { border-color: var(--wa-pri); }
-		&:focus-visible { outline: none; border-color: var(--wa-pri); box-shadow: 0 0 0 3px var(--wa-pri-s); }
-		&.is-copied { border-color: var(--wa-pri); background: var(--wa-pri-s); }
+		&:hover { border-color: var(--whatsapp-pri); }
+		&:focus-visible { outline: none; border-color: var(--whatsapp-pri); box-shadow: 0 0 0 3px var(--whatsapp-pri-s); }
+		&.is-copied { border-color: var(--whatsapp-pri); background: var(--whatsapp-pri-s); }
 	}
 	&__code-tiles {
 		// left to right on an Arabic page too: the markup's dir="ltr", never a `direction` here —
@@ -1029,8 +1029,8 @@
 		padding-inline: 12px;
 		margin-inline-end: 6px;
 		border-radius: 10px;
-		background: var(--wa-pri);
-		color: var(--wa-surface);
+		background: var(--whatsapp-pri);
+		color: var(--whatsapp-surface);
 		font-family: "IBM Plex Mono", ui-monospace, monospace;
 		font-size: 17px;
 		font-weight: 700;
@@ -1042,22 +1042,22 @@
 		justify-content: center;
 		inline-size: 40px;
 		block-size: 48px;
-		border: 1px solid var(--wa-border-2);
+		border: 1px solid var(--whatsapp-border-2);
 		border-radius: 10px;
-		background: var(--wa-pri-s);
+		background: var(--whatsapp-pri-s);
 		font-family: "IBM Plex Mono", ui-monospace, monospace;
 		font-size: 24px;
 		font-weight: 700;
-		color: var(--wa-ink);
+		color: var(--whatsapp-ink);
 	}
 	&__code-hint {
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
 		font-size: 12px;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
-	&__code.is-copied &__code-hint { color: var(--wa-pri); font-weight: 600; }
+	&__code.is-copied &__code-hint { color: var(--whatsapp-pri); font-weight: 600; }
 	@media (max-width: 480px) {
 		&__code-tiles { gap: 4px; }
 		&__code-tag { block-size: 40px; padding-inline: 7px; margin-inline-end: 2px; font-size: 13px; letter-spacing: 1px; }
@@ -1068,7 +1068,7 @@
 		margin: 0;
 		font-size: 11.5px;
 		line-height: 1.8;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 
 	// =============================================================================================
@@ -1078,7 +1078,7 @@
 	// the prototype puts the reveal inside the field; it carries a word, not a glyph, so the slot
 	// is wider than the kit's icon-sized default and the input reserves that much at its end
 	&__pwaffix {
-		.wa-input {
+		.whatsapp-input {
 			padding-inline-end: 58px;
 		}
 	}
@@ -1090,18 +1090,18 @@
 		border: 0;
 		border-radius: 6px;
 		background: transparent;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 		font: inherit;
 		font-size: 11px;
 		font-weight: 600;
 		cursor: pointer;
 
 		&:hover {
-			background: var(--wa-sunken);
-			color: var(--wa-pri);
+			background: var(--whatsapp-sunken);
+			color: var(--whatsapp-pri);
 		}
 		&:focus-visible {
-			outline: 2px solid var(--wa-pri);
+			outline: 2px solid var(--whatsapp-pri);
 			outline-offset: 2px;
 		}
 	}
@@ -1119,21 +1119,21 @@
 		gap: 7px;
 		font-size: 11.5px;
 		line-height: 1.7;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 	&__divider {
 		display: flex;
 		align-items: center;
 		gap: 10px;
 		font-size: 11px;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 
 		&::before,
 		&::after {
 			content: "";
 			flex: 1;
 			block-size: 1px;
-			background: var(--wa-border);
+			background: var(--whatsapp-border);
 		}
 	}
 
@@ -1148,22 +1148,22 @@
 		inline-size: 54px;
 		block-size: 54px;
 		border-radius: 50%;
-		border: 1px solid var(--wa-ok-sb);
-		background: var(--wa-ok-s);
-		color: var(--wa-ok-i);
+		border: 1px solid var(--whatsapp-ok-sb);
+		background: var(--whatsapp-ok-s);
+		color: var(--whatsapp-ok-i);
 	}
 	&__ready-title {
 		margin: 0;
 		font-size: 24px; // the same heading as every other step
 		line-height: 1.3;
 		font-weight: 700;
-		color: var(--wa-ink);
+		color: var(--whatsapp-ink);
 	}
 	&__ready-sub {
 		margin: 0;
 		font-size: 13.5px;
 		line-height: 1.9;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 	&__ready-note {
 		display: flex;
@@ -1171,9 +1171,9 @@
 		gap: 10px;
 		inline-size: 100%;
 		padding: 12px 14px;
-		border: 1px solid var(--wa-ok-sb);
+		border: 1px solid var(--whatsapp-ok-sb);
 		border-radius: 11px;
-		background: var(--wa-ok-s);
+		background: var(--whatsapp-ok-s);
 		text-align: start;
 	}
 	&__ready-note-mark {
@@ -1184,8 +1184,8 @@
 		block-size: 28px;
 		flex: none;
 		border-radius: 9px;
-		background: var(--wa-ok);
-		color: var(--wa-on-pri);
+		background: var(--whatsapp-ok);
+		color: var(--whatsapp-on-pri);
 	}
 	&__ready-note-text {
 		display: flex;
@@ -1194,12 +1194,12 @@
 
 		b {
 			font-size: 12.5px;
-			color: var(--wa-ink);
+			color: var(--whatsapp-ink);
 		}
 		span {
 			font-size: 11.5px;
 			line-height: 1.7;
-			color: var(--wa-ink-3);
+			color: var(--whatsapp-ink-3);
 		}
 	}
 
@@ -1209,9 +1209,9 @@
 		gap: 10px;
 		inline-size: 100%;
 		padding: 16px;
-		border: 1px solid var(--wa-pri-sb);
+		border: 1px solid var(--whatsapp-pri-sb);
 		border-radius: 12px;
-		background: var(--wa-pri-s);
+		background: var(--whatsapp-pri-s);
 		text-align: start;
 	}
 	&__invite-head {
@@ -1221,7 +1221,7 @@
 
 		b {
 			font-size: 14px;
-			color: var(--wa-ink);
+			color: var(--whatsapp-ink);
 		}
 	}
 	&__invite-mark {
@@ -1232,14 +1232,14 @@
 		block-size: 30px;
 		flex: none;
 		border-radius: 9px;
-		background: var(--wa-pri);
-		color: var(--wa-on-pri);
+		background: var(--whatsapp-pri);
+		color: var(--whatsapp-on-pri);
 	}
 	&__invite-body {
 		margin: 0;
 		font-size: 12.5px;
 		line-height: 2;
-		color: var(--wa-ink-2);
+		color: var(--whatsapp-ink-2);
 	}
 	&__invite-row {
 		display: flex;
@@ -1253,36 +1253,36 @@
 		gap: 10px;
 		flex-wrap: wrap;
 		margin: 0;
-		min-block-size: var(--wa-h, 38px);
+		min-block-size: var(--whatsapp-h, 38px);
 		padding-block: 5px;
 		padding-inline: 12px 6px;
-		border: 1px dashed var(--wa-pri-sb);
-		border-radius: var(--wa-radius, 8px);
-		background: var(--wa-surface);
+		border: 1px dashed var(--whatsapp-pri-sb);
+		border-radius: var(--whatsapp-radius, 8px);
+		background: var(--whatsapp-surface);
 	}
 	&__invite-k {
 		font-size: 11px;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 	&__invite-code {
 		font-family: "IBM Plex Mono", ui-monospace, monospace;
 		font-size: 13.5px;
 		font-weight: 700;
 		letter-spacing: 1px;
-		color: var(--wa-ink);
+		color: var(--whatsapp-ink);
 	}
 	&__invite-note {
 		margin: 0;
 		font-size: 11px;
 		line-height: 1.8;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 
 	// =============================================================================================
 	// Verbs and motion
 	// =============================================================================================
 
-	&__grow.wa-btn {
+	&__grow.whatsapp-btn {
 		flex: 1 1 180px;
 	}
 	&__btn--busy::before {
@@ -1293,14 +1293,14 @@
 		border-radius: 50%;
 		border: 2px solid currentColor;
 		border-block-start-color: transparent;
-		animation: wa-onb-spin 0.7s linear infinite;
+		animation: whatsapp-onb-spin 0.7s linear infinite;
 	}
 
 	&__foot-note {
 		margin: 0;
 		font-size: 11px;
 		line-height: 1.9;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -1341,7 +1341,7 @@
 			inset-block-start: 0;
 			align-self: flex-start;
 			// the scroller's measured height (`fit_to_scroller` in the page's JS), the window until then
-			block-size: var(--wa-onb-h, calc(100dvh - var(--wa-viewport-offset)));
+			block-size: var(--whatsapp-onb-h, calc(100dvh - var(--whatsapp-viewport-offset)));
 			// never a scroller of its own (owner, 2026-10-10): the shorter the window, the less it
 			// says (below), so nothing in it moves while the form is used
 			overflow: hidden;
@@ -1411,61 +1411,61 @@
 // The one glyph whose meaning is its direction. `chevronEnd` already points at the end of the
 // line, so Arabic needs nothing — but Desk renders some icon sets unmirrored, so the rule is
 // stated rather than assumed.
-html[dir="rtl"] .wa-onb__route-arrow {
+html[dir="rtl"] .whatsapp-onb__route-arrow {
 	transform: scaleX(-1);
 }
 
 // "Sign in with another account?" — what goes, what stays, and the backup before it
 // a sign-in with several accounts: one button per account, the chosen one marked (owner, 2026-11-04)
-.wa-onb__accounts {
+.whatsapp-onb__accounts {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 	margin-block-end: 12px;
 }
-.wa-onb__accounts-lead {
+.whatsapp-onb__accounts-lead {
 	margin: 0;
 	font-size: 13px;
-	color: var(--wa-ink-3);
+	color: var(--whatsapp-ink-3);
 }
-.wa-onb__account {
+.whatsapp-onb__account {
 	display: flex;
 	flex-direction: column;
 	align-items: flex-start;
 	gap: 2px;
 	padding: 10px 12px;
-	border: 1px solid var(--wa-border);
+	border: 1px solid var(--whatsapp-border);
 	border-radius: 10px;
-	background: var(--wa-surface);
+	background: var(--whatsapp-surface);
 	text-align: start;
 	cursor: pointer;
-	b { font-size: 14px; font-weight: 600; color: var(--wa-ink); }
-	span { font-size: 12px; color: var(--wa-ink-4); }
-	.wa-onb__account-site { color: var(--wa-ink-3); }
-	&[aria-pressed="true"] { border-color: var(--wa-pri); box-shadow: inset 0 0 0 1px var(--wa-pri); }
-	&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: 2px; }
+	b { font-size: 14px; font-weight: 600; color: var(--whatsapp-ink); }
+	span { font-size: 12px; color: var(--whatsapp-ink-4); }
+	.whatsapp-onb__account-site { color: var(--whatsapp-ink-3); }
+	&[aria-pressed="true"] { border-color: var(--whatsapp-pri); box-shadow: inset 0 0 0 1px var(--whatsapp-pri); }
+	&:focus-visible { outline: 2px solid var(--whatsapp-pri); outline-offset: 2px; }
 }
 
 // the account another site has: what moving it means, and the verb (owner, 2026-11-04)
-.wa-onb__inuse {
+.whatsapp-onb__inuse {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
 	margin-block-end: 12px;
 	padding: 12px 14px;
 	border-radius: 10px;
-	background: var(--wa-wn-s);
-	color: var(--wa-wn-i);
+	background: var(--whatsapp-wn-s);
+	color: var(--whatsapp-wn-i);
 	p { margin: 0; font-size: 13px; line-height: 1.6; }
 }
 
-.wa-onb__switch {
+.whatsapp-onb__switch {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 	font-size: 13.5px;
 	line-height: 1.7;
-	color: var(--wa-ink-2, var(--wa-ink));
+	color: var(--whatsapp-ink-2, var(--whatsapp-ink));
 
 	p,
 	ul {
@@ -1474,10 +1474,10 @@ html[dir="rtl"] .wa-onb__route-arrow {
 	ul {
 		padding-inline-start: 18px;
 		font-weight: 600;
-		color: var(--wa-dg-i, var(--wa-ink));
+		color: var(--whatsapp-dg-i, var(--whatsapp-ink));
 	}
 }
-.wa-onb__switch-backup {
+.whatsapp-onb__switch-backup {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -1486,6 +1486,6 @@ html[dir="rtl"] .wa-onb__route-arrow {
 	margin-block-start: 4px;
 	padding: 10px 12px;
 	border-radius: 10px;
-	background: var(--wa-sunken);
+	background: var(--whatsapp-sunken);
 	font-size: 13px;
 }

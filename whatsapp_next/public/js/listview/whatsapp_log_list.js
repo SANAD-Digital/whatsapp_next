@@ -5,7 +5,7 @@
 // The drawer, the formatters and the per-message actions live in `js/screens/messages.js`.
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const DT = "WhatsApp Log";
 	const M = whatsapp_next.messages;
 	const is_agent = M.is_agent;
@@ -27,7 +27,7 @@
 		// every field the table, the badges and the actions read (the columns are explicit below)
 		add_fields: ["status", "phone", "phone_e164", "jid", "recipient_type", "display_name", "contact", "device", "source_type", "campaign", "reference_doctype", "reference_name", "message_type", "error_code", "error_message", "is_simulated", "is_test", "creation", "sent_at", "command", "template"],
 
-		// The one status → colour rule for this DocType; every badge reads it through `sanad.ui.indicator_for`.
+		// The one status → colour rule for this DocType; every badge reads it through `whatsapp.ui.indicator_for`.
 		get_indicator(doc) {
 			const colour = { Sent: "green", Delivered: "green", Read: "green", Queued: "blue", Sending: "blue", Unsent: "orange", Held: "orange", Failed: "red", Cancelled: "red" }[doc.status] || "gray";
 			return [__(doc.status), colour, `status,=,${doc.status}`];
@@ -84,7 +84,7 @@
 						format: (v, doc) => (!v && ["Failed", "Cancelled"].includes(doc.status) ? "—" : whatsapp_next.fmt.time_cell(v, doc)),
 					}),
 					// the reason in words ("The number is not on WhatsApp"), the raw code and text on hover
-					{ fieldname: "error_code", label: __("Error"), sortable: true, format: (v, doc) => (v ? `<span class="sanad-cell__error" dir="auto" title="${ui.escape(doc.error_message || v)}">${ui.escape(whatsapp_next.fmt.error_text(v, doc.error_message))}</span>` : "") },
+					{ fieldname: "error_code", label: __("Error"), sortable: true, format: (v, doc) => (v ? `<span class="whatsapp-kit-cell__error" dir="auto" title="${ui.escape(doc.error_message || v)}">${ui.escape(whatsapp_next.fmt.error_text(v, doc.error_message))}</span>` : "") },
 					whatsapp_next.columns.flag({ fieldname: "is_simulated", label: __("On behalf") }),
 				],
 				mobile_columns: ["display_name", "status"],

@@ -1,4 +1,4 @@
-# `sanad.ui.Toast`
+# `whatsapp.ui.Toast`
 
 A thin wrapper over `frappe.show_alert`. It maps semantic tones to Desk indicators, sets an auto-dismiss time per tone, and can add one inline action link. Constructing a Toast shows it immediately. Desk's alert container is already a live region, so the Toast adds no announcement of its own. Placement is Desk's own and follows the document direction.
 
@@ -32,17 +32,17 @@ None.
 ## Usage
 
 ```js
-sanad.ui.Toast.success(__("Message queued"));
-sanad.ui.Toast.error(err);
-sanad.ui.Toast.warning(__("Device offline — message stays queued"), {
+whatsapp.ui.Toast.success(__("Message queued"));
+whatsapp.ui.Toast.error(err);
+whatsapp.ui.Toast.warning(__("Device offline — message stays queued"), {
   action: { label: __("Open devices"), on_click: () => frappe.set_route("wa-devices") },
 });
-sanad.ui.Toast.warnings(r.warnings, { device_offline: __("The device is offline.") });
+whatsapp.ui.Toast.warnings(r.warnings, { device_offline: __("The device is offline.") });
 ```
 
 ## CSS hooks
 
-- `.sanad-toast__action` is the inline action link: start margin, weight 600, underlined. Everything else is Desk's `.alert` markup.
+- `.whatsapp-kit-toast__action` is the inline action link: start margin, weight 600, underlined. Everything else is Desk's `.alert` markup.
 
 ## Notes
 

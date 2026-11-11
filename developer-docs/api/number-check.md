@@ -72,7 +72,7 @@ batches of 1,000.
 **Realtime:** none.
 
 ```js
-const r = await sanad.ui.call("number_check.check_selection", {
+const r = await whatsapp.ui.call("number_check.check_selection", {
   source_doctype: "Contact", names: ["Ali Saleh", "Sara Omar"],
 });
 ```
@@ -116,7 +116,7 @@ check, as in `check_selection`. The platform is asked in batches of 20.
 **Realtime:** none.
 
 ```js
-const r = await sanad.ui.call("number_check.refresh_profiles", {
+const r = await whatsapp.ui.call("number_check.refresh_profiles", {
   source_doctype: "WhatsApp Number", names: ["+966501234567"],
 });
 ```

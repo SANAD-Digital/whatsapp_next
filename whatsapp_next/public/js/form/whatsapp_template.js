@@ -6,7 +6,7 @@
 
 frappe.ui.form.on("WhatsApp Template", {
 	refresh(frm) {
-		sanad.ui.TemplateEditor.mount({
+		whatsapp.ui.TemplateEditor.mount({
 			frm,
 			body_field: "body",
 			reference_doctype_field: "reference_doctype",
@@ -27,9 +27,9 @@ frappe.ui.form.on("WhatsApp Template", {
 			});
 		}
 
-		if (!frm.is_new() && !frm.doc.disabled && typeof sanad.ui.QuickSend === "function") {
+		if (!frm.is_new() && !frm.doc.disabled && typeof whatsapp.ui.QuickSend === "function") {
 			frm.add_custom_button(__("Use in a message"), () => {
-				new sanad.ui.QuickSend({ template: frm.doc.name });
+				new whatsapp.ui.QuickSend({ template: frm.doc.name });
 			});
 		}
 	},

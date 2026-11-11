@@ -1,5 +1,5 @@
-// sanad.ui.ConversationDrawer — the conversation variant of the side panel: the shared
-// `.sanad-panel` shell (full-height sheet on mobile) showing one number's merged outbound +
+// whatsapp.ui.ConversationDrawer — the conversation variant of the side panel: the shared
+// `.whatsapp-kit-panel` shell (full-height sheet on mobile) showing one number's merged outbound +
 // inbound thread from the read layer, its link status, and the contextual actions (link /
 // convert, quick send, confirm conversation). One overlay at a time through `ui.overlay`
 // (opening it closes a Drawer and vice versa); it traps focus, closes on Escape, restores focus
@@ -41,7 +41,7 @@ async function sha1_hex(text) {
 	return out;
 }
 
-sanad.ui.ConversationDrawer = class ConversationDrawer {
+whatsapp.ui.ConversationDrawer = class ConversationDrawer {
 	/**
 	 * @param {Object} opts
 	 * @param {string} opts.key — `phone_e164` or group JID
@@ -68,44 +68,44 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 		if (!this.key) throw new Error(__("ConversationDrawer needs a key"));
 		this.opener = document.activeElement;
 		ui.overlay.open(this); // closes any open Drawer / ConversationDrawer first
-		sanad.ui.ConversationDrawer.current = this;
+		whatsapp.ui.ConversationDrawer.current = this;
 		this.make();
 		this.open();
 	}
 
 	static open(opts) {
-		return new sanad.ui.ConversationDrawer(opts);
+		return new whatsapp.ui.ConversationDrawer(opts);
 	}
 
 	make() {
 		const title_id = `${this.id}-title`;
 		const width = this.opts.width ? (typeof this.opts.width === "number" ? `${this.opts.width}px` : this.opts.width) : "";
-		this.$backdrop = $(`<div class="sanad-kit sanad-backdrop sanad-convo__backdrop"></div>`);
+		this.$backdrop = $(`<div class="whatsapp-kit whatsapp-kit-backdrop whatsapp-kit-convo__backdrop"></div>`);
 		this.$root = $(`
-			<aside class="sanad-kit sanad-panel sanad-convo" id="${this.id}" role="dialog" aria-modal="true" aria-labelledby="${title_id}"${width ? ` style="--sanad-panel-width:${ui.escape(width)}"` : ""}>
-				<header class="sanad-panel__header">
-					<div class="sanad-convo__avatar" aria-hidden="true"></div>
-					<div class="sanad-panel__title">
-						<h2 class="sanad-convo__title" id="${title_id}"></h2>
-						<div class="sanad-panel__subtitle sanad-convo__sub sanad-tabular"></div>
+			<aside class="whatsapp-kit whatsapp-kit-panel whatsapp-kit-convo" id="${this.id}" role="dialog" aria-modal="true" aria-labelledby="${title_id}"${width ? ` style="--whatsapp-kit-panel-width:${ui.escape(width)}"` : ""}>
+				<header class="whatsapp-kit-panel__header">
+					<div class="whatsapp-kit-convo__avatar" aria-hidden="true"></div>
+					<div class="whatsapp-kit-panel__title">
+						<h2 class="whatsapp-kit-convo__title" id="${title_id}"></h2>
+						<div class="whatsapp-kit-panel__subtitle whatsapp-kit-convo__sub whatsapp-kit-tabular"></div>
 					</div>
-					<div class="sanad-convo__badge"></div>
-					<button type="button" class="btn btn-sm btn-default sanad-convo__close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "sm")}</button>
+					<div class="whatsapp-kit-convo__badge"></div>
+					<button type="button" class="btn btn-sm btn-default whatsapp-kit-convo__close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "sm")}</button>
 				</header>
-				<div class="sanad-panel__actions sanad-convo__actions" role="group" aria-label="${ui.escape(__("Conversation actions"))}"></div>
-				<div class="sanad-panel__body sanad-convo__body">
-					<div class="sanad-convo__state"></div>
-					<div class="sanad-convo__thread"></div>
+				<div class="whatsapp-kit-panel__actions whatsapp-kit-convo__actions" role="group" aria-label="${ui.escape(__("Conversation actions"))}"></div>
+				<div class="whatsapp-kit-panel__body whatsapp-kit-convo__body">
+					<div class="whatsapp-kit-convo__state"></div>
+					<div class="whatsapp-kit-convo__thread"></div>
 				</div>
 			</aside>`);
-		this.$title = this.$root.find(".sanad-convo__title");
-		this.$sub = this.$root.find(".sanad-convo__sub");
-		this.$avatar = this.$root.find(".sanad-convo__avatar");
-		this.$badge = this.$root.find(".sanad-convo__badge");
-		this.$actions = this.$root.find(".sanad-convo__actions");
-		this.$thread = this.$root.find(".sanad-convo__thread");
-		this.state = new sanad.ui.EmptyState({ wrapper: this.$root.find(".sanad-convo__state"), state: "loading", rows: 4 });
-		this.$root.find(".sanad-convo__close").on("click", () => this.close());
+		this.$title = this.$root.find(".whatsapp-kit-convo__title");
+		this.$sub = this.$root.find(".whatsapp-kit-convo__sub");
+		this.$avatar = this.$root.find(".whatsapp-kit-convo__avatar");
+		this.$badge = this.$root.find(".whatsapp-kit-convo__badge");
+		this.$actions = this.$root.find(".whatsapp-kit-convo__actions");
+		this.$thread = this.$root.find(".whatsapp-kit-convo__thread");
+		this.state = new whatsapp.ui.EmptyState({ wrapper: this.$root.find(".whatsapp-kit-convo__state"), state: "loading", rows: 4 });
+		this.$root.find(".whatsapp-kit-convo__close").on("click", () => this.close());
 		this.$backdrop.on("click", () => this.close());
 		this.$root.on("keydown", (e) => {
 			if (e.key === "Escape") {
@@ -118,9 +118,9 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 	}
 
 	open() {
-		window.requestAnimationFrame(() => this.$root.addClass("sanad-panel--open"));
+		window.requestAnimationFrame(() => this.$root.addClass("whatsapp-kit-panel--open"));
 		this.untrap = ui.trap_focus(this.$root);
-		this.$root.find(".sanad-convo__close").trigger("focus");
+		this.$root.find(".whatsapp-kit-convo__close").trigger("focus");
 		this.subscribe();
 		this.load_number();
 		this.load_first_page();
@@ -133,8 +133,8 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 		this.unsubscribe();
 		this.untrap && this.untrap();
 		ui.overlay.close(this);
-		if (sanad.ui.ConversationDrawer.current === this) sanad.ui.ConversationDrawer.current = null;
-		this.$root.removeClass("sanad-panel--open");
+		if (whatsapp.ui.ConversationDrawer.current === this) whatsapp.ui.ConversationDrawer.current = null;
+		this.$root.removeClass("whatsapp-kit-panel--open");
 		this.$backdrop.remove();
 		window.setTimeout(() => {
 			this.thread && this.thread.destroy();
@@ -162,9 +162,9 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 		this.$sub.text(ui.phone(this.key) !== name ? ui.phone(this.key) : "");
 		this.$avatar.text(cstr(name).trim().slice(0, 2).toUpperCase());
 		if (n === undefined) {
-			this.$badge.html(`<span class="sanad-skeleton__line sanad-convo__badge-skeleton" aria-hidden="true"></span>`);
+			this.$badge.html(`<span class="whatsapp-kit-skeleton__line whatsapp-kit-convo__badge-skeleton" aria-hidden="true"></span>`);
 		} else {
-			this.$badge.html(sanad.ui.ConversationDrawer.link_badge(linked));
+			this.$badge.html(whatsapp.ui.ConversationDrawer.link_badge(linked));
 		}
 		this.render_actions();
 	}
@@ -178,31 +178,31 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 		if (!name) return;
 		if (frappe.perm.has_perm("Contact", 0, "read")) return frappe.set_route("Form", "Contact", name);
 		frappe.route_options = { contact: name };
-		frappe.set_route((sanad.ui.config.defaults || {}).contacts_route || "wa-contacts");
+		frappe.set_route((whatsapp.ui.config.defaults || {}).contacts_route || "wa-contacts");
 	}
 
 	/** Linked (green, icon) / Not linked (neutral gray, no icon — it is a state, not a warning). */
 	static link_badge(linked) {
 		return linked
-			? sanad.ui.StatusBadge.html({ label: __("Linked"), colour: "green" })
-			: sanad.ui.StatusBadge.html({ label: __("Not linked"), colour: "gray", icon: false });
+			? whatsapp.ui.StatusBadge.html({ label: __("Linked"), colour: "green" })
+			: whatsapp.ui.StatusBadge.html({ label: __("Not linked"), colour: "gray", icon: false });
 	}
 
 	load_number() {
 		this.number = undefined;
 		this.render_header();
 		// search first: a key without a Number row must not raise Desk's global 404 message
-		return sanad.ui
+		return whatsapp.ui
 			.call(this.api.number_search, { txt: this.key, page_length: 5 }, { silent: true })
 			.then((r) => {
 				const rows = (r && r.rows) || [];
 				const hit = rows.find((row) => row.phone_e164 === this.key || row.name === this.key);
 				if (!hit) return null;
-				return sanad.ui.call(this.api.number, { phone_e164: this.key }, { silent: true }).catch(() => hit);
+				return whatsapp.ui.call(this.api.number, { phone_e164: this.key }, { silent: true }).catch(() => hit);
 			})
 			.catch((err) => {
 				// permission or transport problem: the thread still loads; header stays minimal
-				if (err && err.http_status !== 403) sanad.ui.Toast.error(err);
+				if (err && err.http_status !== 403) whatsapp.ui.Toast.error(err);
 				return null;
 			})
 			.then((row) => {
@@ -223,20 +223,20 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 				icon: n.contact ? "es-line-customer" : "es-line-add-people",
 				// a group can belong to a contact too; only an LID has nothing to link
 				condition: () => (n.contact ? true : !!this.number && (individual || n.number_type === "Group") && typeof this.opts.on_link === "function"),
-				handler: () => (n.contact ? sanad.ui.ConversationDrawer.open_contact(n.contact) : this.opts.on_link(this.number, this)),
+				handler: () => (n.contact ? whatsapp.ui.ConversationDrawer.open_contact(n.contact) : this.opts.on_link(this.number, this)),
 			},
 			quick_send: {
 				label: __("Quick send"),
 				icon: ui.icons.quick_send,
 				roles: this.roles.quick_send,
-				condition: () => typeof sanad.ui.QuickSend === "function",
+				condition: () => typeof whatsapp.ui.QuickSend === "function",
 				handler: () => {
-					if (typeof sanad.ui.QuickSend !== "function") return;
+					if (typeof whatsapp.ui.QuickSend !== "function") return;
 					// the message just sent joins the thread; a status event only patches rows it has
 					const args = { device: this.opts.device || n.last_device || undefined, on_sent: () => this.refresh_newest() };
 					if (this.key.includes("@")) args.jid = this.key;
 					else args.phone = this.key;
-					new sanad.ui.QuickSend(args);
+					new whatsapp.ui.QuickSend(args);
 				},
 			},
 			confirm: {
@@ -259,7 +259,7 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 			return;
 		}
 		ui.visible_actions(this.action_specs(), this.number).forEach((a) => {
-			$(`<button type="button" class="btn btn-sm btn-default sanad-convo__action">${a.icon ? ui.icon(a.icon, "xs") : ""}<span>${ui.escape(a.label)}</span></button>`)
+			$(`<button type="button" class="btn btn-sm btn-default whatsapp-kit-convo__action">${a.icon ? ui.icon(a.icon, "xs") : ""}<span>${ui.escape(a.label)}</span></button>`)
 				.on("click", () => a.handler(this.number, this))
 				.appendTo(this.$actions);
 		});
@@ -275,7 +275,7 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 		const key = n.phone_e164 || n.name;
 		const confirmed = !cint(n.conversation_confirmed);
 		const who = n.display_name || ui.phone(key);
-		return sanad.ui.ConfirmDialog.ask({
+		return whatsapp.ui.ConfirmDialog.ask({
 			title: confirmed ? __("Confirm this conversation?") : __("Remove the confirmation?"),
 			message: confirmed
 				? __("Marks {0} as a real, ongoing conversation. Agents rely on this flag.", [who])
@@ -284,15 +284,15 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 			reason_field: { label: __("Note"), required: true, description: __("Saved on the number and in the audit log.") },
 			confirm_label: confirmed ? __("Confirm conversation") : __("Remove confirmation"),
 			on_confirm: ({ reason }) =>
-				sanad.ui.call(api.confirm || DEFAULT_API.confirm, { phone_e164: key, confirmed: confirmed ? 1 : 0, note: reason }),
+				whatsapp.ui.call(api.confirm || DEFAULT_API.confirm, { phone_e164: key, confirmed: confirmed ? 1 : 0, note: reason }),
 		}).then((r) => {
-			sanad.ui.Toast.success(confirmed ? __("Conversation confirmed") : __("Confirmation removed"));
+			whatsapp.ui.Toast.success(confirmed ? __("Conversation confirmed") : __("Confirmation removed"));
 			return r;
 		});
 	}
 
 	confirm_conversation() {
-		return sanad.ui.ConversationDrawer.confirm_dialog(Object.assign({ phone_e164: this.key }, this.number || {}), this.api)
+		return whatsapp.ui.ConversationDrawer.confirm_dialog(Object.assign({ phone_e164: this.key }, this.number || {}), this.api)
 			.then((r) => {
 				if (this._closed) return;
 				this.number = Object.assign({}, this.number, { conversation_confirmed: r && r.conversation_confirmed ? 1 : 0 });
@@ -307,7 +307,7 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 		const args = { key: this.key, limit: this.opts.page_length };
 		if (this.opts.device) args.device = this.opts.device;
 		if (before) args.before = before;
-		return sanad.ui.call(this.api.conversation, args, { silent: true });
+		return whatsapp.ui.call(this.api.conversation, args, { silent: true });
 	}
 
 	load_first_page() {
@@ -320,7 +320,7 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 				this.next_cursor = page && page.has_more ? page.next_cursor : null;
 				this.state.hide();
 				this.$thread.show();
-				this.thread = new sanad.ui.ChatThread({
+				this.thread = new whatsapp.ui.ChatThread({
 					wrapper: this.$thread,
 					rows,
 					has_more: !!this.next_cursor,
@@ -407,6 +407,6 @@ sanad.ui.ConversationDrawer = class ConversationDrawer {
 	}
 };
 
-sanad.ui.ConversationDrawer.current = null;
+whatsapp.ui.ConversationDrawer.current = null;
 
-export default sanad.ui.ConversationDrawer;
+export default whatsapp.ui.ConversationDrawer;

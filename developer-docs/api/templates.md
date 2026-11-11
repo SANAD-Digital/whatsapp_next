@@ -59,7 +59,7 @@ Behaviour:
 **Realtime:** none.
 
 ```js
-const r = await sanad.ui.call("templates.preview", {
+const r = await whatsapp.ui.call("templates.preview", {
   body: "Dear {{ doc.customer_name }}, invoice {{ doc.name }} is due on {{ doc.due_date }}.",
   reference_doctype: "Sales Invoice", reference_name: "ACC-SINV-2026-00001",
 });
@@ -129,14 +129,14 @@ Uses `frappe.get_list` (the caller's permissions), ordered `modified desc`.
 **Realtime:** none.
 
 ```js
-const { name } = await sanad.ui.call("templates.pick_sample", { reference_doctype: "Sales Invoice" });
+const { name } = await whatsapp.ui.call("templates.pick_sample", { reference_doctype: "Sales Invoice" });
 ```
 
 ---
 
 ## get_editor
 
-What the template editor window (`sanad.ui.TemplateWindow`) opens with: the template, or the
+What the template editor window (`whatsapp.ui.TemplateWindow`) opens with: the template, or the
 defaults of a new one, plus the choices its controls offer.
 
 - **Path:** `whatsapp_next.api.v1.templates.get_editor`
@@ -180,7 +180,7 @@ file_name_template, reference_doctype, language, sample_context`), plus `use_cou
 **Realtime:** none.
 
 ```js
-const ed = await sanad.ui.call("templates.get_editor", { name: "Invoice Ready" });
+const ed = await whatsapp.ui.call("templates.get_editor", { name: "Invoice Ready" });
 ```
 
 ---
@@ -219,7 +219,7 @@ format). A changed `template_name` renames the template.
 **Realtime:** none.
 
 ```js
-const { name, modified } = await sanad.ui.call("templates.save_editor", {
+const { name, modified } = await whatsapp.ui.call("templates.save_editor", {
   payload: { name: "Invoice Ready", modified: ed.template.modified, template_name: "Invoice Ready",
              message_type: "Text", body: "Dear {{ doc.customer_name }}, invoice {{ doc.name }} is ready." },
 });
@@ -257,5 +257,5 @@ message names them; the window then suggests disabling the template instead.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("templates.delete_template", { name: "Old Reminder" });
+await whatsapp.ui.call("templates.delete_template", { name: "Old Reminder" });
 ```

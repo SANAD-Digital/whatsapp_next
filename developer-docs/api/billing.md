@@ -76,7 +76,7 @@ mapped.
 **Realtime:** none.
 
 ```js
-const { wallet, plans, payment } = await sanad.ui.call("billing.get_billing");
+const { wallet, plans, payment } = await whatsapp.ui.call("billing.get_billing");
 ```
 
 ---
@@ -118,7 +118,7 @@ when the account has no subscription. Provider errors are mapped.
 **Realtime:** none.
 
 ```js
-const r = await sanad.ui.call("billing.renew", {}, { freeze: true });
+const r = await whatsapp.ui.call("billing.renew", {}, { freeze: true });
 if (!r.done) show_topup(r.amount - r.wallet_balance, r.currency);
 ```
 
@@ -152,7 +152,7 @@ mapped.
 **Realtime:** none.
 
 ```js
-const r = await sanad.ui.call("billing.change_plan", { plan_code: "PRO" }, { freeze: true });
+const r = await whatsapp.ui.call("billing.change_plan", { plan_code: "PRO" }, { freeze: true });
 ```
 
 ---
@@ -192,7 +192,7 @@ uploaded and sent to the platform as base64.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("billing.request_topup", {
+await whatsapp.ui.call("billing.request_topup", {
   amount: 50, payment_option: "PM-0001", reference_no: "TRX-778812", receipt_file: "/private/files/receipt.pdf",
 });
 ```
@@ -227,7 +227,7 @@ address (it must be on this account's own site). `WARateLimitError` (429) above 
 **Realtime:** none.
 
 ```js
-const { approve_url } = await sanad.ui.call("billing.start_paypal", { amount: 25 });
+const { approve_url } = await whatsapp.ui.call("billing.start_paypal", { amount: 25 });
 window.location.href = approve_url;
 ```
 
@@ -265,7 +265,7 @@ platform's 20 confirmations a minute.
 **Realtime:** none.
 
 ```js
-const paid = await sanad.ui.call("billing.confirm_paypal", { order_id: token }, { freeze: true });
+const paid = await whatsapp.ui.call("billing.confirm_paypal", { order_id: token }, { freeze: true });
 ```
 
 ---
@@ -304,5 +304,5 @@ mapped.
 **Realtime:** none.
 
 ```js
-const st = await sanad.ui.call("billing.statement", { from_date: "2026-10-01", to_date: "2026-10-31" });
+const st = await whatsapp.ui.call("billing.statement", { from_date: "2026-10-01", to_date: "2026-10-31" });
 ```

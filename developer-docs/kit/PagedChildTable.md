@@ -1,4 +1,4 @@
-# `sanad.ui.PagedChildTable`
+# `whatsapp.ui.PagedChildTable`
 
 Replaces the native grid of a large child table on a form with a paged, read-only panel fed by an
 API key that returns `{rows, total, counts?}`. The child data stays on the form and the field
@@ -8,7 +8,7 @@ default to the child DocType's `in_list_view` fields, values are formatted from 
 column renders as a StatusBadge. Filter chips, a search box, toolbar actions and per-row actions
 are options.
 
-**Portability:** portable. The page method is any `sanad.ui.call` key; the only contract is the
+**Portability:** portable. The page method is any `whatsapp.ui.call` key; the only contract is the
 return shape `{rows, total, counts?}` and the default args `{name, page, page_length, search,
 ...filters}` (adapt with `args`).
 
@@ -28,7 +28,7 @@ return shape `{rows, total, counts?}` and the default args `{name, page, page_le
 | `filters` | `Array<Filter>` | `[]` | Chip groups / selects above the table. |
 | `toolbar_actions` | `Array<ToolbarAction>` | `[]` | Buttons in the panel head. |
 | `empty_text` | string | "No rows yet" | Empty-state title. |
-| `hide_grid` | boolean | `true` | Add `sanad-pct-host` to the field wrapper (hides the grid and the field label). |
+| `hide_grid` | boolean | `true` | Add `whatsapp-kit-pct-host` to the field wrapper (hides the grid and the field label). |
 | `search` | boolean | `true` | Search box, sent as `search` (debounced 300 ms). |
 
 - **Column** `{fieldname, label?, format?(value, row) → string | {html}, width?}` — a string is
@@ -65,7 +65,7 @@ Only the handlers in `row_actions` / `toolbar_actions`. No DOM events, no realti
 ## Usage
 
 ```js
-frm.sanad_members = new sanad.ui.PagedChildTable({
+frm.whatsapp_members = new whatsapp.ui.PagedChildTable({
   frm,
   fieldname: "members",
   page_method: "picker.get_group_members",
@@ -78,23 +78,23 @@ frm.sanad_members = new sanad.ui.PagedChildTable({
   toolbar_actions: [{ label: __("Add members"), primary: true, disabled: frm.is_dirty(),
                       hint: __("Save the group first."), handler: () => open_picker(frm) }],
 });
-// later, on refresh: frm.sanad_members.update({ toolbar_actions });
+// later, on refresh: frm.whatsapp_members.update({ toolbar_actions });
 ```
 
 ## CSS hooks
 
-- `.sanad-pct-host` on the field wrapper — hides `.grid-custom-buttons`, `.form-grid-container`,
+- `.whatsapp-kit-pct-host` on the field wrapper — hides `.grid-custom-buttons`, `.form-grid-container`,
   `.grid-footer`, `.control-label`, `.grid-label`.
-- Root `.sanad-kit.sanad-pct[data-fieldname]`; `__head`, `__title`, `__count`, `__actions`,
+- Root `.whatsapp-kit.whatsapp-kit-pct[data-fieldname]`; `__head`, `__title`, `__count`, `__actions`,
   `__toolbar`, `__filters`, `__chips[data-field]`, `__chip[data-value][aria-pressed]`,
   `__chip-label`, `__chip-count`, `__select`, `__search`, `__note`, `__state`, `__scroll`
-  (`.sanad-table-wrap`), `__table` (`.sanad-table`), `__th-actions`, `__row-actions`, `__pager`,
+  (`.whatsapp-kit-table-wrap`), `__table` (`.whatsapp-kit-table`), `__th-actions`, `__row-actions`, `__pager`,
   `__range`, `__pager-btns`, `__prev`, `__next`.
 
 ## Notes
 
 - **Mounting:** inside `field.grid.wrapper` (else `field.$wrapper`, else the form's first
-  `.form-page`). Idempotent: an existing `.sanad-pct` for the same field is replaced.
+  `.form-page`). Idempotent: an existing `.whatsapp-kit-pct` for the same field is replaced.
 - **States:** EmptyState loading skeleton, empty (with "Try a different search or filter." when
   filtered), error with Retry; `aria-busy` on the table while loading. Unsaved document →
   "Save the document first".

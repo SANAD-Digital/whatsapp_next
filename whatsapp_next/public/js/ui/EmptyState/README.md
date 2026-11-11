@@ -8,9 +8,9 @@ carry a primary action ("Create…", "Retry") and a secondary one.
 ## Usage
 
 ```js
-const state = new sanad.ui.EmptyState({ wrapper: $panel, state: "loading" });
+const state = new whatsapp.ui.EmptyState({ wrapper: $panel, state: "loading" });
 
-sanad.ui.call("home.get_dashboard")
+whatsapp.ui.call("home.get_dashboard")
   .then((data) => {
     if (!data.devices.length) {
       return state.empty({ title: __("No devices yet"), description: __("Pair a phone to start sending."),

@@ -1,18 +1,18 @@
-// sanad.ui.SettingsWindow — claude.ai's settings window, compact and wide (owner, 2026-10-26): a 14 px-radius
+// whatsapp.ui.SettingsWindow — claude.ai's settings window, compact and wide (owner, 2026-10-26): a 14 px-radius
 // modal of at most 1240 × 780 over the dimmed page, a 212 px rail (search, group labels, 31 px items) and a pane
 // that scrolls by itself with the close button at its corner. Under 720 px it is the whole screen
 // and shows the list or one section. Product tokens only; logical properties throughout.
 
-.sanad-sw-backdrop {
+.whatsapp-kit-sw-backdrop {
 	position: fixed;
 	inset: 0;
 	z-index: 1034; // under Frappe's dialogs (1040/1050), which sections open on top of it
-	background: color-mix(in srgb, var(--wa-ink) 38%, transparent);
+	background: color-mix(in srgb, var(--whatsapp-ink) 38%, transparent);
 }
 
-body.sanad-sw-open { overflow: hidden; }
+body.whatsapp-kit-sw-open { overflow: hidden; }
 
-.sanad-sw {
+.whatsapp-kit-sw {
 	// centred by `inset: 0` + `margin: auto` on a sized box — the same in both directions
 	position: fixed;
 	inset: 0;
@@ -23,16 +23,16 @@ body.sanad-sw-open { overflow: hidden; }
 	inline-size: min(1240px, calc(100vw - 36px));
 	block-size: min(780px, calc(100dvh - 32px));
 	border-radius: 12px;
-	border: 1px solid var(--wa-border);
-	background: var(--wa-surface);
-	color: var(--wa-ink);
-	box-shadow: var(--wa-shadow-lg);
+	border: 1px solid var(--whatsapp-border);
+	background: var(--whatsapp-surface);
+	color: var(--whatsapp-ink);
+	box-shadow: var(--whatsapp-shadow-lg);
 	overflow: hidden;
 	transform: scale(0.985);
 	opacity: 0;
 	transition: opacity 140ms ease, transform 140ms ease;
 
-	&.sanad-sw--in { opacity: 1; transform: none; }
+	&.whatsapp-kit-sw--in { opacity: 1; transform: none; }
 
 	[hidden] { display: none !important; }
 
@@ -43,7 +43,7 @@ body.sanad-sw-open { overflow: hidden; }
 		flex-direction: column;
 		min-block-size: 0;
 		padding: 10px 8px;
-		border-inline-end: 1px solid var(--wa-border);
+		border-inline-end: 1px solid var(--whatsapp-border);
 		overflow: auto;
 		scrollbar-width: thin;
 	}
@@ -55,10 +55,10 @@ body.sanad-sw-open { overflow: hidden; }
 		min-block-size: 28px;
 		margin: 0 0 8px;
 		padding-inline: 10px;
-		border: 1px solid var(--wa-border-2);
+		border: 1px solid var(--whatsapp-border-2);
 		border-radius: 8px;
-		background: var(--wa-surface);
-		color: var(--wa-ink-4);
+		background: var(--whatsapp-surface);
+		color: var(--whatsapp-ink-4);
 		font-weight: 400;
 
 		input {
@@ -66,14 +66,14 @@ body.sanad-sw-open { overflow: hidden; }
 			min-inline-size: 0;
 			border: 0;
 			background: transparent;
-			color: var(--wa-ink);
+			color: var(--whatsapp-ink);
 			font-size: 13px;
 			outline: none;
 			box-shadow: none;
 			padding: 0;
 		}
 
-		&:focus-within { border-color: var(--wa-pri); box-shadow: 0 0 0 3px var(--wa-pri-s); }
+		&:focus-within { border-color: var(--whatsapp-pri); box-shadow: 0 0 0 3px var(--whatsapp-pri-s); }
 	}
 
 	&__search-icon { display: inline-flex; flex: none; }
@@ -86,7 +86,7 @@ body.sanad-sw-open { overflow: hidden; }
 		padding-inline: 10px;
 		font-size: 11px;
 		font-weight: 500;
-		color: var(--wa-ink-4);
+		color: var(--whatsapp-ink-4);
 	}
 
 	&__item {
@@ -98,22 +98,22 @@ body.sanad-sw-open { overflow: hidden; }
 		border: 0;
 		border-radius: 6px;
 		background: transparent;
-		color: var(--wa-ink-2);
+		color: var(--whatsapp-ink-2);
 		font-size: 12px;
 		font-weight: 500;
 		text-align: start;
 		cursor: pointer;
 
-		&:hover { background: var(--wa-bg); color: var(--wa-ink); }
-		&.is-on { background: var(--wa-sunken); color: var(--wa-ink); font-weight: 600; }
-		&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: -2px; }
+		&:hover { background: var(--whatsapp-bg); color: var(--whatsapp-ink); }
+		&.is-on { background: var(--whatsapp-sunken); color: var(--whatsapp-ink); font-weight: 600; }
+		&:focus-visible { outline: 2px solid var(--whatsapp-pri); outline-offset: -2px; }
 	}
 
-	&__item-icon { display: inline-flex; flex: none; color: var(--wa-ink-3); }
-	&__item.is-on &__item-icon { color: var(--wa-pri-d); }
+	&__item-icon { display: inline-flex; flex: none; color: var(--whatsapp-ink-3); }
+	&__item.is-on &__item-icon { color: var(--whatsapp-pri-d); }
 	&__item-label { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-	&__none { margin: 8px 12px; font-size: 13px; color: var(--wa-ink-4); }
+	&__none { margin: 8px 12px; font-size: 13px; color: var(--whatsapp-ink-4); }
 
 	// ---- the pane ---------------------------------------------------------------------------------
 
@@ -142,12 +142,12 @@ body.sanad-sw-open { overflow: hidden; }
 		min-inline-size: 28px;
 		border: 0;
 		border-radius: 8px;
-		background: var(--wa-surface);
-		color: var(--wa-ink-3);
+		background: var(--whatsapp-surface);
+		color: var(--whatsapp-ink-3);
 		cursor: pointer;
 
-		&:hover { background: var(--wa-sunken); color: var(--wa-ink); }
-		&:focus-visible { outline: 2px solid var(--wa-pri); outline-offset: 1px; }
+		&:hover { background: var(--whatsapp-sunken); color: var(--whatsapp-ink); }
+		&:focus-visible { outline: 2px solid var(--whatsapp-pri); outline-offset: 1px; }
 	}
 
 	&__back {
@@ -156,10 +156,10 @@ body.sanad-sw-open { overflow: hidden; }
 		padding-inline: 6px 10px;
 		font-size: 14px;
 		font-weight: 600;
-		color: var(--wa-ink);
+		color: var(--whatsapp-ink);
 
 		// the caret points at the start side: the way back
-		.wa-ico { transform: rotate(90deg); }
+		.whatsapp-ico { transform: rotate(90deg); }
 	}
 
 	&__pane {
@@ -177,14 +177,14 @@ body.sanad-sw-open { overflow: hidden; }
 	// ---- content: Claude's headings and rows --------------------------------------------------------
 
 	&__head { margin-block-end: 12px; padding-inline-end: 36px; }
-	&__title { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--wa-ink); }
-	&__desc { margin: 4px 0 0; font-size: 13px; line-height: 1.55; color: var(--wa-ink-3); }
+	&__title { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--whatsapp-ink); }
+	&__desc { margin: 4px 0 0; font-size: 13px; line-height: 1.55; color: var(--whatsapp-ink-3); }
 
 	&__h {
 		margin-block: 12px 2px;
 
-		h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--wa-ink); }
-		p { margin: 2px 0 0; font-size: 13px; color: var(--wa-ink-3); }
+		h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--whatsapp-ink); }
+		p { margin: 2px 0 0; font-size: 13px; color: var(--whatsapp-ink-3); }
 	}
 
 	&__row {
@@ -193,14 +193,14 @@ body.sanad-sw-open { overflow: hidden; }
 		justify-content: space-between;
 		gap: 12px;
 		padding-block: 10px;
-		border-block-end: 1px solid var(--wa-border);
+		border-block-end: 1px solid var(--whatsapp-border);
 
 		&:last-child { border-block-end: 0; }
 	}
 
 	&__row-text { display: flex; flex-direction: column; gap: 2px; min-inline-size: 0; }
-	&__row-title { font-size: 13px; font-weight: 500; color: var(--wa-ink); }
-	&__row-desc { font-size: 12px; line-height: 1.5; color: var(--wa-ink-3); }
+	&__row-title { font-size: 13px; font-weight: 500; color: var(--whatsapp-ink); }
+	&__row-desc { font-size: 12px; line-height: 1.5; color: var(--whatsapp-ink-3); }
 	&__row-control { flex: none; display: flex; align-items: center; gap: 8px; max-inline-size: 55%; }
 
 	// ---- a phone: the whole screen, the list or one section ------------------------------------------

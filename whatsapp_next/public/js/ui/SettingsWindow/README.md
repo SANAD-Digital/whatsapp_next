@@ -13,7 +13,7 @@ the title and description on the start side and the control on the end side.
 ## Usage
 
 ```js
-const win = new sanad.ui.SettingsWindow({
+const win = new whatsapp.ui.SettingsWindow({
   title: __("Settings"),
   cls: "my-palette-scope",                       // optional: the host's colour scope
   groups: [
@@ -24,9 +24,9 @@ const win = new sanad.ui.SettingsWindow({
     { label: __("Settings"), items: [{ key: "general", label: __("General"), icon: "gear" }] },
   ],
   render: (key, $pane) => {
-    $pane.append(sanad.ui.SettingsWindow.head_html(__("General"), __("How the app behaves.")));
-    $pane.append(sanad.ui.SettingsWindow.section_html(__("Notifications")));
-    $pane.append(sanad.ui.SettingsWindow.row_html(__("Email me"), __("A daily summary."), toggle_html));
+    $pane.append(whatsapp.ui.SettingsWindow.head_html(__("General"), __("How the app behaves.")));
+    $pane.append(whatsapp.ui.SettingsWindow.section_html(__("Notifications")));
+    $pane.append(whatsapp.ui.SettingsWindow.row_html(__("Email me"), __("A daily summary."), toggle_html));
     return load_more_into($pane);               // a promise is fine
   },
 });

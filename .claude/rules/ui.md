@@ -15,9 +15,9 @@ The product is embedded in ERPNext and the user is already in Desk. A Frappe UI 
 mean rebuilding Desk's meta-driven machinery and forfeiting future framework improvements.
 - **The product's palette is the prototype's own, not Desk's.** Every `docs/screen/*.dc.html` opens
   with the same `:root` block — thirty-one values, light and dark. That block lives in
-  `public/scss/_tokens.scss` as `--wa-*`, and the same file re-points Desk's Espresso variables at
+  `public/scss/_tokens.scss` as `--whatsapp-*`, and the same file re-points Desk's Espresso variables at
   it on this product's surfaces, so a screen written against either name comes out in the product's
-  colours. Write `--wa-pri`, `--wa-ok-s`, `--wa-wn-i`, `--wa-surface`, `--wa-ink-3`. Never write a
+  colours. Write `--whatsapp-pri`, `--whatsapp-ok-s`, `--whatsapp-wn-i`, `--whatsapp-surface`, `--whatsapp-ink-3`. Never write a
   colour anywhere else; `_tokens.scss` is the one place a colour is spelled out, and it is spelled
   out there because the prototype spelled it out first.
 - Frappe is used for what is genuinely ready-made — routing, permissions, meta, dialogs, the file
@@ -42,7 +42,7 @@ unified read layer) · `ContactPicker` (a sub-system — six sources, see the sc
 Block + Number Card / Dashboard Chart sources) · `Toast`.
 
 Bundle as `whatsapp_next.bundle.js`, load via `app_include_js`, expose on one namespace
-(e.g. `frappe.provide("sanad.ui")`).
+(e.g. `frappe.provide("whatsapp.ui")`).
 
 ## Every custom Page must
 - be mobile-first and responsive (not a shrunk desktop);
@@ -59,7 +59,7 @@ than once, so the order is fixed and written in `DataList/style.scss`:
     0 body cell · 2 pinned body cell · 3 checkbox/action body cell · 5 group row
     8 header · 9 pinned header · 10 checkbox/action header
 
-All of it lives inside `.sanad-datalist__wrap`, which is its own stacking context, so nothing here
+All of it lives inside `.whatsapp-kit-datalist__wrap`, which is its own stacking context, so nothing here
 can ever paint over Desk's menus. After touching `DataList` or `FilterBar`, run
 `scripts/list_checks.mjs` — it hit-tests the sticky group row and checks the toolbar, the group
 tree and group selection.

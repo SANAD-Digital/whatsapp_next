@@ -86,7 +86,7 @@ An unknown template returns `{"body": "", "errors": ["WhatsApp Template X not fo
 **Errors:** None beyond the role check.
 
 ```js
-const p = await sanad.ui.call("quick_send.preview", {
+const p = await whatsapp.ui.call("quick_send.preview", {
   template: "Invoice reminder", reference_doctype: "Sales Invoice", reference_name: "ACC-SINV-2026-00042",
 });
 ```
@@ -157,7 +157,7 @@ curl -s -X POST "https://<site>/api/method/whatsapp_next.api.v1.quick_send.send"
 ```
 
 ```js
-const r = await sanad.ui.call("quick_send.send", {
+const r = await whatsapp.ui.call("quick_send.send", {
   device: "WA-DEV-001", phone: "+966501234567", message_type: "Poll",
   poll_question: "Pick a slot", poll_options: JSON.stringify(["9:00", "11:00", "14:00"]),
 });

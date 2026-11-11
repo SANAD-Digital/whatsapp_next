@@ -14,7 +14,7 @@
 frappe.provide("whatsapp_next.campaign");
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const C = whatsapp_next.campaign;
 	const K = whatsapp_next.campaigns;
 
@@ -66,18 +66,18 @@ frappe.provide("whatsapp_next.campaign");
 		}
 
 		make() {
-			// `wa wa--compact` is the kit's own density switch: every control the screen draws —
+			// `wa whatsapp--compact` is the kit's own density switch: every control the screen draws —
 			// input, select, toggle, button, badge — takes the compact scale from it instead of
 			// this screen inventing sizes of its own.
-			this.$wrapper.addClass("wa wa--compact");
+			this.$wrapper.addClass("whatsapp whatsapp--compact");
 			this.$wrapper.html(`
-				<div class="wa-cb__shell">
-					<div class="wa-cb__top" data-el="header"></div>
-					<div class="wa-cb__body">
-						<main class="wa-cb__main">
-							<div class="wa-cb__panel">
-								<div class="wa-cb__panel-head" data-el="stepper"></div>
-								<div class="wa-cb__pane" data-el="pane"></div>
+				<div class="whatsapp-cb__shell">
+					<div class="whatsapp-cb__top" data-el="header"></div>
+					<div class="whatsapp-cb__body">
+						<main class="whatsapp-cb__main">
+							<div class="whatsapp-cb__panel">
+								<div class="whatsapp-cb__panel-head" data-el="stepper"></div>
+								<div class="whatsapp-cb__pane" data-el="pane"></div>
 							</div>
 						</main>
 					</div>
@@ -235,7 +235,7 @@ frappe.provide("whatsapp_next.campaign");
 		/** The whole screen, including the step's own pane. */
 		render() {
 			const wizard = this.wizard();
-			this.$wrapper.toggleClass("wa-cb--wizard", wizard).toggleClass("wa-cb--monitor", !wizard);
+			this.$wrapper.toggleClass("whatsapp-cb--wizard", wizard).toggleClass("whatsapp-cb--monitor", !wizard);
 			// until the campaign exists there is no device, no audience and no duration to state:
 			// the band would be four dashes over an empty name
 			this.$("header").toggle(!this.frm.is_new());

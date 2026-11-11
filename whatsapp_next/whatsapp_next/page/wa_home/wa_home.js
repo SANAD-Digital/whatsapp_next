@@ -26,7 +26,7 @@
 frappe.provide("whatsapp_next.home");
 
 (() => {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const C = whatsapp_next.campaigns;
 
 	const OUT = "WhatsApp Log";
@@ -105,7 +105,7 @@ frappe.provide("whatsapp_next.home");
 	const is_agent = () => frappe.user.has_role(AGENT_UP);
 	const period_of = (key) => PERIODS.find((p) => p.key === key) || PERIODS[1];
 	const sum_of = (counts, keys) => keys.reduce((n, k) => n + cint(counts[k]), 0);
-	const ago = (value) => sanad.ui.ago(value);
+	const ago = (value) => whatsapp.ui.ago(value);
 
 	/**
 	 * The site's own calendar day. Every period is cut by the server in the site's time zone
@@ -268,7 +268,7 @@ frappe.provide("whatsapp_next.home");
 			this.page = page;
 			this.wrapper = wrapper;
 			this.period = "7d";
-			this.$screen = $('<div class="wa-home"></div>').appendTo(page.main);
+			this.$screen = $('<div class="whatsapp-home"></div>').appendTo(page.main);
 			this.make_page_actions();
 			this.header = new ui.PageHeader({
 				wrapper: this.$screen,
@@ -304,14 +304,14 @@ frappe.provide("whatsapp_next.home");
 
 		render_board() {
 			this.$board = $(`
-				<div class="wa-home__board">
-					<p class="wa-home__lede">
-						<span class="wa-home__lede-text">${esc(
+				<div class="whatsapp-home__board">
+					<p class="whatsapp-home__lede">
+						<span class="whatsapp-home__lede-text">${esc(
 							__("What is running right now — devices, the queue, campaigns and everything that went out.")
 						)}</span>
-						<span class="wa-home__range sanad-tabular"></span>
+						<span class="whatsapp-home__range whatsapp-kit-tabular"></span>
 					</p>
-					<div class="wa-home__period sanad-chip-row" role="radiogroup" aria-label="${esc(__("Period"))}"></div>
+					<div class="whatsapp-home__period whatsapp-kit-chip-row" role="radiogroup" aria-label="${esc(__("Period"))}"></div>
 				</div>`).prependTo(this.$screen);
 			this.render_period();
 		}
@@ -336,13 +336,13 @@ frappe.provide("whatsapp_next.home");
 		}
 
 		render_period() {
-			const $row = this.$board.find(".wa-home__period");
-			this.$board.find(".wa-home__range").text(this.range_text());
+			const $row = this.$board.find(".whatsapp-home__period");
+			this.$board.find(".whatsapp-home__range").text(this.range_text());
 			$row.empty();
 			PERIODS.forEach((p) => {
 				const on = p.key === this.period;
 				$(
-					`<button type="button" class="sanad-chip" role="radio" aria-checked="${on}" tabindex="${
+					`<button type="button" class="whatsapp-kit-chip" role="radio" aria-checked="${on}" tabindex="${
 						on ? 0 : -1
 					}" data-key="${p.key}">${esc(p.label())}</button>`
 				)
@@ -368,7 +368,7 @@ frappe.provide("whatsapp_next.home");
 			this.render_period();
 			ui.announce(__("Showing {0}.", [period_of(key).window()]));
 			// another period is another chart: show it loading rather than the old one standing in
-			this.$screen.find(".wa-home__evidence .wa-home__card-body").empty();
+			this.$screen.find(".whatsapp-home__evidence .whatsapp-home__card-body").empty();
 			["kpis", "evidence"].forEach((k) => {
 				const block = this.header.opts.blocks.find((b) => b.key === k);
 				if (block) this.header.render_block(block);
@@ -708,21 +708,21 @@ frappe.provide("whatsapp_next.home");
 					this._alert_signature = signature;
 					$el.empty();
 					if (!alerts.length) return;
-					const $list = $('<div class="wa-home__alerts"></div>').appendTo($el);
+					const $list = $('<div class="whatsapp-home__alerts"></div>').appendTo($el);
 					alerts.slice(0, 3).forEach((a) => {
 						const $alert = $(`
-							<div class="wa-home__alert sanad-tone--${a.tone}" role="${a.tone === "red" ? "alert" : "status"}">
-								<span class="wa-home__alert-icon" aria-hidden="true">${ui.icon(a.icon, "sm")}</span>
-								<div class="wa-home__alert-text">
-									<strong class="wa-home__alert-title">${esc(a.title)}</strong>
-									<span class="wa-home__alert-note">${esc(a.note)}</span>
+							<div class="whatsapp-home__alert whatsapp-kit-tone--${a.tone}" role="${a.tone === "red" ? "alert" : "status"}">
+								<span class="whatsapp-home__alert-icon" aria-hidden="true">${ui.icon(a.icon, "sm")}</span>
+								<div class="whatsapp-home__alert-text">
+									<strong class="whatsapp-home__alert-title">${esc(a.title)}</strong>
+									<span class="whatsapp-home__alert-note">${esc(a.note)}</span>
 								</div>
 							</div>`).appendTo($list);
 						if (a.action) {
 							$(
 								`<button type="button" class="btn btn-sm ${
 									a.action.primary ? "btn-primary" : "btn-default"
-								} wa-home__alert-action">${esc(a.action.label)}</button>`
+								} whatsapp-home__alert-action">${esc(a.action.label)}</button>`
 							)
 								.on("click", a.action.handler)
 								.appendTo($alert);
@@ -771,10 +771,10 @@ frappe.provide("whatsapp_next.home");
 		// ---- band 4: the period's five numbers, each with the shape behind it -------------------
 
 		render_kpis($el) {
-			if (!$el.find(".wa-home__kpis").length) {
-				$el.html(`<div class="wa-home__kpis" role="group" aria-label="${esc(__("Message traffic"))}"></div>`);
+			if (!$el.find(".whatsapp-home__kpis").length) {
+				$el.html(`<div class="whatsapp-home__kpis" role="group" aria-label="${esc(__("Message traffic"))}"></div>`);
 			}
-			const $row = $el.find(".wa-home__kpis");
+			const $row = $el.find(".whatsapp-home__kpis");
 			if (!$row.children().length) $row.html(ui.skeleton(5, { lines: 3 }));
 
 			return Promise.all([this.traffic(), this.series(), this.dashboard()])
@@ -881,22 +881,22 @@ frappe.provide("whatsapp_next.home");
 			$row.empty();
 			cards.forEach((card) => {
 				const $card = $(`
-					<button type="button" class="wa-home__kpi" data-key="${esc(card.key)}">
-						<span class="wa-home__kpi-head">
-							<span class="wa-home__kpi-dot sanad-tone--${esc(card.tone)}" aria-hidden="true"></span>
-							<span class="wa-home__kpi-label">${esc(card.label)}</span>
-							<span class="wa-home__kpi-icon sanad-tone--${esc(card.tone)}" aria-hidden="true">${ui.icon(card.icon, "sm")}</span>
+					<button type="button" class="whatsapp-home__kpi" data-key="${esc(card.key)}">
+						<span class="whatsapp-home__kpi-head">
+							<span class="whatsapp-home__kpi-dot whatsapp-kit-tone--${esc(card.tone)}" aria-hidden="true"></span>
+							<span class="whatsapp-home__kpi-label">${esc(card.label)}</span>
+							<span class="whatsapp-home__kpi-icon whatsapp-kit-tone--${esc(card.tone)}" aria-hidden="true">${ui.icon(card.icon, "sm")}</span>
 						</span>
-						<span class="wa-home__kpi-value sanad-tabular${card.value_tone ? ` sanad-tone--${esc(card.value_tone)}` : ""}">${esc(
+						<span class="whatsapp-home__kpi-value whatsapp-kit-tabular${card.value_tone ? ` whatsapp-kit-tone--${esc(card.value_tone)}` : ""}">${esc(
 							card.value
 						)}</span>
-						<span class="wa-home__kpi-foot">
-							<span class="wa-home__kpi-note${card.note_tone ? ` sanad-tone--${esc(card.note_tone)}` : ""}">${
+						<span class="whatsapp-home__kpi-foot">
+							<span class="whatsapp-home__kpi-note${card.note_tone ? ` whatsapp-kit-tone--${esc(card.note_tone)}` : ""}">${
 								card.note_icon ? ui.icon(card.note_icon, "xs") : ""
 							}${esc(card.note)}</span>
 							${this.spark_html(card.series, card.tone)}
 						</span>
-						<span class="sanad-visually-hidden">${esc(card.goes)}</span>
+						<span class="whatsapp-kit-visually-hidden">${esc(card.goes)}</span>
 					</button>`).appendTo($row);
 				$card.on("click", card.onclick);
 			});
@@ -910,11 +910,11 @@ frappe.provide("whatsapp_next.home");
 		 */
 		spark_html(values, tone) {
 			const points = (values || []).map((n) => cint(n));
-			if (points.length < 2) return '<span class="wa-home__kpi-spark" aria-hidden="true"></span>';
+			if (points.length < 2) return '<span class="whatsapp-home__kpi-spark" aria-hidden="true"></span>';
 			const max = Math.max.apply(null, points.concat([1]));
 			const step = 100 / (points.length - 1);
 			const path = points.map((n, i) => `${(i * step).toFixed(2)},${(100 - (n / max) * 92 - 4).toFixed(2)}`).join(" ");
-			return `<span class="wa-home__kpi-spark sanad-tone--${esc(tone)}" aria-hidden="true">
+			return `<span class="whatsapp-home__kpi-spark whatsapp-kit-tone--${esc(tone)}" aria-hidden="true">
 				<svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">
 					<polyline points="${path}"></polyline>
 				</svg>
@@ -925,48 +925,48 @@ frappe.provide("whatsapp_next.home");
 
 		render_evidence($el) {
 			const p = period_of(this.period);
-			if (!$el.find(".wa-home__evidence").length) {
+			if (!$el.find(".whatsapp-home__evidence").length) {
 				$el.html(`
-					<div class="wa-home__evidence">
-						<section class="wa-home__card wa-home__volume" aria-labelledby="wa-home-vol-title">
-							<header class="wa-home__card-head">
-								<div class="wa-home__card-text">
-									<h3 class="wa-home__card-title" id="wa-home-vol-title"></h3>
-									<p class="wa-home__card-note"></p>
+					<div class="whatsapp-home__evidence">
+						<section class="whatsapp-home__card whatsapp-home__volume" aria-labelledby="whatsapp-home-vol-title">
+							<header class="whatsapp-home__card-head">
+								<div class="whatsapp-home__card-text">
+									<h3 class="whatsapp-home__card-title" id="whatsapp-home-vol-title"></h3>
+									<p class="whatsapp-home__card-note"></p>
 								</div>
-								<div class="wa-home__card-aside">
-									<span class="wa-home__card-total sanad-tabular"></span>
-									<button type="button" class="wa-ops__link wa-home__volume-all">${esc(__("See all"))}</button>
+								<div class="whatsapp-home__card-aside">
+									<span class="whatsapp-home__card-total whatsapp-kit-tabular"></span>
+									<button type="button" class="whatsapp-ops__link whatsapp-home__volume-all">${esc(__("See all"))}</button>
 								</div>
 							</header>
-							<div class="wa-home__card-body"></div>
+							<div class="whatsapp-home__card-body"></div>
 						</section>
-						<section class="wa-home__card wa-home__failures" aria-labelledby="wa-home-fail-title">
-							<header class="wa-home__card-head">
-								<div class="wa-home__card-text">
-									<h3 class="wa-home__card-title" id="wa-home-fail-title">${esc(__("Failures by error"))}</h3>
-									<p class="wa-home__card-note">${esc(__("Largest first — open a row for just those messages."))}</p>
+						<section class="whatsapp-home__card whatsapp-home__failures" aria-labelledby="whatsapp-home-fail-title">
+							<header class="whatsapp-home__card-head">
+								<div class="whatsapp-home__card-text">
+									<h3 class="whatsapp-home__card-title" id="whatsapp-home-fail-title">${esc(__("Failures by error"))}</h3>
+									<p class="whatsapp-home__card-note">${esc(__("Largest first — open a row for just those messages."))}</p>
 								</div>
-								<div class="wa-home__card-aside">
-									<button type="button" class="wa-ops__link wa-home__failures-all">${esc(__("See all"))}</button>
+								<div class="whatsapp-home__card-aside">
+									<button type="button" class="whatsapp-ops__link whatsapp-home__failures-all">${esc(__("See all"))}</button>
 								</div>
 							</header>
-							<div class="wa-home__card-body"></div>
+							<div class="whatsapp-home__card-body"></div>
 						</section>
 					</div>`);
 				// bound once, read at click time: the period may have changed since
-				$el.find(".wa-home__volume-all").on("click", () => open_outbound(since(this._shown_traffic)));
-				$el.find(".wa-home__failures-all").on("click", () => open_outbound({ ...since(this._shown_traffic), status: "Failed" }));
+				$el.find(".whatsapp-home__volume-all").on("click", () => open_outbound(since(this._shown_traffic)));
+				$el.find(".whatsapp-home__failures-all").on("click", () => open_outbound({ ...since(this._shown_traffic), status: "Failed" }));
 			}
-			$el.find("#wa-home-vol-title").text(__("Message volume — {0}", [p.window()]));
-			$el.find(".wa-home__volume .wa-home__card-note").text(
+			$el.find("#whatsapp-home-vol-title").text(__("Message volume — {0}", [p.window()]));
+			$el.find(".whatsapp-home__volume .whatsapp-home__card-note").text(
 				p.grain === "hour"
 					? __("One column per hour — open a column for that hour's messages.")
 					: __("One column per day — open a column for that day's messages.")
 			);
 
-			const $vol = $el.find(".wa-home__volume .wa-home__card-body");
-			const $fails = $el.find(".wa-home__failures .wa-home__card-body");
+			const $vol = $el.find(".whatsapp-home__volume .whatsapp-home__card-body");
+			const $fails = $el.find(".whatsapp-home__failures .whatsapp-home__card-body");
 			const vol_state = body_state($vol, 4);
 			const fail_state = body_state($fails, 4);
 
@@ -975,7 +975,7 @@ frappe.provide("whatsapp_next.home");
 					this._shown_traffic = t;
 					// the total is the sum of the columns under it, so it counts every band drawn —
 					// the waiting one too
-					$el.find(".wa-home__card-total").text(__("{0} messages", [int(sum_of(t.now, [...HANDED, ...WAITING, "Failed"]))]));
+					$el.find(".whatsapp-home__card-total").text(__("{0} messages", [int(sum_of(t.now, [...HANDED, ...WAITING, "Failed"]))]));
 					this.paint_volume($vol, vol_state, s);
 					this.paint_failures($fails, fail_state, t);
 				})
@@ -1011,7 +1011,7 @@ frappe.provide("whatsapp_next.home");
 			const ticks = [max, step * 2, step, 0];
 			const legend = BANDS.map(
 				(band) =>
-					`<li class="wa-home__legend-item"><span class="wa-home__swatch wa-home__swatch--${band.seg}" aria-hidden="true"></span>${esc(
+					`<li class="whatsapp-home__legend-item"><span class="whatsapp-home__swatch whatsapp-home__swatch--${band.seg}" aria-hidden="true"></span>${esc(
 						band.label()
 					)}</li>`
 			).join("");
@@ -1027,35 +1027,35 @@ frappe.provide("whatsapp_next.home");
 					const stack = BANDS.filter((band) => cint(b.counts[band.key]))
 						.map(
 							(band) =>
-								`<span class="wa-home__seg wa-home__seg--${band.seg}" style="block-size:${((cint(b.counts[band.key]) / max) * 100).toFixed(
+								`<span class="whatsapp-home__seg whatsapp-home__seg--${band.seg}" style="block-size:${((cint(b.counts[band.key]) / max) * 100).toFixed(
 									2
 								)}%"></span>`
 						)
 						.join("");
-					return `<li class="wa-home__col">
-						<button type="button" class="wa-home__col-btn" data-from="${esc(b.from)}" data-to="${esc(b.to)}" title="${esc(title)}" aria-label="${esc(title)}">
-							<span class="wa-home__stack">${stack || '<span class="wa-home__seg wa-home__seg--none"></span>'}</span>
+					return `<li class="whatsapp-home__col">
+						<button type="button" class="whatsapp-home__col-btn" data-from="${esc(b.from)}" data-to="${esc(b.to)}" title="${esc(title)}" aria-label="${esc(title)}">
+							<span class="whatsapp-home__stack">${stack || '<span class="whatsapp-home__seg whatsapp-home__seg--none"></span>'}</span>
 						</button>
-						<span class="wa-home__col-tick" aria-hidden="true">${esc(b.tick)}</span>
+						<span class="whatsapp-home__col-tick" aria-hidden="true">${esc(b.tick)}</span>
 					</li>`;
 				})
 				.join("");
 
 			const $fig = $(`
-				<figure class="wa-home__plot">
-					<ul class="wa-home__legend">${legend}</ul>
-					<div class="wa-home__grid">
-						<div class="wa-home__rules" aria-hidden="true">
-							${ticks.map((v) => `<span class="wa-home__rule"><i class="sanad-tabular">${esc(int(v))}</i></span>`).join("")}
+				<figure class="whatsapp-home__plot">
+					<ul class="whatsapp-home__legend">${legend}</ul>
+					<div class="whatsapp-home__grid">
+						<div class="whatsapp-home__rules" aria-hidden="true">
+							${ticks.map((v) => `<span class="whatsapp-home__rule"><i class="whatsapp-kit-tabular">${esc(int(v))}</i></span>`).join("")}
 						</div>
-						<ol class="wa-home__cols">${columns}</ol>
+						<ol class="whatsapp-home__cols">${columns}</ol>
 					</div>
-					<figcaption class="sanad-visually-hidden">${esc(
+					<figcaption class="whatsapp-kit-visually-hidden">${esc(
 						__("{0} messages over {1} columns; the busiest column holds {2}.", [int(total), int(buckets.length), int(peak)])
 					)}</figcaption>
 				</figure>`).appendTo($el);
 
-			$fig.find(".wa-home__col-btn").on("click", function () {
+			$fig.find(".whatsapp-home__col-btn").on("click", function () {
 				// one bucket: its own window replaces the period's
 				const $b = $(this);
 				open_outbound({ creation: ["between", [$b.data("from"), $b.data("to")]] });
@@ -1088,28 +1088,28 @@ frappe.provide("whatsapp_next.home");
 			$el.empty();
 			const max = rows[0].count;
 			const $fig = $(`
-				<div class="wa-home__fails">
-					<ul class="wa-home__fail-list"></ul>
-					<div class="wa-home__fails-foot">
+				<div class="whatsapp-home__fails">
+					<ul class="whatsapp-home__fail-list"></ul>
+					<div class="whatsapp-home__fails-foot">
 						<span>${esc(__("Total failures"))}</span>
-						<span class="sanad-tabular sanad-tone--red">${esc(int(total))}</span>
+						<span class="whatsapp-kit-tabular whatsapp-kit-tone--red">${esc(int(total))}</span>
 						<span>${esc(__("Failure rate"))}</span>
-						<span class="sanad-tabular sanad-tone--red">${esc(rate_text(total, attempted))}</span>
+						<span class="whatsapp-kit-tabular whatsapp-kit-tone--red">${esc(rate_text(total, attempted))}</span>
 					</div>
 				</div>`).appendTo($el);
-			const $list = $fig.find(".wa-home__fail-list");
+			const $list = $fig.find(".whatsapp-home__fail-list");
 			rows.slice(0, FAIL_LIMIT).forEach((r) => {
 				$(`
 					<li>
-						<button type="button" class="wa-home__fail" data-code="${esc(r.code)}">
-							<span class="wa-home__fail-label">${esc(r.label)}</span>
-							<span class="wa-home__fail-bar" aria-hidden="true"><span style="inline-size:${((r.count / max) * 100).toFixed(1)}%"></span></span>
-							<span class="wa-home__fail-share sanad-tabular">${esc(rate_text(r.count, total))}</span>
-							<span class="wa-home__fail-count sanad-tabular">${esc(int(r.count))}</span>
+						<button type="button" class="whatsapp-home__fail" data-code="${esc(r.code)}">
+							<span class="whatsapp-home__fail-label">${esc(r.label)}</span>
+							<span class="whatsapp-home__fail-bar" aria-hidden="true"><span style="inline-size:${((r.count / max) * 100).toFixed(1)}%"></span></span>
+							<span class="whatsapp-home__fail-share whatsapp-kit-tabular">${esc(rate_text(r.count, total))}</span>
+							<span class="whatsapp-home__fail-count whatsapp-kit-tabular">${esc(int(r.count))}</span>
 						</button>
 					</li>`).appendTo($list);
 			});
-			$list.find(".wa-home__fail").on("click", function () {
+			$list.find(".whatsapp-home__fail").on("click", function () {
 				const code = $(this).data("code");
 				// "No code recorded" is its own row, so it opens only the failures without a code
 				open_outbound({ ...period_filter, status: "Failed", error_code: code ? code : ["is", "not set"] });
@@ -1119,33 +1119,33 @@ frappe.provide("whatsapp_next.home");
 		// ---- band 6: the four panels -------------------------------------------------------
 
 		render_panels($el) {
-			if (!$el.find(".wa-home__panels").length) {
-				$el.html('<div class="wa-home__panels"></div>');
+			if (!$el.find(".whatsapp-home__panels").length) {
+				$el.html('<div class="whatsapp-home__panels"></div>');
 			}
-			const $grid = $el.find(".wa-home__panels");
+			const $grid = $el.find(".whatsapp-home__panels");
 			const panel = (key) => {
 				let $p = $grid.find(`[data-panel="${key}"]`);
 				if (!$p.length) {
 					$p = $(`
-						<section class="wa-home__card wa-home__panel" data-panel="${key}">
-							<header class="wa-home__card-head">
-								<div class="wa-home__card-text">
-									<h3 class="wa-home__card-title"></h3>
-									<p class="wa-home__card-note"></p>
+						<section class="whatsapp-home__card whatsapp-home__panel" data-panel="${key}">
+							<header class="whatsapp-home__card-head">
+								<div class="whatsapp-home__card-text">
+									<h3 class="whatsapp-home__card-title"></h3>
+									<p class="whatsapp-home__card-note"></p>
 								</div>
-								<div class="wa-home__card-aside"></div>
+								<div class="whatsapp-home__card-aside"></div>
 							</header>
-							<div class="wa-home__card-body"></div>
+							<div class="whatsapp-home__card-body"></div>
 						</section>`).appendTo($grid);
 				}
 				return $p;
 			};
 			const head = ($p, title, note, cta) => {
-				$p.find(".wa-home__card-title").text(title);
-				$p.find(".wa-home__card-note").text(note || "");
-				const $cta = $p.find(".wa-home__card-aside").empty();
+				$p.find(".whatsapp-home__card-title").text(title);
+				$p.find(".whatsapp-home__card-note").text(note || "");
+				const $cta = $p.find(".whatsapp-home__card-aside").empty();
 				if (!cta) return;
-				$(`<button type="button" class="wa-ops__link wa-home__card-link">${esc(cta.label)}</button>`)
+				$(`<button type="button" class="whatsapp-ops__link whatsapp-home__card-link">${esc(cta.label)}</button>`)
 					.on("click", cta.handler)
 					.appendTo($cta);
 			};
@@ -1164,7 +1164,7 @@ frappe.provide("whatsapp_next.home");
 				__("The last five movements, in and out"),
 				is_agent() ? { label: __("Send a message"), handler: () => new ui.QuickSend({ on_sent: () => this.refresh() }) } : null
 			);
-			const $body = $p.find(".wa-home__card-body");
+			const $body = $p.find(".whatsapp-home__card-body");
 			const state = body_state($body, 5);
 			return Promise.all([ui.meta.with_doctype(OUT), ui.meta.with_doctype(IN), this.feed()])
 				.then(([, , rows]) => {
@@ -1200,7 +1200,7 @@ frappe.provide("whatsapp_next.home");
 		}
 
 		render_campaigns($p, head) {
-			const $body = $p.find(".wa-home__card-body");
+			const $body = $p.find(".whatsapp-home__card-body");
 			const state = body_state($body, 4);
 			return Promise.all([ui.meta.with_doctype(CAMP), this.dashboard(), this.scheduled()])
 				.then(([, data, scheduled]) => {
@@ -1244,7 +1244,7 @@ frappe.provide("whatsapp_next.home");
 		}
 
 		render_devices($p, head) {
-			const $body = $p.find(".wa-home__card-body");
+			const $body = $p.find(".whatsapp-home__card-body");
 			const state = body_state($body, 4);
 			return Promise.all([ui.meta.with_doctype(DEV), this.dashboard()])
 				.then(([, data]) => {

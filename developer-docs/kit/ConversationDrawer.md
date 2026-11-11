@@ -1,7 +1,7 @@
-# `sanad.ui.ConversationDrawer`
+# `whatsapp.ui.ConversationDrawer`
 
-The conversation variant of the side panel: the shared `.sanad-panel` shell (full-height sheet on
-mobile) showing one number's merged outbound + inbound thread (a `sanad.ui.ChatThread`), the
+The conversation variant of the side panel: the shared `.whatsapp-kit-panel` shell (full-height sheet on
+mobile) showing one number's merged outbound + inbound thread (a `whatsapp.ui.ChatThread`), the
 number's link status badge and contextual actions — Add as contact / Open contact, Quick send,
 Confirm conversation. One overlay at a time through `ui.overlay` (opening it closes a Drawer and
 vice versa); it traps focus, closes on Escape / backdrop, restores focus to the opener and
@@ -24,7 +24,7 @@ unsubscribes its realtime handlers on close. **Constructing it opens it.**
 | `page_length` | number | `50` | `limit` per page. |
 | `actions` | `Array<string \| spec>` | `["link", "quick_send", "confirm"]` | Built-in keys or custom specs. |
 | `title` | string | number's `display_name`, the key, or "Unknown number" | Header title. |
-| `width` | number \| CSS string | 520px (shell) | Sets `--sanad-panel-width`. |
+| `width` | number \| CSS string | 520px (shell) | Sets `--whatsapp-kit-panel-width`. |
 | `on_close` | `(drawer) => void` | — | Not called on `close({silent: true})`. |
 | `on_link` | `(number_row, drawer) => void` | — | Caller's link / convert dialog; without it "Add as contact" is not rendered. |
 | `on_row_click` | `(row) => void` | — | Forwarded to ChatThread. |
@@ -33,7 +33,7 @@ unsubscribes its realtime handlers on close. **Constructing it opens it.**
 
 **Built-in actions** (`ui.visible_actions` against the number row):
 - `link` — "Open contact" (`frappe.set_route("Form", "Contact", n.contact)`) when linked; else "Add as contact" → `on_link`, only for a known individual number.
-- `quick_send` — opens `sanad.ui.QuickSend` with `phone` (or `jid` when the key contains `@`) and `device` (option or `last_device`); only if QuickSend is loaded.
+- `quick_send` — opens `whatsapp.ui.QuickSend` with `phone` (or `jid` when the key contains `@`) and `device` (option or `last_device`); only if QuickSend is loaded.
 - `confirm` — "Confirm conversation" / "Remove confirmation" for a known individual number.
 
 **Custom action spec:** `{key, label, icon?, handler(number, drawer), condition?(number), roles?, perm?}`.
@@ -64,7 +64,7 @@ unsubscribes its realtime handlers on close. **Constructing it opens it.**
 ## Usage
 
 ```js
-sanad.ui.ConversationDrawer.open({
+whatsapp.ui.ConversationDrawer.open({
   key: doc.phone_e164 || doc.jid,
   device: doc.last_device,
   on_link: (number) => open_link_dialog(number),
@@ -76,13 +76,13 @@ sanad.ui.ConversationDrawer.open({
 
 ## CSS hooks
 
-- Root `aside.sanad-kit.sanad-panel.sanad-convo` (`.sanad-panel--open`), `.sanad-convo__backdrop`.
-- `__avatar` (two initials), `__title`, `__sub` (key, LTR), `__badge`, `__badge-skeleton`, `__close`, `__actions` (`role="group"`), `__action`, `__body`, `__state`, `__thread` (contains `.sanad-chat`).
+- Root `aside.whatsapp-kit.whatsapp-kit-panel.whatsapp-kit-convo` (`.whatsapp-kit-panel--open`), `.whatsapp-kit-convo__backdrop`.
+- `__avatar` (two initials), `__title`, `__sub` (key, LTR), `__badge`, `__badge-skeleton`, `__close`, `__actions` (`role="group"`), `__action`, `__body`, `__state`, `__thread` (contains `.whatsapp-kit-chat`).
 
 ## Notes
 
 - States: skeleton (4 rows) → thread; empty → "No messages yet" / "Messages exchanged with this number will appear here."; 403 / `PermissionError` → "No access to conversations" (no retry); other errors → "Could not load the conversation" with Retry. Header badge and action row reserve space with skeletons while the number loads; a non-403 number-lookup error shows a toast and the thread still loads.
 - Announces "{n} messages loaded." on first load. Phone numbers in confirm sentences are bidi-isolated (LRI…PDI).
 - `role="dialog"` + `aria-modal`, labelled by the title; focus starts on the close button.
-- The README says default roles come from `sanad.ui.config.defaults.roles`; the code actually uses the hardcoded `DEFAULT_ROLES`.
+- The README says default roles come from `whatsapp.ui.config.defaults.roles`; the code actually uses the hardcoded `DEFAULT_ROLES`.
 - Live use: `public/js/screens/numbers.js` (`open_conversation`, used by `public/js/listview/whatsapp_number_list.js` and `public/js/form/whatsapp_number.js`; `confirm_dialog`), `public/js/listview/whatsapp_number_list.js` (`link_badge`), `public/js/form/whatsapp_log.js`, `whatsapp_next/page/wa_contacts/wa_contacts.js`.

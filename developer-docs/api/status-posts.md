@@ -69,7 +69,7 @@ and the request is rolled back, so the post keeps the state it had before the ca
 **Realtime:** none.
 
 ```js
-const { status_id } = await sanad.ui.call("status_posts.post_now", { name: frm.doc.name });
+const { status_id } = await whatsapp.ui.call("status_posts.post_now", { name: frm.doc.name });
 ```
 
 ---
@@ -101,7 +101,7 @@ Sets the post to be posted at a time in the future by the minute job. The post b
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("status_posts.schedule", { name: frm.doc.name, scheduled_at: "2026-11-10 09:00:00" });
+await whatsapp.ui.call("status_posts.schedule", { name: frm.doc.name, scheduled_at: "2026-11-10 09:00:00" });
 ```
 
 ---
@@ -125,7 +125,7 @@ call still answers `ok`. The plan isn't checked.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("status_posts.unschedule", { name: frm.doc.name });
+await whatsapp.ui.call("status_posts.unschedule", { name: frm.doc.name });
 ```
 
 ---
@@ -158,7 +158,7 @@ plan isn't checked.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("status_posts.delete_post", { name: frm.doc.name }, { freeze: true });
+await whatsapp.ui.call("status_posts.delete_post", { name: frm.doc.name }, { freeze: true });
 ```
 
 ---
@@ -195,5 +195,5 @@ seconds (the form reads it with `moment.unix`).
 **Realtime:** none.
 
 ```js
-const { view_count, viewers } = await sanad.ui.call("status_posts.refresh_views", { name: frm.doc.name });
+const { view_count, viewers } = await whatsapp.ui.call("status_posts.refresh_views", { name: frm.doc.name });
 ```

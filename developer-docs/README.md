@@ -17,7 +17,7 @@ What it does:
   that carry a `WA-FUNCTION` header and are installed in the Functions Center. A command runs only
   its installed function's script, never a path taken from data, and never as Administrator; the
   script's direct URL is refused by a guard (D-012)
-- ships Desk pages (`wa-*`) and a portable UI kit (`sanad.ui`)
+- ships Desk pages (`wa-*`) and a portable UI kit (`whatsapp.ui`)
 
 | | |
 |---|---|
@@ -80,7 +80,7 @@ What it does:
 | [api/commands.md](api/commands.md) | Inbound commands |
 | [api/webhooks.md](api/webhooks.md) | The inbound webhook receiver contract |
 | [events-and-hooks.md](events-and-hooks.md) | Hooks the app defines and uses, realtime `wa:*` events, webhook event names |
-| [kit/README.md](kit/README.md) | The portable `sanad.ui` component kit, with one page per component under `kit/` |
+| [kit/README.md](kit/README.md) | The portable `whatsapp.ui` component kit, with one page per component under `kit/` |
 | [permissions.md](permissions.md) | Roles, the permission matrix, the contextual layer for `WhatsApp Contact User` |
 | [troubleshooting.md](troubleshooting.md) | Symptom → cause → fix |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Branches, commits, code rules, lint, tests, translations, assets |
@@ -102,9 +102,9 @@ whatsapp_next/                      # the app repo (apps/whatsapp_next)
 │   ├── webhooks/v1/receiver.py     # the only guest endpoint; verify.py, idempotency.py, handlers.py
 │   ├── whatsapp_next/doctype/      # 26 DocTypes (module "WhatsApp Next")
 │   ├── whatsapp_next/page/         # wa_home, wa_onboarding, wa_devices, wa_contacts, wa_functions_center, wa_simulator, wa_test_lab, wa_settings
-│   ├── public/js/ui/               # portable kit (sanad.ui), never imports whatsapp_next
+│   ├── public/js/ui/               # portable kit (whatsapp.ui), never imports whatsapp_next
 │   ├── public/js/{screens,form,listview}/  # app-specific screens, form and list scripts
-│   ├── public/scss/_tokens.scss    # the product palette (--wa-*)
+│   ├── public/scss/_tokens.scss    # the product palette (--whatsapp-*)
 │   ├── fixtures/                   # roles, Custom HTML Block
 │   ├── desktop_icon/, workspace_sidebar/   # app-level folders Frappe syncs itself
 │   ├── whatsapp_next/custom/       # customizations of core DocTypes (Contact Phone.wa_phone_e164)

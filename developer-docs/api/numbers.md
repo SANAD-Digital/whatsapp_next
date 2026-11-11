@@ -122,7 +122,7 @@ Ordered `last_seen desc, name asc`. `total` counts every match, not just the pag
 **Realtime:** none.
 
 ```js
-const { rows, total } = await sanad.ui.call("numbers.search_numbers", { txt: "5000", link_status: "Not Linked" });
+const { rows, total } = await whatsapp.ui.call("numbers.search_numbers", { txt: "5000", link_status: "Not Linked" });
 ```
 
 ---
@@ -206,7 +206,7 @@ Contact gets none — a group has no phone, the link carries it. Audited
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("numbers.convert_number", {
+await whatsapp.ui.call("numbers.convert_number", {
   phone_e164: "+966500000002", first_name: "Ahmed", last_name: "Ali",
   party_type: "Customer", party_name: "CUST-0001",
 });
@@ -248,7 +248,7 @@ in `failed`, never raised.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("numbers.convert_many", { phone_e164s: ["+966500000002", "+966500000003"] });
+await whatsapp.ui.call("numbers.convert_many", { phone_e164s: ["+966500000002", "+966500000003"] });
 ```
 
 ---
@@ -314,7 +314,7 @@ clears it). Audited `Conversation Confirmed` with `details.confirmed`.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("numbers.confirm_conversation", { phone_e164: "+966500000002", confirmed: 1, note: "Asked for a statement" });
+await whatsapp.ui.call("numbers.confirm_conversation", { phone_e164: "+966500000002", confirmed: 1, note: "Asked for a statement" });
 ```
 
 ---
@@ -347,7 +347,7 @@ rows; never the IP address or the raw row).
 **Realtime:** none.
 
 ```js
-const { rows } = await sanad.ui.call("numbers.get_conversation_log", { phone_e164: "+966500000002" });
+const { rows } = await whatsapp.ui.call("numbers.get_conversation_log", { phone_e164: "+966500000002" });
 ```
 
 ---
@@ -378,7 +378,7 @@ device synced, or `null`.
 **Realtime:** none.
 
 ```js
-const devices = await sanad.ui.call("numbers.list_sync_devices", {});
+const devices = await whatsapp.ui.call("numbers.list_sync_devices", {});
 ```
 
 ---
@@ -419,7 +419,7 @@ arrive on the realtime event and in `get_sync_state`.
 `{device, error}` on failure.
 
 ```js
-await sanad.ui.call("numbers.sync_from_device", { device: "WA-DEV-001" });
+await whatsapp.ui.call("numbers.sync_from_device", { device: "WA-DEV-001" });
 ```
 
 ---
@@ -450,5 +450,5 @@ state lives in the cache for one hour.
 **Realtime:** none.
 
 ```js
-const state = await sanad.ui.call("numbers.get_sync_state", { device: "WA-DEV-001" });
+const state = await whatsapp.ui.call("numbers.get_sync_state", { device: "WA-DEV-001" });
 ```

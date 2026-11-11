@@ -1,4 +1,4 @@
-// sanad.ui.CommandEditor — the prototype's command editor (`docs/component/Command Editor.dc.html`),
+// whatsapp.ui.CommandEditor — the prototype's command editor (`docs/component/Command Editor.dc.html`),
 // value for value: a full-height 10 px-radius modal on the page background, a surface header with
 // the command word, tabs and the function chip, three scrolling columns per tab and a surface
 // footer. Columns: 340 | 1fr | 1fr (setup) and 320 | 1fr | 420 (preview); under 1080 px the first
@@ -9,9 +9,9 @@ $ce-narrow: 1079px;
 $ce-mobile: 759px;
 $ce-mono: "IBM Plex Mono", ui-monospace, monospace;
 
-body.sanad-ce-open { overflow: hidden; }
+body.whatsapp-kit-ce-open { overflow: hidden; }
 
-.sanad-ce-layer {
+.whatsapp-kit-ce-layer {
 	position: fixed;
 	inset: 0;
 	z-index: 1040;
@@ -19,24 +19,24 @@ body.sanad-ce-open { overflow: hidden; }
 	align-items: center;
 	justify-content: center;
 	padding: 12px;
-	color: var(--wa-ink);
+	color: var(--whatsapp-ink);
 
 	@media (max-width: $ce-mobile) { padding: 0; }
 }
 
-.sanad-ce-backdrop {
+.whatsapp-kit-ce-backdrop {
 	position: absolute;
 	inset: 0;
-	background: var(--wa-ink);
+	background: var(--whatsapp-ink);
 	opacity: 0.45;
 }
 
-@keyframes sanad-ce-in {
+@keyframes whatsapp-kit-ce-in {
 	from { opacity: 0; transform: translateY(8px) scale(0.995); }
 	to { opacity: 1; transform: none; }
 }
 
-.sanad-ce {
+.whatsapp-kit-ce {
 	position: relative;
 	z-index: 1;
 	inline-size: min(1320px, 100%);
@@ -45,11 +45,11 @@ body.sanad-ce-open { overflow: hidden; }
 	display: flex;
 	flex-direction: column;
 	border-radius: 10px;
-	background: var(--wa-bg);
-	border: 1px solid var(--wa-border);
-	box-shadow: 0 24px 60px color-mix(in srgb, var(--wa-ink) 28%, transparent);
+	background: var(--whatsapp-bg);
+	border: 1px solid var(--whatsapp-border);
+	box-shadow: 0 24px 60px color-mix(in srgb, var(--whatsapp-ink) 28%, transparent);
 	overflow: hidden;
-	animation: sanad-ce-in 0.18s ease-out;
+	animation: whatsapp-kit-ce-in 0.18s ease-out;
 
 	@media (prefers-reduced-motion: reduce) { animation: none; }
 	@media (max-width: $ce-mobile) { border-radius: 0; }
@@ -69,7 +69,7 @@ body.sanad-ce-open { overflow: hidden; }
 		align-items: center;
 		justify-content: center;
 		font-size: 13px;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 	}
 
 	// ---- header ------------------------------------------------------------------------------
@@ -78,8 +78,8 @@ body.sanad-ce-open { overflow: hidden; }
 		flex: none;
 		display: flex;
 		flex-direction: column;
-		background: var(--wa-surface);
-		border-block-end: 1px solid var(--wa-border);
+		background: var(--whatsapp-surface);
+		border-block-end: 1px solid var(--whatsapp-border);
 	}
 
 	&__head-row {
@@ -93,7 +93,7 @@ body.sanad-ce-open { overflow: hidden; }
 	}
 
 	&__word { display: flex; align-items: center; gap: 8px; min-inline-size: 0; flex: 1; flex-wrap: wrap; }
-	&__word-label { font-size: 11px; color: var(--wa-ink-4); flex: none; margin: 0; font-weight: 400; }
+	&__word-label { font-size: 11px; color: var(--whatsapp-ink-4); flex: none; margin: 0; font-weight: 400; }
 
 	&__code {
 		min-block-size: 28px;
@@ -101,16 +101,16 @@ body.sanad-ce-open { overflow: hidden; }
 		max-inline-size: 260px;
 		padding: 0 12px;
 		border-radius: 8px;
-		border: 1px solid var(--wa-border-2);
-		background: var(--wa-bg);
-		color: var(--wa-ink);
+		border: 1px solid var(--whatsapp-border-2);
+		background: var(--whatsapp-bg);
+		color: var(--whatsapp-ink);
 		font-family: $ce-mono;
 		font-size: 16px;
 		font-weight: 700;
 		text-align: end;
 		outline: none;
 
-		&:focus { border-color: var(--wa-pri); background: var(--wa-surface); }
+		&:focus { border-color: var(--whatsapp-pri); background: var(--whatsapp-surface); }
 	}
 
 	&__dirty {
@@ -119,9 +119,9 @@ body.sanad-ce-open { overflow: hidden; }
 		gap: 6px;
 		padding: 4px 10px;
 		border-radius: 999px;
-		background: var(--wa-wn-s);
-		border: 1px solid var(--wa-wn-sb);
-		color: var(--wa-wn-i);
+		background: var(--whatsapp-wn-s);
+		border: 1px solid var(--whatsapp-wn-sb);
+		color: var(--whatsapp-wn-i);
 		font-size: 11px;
 		font-weight: 700;
 		flex: none;
@@ -134,7 +134,7 @@ body.sanad-ce-open { overflow: hidden; }
 		border-radius: 50%;
 		background: currentcolor;
 
-		&--wn { background: var(--wa-wn); }
+		&--wn { background: var(--whatsapp-wn); }
 	}
 
 	&__head-end { display: flex; align-items: center; gap: 10px; flex: none; }
@@ -146,15 +146,15 @@ body.sanad-ce-open { overflow: hidden; }
 		min-block-size: 28px;
 		padding: 0 11px;
 		border-radius: 8px;
-		border: 1px solid var(--wa-border-2);
-		background: var(--wa-surface);
-		color: var(--wa-ink-3);
+		border: 1px solid var(--whatsapp-border-2);
+		background: var(--whatsapp-surface);
+		color: var(--whatsapp-ink-3);
 		font-size: 12px;
 		font-weight: 600;
 		cursor: pointer;
 		white-space: nowrap;
 
-		&.is-on { border-color: var(--wa-ok-sb); background: var(--wa-ok-s); color: var(--wa-ok-i); }
+		&.is-on { border-color: var(--whatsapp-ok-sb); background: var(--whatsapp-ok-s); color: var(--whatsapp-ok-i); }
 	}
 
 	&__track {
@@ -162,10 +162,10 @@ body.sanad-ce-open { overflow: hidden; }
 		inline-size: 28px;
 		block-size: 19px;
 		border-radius: 999px;
-		background: var(--wa-border-2);
+		background: var(--whatsapp-border-2);
 		flex: none;
 
-		.is-on & { background: var(--wa-ok); }
+		.is-on & { background: var(--whatsapp-ok); }
 	}
 
 	&__knob {
@@ -175,8 +175,8 @@ body.sanad-ce-open { overflow: hidden; }
 		inline-size: 13px;
 		block-size: 13px;
 		border-radius: 50%;
-		background: var(--wa-surface);
-		box-shadow: 0 1px 3px color-mix(in srgb, var(--wa-ink) 28%, transparent);
+		background: var(--whatsapp-surface);
+		box-shadow: 0 1px 3px color-mix(in srgb, var(--whatsapp-ink) 28%, transparent);
 		transition: inset-inline-end 0.18s ease-out;
 
 		.is-on & { inset-inline-end: 18px; }
@@ -186,7 +186,7 @@ body.sanad-ce-open { overflow: hidden; }
 		inline-size: 28px;
 		block-size: 28px;
 		border-radius: 8px;
-		border: 1px solid var(--wa-border);
+		border: 1px solid var(--whatsapp-border);
 		background: transparent;
 		display: flex;
 		align-items: center;
@@ -194,10 +194,10 @@ body.sanad-ce-open { overflow: hidden; }
 		cursor: pointer;
 		font-size: 16px;
 		line-height: 1;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 		flex: none;
 
-		&:hover { background: var(--wa-sunken); color: var(--wa-ink); }
+		&:hover { background: var(--whatsapp-sunken); color: var(--whatsapp-ink); }
 	}
 
 	&__tabs { display: flex; gap: 2px; overflow-x: auto; }
@@ -212,12 +212,12 @@ body.sanad-ce-open { overflow: hidden; }
 		background: transparent;
 		cursor: pointer;
 		white-space: nowrap;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 		font-size: 12px;
 		font-weight: 500;
 		box-shadow: inset 0 -2px 0 transparent;
 
-		&.is-sel { color: var(--wa-pri-d); font-weight: 700; box-shadow: inset 0 -2px 0 var(--wa-pri); }
+		&.is-sel { color: var(--whatsapp-pri-d); font-weight: 700; box-shadow: inset 0 -2px 0 var(--whatsapp-pri); }
 	}
 
 	&__count {
@@ -227,13 +227,13 @@ body.sanad-ce-open { overflow: hidden; }
 		block-size: 17px;
 		padding: 0 5px;
 		border-radius: 999px;
-		background: var(--wa-sunken);
-		color: var(--wa-ink-3);
+		background: var(--whatsapp-sunken);
+		color: var(--whatsapp-ink-3);
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 
-		.is-sel & { background: var(--wa-pri-s); color: var(--wa-pri-d); }
+		.is-sel & { background: var(--whatsapp-pri-s); color: var(--whatsapp-pri-d); }
 	}
 
 	&__meta {
@@ -246,8 +246,8 @@ body.sanad-ce-open { overflow: hidden; }
 		overflow: hidden;
 	}
 
-	&__runs { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--wa-ink-4); flex: none; }
-	&__runs-n { font-family: $ce-mono; font-size: 12px; font-weight: 600; color: var(--wa-ink-2); }
+	&__runs { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--whatsapp-ink-4); flex: none; }
+	&__runs-n { font-family: $ce-mono; font-size: 12px; font-weight: 600; color: var(--whatsapp-ink-2); }
 
 	&__fnchip {
 		display: inline-flex;
@@ -256,9 +256,9 @@ body.sanad-ce-open { overflow: hidden; }
 		max-inline-size: 210px;
 		padding: 0 10px;
 		border-radius: 999px;
-		background: var(--wa-pri-s);
-		border: 1px solid var(--wa-pri-sb);
-		color: var(--wa-pri-d);
+		background: var(--whatsapp-pri-s);
+		border: 1px solid var(--whatsapp-pri-sb);
+		color: var(--whatsapp-pri-d);
 		font-size: 11px;
 		font-weight: 600;
 		cursor: pointer;
@@ -266,7 +266,7 @@ body.sanad-ce-open { overflow: hidden; }
 		text-overflow: ellipsis;
 		white-space: nowrap;
 
-		&:hover { background: var(--wa-pri-sb); }
+		&:hover { background: var(--whatsapp-pri-sb); }
 	}
 
 	// ---- grids & columns ---------------------------------------------------------------------
@@ -295,17 +295,17 @@ body.sanad-ce-open { overflow: hidden; }
 		overflow: auto;
 		display: flex;
 		flex-direction: column;
-		background: var(--wa-surface);
-		border-inline-end: 1px solid var(--wa-border);
+		background: var(--whatsapp-surface);
+		border-inline-end: 1px solid var(--whatsapp-border);
 		scrollbar-width: thin;
 
-		&--bg { background: var(--wa-bg); }
+		&--bg { background: var(--whatsapp-bg); }
 		&--last { border-inline-end: 0; }
 		&:last-child { border-inline-end: 0; }
 
 		@media (max-width: $ce-narrow) and (min-width: $ce-mobile + 1) {
 			&--span { grid-row: span 2; }
-			.sanad-ce__grid--preview &:first-child { grid-row: span 2; }
+			.whatsapp-kit-ce__grid--preview &:first-child { grid-row: span 2; }
 		}
 
 		@media (max-width: $ce-mobile) {
@@ -313,7 +313,7 @@ body.sanad-ce-open { overflow: hidden; }
 			min-block-size: auto;
 			overflow: visible;
 			border-inline-end: 0;
-			border-block-end: 1px solid var(--wa-border);
+			border-block-end: 1px solid var(--whatsapp-border);
 		}
 	}
 
@@ -327,10 +327,10 @@ body.sanad-ce-open { overflow: hidden; }
 		gap: 8px;
 		padding: 10px 10px;
 		background: inherit;
-		border-block-end: 1px solid var(--wa-border);
+		border-block-end: 1px solid var(--whatsapp-border);
 	}
 
-	&__col-title { font-size: 11px; font-weight: 700; color: var(--wa-ink-2); letter-spacing: 0.02em; }
+	&__col-title { font-size: 11px; font-weight: 700; color: var(--whatsapp-ink-2); letter-spacing: 0.02em; }
 
 	&__col-body {
 		padding: 10px;
@@ -347,7 +347,7 @@ body.sanad-ce-open { overflow: hidden; }
 		padding: 0;
 		font-size: 11px;
 		font-weight: 600;
-		color: var(--wa-pri-d);
+		color: var(--whatsapp-pri-d);
 		cursor: pointer;
 		flex: none;
 
@@ -360,50 +360,50 @@ body.sanad-ce-open { overflow: hidden; }
 		&--tight { gap: 7px; }
 	}
 
-	&__label { font-size: 11px; font-weight: 600; color: var(--wa-ink-2); margin: 0; }
-	&__sub { font-size: 11px; color: var(--wa-ink-3); margin: 0; font-weight: 400; }
-	&__note { font-size: 11px; color: var(--wa-ink-4); line-height: 1.75;
-		&--danger { color: var(--wa-dg-i); }
-		&--warn { color: var(--wa-wn-i); }
+	&__label { font-size: 11px; font-weight: 600; color: var(--whatsapp-ink-2); margin: 0; }
+	&__sub { font-size: 11px; color: var(--whatsapp-ink-3); margin: 0; font-weight: 400; }
+	&__note { font-size: 11px; color: var(--whatsapp-ink-4); line-height: 1.75;
+		&--danger { color: var(--whatsapp-dg-i); }
+		&--warn { color: var(--whatsapp-wn-i); }
 	}
-	&__hint { font-size: 11px; color: var(--wa-ink-3); line-height: 1.75; }
+	&__hint { font-size: 11px; color: var(--whatsapp-ink-3); line-height: 1.75; }
 
 	&__input {
 		min-block-size: 28px;
 		padding: 0 11px;
 		border-radius: 8px;
-		border: 1px solid var(--wa-border-2);
-		background: var(--wa-bg);
+		border: 1px solid var(--whatsapp-border-2);
+		background: var(--whatsapp-bg);
 		font-size: 13px;
-		color: var(--wa-ink);
+		color: var(--whatsapp-ink);
 		outline: none;
 		inline-size: 100%;
 
-		&:focus { border-color: var(--wa-pri); background: var(--wa-surface); }
-		&--surface { background: var(--wa-surface); font-size: 12px; min-block-size: 28px; }
+		&:focus { border-color: var(--whatsapp-pri); background: var(--whatsapp-surface); }
+		&--surface { background: var(--whatsapp-surface); font-size: 12px; min-block-size: 28px; }
 		&--sm { min-block-size: 28px; padding: 0 10px; font-size: 12px; }
-		&--num { inline-size: 82px; min-block-size: 28px; padding: 0 9px; font-size: 12px; background: var(--wa-surface); }
-		&--text { inline-size: 150px; min-block-size: 28px; padding: 0 9px; font-size: 12px; background: var(--wa-surface); }
+		&--num { inline-size: 82px; min-block-size: 28px; padding: 0 9px; font-size: 12px; background: var(--whatsapp-surface); }
+		&--text { inline-size: 150px; min-block-size: 28px; padding: 0 9px; font-size: 12px; background: var(--whatsapp-surface); }
 	}
 
-	&__select { inline-size: auto; min-block-size: 28px; padding-inline: 9px 20px; font-size: 12px; background: var(--wa-surface); }
+	&__select { inline-size: auto; min-block-size: 28px; padding-inline: 9px 20px; font-size: 12px; background: var(--whatsapp-surface); }
 
 	&__textarea {
 		inline-size: 100%;
 		padding: 10px 12px;
 		border-radius: 8px;
-		border: 1px solid var(--wa-border-2);
-		background: var(--wa-bg);
-		color: var(--wa-ink);
+		border: 1px solid var(--whatsapp-border-2);
+		background: var(--whatsapp-bg);
+		color: var(--whatsapp-ink);
 		font-size: 12px;
 		line-height: 1.95;
 		resize: vertical;
 		outline: none;
 
-		&:focus { border-color: var(--wa-pri); background: var(--wa-surface); }
+		&:focus { border-color: var(--whatsapp-pri); background: var(--whatsapp-surface); }
 	}
 
-	&__check { inline-size: 17px; block-size: 17px; accent-color: var(--wa-pri); cursor: pointer; margin: 0; flex: none; }
+	&__check { inline-size: 17px; block-size: 17px; accent-color: var(--whatsapp-pri); cursor: pointer; margin: 0; flex: none; }
 
 	&__combo { position: relative; display: flex; flex-direction: column; gap: 6px; }
 
@@ -419,9 +419,9 @@ body.sanad-ce-open { overflow: hidden; }
 		overflow: auto;
 		padding: 5px;
 		border-radius: 8px;
-		border: 1px solid var(--wa-border-2);
-		background: var(--wa-surface);
-		box-shadow: 0 12px 28px color-mix(in srgb, var(--wa-ink) 16%, transparent);
+		border: 1px solid var(--whatsapp-border-2);
+		background: var(--whatsapp-surface);
+		box-shadow: 0 12px 28px color-mix(in srgb, var(--whatsapp-ink) 16%, transparent);
 
 		&--sm { max-block-size: 190px; }
 	}
@@ -437,16 +437,16 @@ body.sanad-ce-open { overflow: hidden; }
 		background: transparent;
 		font-size: 12px;
 		font-weight: 600;
-		color: var(--wa-ink);
+		color: var(--whatsapp-ink);
 		cursor: pointer;
 		text-align: start;
 
-		&:hover, &:focus-visible { background: var(--wa-sunken); }
-		&.is-sel { background: var(--wa-pri-s); color: var(--wa-pri-d); }
+		&:hover, &:focus-visible { background: var(--whatsapp-sunken); }
+		&.is-sel { background: var(--whatsapp-pri-s); color: var(--whatsapp-pri-d); }
 	}
 
-	&__opt-sub { font-size: 11px; font-weight: 500; color: var(--wa-ink-4); }
-	&__none { padding: 9px; font-size: 12px; color: var(--wa-ink-4); }
+	&__opt-sub { font-size: 11px; font-weight: 500; color: var(--whatsapp-ink-4); }
+	&__none { padding: 9px; font-size: 12px; color: var(--whatsapp-ink-4); }
 
 	&__callout {
 		display: flex;
@@ -458,9 +458,9 @@ body.sanad-ce-open { overflow: hidden; }
 		line-height: 1.75;
 
 		strong { font-size: 12px; font-weight: 700; }
-		&--warn { background: var(--wa-wn-s); border: 1px solid var(--wa-wn-sb); color: var(--wa-wn-i); }
-		&--danger { background: var(--wa-dg-s); border: 1px solid var(--wa-dg-sb); color: var(--wa-dg-i); }
-		&--muted { background: var(--wa-surface); border: 1px dashed var(--wa-border-2); color: var(--wa-ink-3); }
+		&--warn { background: var(--whatsapp-wn-s); border: 1px solid var(--whatsapp-wn-sb); color: var(--whatsapp-wn-i); }
+		&--danger { background: var(--whatsapp-dg-s); border: 1px solid var(--whatsapp-dg-sb); color: var(--whatsapp-dg-i); }
+		&--muted { background: var(--whatsapp-surface); border: 1px dashed var(--whatsapp-border-2); color: var(--whatsapp-ink-3); }
 	}
 
 	// ---- chips -------------------------------------------------------------------------------
@@ -481,20 +481,20 @@ body.sanad-ce-open { overflow: hidden; }
 		white-space: nowrap;
 		border: 1px solid transparent;
 
-		&--pri { background: var(--wa-pri-s); border-color: var(--wa-pri-sb); color: var(--wa-pri-d); }
-		&--dg { background: var(--wa-dg-s); border-color: var(--wa-dg-sb); color: var(--wa-dg-i); min-block-size: 28px; font-size: 11px; }
+		&--pri { background: var(--whatsapp-pri-s); border-color: var(--whatsapp-pri-sb); color: var(--whatsapp-pri-d); }
+		&--dg { background: var(--whatsapp-dg-s); border-color: var(--whatsapp-dg-sb); color: var(--whatsapp-dg-i); min-block-size: 28px; font-size: 11px; }
 		&--ghost {
-			background: var(--wa-sunken);
-			border-color: var(--wa-border-2);
-			color: var(--wa-ink-2);
+			background: var(--whatsapp-sunken);
+			border-color: var(--whatsapp-border-2);
+			color: var(--whatsapp-ink-2);
 			padding: 0 12px;
 			cursor: pointer;
 
-			&:hover { background: var(--wa-pri-s); border-color: var(--wa-pri-sb); color: var(--wa-pri-d); }
+			&:hover { background: var(--whatsapp-pri-s); border-color: var(--whatsapp-pri-sb); color: var(--whatsapp-pri-d); }
 		}
 	}
 
-	.sanad-ce__picker &__chip--pri { min-block-size: 28px; font-size: 11px; }
+	.whatsapp-kit-ce__picker &__chip--pri { min-block-size: 28px; font-size: 11px; }
 
 	&__chip-x {
 		border: 0;
@@ -511,13 +511,13 @@ body.sanad-ce-open { overflow: hidden; }
 		min-inline-size: 170px;
 		padding: 0 12px;
 		border-radius: 999px;
-		border: 1px dashed var(--wa-border-2);
+		border: 1px dashed var(--whatsapp-border-2);
 		background: transparent;
 		font-size: 12px;
-		color: var(--wa-ink);
+		color: var(--whatsapp-ink);
 		outline: none;
 
-		&:focus { border-style: solid; border-color: var(--wa-pri); }
+		&:focus { border-style: solid; border-color: var(--whatsapp-pri); }
 	}
 
 	&__pill {
@@ -527,41 +527,41 @@ body.sanad-ce-open { overflow: hidden; }
 		min-block-size: 28px;
 		padding: 0 11px;
 		border-radius: 8px;
-		border: 1px solid var(--wa-border-2);
-		background: var(--wa-surface);
-		color: var(--wa-ink-3);
+		border: 1px solid var(--whatsapp-border-2);
+		background: var(--whatsapp-surface);
+		color: var(--whatsapp-ink-3);
 		font-size: 12px;
 		font-weight: 600;
 		cursor: pointer;
 		white-space: nowrap;
 
-		&.is-on { border-color: var(--wa-pri-sb); background: var(--wa-pri-s); color: var(--wa-pri-d); }
+		&.is-on { border-color: var(--whatsapp-pri-sb); background: var(--whatsapp-pri-s); color: var(--whatsapp-pri-d); }
 	}
 
-	.sanad-ce__perm &__pill { min-block-size: 28px; padding: 0 12px; }
+	.whatsapp-kit-ce__perm &__pill { min-block-size: 28px; padding: 0 12px; }
 
 	&__mark { font-size: 13px; line-height: 1; }
 
 	&__tag {
 		padding: 2px 8px;
 		border-radius: 999px;
-		background: var(--wa-sunken);
-		border: 1px solid var(--wa-border);
-		color: var(--wa-ink-3);
+		background: var(--whatsapp-sunken);
+		border: 1px solid var(--whatsapp-border);
+		color: var(--whatsapp-ink-3);
 		font-size: 11px;
 		font-weight: 600;
 		white-space: nowrap;
 
-		&--warn { background: var(--wa-wn-s); border-color: var(--wa-wn-sb); color: var(--wa-wn-i); font-weight: 700; }
-		&--ok { background: var(--wa-ok-s); border-color: var(--wa-ok-sb); color: var(--wa-ok-i); }
+		&--warn { background: var(--whatsapp-wn-s); border-color: var(--whatsapp-wn-sb); color: var(--whatsapp-wn-i); font-weight: 700; }
+		&--ok { background: var(--whatsapp-ok-s); border-color: var(--whatsapp-ok-sb); color: var(--whatsapp-ok-i); }
 	}
 
 	&__token {
 		padding: 3px 8px;
 		border-radius: 6px;
-		background: var(--wa-pri-s);
-		border: 1px solid var(--wa-pri-sb);
-		color: var(--wa-pri-d);
+		background: var(--whatsapp-pri-s);
+		border: 1px solid var(--whatsapp-pri-sb);
+		color: var(--whatsapp-pri-d);
 		font-size: 11px;
 		cursor: pointer;
 	}
@@ -573,15 +573,15 @@ body.sanad-ce-open { overflow: hidden; }
 		gap: 10px;
 		padding: 10px 12px;
 		border-radius: 8px;
-		background: var(--wa-bg);
-		border: 1px solid var(--wa-border);
+		background: var(--whatsapp-bg);
+		border: 1px solid var(--whatsapp-border);
 		cursor: pointer;
 		margin: 0;
 		font-weight: 400;
 	}
 
 	&__switch-text { display: flex; flex-direction: column; gap: 3px; min-inline-size: 0; }
-	&__switch-title { font-size: 12px; font-weight: 600; color: var(--wa-ink); }
+	&__switch-title { font-size: 12px; font-weight: 600; color: var(--whatsapp-ink); }
 
 	// ---- cards -------------------------------------------------------------------------------
 
@@ -593,14 +593,14 @@ body.sanad-ce-open { overflow: hidden; }
 		gap: 5px;
 		padding: 10px 12px;
 		border-radius: 8px;
-		background: var(--wa-bg);
-		border: 1px solid var(--wa-border);
+		background: var(--whatsapp-bg);
+		border: 1px solid var(--whatsapp-border);
 
-		&.is-off { border-color: var(--wa-border-2); }
-		&.is-off .sanad-ce__mono { color: var(--wa-ink-4); }
-		&.is-missing { border-color: var(--wa-wn-sb); }
+		&.is-off { border-color: var(--whatsapp-border-2); }
+		&.is-off .whatsapp-kit-ce__mono { color: var(--whatsapp-ink-4); }
+		&.is-missing { border-color: var(--whatsapp-wn-sb); }
 		&--row { flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; }
-		&--surface { background: var(--wa-surface); }
+		&--surface { background: var(--whatsapp-surface); }
 	}
 
 	&__card-row {
@@ -613,21 +613,21 @@ body.sanad-ce-open { overflow: hidden; }
 	}
 
 	&__card-title { display: flex; align-items: center; gap: 7px; min-inline-size: 0; flex-wrap: wrap; }
-	&__card-title > .sanad-ce__mono { font-size: 12px; font-weight: 600; color: var(--wa-ink); }
-	&__card-name { font-size: 12px; font-weight: 600; color: var(--wa-ink); }
+	&__card-title > .whatsapp-kit-ce__mono { font-size: 12px; font-weight: 600; color: var(--whatsapp-ink); }
+	&__card-name { font-size: 12px; font-weight: 600; color: var(--whatsapp-ink); }
 	&__control { flex: none; display: flex; align-items: center; gap: 8px; }
-	&__example { text-align: end; font-size: 11px; color: var(--wa-pri-d); }
+	&__example { text-align: end; font-size: 11px; color: var(--whatsapp-pri-d); }
 
 	&__empty {
 		padding: 10px;
 		border-radius: 8px;
-		background: var(--wa-bg);
-		border: 1px dashed var(--wa-border-2);
+		background: var(--whatsapp-bg);
+		border: 1px dashed var(--whatsapp-border-2);
 		font-size: 12px;
-		color: var(--wa-ink-4);
+		color: var(--whatsapp-ink-4);
 		line-height: 1.9;
 
-		&--surface { background: var(--wa-surface); }
+		&--surface { background: var(--whatsapp-surface); }
 	}
 
 	&__out {
@@ -636,11 +636,11 @@ body.sanad-ce-open { overflow: hidden; }
 		gap: 7px;
 		padding: 12px;
 		border-radius: 8px;
-		background: var(--wa-surface);
-		border: 1px solid var(--wa-border);
+		background: var(--whatsapp-surface);
+		border: 1px solid var(--whatsapp-border);
 	}
 
-	&__out-name { font-size: 12px; font-weight: 700; color: var(--wa-ink); }
+	&__out-name { font-size: 12px; font-weight: 700; color: var(--whatsapp-ink); }
 
 	// ---- permissions -------------------------------------------------------------------------
 
@@ -658,8 +658,8 @@ body.sanad-ce-open { overflow: hidden; }
 		display: flex;
 		padding: 3px;
 		border-radius: 8px;
-		background: var(--wa-sunken);
-		border: 1px solid var(--wa-border);
+		background: var(--whatsapp-sunken);
+		border: 1px solid var(--whatsapp-border);
 		align-self: flex-start;
 		gap: 2px;
 		flex-wrap: wrap;
@@ -674,16 +674,16 @@ body.sanad-ce-open { overflow: hidden; }
 		border: 0;
 		border-radius: 6px;
 		background: transparent;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 		font-size: 12px;
 		font-weight: 600;
 		cursor: pointer;
 		white-space: nowrap;
 
-		&.is-sel { background: var(--wa-surface); color: var(--wa-pri-d); }
+		&.is-sel { background: var(--whatsapp-surface); color: var(--whatsapp-pri-d); }
 	}
 
-	&__seg-n { font-family: $ce-mono; font-size: 11px; color: var(--wa-ink-4); }
+	&__seg-n { font-family: $ce-mono; font-size: 11px; color: var(--whatsapp-ink-4); }
 
 	&__perm {
 		display: flex;
@@ -691,11 +691,11 @@ body.sanad-ce-open { overflow: hidden; }
 		gap: 10px;
 		padding: 10px;
 		border-radius: 8px;
-		background: var(--wa-surface);
-		border: 1px solid var(--wa-border);
+		background: var(--whatsapp-surface);
+		border: 1px solid var(--whatsapp-border);
 	}
 
-	&__perm-title { font-size: 13px; font-weight: 700; color: var(--wa-ink); }
+	&__perm-title { font-size: 13px; font-weight: 700; color: var(--whatsapp-ink); }
 
 	&__inline-check {
 		display: inline-flex;
@@ -705,7 +705,7 @@ body.sanad-ce-open { overflow: hidden; }
 		cursor: pointer;
 		font-size: 11px;
 		font-weight: 600;
-		color: var(--wa-ink-2);
+		color: var(--whatsapp-ink-2);
 		margin: 0;
 	}
 
@@ -717,8 +717,8 @@ body.sanad-ce-open { overflow: hidden; }
 		gap: 7px;
 		padding: 12px;
 		border-radius: 8px;
-		background: var(--wa-bg);
-		border: 1px solid var(--wa-border);
+		background: var(--whatsapp-bg);
+		border: 1px solid var(--whatsapp-border);
 	}
 
 	// ---- preview -----------------------------------------------------------------------------
@@ -729,8 +729,8 @@ body.sanad-ce-open { overflow: hidden; }
 		gap: 7px;
 		padding: 11px;
 		border-radius: 8px;
-		background: var(--wa-bg);
-		border: 1px solid var(--wa-border);
+		background: var(--whatsapp-bg);
+		border: 1px solid var(--whatsapp-border);
 	}
 
 	&__sim {
@@ -739,9 +739,9 @@ body.sanad-ce-open { overflow: hidden; }
 		gap: 6px;
 		padding: 3px 9px;
 		border-radius: 999px;
-		background: var(--wa-wn-s);
-		border: 1px solid var(--wa-wn-sb);
-		color: var(--wa-wn-i);
+		background: var(--whatsapp-wn-s);
+		border: 1px solid var(--whatsapp-wn-sb);
+		color: var(--whatsapp-wn-i);
 		font-size: 11px;
 		font-weight: 600;
 		flex: none;
@@ -754,8 +754,8 @@ body.sanad-ce-open { overflow: hidden; }
 		display: flex;
 		flex-direction: column;
 		border-radius: 10px;
-		border: 1px solid var(--wa-border);
-		background: var(--wa-surface);
+		border: 1px solid var(--whatsapp-border);
+		background: var(--whatsapp-surface);
 		overflow: hidden;
 	}
 
@@ -764,17 +764,17 @@ body.sanad-ce-open { overflow: hidden; }
 		align-items: center;
 		gap: 10px;
 		padding: 10px 12px;
-		border-block-end: 1px solid var(--wa-border);
+		border-block-end: 1px solid var(--whatsapp-border);
 	}
 
-	&__phone-head .sanad-ce__switch-text { flex: 1; }
+	&__phone-head .whatsapp-kit-ce__switch-text { flex: 1; }
 
 	&__avatar {
 		inline-size: 28px;
 		block-size: 28px;
 		border-radius: 50%;
-		background: var(--wa-pri-s);
-		color: var(--wa-pri-d);
+		background: var(--whatsapp-pri-s);
+		color: var(--whatsapp-pri-d);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -786,7 +786,7 @@ body.sanad-ce-open { overflow: hidden; }
 	&__phone-note {
 		margin: 10px 12px 0;
 		font-size: 11px;
-		color: var(--wa-ink-4);
+		color: var(--whatsapp-ink-4);
 		text-align: center;
 		line-height: 1.7;
 	}
@@ -795,14 +795,14 @@ body.sanad-ce-open { overflow: hidden; }
 		flex: 1;
 		min-block-size: 0;
 		padding: 8px 4px;
-		background: var(--wa-bg);
+		background: var(--whatsapp-bg);
 		transition: opacity 0.15s ease-out;
 
 		&.is-running { opacity: 0.55; }
 	}
 
-	&__bubble { margin: 6px 10px; padding: 8px 10px; border-radius: 8px; background: var(--wa-surface); font-size: 12px; white-space: pre-wrap;
-		&--out { background: var(--wa-pri-s); margin-inline-start: auto; }
+	&__bubble { margin: 6px 10px; padding: 8px 10px; border-radius: 8px; background: var(--whatsapp-surface); font-size: 12px; white-space: pre-wrap;
+		&--out { background: var(--whatsapp-pri-s); margin-inline-start: auto; }
 	}
 
 	// ---- footer ------------------------------------------------------------------------------
@@ -814,50 +814,50 @@ body.sanad-ce-open { overflow: hidden; }
 		gap: 8px;
 		flex-wrap: wrap;
 		padding: 10px 10px;
-		background: var(--wa-surface);
-		border-block-start: 1px solid var(--wa-border);
+		background: var(--whatsapp-surface);
+		border-block-start: 1px solid var(--whatsapp-border);
 	}
 
-	&__foot-hint { flex: 1; min-inline-size: 80px; font-size: 11px; color: var(--wa-ink-4); line-height: 1.7; }
+	&__foot-hint { flex: 1; min-inline-size: 80px; font-size: 11px; color: var(--whatsapp-ink-4); line-height: 1.7; }
 
 	&__btn {
 		min-block-size: 28px;
 		padding: 0 10px;
 		border-radius: 8px;
-		border: 1px solid var(--wa-border-2);
-		background: var(--wa-surface);
-		color: var(--wa-ink-2);
+		border: 1px solid var(--whatsapp-border-2);
+		background: var(--whatsapp-surface);
+		color: var(--whatsapp-ink-2);
 		font-size: 13px;
 		font-weight: 600;
 		cursor: pointer;
 
-		&:hover { background: var(--wa-sunken); }
+		&:hover { background: var(--whatsapp-sunken); }
 		&:disabled { opacity: 0.6; cursor: default; }
 
-		&--pri { border: 0; padding: 0 12px; background: var(--wa-pri); color: var(--wa-on-pri);
-			&:hover { background: var(--wa-pri-d); }
+		&--pri { border: 0; padding: 0 12px; background: var(--whatsapp-pri); color: var(--whatsapp-on-pri);
+			&:hover { background: var(--whatsapp-pri-d); }
 		}
 
-		&--danger { border-color: var(--wa-dg-sb); background: var(--wa-dg-s); color: var(--wa-dg-i);
-			&:hover { background: var(--wa-dg-sb); }
+		&--danger { border-color: var(--whatsapp-dg-sb); background: var(--whatsapp-dg-s); color: var(--whatsapp-dg-i);
+			&:hover { background: var(--whatsapp-dg-sb); }
 		}
 	}
 
 	button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-		outline: 2px solid var(--wa-pri);
+		outline: 2px solid var(--whatsapp-pri);
 		outline-offset: 1px;
 	}
 
-	&--readonly .sanad-ce__status, &--readonly .sanad-ce__fnchip { cursor: default; }
+	&--readonly .whatsapp-kit-ce__status, &--readonly .whatsapp-kit-ce__fnchip { cursor: default; }
 }
 
-.sanad-ce__ask {
+.whatsapp-kit-ce__ask {
 	display: flex;
 	align-items: center;
-	gap: var(--sanad-gap-xs);
-	margin-block-start: var(--sanad-gap-xs);
+	gap: var(--whatsapp-kit-gap-xs);
+	margin-block-start: var(--whatsapp-kit-gap-xs);
 	font-size: var(--text-sm, 13px);
 	color: var(--ink-gray-6);
 }
-.sanad-ce__ask-choices { margin-block-start: 4px; }
+.whatsapp-kit-ce__ask-choices { margin-block-start: 4px; }
 

@@ -1,11 +1,11 @@
-# `sanad.ui.ListStatsCard`
+# `whatsapp.ui.ListStatsCard`
 
 A row of live number cards, prepended to a Desk list's `listview.$frappe_list` or appended to any
 wrapper. Each card's value comes from a `ui.call` key or function (`method`), a `frappe.db.count`,
 a `SUM` aggregate through `frappe.db.get_list`, or a static `value`. Cards show a skeleton while
 loading and an inline error on failure. An interactive card either runs `onclick` or opens a
 `frappe.ui.Dialog` listing rows with per-row action buttons (optionally behind
-`sanad.ui.ConfirmDialog`). It refreshes on an interval and/or on realtime events.
+`whatsapp.ui.ConfirmDialog`). It refreshes on an interval and/or on realtime events.
 
 **Portability:** no DocType, field name or API key lives in the component; everything comes from
 the card specs.
@@ -26,7 +26,7 @@ the card specs.
 | Key | Type | Meaning |
 |---|---|---|
 | `key`, `label` | string | Identity and visible label (required). |
-| `icon`, `tone` | string | Icon name; tone for icon square and value (`ui.tone()` maps it to `sanad-tone--*`). |
+| `icon`, `tone` | string | Icon name; tone for icon square and value (`ui.tone()` maps it to `whatsapp-kit-tone--*`). |
 | `method` | string \| `() => Promise` | API key (called with `args`, silent) or a function — lets several cards share one call. Resolves to a number, `{value, tone}` or an array (its length). |
 | `args` | object \| `() => object` | Arguments for a string `method`. |
 | `count` | `{doctype, filters}` | `frappe.db.count`. |
@@ -58,7 +58,7 @@ confirmation when present.
 ## Events and callbacks
 
 - `frappe.realtime.on(event, handler)` for each `events` entry on mount; `off` on `destroy()`.
-- With `listview`: `show.sanadstats` → `refresh()`, `hide.sanadstats` → `stop_timer()` on
+- With `listview`: `show.whatsappstats` → `refresh()`, `hide.whatsappstats` → `stop_timer()` on
   `listview.page.wrapper`.
 - Card `onclick`, `format`, `sub`, `args`; modal `row_actions` `handler`/`args`/`condition`.
 - Closing the modal (`hidden.bs.modal`) forces a refresh; a successful row action reloads the rows
@@ -78,7 +78,7 @@ No keys of its own.
 ## Usage
 
 ```js
-new sanad.ui.ListStatsCard({
+new whatsapp.ui.ListStatsCard({
   listview,
   layout: "kpi",
   refresh_seconds: 60,
@@ -97,16 +97,16 @@ new sanad.ui.ListStatsCard({
 
 ## CSS hooks
 
-- Root `.sanad-kit.sanad-stats.sanad-stats--{row|kpi}[role=group]`.
-- Card `.sanad-stats__card[data-key]` (`--interactive`, `--error`), `__icon`, `__text`, `__label`,
-  `__value`, `__sub`, `__error`, `__chevron`; tones via `.sanad-tone--*`.
-- Modal: `.sanad-kit.sanad-stats-modal.sanad-sheet` on the dialog wrapper, `__table`
-  (`.sanad-table`), `__actions`.
+- Root `.whatsapp-kit.whatsapp-kit-stats.whatsapp-kit-stats--{row|kpi}[role=group]`.
+- Card `.whatsapp-kit-stats__card[data-key]` (`--interactive`, `--error`), `__icon`, `__text`, `__label`,
+  `__value`, `__sub`, `__error`, `__chevron`; tones via `.whatsapp-kit-tone--*`.
+- Modal: `.whatsapp-kit.whatsapp-kit-stats-modal.whatsapp-kit-sheet` on the dialog wrapper, `__table`
+  (`.whatsapp-kit-table`), `__actions`.
 
 ## Notes
 
 - **States:** `ui.skeleton` in each value until it resolves; failure shows "Could not load" with
-  `role="alert"` and the reason in a visually hidden span. The modal uses `sanad.ui.EmptyState`
+  `role="alert"` and the reason in a visually hidden span. The modal uses `whatsapp.ui.EmptyState`
   (loading, empty with `empty_text`, error with Retry).
 - **Keyboard/ARIA:** interactive cards are `role="button"` + `tabindex="0"`, Enter/Space activate;
   no per-card `aria-live`.

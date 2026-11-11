@@ -1,4 +1,4 @@
-# `sanad.ui.StatusBadge`
+# `whatsapp.ui.StatusBadge`
 
 A status pill. Its colour comes from the DocType's own indicator rules through `frappe.get_indicator`, so `listview_settings[doctype].get_indicator`, workflow states and docstatus all apply. Anything it cannot resolve falls back to gray. The label is always rendered, so colour is never the only signal. The green, red and amber tones also get an icon, and every other tone gets a dot. Use it as an instance mounted in a wrapper, or through the static `html()` renderer in formatters and templates.
 
@@ -40,18 +40,18 @@ None. Colour comes from client-side meta and `listview_settings`.
 // in a list formatter
 formatters: {
   status: (value, df, doc) =>
-    sanad.ui.StatusBadge.html({ label: __(value), colour: sanad.ui.indicator_for(doc.doctype, doc).colour }),
+    whatsapp.ui.StatusBadge.html({ label: __(value), colour: whatsapp.ui.indicator_for(doc.doctype, doc).colour }),
 },
 
 // meta-driven, mounted
-const badge = new sanad.ui.StatusBadge({ wrapper: $el, doctype: "WhatsApp Device", doc });
+const badge = new whatsapp.ui.StatusBadge({ wrapper: $el, doctype: "WhatsApp Device", doc });
 badge.refresh(updated_doc);
 ```
 
 ## CSS hooks
 
-- `.sanad-badge` is the root. Size modifiers are `.sanad-badge--sm` and `--md`. The tone class is `.sanad-tone--{green|blue|amber|red|gray|cyan|violet|pink}`, and the colours come from the shared tone classes, not this stylesheet.
-- `.sanad-badge__label` (ellipsis), `.sanad-badge__dot` (6 px, `currentColor`) and `.sanad-badge__icon`.
+- `.whatsapp-kit-badge` is the root. Size modifiers are `.whatsapp-kit-badge--sm` and `--md`. The tone class is `.whatsapp-kit-tone--{green|blue|amber|red|gray|cyan|violet|pink}`, and the colours come from the shared tone classes, not this stylesheet.
+- `.whatsapp-kit-badge__label` (ellipsis), `.whatsapp-kit-badge__dot` (6 px, `currentColor`) and `.whatsapp-kit-badge__icon`.
 
 ## Notes
 

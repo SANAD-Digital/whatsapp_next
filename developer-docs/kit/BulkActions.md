@@ -1,4 +1,4 @@
-# `sanad.ui.BulkActions`
+# `whatsapp.ui.BulkActions`
 
 Runs actions over the checked rows of a Desk list. Each action is registered in the list's own **Actions** menu with `page.add_actions_menu_item`, and Desk shows that menu once rows are checked. An action runs in one of three modes:
 
@@ -25,7 +25,7 @@ Action spec:
 | `args` | `(names, {docs, reason}) => Object` | Extra arguments merged over `{names}` (native) or `{name}` (per name). |
 | `per_name` | boolean | Loop over the names one at a time, with a progress dialog. |
 | `handler` | `(names, docs, payload) => any` | Replaces the API call. `payload` is the ConfirmDialog result, or `{reason: null}`. |
-| `confirm` | Object \| `(names, docs) => Object \| null` | A `sanad.ui.ConfirmDialog.ask` spec. Cancelling it aborts the run. |
+| `confirm` | Object \| `(names, docs) => Object \| null` | A `whatsapp.ui.ConfirmDialog.ask` spec. Cancelling it aborts the run. |
 | `condition` | `(docs) => boolean` | Evaluated on every selection change to show or hide the menu item. An exception hides it. |
 | `roles` | string[] | Any-of role check, decided once at mount. |
 | `perm` | string | A ptype on the list's DocType, decided once at mount. |
@@ -62,7 +62,7 @@ The default report understands a result of `{count}` or `{count, failed[], skipp
 ## Usage
 
 ```js
-new sanad.ui.BulkActions({
+new whatsapp.ui.BulkActions({
   listview,
   actions: [{
     label: (n) => __("Pause {0}", [n]),
@@ -77,8 +77,8 @@ new sanad.ui.BulkActions({
 
 ## CSS hooks
 
-- `.sanad-bulk__item` is the class added to each Actions-menu item.
-- The progress dialog is `.sanad-bulk__dialog` (also `.sanad-kit`). It contains `.sanad-bulk__progress` (`role="progressbar"`), `.sanad-bulk__bar` and `.sanad-bulk__status`.
+- `.whatsapp-kit-bulk__item` is the class added to each Actions-menu item.
+- The progress dialog is `.whatsapp-kit-bulk__dialog` (also `.whatsapp-kit`). It contains `.whatsapp-kit-bulk__progress` (`role="progressbar"`), `.whatsapp-kit-bulk__bar` and `.whatsapp-kit-bulk__status`.
 
 ## Notes
 

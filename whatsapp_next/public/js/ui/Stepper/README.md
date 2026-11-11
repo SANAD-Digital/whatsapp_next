@@ -10,7 +10,7 @@ of a step — `render`, `validate` and `on_finish` are the caller's.
 ## Usage
 
 ```js
-const stepper = new sanad.ui.Stepper({
+const stepper = new whatsapp.ui.Stepper({
   wrapper: $panel,
   ctx: { device: null },
   steps: [
@@ -18,10 +18,10 @@ const stepper = new sanad.ui.Stepper({
       render($body, ctx, stepper) { /* build controls; call stepper.set_step_valid(!!ctx.device) */ },
       validate: (ctx) => !!ctx.device || __("Choose a device to continue") },
     { key: "pair", label: __("Pair"), render($body, ctx) { /* ... */ },
-      validate: (ctx) => sanad.ui.call("devices.poll_status", { name: ctx.device }).then((s) => s.status === "Connected" || __("Pairing is not complete yet")) },
+      validate: (ctx) => whatsapp.ui.call("devices.poll_status", { name: ctx.device }).then((s) => s.status === "Connected" || __("Pairing is not complete yet")) },
     { key: "done", label: __("Finish"), can_skip: false, render($body) { $body.text(__("All set.")); } },
   ],
-  on_finish: (ctx) => sanad.ui.call("onboarding.complete_setup", { device: ctx.device }),
+  on_finish: (ctx) => whatsapp.ui.call("onboarding.complete_setup", { device: ctx.device }),
   on_cancel: () => frappe.set_route("wa-home"),
   finish_label: __("Complete setup"),
 });

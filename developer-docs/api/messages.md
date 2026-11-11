@@ -117,7 +117,7 @@ webhook_event, is_simulated, replied_at`. Three keys are added:
 **Errors:** `WANotFoundError` (404). `WAPermissionError` (403).
 
 ```js
-const row = await sanad.ui.call("messages.get_inbound", { name: "9z8y7x6w5v" });
+const row = await whatsapp.ui.call("messages.get_inbound", { name: "9z8y7x6w5v" });
 ```
 
 ---
@@ -161,8 +161,8 @@ An empty `key` returns `{"rows": [], "has_more": false, "next_cursor": null}`.
 **Errors:** `WAPermissionError` (403) "Not permitted to read conversations".
 
 ```js
-let page = await sanad.ui.call("messages.get_conversation", { key: "+966501234567", limit: 30 });
-if (page.has_more) page = await sanad.ui.call("messages.get_conversation", { key: "+966501234567", before: page.next_cursor });
+let page = await whatsapp.ui.call("messages.get_conversation", { key: "+966501234567", limit: 30 });
+if (page.has_more) page = await whatsapp.ui.call("messages.get_conversation", { key: "+966501234567", before: page.next_cursor });
 ```
 
 ---
@@ -222,7 +222,7 @@ names are not returned.
 **Errors:** Per row, in `failed`. A permission error aborts the call (403).
 
 ```js
-const r = await sanad.ui.call("messages.resend_many", { names: ["a1b2c3d4e5", "b2c3d4e5f6"] });
+const r = await whatsapp.ui.call("messages.resend_many", { names: ["a1b2c3d4e5", "b2c3d4e5f6"] });
 ```
 
 ---
@@ -292,7 +292,7 @@ Returns the Inbound screen's figures over the last `days`, bucketed by `received
 **Errors:** `WAValidationError` (417) for a non-integer `days`.
 
 ```js
-const s = await sanad.ui.call("messages.get_inbound_summary", { days: 7 });
+const s = await whatsapp.ui.call("messages.get_inbound_summary", { days: 7 });
 ```
 
 ---
@@ -332,7 +332,7 @@ nothing for a poll, that entry is `{"error": "…"}` instead (never raised).
 **Realtime:** none.
 
 ```js
-const r = await sanad.ui.call("messages.get_poll_results", { names: ["a1b2c3d4e5", "b2c3d4e5f6"] });
+const r = await whatsapp.ui.call("messages.get_poll_results", { names: ["a1b2c3d4e5", "b2c3d4e5f6"] });
 ```
 
 ---
@@ -386,7 +386,7 @@ provider. The sending device's own vote is left out, so a response is a recipien
 **Realtime:** none.
 
 ```js
-const s = await sanad.ui.call("messages.get_poll_summary", { name: "a1b2c3d4e5" });
+const s = await whatsapp.ui.call("messages.get_poll_summary", { name: "a1b2c3d4e5" });
 ```
 
 ---
@@ -421,5 +421,5 @@ The file is named `<provider_message_id><extension>`, the extension guessed from
 **Realtime:** none.
 
 ```js
-const { attachment } = await sanad.ui.call("messages.fetch_media", { name: "f6e5d4c3b2" });
+const { attachment } = await whatsapp.ui.call("messages.fetch_media", { name: "f6e5d4c3b2" });
 ```

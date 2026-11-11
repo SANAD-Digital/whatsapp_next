@@ -1,28 +1,28 @@
 // Prototype `stat` card (docs/component/Cards.dc.html, compact). One size in every layout (owner,
 // 2026-10-26): 12/16 padding, 32 px icon tile at the trailing edge, 20 px bold value, 12 px/600
 // label, 11 px note, 12 px between cards; grid auto-fit from 150 px.
-.sanad-stats {
+.whatsapp-kit-stats {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-	gap: var(--sanad-gap-md);
-	margin-block: var(--sanad-gap-xs) var(--sanad-gap-md);
+	gap: var(--whatsapp-kit-gap-md);
+	margin-block: var(--whatsapp-kit-gap-xs) var(--whatsapp-kit-gap-md);
 
 	&__card {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-md);
+		gap: var(--whatsapp-kit-gap-md);
 		min-height: 44px;
-		padding-block: calc(var(--sanad-gap-sm) + 2px);
-		padding-inline: var(--sanad-gap-lg);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-card-radius);
+		padding-block: calc(var(--whatsapp-kit-gap-sm) + 2px);
+		padding-inline: var(--whatsapp-kit-gap-lg);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-card-radius);
 		background: var(--surface-base);
 		color: var(--ink-gray-9);
-		transition: border-color var(--sanad-motion), background var(--sanad-motion);
+		transition: border-color var(--whatsapp-kit-motion), background var(--whatsapp-kit-motion);
 
 		&--interactive {
 			cursor: pointer;
-			&:hover { background: var(--surface-gray-1); border-color: var(--sanad-accent-outline); }
+			&:hover { background: var(--surface-gray-1); border-color: var(--whatsapp-kit-accent-outline); }
 		}
 		&--error { border-color: var(--outline-red-3); }
 	}
@@ -34,7 +34,7 @@
 		height: 28px;
 		align-items: center;
 		justify-content: center;
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-gray-2);
 		color: var(--ink-gray-6);
 		.icon { width: 15px; height: 15px; }
@@ -47,13 +47,13 @@
 		font-size: 20px;
 		font-weight: 700;
 		line-height: 1.2;
-		.sanad-skeleton { padding-block: 6px; }
-		.sanad-skeleton__line { width: 40% !important; }
+		.whatsapp-kit-skeleton { padding-block: 6px; }
+		.whatsapp-kit-skeleton__line { width: 40% !important; }
 	}
 	&__error {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--sanad-gap-xs);
+		gap: var(--whatsapp-kit-gap-xs);
 		font-size: var(--text-sm, 13px);
 		font-weight: 500;
 		color: var(--ink-red-8);
@@ -62,36 +62,36 @@
 	[dir="rtl"] &__chevron { transform: scaleX(-1); }
 }
 
-.sanad-stats-modal {
+.whatsapp-kit-stats-modal {
 	&__table { margin: 0; }
 	&__actions {
 		white-space: nowrap;
 		text-align: end;
-		.btn { min-height: var(--sanad-target); margin-inline-start: var(--sanad-gap-xs); }
+		.btn { min-height: var(--whatsapp-kit-target); margin-inline-start: var(--whatsapp-kit-gap-xs); }
 	}
 }
 
 // KPI layout (PageHeader): prototype card — icon square at the inline-start, label, big number, sub-text.
-.sanad-stats--kpi {
+.whatsapp-kit-stats--kpi {
 	grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); // 4 cards fill the row; 2 on tablets; 1 on phones
 	margin-block: 0;
-	.sanad-stats__icon.sanad-tone--blue { background: var(--surface-blue-1); color: var(--ink-blue-7); }
-	.sanad-stats__icon.sanad-tone--gray { background: var(--surface-gray-2); color: var(--ink-gray-6); }
-	.sanad-stats__icon.sanad-tone--amber { background: var(--surface-amber-1); color: var(--ink-amber-7); }
-	.sanad-stats__icon.sanad-tone--red { background: var(--surface-red-1); color: var(--ink-red-8); }
-	.sanad-stats__icon.sanad-tone--green { background: var(--surface-green-1); color: var(--ink-green-7); }
+	.whatsapp-kit-stats__icon.whatsapp-kit-tone--blue { background: var(--surface-blue-1); color: var(--ink-blue-7); }
+	.whatsapp-kit-stats__icon.whatsapp-kit-tone--gray { background: var(--surface-gray-2); color: var(--ink-gray-6); }
+	.whatsapp-kit-stats__icon.whatsapp-kit-tone--amber { background: var(--surface-amber-1); color: var(--ink-amber-7); }
+	.whatsapp-kit-stats__icon.whatsapp-kit-tone--red { background: var(--surface-red-1); color: var(--ink-red-8); }
+	.whatsapp-kit-stats__icon.whatsapp-kit-tone--green { background: var(--surface-green-1); color: var(--ink-green-7); }
 }
 
 // KPI cards mounted straight on a list (no PageHeader around them) keep the header's step above
 // and below, so every list measures alike under Desk's strip (owner, 2026-10-26)
-.sanad-list-card > .sanad-stats--kpi {
-	margin-block: var(--sanad-gap-sm);
+.whatsapp-kit-list-card > .whatsapp-kit-stats--kpi {
+	margin-block: var(--whatsapp-kit-gap-sm);
 }
 
 @media (max-width: 767px) {
-	.sanad-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sanad-gap-sm); }
+	.whatsapp-kit-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--whatsapp-kit-gap-sm); }
 	// two to a row in every layout (owner, 2026-10-26: compact): one a row made four cards a screen
-	.sanad-stats--kpi .sanad-stats__chevron { display: none; }
-	.sanad-stats__card { padding-inline: var(--sanad-gap-md); }
-	.sanad-stats--row .sanad-stats__icon { display: none; }
+	.whatsapp-kit-stats--kpi .whatsapp-kit-stats__chevron { display: none; }
+	.whatsapp-kit-stats__card { padding-inline: var(--whatsapp-kit-gap-md); }
+	.whatsapp-kit-stats--row .whatsapp-kit-stats__icon { display: none; }
 }

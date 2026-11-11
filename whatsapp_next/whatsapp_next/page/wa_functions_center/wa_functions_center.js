@@ -10,16 +10,16 @@
 // page mode. The scripts come whole from `functions.get_catalog`, so this screen owns the rows, the
 // filtering, the sorting and the paging and hands the table one page at a time.
 //
-// The function opens as the prototype's function window (`sanad.ui.FunctionDetail`, D-133); its
+// The function opens as the prototype's function window (`whatsapp.ui.FunctionDetail`, D-133); its
 // header is drawn as variables · options · outputs by `whatsapp_next.functions` (screens/
 // function_spec.js). A form is an `OverlayPanel`: the diff before install or update, the values
 // form (built from the header's parameters, a message text per language) and the "Try" run. Every
-// read and write goes through `sanad.ui.call` to `functions.*` / `commands.*`.
+// read and write goes through `whatsapp.ui.call` to `functions.*` / `commands.*`.
 
 (() => {
 	const ROUTE = "wa-functions-center";
-	const ui = sanad.ui;
-	const kit = sanad.kit;
+	const ui = whatsapp.ui;
+	const kit = whatsapp.kit;
 	const esc = (v) => ui.escape(v == null ? "" : v);
 	const fmt_int = (v) => ui.format_int(v);
 	const is_manager = () => frappe.user.has_role("WhatsApp Manager") || frappe.user.has_role("System Manager");
@@ -36,7 +36,7 @@
 	const status_badge = (e) =>
 		e.installed
 			? ui.StatusBadge.html({ label: __(e.status || "Active"), colour: e.status === "Active" ? "green" : "gray" })
-			: `<span class="text-muted" aria-hidden="true">—</span><span class="sanad-visually-hidden">${esc(__("Not installed"))}</span>`;
+			: `<span class="text-muted" aria-hidden="true">—</span><span class="whatsapp-kit-visually-hidden">${esc(__("Not installed"))}</span>`;
 
 	/** Installed, or why it cannot be: an invalid header, a site that lacks what it needs, a lost script. */
 	const install_badge = (e) => {
@@ -105,7 +105,7 @@
 				render: ($el) =>
 					$el.html(
 						lines
-							.map((l) => `<div class="wa-fn-diff__line"><span class="wa-fn-diff__what">${esc(l[0])}</span><span class="wa-fn-diff__keys">${l[1]}</span></div>`)
+							.map((l) => `<div class="whatsapp-fn-diff__line"><span class="whatsapp-fn-diff__what">${esc(l[0])}</span><span class="whatsapp-fn-diff__keys">${l[1]}</span></div>`)
 							.join("")
 					),
 			};
@@ -353,8 +353,8 @@
 									? r.messages
 											.map((m) =>
 												m.type === "text"
-													? `<div class="wa-fn-try__msg"><span class="wa-fn-try__key">${esc(m.reply)}</span><pre class="wa-fn-try__text">${esc(m.text)}</pre></div>`
-													: `<div class="wa-fn-try__msg"><span class="wa-fn-try__key">${esc(m.reply)}</span><span>${esc(__("File {0} from report {1}", [m.file_name || "", m.report_name]))}</span></div>`
+													? `<div class="whatsapp-fn-try__msg"><span class="whatsapp-fn-try__key">${esc(m.reply)}</span><pre class="whatsapp-fn-try__text">${esc(m.text)}</pre></div>`
+													: `<div class="whatsapp-fn-try__msg"><span class="whatsapp-fn-try__key">${esc(m.reply)}</span><span>${esc(__("File {0} from report {1}", [m.file_name || "", m.report_name]))}</span></div>`
 											)
 											.join("")
 									: `<span class="text-muted">${esc(r.error || __("No message."))}</span>`
@@ -369,7 +369,7 @@
 
 	// ---- the function, as a document ---------------------------------------------------------
 
-	/** The header from `functions.get_manifest` in the shape `sanad.ui.FunctionDetail` draws. */
+	/** The header from `functions.get_manifest` in the shape `whatsapp.ui.FunctionDetail` draws. */
 	function window_data(entry, detail) {
 		const params = detail.params || [];
 		const typed = params.filter((p) => p.fieldtype !== "Template");
@@ -421,7 +421,7 @@
 	}
 
 	/**
-	 * The function as the prototype's window (`sanad.ui.FunctionDetail`, D-133): the header read
+	 * The function as the prototype's window (`whatsapp.ui.FunctionDetail`, D-133): the header read
 	 * once, the verbs mapped onto this screen's forms. The preview runs the function on a throw-away
 	 * command draft through `commands.preview_command` — nothing saved, nothing sent.
 	 */
@@ -501,13 +501,13 @@
 	 */
 	const columns = () => [
 		{ fieldname: "function_name", label: __("Function"), width: 160, sortable: true, format: (v) => `<strong>${esc(v || "")}</strong>` },
-		{ fieldname: "server_script", label: __("Server Script"), width: 150, sortable: true, format: (v) => `<span class="sanad-tabular" dir="ltr">${esc(v || "")}</span>` },
+		{ fieldname: "server_script", label: __("Server Script"), width: 150, sortable: true, format: (v) => `<span class="whatsapp-kit-tabular" dir="ltr">${esc(v || "")}</span>` },
 		{
 			fieldname: "installed_version",
 			label: __("Version"),
 			width: 84,
 			sortable: true,
-			format: (v, doc) => `<span class="sanad-tabular" dir="ltr">${esc(v || doc.version || "")}</span>`,
+			format: (v, doc) => `<span class="whatsapp-kit-tabular" dir="ltr">${esc(v || doc.version || "")}</span>`,
 		},
 		{ fieldname: "update_available", label: __("Update"), width: 112, sortable: true, format: (v, doc) => (doc.installed && doc.state !== "missing" ? update_badge(doc) : "") },
 		{ fieldname: "commands_count", label: __("Linked commands"), type: "number", align: "end", width: 104, sortable: true, format: (v) => fmt_int(v) },
@@ -543,20 +543,20 @@
 			this.filters = {};
 			this.search = "";
 			this.sort = { fieldname: "calls_30d", order: "desc" };
-			this.$main = $(page.main).addClass("sanad-kit wa-functions");
-			this.$head = $('<div class="wa-functions__head"></div>').appendTo(this.$main);
+			this.$main = $(page.main).addClass("whatsapp-kit whatsapp-functions");
+			this.$head = $('<div class="whatsapp-functions__head"></div>').appendTo(this.$main);
 			// the toolbar, the selection and the table are one panel, exactly a Desk list's
-			this.$panel = $('<div class="wa-functions__panel sanad-list-card"></div>').appendTo(this.$main);
-			this.$toolbar = $('<div class="wa-functions__toolbar"></div>').appendTo(this.$panel);
-			this.$bulk = $('<div class="wa-functions__bulk" hidden></div>').appendTo(this.$panel);
-			this.$body = $('<div class="wa-functions__body"></div>').appendTo(this.$panel);
+			this.$panel = $('<div class="whatsapp-functions__panel whatsapp-kit-list-card"></div>').appendTo(this.$main);
+			this.$toolbar = $('<div class="whatsapp-functions__toolbar"></div>').appendTo(this.$panel);
+			this.$bulk = $('<div class="whatsapp-functions__bulk" hidden></div>').appendTo(this.$panel);
+			this.$body = $('<div class="whatsapp-functions__body"></div>').appendTo(this.$panel);
 			this.state = new ui.EmptyState({ wrapper: this.$body, state: "loading", rows: 6 });
 			this.loaded = this.load();
 			// the WhatsApp hub: ready-made functions from the platform (owner, 2026-10-29)
 			if (frappe.user.has_role(["WhatsApp Manager", "System Manager"]))
 				page.add_inner_button(__("Hub"), () => whatsapp_next.hub.open("Function", { on_installed: () => this.reload() }));
 			// the filters stay under Desk's strip while the functions scroll beneath, as on a list
-			ui.pin_stack(this.$main, [".wa-functions__toolbar"]);
+			ui.pin_stack(this.$main, [".whatsapp-functions__toolbar"]);
 		}
 
 		// ---- data -----------------------------------------------------------------------------
@@ -872,19 +872,19 @@
 			const updatable = picked.filter((e) => e.update_available).length;
 			const installed = picked.filter((e) => e.installed).length;
 			this.$bulk.removeAttr("hidden").html(`
-				<span class="wa-functions__bulk-count">
+				<span class="whatsapp-functions__bulk-count">
 					<span role="status" aria-atomic="true">${esc(ui.plural(picked.length, { one: __("{0} selected"), other: __("{0} selected") }))}</span>
-					<button type="button" class="wa-functions__bulk-clear" aria-label="${esc(__("Clear selection"))}">&times;</button>
+					<button type="button" class="whatsapp-functions__bulk-clear" aria-label="${esc(__("Clear selection"))}">&times;</button>
 				</span>
 				${updatable ? kit.btn({ label: __("Update {0}", [fmt_int(updatable)]), variant: "tonal", attrs: { "data-bulk": "update" } }) : ""}
 				${
 					installed
 						? kit.btn({ label: __("Activate {0}", [fmt_int(installed)]), variant: "tonal", attrs: { "data-bulk": "Active" } }) +
 						  kit.btn({ label: __("Deactivate {0}", [fmt_int(installed)]), variant: "tonal", attrs: { "data-bulk": "Inactive" } })
-						: `<span class="wa-functions__bulk-note">${esc(__("Install a function before activating or deactivating it."))}</span>`
+						: `<span class="whatsapp-functions__bulk-note">${esc(__("Install a function before activating or deactivating it."))}</span>`
 				}`);
 			this.$bulk.find("[data-bulk]").on("click", (ev) => this.bulk($(ev.currentTarget).data("bulk"), picked));
-			this.$bulk.find(".wa-functions__bulk-clear").on("click", () => {
+			this.$bulk.find(".whatsapp-functions__bulk-clear").on("click", () => {
 				this.table.clear_selection();
 				this.render_bulk([]);
 			});
@@ -1059,15 +1059,15 @@
 		if (!(window.whatsapp_next && whatsapp_next.functions && whatsapp_next.functions.editor_spec)) {
 			let first = true;
 			try {
-				first = !sessionStorage.getItem("wa-functions-reloaded");
-				sessionStorage.setItem("wa-functions-reloaded", "1");
+				first = !sessionStorage.getItem("whatsapp-functions-reloaded");
+				sessionStorage.setItem("whatsapp-functions-reloaded", "1");
 			} catch (e) {
 				first = true;
 			}
 			if (first) return window.location.reload();
 		}
 		try {
-			sessionStorage.removeItem("wa-functions-reloaded");
+			sessionStorage.removeItem("whatsapp-functions-reloaded");
 		} catch (e) {
 			// storage blocked: nothing to forget
 		}

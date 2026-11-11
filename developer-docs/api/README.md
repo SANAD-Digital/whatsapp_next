@@ -15,7 +15,7 @@ functions by their dotted path:
 |---|---|
 | Dotted path (Python, `frappe.call`) | `whatsapp_next.api.v1.<area>.<fn>` |
 | HTTP | `/api/method/whatsapp_next.api.v1.<area>.<fn>` |
-| Desk kit key (`sanad.ui.call`) | `"<area>.<fn>"` |
+| Desk kit key (`whatsapp.ui.call`) | `"<area>.<fn>"` |
 
 **Versioning (decision D-031).** The version is a Python package in the path (`api/v1/`). A
 breaking change goes into a new package, `api/v2/`, and `v1` stays as it is. A deprecation is
@@ -151,7 +151,7 @@ Frappe builds the response. The status is the class's `http_status_code`. The bo
 - Over `/api/v2/method/…`, Frappe returns `{"errors": [{"type": "<exc_type>", "message": …}]}`
   instead.
 
-`sanad.ui.call` normalises all of this into `Error { message, exc_type, http_status }`.
+`whatsapp.ui.call` normalises all of this into `Error { message, exc_type, http_status }`.
 
 ## 6. Success envelope
 
@@ -198,19 +198,19 @@ return `{rows, total}`. Conversation-style reads use a keyset cursor instead
 ## 9. Calling from Desk
 
 `whatsapp_next/public/js/whatsapp_next_setup.js` builds the kit's API map. Each key `"<area>.<fn>"`
-maps to `whatsapp_next.api.v1.<area>.<fn>`. The map is registered with `sanad.ui.configure({api})`
+maps to `whatsapp_next.api.v1.<area>.<fn>`. The map is registered with `whatsapp.ui.configure({api})`
 and exposed as `whatsapp_next.api`.
 
 ```js
 // kit helper: resolves the key, returns a Promise of r.message
-const dash = await sanad.ui.call("home.get_dashboard");
+const dash = await whatsapp.ui.call("home.get_dashboard");
 
 // options: {silent, freeze, freeze_message}
-await sanad.ui.call("queue.pause_queue", { reason: "Maintenance" }, { freeze: true });
+await whatsapp.ui.call("queue.pause_queue", { reason: "Maintenance" }, { freeze: true });
 
 // errors reject with Error {message, exc_type, http_status}
 try {
-  await sanad.ui.call("devices.start_pairing", { device: "WA-DEV-001", mode: "Code" });
+  await whatsapp.ui.call("devices.start_pairing", { device: "WA-DEV-001", mode: "Code" });
 } catch (e) {
   if (e.exc_type === "WAStateConflictError") { /* already connected */ }
 }
@@ -219,10 +219,10 @@ try {
 frappe.call({ method: "whatsapp_next.api.v1.home.get_dashboard" }).then((r) => r.message);
 ```
 
-`sanad.ui.api(key)` throws for a two-segment key that isn't in the map. A **full dotted path**
+`whatsapp.ui.api(key)` throws for a two-segment key that isn't in the map. A **full dotted path**
 (three or more segments) passes through unchanged. Endpoints that aren't in the map can still be
-called through `sanad.ui.call` with their full path, for example
-`sanad.ui.call("whatsapp_next.api.v1.onboarding.verify_code", {...})`. Every endpoint of
+called through `whatsapp.ui.call` with their full path, for example
+`whatsapp.ui.call("whatsapp_next.api.v1.onboarding.verify_code", {...})`. Every endpoint of
 `api/v1` is in the map today (`public/js/whatsapp_next_setup.js`).
 
 ## 10. HTTP examples
@@ -288,5 +288,5 @@ with `frappe.realtime.on("<event>", handler)`.
 | hub | [hub.md](hub.md) | `api/v1/hub.py` | The platform hub of ready-made content: list, details, install or update |
 | number_check | [number-check.md](number-check.md) | `api/v1/number_check.py` | "Check on WhatsApp" and profile refresh for a selection |
 | status_posts | [status-posts.md](status-posts.md) | `api/v1/status_posts.py` | Status post actions: post now, schedule, unschedule, delete, views |
-| wa_groups | [wa-groups.md](wa-groups.md) | `api/v1/wa_groups.py` | WhatsApp group creation: members behind a selection, create |
+| wa_groups | [whatsapp-groups.md](whatsapp-groups.md) | `api/v1/wa_groups.py` | WhatsApp group creation: members behind a selection, create |
 | webhooks | [webhooks.md](webhooks.md) | `webhooks/v1/receiver.py` | The inbound receiver (the only guest endpoint) |

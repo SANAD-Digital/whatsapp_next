@@ -23,40 +23,40 @@
 
 // ---------------------------------------------------------------------------------------------
 // Brand accent. The kit (`public/js/ui/`) never names a colour: it drives every active, selected
-// and primary state from five `--sanad-accent*` custom properties that default to Desk's Espresso
+// and primary state from five `--whatsapp-kit-accent*` custom properties that default to Desk's Espresso
 // blue. This block — the app's own stylesheet, not the portable kit — repoints them at the brand's
 // Petrol (`brand/BRAND.md`: Petrol / Petrol Deep / Mist / Paper, and #5FB8A9 on dark grounds), so
 // Desk's theme switch keeps working. It is set on :root so the accent in the Desk lists follows too:
 // only the colour, never their layout (owner, 2026-10-07).
 // ---------------------------------------------------------------------------------------------
 :root {
-	--sanad-accent: var(--wa-pri);
-	--sanad-accent-ink: var(--wa-pri-d);
-	--sanad-accent-soft: var(--wa-pri-s);
-	--sanad-accent-outline: var(--wa-pri-sb);
-	--sanad-accent-on: var(--wa-on-pri);
+	--whatsapp-kit-accent: var(--whatsapp-pri);
+	--whatsapp-kit-accent-ink: var(--whatsapp-pri-d);
+	--whatsapp-kit-accent-soft: var(--whatsapp-pri-s);
+	--whatsapp-kit-accent-outline: var(--whatsapp-pri-sb);
+	--whatsapp-kit-accent-on: var(--whatsapp-on-pri);
 	// the kit's charts (DashboardBlock); light and dark tones live in `_tokens.scss`
-	--sanad-chart-palette: var(--wa-chart-palette);
+	--whatsapp-kit-chart-palette: var(--whatsapp-chart-palette);
 }
 
 
 // Desk's own `.btn-primary` is near-black. The prototype's primary verb is the product's teal
 // (`docs/screen/Hub Screen - Devices.dc.html`: `background: var(--pri)`), and a screen whose
 // header asks for the one action that matters should say so in the product's colour. The kit's
-// own markup all carries `.sanad-kit`, and the dialogs it opens carry `.sanad-sheet`, so this
+// own markup all carries `.whatsapp-kit`, and the dialogs it opens carry `.whatsapp-kit-sheet`, so this
 // brands every screen header, wizard, drawer and dialog the product draws and leaves the ones Desk
 // draws for itself alone. A destructive confirmation swaps to `.btn-danger` and is untouched.
-.sanad-kit .btn-primary,
-.sanad-sheet .btn-primary {
-	background: var(--sanad-accent);
-	border-color: var(--sanad-accent);
-	color: var(--sanad-accent-on);
+.whatsapp-kit .btn-primary,
+.whatsapp-kit-sheet .btn-primary {
+	background: var(--whatsapp-kit-accent);
+	border-color: var(--whatsapp-kit-accent);
+	color: var(--whatsapp-kit-accent-on);
 
 	&:hover,
 	&:focus,
 	&:active {
-		background: var(--sanad-accent-ink);
-		border-color: var(--sanad-accent-ink);
-		color: var(--sanad-accent-on);
+		background: var(--whatsapp-kit-accent-ink);
+		border-color: var(--whatsapp-kit-accent-ink);
+		color: var(--whatsapp-kit-accent-on);
 	}
 }

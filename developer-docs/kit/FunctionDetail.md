@@ -1,4 +1,4 @@
-# `sanad.ui.FunctionDetail`
+# `whatsapp.ui.FunctionDetail`
 
 A read-mostly, full-height modal describing one catalog "function" (a server-side handler that chat
 commands run). Header: name, category, Active / Stopped and Installed / Not installed badges, tabs
@@ -9,7 +9,7 @@ takes and its outputs (text / file-name templates with copy buttons, fields that
 **Version log** lists versions newest first with changelog bullets. **Preview** dry-runs the
 function through the host's `preview` with preview-only settings / texts. The footer offers Update,
 Install / Uninstall, Linked commands, a More menu and Close — all delegated to host callbacks. It
-reuses `CommandEditor`'s shell classes (`sanad-ce*`), so both stylesheets must be loaded.
+reuses `CommandEditor`'s shell classes (`whatsapp-kit-ce*`), so both stylesheets must be loaded.
 
 **Portability:** no app imports, but the `entry` / `manifest` shapes are this app's Functions
 catalog (`functions.get_manifest`), the preview result is this app's `commands.preview_command`
@@ -39,7 +39,7 @@ result, the default party types are hardcoded ERPNext doctypes (`Customer`, `Sup
 
 ## Methods
 
-- `show()` — builds and opens the window (the constructor does not); returns `this`. Registers with `sanad.ui.overlay` when present; focuses the close button.
+- `show()` — builds and opens the window (the constructor does not); returns `this`. Registers with `whatsapp.ui.overlay` when present; focuses the close button.
 - `close()` — `hide()`, restore focus to the opener, call `on_close`.
 - `hide()` — remove without callbacks (another overlay took the screen); `destroy()` is an alias.
 - `render()` — re-render, preserving focused field, caret and per-column scroll.
@@ -48,7 +48,7 @@ result, the default party types are hardcoded ERPNext doctypes (`Customer`, `Sup
 
 The option callbacks above only; they receive `entry` and do not close the window themselves.
 No custom DOM events, no realtime. `copy` uses `frappe.utils.copy_to_clipboard`, falling back to
-`navigator.clipboard` + `sanad.ui.Toast.success`.
+`navigator.clipboard` + `whatsapp.ui.Toast.success`.
 
 ## Server calls
 
@@ -64,12 +64,12 @@ None directly. In this app `whatsapp_next/page/wa_functions_center/wa_functions_
 ## Usage
 
 ```js
-const view = new sanad.ui.FunctionDetail({
+const view = new whatsapp.ui.FunctionDetail({
   entry,
-  manifest: await sanad.ui.call("functions.get_manifest", { function_key: entry.function_key }),
+  manifest: await whatsapp.ui.call("functions.get_manifest", { function_key: entry.function_key }),
   party_types: [{ key: "Customer", label: __("Customer") }],
   preview: (args) => run_dry_run(args),
-  search_contacts: (txt, party_type) => sanad.ui.call("commands.search_contacts", { txt, party_type }),
+  search_contacts: (txt, party_type) => whatsapp.ui.call("commands.search_contacts", { txt, party_type }),
   on_toggle_install: (e) => install_or_remove(e),
   more: [{ label: __("Deactivate"), handler: (e) => set_status(e, "Inactive") }],
 }).show();
@@ -79,9 +79,9 @@ view.hide();
 
 ## CSS hooks
 
-- Layer: `.sanad-kit.sanad-ce-layer.sanad-fd-layer` > `.sanad-ce-backdrop` + `.sanad-ce.sanad-fd` (dialog). Sets `body.sanad-ce-open` (removed only when no `.sanad-ce-layer` remains).
-- Own classes: `sanad-fd__identity`, `__name`, `__badge--ok|--muted|--line|--pri|--wn`, `__ver--pri|--wn`, `__grid`, `__body(--outs)`, `__lede`, `__box`, `__stats` / `__stat`, `__word`, `__cmd.is-on`, `__value`, `__choices`, `__copybox(--sm)`, `__copy`, `__field`, `__log.is-current`, `__log-head`, `__changes`, `__grid--preview`, `__more`, `__menu`, `__danger`, `__btn-pri-soft`, `__close`.
-- Shared `sanad-ce__*` shell: tabs, columns, cards, pills, callouts, `__thread.is-running`, `__btn--pri`.
+- Layer: `.whatsapp-kit.whatsapp-kit-ce-layer.whatsapp-kit-fd-layer` > `.whatsapp-kit-ce-backdrop` + `.whatsapp-kit-ce.whatsapp-kit-fd` (dialog). Sets `body.whatsapp-kit-ce-open` (removed only when no `.whatsapp-kit-ce-layer` remains).
+- Own classes: `whatsapp-kit-fd__identity`, `__name`, `__badge--ok|--muted|--line|--pri|--wn`, `__ver--pri|--wn`, `__grid`, `__body(--outs)`, `__lede`, `__box`, `__stats` / `__stat`, `__word`, `__cmd.is-on`, `__value`, `__choices`, `__copybox(--sm)`, `__copy`, `__field`, `__log.is-current`, `__log-head`, `__changes`, `__grid--preview`, `__more`, `__menu`, `__danger`, `__btn-pri-soft`, `__close`.
+- Shared `whatsapp-kit-ce__*` shell: tabs, columns, cards, pills, callouts, `__thread.is-running`, `__btn--pri`.
 - Breakpoints: Preview grid 320 | 1fr | 400 → two columns under 1080 px → one under 760 px.
 
 ## Notes
@@ -99,6 +99,6 @@ view.hide();
   `aria-selected`; version heads `aria-expanded`; More `aria-haspopup="menu"` with `role="menu"` /
   `menuitem`; copy buttons have `aria-label`; thread `aria-live="polite"`.
 - **RTL:** logical offsets; versions, keys and numbers are `dir="ltr"`, prose `dir="auto"`.
-- **Chat bubbles** need `sanad.ui.ChatThread`; without it the thread slot stays empty (unlike
+- **Chat bubbles** need `whatsapp.ui.ChatThread`; without it the thread slot stays empty (unlike
   CommandEditor, there is no fallback).
 - **Live use:** `whatsapp_next/page/wa_functions_center/wa_functions_center.js` (as `ui.FunctionDetail`).

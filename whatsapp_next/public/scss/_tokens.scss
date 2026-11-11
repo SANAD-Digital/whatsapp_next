@@ -14,8 +14,8 @@
 //
 // Two notes on why this is not "hard-coded colour". The values live in exactly one place and are
 // referenced everywhere as tokens, which is what that rule was protecting. And the prototype's
-// palette carries something Espresso does not: a readable ink for every tone (`--wa-ok-i`,
-// `--wa-wn-i`, `--wa-dg-i`, `--wa-nf-i`), made to sit on that tone's own soft surface — so a
+// palette carries something Espresso does not: a readable ink for every tone (`--whatsapp-ok-i`,
+// `--whatsapp-wn-i`, `--whatsapp-dg-i`, `--whatsapp-nf-i`), made to sit on that tone's own soft surface — so a
 // coloured word on a coloured card passes AA here, which it could not with Espresso's three-step
 // tone inks.
 //
@@ -26,120 +26,120 @@
 // If the palette changes, this file changes, and nothing else does.
 
 :root {
-	--wa-bg: #f5f7f6;
-	--wa-surface: #ffffff;
-	--wa-sunken: #eef2f0;
-	--wa-border: #e3e8e6;
-	--wa-border-2: #c9d2cf;
+	--whatsapp-bg: #f5f7f6;
+	--whatsapp-surface: #ffffff;
+	--whatsapp-sunken: #eef2f0;
+	--whatsapp-border: #e3e8e6;
+	--whatsapp-border-2: #c9d2cf;
 
-	--wa-ink: #0e1a1a; // brand Ink
-	--wa-ink-2: #33423f;
-	--wa-ink-3: #4a5656; // brand muted text, 7.4:1 on white
-	--wa-ink-4: #5e6b6a;
+	--whatsapp-ink: #0e1a1a; // brand Ink
+	--whatsapp-ink-2: #33423f;
+	--whatsapp-ink-3: #4a5656; // brand muted text, 7.4:1 on white
+	--whatsapp-ink-4: #5e6b6a;
 
 	// primary — the brand's Petrol (9.6:1 on white), Petrol Deep for hover and pressed, Mist for
 	// tinted surfaces, Paper on Petrol
-	--wa-pri: #0b4f4a;
-	--wa-pri-d: #0e3e3a;
-	--wa-pri-s: #dce7e4;
-	--wa-pri-sb: #b9d0ca;
-	--wa-on-pri: #f7f7f4;
+	--whatsapp-pri: #0b4f4a;
+	--whatsapp-pri-d: #0e3e3a;
+	--whatsapp-pri-s: #dce7e4;
+	--whatsapp-pri-sb: #b9d0ca;
+	--whatsapp-on-pri: #f7f7f4;
 	// WhatsApp's own read-tick blue (ChatThread's ✓✓ once read)
-	--wa-read: #53bdeb;
+	--whatsapp-read: #53bdeb;
 	// the one accent: Apricot — one prominent element per screen, never small text
-	--wa-accent: #ff8a4c;
+	--whatsapp-accent: #ff8a4c;
 	// text on a solid tone (a count badge, a verdict mark, the brand panel): white in both themes
-	--wa-on-tone: #fff;
+	--whatsapp-on-tone: #fff;
 	// the ink a pinned bar's shadow is cast in, the same in both themes
-	--wa-shadow-ink: #0e1a1a;
+	--whatsapp-shadow-ink: #0e1a1a;
 	// charts: Petrol first, then its light tone, Apricot, Mist's ink, and the danger and info tones
-	--wa-chart-palette: #0b4f4a, #5fb8a9, #ff8a4c, #8fa9a4, #c9524b, #2568af;
-	--wa-on-accent: #0e1a1a;
+	--whatsapp-chart-palette: #0b4f4a, #5fb8a9, #ff8a4c, #8fa9a4, #c9524b, #2568af;
+	--whatsapp-on-accent: #0e1a1a;
 	// The brand itself, the same in both themes: a Petrol panel stays Petrol in dark mode, as the
 	// platform's sign-in keeps it, with Paper on it and the brand's light Petrol for its marks.
-	--wa-brand: #0b4f4a;
-	--wa-brand-deep: #0e3e3a;
-	--wa-on-brand: #f7f7f4;
-	--wa-brand-bright: #5fb8a9;
+	--whatsapp-brand: #0b4f4a;
+	--whatsapp-brand-deep: #0e3e3a;
+	--whatsapp-on-brand: #f7f7f4;
+	--whatsapp-brand-bright: #5fb8a9;
 	// the canvas every screen of the product stands on, edge to edge: white cards on a Petrol-tinted
 	// ground, never white on white (owner, 2026-10-07)
-	--wa-canvas: #eef2f0;
+	--whatsapp-canvas: #eef2f0;
 	// a status is drawn as WhatsApp draws it: white text on the post's own colour, in both themes
-	--wa-status-ink: #ffffff;
-	--wa-status-stage: #111b21;
-	--wa-status-scrim: rgb(0 0 0 / 45%);
+	--whatsapp-status-ink: #ffffff;
+	--whatsapp-status-stage: #111b21;
+	--whatsapp-status-scrim: rgb(0 0 0 / 45%);
 
 	// ok · warn · danger · info — each with a strong, a soft surface, a readable ink and a border
-	--wa-ok: #1a8b50;
-	--wa-ok-s: #e1f3e8;
-	--wa-ok-i: #16713f;
-	--wa-ok-sb: #b9e2ca;
+	--whatsapp-ok: #1a8b50;
+	--whatsapp-ok-s: #e1f3e8;
+	--whatsapp-ok-i: #16713f;
+	--whatsapp-ok-sb: #b9e2ca;
 
-	--wa-wn: #9a6c14;
-	--wa-wn-s: #fbf1dc;
-	--wa-wn-i: #8a6116;
-	--wa-wn-sb: #efdcb4;
+	--whatsapp-wn: #9a6c14;
+	--whatsapp-wn-s: #fbf1dc;
+	--whatsapp-wn-i: #8a6116;
+	--whatsapp-wn-sb: #efdcb4;
 
-	--wa-dg: #c9524b;
-	--wa-dg-s: #fbeae8;
-	--wa-dg-i: #a93a34;
-	--wa-dg-sb: #f2cbc7;
+	--whatsapp-dg: #c9524b;
+	--whatsapp-dg-s: #fbeae8;
+	--whatsapp-dg-i: #a93a34;
+	--whatsapp-dg-sb: #f2cbc7;
 
-	--wa-nf: #2568af;
-	--wa-nf-s: #e4effa;
-	--wa-nf-i: #1f5a97;
-	--wa-nf-sb: #c2dcf2;
+	--whatsapp-nf: #2568af;
+	--whatsapp-nf-s: #e4effa;
+	--whatsapp-nf-i: #1f5a97;
+	--whatsapp-nf-sb: #c2dcf2;
 
-	--wa-shadow-sm: 0 1px 2px rgb(23 33 31 / 6%);
-	--wa-shadow-md: 0 8px 20px -14px rgb(23 33 31 / 40%);
-	--wa-shadow-lg: 0 18px 40px -26px rgb(23 33 31 / 50%);
+	--whatsapp-shadow-sm: 0 1px 2px rgb(23 33 31 / 6%);
+	--whatsapp-shadow-md: 0 8px 20px -14px rgb(23 33 31 / 40%);
+	--whatsapp-shadow-lg: 0 18px 40px -26px rgb(23 33 31 / 50%);
 }
 
 [data-theme="dark"] {
-	--wa-bg: #0e1513;
-	--wa-surface: #14201d;
-	--wa-sunken: #1b2926;
-	--wa-border: #243531;
-	--wa-border-2: #334742;
+	--whatsapp-bg: #0e1513;
+	--whatsapp-surface: #14201d;
+	--whatsapp-sunken: #1b2926;
+	--whatsapp-border: #243531;
+	--whatsapp-border-2: #334742;
 
-	--wa-ink: #eaf2f0;
-	--wa-ink-2: #c4d2ce;
-	--wa-ink-3: #9aaaa6;
-	--wa-ink-4: #7e8f8b;
+	--whatsapp-ink: #eaf2f0;
+	--whatsapp-ink-2: #c4d2ce;
+	--whatsapp-ink-3: #9aaaa6;
+	--whatsapp-ink-4: #7e8f8b;
 
 	// the brand's Petrol for dark grounds, Ink on it
-	--wa-pri: #5fb8a9;
-	--wa-pri-d: #7fcbbe;
-	--wa-pri-s: #13302d;
-	--wa-pri-sb: #1f4a45;
-	--wa-on-pri: #0e1a1a;
-	--wa-chart-palette: #5fb8a9, #2f7d73, #ff8a4c, #9aaaa6, #d9736c, #4a8ed0;
-	--wa-read: #53bdeb;
-	--wa-canvas: #0e1513;
+	--whatsapp-pri: #5fb8a9;
+	--whatsapp-pri-d: #7fcbbe;
+	--whatsapp-pri-s: #13302d;
+	--whatsapp-pri-sb: #1f4a45;
+	--whatsapp-on-pri: #0e1a1a;
+	--whatsapp-chart-palette: #5fb8a9, #2f7d73, #ff8a4c, #9aaaa6, #d9736c, #4a8ed0;
+	--whatsapp-read: #53bdeb;
+	--whatsapp-canvas: #0e1513;
 
-	--wa-ok: #35a96a;
-	--wa-ok-s: #132a1e;
-	--wa-ok-i: #7fd3a3;
-	--wa-ok-sb: #1e4531;
+	--whatsapp-ok: #35a96a;
+	--whatsapp-ok-s: #132a1e;
+	--whatsapp-ok-i: #7fd3a3;
+	--whatsapp-ok-sb: #1e4531;
 
-	--wa-wn: #c79436;
-	--wa-wn-s: #2c2314;
-	--wa-wn-i: #e0bc78;
-	--wa-wn-sb: #4a3a1b;
+	--whatsapp-wn: #c79436;
+	--whatsapp-wn-s: #2c2314;
+	--whatsapp-wn-i: #e0bc78;
+	--whatsapp-wn-sb: #4a3a1b;
 
-	--wa-dg: #d9736c;
-	--wa-dg-s: #2e1a19;
-	--wa-dg-i: #f0a8a2;
-	--wa-dg-sb: #4c2a28;
+	--whatsapp-dg: #d9736c;
+	--whatsapp-dg-s: #2e1a19;
+	--whatsapp-dg-i: #f0a8a2;
+	--whatsapp-dg-sb: #4c2a28;
 
-	--wa-nf: #4a8ed0;
-	--wa-nf-s: #141f2c;
-	--wa-nf-i: #9cc5ec;
-	--wa-nf-sb: #25405c;
+	--whatsapp-nf: #4a8ed0;
+	--whatsapp-nf-s: #141f2c;
+	--whatsapp-nf-i: #9cc5ec;
+	--whatsapp-nf-sb: #25405c;
 
-	--wa-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
-	--wa-shadow-md: 0 8px 20px -14px rgb(0 0 0 / 60%);
-	--wa-shadow-lg: 0 18px 40px -22px rgb(0 0 0 / 70%);
+	--whatsapp-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+	--whatsapp-shadow-md: 0 8px 20px -14px rgb(0 0 0 / 60%);
+	--whatsapp-shadow-lg: 0 18px 40px -22px rgb(0 0 0 / 70%);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -148,7 +148,7 @@
 
 // Where the palette applies: this product's own Pages, its forms, and the dialogs its components
 // open. **Not the Desk lists.** Those screens are finished and the owner is happy with them, so
-// they keep Desk's own colours — which is also why `.sanad-kit` is not listed bare here: kit
+// they keep Desk's own colours — which is also why `.whatsapp-kit` is not listed bare here: kit
 // components mount inside lists too, and a bare class selector would repaint them there. A kit
 // component inside a Page, a form or one of our dialogs inherits the palette from the container,
 // which is exactly the scope asked for.
@@ -162,13 +162,13 @@ $wa-surfaces:
 	'body[data-route^="Form/WhatsApp "] .page-container',
 	// the product's own workspace (`/app/whatsapp`): its number cards, charts and shortcuts
 	'body[data-route="Workspaces/WhatsApp"] #page-Workspaces',
-	".modal.sanad-sheet",
+	".modal.whatsapp-kit-sheet",
 	// the settings window (D-138) mounts on <body> too
-	".sanad-sw.wa-settings-window",
+	".whatsapp-kit-sw.whatsapp-settings-window",
 	// the alert editor (D-139) mounts on <body>
-	".sanad-ae-layer",
+	".whatsapp-kit-ae-layer",
 	// the prototype's overlay panel mounts on <body>, outside every page, and is always ours
-	".sanad-op";
+	".whatsapp-kit-op";
 
 $wa-bridge: ();
 @each $sel in $wa-surfaces {
@@ -177,94 +177,94 @@ $wa-bridge: ();
 
 #{$wa-bridge} {
 	// surfaces
-	--surface-base: var(--wa-surface);
-	--surface-elevation-1: var(--wa-surface);
-	--surface-elevation-2: var(--wa-surface);
-	--surface-gray-1: var(--wa-bg);
-	--surface-gray-2: var(--wa-sunken);
-	--surface-gray-3: var(--wa-border);
-	--surface-gray-4: var(--wa-border-2);
-	--surface-gray-8: var(--wa-ink-4);
-	--surface-gray-9: var(--wa-ink-3);
-	--surface-gray-10: var(--wa-ink-2);
+	--surface-base: var(--whatsapp-surface);
+	--surface-elevation-1: var(--whatsapp-surface);
+	--surface-elevation-2: var(--whatsapp-surface);
+	--surface-gray-1: var(--whatsapp-bg);
+	--surface-gray-2: var(--whatsapp-sunken);
+	--surface-gray-3: var(--whatsapp-border);
+	--surface-gray-4: var(--whatsapp-border-2);
+	--surface-gray-8: var(--whatsapp-ink-4);
+	--surface-gray-9: var(--whatsapp-ink-3);
+	--surface-gray-10: var(--whatsapp-ink-2);
 
 	// outlines
-	--outline-gray-1: var(--wa-border);
-	--outline-gray-2: var(--wa-border-2);
-	--outline-gray-3: var(--wa-ink-4);
-	--border-color: var(--wa-border);
+	--outline-gray-1: var(--whatsapp-border);
+	--outline-gray-2: var(--whatsapp-border-2);
+	--outline-gray-3: var(--whatsapp-ink-4);
+	--border-color: var(--whatsapp-border);
 
 	// inks
-	--ink-gray-9: var(--wa-ink);
-	--ink-gray-7: var(--wa-ink-2);
-	--ink-gray-8: var(--wa-ink); // Desk's body text
-	--ink-gray-6: var(--wa-ink-3);
-	--ink-gray-5: var(--wa-ink-4);
-	--ink-gray-4: var(--wa-ink-4);
-	--ink-white: var(--wa-on-pri);
-	--text-color: var(--wa-ink);
+	--ink-gray-9: var(--whatsapp-ink);
+	--ink-gray-7: var(--whatsapp-ink-2);
+	--ink-gray-8: var(--whatsapp-ink); // Desk's body text
+	--ink-gray-6: var(--whatsapp-ink-3);
+	--ink-gray-5: var(--whatsapp-ink-4);
+	--ink-gray-4: var(--whatsapp-ink-4);
+	--ink-white: var(--whatsapp-on-pri);
+	--text-color: var(--whatsapp-ink);
 
 	// tones — strong / soft / readable ink / border, the four the prototype gives each of them
-	--surface-green-7: var(--wa-ok);
-	--surface-green-2: var(--wa-ok-sb);
-	--surface-green-1: var(--wa-ok-s);
-	--outline-green-3: var(--wa-ok-sb);
-	--ink-green-7: var(--wa-ok-i);
-	--ink-green-8: var(--wa-ok-i); // Espresso's text on a soft fill
-	--ink-green-1: var(--wa-on-tone); // and on a solid one
-	--ink-green-6: var(--wa-ok);
+	--surface-green-7: var(--whatsapp-ok);
+	--surface-green-2: var(--whatsapp-ok-sb);
+	--surface-green-1: var(--whatsapp-ok-s);
+	--outline-green-3: var(--whatsapp-ok-sb);
+	--ink-green-7: var(--whatsapp-ok-i);
+	--ink-green-8: var(--whatsapp-ok-i); // Espresso's text on a soft fill
+	--ink-green-1: var(--whatsapp-on-tone); // and on a solid one
+	--ink-green-6: var(--whatsapp-ok);
 
-	--surface-blue-8: var(--wa-nf);
-	--surface-blue-7: var(--wa-nf); // Espresso's solid fill
-	--surface-blue-2: var(--wa-nf-sb);
-	--surface-blue-1: var(--wa-nf-s);
-	--outline-blue-3: var(--wa-nf-sb);
-	--ink-blue-7: var(--wa-nf-i);
-	--ink-blue-8: var(--wa-nf-i); // Espresso's text on a soft fill
-	--ink-blue-1: var(--wa-on-tone); // and on a solid one
-	--ink-blue-6: var(--wa-nf);
+	--surface-blue-8: var(--whatsapp-nf);
+	--surface-blue-7: var(--whatsapp-nf); // Espresso's solid fill
+	--surface-blue-2: var(--whatsapp-nf-sb);
+	--surface-blue-1: var(--whatsapp-nf-s);
+	--outline-blue-3: var(--whatsapp-nf-sb);
+	--ink-blue-7: var(--whatsapp-nf-i);
+	--ink-blue-8: var(--whatsapp-nf-i); // Espresso's text on a soft fill
+	--ink-blue-1: var(--whatsapp-on-tone); // and on a solid one
+	--ink-blue-6: var(--whatsapp-nf);
 
-	--surface-amber-7: var(--wa-wn);
-	--surface-amber-2: var(--wa-wn-sb);
-	--surface-amber-1: var(--wa-wn-s);
-	--outline-amber-3: var(--wa-wn-sb);
-	--ink-amber-7: var(--wa-wn-i);
-	--ink-amber-8: var(--wa-wn-i); // Espresso's text on a soft fill
-	--ink-amber-1: var(--wa-on-tone); // and on a solid one
-	--ink-amber-6: var(--wa-wn);
+	--surface-amber-7: var(--whatsapp-wn);
+	--surface-amber-2: var(--whatsapp-wn-sb);
+	--surface-amber-1: var(--whatsapp-wn-s);
+	--outline-amber-3: var(--whatsapp-wn-sb);
+	--ink-amber-7: var(--whatsapp-wn-i);
+	--ink-amber-8: var(--whatsapp-wn-i); // Espresso's text on a soft fill
+	--ink-amber-1: var(--whatsapp-on-tone); // and on a solid one
+	--ink-amber-6: var(--whatsapp-wn);
 
-	--surface-red-7: var(--wa-dg);
-	--surface-red-2: var(--wa-dg-sb);
-	--surface-red-1: var(--wa-dg-s);
-	--outline-red-3: var(--wa-dg-sb);
-	--outline-red-4: var(--wa-dg);
-	--ink-red-8: var(--wa-dg-i);
-	--ink-red-7: var(--wa-dg-i);
-	--ink-red-1: var(--wa-on-tone);
-	--ink-red-6: var(--wa-dg);
+	--surface-red-7: var(--whatsapp-dg);
+	--surface-red-2: var(--whatsapp-dg-sb);
+	--surface-red-1: var(--whatsapp-dg-s);
+	--outline-red-3: var(--whatsapp-dg-sb);
+	--outline-red-4: var(--whatsapp-dg);
+	--ink-red-8: var(--whatsapp-dg-i);
+	--ink-red-7: var(--whatsapp-dg-i);
+	--ink-red-1: var(--whatsapp-on-tone);
+	--ink-red-6: var(--whatsapp-dg);
 
 	// the kit's accent — the five properties every active, selected and primary state reads
-	--sanad-accent: var(--wa-pri);
-	--sanad-accent-ink: var(--wa-pri-d);
-	--sanad-accent-soft: var(--wa-pri-s);
-	--sanad-accent-outline: var(--wa-pri-sb);
-	--sanad-accent-on: var(--wa-on-pri);
+	--whatsapp-kit-accent: var(--whatsapp-pri);
+	--whatsapp-kit-accent-ink: var(--whatsapp-pri-d);
+	--whatsapp-kit-accent-soft: var(--whatsapp-pri-s);
+	--whatsapp-kit-accent-outline: var(--whatsapp-pri-sb);
+	--whatsapp-kit-accent-on: var(--whatsapp-on-pri);
 
 	// shadows
-	--shadow-sm: var(--wa-shadow-sm);
-	--shadow: var(--wa-shadow-md);
-	--shadow-base: var(--wa-shadow-md);
-	--shadow-md: var(--wa-shadow-md);
-	--shadow-lg: var(--wa-shadow-lg);
+	--shadow-sm: var(--whatsapp-shadow-sm);
+	--shadow: var(--whatsapp-shadow-md);
+	--shadow-base: var(--whatsapp-shadow-md);
+	--shadow-md: var(--whatsapp-shadow-md);
+	--shadow-lg: var(--whatsapp-shadow-lg);
 
 	// the page itself, and the controls Desk draws inside our screens
-	--control-bg: var(--wa-sunken);
-	--awesomplete-hover-bg: var(--wa-pri-s);
+	--control-bg: var(--whatsapp-sunken);
+	--awesomplete-hover-bg: var(--whatsapp-pri-s);
 	// Desk's primary button (a form's Save, a dialog's verb) — Desk reads `--btn-primary`
-	--btn-primary: var(--wa-pri);
-	--fg-color: var(--wa-surface);
+	--btn-primary: var(--whatsapp-pri);
+	--fg-color: var(--whatsapp-surface);
 	// the page background stays Frappe's own (owner, 2026-09-27): no --bg-color here
-	--card-bg: var(--wa-surface);
+	--card-bg: var(--whatsapp-surface);
 }
 
 // ---- Espresso names that Frappe before 16.53 does not define ----------------------------------

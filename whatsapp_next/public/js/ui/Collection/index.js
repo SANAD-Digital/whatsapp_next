@@ -1,10 +1,10 @@
-// sanad.ui.Collection — many rows are not always a table (reference image 07). The same records
+// whatsapp.ui.Collection — many rows are not always a table (reference image 07). The same records
 // can be read as a table (when comparing columns is the point — accounting entries), a compact
 // list (dense scanning), cards (when a picture or a value matters), a gallery (images) or a
 // timeline (when *when* is the most important column — activity history).
 //
 // The component owns the switch between those views, remembers the chosen one per key, and hands
-// every row to `sanad.ui.Render` so a person, an item or a document looks the same here as in a
+// every row to `whatsapp.ui.Render` so a person, an item or a document looks the same here as in a
 // drawer. Columns come from the DocType's meta unless the caller names them.
 
 import ui from "../_core/index.js";
@@ -28,7 +28,7 @@ const VIEWS_BY_KIND = {
 	generic: ["table", "list", "cards"],
 };
 
-sanad.ui.Collection = class Collection {
+whatsapp.ui.Collection = class Collection {
 	/**
 	 * @param {Object} opts
 	 * @param {jQuery|HTMLElement} opts.wrapper
@@ -68,40 +68,40 @@ sanad.ui.Collection = class Collection {
 	make() {
 		this.id = ui.uid("coll");
 		this.$root = $(`
-			<section class="sanad-kit sanad-collection" aria-labelledby="${this.id}-title">
-				<header class="sanad-collection__head"${this.opts.title ? "" : " hidden"}>
-					<div class="sanad-collection__heading">
-						${this.opts.icon ? `<span class="sanad-collection__icon" aria-hidden="true">${ui.icon(this.opts.icon, "md")}</span>` : ""}
+			<section class="whatsapp-kit whatsapp-kit-collection" aria-labelledby="${this.id}-title">
+				<header class="whatsapp-kit-collection__head"${this.opts.title ? "" : " hidden"}>
+					<div class="whatsapp-kit-collection__heading">
+						${this.opts.icon ? `<span class="whatsapp-kit-collection__icon" aria-hidden="true">${ui.icon(this.opts.icon, "md")}</span>` : ""}
 						<div>
-							<h3 class="sanad-collection__title" id="${this.id}-title">${ui.escape(this.opts.title || "")}</h3>
-							${this.opts.description ? `<p class="sanad-collection__desc">${ui.escape(this.opts.description)}</p>` : ""}
+							<h3 class="whatsapp-kit-collection__title" id="${this.id}-title">${ui.escape(this.opts.title || "")}</h3>
+							${this.opts.description ? `<p class="whatsapp-kit-collection__desc">${ui.escape(this.opts.description)}</p>` : ""}
 						</div>
 					</div>
-					<div class="sanad-collection__views"></div>
+					<div class="whatsapp-kit-collection__views"></div>
 				</header>
-				<div class="sanad-collection__body"></div>
-				<footer class="sanad-collection__foot" hidden></footer>
+				<div class="whatsapp-kit-collection__body"></div>
+				<footer class="whatsapp-kit-collection__foot" hidden></footer>
 			</section>`).appendTo(this.$wrapper.empty());
-		this.$body = this.$root.find(".sanad-collection__body");
-		this.$foot = this.$root.find(".sanad-collection__foot");
+		this.$body = this.$root.find(".whatsapp-kit-collection__body");
+		this.$foot = this.$root.find(".whatsapp-kit-collection__foot");
 		this.render_switcher();
 	}
 
 	render_switcher() {
-		const $views = this.$root.find(".sanad-collection__views").empty();
+		const $views = this.$root.find(".whatsapp-kit-collection__views").empty();
 		if (this.views.length < 2) return;
-		this.$root.find(".sanad-collection__head").prop("hidden", false);
-		const $group = $(`<div class="sanad-seg" role="tablist" aria-label="${ui.escape(__("Display"))}"></div>`).appendTo($views);
+		this.$root.find(".whatsapp-kit-collection__head").prop("hidden", false);
+		const $group = $(`<div class="whatsapp-kit-seg" role="tablist" aria-label="${ui.escape(__("Display"))}"></div>`).appendTo($views);
 		this.views.forEach((view) => {
 			const meta = VIEW_META[view];
 			if (!meta) return;
 			const active = view === this.view;
-			$(`<button type="button" class="sanad-seg__btn" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" data-view="${view}">${ui.icon(meta.icon, "xs")}<span>${ui.escape(meta.label())}</span></button>`)
+			$(`<button type="button" class="whatsapp-kit-seg__btn" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" data-view="${view}">${ui.icon(meta.icon, "xs")}<span>${ui.escape(meta.label())}</span></button>`)
 				.on("click", () => this.set_view(view))
 				.appendTo($group);
 		});
 		$group.on("keydown", (e) => {
-			const items = $group.find(".sanad-seg__btn").toArray();
+			const items = $group.find(".whatsapp-kit-seg__btn").toArray();
 			const idx = ui.roving_index(e, items, items.indexOf(document.activeElement));
 			if (idx < 0) return;
 			e.preventDefault();
@@ -123,7 +123,7 @@ sanad.ui.Collection = class Collection {
 	saved_view() {
 		if (!this.opts.settings_key) return null;
 		try {
-			return window.localStorage.getItem(`sanad_collection_${this.opts.settings_key}`);
+			return window.localStorage.getItem(`whatsapp_collection_${this.opts.settings_key}`);
 		} catch (e) {
 			return null;
 		}
@@ -132,7 +132,7 @@ sanad.ui.Collection = class Collection {
 	save_view() {
 		if (!this.opts.settings_key) return;
 		try {
-			window.localStorage.setItem(`sanad_collection_${this.opts.settings_key}`, this.view);
+			window.localStorage.setItem(`whatsapp_collection_${this.opts.settings_key}`, this.view);
 		} catch (e) {
 			// private mode — the view simply is not remembered
 		}
@@ -141,7 +141,7 @@ sanad.ui.Collection = class Collection {
 	// ---- data ------------------------------------------------------------------------------
 
 	refresh() {
-		const state = new sanad.ui.EmptyState({ wrapper: this.$body, state: "loading", rows: 3 });
+		const state = new whatsapp.ui.EmptyState({ wrapper: this.$body, state: "loading", rows: 3 });
 		return Promise.resolve(this.opts.fetch())
 			.then((rows) => {
 				this.rows = rows || [];
@@ -194,7 +194,7 @@ sanad.ui.Collection = class Collection {
 		this.$body.empty().attr("data-view", this.view);
 		const rows = this.visible_rows();
 		if (!this.rows.length) {
-			new sanad.ui.EmptyState({ wrapper: this.$body, state: "empty", title: this.opts.empty_title || __("Nothing to show"), description: this.opts.empty_description, action: this.opts.empty_action, size: "sm" });
+			new whatsapp.ui.EmptyState({ wrapper: this.$body, state: "empty", title: this.opts.empty_title || __("Nothing to show"), description: this.opts.empty_description, action: this.opts.empty_action, size: "sm" });
 			this.$foot.prop("hidden", true).empty();
 			return this;
 		}
@@ -208,7 +208,7 @@ sanad.ui.Collection = class Collection {
 	bind_row($el, doc) {
 		bind_actions($el, this.row_actions(doc), doc);
 		if (typeof this.opts.on_click === "function") {
-			$el.addClass("sanad-collection__clickable").on("click", (e) => {
+			$el.addClass("whatsapp-kit-collection__clickable").on("click", (e) => {
 				if ($(e.target).closest("[data-action-index], a, button").length) return;
 				this.opts.on_click(doc, e);
 			});
@@ -228,18 +228,18 @@ sanad.ui.Collection = class Collection {
 
 	render_table(rows) {
 		const cols = this.columns();
-		const head = cols.map((c) => `<th class="sanad-table__${c.align}"${c.width ? ` style="inline-size:${ui.escape(c.width)}"` : ""}>${ui.escape(c.label)}</th>`).join("");
+		const head = cols.map((c) => `<th class="whatsapp-kit-table__${c.align}"${c.width ? ` style="inline-size:${ui.escape(c.width)}"` : ""}>${ui.escape(c.label)}</th>`).join("");
 		const has_actions = this.opts.actions && (typeof this.opts.actions === "function" || this.opts.actions.length);
-		const $wrap = $(`<div class="sanad-table-wrap"><table class="sanad-table sanad-collection__table"><thead><tr>${head}${has_actions ? `<th class="sanad-table__end"><span class="sanad-visually-hidden">${ui.escape(__("Actions"))}</span></th>` : ""}</tr></thead><tbody></tbody></table></div>`).appendTo(this.$body);
+		const $wrap = $(`<div class="whatsapp-kit-table-wrap"><table class="whatsapp-kit-table whatsapp-kit-collection__table"><thead><tr>${head}${has_actions ? `<th class="whatsapp-kit-table__end"><span class="whatsapp-kit-visually-hidden">${ui.escape(__("Actions"))}</span></th>` : ""}</tr></thead><tbody></tbody></table></div>`).appendTo(this.$body);
 		const $tbody = $wrap.find("tbody");
 		rows.forEach((doc) => {
 			const cells = cols
 				.map((c) => {
 					const html = typeof c.format === "function" ? c.format(doc[c.fieldname], doc) : this.cell(c, doc);
-					return `<td class="sanad-table__${c.align}${c.align !== "start" && ui.num_align(c.df && c.df.fieldtype) ? " sanad-tabular" : ""}" data-label="${ui.escape(c.label)}">${html == null || html === "" ? '<span class="sanad-muted">—</span>' : html}</td>`;
+					return `<td class="whatsapp-kit-table__${c.align}${c.align !== "start" && ui.num_align(c.df && c.df.fieldtype) ? " whatsapp-kit-tabular" : ""}" data-label="${ui.escape(c.label)}">${html == null || html === "" ? '<span class="whatsapp-kit-muted">—</span>' : html}</td>`;
 				})
 				.join("");
-			const $tr = $(`<tr>${cells}${has_actions ? `<td class="sanad-table__end">${action_buttons(this.row_actions(doc))}</td>` : ""}</tr>`).appendTo($tbody);
+			const $tr = $(`<tr>${cells}${has_actions ? `<td class="whatsapp-kit-table__end">${action_buttons(this.row_actions(doc))}</td>` : ""}</tr>`).appendTo($tbody);
 			this.bind_row($tr, doc);
 		});
 	}
@@ -253,31 +253,31 @@ sanad.ui.Collection = class Collection {
 	}
 
 	render_list(rows) {
-		const $list = $('<div class="sanad-collection__list"></div>').appendTo(this.$body);
+		const $list = $('<div class="whatsapp-kit-collection__list"></div>').appendTo(this.$body);
 		rows.forEach((doc) => {
-			const $item = $('<div class="sanad-collection__item"></div>').appendTo($list);
+			const $item = $('<div class="whatsapp-kit-collection__item"></div>').appendTo($list);
 			$item.html(Render.entity(doc, { doctype: this.doctype, kind: this.kind, density: "row", profile: this.opts.profile, actions: this.row_actions(doc), href: this.opts.on_click ? null : undefined }));
 			this.bind_row($item, doc);
 		});
 	}
 
 	render_cards(rows) {
-		const $grid = $('<div class="sanad-collection__grid"></div>').appendTo(this.$body);
+		const $grid = $('<div class="whatsapp-kit-collection__grid"></div>').appendTo(this.$body);
 		rows.forEach((doc) => {
-			const $item = $('<div class="sanad-collection__cell"></div>').appendTo($grid);
+			const $item = $('<div class="whatsapp-kit-collection__cell"></div>').appendTo($grid);
 			$item.html(Render.entity(doc, { doctype: this.doctype, kind: this.kind, density: "card", profile: this.opts.profile, actions: this.row_actions(doc), href: this.opts.on_click ? null : undefined }));
 			this.bind_row($item, doc);
 		});
 	}
 
 	render_gallery(rows) {
-		const $grid = $('<div class="sanad-collection__gallery"></div>').appendTo(this.$body);
+		const $grid = $('<div class="whatsapp-kit-collection__gallery"></div>').appendTo(this.$body);
 		const max = this.opts.gallery_max || 8;
 		rows.slice(0, max).forEach((doc, i) => {
 			const vm = Render.vm(doc, { doctype: this.doctype, kind: this.kind, profile: this.opts.profile, density: "card" });
 			const rest = rows.length - max;
-			const overlay = i === max - 1 && rest > 0 ? `<span class="sanad-collection__more">+${ui.format_int(rest)}</span>` : "";
-			const $item = $(`<div class="sanad-collection__tile" title="${ui.escape(vm.title)}">${thumb({ src: vm.image, alt: vm.title, size: "cover", icon: vm.icon })}${overlay}<span class="sanad-collection__caption" dir="auto">${ui.escape(vm.title)}</span></div>`).appendTo($grid);
+			const overlay = i === max - 1 && rest > 0 ? `<span class="whatsapp-kit-collection__more">+${ui.format_int(rest)}</span>` : "";
+			const $item = $(`<div class="whatsapp-kit-collection__tile" title="${ui.escape(vm.title)}">${thumb({ src: vm.image, alt: vm.title, size: "cover", icon: vm.icon })}${overlay}<span class="whatsapp-kit-collection__caption" dir="auto">${ui.escape(vm.title)}</span></div>`).appendTo($grid);
 			this.bind_row($item, doc);
 		});
 	}
@@ -289,19 +289,19 @@ sanad.ui.Collection = class Collection {
 	 */
 	render_timeline(rows) {
 		const map = this.opts.timeline || ((doc) => doc);
-		const $list = $('<ol class="sanad-timeline"></ol>').appendTo(this.$body);
+		const $list = $('<ol class="whatsapp-kit-timeline"></ol>').appendTo(this.$body);
 		rows.forEach((doc) => {
 			const r = map(doc) || {};
 			const tone = ui.tone(r.tone || "gray");
-			const $item = $(`<li class="sanad-timeline__item">
-				<span class="sanad-timeline__rail" aria-hidden="true"><span class="sanad-timeline__dot sanad-tone--${tone}">${r.icon ? ui.icon(r.icon, "xs") : ""}</span></span>
-				<div class="sanad-timeline__body">
-					<div class="sanad-timeline__head">
-						<span class="sanad-timeline__title" dir="auto">${ui.escape(r.title || "")}</span>
-						${r.time ? `<span class="sanad-timeline__time">${Render.value(r.time, { fieldtype: "Datetime", fieldname: "time" }, doc, { density: "inline" })}</span>` : ""}
+			const $item = $(`<li class="whatsapp-kit-timeline__item">
+				<span class="whatsapp-kit-timeline__rail" aria-hidden="true"><span class="whatsapp-kit-timeline__dot whatsapp-kit-tone--${tone}">${r.icon ? ui.icon(r.icon, "xs") : ""}</span></span>
+				<div class="whatsapp-kit-timeline__body">
+					<div class="whatsapp-kit-timeline__head">
+						<span class="whatsapp-kit-timeline__title" dir="auto">${ui.escape(r.title || "")}</span>
+						${r.time ? `<span class="whatsapp-kit-timeline__time">${Render.value(r.time, { fieldtype: "Datetime", fieldname: "time" }, doc, { density: "inline" })}</span>` : ""}
 					</div>
-					${r.description ? `<div class="sanad-timeline__desc" dir="auto">${r.html ? r.description : ui.escape(r.description)}</div>` : ""}
-					${r.user ? `<div class="sanad-timeline__user">${chip({ icon: "es-line-customer", text: r.user })}</div>` : ""}
+					${r.description ? `<div class="whatsapp-kit-timeline__desc" dir="auto">${r.html ? r.description : ui.escape(r.description)}</div>` : ""}
+					${r.user ? `<div class="whatsapp-kit-timeline__user">${chip({ icon: "es-line-customer", text: r.user })}</div>` : ""}
 				</div>
 			</li>`).appendTo($list);
 			this.bind_row($item, doc);
@@ -320,11 +320,11 @@ sanad.ui.Collection = class Collection {
 		if (total) {
 			const value = typeof total.value === "function" ? total.value(this.rows) : total.value;
 			const html = total.fieldtype ? Render.value(value, { fieldtype: total.fieldtype }, this.rows[0] || {}, { density: "card", variant: "strong" }) : ui.escape(value);
-			this.$foot.append(`<div class="sanad-collection__total"><span class="sanad-collection__total-label">${ui.escape(total.label || __("Total"))}</span><span class="sanad-collection__total-value">${html}</span>${total.note ? `<span class="sanad-collection__total-note">${ui.escape(total.note)}</span>` : ""}</div>`);
+			this.$foot.append(`<div class="whatsapp-kit-collection__total"><span class="whatsapp-kit-collection__total-label">${ui.escape(total.label || __("Total"))}</span><span class="whatsapp-kit-collection__total-value">${html}</span>${total.note ? `<span class="whatsapp-kit-collection__total-note">${ui.escape(total.note)}</span>` : ""}</div>`);
 		}
 		if (hidden) {
 			const rest = this.rows.length - this.opts.limit;
-			$(`<button type="button" class="btn btn-sm btn-default sanad-collection__more-btn">${ui.escape(__("Show all {0}", [ui.format_int(this.rows.length)]))}</button>`)
+			$(`<button type="button" class="btn btn-sm btn-default whatsapp-kit-collection__more-btn">${ui.escape(__("Show all {0}", [ui.format_int(this.rows.length)]))}</button>`)
 				.on("click", () => {
 					this.expanded = true;
 					this.render();
@@ -340,4 +340,4 @@ sanad.ui.Collection = class Collection {
 	}
 };
 
-export default sanad.ui.Collection;
+export default whatsapp.ui.Collection;

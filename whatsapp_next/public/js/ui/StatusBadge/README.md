@@ -9,15 +9,15 @@ tones add a small icon (accessibility finding: "don't convey information by colo
 
 ```js
 // Inline (formatters, drawers, cards)
-$cell.html(sanad.ui.StatusBadge.html({ label: __("Connected"), colour: "green" }));
+$cell.html(whatsapp.ui.StatusBadge.html({ label: __("Connected"), colour: "green" }));
 
 // Meta-driven: resolves label + colour from the DocType's indicator rules
-new sanad.ui.StatusBadge({ wrapper: $el, doctype: "WhatsApp Device", doc });
+new whatsapp.ui.StatusBadge({ wrapper: $el, doctype: "WhatsApp Device", doc });
 
 // Column formatter in listview_settings
 formatters: {
   status(value, df, doc) {
-    return sanad.ui.StatusBadge.html({ label: __(value), colour: sanad.ui.indicator_for(doc.doctype, doc).colour });
+    return whatsapp.ui.StatusBadge.html({ label: __(value), colour: whatsapp.ui.indicator_for(doc.doctype, doc).colour });
   },
 },
 ```
@@ -26,7 +26,7 @@ Options: `wrapper`, `doctype`, `fieldname` (default `status`), `doc` | `value`, 
 `icon` (default `true`), `size` (`sm` | `md`), `title`. `refresh(doc)` re-renders.
 
 Tones: Frappe colours map to the Espresso triplets green / blue / amber / red / gray / cyan /
-violet / pink (`sanad.ui.tone`). Only `--surface-*`, `--ink-*`, `--outline-*` tokens are used.
+violet / pink (`whatsapp.ui.tone`). Only `--surface-*`, `--ink-*`, `--outline-*` tokens are used.
 
 ## Live use
 `WhatsApp Log` list (Outbound) — `public/js/listview/whatsapp_log_list.js` status column and the

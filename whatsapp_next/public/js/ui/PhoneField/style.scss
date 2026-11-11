@@ -1,4 +1,4 @@
-// sanad.ui.PhoneField — the prototype's phone field (`docs/component/Phone Field.dc.html`).
+// whatsapp.ui.PhoneField — the prototype's phone field (`docs/component/Phone Field.dc.html`).
 //
 // Geometry is the prototype's, to the pixel: a 40 px box with a 9 px radius, the country trigger
 // closed off by a hairline on its inline-end, an 11 px ISO code beside a 13 px monospace dial code,
@@ -13,12 +13,12 @@
 // Every offset is a logical property, so the field mirrors into Arabic with no second rule: the
 // trigger sits at the inline-start in both scripts, the number itself always reads `dir="ltr"`.
 
-.sanad-phone {
+.whatsapp-kit-phone {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
 	min-inline-size: 0;
-	margin-block-end: var(--sanad-gap-md);
+	margin-block-end: var(--whatsapp-kit-gap-md);
 
 	// ---- the label, and the bubble that explains the field ------------------------------------
 
@@ -48,11 +48,11 @@
 		block-size: 17px;
 		flex: none;
 		padding: 0;
-		border: 1px solid var(--sanad-accent);
+		border: 1px solid var(--whatsapp-kit-accent);
 		border-radius: 50%;
-		background: var(--sanad-accent);
-		color: var(--sanad-accent-on);
-		box-shadow: 0 0 0 3px var(--sanad-accent-soft);
+		background: var(--whatsapp-kit-accent);
+		color: var(--whatsapp-kit-accent-on);
+		box-shadow: 0 0 0 3px var(--whatsapp-kit-accent-soft);
 		font: inherit;
 		font-size: 11px;
 		font-weight: 700;
@@ -62,13 +62,13 @@
 		&--seen {
 			inline-size: 15px;
 			block-size: 15px;
-			border-color: var(--sanad-accent-outline);
-			background: var(--sanad-accent-soft);
-			color: var(--sanad-accent-ink);
+			border-color: var(--whatsapp-kit-accent-outline);
+			background: var(--whatsapp-kit-accent-soft);
+			color: var(--whatsapp-kit-accent-ink);
 			box-shadow: none;
 		}
 		&:focus-visible {
-			outline: 2px solid var(--sanad-accent);
+			outline: 2px solid var(--whatsapp-kit-accent);
 			outline-offset: 2px;
 		}
 	}
@@ -98,14 +98,14 @@
 		display: flex;
 		align-items: stretch;
 		// a field's height, beside the fields around it
-		min-block-size: var(--wa-h, var(--sanad-ctl-h, 28px));
+		min-block-size: var(--whatsapp-h, var(--whatsapp-kit-ctl-h, 28px));
 		border: 1px solid var(--outline-gray-2);
 		border-radius: 8px;
 		background: var(--surface-gray-1);
 
 		&--focus {
-			border-color: var(--sanad-accent);
-			box-shadow: 0 0 0 3px var(--sanad-accent-soft);
+			border-color: var(--whatsapp-kit-accent);
+			box-shadow: 0 0 0 3px var(--whatsapp-kit-accent-soft);
 		}
 		&--error {
 			border-color: var(--outline-red-4);
@@ -132,7 +132,7 @@
 			background: var(--surface-gray-2);
 		}
 		&:focus-visible {
-			outline: 2px solid var(--sanad-accent);
+			outline: 2px solid var(--whatsapp-kit-accent);
 			outline-offset: 2px;
 		}
 	}
@@ -151,7 +151,7 @@
 		display: inline-flex;
 		flex: none;
 		color: var(--ink-gray-5);
-		transition: transform var(--sanad-motion);
+		transition: transform var(--whatsapp-kit-motion);
 
 		&--open {
 			transform: rotate(180deg);
@@ -205,7 +205,7 @@
 		display: flex;
 		flex-direction: column;
 		padding: 6px;
-		border: var(--sanad-border);
+		border: var(--whatsapp-kit-border);
 		border-radius: 10px;
 		background: var(--surface-base);
 		box-shadow: var(--shadow-lg);
@@ -217,7 +217,7 @@
 		min-block-size: 28px;
 		padding: 0 9px;
 		margin-block-end: 5px;
-		border: var(--sanad-border);
+		border: var(--whatsapp-kit-border);
 		border-radius: 8px;
 		background: var(--surface-gray-1);
 		color: var(--ink-gray-5);
@@ -256,7 +256,7 @@
 		}
 		&--on,
 		&--cursor {
-			background: var(--sanad-accent-soft);
+			background: var(--whatsapp-kit-accent-soft);
 		}
 	}
 	&__opt-iso {
@@ -287,25 +287,25 @@
 
 	// The caret and the tick are inline SVGs drawn by this component, not icon-font glyphs:
 	// Frappe's own icon rule carries `margin: 0 auto`, which inside a flex row hands the icon the
-	// free space and parks it in the middle of its line. The shared `.wa-ico` wrapper already
+	// free space and parks it in the middle of its line. The shared `.whatsapp-ico` wrapper already
 	// pins its own margin, so the search glyph needs nothing here beyond its size.
 	&__svg {
 		flex: none;
 		margin-inline: 0;
 	}
-	&__search .wa-ico {
+	&__search .whatsapp-ico {
 		inline-size: 13px;
 		block-size: 13px;
 	}
 }
 
 // Shared by the full field and by the hint-only mode over a wrapped Frappe control.
-.sanad-phone__hint {
+.whatsapp-kit-phone__hint {
 	display: flex;
 	align-items: flex-start;
-	gap: var(--sanad-gap-xs);
+	gap: var(--whatsapp-kit-gap-xs);
 	min-block-size: 18px; // reserved so the field does not jump between states
-	margin-block-start: var(--sanad-gap-xs);
+	margin-block-start: var(--whatsapp-kit-gap-xs);
 	font-size: 11px;
 	line-height: 1.7;
 	color: var(--ink-gray-5);
@@ -327,13 +327,13 @@
 }
 
 @media (max-width: 767px) {
-	.sanad-phone__pop {
+	.whatsapp-kit-phone__pop {
 		inline-size: 100%;
 	}
 }
 
-// `sanad.ui.group_tag()`: the "Group" badge after a group's name or JID, on its line.
-.sanad-group-tag {
+// `whatsapp.ui.group_tag()`: the "Group" badge after a group's name or JID, on its line.
+.whatsapp-kit-group-tag {
 	display: inline-flex;
 	vertical-align: middle;
 	margin-inline-start: 6px;

@@ -1,4 +1,4 @@
-// sanad.ui.DataList — the prototype's data table on top of a Desk ListView: sortable headers,
+// whatsapp.ui.DataList — the prototype's data table on top of a Desk ListView: sortable headers,
 // a checkbox column (Desk's `.list-row-checkbox[data-name]`, so `get_checked_items()` and
 // BulkActions keep working), dense rows with a muted second line, typed cells (status badge,
 // avatar chip, tabular numbers, user dates, links), a per-row "View" button, an optional
@@ -11,9 +11,9 @@ import ui from "../_core/index.js";
 /** The table never gets less than this, however tall the console above it is. */
 const MIN_TABLE_HEIGHT = 280;
 
-const CONTROL_SELECTOR = "a, button, input, select, textarea, label, .sanad-datalist__action, [data-toggle]";
+const CONTROL_SELECTOR = "a, button, input, select, textarea, label, .whatsapp-kit-datalist__action, [data-toggle]";
 
-sanad.ui.DataList = class DataList {
+whatsapp.ui.DataList = class DataList {
 	/**
 	 * @param {Object} opts
 	 * @param {Object} opts.listview — a Desk ListView
@@ -46,7 +46,7 @@ sanad.ui.DataList = class DataList {
 		this.listview = this.opts.listview || null;
 		this.lv = this.listview;
 		this.page_mode = !this.lv;
-		if (!this.lv && !this.opts.wrapper) throw new Error("sanad.ui.DataList: listview or wrapper is required");
+		if (!this.lv && !this.opts.wrapper) throw new Error("whatsapp.ui.DataList: listview or wrapper is required");
 		this.doctype = this.lv ? this.lv.doctype : this.opts.doctype || null;
 		this.rows = (this.opts.rows || []).slice();
 		this.sort_state = this.opts.sort || {};
@@ -75,28 +75,28 @@ sanad.ui.DataList = class DataList {
 		lv.selected_page_count = this.page_length;
 		lv.start = 0;
 		lv.$no_result && lv.$no_result.hide();
-		lv._sanad_datalist = this; // FilterBar's grouping control drives this table
-		lv.$result.addClass("sanad-datalist-host");
+		lv._whatsapp_datalist = this; // FilterBar's grouping control drives this table
+		lv.$result.addClass("whatsapp-kit-datalist-host");
 		// the list owns its page edge to edge: no card frame, no outer margin
-		lv.$frappe_list.addClass("sanad-list-card");
+		lv.$frappe_list.addClass("whatsapp-kit-list-card");
 		// Desk pads the list column 40px at the bottom; the card already fills the screen, so that
 		// padding only added scroll: the toolbar slid under the sticky head and a strip stayed
 		// under the footer. The host loses it while this card is mounted.
-		lv.$frappe_list.parent().addClass("sanad-list-card-host");
-		this.$table = $(`<div class="sanad-kit sanad-datalist__wrap${this.opts.mobile === "cards" ? " sanad-datalist__wrap--cards" : ""}"></div>`);
+		lv.$frappe_list.parent().addClass("whatsapp-kit-list-card-host");
+		this.$table = $(`<div class="whatsapp-kit whatsapp-kit-datalist__wrap${this.opts.mobile === "cards" ? " whatsapp-kit-datalist__wrap--cards" : ""}"></div>`);
 		lv.$result.find(".list-row-container, .list-row-head").remove();
 		lv.$result.prepend(this.$table);
-		this.$footer = $(`<div class="sanad-kit sanad-datalist__footer"><div class="sanad-datalist__count" aria-live="polite"></div><div class="sanad-datalist__extra"></div><nav class="sanad-datalist__pager" aria-label="${ui.escape(__("Pages"))}"></nav></div>`);
+		this.$footer = $(`<div class="whatsapp-kit whatsapp-kit-datalist__footer"><div class="whatsapp-kit-datalist__count" aria-live="polite"></div><div class="whatsapp-kit-datalist__extra"></div><nav class="whatsapp-kit-datalist__pager" aria-label="${ui.escape(__("Pages"))}"></nav></div>`);
 		lv.$frappe_list.append(this.$footer);
 		// Frappe's own paging component (page sizes + Load More) moves into the footer: it divides
 		// the pages, keeps the fetch small and is what the rest of Desk behaves like.
-		if (lv.$paging_area) lv.$paging_area.addClass("sanad-datalist__paging").appendTo(this.$footer.find(".sanad-datalist__pager")).show();
+		if (lv.$paging_area) lv.$paging_area.addClass("whatsapp-kit-datalist__paging").appendTo(this.$footer.find(".whatsapp-kit-datalist__pager")).show();
 
 		// rows: our table instead of Desk's row markup (keeps the shared render hooks of the kit)
-		lv._sanad_render_hooks = lv._sanad_render_hooks || [];
+		lv._whatsapp_render_hooks = lv._whatsapp_render_hooks || [];
 		lv.render_list = function () {
 			self.render();
-			lv._sanad_render_hooks.forEach((fn) => {
+			lv._whatsapp_render_hooks.forEach((fn) => {
 				try {
 					fn(lv);
 				} catch (e) {
@@ -142,9 +142,9 @@ sanad.ui.DataList = class DataList {
 	 */
 	mount_page() {
 		const $w = $(this.opts.wrapper);
-		$w.addClass("sanad-kit sanad-datalist-page");
-		this.$table = $(`<div class="sanad-datalist__wrap${this.opts.mobile === "cards" ? " sanad-datalist__wrap--cards" : ""}"></div>`).appendTo($w);
-		this.$footer = $(`<div class="sanad-datalist__footer"><div class="sanad-datalist__count" aria-live="polite"></div><div class="sanad-datalist__extra"></div><nav class="sanad-datalist__pager" aria-label="${ui.escape(__("Pages"))}"></nav></div>`).appendTo($w);
+		$w.addClass("whatsapp-kit whatsapp-kit-datalist-page");
+		this.$table = $(`<div class="whatsapp-kit-datalist__wrap${this.opts.mobile === "cards" ? " whatsapp-kit-datalist__wrap--cards" : ""}"></div>`).appendTo($w);
+		this.$footer = $(`<div class="whatsapp-kit-datalist__footer"><div class="whatsapp-kit-datalist__count" aria-live="polite"></div><div class="whatsapp-kit-datalist__extra"></div><nav class="whatsapp-kit-datalist__pager" aria-label="${ui.escape(__("Pages"))}"></nav></div>`).appendTo($w);
 		this.$root = $w;
 		this.total = cint(this.opts.total) || this.rows.length;
 		this.bind_events();
@@ -187,8 +187,8 @@ sanad.ui.DataList = class DataList {
 	 * from page 0 each time, so it needs nothing new.
 	 */
 	render_page_buttons() {
-		const $pager = this.$footer.find(".sanad-datalist__pager");
-		if (!this.page_mode || $pager.find(".sanad-datalist__paging").length) return;
+		const $pager = this.$footer.find(".whatsapp-kit-datalist__pager");
+		if (!this.page_mode || $pager.find(".whatsapp-kit-datalist__paging").length) return;
 		const sizes = [20, 100, 500, 2500];
 		this.page_size = sizes.includes(this.page_length) ? this.page_length : sizes[0];
 		const reload = (length) => {
@@ -197,7 +197,7 @@ sanad.ui.DataList = class DataList {
 			this.set_loading(true);
 			if (this.opts.on_page) this.opts.on_page(0, this);
 		};
-		const $area = $('<div class="list-paging-area level sanad-datalist__paging"><div class="level-left"></div><div class="level-right"></div></div>').appendTo($pager);
+		const $area = $('<div class="list-paging-area level whatsapp-kit-datalist__paging"><div class="level-left"></div><div class="level-right"></div></div>').appendTo($pager);
 		if (frappe.ui.TabButtons) {
 			this.size_buttons = new frappe.ui.TabButtons({
 				label: __("Page Size"),
@@ -229,23 +229,23 @@ sanad.ui.DataList = class DataList {
 
 	bind_events() {
 		const $r = this.$root || this.listview.$result;
-		$r.on(`click.${this.id}`, ".sanad-datalist__sort", (e) => {
+		$r.on(`click.${this.id}`, ".whatsapp-kit-datalist__sort", (e) => {
 			e.preventDefault();
-			if ($(e.target).closest(".sanad-datalist__pin").length) return;
+			if ($(e.target).closest(".whatsapp-kit-datalist__pin").length) return;
 			this.sort($(e.currentTarget).closest("th").data("fieldname"));
 		});
-		$r.on(`click.${this.id}`, ".sanad-datalist__view", (e) => {
+		$r.on(`click.${this.id}`, ".whatsapp-kit-datalist__view", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			const doc = this.doc_of($(e.currentTarget).closest("tr").data("name"));
 			if (doc && this.opts.row_action && this.opts.row_action.handler) this.run(this.opts.row_action.handler, doc, $(e.currentTarget));
 		});
-		$r.on(`click.${this.id}`, ".sanad-datalist__pin", (e) => {
+		$r.on(`click.${this.id}`, ".whatsapp-kit-datalist__pin", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			this.toggle_pin($(e.currentTarget).data("fieldname"));
 		});
-		$r.on(`click.${this.id}`, ".sanad-datalist__group-toggle", (e) => {
+		$r.on(`click.${this.id}`, ".whatsapp-kit-datalist__group-toggle", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			const gid = e.currentTarget.closest("tr").getAttribute("data-gid");
@@ -255,23 +255,23 @@ sanad.ui.DataList = class DataList {
 			else this.collapsed.add(group.path);
 			this.render();
 		});
-		$r.on(`click.${this.id}`, ".sanad-datalist__toggle", (e) => {
+		$r.on(`click.${this.id}`, ".whatsapp-kit-datalist__toggle", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			this.expand_row($(e.currentTarget).closest("tr").data("name"));
 		});
-		$r.on(`click.${this.id}`, ".sanad-datalist__row", (e) => {
+		$r.on(`click.${this.id}`, ".whatsapp-kit-datalist__row", (e) => {
 			if (!this.opts.on_row_click) return;
 			if (e.ctrlKey || e.metaKey || $(e.target).closest(CONTROL_SELECTOR).length) return;
 			const doc = this.doc_of($(e.currentTarget).data("name"));
 			if (doc) this.run(this.opts.on_row_click, doc, $(e.currentTarget));
 		});
-		$r.on(`keydown.${this.id}`, ".sanad-datalist__row", (e) => {
+		$r.on(`keydown.${this.id}`, ".whatsapp-kit-datalist__row", (e) => {
 			if (e.key !== "Enter" || !this.opts.on_row_click || e.target !== e.currentTarget) return;
 			const doc = this.doc_of($(e.currentTarget).data("name"));
 			if (doc) this.run(this.opts.on_row_click, doc, $(e.currentTarget));
 		});
-		$r.on(`change.${this.id}`, ".sanad-datalist__group-checkbox", (e) => {
+		$r.on(`change.${this.id}`, ".whatsapp-kit-datalist__group-checkbox", (e) => {
 			e.stopPropagation();
 			this.select_group(e.currentTarget.getAttribute("data-gid"), e.currentTarget.checked);
 		});
@@ -282,7 +282,7 @@ sanad.ui.DataList = class DataList {
 			this.selection_changed(); // one row is a selection too: the host hears about it
 			this.sync_group_checkboxes();
 		});
-		$r.on(`change.${this.id}`, ".sanad-datalist__check-all", (e) => {
+		$r.on(`change.${this.id}`, ".whatsapp-kit-datalist__check-all", (e) => {
 			const on = e.currentTarget.checked;
 			$r.find(".list-row-checkbox").each((i, el) => {
 				el.checked = on;
@@ -297,7 +297,7 @@ sanad.ui.DataList = class DataList {
 
 	run(fn, doc, $el) {
 		Promise.resolve(fn(doc, $el)).catch((err) => {
-			if (err && err.message && err.message !== "cancelled") sanad.ui.Toast.error(err);
+			if (err && err.message && err.message !== "cancelled") whatsapp.ui.Toast.error(err);
 		});
 	}
 
@@ -397,7 +397,7 @@ sanad.ui.DataList = class DataList {
 	}
 
 	settings_key() {
-		return `sanad_columns_${this.opts.settings_key || "default"}`;
+		return `whatsapp_columns_${this.opts.settings_key || "default"}`;
 	}
 
 	/** Show exactly these fieldnames, in this order, and remember the choice like Frappe does. */
@@ -435,8 +435,8 @@ sanad.ui.DataList = class DataList {
 
 	render_skeleton() {
 		const rows = [];
-		for (let i = 0; i < 6; i++) rows.push(`<tr class="sanad-datalist__row--skeleton"><td colspan="${this.colspan()}">${ui.skeleton(1, { lines: 1 })}</td></tr>`);
-		this.$table.html(`<table class="sanad-datalist" aria-busy="true">${this.thead()}<tbody>${rows.join("")}</tbody></table>`);
+		for (let i = 0; i < 6; i++) rows.push(`<tr class="whatsapp-kit-datalist__row--skeleton"><td colspan="${this.colspan()}">${ui.skeleton(1, { lines: 1 })}</td></tr>`);
+		this.$table.html(`<table class="whatsapp-kit-datalist" aria-busy="true">${this.thead()}<tbody>${rows.join("")}</tbody></table>`);
 	}
 
 	thead() {
@@ -445,27 +445,27 @@ sanad.ui.DataList = class DataList {
 		const sort_order = this.page_mode ? this.sort_state.order : lv.sort_selector && lv.sort_selector.sort_order;
 		let html = "<thead><tr>";
 		if (this.opts.selectable) {
-			html += `<th scope="col" class="sanad-datalist__th sanad-datalist__th--check"><input type="checkbox" class="sanad-datalist__check-all" aria-label="${ui.escape(__("Select all rows on this page"))}"></th>`;
+			html += `<th scope="col" class="whatsapp-kit-datalist__th whatsapp-kit-datalist__th--check"><input type="checkbox" class="whatsapp-kit-datalist__check-all" aria-label="${ui.escape(__("Select all rows on this page"))}"></th>`;
 		}
-		if (this.opts.expand) html += `<th scope="col" class="sanad-datalist__th sanad-datalist__th--expand"><span class="sanad-visually-hidden">${ui.escape(__("Details"))}</span></th>`;
+		if (this.opts.expand) html += `<th scope="col" class="whatsapp-kit-datalist__th whatsapp-kit-datalist__th--expand"><span class="whatsapp-kit-visually-hidden">${ui.escape(__("Details"))}</span></th>`;
 		this.columns.forEach((c) => {
 			const active = c.sortable && sort_by === c.fieldname;
 			const aria = active ? ` aria-sort="${sort_order === "asc" ? "ascending" : "descending"}"` : "";
 			const style = c.width ? ` style="width:${ui.escape(typeof c.width === "number" ? `${c.width}px` : c.width)}"` : "";
 			const icon = active ? ui.icon(sort_order === "asc" ? "sort-ascending" : "sort-descending", "xs") : ui.icon("es-line-sort", "xs");
-			const pinned = this.pinned.includes(c.fieldname) ? " sanad-datalist__th--pinned" : "";
-			html += `<th scope="col" class="sanad-datalist__th sanad-datalist__th--${c.align}${c.hidden_xs ? " sanad-datalist__th--hidden-xs" : ""}${active ? " sanad-datalist__th--sorted" : ""}${pinned}" data-fieldname="${ui.escape(c.fieldname)}"${aria}${style}>`;
+			const pinned = this.pinned.includes(c.fieldname) ? " whatsapp-kit-datalist__th--pinned" : "";
+			html += `<th scope="col" class="whatsapp-kit-datalist__th whatsapp-kit-datalist__th--${c.align}${c.hidden_xs ? " whatsapp-kit-datalist__th--hidden-xs" : ""}${active ? " whatsapp-kit-datalist__th--sorted" : ""}${pinned}" data-fieldname="${ui.escape(c.fieldname)}"${aria}${style}>`;
 			if (c.sortable) {
 				const dir = active && sort_order === "asc" ? __("descending") : __("ascending");
-				html += `<button type="button" class="sanad-datalist__sort" aria-label="${ui.escape(__("Sort by {0}, {1}", [c.label, dir]))}"><span>${ui.escape(c.label)}</span><span class="sanad-datalist__sort-icon" aria-hidden="true">${icon}</span></button>`;
-			} else html += `<span class="sanad-datalist__label">${ui.escape(c.label)}</span>`;
+				html += `<button type="button" class="whatsapp-kit-datalist__sort" aria-label="${ui.escape(__("Sort by {0}, {1}", [c.label, dir]))}"><span>${ui.escape(c.label)}</span><span class="whatsapp-kit-datalist__sort-icon" aria-hidden="true">${icon}</span></button>`;
+			} else html += `<span class="whatsapp-kit-datalist__label">${ui.escape(c.label)}</span>`;
 			if (this.opts.pinnable) {
 				const on = this.pinned.includes(c.fieldname);
-				html += `<button type="button" class="sanad-datalist__pin${on ? " sanad-datalist__pin--on" : ""}" data-fieldname="${ui.escape(c.fieldname)}" aria-pressed="${on}" title="${ui.escape(on ? __("Unpin {0}", [c.label]) : __("Pin {0}", [c.label]))}" aria-label="${ui.escape(on ? __("Unpin {0}", [c.label]) : __("Pin {0}", [c.label]))}">${ui.icon("es-line-pin", "xs")}</button>`;
+				html += `<button type="button" class="whatsapp-kit-datalist__pin${on ? " whatsapp-kit-datalist__pin--on" : ""}" data-fieldname="${ui.escape(c.fieldname)}" aria-pressed="${on}" title="${ui.escape(on ? __("Unpin {0}", [c.label]) : __("Pin {0}", [c.label]))}" aria-label="${ui.escape(on ? __("Unpin {0}", [c.label]) : __("Pin {0}", [c.label]))}">${ui.icon("es-line-pin", "xs")}</button>`;
 			}
 			html += "</th>";
 		});
-		if (this.opts.row_action) html += `<th scope="col" class="sanad-datalist__th sanad-datalist__th--action"><span class="sanad-datalist__label">${ui.escape(this.opts.row_action.label || __("View"))}</span></th>`;
+		if (this.opts.row_action) html += `<th scope="col" class="whatsapp-kit-datalist__th whatsapp-kit-datalist__th--action"><span class="whatsapp-kit-datalist__label">${ui.escape(this.opts.row_action.label || __("View"))}</span></th>`;
 		return html + "</tr></thead>";
 	}
 
@@ -474,17 +474,17 @@ sanad.ui.DataList = class DataList {
 		this.expanded = new Set(Array.from(this.expanded).filter((n) => rows.some((d) => d.name === n)));
 		let body = "";
 		if (!rows.length) {
-			body = `<tr class="sanad-datalist__row--empty"><td colspan="${this.colspan()}"><div class="sanad-datalist__empty"></div></td></tr>`;
+			body = `<tr class="whatsapp-kit-datalist__row--empty"><td colspan="${this.colspan()}"><div class="whatsapp-kit-datalist__empty"></div></td></tr>`;
 		} else if (this.group_by.length) {
 			this.group_names = new Map();
 			body = this.group_html(this.group_tree(rows, 0, []), 0);
 		} else {
 			body = rows.map((doc) => this.row_html(doc)).join("");
 		}
-		this.$table.html(`<table class="sanad-datalist" aria-busy="false">${this.thead()}<tbody>${body}</tbody></table>`);
+		this.$table.html(`<table class="whatsapp-kit-datalist" aria-busy="false">${this.thead()}<tbody>${body}</tbody></table>`);
 		if (!rows.length) {
 			const e = this.opts.empty || {};
-			new sanad.ui.EmptyState({ wrapper: this.$table.find(".sanad-datalist__empty"), state: "empty", title: e.title || __("No records match"), description: e.description || __("Change the filters or the period to see more."), action: e.action });
+			new whatsapp.ui.EmptyState({ wrapper: this.$table.find(".whatsapp-kit-datalist__empty"), state: "empty", title: e.title || __("No records match"), description: e.description || __("Change the filters or the period to see more."), action: e.action });
 		}
 		this.expanded.forEach((name) => this.render_expand(name, true));
 		this.apply_pins();
@@ -554,7 +554,7 @@ sanad.ui.DataList = class DataList {
 	/** `level` tree guides — the vertical rules that make the nesting read as a tree. */
 	rails(level) {
 		let html = "";
-		for (let i = 0; i < level; i++) html += '<span class="sanad-datalist__rail" aria-hidden="true"></span>';
+		for (let i = 0; i < level; i++) html += '<span class="whatsapp-kit-datalist__rail" aria-hidden="true"></span>';
 		return html;
 	}
 
@@ -569,18 +569,18 @@ sanad.ui.DataList = class DataList {
 				this.group_names.set(gid, { path: node.path, names });
 				const label = `${label_col ? label_col.label : __(node.fieldname)}: ${node.label}`;
 				const check = this.opts.selectable
-					? `<span class="sanad-datalist__group-check"><input type="checkbox" class="sanad-datalist__group-checkbox" data-gid="${gid}" aria-label="${ui.escape(__("Select the {0} rows in {1}", [ui.format_int(node.count), label]))}"></span>`
+					? `<span class="whatsapp-kit-datalist__group-check"><input type="checkbox" class="whatsapp-kit-datalist__group-checkbox" data-gid="${gid}" aria-label="${ui.escape(__("Select the {0} rows in {1}", [ui.format_int(node.count), label]))}"></span>`
 					: "";
-				let html = `<tr class="sanad-datalist__group sanad-datalist__group--l${node.level}" data-gid="${gid}">
-					<td class="sanad-datalist__group-cell" colspan="${this.colspan()}">
-						<div class="sanad-datalist__group-inner">
+				let html = `<tr class="whatsapp-kit-datalist__group whatsapp-kit-datalist__group--l${node.level}" data-gid="${gid}">
+					<td class="whatsapp-kit-datalist__group-cell" colspan="${this.colspan()}">
+						<div class="whatsapp-kit-datalist__group-inner">
 							${check}
 							${this.rails(node.level)}
-							<button type="button" class="sanad-datalist__group-toggle" aria-expanded="${open}" aria-label="${ui.escape(open ? __("Collapse {0}", [node.label]) : __("Expand {0}", [node.label]))}">${ui.icon("es-line-down", "xs")}</button>
-							<span class="sanad-datalist__group-field">${ui.escape(label_col ? label_col.label : __(node.fieldname))}</span>
-							<span class="sanad-datalist__group-label">${ui.escape(node.label)}</span>
-							<span class="sanad-datalist__group-count sanad-tabular">${ui.escape(ui.format_int(node.count))}</span>
-							${sum_col && node.sum ? `<span class="sanad-datalist__group-sum"><span class="sanad-datalist__group-sum-label">${ui.escape(__("Total {0}", [sum_col.label]))}</span> <span class="sanad-tabular" dir="ltr">${frappe.format(node.sum, sum_col.df, { inline: true })}</span></span>` : ""}
+							<button type="button" class="whatsapp-kit-datalist__group-toggle" aria-expanded="${open}" aria-label="${ui.escape(open ? __("Collapse {0}", [node.label]) : __("Expand {0}", [node.label]))}">${ui.icon("es-line-down", "xs")}</button>
+							<span class="whatsapp-kit-datalist__group-field">${ui.escape(label_col ? label_col.label : __(node.fieldname))}</span>
+							<span class="whatsapp-kit-datalist__group-label">${ui.escape(node.label)}</span>
+							<span class="whatsapp-kit-datalist__group-count whatsapp-kit-tabular">${ui.escape(ui.format_int(node.count))}</span>
+							${sum_col && node.sum ? `<span class="whatsapp-kit-datalist__group-sum"><span class="whatsapp-kit-datalist__group-sum-label">${ui.escape(__("Total {0}", [sum_col.label]))}</span> <span class="whatsapp-kit-tabular" dir="ltr">${frappe.format(node.sum, sum_col.df, { inline: true })}</span></span>` : ""}
 						</div>
 					</td>
 				</tr>`;
@@ -643,14 +643,14 @@ sanad.ui.DataList = class DataList {
 
 	/** Group boxes reflect their rows: checked, unchecked, or indeterminate when partly selected. */
 	sync_group_checkboxes() {
-		this.$table.find(".sanad-datalist__group-checkbox").each((i, el) => {
+		this.$table.find(".whatsapp-kit-datalist__group-checkbox").each((i, el) => {
 			const $boxes = this.$rows_of(el.getAttribute("data-gid"));
 			const total = $boxes.length;
 			const on = $boxes.filter(":checked").length;
 			el.checked = total > 0 && on === total;
 			el.indeterminate = on > 0 && on < total;
 		});
-		const $all = this.$table.find(".sanad-datalist__check-all");
+		const $all = this.$table.find(".whatsapp-kit-datalist__check-all");
 		if ($all.length) {
 			const rows = this.$table.find(".list-row-checkbox");
 			const on = rows.filter(":checked").length;
@@ -731,7 +731,7 @@ sanad.ui.DataList = class DataList {
 		// the console and stops: at the end of that scroll the toolbar sits at the top, the table
 		// fills the viewport and the footer rests on its bottom edge. Without a console the card is
 		// the room itself and nothing scrolls, as Desk's own list does.
-		const bar = card.querySelector(":scope > .sanad-filterbar");
+		const bar = card.querySelector(":scope > .whatsapp-kit-filterbar");
 		let above = 0;
 		if (bar) {
 			for (const child of Array.from(card.children)) {
@@ -751,17 +751,17 @@ sanad.ui.DataList = class DataList {
 	 * the table sizes itself to its content; the last pinned column carries the edge shadow.
 	 */
 	apply_pins() {
-		const $table = this.$table.find("table.sanad-datalist");
-		$table.find(".sanad-datalist__td--pinned, .sanad-datalist__th--pinned").removeClass("sanad-datalist__cell--pin-edge").css({ "inset-inline-start": "" });
+		const $table = this.$table.find("table.whatsapp-kit-datalist");
+		$table.find(".whatsapp-kit-datalist__td--pinned, .whatsapp-kit-datalist__th--pinned").removeClass("whatsapp-kit-datalist__cell--pin-edge").css({ "inset-inline-start": "" });
 		if (!this.pinned.length) return;
 		let offset = 0;
-		const $lead = $table.find("thead th.sanad-datalist__th--check, thead th.sanad-datalist__th--expand");
+		const $lead = $table.find("thead th.whatsapp-kit-datalist__th--check, thead th.whatsapp-kit-datalist__th--expand");
 		$lead.each((i, el) => (offset += $(el).outerWidth() || 0));
 		const order = this.columns.map((c) => c.fieldname).filter((f) => this.pinned.includes(f));
 		order.forEach((fieldname, i) => {
-			const $cells = $table.find(`[data-fieldname="${CSS.escape(fieldname)}"]`).filter(".sanad-datalist__th, .sanad-datalist__td");
+			const $cells = $table.find(`[data-fieldname="${CSS.escape(fieldname)}"]`).filter(".whatsapp-kit-datalist__th, .whatsapp-kit-datalist__td");
 			$cells.css("inset-inline-start", `${offset}px`);
-			if (i === order.length - 1) $cells.addClass("sanad-datalist__cell--pin-edge");
+			if (i === order.length - 1) $cells.addClass("whatsapp-kit-datalist__cell--pin-edge");
 			offset += ($cells.first().outerWidth() || 0);
 		});
 	}
@@ -769,25 +769,25 @@ sanad.ui.DataList = class DataList {
 	row_html(doc, depth = 0) {
 		const name = ui.escape(doc.name);
 		const clickable = !!this.opts.on_row_click;
-		let html = `<tr class="sanad-datalist__row${clickable ? " sanad-datalist__row--clickable" : ""}" data-name="${name}"${clickable ? ' tabindex="0"' : ""}>`;
+		let html = `<tr class="whatsapp-kit-datalist__row${clickable ? " whatsapp-kit-datalist__row--clickable" : ""}" data-name="${name}"${clickable ? ' tabindex="0"' : ""}>`;
 		if (this.opts.selectable) {
-			html += `<td class="sanad-datalist__td sanad-datalist__td--check"><input type="checkbox" class="list-row-checkbox" data-name="${name}" aria-label="${ui.escape(__("Select {0}", [this.title_of(doc)]))}"></td>`;
+			html += `<td class="whatsapp-kit-datalist__td whatsapp-kit-datalist__td--check"><input type="checkbox" class="list-row-checkbox" data-name="${name}" aria-label="${ui.escape(__("Select {0}", [this.title_of(doc)]))}"></td>`;
 		}
 		if (this.opts.expand) {
 			const open = this.expanded.has(doc.name);
-			html += `<td class="sanad-datalist__td sanad-datalist__td--expand"><button type="button" class="sanad-datalist__toggle" aria-expanded="${open}" aria-label="${ui.escape(__("Details of {0}", [this.title_of(doc)]))}">${ui.icon("es-line-down", "xs")}</button></td>`;
+			html += `<td class="whatsapp-kit-datalist__td whatsapp-kit-datalist__td--expand"><button type="button" class="whatsapp-kit-datalist__toggle" aria-expanded="${open}" aria-label="${ui.escape(__("Details of {0}", [this.title_of(doc)]))}">${ui.icon("es-line-down", "xs")}</button></td>`;
 		}
 		let first = true;
 		this.columns.forEach((c) => {
 			const rails = first && depth ? this.rails(depth) : "";
 			first = false;
-			const pinned = this.pinned.includes(c.fieldname) ? " sanad-datalist__td--pinned" : "";
-			const card = this.in_card_layout(c) ? (c === this.card_title_column() || c.type === "status" ? "" : " sanad-datalist__td--card-extra") : " sanad-datalist__td--off-card";
-			const kind = c.type === "status" ? " sanad-datalist__td--status" : "";
-			html += `<td class="sanad-datalist__td sanad-datalist__td--${c.align}${c.hidden_xs ? " sanad-datalist__td--hidden-xs" : ""}${pinned}${card}${kind}" data-fieldname="${ui.escape(c.fieldname)}" data-label="${ui.escape(c.label)}">${rails ? `<div class="sanad-datalist__indent">${rails}<div class="sanad-datalist__indent-body">${this.cell_html(c, doc)}</div></div>` : this.cell_html(c, doc)}</td>`;
+			const pinned = this.pinned.includes(c.fieldname) ? " whatsapp-kit-datalist__td--pinned" : "";
+			const card = this.in_card_layout(c) ? (c === this.card_title_column() || c.type === "status" ? "" : " whatsapp-kit-datalist__td--card-extra") : " whatsapp-kit-datalist__td--off-card";
+			const kind = c.type === "status" ? " whatsapp-kit-datalist__td--status" : "";
+			html += `<td class="whatsapp-kit-datalist__td whatsapp-kit-datalist__td--${c.align}${c.hidden_xs ? " whatsapp-kit-datalist__td--hidden-xs" : ""}${pinned}${card}${kind}" data-fieldname="${ui.escape(c.fieldname)}" data-label="${ui.escape(c.label)}">${rails ? `<div class="whatsapp-kit-datalist__indent">${rails}<div class="whatsapp-kit-datalist__indent-body">${this.cell_html(c, doc)}</div></div>` : this.cell_html(c, doc)}</td>`;
 		});
 		if (this.opts.row_action) {
-			html += `<td class="sanad-datalist__td sanad-datalist__td--action"><button type="button" class="sanad-datalist__view sanad-datalist__action">${ui.escape(this.opts.row_action.label || __("View"))}</button></td>`;
+			html += `<td class="whatsapp-kit-datalist__td whatsapp-kit-datalist__td--action"><button type="button" class="whatsapp-kit-datalist__view whatsapp-kit-datalist__action">${ui.escape(this.opts.row_action.label || __("View"))}</button></td>`;
 		}
 		return html + "</tr>";
 	}
@@ -825,13 +825,13 @@ sanad.ui.DataList = class DataList {
 			main = c.format(value, doc);
 			if (main == null) main = "";
 		} else {
-			main = sanad.ui.DataList.format(c.type, value, c.df, doc, this.display_of(c, doc), this.doctype);
+			main = whatsapp.ui.DataList.format(c.type, value, c.df, doc, this.display_of(c, doc), this.doctype);
 		}
 		const sub = typeof c.sub === "function" ? c.sub(doc) : "";
-		return `<div class="sanad-datalist__cell">${main === "" ? `<span class="sanad-datalist__muted" aria-hidden="true">—</span>` : `<div class="sanad-datalist__main">${main}</div>`}${sub ? `<div class="sanad-datalist__sub" dir="auto">${sub}</div>` : ""}</div>`;
+		return `<div class="whatsapp-kit-datalist__cell">${main === "" ? `<span class="whatsapp-kit-datalist__muted" aria-hidden="true">—</span>` : `<div class="whatsapp-kit-datalist__main">${main}</div>`}${sub ? `<div class="whatsapp-kit-datalist__sub" dir="auto">${sub}</div>` : ""}</div>`;
 	}
 
-	/** Typed cell renderers (also usable by callers: `sanad.ui.DataList.format("avatar", value, df, doc)`). */
+	/** Typed cell renderers (also usable by callers: `whatsapp.ui.DataList.format("avatar", value, df, doc)`). */
 	static format(type, value, df, doc, display, doctype) {
 		if (value == null || value === "") return "";
 		display = display == null ? value : display;
@@ -844,21 +844,21 @@ sanad.ui.DataList = class DataList {
 		switch (type) {
 			case "status": {
 				const ind = ui.indicator_for(doctype || doc.doctype, Object.assign({ doctype: doctype || doc.doctype }, doc));
-				return sanad.ui.StatusBadge.html({ label: __(String(value)), colour: ind.colour });
+				return whatsapp.ui.StatusBadge.html({ label: __(String(value)), colour: ind.colour });
 			}
 			case "avatar":
-				return `<span class="sanad-avatar sanad-avatar--sm sanad-avatar--solid" aria-hidden="true">${ui.escape(ui.initials(display))}</span><span class="sanad-datalist__avatar-text">${ui.escape(display)}</span>`;
+				return `<span class="whatsapp-kit-avatar whatsapp-kit-avatar--sm whatsapp-kit-avatar--solid" aria-hidden="true">${ui.escape(ui.initials(display))}</span><span class="whatsapp-kit-datalist__avatar-text">${ui.escape(display)}</span>`;
 			case "entity":
-				return sanad.ui.Render.entity(doc, { doctype: doctype || doc.doctype, density: "inline" });
+				return whatsapp.ui.Render.entity(doc, { doctype: doctype || doc.doctype, density: "inline" });
 			case "number": {
 				// Frappe prints an Int through `cint()` with no grouping ("12500"): counts are grouped
 				// in the reader's locale like every other count of the kit
 				const int = df ? df.fieldtype === "Int" && cstr(df.options).trim() !== "File Size" : Number.isInteger(Number(value));
-				return `<span class="sanad-tabular">${int ? ui.format_int(value) : frappe.format(value, df || { fieldtype: "Float" }, { inline: true }, doc)}</span>`;
+				return `<span class="whatsapp-kit-tabular">${int ? ui.format_int(value) : frappe.format(value, df || { fieldtype: "Float" }, { inline: true }, doc)}</span>`;
 			}
 			case "date":
 				// dates stay left-to-right inside an Arabic row, or the time jumps ahead of the date
-				return `<span class="sanad-tabular sanad-datalist__date" dir="ltr">${ui.escape(frappe.datetime.str_to_user(value))}</span>`;
+				return `<span class="whatsapp-kit-tabular whatsapp-kit-datalist__date" dir="ltr">${ui.escape(frappe.datetime.str_to_user(value))}</span>`;
 			case "link": {
 				const target = df && df.options;
 				return target ? frappe.utils.get_form_link(target, value, true, ui.escape(display)) : ui.escape(display);
@@ -866,7 +866,7 @@ sanad.ui.DataList = class DataList {
 			default:
 				// Everything else is drawn by the kit's one presentation layer, at cell density:
 				// a check reads "Yes", a percent gets its bar, an attachment gets its file chip.
-				if (df && df.fieldtype && df.fieldtype !== "Data") return sanad.ui.Render.value(value, df, doc, { density: "inline", doctype: doctype || doc.doctype });
+				if (df && df.fieldtype && df.fieldtype !== "Data") return whatsapp.ui.Render.value(value, df, doc, { density: "inline", doctype: doctype || doc.doctype });
 				// plain text still goes through Desk's formatter chain, so what an app registers
 				// there (a phone shown without its "+") reads the same here as in a form; the
 				// value is escaped first because the Data formatter does not escape
@@ -881,8 +881,8 @@ sanad.ui.DataList = class DataList {
 		const open = this.expanded.has(name);
 		if (open) {
 			this.expanded.delete(name);
-			this.$table.find(`tr.sanad-datalist__detail[data-for="${CSS.escape(name)}"]`).remove();
-			this.$table.find(`tr[data-name="${CSS.escape(name)}"] .sanad-datalist__toggle`).attr("aria-expanded", "false");
+			this.$table.find(`tr.whatsapp-kit-datalist__detail[data-for="${CSS.escape(name)}"]`).remove();
+			this.$table.find(`tr[data-name="${CSS.escape(name)}"] .whatsapp-kit-datalist__toggle`).attr("aria-expanded", "false");
 			return;
 		}
 		this.expanded.add(name);
@@ -890,17 +890,17 @@ sanad.ui.DataList = class DataList {
 	}
 
 	render_expand(name) {
-		const $row = this.$table.find(`tr.sanad-datalist__row[data-name="${CSS.escape(name)}"]`);
+		const $row = this.$table.find(`tr.whatsapp-kit-datalist__row[data-name="${CSS.escape(name)}"]`);
 		if (!$row.length) return;
-		$row.find(".sanad-datalist__toggle").attr("aria-expanded", "true");
-		this.$table.find(`tr.sanad-datalist__detail[data-for="${CSS.escape(name)}"]`).remove();
-		const $detail = $(`<tr class="sanad-datalist__detail" data-for="${ui.escape(name)}"><td colspan="${this.colspan()}"><div class="sanad-datalist__detail-body"></div></td></tr>`).insertAfter($row);
-		const $body = $detail.find(".sanad-datalist__detail-body");
-		const state = new sanad.ui.EmptyState({ wrapper: $body, state: "loading", rows: 2, size: "sm" });
+		$row.find(".whatsapp-kit-datalist__toggle").attr("aria-expanded", "true");
+		this.$table.find(`tr.whatsapp-kit-datalist__detail[data-for="${CSS.escape(name)}"]`).remove();
+		const $detail = $(`<tr class="whatsapp-kit-datalist__detail" data-for="${ui.escape(name)}"><td colspan="${this.colspan()}"><div class="whatsapp-kit-datalist__detail-body"></div></td></tr>`).insertAfter($row);
+		const $body = $detail.find(".whatsapp-kit-datalist__detail-body");
+		const state = new whatsapp.ui.EmptyState({ wrapper: $body, state: "loading", rows: 2, size: "sm" });
 		const doc = this.doc_of(name);
 		Promise.resolve(this.opts.expand($body, doc, this))
 			.then(() => {
-				if ($body.find(".sanad-empty--loading").length && $body.children().length === 1) state.hide();
+				if ($body.find(".whatsapp-kit-empty--loading").length && $body.children().length === 1) state.hide();
 			})
 			.catch((err) => state.error(err));
 	}
@@ -929,7 +929,7 @@ sanad.ui.DataList = class DataList {
 	}
 
 	set_loading(on) {
-		this.$table.find(".sanad-datalist").attr("aria-busy", on).toggleClass("sanad-datalist--loading", on);
+		this.$table.find(".whatsapp-kit-datalist").attr("aria-busy", on).toggleClass("whatsapp-kit-datalist--loading", on);
 	}
 
 	/**
@@ -942,7 +942,7 @@ sanad.ui.DataList = class DataList {
 		const lv = this.listview;
 		// a search is an `or_filters` list the toolbar adds beside the filters: it is part of what
 		// is being counted, or a new search would keep the previous search's total
-		const or_filters = lv._sanad_or_filters || [];
+		const or_filters = lv._whatsapp_or_filters || [];
 		const key = JSON.stringify([lv.get_filters_for_args() || [], or_filters]);
 		// a page that came back short is the whole result; no extra request needed
 		if (rows.length < cint(lv.start) + cint(lv.page_length)) {
@@ -968,19 +968,19 @@ sanad.ui.DataList = class DataList {
 	render_footer() {
 		const lv = this.listview;
 		const rows = this.page_mode ? this.rows : lv.data || [];
-		const $count = this.$footer.find(".sanad-datalist__count");
-		const $pager = this.$footer.find(".sanad-datalist__pager");
+		const $count = this.$footer.find(".whatsapp-kit-datalist__count");
+		const $pager = this.$footer.find(".whatsapp-kit-datalist__pager");
 		const paint = () => {
 			const total = this.total == null ? rows.length : this.total;
 			const text = typeof this.opts.footer.count === "function" ? this.opts.footer.count(total, rows) : ui.plural(total, { one: __("{0} record"), other: __("{0} records") });
 			// the total first and plain, what is on screen after it in the quieter tone
 			$count.html(
-				`<span class="sanad-datalist__total">${ui.escape(text)}</span>` +
-					(rows.length ? `<span class="sanad-datalist__sep" aria-hidden="true">·</span><span class="sanad-datalist__shown">${ui.escape(__("showing {0}", [ui.format_int(rows.length)]))}</span>` : "")
+				`<span class="whatsapp-kit-datalist__total">${ui.escape(text)}</span>` +
+					(rows.length ? `<span class="whatsapp-kit-datalist__sep" aria-hidden="true">·</span><span class="whatsapp-kit-datalist__shown">${ui.escape(__("showing {0}", [ui.format_int(rows.length)]))}</span>` : "")
 			);
 			this.render_group_tools();
 			this.render_page_state();
-			if (typeof this.opts.footer.extra === "function") this.opts.footer.extra(this.$footer.find(".sanad-datalist__extra"), rows, this);
+			if (typeof this.opts.footer.extra === "function") this.opts.footer.extra(this.$footer.find(".whatsapp-kit-datalist__extra"), rows, this);
 		};
 		paint();
 		const before = this.total;
@@ -993,17 +993,17 @@ sanad.ui.DataList = class DataList {
 
 	/** Expand all / Collapse all, next to the count, only while the table is grouped. */
 	render_group_tools() {
-		let $tools = this.$footer.find(".sanad-datalist__group-tools");
+		let $tools = this.$footer.find(".whatsapp-kit-datalist__group-tools");
 		if (!this.group_by.length) {
 			$tools.remove();
 			return;
 		}
 		if (!$tools.length) {
-			$tools = $('<div class="sanad-datalist__group-tools"></div>').insertAfter(this.$footer.find(".sanad-datalist__count"));
-			$(`<button type="button" class="sanad-datalist__group-tool" data-fold="0">${ui.icon("es-line-expand", "xs")}<span>${ui.escape(__("Expand all"))}</span></button>`)
+			$tools = $('<div class="whatsapp-kit-datalist__group-tools"></div>').insertAfter(this.$footer.find(".whatsapp-kit-datalist__count"));
+			$(`<button type="button" class="whatsapp-kit-datalist__group-tool" data-fold="0">${ui.icon("es-line-expand", "xs")}<span>${ui.escape(__("Expand all"))}</span></button>`)
 				.on("click", () => this.set_all_folded(false))
 				.appendTo($tools);
-			$(`<button type="button" class="sanad-datalist__group-tool" data-fold="1">${ui.icon("es-line-sidebar-collapse", "xs")}<span>${ui.escape(__("Collapse all"))}</span></button>`)
+			$(`<button type="button" class="whatsapp-kit-datalist__group-tool" data-fold="1">${ui.icon("es-line-sidebar-collapse", "xs")}<span>${ui.escape(__("Collapse all"))}</span></button>`)
 				.on("click", () => this.set_all_folded(true))
 				.appendTo($tools);
 		}
@@ -1033,8 +1033,8 @@ sanad.ui.DataList = class DataList {
 		$(window).off(`resize.${this.id}`);
 		this._card_observer && this._card_observer.disconnect();
 		if (this.lv) {
-			this.lv.$frappe_list.removeClass("sanad-list-card");
-			this.lv.$frappe_list.parent().removeClass("sanad-list-card-host");
+			this.lv.$frappe_list.removeClass("whatsapp-kit-list-card");
+			this.lv.$frappe_list.parent().removeClass("whatsapp-kit-list-card-host");
 		}
 		// the delegated row / sort / checkbox handlers sit on the list view's own result area in
 		// list mode: left bound, a remount stacked a second set and every click ran twice
@@ -1045,4 +1045,4 @@ sanad.ui.DataList = class DataList {
 	}
 };
 
-export default sanad.ui.DataList;
+export default whatsapp.ui.DataList;

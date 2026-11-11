@@ -1,6 +1,6 @@
-// The shell (position, width, backdrop, mobile sheet, header / actions / body) is `.sanad-panel`
+// The shell (position, width, backdrop, mobile sheet, header / actions / body) is `.whatsapp-kit-panel`
 // from _core; only the conversation-specific parts live here.
-.sanad-convo {
+.whatsapp-kit-convo {
 	&__avatar {
 		flex: none;
 		width: 28px;
@@ -28,8 +28,8 @@
 	&__badge-skeleton { display: inline-block; width: 48px; height: 18px; }
 	&__close {
 		flex: none;
-		min-width: var(--sanad-target);
-		min-height: var(--sanad-target);
+		min-width: var(--whatsapp-kit-target);
+		min-height: var(--whatsapp-kit-target);
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -37,22 +37,22 @@
 	}
 	&__actions {
 		min-height: 36px; // reserved while the number loads
-		.sanad-skeleton { flex: 1 1 auto; padding-block: 0; }
+		.whatsapp-kit-skeleton { flex: 1 1 auto; padding-block: 0; }
 	}
 	&__action {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--sanad-gap-xs);
-		min-height: var(--sanad-target);
+		gap: var(--whatsapp-kit-gap-xs);
+		min-height: var(--whatsapp-kit-target);
 	}
 	&__body {
 		display: flex;
 		flex-direction: column;
 		overflow: hidden; // the thread scrolls, not the body
-		padding: var(--sanad-gap-md);
+		padding: var(--whatsapp-kit-gap-md);
 		background: var(--surface-gray-1);
 	}
 	&__state:empty { display: none; }
 	&__thread { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-	&__thread .sanad-chat { flex: 1 1 auto; }
+	&__thread .whatsapp-kit-chat { flex: 1 1 auto; }
 }

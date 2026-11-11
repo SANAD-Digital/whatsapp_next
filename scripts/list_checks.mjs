@@ -1,4 +1,4 @@
-// Regression checks for the kit's list table (sanad.ui.DataList + FilterBar).
+// Regression checks for the kit's list table (whatsapp.ui.DataList + FilterBar).
 //
 // These assert the things that broke more than once while the list was being built: the stacking
 // order around sticky cells, the grouping tree, group selection, the toolbar's shape at several
@@ -66,19 +66,19 @@ for (const width of [1700, 1400, 1200, 1000, 900]) {
 	await page.setViewportSize({ width, height: 950 });
 	await page.waitForTimeout(700);
 	const state = await page.evaluate(() => {
-		const main = document.querySelector(".sanad-filterbar__main");
-		const dd = [...main.querySelectorAll(":scope > .sanad-filterbar__dd")].filter((e) => !e.classList.contains("sanad-filterbar__dd--more"));
-		const more = document.querySelector(".sanad-filterbar__dd--more");
-		const count = document.querySelector(".sanad-filterbar__more-count");
+		const main = document.querySelector(".whatsapp-kit-filterbar__main");
+		const dd = [...main.querySelectorAll(":scope > .whatsapp-kit-filterbar__dd")].filter((e) => !e.classList.contains("whatsapp-kit-filterbar__dd--more"));
+		const more = document.querySelector(".whatsapp-kit-filterbar__dd--more");
+		const count = document.querySelector(".whatsapp-kit-filterbar__more-count");
 		return {
 			total: dd.length,
 			shown: dd.filter((e) => e.offsetParent).length,
 			more_on: !!(more && !more.hasAttribute("hidden")),
 			count: count ? parseInt(count.textContent || "0", 10) || 0 : 0,
-			phone: !!document.querySelector(".sanad-filterbar__mobile-toggle").offsetParent,
+			phone: !!document.querySelector(".whatsapp-kit-filterbar__mobile-toggle").offsetParent,
 		};
 	});
-	const one_line = !(await wrapped(".sanad-filterbar__main")) && !(await wrapped(".sanad-filterbar__actions"));
+	const one_line = !(await wrapped(".whatsapp-kit-filterbar__main")) && !(await wrapped(".whatsapp-kit-filterbar__actions"));
 	check(`${width}px: the toolbar stays on one line`, one_line);
 	check(
 		`${width}px: every filter is shown or counted in "More"`,
@@ -90,8 +90,8 @@ for (const width of [1700, 1400, 1200, 1000, 900]) {
 // the search box shows its icon: Desk's `.form-control` is positioned, so the input used to paint
 // over it and the icon was never visible at any width
 const search_icon = await page.evaluate(() => {
-	const icon = document.querySelector(".sanad-filterbar__search-icon");
-	const input = document.querySelector(".sanad-filterbar__search");
+	const icon = document.querySelector(".whatsapp-kit-filterbar__search-icon");
+	const input = document.querySelector(".whatsapp-kit-filterbar__search");
 	if (!icon || !input) return null;
 	const box = icon.getBoundingClientRect();
 	const field = input.getBoundingClientRect();
@@ -108,15 +108,15 @@ check("the search box shows its icon", !!search_icon && search_icon.painted && s
 // the hidden ones are reachable, and they are the same fields the toolbar would have shown
 await page.setViewportSize({ width: 900, height: 950 });
 await page.waitForTimeout(700);
-const hidden_now = await page.$eval(".sanad-filterbar__more-count", (e) => parseInt(e.textContent || "0", 10) || 0).catch(() => 0);
+const hidden_now = await page.$eval(".whatsapp-kit-filterbar__more-count", (e) => parseInt(e.textContent || "0", 10) || 0).catch(() => 0);
 if (hidden_now) {
-	await page.click(".sanad-filterbar__more");
+	await page.click(".whatsapp-kit-filterbar__more");
 	await page.waitForTimeout(500);
-	const rows = await page.$$eval(".sanad-filterbar__more-list .sanad-filter-sheet__row", (n) => n.length);
+	const rows = await page.$$eval(".whatsapp-kit-filterbar__more-list .whatsapp-kit-filter-sheet__row", (n) => n.length);
 	check('"More" lists every filter it hides', rows === hidden_now, `${rows} row(s) for ${hidden_now} hidden`);
-	await page.click(".sanad-filterbar__more-list .sanad-filter-sheet__trigger >> nth=0");
+	await page.click(".whatsapp-kit-filterbar__more-list .whatsapp-kit-filter-sheet__trigger >> nth=0");
 	await page.waitForTimeout(800);
-	const opts = await page.$$eval(".sanad-filterbar__more-list .sanad-filterbar__opt", (n) => n.length);
+	const opts = await page.$$eval(".whatsapp-kit-filterbar__more-list .whatsapp-kit-filterbar__opt", (n) => n.length);
 	check("a filter opens its options inside More", opts > 0, `${opts} option(s)`);
 	await page.keyboard.press("Escape");
 	await page.waitForTimeout(300);
@@ -129,66 +129,66 @@ await page.waitForTimeout(600);
 // ---- grouping ----
 // grouping is remembered per user in List View Settings, so the run starts from none and adds its
 // own; without the reset a second run piled levels on the first one's and measured a different table
-await page.click(".sanad-filterbar__action--group");
+await page.click(".whatsapp-kit-filterbar__action--group");
 await page.waitForTimeout(400);
-if ((await page.$$(".sanad-filterbar__levels-clear")).length) {
-	await page.click(".sanad-filterbar__levels-clear");
+if ((await page.$$(".whatsapp-kit-filterbar__levels-clear")).length) {
+	await page.click(".whatsapp-kit-filterbar__levels-clear");
 	await page.waitForTimeout(1200);
 }
 await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 for (const i of [1, 0, 0]) {
-	await page.click(".sanad-filterbar__action--group");
+	await page.click(".whatsapp-kit-filterbar__action--group");
 	await page.waitForTimeout(400);
 	// a fresh locator each time: the popover re-renders itself, and a handle taken before that
 	// clicks a node that is no longer in the document, silently doing nothing
-	const add = await page.$$eval(".sanad-filterbar__level--add", (n) => n.length);
-	if (add > i) await page.click(`.sanad-filterbar__level--add >> nth=${i}`);
+	const add = await page.$$eval(".whatsapp-kit-filterbar__level--add", (n) => n.length);
+	if (add > i) await page.click(`.whatsapp-kit-filterbar__level--add >> nth=${i}`);
 	await page.waitForTimeout(1200);
 	await page.keyboard.press("Escape");
 	await page.waitForTimeout(300);
 }
-const groups = await page.$$eval(".sanad-datalist__group", (n) => n.length);
-const boxes = await page.$$eval(".sanad-datalist__group-checkbox", (n) => n.length);
+const groups = await page.$$eval(".whatsapp-kit-datalist__group", (n) => n.length);
+const boxes = await page.$$eval(".whatsapp-kit-datalist__group-checkbox", (n) => n.length);
 check("grouping renders group rows", groups > 0, `${groups} rows`);
 check("every group row has a checkbox", groups === boxes, `${boxes} of ${groups}`);
-check("fold-all controls appear", (await page.$$eval(".sanad-datalist__group-tool", (n) => n.length)) === 2);
+check("fold-all controls appear", (await page.$$eval(".whatsapp-kit-datalist__group-tool", (n) => n.length)) === 2);
 
 // only the outermost level is sticky, so a child never piles on its parent
-const sticky = await page.$$eval("tr.sanad-datalist__group td", (n) => n.filter((e) => getComputedStyle(e).position === "sticky").length);
+const sticky = await page.$$eval("tr.whatsapp-kit-datalist__group td", (n) => n.filter((e) => getComputedStyle(e).position === "sticky").length);
 check("only top-level group rows stick", sticky > 0 && sticky < groups, `${sticky} of ${groups}`);
 
 // selecting a group selects its records
 const before = await page.$$eval(".list-row-checkbox:checked", (n) => n.length);
-await page.click(".sanad-datalist__group-checkbox >> nth=0");
+await page.click(".whatsapp-kit-datalist__group-checkbox >> nth=0");
 await page.waitForTimeout(900);
 const after = await page.$$eval(".list-row-checkbox:checked", (n) => n.length);
 check("a group checkbox selects its rows", after > before, `${before} → ${after}`);
-await page.click(".sanad-datalist__group-checkbox >> nth=0");
+await page.click(".whatsapp-kit-datalist__group-checkbox >> nth=0");
 await page.waitForTimeout(700);
 check("and clears them again", (await page.$$eval(".list-row-checkbox:checked", (n) => n.length)) === before);
 
 // ---- stacking: nothing paints over a sticky group row ----
-await page.$eval(".sanad-datalist__wrap", (e) => {
+await page.$eval(".whatsapp-kit-datalist__wrap", (e) => {
 	e.scrollTop = 340;
 });
 await page.waitForTimeout(600);
 for (const [tag, left] of [["scrolled down", 0], ["and sideways", 380]]) {
 	if (left) {
-		await page.$eval(".sanad-datalist__wrap", (e, x) => {
+		await page.$eval(".whatsapp-kit-datalist__wrap", (e, x) => {
 			e.scrollLeft = x;
 		}, left);
 		await page.waitForTimeout(600);
 	}
 	const hits = await page.evaluate(() => {
-		const row = Array.from(document.querySelectorAll("tr.sanad-datalist__group")).find((r) => getComputedStyle(r.querySelector("td")).position === "sticky");
+		const row = Array.from(document.querySelectorAll("tr.whatsapp-kit-datalist__group")).find((r) => getComputedStyle(r.querySelector("td")).position === "sticky");
 		if (!row) return null;
 		const box = row.querySelector("td").getBoundingClientRect();
-		const wrap = document.querySelector(".sanad-datalist__wrap").getBoundingClientRect();
+		const wrap = document.querySelector(".whatsapp-kit-datalist__wrap").getBoundingClientRect();
 		const y = Math.round(box.top + box.height / 2);
 		return [wrap.left + 22, wrap.left + 60, wrap.left + 200, wrap.left + 600, wrap.right - 120, wrap.right - 40].map((x) => {
 			const el = document.elementFromPoint(x, y);
-			return el && el.closest("tr.sanad-datalist__group") ? "group" : `${Math.round(x)}:${el ? el.tagName : "none"}`;
+			return el && el.closest("tr.whatsapp-kit-datalist__group") ? "group" : `${Math.round(x)}:${el ? el.tagName : "none"}`;
 		});
 	});
 	check(`${tag}: the sticky group row is on top`, !!hits && hits.every((h) => h === "group"), hits ? hits.filter((h) => h !== "group").join(", ") : "no sticky row");
@@ -217,7 +217,7 @@ const anchored = async (opener, popup, tag) => {
 	const box = await page
 		.$eval(popup, (el) => {
 			const p = el.getBoundingClientRect();
-			const t = el.closest(".sanad-datefilter").querySelector(".sanad-datefilter__trigger").getBoundingClientRect();
+			const t = el.closest(".whatsapp-kit-datefilter").querySelector(".whatsapp-kit-datefilter__trigger").getBoundingClientRect();
 			return { start: Math.round(p.left - t.left), wide: p.width >= t.width - 1, inside: p.left >= 0 && p.right <= window.innerWidth };
 		})
 		.catch(() => null);
@@ -225,57 +225,57 @@ const anchored = async (opener, popup, tag) => {
 	await page.keyboard.press("Escape");
 	await page.waitForTimeout(250);
 };
-await anchored(".sanad-datefilter:not(.sanad-datefilter--hidden) .sanad-datefilter__op", ".sanad-datefilter__menu", "the operator menu");
-await anchored(".sanad-datefilter:not(.sanad-datefilter--hidden) .sanad-datefilter__fieldpick", ".sanad-datefilter__menu--fields", "the field picker");
+await anchored(".whatsapp-kit-datefilter:not(.whatsapp-kit-datefilter--hidden) .whatsapp-kit-datefilter__op", ".whatsapp-kit-datefilter__menu", "the operator menu");
+await anchored(".whatsapp-kit-datefilter:not(.whatsapp-kit-datefilter--hidden) .whatsapp-kit-datefilter__fieldpick", ".whatsapp-kit-datefilter__menu--fields", "the field picker");
 
-const live = ".sanad-datefilter:not(.sanad-datefilter--hidden)";
+const live = ".whatsapp-kit-datefilter:not(.whatsapp-kit-datefilter--hidden)";
 const visible = () => page.$$eval(live, (n) => n.length);
-const caption = () => page.$eval(`${live} .sanad-datefilter__fieldpick-label`, (e) => e.textContent.trim());
+const caption = () => page.$eval(`${live} .whatsapp-kit-datefilter__fieldpick-label`, (e) => e.textContent.trim());
 
-await page.click(`${live} .sanad-datefilter__fieldpick`);
+await page.click(`${live} .whatsapp-kit-datefilter__fieldpick`);
 await page.waitForTimeout(400);
-const offered = await page.$$eval(".sanad-datefilter__menu--fields .sanad-datefilter__menu-item", (n) => n.length);
+const offered = await page.$$eval(".whatsapp-kit-datefilter__menu--fields .whatsapp-kit-datefilter__menu-item", (n) => n.length);
 check("the field picker lists the DocType's date fields", offered >= 3, `${offered} offered`);
 // an untouched field moves to the one just ticked rather than leaving an empty field behind
-await page.click(".sanad-datefilter__menu--fields .sanad-datefilter__menu-item >> nth=2");
+await page.click(".whatsapp-kit-datefilter__menu--fields .whatsapp-kit-datefilter__menu-item >> nth=2");
 await page.waitForTimeout(600);
-check("ticking a field on an empty set moves it", (await visible()) === 1 && (await page.$$eval(".sanad-datefilter", (n) => n.length)) === 1);
+check("ticking a field on an empty set moves it", (await visible()) === 1 && (await page.$$eval(".whatsapp-kit-datefilter", (n) => n.length)) === 1);
 
 // apply a range, then tick another field: it is added, and the toolbar still shows one trigger
-await page.click(".sanad-datefilter__preset >> nth=2");
+await page.click(".whatsapp-kit-datefilter__preset >> nth=2");
 await page.waitForTimeout(250);
-await page.click(".sanad-datefilter__apply");
+await page.click(".whatsapp-kit-datefilter__apply");
 await page.waitForTimeout(1400);
-await page.click(`${live} .sanad-datefilter__fieldpick`);
+await page.click(`${live} .whatsapp-kit-datefilter__fieldpick`);
 await page.waitForTimeout(400);
-await page.click(".sanad-datefilter__menu--fields .sanad-datefilter__menu-item >> nth=3");
+await page.click(".whatsapp-kit-datefilter__menu--fields .whatsapp-kit-datefilter__menu-item >> nth=3");
 await page.waitForTimeout(900);
 check("a second field keeps one trigger", (await visible()) === 1, `${await visible()} visible`);
-check("the field segment turns into a count tag", /2/.test(await caption()) && (await page.$$eval(".sanad-datefilter__fieldpick-label--tag", (n) => n.length)) === 1, await caption());
-const rail = await page.$$eval(".sanad-datefilter__rail-item", (n) => n.length);
+check("the field segment turns into a count tag", /2/.test(await caption()) && (await page.$$eval(".whatsapp-kit-datefilter__fieldpick-label--tag", (n) => n.length)) === 1, await caption());
+const rail = await page.$$eval(".whatsapp-kit-datefilter__rail-item", (n) => n.length);
 check("the panel lists both fields on its rail", rail === 2, `${rail} item(s)`);
 
-await page.click(".sanad-datefilter__preset >> nth=0");
+await page.click(".whatsapp-kit-datefilter__preset >> nth=0");
 await page.waitForTimeout(250);
-await page.click(".sanad-datefilter__apply");
+await page.click(".whatsapp-kit-datefilter__apply");
 await page.waitForTimeout(1600);
 const ranges = await page.evaluate(() => cur_list.filter_area.get().filter((f) => f[2] === "Between").length);
 check("one Apply commits every field", ranges === 2, `${ranges} range filter(s)`);
 
 // the fiscal panel's year and month open a grid instead of stepping
-await page.click(`${live} .sanad-datefilter__op`);
+await page.click(`${live} .whatsapp-kit-datefilter__op`);
 await page.waitForTimeout(400);
-await page.click(".sanad-datefilter__menu-item >> nth=7");
+await page.click(".whatsapp-kit-datefilter__menu-item >> nth=7");
 await page.waitForTimeout(700);
-await page.click(".sanad-datefilter__stepper-value >> nth=0");
+await page.click(".whatsapp-kit-datefilter__stepper-value >> nth=0");
 await page.waitForTimeout(450);
-const years = await page.$$eval(".sanad-datefilter__picker-cell", (n) => n.map((x) => x.textContent.trim()));
+const years = await page.$$eval(".whatsapp-kit-datefilter__picker-cell", (n) => n.map((x) => x.textContent.trim()));
 check("the fiscal year opens a year grid", years.length === 12 && /^\d{4}$/.test(years[0]), years.slice(0, 2).join(", "));
-await page.click(".sanad-datefilter__picker-cell >> nth=8");
+await page.click(".whatsapp-kit-datefilter__picker-cell >> nth=8");
 await page.waitForTimeout(450);
-await page.click(".sanad-datefilter__stepper-value >> nth=1");
+await page.click(".whatsapp-kit-datefilter__stepper-value >> nth=1");
 await page.waitForTimeout(450);
-check("the fiscal start month opens a month grid", (await page.$$eval(".sanad-datefilter__picker-cell", (n) => n.length)) === 12);
+check("the fiscal start month opens a month grid", (await page.$$eval(".whatsapp-kit-datefilter__picker-cell", (n) => n.length)) === 12);
 await page.keyboard.press("Escape");
 await page.waitForTimeout(300);
 await page.keyboard.press("Escape");
@@ -288,15 +288,15 @@ let has_amore = false;
 for (const w of [900, 860, 820, 790, 768]) {
 	await page.setViewportSize({ width: w, height: 950 });
 	await page.waitForTimeout(700);
-	has_amore = await page.$eval(".sanad-filterbar__dd--amore", (e) => !e.hasAttribute("hidden")).catch(() => false);
+	has_amore = await page.$eval(".whatsapp-kit-filterbar__dd--amore", (e) => !e.hasAttribute("hidden")).catch(() => false);
 	if (has_amore) break;
 }
 if (has_amore) {
-	await page.click(".sanad-filterbar__dd--amore .sanad-filterbar__action");
+	await page.click(".whatsapp-kit-filterbar__dd--amore .whatsapp-kit-filterbar__action");
 	await page.waitForTimeout(600);
-	const named = await page.$$eval(".sanad-filterbar__amore-item", (n) =>
+	const named = await page.$$eval(".whatsapp-kit-filterbar__amore-item", (n) =>
 		n.map((e) => {
-			const label = e.querySelector(".sanad-filterbar__amore-label");
+			const label = e.querySelector(".whatsapp-kit-filterbar__amore-label");
 			return label ? label.textContent.trim() : "";
 		})
 	);
@@ -306,8 +306,8 @@ if (has_amore) {
 } else {
 	// a container squeezed to nothing is the shape of this going wrong, so say how wide it got
 	const why = await page.evaluate(() => {
-		const main = document.querySelector(".sanad-filterbar__main");
-		const end = document.querySelector(".sanad-filterbar__end");
+		const main = document.querySelector(".whatsapp-kit-filterbar__main");
+		const end = document.querySelector(".whatsapp-kit-filterbar__end");
 		return { main: main ? Math.round(main.getBoundingClientRect().width) : null, end: end ? Math.round(end.getBoundingClientRect().width) : null };
 	});
 	check('every action in the "…" menu is named', false, `no overflow down to 768px — ${JSON.stringify(why)}`);
@@ -316,15 +316,15 @@ if (has_amore) {
 // ---- the column picker holds its place while you tick ----
 await page.setViewportSize({ width: 1500, height: 950 });
 await page.waitForTimeout(700);
-await page.click(".sanad-filterbar__dd--columns .sanad-filterbar__action");
+await page.click(".whatsapp-kit-filterbar__dd--columns .whatsapp-kit-filterbar__action");
 await page.waitForTimeout(700);
-await page.$eval(".sanad-filterbar__columns-list", (e) => {
+await page.$eval(".whatsapp-kit-filterbar__columns-list", (e) => {
 	e.scrollTop = 180;
 });
 await page.waitForTimeout(300);
 const col_before = await page.evaluate(() => {
-	const list = document.querySelector(".sanad-filterbar__columns-list");
-	const rows = [...list.querySelectorAll(".sanad-filterbar__column")];
+	const list = document.querySelector(".whatsapp-kit-filterbar__columns-list");
+	const rows = [...list.querySelectorAll(".whatsapp-kit-filterbar__column")];
 	const box = list.getBoundingClientRect();
 	const mid = rows.find((r) => {
 		const b = r.getBoundingClientRect();
@@ -333,11 +333,11 @@ const col_before = await page.evaluate(() => {
 	return { top: Math.round(list.scrollTop), field: mid ? mid.getAttribute("data-field") : null, index: rows.indexOf(mid) };
 });
 if (col_before.field) {
-	await page.click(`.sanad-filterbar__column[data-field="${col_before.field}"] input`);
+	await page.click(`.whatsapp-kit-filterbar__column[data-field="${col_before.field}"] input`);
 	await page.waitForTimeout(800);
 	const col_after = await page.evaluate((f) => {
-		const list = document.querySelector(".sanad-filterbar__columns-list");
-		const rows = [...list.querySelectorAll(".sanad-filterbar__column")];
+		const list = document.querySelector(".whatsapp-kit-filterbar__columns-list");
+		const rows = [...list.querySelectorAll(".whatsapp-kit-filterbar__column")];
 		return {
 			top: Math.round(list.scrollTop),
 			index: rows.findIndex((r) => r.getAttribute("data-field") === f),
@@ -347,7 +347,7 @@ if (col_before.field) {
 	check("ticking a column keeps the list where it was", col_after.top === col_before.top, `${col_before.top} → ${col_after.top}`);
 	check("and keeps the row under the pointer", col_after.index === col_before.index, `row ${col_before.index} → ${col_after.index}`);
 	check("and leaves focus on the row", col_after.focused);
-	await page.click(`.sanad-filterbar__column[data-field="${col_before.field}"] input`);
+	await page.click(`.whatsapp-kit-filterbar__column[data-field="${col_before.field}"] input`);
 	await page.waitForTimeout(800);
 } else {
 	check("ticking a column keeps the list where it was", false, "no scrollable column list");
@@ -364,15 +364,15 @@ await page.evaluate(() => {
 	document.querySelectorAll(".body-sidebar-container.expanded").forEach((e) => e.classList.remove("expanded"));
 });
 await page.waitForTimeout(400);
-check("the phone collapses the filters behind one button", await page.$eval(".sanad-filterbar__mobile-toggle", (e) => !!e.offsetParent).catch(() => false));
-await page.click(".sanad-filterbar__mobile-toggle");
+check("the phone collapses the filters behind one button", await page.$eval(".whatsapp-kit-filterbar__mobile-toggle", (e) => !!e.offsetParent).catch(() => false));
+await page.click(".whatsapp-kit-filterbar__mobile-toggle");
 await page.waitForTimeout(800);
-const sheet_rows = await page.$$eval(".sanad-filter-sheet__row", (n) => n.length);
+const sheet_rows = await page.$$eval(".whatsapp-kit-filter-sheet__row", (n) => n.length);
 check("the sheet has one field per filter", sheet_rows > 0, `${sheet_rows} field(s)`);
-await page.click(".sanad-filter-sheet__trigger >> nth=0");
+await page.click(".whatsapp-kit-filter-sheet__trigger >> nth=0");
 await page.waitForTimeout(800);
 const drawer = await page
-	.$eval(".sanad-optsheet__panel", (e) => {
+	.$eval(".whatsapp-kit-optsheet__panel", (e) => {
 		const r = e.getBoundingClientRect();
 		return { top: Math.round(r.top), bottom: Math.round(r.bottom), h: Math.round(r.height) };
 	})
@@ -382,17 +382,17 @@ check(
 	!!drawer && Math.abs(drawer.bottom - 760) < 2 && drawer.h >= 760 * 0.4 && drawer.h <= 760 * 0.9,
 	drawer ? JSON.stringify(drawer) : "no drawer"
 );
-const row_h = await page.$eval(".sanad-optsheet__list .sanad-filterbar__opt", (e) => Math.round(e.getBoundingClientRect().height)).catch(() => 0);
+const row_h = await page.$eval(".whatsapp-kit-optsheet__list .whatsapp-kit-filterbar__opt", (e) => Math.round(e.getBoundingClientRect().height)).catch(() => 0);
 check("its rows are a thumb's size", row_h >= 44, `${row_h}px`);
-const scrolls = await page.$eval(".sanad-optsheet__list", (e) => getComputedStyle(e).overflowY === "auto").catch(() => false);
+const scrolls = await page.$eval(".whatsapp-kit-optsheet__list", (e) => getComputedStyle(e).overflowY === "auto").catch(() => false);
 check("the list scrolls inside the drawer", scrolls);
-await page.click(".sanad-optsheet__list .sanad-filterbar__opt >> nth=0");
+await page.click(".whatsapp-kit-optsheet__list .whatsapp-kit-filterbar__opt >> nth=0");
 await page.waitForTimeout(1000);
-const picked = await page.$eval(".sanad-filter-sheet__row:first-child .sanad-filter-sheet__chosen", (e) => e.textContent.trim()).catch(() => "");
+const picked = await page.$eval(".whatsapp-kit-filter-sheet__row:first-child .whatsapp-kit-filter-sheet__chosen", (e) => e.textContent.trim()).catch(() => "");
 check("choosing in the drawer sets the filter", !!picked && picked !== "All", picked);
-await page.click(".sanad-optsheet__done");
+await page.click(".whatsapp-kit-optsheet__done");
 await page.waitForTimeout(600);
-check("Done dismisses the drawer", (await page.$$(".sanad-optsheet")).length === 0);
+check("Done dismisses the drawer", (await page.$$(".whatsapp-kit-optsheet")).length === 0);
 
 // the Filters sheet is still up over the toolbar; Done only dismissed the drawer
 await page.keyboard.press("Escape");
@@ -400,9 +400,9 @@ await page.waitForTimeout(600);
 
 // the date filter is one icon beside the search box, and keeps its operator and field in the panel
 const phone_row = await page.evaluate(() => {
-	const s = document.querySelector(".sanad-filterbar__search");
-	const d = document.querySelector(".sanad-filterbar__datefilter");
-	const f = document.querySelector(".sanad-filterbar__mobile-toggle");
+	const s = document.querySelector(".whatsapp-kit-filterbar__search");
+	const d = document.querySelector(".whatsapp-kit-filterbar__datefilter");
+	const f = document.querySelector(".whatsapp-kit-filterbar__mobile-toggle");
 	if (!s || !d || !f) return null;
 	const sr = s.getBoundingClientRect();
 	const dr = d.getBoundingClientRect();
@@ -412,18 +412,18 @@ const phone_row = await page.evaluate(() => {
 check("the date filter is an icon beside the search box", !!phone_row && phone_row.same_row && phone_row.date_w <= 56, JSON.stringify(phone_row));
 // the set keeps the fields it is not showing in the DOM, so target the one on screen; and the
 // trigger toggles, so a panel left open by an earlier step would be closed by this click
-const live_date = ".sanad-datefilter:not(.sanad-datefilter--hidden) .sanad-datefilter__value";
+const live_date = ".whatsapp-kit-datefilter:not(.whatsapp-kit-datefilter--hidden) .whatsapp-kit-datefilter__value";
 await page.click(live_date);
 await page.waitForTimeout(800);
-if (!(await page.$$(".sanad-datefilter__panel")).length) {
+if (!(await page.$$(".whatsapp-kit-datefilter__panel")).length) {
 	await page.click(live_date);
 	await page.waitForTimeout(800);
 }
-const head = await page.$$eval(".sanad-datefilter__chead-row", (n) => n.length);
+const head = await page.$$eval(".whatsapp-kit-datefilter__chead-row", (n) => n.length);
 check("its operator and field move into the panel", head === 2, `${head} row(s)`);
-await page.click(".sanad-datefilter__chead-trigger >> nth=0");
+await page.click(".whatsapp-kit-datefilter__chead-trigger >> nth=0");
 await page.waitForTimeout(500);
-const ops = await page.$$eval(".sanad-datefilter__chead-list .sanad-datefilter__menu-item", (n) => n.length);
+const ops = await page.$$eval(".whatsapp-kit-datefilter__chead-list .whatsapp-kit-datefilter__menu-item", (n) => n.length);
 check("the operator list opens in place", ops === 8, `${ops} operator(s)`);
 await page.keyboard.press("Escape");
 await page.waitForTimeout(300);

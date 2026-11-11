@@ -20,7 +20,7 @@
 frappe.provide("whatsapp_next.campaign");
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const C = whatsapp_next.campaign;
 	const esc = C.esc;
 	const NAME_MAX = 140;
@@ -43,7 +43,7 @@ frappe.provide("whatsapp_next.campaign");
 		render() {
 			// full width, every field in sight: the three identity fields share a row, the rate and
 			// the send time stand side by side, and the switches make one row under them
-			this.$wrapper.html(`<div class="wa-cb__stack">${this.basic()}<div class="wa-cb__two">${this.rate()}${this.when()}</div>${this.advanced()}</div>`);
+			this.$wrapper.html(`<div class="whatsapp-cb__stack">${this.basic()}<div class="whatsapp-cb__two">${this.rate()}${this.when()}</div>${this.advanced()}</div>`);
 			this.mount_controls();
 			this.bind();
 			return this;
@@ -113,7 +113,7 @@ frappe.provide("whatsapp_next.campaign");
 
 		set_when_enabled(on) {
 			[this.date, this.time].forEach((c) => c && c.$input && c.$input.prop("disabled", !on));
-			this.$wrapper.find(".wa-cb__when-at").toggleClass("wa-cb__when-at--off", !on);
+			this.$wrapper.find(".whatsapp-cb__when-at").toggleClass("whatsapp-cb__when-at--off", !on);
 		}
 
 		// ---- the four groups -------------------------------------------------------------------
@@ -126,28 +126,28 @@ frappe.provide("whatsapp_next.campaign");
 				icon: "doc",
 				title: __("Basic information"),
 				body: `
-					<div class="wa-cb__grid">
+					<div class="whatsapp-cb__grid">
 						${C.field({
-							id: "wa-cb-name",
+							id: "whatsapp-cb-name",
 							label: __("Campaign name"),
 							required: true,
 							counter: `${name.length}/${NAME_MAX}`,
-							control: `<input id="wa-cb-name" type="text" class="wa-input" maxlength="${NAME_MAX}" value="${esc(name)}" data-field="campaign_name" placeholder="${esc(__("What is this campaign called?"))}">`,
+							control: `<input id="whatsapp-cb-name" type="text" class="whatsapp-input" maxlength="${NAME_MAX}" value="${esc(name)}" data-field="campaign_name" placeholder="${esc(__("What is this campaign called?"))}">`,
 						})}
 						${C.field({
-							id: "wa-cb-device",
+							id: "whatsapp-cb-device",
 							label: __("Sending device"),
 							required: true,
 							control: `
-								<span class="wa-affix wa-affix--has-start">
-									<span class="wa-affix__in wa-affix__in--start" aria-hidden="true">${ui.ico("device", "sm")}</span>
-									<select id="wa-cb-device" class="wa-input wa-select" data-field="device" required></select>
+								<span class="whatsapp-affix whatsapp-affix--has-start">
+									<span class="whatsapp-affix__in whatsapp-affix__in--start" aria-hidden="true">${ui.ico("device", "sm")}</span>
+									<select id="whatsapp-cb-device" class="whatsapp-input whatsapp-select" data-field="device" required></select>
 								</span>`,
 						})}
 						${C.field({
-							id: "wa-cb-description",
+							id: "whatsapp-cb-description",
 							label: __("Description"),
-							control: `<textarea id="wa-cb-description" class="wa-textarea" rows="1" data-field="description" placeholder="${esc(__("For whoever opens the campaign later. It is never sent."))}">${esc(doc.description || "")}</textarea>`,
+							control: `<textarea id="whatsapp-cb-description" class="whatsapp-textarea" rows="1" data-field="description" placeholder="${esc(__("For whoever opens the campaign later. It is never sent."))}">${esc(doc.description || "")}</textarea>`,
 						})}
 					</div>`,
 			});
@@ -160,20 +160,20 @@ frappe.provide("whatsapp_next.campaign");
 				icon: "bolt",
 				title: __("Sending rate"),
 				body: `
-					<div class="wa-cb__rate">
-						<div class="wa-cb__rate-input">
-							<input type="number" class="wa-input wa-input--mono" id="wa-cb-rate-n" min="1" max="${cint(this.ctx.cap) || 60}" value="${cint(rate)}" data-rate="number" aria-label="${esc(__("Messages per minute"))}">
-							<span class="wa-cb__rate-unit">${esc(__("messages/minute"))}</span>
+					<div class="whatsapp-cb__rate">
+						<div class="whatsapp-cb__rate-input">
+							<input type="number" class="whatsapp-input whatsapp-input--mono" id="whatsapp-cb-rate-n" min="1" max="${cint(this.ctx.cap) || 60}" value="${cint(rate)}" data-rate="number" aria-label="${esc(__("Messages per minute"))}">
+							<span class="whatsapp-cb__rate-unit">${esc(__("messages/minute"))}</span>
 						</div>
-						<input type="range" class="wa-cb__slider" min="1" max="${cint(this.ctx.cap) || 60}" value="${cint(rate)}" data-rate="slider" aria-label="${esc(__("Messages per minute"))}">
-						<div class="wa-cb__estimate" data-estimate>
-							<span class="wa-cb__estimate-icon" aria-hidden="true">${ui.ico("clock", "sm")}</span>
-							<span class="wa-cb__estimate-text">
-								<span class="wa-cb__estimate-label">${esc(__("Estimated duration"))}</span>
-								<span class="wa-cb__estimate-value sanad-tabular">${esc(C.dur_text(this.ctx.estimate().minutes))}</span>
+						<input type="range" class="whatsapp-cb__slider" min="1" max="${cint(this.ctx.cap) || 60}" value="${cint(rate)}" data-rate="slider" aria-label="${esc(__("Messages per minute"))}">
+						<div class="whatsapp-cb__estimate" data-estimate>
+							<span class="whatsapp-cb__estimate-icon" aria-hidden="true">${ui.ico("clock", "sm")}</span>
+							<span class="whatsapp-cb__estimate-text">
+								<span class="whatsapp-cb__estimate-label">${esc(__("Estimated duration"))}</span>
+								<span class="whatsapp-cb__estimate-value whatsapp-kit-tabular">${esc(C.dur_text(this.ctx.estimate().minutes))}</span>
 							</span>
 						</div>
-						<p class="wa-cb__rate-hint" data-rate-hint>${esc(this.rate_hint(rate))}</p>
+						<p class="whatsapp-cb__rate-hint" data-rate-hint>${esc(this.rate_hint(rate))}</p>
 					</div>`,
 			});
 		}
@@ -188,17 +188,17 @@ frappe.provide("whatsapp_next.campaign");
 		when() {
 			const scheduled = !!this.doc.scheduled_at;
 			const choice = (value, label, note) => `
-				<label class="wa-cb__choice">
-					<input type="radio" name="wa-cb-when" value="${value}"${(value === "scheduled") === scheduled ? " checked" : ""}>
-					<span class="wa-cb__choice-text">
-						<span class="wa-cb__choice-label">${esc(label)}</span>
-						<span class="wa-cb__choice-note">${esc(note)}</span>
+				<label class="whatsapp-cb__choice">
+					<input type="radio" name="whatsapp-cb-when" value="${value}"${(value === "scheduled") === scheduled ? " checked" : ""}>
+					<span class="whatsapp-cb__choice-text">
+						<span class="whatsapp-cb__choice-label">${esc(label)}</span>
+						<span class="whatsapp-cb__choice-note">${esc(note)}</span>
 					</span>
 				</label>`;
 			// the date and the time are Frappe's own pickers, in the kit's field with its icon
 			const when_input = (kind, icon, label) => `
-				<span class="wa-affix wa-affix--has-start wa-cb__when-field" aria-label="${esc(label)}">
-					<span class="wa-affix__in wa-affix__in--start" aria-hidden="true">${ui.ico(icon, "sm")}</span>
+				<span class="whatsapp-affix whatsapp-affix--has-start whatsapp-cb__when-field" aria-label="${esc(label)}">
+					<span class="whatsapp-affix__in whatsapp-affix__in--start" aria-hidden="true">${ui.ico(icon, "sm")}</span>
 					<span data-control="${kind}"></span>
 				</span>`;
 			return C.card({
@@ -206,31 +206,31 @@ frappe.provide("whatsapp_next.campaign");
 				icon: "clock",
 				title: __("Send time"),
 				body: `
-					<div class="wa-cb__when">
-						<div class="wa-cb__when-choices" role="radiogroup" aria-label="${esc(__("Send time"))}">
+					<div class="whatsapp-cb__when">
+						<div class="whatsapp-cb__when-choices" role="radiogroup" aria-label="${esc(__("Send time"))}">
 							${choice("now", __("Now"), __("Sending starts as soon as you save and start the campaign."))}
 							${choice("scheduled", __("Schedule", null, "campaign"), __("Set the date and time the sending begins."))}
 						</div>
-						<div class="wa-cb__when-at">
+						<div class="whatsapp-cb__when-at">
 							${when_input("date", "calendar", __("Choose the date"))}
 							${when_input("time", "clock", __("Choose the time"))}
 						</div>
-						<p class="wa-cb__when-error" role="alert" data-when-error hidden></p>
+						<p class="whatsapp-cb__when-error" role="alert" data-when-error hidden></p>
 					</div>`,
 			});
 		}
 
 		advanced() {
 			const option = ({ field, design_only, on, label, note }) => `
-				<div class="wa-cb__option">
-					<span class="wa-cb__option-text">
-						<span class="wa-cb__option-label">${esc(label)}</span>
-						<span class="wa-cb__option-note">${esc(note)}</span>
+				<div class="whatsapp-cb__option">
+					<span class="whatsapp-cb__option-text">
+						<span class="whatsapp-cb__option-label">${esc(label)}</span>
+						<span class="whatsapp-cb__option-note">${esc(note)}</span>
 					</span>
-					<label class="wa-toggle">
+					<label class="whatsapp-toggle">
 						<input type="checkbox"${field ? ` data-field="${esc(field)}"` : ' data-design-only="1"'}${on ? " checked" : ""}>
-						<span class="wa-toggle__track"></span>
-						<span class="sanad-visually-hidden">${esc(label)}</span>
+						<span class="whatsapp-toggle__track"></span>
+						<span class="whatsapp-kit-visually-hidden">${esc(label)}</span>
 					</label>
 				</div>`;
 			return C.card({
@@ -240,7 +240,7 @@ frappe.provide("whatsapp_next.campaign");
 				collapsible: true,
 				open: true,
 				body: `
-					<div class="wa-cb__options">
+					<div class="whatsapp-cb__options">
 						${option({
 							field: "exclude_unknown_numbers",
 							on: !!cint(this.doc.exclude_unknown_numbers),
@@ -277,13 +277,13 @@ frappe.provide("whatsapp_next.campaign");
 			const editable = this.ctx.can_edit();
 			if (!editable) $el.find("input, select, textarea").prop("disabled", true);
 			// a paused campaign keeps its device and its send time (see `can_edit_content`)
-			else if (!this.ctx.can_edit_content()) $el.find('[data-field="device"], input[name="wa-cb-when"]').prop("disabled", true);
+			else if (!this.ctx.can_edit_content()) $el.find('[data-field="device"], input[name="whatsapp-cb-when"]').prop("disabled", true);
 
 
-			$el.on("click", ".wa-cb__card--fold .wa-cb__card-head", (e) => {
-				const $card = $(e.currentTarget).closest(".wa-cb__card");
+			$el.on("click", ".whatsapp-cb__card--fold .whatsapp-cb__card-head", (e) => {
+				const $card = $(e.currentTarget).closest(".whatsapp-cb__card");
 				const open = $card.attr("data-open") !== "1";
-				$card.attr("data-open", open ? 1 : 0).find(".wa-cb__card-body").attr("hidden", !open ? "hidden" : null);
+				$card.attr("data-open", open ? 1 : 0).find(".whatsapp-cb__card-body").attr("hidden", !open ? "hidden" : null);
 				$(e.currentTarget).attr("aria-expanded", open);
 			});
 
@@ -291,7 +291,7 @@ frappe.provide("whatsapp_next.campaign");
 			const $name = $el.find('[data-field="campaign_name"]');
 			const commit_name = ui.debounce(() => frm.set_value("campaign_name", $name.val()), 400);
 			$name.on("input", () => {
-				$el.find('[data-counter="wa-cb-name"]').text(`${($name.val() || "").length}/${NAME_MAX}`);
+				$el.find('[data-counter="whatsapp-cb-name"]').text(`${($name.val() || "").length}/${NAME_MAX}`);
 				commit_name();
 			});
 			$name.on("blur", () => frm.set_value("campaign_name", $name.val()));
@@ -315,14 +315,14 @@ frappe.provide("whatsapp_next.campaign");
 			$s.on("input", (e) => set_rate(e.currentTarget.value, { from: "slider" }));
 			$n.on("input", (e) => set_rate(e.currentTarget.value, { from: "number" }));
 
-			$el.on("change", 'input[name="wa-cb-when"]', () => this.commit_when({ chosen: true }));
+			$el.on("change", 'input[name="whatsapp-cb-when"]', () => this.commit_when({ chosen: true }));
 		}
 
 		/** The estimate the slider buys, without waiting for the document to come back. */
 		show_estimate(rate) {
 			const doc = Object.assign({}, this.doc, { messages_per_minute: rate });
 			const minutes = C.estimate(doc, this.ctx.cap).minutes;
-			this.$wrapper.find(".wa-cb__estimate-value").text(C.dur_text(minutes));
+			this.$wrapper.find(".whatsapp-cb__estimate-value").text(C.dur_text(minutes));
 			this.ctx.sync();
 		}
 
@@ -333,7 +333,7 @@ frappe.provide("whatsapp_next.campaign");
 		 */
 		commit_when({ chosen = false } = {}) {
 			const $el = this.$wrapper;
-			const scheduled = $el.find('input[name="wa-cb-when"]:checked').val() === "scheduled";
+			const scheduled = $el.find('input[name="whatsapp-cb-when"]:checked').val() === "scheduled";
 			const $error = $el.find("[data-when-error]");
 			this.set_when_enabled(scheduled && this.ctx.can_edit_content());
 			const fail = (message) => {

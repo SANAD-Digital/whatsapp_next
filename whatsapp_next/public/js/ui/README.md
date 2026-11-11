@@ -1,4 +1,4 @@
-# `sanad.ui` — portable Desk component kit
+# `whatsapp.ui` — portable Desk component kit
 
 A set of Frappe Desk components that any Frappe app can copy and use. Everything is driven by
 DocType meta (`frappe.get_meta`, `frappe.model.with_doctype`) and by a small API map the host app
@@ -12,7 +12,7 @@ loading (skeleton) / empty / error states, and every panel is keyboard-accessibl
 
 | Component | What it does | Live use in this app |
 |---|---|---|
-| `_core` | namespace, `sanad.ui.configure`, `call`, escaping, icons, tones, announcer, focus trap, skeleton, meta helpers | everything |
+| `_core` | namespace, `whatsapp.ui.configure`, `call`, escaping, icons, tones, announcer, focus trap, skeleton, meta helpers | everything |
 | `Render` | one presentation layer: values, records and links at five display levels | every list cell, the drawer, Collection |
 | `StatusBadge` | status pill coloured by the DocType's own indicator rules | Outbound / Numbers lists |
 | `EmptyState` | loading (skeleton) · empty · error · offline | every panel |
@@ -40,7 +40,7 @@ loading (skeleton) / empty / error states, and every panel is keyboard-accessibl
 | `DashboardBlock` | Custom HTML Block rendering Number Cards / Dashboard Charts | Workspace "WhatsApp" |
 | `ContactPicker` | six-source recipient picker with duplicate flags and confirm | Campaigns, Contact Groups |
 
-Each folder has `index.js` (registers `sanad.ui.<Component>`), `style.scss` and a `README.md`
+Each folder has `index.js` (registers `whatsapp.ui.<Component>`), `style.scss` and a `README.md`
 with a usage snippet, its live use and the design-gate findings applied.
 
 ## Copy the kit into another Frappe app
@@ -49,7 +49,7 @@ with a usage snippet, its live use and the design-gate findings applied.
 2. Create `<your_app>/public/js/<your_app>.bundle.js`:
    ```js
    import "./ui/index.js";
-   sanad.ui.configure({
+   whatsapp.ui.configure({
      api: {
        // key the components use            → your whitelisted method
        "messages.get_conversation": "your_app.api.get_conversation",
@@ -68,7 +68,7 @@ with a usage snippet, its live use and the design-gate findings applied.
 3. In `hooks.py`: `app_include_js = ["<your_app>.bundle.js"]`,
    `app_include_css = ["<your_app>.bundle.css"]`, then `bench build --app <your_app>`.
 4. Mount components from your list/form scripts or pages, e.g.
-   `new sanad.ui.Drawer({ doctype: "Sales Invoice", name, mode: "record" }).show()`.
+   `new whatsapp.ui.Drawer({ doctype: "Sales Invoice", name, mode: "record" }).show()`.
 5. Components that call the server expect the return shapes documented in their README; wire
    your own whitelisted methods to those shapes (they are plain dicts) or pass `api: {...}`
    overrides per instance.

@@ -2,11 +2,11 @@
 // PageHeader ("+ New template" in the page bar, KPIs Templates · Uses (30d) · Categories) → FilterBar
 // (search, category) → DataList (Template · Text start · Category · Uses · Last updated · View,
 // plus "Use in a message" → QuickSend). "New template", a row and "View" open the editor window
-// (`whatsapp_next.templates.open` → `sanad.ui.TemplateWindow`). PageHeader / DataList are guarded with `typeof`;
+// (`whatsapp_next.templates.open` → `whatsapp.ui.TemplateWindow`). PageHeader / DataList are guarded with `typeof`;
 // the native rows render until they land.
 
 const DOCTYPE = "WhatsApp Template";
-const has_kit = (name) => typeof sanad.ui[name] === "function";
+const has_kit = (name) => typeof whatsapp.ui[name] === "function";
 const days_ago = (n) => frappe.datetime.add_days(frappe.datetime.now_date(), -n);
 
 /** Distinct, non-empty categories (Data field — no meta options to read). */
@@ -28,8 +28,8 @@ function new_template() {
 }
 
 function use_in_message(doc) {
-	if (typeof sanad.ui.QuickSend !== "function") return;
-	new sanad.ui.QuickSend({ template: doc.name });
+	if (typeof whatsapp.ui.QuickSend !== "function") return;
+	new whatsapp.ui.QuickSend({ template: doc.name });
 }
 
 const STATS = () => [
@@ -69,8 +69,8 @@ const COLUMNS = () => [
 		sortable: true,
 		format: (v, doc) => `<strong>${frappe.utils.escape_html(v || doc.name)}</strong>`,
 		sub: (doc) =>
-			typeof sanad.ui.QuickSend === "function" && !cint(doc.disabled)
-				? `<button type="button" class="btn btn-xs btn-link p-0 wa-template-use" data-name="${frappe.utils.escape_html(doc.name)}">${frappe.utils.icon(sanad.ui.icons.quick_send, "xs")} ${frappe.utils.escape_html(__("Use in a message"))}</button>`
+			typeof whatsapp.ui.QuickSend === "function" && !cint(doc.disabled)
+				? `<button type="button" class="btn btn-xs btn-link p-0 whatsapp-template-use" data-name="${frappe.utils.escape_html(doc.name)}">${frappe.utils.icon(whatsapp.ui.icons.quick_send, "xs")} ${frappe.utils.escape_html(__("Use in a message"))}</button>`
 				: "",
 	},
 	{ fieldname: "body", label: __("Text start"), sortable: false, hidden_xs: true, format: (v) => `<span class="text-muted">${frappe.utils.escape_html(excerpt(v))}</span>` },
@@ -78,7 +78,7 @@ const COLUMNS = () => [
 		fieldname: "category",
 		label: __("Category"),
 		sortable: true,
-		format: (v) => (v ? sanad.ui.StatusBadge.html({ label: __(v), colour: "gray", icon: false }) : ""),
+		format: (v) => (v ? whatsapp.ui.StatusBadge.html({ label: __(v), colour: "gray", icon: false }) : ""),
 	},
 	{ fieldname: "use_count", label: __("Uses"), type: "number", sortable: true },
 	{ fieldname: "modified", label: __("Last updated"), type: "date", sortable: true, format: (v) => (v ? frappe.datetime.str_to_user(v, false, true) : "") },
@@ -102,7 +102,7 @@ frappe.listview_settings[DOCTYPE] = {
 
 		const has_header = has_kit("PageHeader");
 		if (has_header) {
-			listview._sanad_header = new sanad.ui.PageHeader({
+			listview._whatsapp_header = new whatsapp.ui.PageHeader({
 				listview,
 				primary: { label: __("New template"), icon: "es-line-add", perm: "create", handler: new_template },
 				stats: STATS(),
@@ -110,7 +110,7 @@ frappe.listview_settings[DOCTYPE] = {
 		}
 
 		if (has_kit("FilterBar")) {
-			new sanad.ui.FilterBar({
+			new whatsapp.ui.FilterBar({
 				listview,
 				actions: ["group_by", "export"],
 				intro: has_header ? null : __("Ready-made texts to pick when sending; Jinja variables and conditions are supported."),
@@ -124,13 +124,13 @@ frappe.listview_settings[DOCTYPE] = {
 		}
 
 		if (has_kit("DataList")) {
-			listview._sanad_datalist = new sanad.ui.DataList({
+			listview._whatsapp_datalist = new whatsapp.ui.DataList({
 				listview,
 				columns: COLUMNS(),
 				selectable: true,
 				page_length: 20,
 				on_row_click: open_form,
-				footer: { count: (total) => sanad.ui.plural(total, { one: __("{0} template"), other: __("{0} templates") }) },
+				footer: { count: (total) => whatsapp.ui.plural(total, { one: __("{0} template"), other: __("{0} templates") }) },
 				empty: {
 					title: __("No templates yet"),
 					description: __("Create a template once and pick it every time you send."),
@@ -139,18 +139,18 @@ frappe.listview_settings[DOCTYPE] = {
 				mobile: "cards",
 			});
 		} else if (has_kit("RowActions")) {
-			new sanad.ui.RowActions({
+			new whatsapp.ui.RowActions({
 				listview,
 				actions: [
-					{ label: __("Use in a message"), icon: sanad.ui.icons.quick_send, condition: (doc) => typeof sanad.ui.QuickSend === "function" && !cint(doc.disabled), handler: use_in_message },
-					{ label: __("Open"), icon: sanad.ui.icons.open, handler: open_form },
+					{ label: __("Use in a message"), icon: whatsapp.ui.icons.quick_send, condition: (doc) => typeof whatsapp.ui.QuickSend === "function" && !cint(doc.disabled), handler: use_in_message },
+					{ label: __("Open"), icon: whatsapp.ui.icons.open, handler: open_form },
 				],
 				on_row_click: open_form,
 			});
 		}
 
 		// "Use in a message" inside DataList rows (delegated: rows re-render on every refresh).
-		listview.$result.off("click.watemplate").on("click.watemplate", ".wa-template-use", (e) => {
+		listview.$result.off("click.watemplate").on("click.watemplate", ".whatsapp-template-use", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			use_in_message({ name: $(e.currentTarget).data("name") });

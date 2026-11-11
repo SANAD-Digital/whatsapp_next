@@ -1,4 +1,4 @@
-# `sanad.ui.SettingsWindow`
+# `whatsapp.ui.SettingsWindow`
 
 A settings window in the shape of claude.ai's: one large modal over a dimmed backdrop, a rail on
 the inline-start (a search field, then sections in labelled groups) and one content pane that
@@ -8,7 +8,7 @@ nothing inside a section: the host renders each one through `render(key, $pane)`
 the static content helpers (`head_html`, `section_html`, `row_html`) for the same rows and headings.
 Constructing it builds the DOM but does not open it — call `show_window()`.
 
-**Portability:** no server calls, no app keys. The stylesheet uses the app's `--wa-*` palette
+**Portability:** no server calls, no app keys. The stylesheet uses the app's `--whatsapp-*` palette
 tokens (`public/scss/_tokens.scss`), which live outside the kit; the host's `cls` is where a palette
 scope goes.
 
@@ -45,7 +45,7 @@ Instance fields a host may read: `current` (open key), `open` (boolean), `$root`
 ## Events and callbacks
 
 - `render`, `on_show`, `on_close` as above.
-- Registers with `sanad.ui.overlay.open/close`; focus is trapped with `ui.trap_focus`; opening is
+- Registers with `whatsapp.ui.overlay.open/close`; focus is trapped with `ui.trap_focus`; opening is
   announced ("Settings opened.") with `ui.announce`.
 - No custom DOM events; no realtime subscriptions (the live host binds its own).
 
@@ -56,7 +56,7 @@ None.
 ## Usage
 
 ```js
-const SW = sanad.ui.SettingsWindow;
+const SW = whatsapp.ui.SettingsWindow;
 const win = new SW({
   title: __("Settings"),
   cls: "my-palette-scope",
@@ -75,9 +75,9 @@ win.show_window("usage");
 
 ## CSS hooks
 
-- `.sanad-sw-backdrop` and root `.sanad-kit.sanad-sw[role=dialog]` (plus `cls`), both appended to
-  `body`; `body.sanad-sw-open` while open.
-- State modifiers: `.sanad-sw--in` (entered, for the transition), `.sanad-sw--pane` (a section is
+- `.whatsapp-kit-sw-backdrop` and root `.whatsapp-kit.whatsapp-kit-sw[role=dialog]` (plus `cls`), both appended to
+  `body`; `body.whatsapp-kit-sw-open` while open.
+- State modifiers: `.whatsapp-kit-sw--in` (entered, for the transition), `.whatsapp-kit-sw--pane` (a section is
   shown — on phones this switches from list to pane).
 - Rail: `__rail`, `__search`, `__search-icon`, `__nav`, `__group`, `__group-label`,
   `__item[data-key]` (`.is-on`, `aria-current="page"`), `__item-icon`, `__item-label`, `__none`.

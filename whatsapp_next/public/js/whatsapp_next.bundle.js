@@ -1,4 +1,4 @@
-// whatsapp_next Desk bundle — loads the portable kit (sanad.ui) then the app-specific setup that
+// whatsapp_next Desk bundle — loads the portable kit (whatsapp.ui) then the app-specific setup that
 // maps kit API keys to this app's whitelisted methods. Nothing under `ui/` knows this app.
 
 import "./ui/index.js";

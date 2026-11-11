@@ -92,7 +92,7 @@ on the site becomes the default. Audited as `Device Created`.
 | Provider errors (mapped, README §5) | 4xx/5xx | The provider refused to create the device |
 
 ```js
-const dev = await sanad.ui.call("devices.create_device", { device_name: "Support", pairing_mode: "QR" });
+const dev = await whatsapp.ui.call("devices.create_device", { device_name: "Support", pairing_mode: "QR" });
 ```
 
 ---
@@ -159,7 +159,7 @@ unknown. Provider errors are mapped.
 **Realtime:** `wa:device:status` when `changed` is true.
 
 ```js
-const s = await sanad.ui.call("devices.poll_status", { device: "WA-DEV-002" });
+const s = await whatsapp.ui.call("devices.poll_status", { device: "WA-DEV-002" });
 ```
 
 ---
@@ -221,7 +221,7 @@ at nothing. Audited as `Device Deleted`.
 **Realtime:** `wa:device:status` with `status: "Deleted"`.
 
 ```js
-await sanad.ui.call("devices.delete_device", { device: "WA-DEV-002", delete_remote: 1 });
+await whatsapp.ui.call("devices.delete_device", { device: "WA-DEV-002", delete_remote: 1 });
 ```
 
 ---
@@ -277,7 +277,7 @@ Makes the device the default. The controller clears the flag on the others, and
 default".
 
 ```js
-await sanad.ui.call("devices.set_default", { device: "WA-DEV-001" });
+await whatsapp.ui.call("devices.set_default", { device: "WA-DEV-001" });
 ```
 
 ---
@@ -338,7 +338,7 @@ Returns the device card's figures over the last `days`.
 **Errors:** `WAValidationError` (417) for `days` outside 1–365.
 
 ```js
-const stats = await sanad.ui.call("devices.get_device_stats", { device: "WA-DEV-001", days: 7 });
+const stats = await whatsapp.ui.call("devices.get_device_stats", { device: "WA-DEV-001", days: 7 });
 ```
 
 ---
@@ -371,7 +371,7 @@ screen.
 **Realtime:** none.
 
 ```js
-const impact = await sanad.ui.call("devices.get_device_impact", { device: "WA-DEV-002" });
+const impact = await whatsapp.ui.call("devices.get_device_impact", { device: "WA-DEV-002" });
 ```
 
 ---
@@ -415,7 +415,7 @@ queued (`status` is `Running`).
 device rows when it refreshes.
 
 ```js
-await sanad.ui.call("devices.import_history", { device: "WA-DEV-001", restart: 0 });
+await whatsapp.ui.call("devices.import_history", { device: "WA-DEV-001", restart: 0 });
 ```
 
 ---
@@ -450,5 +450,5 @@ Returns the progress of the device's history import.
 again to follow it.
 
 ```js
-const h = await sanad.ui.call("devices.get_history_status", { device: "WA-DEV-001" });
+const h = await whatsapp.ui.call("devices.get_history_status", { device: "WA-DEV-001" });
 ```

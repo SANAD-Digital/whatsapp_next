@@ -1,4 +1,4 @@
-# `sanad.ui.PhoneField`
+# `whatsapp.ui.PhoneField`
 
 A phone input ported from the design prototype (`docs/component/Phone Field.dc.html`). It has
 two modes. **Wrapper mode** renders the full field: a country trigger showing ISO code and dial
@@ -62,7 +62,7 @@ Static:
 ## Usage
 
 ```js
-const phone = new sanad.ui.PhoneField({
+const phone = new whatsapp.ui.PhoneField({
   wrapper: $slot,
   required: true,
   tip: __("The number customers write to."),
@@ -71,20 +71,20 @@ const phone = new sanad.ui.PhoneField({
 phone.set_value("+966501234567");
 
 // Hint-only over a dialog field
-new sanad.ui.PhoneField({ control: dialog.fields_dict.phone });
+new whatsapp.ui.PhoneField({ control: dialog.fields_dict.phone });
 
-sanad.ui.PhoneField.format_display("+966501234567");
+whatsapp.ui.PhoneField.format_display("+966501234567");
 ```
 
 ## CSS hooks
 
-- Root `.sanad-kit.sanad-phone` (`id` = uid); `data-slot` attributes: `labelrow`, `box`,
+- Root `.whatsapp-kit.whatsapp-kit-phone` (`id` = uid); `data-slot` attributes: `labelrow`, `box`,
   `trigger`, `iso`, `dial`, `caret`, `tick`, `msg`.
 - `__label`, `__req`, `__tip-btn` (`--seen`), `__tip-pop`; `__box` (`--focus`, `--error`,
   `--ok`); `__country`, `__iso`, `__dial`, `__caret` (`--open`); `__input`; `__tick`.
 - Popup: `__pop`, `__search`, `__q`, `__list`, `__opt` (`--on`, `--cursor`), `__opt-iso`,
   `__opt-name`, `__opt-dial`, `__empty`; `__svg` for the inline SVGs.
-- Hint: `.sanad-phone__hint` (`--ok`, `--error`) — also used in control mode, appended to the
+- Hint: `.whatsapp-kit-phone__hint` (`--ok`, `--error`) — also used in control mode, appended to the
   control's `.control-input-wrapper`.
 
 ## Notes

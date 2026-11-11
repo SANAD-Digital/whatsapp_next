@@ -1,4 +1,4 @@
-// sanad.kit primitives — the design prototype's own controls, ported as classes.
+// whatsapp.kit primitives — the design prototype's own controls, ported as classes.
 //
 // `docs/shared/ui-kit.js` calls itself "one source for the design of fields and buttons, used by
 // the Overlay Panel, the tables and every other screen". It is the product's control layer, and
@@ -13,33 +13,33 @@
 // Geometry comes from the prototype's `DENSITY` and `BUTTON_SIZES` maps. It is pinned in px
 // because it is geometry, and logical properties are used throughout so Arabic mirrors for free.
 
-.wa {
+.whatsapp {
 	// DENSITY.comfortable — the default
-	--wa-h: 38px;
-	--wa-h-sm: 32px;
-	--wa-fs: 14px;
-	--wa-fs-sm: 13px;
-	--wa-px: 12px;
-	--wa-row-gap: 12px 16px;
-	--wa-row-pad: 14px 0;
-	--wa-radius: 8px;
-	--wa-radius-lg: 12px;
-	--wa-motion: 160ms;
+	--whatsapp-h: 38px;
+	--whatsapp-h-sm: 32px;
+	--whatsapp-fs: 14px;
+	--whatsapp-fs-sm: 13px;
+	--whatsapp-px: 12px;
+	--whatsapp-row-gap: 12px 16px;
+	--whatsapp-row-pad: 14px 0;
+	--whatsapp-radius: 8px;
+	--whatsapp-radius-lg: 12px;
+	--whatsapp-motion: 160ms;
 }
 
 // DENSITY.compact — a table, a toolbar, a panel that has to fit more in
-.wa--compact {
-	--wa-h: 28px;
-	--wa-h-sm: 24px;
-	--wa-fs: 13px;
-	--wa-fs-sm: 12px;
-	--wa-px: 10px;
-	--wa-row-gap: 8px 12px;
-	--wa-row-pad: 8px 0;
+.whatsapp--compact {
+	--whatsapp-h: 28px;
+	--whatsapp-h-sm: 24px;
+	--whatsapp-fs: 13px;
+	--whatsapp-fs-sm: 12px;
+	--whatsapp-px: 10px;
+	--whatsapp-row-gap: 8px 12px;
+	--whatsapp-row-pad: 8px 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.wa { --wa-motion: 0ms; }
+	.whatsapp { --whatsapp-motion: 0ms; }
 }
 
 // ---- icons ---------------------------------------------------------------------------------
@@ -48,7 +48,7 @@
 // `margin: 0 auto`, which centres an icon inside any flex row it lands in, so the size and the
 // margin are both stated here rather than left to whatever Frappe last declared.
 
-.wa-ico {
+.whatsapp-ico {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -77,28 +77,28 @@
 // (filter on, column pinned) — which is the one Frappe has no idea about and the product uses
 // everywhere.
 
-.wa-btn {
+.whatsapp-btn {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 7px;
-	// the button's height is the scale's (`--wa-btn-h`: 32 in the compact scale), 36 by default
-	min-block-size: var(--wa-btn-h, 28px);
+	// the button's height is the scale's (`--whatsapp-btn-h`: 32 in the compact scale), 36 by default
+	min-block-size: var(--whatsapp-btn-h, 28px);
 	padding-inline: 14px;
 	border: none;
-	border-radius: var(--wa-radius, 8px);
-	background: var(--wa-surface);
-	color: var(--wa-ink);
+	border-radius: var(--whatsapp-radius, 8px);
+	background: var(--whatsapp-surface);
+	color: var(--whatsapp-ink);
 	font: inherit;
 	font-size: 13px;
 	font-weight: 600;
 	line-height: 1;
 	white-space: nowrap;
 	cursor: pointer;
-	transition: background var(--wa-motion, 160ms), border-color var(--wa-motion, 160ms), color var(--wa-motion, 160ms);
+	transition: background var(--whatsapp-motion, 160ms), border-color var(--whatsapp-motion, 160ms), color var(--whatsapp-motion, 160ms);
 
 	&:focus-visible {
-		outline: 2px solid var(--wa-pri);
+		outline: 2px solid var(--whatsapp-pri);
 		outline-offset: 2px;
 	}
 	&[disabled],
@@ -109,55 +109,55 @@
 
 	// BUTTON_SIZES
 	&--sm { min-block-size: 28px; padding-inline: 10px; font-size: 12px; }
-	&--lg { min-block-size: var(--wa-btn-h-lg, 36px); padding-inline: 16px; font-size: 14px; }
+	&--lg { min-block-size: var(--whatsapp-btn-h-lg, 36px); padding-inline: 16px; font-size: 14px; }
 
 	// an icon on its own keeps the square the size gives it
 	&--icon {
 		padding-inline: 0;
-		inline-size: var(--wa-btn-h, 28px);
-		&.wa-btn--sm { inline-size: 28px; }
-		&.wa-btn--lg { inline-size: var(--wa-btn-h-lg, 36px); }
+		inline-size: var(--whatsapp-btn-h, 28px);
+		&.whatsapp-btn--sm { inline-size: 28px; }
+		&.whatsapp-btn--lg { inline-size: var(--whatsapp-btn-h-lg, 36px); }
 	}
 	&--block { inline-size: 100%; }
 
 	&--primary {
-		background: var(--wa-pri);
-		color: var(--wa-on-pri);
-		&:hover:not([disabled]) { background: var(--wa-pri-d); }
+		background: var(--whatsapp-pri);
+		color: var(--whatsapp-on-pri);
+		&:hover:not([disabled]) { background: var(--whatsapp-pri-d); }
 	}
 	&--secondary {
-		background: var(--wa-surface);
-		color: var(--wa-ink);
-		border: 1px solid var(--wa-border-2);
-		&:hover:not([disabled]) { background: var(--wa-sunken); }
+		background: var(--whatsapp-surface);
+		color: var(--whatsapp-ink);
+		border: 1px solid var(--whatsapp-border-2);
+		&:hover:not([disabled]) { background: var(--whatsapp-sunken); }
 	}
 	&--danger {
-		background: var(--wa-dg-s);
-		color: var(--wa-dg-i);
-		border: 1px solid var(--wa-dg-sb);
-		&:hover:not([disabled]) { background: var(--wa-dg-sb); }
+		background: var(--whatsapp-dg-s);
+		color: var(--whatsapp-dg-i);
+		border: 1px solid var(--whatsapp-dg-sb);
+		&:hover:not([disabled]) { background: var(--whatsapp-dg-sb); }
 	}
 	&--ghost {
 		background: transparent;
-		color: var(--wa-ink-2);
-		&:hover:not([disabled]) { background: var(--wa-sunken); }
+		color: var(--whatsapp-ink-2);
+		&:hover:not([disabled]) { background: var(--whatsapp-sunken); }
 	}
 	&--tonal {
-		background: var(--wa-pri-s);
-		color: var(--wa-pri-d);
-		border: 1px solid var(--wa-pri-sb);
-		&:hover:not([disabled]) { background: var(--wa-pri-sb); }
+		background: var(--whatsapp-pri-s);
+		color: var(--whatsapp-pri-d);
+		border: 1px solid var(--whatsapp-pri-sb);
+		&:hover:not([disabled]) { background: var(--whatsapp-pri-sb); }
 	}
 }
 
 // a row of buttons: danger is anchored to the start of the bar, the rest sit at the end
-.wa-btnbar {
+.whatsapp-btnbar {
 	display: flex;
 	align-items: center;
 	gap: 8px;
 	flex-wrap: wrap;
 
-	> .wa-btn--danger:first-child { margin-inline-end: auto; }
+	> .whatsapp-btn--danger:first-child { margin-inline-end: auto; }
 }
 
 // ---- badges --------------------------------------------------------------------------------
@@ -165,16 +165,16 @@
 // TONE: five tones, each a surface, a readable ink, a dot and a border. The ink is made for its
 // own surface, which is why a coloured word on a coloured badge is legible here.
 
-.wa-badge {
+.whatsapp-badge {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
 	padding-block: 4px;
 	padding-inline: 10px;
-	border: 1px solid var(--wa-border);
+	border: 1px solid var(--whatsapp-border);
 	border-radius: 999px;
-	background: var(--wa-sunken);
-	color: var(--wa-ink-2);
+	background: var(--whatsapp-sunken);
+	color: var(--whatsapp-ink-2);
 	font-size: 12px;
 	font-weight: 600;
 	line-height: 1.4;
@@ -186,15 +186,15 @@
 		block-size: 7px;
 		flex: none;
 		border-radius: 50%;
-		background: var(--wa-ink-4);
+		background: var(--whatsapp-ink-4);
 	}
 	&--nodot::before { display: none; }
 
-	&--ok { background: var(--wa-ok-s); color: var(--wa-ok-i); border-color: var(--wa-ok-sb); &::before { background: var(--wa-ok); } }
-	&--warn { background: var(--wa-wn-s); color: var(--wa-wn-i); border-color: var(--wa-wn-sb); &::before { background: var(--wa-wn); } }
-	&--danger { background: var(--wa-dg-s); color: var(--wa-dg-i); border-color: var(--wa-dg-sb); &::before { background: var(--wa-dg); } }
-	&--info { background: var(--wa-nf-s); color: var(--wa-nf-i); border-color: var(--wa-nf-sb); &::before { background: var(--wa-nf); } }
-	&--pri { background: var(--wa-pri-s); color: var(--wa-pri-d); border-color: var(--wa-pri-sb); &::before { background: var(--wa-pri); } }
+	&--ok { background: var(--whatsapp-ok-s); color: var(--whatsapp-ok-i); border-color: var(--whatsapp-ok-sb); &::before { background: var(--whatsapp-ok); } }
+	&--warn { background: var(--whatsapp-wn-s); color: var(--whatsapp-wn-i); border-color: var(--whatsapp-wn-sb); &::before { background: var(--whatsapp-wn); } }
+	&--danger { background: var(--whatsapp-dg-s); color: var(--whatsapp-dg-i); border-color: var(--whatsapp-dg-sb); &::before { background: var(--whatsapp-dg); } }
+	&--info { background: var(--whatsapp-nf-s); color: var(--whatsapp-nf-i); border-color: var(--whatsapp-nf-sb); &::before { background: var(--whatsapp-nf); } }
+	&--pri { background: var(--whatsapp-pri-s); color: var(--whatsapp-pri-d); border-color: var(--whatsapp-pri-sb); &::before { background: var(--whatsapp-pri); } }
 }
 
 // ---- fields --------------------------------------------------------------------------------
@@ -202,7 +202,7 @@
 // FIELD_BASE, verbatim: full width, 8 px radius, the `--border-2` rule, the surface fill and the
 // ink. The focus ring is the prototype's — the primary at three pixels, soft.
 
-.wa-field {
+.whatsapp-field {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
@@ -214,17 +214,17 @@
 		gap: 6px;
 		font-size: 13px;
 		font-weight: 600;
-		color: var(--wa-ink-2);
+		color: var(--whatsapp-ink-2);
 	}
 	// the strong danger is 4.38:1 on a white card — under the bar for a mark this small, so the
 	// asterisk takes the readable ink of the same tone, which measures 6.28:1
 	&__req {
-		color: var(--wa-dg-i);
+		color: var(--whatsapp-dg-i);
 		font-weight: 700;
 	}
 	&__hint {
 		font-size: 12px;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 		line-height: 1.6;
 	}
 	&__error {
@@ -233,35 +233,35 @@
 		gap: 5px;
 		font-size: 12px;
 		font-weight: 600;
-		color: var(--wa-dg-i);
+		color: var(--whatsapp-dg-i);
 	}
-	&--invalid &__input { border-color: var(--wa-dg); }
+	&--invalid &__input { border-color: var(--whatsapp-dg); }
 }
 
-.wa-input,
-.wa-select,
-.wa-textarea {
+.whatsapp-input,
+.whatsapp-select,
+.whatsapp-textarea {
 	inline-size: 100%;
-	min-block-size: var(--wa-h, 28px);
-	padding-inline: var(--wa-px, 12px);
-	border: 1px solid var(--wa-border-2);
-	border-radius: var(--wa-radius, 8px);
-	background: var(--wa-surface);
-	color: var(--wa-ink);
+	min-block-size: var(--whatsapp-h, 28px);
+	padding-inline: var(--whatsapp-px, 12px);
+	border: 1px solid var(--whatsapp-border-2);
+	border-radius: var(--whatsapp-radius, 8px);
+	background: var(--whatsapp-surface);
+	color: var(--whatsapp-ink);
 	font-family: inherit;
-	font-size: var(--wa-fs, 14px);
+	font-size: var(--whatsapp-fs, 14px);
 	outline: none;
-	transition: border-color var(--wa-motion, 160ms), box-shadow var(--wa-motion, 160ms);
+	transition: border-color var(--whatsapp-motion, 160ms), box-shadow var(--whatsapp-motion, 160ms);
 
-	&::placeholder { color: var(--wa-ink-4); }
-	&:hover:not([disabled]):not(:focus) { border-color: var(--wa-ink-4); }
+	&::placeholder { color: var(--whatsapp-ink-4); }
+	&:hover:not([disabled]):not(:focus) { border-color: var(--whatsapp-ink-4); }
 	&:focus {
-		border-color: var(--wa-pri);
-		box-shadow: 0 0 0 3px var(--wa-pri-s);
+		border-color: var(--whatsapp-pri);
+		box-shadow: 0 0 0 3px var(--whatsapp-pri-s);
 	}
 	&[disabled] {
-		background: var(--wa-sunken);
-		color: var(--wa-ink-4);
+		background: var(--whatsapp-sunken);
+		color: var(--whatsapp-ink-4);
 		cursor: not-allowed;
 	}
 	// a number, an id or a phone reads left to right whatever the page direction is
@@ -272,13 +272,13 @@
 	}
 }
 
-.wa-textarea {
+.whatsapp-textarea {
 	padding-block: 9px;
 	line-height: 1.7;
 	resize: vertical;
 }
 
-.wa-select {
+.whatsapp-select {
 	appearance: none;
 	padding-inline-end: 32px;
 	cursor: pointer;
@@ -293,11 +293,11 @@
 	background-position: right 19px center, right 14px center;
 	// the empty value is a prompt, not a value
 	&:invalid,
-	&[data-empty="true"] { color: var(--wa-ink-4); }
+	&[data-empty="true"] { color: var(--whatsapp-ink-4); }
 }
 
 // a field with something attached: an icon inside it, or a joined segment beside it
-.wa-affix {
+.whatsapp-affix {
 	display: flex;
 	align-items: stretch;
 	position: relative;
@@ -310,14 +310,14 @@
 		align-items: center;
 		justify-content: center;
 		inline-size: 28px;
-		color: var(--wa-ink-4);
+		color: var(--whatsapp-ink-4);
 		pointer-events: none;
 
 		&--start { inset-inline-start: 0; }
 		&--end { inset-inline-end: 0; pointer-events: auto; }
 	}
-	&--has-start .wa-input { padding-inline-start: 34px; }
-	&--has-end .wa-input { padding-inline-end: 34px; }
+	&--has-start .whatsapp-input { padding-inline-start: 34px; }
+	&--has-end .whatsapp-input { padding-inline-end: 34px; }
 
 	// `mode: "attached"` — a part joined to the field showing text, an icon, or both
 	&__on {
@@ -326,28 +326,28 @@
 		gap: 6px;
 		flex: none;
 		padding-inline: 12px;
-		border: 1px solid var(--wa-border-2);
-		background: var(--wa-sunken);
-		color: var(--wa-ink-2);
-		font-size: var(--wa-fs-sm, 13px);
+		border: 1px solid var(--whatsapp-border-2);
+		background: var(--whatsapp-sunken);
+		color: var(--whatsapp-ink-2);
+		font-size: var(--whatsapp-fs-sm, 13px);
 		font-weight: 600;
 		white-space: nowrap;
 		cursor: pointer;
 
-		&:hover { background: var(--wa-border); }
+		&:hover { background: var(--whatsapp-border); }
 	}
 	&__on--start {
-		border-start-start-radius: var(--wa-radius, 8px);
-		border-end-start-radius: var(--wa-radius, 8px);
+		border-start-start-radius: var(--whatsapp-radius, 8px);
+		border-end-start-radius: var(--whatsapp-radius, 8px);
 		border-inline-end: 0;
 	}
 	&__on--end {
-		border-start-end-radius: var(--wa-radius, 8px);
-		border-end-end-radius: var(--wa-radius, 8px);
+		border-start-end-radius: var(--whatsapp-radius, 8px);
+		border-end-end-radius: var(--whatsapp-radius, 8px);
 		border-inline-start: 0;
 	}
-	&--on-start .wa-input { border-start-start-radius: 0; border-end-start-radius: 0; }
-	&--on-end .wa-input { border-start-end-radius: 0; border-end-end-radius: 0; }
+	&--on-start .whatsapp-input { border-start-start-radius: 0; border-end-start-radius: 0; }
+	&--on-end .whatsapp-input { border-start-end-radius: 0; border-end-end-radius: 0; }
 }
 
 // ---- segmented -------------------------------------------------------------------------------
@@ -355,14 +355,14 @@
 // Two to four short options side by side. What a select becomes when the options are few — a
 // control Frappe does not have at all, and the product leans on constantly.
 
-.wa-seg {
+.whatsapp-seg {
 	display: inline-flex;
 	align-items: center;
 	gap: 2px;
 	padding: 2px; // a control's height in all: 1 + 2 + 22 + 2 + 1, as Desk's tab buttons
-	border: 1px solid var(--wa-border);
-	border-radius: var(--wa-radius, 8px);
-	background: var(--wa-sunken);
+	border: 1px solid var(--whatsapp-border);
+	border-radius: var(--whatsapp-radius, 8px);
+	background: var(--whatsapp-sunken);
 	max-inline-size: 100%;
 	flex-wrap: wrap;
 
@@ -371,29 +371,29 @@
 		align-items: center;
 		justify-content: center;
 		gap: 6px;
-		min-block-size: calc(var(--wa-h, 28px) - 6px);
+		min-block-size: calc(var(--whatsapp-h, 28px) - 6px);
 		padding-block: 0;
 		line-height: 18px;
 		padding-inline: 12px;
 		border: 1px solid transparent;
 		border-radius: 6px;
 		background: transparent;
-		color: var(--wa-ink-3);
+		color: var(--whatsapp-ink-3);
 		font: inherit;
-		font-size: var(--wa-fs-sm, 13px);
+		font-size: var(--whatsapp-fs-sm, 13px);
 		cursor: pointer;
 		white-space: nowrap;
-		transition: background var(--wa-motion, 160ms), color var(--wa-motion, 160ms);
+		transition: background var(--whatsapp-motion, 160ms), color var(--whatsapp-motion, 160ms);
 
-		&:hover:not([disabled]) { color: var(--wa-ink); }
+		&:hover:not([disabled]) { color: var(--whatsapp-ink); }
 		&[aria-checked="true"],
 		&[aria-selected="true"],
 		&[aria-pressed="true"] {
-			background: var(--wa-surface);
-			border-color: var(--wa-border-2);
-			color: var(--wa-ink);
+			background: var(--whatsapp-surface);
+			border-color: var(--whatsapp-border-2);
+			color: var(--whatsapp-ink);
 			font-weight: 600;
-			box-shadow: var(--wa-shadow-sm);
+			box-shadow: var(--whatsapp-shadow-sm);
 		}
 		&[disabled] { opacity: 0.5; cursor: not-allowed; }
 	}
@@ -401,7 +401,7 @@
 
 // ---- toggle · checkbox · radio ----------------------------------------------------------------
 
-.wa-toggle {
+.whatsapp-toggle {
 	display: inline-flex;
 	align-items: center;
 	gap: 10px;
@@ -409,62 +409,62 @@
 
 	&__track {
 		position: relative;
-		--wa-tg-knob: 14px;
+		--whatsapp-tg-knob: 14px;
 		inline-size: 32px;
 		block-size: 20px;
 		flex: none;
 		border-radius: 999px;
-		background: var(--wa-border-2);
-		transition: background var(--wa-motion, 160ms);
+		background: var(--whatsapp-border-2);
+		transition: background var(--whatsapp-motion, 160ms);
 
 		&::after {
 			content: "";
 			position: absolute;
 			inset-block-start: 3px;
 			inset-inline-start: 3px;
-			inline-size: var(--wa-tg-knob);
-			block-size: var(--wa-tg-knob);
+			inline-size: var(--whatsapp-tg-knob);
+			block-size: var(--whatsapp-tg-knob);
 			border-radius: 50%;
-			background: var(--wa-surface);
-			box-shadow: var(--wa-shadow-sm);
-			transition: inset-inline-start var(--wa-motion, 160ms);
+			background: var(--whatsapp-surface);
+			box-shadow: var(--whatsapp-shadow-sm);
+			transition: inset-inline-start var(--whatsapp-motion, 160ms);
 		}
 	}
-	&__label { font-size: var(--wa-fs-sm, 13px); color: var(--wa-ink-2); }
+	&__label { font-size: var(--whatsapp-fs-sm, 13px); color: var(--whatsapp-ink-2); }
 
 	input { position: absolute; opacity: 0; pointer-events: none; }
 	input:checked + &__track,
 	&[aria-checked="true"] &__track {
-		background: var(--wa-pri);
-		&::after { inset-inline-start: calc(100% - var(--wa-tg-knob) - 3px); }
+		background: var(--whatsapp-pri);
+		&::after { inset-inline-start: calc(100% - var(--whatsapp-tg-knob) - 3px); }
 	}
 	input:focus-visible + &__track {
-		outline: 2px solid var(--wa-pri);
+		outline: 2px solid var(--whatsapp-pri);
 		outline-offset: 2px;
 	}
 }
 
-.wa-check,
-.wa-radio {
+.whatsapp-check,
+.whatsapp-radio {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
-	font-size: var(--wa-fs-sm, 13px);
-	color: var(--wa-ink-2);
+	font-size: var(--whatsapp-fs-sm, 13px);
+	color: var(--whatsapp-ink-2);
 	cursor: pointer;
 
 	input {
 		inline-size: 16px;
 		block-size: 16px;
 		flex: none;
-		accent-color: var(--wa-pri);
+		accent-color: var(--whatsapp-pri);
 		cursor: pointer;
 	}
 }
 
 // ---- avatar ----------------------------------------------------------------------------------
 
-.wa-avatar {
+.whatsapp-avatar {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -472,8 +472,8 @@
 	block-size: 36px;
 	flex: none;
 	border-radius: 50%;
-	background: var(--wa-pri-s);
-	color: var(--wa-pri-d);
+	background: var(--whatsapp-pri-s);
+	color: var(--whatsapp-pri-d);
 	font-size: 16px;
 	font-weight: 700;
 	text-transform: uppercase;
@@ -492,7 +492,7 @@
 // The prototype's form sections are titled by a rule with the section's name at the start and its
 // obligation ("مطلوبة" / "اختياري") at the end. Frappe's section break draws neither.
 
-.wa-rule {
+.whatsapp-rule {
 	display: flex;
 	align-items: center;
 	gap: 12px;
@@ -501,31 +501,31 @@
 	&__label {
 		font-size: 12px;
 		font-weight: 700;
-		color: var(--wa-ink-2);
+		color: var(--whatsapp-ink-2);
 		white-space: nowrap;
 	}
 	&__line {
 		flex: 1;
 		block-size: 1px;
-		background: var(--wa-border);
+		background: var(--whatsapp-border);
 	}
 	&__note {
 		font-size: 11px;
-		color: var(--wa-ink-4);
+		color: var(--whatsapp-ink-4);
 		white-space: nowrap;
 	}
 }
 
 // ---- surfaces ----------------------------------------------------------------------------------
 
-.wa-card {
-	background: var(--wa-surface);
-	border: 1px solid var(--wa-border);
-	border-radius: var(--wa-radius-lg, 12px);
-	box-shadow: var(--wa-shadow-sm);
+.whatsapp-card {
+	background: var(--whatsapp-surface);
+	border: 1px solid var(--whatsapp-border);
+	border-radius: var(--whatsapp-radius-lg, 12px);
+	box-shadow: var(--whatsapp-shadow-sm);
 }
-.wa-sunken {
-	background: var(--wa-bg);
-	border: 1px solid var(--wa-border);
-	border-radius: var(--wa-radius-lg, 12px);
+.whatsapp-sunken {
+	background: var(--whatsapp-bg);
+	border: 1px solid var(--whatsapp-border);
+	border-radius: var(--whatsapp-radius-lg, 12px);
 }

@@ -1,4 +1,4 @@
-# `sanad.ui.MessageComposer`
+# `whatsapp.ui.MessageComposer`
 
 An editor for the ordered messages a record sends, mounted over a Desk form's **Table** field. It
 replaces the child grid with a rail of messages (order, type, one-line summary, a "missing" dot,
@@ -40,7 +40,7 @@ this app's `campaigns.preview_message` returns.
 - `select(name)` — make a row (by child `name`) the one being edited, and focus its first input.
 - `add(type?)` — append a row of `type` (default: first Select option, else `"Text"`) and select it.
 - `duplicate(row)` — copy a row (system keys stripped) and select the copy.
-- `remove(row)` — remove a row; asks via `sanad.ui.ConfirmDialog.ask` unless it is empty.
+- `remove(row)` — remove a row; asks via `whatsapp.ui.ConfirmDialog.ask` unless it is empty.
 - `move(row, delta)` — move a row up (`-1`) or down (`1`) and renumber `idx`.
 - `ask_delay(row)` — open the "Wait before this message" dialog for `delay_field`.
 - `load_variables()` — (re)load variables; returns a Promise of the list.
@@ -70,7 +70,7 @@ Nothing else; row changes go through `frappe.model`.
 ```js
 frappe.ui.form.on("WhatsApp Campaign", {
   refresh(frm) {
-    frm.composer = new sanad.ui.MessageComposer({
+    frm.composer = new whatsapp.ui.MessageComposer({
       frm,
       fieldname: "messages",
       type_field: "message_type",
@@ -88,7 +88,7 @@ frappe.ui.form.on("WhatsApp Campaign", {
 
 ## CSS hooks
 
-- Root `.sanad-kit.sanad-mc[data-fieldname]`; the field wrapper gets `.sanad-mc-host`, which hides
+- Root `.whatsapp-kit.whatsapp-kit-mc[data-fieldname]`; the field wrapper gets `.whatsapp-kit-mc-host`, which hides
   the native grid, its label, buttons and help.
 - Head: `__head`, `__title`, `__count`, `__head-actions`, `__add`, `__addwrap`.
 - Rail: `__split`, `__rail`, `__raillist`, `__railitem` (`--on`, `--problem`), `__railtop`,
@@ -106,7 +106,7 @@ frappe.ui.form.on("WhatsApp Campaign", {
 
 ## Notes
 
-- **Empty:** the rail shows a `sanad.ui.EmptyState` (`size: "sm"`) with "Add the first message"
+- **Empty:** the rail shows a `whatsapp.ui.EmptyState` (`size: "sm"`) with "Add the first message"
   when editable.
 - **Problems** per row: no type, empty text, poll without question or with fewer than two answers,
   media without a file (a Document may use `print_format` instead). Shown as a dot with a title.

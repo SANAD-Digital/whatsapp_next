@@ -17,17 +17,17 @@ frappe.provide("whatsapp_next.backup");
 		if (!$btn || !$btn.length) return promise;
 		const $label = $btn.find("span").last().length ? $btn.find("span").last() : $btn;
 		const before = $label.text();
-		$btn.prop("disabled", true).attr("aria-busy", "true").addClass("wa-backup-btn--busy");
+		$btn.prop("disabled", true).attr("aria-busy", "true").addClass("whatsapp-backup-btn--busy");
 		if (busy_label) $label.text(busy_label);
 		const restore = () => {
-			$btn.prop("disabled", false).removeAttr("aria-busy").removeClass("wa-backup-btn--busy wa-backup-btn--done");
+			$btn.prop("disabled", false).removeAttr("aria-busy").removeClass("whatsapp-backup-btn--busy whatsapp-backup-btn--done");
 			$label.text(before);
 		};
 		return promise.then(
 			(r) => {
-				$btn.removeClass("wa-backup-btn--busy").removeAttr("aria-busy");
+				$btn.removeClass("whatsapp-backup-btn--busy").removeAttr("aria-busy");
 				if (done_label) {
-					$btn.addClass("wa-backup-btn--done");
+					$btn.addClass("whatsapp-backup-btn--done");
 					$label.text(done_label);
 					window.setTimeout(restore, 2500);
 				} else restore();
@@ -49,7 +49,7 @@ frappe.provide("whatsapp_next.backup");
 	function download($btn) {
 		return busy(
 			$btn,
-			sanad.ui.call("settings.export_backup", {}).then((data) => {
+			whatsapp.ui.call("settings.export_backup", {}).then((data) => {
 				const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
 				const url = URL.createObjectURL(blob);
 				const a = document.createElement("a");
@@ -59,7 +59,7 @@ frappe.provide("whatsapp_next.backup");
 				a.click();
 				a.remove();
 				window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-				sanad.ui.Toast.success(__("The backup was downloaded."));
+				whatsapp.ui.Toast.success(__("The backup was downloaded."));
 				return data;
 			}),
 			{ busy_label: __("Preparing the backup…"), done_label: __("Downloaded") }
@@ -70,7 +70,7 @@ frappe.provide("whatsapp_next.backup");
 	function confirm_import(text, preview) {
 		const replaced = preview.replace || [];
 		const from = [preview.site, preview.exported_at && frappe.datetime.str_to_user(preview.exported_at)].filter(Boolean).join(" · ");
-		return sanad.ui.ConfirmDialog.ask({
+		return whatsapp.ui.ConfirmDialog.ask({
 			title: __("Import this backup?"),
 			message: [
 				from ? __("Backup of {0}.", [from]) : "",
@@ -87,7 +87,7 @@ frappe.provide("whatsapp_next.backup");
 				{ label: __("Settings fields"), value: preview.settings || 0 },
 			],
 			confirm_label: __("Import the backup"),
-			on_confirm: () => sanad.ui.call("settings.import_backup", { data: text }, { freeze: true }),
+			on_confirm: () => whatsapp.ui.call("settings.import_backup", { data: text }, { freeze: true }),
 		});
 	}
 
@@ -103,20 +103,20 @@ frappe.provide("whatsapp_next.backup");
 			file.text().then((text) =>
 				busy(
 					$btn,
-					sanad.ui
+					whatsapp.ui
 						.call("settings.preview_backup", { data: text })
 						.then((preview) => confirm_import(text, preview))
 						.then((r) => {
 							const failed = r.failed || [];
 							const line = __("{0} added, {1} replaced, {2} failed.", [r.created || 0, r.updated || 0, failed.length]);
-							if (failed.length) sanad.ui.Toast.error(line);
-							else sanad.ui.Toast.success(__("The backup was imported.") + " " + line);
+							if (failed.length) whatsapp.ui.Toast.error(line);
+							else whatsapp.ui.Toast.success(__("The backup was imported.") + " " + line);
 							if ($result) {
 								$result.html(`
 									<p>${esc(line)}</p>
 									${
 										failed.length
-											? `<ul class="wa-settings__backup-failed">${failed
+											? `<ul class="whatsapp-settings__backup-failed">${failed
 													.map((f) => `<li><b>${esc(__(f.doctype))} · ${esc(f.name)}</b> — ${esc(f.error)}</li>`)
 													.join("")}</ul>`
 											: ""
@@ -124,7 +124,7 @@ frappe.provide("whatsapp_next.backup");
 							}
 						})
 						// a cancelled confirmation is not an error
-						.catch((err) => err && err.message !== "cancelled" && sanad.ui.Toast.error(err)),
+						.catch((err) => err && err.message !== "cancelled" && whatsapp.ui.Toast.error(err)),
 					{ busy_label: __("Importing…"), done_label: __("Imported") }
 				)
 			);

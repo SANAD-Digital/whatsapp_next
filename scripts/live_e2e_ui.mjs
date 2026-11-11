@@ -80,7 +80,7 @@ try {
 		await go("whatsapp-log");
 		await page.evaluate((p) => {
 			window.__e2e_sent = null;
-			new sanad.ui.QuickSend({ phone: p.phone, on_sent: (r) => (window.__e2e_sent = r) });
+			new whatsapp.ui.QuickSend({ phone: p.phone, on_sent: (r) => (window.__e2e_sent = r) });
 		}, payload);
 		await page.waitForSelector(".modal.show [data-fieldname=body] textarea", { timeout: 15000 });
 		await page.waitForTimeout(1500); // context loads, device select fills
@@ -158,7 +158,7 @@ try {
 		};
 		const view = async () => {
 			// the row opens the drawer (the duplicate «View» button is gone)
-			await page.click(".sanad-datalist__row >> nth=0", { timeout: 6000 });
+			await page.click(".whatsapp-kit-datalist__row >> nth=0", { timeout: 6000 });
 			await page.waitForTimeout(1500);
 		};
 		await shoot("home", "wa-home", async (f) => {
@@ -171,7 +171,7 @@ try {
 		await shoot("campaigns", "whatsapp-campaign");
 		await shoot("numbers-drawer", `whatsapp-number?name=${encodeURIComponent(payload.number)}`, async (f) => {
 			await view();
-			f.drawer = (await page.locator(".sanad-drawer, .sanad-kit .sanad-drawer__body").first().innerText().catch(() => "")).slice(0, 500).replace(/\s+/g, " ");
+			f.drawer = (await page.locator(".whatsapp-kit-drawer, .whatsapp-kit .whatsapp-kit-drawer__body").first().innerText().catch(() => "")).slice(0, 500).replace(/\s+/g, " ");
 		});
 		// any other screen the caller names: [[shot name, route], …]
 		for (const [name, route] of payload.extra || []) await shoot(name, route);

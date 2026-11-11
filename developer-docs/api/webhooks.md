@@ -191,7 +191,7 @@ From `whatsapp_next/tests/fixtures/webhooks/message.received.json` (sent with
  "status": "Connected",
  "subscription": "WASUB-00001",
  "text": "كشف حساب",
- "wa_device_id": "wa-dev-1"
+ "wa_device_id": "whatsapp-dev-1"
 }
 ```
 
@@ -212,7 +212,7 @@ A delivery status (`message.delivered.json`):
  "provider_message_id": "3EB0SENT0001",
  "queue_id": "WAMQ-00001",
  "subscription": "WASUB-00001",
- "wa_device_id": "wa-dev-1"
+ "wa_device_id": "whatsapp-dev-1"
 }
 ```
 

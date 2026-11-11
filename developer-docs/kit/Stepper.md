@@ -1,4 +1,4 @@
-# `sanad.ui.Stepper`
+# `whatsapp.ui.Stepper`
 
 A multi-step flow (wizard): a spoken "Step 2 of 4" progress line, a step list whose current step
 carries `aria-current="step"`, one lazily rendered pane per step, and a footer with Back /
@@ -57,7 +57,7 @@ None.
 ## Usage
 
 ```js
-const stepper = new sanad.ui.Stepper({
+const stepper = new whatsapp.ui.Stepper({
   wrapper: $panel,
   ctx: { device: null },
   steps: [
@@ -75,7 +75,7 @@ const stepper = new sanad.ui.Stepper({
 
 ## CSS hooks
 
-- Root `sanad-kit sanad-stepper` (with a generated `id`).
+- Root `whatsapp-kit whatsapp-kit-stepper` (with a generated `id`).
 - `__header`, `__progress` (`aria-live="polite"`), `__list` (`<ol role="list">`), `__step`
   (`data-index`) with modifiers `--current`, `--done`, `--todo`; `__step-btn`, `__num`,
   `__check`, `__label`, `__optional`.

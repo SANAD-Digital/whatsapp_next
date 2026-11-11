@@ -160,7 +160,7 @@ function (type / method prefix) or its header does not parse.
 **Realtime:** none.
 
 ```js
-const m = await sanad.ui.call("functions.get_manifest", { function_key: "party_balance" });
+const m = await whatsapp.ui.call("functions.get_manifest", { function_key: "party_balance" });
 ```
 
 ---
@@ -207,7 +207,7 @@ function script, or the header does not parse.
 **Realtime:** none.
 
 ```js
-const d = await sanad.ui.call("functions.preview_install", { server_script: "wa_fn_party_balance" });
+const d = await whatsapp.ui.call("functions.preview_install", { server_script: "wa_fn_party_balance" });
 ```
 
 ---
@@ -278,7 +278,7 @@ the same `@function`. Audited `Function Updated` with `details {from, to}`.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("functions.update", { function_key: "party_balance" });
+await whatsapp.ui.call("functions.update", { function_key: "party_balance" });
 ```
 
 ---
@@ -306,7 +306,7 @@ Bulk update from the scripts.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("functions.update_many", { function_keys: ["ping", "party_balance"] });
+await whatsapp.ui.call("functions.update_many", { function_keys: ["ping", "party_balance"] });
 ```
 
 ---
@@ -333,7 +333,7 @@ No arguments. Sets `update_available` on each installed row whose script header 
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("functions.check_updates");
+await whatsapp.ui.call("functions.check_updates");
 ```
 
 ---
@@ -368,7 +368,7 @@ Audited `Function Removed`.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("functions.remove", { function_key: "ping" });
+await whatsapp.ui.call("functions.remove", { function_key: "ping" });
 ```
 
 ---
@@ -398,7 +398,7 @@ uses it (block reason `Function Inactive`).
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("functions.set_status", { function_key: "ping", status: "Inactive" });
+await whatsapp.ui.call("functions.set_status", { function_key: "ping", status: "Inactive" });
 ```
 
 ---
@@ -422,7 +422,7 @@ Bulk activate / deactivate.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("functions.set_status_many", { function_keys: ["ping", "party_balance"], status: "Active" });
+await whatsapp.ui.call("functions.set_status_many", { function_keys: ["ping", "party_balance"], status: "Active" });
 ```
 
 ---
@@ -512,7 +512,7 @@ raises (**Run**, with the exception's type and message), a message the header di
 **Realtime:** none.
 
 ```js
-const t = await sanad.ui.call("functions.try_function", {
+const t = await whatsapp.ui.call("functions.try_function", {
   function_key: "party_balance", party_type: "Customer", party: "CUST-0001", values: { to_date: "today" },
 });
 ```

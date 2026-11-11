@@ -98,11 +98,11 @@ bench --site <site> run-tests --app whatsapp_next --module whatsapp_next.tests.t
 The kit must be copy-pasteable into any Frappe app (`.claude/rules/ui.md`, D-056):
 
 - **No reference to `whatsapp_next`** anywhere under `public/js/ui/`. Components call
-  `sanad.ui.call("<area>.<fn>")`, and the host app maps the keys in
-  `public/js/whatsapp_next_setup.js` with `sanad.ui.configure({api, defaults})`.
+  `whatsapp.ui.call("<area>.<fn>")`, and the host app maps the keys in
+  `public/js/whatsapp_next_setup.js` with `whatsapp.ui.configure({api, defaults})`.
 - Every label goes through `__()`. Behaviour comes from DocType meta (`frappe.get_meta`), never
   from hard-coded field lists.
-- Colours come only from tokens. `public/scss/_tokens.scss` (`--wa-*`) is the one place a colour
+- Colours come only from tokens. `public/scss/_tokens.scss` (`--whatsapp-*`) is the one place a colour
   value is written (D-100). Use logical CSS properties only.
 - One folder per component with `index.js`, `style.scss` and `README.md` (a usage snippet, live
   use and design-gate notes). The component must also be imported in `ui/index.js` and the kit

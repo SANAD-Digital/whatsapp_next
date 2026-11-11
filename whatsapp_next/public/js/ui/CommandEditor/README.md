@@ -25,8 +25,8 @@ Portable: the component knows nothing about the host app. The host passes the da
 ## Usage
 
 ```js
-const call = (m, args) => sanad.ui.call(`commands.${m}`, args);
-new sanad.ui.CommandEditor({
+const call = (m, args) => whatsapp.ui.call(`commands.${m}`, args);
+new whatsapp.ui.CommandEditor({
   name: "doc",                                   // empty for a new command
   read_only: !frappe.user.has_role("System Manager"),
   load: (name) => call("get_editor", { name }),  // {command, functions, party_types, function}
@@ -66,5 +66,5 @@ through the host's own `command_modal(name, opts)` wrapper.
   picking never jump.
 - The preview thread is `aria-live="polite"`; while a run is in flight the thread dims instead of
   flashing a spinner.
-- Colours are product tokens only (`--wa-*`); offsets are logical, so Arabic and English need
+- Colours are product tokens only (`--whatsapp-*`); offsets are logical, so Arabic and English need
   nothing extra; the entry animation is off under `prefers-reduced-motion`.

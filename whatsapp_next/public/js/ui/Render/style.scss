@@ -1,33 +1,33 @@
-// sanad.ui.Render styles — the visual language of the kit: media, chips, facts, values and the
+// whatsapp.ui.Render styles — the visual language of the kit: media, chips, facts, values and the
 // five entity densities. Sizes are pinned (they are geometry, taken from the renderer reference);
 // every colour is an Espresso token and every box uses logical properties, so RTL needs no rules
 // of its own.
 
 :root {
-	--sanad-ent-radius: var(--sanad-card-radius);
-	--sanad-media-xs: 20px;
-	--sanad-media-sm: 24px;
-	--sanad-media-md: 28px;
-	--sanad-media-lg: 36px;
-	--sanad-media-xl: 56px;
+	--whatsapp-kit-ent-radius: var(--whatsapp-kit-card-radius);
+	--whatsapp-kit-media-xs: 20px;
+	--whatsapp-kit-media-sm: 24px;
+	--whatsapp-kit-media-md: 28px;
+	--whatsapp-kit-media-lg: 36px;
+	--whatsapp-kit-media-xl: 56px;
 }
 
 // An icon never grows to fill a flex row (a bare <svg> flex item would). Espresso icons carry
 // `es-icon`, the legacy set carries `icon`.
-:is(.sanad-kit, .sanad-ent, .sanad-fact, .sanad-chipline, .sanad-doc__block-title, .sanad-timeline) :is(svg.es-icon, svg.icon) {
+:is(.whatsapp-kit, .whatsapp-kit-ent, .whatsapp-kit-fact, .whatsapp-kit-chipline, .whatsapp-kit-doc__block-title, .whatsapp-kit-timeline) :is(svg.es-icon, svg.icon) {
 	flex: none;
 }
 
 // ---- media ---------------------------------------------------------------------------------
 
-.sanad-avatar {
+.whatsapp-kit-avatar {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	flex: none;
-	inline-size: var(--sanad-media-md);
-	block-size: var(--sanad-media-md);
-	border-radius: var(--sanad-radius);
+	inline-size: var(--whatsapp-kit-media-md);
+	block-size: var(--whatsapp-kit-media-md);
+	border-radius: var(--whatsapp-kit-radius);
 	background: var(--surface-gray-2);
 	color: var(--ink-gray-6);
 	font-size: 12px;
@@ -42,10 +42,10 @@
 		object-fit: cover;
 	}
 
-	&--xs { inline-size: var(--sanad-media-xs); block-size: var(--sanad-media-xs); font-size: 9px; border-radius: var(--radius, 4px); }
-	&--sm { inline-size: var(--sanad-media-sm); block-size: var(--sanad-media-sm); font-size: 11px; }
-	&--lg { inline-size: var(--sanad-media-lg); block-size: var(--sanad-media-lg); font-size: 14px; }
-	&--xl { inline-size: var(--sanad-media-xl); block-size: var(--sanad-media-xl); font-size: 24px; border-radius: var(--sanad-ent-radius); }
+	&--xs { inline-size: var(--whatsapp-kit-media-xs); block-size: var(--whatsapp-kit-media-xs); font-size: 9px; border-radius: var(--radius, 4px); }
+	&--sm { inline-size: var(--whatsapp-kit-media-sm); block-size: var(--whatsapp-kit-media-sm); font-size: 11px; }
+	&--lg { inline-size: var(--whatsapp-kit-media-lg); block-size: var(--whatsapp-kit-media-lg); font-size: 14px; }
+	&--xl { inline-size: var(--whatsapp-kit-media-xl); block-size: var(--whatsapp-kit-media-xl); font-size: 24px; border-radius: var(--whatsapp-kit-ent-radius); }
 
 	&--image { background: var(--surface-gray-2); }
 	// The filled variant is for dense tables, where the initials are a marker, not a portrait.
@@ -53,53 +53,53 @@
 }
 
 // A person is a circle, everything else is a tile — the quickest way to tell them apart.
-.sanad-ent--person .sanad-avatar,
-.sanad-avatar--circle { border-radius: var(--radius-full, 999px); }
+.whatsapp-kit-ent--person .whatsapp-kit-avatar,
+.whatsapp-kit-avatar--circle { border-radius: var(--radius-full, 999px); }
 
-.sanad-thumb {
+.whatsapp-kit-thumb {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	flex: none;
-	inline-size: var(--sanad-media-lg);
-	block-size: var(--sanad-media-lg);
-	border-radius: var(--sanad-radius);
-	border: var(--sanad-border);
+	inline-size: var(--whatsapp-kit-media-lg);
+	block-size: var(--whatsapp-kit-media-lg);
+	border-radius: var(--whatsapp-kit-radius);
+	border: var(--whatsapp-kit-border);
 	background: var(--surface-gray-1);
 	color: var(--ink-gray-5);
 	overflow: hidden;
 
 	img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 
-	&--sm { inline-size: var(--sanad-media-md); block-size: var(--sanad-media-md); }
-	&--md { inline-size: var(--sanad-media-lg); block-size: var(--sanad-media-lg); }
-	&--lg { inline-size: var(--sanad-media-xl); block-size: var(--sanad-media-xl); }
-	&--cover { inline-size: 100%; block-size: auto; aspect-ratio: 4 / 3; border: 0; border-radius: var(--sanad-ent-radius); }
+	&--sm { inline-size: var(--whatsapp-kit-media-md); block-size: var(--whatsapp-kit-media-md); }
+	&--md { inline-size: var(--whatsapp-kit-media-lg); block-size: var(--whatsapp-kit-media-lg); }
+	&--lg { inline-size: var(--whatsapp-kit-media-xl); block-size: var(--whatsapp-kit-media-xl); }
+	&--cover { inline-size: 100%; block-size: auto; aspect-ratio: 4 / 3; border: 0; border-radius: var(--whatsapp-kit-ent-radius); }
 }
 
 // File type tile: the extension is the icon (reference image 05).
-.sanad-filetype {
+.whatsapp-kit-filetype {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	flex: none;
-	inline-size: var(--sanad-media-md);
-	block-size: var(--sanad-media-md);
+	inline-size: var(--whatsapp-kit-media-md);
+	block-size: var(--whatsapp-kit-media-md);
 	border: 1px solid;
-	border-radius: var(--sanad-radius);
+	border-radius: var(--whatsapp-kit-radius);
 	font-size: 9px;
 	font-weight: 700;
 	letter-spacing: 0.02em;
-	&--lg { inline-size: var(--sanad-media-xl); block-size: var(--sanad-media-xl); font-size: 14px; border-radius: var(--sanad-ent-radius); }
+	&--lg { inline-size: var(--whatsapp-kit-media-xl); block-size: var(--whatsapp-kit-media-xl); font-size: 14px; border-radius: var(--whatsapp-kit-ent-radius); }
 	&__ext { direction: ltr; }
 }
 
 // ---- small pieces --------------------------------------------------------------------------
 
-.sanad-chipline {
+.whatsapp-kit-chipline {
 	display: inline-flex;
 	align-items: center;
-	gap: var(--sanad-gap-xs);
+	gap: var(--whatsapp-kit-gap-xs);
 	min-inline-size: 0;
 	max-inline-size: 100%;
 	color: var(--ink-gray-6);
@@ -108,22 +108,22 @@
 
 	&__icon { display: inline-flex; flex: none; color: var(--ink-gray-5); }
 	&__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	&:is(a):hover { color: var(--sanad-accent-ink); text-decoration: none; }
-	&--link { color: var(--sanad-accent-ink); }
+	&:is(a):hover { color: var(--whatsapp-kit-accent-ink); text-decoration: none; }
+	&--link { color: var(--whatsapp-kit-accent-ink); }
 }
-.sanad-chipline-row {
+.whatsapp-kit-chipline-row {
 	display: inline-flex;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+	gap: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-md);
 	min-inline-size: 0;
 }
 
-.sanad-tag-row { display: inline-flex; flex-wrap: wrap; gap: var(--sanad-gap-xs); align-items: center; }
-.sanad-tag {
+.whatsapp-kit-tag-row { display: inline-flex; flex-wrap: wrap; gap: var(--whatsapp-kit-gap-xs); align-items: center; }
+.whatsapp-kit-tag {
 	display: inline-flex;
 	align-items: center;
-	padding-inline: var(--sanad-gap-sm);
+	padding-inline: var(--whatsapp-kit-gap-sm);
 	padding-block: 2px;
 	border-radius: var(--radius-full, 999px);
 	background: var(--surface-gray-2);
@@ -133,18 +133,18 @@
 	&--rest { background: transparent; color: var(--ink-gray-5); }
 }
 
-.sanad-swatch { inline-size: 12px; block-size: 12px; border-radius: 3px; border: var(--sanad-border); display: inline-block; }
-.sanad-muted { color: var(--ink-gray-4); }
+.whatsapp-kit-swatch { inline-size: 12px; block-size: 12px; border-radius: 3px; border: var(--whatsapp-kit-border); display: inline-block; }
+.whatsapp-kit-muted { color: var(--ink-gray-4); }
 
-.sanad-amount,
-.sanad-number {
+.whatsapp-kit-amount,
+.whatsapp-kit-number {
 	color: var(--ink-gray-9);
 	font-weight: 600;
 	&--strong { font-size: var(--text-lg, 16px); font-weight: 700; }
 }
-.sanad-when { color: var(--ink-gray-6); white-space: nowrap; }
+.whatsapp-kit-when { color: var(--ink-gray-6); white-space: nowrap; }
 
-.sanad-clamp {
+.whatsapp-kit-clamp {
 	display: -webkit-box;
 	text-align: start;
 	unicode-bidi: plaintext;
@@ -153,7 +153,7 @@
 	&--1 { -webkit-line-clamp: 1; }
 	&--4 { -webkit-line-clamp: 4; }
 }
-.sanad-rich {
+.whatsapp-kit-rich {
 	font-size: var(--text-sm, 13px);
 	line-height: 1.8;
 	color: var(--ink-gray-7);
@@ -162,10 +162,10 @@
 	> :last-child { margin-block-end: 0; }
 }
 
-.sanad-progress {
+.whatsapp-kit-progress {
 	display: inline-flex;
 	align-items: center;
-	gap: var(--sanad-gap-sm);
+	gap: var(--whatsapp-kit-gap-sm);
 	inline-size: 100%;
 	min-inline-size: 90px;
 
@@ -173,57 +173,57 @@
 	&__bar { display: block; block-size: 100%; border-radius: inherit; background: var(--ink-gray-6); }
 	&__value { flex: none; font-size: var(--text-sm, 13px); color: var(--ink-gray-6); font-weight: 600; }
 	&--green { background: var(--ink-green-7); }
-	&--blue { background: var(--sanad-accent); }
+	&--blue { background: var(--whatsapp-kit-accent); }
 	&--amber { background: var(--ink-amber-7); }
 	&--red { background: var(--ink-red-8); }
 	&--gray { background: var(--ink-gray-5); }
 }
 
-.sanad-stars {
+.whatsapp-kit-stars {
 	display: inline-flex;
 	align-items: center;
 	gap: 1px;
 	&__star { display: inline-flex; color: var(--surface-gray-4); }
 	&__star--full, &__star--half { color: var(--ink-amber-7); }
 	&__star--half { opacity: 0.6; }
-	&__value { margin-inline-start: var(--sanad-gap-xs); color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
+	&__value { margin-inline-start: var(--whatsapp-kit-gap-xs); color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
 }
 
 // Quick facts — label above, value below, icon in the corner (reference image 01).
-.sanad-fact-grid {
+.whatsapp-kit-fact-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-	gap: var(--sanad-gap-sm);
+	gap: var(--whatsapp-kit-gap-sm);
 }
-.sanad-fact {
+.whatsapp-kit-fact {
 	display: flex;
 	flex-direction: column;
 	gap: 2px;
-	padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-	border: var(--sanad-border);
-	border-radius: var(--sanad-ent-radius);
+	padding: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-md);
+	border: var(--whatsapp-kit-border);
+	border-radius: var(--whatsapp-kit-ent-radius);
 	background: var(--surface-base);
 	min-inline-size: 0;
 
-	&__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sanad-gap-xs); flex-direction: row-reverse; }
+	&__head { display: flex; align-items: center; justify-content: space-between; gap: var(--whatsapp-kit-gap-xs); flex-direction: row-reverse; }
 	&__label { flex: 1; font-size: var(--text-xs, 11px); color: var(--ink-gray-6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	&__icon { display: inline-flex; flex: none; color: var(--ink-gray-4); }
 	&__value { font-size: var(--text-sm, 13px); font-weight: 600; color: var(--ink-gray-9); overflow-wrap: anywhere; text-align: -webkit-match-parent; text-align: match-parent; }
 	// a linked record inside a tile reads as the tile's value, not as a green link among black
 	// ones; it is still a link, and says so on hover
-	&__value .sanad-chipline--link { color: inherit; }
-	&__value .sanad-chipline--link:hover { color: var(--sanad-accent-ink); text-decoration: underline; }
+	&__value .whatsapp-kit-chipline--link { color: inherit; }
+	&__value .whatsapp-kit-chipline--link:hover { color: var(--whatsapp-kit-accent-ink); text-decoration: underline; }
 }
 
 // Key / value rows — the drawer's data. One bordered box, one field per row, the keys in one
 // column so the eye runs down them and across to the value; a hairline between rows, none after
 // the last. The key column is a share of the row with a floor, so a long key wraps rather than
 // pushing its value off the row.
-.sanad-kv {
+.whatsapp-kit-kv {
 	margin: 0;
-	padding-inline: var(--sanad-gap-md);
-	border: var(--sanad-border);
-	border-radius: var(--sanad-ent-radius);
+	padding-inline: var(--whatsapp-kit-gap-md);
+	border: var(--whatsapp-kit-border);
+	border-radius: var(--whatsapp-kit-ent-radius);
 	background: var(--surface-base);
 
 	&__row {
@@ -231,23 +231,23 @@
 		grid-template-columns: minmax(110px, 38%) minmax(0, 1fr);
 		// centre, not baseline: a key that carries an icon would otherwise sit higher than its value
 		align-items: center;
-		gap: var(--sanad-gap-md);
+		gap: var(--whatsapp-kit-gap-md);
 		// a fact is one compact line, 32 px with its rule (owner, 2026-10-26)
 		min-block-size: 28px;
 		padding-block: 6px;
-		border-block-end: var(--sanad-border);
+		border-block-end: var(--whatsapp-kit-border);
 		min-inline-size: 0;
 		&:last-child { border-block-end: 0; }
 		// a long value gets the whole row under its key
 		&--wide {
 			grid-template-columns: minmax(0, 1fr);
-			gap: var(--sanad-gap-xs);
+			gap: var(--whatsapp-kit-gap-xs);
 		}
 	}
 	dt {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		min-inline-size: 0;
 		margin: 0;
 		font-size: var(--text-sm, 13px);
@@ -265,21 +265,21 @@
 		overflow-wrap: anywhere;
 		text-align: start;
 		// a value in another language keeps its own rendering but stays on the key's side
-		> [dir="auto"], .sanad-clamp, .sanad-rich {
+		> [dir="auto"], .whatsapp-kit-clamp, .whatsapp-kit-rich {
 			unicode-bidi: isolate;
 			text-align: -webkit-match-parent;
 			text-align: match-parent;
 		}
 		// a linked record reads as the value, not as a green link among black ones
-		.sanad-chipline--link { color: inherit; }
-		.sanad-chipline--link:hover { color: var(--sanad-accent-ink); text-decoration: underline; }
+		.whatsapp-kit-chipline--link { color: inherit; }
+		.whatsapp-kit-chipline--link:hover { color: var(--whatsapp-kit-accent-ink); text-decoration: underline; }
 	}
 }
 
 // Key / value list — the "additional details" block.
-.sanad-dl {
+.whatsapp-kit-dl {
 	display: grid;
-	gap: var(--sanad-gap-sm) var(--sanad-gap-lg);
+	gap: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-lg);
 	margin: 0;
 	&--cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	&--cols-1 { grid-template-columns: minmax(0, 1fr); }
@@ -299,7 +299,7 @@
 	// text's own rendering is left to `dir="auto"`.
 	// `start` would resolve against the value's own `dir="auto"` and throw an Arabic value to the
 	// other side of its English label; `match-parent` resolves it against the list instead.
-	dd .sanad-clamp, dd .sanad-rich, dd > [dir="auto"] {
+	dd .whatsapp-kit-clamp, dd .whatsapp-kit-rich, dd > [dir="auto"] {
 		unicode-bidi: isolate;
 		// Chrome knows only the prefixed keyword and drops the standard one; Firefox the reverse
 		text-align: -webkit-match-parent;
@@ -310,18 +310,18 @@
 	}
 }
 
-.sanad-code {
+.whatsapp-kit-code {
 	font-family: var(--font-stack-mono, monospace);
 	font-size: var(--text-xs, 11px);
-	&--inline { padding-inline: var(--sanad-gap-xs); border-radius: 4px; background: var(--surface-gray-2); color: var(--ink-gray-7); }
+	&--inline { padding-inline: var(--whatsapp-kit-gap-xs); border-radius: 4px; background: var(--surface-gray-2); color: var(--ink-gray-7); }
 }
-.sanad-code-block {
+.whatsapp-kit-code-block {
 	position: relative;
 	&__pre {
 		margin: 0;
-		padding: var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-ent-radius);
+		padding: var(--whatsapp-kit-gap-md);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-ent-radius);
 		background: var(--surface-gray-1);
 		color: var(--ink-gray-7);
 		font-family: var(--font-stack-mono, monospace);
@@ -332,15 +332,15 @@
 	}
 	&__copy {
 		position: absolute;
-		inset-block-start: var(--sanad-gap-sm);
-		inset-inline-end: var(--sanad-gap-sm);
+		inset-block-start: var(--whatsapp-kit-gap-sm);
+		inset-inline-end: var(--whatsapp-kit-gap-sm);
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		inline-size: 26px;
 		block-size: 26px;
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-base);
 		color: var(--ink-gray-6);
 		&:hover { color: var(--ink-gray-9); }
@@ -348,17 +348,17 @@
 }
 
 // Icon-only quick actions on a row or card.
-.sanad-iconbtn-row { display: inline-flex; align-items: center; gap: var(--sanad-gap-xs); flex: none; }
-.sanad-iconbtn {
+.whatsapp-kit-iconbtn-row { display: inline-flex; align-items: center; gap: var(--whatsapp-kit-gap-xs); flex: none; }
+.whatsapp-kit-iconbtn {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	gap: var(--sanad-gap-xs);
-	min-inline-size: var(--sanad-target);
-	block-size: var(--sanad-target);
-	padding-inline: var(--sanad-gap-sm);
-	border: var(--sanad-border);
-	border-radius: var(--sanad-radius);
+	gap: var(--whatsapp-kit-gap-xs);
+	min-inline-size: var(--whatsapp-kit-target);
+	block-size: var(--whatsapp-kit-target);
+	padding-inline: var(--whatsapp-kit-gap-sm);
+	border: var(--whatsapp-kit-border);
+	border-radius: var(--whatsapp-kit-radius);
 	background: var(--surface-base);
 	color: var(--ink-gray-6);
 	cursor: pointer;
@@ -369,10 +369,10 @@
 
 // ---- entities ------------------------------------------------------------------------------
 
-.sanad-ent {
+.whatsapp-kit-ent {
 	display: flex;
 	align-items: center;
-	gap: var(--sanad-gap-sm);
+	gap: var(--whatsapp-kit-gap-sm);
 	min-inline-size: 0;
 	color: inherit;
 	text-align: start;
@@ -390,10 +390,10 @@
 		text-align: match-parent;
 	}
 	&__desc { font-size: var(--text-sm, 13px); color: var(--ink-gray-6); line-height: 1.7; }
-	&__trail { display: inline-flex; align-items: center; gap: var(--sanad-gap-sm); flex: none; margin-inline-start: auto; }
+	&__trail { display: inline-flex; align-items: center; gap: var(--whatsapp-kit-gap-sm); flex: none; margin-inline-start: auto; }
 	&__value { font-size: var(--text-sm, 13px); font-weight: 700; color: var(--ink-gray-9); white-space: nowrap; }
 	&__value--hero { font-size: var(--text-xl, 20px); }
-	&__facts { display: flex; flex-wrap: wrap; gap: var(--sanad-gap-xs) var(--sanad-gap-md); }
+	&__facts { display: flex; flex-wrap: wrap; gap: var(--whatsapp-kit-gap-xs) var(--whatsapp-kit-gap-md); }
 	&__dot { inline-size: 6px; block-size: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
 	&__go { display: inline-flex; color: var(--ink-gray-4); flex: none; }
 
@@ -405,16 +405,16 @@
 	// inline — a table cell or a sentence: no box, one line.
 	&--inline {
 		display: inline-flex;
-		gap: var(--sanad-gap-xs);
-		.sanad-ent__sub { color: var(--ink-gray-5); }
-		.sanad-ent__title { font-weight: 500; }
+		gap: var(--whatsapp-kit-gap-xs);
+		.whatsapp-kit-ent__sub { color: var(--ink-gray-5); }
+		.whatsapp-kit-ent__title { font-weight: 500; }
 	}
 
 	// compact — dense lists and pick results.
 	&--compact {
-		padding: var(--sanad-gap-xs) var(--sanad-gap-sm);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
+		padding: var(--whatsapp-kit-gap-xs) var(--whatsapp-kit-gap-sm);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-base);
 		&:hover { background: var(--surface-gray-1); }
 	}
@@ -422,9 +422,9 @@
 	// row — drawer lists, selection results: media, two lines, a trailing value or badge.
 	&--row {
 		inline-size: 100%;
-		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-ent-radius);
+		padding: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-md);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-ent-radius);
 		background: var(--surface-base);
 		min-block-size: 44px;
 		&:hover { background: var(--surface-gray-1); }
@@ -434,48 +434,48 @@
 	&--card {
 		flex-direction: column;
 		align-items: stretch;
-		gap: var(--sanad-gap-sm);
-		padding: var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-card-radius);
+		gap: var(--whatsapp-kit-gap-sm);
+		padding: var(--whatsapp-kit-gap-md);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-card-radius);
 		background: var(--surface-base);
 		block-size: 100%;
-		.sanad-ent__head { display: flex; align-items: center; gap: var(--sanad-gap-sm); }
-		.sanad-ent__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--sanad-gap-sm); margin-block-start: auto; }
-		.sanad-ent__body { display: flex; flex-direction: column; gap: var(--sanad-gap-xs); }
-		.sanad-ent__cover { position: relative; display: block; margin: calc(-1 * var(--sanad-gap-md)); margin-block-end: 0; }
-		.sanad-ent__flag { position: absolute; inset-block-start: var(--sanad-gap-sm); inset-inline-end: var(--sanad-gap-sm); }
-		.sanad-ent__title { white-space: normal; }
+		.whatsapp-kit-ent__head { display: flex; align-items: center; gap: var(--whatsapp-kit-gap-sm); }
+		.whatsapp-kit-ent__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--whatsapp-kit-gap-sm); margin-block-start: auto; }
+		.whatsapp-kit-ent__body { display: flex; flex-direction: column; gap: var(--whatsapp-kit-gap-xs); }
+		.whatsapp-kit-ent__cover { position: relative; display: block; margin: calc(-1 * var(--whatsapp-kit-gap-md)); margin-block-end: 0; }
+		.whatsapp-kit-ent__flag { position: absolute; inset-block-start: var(--whatsapp-kit-gap-sm); inset-inline-end: var(--whatsapp-kit-gap-sm); }
+		.whatsapp-kit-ent__title { white-space: normal; }
 		&:hover { border-color: var(--outline-gray-2); }
 	}
 
 	// hero — the subject of the screen.
 	&--hero {
 		align-items: flex-start;
-		gap: var(--sanad-gap-lg);
-		padding: var(--sanad-gap-lg);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-card-radius);
+		gap: var(--whatsapp-kit-gap-lg);
+		padding: var(--whatsapp-kit-gap-lg);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-card-radius);
 		background: var(--surface-base);
-		.sanad-ent__hero-body { display: flex; flex-direction: column; gap: var(--sanad-gap-sm); min-inline-size: 0; flex: 1; }
-		.sanad-ent__hero-head { display: flex; align-items: center; gap: var(--sanad-gap-sm); flex-wrap: wrap; }
-		.sanad-ent__title { font-size: var(--text-lg, 16px); white-space: normal; margin: 0; }
+		.whatsapp-kit-ent__hero-body { display: flex; flex-direction: column; gap: var(--whatsapp-kit-gap-sm); min-inline-size: 0; flex: 1; }
+		.whatsapp-kit-ent__hero-head { display: flex; align-items: center; gap: var(--whatsapp-kit-gap-sm); flex-wrap: wrap; }
+		.whatsapp-kit-ent__title { font-size: var(--text-lg, 16px); white-space: normal; margin: 0; }
 		@media (max-width: 520px) {
 			flex-direction: column;
 		}
 	}
 
 	// File rows keep their type tile square even inside a person-shaped list.
-	&--file .sanad-avatar { border-radius: var(--sanad-radius); }
+	&--file .whatsapp-kit-avatar { border-radius: var(--whatsapp-kit-radius); }
 }
 
-[dir="rtl"] .sanad-ent__go { transform: scaleX(-1); }
+[dir="rtl"] .whatsapp-kit-ent__go { transform: scaleX(-1); }
 
-.sanad-ent-list {
+.whatsapp-kit-ent-list {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sanad-gap-sm);
+	gap: var(--whatsapp-kit-gap-sm);
 	&--card, &--compact { flex-direction: row; flex-wrap: wrap; }
 	&__item { min-inline-size: 0; }
-	&--row > .sanad-ent-list__item { inline-size: 100%; }
+	&--row > .whatsapp-kit-ent-list__item { inline-size: 100%; }
 }

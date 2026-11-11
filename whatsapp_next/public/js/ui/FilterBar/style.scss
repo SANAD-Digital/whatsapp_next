@@ -3,18 +3,18 @@
 // when set, then a joined segmented period control at the inline-end. On a list it is the first
 // band of the list card, so it carries no margin of its own.
 
-.sanad-filterbar {
+.whatsapp-kit-filterbar {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sanad-gap-sm);
-	padding-block: var(--sanad-gap-sm);
+	gap: var(--whatsapp-kit-gap-sm);
+	padding-block: var(--whatsapp-kit-gap-sm);
 	padding-inline: 0;
-	margin-block-end: var(--sanad-gap-sm);
+	margin-block-end: var(--whatsapp-kit-gap-sm);
 	min-height: 32px; // reserved so the list does not jump while meta loads
 
 	&--list {
-		padding-inline: var(--sanad-gap-md);
-		border-block-end: var(--sanad-border);
+		padding-inline: var(--whatsapp-kit-gap-md);
+		border-block-end: var(--whatsapp-kit-border);
 	}
 	&__intro {
 		margin: 0;
@@ -25,7 +25,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 	}
 	// toolbar = a wrapping group of filters + a cluster that never leaves the first line
 	&__row--toolbar { flex-wrap: nowrap; align-items: flex-start; }
@@ -33,7 +33,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		flex: 1 1 auto;
 		min-width: 0;
 	}
@@ -50,7 +50,7 @@
 		max-width: 260px;
 		min-width: 0;
 		.frappe-control { margin: 0; }
-		.form-control { min-height: var(--sanad-ctl-h); font-size: var(--text-sm, 13px); }
+		.form-control { min-height: var(--whatsapp-kit-ctl-h); font-size: var(--text-sm, 13px); }
 	}
 	&__field--range { flex-basis: 200px; }
 	&__field--search {
@@ -60,14 +60,14 @@
 		flex: 1 1 140px;
 		min-width: 120px;
 		max-width: 320px;
-		.sanad-filterbar__search {
-			min-height: var(--sanad-ctl-h);
+		.whatsapp-kit-filterbar__search {
+			min-height: var(--whatsapp-kit-ctl-h);
 			padding-inline-start: 34px;
-			padding-inline-end: var(--sanad-cell-px);
-			border-radius: var(--sanad-radius);
+			padding-inline-end: var(--whatsapp-kit-cell-px);
+			border-radius: var(--whatsapp-kit-radius);
 			border: 1px solid var(--outline-gray-2);
 			font-size: var(--text-sm, 13px);
-			&:focus { border-color: var(--sanad-accent); box-shadow: none; }
+			&:focus { border-color: var(--whatsapp-kit-accent); box-shadow: none; }
 		}
 	}
 	// Desk's placeholder is `--ink-gray-3`, which Espresso 2 made near-black in dark mode
@@ -93,26 +93,26 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		min-height: var(--sanad-ctl-h);
+		min-height: var(--whatsapp-kit-ctl-h);
 		max-width: 220px;
-		padding-inline-start: var(--sanad-cell-px);
+		padding-inline-start: var(--whatsapp-kit-cell-px);
 		padding-inline-end: 10px;
 		border: 1px solid var(--outline-gray-2);
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-base);
 		color: var(--ink-gray-7);
 		font-size: var(--text-sm, 13px);
 		white-space: nowrap;
 		cursor: pointer;
-		transition: background var(--sanad-motion), border-color var(--sanad-motion), color var(--sanad-motion);
+		transition: background var(--whatsapp-kit-motion), border-color var(--whatsapp-kit-motion), color var(--whatsapp-kit-motion);
 		&:hover { background: var(--surface-gray-2); }
 		&[aria-expanded="true"] { background: var(--surface-gray-2); border-color: var(--outline-gray-3); }
 		&--active {
-			background: var(--sanad-accent-soft);
-			border-color: var(--sanad-accent-outline);
-			color: var(--sanad-accent-ink);
+			background: var(--whatsapp-kit-accent-soft);
+			border-color: var(--whatsapp-kit-accent-outline);
+			color: var(--whatsapp-kit-accent-ink);
 			font-weight: 600;
-			.sanad-filterbar__btn-label { color: var(--sanad-accent-ink); }
+			.whatsapp-kit-filterbar__btn-label { color: var(--whatsapp-kit-accent-ink); }
 		}
 	}
 	&__btn-label { color: var(--ink-gray-6); }
@@ -127,7 +127,7 @@
 	&__chevron {
 		display: inline-flex;
 		color: var(--ink-gray-5);
-		transition: transform var(--sanad-motion);
+		transition: transform var(--whatsapp-kit-motion);
 		.icon { width: 11px; height: 11px; }
 	}
 	&__btn[aria-expanded="true"] &__chevron { transform: rotate(180deg); }
@@ -139,50 +139,50 @@
 		inset-inline-start: 0;
 		z-index: 1030; // above the page, below Desk modals (1050)
 		min-width: 230px;
-		max-width: min(320px, calc(100vw - 2 * var(--sanad-gap-lg)));
+		max-width: min(320px, calc(100vw - 2 * var(--whatsapp-kit-gap-lg)));
 		max-height: 300px;
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
-		padding: var(--sanad-gap-xs);
+		padding: var(--whatsapp-kit-gap-xs);
 		background: var(--surface-base);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-radius);
 		box-shadow: var(--shadow-lg);
-		animation: sanad-pop var(--sanad-motion) ease-out;
+		animation: whatsapp-kit-pop var(--whatsapp-kit-motion) ease-out;
 	}
 	&__pop-head {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--sanad-gap-sm);
-		padding-inline: var(--sanad-gap-sm);
-		padding-block: var(--sanad-gap-xs);
+		gap: var(--whatsapp-kit-gap-sm);
+		padding-inline: var(--whatsapp-kit-gap-sm);
+		padding-block: var(--whatsapp-kit-gap-xs);
 	}
 	&__pop-title { font-size: var(--text-tiny, 11px); font-weight: 600; color: var(--ink-gray-6); text-transform: uppercase; letter-spacing: 0.02em; }
 	&__pop-close { min-width: 22px; min-height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
-	&__pop-search { margin-block-end: 2px; min-height: var(--sanad-ctl-h-sm); border-radius: var(--sanad-radius); }
+	&__pop-search { margin-block-end: 2px; min-height: var(--whatsapp-kit-ctl-h-sm); border-radius: var(--whatsapp-kit-radius); }
 	&__pop-list { flex: 1 1 auto; min-height: 32px; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
-	&__pop-empty { padding: var(--sanad-gap-sm); color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
+	&__pop-empty { padding: var(--whatsapp-kit-gap-sm); color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
 	&__opt {
 		display: flex;
 		align-items: center;
 		gap: 9px;
-		min-height: var(--sanad-ctl-h);
+		min-height: var(--whatsapp-kit-ctl-h);
 		margin: 0;
 		padding-inline: 9px;
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		font-size: var(--text-sm, 13px);
 		font-weight: 400;
 		color: var(--ink-gray-7);
 		cursor: pointer;
 		&:hover { background: var(--surface-gray-2); }
 		&:has(input:checked) { color: var(--ink-gray-9); font-weight: 600; }
-		input { width: 15px; height: 15px; margin: 0; flex: none; accent-color: var(--sanad-accent); }
+		input { width: 15px; height: 15px; margin: 0; flex: none; accent-color: var(--whatsapp-kit-accent); }
 	}
 	&__opt-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	&__pop-foot { display: flex; justify-content: flex-end; padding-block-start: 3px; border-block-start: var(--sanad-border); }
-	&__pop-clear { padding-inline: var(--sanad-gap-sm); }
+	&__pop-foot { display: flex; justify-content: flex-end; padding-block-start: 3px; border-block-start: var(--whatsapp-kit-border); }
+	&__pop-clear { padding-inline: var(--whatsapp-kit-gap-sm); }
 
 	// the inline-end cluster: period · Group by · Export · Desk's Filter popover
 	&__end {
@@ -195,12 +195,12 @@
 		// size (`__actions` is `flex: none`), so the squeeze lands on the date text, which elides.
 		flex: 0 1 auto;
 		min-width: 0;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		margin-inline-start: auto;
 		// …and only when there is one: a segmented period cannot elide, so a cluster without a date
 		// filter that shrank pushed its own icons past the screen's edge (the Numbers list at 1280)
 		// while the filters beside it never wrapped and never moved behind "More"
-		&:not(:has(.sanad-filterbar__datefilter)) { flex-shrink: 0; }
+		&:not(:has(.whatsapp-kit-filterbar__datefilter)) { flex-shrink: 0; }
 	}
 	// a flex box, so the date filter inside it can give way too — as a block it held its full width
 	// and pushed the cluster past the screen edge (owner, 2026-10-26)
@@ -211,14 +211,14 @@
 		flex: none;
 		display: inline-flex;
 		border: 1px solid var(--outline-gray-2);
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		overflow: hidden;
 		background: var(--surface-base);
 	}
 	&__period-btn {
 		appearance: none;
-		min-height: var(--sanad-ctl-h);
-		padding-inline: var(--sanad-cell-px);
+		min-height: var(--whatsapp-kit-ctl-h);
+		padding-inline: var(--whatsapp-kit-cell-px);
 		border: 0;
 		border-radius: 0;
 		border-inline-start: 1px solid var(--outline-gray-2);
@@ -228,12 +228,12 @@
 		font-weight: 600;
 		white-space: nowrap;
 		cursor: pointer;
-		transition: background var(--sanad-motion), color var(--sanad-motion);
+		transition: background var(--whatsapp-kit-motion), color var(--whatsapp-kit-motion);
 		&:first-child { border-inline-start: 0; }
 		&:hover { background: var(--surface-gray-2); }
 		&[aria-pressed="true"] {
-			background: var(--sanad-accent);
-			color: var(--sanad-accent-on);
+			background: var(--whatsapp-kit-accent);
+			color: var(--whatsapp-kit-accent-on);
 		}
 	}
 	&__period-short { display: none; }
@@ -255,14 +255,14 @@
 		height: 18px;
 		padding-inline: 5px;
 		border-radius: 999px;
-		background: var(--sanad-accent-soft);
-		color: var(--sanad-accent-ink);
+		background: var(--whatsapp-kit-accent-soft);
+		color: var(--whatsapp-kit-accent-ink);
 		font-size: var(--text-tiny, 11px);
 		font-weight: 700;
 		&:empty { display: none; }
 	}
 	&__pop--more { width: 280px; padding: 0; }
-	&__pop--more &__pop-head { padding: 8px 10px; border-block-end: var(--sanad-border); }
+	&__pop--more &__pop-head { padding: 8px 10px; border-block-end: var(--whatsapp-kit-border); }
 	&__more-list { padding: 2px 10px 8px; max-height: 60vh; overflow: auto; }
 	// the menu is a menu, not a column of bare icons: every row names what it does
 	&__pop--amore {
@@ -276,9 +276,9 @@
 	&__amore-item {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		padding-inline-end: 8px;
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		cursor: pointer;
 		&:hover { background: var(--surface-gray-2); }
 	}
@@ -300,11 +300,11 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 5px;
-		min-height: var(--sanad-ctl-h);
+		min-height: var(--whatsapp-kit-ctl-h);
 		max-width: 240px;
-		padding-inline: var(--sanad-cell-px) 6px;
-		border: 1px solid var(--sanad-accent-outline);
-		border-radius: var(--sanad-radius);
+		padding-inline: var(--whatsapp-kit-cell-px) 6px;
+		border: 1px solid var(--whatsapp-kit-accent-outline);
+		border-radius: var(--whatsapp-kit-radius);
 		font-size: var(--text-sm, 13px);
 	}
 	&__chipfilter-label { color: var(--ink-gray-6); flex: none; }
@@ -324,7 +324,7 @@
 		justify-content: center;
 		cursor: pointer;
 		.icon { width: 11px; height: 11px; }
-		&:hover { background: var(--sanad-accent-outline); }
+		&:hover { background: var(--whatsapp-kit-accent-outline); }
 	}
 
 	&__clear {
@@ -333,8 +333,8 @@
 		background: transparent;
 		cursor: pointer;
 		padding-inline: 10px;
-		min-height: var(--sanad-ctl-h-sm);
-		border-radius: var(--sanad-radius);
+		min-height: var(--whatsapp-kit-ctl-h-sm);
+		border-radius: var(--whatsapp-kit-radius);
 		color: var(--ink-red-8);
 		font-size: var(--text-xs, 12px);
 		font-weight: 600;
@@ -343,24 +343,24 @@
 
 	// Group by / Export / the native Filter popover — every one of them the same 32 px control, so
 	// the row reads as one toolbar rather than three button languages side by side.
-	&__actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--sanad-gap-sm); flex: none; }
+	&__actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--whatsapp-kit-gap-sm); flex: none; }
 	&__action--icon,
 	&__action--group {
-		width: var(--sanad-ctl-h);
+		width: var(--whatsapp-kit-ctl-h);
 		padding-inline: 0;
 		justify-content: center;
 		.icon { width: 15px; height: 15px; }
 	}
-	&__action--group .sanad-filterbar__btn-value { display: none; }
+	&__action--group .whatsapp-kit-filterbar__btn-value { display: none; }
 	&__action,
 	&__native .btn {
 		display: inline-flex;
 		align-items: center;
 		gap: 7px;
-		min-height: var(--sanad-ctl-h);
+		min-height: var(--whatsapp-kit-ctl-h);
 		padding-inline: 10px;
 		border: 1px solid var(--outline-gray-2);
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-base);
 		color: var(--ink-gray-7);
 		font-size: var(--text-sm, 13px);
@@ -377,20 +377,20 @@
 		.btn-group { gap: 0; }
 		.btn-group > .btn:first-child { border-start-end-radius: 0; border-end-end-radius: 0; }
 		.btn-group > .btn:last-child { border-start-start-radius: 0; border-end-start-radius: 0; border-inline-start-width: 0; }
-		.filter-button { width: var(--sanad-ctl-h); padding-inline: 0; justify-content: center; }
+		.filter-button { width: var(--whatsapp-kit-ctl-h); padding-inline: 0; justify-content: center; }
 		.filter-button .button-icon { margin: 0; }
 		// "Clear filters" in this same row already does this
 		.filter-x-button { display: none; }
-		.btn-group > .btn:first-child { border-radius: var(--sanad-radius); }
+		.btn-group > .btn:first-child { border-radius: var(--whatsapp-kit-radius); }
 		.sort-selector { display: none; }
 	}
 	&__groupby:empty { display: none; }
 
 	// grouping levels popover
 	&__action--active {
-		background: var(--sanad-accent-soft);
-		border-color: var(--sanad-accent-outline);
-		color: var(--sanad-accent-ink);
+		background: var(--whatsapp-kit-accent-soft);
+		border-color: var(--whatsapp-kit-accent-outline);
+		color: var(--whatsapp-kit-accent-ink);
 	}
 	&__levels {
 		max-width: 150px;
@@ -401,7 +401,7 @@
 		font-weight: 600;
 		&:empty { display: none; }
 	}
-	&__dd--group .sanad-filterbar__action--group:has(.sanad-filterbar__levels:not(:empty)) {
+	&__dd--group .whatsapp-kit-filterbar__action--group:has(.whatsapp-kit-filterbar__levels:not(:empty)) {
 		width: auto;
 		padding-inline: 10px;
 		gap: 7px;
@@ -412,9 +412,9 @@
 	&__column {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-xs);
-		.sanad-filterbar__opt { flex: 1; min-width: 0; }
-		.sanad-filterbar__level-move { color: var(--ink-gray-6); &:hover { background: var(--surface-gray-2); } }
+		gap: var(--whatsapp-kit-gap-xs);
+		.whatsapp-kit-filterbar__opt { flex: 1; min-width: 0; }
+		.whatsapp-kit-filterbar__level-move { color: var(--ink-gray-6); &:hover { background: var(--surface-gray-2); } }
 	}
 	&__levels-clear {
 		appearance: none;
@@ -427,18 +427,18 @@
 		cursor: pointer;
 	}
 	&__levels-list { display: flex; flex-direction: column; gap: 2px; }
-	&__levels-add { padding-inline: var(--sanad-gap-sm); padding-block: var(--sanad-gap-xs) 2px; }
+	&__levels-add { padding-inline: var(--whatsapp-kit-gap-sm); padding-block: var(--whatsapp-kit-gap-xs) 2px; }
 	&__level {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		width: 100%;
-		min-height: var(--sanad-ctl-h);
+		min-height: var(--whatsapp-kit-ctl-h);
 		padding-inline: 9px;
 		border: 0;
-		border-radius: var(--sanad-radius);
-		background: var(--sanad-accent-soft);
-		color: var(--sanad-accent-ink);
+		border-radius: var(--whatsapp-kit-radius);
+		background: var(--whatsapp-kit-accent-soft);
+		color: var(--whatsapp-kit-accent-ink);
 		font-size: var(--text-sm, 13px);
 		font-weight: 600;
 		text-align: start;
@@ -458,8 +458,8 @@
 		width: 18px;
 		height: 18px;
 		border-radius: var(--radius-full, 999px);
-		background: var(--sanad-accent);
-		color: var(--sanad-accent-on);
+		background: var(--whatsapp-kit-accent);
+		color: var(--whatsapp-kit-accent-on);
 		font-size: var(--text-tiny, 11px);
 	}
 	&__level-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -479,7 +479,7 @@
 		align-items: center;
 		justify-content: center;
 		.icon { width: 11px; height: 11px; }
-		&:hover { background: var(--sanad-accent-outline); }
+		&:hover { background: var(--whatsapp-kit-accent-outline); }
 		&[disabled] { opacity: 0.35; cursor: default; }
 	}
 	&__level-plus { color: var(--ink-gray-5); font-size: var(--text-base, 14px); }
@@ -494,8 +494,8 @@
 		height: 18px;
 		padding-inline: 5px;
 		border-radius: var(--radius-full, 999px);
-		background: var(--sanad-accent);
-		color: var(--sanad-accent-on);
+		background: var(--whatsapp-kit-accent);
+		color: var(--whatsapp-kit-accent-on);
 		font-size: var(--text-tiny, 11px);
 		font-weight: 600;
 		&[hidden] { display: none; }
@@ -513,17 +513,17 @@
 		color: currentColor;
 		opacity: 0.75;
 		.icon { width: 11px; height: 11px; }
-		&:hover { background: var(--sanad-accent-outline); opacity: 1; }
+		&:hover { background: var(--whatsapp-kit-accent-outline); opacity: 1; }
 		&[hidden] { display: none; }
 	}
 }
 
-@keyframes sanad-pop {
+@keyframes whatsapp-kit-pop {
 	from { opacity: 0; transform: translateY(-4px); }
 	to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-	.sanad-filterbar__pop { animation: none; }
+	.whatsapp-kit-filterbar__pop { animation: none; }
 }
 
 // Under 768 px the prototype collapses the dropdowns behind one "Filters" button; until that
@@ -531,16 +531,16 @@
 // Phone layout. Two rows, nothing clipped: search on its own, then Filters · Group · period.
 // Export and Desk's Filter popover are desktop-only affordances and are dropped here.
 @media (max-width: 767px) {
-	.sanad-filterbar {
-		&--list { padding: var(--sanad-gap-md) 14px; gap: var(--sanad-gap-sm); }
+	.whatsapp-kit-filterbar {
+		&--list { padding: var(--whatsapp-kit-gap-md) 14px; gap: var(--whatsapp-kit-gap-sm); }
 		// one row: search · Filters · the date icon — the date filter used to take a row of its own
-		&__row--toolbar { flex-wrap: nowrap; gap: var(--sanad-gap-sm); align-items: center; }
+		&__row--toolbar { flex-wrap: nowrap; gap: var(--whatsapp-kit-gap-sm); align-items: center; }
 		// a segmented period does not fit beside search · Filters on a phone: it squeezed the
 		// search to a sliver and the Filters button slid under it. It takes the second row.
-		&__row--toolbar:has(.sanad-filterbar__period) {
+		&__row--toolbar:has(.whatsapp-kit-filterbar__period) {
 			flex-wrap: wrap;
-			> .sanad-filterbar__main { flex: 1 0 100%; }
-			> .sanad-filterbar__end { flex: 1 0 100%; }
+			> .whatsapp-kit-filterbar__main { flex: 1 0 100%; }
+			> .whatsapp-kit-filterbar__end { flex: 1 0 100%; }
 		}
 		&__main { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; }
 		&__field, &__field--range { flex: 1 0 100%; max-width: none; }
@@ -549,7 +549,7 @@
 		&__clear { display: none; }
 		// the Filters button takes only what it needs so the period never clips a label
 		&__mobile-toggle { display: inline-flex; flex: 0 0 auto; gap: 6px; }
-		&__end { margin-inline-start: 0; flex: none; flex-wrap: nowrap; gap: var(--sanad-gap-sm); }
+		&__end { margin-inline-start: 0; flex: none; flex-wrap: nowrap; gap: var(--whatsapp-kit-gap-sm); }
 		&__period { flex: 1 1 auto; min-width: 0; }
 		&__period-btn { flex: 1 1 0; min-width: 0; padding-inline: 6px; font-size: var(--text-xs, 12px); }
 		&__period-long { display: none; }
@@ -557,24 +557,24 @@
 		&__actions { flex: none; }
 		&__action--icon, &__native, &__dd--columns { display: none; }
 		&__levels { display: none; }
-		&__pop { max-width: calc(100vw - 2 * var(--sanad-gap-md)); }
+		&__pop { max-width: calc(100vw - 2 * var(--whatsapp-kit-gap-md)); }
 	}
 }
 
 // Desk's filter row is replaced by this toolbar on every kit list, phones included
-.sanad-hide-page-form > .page-head .page-form,
-.sanad-hide-page-form .page-head .standard-filter-section,
-.sanad-hide-page-form .page-head .filter-toggle { display: none !important; }
+.whatsapp-kit-hide-page-form > .page-head .page-form,
+.whatsapp-kit-hide-page-form .page-head .standard-filter-section,
+.whatsapp-kit-hide-page-form .page-head .filter-toggle { display: none !important; }
 
-// the phone filter sheet (a kit dialog, so `.sanad-sheet` already makes it full height):
+// the phone filter sheet (a kit dialog, so `.whatsapp-kit-sheet` already makes it full height):
 // one field per filter, each opening its own list in place
-.sanad-filter-sheet {
-	&__row { border-block-end: var(--sanad-border); }
+.whatsapp-kit-filter-sheet {
+	&__row { border-block-end: var(--whatsapp-kit-border); }
 	&__trigger {
 		appearance: none;
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		width: 100%;
 		min-height: 44px;
 		padding-inline: 2px;
@@ -594,9 +594,9 @@
 		white-space: nowrap;
 		text-align: end;
 		color: var(--ink-gray-5);
-		&--set { color: var(--sanad-accent-ink); font-weight: 600; }
+		&--set { color: var(--whatsapp-kit-accent-ink); font-weight: 600; }
 	}
-	&__caret { display: inline-flex; flex: none; color: var(--ink-gray-5); transition: transform var(--sanad-motion); }
+	&__caret { display: inline-flex; flex: none; color: var(--ink-gray-5); transition: transform var(--whatsapp-kit-motion); }
 	&__trigger[aria-expanded="true"] &__caret { transform: rotate(180deg); }
 	&__list {
 		display: flex;
@@ -604,14 +604,14 @@
 		gap: 2px;
 		max-height: 45dvh;
 		overflow: auto;
-		padding-block-end: var(--sanad-gap-sm);
+		padding-block-end: var(--whatsapp-kit-gap-sm);
 		&[hidden] { display: none; }
 	}
 }
 
 // The option drawer: one filter's list, rising from the bottom of the screen where a thumb is.
 // It stops around half the screen and grows to 88 % as the list needs it, scrolling inside itself.
-.sanad-optsheet {
+.whatsapp-kit-optsheet {
 	position: fixed;
 	inset: 0;
 	z-index: 2000;
@@ -621,7 +621,7 @@
 	&__scrim {
 		position: absolute;
 		inset: 0;
-		// same scrim as every other kit overlay (`.sanad-backdrop`)
+		// same scrim as every other kit overlay (`.whatsapp-kit-backdrop`)
 		background: var(--surface-gray-10);
 		opacity: 0;
 		transition: opacity 180ms ease;
@@ -658,7 +658,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		padding: 6px 16px 10px;
 	}
 	&__title { font-size: var(--text-base, 14px); font-weight: 600; color: var(--ink-gray-9); }
@@ -667,7 +667,7 @@
 		border: 0;
 		background: transparent;
 		padding: 6px 4px;
-		color: var(--sanad-accent-ink);
+		color: var(--whatsapp-kit-accent-ink);
 		font-size: var(--text-sm, 13px);
 		font-weight: 600;
 		cursor: pointer;
@@ -684,10 +684,10 @@
 		-webkit-overflow-scrolling: touch;
 		padding: 0 8px 8px;
 		// a row a thumb can hit, not a desktop checkbox line
-		.sanad-filterbar__opt {
+		.whatsapp-kit-filterbar__opt {
 			min-height: 44px;
 			padding-inline: 8px;
-			border-radius: var(--sanad-radius);
+			border-radius: var(--whatsapp-kit-radius);
 			gap: 12px;
 			font-size: var(--text-sm, 13px);
 			&:active { background: var(--surface-gray-2); }
@@ -698,12 +698,12 @@
 		flex: none;
 		display: flex;
 		padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
-		border-block-start: var(--sanad-border);
+		border-block-start: var(--whatsapp-kit-border);
 		.btn { width: 100%; min-height: 44px; }
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.sanad-optsheet__panel,
-	.sanad-optsheet__scrim { transition: none; }
+	.whatsapp-kit-optsheet__panel,
+	.whatsapp-kit-optsheet__scrim { transition: none; }
 }

@@ -18,7 +18,7 @@ actions are options. Loading / empty / error states come from EmptyState.
 ```js
 frappe.ui.form.on("Sales Order", {
   refresh(frm) {
-    frm.items_table = new sanad.ui.PagedChildTable({
+    frm.items_table = new whatsapp.ui.PagedChildTable({
       frm,
       fieldname: "items",
       page_method: "orders.get_items_page",          // → {rows, total, counts?}; args {name, page, page_length, search, ...filters}
@@ -33,7 +33,7 @@ frappe.ui.form.on("Sales Order", {
 });
 
 // A method with different argument names: adapt with `args(state)`
-new sanad.ui.PagedChildTable({ frm, fieldname: "members", page_method: "picker.get_group_members",
+new whatsapp.ui.PagedChildTable({ frm, fieldname: "members", page_method: "picker.get_group_members",
   args: (s) => ({ group: frm.doc.name, page: s.page, page_length: s.page_length }) });
 ```
 
@@ -70,9 +70,9 @@ status / source type, "Add recipients" / "Remove recipients" through ContactPick
   active); errors carry a Retry action.
 - A disabled toolbar action shows its reason as visible text (`hint`, linked with
   `aria-describedby`) instead of a hover-only `title`.
-- Filter chips are the shared `.sanad-chip` toggle buttons (`aria-pressed`, ≥ 32 px); more than
+- Filter chips are the shared `.whatsapp-kit-chip` toggle buttons (`aria-pressed`, ≥ 32 px); more than
   eight options fall back to a native select; search is debounced (300 ms).
-- The table is the shared `.sanad-table` inside a focusable `.sanad-table-wrap` (horizontal scroll
+- The table is the shared `.whatsapp-kit-table` inside a focusable `.whatsapp-kit-table-wrap` (horizontal scroll
   on phones, no page scroll); the pager buttons keep only their icons under 768 px but retain
   `aria-label`. Focus ring from the kit's global rule.
 - Unsaved documents show "Save the document first" instead of a dead toolbar.

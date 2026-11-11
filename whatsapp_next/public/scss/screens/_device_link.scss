@@ -2,7 +2,7 @@
 // its name — the same in every list, table and drawer. The dot carries a tooltip and the state is
 // also in words for a screen reader, so the colour is never the only signal (WCAG 1.4.1).
 
-.wa-devlink {
+.whatsapp-devlink {
 	display: inline-flex;
 	align-items: center;
 	gap: 7px;
@@ -12,15 +12,15 @@
 	text-decoration: none;
 	vertical-align: middle;
 
-	&:hover .wa-devlink__name { color: var(--wa-pri-d); text-decoration: underline; text-underline-offset: 2px; }
+	&:hover .whatsapp-devlink__name { color: var(--whatsapp-pri-d); text-decoration: underline; text-underline-offset: 2px; }
 
 	&__dot {
 		inline-size: 8px;
 		block-size: 8px;
 		flex: none;
 		border-radius: 50%;
-		background: var(--wa-ink-4);
-		box-shadow: 0 0 0 3px color-mix(in srgb, var(--wa-ink-4) 18%, transparent);
+		background: var(--whatsapp-ink-4);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--whatsapp-ink-4) 18%, transparent);
 	}
 	&__name {
 		min-inline-size: 0;
@@ -29,8 +29,8 @@
 		white-space: nowrap;
 	}
 
-	&[data-tone="green"] &__dot { background: var(--wa-ok); box-shadow: 0 0 0 3px var(--wa-ok-s); }
-	&[data-tone="blue"] &__dot { background: var(--wa-nf); box-shadow: 0 0 0 3px var(--wa-nf-s); }
-	&[data-tone="amber"] &__dot { background: var(--wa-wn); box-shadow: 0 0 0 3px var(--wa-wn-s); }
-	&[data-tone="red"] &__dot { background: var(--wa-dg); box-shadow: 0 0 0 3px var(--wa-dg-s); }
+	&[data-tone="green"] &__dot { background: var(--whatsapp-ok); box-shadow: 0 0 0 3px var(--whatsapp-ok-s); }
+	&[data-tone="blue"] &__dot { background: var(--whatsapp-nf); box-shadow: 0 0 0 3px var(--whatsapp-nf-s); }
+	&[data-tone="amber"] &__dot { background: var(--whatsapp-wn); box-shadow: 0 0 0 3px var(--whatsapp-wn-s); }
+	&[data-tone="red"] &__dot { background: var(--whatsapp-dg); box-shadow: 0 0 0 3px var(--whatsapp-dg-s); }
 }

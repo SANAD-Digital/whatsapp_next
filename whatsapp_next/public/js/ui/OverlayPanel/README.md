@@ -12,15 +12,15 @@ The fields are the prototype's own — `text`, `number`, `email`, `textarea`, `s
 `toggle`, `readonly`, `link` (the prototype's autocomplete: the typed text is looked up on the
 server and only a listed record can be chosen), `rows` (a child table whose rows are `select` and
 `link` controls with a remove, and an add button), `list` (a bordered read-mostly table with an
-add row), `choice` (a searchable grid of options), `phone` (the kit's `PhoneField`) and `html` — drawn with the kit's controls (`wa-input`, `wa-select`,
-`wa-seg`, `wa-toggle`, `wa-btn`, `wa-badge`). Values are tracked against the initial ones, so the
+add row), `choice` (a searchable grid of options), `phone` (the kit's `PhoneField`) and `html` — drawn with the kit's controls (`whatsapp-input`, `whatsapp-select`,
+`whatsapp-seg`, `whatsapp-toggle`, `whatsapp-btn`, `whatsapp-badge`). Values are tracked against the initial ones, so the
 header says when something changed and an action with `requires_dirty` sleeps until then.
 
 ## Usage
 
 ```js
 // an edit modal
-const panel = new sanad.ui.OverlayPanel({
+const panel = new whatsapp.ui.OverlayPanel({
   type: "modal", width: "600px",
   title: __("Edit «{0}»", [doc.full_name]), subtitle: doc.name, subtitle_mono: true,
   badge: { text: __("Linked"), tone: "ok" },
@@ -31,26 +31,26 @@ const panel = new sanad.ui.OverlayPanel({
       { key: "email_id", label: __("Email"), type: "email", mono: true },
       { key: "phone", label: __("WhatsApp number"), type: "phone", required: true, value: "+9665…" },
       { key: "company_name", label: __("Company"), type: "link", value: doc.company_name, display: doc.company_name,
-        search: (txt) => sanad.ui.call("contacts.search_company", { txt }).then((rows) => rows.map((r) => ({ value: r.name, label: r.title }))) },
+        search: (txt) => whatsapp.ui.call("contacts.search_company", { txt }).then((rows) => rows.map((r) => ({ value: r.name, label: r.title }))) },
       { key: "links", type: "rows", span: 2, value: rows, add_label: __("Add an account"),
         columns: [
           { key: "link_doctype", label: __("Account type"), type: "select", width: "150px", resets: ["link_name"],
             options: [{ value: "Customer", label: __("Customer") }] },
           { key: "link_name", label: __("Account"), type: "link",
-            search: (txt, row) => sanad.ui.call("contacts.search_party", { party_type: row.link_doctype, txt }) },
+            search: (txt, row) => whatsapp.ui.call("contacts.search_party", { party_type: row.link_doctype, txt }) },
         ] },
-      { key: "status", label: __("Status"), type: "readonly", html: sanad.kit.badge(__("Blocked"), "danger"), hint: __("Changed with the Block action.") },
+      { key: "status", label: __("Status"), type: "readonly", html: whatsapp.kit.badge(__("Blocked"), "danger"), hint: __("Changed with the Block action.") },
     ],
   }],
   actions: [
     { key: "cancel", label: __("Cancel"), close: true },
     { key: "save", label: __("Save"), variant: "primary", requires_dirty: true,
-      handler: (values, p) => sanad.ui.call("contacts.update_contact", { name: doc.name, payload: values }, { silent: true }) },
+      handler: (values, p) => whatsapp.ui.call("contacts.update_contact", { name: doc.name, payload: values }, { silent: true }) },
   ],
 }).show();
 
 // a record's detail as a drawer
-sanad.ui.OverlayPanel.open({
+whatsapp.ui.OverlayPanel.open({
   type: "drawer", width: "520px", title: doc.full_name, subtitle: doc.phone, subtitle_mono: true,
   badge: { text: __("Not linked"), tone: "warn" },
   detail: {
@@ -82,7 +82,7 @@ Methods: `show()`, `hide()`, `destroy()`, `get_values()`, `get_value(key)`, `set
 text)`, `clear_error(key)`, `show_error(err)`, `is_dirty()`, `mark_clean()`, `set_badge(badge)`,
 `set_title(title, subtitle)`, `set_action_disabled(key, bool)`; static `open(opts)`.
 
-`sanad.ui.OverlayPanel.link_input($host, {value, display, search(txt), on_pick(item)})` draws the
+`whatsapp.ui.OverlayPanel.link_input($host, {value, display, search(txt), on_pick(item)})` draws the
 same link field outside a panel, for a screen that lays out its own rows (the settings window).
 
 ## Live use
@@ -94,7 +94,7 @@ before install / update (`detail` with facts and blocks, the verb disabled while
 and the settings editor (fields typed from the function's own setting rows, `requires_dirty` save).
 
 ## Design gate
-- One overlay at a time through `sanad.ui.overlay`; `role="dialog"` + `aria-modal`, labelled by
+- One overlay at a time through `whatsapp.ui.overlay`; `role="dialog"` + `aria-modal`, labelled by
   the title; focus trapped, Escape closes, focus returns to the opener; the opening is announced.
 - Required fields fail with a focusable summary (`role="alert"`) whose entries are links that focus
   the field, and each field carries its own error with `aria-invalid` / `aria-describedby`; a

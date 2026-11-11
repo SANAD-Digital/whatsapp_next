@@ -24,10 +24,10 @@ progress, for tasks), a **file** with its type, size and actions. `generic` is t
 ### Values
 
 ```js
-sanad.ui.Render.value(doc.amount, df, doc, { density: "card" });   // 1,250.00 ر.س, tabular, LTR
-sanad.ui.Render.value(doc.percent_complete, df, doc, { variant: "progress" }); // bar + number
-sanad.ui.Render.value(doc.is_active, df, doc);                     // "Yes" badge, never a checkbox
-sanad.ui.Render.value(doc.modified, df, doc, { variant: "relative" }); // "3 days ago"
+whatsapp.ui.Render.value(doc.amount, df, doc, { density: "card" });   // 1,250.00 ر.س, tabular, LTR
+whatsapp.ui.Render.value(doc.percent_complete, df, doc, { variant: "progress" }); // bar + number
+whatsapp.ui.Render.value(doc.is_active, df, doc);                     // "Yes" badge, never a checkbox
+whatsapp.ui.Render.value(doc.modified, df, doc, { variant: "relative" }); // "3 days ago"
 ```
 
 One renderer per fieldtype, each `(value, df, doc, opts) => html`, with `opts.density` and
@@ -40,28 +40,28 @@ options. Anything else falls back to `frappe.format`.
 Add or replace one:
 
 ```js
-sanad.ui.Render.field("Currency", (value, df, doc, o) => `…`);
+whatsapp.ui.Render.field("Currency", (value, df, doc, o) => `…`);
 ```
 
 ### Records
 
 ```js
 // HTML only
-$cell.html(sanad.ui.Render.entity(doc, { doctype: "Contact", density: "inline" }));
+$cell.html(whatsapp.ui.Render.entity(doc, { doctype: "Contact", density: "inline" }));
 
 // Rendered and wired (quick actions, row click)
-sanad.ui.Render.mount($el, doc, {
+whatsapp.ui.Render.mount($el, doc, {
   doctype: "Contact",
   density: "row",
   actions: [{ icon: "es-line-call", label: __("Call"), on_click: (d) => … }],
-  on_click: (d) => sanad.ui.Drawer.open({ doctype: "Contact", name: d.name }),
+  on_click: (d) => whatsapp.ui.Drawer.open({ doctype: "Contact", name: d.name }),
 });
 
 // A link you only have the name of: fetch the fields its view model needs, then render
-sanad.ui.Render.load_into($el, "Contact", doc.contact, { density: "row" });
+whatsapp.ui.Render.load_into($el, "Contact", doc.contact, { density: "row" });
 
 // Many at once
-sanad.ui.Render.list($el, rows, { doctype: "Contact", density: "compact" });
+whatsapp.ui.Render.list($el, rows, { doctype: "Contact", density: "compact" });
 ```
 
 ## Configuration — three levels
@@ -73,7 +73,7 @@ sanad.ui.Render.list($el, rows, { doctype: "Contact", density: "compact" });
    it reads one, so the same value is not repeated elsewhere):
 
    ```js
-   sanad.ui.Render.profile("WhatsApp Log", {
+   whatsapp.ui.Render.profile("WhatsApp Log", {
      icon: "es-line-chat",
      title: { field: "display_name", value: (doc) => doc.display_name || doc.phone_e164 },
      lines: [{ field: "phone_e164", ltr: true, icon: "es-line-call" }],
@@ -89,14 +89,14 @@ sanad.ui.Render.list($el, rows, { doctype: "Contact", density: "compact" });
 3. **A renderer** — take over one kind at one density:
 
    ```js
-   sanad.ui.Render.register("person", { card(vm) { return `…`; } });
-   sanad.ui.Render.map({ "WhatsApp Number": "person" });
+   whatsapp.ui.Render.register("person", { card(vm) { return `…`; } });
+   whatsapp.ui.Render.map({ "WhatsApp Number": "person" });
    ```
 
 All three can come from the host app in one call, next to its API map:
 
 ```js
-sanad.ui.configure({
+whatsapp.ui.configure({
   api,
   renderers: { doctypes: {...}, profiles: {...}, kinds: {...}, fields: {...} },
 });
@@ -104,7 +104,7 @@ sanad.ui.configure({
 
 ## Pieces
 
-`sanad.ui.Render.parts` exports the blocks renderers are assembled from — `avatar`, `thumb`,
+`whatsapp.ui.Render.parts` exports the blocks renderers are assembled from — `avatar`, `thumb`,
 `chip`, `chips`, `fact`, `progress`, `stars`, `dl`, `code`, `actions`, `bind_actions` — so a custom
 renderer or a page can build the same shapes instead of inventing new ones.
 

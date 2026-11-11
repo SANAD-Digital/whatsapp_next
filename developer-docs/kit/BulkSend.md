@@ -1,18 +1,18 @@
-# `sanad.ui.BulkSend`
+# `whatsapp.ui.BulkSend`
 
 The "Send a bulk message" window: a full-height modal with a header (title, subtitle, close) over
 two panes. **Recipients** — Groups · Contacts · Numbers segments with counts, a search, selectable
 rows, a numbers box, and a footer with "Selected N", "Show the selected" and "Remove all".
 **The message** — a header saying who it goes to with a "Send settings" pill (template, device,
 rate, timing), the first recipient as the preview identity, the message bubble, a composer with a
-"+" that opens `sanad.ui.AttachMenu`, and an estimates bar with the send pill. Sending asks through
-`sanad.ui.ConfirmDialog` with the facts of the send. The constructor opens the window immediately.
+"+" that opens `whatsapp.ui.AttachMenu`, and an estimates bar with the send pill. Sending asks through
+`whatsapp.ui.ConfirmDialog` with the facts of the send. The constructor opens the window immediately.
 
 **Portability:** the data source is passed in as functions, so the component makes no server calls
 of its own; but the shapes it expects (`load`, `estimate`, `send` payload/result) mirror this app's
-`bulk_send.*` API, and the stylesheet uses the app's `--wa-*` palette tokens from
+`bulk_send.*` API, and the stylesheet uses the app's `--whatsapp-*` palette tokens from
 `public/scss/_tokens.scss`, which live outside the kit. It reuses `CommandEditor`'s layer/modal
-classes (`sanad-ce-*`), so that stylesheet must load too (the kit's `style.scss` imports both).
+classes (`whatsapp-kit-ce-*`), so that stylesheet must load too (the kit's `style.scss` imports both).
 
 ## Options
 
@@ -51,7 +51,7 @@ scheduled_at ("YYYY-MM-DD HH:mm" or null)}`.
 - `on_sent(result)`, `on_templates()`, `on_close()` as above.
 - No custom DOM events; no realtime subscriptions. All clicks are delegated through `data-act`
   attributes on the root; inputs through `data-in` / `data-ch`.
-- Registers itself with `sanad.ui.overlay.open/close` when available.
+- Registers itself with `whatsapp.ui.overlay.open/close` when available.
 
 ## Server calls
 
@@ -62,8 +62,8 @@ None directly — everything goes through the host's `load`, `estimate`, `search
 ## Usage
 
 ```js
-const call = (m, args) => sanad.ui.call(`bulk_send.${m}`, args);
-new sanad.ui.BulkSend({
+const call = (m, args) => whatsapp.ui.call(`bulk_send.${m}`, args);
+new whatsapp.ui.BulkSend({
   load: () => call("get_context"),
   estimate: (sel) => call("estimate", sel),
   search_contacts: (txt) => call("search_contacts", { txt }),
@@ -76,9 +76,9 @@ new sanad.ui.BulkSend({
 
 ## CSS hooks
 
-- Layer/modal: `.sanad-kit.sanad-ce-layer.sanad-bs-layer` > `.sanad-ce-backdrop` +
-  `.sanad-ce.sanad-bs[role=dialog]`; `body.sanad-ce-open` while any layer is open.
-- Header: `.sanad-bs__top`, `__title`, `__subtitle`; body `__body`, `__grid`.
+- Layer/modal: `.whatsapp-kit.whatsapp-kit-ce-layer.whatsapp-kit-bs-layer` > `.whatsapp-kit-ce-backdrop` +
+  `.whatsapp-kit-ce.whatsapp-kit-bs[role=dialog]`; `body.whatsapp-kit-ce-open` while any layer is open.
+- Header: `.whatsapp-kit-bs__top`, `__title`, `__subtitle`; body `__body`, `__grid`.
 - Recipients: `__list-pane`, `__list-head`, `__segs` (`--sm`), `__seg` (`.is-sel`), `__seg-n`,
   `__search`, `__list`, `__row` (`.is-on`), `__avatar` (`--nf`, `--q`, `.is-on`), `__row-name`,
   `__row-sub`, `__badge--{wn|muted|pri|nf}`, `__mark` (`.is-on`, `.is-rm`), `__none`, `__manual`,

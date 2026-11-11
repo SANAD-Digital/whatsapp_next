@@ -6,7 +6,7 @@
 frappe.provide("whatsapp_next.campaign");
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const C = whatsapp_next.campaign;
 	const K = whatsapp_next.campaigns;
 	const esc = C.esc;
@@ -38,26 +38,26 @@ frappe.provide("whatsapp_next.campaign");
 			const cells = this.metrics()
 				.map(
 					(m) => `
-					<div class="wa-cb__metric${m.muted ? " wa-cb__metric--muted" : ""}">
-						<span class="wa-cb__metric-text">
-							<span class="wa-cb__metric-label">${esc(m.label)}</span>
-							<span class="wa-cb__metric-value">${esc(m.value)}</span>
+					<div class="whatsapp-cb__metric${m.muted ? " whatsapp-cb__metric--muted" : ""}">
+						<span class="whatsapp-cb__metric-text">
+							<span class="whatsapp-cb__metric-label">${esc(m.label)}</span>
+							<span class="whatsapp-cb__metric-value">${esc(m.value)}</span>
 						</span>
-						<span class="wa-cb__metric-icon" aria-hidden="true">${ui.ico(m.icon, "sm")}</span>
+						<span class="whatsapp-cb__metric-icon" aria-hidden="true">${ui.ico(m.icon, "sm")}</span>
 					</div>`
 				)
 				.join("");
 
 			this.$wrapper.html(`
-				<header class="wa-cb__header">
-					<div class="wa-cb__identity">
-						<div class="wa-cb__identity-line">
-							<h2 class="wa-cb__kicker">${esc(__("WhatsApp Campaign"))}</h2>
+				<header class="whatsapp-cb__header">
+					<div class="whatsapp-cb__identity">
+						<div class="whatsapp-cb__identity-line">
+							<h2 class="whatsapp-cb__kicker">${esc(__("WhatsApp Campaign"))}</h2>
 							${ui.badge(__(doc.status, null, "campaign"), tone)}
 						</div>
-						<p class="wa-cb__name" dir="auto">${esc(doc.campaign_name || doc.name || __("New campaign"))}</p>
+						<p class="whatsapp-cb__name" dir="auto">${esc(doc.campaign_name || doc.name || __("New campaign"))}</p>
 					</div>
-					<div class="wa-cb__metrics">${cells}</div>
+					<div class="whatsapp-cb__metrics">${cells}</div>
 				</header>`);
 			return this;
 		}

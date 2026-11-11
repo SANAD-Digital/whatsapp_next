@@ -48,7 +48,7 @@ def send_now(name: str, reference_name: str) -> dict[str, Any]:
 	}
 
 
-# ---- the editor window (`sanad.ui.NotificationEditor`) --------------------------------------
+# ---- the editor window (`whatsapp.ui.NotificationEditor`) --------------------------------------
 
 
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))

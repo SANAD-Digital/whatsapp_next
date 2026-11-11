@@ -5,14 +5,14 @@ columns is the point — accounting entries), a **list** (dense scanning), **car
 or a value matters), a **gallery** (images) or a **timeline** (when *when* is the information —
 activity history). `Collection` owns that choice: it renders one of those views, offers the switch
 between the ones you allow, remembers the reader's pick, and hands every row to
-[`sanad.ui.Render`](../Render/README.md) so a person, an item or a document looks the same here as
+[`whatsapp.ui.Render`](../Render/README.md) so a person, an item or a document looks the same here as
 in a drawer.
 
 ## Usage
 
 ```js
 // A child table read as rows, with a total under it
-new sanad.ui.Collection({
+new whatsapp.ui.Collection({
   wrapper: $el,
   doctype: "Sales Invoice Item",
   rows: doc.items,
@@ -24,18 +24,18 @@ new sanad.ui.Collection({
 });
 
 // Loaded from the server, click opens the record
-new sanad.ui.Collection({
+new whatsapp.ui.Collection({
   wrapper: $el,
   doctype: "Contact",
-  fetch: () => sanad.ui.call("contacts.list_contacts", { group }),
+  fetch: () => whatsapp.ui.call("contacts.list_contacts", { group }),
   views: ["list", "cards"],
   settings_key: "group-members",
-  on_click: (doc) => sanad.ui.Drawer.open({ doctype: "Contact", name: doc.name }),
+  on_click: (doc) => whatsapp.ui.Drawer.open({ doctype: "Contact", name: doc.name }),
   actions: [{ icon: "es-line-call", label: __("Call"), href: (d) => `tel:${d.mobile_no}` }],
 });
 
 // Activity history
-new sanad.ui.Collection({
+new whatsapp.ui.Collection({
   wrapper: $el,
   rows: events,
   views: ["timeline"],

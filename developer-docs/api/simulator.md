@@ -103,7 +103,7 @@ A failure inside a command function is reported in `error` and `command_status: 
 isn't raised.
 
 ```js
-const r = await sanad.ui.call("simulator.simulate_inbound", {
+const r = await whatsapp.ui.call("simulator.simulate_inbound", {
   device: "WA-DEV-001", sender_phone: "+966501234567", text: "balance",
 });
 ```
@@ -183,7 +183,7 @@ first reply that has a body.
 "Message text is required".
 
 ```js
-const r = await sanad.ui.call("simulator.dry_run_command", { text: "balance", sender_phone: "0501234567" });
+const r = await whatsapp.ui.call("simulator.dry_run_command", { text: "balance", sender_phone: "0501234567" });
 ```
 
 ---
@@ -217,7 +217,7 @@ back to `last_seen`. `total` counts every match, not only the rows returned.
 **Errors:** `WAValidationError` (417) for a non-integer `limit`.
 
 ```js
-const list = await sanad.ui.call("simulator.list_conversations", { txt: "ali" });
+const list = await whatsapp.ui.call("simulator.list_conversations", { txt: "ali" });
 ```
 
 ---

@@ -1,16 +1,16 @@
-.sanad-quicksend {
+.whatsapp-kit-quicksend {
 	&__recipient {
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: var(--sanad-gap-md);
+		gap: var(--whatsapp-kit-gap-md);
 		min-height: 36px; // reserved while the context loads
-		padding-block: var(--sanad-gap-sm);
-		padding-inline: var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
+		padding-block: var(--whatsapp-kit-gap-sm);
+		padding-inline: var(--whatsapp-kit-gap-md);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-gray-1);
-		margin-block-end: var(--sanad-gap-sm);
+		margin-block-end: var(--whatsapp-kit-gap-sm);
 		&--empty { color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
 	}
 	&__avatar {
@@ -21,24 +21,24 @@
 		height: 28px;
 		border-radius: 50%;
 		background: var(--surface-base);
-		border: var(--sanad-border);
+		border: var(--whatsapp-kit-border);
 		color: var(--ink-gray-6);
 		flex: none;
 	}
 	&__who { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
 	&__name { font-weight: 600; color: var(--ink-gray-9); overflow-wrap: anywhere; }
 	&__phone { color: var(--ink-gray-6); font-size: var(--text-sm, 13px); direction: ltr; unicode-bidi: isolate; }
-	&__badges { display: inline-flex; gap: var(--sanad-gap-xs); flex-wrap: wrap; }
+	&__badges { display: inline-flex; gap: var(--whatsapp-kit-gap-xs); flex-wrap: wrap; }
 
-	&__preview { margin-block-start: var(--sanad-gap-xs); min-height: 44px; }
-	&__preview-label { font-size: var(--text-xs, 12px); font-weight: 600; color: var(--ink-gray-6); margin-block-end: var(--sanad-gap-xs); }
+	&__preview { margin-block-start: var(--whatsapp-kit-gap-xs); min-height: 44px; }
+	&__preview-label { font-size: var(--text-xs, 12px); font-weight: 600; color: var(--ink-gray-6); margin-block-end: var(--whatsapp-kit-gap-xs); }
 	&__bubble {
 		display: inline-block;
 		max-width: 100%;
-		padding-block: var(--sanad-gap-sm);
-		padding-inline: var(--sanad-gap-md);
+		padding-block: var(--whatsapp-kit-gap-sm);
+		padding-inline: var(--whatsapp-kit-gap-md);
 		border: 1px solid var(--outline-green-3);
-		border-radius: var(--sanad-radius-lg);
+		border-radius: var(--whatsapp-kit-radius-lg);
 		border-start-start-radius: 4px;
 		background: var(--surface-green-1);
 		color: var(--ink-gray-9);
@@ -48,12 +48,12 @@
 	}
 
 	&__error {
-		margin-block-start: var(--sanad-gap-xs);
+		margin-block-start: var(--whatsapp-kit-gap-xs);
 		color: var(--ink-red-8);
 		font-size: var(--text-sm, 13px);
 	}
 	&__field--invalid .form-control { border-color: var(--outline-red-3); }
-	&__fix { margin-inline-start: var(--sanad-gap-sm); }
+	&__fix { margin-inline-start: var(--whatsapp-kit-gap-sm); }
 	.modal-footer .custom-actions { margin-inline-end: auto; }
 	&__simulator { color: var(--ink-blue-7); }
 }

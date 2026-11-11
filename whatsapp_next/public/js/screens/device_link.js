@@ -1,5 +1,5 @@
 // How a WhatsApp Device reads wherever it is linked — every list, table and drawer: a dot in the
-// device's state colour and its name, nothing else (`sanad.ui.link_renderers`). The state is not on
+// device's state colour and its name, nothing else (`whatsapp.ui.link_renderers`). The state is not on
 // the row that links to it, so the devices are read once (a handful of rows) and kept; a dot drawn
 // before they arrive is grey and takes its colour as soon as they do, and `wa:device:status`
 // recolours every dot on the page when a device connects or drops.
@@ -37,14 +37,14 @@ frappe.provide("whatsapp_next.device_link");
 
 	/** Recolour every device dot on the page from what is known now. */
 	function paint(only) {
-		document.querySelectorAll(only ? `.wa-devlink[data-device="${CSS.escape(only)}"]` : ".wa-devlink[data-device]").forEach((el) => {
+		document.querySelectorAll(only ? `.whatsapp-devlink[data-device="${CSS.escape(only)}"]` : ".whatsapp-devlink[data-device]").forEach((el) => {
 			const row = state.rows && state.rows[el.dataset.device];
 			if (!row) return;
 			const l = look(row.status);
 			el.dataset.tone = l.tone;
-			const dot = el.querySelector(".wa-devlink__dot");
+			const dot = el.querySelector(".whatsapp-devlink__dot");
 			if (dot) dot.title = l.label();
-			const sr = el.querySelector(".wa-devlink__state");
+			const sr = el.querySelector(".whatsapp-devlink__state");
 			if (sr) sr.textContent = l.label();
 		});
 	}
@@ -56,7 +56,7 @@ frappe.provide("whatsapp_next.device_link");
 		const l = look(row && row.status);
 		// Desk hands the device's title when it fetched it; otherwise the known name, else the ID
 		const label = display && display !== name ? display : (row && row.device_name) || name;
-		return `<a class="wa-devlink" href="${esc(frappe.utils.get_form_link(DOCTYPE, name))}" data-device="${esc(name)}" data-tone="${row ? l.tone : "gray"}" title="${esc(label)}"><span class="wa-devlink__dot" aria-hidden="true" title="${esc(row ? l.label() : "")}"></span><span class="wa-devlink__name" dir="auto">${esc(label)}</span><span class="sr-only wa-devlink__state">${esc(row ? l.label() : "")}</span></a>`;
+		return `<a class="whatsapp-devlink" href="${esc(frappe.utils.get_form_link(DOCTYPE, name))}" data-device="${esc(name)}" data-tone="${row ? l.tone : "gray"}" title="${esc(label)}"><span class="whatsapp-devlink__dot" aria-hidden="true" title="${esc(row ? l.label() : "")}"></span><span class="whatsapp-devlink__name" dir="auto">${esc(label)}</span><span class="sr-only whatsapp-devlink__state">${esc(row ? l.label() : "")}</span></a>`;
 	}
 
 	whatsapp_next.device_link.html = html;
@@ -66,9 +66,9 @@ frappe.provide("whatsapp_next.device_link");
 	};
 
 	const register = () => {
-		if (!window.sanad || !sanad.ui) return;
-		sanad.ui.link_renderers = sanad.ui.link_renderers || {};
-		sanad.ui.link_renderers[DOCTYPE] = html;
+		if (!window.whatsapp || !whatsapp.ui) return;
+		whatsapp.ui.link_renderers = whatsapp.ui.link_renderers || {};
+		whatsapp.ui.link_renderers[DOCTYPE] = html;
 	};
 	register();
 	$(document).on("app_ready", register);

@@ -1,9 +1,9 @@
-# `sanad.ui.Collection`
+# `whatsapp.ui.Collection`
 
 Renders one set of records in the view that suits them — **table**, **list**, **cards**,
 **gallery** or **timeline** — with a segmented switch between the allowed views, the reader's
 choice remembered per `settings_key`, an optional footer total and "Show all" limit. Every row
-goes through `sanad.ui.Render` (entity / value / vm), so a record looks the same here as in a
+goes through `whatsapp.ui.Render` (entity / value / vm), so a record looks the same here as in a
 Drawer. Columns come from the DocType meta unless named. No server calls of its own; data is
 `rows` or a caller `fetch()`.
 
@@ -26,7 +26,7 @@ Drawer. Columns come from the DocType meta unless named. No server calls of its 
 | `on_click` | `(doc, event) => void` | — | Makes rows focusable/clickable (Enter/Space too); disables Render's own href. |
 | `profile` | object | — | Render profile override. |
 | `timeline` | `(doc) => TimelineRow` | identity | Maps a row for the timeline view. |
-| `settings_key` | string | — | localStorage key suffix (`sanad_collection_<key>`) for the chosen view. |
+| `settings_key` | string | — | localStorage key suffix (`whatsapp_collection_<key>`) for the chosen view. |
 | `limit` | number | — | Show first N rows plus a "Show all N" button. |
 | `gallery_max` | number | `8` | Gallery tiles; the last shows `+N`. |
 | `empty_title` / `empty_description` / `empty_action` | string / string / object | "Nothing to show" | Passed to EmptyState when there are no rows. |
@@ -56,7 +56,7 @@ None directly (the caller's `fetch` does its own).
 ## Usage
 
 ```js
-new sanad.ui.Collection({
+new whatsapp.ui.Collection({
   wrapper: $el,
   doctype: "Sales Invoice Item",
   rows: frm.doc.items,
@@ -67,7 +67,7 @@ new sanad.ui.Collection({
   title: __("Items"),
 });
 
-new sanad.ui.Collection({
+new whatsapp.ui.Collection({
   wrapper: $el, rows: events, views: ["timeline"],
   timeline: (e) => ({ title: e.text, time: e.at, tone: e.tone, icon: e.icon, user: e.by }),
 });
@@ -75,13 +75,13 @@ new sanad.ui.Collection({
 
 ## CSS hooks
 
-- Root `<section class="sanad-kit sanad-collection">` (labelled by the title id).
+- Root `<section class="whatsapp-kit whatsapp-kit-collection">` (labelled by the title id).
 - `__head`, `__heading`, `__icon`, `__title`, `__desc`, `__views`, `__body[data-view]`, `__list`,
   `__item`, `__grid`, `__cell`, `__gallery`, `__tile`, `__caption`, `__more`, `__clickable`,
   `__foot`, `__total`, `__total-label`, `__total-value`, `__total-note`, `__more-btn`, `__table`.
-- Table: `sanad-table-wrap`, `sanad-table`, `sanad-table__start|end`, cells carry `data-label`.
-- View switch: `sanad-seg` / `sanad-seg__btn[data-view]` (`role="tab"`, `aria-selected`).
-- Timeline: `sanad-timeline`, `__item`, `__rail`, `__dot` (+ `sanad-tone--*`), `__body`, `__head`,
+- Table: `whatsapp-kit-table-wrap`, `whatsapp-kit-table`, `whatsapp-kit-table__start|end`, cells carry `data-label`.
+- View switch: `whatsapp-kit-seg` / `whatsapp-kit-seg__btn[data-view]` (`role="tab"`, `aria-selected`).
+- Timeline: `whatsapp-kit-timeline`, `__item`, `__rail`, `__dot` (+ `whatsapp-kit-tone--*`), `__body`, `__head`,
   `__title`, `__time`, `__desc`, `__user`.
 
 ## Notes

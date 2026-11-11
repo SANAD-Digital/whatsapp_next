@@ -5,7 +5,7 @@
 // Last updated · View → the alert editor window, D-139). PageHeader / DataList are guarded with `typeof`.
 
 const DOCTYPE = "WhatsApp Notification Alert";
-const has_kit = (name) => typeof sanad.ui[name] === "function";
+const has_kit = (name) => typeof whatsapp.ui[name] === "function";
 
 // a row, "View" and "New alert" open the alert editor window (D-139); the form stays one click away in it
 function open_form(doc) {
@@ -50,7 +50,7 @@ const STATS = () => [
 			Promise.all([frappe.db.count(DOCTYPE), frappe.db.count(DOCTYPE, { filters: { content_type: "Report" } })]).then(
 				([total, reports]) => ({ value: total, reports })
 			),
-		sub: (value, raw) => sanad.ui.plural((raw && raw.reports) || 0, { one: __("{0} report alert"), other: __("{0} report alerts") }),
+		sub: (value, raw) => whatsapp.ui.plural((raw && raw.reports) || 0, { one: __("{0} report alert"), other: __("{0} report alerts") }),
 	},
 	{
 		key: "enabled",
@@ -61,7 +61,7 @@ const STATS = () => [
 			Promise.all([frappe.db.count(DOCTYPE, { filters: { enabled: 1 } }), frappe.db.count(DOCTYPE, { filters: { enabled: 0 } })]).then(
 				([on, off]) => ({ value: on, tone: "green", disabled: off })
 			),
-		sub: (value, raw) => sanad.ui.plural((raw && raw.disabled) || 0, { one: __("{0} disabled"), other: __("{0} disabled") }),
+		sub: (value, raw) => whatsapp.ui.plural((raw && raw.disabled) || 0, { one: __("{0} disabled"), other: __("{0} disabled") }),
 	},
 	{
 		key: "sent",
@@ -123,7 +123,7 @@ frappe.listview_settings[DOCTYPE] = {
 
 		const has_header = has_kit("PageHeader");
 		if (has_header) {
-			listview._sanad_header = new sanad.ui.PageHeader({
+			listview._whatsapp_header = new whatsapp.ui.PageHeader({
 				listview,
 				primary: { label: __("New alert"), icon: "es-line-add", perm: "create", handler: new_alert },
 				stats: STATS(),
@@ -131,7 +131,7 @@ frappe.listview_settings[DOCTYPE] = {
 		}
 
 		if (has_kit("FilterBar")) {
-			new sanad.ui.FilterBar({
+			new whatsapp.ui.FilterBar({
 				listview,
 				actions: ["group_by", "export"],
 				intro: has_header ? null : __("Reports and messages sent on a schedule from a chosen device."),
@@ -146,13 +146,13 @@ frappe.listview_settings[DOCTYPE] = {
 		}
 
 		if (has_kit("DataList")) {
-			listview._sanad_datalist = new sanad.ui.DataList({
+			listview._whatsapp_datalist = new whatsapp.ui.DataList({
 				listview,
 				columns: COLUMNS(can_write),
 				selectable: true,
 				page_length: 20,
 				on_row_click: open_form,
-				footer: { count: (total) => sanad.ui.plural(total, { one: __("{0} alert"), other: __("{0} alerts") }) },
+				footer: { count: (total) => whatsapp.ui.plural(total, { one: __("{0} alert"), other: __("{0} alerts") }) },
 				empty: {
 					title: __("No alerts yet"),
 					description: __("Send a report or a message on a schedule to a group of numbers."),
@@ -161,12 +161,12 @@ frappe.listview_settings[DOCTYPE] = {
 				mobile: "cards",
 			});
 		} else if (has_kit("RowActions")) {
-			new sanad.ui.RowActions({
+			new whatsapp.ui.RowActions({
 				listview,
 				actions: [
 					{ label: __("Enable"), icon: "es-line-success", condition: (doc) => can_write && !cint(doc.enabled), handler: (doc) => toggle_enabled(doc, listview) },
-					{ label: __("Disable"), icon: sanad.ui.icons.cancel, condition: (doc) => can_write && !!cint(doc.enabled), handler: (doc) => toggle_enabled(doc, listview) },
-					{ label: __("Open"), icon: sanad.ui.icons.open, handler: open_form },
+					{ label: __("Disable"), icon: whatsapp.ui.icons.cancel, condition: (doc) => can_write && !!cint(doc.enabled), handler: (doc) => toggle_enabled(doc, listview) },
+					{ label: __("Open"), icon: whatsapp.ui.icons.open, handler: open_form },
 				],
 				on_row_click: open_form,
 			});

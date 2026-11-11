@@ -15,7 +15,7 @@
 		const meta = frm.meta || {};
 		if (frm.is_new() || meta.issingle || meta.istable) return false;
 		if (meta.module === "WhatsApp Next") return false;
-		if (typeof sanad === "undefined" || !sanad.ui || typeof sanad.ui.QuickSend !== "function") return false;
+		if (typeof whatsapp === "undefined" || !whatsapp.ui || typeof whatsapp.ui.QuickSend !== "function") return false;
 		return frappe.user.has_role(AGENT_ROLES) && frappe.model.can_email(null, frm);
 	}
 
@@ -35,7 +35,7 @@
 			timeline.wa_send_button = timeline.add_action_button(
 				__("New WhatsApp message"),
 				() =>
-					new sanad.ui.QuickSend(
+					new whatsapp.ui.QuickSend(
 						Object.assign(recipient_of(timeline.frm.doc), {
 							reference_doctype: timeline.frm.doctype,
 							reference_name: timeline.frm.docname,

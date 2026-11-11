@@ -4,17 +4,17 @@
 // DataList columns exactly as the prototype (campaign + owner, status, edit chip, progress bar,
 // recipients, sent, success %, read, read %) with "View" → form, and BulkActions pause / resume /
 // cancel through `campaigns.*_many`. The status indicator here is the one colour source (read
-// elsewhere through `sanad.ui.indicator_for`). Until `sanad.ui.DataList` lands, the native rows
+// elsewhere through `whatsapp.ui.indicator_for`). Until `whatsapp.ui.DataList` lands, the native rows
 // keep their formatters and RowActions.
-// keep the list's own colour source (`sanad.ui.indicator_for`).
+// keep the list's own colour source (`whatsapp.ui.indicator_for`).
 
 // The campaign's own vocabulary — the funnel bar, the counters, the ETA sentence and the verbs —
 // is shared with the campaign form: `public/js/screens/campaigns.js`.
 const K = whatsapp_next.campaigns;
 const { metric, state_metric } = whatsapp_next.console;
 const { TERMINAL, STOPPABLE, EDITABLE, INDICATOR, is_manager, bar_html, progress_html, progress_text, messages_of_doc, stats_html, eta_text, pct_text, handed_of_doc, device_title, counters_as_doc } = K;
-const fmt_int = (v) => sanad.ui.format_int(v);
-const esc = (v) => sanad.ui.escape(v);
+const fmt_int = (v) => whatsapp.ui.format_int(v);
+const esc = (v) => whatsapp.ui.escape(v);
 
 /** A share as plain text, one decimal, never Frappe's wrapped HTML (it would be escaped). */
 const pct = (part, whole) => {
@@ -25,8 +25,8 @@ const pct = (part, whole) => {
 
 /** "Stop to edit" (running / scheduled), "Edit" (draft / paused) or "—" (ended). */
 function edit_chip(doc) {
-	if (STOPPABLE.includes(doc.status) && is_manager()) return `<button type="button" class="sanad-chip sanad-chip--sm" data-edit="stop" data-name="${esc(doc.name)}">${esc(__("Stop to edit"))}</button>`;
-	if (EDITABLE.includes(doc.status)) return `<button type="button" class="sanad-chip sanad-chip--sm sanad-chip--active" data-edit="open" data-name="${esc(doc.name)}">${esc(__("Edit"))}</button>`;
+	if (STOPPABLE.includes(doc.status) && is_manager()) return `<button type="button" class="whatsapp-kit-chip whatsapp-kit-chip--sm" data-edit="stop" data-name="${esc(doc.name)}">${esc(__("Stop to edit"))}</button>`;
+	if (EDITABLE.includes(doc.status)) return `<button type="button" class="whatsapp-kit-chip whatsapp-kit-chip--sm whatsapp-kit-chip--active" data-edit="open" data-name="${esc(doc.name)}">${esc(__("Edit"))}</button>`;
 	return `<span class="text-muted">—</span>`;
 }
 
@@ -56,7 +56,7 @@ function overview(fresh = false) {
 	if (fresh || (overview_state.promise && Date.now() - overview_state.at > OVERVIEW_TTL)) overview_state.promise = null;
 	if (!overview_state.promise) {
 		overview_state.at = Date.now();
-		overview_state.promise = sanad.ui
+		overview_state.promise = whatsapp.ui
 			.call("campaigns.get_overview", { days: OVERVIEW_DAYS }, { silent: true })
 			.catch(() => null);
 	}
@@ -70,24 +70,24 @@ function live_strip(row, header) {
 	const doc = Object.assign({}, row, counters_as_doc(row));
 	const paused = row.status === "Paused";
 	const $strip = $(`
-		<div class="wa-strip${paused ? " wa-strip--paused" : ""}">
-			<div class="wa-strip__line">
-				<span class="wa-strip__title">
-					<span class="wa-strip__dot" aria-hidden="true"></span>
-					<a class="wa-strip__name" href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${esc(row.campaign_name || row.name)}</a>
-					<span class="wa-strip__badge">${esc(paused ? __("Paused") : __("Running now"))}</span>
+		<div class="whatsapp-strip${paused ? " whatsapp-strip--paused" : ""}">
+			<div class="whatsapp-strip__line">
+				<span class="whatsapp-strip__title">
+					<span class="whatsapp-strip__dot" aria-hidden="true"></span>
+					<a class="whatsapp-strip__name" href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${esc(row.campaign_name || row.name)}</a>
+					<span class="whatsapp-strip__badge">${esc(paused ? __("Paused") : __("Running now"))}</span>
 				</span>
-				<span class="wa-strip__progress">
+				<span class="whatsapp-strip__progress">
 					${bar_html(doc, { paused })}
-					<span class="wa-strip__progress-text sanad-tabular">${esc(progress_text(doc))} · ${esc(pct_text(handed_of_doc(doc), messages_of_doc(doc)))}</span>
+					<span class="whatsapp-strip__progress-text whatsapp-kit-tabular">${esc(progress_text(doc))} · ${esc(pct_text(handed_of_doc(doc), messages_of_doc(doc)))}</span>
 				</span>
-				<span class="wa-strip__stats">${stats_html(doc)}</span>
-				<span class="wa-strip__actions"></span>
+				<span class="whatsapp-strip__stats">${stats_html(doc)}</span>
+				<span class="whatsapp-strip__actions"></span>
 			</div>
-			<p class="wa-strip__foot" aria-live="polite" dir="auto"></p>
+			<p class="whatsapp-strip__foot" aria-live="polite" dir="auto"></p>
 		</div>`);
 
-	const $actions = $strip.find(".wa-strip__actions");
+	const $actions = $strip.find(".whatsapp-strip__actions");
 	if (is_manager()) {
 		const label = paused ? __("Resume") : __("Pause");
 		$(`<button type="button" class="btn btn-default btn-sm">${esc(label)}</button>`)
@@ -98,10 +98,10 @@ function live_strip(row, header) {
 		.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: row.name }))
 		.appendTo($actions);
 
-	$strip.find(".wa-strip__foot").text(eta_text(doc, null));
-	sanad.ui
+	$strip.find(".whatsapp-strip__foot").text(eta_text(doc, null));
+	whatsapp.ui
 		.call("campaigns.get_progress", { name: row.name }, { silent: true })
-		.then((p) => $strip.find(".wa-strip__foot").text(eta_text(doc, p)))
+		.then((p) => $strip.find(".whatsapp-strip__foot").text(eta_text(doc, p)))
 		.catch(() => {});
 	return $strip;
 }
@@ -125,7 +125,7 @@ function scheduled_strip(row, header) {
 						: __("in {0} days", [fmt_int(days)]);
 	const meta = [
 		relative,
-		sanad.ui.plural(cint(row.total_recipients), { one: __("{0} recipient"), other: __("{0} recipients") }),
+		whatsapp.ui.plural(cint(row.total_recipients), { one: __("{0} recipient"), other: __("{0} recipients") }),
 		device_title(row.device),
 		cint(row.pause_count) ? __("edited {0} times", [fmt_int(row.pause_count)]) : "",
 	]
@@ -133,26 +133,26 @@ function scheduled_strip(row, header) {
 		.join(" · ");
 
 	const $strip = $(`
-		<div class="wa-strip wa-strip--scheduled">
-			<div class="wa-strip__line">
-				<span class="wa-strip__title">
-					<span class="wa-strip__dot" aria-hidden="true"></span>
-					<a class="wa-strip__name" href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${esc(row.campaign_name || row.name)}</a>
-					<span class="wa-strip__badge">${esc(__("Scheduled"))}</span>
+		<div class="whatsapp-strip whatsapp-strip--scheduled">
+			<div class="whatsapp-strip__line">
+				<span class="whatsapp-strip__title">
+					<span class="whatsapp-strip__dot" aria-hidden="true"></span>
+					<a class="whatsapp-strip__name" href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${esc(row.campaign_name || row.name)}</a>
+					<span class="whatsapp-strip__badge">${esc(__("Scheduled"))}</span>
 				</span>
-				<span class="wa-strip__when sanad-tabular">${esc(when)}</span>
-				<span class="wa-strip__meta">${esc(meta)}</span>
-				<span class="wa-strip__actions"></span>
+				<span class="whatsapp-strip__when whatsapp-kit-tabular">${esc(when)}</span>
+				<span class="whatsapp-strip__meta">${esc(meta)}</span>
+				<span class="whatsapp-strip__actions"></span>
 			</div>
 		</div>`);
 
-	const $actions = $strip.find(".wa-strip__actions");
+	const $actions = $strip.find(".whatsapp-strip__actions");
 	if (is_manager()) {
 		$(`<button type="button" class="btn btn-default btn-sm">${esc(__("Stop to edit"))}</button>`)
 			.on("click", () => K.stop_to_edit(row, { after: () => refresh_all(header) }))
 			.appendTo($actions);
 	}
-	$(`<button type="button" class="btn btn-default btn-sm wa-strip__btn-blue">${esc(__("Scheduled messages"))}</button>`)
+	$(`<button type="button" class="btn btn-default btn-sm whatsapp-strip__btn-blue">${esc(__("Scheduled messages"))}</button>`)
 		.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: row.name }))
 		.appendTo($actions);
 	return $strip;
@@ -171,15 +171,15 @@ function metrics_html(o) {
 	const per_minute = o.per_minute == null ? null : Math.round(o.per_minute);
 
 	return `
-		<div class="wa-ops__metrics">
+		<div class="whatsapp-ops__metrics">
 			${state_metric({
 				label: __("Sending now"),
-				state: running ? sanad.ui.plural(running, { one: __("{0} campaign"), other: __("{0} campaigns") }) : __("Nothing"),
+				state: running ? whatsapp.ui.plural(running, { one: __("{0} campaign"), other: __("{0} campaigns") }) : __("Nothing"),
 				tone: running ? "green" : "gray",
 				pulse: !!running,
 				sub: esc(
 					paused
-						? sanad.ui.plural(paused, { one: __("{0} paused"), other: __("{0} paused") })
+						? whatsapp.ui.plural(paused, { one: __("{0} paused"), other: __("{0} paused") })
 						: running
 							? __("handing messages to the queue")
 							: __("no campaign is sending")
@@ -209,7 +209,7 @@ function metrics_html(o) {
 				__("Failed"),
 				esc(fmt_int(totals.failed)),
 				cint(totals.failed)
-					? `<button type="button" class="wa-ops__link" data-go="failed">${esc(__("See the messages"))}</button>`
+					? `<button type="button" class="whatsapp-ops__link" data-go="failed">${esc(__("See the messages"))}</button>`
 					: esc(__("no failures")),
 				{ tone: cint(totals.failed) ? "red" : "" },
 			)}
@@ -223,13 +223,13 @@ function metrics_html(o) {
  * when there is neither, the block stays empty rather than drawing a band that says nothing.
  */
 function render_console($el, header) {
-	if (!$el.children().length) new sanad.ui.EmptyState({ wrapper: $el, state: "loading", size: "sm", rows: 2 });
-	return Promise.all([overview(), sanad.ui.call("campaigns.get_sending_now", {}, { silent: true })])
+	if (!$el.children().length) new whatsapp.ui.EmptyState({ wrapper: $el, state: "loading", size: "sm", rows: 2 });
+	return Promise.all([overview(), whatsapp.ui.call("campaigns.get_sending_now", {}, { silent: true })])
 		.then(([o, rows]) => {
 			// `Paused` is stated by the metric row ("2 paused"); the strips are for what moves
 			const live = (rows || []).filter((r) => ["Running", "Queued"].includes(r.status));
-			$el.html(`<section class="wa-ops">${metrics_html(o)}</section>
-				<div class="wa-strips"></div>`);
+			$el.html(`<section class="whatsapp-ops">${metrics_html(o)}</section>
+				<div class="whatsapp-strips"></div>`);
 			// the campaigns' failures, not every failed message of the site
 		$el.find("[data-go=failed]").on("click", () => frappe.set_route("List", "WhatsApp Log", { status: "Failed", campaign: ["is", "set"] }));
 
@@ -237,13 +237,13 @@ function render_console($el, header) {
 			// and the next scheduled ones — not one strip per campaign in flight — so at most two
 			// live strips are drawn and the rest are counted in a line (owner: five strips pushed
 			// the table down to two clipped rows, 2026-09-24).
-			const $strips = $el.find(".wa-strips").data("header", header);
+			const $strips = $el.find(".whatsapp-strips").data("header", header);
 			const shown = live.slice(0, LIVE_STRIPS);
 			shown.forEach((row) => $strips.append(live_strip(row, header)));
 			if (live.length > shown.length) {
 				$strips.append(
-					`<p class="wa-strips__more">${esc(
-						sanad.ui.plural(live.length - shown.length, {
+					`<p class="whatsapp-strips__more">${esc(
+						whatsapp.ui.plural(live.length - shown.length, {
 							one: __("{0} more campaign is sending — it is in the list below."),
 							other: __("{0} more campaigns are sending — they are in the list below."),
 						})
@@ -253,7 +253,7 @@ function render_console($el, header) {
 			return render_next($strips, shown.length);
 		})
 		.catch((err) => {
-			new sanad.ui.EmptyState({
+			new whatsapp.ui.EmptyState({
 				wrapper: $el,
 				state: "error",
 				size: "sm",
@@ -280,8 +280,8 @@ function render_next($strips, live_count) {
 			const rest = cint(total) - (rows || []).length;
 			if (rest > 0) {
 				$strips.append(
-					`<p class="wa-strips__more">${esc(
-						sanad.ui.plural(rest, {
+					`<p class="whatsapp-strips__more">${esc(
+						whatsapp.ui.plural(rest, {
 							one: __("{0} more scheduled campaign in the list below."),
 							other: __("{0} more scheduled campaigns in the list below."),
 						})
@@ -316,16 +316,16 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 	// Fallback (native rows) until DataList is present.
 	formatters: {
 		sent_count(value, df, doc) {
-			return messages_of_doc(doc) ? `<span class="sanad-tabular">${esc(progress_text(doc))}</span>` : fmt_int(value);
+			return messages_of_doc(doc) ? `<span class="whatsapp-kit-tabular">${esc(progress_text(doc))}</span>` : fmt_int(value);
 		},
 	},
 
 	onload(listview) {
-		const ui = sanad.ui;
+		const ui = whatsapp.ui;
 		// No title and no description: Desk's breadcrumb names the list and the console's first
 		// cell says what the campaigns are doing, which is all a title could have said. "New
 		// campaign" goes back to Desk's own primary slot, where a list's create action belongs.
-		listview.sanad_header = new ui.PageHeader({
+		listview.whatsapp_header = new ui.PageHeader({
 			listview,
 			blocks: [{ key: "campaign-console", events: ["wa:campaign:status", "wa:queue:progress"], render: render_console }],
 		});
@@ -364,15 +364,15 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 
 		const dt = (v) => (v ? esc(whatsapp_next.fmt.dt(v)) : dash());
 		const dash = () => `<span class="text-muted">—</span>`;
-		const num = (v) => `<span class="sanad-tabular">${esc(fmt_int(v))}</span>`;
+		const num = (v) => `<span class="whatsapp-kit-tabular">${esc(fmt_int(v))}</span>`;
 		const rate_cell = (part, whole, tone) =>
-			cint(whole) ? `<span class="sanad-tabular${tone ? ` sanad-tone--${tone}` : ""}">${esc(pct(part, whole))}</span>` : dash();
+			cint(whole) ? `<span class="whatsapp-kit-tabular${tone ? ` whatsapp-kit-tone--${tone}` : ""}">${esc(pct(part, whole))}</span>` : dash();
 
 		/** How long a campaign needs at its own rate, and how long it actually took. */
 		// the queue sends messages, not recipients: once the campaign has its messages (recipients ×
 		// messages) they are what the rate drains; before that the recipients are all there is
 		const est_minutes = (doc) => {
-			const rate = cint(doc.messages_per_minute) || cint(frappe.boot.sanad_rate) || 20;
+			const rate = cint(doc.messages_per_minute) || cint(frappe.boot.whatsapp_rate) || 20;
 			return (messages_of_doc(doc) || cint(doc.total_recipients)) / Math.max(rate, 1);
 		};
 		const act_minutes = (doc) => {
@@ -403,39 +403,39 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 			{ fieldname: "_ok_rate", label: __("Success %"), width: 110, fieldtype: "Percent", sortable: false, format: (v, doc) => rate_cell(handed_of_doc(doc), handed_of_doc(doc) + cint(doc.failed_count), "green") },
 			{ fieldname: "read_count", label: __("Read"), type: "number", width: 100, sortable: true },
 			{ fieldname: "_read_rate", label: __("Read %"), width: 115, fieldtype: "Percent", sortable: false, format: (v, doc) => rate_cell(doc.read_count, cint(doc.delivered_count) + cint(doc.read_count), "blue") },
-			{ fieldname: "failed_count", label: __("Failures"), type: "number", width: 90, sortable: true, format: (v) => (cint(v) ? `<span class="sanad-tone--red sanad-tabular">${fmt_int(v)}</span>` : num(0)) },
+			{ fieldname: "failed_count", label: __("Failures"), type: "number", width: 90, sortable: true, format: (v) => (cint(v) ? `<span class="whatsapp-kit-tone--red whatsapp-kit-tabular">${fmt_int(v)}</span>` : num(0)) },
 			{ fieldname: "_fail_rate", label: __("Failure %"), width: 110, fieldtype: "Percent", sortable: false, format: (v, doc) => rate_cell(doc.failed_count, handed_of_doc(doc) + cint(doc.failed_count), cint(doc.failed_count) ? "red" : "") },
 			{ fieldname: "device", label: __("Device"), type: "avatar", width: 150, sortable: true },
-			{ fieldname: "_start_kind", label: __("Start type"), width: 110, sortable: false, format: (v, doc) => sanad.ui.StatusBadge.html({ label: was_scheduled(doc) ? __("Scheduled") : __("Immediate"), colour: was_scheduled(doc) ? "blue" : "gray" }) },
+			{ fieldname: "_start_kind", label: __("Start type"), width: 110, sortable: false, format: (v, doc) => whatsapp.ui.StatusBadge.html({ label: was_scheduled(doc) ? __("Scheduled") : __("Immediate"), colour: was_scheduled(doc) ? "blue" : "gray" }) },
 			{ fieldname: "scheduled_at", label: __("Scheduled for"), width: 150, align: "end", sortable: true, format: (v, doc) => (was_scheduled(doc) ? dt(v) : `<span class="text-muted">${esc(__("Immediate"))}</span>`) },
 			{ fieldname: "creation", label: __("Created"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
 			{ fieldname: "started_at", label: __("Started"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
-			{ fieldname: "_edited", label: __("Edited after approval"), width: 145, sortable: false, format: (v, doc) => (cint(doc.pause_count) ? sanad.ui.StatusBadge.html({ label: sanad.ui.plural(cint(doc.pause_count), { one: __("Yes — once"), other: __("Yes — {0} times") }), colour: "orange" }) : sanad.ui.StatusBadge.html({ label: __("No"), colour: "gray" })) },
+			{ fieldname: "_edited", label: __("Edited after approval"), width: 145, sortable: false, format: (v, doc) => (cint(doc.pause_count) ? whatsapp.ui.StatusBadge.html({ label: whatsapp.ui.plural(cint(doc.pause_count), { one: __("Yes — once"), other: __("Yes — {0} times") }), colour: "orange" }) : whatsapp.ui.StatusBadge.html({ label: __("No"), colour: "gray" })) },
 			{ fieldname: "initial_recipients", label: __("Recipients at start"), type: "number", width: 140, sortable: true, format: (v) => (cint(v) ? num(v) : dash()) },
 			{ fieldname: "_edit_pct", label: __("Change %"), width: 110, fieldtype: "Percent", sortable: false, format: (v, doc) => {
 				const start = cint(doc.initial_recipients);
 				if (!start || start === cint(doc.total_recipients)) return dash();
 				const change = ((cint(doc.total_recipients) - start) * 100) / start;
-				return `<span class="sanad-tabular sanad-tone--${change < 0 ? "red" : "green"}">${change < 0 ? "−" : "+"}${esc(pct(Math.abs(change), 100))}</span>`;
+				return `<span class="whatsapp-kit-tabular whatsapp-kit-tone--${change < 0 ? "red" : "green"}">${change < 0 ? "−" : "+"}${esc(pct(Math.abs(change), 100))}</span>`;
 			} },
 			{ fieldname: "first_message_at", label: __("First message"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
 			{ fieldname: "last_message_at", label: __("Last message"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
-			{ fieldname: "_est_dur", label: __("Estimated time"), width: 120, align: "end", sortable: false, format: (v, doc) => (cint(doc.total_recipients) ? `<span class="sanad-tabular">${esc(dur_text(est_minutes(doc)))}</span>` : dash()) },
+			{ fieldname: "_est_dur", label: __("Estimated time"), width: 120, align: "end", sortable: false, format: (v, doc) => (cint(doc.total_recipients) ? `<span class="whatsapp-kit-tabular">${esc(dur_text(est_minutes(doc)))}</span>` : dash()) },
 			{ fieldname: "_act_dur", label: __("Actual time"), width: 120, align: "end", sortable: false, format: (v, doc) => {
 				const minutes = act_minutes(doc);
-				return minutes == null ? dash() : `<span class="sanad-tabular">${esc(dur_text(minutes))}</span>`;
+				return minutes == null ? dash() : `<span class="whatsapp-kit-tabular">${esc(dur_text(minutes))}</span>`;
 			} },
 			{ fieldname: "_dur_diff", label: __("Time difference"), width: 115, align: "end", sortable: false, format: (v, doc) => {
 				const actual = act_minutes(doc);
 				if (actual == null || !doc.ended_at || !cint(doc.total_recipients)) return dash();
 				const diff = actual - est_minutes(doc);
 				const tone = diff > 1 ? "red" : diff < -1 ? "green" : "";
-				return `<span class="sanad-tabular${tone ? ` sanad-tone--${tone}` : ""}">${diff >= 0 ? "+" : "−"}${esc(dur_text(Math.abs(diff)))}</span>`;
+				return `<span class="whatsapp-kit-tabular${tone ? ` whatsapp-kit-tone--${tone}` : ""}">${diff >= 0 ? "+" : "−"}${esc(dur_text(Math.abs(diff)))}</span>`;
 			} },
 		];
 
 		if (typeof ui.DataList === "function") {
-			listview.sanad_datalist = new ui.DataList({
+			listview.whatsapp_datalist = new ui.DataList({
 				listview,
 				columns,
 				selectable: true,
@@ -445,7 +445,7 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 				page_length: 50,
 				mobile_columns: ["campaign_name", "status", "sent_count"],
 				footer: {
-					count: (total) => sanad.ui.plural(total, { one: __("{0} campaign"), two: __("{0} campaigns"), few: __("{0} campaigns"), many: __("{0} campaigns"), other: __("{0} campaigns") }),
+					count: (total) => whatsapp.ui.plural(total, { one: __("{0} campaign"), two: __("{0} campaigns"), few: __("{0} campaigns"), many: __("{0} campaigns"), other: __("{0} campaigns") }),
 					// the prototype totals the recipients of what is on screen
 					extra: ($el, rows) =>
 						$el.text(

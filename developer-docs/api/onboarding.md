@@ -12,7 +12,7 @@ and `WARateLimitError` (429).
 
 Kit keys: `get_status`, `start_signup`, `get_signup_status`, `complete_signup`,
 `start_password_reset`, `save_credentials`, `complete_setup`, `login`, `validate_coupon`,
-`get_referral_coupon`, and `get_signup_bootstrap` are in the `sanad.ui` map (`"onboarding.<fn>"`).
+`get_referral_coupon`, and `get_signup_bootstrap` are in the `whatsapp.ui` map (`"onboarding.<fn>"`).
 `verify_code`, `get_password_reset_status`, `finish_password_reset`, `sign_out`,
 `get_account_switch` and `resolve_account_switch` are in the map as well.
 
@@ -102,7 +102,7 @@ when the platform doesn't give it.
 **Errors:** Provider errors are mapped.
 
 ```js
-const boot = await sanad.ui.call("onboarding.get_signup_bootstrap");
+const boot = await whatsapp.ui.call("onboarding.get_signup_bootstrap");
 ```
 
 ---
@@ -164,7 +164,7 @@ Polls a sign-up request.
 **Errors:** Provider errors are mapped.
 
 ```js
-await sanad.ui.call("onboarding.get_signup_status", { request_key });
+await whatsapp.ui.call("onboarding.get_signup_status", { request_key });
 ```
 
 ---
@@ -193,7 +193,7 @@ Checks a verification code without finishing the sign-up.
 (417).
 
 ```js
-await sanad.ui.call("whatsapp_next.api.v1.onboarding.verify_code", { request_key, code: "123456" });
+await whatsapp.ui.call("whatsapp_next.api.v1.onboarding.verify_code", { request_key, code: "123456" });
 ```
 
 ---
@@ -273,7 +273,7 @@ part of the response.**
 | `WAProviderAuthError` | 424 | The platform refused this site's own credentials |
 
 ```js
-await sanad.ui.call("onboarding.login", { platform_base_url: "", email, password });
+await whatsapp.ui.call("onboarding.login", { platform_base_url: "", email, password });
 ```
 
 ---
@@ -295,7 +295,7 @@ Starts a password reset for a platform user.
 **Errors:** Provider errors are mapped.
 
 ```js
-await sanad.ui.call("onboarding.start_password_reset", { identifier: "ops@acme.sa" });
+await whatsapp.ui.call("onboarding.start_password_reset", { identifier: "ops@acme.sa" });
 ```
 
 ---
@@ -364,7 +364,7 @@ accounts.
 **Realtime:** none.
 
 ```js
-const r = await sanad.ui.call("onboarding.finish_password_reset", { request_key, password, code: "123456" });
+const r = await whatsapp.ui.call("onboarding.finish_password_reset", { request_key, password, code: "123456" });
 ```
 
 ---
@@ -395,7 +395,7 @@ A valid coupon may also carry `reward_kind` and `reward_value`.
 **Errors:** Provider errors are mapped.
 
 ```js
-await sanad.ui.call("onboarding.validate_coupon", { code: "WELCOME" });
+await whatsapp.ui.call("onboarding.validate_coupon", { code: "WELCOME" });
 ```
 
 ---
@@ -420,7 +420,7 @@ Arguments: none.
 `WAProviderAuthError` (424).
 
 ```js
-const ref = await sanad.ui.call("onboarding.get_referral_coupon");
+const ref = await whatsapp.ui.call("onboarding.get_referral_coupon");
 ```
 
 ---
@@ -481,7 +481,7 @@ call failed (logged to the Error Log).
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("onboarding.sign_out");
+await whatsapp.ui.call("onboarding.sign_out");
 ```
 
 ---
@@ -517,7 +517,7 @@ rows.
 **Realtime:** none.
 
 ```js
-const sw = await sanad.ui.call("onboarding.get_account_switch");
+const sw = await whatsapp.ui.call("onboarding.get_account_switch");
 ```
 
 ---
@@ -555,7 +555,7 @@ Records the System Manager's decision on what the previous account left.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("onboarding.resolve_account_switch", { action: "keep" });
+await whatsapp.ui.call("onboarding.resolve_account_switch", { action: "keep" });
 ```
 
 ---
@@ -578,5 +578,5 @@ Arguments: none.
 first missing step.
 
 ```js
-await sanad.ui.call("onboarding.complete_setup");
+await whatsapp.ui.call("onboarding.complete_setup");
 ```

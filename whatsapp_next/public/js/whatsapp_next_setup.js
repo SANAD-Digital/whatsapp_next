@@ -36,7 +36,7 @@ const areas = {
 };
 Object.entries(areas).forEach(([area, fns]) => fns.forEach((fn) => (api[`${area}.${fn}`] = `${V1}.${area}.${fn}`)));
 
-sanad.ui.configure({
+whatsapp.ui.configure({
 	api,
 	defaults: {
 		roles: {
@@ -72,20 +72,20 @@ sanad.ui.configure({
 			// A message is known by who it went to, not by its hash of a name.
 			"WhatsApp Log": {
 				icon: "es-line-chat",
-				title: { field: "display_name", value: (doc) => doc.display_name || sanad.ui.phone(doc.phone_e164 || doc.jid || doc.name) },
+				title: { field: "display_name", value: (doc) => doc.display_name || whatsapp.ui.phone(doc.phone_e164 || doc.jid || doc.name) },
 				title_ltr: false,
 				lines: [{ field: "phone_e164", ltr: true, icon: "es-line-call" }],
 				value: false,
 			},
 			"WhatsApp Inbound Message": {
 				icon: "es-line-chat-alt",
-				title: { field: "display_name", value: (doc) => doc.display_name || sanad.ui.phone(doc.phone_e164 || doc.jid || doc.name) },
+				title: { field: "display_name", value: (doc) => doc.display_name || whatsapp.ui.phone(doc.phone_e164 || doc.jid || doc.name) },
 				lines: [{ field: "phone_e164", ltr: true, icon: "es-line-call" }],
 				value: false,
 			},
 			"WhatsApp Number": {
 				icon: "es-line-call",
-				title: { field: "display_name", value: (doc) => doc.display_name || sanad.ui.phone(doc.phone_e164 || doc.name) },
+				title: { field: "display_name", value: (doc) => doc.display_name || whatsapp.ui.phone(doc.phone_e164 || doc.name) },
 				lines: [{ field: "phone_e164", ltr: true }, "link_status"],
 				value: false,
 			},
@@ -136,27 +136,27 @@ whatsapp_next.drop_unreadable_link_titles = (listview) => {
 	};
 };
 
-// Creating WhatsApp groups (sanad.ui.GroupCreate): a Manager's verb, offered only when the plan
+// Creating WhatsApp groups (whatsapp.ui.GroupCreate): a Manager's verb, offered only when the plan
 // includes groups. Every screen that offers it asks here, so the rule lives in one place.
 whatsapp_next.wa_groups = {
 	can_create: () =>
 		!!(((frappe.boot.whatsapp_next || {}).features || {}).groups) &&
 		frappe.user.has_role(["WhatsApp Manager", "System Manager"]) &&
-		typeof sanad.ui.GroupCreate === "function",
-	open: (opts) => new sanad.ui.GroupCreate(opts || {}),
+		typeof whatsapp.ui.GroupCreate === "function",
+	open: (opts) => new whatsapp.ui.GroupCreate(opts || {}),
 };
 
 // "Check on WhatsApp": the numbers behind a selection of contacts, contact groups or WhatsApp
 // Numbers, asked through a connected device; the answer is shown and remembered (number_check).
 whatsapp_next.check_numbers = (source_doctype, names, { on_done } = {}) =>
-	sanad.ui
+	whatsapp.ui
 		.call("number_check.check_selection", { source_doctype, names }, { freeze: true, freeze_message: __("Checking the numbers with WhatsApp…") })
 		.then((r) => {
 			const esc = frappe.utils.escape_html;
 			const rows = (r.results || [])
-				.map((m) => `<li><span class="sanad-groupcreate__name">${esc(m.display_name || "")}</span>
-					<bdi class="sanad-tabular" dir="ltr">${esc(sanad.ui.phone ? sanad.ui.phone(m.phone_e164) : m.phone_e164)}</bdi>
-					${sanad.ui.StatusBadge.html(m.on_whatsapp ? { label: __("Registered on WhatsApp"), colour: "green" } : { label: __("Not on WhatsApp"), colour: "gray" })}</li>`)
+				.map((m) => `<li><span class="whatsapp-kit-groupcreate__name">${esc(m.display_name || "")}</span>
+					<bdi class="whatsapp-kit-tabular" dir="ltr">${esc(whatsapp.ui.phone ? whatsapp.ui.phone(m.phone_e164) : m.phone_e164)}</bdi>
+					${whatsapp.ui.StatusBadge.html(m.on_whatsapp ? { label: __("Registered on WhatsApp"), colour: "green" } : { label: __("Not on WhatsApp"), colour: "gray" })}</li>`)
 				.join("");
 			const d = new frappe.ui.Dialog({
 				title: __("WhatsApp check"),
@@ -165,28 +165,28 @@ whatsapp_next.check_numbers = (source_doctype, names, { on_done } = {}) =>
 				primary_action_label: __("Done"),
 				primary_action: () => d.hide(),
 			});
-			d.$wrapper.addClass("sanad-kit sanad-sheet sanad-groupcreate");
+			d.$wrapper.addClass("whatsapp-kit whatsapp-kit-sheet whatsapp-kit-groupcreate");
 			d.get_field("body").$wrapper.html(
 				r.checked
-					? `<p>${esc(__("{0} of {1} numbers are on WhatsApp.", [r.on_whatsapp, r.checked]))}</p><ul class="sanad-groupcreate__list">${rows}</ul>`
+					? `<p>${esc(__("{0} of {1} numbers are on WhatsApp.", [r.on_whatsapp, r.checked]))}</p><ul class="whatsapp-kit-groupcreate__list">${rows}</ul>`
 					: `<p>${esc(__("The selection has no individual numbers to check."))}</p>`
 			);
 			d.show();
 			if (on_done) on_done(r);
 			return r;
 		})
-		.catch((err) => sanad.ui.Toast.error(err));
+		.catch((err) => whatsapp.ui.Toast.error(err));
 
 // "Refresh WhatsApp profile": photo, about and business details of the numbers behind a selection.
 whatsapp_next.refresh_profiles = (source_doctype, names, { on_done } = {}) =>
-	sanad.ui
+	whatsapp.ui
 		.call("number_check.refresh_profiles", { source_doctype, names }, { freeze: true, freeze_message: __("Reading the WhatsApp profiles…") })
 		.then((r) => {
-			sanad.ui.Toast.success(__("{0} profiles read, {1} new photos", [r.updated || 0, r.photos || 0]));
+			whatsapp.ui.Toast.success(__("{0} profiles read, {1} new photos", [r.updated || 0, r.photos || 0]));
 			if (on_done) on_done(r);
 			return r;
 		})
-		.catch((err) => sanad.ui.Toast.error(err));
+		.catch((err) => whatsapp.ui.Toast.error(err));
 
 // The Status column of a list whose rows switch on and off (notifications, alerts): the badge, a
 // button over it for whoever may write, and the confirmed switch a click on it opens. The list
@@ -194,16 +194,16 @@ whatsapp_next.refresh_profiles = (source_doctype, names, { on_done } = {}) =>
 whatsapp_next.enabled_toggle = {
 	chip(doc, can_write) {
 		const enabled = !!cint(doc.enabled);
-		const badge = sanad.ui.StatusBadge.html({ label: enabled ? __("Enabled") : __("Disabled"), colour: enabled ? "green" : "gray" });
+		const badge = whatsapp.ui.StatusBadge.html({ label: enabled ? __("Enabled") : __("Disabled"), colour: enabled ? "green" : "gray" });
 		if (!can_write) return badge;
-		return `<button type="button" class="btn btn-link p-0 wa-toggle-enabled" data-name="${frappe.utils.escape_html(doc.name)}" aria-pressed="${enabled}" aria-label="${frappe.utils.escape_html(enabled ? __("Enabled — click to disable") : __("Disabled — click to enable"))}">${badge}</button>`;
+		return `<button type="button" class="btn btn-link p-0 whatsapp-toggle-enabled" data-name="${frappe.utils.escape_html(doc.name)}" aria-pressed="${enabled}" aria-label="${frappe.utils.escape_html(enabled ? __("Enabled — click to disable") : __("Disabled — click to enable"))}">${badge}</button>`;
 	},
 
 	/** Ask, switch `enabled`, then refresh the list and its header.
 	 * `words`: `{title, enable_message, disable_message, impact[], enabled_toast, disabled_toast}`. */
 	ask(listview, doctype, doc, words) {
 		const enable = !cint(doc.enabled);
-		return sanad.ui.ConfirmDialog.ask({
+		return whatsapp.ui.ConfirmDialog.ask({
 			title: enable ? __("Enable {0}?", [words.title]) : __("Disable {0}?", [words.title]),
 			message: enable ? words.enable_message : words.disable_message,
 			impact: words.impact,
@@ -212,16 +212,16 @@ whatsapp_next.enabled_toggle = {
 			on_confirm: () => frappe.xcall("frappe.client.set_value", { doctype, name: doc.name, fieldname: "enabled", value: enable ? 1 : 0 }),
 		})
 			.then(() => {
-				sanad.ui.Toast.success(enable ? words.enabled_toast : words.disabled_toast);
+				whatsapp.ui.Toast.success(enable ? words.enabled_toast : words.disabled_toast);
 				listview.refresh();
-				listview._sanad_header && listview._sanad_header.refresh();
+				listview._whatsapp_header && listview._whatsapp_header.refresh();
 			})
 			.catch(() => {});
 	},
 
 	/** A click on a row's chip opens `toggle(doc, listview)` (delegated: rows re-render on every refresh). */
 	bind(listview, namespace, toggle) {
-		listview.$result.off(`click.${namespace}`).on(`click.${namespace}`, ".wa-toggle-enabled", (e) => {
+		listview.$result.off(`click.${namespace}`).on(`click.${namespace}`, ".whatsapp-toggle-enabled", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			const name = $(e.currentTarget).data("name");

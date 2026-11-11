@@ -13,7 +13,7 @@ function can_change_members(frm) {
 }
 
 function open_picker(frm, operation, preselect) {
-	new sanad.ui.ContactPicker({
+	new whatsapp.ui.ContactPicker({
 		target_doctype: frm.doctype,
 		target_name: frm.doc.name,
 		operation,
@@ -30,11 +30,11 @@ function mount_members(frm) {
 		{ label: __("Add members"), primary: true, icon: "es-line-add", disabled: !can_change_members(frm), hint, handler: () => open_picker(frm, "add") },
 		{ label: __("Remove members"), icon: "es-line-delete", condition: () => cint(frm.doc.member_count) > 0, disabled: !can_change_members(frm), hint, handler: () => open_picker(frm, "remove") },
 	];
-	if (frm.sanad_members && frm.sanad_members.frm === frm && frm.$wrapper.find('.sanad-pct[data-fieldname="members"]').length) {
-		frm.sanad_members.update({ toolbar_actions });
+	if (frm.whatsapp_members && frm.whatsapp_members.frm === frm && frm.$wrapper.find('.whatsapp-kit-pct[data-fieldname="members"]').length) {
+		frm.whatsapp_members.update({ toolbar_actions });
 		return;
 	}
-	frm.sanad_members = new sanad.ui.PagedChildTable({
+	frm.whatsapp_members = new whatsapp.ui.PagedChildTable({
 		frm,
 		fieldname: "members",
 		page_method: "picker.get_group_members",
@@ -43,7 +43,7 @@ function mount_members(frm) {
 		columns: [{ fieldname: "display_name" }, { fieldname: "phone_e164", label: __("Phone") }, { fieldname: "contact" }, { fieldname: "source_type" }],
 		status_field: null,
 		search: false,
-		row_actions: [{ label: __("Open contact"), icon: "es-line-people", condition: (row) => !!row.contact, handler: (row) => sanad.ui.ConversationDrawer.open_contact(row.contact) }],
+		row_actions: [{ label: __("Open contact"), icon: "es-line-people", condition: (row) => !!row.contact, handler: (row) => whatsapp.ui.ConversationDrawer.open_contact(row.contact) }],
 		toolbar_actions,
 		empty_text: __("No members yet"),
 	});
@@ -68,7 +68,7 @@ frappe.ui.form.on("WhatsApp Contact Group", {
 		const params = frappe.utils.get_query_params ? frappe.utils.get_query_params() : {};
 		if (ro.import === "csv" || params.import === "csv" || (frm.is_new() && frappe.flags.wa_group_import_csv)) {
 			frappe.flags.wa_group_import_csv = false;
-			frm.sanad_import_csv = true;
+			frm.whatsapp_import_csv = true;
 			if (ro.import) delete frappe.route_options.import;
 		}
 	},
@@ -90,8 +90,8 @@ frappe.ui.form.on("WhatsApp Contact Group", {
 				__("Actions"));
 			}
 		}
-		if (frm.sanad_import_csv && can_change_members(frm)) {
-			frm.sanad_import_csv = false;
+		if (frm.whatsapp_import_csv && can_change_members(frm)) {
+			frm.whatsapp_import_csv = false;
 			open_picker(frm, "add", { source: "phonebook", kind: "csv" });
 		}
 	},

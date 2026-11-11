@@ -23,7 +23,7 @@ arrive as options / server entries; kind chips and `source_type` chips come from
 ## Usage
 
 ```js
-new sanad.ui.ContactPicker({
+new whatsapp.ui.ContactPicker({
   target_doctype: frm.doctype,          // a picker target (holds the child table)
   target_name: frm.doc.name,
   operation: "add",                     // or "remove"
@@ -31,8 +31,8 @@ new sanad.ui.ContactPicker({
 });
 
 // Open straight on one source and pre-fill it
-new sanad.ui.ContactPicker({ target_doctype, target_name, preselect: { source: "groups", ref: "VIP customers" }, on_commit });
-new sanad.ui.ContactPicker({ target_doctype, target_name, preselect: { source: "phonebook", kind: "csv" }, on_commit });
+new whatsapp.ui.ContactPicker({ target_doctype, target_name, preselect: { source: "groups", ref: "VIP customers" }, on_commit });
+new whatsapp.ui.ContactPicker({ target_doctype, target_name, preselect: { source: "phonebook", kind: "csv" }, on_commit });
 ```
 
 **Local mode** — a host that keeps its own list (an alert's recipients, a draft) passes
@@ -40,20 +40,20 @@ new sanad.ui.ContactPicker({ target_doctype, target_name, preselect: { source: "
 (`picker.classify`, nothing written), and "Continue" hands back the available rows:
 
 ```js
-new sanad.ui.ContactPicker({ title: __("Choose recipients"), existing: ["+9665…"], on_pick: (rows) => keep(rows) });
+new whatsapp.ui.ContactPicker({ title: __("Choose recipients"), existing: ["+9665…"], on_pick: (rows) => keep(rows) });
 ```
 
 Options: `on_pick?(rows, picker)` and `existing?: string[]` (local mode), `target_doctype`, `target_name`, `operation` (`"add"` | `"remove"`), `sources?`
 (keys or aliases: `groups`, `contacts`, `doctype`, `excel`, `phonebook`, `manual`),
 `preselect?: {source, ref?, kind?}`, `on_commit(result, picker)`, `on_close?(committed)`,
-`title?`, `group_doctype?` (default `sanad.ui.config.defaults.group_doctype`; kind chips from its `kind` Select; excluded as a source when it is
+`title?`, `group_doctype?` (default `whatsapp.ui.config.defaults.group_doctype`; kind chips from its `kind` Select; excluded as a source when it is
 the target), `contact_link_doctypes?` (chips for source 2, default `config.defaults.contact_link_doctypes`; the server entry's `link_doctypes`
 wins), `current?: {method, args(state), server_filters?, source_types?, status_field?}` (remove
 mode paging of the target's rows — defaults per target), `api?` (key overrides).
 Methods on the instance (used by sources): `add_rows(rows, {source_type, source_ref, quiet})`,
 `source_groups()` (the selection split by the source it came from), `accept_file(file)`,
 `remove_rows(keys)`, `clear_selection()`, `activate(key)`, `set_progress(text)`, `call(key, args)`.
-`sanad.ui.ContactPicker.sources` is the registry (`{apiKey: SourceClass}`) — a host may replace or
+`whatsapp.ui.ContactPicker.sources` is the registry (`{apiKey: SourceClass}`) — a host may replace or
 add a source class before opening.
 
 Realtime: `wa:import:progress` `{kind, stage, total, valid, invalid}` (user room) drives the
@@ -91,7 +91,7 @@ checkboxes, "Select all on page", "Add all N matching" (200 per page with "x of 
 capped at 20,000 with a warning).
 
 ### Source 4 · Excel (`sources/excel.js`) — built (Stepper flow)
-A three-step `sanad.ui.Stepper` ("Step n of 3"): **1 Upload** — `frappe.ui.FileUploader` inside
+A three-step `whatsapp.ui.Stepper` ("Step n of 3"): **1 Upload** — `frappe.ui.FileUploader` inside
 the pane (private, `.xlsx / .xls / .csv`, 5 MB) → `picker.parse_upload {file_url, kind, mapping}`
 runs on upload; **2 Map columns** — phone / name `<select>`s over the returned `columns`; when the
 server answers `needs_mapping: true` (phone column not detected) the step is mandatory and opens
@@ -182,7 +182,7 @@ same rows with "Show members" folding the first ten under them.
   added"); no list joins with ", " in code.
 - Long loops (group members, "Add all matching") show "x of N" progress and stop at 20,000 with a
   clear message; `Continue` is disabled while nothing is selected (no dead button).
-- Chips and tables are the shared `.sanad-chip` / `.sanad-table`; the dialog is a `.sanad-sheet`
+- Chips and tables are the shared `.whatsapp-kit-chip` / `.whatsapp-kit-table`; the dialog is a `.whatsapp-kit-sheet`
   on phones (`100dvh`, sticky footer, `scroll-padding-block-end`); ≥ 32 px targets; focus ring
   from the kit's global rule.
-- The manual-entry example comes from `sanad.ui.PhoneField.example()` when the kit ships it.
+- The manual-entry example comes from `whatsapp.ui.PhoneField.example()` when the kit ships it.

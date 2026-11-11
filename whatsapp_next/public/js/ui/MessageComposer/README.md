@@ -15,7 +15,7 @@ untouched; the native grid stays in the DOM (it is what saves) and is hidden beh
 ```js
 frappe.ui.form.on("Campaign", {
   refresh(frm) {
-    frm.composer = new sanad.ui.MessageComposer({
+    frm.composer = new whatsapp.ui.MessageComposer({
       frm,
       fieldname: "messages",             // the Table field
       type_field: "message_type",        // Select — drives which fields show

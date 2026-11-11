@@ -1,4 +1,4 @@
-// sanad.ui.StatusBadge — a status pill whose colour comes from the DocType's own indicator rules
+// whatsapp.ui.StatusBadge — a status pill whose colour comes from the DocType's own indicator rules
 // (`frappe.listview_settings[doctype].get_indicator`, workflow states, submittable docstatus) and
 // falls back to gray. Colour is never the only signal: the label is always rendered, plus an
 // optional dot / icon for the four semantic tones.
@@ -7,7 +7,7 @@ import ui from "../_core/index.js";
 
 const TONE_ICON = { green: "es-line-success", red: "es-line-close-circle", amber: "es-line-alert-triangle" };
 
-sanad.ui.StatusBadge = class StatusBadge {
+whatsapp.ui.StatusBadge = class StatusBadge {
 	/**
 	 * @param {Object} opts
 	 * @param {jQuery|HTMLElement} [opts.wrapper] — where to render (omit to use `html()` only)
@@ -45,7 +45,7 @@ sanad.ui.StatusBadge = class StatusBadge {
 	}
 
 	html() {
-		return sanad.ui.StatusBadge.html(Object.assign({}, this.opts, this.resolve()));
+		return whatsapp.ui.StatusBadge.html(Object.assign({}, this.opts, this.resolve()));
 	}
 
 	refresh(doc) {
@@ -54,13 +54,13 @@ sanad.ui.StatusBadge = class StatusBadge {
 		return this;
 	}
 
-	/** Static renderer: `sanad.ui.StatusBadge.html({label, colour|tone, icon, size, title})`. */
+	/** Static renderer: `whatsapp.ui.StatusBadge.html({label, colour|tone, icon, size, title})`. */
 	static html({ label = "", colour, tone, icon = true, size = "sm", title } = {}) {
 		const t = tone || ui.tone(colour);
 		const show_icon = icon && TONE_ICON[t];
-		const icon_html = show_icon ? `<span class="sanad-badge__icon" aria-hidden="true">${ui.icon(TONE_ICON[t], "xs")}</span>` : `<span class="sanad-badge__dot" aria-hidden="true"></span>`;
-		return `<span class="sanad-badge sanad-badge--${size} sanad-tone--${t}"${title ? ` title="${ui.escape(title)}"` : ""}>${icon_html}<span class="sanad-badge__label">${ui.escape(label)}</span></span>`;
+		const icon_html = show_icon ? `<span class="whatsapp-kit-badge__icon" aria-hidden="true">${ui.icon(TONE_ICON[t], "xs")}</span>` : `<span class="whatsapp-kit-badge__dot" aria-hidden="true"></span>`;
+		return `<span class="whatsapp-kit-badge whatsapp-kit-badge--${size} whatsapp-kit-tone--${t}"${title ? ` title="${ui.escape(title)}"` : ""}>${icon_html}<span class="whatsapp-kit-badge__label">${ui.escape(label)}</span></span>`;
 	}
 };
 
-export default sanad.ui.StatusBadge;
+export default whatsapp.ui.StatusBadge;

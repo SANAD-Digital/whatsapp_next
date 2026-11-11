@@ -14,7 +14,7 @@ in its own card that ticks itself green once it is complete:
    rows only when the report defines none. The file it attaches (none, PDF, image) with print
    format, letter head and language; or a message only. The text is written with insertable
    variables, or taken from a saved template. Templates are the notification editor's cards
-   (`sanad.ui.template_cards`): a filter, "New template", "Edit this template", "Save this text as
+   (`whatsapp.ui.template_cards`): a filter, "New template", "Edit this template", "Save this text as
    a template", and a double click on a card opens it to edit, over this window. They need the
    host's `open_template(name, {defaults, on_saved})`; without it the cards only choose.
    "Create PDF" beside the file choice makes the file the draft attaches and opens it in a new tab
@@ -33,7 +33,7 @@ anything; a saved alert also shows what it has sent and can run now.
 ## Usage
 
 ```js
-new sanad.ui.AlertEditor({
+new whatsapp.ui.AlertEditor({
   name: "Daily sales" /* or null for a new one */,
   load: (name) => api("get_editor", { name }),          // alert, options, devices, templates, tokens, variables, stats, recent
   preview: (payload) => api("preview_draft", { payload }),

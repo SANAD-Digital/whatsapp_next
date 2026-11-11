@@ -10,7 +10,7 @@
 frappe.provide("whatsapp_next.campaigns");
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const C = whatsapp_next.campaigns;
 	const esc = (v) => ui.escape(v);
 	const fmt_int = (v) => ui.format_int(v);
@@ -112,22 +112,22 @@ frappe.provide("whatsapp_next.campaigns");
 	C.bar_html = (doc, { paused } = {}) => {
 		const total = Math.max(C.messages_of_doc(doc), 1);
 		const w = (n) => `${Math.max(0, (cint(n) * 100) / total).toFixed(2)}%`;
-		return `<span class="wa-strip__bar${paused ? " wa-strip__bar--paused" : ""}" role="img"
+		return `<span class="whatsapp-strip__bar${paused ? " whatsapp-strip__bar--paused" : ""}" role="img"
 				aria-label="${esc(__("{0} sent, {1} delivered, {2} read, {3} failed, of {4} messages", [
 					fmt_int(C.handed_of_doc(doc)), fmt_int(doc.delivered_count), fmt_int(doc.read_count), fmt_int(doc.failed_count), fmt_int(C.messages_of_doc(doc)),
 				]))}">
-			<span class="wa-strip__seg wa-strip__seg--read" style="inline-size:${w(doc.read_count)}"></span>
-			<span class="wa-strip__seg wa-strip__seg--delivered" style="inline-size:${w(doc.delivered_count)}"></span>
-			<span class="wa-strip__seg wa-strip__seg--sent" style="inline-size:${w(doc.sent_count)}"></span>
-			<span class="wa-strip__seg wa-strip__seg--failed" style="inline-size:${w(doc.failed_count)}"></span>
+			<span class="whatsapp-strip__seg whatsapp-strip__seg--read" style="inline-size:${w(doc.read_count)}"></span>
+			<span class="whatsapp-strip__seg whatsapp-strip__seg--delivered" style="inline-size:${w(doc.delivered_count)}"></span>
+			<span class="whatsapp-strip__seg whatsapp-strip__seg--sent" style="inline-size:${w(doc.sent_count)}"></span>
+			<span class="whatsapp-strip__seg whatsapp-strip__seg--failed" style="inline-size:${w(doc.failed_count)}"></span>
 		</span>`;
 	};
 
 	/** The same bar inside a table cell, with a "sent / messages" label above it. */
 	C.progress_html = (doc, { tone } = {}) => {
 		if (!C.messages_of_doc(doc)) return `<span class="text-muted">—</span>`;
-		return `<span class="wa-strip__cell" title="${esc(__("Messages sent out of all the campaign's messages"))}">
-			<span class="wa-strip__cell-label sanad-tabular">${esc(C.progress_text(doc))}</span>
+		return `<span class="whatsapp-strip__cell" title="${esc(__("Messages sent out of all the campaign's messages"))}">
+			<span class="whatsapp-strip__cell-label whatsapp-kit-tabular">${esc(C.progress_text(doc))}</span>
 			${C.bar_html(doc, { paused: tone === "amber" })}
 		</span>`;
 	};
@@ -141,9 +141,9 @@ frappe.provide("whatsapp_next.campaigns");
 			{ label: __("Failed"), value: cint(doc.failed_count), tone: cint(doc.failed_count) ? "red" : "" },
 		]
 			.map(
-				(s) => `<span class="wa-strip__stat">
-					<span class="wa-strip__stat-label">${esc(s.label)}</span>
-					<span class="wa-strip__stat-value sanad-tabular${s.tone ? ` sanad-tone--${s.tone}` : ""}">${esc(fmt_int(s.value))}</span>
+				(s) => `<span class="whatsapp-strip__stat">
+					<span class="whatsapp-strip__stat-label">${esc(s.label)}</span>
+					<span class="whatsapp-strip__stat-value whatsapp-kit-tabular${s.tone ? ` whatsapp-kit-tone--${s.tone}` : ""}">${esc(fmt_int(s.value))}</span>
 				</span>`
 			)
 			.join("");

@@ -81,7 +81,7 @@ Returns live counts for a selection, with the blacklists applied. No rows are re
 list argument isn't JSON.
 
 ```js
-const est = await sanad.ui.call("bulk_send.estimate", { groups: ["VIP"], numbers: ["0501234567"] });
+const est = await whatsapp.ui.call("bulk_send.estimate", { groups: ["VIP"], numbers: ["0501234567"] });
 ```
 
 ---
@@ -175,7 +175,7 @@ curl -s -X POST "https://<site>/api/method/whatsapp_next.api.v1.bulk_send.send" 
 ```
 
 ```js
-const r = await sanad.ui.call("bulk_send.send", {
+const r = await whatsapp.ui.call("bulk_send.send", {
   payload: { contacts: ["Ali Saleh"], kind: "image", attachment: "/private/files/flyer.png", body: "New flyer" },
 });
 ```

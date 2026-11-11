@@ -1,7 +1,7 @@
 # NotificationEditor
 
 One window to create, edit and try a document notification — a WhatsApp message that goes out
-when something happens to a record. The AlertEditor's anatomy and styling (`sanad-ae`), with
+when something happens to a record. The AlertEditor's anatomy and styling (`whatsapp-kit-ae`), with
 four cards that tick themselves green once complete:
 
 1. **When** — the document type (searched), the event as chips (created, saved, submitted,
@@ -14,7 +14,7 @@ four cards that tick themselves green once complete:
 2. **What** — the message **from a template** or **written here**. Templates are cards, the ones
    written for this document type first, with a "New template" card and "Edit this template";
    both open the host's template editor, and a template saved there is chosen. A double click on
-   a card chooses it and opens it to edit, over this window (`sanad.ui.template_cards`, shared with
+   a card chooses it and opens it to edit, over this window (`whatsapp.ui.template_cards`, shared with
    the alert editor). "Create PDF", beside the record the preview is tried on, prints that
    record and opens it in a new tab, whatever the message attaches (host's
    `make_file(payload, reference_name)`). Written text
@@ -34,7 +34,7 @@ A saved notification also shows what it has sent.
 ## Usage
 
 ```js
-new sanad.ui.NotificationEditor({
+new whatsapp.ui.NotificationEditor({
   name: "Invoice submitted" /* or null for a new one */,
   load: (name) => api("get_editor", { name }),            // {notification, stats, recent[], options{event, method, recipient_type}, devices[], templates[], fields, me{phone}, can_write, can_delete}
   setup: (doctype) => api("get_document_setup", { document_type: doctype }), // {fields, templates}

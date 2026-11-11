@@ -1,4 +1,4 @@
-// sanad.ui.ListStatsCard — a row of live number cards above a Desk list (or inside any wrapper).
+// whatsapp.ui.ListStatsCard — a row of live number cards above a Desk list (or inside any wrapper).
 // Each card gets its value from a configured API key, a `frappe.db.count`, or a `sum` aggregate
 // through `frappe.db.get_list`; it shows a skeleton while loading, an inline error on failure, and
 // on click either runs `onclick` or opens a `frappe.ui.Dialog` listing the method's rows with
@@ -7,7 +7,7 @@
 
 import ui from "../_core/index.js";
 
-sanad.ui.ListStatsCard = class ListStatsCard {
+whatsapp.ui.ListStatsCard = class ListStatsCard {
 	/**
 	 * @param {Object} opts
 	 * @param {Object} [opts.listview] — a Desk ListView; cards are inserted above the result rows
@@ -32,18 +32,18 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 	}
 
 	make() {
-		this.$el = $(`<div class="sanad-kit sanad-stats sanad-stats--${this.opts.layout === "kpi" ? "kpi" : "row"}" role="group"></div>`).attr("aria-label", __("Summary"));
+		this.$el = $(`<div class="whatsapp-kit whatsapp-kit-stats whatsapp-kit-stats--${this.opts.layout === "kpi" ? "kpi" : "row"}" role="group"></div>`).attr("aria-label", __("Summary"));
 		this.opts.cards.forEach((card) => this.$el.append(this.card_html(card)));
 		const lv = this.opts.listview;
 		if (lv && lv.$frappe_list) {
 			lv.$frappe_list.prepend(this.$el);
 			// `show` fires straight after mount: `refresh()` skips a repeat within its quiet window
-			lv.page && lv.page.wrapper.on("show.sanadstats", () => this.refresh()).on("hide.sanadstats", () => this.stop_timer());
+			lv.page && lv.page.wrapper.on("show.whatsappstats", () => this.refresh()).on("hide.whatsappstats", () => this.stop_timer());
 		} else {
 			$(this.opts.wrapper).append(this.$el);
 		}
-		this.$el.on("click", ".sanad-stats__card", (e) => this.on_card_click($(e.currentTarget).data("key")));
-		this.$el.on("keydown", ".sanad-stats__card", (e) => {
+		this.$el.on("click", ".whatsapp-kit-stats__card", (e) => this.on_card_click($(e.currentTarget).data("key")));
+		this.$el.on("keydown", ".whatsapp-kit-stats__card", (e) => {
 			if (e.key === "Enter" || e.key === " ") {
 				e.preventDefault();
 				this.on_card_click($(e.currentTarget).data("key"));
@@ -55,19 +55,19 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 		const interactive = !!(card.onclick || card.modal);
 		const attrs = interactive ? ` tabindex="0" role="button"` : "";
 		return `
-			<div class="sanad-stats__card ${interactive ? "sanad-stats__card--interactive" : ""}" data-key="${ui.escape(card.key)}"${attrs}>
-				${card.icon ? `<div class="sanad-stats__icon ${card.tone ? `sanad-tone--${ui.tone(card.tone)}` : ""}" aria-hidden="true">${ui.icon(card.icon, "md")}</div>` : ""}
-				<div class="sanad-stats__text">
-					<div class="sanad-stats__label">${ui.escape(card.label)}</div>
-					<div class="sanad-stats__value sanad-tabular">${ui.skeleton(1, { lines: 1 })}</div>
-					${card.sub != null ? `<div class="sanad-stats__sub">${typeof card.sub === "string" ? ui.escape(card.sub) : ""}</div>` : ""}
+			<div class="whatsapp-kit-stats__card ${interactive ? "whatsapp-kit-stats__card--interactive" : ""}" data-key="${ui.escape(card.key)}"${attrs}>
+				${card.icon ? `<div class="whatsapp-kit-stats__icon ${card.tone ? `whatsapp-kit-tone--${ui.tone(card.tone)}` : ""}" aria-hidden="true">${ui.icon(card.icon, "md")}</div>` : ""}
+				<div class="whatsapp-kit-stats__text">
+					<div class="whatsapp-kit-stats__label">${ui.escape(card.label)}</div>
+					<div class="whatsapp-kit-stats__value whatsapp-kit-tabular">${ui.skeleton(1, { lines: 1 })}</div>
+					${card.sub != null ? `<div class="whatsapp-kit-stats__sub">${typeof card.sub === "string" ? ui.escape(card.sub) : ""}</div>` : ""}
 				</div>
-				${interactive ? `<span class="sanad-stats__chevron" aria-hidden="true">${ui.icon("es-line-right-chevron", "xs")}</span>` : ""}
+				${interactive ? `<span class="whatsapp-kit-stats__chevron" aria-hidden="true">${ui.icon("es-line-right-chevron", "xs")}</span>` : ""}
 			</div>`;
 	}
 
 	$card(key) {
-		return this.$el.find(`.sanad-stats__card[data-key="${key}"]`);
+		return this.$el.find(`.whatsapp-kit-stats__card[data-key="${key}"]`);
 	}
 
 	/** Fetch the value of one card according to its `method` / `count` / `sum` option. */
@@ -75,7 +75,7 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 		// a function lets several cards share one call (each picks its own figure from the answer)
 		if (typeof card.method === "function") return Promise.resolve(card.method());
 		if (card.method) {
-			return sanad.ui.call(card.method, typeof card.args === "function" ? card.args() : card.args || {}, { silent: true });
+			return whatsapp.ui.call(card.method, typeof card.args === "function" ? card.args() : card.args || {}, { silent: true });
 		}
 		if (card.count) {
 			return frappe.db.count(card.count.doctype, { filters: card.count.filters || {} });
@@ -99,7 +99,7 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 		if (!force && this.last_refresh && now - this.last_refresh < 2000) return Promise.resolve();
 		this.last_refresh = now;
 		const jobs = this.opts.cards.map((card) => {
-			const $value = this.$card(card.key).find(".sanad-stats__value");
+			const $value = this.$card(card.key).find(".whatsapp-kit-stats__value");
 			return this.fetch(card)
 				.then((raw) => {
 					let value = raw;
@@ -111,14 +111,14 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 					}
 					this.values[card.key] = { raw, value };
 					const text = card.format ? card.format(value, raw) : ui.format_int(value || 0);
-					$value.html(`<span class="${tone ? `sanad-tone--${ui.tone(tone)}` : ""}">${ui.escape(text)}</span>`);
-					if (typeof card.sub === "function") this.$card(card.key).find(".sanad-stats__sub").text(card.sub(value, raw) || "");
-					this.$card(card.key).removeClass("sanad-stats__card--error");
+					$value.html(`<span class="${tone ? `whatsapp-kit-tone--${ui.tone(tone)}` : ""}">${ui.escape(text)}</span>`);
+					if (typeof card.sub === "function") this.$card(card.key).find(".whatsapp-kit-stats__sub").text(card.sub(value, raw) || "");
+					this.$card(card.key).removeClass("whatsapp-kit-stats__card--error");
 				})
 				.catch((err) => {
 					this.values[card.key] = { error: err };
-					this.$card(card.key).addClass("sanad-stats__card--error");
-					$value.html(`<span class="sanad-stats__error" role="alert">${ui.icon("es-line-alert-circle", "xs")} ${ui.escape(__("Could not load"))}<span class="sanad-visually-hidden">. ${ui.escape(err.message || "")}</span></span>`);
+					this.$card(card.key).addClass("whatsapp-kit-stats__card--error");
+					$value.html(`<span class="whatsapp-kit-stats__error" role="alert">${ui.icon("es-line-alert-circle", "xs")} ${ui.escape(__("Could not load"))}<span class="whatsapp-kit-visually-hidden">. ${ui.escape(err.message || "")}</span></span>`);
 				});
 		});
 		this.start_timer();
@@ -163,16 +163,16 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 			size: modal.size || "large",
 			fields: [{ fieldtype: "HTML", fieldname: "body" }],
 		});
-		dialog.$wrapper.addClass("sanad-kit sanad-stats-modal sanad-sheet");
+		dialog.$wrapper.addClass("whatsapp-kit whatsapp-kit-stats-modal whatsapp-kit-sheet");
 		this.modal_open = true; // auto-refresh pauses while the modal is open
 		dialog.$wrapper.on("hidden.bs.modal", () => {
 			this.modal_open = false;
 			this.refresh(true);
 		});
 		const $body = dialog.get_field("body").$wrapper;
-		const state = new sanad.ui.EmptyState({ wrapper: $body, state: "loading", rows: 4 });
+		const state = new whatsapp.ui.EmptyState({ wrapper: $body, state: "loading", rows: 4 });
 		const load = () =>
-			sanad.ui
+			whatsapp.ui
 				.call(modal.method || card.method, typeof modal.args === "function" ? modal.args() : modal.args || {}, { silent: true })
 				.then((data) => {
 					const rows = Array.isArray(data) ? data : (data && data.rows) || [];
@@ -191,9 +191,9 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 
 	render_rows($body, rows, columns, modal, reload) {
 		const actions = (modal.row_actions || []).filter((a) => a.method || a.handler);
-		let html = '<div class="sanad-table-wrap"><table class="sanad-table sanad-stats-modal__table"><thead><tr>';
+		let html = '<div class="whatsapp-kit-table-wrap"><table class="whatsapp-kit-table whatsapp-kit-stats-modal__table"><thead><tr>';
 		columns.forEach((c) => (html += `<th scope="col">${ui.escape(c.label)}</th>`));
-		if (actions.length) html += `<th scope="col"><span class="sanad-visually-hidden">${ui.escape(__("Actions"))}</span></th>`;
+		if (actions.length) html += `<th scope="col"><span class="whatsapp-kit-visually-hidden">${ui.escape(__("Actions"))}</span></th>`;
 		html += "</tr></thead><tbody>";
 		rows.forEach((row, i) => {
 			html += `<tr data-idx="${i}">`;
@@ -202,7 +202,7 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 				html += `<td>${value == null ? "" : ui.escape(value)}</td>`;
 			});
 			if (actions.length) {
-				html += '<td class="sanad-stats-modal__actions">';
+				html += '<td class="whatsapp-kit-stats-modal__actions">';
 				actions.forEach((a, j) => {
 					if (a.condition && !a.condition(row)) return;
 					html += `<button type="button" class="btn btn-xs btn-default" data-action="${j}" data-idx="${i}">${a.icon ? ui.icon(a.icon, "xs") + " " : ""}${ui.escape(a.label)}</button>`;
@@ -231,14 +231,14 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 			if (action.handler) return Promise.resolve(action.handler(row, extra)).then(() => true);
 			const args = action.args ? action.args(row, extra) : { name: row.name };
 			if (extra.reason && !("reason" in args)) args.reason = extra.reason;
-			return sanad.ui
+			return whatsapp.ui
 				.call(action.method, args)
 				.then(() => {
-					sanad.ui.Toast.success(action.success_message || __("{0} done", [action.label]));
+					whatsapp.ui.Toast.success(action.success_message || __("{0} done", [action.label]));
 					return true;
 				})
 				.catch((err) => {
-					sanad.ui.Toast.error(err);
+					whatsapp.ui.Toast.error(err);
 					return false;
 				});
 		};
@@ -246,7 +246,7 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 		const confirm = typeof action.confirm === "object" ? Object.assign({}, action.confirm) : {};
 		if (confirm.impact_of) confirm.impact = confirm.impact_of(row);
 		delete confirm.impact_of;
-		return sanad.ui.ConfirmDialog.ask(
+		return whatsapp.ui.ConfirmDialog.ask(
 			Object.assign({ title: __("{0} this row?", [action.label]), confirm_label: action.label }, confirm)
 		)
 			.then(({ reason }) => call({ reason }))
@@ -258,9 +258,9 @@ sanad.ui.ListStatsCard = class ListStatsCard {
 		Object.entries(this.handlers).forEach(([event, handler]) => frappe.realtime.off(event, handler));
 		this.handlers = {};
 		const lv = this.opts.listview;
-		lv && lv.page && lv.page.wrapper.off(".sanadstats");
+		lv && lv.page && lv.page.wrapper.off(".whatsappstats");
 		this.$el.remove();
 	}
 };
 
-export default sanad.ui.ListStatsCard;
+export default whatsapp.ui.ListStatsCard;

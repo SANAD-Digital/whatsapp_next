@@ -1,7 +1,7 @@
-.sanad-rowactions {
+.whatsapp-kit-rowactions {
 	display: inline-flex;
 	align-items: center;
-	margin-inline-start: var(--sanad-gap-sm);
+	margin-inline-start: var(--whatsapp-kit-gap-sm);
 	min-width: 28px; // stable slot even when a row has no actions
 
 	&__btn {
@@ -21,14 +21,14 @@
 		position: fixed;
 		inset-block-start: 0;
 		inset-inline-start: 0;
-		translate: var(--sanad-menu-x, 0) var(--sanad-menu-y, 0);
+		translate: var(--whatsapp-kit-menu-x, 0) var(--whatsapp-kit-menu-y, 0);
 		z-index: 1035; // above the list, below Desk modals (1050)
 		min-width: 180px;
 		max-width: min(320px, calc(100vw - 16px));
-		padding: var(--sanad-gap-xs);
+		padding: var(--whatsapp-kit-gap-xs);
 		background: var(--surface-base);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-radius);
 		box-shadow: var(--shadow-md, 0 4px 12px var(--surface-gray-4));
 		display: flex;
 		flex-direction: column;
@@ -38,12 +38,12 @@
 		appearance: none;
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		width: 100%;
-		min-height: var(--sanad-target);
-		padding-inline: var(--sanad-gap-md);
+		min-height: var(--whatsapp-kit-target);
+		padding-inline: var(--whatsapp-kit-gap-md);
 		border: 0;
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		background: transparent;
 		color: var(--ink-gray-7);
 		font-size: var(--text-sm, 13px);
@@ -60,15 +60,15 @@
 
 // Desk gives `.level-right` a fixed 180 px; a decorated row needs room for the button as well.
 // (attribute selector keeps Desk's class name out of the physical-property grep)
-.list-view .frappe-list .result .list-row > [class~="level-right"]:has(.sanad-rowactions) {
+.list-view .frappe-list .result .list-row > [class~="level-right"]:has(.whatsapp-kit-rowactions) {
 	flex: 0 0 216px;
 	width: 216px;
 }
 
 // Two-line list cells decorated after render (name + muted phone / id line).
-.sanad-cell { display: inline-flex !important; flex-direction: column; min-width: 0; line-height: 1.3; vertical-align: middle; }
-.sanad-cell > a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sanad-cell__sub {
+.whatsapp-kit-cell { display: inline-flex !important; flex-direction: column; min-width: 0; line-height: 1.3; vertical-align: middle; }
+.whatsapp-kit-cell > a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.whatsapp-kit-cell__sub {
 	display: block;
 	color: var(--ink-gray-6);
 	font-size: var(--text-xs, 12px);
@@ -80,7 +80,7 @@
 	unicode-bidi: isolate;
 }
 // Lists whose cells carry a second line grow their rows (set on `listview.$result` by the list script).
-.sanad-list--two-line .list-row { height: auto; min-height: 32px; padding-block: 6px; align-items: center; }
-.sanad-list--two-line .list-row-col.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sanad-cell__muted { color: var(--ink-gray-5); }
-.sanad-cell__error { color: var(--ink-red-8); } // ink only — the error text, no chip background
+.whatsapp-kit-list--two-line .list-row { height: auto; min-height: 32px; padding-block: 6px; align-items: center; }
+.whatsapp-kit-list--two-line .list-row-col.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.whatsapp-kit-cell__muted { color: var(--ink-gray-5); }
+.whatsapp-kit-cell__error { color: var(--ink-red-8); } // ink only — the error text, no chip background

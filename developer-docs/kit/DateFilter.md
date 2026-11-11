@@ -1,4 +1,4 @@
-# `sanad.ui.DateFilter` and `sanad.ui.DateFilterSet`
+# `whatsapp.ui.DateFilter` and `whatsapp.ui.DateFilterSet`
 
 `DateFilter` is the prototype's operator-based date filter (`docs/component/Date Filter.html`). A split trigger (**operator · [field] · value**) opens a panel whose shape follows the operator:
 
@@ -35,7 +35,7 @@ All bounds are inclusive. `after` / `before` without a time shift the date by on
 | Option | Type | Default | Meaning |
 |---|---|---|---|
 | `wrapper` | jQuery \| HTMLElement | — (required) | The trigger is appended here. |
-| `label` | string | — | Caption above the trigger (`.sanad-datefilter__label`). |
+| `label` | string | — | Caption above the trigger (`.whatsapp-kit-datefilter__label`). |
 | `placeholder` | string | `__("Pick a date")` | Value text while nothing is applied. `""` hides the text. |
 | `default_op` | operator key | `"between"` | Operator for a fresh draft. |
 | `layout` | `"auto"` \| `"wide"` \| `"compact"` | `"auto"` | `auto` goes compact under 720 px wide. |
@@ -59,7 +59,7 @@ The last seven options are the set's wiring. `DateFilterSet` supplies them, and 
 
 | Option | Type | Default | Meaning |
 |---|---|---|---|
-| `wrapper` | jQuery \| HTMLElement | — (required) | Receives `.sanad-datefilter-set`. |
+| `wrapper` | jQuery \| HTMLElement | — (required) | Receives `.whatsapp-kit-datefilter-set`. |
 | `fields` | as above | — | The date fields on offer. |
 | `fieldname` | string | first field | The field the first row starts on. |
 | `on_change` | `(rows, {removed}) => void` | — | `rows = [{fieldname, value \| null}]`. `removed` holds the fieldnames the set dropped. |
@@ -105,12 +105,12 @@ None.
 ## Usage
 
 ```js
-new sanad.ui.DateFilter({
+new whatsapp.ui.DateFilter({
   wrapper: $slot, label: __("Sent at"), default_op: "between",
   on_change: (v) => (v ? load({ from: v.from, to: v.to }) : load({})),
 });
 
-new sanad.ui.DateFilterSet({
+new whatsapp.ui.DateFilterSet({
   wrapper: $slot,
   fields: [{ value: "sent_at", label: __("Sent at") }, { value: "creation", label: __("Created On") }],
   fieldname: "creation",
@@ -122,10 +122,10 @@ In a Desk list, use the FilterBar preset `{ type: "date" }` instead, which does 
 
 ## CSS hooks
 
-- **Root:** `.sanad-datefilter`, with the modifiers `--set` (a value is applied) and `--hidden` (the set's inactive rows).
-- **Trigger:** `.sanad-datefilter__trigger` contains `__op`, `__fieldpick` (`__fieldpick-label--tag`), `__value`, `__text` (`--empty`), `__clear` and `__caret`.
-- **Menus:** `.sanad-datefilter__menu` (`--fields`) holds `__menu-item`, with the modifiers `--on` and `--mine`, plus `__menu-box` and `__menu-check`.
-- **Panel:** `.sanad-datefilter__panel` (`--compact`) contains:
+- **Root:** `.whatsapp-kit-datefilter`, with the modifiers `--set` (a value is applied) and `--hidden` (the set's inactive rows).
+- **Trigger:** `.whatsapp-kit-datefilter__trigger` contains `__op`, `__fieldpick` (`__fieldpick-label--tag`), `__value`, `__text` (`--empty`), `__clear` and `__caret`.
+- **Menus:** `.whatsapp-kit-datefilter__menu` (`--fields`) holds `__menu-item`, with the modifiers `--on` and `--mine`, plus `__menu-box` and `__menu-check`.
+- **Panel:** `.whatsapp-kit-datefilter__panel` (`--compact`) contains:
   - `__chead` (the compact head)
   - `__rail` / `__rail-item--on`
   - `__presets` / `__preset--on`
@@ -135,8 +135,8 @@ In a Desk list, use the FilterBar preset `{ type: "date" }` instead, which does 
   - `__picker` / `__picker-cell--on` / `--now`
   - `__form`, `__seg`, `__stepper` and `__bars` / `__bar--on`
   - `__footer`, holding `__summary`, `__count-chip`, `__cancel` and `__apply`
-- **Custom property:** `--sanad-band-radius` is set on range cells.
-- **Set root:** `.sanad-datefilter-set`.
+- **Custom property:** `--whatsapp-kit-band-radius` is set on range cells.
+- **Set root:** `.whatsapp-kit-datefilter-set`.
 
 ## Notes
 

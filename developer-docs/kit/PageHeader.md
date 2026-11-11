@@ -1,8 +1,8 @@
-# `sanad.ui.PageHeader`
+# `whatsapp.ui.PageHeader`
 
 The screen header above a Desk list or on a custom page: an H2 title and one-line description,
 the primary button at the inline-end of the title row, optional secondary buttons (with a count
-pill), a KPI row (a `sanad.ui.ListStatsCard` in `kpi` layout), an optional banner (tone + icon +
+pill), a KPI row (a `whatsapp.ui.ListStatsCard` in `kpi` layout), an optional banner (tone + icon +
 text + one action, static or loaded) and caller-rendered **blocks** that re-render on realtime
 events. On a list it mounts as the first child of `listview.$frappe_list` (above the FilterBar)
 and, when `primary` is given, clears Frappe's own "+ Add" and keeps it cleared across renders.
@@ -46,7 +46,7 @@ per tone: amber alert-triangle, red alert-circle, blue/gray info, green success.
 
 - `frappe.realtime.on` for each key of `events` and each block's `events`.
 - List mode: `ui.on_list_render` (keeps the header first and Frappe's primary cleared) and the
-  page wrapper's `show.sanadpagehead` jQuery event → `refresh()`.
+  page wrapper's `show.whatsapppagehead` jQuery event → `refresh()`.
 - Action/banner handlers receive the header instance.
 
 ## Server calls
@@ -58,7 +58,7 @@ None directly. KPI counts go through ListStatsCard; banner loaders and blocks ma
 ```js
 frappe.listview_settings["Sales Order"] = {
   onload(listview) {
-    listview.sanad_header = new sanad.ui.PageHeader({
+    listview.whatsapp_header = new whatsapp.ui.PageHeader({
       listview,
       title: __("Sales orders"),
       description: __("Every order, its status and what is still to deliver."),
@@ -73,19 +73,19 @@ frappe.listview_settings["Sales Order"] = {
 
 ## CSS hooks
 
-- Root `<header class="sanad-kit sanad-pagehead">`.
+- Root `<header class="whatsapp-kit whatsapp-kit-pagehead">`.
 - `__row`, `__text`, `__title`, `__desc`, `__actions`, `__primary`, `__count`, `__stats`,
-  `__banner` (+ `sanad-tone--<tone>`), `__banner-icon`, `__banner-text`, `__banner-action`,
+  `__banner` (+ `whatsapp-kit-tone--<tone>`), `__banner-icon`, `__banner-text`, `__banner-action`,
   `__blocks`, `__block[data-key]`.
-- Shared primitives shipped in this stylesheet for blocks and DataList cells: `.sanad-strip`
+- Shared primitives shipped in this stylesheet for blocks and DataList cells: `.whatsapp-kit-strip`
   (`--green`, `--amber`, `__title`, `__dot`, `__meta`, `__grow`, `__actions`, `__note`),
-  `.sanad-strip-list`, `.sanad-strip-more`, `.sanad-progress` (`__label`, `__bar`, `__fill`,
+  `.whatsapp-kit-strip-list`, `.whatsapp-kit-strip-more`, `.whatsapp-kit-progress` (`__label`, `__bar`, `__fill`,
   `__fail`, `--amber`).
 
 ## Notes
 
 - Banner is `role="status"`, or `role="alert"` when the tone is red.
-- Block errors render `sanad.ui.EmptyState` (`state: "error"`, with Retry for async failures).
+- Block errors render `whatsapp.ui.EmptyState` (`state: "error"`, with Retry for async failures).
 - Empty title row / actions / stats containers are removed so no stray spacing remains.
 - Live use: `public/js/listview/whatsapp_campaign_list.js`, `whatsapp_command_list.js`,
   `whatsapp_contact_group_list.js`, `whatsapp_notification_list.js`,

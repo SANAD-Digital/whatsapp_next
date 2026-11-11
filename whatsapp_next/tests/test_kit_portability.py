@@ -70,8 +70,8 @@ class TestKitPortability(IntegrationTestCase):
 			index = (comp / "index.js").read_text(encoding="utf-8")
 			# most components are a class; a foundation like Render is a namespace object
 			self.assertTrue(
-				f"sanad.ui.{comp.name} = class" in index or f"sanad.ui.{comp.name} = " in index,
-				f"{comp.name} must export sanad.ui.{comp.name}",
+				f"whatsapp.ui.{comp.name} = class" in index or f"whatsapp.ui.{comp.name} = " in index,
+				f"{comp.name} must export whatsapp.ui.{comp.name}",
 			)
 			self.assertNotIn("stub, replaced", index, f"{comp.name}/index.js is still a stub")
 			readme = (comp / "README.md").read_text(encoding="utf-8")
@@ -127,4 +127,4 @@ class TestKitPortability(IntegrationTestCase):
 	def test_kit_readme_explains_copying(self):
 		readme = (UI / "README.md").read_text(encoding="utf-8")
 		self.assertIn("another", readme.lower())
-		self.assertIn("sanad.ui.configure", readme)
+		self.assertIn("whatsapp.ui.configure", readme)

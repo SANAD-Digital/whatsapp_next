@@ -82,20 +82,20 @@ function load_field_choices(frm) {
 		}
 	};
 	if (frm._wa_fields && frm._wa_fields.dt === dt) return apply(frm._wa_fields.data);
-	sanad.ui
+	whatsapp.ui
 		.call("notifications.get_document_fields", { document_type: dt })
 		.then((data) => {
 			frm._wa_fields = { dt, data };
 			apply(data);
 		})
-		.catch((err) => sanad.ui.Toast.error(err));
+		.catch((err) => whatsapp.ui.Toast.error(err));
 }
 
 /** Ask for one document of the notification's DocType; resolves its name, or null when closed. */
 function pick_document(frm, title, label) {
 	return new Promise((resolve) => {
 		if (!frm.doc.document_type) {
-			sanad.ui.Toast.info(__("Choose the document type first."));
+			whatsapp.ui.Toast.info(__("Choose the document type first."));
 			return resolve(null);
 		}
 		let done = false;
@@ -110,16 +110,16 @@ function pick_document(frm, title, label) {
 			},
 			on_hide: () => done || resolve(null),
 		});
-		d.$wrapper.addClass("sanad-kit");
+		d.$wrapper.addClass("whatsapp-kit");
 		d.show();
 	});
 }
 
 function preview(frm, reference_name) {
-	sanad.ui
+	whatsapp.ui
 		.call("notifications.preview", { name: frm.doc.name, reference_name }, { freeze: true })
 		.then((r) => {
-			const esc = sanad.ui.escape;
+			const esc = whatsapp.ui.escape;
 			const recipients = (r.recipients || []).map((x) => `<li><bdi dir="ltr">${esc(x.phone_e164)}</bdi> <span class="text-muted">· ${esc(__(x.source || ""))}</span></li>`).join("");
 			const errors = (r.errors || []).map((e) => `<li>${esc(e)}</li>`).join("");
 			const d = new frappe.ui.Dialog({
@@ -132,31 +132,31 @@ function preview(frm, reference_name) {
 						options: `
 							<p class="${r.meets_condition ? "text-success" : "text-warning"}">${esc(r.meets_condition ? __("The condition is met: this document would be sent.") : __("The condition is not met: nothing would be sent."))}</p>
 							<h6>${esc(__("Message"))}</h6>
-							<div class="wa-notification-preview" dir="auto" style="white-space: pre-wrap">${esc(r.message || "")}</div>
+							<div class="whatsapp-notification-preview" dir="auto" style="white-space: pre-wrap">${esc(r.message || "")}</div>
 							<h6>${esc(__("Recipients"))}</h6>
 							${recipients ? `<ul>${recipients}</ul>` : `<p class="text-muted">${esc(__("No recipient resolved."))}</p>`}
 							${errors ? `<h6>${esc(__("Errors"))}</h6><ul class="text-danger">${errors}</ul>` : ""}`,
 					},
 				],
 			});
-			d.$wrapper.addClass("sanad-kit");
+			d.$wrapper.addClass("whatsapp-kit");
 			d.show();
 		})
-		.catch((err) => sanad.ui.Toast.error(err));
+		.catch((err) => whatsapp.ui.Toast.error(err));
 }
 
 function send_now(frm, reference_name) {
-	sanad.ui.ConfirmDialog.ask({
+	whatsapp.ui.ConfirmDialog.ask({
 		title: __("Send {0} now?", [frm.doc.notification_name || frm.doc.name]),
 		message: __("The condition is checked again; one message per recipient is queued."),
 		impact: [{ label: __(frm.doc.document_type), value: reference_name }],
 		confirm_label: __("Send now"),
-		on_confirm: () => sanad.ui.call("notifications.send_now", { name: frm.doc.name, reference_name }),
+		on_confirm: () => whatsapp.ui.call("notifications.send_now", { name: frm.doc.name, reference_name }),
 	})
 		.then((r) => {
-			if (r && r.error) sanad.ui.Toast.error(r.error);
-			else if (r && r.sent) sanad.ui.Toast.success(sanad.ui.plural(r.sent, { one: __("{0} message queued"), other: __("{0} messages queued") }));
-			else sanad.ui.Toast.info(__("Nothing was sent: the condition is not met or no recipient was found."));
+			if (r && r.error) whatsapp.ui.Toast.error(r.error);
+			else if (r && r.sent) whatsapp.ui.Toast.success(whatsapp.ui.plural(r.sent, { one: __("{0} message queued"), other: __("{0} messages queued") }));
+			else whatsapp.ui.Toast.info(__("Nothing was sent: the condition is not met or no recipient was found."));
 			frm.reload_doc();
 		})
 		.catch(() => {});

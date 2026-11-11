@@ -1,4 +1,4 @@
-// sanad.ui.EmptyState — the one component for the four non-data states of any panel, list or
+// whatsapp.ui.EmptyState — the one component for the four non-data states of any panel, list or
 // page: `loading` (skeleton rows, never a spinner), `empty`, `error` (role=alert + retry) and
 // `offline`. Every custom Page and drawer renders through it so the states look and behave alike.
 
@@ -11,7 +11,7 @@ const DEFAULTS = {
 	offline: { icon: "es-line-wifi-off", title: () => __("You are offline") },
 };
 
-sanad.ui.EmptyState = class EmptyState {
+whatsapp.ui.EmptyState = class EmptyState {
 	/**
 	 * @param {Object} opts
 	 * @param {jQuery|HTMLElement} opts.wrapper
@@ -53,19 +53,19 @@ sanad.ui.EmptyState = class EmptyState {
 		const title = this.opts.title || base.title();
 		if (state === "loading") {
 			this.$wrapper.html(
-				`<div class="sanad-empty sanad-empty--loading" role="status" aria-busy="true"><span class="sanad-visually-hidden">${ui.escape(title)}</span>${ui.skeleton(this.opts.rows)}</div>`
+				`<div class="whatsapp-kit-empty whatsapp-kit-empty--loading" role="status" aria-busy="true"><span class="whatsapp-kit-visually-hidden">${ui.escape(title)}</span>${ui.skeleton(this.opts.rows)}</div>`
 			);
 			return this;
 		}
 		const is_error = state === "error" || state === "offline";
 		const $el = $(`
-			<div class="sanad-empty sanad-empty--${state} sanad-empty--${this.opts.size}" ${is_error ? 'role="alert"' : ""}>
-				${base.icon ? `<div class="sanad-empty__icon" aria-hidden="true">${ui.icon(base.icon, "lg")}</div>` : ""}
-				<div class="sanad-empty__title">${ui.escape(title)}</div>
-				${this.opts.description ? `<div class="sanad-empty__desc">${ui.escape(this.opts.description)}</div>` : ""}
-				<div class="sanad-empty__actions"></div>
+			<div class="whatsapp-kit-empty whatsapp-kit-empty--${state} whatsapp-kit-empty--${this.opts.size}" ${is_error ? 'role="alert"' : ""}>
+				${base.icon ? `<div class="whatsapp-kit-empty__icon" aria-hidden="true">${ui.icon(base.icon, "lg")}</div>` : ""}
+				<div class="whatsapp-kit-empty__title">${ui.escape(title)}</div>
+				${this.opts.description ? `<div class="whatsapp-kit-empty__desc">${ui.escape(this.opts.description)}</div>` : ""}
+				<div class="whatsapp-kit-empty__actions"></div>
 			</div>`);
-		const $actions = $el.find(".sanad-empty__actions");
+		const $actions = $el.find(".whatsapp-kit-empty__actions");
 		const action = this.opts.action;
 		const click = action && (action.on_click || action.onclick);
 		if (click) {
@@ -85,4 +85,4 @@ sanad.ui.EmptyState = class EmptyState {
 	}
 };
 
-export default sanad.ui.EmptyState;
+export default whatsapp.ui.EmptyState;

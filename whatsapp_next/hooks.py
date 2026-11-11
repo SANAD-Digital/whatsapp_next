@@ -144,7 +144,7 @@ scheduler_events = {
 }
 
 
-# Desk assets (phase 5): the portable kit (`public/js/ui/`, namespace `sanad.ui`) plus the app
+# Desk assets (phase 5): the portable kit (`public/js/ui/`, namespace `whatsapp.ui`) plus the app
 # setup that maps kit API keys to `whatsapp_next.api.v1.*` (D-031). Per-DocType list/form scripts
 # are registered below as they land (phase 5 live uses, phase 7 customisation).
 app_include_js = ["whatsapp_next.bundle.js"]

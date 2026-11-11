@@ -1,4 +1,4 @@
-// sanad.ui.Toast — thin, consistent wrapper over `frappe.show_alert`: semantic tones, sensible
+// whatsapp.ui.Toast — thin, consistent wrapper over `frappe.show_alert`: semantic tones, sensible
 // auto-dismiss (3–7 s), optional action link. Desk's alert container is already a live region,
 // so nothing is announced twice. Bottom-start on RTL is Desk's own
 // placement (the alert container follows the document direction).
@@ -8,7 +8,7 @@ import ui from "../_core/index.js";
 const INDICATOR = { success: "green", info: "blue", warning: "orange", error: "red" };
 const DEFAULT_SECONDS = { success: 4, info: 5, warning: 6, error: 8 };
 
-sanad.ui.Toast = class Toast {
+whatsapp.ui.Toast = class Toast {
 	/**
 	 * @param {Object|string} opts — a message string or `{ title, message, tone, seconds, action }`
 	 * @param {string} [opts.tone="info"] — success | info | warning | error
@@ -30,9 +30,9 @@ sanad.ui.Toast = class Toast {
 		let html = body;
 		if (action && (action.on_click || action.onclick)) {
 			const id = ui.uid("toast-action");
-			html += ` <a href="#" class="sanad-toast__action" data-id="${id}">${ui.escape(action.label)}</a>`;
+			html += ` <a href="#" class="whatsapp-kit-toast__action" data-id="${id}">${ui.escape(action.label)}</a>`;
 			window.setTimeout(() => {
-				$(`.sanad-toast__action[data-id="${id}"]`).on("click", (e) => {
+				$(`.whatsapp-kit-toast__action[data-id="${id}"]`).on("click", (e) => {
 					e.preventDefault();
 					(action.on_click || action.onclick)();
 				});
@@ -59,4 +59,4 @@ sanad.ui.Toast = class Toast {
 	}
 };
 
-export default sanad.ui.Toast;
+export default whatsapp.ui.Toast;

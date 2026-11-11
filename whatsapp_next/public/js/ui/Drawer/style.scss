@@ -1,6 +1,6 @@
 // Drawer — content styles only; the panel shell, backdrop, mobile sheet and focus ring come from
-// `_core/style.scss` (`.sanad-panel`, `.sanad-backdrop`).
-.sanad-drawer {
+// `_core/style.scss` (`.whatsapp-kit-panel`, `.whatsapp-kit-backdrop`).
+.whatsapp-kit-drawer {
 	&__backdrop[hidden], &[hidden] { display: none; }
 	&:focus { outline: none; }
 	// ---- the shell, in the Overlay Panel's geometry (`OverlayPanel/style.scss`) ----------------
@@ -8,13 +8,13 @@
 	// One panel language across the product: the same header rhythm, the same close square, the
 	// same footer and the kit's own buttons (`_kit/style.scss`) instead of Desk's `.btn`.
 
-	.sanad-panel__header {
+	.whatsapp-kit-panel__header {
 		align-items: center;
 		gap: 10px;
 		min-height: 0;
 		// compact, as the product's other panels (owner, 2026-10-26)
 		padding: 10px 12px;
-		border-block-end: 1px solid var(--wa-border);
+		border-block-end: 1px solid var(--whatsapp-border);
 	}
 	&__heading { flex: 1; min-inline-size: 0; display: flex; flex-direction: column; gap: 4px; white-space: normal; }
 	&__title {
@@ -22,12 +22,12 @@
 		font-size: 14px;
 		font-weight: 600;
 		line-height: 1.35;
-		color: var(--wa-ink);
+		color: var(--whatsapp-ink);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	&__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--wa-ink-3); font-size: 12px; &:empty { display: none; } }
+	&__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--whatsapp-ink-3); font-size: 12px; &:empty { display: none; } }
 	&__tools { display: flex; align-items: center; gap: 6px; flex: none; }
 	// the kind of document, as the reference's header draws it: an icon before the panel's title
 	&__mark {
@@ -38,22 +38,22 @@
 		block-size: 28px;
 		flex: none;
 		border-radius: 8px;
-		background: var(--wa-pri-s);
-		color: var(--wa-pri-d);
-		box-shadow: inset 0 0 0 1px var(--wa-pri-sb);
+		background: var(--whatsapp-pri-s);
+		color: var(--whatsapp-pri-d);
+		box-shadow: inset 0 0 0 1px var(--whatsapp-pri-sb);
 	}
-	&__close { color: var(--wa-ink-3); &:hover { color: var(--wa-ink); } }
-	&__open { color: var(--wa-ink-2); &:hover { color: var(--wa-ink); text-decoration: none; } }
+	&__close { color: var(--whatsapp-ink-3); &:hover { color: var(--whatsapp-ink); } }
+	&__open { color: var(--whatsapp-ink-2); &:hover { color: var(--whatsapp-ink); text-decoration: none; } }
 	// the kit's button is drawn for the kit's 20 px icons; Espresso's carry their own size and
 	// Desk's icon rule centres them with auto margins, which would pull them off their word
-	.wa-btn svg { flex: none; margin: 0; }
+	.whatsapp-btn svg { flex: none; margin: 0; }
 
 	&__body {
 		min-height: 160px;
 		padding: 12px 12px;
-		background: var(--wa-surface);
+		background: var(--whatsapp-surface);
 		scrollbar-width: thin;
-		scrollbar-color: var(--wa-border-2) transparent;
+		scrollbar-color: var(--whatsapp-border-2) transparent;
 	}
 
 	// The reference ends in two or three verbs of one width that share the footer's whole row,
@@ -62,13 +62,13 @@
 		flex-wrap: nowrap;
 		gap: 8px;
 		padding: 8px 12px;
-		border-block-start: 1px solid var(--wa-border);
-		background: var(--wa-surface);
+		border-block-start: 1px solid var(--whatsapp-border);
+		background: var(--whatsapp-surface);
 		&[hidden] { display: none; }
 	}
-	&__footer .sanad-drawer__action:not(.sanad-drawer__more) { flex: 1 1 0; min-inline-size: 0; }
+	&__footer .whatsapp-kit-drawer__action:not(.whatsapp-kit-drawer__more) { flex: 1 1 0; min-inline-size: 0; }
 	// the footer's verbs at the product's control height
-	&__footer .sanad-drawer__action { min-block-size: var(--sanad-ctl-h); font-size: 13px; }
+	&__footer .whatsapp-kit-drawer__action { min-block-size: var(--whatsapp-kit-ctl-h); font-size: 13px; }
 	&__action-label { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; }
 	&__menu { z-index: 1060; }
 	&__more { flex: none; }
@@ -77,7 +77,7 @@
 	&__dl {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: var(--sanad-gap-md) var(--sanad-gap-lg);
+		gap: var(--whatsapp-kit-gap-md) var(--whatsapp-kit-gap-lg);
 		margin: 0;
 	}
 	&__field {
@@ -88,12 +88,12 @@
 	}
 
 	// form mode
-	&__form .frappe-control { margin-block-end: var(--sanad-gap-md); }
+	&__form .frappe-control { margin-block-end: var(--whatsapp-kit-gap-md); }
 	&__summary {
-		margin-block-end: var(--sanad-gap-md);
-		padding: var(--sanad-gap-md);
+		margin-block-end: var(--whatsapp-kit-gap-md);
+		padding: var(--whatsapp-kit-gap-md);
 		border: 1px solid var(--outline-red-3);
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-red-1);
 		color: var(--ink-red-8);
 		font-size: var(--text-sm, 13px);
@@ -102,23 +102,23 @@
 	}
 
 	// choice mode
-	&__choices { display: flex; flex-direction: column; gap: var(--sanad-gap-sm); }
+	&__choices { display: flex; flex-direction: column; gap: var(--whatsapp-kit-gap-sm); }
 	&__choice {
 		appearance: none;
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-md);
+		gap: var(--whatsapp-kit-gap-md);
 		width: 100%;
 		min-height: 44px;
-		padding-block: var(--sanad-gap-sm);
-		padding-inline: var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
+		padding-block: var(--whatsapp-kit-gap-sm);
+		padding-inline: var(--whatsapp-kit-gap-md);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-base);
 		color: var(--ink-gray-9);
 		text-align: start;
 		cursor: pointer;
-		transition: background var(--sanad-motion), border-color var(--sanad-motion);
+		transition: background var(--whatsapp-kit-motion), border-color var(--whatsapp-kit-motion);
 		&:hover { background: var(--surface-gray-1); border-color: var(--outline-gray-2); }
 	}
 	&__choice-icon { display: inline-flex; color: var(--ink-gray-6); flex: none; }
@@ -128,47 +128,47 @@
 
 }
 
-.sanad-drawer-open { overflow: hidden; }
+.whatsapp-kit-drawer-open { overflow: hidden; }
 
 // An empty block inside a record is a line, not a poster: a small icon and one row of words, so
 // "no reply sent" does not take a third of the panel (owner, 2026-10-26: the drawer compact)
-.sanad-drawer__body .sanad-empty:not(.sanad-empty--loading) {
+.whatsapp-kit-drawer__body .whatsapp-kit-empty:not(.whatsapp-kit-empty--loading) {
 	flex-direction: row;
 	flex-wrap: wrap;
 	justify-content: flex-start;
-	gap: var(--sanad-gap-sm);
+	gap: var(--whatsapp-kit-gap-sm);
 	min-height: 0;
-	padding: var(--sanad-gap-sm) var(--sanad-gap-md);
+	padding: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-md);
 	border: 1px dashed var(--outline-gray-2);
-	border-radius: var(--sanad-ent-radius);
+	border-radius: var(--whatsapp-kit-ent-radius);
 	text-align: start;
-	.sanad-empty__icon .icon { width: 16px; height: 16px; }
-	.sanad-empty__title { font-size: var(--text-sm, 13px); font-weight: 500; color: var(--ink-gray-6); }
-	.sanad-empty__desc { font-size: var(--text-xs, 12px); }
+	.whatsapp-kit-empty__icon .icon { width: 16px; height: 16px; }
+	.whatsapp-kit-empty__title { font-size: var(--text-sm, 13px); font-weight: 500; color: var(--ink-gray-6); }
+	.whatsapp-kit-empty__desc { font-size: var(--text-xs, 12px); }
 }
 
 @media (max-width: 767px) {
-	.sanad-drawer__dl { grid-template-columns: minmax(0, 1fr); }
+	.whatsapp-kit-drawer__dl { grid-template-columns: minmax(0, 1fr); }
 }
 
 // ---- document layout (reference image 01) ---------------------------------------------------
 // The record introduces itself, says its piece, states its facts, points at what it is linked to,
 // folds the rest away and ends with its history. Blocks are separated by space, not by boxes.
-.sanad-drawer__body {
+.whatsapp-kit-drawer__body {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sanad-gap-lg);
+	gap: var(--whatsapp-kit-gap-lg);
 }
 
-.sanad-doc {
+.whatsapp-kit-doc {
 	&__identity {
 		display: flex;
 		align-items: flex-start;
 		justify-content: space-between;
-		gap: var(--sanad-gap-md);
+		gap: var(--whatsapp-kit-gap-md);
 		flex-wrap: wrap;
 	}
-	&__identity-main { display: flex; align-items: flex-start; gap: var(--sanad-gap-md); min-inline-size: 0; flex: 1; }
+	&__identity-main { display: flex; align-items: flex-start; gap: var(--whatsapp-kit-gap-md); min-inline-size: 0; flex: 1; }
 	&__identity-text { display: flex; flex-direction: column; gap: 2px; min-inline-size: 0; }
 	&__identity-title {
 		margin: 0;
@@ -181,7 +181,7 @@
 	&__identity-ref {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-xs);
+		gap: var(--whatsapp-kit-gap-xs);
 		font-size: var(--text-xs, 11px);
 		color: var(--ink-gray-5);
 		code { font-family: var(--font-stack-mono, monospace); color: inherit; background: none; padding: 0; }
@@ -190,24 +190,24 @@
 		display: flex;
 		flex-direction: column;
 		align-items: flex-end;
-		gap: var(--sanad-gap-xs);
+		gap: var(--whatsapp-kit-gap-xs);
 		flex: none;
 	}
 	&__identity-time {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--sanad-gap-xs);
+		gap: var(--whatsapp-kit-gap-xs);
 		font-size: var(--text-xs, 11px);
 		color: var(--ink-gray-6);
 		white-space: nowrap;
 	}
 	&__identity-value { font-size: var(--text-lg, 16px); font-weight: 700; color: var(--ink-gray-9); }
 
-	&__block { display: flex; flex-direction: column; gap: var(--sanad-gap-sm); min-inline-size: 0; }
+	&__block { display: flex; flex-direction: column; gap: var(--whatsapp-kit-gap-sm); min-inline-size: 0; }
 	&__block-title {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-xs);
+		gap: var(--whatsapp-kit-gap-xs);
 		margin: 0;
 		font-size: var(--text-sm, 13px);
 		font-weight: 600;
@@ -215,15 +215,15 @@
 	}
 	// every block heading wears the same accent icon, so the eye finds the start of each block
 	// without any one of them shouting louder than the others
-	&__block-icon { display: inline-flex; color: var(--sanad-accent-ink); }
+	&__block-icon { display: inline-flex; color: var(--whatsapp-kit-accent-ink); }
 	&__block-body { min-inline-size: 0; }
 
 	// the record's own content: a quiet sunken panel — the same surface family as the tiles below it,
 	// so the message leads by its place and its size, not by a slab of colour
 	&__highlight {
-		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-ent-radius);
+		padding: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-md);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-ent-radius);
 		background: var(--surface-gray-1);
 		color: var(--ink-gray-9);
 		font-size: var(--text-sm, 13px);
@@ -240,8 +240,8 @@
 			list-style: none;
 			display: flex;
 			align-items: center;
-			gap: var(--sanad-gap-xs);
-			min-block-size: var(--sanad-ctl-h-sm);
+			gap: var(--whatsapp-kit-gap-xs);
+			min-block-size: var(--whatsapp-kit-ctl-h-sm);
 			&::-webkit-details-marker { display: none; }
 			&::after {
 				content: "";
@@ -251,12 +251,12 @@
 				border-inline-end: 1.5px solid var(--ink-gray-5);
 				border-block-end: 1.5px solid var(--ink-gray-5);
 				transform: rotate(45deg);
-				transition: transform var(--sanad-motion);
+				transition: transform var(--whatsapp-kit-motion);
 			}
 		}
 		&[open] summary::after { transform: rotate(-135deg); }
 	}
 	// the rest of the fields sit in one bordered box, like the reference — one container for the
 	// lot, not a card per field and not loose text floating under a rule
-	&__details-body { margin-block-start: var(--sanad-gap-xs); }
+	&__details-body { margin-block-start: var(--whatsapp-kit-gap-xs); }
 }

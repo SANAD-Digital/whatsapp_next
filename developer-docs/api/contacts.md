@@ -88,7 +88,7 @@ One page of the Contacts screen.
 **Realtime:** none.
 
 ```js
-const page = await sanad.ui.call("contacts.list_contacts", { search: "Ahmed", has_whatsapp: 1, page: 1 });
+const page = await whatsapp.ui.call("contacts.list_contacts", { search: "Ahmed", has_whatsapp: 1, page: 1 });
 ```
 
 ---
@@ -145,7 +145,7 @@ primary mobile first.
 **Realtime:** none.
 
 ```js
-const c = await sanad.ui.call("contacts.get_contact", { name: "Ahmed Ali" });
+const c = await whatsapp.ui.call("contacts.get_contact", { name: "Ahmed Ali" });
 ```
 
 ---
@@ -229,7 +229,7 @@ changed (the audit row holds the latter).
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("contacts.update_contact", { name: "Ahmed Ali", payload: { designation: "Buyer" } });
+await whatsapp.ui.call("contacts.update_contact", { name: "Ahmed Ali", payload: { designation: "Buyer" } });
 ```
 
 ---
@@ -263,7 +263,7 @@ Disabled parties are excluded (`disabled = 0` when the field exists); Employees 
 **Realtime:** none.
 
 ```js
-const rows = await sanad.ui.call("contacts.search_party", { party_type: "Customer", txt: "Ahmed" });
+const rows = await whatsapp.ui.call("contacts.search_party", { party_type: "Customer", txt: "Ahmed" });
 ```
 
 ---
@@ -290,7 +290,7 @@ The site's companies for the contact form's Company field (`name` and `company_n
 **Realtime:** none.
 
 ```js
-const rows = await sanad.ui.call("contacts.search_company", { txt: "San" });
+const rows = await whatsapp.ui.call("contacts.search_company", { txt: "San" });
 ```
 
 ---
@@ -327,7 +327,7 @@ The IP address is never returned.
 **Realtime:** none.
 
 ```js
-const events = await sanad.ui.call("contacts.get_activity", { name: "Ahmed Ali" });
+const events = await whatsapp.ui.call("contacts.get_activity", { name: "Ahmed Ali" });
 ```
 
 ---
@@ -367,7 +367,7 @@ group is saved and audited `Contact Group Members Changed` with `details {blocke
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("contacts.toggle_blacklist", { contact: "Ahmed Ali", blocked: 1, note: "Asked to stop" });
+await whatsapp.ui.call("contacts.toggle_blacklist", { contact: "Ahmed Ali", blocked: 1, note: "Asked to stop" });
 ```
 
 ---
@@ -393,7 +393,7 @@ WhatsApp activity of the contact's phones that exist in `WhatsApp Number`.
 **Realtime:** none.
 
 ```js
-const nums = await sanad.ui.call("contacts.get_contact_numbers", { contact: "Ahmed Ali" });
+const nums = await whatsapp.ui.call("contacts.get_contact_numbers", { contact: "Ahmed Ali" });
 ```
 
 ---
@@ -426,7 +426,7 @@ Each contact goes through `update_contact` (audited per contact), in its own sav
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("contacts.link_many", { names: ["Ahmed Ali", "Sara Omar"], link_doctype: "Customer", link_name: "CUST-0001" });
+await whatsapp.ui.call("contacts.link_many", { names: ["Ahmed Ali", "Sara Omar"], link_doctype: "Customer", link_name: "CUST-0001" });
 ```
 
 ---
@@ -460,5 +460,5 @@ link, nothing is written.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("contacts.unlink_account", { name: "Ahmed Ali", link_doctype: "Customer", link_name: "CUST-0001" });
+await whatsapp.ui.call("contacts.unlink_account", { name: "Ahmed Ali", link_doctype: "Customer", link_name: "CUST-0001" });
 ```

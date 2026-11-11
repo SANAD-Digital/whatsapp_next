@@ -95,7 +95,7 @@ Arguments: none.
 **Errors:** `WAPermissionError` (403).
 
 ```js
-const { rate, plan_rate } = await sanad.ui.call("queue.get_limits");
+const { rate, plan_rate } = await whatsapp.ui.call("queue.get_limits");
 ```
 
 ---
@@ -155,7 +155,7 @@ Returns what actually left the queue: the number of `Completed` items per minute
 **Errors:** `WAValidationError` (417) for a non-integer `minutes`.
 
 ```js
-const t = await sanad.ui.call("queue.get_throughput", { minutes: 30 });
+const t = await whatsapp.ui.call("queue.get_throughput", { minutes: 30 });
 ```
 
 ---
@@ -201,7 +201,7 @@ Arguments: none.
 **Realtime:** `wa:queue:progress`.
 
 ```js
-await sanad.ui.call("queue.resume_queue");
+await whatsapp.ui.call("queue.resume_queue");
 ```
 
 ---
@@ -277,7 +277,7 @@ Moves the selected `Paused` rows back to `Queued` and clears the pause fields an
 **Errors:** `WAValidationError` (417) for an empty or unknown selection.
 
 ```js
-await sanad.ui.call("queue.resume_items", { names: ["f6a7b8c9d0"] });
+await whatsapp.ui.call("queue.resume_items", { names: ["f6a7b8c9d0"] });
 ```
 
 ---
@@ -337,5 +337,5 @@ claim, and job fields. Their outbound rows go back to `Queued`, with `error_code
 **Errors:** `WAValidationError` (417) "names[] is required".
 
 ```js
-await sanad.ui.call("queue.retry_dead_letter", { names: ["f6a7b8c9d0"] });
+await whatsapp.ui.call("queue.retry_dead_letter", { names: ["f6a7b8c9d0"] });
 ```

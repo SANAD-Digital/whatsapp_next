@@ -28,7 +28,7 @@ payload and a politics.
 
 ```js
 // The full field (pages, wizards, forms)
-const phone = new sanad.ui.PhoneField({
+const phone = new whatsapp.ui.PhoneField({
   wrapper: $slot,
   label: __("Mobile number (WhatsApp)"),
   required: true,
@@ -41,15 +41,15 @@ phone.set_country("AE");
 phone.example();     // → "+971 501 234 567"
 
 // Wrapping a Frappe control (the hint renders under Frappe's own input)
-new sanad.ui.PhoneField({ control: frm.get_field("mobile_no"), on_change: ({ valid }) => … });
+new whatsapp.ui.PhoneField({ control: frm.get_field("mobile_no"), on_change: ({ valid }) => … });
 
 // Helpers
-sanad.ui.PhoneField.normalize("00966 50 123 4567");   // → { phone_e164: "+966501234567", valid: true }
-sanad.ui.PhoneField.format_display("+966559021177");  // → "+966 559 021 177"
-sanad.ui.PhoneField.mask("559021177", country);       // → "559 021 177"
-sanad.ui.PhoneField.example("AE");                    // → "+971 501 234 567"
-sanad.ui.PhoneField.example(null, { format: false }); // → "+966501234567"
-sanad.ui.PhoneField.countries;                        // [{iso, name, dial, len, starts, groups}, …]
+whatsapp.ui.PhoneField.normalize("00966 50 123 4567");   // → { phone_e164: "+966501234567", valid: true }
+whatsapp.ui.PhoneField.format_display("+966559021177");  // → "+966 559 021 177"
+whatsapp.ui.PhoneField.mask("559021177", country);       // → "559 021 177"
+whatsapp.ui.PhoneField.example("AE");                    // → "+971 501 234 567"
+whatsapp.ui.PhoneField.example(null, { format: false }); // → "+966501234567"
+whatsapp.ui.PhoneField.countries;                        // [{iso, name, dial, len, starts, groups}, …]
 ```
 
 Options: `wrapper` | `control`, `label` (`""` renders none), `tip`, `hint`, `placeholder`,
@@ -60,12 +60,12 @@ Methods: `get_value()`, `set_value(v)`, `set_country(iso|name)`, `focus()`, `exa
 
 ### The country default
 
-`country_default` → `sanad.ui.config.defaults.country` → `frappe.boot.sysdefaults.country` → `SA`.
+`country_default` → `whatsapp.ui.config.defaults.country` → `frappe.boot.sysdefaults.country` → `SA`.
 The prototype's default is Saudi Arabia, and a host that wants that regardless of the site's own
 country setting says so once:
 
 ```js
-sanad.ui.configure({ defaults: { country: "SA" } });
+whatsapp.ui.configure({ defaults: { country: "SA" } });
 ```
 
 ### The country table

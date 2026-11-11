@@ -1,4 +1,4 @@
-# `sanad.ui.DashboardBlock`
+# `whatsapp.ui.DashboardBlock`
 
 The driver behind a Frappe **Custom HTML Block** (or any element): renders Number Cards and
 Dashboard Charts **by document name** through the same server methods Desk's workspace widgets
@@ -20,7 +20,7 @@ realtime event names come from the host (here from the `WA %` fixtures).
 | `charts` | string[] | `[]` | Dashboard Chart names. Report and Custom chart types show an error state. |
 | `period_filter` | boolean | `false` | Show the period radiogroup. |
 | `period` | `"today"` \| `"7d"` \| `"30d"` | `"7d"` | Initial period (only used when `period_filter` is on). |
-| `columns` | number | `4` | Card columns on wide screens (sets `--sanad-dashboard-columns`; 2 under 992 px, 1 under 576 px). |
+| `columns` | number | `4` | Card columns on wide screens (sets `--whatsapp-kit-dashboard-columns`; 2 under 992 px, 1 under 576 px). |
 | `chart_height` | number | `240` | Chart height and reserved body `min-height` (px). |
 | `refresh_seconds` | number | `0` | Timed full refresh; 0 = off. |
 | `events` | `{[event]: true \| (data, block) => void}` | `{}` | Realtime events; `true` = debounced (1 s) full refresh. |
@@ -58,9 +58,9 @@ All via `frappe.xcall`; filters come from `frappe.dashboard_utils.get_all_filter
 ## Usage
 
 ```js
-// Custom HTML Block script; the block html is <div class="wa-dashboard"></div>
-new sanad.ui.DashboardBlock({
-  wrapper: root_element.querySelector(".wa-dashboard"),
+// Custom HTML Block script; the block html is <div class="whatsapp-dashboard"></div>
+new whatsapp.ui.DashboardBlock({
+  wrapper: root_element.querySelector(".whatsapp-dashboard"),
   number_cards: ["WA Queued Now", "WA Connected Devices", "WA Sent Today", "WA Failed Today"],
   charts: ["WA Messages per Day", "WA Outbound by Status"],
   period_filter: true,
@@ -71,18 +71,18 @@ new sanad.ui.DashboardBlock({
 
 ## CSS hooks
 
-- Root `.sanad-kit.sanad-dashboard` with `--sanad-dashboard-columns`.
-- Toolbar: `__toolbar`, `__period[role=radiogroup]`, `__period-btn.sanad-chip[role=radio][data-key]`,
+- Root `.whatsapp-kit.whatsapp-kit-dashboard` with `--whatsapp-kit-dashboard-columns`.
+- Toolbar: `__toolbar`, `__period[role=radiogroup]`, `__period-btn.whatsapp-kit-chip[role=radio][data-key]`,
   `__refresh`.
 - Cards: `__cards[role=list]`, `__card[role=listitem]`, `__card-btn` (a `<button>` when openable,
   else a `<div>` with `--static`; `aria-busy`), `__card-label`, `__card-value`, `__number`,
-  `__card-stat`, `__stat.sanad-tone--{green|red|gray}`, `__card-state`.
+  `__card-stat`, `__stat.whatsapp-kit-tone--{green|red|gray}`, `__card-state`.
 - Charts: `__charts`, `__chart` (`aria-busy`), `__chart-title`, `__chart-body`, `__chart-state`,
   `__chart-canvas`.
 
 ## Notes
 
-- **States:** skeleton on first load; per-card error via `sanad.ui.EmptyState` (`size: "sm"`) with
+- **States:** skeleton on first load; per-card error via `whatsapp.ui.EmptyState` (`size: "sm"`) with
   Retry; per chart loading/empty ("No data for this period", "Try a wider period.")/error with
   Retry. Existing charts refresh in place (`update(data)`) without a skeleton; Pie/Donut/Percentage
   are rebuilt after disposing the old instance.

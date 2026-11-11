@@ -13,7 +13,7 @@ message takes in each direction. `plan/decisions.md` records the reasons (cited 
 | API | `whatsapp_next/api/v1/<area>.py` | Endpoints wrapped in `api._common.api_endpoint` (D-039): role check, typed arguments, provider errors mapped to `WA*` errors. The only logic allowed here is the list of writable fields, bulk orchestration (`_bulk.run_bulk`) and shaping read-only query results (D-128). |
 | Webhooks | `whatsapp_next/webhooks/v1/receiver.py` + `verify.py`, `idempotency.py`, `handlers.py` | The only guest endpoint. It checks the delivery, removes duplicates, stores the event and hands the rest to a job. |
 | Desk pages | `whatsapp_next/whatsapp_next/page/wa_*` | `wa-home`, `wa-onboarding`, `wa-devices`, `wa-contacts`, `wa-functions-center`, `wa-simulator`, `wa-settings`. Every page takes its data from the API layer. |
-| UI kit | `whatsapp_next/public/js/ui/` | Portable `sanad.ui` components. They call `sanad.ui.call("<area>.<fn>")`, and `public/js/whatsapp_next_setup.js` maps those keys to `whatsapp_next.api.v1.*` (D-056). See [kit/README.md](kit/README.md). |
+| UI kit | `whatsapp_next/public/js/ui/` | Portable `whatsapp.ui` components. They call `whatsapp.ui.call("<area>.<fn>")`, and `public/js/whatsapp_next_setup.js` maps those keys to `whatsapp_next.api.v1.*` (D-056). See [kit/README.md](kit/README.md). |
 | Screens, forms, lists | `public/js/screens/`, `public/js/form/`, `public/js/listview/` | App-specific JS, registered through `doctype_js` / `doctype_list_js` (D-057). |
 
 The code contains no `frappe.db.sql`. Queries use `frappe.qb` or `frappe.get_all`. The rule: raw
@@ -25,7 +25,7 @@ SQL only when `frappe.qb` cannot express the query, with a decision recorded for
 flowchart LR
   subgraph Desk["Desk (browser)"]
     Pages["wa-* pages<br/>public/js/screens"]
-    Kit["sanad.ui kit<br/>public/js/ui"]
+    Kit["whatsapp.ui kit<br/>public/js/ui"]
   end
   subgraph App["whatsapp_next (Frappe site)"]
     API["api/v1/*<br/>api_endpoint"]

@@ -13,7 +13,7 @@ frappe.provide("whatsapp_next.columns");
 frappe.provide("whatsapp_next.fmt");
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const OUT = "WhatsApp Log";
 	const TERMINAL = ["Sent", "Delivered", "Read", "Failed", "Cancelled"];
 	const AGENT_ROLES = ["WhatsApp Agent", "WhatsApp Manager", "System Manager"];
@@ -49,7 +49,7 @@ frappe.provide("whatsapp_next.fmt");
 	};
 
 	/** A time cell: left-to-right and tabular, falling back to when the row was created. */
-	fmt.time_cell = (v, doc) => (v || (doc && doc.creation) ? `<span class="sanad-tabular sanad-datalist__date" dir="ltr">${ui.escape(fmt.short(v || doc.creation))}</span>` : "");
+	fmt.time_cell = (v, doc) => (v || (doc && doc.creation) ? `<span class="whatsapp-kit-tabular whatsapp-kit-datalist__date" dir="ltr">${ui.escape(fmt.short(v || doc.creation))}</span>` : "");
 
 	/** What a failure code means to the person reading it, not to the dispatcher. */
 	const ERROR_TEXT = {
@@ -80,7 +80,7 @@ frappe.provide("whatsapp_next.fmt");
 		label: label || __("Contact"),
 		sortable,
 		width,
-		format: (v, doc) => `<span class="sanad-datalist__name">${ui.escape(v || fallback || __("Unknown"))}</span>${ui.group_tag(doc && (doc.phone_e164 || doc.jid))}`,
+		format: (v, doc) => `<span class="whatsapp-kit-datalist__name">${ui.escape(v || fallback || __("Unknown"))}</span>${ui.group_tag(doc && (doc.phone_e164 || doc.jid))}`,
 		sub: (doc) => `<span dir="ltr">${ui.escape(ui.phone(doc.phone_e164 || doc.phone || doc.jid || ""))}</span>`,
 	});
 
@@ -209,7 +209,7 @@ frappe.provide("whatsapp_next.fmt");
 				}
 			},
 		});
-		d.$wrapper.addClass("sanad-kit");
+		d.$wrapper.addClass("whatsapp-kit");
 		d.show();
 		return d;
 	};
@@ -288,8 +288,8 @@ frappe.provide("whatsapp_next.fmt");
 				const text = d.body || d.caption;
 				$el.html(
 					text
-						? `<div class="sanad-doc__highlight" dir="auto">${ui.Render.value(text, body_df(), d, { density: "card", doctype: OUT })}</div>`
-						: `<div class="sanad-doc__highlight text-muted">${ui.escape(__(d.message_type || "Text"))}</div>`
+						? `<div class="whatsapp-kit-doc__highlight" dir="auto">${ui.Render.value(text, body_df(), d, { density: "card", doctype: OUT })}</div>`
+						: `<div class="whatsapp-kit-doc__highlight text-muted">${ui.escape(__(d.message_type || "Text"))}</div>`
 				);
 			},
 			highlight_label: __("Message"),

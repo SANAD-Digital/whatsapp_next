@@ -1,4 +1,4 @@
-// sanad.ui.AttachMenu — the composer's "+" from the prototype's Chat Thread
+// whatsapp.ui.AttachMenu — the composer's "+" from the prototype's Chat Thread
 // (`docs/component/Chat Thread.dc.html`, `composer.attach`): a popover over the button with a
 // 3-column grid of kinds (image · video · document · voice note · location · contact card), each
 // in its tone, and — once picked — a chip above the field ("Image · receipt.jpg ×").
@@ -10,10 +10,10 @@
 //
 // Portable: the host passes the kinds it can send and the contact search.
 
-frappe.provide("sanad.ui");
+frappe.provide("whatsapp.ui");
 
 (function () {
-	const esc = (v) => sanad.ui.escape(v);
+	const esc = (v) => whatsapp.ui.escape(v);
 	const SV = (d) =>
 		`<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 	const ICONS = {
@@ -79,16 +79,16 @@ frappe.provide("sanad.ui");
 			if (!v) return "";
 			const detail = v.file_name || v.contact_label || v.summary || (v.location ? v.location.name || `${v.location.latitude}, ${v.location.longitude}` : "");
 			const tone = (KINDS.find((k) => k.key === v.kind) || {}).tone || "muted";
-			return `<span class="sanad-am__chip sanad-am__chip--${tone}">
-				<span class="sanad-am__chip-icon">${ICONS[v.kind] || ""}</span>
-				<span class="sanad-am__chip-text">${esc(label_of(v.kind))}${detail ? ` · <bdi>${esc(detail)}</bdi>` : ""}</span>
-				<button type="button" class="sanad-am__chip-x" data-attach-clear aria-label="${esc(__("Remove the attachment"))}" title="${esc(__("Remove the attachment"))}">×</button>
+			return `<span class="whatsapp-kit-am__chip whatsapp-kit-am__chip--${tone}">
+				<span class="whatsapp-kit-am__chip-icon">${ICONS[v.kind] || ""}</span>
+				<span class="whatsapp-kit-am__chip-text">${esc(label_of(v.kind))}${detail ? ` · <bdi>${esc(detail)}</bdi>` : ""}</span>
+				<button type="button" class="whatsapp-kit-am__chip-x" data-attach-clear aria-label="${esc(__("Remove the attachment"))}" title="${esc(__("Remove the attachment"))}">×</button>
 			</span>`;
 		}
 
 		open() {
 			const $anchor = $(this.opts.anchor);
-			this.$pop = $(`<div class="sanad-kit sanad-am" role="dialog" aria-label="${esc(__("Message type"))}"></div>`).appendTo(document.body);
+			this.$pop = $(`<div class="whatsapp-kit whatsapp-kit-am" role="dialog" aria-label="${esc(__("Message type"))}"></div>`).appendTo(document.body);
 			this.render();
 			this.place($anchor);
 			this._outside = (e) => {
@@ -104,7 +104,7 @@ frappe.provide("sanad.ui");
 			setTimeout(() => document.addEventListener("mousedown", this._outside, true), 0);
 			this.$pop.on("keydown", this._key);
 			this._resize = () => this.place($anchor);
-			$(window).on("resize.sanad-am", this._resize);
+			$(window).on("resize.whatsapp-kit-am", this._resize);
 			const first = this.$pop.find("button:not([disabled]), input").get(0);
 			first && first.focus();
 		}
@@ -114,7 +114,7 @@ frappe.provide("sanad.ui");
 			const r = $anchor.get(0).getBoundingClientRect();
 			const w = this.$pop.outerWidth();
 			const h = this.$pop.outerHeight();
-			const rtl = sanad.ui.is_rtl();
+			const rtl = whatsapp.ui.is_rtl();
 			let left = rtl ? r.right - w : r.left;
 			left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
 			const top = r.top - h - 8 >= 8 ? r.top - h - 8 : Math.min(r.bottom + 8, window.innerHeight - h - 8);
@@ -123,7 +123,7 @@ frappe.provide("sanad.ui");
 
 		close(refocus = false) {
 			document.removeEventListener("mousedown", this._outside, true);
-			$(window).off("resize.sanad-am", this._resize);
+			$(window).off("resize.whatsapp-kit-am", this._resize);
 			if (this.$pop) this.$pop.remove();
 			this.$pop = null;
 			if (refocus) $(this.opts.anchor).trigger("focus");
@@ -137,30 +137,30 @@ frappe.provide("sanad.ui");
 		render() {
 			const $p = this.$pop;
 			if (this.step === "menu") {
-				$p.html(`<div class="sanad-am__grid">${KINDS.filter((k) => !k.opt_in || (this.opts.kinds || []).includes(k.key)).map((k) => {
+				$p.html(`<div class="whatsapp-kit-am__grid">${KINDS.filter((k) => !k.opt_in || (this.opts.kinds || []).includes(k.key)).map((k) => {
 					const ok = this.allowed(k.key);
 					const reason = !ok && this.opts.reasons ? this.opts.reasons[k.key] : "";
-					return `<button type="button" class="sanad-am__item" data-kind="${k.key}"${ok ? "" : ` disabled title="${esc(reason || __("Not available here"))}"`}>
-						<span class="sanad-am__icon sanad-am__icon--${k.tone}">${ICONS[k.key]}</span>
-						<span class="sanad-am__label">${esc(label_of(k.key))}</span>
+					return `<button type="button" class="whatsapp-kit-am__item" data-kind="${k.key}"${ok ? "" : ` disabled title="${esc(reason || __("Not available here"))}"`}>
+						<span class="whatsapp-kit-am__icon whatsapp-kit-am__icon--${k.tone}">${ICONS[k.key]}</span>
+						<span class="whatsapp-kit-am__label">${esc(label_of(k.key))}</span>
 					</button>`;
 				}).join("")}</div>`);
 				$p.find("[data-kind]").on("click", (e) => this.pick($(e.currentTarget).data("kind")));
 				return;
 			}
 			if (this.step === "location") {
-				$p.html(`<form class="sanad-am__form" novalidate>
-					<span class="sanad-am__title">${ICONS.location}${esc(__("Location"))}</span>
-					<span class="sanad-am__row">
-						<label class="sanad-am__fld"><span>${esc(__("Latitude"))}</span><input type="number" step="any" name="latitude" dir="ltr" required /></label>
-						<label class="sanad-am__fld"><span>${esc(__("Longitude"))}</span><input type="number" step="any" name="longitude" dir="ltr" required /></label>
+				$p.html(`<form class="whatsapp-kit-am__form" novalidate>
+					<span class="whatsapp-kit-am__title">${ICONS.location}${esc(__("Location"))}</span>
+					<span class="whatsapp-kit-am__row">
+						<label class="whatsapp-kit-am__fld"><span>${esc(__("Latitude"))}</span><input type="number" step="any" name="latitude" dir="ltr" required /></label>
+						<label class="whatsapp-kit-am__fld"><span>${esc(__("Longitude"))}</span><input type="number" step="any" name="longitude" dir="ltr" required /></label>
 					</span>
-					<label class="sanad-am__fld"><span>${esc(__("Place name"))}</span><input type="text" name="name" /></label>
-					${navigator.geolocation ? `<button type="button" class="sanad-am__link" data-here>${esc(__("Use my current location"))}</button>` : ""}
-					<span class="sanad-am__error" role="alert"></span>
-					<span class="sanad-am__actions">
-						<button type="button" class="sanad-am__btn" data-back>${esc(__("Back"))}</button>
-						<button type="submit" class="sanad-am__btn sanad-am__btn--pri">${esc(__("Add the location"))}</button>
+					<label class="whatsapp-kit-am__fld"><span>${esc(__("Place name"))}</span><input type="text" name="name" /></label>
+					${navigator.geolocation ? `<button type="button" class="whatsapp-kit-am__link" data-here>${esc(__("Use my current location"))}</button>` : ""}
+					<span class="whatsapp-kit-am__error" role="alert"></span>
+					<span class="whatsapp-kit-am__actions">
+						<button type="button" class="whatsapp-kit-am__btn" data-back>${esc(__("Back"))}</button>
+						<button type="submit" class="whatsapp-kit-am__btn whatsapp-kit-am__btn--pri">${esc(__("Add the location"))}</button>
 					</span>
 				</form>`);
 				const $f = $p.find("form");
@@ -171,7 +171,7 @@ frappe.provide("sanad.ui");
 							$f.find("[name=latitude]").val(pos.coords.latitude.toFixed(6));
 							$f.find("[name=longitude]").val(pos.coords.longitude.toFixed(6));
 						},
-						() => $f.find(".sanad-am__error").text(__("The browser did not share the location."))
+						() => $f.find(".whatsapp-kit-am__error").text(__("The browser did not share the location."))
 					)
 				);
 				$f.on("submit", (e) => {
@@ -179,7 +179,7 @@ frappe.provide("sanad.ui");
 					const lat = parseFloat($f.find("[name=latitude]").val());
 					const lng = parseFloat($f.find("[name=longitude]").val());
 					if (!(lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180)) {
-						$f.find(".sanad-am__error").text(__("Enter a latitude between -90 and 90 and a longitude between -180 and 180."));
+						$f.find(".whatsapp-kit-am__error").text(__("Enter a latitude between -90 and 90 and a longitude between -180 and 180."));
 						return;
 					}
 					const name = cstr($f.find("[name=name]").val()).trim();
@@ -188,22 +188,22 @@ frappe.provide("sanad.ui");
 				return;
 			}
 			if (this.step === "contact") {
-				$p.html(`<div class="sanad-am__form">
-					<span class="sanad-am__title">${ICONS.contact}${esc(__("Contact card"))}</span>
-					<input type="text" class="sanad-am__search" data-sanad-bare placeholder="${esc(__("Search by name or number…"))}" aria-label="${esc(__("Search by name or number"))}" autocomplete="off" />
-					<span class="sanad-am__results" role="listbox"><span class="sanad-am__none">${esc(__("Loading…"))}</span></span>
-					<span class="sanad-am__actions"><button type="button" class="sanad-am__btn" data-back>${esc(__("Back"))}</button></span>
+				$p.html(`<div class="whatsapp-kit-am__form">
+					<span class="whatsapp-kit-am__title">${ICONS.contact}${esc(__("Contact card"))}</span>
+					<input type="text" class="whatsapp-kit-am__search" data-whatsapp-bare placeholder="${esc(__("Search by name or number…"))}" aria-label="${esc(__("Search by name or number"))}" autocomplete="off" />
+					<span class="whatsapp-kit-am__results" role="listbox"><span class="whatsapp-kit-am__none">${esc(__("Loading…"))}</span></span>
+					<span class="whatsapp-kit-am__actions"><button type="button" class="whatsapp-kit-am__btn" data-back>${esc(__("Back"))}</button></span>
 				</div>`);
 				$p.find("[data-back]").on("click", () => this.go("menu"));
-				const $q = $p.find(".sanad-am__search");
-				const $r = $p.find(".sanad-am__results");
-				const load = sanad.ui.debounce(async () => {
+				const $q = $p.find(".whatsapp-kit-am__search");
+				const $r = $p.find(".whatsapp-kit-am__results");
+				const load = whatsapp.ui.debounce(async () => {
 					const q = cstr($q.val());
 					let rows = [];
 					try {
 						rows = (await this.opts.search_contacts(q)) || [];
 					} catch (err) {
-						$r.html(`<span class="sanad-am__none">${esc(err && err.message ? err.message : __("Something went wrong. Please try again."))}</span>`);
+						$r.html(`<span class="whatsapp-kit-am__none">${esc(err && err.message ? err.message : __("Something went wrong. Please try again."))}</span>`);
 						return;
 					}
 					if (cstr($q.val()) !== q) return;
@@ -211,9 +211,9 @@ frappe.provide("sanad.ui");
 						rows.length
 							? rows
 									.slice(0, 20)
-									.map((c) => `<button type="button" role="option" class="sanad-am__opt" data-name="${esc(c.name)}">${esc(c.label || c.name)}<span dir="ltr">${esc(sanad.ui.phone(c.phone || ""))}</span></button>`)
+									.map((c) => `<button type="button" role="option" class="whatsapp-kit-am__opt" data-name="${esc(c.name)}">${esc(c.label || c.name)}<span dir="ltr">${esc(whatsapp.ui.phone(c.phone || ""))}</span></button>`)
 									.join("")
-							: `<span class="sanad-am__none">${esc(__("No matching contacts."))}</span>`
+							: `<span class="whatsapp-kit-am__none">${esc(__("No matching contacts."))}</span>`
 					);
 					$r.find("[data-name]").on("click", (e) => {
 						const c = rows.find((x) => x.name === $(e.currentTarget).data("name"));
@@ -311,5 +311,5 @@ frappe.provide("sanad.ui");
 		}
 	}
 
-	sanad.ui.AttachMenu = AttachMenu;
+	whatsapp.ui.AttachMenu = AttachMenu;
 })();

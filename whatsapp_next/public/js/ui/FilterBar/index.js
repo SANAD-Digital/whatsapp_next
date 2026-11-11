@@ -1,4 +1,4 @@
-// sanad.ui.FilterBar — the prototype's one-row toolbar above a Desk list or a custom page:
+// whatsapp.ui.FilterBar — the prototype's one-row toolbar above a Desk list or a custom page:
 // a search box first, then one dropdown button per filter (a multi-select checkbox popover —
 // options from meta, a Link target or the caller), then a segmented period control (Today ·
 // 7 days · 30 days · All) at the inline-end; optional status pills (`tabs`) on a row below and
@@ -40,7 +40,7 @@ const parse_period = (v) => {
 	return m ? cint(m[1]) : null;
 };
 
-sanad.ui.FilterBar = class FilterBar {
+whatsapp.ui.FilterBar = class FilterBar {
 	/**
 	 * @param {Object} opts
 	 * @param {Object} [opts.listview] — a Desk ListView (`frappe.views.ListView`)
@@ -52,16 +52,16 @@ sanad.ui.FilterBar = class FilterBar {
 	 * @param {Array<Object>} opts.presets — `{fieldname, type?: "select"|"tabs"|"daterange"|"search"|"period", label?,
 	 *   options?: Array<string|{value,label}> | () => Promise<Array>, multiple?: boolean (select, default true),
 	 *   fields?: string[] (search), placeholder?, all_label?, default?: "30d"|"7d"|"today"|"all"|number (period)}`
-	 *   — `type: "date"` mounts `sanad.ui.DateFilterSet`: one trigger that filters any number of
+	 *   — `type: "date"` mounts `whatsapp.ui.DateFilterSet`: one trigger that filters any number of
 	 *   date fields, each with its own dates. It offers the DocType's Date / Datetime fields plus
 	 *   `creation` / `modified` and starts on its `sort_field`; `fieldname` pins the first field,
-	 *   `date_fields: [...]` narrows the list, `fields: false` goes back to one `sanad.ui.DateFilter`
+	 *   `date_fields: [...]` narrows the list, `fields: false` goes back to one `whatsapp.ui.DateFilter`
 	 * @param {Array<string>} [opts.actions] — `"group_by"` (multi-level grouping of the table),
 	 *   `"columns"` (pick and order the table's columns), `"export"` (Desk's exporter)
 	 * @param {string} [opts.intro] — one-line description rendered above the toolbar
 	 * @param {boolean} [opts.replace_standard_filters=true] — list mode: hide Frappe's standard-filter fields
 	 * @param {Function} [opts.on_change] — `(filters, {or_filters, values, search}) => void` (page mode; also fired in list mode)
-	 * @param {Object|Function} [opts.datalist] — page mode: the `sanad.ui.DataList` the `group_by` action drives (or `() => DataList`)
+	 * @param {Object|Function} [opts.datalist] — page mode: the `whatsapp.ui.DataList` the `group_by` action drives (or `() => DataList`)
 	 * @param {number} [opts.debounce=300] — search debounce in ms
 	 * @param {number} [opts.max_inline=4] — filter buttons shown in the row; the rest stay reachable
 	 *   through Desk's Filter popover, which sits in the same toolbar (prototype: one row, no wrap)
@@ -70,7 +70,7 @@ sanad.ui.FilterBar = class FilterBar {
 		this.opts = Object.assign({ presets: [], actions: [], debounce: 300, max_inline: 4, replace_standard_filters: true }, opts);
 		this.listview = this.opts.listview || null;
 		this.doctype = this.opts.doctype || (this.listview && this.listview.doctype);
-		if (!this.doctype) throw new Error("sanad.ui.FilterBar: doctype is required");
+		if (!this.doctype) throw new Error("whatsapp.ui.FilterBar: doctype is required");
 		this.values = {};
 		this.search_text = "";
 		this.controls = {};
@@ -94,35 +94,35 @@ sanad.ui.FilterBar = class FilterBar {
 
 	make() {
 		this.$wrapper = $(
-			`<div class="sanad-kit sanad-filterbar${this.listview || this.opts.list_style ? " sanad-filterbar--list" : ""}" role="group" aria-label="${ui.escape(__("Filters"))}"></div>`
+			`<div class="whatsapp-kit whatsapp-kit-filterbar${this.listview || this.opts.list_style ? " whatsapp-kit-filterbar--list" : ""}" role="group" aria-label="${ui.escape(__("Filters"))}"></div>`
 		);
 		const $mount = this.opts.wrapper ? $(this.opts.wrapper) : null;
 		if ($mount) $mount.append(this.$wrapper);
 		else if (this.listview) this.listview.$frappe_list.prepend(this.$wrapper);
 		else if (this.opts.page) $(this.opts.page.main).prepend(this.$wrapper);
-		if (this.opts.intro) this.$wrapper.append(`<p class="sanad-filterbar__intro">${ui.escape(this.opts.intro)}</p>`);
+		if (this.opts.intro) this.$wrapper.append(`<p class="whatsapp-kit-filterbar__intro">${ui.escape(this.opts.intro)}</p>`);
 		// One row, one button style (prototype `List View` toolbar): search and the filter buttons at
 		// the inline-start, then a single cluster at the inline-end — period, Group by, Export and
 		// Desk's own Filter popover, all restyled to the same 32 px control.
-		this.$toolbar = $('<div class="sanad-filterbar__row sanad-filterbar__row--toolbar"></div>').appendTo(this.$wrapper);
+		this.$toolbar = $('<div class="whatsapp-kit-filterbar__row whatsapp-kit-filterbar__row--toolbar"></div>').appendTo(this.$wrapper);
 		// the filters wrap inside their own group, so the period / grouping / columns / export
 		// cluster stays on the first line however many filters a screen declares
-		this.$main = $('<div class="sanad-filterbar__main"></div>').appendTo(this.$toolbar);
-		this.$tabs = $('<div class="sanad-filterbar__row sanad-filterbar__row--tabs"></div>').appendTo(this.$wrapper);
-		this.$extra = $('<div class="sanad-filterbar__extra"></div>').appendTo(this.$main);
-		this.$groupby = $('<div class="sanad-filterbar__groupby"></div>').appendTo(this.$wrapper);
+		this.$main = $('<div class="whatsapp-kit-filterbar__main"></div>').appendTo(this.$toolbar);
+		this.$tabs = $('<div class="whatsapp-kit-filterbar__row whatsapp-kit-filterbar__row--tabs"></div>').appendTo(this.$wrapper);
+		this.$extra = $('<div class="whatsapp-kit-filterbar__extra"></div>').appendTo(this.$main);
+		this.$groupby = $('<div class="whatsapp-kit-filterbar__groupby"></div>').appendTo(this.$wrapper);
 		const of_type = (types) => this.opts.presets.filter((p) => types.includes(p.type || "select"));
 		of_type(["search"]).forEach((p) => this.render_search(p));
 		of_type(["select", "daterange"])
 			.slice(0, cint(this.opts.max_inline) || 99)
 			.forEach((p) => (p.type === "daterange" ? this.render_daterange(p) : this.render_select(p)));
 		this.render_more();
-		$(`<button type="button" class="sanad-filterbar__clear" hidden>${ui.escape(__("Clear filters"))}</button>`)
+		$(`<button type="button" class="whatsapp-kit-filterbar__clear" hidden>${ui.escape(__("Clear filters"))}</button>`)
 			.on("click", () => this.clear())
 			.appendTo(this.$main);
 		this.render_mobile_toggle();
-		this.$end = $('<div class="sanad-filterbar__end"></div>').appendTo(this.$toolbar);
-		this.$actions = $('<div class="sanad-filterbar__actions"></div>').appendTo(this.$end);
+		this.$end = $('<div class="whatsapp-kit-filterbar__end"></div>').appendTo(this.$toolbar);
+		this.$actions = $('<div class="whatsapp-kit-filterbar__actions"></div>').appendTo(this.$end);
 		of_type(["period"]).forEach((p) => this.render_period(p));
 		of_type(["date"]).forEach((p) => this.render_date(p));
 		of_type(["tabs"]).forEach((p) => this.render_tabs(p));
@@ -130,7 +130,7 @@ sanad.ui.FilterBar = class FilterBar {
 		this.render_actions();
 		this.render_actions_more();
 		if (this.listview) {
-			this.listview._sanad_filterbar = this;
+			this.listview._whatsapp_filterbar = this;
 			this.bind_listview();
 		}
 		if (!this.$actions.children().length) this.$actions.remove();
@@ -139,7 +139,7 @@ sanad.ui.FilterBar = class FilterBar {
 		this.sync();
 		this.apply_defaults();
 		$(document).on(`mousedown.${this.id} touchstart.${this.id}`, (e) => {
-			if ($(e.target).closest(".sanad-filterbar__dd").length) return;
+			if ($(e.target).closest(".whatsapp-kit-filterbar__dd").length) return;
 			this.close_popover();
 			this.close_levels();
 			this.close_columns();
@@ -164,21 +164,21 @@ sanad.ui.FilterBar = class FilterBar {
 		const lv = this.listview;
 		if (this.opts.replace_standard_filters) this.hide_standard_filters();
 		// search → or_filters over the search fields (Frappe filters are AND-only)
-		if (!lv._sanad_get_args) {
-			lv._sanad_get_args = lv.get_args.bind(lv);
-			lv._sanad_or_filters = [];
+		if (!lv._whatsapp_get_args) {
+			lv._whatsapp_get_args = lv.get_args.bind(lv);
+			lv._whatsapp_or_filters = [];
 			lv.get_args = () => {
-				const args = lv._sanad_get_args();
-				if (lv._sanad_or_filters.length) args.or_filters = lv._sanad_or_filters;
+				const args = lv._whatsapp_get_args();
+				if (lv._whatsapp_or_filters.length) args.or_filters = lv._whatsapp_or_filters;
 				return args;
 			};
 		}
 		// several values of a Select field are kept out of Frappe's filter row (see `select_in`)
 		// and added to every query the list makes — its rows, its count, its export
-		if (!lv._sanad_get_filters_for_args) {
-			lv._sanad_get_filters_for_args = lv.get_filters_for_args.bind(lv);
-			lv._sanad_select_in = {};
-			lv.get_filters_for_args = () => lv._sanad_get_filters_for_args().concat(Object.values(lv._sanad_select_in));
+		if (!lv._whatsapp_get_filters_for_args) {
+			lv._whatsapp_get_filters_for_args = lv.get_filters_for_args.bind(lv);
+			lv._whatsapp_select_in = {};
+			lv.get_filters_for_args = () => lv._whatsapp_get_filters_for_args().concat(Object.values(lv._whatsapp_select_in));
 		}
 		// keep buttons / pills in step with filters set elsewhere (Filter popover, URL, sidebar)
 		const orig = lv.on_filter_change.bind(lv);
@@ -206,13 +206,13 @@ sanad.ui.FilterBar = class FilterBar {
 			$section.find(".sort-selector").hide(); // the table's own column headers sort
 			$section.find(".filter-button .button-label").hide(); // icon only; the kit buttons name what is set
 			$section.find(".filter-button").attr("title", __("More filters"));
-			$section.addClass("sanad-filterbar__native").appendTo(this.$actions);
+			$section.addClass("whatsapp-kit-filterbar__native").appendTo(this.$actions);
 		}
 		const others = $form.children().filter((i, el) => !$(el).is(".standard-filter-section, .clearfix") && $(el).children().length);
 		$form.toggleClass("hide", !others.length);
 		// on phones Desk re-orders and re-shows `page_form` after this runs, so mark the page and
 		// let CSS keep the row down for good
-		lv.page.wrapper.addClass("sanad-hide-page-form");
+		lv.page.wrapper.addClass("whatsapp-kit-hide-page-form");
 	}
 
 	/** Period presets with a `default` apply it once, when the list has no filter on that field yet. */
@@ -303,8 +303,8 @@ sanad.ui.FilterBar = class FilterBar {
 	render_search(preset) {
 		const fields = preset.fields || this.search_fields();
 		const label = preset.label || __("Search");
-		const $field = $(`<div class="sanad-filterbar__field sanad-filterbar__field--search"></div>`).appendTo(this.$main);
-		const $input = $(`<input type="search" class="form-control sanad-filterbar__search" placeholder="${ui.escape(preset.placeholder || label)}" aria-label="${ui.escape(label)}">`);
+		const $field = $(`<div class="whatsapp-kit-filterbar__field whatsapp-kit-filterbar__field--search"></div>`).appendTo(this.$main);
+		const $input = $(`<input type="search" class="form-control whatsapp-kit-filterbar__search" placeholder="${ui.escape(preset.placeholder || label)}" aria-label="${ui.escape(label)}">`);
 		const apply = ui.debounce(() => this.set_search($input.val(), fields), this.opts.debounce);
 		$input.on("input", apply).on("keydown", (e) => {
 			if (e.key === "Enter") {
@@ -312,7 +312,7 @@ sanad.ui.FilterBar = class FilterBar {
 				this.set_search($input.val(), fields);
 			}
 		});
-		$field.append(`<span class="sanad-filterbar__search-icon" aria-hidden="true">${ui.icon("es-line-search", "sm")}</span>`).append($input);
+		$field.append(`<span class="whatsapp-kit-filterbar__search-icon" aria-hidden="true">${ui.icon("es-line-search", "sm")}</span>`).append($input);
 		this.controls.__search = { preset, $el: $input, type: "search", fields };
 	}
 
@@ -327,7 +327,7 @@ sanad.ui.FilterBar = class FilterBar {
 
 	render_daterange(preset) {
 		const label = this.label_of(preset);
-		const $field = $(`<div class="sanad-filterbar__field sanad-filterbar__field--range"></div>`).appendTo(this.$main);
+		const $field = $(`<div class="whatsapp-kit-filterbar__field whatsapp-kit-filterbar__field--range"></div>`).appendTo(this.$main);
 		const control = frappe.ui.form.make_control({
 			df: { fieldtype: "DateRange", fieldname: preset.fieldname, label, placeholder: label, onchange: () => this.set(preset.fieldname, control.get_value()) },
 			parent: $field,
@@ -343,9 +343,9 @@ sanad.ui.FilterBar = class FilterBar {
 		const p = Object.assign({ fieldname: "creation", label: __("Period") }, preset);
 		const options = preset.options ? preset.options.map((o) => ({ value: parse_period(o.value), label: o.label })) : PERIOD_DEFAULTS();
 		const label = this.label_of(p);
-		const $group = $(`<div class="sanad-filterbar__period" role="group" aria-label="${ui.escape(label)}"></div>`);
+		const $group = $(`<div class="whatsapp-kit-filterbar__period" role="group" aria-label="${ui.escape(label)}"></div>`);
 		options.forEach((o) => {
-			$(`<button type="button" class="sanad-filterbar__period-btn" data-key="${ui.escape(key_of(o.value))}" aria-pressed="false" aria-label="${ui.escape(o.label)}"><span class="sanad-filterbar__period-long">${ui.escape(o.label)}</span><span class="sanad-filterbar__period-short" aria-hidden="true">${ui.escape(short_period(o.value, o.label))}</span></button>`)
+			$(`<button type="button" class="whatsapp-kit-filterbar__period-btn" data-key="${ui.escape(key_of(o.value))}" aria-pressed="false" aria-label="${ui.escape(o.label)}"><span class="whatsapp-kit-filterbar__period-long">${ui.escape(o.label)}</span><span class="whatsapp-kit-filterbar__period-short" aria-hidden="true">${ui.escape(short_period(o.value, o.label))}</span></button>`)
 				.on("click", () => this.set(p.fieldname, o.value))
 				.appendTo($group);
 		});
@@ -355,17 +355,17 @@ sanad.ui.FilterBar = class FilterBar {
 	}
 
 	/**
-	 * The full date filter (`sanad.ui.DateFilter`): operators, a preset rail, a range calendar,
+	 * The full date filter (`whatsapp.ui.DateFilter`): operators, a preset rail, a range calendar,
 	 * relative spans and fiscal periods. Its value becomes one Frappe filter on the field —
 	 * `Between` for a range, `>=` / `<=` / `>` / `<` / `=` for the single-sided operators.
 	 */
 	render_date(preset) {
-		if (typeof sanad.ui.DateFilter !== "function") return this.render_period(preset);
+		if (typeof whatsapp.ui.DateFilter !== "function") return this.render_period(preset);
 		const fields = preset.fields === false ? [] : this.date_fields(preset);
 		const p = Object.assign({ fieldname: this.default_date_field(preset, fields) }, preset);
-		const $slot = $('<div class="sanad-filterbar__datefilter"></div>').appendTo(this.$end);
-		if (!fields.length || typeof sanad.ui.DateFilterSet !== "function") {
-			const control = new sanad.ui.DateFilter({
+		const $slot = $('<div class="whatsapp-kit-filterbar__datefilter"></div>').appendTo(this.$end);
+		if (!fields.length || typeof whatsapp.ui.DateFilterSet !== "function") {
+			const control = new whatsapp.ui.DateFilter({
 				wrapper: $slot,
 				placeholder: this.label_of(p),
 				default_op: p.default_op || "between",
@@ -375,7 +375,7 @@ sanad.ui.FilterBar = class FilterBar {
 			return control;
 		}
 		// one row per date field: the field picker inside each trigger owns which fields are filtered
-		const control = new sanad.ui.DateFilterSet({
+		const control = new whatsapp.ui.DateFilterSet({
 			wrapper: $slot,
 			fields,
 			fieldname: p.fieldname,
@@ -438,9 +438,9 @@ sanad.ui.FilterBar = class FilterBar {
 	render_tabs(preset) {
 		const label = this.label_of(preset);
 		const options = [{ value: ALL, label: preset.all_label || __("All") }].concat(this.static_options(preset) || []);
-		const $list = $(`<div class="sanad-chip-row sanad-filterbar__pills" role="radiogroup" aria-label="${ui.escape(label)}"></div>`);
+		const $list = $(`<div class="whatsapp-kit-chip-row whatsapp-kit-filterbar__pills" role="radiogroup" aria-label="${ui.escape(label)}"></div>`);
 		options.forEach((o, i) => {
-			$(`<button type="button" class="sanad-chip sanad-filterbar__pill" role="radio" data-key="${ui.escape(key_of(o.value))}" aria-checked="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${ui.escape(o.label)}</button>`)
+			$(`<button type="button" class="whatsapp-kit-chip whatsapp-kit-filterbar__pill" role="radio" data-key="${ui.escape(key_of(o.value))}" aria-checked="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${ui.escape(o.label)}</button>`)
 				.on("click", () => this.set(preset.fieldname, o.value))
 				.appendTo($list);
 		});
@@ -467,13 +467,13 @@ sanad.ui.FilterBar = class FilterBar {
 	 * this twice before (D-072, D-075b) — a flex line that has actually wrapped cannot be wrong.
 	 */
 	render_more() {
-		this.$more_dd = $('<div class="sanad-filterbar__dd sanad-filterbar__dd--more" hidden></div>').appendTo(this.$main);
+		this.$more_dd = $('<div class="whatsapp-kit-filterbar__dd whatsapp-kit-filterbar__dd--more" hidden></div>').appendTo(this.$main);
 		this.more_pop_id = `${this.id}-more-pop`;
-		this.$more_btn = $(`<button type="button" class="sanad-filterbar__btn sanad-filterbar__more" aria-haspopup="dialog" aria-expanded="false" aria-controls="${this.more_pop_id}">
-				<span class="sanad-filterbar__more-icon" aria-hidden="true">${ui.icon("es-line-filter", "xs")}</span>
-				<span class="sanad-filterbar__btn-label">${ui.escape(__("More"))}</span>
-				<span class="sanad-filterbar__more-count sanad-tabular"></span>
-				<span class="sanad-filterbar__chevron" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
+		this.$more_btn = $(`<button type="button" class="whatsapp-kit-filterbar__btn whatsapp-kit-filterbar__more" aria-haspopup="dialog" aria-expanded="false" aria-controls="${this.more_pop_id}">
+				<span class="whatsapp-kit-filterbar__more-icon" aria-hidden="true">${ui.icon("es-line-filter", "xs")}</span>
+				<span class="whatsapp-kit-filterbar__btn-label">${ui.escape(__("More"))}</span>
+				<span class="whatsapp-kit-filterbar__more-count whatsapp-kit-tabular"></span>
+				<span class="whatsapp-kit-filterbar__chevron" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 			</button>`)
 			.on("click", () => (this.$more ? this.close_more() : this.open_more()))
 			.appendTo(this.$more_dd);
@@ -482,9 +482,9 @@ sanad.ui.FilterBar = class FilterBar {
 	/** The same treatment for the action cluster: the icons that do not fit go under a "…". */
 	render_actions_more() {
 		if (!this.$actions || !this.$actions.children().length) return;
-		this.$amore_dd = $('<div class="sanad-filterbar__dd sanad-filterbar__dd--amore" hidden></div>').appendTo(this.$actions);
+		this.$amore_dd = $('<div class="whatsapp-kit-filterbar__dd whatsapp-kit-filterbar__dd--amore" hidden></div>').appendTo(this.$actions);
 		this.amore_pop_id = `${this.id}-amore-pop`;
-		this.$amore_btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--icon" title="${ui.escape(__("More actions"))}" aria-label="${ui.escape(__("More actions"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${this.amore_pop_id}">${ui.icon("es-line-dot-horizontal", "sm")}</button>`)
+		this.$amore_btn = $(`<button type="button" class="whatsapp-kit-filterbar__action whatsapp-kit-filterbar__action--icon" title="${ui.escape(__("More actions"))}" aria-label="${ui.escape(__("More actions"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${this.amore_pop_id}">${ui.icon("es-line-dot-horizontal", "sm")}</button>`)
 			.on("click", () => (this.$amore ? this.close_amore() : this.open_amore()))
 			.appendTo(this.$amore_dd);
 	}
@@ -526,7 +526,7 @@ sanad.ui.FilterBar = class FilterBar {
 	 * hidden. Returns the fieldnames (or elements) left out.
 	 */
 	fit($box, items, $more_dd) {
-		items.forEach((el) => $(el).removeClass("sanad-filterbar__hidden"));
+		items.forEach((el) => $(el).removeClass("whatsapp-kit-filterbar__hidden"));
 		$more_dd.prop("hidden", true);
 		let left = items.slice();
 		if (!$box.is(":visible") || !$box[0].clientWidth) return [];
@@ -534,7 +534,7 @@ sanad.ui.FilterBar = class FilterBar {
 		$more_dd.prop("hidden", false);
 		while (left.length && FilterBar.wrapped($box)) {
 			const el = left.pop();
-			$(el).addClass("sanad-filterbar__hidden");
+			$(el).addClass("whatsapp-kit-filterbar__hidden");
 		}
 		const hidden = items.filter((el) => !left.includes(el));
 		$more_dd.prop("hidden", !hidden.length);
@@ -547,13 +547,13 @@ sanad.ui.FilterBar = class FilterBar {
 		if (!this.$main || !this.$main.length || this.phone()) {
 			if (this.$more_dd) this.$more_dd.prop("hidden", true);
 			if (this.$amore_dd) this.$amore_dd.prop("hidden", true);
-			if (this.$main) this.$main.find(".sanad-filterbar__hidden").removeClass("sanad-filterbar__hidden");
-			if (this.$actions) this.$actions.find(".sanad-filterbar__hidden").removeClass("sanad-filterbar__hidden");
+			if (this.$main) this.$main.find(".whatsapp-kit-filterbar__hidden").removeClass("whatsapp-kit-filterbar__hidden");
+			if (this.$actions) this.$actions.find(".whatsapp-kit-filterbar__hidden").removeClass("whatsapp-kit-filterbar__hidden");
 			return this;
 		}
-		const filters = this.$main.children(".sanad-filterbar__dd, .sanad-filterbar__chipfilter").not(this.$more_dd).toArray();
+		const filters = this.$main.children(".whatsapp-kit-filterbar__dd, .whatsapp-kit-filterbar__chipfilter").not(this.$more_dd).toArray();
 		// Desk's own filter section rides in the cluster too, so it overflows with the rest
-		const actions = this.$actions ? this.$actions.children(".sanad-filterbar__dd, .sanad-filterbar__action, .sanad-filterbar__native").not(this.$amore_dd).toArray() : [];
+		const actions = this.$actions ? this.$actions.children(".whatsapp-kit-filterbar__dd, .whatsapp-kit-filterbar__action, .whatsapp-kit-filterbar__native").not(this.$amore_dd).toArray() : [];
 		// the cluster settles first: an icon row that has wrapped is as wrong as a filter row that has
 		this.hidden_actions = this.$amore_dd ? this.fit(this.$actions, actions, this.$amore_dd) : [];
 		this.hidden_filters = this.fit(this.$main, filters, this.$more_dd);
@@ -561,12 +561,12 @@ sanad.ui.FilterBar = class FilterBar {
 		// cluster is out of room, though the filter row beside it still fits on one line, so a filter
 		// gives way too, or the date filter's last button runs past the card's edge (Outbound at 1366).
 		const overrun = () => {
-			const trigger = this.$end.find(".sanad-datefilter__trigger")[0];
+			const trigger = this.$end.find(".whatsapp-kit-datefilter__trigger")[0];
 			return !!trigger && trigger.scrollWidth > trigger.clientWidth + 1;
 		};
 		const shown = filters.filter((el) => !this.hidden_filters.includes(el));
 		while (shown.length && overrun()) {
-			$(shown.pop()).addClass("sanad-filterbar__hidden");
+			$(shown.pop()).addClass("whatsapp-kit-filterbar__hidden");
 			this.$more_dd.prop("hidden", false);
 		}
 		this.hidden_filters = filters.filter((el) => !shown.includes(el));
@@ -576,17 +576,17 @@ sanad.ui.FilterBar = class FilterBar {
 		// icons are worth less than a search field you can read what you typed into.
 		const cramped = () => {
 			if (FilterBar.wrapped(this.$main)) return true;
-			const $search = this.$main.children(".sanad-filterbar__field--search");
+			const $search = this.$main.children(".whatsapp-kit-filterbar__field--search");
 			return $search.length ? $search[0].getBoundingClientRect().width < 180 : false;
 		};
 		while (this.$amore_dd && actions.length > this.hidden_actions.length && this.hidden_filters.length === filters.length && cramped()) {
 			const el = actions[actions.length - 1 - this.hidden_actions.length];
-			$(el).addClass("sanad-filterbar__hidden");
+			$(el).addClass("whatsapp-kit-filterbar__hidden");
 			this.hidden_actions.push(el);
 			this.$amore_dd.prop("hidden", false);
 			this.hidden_filters = this.fit(this.$main, filters, this.$more_dd);
 		}
-		this.$more_btn.find(".sanad-filterbar__more-count").text(this.hidden_filters.length ? ui.format_int(this.hidden_filters.length) : "");
+		this.$more_btn.find(".whatsapp-kit-filterbar__more-count").text(this.hidden_filters.length ? ui.format_int(this.hidden_filters.length) : "");
 		if (this.$more && this.hidden_filters.length) this.fill_more();
 		else if (this.$more) this.close_more();
 		if (this.$amore && !this.hidden_actions.length) this.close_amore();
@@ -602,7 +602,7 @@ sanad.ui.FilterBar = class FilterBar {
 	 * full-height sheet with the same option lists.
 	 */
 	render_mobile_toggle() {
-		this.$mobile_btn = $(`<button type="button" class="sanad-filterbar__btn sanad-filterbar__mobile-toggle">${ui.icon("es-line-filter", "xs")}<span>${ui.escape(__("Filters"))}</span><span class="sanad-filterbar__mobile-count sanad-tabular" hidden></span></button>`)
+		this.$mobile_btn = $(`<button type="button" class="whatsapp-kit-filterbar__btn whatsapp-kit-filterbar__mobile-toggle">${ui.icon("es-line-filter", "xs")}<span>${ui.escape(__("Filters"))}</span><span class="whatsapp-kit-filterbar__mobile-count whatsapp-kit-tabular" hidden></span></button>`)
 			.on("click", () => this.open_filter_sheet())
 			.appendTo(this.$main);
 	}
@@ -610,8 +610,8 @@ sanad.ui.FilterBar = class FilterBar {
 	reflect_mobile() {
 		if (!this.$mobile_btn) return;
 		const n = Object.keys(this.values).filter((k) => !k.startsWith("__") && this.controls[k] && this.controls[k].type === "select").length;
-		this.$mobile_btn.find(".sanad-filterbar__mobile-count").prop("hidden", !n).text(ui.format_int(n));
-		this.$mobile_btn.toggleClass("sanad-filterbar__btn--active", !!n);
+		this.$mobile_btn.find(".whatsapp-kit-filterbar__mobile-count").prop("hidden", !n).text(ui.format_int(n));
+		this.$mobile_btn.toggleClass("whatsapp-kit-filterbar__btn--active", !!n);
 	}
 
 	/**
@@ -622,7 +622,7 @@ sanad.ui.FilterBar = class FilterBar {
 	open_filter_sheet() {
 		const presets = this.opts.presets.filter((p) => (p.type || "select") === "select");
 		const dialog = new frappe.ui.Dialog({ title: __("Filters"), fields: [{ fieldtype: "HTML", fieldname: "body" }], primary_action_label: __("Done"), primary_action: () => dialog.hide() });
-		dialog.$wrapper.addClass("sanad-kit sanad-sheet sanad-filter-sheet");
+		dialog.$wrapper.addClass("whatsapp-kit whatsapp-kit-sheet whatsapp-kit-filter-sheet");
 		dialog.set_secondary_action_label(__("Clear all"));
 		dialog.set_secondary_action(() => {
 			this.clear();
@@ -644,7 +644,7 @@ sanad.ui.FilterBar = class FilterBar {
 		this.close_popover();
 		this.close_levels();
 		this.close_columns();
-		this.$more = $(`<div class="sanad-filterbar__pop sanad-filterbar__pop--more" id="${this.more_pop_id}" role="dialog" aria-label="${ui.escape(__("More filters"))}"></div>`).appendTo(this.$more_dd);
+		this.$more = $(`<div class="whatsapp-kit-filterbar__pop whatsapp-kit-filterbar__pop--more" id="${this.more_pop_id}" role="dialog" aria-label="${ui.escape(__("More filters"))}"></div>`).appendTo(this.$more_dd);
 		this.$more_btn.attr("aria-expanded", "true");
 		this.fill_more();
 		this.keep_in_view(this.$more);
@@ -653,17 +653,17 @@ sanad.ui.FilterBar = class FilterBar {
 	fill_more() {
 		if (!this.$more) return;
 		const $pop = this.$more.empty();
-		$(`<div class="sanad-filterbar__pop-head"><span class="sanad-filterbar__pop-title">${ui.escape(__("More filters"))}</span>
-				<button type="button" class="btn btn-xs btn-default sanad-filterbar__pop-close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "xs")}</button></div>`)
+		$(`<div class="whatsapp-kit-filterbar__pop-head"><span class="whatsapp-kit-filterbar__pop-title">${ui.escape(__("More filters"))}</span>
+				<button type="button" class="btn btn-xs btn-default whatsapp-kit-filterbar__pop-close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "xs")}</button></div>`)
 			.appendTo($pop)
-			.find(".sanad-filterbar__pop-close")
+			.find(".whatsapp-kit-filterbar__pop-close")
 			.on("click", () => this.close_more(true));
-		const $body = $('<div class="sanad-filter-sheet sanad-filterbar__more-list"></div>').appendTo($pop);
+		const $body = $('<div class="whatsapp-kit-filter-sheet whatsapp-kit-filterbar__more-list"></div>').appendTo($pop);
 		(this.hidden_filters || []).forEach((el) => {
 			const c = Object.values(this.controls).find((x) => x.$dd && x.$dd[0] === el);
 			if (c) this.option_field($body, c.preset, { inline: true });
 		});
-		if (!$body.children().length) $body.append(`<div class="sanad-filterbar__pop-empty">${ui.escape(__("No options"))}</div>`);
+		if (!$body.children().length) $body.append(`<div class="whatsapp-kit-filterbar__pop-empty">${ui.escape(__("No options"))}</div>`);
 	}
 
 	close_more(restore_focus = false) {
@@ -681,16 +681,16 @@ sanad.ui.FilterBar = class FilterBar {
 	open_amore() {
 		this.close_popover();
 		this.close_more();
-		this.$amore = $(`<div class="sanad-filterbar__pop sanad-filterbar__pop--amore" id="${this.amore_pop_id}" role="dialog" aria-label="${ui.escape(__("More actions"))}"></div>`).appendTo(this.$amore_dd);
+		this.$amore = $(`<div class="whatsapp-kit-filterbar__pop whatsapp-kit-filterbar__pop--amore" id="${this.amore_pop_id}" role="dialog" aria-label="${ui.escape(__("More actions"))}"></div>`).appendTo(this.$amore_dd);
 		this.$amore_btn.attr("aria-expanded", "true");
 		(this.hidden_actions || []).forEach((el) => {
-			const $item = $('<div class="sanad-filterbar__amore-item"></div>').appendTo(this.$amore);
-			$(el).removeClass("sanad-filterbar__hidden").appendTo($item);
+			const $item = $('<div class="whatsapp-kit-filterbar__amore-item"></div>').appendTo(this.$amore);
+			$(el).removeClass("whatsapp-kit-filterbar__hidden").appendTo($item);
 			const text = FilterBar.action_label(el);
 			if (!text) return;
 			// the icon alone says nothing in a stack of four; the row names it, and clicking the
 			// name is the same as clicking the icon
-			$(`<span class="sanad-filterbar__amore-label">${ui.escape(text)}</span>`)
+			$(`<span class="whatsapp-kit-filterbar__amore-label">${ui.escape(text)}</span>`)
 				.on("click", () => {
 					const $btn = $(el).is("button") ? $(el) : $(el).find("button").first();
 					$btn.trigger("click");
@@ -703,9 +703,9 @@ sanad.ui.FilterBar = class FilterBar {
 	/** What to call an action in the "…" menu: its own name, stable whatever it is showing. */
 	static action_label(el) {
 		const $el = $(el);
-		if ($el.hasClass("sanad-filterbar__dd--group")) return __("Group by");
-		if ($el.hasClass("sanad-filterbar__dd--columns")) return __("Columns");
-		if ($el.hasClass("sanad-filterbar__native")) return __("More filters");
+		if ($el.hasClass("whatsapp-kit-filterbar__dd--group")) return __("Group by");
+		if ($el.hasClass("whatsapp-kit-filterbar__dd--columns")) return __("Columns");
+		if ($el.hasClass("whatsapp-kit-filterbar__native")) return __("More filters");
 		const $btn = $el.is("button") ? $el : $el.find("button").first();
 		return ($btn.attr("aria-label") || $btn.attr("title") || $el.attr("title") || "").trim();
 	}
@@ -713,7 +713,7 @@ sanad.ui.FilterBar = class FilterBar {
 	close_amore(restore_focus = false) {
 		if (!this.$amore) return;
 		// put them back where the toolbar expects them, still hidden, before the menu goes
-		(this.hidden_actions || []).forEach((el) => $(el).addClass("sanad-filterbar__hidden").insertBefore(this.$amore_dd));
+		(this.hidden_actions || []).forEach((el) => $(el).addClass("whatsapp-kit-filterbar__hidden").insertBefore(this.$amore_dd));
 		this.$amore.remove();
 		this.$amore = null;
 		this.$amore_btn.attr("aria-expanded", "false");
@@ -727,16 +727,16 @@ sanad.ui.FilterBar = class FilterBar {
 	 */
 	option_field($body, preset, { inline = false } = {}) {
 		const label = this.label_of(preset);
-		const $row = $(`<section class="sanad-filter-sheet__row">
-				<button type="button" class="sanad-filter-sheet__trigger" aria-expanded="false">
-					<span class="sanad-filter-sheet__name">${ui.escape(label)}</span>
-					<span class="sanad-filter-sheet__chosen"></span>
-					<span class="sanad-filter-sheet__caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
+		const $row = $(`<section class="whatsapp-kit-filter-sheet__row">
+				<button type="button" class="whatsapp-kit-filter-sheet__trigger" aria-expanded="false">
+					<span class="whatsapp-kit-filter-sheet__name">${ui.escape(label)}</span>
+					<span class="whatsapp-kit-filter-sheet__chosen"></span>
+					<span class="whatsapp-kit-filter-sheet__caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 				</button>
-				<div class="sanad-filter-sheet__list" hidden></div>
+				<div class="whatsapp-kit-filter-sheet__list" hidden></div>
 			</section>`).appendTo($body);
-		const $trigger = $row.find(".sanad-filter-sheet__trigger");
-		const $list = $row.find(".sanad-filter-sheet__list");
+		const $trigger = $row.find(".whatsapp-kit-filter-sheet__trigger");
+		const $list = $row.find(".whatsapp-kit-filter-sheet__list");
 		const paint_chosen = () => this.paint_chosen($row, preset);
 		paint_chosen();
 
@@ -745,16 +745,16 @@ sanad.ui.FilterBar = class FilterBar {
 			return $row;
 		}
 
-		const $search = $(`<input type="search" class="form-control input-xs sanad-filterbar__pop-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [label]))}" hidden>`).insertBefore($list);
+		const $search = $(`<input type="search" class="form-control input-xs whatsapp-kit-filterbar__pop-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [label]))}" hidden>`).insertBefore($list);
 		const fill = (txt) => this.fill_options($list, preset, txt, paint_chosen);
 		$search.on("input", ui.debounce(() => fill($search.val()), 250));
 
 		$trigger.on("click", () => {
 			const open = $trigger.attr("aria-expanded") === "true";
 			// one field open at a time, like a set of dropdowns
-			$body.find(".sanad-filter-sheet__trigger").attr("aria-expanded", "false");
-			$body.find(".sanad-filter-sheet__list").prop("hidden", true);
-			$body.find(".sanad-filterbar__pop-search").prop("hidden", true);
+			$body.find(".whatsapp-kit-filter-sheet__trigger").attr("aria-expanded", "false");
+			$body.find(".whatsapp-kit-filter-sheet__list").prop("hidden", true);
+			$body.find(".whatsapp-kit-filterbar__pop-search").prop("hidden", true);
 			if (open) return;
 			$trigger.attr("aria-expanded", "true");
 			$list.prop("hidden", false);
@@ -777,37 +777,37 @@ sanad.ui.FilterBar = class FilterBar {
 	open_option_sheet(preset, after) {
 		const label = this.label_of(preset);
 		const searchable = this.searchable(preset);
-		const $sheet = $(`<div class="sanad-kit sanad-optsheet" role="dialog" aria-modal="true" aria-label="${ui.escape(label)}">
-				<div class="sanad-optsheet__scrim"></div>
-				<div class="sanad-optsheet__panel">
-					<div class="sanad-optsheet__grip" aria-hidden="true"></div>
-					<div class="sanad-optsheet__head">
-						<span class="sanad-optsheet__title">${ui.escape(label)}</span>
-						<button type="button" class="sanad-optsheet__clear">${ui.escape(__("Clear"))}</button>
+		const $sheet = $(`<div class="whatsapp-kit whatsapp-kit-optsheet" role="dialog" aria-modal="true" aria-label="${ui.escape(label)}">
+				<div class="whatsapp-kit-optsheet__scrim"></div>
+				<div class="whatsapp-kit-optsheet__panel">
+					<div class="whatsapp-kit-optsheet__grip" aria-hidden="true"></div>
+					<div class="whatsapp-kit-optsheet__head">
+						<span class="whatsapp-kit-optsheet__title">${ui.escape(label)}</span>
+						<button type="button" class="whatsapp-kit-optsheet__clear">${ui.escape(__("Clear"))}</button>
 					</div>
-					${searchable ? `<div class="sanad-optsheet__search"><input type="search" class="form-control" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [label]))}"></div>` : ""}
-					<div class="sanad-optsheet__list" role="group" aria-label="${ui.escape(label)}"></div>
-					<div class="sanad-optsheet__foot"><button type="button" class="btn btn-primary btn-sm sanad-optsheet__done">${ui.escape(__("Done"))}</button></div>
+					${searchable ? `<div class="whatsapp-kit-optsheet__search"><input type="search" class="form-control" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [label]))}"></div>` : ""}
+					<div class="whatsapp-kit-optsheet__list" role="group" aria-label="${ui.escape(label)}"></div>
+					<div class="whatsapp-kit-optsheet__foot"><button type="button" class="btn btn-primary btn-sm whatsapp-kit-optsheet__done">${ui.escape(__("Done"))}</button></div>
 				</div>
 			</div>`).appendTo(document.body);
-		const $list = $sheet.find(".sanad-optsheet__list");
+		const $list = $sheet.find(".whatsapp-kit-optsheet__list");
 		const changed = () => {
 			if (typeof after === "function") after();
 		};
 		const fill = (txt) => this.fill_options($list, preset, txt, changed);
 		const close = () => {
-			$sheet.removeClass("sanad-optsheet--in");
+			$sheet.removeClass("whatsapp-kit-optsheet--in");
 			$(document).off(`keydown.${this.id}-opt`);
 			window.setTimeout(() => $sheet.remove(), 180);
 			if (this.$optsheet === $sheet) this.$optsheet = null;
 		};
-		$sheet.find(".sanad-optsheet__scrim, .sanad-optsheet__done").on("click", close);
-		$sheet.find(".sanad-optsheet__clear").on("click", () => {
+		$sheet.find(".whatsapp-kit-optsheet__scrim, .whatsapp-kit-optsheet__done").on("click", close);
+		$sheet.find(".whatsapp-kit-optsheet__clear").on("click", () => {
 			this.set(preset.fieldname, null);
 			changed();
-			fill($sheet.find(".sanad-optsheet__search input").val() || "");
+			fill($sheet.find(".whatsapp-kit-optsheet__search input").val() || "");
 		});
-		const $search = $sheet.find(".sanad-optsheet__search input");
+		const $search = $sheet.find(".whatsapp-kit-optsheet__search input");
 		$search.on("input", ui.debounce(() => fill($search.val()), 250));
 		$(document).on(`keydown.${this.id}-opt`, (e) => {
 			if (e.key !== "Escape") return;
@@ -817,7 +817,7 @@ sanad.ui.FilterBar = class FilterBar {
 		this.$optsheet = $sheet;
 		fill("");
 		// one frame before the transition, so it slides in rather than appearing
-		window.requestAnimationFrame(() => $sheet.addClass("sanad-optsheet--in"));
+		window.requestAnimationFrame(() => $sheet.addClass("whatsapp-kit-optsheet--in"));
 		return $sheet;
 	}
 
@@ -830,7 +830,7 @@ sanad.ui.FilterBar = class FilterBar {
 	paint_chosen($row, preset) {
 		const chosen = this.chosen(preset.fieldname);
 		const text = !chosen.length ? __("All") : chosen.length === 1 ? this.label_for_value(preset.fieldname, chosen[0]) : __("{0} selected", [ui.format_int(chosen.length)]);
-		$row.find(".sanad-filter-sheet__chosen").text(text).toggleClass("sanad-filter-sheet__chosen--set", !!chosen.length);
+		$row.find(".whatsapp-kit-filter-sheet__chosen").text(text).toggleClass("whatsapp-kit-filter-sheet__chosen--set", !!chosen.length);
 	}
 
 	/** Fill any container with one filter's options — the sheet, the drawer and "More" share it. */
@@ -844,13 +844,13 @@ sanad.ui.FilterBar = class FilterBar {
 				chosen.filter((v) => !listed.has(key_of(v))).forEach((v) => options.unshift({ value: v, label: this.label_for_value(preset.fieldname, v) }));
 				$list.empty();
 				if (!options.length) {
-					$list.append(`<div class="sanad-filterbar__pop-empty">${ui.escape(txt ? __("No match for {0}", [txt]) : __("No options"))}</div>`);
+					$list.append(`<div class="whatsapp-kit-filterbar__pop-empty">${ui.escape(txt ? __("No match for {0}", [txt]) : __("No options"))}</div>`);
 					return;
 				}
 				const type = preset.multiple === false ? "radio" : "checkbox";
 				options.forEach((o) => {
 					const on = chosen.some((v) => key_of(v) === key_of(o.value));
-					const $opt = $(`<label class="sanad-filterbar__opt"><input type="${type}" name="${this.id}-opt-${ui.escape(preset.fieldname)}" value="${ui.escape(key_of(o.value))}"${on ? " checked" : ""}><span class="sanad-filterbar__opt-label">${ui.escape(o.label)}</span></label>`);
+					const $opt = $(`<label class="whatsapp-kit-filterbar__opt"><input type="${type}" name="${this.id}-opt-${ui.escape(preset.fieldname)}" value="${ui.escape(key_of(o.value))}"${on ? " checked" : ""}><span class="whatsapp-kit-filterbar__opt-label">${ui.escape(o.label)}</span></label>`);
 					$opt.find("input").on("change", (e) => {
 						this.toggle(preset.fieldname, o.value, e.target.checked);
 						if (typeof after === "function") after();
@@ -860,7 +860,7 @@ sanad.ui.FilterBar = class FilterBar {
 			})
 			.catch((err) => {
 				$list.empty();
-				new sanad.ui.EmptyState({
+				new whatsapp.ui.EmptyState({
 					wrapper: $list,
 					state: "error",
 					size: "sm",
@@ -875,16 +875,16 @@ sanad.ui.FilterBar = class FilterBar {
 	render_select(preset) {
 		const p = Object.assign({ multiple: true }, preset);
 		const label = this.label_of(p);
-		const $dd = $(`<div class="sanad-filterbar__dd"></div>`).appendTo(this.$main);
+		const $dd = $(`<div class="whatsapp-kit-filterbar__dd"></div>`).appendTo(this.$main);
 		const pop_id = `${this.id}-${p.fieldname}-pop`;
-		const $btn = $(`<button type="button" class="sanad-filterbar__btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">
-			<span class="sanad-filterbar__btn-label">${ui.escape(label)}</span><span class="sanad-filterbar__btn-value"></span>
-			<span class="sanad-filterbar__btn-clear" title="${ui.escape(__("Clear {0}", [label]))}" hidden>${ui.icon("es-line-close", "xs")}</span>
-			<span class="sanad-filterbar__chevron" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
+		const $btn = $(`<button type="button" class="whatsapp-kit-filterbar__btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">
+			<span class="whatsapp-kit-filterbar__btn-label">${ui.escape(label)}</span><span class="whatsapp-kit-filterbar__btn-value"></span>
+			<span class="whatsapp-kit-filterbar__btn-clear" title="${ui.escape(__("Clear {0}", [label]))}" hidden>${ui.icon("es-line-close", "xs")}</span>
+			<span class="whatsapp-kit-filterbar__chevron" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 		</button>`)
 			.on("click", (e) => {
 				// the inline × clears this one filter instead of opening the list
-				if ($(e.target).closest(".sanad-filterbar__btn-clear").length) {
+				if ($(e.target).closest(".whatsapp-kit-filterbar__btn-clear").length) {
 					this.close_popover();
 					return this.set(p.fieldname, null);
 				}
@@ -925,21 +925,21 @@ sanad.ui.FilterBar = class FilterBar {
 		const p = c.preset;
 		const stat = this.static_options(p);
 		const searchable = !stat || stat.length > SEARCH_THRESHOLD;
-		const $pop = $(`<div class="sanad-filterbar__pop" id="${c.pop_id}" role="dialog" aria-label="${ui.escape(c.label)}" data-field="${ui.escape(fieldname)}">
-			<div class="sanad-filterbar__pop-head"><span class="sanad-filterbar__pop-title">${ui.escape(c.label)}</span>
-				<button type="button" class="btn btn-xs btn-default sanad-filterbar__pop-close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "xs")}</button></div>
-			${searchable ? `<input type="search" class="form-control input-xs sanad-filterbar__pop-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [c.label]))}">` : ""}
-			<div class="sanad-filterbar__pop-list" role="group" aria-labelledby="${c.pop_id}-legend"><span class="sanad-visually-hidden" id="${c.pop_id}-legend">${ui.escape(c.label)}</span></div>
-			<div class="sanad-filterbar__pop-foot"><button type="button" class="btn btn-xs btn-link sanad-filterbar__pop-clear">${ui.escape(__("Clear"))}</button></div>
+		const $pop = $(`<div class="whatsapp-kit-filterbar__pop" id="${c.pop_id}" role="dialog" aria-label="${ui.escape(c.label)}" data-field="${ui.escape(fieldname)}">
+			<div class="whatsapp-kit-filterbar__pop-head"><span class="whatsapp-kit-filterbar__pop-title">${ui.escape(c.label)}</span>
+				<button type="button" class="btn btn-xs btn-default whatsapp-kit-filterbar__pop-close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "xs")}</button></div>
+			${searchable ? `<input type="search" class="form-control input-xs whatsapp-kit-filterbar__pop-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [c.label]))}">` : ""}
+			<div class="whatsapp-kit-filterbar__pop-list" role="group" aria-labelledby="${c.pop_id}-legend"><span class="whatsapp-kit-visually-hidden" id="${c.pop_id}-legend">${ui.escape(c.label)}</span></div>
+			<div class="whatsapp-kit-filterbar__pop-foot"><button type="button" class="btn btn-xs btn-link whatsapp-kit-filterbar__pop-clear">${ui.escape(__("Clear"))}</button></div>
 		</div>`).appendTo(c.$dd);
 		c.$el.attr("aria-expanded", "true");
 		this.$open = $pop;
-		$pop.find(".sanad-filterbar__pop-close").on("click", () => this.close_popover(true));
-		$pop.find(".sanad-filterbar__pop-clear").on("click", () => {
+		$pop.find(".whatsapp-kit-filterbar__pop-close").on("click", () => this.close_popover(true));
+		$pop.find(".whatsapp-kit-filterbar__pop-clear").on("click", () => {
 			this.set(fieldname, null);
-			this.fill_popover(fieldname, $pop.find(".sanad-filterbar__pop-search").val() || "");
+			this.fill_popover(fieldname, $pop.find(".whatsapp-kit-filterbar__pop-search").val() || "");
 		});
-		const $search = $pop.find(".sanad-filterbar__pop-search");
+		const $search = $pop.find(".whatsapp-kit-filterbar__pop-search");
 		$search.on("input", ui.debounce(() => this.fill_popover(fieldname, $search.val()), 250));
 		$pop.on("keydown", (e) => {
 			if (e.key === "Escape") {
@@ -948,7 +948,7 @@ sanad.ui.FilterBar = class FilterBar {
 				return this.close_popover(true);
 			}
 			if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key) || $(e.target).is("input[type=search]")) return;
-			const items = $pop.find(".sanad-filterbar__opt input").toArray();
+			const items = $pop.find(".whatsapp-kit-filterbar__opt input").toArray();
 			const idx = ui.roving_index(e, items, items.indexOf(document.activeElement));
 			if (idx < 0) return;
 			e.preventDefault();
@@ -956,7 +956,7 @@ sanad.ui.FilterBar = class FilterBar {
 		});
 		this.keep_in_view($pop);
 		this.fill_popover(fieldname, "").then(() => {
-			const $first = $search.length ? $search : $pop.find(".sanad-filterbar__opt input").first();
+			const $first = $search.length ? $search : $pop.find(".whatsapp-kit-filterbar__opt input").first();
 			$first.trigger("focus");
 			this.keep_in_view($pop);
 		});
@@ -967,8 +967,8 @@ sanad.ui.FilterBar = class FilterBar {
 		const $pop = this.$open;
 		if (!$pop || $pop.data("field") !== fieldname) return Promise.resolve();
 		const c = this.controls[fieldname];
-		const $list = $pop.find(".sanad-filterbar__pop-list");
-		const $legend = $list.children(".sanad-visually-hidden").detach();
+		const $list = $pop.find(".whatsapp-kit-filterbar__pop-list");
+		const $legend = $list.children(".whatsapp-kit-visually-hidden").detach();
 		$list.html(ui.skeleton(3, { lines: 1 })).prepend($legend);
 		return this.resolve_options(c.preset, txt)
 			.then((options) => {
@@ -979,20 +979,20 @@ sanad.ui.FilterBar = class FilterBar {
 				chosen.filter((v) => !listed.has(key_of(v))).forEach((v) => options.unshift({ value: v, label: this.label_for_value(fieldname, v) }));
 				$list.empty().append($legend);
 				if (!options.length) {
-					$list.append(`<div class="sanad-filterbar__pop-empty">${ui.escape(txt ? __("No match for {0}", [txt]) : __("No options"))}</div>`);
+					$list.append(`<div class="whatsapp-kit-filterbar__pop-empty">${ui.escape(txt ? __("No match for {0}", [txt]) : __("No options"))}</div>`);
 					return;
 				}
 				const type = c.preset.multiple === false ? "radio" : "checkbox";
 				options.forEach((o) => {
 					const on = chosen.some((v) => key_of(v) === key_of(o.value));
-					const $opt = $(`<label class="sanad-filterbar__opt"><input type="${type}" name="${c.pop_id}" value="${ui.escape(key_of(o.value))}"${on ? " checked" : ""}><span class="sanad-filterbar__opt-label">${ui.escape(o.label)}</span></label>`);
+					const $opt = $(`<label class="whatsapp-kit-filterbar__opt"><input type="${type}" name="${c.pop_id}" value="${ui.escape(key_of(o.value))}"${on ? " checked" : ""}><span class="whatsapp-kit-filterbar__opt-label">${ui.escape(o.label)}</span></label>`);
 					$opt.find("input").on("change", (e) => this.toggle(fieldname, o.value, e.target.checked));
 					$list.append($opt);
 				});
 			})
 			.catch((err) => {
 				$list.empty().append($legend);
-				new sanad.ui.EmptyState({ wrapper: $list, state: "error", description: err.message, size: "sm", action: { label: __("Retry"), onclick: () => this.fill_popover(fieldname, txt) } });
+				new whatsapp.ui.EmptyState({ wrapper: $list, state: "error", description: err.message, size: "sm", action: { label: __("Retry"), onclick: () => this.fill_popover(fieldname, txt) } });
 			});
 	}
 
@@ -1030,7 +1030,7 @@ sanad.ui.FilterBar = class FilterBar {
 		if (actions.includes("group_by")) this.render_group_by();
 		if (actions.includes("columns")) this.render_columns();
 		if (actions.includes("export") && this.listview) {
-			$(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--icon" title="${ui.escape(__("Export"))}" aria-label="${ui.escape(__("Export"))}">${ui.icon("download", "sm")}</button>`)
+			$(`<button type="button" class="whatsapp-kit-filterbar__action whatsapp-kit-filterbar__action--icon" title="${ui.escape(__("Export"))}" aria-label="${ui.escape(__("Export"))}">${ui.icon("download", "sm")}</button>`)
 				.on("click", () => this.export())
 				.appendTo(this.$actions);
 		}
@@ -1042,9 +1042,9 @@ sanad.ui.FilterBar = class FilterBar {
 	 * added, and "Remove all". It drives the DataList's multi-level group rows.
 	 */
 	render_group_by() {
-		const $dd = $(`<div class="sanad-filterbar__dd sanad-filterbar__dd--group"></div>`).appendTo(this.$actions);
+		const $dd = $(`<div class="whatsapp-kit-filterbar__dd whatsapp-kit-filterbar__dd--group"></div>`).appendTo(this.$actions);
 		const pop_id = `${this.id}-levels-pop`;
-		this.$group_btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--group" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-group", "sm")}<span class="sanad-filterbar__levels"></span></button>`).appendTo($dd);
+		this.$group_btn = $(`<button type="button" class="whatsapp-kit-filterbar__action whatsapp-kit-filterbar__action--group" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-group", "sm")}<span class="whatsapp-kit-filterbar__levels"></span></button>`).appendTo($dd);
 		this.$group_dd = $dd;
 		this.group_pop_id = pop_id;
 		this.$group_btn.on("click", () => (this.$levels ? this.close_levels() : this.open_levels()));
@@ -1061,9 +1061,9 @@ sanad.ui.FilterBar = class FilterBar {
 	 * `List View Settings`, so it behaves like the rest of Desk.
 	 */
 	render_columns() {
-		const $dd = $(`<div class="sanad-filterbar__dd sanad-filterbar__dd--columns"></div>`).appendTo(this.$actions);
+		const $dd = $(`<div class="whatsapp-kit-filterbar__dd whatsapp-kit-filterbar__dd--columns"></div>`).appendTo(this.$actions);
 		const pop_id = `${this.id}-columns-pop`;
-		this.$columns_btn = $(`<button type="button" class="sanad-filterbar__action sanad-filterbar__action--icon" title="${ui.escape(__("Columns"))}" aria-label="${ui.escape(__("Columns"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("columns-3", "sm")}</button>`).appendTo($dd);
+		this.$columns_btn = $(`<button type="button" class="whatsapp-kit-filterbar__action whatsapp-kit-filterbar__action--icon" title="${ui.escape(__("Columns"))}" aria-label="${ui.escape(__("Columns"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("columns-3", "sm")}</button>`).appendTo($dd);
 		this.$columns_dd = $dd;
 		this.columns_pop_id = pop_id;
 		this.$columns_btn.on("click", () => (this.$columns ? this.close_columns() : this.open_columns()));
@@ -1073,7 +1073,7 @@ sanad.ui.FilterBar = class FilterBar {
 		this.close_popover();
 		this.close_levels();
 		this.columns_order = null;
-		const $pop = $(`<div class="sanad-filterbar__pop sanad-filterbar__pop--columns" id="${this.columns_pop_id}" role="dialog" aria-label="${ui.escape(__("Columns"))}"></div>`).appendTo(this.$columns_dd);
+		const $pop = $(`<div class="whatsapp-kit-filterbar__pop whatsapp-kit-filterbar__pop--columns" id="${this.columns_pop_id}" role="dialog" aria-label="${ui.escape(__("Columns"))}"></div>`).appendTo(this.$columns_dd);
 		this.$columns = $pop;
 		this.$columns_btn.attr("aria-expanded", "true");
 		this.fill_columns();
@@ -1090,14 +1090,14 @@ sanad.ui.FilterBar = class FilterBar {
 	keeping_place($pop, render) {
 		if (!$pop || !$pop.length) return render();
 		// `__pop-list` is the only list that scrolls inside itself; the levels lists grow the popover
-		const lists = () => $pop.find(".sanad-filterbar__pop-list").toArray();
+		const lists = () => $pop.find(".whatsapp-kit-filterbar__pop-list").toArray();
 		const tops = lists().map((el) => el.scrollTop);
 		const own = $pop[0].scrollTop;
 		const active = document.activeElement;
 		const $row = active && $pop[0].contains(active) ? $(active).closest("[data-field]") : $();
 		const field = $row.attr("data-field") || null;
 		const dir = field && active.tagName === "BUTTON" ? $(active).attr("data-dir") : null;
-		const removing = field && active.tagName === "BUTTON" && $(active).hasClass("sanad-filterbar__level-remove");
+		const removing = field && active.tagName === "BUTTON" && $(active).hasClass("whatsapp-kit-filterbar__level-remove");
 		const out = render();
 		lists().forEach((el, i) => {
 			if (tops[i]) el.scrollTop = tops[i];
@@ -1109,7 +1109,7 @@ sanad.ui.FilterBar = class FilterBar {
 			// the row's own control so focus never lands back on the document
 			const candidates = [
 				dir != null ? $again.find(`button[data-dir="${dir}"]`) : $(),
-				removing ? $again.find(".sanad-filterbar__level-remove") : $(),
+				removing ? $again.find(".whatsapp-kit-filterbar__level-remove") : $(),
 				$again.find('input[type="checkbox"]'),
 				$again.is("button") ? $again : $(),
 			];
@@ -1129,12 +1129,12 @@ sanad.ui.FilterBar = class FilterBar {
 		if (!$pop || !dl) return;
 		const available = dl.available_columns();
 		const shown = dl.visible_columns();
-		const typed = $pop.find(".sanad-filterbar__pop-search").val() || "";
+		const typed = $pop.find(".whatsapp-kit-filterbar__pop-search").val() || "";
 		$pop.empty().append(
-			`<div class="sanad-filterbar__pop-head"><span class="sanad-filterbar__pop-title">${ui.escape(__("Columns"))}</span><button type="button" class="sanad-filterbar__levels-clear">${ui.escape(__("Reset"))}</button></div>
-			<input type="search" class="form-control input-xs sanad-filterbar__pop-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search columns"))}">`
+			`<div class="whatsapp-kit-filterbar__pop-head"><span class="whatsapp-kit-filterbar__pop-title">${ui.escape(__("Columns"))}</span><button type="button" class="whatsapp-kit-filterbar__levels-clear">${ui.escape(__("Reset"))}</button></div>
+			<input type="search" class="form-control input-xs whatsapp-kit-filterbar__pop-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search columns"))}">`
 		);
-		const $list = $(`<div class="sanad-filterbar__pop-list sanad-filterbar__columns-list"></div>`).appendTo($pop);
+		const $list = $(`<div class="whatsapp-kit-filterbar__pop-list whatsapp-kit-filterbar__columns-list"></div>`).appendTo($pop);
 		// The order is frozen while the picker is open. Rebuilding it on every tick moved the row
 		// under the pointer — unticking a column sent it from the shown group to the bottom of the
 		// list — so ticking a few in a row meant hunting for each one again. Only the arrows, which
@@ -1151,27 +1151,27 @@ sanad.ui.FilterBar = class FilterBar {
 				if (txt && !String(col.label).toLowerCase().includes(txt.toLowerCase())) return;
 				const on = shown.includes(fieldname);
 				const at = shown.indexOf(fieldname);
-				$(`<div class="sanad-filterbar__column" data-field="${ui.escape(fieldname)}">
-					<label class="sanad-filterbar__opt">
+				$(`<div class="whatsapp-kit-filterbar__column" data-field="${ui.escape(fieldname)}">
+					<label class="whatsapp-kit-filterbar__opt">
 						<input type="checkbox"${on ? " checked" : ""} aria-label="${ui.escape(__("Show {0}", [col.label]))}">
-						<span class="sanad-filterbar__opt-label">${ui.escape(col.label)}</span>
+						<span class="whatsapp-kit-filterbar__opt-label">${ui.escape(col.label)}</span>
 					</label>
-					<button type="button" class="sanad-filterbar__level-move" data-dir="-1"${!on || at <= 0 ? " disabled" : ""} aria-label="${ui.escape(__("Move {0} up", [col.label]))}">${ui.icon("es-line-up", "xs")}</button>
-					<button type="button" class="sanad-filterbar__level-move" data-dir="1"${!on || at < 0 || at >= shown.length - 1 ? " disabled" : ""} aria-label="${ui.escape(__("Move {0} down", [col.label]))}">${ui.icon("es-line-down", "xs")}</button>
+					<button type="button" class="whatsapp-kit-filterbar__level-move" data-dir="-1"${!on || at <= 0 ? " disabled" : ""} aria-label="${ui.escape(__("Move {0} up", [col.label]))}">${ui.icon("es-line-up", "xs")}</button>
+					<button type="button" class="whatsapp-kit-filterbar__level-move" data-dir="1"${!on || at < 0 || at >= shown.length - 1 ? " disabled" : ""} aria-label="${ui.escape(__("Move {0} down", [col.label]))}">${ui.icon("es-line-down", "xs")}</button>
 				</div>`).appendTo($list);
 			});
 		};
 		paint(typed);
-		$pop.find(".sanad-filterbar__pop-search")
+		$pop.find(".whatsapp-kit-filterbar__pop-search")
 			.val(typed)
 			.on("input", ui.debounce((e) => paint($(e.target).val()), 200));
-		$pop.find(".sanad-filterbar__levels-clear").on("click", () => {
+		$pop.find(".whatsapp-kit-filterbar__levels-clear").on("click", () => {
 			dl.reset_columns();
 			this.columns_order = null;
 			this.fill_columns();
 		});
 		$list.on("change", "input[type=checkbox]", (e) => {
-			const field = $(e.currentTarget).closest(".sanad-filterbar__column").data("field");
+			const field = $(e.currentTarget).closest(".whatsapp-kit-filterbar__column").data("field");
 			// re-ticking puts a column back where it was, not at the far right of the table: the row
 			// has not moved in the list, so the table should not move it either
 			const next = e.currentTarget.checked ? this.in_list_order(shown.concat(field)) : shown.filter((f) => f !== field);
@@ -1182,8 +1182,8 @@ sanad.ui.FilterBar = class FilterBar {
 			dl.set_visible_columns(next);
 			this.fill_columns();
 		});
-		$list.on("click", ".sanad-filterbar__level-move", (e) => {
-			const field = $(e.currentTarget).closest(".sanad-filterbar__column").data("field");
+		$list.on("click", ".whatsapp-kit-filterbar__level-move", (e) => {
+			const field = $(e.currentTarget).closest(".whatsapp-kit-filterbar__column").data("field");
 			const dir = cint($(e.currentTarget).data("dir"));
 			const next = shown.slice();
 			const i = next.indexOf(field);
@@ -1220,7 +1220,7 @@ sanad.ui.FilterBar = class FilterBar {
 	 */
 	datalist() {
 		const own = typeof this.opts.datalist === "function" ? this.opts.datalist() : this.opts.datalist;
-		return own || (this.listview && this.listview._sanad_datalist);
+		return own || (this.listview && this.listview._whatsapp_datalist);
 	}
 
 	group_levels() {
@@ -1245,16 +1245,16 @@ sanad.ui.FilterBar = class FilterBar {
 		};
 		const text = levels.map(label_of).join(" › ");
 		this.$group_btn
-			.toggleClass("sanad-filterbar__action--active", !!levels.length)
+			.toggleClass("whatsapp-kit-filterbar__action--active", !!levels.length)
 			.attr("title", levels.length ? __("Grouped by {0}", [text]) : __("Group by"))
 			.attr("aria-label", levels.length ? __("Grouped by {0}", [text]) : __("Group by"))
-			.find(".sanad-filterbar__levels")
+			.find(".whatsapp-kit-filterbar__levels")
 			.text(text);
 	}
 
 	open_levels() {
 		this.close_popover();
-		const $pop = $(`<div class="sanad-filterbar__pop sanad-filterbar__pop--levels" id="${this.group_pop_id}" role="dialog" aria-label="${ui.escape(__("Grouping levels"))}"></div>`).appendTo(this.$group_dd);
+		const $pop = $(`<div class="whatsapp-kit-filterbar__pop whatsapp-kit-filterbar__pop--levels" id="${this.group_pop_id}" role="dialog" aria-label="${ui.escape(__("Grouping levels"))}"></div>`).appendTo(this.$group_dd);
 		this.keep_in_view($pop);
 		this.$levels = $pop;
 		this.$group_btn.attr("aria-expanded", "true");
@@ -1280,42 +1280,42 @@ sanad.ui.FilterBar = class FilterBar {
 		const levels = this.group_levels();
 		const label_of = (f) => (options.find((o) => o.value === f) || { label: __(f) }).label;
 		$pop.empty();
-		$pop.append(`<div class="sanad-filterbar__pop-head"><span class="sanad-filterbar__pop-title">${ui.escape(__("Grouping levels"))}</span>${levels.length ? `<button type="button" class="sanad-filterbar__levels-clear">${ui.escape(__("Remove all"))}</button>` : ""}</div>`);
-		const $list = $(`<div class="sanad-filterbar__levels-list"></div>`).appendTo($pop);
+		$pop.append(`<div class="whatsapp-kit-filterbar__pop-head"><span class="whatsapp-kit-filterbar__pop-title">${ui.escape(__("Grouping levels"))}</span>${levels.length ? `<button type="button" class="whatsapp-kit-filterbar__levels-clear">${ui.escape(__("Remove all"))}</button>` : ""}</div>`);
+		const $list = $(`<div class="whatsapp-kit-filterbar__levels-list"></div>`).appendTo($pop);
 		levels.forEach((f, i) => {
-			$(`<div class="sanad-filterbar__level">
-				<span class="sanad-filterbar__level-no sanad-tabular">${ui.escape(ui.format_int(i + 1))}</span>
-				<span class="sanad-filterbar__level-label">${ui.escape(label_of(f))}</span>
-				<button type="button" class="sanad-filterbar__level-move" data-dir="-1" ${i === 0 ? "disabled" : ""} aria-label="${ui.escape(__("Move {0} up", [label_of(f)]))}">${ui.icon("es-line-up", "xs")}</button>
-				<button type="button" class="sanad-filterbar__level-move" data-dir="1" ${i === levels.length - 1 ? "disabled" : ""} aria-label="${ui.escape(__("Move {0} down", [label_of(f)]))}">${ui.icon("es-line-down", "xs")}</button>
-				<button type="button" class="sanad-filterbar__level-remove" aria-label="${ui.escape(__("Remove level {0}", [label_of(f)]))}">${ui.icon("es-line-close", "xs")}</button>
+			$(`<div class="whatsapp-kit-filterbar__level">
+				<span class="whatsapp-kit-filterbar__level-no whatsapp-kit-tabular">${ui.escape(ui.format_int(i + 1))}</span>
+				<span class="whatsapp-kit-filterbar__level-label">${ui.escape(label_of(f))}</span>
+				<button type="button" class="whatsapp-kit-filterbar__level-move" data-dir="-1" ${i === 0 ? "disabled" : ""} aria-label="${ui.escape(__("Move {0} up", [label_of(f)]))}">${ui.icon("es-line-up", "xs")}</button>
+				<button type="button" class="whatsapp-kit-filterbar__level-move" data-dir="1" ${i === levels.length - 1 ? "disabled" : ""} aria-label="${ui.escape(__("Move {0} down", [label_of(f)]))}">${ui.icon("es-line-down", "xs")}</button>
+				<button type="button" class="whatsapp-kit-filterbar__level-remove" aria-label="${ui.escape(__("Remove level {0}", [label_of(f)]))}">${ui.icon("es-line-close", "xs")}</button>
 			</div>`)
 				.attr("data-field", f)
 				.appendTo($list);
 		});
 		const rest = options.filter((o) => !levels.includes(o.value));
 		if (rest.length) {
-			$pop.append(`<div class="sanad-filterbar__pop-title sanad-filterbar__levels-add">${ui.escape(__("Add a level"))}</div>`);
-			const $add = $(`<div class="sanad-filterbar__levels-list"></div>`).appendTo($pop);
+			$pop.append(`<div class="whatsapp-kit-filterbar__pop-title whatsapp-kit-filterbar__levels-add">${ui.escape(__("Add a level"))}</div>`);
+			const $add = $(`<div class="whatsapp-kit-filterbar__levels-list"></div>`).appendTo($pop);
 			rest.forEach((o) => {
-				$(`<button type="button" class="sanad-filterbar__level sanad-filterbar__level--add"><span class="sanad-filterbar__level-label">${ui.escape(o.label)}</span><span class="sanad-filterbar__level-plus" aria-hidden="true">+</span></button>`)
+				$(`<button type="button" class="whatsapp-kit-filterbar__level whatsapp-kit-filterbar__level--add"><span class="whatsapp-kit-filterbar__level-label">${ui.escape(o.label)}</span><span class="whatsapp-kit-filterbar__level-plus" aria-hidden="true">+</span></button>`)
 					.attr("data-field", o.value)
 					.appendTo($add);
 			});
 		}
-		$pop.find(".sanad-filterbar__levels-clear").on("click", () => this.set_group_levels([]));
-		$pop.find(".sanad-filterbar__level--add").on("click", (e) => {
+		$pop.find(".whatsapp-kit-filterbar__levels-clear").on("click", () => this.set_group_levels([]));
+		$pop.find(".whatsapp-kit-filterbar__level--add").on("click", (e) => {
 			const field = $(e.currentTarget).data("field");
 			this.set_group_levels(this.group_levels().concat(field));
-			this.$levels && this.$levels.find(`.sanad-filterbar__level[data-field="${CSS.escape(field)}"] .sanad-filterbar__level-remove`).trigger("focus");
+			this.$levels && this.$levels.find(`.whatsapp-kit-filterbar__level[data-field="${CSS.escape(field)}"] .whatsapp-kit-filterbar__level-remove`).trigger("focus");
 		});
-		$pop.find(".sanad-filterbar__level-remove").on("click", (e) => {
-			const f = $(e.currentTarget).closest(".sanad-filterbar__level").data("field");
+		$pop.find(".whatsapp-kit-filterbar__level-remove").on("click", (e) => {
+			const f = $(e.currentTarget).closest(".whatsapp-kit-filterbar__level").data("field");
 			this.set_group_levels(this.group_levels().filter((x) => x !== f));
 		});
-		$pop.find(".sanad-filterbar__level-move").on("click", (e) => {
+		$pop.find(".whatsapp-kit-filterbar__level-move").on("click", (e) => {
 			const dir = cint($(e.currentTarget).data("dir"));
-			const f = $(e.currentTarget).closest(".sanad-filterbar__level").data("field");
+			const f = $(e.currentTarget).closest(".whatsapp-kit-filterbar__level").data("field");
 			const next = this.group_levels();
 			const i = next.indexOf(f);
 			if (i < 0 || i + dir < 0 || i + dir >= next.length) return;
@@ -1371,7 +1371,7 @@ sanad.ui.FilterBar = class FilterBar {
 		this.search_fields_used = fields;
 		if (this.listview) {
 			const lv = this.listview;
-			lv._sanad_or_filters = this.search_text ? fields.map((f) => [this.doctype, f, "like", `%${this.search_text}%`]) : [];
+			lv._whatsapp_or_filters = this.search_text ? fields.map((f) => [this.doctype, f, "like", `%${this.search_text}%`]) : [];
 			lv.start = 0;
 			lv.refresh();
 		}
@@ -1411,9 +1411,9 @@ sanad.ui.FilterBar = class FilterBar {
 		const lv = this.listview;
 		const area = lv.filter_area;
 		const has = area.get().some((f) => f[1] === fieldname);
-		const had_in = !!(lv._sanad_select_in && lv._sanad_select_in[fieldname]);
+		const had_in = !!(lv._whatsapp_select_in && lv._whatsapp_select_in[fieldname]);
 		if (!has && !had_in && value == null) return Promise.resolve();
-		if (had_in) delete lv._sanad_select_in[fieldname];
+		if (had_in) delete lv._whatsapp_select_in[fieldname];
 		let filter = value == null ? null : this.filter_of(fieldname, value);
 		if (filter && this.is_select(fieldname) && filter[2] === "in") {
 			// Frappe's filter row turns `in` on a Select into a MultiSelect that, in any language
@@ -1422,7 +1422,7 @@ sanad.ui.FilterBar = class FilterBar {
 			// Select holds fine; several go straight into the list's query instead.
 			if (filter[3].length === 1) filter = [filter[0], fieldname, "=", filter[3][0]];
 			else {
-				lv._sanad_select_in[fieldname] = filter;
+				lv._whatsapp_select_in[fieldname] = filter;
 				filter = null;
 			}
 		}
@@ -1471,15 +1471,15 @@ sanad.ui.FilterBar = class FilterBar {
 		const value = this.values[fieldname];
 		if (c.type === "select") {
 			const chosen = this.chosen(fieldname);
-			const $value = c.$el.find(".sanad-filterbar__btn-value");
+			const $value = c.$el.find(".whatsapp-kit-filterbar__btn-value");
 			if (!chosen.length) $value.text("").attr("hidden", true);
 			else if (chosen.length === 1) $value.text(this.label_for_value(fieldname, chosen[0])).removeAttr("hidden");
 			else $value.text(ui.format_int(chosen.length)).removeAttr("hidden");
-			c.$el.toggleClass("sanad-filterbar__btn--active", chosen.length > 0);
-			c.$el.find(".sanad-filterbar__btn-clear").prop("hidden", !chosen.length);
+			c.$el.toggleClass("whatsapp-kit-filterbar__btn--active", chosen.length > 0);
+			c.$el.find(".whatsapp-kit-filterbar__btn-clear").prop("hidden", !chosen.length);
 		} else if (c.type === "period") {
 			const current = key_of(value == null ? null : value);
-			c.$el.find(".sanad-filterbar__period-btn").each((i, el) => {
+			c.$el.find(".whatsapp-kit-filterbar__period-btn").each((i, el) => {
 				$(el).attr("aria-pressed", String($(el).attr("data-key")) === current);
 			});
 		} else if (c.type === "tabs") {
@@ -1490,7 +1490,7 @@ sanad.ui.FilterBar = class FilterBar {
 			});
 		} else if (c.type === "date") {
 			// the DateFilter owns its own draft; the bar only mirrors whether it is set
-			c.$el.toggleClass("sanad-filterbar__datefilter--set", value != null);
+			c.$el.toggleClass("whatsapp-kit-filterbar__datefilter--set", value != null);
 		} else if (c.control) {
 			const current = c.control.get_value();
 			if (JSON.stringify(current || "") !== JSON.stringify(value || "")) c.control.set_value(value == null ? "" : value);
@@ -1504,7 +1504,7 @@ sanad.ui.FilterBar = class FilterBar {
 		// the period is always set, so it alone is not something to offer to clear
 		const set = Object.keys(this.values).filter((k) => k !== "__group_by" && (this.controls[k] || {}).type !== "period");
 		const active = extra > 0 || set.length > 0 || !!this.search_text;
-		this.$wrapper.find(".sanad-filterbar__clear").prop("hidden", !active);
+		this.$wrapper.find(".whatsapp-kit-filterbar__clear").prop("hidden", !active);
 	}
 
 	/**
@@ -1522,12 +1522,12 @@ sanad.ui.FilterBar = class FilterBar {
 			const [, fieldname, operator, value] = f;
 			const label = __(this.df(fieldname).label || fieldname);
 			const shown = Array.isArray(value) ? value.join(", ") : String(value == null ? "" : value);
-			$(`<span class="sanad-filterbar__chipfilter sanad-accent-soft">
-					<span class="sanad-filterbar__chipfilter-label">${ui.escape(label)}</span>
-					<span class="sanad-filterbar__chipfilter-value" title="${ui.escape(`${label} ${operator} ${shown}`)}">${ui.escape(shown)}</span>
-					<button type="button" class="sanad-filterbar__chipfilter-x" aria-label="${ui.escape(__("Clear {0}", [label]))}">${ui.icon("es-line-close", "xs")}</button>
+			$(`<span class="whatsapp-kit-filterbar__chipfilter whatsapp-kit-accent-soft">
+					<span class="whatsapp-kit-filterbar__chipfilter-label">${ui.escape(label)}</span>
+					<span class="whatsapp-kit-filterbar__chipfilter-value" title="${ui.escape(`${label} ${operator} ${shown}`)}">${ui.escape(shown)}</span>
+					<button type="button" class="whatsapp-kit-filterbar__chipfilter-x" aria-label="${ui.escape(__("Clear {0}", [label]))}">${ui.icon("es-line-close", "xs")}</button>
 				</span>`)
-				.find(".sanad-filterbar__chipfilter-x")
+				.find(".whatsapp-kit-filterbar__chipfilter-x")
 				.on("click", () => this.remove_filter(fieldname))
 				.end()
 				.appendTo(this.$extra);
@@ -1544,7 +1544,7 @@ sanad.ui.FilterBar = class FilterBar {
 	/** Read the list's current filters into the bar (list mode). */
 	sync() {
 		if (!this.listview || !this.listview.filter_area) return;
-		const filters = this.listview.filter_area.get().concat(Object.values(this.listview._sanad_select_in || {}));
+		const filters = this.listview.filter_area.get().concat(Object.values(this.listview._whatsapp_select_in || {}));
 		this.render_extra_filters(this.listview.filter_area.get());
 		Object.keys(this.controls).forEach((fieldname) => {
 			if (fieldname.startsWith("__")) return;
@@ -1606,11 +1606,11 @@ sanad.ui.FilterBar = class FilterBar {
 			});
 			this.register_date_rows(this.date_control.preset, this.date_control.$el, kept);
 		}
-		if (this.listview && this.listview._sanad_select_in) this.listview._sanad_select_in = {};
+		if (this.listview && this.listview._whatsapp_select_in) this.listview._whatsapp_select_in = {};
 		if (this.controls.__search) {
 			this.controls.__search.$el.val("");
 			this.search_text = "";
-			if (this.listview) this.listview._sanad_or_filters = [];
+			if (this.listview) this.listview._whatsapp_or_filters = [];
 		}
 		const done = this.listview
 			? this.quietly(() => fields.reduce((chain, f) => chain.then(() => this.listview.filter_area.remove(f)), Promise.resolve())).then(() => this.refresh_list())
@@ -1630,4 +1630,4 @@ sanad.ui.FilterBar = class FilterBar {
 	}
 };
 
-export default sanad.ui.FilterBar;
+export default whatsapp.ui.FilterBar;

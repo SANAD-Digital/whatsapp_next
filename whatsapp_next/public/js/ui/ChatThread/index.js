@@ -1,4 +1,4 @@
-// sanad.ui.ChatThread — a WhatsApp-style thread over read-layer message rows: bubbles by
+// whatsapp.ui.ChatThread — a WhatsApp-style thread over read-layer message rows: bubbles by
 // `direction` (outbound inline-end, inbound inline-start — logical properties keep RTL right),
 // day separators, time, outbound status ticks (icon + accessible label, never colour alone),
 // media rows, a reference chip and a "Load older" button. The caller owns the data (a drawer,
@@ -47,7 +47,7 @@ const MEDIA_ICON = {
 
 const row_key = (row) => `${row.direction || ""}:${row.name}`;
 
-sanad.ui.ChatThread = class ChatThread {
+whatsapp.ui.ChatThread = class ChatThread {
 	/**
 	 * @param {Object} opts
 	 * @param {jQuery|HTMLElement} opts.wrapper
@@ -71,40 +71,40 @@ sanad.ui.ChatThread = class ChatThread {
 
 	make() {
 		this.$root = $(`
-			<div class="sanad-kit sanad-chat" id="${this.id}">
-				<div class="sanad-chat__top"></div>
-				<div class="sanad-chat__scroll" tabindex="0" role="log" aria-label="${ui.escape(__("Conversation"))}">
-					<div class="sanad-chat__state"></div>
-					<div class="sanad-chat__list"></div>
+			<div class="whatsapp-kit whatsapp-kit-chat" id="${this.id}">
+				<div class="whatsapp-kit-chat__top"></div>
+				<div class="whatsapp-kit-chat__scroll" tabindex="0" role="log" aria-label="${ui.escape(__("Conversation"))}">
+					<div class="whatsapp-kit-chat__state"></div>
+					<div class="whatsapp-kit-chat__list"></div>
 				</div>
 			</div>`);
 		if (this.opts.max_height) this.$root.css("max-height", `${cint(this.opts.max_height)}px`);
 		this.$wrapper.empty().append(this.$root);
-		this.$top = this.$root.find(".sanad-chat__top");
-		this.$scroll = this.$root.find(".sanad-chat__scroll");
-		this.$list = this.$root.find(".sanad-chat__list");
-		this.state = new sanad.ui.EmptyState({ wrapper: this.$root.find(".sanad-chat__state"), state: "empty" });
+		this.$top = this.$root.find(".whatsapp-kit-chat__top");
+		this.$scroll = this.$root.find(".whatsapp-kit-chat__scroll");
+		this.$list = this.$root.find(".whatsapp-kit-chat__list");
+		this.state = new whatsapp.ui.EmptyState({ wrapper: this.$root.find(".whatsapp-kit-chat__state"), state: "empty" });
 		this.state.hide();
 		this.render_top();
 		// Clickable rows: the whole bubble reacts to a mouse click, keyboard users get the explicit
 		// "Open" button in the meta line — no interactive content nested inside another control.
-		this.$list.on("click", ".sanad-chat__row--clickable", (e) => {
-			if ($(e.target).closest("a, button").length && !$(e.target).closest(".sanad-chat__open").length) return;
-			if ($(e.target).closest(".sanad-chat__poll").length) return; // the poll opens its results
+		this.$list.on("click", ".whatsapp-kit-chat__row--clickable", (e) => {
+			if ($(e.target).closest("a, button").length && !$(e.target).closest(".whatsapp-kit-chat__open").length) return;
+			if ($(e.target).closest(".whatsapp-kit-chat__poll").length) return; // the poll opens its results
 			e.preventDefault();
 			const row = this.get_row($(e.currentTarget).data("key"));
 			if (row && this.opts.on_row_click) this.opts.on_row_click(row);
 		});
 		// a received file not fetched yet (a past message): fetched on demand, then shown in place
-		this.$list.on("click", ".sanad-chat__fetch", (e) => {
+		this.$list.on("click", ".whatsapp-kit-chat__fetch", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			const btn = e.currentTarget;
 			const row = this.rows.find((r) => r.name === btn.dataset.name);
 			if (!row || btn.disabled) return;
 			btn.disabled = true;
-			btn.querySelector(".sanad-chat__media-type").textContent = __("Downloading…");
-			sanad.ui
+			btn.querySelector(".whatsapp-kit-chat__media-type").textContent = __("Downloading…");
+			whatsapp.ui
 				.call("messages.fetch_media", { name: row.name })
 				.then((r) => {
 					row.attachment = r && r.attachment;
@@ -113,15 +113,15 @@ sanad.ui.ChatThread = class ChatThread {
 				})
 				.catch((err) => {
 					btn.disabled = false;
-					btn.querySelector(".sanad-chat__media-type").textContent = __("Download");
-					sanad.ui.Toast.error(err);
+					btn.querySelector(".whatsapp-kit-chat__media-type").textContent = __("Download");
+					whatsapp.ui.Toast.error(err);
 				});
 		});
 		// a sent poll opens its results: anywhere on the poll with a mouse, its button from the keyboard
-		this.$list.on("click", ".sanad-chat__poll", (e) => {
+		this.$list.on("click", ".whatsapp-kit-chat__poll", (e) => {
 			e.preventDefault();
 			const row = this.rows.find((r) => r.name === e.currentTarget.dataset.name);
-			if (row) sanad.ui.ChatThread.open_poll(row);
+			if (row) whatsapp.ui.ChatThread.open_poll(row);
 		});
 	}
 
@@ -129,7 +129,7 @@ sanad.ui.ChatThread = class ChatThread {
 		this.$top.empty();
 		if (!this.opts.on_load_more || !this.opts.has_more) return;
 		this.$more = $(
-			`<button type="button" class="btn btn-sm btn-default sanad-chat__more">${ui.icon("es-line-up", "xs")} ${ui.escape(__("Load older messages"))}</button>`
+			`<button type="button" class="btn btn-sm btn-default whatsapp-kit-chat__more">${ui.icon("es-line-up", "xs")} ${ui.escape(__("Load older messages"))}</button>`
 		)
 			.on("click", () => this.load_more())
 			.appendTo(this.$top);
@@ -141,7 +141,7 @@ sanad.ui.ChatThread = class ChatThread {
 		const $btn = this.$more;
 		$btn.prop("disabled", true).attr("aria-busy", "true").text(__("Loading…"));
 		return Promise.resolve(this.opts.on_load_more())
-			.catch((err) => sanad.ui.Toast.error(err))
+			.catch((err) => whatsapp.ui.Toast.error(err))
 			.then(() => {
 				this._loading = false;
 				this.render_top();
@@ -161,7 +161,7 @@ sanad.ui.ChatThread = class ChatThread {
 
 	/** Replace all rows (any order; sorted oldest → newest) and scroll to the bottom. */
 	set_rows(rows = []) {
-		this.rows = sanad.ui.ChatThread.sort([...(rows || [])]);
+		this.rows = whatsapp.ui.ChatThread.sort([...(rows || [])]);
 		this.render();
 		this.scroll_to_bottom();
 		if (this.opts.highlight) this.scroll_to(this.opts.highlight);
@@ -175,7 +175,7 @@ sanad.ui.ChatThread = class ChatThread {
 		const el = this.$scroll.get(0);
 		const before_height = el.scrollHeight;
 		const before_top = el.scrollTop;
-		this.rows = sanad.ui.ChatThread.sort(fresh.concat(this.rows));
+		this.rows = whatsapp.ui.ChatThread.sort(fresh.concat(this.rows));
 		this.render();
 		el.scrollTop = before_top + (el.scrollHeight - before_height);
 		ui.announce(ui.plural(fresh.length, { one: __("{0} older message loaded."), other: __("{0} older messages loaded.") }));
@@ -187,7 +187,7 @@ sanad.ui.ChatThread = class ChatThread {
 		const fresh = this.dedupe(rows);
 		if (!fresh.length) return 0;
 		const at_bottom = this.is_at_bottom();
-		this.rows = sanad.ui.ChatThread.sort(this.rows.concat(fresh));
+		this.rows = whatsapp.ui.ChatThread.sort(this.rows.concat(fresh));
 		this.render();
 		if (at_bottom) this.scroll_to_bottom();
 		return fresh.length;
@@ -216,7 +216,7 @@ sanad.ui.ChatThread = class ChatThread {
 		const el = this.$scroll.get(0);
 		const at_bottom = this.is_at_bottom();
 		const from_bottom = el.scrollHeight - el.scrollTop;
-		this.rows = sanad.ui.ChatThread.sort(this.rows.concat(added));
+		this.rows = whatsapp.ui.ChatThread.sort(this.rows.concat(added));
 		this.render();
 		if (at_bottom) this.scroll_to_bottom();
 		else el.scrollTop = el.scrollHeight - from_bottom;
@@ -240,8 +240,8 @@ sanad.ui.ChatThread = class ChatThread {
 		if (!row || !status) return false;
 		row.status = status;
 		const key = row_key(row);
-		const $row = this.$list.children(".sanad-chat__row").filter((i, el) => el.dataset.key === key);
-		$row.find(".sanad-chat__status").replaceWith(sanad.ui.ChatThread.status_html(status));
+		const $row = this.$list.children(".whatsapp-kit-chat__row").filter((i, el) => el.dataset.key === key);
+		$row.find(".whatsapp-kit-chat__status").replaceWith(whatsapp.ui.ChatThread.status_html(status));
 		return true;
 	}
 
@@ -265,7 +265,7 @@ sanad.ui.ChatThread = class ChatThread {
 	}
 
 	scroll_to(name) {
-		const $row = this.$list.children(".sanad-chat__row").filter((i, el) => el.dataset.name === cstr(name)).first();
+		const $row = this.$list.children(".whatsapp-kit-chat__row").filter((i, el) => el.dataset.name === cstr(name)).first();
 		if ($row.length && $row.get(0).scrollIntoView) $row.get(0).scrollIntoView({ block: "center" });
 		return this;
 	}
@@ -284,20 +284,20 @@ sanad.ui.ChatThread = class ChatThread {
 		this.state.hide();
 		let html = "";
 		let last_day = null;
-		const reactions = sanad.ui.ChatThread.collect_reactions(this.rows);
+		const reactions = whatsapp.ui.ChatThread.collect_reactions(this.rows);
 		this.rows.forEach((row) => {
 			// a reaction whose message is on screen shows as a badge on that message instead
 			if (reactions.folded.has(row)) return;
-			const day = sanad.ui.ChatThread.day_of(row.ts || row.creation);
+			const day = whatsapp.ui.ChatThread.day_of(row.ts || row.creation);
 			if (day.key !== last_day) {
-				html += `<div class="sanad-chat__day" role="separator" aria-label="${ui.escape(day.label)}"><span>${ui.escape(day.label)}</span></div>`;
+				html += `<div class="whatsapp-kit-chat__day" role="separator" aria-label="${ui.escape(day.label)}"><span>${ui.escape(day.label)}</span></div>`;
 				last_day = day.key;
 			}
 			html += this.row_html(row, reactions.by_target.get(cstr(row.provider_message_id)));
 		});
 		this.$list.html(html);
 		// A preview gets its height only once it loads: keep a reader who was at the bottom there.
-		this.$list.find("img.sanad-chat__preview, video.sanad-chat__preview").each((i, el) => {
+		this.$list.find("img.whatsapp-kit-chat__preview, video.whatsapp-kit-chat__preview").each((i, el) => {
 			if (el.tagName === "IMG" && el.complete) return;
 			$(el).one(el.tagName === "IMG" ? "load" : "loadedmetadata", () => {
 				if (this.pinned) this.scroll_to_bottom();
@@ -314,12 +314,12 @@ sanad.ui.ChatThread = class ChatThread {
 			.map((r) => r.name)
 			.slice(-20);
 		if (!names.length || this.opts.poll_results === false) return;
-		sanad.ui
+		whatsapp.ui
 			.call("messages.get_poll_results", { names }, { silent: true })
 			.then((res) => {
 				Object.entries((res && res.results) || {}).forEach(([name, tally]) => {
-					const $poll = this.$list.find(`.sanad-chat__poll[data-name="${CSS.escape(name)}"]`);
-					if ($poll.length) sanad.ui.ChatThread.fill_poll($poll, tally);
+					const $poll = this.$list.find(`.whatsapp-kit-chat__poll[data-name="${CSS.escape(name)}"]`);
+					if ($poll.length) whatsapp.ui.ChatThread.fill_poll($poll, tally);
 				});
 			})
 			.catch(() => {});
@@ -334,42 +334,42 @@ sanad.ui.ChatThread = class ChatThread {
 		const status_label = STATUS[row.status] ? STATUS[row.status].label() : row.status || "";
 		const aria = out ? __("Sent message, {0}", [status_label]) : __("Received message from {0}", [who]);
 		let inner = "";
-		inner += sanad.ui.ChatThread.quote_html(row, this.rows);
-		if (!NO_CHIP.has(type) && (type !== "Text" || row.attachment)) inner += sanad.ui.ChatThread.media_html(row, { link: !clickable });
-		const ia = INTERACTIVE.has(type) ? sanad.ui.ChatThread.interactive_of(row) : null;
-		if (ia && ia.title) inner += `<div class="sanad-chat__ia-title">${ui.escape(ia.title)}</div>`;
-		if (type === "Poll" && row.poll_question) inner += sanad.ui.ChatThread.poll_html(row);
+		inner += whatsapp.ui.ChatThread.quote_html(row, this.rows);
+		if (!NO_CHIP.has(type) && (type !== "Text" || row.attachment)) inner += whatsapp.ui.ChatThread.media_html(row, { link: !clickable });
+		const ia = INTERACTIVE.has(type) ? whatsapp.ui.ChatThread.interactive_of(row) : null;
+		if (ia && ia.title) inner += `<div class="whatsapp-kit-chat__ia-title">${ui.escape(ia.title)}</div>`;
+		if (type === "Poll" && row.poll_question) inner += whatsapp.ui.ChatThread.poll_html(row);
 		if (row.deleted_at) {
 			// deleted for everyone: say so and by whom, and keep what it said one click away
 			const by = row.deleted_by ? ui.phone(`+${cstr(row.deleted_by).replace(/\D/g, "")}`) : "";
-			inner += `<div class="sanad-chat__deleted">${ui.icon("es-line-delete", "xs")}<span>${ui.escape(by ? __("This message was deleted by {0}", [by]) : __("This message was deleted"))}</span></div>`;
-			if (row.body) inner += `<details class="sanad-chat__history"><summary>${ui.escape(__("Show the deleted message"))}</summary><div class="sanad-chat__text">${sanad.ui.ChatThread.format(row.body)}</div></details>`;
+			inner += `<div class="whatsapp-kit-chat__deleted">${ui.icon("es-line-delete", "xs")}<span>${ui.escape(by ? __("This message was deleted by {0}", [by]) : __("This message was deleted"))}</span></div>`;
+			if (row.body) inner += `<details class="whatsapp-kit-chat__history"><summary>${ui.escape(__("Show the deleted message"))}</summary><div class="whatsapp-kit-chat__text">${whatsapp.ui.ChatThread.format(row.body)}</div></details>`;
 		} else if (row.body) {
-			inner += `<div class="sanad-chat__text">${sanad.ui.ChatThread.format(row.body)}</div>`;
+			inner += `<div class="whatsapp-kit-chat__text">${whatsapp.ui.ChatThread.format(row.body)}</div>`;
 			if (row.edited_at && row.original_body && row.original_body !== row.body)
-				inner += `<details class="sanad-chat__history"><summary>${ui.escape(__("Original text"))}</summary><div class="sanad-chat__text sanad-chat__text--muted">${sanad.ui.ChatThread.format(row.original_body)}</div></details>`;
+				inner += `<details class="whatsapp-kit-chat__history"><summary>${ui.escape(__("Original text"))}</summary><div class="whatsapp-kit-chat__text whatsapp-kit-chat__text--muted">${whatsapp.ui.ChatThread.format(row.original_body)}</div></details>`;
 		}
-		if (row.caption) inner += `<div class="sanad-chat__caption">${sanad.ui.ChatThread.format(row.caption)}</div>`;
+		if (row.caption) inner += `<div class="whatsapp-kit-chat__caption">${whatsapp.ui.ChatThread.format(row.caption)}</div>`;
 		// as WhatsApp lays it out: title, text, footer, then the buttons / the list button
-		if (ia) inner += sanad.ui.ChatThread.interactive_html(type, ia);
-		if (!inner) inner = `<div class="sanad-chat__text sanad-chat__text--muted">${ui.escape(__(type))}</div>`;
+		if (ia) inner += whatsapp.ui.ChatThread.interactive_html(type, ia);
+		if (!inner) inner = `<div class="whatsapp-kit-chat__text whatsapp-kit-chat__text--muted">${ui.escape(__(type))}</div>`;
 		if (row.reference_doctype && row.reference_name) {
 			const label = `${ui.escape(__(row.reference_doctype))}: ${ui.escape(row.reference_name)}`;
 			if (clickable) {
-				inner += `<span class="sanad-chat__ref">${ui.icon(ui.icons.link, "xs")}<span>${label}</span></span>`;
+				inner += `<span class="whatsapp-kit-chat__ref">${ui.icon(ui.icons.link, "xs")}<span>${label}</span></span>`;
 			} else {
 				const href = frappe.utils.get_form_link(row.reference_doctype, row.reference_name);
-				inner += `<a class="sanad-chat__ref" href="${ui.escape(href)}" title="${ui.escape(__("Open {0}", [__(row.reference_doctype)]))}">${ui.icon(ui.icons.link, "xs")}<span>${label}</span></a>`;
+				inner += `<a class="whatsapp-kit-chat__ref" href="${ui.escape(href)}" title="${ui.escape(__("Open {0}", [__(row.reference_doctype)]))}">${ui.icon(ui.icons.link, "xs")}<span>${label}</span></a>`;
 			}
 		}
-		const time = sanad.ui.ChatThread.time_of(row.ts || row.creation);
+		const time = whatsapp.ui.ChatThread.time_of(row.ts || row.creation);
 		const open_btn = clickable
-			? `<button type="button" class="btn btn-xs btn-default sanad-chat__open" aria-label="${ui.escape(__("Open message details"))}">${ui.icon(ui.icons.open, "xs")}<span>${ui.escape(__("Open"))}</span></button>`
+			? `<button type="button" class="btn btn-xs btn-default whatsapp-kit-chat__open" aria-label="${ui.escape(__("Open message details"))}">${ui.icon(ui.icons.open, "xs")}<span>${ui.escape(__("Open"))}</span></button>`
 			: "";
-		if (reactions && reactions.length) inner += sanad.ui.ChatThread.reactions_html(reactions);
-		const edited = row.edited_at && !row.deleted_at ? `<span class="sanad-chat__edited">${ui.escape(__("Edited"))}</span>` : "";
-		inner += `<div class="sanad-chat__meta">${edited}<time datetime="${ui.escape(time.iso)}" title="${ui.escape(time.full)}">${ui.escape(time.label)}</time>${out ? sanad.ui.ChatThread.status_html(row.status) : ""}${open_btn}</div>`;
-		return `<div class="sanad-chat__row sanad-chat__row--${out ? "out" : "in"}${highlight ? " sanad-chat__row--highlight" : ""}${clickable ? " sanad-chat__row--clickable" : ""}" data-key="${ui.escape(row_key(row))}" data-name="${ui.escape(row.name)}" role="group" aria-label="${ui.escape(aria)}"><div class="sanad-chat__bubble">${inner}</div></div>`;
+		if (reactions && reactions.length) inner += whatsapp.ui.ChatThread.reactions_html(reactions);
+		const edited = row.edited_at && !row.deleted_at ? `<span class="whatsapp-kit-chat__edited">${ui.escape(__("Edited"))}</span>` : "";
+		inner += `<div class="whatsapp-kit-chat__meta">${edited}<time datetime="${ui.escape(time.iso)}" title="${ui.escape(time.full)}">${ui.escape(time.label)}</time>${out ? whatsapp.ui.ChatThread.status_html(row.status) : ""}${open_btn}</div>`;
+		return `<div class="whatsapp-kit-chat__row whatsapp-kit-chat__row--${out ? "out" : "in"}${highlight ? " whatsapp-kit-chat__row--highlight" : ""}${clickable ? " whatsapp-kit-chat__row--clickable" : ""}" data-key="${ui.escape(row_key(row))}" data-name="${ui.escape(row.name)}" role="group" aria-label="${ui.escape(aria)}"><div class="whatsapp-kit-chat__bubble">${inner}</div></div>`;
 	}
 
 	/**
@@ -404,29 +404,29 @@ sanad.ui.ChatThread = class ChatThread {
 	static reactions_html(reactions) {
 		const label = reactions.map((r) => (r.count > 1 ? `${r.emoji} ${r.count}` : r.emoji)).join(" ");
 		const chips = reactions
-			.map((r) => `<span class="sanad-chat__reaction">${ui.escape(r.emoji)}${r.count > 1 ? `<span class="sanad-chat__reaction-count">${r.count}</span>` : ""}</span>`)
+			.map((r) => `<span class="whatsapp-kit-chat__reaction">${ui.escape(r.emoji)}${r.count > 1 ? `<span class="whatsapp-kit-chat__reaction-count">${r.count}</span>` : ""}</span>`)
 			.join("");
-		return `<div class="sanad-chat__reactions" role="img" aria-label="${ui.escape(__("Reactions: {0}", [label]))}">${chips}</div>`;
+		return `<div class="whatsapp-kit-chat__reactions" role="img" aria-label="${ui.escape(__("Reactions: {0}", [label]))}">${chips}</div>`;
 	}
 
 	/** A sent poll: its question and options; `fill_poll` adds the counts once they load. */
 	static poll_html(row) {
-		const options = sanad.ui.ChatThread.poll_options(row.poll_options);
+		const options = whatsapp.ui.ChatThread.poll_options(row.poll_options);
 		const items = options
 			.map(
-				(o) => `<li class="sanad-chat__poll-option" data-option="${ui.escape(o)}">
-					<span class="sanad-chat__poll-label">${ui.escape(o)}</span>
-					<span class="sanad-chat__poll-count" aria-hidden="true"></span>
-					<span class="sanad-chat__poll-bar"><span class="sanad-chat__poll-fill"></span></span>
+				(o) => `<li class="whatsapp-kit-chat__poll-option" data-option="${ui.escape(o)}">
+					<span class="whatsapp-kit-chat__poll-label">${ui.escape(o)}</span>
+					<span class="whatsapp-kit-chat__poll-count" aria-hidden="true"></span>
+					<span class="whatsapp-kit-chat__poll-bar"><span class="whatsapp-kit-chat__poll-fill"></span></span>
 				</li>`
 			)
 			.join("");
-		return `<div class="sanad-chat__poll" data-name="${ui.escape(row.name)}">
-			<div class="sanad-chat__poll-question">${ui.escape(row.poll_question)}</div>
-			<ul class="sanad-chat__poll-options">${items}</ul>
-			<div class="sanad-chat__poll-foot">
-				<span class="sanad-chat__poll-total" aria-live="polite"></span>
-				<button type="button" class="sanad-chat__poll-open">${ui.escape(__("View results"))}</button>
+		return `<div class="whatsapp-kit-chat__poll" data-name="${ui.escape(row.name)}">
+			<div class="whatsapp-kit-chat__poll-question">${ui.escape(row.poll_question)}</div>
+			<ul class="whatsapp-kit-chat__poll-options">${items}</ul>
+			<div class="whatsapp-kit-chat__poll-foot">
+				<span class="whatsapp-kit-chat__poll-total" aria-live="polite"></span>
+				<button type="button" class="whatsapp-kit-chat__poll-open">${ui.escape(__("View results"))}</button>
 			</div>
 		</div>`;
 	}
@@ -438,7 +438,7 @@ sanad.ui.ChatThread = class ChatThread {
 	 */
 	static open_poll(row) {
 		const base = { doctype: "WhatsApp Log", name: row.name, poll_question: row.poll_question, scope_label: "", recipients: 0, responded: 0, response_rate: "", leading: "" };
-		const drawer = new sanad.ui.Drawer({
+		const drawer = new whatsapp.ui.Drawer({
 			doctype: "WhatsApp Log",
 			name: row.name,
 			mode: "record",
@@ -472,15 +472,15 @@ sanad.ui.ChatThread = class ChatThread {
 			],
 			relations: [],
 			sections: [
-				{ label: __("Results"), icon: "es-line-chart", render: ($el, d) => sanad.ui.ChatThread.render_poll_results($el, d) },
-				{ label: __("Answers"), icon: "es-line-people", render: ($el, d) => sanad.ui.ChatThread.render_poll_answers($el, d) },
-				{ label: __("Not answered yet"), icon: "es-line-time", condition: (d) => d.summary && d.summary.not_responded_count, render: ($el, d) => sanad.ui.ChatThread.render_poll_waiting($el, d) },
+				{ label: __("Results"), icon: "es-line-chart", render: ($el, d) => whatsapp.ui.ChatThread.render_poll_results($el, d) },
+				{ label: __("Answers"), icon: "es-line-people", render: ($el, d) => whatsapp.ui.ChatThread.render_poll_answers($el, d) },
+				{ label: __("Not answered yet"), icon: "es-line-time", condition: (d) => d.summary && d.summary.not_responded_count, render: ($el, d) => whatsapp.ui.ChatThread.render_poll_waiting($el, d) },
 			],
 			details: [],
 			actions: [{ label: __("Refresh"), icon: "es-line-reload", primary: true, handler: (d, dr) => load(dr) }],
 		});
 		const load = (dr) =>
-			sanad.ui
+			whatsapp.ui
 				.call("messages.get_poll_summary", { name: row.name }, { silent: true })
 				.then((sm) => {
 					const top = (sm.counts || []).reduce((a, b) => (cint(b.votes) > cint(a.votes) ? b : a), { votes: 0 });
@@ -506,16 +506,16 @@ sanad.ui.ChatThread = class ChatThread {
 
 	static render_poll_results($el, d) {
 		const sm = d.summary;
-		if (!sm) return $el.html(`<div class="sanad-chat__poll-total">${ui.escape(__("Loading…"))}</div>`);
-		if (sm.error) return $el.html(`<div class="sanad-chat__poll-total">${ui.escape(__("Results unavailable"))}</div>`);
+		if (!sm) return $el.html(`<div class="whatsapp-kit-chat__poll-total">${ui.escape(__("Loading…"))}</div>`);
+		if (sm.error) return $el.html(`<div class="whatsapp-kit-chat__poll-total">${ui.escape(__("Results unavailable"))}</div>`);
 		const total = Math.max(1, cint(sm.total_votes));
 		const rows = (sm.counts || [])
 			.map((o) => {
 				const pct = Math.round((cint(o.votes) / total) * 100);
-				return `<li class="sanad-chat__poll-option" aria-label="${ui.escape(__("{0}: {1} votes", [o.option, ui.format_int(o.votes)]))}">
-					<span class="sanad-chat__poll-label">${ui.escape(o.option)}</span>
-					<span class="sanad-chat__poll-count">${ui.format_int(o.votes)} · ${pct}%</span>
-					<span class="sanad-chat__poll-bar"><span class="sanad-chat__poll-fill" style="inline-size:${pct}%"></span></span>
+				return `<li class="whatsapp-kit-chat__poll-option" aria-label="${ui.escape(__("{0}: {1} votes", [o.option, ui.format_int(o.votes)]))}">
+					<span class="whatsapp-kit-chat__poll-label">${ui.escape(o.option)}</span>
+					<span class="whatsapp-kit-chat__poll-count">${ui.format_int(o.votes)} · ${pct}%</span>
+					<span class="whatsapp-kit-chat__poll-bar"><span class="whatsapp-kit-chat__poll-fill" style="inline-size:${pct}%"></span></span>
 				</li>`;
 			})
 			.join("");
@@ -524,8 +524,8 @@ sanad.ui.ChatThread = class ChatThread {
 		if (sm.errors) notes.push(__("{0} sent polls could not be read; they count as not answered.", [ui.format_int(sm.errors)]));
 		if (sm.truncated) notes.push(__("Only the first {0} recipients are counted.", [ui.format_int(sm.recipients)]));
 		$el.html(
-			`<ul class="sanad-chat__poll-options sanad-chat__poll-options--drawer">${rows}</ul>` +
-				notes.map((n) => `<p class="sanad-chat__poll-note">${ui.escape(n)}</p>`).join("")
+			`<ul class="whatsapp-kit-chat__poll-options whatsapp-kit-chat__poll-options--drawer">${rows}</ul>` +
+				notes.map((n) => `<p class="whatsapp-kit-chat__poll-note">${ui.escape(n)}</p>`).join("")
 		);
 	}
 
@@ -533,7 +533,7 @@ sanad.ui.ChatThread = class ChatThread {
 		const sm = d.summary;
 		if (!sm || sm.error) return $el.empty();
 		if (!(sm.responses || []).length) {
-			new sanad.ui.EmptyState({ wrapper: $el, state: "empty", size: "sm", title: __("No answers yet"), description: __("Answers appear here as recipients vote.") });
+			new whatsapp.ui.EmptyState({ wrapper: $el, state: "empty", size: "sm", title: __("No answers yet"), description: __("Answers appear here as recipients vote.") });
 			return;
 		}
 		const when = (ts) => (ts ? frappe.datetime.prettyDate(moment.unix(cint(ts)).format("YYYY-MM-DD HH:mm:ss")) : "");
@@ -541,20 +541,20 @@ sanad.ui.ChatThread = class ChatThread {
 			.map((r) => {
 				const who = r.recipient || r.voter || ui.phone(r.phone || (r.voter_number ? "+" + r.voter_number : ""));
 				const sub = [r.voter && r.voter !== r.recipient ? r.voter : "", ui.phone(r.phone || (r.voter_number ? "+" + r.voter_number : "")), when(r.voted_at)].filter(Boolean).join(" · ");
-				const chips = (r.options || []).map((o) => `<span class="sanad-chat__poll-chip">${ui.escape(o)}</span>`).join("");
-				return `<li class="sanad-chat__poll-answer"><div><div class="sanad-chat__poll-voter">${ui.escape(who)}</div><div class="sanad-chat__poll-voter-meta">${ui.escape(sub)}</div></div><div class="sanad-chat__poll-chips">${chips}</div></li>`;
+				const chips = (r.options || []).map((o) => `<span class="whatsapp-kit-chat__poll-chip">${ui.escape(o)}</span>`).join("");
+				return `<li class="whatsapp-kit-chat__poll-answer"><div><div class="whatsapp-kit-chat__poll-voter">${ui.escape(who)}</div><div class="whatsapp-kit-chat__poll-voter-meta">${ui.escape(sub)}</div></div><div class="whatsapp-kit-chat__poll-chips">${chips}</div></li>`;
 			})
 			.join("");
-		$el.html(`<ul class="sanad-chat__poll-answers">${items}</ul>`);
+		$el.html(`<ul class="whatsapp-kit-chat__poll-answers">${items}</ul>`);
 	}
 
 	static render_poll_waiting($el, d) {
 		const sm = d.summary;
 		const items = (sm.not_responded || [])
-			.map((r) => `<li><span class="sanad-chat__poll-voter">${ui.escape(r.recipient || "")}</span><span class="sanad-chat__poll-voter-meta">${ui.escape(ui.phone(r.phone || ""))}</span></li>`)
+			.map((r) => `<li><span class="whatsapp-kit-chat__poll-voter">${ui.escape(r.recipient || "")}</span><span class="whatsapp-kit-chat__poll-voter-meta">${ui.escape(ui.phone(r.phone || ""))}</span></li>`)
 			.join("");
 		const more = cint(sm.not_responded_count) - (sm.not_responded || []).length;
-		$el.html(`<ul class="sanad-chat__poll-voters">${items}</ul>${more > 0 ? `<p class="sanad-chat__poll-note">${ui.escape(__("And {0} more", [ui.format_int(more)]))}</p>` : ""}`);
+		$el.html(`<ul class="whatsapp-kit-chat__poll-voters">${items}</ul>${more > 0 ? `<p class="whatsapp-kit-chat__poll-note">${ui.escape(__("And {0} more", [ui.format_int(more)]))}</p>` : ""}`);
 	}
 
 	static poll_options(value) {
@@ -570,19 +570,19 @@ sanad.ui.ChatThread = class ChatThread {
 
 	static fill_poll($poll, tally) {
 		if (!tally || tally.error) {
-			$poll.find(".sanad-chat__poll-total").text(__("Results unavailable"));
+			$poll.find(".whatsapp-kit-chat__poll-total").text(__("Results unavailable"));
 			return;
 		}
 		const total = cint(tally.total_voters);
 		const max = Math.max(1, ...(tally.options || []).map((o) => cint(o.votes)));
 		(tally.options || []).forEach((o) => {
-			const $li = $poll.find(".sanad-chat__poll-option").filter((i, el) => el.dataset.option === cstr(o.option));
+			const $li = $poll.find(".whatsapp-kit-chat__poll-option").filter((i, el) => el.dataset.option === cstr(o.option));
 			const votes = cint(o.votes);
-			$li.find(".sanad-chat__poll-count").text(ui.format_int(votes));
-			$li.find(".sanad-chat__poll-fill").css("inline-size", `${Math.round((votes / max) * 100)}%`);
+			$li.find(".whatsapp-kit-chat__poll-count").text(ui.format_int(votes));
+			$li.find(".whatsapp-kit-chat__poll-fill").css("inline-size", `${Math.round((votes / max) * 100)}%`);
 			$li.attr("aria-label", __("{0}: {1} votes", [cstr(o.option), ui.format_int(votes)]));
 		});
-		$poll.find(".sanad-chat__poll-total").text(
+		$poll.find(".whatsapp-kit-chat__poll-total").text(
 			total ? ui.plural(total, { one: __("{0} voter"), other: __("{0} voters") }) : __("No votes yet")
 		);
 	}
@@ -600,23 +600,23 @@ sanad.ui.ChatThread = class ChatThread {
 	 * options one click away). */
 	static interactive_html(type, ia) {
 		let html = "";
-		if (ia.footer) html += `<div class="sanad-chat__ia-footer">${ui.escape(ia.footer)}</div>`;
+		if (ia.footer) html += `<div class="whatsapp-kit-chat__ia-footer">${ui.escape(ia.footer)}</div>`;
 		if (type === "Buttons") {
-			html += `<div class="sanad-chat__ia-buttons">${(ia.buttons || [])
+			html += `<div class="whatsapp-kit-chat__ia-buttons">${(ia.buttons || [])
 				.map((b) => {
 					const hint = b.url || b.phone || b.code || "";
-					return `<span class="sanad-chat__ia-button" title="${ui.escape(hint)}">${ui.icon(IA_ICON[b.type] || IA_ICON.reply, "xs")}<span>${ui.escape(b.text)}</span></span>`;
+					return `<span class="whatsapp-kit-chat__ia-button" title="${ui.escape(hint)}">${ui.icon(IA_ICON[b.type] || IA_ICON.reply, "xs")}<span>${ui.escape(b.text)}</span></span>`;
 				})
 				.join("")}</div>`;
 		} else {
 			const rows = (ia.sections || [])
 				.map(
 					(s) =>
-						(s.title ? `<li class="sanad-chat__ia-section">${ui.escape(s.title)}</li>` : "") +
-						(s.rows || []).map((r) => `<li class="sanad-chat__ia-row"><span>${ui.escape(r.title)}</span>${r.description ? `<small>${ui.escape(r.description)}</small>` : ""}</li>`).join("")
+						(s.title ? `<li class="whatsapp-kit-chat__ia-section">${ui.escape(s.title)}</li>` : "") +
+						(s.rows || []).map((r) => `<li class="whatsapp-kit-chat__ia-row"><span>${ui.escape(r.title)}</span>${r.description ? `<small>${ui.escape(r.description)}</small>` : ""}</li>`).join("")
 				)
 				.join("");
-			html += `<details class="sanad-chat__ia-list"><summary class="sanad-chat__ia-button">${ui.icon("es-line-bullet-list", "xs")}<span>${ui.escape(ia.button_text || __("Options"))}</span></summary><ul>${rows}</ul></details>`;
+			html += `<details class="whatsapp-kit-chat__ia-list"><summary class="whatsapp-kit-chat__ia-button">${ui.icon("es-line-bullet-list", "xs")}<span>${ui.escape(ia.button_text || __("Options"))}</span></summary><ul>${rows}</ul></details>`;
 		}
 		return html;
 	}
@@ -628,7 +628,7 @@ sanad.ui.ChatThread = class ChatThread {
 		const target = (rows || []).find((r) => cstr(r.provider_message_id) === id);
 		const text = target ? target.body || target.poll_question || __(target.message_type || "Message") : __("An earlier message");
 		const lead = row.message_type === "Interactive Reply" ? __("Chose from") : __("Reply to");
-		return `<div class="sanad-chat__quote"><span class="sanad-chat__quote-lead">${ui.escape(lead)}</span><span class="sanad-chat__quote-text">${ui.escape(cstr(text).slice(0, 140))}</span></div>`;
+		return `<div class="whatsapp-kit-chat__quote"><span class="whatsapp-kit-chat__quote-lead">${ui.escape(lead)}</span><span class="whatsapp-kit-chat__quote-text">${ui.escape(cstr(text).slice(0, 140))}</span></div>`;
 	}
 
 	/** Sort oldest → newest (`ts`, then `name`) — stable for equal timestamps. */
@@ -645,7 +645,7 @@ sanad.ui.ChatThread = class ChatThread {
 	static status_html(status) {
 		const s = STATUS[status] || { icon: "es-line-time", tone: "gray", label: () => __(status || "Queued") };
 		const label = s.label();
-		return `<span class="sanad-chat__status sanad-chat__status--${s.tone}" role="img" aria-label="${ui.escape(label)}" title="${ui.escape(label)}">${ui.icon(s.icon, "xs")}${s.text ? `<span class="sanad-chat__status-text">${ui.escape(label)}</span>` : ""}</span>`;
+		return `<span class="whatsapp-kit-chat__status whatsapp-kit-chat__status--${s.tone}" role="img" aria-label="${ui.escape(label)}" title="${ui.escape(label)}">${ui.icon(s.icon, "xs")}${s.text ? `<span class="whatsapp-kit-chat__status-text">${ui.escape(label)}</span>` : ""}</span>`;
 	}
 
 	/** Inline preview of an attached image, sticker, video or audio, or "" when the file's own
@@ -658,11 +658,11 @@ sanad.ui.ChatThread = class ChatThread {
 		if (!kind || !kind.ext.includes(ext)) return "";
 		const src = ui.escape(ui.safe_url(url));
 		if (kind.tag === "img") {
-			const img = `<img class="sanad-chat__preview sanad-chat__preview--${type === "Sticker" ? "sticker" : "image"}" src="${src}" alt="${ui.escape(__(type))}" loading="lazy">`;
-			return link ? `<a class="sanad-chat__preview-link" href="${src}" target="_blank" rel="noopener" aria-label="${ui.escape(__("Open {0}", [__(type)]))}">${img}</a>` : img;
+			const img = `<img class="whatsapp-kit-chat__preview whatsapp-kit-chat__preview--${type === "Sticker" ? "sticker" : "image"}" src="${src}" alt="${ui.escape(__(type))}" loading="lazy">`;
+			return link ? `<a class="whatsapp-kit-chat__preview-link" href="${src}" target="_blank" rel="noopener" aria-label="${ui.escape(__("Open {0}", [__(type)]))}">${img}</a>` : img;
 		}
-		if (kind.tag === "video") return `<video class="sanad-chat__preview" src="${src}" controls preload="metadata"></video>`;
-		return `<audio class="sanad-chat__audio" src="${src}" controls preload="none"></audio>`;
+		if (kind.tag === "video") return `<video class="whatsapp-kit-chat__preview" src="${src}" controls preload="metadata"></video>`;
+		return `<audio class="whatsapp-kit-chat__audio" src="${src}" controls preload="none"></audio>`;
 	}
 
 	/** Media row; `link: false` renders the attachment name as text (rows that are themselves clickable). */
@@ -672,15 +672,15 @@ sanad.ui.ChatThread = class ChatThread {
 		const label = __(type);
 		if (row.attachment) {
 			const file = decodeURIComponent(cstr(row.attachment).split("/").pop() || "") || label;
-			const preview = sanad.ui.ChatThread.preview_html(row, { link });
-			const body = `<span class="sanad-chat__media-icon" aria-hidden="true">${ui.icon(icon, "sm")}</span><span class="sanad-chat__media-name">${ui.escape(file)}</span><span class="sanad-chat__media-type">${ui.escape(label)}</span>`;
-			if (!link) return `${preview}<div class="sanad-chat__media sanad-chat__media--plain">${body}</div>`;
-			return `${preview}<a class="sanad-chat__media" href="${ui.escape(ui.safe_url(row.attachment))}" target="_blank" rel="noopener" aria-label="${ui.escape(__("Open {0}: {1}", [label, file]))}">${body}</a>`;
+			const preview = whatsapp.ui.ChatThread.preview_html(row, { link });
+			const body = `<span class="whatsapp-kit-chat__media-icon" aria-hidden="true">${ui.icon(icon, "sm")}</span><span class="whatsapp-kit-chat__media-name">${ui.escape(file)}</span><span class="whatsapp-kit-chat__media-type">${ui.escape(label)}</span>`;
+			if (!link) return `${preview}<div class="whatsapp-kit-chat__media whatsapp-kit-chat__media--plain">${body}</div>`;
+			return `${preview}<a class="whatsapp-kit-chat__media" href="${ui.escape(ui.safe_url(row.attachment))}" target="_blank" rel="noopener" aria-label="${ui.escape(__("Open {0}: {1}", [label, file]))}">${body}</a>`;
 		}
 		if (cint(row.media_pending) && row.name) {
-			return `<button type="button" class="sanad-chat__media sanad-chat__fetch" data-name="${ui.escape(row.name)}" aria-label="${ui.escape(__("Download {0}", [label]))}"><span class="sanad-chat__media-icon" aria-hidden="true">${ui.icon("es-line-download", "sm")}</span><span class="sanad-chat__media-name">${ui.escape(label)}</span><span class="sanad-chat__media-type">${ui.escape(__("Download"))}</span></button>`;
+			return `<button type="button" class="whatsapp-kit-chat__media whatsapp-kit-chat__fetch" data-name="${ui.escape(row.name)}" aria-label="${ui.escape(__("Download {0}", [label]))}"><span class="whatsapp-kit-chat__media-icon" aria-hidden="true">${ui.icon("es-line-download", "sm")}</span><span class="whatsapp-kit-chat__media-name">${ui.escape(label)}</span><span class="whatsapp-kit-chat__media-type">${ui.escape(__("Download"))}</span></button>`;
 		}
-		return `<div class="sanad-chat__media sanad-chat__media--plain"><span class="sanad-chat__media-icon" aria-hidden="true">${ui.icon(icon, "sm")}</span><span class="sanad-chat__media-type">${ui.escape(label)}</span></div>`;
+		return `<div class="whatsapp-kit-chat__media whatsapp-kit-chat__media--plain"><span class="whatsapp-kit-chat__media-icon" aria-hidden="true">${ui.icon(icon, "sm")}</span><span class="whatsapp-kit-chat__media-type">${ui.escape(label)}</span></div>`;
 	}
 
 	/** Escape, keep line breaks, render WhatsApp `*bold*`, `_italic_`, `~strike~`, `` `code` ``. */
@@ -705,7 +705,7 @@ sanad.ui.ChatThread = class ChatThread {
 
 	/** `{key, label}` for the day separator (Today / Yesterday / user date format). */
 	static day_of(ts) {
-		const m = sanad.ui.ChatThread.moment_of(ts);
+		const m = whatsapp.ui.ChatThread.moment_of(ts);
 		if (!m || !m.isValid()) return { key: "", label: "" };
 		const key = m.format("YYYY-MM-DD");
 		const today = moment().format("YYYY-MM-DD");
@@ -718,7 +718,7 @@ sanad.ui.ChatThread = class ChatThread {
 
 	/** `{label, full, iso}` — time in the user's format without seconds. */
 	static time_of(ts) {
-		const m = sanad.ui.ChatThread.moment_of(ts);
+		const m = whatsapp.ui.ChatThread.moment_of(ts);
 		if (!m || !m.isValid()) return { label: "", full: "", iso: "" };
 		const fmt = frappe.datetime.get_user_time_fmt().replace(/:ss/, "");
 		return {
@@ -734,4 +734,4 @@ sanad.ui.ChatThread = class ChatThread {
 	}
 };
 
-export default sanad.ui.ChatThread;
+export default whatsapp.ui.ChatThread;

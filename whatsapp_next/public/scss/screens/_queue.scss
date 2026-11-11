@@ -2,20 +2,20 @@
 // queue in each of the last sixty minutes) and the send-rate control with its recommended band
 // drawn on the track. The panel itself is the shared console (`screens/_console.scss`).
 
-.wa-ops {
+.whatsapp-ops {
 	// ---- the sparkline -------------------------------------------------------------------------
 
 	&__chart {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		margin: 0;
 		min-inline-size: 0;
 		figcaption {
 			display: flex;
 			align-items: baseline;
 			justify-content: space-between;
-			gap: var(--sanad-gap-sm);
+			gap: var(--whatsapp-kit-gap-sm);
 		}
 	}
 	&__peak {
@@ -34,7 +34,7 @@
 			display: block;
 			overflow: visible;
 		}
-		rect { fill: var(--sanad-accent); }
+		rect { fill: var(--whatsapp-kit-accent); }
 		// the axis labels flip with the document; the SVG does not, so mirror it by hand or the
 		// oldest minute would sit under "now"
 		[dir="rtl"] & svg { transform: scaleX(-1); }
@@ -45,7 +45,7 @@
 	&__target {
 		position: absolute;
 		inset-inline: 0;
-		inset-block-end: var(--wa-target, 0%);
+		inset-block-end: var(--whatsapp-target, 0%);
 		border-block-start: 1px dashed var(--ink-gray-5);
 		opacity: 0.7;
 		pointer-events: none;
@@ -55,7 +55,7 @@
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		font-size: 11px;
 		color: var(--ink-gray-5);
 	}
@@ -63,23 +63,23 @@
 
 	&__rate {
 		display: grid;
-		gap: var(--sanad-gap-xs);
+		gap: var(--whatsapp-kit-gap-xs);
 		align-content: start;
 		min-inline-size: 0;
 		@media (min-width: 992px) {
-			padding-inline-start: var(--sanad-gap-xl);
-			border-inline-start: var(--sanad-border);
+			padding-inline-start: var(--whatsapp-kit-gap-xl);
+			border-inline-start: var(--whatsapp-kit-border);
 		}
 		@media (max-width: 991px) {
-			padding-block-start: var(--sanad-gap-md);
-			border-block-start: var(--sanad-border);
+			padding-block-start: var(--whatsapp-kit-gap-md);
+			border-block-start: var(--whatsapp-kit-border);
 		}
 	}
 	&__rate-head {
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 	}
 	&__rate-value {
 		font-size: var(--text-lg, 16px);
@@ -91,7 +91,7 @@
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		margin: 0;
 		font-size: var(--text-xs, 11px);
 		color: var(--ink-gray-6);
@@ -103,8 +103,8 @@
 		position: relative;
 		display: flex;
 		align-items: center;
-		min-block-size: var(--sanad-target);
-		--wa-fill: 0%;
+		min-block-size: var(--whatsapp-kit-target);
+		--whatsapp-fill: 0%;
 		&::before,
 		&::after {
 			content: "";
@@ -121,16 +121,16 @@
 		}
 		&::after {
 			inset-inline-start: 0;
-			inline-size: var(--wa-fill);
-			background: var(--sanad-accent);
+			inline-size: var(--whatsapp-fill);
+			background: var(--whatsapp-kit-accent);
 		}
 	}
 	&__zone {
 		position: absolute;
 		inset-block-start: 50%;
 		translate: 0 -50%;
-		inset-inline-start: var(--wa-from, 0%);
-		inline-size: calc(var(--wa-to, 0%) - var(--wa-from, 0%));
+		inset-inline-start: var(--whatsapp-from, 0%);
+		inline-size: calc(var(--whatsapp-to, 0%) - var(--whatsapp-from, 0%));
 		block-size: 12px;
 		border-radius: 4px;
 		background: var(--surface-green-1);
@@ -141,7 +141,7 @@
 		position: relative;
 		z-index: 1;
 		inline-size: 100%;
-		min-block-size: var(--sanad-target);
+		min-block-size: var(--whatsapp-kit-target);
 		margin: 0;
 		background: none;
 		appearance: none;
@@ -158,7 +158,7 @@
 			margin-block-start: -6px;
 			border-radius: 50%;
 			border: 2px solid var(--surface-base);
-			background: var(--sanad-accent);
+			background: var(--whatsapp-kit-accent);
 			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 		}
 		&::-moz-range-thumb {
@@ -166,14 +166,14 @@
 			block-size: 16px;
 			border-radius: 50%;
 			border: 2px solid var(--surface-base);
-			background: var(--sanad-accent);
+			background: var(--whatsapp-kit-accent);
 		}
 	}
 	&__scale {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		font-size: 11px;
 		color: var(--ink-gray-5);
 	}
@@ -181,6 +181,6 @@
 }
 
 // the failure under a row's status (`whatsapp_queue_item_list.js`): said in words, in the danger ink
-.wa-queue__error {
-	color: var(--wa-dg-i);
+.whatsapp-queue__error {
+	color: var(--whatsapp-dg-i);
 }

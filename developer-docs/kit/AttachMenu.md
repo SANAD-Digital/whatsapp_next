@@ -1,4 +1,4 @@
-# `sanad.ui.AttachMenu`
+# `whatsapp.ui.AttachMenu`
 
 A composer's "+" popover: a 3-column grid of attachment kinds — image, video, document, voice note,
 location, contact card — each in its tone. A file kind opens Frappe's own `frappe.ui.FileUploader`
@@ -8,7 +8,7 @@ host, which also draws the chip above its field with the static `chip_html()`. T
 opens the popover immediately; each click on "+" makes a new instance.
 
 **Portability:** no server calls of its own and no app-specific keys; the contact search is the
-host's. The stylesheet uses the app's `--wa-*` palette tokens (`public/scss/_tokens.scss`), which
+host's. The stylesheet uses the app's `--whatsapp-*` palette tokens (`public/scss/_tokens.scss`), which
 live outside the kit.
 
 ## Options
@@ -43,7 +43,7 @@ live outside the kit.
 
 - `on_pick(value)`, `on_close()`.
 - Listens to `mousedown` on `document` (capture) to close on an outside click, `keydown` Escape
-  on the popover, and `resize.sanad-am` on `window`; all removed on close. No realtime.
+  on the popover, and `resize.whatsapp-kit-am` on `window`; all removed on close. No realtime.
 
 ## Server calls
 
@@ -54,7 +54,7 @@ None. File kinds go through `frappe.ui.FileUploader` (`make_attachments_public: 
 
 ```js
 $plus.on("click", (ev) =>
-  new sanad.ui.AttachMenu({
+  new whatsapp.ui.AttachMenu({
     anchor: ev.currentTarget,
     kinds: ["image", "video", "document", "audio", "contact"],
     reasons: { location: __("A location goes to one conversation at a time.") },
@@ -62,18 +62,18 @@ $plus.on("click", (ev) =>
     on_pick: (v) => { draft.attach = v; redraw(); },
   })
 );
-$slot.html(sanad.ui.AttachMenu.chip_html(draft.attach));
+$slot.html(whatsapp.ui.AttachMenu.chip_html(draft.attach));
 $slot.find("[data-attach-clear]").on("click", () => { draft.attach = null; redraw(); });
 ```
 
 ## CSS hooks
 
-- Root `.sanad-kit.sanad-am[role=dialog]`, appended to `body` and positioned with inline
+- Root `.whatsapp-kit.whatsapp-kit-am[role=dialog]`, appended to `body` and positioned with inline
   `left`/`top`.
 - Menu: `__grid`, `__item[data-kind]`, `__icon--{pri|nf|wn|ok|dg|muted}`, `__label`.
 - Steps: `__form`, `__title`, `__row`, `__fld`, `__link[data-here]`, `__error`, `__actions`,
   `__btn` (`--pri`), `__search`, `__results`, `__opt[data-name]`, `__none`.
-- Chip (outside the popover): `.sanad-am__chip--{tone}`, `__chip-icon`, `__chip-text`,
+- Chip (outside the popover): `.whatsapp-kit-am__chip--{tone}`, `__chip-icon`, `__chip-text`,
   `__chip-x[data-attach-clear]`.
 
 ## Notes

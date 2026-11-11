@@ -7,13 +7,13 @@
 //
 // Under the numbers are the four shapes every step is drawn with: a titled card, a labelled
 // field, a reading and a check. They are the prototype's own (`docs/component/Wizard.dc.html`,
-// `docs/component/Cards.dc.html`) and they are built from the kit's controls (`wa-btn`,
-// `wa-badge`, `wa-seg`), so the builder takes the product's palette wherever it is mounted.
+// `docs/component/Cards.dc.html`) and they are built from the kit's controls (`whatsapp-btn`,
+// `whatsapp-badge`, `whatsapp-seg`), so the builder takes the product's palette wherever it is mounted.
 
 frappe.provide("whatsapp_next.campaign");
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const C = whatsapp_next.campaign;
 	const esc = (v) => ui.escape(v);
 	const fmt_int = (v) => ui.format_int(v);
@@ -127,38 +127,38 @@ frappe.provide("whatsapp_next.campaign");
 	 * the setup step a reader should be able to leave closed.
 	 */
 	C.card = ({ key, icon, title, note, body = "", collapsible = false, open = true, cls = "" }) => `
-		<section class="wa-cb__card${collapsible ? " wa-cb__card--fold" : ""}${cls ? ` ${cls}` : ""}" data-card="${esc(key || "")}"${collapsible ? ` data-open="${open ? 1 : 0}"` : ""}>
-			<${collapsible ? "button type=\"button\"" : "header"} class="wa-cb__card-head"${collapsible ? ` aria-expanded="${open}"` : ""}>
-				${icon ? `<span class="wa-cb__card-icon" aria-hidden="true">${ui.ico(icon, "sm")}</span>` : ""}
-				<span class="wa-cb__card-title">${esc(title)}</span>
-				${note ? `<span class="wa-cb__card-note">${esc(note)}</span>` : ""}
-				${collapsible ? `<span class="wa-cb__card-caret" aria-hidden="true">${ui.ico("caret", "sm")}</span>` : ""}
+		<section class="whatsapp-cb__card${collapsible ? " whatsapp-cb__card--fold" : ""}${cls ? ` ${cls}` : ""}" data-card="${esc(key || "")}"${collapsible ? ` data-open="${open ? 1 : 0}"` : ""}>
+			<${collapsible ? "button type=\"button\"" : "header"} class="whatsapp-cb__card-head"${collapsible ? ` aria-expanded="${open}"` : ""}>
+				${icon ? `<span class="whatsapp-cb__card-icon" aria-hidden="true">${ui.ico(icon, "sm")}</span>` : ""}
+				<span class="whatsapp-cb__card-title">${esc(title)}</span>
+				${note ? `<span class="whatsapp-cb__card-note">${esc(note)}</span>` : ""}
+				${collapsible ? `<span class="whatsapp-cb__card-caret" aria-hidden="true">${ui.ico("caret", "sm")}</span>` : ""}
 			</${collapsible ? "button" : "header"}>
-			<div class="wa-cb__card-body"${collapsible && !open ? " hidden" : ""}>${body}</div>
+			<div class="whatsapp-cb__card-body"${collapsible && !open ? " hidden" : ""}>${body}</div>
 		</section>`;
 
 	/**
 	 * A labelled control, with the rule that explains it under the control and never beside it.
-	 * The shell is the kit's own field (`wa-field`), so a campaign's inputs are the same inputs
+	 * The shell is the kit's own field (`whatsapp-field`), so a campaign's inputs are the same inputs
 	 * every other screen of the product draws.
 	 */
 	C.field = ({ id, label, required, control, hint, counter, wide }) => `
-		<div class="wa-field${wide ? " wa-field--wide" : ""}">
-			<label class="wa-field__label" for="${esc(id)}">${esc(label)}${required ? ` <b class="wa-field__req" aria-hidden="true">*</b>` : ""}</label>
+		<div class="whatsapp-field${wide ? " whatsapp-field--wide" : ""}">
+			<label class="whatsapp-field__label" for="${esc(id)}">${esc(label)}${required ? ` <b class="whatsapp-field__req" aria-hidden="true">*</b>` : ""}</label>
 			${control}
-			${counter !== undefined ? `<span class="wa-field__hint wa-cb__counter sanad-tabular" dir="ltr" data-counter="${esc(id)}">${esc(counter)}</span>` : ""}
-			${hint ? `<span class="wa-field__hint">${esc(hint)}</span>` : ""}
+			${counter !== undefined ? `<span class="whatsapp-field__hint whatsapp-cb__counter whatsapp-kit-tabular" dir="ltr" data-counter="${esc(id)}">${esc(counter)}</span>` : ""}
+			${hint ? `<span class="whatsapp-field__hint">${esc(hint)}</span>` : ""}
 		</div>`;
 
 	/** One reading of the campaign: an icon tile, what it is, and the figure. */
 	C.reading = ({ icon, tone = "muted", label, value, sub }) => `
-		<div class="wa-cb__reading">
-			<span class="wa-cb__reading-icon wa-cb__reading-icon--${esc(tone)}" aria-hidden="true">${ui.ico(icon, "sm")}</span>
-			<span class="wa-cb__reading-text">
-				<span class="wa-cb__reading-label">${esc(label)}</span>
-				<span class="wa-cb__reading-value sanad-tabular">${esc(value)}</span>
+		<div class="whatsapp-cb__reading">
+			<span class="whatsapp-cb__reading-icon whatsapp-cb__reading-icon--${esc(tone)}" aria-hidden="true">${ui.ico(icon, "sm")}</span>
+			<span class="whatsapp-cb__reading-text">
+				<span class="whatsapp-cb__reading-label">${esc(label)}</span>
+				<span class="whatsapp-cb__reading-value whatsapp-kit-tabular">${esc(value)}</span>
 			</span>
-			${sub ? `<span class="wa-cb__reading-sub">${esc(sub)}</span>` : ""}
+			${sub ? `<span class="whatsapp-cb__reading-sub">${esc(sub)}</span>` : ""}
 		</div>`;
 
 	/**
@@ -166,28 +166,28 @@ frappe.provide("whatsapp_next.campaign");
 	 * that has not been run yet (an unsaved campaign) is a third state, not a silent pass.
 	 */
 	C.check = ({ state = "todo", label, note, action, key }) => `
-		<div class="wa-cb__check wa-cb__check--${esc(state)}" data-check="${esc(key || "")}">
-			<span class="wa-cb__check-mark" aria-hidden="true">${ui.ico(state === "ok" ? "tick" : state === "bad" ? "x" : "clock", "xs")}</span>
-			<span class="wa-cb__check-text">
-				<span class="wa-cb__check-label">${esc(label)}</span>
-				${note ? `<span class="wa-cb__check-note">${esc(note)}</span>` : ""}
+		<div class="whatsapp-cb__check whatsapp-cb__check--${esc(state)}" data-check="${esc(key || "")}">
+			<span class="whatsapp-cb__check-mark" aria-hidden="true">${ui.ico(state === "ok" ? "tick" : state === "bad" ? "x" : "clock", "xs")}</span>
+			<span class="whatsapp-cb__check-text">
+				<span class="whatsapp-cb__check-label">${esc(label)}</span>
+				${note ? `<span class="whatsapp-cb__check-note">${esc(note)}</span>` : ""}
 			</span>
-			${action ? `<button type="button" class="wa-cb__check-fix" data-fix="${esc(action.key)}">${esc(action.label)}</button>` : ""}
-			<span class="sanad-visually-hidden">${esc(state === "ok" ? __("Ready") : state === "bad" ? __("Needs attention") : __("Not checked yet"))}</span>
+			${action ? `<button type="button" class="whatsapp-cb__check-fix" data-fix="${esc(action.key)}">${esc(action.label)}</button>` : ""}
+			<span class="whatsapp-kit-visually-hidden">${esc(state === "ok" ? __("Ready") : state === "bad" ? __("Needs attention") : __("Not checked yet"))}</span>
 		</div>`;
 
 	/** A tinted note — the prototype's one way of saying something the reader has not asked for. */
 	C.note = ({ tone = "info", icon = "info", title, text, cta }) => `
-		<div class="wa-cb__note wa-cb__note--${esc(tone)}">
-			<span class="wa-cb__note-icon" aria-hidden="true">${ui.ico(icon, "sm")}</span>
-			<span class="wa-cb__note-text">${title ? `<b class="wa-cb__note-title">${esc(title)}</b>` : ""}${esc(text)}</span>
-			${cta ? `<button type="button" class="wa-cb__note-cta" data-note-cta="${esc(cta.key)}">${esc(cta.label)}</button>` : ""}
+		<div class="whatsapp-cb__note whatsapp-cb__note--${esc(tone)}">
+			<span class="whatsapp-cb__note-icon" aria-hidden="true">${ui.ico(icon, "sm")}</span>
+			<span class="whatsapp-cb__note-text">${title ? `<b class="whatsapp-cb__note-title">${esc(title)}</b>` : ""}${esc(text)}</span>
+			${cta ? `<button type="button" class="whatsapp-cb__note-cta" data-note-cta="${esc(cta.key)}">${esc(cta.label)}</button>` : ""}
 		</div>`;
 
 	/** A key and its value, on one line — what a review and a recap are made of. */
 	C.pair = ({ label, value, ltr, tone }) => `
-		<div class="wa-cb__pair">
-			<span class="wa-cb__pair-label">${esc(label)}</span>
-			<span class="wa-cb__pair-value${ltr ? " sanad-tabular" : ""}${tone ? ` sanad-tone--${esc(tone)}` : ""}"${ltr ? ' dir="ltr"' : ""}>${esc(value)}</span>
+		<div class="whatsapp-cb__pair">
+			<span class="whatsapp-cb__pair-label">${esc(label)}</span>
+			<span class="whatsapp-cb__pair-value${ltr ? " whatsapp-kit-tabular" : ""}${tone ? ` whatsapp-kit-tone--${esc(tone)}` : ""}"${ltr ? ' dir="ltr"' : ""}>${esc(value)}</span>
 		</div>`;
 })();

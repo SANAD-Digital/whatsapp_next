@@ -3,13 +3,13 @@
 // (search, kind tabs, source, state), DataList columns as the prototype (group + description, kind chip, members, source,
 // last updated, Edit → the group editor window `screens/groups.js`, View → the form) with an expandable row showing the first 10 members
 // (`picker.get_group_members`) and the description note. The kind indicator here is the one
-// colour source (read through `sanad.ui.indicator_for`). Until `sanad.ui.DataList` lands, the
+// colour source (read through `whatsapp.ui.indicator_for`). Until `whatsapp.ui.DataList` lands, the
 // native rows keep RowActions.
 
 const KIND_COLOUR = { Blacklist: "red", Marketing: "blue", "Mailing List": "green", Professional: "green", Other: "green" };
 const MEMBER_PEEK = 10;
-const esc = (v) => sanad.ui.escape(v);
-const fmt_int = (v) => sanad.ui.format_int(v);
+const esc = (v) => whatsapp.ui.escape(v);
+const fmt_int = (v) => whatsapp.ui.format_int(v);
 const open_editor = (name, opts) => whatsapp_next.groups.open(name, opts);
 const can_send = () => frappe.user.has_role("WhatsApp Manager") || frappe.user.has_role("System Manager");
 
@@ -20,22 +20,22 @@ function campaign_for_group(name, group_name) {
 
 /** Expandable row: first 10 members + the description note. */
 function expand_group($el, doc) {
-	const state = new sanad.ui.EmptyState({ wrapper: $el, state: "loading", size: "sm", rows: 2 });
-	return sanad.ui
+	const state = new whatsapp.ui.EmptyState({ wrapper: $el, state: "loading", size: "sm", rows: 2 });
+	return whatsapp.ui
 		.call("picker.get_group_members", { group: doc.name, page: 1, page_length: MEMBER_PEEK }, { silent: true })
 		.then((r) => {
 			const rows = (r && r.rows) || [];
 			const total = cint(r && r.total);
 			state.hide();
-			const $box = $('<div class="wa-group-expand"></div>');
+			const $box = $('<div class="whatsapp-group-expand"></div>');
 			if (doc.description) $box.append(`<p class="text-muted small">${esc(doc.description)}</p>`);
 			if (!rows.length) {
 				$box.append(`<p class="text-muted small">${esc(__("This group has no members yet."))}</p>`);
 			} else {
-				const $wrap = $('<div class="sanad-table-wrap"></div>');
-				let html = `<table class="sanad-table"><thead><tr><th scope="col">${esc(__("Name"))}</th><th scope="col">${esc(__("Phone"))}</th><th scope="col">${esc(__("Contact"))}</th></tr></thead><tbody>`;
+				const $wrap = $('<div class="whatsapp-kit-table-wrap"></div>');
+				let html = `<table class="whatsapp-kit-table"><thead><tr><th scope="col">${esc(__("Name"))}</th><th scope="col">${esc(__("Phone"))}</th><th scope="col">${esc(__("Contact"))}</th></tr></thead><tbody>`;
 				rows.forEach((m) => {
-					html += `<tr><td>${esc(m.display_name || "")}${sanad.ui.group_tag(m.phone_e164 || m.phone)}</td><td class="sanad-table__ltr sanad-tabular">${esc(sanad.ui.phone(m.phone_e164 || m.phone || ""))}</td><td>${m.contact ? `<a href="/app/contact/${encodeURIComponent(m.contact)}">${esc(m.contact)}</a>` : ""}</td></tr>`;
+					html += `<tr><td>${esc(m.display_name || "")}${whatsapp.ui.group_tag(m.phone_e164 || m.phone)}</td><td class="whatsapp-kit-table__ltr whatsapp-kit-tabular">${esc(whatsapp.ui.phone(m.phone_e164 || m.phone || ""))}</td><td>${m.contact ? `<a href="/app/contact/${encodeURIComponent(m.contact)}">${esc(m.contact)}</a>` : ""}</td></tr>`;
 				});
 				html += "</tbody></table>";
 				$box.append($wrap.html(html));
@@ -59,8 +59,8 @@ frappe.listview_settings["WhatsApp Contact Group"] = {
 	},
 
 	onload(listview) {
-		const ui = sanad.ui;
-		listview.sanad_header = new ui.PageHeader({
+		const ui = whatsapp.ui;
+		listview.whatsapp_header = new ui.PageHeader({
 			listview,
 			primary: { label: __("New group"), icon: "es-line-add", perm: "create", handler: () => open_editor() },
 			// 09 row 14: «استيراد من ملف CSV» → the group editor for a new group, with the picker open
@@ -117,11 +117,11 @@ frappe.listview_settings["WhatsApp Contact Group"] = {
 			{ fieldname: "member_count", label: __("Members"), type: "number", sortable: true },
 			{ fieldname: "source", label: __("Source"), sortable: true, format: (v) => esc(v ? __(v) : "") },
 			{ fieldname: "members_changed_at", label: __("Last updated"), type: "date", sortable: true, format: (v, doc) => esc(frappe.datetime.str_to_user((v || doc.modified || "").split(" ")[0])) },
-			{ fieldname: "_edit", label: __("Edit"), sortable: false, format: (v, doc) => `<button type="button" class="btn btn-default btn-xs wa-group-edit" data-name="${esc(doc.name)}">${esc(__("Edit"))}</button>` },
+			{ fieldname: "_edit", label: __("Edit"), sortable: false, format: (v, doc) => `<button type="button" class="btn btn-default btn-xs whatsapp-group-edit" data-name="${esc(doc.name)}">${esc(__("Edit"))}</button>` },
 		];
 
 		if (typeof ui.DataList === "function") {
-			listview.sanad_datalist = new ui.DataList({
+			listview.whatsapp_datalist = new ui.DataList({
 				listview,
 				columns,
 				selectable: true,
@@ -133,7 +133,7 @@ frappe.listview_settings["WhatsApp Contact Group"] = {
 				mobile: "cards",
 			});
 			// "Edit" opens the quick editor window; "View" and the row keep the full form
-			listview.$result.on("click", ".wa-group-edit", (e) => {
+			listview.$result.on("click", ".whatsapp-group-edit", (e) => {
 				e.preventDefault();
 				e.stopPropagation();
 				open_editor($(e.currentTarget).attr("data-name"));

@@ -1,12 +1,12 @@
-.sanad-stepper {
+.whatsapp-kit-stepper {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sanad-gap-lg);
+	gap: var(--whatsapp-kit-gap-lg);
 
 	&__header {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 	}
 	&__progress {
 		font-size: var(--text-sm, 13px);
@@ -16,7 +16,7 @@
 	&__list {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		list-style: none;
 		margin: 0;
 		padding: 0;
@@ -25,11 +25,11 @@
 	&__step-btn {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
-		min-height: var(--sanad-target);
-		padding-block: var(--sanad-gap-xs);
-		padding-inline: var(--sanad-gap-md);
-		border: var(--sanad-border);
+		gap: var(--whatsapp-kit-gap-sm);
+		min-height: var(--whatsapp-kit-target);
+		padding-block: var(--whatsapp-kit-gap-xs);
+		padding-inline: var(--whatsapp-kit-gap-md);
+		border: var(--whatsapp-kit-border);
 		border-radius: var(--radius-full, 999px);
 		background: var(--surface-base);
 		color: var(--ink-gray-6);
@@ -51,12 +51,12 @@
 	}
 	&__optional { font-size: var(--text-xs, 12px); color: var(--ink-gray-6); }
 	&__step--current &__step-btn {
-		border-color: var(--sanad-accent-outline);
-		background: var(--sanad-accent-soft);
-		color: var(--sanad-accent-ink);
+		border-color: var(--whatsapp-kit-accent-outline);
+		background: var(--whatsapp-kit-accent-soft);
+		color: var(--whatsapp-kit-accent-ink);
 		font-weight: 600;
 	}
-	&__step--current &__num { background: var(--sanad-accent-ink); color: var(--ink-white); }
+	&__step--current &__num { background: var(--whatsapp-kit-accent-ink); color: var(--ink-white); }
 	&__step--done &__num { background: var(--surface-green-1); color: var(--ink-green-7); }
 	&__step--todo &__step-btn { color: var(--ink-gray-6); }
 
@@ -65,12 +65,12 @@
 	&__error {
 		display: flex;
 		align-items: flex-start;
-		gap: var(--sanad-gap-sm);
-		margin-block-end: var(--sanad-gap-md);
-		padding-block: var(--sanad-gap-sm);
-		padding-inline: var(--sanad-gap-md);
+		gap: var(--whatsapp-kit-gap-sm);
+		margin-block-end: var(--whatsapp-kit-gap-md);
+		padding-block: var(--whatsapp-kit-gap-sm);
+		padding-inline: var(--whatsapp-kit-gap-md);
 		border: 1px solid var(--outline-red-3);
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-red-1);
 		color: var(--ink-red-8);
 		font-size: var(--text-sm, 13px);
@@ -80,32 +80,32 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
-		padding-block-start: var(--sanad-gap-md);
-		border-block-start: var(--sanad-border);
+		gap: var(--whatsapp-kit-gap-sm);
+		padding-block-start: var(--whatsapp-kit-gap-md);
+		border-block-start: var(--whatsapp-kit-border);
 	}
-	&__footer-start, &__footer-end { display: flex; gap: var(--sanad-gap-sm); flex-wrap: wrap; }
-	&__footer .btn { min-height: var(--sanad-target); }
+	&__footer-start, &__footer-end { display: flex; gap: var(--whatsapp-kit-gap-sm); flex-wrap: wrap; }
+	&__footer .btn { min-height: var(--whatsapp-kit-target); }
 }
 
 @media (max-width: 767px) {
-	.sanad-stepper__list { flex-wrap: nowrap; overflow-x: auto; padding-block-end: var(--sanad-gap-xs); }
-	.sanad-stepper__step--todo .sanad-stepper__label { display: none; }
+	.whatsapp-kit-stepper__list { flex-wrap: nowrap; overflow-x: auto; padding-block-end: var(--whatsapp-kit-gap-xs); }
+	.whatsapp-kit-stepper__step--todo .whatsapp-kit-stepper__label { display: none; }
 }
 
 // a step that is behind the reader is done, and says so with a check instead of its number
-.sanad-stepper__check { display: none; }
-.sanad-stepper__step--done {
-	.sanad-stepper__num { display: none; }
-	.sanad-stepper__check {
+.whatsapp-kit-stepper__check { display: none; }
+.whatsapp-kit-stepper__step--done {
+	.whatsapp-kit-stepper__num { display: none; }
+	.whatsapp-kit-stepper__check {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		inline-size: 22px;
 		block-size: 22px;
 		border-radius: var(--radius-full, 999px);
-		background: var(--sanad-accent);
-		color: var(--sanad-accent-on);
+		background: var(--whatsapp-kit-accent);
+		color: var(--whatsapp-kit-accent-on);
 		flex: none;
 	}
 }

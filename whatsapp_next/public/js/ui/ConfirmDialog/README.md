@@ -9,20 +9,20 @@ trapping are Desk's own.
 ## Usage
 
 ```js
-sanad.ui.ConfirmDialog.ask({
+whatsapp.ui.ConfirmDialog.ask({
   title: __("Pause the queue?"),
   message: __("Sending stops immediately. Messages stay queued."),
-  load_impact: () => sanad.ui.call("queue.get_summary").then((s) => [
+  load_impact: () => whatsapp.ui.call("queue.get_summary").then((s) => [
     { label: __("Messages that will stop"), value: s.counts_by_status.Queued || 0 },
     { label: __("Current rate"), value: __("{0} / minute", [s.rate]) },
   ]),
   reason_field: true,
   confirm_label: __("Pause"),
-  on_confirm: ({ reason }) => sanad.ui.call("queue.pause_queue", { reason }),
-}).then(() => sanad.ui.Toast.success(__("Queue paused")))
+  on_confirm: ({ reason }) => whatsapp.ui.call("queue.pause_queue", { reason }),
+}).then(() => whatsapp.ui.Toast.success(__("Queue paused")))
   .catch(() => {});   // cancelled
 
-sanad.ui.ConfirmDialog.ask({
+whatsapp.ui.ConfirmDialog.ask({
   title: __("Cancel {0} messages?", [n]),
   impact: [{ label: __("Will be cancelled"), value: n, tone: "red" }],
   ack_checkbox: __("I understand these messages will not be sent."),

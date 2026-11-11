@@ -7,7 +7,7 @@
 frappe.provide("whatsapp_next.hub");
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const esc = (v) => ui.escape(v == null ? "" : v);
 
 	const TITLES = {
@@ -38,19 +38,19 @@ frappe.provide("whatsapp_next.hub");
 				size: "extra-large",
 				fields: [{ fieldtype: "HTML", fieldname: "body" }],
 			});
-			this.$body = this.dialog.get_field("body").$wrapper.addClass("wa-hub");
+			this.$body = this.dialog.get_field("body").$wrapper.addClass("whatsapp-hub");
 			this.$body.html(`
-				<div class="wa-hub__layout">
-					<section class="wa-hub__list" aria-label="${esc(__("Entries", null, "Hub"))}">
-						<input type="search" class="wa-input wa-hub__search" placeholder="${esc(__("Search the hub…"))}" aria-label="${esc(__("Search the hub"))}">
-						<div class="wa-hub__rows" role="listbox" aria-label="${esc(__("Entries", null, "Hub"))}"></div>
+				<div class="whatsapp-hub__layout">
+					<section class="whatsapp-hub__list" aria-label="${esc(__("Entries", null, "Hub"))}">
+						<input type="search" class="whatsapp-input whatsapp-hub__search" placeholder="${esc(__("Search the hub…"))}" aria-label="${esc(__("Search the hub"))}">
+						<div class="whatsapp-hub__rows" role="listbox" aria-label="${esc(__("Entries", null, "Hub"))}"></div>
 					</section>
-					<section class="wa-hub__detail" aria-live="polite"></section>
+					<section class="whatsapp-hub__detail" aria-live="polite"></section>
 				</div>`);
-			this.$layout = this.$body.find(".wa-hub__layout");
-			this.$rows = this.$body.find(".wa-hub__rows");
-			this.$detail = this.$body.find(".wa-hub__detail");
-			this.$body.find(".wa-hub__search").on(
+			this.$layout = this.$body.find(".whatsapp-hub__layout");
+			this.$rows = this.$body.find(".whatsapp-hub__rows");
+			this.$detail = this.$body.find(".whatsapp-hub__detail");
+			this.$body.find(".whatsapp-hub__search").on(
 				"input",
 				ui.debounce((e) => {
 					this.txt = e.target.value.trim();
@@ -62,7 +62,7 @@ frappe.provide("whatsapp_next.hub");
 				this.$layout.addClass("is-detail");
 				this.show($(e.currentTarget).attr("data-entry"));
 			});
-			this.$detail.on("click", ".wa-hub__back", () => {
+			this.$detail.on("click", ".whatsapp-hub__back", () => {
 				this.$layout.removeClass("is-detail");
 				this.$rows.find(".is-on").trigger("focus");
 			});
@@ -93,8 +93,8 @@ frappe.provide("whatsapp_next.hub");
 			this.$rows.html(
 				this.rows
 					.map(
-						(r) => `<button type="button" class="wa-hub__row${r.name === this.current ? " is-on" : ""}" data-entry="${esc(r.name)}" role="option" aria-selected="${r.name === this.current}">
-							<span class="wa-hub__row-text"><b>${esc(r.hub_name)}</b>${r.description ? `<em>${esc(describe(r.description))}</em>` : ""}</span>
+						(r) => `<button type="button" class="whatsapp-hub__row${r.name === this.current ? " is-on" : ""}" data-entry="${esc(r.name)}" role="option" aria-selected="${r.name === this.current}">
+							<span class="whatsapp-hub__row-text"><b>${esc(r.hub_name)}</b>${r.description ? `<em>${esc(describe(r.description))}</em>` : ""}</span>
 							${badge(r.state)}
 						</button>`
 					)
@@ -129,7 +129,7 @@ frappe.provide("whatsapp_next.hub");
 					.join(" · ");
 			const value_html = (v) =>
 				Array.isArray(v)
-					? `<ul class="wa-hub__table">${v.map((r) => `<li dir="auto">${esc(typeof r === "object" ? row_line(r) : text(r))}</li>`).join("")}</ul>`
+					? `<ul class="whatsapp-hub__table">${v.map((r) => `<li dir="auto">${esc(typeof r === "object" ? row_line(r) : text(r))}</li>`).join("")}</ul>`
 					: typeof v === "object"
 					? esc(row_line(v))
 					: esc(text(v));
@@ -138,35 +138,35 @@ frappe.provide("whatsapp_next.hub");
 				.map(([k, v]) => `<div${Array.isArray(v) ? ' class="is-wide"' : ""}><dt>${esc((e.labels || {})[k] || k)}</dt><dd dir="auto">${value_html(v)}</dd></div>`)
 				.join("");
 			this.$detail.html(`
-				<button type="button" class="btn btn-xs btn-default wa-hub__back">${esc(__("Back"))}</button>
-				<header class="wa-hub__head">
+				<button type="button" class="btn btn-xs btn-default whatsapp-hub__back">${esc(__("Back"))}</button>
+				<header class="whatsapp-hub__head">
 					<div>
 						<h3>${esc(e.hub_name)}</h3>
-						<p>${badge(e.state)}${e.local ? ` <span class="wa-hub__muted">${esc(__("Here as {0}", [e.local]))}</span>` : ""}</p>
+						<p>${badge(e.state)}${e.local ? ` <span class="whatsapp-hub__muted">${esc(__("Here as {0}", [e.local]))}</span>` : ""}</p>
 					</div>
-					<span class="wa-settings__btns">
+					<span class="whatsapp-settings__btns">
 						${e.local ? `<button type="button" class="btn btn-sm btn-default" data-act="open">${esc(__("Open form"))}</button>` : ""}
 						<button type="button" class="btn btn-sm btn-primary" data-act="install">${esc(verb)}</button>
 					</span>
 				</header>
-				${e.description ? `<p class="wa-hub__desc">${esc(describe(e.description))}</p>` : ""}
-				<dl class="wa-hub__facts">
+				${e.description ? `<p class="whatsapp-hub__desc">${esc(describe(e.description))}</p>` : ""}
+				<dl class="whatsapp-hub__facts">
 					<div><dt>${esc(__("Type"))}</dt><dd>${esc(__(e.hub_type))}</dd></div>
 					<div><dt>${esc(__("Last changed"))}</dt><dd>${esc(frappe.datetime.str_to_user(e.modified))}</dd></div>
-					<div><dt>${esc(__("Checksum", null, "Hub"))}</dt><dd dir="ltr" class="sanad-tabular">${esc(e.checksum)}</dd></div>
+					<div><dt>${esc(__("Checksum", null, "Hub"))}</dt><dd dir="ltr" class="whatsapp-kit-tabular">${esc(e.checksum)}</dd></div>
 				</dl>
-				${["Template", "Notification", "Alert"].includes(e.hub_type) ? `<h4 class="wa-hub__sub">${esc(__("How it is sent"))}</h4><div class="wa-hub__preview" data-slot="preview"></div>` : ""}
-				${fields ? `<h4 class="wa-hub__sub">${esc(__("What it sets up"))}</h4><dl class="wa-hub__fields">${fields}</dl>` : ""}
+				${["Template", "Notification", "Alert"].includes(e.hub_type) ? `<h4 class="whatsapp-hub__sub">${esc(__("How it is sent"))}</h4><div class="whatsapp-hub__preview" data-slot="preview"></div>` : ""}
+				${fields ? `<h4 class="whatsapp-hub__sub">${esc(__("What it sets up"))}</h4><dl class="whatsapp-hub__fields">${fields}</dl>` : ""}
 				${
 					e.payload && e.payload.script
-						? `<h4 class="wa-hub__sub">${esc(__("The code it runs on this site"))}</h4><pre class="wa-hub__code" dir="ltr">${esc(e.payload.script)}</pre>`
+						? `<h4 class="whatsapp-hub__sub">${esc(__("The code it runs on this site"))}</h4><pre class="whatsapp-hub__code" dir="ltr">${esc(e.payload.script)}</pre>`
 						: ""
 				}
 				${
 					["Alert", "Notification"].includes(e.hub_type) && e.state === "not_installed"
-						? `<p class="wa-hub__muted">${esc(__("It is installed switched off: turn it on when its recipients and device are right."))}</p>`
+						? `<p class="whatsapp-hub__muted">${esc(__("It is installed switched off: turn it on when its recipients and device are right."))}</p>`
 						: e.hub_type === "Command" && e.state === "not_installed"
-						? `<p class="wa-hub__muted">${esc(__("It is installed stopped: set who may use it (groups, account types), then turn it on."))}</p>`
+						? `<p class="whatsapp-hub__muted">${esc(__("It is installed stopped: set who may use it (groups, account types), then turn it on."))}</p>`
 						: ""
 				}`);
 			this.$detail.find("[data-act=install]").on("click", () => this.install(e));
@@ -199,10 +199,10 @@ frappe.provide("whatsapp_next.hub");
 			}
 			if (this.current !== e.name) return;
 			if (!body) {
-				$slot.html(`<p class="wa-hub__muted">${esc(e.hub_type === "Alert" ? __("It sends the report itself, with no text of its own.") : __("Nothing to preview: it has no text."))}</p>`);
+				$slot.html(`<p class="whatsapp-hub__muted">${esc(e.hub_type === "Alert" ? __("It sends the report itself, with no text of its own.") : __("Nothing to preview: it has no text."))}</p>`);
 				return;
 			}
-			$slot.html(`<div class="wa-hub__chat"><div class="wa-hub__bubble" aria-busy="true"><span class="wa-hub__muted">${esc(__("Preparing the preview…"))}</span></div></div>`);
+			$slot.html(`<div class="whatsapp-hub__chat"><div class="whatsapp-hub__bubble" aria-busy="true"><span class="whatsapp-hub__muted">${esc(__("Preparing the preview…"))}</span></div></div>`);
 			let r;
 			try {
 				// the template's own sample values fill what no readable record gives
@@ -223,14 +223,14 @@ frappe.provide("whatsapp_next.hub");
 			const format = ui.ChatThread && ui.ChatThread.format ? ui.ChatThread.format : (t) => esc(t).replace(/\r?\n/g, "<br>");
 			const attachment = (p.message_type || "Text") !== "Text" || cint(p.attach_print) || (e.hub_type === "Alert" && p.content_type === "Report");
 			$slot.html(`
-				<div class="wa-hub__chat">
-					<div class="wa-hub__bubble">
-						${attachment ? `<span class="wa-hub__file">${ui.ico ? ui.ico("attach", "xs") : ""} ${esc(e.hub_type === "Alert" ? __("The report, as a file") : __("The document, as a file"))}</span>` : ""}
-						<div class="wa-hub__text" dir="auto">${format(text)}</div>
-						<span class="wa-hub__time" dir="ltr">${esc(frappe.datetime.now_time().slice(0, 5))} ✓✓</span>
+				<div class="whatsapp-hub__chat">
+					<div class="whatsapp-hub__bubble">
+						${attachment ? `<span class="whatsapp-hub__file">${ui.ico ? ui.ico("attach", "xs") : ""} ${esc(e.hub_type === "Alert" ? __("The report, as a file") : __("The document, as a file"))}</span>` : ""}
+						<div class="whatsapp-hub__text" dir="auto">${format(text)}</div>
+						<span class="whatsapp-hub__time" dir="ltr">${esc(frappe.datetime.now_time().slice(0, 5))} ✓✓</span>
 					</div>
 				</div>
-				<p class="wa-hub__muted">${esc(
+				<p class="whatsapp-hub__muted">${esc(
 					(r && r.errors && r.errors.length)
 						? __("Shown as written: {0}", [r.errors[0]])
 						: doctype

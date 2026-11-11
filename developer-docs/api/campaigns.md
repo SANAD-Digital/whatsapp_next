@@ -119,7 +119,7 @@ when the time comes.
 **Realtime:** `wa:campaign:status` (`Scheduled`).
 
 ```js
-await sanad.ui.call("campaigns.schedule", { name: "CAMP-0001", scheduled_at: "2026-10-01 09:00:00" });
+await whatsapp.ui.call("campaigns.schedule", { name: "CAMP-0001", scheduled_at: "2026-10-01 09:00:00" });
 ```
 
 ---
@@ -147,7 +147,7 @@ await sanad.ui.call("campaigns.schedule", { name: "CAMP-0001", scheduled_at: "20
 **Realtime:** `wa:campaign:status` (`Draft`).
 
 ```js
-await sanad.ui.call("campaigns.unschedule", { name: "CAMP-0001" });
+await whatsapp.ui.call("campaigns.unschedule", { name: "CAMP-0001" });
 ```
 
 ---
@@ -181,7 +181,7 @@ other than `Running` / `Queued`).
 **Realtime:** `wa:campaign:status` (`Paused`; preceded by `Running` when the campaign was `Queued`).
 
 ```js
-await sanad.ui.call("campaigns.pause", { name: "CAMP-0001", reason: "Wrong attachment" });
+await whatsapp.ui.call("campaigns.pause", { name: "CAMP-0001", reason: "Wrong attachment" });
 ```
 
 ---
@@ -211,7 +211,7 @@ Clears `paused_at`, `paused_by`, `pause_reason`. Audited `Queue Resumed` and `Ca
 **Realtime:** `wa:campaign:status` (`Running`).
 
 ```js
-await sanad.ui.call("campaigns.resume", { name: "CAMP-0001" });
+await whatsapp.ui.call("campaigns.resume", { name: "CAMP-0001" });
 ```
 
 ---
@@ -280,7 +280,7 @@ aborts the whole call (the bulk helper re-raises permission errors).
 **Realtime:** as for the single-campaign endpoint, per campaign.
 
 ```js
-await sanad.ui.call("campaigns.pause_many", { names: ["CAMP-0001", "CAMP-0002"], reason: "Maintenance" });
+await whatsapp.ui.call("campaigns.pause_many", { names: ["CAMP-0001", "CAMP-0002"], reason: "Maintenance" });
 ```
 
 ---
@@ -325,7 +325,7 @@ Live counters, rates and the most recently changed outbound rows of one campaign
 **Realtime:** none (subscribe to `wa:campaign:status` for pushes).
 
 ```js
-const p = await sanad.ui.call("campaigns.get_progress", { name: "CAMP-0001" });
+const p = await whatsapp.ui.call("campaigns.get_progress", { name: "CAMP-0001" });
 ```
 
 ---
@@ -393,7 +393,7 @@ No arguments.
 **Realtime:** none.
 
 ```js
-const live = await sanad.ui.call("campaigns.get_sending_now");
+const live = await whatsapp.ui.call("campaigns.get_sending_now");
 ```
 
 ---
@@ -443,7 +443,7 @@ a chip says how many rows it would show; `counts[field]["All"]` is their sum.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("campaigns.get_recipients_page", { name: "CAMP-0001", status: ["Failed", "Cancelled"], search: "0500" });
+await whatsapp.ui.call("campaigns.get_recipients_page", { name: "CAMP-0001", status: ["Failed", "Cancelled"], search: "0500" });
 ```
 
 ---
@@ -478,7 +478,7 @@ name, or for a `Document` message built from a print format the rendered `file_n
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("campaigns.preview_message", { name: "CAMP-0001", idx: 1 });
+await whatsapp.ui.call("campaigns.preview_message", { name: "CAMP-0001", idx: 1 });
 ```
 
 ---
@@ -521,7 +521,7 @@ recorded per poll id in `errors` / `by_poll_id[…].error`, never raised.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("campaigns.get_poll_results", { name: "CAMP-0001", refresh: 1 });
+await whatsapp.ui.call("campaigns.get_poll_results", { name: "CAMP-0001", refresh: 1 });
 ```
 
 ---
@@ -565,7 +565,7 @@ the screen writes the sentence:
 **Realtime:** none.
 
 ```js
-const r = await sanad.ui.call("campaigns.get_readiness", { name: "CAMP-0001" });
+const r = await whatsapp.ui.call("campaigns.get_readiness", { name: "CAMP-0001" });
 ```
 
 ---
@@ -601,7 +601,7 @@ Retryable codes are `services.errors.RETRYABLE`: `device_disconnected`, `timeout
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("campaigns.get_failures", { name: "CAMP-0001" });
+await whatsapp.ui.call("campaigns.get_failures", { name: "CAMP-0001" });
 ```
 
 ---
@@ -635,7 +635,7 @@ Each campaign message with the status counts of its own outbound rows.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("campaigns.get_message_stats", { name: "CAMP-0001" });
+await whatsapp.ui.call("campaigns.get_message_stats", { name: "CAMP-0001" });
 ```
 
 ---
@@ -675,7 +675,7 @@ The audit-backed keys (`started` … `recipients_changed`) are included only whe
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("campaigns.get_timeline", { name: "CAMP-0001" });
+await whatsapp.ui.call("campaigns.get_timeline", { name: "CAMP-0001" });
 ```
 
 ---

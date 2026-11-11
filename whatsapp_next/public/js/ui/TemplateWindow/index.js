@@ -1,4 +1,4 @@
-// sanad.ui.TemplateWindow — one window to write, check and save a message template, ported from
+// whatsapp.ui.TemplateWindow — one window to write, check and save a message template, ported from
 // `docs/component/Template Editor.dc.html`: the name in the header, and three columns under it —
 //
 //   Editor     what kind of message it is (text / image / document), its category, the document it
@@ -14,14 +14,14 @@
 // text box never loses its caret while the preview follows it.
 //
 // Portable: it knows nothing about the host app — the host passes the data source as functions
-// (see README.md). Colours are the product tokens (`--wa-*`); offsets are logical.
+// (see README.md). Colours are the product tokens (`--whatsapp-*`); offsets are logical.
 
 import ui from "../_core/index.js";
 import kit from "../_kit/index.js";
 
 const esc = (v) => ui.escape(v == null ? "" : v);
 const format_html = (text) =>
-	sanad.ui.ChatThread && sanad.ui.ChatThread.format ? sanad.ui.ChatThread.format(text) : esc(text).replace(/\n/g, "<br>");
+	whatsapp.ui.ChatThread && whatsapp.ui.ChatThread.format ? whatsapp.ui.ChatThread.format(text) : esc(text).replace(/\n/g, "<br>");
 
 const TYPES = () => [
 	{ value: "Text", label: __("Text"), icon: "chat" },
@@ -37,7 +37,7 @@ const FORMATS = () => [
 	{ key: "mono", mark: "```", label: __("Monospace"), glyph: "</>" },
 ];
 
-sanad.ui.TemplateWindow = class TemplateWindow {
+whatsapp.ui.TemplateWindow = class TemplateWindow {
 	/**
 	 * @param {Object} opts
 	 * @param {string|null} [opts.name] — the template to open; empty for a new one
@@ -62,19 +62,19 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 	// ---- shell ---------------------------------------------------------------------------------
 
 	build() {
-		this.id = ui.uid("sanad-tw");
+		this.id = ui.uid("whatsapp-kit-tw");
 		this.previous_focus = document.activeElement;
 		this.$root = $(`
-			<div class="sanad-kit wa sanad-tw-layer" role="presentation">
-				<div class="sanad-tw-backdrop"></div>
-				<div class="sanad-tw sanad-tw--tab-editor" role="dialog" aria-modal="true" aria-labelledby="${this.id}-label">
+			<div class="whatsapp-kit whatsapp whatsapp-kit-tw-layer" role="presentation">
+				<div class="whatsapp-kit-tw-backdrop"></div>
+				<div class="whatsapp-kit-tw whatsapp-kit-tw--tab-editor" role="dialog" aria-modal="true" aria-labelledby="${this.id}-label">
 					<span class="sr-only" id="${this.id}-label">${esc(__("Message template"))}</span>
-					<div class="sanad-tw__loading">${esc(__("Loading…"))}</div>
+					<div class="whatsapp-kit-tw__loading">${esc(__("Loading…"))}</div>
 				</div>
 			</div>`).appendTo(document.body);
-		this.$dlg = this.$root.find(".sanad-tw");
-		$("body").addClass("sanad-tw-open");
-		this.$root.find(".sanad-tw-backdrop").on("click", () => this.close());
+		this.$dlg = this.$root.find(".whatsapp-kit-tw");
+		$("body").addClass("whatsapp-kit-tw-open");
+		this.$root.find(".whatsapp-kit-tw-backdrop").on("click", () => this.close());
 		this.$root.on("keydown", (e) => this.on_key(e));
 		this.untrap = ui.trap_focus(this.$root);
 		this.preview_later = ui.debounce(() => this.run_preview(), 400);
@@ -107,7 +107,7 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 		this._closed = true;
 		frappe.router.off("change", this._on_route);
 		this.untrap && this.untrap();
-		$("body").removeClass("sanad-tw-open");
+		$("body").removeClass("whatsapp-kit-tw-open");
 		this.$root.remove();
 		if (this.previous_focus && document.contains(this.previous_focus)) this.previous_focus.focus();
 		this.opts.on_close && this.opts.on_close();
@@ -142,7 +142,7 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 			(this.draft.name ? this.$body_input : this.$name_input).trigger("focus");
 		} catch (err) {
 			this.$dlg.html(`
-				<div class="sanad-tw__loading" role="alert">
+				<div class="whatsapp-kit-tw__loading" role="alert">
 					<span>${esc((err && err.message) || __("Something went wrong. Please try again."))}</span>
 					${kit.btn({ label: __("Close"), attrs: { "data-act": "close" } })}
 				</div>`);
@@ -200,102 +200,102 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 		const d = this.draft;
 		const ro = !this.data.can_write;
 		this.$dlg.html(`
-			<header class="sanad-tw__head">
-				<span class="sanad-tw__mark" aria-hidden="true">${kit.ico("doc", "sm")}</span>
-				<input type="text" class="sanad-tw__name" value="${esc(d.template_name)}" placeholder="${esc(__("Template name"))}" aria-label="${esc(__("Template name"))}" maxlength="140"${ro ? " readonly" : ""}>
-				<span class="sanad-tw__status" aria-live="polite"></span>
-				${this.opts.form_doctype && this.draft && this.draft.name ? sanad.ui.form_button_html() : ""}
-				${kit.btn({ icon: "x", variant: "secondary", title: __("Close (Esc)"), cls: "sanad-tw__close", attrs: { "data-act": "close" } })}
+			<header class="whatsapp-kit-tw__head">
+				<span class="whatsapp-kit-tw__mark" aria-hidden="true">${kit.ico("doc", "sm")}</span>
+				<input type="text" class="whatsapp-kit-tw__name" value="${esc(d.template_name)}" placeholder="${esc(__("Template name"))}" aria-label="${esc(__("Template name"))}" maxlength="140"${ro ? " readonly" : ""}>
+				<span class="whatsapp-kit-tw__status" aria-live="polite"></span>
+				${this.opts.form_doctype && this.draft && this.draft.name ? whatsapp.ui.form_button_html() : ""}
+				${kit.btn({ icon: "x", variant: "secondary", title: __("Close (Esc)"), cls: "whatsapp-kit-tw__close", attrs: { "data-act": "close" } })}
 			</header>
-			<div class="sanad-tw__tabs" role="tablist" aria-label="${esc(__("Sections"))}">
+			<div class="whatsapp-kit-tw__tabs" role="tablist" aria-label="${esc(__("Sections"))}">
 				${[["editor", __("Editor")], ["preview", __("Preview", null, "Template preview tab")], ["vars", __("Variables")]]
-					.map(([k, l]) => `<button type="button" class="sanad-tw__tab" role="tab" data-tab="${k}" aria-selected="${k === this.state.tab}">${esc(l)}</button>`)
+					.map(([k, l]) => `<button type="button" class="whatsapp-kit-tw__tab" role="tab" data-tab="${k}" aria-selected="${k === this.state.tab}">${esc(l)}</button>`)
 					.join("")}
 			</div>
-			<div class="sanad-tw__grid">
-				<section class="sanad-tw__pane sanad-tw__editor" data-pane="editor" aria-label="${esc(__("Editor"))}">
-					<div class="sanad-tw__row">
-						<div class="wa-field">
-							<span class="wa-field__label">${esc(__("Message type"))}</span>
+			<div class="whatsapp-kit-tw__grid">
+				<section class="whatsapp-kit-tw__pane whatsapp-kit-tw__editor" data-pane="editor" aria-label="${esc(__("Editor"))}">
+					<div class="whatsapp-kit-tw__row">
+						<div class="whatsapp-field">
+							<span class="whatsapp-field__label">${esc(__("Message type"))}</span>
 							${kit.segmented(TYPES(), d.message_type, { label: __("Message type") })}
 						</div>
-						<label class="wa-field">
-							<span class="wa-field__label">${esc(__("Category"))}</span>
-							<input type="text" class="wa-input" data-field="category" list="${this.id}-cats" value="${esc(d.category)}" placeholder="${esc(__("e.g. Sales"))}"${ro ? " disabled" : ""}>
+						<label class="whatsapp-field">
+							<span class="whatsapp-field__label">${esc(__("Category"))}</span>
+							<input type="text" class="whatsapp-input" data-field="category" list="${this.id}-cats" value="${esc(d.category)}" placeholder="${esc(__("e.g. Sales"))}"${ro ? " disabled" : ""}>
 							<datalist id="${this.id}-cats">${(this.data.categories || []).map((c) => `<option value="${esc(c)}">`).join("")}</datalist>
 						</label>
 					</div>
-					<div class="wa-field">
-						<span class="wa-field__label">${esc(__("Document it is about"))}</span>
-						<div class="sanad-tw__link" data-link="reference_doctype"></div>
-						<span class="wa-field__hint">${esc(__("Optional. Pick the document the message is sent about, such as Sales Invoice, to insert its fields."))}</span>
+					<div class="whatsapp-field">
+						<span class="whatsapp-field__label">${esc(__("Document it is about"))}</span>
+						<div class="whatsapp-kit-tw__link" data-link="reference_doctype"></div>
+						<span class="whatsapp-field__hint">${esc(__("Optional. Pick the document the message is sent about, such as Sales Invoice, to insert its fields."))}</span>
 					</div>
-					<div class="wa-field sanad-tw__body-field">
-						<div class="sanad-tw__body-head">
-							<label class="wa-field__label" for="${this.id}-body">${esc(__("Message text"))} <span class="wa-field__req" aria-hidden="true">*</span></label>
-							${ro ? "" : `<div class="sanad-tw__fmt" role="toolbar" aria-label="${esc(__("Formatting"))}">
-								${FORMATS().map((f) => `<button type="button" class="sanad-tw__fmt-btn sanad-tw__fmt-btn--${f.key}" data-fmt="${f.key}" title="${esc(f.label)}" aria-label="${esc(f.label)}">${esc(f.glyph)}</button>`).join("")}
-								<span class="sanad-tw__fmt-sep" aria-hidden="true"></span>
-								<button type="button" class="sanad-tw__fmt-btn sanad-tw__fmt-btn--wide" data-fmt="if" title="${esc(__("Show a part only when a condition holds"))}">${esc(__("Condition"))}</button>
+					<div class="whatsapp-field whatsapp-kit-tw__body-field">
+						<div class="whatsapp-kit-tw__body-head">
+							<label class="whatsapp-field__label" for="${this.id}-body">${esc(__("Message text"))} <span class="whatsapp-field__req" aria-hidden="true">*</span></label>
+							${ro ? "" : `<div class="whatsapp-kit-tw__fmt" role="toolbar" aria-label="${esc(__("Formatting"))}">
+								${FORMATS().map((f) => `<button type="button" class="whatsapp-kit-tw__fmt-btn whatsapp-kit-tw__fmt-btn--${f.key}" data-fmt="${f.key}" title="${esc(f.label)}" aria-label="${esc(f.label)}">${esc(f.glyph)}</button>`).join("")}
+								<span class="whatsapp-kit-tw__fmt-sep" aria-hidden="true"></span>
+								<button type="button" class="whatsapp-kit-tw__fmt-btn whatsapp-kit-tw__fmt-btn--wide" data-fmt="if" title="${esc(__("Show a part only when a condition holds"))}">${esc(__("Condition"))}</button>
 							</div>`}
 						</div>
-						<textarea id="${this.id}-body" class="wa-textarea sanad-tw__body" dir="auto" rows="10" placeholder="${esc(__("Hello {{ doc.customer_name }}, …"))}"${ro ? " readonly" : ""}>${esc(d.body)}</textarea>
-						<div class="sanad-tw__body-foot">
-							<span class="wa-field__hint">${esc(__("Variables go in {{ … }} and conditions in {% if … %} … {% endif %}."))}</span>
-							<span class="sanad-tw__count sanad-tabular"></span>
+						<textarea id="${this.id}-body" class="whatsapp-textarea whatsapp-kit-tw__body" dir="auto" rows="10" placeholder="${esc(__("Hello {{ doc.customer_name }}, …"))}"${ro ? " readonly" : ""}>${esc(d.body)}</textarea>
+						<div class="whatsapp-kit-tw__body-foot">
+							<span class="whatsapp-field__hint">${esc(__("Variables go in {{ … }} and conditions in {% if … %} … {% endif %}."))}</span>
+							<span class="whatsapp-kit-tw__count whatsapp-kit-tabular"></span>
 						</div>
 					</div>
-					<div class="sanad-tw__attach"></div>
-					<details class="sanad-tw__more">
+					<div class="whatsapp-kit-tw__attach"></div>
+					<details class="whatsapp-kit-tw__more">
 						<summary>${esc(__("More options"))}</summary>
-						<div class="sanad-tw__more-body">
-							<label class="wa-toggle">
+						<div class="whatsapp-kit-tw__more-body">
+							<label class="whatsapp-toggle">
 								<input type="checkbox" data-field="enabled"${d.disabled ? "" : " checked"}${ro ? " disabled" : ""}>
-								<span class="wa-toggle__track" aria-hidden="true"></span>
-								<span class="wa-toggle__label">${esc(__("Offered when sending"))}</span>
+								<span class="whatsapp-toggle__track" aria-hidden="true"></span>
+								<span class="whatsapp-toggle__label">${esc(__("Offered when sending"))}</span>
 							</label>
-							<label class="wa-field">
-								<span class="wa-field__label">${esc(__("Description"))}</span>
-								<textarea class="wa-textarea" data-field="description" rows="2" placeholder="${esc(__("When to use it — shown to whoever picks it"))}"${ro ? " readonly" : ""}>${esc(d.description)}</textarea>
+							<label class="whatsapp-field">
+								<span class="whatsapp-field__label">${esc(__("Description"))}</span>
+								<textarea class="whatsapp-textarea" data-field="description" rows="2" placeholder="${esc(__("When to use it — shown to whoever picks it"))}"${ro ? " readonly" : ""}>${esc(d.description)}</textarea>
 							</label>
-							<div class="wa-field">
-								<span class="wa-field__label">${esc(__("Language"))}</span>
-								<div class="sanad-tw__link" data-link="language"></div>
+							<div class="whatsapp-field">
+								<span class="whatsapp-field__label">${esc(__("Language"))}</span>
+								<div class="whatsapp-kit-tw__link" data-link="language"></div>
 							</div>
-							<label class="wa-field">
-								<span class="wa-field__label">${esc(__("Extra sample values (JSON)"))}</span>
-								<textarea class="wa-textarea wa-textarea--mono" data-field="sample_context" dir="ltr" rows="3" placeholder='{"discount": 10}'${ro ? " readonly" : ""}>${esc(d.sample_context)}</textarea>
-								<span class="wa-field__hint">${esc(__("Only for the preview: values the text uses that no document has."))}</span>
+							<label class="whatsapp-field">
+								<span class="whatsapp-field__label">${esc(__("Extra sample values (JSON)"))}</span>
+								<textarea class="whatsapp-textarea whatsapp-textarea--mono" data-field="sample_context" dir="ltr" rows="3" placeholder='{"discount": 10}'${ro ? " readonly" : ""}>${esc(d.sample_context)}</textarea>
+								<span class="whatsapp-field__hint">${esc(__("Only for the preview: values the text uses that no document has."))}</span>
 							</label>
 						</div>
 					</details>
 				</section>
 
-				<section class="sanad-tw__pane sanad-tw__preview" data-pane="preview" aria-label="${esc(__("Preview", null, "Template preview tab"))}">
-					<span class="sanad-tw__pane-title">${esc(__("Preview — as the recipient sees it"))}</span>
-					<div class="sanad-tw__sample"></div>
-					<div class="sanad-tw__chat">
-						<div class="sanad-tw__bubble" aria-busy="false">
-							<div class="sanad-tw__bubble-file"></div>
-							<div class="sanad-tw__bubble-text" dir="auto"></div>
-							<span class="sanad-tw__bubble-time" dir="ltr">${esc(frappe.datetime.now_time().slice(0, 5))} ✓✓</span>
+				<section class="whatsapp-kit-tw__pane whatsapp-kit-tw__preview" data-pane="preview" aria-label="${esc(__("Preview", null, "Template preview tab"))}">
+					<span class="whatsapp-kit-tw__pane-title">${esc(__("Preview — as the recipient sees it"))}</span>
+					<div class="whatsapp-kit-tw__sample"></div>
+					<div class="whatsapp-kit-tw__chat">
+						<div class="whatsapp-kit-tw__bubble" aria-busy="false">
+							<div class="whatsapp-kit-tw__bubble-file"></div>
+							<div class="whatsapp-kit-tw__bubble-text" dir="auto"></div>
+							<span class="whatsapp-kit-tw__bubble-time" dir="ltr">${esc(frappe.datetime.now_time().slice(0, 5))} ✓✓</span>
 						</div>
 					</div>
-					<ul class="sanad-tw__errors" role="alert"></ul>
+					<ul class="whatsapp-kit-tw__errors" role="alert"></ul>
 				</section>
 
-				<section class="sanad-tw__pane sanad-tw__vars" data-pane="vars" aria-label="${esc(__("Variables"))}">
-					<span class="sanad-tw__pane-title">${esc(__("Variables — click to insert"))}</span>
-					<input type="search" class="wa-input sanad-tw__vars-q" placeholder="${esc(__("Filter variables…"))}" aria-label="${esc(__("Filter variables"))}">
-					<div class="sanad-tw__vars-list" role="list"></div>
+				<section class="whatsapp-kit-tw__pane whatsapp-kit-tw__vars" data-pane="vars" aria-label="${esc(__("Variables"))}">
+					<span class="whatsapp-kit-tw__pane-title">${esc(__("Variables — click to insert"))}</span>
+					<input type="search" class="whatsapp-input whatsapp-kit-tw__vars-q" placeholder="${esc(__("Filter variables…"))}" aria-label="${esc(__("Filter variables"))}">
+					<div class="whatsapp-kit-tw__vars-list" role="list"></div>
 				</section>
 			</div>
-			<footer class="sanad-tw__foot">
-				<div class="sanad-tw__foot-msg" role="alert"></div>
-				<div class="sanad-tw__foot-btns"></div>
+			<footer class="whatsapp-kit-tw__foot">
+				<div class="whatsapp-kit-tw__foot-msg" role="alert"></div>
+				<div class="whatsapp-kit-tw__foot-btns"></div>
 			</footer>`);
-		this.$name_input = this.$dlg.find(".sanad-tw__name");
-		this.$body_input = this.$dlg.find(".sanad-tw__body");
+		this.$name_input = this.$dlg.find(".whatsapp-kit-tw__name");
+		this.$body_input = this.$dlg.find(".whatsapp-kit-tw__body");
 		this.make_link("reference_doctype", "DocType", { get_query: () => ({ filters: { istable: 0, issingle: 0 } }), placeholder: __("Any document") });
 		this.make_link("language", "Language", { placeholder: __("The user's language") });
 		this.bind();
@@ -333,7 +333,7 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 		});
 		const value = field === "sample" ? this.state.sample : this.draft[field];
 		if (value) control.set_value(value);
-		control.$input && control.$input.addClass("wa-input");
+		control.$input && control.$input.addClass("whatsapp-input");
 		this.controls[field] = control;
 		return control;
 	}
@@ -341,10 +341,10 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 	bind() {
 		const $d = this.$dlg;
 		$d.on("click", "[data-act=close]", () => this.close());
-		$d.on("click", "[data-act=open_form]", () => sanad.ui.open_form(this, this.opts.form_doctype, this.draft && this.draft.name));
+		$d.on("click", "[data-act=open_form]", () => whatsapp.ui.open_form(this, this.opts.form_doctype, this.draft && this.draft.name));
 		$d.on("click", "[data-tab]", (e) => this.show_tab($(e.currentTarget).data("tab")));
-		kit.bind_segmented($d.find(".wa-seg"), (value) => this.set("message_type", value));
-		if (!this.data.can_write) $d.find(".wa-seg__opt").prop("disabled", true);
+		kit.bind_segmented($d.find(".whatsapp-seg"), (value) => this.set("message_type", value));
+		if (!this.data.can_write) $d.find(".whatsapp-seg__opt").prop("disabled", true);
 		this.$name_input.on("input", (e) => this.set("template_name", e.target.value));
 		this.$body_input.on("input", (e) => {
 			this.set("body", e.target.value);
@@ -355,7 +355,7 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 		);
 		$d.on("change", "[data-field=enabled]", (e) => this.set("disabled", e.target.checked ? 0 : 1));
 		$d.on("click", "[data-fmt]", (e) => this.apply_format($(e.currentTarget).data("fmt")));
-		$d.on("input", ".sanad-tw__vars-q", (e) => {
+		$d.on("input", ".whatsapp-kit-tw__vars-q", (e) => {
 			this.state.vars_q = e.target.value;
 			this.render_vars();
 		});
@@ -371,13 +371,13 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 
 	show_tab(tab) {
 		this.state.tab = tab;
-		this.$dlg.removeClass("sanad-tw--tab-editor sanad-tw--tab-preview sanad-tw--tab-vars").addClass(`sanad-tw--tab-${tab}`);
+		this.$dlg.removeClass("whatsapp-kit-tw--tab-editor whatsapp-kit-tw--tab-preview whatsapp-kit-tw--tab-vars").addClass(`whatsapp-kit-tw--tab-${tab}`);
 		this.$dlg.find("[data-tab]").each((_, el) => el.setAttribute("aria-selected", String(el.dataset.tab === tab)));
 	}
 
 	render_count() {
 		const n = (this.draft.body || "").length;
-		this.$dlg.find(".sanad-tw__count").text(__("{0} characters", [format_number(n, null, 0)]));
+		this.$dlg.find(".whatsapp-kit-tw__count").text(__("{0} characters", [format_number(n, null, 0)]));
 	}
 
 	/** The header's word on the template: unsaved, off, or how often it has been used. */
@@ -388,9 +388,9 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 		else if (!d.name) parts.push(kit.badge(__("New"), "info"));
 		if (d.disabled) parts.push(kit.badge(__("Not offered"), "muted"));
 		if (d.name && !this.is_dirty() && this.stats && cint(this.stats.use_count))
-			parts.push(`<span class="sanad-tw__uses">${esc(__("Used {0} times", [format_number(this.stats.use_count, null, 0)]))}</span>`);
+			parts.push(`<span class="whatsapp-kit-tw__uses">${esc(__("Used {0} times", [format_number(this.stats.use_count, null, 0)]))}</span>`);
 		if (!this.data.can_write) parts.push(kit.badge(__("Read only"), "muted", { dot: false }));
-		this.$dlg.find(".sanad-tw__status").html(parts.join(""));
+		this.$dlg.find(".whatsapp-kit-tw__status").html(parts.join(""));
 		this.render_foot_state();
 	}
 
@@ -398,39 +398,39 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 	render_attachment() {
 		const d = this.draft;
 		const ro = !this.data.can_write;
-		const $a = this.$dlg.find(".sanad-tw__attach").empty();
+		const $a = this.$dlg.find(".whatsapp-kit-tw__attach").empty();
 		if (d.message_type === "Image") {
 			const file = d.attachment;
 			$a.html(`
-				<div class="wa-field">
-					<span class="wa-field__label">${esc(__("Image"))}</span>
+				<div class="whatsapp-field">
+					<span class="whatsapp-field__label">${esc(__("Image"))}</span>
 					${
 						file
-							? `<div class="sanad-tw__file">
-								<img class="sanad-tw__file-thumb" src="${esc(file)}" alt="">
-								<span class="sanad-tw__file-name" dir="ltr">${esc(file.split("/").pop())}</span>
+							? `<div class="whatsapp-kit-tw__file">
+								<img class="whatsapp-kit-tw__file-thumb" src="${esc(file)}" alt="">
+								<span class="whatsapp-kit-tw__file-name" dir="ltr">${esc(file.split("/").pop())}</span>
 								${ro ? "" : `${kit.btn({ label: __("Replace"), size: "sm", attrs: { "data-act": "upload" } })}${kit.btn({ icon: "x", size: "sm", variant: "ghost", title: __("Remove the image"), attrs: { "data-act": "unattach" } })}`}
 							</div>`
 							: ro
-								? `<span class="wa-field__hint">${esc(__("No image"))}</span>`
-								: `<button type="button" class="sanad-tw__drop" data-act="upload">${kit.ico("attach", "md")}<span>${esc(__("Upload the image the message is sent with"))}</span></button>`
+								? `<span class="whatsapp-field__hint">${esc(__("No image"))}</span>`
+								: `<button type="button" class="whatsapp-kit-tw__drop" data-act="upload">${kit.ico("attach", "md")}<span>${esc(__("Upload the image the message is sent with"))}</span></button>`
 					}
 				</div>`);
 		} else if (d.message_type === "Document") {
 			$a.html(`
-				<div class="sanad-tw__doc">
-					<div class="wa-field">
-						<span class="wa-field__label">${esc(__("Print format"))} <span class="wa-field__req" aria-hidden="true">*</span></span>
-						<div class="sanad-tw__link" data-link="print_format"></div>
-						<span class="wa-field__hint">${esc(d.reference_doctype ? __("The PDF is printed from the document with this format.") : __("Pick the document it is about first, to see its print formats."))}</span>
+				<div class="whatsapp-kit-tw__doc">
+					<div class="whatsapp-field">
+						<span class="whatsapp-field__label">${esc(__("Print format"))} <span class="whatsapp-field__req" aria-hidden="true">*</span></span>
+						<div class="whatsapp-kit-tw__link" data-link="print_format"></div>
+						<span class="whatsapp-field__hint">${esc(d.reference_doctype ? __("The PDF is printed from the document with this format.") : __("Pick the document it is about first, to see its print formats."))}</span>
 					</div>
-					<div class="wa-field">
-						<span class="wa-field__label">${esc(__("Letter head"))}</span>
-						<div class="sanad-tw__link" data-link="letter_head"></div>
+					<div class="whatsapp-field">
+						<span class="whatsapp-field__label">${esc(__("Letter head"))}</span>
+						<div class="whatsapp-kit-tw__link" data-link="letter_head"></div>
 					</div>
-					<label class="wa-field sanad-tw__doc-wide">
-						<span class="wa-field__label">${esc(__("File name"))}</span>
-						<input type="text" class="wa-input wa-input--mono" dir="ltr" data-field="file_name_template" value="${esc(d.file_name_template)}" placeholder="{{ doc.name }}.pdf"${ro ? " disabled" : ""}>
+					<label class="whatsapp-field whatsapp-kit-tw__doc-wide">
+						<span class="whatsapp-field__label">${esc(__("File name"))}</span>
+						<input type="text" class="whatsapp-input whatsapp-input--mono" dir="ltr" data-field="file_name_template" value="${esc(d.file_name_template)}" placeholder="{{ doc.name }}.pdf"${ro ? " disabled" : ""}>
 					</label>
 				</div>`);
 			this.make_link("print_format", "Print Format", {
@@ -455,20 +455,20 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 	/** The sample the preview renders with: a record of the chosen document, picked or the latest. */
 	render_sample() {
 		const dt = this.draft.reference_doctype;
-		const $s = this.$dlg.find(".sanad-tw__sample").empty();
+		const $s = this.$dlg.find(".whatsapp-kit-tw__sample").empty();
 		if (!dt) {
-			$s.html(`<span class="sanad-tw__sample-note">${esc(__("Rendered with general sample values. Pick the document it is about to preview with a real record."))}</span>`);
+			$s.html(`<span class="whatsapp-kit-tw__sample-note">${esc(__("Rendered with general sample values. Pick the document it is about to preview with a real record."))}</span>`);
 			return;
 		}
 		$s.html(`
-			<span class="sanad-tw__sample-label">${esc(__("With {0}", [__(dt)]))}</span>
-			<div class="sanad-tw__sample-pick"></div>
+			<span class="whatsapp-kit-tw__sample-label">${esc(__("With {0}", [__(dt)]))}</span>
+			<div class="whatsapp-kit-tw__sample-pick"></div>
 			${this.opts.pick_sample ? kit.btn({ label: __("Latest"), size: "sm", variant: "ghost", title: __("Use the latest {0}", [__(dt)]), attrs: { "data-act": "latest" } }) : ""}`);
-		const control = this.make_link("sample", dt, { parent: $s.find(".sanad-tw__sample-pick"), placeholder: __("Pick a record…") });
+		const control = this.make_link("sample", dt, { parent: $s.find(".whatsapp-kit-tw__sample-pick"), placeholder: __("Pick a record…") });
 		// the sample is not part of the template, so even a read-only reader may change it
 		control.df.read_only = 0;
 		control.refresh();
-		control.$input && control.$input.addClass("wa-input");
+		control.$input && control.$input.addClass("whatsapp-input");
 		if (!this.state.sample && this.opts.pick_sample) this.use_latest(true);
 	}
 
@@ -479,7 +479,7 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 			const r = await this.opts.pick_sample(dt);
 			if (dt !== this.draft.reference_doctype) return;
 			if (!r || !r.name) {
-				if (!quiet) sanad.ui.Toast.info(__("There are no {0} records to preview with yet.", [__(dt)]));
+				if (!quiet) whatsapp.ui.Toast.info(__("There are no {0} records to preview with yet.", [__(dt)]));
 				return;
 			}
 			this.state.sample = r.name;
@@ -499,7 +499,7 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 	async run_preview() {
 		if (!this.draft) return;
 		const seq = ++this.state.seq;
-		const $bubble = this.$dlg.find(".sanad-tw__bubble").attr("aria-busy", "true").addClass("sanad-tw__bubble--busy");
+		const $bubble = this.$dlg.find(".whatsapp-kit-tw__bubble").attr("aria-busy", "true").addClass("whatsapp-kit-tw__bubble--busy");
 		let r;
 		try {
 			r = await this.opts.preview({
@@ -512,21 +512,21 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 			r = { body: "", errors: [(err && err.message) || __("The preview could not be rendered.")] };
 		}
 		if (seq !== this.state.seq) return; // a newer render is on its way
-		$bubble.attr("aria-busy", "false").removeClass("sanad-tw__bubble--busy");
+		$bubble.attr("aria-busy", "false").removeClass("whatsapp-kit-tw__bubble--busy");
 		// when it could not render, the text is still shown as written, so the preview never goes blank
 		const failed = !r.body && (r.errors || []).length;
 		const text = failed ? this.draft.body || "" : r.body || "";
 		this.$dlg
-			.find(".sanad-tw__bubble-text")
-			.toggleClass("sanad-tw__bubble-text--empty", !text)
-			.toggleClass("sanad-tw__bubble-text--raw", !!(failed && text))
+			.find(".whatsapp-kit-tw__bubble-text")
+			.toggleClass("whatsapp-kit-tw__bubble-text--empty", !text)
+			.toggleClass("whatsapp-kit-tw__bubble-text--raw", !!(failed && text))
 			.html(text ? format_html(text) : esc(this.draft.body ? __("(the text renders empty)") : __("Start writing and the message appears here.")));
 		const errors = (r.errors || []).concat(this.sample_error ? [this.sample_error] : []);
 		const key = JSON.stringify(errors);
 		// re-render only when they change, so a screen reader hears them once
 		if (key !== this.state.errors_key) {
 			this.state.errors_key = key;
-			this.$dlg.find(".sanad-tw__errors").html(errors.map((e) => `<li>${kit.ico("warn", "xs")}<span>${esc(e)}</span></li>`).join(""));
+			this.$dlg.find(".whatsapp-kit-tw__errors").html(errors.map((e) => `<li>${kit.ico("warn", "xs")}<span>${esc(e)}</span></li>`).join(""));
 		}
 	}
 
@@ -547,11 +547,11 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 
 	render_bubble_file() {
 		const d = this.draft;
-		const $f = this.$dlg.find(".sanad-tw__bubble-file").empty();
+		const $f = this.$dlg.find(".whatsapp-kit-tw__bubble-file").empty();
 		if (d.message_type === "Image") {
-			$f.html(d.attachment ? `<img src="${esc(d.attachment)}" alt="">` : `<span class="sanad-tw__bubble-ph">${kit.ico("attach", "md")}<span>${esc(__("Image"))}</span></span>`);
+			$f.html(d.attachment ? `<img src="${esc(d.attachment)}" alt="">` : `<span class="whatsapp-kit-tw__bubble-ph">${kit.ico("attach", "md")}<span>${esc(__("Image"))}</span></span>`);
 		} else if (d.message_type === "Document") {
-			$f.html(`<span class="sanad-tw__bubble-doc">${kit.ico("doc", "md")}<span dir="ltr">${esc(d.file_name_template || (d.reference_doctype ? `${__(d.reference_doctype)}.pdf` : "document.pdf"))}</span><small>PDF</small></span>`);
+			$f.html(`<span class="whatsapp-kit-tw__bubble-doc">${kit.ico("doc", "md")}<span dir="ltr">${esc(d.file_name_template || (d.reference_doctype ? `${__(d.reference_doctype)}.pdf` : "document.pdf"))}</span><small>PDF</small></span>`);
 		}
 		$f.prop("hidden", d.message_type === "Text");
 	}
@@ -577,16 +577,16 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 		const of_doc = rows.filter((v) => v.name.startsWith("doc."));
 		const general = rows.filter((v) => !v.name.startsWith("doc."));
 		const item = (v) =>
-			`<button type="button" class="sanad-tw__var" role="listitem" data-token="{{ ${esc(v.name)} }}" title="${esc(__("Insert {0}", [`{{ ${v.name} }}`]))}"${this.data.can_write ? "" : " disabled"}>
-				<span class="sanad-tw__var-token" dir="ltr">{{ ${esc(v.name)} }}</span>
-				${v.label && v.label !== v.name ? `<span class="sanad-tw__var-label">${esc(__(v.label))}</span>` : ""}
+			`<button type="button" class="whatsapp-kit-tw__var" role="listitem" data-token="{{ ${esc(v.name)} }}" title="${esc(__("Insert {0}", [`{{ ${v.name} }}`]))}"${this.data.can_write ? "" : " disabled"}>
+				<span class="whatsapp-kit-tw__var-token" dir="ltr">{{ ${esc(v.name)} }}</span>
+				${v.label && v.label !== v.name ? `<span class="whatsapp-kit-tw__var-label">${esc(__(v.label))}</span>` : ""}
 			</button>`;
-		const group = (title, list) => (list.length ? `<span class="sanad-tw__vars-group">${esc(title)}</span>${list.map(item).join("")}` : "");
+		const group = (title, list) => (list.length ? `<span class="whatsapp-kit-tw__vars-group">${esc(title)}</span>${list.map(item).join("")}` : "");
 		const html =
 			group(this.draft.reference_doctype ? __("Fields of {0}", [__(this.draft.reference_doctype)]) : __("Document fields"), of_doc) + group(__("General"), general);
-		this.$dlg.find(".sanad-tw__vars-list").html(
+		this.$dlg.find(".whatsapp-kit-tw__vars-list").html(
 			html ||
-				`<span class="sanad-tw__vars-empty">${esc(
+				`<span class="whatsapp-kit-tw__vars-empty">${esc(
 					q ? __("No variable matches “{0}”.", [this.state.vars_q]) : __("Pick the document it is about to see its fields here.")
 				)}</span>`
 		);
@@ -631,11 +631,11 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 		const d = this.draft;
 		const can = this.data.can_write;
 		const btns = [];
-		if (can) btns.push(kit.btn({ label: d.name ? __("Save") : __("Create template"), variant: "primary", cls: "sanad-tw__save", attrs: { "data-act": "save", "aria-keyshortcuts": "Control+S" } }));
+		if (can) btns.push(kit.btn({ label: d.name ? __("Save") : __("Create template"), variant: "primary", cls: "whatsapp-kit-tw__save", attrs: { "data-act": "save", "aria-keyshortcuts": "Control+S" } }));
 		btns.push(kit.btn({ label: can ? __("Cancel") : __("Close"), attrs: { "data-act": "close" } }));
 		if (d.name && this.opts.use_in_message && !d.disabled) btns.push(kit.btn({ label: __("Use in a message"), icon: "send", variant: "ghost", attrs: { "data-act": "use" } }));
-		if (d.name && this.data.can_delete && this.opts.remove) btns.push(kit.btn({ label: __("Delete"), icon: "trash", variant: "danger", cls: "sanad-tw__delete", attrs: { "data-act": "delete" } }));
-		const $b = this.$dlg.find(".sanad-tw__foot-btns").html(btns.join(""));
+		if (d.name && this.data.can_delete && this.opts.remove) btns.push(kit.btn({ label: __("Delete"), icon: "trash", variant: "danger", cls: "whatsapp-kit-tw__delete", attrs: { "data-act": "delete" } }));
+		const $b = this.$dlg.find(".whatsapp-kit-tw__foot-btns").html(btns.join(""));
 		$b.find("[data-act=save]").on("click", () => this.save());
 		// the send takes over from here: this window steps aside first (asking about unsaved edits),
 		// so it is not left open on top of the send window or the screen the send leads to
@@ -652,13 +652,13 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 	}
 
 	render_foot_state() {
-		const $save = this.$dlg.find(".sanad-tw__save");
+		const $save = this.$dlg.find(".whatsapp-kit-tw__save");
 		$save.prop("disabled", this.state.saving || (!!this.draft.name && !this.is_dirty()));
-		$save.toggleClass("wa-btn--busy", !!this.state.saving);
+		$save.toggleClass("whatsapp-btn--busy", !!this.state.saving);
 	}
 
 	show_error(message) {
-		this.$dlg.find(".sanad-tw__foot-msg").html(message ? `${kit.ico("warn", "xs")}<span>${esc(message)}</span>` : "");
+		this.$dlg.find(".whatsapp-kit-tw__foot-msg").html(message ? `${kit.ico("warn", "xs")}<span>${esc(message)}</span>` : "");
 	}
 
 	/** What is missing before a save can work, said before the server has to. */
@@ -691,7 +691,7 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 			this.draft.modified = r.modified;
 			this.draft.template_name = r.name;
 			this.mark_clean();
-			sanad.ui.Toast.success(created ? __("Template created") : __("Template saved"));
+			whatsapp.ui.Toast.success(created ? __("Template created") : __("Template saved"));
 			this.opts.on_saved && this.opts.on_saved(r);
 			if (created) this.data.can_delete = !!this.opts.remove;
 		} catch (err) {
@@ -708,7 +708,7 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 		frappe.confirm(__("Delete the template {0}? This cannot be undone.", [`<b>${esc(name)}</b>`]), async () => {
 			try {
 				await this.opts.remove(name);
-				sanad.ui.Toast.success(__("Template deleted"));
+				whatsapp.ui.Toast.success(__("Template deleted"));
 				this.opts.on_saved && this.opts.on_saved({ name, deleted: true });
 				this.close(true);
 			} catch (err) {
@@ -723,4 +723,4 @@ sanad.ui.TemplateWindow = class TemplateWindow {
 	}
 };
 
-export default sanad.ui.TemplateWindow;
+export default whatsapp.ui.TemplateWindow;

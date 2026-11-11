@@ -14,7 +14,7 @@ unsubscribed on `destroy()`). Portable: no DocType or field name lives in the co
 ```js
 frappe.listview_settings["Sales Order"] = {
   onload(listview) {
-    listview.sanad_stats = new sanad.ui.ListStatsCard({
+    listview.whatsapp_stats = new whatsapp.ui.ListStatsCard({
       listview,
       refresh_seconds: 60,
       events: { "wa:queue:progress": function () { this.refresh(); } },
@@ -68,7 +68,7 @@ modal with Pause / Outbound log); `WhatsApp Contact Group` list — group count 
   visually hidden span, never a hover-only `title`.
 - Auto-refresh pauses while the page is hidden and while the card's modal is open.
 - Tone is never the only signal: the label is always rendered next to the coloured value.
-- Modal tables use the shared `.sanad-table` in a scroll wrapper; the modal is a `.sanad-sheet`
+- Modal tables use the shared `.whatsapp-kit-table` in a scroll wrapper; the modal is a `.whatsapp-kit-sheet`
   on phones; row actions are ≥ 32 px.
 - Decisions in row actions go through ConfirmDialog (`confirm.title` expected; fallback "{label}
   this row?"), results through Toast ("{label} done" fallback).

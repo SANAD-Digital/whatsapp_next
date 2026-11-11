@@ -15,7 +15,7 @@ from ListStatsCard specs or the caller's API keys.
 ```js
 frappe.listview_settings["Sales Order"] = {
   onload(listview) {
-    listview.sanad_header = new sanad.ui.PageHeader({
+    listview.whatsapp_header = new whatsapp.ui.PageHeader({
       listview,
       title: __("Sales orders"),
       description: __("Every order, its status and what is still to deliver."),
@@ -26,8 +26,8 @@ frappe.listview_settings["Sales Order"] = {
         { key: "value", label: __("Open value"), icon: "es-line-money", tone: "blue", sum: { doctype: "Sales Order", field: "grand_total", filters: { docstatus: 1 } },
           format: (v) => frappe.format(v, { fieldtype: "Currency" }), sub: (v, raw) => __("Across {0} orders", [raw.count]) },
       ],
-      banner: () => sanad.ui.call("queue.get_summary").then((s) => (s.paused_globally ? { tone: "amber", text: __("Sending is paused."), action: { label: __("Resume"), handler: resume } } : null)),
-      blocks: [{ key: "sending", events: ["wa:campaign:status"], render: ($el, header) => sanad.ui.call("campaigns.get_sending_now").then((rows) => render_strips($el, rows)) }],
+      banner: () => whatsapp.ui.call("queue.get_summary").then((s) => (s.paused_globally ? { tone: "amber", text: __("Sending is paused."), action: { label: __("Resume"), handler: resume } } : null)),
+      blocks: [{ key: "sending", events: ["wa:campaign:status"], render: ($el, header) => whatsapp.ui.call("campaigns.get_sending_now").then((rows) => render_strips($el, rows)) }],
       events: { "wa:queue:progress": (data, header) => header.refresh() },
     });
   },
@@ -50,7 +50,7 @@ perm?, condition?}`, `secondary[{label, icon?, count?, handler, roles?, perm?}]`
 `() => Promise<banner|null>`), `blocks[{key, render($el, header) → void|Promise, events?}]`,
 `events {name: (data, header)}`, `refresh_seconds`.
 Methods: `refresh()` (banner + blocks + KPIs), `set_banner(b)`, `get_block(key)`, `destroy()`.
-Shared primitive shipped with the component's stylesheet: `.sanad-progress` (sent / failed bar
+Shared primitive shipped with the component's stylesheet: `.whatsapp-kit-progress` (sent / failed bar
 with a tabular label) — used by DataList progress cells.
 
 ## Live use
@@ -81,5 +81,5 @@ primary action and `secondary` to its bar; the header itself is then the KPI row
 (no title row, no description). A header that is redrawn removes the buttons it put on the bar.
 
 ```js
-new sanad.ui.PageHeader({ wrapper: $head, page: this.page, title: __("Contacts"), primary, stats });
+new whatsapp.ui.PageHeader({ wrapper: $head, page: this.page, title: __("Contacts"), primary, stats });
 ```

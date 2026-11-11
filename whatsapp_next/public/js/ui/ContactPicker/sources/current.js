@@ -48,7 +48,7 @@ export class CurrentSource extends BaseSource {
 					return;
 				}
 				this.state.hide();
-				const $table = this.candidate_table(rows, { show_source: true, disabled_when: (row) => row.status === "Removed", extra_columns: this.cfg.status_field ? [{ label: __("Status"), format: (row) => (row[this.cfg.status_field] ? sanad.ui.StatusBadge.html({ label: __(row[this.cfg.status_field]), colour: this.cfg.status_colour ? this.cfg.status_colour(row) : "gray" }) : "") }] : [] });
+				const $table = this.candidate_table(rows, { show_source: true, disabled_when: (row) => row.status === "Removed", extra_columns: this.cfg.status_field ? [{ label: __("Status"), format: (row) => (row[this.cfg.status_field] ? whatsapp.ui.StatusBadge.html({ label: __(row[this.cfg.status_field]), colour: this.cfg.status_colour ? this.cfg.status_colour(row) : "gray" }) : "") }] : [] });
 				this.$results.html($table);
 				this.$foot.append(this.add_selected_button($table, { source_type: "__current", label: (n) => __("Mark {0} for removal", [ui.format_int(n)]) }));
 			})

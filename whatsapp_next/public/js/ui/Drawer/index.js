@@ -1,9 +1,9 @@
-// sanad.ui.Drawer — an inline-end side panel to inspect (`record`), edit (`form`) or pick
+// whatsapp.ui.Drawer — an inline-end side panel to inspect (`record`), edit (`form`) or pick
 // (`choice`) without leaving the list. Meta-driven: the header badge comes from the DocType's
-// indicator rules, `record` fields default to `sanad.ui.meta.preview_fields(meta)` and values
-// go through `sanad.ui.meta.format`; `form` fields are real Frappe controls. Payload from a
+// indicator rules, `record` fields default to `whatsapp.ui.meta.preview_fields(meta)` and values
+// go through `whatsapp.ui.meta.format`; `form` fields are real Frappe controls. Payload from a
 // configured API key (`method`) or `frappe.client.get_value` with the explicit field list.
-// Built on the shared `.sanad-panel` shell; one overlay at a time through `sanad.ui.overlay`;
+// Built on the shared `.whatsapp-kit-panel` shell; one overlay at a time through `whatsapp.ui.overlay`;
 // Escape closes, focus is trapped inside and restored to the opener (or the list row).
 
 import ui from "../_core/index.js";
@@ -14,7 +14,7 @@ const LONG_TYPES = ["Text", "Small Text", "Long Text", "Text Editor", "Markdown 
 // Fieldtypes that belong in the quick-facts grid: short enough to read at a glance.
 const FACT_TYPES = ["Data", "Select", "Link", "Dynamic Link", "Int", "Float", "Currency", "Percent", "Date", "Datetime", "Time", "Check", "Rating", "Duration", "Phone"];
 
-sanad.ui.Drawer = class Drawer {
+whatsapp.ui.Drawer = class Drawer {
 	/**
 	 * @param {Object} opts
 	 * @param {string} opts.doctype
@@ -31,7 +31,7 @@ sanad.ui.Drawer = class Drawer {
 	 * @param {Array<{label: string, render: Function($el, doc), condition?: Function}>} [opts.sections] — extra blocks under the fields (`record`)
 	 * @param {"document"|"fields"} [opts.layout="document"] — `record` mode: the document layout
 	 *   (identity · highlight · quick facts · related · details · activity) or the plain field list
-	 * @param {Object} [opts.profile] — `sanad.ui.Render` profile overrides for the identity block
+	 * @param {Object} [opts.profile] — `whatsapp.ui.Render` profile overrides for the identity block
 	 * @param {string|Object|Function} [opts.highlight] — the record's primary content (fieldname,
 	 *   `{field, label, icon, tone}` or `(doc) => html`); default: its first long text field
 	 * @param {Array<string|Object>} [opts.facts] — fieldnames for the quick-facts grid (default: the
@@ -54,7 +54,7 @@ sanad.ui.Drawer = class Drawer {
 	 */
 	constructor(opts = {}) {
 		this.opts = Object.assign({ mode: "record", layout: "document", facts_max: 6, actions: [], sections: [], choices: [], open_link: true }, opts);
-		if (!this.opts.doctype && this.opts.mode !== "choice") throw new Error("sanad.ui.Drawer: doctype is required");
+		if (!this.opts.doctype && this.opts.mode !== "choice") throw new Error("whatsapp.ui.Drawer: doctype is required");
 		this.doctype = this.opts.doctype;
 		this.doc = this.opts.doc || null;
 		this.id = ui.uid("drawer");
@@ -66,31 +66,31 @@ sanad.ui.Drawer = class Drawer {
 
 	make() {
 		const width = this.opts.width ? (typeof this.opts.width === "number" ? `${this.opts.width}px` : this.opts.width) : "";
-		this.$backdrop = $(`<div class="sanad-backdrop sanad-drawer__backdrop" hidden></div>`).appendTo(document.body);
+		this.$backdrop = $(`<div class="whatsapp-kit-backdrop whatsapp-kit-drawer__backdrop" hidden></div>`).appendTo(document.body);
 		this.$root = $(`
-			<aside class="sanad-kit wa sanad-panel sanad-drawer sanad-drawer--${this.opts.mode}" role="dialog" aria-modal="true" aria-labelledby="${this.id}-title" tabindex="-1" hidden${width ? ` style="--sanad-panel-width:${ui.escape(width)}"` : ""}>
-				<header class="sanad-panel__header">
-					${this.doctype ? `<span class="sanad-drawer__mark" aria-hidden="true">${ui.icon(Render.icon_for(this.doctype) || "es-line-file", "sm")}</span>` : ""}
-					<div class="sanad-panel__title sanad-drawer__heading">
-						<h2 class="sanad-drawer__title" id="${this.id}-title"></h2>
-						<div class="sanad-drawer__meta"></div>
+			<aside class="whatsapp-kit whatsapp whatsapp-kit-panel whatsapp-kit-drawer whatsapp-kit-drawer--${this.opts.mode}" role="dialog" aria-modal="true" aria-labelledby="${this.id}-title" tabindex="-1" hidden${width ? ` style="--whatsapp-kit-panel-width:${ui.escape(width)}"` : ""}>
+				<header class="whatsapp-kit-panel__header">
+					${this.doctype ? `<span class="whatsapp-kit-drawer__mark" aria-hidden="true">${ui.icon(Render.icon_for(this.doctype) || "es-line-file", "sm")}</span>` : ""}
+					<div class="whatsapp-kit-panel__title whatsapp-kit-drawer__heading">
+						<h2 class="whatsapp-kit-drawer__title" id="${this.id}-title"></h2>
+						<div class="whatsapp-kit-drawer__meta"></div>
 					</div>
-					<div class="sanad-drawer__tools">
-						<a class="wa-btn wa-btn--ghost wa-btn--sm sanad-drawer__open" hidden>${ui.icon(ui.icons.open, "xs")}<span>${ui.escape(__("Open", null, "Open the record in its form"))}</span></a>
-						<button type="button" class="wa-btn wa-btn--secondary wa-btn--sm wa-btn--icon sanad-drawer__close" aria-label="${ui.escape(__("Close"))}" title="${ui.escape(__("Close (Esc)"))}">${ui.icon("es-line-close", "sm")}</button>
+					<div class="whatsapp-kit-drawer__tools">
+						<a class="whatsapp-btn whatsapp-btn--ghost whatsapp-btn--sm whatsapp-kit-drawer__open" hidden>${ui.icon(ui.icons.open, "xs")}<span>${ui.escape(__("Open", null, "Open the record in its form"))}</span></a>
+						<button type="button" class="whatsapp-btn whatsapp-btn--secondary whatsapp-btn--sm whatsapp-btn--icon whatsapp-kit-drawer__close" aria-label="${ui.escape(__("Close"))}" title="${ui.escape(__("Close (Esc)"))}">${ui.icon("es-line-close", "sm")}</button>
 					</div>
 				</header>
-				<div class="sanad-panel__body sanad-drawer__body"></div>
-				<footer class="sanad-panel__footer sanad-drawer__footer" hidden></footer>
+				<div class="whatsapp-kit-panel__body whatsapp-kit-drawer__body"></div>
+				<footer class="whatsapp-kit-panel__footer whatsapp-kit-drawer__footer" hidden></footer>
 			</aside>`).appendTo(document.body);
-		this.$title = this.$root.find(".sanad-drawer__title");
-		this.$meta = this.$root.find(".sanad-drawer__meta");
-		this.$body = this.$root.find(".sanad-drawer__body");
-		this.$footer = this.$root.find(".sanad-drawer__footer");
-		this.$root.find(".sanad-drawer__close").on("click", () => this.hide());
+		this.$title = this.$root.find(".whatsapp-kit-drawer__title");
+		this.$meta = this.$root.find(".whatsapp-kit-drawer__meta");
+		this.$body = this.$root.find(".whatsapp-kit-drawer__body");
+		this.$footer = this.$root.find(".whatsapp-kit-drawer__footer");
+		this.$root.find(".whatsapp-kit-drawer__close").on("click", () => this.hide());
 		// the form replaces the list the drawer was opened from, so the drawer goes with it; Desk's
 		// router still takes the click and follows the link
-		this.$root.find(".sanad-drawer__open").on("click", () => this.hide());
+		this.$root.find(".whatsapp-kit-drawer__open").on("click", () => this.hide());
 		this.$backdrop.on("click", () => this.hide());
 		this.$root.on("keydown", (e) => {
 			if (e.key === "Escape") {
@@ -103,8 +103,8 @@ sanad.ui.Drawer = class Drawer {
 
 	set_title(title, subtitle) {
 		this.$title.text(title || "");
-		this.$meta.find(".sanad-panel__subtitle").remove();
-		if (subtitle || this.opts.subtitle) this.$meta.append(`<span class="sanad-panel__subtitle">${ui.escape(subtitle || this.opts.subtitle)}</span>`);
+		this.$meta.find(".whatsapp-kit-panel__subtitle").remove();
+		if (subtitle || this.opts.subtitle) this.$meta.append(`<span class="whatsapp-kit-panel__subtitle">${ui.escape(subtitle || this.opts.subtitle)}</span>`);
 	}
 
 	show() {
@@ -117,8 +117,8 @@ sanad.ui.Drawer = class Drawer {
 		ui.overlay.open(this);
 		this.$backdrop.prop("hidden", false);
 		this.$root.prop("hidden", false);
-		$(document.body).addClass("sanad-drawer-open");
-		window.requestAnimationFrame(() => this.$root.addClass("sanad-panel--open"));
+		$(document.body).addClass("whatsapp-kit-drawer-open");
+		window.requestAnimationFrame(() => this.$root.addClass("whatsapp-kit-panel--open"));
 		this.untrap = ui.trap_focus(this.$root);
 		// focus the panel itself, not its close button: the dialog is announced by its title and
 		// Tab still reaches the close first, but a ring no longer greets every mouse user
@@ -126,7 +126,7 @@ sanad.ui.Drawer = class Drawer {
 		if (this.opts.mode === "choice") {
 			this.render_choice();
 		} else if (this.doc) {
-			this.state = new sanad.ui.EmptyState({ wrapper: this.$body, state: "loading", rows: 4 });
+			this.state = new whatsapp.ui.EmptyState({ wrapper: this.$body, state: "loading", rows: 4 });
 			ui.meta.with_doctype(this.doctype).then((meta) => {
 				this.meta = meta;
 				this.render();
@@ -143,14 +143,14 @@ sanad.ui.Drawer = class Drawer {
 		this.untrap && this.untrap();
 		this.untrap = null;
 		ui.overlay.close(this);
-		this.$root.removeClass("sanad-panel--open");
+		this.$root.removeClass("whatsapp-kit-panel--open");
 		this._hide_timer = window.setTimeout(() => {
 			this.$root.prop("hidden", true);
 			this.$backdrop.prop("hidden", true);
 			// the page scrolls again unless another drawer took over: a form panel opened from
 			// this drawer is also "current", and waiting on it left the page locked after it closed
 			const next = ui.overlay.current;
-			if (!next || !next.$root || !next.$root.hasClass("sanad-drawer")) $(document.body).removeClass("sanad-drawer-open");
+			if (!next || !next.$root || !next.$root.hasClass("whatsapp-kit-drawer")) $(document.body).removeClass("whatsapp-kit-drawer-open");
 		}, 160);
 		this.restore_focus();
 		if (!silent && typeof this.opts.on_close === "function") this.opts.on_close(this);
@@ -208,7 +208,7 @@ sanad.ui.Drawer = class Drawer {
 	}
 
 	refresh() {
-		this.state = new sanad.ui.EmptyState({ wrapper: this.$body, state: "loading", rows: 4 });
+		this.state = new whatsapp.ui.EmptyState({ wrapper: this.$body, state: "loading", rows: 4 });
 		this.$footer.prop("hidden", true).empty();
 		return this.fetch()
 			.then((doc) => {
@@ -251,8 +251,8 @@ sanad.ui.Drawer = class Drawer {
 		// introduces itself in the identity block, so the title is never printed twice.
 		this.set_title(as_document ? this.opts.title || __(this.doctype) : record_title);
 		if (!as_document) this.render_badge(doc);
-		else this.$meta.find(".sanad-badge").remove();
-		const $open = this.$root.find(".sanad-drawer__open");
+		else this.$meta.find(".whatsapp-kit-badge").remove();
+		const $open = this.$root.find(".whatsapp-kit-drawer__open");
 		const name = doc.name || this.opts.name;
 		if (this.opts.open_link && name && this.doctype) {
 			$open.attr("href", frappe.utils.get_form_link(this.doctype, name)).prop("hidden", false);
@@ -266,10 +266,10 @@ sanad.ui.Drawer = class Drawer {
 	}
 
 	render_badge(doc) {
-		this.$meta.find(".sanad-badge").remove();
+		this.$meta.find(".whatsapp-kit-badge").remove();
 		if (!this.doctype || !doc || (!doc.status && doc.docstatus == null)) return;
 		const ind = ui.indicator_for(this.doctype, Object.assign({ doctype: this.doctype }, doc));
-		if (ind.label) this.$meta.prepend(sanad.ui.StatusBadge.html({ label: __(ind.label), colour: ind.colour, size: "md" }));
+		if (ind.label) this.$meta.prepend(whatsapp.ui.StatusBadge.html({ label: __(ind.label), colour: ind.colour, size: "md" }));
 	}
 
 	// ---- document layout (reference image 01) ------------------------------------------------
@@ -339,31 +339,31 @@ sanad.ui.Drawer = class Drawer {
 
 	/** A titled block with the reference's icon-then-label heading. */
 	block({ label, icon, cls = "" } = {}) {
-		const $sec = $(`<section class="sanad-doc__block${cls ? ` ${cls}` : ""}">
-			${label ? `<h3 class="sanad-doc__block-title">${icon ? `<span class="sanad-doc__block-icon" aria-hidden="true">${ui.icon(icon, "sm")}</span>` : ""}<span>${ui.escape(label)}</span></h3>` : ""}
-			<div class="sanad-doc__block-body"></div>
+		const $sec = $(`<section class="whatsapp-kit-doc__block${cls ? ` ${cls}` : ""}">
+			${label ? `<h3 class="whatsapp-kit-doc__block-title">${icon ? `<span class="whatsapp-kit-doc__block-icon" aria-hidden="true">${ui.icon(icon, "sm")}</span>` : ""}<span>${ui.escape(label)}</span></h3>` : ""}
+			<div class="whatsapp-kit-doc__block-body"></div>
 		</section>`).appendTo(this.$body);
-		return $sec.find(".sanad-doc__block-body");
+		return $sec.find(".whatsapp-kit-doc__block-body");
 	}
 
 	/** Who this record is: picture, title, the one or two lines that identify it, status, time. */
 	render_identity(doc, vm, time_field) {
 		const time = doc[time_field];
-		const lines = (vm.lines || []).map((l) => `<div class="sanad-doc__identity-sub"${l.ltr ? ' dir="ltr"' : ' dir="auto"'}>${l.html || ui.escape(l.text || "")}</div>`).join("");
+		const lines = (vm.lines || []).map((l) => `<div class="whatsapp-kit-doc__identity-sub"${l.ltr ? ' dir="ltr"' : ' dir="auto"'}>${l.html || ui.escape(l.text || "")}</div>`).join("");
 		const name = doc.name || this.opts.name || "";
-		const $id = $(`<section class="sanad-doc__identity">
-			<div class="sanad-doc__identity-main">
+		const $id = $(`<section class="whatsapp-kit-doc__identity">
+			<div class="whatsapp-kit-doc__identity-main">
 				${avatar({ image: vm.image, initials: vm.initials, icon: vm.icon, tone: vm.tone, size: "lg", alt: vm.title })}
-				<div class="sanad-doc__identity-text">
-					<h3 class="sanad-doc__identity-title" dir="auto">${ui.escape(vm.title || name)}</h3>
+				<div class="whatsapp-kit-doc__identity-text">
+					<h3 class="whatsapp-kit-doc__identity-title" dir="auto">${ui.escape(vm.title || name)}</h3>
 					${lines}
-					${name ? `<div class="sanad-doc__identity-ref"><span>${ui.escape(__(this.doctype))}</span><span aria-hidden="true">·</span><code dir="ltr">${ui.escape(this.doctype === "WhatsApp Number" && ui.phone ? ui.phone(name) : name)}</code></div>` : ""}
+					${name ? `<div class="whatsapp-kit-doc__identity-ref"><span>${ui.escape(__(this.doctype))}</span><span aria-hidden="true">·</span><code dir="ltr">${ui.escape(this.doctype === "WhatsApp Number" && ui.phone ? ui.phone(name) : name)}</code></div>` : ""}
 				</div>
 			</div>
-			<div class="sanad-doc__identity-side">
-				${vm.status && vm.status.label ? sanad.ui.StatusBadge.html({ label: vm.status.label, colour: vm.status.colour, size: "md" }) : ""}
-				${time ? `<span class="sanad-doc__identity-time">${ui.icon("es-line-time", "xs")}${Render.value(time, { fieldtype: "Datetime", fieldname: time_field }, doc, { density: "inline" })}</span>` : ""}
-				${vm.value && vm.value.html ? `<span class="sanad-doc__identity-value">${vm.value.html}</span>` : ""}
+			<div class="whatsapp-kit-doc__identity-side">
+				${vm.status && vm.status.label ? whatsapp.ui.StatusBadge.html({ label: vm.status.label, colour: vm.status.colour, size: "md" }) : ""}
+				${time ? `<span class="whatsapp-kit-doc__identity-time">${ui.icon("es-line-time", "xs")}${Render.value(time, { fieldtype: "Datetime", fieldname: time_field }, doc, { density: "inline" })}</span>` : ""}
+				${vm.value && vm.value.html ? `<span class="whatsapp-kit-doc__identity-value">${vm.value.html}</span>` : ""}
 			</div>
 		</section>`).appendTo(this.$body);
 		return $id;
@@ -371,13 +371,13 @@ sanad.ui.Drawer = class Drawer {
 
 	/** The record's own content — the message, the note, the description — given room to breathe. */
 	render_highlight(doc, spec) {
-		const $body = this.block({ label: spec.label, icon: spec.icon || "es-line-chat", cls: "sanad-doc__block--highlight" });
+		const $body = this.block({ label: spec.label, icon: spec.icon || "es-line-chat", cls: "whatsapp-kit-doc__block--highlight" });
 		if (typeof spec.render === "function") {
 			spec.render($body, doc, this);
 			return;
 		}
 		const html = Render.value(doc[spec.field], spec.df, doc, { density: "card", doctype: this.doctype });
-		$body.html(`<div class="sanad-doc__highlight" dir="auto">${html}</div>`);
+		$body.html(`<div class="whatsapp-kit-doc__highlight" dir="auto">${html}</div>`);
 	}
 
 	/** Quick facts: the short fields as key / value rows, each key with its icon. */
@@ -419,9 +419,9 @@ sanad.ui.Drawer = class Drawer {
 		});
 		const html = kv(rows);
 		if (!html) return;
-		$(`<details class="sanad-doc__details" open>
-			<summary class="sanad-doc__block-title"><span class="sanad-doc__block-icon" aria-hidden="true">${ui.icon("es-line-article", "sm")}</span><span>${ui.escape(__("More details"))}</span></summary>
-			<div class="sanad-doc__details-body">${html}</div>
+		$(`<details class="whatsapp-kit-doc__details" open>
+			<summary class="whatsapp-kit-doc__block-title"><span class="whatsapp-kit-doc__block-icon" aria-hidden="true">${ui.icon("es-line-article", "sm")}</span><span>${ui.escape(__("More details"))}</span></summary>
+			<div class="whatsapp-kit-doc__details-body">${html}</div>
 		</details>`).appendTo(this.$body);
 	}
 
@@ -431,15 +431,15 @@ sanad.ui.Drawer = class Drawer {
 		const source = this.opts.activity;
 		const mount = (rows) => {
 			if (!rows || !rows.length) {
-				new sanad.ui.EmptyState({ wrapper: $body, state: "empty", title: __("No activity yet"), size: "sm" });
+				new whatsapp.ui.EmptyState({ wrapper: $body, state: "empty", title: __("No activity yet"), size: "sm" });
 				return;
 			}
-			new sanad.ui.Collection({ wrapper: $body, rows, views: ["timeline"], view: "timeline", timeline: this.opts.timeline });
+			new whatsapp.ui.Collection({ wrapper: $body, rows, views: ["timeline"], view: "timeline", timeline: this.opts.timeline });
 		};
 		if (typeof source === "function") {
 			const out = source(doc, this);
 			if (out && typeof out.then === "function") {
-				const state = new sanad.ui.EmptyState({ wrapper: $body, state: "loading", rows: 2, size: "sm" });
+				const state = new whatsapp.ui.EmptyState({ wrapper: $body, state: "loading", rows: 2, size: "sm" });
 				out.then((rows) => {
 					$body.empty();
 					mount(rows);
@@ -462,7 +462,7 @@ sanad.ui.Drawer = class Drawer {
 					s.render($body, doc, this);
 				} catch (e) {
 					console.error(e); // eslint-disable-line no-console
-					new sanad.ui.EmptyState({ wrapper: $body, state: "error", description: e.message, size: "sm" });
+					new whatsapp.ui.EmptyState({ wrapper: $body, state: "error", description: e.message, size: "sm" });
 				}
 			});
 	}
@@ -476,21 +476,21 @@ sanad.ui.Drawer = class Drawer {
 				if (value == null || value === "") return "";
 				const html = Render.value(value, df, doc, { density: "row", doctype: this.doctype });
 				const long = LONG_TYPES.includes(df.fieldtype);
-				return `<div class="sanad-drawer__field${long ? " sanad-drawer__field--wide" : ""}"><dt>${ui.escape(__(df.label || df.fieldname))}</dt><dd>${html}</dd></div>`;
+				return `<div class="whatsapp-kit-drawer__field${long ? " whatsapp-kit-drawer__field--wide" : ""}"><dt>${ui.escape(__(df.label || df.fieldname))}</dt><dd>${html}</dd></div>`;
 			})
 			.filter(Boolean);
-		if (rows.length) this.$body.append(`<dl class="sanad-drawer__dl">${rows.join("")}</dl>`);
+		if (rows.length) this.$body.append(`<dl class="whatsapp-kit-drawer__dl">${rows.join("")}</dl>`);
 		const sections = (this.opts.sections || []).filter((s) => !s.condition || s.condition(doc));
 		this.render_sections(doc);
 		if (!rows.length && !sections.length) {
-			new sanad.ui.EmptyState({ wrapper: this.$body, state: "empty", title: __("Nothing to show"), description: __("This record has no fields marked for preview.") });
+			new whatsapp.ui.EmptyState({ wrapper: this.$body, state: "empty", title: __("Nothing to show"), description: __("This record has no fields marked for preview.") });
 		}
 	}
 
 	render_form(doc) {
 		this.controls = {};
-		this.$body.append(`<div class="sanad-drawer__summary" role="alert" tabindex="-1" hidden></div>`);
-		const $form = $('<div class="sanad-drawer__form"></div>').appendTo(this.$body);
+		this.$body.append(`<div class="whatsapp-kit-drawer__summary" role="alert" tabindex="-1" hidden></div>`);
+		const $form = $('<div class="whatsapp-kit-drawer__form"></div>').appendTo(this.$body);
 		this.field_list().forEach((df) => {
 			const field = Object.assign({}, df, { read_only: df.read_only ? 1 : 0 });
 			delete field.depends_on;
@@ -515,7 +515,7 @@ sanad.ui.Drawer = class Drawer {
 	save() {
 		const values = this.get_values();
 		const missing = this.field_list().filter((df) => df.reqd && (values[df.fieldname] == null || values[df.fieldname] === ""));
-		const $summary = this.$body.find(".sanad-drawer__summary");
+		const $summary = this.$body.find(".whatsapp-kit-drawer__summary");
 		if (missing.length) {
 			$summary.prop("hidden", false).html(`${ui.escape(__("Fill in the required fields:"))} ${missing.map((df) => `<a href="#" data-field="${ui.escape(df.fieldname)}">${ui.escape(__(df.label))}</a>`).join(", ")}`);
 			$summary.find("a").on("click", (e) => {
@@ -538,14 +538,14 @@ sanad.ui.Drawer = class Drawer {
 		this.$body.empty();
 		const choices = this.opts.choices || [];
 		if (!choices.length) {
-			new sanad.ui.EmptyState({ wrapper: this.$body, state: "empty", title: __("No options available"), size: "sm" });
+			new whatsapp.ui.EmptyState({ wrapper: this.$body, state: "empty", title: __("No options available"), size: "sm" });
 			return;
 		}
-		const $list = $(`<div class="sanad-drawer__choices" role="list" aria-labelledby="${this.id}-title"></div>`).appendTo(this.$body);
+		const $list = $(`<div class="whatsapp-kit-drawer__choices" role="list" aria-labelledby="${this.id}-title"></div>`).appendTo(this.$body);
 		choices.forEach((c, i) => {
-			$(`<button type="button" class="sanad-drawer__choice" role="listitem" tabindex="${i === 0 ? 0 : -1}">
-				${c.icon ? `<span class="sanad-drawer__choice-icon" aria-hidden="true">${ui.icon(c.icon, "md")}</span>` : ""}
-				<span class="sanad-drawer__choice-text"><span class="sanad-drawer__choice-label">${ui.escape(c.label)}</span>${c.description ? `<span class="sanad-drawer__choice-desc">${ui.escape(c.description)}</span>` : ""}</span>
+			$(`<button type="button" class="whatsapp-kit-drawer__choice" role="listitem" tabindex="${i === 0 ? 0 : -1}">
+				${c.icon ? `<span class="whatsapp-kit-drawer__choice-icon" aria-hidden="true">${ui.icon(c.icon, "md")}</span>` : ""}
+				<span class="whatsapp-kit-drawer__choice-text"><span class="whatsapp-kit-drawer__choice-label">${ui.escape(c.label)}</span>${c.description ? `<span class="whatsapp-kit-drawer__choice-desc">${ui.escape(c.description)}</span>` : ""}</span>
 			</button>`)
 				.on("click", () => {
 					this.hide();
@@ -554,7 +554,7 @@ sanad.ui.Drawer = class Drawer {
 				.appendTo($list);
 		});
 		$list.on("keydown", (e) => {
-			const items = $list.find(".sanad-drawer__choice").toArray();
+			const items = $list.find(".whatsapp-kit-drawer__choice").toArray();
 			const idx = ui.roving_index(e, items, items.indexOf(document.activeElement));
 			if (idx < 0) return;
 			e.preventDefault();
@@ -582,22 +582,22 @@ sanad.ui.Drawer = class Drawer {
 			$btn && $btn.prop("disabled", true);
 			Promise.resolve(a.handler(this.doc, this))
 				.catch((err) => {
-					if (err && err.message && err.message !== "cancelled") sanad.ui.Toast.error(err);
+					if (err && err.message && err.message !== "cancelled") whatsapp.ui.Toast.error(err);
 				})
 				.finally(() => $btn && $btn.prop("disabled", false));
 		};
 		const inline = actions.filter((a) => !a.menu);
 		const more = actions.filter((a) => a.menu);
 		if (more.length) {
-			const $more = $(`<button type="button" class="wa-btn wa-btn--secondary wa-btn--icon sanad-drawer__action sanad-drawer__more" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("More actions"))}" title="${ui.escape(__("More actions"))}">${ui.icon(ui.icons.more, "sm")}</button>`);
+			const $more = $(`<button type="button" class="whatsapp-btn whatsapp-btn--secondary whatsapp-btn--icon whatsapp-kit-drawer__action whatsapp-kit-drawer__more" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("More actions"))}" title="${ui.escape(__("More actions"))}">${ui.icon(ui.icons.more, "sm")}</button>`);
 			$more.on("click", () => (this.$menu ? this.close_menu(true) : this.open_menu($more, more, run)));
 			this.$footer.append($more);
 		}
 		inline.forEach((a) => {
 			// the kit's own variants (`_kit/style.scss`): primary for the one main verb, danger for what
 			// cannot be undone, secondary for the rest
-			const cls = a.primary ? "wa-btn--primary" : a.danger ? "wa-btn--danger" : "wa-btn--secondary";
-			const $btn = $(`<button type="button" class="wa-btn ${cls} sanad-drawer__action" title="${ui.escape(a.label)}">${a.icon ? ui.icon(a.icon, "xs") : ""}<span class="sanad-drawer__action-label">${ui.escape(a.label)}</span></button>`);
+			const cls = a.primary ? "whatsapp-btn--primary" : a.danger ? "whatsapp-btn--danger" : "whatsapp-btn--secondary";
+			const $btn = $(`<button type="button" class="whatsapp-btn ${cls} whatsapp-kit-drawer__action" title="${ui.escape(a.label)}">${a.icon ? ui.icon(a.icon, "xs") : ""}<span class="whatsapp-kit-drawer__action-label">${ui.escape(a.label)}</span></button>`);
 			$btn.on("click", () => run(a, $btn));
 			this.$footer.append($btn);
 		});
@@ -608,9 +608,9 @@ sanad.ui.Drawer = class Drawer {
 	open_menu($btn, actions, run) {
 		const id = ui.uid("drawermenu");
 		// the list's menu sits under an open panel; this one belongs to the panel, so it sits above it
-		const $menu = $(`<div class="sanad-kit sanad-rowactions__menu sanad-drawer__menu" id="${id}" role="menu" aria-label="${ui.escape(__("More actions"))}"></div>`);
+		const $menu = $(`<div class="whatsapp-kit whatsapp-kit-rowactions__menu whatsapp-kit-drawer__menu" id="${id}" role="menu" aria-label="${ui.escape(__("More actions"))}"></div>`);
 		actions.forEach((a) => {
-			$(`<button type="button" class="sanad-rowactions__item${a.danger ? " sanad-rowactions__item--danger" : ""}" role="menuitem" tabindex="-1">${a.icon ? `<span class="sanad-rowactions__icon" aria-hidden="true">${ui.icon(a.icon, "sm")}</span>` : ""}<span>${ui.escape(a.label)}</span></button>`)
+			$(`<button type="button" class="whatsapp-kit-rowactions__item${a.danger ? " whatsapp-kit-rowactions__item--danger" : ""}" role="menuitem" tabindex="-1">${a.icon ? `<span class="whatsapp-kit-rowactions__icon" aria-hidden="true">${ui.icon(a.icon, "sm")}</span>` : ""}<span>${ui.escape(a.label)}</span></button>`)
 				.on("click", (e) => {
 					e.preventDefault();
 					this.close_menu(true);
@@ -643,15 +643,15 @@ sanad.ui.Drawer = class Drawer {
 		let y = rect.top - h - 4;
 		if (y < 8) y = rect.bottom + 4;
 		const tx = ui.is_rtl() ? -(window.innerWidth - (x + w)) : x;
-		$menu[0].style.setProperty("--sanad-menu-x", `${Math.round(tx)}px`);
-		$menu[0].style.setProperty("--sanad-menu-y", `${Math.round(y)}px`);
+		$menu[0].style.setProperty("--whatsapp-kit-menu-x", `${Math.round(tx)}px`);
+		$menu[0].style.setProperty("--whatsapp-kit-menu-y", `${Math.round(y)}px`);
 		$btn.attr("aria-expanded", "true").attr("aria-controls", id);
 		this.$menu = $menu;
 		this.$menu_opener = $btn;
 		this._outside = (e) => {
-			if (!$(e.target).closest(".sanad-rowactions__menu, .sanad-drawer__more").length) this.close_menu();
+			if (!$(e.target).closest(".whatsapp-kit-rowactions__menu, .whatsapp-kit-drawer__more").length) this.close_menu();
 		};
-		window.setTimeout(() => $(document).on("mousedown.sanaddrawermenu touchstart.sanaddrawermenu", this._outside), 0);
+		window.setTimeout(() => $(document).on("mousedown.whatsappdrawermenu touchstart.whatsappdrawermenu", this._outside), 0);
 		$menu.find('[role="menuitem"]').first().attr("tabindex", "0").trigger("focus");
 	}
 
@@ -659,7 +659,7 @@ sanad.ui.Drawer = class Drawer {
 		if (!this.$menu) return;
 		this.$menu.remove();
 		this.$menu = null;
-		$(document).off(".sanaddrawermenu");
+		$(document).off(".whatsappdrawermenu");
 		if (this.$menu_opener) {
 			this.$menu_opener.attr("aria-expanded", "false").removeAttr("aria-controls");
 			if (restore_focus) this.$menu_opener.trigger("focus");
@@ -677,4 +677,4 @@ sanad.ui.Drawer = class Drawer {
 	}
 };
 
-export default sanad.ui.Drawer;
+export default whatsapp.ui.Drawer;

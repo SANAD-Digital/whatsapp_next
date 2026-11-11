@@ -22,7 +22,7 @@
 
 - هي اللوحة التي تظهر عند النقر على الاسم أو الحساب المربوط في رأس المحاكي.
 - الكود: `identity_panel()` و`group_panel()` في `whatsapp_next/whatsapp_next/page/wa_simulator/wa_simulator.js`.
-  - تستخدم `sanad.ui.OverlayPanel` بتخطيط `rows`، وكل سطر بارتفاع كبير.
+  - تستخدم `whatsapp.ui.OverlayPanel` بتخطيط `rows`، وكل سطر بارتفاع كبير.
 - المطلوب:
   - تصميم مضغوط: صفوف أقصر، والحقائق في شبكة أو شرائح.
   - الحسابات المرتبطة كقائمة صغيرة، ولا scroll لمحتوى بهذا الحجم.

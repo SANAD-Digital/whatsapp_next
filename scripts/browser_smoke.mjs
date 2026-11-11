@@ -76,9 +76,9 @@ for (const r of routes) {
 	await page.waitForTimeout(1200);
 	// surface errors the kit shows only as toasts
 	await page.evaluate(() => {
-		if (window.sanad && sanad.ui && sanad.ui.Toast) {
-			const orig = sanad.ui.Toast.error;
-			sanad.ui.Toast.error = (e, o) => {
+		if (window.whatsapp && whatsapp.ui && whatsapp.ui.Toast) {
+			const orig = whatsapp.ui.Toast.error;
+			whatsapp.ui.Toast.error = (e, o) => {
 				console.error("[toast-error] " + ((e && e.stack) || e));
 				return orig(e, o);
 			};

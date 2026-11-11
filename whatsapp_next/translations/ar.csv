@@ -3267,7 +3267,7 @@ picker_sources must be a list of rows,يجب أن يكون picker_sources قائ
 plan reading unavailable,تعذّرت قراءة الباقة,
 queue is empty,الطابور فارغ,
 recipients not yet sent,مستلمون لم تُرسل لهم بعد,
-sanad.ui: API method '{0}' is not configured,sanad.ui: دالة API '{0}' غير مضبوطة,
+whatsapp.ui: API method '{0}' is not configured,whatsapp.ui: دالة API '{0}' غير مضبوطة,
 see the messages,اعرض الرسائل,
 sending is paused,الإرسال موقوف,
 settings_overrides must be an object,يجب أن يكون settings_overrides كائنًا,

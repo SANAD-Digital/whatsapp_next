@@ -1,4 +1,4 @@
-# `sanad.ui.EmptyState`
+# `whatsapp.ui.EmptyState`
 
 The single renderer for the four non-data states of any panel, list or page:
 
@@ -43,8 +43,8 @@ None.
 ## Usage
 
 ```js
-const state = new sanad.ui.EmptyState({ wrapper: $panel, state: "loading" });
-sanad.ui.call("home.get_dashboard")
+const state = new whatsapp.ui.EmptyState({ wrapper: $panel, state: "loading" });
+whatsapp.ui.call("home.get_dashboard")
   .then((data) => {
     if (!data.devices.length)
       return state.empty({ title: __("No devices yet"),
@@ -57,8 +57,8 @@ sanad.ui.call("home.get_dashboard")
 
 ## CSS hooks
 
-- `.sanad-empty` is the root. Size modifiers are `--sm` and `--md`. State modifiers are `--loading`, `--empty`, `--error` and `--offline`.
-- Inner elements are `.sanad-empty__icon`, `__title`, `__desc` and `__actions`. `__actions` is removed when it has no buttons.
+- `.whatsapp-kit-empty` is the root. Size modifiers are `--sm` and `--md`. State modifiers are `--loading`, `--empty`, `--error` and `--offline`.
+- Inner elements are `.whatsapp-kit-empty__icon`, `__title`, `__desc` and `__actions`. `__actions` is removed when it has no buttons.
 - The icon is red in `--error` and amber in `--offline`. The root has a reserved `min-height` (120 px, or 80 px for `sm`) so the panel does not jump.
 
 ## Notes

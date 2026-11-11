@@ -1,4 +1,4 @@
-# `sanad.ui.CommandEditor`
+# `whatsapp.ui.CommandEditor`
 
 A full-height modal for creating and editing a chat command: a command word (plus synonyms) that
 runs a "function" when an inbound message matches it. Header: command word, "Not saved yet" chip,
@@ -13,7 +13,7 @@ shows the reply in a chat thread. All data comes from host-supplied functions.
 `settings` / `outputs` / `suggested_commands`, party-type keys matching Contact `links[].link_doctype`,
 `access` modes `Allow All` / `Deny All`, preview result `{status, replies, missing, text, reply_sent}`)
 are this app's `WhatsApp Command` / Functions model and its `commands.*` API. It also requires
-`sanad.ui.Toast` and `sanad.ui.ConfirmDialog`, and uses `sanad.ui.ChatThread` when present.
+`whatsapp.ui.Toast` and `whatsapp.ui.ConfirmDialog`, and uses `whatsapp.ui.ChatThread` when present.
 
 ## Options
 
@@ -53,14 +53,14 @@ The constructor opens the modal and calls `load`.
 
 - `close(force = false)` — asks "Discard unsaved changes?" when dirty (and not read-only) unless `force`; destroys the thread.
 - `save()` — validates (word, function, ≥1 party type), calls `opts.save`, lowercases the word, toasts.
-- `remove()` — `sanad.ui.ConfirmDialog.ask` (danger) whose `on_confirm` calls `opts.remove`; then closes.
+- `remove()` — `whatsapp.ui.ConfirmDialog.ask` (danger) whose `on_confirm` calls `opts.remove`; then closes.
 - `payload()` — the draft as the payload above. `is_dirty()` — draft differs from last load/save.
 - `render()` — full re-render; keeps focused field, caret and per-column scroll.
 
 ## Events and callbacks
 
 `on_saved`, `on_close`. No custom DOM events and no realtime. Errors surface via
-`sanad.ui.Toast.error`; save/delete success via `Toast.success`. A window `resize.<id>` handler
+`whatsapp.ui.Toast.error`; save/delete success via `Toast.success`. A window `resize.<id>` handler
 re-renders (debounced 150 ms) and is removed on close.
 
 ## Server calls
@@ -81,8 +81,8 @@ None directly — everything goes through the option functions. This app wires t
 ## Usage
 
 ```js
-const call = (m, args) => sanad.ui.call(`commands.${m}`, args);
-new sanad.ui.CommandEditor({
+const call = (m, args) => whatsapp.ui.call(`commands.${m}`, args);
+new whatsapp.ui.CommandEditor({
   name: null,
   read_only: !frappe.user.has_role("WhatsApp Manager"),
   load: (n) => call("get_editor", { name: n }),
@@ -98,7 +98,7 @@ new sanad.ui.CommandEditor({
 
 ## CSS hooks
 
-- Layer: `.sanad-kit.sanad-ce-layer` > `.sanad-ce-backdrop` + `.sanad-ce` (dialog; `.sanad-ce--readonly`). `body.sanad-ce-open` locks scroll.
+- Layer: `.whatsapp-kit.whatsapp-kit-ce-layer` > `.whatsapp-kit-ce-backdrop` + `.whatsapp-kit-ce` (dialog; `.whatsapp-kit-ce--readonly`). `body.whatsapp-kit-ce-open` locks scroll.
 - Header: `__head`, `__head-row(--tabs)`, `__code`, `__dirty`, `__status.is-on` (`__track`, `__knob`), `__x`, `__tabs` / `__tab.is-sel`, `__count`, `__runs`, `__fnchip`.
 - Layout: `__grid--setup`, `__grid--preview`, `__col--surface|--bg|--span|--last`, `__col-head`, `__col-body`, `__pane`, `__foot`, `__foot-hint`, `__loading`.
 - Controls: `__combo`, `__pop`, `__opt.is-sel`, `__chip--pri|--ghost|--dg`, `__chip-x`, `__pill.is-on`, `__seg.is-sel`, `__card.is-off|.is-missing`, `__tag--warn|--ok`, `__token`, `__callout--warn|--danger|--muted`, `__note--warn|--danger`.

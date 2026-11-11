@@ -1,4 +1,4 @@
-# Module role: the notification alert editor (D-139) — what `sanad.ui.AlertEditor` opens with,
+# Module role: the notification alert editor (D-139) — what `whatsapp.ui.AlertEditor` opens with,
 # saves and deletes, plus the live preview of the unsaved draft and the test send to one number.
 # The controller keeps every rule (content, schedule, JSON, recipients, next run); this module maps
 # an allow-listed payload onto the document and runs it through `alerts.execute`. The API layer

@@ -18,12 +18,12 @@ frappe.ui.form.on("WhatsApp Number", {
 		}
 
 		const can_send = frappe.user.has_role(["WhatsApp Agent", "WhatsApp Manager", "System Manager"]);
-		if (typeof sanad.ui.QuickSend === "function" && can_send && doc.number_type !== "LID") {
+		if (typeof whatsapp.ui.QuickSend === "function" && can_send && doc.number_type !== "LID") {
 			frm.add_custom_button(__("Quick send"), () => N.quick_send(doc));
 		}
 
 		if (doc.contact) {
-			frm.add_custom_button(__("Open contact"), () => sanad.ui.ConversationDrawer.open_contact(doc.contact));
+			frm.add_custom_button(__("Open contact"), () => whatsapp.ui.ConversationDrawer.open_contact(doc.contact));
 			if (frappe.user.has_role(["WhatsApp Manager", "System Manager"])) {
 				frm.add_custom_button(__("Unlink"), () => N.unlink_number(doc, reload));
 			}

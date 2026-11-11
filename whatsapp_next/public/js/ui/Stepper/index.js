@@ -1,4 +1,4 @@
-// sanad.ui.Stepper — a multi-step flow with a visible "Step 2 of 4" progress line, a step list
+// whatsapp.ui.Stepper — a multi-step flow with a visible "Step 2 of 4" progress line, a step list
 // (`role="list"`, current step `aria-current="step"`), one pane per step rendered lazily by the
 // caller, Back / Next / Finish (and optional Skip / Cancel) in the footer, and per-step validation
 // whose message is shown inline in the step body (`role="alert"`). Portable: it knows nothing
@@ -6,7 +6,7 @@
 
 import ui from "../_core/index.js";
 
-sanad.ui.Stepper = class Stepper {
+whatsapp.ui.Stepper = class Stepper {
 	/**
 	 * @param {Object} opts
 	 * @param {jQuery|HTMLElement} opts.wrapper
@@ -46,23 +46,23 @@ sanad.ui.Stepper = class Stepper {
 		const id = ui.uid("stepper");
 		this.id = id;
 		this.$el = $(`
-			<div class="sanad-kit sanad-stepper" id="${id}">
-				<div class="sanad-stepper__header">
-					<div class="sanad-stepper__progress" aria-live="polite"></div>
-					<ol class="sanad-stepper__list" role="list"></ol>
+			<div class="whatsapp-kit whatsapp-kit-stepper" id="${id}">
+				<div class="whatsapp-kit-stepper__header">
+					<div class="whatsapp-kit-stepper__progress" aria-live="polite"></div>
+					<ol class="whatsapp-kit-stepper__list" role="list"></ol>
 				</div>
-				<div class="sanad-stepper__body"></div>
-				<div class="sanad-stepper__footer">
-					<div class="sanad-stepper__footer-start"></div>
-					<div class="sanad-stepper__footer-end"></div>
+				<div class="whatsapp-kit-stepper__body"></div>
+				<div class="whatsapp-kit-stepper__footer">
+					<div class="whatsapp-kit-stepper__footer-start"></div>
+					<div class="whatsapp-kit-stepper__footer-end"></div>
 				</div>
 			</div>`);
 		this.$wrapper.empty().append(this.$el);
-		this.$progress = this.$el.find(".sanad-stepper__progress");
-		this.$list = this.$el.find(".sanad-stepper__list");
-		this.$body = this.$el.find(".sanad-stepper__body");
-		const $start = this.$el.find(".sanad-stepper__footer-start");
-		const $end = this.$el.find(".sanad-stepper__footer-end");
+		this.$progress = this.$el.find(".whatsapp-kit-stepper__progress");
+		this.$list = this.$el.find(".whatsapp-kit-stepper__list");
+		this.$body = this.$el.find(".whatsapp-kit-stepper__body");
+		const $start = this.$el.find(".whatsapp-kit-stepper__footer-start");
+		const $end = this.$el.find(".whatsapp-kit-stepper__footer-end");
 
 		if (this.opts.on_cancel) {
 			this.$cancel = $(`<button type="button" class="btn btn-default btn-sm">${ui.escape(this.opts.cancel_label || __("Cancel"))}</button>`)
@@ -80,23 +80,23 @@ sanad.ui.Stepper = class Stepper {
 			.appendTo($end);
 
 		this.steps.forEach((step, i) => {
-			const $li = $(`<li class="sanad-stepper__step" data-index="${i}"></li>`);
-			const $btn = $(`<button type="button" class="sanad-stepper__step-btn" aria-describedby="${id}-progress"></button>`);
-			$btn.append(`<span class="sanad-stepper__num" aria-hidden="true">${i + 1}</span><span class="sanad-stepper__check" aria-hidden="true">${ui.icon("es-line-check", "xs")}</span>`);
-			$btn.append(`<span class="sanad-stepper__label">${ui.escape(step.label)}</span>`);
-			if (step.can_skip) $btn.append(`<span class="sanad-stepper__optional">${ui.escape(__("Optional"))}</span>`);
+			const $li = $(`<li class="whatsapp-kit-stepper__step" data-index="${i}"></li>`);
+			const $btn = $(`<button type="button" class="whatsapp-kit-stepper__step-btn" aria-describedby="${id}-progress"></button>`);
+			$btn.append(`<span class="whatsapp-kit-stepper__num" aria-hidden="true">${i + 1}</span><span class="whatsapp-kit-stepper__check" aria-hidden="true">${ui.icon("es-line-check", "xs")}</span>`);
+			$btn.append(`<span class="whatsapp-kit-stepper__label">${ui.escape(step.label)}</span>`);
+			if (step.can_skip) $btn.append(`<span class="whatsapp-kit-stepper__optional">${ui.escape(__("Optional"))}</span>`);
 			$btn.on("click", () => {
 				if (!$btn.prop("disabled")) this.go(i);
 			});
 			$li.append($btn);
 			this.$list.append($li);
-			this.$body.append(`<div class="sanad-stepper__pane" data-index="${i}" hidden></div>`);
+			this.$body.append(`<div class="whatsapp-kit-stepper__pane" data-index="${i}" hidden></div>`);
 		});
 		this.$progress.attr("id", `${id}-progress`);
 	}
 
 	pane(i) {
-		return this.$body.find(`.sanad-stepper__pane[data-index="${i}"]`);
+		return this.$body.find(`.whatsapp-kit-stepper__pane[data-index="${i}"]`);
 	}
 
 	/** Jump to a step (no validation — used by Back and by header clicks on visited steps). */
@@ -110,12 +110,12 @@ sanad.ui.Stepper = class Stepper {
 		const $pane = this.pane(index);
 		if (!this.rendered.has(index)) {
 			this.rendered.add(index);
-			$pane.html(`<div class="sanad-stepper__error" role="alert" tabindex="-1" hidden></div><div class="sanad-stepper__content"></div>`);
-			step.render($pane.find(".sanad-stepper__content"), this.ctx, this);
+			$pane.html(`<div class="whatsapp-kit-stepper__error" role="alert" tabindex="-1" hidden></div><div class="whatsapp-kit-stepper__content"></div>`);
+			step.render($pane.find(".whatsapp-kit-stepper__content"), this.ctx, this);
 		}
 		$pane.removeAttr("hidden");
 		this.valid = true; // on_show may call set_step_valid(false)
-		step.on_show && step.on_show($pane.find(".sanad-stepper__content"), this.ctx, this);
+		step.on_show && step.on_show($pane.find(".whatsapp-kit-stepper__content"), this.ctx, this);
 		this.render_state();
 		this.$progress.text(__("Step {0} of {1}", [index + 1, this.steps.length]));
 		return this;
@@ -123,12 +123,12 @@ sanad.ui.Stepper = class Stepper {
 
 	render_state() {
 		const last = this.index === this.steps.length - 1;
-		this.$list.find(".sanad-stepper__step").each((i, li) => {
+		this.$list.find(".whatsapp-kit-stepper__step").each((i, li) => {
 			const $li = $(li);
-			const $btn = $li.find(".sanad-stepper__step-btn");
-			$li.toggleClass("sanad-stepper__step--current", i === this.index)
-				.toggleClass("sanad-stepper__step--done", i < this.index)
-				.toggleClass("sanad-stepper__step--todo", i > this.index);
+			const $btn = $li.find(".whatsapp-kit-stepper__step-btn");
+			$li.toggleClass("whatsapp-kit-stepper__step--current", i === this.index)
+				.toggleClass("whatsapp-kit-stepper__step--done", i < this.index)
+				.toggleClass("whatsapp-kit-stepper__step--todo", i > this.index);
 			if (i === this.index) $btn.attr("aria-current", "step");
 			else $btn.removeAttr("aria-current");
 			const reachable = !this.opts.linear || i <= (this.max_visited || 0);
@@ -155,7 +155,7 @@ sanad.ui.Stepper = class Stepper {
 	}
 
 	show_error(message) {
-		const $err = this.pane(this.index).find(".sanad-stepper__error");
+		const $err = this.pane(this.index).find(".whatsapp-kit-stepper__error");
 		$err.html(`${ui.icon("es-line-alert-circle", "xs")} <span>${ui.escape(message)}</span>`).removeAttr("hidden");
 		$err[0] && $err[0].focus();
 		ui.announce(message, { assertive: true });
@@ -163,7 +163,7 @@ sanad.ui.Stepper = class Stepper {
 
 	clear_error() {
 		if (this.index < 0) return;
-		this.pane(this.index).find(".sanad-stepper__error").attr("hidden", true).empty();
+		this.pane(this.index).find(".whatsapp-kit-stepper__error").attr("hidden", true).empty();
 	}
 
 	validate_current() {
@@ -219,4 +219,4 @@ sanad.ui.Stepper = class Stepper {
 	}
 };
 
-export default sanad.ui.Stepper;
+export default whatsapp.ui.Stepper;

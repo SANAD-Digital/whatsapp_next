@@ -1,16 +1,16 @@
-.sanad-bulk {
+.whatsapp-kit-bulk {
 	&__progress {
 		height: 8px;
 		border-radius: var(--radius-full, 999px);
 		background: var(--surface-gray-3);
 		overflow: hidden;
-		margin-block: var(--sanad-gap-sm);
+		margin-block: var(--whatsapp-kit-gap-sm);
 	}
 	&__bar {
 		height: 100%;
 		background: var(--ink-blue-7);
 		border-radius: inherit;
-		transition: width var(--sanad-motion) linear;
+		transition: width var(--whatsapp-kit-motion) linear;
 	}
 	&__status {
 		font-size: var(--text-sm, 13px);

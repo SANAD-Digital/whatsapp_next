@@ -118,7 +118,7 @@ in the last 30 days, leaving out `Blocked` and simulated rows.
 **Realtime:** none.
 
 ```js
-const { rows } = await sanad.ui.call("commands.list_commands", { filters: { status: "Active" } });
+const { rows } = await whatsapp.ui.call("commands.list_commands", { filters: { status: "Active" } });
 ```
 
 ---
@@ -157,7 +157,7 @@ types.
 **Realtime:** none.
 
 ```js
-const d = await sanad.ui.call("commands.get_defaults", { function: "document_info" });
+const d = await whatsapp.ui.call("commands.get_defaults", { function: "document_info" });
 ```
 
 ---
@@ -228,7 +228,7 @@ Start or stop a command.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("commands.set_status", { name: "فاتورة", status: "Active" });
+await whatsapp.ui.call("commands.set_status", { name: "فاتورة", status: "Active" });
 ```
 
 ---
@@ -252,7 +252,7 @@ Bulk start / stop.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("commands.set_status_many", { names: ["فاتورة", "فحص"], status: "Inactive" });
+await whatsapp.ui.call("commands.set_status_many", { names: ["فاتورة", "فحص"], status: "Inactive" });
 ```
 
 ---
@@ -284,7 +284,7 @@ Sets `defaults_restored_at`. Audited `Command Defaults Restored`. `disabled_inpu
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("commands.restore_defaults", { name: "فاتورة" });
+await whatsapp.ui.call("commands.restore_defaults", { name: "فاتورة" });
 ```
 
 ---
@@ -391,7 +391,7 @@ already point at the command (it can then only be stopped, not deleted).
 **Realtime:** none.
 
 ```js
-const ed = await sanad.ui.call("commands.get_editor", { name: "فاتورة" });
+const ed = await whatsapp.ui.call("commands.get_editor", { name: "فاتورة" });
 ```
 
 ---
@@ -437,7 +437,7 @@ What the editor shows for one installed function, read from its installed header
 **Realtime:** none.
 
 ```js
-const spec = await sanad.ui.call("commands.get_function_spec", { function: "document_info" });
+const spec = await whatsapp.ui.call("commands.get_function_spec", { function: "document_info" });
 ```
 
 ---
@@ -467,7 +467,7 @@ chosen status (default: back to `Active`) in one request.
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("commands.save_editor", { payload: { name: "فاتورة", synonyms: "فاتورتي\ninvoice", status: "Active" } });
+await whatsapp.ui.call("commands.save_editor", { payload: { name: "فاتورة", synonyms: "فاتورتي\ninvoice", status: "Active" } });
 ```
 
 ---
@@ -525,7 +525,7 @@ discarded; failures are in the result.
 **Realtime:** none. As with `test_command`, the run is not counted in the function's metrics.
 
 ```js
-const p = await sanad.ui.call("commands.preview_command", {
+const p = await whatsapp.ui.call("commands.preview_command", {
   payload: { code: "فاتورة", function: "document_info", allowed_party_types: ["Customer"] },
   sender: { contact: "Ahmed Ali", party_type: "Customer", party_name: "CUST-0001" },
   values: { document_name: "SINV-0001" },
@@ -560,7 +560,7 @@ command (`… has run history; stop it instead of deleting it`).
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("commands.delete_command", { name: "فاتورة" });
+await whatsapp.ui.call("commands.delete_command", { name: "فاتورة" });
 ```
 
 ---
@@ -586,7 +586,7 @@ Enabled contact groups for the editor's allowed / blocked / list pickers.
 **Realtime:** none.
 
 ```js
-const groups = await sanad.ui.call("commands.search_groups", { txt: "VI" });
+const groups = await whatsapp.ui.call("commands.search_groups", { txt: "VI" });
 ```
 
 ---
@@ -619,5 +619,5 @@ Contacts for the editor's lists and the preview sender, through the contextual p
 **Realtime:** none.
 
 ```js
-const contacts = await sanad.ui.call("commands.search_contacts", { txt: "Ahmed", party_type: "Customer" });
+const contacts = await whatsapp.ui.call("commands.search_contacts", { txt: "Ahmed", party_type: "Customer" });
 ```

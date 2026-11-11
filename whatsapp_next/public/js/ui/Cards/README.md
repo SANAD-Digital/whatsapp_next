@@ -19,7 +19,7 @@ media query per screen.
 ## Usage
 
 ```js
-frm.cards = new sanad.ui.Cards({
+frm.cards = new whatsapp.ui.Cards({
   wrapper: $host,
   density: "comfortable",              // or "compact" — the prototype's two scales
   handlers: { open_failed: () => frappe.set_route("List", "WhatsApp Log", { status: "Failed" }) },

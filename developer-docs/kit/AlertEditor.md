@@ -1,4 +1,4 @@
-# `sanad.ui.AlertEditor`
+# `whatsapp.ui.AlertEditor`
 
 A full-screen modal window to create, edit, preview and test a scheduled alert (a report or a
 plain message sent daily / weekly / monthly / quarterly / yearly). The draft is built in four
@@ -84,8 +84,8 @@ Everything else goes through the host's functions. This app wires them in
 ## Usage
 
 ```js
-const call = (m, args) => sanad.ui.call(`alerts.${m}`, args || {}, { silent: true });
-new sanad.ui.AlertEditor({
+const call = (m, args) => whatsapp.ui.call(`alerts.${m}`, args || {}, { silent: true });
+new whatsapp.ui.AlertEditor({
   name: null,
   load: (n) => call("get_editor", n ? { name: n } : {}),
   preview: (payload) => call("preview_draft", { payload }),
@@ -102,10 +102,10 @@ new sanad.ui.AlertEditor({
 
 ## CSS hooks
 
-- Layer: `.sanad-kit.sanad-ae-layer` > `.sanad-ae-backdrop` + `.sanad-ae` (the dialog). `body.sanad-ae-open` locks page scroll.
+- Layer: `.whatsapp-kit.whatsapp-kit-ae-layer` > `.whatsapp-kit-ae-backdrop` + `.whatsapp-kit-ae` (the dialog). `body.whatsapp-kit-ae-open` locks page scroll.
 - Frame: `__head` (`__mark`, `__name`, `__sentence`, `__dirty`, `__enabled`), `__main` > `__build` + `__side`, `__foot` (`__foot-hint.is-warn`), `__loading`.
 - Steps: `__step[data-step=when|what|who|from]`, `__step-head`, `__num.is-done`, `__step-body`.
-- Controls: `__chip.is-on`, `__seg` (on `.wa-seg`), `__pick`, `__results`, `__opt`, `__picked`, `__vars` / `__var`, `__msg`, `__filter`, `__rf.is-moving`, `__token`, `__n`, `__more`.
+- Controls: `__chip.is-on`, `__seg` (on `.whatsapp-seg`), `__pick`, `__results`, `__opt`, `__picked`, `__vars` / `__var`, `__msg`, `__filter`, `__rf.is-moving`, `__token`, `__n`, `__more`.
 - Recipients: `__whos` > `__who--user|--role|--phone|--report_column` (`frappe.scrub` of the type), `__colpick`.
 - Side: `__phone`, `__bubble` (`.is-ghost`), `__file`, `__facts`, `__note--warn|--danger`, `__status.is-busy`, `__test`, `__hist`, `__recent`, `__next` / `__runs` (`li.is-first`).
 - Buttons: `__btn`, `__btn--pri`, `__btn--danger`, `__icon`, `__icon--sm`, `__link`, `__add`.
@@ -121,7 +121,7 @@ new sanad.ui.AlertEditor({
   `FilterGroup` on `ref_doctype`), or `rows` (key/value rows with an "Edit as JSON" toggle; JSON
   that rows can't represent stays JSON). A new alert gets the report's defaults; a date defaulting
   to today becomes the `today` token.
-- **Keyboard:** focus is trapped (`sanad.ui.trap_focus`) and restored on close. Esc closes an open
+- **Keyboard:** focus is trapped (`whatsapp.ui.trap_focus`) and restored on close. Esc closes an open
   picker, else the window (skipped while a Frappe modal is open). Ctrl/⌘+S saves. In a picker,
   Enter takes the first result and ArrowDown moves into the list; Enter in the test number sends.
 - **ARIA:** `role="dialog"` + `aria-modal`, labelled by a visually hidden title; segmented controls

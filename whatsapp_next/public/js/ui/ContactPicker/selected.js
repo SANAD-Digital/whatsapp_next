@@ -25,21 +25,21 @@ export class SelectedTab {
 	mount($pane) {
 		this.$pane = $pane;
 		// in the tray the rows are read in 272 px: name, number, and what will happen to it
-		this.compact = $pane.hasClass("sanad-picker__tray-body");
-		const $head = $('<div class="sanad-picker__head"></div>');
-		const $search = $(`<label class="sanad-picker__search sanad-picker__search--sm"><span class="sanad-picker__search-icon" aria-hidden="true">${ui.icon("es-line-search", "sm")}</span><input type="search" class="sanad-picker__search-input" placeholder="${ui.escape(__("Search the selection"))}" aria-label="${ui.escape(__("Search the selection"))}"></label>`);
+		this.compact = $pane.hasClass("whatsapp-kit-picker__tray-body");
+		const $head = $('<div class="whatsapp-kit-picker__head"></div>');
+		const $search = $(`<label class="whatsapp-kit-picker__search whatsapp-kit-picker__search--sm"><span class="whatsapp-kit-picker__search-icon" aria-hidden="true">${ui.icon("es-line-search", "sm")}</span><input type="search" class="whatsapp-kit-picker__search-input" placeholder="${ui.escape(__("Search the selection"))}" aria-label="${ui.escape(__("Search the selection"))}"></label>`);
 		$search.on("input", ui.debounce(() => {
 			this.txt = $search.find("input").val().trim().toLowerCase();
 			this.limit = RENDER_STEP;
 			this.render();
 		}, 200));
-		this.$clear = $(`<button type="button" class="sanad-picker__clear">${ui.escape(__("Clear all"))}</button>`).on("click", () => this.picker.clear_selection());
+		this.$clear = $(`<button type="button" class="whatsapp-kit-picker__clear">${ui.escape(__("Clear all"))}</button>`).on("click", () => this.picker.clear_selection());
 		$head.append($search, this.$clear);
-		this.$counts = $('<div class="sanad-picker__counts"></div>');
-		this.$alert = $('<div class="sanad-picker__alert" role="alert" hidden></div>');
-		this.$list = $('<div class="sanad-picker__results"></div>');
+		this.$counts = $('<div class="whatsapp-kit-picker__counts"></div>');
+		this.$alert = $('<div class="whatsapp-kit-picker__alert" role="alert" hidden></div>');
+		this.$list = $('<div class="whatsapp-kit-picker__results"></div>');
 		this.$pane.append($head, this.$counts, this.$alert, this.$list);
-		this.state = new sanad.ui.EmptyState({ wrapper: this.$list, state: "empty", size: "sm" });
+		this.state = new whatsapp.ui.EmptyState({ wrapper: this.$list, state: "empty", size: "sm" });
 		this.render();
 	}
 
@@ -131,17 +131,17 @@ export class SelectedTab {
 		];
 		if (c.duplicates) parts.push({ label: __("{0} duplicates in selection", [ui.format_int(c.duplicates)]), tone: "red" });
 		if (!remove) parts.push({ label: __("{0} with a conversation", [ui.format_int(c.known)]), tone: "blue" });
-		this.$counts.html(parts.map((p) => `<span class="sanad-picker__count sanad-tone--${p.tone}">${ui.escape(p.label)}</span>`).join('<span class="sanad-picker__dot" aria-hidden="true">·</span>'));
+		this.$counts.html(parts.map((p) => `<span class="whatsapp-kit-picker__count whatsapp-kit-tone--${p.tone}">${ui.escape(p.label)}</span>`).join('<span class="whatsapp-kit-picker__dot" aria-hidden="true">·</span>'));
 	}
 
 	chip_for(key, row) {
 		const remove = this.picker.operation === "remove";
 		const b = this.buckets.get(key);
-		if (!b) return row.valid === false ? sanad.ui.StatusBadge.html({ label: row.error || __("Invalid"), colour: "orange" }) : "";
-		if (b.bucket === "already_added") return sanad.ui.StatusBadge.html({ label: remove ? __("Will be removed") : __("Already added"), colour: "red" });
-		if (b.bucket === "invalid") return sanad.ui.StatusBadge.html({ label: b.error || __("Invalid"), colour: "orange" });
-		if (b.bucket === "duplicates_in_selection") return sanad.ui.StatusBadge.html({ label: __("Duplicate in selection"), colour: "red" });
-		if (remove) return sanad.ui.StatusBadge.html({ label: __("Not in the list"), colour: "gray", icon: false });
+		if (!b) return row.valid === false ? whatsapp.ui.StatusBadge.html({ label: row.error || __("Invalid"), colour: "orange" }) : "";
+		if (b.bucket === "already_added") return whatsapp.ui.StatusBadge.html({ label: remove ? __("Will be removed") : __("Already added"), colour: "red" });
+		if (b.bucket === "invalid") return whatsapp.ui.StatusBadge.html({ label: b.error || __("Invalid"), colour: "orange" });
+		if (b.bucket === "duplicates_in_selection") return whatsapp.ui.StatusBadge.html({ label: __("Duplicate in selection"), colour: "red" });
+		if (remove) return whatsapp.ui.StatusBadge.html({ label: __("Not in the list"), colour: "gray", icon: false });
 		return "";
 	}
 
@@ -152,39 +152,39 @@ export class SelectedTab {
 		this.$clear.prop("disabled", !entries.length);
 		if (!entries.length) {
 			this.$list.empty();
-			this.state = new sanad.ui.EmptyState({ wrapper: this.$list, state: "empty", size: "sm", title: __("Nothing selected yet"), description: __("Pick numbers from one of the sources.") });
+			this.state = new whatsapp.ui.EmptyState({ wrapper: this.$list, state: "empty", size: "sm", title: __("Nothing selected yet"), description: __("Pick numbers from one of the sources.") });
 			return;
 		}
 		const q = this.txt;
 		const visible = q ? entries.filter(([, r]) => String(r.display_name || "").toLowerCase().includes(q) || String(r.phone_e164 || r.phone || "").includes(q)) : entries;
 		if (!visible.length) {
 			this.$list.empty();
-			this.state = new sanad.ui.EmptyState({ wrapper: this.$list, state: "empty", size: "sm", title: __("No selected number matches your search.") });
+			this.state = new whatsapp.ui.EmptyState({ wrapper: this.$list, state: "empty", size: "sm", title: __("No selected number matches your search.") });
 			return;
 		}
 		if (this.compact) return this.render_compact(visible);
-		let html = `<div class="sanad-table-wrap sanad-picker__scroll"><table class="sanad-table sanad-picker__table sanad-picker__selected-table"><thead><tr><th scope="col">${ui.escape(__("Name"))}</th><th scope="col">${ui.escape(__("Phone"))}</th><th scope="col">${ui.escape(__("Source"))}</th><th scope="col">${ui.escape(__("Result"))}</th><th scope="col"><span class="sanad-visually-hidden">${ui.escape(__("Remove"))}</span></th></tr></thead><tbody>`;
+		let html = `<div class="whatsapp-kit-table-wrap whatsapp-kit-picker__scroll"><table class="whatsapp-kit-table whatsapp-kit-picker__table whatsapp-kit-picker__selected-table"><thead><tr><th scope="col">${ui.escape(__("Name"))}</th><th scope="col">${ui.escape(__("Phone"))}</th><th scope="col">${ui.escape(__("Source"))}</th><th scope="col">${ui.escape(__("Result"))}</th><th scope="col"><span class="whatsapp-kit-visually-hidden">${ui.escape(__("Remove"))}</span></th></tr></thead><tbody>`;
 		visible.slice(0, this.limit).forEach(([key, row]) => {
 			const name = row.display_name || row.source_name || row.contact || "";
 			const b = this.buckets.get(key);
-			html += `<tr class="${b && b.bucket !== "available" && b.bucket !== "already_added" ? "sanad-picker__row--flagged" : ""}" data-key="${ui.escape(key)}">
+			html += `<tr class="${b && b.bucket !== "available" && b.bucket !== "already_added" ? "whatsapp-kit-picker__row--flagged" : ""}" data-key="${ui.escape(key)}">
 				<td>${ui.escape(name)}${ui.group_tag(row.phone_e164 || row.phone)}</td>
-				<td class="sanad-tabular" dir="ltr">${ui.escape(ui.phone(row.phone_e164 || row.phone || ""))}</td>
-				<td>${row.source_type ? sanad.ui.StatusBadge.html({ label: __(row.source_type), colour: "gray", icon: false }) : ""}</td>
+				<td class="whatsapp-kit-tabular" dir="ltr">${ui.escape(ui.phone(row.phone_e164 || row.phone || ""))}</td>
+				<td>${row.source_type ? whatsapp.ui.StatusBadge.html({ label: __(row.source_type), colour: "gray", icon: false }) : ""}</td>
 				<td>${this.chip_for(key, row)}</td>
-				<td class="sanad-picker__td-remove"><button type="button" class="btn btn-xs btn-default sanad-picker__remove" data-key="${ui.escape(key)}" aria-label="${ui.escape(__("Remove {0} from the selection", [name || row.phone || ""]))}" title="${ui.escape(__("Remove"))}">${ui.icon("es-line-close", "xs")}</button></td>
+				<td class="whatsapp-kit-picker__td-remove"><button type="button" class="btn btn-xs btn-default whatsapp-kit-picker__remove" data-key="${ui.escape(key)}" aria-label="${ui.escape(__("Remove {0} from the selection", [name || row.phone || ""]))}" title="${ui.escape(__("Remove"))}">${ui.icon("es-line-close", "xs")}</button></td>
 			</tr>`;
 		});
 		html += "</tbody></table></div>";
 		this.$list.html(html);
 		if (visible.length > this.limit) {
-			const $more = $(`<button type="button" class="btn btn-default btn-sm sanad-picker__more">${ui.escape(__("Show {0} more", [ui.format_int(Math.min(RENDER_STEP, visible.length - this.limit))]))}</button>`).on("click", () => {
+			const $more = $(`<button type="button" class="btn btn-default btn-sm whatsapp-kit-picker__more">${ui.escape(__("Show {0} more", [ui.format_int(Math.min(RENDER_STEP, visible.length - this.limit))]))}</button>`).on("click", () => {
 				this.limit += RENDER_STEP;
 				this.render();
 			});
 			this.$list.append($more);
 		}
-		this.$list.find(".sanad-picker__remove").on("click", (e) => this.picker.remove_rows([$(e.currentTarget).data("key")]));
+		this.$list.find(".whatsapp-kit-picker__remove").on("click", (e) => this.picker.remove_rows([$(e.currentTarget).data("key")]));
 	}
 
 	/**
@@ -201,7 +201,7 @@ export class SelectedTab {
 			duplicates_in_selection: __("Duplicate in the selection"),
 			available: remove ? __("Not in the list") : "",
 		};
-		let html = '<div class="sanad-picker__rows sanad-picker__trayrows">';
+		let html = '<div class="whatsapp-kit-picker__rows whatsapp-kit-picker__trayrows">';
 		visible.slice(0, this.limit).forEach(([key, row]) => {
 			const b = this.buckets.get(key);
 			const bucket = b ? b.bucket : "available";
@@ -211,27 +211,27 @@ export class SelectedTab {
 			const manual = (row.source_type || row.__source) === "Manual" || row.__source === "manual";
 			const source = row.source_type ? __(row.source_type) : "";
 			const tone = tone_of(bucket);
-			html += `<div class="sanad-picker__row sanad-picker__row--chosen${tone ? ` sanad-picker__row--${tone}` : ""}" data-key="${ui.escape(key)}" role="listitem">
-				<span class="sanad-picker__av${manual ? " sanad-picker__av--manual" : " sanad-picker__av--on"}" aria-hidden="true">${manual && !name ? "#" : ui.escape(ui.initials(name || phone) || "#")}</span>
-				<span class="sanad-picker__row-text">
-					<span class="sanad-picker__row-name" dir="auto">${ui.escape(name || phone)}${ui.group_tag(row.phone_e164 || row.phone)}</span>
-					${name && phone ? `<span class="sanad-picker__row-sub sanad-tabular" dir="ltr">${ui.escape(phone)}</span>` : ""}
+			html += `<div class="whatsapp-kit-picker__row whatsapp-kit-picker__row--chosen${tone ? ` whatsapp-kit-picker__row--${tone}` : ""}" data-key="${ui.escape(key)}" role="listitem">
+				<span class="whatsapp-kit-picker__av${manual ? " whatsapp-kit-picker__av--manual" : " whatsapp-kit-picker__av--on"}" aria-hidden="true">${manual && !name ? "#" : ui.escape(ui.initials(name || phone) || "#")}</span>
+				<span class="whatsapp-kit-picker__row-text">
+					<span class="whatsapp-kit-picker__row-name" dir="auto">${ui.escape(name || phone)}${ui.group_tag(row.phone_e164 || row.phone)}</span>
+					${name && phone ? `<span class="whatsapp-kit-picker__row-sub whatsapp-kit-tabular" dir="ltr">${ui.escape(phone)}</span>` : ""}
 				</span>
-				${word ? `<span class="sanad-picker__row-badge sanad-picker__row-badge--${tone || "muted"}">${ui.escape(word)}</span>` : source ? `<span class="sanad-picker__row-badge">${ui.escape(source)}</span>` : ""}
-				<button type="button" class="sanad-picker__mark sanad-picker__mark--x sanad-picker__remove" data-key="${ui.escape(key)}" aria-label="${ui.escape(__("Remove {0} from the selection", [name || phone]))}">${ui.icon("es-line-close", "xs")}</button>
+				${word ? `<span class="whatsapp-kit-picker__row-badge whatsapp-kit-picker__row-badge--${tone || "muted"}">${ui.escape(word)}</span>` : source ? `<span class="whatsapp-kit-picker__row-badge">${ui.escape(source)}</span>` : ""}
+				<button type="button" class="whatsapp-kit-picker__mark whatsapp-kit-picker__mark--x whatsapp-kit-picker__remove" data-key="${ui.escape(key)}" aria-label="${ui.escape(__("Remove {0} from the selection", [name || phone]))}">${ui.icon("es-line-close", "xs")}</button>
 			</div>`;
 		});
 		html += "</div>";
 		this.$list.html(html);
 		if (visible.length > this.limit) {
-			$(`<button type="button" class="btn btn-default btn-sm sanad-picker__more">${ui.escape(__("Show {0} more", [ui.format_int(Math.min(RENDER_STEP, visible.length - this.limit))]))}</button>`)
+			$(`<button type="button" class="btn btn-default btn-sm whatsapp-kit-picker__more">${ui.escape(__("Show {0} more", [ui.format_int(Math.min(RENDER_STEP, visible.length - this.limit))]))}</button>`)
 				.on("click", () => {
 					this.limit += RENDER_STEP;
 					this.render();
 				})
 				.appendTo(this.$list);
 		}
-		this.$list.find(".sanad-picker__remove").on("click", (e) => this.picker.remove_rows([$(e.currentTarget).data("key")]));
+		this.$list.find(".whatsapp-kit-picker__remove").on("click", (e) => this.picker.remove_rows([$(e.currentTarget).data("key")]));
 	}
 }
 

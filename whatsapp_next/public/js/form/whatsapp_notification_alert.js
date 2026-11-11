@@ -40,7 +40,7 @@ function load_report_columns(frm) {
 	};
 	if (frm.doc.content_type !== "Report" || !frm.doc.report) return set_help(__("Choose a report first; its columns are listed here."));
 	const filters = parse_json(frm.doc.filters_json);
-	sanad.ui
+	whatsapp.ui
 		.call("alerts.get_report_columns", { report: frm.doc.report, filters: filters || {} })
 		.then((cols) => {
 			if (!cols || !cols.length) return set_help(__("The report returned no columns with these filters."));
@@ -53,32 +53,32 @@ function load_report_columns(frm) {
 function load_token_reference(frm) {
 	const field = frm.get_field("dynamic_filters_json");
 	if (!field || frm._wa_tokens_rendered) return;
-	sanad.ui
+	whatsapp.ui
 		.call("alerts.get_dynamic_filter_reference")
 		.then((tokens) => {
 			frm._wa_tokens_rendered = true;
-			const esc = sanad.ui.escape;
+			const esc = whatsapp.ui.escape;
 			const rows = (tokens || []).map((t) => `<tr><td><code>${esc(t.name)}</code></td><td dir="ltr">${esc(t.example == null ? "" : String(t.example))}</td></tr>`).join("");
 			const $help = $(`
-				<details class="wa-token-reference mt-2">
+				<details class="whatsapp-token-reference mt-2">
 					<summary class="text-muted small">${esc(__("Dynamic date tokens"))}</summary>
 					<p class="small text-muted mb-1">${esc(__('Use a token as a filter value, e.g. {"posting_date": "today"}. N tokens take a number: "last_days:7".'))}</p>
 					<table class="table table-sm small mb-0"><thead><tr><th>${esc(__("Token"))}</th><th>${esc(__("Today"))}</th></tr></thead><tbody>${rows}</tbody></table>
 				</details>`);
-			field.$wrapper.find(".wa-token-reference").remove();
+			field.$wrapper.find(".whatsapp-token-reference").remove();
 			field.$wrapper.append($help);
 		})
 		.catch(() => {});
 }
 
 function preview(frm) {
-	sanad.ui
+	whatsapp.ui
 		.call("alerts.preview", { name: frm.doc.name }, { freeze: true, freeze_message: __("Running the report…") })
 		.then((r) => {
-			const esc = sanad.ui.escape;
+			const esc = whatsapp.ui.escape;
 			const facts = [
-				[__("Rows"), sanad.ui.format_int(r.row_count || 0)],
-				[__("Recipients"), sanad.ui.format_int(r.recipients_count || 0)],
+				[__("Rows"), whatsapp.ui.format_int(r.row_count || 0)],
+				[__("Recipients"), whatsapp.ui.format_int(r.recipients_count || 0)],
 				[__("Attachment"), r.attachment_name || "—"],
 			]
 				.map(([k, v]) => `<tr><th class="text-muted" style="width: 30%">${esc(k)}</th><td><bdi dir="auto">${esc(v)}</bdi></td></tr>`)
@@ -98,19 +98,19 @@ function preview(frm) {
 					},
 				],
 			});
-			d.$wrapper.addClass("sanad-kit");
+			d.$wrapper.addClass("whatsapp-kit");
 			d.show();
 		})
-		.catch((err) => sanad.ui.Toast.error(err));
+		.catch((err) => whatsapp.ui.Toast.error(err));
 }
 
 function run_now(frm) {
-	sanad.ui.ConfirmDialog.ask({
+	whatsapp.ui.ConfirmDialog.ask({
 		title: __("Run {0} now?", [frm.doc.alert_name || frm.doc.name]),
 		message: __("The report runs in the background and the messages are queued; the schedule is not changed."),
 		confirm_label: __("Run now"),
-		on_confirm: () => sanad.ui.call("alerts.run_now", { name: frm.doc.name }),
+		on_confirm: () => whatsapp.ui.call("alerts.run_now", { name: frm.doc.name }),
 	})
-		.then(() => sanad.ui.Toast.success(__("The alert is running in the background")))
+		.then(() => whatsapp.ui.Toast.success(__("The alert is running in the background")))
 		.catch(() => {});
 }

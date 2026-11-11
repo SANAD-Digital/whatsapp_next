@@ -1,6 +1,6 @@
-.sanad-groupcreate {
-	&__members { display: flex; flex-direction: column; gap: var(--sanad-gap-sm); }
-	&__bar { display: flex; align-items: center; justify-content: space-between; gap: var(--sanad-gap-sm); }
+.whatsapp-kit-groupcreate {
+	&__members { display: flex; flex-direction: column; gap: var(--whatsapp-kit-gap-sm); }
+	&__bar { display: flex; align-items: center; justify-content: space-between; gap: var(--whatsapp-kit-gap-sm); }
 	&__count { color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
 	&__list {
 		list-style: none;
@@ -8,15 +8,15 @@
 		padding: 0;
 		max-height: 320px;
 		overflow-y: auto;
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-radius);
 		li {
 			display: flex;
 			align-items: center;
-			gap: var(--sanad-gap-sm);
-			min-height: var(--sanad-target);
-			padding-inline: var(--sanad-gap-md);
-			border-block-end: var(--sanad-border);
+			gap: var(--whatsapp-kit-gap-sm);
+			min-height: var(--whatsapp-kit-target);
+			padding-inline: var(--whatsapp-kit-gap-md);
+			border-block-end: var(--whatsapp-kit-border);
 			&:last-child { border-block-end: 0; }
 		}
 	}
@@ -28,20 +28,20 @@
 		width: 28px;
 		height: 28px;
 		border: 0;
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		background: transparent;
 		color: var(--ink-gray-6);
 		&:hover, &:focus-visible { background: var(--surface-gray-2); color: var(--ink-red-8, var(--ink-gray-9)); }
 	}
 	&__empty { margin: 0; color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
-	&__invite { margin-block-start: var(--sanad-gap-md); p { margin-block-end: var(--sanad-gap-xs); color: var(--ink-gray-6); } }
+	&__invite { margin-block-start: var(--whatsapp-kit-gap-md); p { margin-block-end: var(--whatsapp-kit-gap-xs); color: var(--ink-gray-6); } }
 	&__link {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
-		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
+		gap: var(--whatsapp-kit-gap-sm);
+		padding: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-md);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-gray-1);
 		bdi { flex: 1 1 auto; overflow-wrap: anywhere; }
 	}

@@ -1,4 +1,4 @@
-# Module role: the message template editor window — what `sanad.ui.TemplateWindow` opens with,
+# Module role: the message template editor window — what `whatsapp.ui.TemplateWindow` opens with,
 # saves and deletes. The controller keeps every rule (the body compiles, a Document template has a
 # print format); this module maps an allow-listed payload onto the document, guards against an
 # edit made elsewhere since the window opened, and renames on a changed name. The API layer

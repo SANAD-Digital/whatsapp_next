@@ -2,14 +2,14 @@
 // Geometry follows `docs/component/List View.dc.html` at its "compact" density: a 36 px header row
 // on a sunken fill, 38 px body rows, 12 px cell padding, 13 px text, an 11 px tabular sub-line and
 // a 26 px in-row "View" button. Colours come only from Espresso tokens (plus the kit's accent).
-// The toolbar, the table and the footer share one card — see `.sanad-list-card` at the bottom.
+// The toolbar, the table and the footer share one card — see `.whatsapp-kit-list-card` at the bottom.
 
-.sanad-datalist-host {
+.whatsapp-kit-datalist-host {
 	// Desk sizes `.result` for its own rows; the table brings its own borders
 	.freeze { display: none !important; }
 }
 
-.sanad-datalist__wrap {
+.whatsapp-kit-datalist__wrap {
 	// its own stacking context: the sticky header and pinned columns stack inside the table only,
 	// so Desk's page-head menus and dropdowns always paint above it
 	position: relative;
@@ -17,25 +17,25 @@
 	isolation: isolate;
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
-	border: var(--sanad-border);
-	border-radius: var(--sanad-card-radius);
+	border: var(--whatsapp-kit-border);
+	border-radius: var(--whatsapp-kit-card-radius);
 	background: var(--surface-base);
 }
 
-.sanad-datalist {
+.whatsapp-kit-datalist {
 	width: 100%;
 	border-collapse: separate;
 	border-spacing: 0;
 	font-size: var(--text-sm, 13px);
 	color: var(--ink-gray-7);
-	transition: opacity var(--sanad-motion);
+	transition: opacity var(--whatsapp-kit-motion);
 	&--loading { opacity: 0.6; }
 
 	thead th {
 		position: sticky;
 		inset-block-start: 0;
 		z-index: 8; // above every body cell, including the sticky group rows
-		height: var(--sanad-head-h);
+		height: var(--whatsapp-kit-head-h);
 		background: var(--surface-gray-2);
 		color: var(--ink-gray-6);
 		font-weight: 600;
@@ -43,24 +43,24 @@
 		text-align: start;
 		white-space: nowrap;
 		padding-block: 0;
-		padding-inline: var(--sanad-cell-px);
-		border-block-end: var(--sanad-border);
+		padding-inline: var(--whatsapp-kit-cell-px);
+		border-block-end: var(--whatsapp-kit-border);
 	}
 	// Column rules live under `thead th` / `tbody td`: those selectors out-specify a bare class,
 	// so written any other way the paddings, the z-index and the sticky fills never applied.
 	thead th, tbody td {
-		&.sanad-datalist__th--end, &.sanad-datalist__td--end { text-align: end; }
-		&.sanad-datalist__th--center, &.sanad-datalist__td--center { text-align: center; }
-		&.sanad-datalist__th--check, &.sanad-datalist__td--check {
+		&.whatsapp-kit-datalist__th--end, &.whatsapp-kit-datalist__td--end { text-align: end; }
+		&.whatsapp-kit-datalist__th--center, &.whatsapp-kit-datalist__td--center { text-align: center; }
+		&.whatsapp-kit-datalist__th--check, &.whatsapp-kit-datalist__td--check {
 			width: 36px;
 			text-align: center;
-			padding-inline: var(--sanad-gap-sm);
+			padding-inline: var(--whatsapp-kit-gap-sm);
 			position: sticky;
 			inset-inline-start: 0; // the checkbox leads the sticky block
 		}
-		&.sanad-datalist__th--expand, &.sanad-datalist__td--expand { width: 28px; padding-inline: var(--sanad-gap-xs); }
+		&.whatsapp-kit-datalist__th--expand, &.whatsapp-kit-datalist__td--expand { width: 28px; padding-inline: var(--whatsapp-kit-gap-xs); }
 		// the action column stays put when the table scrolls sideways, so "View" is never half-cut
-		&.sanad-datalist__th--action, &.sanad-datalist__td--action {
+		&.whatsapp-kit-datalist__th--action, &.whatsapp-kit-datalist__td--action {
 			width: 1%;
 			text-align: center;
 			white-space: nowrap;
@@ -75,17 +75,17 @@
 	//   0 body cell · 2 pinned body cell · 3 checkbox/action body cell · 5 group row
 	//   8 header · 9 pinned header · 10 checkbox/action header
 	// The sticky checkbox and action cells must stay BELOW a group row, or they float over it.
-	thead th.sanad-datalist__th--check, thead th.sanad-datalist__th--action { z-index: 10; background-color: var(--surface-gray-2); }
-	tbody td.sanad-datalist__td--check, tbody td.sanad-datalist__td--action { z-index: 3; background-color: var(--surface-base); }
-	&__row:hover td.sanad-datalist__td--check, &__row:hover td.sanad-datalist__td--action { background-color: var(--surface-gray-1); }
-	&__row:has(.list-row-checkbox:checked) td.sanad-datalist__td--check,
-	&__row:has(.list-row-checkbox:checked) td.sanad-datalist__td--action { background-color: var(--sanad-accent-soft); }
+	thead th.whatsapp-kit-datalist__th--check, thead th.whatsapp-kit-datalist__th--action { z-index: 10; background-color: var(--surface-gray-2); }
+	tbody td.whatsapp-kit-datalist__td--check, tbody td.whatsapp-kit-datalist__td--action { z-index: 3; background-color: var(--surface-base); }
+	&__row:hover td.whatsapp-kit-datalist__td--check, &__row:hover td.whatsapp-kit-datalist__td--action { background-color: var(--surface-gray-1); }
+	&__row:has(.list-row-checkbox:checked) td.whatsapp-kit-datalist__td--check,
+	&__row:has(.list-row-checkbox:checked) td.whatsapp-kit-datalist__td--action { background-color: var(--whatsapp-kit-accent-soft); }
 	&__th--sorted { color: var(--ink-gray-9); }
 	&__sort {
 		appearance: none;
 		display: inline-flex;
 		align-items: center;
-		gap: var(--sanad-gap-xs);
+		gap: var(--whatsapp-kit-gap-xs);
 		border: 0;
 		background: transparent;
 		padding: 0;
@@ -96,21 +96,21 @@
 		&:hover { color: var(--ink-gray-9); }
 	}
 	&__sort-icon { display: inline-flex; color: var(--ink-gray-5); .icon { width: 12px; height: 12px; } }
-	&__th--sorted &__sort-icon { color: var(--sanad-accent); }
+	&__th--sorted &__sort-icon { color: var(--whatsapp-kit-accent); }
 	&__label { font-weight: 600; }
 
 	tbody td {
-		height: var(--sanad-row-h);
+		height: var(--whatsapp-kit-row-h);
 		padding-block: 0;
-		padding-inline: var(--sanad-cell-px);
-		border-block-end: var(--sanad-border);
+		padding-inline: var(--whatsapp-kit-cell-px);
+		border-block-end: var(--whatsapp-kit-border);
 		vertical-align: middle;
 	}
 	tbody tr:last-child td { border-block-end: 0; }
 	&__row--clickable { cursor: pointer; }
 	&__row:hover td { background: var(--surface-gray-1); }
-	&__row:focus-visible { outline: 2px solid var(--sanad-accent); outline-offset: -2px; }
-	&__row:has(.list-row-checkbox:checked) td { background: var(--sanad-accent-soft); }
+	&__row:focus-visible { outline: 2px solid var(--whatsapp-kit-accent); outline-offset: -2px; }
+	&__row:has(.list-row-checkbox:checked) td { background: var(--whatsapp-kit-accent-soft); }
 	&__td--end { text-align: end; }
 	&__td--center { text-align: center; }
 	&__td--end &__cell { align-items: flex-end; }
@@ -121,7 +121,7 @@
 	&__main {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -151,10 +151,10 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		min-height: var(--sanad-ctl-h-sm);
+		min-height: var(--whatsapp-kit-ctl-h-sm);
 		padding-inline: 10px;
 		border: 1px solid var(--outline-gray-2);
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-base);
 		color: var(--ink-gray-6);
 		font-size: var(--text-xs, 12px);
@@ -162,11 +162,11 @@
 		line-height: 1;
 		white-space: nowrap;
 		cursor: pointer;
-		transition: background var(--sanad-motion), color var(--sanad-motion), border-color var(--sanad-motion);
+		transition: background var(--whatsapp-kit-motion), color var(--whatsapp-kit-motion), border-color var(--whatsapp-kit-motion);
 		&:hover {
-			background: var(--sanad-accent-soft);
-			border-color: var(--sanad-accent-outline);
-			color: var(--sanad-accent-ink);
+			background: var(--whatsapp-kit-accent-soft);
+			border-color: var(--whatsapp-kit-accent-outline);
+			color: var(--whatsapp-kit-accent-ink);
 		}
 	}
 	&__toggle {
@@ -175,38 +175,38 @@
 		background: transparent;
 		width: 26px;
 		height: 26px;
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		color: var(--ink-gray-6);
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
-		transition: transform var(--sanad-motion), background var(--sanad-motion);
+		transition: transform var(--whatsapp-kit-motion), background var(--whatsapp-kit-motion);
 		&:hover { background: var(--surface-gray-2); }
 		&[aria-expanded="true"] { transform: rotate(180deg); }
 	}
 	// ---- grouping (prototype: a 36 px group row per level, indented 22 px, with count and total)
 	// A group row sticks under the header as you scroll down, and its contents stick to the start
 	// edge as you scroll sideways, so the label is never scrolled out of its own row.
-	tbody tr.sanad-datalist__group td {
+	tbody tr.whatsapp-kit-datalist__group td {
 		position: sticky;
-		inset-block-start: var(--sanad-head-h);
+		inset-block-start: var(--whatsapp-kit-head-h);
 		z-index: 5; // above every body cell, below the header
 		height: 28px;
 		padding: 0;
 		// only a rule above: the one below sat between the group and its own rows and read as a
 		// stray border in front of them
-		border-block-start: 1px solid var(--sanad-accent-outline);
+		border-block-start: 1px solid var(--whatsapp-kit-accent-outline);
 		border-block-end: 0;
-		background-color: color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-base));
+		background-color: color-mix(in srgb, var(--whatsapp-kit-accent) 7%, var(--surface-base));
 	}
 	// Only the outermost level stays under the header. Stacking every level meant a child's row —
 	// and its checkbox — piled on top of its parent's.
-	tbody tr.sanad-datalist__group--l1 td,
-	tbody tr.sanad-datalist__group--l2 td,
-	tbody tr.sanad-datalist__group--l3 td { position: static; }
-	tbody tr.sanad-datalist__group--l1 td { background-color: color-mix(in srgb, var(--sanad-accent) 4%, var(--surface-base)); }
-	tbody tr.sanad-datalist__group--l2 td, tbody tr.sanad-datalist__group--l3 td { background-color: color-mix(in srgb, var(--sanad-accent) 2%, var(--surface-base)); }
+	tbody tr.whatsapp-kit-datalist__group--l1 td,
+	tbody tr.whatsapp-kit-datalist__group--l2 td,
+	tbody tr.whatsapp-kit-datalist__group--l3 td { position: static; }
+	tbody tr.whatsapp-kit-datalist__group--l1 td { background-color: color-mix(in srgb, var(--whatsapp-kit-accent) 4%, var(--surface-base)); }
+	tbody tr.whatsapp-kit-datalist__group--l2 td, tbody tr.whatsapp-kit-datalist__group--l3 td { background-color: color-mix(in srgb, var(--whatsapp-kit-accent) 2%, var(--surface-base)); }
 	&__group-inner {
 		position: sticky;
 		inset-inline-start: 0;
@@ -214,11 +214,11 @@
 		align-items: stretch;
 		width: max-content;
 		max-width: 100%;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		min-height: 28px;
-		padding-inline-end: var(--sanad-cell-px);
+		padding-inline-end: var(--whatsapp-kit-cell-px);
 		font-size: var(--text-sm, 13px);
-		> *:not(.sanad-datalist__rail) { align-self: center; }
+		> *:not(.whatsapp-kit-datalist__rail) { align-self: center; }
 	}
 	// the group's checkbox lines up with the row checkboxes below it
 	&__group-check {
@@ -235,13 +235,13 @@
 		flex: none;
 		width: 22px;
 		align-self: stretch;
-		margin-inline-end: calc(-1 * var(--sanad-gap-sm));
+		margin-inline-end: calc(-1 * var(--whatsapp-kit-gap-sm));
 		border-inline-start: 1px solid var(--outline-gray-2);
 	}
 	// A data row is indented to sit under its group, but draws no rules of its own — repeating the
 	// guides on every row made the table look like it had extra empty columns.
 	&__indent { display: flex; align-items: center; gap: 0; min-width: 0; }
-	&__indent .sanad-datalist__rail { border-inline-start: 0; width: 22px; }
+	&__indent .whatsapp-kit-datalist__rail { border-inline-start: 0; width: 22px; }
 	&__indent-body { min-width: 0; flex: 1; }
 
 	// a group row selects every row under it; partly selected shows as indeterminate
@@ -250,7 +250,7 @@
 		width: 15px;
 		height: 15px;
 		margin: 0;
-		accent-color: var(--sanad-accent);
+		accent-color: var(--whatsapp-kit-accent);
 		vertical-align: middle;
 		cursor: pointer;
 	}
@@ -279,7 +279,7 @@
 		padding-inline: 8px;
 		border-radius: var(--radius-full, 999px);
 		background: var(--surface-base);
-		border: 1px solid var(--sanad-accent-outline);
+		border: 1px solid var(--whatsapp-kit-accent-outline);
 		color: var(--ink-gray-6);
 		font-size: var(--text-tiny, 11px);
 	}
@@ -289,34 +289,34 @@
 	// ---- pinned columns (sticky at the inline-start, accent-tinted, shadow on the last one)
 	// A sticky cell must be fully opaque or the columns scrolling beneath it show through. The
 	// fill is set per row state, with the accent tint painted on top of it, never instead of it.
-	tbody td.sanad-datalist__td--pinned {
+	tbody td.whatsapp-kit-datalist__td--pinned {
 		position: sticky;
 		z-index: 2;
 		background-color: var(--surface-base);
 		background-image: linear-gradient(
-			color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-base)),
-			color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-base))
+			color-mix(in srgb, var(--whatsapp-kit-accent) 7%, var(--surface-base)),
+			color-mix(in srgb, var(--whatsapp-kit-accent) 7%, var(--surface-base))
 		);
 		background-clip: padding-box;
 	}
-	thead th.sanad-datalist__th--pinned {
+	thead th.whatsapp-kit-datalist__th--pinned {
 		position: sticky;
 		z-index: 9;
 		background-color: var(--surface-gray-2);
 		background-image: linear-gradient(
-			color-mix(in srgb, var(--sanad-accent) 10%, var(--surface-gray-2)),
-			color-mix(in srgb, var(--sanad-accent) 10%, var(--surface-gray-2))
+			color-mix(in srgb, var(--whatsapp-kit-accent) 10%, var(--surface-gray-2)),
+			color-mix(in srgb, var(--whatsapp-kit-accent) 10%, var(--surface-gray-2))
 		);
 		background-clip: padding-box;
 	}
-	&__row:hover td.sanad-datalist__td--pinned {
+	&__row:hover td.whatsapp-kit-datalist__td--pinned {
 		background-image: linear-gradient(
-			color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-gray-1)),
-			color-mix(in srgb, var(--sanad-accent) 7%, var(--surface-gray-1))
+			color-mix(in srgb, var(--whatsapp-kit-accent) 7%, var(--surface-gray-1)),
+			color-mix(in srgb, var(--whatsapp-kit-accent) 7%, var(--surface-gray-1))
 		);
 	}
-	&__row:has(.list-row-checkbox:checked) td.sanad-datalist__td--pinned {
-		background-image: linear-gradient(var(--sanad-accent-soft), var(--sanad-accent-soft));
+	&__row:has(.list-row-checkbox:checked) td.whatsapp-kit-datalist__td--pinned {
+		background-image: linear-gradient(var(--whatsapp-kit-accent-soft), var(--whatsapp-kit-accent-soft));
 	}
 	&__cell--pin-edge { box-shadow: inset -1px 0 0 var(--outline-gray-2); } // mirrored by rtlcss
 
@@ -327,7 +327,7 @@
 		background: transparent;
 		width: 20px;
 		height: 20px;
-		margin-inline-start: var(--sanad-gap-xs);
+		margin-inline-start: var(--whatsapp-kit-gap-xs);
 		padding: 0;
 		border-radius: 6px;
 		color: var(--ink-gray-4, var(--ink-gray-5));
@@ -336,82 +336,82 @@
 		vertical-align: middle;
 		.icon { width: 12px; height: 12px; }
 		&:hover { background: var(--outline-gray-2); color: var(--ink-gray-7); }
-		&--on, &:focus-visible { opacity: 1; color: var(--sanad-accent); }
+		&--on, &:focus-visible { opacity: 1; color: var(--whatsapp-kit-accent); }
 	}
 	&__th:hover &__pin { opacity: 1; }
 
-	&__detail td { background: var(--surface-gray-1); height: auto; padding-block: var(--sanad-gap-md); }
-	&__detail-body { padding-inline-start: var(--sanad-gap-xl); }
-	&__check-all, .list-row-checkbox { width: 15px; height: 15px; margin: 0; accent-color: var(--sanad-accent); vertical-align: middle; }
-	&__row--skeleton td { height: var(--sanad-row-h); padding-block: var(--sanad-gap-xs); border-block-end: var(--sanad-border); }
+	&__detail td { background: var(--surface-gray-1); height: auto; padding-block: var(--whatsapp-kit-gap-md); }
+	&__detail-body { padding-inline-start: var(--whatsapp-kit-gap-xl); }
+	&__check-all, .list-row-checkbox { width: 15px; height: 15px; margin: 0; accent-color: var(--whatsapp-kit-accent); vertical-align: middle; }
+	&__row--skeleton td { height: var(--whatsapp-kit-row-h); padding-block: var(--whatsapp-kit-gap-xs); border-block-end: var(--whatsapp-kit-border); }
 	&__row--empty td { height: auto; padding: 0; }
 }
 
 // 2-letter initials chip (device / contact) — prototype: 24 px, 6 px radius, 10 px bold
-// `.sanad-avatar` lives in Render/style.scss — one avatar for the whole kit.
+// `.whatsapp-kit-avatar` lives in Render/style.scss — one avatar for the whole kit.
 
 // footer: count at the inline-start, pager at the inline-end (inside the card, not the viewport)
-.sanad-datalist__footer {
+.whatsapp-kit-datalist__footer {
 	background: var(--surface-base);
-	border-block-start: var(--sanad-border);
+	border-block-start: var(--whatsapp-kit-border);
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: space-between;
-	gap: var(--sanad-gap-sm);
-	padding-block: var(--sanad-gap-sm);
-	padding-inline: var(--sanad-cell-px);
+	gap: var(--whatsapp-kit-gap-sm);
+	padding-block: var(--whatsapp-kit-gap-sm);
+	padding-inline: var(--whatsapp-kit-cell-px);
 	color: var(--ink-gray-6);
 	font-size: var(--text-xs, 12px);
 	font-variant-numeric: tabular-nums;
-	.sanad-datalist__count { min-height: 18px; unicode-bidi: plaintext; margin-inline-end: var(--sanad-gap-md); }
-	.sanad-datalist__extra:empty { display: none; }
-	.sanad-datalist__group-tools { display: inline-flex; align-items: center; gap: var(--sanad-gap-xs); }
-	.sanad-datalist__group-tool {
+	.whatsapp-kit-datalist__count { min-height: 18px; unicode-bidi: plaintext; margin-inline-end: var(--whatsapp-kit-gap-md); }
+	.whatsapp-kit-datalist__extra:empty { display: none; }
+	.whatsapp-kit-datalist__group-tools { display: inline-flex; align-items: center; gap: var(--whatsapp-kit-gap-xs); }
+	.whatsapp-kit-datalist__group-tool {
 		appearance: none;
 		display: inline-flex;
 		align-items: center;
 		gap: 5px;
-		min-height: var(--sanad-ctl-h-sm);
+		min-height: var(--whatsapp-kit-ctl-h-sm);
 		padding-inline: 8px;
 		border: 1px solid var(--outline-gray-2);
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-base);
 		color: var(--ink-gray-6);
 		font-size: var(--text-xs, 12px);
 		font-weight: 600;
 		cursor: pointer;
 		.icon { width: 12px; height: 12px; }
-		&:hover:not([disabled]) { background: var(--sanad-accent-soft); border-color: var(--sanad-accent-outline); color: var(--sanad-accent-ink); }
+		&:hover:not([disabled]) { background: var(--whatsapp-kit-accent-soft); border-color: var(--whatsapp-kit-accent-outline); color: var(--whatsapp-kit-accent-ink); }
 		&[disabled] { opacity: 0.45; cursor: default; }
 	}
-	.sanad-datalist__pager { display: inline-flex; align-items: center; gap: var(--sanad-gap-sm); }
-	.sanad-datalist__paging {
+	.whatsapp-kit-datalist__pager { display: inline-flex; align-items: center; gap: var(--whatsapp-kit-gap-sm); }
+	.whatsapp-kit-datalist__paging {
 		display: flex !important;
 		align-items: center;
-		gap: var(--sanad-gap-md);
+		gap: var(--whatsapp-kit-gap-md);
 		margin: 0;
 		padding: 0;
 		border: 0;
 		.level-left, .level-right { margin: 0; }
-		.btn { min-height: var(--sanad-ctl-h); border-radius: var(--sanad-radius); font-size: var(--text-xs, 12px); font-weight: 600; }
+		.btn { min-height: var(--whatsapp-kit-ctl-h); border-radius: var(--whatsapp-kit-radius); font-size: var(--text-xs, 12px); font-weight: 600; }
 	}
-	.sanad-datalist__page { color: var(--ink-gray-6); margin-inline-end: var(--sanad-gap-xs); }
+	.whatsapp-kit-datalist__page { color: var(--ink-gray-6); margin-inline-end: var(--whatsapp-kit-gap-xs); }
 	.btn {
-		min-height: var(--sanad-ctl-h);
-		padding-inline: var(--sanad-cell-px);
-		border-radius: var(--sanad-radius);
+		min-height: var(--whatsapp-kit-ctl-h);
+		padding-inline: var(--whatsapp-kit-cell-px);
+		border-radius: var(--whatsapp-kit-radius);
 		font-size: var(--text-xs, 12px);
 		font-weight: 600;
 	}
 }
 
 // ---- one card around toolbar + table + footer (prototype: List View is a single panel) --------
-// `.sanad-list-card` is set by DataList on the list's own wrapper, so the three pieces — which live
+// `.whatsapp-kit-list-card` is set by DataList on the list's own wrapper, so the three pieces — which live
 // in different Desk containers — read as one surface.
 // The list fills its page edge to edge: no card, no radius, no border, no outer margin. Desk's
 // own `.frappe-list { margin: 0 var(--margin-md) }` is overridden here on purpose.
-.sanad-list-card {
+.whatsapp-kit-list-card {
 	display: flex;
 	flex-direction: column;
 	min-height: 0;
@@ -419,13 +419,13 @@
 	padding: 0;
 	border-radius: 0;
 
-	.sanad-filterbar--list {
+	.whatsapp-kit-filterbar--list {
 		margin-block-end: 0;
 		// compact: a step above and below the controls, the list's gutter at the sides
-		padding: var(--sanad-gap-sm) var(--sanad-gap-md);
+		padding: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-md);
 		background: var(--surface-base);
 		border: 0;
-		border-block-end: var(--sanad-border);
+		border-block-end: var(--whatsapp-kit-border);
 	}
 	// Desk fixes `.result-container` to a computed height while its child overflows `visible`, which
 	// pushed the table under the footer. Inside the card the table owns the scrolling instead
@@ -439,7 +439,7 @@
 		background: var(--surface-base);
 		border: 0;
 	}
-	.result, .sanad-datalist-host { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; }
+	.result, .whatsapp-kit-datalist-host { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; }
 	// Desk keeps `.result` at a 200 px minimum with the same specificity as the line above, and it
 	// wins by order: inside the card the table owns its height, so the rule is overruled from a
 	// stronger selector. Without this the table paints over the footer when a console sits above it.
@@ -448,20 +448,20 @@
 	// .frappe-list .result-container .result { display: table }`), and a table grows with its rows:
 	// the table then ran under the footer. Said back here with as many classes, so the card keeps
 	// the height it measured and the table scrolls inside it.
-	&.frappe-list .result-container .result.sanad-datalist-host { display: flex; min-width: 0; width: auto; }
-	.sanad-datalist__wrap {
+	&.frappe-list .result-container .result.whatsapp-kit-datalist-host { display: flex; min-width: 0; width: auto; }
+	.whatsapp-kit-datalist__wrap {
 		flex: 1 1 auto;
 		min-width: 0;
 		min-height: 0;
 		overflow: auto; // `max-height` is measured in JS (DataList.fit_height)
 	}
-	.sanad-filterbar--list, .sanad-datalist__footer { flex: none; }
+	.whatsapp-kit-filterbar--list, .whatsapp-kit-datalist__footer { flex: none; }
 	// the table fills the width it is given, however many columns are shown
-	.sanad-datalist { min-width: 100%; }
-	.sanad-datalist__wrap { border: 0; border-radius: 0; }
-	.sanad-datalist__footer {
+	.whatsapp-kit-datalist { min-width: 100%; }
+	.whatsapp-kit-datalist__wrap { border: 0; border-radius: 0; }
+	.whatsapp-kit-datalist__footer {
 		border: 0;
-		border-block-start: var(--sanad-border);
+		border-block-start: var(--whatsapp-kit-border);
 		border-radius: 0;
 	}
 }
@@ -469,56 +469,56 @@
 // mobile: one row per record, stacked as Frappe's own list does — a single column of lines with a
 // rule under each, no card around a row and no gap between rows (owner, 2026-09-30)
 @media (max-width: 767px) {
-	.sanad-list-card {
-		.sanad-filterbar--list,
+	.whatsapp-kit-list-card {
+		.whatsapp-kit-filterbar--list,
 		.result-container,
-		.sanad-datalist__footer { border-inline: 0; border-radius: 0; }
+		.whatsapp-kit-datalist__footer { border-inline: 0; border-radius: 0; }
 		.result-container { padding-inline: 0; }
-		.sanad-datalist__footer { padding-inline: 14px; gap: var(--sanad-gap-xs); }
+		.whatsapp-kit-datalist__footer { padding-inline: 14px; gap: var(--whatsapp-kit-gap-xs); }
 	}
-	.sanad-datalist__wrap--cards {
+	.whatsapp-kit-datalist__wrap--cards {
 		border: 0;
 		background: var(--surface-base);
 		// pinning is a desktop affordance; on a card there is nothing to scroll past
-		.sanad-datalist__td--pinned, .sanad-datalist__th--pinned,
-		.sanad-datalist__td--action, .sanad-datalist__th--action,
-		.sanad-datalist__group td { position: static; background-image: none; box-shadow: none; }
-		.sanad-datalist thead { display: none; }
-		.sanad-datalist, .sanad-datalist tbody { display: block; }
-		.sanad-datalist__row {
+		.whatsapp-kit-datalist__td--pinned, .whatsapp-kit-datalist__th--pinned,
+		.whatsapp-kit-datalist__td--action, .whatsapp-kit-datalist__th--action,
+		.whatsapp-kit-datalist__group td { position: static; background-image: none; box-shadow: none; }
+		.whatsapp-kit-datalist thead { display: none; }
+		.whatsapp-kit-datalist, .whatsapp-kit-datalist tbody { display: block; }
+		.whatsapp-kit-datalist__row {
 			display: grid;
 			grid-template-columns: auto minmax(0, 1fr) auto auto;
 			align-items: center;
-			gap: var(--sanad-gap-xs) 10px;
+			gap: var(--whatsapp-kit-gap-xs) 10px;
 			min-height: 44px;
-			padding: var(--sanad-gap-md) 14px;
+			padding: var(--whatsapp-kit-gap-md) 14px;
 			border: 0;
-			border-block-end: var(--sanad-border);
+			border-block-end: var(--whatsapp-kit-border);
 			border-radius: 0;
 			background: var(--surface-base);
 		}
-		.sanad-datalist__row td { display: block; border: 0; padding: 0; height: auto; background: transparent !important; }
-		.sanad-datalist__td--check { grid-column: 1; grid-row: 1; }
-		.sanad-datalist__td--action { grid-column: 4; grid-row: 1; }
+		.whatsapp-kit-datalist__row td { display: block; border: 0; padding: 0; height: auto; background: transparent !important; }
+		.whatsapp-kit-datalist__td--check { grid-column: 1; grid-row: 1; }
+		.whatsapp-kit-datalist__td--action { grid-column: 4; grid-row: 1; }
 		// keeps its own tap target instead of hiding under the row action
-		.sanad-datalist__td--expand { grid-column: 4; grid-row: 2; justify-self: end; }
+		.whatsapp-kit-datalist__td--expand { grid-column: 4; grid-row: 2; justify-self: end; }
 		// only the title column and the status badge survive; the rest live in the record drawer
-		.sanad-datalist__td--off-card, .sanad-datalist__td--hidden-xs { display: none !important; }
-		.sanad-datalist__td:not(.sanad-datalist__td--check):not(.sanad-datalist__td--action):not(.sanad-datalist__td--expand) {
+		.whatsapp-kit-datalist__td--off-card, .whatsapp-kit-datalist__td--hidden-xs { display: none !important; }
+		.whatsapp-kit-datalist__td:not(.whatsapp-kit-datalist__td--check):not(.whatsapp-kit-datalist__td--action):not(.whatsapp-kit-datalist__td--expand) {
 			grid-column: 2;
 			grid-row: 1;
 			min-width: 0;
 		}
 		// must outweigh the :not() chain above (four class-weights), or the badge lands in the
 		// title's own cell and paints over a long name; two class names did not, so it did
-		.sanad-datalist__td--status.sanad-datalist__td--status.sanad-datalist__td--status.sanad-datalist__td--status.sanad-datalist__td--status { grid-column: 3; grid-row: 1; justify-self: end; }
+		.whatsapp-kit-datalist__td--status.whatsapp-kit-datalist__td--status.whatsapp-kit-datalist__td--status.whatsapp-kit-datalist__td--status.whatsapp-kit-datalist__td--status { grid-column: 3; grid-row: 1; justify-self: end; }
 		// Anything else a screen keeps in the card starts a line of its own rather than painting over
 		// the title. Two class names lost to the five-name `:not()` chain above, so every extra
 		// column landed on the title's cell: the rule needs at least as much weight as the chain.
-		.sanad-datalist__td--card-extra.sanad-datalist__td--card-extra.sanad-datalist__td--card-extra.sanad-datalist__td--card-extra.sanad-datalist__td--card-extra {
+		.whatsapp-kit-datalist__td--card-extra.whatsapp-kit-datalist__td--card-extra.whatsapp-kit-datalist__td--card-extra.whatsapp-kit-datalist__td--card-extra.whatsapp-kit-datalist__td--card-extra {
 			display: flex;
 			align-items: baseline;
-			gap: var(--sanad-gap-sm);
+			gap: var(--whatsapp-kit-gap-sm);
 			grid-column: 2 / 4;
 			grid-row: auto;
 			justify-self: stretch;
@@ -532,11 +532,11 @@
 				font-size: var(--text-xs, 11px);
 			}
 		}
-		.sanad-datalist__main { font-size: var(--text-base, 14px); font-weight: 600; }
-		.sanad-datalist__sub { font-size: var(--text-xs, 12px); }
+		.whatsapp-kit-datalist__main { font-size: var(--text-base, 14px); font-weight: 600; }
+		.whatsapp-kit-datalist__sub { font-size: var(--text-xs, 12px); }
 		.list-row-checkbox { width: 18px; height: 18px; }
 		// the row action becomes the prototype's trailing chevron
-		.sanad-datalist__view {
+		.whatsapp-kit-datalist__view {
 			width: 28px;
 			min-height: 28px;
 			padding: 0;
@@ -548,19 +548,19 @@
 			[dir="rtl"] &::after { content: "‹"; }
 		}
 		// grouping stays readable: one indented strip per level
-		.sanad-datalist__group { display: block; padding-inline: 14px; border-block-end: var(--sanad-border); }
-		.sanad-datalist__group td { display: block; background: transparent; border: 0; }
-		.sanad-datalist__group-inner { min-height: 28px; }
-		.sanad-datalist__main, .sanad-datalist__sub { max-width: none; white-space: normal; }
-		.sanad-datalist__detail { display: block; }
-		.sanad-datalist__detail td { display: block; }
-		.sanad-datalist__row--empty, .sanad-datalist__row--skeleton { display: block; td { display: block; } }
+		.whatsapp-kit-datalist__group { display: block; padding-inline: 14px; border-block-end: var(--whatsapp-kit-border); }
+		.whatsapp-kit-datalist__group td { display: block; background: transparent; border: 0; }
+		.whatsapp-kit-datalist__group-inner { min-height: 28px; }
+		.whatsapp-kit-datalist__main, .whatsapp-kit-datalist__sub { max-width: none; white-space: normal; }
+		.whatsapp-kit-datalist__detail { display: block; }
+		.whatsapp-kit-datalist__detail td { display: block; }
+		.whatsapp-kit-datalist__row--empty, .whatsapp-kit-datalist__row--skeleton { display: block; td { display: block; } }
 	}
-	.sanad-datalist__footer {
+	.whatsapp-kit-datalist__footer {
 		flex-direction: column;
 		align-items: stretch;
-		.sanad-datalist__pager { justify-content: space-between; }
-		.sanad-datalist__page { margin-inline-end: 0; }
+		.whatsapp-kit-datalist__pager { justify-content: space-between; }
+		.whatsapp-kit-datalist__page { margin-inline-end: 0; }
 	}
 }
 
@@ -568,48 +568,48 @@
 // The same table on a custom page (no Desk list view under it): the wrapper is the card, and the
 // footer carries the count and the page buttons the page drives. Scoped to `--page`, so a list
 // view's own table is untouched.
-.sanad-datalist-page {
+.whatsapp-kit-datalist-page {
 	display: flex;
 	flex-direction: column;
 	min-inline-size: 0;
 
-	.sanad-datalist__footer {
+	.whatsapp-kit-datalist__footer {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		// its padding is the one footer's (below), as a Desk list's
-		border-block-start: var(--sanad-border);
+		border-block-start: var(--whatsapp-kit-border);
 	}
-	.sanad-datalist__pager {
+	.whatsapp-kit-datalist__pager {
 		display: flex;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 	}
-	.sanad-datalist__page-btn[disabled] { opacity: 0.5; }
+	.whatsapp-kit-datalist__page-btn[disabled] { opacity: 0.5; }
 }
 
 // page mode's footer: the page you are on, then the two ways out of it
-.sanad-datalist__page-state {
-	margin-inline-end: var(--sanad-gap-sm);
+.whatsapp-kit-datalist__page-state {
+	margin-inline-end: var(--whatsapp-kit-gap-sm);
 	color: var(--ink-gray-6);
 	font-size: var(--text-sm, 12px);
 }
 
 // The list column Desk pads at the bottom; the card already reaches the bottom of the screen.
-.layout-main-section.sanad-list-card-host {
+.layout-main-section.whatsapp-kit-list-card-host {
 	padding-block-end: 0;
 }
 
 // ---- the footer: one design under every list and every page's table (owner, 2026-10-26) -------
 // A compact bar: the count at the inline-start (the total plain, what is shown quieter), then the
 // page-size choice as one segmented control and its verb, all at the small control height.
-.sanad-datalist__footer {
+.whatsapp-kit-datalist__footer {
 	min-block-size: 36px;
 	padding-block: 6px;
-	padding-inline: var(--sanad-gap-md);
-	gap: var(--sanad-gap-md);
+	padding-inline: var(--whatsapp-kit-gap-md);
+	gap: var(--whatsapp-kit-gap-md);
 
-	.sanad-datalist__count {
+	.whatsapp-kit-datalist__count {
 		display: inline-flex;
 		align-items: baseline;
 		gap: 6px;
@@ -618,25 +618,25 @@
 		color: var(--ink-gray-6);
 		font-size: var(--text-xs, 12px);
 	}
-	.sanad-datalist__total { color: var(--ink-gray-8); font-weight: 600; }
-	.sanad-datalist__sep { color: var(--ink-gray-4); }
+	.whatsapp-kit-datalist__total { color: var(--ink-gray-8); font-weight: 600; }
+	.whatsapp-kit-datalist__sep { color: var(--ink-gray-4); }
 
-	.sanad-datalist__pager,
-	.sanad-datalist__paging { gap: var(--sanad-gap-sm); }
+	.whatsapp-kit-datalist__pager,
+	.whatsapp-kit-datalist__paging { gap: var(--whatsapp-kit-gap-sm); }
 
 	// Desk's page-size radios (`frappe.ui.TabButtons`) as one segmented control
 	.es-tab-buttons {
 		display: inline-flex;
 		gap: 2px;
 		padding: 2px;
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-gray-2);
 	}
 	.es-tab-buttons .es-pill {
-		min-block-size: calc(var(--sanad-ctl-h-sm) - 4px);
+		min-block-size: calc(var(--whatsapp-kit-ctl-h-sm) - 4px);
 		padding-inline: 10px;
 		border: 0;
-		border-radius: calc(var(--sanad-radius) - 2px);
+		border-radius: calc(var(--whatsapp-kit-radius) - 2px);
 		background: transparent;
 		box-shadow: none;
 		color: var(--ink-gray-6);
@@ -653,15 +653,15 @@
 	}
 
 	// "Load more", Previous / Next: the small control, quiet until hovered
-	.sanad-datalist__paging .btn-more,
-	:is(.sanad-datalist__page-btn):not(.btn-md):not(.btn-lg):not(.btn-xs) {
+	.whatsapp-kit-datalist__paging .btn-more,
+	:is(.whatsapp-kit-datalist__page-btn):not(.btn-md):not(.btn-lg):not(.btn-xs) {
 		display: inline-flex;
 		align-items: center;
-		min-block-size: var(--sanad-ctl-h-sm);
-		min-height: var(--sanad-ctl-h-sm);
+		min-block-size: var(--whatsapp-kit-ctl-h-sm);
+		min-height: var(--whatsapp-kit-ctl-h-sm);
 		padding-inline: 10px;
 		border: 1px solid var(--outline-gray-2);
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-base);
 		box-shadow: none;
 		color: var(--ink-gray-8);
@@ -669,13 +669,13 @@
 		font-weight: 600;
 		&:hover:not([disabled]) { background: var(--surface-gray-1); border-color: var(--outline-gray-3); }
 	}
-	.sanad-datalist__page-state { margin-inline-end: 2px; color: var(--ink-gray-6); font-size: var(--text-xs, 12px); }
+	.whatsapp-kit-datalist__page-state { margin-inline-end: 2px; color: var(--ink-gray-6); font-size: var(--text-xs, 12px); }
 }
 
 // The footer never leaves the screen (owner, 2026-10-26): inside a list panel — a Desk list's or a
 // page's — it is stuck to the bottom of the scroller while the rows scroll, and the panel reaches
 // the bottom of the screen, so a short table does not lift it to the middle of the page.
-.sanad-list-card .sanad-datalist__footer {
+.whatsapp-kit-list-card .whatsapp-kit-datalist__footer {
 	position: sticky;
 	inset-block-end: 0;
 	z-index: 6; // above the rows (0 – 5, D-076), under the table's header ladder's own context

@@ -1,11 +1,11 @@
-// sanad.ui.ConfirmDialog — a confirmation that states the impact before the action runs:
+// whatsapp.ui.ConfirmDialog — a confirmation that states the impact before the action runs:
 // a list of `{label, value}` facts (counts supplied by the caller), an optional mandatory
 // reason, an optional "I understand" acknowledgement, and a danger variant. Built on
 // `frappe.ui.Dialog` (focus trap, Escape, backdrop) — the kit adds the impact layout and copy rules.
 
 import ui from "../_core/index.js";
 
-sanad.ui.ConfirmDialog = class ConfirmDialog {
+whatsapp.ui.ConfirmDialog = class ConfirmDialog {
 	/**
 	 * @param {Object} opts
 	 * @param {string} opts.title
@@ -51,7 +51,7 @@ sanad.ui.ConfirmDialog = class ConfirmDialog {
 			secondary_action: () => this.cancel(),
 			primary_action: (values) => this.confirm(values),
 		});
-		this.dialog.$wrapper.addClass("sanad-kit sanad-confirm");
+		this.dialog.$wrapper.addClass("whatsapp-kit whatsapp-kit-confirm");
 		const $btn = this.dialog.get_primary_btn();
 		if (o.danger) $btn.removeClass("btn-primary").addClass("btn-danger");
 		this.$impact = this.dialog.get_field("impact").$wrapper;
@@ -67,12 +67,12 @@ sanad.ui.ConfirmDialog = class ConfirmDialog {
 
 	render_impact(impact = []) {
 		const o = this.opts;
-		let html = o.message ? `<p class="sanad-confirm__message">${ui.escape(o.message)}</p>` : "";
+		let html = o.message ? `<p class="whatsapp-kit-confirm__message">${ui.escape(o.message)}</p>` : "";
 		if (impact && impact.length) {
-			html += '<dl class="sanad-confirm__impact">';
+			html += '<dl class="whatsapp-kit-confirm__impact">';
 			impact.forEach((row) => {
-				const tone = row.tone ? ` sanad-tone--${ui.tone(row.tone)}` : "";
-				html += `<div class="sanad-confirm__row"><dt>${ui.escape(row.label)}</dt><dd class="sanad-tabular${tone}">${ui.escape(row.value)}</dd></div>`;
+				const tone = row.tone ? ` whatsapp-kit-tone--${ui.tone(row.tone)}` : "";
+				html += `<div class="whatsapp-kit-confirm__row"><dt>${ui.escape(row.label)}</dt><dd class="whatsapp-kit-tabular${tone}">${ui.escape(row.value)}</dd></div>`;
 			});
 			html += "</dl>";
 		}
@@ -85,7 +85,7 @@ sanad.ui.ConfirmDialog = class ConfirmDialog {
 			this.$impact.append(ui.skeleton(2, { lines: 1 }));
 			Promise.resolve(this.opts.load_impact())
 				.then((impact) => this.render_impact(impact))
-				.catch((err) => this.$impact.append(`<div class="sanad-confirm__error" role="alert">${ui.escape(err.message || err)}</div>`));
+				.catch((err) => this.$impact.append(`<div class="whatsapp-kit-confirm__error" role="alert">${ui.escape(err.message || err)}</div>`));
 		}
 		return new Promise((resolve, reject) => {
 			this._resolve = resolve;
@@ -105,7 +105,7 @@ sanad.ui.ConfirmDialog = class ConfirmDialog {
 			})
 			.catch((err) => {
 				$btn.prop("disabled", false).removeClass("disabled");
-				if (err && err.message) sanad.ui.Toast.error(err);
+				if (err && err.message) whatsapp.ui.Toast.error(err);
 			});
 	}
 
@@ -118,10 +118,10 @@ sanad.ui.ConfirmDialog = class ConfirmDialog {
 		this._reject && this._reject(new Error("cancelled"));
 	}
 
-	/** Promise-style shortcut: `await sanad.ui.ConfirmDialog.ask({...})` → `{reason}`; rejects on cancel. */
+	/** Promise-style shortcut: `await whatsapp.ui.ConfirmDialog.ask({...})` → `{reason}`; rejects on cancel. */
 	static ask(opts) {
 		return new ConfirmDialog(opts).show();
 	}
 };
 
-export default sanad.ui.ConfirmDialog;
+export default whatsapp.ui.ConfirmDialog;

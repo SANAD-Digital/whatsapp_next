@@ -18,7 +18,7 @@ location{latitude, longitude, name}}`.
 ## Usage
 
 ```js
-new sanad.ui.AttachMenu({
+new whatsapp.ui.AttachMenu({
   anchor: plus_button,
   kinds: ["image", "video", "document", "audio", "contact"],          // optional; default all six
   reasons: { location: __("Send a location from one conversation.") }, // why a kind is off
@@ -26,8 +26,8 @@ new sanad.ui.AttachMenu({
   on_pick: (value) => { draft.attach = value; redraw(); },
 });
 
-$slot.html(sanad.ui.AttachMenu.chip_html(draft.attach));   // the chip; its × is [data-attach-clear]
-sanad.ui.AttachMenu.icon("image");  sanad.ui.AttachMenu.label("image");
+$slot.html(whatsapp.ui.AttachMenu.chip_html(draft.attach));   // the chip; its × is [data-attach-clear]
+whatsapp.ui.AttachMenu.icon("image");  whatsapp.ui.AttachMenu.label("image");
 ```
 
 ## Live use

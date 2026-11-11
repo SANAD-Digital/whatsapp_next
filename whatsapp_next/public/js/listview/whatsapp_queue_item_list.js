@@ -11,7 +11,7 @@
 // opens the linked message's drawer, which also carries this queue's own Pause / Resume / Retry.
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const DT = "WhatsApp Queue Item";
 	const MANAGER_ROLES = ["WhatsApp Manager", "System Manager"];
 	const LIVE = ["Queued", "Sending", "Paused"];
@@ -65,7 +65,7 @@
 				const was_paused = !!(state.summary && state.summary.paused);
 				state.summary = s;
 				// "Expected send" shows Paused while the queue is paused: re-render rows when that flips.
-				const datalist = state.listview && state.listview._sanad_datalist;
+				const datalist = state.listview && state.listview._whatsapp_datalist;
 				if (datalist && datalist.refresh && was_paused !== !!s.paused) datalist.refresh();
 				return s;
 			});
@@ -213,7 +213,7 @@
 			listview.refresh();
 		};
 
-		const header = new sanad.ui.PageHeader({
+		const header = new whatsapp.ui.PageHeader({
 			listview,
 			// no title and no description: the console's first cell states what the queue is doing,
 			// which is the only thing a title could have said (owner, 2026-09-23)
@@ -233,7 +233,7 @@
 		 */
 		const verb_html = (paused) =>
 			is_manager()
-				? `<button type="button" class="btn btn-default btn-sm wa-ops__verb">
+				? `<button type="button" class="btn btn-default btn-sm whatsapp-ops__verb">
 						${ui.icon(paused ? "es-line-zap" : "es-line-time", "xs")} ${ui.escape(paused ? __("Resume sending") : __("Pause sending"))}
 					</button>`
 				: "";
@@ -241,10 +241,10 @@
 		// ---- the metric row ---------------------------------------------------------------------
 
 		const metric = (label, value, sub, opts = {}) => `
-			<div class="wa-ops__metric${opts.wide ? " wa-ops__metric--wide" : ""}">
-				<span class="wa-ops__label">${ui.escape(label)}</span>
-				<span class="wa-ops__value${opts.tone ? ` sanad-tone--${opts.tone}` : ""} sanad-tabular">${value}</span>
-				<span class="wa-ops__sub">${sub || "&nbsp;"}</span>
+			<div class="whatsapp-ops__metric${opts.wide ? " whatsapp-ops__metric--wide" : ""}">
+				<span class="whatsapp-ops__label">${ui.escape(label)}</span>
+				<span class="whatsapp-ops__value${opts.tone ? ` whatsapp-kit-tone--${opts.tone}` : ""} whatsapp-kit-tabular">${value}</span>
+				<span class="whatsapp-ops__sub">${sub || "&nbsp;"}</span>
 			</div>`;
 
 		/** The depth's own breakdown: four counts that are also the list's filters. */
@@ -252,12 +252,12 @@
 			const active = (listview.filter_area ? listview.filter_area.get() : []).filter((f) => f[1] === "status");
 			const is_on = (status) => active.some((f) => f[2] === "=" && f[3] === status);
 			const parts = FLOW.filter((f) => count_by(s, f.status) || is_on(f.status)).map(
-				(f) => `<button type="button" class="wa-ops__part" data-status="${ui.escape(f.status)}" aria-pressed="${is_on(f.status)}">
-					<span class="wa-ops__dot sanad-tone--${f.tone}" aria-hidden="true"></span>${ui.escape(f.label())}
-					<span class="sanad-tabular">${ui.escape(ui.format_int(count_by(s, f.status)))}</span>
+				(f) => `<button type="button" class="whatsapp-ops__part" data-status="${ui.escape(f.status)}" aria-pressed="${is_on(f.status)}">
+					<span class="whatsapp-ops__dot whatsapp-kit-tone--${f.tone}" aria-hidden="true"></span>${ui.escape(f.label())}
+					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_int(count_by(s, f.status)))}</span>
 				</button>`
 			);
-			return parts.length ? parts.join("") : `<span class="wa-ops__sub">${ui.escape(__("Nothing is waiting."))}</span>`;
+			return parts.length ? parts.join("") : `<span class="whatsapp-ops__sub">${ui.escape(__("Nothing is waiting."))}</span>`;
 		};
 
 		// ---- the evidence: what actually left the queue, minute by minute -------------------------
@@ -274,16 +274,16 @@
 			const bars = series
 				.map((n, i) => `<rect x="${(i + 0.15).toFixed(2)}" y="${(100 - (n / scale) * 100).toFixed(2)}" width="0.7" height="${((n / scale) * 100).toFixed(2)}"></rect>`)
 				.join("");
-			return `<figure class="wa-ops__chart">
-				<figcaption class="wa-ops__label">
+			return `<figure class="whatsapp-ops__chart">
+				<figcaption class="whatsapp-ops__label">
 					${ui.escape(caption)}
-					${empty ? "" : `<span class="wa-ops__peak sanad-tabular">${ui.escape(__("peak {0}/min", [ui.format_int(peak)]))}</span>`}
+					${empty ? "" : `<span class="whatsapp-ops__peak whatsapp-kit-tabular">${ui.escape(__("peak {0}/min", [ui.format_int(peak)]))}</span>`}
 				</figcaption>
-				<div class="wa-ops__plot" style="--wa-target:${Math.min((rate / scale) * 100, 96).toFixed(2)}%">
+				<div class="whatsapp-ops__plot" style="--whatsapp-target:${Math.min((rate / scale) * 100, 96).toFixed(2)}%">
 					<svg viewBox="0 0 ${series.length} 100" preserveAspectRatio="none" aria-hidden="true">${bars}</svg>
-					<span class="wa-ops__target" aria-hidden="true"></span>
+					<span class="whatsapp-ops__target" aria-hidden="true"></span>
 				</div>
-				<p class="sanad-visually-hidden">${ui.escape(
+				<p class="whatsapp-kit-visually-hidden">${ui.escape(
 					empty
 						? __("Nothing has left the queue in the last {0} minutes.", [ui.format_int(t && t.minutes ? t.minutes : THROUGHPUT_WINDOW)])
 						: __("{0} messages left the queue in the last {1} minutes; the busiest minute sent {2}.", [
@@ -292,9 +292,9 @@
 								ui.format_int(peak),
 							])
 				)}</p>
-				<div class="wa-ops__axis" aria-hidden="true">
+				<div class="whatsapp-ops__axis" aria-hidden="true">
 					<span>${ui.escape(__("{0} min ago", [ui.format_int(t && t.minutes ? t.minutes : THROUGHPUT_WINDOW)]))}</span>
-					<span class="wa-ops__axis-note">${ui.escape(empty ? __("nothing sent in this window") : __("dashed line: the rate you set"))}</span>
+					<span class="whatsapp-ops__axis-note">${ui.escape(empty ? __("nothing sent in this window") : __("dashed line: the rate you set"))}</span>
 					<span>${ui.escape(__("now"))}</span>
 				</div>
 			</figure>`;
@@ -303,29 +303,29 @@
 		// ---- the one control ---------------------------------------------------------------------
 
 		const rate_html = (s, rate, max, t) => {
-			const id = ui.uid("wa-rate");
+			const id = ui.uid("whatsapp-rate");
 			const span = Math.max(max - RATE_MIN, 1);
 			const zone_from = ((Math.max(RECOMMENDED.low, RATE_MIN) - RATE_MIN) / span) * 100;
 			const zone_to = ((Math.min(RECOMMENDED.high, max) - RATE_MIN) / span) * 100;
 			const verdict = rate_verdict(rate);
 			const achieved = t && t.per_minute != null ? t.per_minute : null;
-			return `<div class="wa-ops__rate">
-				<div class="wa-ops__rate-head">
-					<label class="wa-ops__label" for="${id}">${ui.escape(__("Send rate"))}</label>
-					<output class="wa-ops__rate-value sanad-tabular" for="${id}">${ui.escape(__("{0}/min", [ui.format_int(rate)]))}</output>
+			return `<div class="whatsapp-ops__rate">
+				<div class="whatsapp-ops__rate-head">
+					<label class="whatsapp-ops__label" for="${id}">${ui.escape(__("Send rate"))}</label>
+					<output class="whatsapp-ops__rate-value whatsapp-kit-tabular" for="${id}">${ui.escape(__("{0}/min", [ui.format_int(rate)]))}</output>
 				</div>
-				<div class="wa-ops__track">
-					<span class="wa-ops__zone" style="--wa-from:${zone_from.toFixed(2)}%;--wa-to:${zone_to.toFixed(2)}%" aria-hidden="true"></span>
-					<input type="range" class="wa-ops__slider" id="${id}" min="${RATE_MIN}" max="${max}" step="1" value="${rate}"
+				<div class="whatsapp-ops__track">
+					<span class="whatsapp-ops__zone" style="--whatsapp-from:${zone_from.toFixed(2)}%;--whatsapp-to:${zone_to.toFixed(2)}%" aria-hidden="true"></span>
+					<input type="range" class="whatsapp-ops__slider" id="${id}" min="${RATE_MIN}" max="${max}" step="1" value="${rate}"
 						aria-describedby="${id}-note" aria-valuetext="${ui.escape(per_minute(rate))}" ${is_manager() ? "" : "disabled"}>
 				</div>
-				<div class="wa-ops__scale" aria-hidden="true">
-					<span class="sanad-tabular">${ui.escape(ui.format_int(RATE_MIN))}</span>
-					<span class="wa-ops__scale-zone">${ui.escape(__("Recommended {0}–{1}", [ui.format_int(RECOMMENDED.low), ui.format_int(RECOMMENDED.high)]))}</span>
-					<span class="sanad-tabular">${ui.escape(ui.format_int(max))}</span>
+				<div class="whatsapp-ops__scale" aria-hidden="true">
+					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_int(RATE_MIN))}</span>
+					<span class="whatsapp-ops__scale-zone">${ui.escape(__("Recommended {0}–{1}", [ui.format_int(RECOMMENDED.low), ui.format_int(RECOMMENDED.high)]))}</span>
+					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_int(max))}</span>
 				</div>
-				<p class="wa-ops__rate-note" id="${id}-note">
-					<span class="wa-ops__verdict">${sanad.ui.StatusBadge.html({ label: verdict.label, colour: verdict.tone })}</span>
+				<p class="whatsapp-ops__rate-note" id="${id}-note">
+					<span class="whatsapp-ops__verdict">${whatsapp.ui.StatusBadge.html({ label: verdict.label, colour: verdict.tone })}</span>
 					${ui.escape(achieved == null ? __("A higher rate raises the platform's ban risk.") : __("Achieving {0}/min over the last hour.", [achieved_text(achieved)]))}
 				</p>
 			</div>`;
@@ -352,34 +352,34 @@
 			const clock = paused || !depth ? "—" : drain_clock(depth, rate) || __("now");
 
 			const state_cell = `
-				<div class="wa-ops__metric wa-ops__metric--state">
-					<span class="wa-ops__label">${ui.escape(__("Status"))}</span>
-					<div class="wa-ops__state-row">
-						<span class="wa-ops__state sanad-tone--${paused ? "amber" : "green"}">
-							<span class="wa-ops__pulse" aria-hidden="true"></span>${ui.escape(paused ? __("Paused") : __("Running"))}
+				<div class="whatsapp-ops__metric whatsapp-ops__metric--state">
+					<span class="whatsapp-ops__label">${ui.escape(__("Status"))}</span>
+					<div class="whatsapp-ops__state-row">
+						<span class="whatsapp-ops__state whatsapp-kit-tone--${paused ? "amber" : "green"}">
+							<span class="whatsapp-ops__pulse" aria-hidden="true"></span>${ui.escape(paused ? __("Paused") : __("Running"))}
 						</span>
 						${verb_html(paused)}
 					</div>
-					<span class="wa-ops__sub">${ui.escape(paused ? __("Nothing is going out.") : __("Messages go out automatically."))}</span>
+					<span class="whatsapp-ops__sub">${ui.escape(paused ? __("Nothing is going out.") : __("Messages go out automatically."))}</span>
 				</div>`;
 
 			$el.html(`
-				<section class="wa-ops${paused ? " wa-ops--paused" : ""}" aria-label="${ui.escape(__("Queue status"))}">
-					<div class="wa-ops__metrics">
+				<section class="whatsapp-ops${paused ? " whatsapp-ops--paused" : ""}" aria-label="${ui.escape(__("Queue status"))}">
+					<div class="whatsapp-ops__metrics">
 						${state_cell}
-						${metric(__("In queue"), ui.escape(ui.format_int(depth)), `<span class="wa-ops__parts">${breakdown_html(s)}</span>`, { wide: true })}
+						${metric(__("In queue"), ui.escape(ui.format_int(depth)), `<span class="whatsapp-ops__parts">${breakdown_html(s)}</span>`, { wide: true })}
 						${metric(__("Throughput"), achieved == null ? "—" : ui.escape(__("{0}/min", [achieved_text(achieved)])), ui.escape(__("last hour, actual")))}
 						${metric(__("Drains by"), ui.escape(clock), ui.escape(paused ? __("sending is paused") : depth ? __("in {0}", [eta_phrase(depth, rate)]) : __("queue is empty")))}
-						${metric(__("Given up"), ui.escape(ui.format_int(failed)), failed ? `<button type="button" class="wa-ops__link" data-status="Dead Letter">${ui.escape(__("Review and retry"))}</button>` : ui.escape(__("no failures")), { tone: failed ? "red" : "" })}
+						${metric(__("Given up"), ui.escape(ui.format_int(failed)), failed ? `<button type="button" class="whatsapp-ops__link" data-status="Dead Letter">${ui.escape(__("Review and retry"))}</button>` : ui.escape(__("no failures")), { tone: failed ? "red" : "" })}
 						${metric(
 							__("Plan left"),
 							remaining == null ? "—" : ui.escape(ui.format_int(Math.max(0, cint(remaining) - depth))),
-							`<button type="button" class="wa-ops__link" data-go="billing">${ui.escape(
+							`<button type="button" class="whatsapp-ops__link" data-go="billing">${ui.escape(
 								remaining == null ? __("plan reading unavailable") : depth ? __("after this queue sends") : __("messages available")
 							)}</button>`
 						)}
 					</div>
-					<div class="wa-ops__lower">
+					<div class="whatsapp-ops__lower">
 						${chart_html(t, rate)}
 						${rate_html(s, rate, max, t)}
 					</div>
@@ -394,12 +394,12 @@
 					if (!on) area.add([[DT, "status", "=", status]]);
 				});
 			});
-			$el.find(".wa-ops__verb").on("click", () => (paused ? ask_resume(refresh_all) : ask_pause(refresh_all)));
+			$el.find(".whatsapp-ops__verb").on("click", () => (paused ? ask_resume(refresh_all) : ask_pause(refresh_all)));
 			bind_rate($el, rate, max);
 		};
 
 		const bind_rate = ($el, rate, max) => {
-			const $input = $el.find(".wa-ops__slider");
+			const $input = $el.find(".whatsapp-ops__slider");
 			const hold = () => (con.interacting = true);
 			const release = () => {
 				con.interacting = false;
@@ -409,14 +409,14 @@
 			};
 			$input.on("pointerdown focusin", hold);
 			$input.on("pointerup pointercancel focusout", release);
-			const $value = $el.find(".wa-ops__rate-value");
-			const $verdict = $el.find(".wa-ops__verdict");
-			const track = $el.find(".wa-ops__track").get(0);
-			const fill = (value) => track && track.style.setProperty("--wa-fill", `${(((value - RATE_MIN) / Math.max(max - RATE_MIN, 1)) * 100).toFixed(2)}%`);
+			const $value = $el.find(".whatsapp-ops__rate-value");
+			const $verdict = $el.find(".whatsapp-ops__verdict");
+			const track = $el.find(".whatsapp-ops__track").get(0);
+			const fill = (value) => track && track.style.setProperty("--whatsapp-fill", `${(((value - RATE_MIN) / Math.max(max - RATE_MIN, 1)) * 100).toFixed(2)}%`);
 			const paint_rate = (value) => {
 				const v = rate_verdict(value);
 				$value.text(__("{0}/min", [ui.format_int(value)]));
-				$verdict.html(sanad.ui.StatusBadge.html({ label: v.label, colour: v.tone }));
+				$verdict.html(whatsapp.ui.StatusBadge.html({ label: v.label, colour: v.tone }));
 				$input.attr("aria-valuetext", per_minute(value));
 				fill(value);
 			};
@@ -500,7 +500,7 @@
 					sortable: false,
 					format: (v, doc) => {
 						if (doc._ref && doc._ref.status) return whatsapp_next.fmt.badge("WhatsApp Log", { status: doc._ref.status }, doc._ref.status);
-						if (doc.outbound_message && !doc._ref) return `<span class="sanad-skeleton__line" style="inline-size:64px" aria-hidden="true"></span>`;
+						if (doc.outbound_message && !doc._ref) return `<span class="whatsapp-kit-skeleton__line" style="inline-size:64px" aria-hidden="true"></span>`;
 						return whatsapp_next.fmt.badge(listview.doctype, doc, doc.status);
 					},
 					// what went wrong, how far the automatic retries have gone, and a queue hold
@@ -510,7 +510,7 @@
 						// a row that went out in the end keeps its earlier failed try on record (the form
 						// shows it), but under a green "Sent" it only reads as a live error
 						const error = doc.status === "Completed" ? "" : doc.last_error_code ? whatsapp_next.fmt.error_text(doc.last_error_code, doc.last_error) : doc.dead_letter_reason || doc.last_error;
-						if (error) parts.push(`<span class="wa-queue__error" title="${ui.escape(doc.last_error || error)}">${ui.escape(error)}</span>`);
+						if (error) parts.push(`<span class="whatsapp-queue__error" title="${ui.escape(doc.last_error || error)}">${ui.escape(error)}</span>`);
 						if (cint(doc.attempts) && doc.status !== "Completed") parts.push(ui.escape(__("Attempt {0} of {1}", [cint(doc.attempts), cint(doc.max_attempts) || 3])));
 						return parts.join(" · ");
 					},
@@ -587,7 +587,7 @@
 		hide_name_column: true,
 		add_fields: ["status", "outbound_message", "device", "campaign", "phone_e164", "display_name", "priority", "scheduled_at", "attempts", "max_attempts", "last_error_code", "last_error", "dead_letter_reason"],
 
-		// The one status → colour rule; badges read it through `sanad.ui.indicator_for`.
+		// The one status → colour rule; badges read it through `whatsapp.ui.indicator_for`.
 		get_indicator(doc) {
 			const colour = { Queued: "blue", Sending: "blue", Paused: "orange", Completed: "green", Deleted: "gray", "Dead Letter": "red" }[doc.status] || "gray";
 			return [__(doc.status), colour, `status,=,${doc.status}`];
@@ -612,11 +612,11 @@
 
 			state.listview = listview;
 			state.promise = null;
-			listview._sanad_console = make_console(listview);
+			listview._whatsapp_console = make_console(listview);
 
 			const bulk = is_manager() ? bulk_actions(refresh) : [];
-			listview._sanad_datalist = make_list(listview, refresh, bulk);
-			ui.on_list_render(listview, () => enrich_rows(listview, listview._sanad_datalist));
+			listview._whatsapp_datalist = make_list(listview, refresh, bulk);
+			ui.on_list_render(listview, () => enrich_rows(listview, listview._whatsapp_datalist));
 		},
 	};
 })();

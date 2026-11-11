@@ -13,13 +13,13 @@ WhatsApp**. With `contact`, the group is also saved among that contact's numbers
 
 ```js
 // from a selection of contacts / contact groups / numbers
-new sanad.ui.GroupCreate({ source: { doctype: "Contact", names: selected } });
+new whatsapp.ui.GroupCreate({ source: { doctype: "Contact", names: selected } });
 
 // from one contact: its numbers to start with, and the group saved on it
-new sanad.ui.GroupCreate({ source: { doctype: "Contact", names: [frm.doc.name] }, contact: frm.doc.name, name: frm.doc.full_name });
+new whatsapp.ui.GroupCreate({ source: { doctype: "Contact", names: [frm.doc.name] }, contact: frm.doc.name, name: frm.doc.full_name });
 
 // numbers already in hand
-new sanad.ui.GroupCreate({ members: [{ phone_e164: "+9677…", display_name: "Ali" }], on_created: (r) => … });
+new whatsapp.ui.GroupCreate({ members: [{ phone_e164: "+9677…", display_name: "Ali" }], on_created: (r) => … });
 ```
 
 Options: `members?`, `source?: {doctype, names}`, `contact?`, `name?`, `on_created?(result)`.

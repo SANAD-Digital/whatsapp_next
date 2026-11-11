@@ -1,4 +1,4 @@
-# `sanad.ui.Render`
+# `whatsapp.ui.Render`
 
 The kit's presentation layer — a **namespace object, not a class** (never `new`). It decides how a
 field value, a record ("entity") or a list of records looks, at five display levels, so a person
@@ -30,9 +30,9 @@ when meta was loaded.
 
 ## Configuration
 
-### `configure(opts)` — one call, used by `sanad.ui.configure({renderers})`
+### `configure(opts)` — one call, used by `whatsapp.ui.configure({renderers})`
 
-`sanad.ui.configure({ api, defaults, renderers })` stores `renderers` on `ui.config.renderers` and
+`whatsapp.ui.configure({ api, defaults, renderers })` stores `renderers` on `ui.config.renderers` and
 calls `Render.configure(renderers)`:
 
 | Key | Shape | Effect |
@@ -98,7 +98,7 @@ Registries (mutable): `fields`, `kinds`, `doctype_kinds`, `profiles`, `DENSITIES
 ## Events and callbacks
 
 Profile / opts `on_click(doc, e)` on the entity and per-action `on_click(doc, e)` (bound by
-`mount`). A single delegated `document` click handler copies `.sanad-code-block` contents (Toast +
+`mount`). A single delegated `document` click handler copies `.whatsapp-kit-code-block` contents (Toast +
 announce "Copied"). No realtime.
 
 ## Server calls
@@ -110,23 +110,23 @@ announce "Copied"). No realtime.
 ## Usage
 
 ```js
-sanad.ui.configure({
+whatsapp.ui.configure({
   renderers: {
     doctypes: { "Library Member": "person" },
     profiles: { "Library Member": { title: "member_name", lines: [{ field: "phone", ltr: true }], value: false } },
   },
 });
-$cell.html(sanad.ui.Render.value(doc.grand_total, { fieldtype: "Currency" }, doc, { density: "row" }));
-sanad.ui.Render.mount($el, doc, { doctype: "Library Member", density: "card", on_click: (d) => open(d) });
-sanad.ui.Render.load_into($slot, "Contact", doc.contact, { density: "row" });
+$cell.html(whatsapp.ui.Render.value(doc.grand_total, { fieldtype: "Currency" }, doc, { density: "row" }));
+whatsapp.ui.Render.mount($el, doc, { doctype: "Library Member", density: "card", on_click: (d) => open(d) });
+whatsapp.ui.Render.load_into($slot, "Contact", doc.contact, { density: "row" });
 ```
 
 ## CSS hooks
 
-- Entity: `.sanad-ent.sanad-ent--{density}.sanad-ent--{kind}`, `.sanad-ent--go` (link / clickable), `data-name`; parts `__title`, `__sub`, `__text`, `__trail`, `__go`, `__value` (`--hero`), `__head`, `__desc`, `__facts`, `__foot`, `__cover`, `__body`, `__flag`, `__dot`, `__hero-media|-body|-head`.
-- Lists: `.sanad-ent-list.sanad-ent-list--{density}`, `__item`.
-- Parts: `.sanad-avatar--{size}` (`--image`, `--icon`, `--circle`), `.sanad-thumb--{size}` (`--empty`), `.sanad-filetype`, `.sanad-chipline` (`--link`, `__icon`, `__text`), `.sanad-chipline-row`, `.sanad-fact-grid` / `.sanad-fact` (`__head`, `__icon`, `__label`, `__value`), `.sanad-dl.sanad-dl--cols-N` / `__row--wide`, `.sanad-progress` (`__track`, `__bar`, `__value`), `.sanad-stars`, `.sanad-code`, `.sanad-code-block` (`__copy`, `__pre`), `.sanad-iconbtn-row` / `.sanad-iconbtn--{size}`.
-- Values: `.sanad-amount` / `.sanad-number` (`--strong`), `.sanad-when`, `.sanad-tabular`, `.sanad-clamp--1|4`, `.sanad-rich`, `.sanad-tag-row` / `.sanad-tag` (`--rest`), `.sanad-swatch`; tones via `.sanad-tone--{tone}`.
+- Entity: `.whatsapp-kit-ent.whatsapp-kit-ent--{density}.whatsapp-kit-ent--{kind}`, `.whatsapp-kit-ent--go` (link / clickable), `data-name`; parts `__title`, `__sub`, `__text`, `__trail`, `__go`, `__value` (`--hero`), `__head`, `__desc`, `__facts`, `__foot`, `__cover`, `__body`, `__flag`, `__dot`, `__hero-media|-body|-head`.
+- Lists: `.whatsapp-kit-ent-list.whatsapp-kit-ent-list--{density}`, `__item`.
+- Parts: `.whatsapp-kit-avatar--{size}` (`--image`, `--icon`, `--circle`), `.whatsapp-kit-thumb--{size}` (`--empty`), `.whatsapp-kit-filetype`, `.whatsapp-kit-chipline` (`--link`, `__icon`, `__text`), `.whatsapp-kit-chipline-row`, `.whatsapp-kit-fact-grid` / `.whatsapp-kit-fact` (`__head`, `__icon`, `__label`, `__value`), `.whatsapp-kit-dl.whatsapp-kit-dl--cols-N` / `__row--wide`, `.whatsapp-kit-progress` (`__track`, `__bar`, `__value`), `.whatsapp-kit-stars`, `.whatsapp-kit-code`, `.whatsapp-kit-code-block` (`__copy`, `__pre`), `.whatsapp-kit-iconbtn-row` / `.whatsapp-kit-iconbtn--{size}`.
+- Values: `.whatsapp-kit-amount` / `.whatsapp-kit-number` (`--strong`), `.whatsapp-kit-when`, `.whatsapp-kit-tabular`, `.whatsapp-kit-clamp--1|4`, `.whatsapp-kit-rich`, `.whatsapp-kit-tag-row` / `.whatsapp-kit-tag` (`--rest`), `.whatsapp-kit-swatch`; tones via `.whatsapp-kit-tone--{tone}`.
 
 ## Notes
 

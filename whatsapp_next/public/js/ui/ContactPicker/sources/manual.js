@@ -26,22 +26,22 @@ export class ManualSource extends BaseSource {
 		const id = ui.uid("manual");
 		const hint_id = `${id}-hint`;
 		// The example comes from PhoneField (country default of the host) when the kit ships it.
-		const PhoneField = sanad.ui.PhoneField;
+		const PhoneField = whatsapp.ui.PhoneField;
 		const example = typeof PhoneField === "function" && typeof PhoneField.example === "function" ? PhoneField.example() : "966 5X XXX XXXX";
 		this.pending = []; // lines the server refused, each `{raw, phone, display_name, error}`
 		const $field = $(`
-			<div class="sanad-picker__field sanad-picker__manual">
+			<div class="whatsapp-kit-picker__field whatsapp-kit-picker__manual">
 				<label for="${id}">${ui.escape(__("Numbers, one per line"))}</label>
-				<textarea id="${id}" class="form-control sanad-picker__numbers" rows="6" dir="ltr" inputmode="tel" aria-describedby="${hint_id}" placeholder="${ui.escape(example)}"></textarea>
-				<div id="${hint_id}" class="sanad-picker__note">${ui.escape(__("One number per line, with the country code (e.g. {0}). Digits only.", [example]))}</div>
+				<textarea id="${id}" class="form-control whatsapp-kit-picker__numbers" rows="6" dir="ltr" inputmode="tel" aria-describedby="${hint_id}" placeholder="${ui.escape(example)}"></textarea>
+				<div id="${hint_id}" class="whatsapp-kit-picker__note">${ui.escape(__("One number per line, with the country code (e.g. {0}). Digits only.", [example]))}</div>
 			</div>`);
 		this.$text = $field.find("textarea");
-		this.$error = $('<div class="sanad-picker__alert" role="alert" hidden></div>');
-		this.$foot = $('<div class="sanad-picker__foot"></div>');
+		this.$error = $('<div class="whatsapp-kit-picker__alert" role="alert" hidden></div>');
+		this.$foot = $('<div class="whatsapp-kit-picker__foot"></div>');
 		this.$add = $(`<button type="button" class="btn btn-primary btn-sm">${ui.escape(__("Add numbers"))}</button>`).on("click", () => this.parse());
-		this.$count = $('<span class="sanad-picker__note sanad-tabular"></span>');
+		this.$count = $('<span class="whatsapp-kit-picker__note whatsapp-kit-tabular"></span>');
 		this.$foot.append(this.$add, this.$count);
-		this.$fixes = $('<div class="sanad-picker__fixes" hidden></div>');
+		this.$fixes = $('<div class="whatsapp-kit-picker__fixes" hidden></div>');
 		// digits, +, and the separators between numbers — a letter or a symbol never reaches the box
 		this.$text.on("input", () => {
 			const raw = this.$text.val();
@@ -110,20 +110,20 @@ export class ManualSource extends BaseSource {
 		}
 		const n = this.pending.length;
 		const $head = $(`
-			<div class="sanad-picker__fixes-head">
-				<span class="sanad-picker__fixes-title">${ui.escape(ui.plural(n, { one: __("{0} line needs a correction", null, "one"), two: __("{0} lines need a correction", null, "two"), few: __("{0} lines need a correction", null, "few"), many: __("{0} lines need a correction", null, "many"), other: __("{0} lines need a correction") }))}</span>
-				<span class="sanad-picker__note">${ui.escape(__("Edit the text and press Enter, or Fix."))}</span>
+			<div class="whatsapp-kit-picker__fixes-head">
+				<span class="whatsapp-kit-picker__fixes-title">${ui.escape(ui.plural(n, { one: __("{0} line needs a correction", null, "one"), two: __("{0} lines need a correction", null, "two"), few: __("{0} lines need a correction", null, "few"), many: __("{0} lines need a correction", null, "many"), other: __("{0} lines need a correction") }))}</span>
+				<span class="whatsapp-kit-picker__note">${ui.escape(__("Edit the text and press Enter, or Fix."))}</span>
 				<button type="button" class="btn btn-default btn-xs" data-act="fix-all">${ui.escape(__("Fix all"))}</button>
 				<button type="button" class="btn btn-default btn-xs" data-act="drop-all">${ui.escape(__("Ignore all"))}</button>
 			</div>`);
-		const $rows = $('<div class="sanad-picker__fixrows" role="list"></div>');
+		const $rows = $('<div class="whatsapp-kit-picker__fixrows" role="list"></div>');
 		this.pending.forEach((p, i) => {
 			const $row = $(`
-				<div class="sanad-picker__fix" role="listitem" data-idx="${i}">
-					<input type="text" class="form-control sanad-picker__fix-input sanad-tabular" dir="auto" value="${ui.escape(p.raw)}" aria-label="${ui.escape(__("Line to correct"))}">
-					<span class="sanad-picker__fix-reason" role="status">${ui.escape(p.error)}</span>
+				<div class="whatsapp-kit-picker__fix" role="listitem" data-idx="${i}">
+					<input type="text" class="form-control whatsapp-kit-picker__fix-input whatsapp-kit-tabular" dir="auto" value="${ui.escape(p.raw)}" aria-label="${ui.escape(__("Line to correct"))}">
+					<span class="whatsapp-kit-picker__fix-reason" role="status">${ui.escape(p.error)}</span>
 					<button type="button" class="btn btn-default btn-xs" data-act="fix">${ui.escape(__("Fix"))}</button>
-					<button type="button" class="sanad-picker__remove" data-act="drop" aria-label="${ui.escape(__("Ignore this line"))}" title="${ui.escape(__("Ignore"))}">${ui.icon("es-line-close", "xs")}</button>
+					<button type="button" class="whatsapp-kit-picker__remove" data-act="drop" aria-label="${ui.escape(__("Ignore this line"))}" title="${ui.escape(__("Ignore"))}">${ui.icon("es-line-close", "xs")}</button>
 				</div>`);
 			$row.find("input").on("input", (e) => {
 				const clean = ManualSource.numbers_only(e.currentTarget.value);
@@ -157,7 +157,7 @@ export class ManualSource extends BaseSource {
 	fix_one(i, $row) {
 		const raw = String($row.find("input").val() || "").trim();
 		if (!raw) return this.drop(i);
-		$row.addClass("sanad-picker__fix--busy").find("button").prop("disabled", true);
+		$row.addClass("whatsapp-kit-picker__fix--busy").find("button").prop("disabled", true);
 		return this.call("picker.parse_manual", { text: raw }, { silent: true })
 			.then((r) => {
 				const rows = r.rows || [];
@@ -172,15 +172,15 @@ export class ManualSource extends BaseSource {
 				}
 				const bad = (r.invalid || [])[0];
 				this.pending[i] = Object.assign(this.as_pending(bad || { phone: raw }), { raw });
-				$row.removeClass("sanad-picker__fix--busy").find("button").prop("disabled", false);
-				$row.find(".sanad-picker__fix-reason").text(this.pending[i].error);
-				$row.addClass("sanad-picker__fix--still");
-				setTimeout(() => $row.removeClass("sanad-picker__fix--still"), 600);
+				$row.removeClass("whatsapp-kit-picker__fix--busy").find("button").prop("disabled", false);
+				$row.find(".whatsapp-kit-picker__fix-reason").text(this.pending[i].error);
+				$row.addClass("whatsapp-kit-picker__fix--still");
+				setTimeout(() => $row.removeClass("whatsapp-kit-picker__fix--still"), 600);
 				$row.find("input").trigger("focus").trigger("select");
 			})
 			.catch((err) => {
-				$row.removeClass("sanad-picker__fix--busy").find("button").prop("disabled", false);
-				sanad.ui.Toast.error(err);
+				$row.removeClass("whatsapp-kit-picker__fix--busy").find("button").prop("disabled", false);
+				whatsapp.ui.Toast.error(err);
 			});
 	}
 
@@ -207,7 +207,7 @@ export class ManualSource extends BaseSource {
 			})
 			.catch((err) => {
 				this.$fixes.find("button").prop("disabled", false);
-				sanad.ui.Toast.error(err);
+				whatsapp.ui.Toast.error(err);
 			});
 	}
 

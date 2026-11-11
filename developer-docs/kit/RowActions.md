@@ -1,4 +1,4 @@
-# `sanad.ui.RowActions`
+# `whatsapp.ui.RowActions`
 
 Adds a per-row overflow button to a Desk list (the `ui.icons.more` icon) that opens a small menu. The menu shows the actions allowed for that row by `roles`, `perm` and `condition(doc)`. An optional `on_row_click` handler replaces the form route, for example to open a Drawer. Rows are decorated again after every render through the shared `ui.on_list_render` hook, so paging, filtering and realtime refreshes keep their buttons. The menu is appended to `<body>` because list rows clip overflow.
 
@@ -26,12 +26,12 @@ Action spec:
 - `decorate()` adds the button to every rendered row that does not have one yet. It is idempotent.
 - `visible_actions(doc)` returns the actions allowed for `doc`, computed by `ui.visible_actions`.
 - `open_menu($btn)` and `close_menu(restore_focus = false)` open and close the menu.
-- `destroy()` closes the menu, unhooks the render hook, removes the `.sanadrow` handlers and removes the buttons.
+- `destroy()` closes the menu, unhooks the render hook, removes the `.whatsapprow` handlers and removes the buttons.
 
 ## Events and callbacks
 
 - `handler(doc, $row)` and `on_row_click(doc, $row)` are described under Options. `doc` is looked up by name in `listview.data`.
-- While the menu is open, `.sanadrowmenu` listeners on `document` (mousedown/touchstart outside) and `window` (resize/scroll) close it.
+- While the menu is open, `.whatsapprowmenu` listeners on `document` (mousedown/touchstart outside) and `window` (resize/scroll) close it.
 - No custom events are triggered and no realtime events are subscribed.
 
 ## Server calls
@@ -41,28 +41,28 @@ None of its own. The action handlers make the calls.
 ## Usage
 
 ```js
-new sanad.ui.RowActions({
+new whatsapp.ui.RowActions({
   listview,
   actions: [
-    { label: __("View"), icon: sanad.ui.icons.open,
+    { label: __("View"), icon: whatsapp.ui.icons.open,
       handler: (doc) => frappe.set_route("Form", listview.doctype, doc.name) },
     { label: __("Cancel"), icon: "es-line-close-circle", danger: true, roles: ["WhatsApp Manager"],
       condition: (doc) => doc.status === "Queued",
-      handler: (doc) => sanad.ui.call("queue.delete_items", { names: [doc.name] }).then(() => listview.refresh()) },
+      handler: (doc) => whatsapp.ui.call("queue.delete_items", { names: [doc.name] }).then(() => listview.refresh()) },
   ],
-  on_row_click: (doc) => new sanad.ui.Drawer({ doctype: listview.doctype, name: doc.name }).show(),
+  on_row_click: (doc) => new whatsapp.ui.Drawer({ doctype: listview.doctype, name: doc.name }).show(),
 });
 ```
 
 ## CSS hooks
 
-- `.sanad-rowactions` is the cell, appended to the row's `.level-right` (or `.list-row` when there is no `.level-right`). It keeps a 28 px slot even when the row has no actions.
-- `.sanad-rowactions__btn` carries `aria-expanded` and `data-name`.
-- `.sanad-rowactions__clickable` is added to rows when `on_row_click` is set.
-- The menu is `.sanad-rowactions__menu`. It uses `position: fixed` with the CSS variables `--sanad-menu-x` / `--sanad-menu-y` and `z-index: 1035`.
-- Menu entries are `.sanad-rowactions__item`, with `--danger` for red entries, and `.sanad-rowactions__icon`.
+- `.whatsapp-kit-rowactions` is the cell, appended to the row's `.level-right` (or `.list-row` when there is no `.level-right`). It keeps a 28 px slot even when the row has no actions.
+- `.whatsapp-kit-rowactions__btn` carries `aria-expanded` and `data-name`.
+- `.whatsapp-kit-rowactions__clickable` is added to rows when `on_row_click` is set.
+- The menu is `.whatsapp-kit-rowactions__menu`. It uses `position: fixed` with the CSS variables `--whatsapp-kit-menu-x` / `--whatsapp-kit-menu-y` and `z-index: 1035`.
+- Menu entries are `.whatsapp-kit-rowactions__item`, with `--danger` for red entries, and `.whatsapp-kit-rowactions__icon`.
 - The stylesheet also widens `.level-right` to 216 px on decorated rows.
-- The stylesheet also carries shared two-line cell helpers: `.sanad-cell`, `.sanad-cell__sub`, `.sanad-cell__muted`, `.sanad-cell__error` and `.sanad-list--two-line`.
+- The stylesheet also carries shared two-line cell helpers: `.whatsapp-kit-cell`, `.whatsapp-kit-cell__sub`, `.whatsapp-kit-cell__muted`, `.whatsapp-kit-cell__error` and `.whatsapp-kit-list--two-line`.
 
 ## Notes
 

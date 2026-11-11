@@ -1,5 +1,5 @@
 // Notification alerts — the editor window (D-139). `whatsapp_next.alerts.open(name)` opens
-// `sanad.ui.AlertEditor` on a saved alert, or on a new one without a name, wired to
+// `whatsapp.ui.AlertEditor` on a saved alert, or on a new one without a name, wired to
 // `api/v1/alerts.py`. The alerts list opens it for "New alert", a row and "View"; the alert form
 // offers it too.
 
@@ -7,8 +7,8 @@ frappe.provide("whatsapp_next.alerts");
 
 whatsapp_next.alerts.open = function (name, { on_saved } = {}) {
 	// silent: the editor says what went wrong itself, so Frappe must not pop the same message up too
-	const call = (method, args) => sanad.ui.call(`alerts.${method}`, args || {}, { silent: true });
-	return new sanad.ui.AlertEditor({
+	const call = (method, args) => whatsapp.ui.call(`alerts.${method}`, args || {}, { silent: true });
+	return new whatsapp.ui.AlertEditor({
 		name: name || null,
 		form_doctype: "WhatsApp Notification Alert",
 		load: (n) => call("get_editor", n ? { name: n } : {}),
@@ -29,7 +29,7 @@ whatsapp_next.alerts.open = function (name, { on_saved } = {}) {
 		pick_recipients: ({ existing }) =>
 			new Promise((resolve) => {
 				let done = false;
-				new sanad.ui.ContactPicker({
+				new whatsapp.ui.ContactPicker({
 					title: __("Choose who gets the alert"),
 					existing,
 					on_pick: (rows) => {
@@ -45,7 +45,7 @@ whatsapp_next.alerts.open = function (name, { on_saved } = {}) {
 			const list = typeof cur_list !== "undefined" && cur_list && cur_list.doctype === "WhatsApp Notification Alert" ? cur_list : null;
 			if (list) {
 				list.refresh();
-				list._sanad_header && list._sanad_header.refresh();
+				list._whatsapp_header && list._whatsapp_header.refresh();
 			}
 		},
 	});

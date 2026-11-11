@@ -1,4 +1,4 @@
-# `sanad.ui.ChatThread`
+# `whatsapp.ui.ChatThread`
 
 A WhatsApp-style message thread over read-layer rows: bubbles by `direction` (outbound on the
 inline-end side, inbound on the inline-start side), day separators ("Today" / "Yesterday" / user
@@ -55,7 +55,7 @@ None.
 ## Usage
 
 ```js
-const thread = new sanad.ui.ChatThread({
+const thread = new whatsapp.ui.ChatThread({
   wrapper: $panel,
   rows: page.rows.slice().reverse(),     // API pages are newest-first
   has_more: page.has_more,
@@ -67,8 +67,8 @@ frappe.realtime.on("wa:message:status", (p) => thread.update_status(p.outbound, 
 
 ## CSS hooks
 
-- Root `.sanad-kit.sanad-chat` (`id` = uid), `__top`, `__more`, `__scroll` (`role="log"`), `__state`, `__list`, `__day`.
-- Rows: `.sanad-chat__row--in|--out`, `--clickable`, `--highlight`, `data-key`, `data-name`; `__bubble`, `__text` (`--muted`), `__caption`, `__meta`, `__open`, `__ref`.
+- Root `.whatsapp-kit.whatsapp-kit-chat` (`id` = uid), `__top`, `__more`, `__scroll` (`role="log"`), `__state`, `__list`, `__day`.
+- Rows: `.whatsapp-kit-chat__row--in|--out`, `--clickable`, `--highlight`, `data-key`, `data-name`; `__bubble`, `__text` (`--muted`), `__caption`, `__meta`, `__open`, `__ref`.
 - Media: `__media` (`--plain`), `__media-icon`, `__media-name`, `__media-type`.
 - Status: `__status--gray|blue|red|amber`, `__status-text` (visible word for Failed / Cancelled / Held).
 

@@ -1,4 +1,4 @@
-// sanad.ui.QuickSend — the one-message composer as a `frappe.ui.Dialog`: recipient (resolved
+// whatsapp.ui.QuickSend — the one-message composer as a `frappe.ui.Dialog`: recipient (resolved
 // server-side, with known / blacklisted badges), device (default from settings), optional
 // template with a live preview over the reference document, text / document / image body,
 // private attachment, optional schedule, and an "Open in Simulator" footer link. Data through the
@@ -9,7 +9,7 @@ import ui from "../_core/index.js";
 
 const MESSAGE_TYPES = ["Text", "Document", "Image"];
 
-sanad.ui.QuickSend = class QuickSend {
+whatsapp.ui.QuickSend = class QuickSend {
 	/**
 	 * @param {Object} opts — every key optional; a phone / contact / number / jid pre-fills the recipient
 	 * @param {string} [opts.phone]
@@ -23,7 +23,7 @@ sanad.ui.QuickSend = class QuickSend {
 	 * @param {string} [opts.body]
 	 * @param {Function} [opts.on_sent] — `(result) => void` with `{outbound, queue_item, warnings[]}`
 	 * @param {{get_context?: string, preview?: string, send?: string}} [opts.api] — key overrides
-	 * @param {string} [opts.simulator_route] — default `sanad.ui.config.defaults.simulator_route`
+	 * @param {string} [opts.simulator_route] — default `whatsapp.ui.config.defaults.simulator_route`
 	 * @param {string} [opts.title]
 	 */
 	constructor(opts = {}) {
@@ -67,10 +67,10 @@ sanad.ui.QuickSend = class QuickSend {
 			primary_action: () => this.send(),
 			on_hide: () => this.opts.on_close && this.opts.on_close(),
 		});
-		this.dialog.$wrapper.addClass("sanad-kit sanad-sheet sanad-quicksend");
+		this.dialog.$wrapper.addClass("whatsapp-kit whatsapp-kit-sheet whatsapp-kit-quicksend");
 		this.$recipient = this.dialog.get_field("recipient").$wrapper;
 		this.$preview = this.dialog.get_field("preview").$wrapper;
-		this.$recipient.html(`<div class="sanad-quicksend__recipient">${ui.skeleton(1, { lines: 1 })}</div>`);
+		this.$recipient.html(`<div class="whatsapp-kit-quicksend__recipient">${ui.skeleton(1, { lines: 1 })}</div>`);
 		// footer: Open in Simulator
 		const route = o.simulator_route || (ui.config.defaults || {}).simulator_route;
 		if (route) {
@@ -80,7 +80,7 @@ sanad.ui.QuickSend = class QuickSend {
 				if (key) args.phone = key;
 				this.dialog.hide();
 				frappe.set_route(route, args);
-			}, "btn-default sanad-quicksend__simulator");
+			}, "btn-default whatsapp-kit-quicksend__simulator");
 		}
 		// live preview when a template or a reference is involved
 		const preview = ui.debounce(() => this.preview(), 400);
@@ -98,8 +98,8 @@ sanad.ui.QuickSend = class QuickSend {
 		});
 		if (!has_recipient) {
 			// country hint + loose E.164 normalisation; the example number is never hard-coded here
-			if (typeof sanad.ui.PhoneField === "function") {
-				this.phone_field = new sanad.ui.PhoneField({ control: this.dialog.fields_dict.phone });
+			if (typeof whatsapp.ui.PhoneField === "function") {
+				this.phone_field = new whatsapp.ui.PhoneField({ control: this.dialog.fields_dict.phone });
 			}
 			this.dialog.fields_dict.phone.$input.on("blur", () => this.resolve_phone());
 			// a number edited after it was looked up is no longer that recipient: Send must not
@@ -141,7 +141,7 @@ sanad.ui.QuickSend = class QuickSend {
 					this.set_error("phone", err.message);
 				} else {
 					this.$recipient.empty();
-					new sanad.ui.EmptyState({ wrapper: this.$recipient, state: "error", description: err.message, size: "sm", action: { label: __("Retry"), onclick: () => this.load() } });
+					new whatsapp.ui.EmptyState({ wrapper: this.$recipient, state: "error", description: err.message, size: "sm", action: { label: __("Retry"), onclick: () => this.load() } });
 				}
 			});
 	}
@@ -160,12 +160,12 @@ sanad.ui.QuickSend = class QuickSend {
 			this.set_error("device", __("No device is enabled. Pair or enable a device, then try again."), { focus: true });
 			const route = (ui.config.defaults || {}).devices_route;
 			if (route) {
-				$(`<button type="button" class="btn btn-xs btn-default sanad-quicksend__fix">${ui.escape(__("Open devices"))}</button>`)
+				$(`<button type="button" class="btn btn-xs btn-default whatsapp-kit-quicksend__fix">${ui.escape(__("Open devices"))}</button>`)
 					.on("click", () => {
 						this.dialog.hide();
 						frappe.set_route(route);
 					})
-					.appendTo(this.dialog.get_field("device").$wrapper.find(".sanad-quicksend__error"));
+					.appendTo(this.dialog.get_field("device").$wrapper.find(".whatsapp-kit-quicksend__error"));
 			}
 		}
 		const templates = [{ value: "", label: __("No template (write the message)") }].concat(
@@ -184,26 +184,26 @@ sanad.ui.QuickSend = class QuickSend {
 		// a blacklisted recipient disabled Send; any other one (or none yet) enables it again
 		this.dialog.get_primary_btn().prop("disabled", !!(recipient && recipient.blacklisted));
 		if (!recipient) {
-			this.$recipient.html(`<div class="sanad-quicksend__recipient sanad-quicksend__recipient--empty">${ui.escape(__("Enter a phone number to look up the recipient."))}</div>`);
+			this.$recipient.html(`<div class="whatsapp-kit-quicksend__recipient whatsapp-kit-quicksend__recipient--empty">${ui.escape(__("Enter a phone number to look up the recipient."))}</div>`);
 			return;
 		}
 		const key = recipient.phone_e164 || recipient.jid || "";
 		const badges = [];
-		if (recipient.blacklisted) badges.push(sanad.ui.StatusBadge.html({ label: __("Blacklisted"), colour: "red" }));
-		else if (recipient.known) badges.push(sanad.ui.StatusBadge.html({ label: __("Known number"), colour: "green" }));
-		else badges.push(sanad.ui.StatusBadge.html({ label: __("New number"), colour: "gray" }));
-		if (recipient.jid) badges.push(sanad.ui.StatusBadge.html({ label: __("Group"), colour: "blue" }));
+		if (recipient.blacklisted) badges.push(whatsapp.ui.StatusBadge.html({ label: __("Blacklisted"), colour: "red" }));
+		else if (recipient.known) badges.push(whatsapp.ui.StatusBadge.html({ label: __("Known number"), colour: "green" }));
+		else badges.push(whatsapp.ui.StatusBadge.html({ label: __("New number"), colour: "gray" }));
+		if (recipient.jid) badges.push(whatsapp.ui.StatusBadge.html({ label: __("Group"), colour: "blue" }));
 		this.$recipient.html(`
-			<div class="sanad-quicksend__recipient">
-				<span class="sanad-quicksend__avatar" aria-hidden="true">${ui.icon(recipient.jid ? "es-line-people" : "es-line-customer", "md")}</span>
-				<span class="sanad-quicksend__who">
-					<span class="sanad-quicksend__name">${ui.escape(recipient.display_name || ui.phone(key))}</span>
-					${recipient.display_name ? `<span class="sanad-quicksend__phone sanad-tabular">${ui.escape(ui.phone(key))}</span>` : ""}
+			<div class="whatsapp-kit-quicksend__recipient">
+				<span class="whatsapp-kit-quicksend__avatar" aria-hidden="true">${ui.icon(recipient.jid ? "es-line-people" : "es-line-customer", "md")}</span>
+				<span class="whatsapp-kit-quicksend__who">
+					<span class="whatsapp-kit-quicksend__name">${ui.escape(recipient.display_name || ui.phone(key))}</span>
+					${recipient.display_name ? `<span class="whatsapp-kit-quicksend__phone whatsapp-kit-tabular">${ui.escape(ui.phone(key))}</span>` : ""}
 				</span>
-				<span class="sanad-quicksend__badges">${badges.join(" ")}</span>
+				<span class="whatsapp-kit-quicksend__badges">${badges.join(" ")}</span>
 			</div>`);
 		if (recipient.blacklisted) {
-			this.$recipient.append(`<div class="sanad-quicksend__error" role="alert">${ui.escape(__("This number is blacklisted, so the message cannot be sent."))}</div>`);
+			this.$recipient.append(`<div class="whatsapp-kit-quicksend__error" role="alert">${ui.escape(__("This number is blacklisted, so the message cannot be sent."))}</div>`);
 		}
 	}
 
@@ -268,7 +268,7 @@ sanad.ui.QuickSend = class QuickSend {
 			this.$preview.empty();
 			return;
 		}
-		this.$preview.html(`<div class="sanad-quicksend__preview" aria-busy="true"><div class="sanad-quicksend__preview-label">${ui.escape(__("Preview"))}</div>${ui.skeleton(1, { lines: 2 })}</div>`);
+		this.$preview.html(`<div class="whatsapp-kit-quicksend__preview" aria-busy="true"><div class="whatsapp-kit-quicksend__preview-label">${ui.escape(__("Preview"))}</div>${ui.skeleton(1, { lines: 2 })}</div>`);
 		// the recipient too: a body that greets them by name previews with the name the send will use
 		const who = (this.recipient && (this.recipient.phone_e164 || this.recipient.jid)) || this.dialog.get_value("phone");
 		const args = { template, body, reference_doctype, reference_name };
@@ -277,14 +277,14 @@ sanad.ui.QuickSend = class QuickSend {
 			.then((r) => {
 				const errors = (r && r.errors) || [];
 				this.$preview.html(`
-					<div class="sanad-quicksend__preview">
-						<div class="sanad-quicksend__preview-label">${ui.escape(__("Preview"))}</div>
-						<div class="sanad-quicksend__bubble">${ui.escape((r && r.body) || "")}</div>
-						${errors.length ? `<div class="sanad-quicksend__error" role="alert">${errors.map((e) => ui.escape(e)).join("<br>")}</div>` : ""}
+					<div class="whatsapp-kit-quicksend__preview">
+						<div class="whatsapp-kit-quicksend__preview-label">${ui.escape(__("Preview"))}</div>
+						<div class="whatsapp-kit-quicksend__bubble">${ui.escape((r && r.body) || "")}</div>
+						${errors.length ? `<div class="whatsapp-kit-quicksend__error" role="alert">${errors.map((e) => ui.escape(e)).join("<br>")}</div>` : ""}
 					</div>`);
 			})
 			.catch((err) => {
-				this.$preview.html(`<div class="sanad-quicksend__error" role="alert">${ui.escape(err.message)}</div>`);
+				this.$preview.html(`<div class="whatsapp-kit-quicksend__error" role="alert">${ui.escape(err.message)}</div>`);
 			});
 	}
 
@@ -293,11 +293,11 @@ sanad.ui.QuickSend = class QuickSend {
 	/** Inline error next to the field (`role="alert"`, `aria-describedby`); focus only when asked. */
 	set_error(fieldname, message, { focus = true } = {}) {
 		const field = this.dialog.get_field(fieldname);
-		if (!field) return sanad.ui.Toast.error(message);
+		if (!field) return whatsapp.ui.Toast.error(message);
 		this.clear_error(fieldname);
 		const id = `${ui.uid("qs-err")}`;
-		field.$wrapper.addClass("sanad-quicksend__field--invalid");
-		field.$wrapper.append(`<div class="sanad-quicksend__error" id="${id}" role="alert">${ui.escape(message)}</div>`);
+		field.$wrapper.addClass("whatsapp-kit-quicksend__field--invalid");
+		field.$wrapper.append(`<div class="whatsapp-kit-quicksend__error" id="${id}" role="alert">${ui.escape(message)}</div>`);
 		field.$input && field.$input.attr("aria-invalid", "true").attr("aria-describedby", [field.$input.attr("aria-describedby"), id].filter(Boolean).join(" "));
 		if (focus && field.set_focus) field.set_focus();
 	}
@@ -305,10 +305,10 @@ sanad.ui.QuickSend = class QuickSend {
 	clear_error(fieldname) {
 		const field = this.dialog.get_field(fieldname);
 		if (!field) return;
-		const $err = field.$wrapper.find(".sanad-quicksend__error");
+		const $err = field.$wrapper.find(".whatsapp-kit-quicksend__error");
 		const ids = $err.map((i, el) => el.id).get();
 		$err.remove();
-		field.$wrapper.removeClass("sanad-quicksend__field--invalid");
+		field.$wrapper.removeClass("whatsapp-kit-quicksend__field--invalid");
 		if (field.$input) {
 			field.$input.removeAttr("aria-invalid");
 			const rest = (field.$input.attr("aria-describedby") || "").split(" ").filter((x) => x && !ids.includes(x));
@@ -354,11 +354,11 @@ sanad.ui.QuickSend = class QuickSend {
 		return ui.call(this.api.send, args, { silent: true })
 			.then((r) => {
 				this.dialog.hide();
-				sanad.ui.Toast.warnings((r && r.warnings) || [], {
+				whatsapp.ui.Toast.warnings((r && r.warnings) || [], {
 					device_offline: __("The device is offline; the message stays queued until it reconnects."),
 					queue_paused: __("The queue is paused; the message is sent after it resumes."),
 				});
-				sanad.ui.Toast.success(args.scheduled_at ? __("Message scheduled") : __("Message queued"));
+				whatsapp.ui.Toast.success(args.scheduled_at ? __("Message scheduled") : __("Message queued"));
 				if (this.trying && args.phone) ui.test_phone.set(args.phone);
 				typeof o.on_sent === "function" && o.on_sent(r);
 			})
@@ -367,15 +367,15 @@ sanad.ui.QuickSend = class QuickSend {
 				const t = err.exc_type || "";
 				if (t === "WAInvalidPhoneError" || t === "WABlacklistedError" || t === "WAUnknownNumberPolicyError") {
 					if (this.dialog.fields_dict.phone.df.hidden) {
-						this.$recipient.find(".sanad-quicksend__error").remove();
-						this.$recipient.append(`<div class="sanad-quicksend__error" role="alert">${ui.escape(err.message)}</div>`);
+						this.$recipient.find(".whatsapp-kit-quicksend__error").remove();
+						this.$recipient.append(`<div class="whatsapp-kit-quicksend__error" role="alert">${ui.escape(err.message)}</div>`);
 					} else this.set_error("phone", err.message);
 				} else if (t === "WAFileError") {
 					this.set_error("attachment", err.message);
 				} else if (t === "WAValidationError") {
 					this.set_error("body", err.message);
 				} else {
-					sanad.ui.Toast.error(err);
+					whatsapp.ui.Toast.error(err);
 				}
 			});
 	}
@@ -384,10 +384,10 @@ sanad.ui.QuickSend = class QuickSend {
 		this.dialog.hide();
 	}
 
-	/** Shortcut: `sanad.ui.QuickSend.open({phone})`. */
+	/** Shortcut: `whatsapp.ui.QuickSend.open({phone})`. */
 	static open(opts) {
 		return new QuickSend(opts);
 	}
 };
 
-export default sanad.ui.QuickSend;
+export default whatsapp.ui.QuickSend;

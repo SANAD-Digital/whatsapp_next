@@ -3,10 +3,10 @@
 // four-segment funnel bar (read · delivered · sent · failed of the recipients), the counters and
 // the two verbs. The metric row above them is the shared console (`screens/_console.scss`).
 
-.wa-strips {
+.whatsapp-strips {
 	display: grid;
-	gap: var(--sanad-gap-sm);
-	margin-block-start: var(--sanad-gap-sm);
+	gap: var(--whatsapp-kit-gap-sm);
+	margin-block-start: var(--whatsapp-kit-gap-sm);
 
 	&__more {
 		margin: 0;
@@ -15,35 +15,35 @@
 	}
 }
 
-.wa-strip {
+.whatsapp-strip {
 	display: grid;
 	gap: 5px;
 	padding: 9px 12px;
-	border: 1px solid var(--sanad-accent-outline);
-	border-inline-start: 3px solid var(--sanad-accent);
-	border-radius: var(--sanad-radius);
+	border: 1px solid var(--whatsapp-kit-accent-outline);
+	border-inline-start: 3px solid var(--whatsapp-kit-accent);
+	border-radius: var(--whatsapp-kit-radius);
 	background: var(--surface-base);
 
 	&__line {
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: var(--sanad-gap-md) var(--sanad-gap-lg);
+		gap: var(--whatsapp-kit-gap-md) var(--whatsapp-kit-gap-lg);
 	}
 
 	&__title {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		min-inline-size: 0;
 	}
 	&__dot {
 		inline-size: 8px;
 		block-size: 8px;
 		border-radius: 50%;
-		background: var(--sanad-accent);
+		background: var(--whatsapp-kit-accent);
 		flex: none;
-		animation: wa-ops-pulse 1.8s ease-in-out infinite;
+		animation: whatsapp-ops-pulse 1.8s ease-in-out infinite;
 	}
 	&__name {
 		font-size: var(--text-lg, 16px);
@@ -53,13 +53,13 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		&:hover { color: var(--sanad-accent-ink); }
+		&:hover { color: var(--whatsapp-kit-accent-ink); }
 	}
 	&__badge {
 		padding: 3px 8px;
 		border-radius: var(--radius-full, 999px);
-		background: var(--sanad-accent-soft);
-		color: var(--sanad-accent-ink);
+		background: var(--whatsapp-kit-accent-soft);
+		color: var(--whatsapp-kit-accent-ink);
 		font-size: 11px;
 		font-weight: 600;
 		white-space: nowrap;
@@ -71,7 +71,7 @@
 	&__progress {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		flex: 1;
 		min-inline-size: 200px;
 	}
@@ -91,10 +91,10 @@
 		&--paused { opacity: 0.55; }
 	}
 	&__seg {
-		transition: inline-size var(--sanad-motion) ease-out;
+		transition: inline-size var(--whatsapp-kit-motion) ease-out;
 		&--read { background: var(--ink-blue-7); }
-		&--delivered { background: var(--sanad-accent); }
-		&--sent { background: var(--sanad-accent-outline); }
+		&--delivered { background: var(--whatsapp-kit-accent); }
+		&--sent { background: var(--whatsapp-kit-accent-outline); }
 		&--failed { background: var(--ink-red-8); }
 	}
 
@@ -104,7 +104,7 @@
 		display: flex;
 		align-items: center;
 		flex-wrap: wrap;
-		gap: var(--sanad-gap-md);
+		gap: var(--whatsapp-kit-gap-md);
 	}
 	&__stat {
 		display: inline-flex;
@@ -138,7 +138,7 @@
 		display: flex;
 		gap: 6px;
 		flex: none;
-		.btn { min-block-size: var(--sanad-target); white-space: nowrap; }
+		.btn { min-block-size: var(--whatsapp-kit-target); white-space: nowrap; }
 	}
 
 	&__foot {
@@ -152,17 +152,17 @@
 	&--paused {
 		border-color: var(--outline-amber-3);
 		border-inline-start-color: var(--ink-amber-7);
-		.wa-strip__dot { background: var(--ink-amber-7); animation: none; }
-		.wa-strip__badge { background: var(--surface-amber-1); color: var(--ink-amber-7); }
+		.whatsapp-strip__dot { background: var(--ink-amber-7); animation: none; }
+		.whatsapp-strip__badge { background: var(--surface-amber-1); color: var(--ink-amber-7); }
 	}
 
 	// a scheduled campaign is blue and still
 	&--scheduled {
 		border-color: var(--outline-blue-3);
 		border-inline-start-color: var(--ink-blue-7);
-		.wa-strip__dot { background: var(--ink-blue-7); animation: none; }
-		.wa-strip__name { font-size: var(--text-base, 15px); }
-		.wa-strip__badge { background: var(--surface-blue-1); color: var(--ink-blue-7); }
+		.whatsapp-strip__dot { background: var(--ink-blue-7); animation: none; }
+		.whatsapp-strip__name { font-size: var(--text-base, 15px); }
+		.whatsapp-strip__badge { background: var(--surface-blue-1); color: var(--ink-blue-7); }
 	}
 	&__btn-blue {
 		border-color: var(--outline-blue-3);

@@ -16,7 +16,7 @@ trigger clears the filter and emits `null`.
 ## Usage
 
 ```js
-new sanad.ui.DateFilter({
+new whatsapp.ui.DateFilter({
     wrapper: $("<div>").appendTo(page.main),
     label: __("Sent at"),
     default_op: "between",
@@ -28,13 +28,13 @@ new sanad.ui.DateFilter({
 });
 ```
 
-## Which field — `sanad.ui.DateFilterSet`
+## Which field — `whatsapp.ui.DateFilterSet`
 
 Give the trigger a field segment by passing `fields`, and a **set** turns each picked field into a
 filter row of its own:
 
 ```js
-new sanad.ui.DateFilterSet({
+new whatsapp.ui.DateFilterSet({
     wrapper: $("<div>").appendTo(page.main),
     fields: [
         { value: "sent_at", label: __("Sent at") },
@@ -66,7 +66,7 @@ control reports (`on_field_change(now, was)`).
 In a list, use the `date` preset type instead and `FilterBar` does the wiring:
 
 ```js
-new sanad.ui.FilterBar({
+new whatsapp.ui.FilterBar({
     listview,
     presets: [{ type: "date", label: __("Date"), default_op: "between" }],
 });

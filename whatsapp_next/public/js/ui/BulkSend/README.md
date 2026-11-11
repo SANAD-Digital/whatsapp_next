@@ -22,8 +22,8 @@ modal), so both styles must load — the kit's `style.scss` imports both.
 ## Usage
 
 ```js
-const call = (m, args) => sanad.ui.call(`bulk_send.${m}`, args);
-new sanad.ui.BulkSend({
+const call = (m, args) => whatsapp.ui.call(`bulk_send.${m}`, args);
+new whatsapp.ui.BulkSend({
   load: () => call("get_context"),                     // {groups[], templates[], devices[], default_device, rate, messages_remaining}
   estimate: (sel) => call("estimate", sel),            // {total, excluded, invalid}
   search_contacts: (txt) => call("search_contacts", { txt }),   // [{name, label, phone, party_type}]
@@ -39,7 +39,7 @@ The host app's simulator: its "Send a bulk message" button.
 
 ## Design gate
 - `role="dialog"` + `aria-modal`, focus kept inside, Esc closes, focus returns to the opener;
-  registered with `sanad.ui.overlay`.
+  registered with `whatsapp.ui.overlay`.
 - Segments are `role="tab"` with `aria-selected`; rows are buttons with `aria-pressed`; the
   settings pill carries `aria-expanded`.
 - The send pill stays clickable when not ready and says why (no recipients, empty text, device

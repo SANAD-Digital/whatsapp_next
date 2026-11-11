@@ -14,16 +14,16 @@ Desk list and explicit columns (DocType `in_list_view` flags are a fallback, not
 
 ```js
 // in listview_settings.onload
-new sanad.ui.DataList({
+new whatsapp.ui.DataList({
   listview,
   columns: [
     { fieldname: "display_name", label: __("Contact"), sortable: true,
-      format: (v) => sanad.ui.escape(v || __("Unknown")),
-      sub: (doc) => `<span dir="ltr">${sanad.ui.escape(doc.phone_e164 || "")}</span>` },
-    { fieldname: "status", type: "status" },                         // StatusBadge via sanad.ui.indicator_for
+      format: (v) => whatsapp.ui.escape(v || __("Unknown")),
+      sub: (doc) => `<span dir="ltr">${whatsapp.ui.escape(doc.phone_e164 || "")}</span>` },
+    { fieldname: "status", type: "status" },                         // StatusBadge via whatsapp.ui.indicator_for
     { fieldname: "reference_doctype", label: __("Document type") },
     { fieldname: "reference_name", label: __("Document no."),
-      format: (v, doc) => v ? frappe.utils.get_form_link(doc.reference_doctype, v, true, sanad.ui.escape(v)) : "" },
+      format: (v, doc) => v ? frappe.utils.get_form_link(doc.reference_doctype, v, true, whatsapp.ui.escape(v)) : "" },
     { fieldname: "device", type: "avatar" },                         // initials chip + Link title
     { fieldname: "sent_at", type: "date", label: __("Sent at"), format: (v, doc) => … },
     { fieldname: "attempts", type: "number" },                        // tabular digits; an Int sits in the middle
@@ -33,7 +33,7 @@ new sanad.ui.DataList({
   on_row_click: (doc) => open_drawer(doc),
   expand: ($el, doc) => render_members($el, doc),                    // optional chevron column
   page_length: 20,
-  footer: { count: (total) => sanad.ui.plural(total, { one: __("{0} message"), other: __("{0} messages") }) },
+  footer: { count: (total) => whatsapp.ui.plural(total, { one: __("{0} message"), other: __("{0} messages") }) },
   empty: { title: __("No messages match"), description: __("Change the filters or the period.") },
 });
 ```
@@ -49,7 +49,7 @@ Number columns are placed by their fieldtype, over any `align` the caller passes
 reads the same (`ui.num_align`): **Int in the middle; Float, Currency and Percent at the end** —
 the left in Arabic, the right in English. A computed column says what it shows with `fieldtype`.
 Methods: `refresh()`, `set_columns(cols)`, `get_selected()`, `expand_row(name)`, `destroy()`;
-static `DataList.format(type, value, df, doc, display, doctype)`. Helper: `sanad.ui.initials(text)`.
+static `DataList.format(type, value, df, doc, display, doctype)`. Helper: `whatsapp.ui.initials(text)`.
 Keep every rendered field in `listview_settings.add_fields`.
 
 Page mode (a custom page with no list view): pass `wrapper` (and `doctype` for labels) instead of

@@ -1,7 +1,7 @@
 // Host = the Table field's `.grid-field`: the panel's own head carries the name and the count, so
 // the field's label steps aside rather than printing the same word twice; the native grid parts
 // stay hidden.
-.sanad-pct-host {
+.whatsapp-kit-pct-host {
 	> .grid-custom-buttons,
 	> .form-grid-container,
 	> .grid-footer { display: none; }
@@ -9,18 +9,18 @@
 	> .grid-label { display: none; }
 }
 
-.sanad-pct {
+.whatsapp-kit-pct {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sanad-gap-md);
-	margin-block: var(--sanad-gap-sm) var(--sanad-gap-lg);
+	gap: var(--whatsapp-kit-gap-md);
+	margin-block: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-lg);
 
 	// the head: what these rows are, how many there are, and what may be done to them
 	&__head {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: baseline;
-		gap: var(--sanad-gap-sm) var(--sanad-gap-md);
+		gap: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-md);
 	}
 	&__title {
 		margin: 0;
@@ -39,21 +39,21 @@
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 	}
 	&__filters {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		min-width: 0;
 		flex: 1;
 	}
 	&__actions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--sanad-gap-sm);
-		.btn { min-height: var(--sanad-target); }
+		gap: var(--whatsapp-kit-gap-sm);
+		.btn { min-height: var(--whatsapp-kit-target); }
 	}
 	&__note {
 		font-size: var(--text-sm, 13px);
@@ -61,13 +61,13 @@
 		&[hidden] { display: none; }
 	}
 	&__search, &__select {
-		min-height: var(--sanad-target);
+		min-height: var(--whatsapp-kit-target);
 		max-width: 220px;
 	}
 	&__state:empty { display: none; }
 	&__scroll {
-		border: var(--sanad-border);
-		border-radius: var(--sanad-radius);
+		border: var(--whatsapp-kit-border);
+		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-base);
 		&:has(table:empty) { display: none; }
 	}
@@ -78,48 +78,48 @@
 	&__th-actions { width: 1%; }
 	&__row-actions {
 		text-align: end;
-		.btn { min-height: 28px; margin-inline-start: var(--sanad-gap-xs); }
+		.btn { min-height: 28px; margin-inline-start: var(--whatsapp-kit-gap-xs); }
 	}
 	&__pager {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		color: var(--ink-gray-6);
 		font-size: var(--text-sm, 13px);
 	}
 	&__pager-btns {
 		display: flex;
-		gap: var(--sanad-gap-sm);
-		.btn { min-height: var(--sanad-target); display: inline-flex; align-items: center; gap: var(--sanad-gap-xs); }
+		gap: var(--whatsapp-kit-gap-sm);
+		.btn { min-height: var(--whatsapp-kit-target); display: inline-flex; align-items: center; gap: var(--whatsapp-kit-gap-xs); }
 	}
 	[dir="rtl"] &__pager-btns .icon { transform: scaleX(-1); }
 }
 
 @media (max-width: 767px) {
-	.sanad-pct__search, .sanad-pct__select { max-width: 100%; width: 100%; }
-	.sanad-pct__pager-btns .btn span { display: none; }
+	.whatsapp-kit-pct__search, .whatsapp-kit-pct__select { max-width: 100%; width: 100%; }
+	.whatsapp-kit-pct__pager-btns .btn span { display: none; }
 }
 
 // A chip carries the number behind it, so the reader chooses knowing how many rows are there.
-.sanad-pct__chip {
+.whatsapp-kit-pct__chip {
 	display: inline-flex;
 	align-items: center;
-	gap: var(--sanad-gap-xs);
+	gap: var(--whatsapp-kit-gap-xs);
 
 	&[hidden] { display: none; }
 }
-.sanad-pct__chip-count {
+.whatsapp-kit-pct__chip-count {
 	font-size: var(--text-xs, 11px);
 	color: var(--ink-gray-6);
 }
-.sanad-pct__chip[aria-pressed="true"] .sanad-pct__chip-count {
+.whatsapp-kit-pct__chip[aria-pressed="true"] .whatsapp-kit-pct__chip-count {
 	color: inherit;
 }
 
 // two chip groups on one line are two questions: they need air between them, and a group that
 // offers nothing to choose is hidden by the component
-.sanad-pct__chips {
+.whatsapp-kit-pct__chips {
 	&[hidden] { display: none; }
-	& + .sanad-pct__chips { margin-inline-start: var(--sanad-gap-md); }
+	& + .whatsapp-kit-pct__chips { margin-inline-start: var(--whatsapp-kit-gap-md); }
 }

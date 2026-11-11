@@ -75,7 +75,7 @@ raised.
 **Realtime:** none.
 
 ```js
-const r = await sanad.ui.call("alerts.preview", { name: "Overdue invoices" });
+const r = await whatsapp.ui.call("alerts.preview", { name: "Overdue invoices" });
 ```
 
 ---
@@ -137,7 +137,7 @@ Column choices for the `Report Column` recipient type.
 **Realtime:** none.
 
 ```js
-const cols = await sanad.ui.call("alerts.get_report_columns", { report: "Accounts Receivable", filters: { company: "Sanad" } });
+const cols = await whatsapp.ui.call("alerts.get_report_columns", { report: "Accounts Receivable", filters: { company: "Sanad" } });
 ```
 
 ---
@@ -164,7 +164,7 @@ No arguments.
 **Realtime:** none.
 
 ```js
-const tokens = await sanad.ui.call("alerts.get_dynamic_filter_reference");
+const tokens = await whatsapp.ui.call("alerts.get_dynamic_filter_reference");
 ```
 
 ---
@@ -218,7 +218,7 @@ create.
 **Realtime:** none.
 
 ```js
-const ed = await sanad.ui.call("alerts.get_editor", { name: "Overdue invoices" });
+const ed = await whatsapp.ui.call("alerts.get_editor", { name: "Overdue invoices" });
 ```
 
 ---
@@ -263,7 +263,7 @@ Run the editor's draft — saved or not — without saving or sending.
 **Realtime:** none.
 
 ```js
-const p = await sanad.ui.call("alerts.preview_draft", { payload: { alert_name: "Test", content_type: "Static Message", message: "Hello", recipients: [] } });
+const p = await whatsapp.ui.call("alerts.preview_draft", { payload: { alert_name: "Test", content_type: "Static Message", message: "Hello", recipients: [] } });
 ```
 
 ---
@@ -294,7 +294,7 @@ and no File row is made.
 **Realtime:** none.
 
 ```js
-await sanad.ui.open_file_in_tab(() => sanad.ui.call("alerts.make_file", { payload }));
+await whatsapp.ui.open_file_in_tab(() => whatsapp.ui.call("alerts.make_file", { payload }));
 ```
 
 ## send_test
@@ -330,7 +330,7 @@ Audited `Alert Test Sent`.
 **Realtime:** none directly; the queued message reports as `wa:message:status`.
 
 ```js
-await sanad.ui.call("alerts.send_test", { payload: { name: "Overdue invoices" }, phone: "0500000009" });
+await whatsapp.ui.call("alerts.send_test", { payload: { name: "Overdue invoices" }, phone: "0500000009" });
 ```
 
 ---
@@ -395,7 +395,7 @@ Switch an alert on or off (`next_run_at` is recomputed by the controller).
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("alerts.set_enabled", { name: "Overdue invoices", enabled: 0 });
+await whatsapp.ui.call("alerts.set_enabled", { name: "Overdue invoices", enabled: 0 });
 ```
 
 ---
@@ -423,7 +423,7 @@ Delete an alert (its sent messages stay in the log).
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("alerts.delete_alert", { name: "Overdue invoices" });
+await whatsapp.ui.call("alerts.delete_alert", { name: "Overdue invoices" });
 ```
 
 ---
@@ -460,7 +460,7 @@ The editor's pickers, through `frappe.get_list` (the caller's own permissions; 2
 **Realtime:** none.
 
 ```js
-const users = await sanad.ui.call("alerts.search", { kind: "user", txt: "sara" });
+const users = await whatsapp.ui.call("alerts.search", { kind: "user", txt: "sara" });
 ```
 
 ---
@@ -492,5 +492,5 @@ it with Frappe's `get_script`); a Report Builder report is a list of `ref_doctyp
 **Realtime:** none.
 
 ```js
-const info = await sanad.ui.call("alerts.get_report_info", { report: "Overdue list" });
+const info = await whatsapp.ui.call("alerts.get_report_info", { report: "Overdue list" });
 ```

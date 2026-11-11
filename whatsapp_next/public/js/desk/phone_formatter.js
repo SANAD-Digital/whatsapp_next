@@ -15,7 +15,7 @@ frappe.provide("frappe.form.formatters");
 const base_data = frappe.form.formatters.Data;
 frappe.form.formatters.Data = function (value, df, options, doc) {
 	if (value && is_ours(df) && E164.test(String(value).trim())) {
-		value = sanad.ui.phone(value);
+		value = whatsapp.ui.phone(value);
 	}
 	return base_data ? base_data(value, df, options, doc) : value;
 };
@@ -24,9 +24,9 @@ frappe.form.formatters.Data = function (value, df, options, doc) {
 // matching and de-duplication run on, not something a person needs to read twice. Where a list
 // also shows `phone`, the E.164 column goes; where it is the only number, it is simply "Phone".
 $(document).on("app_ready", () => {
-	if (!window.sanad || !sanad.ui || !sanad.ui.DataList) return;
-	const previous = sanad.ui.DataList.adjust_columns;
-	sanad.ui.DataList.adjust_columns = (columns, doctype) => {
+	if (!window.whatsapp || !whatsapp.ui || !whatsapp.ui.DataList) return;
+	const previous = whatsapp.ui.DataList.adjust_columns;
+	whatsapp.ui.DataList.adjust_columns = (columns, doctype) => {
 		let cols = typeof previous === "function" ? previous(columns, doctype) || columns : columns;
 		if (!String(doctype || "").startsWith("WhatsApp ")) return cols;
 		const has_phone = cols.some((c) => c.fieldname === "phone");

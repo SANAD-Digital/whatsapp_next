@@ -1,4 +1,4 @@
-// sanad.ui.Cards — the design prototype's card vocabulary (`docs/component/Cards.dc.html`),
+// whatsapp.ui.Cards — the design prototype's card vocabulary (`docs/component/Cards.dc.html`),
 // ported as a real component.
 //
 // The prototype does not draw a screen full of numbers by inventing a layout for it. It composes
@@ -38,10 +38,10 @@ function spark(series) {
 	const points = values
 		.map((v, i) => `${((i / (values.length - 1)) * 58 + 1).toFixed(1)},${(17 - ((v - min) / span) * 16).toFixed(1)}`)
 		.join(" ");
-	return `<svg class="wa-card__spark" width="56" height="18" viewBox="0 0 60 18" fill="none" aria-hidden="true"><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+	return `<svg class="whatsapp-card__spark" width="56" height="18" viewBox="0 0 60 18" fill="none" aria-hidden="true"><polyline points="${points}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 }
 
-sanad.ui.Cards = class Cards {
+whatsapp.ui.Cards = class Cards {
 	/**
 	 * @param {object} opts
 	 * @param {jQuery|HTMLElement} opts.wrapper
@@ -65,9 +65,9 @@ sanad.ui.Cards = class Cards {
 	}
 
 	render() {
-		this.$wrapper.empty().addClass("sanad-kit wa");
-		this.$wrapper.toggleClass("wa--compact", this.opts.density === "compact");
-		this.$el = $(`<div class="wa-cards wa-cards--${this.opts.density}"></div>`).appendTo(this.$wrapper);
+		this.$wrapper.empty().addClass("whatsapp-kit whatsapp");
+		this.$wrapper.toggleClass("whatsapp--compact", this.opts.density === "compact");
+		this.$el = $(`<div class="whatsapp-cards whatsapp-cards--${this.opts.density}"></div>`).appendTo(this.$wrapper);
 		(this.opts.sections || []).forEach((section) => this.render_section(section));
 		this.bind();
 		return this;
@@ -75,15 +75,15 @@ sanad.ui.Cards = class Cards {
 
 	render_section(section) {
 		const min = cint(section.min) || 240;
-		const $sec = $(`<section class="wa-cards__section"></section>`).appendTo(this.$el);
+		const $sec = $(`<section class="whatsapp-cards__section"></section>`).appendTo(this.$el);
 		if (section.title || section.sub) {
 			$sec.append(`
-				<header class="wa-cards__head">
-					${section.title ? `<h3 class="wa-cards__title">${esc(section.title)}</h3>` : ""}
-					${section.sub ? `<p class="wa-cards__sub">${esc(section.sub)}</p>` : ""}
+				<header class="whatsapp-cards__head">
+					${section.title ? `<h3 class="whatsapp-cards__title">${esc(section.title)}</h3>` : ""}
+					${section.sub ? `<p class="whatsapp-cards__sub">${esc(section.sub)}</p>` : ""}
 				</header>`);
 		}
-		const $grid = $(`<div class="wa-cards__grid" style="--wa-cards-min:${min}px"></div>`).appendTo($sec);
+		const $grid = $(`<div class="whatsapp-cards__grid" style="--whatsapp-cards-min:${min}px"></div>`).appendTo($sec);
 		(section.cards || []).forEach((card) => $grid.append(this.card_html(card)));
 	}
 
@@ -97,45 +97,45 @@ sanad.ui.Cards = class Cards {
 	/** Common attributes: what makes a card clickable, and how wide it is. */
 	shell(card, cls) {
 		const clickable = !!(card.action || card.onClick);
-		const span = cint(card.span) > 1 ? ` style="--wa-card-span:${cint(card.span)}"` : "";
+		const span = cint(card.span) > 1 ? ` style="--whatsapp-card-span:${cint(card.span)}"` : "";
 		const tag = clickable ? "button" : "div";
 		const attrs = clickable
 			? ` type="button" data-action="${esc(card.action || "")}" data-key="${esc(card.key || "")}"`
 			: "";
-		return { tag, open: `<${tag} class="${cls}${clickable ? " wa-card--click" : ""}"${span}${attrs}>`, close: `</${tag}>` };
+		return { tag, open: `<${tag} class="${cls}${clickable ? " whatsapp-card--click" : ""}"${span}${attrs}>`, close: `</${tag}>` };
 	}
 
 	/** The icon tile a `stat` and a `kpi` wear at the end of their label. */
 	tile(card) {
 		if (!card.icon) return "";
-		return `<span class="wa-card__tile wa-card__tile--${tone_of(card.tone)}" aria-hidden="true">${ico(card.icon, "sm")}</span>`;
+		return `<span class="whatsapp-card__tile whatsapp-card__tile--${tone_of(card.tone)}" aria-hidden="true">${ico(card.icon, "sm")}</span>`;
 	}
 
 	stat_html(card) {
-		const s = this.shell(card, `wa-card wa-card--stat wa-card--${tone_of(card.tone)}`);
+		const s = this.shell(card, `whatsapp-card whatsapp-card--stat whatsapp-card--${tone_of(card.tone)}`);
 		return `${s.open}
-			<span class="wa-card__body">
-				<span class="wa-card__line">
-					${card.dot === false ? "" : `<span class="wa-card__dot" aria-hidden="true"></span>`}
-					<span class="wa-card__label">${esc(card.label)}</span>
+			<span class="whatsapp-card__body">
+				<span class="whatsapp-card__line">
+					${card.dot === false ? "" : `<span class="whatsapp-card__dot" aria-hidden="true"></span>`}
+					<span class="whatsapp-card__label">${esc(card.label)}</span>
 				</span>
-				<span class="wa-card__value sanad-tabular" dir="${card.rtl ? "auto" : "ltr"}">${esc(card.value)}</span>
-				${card.note ? `<span class="wa-card__note">${esc(card.note)}</span>` : ""}
+				<span class="whatsapp-card__value whatsapp-kit-tabular" dir="${card.rtl ? "auto" : "ltr"}">${esc(card.value)}</span>
+				${card.note ? `<span class="whatsapp-card__note">${esc(card.note)}</span>` : ""}
 			</span>
 			${this.tile(card)}
 		${s.close}`;
 	}
 
 	kpi_html(card) {
-		const s = this.shell(card, `wa-card wa-card--kpi wa-card--${tone_of(card.tone)}`);
+		const s = this.shell(card, `whatsapp-card whatsapp-card--kpi whatsapp-card--${tone_of(card.tone)}`);
 		return `${s.open}
-			<span class="wa-card__top">
-				<span class="wa-card__label">${esc(card.label)}</span>
+			<span class="whatsapp-card__top">
+				<span class="whatsapp-card__label">${esc(card.label)}</span>
 				${this.tile(card)}
 			</span>
-			<span class="wa-card__figure sanad-tabular" dir="ltr">${esc(card.value)}</span>
-			<span class="wa-card__foot">
-				<span class="wa-card__note">${esc(card.note || "")}</span>
+			<span class="whatsapp-card__figure whatsapp-kit-tabular" dir="ltr">${esc(card.value)}</span>
+			<span class="whatsapp-card__foot">
+				<span class="whatsapp-card__note">${esc(card.note || "")}</span>
 				${card.series ? spark(card.series) : ""}
 			</span>
 		${s.close}`;
@@ -146,26 +146,26 @@ sanad.ui.Cards = class Cards {
 			.map((r) => {
 				const click = r.action || r.onClick ? ` data-action="${esc(r.action || "")}" data-key="${esc(r.key || "")}"` : "";
 				const tag = r.action || r.onClick ? "button" : "div";
-				return `<${tag} type="button" class="wa-card__row${r.action || r.onClick ? " wa-card__row--click" : ""}"${click}>
-					<span class="wa-card__row-main">
-						${r.dot === false || !r.tone ? "" : `<span class="wa-card__dot wa-card__dot--${tone_of(r.tone)}" aria-hidden="true"></span>`}
-						${r.avatar ? `<span class="wa-card__av" aria-hidden="true">${esc(r.avatar)}</span>` : ""}
-						<span class="wa-card__row-text">
-							<span class="wa-card__row-label">${esc(r.label)}</span>
-							${r.sub ? `<span class="wa-card__row-sub">${esc(r.sub)}</span>` : ""}
+				return `<${tag} type="button" class="whatsapp-card__row${r.action || r.onClick ? " whatsapp-card__row--click" : ""}"${click}>
+					<span class="whatsapp-card__row-main">
+						${r.dot === false || !r.tone ? "" : `<span class="whatsapp-card__dot whatsapp-card__dot--${tone_of(r.tone)}" aria-hidden="true"></span>`}
+						${r.avatar ? `<span class="whatsapp-card__av" aria-hidden="true">${esc(r.avatar)}</span>` : ""}
+						<span class="whatsapp-card__row-text">
+							<span class="whatsapp-card__row-label">${esc(r.label)}</span>
+							${r.sub ? `<span class="whatsapp-card__row-sub">${esc(r.sub)}</span>` : ""}
 						</span>
 					</span>
-					${r.bar != null ? `<span class="wa-card__bar"><span class="wa-card__bar-fill wa-card__bar-fill--${tone_of(r.tone)}" style="inline-size:${Math.max(0, Math.min(100, Number(r.bar) || 0)).toFixed(2)}%"></span></span>` : ""}
-					${r.value != null ? `<span class="wa-card__row-value sanad-tabular" dir="ltr">${esc(r.value)}</span>` : ""}
-					${r.badge ? `<span class="wa-badge wa-badge--${tone_of(r.badgeTone || r.tone)}">${esc(r.badge)}</span>` : ""}
+					${r.bar != null ? `<span class="whatsapp-card__bar"><span class="whatsapp-card__bar-fill whatsapp-card__bar-fill--${tone_of(r.tone)}" style="inline-size:${Math.max(0, Math.min(100, Number(r.bar) || 0)).toFixed(2)}%"></span></span>` : ""}
+					${r.value != null ? `<span class="whatsapp-card__row-value whatsapp-kit-tabular" dir="ltr">${esc(r.value)}</span>` : ""}
+					${r.badge ? `<span class="whatsapp-badge whatsapp-badge--${tone_of(r.badgeTone || r.tone)}">${esc(r.badge)}</span>` : ""}
 				</${tag}>`;
 			})
 			.join("");
-		const span = cint(card.span) > 1 ? ` style="--wa-card-span:${cint(card.span)}"` : "";
-		return `<div class="wa-card wa-card--panel"${span}>
-			${card.label || card.note ? `<div class="wa-card__phead"><span class="wa-card__ptitle">${esc(card.label)}</span>${card.note ? `<span class="wa-card__note">${esc(card.note)}</span>` : ""}</div>` : ""}
-			<div class="wa-card__rows">${rows}</div>
-			${card.foot ? `<div class="wa-card__pfoot">${esc(card.foot)}</div>` : ""}
+		const span = cint(card.span) > 1 ? ` style="--whatsapp-card-span:${cint(card.span)}"` : "";
+		return `<div class="whatsapp-card whatsapp-card--panel"${span}>
+			${card.label || card.note ? `<div class="whatsapp-card__phead"><span class="whatsapp-card__ptitle">${esc(card.label)}</span>${card.note ? `<span class="whatsapp-card__note">${esc(card.note)}</span>` : ""}</div>` : ""}
+			<div class="whatsapp-card__rows">${rows}</div>
+			${card.foot ? `<div class="whatsapp-card__pfoot">${esc(card.foot)}</div>` : ""}
 		</div>`;
 	}
 
@@ -176,22 +176,22 @@ sanad.ui.Cards = class Cards {
 	 * border. Markup is the caller's and is not escaped: it is the caller's own, never a value.
 	 */
 	html_html(card) {
-		const span = cint(card.span) > 1 ? ` style="--wa-card-span:${cint(card.span)}"` : "";
-		return `<div class="wa-card wa-card--html wa-card--${tone_of(card.tone)}"${span}>${card.html || ""}</div>`;
+		const span = cint(card.span) > 1 ? ` style="--whatsapp-card-span:${cint(card.span)}"` : "";
+		return `<div class="whatsapp-card whatsapp-card--html whatsapp-card--${tone_of(card.tone)}"${span}>${card.html || ""}</div>`;
 	}
 
 	alert_html(card) {
 		const tone = tone_of(card.tone || "warn");
 		const cta =
 			card.cta && (card.action || card.onClick)
-				? `<button type="button" class="wa-btn wa-btn--${card.ctaStyle === "solid" ? "primary" : "secondary"} wa-btn--sm wa-card__cta" data-action="${esc(card.action || "")}" data-key="${esc(card.key || "")}">${esc(card.cta)}</button>`
+				? `<button type="button" class="whatsapp-btn whatsapp-btn--${card.ctaStyle === "solid" ? "primary" : "secondary"} whatsapp-btn--sm whatsapp-card__cta" data-action="${esc(card.action || "")}" data-key="${esc(card.key || "")}">${esc(card.cta)}</button>`
 				: "";
-		const span = cint(card.span) > 1 ? ` style="--wa-card-span:${cint(card.span)}"` : "";
-		return `<div class="wa-card wa-card--alert wa-card--${tone}" role="${tone === "danger" ? "alert" : "status"}"${span}>
-			<span class="wa-card__tile wa-card__tile--${tone}" aria-hidden="true">${ico(card.icon || (tone === "danger" ? "error" : tone === "ok" ? "check" : "warn"), "sm")}</span>
-			<span class="wa-card__body">
-				<b class="wa-card__alert-label">${esc(card.label)}</b>
-				${card.note ? `<span class="wa-card__note">${esc(card.note)}</span>` : ""}
+		const span = cint(card.span) > 1 ? ` style="--whatsapp-card-span:${cint(card.span)}"` : "";
+		return `<div class="whatsapp-card whatsapp-card--alert whatsapp-card--${tone}" role="${tone === "danger" ? "alert" : "status"}"${span}>
+			<span class="whatsapp-card__tile whatsapp-card__tile--${tone}" aria-hidden="true">${ico(card.icon || (tone === "danger" ? "error" : tone === "ok" ? "check" : "warn"), "sm")}</span>
+			<span class="whatsapp-card__body">
+				<b class="whatsapp-card__alert-label">${esc(card.label)}</b>
+				${card.note ? `<span class="whatsapp-card__note">${esc(card.note)}</span>` : ""}
 			</span>
 			${cta}
 		</div>`;
@@ -214,4 +214,4 @@ sanad.ui.Cards = class Cards {
 	}
 };
 
-export default sanad.ui.Cards;
+export default whatsapp.ui.Cards;

@@ -1,4 +1,4 @@
-// sanad.kit — the design prototype's own control layer, ported.
+// whatsapp.kit — the design prototype's own control layer, ported.
 //
 // `docs/shared/ui-kit.js` is the prototype's "one source for the design of fields and buttons".
 // Most of what it holds has no equivalent in Frappe — a segmented control, a tonal button, a
@@ -36,11 +36,11 @@ export function btn(o = {}) {
 	const label = o.label ? `<span>${esc(o.label)}</span>` : "";
 	const only = !o.label && o.icon;
 	const cls = [
-		"wa-btn",
-		`wa-btn--${VARIANTS.includes(o.variant) ? o.variant : "secondary"}`,
-		o.size && o.size !== "md" ? `wa-btn--${o.size}` : "",
-		only ? "wa-btn--icon" : "",
-		o.block ? "wa-btn--block" : "",
+		"whatsapp-btn",
+		`whatsapp-btn--${VARIANTS.includes(o.variant) ? o.variant : "secondary"}`,
+		o.size && o.size !== "md" ? `whatsapp-btn--${o.size}` : "",
+		only ? "whatsapp-btn--icon" : "",
+		o.block ? "whatsapp-btn--block" : "",
 		o.cls || "",
 	]
 		.filter(Boolean)
@@ -59,7 +59,7 @@ export function btn(o = {}) {
  * @param {{dot?: boolean, icon?: string}} [o]
  */
 export function badge(label, tone = "muted", o = {}) {
-	const cls = `wa-badge wa-badge--${tone}${o.dot === false ? " wa-badge--nodot" : ""}`;
+	const cls = `whatsapp-badge whatsapp-badge--${tone}${o.dot === false ? " whatsapp-badge--nodot" : ""}`;
 	return `<span class="${cls}">${o.icon ? ico(o.icon, "xs") : ""}${esc(label)}</span>`;
 }
 
@@ -74,15 +74,15 @@ export function segmented(options, value, o = {}) {
 	const opts = (options || [])
 		.map(
 			(opt) =>
-				`<button type="button" class="wa-seg__opt" role="radio" aria-checked="${opt.value === value}" tabindex="${opt.value === value ? 0 : -1}" data-value="${esc(opt.value)}"${opt.disabled ? " disabled" : ""}>${opt.icon ? ico(opt.icon, "xs") : ""}<span>${esc(opt.label)}</span></button>`
+				`<button type="button" class="whatsapp-seg__opt" role="radio" aria-checked="${opt.value === value}" tabindex="${opt.value === value ? 0 : -1}" data-value="${esc(opt.value)}"${opt.disabled ? " disabled" : ""}>${opt.icon ? ico(opt.icon, "xs") : ""}<span>${esc(opt.label)}</span></button>`
 		)
 		.join("");
-	return `<div class="wa-seg" role="radiogroup"${o.label ? ` aria-label="${esc(o.label)}"` : ""}>${opts}</div>`;
+	return `<div class="whatsapp-seg" role="radiogroup"${o.label ? ` aria-label="${esc(o.label)}"` : ""}>${opts}</div>`;
 }
 
 /** The rule that titles a form section: its name at the start, what it costs at the end. */
 export function rule(label, note) {
-	return `<div class="wa-rule"><span class="wa-rule__label">${esc(label)}</span><span class="wa-rule__line"></span>${note ? `<span class="wa-rule__note">${esc(note)}</span>` : ""}</div>`;
+	return `<div class="whatsapp-rule"><span class="whatsapp-rule__label">${esc(label)}</span><span class="whatsapp-rule__line"></span>${note ? `<span class="whatsapp-rule__note">${esc(note)}</span>` : ""}</div>`;
 }
 
 /** Two letters for an avatar: one per word, or the first two of a single word. */
@@ -95,27 +95,27 @@ export function initials(name) {
 
 /** @param {{name?: string, text?: string, src?: string, size?: "sm"|"md"|"lg", square?: boolean}} o */
 export function avatar(o = {}) {
-	const cls = `wa-avatar${o.size ? ` wa-avatar--${o.size}` : ""}${o.square ? " wa-avatar--sq" : ""}`;
+	const cls = `whatsapp-avatar${o.size ? ` whatsapp-avatar--${o.size}` : ""}${o.square ? " whatsapp-avatar--sq" : ""}`;
 	const body = o.src ? `<img src="${esc(o.src)}" alt="" loading="lazy">` : esc(o.text || initials(o.name));
 	return `<span class="${cls}" aria-hidden="true">${body}</span>`;
 }
 
 /**
  * Bind a segmented control: arrow keys move and choose, as a radio group must (WCAG 2.1.1).
- * @param {jQuery|HTMLElement} el — the `.wa-seg`
+ * @param {jQuery|HTMLElement} el — the `.whatsapp-seg`
  * @param {(value: string) => void} on_pick
  */
 export function bind_segmented(el, on_pick) {
 	const $el = $(el);
 	const pick = ($opt) => {
 		const value = $opt.attr("data-value");
-		$el.find(".wa-seg__opt").attr("aria-checked", "false").attr("tabindex", "-1");
+		$el.find(".whatsapp-seg__opt").attr("aria-checked", "false").attr("tabindex", "-1");
 		$opt.attr("aria-checked", "true").attr("tabindex", "0");
 		on_pick && on_pick(value);
 	};
-	$el.on("click", ".wa-seg__opt", (e) => pick($(e.currentTarget)));
-	$el.on("keydown", ".wa-seg__opt", (e) => {
-		const items = $el.find(".wa-seg__opt:not([disabled])").toArray();
+	$el.on("click", ".whatsapp-seg__opt", (e) => pick($(e.currentTarget)));
+	$el.on("keydown", ".whatsapp-seg__opt", (e) => {
+		const items = $el.find(".whatsapp-seg__opt:not([disabled])").toArray();
 		const i = ui.roving_index(e, items, items.indexOf(e.currentTarget));
 		if (i < 0) return;
 		e.preventDefault();
@@ -128,7 +128,7 @@ export function bind_segmented(el, on_pick) {
 const kit = { ICONS, ICON_NAMES, ico, btn, badge, segmented, rule, avatar, initials, bind_segmented, TONES, VARIANTS };
 
 // the kit hangs off the same namespace as the components, so a screen writes `ui.ico(…)`
-Object.assign(sanad.ui, kit);
-sanad.kit = kit;
+Object.assign(whatsapp.ui, kit);
+whatsapp.kit = kit;
 
 export default kit;

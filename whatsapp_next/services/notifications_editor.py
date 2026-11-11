@@ -1,4 +1,4 @@
-# Module role: the notification editor window — what `sanad.ui.NotificationEditor` opens with,
+# Module role: the notification editor window — what `whatsapp.ui.NotificationEditor` opens with,
 # saves and deletes, plus the live preview of the unsaved draft against one document and the test
 # send to one number. The controller keeps every rule (document type, body source, method
 # allow-list, condition, recipients); this module maps an allow-listed payload onto the document

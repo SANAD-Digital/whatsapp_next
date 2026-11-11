@@ -11,9 +11,9 @@
 	// petrol (on light) · paper (on Petrol or Ink) · ghost (a watermark on Petrol, one tone). The
 	// colours are the brand tokens of `_tokens.scss` (the same in both themes), read through CSS.
 	const TONES = {
-		petrol: { bubble: "--wa-brand", dot: "--wa-on-brand", last: "--wa-accent" },
-		paper: { bubble: "--wa-on-brand", dot: "--wa-brand", last: "--wa-accent" },
-		ghost: { bubble: "--wa-brand-deep", dot: "--wa-brand", last: "--wa-brand-deep" },
+		petrol: { bubble: "--whatsapp-brand", dot: "--whatsapp-on-brand", last: "--whatsapp-accent" },
+		paper: { bubble: "--whatsapp-on-brand", dot: "--whatsapp-brand", last: "--whatsapp-accent" },
+		ghost: { bubble: "--whatsapp-brand-deep", dot: "--whatsapp-brand", last: "--whatsapp-brand-deep" },
 	};
 	const fill = (token) => `style="fill: var(${token})"`;
 

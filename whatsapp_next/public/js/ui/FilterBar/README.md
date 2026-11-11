@@ -14,7 +14,7 @@ a Link control) unless the preset supplies them. Portable: needs only a DocType 
 
 ```js
 // Desk list (in listview_settings.onload) — one row: search → dropdown filters → period control
-new sanad.ui.FilterBar({
+new whatsapp.ui.FilterBar({
   listview,
   intro: __("Everything sent from your devices: status, document, device and errors."),
   actions: ["group_by", "export"],                 // optional second row
@@ -34,7 +34,7 @@ new sanad.ui.FilterBar({
 });
 
 // Custom page
-const bar = new sanad.ui.FilterBar({
+const bar = new whatsapp.ui.FilterBar({
   page, doctype: "ToDo", presets: [...],
   on_change: (filters, { or_filters, values, search }) => load(filters, or_filters),
 });
@@ -123,10 +123,10 @@ prototype (`docs/component/Toolbar.dc.html`) and the WCAG 2.1 AA review:
   "No options" empty copy.
 - Second row "Group by ▾" / "Export" reuse the kit (`DataList` grouping) and Desk (`DataExporter`)
   instead of new UI.
-- Reserved bar height, `--sanad-gap-*` spacing, global kit focus ring, full-width search and a
+- Reserved bar height, `--whatsapp-kit-gap-*` spacing, global kit focus ring, full-width search and a
   wrapping toolbar under 768 px; announcements are sentences ("Filters cleared.").
 
 ## `list_style`
 
 `list_style: true` gives a toolbar on a custom page the padding and the rule a Desk list's toolbar
-has, for a page whose rows are drawn exactly as a list's (inside a `.sanad-list-card` panel).
+has, for a page whose rows are drawn exactly as a list's (inside a `.whatsapp-kit-list-card` panel).

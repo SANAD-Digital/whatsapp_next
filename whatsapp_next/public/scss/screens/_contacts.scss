@@ -3,12 +3,12 @@
 // Screen 12 — the system contacts screen the contextual permission layer forces into existence.
 // Its anatomy comes from `docs/screen/Hub Screen - Contacts.dc.html`: the screen header with its
 // four stat cards, a one-line toolbar whose inline-end carries the selection chip and the bulk
-// verbs, then the prototype's list. The table itself is `sanad.ui.DataList` in page mode, and a
+// verbs, then the prototype's list. The table itself is `whatsapp.ui.DataList` in page mode, and a
 // row's detail, the create / edit form and the smaller state changes all open in
-// `sanad.ui.OverlayPanel` (the prototype's own panel), so everything below is only what this
+// `whatsapp.ui.OverlayPanel` (the prototype's own panel), so everything below is only what this
 // screen adds around the table: the toolbar's inline-end and the identity cell.
 
-.wa-contacts {
+.whatsapp-contacts {
 	display: flex;
 	flex-direction: column;
 	// the header carries the step to the panel, as above a Desk list
@@ -20,7 +20,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		min-block-size: var(--sanad-ctl-h);
+		min-block-size: var(--whatsapp-kit-ctl-h);
 	}
 
 	// ---- the toolbar: filters at the inline-start, the selection at the inline-end -------------
@@ -28,30 +28,30 @@
 	&__toolbar {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 	}
 	&__filters {
 		flex: 1;
 		min-inline-size: 0;
-		.sanad-filterbar {
+		.whatsapp-kit-filterbar {
 			margin-block-end: 0;
 		}
 	}
 	&__selection {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		flex: none;
 	}
 	&__selected {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
-		min-block-size: var(--sanad-ctl-h);
-		padding-inline: var(--sanad-gap-md);
-		border-radius: var(--sanad-radius);
-		background: var(--sanad-accent-soft);
-		color: var(--sanad-accent-ink);
+		gap: var(--whatsapp-kit-gap-sm);
+		min-block-size: var(--whatsapp-kit-ctl-h);
+		padding-inline: var(--whatsapp-kit-gap-md);
+		border-radius: var(--whatsapp-kit-radius);
+		background: var(--whatsapp-kit-accent-soft);
+		color: var(--whatsapp-kit-accent-ink);
 		font-size: var(--text-xs, 11px);
 		font-weight: 600;
 		white-space: nowrap;
@@ -69,43 +69,43 @@
 		white-space: nowrap;
 	}
 
-	// The toolbar and the table are one panel, exactly a Desk list's (`.sanad-list-card`, owner
+	// The toolbar and the table are one panel, exactly a Desk list's (`.whatsapp-kit-list-card`, owner
 	// 2026-10-26): the toolbar's rule runs under the selection too, and the table has no card of its
 	// own.
 	&__panel {
 		gap: 0;
 		background: var(--surface-base);
-		.sanad-filterbar--list { border-block-end: 0; }
+		.whatsapp-kit-filterbar--list { border-block-end: 0; }
 	}
 	&__panel &__toolbar {
-		border-block-end: var(--sanad-border);
+		border-block-end: var(--whatsapp-kit-border);
 		// the filters carry the list's own padding; the selection, when shown, keeps the same edge
-		&:has(> .wa-contacts__selection:not([hidden])) { padding-inline-end: var(--sanad-gap-md); }
+		&:has(> .whatsapp-contacts__selection:not([hidden])) { padding-inline-end: var(--whatsapp-kit-gap-md); }
 	}
 	&__list {
 		// a row opens its detail: say so with the pointer, as the prototype's rows do
-		.sanad-datalist__row[tabindex] { cursor: pointer; }
+		.whatsapp-kit-datalist__row[tabindex] { cursor: pointer; }
 	}
 
 	// ---- the identity cell ----------------------------------------------------------------------
 
 	// a linked contact wears the accent, an unlinked one stays neutral (prototype: `pri-s` / sunken)
 	&__avatar--linked {
-		background: var(--sanad-accent-soft);
-		color: var(--sanad-accent-ink);
+		background: var(--whatsapp-kit-accent-soft);
+		color: var(--whatsapp-kit-accent-ink);
 	}
 
 	&__identity {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		min-inline-size: 0;
 	}
 	// the prototype writes the account name after the person on one line, so a row stays 38 px
 	&__names {
 		display: flex;
 		align-items: baseline;
-		gap: var(--sanad-gap-xs);
+		gap: var(--whatsapp-kit-gap-xs);
 		min-inline-size: 0;
 		max-inline-size: 22ch;
 		overflow: hidden;
@@ -171,28 +171,28 @@
 // ---- what this screen adds inside the prototype's panel -----------------------------------------
 
 // the conversation-state history in the "Change conversation state" window (09 G-06)
-.wa-contacts__log {
+.whatsapp-contacts__log {
 	margin: 0;
 	padding: 0;
 	list-style: none;
 	max-height: 220px;
 	overflow-y: auto;
-	li { padding: 8px 0; border-bottom: 1px solid var(--wa-border); font-size: 13px; }
+	li { padding: 8px 0; border-bottom: 1px solid var(--whatsapp-border); font-size: 13px; }
 	li:last-child { border-bottom: 0; }
 }
 
 // A linked account in the detail drawer, with its own "Unlink" at the inline-end.
-.wa-contacts__link {
+.whatsapp-contacts__link {
 	display: flex;
 	align-items: center;
-	gap: var(--sanad-gap-sm);
+	gap: var(--whatsapp-kit-gap-sm);
 }
 
-.wa-contacts__link-card {
+.whatsapp-contacts__link-card {
 	flex: 1 1 auto;
 	min-inline-size: 0;
 }
 
-.wa-contacts__unlink {
+.whatsapp-contacts__unlink {
 	flex: none;
 }

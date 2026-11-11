@@ -103,5 +103,5 @@ Returns the figures for one Home period. All grouping happens in the database.
 **Errors:** `WAValidationError` (417) for a `period` outside the enum. `WAPermissionError` (403).
 
 ```js
-const activity = await sanad.ui.call("home.get_activity", { period: "30d" });
+const activity = await whatsapp.ui.call("home.get_activity", { period: "30d" });
 ```

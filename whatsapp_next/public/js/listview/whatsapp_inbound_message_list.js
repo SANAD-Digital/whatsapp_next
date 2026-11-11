@@ -4,7 +4,7 @@
 // message is — the matched command, the contact link, and the reply that went back.
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const DT = "WhatsApp Inbound Message";
 	const M = whatsapp_next.messages;
 	const fmt = whatsapp_next.fmt;
@@ -152,7 +152,7 @@
 		hide_name_column: true,
 		add_fields: ["command_status", "command", "phone", "phone_e164", "jid", "chat_jid", "is_group", "display_name", "contact", "device", "message_type", "body", "caption", "received_at", "is_simulated", "creation"],
 
-		// The one command_status → colour rule; badges read it through `sanad.ui.indicator_for`.
+		// The one command_status → colour rule; badges read it through `whatsapp.ui.indicator_for`.
 		get_indicator(doc) {
 			const status = doc.command_status || "None";
 			const colour = { Matched: "green", Executed: "green", "Not Matched": "orange", None: "gray", Failed: "red", Blocked: "orange" }[status] || "gray";

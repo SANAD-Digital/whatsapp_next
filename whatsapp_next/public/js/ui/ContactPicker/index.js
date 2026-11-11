@@ -1,4 +1,4 @@
-// sanad.ui.ContactPicker — the shell of the recipient / member picker sub-system: one
+// whatsapp.ui.ContactPicker — the shell of the recipient / member picker sub-system: one
 // `frappe.ui.Dialog` (extra-large; a full-height sheet under 768 px), source tabs on the
 // inline-start side built from `picker.list_sources(target_doctype)` (disabled sources hidden),
 // a **Selected** tab always last with a live count badge, and a footer counter + "Continue" that
@@ -37,7 +37,7 @@ const ALIASES = {
 	current: CURRENT,
 };
 
-sanad.ui.ContactPicker = class ContactPicker {
+whatsapp.ui.ContactPicker = class ContactPicker {
 	/** What each source looks like in the rail; a host source falls back to a list icon. */
 	static SOURCE_ICON = {
 		"Contact Group": "es-line-group",
@@ -58,7 +58,7 @@ sanad.ui.ContactPicker = class ContactPicker {
 		this._sources_cache = this._sources_cache || {};
 		const key = target_doctype || "";
 		if (!this._sources_cache[key]) {
-			this._sources_cache[key] = sanad.ui.call((api && api["picker.list_sources"]) || "picker.list_sources", { target_doctype }, { silent: true }).catch((err) => {
+			this._sources_cache[key] = whatsapp.ui.call((api && api["picker.list_sources"]) || "picker.list_sources", { target_doctype }, { silent: true }).catch((err) => {
 				delete this._sources_cache[key];
 				throw err;
 			});
@@ -127,7 +127,7 @@ sanad.ui.ContactPicker = class ContactPicker {
 	// ---- API plumbing ---------------------------------------------------------------------
 
 	call(key, args = {}, opts = {}) {
-		return sanad.ui.call((this.opts.api || {})[key] || key, args, opts);
+		return whatsapp.ui.call((this.opts.api || {})[key] || key, args, opts);
 	}
 
 	target_is_group() {
@@ -232,7 +232,7 @@ sanad.ui.ContactPicker = class ContactPicker {
 
 	notify_added(added, merged = 0) {
 		const msg = merged ? __("Added {0} to the selection. {1} were already selected.", [ui.format_int(added), ui.format_int(merged)]) : __("Added {0} to the selection", [ui.format_int(added)]);
-		sanad.ui.Toast.success(msg, { seconds: 3 });
+		whatsapp.ui.Toast.success(msg, { seconds: 3 });
 	}
 
 	remove_rows(keys) {
@@ -250,14 +250,14 @@ sanad.ui.ContactPicker = class ContactPicker {
 
 	show_zone(zone) {
 		const selected = zone === "selected";
-		this.$root.toggleClass("sanad-picker--zone-selected", selected);
-		this.$root.find(".sanad-picker__zone").each((i, el) => el.setAttribute("aria-selected", (el.getAttribute("data-zone") === "selected") === selected ? "true" : "false"));
+		this.$root.toggleClass("whatsapp-kit-picker--zone-selected", selected);
+		this.$root.find(".whatsapp-kit-picker__zone").each((i, el) => el.setAttribute("aria-selected", (el.getAttribute("data-zone") === "selected") === selected ? "true" : "false"));
 	}
 
 	on_selection_change() {
 		this.revision += 1;
 		const n = this.selection.size;
-		this.$badge.text(ui.format_int(n)).toggleClass("sanad-picker__badge--empty", !n);
+		this.$badge.text(ui.format_int(n)).toggleClass("whatsapp-kit-picker__badge--empty", !n);
 		this.$root.find("[data-zone-count]").text(n ? ui.format_int(n) : "");
 		this.$counter.text(n ? __("{0} selected", [ui.format_int(n)]) : __("Nothing selected"));
 		this.dialog.get_primary_btn().prop("disabled", !n);
@@ -287,21 +287,21 @@ sanad.ui.ContactPicker = class ContactPicker {
 		if (!this.$tabs) return;
 		const counts = {};
 		this.source_groups().forEach((g) => (counts[g.source] = g.rows.length));
-		this.$tabs.find(".sanad-picker__tab-count").each((i, el) => {
+		this.$tabs.find(".whatsapp-kit-picker__tab-count").each((i, el) => {
 			const n = counts[el.getAttribute("data-count")] || 0;
-			$(el).text(n ? ui.format_int(n) : "").toggleClass("sanad-picker__tab-count--on", !!n);
+			$(el).text(n ? ui.format_int(n) : "").toggleClass("whatsapp-kit-picker__tab-count--on", !!n);
 		});
 		if (!this.$tray_sources) return;
 		const groups = this.source_groups();
 		this.$tray_sources.empty();
 		if (groups.length < 2) return; // one source needs no breakdown; the count above says it
 		groups.forEach((g) => {
-			const $chip = $(`<span class="sanad-picker__srcchip">
+			const $chip = $(`<span class="whatsapp-kit-picker__srcchip">
 					<span>${ui.escape(g.label)}</span>
-					<span class="sanad-tabular">${ui.escape(ui.format_int(g.rows.length))}</span>
-					<button type="button" class="sanad-picker__srcchip-x" aria-label="${ui.escape(__("Remove everything from {0}", [g.label]))}">${ui.icon("es-line-close", "xs")}</button>
+					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_int(g.rows.length))}</span>
+					<button type="button" class="whatsapp-kit-picker__srcchip-x" aria-label="${ui.escape(__("Remove everything from {0}", [g.label]))}">${ui.icon("es-line-close", "xs")}</button>
 				</span>`);
-			$chip.find(".sanad-picker__srcchip-x").on("click", () => this.remove_rows(g.rows.map(([key]) => key)));
+			$chip.find(".whatsapp-kit-picker__srcchip-x").on("click", () => this.remove_rows(g.rows.map(([key]) => key)));
 			this.$tray_sources.append($chip);
 		});
 	}
@@ -334,12 +334,12 @@ sanad.ui.ContactPicker = class ContactPicker {
 				if (!(e.originalEvent.dataTransfer && Array.from(e.originalEvent.dataTransfer.types || []).includes("Files"))) return;
 				e.preventDefault();
 				e.stopPropagation();
-				$w.addClass("sanad-picker-dialog--drop");
+				$w.addClass("whatsapp-kit-picker-dialog--drop");
 			})
 		);
 		$w.on("dragleave.picker drop.picker", (e) => {
 			if (e.type === "dragleave" && $w[0].contains(e.originalEvent.relatedTarget)) return;
-			$w.removeClass("sanad-picker-dialog--drop");
+			$w.removeClass("whatsapp-kit-picker-dialog--drop");
 			if (e.type !== "drop") return;
 			const file = e.originalEvent.dataTransfer && e.originalEvent.dataTransfer.files && e.originalEvent.dataTransfer.files[0];
 			if (!file) return;
@@ -374,11 +374,11 @@ sanad.ui.ContactPicker = class ContactPicker {
 				this.set_progress(null);
 				const rows = (r.rows || []).map((row) => Object.assign({}, row, { source_type: "Manual", __source: "manual" }));
 				this.add_rows(rows, { source_type: "Manual" });
-				if ((r.invalid || []).length) sanad.ui.Toast.warning(__("{0} of them could not be read as a number.", [ui.format_int(r.invalid.length)]));
+				if ((r.invalid || []).length) whatsapp.ui.Toast.warning(__("{0} of them could not be read as a number.", [ui.format_int(r.invalid.length)]));
 			})
 			.catch((err) => {
 				this.set_progress(null);
-				sanad.ui.Toast.error(err);
+				whatsapp.ui.Toast.error(err);
 			});
 	}
 
@@ -387,12 +387,12 @@ sanad.ui.ContactPicker = class ContactPicker {
 		const name = String(file.name || "").toLowerCase();
 		const key = /\.(vcf|vcard)$/.test(name) ? "phonebook" : /\.(xlsx|xls|csv)$/.test(name) ? "excel" : null;
 		if (!key || !this.tabs.some((tab) => tab.key === key)) {
-			return sanad.ui.Toast.warning(__("That file is not one this list can read. Use an Excel file, a CSV or a vCard."));
+			return whatsapp.ui.Toast.warning(__("That file is not one this list can read. Use an Excel file, a CSV or a vCard."));
 		}
 		this.activate(key).then(() => {
 			const source = this.instances[key];
 			if (source && source.accept_file) source.accept_file(file);
-			else sanad.ui.Toast.info(__("Choose the file in the panel — dropping it opened the right source."));
+			else whatsapp.ui.Toast.info(__("Choose the file in the panel — dropping it opened the right source."));
 		});
 	}
 
@@ -410,45 +410,45 @@ sanad.ui.ContactPicker = class ContactPicker {
 			secondary_action: () => this.dialog.hide(),
 		});
 		// no fade: the dialog is there the moment it is asked for, like the prototype's panel
-		this.dialog.$wrapper.removeClass("fade").addClass("sanad-kit sanad-sheet sanad-picker-dialog").toggleClass("sanad-picker-dialog--remove", remove);
+		this.dialog.$wrapper.removeClass("fade").addClass("whatsapp-kit whatsapp-kit-sheet whatsapp-kit-picker-dialog").toggleClass("whatsapp-kit-picker-dialog--remove", remove);
 		this.dialog.get_primary_btn().prop("disabled", true);
 		// One live channel only: the selection count is announced through the debounced `ui.announce`.
-		this.$counter = $('<span class="sanad-picker__counter sanad-tabular"></span>').text(__("Nothing selected"));
-		this.$progress = $('<span class="sanad-picker__progress" aria-live="polite"></span>');
-		this.dialog.footer.prepend($('<div class="sanad-picker__footer-info"></div>').append(this.$counter, this.$progress));
+		this.$counter = $('<span class="whatsapp-kit-picker__counter whatsapp-kit-tabular"></span>').text(__("Nothing selected"));
+		this.$progress = $('<span class="whatsapp-kit-picker__progress" aria-live="polite"></span>');
+		this.dialog.footer.prepend($('<div class="whatsapp-kit-picker__footer-info"></div>').append(this.$counter, this.$progress));
 		const $body = this.dialog.get_field("body").$wrapper;
 		this.$root = $(`
-			<div class="sanad-picker">
-				<div class="sanad-picker__tabs" role="tablist" aria-orientation="horizontal" aria-label="${ui.escape(__("Sources"))}"></div>
-				<div class="sanad-picker__zones" role="tablist" aria-label="${ui.escape(__("Choose or review"))}">
-					<button type="button" class="sanad-picker__zone" role="tab" data-zone="pick" aria-selected="true">${ui.escape(__("Choose"))}</button>
-					<button type="button" class="sanad-picker__zone" role="tab" data-zone="selected" aria-selected="false">${ui.escape(__("Selected"))} <span class="sanad-picker__zone-count sanad-tabular" data-zone-count></span></button>
+			<div class="whatsapp-kit-picker">
+				<div class="whatsapp-kit-picker__tabs" role="tablist" aria-orientation="horizontal" aria-label="${ui.escape(__("Sources"))}"></div>
+				<div class="whatsapp-kit-picker__zones" role="tablist" aria-label="${ui.escape(__("Choose or review"))}">
+					<button type="button" class="whatsapp-kit-picker__zone" role="tab" data-zone="pick" aria-selected="true">${ui.escape(__("Choose"))}</button>
+					<button type="button" class="whatsapp-kit-picker__zone" role="tab" data-zone="selected" aria-selected="false">${ui.escape(__("Selected"))} <span class="whatsapp-kit-picker__zone-count whatsapp-kit-tabular" data-zone-count></span></button>
 				</div>
-				<div class="sanad-picker__work">
-					<div class="sanad-picker__paste" hidden></div>
-					<div class="sanad-picker__panes"></div>
+				<div class="whatsapp-kit-picker__work">
+					<div class="whatsapp-kit-picker__paste" hidden></div>
+					<div class="whatsapp-kit-picker__panes"></div>
 				</div>
-				<aside class="sanad-picker__tray" aria-label="${ui.escape(__("The selection"))}">
-					<div class="sanad-picker__tray-head">
-						<span class="sanad-picker__tray-title">${ui.escape(__("Selected"))}</span>
-						<span class="sanad-picker__badge sanad-picker__badge--empty sanad-tabular">0</span>
+				<aside class="whatsapp-kit-picker__tray" aria-label="${ui.escape(__("The selection"))}">
+					<div class="whatsapp-kit-picker__tray-head">
+						<span class="whatsapp-kit-picker__tray-title">${ui.escape(__("Selected"))}</span>
+						<span class="whatsapp-kit-picker__badge whatsapp-kit-picker__badge--empty whatsapp-kit-tabular">0</span>
 					</div>
-					<div class="sanad-picker__tray-sources"></div>
-					<div class="sanad-picker__tray-body"></div>
+					<div class="whatsapp-kit-picker__tray-sources"></div>
+					<div class="whatsapp-kit-picker__tray-body"></div>
 				</aside>
 			</div>`);
 		$body.html(this.$root);
-		this.$tabs = this.$root.find(".sanad-picker__tabs");
-		this.$panes = this.$root.find(".sanad-picker__panes");
-		this.$tray = this.$root.find(".sanad-picker__tray-body");
-		this.$tray_sources = this.$root.find(".sanad-picker__tray-sources");
-		this.$paste = this.$root.find(".sanad-picker__paste");
-		this.$badge = this.$root.find(".sanad-picker__badge");
+		this.$tabs = this.$root.find(".whatsapp-kit-picker__tabs");
+		this.$panes = this.$root.find(".whatsapp-kit-picker__panes");
+		this.$tray = this.$root.find(".whatsapp-kit-picker__tray-body");
+		this.$tray_sources = this.$root.find(".whatsapp-kit-picker__tray-sources");
+		this.$paste = this.$root.find(".whatsapp-kit-picker__paste");
+		this.$badge = this.$root.find(".whatsapp-kit-picker__badge");
 		// The two zones are two tabs: what is being chosen, and what has been chosen — the
 		// prototype's pane shows one at a time, and side by side the second was scrolled past.
-		this.$root.find(".sanad-picker__zone").on("click", (e) => this.show_zone($(e.currentTarget).attr("data-zone")));
+		this.$root.find(".whatsapp-kit-picker__zone").on("click", (e) => this.show_zone($(e.currentTarget).attr("data-zone")));
 		this.bind_shortcuts();
-		this.state = new sanad.ui.EmptyState({ wrapper: this.$panes, state: "loading", rows: 4 });
+		this.state = new whatsapp.ui.EmptyState({ wrapper: this.$panes, state: "loading", rows: 4 });
 		this.dialog.$wrapper.on("hidden.bs.modal", () => this.destroy());
 		this.dialog.show();
 		this.realtime = (data) => this.on_import_progress(data);
@@ -460,7 +460,7 @@ sanad.ui.ContactPicker = class ContactPicker {
 		return ContactPicker.sources_for(this.target_doctype, { api: this.opts.api })
 			.then((entries) => {
 				const wanted = (this.opts.sources || []).map((k) => ALIASES[String(k).toLowerCase()] || k);
-				const list = (entries || []).filter((e) => e.enabled !== false && (!wanted.length || wanted.includes(e.key)) && sanad.ui.ContactPicker.sources[e.key]);
+				const list = (entries || []).filter((e) => e.enabled !== false && (!wanted.length || wanted.includes(e.key)) && whatsapp.ui.ContactPicker.sources[e.key]);
 				this.state.hide();
 				this.build_tabs(list);
 			})
@@ -476,7 +476,7 @@ sanad.ui.ContactPicker = class ContactPicker {
 			this.add_tab(CURRENT, label, (pane) => new CurrentSource(this, { key: CURRENT, label }).mount(pane));
 		}
 		entries.forEach((entry) => {
-			const Source = sanad.ui.ContactPicker.sources[entry.key];
+			const Source = whatsapp.ui.ContactPicker.sources[entry.key];
 			this.add_tab(entry.key, entry.label || Source.label(), (pane) => {
 				const inst = new Source(this, entry);
 				this.instances[entry.key] = inst;
@@ -486,9 +486,9 @@ sanad.ui.ContactPicker = class ContactPicker {
 		});
 		this.selected.mount(this.$tray);
 		if (!entries.length) {
-			sanad.ui.Toast.warning(__("No source is enabled for {0}. Enable one in the WhatsApp settings.", [__(this.target_doctype)]));
+			whatsapp.ui.Toast.warning(__("No source is enabled for {0}. Enable one in the WhatsApp settings.", [__(this.target_doctype)]));
 		}
-		this.$tabs.on("keydown", ".sanad-picker__tab", (e) => this.on_tab_key(e));
+		this.$tabs.on("keydown", ".whatsapp-kit-picker__tab", (e) => this.on_tab_key(e));
 		const pre = this.opts.preselect;
 		const first = pre && pre.source ? ALIASES[String(pre.source).toLowerCase()] || pre.source : null;
 		this.activate(first && this.tabs.some((t) => t.key === first) ? first : this.tabs[0].key, { force: true }).then(() => {
@@ -499,14 +499,14 @@ sanad.ui.ContactPicker = class ContactPicker {
 	add_tab(key, label, mount, $badge) {
 		const id = ui.uid("ptab");
 		const icon = ContactPicker.SOURCE_ICON[key] || "es-line-list";
-		const $tab = $(`<button type="button" class="sanad-picker__tab" role="tab" id="${id}" data-key="${ui.escape(key)}" aria-selected="false" aria-controls="${id}-pane" tabindex="-1">
-			<span class="sanad-picker__tab-icon" aria-hidden="true">${ui.icon(icon, "sm")}</span>
-			<span class="sanad-picker__tab-label">${ui.escape(label)}</span>
-			<span class="sanad-picker__tab-count sanad-tabular" data-count="${ui.escape(key)}"></span>
+		const $tab = $(`<button type="button" class="whatsapp-kit-picker__tab" role="tab" id="${id}" data-key="${ui.escape(key)}" aria-selected="false" aria-controls="${id}-pane" tabindex="-1">
+			<span class="whatsapp-kit-picker__tab-icon" aria-hidden="true">${ui.icon(icon, "sm")}</span>
+			<span class="whatsapp-kit-picker__tab-label">${ui.escape(label)}</span>
+			<span class="whatsapp-kit-picker__tab-count whatsapp-kit-tabular" data-count="${ui.escape(key)}"></span>
 		</button>`);
 		if ($badge) $tab.append($badge);
 		$tab.on("click", () => this.activate(key));
-		const $pane = $(`<div class="sanad-picker__pane" role="tabpanel" id="${id}-pane" aria-labelledby="${id}" tabindex="0" hidden></div>`);
+		const $pane = $(`<div class="whatsapp-kit-picker__pane" role="tabpanel" id="${id}-pane" aria-labelledby="${id}" tabindex="0" hidden></div>`);
 		this.$tabs.append($tab);
 		this.$panes.append($pane);
 		this.tabs.push({ key, label, $tab, $pane, mount, mounted: false });
@@ -607,7 +607,7 @@ sanad.ui.ContactPicker = class ContactPicker {
 							{ label: __("With a conversation"), value: ui.format_int(c.known) },
 					  ];
 				if (c.duplicates) impact.push({ label: __("Duplicates in selection (merged)"), value: ui.format_int(c.duplicates) });
-				return sanad.ui.ConfirmDialog.ask({
+				return whatsapp.ui.ConfirmDialog.ask({
 					title: remove ? __("Remove {0} numbers?", [ui.format_int(c.action)]) : __("Add {0} numbers?", [ui.format_int(c.action)]),
 					message: __("Changes apply to {0} {1}.", [__(this.target_doctype), this.opts.target_label || this.target_name]),
 					impact,
@@ -660,11 +660,11 @@ sanad.ui.ContactPicker = class ContactPicker {
 			.then((result) => {
 				this.set_progress(null);
 				this.committed = true;
-				if (remove) sanad.ui.Toast.success(__("Removed {0}", [ui.format_int(result.removed)]));
+				if (remove) whatsapp.ui.Toast.success(__("Removed {0}", [ui.format_int(result.removed)]));
 				else if (result.skipped_duplicates || result.skipped_invalid) {
-					sanad.ui.Toast.success(__("Added {0}. Skipped {1} already added and {2} invalid.", [ui.format_int(result.added), ui.format_int(result.skipped_duplicates), ui.format_int(result.skipped_invalid)]));
+					whatsapp.ui.Toast.success(__("Added {0}. Skipped {1} already added and {2} invalid.", [ui.format_int(result.added), ui.format_int(result.skipped_duplicates), ui.format_int(result.skipped_invalid)]));
 				} else {
-					sanad.ui.Toast.success(__("Added {0}", [ui.format_int(result.added)]));
+					whatsapp.ui.Toast.success(__("Added {0}", [ui.format_int(result.added)]));
 				}
 				this.opts.on_commit && this.opts.on_commit(result, this);
 				this.dialog.hide();
@@ -699,10 +699,10 @@ sanad.ui.ContactPicker = class ContactPicker {
 		this.opts.on_close && this.opts.on_close(this.committed || false);
 	}
 
-	/** Shortcut: `sanad.ui.ContactPicker.open({...})`. */
+	/** Shortcut: `whatsapp.ui.ContactPicker.open({...})`. */
 	static open(opts) {
 		return new ContactPicker(opts);
 	}
 };
 
-export default sanad.ui.ContactPicker;
+export default whatsapp.ui.ContactPicker;

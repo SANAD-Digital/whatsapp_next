@@ -1,7 +1,7 @@
 // The function's header (WA-FUNCTION) in the shape the command editor and the function window draw.
 // The server reads a function from its Server Script header: values the sender writes (`inputs`), the
 // site's options (`settings`), the message texts (`templates`, per language) and the replies it sends.
-// `sanad.ui.CommandEditor` and `sanad.ui.FunctionDetail` are portable kit components that draw a
+// `whatsapp.ui.CommandEditor` and `whatsapp.ui.FunctionDetail` are portable kit components that draw a
 // function as variables · options · outputs; these helpers turn the header into that shape and turn
 // the edited outputs back into the command's `templates` rows — the components stay unchanged.
 

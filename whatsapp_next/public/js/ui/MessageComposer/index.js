@@ -73,7 +73,7 @@ function list_from_value(value) {
 	}
 	return list_from_lines(text);
 }
-sanad.ui.MessageComposer = class MessageComposer {
+whatsapp.ui.MessageComposer = class MessageComposer {
 	/**
 	 * @param {object} opts
 	 * @param {object} opts.frm — the host form
@@ -142,25 +142,25 @@ sanad.ui.MessageComposer = class MessageComposer {
 		const field = this.frm.get_field(this.fieldname);
 		this.$host = field && field.grid && field.grid.wrapper ? field.grid.wrapper : field && field.$wrapper;
 		this.$el = $(`
-			<div class="sanad-kit sanad-mc" id="${this.id}" data-fieldname="${ui.escape(this.fieldname)}">
-				<div class="sanad-mc__head">
-					<h4 class="sanad-mc__title">${ui.escape(this.label)}</h4>
-					<span class="sanad-mc__count sanad-tabular" aria-live="polite"></span>
-					<div class="sanad-mc__head-actions"></div>
+			<div class="whatsapp-kit whatsapp-kit-mc" id="${this.id}" data-fieldname="${ui.escape(this.fieldname)}">
+				<div class="whatsapp-kit-mc__head">
+					<h4 class="whatsapp-kit-mc__title">${ui.escape(this.label)}</h4>
+					<span class="whatsapp-kit-mc__count whatsapp-kit-tabular" aria-live="polite"></span>
+					<div class="whatsapp-kit-mc__head-actions"></div>
 				</div>
-				<div class="sanad-mc__split">
-					<nav class="sanad-mc__rail" aria-label="${ui.escape(this.label)}"></nav>
-					<section class="sanad-mc__editor" aria-live="polite"></section>
+				<div class="whatsapp-kit-mc__split">
+					<nav class="whatsapp-kit-mc__rail" aria-label="${ui.escape(this.label)}"></nav>
+					<section class="whatsapp-kit-mc__editor" aria-live="polite"></section>
 				</div>
 			</div>`);
-		const $existing = this.frm.$wrapper.find(`.sanad-mc[data-fieldname="${this.fieldname}"]`);
+		const $existing = this.frm.$wrapper.find(`.whatsapp-kit-mc[data-fieldname="${this.fieldname}"]`);
 		if ($existing.length) $existing.replaceWith(this.$el);
 		else if (this.$host && this.$host.length) this.$host.append(this.$el);
 		else this.frm.$wrapper.find(".form-page").first().append(this.$el);
-		if (this.$host) this.$host.addClass("sanad-mc-host");
-		this.$rail = this.$el.find(".sanad-mc__rail");
-		this.$editor = this.$el.find(".sanad-mc__editor");
-		this.$actions = this.$el.find(".sanad-mc__head-actions");
+		if (this.$host) this.$host.addClass("whatsapp-kit-mc-host");
+		this.$rail = this.$el.find(".whatsapp-kit-mc__rail");
+		this.$editor = this.$el.find(".whatsapp-kit-mc__editor");
+		this.$actions = this.$el.find(".whatsapp-kit-mc__head-actions");
 		const first = this.rows()[0];
 		this.active = first ? first.name : null;
 		this.render();
@@ -171,7 +171,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 	render() {
 		const rows = this.rows();
 		if (!rows.some((r) => r.name === this.active)) this.active = rows.length ? rows[0].name : null;
-		this.$el.find(".sanad-mc__count").text(ui.plural(rows.length, { one: __("{0} message"), other: __("{0} messages") }));
+		this.$el.find(".whatsapp-kit-mc__count").text(ui.plural(rows.length, { one: __("{0} message"), other: __("{0} messages") }));
 		this.render_head_actions();
 		this.render_rail(rows);
 		this.render_editor();
@@ -181,7 +181,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 	render_head_actions() {
 		this.$actions.empty();
 		if (!this.can_edit()) return;
-		this.add_button(this.$actions, "btn btn-sm btn-primary sanad-mc__add");
+		this.add_button(this.$actions, "btn btn-sm btn-primary whatsapp-kit-mc__add");
 	}
 
 	/**
@@ -191,7 +191,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 	 */
 	add_button($host, cls) {
 		const full = this.opts.max && this.rows().length >= cint(this.opts.max);
-		const $wrap = $('<span class="sanad-mc__addwrap"></span>').appendTo($host);
+		const $wrap = $('<span class="whatsapp-kit-mc__addwrap"></span>').appendTo($host);
 		const $btn = $(`<button type="button" class="${cls}" aria-haspopup="menu" aria-expanded="false">${ui.icon("es-line-add", "xs")}<span>${ui.escape(__("Add message"))}</span>${ui.icon("es-line-down", "xs")}</button>`)
 			.prop("disabled", !!full)
 			.attr("title", full ? __("This record may carry {0} messages.", [ui.format_int(this.opts.max)]) : __("Choose what the next message is"))
@@ -206,7 +206,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 	render_rail(rows) {
 		this.$rail.empty();
 		if (!rows.length) {
-			new sanad.ui.EmptyState({
+			new whatsapp.ui.EmptyState({
 				wrapper: this.$rail,
 				state: "empty",
 				size: "sm",
@@ -215,7 +215,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 			});
 			return;
 		}
-		const $list = $('<ol class="sanad-mc__raillist"></ol>').appendTo(this.$rail);
+		const $list = $('<ol class="whatsapp-kit-mc__raillist"></ol>').appendTo(this.$rail);
 		rows.forEach((row, index) => {
 			const type = row[this.opts.type_field] || this.types[0];
 			const on = row.name === this.active;
@@ -224,22 +224,22 @@ sanad.ui.MessageComposer = class MessageComposer {
 			// it whole, because a message is told apart by what it says and an Arabic sentence
 			// squeezed into what four icon buttons leave says nothing at all
 			const $item = $(`
-				<li class="sanad-mc__railitem${on ? " sanad-mc__railitem--on" : ""}${problem ? " sanad-mc__railitem--problem" : ""}">
-					<span class="sanad-mc__railtop">
-						<span class="sanad-mc__order sanad-tabular">${ui.escape(ui.format_int(index + 1))}</span>
-						<span class="sanad-mc__railtype">${ui.icon(icon_of(type), "xs")} ${ui.escape(__(type || ""))}</span>
-						${problem ? `<span class="sanad-mc__raildot" title="${ui.escape(problem)}" aria-label="${ui.escape(problem)}"></span>` : ""}
-						<span class="sanad-mc__railactions"></span>
+				<li class="whatsapp-kit-mc__railitem${on ? " whatsapp-kit-mc__railitem--on" : ""}${problem ? " whatsapp-kit-mc__railitem--problem" : ""}">
+					<span class="whatsapp-kit-mc__railtop">
+						<span class="whatsapp-kit-mc__order whatsapp-kit-tabular">${ui.escape(ui.format_int(index + 1))}</span>
+						<span class="whatsapp-kit-mc__railtype">${ui.icon(icon_of(type), "xs")} ${ui.escape(__(type || ""))}</span>
+						${problem ? `<span class="whatsapp-kit-mc__raildot" title="${ui.escape(problem)}" aria-label="${ui.escape(problem)}"></span>` : ""}
+						<span class="whatsapp-kit-mc__railactions"></span>
 					</span>
-					<button type="button" class="sanad-mc__railbtn" aria-current="${on}" data-name="${ui.escape(row.name)}">
-						<span class="sanad-mc__railline" dir="auto">${ui.escape(this.summary_of(row))}</span>
+					<button type="button" class="whatsapp-kit-mc__railbtn" aria-current="${on}" data-name="${ui.escape(row.name)}">
+						<span class="whatsapp-kit-mc__railline" dir="auto">${ui.escape(this.summary_of(row))}</span>
 					</button>
 				</li>`);
-			$item.find(".sanad-mc__railbtn").on("click", () => this.select(row.name));
-			const $acts = $item.find(".sanad-mc__railactions");
+			$item.find(".whatsapp-kit-mc__railbtn").on("click", () => this.select(row.name));
+			const $acts = $item.find(".whatsapp-kit-mc__railactions");
 			if (this.can_edit()) {
 				const btn = (icon, label, disabled, handler) =>
-					$(`<button type="button" class="sanad-mc__icon-btn" title="${ui.escape(label)}" aria-label="${ui.escape(label)}">${ui.icon(icon, "xs")}</button>`)
+					$(`<button type="button" class="whatsapp-kit-mc__icon-btn" title="${ui.escape(label)}" aria-label="${ui.escape(label)}">${ui.icon(icon, "xs")}</button>`)
 						.prop("disabled", !!disabled)
 						.on("click", (e) => {
 							e.stopPropagation();
@@ -255,15 +255,15 @@ sanad.ui.MessageComposer = class MessageComposer {
 			if (this.opts.delay_field && index < rows.length - 1) $list.append(this.rail_delay(rows[index + 1]));
 		});
 		// the verb again at the foot of the list, where the eye already is once it has read it
-		if (this.can_edit()) this.add_button($('<div class="sanad-mc__railadd"></div>').appendTo(this.$rail), "sanad-mc__railaddbtn");
+		if (this.can_edit()) this.add_button($('<div class="whatsapp-kit-mc__railadd"></div>').appendTo(this.$rail), "whatsapp-kit-mc__railaddbtn");
 	}
 
 	/** Between two rail items: how long the campaign waits before the next message. */
 	rail_delay(next_row) {
 		const seconds = cint(next_row[this.opts.delay_field]);
 		const label = seconds ? __("wait {0}", [this.duration(seconds)]) : __("no wait");
-		const $li = $(`<li class="sanad-mc__railwait">
-			<button type="button" class="sanad-mc__delay">${ui.icon("es-line-time", "xs")} <span>${ui.escape(label)}</span></button>
+		const $li = $(`<li class="whatsapp-kit-mc__railwait">
+			<button type="button" class="whatsapp-kit-mc__delay">${ui.icon("es-line-time", "xs")} <span>${ui.escape(label)}</span></button>
 		</li>`);
 		$li.find("button").on("click", () => this.ask_delay(next_row));
 		return $li;
@@ -283,22 +283,22 @@ sanad.ui.MessageComposer = class MessageComposer {
 		const row = this.row_of(this.active);
 		if (!row) return;
 		const type = row[this.opts.type_field] || this.types[0];
-		const $head = $(`<div class="sanad-mc__etop"></div>`).appendTo(this.$editor);
+		const $head = $(`<div class="whatsapp-kit-mc__etop"></div>`).appendTo(this.$editor);
 		this.render_type_control($head, row);
-		$(`<button type="button" class="sanad-mc__toggle-preview" aria-pressed="${this.show_preview}">${ui.icon("es-line-chat-alt", "xs")} <span>${ui.escape(this.show_preview ? __("Hide preview") : __("Show preview"))}</span></button>`)
+		$(`<button type="button" class="whatsapp-kit-mc__toggle-preview" aria-pressed="${this.show_preview}">${ui.icon("es-line-chat-alt", "xs")} <span>${ui.escape(this.show_preview ? __("Hide preview") : __("Show preview"))}</span></button>`)
 			.on("click", () => {
 				this.show_preview = !this.show_preview;
 				this.render_editor();
 			})
 			.appendTo($head);
 
-		const $grid = $(`<div class="sanad-mc__egrid${this.show_preview ? "" : " sanad-mc__egrid--nopreview"}"></div>`).appendTo(this.$editor);
-		const $form = $('<div class="sanad-mc__eform"></div>').appendTo($grid);
+		const $grid = $(`<div class="whatsapp-kit-mc__egrid${this.show_preview ? "" : " whatsapp-kit-mc__egrid--nopreview"}"></div>`).appendTo(this.$editor);
+		const $form = $('<div class="whatsapp-kit-mc__eform"></div>').appendTo($grid);
 		if (this.show_preview) {
-			$(`<aside class="sanad-mc__epreview">
-					<span class="sanad-mc__pane-label">${ui.escape(__("As the recipient will see it"))}</span>
-					<div class="sanad-mc__chat"></div>
-					<div class="sanad-mc__errors" role="alert"></div>
+			$(`<aside class="whatsapp-kit-mc__epreview">
+					<span class="whatsapp-kit-mc__pane-label">${ui.escape(__("As the recipient will see it"))}</span>
+					<div class="whatsapp-kit-mc__chat"></div>
+					<div class="whatsapp-kit-mc__errors" role="alert"></div>
 				</aside>`).appendTo($grid);
 		}
 		this.render_fields($form, row, type);
@@ -315,18 +315,18 @@ sanad.ui.MessageComposer = class MessageComposer {
 	render_type_control($host, row) {
 		const current = row[this.opts.type_field] || this.types[0];
 		const type_label = __((this.field_map[this.opts.type_field] || {}).label || "Type");
-		const $wrap = $('<div class="sanad-mc__typewrap"></div>').appendTo($host);
+		const $wrap = $('<div class="whatsapp-kit-mc__typewrap"></div>').appendTo($host);
 		const $btn = $(`
-			<button type="button" class="sanad-mc__typepick" aria-haspopup="menu" aria-expanded="false">
-				<span class="sanad-mc__typepick-icon" aria-hidden="true">${ui.icon(icon_of(current), "sm")}</span>
-				<span class="sanad-mc__typepick-text">
-					<span class="sanad-mc__typepick-caption">${ui.escape(type_label)}</span>
-					<span class="sanad-mc__typepick-name">${ui.escape(__(current || ""))}</span>
+			<button type="button" class="whatsapp-kit-mc__typepick" aria-haspopup="menu" aria-expanded="false">
+				<span class="whatsapp-kit-mc__typepick-icon" aria-hidden="true">${ui.icon(icon_of(current), "sm")}</span>
+				<span class="whatsapp-kit-mc__typepick-text">
+					<span class="whatsapp-kit-mc__typepick-caption">${ui.escape(type_label)}</span>
+					<span class="whatsapp-kit-mc__typepick-name">${ui.escape(__(current || ""))}</span>
 				</span>
-				<span class="sanad-mc__typepick-caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
+				<span class="whatsapp-kit-mc__typepick-caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 			</button>`).appendTo($wrap);
 		if (!this.can_edit()) {
-			$btn.prop("disabled", true).find(".sanad-mc__typepick-caret").remove();
+			$btn.prop("disabled", true).find(".whatsapp-kit-mc__typepick-caret").remove();
 			return;
 		}
 		$btn.attr("aria-label", __("{0}: {1}. Change it.", [type_label, __(current || "")])).on("click", (e) => {
@@ -344,22 +344,22 @@ sanad.ui.MessageComposer = class MessageComposer {
 	 */
 	open_type_menu($host, $btn, current, on_pick) {
 		if (this.close_type_menu(true)) return; // a second click on the same button closes it
-		const $menu = $(`<div class="sanad-mc__typemenu" role="menu" aria-label="${ui.escape(__("Message type"))}"></div>`).appendTo($host);
+		const $menu = $(`<div class="whatsapp-kit-mc__typemenu" role="menu" aria-label="${ui.escape(__("Message type"))}"></div>`).appendTo($host);
 		const shelves = GROUPS.map((g) => [g, this.types.filter((t) => ((TYPES[t] || {}).group || GROUPS[GROUPS.length - 1].key) === g.key)]);
 		shelves.forEach(([group, types]) => {
 			if (!types.length) return;
-			$(`<p class="sanad-mc__typegroup">${ui.escape(group.label())}</p>`).appendTo($menu);
+			$(`<p class="whatsapp-kit-mc__typegroup">${ui.escape(group.label())}</p>`).appendTo($menu);
 			types.forEach((type) => {
 				const meta = TYPES[type] || {};
 				const on = type === current;
 				$(`
-					<button type="button" class="sanad-mc__typeopt${on ? " sanad-mc__typeopt--on" : ""}" role="menuitemradio" aria-checked="${on}" tabindex="-1">
-						<span class="sanad-mc__typeopt-icon" aria-hidden="true">${ui.icon(icon_of(type), "sm")}</span>
-						<span class="sanad-mc__typeopt-text">
-							<span class="sanad-mc__typeopt-name">${ui.escape(__(type))}</span>
-							${meta.hint ? `<span class="sanad-mc__typeopt-hint">${ui.escape(meta.hint())}</span>` : ""}
+					<button type="button" class="whatsapp-kit-mc__typeopt${on ? " whatsapp-kit-mc__typeopt--on" : ""}" role="menuitemradio" aria-checked="${on}" tabindex="-1">
+						<span class="whatsapp-kit-mc__typeopt-icon" aria-hidden="true">${ui.icon(icon_of(type), "sm")}</span>
+						<span class="whatsapp-kit-mc__typeopt-text">
+							<span class="whatsapp-kit-mc__typeopt-name">${ui.escape(__(type))}</span>
+							${meta.hint ? `<span class="whatsapp-kit-mc__typeopt-hint">${ui.escape(meta.hint())}</span>` : ""}
 						</span>
-						<span class="sanad-mc__typeopt-tick" aria-hidden="true">${on ? ui.icon("es-line-check", "xs") : ""}</span>
+						<span class="whatsapp-kit-mc__typeopt-tick" aria-hidden="true">${on ? ui.icon("es-line-check", "xs") : ""}</span>
 					</button>`)
 					.on("click", (e) => {
 						e.stopPropagation();
@@ -413,7 +413,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 
 		primary.forEach((fieldname) => this.field(  $form, row, fieldname, controls));
 		if (!rest.length) return;
-		const $more = $(`<details class="sanad-mc__more"><summary>${ui.escape(__("More options"))}</summary></details>`).appendTo($form);
+		const $more = $(`<details class="whatsapp-kit-mc__more"><summary>${ui.escape(__("More options"))}</summary></details>`).appendTo($form);
 		rest.forEach((fieldname) => this.field($more, row, fieldname, controls));
 	}
 
@@ -421,7 +421,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 		if (LIST_FIELDS[fieldname] && this.field_map[fieldname].fieldtype === "JSON") return this.list_field($host, row, fieldname, controls);
 		const df = this.field_map[fieldname];
 		const is_body = fieldname === this.opts.body_field || (df.fieldtype === "Small Text" && fieldname === "caption");
-		const $wrap = $(`<div class="sanad-mc__field sanad-mc__field--${ui.escape(df.fieldtype.toLowerCase().replace(/\s+/g, "-"))}"></div>`).appendTo($host);
+		const $wrap = $(`<div class="whatsapp-kit-mc__field whatsapp-kit-mc__field--${ui.escape(df.fieldtype.toLowerCase().replace(/\s+/g, "-"))}"></div>`).appendTo($host);
 		let ready = false;
 		const control = frappe.ui.form.make_control({
 			df: Object.assign({}, df, {
@@ -456,7 +456,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 	 */
 	list_field($host, row, fieldname, controls) {
 		const df = this.field_map[fieldname];
-		const $wrap = $(`<div class="sanad-mc__field sanad-mc__field--list"></div>`).appendTo($host);
+		const $wrap = $(`<div class="whatsapp-kit-mc__field whatsapp-kit-mc__field--list"></div>`).appendTo($host);
 		let ready = false;
 		const control = frappe.ui.form.make_control({
 			df: {
@@ -487,14 +487,14 @@ sanad.ui.MessageComposer = class MessageComposer {
 	/** The writing toolbar: WhatsApp's marks, and the variables, over the field they act on. */
 	render_toolbar($wrap, row, fieldname, control) {
 		if (!this.can_edit()) return;
-		const $bar = $('<div class="sanad-mc__toolbar"></div>').insertAfter($wrap.find(".control-input-wrapper").first().length ? $wrap.find(".control-input-wrapper").first() : $wrap.children().first());
+		const $bar = $('<div class="whatsapp-kit-mc__toolbar"></div>').insertAfter($wrap.find(".control-input-wrapper").first().length ? $wrap.find(".control-input-wrapper").first() : $wrap.children().first());
 		MARKS.forEach((m) => {
-			$(`<button type="button" class="sanad-mc__mark" title="${ui.escape(m.label())}" aria-label="${ui.escape(m.label())}">${ui.icon(m.icon, "xs")}</button>`)
+			$(`<button type="button" class="whatsapp-kit-mc__mark" title="${ui.escape(m.label())}" aria-label="${ui.escape(m.label())}">${ui.icon(m.icon, "xs")}</button>`)
 				.on("click", () => this.wrap_selection(row, fieldname, control, m.mark))
 				.appendTo($bar);
 		});
-		const $vars = $(`<div class="sanad-mc__varpick"></div>`).appendTo($bar);
-		$(`<button type="button" class="sanad-mc__varbtn" aria-haspopup="listbox" aria-expanded="false">${ui.icon("es-line-add", "xs")} ${ui.escape(__("Variable"))}</button>`)
+		const $vars = $(`<div class="whatsapp-kit-mc__varpick"></div>`).appendTo($bar);
+		$(`<button type="button" class="whatsapp-kit-mc__varbtn" aria-haspopup="listbox" aria-expanded="false">${ui.icon("es-line-add", "xs")} ${ui.escape(__("Variable"))}</button>`)
 			.on("click", (e) => {
 				e.stopPropagation();
 				this.toggle_vars($vars, row, fieldname, control);
@@ -503,18 +503,18 @@ sanad.ui.MessageComposer = class MessageComposer {
 	}
 
 	toggle_vars($host, row, fieldname, control) {
-		const open = $host.find(".sanad-mc__varmenu").length;
+		const open = $host.find(".whatsapp-kit-mc__varmenu").length;
 		$(document).off(`click.${this.id}-vars`);
-		$host.find(".sanad-mc__varmenu").remove();
-		$host.find(".sanad-mc__varbtn").attr("aria-expanded", open ? "false" : "true");
+		$host.find(".whatsapp-kit-mc__varmenu").remove();
+		$host.find(".whatsapp-kit-mc__varbtn").attr("aria-expanded", open ? "false" : "true");
 		if (open) return;
 		const list = this.variables || [];
-		const $menu = $('<div class="sanad-mc__varmenu" role="listbox"></div>').appendTo($host);
-		if (!list.length) $menu.append(`<p class="sanad-mc__hint">${ui.escape(__("No variable is offered for this record."))}</p>`);
+		const $menu = $('<div class="whatsapp-kit-mc__varmenu" role="listbox"></div>').appendTo($host);
+		if (!list.length) $menu.append(`<p class="whatsapp-kit-mc__hint">${ui.escape(__("No variable is offered for this record."))}</p>`);
 		list.forEach((v) => {
-			$(`<button type="button" class="sanad-mc__varopt" role="option">
-					<span class="sanad-mc__var-label">${ui.escape(__(v.label || v.name))}</span>
-					<span class="sanad-mc__var-name">${ui.escape(v.name)}</span>
+			$(`<button type="button" class="whatsapp-kit-mc__varopt" role="option">
+					<span class="whatsapp-kit-mc__var-label">${ui.escape(__(v.label || v.name))}</span>
+					<span class="whatsapp-kit-mc__var-name">${ui.escape(v.name)}</span>
 				</button>`)
 				.on("click", () => {
 					this.insert_at_caret(row, fieldname, control, `{{ ${v.name} }}`);
@@ -570,9 +570,9 @@ sanad.ui.MessageComposer = class MessageComposer {
 		const rows = this.rows();
 		if (rows.findIndex((r) => r.name === row.name) === 0) return; // the first message waits for nothing
 		const seconds = cint(row[this.opts.delay_field]);
-		const $line = $(`<div class="sanad-mc__delayline">
+		const $line = $(`<div class="whatsapp-kit-mc__delayline">
 				<span>${ui.escape(__("Send it"))}</span>
-				<button type="button" class="sanad-mc__delay">${ui.icon("es-line-time", "xs")} <span>${ui.escape(seconds ? this.duration(seconds) : __("immediately"))}</span></button>
+				<button type="button" class="whatsapp-kit-mc__delay">${ui.icon("es-line-time", "xs")} <span>${ui.escape(seconds ? this.duration(seconds) : __("immediately"))}</span></button>
 				<span>${ui.escape(__("after the message before it."))}</span>
 			</div>`).appendTo($form);
 		$line.find("button").on("click", () => this.ask_delay(row));
@@ -644,7 +644,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 	// ---- the preview --------------------------------------------------------------------------
 
 	preview(row) {
-		const $chat = this.$editor.find(".sanad-mc__chat");
+		const $chat = this.$editor.find(".whatsapp-kit-mc__chat");
 		if (!$chat.length) return;
 		this.draw_bubble($chat, this.local_preview(row));
 		if (!this.opts.preview || this.frm.is_new() || this.frm.is_dirty()) return;
@@ -654,7 +654,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 				const local = this.local_preview(row);
 				this.draw_bubble($chat, { type: p.message_type || row[this.opts.type_field], body: p.body || p.caption, attachment: p.attachment_name || local.attachment, image: local.image, poll: this.poll_of(row) });
 				const errors = p.errors || [];
-				this.$editor.find(".sanad-mc__errors").html(errors.length ? `<ul>${errors.map((e) => `<li>${ui.escape(e)}</li>`).join("")}</ul>` : "");
+				this.$editor.find(".whatsapp-kit-mc__errors").html(errors.length ? `<ul>${errors.map((e) => `<li>${ui.escape(e)}</li>`).join("")}</ul>` : "");
 			})
 			.catch(() => {});
 	}
@@ -682,29 +682,29 @@ sanad.ui.MessageComposer = class MessageComposer {
 		const body = (message.body || "").trim();
 		let inner = "";
 		if (message.image) {
-			inner += `<span class="sanad-mc__thumb" data-file="${ui.escape(message.attachment || "")}"><img src="${ui.escape(message.image)}" alt="${ui.escape(message.attachment || __("Image"))}" loading="lazy"></span>`;
+			inner += `<span class="whatsapp-kit-mc__thumb" data-file="${ui.escape(message.attachment || "")}"><img src="${ui.escape(message.image)}" alt="${ui.escape(message.attachment || __("Image"))}" loading="lazy"></span>`;
 			// a picture carried by a Document arrives as a file with a preview on it, so its name
 			// is part of what the recipient sees
 			if (message.attachment && !["Image", "Sticker"].includes(message.type)) {
-				inner += `<span class="sanad-mc__file sanad-mc__file--under">${ui.icon("es-line-filetype", "xs")} <span dir="auto">${ui.escape(message.attachment)}</span></span>`;
+				inner += `<span class="whatsapp-kit-mc__file whatsapp-kit-mc__file--under">${ui.icon("es-line-filetype", "xs")} <span dir="auto">${ui.escape(message.attachment)}</span></span>`;
 			}
 		} else if (message.attachment) {
-			inner += `<span class="sanad-mc__file">${ui.icon("es-line-filetype", "xs")} <span dir="auto">${ui.escape(message.attachment)}</span></span>`;
+			inner += `<span class="whatsapp-kit-mc__file">${ui.icon("es-line-filetype", "xs")} <span dir="auto">${ui.escape(message.attachment)}</span></span>`;
 		}
 		if (message.poll) {
-			inner += `<span class="sanad-mc__poll">
-				<span class="sanad-mc__poll-q" dir="auto">${ui.escape(message.poll.question)}</span>
-				${(message.poll.options.length ? message.poll.options : [__("No answer yet")]).map((o) => `<span class="sanad-mc__poll-o" dir="auto">${ui.escape(o)}</span>`).join("")}
-				<span class="sanad-mc__poll-note">${ui.escape(message.poll.multiple ? __("More than one answer allowed") : __("One answer"))}</span>
+			inner += `<span class="whatsapp-kit-mc__poll">
+				<span class="whatsapp-kit-mc__poll-q" dir="auto">${ui.escape(message.poll.question)}</span>
+				${(message.poll.options.length ? message.poll.options : [__("No answer yet")]).map((o) => `<span class="whatsapp-kit-mc__poll-o" dir="auto">${ui.escape(o)}</span>`).join("")}
+				<span class="whatsapp-kit-mc__poll-note">${ui.escape(message.poll.multiple ? __("More than one answer allowed") : __("One answer"))}</span>
 			</span>`;
 		}
-		if (body) inner += `<span class="sanad-mc__text" dir="auto">${this.format_body(body)}</span>`;
-		if (!inner) inner = `<span class="sanad-mc__text sanad-mc__text--empty">${ui.escape(__("Nothing to send yet"))}</span>`;
-		$chat.html(`<div class="sanad-mc__bubble">${inner}<span class="sanad-mc__meta"><span class="sanad-tabular">${ui.escape(now)}</span>${ui.icon("es-line-double-check", "xs")}</span></div>`);
-		$chat.find(".sanad-mc__thumb img").on("error", (e) => {
-			const $thumb = $(e.currentTarget).closest(".sanad-mc__thumb");
+		if (body) inner += `<span class="whatsapp-kit-mc__text" dir="auto">${this.format_body(body)}</span>`;
+		if (!inner) inner = `<span class="whatsapp-kit-mc__text whatsapp-kit-mc__text--empty">${ui.escape(__("Nothing to send yet"))}</span>`;
+		$chat.html(`<div class="whatsapp-kit-mc__bubble">${inner}<span class="whatsapp-kit-mc__meta"><span class="whatsapp-kit-tabular">${ui.escape(now)}</span>${ui.icon("es-line-double-check", "xs")}</span></div>`);
+		$chat.find(".whatsapp-kit-mc__thumb img").on("error", (e) => {
+			const $thumb = $(e.currentTarget).closest(".whatsapp-kit-mc__thumb");
 			const file = $thumb.attr("data-file") || __("The file is missing");
-			$thumb.replaceWith(`<span class="sanad-mc__file">${ui.icon("es-line-filetype", "xs")} <span dir="auto">${ui.escape(file)}</span></span>`);
+			$thumb.replaceWith(`<span class="whatsapp-kit-mc__file">${ui.icon("es-line-filetype", "xs")} <span dir="auto">${ui.escape(file)}</span></span>`);
 		});
 	}
 
@@ -723,7 +723,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 		html = html.replace(/_([^_\n]+)_/g, "<i>$1</i>");
 		html = html.replace(/~([^~\n]+)~/g, "<s>$1</s>");
 		html = html.replace(/```([^`]+)```/g, "<code>$1</code>");
-		html = html.replace(/\u0000(\d+)\u0000/g, (m, i) => `<span class="sanad-mc__var">${vars[cint(i)]}</span>`);
+		html = html.replace(/\u0000(\d+)\u0000/g, (m, i) => `<span class="whatsapp-kit-mc__var">${vars[cint(i)]}</span>`);
 		return html.replace(/\n/g, "<br>");
 	}
 
@@ -796,7 +796,7 @@ sanad.ui.MessageComposer = class MessageComposer {
 			ui.announce(__("Message removed"));
 		};
 		if (this.problem_of(row) === __("The text is empty") || this.summary_of(row) === __("Nothing to send yet")) return doit();
-		sanad.ui.ConfirmDialog.ask({
+		whatsapp.ui.ConfirmDialog.ask({
 			title: __("Remove message {0}?", [ui.format_int(rows.findIndex((r) => r.name === row.name) + 1)]),
 			message: this.summary_of(row),
 			danger: true,
@@ -832,8 +832,8 @@ sanad.ui.MessageComposer = class MessageComposer {
 		this.close_type_menu();
 		$(document).off(`click.${this.id}-vars`);
 		this.$el && this.$el.remove();
-		this.$host && this.$host.removeClass("sanad-mc-host");
+		this.$host && this.$host.removeClass("whatsapp-kit-mc-host");
 	}
 };
 
-export default sanad.ui.MessageComposer;
+export default whatsapp.ui.MessageComposer;

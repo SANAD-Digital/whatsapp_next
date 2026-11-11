@@ -9,7 +9,7 @@ frappe.ui.form.on("WhatsApp Device", {
 			frappe.set_route("wa-devices");
 			return;
 		}
-		const ui = sanad.ui;
+		const ui = whatsapp.ui;
 		const doc = frm.doc;
 		const label = doc.device_name || doc.name;
 		frm.add_custom_button(__("Open Devices page"), () => frappe.set_route("wa-devices"));

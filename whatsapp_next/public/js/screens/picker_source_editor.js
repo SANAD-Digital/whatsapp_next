@@ -16,13 +16,13 @@ frappe.provide("whatsapp_next");
 
 (function () {
 	const esc = (v) => frappe.utils.escape_html(v == null ? "" : String(v));
-	const fmt = (n) => (sanad.ui.format_int ? sanad.ui.format_int(n) : String(n));
+	const fmt = (n) => (whatsapp.ui.format_int ? whatsapp.ui.format_int(n) : String(n));
 	let candidates_promise = null;
 
 	const candidates = () =>
 		(candidates_promise =
 			candidates_promise ||
-			sanad.ui.call("settings.list_picker_candidates", {}, { silent: true }).catch(() => {
+			whatsapp.ui.call("settings.list_picker_candidates", {}, { silent: true }).catch(() => {
 				candidates_promise = null;
 				return [];
 			}));
@@ -109,8 +109,8 @@ frappe.provide("whatsapp_next");
 				primary_action_label: this.is_new ? __("Add") : __("Save"),
 				primary_action: (values) => this.save(values),
 			}));
-			d.$wrapper.addClass("sanad-kit sanad-sheet wa-pse");
-			this._preview = sanad.ui.debounce ? sanad.ui.debounce(() => this.preview(), 350) : () => this.preview();
+			d.$wrapper.addClass("whatsapp-kit whatsapp-kit-sheet whatsapp-pse");
+			this._preview = whatsapp.ui.debounce ? whatsapp.ui.debounce(() => this.preview(), 350) : () => this.preview();
 
 			candidates().then((list) => {
 				const taken = new Set((this.opts.taken || []).filter((t) => t !== row.document_type));
@@ -152,7 +152,7 @@ frappe.provide("whatsapp_next");
 			}
 			if (this.info && this.info.document_type === doctype) return;
 			this.draw_summary("loading");
-			return sanad.ui
+			return whatsapp.ui
 				.call("settings.analyze_picker_doctype", { document_type: doctype }, { silent: true })
 				.then((info) => {
 					if (d.get_value("document_type") !== doctype) return;
@@ -214,14 +214,14 @@ frappe.provide("whatsapp_next");
 
 		draw_summary(state, err) {
 			const $w = this.dialog.get_field("summary").$wrapper;
-			if (state === "loading") return $w.html(`<div class="wa-pse__note">${esc(__("Reading the screen's fields…"))}</div>`);
-			if (state === "error") return $w.html(`<div class="wa-pse__note wa-pse__note--bad">${esc((err && err.message) || __("The screen could not be read."))}</div>`);
+			if (state === "loading") return $w.html(`<div class="whatsapp-pse__note">${esc(__("Reading the screen's fields…"))}</div>`);
+			if (state === "error") return $w.html(`<div class="whatsapp-pse__note whatsapp-pse__note--bad">${esc((err && err.message) || __("The screen could not be read."))}</div>`);
 			const info = this.info;
-			if (!info) return $w.html(`<div class="wa-pse__note">${esc(__("Choose a screen: its number, name and contact fields are found for you."))}</div>`);
+			if (!info) return $w.html(`<div class="whatsapp-pse__note">${esc(__("Choose a screen: its number, name and contact fields are found for you."))}</div>`);
 			const found = [];
 			if (info.phone_fields.length) found.push(__("{0} number fields", [info.phone_fields.length]));
 			if (info.contact_fields.length) found.push(__("{0} links to a contact", [info.contact_fields.length]));
-			$w.html(`<div class="wa-pse__note wa-pse__note--ok">
+			$w.html(`<div class="whatsapp-pse__note whatsapp-pse__note--ok">
 				<strong>${esc(info.label)}</strong>
 				<span>${esc(__("{0} records", [fmt(info.total)]))}</span>
 				<span>${esc(found.join(" · ") || __("no number field and no contact link"))}</span>
@@ -231,7 +231,7 @@ frappe.provide("whatsapp_next");
 		/** Frappe's own filter builder on the chosen screen; it keeps `[[field, op, value]]`. */
 		draw_filters(doctype, saved) {
 			const $w = this.dialog.get_field("filters").$wrapper;
-			$w.html(`<p class="wa-pse__hint">${esc(__("Always applied on top of what the user chooses in the picker. Leave empty to offer every record."))}</p><div class="wa-pse__fg"></div>`);
+			$w.html(`<p class="whatsapp-pse__hint">${esc(__("Always applied on top of what the user chooses in the picker. Leave empty to offer every record."))}</p><div class="whatsapp-pse__fg"></div>`);
 			let rows = [];
 			try {
 				rows = saved ? (typeof saved === "string" ? JSON.parse(saved) : saved) : [];
@@ -241,7 +241,7 @@ frappe.provide("whatsapp_next");
 			}
 			try {
 				this.fg = new frappe.ui.FilterGroup({
-					parent: $w.find(".wa-pse__fg"),
+					parent: $w.find(".whatsapp-pse__fg"),
 					doctype,
 					on_change: () => this.changed(),
 				});
@@ -249,7 +249,7 @@ frappe.provide("whatsapp_next");
 				this.fg.add_filters_to_filter_group(rows.map((r) => [doctype, ...r.slice(-3)]));
 			} catch (e) {
 				this.fg = null;
-				$w.find(".wa-pse__fg").html(`<p class="wa-pse__hint">${esc(__("The filters of this screen could not be shown."))}</p>`);
+				$w.find(".whatsapp-pse__fg").html(`<p class="whatsapp-pse__hint">${esc(__("The filters of this screen could not be shown."))}</p>`);
 			}
 		}
 
@@ -283,27 +283,27 @@ frappe.provide("whatsapp_next");
 			const source = this.values();
 			if (!source.document_type) return $w.empty();
 			const seq = (this._seq = (this._seq || 0) + 1);
-			$w.html(`<div class="wa-pse__note">${esc(__("Counting…"))}</div>`);
-			sanad.ui
+			$w.html(`<div class="whatsapp-pse__note">${esc(__("Counting…"))}</div>`);
+			whatsapp.ui
 				.call("settings.preview_picker_source", { source: JSON.stringify(source) }, { silent: true })
 				.then((r) => {
 					if (seq !== this._seq) return;
 					const ok = cint(r.with_number) > 0;
 					const sample = (r.sample || [])
-						.map((s) => `<li><span>${esc(s.label)}</span><span dir="ltr">${esc(sanad.ui.phone ? sanad.ui.phone(s.phone) : s.phone)}</span></li>`)
+						.map((s) => `<li><span>${esc(s.label)}</span><span dir="ltr">${esc(whatsapp.ui.phone ? whatsapp.ui.phone(s.phone) : s.phone)}</span></li>`)
 						.join("");
-					$w.html(`<div class="wa-pse__preview ${ok ? "is-ok" : "is-bad"}">
-						<div class="wa-pse__count">
+					$w.html(`<div class="whatsapp-pse__preview ${ok ? "is-ok" : "is-bad"}">
+						<div class="whatsapp-pse__count">
 							<strong>${esc(fmt(r.with_number))}</strong>
 							<span>${esc(__("of {0} records have a number WhatsApp can use", [fmt(r.total)]))}</span>
 						</div>
-						${ok ? `<ul class="wa-pse__sample">${sample}</ul>` : `<p class="wa-pse__hint">${esc(
+						${ok ? `<ul class="whatsapp-pse__sample">${sample}</ul>` : `<p class="whatsapp-pse__hint">${esc(
 							this.empty_hint(source, r)
 						)}</p>`}
 					</div>`);
 				})
 				.catch((err) => {
-					if (seq === this._seq) $w.html(`<div class="wa-pse__note wa-pse__note--bad">${esc(err && err.message)}</div>`);
+					if (seq === this._seq) $w.html(`<div class="whatsapp-pse__note whatsapp-pse__note--bad">${esc(err && err.message)}</div>`);
 				});
 		}
 

@@ -1,4 +1,4 @@
-// sanad.ui.DashboardBlock — the driver behind a Frappe Custom HTML Block (or any wrapper): renders
+// whatsapp.ui.DashboardBlock — the driver behind a Frappe Custom HTML Block (or any wrapper): renders
 // Number Cards and Dashboard Charts by name through the same server methods the workspace widgets
 // call (`number_card.get_result`, `dashboard_chart.get`), in a responsive grid with skeleton →
 // value, an error state per card, an optional Today / 7 days / 30 days period filter applied to the
@@ -31,7 +31,7 @@ const STATS_QUALIFIER = {
 
 const as_error = (err) => (err instanceof Error ? err : ui.error_from(err));
 
-sanad.ui.DashboardBlock = class DashboardBlock {
+whatsapp.ui.DashboardBlock = class DashboardBlock {
 	/**
 	 * @param {Object} opts
 	 * @param {jQuery|HTMLElement|ShadowRoot} opts.wrapper — a Custom Block's `root_element` or any element
@@ -77,31 +77,31 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 
 	render() {
 		const o = this.opts;
-		this.$root = $(`<div class="sanad-kit sanad-dashboard" style="--sanad-dashboard-columns:${cint(o.columns) || 4}"></div>`);
-		this.$toolbar = $('<div class="sanad-dashboard__toolbar"></div>').appendTo(this.$root);
+		this.$root = $(`<div class="whatsapp-kit whatsapp-kit-dashboard" style="--whatsapp-kit-dashboard-columns:${cint(o.columns) || 4}"></div>`);
+		this.$toolbar = $('<div class="whatsapp-kit-dashboard__toolbar"></div>').appendTo(this.$root);
 		if (o.period_filter) this.render_period();
 		this.$refresh = $(
-			`<button type="button" class="btn btn-sm btn-default sanad-dashboard__refresh">${ui.icon("es-line-reload", "xs")} <span>${ui.escape(__("Refresh"))}</span></button>`
+			`<button type="button" class="btn btn-sm btn-default whatsapp-kit-dashboard__refresh">${ui.icon("es-line-reload", "xs")} <span>${ui.escape(__("Refresh"))}</span></button>`
 		)
 			.on("click", () => this.refresh({ announce: true }))
 			.appendTo(this.$toolbar);
 
 		if (o.number_cards.length) {
-			this.$cards = $('<div class="sanad-dashboard__cards" role="list"></div>').appendTo(this.$root);
+			this.$cards = $('<div class="whatsapp-kit-dashboard__cards" role="list"></div>').appendTo(this.$root);
 			o.number_cards.forEach((name) => (this.cards[name] = this.make_card(name)));
 		}
 		if (o.charts.length) {
-			this.$charts = $('<div class="sanad-dashboard__charts"></div>').appendTo(this.$root);
+			this.$charts = $('<div class="whatsapp-kit-dashboard__charts"></div>').appendTo(this.$root);
 			o.charts.forEach((name) => (this.charts[name] = this.make_chart(name)));
 		}
 		this.$wrapper.append(this.$root);
 	}
 
 	render_period() {
-		this.$period = $(`<div class="sanad-dashboard__period" role="radiogroup" aria-label="${ui.escape(__("Period"))}"></div>`);
+		this.$period = $(`<div class="whatsapp-kit-dashboard__period" role="radiogroup" aria-label="${ui.escape(__("Period"))}"></div>`);
 		PERIODS.forEach((p) => {
 			$(
-				`<button type="button" class="sanad-chip sanad-dashboard__period-btn" role="radio" aria-checked="${p.key === this.period}" tabindex="${
+				`<button type="button" class="whatsapp-kit-chip whatsapp-kit-dashboard__period-btn" role="radio" aria-checked="${p.key === this.period}" tabindex="${
 					p.key === this.period ? 0 : -1
 				}" data-key="${p.key}">${ui.escape(p.label())}</button>`
 			)
@@ -154,22 +154,22 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 
 	make_card(name) {
 		const $el = $(`
-			<div class="sanad-dashboard__card" role="listitem">
-				<div class="sanad-dashboard__card-btn sanad-dashboard__card-btn--static" aria-busy="true">
-					<span class="sanad-dashboard__card-label"></span>
-					<span class="sanad-dashboard__card-value sanad-tabular"></span>
-					<span class="sanad-dashboard__card-stat"></span>
+			<div class="whatsapp-kit-dashboard__card" role="listitem">
+				<div class="whatsapp-kit-dashboard__card-btn whatsapp-kit-dashboard__card-btn--static" aria-busy="true">
+					<span class="whatsapp-kit-dashboard__card-label"></span>
+					<span class="whatsapp-kit-dashboard__card-value whatsapp-kit-tabular"></span>
+					<span class="whatsapp-kit-dashboard__card-stat"></span>
 				</div>
-				<div class="sanad-dashboard__card-state" hidden></div>
+				<div class="whatsapp-kit-dashboard__card-state" hidden></div>
 			</div>`).appendTo(this.$cards);
 		const card = {
 			name,
 			$el,
-			$btn: $el.find(".sanad-dashboard__card-btn"),
-			$label: $el.find(".sanad-dashboard__card-label"),
-			$value: $el.find(".sanad-dashboard__card-value"),
-			$stat: $el.find(".sanad-dashboard__card-stat"),
-			$state: $el.find(".sanad-dashboard__card-state"),
+			$btn: $el.find(".whatsapp-kit-dashboard__card-btn"),
+			$label: $el.find(".whatsapp-kit-dashboard__card-label"),
+			$value: $el.find(".whatsapp-kit-dashboard__card-value"),
+			$stat: $el.find(".whatsapp-kit-dashboard__card-stat"),
+			$state: $el.find(".whatsapp-kit-dashboard__card-state"),
 			doc: null,
 			number: null,
 		};
@@ -187,7 +187,7 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 			card.filters = frappe.dashboard_utils.get_all_filters(doc) || [];
 			const { number, formatted } = await this.fetch_card_value(card);
 			card.number = number;
-			card.$value.html(`<span class="sanad-dashboard__number">${ui.escape(formatted)}</span>`);
+			card.$value.html(`<span class="whatsapp-kit-dashboard__number">${ui.escape(formatted)}</span>`);
 			await this.render_card_stats(card);
 			this.set_card_openable(card, this.card_route_exists(card));
 			this.set_card_state(card, null);
@@ -249,7 +249,7 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 		const icon = res > 0 ? ui.icon(ui.icons.open, "xs") : res < 0 ? ui.icon("es-line-down", "xs") : "";
 		const qualifier = (STATS_QUALIFIER[doc.stats_time_interval] || STATS_QUALIFIER.Daily)();
 		card.$stat.html(
-			`<span class="sanad-dashboard__stat sanad-tone--${tone}">${icon}<span>${ui.escape(__("{0} {1}", [pct, qualifier]))}</span></span>`
+			`<span class="whatsapp-kit-dashboard__stat whatsapp-kit-tone--${tone}">${icon}<span>${ui.escape(__("{0} {1}", [pct, qualifier]))}</span></span>`
 		);
 	}
 
@@ -261,7 +261,7 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 		}
 		card.$btn.prop("hidden", true);
 		card.$state.prop("hidden", false);
-		new sanad.ui.EmptyState({
+		new whatsapp.ui.EmptyState({
 			wrapper: card.$state,
 			state,
 			size: "sm",
@@ -287,8 +287,8 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 		const is_button = card.$btn.is("button");
 		if (openable === is_button) return;
 		const $next = $(openable ? '<button type="button"></button>' : "<div></div>")
-			.addClass("sanad-dashboard__card-btn")
-			.toggleClass("sanad-dashboard__card-btn--static", !openable)
+			.addClass("whatsapp-kit-dashboard__card-btn")
+			.toggleClass("whatsapp-kit-dashboard__card-btn--static", !openable)
 			.attr("aria-busy", card.$btn.attr("aria-busy") || "false")
 			.append(card.$btn.children());
 		card.$btn.replaceWith($next);
@@ -327,23 +327,23 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 
 	make_chart(name) {
 		const height = cint(this.opts.chart_height) || 240;
-		const id = ui.uid("sanad-chart");
+		const id = ui.uid("whatsapp-kit-chart");
 		const $el = $(`
-			<section class="sanad-dashboard__chart" aria-busy="true" aria-labelledby="${id}-title" aria-describedby="${id}-summary">
-				<h3 class="sanad-dashboard__chart-title" id="${id}-title"></h3>
-				<p class="sanad-visually-hidden" id="${id}-summary"></p>
-				<div class="sanad-dashboard__chart-body" style="min-height:${height}px">
-					<div class="sanad-dashboard__chart-state"></div>
-					<div class="sanad-dashboard__chart-canvas" hidden aria-hidden="true"></div>
+			<section class="whatsapp-kit-dashboard__chart" aria-busy="true" aria-labelledby="${id}-title" aria-describedby="${id}-summary">
+				<h3 class="whatsapp-kit-dashboard__chart-title" id="${id}-title"></h3>
+				<p class="whatsapp-kit-visually-hidden" id="${id}-summary"></p>
+				<div class="whatsapp-kit-dashboard__chart-body" style="min-height:${height}px">
+					<div class="whatsapp-kit-dashboard__chart-state"></div>
+					<div class="whatsapp-kit-dashboard__chart-canvas" hidden aria-hidden="true"></div>
 				</div>
 			</section>`).appendTo(this.$charts);
 		const chart = {
 			name,
 			$el,
-			$title: $el.find(".sanad-dashboard__chart-title"),
+			$title: $el.find(".whatsapp-kit-dashboard__chart-title"),
 			$summary: $el.find(`#${id}-summary`),
-			$canvas: $el.find(".sanad-dashboard__chart-canvas"),
-			state: new sanad.ui.EmptyState({ wrapper: $el.find(".sanad-dashboard__chart-state"), state: "loading", rows: 4 }),
+			$canvas: $el.find(".whatsapp-kit-dashboard__chart-canvas"),
+			state: new whatsapp.ui.EmptyState({ wrapper: $el.find(".whatsapp-kit-dashboard__chart-state"), state: "loading", rows: 4 }),
 			doc: null,
 			instance: null,
 		};
@@ -450,8 +450,8 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 			},
 		};
 		// A chart's own colour wins; otherwise the host app's palette, read from the
-		// `--sanad-chart-palette` custom property (a comma list), so the kit never names a colour.
-		const palette = getComputedStyle(chart.$canvas[0]).getPropertyValue("--sanad-chart-palette").split(",").map((c) => c.trim()).filter(Boolean);
+		// `--whatsapp-kit-chart-palette` custom property (a comma list), so the kit never names a colour.
+		const palette = getComputedStyle(chart.$canvas[0]).getPropertyValue("--whatsapp-kit-chart-palette").split(",").map((c) => c.trim()).filter(Boolean);
 		if (doc.color) args.colors = [doc.color];
 		else if (palette.length) args.colors = palette;
 		if (doc.show_values_over_chart) args.valuesOverPoints = true;
@@ -530,4 +530,4 @@ sanad.ui.DashboardBlock = class DashboardBlock {
 	}
 };
 
-export default sanad.ui.DashboardBlock;
+export default whatsapp.ui.DashboardBlock;

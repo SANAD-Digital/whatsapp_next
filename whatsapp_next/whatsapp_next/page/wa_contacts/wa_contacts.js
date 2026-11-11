@@ -7,9 +7,9 @@
 //
 // Anatomy, from `docs/screen/Hub Screen - Contacts.dc.html`: the screen header with its four
 // stat cards, the one-line toolbar (search · filters · selection chip and bulk verbs at the
-// inline-end), then the prototype's own list — `sanad.ui.DataList` in page mode: checkbox column,
+// inline-end), then the prototype's own list — `whatsapp.ui.DataList` in page mode: checkbox column,
 // the ten columns, and the footer count with the pager. A row opens the prototype's detail panel
-// (`sanad.ui.OverlayPanel` as a drawer: alert · facts · linked accounts · recent messages · the
+// (`whatsapp.ui.OverlayPanel` as a drawer: alert · facts · linked accounts · recent messages · the
 // verbs); "New contact" and "Edit" open its edit modal (`editPanel` in the prototype), and the
 // two state changes open its smaller modals (`chatPanel`, `statusPanel`). The page owns the
 // data; the table only asks for a page, a sort or a selection.
@@ -70,34 +70,34 @@ class ContactsPage {
 		const name = frappe.route_options && frappe.route_options.contact;
 		if (!name) return;
 		frappe.route_options = null;
-		sanad.ui
+		whatsapp.ui
 			.call("contacts.get_contact", { name }, { silent: true })
 			.then((row) => row && this.open_detail(row))
-			.catch((err) => sanad.ui.Toast.error(err));
+			.catch((err) => whatsapp.ui.Toast.error(err));
 	}
 
 	// ---- layout ---------------------------------------------------------------------------
 
 	make() {
 		this.$el = $(`
-			<div class="wa-contacts sanad-kit">
-				<div class="wa-contacts__head"></div>
-				<div class="wa-contacts__panel sanad-list-card">
-					<div class="wa-contacts__toolbar">
-						<div class="wa-contacts__filters"></div>
-						<div class="wa-contacts__selection" hidden></div>
+			<div class="whatsapp-contacts whatsapp-kit">
+				<div class="whatsapp-contacts__head"></div>
+				<div class="whatsapp-contacts__panel whatsapp-kit-list-card">
+					<div class="whatsapp-contacts__toolbar">
+						<div class="whatsapp-contacts__filters"></div>
+						<div class="whatsapp-contacts__selection" hidden></div>
 					</div>
-					<div class="wa-contacts__list"></div>
+					<div class="whatsapp-contacts__list"></div>
 				</div>
 			</div>`);
 		this.$el.appendTo(this.page.main);
-		this.$selection = this.$el.find(".wa-contacts__selection");
+		this.$selection = this.$el.find(".whatsapp-contacts__selection");
 
 		this.make_header();
 		this.make_toolbar();
 		this.make_table();
 		// the filters stay under Desk's strip while the rows scroll beneath, as on a Desk list
-		sanad.ui.pin_stack(this.$el, [".wa-contacts__toolbar"]);
+		whatsapp.ui.pin_stack(this.$el, [".whatsapp-contacts__toolbar"]);
 	}
 
 	/**
@@ -105,7 +105,7 @@ class ContactsPage {
 	 * row costs one call, not four; `reload()` drops it so the next refresh counts again.
 	 */
 	stats() {
-		if (!this._stats) this._stats = sanad.ui.call("contacts.get_stats", {}, { silent: true });
+		if (!this._stats) this._stats = whatsapp.ui.call("contacts.get_stats", {}, { silent: true });
 		return this._stats;
 	}
 
@@ -116,8 +116,8 @@ class ContactsPage {
 
 	make_header() {
 		// Desk's own strip, as on a list: the page's title and breadcrumb, "New contact" on its bar
-		this.header = new sanad.ui.PageHeader({
-			wrapper: this.$el.find(".wa-contacts__head"),
+		this.header = new whatsapp.ui.PageHeader({
+			wrapper: this.$el.find(".whatsapp-contacts__head"),
 			page: this.page,
 			title: __("Contacts"),
 			description: __(
@@ -164,7 +164,7 @@ class ContactsPage {
 						this.stats().then((s) =>
 							cint(s && s.total) ? (cint(s.linked) / cint(s.total)) * 100 : 0
 						),
-					format: (v) => (v > 0 && v < 1 ? `\u2066${__("<1%")}\u2069` : `${sanad.ui.format_int(Math.round(v))}%`),
+					format: (v) => (v > 0 && v < 1 ? `\u2066${__("<1%")}\u2069` : `${whatsapp.ui.format_int(Math.round(v))}%`),
 					sub: __("Share of contacts ready for notifications"),
 					onclick: () => this.apply({}, ""),
 				},
@@ -173,8 +173,8 @@ class ContactsPage {
 	}
 
 	make_toolbar() {
-		this.filterbar = new sanad.ui.FilterBar({
-			wrapper: this.$el.find(".wa-contacts__filters"),
+		this.filterbar = new whatsapp.ui.FilterBar({
+			wrapper: this.$el.find(".whatsapp-contacts__filters"),
 			list_style: true,
 			doctype: "Contact",
 			// the matrix gives this screen five dropdowns; FilterBar shows four and drops the rest
@@ -285,8 +285,8 @@ class ContactsPage {
 	// ---- the table ---------------------------------------------------------------------------
 
 	make_table() {
-		this.table = new sanad.ui.DataList({
-			wrapper: this.$el.find(".wa-contacts__list"),
+		this.table = new whatsapp.ui.DataList({
+			wrapper: this.$el.find(".whatsapp-contacts__list"),
 			doctype: "Contact",
 			columns: this.columns(),
 			selectable: CAN_WRITE(),
@@ -310,7 +310,7 @@ class ContactsPage {
 			on_select: () => this.render_selection(),
 			footer: {
 				count: (total) =>
-					sanad.ui.plural(total, { one: __("{0} contact"), other: __("{0} contacts") }),
+					whatsapp.ui.plural(total, { one: __("{0} contact"), other: __("{0} contacts") }),
 			},
 			empty: {
 				title: __("No contact matches"),
@@ -320,12 +320,12 @@ class ContactsPage {
 					: undefined,
 			},
 		});
-		this.$el.find(".wa-contacts__list").on("change", ".list-row-checkbox", () => this.render_selection());
+		this.$el.find(".whatsapp-contacts__list").on("change", ".list-row-checkbox", () => this.render_selection());
 	}
 
 	columns() {
 		const esc = frappe.utils.escape_html;
-		const badge = sanad.ui.StatusBadge.html;
+		const badge = whatsapp.ui.StatusBadge.html;
 		return [
 			{
 				fieldname: "full_name",
@@ -334,14 +334,14 @@ class ContactsPage {
 				format: (v, doc) => {
 					const name = doc.full_name || __("No name");
 					const linked = (doc.links || []).length > 0;
-					return `<span class="wa-contacts__identity">
-							<span class="sanad-avatar sanad-avatar--sm ${
-								linked ? "wa-contacts__avatar--linked" : ""
-							}" aria-hidden="true">${esc(sanad.ui.initials(name))}</span>
-							<span class="wa-contacts__names" title="${esc(
+					return `<span class="whatsapp-contacts__identity">
+							<span class="whatsapp-kit-avatar whatsapp-kit-avatar--sm ${
+								linked ? "whatsapp-contacts__avatar--linked" : ""
+							}" aria-hidden="true">${esc(whatsapp.ui.initials(name))}</span>
+							<span class="whatsapp-contacts__names" title="${esc(
 								doc.company_name ? __("{0} ({1})", [name, doc.company_name]) : name
-							)}"><span class="wa-contacts__name">${esc(name)}</span>${
-						doc.company_name ? `<span class="wa-contacts__sub">${esc(doc.company_name)}</span>` : ""
+							)}"><span class="whatsapp-contacts__name">${esc(name)}</span>${
+						doc.company_name ? `<span class="whatsapp-contacts__sub">${esc(doc.company_name)}</span>` : ""
 					}</span>
 						</span>`;
 				},
@@ -350,7 +350,7 @@ class ContactsPage {
 				sub: (doc) => {
 					const phone = ContactsPage.phone_of(doc);
 					return phone
-						? `<span class="wa-contacts__card-only sanad-tabular" dir="ltr">${esc(sanad.ui.phone(phone))}</span>`
+						? `<span class="whatsapp-contacts__card-only whatsapp-kit-tabular" dir="ltr">${esc(whatsapp.ui.phone(phone))}</span>`
 						: "";
 				},
 			},
@@ -360,8 +360,8 @@ class ContactsPage {
 				format: (v, doc) => {
 					const phone = ContactsPage.phone_of(doc);
 					return phone
-						? `<span class="sanad-tabular" dir="ltr">${esc(sanad.ui.phone(phone))}</span>`
-						: `<span class="wa-contacts__muted">${esc(__("None"))}</span>`;
+						? `<span class="whatsapp-kit-tabular" dir="ltr">${esc(whatsapp.ui.phone(phone))}</span>`
+						: `<span class="whatsapp-contacts__muted">${esc(__("None"))}</span>`;
 				},
 			},
 			{
@@ -369,8 +369,8 @@ class ContactsPage {
 				label: __("Type"),
 				format: (v, doc) =>
 					(doc.links || []).length
-						? `<span class="wa-contacts__type">${esc(__(doc.links[0].link_doctype))}</span>`
-						: `<span class="wa-contacts__muted">&mdash;</span>`,
+						? `<span class="whatsapp-contacts__type">${esc(__(doc.links[0].link_doctype))}</span>`
+						: `<span class="whatsapp-contacts__muted">&mdash;</span>`,
 			},
 			{
 				fieldname: "link_status",
@@ -387,7 +387,7 @@ class ContactsPage {
 				align: "end",
 				hidden_xs: true,
 				format: (v, doc) =>
-					`<span class="sanad-tabular">${sanad.ui.format_int((doc.links || []).length)}</span>`,
+					`<span class="whatsapp-kit-tabular">${whatsapp.ui.format_int((doc.links || []).length)}</span>`,
 			},
 			{
 				fieldname: "accounts",
@@ -396,10 +396,10 @@ class ContactsPage {
 				format: (v, doc) => {
 					const names = (doc.links || []).map((l) => l.link_title || l.link_name);
 					return names.length
-						? `<span class="wa-contacts__accounts" title="${esc(names.join(" · "))}">${esc(
+						? `<span class="whatsapp-contacts__accounts" title="${esc(names.join(" · "))}">${esc(
 								names.join(" · ")
 						  )}</span>`
-						: `<span class="wa-contacts__muted">&mdash;</span>`;
+						: `<span class="whatsapp-contacts__muted">&mdash;</span>`;
 				},
 			},
 			{
@@ -433,8 +433,8 @@ class ContactsPage {
 				hidden_xs: true,
 				format: (v, doc) =>
 					doc.last_seen
-						? `<span class="wa-contacts__muted">${frappe.datetime.comment_when(doc.last_seen, true)}</span>`
-						: `<span class="wa-contacts__muted">&mdash;</span>`,
+						? `<span class="whatsapp-contacts__muted">${frappe.datetime.comment_when(doc.last_seen, true)}</span>`
+						: `<span class="whatsapp-contacts__muted">&mdash;</span>`,
 			},
 		];
 	}
@@ -493,7 +493,7 @@ class ContactsPage {
 
 	load() {
 		this.table.set_loading(true);
-		return sanad.ui
+		return whatsapp.ui
 			.call("contacts.list_contacts", this.args())
 			.then((r) => {
 				this.rows = (r && r.rows) || [];
@@ -503,8 +503,8 @@ class ContactsPage {
 			.catch((err) => {
 				this.table.set_loading(false);
 				this.table.set_rows([], 0);
-				new sanad.ui.EmptyState({
-					wrapper: this.$el.find(".sanad-datalist__empty, .wa-contacts__list").first(),
+				new whatsapp.ui.EmptyState({
+					wrapper: this.$el.find(".whatsapp-kit-datalist__empty, .whatsapp-contacts__list").first(),
 					state: "error",
 					title: err.message,
 					action: { label: __("Retry"), onclick: () => this.load() },
@@ -542,62 +542,62 @@ class ContactsPage {
 		const rows = this.table.get_selected();
 		if (!rows.length || !CAN_WRITE()) return this.$selection.prop("hidden", true).empty();
 		const esc = frappe.utils.escape_html;
-		const count = `<span class="sanad-tabular">${esc(sanad.ui.format_int(rows.length))}</span>`;
+		const count = `<span class="whatsapp-kit-tabular">${esc(whatsapp.ui.format_int(rows.length))}</span>`;
 		this.$selection.prop("hidden", false).html(`
-			<span class="wa-contacts__selected" role="status">
+			<span class="whatsapp-contacts__selected" role="status">
 				<span>${__("{0} selected", [count])}</span>
-				<button type="button" class="wa-contacts__selected-clear" aria-label="${esc(
+				<button type="button" class="whatsapp-contacts__selected-clear" aria-label="${esc(
 					__("Clear selection")
 				)}">&times;</button>
 			</span>
-			<button type="button" class="btn btn-sm sanad-accent-soft wa-contacts__bulk">${esc(
+			<button type="button" class="btn btn-sm whatsapp-kit-accent-soft whatsapp-contacts__bulk">${esc(
 				__("Link to an account")
 			)}</button>
-			<button type="button" class="btn btn-sm btn-default wa-contacts__check">${esc(__("Check on WhatsApp"))}</button>
-			<button type="button" class="btn btn-sm btn-default wa-contacts__profiles">${esc(__("Refresh WhatsApp profile"))}</button>
+			<button type="button" class="btn btn-sm btn-default whatsapp-contacts__check">${esc(__("Check on WhatsApp"))}</button>
+			<button type="button" class="btn btn-sm btn-default whatsapp-contacts__profiles">${esc(__("Refresh WhatsApp profile"))}</button>
 			${whatsapp_next.wa_groups && whatsapp_next.wa_groups.can_create()
-				? `<button type="button" class="btn btn-sm btn-default wa-contacts__group">${esc(__("Create WhatsApp group"))}</button>`
+				? `<button type="button" class="btn btn-sm btn-default whatsapp-contacts__group">${esc(__("Create WhatsApp group"))}</button>`
 				: ""}`);
-		this.$selection.find(".wa-contacts__check").on("click", () =>
+		this.$selection.find(".whatsapp-contacts__check").on("click", () =>
 			whatsapp_next.check_numbers("Contact", rows.map((d) => d.name))
 		);
-		this.$selection.find(".wa-contacts__profiles").on("click", () =>
+		this.$selection.find(".whatsapp-contacts__profiles").on("click", () =>
 			whatsapp_next.refresh_profiles("Contact", rows.map((d) => d.name), { on_done: () => this.reload() })
 		);
-		this.$selection.find(".wa-contacts__group").on("click", () =>
+		this.$selection.find(".whatsapp-contacts__group").on("click", () =>
 			whatsapp_next.wa_groups.open({ source: { doctype: "Contact", names: rows.map((d) => d.name) } })
 		);
-		this.$selection.find(".wa-contacts__selected-clear").on("click", () => this.table.clear_selection());
-		this.$selection.find(".wa-contacts__bulk").on("click", () => this.link_selected(rows));
+		this.$selection.find(".whatsapp-contacts__selected-clear").on("click", () => this.table.clear_selection());
+		this.$selection.find(".whatsapp-contacts__bulk").on("click", () => this.link_selected(rows));
 	}
 
 	link_selected(selected) {
 		const names = selected.map((d) => d.name).slice(0, BULK_CAP);
 		if (selected.length > BULK_CAP) {
-			sanad.ui.Toast.warning(__("Only the first {0} contacts are linked in one go.", [BULK_CAP]));
+			whatsapp.ui.Toast.warning(__("Only the first {0} contacts are linked in one go.", [BULK_CAP]));
 		}
 		this.ask_party({
 			title: __("Link {0} contacts to an account", [names.length]),
 			subtitle: __("The same account is added to every selected contact."),
 		})
 			.then(({ link_doctype, link_name, link_title }) =>
-				sanad.ui
+				whatsapp.ui
 					.call("contacts.link_many", { names, link_doctype, link_name }, { freeze: true })
 					.then((r) => {
 						const done = cint(r && r.count);
 						const skipped = ((r && r.skipped) || []).length;
 						const failed = ((r && r.failed) || []).length;
-						sanad.ui.Toast.success(
+						whatsapp.ui.Toast.success(
 							__("Linked {0} of {1} contacts to {2}", [done, names.length, link_title || link_name])
 						);
-						if (skipped) sanad.ui.Toast.warning(__("{0} were already linked to that account.", [skipped]));
+						if (skipped) whatsapp.ui.Toast.warning(__("{0} were already linked to that account.", [skipped]));
 						if (failed) {
-							sanad.ui.Toast.error(__("{0} could not be linked. Open one of them to see why.", [failed]));
+							whatsapp.ui.Toast.error(__("{0} could not be linked. Open one of them to see why.", [failed]));
 						}
 						this.table.clear_selection();
 						this.reload();
 					})
-					.catch((err) => sanad.ui.Toast.error(err))
+					.catch((err) => whatsapp.ui.Toast.error(err))
 			)
 			.catch(() => {});
 	}
@@ -606,7 +606,7 @@ class ContactsPage {
 
 	/** `[{value, label, note}]` of one party DocType, as the choice grid and the add row want it. */
 	search_party(party_type, txt) {
-		return sanad.ui
+		return whatsapp.ui
 			.call("contacts.search_party", { party_type, txt: txt || "", page_length: 20 }, { silent: true })
 			.then((rows) => (rows || []).map((r) => ({ value: r.name, label: r.title || r.name, note: r.name, note_mono: true })))
 			.catch(() => []);
@@ -617,7 +617,7 @@ class ContactsPage {
 		return new Promise((resolve, reject) => {
 			let settled = false;
 			let chosen = null;
-			const panel = new sanad.ui.OverlayPanel({
+			const panel = new whatsapp.ui.OverlayPanel({
 				type: "modal",
 				width: "520px",
 				title: title || __("Link to an account"),
@@ -697,7 +697,7 @@ class ContactsPage {
 			conversation: conversation.text,
 		});
 		this.detail_name = row.name;
-		this.detail = new sanad.ui.Drawer({
+		this.detail = new whatsapp.ui.Drawer({
 			doctype: "Contact",
 			name: row.name,
 			mode: "record",
@@ -736,9 +736,9 @@ class ContactsPage {
 			highlight: alert
 				? ($el) =>
 						$el.html(
-							`<div class="sanad-op__alert sanad-op__alert--${alert.tone}" role="${alert.tone === "danger" ? "alert" : "status"}">
-								<span class="sanad-op__alert-title">${frappe.utils.escape_html(alert.title)}</span>
-								${alert.lines.map((l) => `<span class="sanad-op__alert-line">${frappe.utils.escape_html(l)}</span>`).join("")}
+							`<div class="whatsapp-kit-op__alert whatsapp-kit-op__alert--${alert.tone}" role="${alert.tone === "danger" ? "alert" : "status"}">
+								<span class="whatsapp-kit-op__alert-title">${frappe.utils.escape_html(alert.title)}</span>
+								${alert.lines.map((l) => `<span class="whatsapp-kit-op__alert-line">${frappe.utils.escape_html(l)}</span>`).join("")}
 							</div>`
 						)
 				: null,
@@ -804,7 +804,7 @@ class ContactsPage {
 	render_links($el, links, row) {
 		const esc = frappe.utils.escape_html;
 		if (!links.length) {
-			new sanad.ui.EmptyState({
+			new whatsapp.ui.EmptyState({
 				wrapper: $el,
 				state: "empty",
 				size: "sm",
@@ -814,14 +814,14 @@ class ContactsPage {
 			});
 			return;
 		}
-		const $list = $('<div class="sanad-ent-list sanad-ent-list--row"></div>').appendTo($el);
-		Promise.all(links.map((l) => sanad.ui.meta.with_doctype(l.link_doctype).catch(() => null))).then(() => {
+		const $list = $('<div class="whatsapp-kit-ent-list whatsapp-kit-ent-list--row"></div>').appendTo($el);
+		Promise.all(links.map((l) => whatsapp.ui.meta.with_doctype(l.link_doctype).catch(() => null))).then(() => {
 			links.forEach((l) => {
 				const title_field = ContactsPage.PARTY_TITLE[l.link_doctype] || "title";
 				const doc = { doctype: l.link_doctype, name: l.link_name, [title_field]: l.link_title || l.link_name };
-				const $item = $('<div class="sanad-ent-list__item wa-contacts__link"></div>').appendTo($list);
-				const $card = $('<div class="wa-contacts__link-card"></div>').appendTo($item);
-				sanad.ui.Render.mount($card, doc, {
+				const $item = $('<div class="whatsapp-kit-ent-list__item whatsapp-contacts__link"></div>').appendTo($list);
+				const $card = $('<div class="whatsapp-contacts__link-card"></div>').appendTo($item);
+				whatsapp.ui.Render.mount($card, doc, {
 					doctype: l.link_doctype,
 					density: "row",
 					profile: { title: title_field, lines: [], status: false, value: false, facts: [] },
@@ -829,7 +829,7 @@ class ContactsPage {
 					href: frappe.perm.has_perm(l.link_doctype, 0, "read") ? undefined : null,
 				});
 				if (CAN_WRITE()) {
-					$(`<button type="button" class="btn btn-default btn-xs wa-contacts__unlink">${esc(__("Unlink"))}</button>`)
+					$(`<button type="button" class="btn btn-default btn-xs whatsapp-contacts__unlink">${esc(__("Unlink"))}</button>`)
 						.appendTo($item)
 						.on("click", () => this.unlink_account(row, l));
 				}
@@ -841,18 +841,18 @@ class ContactsPage {
 	/** The last messages to and from this number, each drawn as the message record it is. */
 	render_messages($el, phone) {
 		const esc = frappe.utils.escape_html;
-		const empty = (title, description) => new sanad.ui.EmptyState({ wrapper: $el, state: "empty", size: "sm", title, description });
+		const empty = (title, description) => new whatsapp.ui.EmptyState({ wrapper: $el, state: "empty", size: "sm", title, description });
 		if (!phone) return empty(__("No WhatsApp number"), __("Add a number to the contact before sending anything."));
 		if (!CAN_READ_CONVERSATION()) return empty(__("Conversations are not visible with your role"), __("Reading a conversation needs the WhatsApp Viewer role."));
-		const state = new sanad.ui.EmptyState({ wrapper: $el, state: "loading", rows: 2, size: "sm" });
-		sanad.ui
+		const state = new whatsapp.ui.EmptyState({ wrapper: $el, state: "loading", rows: 2, size: "sm" });
+		whatsapp.ui
 			.call("messages.get_conversation", { key: phone, limit: RECENT_MESSAGES }, { silent: true })
 			.then((r) => {
 				const rows = (r && r.rows) || [];
 				if (!rows.length) return state.empty({ title: __("No message yet"), description: __("Nothing has been sent to or received from this number.") });
 				state.hide();
 				$el.empty();
-				const $list = $('<div class="sanad-ent-list sanad-ent-list--compact"></div>').appendTo($el);
+				const $list = $('<div class="whatsapp-kit-ent-list whatsapp-kit-ent-list--compact"></div>').appendTo($el);
 				rows.slice(0, RECENT_MESSAGES).forEach((m) => {
 					const inbound = m.direction === "Inbound";
 					const doctype = inbound ? "WhatsApp Inbound Message" : "WhatsApp Log";
@@ -861,8 +861,8 @@ class ContactsPage {
 						text: (m.body || m.caption || "").trim().slice(0, 140) || __(m.message_type || "No text"),
 						when: `${inbound ? __("Received") : __("Sent")} · ${frappe.datetime.prettyDate(m.ts || m.creation, true)}`,
 					});
-					const $item = $('<div class="sanad-ent-list__item"></div>').appendTo($list);
-					sanad.ui.Render.mount($item, doc, {
+					const $item = $('<div class="whatsapp-kit-ent-list__item"></div>').appendTo($list);
+					whatsapp.ui.Render.mount($item, doc, {
 						doctype,
 						kind: "document",
 						density: "compact",
@@ -878,7 +878,7 @@ class ContactsPage {
 							status: () => (inbound ? { label: __("Received"), colour: "blue" } : { label: __(m.status || "Sent"), colour: ContactsPage.status_colour(m.status) }),
 						},
 						href: null,
-						on_click: () => sanad.ui.ConversationDrawer.open({ key: phone, on_close: () => this.back_to_detail(this.detail_name) }),
+						on_click: () => whatsapp.ui.ConversationDrawer.open({ key: phone, on_close: () => this.back_to_detail(this.detail_name) }),
 					});
 				});
 				void esc;
@@ -916,7 +916,7 @@ class ContactsPage {
 		};
 		// the write audit carries "create" / "update" as its reason: that is the title's job, not a note
 		const note_of = (r) => (r.reason && !["create", "update"].includes(r.reason) ? r.reason : "");
-		return sanad.ui.call("contacts.get_activity", { name }, { silent: true }).then((rows) =>
+		return whatsapp.ui.call("contacts.get_activity", { name }, { silent: true }).then((rows) =>
 			(rows || []).map((r) => ({
 				title: title_of(r),
 				description: note_of(r),
@@ -954,7 +954,7 @@ class ContactsPage {
 				icon: "es-line-chat",
 				primary: linked,
 				close: false,
-				handler: () => new sanad.ui.QuickSend({ phone, contact: row.name, on_sent: () => this.after_change(row.name) }),
+				handler: () => new whatsapp.ui.QuickSend({ phone, contact: row.name, on_sent: () => this.after_change(row.name) }),
 			});
 		}
 		if (CAN_WRITE()) {
@@ -996,7 +996,7 @@ class ContactsPage {
 				menu: true,
 				handler: () => {
 					frappe.route_options = { contact: row.name, phone };
-					frappe.set_route(sanad.ui.config.defaults.simulator_route || "wa-simulator");
+					frappe.set_route(whatsapp.ui.config.defaults.simulator_route || "wa-simulator");
 				},
 			});
 		}
@@ -1006,7 +1006,7 @@ class ContactsPage {
 				label: __("Message history"),
 				icon: "es-line-chat",
 				menu: true,
-				handler: () => sanad.ui.ConversationDrawer.open({ key: phone, on_close: () => this.back_to_detail(row.name) }),
+				handler: () => whatsapp.ui.ConversationDrawer.open({ key: phone, on_close: () => this.back_to_detail(row.name) }),
 			});
 		}
 		return list;
@@ -1048,7 +1048,7 @@ class ContactsPage {
 					});
 		pick
 			.then((l) =>
-				sanad.ui.ConfirmDialog.ask({
+				whatsapp.ui.ConfirmDialog.ask({
 					title: __("Unlink «{0}» from {1}?", [ContactsPage.title_of(row), l.link_title || l.link_name]),
 					message: __("The contact and its numbers stay. Notifications for this account no longer reach it, and commands that need the link are refused."),
 					impact: [
@@ -1058,9 +1058,9 @@ class ContactsPage {
 					danger: true,
 					confirm_label: __("Unlink"),
 					on_confirm: () =>
-						sanad.ui.call("contacts.unlink_account", { name: row.name, link_doctype: l.link_doctype, link_name: l.link_name }, { freeze: true }),
+						whatsapp.ui.call("contacts.unlink_account", { name: row.name, link_doctype: l.link_doctype, link_name: l.link_name }, { freeze: true }),
 				}).then(() => {
-					sanad.ui.Toast.success(__("Unlinked from {0}", [l.link_title || l.link_name]));
+					whatsapp.ui.Toast.success(__("Unlinked from {0}", [l.link_title || l.link_name]));
 					this.after_change(row.name);
 				})
 			)
@@ -1070,17 +1070,17 @@ class ContactsPage {
 	link_one(row) {
 		this.ask_party({
 			title: __("Link «{0}» to an account", [ContactsPage.title_of(row)]),
-			subtitle: sanad.ui.phone(ContactsPage.phone_of(row) || "") || undefined,
+			subtitle: whatsapp.ui.phone(ContactsPage.phone_of(row) || "") || undefined,
 		})
 			.then(({ link_doctype, link_name, link_title }) =>
-				sanad.ui
+				whatsapp.ui
 					.call("contacts.link_many", { names: [row.name], link_doctype, link_name }, { freeze: true })
 					.then(() => {
-						sanad.ui.Toast.success(__("Linked to {0}", [link_title || link_name]));
+						whatsapp.ui.Toast.success(__("Linked to {0}", [link_title || link_name]));
 						this.after_change(row.name);
 					})
 					.catch((err) => {
-						sanad.ui.Toast.error(err);
+						whatsapp.ui.Toast.error(err);
 						this.back_to_detail(row.name);
 					})
 			)
@@ -1092,11 +1092,11 @@ class ContactsPage {
 		const current = ContactsPage.conversation_of(row);
 		const confirmed = cint(row.conversation_confirmed);
 		let saved = false;
-		new sanad.ui.OverlayPanel({
+		new whatsapp.ui.OverlayPanel({
 			type: "modal",
 			width: "520px",
 			title: __("Change conversation state"),
-			subtitle: __("{0} · {1}", [ContactsPage.title_of(row), sanad.ui.phone(phone)]),
+			subtitle: __("{0} · {1}", [ContactsPage.title_of(row), whatsapp.ui.phone(phone)]),
 			badge: { text: current.text, tone: current.tone },
 			sections: [
 				{
@@ -1140,7 +1140,7 @@ class ContactsPage {
 					label: __("Save the change"),
 					variant: "primary",
 					handler: (values) =>
-						sanad.ui
+						whatsapp.ui
 							.call(
 								"numbers.confirm_conversation",
 								{ phone_e164: phone, confirmed: values.chat === "yes" ? 1 : 0, note: values.note },
@@ -1148,7 +1148,7 @@ class ContactsPage {
 							)
 							.then(() => {
 								saved = true;
-								sanad.ui.Toast.success(__("Conversation state updated"));
+								whatsapp.ui.Toast.success(__("Conversation state updated"));
 							}),
 				},
 			],
@@ -1158,23 +1158,23 @@ class ContactsPage {
 
 	/** The number's conversation-state changes, newest first (`numbers.get_conversation_log`). */
 	static render_conversation_log($h, phone) {
-		const esc = sanad.ui.escape;
-		const state = new sanad.ui.EmptyState({ wrapper: $h, state: "loading", size: "sm", rows: 2 });
-		return sanad.ui
+		const esc = whatsapp.ui.escape;
+		const state = new whatsapp.ui.EmptyState({ wrapper: $h, state: "loading", size: "sm", rows: 2 });
+		return whatsapp.ui
 			.call("numbers.get_conversation_log", { phone_e164: phone }, { silent: true })
 			.then((r) => {
 				state.hide();
 				const rows = (r && r.rows) || [];
 				if (!rows.length) {
-					$h.html(`<p class="wa-contacts__muted">${esc(__("No change recorded yet."))}</p>`);
+					$h.html(`<p class="whatsapp-contacts__muted">${esc(__("No change recorded yet."))}</p>`);
 					return;
 				}
 				$h.html(
-					`<ol class="wa-contacts__log">${rows
+					`<ol class="whatsapp-contacts__log">${rows
 						.map(
 							(row) => `<li>
 								<strong>${esc(row.confirmed ? __("There is a conversation") : __("There is none"))}</strong>
-								<span class="wa-contacts__muted"> · ${esc(row.user_name || "")} · ${esc(frappe.datetime.str_to_user(row.at))}</span>
+								<span class="whatsapp-contacts__muted"> · ${esc(row.user_name || "")} · ${esc(frappe.datetime.str_to_user(row.at))}</span>
 								${row.note ? `<div>${esc(row.note)}</div>` : ""}
 							</li>`
 						)
@@ -1188,11 +1188,11 @@ class ContactsPage {
 	toggle_block(row, phone) {
 		const blocked = cint(row.blacklisted);
 		let saved = false;
-		new sanad.ui.OverlayPanel({
+		new whatsapp.ui.OverlayPanel({
 			type: "modal",
 			width: "520px",
 			title: blocked ? __("Unblock the number") : __("Block the number"),
-			subtitle: __("{0} · {1}", [ContactsPage.title_of(row), sanad.ui.phone(phone)]),
+			subtitle: __("{0} · {1}", [ContactsPage.title_of(row), whatsapp.ui.phone(phone)]),
 			badge: blocked ? { text: __("Blocked"), tone: "danger" } : { text: __("Not blocked"), tone: "ok" },
 			sections: [
 				{
@@ -1230,7 +1230,7 @@ class ContactsPage {
 					label: blocked ? __("Unblock") : __("Block"),
 					variant: blocked ? "primary" : "danger",
 					handler: (values) =>
-						sanad.ui
+						whatsapp.ui
 							.call(
 								"contacts.toggle_blacklist",
 								{ contact: row.name, phone, blocked: blocked ? 0 : 1, note: values.note },
@@ -1238,7 +1238,7 @@ class ContactsPage {
 							)
 							.then(() => {
 								saved = true;
-								sanad.ui.Toast.success(blocked ? __("Number unblocked") : __("Number blocked"));
+								whatsapp.ui.Toast.success(blocked ? __("Number unblocked") : __("Number blocked"));
 							}),
 				},
 			],
@@ -1250,7 +1250,7 @@ class ContactsPage {
 
 	/** `[{value, label, note}]` of the site's companies, for the Company link. */
 	search_company(txt) {
-		return sanad.ui
+		return whatsapp.ui
 			.call("contacts.search_company", { txt: txt || "", page_length: 20 }, { silent: true })
 			.then((rows) => (rows || []).map((r) => ({ value: r.name, label: r.title || r.name, note: r.name })))
 			.catch(() => []);
@@ -1269,7 +1269,7 @@ class ContactsPage {
 		}));
 		let saved = false;
 
-		this.form = new sanad.ui.OverlayPanel({
+		this.form = new whatsapp.ui.OverlayPanel({
 			type: "modal",
 			width: "680px",
 			title: editing ? __("Edit «{0}»", [ContactsPage.title_of(r)]) : __("New contact"),
@@ -1347,14 +1347,14 @@ class ContactsPage {
 										key: "status_ro",
 										type: "readonly",
 										label: __("Status"),
-										html: sanad.kit.badge(blocked ? __("Blocked") : __(r.status || "Passive"), blocked ? "danger" : r.status === "Open" ? "info" : "muted"),
+										html: whatsapp.kit.badge(blocked ? __("Blocked") : __(r.status || "Passive"), blocked ? "danger" : r.status === "Open" ? "info" : "muted"),
 										hint: __("Changed with the Block action, with a note."),
 									},
 									{
 										key: "chat_ro",
 										type: "readonly",
 										label: __("Conversation"),
-										html: sanad.kit.badge(conversation.text, conversation.tone),
+										html: whatsapp.kit.badge(conversation.text, conversation.tone),
 										hint: cint(r.inbound_count)
 											? __("A real inbound message exists; this cannot change.")
 											: __("Changed with the conversation action, with a note."),
@@ -1374,11 +1374,11 @@ class ContactsPage {
 					handler: (values) => {
 						const payload = this.form_payload(values, editing ? r : null);
 						const call = editing
-							? sanad.ui.call("contacts.update_contact", { name: r.name, payload }, { silent: true })
-							: sanad.ui.call("contacts.create_contact", { payload }, { silent: true });
+							? whatsapp.ui.call("contacts.update_contact", { name: r.name, payload }, { silent: true })
+							: whatsapp.ui.call("contacts.create_contact", { payload }, { silent: true });
 						return call.then(() => {
 							saved = true;
-							sanad.ui.Toast.success(editing ? __("Contact saved") : __("Contact added"));
+							whatsapp.ui.Toast.success(editing ? __("Contact saved") : __("Contact added"));
 						});
 					},
 				},
@@ -1428,7 +1428,7 @@ class ContactsPage {
 	}
 
 	bind_realtime() {
-		this.on_inbound = sanad.ui.throttle(() => this.load(), 4000);
+		this.on_inbound = whatsapp.ui.throttle(() => this.load(), 4000);
 		const subscribe = () => frappe.realtime.on("wa:inbound:received", this.on_inbound);
 		const unsubscribe = () => frappe.realtime.off("wa:inbound:received", this.on_inbound);
 		subscribe();

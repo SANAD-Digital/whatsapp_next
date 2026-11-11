@@ -7,7 +7,7 @@
 frappe.provide("whatsapp_next.console");
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const K = whatsapp_next.console;
 
 	/**
@@ -15,10 +15,10 @@ frappe.provide("whatsapp_next.console");
 	 * cell may carry a button or a bar); `label` is plain text.
 	 */
 	K.metric = (label, value, sub, opts = {}) => `
-		<div class="wa-ops__metric${opts.wide ? " wa-ops__metric--wide" : ""}${opts.modifier ? ` wa-ops__metric--${opts.modifier}` : ""}">
-			<span class="wa-ops__label">${ui.escape(label)}</span>
-			<span class="wa-ops__value${opts.tone ? ` sanad-tone--${opts.tone}` : ""} sanad-tabular">${value}</span>
-			<span class="wa-ops__sub">${sub || "&nbsp;"}</span>
+		<div class="whatsapp-ops__metric${opts.wide ? " whatsapp-ops__metric--wide" : ""}${opts.modifier ? ` whatsapp-ops__metric--${opts.modifier}` : ""}">
+			<span class="whatsapp-ops__label">${ui.escape(label)}</span>
+			<span class="whatsapp-ops__value${opts.tone ? ` whatsapp-kit-tone--${opts.tone}` : ""} whatsapp-kit-tabular">${value}</span>
+			<span class="whatsapp-ops__sub">${sub || "&nbsp;"}</span>
 		</div>`;
 
 	/**
@@ -26,14 +26,14 @@ frappe.provide("whatsapp_next.console");
 	 * not as a colour, with the verb that changes it beside it — never floating above the screen.
 	 */
 	K.state_metric = ({ label, state, tone = "gray", pulse = false, sub = "", verbs = "" }) => `
-		<div class="wa-ops__metric wa-ops__metric--state">
-			<span class="wa-ops__label">${ui.escape(label)}</span>
-			<div class="wa-ops__state-row">
-				<span class="wa-ops__state sanad-tone--${tone}">
-					${pulse ? '<span class="wa-ops__pulse" aria-hidden="true"></span>' : ""}${ui.escape(state)}
+		<div class="whatsapp-ops__metric whatsapp-ops__metric--state">
+			<span class="whatsapp-ops__label">${ui.escape(label)}</span>
+			<div class="whatsapp-ops__state-row">
+				<span class="whatsapp-ops__state whatsapp-kit-tone--${tone}">
+					${pulse ? '<span class="whatsapp-ops__pulse" aria-hidden="true"></span>' : ""}${ui.escape(state)}
 				</span>
 				${verbs}
 			</div>
-			<span class="wa-ops__sub">${sub || "&nbsp;"}</span>
+			<span class="whatsapp-ops__sub">${sub || "&nbsp;"}</span>
 		</div>`;
 })();

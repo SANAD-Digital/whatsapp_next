@@ -9,7 +9,7 @@ frappe.provide("whatsapp_next.numbers");
 	const MANAGER_ROLES = ["WhatsApp Manager", "System Manager"];
 
 	function open_conversation(doc, listview) {
-		return sanad.ui.ConversationDrawer.open({
+		return whatsapp.ui.ConversationDrawer.open({
 			key: doc.phone_e164 || doc.jid || doc.name,
 			device: doc.last_device || undefined,
 			on_link: (number) => link_convert_dialog(number || doc, () => listview && listview.refresh()),
@@ -21,7 +21,7 @@ frappe.provide("whatsapp_next.numbers");
 				{
 					key: "unlink",
 					label: __("Unlink"),
-					icon: sanad.ui.icons.cancel,
+					icon: whatsapp.ui.icons.cancel,
 					roles: MANAGER_ROLES,
 					condition: (number) => !!(number && number.contact),
 					handler: (number, drawer) => unlink_number(number, { refresh: () => drawer.load_number() }).then(() => listview && listview.refresh()),
@@ -31,33 +31,33 @@ frappe.provide("whatsapp_next.numbers");
 	}
 
 	function quick_send(doc) {
-		if (typeof sanad.ui.QuickSend !== "function") return;
+		if (typeof whatsapp.ui.QuickSend !== "function") return;
 		const args = { device: doc.last_device || undefined };
 		if (doc.phone_e164) args.phone = doc.phone_e164;
 		else if (doc.jid) args.jid = doc.jid;
-		new sanad.ui.QuickSend(args);
+		new whatsapp.ui.QuickSend(args);
 	}
 
 	function confirm_conversation(doc, listview) {
-		return sanad.ui.ConversationDrawer.confirm_dialog(doc)
+		return whatsapp.ui.ConversationDrawer.confirm_dialog(doc)
 			.then(() => listview && listview.refresh())
 			.catch(() => {});
 	}
 
 	function unlink_number(doc, listview) {
-		return sanad.ui.ConfirmDialog.ask({
-			title: __("Unlink {0}?", [sanad.ui.phone(doc.phone_e164)]),
+		return whatsapp.ui.ConfirmDialog.ask({
+			title: __("Unlink {0}?", [whatsapp.ui.phone(doc.phone_e164)]),
 			message: __("The number stays in the list as not linked, and it is removed from the contact's numbers. The contact itself is kept."),
 			impact: [
 				{ label: __("Contact"), value: doc.contact },
-				{ label: __("Number"), value: sanad.ui.phone(doc.phone_e164) },
+				{ label: __("Number"), value: whatsapp.ui.phone(doc.phone_e164) },
 			],
 			danger: true,
 			confirm_label: __("Unlink"),
-			on_confirm: () => sanad.ui.call("numbers.unlink_number", { phone_e164: doc.phone_e164 }),
+			on_confirm: () => whatsapp.ui.call("numbers.unlink_number", { phone_e164: doc.phone_e164 }),
 		})
 			.then(() => {
-				sanad.ui.Toast.success(__("Number unlinked"));
+				whatsapp.ui.Toast.success(__("Number unlinked"));
 				listview && listview.refresh();
 			})
 			.catch(() => {});
@@ -72,7 +72,7 @@ frappe.provide("whatsapp_next.numbers");
 		let party_search = null;
 		const dialog = new frappe.ui.Dialog({
 			// a group's name is whatever its members called it: escaped, a dialog title is HTML
-			title: __("Add {0} as a contact", [frappe.utils.escape_html(doc.display_name || sanad.ui.phone(phone_e164))]),
+			title: __("Add {0} as a contact", [frappe.utils.escape_html(doc.display_name || whatsapp.ui.phone(phone_e164))]),
 			size: "small",
 			fields: [
 				{ fieldtype: "HTML", fieldname: "error_html" },
@@ -88,7 +88,7 @@ frappe.provide("whatsapp_next.numbers");
 					reqd: 1,
 					change: () => dialog.get_primary_btn().text(action_label(dialog.get_value("mode"))),
 				},
-				{ fieldtype: "Data", fieldname: "phone_e164", label: group ? __("WhatsApp group") : __("WhatsApp number"), default: group ? doc.display_name || sanad.ui.phone(phone_e164) : sanad.ui.phone(phone_e164), read_only: 1 },
+				{ fieldtype: "Data", fieldname: "phone_e164", label: group ? __("WhatsApp group") : __("WhatsApp number"), default: group ? doc.display_name || whatsapp.ui.phone(phone_e164) : whatsapp.ui.phone(phone_e164), read_only: 1 },
 				{ fieldtype: "Section Break", fieldname: "link_section", depends_on: "eval:doc.mode=='link'" },
 				{
 					// searched through the contextual layer (`contacts.list_contacts`): a Link on
@@ -133,8 +133,8 @@ frappe.provide("whatsapp_next.numbers");
 				const $btn = dialog.get_primary_btn().prop("disabled", true);
 				const call =
 					values.mode === "link"
-						? sanad.ui.call("numbers.link_number", { phone_e164, contact: values.contact })
-						: sanad.ui.call("numbers.convert_number", {
+						? whatsapp.ui.call("numbers.link_number", { phone_e164, contact: values.contact })
+						: whatsapp.ui.call("numbers.convert_number", {
 								phone_e164,
 								first_name: values.first_name,
 								last_name: values.last_name || null,
@@ -144,8 +144,8 @@ frappe.provide("whatsapp_next.numbers");
 				call
 					.then((r) => {
 						dialog.hide();
-						sanad.ui.Toast.success(__("Linked to contact {0}", [r.contact]), {
-							action: { label: __("Open contact"), onclick: () => sanad.ui.ConversationDrawer.open_contact(r.contact) },
+						whatsapp.ui.Toast.success(__("Linked to contact {0}", [r.contact]), {
+							action: { label: __("Open contact"), onclick: () => whatsapp.ui.ConversationDrawer.open_contact(r.contact) },
 						});
 						on_done && on_done(r);
 					})
@@ -155,7 +155,7 @@ frappe.provide("whatsapp_next.numbers");
 					});
 			},
 		});
-		dialog.$wrapper.addClass("sanad-kit sanad-sheet");
+		dialog.$wrapper.addClass("whatsapp-kit whatsapp-kit-sheet");
 		// Server errors stay visible inside the dialog (a toast alone disappears after 8 s).
 		const $error = dialog.get_field("error_html").$wrapper;
 		const set_error = (message) => {
@@ -163,27 +163,27 @@ frappe.provide("whatsapp_next.numbers");
 				$error.empty();
 				return;
 			}
-			$error.html(`<div class="alert alert-danger sanad-link-dialog__error" role="alert" tabindex="-1">${frappe.utils.escape_html(message)}</div>`);
+			$error.html(`<div class="alert alert-danger whatsapp-kit-link-dialog__error" role="alert" tabindex="-1">${frappe.utils.escape_html(message)}</div>`);
 			$error.find("[role=alert]").trigger("focus");
 		};
 		// Party search goes through the contextual permission layer, not a direct Link on the party DocType.
 		party_search = frappe.utils.debounce((txt) => {
 			const party_type = dialog.get_value("party_type");
 			if (!party_type) return;
-			sanad.ui
+			whatsapp.ui
 				.call("contacts.search_party", { party_type, txt: txt || "" }, { silent: true })
 				.then((rows) => dialog.fields_dict.party_name.set_data((rows || []).map((r) => ({ value: r.name, label: r.title || r.name }))))
 				.catch((err) => set_error((err && err.message) || __("Could not search {0}.", [__(party_type)])));
 		}, 250);
 		dialog.fields_dict.party_name.$input.on("input focus", (e) => party_search(e.target.value));
 		const contact_search = frappe.utils.debounce((txt) => {
-			sanad.ui
+			whatsapp.ui
 				.call("contacts.list_contacts", { search: txt || "", page_length: 10, order_by: "full_name asc" }, { silent: true })
 				.then((r) =>
 					dialog.fields_dict.contact.set_data(
 						((r && r.rows) || []).map((c) => {
 							const phone = ((c.phone_nos || []).find((p) => cint(p.is_primary_mobile_no)) || (c.phone_nos || [])[0] || {}).wa_phone_e164;
-							return { value: c.name, label: c.full_name || c.name, description: phone ? sanad.ui.phone(phone) : c.name };
+							return { value: c.name, label: c.full_name || c.name, description: phone ? whatsapp.ui.phone(phone) : c.name };
 						})
 					)
 				)
@@ -202,17 +202,17 @@ frappe.provide("whatsapp_next.numbers");
 	async function sync_from_whatsapp(listview) {
 		let devices;
 		try {
-			devices = await sanad.ui.call("numbers.list_sync_devices", {});
+			devices = await whatsapp.ui.call("numbers.list_sync_devices", {});
 		} catch (err) {
-			return sanad.ui.Toast.error(err);
+			return whatsapp.ui.Toast.error(err);
 		}
 		if (!devices || !devices.length) {
-			return sanad.ui.Toast.warning(__("No device is registered on the platform yet. Link a device first."));
+			return whatsapp.ui.Toast.warning(__("No device is registered on the platform yet. Link a device first."));
 		}
 		// an <option> holds text only, so the number is kept left-to-right with Unicode isolates
 		// (LRI … PDI); in an Arabic line its groups otherwise came out in reverse order
 		const label = (d) =>
-			[d.device_name || d.name, d.phone ? sanad.ui.phone(d.phone) : null, d.status !== "Connected" ? __(d.status) : null].filter(Boolean).join(" · ");
+			[d.device_name || d.name, d.phone ? whatsapp.ui.phone(d.phone) : null, d.status !== "Connected" ? __(d.status) : null].filter(Boolean).join(" · ");
 		const when = (d) => (d.synced_at ? __("Last fetched {0}", [frappe.datetime.prettyDate(d.synced_at)]) : __("Never fetched from this device"));
 		const dialog = new frappe.ui.Dialog({
 			title: __("Fetch contacts from WhatsApp"),
@@ -242,17 +242,17 @@ frappe.provide("whatsapp_next.numbers");
 			primary_action: async ({ device }) => {
 				const d = devices.find((x) => x.name === device);
 				if (d && d.status !== "Connected") {
-					return sanad.ui.Toast.warning(__("{0} is not connected. Connect it first, then fetch.", [d.device_name || d.name]));
+					return whatsapp.ui.Toast.warning(__("{0} is not connected. Connect it first, then fetch.", [d.device_name || d.name]));
 				}
 				dialog.get_primary_btn().prop("disabled", true);
 				try {
-					await sanad.ui.call("numbers.sync_from_device", { device });
+					await whatsapp.ui.call("numbers.sync_from_device", { device });
 					dialog.hide();
-					sanad.ui.Toast.info(__("Fetching the contacts of {0}… you will be told when it is done.", [(d && d.device_name) || device]));
+					whatsapp.ui.Toast.info(__("Fetching the contacts of {0}… you will be told when it is done.", [(d && d.device_name) || device]));
 					watch_sync(listview, device);
 				} catch (err) {
 					dialog.get_primary_btn().prop("disabled", false);
-					sanad.ui.Toast.error(err);
+					whatsapp.ui.Toast.error(err);
 				}
 			},
 		});
@@ -271,7 +271,7 @@ frappe.provide("whatsapp_next.numbers");
 		const live = () => !run.shown && listview._wa_sync_run === run;
 		const ask = () => {
 			if (!live()) return Promise.resolve(null);
-			return sanad.ui
+			return whatsapp.ui
 				.call("numbers.get_sync_state", { device }, { silent: true })
 				.then((state) => {
 					if (!live()) return null;
@@ -293,7 +293,7 @@ frappe.provide("whatsapp_next.numbers");
 		window.setTimeout(() => {
 			ask().then((state) => {
 				if (live() && state && state.status !== "done" && state.status !== "failed")
-					sanad.ui.Toast.warning(__("The fetch is taking long. Refresh the list later to see the numbers."));
+					whatsapp.ui.Toast.warning(__("The fetch is taking long. Refresh the list later to see the numbers."));
 				stop();
 			});
 		}, 10 * 60 * 1000);
@@ -307,19 +307,19 @@ frappe.provide("whatsapp_next.numbers");
 			run.stop && run.stop();
 		}
 		if (data.error) {
-			sanad.ui.Toast.error(__("Fetching the contacts failed: {0}", [data.error]));
+			whatsapp.ui.Toast.error(__("Fetching the contacts failed: {0}", [data.error]));
 			return;
 		}
-		const n = (v) => sanad.ui.format_int(v || 0);
+		const n = (v) => whatsapp.ui.format_int(v || 0);
 		// one sentence with its own context: Frappe's own "{0} added" / "{0} updated" would win otherwise
-		sanad.ui.Toast.success(
+		whatsapp.ui.Toast.success(
 			__("{0} contacts and {4} groups fetched: {1} added, {2} updated, {3} linked to a contact.", [n(data.fetched), n(data.added), n(data.updated), n(data.linked), n(data.groups)], "Numbers sync")
 		);
-		if (data.link_skipped) sanad.ui.Toast.warning(__("{0} matching contacts were not linked: you may not edit contacts.", [sanad.ui.format_int(data.link_skipped)]));
-		listview._sanad_header && listview._sanad_header.refresh(true);
+		if (data.link_skipped) whatsapp.ui.Toast.warning(__("{0} matching contacts were not linked: you may not edit contacts.", [whatsapp.ui.format_int(data.link_skipped)]));
+		listview._whatsapp_header && listview._whatsapp_header.refresh(true);
 		// show what was just fetched: a filter left on (a "last 7 days" on the last message) would
 		// hide every address-book number, since none has exchanged a message yet
-		const bar = listview._sanad_filterbar;
+		const bar = listview._whatsapp_filterbar;
 		if (bar && data.device && (data.added || data.updated || data.unchanged)) {
 			bar.clear().then(() => bar.set("synced_device", data.device));
 		} else {

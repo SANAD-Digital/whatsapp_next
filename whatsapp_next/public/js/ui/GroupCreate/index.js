@@ -1,4 +1,4 @@
-// sanad.ui.GroupCreate — create a WhatsApp group from any screen: the device that will own it,
+// whatsapp.ui.GroupCreate — create a WhatsApp group from any screen: the device that will own it,
 // the group's name and description, and its members — the numbers the host passed in (a selection
 // of contacts, contact groups or numbers) plus any chosen with the ContactPicker (local mode).
 // After creating, the dialog shows what became of every number: added, needs an invitation (their
@@ -15,7 +15,7 @@ const STATUS = {
 	failed: { label: () => __("Not added"), colour: "red" },
 };
 
-sanad.ui.GroupCreate = class GroupCreate {
+whatsapp.ui.GroupCreate = class GroupCreate {
 	/**
 	 * @param {Object} opts
 	 * @param {Array<{phone_e164: string, display_name?: string}>} [opts.members] — numbers to start with
@@ -53,7 +53,7 @@ sanad.ui.GroupCreate = class GroupCreate {
 			primary_action_label: __("Create group"),
 			primary_action: (values) => this.create(values),
 		});
-		this.dialog.$wrapper.addClass("sanad-kit sanad-sheet sanad-groupcreate");
+		this.dialog.$wrapper.addClass("whatsapp-kit whatsapp-kit-sheet whatsapp-kit-groupcreate");
 		this.$members = this.dialog.get_field("members").$wrapper;
 		this.draw_members();
 	}
@@ -81,28 +81,28 @@ sanad.ui.GroupCreate = class GroupCreate {
 	draw_members() {
 		const esc = ui.escape;
 		const rows = [...this.members.values()];
-		this.$members.html(`<div class="sanad-groupcreate__members">
-			<div class="sanad-groupcreate__bar">
-				<span class="sanad-groupcreate__count">${esc(sanad.ui.plural(rows.length, { one: __("{0} number"), other: __("{0} numbers") }))}</span>
-				<button type="button" class="btn btn-xs btn-default sanad-groupcreate__pick">${ui.icon("es-line-add", "xs")} ${esc(__("Choose numbers"))}</button>
+		this.$members.html(`<div class="whatsapp-kit-groupcreate__members">
+			<div class="whatsapp-kit-groupcreate__bar">
+				<span class="whatsapp-kit-groupcreate__count">${esc(whatsapp.ui.plural(rows.length, { one: __("{0} number"), other: __("{0} numbers") }))}</span>
+				<button type="button" class="btn btn-xs btn-default whatsapp-kit-groupcreate__pick">${ui.icon("es-line-add", "xs")} ${esc(__("Choose numbers"))}</button>
 			</div>
 			${rows.length
-				? `<ul class="sanad-groupcreate__list">${rows.map((m) => `<li data-key="${esc(m.phone_e164)}">
-					<span class="sanad-groupcreate__name">${esc(m.display_name || "")}</span>
-					<bdi class="sanad-tabular" dir="ltr">${esc(sanad.ui.phone ? sanad.ui.phone(m.phone_e164) : m.phone_e164)}</bdi>
-					<button type="button" class="sanad-groupcreate__drop" aria-label="${esc(__("Remove {0}", [m.display_name || m.phone_e164]))}">${ui.icon("es-line-close", "xs")}</button>
+				? `<ul class="whatsapp-kit-groupcreate__list">${rows.map((m) => `<li data-key="${esc(m.phone_e164)}">
+					<span class="whatsapp-kit-groupcreate__name">${esc(m.display_name || "")}</span>
+					<bdi class="whatsapp-kit-tabular" dir="ltr">${esc(whatsapp.ui.phone ? whatsapp.ui.phone(m.phone_e164) : m.phone_e164)}</bdi>
+					<button type="button" class="whatsapp-kit-groupcreate__drop" aria-label="${esc(__("Remove {0}", [m.display_name || m.phone_e164]))}">${ui.icon("es-line-close", "xs")}</button>
 				</li>`).join("")}</ul>`
-				: `<p class="sanad-groupcreate__empty">${esc(__("No numbers yet. Choose the people to add."))}</p>`}
+				: `<p class="whatsapp-kit-groupcreate__empty">${esc(__("No numbers yet. Choose the people to add."))}</p>`}
 		</div>`);
-		this.$members.find(".sanad-groupcreate__pick").on("click", () => this.pick());
-		this.$members.find(".sanad-groupcreate__drop").on("click", (e) => {
+		this.$members.find(".whatsapp-kit-groupcreate__pick").on("click", () => this.pick());
+		this.$members.find(".whatsapp-kit-groupcreate__drop").on("click", (e) => {
 			this.members.delete($(e.currentTarget).closest("li").data("key"));
 			this.draw_members();
 		});
 	}
 
 	pick() {
-		new sanad.ui.ContactPicker({
+		new whatsapp.ui.ContactPicker({
 			title: __("Choose the group's members"),
 			existing: [...this.members.keys()],
 			on_pick: (rows) => {
@@ -114,7 +114,7 @@ sanad.ui.GroupCreate = class GroupCreate {
 
 	create(values) {
 		if (!this.members.size) {
-			sanad.ui.Toast.error(__("Choose at least one number to add"));
+			whatsapp.ui.Toast.error(__("Choose at least one number to add"));
 			return;
 		}
 		ui.call("wa_groups.create_group", {
@@ -129,7 +129,7 @@ sanad.ui.GroupCreate = class GroupCreate {
 				this.report(r);
 				if (this.opts.on_created) this.opts.on_created(r);
 			})
-			.catch((err) => sanad.ui.Toast.error(err));
+			.catch((err) => whatsapp.ui.Toast.error(err));
 	}
 
 	/** What became of every number, and the invite link for those who need it. */
@@ -139,9 +139,9 @@ sanad.ui.GroupCreate = class GroupCreate {
 		const names = Object.fromEntries([...this.members.values()].map((m) => [String(m.phone_e164).replace(/^\+/, ""), m.display_name]));
 		const rows = members.map((m) => {
 			const s = STATUS[m.status] || STATUS.failed;
-			return `<li><span class="sanad-groupcreate__name">${esc(names[m.phone] || "")}</span>
-				<bdi class="sanad-tabular" dir="ltr">${esc("+" + m.phone)}</bdi>
-				${sanad.ui.StatusBadge.html({ label: s.label(), colour: s.colour })}</li>`;
+			return `<li><span class="whatsapp-kit-groupcreate__name">${esc(names[m.phone] || "")}</span>
+				<bdi class="whatsapp-kit-tabular" dir="ltr">${esc("+" + m.phone)}</bdi>
+				${whatsapp.ui.StatusBadge.html({ label: s.label(), colour: s.colour })}</li>`;
 		}).join("");
 		const d = new frappe.ui.Dialog({
 			title: __("Group created: {0}", [r.name]),
@@ -150,17 +150,17 @@ sanad.ui.GroupCreate = class GroupCreate {
 			primary_action_label: __("Done"),
 			primary_action: () => d.hide(),
 		});
-		d.$wrapper.addClass("sanad-kit sanad-sheet sanad-groupcreate");
+		d.$wrapper.addClass("whatsapp-kit whatsapp-kit-sheet whatsapp-kit-groupcreate");
 		const invite = r.invite_link
-			? `<div class="sanad-groupcreate__invite">
+			? `<div class="whatsapp-kit-groupcreate__invite">
 				<p>${esc(__("Some people's privacy settings refuse being added to groups. Send them this link to join:"))}</p>
-				<div class="sanad-groupcreate__link"><bdi dir="ltr">${esc(r.invite_link)}</bdi>
-				<button type="button" class="btn btn-xs btn-default sanad-groupcreate__copy">${esc(__("Copy"))}</button></div>
+				<div class="whatsapp-kit-groupcreate__link"><bdi dir="ltr">${esc(r.invite_link)}</bdi>
+				<button type="button" class="btn btn-xs btn-default whatsapp-kit-groupcreate__copy">${esc(__("Copy"))}</button></div>
 			</div>`
 			: "";
-		const saved = r.saved_to_contact ? `<p class="sanad-groupcreate__saved">${esc(__("The group is saved among the contact's numbers."))}</p>` : "";
-		d.get_field("body").$wrapper.html(`${saved}<ul class="sanad-groupcreate__list sanad-groupcreate__list--report">${rows}</ul>${invite}`);
-		d.get_field("body").$wrapper.find(".sanad-groupcreate__copy").on("click", () => {
+		const saved = r.saved_to_contact ? `<p class="whatsapp-kit-groupcreate__saved">${esc(__("The group is saved among the contact's numbers."))}</p>` : "";
+		d.get_field("body").$wrapper.html(`${saved}<ul class="whatsapp-kit-groupcreate__list whatsapp-kit-groupcreate__list--report">${rows}</ul>${invite}`);
+		d.get_field("body").$wrapper.find(".whatsapp-kit-groupcreate__copy").on("click", () => {
 			frappe.utils.copy_to_clipboard(r.invite_link);
 		});
 		d.show();

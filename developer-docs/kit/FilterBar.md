@@ -1,4 +1,4 @@
-# `sanad.ui.FilterBar`
+# `whatsapp.ui.FilterBar`
 
 The prototype's one-row toolbar, above a Desk list or on a custom page. It lays out, in this order:
 
@@ -14,7 +14,7 @@ The prototype's one-row toolbar, above a Desk list or on a custom page. It lays 
 
 On desktop the toolbar stays on one line. Filters that do not fit move behind a **More** button, and action icons that do not fit move behind a **…** button. Under 768 px the bar becomes a **Filters** button that opens a sheet, and each filter's options open in a bottom drawer.
 
-**Portability:** it needs only a DocType name. The `group_by` / `columns` actions need a kit `DataList`, which it finds from `opts.datalist` or `listview._sanad_datalist`. The `date` preset needs `DateFilter` / `DateFilterSet`.
+**Portability:** it needs only a DocType name. The `group_by` / `columns` actions need a kit `DataList`, which it finds from `opts.datalist` or `listview._whatsapp_datalist`. The `date` preset needs `DateFilter` / `DateFilterSet`.
 
 ## Options
 
@@ -70,7 +70,7 @@ Fetched lists are cached per search text. A popover gets a search box when its o
 ## Events and callbacks
 
 - `on_change` is described under Options.
-- In list mode the bar wraps `listview.on_filter_change` (then calls `sync()`) and `listview.get_args` (adds `or_filters`). It sets `listview._sanad_filterbar` and adds `sanad-hide-page-form` to the page wrapper.
+- In list mode the bar wraps `listview.on_filter_change` (then calls `sync()`) and `listview.get_args` (adds `or_filters`). It sets `listview._whatsapp_filterbar` and adds `whatsapp-kit-hide-page-form` to the page wrapper.
 - It uses `ui.on_list_render` to re-label the Group by button.
 - Handlers `mousedown`/`touchstart`/`keydown.<id>` on `document` close the popovers on an outside click or Escape.
 - A `ResizeObserver` on the toolbar, plus `resize.<id>` on `window`, re-run the fit.
@@ -89,7 +89,7 @@ It makes no `ui.call`.
 ## Usage
 
 ```js
-new sanad.ui.FilterBar({
+new whatsapp.ui.FilterBar({
   listview,
   actions: ["group_by", "columns", "export"],
   presets: [
@@ -101,7 +101,7 @@ new sanad.ui.FilterBar({
 });
 
 // page mode
-new sanad.ui.FilterBar({
+new whatsapp.ui.FilterBar({
   page, wrapper: $toolbar, doctype: "WhatsApp Function",
   presets: [{ fieldname: "category", type: "select", options: cats }],
   on_change: (filters, { or_filters }) => load(filters, or_filters),
@@ -110,15 +110,15 @@ new sanad.ui.FilterBar({
 
 ## CSS hooks
 
-- **Root:** `.sanad-filterbar`, plus `--list` in list mode. It has `role="group"`.
+- **Root:** `.whatsapp-kit-filterbar`, plus `--list` in list mode. It has `role="group"`.
 - **Layout:** `__intro` and `__row--toolbar`, containing `__main` (the search and filters) and `__end` (holding `__period`, `__datefilter` (`--set`) and `__actions`). The pills go in `__row--tabs` / `__pills`.
 - **Filter buttons:** `__dd`, containing `__btn`, which holds `__btn-label`, `__btn-value`, `__btn-clear` and `__chevron`. `__btn--active` marks a button with a value set.
 - **Popovers:** `__pop` (with `--more`, `--amore`, `--levels` and `--columns`), containing `__pop-head`, `__pop-search`, `__pop-list`, `__opt`, `__pop-foot` and `__pop-empty`.
 - **Overflow:** `__more` / `__more-count`, `__hidden`, `__amore-item` / `__amore-label`, and `__native` (Desk's adopted Filter section).
 - **Extra filters and clear:** `__chipfilter` (with its `-label`, `-value` and `-x` parts) and `__clear`.
 - **Actions:** `__action`, `--icon`, `--group` and `--active`, plus `__levels`, `__level*` and `__column`.
-- **Phone:** `__mobile-toggle`, `__mobile-count` and `.sanad-filter-sheet*` (the sheet rows). The bottom drawer is `.sanad-optsheet` (`--in`, `__scrim`, `__panel`, `__list`, `__done`).
-- **Page:** `.sanad-hide-page-form` on the page wrapper keeps Desk's `page_form` row hidden.
+- **Phone:** `__mobile-toggle`, `__mobile-count` and `.whatsapp-kit-filter-sheet*` (the sheet rows). The bottom drawer is `.whatsapp-kit-optsheet` (`--in`, `__scrim`, `__panel`, `__list`, `__done`).
+- **Page:** `.whatsapp-kit-hide-page-form` on the page wrapper keeps Desk's `page_form` row hidden.
 
 ## Notes
 

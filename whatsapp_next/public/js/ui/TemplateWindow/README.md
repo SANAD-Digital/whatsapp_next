@@ -24,7 +24,7 @@ whole screen and all three are tabs.
 ## Usage
 
 ```js
-new sanad.ui.TemplateWindow({
+new whatsapp.ui.TemplateWindow({
   name: "Payment reminder" /* or null for a new one */,
   load: (name) => api("get_editor", { name }),        // {template, categories[], message_types[], can_write, can_delete}
   save: (payload) => api("save_editor", { payload }),  // → {name, modified}
@@ -32,7 +32,7 @@ new sanad.ui.TemplateWindow({
   preview: (args) => api("preview", args),             // {body, reference_doctype, reference_name, sample_context} → {body, errors[]}
   variables: (doctype) => api("list_variables", { reference_doctype: doctype }), // [{name, label, fieldtype}]
   pick_sample: (doctype) => api("pick_sample", { reference_doctype: doctype }),  // {name}
-  use_in_message: (name) => new sanad.ui.QuickSend({ template: name }),
+  use_in_message: (name) => new whatsapp.ui.QuickSend({ template: name }),
   on_saved: (r) => list.refresh(),                     // r.deleted after a delete
 });
 ```

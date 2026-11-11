@@ -1,6 +1,6 @@
-# `sanad.ui.ContactPicker`
+# `whatsapp.ui.ContactPicker`
 
-The recipient / member picker: one extra-large `frappe.ui.Dialog` (a full-height `.sanad-sheet`
+The recipient / member picker: one extra-large `frappe.ui.Dialog` (a full-height `.whatsapp-kit-sheet`
 on phones) with a pill strip of **sources**, the active source's pane, and an always-visible
 **tray** (the Selected tab) that the server classifies live. It adds rows to, or removes rows
 from, a target document's child table (`picker.commit_add` / `picker.commit_remove`), or — in
@@ -77,7 +77,7 @@ dropped by a sequence counter.
 
 ### 4 · Excel file and 5 · Phone export (`UploadSource`)
 `PhonebookSource` extends `UploadSource` (exported from `excel.js`; `ExcelSource` is an empty
-subclass). Both run a three-step `sanad.ui.Stepper` in the pane:
+subclass). Both run a three-step `whatsapp.ui.Stepper` in the pane:
 1. **Upload** — `frappe.ui.FileUploader` (private, `Home/Attachments`, one file, 5 MB; no web
    link or camera). Types by kind: `excel` → `.xlsx .xls .csv`, `csv` → `.csv`, `vcf` → `.vcf`.
    Kinds come from `entry.kinds`, default `["excel"]` (Excel) / `["vcf","csv"]` (Phone export);
@@ -96,7 +96,7 @@ subclass). Both run a three-step `sanad.ui.Stepper` in the pane:
 
 ### 6 · Manual entry
 A `dir="ltr"` textarea, one number per line; input is filtered to digits, `+`, whitespace, `,`
-and `;` (`ManualSource.numbers_only`). Placeholder / hint use `sanad.ui.PhoneField.example()`
+and `;` (`ManualSource.numbers_only`). Placeholder / hint use `whatsapp.ui.PhoneField.example()`
 when PhoneField is loaded. "Add numbers" or Ctrl/⌘+Enter parses.
 - `picker.parse_manual {text}` → `{rows, invalid}`. Valid rows are added; the textarea is
   cleared; each invalid line becomes an editable **fix row** with its reason.
@@ -180,7 +180,7 @@ Static:
 4. **Local add**: no `available` rows → inline alert; else `on_pick(available, picker)`, mark
    committed, hide. No ConfirmDialog.
 5. `action === 0` → inline alert ("nothing to add" / "nothing to remove"), stop.
-6. `sanad.ui.ConfirmDialog.ask({title: "Add N numbers?" | "Remove N numbers?", message: "Changes
+6. `whatsapp.ui.ConfirmDialog.ask({title: "Add N numbers?" | "Remove N numbers?", message: "Changes
    apply to {doctype} {label}.", impact, danger: remove, confirm_label: "Add N" | "Remove N"})`.
    Impact rows — add: Will be added (green), Already added (skipped), Invalid (skipped), With a
    conversation; remove: Will be removed (red), Not in the list (ignored); both add "Duplicates
@@ -202,7 +202,7 @@ Static:
   `{kind, stage, total, valid, invalid}` → footer progress text (`parsing`, `parsed`, other stages via `stage_label`).
 - Dialog wrapper listens (namespace `.picker`): `keydown` (Ctrl/⌘+Enter), `paste` (2+ phone-like
   tokens → "N numbers in what you pasted. Add them / Ignore" bar → `picker.parse_manual`),
-  `dragenter`/`dragover`/`dragleave`/`drop` (adds `sanad-picker-dialog--drop`, then `accept_file`).
+  `dragenter`/`dragover`/`dragleave`/`drop` (adds `whatsapp-kit-picker-dialog--drop`, then `accept_file`).
 - `candidate_table` triggers jQuery `selection-change` on its element.
 
 ## Server calls
@@ -228,7 +228,7 @@ loads the chosen DocType's meta.
 ## Usage
 
 ```js
-new sanad.ui.ContactPicker({
+new whatsapp.ui.ContactPicker({
   target_doctype: frm.doctype,
   target_name: frm.doc.name,
   target_label: frm.doc.group_name,
@@ -238,7 +238,7 @@ new sanad.ui.ContactPicker({
 });
 
 // Local mode: nothing is written
-new sanad.ui.ContactPicker({
+new whatsapp.ui.ContactPicker({
   title: __("Choose who gets the alert"),
   existing: ["+966501234567"],
   on_pick: (rows) => keep(rows),
@@ -248,9 +248,9 @@ new sanad.ui.ContactPicker({
 
 ## CSS hooks
 
-- Dialog wrapper: `.sanad-kit.sanad-sheet.sanad-picker-dialog`, `--remove` (danger primary
-  button), `--drop` (while dragging a file). Members window adds `.sanad-picker-members`.
-- Root `.sanad-picker`, `--zone-selected`; `__tabs` / `__tab` (`data-key`, `aria-selected`),
+- Dialog wrapper: `.whatsapp-kit.whatsapp-kit-sheet.whatsapp-kit-picker-dialog`, `--remove` (danger primary
+  button), `--drop` (while dragging a file). Members window adds `.whatsapp-kit-picker-members`.
+- Root `.whatsapp-kit-picker`, `--zone-selected`; `__tabs` / `__tab` (`data-key`, `aria-selected`),
   `__tab-count` (`--on`); `__zones` / `__zone` (`data-zone="pick|selected"`); `__work`,
   `__paste`, `__panes` / `__pane`; tray `__tray`, `__tray-head`, `__badge` (`--empty`),
   `__tray-sources` / `__srcchip`, `__tray-body`, `__counts`, `__alert`, `__clear`.

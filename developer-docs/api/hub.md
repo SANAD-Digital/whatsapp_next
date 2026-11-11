@@ -73,7 +73,7 @@ function's Server Script).
 **Realtime:** none.
 
 ```js
-const rows = await sanad.ui.call("hub.list_entries", { hub_type: "Template", txt: "invoice" });
+const rows = await whatsapp.ui.call("hub.list_entries", { hub_type: "Template", txt: "invoice" });
 ```
 
 ---
@@ -110,7 +110,7 @@ unknown type. Provider errors are mapped.
 **Realtime:** none.
 
 ```js
-const entry = await sanad.ui.call("hub.get_entry", { name: "HUB-0012" });
+const entry = await whatsapp.ui.call("hub.get_entry", { name: "HUB-0012" });
 ```
 
 ---
@@ -153,5 +153,5 @@ this site has no record of them. Audited as `Hub Entry Installed`.
 **Realtime:** none.
 
 ```js
-const r = await sanad.ui.call("hub.install", { name: "HUB-0012" }, { freeze: true });
+const r = await whatsapp.ui.call("hub.install", { name: "HUB-0012" }, { freeze: true });
 ```

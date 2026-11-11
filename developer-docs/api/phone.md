@@ -54,5 +54,5 @@ curl -s "https://<site>/api/method/whatsapp_next.api.v1.phone.get_countries" \
 ```
 
 ```js
-const { default: region, countries } = await sanad.ui.call("phone.get_countries");
+const { default: region, countries } = await whatsapp.ui.call("phone.get_countries");
 ```

@@ -6,6 +6,19 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
 
 ## [Unreleased]
 
+### Changed
+
+- **One name for the product's own code: `whatsapp`** (owner, 2026-11-11). The component kit's
+  namespace is `whatsapp.ui` / `whatsapp.kit` (was `sanad.ui` / `sanad.kit`); its classes are
+  `whatsapp-kit-*` and its variables `--whatsapp-kit-*` (were `sanad-*`, `--sanad-*`); the screens'
+  classes are `whatsapp-*` and the palette `--whatsapp-*` (were `wa-*`, `--wa-*`), the density
+  class `whatsapp` / `whatsapp--compact` (was `wa` / `wa--compact`). Page routes (`wa-home` …),
+  job ids and the `wa-commands` service user keep their names. The compiled stylesheet is the same
+  rule for rule once the names are mapped back. The "WA Dashboard Block" fixture follows (migrate
+  re-imports it). Another app that called `sanad.ui` of this app now calls `whatsapp.ui`.
+- **Removed** the unused kit components `MetaDialog` and `TreeGroupBy`, and dead code across the
+  app; duplicated code folded into shared helpers (see TECH_DEBT.md, 2026-11-11).
+
 ### Added
 
 - **Who an edit / a deletion is answered for** (Settings → Commands → "Reply on an edit only to",

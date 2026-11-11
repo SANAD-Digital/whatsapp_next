@@ -1,4 +1,4 @@
-// sanad.ui.AlertEditor — one window to create, edit, look at and try a scheduled alert (a report or a
+// whatsapp.ui.AlertEditor — one window to create, edit, look at and try a scheduled alert (a report or a
 // message that goes out daily, weekly, monthly…). The alert is written as four short answers, each
 // in its own card that ticks itself green once it is complete:
 //
@@ -16,12 +16,12 @@
 // also shows what it sent last and can run now.
 //
 // Portable: it knows nothing about the host app. The host passes the data source as functions —
-// see README.md. Colours are the product tokens (`--wa-*`); offsets are logical, so RTL needs nothing.
+// see README.md. Colours are the product tokens (`--whatsapp-*`); offsets are logical, so RTL needs nothing.
 
-frappe.provide("sanad.ui");
+frappe.provide("whatsapp.ui");
 
 (function () {
-	const esc = (v) => sanad.ui.escape(v == null ? "" : v);
+	const esc = (v) => whatsapp.ui.escape(v == null ? "" : v);
 	const WEEK_ORDER = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 	const JS_DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 	const PERIOD_LABEL = () => ({
@@ -81,17 +81,17 @@ frappe.provide("sanad.ui");
 		// ---- shell ---------------------------------------------------------------------------------
 
 		build() {
-			this.id = sanad.ui.uid("sanad-ae");
+			this.id = whatsapp.ui.uid("whatsapp-kit-ae");
 			this.previous_focus = document.activeElement;
 			this.$root = $(`
-				<div class="sanad-kit sanad-ae-layer" role="presentation">
-					<div class="sanad-ae-backdrop" data-act="close"></div>
-					<div class="sanad-ae" role="dialog" aria-modal="true" aria-labelledby="${this.id}-title">
-						<div class="sanad-ae__loading">${esc(__("Loading…"))}</div>
+				<div class="whatsapp-kit whatsapp-kit-ae-layer" role="presentation">
+					<div class="whatsapp-kit-ae-backdrop" data-act="close"></div>
+					<div class="whatsapp-kit-ae" role="dialog" aria-modal="true" aria-labelledby="${this.id}-title">
+						<div class="whatsapp-kit-ae__loading">${esc(__("Loading…"))}</div>
 					</div>
 				</div>`).appendTo(document.body);
-			this.$dlg = this.$root.find(".sanad-ae");
-			$("body").addClass("sanad-ae-open");
+			this.$dlg = this.$root.find(".whatsapp-kit-ae");
+			$("body").addClass("whatsapp-kit-ae-open");
 			this.$root.on("click", "[data-act]", (e) => this.on_act(e));
 			// a Link drop-down that opens near the bottom (the device picker) is brought into view by
 			// scrolling the column it is in; the window itself never scrolls (owner, 2026-11-10)
@@ -112,12 +112,12 @@ frappe.provide("sanad.ui");
 				this.run_search();
 			});
 			this.$root.on("mousedown", (e) => {
-				if (this.ui.pick_open && !$(e.target).closest(".sanad-ae__pick").length) this.close_pick();
+				if (this.ui.pick_open && !$(e.target).closest(".whatsapp-kit-ae__pick").length) this.close_pick();
 			});
-			this.untrap = sanad.ui.trap_focus(this.$root);
+			this.untrap = whatsapp.ui.trap_focus(this.$root);
 			this.install_report_shim();
-			this.refresh_preview = sanad.ui.debounce(() => this.run_preview(), 600);
-			this.search_later = sanad.ui.debounce(() => this.run_search(), 250);
+			this.refresh_preview = whatsapp.ui.debounce(() => this.run_preview(), 600);
+			this.search_later = whatsapp.ui.debounce(() => this.run_search(), 250);
 		}
 
 		close(force = false) {
@@ -127,7 +127,7 @@ frappe.provide("sanad.ui");
 			}
 			this.untrap && this.untrap();
 			frappe.query_report = this._prev_query_report;
-			$("body").removeClass("sanad-ae-open");
+			$("body").removeClass("whatsapp-kit-ae-open");
 			this.$root.remove();
 			if (this.previous_focus && this.previous_focus.focus) this.previous_focus.focus();
 			this.opts.on_close && this.opts.on_close();
@@ -138,7 +138,7 @@ frappe.provide("sanad.ui");
 				this.data = await this.opts.load(name);
 				this.draft = this.seed(this.data.alert);
 				this.clean = JSON.stringify(this.draft);
-				this.ui.test_phone = sanad.ui.test_phone.get() || (this.data.me && this.data.me.phone) || "";
+				this.ui.test_phone = whatsapp.ui.test_phone.get() || (this.data.me && this.data.me.phone) || "";
 				this.render();
 				const $name = this.$root.find("[data-in=alert_name]");
 				if (!this.draft.name) $name.trigger("focus");
@@ -149,9 +149,9 @@ frappe.provide("sanad.ui");
 				}
 			} catch (err) {
 				this.$dlg.html(`
-					<div class="sanad-ae__loading" role="alert">
+					<div class="whatsapp-kit-ae__loading" role="alert">
 						<span>${esc(err && err.message ? err.message : __("Something went wrong. Please try again."))}</span>
-						<button type="button" class="sanad-ae__btn" data-act="close">${esc(__("Close"))}</button>
+						<button type="button" class="whatsapp-kit-ae__btn" data-act="close">${esc(__("Close"))}</button>
 					</div>`);
 			}
 		}
@@ -319,37 +319,37 @@ frappe.provide("sanad.ui");
 		render() {
 			const d = this.draft;
 			this.$dlg.html(`
-				<header class="sanad-ae__head">
-					<span class="sanad-ae__mark" aria-hidden="true">${sanad.ui.ico("clock", "md")}</span>
-					<div class="sanad-ae__heading">
+				<header class="whatsapp-kit-ae__head">
+					<span class="whatsapp-kit-ae__mark" aria-hidden="true">${whatsapp.ui.ico("clock", "md")}</span>
+					<div class="whatsapp-kit-ae__heading">
 						<h2 id="${this.id}-title" class="sr-only">${esc(d.name ? __("Edit alert") : __("New alert"))}</h2>
-						<input type="text" class="sanad-ae__name" data-in="alert_name" data-sanad-bare maxlength="140"
+						<input type="text" class="whatsapp-kit-ae__name" data-in="alert_name" data-whatsapp-bare maxlength="140"
 							value="${esc(d.alert_name)}" placeholder="${esc(__("Name this alert…"))}" aria-label="${esc(__("Alert name"))}">
-						<p class="sanad-ae__sentence" data-slot="sentence"></p>
+						<p class="whatsapp-kit-ae__sentence" data-slot="sentence"></p>
 					</div>
-					<span class="sanad-ae__dirty" data-slot="dirty" hidden>${esc(__("Not saved"))}</span>
-					<label class="wa-toggle sanad-ae__enabled" title="${esc(__("The alert runs on its schedule only when it is on"))}">
+					<span class="whatsapp-kit-ae__dirty" data-slot="dirty" hidden>${esc(__("Not saved"))}</span>
+					<label class="whatsapp-toggle whatsapp-kit-ae__enabled" title="${esc(__("The alert runs on its schedule only when it is on"))}">
 						<input type="checkbox" data-ch="enabled" ${d.enabled ? "checked" : ""}>
-						<span class="wa-toggle__track"></span>
-						<span class="wa-toggle__label" data-slot="enabled-label"></span>
+						<span class="whatsapp-toggle__track"></span>
+						<span class="whatsapp-toggle__label" data-slot="enabled-label"></span>
 					</label>
-					${this.opts.form_doctype && d.name ? sanad.ui.form_button_html() : ""}
-					<button type="button" class="sanad-ae__icon" data-act="close" aria-label="${esc(__("Close"))}" title="${esc(__("Close (Esc)"))}">${sanad.ui.ico("x", "md")}</button>
+					${this.opts.form_doctype && d.name ? whatsapp.ui.form_button_html() : ""}
+					<button type="button" class="whatsapp-kit-ae__icon" data-act="close" aria-label="${esc(__("Close"))}" title="${esc(__("Close (Esc)"))}">${whatsapp.ui.ico("x", "md")}</button>
 				</header>
-				<div class="sanad-ae__main">
-					<div class="sanad-ae__build">
-						<section class="sanad-ae__step" data-step="when"></section>
-						<section class="sanad-ae__step" data-step="what"></section>
-						<section class="sanad-ae__step" data-step="who"></section>
-						<section class="sanad-ae__step" data-step="from"></section>
+				<div class="whatsapp-kit-ae__main">
+					<div class="whatsapp-kit-ae__build">
+						<section class="whatsapp-kit-ae__step" data-step="when"></section>
+						<section class="whatsapp-kit-ae__step" data-step="what"></section>
+						<section class="whatsapp-kit-ae__step" data-step="who"></section>
+						<section class="whatsapp-kit-ae__step" data-step="from"></section>
 					</div>
-					<aside class="sanad-ae__side" aria-label="${esc(__("Preview"))}">
+					<aside class="whatsapp-kit-ae__side" aria-label="${esc(__("Preview"))}">
 						<div data-slot="preview"></div>
 						<div data-slot="test"></div>
 						<div data-slot="history"></div>
 					</aside>
 				</div>
-				<footer class="sanad-ae__foot" data-slot="foot"></footer>`);
+				<footer class="whatsapp-kit-ae__foot" data-slot="foot"></footer>`);
 			this.draw_when();
 			this.draw_what();
 			this.draw_who();
@@ -363,22 +363,22 @@ frappe.provide("sanad.ui");
 
 		step_head(n, key, title, done, note) {
 			return `
-				<header class="sanad-ae__step-head">
-					<span class="sanad-ae__num${done ? " is-done" : ""}" aria-hidden="true">${done ? sanad.ui.ico("tick", "sm") : n}</span>
-					<span class="sanad-ae__step-title"><strong>${esc(title)}</strong>${note ? `<span>${esc(note)}</span>` : ""}</span>
+				<header class="whatsapp-kit-ae__step-head">
+					<span class="whatsapp-kit-ae__num${done ? " is-done" : ""}" aria-hidden="true">${done ? whatsapp.ui.ico("tick", "sm") : n}</span>
+					<span class="whatsapp-kit-ae__step-title"><strong>${esc(title)}</strong>${note ? `<span>${esc(note)}</span>` : ""}</span>
 					<span class="sr-only">${esc(done ? __("Complete") : __("Not complete yet"))}</span>
 				</header>`;
 		}
 
 		chip(label, { act, value, on, disabled, title, wide } = {}) {
-			return `<button type="button" class="sanad-ae__chip${on ? " is-on" : ""}${wide ? " sanad-ae__chip--wide" : ""}" data-act="${esc(act)}" data-value="${esc(value)}" aria-pressed="${on ? "true" : "false"}"${disabled ? " disabled" : ""}${title ? ` title="${esc(title)}"` : ""}>${esc(label)}</button>`;
+			return `<button type="button" class="whatsapp-kit-ae__chip${on ? " is-on" : ""}${wide ? " whatsapp-kit-ae__chip--wide" : ""}" data-act="${esc(act)}" data-value="${esc(value)}" aria-pressed="${on ? "true" : "false"}"${disabled ? " disabled" : ""}${title ? ` title="${esc(title)}"` : ""}>${esc(label)}</button>`;
 		}
 
 		seg(act, options, value, label) {
-			return `<div class="wa-seg sanad-ae__seg" role="radiogroup" aria-label="${esc(label)}">${options
+			return `<div class="whatsapp-seg whatsapp-kit-ae__seg" role="radiogroup" aria-label="${esc(label)}">${options
 				.map(
 					(o) =>
-						`<button type="button" class="wa-seg__opt" role="radio" aria-checked="${o.value === value}" data-act="${esc(act)}" data-value="${esc(o.value)}"${o.disabled ? " disabled" : ""}${o.title ? ` title="${esc(o.title)}"` : ""}>${o.icon ? sanad.ui.ico(o.icon, "xs") : ""}<span>${esc(o.label)}</span></button>`
+						`<button type="button" class="whatsapp-seg__opt" role="radio" aria-checked="${o.value === value}" data-act="${esc(act)}" data-value="${esc(o.value)}"${o.disabled ? " disabled" : ""}${o.title ? ` title="${esc(o.title)}"` : ""}>${o.icon ? whatsapp.ui.ico(o.icon, "xs") : ""}<span>${esc(o.label)}</span></button>`
 				)
 				.join("")}</div>`;
 		}
@@ -390,28 +390,28 @@ frappe.provide("sanad.ui");
 			const o = this.data.options || {};
 			const labels = PERIOD_LABEL();
 			const select = (key, options, value, label) =>
-				`<select class="wa-select sanad-ae__inline" data-ch="${esc(key)}" aria-label="${esc(label)}">${options
+				`<select class="whatsapp-select whatsapp-kit-ae__inline" data-ch="${esc(key)}" aria-label="${esc(label)}">${options
 					.map((opt) => `<option value="${esc(opt.value)}"${String(opt.value) === String(value) ? " selected" : ""}>${esc(opt.label)}</option>`)
 					.join("")}</select>`;
 			const days = Array.from({ length: 28 }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
 			const parts = [
-				`<span class="sanad-ae__word">${esc(__("Send it", null, "alert schedule"))}</span>`,
+				`<span class="whatsapp-kit-ae__word">${esc(__("Send it", null, "alert schedule"))}</span>`,
 				select("periodicity", (o.periodicity || Object.keys(labels)).map((p) => ({ value: p, label: labels[p] || __(p) })), d.periodicity, __("Periodicity")),
 			];
 			if (d.periodicity === "Weekly") {
-				parts.push(`<span class="sanad-ae__word">${esc(__("on", null, "alert schedule"))}</span>`);
+				parts.push(`<span class="whatsapp-kit-ae__word">${esc(__("on", null, "alert schedule"))}</span>`);
 				parts.push(select("day_of_week", WEEK_ORDER.filter((w) => (o.day_of_week || WEEK_ORDER).includes(w)).map((w) => ({ value: w, label: __(w) })), d.day_of_week, __("Day of the week")));
 			}
 			if (["Monthly", "Quarterly", "Yearly"].includes(d.periodicity)) {
-				parts.push(`<span class="sanad-ae__word">${esc(__("on day", null, "alert schedule"))}</span>`);
+				parts.push(`<span class="whatsapp-kit-ae__word">${esc(__("on day", null, "alert schedule"))}</span>`);
 				parts.push(select("day_of_month", days, d.day_of_month, __("Day of the month")));
 			}
 			if (d.periodicity === "Yearly") {
-				parts.push(`<span class="sanad-ae__word">${esc(__("of", null, "alert schedule"))}</span>`);
+				parts.push(`<span class="whatsapp-kit-ae__word">${esc(__("of", null, "alert schedule"))}</span>`);
 				parts.push(select("month_of_year", (o.month_of_year || []).map((m) => ({ value: m, label: __(m) })), d.month_of_year, __("Month")));
 			}
-			parts.push(`<span class="sanad-ae__word">${esc(__("at", null, "alert schedule"))}</span>`);
-			parts.push(`<input type="time" class="wa-input sanad-ae__inline sanad-ae__time-in" data-in="notification_time" value="${esc(d.notification_time)}" aria-label="${esc(__("Time"))}">`);
+			parts.push(`<span class="whatsapp-kit-ae__word">${esc(__("at", null, "alert schedule"))}</span>`);
+			parts.push(`<input type="time" class="whatsapp-input whatsapp-kit-ae__inline whatsapp-kit-ae__time-in" data-in="notification_time" value="${esc(d.notification_time)}" aria-label="${esc(__("Time"))}">`);
 			const note =
 				d.periodicity === "Quarterly"
 					? __("In the first month of each quarter. Days 29–31 are left out so that every month has the day.")
@@ -420,10 +420,10 @@ frappe.provide("sanad.ui");
 						: "";
 			this.$root.find("[data-step=when]").html(`
 				${this.step_head(1, "when", __("When does it go out?"), !!d.notification_time)}
-				<div class="sanad-ae__step-body">
-					<div class="sanad-ae__sentence-line">${parts.join("")}</div>
-					${note ? `<p class="sanad-ae__hint">${esc(note)}</p>` : ""}
-					<div class="sanad-ae__next" data-slot="next"></div>
+				<div class="whatsapp-kit-ae__step-body">
+					<div class="whatsapp-kit-ae__sentence-line">${parts.join("")}</div>
+					${note ? `<p class="whatsapp-kit-ae__hint">${esc(note)}</p>` : ""}
+					<div class="whatsapp-kit-ae__next" data-slot="next"></div>
 				</div>`);
 			this.draw_next();
 			this.draw_sentence();
@@ -434,9 +434,9 @@ frappe.provide("sanad.ui");
 			const $n = this.$root.find("[data-slot=next]");
 			if (!runs.length) return $n.html("");
 			$n.html(`
-				<span class="sanad-ae__next-label">${esc(__("Next runs"))}</span>
-				<ol class="sanad-ae__runs">${runs
-					.map((r, i) => `<li class="${i === 0 ? "is-first" : ""}"><span class="sanad-ae__dot"></span>${esc(this.when_text(r))}</li>`)
+				<span class="whatsapp-kit-ae__next-label">${esc(__("Next runs"))}</span>
+				<ol class="whatsapp-kit-ae__runs">${runs
+					.map((r, i) => `<li class="${i === 0 ? "is-first" : ""}"><span class="whatsapp-kit-ae__dot"></span>${esc(this.when_text(r))}</li>`)
 					.join("")}</ol>`);
 		}
 
@@ -475,7 +475,7 @@ frappe.provide("sanad.ui");
 						: __("a report")
 					: __("a message");
 			const n = d.recipients.length;
-			const who = n ? sanad.ui.plural(n, { one: __("{0} recipient"), other: __("{0} recipients") }) : __("no one yet");
+			const who = n ? whatsapp.ui.plural(n, { one: __("{0} recipient"), other: __("{0} recipients") }) : __("no one yet");
 			this.$root.find("[data-slot=sentence]").text(`${this.schedule_sentence()} — ${what} → ${who}`);
 		}
 
@@ -488,7 +488,7 @@ frappe.provide("sanad.ui");
 			const png_off = !this.data.png_available && d.attachment_format !== "PNG";
 			this.$root.find("[data-step=what]").html(`
 				${this.step_head(2, "what", __("What does it send?"), done)}
-				<div class="sanad-ae__step-body">
+				<div class="whatsapp-kit-ae__step-body">
 					${this.seg(
 						"content",
 						[
@@ -501,23 +501,23 @@ frappe.provide("sanad.ui");
 					${
 						is_report
 							? `
-						<div class="sanad-ae__field">
-							<span class="sanad-ae__label">${esc(__("Report"))}</span>
+						<div class="whatsapp-kit-ae__field">
+							<span class="whatsapp-kit-ae__label">${esc(__("Report"))}</span>
 							${this.picker("report", d.report, __("Search reports…"), d.report ? __(d.report) : null, this.ui.labels[`report:${d.report}`])}
 						</div>
-						<div class="sanad-ae__field">
-							<div class="sanad-ae__field-line">
-								<span class="sanad-ae__label">${esc(__("Filters"))}</span>
+						<div class="whatsapp-kit-ae__field">
+							<div class="whatsapp-kit-ae__field-line">
+								<span class="whatsapp-kit-ae__label">${esc(__("Filters"))}</span>
 								${
 									["report", "builder", "loading"].includes(this.ui.filter_mode)
-										? `<span class="sanad-ae__sub">${esc(this.ui.filter_mode === "builder" ? __("The report's list filters") : this.ui.filter_mode === "report" ? __("The report's own filters") : "")}</span>`
-										: `<button type="button" class="sanad-ae__link" data-act="json">${esc(this.ui.json_mode || d.filters_raw ? __("Edit as rows") : __("Edit as JSON"))}</button>`
+										? `<span class="whatsapp-kit-ae__sub">${esc(this.ui.filter_mode === "builder" ? __("The report's list filters") : this.ui.filter_mode === "report" ? __("The report's own filters") : "")}</span>`
+										: `<button type="button" class="whatsapp-kit-ae__link" data-act="json">${esc(this.ui.json_mode || d.filters_raw ? __("Edit as rows") : __("Edit as JSON"))}</button>`
 								}
 							</div>
 							<div data-slot="filters"></div>
 						</div>
-						<div class="sanad-ae__field">
-							<span class="sanad-ae__label">${esc(__("Attach the report as"))}</span>
+						<div class="whatsapp-kit-ae__field">
+							<span class="whatsapp-kit-ae__label">${esc(__("Attach the report as"))}</span>
 							${this.seg(
 								"format",
 								[
@@ -535,17 +535,17 @@ frappe.provide("sanad.ui");
 							)}
 							${
 								d.attachment_format !== "None" && this.opts.make_file
-									? `<div class="sanad-ne__tpl-actions"><button type="button" class="sanad-ae__btn" data-act="make_file"${this.ui.making ? " disabled" : ""}${d.report ? "" : ` disabled title="${esc(__("Choose the report first"))}"`}>${sanad.ui.ico("doc", "sm")}${esc(this.ui.making ? __("Making the file…") : d.attachment_format === "PNG" ? __("Create the image") : __("Create PDF"))}</button></div>`
+									? `<div class="whatsapp-kit-ne__tpl-actions"><button type="button" class="whatsapp-kit-ae__btn" data-act="make_file"${this.ui.making ? " disabled" : ""}${d.report ? "" : ` disabled title="${esc(__("Choose the report first"))}"`}>${whatsapp.ui.ico("doc", "sm")}${esc(this.ui.making ? __("Making the file…") : d.attachment_format === "PNG" ? __("Create the image") : __("Create PDF"))}</button></div>`
 									: ""
 							}
 							${
 								d.attachment_format !== "None"
-									? `<details class="sanad-ae__more"${d.print_format || d.letter_head || d.language ? " open" : ""}>
+									? `<details class="whatsapp-kit-ae__more"${d.print_format || d.letter_head || d.language ? " open" : ""}>
 										<summary>${esc(__("File options"))}</summary>
-										<div class="sanad-ae__cols">
-											<div class="sanad-ae__field"><span class="sanad-ae__label">${esc(__("Print format"))}</span>${this.picker("print_format", d.print_format, __("Default"), d.print_format)}</div>
-											<div class="sanad-ae__field"><span class="sanad-ae__label">${esc(__("Letter head"))}</span>${this.picker("letter_head", d.letter_head, __("None"), d.letter_head)}</div>
-											<div class="sanad-ae__field"><span class="sanad-ae__label">${esc(__("Language"))}</span>${this.picker("language", d.language, __("The site's"), d.language)}</div>
+										<div class="whatsapp-kit-ae__cols">
+											<div class="whatsapp-kit-ae__field"><span class="whatsapp-kit-ae__label">${esc(__("Print format"))}</span>${this.picker("print_format", d.print_format, __("Default"), d.print_format)}</div>
+											<div class="whatsapp-kit-ae__field"><span class="whatsapp-kit-ae__label">${esc(__("Letter head"))}</span>${this.picker("letter_head", d.letter_head, __("None"), d.letter_head)}</div>
+											<div class="whatsapp-kit-ae__field"><span class="whatsapp-kit-ae__label">${esc(__("Language"))}</span>${this.picker("language", d.language, __("The site's"), d.language)}</div>
 										</div>
 									</details>`
 									: ""
@@ -553,9 +553,9 @@ frappe.provide("sanad.ui");
 						</div>`
 							: ""
 					}
-					<div class="sanad-ae__field">
-						<div class="sanad-ae__field-line">
-							<span class="sanad-ae__label">${esc(is_report && d.attachment_format !== "None" ? __("Caption") : __("Message"))}</span>
+					<div class="whatsapp-kit-ae__field">
+						<div class="whatsapp-kit-ae__field-line">
+							<span class="whatsapp-kit-ae__label">${esc(is_report && d.attachment_format !== "None" ? __("Caption") : __("Message"))}</span>
 							${this.seg(
 								"body",
 								[
@@ -578,20 +578,20 @@ frappe.provide("sanad.ui");
 		body_html() {
 			const d = this.draft;
 			if (d.body_mode === "template")
-				return sanad.ui.template_cards({
+				return whatsapp.ui.template_cards({
 					templates: this.data.templates,
 					chosen: d.template,
 					query: this.ui.tpl_q,
 					can_open: !!this.opts.open_template,
 					empty_note: __("No template yet. Create one, or write the message here."),
 				});
-			return `<div class="sanad-ae__vars" role="group" aria-label="${esc(__("Insert a variable"))}">
+			return `<div class="whatsapp-kit-ae__vars" role="group" aria-label="${esc(__("Insert a variable"))}">
 					${(this.data.variables || [])
-						.map((v, i) => `<button type="button" class="sanad-ae__var" data-act="var" data-value="${i}" title="${esc(v.code)}">${sanad.ui.ico("plus", "xs")}${esc(v.label)}</button>`)
+						.map((v, i) => `<button type="button" class="whatsapp-kit-ae__var" data-act="var" data-value="${i}" title="${esc(v.code)}">${whatsapp.ui.ico("plus", "xs")}${esc(v.label)}</button>`)
 						.join("")}
 				</div>
-				<textarea class="wa-textarea sanad-ae__msg" data-in="message" rows="4" dir="auto" placeholder="${esc(__("What the message says…"))}" aria-label="${esc(__("Message"))}">${esc(d.message)}</textarea>
-				${this.opts.open_template ? `<div class="sanad-ne__tpl-actions"><button type="button" class="sanad-ae__link" data-act="tpl_from_text"${(d.message || "").trim() ? "" : " disabled"}>${sanad.ui.ico("cards", "xs")} ${esc(__("Save this text as a template"))}</button></div>` : ""}`;
+				<textarea class="whatsapp-textarea whatsapp-kit-ae__msg" data-in="message" rows="4" dir="auto" placeholder="${esc(__("What the message says…"))}" aria-label="${esc(__("Message"))}">${esc(d.message)}</textarea>
+				${this.opts.open_template ? `<div class="whatsapp-kit-ne__tpl-actions"><button type="button" class="whatsapp-kit-ae__link" data-act="tpl_from_text"${(d.message || "").trim() ? "" : " disabled"}>${whatsapp.ui.ico("cards", "xs")} ${esc(__("Save this text as a template"))}</button></div>` : ""}`;
 		}
 
 		draw_body() {
@@ -604,9 +604,9 @@ frappe.provide("sanad.ui");
 			if (!this.opts.make_file || this.ui.making) return;
 			this.ui.making = true;
 			this.draw_what();
-			return sanad.ui
+			return whatsapp.ui
 				.open_file_in_tab(() => this.opts.make_file(this.payload()))
-				.catch((err) => sanad.ui.Toast.error(err))
+				.catch((err) => whatsapp.ui.Toast.error(err))
 				.finally(() => {
 					this.ui.making = false;
 					this.draw_what();
@@ -652,7 +652,7 @@ frappe.provide("sanad.ui");
 			const $f = this.$root.find("[data-slot=filters]");
 			if (!$f.length) return;
 			const mode = this.ui.filter_mode;
-			if (mode === "loading") return $f.html(`<p class="sanad-ae__hint">${esc(__("Reading the report's filters…"))}</p>`);
+			if (mode === "loading") return $f.html(`<p class="whatsapp-kit-ae__hint">${esc(__("Reading the report's filters…"))}</p>`);
 			if (mode === "builder") return this.draw_builder($f);
 			if (mode === "report") return this.draw_report_controls($f);
 			return this.draw_filter_rows();
@@ -661,12 +661,12 @@ frappe.provide("sanad.ui");
 		draw_builder($f) {
 			const d = this.draft;
 			const info = this.ui.report_info || {};
-			$f.html(`<div class="sanad-ae__fg"></div><p class="sanad-ae__hint">${esc(
+			$f.html(`<div class="whatsapp-kit-ae__fg"></div><p class="whatsapp-kit-ae__hint">${esc(
 				__("Filters on {0}. For a date that moves, choose the \"Timespan\" condition (today, this week, last month…).", [__(info.ref_doctype)])
 			)}</p>`);
 			try {
 				this.fg = new frappe.ui.FilterGroup({
-					parent: $f.find(".sanad-ae__fg"),
+					parent: $f.find(".whatsapp-kit-ae__fg"),
 					doctype: info.ref_doctype,
 					on_change: () => {
 						d.builder = this.fg.get_filters().map((f) => f.slice(0, 4));
@@ -676,7 +676,7 @@ frappe.provide("sanad.ui");
 				this.fg.wrapper.find(".apply-filters").hide();
 				this.fg.add_filters_to_filter_group(d.builder || []);
 			} catch (e) {
-				$f.html(`<p class="sanad-ae__hint">${esc(__("The filters of this report could not be shown."))}</p>`);
+				$f.html(`<p class="whatsapp-kit-ae__hint">${esc(__("The filters of this report could not be shown."))}</p>`);
 			}
 		}
 
@@ -684,8 +684,8 @@ frappe.provide("sanad.ui");
 			const d = this.draft;
 			const tokens = this.data.tokens || [];
 			const defs = (this.ui.report_defs || []).filter((df) => df.fieldname && !["Section Break", "Column Break", "Tab Break", "HTML", "Button"].includes(df.fieldtype) && !df.hidden);
-			$f.html(`<div class="sanad-ae__rfs"></div>`);
-			const $wrap = $f.find(".sanad-ae__rfs");
+			$f.html(`<div class="whatsapp-kit-ae__rfs"></div>`);
+			const $wrap = $f.find(".whatsapp-kit-ae__rfs");
 			this.rf_controls = {};
 			defs.forEach((def) => {
 				const field = def.fieldname;
@@ -693,20 +693,20 @@ frappe.provide("sanad.ui");
 				const token = d.rf.tokens[field];
 				const m = token ? /^(\w+):(\d+)$/.exec(token) : null;
 				const token_key = m ? `${m[1]}:N` : token;
-				const $row = $(`<div class="sanad-ae__rf${token ? " is-moving" : ""}" data-field="${esc(field)}">
-					<div class="sanad-ae__rf-head">
-						<span class="sanad-ae__rf-label">${esc(__(def.label || field))}${def.reqd ? '<span class="wa-field__req"> *</span>' : ""}</span>
+				const $row = $(`<div class="whatsapp-kit-ae__rf${token ? " is-moving" : ""}" data-field="${esc(field)}">
+					<div class="whatsapp-kit-ae__rf-head">
+						<span class="whatsapp-kit-ae__rf-label">${esc(__(def.label || field))}${def.reqd ? '<span class="whatsapp-field__req"> *</span>' : ""}</span>
 						${is_date ? this.seg(`rf_mode:${field}`, [{ value: "fixed", label: __("Fixed") }, { value: "moving", label: __("Moves") }], token ? "moving" : "fixed", __("Date kind")) : ""}
 					</div>
-					<div class="sanad-ae__rf-in"></div>
+					<div class="whatsapp-kit-ae__rf-in"></div>
 				</div>`).appendTo($wrap);
-				const $in = $row.find(".sanad-ae__rf-in");
+				const $in = $row.find(".whatsapp-kit-ae__rf-in");
 				if (token) {
-					$in.html(`<span class="sanad-ae__token">
-						<select class="wa-select" data-ch="rf_token" data-field="${esc(field)}" aria-label="${esc(__(def.label || field))}">${tokens
+					$in.html(`<span class="whatsapp-kit-ae__token">
+						<select class="whatsapp-select" data-ch="rf_token" data-field="${esc(field)}" aria-label="${esc(__(def.label || field))}">${tokens
 							.map((t) => `<option value="${esc(t.name)}"${t.name === token_key ? " selected" : ""}>${esc(this.token_label(t.name))} — ${esc(t.example)}</option>`)
 							.join("")}</select>
-						${token_key && token_key.endsWith(":N") ? `<input type="number" min="1" max="3660" class="wa-input sanad-ae__n" data-in="rf_n" data-field="${esc(field)}" value="${esc(m ? m[2] : 7)}" aria-label="${esc(__("Number of days"))}">` : ""}
+						${token_key && token_key.endsWith(":N") ? `<input type="number" min="1" max="3660" class="whatsapp-input whatsapp-kit-ae__n" data-in="rf_n" data-field="${esc(field)}" value="${esc(m ? m[2] : 7)}" aria-label="${esc(__("Number of days"))}">` : ""}
 					</span>`);
 					return;
 				}
@@ -722,7 +722,7 @@ frappe.provide("sanad.ui");
 				if (control.$input) control.$input.attr("aria-label", __(def.label || field));
 				this.rf_controls[field] = control;
 			});
-			if (!defs.length) $wrap.html(`<p class="sanad-ae__hint">${esc(__("This report has no filters."))}</p>`);
+			if (!defs.length) $wrap.html(`<p class="whatsapp-kit-ae__hint">${esc(__("This report has no filters."))}</p>`);
 		}
 
 		/** Load the picked report's filter definitions and draw them. */
@@ -827,11 +827,11 @@ frappe.provide("sanad.ui");
 			} else if (this.ui.json_mode || d.filters_raw) {
 				const raw = d.filters_raw || { filters_json: "", dynamic_filters_json: "" };
 				$f.html(`
-					<div class="sanad-ae__cols">
-						<label class="sanad-ae__field"><span class="sanad-ae__sub">${esc(__("Fixed filters (JSON)"))}</span>
-							<textarea class="wa-textarea wa-input--mono" rows="3" data-in="raw_static" dir="ltr">${esc(raw.filters_json || "")}</textarea></label>
-						<label class="sanad-ae__field"><span class="sanad-ae__sub">${esc(__("Moving dates (JSON)"))}</span>
-							<textarea class="wa-textarea wa-input--mono" rows="3" data-in="raw_dynamic" dir="ltr">${esc(raw.dynamic_filters_json || "")}</textarea></label>
+					<div class="whatsapp-kit-ae__cols">
+						<label class="whatsapp-kit-ae__field"><span class="whatsapp-kit-ae__sub">${esc(__("Fixed filters (JSON)"))}</span>
+							<textarea class="whatsapp-textarea whatsapp-input--mono" rows="3" data-in="raw_static" dir="ltr">${esc(raw.filters_json || "")}</textarea></label>
+						<label class="whatsapp-kit-ae__field"><span class="whatsapp-kit-ae__sub">${esc(__("Moving dates (JSON)"))}</span>
+							<textarea class="whatsapp-textarea whatsapp-input--mono" rows="3" data-in="raw_dynamic" dir="ltr">${esc(raw.dynamic_filters_json || "")}</textarea></label>
 					</div>`);
 				return;
 			}
@@ -839,26 +839,26 @@ frappe.provide("sanad.ui");
 			const rows = d.filters
 				.map(
 					(f, i) => `
-					<div class="sanad-ae__filter" data-i="${i}">
-						<input type="text" class="wa-input wa-input--mono" data-in="f_field" data-i="${i}" value="${esc(f.field)}" placeholder="${esc(__("field"))}" aria-label="${esc(__("Filter field"))}" dir="ltr">
+					<div class="whatsapp-kit-ae__filter" data-i="${i}">
+						<input type="text" class="whatsapp-input whatsapp-input--mono" data-in="f_field" data-i="${i}" value="${esc(f.field)}" placeholder="${esc(__("field"))}" aria-label="${esc(__("Filter field"))}" dir="ltr">
 						${this.seg(`f_mode:${i}`, [{ value: "value", label: __("Value") }, { value: "token", label: __("Date that moves") }], f.mode, __("Filter kind"))}
 						${
 							f.mode === "token"
-								? `<span class="sanad-ae__token">
-									<select class="wa-select" data-ch="f_token" data-i="${i}" aria-label="${esc(__("Date"))}">${tokens
+								? `<span class="whatsapp-kit-ae__token">
+									<select class="whatsapp-select" data-ch="f_token" data-i="${i}" aria-label="${esc(__("Date"))}">${tokens
 										.map((t) => `<option value="${esc(t.name)}"${t.name === f.token ? " selected" : ""}>${esc(this.token_label(t.name))} — ${esc(t.example)}</option>`)
 										.join("")}</select>
-									${f.token.endsWith(":N") ? `<input type="number" min="1" max="3660" class="wa-input sanad-ae__n" data-in="f_n" data-i="${i}" value="${esc(f.n)}" aria-label="${esc(__("Number of days"))}">` : ""}
+									${f.token.endsWith(":N") ? `<input type="number" min="1" max="3660" class="whatsapp-input whatsapp-kit-ae__n" data-in="f_n" data-i="${i}" value="${esc(f.n)}" aria-label="${esc(__("Number of days"))}">` : ""}
 								</span>`
-								: `<input type="text" class="wa-input" data-in="f_value" data-i="${i}" value="${esc(f.value)}" placeholder="${esc(__("value"))}" aria-label="${esc(__("Filter value"))}" dir="auto">`
+								: `<input type="text" class="whatsapp-input" data-in="f_value" data-i="${i}" value="${esc(f.value)}" placeholder="${esc(__("value"))}" aria-label="${esc(__("Filter value"))}" dir="auto">`
 						}
-						<button type="button" class="sanad-ae__icon sanad-ae__icon--sm" data-act="f_remove" data-i="${i}" aria-label="${esc(__("Remove filter"))}">${sanad.ui.ico("x", "sm")}</button>
+						<button type="button" class="whatsapp-kit-ae__icon whatsapp-kit-ae__icon--sm" data-act="f_remove" data-i="${i}" aria-label="${esc(__("Remove filter"))}">${whatsapp.ui.ico("x", "sm")}</button>
 					</div>`
 				)
 				.join("");
 			$f.html(`
-				${rows || `<p class="sanad-ae__hint">${esc(__("No filters: the report runs with its own defaults."))}</p>`}
-				<button type="button" class="sanad-ae__add" data-act="f_add">${sanad.ui.ico("plus", "sm")}${esc(__("Add a filter"))}</button>`);
+				${rows || `<p class="whatsapp-kit-ae__hint">${esc(__("No filters: the report runs with its own defaults."))}</p>`}
+				<button type="button" class="whatsapp-kit-ae__add" data-act="f_add">${whatsapp.ui.ico("plus", "sm")}${esc(__("Add a filter"))}</button>`);
 		}
 
 		token_label(token) {
@@ -887,30 +887,30 @@ frappe.provide("sanad.ui");
 		/** A searchable single-value picker: the value as a chip, or a search field with results. */
 		picker(kind, value, placeholder, label, description) {
 			if (value) {
-				return `<div class="sanad-ae__picked">
-					<span class="sanad-ae__picked-text"><strong>${esc(label || value)}</strong>${description ? `<span>${esc(description)}</span>` : ""}</span>
-					<button type="button" class="sanad-ae__link" data-act="unpick" data-kind="${esc(kind)}">${esc(__("Change"))}</button>
+				return `<div class="whatsapp-kit-ae__picked">
+					<span class="whatsapp-kit-ae__picked-text"><strong>${esc(label || value)}</strong>${description ? `<span>${esc(description)}</span>` : ""}</span>
+					<button type="button" class="whatsapp-kit-ae__link" data-act="unpick" data-kind="${esc(kind)}">${esc(__("Change"))}</button>
 				</div>`;
 			}
 			const open = this.ui.pick_open === kind;
-			return `<div class="sanad-ae__pick">
-				<span class="sanad-ae__pick-ico" aria-hidden="true">${sanad.ui.ico("search", "sm")}</span>
-				<input type="search" class="wa-input" data-in="pick_q" data-kind="${esc(kind)}" autocomplete="off" placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}" aria-expanded="${open}" value="${open ? esc(this.ui.add_q) : ""}">
+			return `<div class="whatsapp-kit-ae__pick">
+				<span class="whatsapp-kit-ae__pick-ico" aria-hidden="true">${whatsapp.ui.ico("search", "sm")}</span>
+				<input type="search" class="whatsapp-input" data-in="pick_q" data-kind="${esc(kind)}" autocomplete="off" placeholder="${esc(placeholder)}" aria-label="${esc(placeholder)}" aria-expanded="${open}" value="${open ? esc(this.ui.add_q) : ""}">
 				${open ? this.results_html(kind) : ""}
 			</div>`;
 		}
 
 		results_html(kind) {
 			const rows = this.ui.results || [];
-			return `<div class="sanad-ae__results" role="listbox">${
+			return `<div class="whatsapp-kit-ae__results" role="listbox">${
 				rows.length
 					? rows
 							.map(
 								(r, i) =>
-									`<button type="button" role="option" class="sanad-ae__opt" data-act="pick" data-kind="${esc(kind)}" data-i="${i}"><strong>${esc(r.label)}</strong>${r.description ? `<span>${esc(r.description)}</span>` : ""}</button>`
+									`<button type="button" role="option" class="whatsapp-kit-ae__opt" data-act="pick" data-kind="${esc(kind)}" data-i="${i}"><strong>${esc(r.label)}</strong>${r.description ? `<span>${esc(r.description)}</span>` : ""}</button>`
 							)
 							.join("")
-					: `<p class="sanad-ae__none">${esc(this.ui.searching ? __("Searching…") : __("Nothing matches"))}</p>`
+					: `<p class="whatsapp-kit-ae__none">${esc(this.ui.searching ? __("Searching…") : __("Nothing matches"))}</p>`
 			}</div>`;
 		}
 
@@ -927,10 +927,10 @@ frappe.provide("sanad.ui");
 					const value = r.user || r.role || r.phone || r.report_column || "";
 					const label = this.ui.labels[`${r.recipient_type}:${value}`] || (r.recipient_type === "Role" ? __(value) : value);
 					const sub = r.recipient_type === "Phone" && label !== value ? value : m.label;
-					return `<li class="sanad-ae__who sanad-ae__who--${esc(frappe.scrub(r.recipient_type))}">
-						<span class="sanad-ae__who-ico" aria-hidden="true">${sanad.ui.ico(m.icon, "sm")}</span>
-						<span class="sanad-ae__who-text"><strong>${esc(label)}${r.recipient_type === "Phone" ? sanad.ui.group_tag(value) : ""}</strong><span dir="auto">${esc(sub)}</span></span>
-						<button type="button" class="sanad-ae__icon sanad-ae__icon--sm" data-act="r_remove" data-i="${i}" aria-label="${esc(__("Remove {0}", [label]))}">${sanad.ui.ico("x", "sm")}</button>
+					return `<li class="whatsapp-kit-ae__who whatsapp-kit-ae__who--${esc(frappe.scrub(r.recipient_type))}">
+						<span class="whatsapp-kit-ae__who-ico" aria-hidden="true">${whatsapp.ui.ico(m.icon, "sm")}</span>
+						<span class="whatsapp-kit-ae__who-text"><strong>${esc(label)}${r.recipient_type === "Phone" ? whatsapp.ui.group_tag(value) : ""}</strong><span dir="auto">${esc(sub)}</span></span>
+						<button type="button" class="whatsapp-kit-ae__icon whatsapp-kit-ae__icon--sm" data-act="r_remove" data-i="${i}" aria-label="${esc(__("Remove {0}", [label]))}">${whatsapp.ui.ico("x", "sm")}</button>
 					</li>`;
 				})
 				.join("");
@@ -938,30 +938,30 @@ frappe.provide("sanad.ui");
 			let columns = "";
 			if (is_report) {
 				const cols = this.ui.columns;
-				columns = `<div class="sanad-ae__colpick">
-					<span class="sanad-ae__sub">${esc(__("Or one message per number in a report column"))}</span>
+				columns = `<div class="whatsapp-kit-ae__colpick">
+					<span class="whatsapp-kit-ae__sub">${esc(__("Or one message per number in a report column"))}</span>
 					${
 						!d.report
-							? `<p class="sanad-ae__hint">${esc(__("Choose the report first; its columns are listed here."))}</p>`
+							? `<p class="whatsapp-kit-ae__hint">${esc(__("Choose the report first; its columns are listed here."))}</p>`
 							: cols === null
-								? `<p class="sanad-ae__hint">${esc(__("Reading the report's columns…"))}</p>`
+								? `<p class="whatsapp-kit-ae__hint">${esc(__("Reading the report's columns…"))}</p>`
 								: cols.length
-									? `<div class="sanad-ae__chips">${cols
+									? `<div class="whatsapp-kit-ae__chips">${cols
 											.map((c) => this.chip(__(c.label || c.fieldname), { act: "add_column", value: c.fieldname, on: d.recipients.some((r) => r.report_column === c.fieldname) }))
 											.join("")}</div>`
-									: `<p class="sanad-ae__hint">${esc(__("The report returned no columns with these filters."))}</p>`
+									: `<p class="whatsapp-kit-ae__hint">${esc(__("The report returned no columns with these filters."))}</p>`
 					}
 				</div>`;
 			}
 			this.$root.find("[data-step=who]").html(`
 				${this.step_head(3, "who", __("Who gets it?"), d.recipients.length > 0)}
-				<div class="sanad-ae__step-body">
-					<div class="sanad-ae__who-bar">
-						<button type="button" class="sanad-ae__btn sanad-ae__btn--pri" data-act="pick_contacts"${this.opts.pick_recipients ? "" : " disabled"}>${sanad.ui.ico("users", "sm")}${esc(__("Choose from contacts"))}</button>
-						<span class="sanad-ae__hint">${esc(__("Contact groups, contacts, system screens, a file or typed numbers."))}</span>
-						${phones ? `<button type="button" class="sanad-ae__link" data-act="r_clear">${esc(__("Remove all numbers"))}</button>` : ""}
+				<div class="whatsapp-kit-ae__step-body">
+					<div class="whatsapp-kit-ae__who-bar">
+						<button type="button" class="whatsapp-kit-ae__btn whatsapp-kit-ae__btn--pri" data-act="pick_contacts"${this.opts.pick_recipients ? "" : " disabled"}>${whatsapp.ui.ico("users", "sm")}${esc(__("Choose from contacts"))}</button>
+						<span class="whatsapp-kit-ae__hint">${esc(__("Contact groups, contacts, system screens, a file or typed numbers."))}</span>
+						${phones ? `<button type="button" class="whatsapp-kit-ae__link" data-act="r_clear">${esc(__("Remove all numbers"))}</button>` : ""}
 					</div>
-					${d.recipients.length ? `<ul class="sanad-ae__whos">${chips}</ul>` : `<p class="sanad-ae__empty">${esc(__("Nobody yet."))}</p>`}
+					${d.recipients.length ? `<ul class="whatsapp-kit-ae__whos">${chips}</ul>` : `<p class="whatsapp-kit-ae__empty">${esc(__("Nobody yet."))}</p>`}
 					${columns}
 				</div>`);
 			this.draw_sentence();
@@ -981,7 +981,7 @@ frappe.provide("sanad.ui");
 				added += 1;
 			});
 			if (added) {
-				frappe.show_alert({ message: sanad.ui.plural(added, { one: __("{0} number added"), other: __("{0} numbers added") }), indicator: "green" });
+				frappe.show_alert({ message: whatsapp.ui.plural(added, { one: __("{0} number added"), other: __("{0} numbers added") }), indicator: "green" });
 				this.changed({ redraw: ["who"] });
 			}
 		}
@@ -995,11 +995,11 @@ frappe.provide("sanad.ui");
 			const dev = (this.data.devices || []).find((x) => x.name === d.device);
 			this.$root.find("[data-step=from]").html(`
 				${this.step_head(4, "from", __("From which device?"), !!d.device, d.device ? null : __("Without one, the default device sends it"))}
-				<div class="sanad-ae__step-body">
-					<div class="sanad-ae__device-link"></div>
+				<div class="whatsapp-kit-ae__step-body">
+					<div class="whatsapp-kit-ae__device-link"></div>
 					${
 						dev
-							? `<p class="sanad-ae__hint sanad-ae__device-state"><span class="sanad-ae__device-dot sanad-ae__device-dot--${dev.status === "Connected" ? "ok" : "warn"}"></span>${esc(__(dev.status))}${dev.phone_e164 ? ` · <span dir="ltr">${esc(dev.phone_e164)}</span>` : ""}</p>`
+							? `<p class="whatsapp-kit-ae__hint whatsapp-kit-ae__device-state"><span class="whatsapp-kit-ae__device-dot whatsapp-kit-ae__device-dot--${dev.status === "Connected" ? "ok" : "warn"}"></span>${esc(__(dev.status))}${dev.phone_e164 ? ` · <span dir="ltr">${esc(dev.phone_e164)}</span>` : ""}</p>`
 							: ""
 					}
 				</div>`);
@@ -1019,7 +1019,7 @@ frappe.provide("sanad.ui");
 						this.draw_from();
 					},
 				},
-				parent: this.$root.find(".sanad-ae__device-link"),
+				parent: this.$root.find(".whatsapp-kit-ae__device-link"),
 				render_input: true,
 				only_input: true,
 			});
@@ -1045,33 +1045,33 @@ frappe.provide("sanad.ui");
 			const dev = (this.data.devices || []).find((x) => x.name === d.device) || (this.data.devices || []).find((x) => cint(x.is_default)) || {};
 			const first = p && p.recipients && p.recipients[0];
 			let bubble;
-			if (!p) bubble = `<div class="sanad-ae__bubble is-ghost">${sanad.ui.skeleton(2)}</div>`;
+			if (!p) bubble = `<div class="whatsapp-kit-ae__bubble is-ghost">${whatsapp.ui.skeleton(2)}</div>`;
 			else if (!p.message && !p.attachment)
-				bubble = `<p class="sanad-ae__pv-empty">${esc(d.content_type === "Report" && !d.report ? __("Choose a report to see the message.") : __("Write the message to see it here."))}</p>`;
+				bubble = `<p class="whatsapp-kit-ae__pv-empty">${esc(d.content_type === "Report" && !d.report ? __("Choose a report to see the message.") : __("Write the message to see it here."))}</p>`;
 			else {
 				const file = p.attachment
-					? `<div class="sanad-ae__file"><span class="sanad-ae__file-ico" aria-hidden="true">${sanad.ui.ico(p.attachment.message_type === "Image" ? "image" : "doc", "md")}</span><span><strong dir="ltr">${esc(p.attachment.file_name)}</strong><span>${esc(p.attachment.message_type === "Image" ? __("Image") : "PDF")} · ${esc(__("built when it runs"))}</span></span></div>`
+					? `<div class="whatsapp-kit-ae__file"><span class="whatsapp-kit-ae__file-ico" aria-hidden="true">${whatsapp.ui.ico(p.attachment.message_type === "Image" ? "image" : "doc", "md")}</span><span><strong dir="ltr">${esc(p.attachment.file_name)}</strong><span>${esc(p.attachment.message_type === "Image" ? __("Image") : "PDF")} · ${esc(__("built when it runs"))}</span></span></div>`
 					: "";
-				bubble = `<div class="sanad-ae__bubble">${file}${p.message ? `<div class="sanad-ae__bubble-text" dir="auto">${esc(p.message)}</div>` : ""}<span class="sanad-ae__bubble-time">${esc(d.notification_time || "")} ${sanad.ui.ico("read", "xs")}</span></div>`;
+				bubble = `<div class="whatsapp-kit-ae__bubble">${file}${p.message ? `<div class="whatsapp-kit-ae__bubble-text" dir="auto">${esc(p.message)}</div>` : ""}<span class="whatsapp-kit-ae__bubble-time">${esc(d.notification_time || "")} ${whatsapp.ui.ico("read", "xs")}</span></div>`;
 			}
 			const facts = p
-				? `<dl class="sanad-ae__facts">
-					${d.content_type === "Report" ? `<div><dt>${esc(__("Rows"))}</dt><dd>${esc(sanad.ui.format_int(p.row_count || 0))}</dd></div>` : ""}
-					<div><dt>${esc(__("Recipients"))}</dt><dd>${esc(sanad.ui.format_int(p.recipients_count || 0))}</dd></div>
+				? `<dl class="whatsapp-kit-ae__facts">
+					${d.content_type === "Report" ? `<div><dt>${esc(__("Rows"))}</dt><dd>${esc(whatsapp.ui.format_int(p.row_count || 0))}</dd></div>` : ""}
+					<div><dt>${esc(__("Recipients"))}</dt><dd>${esc(whatsapp.ui.format_int(p.recipients_count || 0))}</dd></div>
 					<div><dt>${esc(__("Next run"))}</dt><dd>${esc(p.next_runs && p.next_runs[0] ? this.when_text(p.next_runs[0]) : "—")}</dd></div>
 				</dl>`
 				: "";
 			const notes = [];
-			if (p && p.problem) notes.push(`<div class="sanad-ae__note sanad-ae__note--warn" role="status">${sanad.ui.ico("warn", "sm")}<span>${esc(p.problem)}</span></div>`);
-			if (p && p.error) notes.push(`<div class="sanad-ae__note sanad-ae__note--danger" role="alert">${sanad.ui.ico("error", "sm")}<span>${esc(p.error)}</span></div>`);
+			if (p && p.problem) notes.push(`<div class="whatsapp-kit-ae__note whatsapp-kit-ae__note--warn" role="status">${whatsapp.ui.ico("warn", "sm")}<span>${esc(p.problem)}</span></div>`);
+			if (p && p.error) notes.push(`<div class="whatsapp-kit-ae__note whatsapp-kit-ae__note--danger" role="alert">${whatsapp.ui.ico("error", "sm")}<span>${esc(p.error)}</span></div>`);
 			this.$root.find("[data-slot=preview]").html(`
-				<div class="sanad-ae__side-head"><strong>${esc(__("Preview"))}</strong><span class="sanad-ae__status" data-slot="pv-status" aria-live="polite"></span></div>
-				<div class="sanad-ae__phone">
-					<div class="sanad-ae__phone-bar">
-						<span class="sanad-ae__phone-av" aria-hidden="true">${sanad.ui.ico("whatsapp", "sm")}</span>
-						<span><strong>${esc(dev.device_name || __("Device"))}</strong><span dir="ltr">${esc(first ? sanad.ui.phone(first.phone_e164) : __("to the first recipient"))}</span></span>
+				<div class="whatsapp-kit-ae__side-head"><strong>${esc(__("Preview"))}</strong><span class="whatsapp-kit-ae__status" data-slot="pv-status" aria-live="polite"></span></div>
+				<div class="whatsapp-kit-ae__phone">
+					<div class="whatsapp-kit-ae__phone-bar">
+						<span class="whatsapp-kit-ae__phone-av" aria-hidden="true">${whatsapp.ui.ico("whatsapp", "sm")}</span>
+						<span><strong>${esc(dev.device_name || __("Device"))}</strong><span dir="ltr">${esc(first ? whatsapp.ui.phone(first.phone_e164) : __("to the first recipient"))}</span></span>
 					</div>
-					<div class="sanad-ae__chat">${bubble}</div>
+					<div class="whatsapp-kit-ae__chat">${bubble}</div>
 				</div>
 				${facts}
 				${notes.join("")}`);
@@ -1082,18 +1082,18 @@ frappe.provide("sanad.ui");
 			if (!this.opts.send_test) return;
 			const d = this.draft;
 			this.$root.find("[data-slot=test]").html(`
-				<div class="sanad-ae__test">
+				<div class="whatsapp-kit-ae__test">
 					<strong>${esc(__("Try it"))}</strong>
 					<p>${esc(__("Sends this draft once to one number — nothing is saved, the schedule and the counters do not change."))}</p>
-					<div class="sanad-ae__addline">
-						<div class="sanad-ae__test-phone" data-slot="test-phone"></div>
-						<button type="button" class="sanad-ae__btn sanad-ae__btn--pri" data-act="test"${this.ui.testing ? " disabled" : ""}>${sanad.ui.ico("send", "sm")}${esc(this.ui.testing ? __("Sending…") : __("Send a test"))}</button>
+					<div class="whatsapp-kit-ae__addline">
+						<div class="whatsapp-kit-ae__test-phone" data-slot="test-phone"></div>
+						<button type="button" class="whatsapp-kit-ae__btn whatsapp-kit-ae__btn--pri" data-act="test"${this.ui.testing ? " disabled" : ""}>${whatsapp.ui.ico("send", "sm")}${esc(this.ui.testing ? __("Sending…") : __("Send a test"))}</button>
 					</div>
-					${d.name && this.opts.run_now ? `<button type="button" class="sanad-ae__link" data-act="run_now">${esc(__("Run it now for every recipient"))}</button>` : ""}
+					${d.name && this.opts.run_now ? `<button type="button" class="whatsapp-kit-ae__link" data-act="run_now">${esc(__("Run it now for every recipient"))}</button>` : ""}
 				</div>`);
 			// the kit's phone field, as in the notification editor: it opens on the site's country
 			// (Global Defaults), so a local number takes that key without it being typed
-			new sanad.ui.PhoneField({
+			new whatsapp.ui.PhoneField({
 				wrapper: this.$root.find("[data-slot=test-phone]"),
 				label: "",
 				value: this.ui.test_phone,
@@ -1109,18 +1109,18 @@ frappe.provide("sanad.ui");
 			if (!this.draft.name) return this.$root.find("[data-slot=history]").html("");
 			const tone = { Read: "ok", Delivered: "ok", Sent: "info", Queued: "muted", Sending: "muted", Failed: "danger", Cancelled: "muted" };
 			this.$root.find("[data-slot=history]").html(`
-				<div class="sanad-ae__hist">
-					<div class="sanad-ae__side-head"><strong>${esc(__("What it has done"))}</strong></div>
-					<dl class="sanad-ae__facts">
-						<div><dt>${esc(__("Sent"))}</dt><dd>${esc(sanad.ui.format_int(s.send_count || 0))}</dd></div>
+				<div class="whatsapp-kit-ae__hist">
+					<div class="whatsapp-kit-ae__side-head"><strong>${esc(__("What it has done"))}</strong></div>
+					<dl class="whatsapp-kit-ae__facts">
+						<div><dt>${esc(__("Sent"))}</dt><dd>${esc(whatsapp.ui.format_int(s.send_count || 0))}</dd></div>
 						<div><dt>${esc(__("Last sent"))}</dt><dd>${esc(s.last_sent_at ? frappe.datetime.str_to_user(s.last_sent_at) : "—")}</dd></div>
 					</dl>
-					${s.last_error ? `<div class="sanad-ae__note sanad-ae__note--danger">${sanad.ui.ico("error", "sm")}<span>${esc(s.last_error)}</span></div>` : ""}
+					${s.last_error ? `<div class="whatsapp-kit-ae__note whatsapp-kit-ae__note--danger">${whatsapp.ui.ico("error", "sm")}<span>${esc(s.last_error)}</span></div>` : ""}
 					${
 						recent.length
-							? `<ul class="sanad-ae__recent">${recent
+							? `<ul class="whatsapp-kit-ae__recent">${recent
 									.map(
-										(r) => `<li><span dir="ltr">${esc(r.display_name || sanad.ui.phone(r.phone_e164))}</span>${sanad.ui.group_tag(r.phone_e164)}${sanad.ui.badge(__(r.status), tone[r.status] || "muted")}<time title="${esc(frappe.datetime.str_to_user(r.creation))}">${esc(sanad.ui.ago(r.creation))}</time></li>`
+										(r) => `<li><span dir="ltr">${esc(r.display_name || whatsapp.ui.phone(r.phone_e164))}</span>${whatsapp.ui.group_tag(r.phone_e164)}${whatsapp.ui.badge(__(r.status), tone[r.status] || "muted")}<time title="${esc(frappe.datetime.str_to_user(r.creation))}">${esc(whatsapp.ui.ago(r.creation))}</time></li>`
 									)
 									.join("")}</ul>`
 							: ""
@@ -1139,10 +1139,10 @@ frappe.provide("sanad.ui");
 			const p = this.ui.preview;
 			const hint = p && p.problem ? p.problem : this.is_dirty() ? __("Changes are not saved yet") : d.name ? __("Saved") : "";
 			this.$root.find("[data-slot=foot]").html(`
-				${d.name && this.data.can_delete && this.opts.remove ? `<button type="button" class="sanad-ae__btn sanad-ae__btn--danger" data-act="delete">${sanad.ui.ico("trash", "sm")}${esc(__("Delete"))}</button>` : ""}
-				<span class="sanad-ae__foot-hint${p && p.problem ? " is-warn" : ""}">${esc(hint)}</span>
-				<button type="button" class="sanad-ae__btn" data-act="close">${esc(__("Cancel"))}</button>
-				<button type="button" class="sanad-ae__btn sanad-ae__btn--pri" data-act="save"${(!this.is_dirty() && d.name) || this.ui.saving || !this.data.can_write ? " disabled" : ""}>${esc(this.ui.saving ? __("Saving…") : d.name ? __("Save") : __("Create alert"))}</button>`);
+				${d.name && this.data.can_delete && this.opts.remove ? `<button type="button" class="whatsapp-kit-ae__btn whatsapp-kit-ae__btn--danger" data-act="delete">${whatsapp.ui.ico("trash", "sm")}${esc(__("Delete"))}</button>` : ""}
+				<span class="whatsapp-kit-ae__foot-hint${p && p.problem ? " is-warn" : ""}">${esc(hint)}</span>
+				<button type="button" class="whatsapp-kit-ae__btn" data-act="close">${esc(__("Cancel"))}</button>
+				<button type="button" class="whatsapp-kit-ae__btn whatsapp-kit-ae__btn--pri" data-act="save"${(!this.is_dirty() && d.name) || this.ui.saving || !this.data.can_write ? " disabled" : ""}>${esc(this.ui.saving ? __("Saving…") : d.name ? __("Save") : __("Create alert"))}</button>`);
 		}
 
 		// ---- events --------------------------------------------------------------------------------
@@ -1169,7 +1169,7 @@ frappe.provide("sanad.ui");
 				case "close":
 					return this.close();
 				case "open_form":
-					return sanad.ui.open_form(this, this.opts.form_doctype, this.draft && this.draft.name);
+					return whatsapp.ui.open_form(this, this.opts.form_doctype, this.draft && this.draft.name);
 				case "content":
 					d.content_type = value;
 					return this.changed({ redraw: ["what", "who"] });
@@ -1372,7 +1372,7 @@ frappe.provide("sanad.ui");
 			}
 			if (e.key === "ArrowDown" && $(e.target).is("[data-in=pick_q]")) {
 				e.preventDefault();
-				this.$root.find(".sanad-ae__opt").first().trigger("focus");
+				this.$root.find(".whatsapp-kit-ae__opt").first().trigger("focus");
 			}
 		}
 
@@ -1382,7 +1382,7 @@ frappe.provide("sanad.ui");
 			const kind = this.ui.pick_open;
 			this.ui.pick_open = null;
 			this.ui.results = [];
-			this.$root.find(`[data-in=pick_q][data-kind=${kind}]`).attr("aria-expanded", "false").siblings(".sanad-ae__results").remove();
+			this.$root.find(`[data-in=pick_q][data-kind=${kind}]`).attr("aria-expanded", "false").siblings(".whatsapp-kit-ae__results").remove();
 		}
 
 		async run_search() {
@@ -1398,8 +1398,8 @@ frappe.provide("sanad.ui");
 				this.ui.results = [];
 			}
 			this.ui.searching = false;
-			const $pick = this.$root.find(`[data-in=pick_q][data-kind=${kind}]`).closest(".sanad-ae__pick");
-			$pick.find(".sanad-ae__results").remove();
+			const $pick = this.$root.find(`[data-in=pick_q][data-kind=${kind}]`).closest(".whatsapp-kit-ae__pick");
+			$pick.find(".whatsapp-kit-ae__results").remove();
 			$pick.append(this.results_html(kind));
 			$pick.find("input").attr("aria-expanded", "true");
 		}
@@ -1477,11 +1477,11 @@ frappe.provide("sanad.ui");
 			this.draw_next();
 			this.draw_foot();
 			// the step header of "who" carries how many numbers the recipients became
-			const $who = this.$root.find("[data-step=who] .sanad-ae__step-title");
+			const $who = this.$root.find("[data-step=who] .whatsapp-kit-ae__step-title");
 			const count = this.ui.preview.recipients_count;
 			$who.find("span").remove();
 			if (count != null && this.draft.recipients.length) {
-				$who.append(`<span>${esc(sanad.ui.plural(count, { one: __("Reaches {0} number"), other: __("Reaches {0} numbers") }))}</span>`);
+				$who.append(`<span>${esc(whatsapp.ui.plural(count, { one: __("Reaches {0} number"), other: __("Reaches {0} numbers") }))}</span>`);
 			}
 		}
 
@@ -1495,8 +1495,8 @@ frappe.provide("sanad.ui");
 			this.draw_test();
 			try {
 				const r = await this.opts.send_test(this.payload(), phone);
-				sanad.ui.test_phone.set(r && r.phone_e164 ? r.phone_e164 : phone);
-				frappe.show_alert({ message: __("Test sent to {0}", [sanad.ui.phone(r && r.phone_e164 ? r.phone_e164 : phone)]), indicator: "green" });
+				whatsapp.ui.test_phone.set(r && r.phone_e164 ? r.phone_e164 : phone);
+				frappe.show_alert({ message: __("Test sent to {0}", [whatsapp.ui.phone(r && r.phone_e164 ? r.phone_e164 : phone)]), indicator: "green" });
 			} catch (err) {
 				frappe.show_alert({ message: err && err.message ? esc(err.message) : __("The test could not be sent"), indicator: "red" });
 			}
@@ -1565,5 +1565,5 @@ frappe.provide("sanad.ui");
 		}
 	}
 
-	sanad.ui.AlertEditor = AlertEditor;
+	whatsapp.ui.AlertEditor = AlertEditor;
 })();

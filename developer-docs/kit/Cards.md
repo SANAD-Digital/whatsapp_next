@@ -1,4 +1,4 @@
-# `sanad.ui.Cards`
+# `whatsapp.ui.Cards`
 
 The design prototype's card vocabulary (`docs/component/Cards.dc.html`) as a component: a
 screen of numbers is composed from a fixed set of card kinds arranged in sections, so every
@@ -11,18 +11,18 @@ closure per card. No server calls; icons come from the kit's own set (`_kit/icon
 
 | Option | Type | Default | Meaning |
 |---|---|---|---|
-| `wrapper` | jQuery \| HTMLElement | — | Emptied and given `sanad-kit wa` (+ `wa--compact`). |
+| `wrapper` | jQuery \| HTMLElement | — | Emptied and given `whatsapp-kit wa` (+ `whatsapp--compact`). |
 | `sections` | `Section[]` | `[]` | See below. |
 | `density` | `"comfortable"` \| `"compact"` | `"comfortable"` | The prototype's two scales. |
 | `handlers` | `{[name]: (key, event) => void}` | `{}` | Called when an element with `data-action="<name>"` is clicked; `key` is the card/row `key` or `null`. |
 
 **Section** — `{title?, sub?, min = 240, cards: Card[]}`. `min` (px) is the narrowest a card may
-be; it sets `--wa-cards-min` on the grid.
+be; it sets `--whatsapp-cards-min` on the grid.
 
 **Card (common)** — `kind` (`stat` default, `kpi`, `panel`, `alert`, `html`), `key`, `label`,
 `value`, `note`, `tone` (`ok` \| `warn` \| `danger` \| `info` \| `muted` \| `pri`; anything else →
 `muted`), `icon` (kit icon name, drawn in a toned tile), `span` (columns to span, sets
-`--wa-card-span`), `action` (handler name; makes `stat`/`kpi` a `<button>`).
+`--whatsapp-card-span`), `action` (handler name; makes `stat`/`kpi` a `<button>`).
 
 | Kind | Extra keys | Renders |
 |---|---|---|
@@ -52,7 +52,7 @@ None.
 ## Usage
 
 ```js
-const cards = new sanad.ui.Cards({
+const cards = new whatsapp.ui.Cards({
   wrapper: $host,
   density: "compact",
   handlers: { open_failed: () => frappe.set_route("List", "Error Log") },
@@ -73,19 +73,19 @@ cards.set_sections(next_sections); // on refresh
 
 ## CSS hooks
 
-- Wrapper `sanad-kit wa` (+ `wa--compact`); inner `wa-cards wa-cards--<density>`.
-- `wa-cards__section`, `__head`, `__title`, `__sub`, `__grid` (`--wa-cards-min`).
-- `wa-card` with `--stat`, `--kpi`, `--panel`, `--alert`, `--html`, tone modifiers
-  `--ok/--warn/--danger/--info/--pri/--muted`, `--click`; custom property `--wa-card-span`.
+- Wrapper `whatsapp-kit wa` (+ `whatsapp--compact`); inner `whatsapp-cards whatsapp-cards--<density>`.
+- `whatsapp-cards__section`, `__head`, `__title`, `__sub`, `__grid` (`--whatsapp-cards-min`).
+- `whatsapp-card` with `--stat`, `--kpi`, `--panel`, `--alert`, `--html`, tone modifiers
+  `--ok/--warn/--danger/--info/--pri/--muted`, `--click`; custom property `--whatsapp-card-span`.
 - Elements: `__body`, `__line`, `__dot(--tone)`, `__label`, `__value`, `__note`, `__tile(--tone)`,
   `__top`, `__figure`, `__foot`, `__spark`, `__phead`, `__ptitle`, `__rows`, `__row(--click)`,
   `__row-main`, `__av`, `__row-text`, `__row-label`, `__row-sub`, `__row-value`, `__bar`,
-  `__bar-fill(--tone)`, `__pfoot`, `__alert-label`, `__cta`; badges use `wa-badge wa-badge--<tone>`.
-- Tone colours come from `--wa-ok/-s/-i/-sb`-style palette tokens.
+  `__bar-fill(--tone)`, `__pfoot`, `__alert-label`, `__cta`; badges use `whatsapp-badge whatsapp-badge--<tone>`.
+- Tone colours come from `--whatsapp-ok/-s/-i/-sb`-style palette tokens.
 
 ## Notes
 
-- Figures are `sanad-tabular` and `dir="ltr"` (except `stat` with `rtl: true`).
+- Figures are `whatsapp-kit-tabular` and `dir="ltr"` (except `stat` with `rtl: true`).
 - `alert` is `role="alert"` when `danger`, else `role="status"`; default icon by tone
   (`error` / `check` / `warn`).
 - No loading/empty states of its own — callers render placeholder sections.

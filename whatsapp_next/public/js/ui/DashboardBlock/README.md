@@ -15,7 +15,7 @@ the document's stylesheets and icon sprite so kit styles and Espresso icons appl
 ```js
 // Custom HTML Block `script` (Frappe exposes `root_element` = the block's shadow root);
 // the block `html` holds `<div class="dashboard"></div>`.
-new sanad.ui.DashboardBlock({
+new whatsapp.ui.DashboardBlock({
   wrapper: root_element.querySelector(".dashboard"),
   number_cards: ["Queued Now", "Connected Devices", "Sent Today", "Failed Today"],
   charts: ["Messages per Day", "Outbound by Status"],
@@ -27,7 +27,7 @@ new sanad.ui.DashboardBlock({
 });
 
 // Any page
-const block = new sanad.ui.DashboardBlock({ wrapper: $panel, number_cards: ["Open Tasks"] });
+const block = new whatsapp.ui.DashboardBlock({ wrapper: $panel, number_cards: ["Open Tasks"] });
 block.refresh();  block.set_period("30d");  block.destroy();
 ```
 
@@ -53,8 +53,8 @@ Home page KPI strip.
 - Charts have a text alternative: each `<section>` is `aria-labelledby` its title and
   `aria-describedby` a visually-hidden summary ("{title}: N data points, latest X on D." /
   "N groups, largest …"); the SVG canvas is `aria-hidden`.
-- Period filter is a real `radiogroup` of `.sanad-chip`s (shared height / look) with roving
-  `tabindex`; arrows are RTL-aware plus Home / End through `sanad.ui.roving_index`; the change is
+- Period filter is a real `radiogroup` of `.whatsapp-kit-chip`s (shared height / look) with roving
+  `tabindex`; arrows are RTL-aware plus Home / End through `whatsapp.ui.roving_index`; the change is
   announced as a sentence ("Showing the last 7 days."); Refresh announces "Dashboard updated".
 - No silent clicks: a card is a `<button>` only when it leads somewhere (list, report, custom
   route or `on_card_click`); otherwise it renders as a plain `<div>`. Targets ≥ 32 px, focus ring
@@ -68,6 +68,6 @@ Home page KPI strip.
 ## Chart colours
 
 A Dashboard Chart's own `color` wins. Without one, the charts take the host app's palette from the
-`--sanad-chart-palette` custom property, a comma-separated list of colours, so the kit never names
+`--whatsapp-kit-chart-palette` custom property, a comma-separated list of colours, so the kit never names
 a colour itself. Set it on `:root` (and again under `[data-theme="dark"]`) in the app's own bundle;
 leave it unset and frappe-charts uses its default colours.

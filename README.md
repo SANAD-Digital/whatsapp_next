@@ -282,7 +282,7 @@ whatsapp_next/
   webhooks/v1/              inbound receiver (guest), verify, idempotency
   whatsapp_next/doctype/    module "WhatsApp Next": thin controllers
   whatsapp_next/page/       the wa-* screens
-  public/js/ui/             the portable component kit (sanad.ui)
+  public/js/ui/             the portable component kit (whatsapp.ui)
   fixtures/                 roles and one HTML block
   translations/ar.csv       Arabic
   tests/                    the app test suite

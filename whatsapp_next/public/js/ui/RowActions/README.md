@@ -9,17 +9,17 @@ list rows clip overflow; it is keyboard-complete and closes on Escape / outside 
 ## Usage
 
 ```js
-new sanad.ui.RowActions({
+new whatsapp.ui.RowActions({
   listview,
   actions: [
     { label: __("Resend"), icon: "es-line-reload",
       condition: (doc) => ["Failed", "Sent"].includes(doc.status),
-      handler: (doc) => sanad.ui.call("messages.resend", { name: doc.name }).then(() => listview.refresh()) },
+      handler: (doc) => whatsapp.ui.call("messages.resend", { name: doc.name }).then(() => listview.refresh()) },
     { label: __("Cancel"), icon: "es-line-close-circle", danger: true,
       roles: ["WhatsApp Manager"], condition: (doc) => doc.status === "Queued",
       handler: (doc) => cancel(doc) },
   ],
-  on_row_click: (doc) => new sanad.ui.Drawer({ doctype: listview.doctype, name: doc.name }).show(),
+  on_row_click: (doc) => new whatsapp.ui.Drawer({ doctype: listview.doctype, name: doc.name }).show(),
 });
 ```
 
@@ -37,12 +37,12 @@ Outbound list — `public/js/listview/whatsapp_log_list.js`; Inbound list —
 ## Design gate
 Applied from the phase-5 audit:
 - Button: `aria-haspopup="menu"`, `aria-expanded`, `aria-controls`, an accessible name that
-  includes the row title (WCAG 2.5.3); icon from the shared `sanad.ui.icons.more`.
+  includes the row title (WCAG 2.5.3); icon from the shared `whatsapp.ui.icons.more`.
 - Menu: `role="menu"` / `menuitem`, arrow / Home / End navigation, Escape and Tab close it,
   focus returns to the button; the focused item shows a 2 px `--ink-blue-7` outline (WCAG 1.4.11
   — the earlier inset light-blue shadow was replaced).
-- Rows are re-decorated through the shared `sanad.ui.on_list_render` hook; visibility rules
-  (`roles` / `perm` / `condition`) go through `sanad.ui.visible_actions` so Drawer, BulkActions
+- Rows are re-decorated through the shared `whatsapp.ui.on_list_render` hook; visibility rules
+  (`roles` / `perm` / `condition`) go through `whatsapp.ui.visible_actions` so Drawer, BulkActions
   and RowActions agree.
 - A row without applicable actions keeps an empty slot of the same width — no column jitter.
 - Row click never fires on checkboxes, links, buttons or Ctrl/⌘-click (Frappe's multi-select).

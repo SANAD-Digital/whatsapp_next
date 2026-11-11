@@ -6,7 +6,7 @@
 frappe.ui.form.on("WhatsApp Log", {
 	refresh(frm) {
 		if (frm.is_new()) return;
-		const ui = sanad.ui;
+		const ui = whatsapp.ui;
 		const doc = frm.doc;
 		const TERMINAL = ["Sent", "Delivered", "Read", "Failed", "Cancelled"];
 		const is_agent = frappe.user.has_role(["WhatsApp Agent", "WhatsApp Manager", "System Manager"]);

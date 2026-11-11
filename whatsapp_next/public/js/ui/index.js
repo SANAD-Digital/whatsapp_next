@@ -1,4 +1,4 @@
-// sanad.ui kit barrel — imports every component so a single bundle line loads the whole kit.
+// whatsapp.ui kit barrel — imports every component so a single bundle line loads the whole kit.
 // Copy `public/js/ui/` into any Frappe app and import this file from that app's bundle.
 
 import "./_core/index.js";

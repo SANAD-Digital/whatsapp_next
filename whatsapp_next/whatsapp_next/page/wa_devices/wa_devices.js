@@ -2,13 +2,13 @@
 // device fleet. One card per device: live status, the 30-day traffic read from
 // `devices.get_device_stats`, the pairing flow (QR image or 8-digit code with an expiry
 // countdown) and the lifecycle actions, each one calling `api.v1.devices` through
-// `sanad.ui.call`. No business logic lives here; the native `WhatsApp Device` list stays as
+// `whatsapp.ui.call`. No business logic lives here; the native `WhatsApp Device` list stays as
 // the read fallback.
 
 frappe.provide("whatsapp_next.devices");
 
 (() => {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const MANAGER = ["WhatsApp Manager", "System Manager"];
 	const AGENT_UP = ["WhatsApp Agent", "WhatsApp Manager", "System Manager"];
 	const OFFLINE = ["Disconnected", "Logged Out"];
@@ -29,7 +29,7 @@ frappe.provide("whatsapp_next.devices");
 		"Logged Out": { tone: "red", label: () => __("Signed out") },
 	};
 	const status_of = (row) => STATUS[row.status] || { tone: "gray", label: () => __("Unknown") };
-	const ago = (value) => sanad.ui.ago(value, null);
+	const ago = (value) => whatsapp.ui.ago(value, null);
 	// when an offline device went offline: a sign-out is stamped `logged_out_at`, a dropped
 	// connection `disconnected_at` — an older stamp of the other kind must not win
 	const offline_since = (row) =>
@@ -40,9 +40,9 @@ frappe.provide("whatsapp_next.devices");
 	/** Overflow menu next to a card's status, drawn with the kit's menu styles. */
 	function open_menu($btn, items) {
 		close_menu();
-		const $menu = $(`<div class="sanad-kit sanad-rowactions__menu" role="menu" aria-label="${ui.escape(__("Device actions"))}"></div>`);
+		const $menu = $(`<div class="whatsapp-kit whatsapp-kit-rowactions__menu" role="menu" aria-label="${ui.escape(__("Device actions"))}"></div>`);
 		items.forEach((item) => {
-			$(`<button type="button" class="sanad-rowactions__item${item.danger ? " sanad-rowactions__item--danger" : ""}" role="menuitem" tabindex="-1">${item.icon ? `<span class="sanad-rowactions__icon" aria-hidden="true">${ui.icon(item.icon, "sm")}</span>` : ""}<span>${ui.escape(item.label)}</span></button>`)
+			$(`<button type="button" class="whatsapp-kit-rowactions__item${item.danger ? " whatsapp-kit-rowactions__item--danger" : ""}" role="menuitem" tabindex="-1">${item.icon ? `<span class="whatsapp-kit-rowactions__icon" aria-hidden="true">${ui.icon(item.icon, "sm")}</span>` : ""}<span>${ui.escape(item.label)}</span></button>`)
 				.on("click", (e) => {
 					e.preventDefault();
 					close_menu(true);
@@ -61,8 +61,8 @@ frappe.provide("whatsapp_next.devices");
 		let y = rect.bottom + 4;
 		if (y + h > window.innerHeight - 8) y = Math.max(8, rect.top - h - 4);
 		const tx = ui.is_rtl() ? -(window.innerWidth - (x + w)) : x;
-		$menu[0].style.setProperty("--sanad-menu-x", `${Math.round(tx)}px`);
-		$menu[0].style.setProperty("--sanad-menu-y", `${Math.round(y)}px`);
+		$menu[0].style.setProperty("--whatsapp-kit-menu-x", `${Math.round(tx)}px`);
+		$menu[0].style.setProperty("--whatsapp-kit-menu-y", `${Math.round(y)}px`);
 		$btn.attr("aria-expanded", "true");
 		open_menu.current = { $menu, $btn };
 		$menu.on("keydown", (e) => {
@@ -79,7 +79,7 @@ frappe.provide("whatsapp_next.devices");
 		});
 		window.setTimeout(() => {
 			$(document).on("mousedown.wadevmenu", (e) => {
-				if (!$(e.target).closest(".sanad-rowactions__menu").length) close_menu();
+				if (!$(e.target).closest(".whatsapp-kit-rowactions__menu").length) close_menu();
 			});
 			$(window).on("resize.wadevmenu scroll.wadevmenu", () => close_menu());
 		}, 0);
@@ -157,11 +157,11 @@ frappe.provide("whatsapp_next.devices");
 				title: repair ? __("Pair {0}", [this.ctx.device_name]) : __("Add a device"),
 				size: "large",
 			});
-			this.dialog.$wrapper.addClass("sanad-sheet wa-pairing-dialog");
+			this.dialog.$wrapper.addClass("whatsapp-kit-sheet whatsapp-pairing-dialog");
 			this.dialog.onhide = () => this.destroy();
 			const $body = $(this.dialog.body).empty();
-			$(`<p class="wa-pairing__lead">${ui.escape(repair ? __("Pair it with a QR code or an 8-digit code, then start sending.") : __("Three steps: name the device, scan the code from WhatsApp, then start sending."))}</p>`).appendTo($body);
-			const $mount = $('<div class="wa-pairing"></div>').appendTo($body);
+			$(`<p class="whatsapp-pairing__lead">${ui.escape(repair ? __("Pair it with a QR code or an 8-digit code, then start sending.") : __("Three steps: name the device, scan the code from WhatsApp, then start sending."))}</p>`).appendTo($body);
+			const $mount = $('<div class="whatsapp-pairing"></div>').appendTo($body);
 			const steps = [];
 			if (!repair) steps.push(this.step_name());
 			steps.push(this.step_pair());
@@ -190,13 +190,13 @@ frappe.provide("whatsapp_next.devices");
 				label: __("Device"),
 				render: ($body, ctx) => {
 					$body.html(`
-						<p class="wa-pairing__hint">${ui.escape(__("The name appears in the message log and wherever a device is chosen. Only the WhatsApp number entered here can be linked to the device."))}</p>
-						<div class="wa-pairing__field" data-slot="name"></div>
-						<div class="wa-pairing__field">
-							<span class="wa-pairing__label" id="wa-pair-mode">${ui.escape(__("Pairing method"))}</span>
-							<div class="sanad-chip-row" role="radiogroup" aria-labelledby="wa-pair-mode" data-slot="mode"></div>
+						<p class="whatsapp-pairing__hint">${ui.escape(__("The name appears in the message log and wherever a device is chosen. Only the WhatsApp number entered here can be linked to the device."))}</p>
+						<div class="whatsapp-pairing__field" data-slot="name"></div>
+						<div class="whatsapp-pairing__field">
+							<span class="whatsapp-pairing__label" id="whatsapp-pair-mode">${ui.escape(__("Pairing method"))}</span>
+							<div class="whatsapp-kit-chip-row" role="radiogroup" aria-labelledby="whatsapp-pair-mode" data-slot="mode"></div>
 						</div>
-						<div class="wa-pairing__field" data-slot="phone"></div>`);
+						<div class="whatsapp-pairing__field" data-slot="phone"></div>`);
 					this.name_control = frappe.ui.form.make_control({
 						parent: $body.find('[data-slot="name"]'),
 						df: {
@@ -211,14 +211,14 @@ frappe.provide("whatsapp_next.devices");
 					this.name_control.set_value(ctx.device_name || "");
 					const $modes = $body.find('[data-slot="mode"]');
 					const $phone = $body.find('[data-slot="phone"]');
-					const $mode_hint = $('<p class="wa-pairing__mode-hint" id="wa-pair-mode-hint"></p>').insertAfter($modes);
+					const $mode_hint = $('<p class="whatsapp-pairing__mode-hint" id="whatsapp-pair-mode-hint"></p>').insertAfter($modes);
 					const MODES = [
 						{ value: "QR", label: __("QR code"), hint: __("The phone scans a code shown on this screen. Fastest way in.") },
 						{ value: "Code", label: __("8-digit code"), hint: __("WhatsApp asks for an 8-digit code on the phone — no camera needed.") },
 					];
-					$modes.attr("aria-describedby", "wa-pair-mode-hint");
+					$modes.attr("aria-describedby", "whatsapp-pair-mode-hint");
 					MODES.forEach((mode) => {
-						$(`<button type="button" class="sanad-chip" role="radio" aria-checked="${ctx.mode === mode.value}" data-mode="${mode.value}">${ui.escape(mode.label)}</button>`)
+						$(`<button type="button" class="whatsapp-kit-chip" role="radio" aria-checked="${ctx.mode === mode.value}" data-mode="${mode.value}">${ui.escape(mode.label)}</button>`)
 							.on("click", () => {
 								ctx.mode = mode.value;
 								$modes.find("[data-mode]").attr("aria-checked", "false");
@@ -275,9 +275,9 @@ frappe.provide("whatsapp_next.devices");
 					// the method can be changed right here, so a device added for QR can still be
 					// paired with a code (and the other way round) without starting over
 					$body.html(`
-						<div class="wa-pairing__switch">
-							<span class="wa-pairing__label" id="wa-pair-switch">${ui.escape(__("Pair with"))}</span>
-							<div class="sanad-chip-row" role="radiogroup" aria-labelledby="wa-pair-switch" data-slot="switch"></div>
+						<div class="whatsapp-pairing__switch">
+							<span class="whatsapp-pairing__label" id="whatsapp-pair-switch">${ui.escape(__("Pair with"))}</span>
+							<div class="whatsapp-kit-chip-row" role="radiogroup" aria-labelledby="whatsapp-pair-switch" data-slot="switch"></div>
 						</div>
 						<div data-slot="pair-body"></div>`);
 					const $switch = $body.find('[data-slot="switch"]');
@@ -285,7 +285,7 @@ frappe.provide("whatsapp_next.devices");
 						{ value: "QR", label: __("QR code") },
 						{ value: "Code", label: __("8-digit code") },
 					].forEach((m) => {
-						$(`<button type="button" class="sanad-chip" role="radio" aria-checked="${this.ctx.mode === m.value}" data-mode="${m.value}">${ui.escape(m.label)}</button>`)
+						$(`<button type="button" class="whatsapp-kit-chip" role="radio" aria-checked="${this.ctx.mode === m.value}" data-mode="${m.value}">${ui.escape(m.label)}</button>`)
 							.on("click", () => {
 								if (this.ctx.mode === m.value) return;
 								this.ctx.mode = m.value;
@@ -344,8 +344,8 @@ frappe.provide("whatsapp_next.devices");
 		/** The number the 8-digit code is issued for, when the device has none yet. */
 		ask_phone($el) {
 			$el.html(`
-				<p class="wa-pairing__hint">${ui.escape(__("The code is issued for a WhatsApp number. Enter the number of the phone you will pair, then enter the code on that phone."))}</p>
-				<div class="wa-pairing__field" data-slot="phone"></div>
+				<p class="whatsapp-pairing__hint">${ui.escape(__("The code is issued for a WhatsApp number. Enter the number of the phone you will pair, then enter the code on that phone."))}</p>
+				<div class="whatsapp-pairing__field" data-slot="phone"></div>
 				<button type="button" class="btn btn-primary btn-sm" data-act="get-code" disabled>${ui.escape(__("Get the code"))}</button>`);
 			let value = null;
 			const $go = $el.find('[data-act="get-code"]');
@@ -369,20 +369,20 @@ frappe.provide("whatsapp_next.devices");
 					? [__("Open WhatsApp on the phone."), __("Menu → Linked devices → Link a device."), __("Choose “Link with phone number” and enter the code.")]
 					: [__("Open WhatsApp on the phone."), __("Menu → Linked devices → Link a device."), __("Point the camera at the code below.")];
 			$el.html(`
-				<div class="wa-pairing__grid">
-					<div class="wa-pairing__code" data-slot="code"></div>
-					<div class="wa-pairing__how">
-						<ol class="wa-pairing__steps">${steps.map((s) => `<li>${ui.escape(s)}</li>`).join("")}</ol>
-						<p class="wa-pairing__status sanad-tone--amber" data-slot="countdown"></p>
+				<div class="whatsapp-pairing__grid">
+					<div class="whatsapp-pairing__code" data-slot="code"></div>
+					<div class="whatsapp-pairing__how">
+						<ol class="whatsapp-pairing__steps">${steps.map((s) => `<li>${ui.escape(s)}</li>`).join("")}</ol>
+						<p class="whatsapp-pairing__status whatsapp-kit-tone--amber" data-slot="countdown"></p>
 					</div>
 				</div>`);
 			const $code = $el.find('[data-slot="code"]');
 			if (this.ctx.mode === "Code" && payload.pair_code) {
-				$code.html(`<span class="wa-pairing__pin sanad-tabular" dir="ltr">${ui.escape(payload.pair_code)}</span><span class="wa-pairing__caption">${ui.escape(__("Enter this code on the phone."))}</span>`);
+				$code.html(`<span class="whatsapp-pairing__pin whatsapp-kit-tabular" dir="ltr">${ui.escape(payload.pair_code)}</span><span class="whatsapp-pairing__caption">${ui.escape(__("Enter this code on the phone."))}</span>`);
 			} else if (is_image) {
-				$code.html(`<img class="wa-pairing__qr" src="${ui.escape(qr)}" alt="${ui.escape(__("QR code — scan it with WhatsApp on the phone"))}">`);
+				$code.html(`<img class="whatsapp-pairing__qr" src="${ui.escape(qr)}" alt="${ui.escape(__("QR code — scan it with WhatsApp on the phone"))}">`);
 			} else if (qr) {
-				$code.html(`<code class="wa-pairing__raw" dir="ltr">${ui.escape(qr)}</code><span class="wa-pairing__caption">${ui.escape(__("Copy this value into a QR reader."))}</span>`);
+				$code.html(`<code class="whatsapp-pairing__raw" dir="ltr">${ui.escape(qr)}</code><span class="whatsapp-pairing__caption">${ui.escape(__("Copy this value into a QR reader."))}</span>`);
 			} else {
 				new ui.EmptyState({
 					wrapper: $code,
@@ -410,8 +410,8 @@ frappe.provide("whatsapp_next.devices");
 					// an expired code can no longer be scanned; the realtime event still lands if the
 					// scan raced the expiry
 					$el.empty()
-						.removeClass("sanad-tone--amber")
-						.addClass("sanad-tone--gray")
+						.removeClass("whatsapp-kit-tone--amber")
+						.addClass("whatsapp-kit-tone--gray")
 						.append(`<span>${ui.escape(__("The code expired."))}</span>`)
 						.append(
 							$(`<button type="button" class="btn btn-default btn-xs">${ui.escape(__("Get a new code"))}</button>`).on("click", () => this.start_pairing())
@@ -419,7 +419,7 @@ frappe.provide("whatsapp_next.devices");
 					ui.announce(__("The pairing code expired."));
 					return;
 				}
-				$el.html(`<span class="wa-pairing__dot" aria-hidden="true"></span><span>${ui.escape(__("Waiting for the scan · the code expires in {0} s", [left]))}</span>`);
+				$el.html(`<span class="whatsapp-pairing__dot" aria-hidden="true"></span><span>${ui.escape(__("Waiting for the scan · the code expires in {0} s", [left]))}</span>`);
 				left -= 1;
 			};
 			window.clearInterval(this._countdown);
@@ -457,8 +457,8 @@ frappe.provide("whatsapp_next.devices");
 			this.stop_watch();
 			this.$pair
 				.find('[data-slot="countdown"]')
-				.removeClass("sanad-tone--amber")
-				.addClass("sanad-tone--red")
+				.removeClass("whatsapp-kit-tone--amber")
+				.addClass("whatsapp-kit-tone--red")
 				.html(`<span>${ui.escape(__("The connection to the platform is not set up, so the pairing cannot be checked: {0}", [err.message || ""]))}</span>`)
 				.append($(`<a class="btn btn-default btn-xs" href="/app/wa-settings">${ui.escape(__("Open settings"))}</a>`));
 			ui.announce(__("The connection to the platform is not set up."), { assertive: true });
@@ -491,8 +491,8 @@ frappe.provide("whatsapp_next.devices");
 			this.stop_watch();
 			const fmt = (n) => ui.PhoneField.format_display(n) || n;
 			this.$pair.html(`
-				<div class="wa-pairing__wrong sanad-tone--red" role="alert">
-					<span class="wa-pairing__wrong-icon" aria-hidden="true">${ui.icon("es-line-alert-circle", "md")}</span>
+				<div class="whatsapp-pairing__wrong whatsapp-kit-tone--red" role="alert">
+					<span class="whatsapp-pairing__wrong-icon" aria-hidden="true">${ui.icon("es-line-alert-circle", "md")}</span>
 					<div>
 						<strong>${ui.escape(__("Another number was linked, so it was unlinked"))}</strong>
 						<p>${ui.escape(
@@ -503,7 +503,7 @@ frappe.provide("whatsapp_next.devices");
 						)}</p>
 					</div>
 				</div>
-				<div class="wa-btnbar"><button type="button" class="btn btn-primary btn-sm" data-act="retry">${ui.escape(__("Show a new code"))}</button></div>`);
+				<div class="whatsapp-btnbar"><button type="button" class="btn btn-primary btn-sm" data-act="retry">${ui.escape(__("Show a new code"))}</button></div>`);
 			this.$pair.find('[data-act="retry"]').on("click", () => this.start_pairing());
 			ui.announce(__("Another number was linked, so it was unlinked"), { assertive: true });
 		}
@@ -548,18 +548,18 @@ frappe.provide("whatsapp_next.devices");
 			const title = row.device_name || row.name;
 			const number = row.phone_e164 ? ui.PhoneField.format_display(row.phone_e164) : __("No number yet");
 			this.$el = $(`
-				<article class="wa-device wa-device--${status.tone}" data-device="${ui.escape(row.name)}" aria-label="${ui.escape(title)}">
-					<header class="wa-device__head">
-						<span class="wa-device__identity">
-							<h3 class="wa-device__name" dir="auto" title="${ui.escape(title)}">${ui.escape(title)}</h3>
-							<span class="wa-device__phone sanad-tabular" dir="ltr" title="${ui.escape(ui.phone(row.phone_e164 || ""))}">${ui.escape(number)}</span>
+				<article class="whatsapp-device whatsapp-device--${status.tone}" data-device="${ui.escape(row.name)}" aria-label="${ui.escape(title)}">
+					<header class="whatsapp-device__head">
+						<span class="whatsapp-device__identity">
+							<h3 class="whatsapp-device__name" dir="auto" title="${ui.escape(title)}">${ui.escape(title)}</h3>
+							<span class="whatsapp-device__phone whatsapp-kit-tabular" dir="ltr" title="${ui.escape(ui.phone(row.phone_e164 || ""))}">${ui.escape(number)}</span>
 						</span>
-						<span class="wa-device__head-end" data-slot="more"></span>
+						<span class="whatsapp-device__head-end" data-slot="more"></span>
 					</header>
-					<div class="wa-device__tags" data-slot="tags"></div>
-					<div class="wa-device__panel" data-slot="panel"></div>
-					<dl class="wa-device__meta" data-slot="meta"></dl>
-					<footer class="wa-device__actions" data-slot="actions"></footer>
+					<div class="whatsapp-device__tags" data-slot="tags"></div>
+					<div class="whatsapp-device__panel" data-slot="panel"></div>
+					<dl class="whatsapp-device__meta" data-slot="meta"></dl>
+					<footer class="whatsapp-device__actions" data-slot="actions"></footer>
 				</article>`);
 			this.render_tags();
 			this.render_panel();
@@ -584,22 +584,22 @@ frappe.provide("whatsapp_next.devices");
 			const row = this.row;
 			const status = status_of(row);
 			const $tags = this.$el.find('[data-slot="tags"]');
-			$(`<span class="wa-device__state"><span class="wa-device__state-dot" aria-hidden="true"></span>${ui.escape(status.label())}</span>`).appendTo($tags);
+			$(`<span class="whatsapp-device__state"><span class="whatsapp-device__state-dot" aria-hidden="true"></span>${ui.escape(status.label())}</span>`).appendTo($tags);
 			if (row.is_default) {
-				$(`<span class="wa-device__flag" title="${ui.escape(__("New messages use this device unless another one is chosen."))}">${ui.icon("es-line-star", "xs")}${ui.escape(__("Default"))}</span>`).appendTo($tags);
+				$(`<span class="whatsapp-device__flag" title="${ui.escape(__("New messages use this device unless another one is chosen."))}">${ui.icon("es-line-star", "xs")}${ui.escape(__("Default"))}</span>`).appendTo($tags);
 			}
 			if (row.disabled) {
-				$(`<span class="wa-device__flag wa-device__flag--muted" title="${ui.escape(__("Nothing is sent from this device until it is enabled again."))}">${ui.icon("es-line-slash", "xs")}${ui.escape(__("Sending paused"))}</span>`).appendTo($tags);
+				$(`<span class="whatsapp-device__flag whatsapp-device__flag--muted" title="${ui.escape(__("Nothing is sent from this device until it is enabled again."))}">${ui.icon("es-line-slash", "xs")}${ui.escape(__("Sending paused"))}</span>`).appendTo($tags);
 			}
 			if (row.history_status === "Running") {
 				const progress = row.history_total
 					? __("{0} of {1}", [ui.format_int(row.history_imported || 0), ui.format_int(row.history_total)])
 					: ui.format_int(row.history_imported || 0);
-				$(`<span class="wa-device__flag" title="${ui.escape(__("Messages this number exchanged before it was linked are being brought in."))}">${ui.icon("es-line-reload", "xs")}${ui.escape(__("Importing past conversations: {0}", [progress]))}</span>`).appendTo($tags);
+				$(`<span class="whatsapp-device__flag" title="${ui.escape(__("Messages this number exchanged before it was linked are being brought in."))}">${ui.icon("es-line-reload", "xs")}${ui.escape(__("Importing past conversations: {0}", [progress]))}</span>`).appendTo($tags);
 			}
 			const items = this.menu_items();
 			if (!items.length) return;
-			$(`<button type="button" class="wa-device__more" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("Actions for {0}", [row.device_name || row.name]))}">${ui.icon(ui.icons.more, "sm")}</button>`)
+			$(`<button type="button" class="whatsapp-device__more" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("Actions for {0}", [row.device_name || row.name]))}">${ui.icon(ui.icons.more, "sm")}</button>`)
 				.on("click", (e) => open_menu($(e.currentTarget), this.menu_items()))
 				.appendTo(this.$el.find('[data-slot="more"]'));
 		}
@@ -645,11 +645,11 @@ frappe.provide("whatsapp_next.devices");
 				{ key: "failed", label: __("Failures"), route: { status: "Failed" }, name: __("Open the failed messages of {0}", [title]) },
 				{ key: "rate", label: __("Failure rate") },
 			];
-			const $row = $('<div class="wa-device__stats"></div>').appendTo($panel);
+			const $row = $('<div class="whatsapp-device__stats"></div>').appendTo($panel);
 			readings.forEach((r) => {
 				const clickable = !!r.route;
 				const tag = clickable ? "button" : "span";
-				const $stat = $(`<${tag} class="wa-device__stat" data-stat="${r.key}"${clickable ? ` type="button" aria-label="${ui.escape(r.name)}" title="${ui.escape(r.name)}"` : ""}><span class="wa-device__stat-label">${ui.escape(r.label)}</span><span class="wa-device__stat-value sanad-tabular" data-slot="value">${ui.skeleton(1, { lines: 1 })}</span></${tag}>`);
+				const $stat = $(`<${tag} class="whatsapp-device__stat" data-stat="${r.key}"${clickable ? ` type="button" aria-label="${ui.escape(r.name)}" title="${ui.escape(r.name)}"` : ""}><span class="whatsapp-device__stat-label">${ui.escape(r.label)}</span><span class="whatsapp-device__stat-value whatsapp-kit-tabular" data-slot="value">${ui.skeleton(1, { lines: 1 })}</span></${tag}>`);
 				if (clickable) {
 					$stat.on("click", () =>
 						frappe.set_route(
@@ -662,9 +662,9 @@ frappe.provide("whatsapp_next.devices");
 				$row.append($stat);
 			});
 			$(`
-				<div class="wa-device__bar wa-device__bar--idle" data-slot="bar" role="img" aria-label="${ui.escape(__("Delivery over the last {0} days", [STATS_DAYS]))}">
-					<span class="wa-device__bar-seg wa-device__bar-seg--ok" data-slot="ok"></span>
-					<span class="wa-device__bar-seg wa-device__bar-seg--bad" data-slot="bad"></span>
+				<div class="whatsapp-device__bar whatsapp-device__bar--idle" data-slot="bar" role="img" aria-label="${ui.escape(__("Delivery over the last {0} days", [STATS_DAYS]))}">
+					<span class="whatsapp-device__bar-seg whatsapp-device__bar-seg--ok" data-slot="ok"></span>
+					<span class="whatsapp-device__bar-seg whatsapp-device__bar-seg--bad" data-slot="bad"></span>
 				</div>`).appendTo($panel);
 		}
 
@@ -680,13 +680,13 @@ frappe.provide("whatsapp_next.devices");
 			this.$el
 				.find('[data-stat="failed"] [data-slot="value"]')
 				.text(ui.format_int(failed))
-				.toggleClass("wa-device__stat-value--alert", high);
+				.toggleClass("whatsapp-device__stat-value--alert", high);
 			this.$el
 				.find('[data-stat="rate"] [data-slot="value"]')
 				.text(percent(rate))
-				.toggleClass("wa-device__stat-value--alert", high);
+				.toggleClass("whatsapp-device__stat-value--alert", high);
 			const $bar = this.$el.find('[data-slot="bar"]');
-			$bar.toggleClass("wa-device__bar--idle", !attempted);
+			$bar.toggleClass("whatsapp-device__bar--idle", !attempted);
 			$bar.find('[data-slot="ok"]').css("flex-basis", attempted ? `${((sent / attempted) * 100).toFixed(2)}%` : "0%");
 			$bar.find('[data-slot="bad"]').css("flex-basis", attempted ? `${((failed / attempted) * 100).toFixed(2)}%` : "0%");
 			// one atomic sentence, not a bare number: the bar is the only thing on the card that
@@ -705,13 +705,13 @@ frappe.provide("whatsapp_next.devices");
 				.find('[data-verb="inbound"] [data-slot="count"]')
 				.text(inbound ? ui.format_int(inbound) : "")
 				.attr("title", inbound ? __("{0} received over the last {1} days", [ui.format_int(inbound), STATS_DAYS]) : null)
-				.toggleClass("wa-device__btn-count--empty", !inbound);
+				.toggleClass("whatsapp-device__btn-count--empty", !inbound);
 		}
 
 		set_stats_error() {
 			if (!this.$el) return;
-			this.$el.find(".wa-device__stat [data-slot='value']").text("—");
-			this.$el.find('[data-slot="bar"]').addClass("wa-device__bar--idle").attr("aria-label", __("The traffic of this device could not be read."));
+			this.$el.find(".whatsapp-device__stat [data-slot='value']").text("—");
+			this.$el.find('[data-slot="bar"]').addClass("whatsapp-device__bar--idle").attr("aria-label", __("The traffic of this device could not be read."));
 			this.$el.find('[data-meta="message"] [data-slot="value"]').text("—");
 		}
 
@@ -734,9 +734,9 @@ frappe.provide("whatsapp_next.devices");
 			const $meta = this.$el.find('[data-slot="meta"]');
 			pairs.forEach((pair) => {
 				const $pair = $(`
-					<div class="wa-device__meta-item" data-meta="${pair.key}">
-						<dt class="wa-device__meta-label"><span class="wa-device__meta-icon" aria-hidden="true">${ui.icon(pair.icon, "xs")}</span>${ui.escape(pair.label)}</dt>
-						<dd class="wa-device__meta-value${pair.alert ? " wa-device__meta-value--alert" : ""}" data-slot="value"></dd>
+					<div class="whatsapp-device__meta-item" data-meta="${pair.key}">
+						<dt class="whatsapp-device__meta-label"><span class="whatsapp-device__meta-icon" aria-hidden="true">${ui.icon(pair.icon, "xs")}</span>${ui.escape(pair.label)}</dt>
+						<dd class="whatsapp-device__meta-value${pair.alert ? " whatsapp-device__meta-value--alert" : ""}" data-slot="value"></dd>
 					</div>`);
 				if (pair.html) $pair.find('[data-slot="value"]').html(pair.value);
 				else $pair.find('[data-slot="value"]').text(pair.value);
@@ -746,11 +746,11 @@ frappe.provide("whatsapp_next.devices");
 
 		render_notice() {
 			$(`
-				<div class="wa-device__notice sanad-tone--blue" role="status">
-					<span class="wa-device__notice-icon" aria-hidden="true">${ui.icon("es-line-security", "sm")}</span>
-					<span class="wa-device__notice-text">
-						<b class="wa-device__notice-title">${ui.escape(__("The code has not been scanned yet"))}</b>
-						<span class="wa-device__notice-line">${ui.escape(__("Open pairing again to scan a fresh code."))}</span>
+				<div class="whatsapp-device__notice whatsapp-kit-tone--blue" role="status">
+					<span class="whatsapp-device__notice-icon" aria-hidden="true">${ui.icon("es-line-security", "sm")}</span>
+					<span class="whatsapp-device__notice-text">
+						<b class="whatsapp-device__notice-title">${ui.escape(__("The code has not been scanned yet"))}</b>
+						<span class="whatsapp-device__notice-line">${ui.escape(__("Open pairing again to scan a fresh code."))}</span>
 					</span>
 				</div>`).insertBefore(this.$el.find('[data-slot="actions"]'));
 		}
@@ -786,7 +786,7 @@ frappe.provide("whatsapp_next.devices");
 			);
 			const $actions = this.$el.find('[data-slot="actions"]');
 			verbs.forEach((verb) => {
-				$(`<button type="button" class="wa-device__btn${verb.primary ? " wa-device__btn--primary" : ""}" data-verb="${verb.key}" title="${ui.escape(verb.label)}" aria-label="${ui.escape(verb.label)}"><span class="wa-device__btn-icon" aria-hidden="true">${ui.icon(verb.icon, "sm")}</span><span class="wa-device__btn-label">${ui.escape(verb.label)}</span>${verb.count ? '<span class="wa-device__btn-count wa-device__btn-count--empty sanad-tabular" data-slot="count"></span>' : ""}</button>`)
+				$(`<button type="button" class="whatsapp-device__btn${verb.primary ? " whatsapp-device__btn--primary" : ""}" data-verb="${verb.key}" title="${ui.escape(verb.label)}" aria-label="${ui.escape(verb.label)}"><span class="whatsapp-device__btn-icon" aria-hidden="true">${ui.icon(verb.icon, "sm")}</span><span class="whatsapp-device__btn-label">${ui.escape(verb.label)}</span>${verb.count ? '<span class="whatsapp-device__btn-count whatsapp-device__btn-count--empty whatsapp-kit-tabular" data-slot="count"></span>' : ""}</button>`)
 					.on("click", verb.handler)
 					.appendTo($actions);
 			});
@@ -808,7 +808,7 @@ frappe.provide("whatsapp_next.devices");
 			this.filter = "all";
 			this.cards = [];
 			this.stats = {};
-			this.$screen = $('<div class="sanad-kit wa-devices"></div>').appendTo(page.main);
+			this.$screen = $('<div class="whatsapp-kit whatsapp-devices"></div>').appendTo(page.main);
 			this.header = new ui.PageHeader({
 				wrapper: this.$screen,
 				title: __("Devices"),
@@ -826,15 +826,15 @@ frappe.provide("whatsapp_next.devices");
 			});
 			this.mark_header();
 			// the title with its buttons and the state tabs stay while the cards scroll beneath
-			ui.pin_stack(this.$screen, [".sanad-pagehead__row", ".wa-devices__rail"]);
+			ui.pin_stack(this.$screen, [".whatsapp-kit-pagehead__row", ".whatsapp-devices__rail"]);
 			this.bind_realtime();
 			$(wrapper).on("hide", () => this.unbind_realtime());
 		}
 
 		/** The screen's mark: the tinted plate carrying the screen's icon beside its title. */
 		mark_header() {
-			$(`<span class="wa-devices__mark" aria-hidden="true">${ui.icon("es-line-mobile", "md")}</span>`).prependTo(
-				this.header.$el.find(".sanad-pagehead__row")
+			$(`<span class="whatsapp-devices__mark" aria-hidden="true">${ui.icon("es-line-mobile", "md")}</span>`).prependTo(
+				this.header.$el.find(".whatsapp-kit-pagehead__row")
 			);
 		}
 
@@ -919,14 +919,14 @@ frappe.provide("whatsapp_next.devices");
 						? { label: __("Pair again"), icon: "es-line-link", handler: () => this.pair(one), strong: true }
 						: { label: __("Show them"), icon: "es-line-filter", handler: () => this.set_filter("offline") };
 				const $alert = $(`
-					<div class="wa-devices__alert wa-devices__alert--${tone}" role="${tone === "red" ? "alert" : "status"}">
-						<span class="wa-devices__alert-icon" aria-hidden="true">${ui.icon("es-line-alert-triangle", "sm")}</span>
-						<span class="wa-devices__alert-text">
-							<b class="wa-devices__alert-title">${ui.escape(title)}</b>
-							<span class="wa-devices__alert-line">${ui.escape(line)}</span>
+					<div class="whatsapp-devices__alert whatsapp-devices__alert--${tone}" role="${tone === "red" ? "alert" : "status"}">
+						<span class="whatsapp-devices__alert-icon" aria-hidden="true">${ui.icon("es-line-alert-triangle", "sm")}</span>
+						<span class="whatsapp-devices__alert-text">
+							<b class="whatsapp-devices__alert-title">${ui.escape(title)}</b>
+							<span class="whatsapp-devices__alert-line">${ui.escape(line)}</span>
 						</span>
 					</div>`).appendTo($el);
-				$(`<button type="button" class="wa-devices__alert-action${action.strong ? " wa-devices__alert-action--strong" : ""}"><span aria-hidden="true">${ui.icon(action.icon, "sm")}</span><span class="wa-devices__alert-label">${ui.escape(action.label)}</span></button>`)
+				$(`<button type="button" class="whatsapp-devices__alert-action${action.strong ? " whatsapp-devices__alert-action--strong" : ""}"><span aria-hidden="true">${ui.icon(action.icon, "sm")}</span><span class="whatsapp-devices__alert-label">${ui.escape(action.label)}</span></button>`)
 					.on("click", action.handler)
 					.appendTo($alert);
 			});
@@ -937,7 +937,7 @@ frappe.provide("whatsapp_next.devices");
 		render_block($el) {
 			const first = !$el.children().length;
 			if (first) {
-				$el.html('<div class="wa-devices__rail" data-slot="rail"></div><div class="wa-devices__grid" data-slot="grid"></div>');
+				$el.html('<div class="whatsapp-devices__rail" data-slot="rail"></div><div class="whatsapp-devices__grid" data-slot="grid"></div>');
 			}
 			const $rail = $el.find('[data-slot="rail"]');
 			const $grid = $el.find('[data-slot="grid"]');
@@ -966,12 +966,12 @@ frappe.provide("whatsapp_next.devices");
 			$grid.empty();
 			for (let i = 0; i < 3; i++) {
 				$grid.append(`
-					<div class="wa-device wa-device--skeleton" aria-hidden="true">
-						<div class="wa-device__head"><span class="wa-device__identity"><span class="sanad-skeleton__line" style="inline-size:55%"></span><span class="sanad-skeleton__line" style="inline-size:38%;block-size:9px"></span></span></div>
-						<div class="wa-device__tags"><span class="sanad-skeleton__line" style="inline-size:82px;block-size:22px;border-radius:999px"></span></div>
-						<div class="wa-device__panel"><div class="wa-device__stats"><span class="wa-device__stat"></span><span class="wa-device__stat"></span><span class="wa-device__stat"></span></div><div class="wa-device__bar wa-device__bar--idle"></div></div>
-						<div class="wa-device__meta"><span class="sanad-skeleton__line" style="inline-size:70%"></span><span class="sanad-skeleton__line" style="inline-size:70%"></span></div>
-						<div class="wa-device__actions"><span class="sanad-skeleton__line" style="block-size:36px;border-radius:8px"></span></div>
+					<div class="whatsapp-device whatsapp-device--skeleton" aria-hidden="true">
+						<div class="whatsapp-device__head"><span class="whatsapp-device__identity"><span class="whatsapp-kit-skeleton__line" style="inline-size:55%"></span><span class="whatsapp-kit-skeleton__line" style="inline-size:38%;block-size:9px"></span></span></div>
+						<div class="whatsapp-device__tags"><span class="whatsapp-kit-skeleton__line" style="inline-size:82px;block-size:22px;border-radius:999px"></span></div>
+						<div class="whatsapp-device__panel"><div class="whatsapp-device__stats"><span class="whatsapp-device__stat"></span><span class="whatsapp-device__stat"></span><span class="whatsapp-device__stat"></span></div><div class="whatsapp-device__bar whatsapp-device__bar--idle"></div></div>
+						<div class="whatsapp-device__meta"><span class="whatsapp-kit-skeleton__line" style="inline-size:70%"></span><span class="whatsapp-kit-skeleton__line" style="inline-size:70%"></span></div>
+						<div class="whatsapp-device__actions"><span class="whatsapp-kit-skeleton__line" style="block-size:36px;border-radius:8px"></span></div>
 					</div>`);
 			}
 		}
@@ -995,7 +995,7 @@ frappe.provide("whatsapp_next.devices");
 			$el.empty();
 			if (!rows.length) return;
 			const counts = this.counts(rows);
-			const $group = $(`<div class="wa-devices__segments" role="group" aria-label="${ui.escape(__("Filter by status"))}"></div>`).appendTo($el);
+			const $group = $(`<div class="whatsapp-devices__segments" role="group" aria-label="${ui.escape(__("Filter by status"))}"></div>`).appendTo($el);
 			[
 				{ key: "all", label: __("All"), tone: "gray" },
 				{ key: "Connected", label: __("Connected"), tone: "green" },
@@ -1003,7 +1003,7 @@ frappe.provide("whatsapp_next.devices");
 				{ key: "offline", label: __("Not connected"), tone: "amber" },
 			].forEach((seg) => {
 				const count = counts[seg.key];
-				$(`<button type="button" class="wa-devices__segment wa-devices__segment--${seg.tone}" aria-pressed="${this.filter === seg.key}"${count ? "" : " disabled"}>${seg.key === "all" ? "" : '<span class="wa-devices__segment-dot" aria-hidden="true"></span>'}<span class="wa-devices__segment-label">${ui.escape(seg.label)}</span><span class="wa-devices__segment-count sanad-tabular">${ui.escape(ui.format_int(count))}</span></button>`)
+				$(`<button type="button" class="whatsapp-devices__segment whatsapp-devices__segment--${seg.tone}" aria-pressed="${this.filter === seg.key}"${count ? "" : " disabled"}>${seg.key === "all" ? "" : '<span class="whatsapp-devices__segment-dot" aria-hidden="true"></span>'}<span class="whatsapp-devices__segment-label">${ui.escape(seg.label)}</span><span class="whatsapp-devices__segment-count whatsapp-kit-tabular">${ui.escape(ui.format_int(count))}</span></button>`)
 					.on("click", () => this.set_filter(seg.key))
 					.appendTo($group);
 			});

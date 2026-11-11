@@ -1,4 +1,4 @@
-// sanad.ui.BulkActions — actions over the checked rows of a Desk list, registered in the list's
+// whatsapp.ui.BulkActions — actions over the checked rows of a Desk list, registered in the list's
 // own "Actions" menu (visible once rows are checked). Native mode calls the API once with
 // `{names}`; `per_name` mode loops the names calling the API with `{name}` behind a cancellable
 // progress dialog. Labels carry the count ("Resend 12"), the selection is capped (200 by
@@ -6,7 +6,7 @@
 
 import ui from "../_core/index.js";
 
-sanad.ui.BulkActions = class BulkActions {
+whatsapp.ui.BulkActions = class BulkActions {
 	/**
 	 * @param {Object} opts
 	 * @param {Object} opts.listview — a Desk ListView
@@ -19,7 +19,7 @@ sanad.ui.BulkActions = class BulkActions {
 	constructor(opts = {}) {
 		this.opts = Object.assign({ actions: [], cap: 200 }, opts);
 		this.listview = this.opts.listview;
-		if (!this.listview) throw new Error("sanad.ui.BulkActions: listview is required");
+		if (!this.listview) throw new Error("whatsapp.ui.BulkActions: listview is required");
 		this.doctype = this.listview.doctype;
 		this.items = [];
 		this.mount();
@@ -31,7 +31,7 @@ sanad.ui.BulkActions = class BulkActions {
 		const allowed = ui.visible_actions(this.opts.actions.map((a) => Object.assign({}, a, { condition: undefined })), null, this.doctype);
 		this.opts.actions.filter((a) => allowed.some((x) => x.label === a.label && x.method === a.method)).forEach((action) => {
 			const $item = lv.page.add_actions_menu_item(this.label_for(action, 0), () => this.run(action), false);
-			$item.addClass("sanad-bulk__item");
+			$item.addClass("whatsapp-kit-bulk__item");
 			this.items.push({ action, $item });
 		});
 		// count in the label + condition(docs) whenever the selection changes
@@ -71,12 +71,12 @@ sanad.ui.BulkActions = class BulkActions {
 		const docs = lv.get_checked_items();
 		const names = docs.map((d) => d.name);
 		if (!names.length) {
-			sanad.ui.Toast.info(__("Select at least one row first."));
+			whatsapp.ui.Toast.info(__("Select at least one row first."));
 			return;
 		}
 		const cap = action.cap || this.opts.cap;
 		if (names.length > cap) {
-			sanad.ui.Toast.warning(__("Select at most {0} rows at a time ({1} selected).", [ui.format_int(cap), ui.format_int(names.length)]));
+			whatsapp.ui.Toast.warning(__("Select at most {0} rows at a time ({1} selected).", [ui.format_int(cap), ui.format_int(names.length)]));
 			return;
 		}
 		let payload = { reason: null };
@@ -84,7 +84,7 @@ sanad.ui.BulkActions = class BulkActions {
 			const spec = typeof action.confirm === "function" ? action.confirm(names, docs) : action.confirm;
 			if (spec) {
 				try {
-					payload = await sanad.ui.ConfirmDialog.ask(spec);
+					payload = await whatsapp.ui.ConfirmDialog.ask(spec);
 				} catch (e) {
 					return; // cancelled
 				}
@@ -102,7 +102,7 @@ sanad.ui.BulkActions = class BulkActions {
 			}
 		} catch (err) {
 			lv.disable_list_update = false;
-			if (err && err.message !== "cancelled") sanad.ui.Toast.error(err);
+			if (err && err.message !== "cancelled") whatsapp.ui.Toast.error(err);
 			return;
 		}
 		lv.disable_list_update = false;
@@ -135,17 +135,17 @@ sanad.ui.BulkActions = class BulkActions {
 				dialog.set_secondary_action_label(__("Stopping…"));
 			},
 		});
-		dialog.$wrapper.addClass("sanad-kit sanad-bulk__dialog");
+		dialog.$wrapper.addClass("whatsapp-kit whatsapp-kit-bulk__dialog");
 		const $p = dialog.get_field("progress").$wrapper;
 		// the live region is rendered once; each tick only updates its text and aria-valuenow
 		$p.html(`
-			<div class="sanad-bulk__progress" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="0" aria-label="${ui.escape(label)}">
-				<div class="sanad-bulk__bar" style="width:0%"></div>
+			<div class="whatsapp-kit-bulk__progress" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="0" aria-label="${ui.escape(label)}">
+				<div class="whatsapp-kit-bulk__bar" style="width:0%"></div>
 			</div>
-			<div class="sanad-bulk__status" aria-live="polite" aria-atomic="true"></div>`);
-		const $bar = $p.find(".sanad-bulk__bar");
-		const $meter = $p.find(".sanad-bulk__progress");
-		const $status = $p.find(".sanad-bulk__status");
+			<div class="whatsapp-kit-bulk__status" aria-live="polite" aria-atomic="true"></div>`);
+		const $bar = $p.find(".whatsapp-kit-bulk__bar");
+		const $meter = $p.find(".whatsapp-kit-bulk__progress");
+		const $status = $p.find(".whatsapp-kit-bulk__status");
 		const render = (i) => {
 			$bar.css("width", `${Math.round((i / total) * 100)}%`);
 			$meter.attr("aria-valuenow", i);
@@ -185,7 +185,7 @@ sanad.ui.BulkActions = class BulkActions {
 	report(action, result, names) {
 		if (typeof action.success === "function") {
 			const msg = action.success(result, names);
-			if (msg) sanad.ui.Toast.success(msg);
+			if (msg) whatsapp.ui.Toast.success(msg);
 			return;
 		}
 		const r = result && typeof result === "object" ? result : {};
@@ -193,12 +193,12 @@ sanad.ui.BulkActions = class BulkActions {
 		const failed = Array.isArray(r.failed) ? r.failed.length : 0;
 		const skipped = Array.isArray(r.skipped) ? r.skipped.length : 0;
 		if (failed) {
-			sanad.ui.Toast.warning(__("{0} done, {1} failed", [ui.format_int(count), ui.format_int(failed)]));
+			whatsapp.ui.Toast.warning(__("{0} done, {1} failed", [ui.format_int(count), ui.format_int(failed)]));
 		} else if (r.cancelled) {
-			sanad.ui.Toast.info(__("Stopped after {0} of {1}", [ui.format_int(count), ui.format_int(names.length)]));
+			whatsapp.ui.Toast.info(__("Stopped after {0} of {1}", [ui.format_int(count), ui.format_int(names.length)]));
 		} else {
 			const text = typeof action.success === "string" ? action.success : __("{0} of {1} done", [ui.format_int(count), ui.format_int(names.length)]);
-			sanad.ui.Toast.success(skipped ? __("{0} ({1} skipped)", [text, ui.format_int(skipped)]) : text);
+			whatsapp.ui.Toast.success(skipped ? __("{0} ({1} skipped)", [text, ui.format_int(skipped)]) : text);
 		}
 	}
 
@@ -208,4 +208,4 @@ sanad.ui.BulkActions = class BulkActions {
 	}
 };
 
-export default sanad.ui.BulkActions;
+export default whatsapp.ui.BulkActions;

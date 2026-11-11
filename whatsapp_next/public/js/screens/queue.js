@@ -5,7 +5,7 @@
 frappe.provide("whatsapp_next.queue");
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 
 	whatsapp_next.queue.cancel_item = function (doc, after) {
 		return ui.ConfirmDialog.ask({

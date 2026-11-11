@@ -13,7 +13,7 @@ nothing about the host app or its API — pass rows in.
 ## Usage
 
 ```js
-const thread = new sanad.ui.ChatThread({
+const thread = new whatsapp.ui.ChatThread({
   wrapper: $panel,
   rows: page.rows.slice().reverse(),          // API pages are newest-first; display is oldest-first
   has_more: page.has_more,
@@ -51,7 +51,7 @@ ConversationDrawer body (WhatsApp Numbers list and form, Contacts); the Simulato
   "Received message from …" — no system terms.
 - The scroll region is a plain `role="log"` **without** `aria-live` (the list is re-rendered on
   prepend / append, which would otherwise re-read the whole thread); the owner announces
-  "N older messages loaded." / "N new messages arrived." through `sanad.ui.announce`.
+  "N older messages loaded." / "N new messages arrived." through `whatsapp.ui.announce`.
 - No nested interactive content: when `on_row_click` is set, attachment and reference links are
   rendered as text and each bubble gets an explicit "Open" button (keyboard path); the mouse can
   still click anywhere on the bubble.
@@ -60,5 +60,5 @@ ConversationDrawer body (WhatsApp Numbers list and form, Contacts); the Simulato
 - Media rows and buttons are ≥ 32 px targets (the inline "Open" button 24 px with 8 px gaps);
   attachment links open in a new tab with `rel="noopener"` and an explicit "Open …" label.
 - Bubbles cap at 60ch / 78 % (88 % on phones); `overflow-wrap: anywhere` prevents horizontal
-  scroll; spacing only through `--sanad-gap-*`; the focus ring comes from the kit's global rule.
+  scroll; spacing only through `--whatsapp-kit-gap-*`; the focus ring comes from the kit's global rule.
 - All text is escaped before the WhatsApp formatting pass; only Espresso tokens are used.

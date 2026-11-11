@@ -1,18 +1,18 @@
 // PageHeader — title row, KPI row (ListStatsCard `kpi` layout), banner, custom blocks; plus the
 // shared progress bar that blocks and DataList cells use.
 
-.sanad-pagehead {
+.whatsapp-kit-pagehead {
 	display: flex;
 	flex-direction: column;
-	gap: var(--sanad-gap-md);
+	gap: var(--whatsapp-kit-gap-md);
 	// one step above and below, the same between every block of a screen (owner, 2026-10-26)
-	margin-block: var(--sanad-gap-sm);
+	margin-block: var(--whatsapp-kit-gap-sm);
 
 	&__row {
 		display: flex;
 		align-items: flex-start;
 		justify-content: space-between;
-		gap: var(--sanad-gap-lg);
+		gap: var(--whatsapp-kit-gap-lg);
 	}
 	&__text { min-width: 0; }
 	&__title {
@@ -24,7 +24,7 @@
 		line-height: 1.3;
 	}
 	&__desc {
-		margin: var(--sanad-gap-xs) 0 0;
+		margin: var(--whatsapp-kit-gap-xs) 0 0;
 		font-size: var(--text-xs, 12px);
 		color: var(--ink-gray-6);
 	}
@@ -32,18 +32,18 @@
 		display: flex;
 		flex: none;
 		flex-wrap: wrap;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 	}
 	// the header's verbs, wherever the screen put them: a toolbar control's height, the icon apart
 	// from its word. Frappe 16.53 pads every `.btn:not(.btn-md):not(.btn-lg):not(.btn-xs)` 4 × 8 px,
 	// so the same three `:not()`s are needed here to be heard.
-	:is(.sanad-pagehead__actions .btn, .sanad-pagehead__row > .btn, .sanad-pagehead__primary):not(.btn-md):not(.btn-lg):not(.btn-xs) {
+	:is(.whatsapp-kit-pagehead__actions .btn, .whatsapp-kit-pagehead__row > .btn, .whatsapp-kit-pagehead__primary):not(.btn-md):not(.btn-lg):not(.btn-xs) {
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		min-height: var(--sanad-ctl-h);
+		min-height: var(--whatsapp-kit-ctl-h);
 		padding-inline: 12px;
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		font-size: var(--text-sm, 13px);
 		font-weight: 600;
 		.icon { flex: none; }
@@ -63,23 +63,23 @@
 	&__banner {
 		display: flex;
 		align-items: center;
-		gap: var(--sanad-gap-sm);
-		padding-block: var(--sanad-gap-sm);
-		padding-inline: var(--sanad-gap-md);
+		gap: var(--whatsapp-kit-gap-sm);
+		padding-block: var(--whatsapp-kit-gap-sm);
+		padding-inline: var(--whatsapp-kit-gap-md);
 		border: 1px solid;
-		border-radius: var(--sanad-radius);
+		border-radius: var(--whatsapp-kit-radius);
 		font-size: var(--text-sm, 13px);
 		&[hidden] { display: none; }
 	}
 	&__banner-icon { display: inline-flex; flex: none; }
 	&__banner-text { flex: 1; min-width: 0; }
 	&__banner-action { flex: none; }
-	&__blocks { display: flex; flex-direction: column; gap: var(--sanad-gap-md); }
+	&__blocks { display: flex; flex-direction: column; gap: var(--whatsapp-kit-gap-md); }
 	&__block:empty { display: none; }
 }
 
 // Progress bar (sent = green, failed = red) with a tabular "sent / total" label.
-.sanad-progress {
+.whatsapp-kit-progress {
 	display: flex;
 	flex-direction: column;
 	gap: 3px;
@@ -87,7 +87,7 @@
 	&__label {
 		display: flex;
 		justify-content: space-between;
-		gap: var(--sanad-gap-sm);
+		gap: var(--whatsapp-kit-gap-sm);
 		font-size: var(--text-xs, 12px);
 		color: var(--ink-gray-6);
 		font-variant-numeric: tabular-nums;
@@ -105,7 +105,7 @@
 }
 
 @media (max-width: 767px) {
-	.sanad-pagehead__row { flex-direction: column; }
-	.sanad-pagehead__actions { width: 100%; .btn { flex: 1; } }
-	.sanad-strip__actions { margin-inline-start: 0; width: 100%; .btn { flex: 1; } }
+	.whatsapp-kit-pagehead__row { flex-direction: column; }
+	.whatsapp-kit-pagehead__actions { width: 100%; .btn { flex: 1; } }
+	.whatsapp-kit-strip__actions { margin-inline-start: 0; width: 100%; .btn { flex: 1; } }
 }

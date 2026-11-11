@@ -92,7 +92,7 @@ nothing was saved.
 | `WAPermissionError` | 403 | The caller is not a System Manager |
 
 ```js
-await sanad.ui.call("settings.save_settings", { section: "queue", values: { max_attempts: 5 } });
+await whatsapp.ui.call("settings.save_settings", { section: "queue", values: { max_attempts: 5 } });
 ```
 
 ---
@@ -129,7 +129,7 @@ and its QR code. It is the Settings preview of the print-format functions `whats
 **Realtime:** none.
 
 ```js
-const { url, qr } = await sanad.ui.call("settings.get_whatsapp_link", { text: "كشف" });
+const { url, qr } = await whatsapp.ui.call("settings.get_whatsapp_link", { text: "كشف" });
 ```
 
 ---
@@ -158,7 +158,7 @@ Arguments: none.
 **Realtime:** none.
 
 ```js
-const { commands, max } = await sanad.ui.call("settings.get_main_menu");
+const { commands, max } = await whatsapp.ui.call("settings.get_main_menu");
 ```
 
 ---
@@ -188,7 +188,7 @@ position; every other command leaves the menu (its order and description are kep
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("settings.save_main_menu", {
+await whatsapp.ui.call("settings.save_main_menu", {
   commands: [{ command: "CMD-0001", menu_description: "Your account statement" }],
 });
 ```
@@ -253,7 +253,7 @@ Arguments: none.
 `WAProviderUnavailableError` (503), `WARateLimitError` (429), and so on.
 
 ```js
-const plan = await sanad.ui.call("settings.sync_subscription");
+const plan = await whatsapp.ui.call("settings.sync_subscription");
 ```
 
 ---
@@ -324,7 +324,7 @@ counts Read. `failed` counts Failed. Days are bucketed by the log row's `creatio
 ("A usage period is at most 92 days").
 
 ```js
-await sanad.ui.call("settings.get_site_usage", { from_date: "2026-09-01", to_date: "2026-09-28" });
+await whatsapp.ui.call("settings.get_site_usage", { from_date: "2026-09-01", to_date: "2026-09-28" });
 ```
 
 ---
@@ -390,7 +390,7 @@ Enables or disables the provider endpoint. `Active` also unlocks a `Locked` endp
 registered yet". Provider errors are mapped.
 
 ```js
-await sanad.ui.call("settings.set_webhook_status", { status: "Active" });
+await whatsapp.ui.call("settings.set_webhook_status", { status: "Active" });
 ```
 
 ---
@@ -440,7 +440,7 @@ Arguments: none.
 underlying provider error is logged, not raised.
 
 ```js
-await sanad.ui.call("settings.rotate_webhook_secret");
+await whatsapp.ui.call("settings.rotate_webhook_secret");
 ```
 
 ---
@@ -492,7 +492,7 @@ Arguments: none.
 **Errors:** Provider errors are mapped.
 
 ```js
-const events = await sanad.ui.call("settings.list_webhook_events_available");
+const events = await whatsapp.ui.call("settings.list_webhook_events_available");
 ```
 
 ---
@@ -553,7 +553,7 @@ Arguments: none.
 **Errors:** `WAPermissionError` (403).
 
 ```js
-const sources = await sanad.ui.call("settings.list_picker_sources");
+const sources = await whatsapp.ui.call("settings.list_picker_sources");
 ```
 
 ---
@@ -613,7 +613,7 @@ Arguments: none.
 **Realtime:** none.
 
 ```js
-const screens = await sanad.ui.call("settings.list_picker_candidates");
+const screens = await whatsapp.ui.call("settings.list_picker_candidates");
 ```
 
 ---
@@ -658,7 +658,7 @@ skipped. Nothing is written.
 **Realtime:** none.
 
 ```js
-const a = await sanad.ui.call("settings.analyze_picker_doctype", { document_type: "Customer" });
+const a = await whatsapp.ui.call("settings.analyze_picker_doctype", { document_type: "Customer" });
 ```
 
 ---
@@ -696,7 +696,7 @@ and an empty `sample`.
 **Realtime:** none.
 
 ```js
-const p = await sanad.ui.call("settings.preview_picker_source", {
+const p = await whatsapp.ui.call("settings.preview_picker_source", {
   source: { document_type: "Customer", phone_source: "Field", phone_fieldname: "mobile_no", name_fieldname: "customer_name" },
 });
 ```
@@ -739,7 +739,7 @@ Arguments: none.
 **Realtime:** none.
 
 ```js
-const backup = await sanad.ui.call("settings.export_backup");
+const backup = await whatsapp.ui.call("settings.export_backup");
 ```
 
 ---
@@ -776,7 +776,7 @@ WhatsApp Next backup." (wrong `format`), or "This backup was made by a newer ver
 **Realtime:** none.
 
 ```js
-const plan = await sanad.ui.call("settings.preview_backup", { data: await file.text() });
+const plan = await whatsapp.ui.call("settings.preview_backup", { data: await file.text() });
 ```
 
 ---
@@ -812,5 +812,5 @@ backup.
 **Realtime:** none.
 
 ```js
-const r = await sanad.ui.call("settings.import_backup", { data: await file.text() });
+const r = await whatsapp.ui.call("settings.import_backup", { data: await file.text() });
 ```

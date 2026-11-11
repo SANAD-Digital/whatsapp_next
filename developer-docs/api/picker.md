@@ -106,7 +106,7 @@ site (chips for source 2).
 **Realtime:** none.
 
 ```js
-const sources = await sanad.ui.call("picker.list_sources");
+const sources = await whatsapp.ui.call("picker.list_sources");
 ```
 
 ---
@@ -138,7 +138,7 @@ Read with the caller's permissions on `WhatsApp Contact Group`.
 **Realtime:** none.
 
 ```js
-const { rows } = await sanad.ui.call("picker.search_groups", { txt: "VIP", exclude: "Blacklist" });
+const { rows } = await whatsapp.ui.call("picker.search_groups", { txt: "VIP", exclude: "Blacklist" });
 ```
 
 ---
@@ -171,7 +171,7 @@ Source 1: members of one group as picker rows.
 **Realtime:** none.
 
 ```js
-const { rows, total } = await sanad.ui.call("picker.get_group_members", { group: "VIP", page: 1 });
+const { rows, total } = await whatsapp.ui.call("picker.get_group_members", { group: "VIP", page: 1 });
 ```
 
 ---
@@ -205,7 +205,7 @@ Source 2: contacts through the contextual permission layer (audited for Contact 
 **Realtime:** none.
 
 ```js
-const { rows } = await sanad.ui.call("picker.search_contacts", { txt: "Ahmed", link_doctype: "Customer" });
+const { rows } = await whatsapp.ui.call("picker.search_contacts", { txt: "Ahmed", link_doctype: "Customer" });
 ```
 
 ---
@@ -238,7 +238,7 @@ by that name. `total` counts every match.
 **Realtime:** none.
 
 ```js
-const { rows, total } = await sanad.ui.call("picker.search_whatsapp_numbers", { txt: "Khalid", page: 1 });
+const { rows, total } = await whatsapp.ui.call("picker.search_whatsapp_numbers", { txt: "Khalid", page: 1 });
 ```
 
 ---
@@ -280,7 +280,7 @@ Contact (`phone_source = "Linked Contact"`).
 **Realtime:** none.
 
 ```js
-await sanad.ui.call("picker.list_doctype_rows", { document_type: "Customer", filters: [["customer_group", "=", "Retail"]] });
+await whatsapp.ui.call("picker.list_doctype_rows", { document_type: "Customer", filters: [["customer_group", "=", "Retail"]] });
 ```
 
 ---
@@ -333,7 +333,7 @@ Limits: 5 MB, 20 000 rows (`MAX_UPLOAD_BYTES`, `MAX_UPLOAD_ROWS`).
 `{kind, stage: "parsing", total: 0}` then `{kind, stage: "parsed", total, valid, invalid}`.
 
 ```js
-const r = await sanad.ui.call("picker.parse_upload", { file_url: "/private/files/customers.xlsx", kind: "excel" });
+const r = await whatsapp.ui.call("picker.parse_upload", { file_url: "/private/files/customers.xlsx", kind: "excel" });
 if (r.needs_mapping) { /* ask, then call again with mapping: { phone: "Mobile", name: "Name" } */ }
 ```
 
@@ -363,7 +363,7 @@ or last token that normalizes is the phone. Blank lines are skipped.
 **Realtime:** none.
 
 ```js
-const r = await sanad.ui.call("picker.parse_manual", { text: "Ahmed;0500000002\n0500000003 Sara" });
+const r = await whatsapp.ui.call("picker.parse_manual", { text: "Ahmed;0500000002\n0500000003 Sara" });
 ```
 
 ---
@@ -402,7 +402,7 @@ exist in `WhatsApp Number`.
 **Realtime:** none.
 
 ```js
-const p = await sanad.ui.call("picker.preview", { target_doctype: "WhatsApp Campaign", target_name: "CAMP-0001", rows });
+const p = await whatsapp.ui.call("picker.preview", { target_doctype: "WhatsApp Campaign", target_name: "CAMP-0001", rows });
 ```
 
 ---
@@ -425,7 +425,7 @@ The same classification with no target document: the host passes the keys it alr
 **Realtime:** none.
 
 ```js
-const p = await sanad.ui.call("picker.classify", { rows, existing: ["+966500000002"] });
+const p = await whatsapp.ui.call("picker.classify", { rows, existing: ["+966500000002"] });
 ```
 
 ---
@@ -520,7 +520,7 @@ Rows already `Removed` are ignored. See the flow above for what happens on a liv
 whose queue item was deleted.
 
 ```js
-await sanad.ui.call("picker.commit_remove", {
+await whatsapp.ui.call("picker.commit_remove", {
   target_doctype: "WhatsApp Campaign", target_name: "CAMP-0001",
   filters: { source_type: "Contact Group", source_ref: "VIP" },
 });

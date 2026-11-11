@@ -3,7 +3,7 @@
 // A child table is the wrong instrument for an audience: it asks the reader to type numbers into
 // rows. The question is where the people come from — a saved group, the contacts, a screen of the
 // system with a filter on it, a file, a pasted list — and the product already owns the answer
-// (`sanad.ui.ContactPicker`, six sources, server-side validation, duplicate and invalid rows
+// (`whatsapp.ui.ContactPicker`, six sources, server-side validation, duplicate and invalid rows
 // classified by the server and never by the client). So this step is one working surface:
 //
 //   a head line — how many, from where, and the sources as the verbs that add more;
@@ -20,7 +20,7 @@
 frappe.provide("whatsapp_next.campaign");
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const C = whatsapp_next.campaign;
 	const esc = C.esc;
 	const fmt_int = C.fmt_int;
@@ -67,26 +67,26 @@ frappe.provide("whatsapp_next.campaign");
 
 		render() {
 			this.$wrapper.html(`
-				<div class="wa-cb__stack">
+				<div class="whatsapp-cb__stack">
 					<div data-block="gate"></div>
-					<section class="wa-cb__aud">
-						<div class="wa-cb__aud-head">
-							<span class="wa-cb__card-icon" aria-hidden="true">${ui.ico("users", "sm")}</span>
-							<span class="wa-cb__card-title">${esc(__("Where the recipients come from"))}</span>
-							<span class="wa-cb__aud-add" data-sources></span>
-							<span class="wa-cb__aud-tags" aria-live="polite">
-								<span class="wa-badge wa-badge--pri wa-badge--nodot wa-cb__aud-total">
-									<b class="sanad-tabular" data-total>${esc(fmt_int(cint(this.ctx.doc.total_recipients)))}</b>
+					<section class="whatsapp-cb__aud">
+						<div class="whatsapp-cb__aud-head">
+							<span class="whatsapp-cb__card-icon" aria-hidden="true">${ui.ico("users", "sm")}</span>
+							<span class="whatsapp-cb__card-title">${esc(__("Where the recipients come from"))}</span>
+							<span class="whatsapp-cb__aud-add" data-sources></span>
+							<span class="whatsapp-cb__aud-tags" aria-live="polite">
+								<span class="whatsapp-badge whatsapp-badge--pri whatsapp-badge--nodot whatsapp-cb__aud-total">
+									<b class="whatsapp-kit-tabular" data-total>${esc(fmt_int(cint(this.ctx.doc.total_recipients)))}</b>
 									<span data-total-label>${esc(C.recipients_text(cint(this.ctx.doc.total_recipients)).replace(/^[\d\u0660-\u0669,.\s\u00a0]+/, ""))}</span>
 								</span>
-								<span class="wa-cb__aud-parts" data-parts></span>
+								<span class="whatsapp-cb__aud-parts" data-parts></span>
 							</span>
 						</div>
-						<div class="wa-cb__aud-bar">
-							<div class="wa-cb__aud-filters" data-bar></div>
-							<span class="wa-cb__aud-verbs" data-verbs></span>
+						<div class="whatsapp-cb__aud-bar">
+							<div class="whatsapp-cb__aud-filters" data-bar></div>
+							<span class="whatsapp-cb__aud-verbs" data-verbs></span>
 						</div>
-						<div class="wa-cb__aud-table" data-table></div>
+						<div class="whatsapp-cb__aud-table" data-table></div>
 					</section>
 				</div>`);
 			this.$parts = this.$wrapper.find("[data-parts]");
@@ -134,7 +134,7 @@ frappe.provide("whatsapp_next.campaign");
 					usable
 						.map(
 							(e) =>
-								`<button type="button" class="wa-btn wa-btn--secondary wa-btn--sm wa-cb__aud-source" data-source="${esc(e.key)}" title="${esc(SOURCE[e.key].hint())}"${open ? "" : " disabled"}>${ui.ico(SOURCE[e.key].icon, "sm")}<span>${esc(e.label || LABEL[e.key]())}</span></button>`
+								`<button type="button" class="whatsapp-btn whatsapp-btn--secondary whatsapp-btn--sm whatsapp-cb__aud-source" data-source="${esc(e.key)}" title="${esc(SOURCE[e.key].hint())}"${open ? "" : " disabled"}>${ui.ico(SOURCE[e.key].icon, "sm")}<span>${esc(e.label || LABEL[e.key]())}</span></button>`
 						)
 						.join("")
 				);
@@ -175,12 +175,12 @@ frappe.provide("whatsapp_next.campaign");
 			this.$wrapper.find("[data-total-label]").text(C.recipients_text(total).replace(/^[\d٠-٩,.\s ]+/, ""));
 			const by_source = (this.counts && this.counts.source_type) || {};
 			const parts = SOURCE_TYPES.filter((k) => cint(by_source[k])).map(
-				(k) => `<span class="wa-cb__chip"><b class="sanad-tabular">${esc(fmt_int(by_source[k]))}</b>${esc(__(k))}</span>`
+				(k) => `<span class="whatsapp-cb__chip"><b class="whatsapp-kit-tabular">${esc(fmt_int(by_source[k]))}</b>${esc(__(k))}</span>`
 			);
 			const excluded = this.ctx.excluded_unknown();
 			if (excluded) {
 				parts.push(
-					`<span class="wa-cb__chip wa-cb__chip--warn" title="${esc(__("They have never had a conversation on WhatsApp and this campaign excludes unknown numbers."))}">${ui.ico("warn", "xs")}<b class="sanad-tabular">${esc(fmt_int(excluded))}</b>${esc(__("will not be sent to"))}</span>`
+					`<span class="whatsapp-cb__chip whatsapp-cb__chip--warn" title="${esc(__("They have never had a conversation on WhatsApp and this campaign excludes unknown numbers."))}">${ui.ico("warn", "xs")}<b class="whatsapp-kit-tabular">${esc(fmt_int(excluded))}</b>${esc(__("will not be sent to"))}</span>`
 				);
 			}
 			// one source and nothing excluded says nothing the total does not
@@ -190,7 +190,7 @@ frappe.provide("whatsapp_next.campaign");
 		// ---- the bar: the product's own toolbar over the recipients child table ------------------------
 
 		/**
-		 * `sanad.ui.FilterBar` in page mode — the same search box, dropdown filters with checkboxes
+		 * `whatsapp.ui.FilterBar` in page mode — the same search box, dropdown filters with checkboxes
 		 * and "Group by" as every list of the product, read from the child DocType's meta. The bar
 		 * says what to ask for; the server answers; the table groups the page it holds.
 		 */
@@ -229,12 +229,12 @@ frappe.provide("whatsapp_next.campaign");
 						return row.contact ? frappe.utils.get_form_link("Contact", row.contact, true, name) : name;
 					},
 				},
-				{ fieldname: "phone_e164", label: __("Phone"), sortable: true, width: 160, format: (v, row) => `<span class="sanad-tabular" dir="ltr">${esc(ui.phone(v || row.phone || ""))}</span>${ui.group_tag(v || row.phone)}` },
+				{ fieldname: "phone_e164", label: __("Phone"), sortable: true, width: 160, format: (v, row) => `<span class="whatsapp-kit-tabular" dir="ltr">${esc(ui.phone(v || row.phone || ""))}</span>${ui.group_tag(v || row.phone)}` },
 				{ fieldname: "source_type", label: __("Source"), sortable: true, groupable: true, width: 140, format: (v) => esc(v ? __(v) : "—") },
 				{ fieldname: "status", label: __("Status"), type: "status", sortable: true, groupable: true, width: 120 },
 			];
 			if (monitoring) {
-				columns.push({ fieldname: "error_code", label: __("Error"), width: 150, format: (v) => (v ? `<span class="sanad-tone--red">${esc(v)}</span>` : "—") });
+				columns.push({ fieldname: "error_code", label: __("Error"), width: 150, format: (v) => (v ? `<span class="whatsapp-kit-tone--red">${esc(v)}</span>` : "—") });
 			}
 			this.table = new ui.DataList({
 				wrapper: this.$wrapper.find("[data-table]"),

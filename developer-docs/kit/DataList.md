@@ -1,4 +1,4 @@
-# `sanad.ui.DataList`
+# `whatsapp.ui.DataList`
 
 The prototype's data table. It has two hosts:
 
@@ -14,7 +14,7 @@ The prototype's data table. It has two hosts:
 Features: sortable headers, pinned (sticky) columns, typed cells, a muted second line per cell,
 per-row "View" button, expandable detail rows, multi-level grouping of the loaded rows with group
 selection and sums, per-user column choice, phone card layout (CSS, < 768 px). Portable; column
-choices are stored in Frappe user settings under `sanad_columns_<settings_key>`.
+choices are stored in Frappe user settings under `whatsapp_columns_<settings_key>`.
 
 ## Options
 
@@ -53,7 +53,7 @@ sub?(doc) → html, type?, hidden_xs?, groupable?, group_label?(raw, doc)}`. `ty
 from the docfield: `link`, `number` (Int/Float/Currency/Percent), `date` (Date/Datetime), else
 `text`; explicit extras are `status` (StatusBadge via `ui.indicator_for`), `avatar` (initials chip
 + text) and `entity` (`Render.entity`). `text` with a non-Data fieldtype renders through
-`sanad.ui.Render.value`.
+`whatsapp.ui.Render.value`.
 
 ## Methods
 
@@ -70,7 +70,7 @@ from the docfield: `link`, `number` (Int/Float/Currency/Percent), `date` (Date/D
 
 Callbacks above. Delegated jQuery handlers namespaced `.<id>` on the result area/wrapper; window
 `resize.<id>`; a `ResizeObserver` on the list card's other children re-fits the height. Sets
-`lv._sanad_datalist` (read by FilterBar) and runs `lv._sanad_render_hooks` after each render (the
+`lv._whatsapp_datalist` (read by FilterBar) and runs `lv._whatsapp_render_hooks` after each render (the
 hooks `ui.on_list_render` registers). No realtime subscriptions of its own.
 
 ## Server calls
@@ -78,9 +78,9 @@ hooks `ui.on_list_render` registers). No realtime subscriptions of its own.
 | Call | When |
 |---|---|
 | `frappe.db.count(doctype, {filters})` | List mode footer, only when a full page came back and the filters changed. |
-| `frappe.model.user_settings.save(doctype, "sanad_columns_<key>", fields\|null)` | `set_visible_columns` / `reset_columns`. |
+| `frappe.model.user_settings.save(doctype, "whatsapp_columns_<key>", fields\|null)` | `set_visible_columns` / `reset_columns`. |
 
-No `sanad.ui.call` keys.
+No `whatsapp.ui.call` keys.
 
 ## Usage
 
@@ -88,11 +88,11 @@ No `sanad.ui.call` keys.
 frappe.listview_settings["ToDo"] = {
   add_fields: ["status", "allocated_to", "date"],
   onload(listview) {
-    listview.sanad_datalist = new sanad.ui.DataList({
+    listview.whatsapp_datalist = new whatsapp.ui.DataList({
       listview,
       settings_key: "todo",
       columns: [
-        { fieldname: "description", label: __("Task"), sub: (d) => sanad.ui.escape(d.name) },
+        { fieldname: "description", label: __("Task"), sub: (d) => whatsapp.ui.escape(d.name) },
         { fieldname: "status", type: "status" },
         { fieldname: "allocated_to", type: "avatar" },
         { fieldname: "date", type: "date" },
@@ -106,9 +106,9 @@ frappe.listview_settings["ToDo"] = {
 
 ## CSS hooks
 
-- List host: `sanad-datalist-host` (on `$result`), `sanad-list-card` (on `$frappe_list`),
-  `sanad-list-card-host` (its parent). Page host: `sanad-kit sanad-datalist-page`.
-- `sanad-datalist__wrap` (+ `--cards`) → `table.sanad-datalist` (`--loading`, `aria-busy`).
+- List host: `whatsapp-kit-datalist-host` (on `$result`), `whatsapp-kit-list-card` (on `$frappe_list`),
+  `whatsapp-kit-list-card-host` (its parent). Page host: `whatsapp-kit whatsapp-kit-datalist-page`.
+- `whatsapp-kit-datalist__wrap` (+ `--cards`) → `table.whatsapp-kit-datalist` (`--loading`, `aria-busy`).
 - Header: `__th` (`--check`, `--expand`, `--action`, `--start|end|center`, `--sorted`, `--pinned`,
   `--hidden-xs`, `data-fieldname`), `__sort`, `__sort-icon`, `__label`, `__pin` (`--on`).
 - Rows: `__row` (`--clickable`, `--skeleton`, `--empty`, `data-name`), `__td` (same modifiers plus
@@ -118,7 +118,7 @@ frappe.listview_settings["ToDo"] = {
 - Groups: `__group` (`--l0..`, `data-gid`), `__group-cell`, `__group-inner`, `__group-check`,
   `__group-checkbox`, `__rail`, `__indent`, `__group-toggle`, `__group-field`, `__group-label`,
   `__group-count`, `__group-sum`.
-- Footer: `sanad-datalist__footer`, `__count` (live region), `__extra`, `__group-tools`,
+- Footer: `whatsapp-kit-datalist__footer`, `__count` (live region), `__extra`, `__group-tools`,
   `__group-tool[data-fold]`, `__pager`, `__paging`, `__page-btn[data-go]`, `__page-state`.
 - Stacking order is fixed in `style.scss` (see `.claude/rules/ui.md`, D-076).
 

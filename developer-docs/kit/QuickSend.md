@@ -1,4 +1,4 @@
-# `sanad.ui.QuickSend`
+# `whatsapp.ui.QuickSend`
 
 The one-message composer as a `frappe.ui.Dialog`: recipient resolved server-side (name, number,
 Known / New / Blacklisted / Group badges), device select with the configured default, optional
@@ -29,10 +29,10 @@ All optional.
 | `on_sent` | `(result) => void` | — | After a successful send; `{outbound, queue_item, warnings[]}`. |
 | `on_close` | `() => void` | — | Dialog `on_hide`. |
 | `api` | `{get_context?, preview?, send?}` | `quick_send.*` | API key overrides. |
-| `simulator_route` | string | `sanad.ui.config.defaults.simulator_route` | Footer action route; no route → no action. |
+| `simulator_route` | string | `whatsapp.ui.config.defaults.simulator_route` | Footer action route; no route → no action. |
 | `title` | string | "Send message" | Dialog title. |
 
-Also read from config: `sanad.ui.config.defaults.devices_route` (the "Open devices" fix button when
+Also read from config: `whatsapp.ui.config.defaults.devices_route` (the "Open devices" fix button when
 no device is enabled).
 
 ## Methods
@@ -60,20 +60,20 @@ input only when a reference is set). Phone blur resolves the recipient. No realt
 ## Usage
 
 ```js
-new sanad.ui.QuickSend({ phone: doc.phone_e164, contact: doc.contact, on_sent: () => listview.refresh() });
-sanad.ui.QuickSend.open({ reference_doctype: frm.doctype, reference_name: frm.docname, template: "Invoice reminder" });
-new sanad.ui.QuickSend();   // blank: the user types the number
+new whatsapp.ui.QuickSend({ phone: doc.phone_e164, contact: doc.contact, on_sent: () => listview.refresh() });
+whatsapp.ui.QuickSend.open({ reference_doctype: frm.doctype, reference_name: frm.docname, template: "Invoice reminder" });
+new whatsapp.ui.QuickSend();   // blank: the user types the number
 ```
 
 ## CSS hooks
 
-- Dialog wrapper `.sanad-kit.sanad-sheet.sanad-quicksend`.
+- Dialog wrapper `.whatsapp-kit.whatsapp-kit-sheet.whatsapp-kit-quicksend`.
 - `__recipient` (`--empty`), `__avatar`, `__who`, `__name`, `__phone`, `__badges`.
 - `__preview`, `__preview-label`, `__bubble`; `__error` (`role="alert"`), `__field--invalid`, `__fix`, `__simulator`.
 
 ## Notes
 
-- Fields: Recipient (HTML), Phone (only without a pre-filled recipient; wrapped by `sanad.ui.PhoneField` when loaded), Device, Template, Message type, Schedule, Message, Preview, Attachment (private, single) and Caption (only for non-Text types).
+- Fields: Recipient (HTML), Phone (only without a pre-filled recipient; wrapped by `whatsapp.ui.PhoneField` when loaded), Device, Template, Message type, Schedule, Message, Preview, Attachment (private, single) and Caption (only for non-Text types).
 - Validation: every error inline with `aria-invalid` / `aria-describedby`; only the first invalid field takes focus. Server errors are mapped to the recipient line, Attachment or Message; others → `Toast.error`.
 - States: recipient skeleton while loading; context error → EmptyState with Retry (or an inline phone error); blacklisted recipient disables Send with an explanation; no devices → inline error (+ "Open devices"); `policy.send_only_to_known_numbers` adds a hint under Phone.
 - Warnings `device_offline` / `queue_paused` → `Toast.warnings`; success toast "Message queued" / "Message scheduled".

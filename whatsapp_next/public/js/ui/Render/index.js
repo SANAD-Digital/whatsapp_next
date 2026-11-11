@@ -1,4 +1,4 @@
-// sanad.ui.Render — the kit's presentation layer: one place that decides how a value, a record or
+// whatsapp.ui.Render — the kit's presentation layer: one place that decides how a value, a record or
 // a collection looks, at five display levels (`inline`, `compact`, `row`, `card`, `hero`).
 //
 // The same data may have more than one visual representation depending on where it appears and
@@ -9,12 +9,12 @@
 // Three levels of configuration:
 //   1. nothing at all — the view model is derived from the DocType's meta (title field, image
 //      field, indicator rules, the first currency field, the list-view fields);
-//   2. a profile — `sanad.ui.Render.profile("WhatsApp Log", { lines: ["phone_e164"], … })`,
+//   2. a profile — `whatsapp.ui.Render.profile("WhatsApp Log", { lines: ["phone_e164"], … })`,
 //      where every entry is a fieldname, a `{field, icon, …}` spec or a function of the doc;
-//   3. a renderer — `sanad.ui.Render.register("my-kind", { card(vm) { return "…" } })` plus
-//      `sanad.ui.Render.map({ "My DocType": "my-kind" })`.
+//   3. a renderer — `whatsapp.ui.Render.register("my-kind", { card(vm) { return "…" } })` plus
+//      `whatsapp.ui.Render.map({ "My DocType": "my-kind" })`.
 //
-// A host app can pass all three through `sanad.ui.configure({ renderers: {…} })`.
+// A host app can pass all three through `whatsapp.ui.configure({ renderers: {…} })`.
 
 import ui from "../_core/index.js";
 import { VALUE_RENDERERS, VALUE_HELPERS, file_size, file_ext, show_phone } from "./values.js";
@@ -74,7 +74,7 @@ const Render = {
 		return Render;
 	},
 
-	/** Everything a host app configures in one call (used by `sanad.ui.configure`). */
+	/** Everything a host app configures in one call (used by `whatsapp.ui.configure`). */
 	configure(opts = {}) {
 		if (!opts) return Render;
 		if (opts.fields) Render.field(opts.fields);
@@ -100,7 +100,7 @@ const Render = {
 		try {
 			return fn(value, df || { fieldtype }, doc || {}, Object.assign({ density: "inline" }, opts)) || "";
 		} catch (e) {
-			console.error("sanad.ui.Render.value", fieldtype, e); // eslint-disable-line no-console
+			console.error("whatsapp.ui.Render.value", fieldtype, e); // eslint-disable-line no-console
 			return ui.escape(value);
 		}
 	},
@@ -118,7 +118,7 @@ const Render = {
 			text: cstr(display || name),
 			href: frappe.utils.get_form_link(doctype, name),
 			title: `${__(doctype)}: ${name}`,
-			cls: "sanad-chipline--link",
+			cls: "whatsapp-kit-chipline--link",
 		});
 	},
 
@@ -312,7 +312,7 @@ const Render = {
 		try {
 			return fn(vm, opts);
 		} catch (e) {
-			console.error("sanad.ui.Render.entity", vm.kind, density, e); // eslint-disable-line no-console
+			console.error("whatsapp.ui.Render.entity", vm.kind, density, e); // eslint-disable-line no-console
 			return ui.escape(vm.title || vm.name || "");
 		}
 	},
@@ -328,7 +328,7 @@ const Render = {
 		parts.bind_actions($el, vm.actions, doc);
 		parts.bind_copy();
 		if (typeof opts.on_click === "function") {
-			$el.find(".sanad-ent").on("click", (e) => {
+			$el.find(".whatsapp-kit-ent").on("click", (e) => {
 				if ($(e.target).closest("[data-action-index]").length) return;
 				opts.on_click(doc, e);
 			});
@@ -340,13 +340,13 @@ const Render = {
 	list(wrapper, docs = [], opts = {}) {
 		const $el = $(wrapper).empty();
 		const density = opts.density || "row";
-		$el.addClass(`sanad-ent-list sanad-ent-list--${density}`);
+		$el.addClass(`whatsapp-kit-ent-list whatsapp-kit-ent-list--${density}`);
 		docs.forEach((doc) => {
-			const $item = $('<div class="sanad-ent-list__item"></div>').appendTo($el);
+			const $item = $('<div class="whatsapp-kit-ent-list__item"></div>').appendTo($el);
 			Render.mount($item, doc, opts);
 		});
 		if (!docs.length && opts.empty !== false) {
-			new sanad.ui.EmptyState({ wrapper: $el, state: "empty", title: opts.empty_title || __("Nothing to show"), size: "sm" });
+			new whatsapp.ui.EmptyState({ wrapper: $el, state: "empty", title: opts.empty_title || __("Nothing to show"), size: "sm" });
 		}
 		return $el;
 	},
@@ -410,7 +410,7 @@ const Render = {
 	/** Load a linked record and render it into `wrapper` (skeleton → row → error). */
 	load_into(wrapper, doctype, name, opts = {}) {
 		const $el = $(wrapper);
-		const state = new sanad.ui.EmptyState({ wrapper: $el, state: "loading", rows: 1, size: "sm" });
+		const state = new whatsapp.ui.EmptyState({ wrapper: $el, state: "loading", rows: 1, size: "sm" });
 		return Render.load(doctype, name, opts)
 			.then((vm) => {
 				if (!vm) return null;
@@ -542,7 +542,7 @@ function file_vm(doc, vm) {
 	};
 }
 
-sanad.ui.Render = Render;
+whatsapp.ui.Render = Render;
 parts.bind_copy();
 
 export default Render;

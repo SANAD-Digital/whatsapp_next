@@ -1,4 +1,4 @@
-// sanad.ui.PhoneField — the design prototype's phone field (`docs/component/Phone Field.dc.html`),
+// whatsapp.ui.PhoneField — the design prototype's phone field (`docs/component/Phone Field.dc.html`),
 // ported as a real component: a country trigger carrying the ISO code and the dial code, a popup
 // that searches by country name, ISO or dial code, a digit-only input masked into the country's
 // own groups, a tick the moment the number is complete, a hint line that turns into the exact
@@ -115,7 +115,7 @@ function load_catalog() {
 		.then((r) => {
 			const rows = (r && r.countries) || [];
 			if (rows.length) CATALOG = rows.map(decorate);
-			if (r && r.default) sanad.ui.PhoneField.site_region = r.default;
+			if (r && r.default) whatsapp.ui.PhoneField.site_region = r.default;
 			return CATALOG;
 		})
 		.catch(() => CATALOG);
@@ -133,17 +133,17 @@ const to_digits = (raw) => ui.latin_digits(raw).replace(/\D/g, "");
 // same path, but its bare `tick` is the hint's lighter one (`M5 10.5l3.5 3.5L15 7`), not the
 // prototype phone field's (`M4 10.5l4 4 8-9`).
 const SVG = {
-	caret: '<svg class="sanad-phone__svg" width="11" height="11" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-	tick: '<svg class="sanad-phone__svg" width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+	caret: '<svg class="whatsapp-kit-phone__svg" width="11" height="11" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+	tick: '<svg class="whatsapp-kit-phone__svg" width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 10.5l4 4 8-9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
 
-sanad.ui.PhoneField = class PhoneField {
+whatsapp.ui.PhoneField = class PhoneField {
 	/**
 	 * @param {Object} opts
 	 * @param {jQuery|HTMLElement} [opts.wrapper] — render the full field here
 	 * @param {Object} [opts.control] — or wrap an existing Frappe Data control (hint-only mode)
 	 * @param {string} [opts.country_default] — Country name or ISO-2; falls back to
-	 *   `sanad.ui.config.defaults.country`, then `frappe.boot.sysdefaults.country`, then `SA`
+	 *   `whatsapp.ui.config.defaults.country`, then `frappe.boot.sysdefaults.country`, then `SA`
 	 * @param {Function} [opts.on_change] — `({phone, phone_e164, valid, country, iso, dial, national, e164})`
 	 * @param {string} [opts.label] — default "Mobile number (WhatsApp)"; `""` renders no label
 	 * @param {string} [opts.tip] — the `!` bubble's text
@@ -158,18 +158,18 @@ sanad.ui.PhoneField = class PhoneField {
 		this.opts = Object.assign({ show_country: true, required: false, invalid: false }, opts);
 		if (this.opts.label == null) this.opts.label = __("Mobile number (WhatsApp)");
 		this.id = ui.uid("phone");
-		this.country = sanad.ui.PhoneField.resolve_country(this.opts.country_default);
+		this.country = whatsapp.ui.PhoneField.resolve_country(this.opts.country_default);
 		// the seed answers immediately so nothing flashes empty; the full catalogue arrives a tick
 		// later and the field redraws on the region it then resolves to
 		load_catalog().then(() => {
 			const $node = this.$root || this.$hint;
 			if (!$node || !$node.closest("body").length) return;
-			const better = sanad.ui.PhoneField.resolve_country(this.opts.country_default);
+			const better = whatsapp.ui.PhoneField.resolve_country(this.opts.country_default);
 			// a country the user picked, or the one a typed international number named, stays;
 			// otherwise the field takes the region the full catalogue resolves to (it had opened
 			// on the seed's answer, which could not yet know the site's region)
 			const keep = this.chosen && this.country && this.country.iso;
-			this.country = keep ? sanad.ui.PhoneField.resolve_country(this.country.iso) : better;
+			this.country = keep ? whatsapp.ui.PhoneField.resolve_country(this.country.iso) : better;
 			this.render && this.render();
 		});
 		this.state = { open: false, touched: false, focus: false, q: "", tip: false, tip_seen: false };
@@ -191,7 +191,7 @@ sanad.ui.PhoneField = class PhoneField {
 	 * reports, then the host's configured default, then the site's country, then Saudi Arabia.
 	 */
 	static resolve_country(hint) {
-		if (!hint && sanad.ui.PhoneField.site_region) hint = sanad.ui.PhoneField.site_region;
+		if (!hint && whatsapp.ui.PhoneField.site_region) hint = whatsapp.ui.PhoneField.site_region;
 		const config = (ui.config && ui.config.defaults && ui.config.defaults.country) || "";
 		const site = (frappe.boot && frappe.boot.sysdefaults && frappe.boot.sysdefaults.country) || "";
 		const tries = [hint, config, site, "SA"];
@@ -243,7 +243,7 @@ sanad.ui.PhoneField = class PhoneField {
 			if (country) {
 				if (s.startsWith("0")) e164 = `+${country.dial}${s.replace(/^0+/, "")}`;
 				else if (country.len && s.length === country.len) e164 = `+${country.dial}${s}`;
-				else e164 = `+${sanad.ui.PhoneField.with_dial(s) || `${country.dial}${s}`}`;
+				else e164 = `+${whatsapp.ui.PhoneField.with_dial(s) || `${country.dial}${s}`}`;
 			} else if (s.length >= 10) {
 				e164 = `+${s}`;
 			}
@@ -272,7 +272,7 @@ sanad.ui.PhoneField = class PhoneField {
 		const rest = e164.slice(1 + dial.length);
 		// the country's own grouping when the number is the length that country uses
 		const hit = country || CATALOG.find((c) => c.dial === dial && c.len && c.len === rest.length);
-		if (hit && hit.len && hit.len === rest.length) return `${dial} ${sanad.ui.PhoneField.mask(rest, hit)}`.trim();
+		if (hit && hit.len && hit.len === rest.length) return `${dial} ${whatsapp.ui.PhoneField.mask(rest, hit)}`.trim();
 		const groups = rest.match(/.{1,3}/g) || [];
 		if (groups.length > 1 && groups[groups.length - 1].length < 2) {
 			const last = groups.pop();
@@ -298,12 +298,12 @@ sanad.ui.PhoneField = class PhoneField {
 	 * `{format: false}` returns the bare E.164 (`+966501234567`).
 	 */
 	static example(country, { format = true } = {}) {
-		const c = country && typeof country === "object" ? country : sanad.ui.PhoneField.resolve_country(country);
+		const c = country && typeof country === "object" ? country : whatsapp.ui.PhoneField.resolve_country(country);
 		const dial = c ? c.dial : "966";
 		// the region's own sample, from the library — not a number anybody made up
 		const national = (c && String(c.example || "").replace(/\D/g, "").slice((c.trunk || "").length)) || "123456789";
 		const e164 = `+${dial}${national}`;
-		return format ? sanad.ui.PhoneField.format_display(e164, c) : e164;
+		return format ? whatsapp.ui.PhoneField.format_display(e164, c) : e164;
 	}
 
 	// ---- mount -------------------------------------------------------------------------------
@@ -320,7 +320,7 @@ sanad.ui.PhoneField = class PhoneField {
 		const hint_id = `${this.id}-hint`;
 		this.control = this.opts.control;
 		this.$input = this.control.$input;
-		this.$hint = $(`<div class="sanad-kit sanad-phone__hint" id="${hint_id}" aria-live="polite"></div>`);
+		this.$hint = $(`<div class="whatsapp-kit whatsapp-kit-phone__hint" id="${hint_id}" aria-live="polite"></div>`);
 		this.control.$wrapper.find(".control-input-wrapper").append(this.$hint);
 		this.$input.attr({ inputmode: "tel", autocomplete: "tel", dir: "ltr" });
 		this.$input.attr("aria-describedby", [this.$input.attr("aria-describedby"), hint_id].filter(Boolean).join(" "));
@@ -339,30 +339,30 @@ sanad.ui.PhoneField = class PhoneField {
 		const input_id = `${this.id}-input`;
 		const hint_id = `${this.id}-hint`;
 		this.$root = $(`
-			<div class="sanad-kit sanad-phone" id="${this.id}">
-				<div class="sanad-phone__labelrow" data-slot="labelrow">
-					<label class="sanad-phone__label" for="${input_id}">${ui.escape(o.label)}${o.required ? ' <span class="sanad-phone__req" aria-hidden="true">*</span>' : ""}</label>
+			<div class="whatsapp-kit whatsapp-kit-phone" id="${this.id}">
+				<div class="whatsapp-kit-phone__labelrow" data-slot="labelrow">
+					<label class="whatsapp-kit-phone__label" for="${input_id}">${ui.escape(o.label)}${o.required ? ' <span class="whatsapp-kit-phone__req" aria-hidden="true">*</span>' : ""}</label>
 				</div>
-				<div class="sanad-phone__box" data-slot="box" dir="ltr">
-					<button type="button" class="sanad-phone__country" data-slot="trigger" aria-haspopup="listbox" aria-expanded="false">
-						<span class="sanad-phone__iso" data-slot="iso"></span>
-						<span class="sanad-phone__dial" dir="ltr" data-slot="dial"></span>
-						<span class="sanad-phone__caret" data-slot="caret">${SVG.caret}</span>
+				<div class="whatsapp-kit-phone__box" data-slot="box" dir="ltr">
+					<button type="button" class="whatsapp-kit-phone__country" data-slot="trigger" aria-haspopup="listbox" aria-expanded="false">
+						<span class="whatsapp-kit-phone__iso" data-slot="iso"></span>
+						<span class="whatsapp-kit-phone__dial" dir="ltr" data-slot="dial"></span>
+						<span class="whatsapp-kit-phone__caret" data-slot="caret">${SVG.caret}</span>
 					</button>
-					<input class="sanad-phone__input" id="${input_id}" type="tel" dir="ltr" inputmode="numeric"
+					<input class="whatsapp-kit-phone__input" id="${input_id}" type="tel" dir="ltr" inputmode="numeric"
 						autocomplete="tel-national" aria-describedby="${hint_id}"${o.required ? ' required aria-required="true"' : ""}>
-					<span class="sanad-phone__tick" data-slot="tick" aria-hidden="true">${SVG.tick}</span>
+					<span class="whatsapp-kit-phone__tick" data-slot="tick" aria-hidden="true">${SVG.tick}</span>
 				</div>
-				<div class="sanad-phone__hint" id="${hint_id}" data-slot="msg" aria-live="polite"></div>
+				<div class="whatsapp-kit-phone__hint" id="${hint_id}" data-slot="msg" aria-live="polite"></div>
 			</div>`);
 		$(o.wrapper).append(this.$root);
 		this.$box = this.$root.find('[data-slot="box"]');
 		this.$trigger = this.$root.find('[data-slot="trigger"]');
-		this.$input = this.$root.find(".sanad-phone__input");
+		this.$input = this.$root.find(".whatsapp-kit-phone__input");
 		this.$tick = this.$root.find('[data-slot="tick"]');
 		this.$hint = this.$root.find('[data-slot="msg"]');
 
-		if (!o.label) this.$root.find(".sanad-phone__label").remove();
+		if (!o.label) this.$root.find(".whatsapp-kit-phone__label").remove();
 		if (!o.show_country) this.$trigger.remove();
 		if (o.tip) this.make_tip();
 
@@ -410,10 +410,10 @@ sanad.ui.PhoneField = class PhoneField {
 	/** The `!` bubble: enlarged with a ring until it has been opened once, then quiet. */
 	make_tip() {
 		this.$tip_btn = $(`
-			<button type="button" class="sanad-phone__tip-btn" aria-expanded="false" aria-label="${ui.escape(__("What this number is used for"))}">!</button>`).appendTo(
+			<button type="button" class="whatsapp-kit-phone__tip-btn" aria-expanded="false" aria-label="${ui.escape(__("What this number is used for"))}">!</button>`).appendTo(
 			this.$root.find('[data-slot="labelrow"]')
 		);
-		this.$tip_pop = $(`<span class="sanad-phone__tip-pop" role="tooltip" hidden>${ui.escape(this.opts.tip)}</span>`).appendTo(
+		this.$tip_pop = $(`<span class="whatsapp-kit-phone__tip-pop" role="tooltip" hidden>${ui.escape(this.opts.tip)}</span>`).appendTo(
 			this.$root.find('[data-slot="labelrow"]')
 		);
 		const open = () => {
@@ -433,7 +433,7 @@ sanad.ui.PhoneField = class PhoneField {
 
 	render_tip() {
 		if (!this.$tip_btn) return;
-		this.$tip_btn.toggleClass("sanad-phone__tip-btn--seen", !!this.state.tip_seen).attr("aria-expanded", String(!!this.state.tip));
+		this.$tip_btn.toggleClass("whatsapp-kit-phone__tip-btn--seen", !!this.state.tip_seen).attr("aria-expanded", String(!!this.state.tip));
 		this.$tip_pop.attr("hidden", this.state.tip ? null : true);
 	}
 
@@ -449,17 +449,17 @@ sanad.ui.PhoneField = class PhoneField {
 		this.state.q = "";
 		this.$trigger.attr("aria-expanded", "true");
 		this.$pop = $(`
-			<div class="sanad-phone__pop">
-				<span class="sanad-phone__search">
+			<div class="whatsapp-kit-phone__pop">
+				<span class="whatsapp-kit-phone__search">
 					${ui.ico ? ui.ico("search", "xs") : ""}
-					<input type="text" class="sanad-phone__q" role="combobox" aria-expanded="true" aria-autocomplete="list"
+					<input type="text" class="whatsapp-kit-phone__q" role="combobox" aria-expanded="true" aria-autocomplete="list"
 						aria-controls="${this.id}-list" placeholder="${ui.escape(__("Search for a country or a dialling code"))}"
 						aria-label="${ui.escape(__("Search for a country or a dialling code"))}">
 				</span>
-				<ul class="sanad-phone__list" id="${this.id}-list" role="listbox" aria-label="${ui.escape(__("Country"))}"></ul>
+				<ul class="whatsapp-kit-phone__list" id="${this.id}-list" role="listbox" aria-label="${ui.escape(__("Country"))}"></ul>
 			</div>`).appendTo(this.$box);
-		this.$list = this.$pop.find(".sanad-phone__list");
-		this.$q = this.$pop.find(".sanad-phone__q");
+		this.$list = this.$pop.find(".whatsapp-kit-phone__list");
+		this.$q = this.$pop.find(".whatsapp-kit-phone__q");
 		this.draw_list();
 		this.$q.on("input", () => {
 			this.state.q = this.$q.val() || "";
@@ -499,15 +499,15 @@ sanad.ui.PhoneField = class PhoneField {
 		const rows = this.matches();
 		this.$list.empty();
 		if (!rows.length) {
-			this.$list.append(`<li class="sanad-phone__empty" role="option" aria-selected="false">${ui.escape(__("No matching country"))}</li>`);
+			this.$list.append(`<li class="whatsapp-kit-phone__empty" role="option" aria-selected="false">${ui.escape(__("No matching country"))}</li>`);
 			return;
 		}
 		rows.forEach((c) => {
 			$(`
-				<li class="sanad-phone__opt${c.iso === current.iso ? " sanad-phone__opt--on" : ""}" role="option" tabindex="-1" aria-selected="${c.iso === current.iso}">
-					<span class="sanad-phone__opt-iso">${ui.escape(c.iso)}</span>
-					<span class="sanad-phone__opt-name">${ui.escape(__(c.name))}</span>
-					<span class="sanad-phone__opt-dial" dir="ltr">${ui.escape(c.dial)}</span>
+				<li class="whatsapp-kit-phone__opt${c.iso === current.iso ? " whatsapp-kit-phone__opt--on" : ""}" role="option" tabindex="-1" aria-selected="${c.iso === current.iso}">
+					<span class="whatsapp-kit-phone__opt-iso">${ui.escape(c.iso)}</span>
+					<span class="whatsapp-kit-phone__opt-name">${ui.escape(__(c.name))}</span>
+					<span class="whatsapp-kit-phone__opt-dial" dir="ltr">${ui.escape(c.dial)}</span>
 				</li>`)
 				.on("click", () => this.pick(c))
 				.appendTo(this.$list);
@@ -515,14 +515,14 @@ sanad.ui.PhoneField = class PhoneField {
 	}
 
 	list_key(e) {
-		const items = this.$list.children(".sanad-phone__opt").toArray();
+		const items = this.$list.children(".whatsapp-kit-phone__opt").toArray();
 		if (!items.length) return;
-		const at = items.findIndex((el) => el.classList.contains("sanad-phone__opt--cursor"));
+		const at = items.findIndex((el) => el.classList.contains("whatsapp-kit-phone__opt--cursor"));
 		if (e.key === "ArrowDown" || e.key === "ArrowUp") {
 			e.preventDefault();
 			const next = e.key === "ArrowDown" ? (at + 1) % items.length : (at - 1 + items.length) % items.length;
-			items.forEach((el) => el.classList.remove("sanad-phone__opt--cursor"));
-			items[next].classList.add("sanad-phone__opt--cursor");
+			items.forEach((el) => el.classList.remove("whatsapp-kit-phone__opt--cursor"));
+			items[next].classList.add("whatsapp-kit-phone__opt--cursor");
 			items[next].scrollIntoView({ block: "nearest" });
 		} else if (e.key === "Enter") {
 			e.preventDefault();
@@ -552,7 +552,7 @@ sanad.ui.PhoneField = class PhoneField {
 		// its country instead of cutting it to the national length (966551234567 → 966551234)
 		if (all.startsWith("00")) all = all.slice(2);
 		if (all.length > max) {
-			const intl = sanad.ui.PhoneField.with_dial(all);
+			const intl = whatsapp.ui.PhoneField.with_dial(all);
 			const hit = intl && CATALOG.slice()
 				.sort((a, b) => b.dial.length - a.dial.length || (b.main ? 1 : 0) - (a.main ? 1 : 0))
 				.find((c) => all.startsWith(c.dial) && (!c.len || all.length - c.dial.length === c.len));
@@ -563,7 +563,7 @@ sanad.ui.PhoneField = class PhoneField {
 		}
 		this.digits = all.slice(0, this.country.len || 14);
 		this.state.touched = true;
-		const masked = sanad.ui.PhoneField.mask(this.digits, this.country);
+		const masked = whatsapp.ui.PhoneField.mask(this.digits, this.country);
 		el.value = masked;
 		let seen = 0;
 		let caret = masked.length;
@@ -593,7 +593,7 @@ sanad.ui.PhoneField = class PhoneField {
 	/** True when `digits` match the region's mobile rule; an unparsable rule counts as a pass. */
 	static mobile_ok(digits, pattern) {
 		if (!pattern) return true;
-		const cache = (sanad.ui.PhoneField._mobile_re = sanad.ui.PhoneField._mobile_re || {});
+		const cache = (whatsapp.ui.PhoneField._mobile_re = whatsapp.ui.PhoneField._mobile_re || {});
 		if (!(pattern in cache)) {
 			try {
 				cache[pattern] = new RegExp(`^(?:${pattern})$`);
@@ -612,7 +612,7 @@ sanad.ui.PhoneField = class PhoneField {
 		// the region's own mobile rule, as libphonenumber publishes it and the server sends it: a
 		// landline or a typo in the first digits is refused here, not only when the server
 		// normalises the number. A region without a separate mobile rule is judged by length.
-		const start_ok = !full || !c.mobile || sanad.ui.PhoneField.mobile_ok(d, c.mobile);
+		const start_ok = !full || !c.mobile || whatsapp.ui.PhoneField.mobile_ok(d, c.mobile);
 		return { full, start_ok, valid: full && start_ok };
 	}
 
@@ -647,22 +647,22 @@ sanad.ui.PhoneField = class PhoneField {
 		const msg = this.message();
 		this.$root.find('[data-slot="iso"]').text(c.iso);
 		this.$root.find('[data-slot="dial"]').text(c.dial);
-		this.$root.find('[data-slot="caret"]').toggleClass("sanad-phone__caret--open", !!this.state.open);
+		this.$root.find('[data-slot="caret"]').toggleClass("whatsapp-kit-phone__caret--open", !!this.state.open);
 		// the placeholder is the region's own sample in national form, masked into its own groups —
 		// `501 234 5678` for Saudi Arabia, which is what the reader is about to type
 		const sample = String(c.example || "").replace(/\D/g, "").slice((c.trunk || "").length);
-		const placeholder = this.opts.placeholder || sanad.ui.PhoneField.mask(sample || "X".repeat(c.len || 9), c);
+		const placeholder = this.opts.placeholder || whatsapp.ui.PhoneField.mask(sample || "X".repeat(c.len || 9), c);
 		this.$input.attr("placeholder", placeholder);
-		if (this.$input.val() !== sanad.ui.PhoneField.mask(this.digits, c)) {
-			this.$input.val(sanad.ui.PhoneField.mask(this.digits, c));
+		if (this.$input.val() !== whatsapp.ui.PhoneField.mask(this.digits, c)) {
+			this.$input.val(whatsapp.ui.PhoneField.mask(this.digits, c));
 		}
 		this.$box
-			.toggleClass("sanad-phone__box--focus", !!this.state.focus)
-			.toggleClass("sanad-phone__box--error", !!msg.error)
-			.toggleClass("sanad-phone__box--ok", valid && this.digits.length > 0);
+			.toggleClass("whatsapp-kit-phone__box--focus", !!this.state.focus)
+			.toggleClass("whatsapp-kit-phone__box--error", !!msg.error)
+			.toggleClass("whatsapp-kit-phone__box--ok", valid && this.digits.length > 0);
 		this.$tick.attr("hidden", valid && this.digits.length ? null : true);
 		this.$input.attr("aria-invalid", msg.error ? "true" : null);
-		this.$hint.toggleClass("sanad-phone__hint--error", !!msg.error).text(msg.text);
+		this.$hint.toggleClass("whatsapp-kit-phone__hint--error", !!msg.error).text(msg.text);
 		return this;
 	}
 
@@ -670,7 +670,7 @@ sanad.ui.PhoneField = class PhoneField {
 	render_control_hint() {
 		const result = this.get_value();
 		const $i = this.$input;
-		this.$hint.removeClass("sanad-phone__hint--ok sanad-phone__hint--error");
+		this.$hint.removeClass("whatsapp-kit-phone__hint--ok whatsapp-kit-phone__hint--error");
 		if (result.empty) {
 			$i.removeAttr("aria-invalid");
 			this.$hint.text(__("Numbers without a country code are sent with {0} ({1})", [this.country.dial, __(this.country.name)]));
@@ -678,13 +678,13 @@ sanad.ui.PhoneField = class PhoneField {
 		}
 		if (result.valid) {
 			$i.removeAttr("aria-invalid");
-			this.$hint.addClass("sanad-phone__hint--ok").text(__("Will be sent to {0}", [`\u2066${sanad.ui.PhoneField.format_display(result.phone_e164, this.country)}\u2069`]));
+			this.$hint.addClass("whatsapp-kit-phone__hint--ok").text(__("Will be sent to {0}", [`\u2066${whatsapp.ui.PhoneField.format_display(result.phone_e164, this.country)}\u2069`]));
 			return result;
 		}
 		if (this.touched) $i.attr("aria-invalid", "true");
 		this.$hint
-			.addClass(this.touched ? "sanad-phone__hint--error" : "")
-			.text(__("Enter a number with its country code, e.g. {0}", [sanad.ui.PhoneField.example(this.country)]));
+			.addClass(this.touched ? "whatsapp-kit-phone__hint--error" : "")
+			.text(__("Enter a number with its country code, e.g. {0}", [whatsapp.ui.PhoneField.example(this.country)]));
 		return result;
 	}
 
@@ -701,12 +701,12 @@ sanad.ui.PhoneField = class PhoneField {
 	 * prototype's own `{iso, dial, national, e164}`.
 	 */
 	get_value() {
-		if (this.control) return sanad.ui.PhoneField.normalize(this.$input.val(), this.country);
+		if (this.control) return whatsapp.ui.PhoneField.normalize(this.$input.val(), this.country);
 		const c = this.country;
 		const { valid } = this.validity();
 		const e164 = this.digits ? `+${c.dial}${this.digits}` : "";
 		return {
-			phone: sanad.ui.PhoneField.mask(this.digits, c),
+			phone: whatsapp.ui.PhoneField.mask(this.digits, c),
 			phone_e164: valid ? e164 : null,
 			valid,
 			empty: !this.digits,
@@ -729,7 +729,7 @@ sanad.ui.PhoneField = class PhoneField {
 		let digits = to_digits(raw);
 		if (raw.startsWith("00")) digits = digits.slice(2);
 		// a stored or pasted international number without "+" is still international
-		if (raw.startsWith("+") || raw.startsWith("00") || (digits.length > (this.country.len || 14) && sanad.ui.PhoneField.with_dial(digits))) {
+		if (raw.startsWith("+") || raw.startsWith("00") || (digits.length > (this.country.len || 14) && whatsapp.ui.PhoneField.with_dial(digits))) {
 			// Longest dial code first, so `+1` never swallows `+1246`; and among the regions that
 			// share one, the library's own main region wins — twenty-five share `+1`, and without
 			// this a US number resolved to whichever sorted first.
@@ -751,14 +751,14 @@ sanad.ui.PhoneField = class PhoneField {
 
 	set_country(iso_or_name) {
 		this.chosen = true;
-		this.country = sanad.ui.PhoneField.resolve_country(iso_or_name);
+		this.country = whatsapp.ui.PhoneField.resolve_country(iso_or_name);
 		this.render();
 		return this;
 	}
 
 	/** A concrete, formatted example for the field's country, e.g. `+966 501 234 567`. */
 	example() {
-		return sanad.ui.PhoneField.example(this.country);
+		return whatsapp.ui.PhoneField.example(this.country);
 	}
 
 	focus() {
@@ -777,7 +777,7 @@ sanad.ui.PhoneField = class PhoneField {
 	}
 };
 
-export default sanad.ui.PhoneField;
+export default whatsapp.ui.PhoneField;
 
 /**
  * A phone number as a person reads it: grouped, never with "+" (owner's rule for the whole app;
@@ -789,16 +789,16 @@ export default sanad.ui.PhoneField;
  * The marks are invisible and only ever reach the screen: nothing sends this text to the server.
  */
 /** A WhatsApp group: its JID (`…@g.us`), which the app carries wherever a number goes. */
-sanad.ui.is_group = (value) => /@g\.us$/i.test(cstr(value).trim());
+whatsapp.ui.is_group = (value) => /@g\.us$/i.test(cstr(value).trim());
 
 /**
  * The tag that tells a group from a person's number, to sit after its name or JID; "" for
  * anything that is not a group. The same blue "Group" badge Quick Send has always shown.
  */
-sanad.ui.group_tag = (value) =>
-	sanad.ui.is_group(value) ? `<span class="sanad-group-tag">${sanad.ui.StatusBadge.html({ label: __("Group"), colour: "blue", icon: false })}</span>` : "";
+whatsapp.ui.group_tag = (value) =>
+	whatsapp.ui.is_group(value) ? `<span class="whatsapp-kit-group-tag">${whatsapp.ui.StatusBadge.html({ label: __("Group"), colour: "blue", icon: false })}</span>` : "";
 
-sanad.ui.phone = (value) => {
-	const text = sanad.ui.PhoneField.format_display(value);
+whatsapp.ui.phone = (value) => {
+	const text = whatsapp.ui.PhoneField.format_display(value);
 	return /^[\d ]+$/.test(text) || /^[\w.+-]+@[\w.-]+$/.test(text) ? `\u2066${text}\u2069` : text;
 };

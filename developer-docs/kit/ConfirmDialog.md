@@ -1,4 +1,4 @@
-# `sanad.ui.ConfirmDialog`
+# `whatsapp.ui.ConfirmDialog`
 
 A confirmation that states the **impact** of an action before it runs: a list of `{label, value}`
 facts (supplied by the caller, or fetched after open while a skeleton shows), an optional
@@ -13,7 +13,7 @@ no server calls itself and holds no app-specific strings.
 |---|---|---|---|
 | `title` | string | — | Dialog title. |
 | `message` | string | — | One sentence shown above the impact list. |
-| `impact` | `Array<{label, value, tone?}>` | `[]` | Facts rendered as a `<dl>`. `tone` is passed through `ui.tone()` and added as `sanad-tone--<tone>` on the value. |
+| `impact` | `Array<{label, value, tone?}>` | `[]` | Facts rendered as a `<dl>`. `tone` is passed through `ui.tone()` and added as `whatsapp-kit-tone--<tone>` on the value. |
 | `load_impact` | `() => Promise<impact[]>` | — | Called on `show()`; a skeleton shows until it resolves, then the list re-renders. A rejection appends an inline `role="alert"` error. |
 | `reason_field` | `true` \| `{label?, required?, description?}` | — | Adds a `Small Text` field `reason`. Required unless `required === false`. Label defaults to "Reason", description to "Recorded in the audit log." |
 | `ack_checkbox` | string | — | Label of a Check field; the primary button stays disabled until it is ticked. |
@@ -21,7 +21,7 @@ no server calls itself and holds no app-specific strings.
 | `confirm_label` | string | "Confirm" | Primary button text (name the verb). |
 | `cancel_label` | string | "Cancel" | Secondary button text. |
 | `size` | string | `"small"` | Passed to `frappe.ui.Dialog`. |
-| `on_confirm` | `({reason}) => Promise\|any` | — | Runs on confirm. A rejected promise keeps the dialog open, re-enables the button and toasts `err.message` via `sanad.ui.Toast.error`. |
+| `on_confirm` | `({reason}) => Promise\|any` | — | Runs on confirm. A rejected promise keeps the dialog open, re-enables the button and toasts `err.message` via `whatsapp.ui.Toast.error`. |
 | `on_cancel` | `() => void` | — | Called on Cancel, Escape, backdrop or any hide without a confirm. |
 
 ## Methods
@@ -47,7 +47,7 @@ None. Callers do their own calls inside `load_impact` / `on_confirm`.
 ## Usage
 
 ```js
-sanad.ui.ConfirmDialog.ask({
+whatsapp.ui.ConfirmDialog.ask({
   title: __("Cancel {0} messages?", [names.length]),
   impact: [{ label: __("Will be cancelled"), value: names.length, tone: "red" }],
   reason_field: true,
@@ -56,15 +56,15 @@ sanad.ui.ConfirmDialog.ask({
   confirm_label: __("Cancel messages"),
   on_confirm: ({ reason }) => frappe.xcall("my_app.api.cancel", { names, reason }),
 })
-  .then(() => sanad.ui.Toast.success(__("Cancelled")))
+  .then(() => whatsapp.ui.Toast.success(__("Cancelled")))
   .catch(() => {}); // user cancelled
 ```
 
 ## CSS hooks
 
-- Root: the dialog `$wrapper` gets `sanad-kit sanad-confirm`.
-- `sanad-confirm__message`, `sanad-confirm__impact` (the `<dl>`), `sanad-confirm__row`
-  (`dt` label / `dd.sanad-tabular` value, plus `sanad-tone--*`), `sanad-confirm__error`.
+- Root: the dialog `$wrapper` gets `whatsapp-kit whatsapp-kit-confirm`.
+- `whatsapp-kit-confirm__message`, `whatsapp-kit-confirm__impact` (the `<dl>`), `whatsapp-kit-confirm__row`
+  (`dt` label / `dd.whatsapp-kit-tabular` value, plus `whatsapp-kit-tone--*`), `whatsapp-kit-confirm__error`.
 
 ## Notes
 

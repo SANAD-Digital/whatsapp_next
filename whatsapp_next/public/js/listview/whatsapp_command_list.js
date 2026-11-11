@@ -9,7 +9,7 @@
 frappe.provide("whatsapp_next");
 
 (function () {
-	const ui = sanad.ui;
+	const ui = whatsapp.ui;
 	const DT = "WhatsApp Command";
 	// the API gates writes on either role (`_roles.MANAGER`); a System Manager is not a viewer here
 	const MANAGERS = ["WhatsApp Manager", "System Manager"];
@@ -40,11 +40,11 @@ frappe.provide("whatsapp_next");
 	function refresh_all(listview) {
 		if (!listview) return;
 		listview.refresh();
-		listview._sanad_header && listview._sanad_header.refresh(true);
+		listview._whatsapp_header && listview._whatsapp_header.refresh(true);
 	}
 
 	function set_primary(listview) {
-		if (listview._sanad_header || !listview.can_create || frappe.boot.read_only) return;
+		if (listview._whatsapp_header || !listview.can_create || frappe.boot.read_only) return;
 		listview.page.set_primary_action(__("New command"), () => open_modal(listview), "add");
 	}
 
@@ -172,7 +172,7 @@ frappe.provide("whatsapp_next");
 			listview,
 			selectable: true,
 			columns: [
-				{ fieldname: "code", label: __("Command word"), sortable: true, format: (v) => `<strong class="sanad-tabular">${ui.escape(v || "")}</strong>` },
+				{ fieldname: "code", label: __("Command word"), sortable: true, format: (v) => `<strong class="whatsapp-kit-tabular">${ui.escape(v || "")}</strong>` },
 				{
 					fieldname: "function",
 					label: __("Function"),
@@ -201,7 +201,7 @@ frappe.provide("whatsapp_next");
 	};
 
 	function setup_row_actions(listview) {
-		if (typeof ui.RowActions !== "function" || listview._sanad_datalist) return;
+		if (typeof ui.RowActions !== "function" || listview._whatsapp_datalist) return;
 		new ui.RowActions({
 			listview,
 			actions: [
@@ -238,13 +238,13 @@ frappe.provide("whatsapp_next");
 		},
 		onload(listview) {
 			ensure_modal_loaded();
-			listview._sanad_header = make_header(listview);
+			listview._whatsapp_header = make_header(listview);
 			set_primary(listview);
 			// the WhatsApp hub: ready-made commands from the platform (owner, 2026-10-29)
 			if (frappe.user.has_role(["WhatsApp Manager", "System Manager"]))
 				listview.page.add_inner_button(__("Hub"), () => whatsapp_next.hub.open("Command", { on_installed: () => listview.refresh() }));
 			if (typeof ui.FilterBar === "function") {
-				listview._sanad_filterbar = new ui.FilterBar({
+				listview._whatsapp_filterbar = new ui.FilterBar({
 					listview,
 					presets: [
 						{ type: "search", fieldname: "search", fields: ["code", "synonyms", "title", "function"], placeholder: __("Command word, synonym or function…") },
@@ -254,8 +254,8 @@ frappe.provide("whatsapp_next");
 					actions: ["group_by", "export"],
 				});
 			}
-			listview._sanad_datalist = make_datalist(listview);
-			ui.on_list_render(listview, () => enrich_rows(listview, listview._sanad_datalist));
+			listview._whatsapp_datalist = make_datalist(listview);
+			ui.on_list_render(listview, () => enrich_rows(listview, listview._whatsapp_datalist));
 			setup_row_actions(listview);
 			setup_bulk_actions(listview);
 			// The list re-sets "Add …" whenever the selection is cleared — restore the label after it.

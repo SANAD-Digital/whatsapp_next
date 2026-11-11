@@ -14,7 +14,7 @@ a notification message or a command output template.
 ```js
 frappe.ui.form.on("Message Template", {
   refresh(frm) {
-    sanad.ui.TemplateEditor.mount({
+    whatsapp.ui.TemplateEditor.mount({
       frm,
       body_field: "body",                          // Code (Jinja) / Text / Small Text / Data
       reference_doctype_field: "reference_doctype", // Link → DocType (optional)

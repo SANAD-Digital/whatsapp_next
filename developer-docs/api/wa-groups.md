@@ -15,7 +15,7 @@ numbers. WhatsApp groups are the plan feature `allow_groups`.
 Not to be confused with [groups.md](groups.md), the editor of the site's own contact groups
 (`WhatsApp Contact Group`), which never touches WhatsApp.
 
-Conventions are in [README.md](README.md). File name of this page: `wa-groups.md`. Python
+Conventions are in [README.md](README.md). File name of this page: `whatsapp-groups.md`. Python
 module: `wa_groups`. Kit keys: `"wa_groups.<fn>"`. Provider exceptions are mapped as described in
 README §5.
 
@@ -60,7 +60,7 @@ display name, and may be `null`.
 **Realtime:** none.
 
 ```js
-const { members } = await sanad.ui.call("wa_groups.members_from", {
+const { members } = await whatsapp.ui.call("wa_groups.members_from", {
   source_doctype: "WhatsApp Contact Group", names: ["VIP customers"],
 });
 ```
@@ -118,7 +118,7 @@ WhatsApp.
 **Realtime:** none.
 
 ```js
-const g = await sanad.ui.call("wa_groups.create_group", {
+const g = await whatsapp.ui.call("wa_groups.create_group", {
   device: "WA-DEV-001", name: "VIP customers",
   members: ["+966501234567", "+966507654321"], contact: "Ali Saleh",
 }, { freeze: true });
