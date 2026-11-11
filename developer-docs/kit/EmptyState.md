@@ -71,4 +71,4 @@ sanad.ui.call("home.get_dashboard")
   - `public/js/listview/`: `whatsapp_campaign_list.js`, `whatsapp_contact_group_list.js`, `whatsapp_inbound_message_list.js`
   - `public/js/screens/settings.js`
   - `whatsapp_next/page/`: `wa_contacts`, `wa_devices`, `wa_functions_center`, `wa_home`, `wa_simulator`
-- Kit users: ChatThread, Collection, ContactPicker, ConversationDrawer, DashboardBlock, DataList, Drawer, FilterBar, ListStatsCard, MessageComposer, PageHeader, PagedChildTable, QuickSend, Render, TemplateEditor and TreeGroupBy.
+- Kit users: ChatThread, Collection, ContactPicker, ConversationDrawer, DashboardBlock, DataList, Drawer, FilterBar, ListStatsCard, MessageComposer, PageHeader, PagedChildTable, QuickSend, Render and TemplateEditor.

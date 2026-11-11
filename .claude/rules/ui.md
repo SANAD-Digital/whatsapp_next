@@ -37,7 +37,7 @@ Must be copy-pasteable into any Frappe app:
 
 Kit: `Drawer` (record preview from a list, plus the **conversation variant** reading from the
 unified read layer) · `ContactPicker` (a sub-system — six sources, see the screens spec §3.2) ·
-`ListStatsCard` · `MetaDialog` · `FilterBar` · `TreeGroupBy` · `RowActions` · `BulkActions` ·
+`ListStatsCard` · `FilterBar` · `RowActions` · `BulkActions` ·
 `QuickSend` · `StatusBadge` · `EmptyState` · `Stepper` · `DashboardBlock` (a real Frappe Custom
 Block + Number Card / Dashboard Chart sources) · `Toast`.
 

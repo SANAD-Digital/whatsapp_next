@@ -19,13 +19,11 @@ loading (skeleton) / empty / error states, and every panel is keyboard-accessibl
 | `Toast` | tone + timing + aria-live wrapper over `frappe.show_alert` | QuickSend, bulk actions |
 | `ConfirmDialog` | impact rows, reason, acknowledgement, danger | pause/cancel flows, picker confirm |
 | `FilterBar` | tabs / select / date range / search bound to a list's filter area | Outbound, Inbound |
-| `TreeGroupBy` | sidebar group-by with counts | WhatsApp Numbers (`link_status`) |
 | `RowActions` | per-row overflow menu + row click | Outbound, Inbound, Queue, Numbers, Commands |
 | `BulkActions` | selection actions, native `names[]` or per-name loop with progress | Outbound, Campaigns, Queue |
 | `Stepper` | multi-step flow with "Step n of m" | ContactPicker confirm, Onboarding (phase 6) |
 | `PhoneField` | phone input with country hint and E.164 preview | ContactPicker manual source |
 | `ListStatsCard` | cards above a list (count / sum / method) with a detail modal | Campaigns "sending now" |
-| `MetaDialog` | tabbed dialog whose fields come from a DocType's meta | Commands modal |
 | `Collection` | rows as a table, list, cards, gallery or timeline, with the switch between them | drawer activity history |
 | `Drawer` | record / form / choice side panel from a list; `record` reads as a document | Outbound, Inbound, Queue |
 | `ChatThread` | message bubbles, ticks, day separators | ConversationDrawer |

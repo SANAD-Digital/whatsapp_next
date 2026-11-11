@@ -12,7 +12,6 @@ import "./Toast/index.js";
 import "./ConfirmDialog/index.js";
 // list helpers
 import "./FilterBar/index.js";
-import "./TreeGroupBy/index.js";
 import "./RowActions/index.js";
 import "./BulkActions/index.js";
 // inputs and flows
@@ -20,7 +19,6 @@ import "./Stepper/index.js";
 import "./PhoneField/index.js";
 import "./DateFilter/index.js";
 import "./ListStatsCard/index.js";
-import "./MetaDialog/index.js";
 // list renderers
 import "./DataList/index.js";
 import "./Collection/index.js";

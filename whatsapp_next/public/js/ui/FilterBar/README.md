@@ -40,8 +40,8 @@ const bar = new sanad.ui.FilterBar({
 });
 ```
 
-Options: `listview` | `page` (+ `doctype`), `wrapper`, `intro`, `actions` (`"group_by"` mounts a
-`TreeGroupBy` rail on a chosen preset field, `"export"` opens Desk's own Data Export dialog over
+Options: `listview` | `page` (+ `doctype`), `wrapper`, `intro`, `actions` (`"group_by"` drives the
+DataList's multi-level grouping, `"export"` opens Desk's own Data Export dialog over
 the checked rows or the current filters), `replace_standard_filters` (default true),
 `presets[]` (`fieldname`, `type` = `select` (default) | `tabs` | `daterange` | `search` | `period`,
 `label`, `options` — strings, `{value, label}` objects or `(txt) => Promise<…>`; for `period`:
@@ -121,8 +121,8 @@ prototype (`docs/component/Toolbar.dc.html`) and the WCAG 2.1 AA review:
   manual activation (3.2.2). Every control has an accessible name.
 - Loading inside a popover is a skeleton, errors show Retry (EmptyState); "No match for {0}" /
   "No options" empty copy.
-- Second row "Group by ▾" / "Export" reuse the kit (`TreeGroupBy`) and Desk (`DataExporter`)
-  instead of new UI; the group-by rail is a chip rail with counts.
+- Second row "Group by ▾" / "Export" reuse the kit (`DataList` grouping) and Desk (`DataExporter`)
+  instead of new UI.
 - Reserved bar height, `--sanad-gap-*` spacing, global kit focus ring, full-width search and a
   wrapping toolbar under 768 px; announcements are sentences ("Filters cleared.").
 

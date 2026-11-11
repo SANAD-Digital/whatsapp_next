@@ -85,8 +85,7 @@ sanad.ui.call(key, args = {}, { silent = false, freeze = false, freeze_message }
 - A failure rejects with an `Error` built by `sanad.ui.error_from(r)`. It carries `message` (the
   server's own `_server_messages`, or "You are offline" / "Something went wrong. Please try
   again."), plus `exc_type` and `http_status`.
-- A few components call Frappe core methods through `frappe.xcall` instead: `TreeGroupBy` (group-by
-  counts), `DashboardBlock` (Number Card / Dashboard Chart / report endpoints) and `AlertEditor`
+- A few components call Frappe core methods through `frappe.xcall` instead: `DashboardBlock` (Number Card / Dashboard Chart / report endpoints) and `AlertEditor`
   (`frappe.desk.query_report.get_script`).
 
 The host registers its keys once, with `sanad.ui.configure`. This app does it in
@@ -269,7 +268,6 @@ to `whatsapp_next/`: `page/<x>` means `whatsapp_next/page/<x>/<x>.js`, and `list
 | [FunctionDetail](FunctionDetail.md) | Function window: details, version log, dry-run | `page/wa_functions_center` |
 | [ListStatsCard](ListStatsCard.md) | Stat cards above a list, with a detail modal | Inbound list; PageHeader |
 | [MessageComposer](MessageComposer.md) | Editor for the ordered messages a record sends: rail, editor, preview | `screens/campaign/messages.js` |
-| [MetaDialog](MetaDialog.md) | Tabbed dialog built from DocType meta | **No live use** |
 | [OverlayPanel](OverlayPanel.md) | The prototype's overlay panel for forms (modal or drawer) | `page/wa_contacts`, `page/wa_functions_center`, `page/wa_simulator` |
 | [PageHeader](PageHeader.md) | Screen header above a list or page: title, primary action, KPI row, banner | 8 list views, `page/wa_home`, `page/wa_devices`, `page/wa_contacts`, `page/wa_functions_center` |
 | [PagedChildTable](PagedChildTable.md) | Paged read-only table in place of a large child grid | `form/whatsapp_contact_group.js` |
@@ -282,4 +280,3 @@ to `whatsapp_next/`: `page/<x>` means `whatsapp_next/page/<x>/<x>.js`, and `list
 | [Stepper](Stepper.md) | Multi-step flow with "Step n of m" | `page/wa_devices`; ContactPicker Excel source |
 | [TemplateEditor](TemplateEditor.md) | Variables sidebar, sample picker and live preview | `form/whatsapp_template.js` |
 | [Toast](Toast.md) | Tone and timing wrapper over `frappe.show_alert` | Almost everywhere |
-| [TreeGroupBy](TreeGroupBy.md) | Sidebar group-by with counts | **No live use** |
