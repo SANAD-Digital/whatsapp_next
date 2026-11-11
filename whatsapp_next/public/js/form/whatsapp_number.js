@@ -5,12 +5,12 @@
 frappe.ui.form.on("WhatsApp Number", {
 	refresh(frm) {
 		if (frm.is_new()) return;
-		const N = whatsapp_next.numbers;
+		const number_helpers = whatsapp_next.numbers;
 		const doc = frm.doc;
 		const reload = { refresh: () => frm.reload_doc() };
 		const individual = !doc.number_type || doc.number_type === "Individual";
 
-		frm.add_custom_button(__("Open conversation"), () => N.open_conversation(doc, reload));
+		frm.add_custom_button(__("Open conversation"), () => number_helpers.open_conversation(doc, reload));
 		if (doc.number_type === "Individual" && frappe.user.has_role(["WhatsApp Agent", "WhatsApp Manager", "System Manager"])) {
 			frm.add_custom_button(__("Refresh WhatsApp profile"), () =>
 				whatsapp_next.refresh_profiles("WhatsApp Number", [doc.name], { on_done: () => frm.reload_doc() })
@@ -19,20 +19,20 @@ frappe.ui.form.on("WhatsApp Number", {
 
 		const can_send = frappe.user.has_role(["WhatsApp Agent", "WhatsApp Manager", "System Manager"]);
 		if (typeof whatsapp.ui.QuickSend === "function" && can_send && doc.number_type !== "LID") {
-			frm.add_custom_button(__("Quick send"), () => N.quick_send(doc));
+			frm.add_custom_button(__("Quick send"), () => number_helpers.quick_send(doc));
 		}
 
 		if (doc.contact) {
 			frm.add_custom_button(__("Open contact"), () => whatsapp.ui.ConversationDrawer.open_contact(doc.contact));
 			if (frappe.user.has_role(["WhatsApp Manager", "System Manager"])) {
-				frm.add_custom_button(__("Unlink"), () => N.unlink_number(doc, reload));
+				frm.add_custom_button(__("Unlink"), () => number_helpers.unlink_number(doc, reload));
 			}
 		} else if (individual && frappe.user.has_role(["WhatsApp Contact User", "WhatsApp Manager", "WhatsApp Agent", "System Manager"])) {
-			frm.add_custom_button(__("Add as contact"), () => N.link_convert_dialog(doc, () => frm.reload_doc()));
+			frm.add_custom_button(__("Add as contact"), () => number_helpers.link_convert_dialog(doc, () => frm.reload_doc()));
 		}
 
 		if (individual && can_send) {
-			frm.add_custom_button(doc.conversation_confirmed ? __("Remove confirmation") : __("Confirm conversation"), () => N.confirm_conversation(doc, reload));
+			frm.add_custom_button(doc.conversation_confirmed ? __("Remove confirmation") : __("Confirm conversation"), () => number_helpers.confirm_conversation(doc, reload));
 		}
 	},
 });

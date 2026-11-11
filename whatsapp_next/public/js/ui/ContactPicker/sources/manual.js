@@ -55,9 +55,9 @@ export class ManualSource extends BaseSource {
 					// a textarea that lost focus has no caret to put back
 				}
 			}
-			const n = this.$text.val().split(/\r?\n/).filter((l) => l.trim()).length;
-			this.$count.text(n ? __("{0} lines", [ui.format_integer(n)]) : "");
-			this.$add.prop("disabled", !n);
+			const line_count = this.$text.val().split(/\r?\n/).filter((l) => l.trim()).length;
+			this.$count.text(line_count ? __("{0} lines", [ui.format_integer(line_count)]) : "");
+			this.$add.prop("disabled", !line_count);
 		});
 		this.$text.on("keydown", (e) => {
 			if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
@@ -108,10 +108,10 @@ export class ManualSource extends BaseSource {
 			this.$fixes.attr("hidden", true).empty();
 			return;
 		}
-		const n = this.pending.length;
+		const pending_count = this.pending.length;
 		const $head = $(`
 			<div class="whatsapp-kit-picker__fixes-head">
-				<span class="whatsapp-kit-picker__fixes-title">${ui.escape(ui.plural(n, { one: __("{0} line needs a correction", null, "one"), two: __("{0} lines need a correction", null, "two"), few: __("{0} lines need a correction", null, "few"), many: __("{0} lines need a correction", null, "many"), other: __("{0} lines need a correction") }))}</span>
+				<span class="whatsapp-kit-picker__fixes-title">${ui.escape(ui.plural(pending_count, { one: __("{0} line needs a correction", null, "one"), two: __("{0} lines need a correction", null, "two"), few: __("{0} lines need a correction", null, "few"), many: __("{0} lines need a correction", null, "many"), other: __("{0} lines need a correction") }))}</span>
 				<span class="whatsapp-kit-picker__note">${ui.escape(__("Edit the text and press Enter, or Fix."))}</span>
 				<button type="button" class="btn btn-default btn-xs" data-act="fix-all">${ui.escape(__("Fix all"))}</button>
 				<button type="button" class="btn btn-default btn-xs" data-act="drop-all">${ui.escape(__("Ignore all"))}</button>
@@ -170,8 +170,8 @@ export class ManualSource extends BaseSource {
 					else this.$text.trigger("focus");
 					return;
 				}
-				const bad = (r.invalid || [])[0];
-				this.pending[i] = Object.assign(this.as_pending(bad || { phone: raw }), { raw });
+				const invalid_entry = (r.invalid || [])[0];
+				this.pending[i] = Object.assign(this.as_pending(invalid_entry || { phone: raw }), { raw });
 				$row.removeClass("whatsapp-kit-picker__fix--busy").find("button").prop("disabled", false);
 				$row.find(".whatsapp-kit-picker__fix-reason").text(this.pending[i].error);
 				$row.addClass("whatsapp-kit-picker__fix--still");

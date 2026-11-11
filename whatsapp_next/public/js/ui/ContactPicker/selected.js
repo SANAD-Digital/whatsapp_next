@@ -60,11 +60,11 @@ export class SelectedTab {
 
 	run_preview() {
 		const rows = Array.from(this.picker.selection.values());
-		const rev = this.picker.revision;
+		const revision = this.picker.revision;
 		if (!rows.length) {
 			this.preview = { available: [], already_added: [], invalid: [], duplicates_in_selection: [], known_count: 0 };
 			this.preview_size = 0;
-			this.preview_rev = rev;
+			this.preview_rev = revision;
 			this.buckets.clear();
 			this.render();
 			return Promise.resolve(this.preview);
@@ -83,10 +83,10 @@ export class SelectedTab {
 			)
 			.finally(() => window.clearTimeout(slow))
 			.then((p) => {
-				if (rev !== this.picker.revision) return this.preview; // stale — a newer preview is on its way
+				if (revision !== this.picker.revision) return this.preview; // stale — a newer preview is on its way
 				this.preview = p;
 				this.preview_size = rows.length;
-				this.preview_rev = rev;
+				this.preview_rev = revision;
 				this.buckets.clear();
 				["available", "already_added", "invalid", "duplicates_in_selection"].forEach((bucket) => {
 					(p[bucket] || []).forEach((row) => this.buckets.set(this.picker.row_key(row), { bucket, error: row.error }));
@@ -155,8 +155,8 @@ export class SelectedTab {
 			this.state = new whatsapp.ui.EmptyState({ wrapper: this.$list, state: "empty", size: "sm", title: __("Nothing selected yet"), description: __("Pick numbers from one of the sources.") });
 			return;
 		}
-		const q = this.txt;
-		const visible = q ? entries.filter(([, r]) => String(r.display_name || "").toLowerCase().includes(q) || String(r.phone_e164 || r.phone || "").includes(q)) : entries;
+		const search_text = this.txt;
+		const visible = search_text ? entries.filter(([, r]) => String(r.display_name || "").toLowerCase().includes(search_text) || String(r.phone_e164 || r.phone || "").includes(search_text)) : entries;
 		if (!visible.length) {
 			this.$list.empty();
 			this.state = new whatsapp.ui.EmptyState({ wrapper: this.$list, state: "empty", size: "sm", title: __("No selected number matches your search.") });

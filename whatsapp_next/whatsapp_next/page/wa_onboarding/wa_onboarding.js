@@ -238,9 +238,9 @@ frappe.provide("whatsapp_next.onboarding");
 		const nu = "23456789";
 		const sy = "!@#$%&*?";
 		const all = up + lo + nu + sy;
-		const pick = (set) => set[Math.floor(Math.random() * set.length)];
-		const out = [pick(up), pick(lo), pick(nu), pick(sy)];
-		while (out.length < 14) out.push(pick(all));
+		const pick_random_character = (set) => set[Math.floor(Math.random() * set.length)];
+		const out = [pick_random_character(up), pick_random_character(lo), pick_random_character(nu), pick_random_character(sy)];
+		while (out.length < 14) out.push(pick_random_character(all));
 		return out.sort(() => Math.random() - 0.5).join("");
 	}
 
@@ -869,7 +869,7 @@ frappe.provide("whatsapp_next.onboarding");
 			const $field = $input.closest(".whatsapp-field");
 			const $hint = $field.find('[data-slot="hint"]');
 			const tried = this.s.tried;
-			const set = (tone, text) => {
+			const show_field_hint = (tone, text) => {
 				$field.removeClass("whatsapp-onboarding__ok whatsapp-onboarding__bad");
 				if (tone) $field.addClass(tone === "ok" ? "whatsapp-onboarding__ok" : "whatsapp-onboarding__bad");
 				$input.attr("aria-invalid", tone === "bad" ? "true" : null);
@@ -878,21 +878,21 @@ frappe.provide("whatsapp_next.onboarding");
 				);
 			};
 
-			if (key === "org") return set(tried && !this.f.org ? "bad" : null, tried && !this.f.org ? __("Enter the company name as it stands in the commercial register") : "");
-			if (key === "person") return set(tried && !this.f.person ? "bad" : null, tried && !this.f.person ? __("Enter the name of the person who owns the account") : "");
+			if (key === "org") return show_field_hint(tried && !this.f.org ? "bad" : null, tried && !this.f.org ? __("Enter the company name as it stands in the commercial register") : "");
+			if (key === "person") return show_field_hint(tried && !this.f.person ? "bad" : null, tried && !this.f.person ? __("Enter the name of the person who owns the account") : "");
 			if (key === "email") {
-				if (!this.f.email) return set(null, __("For invoices and account recovery."));
+				if (!this.f.email) return show_field_hint(null, __("For invoices and account recovery."));
 				const ok = EMAIL_RE.test(this.f.email);
-				return set(ok ? "ok" : "bad", ok ? __("The email format is valid") : __("The email format is not valid — for example email@company.com"));
+				return show_field_hint(ok ? "ok" : "bad", ok ? __("The email format is valid") : __("The email format is not valid — for example email@company.com"));
 			}
 			if (key === "password") {
-				const pw = this.f.password;
-				const score = pw_score(pw);
-				const tone = !pw ? "" : score <= 1 ? "danger" : score === 2 ? "warn" : "ok";
+				const password = this.f.password;
+				const score = pw_score(password);
+				const tone = !password ? "" : score <= 1 ? "danger" : score === 2 ? "warn" : "ok";
 				$card.find('[data-slot="pwbars"] .whatsapp-onboarding__pwbar').each((i, bar) => {
 					$(bar).attr("class", `whatsapp-onboarding__pwbar${i < score && tone ? ` whatsapp-onboarding__pwbar--${tone}` : ""}`);
 				});
-				const text = !pw
+				const text = !password
 					? __("At least 8 characters, with digits, capitals, small letters and a symbol")
 					: score <= 1
 						? __("Weak — add digits, capital letters and a symbol")
@@ -902,22 +902,22 @@ frappe.provide("whatsapp_next.onboarding");
 								? __("Strong")
 								: __("Very strong");
 				// an empty required field reads as missing once "Next" was pressed, like the others
-				if (!pw && tried) set("bad", __("Choose a password for the account"));
-				else set(!pw ? null : score <= 1 ? "bad" : score === 2 ? null : "ok", text);
+				if (!password && tried) show_field_hint("bad", __("Choose a password for the account"));
+				else show_field_hint(!password ? null : score <= 1 ? "bad" : score === 2 ? null : "ok", text);
 				return this.refresh_field($card, "password2");
 			}
 			if (key === "password2") {
-				const p2 = this.f.password2;
-				if (!p2) return set(tried ? "bad" : null, __("Type the password again to confirm it"));
-				const ok = p2 === this.f.password;
-				return set(ok ? "ok" : "bad", ok ? __("They match") : __("The two passwords do not match"));
+				const password_confirmation = this.f.password2;
+				if (!password_confirmation) return show_field_hint(tried ? "bad" : null, __("Type the password again to confirm it"));
+				const ok = password_confirmation === this.f.password;
+				return show_field_hint(ok ? "ok" : "bad", ok ? __("They match") : __("The two passwords do not match"));
 			}
 			if (key === "coupon") {
 				const raw = (this.f.coupon || "").trim();
 				this.coupon_ok = false;
-				if (!raw) return set(null, __("If one of our customers invited you, enter their coupon and start with one extra free month."));
-				if (!COUPON_RE.test(raw)) return set("bad", __("The coupon's shape is not right — for example BSHQ-FREE2."));
-				set(null, __("Checking the coupon…"));
+				if (!raw) return show_field_hint(null, __("If one of our customers invited you, enter their coupon and start with one extra free month."));
+				if (!COUPON_RE.test(raw)) return show_field_hint("bad", __("The coupon's shape is not right — for example BSHQ-FREE2."));
+				show_field_hint(null, __("Checking the coupon…"));
 				return this.check_coupon($card, raw);
 			}
 			return this;
@@ -932,10 +932,10 @@ frappe.provide("whatsapp_next.onboarding");
 			if (!this._coupon_debounce) {
 				this._coupon_debounce = ui.debounce((raw) => {
 					this._coupon_seq = (this._coupon_seq || 0) + 1;
-					const seq = this._coupon_seq;
+					const _coupon_seq = this._coupon_seq;
 					ui.call("onboarding.validate_coupon", { code: raw }, { silent: true })
 						.then((r) => {
-							if (seq !== this._coupon_seq || (this.f.coupon || "").trim() !== raw) return;
+							if (_coupon_seq !== this._coupon_seq || (this.f.coupon || "").trim() !== raw) return;
 							// `{ok, valid, message, reason}` — an unusable coupon answers normally
 							const ok = !!(r && r.valid);
 							this.coupon_ok = ok;
@@ -947,7 +947,7 @@ frappe.provide("whatsapp_next.onboarding");
 							this.set_coupon_hint($card, ok ? "ok" : "bad", text);
 						})
 						.catch((err) => {
-							if (seq !== this._coupon_seq) return;
+							if (_coupon_seq !== this._coupon_seq) return;
 							this.coupon_ok = false;
 							this.set_coupon_hint($card, "bad", err.message);
 						});
@@ -975,7 +975,7 @@ frappe.provide("whatsapp_next.onboarding");
 			};
 			this.close_sector = close;
 
-			const open = () => {
+			const open_sector_list = () => {
 				if ($card.find(".whatsapp-onboarding__sector-pop").length) return close();
 				const $pop = $(`
 					<div class="whatsapp-onboarding__sector-pop">
@@ -989,7 +989,7 @@ frappe.provide("whatsapp_next.onboarding");
 				const $list = $pop.find(".whatsapp-onboarding__sector-list");
 				const $q = $pop.find(".whatsapp-onboarding__sector-q");
 
-				const draw = () => {
+				const render_sector_options = () => {
 					const q = ($q.val() || "").trim();
 					const all = SECTORS().concat([SECTOR_OTHER()]);
 					const rows = q ? all.filter((l) => l.toLowerCase().indexOf(q.toLowerCase()) >= 0) : all;
@@ -1015,8 +1015,8 @@ frappe.provide("whatsapp_next.onboarding");
 							.appendTo($list);
 					}
 				};
-				draw();
-				$q.on("input", draw);
+				render_sector_options();
+				$q.on("input", render_sector_options);
 				$q.on("keydown", (e) => {
 					const items = $list.children().toArray();
 					if (!items.length) return;
@@ -1035,7 +1035,7 @@ frappe.provide("whatsapp_next.onboarding");
 				window.setTimeout(() => $q.trigger("focus"), 20);
 			};
 
-			$card.on("click", '[data-act="sector-toggle"]', open);
+			$card.on("click", '[data-act="sector-toggle"]', open_sector_list);
 			$card.on("click", '[data-act="sector-list"]', () => {
 				this.f.sector = "";
 				this.f.sector_other = "";
@@ -1044,7 +1044,7 @@ frappe.provide("whatsapp_next.onboarding");
 			$card.on("keydown", '[data-act="sector-toggle"]', (e) => {
 				if (e.key === "ArrowDown" || e.key === " " || e.key === "Enter") {
 					e.preventDefault();
-					open();
+					open_sector_list();
 				}
 			});
 
@@ -1132,8 +1132,8 @@ frappe.provide("whatsapp_next.onboarding");
 
 			$box.on("scroll", () => {
 				if (this.s.read) return;
-				const el = $box[0];
-				if (el.scrollTop + el.clientHeight >= el.scrollHeight - 12) {
+				const terms_box = $box[0];
+				if (terms_box.scrollTop + terms_box.clientHeight >= terms_box.scrollHeight - 12) {
 					this.s.read = true;
 					draw_gate();
 					ui.announce(__("The terms have been read to the end. You can create the account."));
@@ -1141,8 +1141,8 @@ frappe.provide("whatsapp_next.onboarding");
 			});
 			// a box that does not scroll can never reach its own end: read it as read
 			window.setTimeout(() => {
-				const el = $box[0];
-				if (el && !this.s.read && el.scrollHeight <= el.clientHeight + 12) {
+				const terms_box = $box[0];
+				if (terms_box && !this.s.read && terms_box.scrollHeight <= terms_box.clientHeight + 12) {
 					this.s.read = true;
 					draw_gate();
 				}
@@ -1234,18 +1234,18 @@ frappe.provide("whatsapp_next.onboarding");
 						: __("The platform sent a code to your email. Enter it here and the account is activated."),
 			});
 
-			const col = (k, v, mono) =>
+			const render_route_column = (k, v, mono) =>
 				`<span class="whatsapp-onboarding__route-col">
 					<span class="whatsapp-onboarding__route-k">${escape_html(k)}</span>
 					<span class="whatsapp-onboarding__route-v${mono ? " whatsapp-onboarding__route-v--mono" : ""}" dir="ltr">${escape_html(v)}</span>
 				</span>`;
 			const route_box = by_whatsapp
-				? col(__("From your registered number"), own, true) +
+				? render_route_column(__("From your registered number"), own, true) +
 				  `<span class="whatsapp-onboarding__route-arrow">${render_icon("chevronEnd", "sm")}</span>` +
 				  platform_contact(route.platform_username, route.platform_phone)
-				: col(__("From the platform"), __("WhatsappNext")) +
+				: render_route_column(__("From the platform"), __("WhatsappNext")) +
 				  `<span class="whatsapp-onboarding__route-arrow">${render_icon("chevronEnd", "sm")}</span>` +
-				  col(__("To your email"), route.email || this.f.email, true);
+				  render_route_column(__("To your email"), route.email || this.f.email, true);
 
 			const text = by_whatsapp ? `${CODE_PREFIX} ${route.code}` : "";
 			const wa_link = by_whatsapp ? wa_send_link(route.platform_phone, route.code) : "";
@@ -1353,7 +1353,7 @@ frappe.provide("whatsapp_next.onboarding");
 		run_countdown($card) {
 			this.stop_timers();
 			const $resend = $card.find('[data-act="resend"]');
-			const tick = () => {
+			const update_resend_countdown = () => {
 				// counted from the code's own expiry, not decremented: a background tab runs its
 				// timers once a minute at best, and the count then fell behind the real code
 				if (this.ctx.code_expires) this.s.left = Math.max(0, Math.round((this.ctx.code_expires - Date.now()) / 1000));
@@ -1364,8 +1364,8 @@ frappe.provide("whatsapp_next.onboarding");
 				if (this.s.verify === "idle") this.draw_verify_state($card);
 				if (!this.ctx.code_expires && this.s.left > 0) this.s.left -= 1;
 			};
-			tick();
-			this._tick = window.setInterval(tick, 1000);
+			update_resend_countdown();
+			this._tick = window.setInterval(update_resend_countdown, 1000);
 		}
 
 		/** `true` when a password is at hand to finish with; otherwise says so and points at the field. */
@@ -1556,7 +1556,7 @@ frappe.provide("whatsapp_next.onboarding");
 
 		watch_signup() {
 			this.stop_signup_watch();
-			const seen = (status, expires_in) => {
+			const apply_signup_status = (status, expires_in) => {
 				// the platform's own clock: the countdown follows what is really left
 				if (expires_in != null && status === "Pending Verification") this.ctx.code_expires = Date.now() + cint(expires_in) * 1000;
 				if (status === "Verified" && this.s.stage === "verify" && !this._finishing) {
@@ -1571,22 +1571,22 @@ frappe.provide("whatsapp_next.onboarding");
 					ui.announce(__("The sign-up was confirmed on the platform."));
 				}
 			};
-			const read = () =>
+			const read_signup_status = () =>
 				this.ctx.request_key &&
 				ui.call("onboarding.get_signup_status", { request_key: this.ctx.request_key }, { silent: true })
-					.then((r) => seen(r && r.status, r && r.expires_in))
+					.then((r) => apply_signup_status(r && r.status, r && r.expires_in))
 					.catch(() => {});
 			// the platform's call (webhooks/v1/signup.py), passed on the moment it arrives; the page
 			// reads the request only when the connection comes back or the person returns to the tab
 			this._stop_signup_listen = ui.listen(
 				"wa:signup:status",
 				(data) => {
-					if (data && data.request_key === this.ctx.request_key) seen(data.status);
+					if (data && data.request_key === this.ctx.request_key) apply_signup_status(data.status);
 				},
-				{ on_connect: read }
+				{ on_connect: read_signup_status }
 			);
 			// once right away: after a reload the number may be confirmed already
-			read();
+			read_signup_status();
 		}
 
 		/** The platform saw the confirming message: set the password and link the site. */
@@ -2293,14 +2293,14 @@ frappe.provide("whatsapp_next.onboarding");
 		// page taller without end. There the window scrolls, under the navbar.
 		const bounded = section && ["auto", "scroll"].includes(getComputedStyle(section).overflowY);
 		const scroller = bounded ? section : document.scrollingElement;
-		const set = () => {
+		const set_scroller_height = () => {
 			const top = bounded ? 0 : $(".navbar").outerHeight() || 0;
 			wrapper.style.setProperty("--whatsapp-onb-h", `${scroller.clientHeight - top}px`);
 		};
-		set();
+		set_scroller_height();
 		scroller.scrollTop = 0;
 		if (!wrapper._wa_fit && typeof ResizeObserver === "function") {
-			wrapper._wa_fit = new ResizeObserver(set);
+			wrapper._wa_fit = new ResizeObserver(set_scroller_height);
 			wrapper._wa_fit.observe(scroller);
 		}
 	}

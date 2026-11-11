@@ -111,15 +111,15 @@ frappe.provide("whatsapp_next.campaigns");
 	 */
 	campaign_helpers.bar_html = (doc, { paused } = {}) => {
 		const total = Math.max(campaign_helpers.messages_of_doc(doc), 1);
-		const w = (n) => `${Math.max(0, (cint(n) * 100) / total).toFixed(2)}%`;
+		const format_segment_width = (n) => `${Math.max(0, (cint(n) * 100) / total).toFixed(2)}%`;
 		return `<span class="whatsapp-strip__bar${paused ? " whatsapp-strip__bar--paused" : ""}" role="img"
 				aria-label="${escape_html(__("{0} sent, {1} delivered, {2} read, {3} failed, of {4} messages", [
 					format_integer(campaign_helpers.handed_of_doc(doc)), format_integer(doc.delivered_count), format_integer(doc.read_count), format_integer(doc.failed_count), format_integer(campaign_helpers.messages_of_doc(doc)),
 				]))}">
-			<span class="whatsapp-strip__seg whatsapp-strip__seg--read" style="inline-size:${w(doc.read_count)}"></span>
-			<span class="whatsapp-strip__seg whatsapp-strip__seg--delivered" style="inline-size:${w(doc.delivered_count)}"></span>
-			<span class="whatsapp-strip__seg whatsapp-strip__seg--sent" style="inline-size:${w(doc.sent_count)}"></span>
-			<span class="whatsapp-strip__seg whatsapp-strip__seg--failed" style="inline-size:${w(doc.failed_count)}"></span>
+			<span class="whatsapp-strip__seg whatsapp-strip__seg--read" style="inline-size:${format_segment_width(doc.read_count)}"></span>
+			<span class="whatsapp-strip__seg whatsapp-strip__seg--delivered" style="inline-size:${format_segment_width(doc.delivered_count)}"></span>
+			<span class="whatsapp-strip__seg whatsapp-strip__seg--sent" style="inline-size:${format_segment_width(doc.sent_count)}"></span>
+			<span class="whatsapp-strip__seg whatsapp-strip__seg--failed" style="inline-size:${format_segment_width(doc.failed_count)}"></span>
 		</span>`;
 	};
 
@@ -353,14 +353,14 @@ frappe.provide("whatsapp_next.campaigns");
 	 */
 	campaign_helpers.available_verbs = (doc, { after, messages = 1 } = {}) => {
 		if (!campaign_helpers.is_manager()) return [];
-		const s = doc.status;
+		const status = doc.status;
 		const out = [];
-		if (campaign_helpers.STARTABLE.includes(s)) out.push({ key: "start", label: __("Start"), tone: "primary", run: () => campaign_helpers.start(doc, { after, messages }) });
-		if (s === "Draft") out.push({ key: "schedule", label: __("Schedule"), run: () => campaign_helpers.schedule(doc, { after }) });
-		if (s === "Scheduled") out.push({ key: "unschedule", label: __("Unschedule"), run: () => campaign_helpers.unschedule(doc, { after }) });
-		if (["Running", "Queued"].includes(s)) out.push({ key: "pause", label: __("Pause"), run: () => campaign_helpers.pause(doc, { after }) });
-		if (s === "Paused") out.push({ key: "resume", label: __("Resume"), tone: "primary", run: () => campaign_helpers.resume(doc, { after }) });
-		if (!campaign_helpers.TERMINAL.includes(s)) out.push({ key: "cancel", label: __("Cancel campaign"), tone: "danger", run: () => campaign_helpers.cancel(doc, { after }) });
+		if (campaign_helpers.STARTABLE.includes(status)) out.push({ key: "start", label: __("Start"), tone: "primary", run: () => campaign_helpers.start(doc, { after, messages }) });
+		if (status === "Draft") out.push({ key: "schedule", label: __("Schedule"), run: () => campaign_helpers.schedule(doc, { after }) });
+		if (status === "Scheduled") out.push({ key: "unschedule", label: __("Unschedule"), run: () => campaign_helpers.unschedule(doc, { after }) });
+		if (["Running", "Queued"].includes(status)) out.push({ key: "pause", label: __("Pause"), run: () => campaign_helpers.pause(doc, { after }) });
+		if (status === "Paused") out.push({ key: "resume", label: __("Resume"), tone: "primary", run: () => campaign_helpers.resume(doc, { after }) });
+		if (!campaign_helpers.TERMINAL.includes(status)) out.push({ key: "cancel", label: __("Cancel campaign"), tone: "danger", run: () => campaign_helpers.cancel(doc, { after }) });
 		return out;
 	};
 })();

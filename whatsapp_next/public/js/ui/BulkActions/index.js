@@ -26,17 +26,17 @@ whatsapp.ui.BulkActions = class BulkActions {
 	}
 
 	mount() {
-		const lv = this.listview;
+		const listview = this.listview;
 		// roles / perm are decided once at mount; `condition(docs)` is re-evaluated per selection
 		const allowed = ui.visible_actions(this.opts.actions.map((a) => Object.assign({}, a, { condition: undefined })), null, this.doctype);
 		this.opts.actions.filter((a) => allowed.some((x) => x.label === a.label && x.method === a.method)).forEach((action) => {
-			const $item = lv.page.add_actions_menu_item(this.label_for(action, 0), () => this.run_bulk_action(action), false);
+			const $item = listview.page.add_actions_menu_item(this.label_for(action, 0), () => this.run_bulk_action(action), false);
 			$item.addClass("whatsapp-kit-bulk__item");
 			this.items.push({ action, $item });
 		});
 		// count in the label + condition(docs) whenever the selection changes
-		const orig = lv.on_row_checked.bind(lv);
-		lv.on_row_checked = (...a) => {
+		const orig = listview.on_row_checked.bind(listview);
+		listview.on_row_checked = (...a) => {
 			const r = orig(...a);
 			this.update();
 			return r;
@@ -67,8 +67,8 @@ whatsapp.ui.BulkActions = class BulkActions {
 	// ---- run -------------------------------------------------------------------------------
 
 	async run_bulk_action(action) {
-		const lv = this.listview;
-		const docs = lv.get_checked_items();
+		const listview = this.listview;
+		const docs = listview.get_checked_items();
 		const names = docs.map((d) => d.name);
 		if (!names.length) {
 			whatsapp.ui.Toast.info(__("Select at least one row first."));
@@ -90,7 +90,7 @@ whatsapp.ui.BulkActions = class BulkActions {
 				}
 			}
 		}
-		lv.disable_list_update = true;
+		listview.disable_list_update = true;
 		let result;
 		try {
 			if (typeof action.handler === "function") {
@@ -101,14 +101,14 @@ whatsapp.ui.BulkActions = class BulkActions {
 				result = await this.run_native(action, names, docs, payload);
 			}
 		} catch (err) {
-			lv.disable_list_update = false;
+			listview.disable_list_update = false;
 			if (err && err.message !== "cancelled") whatsapp.ui.Toast.error(err);
 			return;
 		}
-		lv.disable_list_update = false;
+		listview.disable_list_update = false;
 		if (result !== undefined) this.report(action, result, names);
-		lv.clear_checked_items();
-		lv.refresh();
+		listview.clear_checked_items();
+		listview.refresh();
 		if (typeof action.on_done === "function") action.on_done(result, names);
 	}
 
@@ -136,16 +136,16 @@ whatsapp.ui.BulkActions = class BulkActions {
 			},
 		});
 		dialog.$wrapper.addClass("whatsapp-kit whatsapp-kit-bulk__dialog");
-		const $p = dialog.get_field("progress").$wrapper;
+		const $progress_wrapper = dialog.get_field("progress").$wrapper;
 		// the live region is rendered once; each tick only updates its text and aria-valuenow
-		$p.html(`
+		$progress_wrapper.html(`
 			<div class="whatsapp-kit-bulk__progress" role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="0" aria-label="${ui.escape(label)}">
 				<div class="whatsapp-kit-bulk__bar" style="width:0%"></div>
 			</div>
 			<div class="whatsapp-kit-bulk__status" aria-live="polite" aria-atomic="true"></div>`);
-		const $bar = $p.find(".whatsapp-kit-bulk__bar");
-		const $meter = $p.find(".whatsapp-kit-bulk__progress");
-		const $status = $p.find(".whatsapp-kit-bulk__status");
+		const $bar = $progress_wrapper.find(".whatsapp-kit-bulk__bar");
+		const $meter = $progress_wrapper.find(".whatsapp-kit-bulk__progress");
+		const $status = $progress_wrapper.find(".whatsapp-kit-bulk__status");
 		const render = (i) => {
 			$bar.css("width", `${Math.round((i / total) * 100)}%`);
 			$meter.attr("aria-valuenow", i);
@@ -158,7 +158,7 @@ whatsapp.ui.BulkActions = class BulkActions {
 		render(0);
 		dialog.show();
 		const extra = (name, doc) => (typeof action.args === "function" ? action.args([name], { docs: doc ? [doc] : [], reason: payload.reason }) : {});
-		const loop = async () => {
+		const call_action_per_name = async () => {
 			for (let i = 0; i < total; i++) {
 				if (cancelled) {
 					result.cancelled = true;
@@ -179,7 +179,7 @@ whatsapp.ui.BulkActions = class BulkActions {
 			dialog.hide();
 			return result;
 		};
-		return loop();
+		return call_action_per_name();
 	}
 
 	report(action, result, names) {

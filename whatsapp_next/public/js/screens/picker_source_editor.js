@@ -144,8 +144,8 @@ frappe.provide("whatsapp_next");
 		/** A screen was chosen: read it and fill every choice (keeping the row's own, when editing). */
 		on_screen(keep_row) {
 			if (this.silent) return;
-			const d = this.dialog;
-			const doctype = d.get_value("document_type");
+			const dialog = this.dialog;
+			const doctype = dialog.get_value("document_type");
 			if (!doctype) {
 				this.info = null;
 				return this.draw_summary();
@@ -155,15 +155,15 @@ frappe.provide("whatsapp_next");
 			return whatsapp.ui
 				.call("settings.analyze_picker_doctype", { document_type: doctype }, { silent: true })
 				.then((info) => {
-					if (d.get_value("document_type") !== doctype) return;
+					if (dialog.get_value("document_type") !== doctype) return;
 					this.info = info;
 					const keep = keep_row === true && this.row.document_type === doctype;
 					const pick = keep ? this.row : info.suggestion;
 					this.fill_selects(info);
 					this.silent = true;
-					return d
+					return dialog
 						.set_values({
-							label: keep ? this.row.label || info.label : d.get_value("label") && !this.is_new ? d.get_value("label") : info.label,
+							label: keep ? this.row.label || info.label : dialog.get_value("label") && !this.is_new ? dialog.get_value("label") : info.label,
 							phone_source: pick.phone_source || "Field",
 							phone_fieldname: pick.phone_fieldname || "",
 							contact_fieldname: pick.contact_fieldname || "",
@@ -171,7 +171,7 @@ frappe.provide("whatsapp_next");
 						})
 						.then(() => {
 							this.silent = false;
-							["how", "limits", "check"].forEach((s) => d.set_df_property(s, "hidden", 0));
+							["how", "limits", "check"].forEach((s) => dialog.set_df_property(s, "hidden", 0));
 							this.draw_summary();
 							this.draw_filters(doctype, keep ? this.row.filters_json : null);
 							this.render_reach_preview();
@@ -182,26 +182,26 @@ frappe.provide("whatsapp_next");
 
 		/** Only fields of the right kind in each list, with their type and how full they are. */
 		fill_selects(info) {
-			const d = this.dialog;
+			const dialog = this.dialog;
 			const filled = (f) => (info.total ? __("{0} of {1} filled", [format_integer(f.filled), format_integer(info.total)]) : __("no records yet"));
-			const set = (fieldname, options) => {
-				const f = d.get_field(fieldname);
+			const set_select_options = (fieldname, options) => {
+				const f = dialog.get_field(fieldname);
 				f.df.options = options;
 				f.refresh();
 			};
-			set(
+			set_select_options(
 				"phone_fieldname",
 				info.phone_fields.length
 					? info.phone_fields.map((f) => ({ value: f.fieldname, label: `${f.label} — ${filled(f)}` }))
 					: [{ value: "", label: __("This screen has no number field") }]
 			);
-			set(
+			set_select_options(
 				"contact_fieldname",
 				info.contact_fields.length
 					? info.contact_fields.map((f) => ({ value: f.fieldname, label: `${f.label} — ${filled(f)}` }))
 					: [{ value: "", label: __("This screen has no link to a contact") }]
 			);
-			set(
+			set_select_options(
 				"name_fieldname",
 				info.name_fields.map((f) => ({ value: f.fieldname, label: f.title ? `${f.label} (${__("the screen's title")})` : f.label }))
 			);
@@ -209,19 +209,19 @@ frappe.provide("whatsapp_next");
 			const ways = [];
 			if (info.phone_fields.length) ways.push({ value: "Field", label: __("A number field on the record") });
 			if (info.contact_fields.length) ways.push({ value: "Linked Contact", label: __("The contact linked to the record") });
-			set("phone_source", ways.length ? ways : [{ value: "Field", label: __("A number field on the record") }]);
+			set_select_options("phone_source", ways.length ? ways : [{ value: "Field", label: __("A number field on the record") }]);
 		}
 
 		draw_summary(state, err) {
-			const $w = this.dialog.get_field("summary").$wrapper;
-			if (state === "loading") return $w.html(`<div class="whatsapp-picker-source-editor__note">${escape_html(__("Reading the screen's fields…"))}</div>`);
-			if (state === "error") return $w.html(`<div class="whatsapp-picker-source-editor__note whatsapp-picker-source-editor__note--bad">${escape_html((err && err.message) || __("The screen could not be read."))}</div>`);
+			const $summary_wrapper = this.dialog.get_field("summary").$wrapper;
+			if (state === "loading") return $summary_wrapper.html(`<div class="whatsapp-picker-source-editor__note">${escape_html(__("Reading the screen's fields…"))}</div>`);
+			if (state === "error") return $summary_wrapper.html(`<div class="whatsapp-picker-source-editor__note whatsapp-picker-source-editor__note--bad">${escape_html((err && err.message) || __("The screen could not be read."))}</div>`);
 			const info = this.info;
-			if (!info) return $w.html(`<div class="whatsapp-picker-source-editor__note">${escape_html(__("Choose a screen: its number, name and contact fields are found for you."))}</div>`);
+			if (!info) return $summary_wrapper.html(`<div class="whatsapp-picker-source-editor__note">${escape_html(__("Choose a screen: its number, name and contact fields are found for you."))}</div>`);
 			const found = [];
 			if (info.phone_fields.length) found.push(__("{0} number fields", [info.phone_fields.length]));
 			if (info.contact_fields.length) found.push(__("{0} links to a contact", [info.contact_fields.length]));
-			$w.html(`<div class="whatsapp-picker-source-editor__note whatsapp-picker-source-editor__note--ok">
+			$summary_wrapper.html(`<div class="whatsapp-picker-source-editor__note whatsapp-picker-source-editor__note--ok">
 				<strong>${escape_html(info.label)}</strong>
 				<span>${escape_html(__("{0} records", [format_integer(info.total)]))}</span>
 				<span>${escape_html(found.join(" · ") || __("no number field and no contact link"))}</span>
@@ -230,8 +230,8 @@ frappe.provide("whatsapp_next");
 
 		/** Frappe's own filter builder on the chosen screen; it keeps `[[field, op, value]]`. */
 		draw_filters(doctype, saved) {
-			const $w = this.dialog.get_field("filters").$wrapper;
-			$w.html(`<p class="whatsapp-picker-source-editor__hint">${escape_html(__("Always applied on top of what the user chooses in the picker. Leave empty to offer every record."))}</p><div class="whatsapp-picker-source-editor__fg"></div>`);
+			const $filters_wrapper = this.dialog.get_field("filters").$wrapper;
+			$filters_wrapper.html(`<p class="whatsapp-picker-source-editor__hint">${escape_html(__("Always applied on top of what the user chooses in the picker. Leave empty to offer every record."))}</p><div class="whatsapp-picker-source-editor__fg"></div>`);
 			let rows = [];
 			try {
 				rows = saved ? (typeof saved === "string" ? JSON.parse(saved) : saved) : [];
@@ -241,7 +241,7 @@ frappe.provide("whatsapp_next");
 			}
 			try {
 				this.fg = new frappe.ui.FilterGroup({
-					parent: $w.find(".whatsapp-picker-source-editor__fg"),
+					parent: $filters_wrapper.find(".whatsapp-picker-source-editor__fg"),
 					doctype,
 					on_change: () => this.changed(),
 				});
@@ -249,7 +249,7 @@ frappe.provide("whatsapp_next");
 				this.fg.add_filters_to_filter_group(rows.map((r) => [doctype, ...r.slice(-3)]));
 			} catch (e) {
 				this.fg = null;
-				$w.find(".whatsapp-picker-source-editor__fg").html(`<p class="whatsapp-picker-source-editor__hint">${escape_html(__("The filters of this screen could not be shown."))}</p>`);
+				$filters_wrapper.find(".whatsapp-picker-source-editor__fg").html(`<p class="whatsapp-picker-source-editor__hint">${escape_html(__("The filters of this screen could not be shown."))}</p>`);
 			}
 		}
 
@@ -279,11 +279,11 @@ frappe.provide("whatsapp_next");
 
 		/** How the source as it stands reaches people. */
 		render_reach_preview() {
-			const $w = this.dialog.get_field("preview").$wrapper;
+			const $preview_wrapper = this.dialog.get_field("preview").$wrapper;
 			const source = this.collect_source_values();
-			if (!source.document_type) return $w.empty();
+			if (!source.document_type) return $preview_wrapper.empty();
 			const seq = (this._seq = (this._seq || 0) + 1);
-			$w.html(`<div class="whatsapp-picker-source-editor__note">${escape_html(__("Counting…"))}</div>`);
+			$preview_wrapper.html(`<div class="whatsapp-picker-source-editor__note">${escape_html(__("Counting…"))}</div>`);
 			whatsapp.ui
 				.call("settings.preview_picker_source", { source: JSON.stringify(source) }, { silent: true })
 				.then((r) => {
@@ -292,7 +292,7 @@ frappe.provide("whatsapp_next");
 					const sample = (r.sample || [])
 						.map((s) => `<li><span>${escape_html(s.label)}</span><span dir="ltr">${escape_html(whatsapp.ui.phone ? whatsapp.ui.phone(s.phone) : s.phone)}</span></li>`)
 						.join("");
-					$w.html(`<div class="whatsapp-picker-source-editor__preview ${ok ? "is-ok" : "is-bad"}">
+					$preview_wrapper.html(`<div class="whatsapp-picker-source-editor__preview ${ok ? "is-ok" : "is-bad"}">
 						<div class="whatsapp-picker-source-editor__count">
 							<strong>${escape_html(format_integer(r.with_number))}</strong>
 							<span>${escape_html(__("of {0} records have a number WhatsApp can use", [format_integer(r.total)]))}</span>
@@ -303,7 +303,7 @@ frappe.provide("whatsapp_next");
 					</div>`);
 				})
 				.catch((err) => {
-					if (seq === this._seq) $w.html(`<div class="whatsapp-picker-source-editor__note whatsapp-picker-source-editor__note--bad">${escape_html(err && err.message)}</div>`);
+					if (seq === this._seq) $preview_wrapper.html(`<div class="whatsapp-picker-source-editor__note whatsapp-picker-source-editor__note--bad">${escape_html(err && err.message)}</div>`);
 				});
 		}
 

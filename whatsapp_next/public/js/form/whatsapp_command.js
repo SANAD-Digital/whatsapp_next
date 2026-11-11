@@ -9,22 +9,22 @@ frappe.provide("whatsapp_next");
 
 /** Definition list of a `commands.test_command` result (dry run — nothing sent). */
 whatsapp_next.render_command_test_result = function ($el, result) {
-	const esc = whatsapp.ui.escape;
+	const escape_html = whatsapp.ui.escape;
 	const matched = !!result.matched;
 	const rows = [
 		[__("Matched"), whatsapp.ui.StatusBadge.html({ label: matched ? __("Yes") : __("No"), colour: matched ? "green" : "gray" })],
-		[__("Command"), esc(result.command || "—")],
-		[__("Status"), esc(result.status || "—")],
-		[__("Block reason"), esc(result.block_reason || "—")],
-		[__("Arguments"), `<code>${esc(result.args && Object.keys(result.args).length ? JSON.stringify(result.args) : "—")}</code>`],
-		[__("Reply"), result.reply_body ? `<pre class="small mb-0" style="white-space: pre-wrap">${esc(result.reply_body)}</pre>` : esc("—")],
-		[__("Function time"), esc(result.function_ms != null ? __("{0} ms", [cint(result.function_ms)]) : "—")],
+		[__("Command"), escape_html(result.command || "—")],
+		[__("Status"), escape_html(result.status || "—")],
+		[__("Block reason"), escape_html(result.block_reason || "—")],
+		[__("Arguments"), `<code>${escape_html(result.args && Object.keys(result.args).length ? JSON.stringify(result.args) : "—")}</code>`],
+		[__("Reply"), result.reply_body ? `<pre class="small mb-0" style="white-space: pre-wrap">${escape_html(result.reply_body)}</pre>` : escape_html("—")],
+		[__("Function time"), escape_html(result.function_ms != null ? __("{0} ms", [cint(result.function_ms)]) : "—")],
 	];
-	if (result.error) rows.push([__("Error"), `<span class="text-danger">${esc(result.error)}</span>`]);
+	if (result.error) rows.push([__("Error"), `<span class="text-danger">${escape_html(result.error)}</span>`]);
 	// Reuses the kit's impact-list layout (ConfirmDialog) for the label / value rows.
 	$el.html(
 		`<dl class="whatsapp-kit-confirm__impact whatsapp-command-test" aria-live="polite">${rows
-			.map(([label, value]) => `<div class="whatsapp-kit-confirm__row"><dt>${esc(label)}</dt><dd>${value}</dd></div>`)
+			.map(([label, value]) => `<div class="whatsapp-kit-confirm__row"><dt>${escape_html(label)}</dt><dd>${value}</dd></div>`)
 			.join("")}</dl>`
 	);
 };
@@ -38,10 +38,10 @@ whatsapp_next.render_command_tester = function ($el, { note, initial = {} } = {}
 	if (note) $(`<p class="text-muted whatsapp-command-tester__note">${whatsapp.ui.escape(note)}</p>`).appendTo($el);
 	const $form = $('<div class="whatsapp-command-tester__form"></div>').appendTo($el);
 	const $result = $('<div class="whatsapp-command-tester__result"></div>').appendTo($el);
-	const make = (df) => frappe.ui.form.make_control({ df, parent: $form, render_input: true });
-	const text = make({ fieldtype: "Small Text", fieldname: "text", label: __("Incoming text"), reqd: 1 });
-	const phone = make({ fieldtype: "Data", fieldname: "sender_phone", label: __("Sender phone"), reqd: 1, description: __("Any format works; it is normalised automatically.") });
-	const device = make({ fieldtype: "Link", fieldname: "device", label: __("Device"), options: "WhatsApp Device" });
+	const make_tester_control = (df) => frappe.ui.form.make_control({ df, parent: $form, render_input: true });
+	const text = make_tester_control({ fieldtype: "Small Text", fieldname: "text", label: __("Incoming text"), reqd: 1 });
+	const phone = make_tester_control({ fieldtype: "Data", fieldname: "sender_phone", label: __("Sender phone"), reqd: 1, description: __("Any format works; it is normalised automatically.") });
+	const device = make_tester_control({ fieldtype: "Link", fieldname: "device", label: __("Device"), options: "WhatsApp Device" });
 	[text, phone, device].forEach((c) => c.refresh());
 	if (initial.text) text.set_value(initial.text);
 	// typed and shown without "+" like every number in the app; the server normalises either way
@@ -91,17 +91,17 @@ whatsapp_next.command_test_dialog = function (doc = {}) {
  * delete. Status, per-type lists, variables, options, outputs and the live preview all live in it.
  */
 whatsapp_next.command_modal = function (name, opts = {}) {
-	const call = (method, args) => whatsapp.ui.call(`commands.${method}`, args);
-	const fx = whatsapp_next.functions;
+	const call_commands_api = (method, args) => whatsapp.ui.call(`commands.${method}`, args);
+	const function_helpers = whatsapp_next.functions;
 	// a tab opened before the last build holds the old bundle: load the new one
-	if (!fx || !fx.editor_spec) return window.location.reload();
+	if (!function_helpers || !function_helpers.editor_spec) return window.location.reload();
 	// the function's header drawn as the editor's variables · options · outputs (`function_spec.js`):
 	// the command's own message texts become output rows, and go back as `templates` on save
 	let original = [];
 	let spec_outputs = [];
 	const adapt_spec = (spec) => {
-		const shaped = fx.editor_spec(spec, original);
-		spec_outputs = (shaped && fx.editor_spec(spec, []).outputs) || [];
+		const shaped = function_helpers.editor_spec(spec, original);
+		spec_outputs = (shaped && function_helpers.editor_spec(spec, []).outputs) || [];
 		return shaped;
 	};
 	return new whatsapp.ui.CommandEditor({
@@ -109,24 +109,24 @@ whatsapp_next.command_modal = function (name, opts = {}) {
 		form_doctype: "WhatsApp Command",
 		read_only: !!opts.read_only || !frappe.user.has_role(["WhatsApp Manager", "System Manager"]),
 		load: (n) =>
-			call("get_editor", { name: n }).then((r) => {
+			call_commands_api("get_editor", { name: n }).then((r) => {
 				original = (r.command && r.command.templates) || [];
 				r.function = r.function ? adapt_spec(r.function) : r.function;
 				r.command.outputs = r.function ? r.function.outputs : [];
 				return r;
 			}),
 		load_function: (fn) =>
-			call("get_function_spec", { function: fn }).then((spec) => {
+			call_commands_api("get_function_spec", { function: fn }).then((spec) => {
 				// another function: the command's texts for the old one's messages do not carry over
 				const keys = new Set((spec.templates || []).map((t) => t.key));
 				original = original.filter((r) => keys.has(r.param));
 				return adapt_spec(spec);
 			}),
-		save: (payload) => call("save_editor", { payload: fx.payload_of(payload, spec_outputs, original) }),
-		remove: (n) => call("delete_command", { name: n }),
-		preview: ({ payload, sender, values }) => call("preview_command", { payload: fx.payload_of(payload, spec_outputs, original), sender, values }),
-		search_groups: (txt) => call("search_groups", { txt }),
-		search_contacts: (txt, party_type) => call("search_contacts", { txt, party_type }),
+		save: (payload) => call_commands_api("save_editor", { payload: function_helpers.payload_of(payload, spec_outputs, original) }),
+		remove: (n) => call_commands_api("delete_command", { name: n }),
+		preview: ({ payload, sender, values }) => call_commands_api("preview_command", { payload: function_helpers.payload_of(payload, spec_outputs, original), sender, values }),
+		search_groups: (txt) => call_commands_api("search_groups", { txt }),
+		search_contacts: (txt, party_type) => call_commands_api("search_contacts", { txt, party_type }),
 		on_saved: opts.on_saved,
 		on_close: opts.on_close,
 		function: opts.function || null,
@@ -150,11 +150,11 @@ frappe.ui.form.on("WhatsApp Command", {
 		const manager = frappe.user.has_role(["WhatsApp Manager", "System Manager"]);
 		frm.set_intro(__('Edit this command with "Open editor".'), "blue");
 		if (active) frm.disable_form();
-		const open = () =>
+		const open_command_editor = () =>
 			whatsapp_next.command_modal(frm.doc.name, {
 				on_saved: (r) => (r && r.deleted ? frappe.set_route("List", "WhatsApp Command") : frm.reload_doc()),
 			});
-		frm.add_custom_button(__("Open editor"), open);
+		frm.add_custom_button(__("Open editor"), open_command_editor);
 		if (frm.doc.function) {
 			frm.add_custom_button(__("Open function"), () => {
 				frappe.route_options = { function: frm.doc.function };

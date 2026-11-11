@@ -107,20 +107,20 @@ export function avatar(o = {}) {
  */
 export function bind_segmented(el, on_pick) {
 	const $el = $(el);
-	const pick = ($opt) => {
+	const select_segment_option = ($opt) => {
 		const value = $opt.attr("data-value");
 		$el.find(".whatsapp-segmented__opt").attr("aria-checked", "false").attr("tabindex", "-1");
 		$opt.attr("aria-checked", "true").attr("tabindex", "0");
 		on_pick && on_pick(value);
 	};
-	$el.on("click", ".whatsapp-segmented__opt", (e) => pick($(e.currentTarget)));
+	$el.on("click", ".whatsapp-segmented__opt", (e) => select_segment_option($(e.currentTarget)));
 	$el.on("keydown", ".whatsapp-segmented__opt", (e) => {
 		const items = $el.find(".whatsapp-segmented__opt:not([disabled])").toArray();
 		const i = ui.roving_index(e, items, items.indexOf(e.currentTarget));
 		if (i < 0) return;
 		e.preventDefault();
 		items[i].focus();
-		pick($(items[i]));
+		select_segment_option($(items[i]));
 	});
 	return $el;
 }

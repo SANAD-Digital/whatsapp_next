@@ -57,13 +57,13 @@ function load_token_reference(frm) {
 		.call("alerts.get_dynamic_filter_reference")
 		.then((tokens) => {
 			frm._wa_tokens_rendered = true;
-			const esc = whatsapp.ui.escape;
-			const rows = (tokens || []).map((t) => `<tr><td><code>${esc(t.name)}</code></td><td dir="ltr">${esc(t.example == null ? "" : String(t.example))}</td></tr>`).join("");
+			const escape_html = whatsapp.ui.escape;
+			const rows = (tokens || []).map((t) => `<tr><td><code>${escape_html(t.name)}</code></td><td dir="ltr">${escape_html(t.example == null ? "" : String(t.example))}</td></tr>`).join("");
 			const $help = $(`
 				<details class="whatsapp-token-reference mt-2">
-					<summary class="text-muted small">${esc(__("Dynamic date tokens"))}</summary>
-					<p class="small text-muted mb-1">${esc(__('Use a token as a filter value, e.g. {"posting_date": "today"}. N tokens take a number: "last_days:7".'))}</p>
-					<table class="table table-sm small mb-0"><thead><tr><th>${esc(__("Token"))}</th><th>${esc(__("Today"))}</th></tr></thead><tbody>${rows}</tbody></table>
+					<summary class="text-muted small">${escape_html(__("Dynamic date tokens"))}</summary>
+					<p class="small text-muted mb-1">${escape_html(__('Use a token as a filter value, e.g. {"posting_date": "today"}. N tokens take a number: "last_days:7".'))}</p>
+					<table class="table table-sm small mb-0"><thead><tr><th>${escape_html(__("Token"))}</th><th>${escape_html(__("Today"))}</th></tr></thead><tbody>${rows}</tbody></table>
 				</details>`);
 			field.$wrapper.find(".whatsapp-token-reference").remove();
 			field.$wrapper.append($help);
@@ -75,13 +75,13 @@ function show_alert_preview_dialog(frm) {
 	whatsapp.ui
 		.call("alerts.preview", { name: frm.doc.name }, { freeze: true, freeze_message: __("Running the report…") })
 		.then((r) => {
-			const esc = whatsapp.ui.escape;
+			const escape_html = whatsapp.ui.escape;
 			const facts = [
 				[__("Rows"), whatsapp.ui.format_integer(r.row_count || 0)],
 				[__("Recipients"), whatsapp.ui.format_integer(r.recipients_count || 0)],
 				[__("Attachment"), r.attachment_name || "—"],
 			]
-				.map(([k, v]) => `<tr><th class="text-muted" style="width: 30%">${esc(k)}</th><td><bdi dir="auto">${esc(v)}</bdi></td></tr>`)
+				.map(([k, v]) => `<tr><th class="text-muted" style="width: 30%">${escape_html(k)}</th><td><bdi dir="auto">${escape_html(v)}</bdi></td></tr>`)
 				.join("");
 			const d = new frappe.ui.Dialog({
 				title: __("Preview: {0}", [frappe.utils.escape_html(frm.doc.alert_name || frm.doc.name)]),
@@ -91,10 +91,10 @@ function show_alert_preview_dialog(frm) {
 						fieldtype: "HTML",
 						fieldname: "body",
 						options: `
-							${r.error ? `<p class="text-danger">${esc(r.error)}</p>` : ""}
+							${r.error ? `<p class="text-danger">${escape_html(r.error)}</p>` : ""}
 							<table class="table table-sm">${facts}</table>
-							<h6>${esc(__("Message"))}</h6>
-							<div dir="auto" style="white-space: pre-wrap">${esc(r.message || "")}</div>`,
+							<h6>${escape_html(__("Message"))}</h6>
+							<div dir="auto" style="white-space: pre-wrap">${escape_html(r.message || "")}</div>`,
 					},
 				],
 			});

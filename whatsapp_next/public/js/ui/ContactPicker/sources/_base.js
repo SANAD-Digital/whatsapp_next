@@ -106,7 +106,7 @@ export class BaseSource {
 			$btn.toggleClass("whatsapp-kit-picker__dd-btn--active", !!value);
 			$list.find("[role=option]").each((i, el) => el.setAttribute("aria-selected", el.dataset.value === value ? "true" : "false"));
 		};
-		const fill = (q = "") => {
+		const fill_option_list = (q = "") => {
 			const needle = q.trim().toLowerCase();
 			$list.empty();
 			const shown = list.filter((o) => !needle || o.label.toLowerCase().includes(needle));
@@ -122,8 +122,8 @@ export class BaseSource {
 					.appendTo($list);
 			});
 		};
-		const open = () => {
-			fill();
+		const open_dropdown = () => {
+			fill_option_list();
 			$pop.removeAttr("hidden");
 			$btn.attr("aria-expanded", "true");
 			$(document).on(`mousedown.${id} touchstart.${id}`, (e) => {
@@ -145,8 +145,8 @@ export class BaseSource {
 			$(document).off(`.${id}`);
 			$dd.off(`keydown.${id}`);
 		};
-		$btn.on("click", () => ($pop.prop("hidden") ? open() : close()));
-		if ($search) $search.on("input", () => fill($search.val()));
+		$btn.on("click", () => ($pop.prop("hidden") ? open_dropdown() : close()));
+		if ($search) $search.on("input", () => fill_option_list($search.val()));
 		$list.on("keydown", "[role=option]", (e) => {
 			const opts = $list.find("[role=option]").toArray();
 			const i = opts.indexOf(e.currentTarget);
@@ -225,7 +225,7 @@ export class BaseSource {
 				const enabled = $rows.find('.whatsapp-kit-picker__row:not(.whatsapp-kit-picker__row--disabled)').length;
 				$el.find(".whatsapp-kit-picker__check-all").prop("checked", enabled > 0 && checked.size >= enabled).prop("indeterminate", checked.size > 0 && checked.size < enabled);
 			};
-			const toggle = (el) => {
+			const toggle_row_checked = (el) => {
 				if (el.classList.contains("whatsapp-kit-picker__row--disabled")) return;
 				const i = cint(el.dataset.idx);
 				if (checked.has(i)) checked.delete(i);
@@ -233,11 +233,11 @@ export class BaseSource {
 				reflect();
 				$el.trigger("selection-change");
 			};
-			$rows.on("click", ".whatsapp-kit-picker__row", (e) => toggle(e.currentTarget));
+			$rows.on("click", ".whatsapp-kit-picker__row", (e) => toggle_row_checked(e.currentTarget));
 			$rows.on("keydown", ".whatsapp-kit-picker__row", (e) => {
 				if (e.key === " " || e.key === "Enter") {
 					e.preventDefault();
-					toggle(e.currentTarget);
+					toggle_row_checked(e.currentTarget);
 				}
 			});
 			$el.find(".whatsapp-kit-picker__check-all").on("change", (e) => $el.select_all(e.target.checked));
@@ -255,12 +255,12 @@ export class BaseSource {
 	/** "Add N" button that tracks a candidate table's selection. */
 	add_selected_button($table, { source_type, source_ref = null, label = null } = {}) {
 		const $btn = $(`<button type="button" class="btn btn-primary btn-sm whatsapp-kit-picker__add-btn"></button>`);
-		const update = () => {
+		const update_add_button_label = () => {
 			const n = $table.selected_rows ? $table.selected_rows().length : 0;
 			$btn.text(label ? label(n) : __("Add {0}", [ui.format_integer(n)])).prop("disabled", !n);
 		};
-		$table.on("selection-change", update);
-		update();
+		$table.on("selection-change", update_add_button_label);
+		update_add_button_label();
 		$btn.on("click", () => {
 			const rows = $table.selected_rows();
 			this.picker.add_rows(rows, { source_type: source_type || this.key, source_ref });

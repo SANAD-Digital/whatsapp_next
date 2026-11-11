@@ -32,13 +32,13 @@ frappe.provide("whatsapp_next.campaign");
 		watch_scroll() {
 			this.unwatch_scroll();
 			this._on_scroll = () => {
-				const c = this.composer;
-				if (!c) return;
+				const composer = this.composer;
+				if (!composer) return;
 				// opening a menu focuses its first item, and the browser may scroll to show it:
 				// that scroll is the menu's own, not the reader leaving
 				const $menu = this.$wrapper.find(".whatsapp-kit-message-composer__typemenu, .whatsapp-kit-message-composer__varmenu");
 				if ($menu.length && Date.now() - ($menu[0].__opened_at || 0) < 250) return;
-				if (c.close_type_menu) c.close_type_menu();
+				if (composer.close_type_menu) composer.close_type_menu();
 				this.$wrapper.find(".whatsapp-kit-message-composer__varmenu").remove();
 				this.$wrapper.find(".whatsapp-kit-message-composer__varbtn").attr("aria-expanded", "false");
 			};
@@ -51,7 +51,7 @@ frappe.provide("whatsapp_next.campaign");
 		 */
 		watch_menus() {
 			if (this._menus || !window.MutationObserver) return;
-			const fit = (el) => {
+			const fit_menu_on_screen = (el) => {
 				el.__opened_at = Date.now();
 				const margin = 8;
 				const rtl = document.documentElement.dir === "rtl";
@@ -71,7 +71,7 @@ frappe.provide("whatsapp_next.campaign");
 			this._menus = new MutationObserver((records) => {
 				records.forEach((rec) =>
 					rec.addedNodes.forEach((n) => {
-						if (n.nodeType === 1 && (n.classList.contains("whatsapp-kit-message-composer__typemenu") || n.classList.contains("whatsapp-kit-message-composer__varmenu"))) fit(n);
+						if (n.nodeType === 1 && (n.classList.contains("whatsapp-kit-message-composer__typemenu") || n.classList.contains("whatsapp-kit-message-composer__varmenu"))) fit_menu_on_screen(n);
 					})
 				);
 			});
@@ -208,9 +208,9 @@ frappe.provide("whatsapp_next.campaign");
 			});
 			const $preview = dialog.get_field("preview").$wrapper;
 			$preview.html(`<div class="whatsapp-campaign-builder__test-preview" data-preview></div>${skipped ? `<p class="whatsapp-field__hint">${escape_html(__("{0} of the messages carry a file or a poll. The test send carries text, so they are not offered here.", [campaign_builder.format_integer(skipped)]))}</p>` : ""}`);
-			const load = () => this.load_preview(dialog, $preview.find("[data-preview]"));
-			dialog.get_field("idx").$input.on("change", load);
-			load();
+			const load_test_preview = () => this.load_preview(dialog, $preview.find("[data-preview]"));
+			dialog.get_field("idx").$input.on("change", load_test_preview);
+			load_test_preview();
 		}
 
 		/** The message as the campaign would render it — the server's own preview, not a guess. */

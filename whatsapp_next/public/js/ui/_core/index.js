@@ -142,12 +142,12 @@ ui.form_button_html = (cls = "") =>
  */
 ui.open_form = (win, doctype, name) => {
 	if (!doctype || !name) return;
-	const go = () => {
+	const close_and_open_form = () => {
 		win.close(true);
 		frappe.set_route("Form", doctype, name);
 	};
-	if (typeof win.is_dirty === "function" && win.is_dirty()) return frappe.confirm(__("Discard unsaved changes?"), go);
-	go();
+	if (typeof win.is_dirty === "function" && win.is_dirty()) return frappe.confirm(__("Discard unsaved changes?"), close_and_open_form);
+	close_and_open_form();
 };
 
 ui.debounce = (fn, wait = 250) => frappe.utils.debounce(fn, wait);
@@ -171,12 +171,12 @@ ui.listen = function (event, handler, { on_connect } = {}) {
  * the moments an event may have been missed. Returns a function that stops it.
  */
 ui.on_reconnect = function (reread) {
-	const sock = frappe.realtime.socket;
+	const socket = frappe.realtime.socket;
 	const on_visible = () => !document.hidden && reread();
-	if (sock) sock.on("connect", reread);
+	if (socket) socket.on("connect", reread);
 	document.addEventListener("visibilitychange", on_visible);
 	return () => {
-		if (sock) sock.off("connect", reread);
+		if (socket) socket.off("connect", reread);
 		document.removeEventListener("visibilitychange", on_visible);
 	};
 };
@@ -225,34 +225,34 @@ ui.format_time_ago = (value, fallback = "") => (value ? frappe.datetime.prettyDa
  *   body}], chosen, query, can_open, new_note, empty_note}`
  */
 ui.template_cards = (o) => {
-	const esc = ui.escape;
+	const escape_html = ui.escape;
 	const all = o.templates || [];
 	const q = String(o.query || "").trim().toLowerCase();
 	const rows = all.filter((t) => !q || `${t.template_name || t.name} ${t.category || ""} ${t.body || ""}`.toLowerCase().includes(q));
-	const card = (t) => {
+	const render_template_card = (t) => {
 		const on = t.name === o.chosen;
-		return `<button type="button" class="whatsapp-kit-notification-editor__tpl${on ? " is-on" : ""}" data-act="template" data-value="${esc(t.name)}" aria-pressed="${on}" title="${esc(o.can_open ? __("Double-click to edit the template") : "")}">
+		return `<button type="button" class="whatsapp-kit-notification-editor__tpl${on ? " is-on" : ""}" data-act="template" data-value="${escape_html(t.name)}" aria-pressed="${on}" title="${escape_html(o.can_open ? __("Double-click to edit the template") : "")}">
 			<span class="whatsapp-kit-notification-editor__tpl-head">
-				<strong>${esc(t.template_name || t.name)}</strong>
+				<strong>${escape_html(t.template_name || t.name)}</strong>
 				${on ? `<span class="whatsapp-kit-notification-editor__tpl-tick" aria-hidden="true">${ui.inline_icon_html("tick", "xs")}</span>` : ""}
 			</span>
-			<span class="whatsapp-kit-notification-editor__tpl-meta">${t.category ? `<span class="whatsapp-badge whatsapp-badge--muted whatsapp-badge--nodot">${esc(t.category)}</span>` : ""}${
-				t.reference_doctype ? `<span>${esc(__("For {0}", [__(t.reference_doctype)]))}</span>` : `<span>${esc(__("Any document"))}</span>`
-			}${t.message_type && t.message_type !== "Text" ? `<span>${esc(__(t.message_type))}</span>` : ""}</span>
-			<span class="whatsapp-kit-notification-editor__tpl-body" dir="auto">${esc(t.body || "")}</span>
+			<span class="whatsapp-kit-notification-editor__tpl-meta">${t.category ? `<span class="whatsapp-badge whatsapp-badge--muted whatsapp-badge--nodot">${escape_html(t.category)}</span>` : ""}${
+				t.reference_doctype ? `<span>${escape_html(__("For {0}", [__(t.reference_doctype)]))}</span>` : `<span>${escape_html(__("Any document"))}</span>`
+			}${t.message_type && t.message_type !== "Text" ? `<span>${escape_html(__(t.message_type))}</span>` : ""}</span>
+			<span class="whatsapp-kit-notification-editor__tpl-body" dir="auto">${escape_html(t.body || "")}</span>
 		</button>`;
 	};
 	const chosen = all.find((t) => t.name === o.chosen);
 	return `
-		${all.length > 6 ? `<input type="search" class="whatsapp-input whatsapp-kit-notification-editor__filter" data-in="tpl_q" value="${esc(o.query || "")}" placeholder="${esc(__("Filter templates…"))}" aria-label="${esc(__("Filter templates"))}">` : ""}
-		<div class="whatsapp-kit-notification-editor__tpls" role="group" aria-label="${esc(__("Templates"))}">
-			${o.can_open ? `<button type="button" class="whatsapp-kit-notification-editor__tpl whatsapp-kit-notification-editor__tpl--new" data-act="tpl_new">${ui.inline_icon_html("plus", "sm")}<strong>${esc(__("New template"))}</strong><span>${esc(o.new_note || __("Opens the template editor"))}</span></button>` : ""}
-			${rows.map(card).join("")}
+		${all.length > 6 ? `<input type="search" class="whatsapp-input whatsapp-kit-notification-editor__filter" data-in="tpl_q" value="${escape_html(o.query || "")}" placeholder="${escape_html(__("Filter templates…"))}" aria-label="${escape_html(__("Filter templates"))}">` : ""}
+		<div class="whatsapp-kit-notification-editor__tpls" role="group" aria-label="${escape_html(__("Templates"))}">
+			${o.can_open ? `<button type="button" class="whatsapp-kit-notification-editor__tpl whatsapp-kit-notification-editor__tpl--new" data-act="tpl_new">${ui.inline_icon_html("plus", "sm")}<strong>${escape_html(__("New template"))}</strong><span>${escape_html(o.new_note || __("Opens the template editor"))}</span></button>` : ""}
+			${rows.map(render_template_card).join("")}
 		</div>
-		${!all.length && o.empty_note ? `<p class="whatsapp-kit-alert-editor__hint">${esc(o.empty_note)}</p>` : ""}
-		${all.length && !rows.length ? `<p class="whatsapp-kit-alert-editor__hint">${esc(__("No template matches."))}</p>` : ""}
-		${o.chosen && !chosen ? `<p class="whatsapp-kit-alert-editor__hint">${esc(__("Uses {0}", [o.chosen]))}</p>` : ""}
-		${o.chosen && o.can_open ? `<div class="whatsapp-kit-notification-editor__tpl-actions"><button type="button" class="whatsapp-kit-alert-editor__link" data-act="tpl_edit">${ui.inline_icon_html("note", "xs")} ${esc(__("Edit this template"))}</button></div>` : ""}`;
+		${!all.length && o.empty_note ? `<p class="whatsapp-kit-alert-editor__hint">${escape_html(o.empty_note)}</p>` : ""}
+		${all.length && !rows.length ? `<p class="whatsapp-kit-alert-editor__hint">${escape_html(__("No template matches."))}</p>` : ""}
+		${o.chosen && !chosen ? `<p class="whatsapp-kit-alert-editor__hint">${escape_html(__("Uses {0}", [o.chosen]))}</p>` : ""}
+		${o.chosen && o.can_open ? `<div class="whatsapp-kit-notification-editor__tpl-actions"><button type="button" class="whatsapp-kit-alert-editor__link" data-act="tpl_edit">${ui.inline_icon_html("note", "xs")} ${escape_html(__("Edit this template"))}</button></div>` : ""}`;
 };
 
 /**
@@ -312,12 +312,12 @@ ui.pin_stack = function ($root, selectors) {
 	const root = $($root)[0];
 	if (!root) return () => {};
 	root.classList.add("whatsapp-kit-pinned-page");
-	const items = () => selectors.map((s) => root.querySelector(s)).filter((el) => el && el.offsetParent !== null);
+	const find_pinned_elements = () => selectors.map((s) => root.querySelector(s)).filter((el) => el && el.offsetParent !== null);
 	// the band is painted with whatever the page is painted with, so nothing shows through it
 	const backdrop = () => {
 		for (let el = root; el; el = el.parentElement) {
-			const bg = getComputedStyle(el).backgroundColor;
-			if (bg && bg !== "transparent" && !/rgba\(.*,\s*0\)$/.test(bg)) return bg;
+			const background_color = getComputedStyle(el).backgroundColor;
+			if (background_color && background_color !== "transparent" && !/rgba\(.*,\s*0\)$/.test(background_color)) return background_color;
 		}
 		return "var(--surface-base)";
 	};
@@ -330,7 +330,7 @@ ui.pin_stack = function ($root, selectors) {
 	const layout = () => {
 		let top = strip();
 		const bg = backdrop();
-		items().forEach((el) => {
+		find_pinned_elements().forEach((el) => {
 			el.classList.add("whatsapp-kit-pin");
 			el.style.insetBlockStart = `${top}px`;
 			el.style.setProperty("--whatsapp-kit-pin-bg", bg);
@@ -344,8 +344,8 @@ ui.pin_stack = function ($root, selectors) {
 	// bottom padding), so scrolled to the end it sits right under the band and scrolls inside
 	// itself — with its sticky head in view — instead of sliding its head under the band.
 	const scroller = (() => {
-		for (let el = root.parentElement; el; el = el.parentElement) {
-			if (/(auto|scroll)/.test(getComputedStyle(el).overflowY)) return el;
+		for (let ancestor = root.parentElement; ancestor; ancestor = ancestor.parentElement) {
+			if (/(auto|scroll)/.test(getComputedStyle(ancestor).overflowY)) return ancestor;
 		}
 		return document.scrollingElement;
 	})();
@@ -374,7 +374,7 @@ ui.pin_stack = function ($root, selectors) {
 		});
 	};
 	const ro = typeof ResizeObserver === "function" ? new ResizeObserver(() => layout()) : null;
-	const watch = () => items().forEach((el) => ro && ro.observe(el));
+	const watch = () => find_pinned_elements().forEach((el) => ro && ro.observe(el));
 	layout();
 	watch();
 	// elements drawn later (a filter bar that loads its options) join the band when they appear

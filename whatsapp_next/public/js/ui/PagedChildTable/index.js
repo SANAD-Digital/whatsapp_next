@@ -179,9 +179,9 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 	}
 
 	build_args() {
-		const s = this.state;
-		if (this.opts.args) return this.opts.args(Object.assign({ name: this.frm.doc.name }, s));
-		return Object.assign({ name: this.frm.doc.name, page: s.page, page_length: s.page_length, search: s.search || undefined }, s.filters);
+		const state = this.state;
+		if (this.opts.args) return this.opts.args(Object.assign({ name: this.frm.doc.name }, state));
+		return Object.assign({ name: this.frm.doc.name, page: state.page, page_length: state.page_length, search: state.search || undefined }, state.filters);
 	}
 
 	go_to_page(page) {
@@ -235,8 +235,8 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 	 */
 	render_counts() {
 		const counts = this.state.counts || {};
-		const any = Object.keys(counts)[0];
-		const total = any && counts[any] && counts[any].All != null ? cint(counts[any].All) : cint(this.state.total);
+		const first_counted_field = Object.keys(counts)[0];
+		const total = first_counted_field && counts[first_counted_field] && counts[first_counted_field].All != null ? cint(counts[first_counted_field].All) : cint(this.state.total);
 		this.$count.text(ui.plural(total, { one: __("{0} row"), other: __("{0} rows") }));
 		this.$el.find(".whatsapp-kit-paged-child-table__chips").each((i, group) => {
 			const $group = $(group);

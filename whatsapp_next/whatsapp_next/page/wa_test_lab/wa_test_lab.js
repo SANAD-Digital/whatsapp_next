@@ -151,13 +151,13 @@
 		}
 
 		render() {
-			const c = this.context;
+			const context = this.context;
 			const saved = store.read();
-			const devices = c.devices || [];
+			const devices = context.devices || [];
 			const connected = devices.find((d) => d.status === "Connected");
-			this.device = (devices.find((d) => d.name === saved.device) || {}).name || c.default_device || (connected || devices[0] || {}).name || null;
-			this.cap = Math.min(cint(saved.cap) || c.limits.cap, c.limits.cap_max);
-			this.pacing = Math.max(c.limits.pacing_min, Math.min(cint(saved.pacing) || c.limits.pacing, c.limits.pacing_max));
+			this.device = (devices.find((d) => d.name === saved.device) || {}).name || context.default_device || (connected || devices[0] || {}).name || null;
+			this.cap = Math.min(cint(saved.cap) || context.limits.cap, context.limits.cap_max);
+			this.pacing = Math.max(context.limits.pacing_min, Math.min(cint(saved.pacing) || context.limits.pacing, context.limits.pacing_max));
 			this.$body.html(`
 				<section class="whatsapp-test-lab__section" data-section="setup" aria-labelledby="whatsapp-lab-setup-t">
 					${this.section_title("whatsapp-lab-setup-t", __("What the test runs with"), __("Filled in from your system — change what you need."))}
@@ -195,7 +195,7 @@
 			this.render_run();
 			this.render_bar();
 			this.load_health(false);
-			const start = (saved.targets && saved.targets.length ? saved.targets : [ui.test_phone.get() || (c.me && c.me.phone)]).filter(Boolean);
+			const start = (saved.targets && saved.targets.length ? saved.targets : [ui.test_phone.get() || (context.me && context.me.phone)]).filter(Boolean);
 			if (start.length) this.add_targets(start, { quiet: true });
 			this.subscribe();
 		}
@@ -215,7 +215,7 @@
 		}
 
 		render_setup() {
-			const l = this.context.limits;
+			const limits = this.context.limits;
 			const devices = this.devices();
 			this.$setup.html(`
 				<div class="whatsapp-test-lab__setup-grid">
@@ -237,17 +237,17 @@
 							<div class="whatsapp-test-lab__target-field"></div>
 							${kit.button_html({ label: __("Add"), icon: "plus", variant: "tonal", attrs: { "data-act": "add-target" } })}
 						</div>
-						<span class="whatsapp-field__hint">${escape_html(__("Your own numbers. Up to {0}; nothing is ever sent to anyone else.", [format_integer(l.max_targets)]))}</span>
+						<span class="whatsapp-field__hint">${escape_html(__("Your own numbers. Up to {0}; nothing is ever sent to anyone else.", [format_integer(limits.max_targets)]))}</span>
 					</div>
 					<div class="whatsapp-field whatsapp-test-lab__f-cap">
 						<label class="whatsapp-field__label" for="whatsapp-lab-cap">${escape_html(__("Message cap"))}</label>
-						<input id="whatsapp-lab-cap" class="whatsapp-input whatsapp-input--mono" type="number" inputmode="numeric" min="1" max="${l.cap_max}" value="${this.cap}" />
-						<span class="whatsapp-field__hint">${escape_html(__("The most one run may send (at most {0}).", [format_integer(l.cap_max)]))}</span>
+						<input id="whatsapp-lab-cap" class="whatsapp-input whatsapp-input--mono" type="number" inputmode="numeric" min="1" max="${limits.cap_max}" value="${this.cap}" />
+						<span class="whatsapp-field__hint">${escape_html(__("The most one run may send (at most {0}).", [format_integer(limits.cap_max)]))}</span>
 					</div>
 					<div class="whatsapp-field whatsapp-test-lab__f-pacing">
 						<label class="whatsapp-field__label" for="whatsapp-lab-pacing">${escape_html(__("Seconds between messages"))}</label>
-						<input id="whatsapp-lab-pacing" class="whatsapp-input whatsapp-input--mono" type="number" inputmode="numeric" min="${l.pacing_min}" max="${l.pacing_max}" value="${this.pacing}" />
-						<span class="whatsapp-field__hint">${escape_html(__("A pause that keeps the number safe (at least {0}).", [format_integer(l.pacing_min)]))}</span>
+						<input id="whatsapp-lab-pacing" class="whatsapp-input whatsapp-input--mono" type="number" inputmode="numeric" min="${limits.pacing_min}" max="${limits.pacing_max}" value="${this.pacing}" />
+						<span class="whatsapp-field__hint">${escape_html(__("A pause that keeps the number safe (at least {0}).", [format_integer(limits.pacing_min)]))}</span>
 					</div>
 				</div>`);
 			const device = this.current_device();
@@ -279,13 +279,13 @@
 				this.add_typed_target();
 			});
 			this.$setup.find("#whatsapp-lab-cap").on("change", (e) => {
-				this.cap = Math.max(1, Math.min(cint($(e.currentTarget).val()) || l.cap, l.cap_max));
+				this.cap = Math.max(1, Math.min(cint($(e.currentTarget).val()) || limits.cap, limits.cap_max));
 				$(e.currentTarget).val(this.cap);
 				this.remember();
 				this.render_bar();
 			});
 			this.$setup.find("#whatsapp-lab-pacing").on("change", (e) => {
-				this.pacing = Math.max(l.pacing_min, Math.min(cint($(e.currentTarget).val()) || l.pacing, l.pacing_max));
+				this.pacing = Math.max(limits.pacing_min, Math.min(cint($(e.currentTarget).val()) || limits.pacing, limits.pacing_max));
 				$(e.currentTarget).val(this.pacing);
 				this.remember();
 				this.render_bar();
@@ -319,7 +319,7 @@
 
 		/** Ask the server who the numbers are, then keep the valid, new, unblocked ones. */
 		add_targets(phones, { quiet = false } = {}) {
-			const max = this.context.limits.max_targets;
+			const max_targets = this.context.limits.max_targets;
 			return call_test_lab_api("identify", { phones }, { silent: true })
 				.then((rows) => {
 					let added = 0;
@@ -327,7 +327,7 @@
 						if (!r.valid) return quiet || ui.Toast.warning(__("{0} is not a valid WhatsApp number.", [r.input]));
 						if (this.targets.some((t) => t.phone_e164 === r.phone_e164)) return quiet || ui.Toast.info(__("This number is already a target."));
 						if (r.blacklisted) return ui.Toast.warning(__("{0} is on the blacklist and cannot be a test target.", [phone_text(r.phone_e164)]));
-						if (this.targets.length >= max) return quiet || ui.Toast.warning(__("A test run takes at most {0} target numbers.", [format_integer(max)]));
+						if (this.targets.length >= max_targets) return quiet || ui.Toast.warning(__("A test run takes at most {0} target numbers.", [format_integer(max_targets)]));
 						this.targets.push(r);
 						added += 1;
 						// a number the user typed is the one a test goes to: offered first everywhere else
@@ -392,9 +392,9 @@
 		}
 
 		render_health() {
-			const h = this.health;
+			const health = this.health;
 			const counts = { ok: 0, warn: 0, fail: 0 };
-			h.checks.forEach((c) => (counts[c.status] = (counts[c.status] || 0) + 1));
+			health.checks.forEach((c) => (counts[c.status] = (counts[c.status] || 0) + 1));
 			const overall = counts.fail ? "fail" : counts.warn ? "warn" : "ok";
 			const headline = counts.fail
 				? ui.plural(counts.fail, { one: __("{0} part of the setup is not working"), other: __("{0} parts of the setup are not working") })
@@ -407,9 +407,9 @@
 					<span class="whatsapp-test-lab__health-line">${kit.badge(HEALTH[overall].label(), HEALTH[overall].tone)}<strong>${escape_html(headline)}</strong></span>
 					${kit.button_html({ label: __("Run the checks"), icon: "scan", variant: "tonal", size: "sm", attrs: { "data-act": "health" } })}
 				</div>
-				<ul class="whatsapp-test-lab__health-list">${h.checks.map((c) => this.health_row(c)).join("")}</ul>
+				<ul class="whatsapp-test-lab__health-list">${health.checks.map((c) => this.health_row(c)).join("")}</ul>
 				<p class="whatsapp-test-lab__health-foot">${escape_html(
-					h.live ? __("Checked now against the platform.") : __("Shown from the last known state. «Run the checks» asks the platform now.")
+					health.live ? __("Checked now against the platform.") : __("Shown from the last known state. «Run the checks» asks the platform now.")
 				)}</p>`);
 			this.$health.find('[data-act="health"]').on("click", (e) => {
 				const $b = $(e.currentTarget).prop("disabled", true);
@@ -419,7 +419,7 @@
 				});
 			});
 			this.$health.find("[data-route]").on("click", (e) => {
-				const c = h.checks.find((x) => x.key === $(e.currentTarget).attr("data-route"));
+				const c = health.checks.find((x) => x.key === $(e.currentTarget).attr("data-route"));
 				if (!c || !c.route) return;
 				if (Array.isArray(c.route)) frappe.set_route(...c.route);
 				else frappe.set_route(c.route);
@@ -466,12 +466,12 @@
 		}
 
 		render_checks() {
-			const c = this.context;
-			const none = (text, route_label, route) =>
+			const context = this.context;
+			const render_empty_note = (text, route_label, route) =>
 				`<p class="whatsapp-test-lab__none">${escape_html(text)} <button type="button" class="whatsapp-test-lab__link" data-go='${escape_html(JSON.stringify(route))}'>${escape_html(route_label)}</button></p>`;
 			const file_row = (kind) => `
 				<div class="whatsapp-test-lab__file" data-file="${kind}">
-					<span class="whatsapp-test-lab__file-name" data-file-name>${escape_html(__("The app's sample file ({0})", [c.samples[kind].file_name]))}</span>
+					<span class="whatsapp-test-lab__file-name" data-file-name>${escape_html(__("The app's sample file ({0})", [context.samples[kind].file_name]))}</span>
 					${kit.button_html({ label: __("Pick another file"), icon: "attach", variant: "ghost", size: "sm", attrs: { "data-act": "pick-file", "data-kind": kind } })}
 				</div>`;
 			const preview_box = (key) => `
@@ -511,42 +511,42 @@
 					key: "template",
 					title: __("Template"),
 					note: __("A message template filled from a real record."),
-					checked: !!c.templates.length,
-					body: c.templates.length
-						? this.labelled_field_html(__("Template"), `<select class="whatsapp-select" data-pick="template">${this.select_options_html(c.templates, { label: (t) => t.template_name || t.name })}</select>`) + doc_field("template") + preview_box("template")
-						: none(__("No message template yet."), __("Open templates"), ["List", "WhatsApp Template"]),
+					checked: !!context.templates.length,
+					body: context.templates.length
+						? this.labelled_field_html(__("Template"), `<select class="whatsapp-select" data-pick="template">${this.select_options_html(context.templates, { label: (t) => t.template_name || t.name })}</select>`) + doc_field("template") + preview_box("template")
+						: render_empty_note(__("No message template yet."), __("Open templates"), ["List", "WhatsApp Template"]),
 				}),
 				this.check_card_html({
 					key: "notification",
 					title: __("Notification", null, "Test Lab"),
 					note: __("An automatic notification, tried on a real record and sent to your target numbers instead of the customer."),
-					checked: !!c.notifications.length,
-					body: c.notifications.length
+					checked: !!context.notifications.length,
+					body: context.notifications.length
 						? this.labelled_field_html(
 								__("Notification", null, "Test Lab"),
-								`<select class="whatsapp-select" data-pick="notification">${this.select_options_html(c.notifications, { label: (n) => (cint(n.enabled) ? n.name : __("{0} (switched off)", [n.name])) })}</select>`
+								`<select class="whatsapp-select" data-pick="notification">${this.select_options_html(context.notifications, { label: (n) => (cint(n.enabled) ? n.name : __("{0} (switched off)", [n.name])) })}</select>`
 						  ) +
 						  doc_field("notification") +
 						  `<label class="whatsapp-toggle whatsapp-test-lab__real"><input type="checkbox" data-real="notification" /><span class="whatsapp-toggle__track"></span><span class="whatsapp-toggle__label">${escape_html(
 								__("Send to the record's real recipients instead")
 						  )}</span></label>` +
 						  preview_box("notification")
-						: none(__("No notification yet."), __("Open notifications"), ["List", "WhatsApp Notification"]),
+						: render_empty_note(__("No notification yet."), __("Open notifications"), ["List", "WhatsApp Notification"]),
 				}),
 				this.check_card_html({
 					key: "alert",
 					title: __("Scheduled alert"),
 					note: __("A scheduled alert, run now and sent to your target numbers only."),
 					checked: false,
-					body: c.alerts.length
-						? this.labelled_field_html(__("Alert"), `<select class="whatsapp-select" data-pick="alert">${this.select_options_html(c.alerts, { label: (a) => (cint(a.enabled) ? a.name : __("{0} (switched off)", [a.name])) })}</select>`) + preview_box("alert")
-						: none(__("No scheduled alert yet."), __("Open alerts"), ["List", "WhatsApp Notification Alert"]),
+					body: context.alerts.length
+						? this.labelled_field_html(__("Alert"), `<select class="whatsapp-select" data-pick="alert">${this.select_options_html(context.alerts, { label: (a) => (cint(a.enabled) ? a.name : __("{0} (switched off)", [a.name])) })}</select>`) + preview_box("alert")
+						: render_empty_note(__("No scheduled alert yet."), __("Open alerts"), ["List", "WhatsApp Notification Alert"]),
 				}),
 			];
 			this.$body.find('[data-grid="messages"]').html(messages.join(""));
 
 			// -- commands
-			const commands = c.commands || [];
+			const commands = context.commands || [];
 			const command_rows = commands
 				.map(
 					(cmd, i) => `<li class="whatsapp-test-lab__cmd" data-cmd="${escape_html(cmd.code)}">
@@ -563,16 +563,16 @@
 				key: "commands",
 				title: __("Dry-run the commands"),
 				note: __("Each ticked command is run as if the chosen number had written it. Nothing is stored and nothing is sent — you see the reply the customer would get."),
-				checked: !!commands.length && !!c.commands_enabled,
+				checked: !!commands.length && !!context.commands_enabled,
 				wide: true,
 				body: commands.length
 					? `<div class="whatsapp-test-lab__cmd-setup">
 							${this.labelled_field_html(__("Written by"), `<select class="whatsapp-select" data-pick="sender"></select>`, __("A command answers a number with its own account's records."))}
 							<label class="whatsapp-toggle whatsapp-test-lab__real"><input type="checkbox" data-real="command" /><span class="whatsapp-toggle__track"></span><span class="whatsapp-toggle__label">${escape_html(__("Also send the reply to that number for real"))}</span></label>
 						</div>
-						${c.commands_enabled ? "" : `<p class="whatsapp-test-lab__warn">${escape_html(__("Commands are switched off in the settings: a real message would get no reply."))}</p>`}
+						${context.commands_enabled ? "" : `<p class="whatsapp-test-lab__warn">${escape_html(__("Commands are switched off in the settings: a real message would get no reply."))}</p>`}
 						<ul class="whatsapp-test-lab__cmds">${command_rows}</ul>`
-					: none(__("No active command yet."), __("Open commands"), ["List", "WhatsApp Command"]),
+					: render_empty_note(__("No active command yet."), __("Open commands"), ["List", "WhatsApp Command"]),
 			});
 			const phone_card = `<article class="whatsapp-card whatsapp-test-lab__check whatsapp-test-lab__check--wide" data-card="listen">
 				<header class="whatsapp-test-lab__check-head">
@@ -589,7 +589,7 @@
 			this.$body.find('[data-grid="commands"]').html(commands_card + phone_card);
 
 			// -- campaign and receipts
-			const text_templates = c.templates.filter((t) => t.message_type === "Text" && !t.reference_doctype);
+			const text_templates = context.templates.filter((t) => t.message_type === "Text" && !t.reference_doctype);
 			const campaign = this.check_card_html({
 				key: "campaign",
 				title: __("Mini campaign"),
@@ -608,7 +608,7 @@
 					<div data-camp="text">${this.labelled_field_html(__("Message text"), `<textarea class="whatsapp-textarea" rows="2" data-input="campaign">${escape_html(__("Test Lab · test campaign"))}</textarea>`)}</div>
 					<div data-camp="template" hidden>${this.labelled_field_html(__("Template"), `<select class="whatsapp-select" data-pick="campaign_template">${this.select_options_html(text_templates, { label: (t) => t.template_name || t.name })}</select>`)}</div>
 					<label class="whatsapp-toggle whatsapp-test-lab__real"><input type="checkbox" data-real="schedule" /><span class="whatsapp-toggle__track"></span><span class="whatsapp-toggle__label">${escape_html(
-						__("Schedule it {0} minutes ahead instead of starting now", [format_integer(c.limits.schedule_minutes)])
+						__("Schedule it {0} minutes ahead instead of starting now", [format_integer(context.limits.schedule_minutes)])
 					)}</span></label>
 					<span class="whatsapp-field__hint">${escape_html(__("A scheduled campaign is started by the scheduler, so this also proves the scheduler works."))}</span>`,
 			});
@@ -638,24 +638,24 @@
 		}
 
 		bind_checks() {
-			const $b = this.$body;
-			$b.on("change", "[data-check], [data-cmd-pick], [data-real]", () => this.render_bar());
-			$b.on("click", "[data-go]", (e) => frappe.set_route(...JSON.parse($(e.currentTarget).attr("data-go"))));
-			$b.on("change", '[data-pick="template"]', () => this.sync_document("template"));
-			$b.on("change", '[data-pick="notification"]', () => this.sync_document("notification"));
-			$b.on("change", '[data-pick="template"], [data-pick="notification"], [data-pick="alert"], [data-doc]', (e) => {
+			const $body = this.$body;
+			$body.on("change", "[data-check], [data-cmd-pick], [data-real]", () => this.render_bar());
+			$body.on("click", "[data-go]", (e) => frappe.set_route(...JSON.parse($(e.currentTarget).attr("data-go"))));
+			$body.on("change", '[data-pick="template"]', () => this.sync_document("template"));
+			$body.on("change", '[data-pick="notification"]', () => this.sync_document("notification"));
+			$body.on("change", '[data-pick="template"], [data-pick="notification"], [data-pick="alert"], [data-doc]', (e) => {
 				const key = $(e.currentTarget).attr("data-pick") || $(e.currentTarget).attr("data-doc");
-				$b.find(`[data-preview="${key}"]`).prop("hidden", true).empty();
+				$body.find(`[data-preview="${key}"]`).prop("hidden", true).empty();
 			});
-			$b.on(
+			$body.on(
 				"input",
 				"[data-doc]",
 				ui.debounce((e) => this.search_documents($(e.currentTarget).attr("data-doc"), $(e.currentTarget).val()), 300)
 			);
-			$b.on("click", '[data-act="preview"]', (e) => this.show_check_preview($(e.currentTarget).attr("data-kind"), $(e.currentTarget)));
-			$b.on("click", '[data-act="pick-file"]', (e) => this.pick_file($(e.currentTarget).attr("data-kind")));
-			$b.on("click", '[data-act="listen"]', () => this.listen());
-			$b.on("change", '[data-real="notification"]', (e) => {
+			$body.on("click", '[data-act="preview"]', (e) => this.show_check_preview($(e.currentTarget).attr("data-kind"), $(e.currentTarget)));
+			$body.on("click", '[data-act="pick-file"]', (e) => this.pick_file($(e.currentTarget).attr("data-kind")));
+			$body.on("click", '[data-act="listen"]', () => this.listen());
+			$body.on("change", '[data-real="notification"]', (e) => {
 				if (e.currentTarget.checked) ui.Toast.warning(__("The notification will go to the record's real recipients — customers included. You will be asked to confirm."));
 			});
 		}
@@ -791,17 +791,17 @@
 		}
 
 		params_of(kind) {
-			const pick = (key) => this.$body.find(`[data-pick="${key}"]`).val() || null;
-			const doc = (key) => cstr(this.$body.find(`[data-doc="${key}"]`).val()).trim() || null;
+			const read_picked_value = (key) => this.$body.find(`[data-pick="${key}"]`).val() || null;
+			const read_document_name = (key) => cstr(this.$body.find(`[data-doc="${key}"]`).val()).trim() || null;
 			if (kind === "quick_text") return { body: this.input("quick_text") };
 			if (kind === "quick_image") return { body: this.input("quick_image"), attachment: this.files.image || null };
 			if (kind === "quick_document") return { body: this.input("quick_document"), attachment: this.files.document || null };
-			if (kind === "template") return { template: pick("template"), reference_name: this.doctype_of("template") ? doc("template") : null };
-			if (kind === "notification") return { notification: pick("notification"), reference_name: doc("notification") };
-			if (kind === "alert") return { alert: pick("alert") };
+			if (kind === "template") return { template: read_picked_value("template"), reference_name: this.doctype_of("template") ? read_document_name("template") : null };
+			if (kind === "notification") return { notification: read_picked_value("notification"), reference_name: read_document_name("notification") };
+			if (kind === "alert") return { alert: read_picked_value("alert") };
 			if (kind === "campaign") {
 				const p = { scheduled: this.is_real_send_toggle_on("schedule") ? 1 : 0, schedule_minutes: this.context.limits.schedule_minutes };
-				if (this.camp_mode === "template") p.template = pick("campaign_template");
+				if (this.camp_mode === "template") p.template = read_picked_value("campaign_template");
 				else p.body = this.input("campaign");
 				if (this.camp_mode === "image") p.with_image = 1;
 				return p;
@@ -813,7 +813,7 @@
 		build_run_plan() {
 			const targets = this.targets.map((t) => t.phone_e164);
 			const rows = [];
-			const each = (kind, label) => {
+			const add_check_rows = (kind, label) => {
 				if (!this.is_check_ticked(kind)) return;
 				const params = this.params_of(kind);
 				const real = kind === "notification" && this.is_real_send_toggle_on("notification");
@@ -823,12 +823,12 @@
 				}
 				targets.forEach((target) => rows.push({ kind, card: kind, target, label, params, sends: true, messages: 1 }));
 			};
-			each("quick_text", __("Quick text"));
-			each("quick_image", __("Image"));
-			each("quick_document", __("Document", null, "Test Lab"));
-			each("template", __("Template: {0}", [this.params_of("template").template || ""]));
-			each("notification", __("Notification: {0}", [this.params_of("notification").notification || ""]));
-			each("alert", __("Alert: {0}", [this.params_of("alert").alert || ""]));
+			add_check_rows("quick_text", __("Quick text"));
+			add_check_rows("quick_image", __("Image"));
+			add_check_rows("quick_document", __("Document", null, "Test Lab"));
+			add_check_rows("template", __("Template: {0}", [this.params_of("template").template || ""]));
+			add_check_rows("notification", __("Notification: {0}", [this.params_of("notification").notification || ""]));
+			add_check_rows("alert", __("Alert: {0}", [this.params_of("alert").alert || ""]));
 			if (this.is_check_ticked("commands")) {
 				const sender = this.$body.find('[data-pick="sender"]').val();
 				const send_reply = this.is_real_send_toggle_on("command");
@@ -1029,8 +1029,8 @@
 		}
 
 		scroll_to_run() {
-			const el = this.$body.find('[data-section="run"]')[0];
-			if (el && el.scrollIntoView) el.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+			const run_section = this.$body.find('[data-section="run"]')[0];
+			if (run_section && run_section.scrollIntoView) run_section.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 		}
 
 		// ---- following the run --------------------------------------------------------------------
@@ -1126,10 +1126,10 @@
 				if (replies.length) lines.push(`<details class="whatsapp-test-lab__reply"><summary>${escape_html(__("The reply the customer gets"))}</summary><div class="whatsapp-test-lab__bubble" dir="auto">${escape_html(replies.join("\n\n"))}</div></details>`);
 			}
 			if (row.kind === "campaign" && s.campaign_row) {
-				const c = s.campaign_row;
+				const campaign_row = s.campaign_row;
 				lines.push(
 					`<span>${escape_html(
-						[status_word(c.status), __("{0} of {1} delivered", [format_integer(cint(c.delivered_count) + cint(c.read_count)), format_integer(c.total_recipients)]), c.status === "Scheduled" && c.scheduled_at ? __("starts {0}", [frappe.datetime.prettyDate(c.scheduled_at)]) : null]
+						[status_word(campaign_row.status), __("{0} of {1} delivered", [format_integer(cint(campaign_row.delivered_count) + cint(campaign_row.read_count)), format_integer(campaign_row.total_recipients)]), campaign_row.status === "Scheduled" && campaign_row.scheduled_at ? __("starts {0}", [frappe.datetime.prettyDate(campaign_row.scheduled_at)]) : null]
 							.filter(Boolean)
 							.join(" · ")
 					)}</span>`
@@ -1248,9 +1248,9 @@
 		render_receipts() {
 			const $r = this.$body.find("[data-receipts]");
 			if (!$r.length) return;
-			const st = this.status;
-			const r = st && st.receipts;
-			const last = (st && st.webhook_last_event_at) || null;
+			const status = this.status;
+			const r = status && status.receipts;
+			const last = (status && status.webhook_last_event_at) || null;
 			const $state = this.$body.find('[data-state="receipts"]');
 			if (!r || !r.messages) {
 				$state.html(kit.badge(__("Waits for a run"), "muted"));
@@ -1356,9 +1356,9 @@
 			lines.push(
 				__("Summary: {0} passed · {1} failed · {2} blocked · {3} skipped · {4} in progress", [count(["passed", "delivered", "read"]), count(["failed"]), count(["blocked"]), count(["skipped"]), count(["waiting", "running", "sent", "scheduled"])])
 			);
-			const sum = st.summary;
-			if (sum && (sum.avg_send_seconds != null || sum.avg_deliver_seconds != null))
-				lines.push(__("Average time to send: {0} · to deliver: {1}", [sum.avg_send_seconds != null ? seconds(sum.avg_send_seconds) : "—", sum.avg_deliver_seconds != null ? seconds(sum.avg_deliver_seconds) : "—"]));
+			const summary = st.summary;
+			if (summary && (summary.avg_send_seconds != null || summary.avg_deliver_seconds != null))
+				lines.push(__("Average time to send: {0} · to deliver: {1}", [summary.avg_send_seconds != null ? seconds(summary.avg_send_seconds) : "—", summary.avg_deliver_seconds != null ? seconds(summary.avg_deliver_seconds) : "—"]));
 			return lines.join("\n");
 		}
 

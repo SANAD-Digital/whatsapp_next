@@ -134,12 +134,12 @@ export function bind_copy() {
 	bind_copy.done = true;
 	$(document).on("click", ".whatsapp-kit-code-block__copy", function () {
 		const text = $(`#${$(this).data("copy")}`).text();
-		const done = () => {
+		const announce_copied = () => {
 			whatsapp.ui.Toast && whatsapp.ui.Toast.success(__("Copied"));
 			ui.announce(__("Copied"));
 		};
-		if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done);
-		else frappe.utils.copy_to_clipboard(text) && done();
+		if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(announce_copied);
+		else frappe.utils.copy_to_clipboard(text) && announce_copied();
 	});
 }
 

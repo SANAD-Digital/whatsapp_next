@@ -174,33 +174,33 @@ frappe.provide("whatsapp.ui");
 		}
 
 		setting_value(s) {
-			const o = this.draft.settings_overrides;
-			return Object.prototype.hasOwnProperty.call(o, s.key) ? o[s.key] : s.default_value;
+			const settings_overrides = this.draft.settings_overrides;
+			return Object.prototype.hasOwnProperty.call(settings_overrides, s.key) ? settings_overrides[s.key] : s.default_value;
 		}
 
 		/** Payload for save / preview (the allow-list of `commands.save_editor`). */
 		payload() {
-			const d = this.draft;
+			const draft = this.draft;
 			const access = {};
-			d.allowed_party_types.forEach((key) => {
+			draft.allowed_party_types.forEach((key) => {
 				const a = this.access_of(key);
 				access[key] = { mode: a.mode, groups: a.groups.map((g) => g.name), contacts: a.contacts.map((c) => c.name) };
 			});
 			const out = {
-				code: (d.code || "").trim(),
-				function: d.function,
-				synonyms: d.synonyms.join("\n"),
-				requires_linked_contact: d.requires_linked_contact,
-				allowed_group: d.allowed_group || null,
-				blocked_group: d.blocked_group || null,
-				allowed_party_types: d.allowed_party_types.slice(),
-				disabled_inputs: d.disabled_inputs.slice(),
-				ask_inputs: d.ask_inputs || "",
-				settings_overrides: Object.assign({}, d.settings_overrides),
-				outputs: clone(d.outputs),
+				code: (draft.code || "").trim(),
+				function: draft.function,
+				synonyms: draft.synonyms.join("\n"),
+				requires_linked_contact: draft.requires_linked_contact,
+				allowed_group: draft.allowed_group || null,
+				blocked_group: draft.blocked_group || null,
+				allowed_party_types: draft.allowed_party_types.slice(),
+				disabled_inputs: draft.disabled_inputs.slice(),
+				ask_inputs: draft.ask_inputs || "",
+				settings_overrides: Object.assign({}, draft.settings_overrides),
+				outputs: clone(draft.outputs),
 				access,
 			};
-			if (d.name) out.name = d.name;
+			if (draft.name) out.name = draft.name;
 			return out;
 		}
 
@@ -221,13 +221,13 @@ frappe.provide("whatsapp.ui");
 		}
 
 		render_header() {
-			const d = this.draft;
-			const on = d.status === "Active";
+			const draft = this.draft;
+			const on = draft.status === "Active";
 			const runs = whatsapp.ui.format_integer(cint(this.data.command.runs_30d));
 			const fn = this.selected_function_row();
 			const tabs = [
 				{ key: "setup", label: __("Setup", null, "Command Editor") },
-				{ key: "perms", label: __("Permissions", null, "Command Editor"), count: d.allowed_party_types.length },
+				{ key: "perms", label: __("Permissions", null, "Command Editor"), count: draft.allowed_party_types.length },
 				{ key: "preview", label: __("Preview", null, "Command Editor") },
 			];
 			return `
@@ -235,14 +235,14 @@ frappe.provide("whatsapp.ui");
 					<div class="whatsapp-kit-command-editor__head-row">
 						<span class="whatsapp-kit-command-editor__word">
 							<label class="whatsapp-kit-command-editor__word-label" for="${this.id}-code">${escape_html(__("Command"))}</label>
-							<input id="${this.id}-code" type="text" dir="ltr" class="whatsapp-kit-command-editor__code" data-f="code" data-in="code" value="${escape_html(d.code)}" placeholder="${escape_html(__("Command word"))}" autocomplete="off" />
+							<input id="${this.id}-code" type="text" dir="ltr" class="whatsapp-kit-command-editor__code" data-f="code" data-in="code" value="${escape_html(draft.code)}" placeholder="${escape_html(__("Command word"))}" autocomplete="off" />
 							${this.is_dirty() ? `<span class="whatsapp-kit-command-editor__dirty" data-slot="dirty"><span class="whatsapp-kit-command-editor__dot"></span>${escape_html(__("Not saved yet"))}</span>` : `<span data-slot="dirty"></span>`}
 						</span>
 						<span class="whatsapp-kit-command-editor__head-end">
 							<button type="button" class="whatsapp-kit-command-editor__status${on ? " is-on" : ""}" data-act="toggle-status" role="switch" aria-checked="${on}" title="${escape_html(__("Turn the command on or off"))}">
 								${escape_html(on ? __("Enabled", null, "Command Editor") : __("Stopped"))}<span class="whatsapp-kit-command-editor__track"><span class="whatsapp-kit-command-editor__knob"></span></span>
 							</button>
-							${this.opts.form_doctype && d.name ? whatsapp.ui.form_button_html() : ""}
+							${this.opts.form_doctype && draft.name ? whatsapp.ui.form_button_html() : ""}
 							<button type="button" class="whatsapp-kit-command-editor__x" data-act="close" data-keep title="${escape_html(__("Close (Esc)"))}" aria-label="${escape_html(__("Close"))}">×</button>
 						</span>
 					</div>
@@ -292,7 +292,7 @@ frappe.provide("whatsapp.ui");
 		}
 
 		render_definition() {
-			const d = this.draft;
+			const draft = this.draft;
 			const spec = this.spec;
 			const fn = this.selected_function_row();
 			const q = (this.ui.fn_q == null ? "" : this.ui.fn_q).trim().toLowerCase();
@@ -311,7 +311,7 @@ frappe.provide("whatsapp.ui");
 								? `<span class="whatsapp-kit-command-editor__pop" id="${this.id}-fnlist" role="listbox">
 									${matches
 										.map(
-											(f) => `<button type="button" role="option" class="whatsapp-kit-command-editor__opt${f.name === d.function ? " is-sel" : ""}" aria-selected="${f.name === d.function}" data-act="pick-fn" data-key="${escape_html(f.name)}">
+											(f) => `<button type="button" role="option" class="whatsapp-kit-command-editor__opt${f.name === draft.function ? " is-sel" : ""}" aria-selected="${f.name === draft.function}" data-act="pick-fn" data-key="${escape_html(f.name)}">
 												${escape_html(__(f.function_name || f.name))}<span class="whatsapp-kit-command-editor__opt-sub">${escape_html(f.category ? __(f.category) : "")}${f.status === "Active" ? "" : ` · ${escape_html(__("paused"))}`}</span>
 											</button>`
 										)
@@ -333,7 +333,7 @@ frappe.provide("whatsapp.ui");
 				<div class="whatsapp-kit-command-editor__field">
 					<span class="whatsapp-kit-command-editor__label">${escape_html(__("Synonyms"))}</span>
 					<div class="whatsapp-kit-command-editor__chips">
-						${d.synonyms
+						${draft.synonyms
 							.map(
 								(s, i) => `<span class="whatsapp-kit-command-editor__chip whatsapp-kit-command-editor__chip--pri">${escape_html(s)}<button type="button" class="whatsapp-kit-command-editor__chip-x" data-act="rm-syn" data-key="${i}" title="${escape_html(__("Remove"))}" aria-label="${escape_html(
 									__("Remove {0}", [s])
@@ -365,24 +365,24 @@ frappe.provide("whatsapp.ui");
 							)
 							.join("")}
 					</div>
-					${d.allowed_party_types.length ? "" : `<span class="whatsapp-kit-command-editor__note whatsapp-kit-command-editor__note--danger">${escape_html(__("Pick at least one party type — the command cannot be saved without one."))}</span>`}
+					${draft.allowed_party_types.length ? "" : `<span class="whatsapp-kit-command-editor__note whatsapp-kit-command-editor__note--danger">${escape_html(__("Pick at least one party type — the command cannot be saved without one."))}</span>`}
 					<span class="whatsapp-kit-command-editor__note">${escape_html(__("Each type's white and black lists are in the Permissions tab."))}</span>
 				</div>
 				<label class="whatsapp-kit-command-editor__switch-card">
 					<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__switch-title">${escape_html(__("Requires the party to be linked to an account"))}</span><span class="whatsapp-kit-command-editor__note">${escape_html(
 						__("Messages from numbers that are not linked are refused with an explanatory reply.")
 					)}</span></span>
-					<input type="checkbox" class="whatsapp-kit-command-editor__check" data-ch="link" ${d.requires_linked_contact ? "checked" : ""} />
+					<input type="checkbox" class="whatsapp-kit-command-editor__check" data-ch="link" ${draft.requires_linked_contact ? "checked" : ""} />
 				</label>`;
 		}
 
 		render_vars() {
 			const spec = this.spec;
 			if (!spec) return `<span class="whatsapp-kit-command-editor__empty">${escape_html(__("Pick a function in the Definition column to see its variables, options and outputs."))}</span>`;
-			const off = this.draft.disabled_inputs;
+			const disabled_inputs = this.draft.disabled_inputs;
 			const vars = (spec.inputs || [])
 				.map((v) => {
-					const on = !off.includes(v.key);
+					const on = !disabled_inputs.includes(v.key);
 					return `<div class="whatsapp-kit-command-editor__card${on ? "" : " is-off"}">
 						<div class="whatsapp-kit-command-editor__card-row">
 							<span class="whatsapp-kit-command-editor__card-title">
@@ -495,34 +495,34 @@ frappe.provide("whatsapp.ui");
 		 * the command (whatever their party type), and one group may be kept out. Checked before the lists.
 		 */
 		render_gate() {
-			const d = this.draft;
-			const one = (field, items) => (d[field] ? [{ name: d[field], label: d[field] }] : items);
+			const draft = this.draft;
+			const list_chosen_group = (field, items) => (draft[field] ? [{ name: draft[field], label: draft[field] }] : items);
 			return `<div class="whatsapp-kit-command-editor__perm">
 				<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__perm-title">${escape_html(__("The whole command"))}</span><span class="whatsapp-kit-command-editor__note">${escape_html(
-					d.allowed_group
-						? __("Only the members of «{0}» may use it, whatever their party type; the lists below apply to them.", [d.allowed_group])
+					draft.allowed_group
+						? __("Only the members of «{0}» may use it, whatever their party type; the lists below apply to them.", [draft.allowed_group])
 						: __("Not limited to a group: the party types and their lists below decide who may use it.")
 				)}</span></span>
 				<div class="whatsapp-kit-command-editor__pickers">
-					${this.render_picker("allow", "g", __("Only the members of"), __("Search contact groups…"), one("allowed_group", []), "pri", __("No matching groups."), __("Any number (no group)."))}
-					${this.render_picker("block", "g", __("Never the members of"), __("Search contact groups…"), one("blocked_group", []), "dg", __("No matching groups."), __("No group kept out."))}
+					${this.render_picker("allow", "g", __("Only the members of"), __("Search contact groups…"), list_chosen_group("allowed_group", []), "pri", __("No matching groups."), __("Any number (no group)."))}
+					${this.render_picker("block", "g", __("Never the members of"), __("Search contact groups…"), list_chosen_group("blocked_group", []), "dg", __("No matching groups."), __("No group kept out."))}
 				</div>
 			</div>`;
 		}
 
 		render_perms() {
-			const keys = this.draft.allowed_party_types;
-			if (!keys.length) {
+			const allowed_party_types = this.draft.allowed_party_types;
+			if (!allowed_party_types.length) {
 				return `<div class="whatsapp-kit-command-editor__pane" data-scroll="perms">${this.render_gate()}<span class="whatsapp-kit-command-editor__empty whatsapp-kit-command-editor__empty--surface">${escape_html(
 					__("No party is allowed yet. Pick party types in the Setup tab to manage their lists here.")
 				)}</span></div>`;
 			}
-			const key = keys.includes(this.ui.perm_tab) ? this.ui.perm_tab : keys[0];
+			const key = allowed_party_types.includes(this.ui.perm_tab) ? this.ui.perm_tab : allowed_party_types[0];
 			const a = this.access_of(key);
 			const deny = a.mode === "Deny All";
 			const list = deny ? __("the whitelist") : __("the blacklist");
 			const tone = deny ? "pri" : "dg";
-			const tabs = keys
+			const tabs = allowed_party_types
 				.map((k) => {
 					const x = this.access_of(k);
 					return `<button type="button" role="tab" class="whatsapp-kit-command-editor__seg${k === key ? " is-sel" : ""}" aria-selected="${k === key}" data-act="perm-tab" data-key="${escape_html(k)}" data-keep>${escape_html(this.type_label(k))}<span class="whatsapp-kit-command-editor__seg-n" dir="ltr">${whatsapp.ui.format_integer(
@@ -595,29 +595,29 @@ frappe.provide("whatsapp.ui");
 		// ---- preview ------------------------------------------------------------------------------
 
 		preview_party_type() {
-			const pv = this.ui.pv;
-			return pv.party_type || this.draft.allowed_party_types[0] || (this.party_types()[0] || {}).key || null;
+			const preview = this.ui.pv;
+			return preview.party_type || this.draft.allowed_party_types[0] || (this.party_types()[0] || {}).key || null;
 		}
 
 		preview_contact_links() {
-			const c = this.ui.pv.contact;
-			if (!c) return [];
-			return (c.links || []).filter((l) => l.link_doctype === this.preview_party_type());
+			const contact = this.ui.pv.contact;
+			if (!contact) return [];
+			return (contact.links || []).filter((l) => l.link_doctype === this.preview_party_type());
 		}
 
 		preview_enabled_inputs() {
-			const off = this.draft.disabled_inputs;
-			return ((this.spec && this.spec.inputs) || []).filter((v) => !off.includes(v.key));
+			const disabled_inputs = this.draft.disabled_inputs;
+			return ((this.spec && this.spec.inputs) || []).filter((v) => !disabled_inputs.includes(v.key));
 		}
 
 		render_preview() {
-			const pv = this.ui.pv;
+			const preview = this.ui.pv;
 			const type = this.preview_party_type();
 			const blocked = type && !this.allowed(type);
-			const c = pv.contact;
+			const contact = preview.contact;
 			const links = this.preview_contact_links();
-			const unlinked = !c || !links.length;
-			const account = links.find((l) => l.link_name === pv.account) || links[0] || null;
+			const unlinked = !contact || !links.length;
+			const account = links.find((l) => l.link_name === preview.account) || links[0] || null;
 			const inputs = this.preview_enabled_inputs();
 			const types = this.party_types()
 				.map(
@@ -626,7 +626,7 @@ frappe.provide("whatsapp.ui");
 					}</button>`
 				)
 				.join("");
-			const search_value = pv.q == null ? (c ? c.label || c.phone || "" : "") : pv.q;
+			const search_value = preview.q == null ? (contact ? contact.label || contact.phone || "" : "") : preview.q;
 			const assumptions = `
 				<div class="whatsapp-kit-command-editor__field whatsapp-kit-command-editor__field--tight">
 					<span class="whatsapp-kit-command-editor__label">${escape_html(__("Sender party type"))}</span>
@@ -638,19 +638,19 @@ frappe.provide("whatsapp.ui");
 					<span class="whatsapp-kit-command-editor__combo" data-pop="pv">
 						<input id="${this.id}-pv" type="text" class="whatsapp-kit-command-editor__input" data-f="pv-q" data-in="pv-q" data-focus-open="pv" data-keep value="${escape_html(search_value)}" placeholder="${escape_html(__("Search by name or number…"))}" autocomplete="off" />
 						${
-							pv.open
+							preview.open
 								? `<span class="whatsapp-kit-command-editor__pop" role="listbox">
-									${(pv.results || [])
+									${(preview.results || [])
 										.map(
-											(r) => `<button type="button" role="option" class="whatsapp-kit-command-editor__opt${c && r.name === c.name ? " is-sel" : ""}" data-act="pv-pick" data-name="${escape_html(r.name)}" data-keep>${escape_html(r.label || __("Unnamed"))}<span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${escape_html(whatsapp.ui.phone(r.phone || ""))}</span></button>`
+											(r) => `<button type="button" role="option" class="whatsapp-kit-command-editor__opt${contact && r.name === contact.name ? " is-sel" : ""}" data-act="pv-pick" data-name="${escape_html(r.name)}" data-keep>${escape_html(r.label || __("Unnamed"))}<span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${escape_html(whatsapp.ui.phone(r.phone || ""))}</span></button>`
 										)
 										.join("")}
-									${pv.loading ? `<span class="whatsapp-kit-command-editor__none">${escape_html(__("Loading…"))}</span>` : (pv.results || []).length ? "" : `<span class="whatsapp-kit-command-editor__none">${escape_html(pv.error || __("No matching contacts."))}</span>`}
+									${preview.loading ? `<span class="whatsapp-kit-command-editor__none">${escape_html(__("Loading…"))}</span>` : (preview.results || []).length ? "" : `<span class="whatsapp-kit-command-editor__none">${escape_html(preview.error || __("No matching contacts."))}</span>`}
 								</span>`
 								: ""
 						}
 					</span>
-					${!c ? `<span class="whatsapp-kit-command-editor__note">${escape_html(__("No sender picked — the preview assumes a number that is not linked."))}</span>` : ""}
+					${!contact ? `<span class="whatsapp-kit-command-editor__note">${escape_html(__("No sender picked — the preview assumes a number that is not linked."))}</span>` : ""}
 					${unlinked && this.draft.requires_linked_contact ? `<span class="whatsapp-kit-command-editor__note whatsapp-kit-command-editor__note--warn">${escape_html(__("This contact is not linked to an account and the command requires it — the preview shows the refusal."))}</span>` : ""}
 				</div>
 				${
@@ -669,7 +669,7 @@ frappe.provide("whatsapp.ui");
 							<span class="whatsapp-kit-command-editor__card-row"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Variables passed in the command text"))}</span><button type="button" class="whatsapp-kit-command-editor__link" data-act="pv-fill" data-keep>${escape_html(__("Fill with examples"))}</button></span>
 							<div class="whatsapp-kit-command-editor__stack">${inputs
 								.map((v) => {
-									const val = pv.values[v.key] || "";
+									const val = preview.values[v.key] || "";
 									const missing = v.required && !String(val).trim();
 									return `<span class="whatsapp-kit-command-editor__card${missing ? " is-missing" : ""}">
 										<span class="whatsapp-kit-command-editor__card-row"><span class="whatsapp-kit-command-editor__mono" dir="ltr">#${escape_html(v.key)}</span>${v.required ? `<span class="whatsapp-kit-command-editor__tag whatsapp-kit-command-editor__tag--warn">${escape_html(__("Required"))}</span>` : ""}</span>
@@ -690,8 +690,8 @@ frappe.provide("whatsapp.ui");
 			const result = `
 				<div class="whatsapp-kit-command-editor__phone">
 					<div class="whatsapp-kit-command-editor__phone-head">
-						<span class="whatsapp-kit-command-editor__avatar" aria-hidden="true">${escape_html(String((c && c.label) || "?").trim().slice(0, 2))}</span>
-						<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__card-name">${escape_html(c ? c.label || __("Unnamed") : __("Unknown number"))}</span><span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${escape_html(whatsapp.ui.phone((c && c.phone) || ""))}</span></span>
+						<span class="whatsapp-kit-command-editor__avatar" aria-hidden="true">${escape_html(String((contact && contact.label) || "?").trim().slice(0, 2))}</span>
+						<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__card-name">${escape_html(contact ? contact.label || __("Unnamed") : __("Unknown number"))}</span><span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${escape_html(whatsapp.ui.phone((contact && contact.phone) || ""))}</span></span>
 						<span class="whatsapp-kit-command-editor__tag ${unlinked ? "whatsapp-kit-command-editor__tag--warn" : "whatsapp-kit-command-editor__tag--ok"}">${escape_html(unlinked ? __("Not linked") : __("Linked to an account", null, "Command Editor"))}</span>
 					</div>
 					<span class="whatsapp-kit-command-editor__phone-note">${escape_html(__("The reply is built from the output texts and the function's options, run for real without sending."))}</span>
@@ -726,15 +726,15 @@ frappe.provide("whatsapp.ui");
 		mount_thread() {
 			const $slot = this.$root.find("[data-slot=thread]");
 			if (!$slot.length) return;
-			const r = this.ui.result;
+			const result = this.ui.result;
 			const now = frappe.datetime.now_datetime();
-			const text = (r && r.text) || this.draft.code;
+			const text = (result && result.text) || this.draft.code;
 			const rows = [{ direction: "Inbound", name: "pv-in", ts: now, message_type: "Text", body: text }];
-			if (this.ui.running && !r) {
+			if (this.ui.running && !result) {
 				$slot.html(`<span class="whatsapp-kit-command-editor__none">${escape_html(__("Running the preview…"))}</span>`);
 				return;
 			}
-			((r && r.replies) || []).forEach((rep, i) => {
+			((result && result.replies) || []).forEach((rep, i) => {
 				const doc = rep.message_type === "Document";
 				rows.push({
 					direction: "Outbound",
@@ -762,20 +762,20 @@ frappe.provide("whatsapp.ui");
 
 		async run_preview() {
 			if (!this.draft.function) return;
-			const pv = this.ui.pv;
-			const c = pv.contact;
+			const preview = this.ui.pv;
+			const contact = preview.contact;
 			const links = this.preview_contact_links();
-			const account = links.find((l) => l.link_name === pv.account) || links[0] || null;
+			const account = links.find((l) => l.link_name === preview.account) || links[0] || null;
 			const token = (this._pv_token = (this._pv_token || 0) + 1);
 			this.ui.running = true;
 			this.$root.find("[data-slot=thread]").addClass("is-running");
 			try {
 				const result = await this.opts.preview({
 					payload: this.payload(),
-					sender: c
-						? { contact: c.name, label: c.label, phone: c.phone, party_type: account ? account.link_doctype : null, party_name: account ? account.link_name : null }
+					sender: contact
+						? { contact: contact.name, label: contact.label, phone: contact.phone, party_type: account ? account.link_doctype : null, party_name: account ? account.link_name : null }
 						: { phone: null },
-					values: Object.assign({}, pv.values),
+					values: Object.assign({}, preview.values),
 				});
 				if (token !== this._pv_token) return;
 				this.ui.result = result;
@@ -792,29 +792,29 @@ frappe.provide("whatsapp.ui");
 		}
 
 		async search_preview_contacts(q) {
-			const pv = this.ui.pv;
+			const preview = this.ui.pv;
 			const type = this.preview_party_type();
-			pv.loading = true;
-			pv.error = null;
+			preview.loading = true;
+			preview.error = null;
 			try {
 				const rows = await this.opts.search_contacts(q || "", type);
-				if (pv.q !== q && q !== "") return;
-				pv.results = rows || [];
+				if (preview.q !== q && q !== "") return;
+				preview.results = rows || [];
 			} catch (err) {
-				pv.results = [];
-				pv.error = err && err.message;
+				preview.results = [];
+				preview.error = err && err.message;
 			}
-			pv.loading = false;
-			return pv.results;
+			preview.loading = false;
+			return preview.results;
 		}
 
 		async enter_preview() {
-			const pv = this.ui.pv;
+			const preview = this.ui.pv;
 			const type = this.preview_party_type();
-			if (pv.loaded_for !== type) {
-				pv.loaded_for = type;
+			if (preview.loaded_for !== type) {
+				preview.loaded_for = type;
 				const rows = await this.search_preview_contacts("");
-				if (!pv.contact && rows && rows.length) pv.contact = rows[0];
+				if (!preview.contact && rows && rows.length) preview.contact = rows[0];
 				this.render();
 			}
 			this.run_preview();
@@ -823,11 +823,11 @@ frappe.provide("whatsapp.ui");
 		// ---- footer -------------------------------------------------------------------------------
 
 		foot_hint() {
-			const d = this.draft;
+			const draft = this.draft;
 			if (this.read_only) return __("View only — you can't change commands.");
-			if (!d.allowed_party_types.length) return __("Pick at least one party type before saving.");
-			if (d.status === "Active")
-				return __("After saving, the command works immediately on inbound messages from: {0}", [d.allowed_party_types.map((k) => this.type_label(k)).join(__(", "))]);
+			if (!draft.allowed_party_types.length) return __("Pick at least one party type before saving.");
+			if (draft.status === "Active")
+				return __("After saving, the command works immediately on inbound messages from: {0}", [draft.allowed_party_types.map((k) => this.type_label(k)).join(__(", "))]);
 			return __("The command is stopped; start it to work on inbound messages.");
 		}
 
@@ -861,9 +861,9 @@ frappe.provide("whatsapp.ui");
 			if (e.key === "Escape") {
 				e.preventDefault();
 				e.stopPropagation();
-				const pv = this.ui.pv;
+				const preview = this.ui.pv;
 				const open_pick = Object.keys(this.ui.pick).some((k) => this.ui.pick[k].open);
-				if (pv.open) pv.open = false;
+				if (preview.open) preview.open = false;
 				else if (this.ui.fn_open) this.ui.fn_open = false;
 				else if (open_pick) this.ui.pick = {};
 				else return this.close();
@@ -927,56 +927,56 @@ frappe.provide("whatsapp.ui");
 		}
 
 		search_pick(k, q) {
-			const p = this.ui.pick[k];
+			const picker_state = this.ui.pick[k];
 			const [type, kind] = [k.slice(0, k.lastIndexOf("-")), k.slice(k.lastIndexOf("-") + 1)];
-			p.loading = true;
-			p.error = null;
-			clearTimeout(p.timer);
-			p.timer = setTimeout(async () => {
+			picker_state.loading = true;
+			picker_state.error = null;
+			clearTimeout(picker_state.timer);
+			picker_state.timer = setTimeout(async () => {
 				try {
 					const rows = kind === "g" ? await this.opts.search_groups(q) : await this.opts.search_contacts(q, type);
-					if (p.q !== q) return;
-					p.results = rows || [];
+					if (picker_state.q !== q) return;
+					picker_state.results = rows || [];
 				} catch (err) {
-					p.results = [];
-					p.error = err && err.message;
+					picker_state.results = [];
+					picker_state.error = err && err.message;
 				}
-				p.loading = false;
-				if (p.open) this.render();
+				picker_state.loading = false;
+				if (picker_state.open) this.render();
 			}, 200);
 		}
 
 		on_input(e) {
-			const el = e.target;
-			const kind = el.getAttribute("data-in");
-			const key = el.getAttribute("data-key");
-			const v = el.value;
-			const d = this.draft;
-			if (this.read_only && !$(el).is("[data-keep]")) return;
-			if (kind === "code") d.code = v;
-			else if (kind === "syn") return void (this.ui.syn = v);
+			const target_element = e.target;
+			const kind = target_element.getAttribute("data-in");
+			const key = target_element.getAttribute("data-key");
+			const value = target_element.value;
+			const draft = this.draft;
+			if (this.read_only && !$(target_element).is("[data-keep]")) return;
+			if (kind === "code") draft.code = value;
+			else if (kind === "syn") return void (this.ui.syn = value);
 			else if (kind === "fn-q") {
-				this.ui.fn_q = v;
+				this.ui.fn_q = value;
 				this.ui.fn_open = true;
 				return this.render();
-			} else if (kind === "setting") this.set_setting(key, v);
-			else if (kind === "out-text") d.outputs[cint(key)].template = v;
-			else if (kind === "out-pf") d.outputs[cint(key)].print_format = v || null;
-			else if (kind === "out-file") d.outputs[cint(key)].file_name_template = v;
+			} else if (kind === "setting") this.set_setting(key, value);
+			else if (kind === "out-text") draft.outputs[cint(key)].template = value;
+			else if (kind === "out-pf") draft.outputs[cint(key)].print_format = value || null;
+			else if (kind === "out-file") draft.outputs[cint(key)].file_name_template = value;
 			else if (kind === "pick") {
 				const p = (this.ui.pick[key] = this.ui.pick[key] || { q: "", open: true, results: [] });
-				p.q = v;
+				p.q = value;
 				p.open = true;
-				this.search_pick(key, v);
+				this.search_pick(key, value);
 				return this.render();
 			} else if (kind === "pv-q") {
-				this.ui.pv.q = v;
+				this.ui.pv.q = value;
 				this.ui.pv.open = true;
 				clearTimeout(this._pvq);
-				this._pvq = setTimeout(() => this.search_preview_contacts(v).then(() => this.ui.pv.open && this.render()), 200);
+				this._pvq = setTimeout(() => this.search_preview_contacts(value).then(() => this.ui.pv.open && this.render()), 200);
 				return this.render();
 			} else if (kind === "pv-val") {
-				this.ui.pv.values[key] = v;
+				this.ui.pv.values[key] = value;
 				return this.schedule_preview();
 			}
 			this.touch();
@@ -985,11 +985,11 @@ frappe.provide("whatsapp.ui");
 		set_setting(key, value) {
 			const s = ((this.spec && this.spec.settings) || []).find((x) => x.key === key);
 			if (!s) return;
-			const o = this.draft.settings_overrides;
+			const settings_overrides = this.draft.settings_overrides;
 			const norm = s.fieldtype === "Check" || s.fieldtype === "Int" ? (value === "" ? "" : cint(value)) : value;
 			const def = s.fieldtype === "Check" || s.fieldtype === "Int" ? cint(s.default_value) : s.default_value;
-			if (String(norm) === String(def == null ? "" : def)) delete o[key];
-			else o[key] = norm;
+			if (String(norm) === String(def == null ? "" : def)) delete settings_overrides[key];
+			else settings_overrides[key] = norm;
 		}
 
 		/** The command's `ask_inputs` lines as `{key: "choices text"}` (choices may be empty). */
@@ -1032,16 +1032,16 @@ frappe.provide("whatsapp.ui");
 		}
 
 		on_change(e) {
-			const el = e.target;
+			const target_element = e.target;
 			if (this.read_only) return;
-			const kind = el.getAttribute("data-ch");
-			const key = el.getAttribute("data-key");
-			const d = this.draft;
-			if (kind === "link") d.requires_linked_contact = el.checked ? 1 : 0;
-			else if (kind === "var") d.disabled_inputs = el.checked ? d.disabled_inputs.filter((k) => k !== key) : d.disabled_inputs.concat([key]);
-			else if (kind === "ask") this.set_ask(key, el.checked);
-			else if (kind === "ask-choices") this.set_ask(key, true, el.value.trim());
-			else if (kind === "setting") this.set_setting(key, el.type === "checkbox" ? (el.checked ? 1 : 0) : el.value);
+			const kind = target_element.getAttribute("data-ch");
+			const key = target_element.getAttribute("data-key");
+			const draft = this.draft;
+			if (kind === "link") draft.requires_linked_contact = target_element.checked ? 1 : 0;
+			else if (kind === "var") draft.disabled_inputs = target_element.checked ? draft.disabled_inputs.filter((k) => k !== key) : draft.disabled_inputs.concat([key]);
+			else if (kind === "ask") this.set_ask(key, target_element.checked);
+			else if (kind === "ask-choices") this.set_ask(key, true, target_element.value.trim());
+			else if (kind === "setting") this.set_setting(key, target_element.type === "checkbox" ? (target_element.checked ? 1 : 0) : target_element.value);
 			this.render();
 			this.touch();
 		}
@@ -1050,14 +1050,14 @@ frappe.provide("whatsapp.ui");
 			const $el = $(e.currentTarget);
 			const act = $el.attr("data-act");
 			const key = $el.attr("data-key");
-			const d = this.draft;
-			if (!d && act !== "close") return;
+			const draft = this.draft;
+			if (!draft && act !== "close") return;
 			if (act !== "close" && this.blocked(e)) return;
 			switch (act) {
 				case "close":
 					return this.close();
 				case "open_form":
-					return whatsapp.ui.open_form(this, this.opts.form_doctype, d.name);
+					return whatsapp.ui.open_form(this, this.opts.form_doctype, draft.name);
 				case "tab":
 					this.ui.tab = key;
 					this.ui.fn_open = false;
@@ -1067,7 +1067,7 @@ frappe.provide("whatsapp.ui");
 					if (key === "preview") this.enter_preview();
 					return;
 				case "toggle-status":
-					d.status = d.status === "Active" ? "Inactive" : "Active";
+					draft.status = draft.status === "Active" ? "Inactive" : "Active";
 					break;
 				case "open-fn":
 					this.ui.tab = "setup";
@@ -1081,31 +1081,31 @@ frappe.provide("whatsapp.ui");
 					this.ui.fn_q = null;
 					return this.pick_function(key);
 				case "rm-syn":
-					d.synonyms.splice(cint(key), 1);
+					draft.synonyms.splice(cint(key), 1);
 					break;
 				case "use-word":
-					d.code = key;
+					draft.code = key;
 					break;
 				case "toggle-type":
-					d.allowed_party_types = this.allowed(key) ? d.allowed_party_types.filter((k) => k !== key) : d.allowed_party_types.concat([key]);
-					if (!this.allowed(key)) delete d.access[key];
+					draft.allowed_party_types = this.allowed(key) ? draft.allowed_party_types.filter((k) => k !== key) : draft.allowed_party_types.concat([key]);
+					if (!this.allowed(key)) delete draft.access[key];
 					break;
 				case "reset-fn":
-					d.disabled_inputs = [];
-					d.settings_overrides = {};
+					draft.disabled_inputs = [];
+					draft.settings_overrides = {};
 					break;
 				case "reset-outs":
 					this.reset_outputs();
 					break;
 				case "reset-all":
-					d.disabled_inputs = [];
-					d.settings_overrides = {};
+					draft.disabled_inputs = [];
+					draft.settings_overrides = {};
 					this.reset_outputs();
 					break;
 				case "insert-var": {
-					const o = d.outputs[cint(key)];
-					const text = o.template == null ? o.default_template || "" : o.template;
-					o.template = `${text}${text && !/\s$/.test(text) ? " " : ""}{{ ${$el.attr("data-var")} }}`;
+					const output = draft.outputs[cint(key)];
+					const text = output.template == null ? output.default_template || "" : output.template;
+					output.template = `${text}${text && !/\s$/.test(text) ? " " : ""}{{ ${$el.attr("data-var")} }}`;
 					break;
 				}
 				case "perm-tab":
@@ -1113,7 +1113,7 @@ frappe.provide("whatsapp.ui");
 					this.ui.pick = {};
 					return this.render();
 				case "perm-mode": {
-					const type = d.allowed_party_types.includes(this.ui.perm_tab) ? this.ui.perm_tab : d.allowed_party_types[0];
+					const type = draft.allowed_party_types.includes(this.ui.perm_tab) ? this.ui.perm_tab : draft.allowed_party_types[0];
 					this.set_access(type, { mode: key });
 					break;
 				}
@@ -1125,7 +1125,7 @@ frappe.provide("whatsapp.ui");
 					if (!row) return;
 					if (type === "allow" || type === "block") {
 						// the command-wide gate holds one group each
-						d[type === "allow" ? "allowed_group" : "blocked_group"] = row.name;
+						draft[type === "allow" ? "allowed_group" : "blocked_group"] = row.name;
 						this.ui.pick[k] = { q: "", open: false, results: [] };
 						break;
 					}
@@ -1139,7 +1139,7 @@ frappe.provide("whatsapp.ui");
 					const k = key;
 					const [type, kind] = [k.slice(0, k.lastIndexOf("-")), k.slice(k.lastIndexOf("-") + 1)];
 					if (type === "allow" || type === "block") {
-						d[type === "allow" ? "allowed_group" : "blocked_group"] = null;
+						draft[type === "allow" ? "allowed_group" : "blocked_group"] = null;
 						break;
 					}
 					const a = this.access_of(type);
@@ -1200,18 +1200,18 @@ frappe.provide("whatsapp.ui");
 
 		/** `defaults`: also take the function's suggested words — the first as the command, the rest as its synonyms. */
 		async pick_function(name, { defaults = false } = {}) {
-			const d = this.draft;
-			if (!name || name === d.function) return this.render();
+			const draft = this.draft;
+			if (!name || name === draft.function) return this.render();
 			try {
 				const spec = await this.opts.load_function(name);
 				this.spec = spec;
-				d.function = name;
-				d.disabled_inputs = [];
-				d.settings_overrides = {};
+				draft.function = name;
+				draft.disabled_inputs = [];
+				draft.settings_overrides = {};
 				this.reset_outputs();
-				if (!d.allowed_party_types.length && (spec.party_types || []).length) d.allowed_party_types = spec.party_types.slice();
-				if (!d.code && (spec.suggested_commands || []).length) d.code = spec.suggested_commands[0];
-				if (defaults && !d.synonyms.length) d.synonyms = (spec.suggested_commands || []).filter((w) => w && w !== d.code);
+				if (!draft.allowed_party_types.length && (spec.party_types || []).length) draft.allowed_party_types = spec.party_types.slice();
+				if (!draft.code && (spec.suggested_commands || []).length) draft.code = spec.suggested_commands[0];
+				if (defaults && !draft.synonyms.length) draft.synonyms = (spec.suggested_commands || []).filter((w) => w && w !== draft.code);
 				this.ui.pv.values = {};
 				this.ui.result = null;
 			} catch (err) {
@@ -1222,27 +1222,27 @@ frappe.provide("whatsapp.ui");
 		}
 
 		async save_command() {
-			const d = this.draft;
-			const problem = !String(d.code || "").trim()
+			const draft = this.draft;
+			const problem = !String(draft.code || "").trim()
 				? __("Enter the command word.")
-				: !d.function
+				: !draft.function
 				? __("Pick a function.")
-				: !d.allowed_party_types.length
+				: !draft.allowed_party_types.length
 				? __("Pick at least one party type before saving.")
 				: null;
 			if (problem) {
 				whatsapp.ui.Toast.error(problem);
-				if (!String(d.code || "").trim()) this.$root.find("[data-f=code]").trigger("focus");
+				if (!String(draft.code || "").trim()) this.$root.find("[data-f=code]").trigger("focus");
 				return;
 			}
 			const $btn = this.$root.find('[data-act="save"]').prop("disabled", true);
 			try {
-				const payload = Object.assign(this.payload(), { status: d.status });
+				const payload = Object.assign(this.payload(), { status: draft.status });
 				const result = await this.opts.save(payload);
-				d.name = result.name;
-				d.status = result.status || d.status;
-				d.code = String(d.code).trim().toLowerCase();
-				this.clean = JSON.stringify(d);
+				draft.name = result.name;
+				draft.status = result.status || draft.status;
+				draft.code = String(draft.code).trim().toLowerCase();
+				this.clean = JSON.stringify(draft);
 				whatsapp.ui.Toast.success(__("Command saved"));
 				this.opts.on_saved && this.opts.on_saved(result);
 				this.render();
@@ -1253,21 +1253,21 @@ frappe.provide("whatsapp.ui");
 		}
 
 		async delete_command() {
-			const d = this.draft;
+			const draft = this.draft;
 			try {
 				await whatsapp.ui.ConfirmDialog.ask_for_confirmation({
-					title: __("Delete command {0}?", [d.code || d.name]),
+					title: __("Delete command {0}?", [draft.code || draft.name]),
 					message: __("The command is removed. A command with run history cannot be deleted; stop it instead."),
-					impact: [{ label: __("Function"), value: (this.selected_function_row() || {}).function_name || d.function || "—" }],
+					impact: [{ label: __("Function"), value: (this.selected_function_row() || {}).function_name || draft.function || "—" }],
 					confirm_label: __("Delete command"),
 					danger: true,
-					on_confirm: () => this.opts.remove(d.name),
+					on_confirm: () => this.opts.remove(draft.name),
 				});
 			} catch (e) {
 				return; // cancelled, or the server refused (already shown)
 			}
 			whatsapp.ui.Toast.success(__("Command deleted"));
-			this.opts.on_saved && this.opts.on_saved({ name: d.name, deleted: true });
+			this.opts.on_saved && this.opts.on_saved({ name: draft.name, deleted: true });
 			this.close(true);
 		}
 	}

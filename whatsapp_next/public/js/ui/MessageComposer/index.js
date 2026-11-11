@@ -238,7 +238,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 			$item.find(".whatsapp-kit-message-composer__railbtn").on("click", () => this.select(row.name));
 			const $acts = $item.find(".whatsapp-kit-message-composer__railactions");
 			if (this.can_edit()) {
-				const btn = (icon, label, disabled, handler) =>
+				const append_rail_button = (icon, label, disabled, handler) =>
 					$(`<button type="button" class="whatsapp-kit-message-composer__icon-btn" title="${ui.escape(label)}" aria-label="${ui.escape(label)}">${ui.icon(icon, "xs")}</button>`)
 						.prop("disabled", !!disabled)
 						.on("click", (e) => {
@@ -246,10 +246,10 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 							handler();
 						})
 						.appendTo($acts);
-				btn("es-line-up", __("Move up"), index === 0, () => this.move_message(row, -1));
-				btn("es-line-down", __("Move down"), index === rows.length - 1, () => this.move_message(row, 1));
-				btn("es-line-duplicate", __("Duplicate"), false, () => this.duplicate(row));
-				btn("es-line-delete", __("Delete"), false, () => this.remove_message(row));
+				append_rail_button("es-line-up", __("Move up"), index === 0, () => this.move_message(row, -1));
+				append_rail_button("es-line-down", __("Move down"), index === rows.length - 1, () => this.move_message(row, 1));
+				append_rail_button("es-line-duplicate", __("Duplicate"), false, () => this.duplicate(row));
+				append_rail_button("es-line-delete", __("Delete"), false, () => this.remove_message(row));
 			}
 			$list.append($item);
 			if (this.opts.delay_field && index < rows.length - 1) $list.append(this.rail_delay(rows[index + 1]));
@@ -393,11 +393,11 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 
 	close_type_menu(restore_focus) {
 		$(document).off(`click.${this.id}-types`);
-		const open = this.type_menu;
-		if (!open) return false;
-		open.$menu.remove();
-		open.$btn.attr("aria-expanded", "false");
-		if (restore_focus) open.$btn.trigger("focus");
+		const type_menu = this.type_menu;
+		if (!type_menu) return false;
+		type_menu.$menu.remove();
+		type_menu.$btn.attr("aria-expanded", "false");
+		if (restore_focus) type_menu.$btn.trigger("focus");
 		this.type_menu = null;
 		return true;
 	}
@@ -503,11 +503,11 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 	}
 
 	toggle_vars($host, row, fieldname, control) {
-		const open = $host.find(".whatsapp-kit-message-composer__varmenu").length;
+		const menu_was_open = $host.find(".whatsapp-kit-message-composer__varmenu").length;
 		$(document).off(`click.${this.id}-vars`);
 		$host.find(".whatsapp-kit-message-composer__varmenu").remove();
-		$host.find(".whatsapp-kit-message-composer__varbtn").attr("aria-expanded", open ? "false" : "true");
-		if (open) return;
+		$host.find(".whatsapp-kit-message-composer__varbtn").attr("aria-expanded", menu_was_open ? "false" : "true");
+		if (menu_was_open) return;
 		const list = this.variables || [];
 		const $menu = $('<div class="whatsapp-kit-message-composer__varmenu" role="listbox"></div>').appendTo($host);
 		if (!list.length) $menu.append(`<p class="whatsapp-kit-message-composer__hint">${ui.escape(__("No variable is offered for this record."))}</p>`);
@@ -786,7 +786,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 	remove_message(row) {
 		if (!this.can_edit()) return;
 		const rows = this.sorted_message_rows();
-		const doit = () => {
+		const delete_message_row = () => {
 			this.frm.doc[this.fieldname] = rows.filter((r) => r.name !== row.name);
 			this.frm.doc[this.fieldname].forEach((r, i) => (r.idx = i + 1));
 			if (this.active === row.name) this.active = null;
@@ -795,7 +795,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 			this.render();
 			ui.announce(__("Message removed"));
 		};
-		if (this.problem_of(row) === __("The text is empty") || this.summary_of(row) === __("Nothing to send yet")) return doit();
+		if (this.problem_of(row) === __("The text is empty") || this.summary_of(row) === __("Nothing to send yet")) return delete_message_row();
 		whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 			title: __("Remove message {0}?", [ui.format_integer(rows.findIndex((r) => r.name === row.name) + 1)]),
 			message: this.summary_of(row),
@@ -803,7 +803,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 			confirm_label: __("Remove"),
 			on_confirm: () => Promise.resolve(),
 		})
-			.then(doit)
+			.then(delete_message_row)
 			.catch(() => {});
 	}
 

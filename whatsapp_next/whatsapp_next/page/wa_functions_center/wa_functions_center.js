@@ -93,7 +93,7 @@
 		const title = installing ? __("Install {0}?", [entry.function_name]) : __("Update {0}?", [entry.function_name]);
 		const chips = (keys, tone) => (keys || []).map((k) => kit.badge(k, tone, { dot: false })).join("");
 		const moved = (rows, key) => (rows || []).map((r) => kit.badge(`${r[key]} · ${Object.keys(r.fields || {}).join(", ")}`, "warn", { dot: false })).join("");
-		const area = (label, d, key) => {
+		const build_diff_section = (label, d, key) => {
 			const lines = [
 				[__("Added"), chips(d.added, "ok")],
 				[__("Removed"), chips(d.removed, "danger")],
@@ -117,8 +117,8 @@
 				const count = (x) => (x.added || []).length + (x.removed || []).length + (x.changed || []).length;
 				const moving = count(diff.params || {}) + count(diff.replies || {});
 				const blocks = [
-					area(__("Parameters"), diff.params || {}, "name"),
-					area(__("Replies"), diff.replies || {}, "key"),
+					build_diff_section(__("Parameters"), diff.params || {}, "name"),
+					build_diff_section(__("Replies"), diff.replies || {}, "key"),
 					{
 						label: __("Commands that use this function"),
 						list: impacted.map((c) => ({ text: c, badge: __("Command"), badge_tone: "muted" })),
@@ -269,14 +269,14 @@
 							if (p.fieldtype === "Template") {
 								const texts = {};
 								["", ...text_languages(p)].forEach((lang) => {
-									const v = values[`${p.name}::${lang}`];
-									if (cstr(v).trim()) texts[lang] = v;
+									const language_text = values[`${p.name}::${lang}`];
+									if (cstr(language_text).trim()) texts[lang] = language_text;
 								});
 								payload[p.name] = Object.keys(texts).length ? texts : null;
 								return;
 							}
-							const v = values[p.name];
-							payload[p.name] = p.fieldtype === "Check" ? (v ? 1 : 0) : v == null ? "" : v;
+							const value = values[p.name];
+							payload[p.name] = p.fieldtype === "Check" ? (value ? 1 : 0) : value == null ? "" : value;
 						});
 						return ui.call("functions.save_values", { function_key: entry.function_key, values: payload }, { silent: true }).then(() => {
 							changed = true;
@@ -432,38 +432,38 @@
 		}
 
 		show() {
-			const e = this.entry;
+			const entry = this.entry;
 			const page = this.page;
 			const manager = is_manager();
-			if (e.state === "invalid" || e.state === "missing") return Promise.resolve(page.show_problem(e));
-			const args = e.installed ? { function_key: e.function_key } : { server_script: e.server_script };
+			if (entry.state === "invalid" || entry.state === "missing") return Promise.resolve(page.show_problem(entry));
+			const args = entry.installed ? { function_key: entry.function_key } : { server_script: entry.server_script };
 			return ui
 				.call("functions.get_manifest", args, { silent: true })
 				.catch(() => null)
 				.then((detail) => {
-					const data = window_data(e, detail || { params: [] });
+					const data = window_data(entry, detail || { params: [] });
 					this.manifest = data.manifest;
-					const linked = (e.linked_commands || []).length;
+					const linked = (entry.linked_commands || []).length;
 					const more = [];
-					if (manager && e.installed) {
-						more.push({ label: e.status === "Active" ? __("Deactivate") : __("Activate"), handler: () => page.set_status(e, e.status === "Active" ? "Inactive" : "Active") });
-						if ((this.manifest.params || []).length) more.push({ label: __("Edit values"), handler: () => page.edit_values(e, this.manifest) });
-						more.push({ label: __("Try"), handler: () => page.try_function(e, this.manifest) });
-						if (!linked) more.push({ label: __("Link a command"), handler: () => page.new_command(e) });
+					if (manager && entry.installed) {
+						more.push({ label: entry.status === "Active" ? __("Deactivate") : __("Activate"), handler: () => page.set_status(entry, entry.status === "Active" ? "Inactive" : "Active") });
+						if ((this.manifest.params || []).length) more.push({ label: __("Edit values"), handler: () => page.edit_values(entry, this.manifest) });
+						more.push({ label: __("Try"), handler: () => page.try_function(entry, this.manifest) });
+						if (!linked) more.push({ label: __("Link a command"), handler: () => page.new_command(entry) });
 					}
-					more.push({ label: __("Open the Server Script"), handler: () => frappe.set_route("Form", "Server Script", e.server_script) });
+					more.push({ label: __("Open the Server Script"), handler: () => frappe.set_route("Form", "Server Script", entry.server_script) });
 					this.view = new ui.FunctionDetail({
 						entry: data.entry,
 						manifest: this.manifest,
-						form: e.installed ? { doctype: "WhatsApp Function", name: e.function_key } : null,
+						form: entry.installed ? { doctype: "WhatsApp Function", name: entry.function_key } : null,
 						party_types: PREVIEW_PARTY_TYPES.map((k) => ({ key: k, label: __(k) })),
-						preview: manager && e.installed ? (a) => this.preview_command_draft(a) : null,
+						preview: manager && entry.installed ? (a) => this.preview_command_draft(a) : null,
 						search_contacts: manager ? (txt, party_type) => ui.call("commands.search_contacts", { txt, party_type }) : null,
-						on_update: manager && e.update_available ? () => page.change(e) : null,
-						on_toggle_install: manager && (e.installed || e.available) ? () => (e.installed ? page.remove_installed_function(e) : page.change(e)) : null,
+						on_update: manager && entry.update_available ? () => page.change(entry) : null,
+						on_toggle_install: manager && (entry.installed || entry.available) ? () => (entry.installed ? page.remove_installed_function(entry) : page.change(entry)) : null,
 						on_open_commands: () => {
 							this.view && this.view.close();
-							command_list(e);
+							command_list(entry);
 						},
 						more,
 						on_close: () => {
@@ -601,15 +601,15 @@
 		// ---- the screen's own numbers ----------------------------------------------------------
 
 		counters() {
-			const all = this.entries;
+			const entries = this.entries;
 			return {
-				total: all.length,
-				problems: all.filter((e) => ["invalid", "unavailable", "missing"].includes(e.state)).length,
-				installed: all.filter((e) => e.installed).length,
-				active: all.filter((e) => e.installed && e.status === "Active").length,
-				inactive: all.filter((e) => e.installed && e.status !== "Active").length,
-				outdated: all.filter((e) => e.update_available).length,
-				calls: all.reduce((n, e) => n + cint(e.calls_30d), 0),
+				total: entries.length,
+				problems: entries.filter((e) => ["invalid", "unavailable", "missing"].includes(e.state)).length,
+				installed: entries.filter((e) => e.installed).length,
+				active: entries.filter((e) => e.installed && e.status === "Active").length,
+				inactive: entries.filter((e) => e.installed && e.status !== "Active").length,
+				outdated: entries.filter((e) => e.update_available).length,
+				calls: entries.reduce((n, e) => n + cint(e.calls_30d), 0),
 			};
 		}
 
@@ -783,7 +783,7 @@
 		/** Client-side, because the catalog is a file the API returns whole (a few dozen rows). */
 		visible() {
 			const f = this.filters || {};
-			const has = (value, picked) => {
+			const matches_filter_value = (value, picked) => {
 				if (picked == null || picked === "") return true;
 				const list = Array.isArray(picked) ? picked : [picked];
 				return !list.length || list.map(cstr).includes(cstr(value));

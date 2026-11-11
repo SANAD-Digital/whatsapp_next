@@ -167,9 +167,9 @@ whatsapp.ui.Stepper = class Stepper {
 	}
 
 	validate_current() {
-		const step = this.current;
-		if (!step || !step.validate) return Promise.resolve(true);
-		return Promise.resolve(step.validate(this.ctx, this)).then((result) => {
+		const current = this.current;
+		if (!current || !current.validate) return Promise.resolve(true);
+		return Promise.resolve(current.validate(this.ctx, this)).then((result) => {
 			if (result === true || result === undefined) return true;
 			this.show_error(typeof result === "string" && result ? result : __("Complete this step before continuing"));
 			return false;

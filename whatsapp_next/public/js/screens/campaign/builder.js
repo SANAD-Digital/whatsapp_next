@@ -99,8 +99,8 @@ frappe.provide("whatsapp_next.campaign");
 		 * the band is not drawn at all before the first save.
 		 */
 		update_sticky_offsets() {
-			const el = this.$wrapper[0];
-			if (!el || !el.isConnected) return;
+			const wrapper_element = this.$wrapper[0];
+			if (!wrapper_element || !wrapper_element.isConnected) return;
 			const navbar = document.querySelector(".navbar");
 			const head = document.querySelector(".page-head");
 			const top = (navbar ? navbar.getBoundingClientRect().height : 0) + (head ? head.getBoundingClientRect().height : 0);

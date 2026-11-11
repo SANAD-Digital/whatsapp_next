@@ -324,7 +324,7 @@ class ContactsPage {
 	}
 
 	columns() {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		const badge = whatsapp.ui.StatusBadge.html;
 		return [
 			{
@@ -337,11 +337,11 @@ class ContactsPage {
 					return `<span class="whatsapp-contacts__identity">
 							<span class="whatsapp-kit-avatar whatsapp-kit-avatar--sm ${
 								linked ? "whatsapp-contacts__avatar--linked" : ""
-							}" aria-hidden="true">${esc(whatsapp.ui.initials(name))}</span>
-							<span class="whatsapp-contacts__names" title="${esc(
+							}" aria-hidden="true">${escape_html(whatsapp.ui.initials(name))}</span>
+							<span class="whatsapp-contacts__names" title="${escape_html(
 								doc.company_name ? __("{0} ({1})", [name, doc.company_name]) : name
-							)}"><span class="whatsapp-contacts__name">${esc(name)}</span>${
-						doc.company_name ? `<span class="whatsapp-contacts__sub">${esc(doc.company_name)}</span>` : ""
+							)}"><span class="whatsapp-contacts__name">${escape_html(name)}</span>${
+						doc.company_name ? `<span class="whatsapp-contacts__sub">${escape_html(doc.company_name)}</span>` : ""
 					}</span>
 						</span>`;
 				},
@@ -350,7 +350,7 @@ class ContactsPage {
 				sub: (doc) => {
 					const phone = ContactsPage.phone_of(doc);
 					return phone
-						? `<span class="whatsapp-contacts__card-only whatsapp-kit-tabular" dir="ltr">${esc(whatsapp.ui.phone(phone))}</span>`
+						? `<span class="whatsapp-contacts__card-only whatsapp-kit-tabular" dir="ltr">${escape_html(whatsapp.ui.phone(phone))}</span>`
 						: "";
 				},
 			},
@@ -360,8 +360,8 @@ class ContactsPage {
 				format: (v, doc) => {
 					const phone = ContactsPage.phone_of(doc);
 					return phone
-						? `<span class="whatsapp-kit-tabular" dir="ltr">${esc(whatsapp.ui.phone(phone))}</span>`
-						: `<span class="whatsapp-contacts__muted">${esc(__("None"))}</span>`;
+						? `<span class="whatsapp-kit-tabular" dir="ltr">${escape_html(whatsapp.ui.phone(phone))}</span>`
+						: `<span class="whatsapp-contacts__muted">${escape_html(__("None"))}</span>`;
 				},
 			},
 			{
@@ -369,7 +369,7 @@ class ContactsPage {
 				label: __("Type"),
 				format: (v, doc) =>
 					(doc.links || []).length
-						? `<span class="whatsapp-contacts__type">${esc(__(doc.links[0].link_doctype))}</span>`
+						? `<span class="whatsapp-contacts__type">${escape_html(__(doc.links[0].link_doctype))}</span>`
 						: `<span class="whatsapp-contacts__muted">&mdash;</span>`,
 			},
 			{
@@ -396,7 +396,7 @@ class ContactsPage {
 				format: (v, doc) => {
 					const names = (doc.links || []).map((l) => l.link_title || l.link_name);
 					return names.length
-						? `<span class="whatsapp-contacts__accounts" title="${esc(names.join(" · "))}">${esc(
+						? `<span class="whatsapp-contacts__accounts" title="${escape_html(names.join(" · "))}">${escape_html(
 								names.join(" · ")
 						  )}</span>`
 						: `<span class="whatsapp-contacts__muted">&mdash;</span>`;
@@ -541,22 +541,22 @@ class ContactsPage {
 	render_selection() {
 		const rows = this.table.get_selected();
 		if (!rows.length || !CAN_WRITE()) return this.$selection.prop("hidden", true).empty();
-		const esc = frappe.utils.escape_html;
-		const count = `<span class="whatsapp-kit-tabular">${esc(whatsapp.ui.format_integer(rows.length))}</span>`;
+		const escape_html = frappe.utils.escape_html;
+		const count = `<span class="whatsapp-kit-tabular">${escape_html(whatsapp.ui.format_integer(rows.length))}</span>`;
 		this.$selection.prop("hidden", false).html(`
 			<span class="whatsapp-contacts__selected" role="status">
 				<span>${__("{0} selected", [count])}</span>
-				<button type="button" class="whatsapp-contacts__selected-clear" aria-label="${esc(
+				<button type="button" class="whatsapp-contacts__selected-clear" aria-label="${escape_html(
 					__("Clear selection")
 				)}">&times;</button>
 			</span>
-			<button type="button" class="btn btn-sm whatsapp-kit-accent-soft whatsapp-contacts__bulk">${esc(
+			<button type="button" class="btn btn-sm whatsapp-kit-accent-soft whatsapp-contacts__bulk">${escape_html(
 				__("Link to an account")
 			)}</button>
-			<button type="button" class="btn btn-sm btn-default whatsapp-contacts__check">${esc(__("Check on WhatsApp"))}</button>
-			<button type="button" class="btn btn-sm btn-default whatsapp-contacts__profiles">${esc(__("Refresh WhatsApp profile"))}</button>
+			<button type="button" class="btn btn-sm btn-default whatsapp-contacts__check">${escape_html(__("Check on WhatsApp"))}</button>
+			<button type="button" class="btn btn-sm btn-default whatsapp-contacts__profiles">${escape_html(__("Refresh WhatsApp profile"))}</button>
 			${whatsapp_next.wa_groups && whatsapp_next.wa_groups.can_create()
-				? `<button type="button" class="btn btn-sm btn-default whatsapp-contacts__group">${esc(__("Create WhatsApp group"))}</button>`
+				? `<button type="button" class="btn btn-sm btn-default whatsapp-contacts__group">${escape_html(__("Create WhatsApp group"))}</button>`
 				: ""}`);
 		this.$selection.find(".whatsapp-contacts__check").on("click", () =>
 			whatsapp_next.check_numbers("Contact", rows.map((d) => d.name))
@@ -802,7 +802,7 @@ class ContactsPage {
 
 	/** Every linked account drawn as the party it is — a customer reads as a customer. */
 	render_links($el, links, row) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		if (!links.length) {
 			new whatsapp.ui.EmptyState({
 				wrapper: $el,
@@ -829,18 +829,18 @@ class ContactsPage {
 					href: frappe.perm.has_perm(l.link_doctype, 0, "read") ? undefined : null,
 				});
 				if (CAN_WRITE()) {
-					$(`<button type="button" class="btn btn-default btn-xs whatsapp-contacts__unlink">${esc(__("Unlink"))}</button>`)
+					$(`<button type="button" class="btn btn-default btn-xs whatsapp-contacts__unlink">${escape_html(__("Unlink"))}</button>`)
 						.appendTo($item)
 						.on("click", () => this.unlink_account(row, l));
 				}
-				void esc;
+				void escape_html;
 			});
 		});
 	}
 
 	/** The last messages to and from this number, each drawn as the message record it is. */
 	render_messages($el, phone) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		const empty = (title, description) => new whatsapp.ui.EmptyState({ wrapper: $el, state: "empty", size: "sm", title, description });
 		if (!phone) return empty(__("No WhatsApp number"), __("Add a number to the contact before sending anything."));
 		if (!CAN_READ_CONVERSATION()) return empty(__("Conversations are not visible with your role"), __("Reading a conversation needs the WhatsApp Viewer role."));
@@ -881,7 +881,7 @@ class ContactsPage {
 						on_click: () => whatsapp.ui.ConversationDrawer.open({ key: phone, on_close: () => this.back_to_detail(this.detail_name) }),
 					});
 				});
-				void esc;
+				void escape_html;
 			})
 			.catch((err) => state.error(err, { action: { label: __("Retry"), onclick: () => this.render_messages($el, phone) } }));
 	}
@@ -1023,7 +1023,7 @@ class ContactsPage {
 			: links.length === 1
 				? Promise.resolve(links[0])
 				: new Promise((resolve, reject) => {
-						const label = (l) => `${__(l.link_doctype)}: ${l.link_title || l.link_name}`;
+						const format_link_label = (l) => `${__(l.link_doctype)}: ${l.link_title || l.link_name}`;
 						const dialog = new frappe.ui.Dialog({
 							title: __("Unlink from an account"),
 							size: "small",
@@ -1033,7 +1033,7 @@ class ContactsPage {
 									fieldname: "link",
 									label: __("Account"),
 									reqd: 1,
-									options: links.map((l, i) => ({ value: String(i), label: label(l) })),
+									options: links.map((l, i) => ({ value: String(i), label: format_link_label(l) })),
 									default: "0",
 								},
 							],
@@ -1158,7 +1158,7 @@ class ContactsPage {
 
 	/** The number's conversation-state changes, newest first (`numbers.get_conversation_log`). */
 	static render_conversation_log($h, phone) {
-		const esc = whatsapp.ui.escape;
+		const escape_html = whatsapp.ui.escape;
 		const state = new whatsapp.ui.EmptyState({ wrapper: $h, state: "loading", size: "sm", rows: 2 });
 		return whatsapp.ui
 			.call("numbers.get_conversation_log", { phone_e164: phone }, { silent: true })
@@ -1166,16 +1166,16 @@ class ContactsPage {
 				state.hide();
 				const rows = (r && r.rows) || [];
 				if (!rows.length) {
-					$h.html(`<p class="whatsapp-contacts__muted">${esc(__("No change recorded yet."))}</p>`);
+					$h.html(`<p class="whatsapp-contacts__muted">${escape_html(__("No change recorded yet."))}</p>`);
 					return;
 				}
 				$h.html(
 					`<ol class="whatsapp-contacts__log">${rows
 						.map(
 							(row) => `<li>
-								<strong>${esc(row.confirmed ? __("There is a conversation") : __("There is none"))}</strong>
-								<span class="whatsapp-contacts__muted"> · ${esc(row.user_name || "")} · ${esc(frappe.datetime.str_to_user(row.at))}</span>
-								${row.note ? `<div>${esc(row.note)}</div>` : ""}
+								<strong>${escape_html(row.confirmed ? __("There is a conversation") : __("There is none"))}</strong>
+								<span class="whatsapp-contacts__muted"> · ${escape_html(row.user_name || "")} · ${escape_html(frappe.datetime.str_to_user(row.at))}</span>
+								${row.note ? `<div>${escape_html(row.note)}</div>` : ""}
 							</li>`
 						)
 						.join("")}</ol>`
@@ -1403,8 +1403,8 @@ class ContactsPage {
 	form_payload(values, row) {
 		const out = {};
 		["first_name", "last_name", "company_name", "designation", "email_id"].forEach((k) => {
-			const v = values[k];
-			const text = v === undefined || v === null ? "" : String(v).trim();
+			const value = values[k];
+			const text = value === undefined || value === null ? "" : String(value).trim();
 			if (text !== "") out[k] = text;
 			else if (row && row[k]) out[k] = "";
 		});

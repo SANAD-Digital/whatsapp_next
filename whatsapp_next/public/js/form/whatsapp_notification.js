@@ -64,9 +64,9 @@ function options_of(rows, current) {
 }
 
 function load_field_choices(frm) {
-	const dt = frm.doc.document_type;
-	if (!dt) return;
-	const apply = (f) => {
+	const document_type = frm.doc.document_type;
+	if (!document_type) return;
+	const apply_field_choices = (f) => {
 		frm.set_df_property("date_changed", "options", options_of(f.date_fields, frm.doc.date_changed));
 		frm.set_df_property("datetime_changed", "options", options_of(f.datetime_fields, frm.doc.datetime_changed));
 		frm.set_df_property("value_changed", "options", options_of(f.all_fields, frm.doc.value_changed));
@@ -77,16 +77,16 @@ function load_field_choices(frm) {
 			const receivers = (f.phone_fields || []).concat((f.link_fields || []).filter((r) => r.options === "Contact"));
 			grid.update_docfield_property("receiver_by_document_field", "options", options_of(receivers));
 			grid.update_docfield_property("linked_document_field", "options", options_of(f.link_fields));
-			grid.update_docfield_property("linked_document_field", "description", __("A Link field of {0}; the number is read from the linked document.", [__(dt)]));
+			grid.update_docfield_property("linked_document_field", "description", __("A Link field of {0}; the number is read from the linked document.", [__(document_type)]));
 			grid.refresh();
 		}
 	};
-	if (frm._wa_fields && frm._wa_fields.dt === dt) return apply(frm._wa_fields.data);
+	if (frm._wa_fields && frm._wa_fields.dt === document_type) return apply_field_choices(frm._wa_fields.data);
 	whatsapp.ui
-		.call("notifications.get_document_fields", { document_type: dt })
+		.call("notifications.get_document_fields", { document_type: document_type })
 		.then((data) => {
-			frm._wa_fields = { dt, data };
-			apply(data);
+			frm._wa_fields = { dt: document_type, data };
+			apply_field_choices(data);
 		})
 		.catch((err) => whatsapp.ui.Toast.error(err));
 }
@@ -119,9 +119,9 @@ function show_notification_preview(frm, reference_name) {
 	whatsapp.ui
 		.call("notifications.preview", { name: frm.doc.name, reference_name }, { freeze: true })
 		.then((r) => {
-			const esc = whatsapp.ui.escape;
-			const recipients = (r.recipients || []).map((x) => `<li><bdi dir="ltr">${esc(x.phone_e164)}</bdi> <span class="text-muted">· ${esc(__(x.source || ""))}</span></li>`).join("");
-			const errors = (r.errors || []).map((e) => `<li>${esc(e)}</li>`).join("");
+			const escape_html = whatsapp.ui.escape;
+			const recipients = (r.recipients || []).map((x) => `<li><bdi dir="ltr">${escape_html(x.phone_e164)}</bdi> <span class="text-muted">· ${escape_html(__(x.source || ""))}</span></li>`).join("");
+			const errors = (r.errors || []).map((e) => `<li>${escape_html(e)}</li>`).join("");
 			const d = new frappe.ui.Dialog({
 				title: __("Preview: {0}", [frappe.utils.escape_html(reference_name)]),
 				size: "large",
@@ -130,12 +130,12 @@ function show_notification_preview(frm, reference_name) {
 						fieldtype: "HTML",
 						fieldname: "body",
 						options: `
-							<p class="${r.meets_condition ? "text-success" : "text-warning"}">${esc(r.meets_condition ? __("The condition is met: this document would be sent.") : __("The condition is not met: nothing would be sent."))}</p>
-							<h6>${esc(__("Message"))}</h6>
-							<div class="whatsapp-notification-preview" dir="auto" style="white-space: pre-wrap">${esc(r.message || "")}</div>
-							<h6>${esc(__("Recipients"))}</h6>
-							${recipients ? `<ul>${recipients}</ul>` : `<p class="text-muted">${esc(__("No recipient resolved."))}</p>`}
-							${errors ? `<h6>${esc(__("Errors"))}</h6><ul class="text-danger">${errors}</ul>` : ""}`,
+							<p class="${r.meets_condition ? "text-success" : "text-warning"}">${escape_html(r.meets_condition ? __("The condition is met: this document would be sent.") : __("The condition is not met: nothing would be sent."))}</p>
+							<h6>${escape_html(__("Message"))}</h6>
+							<div class="whatsapp-notification-preview" dir="auto" style="white-space: pre-wrap">${escape_html(r.message || "")}</div>
+							<h6>${escape_html(__("Recipients"))}</h6>
+							${recipients ? `<ul>${recipients}</ul>` : `<p class="text-muted">${escape_html(__("No recipient resolved."))}</p>`}
+							${errors ? `<h6>${escape_html(__("Errors"))}</h6><ul class="text-danger">${errors}</ul>` : ""}`,
 					},
 				],
 			});

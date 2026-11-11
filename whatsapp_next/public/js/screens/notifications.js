@@ -8,18 +8,18 @@ frappe.provide("whatsapp_next.notifications");
 
 whatsapp_next.notifications.open = function (name, { on_saved } = {}) {
 	// silent: the editor says what went wrong itself, so Frappe must not pop the same message up too
-	const call = (method, args) => whatsapp.ui.call(`notifications.${method}`, args || {}, { silent: true });
+	const call_notifications_api = (method, args) => whatsapp.ui.call(`notifications.${method}`, args || {}, { silent: true });
 	return new whatsapp.ui.NotificationEditor({
 		name: name || null,
 		form_doctype: "WhatsApp Notification",
-		load: (n) => call("get_editor", n ? { name: n } : {}),
-		setup: (document_type) => call("get_document_setup", { document_type }),
-		preview: (payload, reference_name) => call("preview_draft", { payload, reference_name: reference_name || null }),
-		save: (payload) => call("save_editor", { payload }),
-		remove: (n) => call("delete_notification", { name: n }),
-		send_test: (payload, phone, reference_name) => call("send_test", { payload, phone, reference_name: reference_name || null }),
-		make_file: (payload, reference_name) => call("make_file", { payload, reference_name: reference_name || null }),
-		search: (kind, txt, document_type) => call("search", { kind, txt: txt || "", document_type: document_type || null }),
+		load: (n) => call_notifications_api("get_editor", n ? { name: n } : {}),
+		setup: (document_type) => call_notifications_api("get_document_setup", { document_type }),
+		preview: (payload, reference_name) => call_notifications_api("preview_draft", { payload, reference_name: reference_name || null }),
+		save: (payload) => call_notifications_api("save_editor", { payload }),
+		remove: (n) => call_notifications_api("delete_notification", { name: n }),
+		send_test: (payload, phone, reference_name) => call_notifications_api("send_test", { payload, phone, reference_name: reference_name || null }),
+		make_file: (payload, reference_name) => call_notifications_api("make_file", { payload, reference_name: reference_name || null }),
+		search: (kind, txt, document_type) => call_notifications_api("search", { kind, txt: txt || "", document_type: document_type || null }),
 		// only a connected device can send
 		device_link: { doctype: "WhatsApp Device", filters: { status: "Connected", disabled: 0 } },
 		open_template: whatsapp_next.templates && whatsapp_next.templates.open ? (n, opts) => whatsapp_next.templates.open(n, opts) : null,

@@ -142,13 +142,13 @@ frappe.provide("whatsapp.ui");
 		}
 
 		picked_count() {
-			const s = this.state;
-			return s.groups.length + s.contacts.length + s.numbers.length;
+			const state = this.state;
+			return state.groups.length + state.contacts.length + state.numbers.length;
 		}
 
 		total() {
-			const e = this.state.estimate;
-			if (e) return cint(e.total);
+			const estimate = this.state.estimate;
+			if (estimate) return cint(estimate.total);
 			return this.state.contacts.length + this.state.numbers.length;
 		}
 
@@ -162,18 +162,18 @@ frappe.provide("whatsapp.ui");
 		}
 
 		render_list() {
-			const s = this.state;
+			const state = this.state;
 			const tabs = [
-				{ key: "groups", label: __("Groups", null, "Bulk Send"), count: s.groups.length },
-				{ key: "contacts", label: __("Contacts", null, "Bulk Send"), count: s.contacts.length },
-				{ key: "manual", label: __("Numbers", null, "Bulk Send"), count: s.numbers.length },
+				{ key: "groups", label: __("Groups", null, "Bulk Send"), count: state.groups.length },
+				{ key: "contacts", label: __("Contacts", null, "Bulk Send"), count: state.contacts.length },
+				{ key: "manual", label: __("Numbers", null, "Bulk Send"), count: state.numbers.length },
 			];
-			const selected = s.src === "selected";
-			const placeholder = s.src === "groups" ? __("Search the groups…") : selected ? __("Search the selected…") : __("Search by name or number…");
+			const selected = state.src === "selected";
+			const placeholder = state.src === "groups" ? __("Search the groups…") : selected ? __("Search the selected…") : __("Search by name or number…");
 			let body;
-			if (s.src === "manual") {
+			if (state.src === "manual") {
 				body = `<div class="whatsapp-kit-bulk-send__manual">
-					<textarea class="whatsapp-kit-bulk-send__numbers" dir="ltr" rows="6" data-f="numbers" data-in="numbers" placeholder="${escape_html(__("One number per line, or separated by commas."))}">${escape_html(s.numbers_text)}</textarea>
+					<textarea class="whatsapp-kit-bulk-send__numbers" dir="ltr" rows="6" data-f="numbers" data-in="numbers" placeholder="${escape_html(__("One number per line, or separated by commas."))}">${escape_html(state.numbers_text)}</textarea>
 					<button type="button" class="whatsapp-kit-command-editor__btn" data-act="add-numbers">${escape_html(__("Add the numbers"))}</button>
 					<span class="whatsapp-kit-command-editor__note">${escape_html(__("Invalid and repeated numbers are skipped. The added ones show under «Selected»."))}</span>
 				</div>`;
@@ -181,7 +181,7 @@ frappe.provide("whatsapp.ui");
 				const rows = this.current_segment_rows();
 				body = rows.length
 					? rows.map((r) => this.row_html(r)).join("")
-					: `<span class="whatsapp-kit-bulk-send__none">${escape_html(s.loading ? __("Loading…") : selected ? __("No recipient selected yet.") : __("No results match the search."))}</span>`;
+					: `<span class="whatsapp-kit-bulk-send__none">${escape_html(state.loading ? __("Loading…") : selected ? __("No recipient selected yet.") : __("No results match the search."))}</span>`;
 			}
 			const n = this.picked_count();
 			return `<section class="whatsapp-kit-bulk-send__list-pane" aria-label="${escape_html(__("Recipients", null, "Bulk Send"))}">
@@ -189,15 +189,15 @@ frappe.provide("whatsapp.ui");
 					<span class="whatsapp-kit-bulk-send__list-title">${escape_html(__("Recipients", null, "Bulk Send"))}</span>
 					<span class="whatsapp-kit-bulk-send__segs" role="tablist">${tabs
 						.map(
-							(t) => `<button type="button" role="tab" class="whatsapp-kit-bulk-send__seg${s.src === t.key ? " is-sel" : ""}" aria-selected="${s.src === t.key}" data-act="src" data-key="${t.key}">${escape_html(t.label)}${
+							(t) => `<button type="button" role="tab" class="whatsapp-kit-bulk-send__seg${state.src === t.key ? " is-sel" : ""}" aria-selected="${state.src === t.key}" data-act="src" data-key="${t.key}">${escape_html(t.label)}${
 								t.count ? `<span class="whatsapp-kit-bulk-send__seg-n" dir="ltr">${whatsapp.ui.format_integer(t.count)}</span>` : ""
 							}</button>`
 						)
 						.join("")}</span>
 					${
-						s.src === "manual"
+						state.src === "manual"
 							? ""
-							: `<label class="whatsapp-kit-bulk-send__search">${SEARCH_ICON}<input type="text" data-whatsapp-bare data-f="q" data-in="q" value="${escape_html(s.q)}" placeholder="${escape_html(placeholder)}" aria-label="${escape_html(placeholder)}" autocomplete="off" /></label>`
+							: `<label class="whatsapp-kit-bulk-send__search">${SEARCH_ICON}<input type="text" data-whatsapp-bare data-f="q" data-in="q" value="${escape_html(state.q)}" placeholder="${escape_html(placeholder)}" aria-label="${escape_html(placeholder)}" autocomplete="off" /></label>`
 					}
 				</div>
 				<div class="whatsapp-kit-bulk-send__list" data-scroll="list" role="list">${body}</div>
@@ -215,14 +215,14 @@ frappe.provide("whatsapp.ui");
 
 		/** The rows of the current segment, already shaped for drawing. */
 		current_segment_rows() {
-			const s = this.state;
-			const q = s.q.trim().toLowerCase();
+			const state = this.state;
+			const q = state.q.trim().toLowerCase();
 			const match = (...parts) => !q || parts.some((p) => String(p || "").toLowerCase().includes(q) || strip_phone_separators(p).includes(strip_phone_separators(q)));
-			if (s.src === "groups") {
+			if (state.src === "groups") {
 				return ((this.ctx && this.ctx.groups) || [])
 					.filter((g) => match(g.group_name, g.name))
 					.map((g) => {
-						const on = s.groups.includes(g.name);
+						const on = state.groups.includes(g.name);
 						const black = g.kind === "Blacklist";
 						return {
 							key: g.name,
@@ -236,8 +236,8 @@ frappe.provide("whatsapp.ui");
 						};
 					});
 			}
-			if (s.src === "contacts") {
-				return (s.results || []).map((c) => ({
+			if (state.src === "contacts") {
+				return (state.results || []).map((c) => ({
 					key: c.name,
 					act: "toggle-contact",
 					name: c.label || __("Unnamed"),
@@ -246,18 +246,18 @@ frappe.provide("whatsapp.ui");
 					initials: whatsapp.ui.initials(c.label || "?"),
 					badge: c.party_type ? __(c.party_type) : "",
 					badge_tone: "muted",
-					on: s.contacts.some((x) => x.name === c.name),
+					on: state.contacts.some((x) => x.name === c.name),
 				}));
 			}
 			// the selected: what was picked, each removable
 			return []
 				.concat(
-					s.groups.map((name) => {
+					state.groups.map((name) => {
 						const g = this.group(name);
 						return { key: name, act: "rm-group", name: g.group_name || name, sub: __("{0} contacts", [whatsapp.ui.format_integer(g.member_count)]), initials: whatsapp.ui.initials(g.group_name || name), badge: __("Group", null, "Bulk Send"), badge_tone: "pri", remove: true };
 					}),
-					s.contacts.map((c) => ({ key: c.name, act: "rm-contact", name: c.label || c.name, sub: whatsapp.ui.phone(c.phone || ""), sub_ltr: true, initials: whatsapp.ui.initials(c.label || "?"), badge: __("Picked contact"), badge_tone: "pri", remove: true })),
-					s.numbers.map((p) => ({ key: p, act: "rm-number", name: __("Number added by hand"), sub: whatsapp.ui.phone(p), sub_ltr: true, initials: "#", avatar_tone: "nf", badge: __("Manual number"), badge_tone: "nf", remove: true }))
+					state.contacts.map((c) => ({ key: c.name, act: "rm-contact", name: c.label || c.name, sub: whatsapp.ui.phone(c.phone || ""), sub_ltr: true, initials: whatsapp.ui.initials(c.label || "?"), badge: __("Picked contact"), badge_tone: "pri", remove: true })),
+					state.numbers.map((p) => ({ key: p, act: "rm-number", name: __("Number added by hand"), sub: whatsapp.ui.phone(p), sub_ltr: true, initials: "#", avatar_tone: "nf", badge: __("Manual number"), badge_tone: "nf", remove: true }))
 				)
 				.filter((r) => match(r.name, r.sub));
 		}
@@ -275,25 +275,25 @@ frappe.provide("whatsapp.ui");
 		}
 
 		render_message() {
-			const s = this.state;
+			const state = this.state;
 			const total = this.total();
 			const dev = this.device();
 			const tpl = this.template();
-			const e = s.estimate || {};
+			const e = state.estimate || {};
 			const parts = [
-				s.groups.length ? __("{0} groups", [whatsapp.ui.format_integer(s.groups.length)]) : "",
-				s.contacts.length ? __("{0} contacts", [whatsapp.ui.format_integer(s.contacts.length)]) : "",
-				s.numbers.length ? __("{0} numbers", [whatsapp.ui.format_integer(s.numbers.length)]) : "",
+				state.groups.length ? __("{0} groups", [whatsapp.ui.format_integer(state.groups.length)]) : "",
+				state.contacts.length ? __("{0} contacts", [whatsapp.ui.format_integer(state.contacts.length)]) : "",
+				state.numbers.length ? __("{0} numbers", [whatsapp.ui.format_integer(state.numbers.length)]) : "",
 				cint(e.excluded) ? __("{0} excluded", [whatsapp.ui.format_integer(e.excluded)]) : "",
 			].filter(Boolean);
 			const head_title = total ? __("Broadcast to {0} recipients", [whatsapp.ui.format_integer(total)]) : __("Send a message");
 			const head_sub = total ? `${parts.join(" · ")} · ${dev ? dev.device_name || dev.name : "—"}` : __("Pick the recipients from the list, then write the message");
-			const first = s.contacts[0] || (s.numbers[0] ? { label: __("Number added by hand"), phone: s.numbers[0] } : null) || (s.groups[0] ? { label: this.group(s.groups[0]).group_name, phone: __("{0} contacts", [whatsapp.ui.format_integer(this.group(s.groups[0]).member_count)]) } : null);
+			const first = state.contacts[0] || (state.numbers[0] ? { label: __("Number added by hand"), phone: state.numbers[0] } : null) || (state.groups[0] ? { label: this.group(state.groups[0]).group_name, phone: __("{0} contacts", [whatsapp.ui.format_integer(this.group(state.groups[0]).member_count)]) } : null);
 			const remaining = this.ctx.messages_remaining;
-			const mins = total / Math.max(1, cint(s.rate) || 20);
+			const mins = total / Math.max(1, cint(state.rate) || 20);
 			const eta = !total ? "—" : mins < 1 ? __("under a minute") : mins < 60 ? __("{0} minutes", [Math.round(mins)]) : __("{0} hours", [Math.round(mins / 60)]);
-			const ready = total > 0 && (!!s.body.trim() || !!s.attach) && dev && dev.status === "Connected";
-			const send_label = s.when === "later" ? __("Schedule the send") : total ? __("Send to {0}", [whatsapp.ui.format_integer(total)]) : __("Send", null, "Bulk Send");
+			const ready = total > 0 && (!!state.body.trim() || !!state.attach) && dev && dev.status === "Connected";
+			const send_label = state.when === "later" ? __("Schedule the send") : total ? __("Send to {0}", [whatsapp.ui.format_integer(total)]) : __("Send", null, "Bulk Send");
 			return `<section class="whatsapp-kit-bulk-send__main" aria-label="${escape_html(__("The message"))}">
 				<div class="whatsapp-kit-bulk-send__head">
 					<span class="whatsapp-kit-bulk-send__head-icon" aria-hidden="true">${SEND_ICON.replace('width="14" height="14"', 'width="18" height="18"')}</span>
@@ -301,9 +301,9 @@ frappe.provide("whatsapp.ui");
 						<span class="whatsapp-kit-bulk-send__head-title">${escape_html(head_title)}</span>
 						<span class="whatsapp-kit-bulk-send__head-sub">${escape_html(head_sub)}</span>
 					</span>
-					<button type="button" class="whatsapp-kit-bulk-send__settings-btn" data-act="settings" aria-expanded="${s.settings}">${GEAR_ICON}<span>${escape_html(s.settings ? __("Hide the settings") : tpl ? tpl.template_name || tpl.name : __("Send settings"))}</span></button>
+					<button type="button" class="whatsapp-kit-bulk-send__settings-btn" data-act="settings" aria-expanded="${state.settings}">${GEAR_ICON}<span>${escape_html(state.settings ? __("Hide the settings") : tpl ? tpl.template_name || tpl.name : __("Send settings"))}</span></button>
 				</div>
-				${s.settings ? this.render_settings() : ""}
+				${state.settings ? this.render_settings() : ""}
 				<div class="whatsapp-kit-bulk-send__who">
 					<span class="whatsapp-kit-command-editor__avatar${first ? "" : " whatsapp-kit-bulk-send__avatar--q"}" aria-hidden="true">${escape_html(first ? whatsapp.ui.initials(first.label || "#") : "?")}</span>
 					<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__card-name">${escape_html(first ? first.label || __("First recipient") : __("No recipient yet", null, "Bulk Send"))}</span><span class="whatsapp-kit-command-editor__opt-sub"${first ? ' dir="auto"' : ""}>${escape_html(first ? first.phone || "" : __("The preview shows once a recipient is picked"))}</span></span>
@@ -312,20 +312,20 @@ frappe.provide("whatsapp.ui");
 				<div class="whatsapp-kit-bulk-send__note"><span class="whatsapp-kit-bulk-send__note-dot" aria-hidden="true"></span><span>${escape_html(__("The send is real — the text is sent as it is to every recipient."))}</span></div>
 				<div class="whatsapp-kit-bulk-send__thread">
 					${
-						s.body.trim() || s.attach
+						state.body.trim() || state.attach
 							? `<span class="whatsapp-kit-bulk-send__day">${escape_html(__("Today"))}</span><div class="whatsapp-kit-bulk-send__bubble" dir="auto">${
-									s.attach
-										? `<span class="whatsapp-kit-bulk-send__bubble-file">${whatsapp.ui.AttachMenu.kind_icon_svg(s.attach.kind)}<bdi>${escape_html(s.attach.file_name || s.attach.contact_label || whatsapp.ui.AttachMenu.label(s.attach.kind))}</bdi></span>`
+									state.attach
+										? `<span class="whatsapp-kit-bulk-send__bubble-file">${whatsapp.ui.AttachMenu.kind_icon_svg(state.attach.kind)}<bdi>${escape_html(state.attach.file_name || state.attach.contact_label || whatsapp.ui.AttachMenu.label(state.attach.kind))}</bdi></span>`
 										: ""
-							  }${escape_html(s.body)}<span class="whatsapp-kit-bulk-send__bubble-at" dir="ltr">${escape_html(frappe.datetime.now_time().slice(0, 5))} 🕓</span></div>`
+							  }${escape_html(state.body)}<span class="whatsapp-kit-bulk-send__bubble-at" dir="ltr">${escape_html(frappe.datetime.now_time().slice(0, 5))} 🕓</span></div>`
 							: `<div class="whatsapp-kit-bulk-send__empty"><strong>${escape_html(__("Write the message"))}</strong><span>${escape_html(__("Write in the box below or pick a template from the send settings — it shows here as the recipient gets it."))}</span></div>`
 					}
 				</div>
-				${s.attach && whatsapp.ui.AttachMenu ? `<div class="whatsapp-kit-bulk-send__attach">${whatsapp.ui.AttachMenu.chip_html(s.attach)}</div>` : ""}
+				${state.attach && whatsapp.ui.AttachMenu ? `<div class="whatsapp-kit-bulk-send__attach">${whatsapp.ui.AttachMenu.chip_html(state.attach)}</div>` : ""}
 				<div class="whatsapp-kit-bulk-send__composer">
 					<span class="whatsapp-kit-bulk-send__tools"><button type="button" class="whatsapp-kit-bulk-send__round whatsapp-kit-bulk-send__round--plain" data-act="plus" title="${escape_html(__("Message type"))}" aria-label="${escape_html(__("Message type"))}" aria-haspopup="dialog">+</button></span>
 					<span class="whatsapp-kit-bulk-send__field">
-						<textarea class="whatsapp-kit-bulk-send__input" rows="2" data-f="body" data-in="body" placeholder="${escape_html(s.attach ? __("Caption (optional)…") : __("Write your message…"))}" aria-label="${escape_html(__("Message"))}">${escape_html(s.body)}</textarea>
+						<textarea class="whatsapp-kit-bulk-send__input" rows="2" data-f="body" data-in="body" placeholder="${escape_html(state.attach ? __("Caption (optional)…") : __("Write your message…"))}" aria-label="${escape_html(__("Message"))}">${escape_html(state.body)}</textarea>
 						<button type="button" class="whatsapp-kit-bulk-send__clear-x" data-act="clear-body" aria-label="${escape_html(__("Clear the text"))}" title="${escape_html(__("Clear the text"))}">×</button>
 					</span>
 					<button type="button" class="whatsapp-kit-bulk-send__round whatsapp-kit-bulk-send__round--pri" data-act="send" title="${escape_html(__("Send", null, "Bulk Send"))}" aria-label="${escape_html(__("Send", null, "Bulk Send"))}">${SEND_ICON}</button>
@@ -342,34 +342,34 @@ frappe.provide("whatsapp.ui");
 		}
 
 		render_settings() {
-			const s = this.state;
-			const ctx = this.ctx;
+			const state = this.state;
+			const context = this.ctx;
 			const dev = this.device();
 			return `<div class="whatsapp-kit-bulk-send__settings">
 				<div class="whatsapp-kit-bulk-send__form">
 					<label class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Message template"))}</span>
 						<select class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__select whatsapp-kit-bulk-send__ctl" data-ch="template">
 							<option value="">${escape_html(__("No template — free text"))}</option>
-							${(ctx.templates || []).map((t) => `<option value="${escape_html(t.name)}" ${t.name === s.template ? "selected" : ""}>${escape_html((t.template_name || t.name) + (t.category ? ` · ${t.category}` : ""))}</option>`).join("")}
+							${(context.templates || []).map((t) => `<option value="${escape_html(t.name)}" ${t.name === state.template ? "selected" : ""}>${escape_html((t.template_name || t.name) + (t.category ? ` · ${t.category}` : ""))}</option>`).join("")}
 						</select></label>
 					<label class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Sending device"))}</span>
 						<select class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__select whatsapp-kit-bulk-send__ctl" data-ch="device">
-							${(ctx.devices || []).map((d) => `<option value="${escape_html(d.name)}" ${d.name === s.device ? "selected" : ""}>${escape_html((d.device_name || d.name) + (d.status === "Connected" ? "" : ` — ${__("not connected")}`))}</option>`).join("")}
+							${(context.devices || []).map((d) => `<option value="${escape_html(d.name)}" ${d.name === state.device ? "selected" : ""}>${escape_html((d.device_name || d.name) + (d.status === "Connected" ? "" : ` — ${__("not connected")}`))}</option>`).join("")}
 						</select>
 						${dev && dev.status !== "Connected" ? `<span class="whatsapp-kit-command-editor__note whatsapp-kit-command-editor__note--warn">${escape_html(__("The device is not connected."))}</span>` : ""}</label>
 					<label class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Rate (messages/minute)"))}</span>
-						<input type="number" min="1"${ctx.max_rate ? ` max="${cint(ctx.max_rate)}"` : ""} class="whatsapp-kit-command-editor__input whatsapp-kit-bulk-send__ctl whatsapp-kit-command-editor__mono" data-f="rate" data-in="rate" value="${escape_html(s.rate || "")}" />
-						<span class="whatsapp-kit-command-editor__note${this.rate_problem() || cint(s.rate) > 30 ? " whatsapp-kit-command-editor__note--warn" : ""}">${escape_html(
-							this.rate_problem() || (cint(s.rate) > 30 ? __("A high rate — raises the risk of a ban.") : __("Recommended 20–30."))
+						<input type="number" min="1"${context.max_rate ? ` max="${cint(context.max_rate)}"` : ""} class="whatsapp-kit-command-editor__input whatsapp-kit-bulk-send__ctl whatsapp-kit-command-editor__mono" data-f="rate" data-in="rate" value="${escape_html(state.rate || "")}" />
+						<span class="whatsapp-kit-command-editor__note${this.rate_problem() || cint(state.rate) > 30 ? " whatsapp-kit-command-editor__note--warn" : ""}">${escape_html(
+							this.rate_problem() || (cint(state.rate) > 30 ? __("A high rate — raises the risk of a ban.") : __("Recommended 20–30."))
 						)}</span></label>
 					<div class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Timing"))}</span>
 						<span class="whatsapp-kit-bulk-send__segs whatsapp-kit-bulk-send__segs--sm">
-							<button type="button" class="whatsapp-kit-bulk-send__seg${s.when === "now" ? " is-sel" : ""}" data-act="when" data-key="now">${escape_html(__("Now", null, "Bulk Send"))}</button>
-							<button type="button" class="whatsapp-kit-bulk-send__seg${s.when === "later" ? " is-sel" : ""}" data-act="when" data-key="later">${escape_html(__("At a time"))}</button>
+							<button type="button" class="whatsapp-kit-bulk-send__seg${state.when === "now" ? " is-sel" : ""}" data-act="when" data-key="now">${escape_html(__("Now", null, "Bulk Send"))}</button>
+							<button type="button" class="whatsapp-kit-bulk-send__seg${state.when === "later" ? " is-sel" : ""}" data-act="when" data-key="later">${escape_html(__("At a time"))}</button>
 						</span></div>
 					${
-						s.when === "later"
-							? `<label class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Start time"))}</span><input type="datetime-local" class="whatsapp-kit-command-editor__input whatsapp-kit-bulk-send__ctl" data-ch="at" value="${escape_html(s.at)}" /></label>`
+						state.when === "later"
+							? `<label class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Start time"))}</span><input type="datetime-local" class="whatsapp-kit-command-editor__input whatsapp-kit-bulk-send__ctl" data-ch="at" value="${escape_html(state.at)}" /></label>`
 							: ""
 					}
 				</div>
@@ -386,19 +386,19 @@ frappe.provide("whatsapp.ui");
 		// ---- data ---------------------------------------------------------------------------------
 
 		search_contacts() {
-			const s = this.state;
-			s.loading = true;
+			const state = this.state;
+			state.loading = true;
 			clearTimeout(this._q);
-			const q = s.q;
+			const query = state.q;
 			this._q = setTimeout(async () => {
 				try {
-					const rows = await this.opts.search_contacts(q);
-					if (s.q !== q || s.src !== "contacts") return;
-					s.results = rows || [];
+					const rows = await this.opts.search_contacts(query);
+					if (state.q !== query || state.src !== "contacts") return;
+					state.results = rows || [];
 				} catch (err) {
-					s.results = [];
+					state.results = [];
 				}
-				s.loading = false;
+				state.loading = false;
 				this.render();
 			}, 220);
 		}
@@ -408,19 +408,19 @@ frappe.provide("whatsapp.ui");
 			// a slower answer to an older selection must not overwrite the newer one's count
 			const seq = (this._est_seq = (this._est_seq || 0) + 1);
 			this._est = setTimeout(async () => {
-				const s = this.state;
+				const state = this.state;
 				if (!this.picked_count()) {
-					s.estimate = { total: 0, excluded: 0 };
+					state.estimate = { total: 0, excluded: 0 };
 					return this.render();
 				}
 				let estimate = null;
 				try {
-					estimate = await this.opts.estimate({ groups: s.groups, contacts: s.contacts.map((c) => c.name), numbers: s.numbers });
+					estimate = await this.opts.estimate({ groups: state.groups, contacts: state.contacts.map((c) => c.name), numbers: state.numbers });
 				} catch (err) {
 					estimate = null;
 				}
 				if (seq !== this._est_seq || !this.$root) return;
-				s.estimate = estimate;
+				state.estimate = estimate;
 				this.render();
 			}, 250);
 		}
@@ -431,11 +431,11 @@ frappe.provide("whatsapp.ui");
 		 * scheduled hours off (and "in the future" was judged against the wrong clock).
 		 */
 		scheduled_at() {
-			const at = this.state.at;
-			if (!at) return null;
+			const local_start_time = this.state.at;
+			if (!local_start_time) return null;
 			const system = window.frappe && frappe.boot && frappe.boot.time_zone && frappe.boot.time_zone.system;
-			const m = window.moment && moment(at);
-			if (!m || !m.isValid()) return at.replace("T", " ");
+			const m = window.moment && moment(local_start_time);
+			if (!m || !m.isValid()) return local_start_time.replace("T", " ");
 			return (system && m.tz ? m.clone().tz(system) : m).locale("en").format("YYYY-MM-DD HH:mm:ss");
 		}
 
@@ -451,32 +451,32 @@ frappe.provide("whatsapp.ui");
 		}
 
 		on_input(e) {
-			const el = e.target;
-			const kind = el.getAttribute("data-in");
-			const s = this.state;
+			const target_element = e.target;
+			const kind = target_element.getAttribute("data-in");
+			const state = this.state;
 			if (kind === "q") {
-				s.q = el.value;
-				if (s.src === "contacts") return this.search_contacts();
+				state.q = target_element.value;
+				if (state.src === "contacts") return this.search_contacts();
 				return this.render();
 			}
-			if (kind === "numbers") return void (s.numbers_text = el.value);
-			if (kind === "rate") return void (s.rate = el.value);
+			if (kind === "numbers") return void (state.numbers_text = target_element.value);
+			if (kind === "rate") return void (state.rate = target_element.value);
 			if (kind === "body") {
-				s.body = el.value;
+				state.body = target_element.value;
 				return this.render();
 			}
 		}
 
 		on_change(e) {
-			const el = e.target;
-			const kind = el.getAttribute("data-ch");
-			const s = this.state;
+			const target_element = e.target;
+			const kind = target_element.getAttribute("data-ch");
+			const state = this.state;
 			if (kind === "template") {
-				s.template = el.value;
+				state.template = target_element.value;
 				const tpl = this.template();
-				if (tpl) s.body = tpl.body || "";
-			} else if (kind === "device") s.device = el.value;
-			else if (kind === "at") s.at = el.value;
+				if (tpl) state.body = tpl.body || "";
+			} else if (kind === "device") state.device = target_element.value;
+			else if (kind === "at") state.at = target_element.value;
 			this.render();
 		}
 
@@ -484,37 +484,37 @@ frappe.provide("whatsapp.ui");
 			const $el = $(e.currentTarget);
 			const act = $el.attr("data-act");
 			const key = $el.attr("data-key");
-			const s = this.state;
+			const state = this.state;
 			switch (act) {
 				case "close":
 					return this.close();
 				case "src":
-					s.src = key;
-					s.q = "";
+					state.src = key;
+					state.q = "";
 					this.render();
 					if (key === "contacts") this.search_contacts();
 					return;
 				case "toggle-group":
-					s.groups = s.groups.includes(key) ? s.groups.filter((x) => x !== key) : s.groups.concat([key]);
+					state.groups = state.groups.includes(key) ? state.groups.filter((x) => x !== key) : state.groups.concat([key]);
 					break;
 				case "toggle-contact": {
-					const c = (s.results || []).find((x) => x.name === key);
-					s.contacts = s.contacts.some((x) => x.name === key) ? s.contacts.filter((x) => x.name !== key) : s.contacts.concat(c ? [c] : []);
+					const c = (state.results || []).find((x) => x.name === key);
+					state.contacts = state.contacts.some((x) => x.name === key) ? state.contacts.filter((x) => x.name !== key) : state.contacts.concat(c ? [c] : []);
 					break;
 				}
 				case "rm-group":
-					s.groups = s.groups.filter((x) => x !== key);
+					state.groups = state.groups.filter((x) => x !== key);
 					break;
 				case "rm-contact":
-					s.contacts = s.contacts.filter((x) => x.name !== key);
+					state.contacts = state.contacts.filter((x) => x.name !== key);
 					break;
 				case "rm-number":
-					s.numbers = s.numbers.filter((x) => x !== key);
+					state.numbers = state.numbers.filter((x) => x !== key);
 					break;
 				case "add-numbers": {
-					const seen = new Set(s.numbers.map(strip_phone_separators));
+					const seen = new Set(state.numbers.map(strip_phone_separators));
 					const add = [];
-					String(s.numbers_text)
+					String(state.numbers_text)
 						.split(/[\n,،;]+/)
 						.map((x) => x.trim())
 						.filter(Boolean)
@@ -525,24 +525,24 @@ frappe.provide("whatsapp.ui");
 								add.push(n);
 							}
 						});
-					s.numbers = s.numbers.concat(add);
-					s.numbers_text = "";
+					state.numbers = state.numbers.concat(add);
+					state.numbers_text = "";
 					if (add.length) whatsapp.ui.Toast.success(whatsapp.ui.plural(add.length, { one: __("{0} number added"), other: __("{0} numbers added") }));
 					else whatsapp.ui.Toast.warning(__("No new valid number"));
 					break;
 				}
 				case "show-selected":
-					s.src = s.src === "selected" ? "groups" : "selected";
-					s.q = "";
+					state.src = state.src === "selected" ? "groups" : "selected";
+					state.q = "";
 					return this.render();
 				case "clear":
-					Object.assign(s, { groups: [], contacts: [], numbers: [], src: "groups", q: "" });
+					Object.assign(state, { groups: [], contacts: [], numbers: [], src: "groups", q: "" });
 					break;
 				case "settings":
-					s.settings = !s.settings;
+					state.settings = !state.settings;
 					return this.render();
 				case "when":
-					s.when = key;
+					state.when = key;
 					return this.render();
 				case "templates":
 					this.close();
@@ -554,12 +554,12 @@ frappe.provide("whatsapp.ui");
 						reasons: { location: __("A location goes to one conversation at a time — send it from the simulator.") },
 						search_contacts: (txt) => this.opts.search_contacts(txt),
 						on_pick: (v) => {
-							s.attach = v;
+							state.attach = v;
 							this.render();
 						},
 					});
 				case "clear-body":
-					s.body = "";
+					state.body = "";
 					this.render();
 					return this.$root.find("[data-f=body]").trigger("focus");
 				case "send":
@@ -573,17 +573,17 @@ frappe.provide("whatsapp.ui");
 
 		/** The prototype's three guards, then its confirmation with the facts of this send. */
 		ask_send() {
-			const s = this.state;
+			const state = this.state;
 			const total = this.total();
 			const dev = this.device();
 			if (!this.picked_count()) return new whatsapp.ui.Toast({ tone: "warning", title: __("No recipients"), message: __("Pick a group or contacts, or enter numbers.") });
-			if (!s.body.trim() && !s.attach)
+			if (!state.body.trim() && !state.attach)
 				return new whatsapp.ui.Toast({ tone: "warning", title: __("The message is empty"), message: __("Write the message text, or pick a file or a contact with «+».") });
 			if (!dev || dev.status !== "Connected") return new whatsapp.ui.Toast({ tone: "warning", title: __("The device is not connected"), message: __("Pick a connected device from the send settings.") });
-			if (s.when === "later" && !s.at) return new whatsapp.ui.Toast({ tone: "warning", title: __("No start time"), message: __("Pick when the send starts, or send now.") });
+			if (state.when === "later" && !state.at) return new whatsapp.ui.Toast({ tone: "warning", title: __("No start time"), message: __("Pick when the send starts, or send now.") });
 			if (this.rate_problem()) return new whatsapp.ui.Toast({ tone: "warning", title: __("The rate is too high"), message: this.rate_problem() });
-			const later = s.when === "later";
-			const e = s.estimate || {};
+			const later = state.when === "later";
+			const e = state.estimate || {};
 			const remaining = this.ctx.messages_remaining;
 			const impact = [
 				{ label: __("Recipients", null, "Bulk Send"), value: whatsapp.ui.format_integer(total) },
@@ -595,22 +595,22 @@ frappe.provide("whatsapp.ui");
 				title: later ? __("Schedule {0} messages?", [whatsapp.ui.format_integer(total)]) : __("Send {0} messages?", [whatsapp.ui.format_integer(total)]),
 				message: later
 					? __("The messages are scheduled for the chosen time and can be cancelled from the queue before they start.")
-					: __("The messages enter the queue now and go out at {0} messages a minute. What is sent cannot be recalled.", [cint(s.rate) || 20]),
+					: __("The messages enter the queue now and go out at {0} messages a minute. What is sent cannot be recalled.", [cint(state.rate) || 20]),
 				impact,
 				ack_checkbox: total > 200 ? __("I understand that {0} messages will really be sent and counted against the balance", [whatsapp.ui.format_integer(total)]) : undefined,
 				confirm_label: later ? __("Schedule the send") : __("Send now"),
 				on_confirm: () =>
 					this.opts.send({
-						groups: s.groups,
-						contacts: s.contacts.map((c) => c.name),
-						numbers: s.numbers,
-						body: s.body,
-						template: s.attach ? null : s.template || null,
-						kind: s.attach ? s.attach.kind : "text",
-						attachment: s.attach ? s.attach.attachment || null : null,
-						contact: s.attach ? s.attach.contact || null : null,
-						device: s.device,
-						rate: cint(s.rate) || null,
+						groups: state.groups,
+						contacts: state.contacts.map((c) => c.name),
+						numbers: state.numbers,
+						body: state.body,
+						template: state.attach ? null : state.template || null,
+						kind: state.attach ? state.attach.kind : "text",
+						attachment: state.attach ? state.attach.attachment || null : null,
+						contact: state.attach ? state.attach.contact || null : null,
+						device: state.device,
+						rate: cint(state.rate) || null,
 						scheduled_at: later ? this.scheduled_at() : null,
 					}),
 			})
@@ -618,7 +618,7 @@ frappe.provide("whatsapp.ui");
 					new whatsapp.ui.Toast({
 						tone: "success",
 						title: later ? __("{0} messages scheduled", [whatsapp.ui.format_integer(r.recipients)]) : __("{0} messages added to the queue", [whatsapp.ui.format_integer(r.recipients)]),
-						message: later ? __("They start at the chosen time.") : __("They go out at {0} messages a minute — follow them from the queue.", [cint(s.rate) || 20]),
+						message: later ? __("They start at the chosen time.") : __("They go out at {0} messages a minute — follow them from the queue.", [cint(state.rate) || 20]),
 					});
 					this.opts.on_sent && this.opts.on_sent(r);
 					this.close();

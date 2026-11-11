@@ -164,28 +164,28 @@ frappe.provide("whatsapp.ui");
 		}
 
 		render_header() {
-			const e = this.entry;
-			const on = e.status === "Active";
-			const releases = e.releases || {};
-			const cur = e.installed ? e.installed_version : e.latest_version;
+			const entry = this.entry;
+			const on = entry.status === "Active";
+			const releases = entry.releases || {};
+			const cur = entry.installed ? entry.installed_version : entry.latest_version;
 			const tabs = [
 				{ key: "details", label: __("Details", null, "Function Detail") },
-				{ key: "log", label: __("Version log"), count: (e.versions || []).length },
+				{ key: "log", label: __("Version log"), count: (entry.versions || []).length },
 				{ key: "preview", label: __("Preview") },
 			];
 			return `
 				<div class="whatsapp-kit-command-editor__head">
 					<div class="whatsapp-kit-command-editor__head-row whatsapp-kit-function-detail__head-row">
 						<span class="whatsapp-kit-function-detail__identity">
-							<span class="whatsapp-kit-function-detail__name" id="${this.id}-title">${escape_html(e.function_name || e.function_key)}</span>
+							<span class="whatsapp-kit-function-detail__name" id="${this.id}-title">${escape_html(entry.function_name || entry.function_key)}</span>
 							<span class="whatsapp-kit-function-detail__sub">
-								<span class="whatsapp-kit-command-editor__sub">${escape_html(e.category || __("Uncategorised"))}</span>
+								<span class="whatsapp-kit-command-editor__sub">${escape_html(entry.category || __("Uncategorised"))}</span>
 								${
-									e.installed
+									entry.installed
 										? `<span class="whatsapp-kit-function-detail__badge ${on ? "whatsapp-kit-function-detail__badge--ok" : "whatsapp-kit-function-detail__badge--muted"}">${escape_html(on ? __("Active", null, "Function Detail") : __("Stopped", null, "Function Detail"))}</span>`
 										: ""
 								}
-								<span class="whatsapp-kit-function-detail__badge whatsapp-kit-function-detail__badge--line ${e.installed ? "whatsapp-kit-function-detail__badge--pri" : ""}">${escape_html(e.installed ? __("Installed", null, "Function Detail") : __("Not installed", null, "Function Detail"))}</span>
+								<span class="whatsapp-kit-function-detail__badge whatsapp-kit-function-detail__badge--line ${entry.installed ? "whatsapp-kit-function-detail__badge--pri" : ""}">${escape_html(entry.installed ? __("Installed", null, "Function Detail") : __("Not installed", null, "Function Detail"))}</span>
 							</span>
 						</span>
 						${this.opts.form ? whatsapp.ui.form_button_html() : ""}
@@ -204,8 +204,8 @@ frappe.provide("whatsapp.ui");
 						<span class="whatsapp-kit-command-editor__meta">
 							${cur ? `<span class="whatsapp-kit-function-detail__ver whatsapp-kit-function-detail__ver--pri" dir="ltr">${escape_html(__("Current {0} · {1}", [cur, this.format_release_date((releases[cur] || {}).released)]))}</span>` : ""}
 							${
-								e.installed && e.update_available
-									? `<span class="whatsapp-kit-function-detail__ver whatsapp-kit-function-detail__ver--wn" dir="ltr">${escape_html(__("Latest {0} · {1}", [e.latest_version, this.format_release_date((releases[e.latest_version] || {}).released)]))}</span>`
+								entry.installed && entry.update_available
+									? `<span class="whatsapp-kit-function-detail__ver whatsapp-kit-function-detail__ver--wn" dir="ltr">${escape_html(__("Latest {0} · {1}", [entry.latest_version, this.format_release_date((releases[entry.latest_version] || {}).released)]))}</span>`
 									: ""
 							}
 						</span>
@@ -214,22 +214,22 @@ frappe.provide("whatsapp.ui");
 		}
 
 		render_details() {
-			const e = this.entry;
-			const m = this.manifest;
-			const linked = e.linked_commands || [];
-			const party = (m.party_types && m.party_types.length ? m.party_types : e.party_types) || [];
-			const words = m.suggested_commands || [];
+			const entry = this.entry;
+			const manifest = this.manifest;
+			const linked = entry.linked_commands || [];
+			const party = (manifest.party_types && manifest.party_types.length ? manifest.party_types : entry.party_types) || [];
+			const words = manifest.suggested_commands || [];
 			const stats = [
-				[__("Calls (30d)", null, "Function Detail"), whatsapp.ui.format_integer(cint(e.calls_30d))],
-				[__("Average run time"), cint(e.avg_ms) ? `${whatsapp.ui.format_integer(e.avg_ms)} ms` : "—"],
+				[__("Calls (30d)", null, "Function Detail"), whatsapp.ui.format_integer(cint(entry.calls_30d))],
+				[__("Average run time"), cint(entry.avg_ms) ? `${whatsapp.ui.format_integer(entry.avg_ms)} ms` : "—"],
 				[__("Linked commands"), whatsapp.ui.format_integer(linked.length)],
 				[__("Active of them"), whatsapp.ui.format_integer(linked.filter((c) => c.status === "Active").length)],
 			];
 			const about = `
-				<p class="whatsapp-kit-function-detail__lede" dir="auto">${escape_html(e.description || __("No description in the catalog."))}</p>
+				<p class="whatsapp-kit-function-detail__lede" dir="auto">${escape_html(entry.description || __("No description in the catalog."))}</p>
 				<div class="whatsapp-kit-command-editor__box whatsapp-kit-function-detail__box">
 					<span class="whatsapp-kit-function-detail__box-title">${escape_html(__("When exactly to use it"))}</span>
-					<span class="whatsapp-kit-function-detail__box-text" dir="auto">${escape_html(e.when_to_use || __("The catalog does not say when to use it."))}</span>
+					<span class="whatsapp-kit-function-detail__box-text" dir="auto">${escape_html(entry.when_to_use || __("The catalog does not say when to use it."))}</span>
 				</div>
 				<div class="whatsapp-kit-command-editor__box whatsapp-kit-function-detail__box">
 					<span class="whatsapp-kit-function-detail__box-title">${escape_html(__("Party type the function serves"))}</span>
@@ -255,8 +255,8 @@ frappe.provide("whatsapp.ui");
 						${linked.length ? "" : `<span class="whatsapp-kit-command-editor__note">${escape_html(__("No command is linked to this function yet."))}</span>`}
 					</span>
 				</div>`;
-			const inputs = m.inputs || [];
-			const settings = m.settings || [];
+			const inputs = manifest.inputs || [];
+			const settings = manifest.settings || [];
 			const vars = `
 				${
 					inputs.length
@@ -354,17 +354,17 @@ frappe.provide("whatsapp.ui");
 		}
 
 		render_log() {
-			const e = this.entry;
-			const releases = e.releases || {};
-			const versions = (e.versions || []).slice().sort((a, b) => compare_versions(b, a));
+			const entry = this.entry;
+			const releases = entry.releases || {};
+			const versions = (entry.versions || []).slice().sort((a, b) => compare_versions(b, a));
 			const cards = versions
 				.map((v, i) => {
 					const rel = releases[v] || {};
-					const note = cstr(rel.changelog || (e.changelog || {})[v]).trim();
+					const note = cstr(rel.changelog || (entry.changelog || {})[v]).trim();
 					const changes = note ? note.split(/\n+/).map((s) => s.replace(/^[-*•]\s*/, "").trim()).filter(Boolean) : [];
 					const open = this.ui.log_open[v] != null ? this.ui.log_open[v] : i === 0;
-					const latest = v === e.latest_version;
-					const current = e.installed && v === e.installed_version;
+					const latest = v === entry.latest_version;
+					const current = entry.installed && v === entry.installed_version;
 					const badge = latest ? __("Latest", null, "Function Detail") : current ? __("Installed now") : "";
 					return `<div class="whatsapp-kit-function-detail__log${current ? " is-current" : ""}">
 						<button type="button" class="whatsapp-kit-function-detail__log-head" data-act="log" data-key="${escape_html(v)}" aria-expanded="${open}">
@@ -395,8 +395,8 @@ frappe.provide("whatsapp.ui");
 		}
 
 		preview_contact_links() {
-			const c = this.ui.pv.contact;
-			return c ? (c.links || []).filter((l) => l.link_doctype === this.preview_party_type()) : [];
+			const contact = this.ui.pv.contact;
+			return contact ? (contact.links || []).filter((l) => l.link_doctype === this.preview_party_type()) : [];
 		}
 
 		preview_blocker() {
@@ -408,13 +408,13 @@ frappe.provide("whatsapp.ui");
 		render_preview() {
 			const blocker = this.preview_blocker();
 			if (blocker) return `<div class="whatsapp-kit-command-editor__pane" data-scroll="pv"><span class="whatsapp-kit-command-editor__empty whatsapp-kit-command-editor__empty--surface">${escape_html(blocker)}</span></div>`;
-			const pv = this.ui.pv;
+			const preview = this.ui.pv;
 			const type = this.preview_party_type();
-			const c = pv.contact;
+			const contact = preview.contact;
 			const links = this.preview_contact_links();
-			const account = links.find((l) => l.link_name === pv.account) || links[0] || null;
+			const account = links.find((l) => l.link_name === preview.account) || links[0] || null;
 			const inputs = this.manifest.inputs || [];
-			const search_value = pv.q == null ? (c ? c.label || c.phone || "" : "") : pv.q;
+			const search_value = preview.q == null ? (contact ? contact.label || contact.phone || "" : "") : preview.q;
 			const assumptions = `
 				<div class="whatsapp-kit-command-editor__field whatsapp-kit-command-editor__field--tight">
 					<span class="whatsapp-kit-command-editor__label">${escape_html(__("Party type"))}</span>
@@ -427,19 +427,19 @@ frappe.provide("whatsapp.ui");
 					<span class="whatsapp-kit-command-editor__combo" data-pop="pv">
 						<input id="${this.id}-pv" type="text" class="whatsapp-kit-command-editor__input" data-f="pv-q" data-in="pv-q" data-focus-open="pv" value="${escape_html(search_value)}" placeholder="${escape_html(__("Search by name or number…"))}" autocomplete="off" />
 						${
-							pv.open
+							preview.open
 								? `<span class="whatsapp-kit-command-editor__pop" role="listbox">
-									${(pv.results || [])
+									${(preview.results || [])
 										.map(
-											(r) => `<button type="button" role="option" class="whatsapp-kit-command-editor__opt${c && r.name === c.name ? " is-sel" : ""}" data-act="pv-pick" data-name="${escape_html(r.name)}">${escape_html(r.label || __("Unnamed"))}<span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${escape_html(whatsapp.ui.phone(r.phone || ""))}</span></button>`
+											(r) => `<button type="button" role="option" class="whatsapp-kit-command-editor__opt${contact && r.name === contact.name ? " is-sel" : ""}" data-act="pv-pick" data-name="${escape_html(r.name)}">${escape_html(r.label || __("Unnamed"))}<span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${escape_html(whatsapp.ui.phone(r.phone || ""))}</span></button>`
 										)
 										.join("")}
-									${pv.loading ? `<span class="whatsapp-kit-command-editor__none">${escape_html(__("Loading…"))}</span>` : (pv.results || []).length ? "" : `<span class="whatsapp-kit-command-editor__none">${escape_html(pv.error || __("No matching contacts."))}</span>`}
+									${preview.loading ? `<span class="whatsapp-kit-command-editor__none">${escape_html(__("Loading…"))}</span>` : (preview.results || []).length ? "" : `<span class="whatsapp-kit-command-editor__none">${escape_html(preview.error || __("No matching contacts."))}</span>`}
 								</span>`
 								: ""
 						}
 					</span>
-					${c ? "" : `<span class="whatsapp-kit-command-editor__note">${escape_html(__("No sender picked — the preview assumes a number that is not linked."))}</span>`}
+					${contact ? "" : `<span class="whatsapp-kit-command-editor__note">${escape_html(__("No sender picked — the preview assumes a number that is not linked."))}</span>`}
 				</div>
 				${
 					links.length
@@ -454,7 +454,7 @@ frappe.provide("whatsapp.ui");
 							<span class="whatsapp-kit-command-editor__card-row"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Variables passed in the command text"))}</span><button type="button" class="whatsapp-kit-command-editor__link" data-act="pv-fill">${escape_html(__("Fill with examples"))}</button></span>
 							<div class="whatsapp-kit-command-editor__stack">${inputs
 								.map((v) => {
-									const val = pv.values[v.key] || "";
+									const val = preview.values[v.key] || "";
 									return `<span class="whatsapp-kit-command-editor__card${v.required && !String(val).trim() ? " is-missing" : ""}">
 										<span class="whatsapp-kit-command-editor__card-row"><span class="whatsapp-kit-command-editor__mono" dir="ltr">#${escape_html(v.key)}</span>${v.required ? `<span class="whatsapp-kit-command-editor__tag whatsapp-kit-command-editor__tag--warn">${escape_html(__("Required"))}</span>` : ""}</span>
 										<input type="text" dir="ltr" class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__input--surface whatsapp-kit-command-editor__mono" data-f="pv-${escape_html(v.key)}" data-in="pv-val" data-key="${escape_html(v.key)}" value="${escape_html(val)}" placeholder="${escape_html(v.example || v.key)}" aria-label="${escape_html(__(v.label || v.key))}" />
@@ -479,13 +479,13 @@ frappe.provide("whatsapp.ui");
 				)
 				.join("");
 			const r = this.ui.result;
-			const c_label = c ? c.label || __("Unnamed") : __("Unknown number");
-			const linked = !!(c && links.length);
+			const c_label = contact ? contact.label || __("Unnamed") : __("Unknown number");
+			const linked = !!(contact && links.length);
 			const result = `
 				<div class="whatsapp-kit-command-editor__phone">
 					<div class="whatsapp-kit-command-editor__phone-head">
-						<span class="whatsapp-kit-command-editor__avatar" aria-hidden="true">${escape_html(String((c && c.label) || "?").trim().slice(0, 2))}</span>
-						<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__card-name">${escape_html(c_label)}</span><span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${escape_html(whatsapp.ui.phone((c && c.phone) || ""))}</span></span>
+						<span class="whatsapp-kit-command-editor__avatar" aria-hidden="true">${escape_html(String((contact && contact.label) || "?").trim().slice(0, 2))}</span>
+						<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__card-name">${escape_html(c_label)}</span><span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${escape_html(whatsapp.ui.phone((contact && contact.phone) || ""))}</span></span>
 						<span class="whatsapp-kit-command-editor__tag ${linked ? "whatsapp-kit-command-editor__tag--ok" : "whatsapp-kit-command-editor__tag--warn"}">${escape_html(linked ? __("Linked to an account", null, "Command Editor") : __("Not linked"))}</span>
 					</div>
 					<span class="whatsapp-kit-command-editor__phone-note">${escape_html(__("The reply comes from the function's output texts, run for real without sending."))}</span>
@@ -546,14 +546,14 @@ frappe.provide("whatsapp.ui");
 		mount_thread() {
 			const $slot = this.$root.find("[data-slot=thread]");
 			if (!$slot.length) return;
-			const r = this.ui.result;
-			if (this.ui.running && !r) {
+			const result = this.ui.result;
+			if (this.ui.running && !result) {
 				$slot.html(`<span class="whatsapp-kit-command-editor__none">${escape_html(__("Running the preview…"))}</span>`);
 				return;
 			}
 			const now = frappe.datetime.now_datetime();
-			const rows = [{ direction: "Inbound", name: "fd-in", ts: now, message_type: "Text", body: (r && r.text) || this.get_command_code() }];
-			((r && r.replies) || []).forEach((rep, i) =>
+			const rows = [{ direction: "Inbound", name: "fd-in", ts: now, message_type: "Text", body: (result && result.text) || this.get_command_code() }];
+			((result && result.replies) || []).forEach((rep, i) =>
 				rows.push({
 					direction: "Outbound",
 					name: `fd-out-${i}`,
@@ -584,10 +584,10 @@ frappe.provide("whatsapp.ui");
 
 		async run_preview() {
 			if (this.preview_blocker()) return;
-			const pv = this.ui.pv;
-			const c = pv.contact;
+			const preview = this.ui.pv;
+			const contact = preview.contact;
 			const links = this.preview_contact_links();
-			const account = links.find((l) => l.link_name === pv.account) || links[0] || null;
+			const account = links.find((l) => l.link_name === preview.account) || links[0] || null;
 			const token = (this._pv_token = (this._pv_token || 0) + 1);
 			this.ui.running = true;
 			this.$root && this.$root.find("[data-slot=thread]").addClass("is-running");
@@ -597,9 +597,9 @@ frappe.provide("whatsapp.ui");
 					code: this.get_command_code(),
 					settings: Object.assign({}, this.ui.opts),
 					outputs,
-					values: Object.assign({}, pv.values),
-					sender: c
-						? { contact: c.name, label: c.label, phone: c.phone, party_type: account ? account.link_doctype : null, party_name: account ? account.link_name : null }
+					values: Object.assign({}, preview.values),
+					sender: contact
+						? { contact: contact.name, label: contact.label, phone: contact.phone, party_type: account ? account.link_doctype : null, party_name: account ? account.link_name : null }
 						: { phone: null },
 				});
 				if (token !== this._pv_token) return;
@@ -617,31 +617,31 @@ frappe.provide("whatsapp.ui");
 		}
 
 		async search_preview_contacts(q) {
-			const pv = this.ui.pv;
+			const preview = this.ui.pv;
 			if (!this.opts.search_contacts) return [];
-			pv.loading = true;
-			pv.error = null;
+			preview.loading = true;
+			preview.error = null;
 			try {
 				const rows = await this.opts.search_contacts(q || "", this.preview_party_type());
 				// a slow answer to an earlier search must not replace the newer one (CommandEditor's guard)
-				if (pv.q !== q && q !== "") return;
-				pv.results = rows || [];
+				if (preview.q !== q && q !== "") return;
+				preview.results = rows || [];
 			} catch (err) {
-				pv.results = [];
-				pv.error = err && err.message;
+				preview.results = [];
+				preview.error = err && err.message;
 			}
-			pv.loading = false;
-			return pv.results;
+			preview.loading = false;
+			return preview.results;
 		}
 
 		async enter_preview() {
 			if (this.preview_blocker()) return;
-			const pv = this.ui.pv;
+			const preview = this.ui.pv;
 			const type = this.preview_party_type();
-			if (pv.loaded_for !== type) {
-				pv.loaded_for = type;
+			if (preview.loaded_for !== type) {
+				preview.loaded_for = type;
 				const rows = await this.search_preview_contacts("");
-				if (!pv.contact && rows && rows.length) pv.contact = rows[0];
+				if (!preview.contact && rows && rows.length) preview.contact = rows[0];
 				this.render();
 			}
 			this.run_preview();
@@ -674,13 +674,13 @@ frappe.provide("whatsapp.ui");
 		// ---- footer -------------------------------------------------------------------------------
 
 		render_footer() {
-			const e = this.entry;
-			const o = this.opts;
-			const more = o.more || [];
+			const entry = this.entry;
+			const options = this.opts;
+			const more = options.more || [];
 			return `<div class="whatsapp-kit-command-editor__foot">
-				${e.installed && e.update_available && o.on_update ? `<button type="button" class="whatsapp-kit-command-editor__btn whatsapp-kit-command-editor__btn--pri" data-act="update">${escape_html(__("Update to {0}", [e.latest_version]))}</button>` : ""}
-				${o.on_toggle_install ? `<button type="button" class="whatsapp-kit-command-editor__btn${e.installed ? "" : " whatsapp-kit-command-editor__btn--pri"}" data-act="install">${escape_html(e.installed ? __("Uninstall") : __("Install the function"))}</button>` : ""}
-				${o.on_open_commands ? `<button type="button" class="whatsapp-kit-command-editor__btn whatsapp-kit-function-detail__btn-pri-soft" data-act="commands">${escape_html(__("Linked commands", null, "Function Detail"))}</button>` : ""}
+				${entry.installed && entry.update_available && options.on_update ? `<button type="button" class="whatsapp-kit-command-editor__btn whatsapp-kit-command-editor__btn--pri" data-act="update">${escape_html(__("Update to {0}", [entry.latest_version]))}</button>` : ""}
+				${options.on_toggle_install ? `<button type="button" class="whatsapp-kit-command-editor__btn${entry.installed ? "" : " whatsapp-kit-command-editor__btn--pri"}" data-act="install">${escape_html(entry.installed ? __("Uninstall") : __("Install the function"))}</button>` : ""}
+				${options.on_open_commands ? `<button type="button" class="whatsapp-kit-command-editor__btn whatsapp-kit-function-detail__btn-pri-soft" data-act="commands">${escape_html(__("Linked commands", null, "Function Detail"))}</button>` : ""}
 				<span class="whatsapp-kit-command-editor__foot-hint"></span>
 				${
 					more.length
@@ -731,27 +731,27 @@ frappe.provide("whatsapp.ui");
 		}
 
 		on_input(e) {
-			const el = e.target;
-			const kind = el.getAttribute("data-in");
-			const key = el.getAttribute("data-key");
-			const v = el.value;
+			const target_element = e.target;
+			const kind = target_element.getAttribute("data-in");
+			const key = target_element.getAttribute("data-key");
+			const value = target_element.value;
 			if (kind === "pv-q") {
-				this.ui.pv.q = v;
+				this.ui.pv.q = value;
 				this.ui.pv.open = true;
 				clearTimeout(this._pvq);
-				this._pvq = setTimeout(() => this.search_preview_contacts(v).then(() => this.ui.pv.open && this.render()), 200);
+				this._pvq = setTimeout(() => this.search_preview_contacts(value).then(() => this.ui.pv.open && this.render()), 200);
 				return this.render();
 			}
-			if (kind === "pv-val") this.ui.pv.values[key] = v;
-			else if (kind === "pv-out") this.ui.outs[key] = v;
-			else if (kind === "pv-file") this.ui.files[key] = v;
-			else if (kind === "pv-setting") this.set_opt(key, v);
+			if (kind === "pv-val") this.ui.pv.values[key] = value;
+			else if (kind === "pv-out") this.ui.outs[key] = value;
+			else if (kind === "pv-file") this.ui.files[key] = value;
+			else if (kind === "pv-setting") this.set_opt(key, value);
 			this.schedule_preview();
 		}
 
 		on_change(e) {
-			const el = e.target;
-			if (el.getAttribute("data-ch") === "pv-setting") this.set_opt(el.getAttribute("data-key"), el.type === "checkbox" ? (el.checked ? 1 : 0) : el.value);
+			const target_element = e.target;
+			if (target_element.getAttribute("data-ch") === "pv-setting") this.set_opt(target_element.getAttribute("data-key"), target_element.type === "checkbox" ? (target_element.checked ? 1 : 0) : target_element.value);
 			this.render();
 			this.schedule_preview();
 		}
@@ -760,7 +760,7 @@ frappe.provide("whatsapp.ui");
 			const $el = $(e.currentTarget);
 			const act = $el.attr("data-act");
 			const key = $el.attr("data-key");
-			const o = this.opts;
+			const options = this.opts;
 			switch (act) {
 				case "open_form":
 					return whatsapp.ui.open_form(this, this.opts.form.doctype, this.opts.form.name);
@@ -778,16 +778,16 @@ frappe.provide("whatsapp.ui");
 				case "copy":
 					return this.copy_text_to_clipboard($el.attr("data-text"));
 				case "commands":
-					return o.on_open_commands && o.on_open_commands(this.entry);
+					return options.on_open_commands && options.on_open_commands(this.entry);
 				case "update":
-					return o.on_update && o.on_update(this.entry);
+					return options.on_update && options.on_update(this.entry);
 				case "install":
-					return o.on_toggle_install && o.on_toggle_install(this.entry);
+					return options.on_toggle_install && options.on_toggle_install(this.entry);
 				case "more":
 					this.ui.more = !this.ui.more;
 					return this.render();
 				case "more-item": {
-					const item = (o.more || [])[cint(key)];
+					const item = (options.more || [])[cint(key)];
 					this.ui.more = false;
 					this.render();
 					return item && item.handler && item.handler(this.entry);

@@ -41,22 +41,22 @@ whatsapp.ui.SettingsWindow = class SettingsWindow {
 	// ---- shell -----------------------------------------------------------------------------------
 
 	build_window_shell() {
-		const o = this.opts;
+		const options = this.opts;
 		this.$backdrop = $(`<div class="whatsapp-kit-settings-window-backdrop" hidden></div>`);
 		this.$root = $(`
-			<section class="whatsapp-kit whatsapp-kit-settings-window ${escape_html(o.cls || "")}" role="dialog" aria-modal="true" aria-label="${escape_html(o.title || __("Settings"))}" hidden>
+			<section class="whatsapp-kit whatsapp-kit-settings-window ${escape_html(options.cls || "")}" role="dialog" aria-modal="true" aria-label="${escape_html(options.title || __("Settings"))}" hidden>
 				<aside class="whatsapp-kit-settings-window__rail">
 					<label class="whatsapp-kit-settings-window__search">
 						<span class="whatsapp-kit-settings-window__search-icon" aria-hidden="true">${inline_icon_html("search", "sm")}</span>
 						<input type="search" data-whatsapp-bare autocomplete="off" placeholder="${escape_html(__("Search"))}" aria-label="${escape_html(__("Search settings"))}">
 					</label>
-					<nav class="whatsapp-kit-settings-window__nav" aria-label="${escape_html(o.title || __("Settings"))}"></nav>
+					<nav class="whatsapp-kit-settings-window__nav" aria-label="${escape_html(options.title || __("Settings"))}"></nav>
 					<p class="whatsapp-kit-settings-window__none" hidden>${escape_html(__("No setting matches"))}</p>
 					<div class="whatsapp-kit-settings-window__foot" hidden></div>
 				</aside>
 				<div class="whatsapp-kit-settings-window__main">
 					<div class="whatsapp-kit-settings-window__bar">
-						<button type="button" class="whatsapp-kit-settings-window__back" aria-label="${escape_html(__("Back"))}">${inline_icon_html("caret", "sm")}<span class="whatsapp-kit-settings-window__back-label">${escape_html(o.title || __("Settings"))}</span></button>
+						<button type="button" class="whatsapp-kit-settings-window__back" aria-label="${escape_html(__("Back"))}">${inline_icon_html("caret", "sm")}<span class="whatsapp-kit-settings-window__back-label">${escape_html(options.title || __("Settings"))}</span></button>
 						<button type="button" class="whatsapp-kit-settings-window__close" aria-label="${escape_html(__("Close"))}" title="${escape_html(__("Close (Esc)"))}">${inline_icon_html("x", "md")}</button>
 					</div>
 					<div class="whatsapp-kit-settings-window__pane" role="region" tabindex="-1"></div>

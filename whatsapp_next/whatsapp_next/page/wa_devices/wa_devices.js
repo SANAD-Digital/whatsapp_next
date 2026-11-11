@@ -99,7 +99,7 @@ frappe.provide("whatsapp_next.devices");
 			next.focus();
 			on_pick && on_pick($(next));
 		};
-		const sync = () => {
+		const sync_radio_tabindex = () => {
 			const items = nodes();
 			const checked = items.find((el) => el.getAttribute("aria-checked") === "true") || items[0];
 			items.forEach((el) => el.setAttribute("tabindex", el === checked ? "0" : "-1"));
@@ -115,9 +115,9 @@ frappe.provide("whatsapp_next.devices");
 				focus_at(i - 1);
 			}
 		});
-		$group.on("click", '[role="radio"]', sync);
-		sync();
-		return sync;
+		$group.on("click", '[role="radio"]', sync_radio_tabindex);
+		sync_radio_tabindex();
+		return sync_radio_tabindex;
 	}
 
 	function close_menu(restore_focus) {
@@ -312,24 +312,24 @@ frappe.provide("whatsapp_next.devices");
 		start_pairing(phone) {
 			const $el = this.$pair.empty();
 			this.stop_watch();
-			const ctx = this.ctx;
+			const context = this.ctx;
 			// the method may have been chosen on the step before
-			if (this.$switch) this.$switch.find("[data-mode]").each((_, b) => b.setAttribute("aria-checked", String(b.dataset.mode === ctx.mode)));
+			if (this.$switch) this.$switch.find("[data-mode]").each((_, b) => b.setAttribute("aria-checked", String(b.dataset.mode === context.mode)));
 			// a code goes to the device's number: a device without one is asked for it first
-			if (ctx.mode === "Code" && !phone && !ctx.phone && !ctx.device_phone) {
+			if (context.mode === "Code" && !phone && !context.phone && !context.device_phone) {
 				this._pair_seq = (this._pair_seq || 0) + 1;
 				return this.ask_phone($el);
 			}
 			const state = new ui.EmptyState({ wrapper: $el, state: "loading", rows: 2 });
-			const args = { device: ctx.device, mode: ctx.mode };
-			if (ctx.mode === "Code" && (phone || ctx.phone)) args.phone = phone || ctx.phone;
+			const args = { device: context.device, mode: context.mode };
+			if (context.mode === "Code" && (phone || context.phone)) args.phone = phone || context.phone;
 			// switching QR ⇄ code quickly leaves an older request in flight: only the newest draws
 			const seq = (this._pair_seq = (this._pair_seq || 0) + 1);
 			return ui
 				.call("devices.start_pairing", args, { silent: true })
 				.then((payload) => {
 					if (seq !== this._pair_seq || this.destroyed) return;
-					if (args.phone) ctx.device_phone = args.phone;
+					if (args.phone) context.device_phone = args.phone;
 					this.render_pairing($el, payload || {});
 					this.watch();
 				})
@@ -400,7 +400,7 @@ frappe.provide("whatsapp_next.devices");
 			let left = Math.max(0, parseInt(seconds, 10) || 60);
 			// a per-second live region would talk over everything: only the milestones are spoken
 			const spoken = new Set();
-			const tick = () => {
+			const update_pairing_countdown = () => {
 				if ([30, 10].includes(left) && !spoken.has(left)) {
 					spoken.add(left);
 					ui.announce(__("The pairing code expires in {0} seconds.", [left]));
@@ -423,8 +423,8 @@ frappe.provide("whatsapp_next.devices");
 				left -= 1;
 			};
 			window.clearInterval(this._countdown);
-			tick();
-			this._countdown = window.setInterval(tick, 1000);
+			update_pairing_countdown();
+			this._countdown = window.setInterval(update_pairing_countdown, 1000);
 		}
 
 		/**
@@ -434,7 +434,7 @@ frappe.provide("whatsapp_next.devices");
 		 */
 		watch() {
 			this.stop_watch(true);
-			const read = () =>
+			const read_device_status = () =>
 				ui.call("devices.poll_status", { device: this.ctx.device }, { silent: true })
 					.then((r) => this.apply_status(r && r.status, r && r.wrong_number))
 					.catch((err) => this.poll_failed(err));
@@ -443,7 +443,7 @@ frappe.provide("whatsapp_next.devices");
 				(data) => {
 					if (data && data.device === this.ctx.device) this.apply_status(data.status, data.wrong_number);
 				},
-				{ on_connect: read }
+				{ on_connect: read_device_status }
 			);
 		}
 
@@ -489,7 +489,7 @@ frappe.provide("whatsapp_next.devices");
 		 */
 		show_wrong_number(info) {
 			this.stop_watch();
-			const fmt = (n) => ui.PhoneField.format_display(n) || n;
+			const format_phone_number = (n) => ui.PhoneField.format_display(n) || n;
 			this.$pair.html(`
 				<div class="whatsapp-pairing__wrong whatsapp-kit-tone--red" role="alert">
 					<span class="whatsapp-pairing__wrong-icon" aria-hidden="true">${ui.icon("es-line-alert-circle", "md")}</span>
@@ -497,9 +497,9 @@ frappe.provide("whatsapp_next.devices");
 						<strong>${ui.escape(__("Another number was linked, so it was unlinked"))}</strong>
 						<p>${ui.escape(
 							info.expected
-								? __("This device is registered for {0}, but WhatsApp {1} scanned the code. Scan the new code with WhatsApp on {0}.", [fmt(info.expected), fmt(info.connected)])
+								? __("This device is registered for {0}, but WhatsApp {1} scanned the code. Scan the new code with WhatsApp on {0}.", [format_phone_number(info.expected), format_phone_number(info.connected)])
 								: // a device from before the number was required: it accepts no account until it has one
-									__("This device has no registered number, so WhatsApp {0} was not linked. Add the device's number on the platform, then scan again.", [fmt(info.connected)])
+									__("This device has no registered number, so WhatsApp {0} was not linked. Add the device's number on the platform, then scan again.", [format_phone_number(info.connected)])
 						)}</p>
 					</div>
 				</div>

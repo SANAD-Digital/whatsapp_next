@@ -42,8 +42,8 @@ whatsapp.ui.QuickSend = class QuickSend {
 	// ---- dialog ----------------------------------------------------------------------------
 
 	build_send_dialog() {
-		const o = this.opts;
-		const has_recipient = !!(o.phone || o.contact || o.number || o.jid);
+		const options = this.opts;
+		const has_recipient = !!(options.phone || options.contact || options.number || options.jid);
 		const fields = [
 			{ fieldtype: "HTML", fieldname: "recipient", label: __("Recipient") },
 			{ fieldtype: "Data", fieldname: "phone", label: __("Phone"), reqd: has_recipient ? 0 : 1, hidden: has_recipient ? 1 : 0 },
@@ -60,7 +60,7 @@ whatsapp.ui.QuickSend = class QuickSend {
 			{ fieldtype: "Data", fieldname: "caption", label: __("Caption"), depends_on: 'eval:doc.message_type && doc.message_type !== "Text"' },
 		];
 		this.dialog = new frappe.ui.Dialog({
-			title: o.title || __("Send message"),
+			title: options.title || __("Send message"),
 			fields,
 			size: "large",
 			primary_action_label: __("Send"),
@@ -72,7 +72,7 @@ whatsapp.ui.QuickSend = class QuickSend {
 		this.$preview = this.dialog.get_field("preview").$wrapper;
 		this.$recipient.html(`<div class="whatsapp-kit-quicksend__recipient">${ui.skeleton(1, { lines: 1 })}</div>`);
 		// footer: Open in Simulator
-		const route = o.simulator_route || (ui.config.defaults || {}).simulator_route;
+		const route = options.simulator_route || (ui.config.defaults || {}).simulator_route;
 		if (route) {
 			this.dialog.add_custom_action(__("Open in the simulator"), () => {
 				const args = {};
@@ -110,17 +110,17 @@ whatsapp.ui.QuickSend = class QuickSend {
 			const last = this.trying ? ui.test_phone.get() : "";
 			if (last) this.dialog.set_value("phone", last);
 		}
-		if (o.body) this.dialog.set_value("body", o.body);
-		if (o.device) this.dialog.set_value("device", o.device);
+		if (options.body) this.dialog.set_value("body", options.body);
+		if (options.device) this.dialog.set_value("device", options.device);
 	}
 
 	// ---- context ---------------------------------------------------------------------------
 
 	load_send_context() {
-		const o = this.opts;
+		const options = this.opts;
 		const args = {};
-		["phone", "contact", "number", "reference_doctype", "reference_name"].forEach((k) => o[k] && (args[k] = o[k]));
-		if (o.jid && !args.phone) args.phone = o.jid;
+		["phone", "contact", "number", "reference_doctype", "reference_name"].forEach((k) => options[k] && (args[k] = options[k]));
+		if (options.jid && !args.phone) args.phone = options.jid;
 		return ui.call(this.api.get_context, args)
 			.then((ctx) => {
 				this.context = ctx || {};
@@ -128,11 +128,11 @@ whatsapp.ui.QuickSend = class QuickSend {
 				this.set_recipient(this.context.recipient);
 				// the remembered test number, looked up once the context is in (not before: it would be overwritten)
 				if (this.trying && (this.dialog.get_value("phone") || "").trim()) this.resolve_phone();
-				if (o.template) {
-					this.dialog.set_value("template", o.template);
+				if (options.template) {
+					this.dialog.set_value("template", options.template);
 					this.on_template_change();
 					this.render_message_preview();
-				} else if (o.reference_doctype && o.reference_name) {
+				} else if (options.reference_doctype && options.reference_name) {
 					this.render_message_preview();
 				}
 			})
@@ -147,14 +147,14 @@ whatsapp.ui.QuickSend = class QuickSend {
 	}
 
 	fill_options() {
-		const ctx = this.context;
-		const devices = (ctx.devices || []).map((d) => ({
+		const context = this.context;
+		const devices = (context.devices || []).map((d) => ({
 			value: d.name,
 			label: d.status === "Connected" ? d.device_name || d.name : __("{0} ({1})", [d.device_name || d.name, __(d.status || "Unknown")]),
 		}));
 		this.dialog.fields_dict.device.df.options = devices;
 		this.dialog.fields_dict.device.refresh();
-		const current_device = this.opts.device || ctx.default_device || (devices[0] && devices[0].value);
+		const current_device = this.opts.device || context.default_device || (devices[0] && devices[0].value);
 		if (current_device) this.dialog.set_value("device", current_device);
 		if (!devices.length) {
 			this.set_error("device", __("No device is enabled. Pair or enable a device, then try again."), { focus: true });
@@ -169,11 +169,11 @@ whatsapp.ui.QuickSend = class QuickSend {
 			}
 		}
 		const templates = [{ value: "", label: __("No template (write the message)") }].concat(
-			(ctx.templates || []).map((t) => ({ value: t.name, label: t.template_name || t.name }))
+			(context.templates || []).map((t) => ({ value: t.name, label: t.template_name || t.name }))
 		);
 		this.dialog.fields_dict.template.df.options = templates;
 		this.dialog.fields_dict.template.refresh();
-		if (ctx.policy && ctx.policy.send_only_to_known_numbers) {
+		if (context.policy && context.policy.send_only_to_known_numbers) {
 			this.dialog.fields_dict.phone.set_description(__("Only numbers with an existing conversation can be messaged."));
 		}
 	}
@@ -250,11 +250,11 @@ whatsapp.ui.QuickSend = class QuickSend {
 	sync_body_required() {
 		const body = this.dialog.fields_dict.body;
 		// read from the inputs: this runs from their own change event, before the model is set
-		const now = (name) => {
-			const f = this.dialog.fields_dict[name];
-			return (f.get_input_value ? f.get_input_value() : f.get_value()) || "";
+		const read_field_input = (name) => {
+			const field = this.dialog.fields_dict[name];
+			return (field.get_input_value ? field.get_input_value() : field.get_value()) || "";
 		};
-		const reqd = !now("template") && (now("message_type") || "Text") === "Text" ? 1 : 0;
+		const reqd = !read_field_input("template") && (read_field_input("message_type") || "Text") === "Text" ? 1 : 0;
 		if (body.df.reqd === reqd) return;
 		body.df.reqd = reqd;
 		body.refresh();
@@ -334,7 +334,7 @@ whatsapp.ui.QuickSend = class QuickSend {
 	send_message() {
 		const values = this.dialog.get_values(true) || {};
 		if (!this.validate(values)) return;
-		const o = this.opts;
+		const options = this.opts;
 		const args = {
 			device: values.device,
 			message_type: values.message_type || "Text",
@@ -343,12 +343,12 @@ whatsapp.ui.QuickSend = class QuickSend {
 			attachment: values.attachment || null,
 			caption: values.caption || null,
 			scheduled_at: values.scheduled_at || null,
-			reference_doctype: o.reference_doctype || null,
-			reference_name: o.reference_name || null,
+			reference_doctype: options.reference_doctype || null,
+			reference_name: options.reference_name || null,
 		};
 		if (this.recipient && this.recipient.jid) args.jid = this.recipient.jid;
-		else args.phone = (this.recipient && this.recipient.phone_e164) || values.phone || o.phone;
-		if (o.contact || (this.recipient && this.recipient.contact)) args.contact = o.contact || this.recipient.contact;
+		else args.phone = (this.recipient && this.recipient.phone_e164) || values.phone || options.phone;
+		if (options.contact || (this.recipient && this.recipient.contact)) args.contact = options.contact || this.recipient.contact;
 		const $btn = this.dialog.get_primary_btn();
 		$btn.prop("disabled", true);
 		return ui.call(this.api.send, args, { silent: true })
@@ -360,7 +360,7 @@ whatsapp.ui.QuickSend = class QuickSend {
 				});
 				whatsapp.ui.Toast.success(args.scheduled_at ? __("Message scheduled") : __("Message queued"));
 				if (this.trying && args.phone) ui.test_phone.set(args.phone);
-				typeof o.on_sent === "function" && o.on_sent(r);
+				typeof options.on_sent === "function" && options.on_sent(r);
 			})
 			.catch((err) => {
 				$btn.prop("disabled", false);

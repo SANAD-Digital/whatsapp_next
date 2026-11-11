@@ -121,18 +121,18 @@ frappe.provide("whatsapp_next.hub");
 			// what an entry sets up, readably: empty values left out, a table (recipients, inputs)
 			// one line per row, the words a select stores in the user's language
 			const empty = (v) => v == null || v === "" || (Array.isArray(v) && !v.length);
-			const text = (v) => (typeof v === "string" ? __(v) : String(v));
+			const translate_value_text = (v) => (typeof v === "string" ? __(v) : String(v));
 			const row_line = (r) =>
 				Object.entries(r || {})
 					.filter(([, v]) => !empty(v) && typeof v !== "object")
-					.map(([, v]) => text(v))
+					.map(([, v]) => translate_value_text(v))
 					.join(" · ");
 			const value_html = (v) =>
 				Array.isArray(v)
-					? `<ul class="whatsapp-hub__table">${v.map((r) => `<li dir="auto">${escape_html(typeof r === "object" ? row_line(r) : text(r))}</li>`).join("")}</ul>`
+					? `<ul class="whatsapp-hub__table">${v.map((r) => `<li dir="auto">${escape_html(typeof r === "object" ? row_line(r) : translate_value_text(r))}</li>`).join("")}</ul>`
 					: typeof v === "object"
 					? escape_html(row_line(v))
-					: escape_html(text(v));
+					: escape_html(translate_value_text(v));
 			const fields = Object.entries(e.payload || {})
 				.filter(([k, v]) => !["script", "requires", "name"].includes(k) && !empty(v))
 				.map(([k, v]) => `<div${Array.isArray(v) ? ' class="is-wide"' : ""}><dt>${escape_html((e.labels || {})[k] || k)}</dt><dd dir="auto">${value_html(v)}</dd></div>`)
@@ -240,7 +240,7 @@ frappe.provide("whatsapp_next.hub");
 		}
 
 		install_hub_entry(e) {
-			const run = () =>
+			const call_hub_install = () =>
 				ui
 					.call("hub.install", { name: e.name }, { freeze: true })
 					.then((r) => {
@@ -251,9 +251,9 @@ frappe.provide("whatsapp_next.hub");
 					.catch((err) => ui.Toast.error(err));
 			if (e.hub_type === "Function") {
 				// code that will run here: said before it is installed
-				return frappe.confirm(escape_html(__("This installs code that runs on this site, as shown under «The code it runs on this site». Continue?")), run);
+				return frappe.confirm(escape_html(__("This installs code that runs on this site, as shown under «The code it runs on this site». Continue?")), call_hub_install);
 			}
-			run();
+			call_hub_install();
 		}
 	}
 

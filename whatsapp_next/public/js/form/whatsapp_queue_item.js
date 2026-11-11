@@ -8,7 +8,7 @@ frappe.ui.form.on("WhatsApp Queue Item", {
 		const ui = whatsapp.ui;
 		const doc = frm.doc;
 		const reload = () => frm.reload_doc();
-		const run = (method, message) =>
+		const run_queue_action_on_item = (method, message) =>
 			ui
 				.call(method, { names: [doc.name] })
 				.then((r) => {
@@ -22,9 +22,9 @@ frappe.ui.form.on("WhatsApp Queue Item", {
 			frm.add_custom_button(__("Open message"), () => whatsapp_next.messages.open_outbound_drawer(doc.outbound_message, { after_change: reload }));
 		}
 		if (!frappe.user.has_role(["WhatsApp Manager", "System Manager"])) return;
-		if (doc.status === "Queued") frm.add_custom_button(__("Pause"), () => run("queue.pause_items", __("Message paused")));
-		if (doc.status === "Paused") frm.add_custom_button(__("Resume"), () => run("queue.resume_items", __("Message resumed")));
-		if (doc.status === "Dead Letter") frm.add_custom_button(__("Retry"), () => run("queue.retry_dead_letter", __("Message re-queued")));
+		if (doc.status === "Queued") frm.add_custom_button(__("Pause"), () => run_queue_action_on_item("queue.pause_items", __("Message paused")));
+		if (doc.status === "Paused") frm.add_custom_button(__("Resume"), () => run_queue_action_on_item("queue.resume_items", __("Message resumed")));
+		if (doc.status === "Dead Letter") frm.add_custom_button(__("Retry"), () => run_queue_action_on_item("queue.retry_dead_letter", __("Message re-queued")));
 		// `delete_items` only takes a row that has not been sent or given up: offering it on a dead
 		// letter ended in "Message cancelled" while nothing changed
 		if (["Queued", "Paused"].includes(doc.status)) {

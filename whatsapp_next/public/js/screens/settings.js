@@ -183,7 +183,7 @@ class SettingsView {
 	 * Frappe controls with one Save. `skip` names the fields the caller draws itself.
 	 */
 	render_fields($el, section, values, skip = []) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		const fieldnames = Object.keys(values || {}).filter(
 			(f) => !f.startsWith("has_") && !skip.includes(f) && this.docfield(f)
 		);
@@ -199,7 +199,7 @@ class SettingsView {
 			const read_only = !!df.read_only || special === "read_only" || !IS_SM();
 			if (read_only) {
 				$read.append(
-					`<div><dt>${esc(__(df.label || fieldname))}</dt><dd>${this.read_value(
+					`<div><dt>${escape_html(__(df.label || fieldname))}</dt><dd>${this.read_value(
 						df,
 						values[fieldname],
 						special
@@ -210,10 +210,10 @@ class SettingsView {
 			const control = this.setting_control(df, values[fieldname]);
 			const required = df.reqd ? ' <span class="whatsapp-settings__req" aria-hidden="true">*</span>' : "";
 			const $row = $(`
-				<div class="whatsapp-kit-settings-window__row whatsapp-settings__field${control.stacked ? " whatsapp-settings__field--stacked" : ""}" data-fieldname="${esc(fieldname)}">
+				<div class="whatsapp-kit-settings-window__row whatsapp-settings__field${control.stacked ? " whatsapp-settings__field--stacked" : ""}" data-fieldname="${escape_html(fieldname)}">
 					<div class="whatsapp-kit-settings-window__row-text">
-						<label class="whatsapp-kit-settings-window__row-title" for="${esc(control.id)}">${esc(__(df.label || fieldname))}${required}</label>
-						${df.description ? `<span class="whatsapp-kit-settings-window__row-desc">${esc(__(df.description))}</span>` : ""}
+						<label class="whatsapp-kit-settings-window__row-title" for="${escape_html(control.id)}">${escape_html(__(df.label || fieldname))}${required}</label>
+						${df.description ? `<span class="whatsapp-kit-settings-window__row-desc">${escape_html(__(df.description))}</span>` : ""}
 					</div>
 					<div class="whatsapp-kit-settings-window__row-control"></div>
 				</div>`).appendTo($form);
@@ -224,23 +224,23 @@ class SettingsView {
 		if ($read.children().length) {
 			if (has_controls) {
 				$el.append(
-					`<h4 class="whatsapp-settings__subhead">${esc(__("Read only"))}</h4>`
+					`<h4 class="whatsapp-settings__subhead">${escape_html(__("Read only"))}</h4>`
 				);
 			}
 			$el.append($read);
 		}
 		if (has_controls) {
 			if ($read.children().length) {
-				$el.append(`<h4 class="whatsapp-settings__subhead">${esc(__("Editable"))}</h4>`);
+				$el.append(`<h4 class="whatsapp-settings__subhead">${escape_html(__("Editable"))}</h4>`);
 			}
 			$el.append($form);
 			// The save bar (owner, 2026-10-08): pinned to the bottom of the pane so it is always in
 			// reach, quiet until something changes, then the one primary action of the section.
 			const $bar = $(`
-				<div class="whatsapp-settings__savebar" role="region" aria-label="${esc(__("Save changes"))}">
+				<div class="whatsapp-settings__savebar" role="region" aria-label="${escape_html(__("Save changes"))}">
 					<span class="whatsapp-settings__savebar-text" aria-live="polite"></span>
-					<button type="button" class="btn btn-default whatsapp-settings__discard" hidden>${esc(__("Discard changes"))}</button>
-					<button type="button" class="btn btn-primary whatsapp-settings__save" disabled>${esc(__("Save changes"))}</button>
+					<button type="button" class="btn btn-default whatsapp-settings__discard" hidden>${escape_html(__("Discard changes"))}</button>
+					<button type="button" class="btn btn-primary whatsapp-settings__save" disabled>${escape_html(__("Save changes"))}</button>
 				</div>`).appendTo($el);
 			const read_all = () => {
 				const out = {};
@@ -305,29 +305,29 @@ class SettingsView {
 	 * to" and "Send only to". The value is the rows, `[{phone_e164, display_name, source}]`.
 	 */
 	targets_control(df, value, id) {
-		const esc = frappe.utils.escape_html;
-		const key = (r) => String((r && (r.phone_e164 || r.jid)) || "").trim();
-		let rows = (value || []).map((r) => ({ phone_e164: key(r), display_name: r.display_name || "", source: r.source || "" })).filter((r) => r.phone_e164);
-		const $el = $(`<div class="whatsapp-settings__targets" id="${esc(id)}" role="group" aria-label="${esc(__(df.label))}"></div>`);
+		const escape_html = frappe.utils.escape_html;
+		const read_target_key = (r) => String((r && (r.phone_e164 || r.jid)) || "").trim();
+		let rows = (value || []).map((r) => ({ phone_e164: read_target_key(r), display_name: r.display_name || "", source: r.source || "" })).filter((r) => r.phone_e164);
+		const $el = $(`<div class="whatsapp-settings__targets" id="${escape_html(id)}" role="group" aria-label="${escape_html(__(df.label))}"></div>`);
 		const changed = () => {
-			draw();
+			draw_target_chips();
 			$el.trigger("change");
 		};
-		const draw = () => {
+		const draw_target_chips = () => {
 			const chips = rows
 				.map(
 					(r, i) => `<span class="whatsapp-settings__target">
-						<span class="whatsapp-settings__target-name" dir="auto">${esc(r.display_name || r.phone_e164)}</span>
-						${r.display_name ? `<span class="whatsapp-settings__target-key" dir="ltr">${esc(r.phone_e164)}</span>` : ""}
-						<button type="button" class="whatsapp-settings__target-x" data-i="${i}" aria-label="${esc(__("Remove {0}", [r.display_name || r.phone_e164]))}">${whatsapp.ui.inline_icon_html("x", "xs")}</button>
+						<span class="whatsapp-settings__target-name" dir="auto">${escape_html(r.display_name || r.phone_e164)}</span>
+						${r.display_name ? `<span class="whatsapp-settings__target-key" dir="ltr">${escape_html(r.phone_e164)}</span>` : ""}
+						<button type="button" class="whatsapp-settings__target-x" data-i="${i}" aria-label="${escape_html(__("Remove {0}", [r.display_name || r.phone_e164]))}">${whatsapp.ui.inline_icon_html("x", "xs")}</button>
 					</span>`
 				)
 				.join("");
 			$el.html(`
-				<div class="whatsapp-settings__targets-list">${chips || `<span class="whatsapp-settings__targets-all">${esc(__("Everyone"))}</span>`}</div>
+				<div class="whatsapp-settings__targets-list">${chips || `<span class="whatsapp-settings__targets-all">${escape_html(__("Everyone"))}</span>`}</div>
 				<div class="whatsapp-settings__targets-actions">
-					<button type="button" class="btn btn-default btn-sm" data-act="pick">${whatsapp.ui.inline_icon_html("users", "sm")}${esc(__("Choose…"))}</button>
-					${rows.length ? `<button type="button" class="btn btn-link btn-sm" data-act="clear">${esc(__("Clear the list"))}</button>` : ""}
+					<button type="button" class="btn btn-default btn-sm" data-act="pick">${whatsapp.ui.inline_icon_html("users", "sm")}${escape_html(__("Choose…"))}</button>
+					${rows.length ? `<button type="button" class="btn btn-link btn-sm" data-act="clear">${escape_html(__("Clear the list"))}</button>` : ""}
 				</div>`);
 		};
 		$el.on("click", ".whatsapp-settings__target-x", (e) => {
@@ -345,7 +345,7 @@ class SettingsView {
 				on_pick: (picked) => {
 					const have = new Set(rows.map((r) => r.phone_e164));
 					(picked || []).forEach((r) => {
-						const k = key(r);
+						const k = read_target_key(r);
 						if (!k || have.has(k)) return;
 						have.add(k);
 						rows.push({ phone_e164: k, display_name: r.display_name || r.full_name || "", source: r.source_type || r.__source || "" });
@@ -354,21 +354,21 @@ class SettingsView {
 				},
 			});
 		});
-		draw();
+		draw_target_chips();
 		return {
 			id,
 			$el,
 			stacked: true,
 			get_value: () => rows.map((r) => Object.assign({}, r)),
 			set_value: (v) => {
-				rows = (v || []).map((r) => ({ phone_e164: key(r), display_name: r.display_name || "", source: r.source || "" })).filter((r) => r.phone_e164);
-				draw();
+				rows = (v || []).map((r) => ({ phone_e164: read_target_key(r), display_name: r.display_name || "", source: r.source || "" })).filter((r) => r.phone_e164);
+				draw_target_chips();
 			},
 		};
 	}
 
 	setting_control(df, value) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		const id = whatsapp.ui.unique_dom_id("whatsapp-set");
 		const type = df.fieldtype;
 		if (type === "Table" && df.options === "WhatsApp Settings Target") return this.targets_control(df, value, id);
@@ -379,7 +379,7 @@ class SettingsView {
 		}
 		if (type === "Select") {
 			const $el = $(`<select class="whatsapp-select" id="${id}"></select>`);
-			(df.options || "").split("\n").forEach((o) => $el.append(`<option value="${esc(o)}">${esc(o ? __(o) : "")}</option>`));
+			(df.options || "").split("\n").forEach((o) => $el.append(`<option value="${escape_html(o)}">${escape_html(o ? __(o) : "")}</option>`));
 			$el.val(value == null ? "" : String(value));
 			return { id, $el, get_value: () => $el.val(), set_value: (v) => $el.val(v == null ? "" : String(v)) };
 		}
@@ -427,41 +427,41 @@ class SettingsView {
 	}
 
 	read_value(df, value, special) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		if (value == null || value === "") return `<span class="whatsapp-settings__muted">&mdash;</span>`;
 		if (special === "json_list") {
 			let data = value;
 			try {
 				data = typeof value === "string" ? JSON.parse(value) : value;
 			} catch (e) {
-				return esc(String(value));
+				return escape_html(String(value));
 			}
 			const entries = Object.entries(data || {});
 			if (!entries.length) return `<span class="whatsapp-settings__muted">&mdash;</span>`;
 			return `<ul class="whatsapp-settings__minilist">${entries
-				.map(([k, v]) => `<li><span>${esc(k)}</span><span>${esc(String(v))}</span></li>`)
+				.map(([k, v]) => `<li><span>${escape_html(k)}</span><span>${escape_html(String(v))}</span></li>`)
 				.join("")}</ul>`;
 		}
-		if (special === "long_text") return `<span class="whatsapp-settings__longtext">${esc(String(value))}</span>`;
-		if (df.fieldtype === "Check") return esc(cint(value) ? __("Yes") : __("No"));
-		return whatsapp.ui.meta.format(value, df) || esc(String(value));
+		if (special === "long_text") return `<span class="whatsapp-settings__longtext">${escape_html(String(value))}</span>`;
+		if (df.fieldtype === "Check") return escape_html(cint(value) ? __("Yes") : __("No"));
+		return whatsapp.ui.meta.format(value, df) || escape_html(String(value));
 	}
 
 	// ---- shared pieces ------------------------------------------------------------------------
 
 	banner($el, { tone, icon, title, text, action }) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		const $b = $(`<div class="whatsapp-settings__banner whatsapp-kit-tone--${whatsapp.ui.tone_for_colour(tone)}" role="${
 			tone === "red" ? "alert" : "status"
 		}">
 			<span class="whatsapp-settings__banner-icon" aria-hidden="true">${whatsapp.ui.icon(icon, "md")}</span>
-			<span class="whatsapp-settings__banner-text"><strong>${esc(title)}</strong><span>${esc(text || "")}</span></span>
+			<span class="whatsapp-settings__banner-text"><strong>${escape_html(title)}</strong><span>${escape_html(text || "")}</span></span>
 		</div>`).appendTo($el);
 		if (action) {
 			$(
 				`<button type="button" class="btn btn-sm ${
 					action.primary ? "btn-primary" : "btn-default"
-				}">${esc(action.label)}</button>`
+				}">${escape_html(action.label)}</button>`
 			)
 				.on("click", () => action.handler())
 				.appendTo($b);
@@ -470,15 +470,15 @@ class SettingsView {
 	}
 
 	panel($el, { title, note, action }) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		const $p = $(`<section class="whatsapp-settings__panel">
 			<header>
-				<span><strong>${esc(title)}</strong>${note ? `<span>${esc(note)}</span>` : ""}</span>
+				<span><strong>${escape_html(title)}</strong>${note ? `<span>${escape_html(note)}</span>` : ""}</span>
 			</header>
 			<div class="whatsapp-settings__panel-body"></div>
 		</section>`).appendTo($el);
 		if (action) {
-			$(`<button type="button" class="btn btn-xs btn-default">${esc(action.label)}</button>`)
+			$(`<button type="button" class="btn btn-xs btn-default">${escape_html(action.label)}</button>`)
 				.on("click", () => action.handler())
 				.appendTo($p.find("header"));
 		}
@@ -491,19 +491,19 @@ class SettingsView {
 	 * nothing here renders HTML a Frappe helper produced.
 	 */
 	render_label_value_rows($el, rows) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		$el.html(
 			`<ul class="whatsapp-settings__rows">${rows
 				.map(
 					(r) =>
-						`<li class="${r.stacked ? "whatsapp-settings__row--stacked" : ""}"><span class="whatsapp-settings__row-label">${esc(
+						`<li class="${r.stacked ? "whatsapp-settings__row--stacked" : ""}"><span class="whatsapp-settings__row-label">${escape_html(
 							r.label
-						)}${r.sub ? `<span>${esc(r.sub)}</span>` : ""}</span><span class="whatsapp-settings__row-value${
+						)}${r.sub ? `<span>${escape_html(r.sub)}</span>` : ""}</span><span class="whatsapp-settings__row-value${
 							r.ltr ? " whatsapp-kit-table__ltr" : ""
 						}">${
 							r.badge
 								? whatsapp.ui.StatusBadge.html({ label: r.badge, colour: r.colour || "gray" })
-								: esc(r.value == null || r.value === "" ? "—" : String(r.value))
+								: escape_html(r.value == null || r.value === "" ? "—" : String(r.value))
 						}</span></li>`
 				)
 				.join("")}</ul>`
@@ -866,25 +866,25 @@ class SettingsView {
 					return;
 				}
 				state.hide();
-				const esc = frappe.utils.escape_html;
+				const escape_html = frappe.utils.escape_html;
 				const $list = $(
-					`<fieldset class="whatsapp-settings__checks"><legend class="whatsapp-kit-visually-hidden">${esc(
+					`<fieldset class="whatsapp-settings__checks"><legend class="whatsapp-kit-visually-hidden">${escape_html(
 						__("Received events")
 					)}</legend></fieldset>`
 				).appendTo($el);
 				rows.forEach((row) => {
 					const id = whatsapp.ui.unique_dom_id("ev");
 					$(`<label class="whatsapp-settings__check" for="${id}">
-						<input type="checkbox" id="${id}" value="${esc(row.event_name)}"
+						<input type="checkbox" id="${id}" value="${escape_html(row.event_name)}"
 							${row.subscribed ? "checked" : ""} ${row.enabled === false || !IS_SM() ? "disabled" : ""}>
-						<span>${esc(row.event_name)}${
-						row.disabled_reason ? `<span>${esc(__(row.disabled_reason))}</span>` : ""
+						<span>${escape_html(row.event_name)}${
+						row.disabled_reason ? `<span>${escape_html(__(row.disabled_reason))}</span>` : ""
 					}</span>
 					</label>`).appendTo($list);
 				});
 				if (!IS_SM()) return;
 				const $save = $(
-					`<button type="button" class="btn btn-xs btn-primary whatsapp-settings__check-save">${esc(
+					`<button type="button" class="btn btn-xs btn-primary whatsapp-settings__check-save">${escape_html(
 						__("Save the event list")
 					)}</button>`
 				).appendTo($el);
@@ -993,24 +993,24 @@ class SettingsView {
 	// ---- a chat link and its QR code for printed documents (print formats: whatsapp_qr) ---------
 
 	draw_link_panel($el) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		const $panel = this.panel($el, {
 			title: __("WhatsApp link on invoices"),
 			note: __("A QR code on a printed document opens a chat with your number and a message already typed."),
 		});
 		$panel.html(`<div class="whatsapp-settings__qr">
 			<div class="whatsapp-settings__qr-form">
-				<label class="control-label" for="whatsapp-qr-text">${esc(__("Message typed in the chat"))}</label>
-				<input id="whatsapp-qr-text" class="form-control" maxlength="500" value="${esc(__("Menu"))}">
-				<p class="help-box small text-muted">${esc(__("Paste this in a print format; doc fields work too, e.g. «كشف » ~ doc.customer."))}</p>
+				<label class="control-label" for="whatsapp-qr-text">${escape_html(__("Message typed in the chat"))}</label>
+				<input id="whatsapp-qr-text" class="form-control" maxlength="500" value="${escape_html(__("Menu"))}">
+				<p class="help-box small text-muted">${escape_html(__("Paste this in a print format; doc fields work too, e.g. «كشف » ~ doc.customer."))}</p>
 				<div class="whatsapp-settings__qr-snippet"><code dir="ltr"></code>
-					<button type="button" class="btn btn-xs btn-default whatsapp-settings__qr-copy">${esc(__("Copy"))}</button></div>
+					<button type="button" class="btn btn-xs btn-default whatsapp-settings__qr-copy">${escape_html(__("Copy"))}</button></div>
 				<a class="whatsapp-settings__qr-link" target="_blank" rel="noopener" dir="ltr"></a>
 			</div>
-			<img class="whatsapp-settings__qr-img" width="140" height="140" alt="${esc(__("Scan to chat on WhatsApp"))}">
+			<img class="whatsapp-settings__qr-img" width="140" height="140" alt="${escape_html(__("Scan to chat on WhatsApp"))}">
 		</div>`);
 		const $text = $panel.find("#whatsapp-qr-text");
-		const draw = () => {
+		const draw_qr_preview = () => {
 			const text = ($text.val() || "").trim();
 			const literal = JSON.stringify(text);
 			$panel.find(".whatsapp-settings__qr-snippet code").text(`{{ whatsapp_qr(${literal}) }}`);
@@ -1019,9 +1019,9 @@ class SettingsView {
 				$panel.find(".whatsapp-settings__qr-link").attr("href", r.url).text(r.url);
 			}).catch(() => $panel.find(".whatsapp-settings__qr-link").text(__("No WhatsApp device has a number yet")));
 		};
-		$text.on("input", frappe.utils.debounce(draw, 400));
+		$text.on("input", frappe.utils.debounce(draw_qr_preview, 400));
 		$panel.find(".whatsapp-settings__qr-copy").on("click", () => frappe.utils.copy_to_clipboard($panel.find(".whatsapp-settings__qr-snippet code").text()));
-		draw();
+		draw_qr_preview();
 	}
 
 	// ---- the main menu: which commands it offers, in what order --------------------------------
@@ -1043,7 +1043,7 @@ class SettingsView {
 	}
 
 	draw_menu($el) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		$el.empty();
 		const can_add = IS_SM() && this.menu.length < this.menu_max && this.menu.length < (this.menu_all || []).length;
 		const $panel = this.panel($el, {
@@ -1065,25 +1065,25 @@ class SettingsView {
 		$panel.html(`<div class="whatsapp-kit-table-wrap"><table class="whatsapp-kit-table">
 			<thead><tr>
 				<th scope="col">#</th>
-				<th scope="col">${esc(__("Command"))}</th>
-				<th scope="col">${esc(__("Shown as"))}</th>
-				<th scope="col">${esc(__("Menu description"))}</th>
-				<th scope="col"><span class="whatsapp-kit-visually-hidden">${esc(__("Actions"))}</span></th>
+				<th scope="col">${escape_html(__("Command"))}</th>
+				<th scope="col">${escape_html(__("Shown as"))}</th>
+				<th scope="col">${escape_html(__("Menu description"))}</th>
+				<th scope="col"><span class="whatsapp-kit-visually-hidden">${escape_html(__("Actions"))}</span></th>
 			</tr></thead><tbody></tbody></table></div>`);
 		const $body = $panel.find("tbody");
 		this.menu.forEach((row, i) => {
 			const c = this.menu_command(row.command);
 			const $tr = $(`<tr>
 				<td class="whatsapp-kit-table__num">${i + 1}</td>
-				<td><bdi>${esc(c.code || row.command)}</bdi></td>
-				<td>${esc(__(c.title || c.code || row.command))}</td>
-				<td>${row.menu_description ? esc(row.menu_description) : '<span class="whatsapp-settings__muted">&mdash;</span>'}</td>
+				<td><bdi>${escape_html(c.code || row.command)}</bdi></td>
+				<td>${escape_html(__(c.title || c.code || row.command))}</td>
+				<td>${row.menu_description ? escape_html(row.menu_description) : '<span class="whatsapp-settings__muted">&mdash;</span>'}</td>
 				<td class="whatsapp-kit-table__num"></td>
 			</tr>`).appendTo($body);
 			if (!IS_SM()) return;
 			const $actions = $tr.find("td").last();
 			const button = (label, disabled, handler) =>
-				$(`<button type="button" class="btn btn-xs btn-default">${esc(label)}</button>`)
+				$(`<button type="button" class="btn btn-xs btn-default">${escape_html(label)}</button>`)
 					.prop("disabled", disabled)
 					.on("click", handler)
 					.appendTo($actions);
@@ -1179,14 +1179,14 @@ class SettingsView {
 	// ---- backup: download and import (owner, 2026-10-10) ------------------------------------------
 
 	render_backup($el) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		this.state.hide();
 		$el.empty();
 		const $down = this.panel($el, {
 			title: __("Download a backup"),
 			note: __("Settings, templates, document notifications, notification alerts, functions, commands, contact groups and campaigns. No keys, no devices and no messages."),
 		});
-		$(`<button type="button" class="btn btn-primary btn-sm">${esc(__("Download a backup"))}</button>`)
+		$(`<button type="button" class="btn btn-primary btn-sm">${escape_html(__("Download a backup"))}</button>`)
 			.on("click", (e) => whatsapp_next.backup.download($(e.currentTarget)))
 			.appendTo($down);
 		if (!IS_SM()) return;
@@ -1194,7 +1194,7 @@ class SettingsView {
 			title: __("Import from a backup file"),
 			note: __("You see what the file adds and replaces before anything is written. Notifications and alerts come in switched off, campaigns as new drafts. Nothing is deleted."),
 		});
-		$(`<button type="button" class="btn btn-default btn-sm">${esc(__("Choose a JSON file…"))}</button>`)
+		$(`<button type="button" class="btn btn-default btn-sm">${escape_html(__("Choose a JSON file…"))}</button>`)
 			.on("click", (e) => whatsapp_next.backup.import_file($(e.currentTarget), $result))
 			.appendTo($up);
 		const $result = $('<div class="whatsapp-settings__backup-result"></div>').appendTo($up);
@@ -1212,7 +1212,7 @@ class SettingsView {
 	}
 
 	draw_sources($el) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		$el.empty();
 		const $panel = this.panel($el, {
 			title: __("Sources"),
@@ -1232,18 +1232,18 @@ class SettingsView {
 		}
 		$panel.html(`<div class="whatsapp-kit-table-wrap"><table class="whatsapp-kit-table">
 			<thead><tr>
-				<th scope="col">${esc(__("Document type"))}</th>
-				<th scope="col">${esc(__("Label"))}</th>
-				<th scope="col">${esc(__("Number source"))}</th>
-				<th scope="col">${esc(__("Enabled"))}</th>
-				<th scope="col"><span class="whatsapp-kit-visually-hidden">${esc(__("Actions"))}</span></th>
+				<th scope="col">${escape_html(__("Document type"))}</th>
+				<th scope="col">${escape_html(__("Label"))}</th>
+				<th scope="col">${escape_html(__("Number source"))}</th>
+				<th scope="col">${escape_html(__("Enabled"))}</th>
+				<th scope="col"><span class="whatsapp-kit-visually-hidden">${escape_html(__("Actions"))}</span></th>
 			</tr></thead><tbody></tbody></table></div>`);
 		const $body = $panel.find("tbody");
 		this.sources.forEach((row, i) => {
 			const $tr = $(`<tr>
-				<td>${esc(__(row.document_type || ""))}</td>
-				<td>${esc(row.label || "")}</td>
-				<td>${esc(whatsapp_next.picker_source_label(row))}</td>
+				<td>${escape_html(__(row.document_type || ""))}</td>
+				<td>${escape_html(row.label || "")}</td>
+				<td>${escape_html(whatsapp_next.picker_source_label(row))}</td>
 				<td>${whatsapp.ui.StatusBadge.html({
 					label: cint(row.enabled) ? __("Enabled") : __("Disabled"),
 					colour: cint(row.enabled) ? "green" : "gray",
@@ -1251,10 +1251,10 @@ class SettingsView {
 				<td class="whatsapp-kit-table__num"></td>
 			</tr>`).appendTo($body);
 			if (!IS_SM()) return;
-			$(`<button type="button" class="btn btn-xs btn-default">${esc(__("Edit"))}</button>`)
+			$(`<button type="button" class="btn btn-xs btn-default">${escape_html(__("Edit"))}</button>`)
 				.on("click", () => this.source_dialog(i))
 				.appendTo($tr.find("td").last());
-			$(`<button type="button" class="btn btn-xs btn-default">${esc(__("Remove"))}</button>`)
+			$(`<button type="button" class="btn btn-xs btn-default">${escape_html(__("Remove"))}</button>`)
 				.on("click", () => {
 					this.sources.splice(i, 1);
 					this.save_sources($el);
@@ -1291,13 +1291,13 @@ class SettingsView {
 	render_subscription($el) {
 		return whatsapp.ui.call("settings.get_settings", { section: "subscription" }).then((data) => {
 			const values = (data && data.subscription) || {};
-			const SW = whatsapp.ui.SettingsWindow;
-			const esc = frappe.utils.escape_html;
+			const SettingsWindow = whatsapp.ui.SettingsWindow;
+			const escape_html = frappe.utils.escape_html;
 			this.state.hide();
 			$el.empty();
 			this.subscription_cards($el, values);
 
-			$el.append(SW.section_html(__("Plan details"), values.plan_name ? __(values.plan_name) : values.plan_code || __("Not synced yet")));
+			$el.append(SettingsWindow.section_html(__("Plan details"), values.plan_name ? __(values.plan_name) : values.plan_code || __("Not synced yet")));
 			const $plan = $('<div class="whatsapp-settings__plan"></div>').appendTo($el);
 			this.render_label_value_rows($plan, [
 				// the allowance is per billing cycle, which is not always a month (a trial runs 14 days)
@@ -1313,15 +1313,15 @@ class SettingsView {
 				{ label: __("Cycle ends"), value: values.subscription_end ? frappe.datetime.str_to_user(values.subscription_end) : null },
 			]);
 
-			$el.append(SW.section_html(__("Sync")));
+			$el.append(SettingsWindow.section_html(__("Sync")));
 			const synced = values.subscription_synced_at
 				? __("Last synced {0}.", [frappe.datetime.str_to_user(values.subscription_synced_at)])
 				: __("Never synced.");
 			$(
-				SW.row_html(
+				SettingsWindow.row_html(
 					__("Read the plan from the platform"),
 					`${synced} ${__("The plan is read again every hour on its own.")}`,
-					`<button type="button" class="btn btn-sm btn-default" data-act="sync">${esc(__("Sync now"))}</button>`
+					`<button type="button" class="btn btn-sm btn-default" data-act="sync">${escape_html(__("Sync now"))}</button>`
 				)
 			)
 				.appendTo($el)
@@ -1329,10 +1329,10 @@ class SettingsView {
 				.on("click", () => this.sync_subscription());
 			this.renewal_row($el, values);
 			$(
-				SW.row_html(
+				SettingsWindow.row_html(
 					__("Wallet, plan changes and invoices"),
 					__("Top up the wallet, change the plan and read the account statement here."),
-					`<span class="whatsapp-settings__btns"><button type="button" class="btn btn-sm btn-default" data-go="wallet">${esc(__("Wallet"))}</button><button type="button" class="btn btn-sm btn-default" data-go="plans">${esc(__("Plans", null, "Billing"))}</button><button type="button" class="btn btn-sm btn-default" data-go="statement">${esc(__("Statement"))}</button></span>`
+					`<span class="whatsapp-settings__btns"><button type="button" class="btn btn-sm btn-default" data-go="wallet">${escape_html(__("Wallet"))}</button><button type="button" class="btn btn-sm btn-default" data-go="plans">${escape_html(__("Plans", null, "Billing"))}</button><button type="button" class="btn btn-sm btn-default" data-go="statement">${escape_html(__("Statement"))}</button></span>`
 				)
 			)
 				.appendTo($el)
@@ -1342,17 +1342,17 @@ class SettingsView {
 
 	/** «Renew now»: offered when the plan is due — its messages are used up or its period is over. */
 	renewal_row($el, values) {
-		const SW = whatsapp.ui.SettingsWindow;
-		const esc = frappe.utils.escape_html;
+		const SettingsWindow = whatsapp.ui.SettingsWindow;
+		const escape_html = frappe.utils.escape_html;
 		const ended = values.subscription_end && frappe.datetime.get_day_diff(values.subscription_end, SITE_TODAY()) < 0;
 		const due = ["Expired", "Suspended"].includes(values.subscription_status) || ended || (cint(values.message_limit) && cint(values.messages_remaining) <= 0);
 		const $row = $(
-			SW.row_html(
+			SettingsWindow.row_html(
 				__("Renew the plan"),
 				due
 					? __("Your plan is due. Renewing starts a new cycle now and is paid from the wallet.")
 					: __("Renewing is offered when the messages run out or the cycle ends."),
-				`<button type="button" class="btn btn-sm ${due ? "btn-primary" : "btn-default"}" data-act="renew"${due ? "" : " disabled"}>${esc(__("Renew now"))}</button>`
+				`<button type="button" class="btn btn-sm ${due ? "btn-primary" : "btn-default"}" data-act="renew"${due ? "" : " disabled"}>${escape_html(__("Renew now"))}</button>`
 			)
 		).appendTo($el);
 		$row.find("[data-act=renew]").on("click", () => this.renew_now());
@@ -1414,37 +1414,37 @@ class SettingsView {
 		const used = cint(values.messages_used);
 		const left = cint(values.messages_remaining);
 		const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		const status = values.subscription_status || "Unknown";
 		const tone = { Active: "green", Trial: "blue", Expired: "red", Suspended: "red", Cancelled: "red" }[status] || "gray";
 		// the plan meter first — how much of the month is gone — then three facts under it
 		$el.append(`
-			<section class="whatsapp-settings__meter" aria-label="${esc(__("Plan used"))}">
+			<section class="whatsapp-settings__meter" aria-label="${escape_html(__("Plan used"))}">
 				<div class="whatsapp-settings__meter-line">
-					<span class="whatsapp-settings__meter-title">${esc(__("Plan used"))}</span>
+					<span class="whatsapp-settings__meter-title">${escape_html(__("Plan used"))}</span>
 					${whatsapp.ui.StatusBadge.html({ label: __(status), colour: tone })}
 				</div>
-				<div class="whatsapp-settings__meter-value"><strong class="whatsapp-kit-tabular" dir="ltr">${pct}%</strong><span>${esc(
+				<div class="whatsapp-settings__meter-value"><strong class="whatsapp-kit-tabular" dir="ltr">${pct}%</strong><span>${escape_html(
 					__("{0} of {1} messages", [whatsapp.ui.format_integer(used), whatsapp.ui.format_integer(limit)])
 				)}</span></div>
-				<div class="whatsapp-settings__meter-track${pct > 80 ? " is-high" : ""}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="${esc(
+				<div class="whatsapp-settings__meter-track${pct > 80 ? " is-high" : ""}" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="${escape_html(
 					__("Plan used")
 				)}"><span style="inline-size: ${pct}%"></span></div>
 			</section>
 			<div class="whatsapp-settings__facts3">
-				<div><span>${esc(__("Messages left"))}</span><strong class="whatsapp-kit-tabular" dir="ltr">${esc(
+				<div><span>${escape_html(__("Messages left"))}</span><strong class="whatsapp-kit-tabular" dir="ltr">${escape_html(
 					whatsapp.ui.format_integer(left)
-				)}</strong><em>${esc(__("Before the plan runs out"))}</em></div>
-				<div><span>${esc(__("Wallet"))}</span><strong class="whatsapp-kit-tabular">${
+				)}</strong><em>${escape_html(__("Before the plan runs out"))}</em></div>
+				<div><span>${escape_html(__("Wallet"))}</span><strong class="whatsapp-kit-tabular">${
 					// no wallet reported is not a wallet of 0: the Single stores a missing balance as 0,
 					// so a zero with no currency is read as "not reported"
 					values.wallet_balance == null || (!values.wallet_currency && !flt(values.wallet_balance))
 						? "—"
 						: frappe.format(values.wallet_balance, { fieldtype: "Currency", options: values.wallet_currency }, { inline: true })
-				}</strong><em>${esc(__("Covers the messages beyond the plan"))}</em></div>
-				<div><span>${esc(__("Renewal"))}</span><strong>${esc(
+				}</strong><em>${escape_html(__("Covers the messages beyond the plan"))}</em></div>
+				<div><span>${escape_html(__("Renewal"))}</span><strong>${escape_html(
 					values.subscription_end ? frappe.datetime.str_to_user(values.subscription_end) : "—"
-				)}</strong><em>${esc(this.renewal_note(values.subscription_end))}</em></div>
+				)}</strong><em>${escape_html(this.renewal_note(values.subscription_end))}</em></div>
 			</div>`);
 	}
 
@@ -1475,10 +1475,10 @@ class SettingsView {
 		return whatsapp.ui.call("billing.get_billing").then((data) => {
 			this.state.hide();
 			$el.empty();
-			const esc = frappe.utils.escape_html;
+			const escape_html = frappe.utils.escape_html;
 			const wallet = data.wallet || {};
 			const plans = (data.plans || []).filter((p) => !p.is_trial && flt(p.monthly_price) > 0);
-			$el.append(`<p class="whatsapp-settings__note whatsapp-billing__lead">${esc(__("Wallet balance"))}: <strong class="whatsapp-kit-tabular">${this.money(wallet.balance, wallet.currency)}</strong></p>`);
+			$el.append(`<p class="whatsapp-settings__note whatsapp-billing__lead">${escape_html(__("Wallet balance"))}: <strong class="whatsapp-kit-tabular">${this.money(wallet.balance, wallet.currency)}</strong></p>`);
 			if (!plans.length) {
 				new whatsapp.ui.EmptyState({ wrapper: $el, state: "empty", size: "sm", title: __("No plans to choose from right now") });
 				return;
@@ -1489,20 +1489,20 @@ class SettingsView {
 				const $card = $(`
 					<article class="whatsapp-billing__plan${p.is_current ? " is-current" : ""}">
 						<header>
-							<h4>${esc(__(p.plan_name || p.plan_code))}</h4>
+							<h4>${escape_html(__(p.plan_name || p.plan_code))}</h4>
 							${p.is_current ? whatsapp.ui.StatusBadge.html({ label: __("Your plan"), colour: "green" }) : p.is_featured ? whatsapp.ui.StatusBadge.html({ label: __("Most popular"), colour: "blue" }) : ""}
 						</header>
-						<p class="whatsapp-billing__price"><strong class="whatsapp-kit-tabular">${this.money(p.monthly_price, p.currency)}</strong><span>${esc(__("per month"))}</span></p>
+						<p class="whatsapp-billing__price"><strong class="whatsapp-kit-tabular">${this.money(p.monthly_price, p.currency)}</strong><span>${escape_html(__("per month"))}</span></p>
 						<ul>
-							<li><span>${esc(__("Messages a month"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_integer(p.message_limit)}</b></li>
-							<li><span>${esc(__("WhatsApp numbers"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_integer(p.device_limit)}</b></li>
-							<li><span>${esc(__("Unused messages"))}</span><b>${esc(p.cumulative_messages ? __("Carry over") : __("Don't carry over"))}</b></li>
-							<li><span>${esc(__("Features included"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_integer(features)}</b></li>
+							<li><span>${escape_html(__("Messages a month"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_integer(p.message_limit)}</b></li>
+							<li><span>${escape_html(__("WhatsApp numbers"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_integer(p.device_limit)}</b></li>
+							<li><span>${escape_html(__("Unused messages"))}</span><b>${escape_html(p.cumulative_messages ? __("Carry over") : __("Don't carry over"))}</b></li>
+							<li><span>${escape_html(__("Features included"))}</span><b class="whatsapp-kit-tabular">${whatsapp.ui.format_integer(features)}</b></li>
 						</ul>
 						<footer>${
 							p.is_current
-								? `<span class="whatsapp-billing__muted">${esc(__("You are on this plan"))}</span>`
-								: `<button type="button" class="btn btn-sm btn-primary" data-plan="${esc(p.plan_code)}">${esc(__("Move to this plan"))}</button>`
+								? `<span class="whatsapp-billing__muted">${escape_html(__("You are on this plan"))}</span>`
+								: `<button type="button" class="btn btn-sm btn-primary" data-plan="${escape_html(p.plan_code)}">${escape_html(__("Move to this plan"))}</button>`
 						}</footer>
 					</article>`).appendTo($grid);
 				$card.find("[data-plan]").on("click", () => this.change_plan(p, wallet));
@@ -1532,18 +1532,18 @@ class SettingsView {
 	// ---- 9c. wallet and payments -----------------------------------------------------------------------
 
 	render_wallet($el) {
-		const back = this.paypal_back;
+		const paypal_return = this.paypal_back;
 		this.paypal_back = null;
-		const confirming = back && back.outcome === "return" && back.token ? whatsapp.ui.call("billing.confirm_paypal", { order_id: back.token }, { freeze: true, freeze_message: __("Confirming your PayPal payment…") }) : Promise.resolve(null);
+		const confirming = paypal_return && paypal_return.outcome === "return" && paypal_return.token ? whatsapp.ui.call("billing.confirm_paypal", { order_id: paypal_return.token }, { freeze: true, freeze_message: __("Confirming your PayPal payment…") }) : Promise.resolve(null);
 		return confirming
 			.then((paid) => whatsapp.ui.call("billing.get_billing").then((data) => ({ data, paid })))
 			.then(({ data, paid }) => {
 				this.state.hide();
 				$el.empty();
-				const SW = whatsapp.ui.SettingsWindow;
+				const SettingsWindow = whatsapp.ui.SettingsWindow;
 				const wallet = data.wallet || {};
 				const renewal = wallet.renewal || {};
-				if (back && back.outcome === "cancel") $el.append(this.banner("warn", __("The PayPal payment was cancelled. Nothing was charged.")));
+				if (paypal_return && paypal_return.outcome === "cancel") $el.append(this.banner("warn", __("The PayPal payment was cancelled. Nothing was charged.")));
 				if (paid) {
 					const txn = paid.transaction || {};
 					$el.append(
@@ -1562,10 +1562,10 @@ class SettingsView {
 						<div><span>${frappe.utils.escape_html(__("Renewal price"))}</span><strong class="whatsapp-kit-tabular">${this.money(renewal.renewal_price, renewal.renewal_currency || wallet.currency)}</strong><em>${frappe.utils.escape_html(renewal.auto_renew ? __("Renews by itself from the wallet") : __("Renewed when you choose"))}</em></div>
 					</div>`);
 
-				$el.append(SW.section_html(__("Top up the wallet")));
+				$el.append(SettingsWindow.section_html(__("Top up the wallet")));
 				this.topup_form($el, wallet, data.payment || {});
 
-				$el.append(SW.section_html(__("Latest activity")));
+				$el.append(SettingsWindow.section_html(__("Latest activity")));
 				this.activity($el, wallet);
 			});
 	}
@@ -1576,7 +1576,7 @@ class SettingsView {
 	}
 
 	topup_form($el, wallet, payment) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		const methods = payment.methods || [];
 		const paypal = payment.paypal || {};
 		const choices = [
@@ -1594,50 +1594,50 @@ class SettingsView {
 		const id = whatsapp.ui.unique_dom_id("whatsapp-topup");
 		const $form = $(`
 			<form class="whatsapp-billing__topup" novalidate>
-				<label class="whatsapp-billing__label" for="${id}-amount">${esc(__("Amount"))} <span class="whatsapp-billing__muted">(${esc(wallet.currency || "")})</span></label>
-				<input class="whatsapp-input whatsapp-billing__amount" id="${id}-amount" type="number" inputmode="decimal" min="0.01" step="0.01" dir="ltr" required value="${esc(amount)}">
-				<fieldset class="whatsapp-billing__methods"><legend class="whatsapp-billing__label">${esc(__("How you pay"))}</legend>${choices
+				<label class="whatsapp-billing__label" for="${id}-amount">${escape_html(__("Amount"))} <span class="whatsapp-billing__muted">(${escape_html(wallet.currency || "")})</span></label>
+				<input class="whatsapp-input whatsapp-billing__amount" id="${id}-amount" type="number" inputmode="decimal" min="0.01" step="0.01" dir="ltr" required value="${escape_html(amount)}">
+				<fieldset class="whatsapp-billing__methods"><legend class="whatsapp-billing__label">${escape_html(__("How you pay"))}</legend>${choices
 					.map(
-						(c, i) => `<label class="whatsapp-billing__method"><input type="radio" name="${id}-method" value="${esc(c.key)}"${i === 0 ? " checked" : ""}><span><b>${esc(c.title)}</b><em>${esc(c.note)}</em></span></label>`
+						(c, i) => `<label class="whatsapp-billing__method"><input type="radio" name="${id}-method" value="${escape_html(c.key)}"${i === 0 ? " checked" : ""}><span><b>${escape_html(c.title)}</b><em>${escape_html(c.note)}</em></span></label>`
 					)
 					.join("")}</fieldset>
 				<div class="whatsapp-billing__details"></div>
 				<div class="whatsapp-billing__actions"><button type="submit" class="btn btn-primary whatsapp-billing__submit"></button></div>
 			</form>`).appendTo($el);
 		let receipt = "";
-		const pick = () => {
+		const show_payment_method_details = () => {
 			const key = $form.find(`input[name="${id}-method"]:checked`).val();
 			const choice = choices.find((c) => c.key === key);
 			const $details = $form.find(".whatsapp-billing__details").empty();
 			receipt = "";
 			if (key === "paypal") {
 				$form.find(".whatsapp-billing__submit").text(__("Pay with PayPal"));
-				$details.append(`<p class="whatsapp-billing__muted">${esc(__("You go to PayPal to pay and come back here; the amount is added to your wallet straight away."))}</p>`);
+				$details.append(`<p class="whatsapp-billing__muted">${escape_html(__("You go to PayPal to pay and come back here; the amount is added to your wallet straight away."))}</p>`);
 				return;
 			}
 			$form.find(".whatsapp-billing__submit").text(__("Send for review"));
-			const m = choice.method;
+			const method = choice.method;
 			const facts = [
-				[__("Bank"), m.bank_name],
-				[__("Account name"), m.account_name],
-				[__("Account number"), m.account_number],
-				[__("IBAN"), m.iban],
-				[__("SWIFT"), m.swift_code],
-				[__("Receiver"), m.receiver_name],
-				[__("Receiver's phone"), m.receiver_phone],
-				[__("City"), m.receiver_city],
-				[__("PayPal account"), m.paypal_account],
+				[__("Bank"), method.bank_name],
+				[__("Account name"), method.account_name],
+				[__("Account number"), method.account_number],
+				[__("IBAN"), method.iban],
+				[__("SWIFT"), method.swift_code],
+				[__("Receiver"), method.receiver_name],
+				[__("Receiver's phone"), method.receiver_phone],
+				[__("City"), method.receiver_city],
+				[__("PayPal account"), method.paypal_account],
 			].filter(([, v]) => v);
 			$details.append(`
-				${facts.length ? `<dl class="whatsapp-billing__payto">${facts.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd dir="auto" class="whatsapp-kit-tabular">${esc(v)}</dd></div>`).join("")}</dl>` : ""}
-				${m.instructions ? `<p class="whatsapp-billing__muted">${esc(m.instructions)}</p>` : ""}
-				<label class="whatsapp-billing__label" for="${id}-ref">${esc(__("Transfer number"))}</label>
+				${facts.length ? `<dl class="whatsapp-billing__payto">${facts.map(([k, v]) => `<div><dt>${escape_html(k)}</dt><dd dir="auto" class="whatsapp-kit-tabular">${escape_html(v)}</dd></div>`).join("")}</dl>` : ""}
+				${method.instructions ? `<p class="whatsapp-billing__muted">${escape_html(method.instructions)}</p>` : ""}
+				<label class="whatsapp-billing__label" for="${id}-ref">${escape_html(__("Transfer number"))}</label>
 				<input class="whatsapp-input" id="${id}-ref" maxlength="140" dir="auto">
-				<span class="whatsapp-billing__label">${esc(__("Receipt"))} <span class="whatsapp-billing__muted">${esc(__("PDF or image, up to 5 MB"))}</span></span>
-				<div class="whatsapp-billing__receipt"><button type="button" class="btn btn-sm btn-default" data-act="receipt">${esc(__("Attach the receipt"))}</button><span class="whatsapp-billing__muted" data-receipt></span></div>
-				<label class="whatsapp-billing__label" for="${id}-note">${esc(__("Note"))} <span class="whatsapp-billing__muted">${esc(__("Optional"))}</span></label>
+				<span class="whatsapp-billing__label">${escape_html(__("Receipt"))} <span class="whatsapp-billing__muted">${escape_html(__("PDF or image, up to 5 MB"))}</span></span>
+				<div class="whatsapp-billing__receipt"><button type="button" class="btn btn-sm btn-default" data-act="receipt">${escape_html(__("Attach the receipt"))}</button><span class="whatsapp-billing__muted" data-receipt></span></div>
+				<label class="whatsapp-billing__label" for="${id}-note">${escape_html(__("Note"))} <span class="whatsapp-billing__muted">${escape_html(__("Optional"))}</span></label>
 				<textarea class="whatsapp-input" id="${id}-note" rows="2" maxlength="500"></textarea>
-				<p class="whatsapp-billing__muted">${esc(__("The platform checks the transfer, then adds the amount to your wallet."))}</p>`);
+				<p class="whatsapp-billing__muted">${escape_html(__("The platform checks the transfer, then adds the amount to your wallet."))}</p>`);
 			$details.find("[data-act=receipt]").on("click", () => {
 				new frappe.ui.FileUploader({
 					allow_multiple: false,
@@ -1651,8 +1651,8 @@ class SettingsView {
 				});
 			});
 		};
-		$form.on("change", `input[name="${id}-method"]`, pick);
-		pick();
+		$form.on("change", `input[name="${id}-method"]`, show_payment_method_details);
+		show_payment_method_details();
 		$form.on("submit", (e) => {
 			e.preventDefault();
 			const value = flt($form.find(`#${id}-amount`).val());
@@ -1662,16 +1662,16 @@ class SettingsView {
 			}
 			const key = $form.find(`input[name="${id}-method"]:checked`).val();
 			const $btn = $form.find(".whatsapp-billing__submit").prop("disabled", true);
-			const done = () => $btn.prop("disabled", false);
+			const enable_submit_button = () => $btn.prop("disabled", false);
 			if (key === "paypal") {
 				return whatsapp.ui
 					.call("billing.start_paypal", { amount: value, plan_code: plan_code || null }, { freeze: true, freeze_message: __("Opening PayPal…") })
 					.then((r) => {
 						if (r && r.approve_url) window.location.href = r.approve_url;
-						else done();
+						else enable_submit_button();
 					})
 					.catch((err) => {
-						done();
+						enable_submit_button();
 						whatsapp.ui.Toast.error(err);
 					});
 			}
@@ -1693,14 +1693,14 @@ class SettingsView {
 					this.show("wallet");
 				})
 				.catch((err) => {
-					done();
+					enable_submit_button();
 					whatsapp.ui.Toast.error(err);
 				});
 		});
 	}
 
 	activity($el, wallet) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		const rows = (wallet.transactions || []).slice(0, 10);
 		if (!rows.length) {
 			new whatsapp.ui.EmptyState({ wrapper: $el, state: "empty", size: "sm", title: __("No wallet activity yet") });
@@ -1713,13 +1713,13 @@ class SettingsView {
 				const out = t.transaction_type === "Debit";
 				const [label, colour] = status[t.status] || [t.status, "gray"];
 				return `<li>
-					<span><b>${esc(kind[t.transaction_type] || __(t.transaction_type))}</b><em>${esc(frappe.datetime.str_to_user(t.posting_date || t.creation))}${t.reference_no ? ` · ${esc(__("Ref."))} <bdi>${esc(t.reference_no)}</bdi>` : ""}</em></span>
+					<span><b>${escape_html(kind[t.transaction_type] || __(t.transaction_type))}</b><em>${escape_html(frappe.datetime.str_to_user(t.posting_date || t.creation))}${t.reference_no ? ` · ${escape_html(__("Ref."))} <bdi>${escape_html(t.reference_no)}</bdi>` : ""}</em></span>
 					${whatsapp.ui.StatusBadge.html({ label: __(label), colour })}
 					<strong class="whatsapp-kit-tabular${out ? "" : " is-in"}" dir="ltr">${out ? "−" : "+"}${this.money(t.amount, t.currency || wallet.currency)}</strong>
 				</li>`;
 			})
 			.join("")}</ul>`);
-		$(`<p class="whatsapp-settings__note"><button type="button" class="btn btn-link btn-sm">${esc(__("See the account statement"))}</button></p>`)
+		$(`<p class="whatsapp-settings__note"><button type="button" class="btn btn-link btn-sm">${escape_html(__("See the account statement"))}</button></p>`)
 			.appendTo($el)
 			.find("button")
 			.on("click", () => this.show("statement"));
@@ -1730,7 +1730,7 @@ class SettingsView {
 	render_statement($el) {
 		this.state.hide();
 		$el.empty();
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		this.statement_period = this.statement_period || "month";
 		const $bar = $('<div class="whatsapp-billing__bar"></div>').appendTo($el);
 		const $seg = $('<div class="whatsapp-settings__period" role="radiogroup"></div>').attr("aria-label", __("Period")).appendTo($bar);
@@ -1739,14 +1739,14 @@ class SettingsView {
 			["quarter", __("Last 3 months")],
 			["year", __("This year")],
 		].forEach(([key, label]) => {
-			$(`<button type="button" role="radio" aria-checked="${key === this.statement_period}" class="${key === this.statement_period ? "is-on" : ""}">${esc(label)}</button>`)
+			$(`<button type="button" role="radio" aria-checked="${key === this.statement_period}" class="${key === this.statement_period ? "is-on" : ""}">${escape_html(label)}</button>`)
 				.on("click", () => {
 					this.statement_period = key;
 					this.show("statement");
 				})
 				.appendTo($seg);
 		});
-		const $tools = $(`<span class="whatsapp-settings__btns"><button type="button" class="btn btn-sm btn-default" data-act="csv" disabled>${esc(__("Download"))}</button><button type="button" class="btn btn-sm btn-default" data-act="print" disabled>${esc(__("Print"))}</button></span>`).appendTo($bar);
+		const $tools = $(`<span class="whatsapp-settings__btns"><button type="button" class="btn btn-sm btn-default" data-act="csv" disabled>${escape_html(__("Download"))}</button><button type="button" class="btn btn-sm btn-default" data-act="print" disabled>${escape_html(__("Print"))}</button></span>`).appendTo($bar);
 		const $body = $('<div class="whatsapp-billing__statement"></div>').appendTo($el);
 		const state = new whatsapp.ui.EmptyState({ wrapper: $body, state: "loading", rows: 5, size: "sm" });
 		const today = SITE_TODAY();
@@ -1776,15 +1776,15 @@ class SettingsView {
 	}
 
 	draw_statement($body, v) {
-		const esc = frappe.utils.escape_html;
-		const day = (d) => esc(frappe.datetime.str_to_user(d));
+		const escape_html = frappe.utils.escape_html;
+		const format_statement_day = (d) => escape_html(frappe.datetime.str_to_user(d));
 		$body.append(`
-			<p class="whatsapp-settings__note">${esc(__("From {0} to {1}", [frappe.datetime.str_to_user(v.from_date), frappe.datetime.str_to_user(v.to_date)]))}</p>
+			<p class="whatsapp-settings__note">${escape_html(__("From {0} to {1}", [frappe.datetime.str_to_user(v.from_date), frappe.datetime.str_to_user(v.to_date)]))}</p>
 			<div class="whatsapp-settings__facts3 whatsapp-settings__facts3--4">
-				<div><span>${esc(__("Opening balance"))}</span><strong class="whatsapp-kit-tabular">${this.money(v.opening, v.currency)}</strong></div>
-				<div><span>${esc(__("Came in"))}</span><strong class="whatsapp-kit-tabular">${this.money(v.total_in, v.currency)}</strong></div>
-				<div><span>${esc(__("Charged"))}</span><strong class="whatsapp-kit-tabular">${this.money(v.total_out, v.currency)}</strong></div>
-				<div><span>${esc(__("Closing balance"))}</span><strong class="whatsapp-kit-tabular">${this.money(v.closing, v.currency)}</strong></div>
+				<div><span>${escape_html(__("Opening balance"))}</span><strong class="whatsapp-kit-tabular">${this.money(v.opening, v.currency)}</strong></div>
+				<div><span>${escape_html(__("Came in"))}</span><strong class="whatsapp-kit-tabular">${this.money(v.total_in, v.currency)}</strong></div>
+				<div><span>${escape_html(__("Charged"))}</span><strong class="whatsapp-kit-tabular">${this.money(v.total_out, v.currency)}</strong></div>
+				<div><span>${escape_html(__("Closing balance"))}</span><strong class="whatsapp-kit-tabular">${this.money(v.closing, v.currency)}</strong></div>
 			</div>`);
 		if (!(v.rows || []).length) {
 			new whatsapp.ui.EmptyState({
@@ -1797,18 +1797,18 @@ class SettingsView {
 			return;
 		}
 		$body.append(`
-			<div class="whatsapp-billing__table-wrap" tabindex="0" role="region" aria-label="${esc(__("Account statement"))}">
+			<div class="whatsapp-billing__table-wrap" tabindex="0" role="region" aria-label="${escape_html(__("Account statement"))}">
 				<table class="whatsapp-billing__table">
-					<thead><tr><th scope="col">${esc(__("Date"))}</th><th scope="col">${esc(__("Details", null, "Statement"))}</th><th scope="col" class="is-num">${esc(__("Money in"))}</th><th scope="col" class="is-num">${esc(__("Money out"))}</th><th scope="col" class="is-num">${esc(__("Balance"))}</th></tr></thead>
+					<thead><tr><th scope="col">${escape_html(__("Date"))}</th><th scope="col">${escape_html(__("Details", null, "Statement"))}</th><th scope="col" class="is-num">${escape_html(__("Money in"))}</th><th scope="col" class="is-num">${escape_html(__("Money out"))}</th><th scope="col" class="is-num">${escape_html(__("Balance"))}</th></tr></thead>
 					<tbody>
-						<tr class="is-opening"><td>${day(v.from_date)}</td><td colspan="3">${esc(__("Opening balance"))}</td><td class="is-num">${this.money(v.opening, v.currency)}</td></tr>
+						<tr class="is-opening"><td>${format_statement_day(v.from_date)}</td><td colspan="3">${escape_html(__("Opening balance"))}</td><td class="is-num">${this.money(v.opening, v.currency)}</td></tr>
 						${v.rows
 							.map(
-								(r) => `<tr><td>${day(r.date)}</td><td><b>${esc(this.statement_line(r))}</b><em><bdi>${esc(r.invoice || r.document)}</bdi>${r.reference ? ` · ${esc(__("Ref."))} <bdi>${esc(r.reference)}</bdi>` : ""}</em></td><td class="is-num is-in">${r.money_in ? this.money(r.money_in, v.currency) : ""}</td><td class="is-num">${r.money_out ? this.money(r.money_out, v.currency) : ""}</td><td class="is-num"><b>${this.money(r.balance, v.currency)}</b></td></tr>`
+								(r) => `<tr><td>${format_statement_day(r.date)}</td><td><b>${escape_html(this.statement_line(r))}</b><em><bdi>${escape_html(r.invoice || r.document)}</bdi>${r.reference ? ` · ${escape_html(__("Ref."))} <bdi>${escape_html(r.reference)}</bdi>` : ""}</em></td><td class="is-num is-in">${r.money_in ? this.money(r.money_in, v.currency) : ""}</td><td class="is-num">${r.money_out ? this.money(r.money_out, v.currency) : ""}</td><td class="is-num"><b>${this.money(r.balance, v.currency)}</b></td></tr>`
 							)
 							.join("")}
 					</tbody>
-					<tfoot><tr><th scope="row" colspan="2">${esc(__("Closing balance"))}</th><td class="is-num">${this.money(v.total_in, v.currency)}</td><td class="is-num">${this.money(v.total_out, v.currency)}</td><td class="is-num">${this.money(v.closing, v.currency)}</td></tr></tfoot>
+					<tfoot><tr><th scope="row" colspan="2">${escape_html(__("Closing balance"))}</th><td class="is-num">${this.money(v.total_in, v.currency)}</td><td class="is-num">${this.money(v.total_out, v.currency)}</td><td class="is-num">${this.money(v.closing, v.currency)}</td></tr></tfoot>
 				</table>
 			</div>`);
 	}
@@ -1816,14 +1816,14 @@ class SettingsView {
 	/** A spreadsheet of the statement (UTF-8 with a byte-order mark, so Excel reads Arabic). */
 	statement_csv(v) {
 		const plain = (n) => (flt(n) ? flt(n).toFixed(2) : "");
-		const cell = (x) => `"${String(x == null ? "" : x).replace(/"/g, '""')}"`;
+		const quote_csv_cell = (x) => `"${String(x == null ? "" : x).replace(/"/g, '""')}"`;
 		const lines = [
 			[__("Date"), __("Details", null, "Statement"), __("Document"), __("Ref."), __("Money in"), __("Money out"), __("Balance")],
 			[v.from_date, __("Opening balance"), "", "", "", "", flt(v.opening).toFixed(2)],
 			...(v.rows || []).map((r) => [r.date, this.statement_line(r), r.invoice || r.document, r.reference, plain(r.money_in), plain(r.money_out), flt(r.balance).toFixed(2)]),
 			[v.to_date, __("Closing balance"), "", "", plain(v.total_in), plain(v.total_out), flt(v.closing).toFixed(2)],
 		];
-		const url = URL.createObjectURL(new Blob(["﻿" + lines.map((l) => l.map(cell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }));
+		const url = URL.createObjectURL(new Blob(["﻿" + lines.map((l) => l.map(quote_csv_cell).join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" }));
 		const a = Object.assign(document.createElement("a"), { href: url, download: `statement-${v.from_date}-${v.to_date}.csv` });
 		document.body.appendChild(a);
 		a.click();
@@ -1833,11 +1833,11 @@ class SettingsView {
 
 	/** Print the statement alone, on a page of its own. */
 	statement_print($body, v) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		const win = window.open("", "_blank", "noopener=no,width=900,height=700");
 		if (!win) return whatsapp.ui.Toast.error(__("Allow pop-ups for this site to print."));
 		const rtl = frappe.utils.is_rtl();
-		win.document.write(`<!doctype html><html dir="${rtl ? "rtl" : "ltr"}"><head><meta charset="utf-8"><title>${esc(__("Account statement"))}</title><style>
+		win.document.write(`<!doctype html><html dir="${rtl ? "rtl" : "ltr"}"><head><meta charset="utf-8"><title>${escape_html(__("Account statement"))}</title><style>
 			body{font:13px/1.5 system-ui,sans-serif;color:#111;margin:24px}
 			h1{font-size:20px;margin:0 0 4px}p{margin:0 0 12px;color:#555}
 			.whatsapp-settings__facts3{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
@@ -1846,7 +1846,7 @@ class SettingsView {
 			table{width:100%;border-collapse:collapse}th,td{padding:6px 8px;border-bottom:1px solid #e5e5e5;text-align:start;vertical-align:top}
 			thead th{background:#f5f5f5;font-size:12px}.is-num{text-align:end;white-space:nowrap}td em{display:block;color:#666;font-style:normal;font-size:11px}
 			tfoot th,tfoot td{font-weight:700;border-top:2px solid #999}.whatsapp-settings__note{display:none}
-		</style></head><body><h1>${esc(__("Account statement"))}</h1><p>${esc(__("From {0} to {1}", [frappe.datetime.str_to_user(v.from_date), frappe.datetime.str_to_user(v.to_date)]))}</p>${$body.html()}</body></html>`);
+		</style></head><body><h1>${escape_html(__("Account statement"))}</h1><p>${escape_html(__("From {0} to {1}", [frappe.datetime.str_to_user(v.from_date), frappe.datetime.str_to_user(v.to_date)]))}</p>${$body.html()}</body></html>`);
 		win.document.close();
 		win.focus();
 		win.setTimeout(() => win.print(), 200);
@@ -1902,7 +1902,7 @@ class SettingsView {
 	}
 
 	draw_usage($el, rows) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		const max = Math.max(1, ...rows.map((r) => cint(r.sent) + cint(r.failed)));
 		const total = rows.reduce((n, r) => n + cint(r.sent), 0);
 		const failed = rows.reduce((n, r) => n + cint(r.failed), 0);
@@ -1910,27 +1910,27 @@ class SettingsView {
 		const peak = rows.reduce((best, r) => (cint(r.sent) > cint(best.sent) ? r : best), rows[0]);
 		const delivered = rows.reduce((n, r) => n + cint(r.delivered), 0);
 		const read = rows.reduce((n, r) => n + cint(r.read), 0);
-		const pct = (n) => (total ? `${Math.round((n / total) * 100)}%` : "—");
+		const format_sent_share = (n) => (total ? `${Math.round((n / total) * 100)}%` : "—");
 		$el.html(`
 			<div class="whatsapp-settings__facts3 whatsapp-settings__facts3--4">
-				<div><span>${esc(__("Sent"))}</span><strong class="whatsapp-kit-tabular" dir="ltr">${esc(
+				<div><span>${escape_html(__("Sent"))}</span><strong class="whatsapp-kit-tabular" dir="ltr">${escape_html(
 					whatsapp.ui.format_integer(total)
-				)}</strong><em>${esc(__("{0} a day on average", [whatsapp.ui.format_integer(average)]))}</em></div>
-				<div><span>${esc(__("Delivered", null, "campaign"))}</span><strong class="whatsapp-kit-tabular" dir="ltr">${esc(
-					pct(delivered)
-				)}</strong><em>${esc(__("{0} messages", [whatsapp.ui.format_integer(delivered)]))}</em></div>
-				<div><span>${esc(__("Read", null, "campaign"))}</span><strong class="whatsapp-kit-tabular" dir="ltr">${esc(
-					pct(read)
-				)}</strong><em>${esc(__("{0} messages", [whatsapp.ui.format_integer(read)]))}</em></div>
-				<div><span>${esc(__("Failed"))}</span><strong class="whatsapp-kit-tabular${failed ? " is-bad" : ""}" dir="ltr">${esc(
+				)}</strong><em>${escape_html(__("{0} a day on average", [whatsapp.ui.format_integer(average)]))}</em></div>
+				<div><span>${escape_html(__("Delivered", null, "campaign"))}</span><strong class="whatsapp-kit-tabular" dir="ltr">${escape_html(
+					format_sent_share(delivered)
+				)}</strong><em>${escape_html(__("{0} messages", [whatsapp.ui.format_integer(delivered)]))}</em></div>
+				<div><span>${escape_html(__("Read", null, "campaign"))}</span><strong class="whatsapp-kit-tabular" dir="ltr">${escape_html(
+					format_sent_share(read)
+				)}</strong><em>${escape_html(__("{0} messages", [whatsapp.ui.format_integer(read)]))}</em></div>
+				<div><span>${escape_html(__("Failed"))}</span><strong class="whatsapp-kit-tabular${failed ? " is-bad" : ""}" dir="ltr">${escape_html(
 					whatsapp.ui.format_integer(failed)
-				)}</strong><em>${esc(total + failed ? __("{0}% of attempts", [Math.round((failed / (total + failed)) * 100)]) : "—")}</em></div>
+				)}</strong><em>${escape_html(total + failed ? __("{0}% of attempts", [Math.round((failed / (total + failed)) * 100)]) : "—")}</em></div>
 			</div>
-			<p class="whatsapp-settings__note">${esc(
+			<p class="whatsapp-settings__note">${escape_html(
 				__("Counted from this site's own message log. Busiest day: {0}.", [frappe.datetime.str_to_user(peak.key)])
 			)}</p>
 			${whatsapp.ui.SettingsWindow.section_html(__("Messages per day"))}
-			<div class="whatsapp-settings__chart" role="img" aria-label="${esc(
+			<div class="whatsapp-settings__chart" role="img" aria-label="${escape_html(
 				__("{0} messages over {1} days, {2} a day on average", [
 					whatsapp.ui.format_integer(total),
 					rows.length,
@@ -1942,24 +1942,24 @@ class SettingsView {
 						const all = cint(r.sent) + cint(r.failed);
 						const h = Math.max(2, Math.round((all / max) * 100));
 						const fh = all ? Math.round((cint(r.failed) / all) * h) : 0;
-						return `<span class="whatsapp-settings__bar" title="${esc(
+						return `<span class="whatsapp-settings__bar" title="${escape_html(
 							__("{0}: {1} sent, {2} failed", [frappe.datetime.str_to_user(r.key), cint(r.sent), cint(r.failed)])
 						)}">
 								<span class="whatsapp-settings__bar-col${all ? "" : " is-zero"}" style="block-size: ${h}%">
 									${fh ? `<span class="whatsapp-settings__bar-fail" style="block-size: ${Math.round((fh / h) * 100)}%"></span>` : ""}
 								</span>
-								<span class="whatsapp-settings__bar-label">${esc(String(r.key).slice(-2))}</span>
+								<span class="whatsapp-settings__bar-label">${escape_html(String(r.key).slice(-2))}</span>
 							</span>`;
 					})
 					.join("")}
 			</div>
-			<div class="whatsapp-settings__legend"><span><i class="is-sent"></i>${esc(__("Sent"))}</span><span><i class="is-fail"></i>${esc(
+			<div class="whatsapp-settings__legend"><span><i class="is-sent"></i>${escape_html(__("Sent"))}</span><span><i class="is-fail"></i>${escape_html(
 				__("Failed")
 			)}</span></div>
-			<table class="whatsapp-kit-visually-hidden"><caption>${esc(__("Messages per day"))}</caption>
-				<thead><tr><th>${esc(__("Day"))}</th><th>${esc(__("Sent"))}</th><th>${esc(__("Failed"))}</th></tr></thead>
+			<table class="whatsapp-kit-visually-hidden"><caption>${escape_html(__("Messages per day"))}</caption>
+				<thead><tr><th>${escape_html(__("Day"))}</th><th>${escape_html(__("Sent"))}</th><th>${escape_html(__("Failed"))}</th></tr></thead>
 				<tbody>${rows
-					.map((r) => `<tr><td>${esc(r.key)}</td><td>${cint(r.sent)}</td><td>${cint(r.failed)}</td></tr>`)
+					.map((r) => `<tr><td>${escape_html(r.key)}</td><td>${cint(r.sent)}</td><td>${cint(r.failed)}</td></tr>`)
 					.join("")}</tbody></table>`);
 	}
 
@@ -2032,15 +2032,15 @@ class SettingsView {
 	}
 
 	draw_audit(rows, total) {
-		const esc = frappe.utils.escape_html;
+		const escape_html = frappe.utils.escape_html;
 		const TONE = { Info: "gray", Warning: "orange", Critical: "red" };
 		const pages = Math.max(1, Math.ceil(total / 20));
 		this.$audit_body.html(`<div class="whatsapp-kit-table-wrap"><table class="whatsapp-kit-table">
 			<thead><tr>
-				<th scope="col">${esc(__("Action"))}</th>
-				<th scope="col">${esc(__("Record"))}</th>
-				<th scope="col">${esc(__("User"))}</th>
-				<th scope="col">${esc(__("When"))}</th>
+				<th scope="col">${escape_html(__("Action"))}</th>
+				<th scope="col">${escape_html(__("Record"))}</th>
+				<th scope="col">${escape_html(__("User"))}</th>
+				<th scope="col">${escape_html(__("When"))}</th>
 			</tr></thead><tbody>${rows
 				.map(
 					(row) => `<tr>
@@ -2049,23 +2049,23 @@ class SettingsView {
 						colour: TONE[row.severity] || "gray",
 					})}</td>
 					<td>${this.audit_record(row)}</td>
-					<td>${esc(row.user || "—")}</td>
-					<td class="whatsapp-settings__nowrap">${esc(frappe.datetime.str_to_user(row.timestamp))}</td>
+					<td>${escape_html(row.user || "—")}</td>
+					<td class="whatsapp-settings__nowrap">${escape_html(frappe.datetime.str_to_user(row.timestamp))}</td>
 				</tr>`
 				)
 				.join("")}</tbody></table></div>
 			<div class="whatsapp-settings__pager">
-				<span role="status">${esc(
+				<span role="status">${escape_html(
 					whatsapp.ui.plural(total, { one: __("{0} entry"), other: __("{0} entries") })
 				)}</span>
 				<span>
 					<button type="button" class="btn btn-xs btn-default" data-page="prev" ${
 						this.audit_page <= 1 ? "disabled" : ""
-					}>${esc(__("Previous"))}</button>
-					<span class="whatsapp-kit-tabular">${esc(__("Page {0} of {1}", [this.audit_page, pages]))}</span>
+					}>${escape_html(__("Previous"))}</button>
+					<span class="whatsapp-kit-tabular">${escape_html(__("Page {0} of {1}", [this.audit_page, pages]))}</span>
 					<button type="button" class="btn btn-xs btn-default" data-page="next" ${
 						this.audit_page >= pages ? "disabled" : ""
-					}>${esc(__("Next"))}</button>
+					}>${escape_html(__("Next"))}</button>
 				</span>
 			</div>`);
 		this.$audit_body.find("[data-page]").on("click", (e) => {
@@ -2079,14 +2079,14 @@ class SettingsView {
 
 	/** What an audit row acted on: the record it references, else what it wrote, else its reason. */
 	audit_record(row) {
-		const esc = frappe.utils.escape_html;
-		const label = (doctype, name) =>
-			frappe.utils.get_form_link(doctype, name, true, esc(`${__(doctype)} · ${name}`));
-		if (row.reference_doctype && row.reference_name) return label(row.reference_doctype, row.reference_name);
-		if (row.target_doctype && row.target_name) return label(row.target_doctype, row.target_name);
-		if (row.fields_written) return `<span class="whatsapp-settings__muted">${esc(row.fields_written)}</span>`;
-		if (row.count != null) return esc(whatsapp.ui.plural(row.count, { one: __("{0} row"), other: __("{0} rows") }));
-		return `<span class="whatsapp-settings__muted">${esc(row.reason || "—")}</span>`;
+		const escape_html = frappe.utils.escape_html;
+		const render_record_link = (doctype, name) =>
+			frappe.utils.get_form_link(doctype, name, true, escape_html(`${__(doctype)} · ${name}`));
+		if (row.reference_doctype && row.reference_name) return render_record_link(row.reference_doctype, row.reference_name);
+		if (row.target_doctype && row.target_name) return render_record_link(row.target_doctype, row.target_name);
+		if (row.fields_written) return `<span class="whatsapp-settings__muted">${escape_html(row.fields_written)}</span>`;
+		if (row.count != null) return escape_html(whatsapp.ui.plural(row.count, { one: __("{0} row"), other: __("{0} rows") }));
+		return `<span class="whatsapp-settings__muted">${escape_html(row.reason || "—")}</span>`;
 	}
 
 	// ---- realtime ---------------------------------------------------------------------------------

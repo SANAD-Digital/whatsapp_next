@@ -26,10 +26,10 @@ whatsapp.ui.ConfirmDialog = class ConfirmDialog {
 	}
 
 	build_dialog() {
-		const o = this.opts;
+		const options = this.opts;
 		const fields = [{ fieldtype: "HTML", fieldname: "impact" }];
-		if (o.reason_field) {
-			const rf = typeof o.reason_field === "object" ? o.reason_field : {};
+		if (options.reason_field) {
+			const rf = typeof options.reason_field === "object" ? options.reason_field : {};
 			fields.push({
 				fieldtype: "Small Text",
 				fieldname: "reason",
@@ -38,25 +38,25 @@ whatsapp.ui.ConfirmDialog = class ConfirmDialog {
 				description: rf.description || __("Recorded in the audit log."),
 			});
 		}
-		if (o.ack_checkbox) {
-			fields.push({ fieldtype: "Check", fieldname: "ack", label: o.ack_checkbox });
+		if (options.ack_checkbox) {
+			fields.push({ fieldtype: "Check", fieldname: "ack", label: options.ack_checkbox });
 		}
 		this.dialog = new frappe.ui.Dialog({
 			// a dialog title is HTML and callers put record names in it: text, always
-			title: ui.escape(o.title),
+			title: ui.escape(options.title),
 			fields,
-			size: o.size || "small",
-			primary_action_label: o.confirm_label || __("Confirm"),
-			secondary_action_label: o.cancel_label || __("Cancel"),
+			size: options.size || "small",
+			primary_action_label: options.confirm_label || __("Confirm"),
+			secondary_action_label: options.cancel_label || __("Cancel"),
 			secondary_action: () => this.cancel(),
 			primary_action: (values) => this.confirm(values),
 		});
 		this.dialog.$wrapper.addClass("whatsapp-kit whatsapp-kit-confirm");
 		const $btn = this.dialog.get_primary_btn();
-		if (o.danger) $btn.removeClass("btn-primary").addClass("btn-danger");
+		if (options.danger) $btn.removeClass("btn-primary").addClass("btn-danger");
 		this.$impact = this.dialog.get_field("impact").$wrapper;
-		this.render_impact(o.impact);
-		if (o.ack_checkbox) {
+		this.render_impact(options.impact);
+		if (options.ack_checkbox) {
 			$btn.prop("disabled", true);
 			this.dialog.fields_dict.ack.$input.on("change", (e) => $btn.prop("disabled", !e.target.checked));
 		}
@@ -66,8 +66,8 @@ whatsapp.ui.ConfirmDialog = class ConfirmDialog {
 	}
 
 	render_impact(impact = []) {
-		const o = this.opts;
-		let html = o.message ? `<p class="whatsapp-kit-confirm__message">${ui.escape(o.message)}</p>` : "";
+		const options = this.opts;
+		let html = options.message ? `<p class="whatsapp-kit-confirm__message">${ui.escape(options.message)}</p>` : "";
 		if (impact && impact.length) {
 			html += '<dl class="whatsapp-kit-confirm__impact">';
 			impact.forEach((row) => {

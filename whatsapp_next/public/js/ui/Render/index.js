@@ -189,7 +189,7 @@ const Render = {
 		const used = new Set(SKIP_FIELDS);
 		const density = opts.density || "row";
 
-		const pick = (entry) => {
+		const resolve_profile_entry = (entry) => {
 			const r = Render.resolve(entry, doc, meta);
 			if (r && r.field) used.add(r.field);
 			return r;
@@ -210,15 +210,15 @@ const Render = {
 		};
 
 		// title / subtitle lines
-		const title_entry = pick(profile.title) || auto_title(doc, meta, used);
+		const title_entry = resolve_profile_entry(profile.title) || auto_title(doc, meta, used);
 		const title = title_entry && title_entry.value != null ? cstr(title_entry.value) : cstr(doc.name || "");
 		const line_specs = profile.lines || (profile.subtitle ? [profile.subtitle] : auto_lines(doc, meta, kind, used));
 		const lines = line_specs
-			.map((e) => text_of(pick(e)))
+			.map((e) => text_of(resolve_profile_entry(e)))
 			.filter((l) => l && ![cstr(l.value != null ? l.value : l.text), show_phone(l.value != null ? l.value : l.text)].includes(title));
 
 		// media
-		const image_entry = profile.image ? pick(profile.image) : auto_image(doc, meta, used);
+		const image_entry = profile.image ? resolve_profile_entry(profile.image) : auto_image(doc, meta, used);
 		const image = image_entry ? cstr(image_entry.value || image_entry.text || "") : "";
 
 		// status
@@ -234,16 +234,16 @@ const Render = {
 		}
 
 		// primary value + progress
-		const value_entry = profile.value !== undefined ? (profile.value === false ? null : pick(profile.value)) : auto_amount(doc, meta, used);
+		const value_entry = profile.value !== undefined ? (profile.value === false ? null : resolve_profile_entry(profile.value)) : auto_amount(doc, meta, used);
 		const value = value_entry && value_entry.value != null && value_entry.value !== "" ? { label: value_entry.label, html: Render.value(value_entry.value, value_entry.df || { fieldtype: "Currency" }, doc, { density, doctype, variant: value_entry.variant || "strong" }) } : null;
-		const progress_entry = profile.progress !== undefined ? (profile.progress === false ? null : pick(profile.progress)) : auto_progress(doc, meta, used);
+		const progress_entry = profile.progress !== undefined ? (profile.progress === false ? null : resolve_profile_entry(profile.progress)) : auto_progress(doc, meta, used);
 		const progress = progress_entry && progress_entry.value != null ? flt(progress_entry.value) : null;
 
 		// facts
 		const fact_specs = profile.facts || auto_facts(doc, meta, used, density);
 		const facts = fact_specs
 			.map((e) => {
-				const r = text_of(pick(e), { density: "inline" });
+				const r = text_of(resolve_profile_entry(e), { density: "inline" });
 				if (!r) return null;
 				return { label: r.label, value: r.html, icon: r.icon || icon_for_field(r.df), ltr: r.ltr };
 			})
@@ -260,7 +260,7 @@ const Render = {
 				title,
 				title_ltr: profile.title_ltr != null ? profile.title_ltr : kind === "document",
 				lines,
-				description: profile.description ? cstr((pick(profile.description) || {}).value || "") : "",
+				description: profile.description ? cstr((resolve_profile_entry(profile.description) || {}).value || "") : "",
 				image,
 				initials: image || !is_nameish(title, doc) ? "" : ui.initials(title),
 				icon: profile.icon || kind_defaults.icon,
@@ -356,13 +356,13 @@ const Render = {
 		const meta = frappe.get_meta(doctype);
 		const profile = Render.profiles[doctype] || {};
 		const out = new Set(["name"]);
-		const add = (entry) => {
+		const add_entry_field = (entry) => {
 			if (typeof entry === "string") out.add(entry);
 			else if (entry && typeof entry === "object" && (entry.field || entry.fieldname)) out.add(entry.field || entry.fieldname);
 		};
-		[profile.title, profile.subtitle, profile.image, profile.value, profile.progress, profile.description].forEach(add);
-		(profile.lines || []).forEach(add);
-		(profile.facts || []).forEach(add);
+		[profile.title, profile.subtitle, profile.image, profile.value, profile.progress, profile.description].forEach(add_entry_field);
+		(profile.lines || []).forEach(add_entry_field);
+		(profile.facts || []).forEach(add_entry_field);
 		if (meta) {
 			if (meta.title_field) out.add(meta.title_field);
 			if (meta.image_field) out.add(meta.image_field);

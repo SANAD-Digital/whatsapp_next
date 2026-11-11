@@ -222,7 +222,7 @@
 				{
 					key: "queue-console",
 					events: ["wa:queue:progress"],
-					render: ($el) => Promise.all([fetch_queue_summary(), throughput()]).then(([s, t]) => paint($el, s, t)),
+					render: ($el) => Promise.all([fetch_queue_summary(), throughput()]).then(([s, t]) => render_queue_console($el, s, t)),
 				},
 			],
 		});
@@ -333,7 +333,7 @@
 
 		// ---- paint --------------------------------------------------------------------------------
 
-		const paint = ($el, s, t) => {
+		const render_queue_console = ($el, s, t) => {
 			if (!s) return;
 			// a realtime tick must never replace the slider under a hand that is dragging it: the
 			// old input then fires its `change` with the value it was abandoned at (seen in the
@@ -400,27 +400,27 @@
 
 		const bind_rate = ($el, rate, max) => {
 			const $input = $el.find(".whatsapp-operations-console__slider");
-			const hold = () => (con.interacting = true);
+			const mark_slider_held = () => (con.interacting = true);
 			const release = () => {
 				con.interacting = false;
 				if (!con.pending) return;
 				con.pending = false;
 				con.refresh(true);
 			};
-			$input.on("pointerdown focusin", hold);
+			$input.on("pointerdown focusin", mark_slider_held);
 			$input.on("pointerup pointercancel focusout", release);
 			const $value = $el.find(".whatsapp-operations-console__rate-value");
 			const $verdict = $el.find(".whatsapp-operations-console__verdict");
 			const track = $el.find(".whatsapp-operations-console__track").get(0);
-			const fill = (value) => track && track.style.setProperty("--whatsapp-fill", `${(((value - RATE_MIN) / Math.max(max - RATE_MIN, 1)) * 100).toFixed(2)}%`);
+			const fill_rate_track = (value) => track && track.style.setProperty("--whatsapp-fill", `${(((value - RATE_MIN) / Math.max(max - RATE_MIN, 1)) * 100).toFixed(2)}%`);
 			const paint_rate = (value) => {
 				const v = rate_verdict(value);
 				$value.text(__("{0}/min", [ui.format_integer(value)]));
 				$verdict.html(whatsapp.ui.StatusBadge.html({ label: v.label, colour: v.tone }));
 				$input.attr("aria-valuetext", per_minute(value));
-				fill(value);
+				fill_rate_track(value);
 			};
-			fill(rate);
+			fill_rate_track(rate);
 			$input.on("input", () => paint_rate(cint($input.val())));
 			$input.on("change", () => {
 				const value = cint($input.val());
@@ -472,9 +472,9 @@
 	/** The same toolbar and table as the other message screens; the queue adds its own columns. */
 	const make_list = (listview, refresh, bulk) => {
 		const page_start = () => cint(listview.start) || 0;
-		const open = (doc) => open_drawer(doc, refresh, listview);
+		const open_queue_item_drawer = (doc) => open_drawer(doc, refresh, listview);
 		return whatsapp_next.screens.message_list(listview, {
-			open,
+			open: open_queue_item_drawer,
 			bulk,
 			realtime: "wa:queue:progress",
 			datalist: { selectable: true },

@@ -154,14 +154,14 @@ whatsapp.ui.ConversationDrawer = class ConversationDrawer {
 	// ---- header ---------------------------------------------------------------------------
 
 	render_header() {
-		const n = this.number;
-		const linked = !!(n && n.link_status === "Linked");
-		const known = !!n;
-		const name = this.opts.title || (n && n.display_name) || (known ? ui.phone(this.key) : __("Unknown number"));
+		const number = this.number;
+		const linked = !!(number && number.link_status === "Linked");
+		const known = !!number;
+		const name = this.opts.title || (number && number.display_name) || (known ? ui.phone(this.key) : __("Unknown number"));
 		this.$title.text(name).append(ui.group_tag(this.key));
 		this.$sub.text(ui.phone(this.key) !== name ? ui.phone(this.key) : "");
 		this.$avatar.text(cstr(name).trim().slice(0, 2).toUpperCase());
-		if (n === undefined) {
+		if (number === undefined) {
 			this.$badge.html(`<span class="whatsapp-kit-skeleton__line whatsapp-kit-conversation__badge-skeleton" aria-hidden="true"></span>`);
 		} else {
 			this.$badge.html(whatsapp.ui.ConversationDrawer.link_badge(linked));

@@ -34,11 +34,11 @@ whatsapp.ui.ListStatsCard = class ListStatsCard {
 	build_card_row() {
 		this.$el = $(`<div class="whatsapp-kit whatsapp-kit-stats whatsapp-kit-stats--${this.opts.layout === "kpi" ? "kpi" : "row"}" role="group"></div>`).attr("aria-label", __("Summary"));
 		this.opts.cards.forEach((card) => this.$el.append(this.card_html(card)));
-		const lv = this.opts.listview;
-		if (lv && lv.$frappe_list) {
-			lv.$frappe_list.prepend(this.$el);
+		const listview = this.opts.listview;
+		if (listview && listview.$frappe_list) {
+			listview.$frappe_list.prepend(this.$el);
 			// `show` fires straight after mount: `refresh()` skips a repeat within its quiet window
-			lv.page && lv.page.wrapper.on("show.whatsappstats", () => this.refresh()).on("hide.whatsappstats", () => this.stop_timer());
+			listview.page && listview.page.wrapper.on("show.whatsappstats", () => this.refresh()).on("hide.whatsappstats", () => this.stop_timer());
 		} else {
 			$(this.opts.wrapper).append(this.$el);
 		}
@@ -171,7 +171,7 @@ whatsapp.ui.ListStatsCard = class ListStatsCard {
 		});
 		const $body = dialog.get_field("body").$wrapper;
 		const state = new whatsapp.ui.EmptyState({ wrapper: $body, state: "loading", rows: 4 });
-		const load = () =>
+		const load_modal_rows = () =>
 			whatsapp.ui
 				.call(modal.method || card.method, typeof modal.args === "function" ? modal.args() : modal.args || {}, { silent: true })
 				.then((data) => {
@@ -180,11 +180,11 @@ whatsapp.ui.ListStatsCard = class ListStatsCard {
 						return state.empty({ title: modal.empty_text || __("Nothing to show right now") });
 					}
 					state.hide();
-					this.render_rows($body, rows, columns, modal, load);
+					this.render_rows($body, rows, columns, modal, load_modal_rows);
 				})
-				.catch((err) => state.error(err, { action: { label: __("Retry"), onclick: load } }));
+				.catch((err) => state.error(err, { action: { label: __("Retry"), onclick: load_modal_rows } }));
 		dialog.show();
-		load();
+		load_modal_rows();
 		this.modal = dialog;
 		return dialog;
 	}
@@ -227,7 +227,7 @@ whatsapp.ui.ListStatsCard = class ListStatsCard {
 	}
 
 	run_row_action(action, row) {
-		const call = (extra = {}) => {
+		const execute_row_action = (extra = {}) => {
 			if (action.handler) return Promise.resolve(action.handler(row, extra)).then(() => true);
 			const args = action.args ? action.args(row, extra) : { name: row.name };
 			if (extra.reason && !("reason" in args)) args.reason = extra.reason;
@@ -242,14 +242,14 @@ whatsapp.ui.ListStatsCard = class ListStatsCard {
 					return false;
 				});
 		};
-		if (!action.confirm) return call();
+		if (!action.confirm) return execute_row_action();
 		const confirm = typeof action.confirm === "object" ? Object.assign({}, action.confirm) : {};
 		if (confirm.impact_of) confirm.impact = confirm.impact_of(row);
 		delete confirm.impact_of;
 		return whatsapp.ui.ConfirmDialog.ask_for_confirmation(
 			Object.assign({ title: __("{0} this row?", [action.label]), confirm_label: action.label }, confirm)
 		)
-			.then(({ reason }) => call({ reason }))
+			.then(({ reason }) => execute_row_action({ reason }))
 			.catch(() => false);
 	}
 
@@ -257,8 +257,8 @@ whatsapp.ui.ListStatsCard = class ListStatsCard {
 		this.stop_timer();
 		Object.entries(this.handlers).forEach(([event, handler]) => frappe.realtime.off(event, handler));
 		this.handlers = {};
-		const lv = this.opts.listview;
-		lv && lv.page && lv.page.wrapper.off(".whatsappstats");
+		const listview = this.opts.listview;
+		listview && listview.page && listview.page.wrapper.off(".whatsappstats");
 		this.$el.remove();
 	}
 };

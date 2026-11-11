@@ -88,25 +88,25 @@
 	};
 
 	const render_reply = ($el, doc) => {
-		const r = doc.reply_outbound;
-		if (!r) {
+		const reply_outbound = doc.reply_outbound;
+		if (!reply_outbound) {
 			new ui.EmptyState({ wrapper: $el, state: "empty", title: __("No reply was sent"), size: "sm" });
 			return;
 		}
 		let gap = "";
-		if (doc.received_at && r.sent_at && typeof frappe.utils.get_formatted_duration === "function") {
-			const seconds = moment(r.sent_at).diff(moment(doc.received_at), "seconds");
+		if (doc.received_at && reply_outbound.sent_at && typeof frappe.utils.get_formatted_duration === "function") {
+			const seconds = moment(reply_outbound.sent_at).diff(moment(doc.received_at), "seconds");
 			if (seconds >= 0) gap = frappe.utils.get_formatted_duration(seconds);
 		}
 		// colour from the Outbound DocType's own indicator rule (gray when its list script is not loaded)
 		$el.html(
 			definition_list_html([
-				{ label: __("Reply"), value: frappe.utils.get_form_link("WhatsApp Log", r.name, true) },
-				{ label: __("Status"), value: message_formatters.badge("WhatsApp Log", r, r.status) },
-				{ label: __("Sent at"), value: message_formatters.format_datetime(r.sent_at) },
+				{ label: __("Reply"), value: frappe.utils.get_form_link("WhatsApp Log", reply_outbound.name, true) },
+				{ label: __("Status"), value: message_formatters.badge("WhatsApp Log", reply_outbound, reply_outbound.status) },
+				{ label: __("Sent at"), value: message_formatters.format_datetime(reply_outbound.sent_at) },
 				{ label: __("Response time"), value: gap },
-				{ label: __("Error"), value: r.error_code, text: true },
-				{ label: __("Text"), value: r.body, wide: true, text: true },
+				{ label: __("Error"), value: reply_outbound.error_code, text: true },
+				{ label: __("Text"), value: reply_outbound.body, wide: true, text: true },
 			])
 		);
 	};
@@ -162,10 +162,10 @@
 		onload(listview) {
 			whatsapp_next.drop_unreadable_link_titles(listview);
 			const refresh = () => listview.refresh();
-			const open = (doc) => open_drawer(doc, refresh, listview);
+			const open_inbound_message_drawer = (doc) => open_drawer(doc, refresh, listview);
 
 			const datalist = whatsapp_next.screens.message_list(listview, {
-				open,
+				open: open_inbound_message_drawer,
 				realtime: "wa:inbound:received",
 				search: { fields: ["phone_e164", "display_name", "body"], placeholder: __("Search name, number or message text…") },
 				filters: [

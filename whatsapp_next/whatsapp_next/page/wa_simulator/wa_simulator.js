@@ -279,12 +279,12 @@
 
 		/** The prototype's "Send a bulk message" window (D-136): the send becomes a campaign. */
 		open_bulk() {
-			const call = (method, args) => whatsapp.ui.call(`bulk_send.${method}`, args);
+			const call_bulk_send_api = (method, args) => whatsapp.ui.call(`bulk_send.${method}`, args);
 			return new whatsapp.ui.BulkSend({
-				load: () => call("get_context"),
-				estimate: (sel) => call("estimate", sel),
-				search_contacts: (txt) => call("search_contacts", { txt }),
-				send: (payload) => call("send", { payload }),
+				load: () => call_bulk_send_api("get_context"),
+				estimate: (sel) => call_bulk_send_api("estimate", sel),
+				search_contacts: (txt) => call_bulk_send_api("search_contacts", { txt }),
+				send: (payload) => call_bulk_send_api("send", { payload }),
 				on_sent: () => this.load_list(),
 				on_templates: () => frappe.set_route("List", "WhatsApp Template"),
 			});
@@ -331,10 +331,10 @@
 		 * carries the value JSON-quoted, so it is unquoted first.
 		 */
 		open_from_route() {
-			const opts = frappe.route_options;
-			if (!opts || !opts.phone) return;
+			const route_options = frappe.route_options;
+			if (!route_options || !route_options.phone) return;
 			frappe.route_options = null;
-			let key = cstr(opts.phone);
+			let key = cstr(route_options.phone);
 			try {
 				const parsed = JSON.parse(key);
 				if (typeof parsed === "string") key = parsed;
@@ -458,18 +458,18 @@
 		// ---- the green header ------------------------------------------------------------------
 
 		render_head() {
-			const c = this.contact;
+			const contact = this.contact;
 			const devices = this.devices();
 			const device = this.current_device();
-			const sub = c
-				? `${whatsapp.ui.phone(c.phone_e164)}${c.link_status === "Linked" ? ` · ${__("Linked to an account", null, "Command Editor")}` : ""}`
+			const sub = contact
+				? `${whatsapp.ui.phone(contact.phone_e164)}${contact.link_status === "Linked" ? ` · ${__("Linked to an account", null, "Command Editor")}` : ""}`
 				: __("Pick a contact from the list, then write the message");
 			this.$head.html(`
-				${c ? `<button type="button" class="whatsapp-simulator__back" title="${escape_html(__("All conversations"))}" aria-label="${escape_html(__("All conversations"))}">${whatsapp.ui.is_rtl() ? "→" : "←"}</button>` : ""}
+				${contact ? `<button type="button" class="whatsapp-simulator__back" title="${escape_html(__("All conversations"))}" aria-label="${escape_html(__("All conversations"))}">${whatsapp.ui.is_rtl() ? "→" : "←"}</button>` : ""}
 				<span class="whatsapp-simulator__head-icon" aria-hidden="true">${SEND_ICON.replace('width="14" height="14"', 'width="18" height="18"')}</span>
-				<button type="button" class="whatsapp-simulator__head-text"${c ? "" : " disabled"}>
-					<span class="whatsapp-simulator__head-title">${c && !c.display_name ? `<bdi dir="ltr">${escape_html(title_of(c))}</bdi>` : escape_html(c ? title_of(c) : __("WhatsApp simulator"))}${c ? whatsapp.ui.group_tag(c.phone_e164) : ""}</span>
-					<span class="whatsapp-simulator__head-sub"${c ? ' dir="auto"' : ""}>${escape_html(sub)}</span>
+				<button type="button" class="whatsapp-simulator__head-text"${contact ? "" : " disabled"}>
+					<span class="whatsapp-simulator__head-title">${contact && !contact.display_name ? `<bdi dir="ltr">${escape_html(title_of(contact))}</bdi>` : escape_html(contact ? title_of(contact) : __("WhatsApp simulator"))}${contact ? whatsapp.ui.group_tag(contact.phone_e164) : ""}</span>
+					<span class="whatsapp-simulator__head-sub"${contact ? ' dir="auto"' : ""}>${escape_html(sub)}</span>
 				</button>
 				${
 					devices.length
@@ -482,7 +482,7 @@
 						: `<button type="button" class="whatsapp-simulator__device whatsapp-simulator__pair">${escape_html(__("Pair a device"))}</button>`
 				}`);
 			this.$head.find(".whatsapp-simulator__back").on("click", () => this.close_conversation());
-			this.$head.find(".whatsapp-simulator__head-text").on("click", () => c && identity_panel(c));
+			this.$head.find(".whatsapp-simulator__head-text").on("click", () => contact && identity_panel(contact));
 			this.$head.find(".whatsapp-simulator__pair").on("click", () => frappe.set_route("wa-devices"));
 			this.$head.find(".whatsapp-simulator__device-select").on("change", (ev) => {
 				this.device = $(ev.currentTarget).val();

@@ -152,10 +152,10 @@ whatsapp_next.check_numbers = (source_doctype, names, { on_done } = {}) =>
 	whatsapp.ui
 		.call("number_check.check_selection", { source_doctype, names }, { freeze: true, freeze_message: __("Checking the numbers with WhatsApp…") })
 		.then((r) => {
-			const esc = frappe.utils.escape_html;
+			const escape_html = frappe.utils.escape_html;
 			const rows = (r.results || [])
-				.map((m) => `<li><span class="whatsapp-kit-group-create__name">${esc(m.display_name || "")}</span>
-					<bdi class="whatsapp-kit-tabular" dir="ltr">${esc(whatsapp.ui.phone ? whatsapp.ui.phone(m.phone_e164) : m.phone_e164)}</bdi>
+				.map((m) => `<li><span class="whatsapp-kit-group-create__name">${escape_html(m.display_name || "")}</span>
+					<bdi class="whatsapp-kit-tabular" dir="ltr">${escape_html(whatsapp.ui.phone ? whatsapp.ui.phone(m.phone_e164) : m.phone_e164)}</bdi>
 					${whatsapp.ui.StatusBadge.html(m.on_whatsapp ? { label: __("Registered on WhatsApp"), colour: "green" } : { label: __("Not on WhatsApp"), colour: "gray" })}</li>`)
 				.join("");
 			const d = new frappe.ui.Dialog({
@@ -168,8 +168,8 @@ whatsapp_next.check_numbers = (source_doctype, names, { on_done } = {}) =>
 			d.$wrapper.addClass("whatsapp-kit whatsapp-kit-sheet whatsapp-kit-group-create");
 			d.get_field("body").$wrapper.html(
 				r.checked
-					? `<p>${esc(__("{0} of {1} numbers are on WhatsApp.", [r.on_whatsapp, r.checked]))}</p><ul class="whatsapp-kit-group-create__list">${rows}</ul>`
-					: `<p>${esc(__("The selection has no individual numbers to check."))}</p>`
+					? `<p>${escape_html(__("{0} of {1} numbers are on WhatsApp.", [r.on_whatsapp, r.checked]))}</p><ul class="whatsapp-kit-group-create__list">${rows}</ul>`
+					: `<p>${escape_html(__("The selection has no individual numbers to check."))}</p>`
 			);
 			d.show();
 			if (on_done) on_done(r);

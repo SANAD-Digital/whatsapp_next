@@ -58,7 +58,7 @@ frappe.provide("whatsapp_next.campaign");
 		}
 
 		describe_check_result(check) {
-			const name = (idx) => __("Message {0}", [campaign_builder.format_integer(idx)]);
+			const format_message_label = (idx) => __("Message {0}", [campaign_builder.format_integer(idx)]);
 			if (check.key === "device") {
 				if (!check.device) return __("No device chosen.");
 				const title = campaign_helpers.device_title(check.device) || check.device_name || check.device;
@@ -72,18 +72,18 @@ frappe.provide("whatsapp_next.campaign");
 					const why = (PROBLEM[first.problem] || (() => first.problem))();
 					const more = (check.incomplete || []).length - 1;
 					return more > 0
-						? __("{0}: {1}, and {2} more.", [name(first.idx), why, campaign_builder.format_integer(more)])
-						: __("{0}: {1}.", [name(first.idx), why]);
+						? __("{0}: {1}, and {2} more.", [format_message_label(first.idx), why, campaign_builder.format_integer(more)])
+						: __("{0}: {1}.", [format_message_label(first.idx), why]);
 				}
 				return campaign_builder.messages_text(check.count);
 			}
 			if (check.key === "attachments") {
 				const first = (check.missing || [])[0];
-				return first ? __("{0}: the file is no longer there.", [name(first.idx)]) : __("All attachments are available.");
+				return first ? __("{0}: the file is no longer there.", [format_message_label(first.idx)]) : __("All attachments are available.");
 			}
 			if (check.key === "variables") {
 				const first = (check.invalid || [])[0];
-				return first ? __("{0}: {1}", [name(first.idx), (first.errors || [])[0] || ""]) : __("No variable errors found.");
+				return first ? __("{0}: {1}", [format_message_label(first.idx), (first.errors || [])[0] || ""]) : __("No variable errors found.");
 			}
 			if (check.key === "audience") {
 				if (!cint(check.count)) return __("No recipient yet.");

@@ -36,10 +36,10 @@
 		onload(listview) {
 			whatsapp_next.drop_unreadable_link_titles(listview);
 			const refresh = () => listview.refresh();
-			const open = (doc) => message_helpers.open_outbound_drawer(doc.name, { after_change: refresh, listview });
+			const open_outbound_message_drawer = (doc) => message_helpers.open_outbound_drawer(doc.name, { after_change: refresh, listview });
 
 			whatsapp_next.screens.message_list(listview, {
-				open,
+				open: open_outbound_message_drawer,
 				realtime: "wa:message:status",
 				search: { fields: ["phone_e164", "display_name", "reference_name"], placeholder: __("Search name, number or document…") },
 				max_inline: 8,

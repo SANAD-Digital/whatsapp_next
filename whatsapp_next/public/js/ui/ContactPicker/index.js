@@ -256,16 +256,16 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 
 	on_selection_change() {
 		this.revision += 1;
-		const n = this.selection.size;
-		this.$badge.text(ui.format_integer(n)).toggleClass("whatsapp-kit-picker__badge--empty", !n);
-		this.$root.find("[data-zone-count]").text(n ? ui.format_integer(n) : "");
-		this.$counter.text(n ? __("{0} selected", [ui.format_integer(n)]) : __("Nothing selected"));
-		this.dialog.get_primary_btn().prop("disabled", !n);
+		const selected_count = this.selection.size;
+		this.$badge.text(ui.format_integer(selected_count)).toggleClass("whatsapp-kit-picker__badge--empty", !selected_count);
+		this.$root.find("[data-zone-count]").text(selected_count ? ui.format_integer(selected_count) : "");
+		this.$counter.text(selected_count ? __("{0} selected", [ui.format_integer(selected_count)]) : __("Nothing selected"));
+		this.dialog.get_primary_btn().prop("disabled", !selected_count);
 		this.render_source_counts();
 		this.selected.clear_alert();
 		this.selected.render();
 		this.selected.schedule_preview();
-		this.announce_count(n);
+		this.announce_count(selected_count);
 	}
 
 	/** How many of the selection each source contributed — in the rail, and in the tray. */
@@ -315,14 +315,14 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 	 * the dialog, and pressing Ctrl+Enter to finish. None of them used to do anything.
 	 */
 	bind_shortcuts() {
-		const $w = this.dialog.$wrapper;
-		$w.on("keydown.picker", (e) => {
+		const $dialog_wrapper = this.dialog.$wrapper;
+		$dialog_wrapper.on("keydown.picker", (e) => {
 			if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
 				e.preventDefault();
 				if (this.selection.size) this.continue_();
 			}
 		});
-		$w.on("paste.picker", (e) => {
+		$dialog_wrapper.on("paste.picker", (e) => {
 			const text = (e.originalEvent && e.originalEvent.clipboardData && e.originalEvent.clipboardData.getData("text")) || "";
 			const numbers = ContactPicker.numbers_in(text);
 			// a search box is a legitimate place to paste one number; two or more is a list
@@ -330,16 +330,16 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 			this.offer_paste(text, numbers.length);
 		});
 		["dragenter", "dragover"].forEach((type) =>
-			$w.on(`${type}.picker`, (e) => {
+			$dialog_wrapper.on(`${type}.picker`, (e) => {
 				if (!(e.originalEvent.dataTransfer && Array.from(e.originalEvent.dataTransfer.types || []).includes("Files"))) return;
 				e.preventDefault();
 				e.stopPropagation();
-				$w.addClass("whatsapp-kit-picker-dialog--drop");
+				$dialog_wrapper.addClass("whatsapp-kit-picker-dialog--drop");
 			})
 		);
-		$w.on("dragleave.picker drop.picker", (e) => {
-			if (e.type === "dragleave" && $w[0].contains(e.originalEvent.relatedTarget)) return;
-			$w.removeClass("whatsapp-kit-picker-dialog--drop");
+		$dialog_wrapper.on("dragleave.picker drop.picker", (e) => {
+			if (e.type === "dragleave" && $dialog_wrapper[0].contains(e.originalEvent.relatedTarget)) return;
+			$dialog_wrapper.removeClass("whatsapp-kit-picker-dialog--drop");
 			if (e.type !== "drop") return;
 			const file = e.originalEvent.dataTransfer && e.originalEvent.dataTransfer.files && e.originalEvent.dataTransfer.files[0];
 			if (!file) return;
@@ -489,10 +489,10 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 			whatsapp.ui.Toast.warning(__("No source is enabled for {0}. Enable one in the WhatsApp settings.", [__(this.target_doctype)]));
 		}
 		this.$tabs.on("keydown", ".whatsapp-kit-picker__tab", (e) => this.on_tab_key(e));
-		const pre = this.opts.preselect;
-		const first = pre && pre.source ? ALIASES[String(pre.source).toLowerCase()] || pre.source : null;
+		const preselect = this.opts.preselect;
+		const first = preselect && preselect.source ? ALIASES[String(preselect.source).toLowerCase()] || preselect.source : null;
 		this.activate(first && this.tabs.some((t) => t.key === first) ? first : this.tabs[0].key, { force: true }).then(() => {
-			if (first && this.instances[first] && pre) this.instances[first].preselect(pre);
+			if (first && this.instances[first] && preselect) this.instances[first].preselect(preselect);
 		});
 	}
 

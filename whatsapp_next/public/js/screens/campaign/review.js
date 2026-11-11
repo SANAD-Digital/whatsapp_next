@@ -23,9 +23,9 @@ frappe.provide("whatsapp_next.campaign");
 		}
 
 		when_text() {
-			const at = this.ctx.doc.scheduled_at;
-			if (!at) return __("As soon as you start it");
-			return campaign_builder.when_text(at);
+			const scheduled_at = this.ctx.doc.scheduled_at;
+			if (!scheduled_at) return __("As soon as you start it");
+			return campaign_builder.when_text(scheduled_at);
 		}
 
 		plan_text() {
@@ -51,7 +51,7 @@ frappe.provide("whatsapp_next.campaign");
 				{ tone: "warn", icon: "bolt", label: __("Sending rate"), value: __("{0}/min", [campaign_builder.format_integer(e.rate)]), of: cap ? __("the queue allows {0}", [campaign_builder.format_integer(cap)]) : "", badge: cap && e.rate >= cap ? __("at the cap") : __("steady") },
 				{ tone: "ok", icon: "clock", label: __("Estimated duration"), value: campaign_builder.duration_text(e.minutes), of: scheduled ? __("from {0}", [this.when_text()]) : __("from the moment it starts"), badge: scheduled ? __("scheduled") : __("on start") },
 			];
-			const tile = (t) => `
+			const render_summary_tile = (t) => `
 				<div class="whatsapp-campaign-builder__tile whatsapp-campaign-builder__tile--${escape_html(t.tone)}">
 					<span class="whatsapp-campaign-builder__tile-icon" aria-hidden="true">${ui.inline_icon_html(t.icon, "sm")}</span>
 					<span class="whatsapp-campaign-builder__tile-text">
@@ -78,7 +78,7 @@ frappe.provide("whatsapp_next.campaign");
 			this.$wrapper.html(`
 				<div class="whatsapp-campaign-builder__stack whatsapp-campaign-builder__review">
 					<div data-block="verdict"></div>
-					<div class="whatsapp-campaign-builder__tiles">${tiles.map(tile).join("")}</div>
+					<div class="whatsapp-campaign-builder__tiles">${tiles.map(render_summary_tile).join("")}</div>
 					<div class="whatsapp-campaign-builder__review-grid">
 						<section class="whatsapp-campaign-builder__rcard" data-block="checks-card">
 							<div data-block="checks"></div>
@@ -124,16 +124,16 @@ frappe.provide("whatsapp_next.campaign");
 		 * scheduled; a scheduled one can start now or drop its schedule.
 		 */
 		render_send() {
-			const ctx = this.ctx;
-			const doc = ctx.doc;
-			const unsaved = ctx.frm.is_new() || ctx.frm.is_dirty();
-			const fresh = ctx.readiness_is_fresh();
-			const ready = fresh && ctx.readiness && ctx.readiness.ok;
-			const failing = fresh && ctx.readiness ? (ctx.readiness.checks || []).filter((c) => !c.ok) : [];
+			const context = this.ctx;
+			const doc = context.doc;
+			const unsaved = context.frm.is_new() || context.frm.is_dirty();
+			const fresh = context.readiness_is_fresh();
+			const ready = fresh && context.readiness && context.readiness.ok;
+			const failing = fresh && context.readiness ? (context.readiness.checks || []).filter((c) => !c.ok) : [];
 			const is_scheduled = doc.status === "Scheduled";
 			const is_paused = doc.status === "Paused";
 			const will_schedule = !!doc.scheduled_at && !is_scheduled;
-			const e = ctx.estimate();
+			const e = context.estimate();
 			const STEP_OF = { device: 0, messages: 1, attachments: 1, variables: 1, audience: 2 };
 			const NAME = { device: () => __("Device connection"), messages: () => __("Messages complete"), attachments: () => __("Attachments available"), variables: () => __("Variables valid"), audience: () => __("Audience ready") };
 
@@ -148,7 +148,7 @@ frappe.provide("whatsapp_next.campaign");
 				title = __("Save first, then the checks run");
 				line = __("The campaign is checked against the device, the messages and the audience once it is saved.");
 				verbs.push({ key: "back", label: __("Back to editing"), variant: "ghost" });
-				if (ctx.can_edit()) verbs.push({ key: "save", label: __("Save the campaign"), variant: "primary", icon: "tick" });
+				if (context.can_edit()) verbs.push({ key: "save", label: __("Save the campaign"), variant: "primary", icon: "tick" });
 			} else if (!fresh) {
 				tone = "muted";
 				icon = "clock";
@@ -199,21 +199,21 @@ frappe.provide("whatsapp_next.campaign");
 			this.$wrapper.find('[data-block="verbs"]').empty();
 			$band.find("[data-verb]").on("click", (ev) => {
 				const key = ev.currentTarget.dataset.verb;
-				if (key === "back") return ctx.go_to_step(0);
-				if (key === "fix") return ctx.go_to_step(cint(ev.currentTarget.dataset.step));
-				if (key === "save") return ctx.save_campaign();
-				if (key === "monitor") return ctx.set_editing_mode(false);
-				if (key === "resume") return campaign_helpers.resume(doc, { after: () => { ctx.editing = false; ctx.frm.reload_doc(); } });
-				if (key === "unschedule") return campaign_helpers.unschedule(doc, { after: () => ctx.frm.reload_doc() });
-				if (key === "start") return is_scheduled ? campaign_helpers.start(doc, { after: () => ctx.frm.reload_doc(), messages: e.per_recipient }) : this.start_or_schedule_campaign();
+				if (key === "back") return context.go_to_step(0);
+				if (key === "fix") return context.go_to_step(cint(ev.currentTarget.dataset.step));
+				if (key === "save") return context.save_campaign();
+				if (key === "monitor") return context.set_editing_mode(false);
+				if (key === "resume") return campaign_helpers.resume(doc, { after: () => { context.editing = false; context.frm.reload_doc(); } });
+				if (key === "unschedule") return campaign_helpers.unschedule(doc, { after: () => context.frm.reload_doc() });
+				if (key === "start") return is_scheduled ? campaign_helpers.start(doc, { after: () => context.frm.reload_doc(), messages: e.per_recipient }) : this.start_or_schedule_campaign();
 			});
 		}
 
 		start_or_schedule_campaign() {
-			const ctx = this.ctx;
-			const doc = ctx.doc;
-			const e = ctx.estimate();
-			const after = () => ctx.frm.reload_doc();
+			const context = this.ctx;
+			const doc = context.doc;
+			const e = context.estimate();
+			const after = () => context.frm.reload_doc();
 			if (!doc.scheduled_at) return campaign_helpers.start(doc, { after, messages: e.per_recipient });
 			return ui.ConfirmDialog.ask_for_confirmation({
 				title: __("Schedule {0}?", [doc.campaign_name || doc.name]),

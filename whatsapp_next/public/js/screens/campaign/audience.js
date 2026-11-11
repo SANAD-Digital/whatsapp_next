@@ -127,7 +127,7 @@ frappe.provide("whatsapp_next.campaign");
 			// drawn at once from what the product knows; the server's answer (shared with the
 			// picker, fetched once per page) only takes away a source that is switched off
 			const LABEL = { "Contact Group": () => __("Contact groups"), Contact: () => __("Contacts"), DocType: () => __("System screen"), Excel: () => __("Excel file"), vCard: () => __("Phone export (vCard / CSV)"), Manual: () => __("Manual entry") };
-			const draw = (entries) => {
+			const draw_source_buttons = (entries) => {
 				if (!this.$sources.closest("body").length) return;
 				const usable = entries.filter((e) => e.enabled !== false && SOURCE[e.key]);
 				this.$sources.html(
@@ -141,12 +141,12 @@ frappe.provide("whatsapp_next.campaign");
 				this.$sources.find("[data-source]").on("click", (ev) => this.open_picker("add", { source: $(ev.currentTarget).attr("data-source") }));
 			};
 			const known = ui.ContactPicker.sources_for(this.frm.doctype);
-			if (known.__value) draw(known.__value);
-			else draw(SOURCE_TYPES.map((key) => ({ key })));
+			if (known.__value) draw_source_buttons(known.__value);
+			else draw_source_buttons(SOURCE_TYPES.map((key) => ({ key })));
 			known
 				.then((entries) => {
 					known.__value = entries || [];
-					draw(known.__value);
+					draw_source_buttons(known.__value);
 				})
 				.catch(() => {});
 		}

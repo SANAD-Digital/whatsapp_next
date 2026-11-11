@@ -108,16 +108,16 @@ frappe.provide("whatsapp_next.campaign");
 		 * reload while messages moved.
 		 */
 		live_doc() {
-			const p = this.data.progress;
-			if (!p || !p.counters) return this.doc;
-			const c = p.counters;
+			const progress = this.data.progress;
+			if (!progress || !progress.counters) return this.doc;
+			const counters = progress.counters;
 			return Object.assign({}, this.doc, {
-				queued_count: cint(c.queued),
-				sent_count: cint(c.sent),
-				delivered_count: cint(c.delivered),
-				read_count: cint(c.read),
-				failed_count: cint(c.failed),
-				cancelled_count: cint(c.cancelled),
+				queued_count: cint(counters.queued),
+				sent_count: cint(counters.sent),
+				delivered_count: cint(counters.delivered),
+				read_count: cint(counters.read),
+				failed_count: cint(counters.failed),
+				cancelled_count: cint(counters.cancelled),
 			});
 		}
 
@@ -175,13 +175,13 @@ frappe.provide("whatsapp_next.campaign");
 		render_verbs() {
 			const $host = this.$wrapper.find("[data-verbs]");
 			if (!$host.length) return;
-			const ctx = this.ctx;
-			const after = () => ctx.frm.reload_doc();
-			const dirty = ctx.frm.is_dirty();
+			const context = this.ctx;
+			const after = () => context.frm.reload_doc();
+			const dirty = context.frm.is_dirty();
 			// a paused campaign may still be edited — its messages, its audience — before it resumes
-			if (this.doc.status === "Paused" && campaign_helpers.is_manager() && ctx.can_edit()) {
+			if (this.doc.status === "Paused" && campaign_helpers.is_manager() && context.can_edit()) {
 				$(ui.button_html({ label: __("Edit the campaign"), icon: "doc", variant: "secondary", size: "sm", disabled: dirty }))
-					.on("click", () => ctx.set_editing_mode(true))
+					.on("click", () => context.set_editing_mode(true))
 					.appendTo($host);
 			}
 			campaign_helpers.available_verbs(this.doc, { after, messages: Math.max(1, campaign_builder.messages_of(this.doc)) })
@@ -249,7 +249,7 @@ frappe.provide("whatsapp_next.campaign");
 		pane_overview($pane) {
 			const t = this.tallies();
 			const share = (a, b) => (cint(b) ? (cint(a) * 100) / cint(b) : null);
-			const pct = (v) => (v == null ? "—" : `${v >= 10 || !v ? Math.round(v) : v.toFixed(1)}%`);
+			const format_percent_text = (v) => (v == null ? "—" : `${v >= 10 || !v ? Math.round(v) : v.toFixed(1)}%`);
 
 			const readings = this.stages(t)
 				.map(
@@ -257,7 +257,7 @@ frappe.provide("whatsapp_next.campaign");
 					<div class="whatsapp-campaign-builder__stage whatsapp-campaign-builder__stage--${s.tone}">
 						<span class="whatsapp-campaign-builder__stage-label">${escape_html(s.label)}</span>
 						<span class="whatsapp-campaign-builder__stage-value whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(s.value))}<span class="whatsapp-campaign-builder__stage-of">/ ${escape_html(format_integer(s.of))}</span></span>
-						<span class="whatsapp-campaign-builder__stage-share whatsapp-kit-tabular" dir="ltr">${escape_html(pct(share(s.value, s.of)))}</span>
+						<span class="whatsapp-campaign-builder__stage-share whatsapp-kit-tabular" dir="ltr">${escape_html(format_percent_text(share(s.value, s.of)))}</span>
 						<span class="whatsapp-campaign-builder__stage-note">${escape_html(s.of_label)}</span>
 					</div>`
 				)
@@ -277,7 +277,7 @@ frappe.provide("whatsapp_next.campaign");
 						<span class="whatsapp-campaign-builder__funnel-label">${escape_html(s.label)}</span>
 						<span class="whatsapp-campaign-builder__funnel-track"><span class="whatsapp-campaign-builder__funnel-bar" style="inline-size:${width.toFixed(2)}%"></span></span>
 						<span class="whatsapp-campaign-builder__funnel-value whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(s.value))}</span>
-						<span class="whatsapp-campaign-builder__funnel-share whatsapp-kit-tabular" dir="ltr">${escape_html(i === 0 ? "" : pct(share(s.value, s.of)))}</span>
+						<span class="whatsapp-campaign-builder__funnel-share whatsapp-kit-tabular" dir="ltr">${escape_html(i === 0 ? "" : format_percent_text(share(s.value, s.of)))}</span>
 					</div>`;
 				})
 				.join("");
@@ -324,7 +324,7 @@ frappe.provide("whatsapp_next.campaign");
 							? campaign_builder.note_html({
 									tone: "danger",
 									icon: "error",
-									text: __("{0} failed — {1} of everything produced.", [campaign_builder.messages_text(t.failed), pct(share(t.failed, t.produced))]),
+									text: __("{0} failed — {1} of everything produced.", [campaign_builder.messages_text(t.failed), format_percent_text(share(t.failed, t.produced))]),
 									cta: { key: "errors", label: __("See why") },
 								})
 							: ""

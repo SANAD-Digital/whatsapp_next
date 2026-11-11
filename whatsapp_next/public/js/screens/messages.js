@@ -217,34 +217,34 @@ frappe.provide("whatsapp_next.message_formatters");
 	/** Timeline rows `{at, text, tone}` from the `messages.get_outbound` payload. */
 	whatsapp_next.messages.timeline_rows = function (doc) {
 		const rows = [];
-		const push = (at, text, tone) => at && rows.push({ at, text, tone });
-		push(doc.creation, __("Created ({0})", [__(doc.source_type || "API")]), "gray");
-		push(doc.queued_at, __("Queued"), "blue");
-		push(doc.scheduled_at, __("Scheduled for {0}", [message_formatters.format_datetime(doc.scheduled_at)]), "blue");
+		const add_timeline_row = (at, text, tone) => at && rows.push({ at, text, tone });
+		add_timeline_row(doc.creation, __("Created ({0})", [__(doc.source_type || "API")]), "gray");
+		add_timeline_row(doc.queued_at, __("Queued"), "blue");
+		add_timeline_row(doc.scheduled_at, __("Scheduled for {0}", [message_formatters.format_datetime(doc.scheduled_at)]), "blue");
 		const q = doc.timeline && doc.timeline.queue_item;
 		if (q) {
-			push(q.claimed_at, __("Picked up for sending (attempt {0} of {1})", [ui.format_integer(q.attempts || 1), ui.format_integer(q.max_attempts || 0)]), "blue");
-			push(q.paused_at, __("Paused by {0}: {1}", [q.paused_by || "", q.pause_reason || ""]), "amber");
-			push(q.next_attempt_at, __("Retry scheduled ({0})", [q.last_error_code || q.last_error || ""]), "amber");
-			push(q.deleted_at, __("Removed from the queue by {0}: {1}", [q.deleted_by || "", q.delete_reason || ""]), "red");
+			add_timeline_row(q.claimed_at, __("Picked up for sending (attempt {0} of {1})", [ui.format_integer(q.attempts || 1), ui.format_integer(q.max_attempts || 0)]), "blue");
+			add_timeline_row(q.paused_at, __("Paused by {0}: {1}", [q.paused_by || "", q.pause_reason || ""]), "amber");
+			add_timeline_row(q.next_attempt_at, __("Retry scheduled ({0})", [q.last_error_code || q.last_error || ""]), "amber");
+			add_timeline_row(q.deleted_at, __("Removed from the queue by {0}: {1}", [q.deleted_by || "", q.delete_reason || ""]), "red");
 			// `completed_at` is the hand-over only when the platform took the message: a row given up
 			// before that carries its give-up time there instead
 			const handed = q.status === "Completed" || !!q.platform_queue_id;
-			if (q.status === "Dead Letter") push(handed ? q.modified : q.completed_at || q.modified, __("Gave up after retries: {0}", [q.dead_letter_reason || q.last_error || ""]), "red");
-			if (handed) push(q.completed_at, __("Handed to the sending platform ({0})", [q.platform_queue_id || q.batch_id || ""]), "green");
+			if (q.status === "Dead Letter") add_timeline_row(handed ? q.modified : q.completed_at || q.modified, __("Gave up after retries: {0}", [q.dead_letter_reason || q.last_error || ""]), "red");
+			if (handed) add_timeline_row(q.completed_at, __("Handed to the sending platform ({0})", [q.platform_queue_id || q.batch_id || ""]), "green");
 		}
-		push(doc.sent_at, __("Sent"), "green");
-		push(doc.delivered_at, __("Delivered"), "green");
-		push(doc.read_at, __("Read"), "green");
-		push(doc.held_at, __("Held: {0}", [doc.held_reason || ""]), "amber");
-		push(doc.failed_at, __("Failed: {0}", [message_formatters.error_text(doc.error_code, doc.error_message)]), "red");
-		push(doc.cancelled_at, __("Cancelled"), "red");
+		add_timeline_row(doc.sent_at, __("Sent"), "green");
+		add_timeline_row(doc.delivered_at, __("Delivered"), "green");
+		add_timeline_row(doc.read_at, __("Read"), "green");
+		add_timeline_row(doc.held_at, __("Held: {0}", [doc.held_reason || ""]), "amber");
+		add_timeline_row(doc.failed_at, __("Failed: {0}", [message_formatters.error_text(doc.error_code, doc.error_message)]), "red");
+		add_timeline_row(doc.cancelled_at, __("Cancelled"), "red");
 		((doc.timeline && doc.timeline.webhook_events) || []).forEach((e) => {
 			const ok = e.status === "Processed";
 			const text = e.error
 				? __("Webhook {0} ({1}): {2}", [e.event_name || "", __(e.status || ""), e.error])
 				: __("Webhook {0} ({1})", [e.event_name || "", __(e.status || "")]);
-			push(e.received_at || e.creation, text, ok ? "gray" : "amber");
+			add_timeline_row(e.received_at || e.creation, text, ok ? "gray" : "amber");
 		});
 		return rows.sort((a, b) => String(a.at).localeCompare(String(b.at)));
 	};

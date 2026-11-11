@@ -49,7 +49,7 @@
 		// shown per document: a new one, or one this user may not email, has none
 		timeline.wa_send_button.toggle(offered(frm));
 		// adding a button shows Frappe's row of them; alone and hidden, the row goes again
-		const $row = timeline.timeline_actions_wrapper;
-		if ($row) $row.toggle($row.find(".action-btn").filter((_, el) => el.style.display !== "none").length > 0);
+		const timeline_actions_wrapper = timeline.timeline_actions_wrapper;
+		if (timeline_actions_wrapper) timeline_actions_wrapper.toggle(timeline_actions_wrapper.find(".action-btn").filter((_, el) => el.style.display !== "none").length > 0);
 	});
 })();

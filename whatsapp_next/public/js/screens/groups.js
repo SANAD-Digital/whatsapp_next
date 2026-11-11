@@ -51,21 +51,21 @@ frappe.provide("whatsapp_next.groups");
 		}
 
 		build_editor_panel() {
-			const g = this.group;
+			const group = this.group;
 			const kind_options = this.kinds.map((k) => ({ value: k, label: __(k) }));
 			this.panel = new whatsapp.ui.OverlayPanel({
 				type: "modal",
 				width: "1080px",
-				title: this.editing ? __("Edit «{0}»", [g.group_name || g.name]) : __("New contact group"),
+				title: this.editing ? __("Edit «{0}»", [group.group_name || group.name]) : __("New contact group"),
 				subtitle: __("Add members from contacts, another group, a file or typed numbers."),
-				badge: this.badge(g.kind, g.disabled),
+				badge: this.badge(group.kind, group.disabled),
 				sections: [
 					{
 						fields: [
-							{ key: "group_name", label: __("Group name"), required: true, value: g.group_name, placeholder: __("Example: Riyadh customers") },
-							{ key: "kind", label: __("Group kind"), type: "select", required: true, value: g.kind, options: kind_options, on_change: (v, p) => this.on_kind(v, p) },
-							{ key: "description", label: __("Note (optional)"), type: "textarea", rows: 3, value: g.description, placeholder: __("Why this group exists and when it is used.") },
-							this.editing ? { key: "disabled", label: __("Disabled — not offered when choosing recipients"), type: "toggle", value: !!cint(g.disabled), on_change: (v, p) => p.set_badge(this.badge(p.get_value("kind"), v)) } : null,
+							{ key: "group_name", label: __("Group name"), required: true, value: group.group_name, placeholder: __("Example: Riyadh customers") },
+							{ key: "kind", label: __("Group kind"), type: "select", required: true, value: group.kind, options: kind_options, on_change: (v, p) => this.on_kind(v, p) },
+							{ key: "description", label: __("Note (optional)"), type: "textarea", rows: 3, value: group.description, placeholder: __("Why this group exists and when it is used.") },
+							this.editing ? { key: "disabled", label: __("Disabled — not offered when choosing recipients"), type: "toggle", value: !!cint(group.disabled), on_change: (v, p) => p.set_badge(this.badge(p.get_value("kind"), v)) } : null,
 							{ key: "summary", type: "html", render: ($el) => (this.$summary = $el) },
 						].filter(Boolean),
 						cols: 1,
@@ -73,7 +73,7 @@ frappe.provide("whatsapp_next.groups");
 					{ fields: [{ key: "members", type: "html", render: ($el) => this.make_members($el) }], cols: 1 },
 				],
 				actions: [
-					this.editing ? { key: "form", label: __("Open full form"), variant: "ghost", align: "start", handler: () => frappe.set_route("Form", DOCTYPE, g.name), validate: false } : null,
+					this.editing ? { key: "form", label: __("Open full form"), variant: "ghost", align: "start", handler: () => frappe.set_route("Form", DOCTYPE, group.name), validate: false } : null,
 					{ key: "cancel", label: __("Cancel"), close: true },
 					this.can_write ? { key: "save", label: this.editing ? __("Save") : __("Create group"), variant: "primary", requires_dirty: this.editing, handler: (values) => this.save_group(values) } : null,
 				].filter(Boolean),
@@ -82,7 +82,7 @@ frappe.provide("whatsapp_next.groups");
 			this.$blacklist = $(`<div class="whatsapp-kit-overlay-panel__note whatsapp-kit-overlay-panel__note--warn" hidden>${escape_html(__("A blacklist blocks its members from every command, campaign and quick send."))}</div>`).appendTo(
 				this.panel.get_field_entry("kind").$el
 			);
-			this.$blacklist.prop("hidden", g.kind !== "Blacklist");
+			this.$blacklist.prop("hidden", group.kind !== "Blacklist");
 			if (!this.can_write) this.panel.$root.find(".whatsapp-kit-overlay-panel__body :input").prop("disabled", true);
 			this.panel.show();
 		}
@@ -228,8 +228,8 @@ frappe.provide("whatsapp_next.groups");
 
 		render_members() {
 			if (!this.$list) return;
-			const q = this.query;
-			const match = (m) => !q || String(m.display_name || "").toLowerCase().includes(q) || key_of(m).includes(q.replace(/[\s\-()]/g, ""));
+			const query = this.query;
+			const match = (m) => !query || String(m.display_name || "").toLowerCase().includes(query) || key_of(m).includes(query.replace(/[\s\-()]/g, ""));
 			const added = Array.from(this.added.values()).filter(match);
 			const saved = this.existing.filter(match);
 			let html = added.map((m) => this.row_html(m, "new")).join("");
@@ -246,7 +246,7 @@ frappe.provide("whatsapp_next.groups");
 					.appendTo(this.$list);
 			} else if (!added.length && !saved.length) {
 				this.$list.html(
-					`<div class="whatsapp-group-editor__empty">${escape_html(q ? __("No member matches this search.") : __("No members yet. Add them from contacts, another group, a file or typed numbers."))}</div>`
+					`<div class="whatsapp-group-editor__empty">${escape_html(query ? __("No member matches this search.") : __("No members yet. Add them from contacts, another group, a file or typed numbers."))}</div>`
 				);
 			}
 			this.render_summary();
@@ -268,14 +268,14 @@ frappe.provide("whatsapp_next.groups");
 					.appendTo(this.$foot_actions);
 			}
 			if (!this.$summary) return;
-			const line = (k, v, cls = "") => `<div class="whatsapp-group-editor__sum-row ${cls}"><dt>${escape_html(k)}</dt><dd class="whatsapp-kit-tabular" dir="ltr">${escape_html(v)}</dd></div>`;
+			const render_summary_row = (k, v, cls = "") => `<div class="whatsapp-group-editor__sum-row ${cls}"><dt>${escape_html(k)}</dt><dd class="whatsapp-kit-tabular" dir="ltr">${escape_html(v)}</dd></div>`;
 			this.$summary.html(`<section class="whatsapp-group-editor__sum" aria-label="${escape_html(__("Members summary"))}">
 				<span class="whatsapp-group-editor__sum-title">${escape_html(__("Members summary"))}</span>
 				<dl>
-					${this.editing ? line(__("Members now"), format_integer(this.total)) : ""}
-					${line(__("To add"), adding ? `+${format_integer(adding)}` : "0", adding ? "whatsapp-group-editor__sum-row--ok" : "")}
-					${this.editing ? line(__("To remove"), removing ? `−${format_integer(removing)}` : "0", removing ? "whatsapp-group-editor__sum-row--dg" : "") : ""}
-					${line(__("After saving"), format_integer(after), "whatsapp-group-editor__sum-row--total")}
+					${this.editing ? render_summary_row(__("Members now"), format_integer(this.total)) : ""}
+					${render_summary_row(__("To add"), adding ? `+${format_integer(adding)}` : "0", adding ? "whatsapp-group-editor__sum-row--ok" : "")}
+					${this.editing ? render_summary_row(__("To remove"), removing ? `−${format_integer(removing)}` : "0", removing ? "whatsapp-group-editor__sum-row--dg" : "") : ""}
+					${render_summary_row(__("After saving"), format_integer(after), "whatsapp-group-editor__sum-row--total")}
 				</dl>
 			</section>`);
 		}

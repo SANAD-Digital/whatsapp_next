@@ -76,23 +76,23 @@ whatsapp.ui.DashboardBlock = class DashboardBlock {
 	}
 
 	render() {
-		const o = this.opts;
-		this.$root = $(`<div class="whatsapp-kit whatsapp-kit-dashboard" style="--whatsapp-kit-dashboard-columns:${cint(o.columns) || 4}"></div>`);
+		const options = this.opts;
+		this.$root = $(`<div class="whatsapp-kit whatsapp-kit-dashboard" style="--whatsapp-kit-dashboard-columns:${cint(options.columns) || 4}"></div>`);
 		this.$toolbar = $('<div class="whatsapp-kit-dashboard__toolbar"></div>').appendTo(this.$root);
-		if (o.period_filter) this.render_period();
+		if (options.period_filter) this.render_period();
 		this.$refresh = $(
 			`<button type="button" class="btn btn-sm btn-default whatsapp-kit-dashboard__refresh">${ui.icon("es-line-reload", "xs")} <span>${ui.escape(__("Refresh"))}</span></button>`
 		)
 			.on("click", () => this.refresh({ announce: true }))
 			.appendTo(this.$toolbar);
 
-		if (o.number_cards.length) {
+		if (options.number_cards.length) {
 			this.$cards = $('<div class="whatsapp-kit-dashboard__cards" role="list"></div>').appendTo(this.$root);
-			o.number_cards.forEach((name) => (this.cards[name] = this.make_card(name)));
+			options.number_cards.forEach((name) => (this.cards[name] = this.make_card(name)));
 		}
-		if (o.charts.length) {
+		if (options.charts.length) {
 			this.$charts = $('<div class="whatsapp-kit-dashboard__charts"></div>').appendTo(this.$root);
-			o.charts.forEach((name) => (this.charts[name] = this.make_chart(name)));
+			options.charts.forEach((name) => (this.charts[name] = this.make_chart(name)));
 		}
 		this.$wrapper.append(this.$root);
 	}
@@ -509,11 +509,11 @@ whatsapp.ui.DashboardBlock = class DashboardBlock {
 	}
 
 	bind_auto_refresh_events() {
-		const o = this.opts;
-		const seconds = cint(o.refresh_seconds);
+		const options = this.opts;
+		const seconds = cint(options.refresh_seconds);
 		if (seconds > 0) this._timer = window.setInterval(() => this.refresh(), seconds * 1000);
 		const debounced = ui.debounce(() => this.refresh(), 1000);
-		Object.entries(o.events || {}).forEach(([event, handler]) => {
+		Object.entries(options.events || {}).forEach(([event, handler]) => {
 			if (!handler) return;
 			const fn = typeof handler === "function" ? (data) => handler(data, this) : () => debounced();
 			frappe.realtime.on(event, fn);

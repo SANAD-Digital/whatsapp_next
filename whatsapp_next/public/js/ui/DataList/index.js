@@ -69,56 +69,56 @@ whatsapp.ui.DataList = class DataList {
 
 	mount() {
 		if (this.page_mode) return this.mount_page();
-		const lv = this.listview;
+		const listview = this.listview;
 		const self = this;
-		lv.page_length = this.page_length;
-		lv.selected_page_count = this.page_length;
-		lv.start = 0;
-		lv.$no_result && lv.$no_result.hide();
-		lv._whatsapp_datalist = this; // FilterBar's grouping control drives this table
-		lv.$result.addClass("whatsapp-kit-datalist-host");
+		listview.page_length = this.page_length;
+		listview.selected_page_count = this.page_length;
+		listview.start = 0;
+		listview.$no_result && listview.$no_result.hide();
+		listview._whatsapp_datalist = this; // FilterBar's grouping control drives this table
+		listview.$result.addClass("whatsapp-kit-datalist-host");
 		// the list owns its page edge to edge: no card frame, no outer margin
-		lv.$frappe_list.addClass("whatsapp-kit-list-card");
+		listview.$frappe_list.addClass("whatsapp-kit-list-card");
 		// Desk pads the list column 40px at the bottom; the card already fills the screen, so that
 		// padding only added scroll: the toolbar slid under the sticky head and a strip stayed
 		// under the footer. The host loses it while this card is mounted.
-		lv.$frappe_list.parent().addClass("whatsapp-kit-list-card-host");
+		listview.$frappe_list.parent().addClass("whatsapp-kit-list-card-host");
 		this.$table = $(`<div class="whatsapp-kit whatsapp-kit-datalist__wrap${this.opts.mobile === "cards" ? " whatsapp-kit-datalist__wrap--cards" : ""}"></div>`);
-		lv.$result.find(".list-row-container, .list-row-head").remove();
-		lv.$result.prepend(this.$table);
+		listview.$result.find(".list-row-container, .list-row-head").remove();
+		listview.$result.prepend(this.$table);
 		this.$footer = $(`<div class="whatsapp-kit whatsapp-kit-datalist__footer"><div class="whatsapp-kit-datalist__count" aria-live="polite"></div><div class="whatsapp-kit-datalist__extra"></div><nav class="whatsapp-kit-datalist__pager" aria-label="${ui.escape(__("Pages"))}"></nav></div>`);
-		lv.$frappe_list.append(this.$footer);
+		listview.$frappe_list.append(this.$footer);
 		// Frappe's own paging component (page sizes + Load More) moves into the footer: it divides
 		// the pages, keeps the fetch small and is what the rest of Desk behaves like.
-		if (lv.$paging_area) lv.$paging_area.addClass("whatsapp-kit-datalist__paging").appendTo(this.$footer.find(".whatsapp-kit-datalist__pager")).show();
+		if (listview.$paging_area) listview.$paging_area.addClass("whatsapp-kit-datalist__paging").appendTo(this.$footer.find(".whatsapp-kit-datalist__pager")).show();
 
 		// rows: our table instead of Desk's row markup (keeps the shared render hooks of the kit)
-		lv._whatsapp_render_hooks = lv._whatsapp_render_hooks || [];
-		lv.render_list = function () {
+		listview._whatsapp_render_hooks = listview._whatsapp_render_hooks || [];
+		listview.render_list = function () {
 			self.render();
-			lv._whatsapp_render_hooks.forEach((fn) => {
+			listview._whatsapp_render_hooks.forEach((fn) => {
 				try {
-					fn(lv);
+					fn(listview);
 				} catch (e) {
 					console.error(e); // eslint-disable-line no-console
 				}
 			});
 		};
-		lv.render_header = () => {};
-		lv.render_skeleton = () => {};
+		listview.render_header = () => {};
+		listview.render_skeleton = () => {};
 		// data, paging and "load more" stay Frappe's: nothing is overridden here any more
-		const orig_toggle = lv.toggle_result_area.bind(lv);
-		lv.toggle_result_area = function () {
+		const orig_toggle = listview.toggle_result_area.bind(listview);
+		listview.toggle_result_area = function () {
 			orig_toggle();
-			lv.$result.parent(".result-container").show();
-			lv.$result.show();
-			lv.$no_result && lv.$no_result.hide(); // the empty state is drawn inside the table
+			listview.$result.parent(".result-container").show();
+			listview.$result.show();
+			listview.$no_result && listview.$no_result.hide(); // the empty state is drawn inside the table
 		};
-		lv.render_count = () => this.render_footer();
-		lv.get_count_str = () => Promise.resolve("");
-		lv.freeze = (on) => this.set_loading(!!on);
+		listview.render_count = () => this.render_footer();
+		listview.get_count_str = () => Promise.resolve("");
+		listview.freeze = (on) => this.set_loading(!!on);
 		// the card is a flex column that fills its page, so Desk's result-height maths is skipped
-		lv.set_result_height = () => {};
+		listview.set_result_height = () => {};
 		this.bind_events();
 		this._on_resize = ui.debounce(() => {
 			this.apply_pins();
@@ -129,7 +129,7 @@ whatsapp.ui.DataList = class DataList {
 		// than it was at mount: the card has to be re-measured when that happens
 		if (typeof ResizeObserver === "function") {
 			this._card_observer = new ResizeObserver(ui.debounce(() => this.fit_height(), 120));
-			Array.from(lv.$frappe_list[0].children).forEach((child) => {
+			Array.from(listview.$frappe_list[0].children).forEach((child) => {
 				if (!child.contains(this.$table[0])) this._card_observer.observe(child);
 			});
 		}
@@ -212,14 +212,14 @@ whatsapp.ui.DataList = class DataList {
 		} else {
 			// Frappe before 16.53 has no TabButtons: its own lists draw this button group instead
 			const $group = $('<div class="btn-group"></div>').appendTo($area.find(".level-left"));
-			const mark = () => $group.find(".btn-paging").each((_, b) => $(b).toggleClass("btn-info", cint(b.dataset.value) === this.page_size).prop("disabled", cint(b.dataset.value) === this.page_size));
+			const mark_active_page_size = () => $group.find(".btn-paging").each((_, b) => $(b).toggleClass("btn-info", cint(b.dataset.value) === this.page_size).prop("disabled", cint(b.dataset.value) === this.page_size));
 			sizes.forEach((value) => $(`<button type="button" class="btn btn-default btn-sm btn-paging" data-value="${value}">${value}</button>`).appendTo($group));
 			$group.on("click", ".btn-paging", (e) => {
 				this.page_size = cint(e.currentTarget.dataset.value);
-				mark();
+				mark_active_page_size();
 				reload(this.page_size);
 			});
-			mark();
+			mark_active_page_size();
 		}
 		const more = frappe.ui.button
 			? frappe.ui.button({ label: __("Load More"), css_class: "btn-more", onclick: () => reload(this.page_length + this.page_size) })
@@ -283,15 +283,15 @@ whatsapp.ui.DataList = class DataList {
 			this.sync_group_checkboxes();
 		});
 		$r.on(`change.${this.id}`, ".whatsapp-kit-datalist__check-all", (e) => {
-			const on = e.currentTarget.checked;
+			const checked = e.currentTarget.checked;
 			$r.find(".list-row-checkbox").each((i, el) => {
-				el.checked = on;
-				if (on) this.selected.add(el.getAttribute("data-name"));
+				el.checked = checked;
+				if (checked) this.selected.add(el.getAttribute("data-name"));
 				else this.selected.delete(el.getAttribute("data-name"));
 			});
 			this.selection_changed();
 			this.sync_group_checkboxes();
-			ui.announce(on ? __("All rows on this page selected.") : __("Selection cleared."));
+			ui.announce(checked ? __("All rows on this page selected.") : __("Selection cleared."));
 		});
 	}
 
@@ -309,12 +309,12 @@ whatsapp.ui.DataList = class DataList {
 	// ---- columns ---------------------------------------------------------------------------
 
 	resolve_columns(columns) {
-		const lv = this.listview;
+		const listview = this.listview;
 		const meta = frappe.get_meta(this.doctype) || { fields: [] };
 		const df_of = (fieldname) => (meta.fields || []).find((f) => f.fieldname === fieldname) || frappe.meta.get_docfield(this.doctype, fieldname) || (fieldname === "name" ? { fieldname: "name", label: __("ID"), fieldtype: "Data" } : { fieldname, label: fieldname, fieldtype: "Data" });
 		let list = columns;
 		if (!list || !list.length) {
-			list = (lv.columns || [])
+			list = (listview.columns || [])
 				.filter((c) => c.type === "Field" || c.type === "Subject" || c.type === "Status")
 				.map((c) => (c.type === "Status" ? { fieldname: "status", type: "status" } : { fieldname: c.df.fieldname }));
 		}
@@ -440,9 +440,9 @@ whatsapp.ui.DataList = class DataList {
 	}
 
 	thead() {
-		const lv = this.listview;
-		const sort_by = this.page_mode ? this.sort_state.fieldname : lv.sort_selector && lv.sort_selector.sort_by;
-		const sort_order = this.page_mode ? this.sort_state.order : lv.sort_selector && lv.sort_selector.sort_order;
+		const listview = this.listview;
+		const sort_by = this.page_mode ? this.sort_state.fieldname : listview.sort_selector && listview.sort_selector.sort_by;
+		const sort_order = this.page_mode ? this.sort_state.order : listview.sort_selector && listview.sort_selector.sort_order;
 		let html = "<thead><tr>";
 		if (this.opts.selectable) {
 			html += `<th scope="col" class="whatsapp-kit-datalist__th whatsapp-kit-datalist__th--check"><input type="checkbox" class="whatsapp-kit-datalist__check-all" aria-label="${ui.escape(__("Select all rows on this page"))}"></th>`;
@@ -646,16 +646,16 @@ whatsapp.ui.DataList = class DataList {
 		this.$table.find(".whatsapp-kit-datalist__group-checkbox").each((i, el) => {
 			const $boxes = this.$rows_of(el.getAttribute("data-gid"));
 			const total = $boxes.length;
-			const on = $boxes.filter(":checked").length;
-			el.checked = total > 0 && on === total;
-			el.indeterminate = on > 0 && on < total;
+			const checked_count = $boxes.filter(":checked").length;
+			el.checked = total > 0 && checked_count === total;
+			el.indeterminate = checked_count > 0 && checked_count < total;
 		});
 		const $all = this.$table.find(".whatsapp-kit-datalist__check-all");
 		if ($all.length) {
 			const rows = this.$table.find(".list-row-checkbox");
-			const on = rows.filter(":checked").length;
-			$all[0].checked = rows.length > 0 && on === rows.length;
-			$all[0].indeterminate = on > 0 && on < rows.length;
+			const checked_count = rows.filter(":checked").length;
+			$all[0].checked = rows.length > 0 && checked_count === rows.length;
+			$all[0].indeterminate = checked_count > 0 && checked_count < rows.length;
 		}
 	}
 
@@ -920,12 +920,12 @@ whatsapp.ui.DataList = class DataList {
 			else this.render();
 			return;
 		}
-		const lv = this.listview;
-		if (!lv.sort_selector) return;
-		const order = lv.sort_selector.sort_by === fieldname && lv.sort_selector.sort_order === "desc" ? "asc" : "desc";
-		lv.sort_selector.set_value(fieldname, order);
-		lv.start = 0;
-		lv.on_sort_change(fieldname, order);
+		const listview = this.listview;
+		if (!listview.sort_selector) return;
+		const order = listview.sort_selector.sort_by === fieldname && listview.sort_selector.sort_order === "desc" ? "asc" : "desc";
+		listview.sort_selector.set_value(fieldname, order);
+		listview.start = 0;
+		listview.on_sort_change(fieldname, order);
 	}
 
 	set_loading(on) {
@@ -939,20 +939,20 @@ whatsapp.ui.DataList = class DataList {
 	 */
 	count_for(rows) {
 		if (this.page_mode) return Promise.resolve(this.total == null ? rows.length : this.total);
-		const lv = this.listview;
+		const listview = this.listview;
 		// a search is an `or_filters` list the toolbar adds beside the filters: it is part of what
 		// is being counted, or a new search would keep the previous search's total
-		const or_filters = lv._whatsapp_or_filters || [];
-		const key = JSON.stringify([lv.get_filters_for_args() || [], or_filters]);
+		const or_filters = listview._whatsapp_or_filters || [];
+		const key = JSON.stringify([listview.get_filters_for_args() || [], or_filters]);
 		// a page that came back short is the whole result; no extra request needed
-		if (rows.length < cint(lv.start) + cint(lv.page_length)) {
+		if (rows.length < cint(listview.start) + cint(listview.page_length)) {
 			this.count_key = key;
 			this.total = rows.length;
 			return Promise.resolve(this.total);
 		}
 		if (this.count_key === key && this.total != null) return Promise.resolve(this.total);
 		// `frappe.db.count` sends no `or_filters`; the endpoint behind it takes them
-		return frappe.xcall("frappe.desk.reportview.get_count", { doctype: this.doctype, filters: lv.get_filters_for_args(), or_filters, fields: [], distinct: false }).then((n) => {
+		return frappe.xcall("frappe.desk.reportview.get_count", { doctype: this.doctype, filters: listview.get_filters_for_args(), or_filters, fields: [], distinct: false }).then((n) => {
 			this.count_key = key;
 			this.total = cint(n);
 			return this.total;
@@ -966,11 +966,11 @@ whatsapp.ui.DataList = class DataList {
 	}
 
 	render_footer() {
-		const lv = this.listview;
-		const rows = this.page_mode ? this.rows : lv.data || [];
+		const listview = this.listview;
+		const rows = this.page_mode ? this.rows : listview.data || [];
 		const $count = this.$footer.find(".whatsapp-kit-datalist__count");
 		const $pager = this.$footer.find(".whatsapp-kit-datalist__pager");
-		const paint = () => {
+		const render_footer_count = () => {
 			const total = this.total == null ? rows.length : this.total;
 			const text = typeof this.opts.footer.count === "function" ? this.opts.footer.count(total, rows) : ui.plural(total, { one: __("{0} record"), other: __("{0} records") });
 			// the total first and plain, what is on screen after it in the quieter tone
@@ -982,11 +982,11 @@ whatsapp.ui.DataList = class DataList {
 			this.render_page_state();
 			if (typeof this.opts.footer.extra === "function") this.opts.footer.extra(this.$footer.find(".whatsapp-kit-datalist__extra"), rows, this);
 		};
-		paint();
+		render_footer_count();
 		const before = this.total;
 		return this.count_for(rows)
 			.then(() => {
-				if (this.total !== before) paint();
+				if (this.total !== before) render_footer_count();
 			})
 			.catch(() => {});
 	}

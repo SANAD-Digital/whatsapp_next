@@ -24,14 +24,14 @@ whatsapp.ui.RowActions = class RowActions {
 	}
 
 	mount() {
-		const lv = this.listview;
-		this.unbind_render = ui.on_list_render(lv, () => this.decorate());
-		lv.$result.on("click.whatsapprow", ".whatsapp-kit-rowactions__btn", (e) => {
+		const listview = this.listview;
+		this.unbind_render = ui.on_list_render(listview, () => this.decorate());
+		listview.$result.on("click.whatsapprow", ".whatsapp-kit-rowactions__btn", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			this.open_menu($(e.currentTarget));
 		});
-		lv.$result.on("keydown.whatsapprow", ".whatsapp-kit-rowactions__btn", (e) => {
+		listview.$result.on("keydown.whatsapprow", ".whatsapp-kit-rowactions__btn", (e) => {
 			if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
 				e.preventDefault();
 				e.stopPropagation();
@@ -135,16 +135,16 @@ whatsapp.ui.RowActions = class RowActions {
 		const rect = $btn[0].getBoundingClientRect();
 		const w = $menu.outerWidth();
 		const h = $menu.outerHeight();
-		const vw = window.innerWidth;
-		const vh = window.innerHeight;
+		const viewport_width = window.innerWidth;
+		const viewport_height = window.innerHeight;
 		// physical x of the menu's start edge; CSS anchors it with inset-inline-start: 0
 		const start_edge = rect.left;
 		const end_edge = rect.right;
 		let x = ui.is_rtl() ? start_edge : end_edge - w;
-		x = Math.max(8, Math.min(x, vw - w - 8));
+		x = Math.max(8, Math.min(x, viewport_width - w - 8));
 		let y = rect.bottom + 4;
-		if (y + h > vh - 8) y = Math.max(8, rect.top - h - 4);
-		const tx = ui.is_rtl() ? -(vw - (x + w)) : x;
+		if (y + h > viewport_height - 8) y = Math.max(8, rect.top - h - 4);
+		const tx = ui.is_rtl() ? -(viewport_width - (x + w)) : x;
 		$menu[0].style.setProperty("--whatsapp-kit-menu-x", `${Math.round(tx)}px`);
 		$menu[0].style.setProperty("--whatsapp-kit-menu-y", `${Math.round(y)}px`);
 	}

@@ -58,8 +58,8 @@ frappe.provide("whatsapp_next.campaign");
 		mount_controls() {
 			const frm = this.frm;
 			const editable = this.ctx.can_edit_content();
-			const $el = this.$wrapper;
-			this.$device = $el.find('[data-field="device"]');
+			const $wrapper = this.$wrapper;
+			this.$device = $wrapper.find('[data-field="device"]');
 
 			this.fill_devices();
 			this.$device.on("change", () => {
@@ -73,7 +73,7 @@ frappe.provide("whatsapp_next.campaign");
 			let ready = false;
 			const control = (key, df) =>
 				frappe.ui.form.make_control({
-					parent: $el.find(`[data-control="${key}"]`),
+					parent: $wrapper.find(`[data-control="${key}"]`),
 					df: Object.assign({ fieldname: `wa_cb_${key}`, read_only: editable ? 0 : 1 }, df),
 					render_input: true,
 					only_input: true,
@@ -92,22 +92,22 @@ frappe.provide("whatsapp_next.campaign");
 
 		/** The devices, by their own names — the chosen one stays listed even if it was disabled since. */
 		fill_devices() {
-			const $sel = this.$device;
+			const $device_select = this.$device;
 			const current = this.doc.device || "";
-			$sel.empty().append(`<option value="">${escape_html(__("Choose a device"))}</option>`);
-			$sel.attr("data-empty", current ? "false" : "true");
-			if (current) $sel.append(`<option value="${escape_html(current)}" selected>${escape_html(current)}</option>`);
+			$device_select.empty().append(`<option value="">${escape_html(__("Choose a device"))}</option>`);
+			$device_select.attr("data-empty", current ? "false" : "true");
+			if (current) $device_select.append(`<option value="${escape_html(current)}" selected>${escape_html(current)}</option>`);
 			this.ctx.devices().then((rows) => {
-				if (!$sel.closest("body").length) return;
-				$sel.find("option[value!='']").remove();
+				if (!$device_select.closest("body").length) return;
+				$device_select.find("option[value!='']").remove();
 				rows.filter((d) => !cint(d.disabled) || d.name === current).forEach((d) => {
 					const label = `${d.device_name || d.name}${d.status && d.status !== "Connected" ? ` — ${__(d.status)}` : ""}`;
-					$sel.append(`<option value="${escape_html(d.name)}"${d.name === current ? " selected" : ""}>${escape_html(label)}</option>`);
+					$device_select.append(`<option value="${escape_html(d.name)}"${d.name === current ? " selected" : ""}>${escape_html(label)}</option>`);
 				});
-				if (current && !$sel.find(`option[value="${current.replace(/"/g, '\\"')}"]`).length) {
-					$sel.append(`<option value="${escape_html(current)}" selected>${escape_html(current)}</option>`);
+				if (current && !$device_select.find(`option[value="${current.replace(/"/g, '\\"')}"]`).length) {
+					$device_select.append(`<option value="${escape_html(current)}" selected>${escape_html(current)}</option>`);
 				}
-				$sel.val(current);
+				$device_select.val(current);
 			});
 		}
 
@@ -273,14 +273,14 @@ frappe.provide("whatsapp_next.campaign");
 
 		bind_setup_controls() {
 			const frm = this.frm;
-			const $el = this.$wrapper;
+			const $wrapper = this.$wrapper;
 			const editable = this.ctx.can_edit();
-			if (!editable) $el.find("input, select, textarea").prop("disabled", true);
+			if (!editable) $wrapper.find("input, select, textarea").prop("disabled", true);
 			// a paused campaign keeps its device and its send time (see `can_edit_content`)
-			else if (!this.ctx.can_edit_content()) $el.find('[data-field="device"], input[name="whatsapp-campaign-builder-when"]').prop("disabled", true);
+			else if (!this.ctx.can_edit_content()) $wrapper.find('[data-field="device"], input[name="whatsapp-campaign-builder-when"]').prop("disabled", true);
 
 
-			$el.on("click", ".whatsapp-campaign-builder__card--fold .whatsapp-campaign-builder__card-head", (e) => {
+			$wrapper.on("click", ".whatsapp-campaign-builder__card--fold .whatsapp-campaign-builder__card-head", (e) => {
 				const $card = $(e.currentTarget).closest(".whatsapp-campaign-builder__card");
 				const open = $card.attr("data-open") !== "1";
 				$card.attr("data-open", open ? 1 : 0).find(".whatsapp-campaign-builder__card-body").attr("hidden", !open ? "hidden" : null);
@@ -288,21 +288,21 @@ frappe.provide("whatsapp_next.campaign");
 			});
 
 			// name — the counter answers every keystroke, the document once the typing settles
-			const $name = $el.find('[data-field="campaign_name"]');
+			const $name = $wrapper.find('[data-field="campaign_name"]');
 			const commit_name = ui.debounce(() => frm.set_value("campaign_name", $name.val()), 400);
 			$name.on("input", () => {
-				$el.find('[data-counter="whatsapp-campaign-builder-name"]').text(`${($name.val() || "").length}/${NAME_MAX}`);
+				$wrapper.find('[data-counter="whatsapp-campaign-builder-name"]').text(`${($name.val() || "").length}/${NAME_MAX}`);
 				commit_name();
 			});
 			$name.on("blur", () => frm.set_value("campaign_name", $name.val()));
 
-			$el.on("change", '[data-field="description"]', (e) => frm.set_value("description", $(e.currentTarget).val()));
-			$el.on("change", '[data-field="exclude_unknown_numbers"]', (e) => frm.set_value("exclude_unknown_numbers", e.currentTarget.checked ? 1 : 0));
-			$el.on("change", '[data-field="exclude_not_on_whatsapp"]', (e) => frm.set_value("exclude_not_on_whatsapp", e.currentTarget.checked ? 1 : 0));
+			$wrapper.on("change", '[data-field="description"]', (e) => frm.set_value("description", $(e.currentTarget).val()));
+			$wrapper.on("change", '[data-field="exclude_unknown_numbers"]', (e) => frm.set_value("exclude_unknown_numbers", e.currentTarget.checked ? 1 : 0));
+			$wrapper.on("change", '[data-field="exclude_not_on_whatsapp"]', (e) => frm.set_value("exclude_not_on_whatsapp", e.currentTarget.checked ? 1 : 0));
 
 			// rate — the two controls are one value; each moves the other, the estimate follows
-			const $n = $el.find('[data-rate="number"]');
-			const $s = $el.find('[data-rate="slider"]');
+			const $n = $wrapper.find('[data-rate="number"]');
+			const $s = $wrapper.find('[data-rate="slider"]');
 			const commit_rate = ui.debounce((v) => frm.set_value("messages_per_minute", v), 300);
 			const set_rate = (raw, { from }) => {
 				const cap = cint(this.ctx.cap) || 60;
@@ -315,7 +315,7 @@ frappe.provide("whatsapp_next.campaign");
 			$s.on("input", (e) => set_rate(e.currentTarget.value, { from: "slider" }));
 			$n.on("input", (e) => set_rate(e.currentTarget.value, { from: "number" }));
 
-			$el.on("change", 'input[name="whatsapp-campaign-builder-when"]', () => this.commit_when({ chosen: true }));
+			$wrapper.on("change", 'input[name="whatsapp-campaign-builder-when"]', () => this.commit_when({ chosen: true }));
 		}
 
 		/** The estimate the slider buys, without waiting for the document to come back. */
@@ -332,11 +332,11 @@ frappe.provide("whatsapp_next.campaign");
 		 * refuse it later, and later is the wrong moment to find out.
 		 */
 		commit_when({ chosen = false } = {}) {
-			const $el = this.$wrapper;
-			const scheduled = $el.find('input[name="whatsapp-campaign-builder-when"]:checked').val() === "scheduled";
-			const $error = $el.find("[data-when-error]");
+			const $wrapper = this.$wrapper;
+			const scheduled = $wrapper.find('input[name="whatsapp-campaign-builder-when"]:checked').val() === "scheduled";
+			const $error = $wrapper.find("[data-when-error]");
 			this.set_when_enabled(scheduled && this.ctx.can_edit_content());
-			const fail = (message) => {
+			const show_schedule_error = (message) => {
 				$error.text(message).removeAttr("hidden");
 				return false;
 			};
@@ -351,10 +351,10 @@ frappe.provide("whatsapp_next.campaign");
 				if (this.date && this.date.$input) this.date.$input.trigger("focus");
 				return this.doc.scheduled_at ? this.frm.set_value("scheduled_at", null) : true;
 			}
-			if (!date || !time) return fail(__("Choose both the date and the time."));
+			if (!date || !time) return show_schedule_error(__("Choose both the date and the time."));
 			const value = `${date} ${String(time).length === 5 ? `${time}:00` : time}`;
 			if (frappe.datetime.str_to_obj(value) <= frappe.datetime.str_to_obj(frappe.datetime.now_datetime())) {
-				return fail(__("The time has already passed. Choose a time in the future."));
+				return show_schedule_error(__("The time has already passed. Choose a time in the future."));
 			}
 			// typed on the reader's clock, stored in system time — the server compares it with its own
 			const stored = frappe.datetime.convert_to_system_tz(value);

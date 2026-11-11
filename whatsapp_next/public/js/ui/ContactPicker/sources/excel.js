@@ -234,12 +234,12 @@ export class UploadSource extends BaseSource {
 
 	render_preview(stepper) {
 		const $body = this.$preview.empty();
-		const r = this.result;
-		const rows = (r && r.rows) || [];
-		const invalid = (r && r.invalid) || [];
+		const result = this.result;
+		const rows = (result && result.rows) || [];
+		const invalid = (result && result.invalid) || [];
 		const state = this.state_for($body);
 		stepper.set_finish_label(rows.length ? __("Add {0} rows", [ui.format_integer(rows.length)]) : __("Add rows"));
-		if (!r) {
+		if (!result) {
 			state.empty({ title: __("Nothing to preview yet"), description: __("Upload a file first."), action: { label: __("Back to upload"), onclick: () => stepper.go_to_step(UPLOAD) } });
 			stepper.set_step_valid(false);
 			return;
@@ -256,7 +256,7 @@ export class UploadSource extends BaseSource {
 			return;
 		}
 		state.hide();
-		$body.append(`<div class="whatsapp-kit-picker__counts"><span class="whatsapp-kit-tone--green">${ui.escape(__("{0} valid", [ui.format_integer(rows.length)]))}</span><span class="whatsapp-kit-tone--amber">${ui.escape(__("{0} invalid", [ui.format_integer(invalid.length)]))}</span><span>${ui.escape(__("{0} rows in file", [ui.format_integer(r.total || rows.length + invalid.length)]))}</span></div>`);
+		$body.append(`<div class="whatsapp-kit-picker__counts"><span class="whatsapp-kit-tone--green">${ui.escape(__("{0} valid", [ui.format_integer(rows.length)]))}</span><span class="whatsapp-kit-tone--amber">${ui.escape(__("{0} invalid", [ui.format_integer(invalid.length)]))}</span><span>${ui.escape(__("{0} rows in file", [ui.format_integer(result.total || rows.length + invalid.length)]))}</span></div>`);
 		$body.append(this.candidate_table(rows.slice(0, PREVIEW_ROWS), { selectable: false }));
 		if (rows.length > PREVIEW_ROWS) $body.append(`<div class="whatsapp-kit-picker__note">${ui.escape(__("Showing the first {0} of {1} valid rows", [PREVIEW_ROWS, ui.format_integer(rows.length)]))}</div>`);
 		$body.append(this.invalid_list(invalid));

@@ -362,11 +362,11 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 
 		// ---- the table: every column the prototype draws (09 §1C row 6) ------------------------
 
-		const dt = (v) => (v ? escape_html(whatsapp_next.message_formatters.format_datetime(v)) : dash());
-		const dash = () => `<span class="text-muted">—</span>`;
-		const num = (v) => `<span class="whatsapp-kit-tabular">${escape_html(format_integer(v))}</span>`;
+		const format_datetime_cell = (v) => (v ? escape_html(whatsapp_next.message_formatters.format_datetime(v)) : empty_cell_html());
+		const empty_cell_html = () => `<span class="text-muted">—</span>`;
+		const format_integer_cell = (v) => `<span class="whatsapp-kit-tabular">${escape_html(format_integer(v))}</span>`;
 		const rate_cell = (part, whole, tone) =>
-			cint(whole) ? `<span class="whatsapp-kit-tabular${tone ? ` whatsapp-kit-tone--${tone}` : ""}">${escape_html(format_share_percent(part, whole))}</span>` : dash();
+			cint(whole) ? `<span class="whatsapp-kit-tabular${tone ? ` whatsapp-kit-tone--${tone}` : ""}">${escape_html(format_share_percent(part, whole))}</span>` : empty_cell_html();
 
 		/** How long a campaign needs at its own rate, and how long it actually took. */
 		// the queue sends messages, not recipients: once the campaign has its messages (recipients ×
@@ -399,35 +399,35 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 			{ fieldname: "_edit", label: __("Edit"), width: 104, sortable: false, format: (v, doc) => edit_chip(doc) },
 			{ fieldname: "sent_count", label: __("Messages sent"), width: 170, fieldtype: "Percent", sortable: false, format: (v, doc) => progress_html(doc, { tone: doc.status === "Paused" ? "amber" : "" }) },
 			{ fieldname: "total_recipients", label: __("Recipients"), type: "number", width: 110, sortable: true },
-			{ fieldname: "_handed", label: __("Sent"), width: 100, fieldtype: "Int", sortable: false, format: (v, doc) => num(handed_of_doc(doc)) },
+			{ fieldname: "_handed", label: __("Sent"), width: 100, fieldtype: "Int", sortable: false, format: (v, doc) => format_integer_cell(handed_of_doc(doc)) },
 			{ fieldname: "_ok_rate", label: __("Success %"), width: 110, fieldtype: "Percent", sortable: false, format: (v, doc) => rate_cell(handed_of_doc(doc), handed_of_doc(doc) + cint(doc.failed_count), "green") },
 			{ fieldname: "read_count", label: __("Read"), type: "number", width: 100, sortable: true },
 			{ fieldname: "_read_rate", label: __("Read %"), width: 115, fieldtype: "Percent", sortable: false, format: (v, doc) => rate_cell(doc.read_count, cint(doc.delivered_count) + cint(doc.read_count), "blue") },
-			{ fieldname: "failed_count", label: __("Failures"), type: "number", width: 90, sortable: true, format: (v) => (cint(v) ? `<span class="whatsapp-kit-tone--red whatsapp-kit-tabular">${format_integer(v)}</span>` : num(0)) },
+			{ fieldname: "failed_count", label: __("Failures"), type: "number", width: 90, sortable: true, format: (v) => (cint(v) ? `<span class="whatsapp-kit-tone--red whatsapp-kit-tabular">${format_integer(v)}</span>` : format_integer_cell(0)) },
 			{ fieldname: "_fail_rate", label: __("Failure %"), width: 110, fieldtype: "Percent", sortable: false, format: (v, doc) => rate_cell(doc.failed_count, handed_of_doc(doc) + cint(doc.failed_count), cint(doc.failed_count) ? "red" : "") },
 			{ fieldname: "device", label: __("Device"), type: "avatar", width: 150, sortable: true },
 			{ fieldname: "_start_kind", label: __("Start type"), width: 110, sortable: false, format: (v, doc) => whatsapp.ui.StatusBadge.html({ label: was_scheduled(doc) ? __("Scheduled") : __("Immediate"), colour: was_scheduled(doc) ? "blue" : "gray" }) },
-			{ fieldname: "scheduled_at", label: __("Scheduled for"), width: 150, align: "end", sortable: true, format: (v, doc) => (was_scheduled(doc) ? dt(v) : `<span class="text-muted">${escape_html(__("Immediate"))}</span>`) },
-			{ fieldname: "creation", label: __("Created"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
-			{ fieldname: "started_at", label: __("Started"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
+			{ fieldname: "scheduled_at", label: __("Scheduled for"), width: 150, align: "end", sortable: true, format: (v, doc) => (was_scheduled(doc) ? format_datetime_cell(v) : `<span class="text-muted">${escape_html(__("Immediate"))}</span>`) },
+			{ fieldname: "creation", label: __("Created"), width: 150, align: "end", sortable: true, format: (v) => format_datetime_cell(v) },
+			{ fieldname: "started_at", label: __("Started"), width: 150, align: "end", sortable: true, format: (v) => format_datetime_cell(v) },
 			{ fieldname: "_edited", label: __("Edited after approval"), width: 145, sortable: false, format: (v, doc) => (cint(doc.pause_count) ? whatsapp.ui.StatusBadge.html({ label: whatsapp.ui.plural(cint(doc.pause_count), { one: __("Yes — once"), other: __("Yes — {0} times") }), colour: "orange" }) : whatsapp.ui.StatusBadge.html({ label: __("No"), colour: "gray" })) },
-			{ fieldname: "initial_recipients", label: __("Recipients at start"), type: "number", width: 140, sortable: true, format: (v) => (cint(v) ? num(v) : dash()) },
+			{ fieldname: "initial_recipients", label: __("Recipients at start"), type: "number", width: 140, sortable: true, format: (v) => (cint(v) ? format_integer_cell(v) : empty_cell_html()) },
 			{ fieldname: "_edit_pct", label: __("Change %"), width: 110, fieldtype: "Percent", sortable: false, format: (v, doc) => {
 				const start = cint(doc.initial_recipients);
-				if (!start || start === cint(doc.total_recipients)) return dash();
+				if (!start || start === cint(doc.total_recipients)) return empty_cell_html();
 				const change = ((cint(doc.total_recipients) - start) * 100) / start;
 				return `<span class="whatsapp-kit-tabular whatsapp-kit-tone--${change < 0 ? "red" : "green"}">${change < 0 ? "−" : "+"}${escape_html(format_share_percent(Math.abs(change), 100))}</span>`;
 			} },
-			{ fieldname: "first_message_at", label: __("First message"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
-			{ fieldname: "last_message_at", label: __("Last message"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
-			{ fieldname: "_est_dur", label: __("Estimated time"), width: 120, align: "end", sortable: false, format: (v, doc) => (cint(doc.total_recipients) ? `<span class="whatsapp-kit-tabular">${escape_html(dur_text(est_minutes(doc)))}</span>` : dash()) },
+			{ fieldname: "first_message_at", label: __("First message"), width: 150, align: "end", sortable: true, format: (v) => format_datetime_cell(v) },
+			{ fieldname: "last_message_at", label: __("Last message"), width: 150, align: "end", sortable: true, format: (v) => format_datetime_cell(v) },
+			{ fieldname: "_est_dur", label: __("Estimated time"), width: 120, align: "end", sortable: false, format: (v, doc) => (cint(doc.total_recipients) ? `<span class="whatsapp-kit-tabular">${escape_html(dur_text(est_minutes(doc)))}</span>` : empty_cell_html()) },
 			{ fieldname: "_act_dur", label: __("Actual time"), width: 120, align: "end", sortable: false, format: (v, doc) => {
 				const minutes = act_minutes(doc);
-				return minutes == null ? dash() : `<span class="whatsapp-kit-tabular">${escape_html(dur_text(minutes))}</span>`;
+				return minutes == null ? empty_cell_html() : `<span class="whatsapp-kit-tabular">${escape_html(dur_text(minutes))}</span>`;
 			} },
 			{ fieldname: "_dur_diff", label: __("Time difference"), width: 115, align: "end", sortable: false, format: (v, doc) => {
 				const actual = act_minutes(doc);
-				if (actual == null || !doc.ended_at || !cint(doc.total_recipients)) return dash();
+				if (actual == null || !doc.ended_at || !cint(doc.total_recipients)) return empty_cell_html();
 				const diff = actual - est_minutes(doc);
 				const tone = diff > 1 ? "red" : diff < -1 ? "green" : "";
 				return `<span class="whatsapp-kit-tabular${tone ? ` whatsapp-kit-tone--${tone}` : ""}">${diff >= 0 ? "+" : "−"}${escape_html(dur_text(Math.abs(diff)))}</span>`;
@@ -473,7 +473,7 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 
 		if (typeof ui.BulkActions !== "function") return;
 		// One full string per verb, count always present (no verb + noun concatenation).
-		const bulk = (spec) => ({
+		const make_bulk_action = (spec) => ({
 			label: (n) => spec.label(format_integer(n)),
 			method: spec.method,
 			roles: ["WhatsApp Manager", "System Manager"],
@@ -500,9 +500,9 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 		new ui.BulkActions({
 			listview,
 			actions: [
-				bulk({ label: (n) => __("Pause {0}", [n]), title: (n) => __("Pause {0} campaigns?", [n]), done: (n) => __("Paused {0} campaigns", [n]), method: "campaigns.pause_many", applies: (s) => ["Running", "Queued"].includes(s), reason: true }),
-				bulk({ label: (n) => __("Resume {0}", [n]), title: (n) => __("Resume {0} campaigns?", [n]), done: (n) => __("Resumed {0} campaigns", [n]), method: "campaigns.resume_many", applies: (s) => s === "Paused" }),
-				bulk({ label: (n) => __("Cancel {0}", [n]), title: (n) => __("Cancel {0} campaigns?", [n]), done: (n) => __("Cancelled {0} campaigns", [n]), method: "campaigns.cancel_many", applies: (s) => !TERMINAL.includes(s), reason: true, ack: __("I understand the remaining messages will not be sent."), danger: true }),
+				make_bulk_action({ label: (n) => __("Pause {0}", [n]), title: (n) => __("Pause {0} campaigns?", [n]), done: (n) => __("Paused {0} campaigns", [n]), method: "campaigns.pause_many", applies: (s) => ["Running", "Queued"].includes(s), reason: true }),
+				make_bulk_action({ label: (n) => __("Resume {0}", [n]), title: (n) => __("Resume {0} campaigns?", [n]), done: (n) => __("Resumed {0} campaigns", [n]), method: "campaigns.resume_many", applies: (s) => s === "Paused" }),
+				make_bulk_action({ label: (n) => __("Cancel {0}", [n]), title: (n) => __("Cancel {0} campaigns?", [n]), done: (n) => __("Cancelled {0} campaigns", [n]), method: "campaigns.cancel_many", applies: (s) => !TERMINAL.includes(s), reason: true, ack: __("I understand the remaining messages will not be sent."), danger: true }),
 			],
 		});
 	},

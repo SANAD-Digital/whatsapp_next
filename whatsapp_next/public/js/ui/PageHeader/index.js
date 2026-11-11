@@ -47,13 +47,13 @@ whatsapp.ui.PageHeader = class PageHeader {
 	// ---- mount ---------------------------------------------------------------------------
 
 	build_header_shell() {
-		const o = this.opts;
+		const options = this.opts;
 		this.$el = $(`
 			<header class="whatsapp-kit whatsapp-kit-page-header">
 				<div class="whatsapp-kit-page-header__row">
 					<div class="whatsapp-kit-page-header__text">
-						${o.title && !this.desk_page ? `<h2 class="whatsapp-kit-page-header__title">${ui.escape(o.title)}</h2>` : ""}
-						${o.description && !this.desk_page ? `<p class="whatsapp-kit-page-header__desc">${ui.escape(o.description)}</p>` : ""}
+						${options.title && !this.desk_page ? `<h2 class="whatsapp-kit-page-header__title">${ui.escape(options.title)}</h2>` : ""}
+						${options.description && !this.desk_page ? `<p class="whatsapp-kit-page-header__desc">${ui.escape(options.description)}</p>` : ""}
 					</div>
 					<div class="whatsapp-kit-page-header__actions"></div>
 				</div>
@@ -70,10 +70,10 @@ whatsapp.ui.PageHeader = class PageHeader {
 		// a header may carry nothing but a banner and its blocks (a screen whose console names
 		// itself, or one whose title is Desk's strip): an empty title row would then reserve space
 		// and draw a stray margin
-		if (this.desk_page || (!o.title && !o.description)) this.$el.find(".whatsapp-kit-page-header__text").remove();
+		if (this.desk_page || (!options.title && !options.description)) this.$el.find(".whatsapp-kit-page-header__text").remove();
 		if (!this.$el.find(".whatsapp-kit-page-header__row").children().length) this.$el.find(".whatsapp-kit-page-header__row").remove();
-		if (o.stats && o.stats.length) {
-			this.stats = new whatsapp.ui.ListStatsCard({ wrapper: this.$stats, cards: o.stats, refresh_seconds: o.refresh_seconds, layout: "kpi" });
+		if (options.stats && options.stats.length) {
+			this.stats = new whatsapp.ui.ListStatsCard({ wrapper: this.$stats, cards: options.stats, refresh_seconds: options.refresh_seconds, layout: "kpi" });
 		} else {
 			this.$stats.remove();
 		}
@@ -92,7 +92,7 @@ whatsapp.ui.PageHeader = class PageHeader {
 		} else {
 			$(this.opts.wrapper).prepend(this.$el);
 			if (this.desk_page) {
-				if (o.title) this.desk_page.set_title(o.title);
+				if (options.title) this.desk_page.set_title(options.title);
 				this.mount_page_actions();
 			}
 		}
@@ -104,22 +104,22 @@ whatsapp.ui.PageHeader = class PageHeader {
 	 * this list rather than the button being cleared after the fact.
 	 */
 	mount_page_actions() {
-		const lv = this.listview;
-		const page = this.desk_page;
-		const p = this.opts.primary;
-		if (p && lv) {
-			lv.can_create = false;
-			lv.set_primary_action = () => {
-				if (this.allowed(p)) page.set_primary_action(p.label, () => p.handler(this), p.icon);
-				else page.clear_primary_action();
+		const listview = this.listview;
+		const desk_page = this.desk_page;
+		const primary = this.opts.primary;
+		if (primary && listview) {
+			listview.can_create = false;
+			listview.set_primary_action = () => {
+				if (this.allowed(primary)) desk_page.set_primary_action(primary.label, () => primary.handler(this), primary.icon);
+				else desk_page.clear_primary_action();
 			};
-			lv.set_primary_action();
-		} else if (p && this.allowed(p)) {
-			page.set_primary_action(p.label, () => p.handler(this), p.icon);
+			listview.set_primary_action();
+		} else if (primary && this.allowed(primary)) {
+			desk_page.set_primary_action(primary.label, () => primary.handler(this), primary.icon);
 		}
 		(this.opts.secondary || []).forEach((a) => {
 			if (!this.allowed(a)) return;
-			const $btn = page.add_button(ui.escape(a.label), () => a.handler(this), { icon: a.icon });
+			const $btn = desk_page.add_button(ui.escape(a.label), () => a.handler(this), { icon: a.icon });
 			this.page_buttons.push($btn);
 			if (a.count == null) return;
 			Promise.resolve(typeof a.count === "function" ? a.count() : a.count).then((n) => {
@@ -145,10 +145,10 @@ whatsapp.ui.PageHeader = class PageHeader {
 				.on("click", () => a.handler(this))
 				.appendTo(this.$actions);
 		});
-		const p = this.opts.primary;
-		if (p && this.allowed(p)) {
-			$(`<button type="button" class="btn btn-primary btn-sm whatsapp-kit-page-header__primary">${p.icon ? ui.icon(p.icon, "xs") + " " : ""}${ui.escape(p.label)}</button>`)
-				.on("click", () => p.handler(this))
+		const primary = this.opts.primary;
+		if (primary && this.allowed(primary)) {
+			$(`<button type="button" class="btn btn-primary btn-sm whatsapp-kit-page-header__primary">${primary.icon ? ui.icon(primary.icon, "xs") + " " : ""}${ui.escape(primary.label)}</button>`)
+				.on("click", () => primary.handler(this))
 				.appendTo(this.$actions);
 		}
 		if (!this.$actions.children().length) this.$actions.remove();

@@ -211,9 +211,9 @@ frappe.provide("whatsapp_next.numbers");
 		}
 		// an <option> holds text only, so the number is kept left-to-right with Unicode isolates
 		// (LRI … PDI); in an Arabic line its groups otherwise came out in reverse order
-		const label = (d) =>
+		const format_device_label = (d) =>
 			[d.device_name || d.name, d.phone ? whatsapp.ui.phone(d.phone) : null, d.status !== "Connected" ? __(d.status) : null].filter(Boolean).join(" · ");
-		const when = (d) => (d.synced_at ? __("Last fetched {0}", [frappe.datetime.prettyDate(d.synced_at)]) : __("Never fetched from this device"));
+		const format_last_fetched_text = (d) => (d.synced_at ? __("Last fetched {0}", [frappe.datetime.prettyDate(d.synced_at)]) : __("Never fetched from this device"));
 		const dialog = new frappe.ui.Dialog({
 			title: __("Fetch contacts from WhatsApp"),
 			fields: [
@@ -229,12 +229,12 @@ frappe.provide("whatsapp_next.numbers");
 					fieldname: "device",
 					label: __("Device"),
 					reqd: 1,
-					options: devices.map((d) => ({ value: d.name, label: label(d) })),
+					options: devices.map((d) => ({ value: d.name, label: format_device_label(d) })),
 					default: devices[0].name,
-					description: when(devices[0]),
+					description: format_last_fetched_text(devices[0]),
 					onchange() {
 						const d = devices.find((x) => x.name === dialog.get_value("device"));
-						dialog.set_df_property("device", "description", d ? when(d) : "");
+						dialog.set_df_property("device", "description", d ? format_last_fetched_text(d) : "");
 					},
 				},
 			],
@@ -268,52 +268,52 @@ frappe.provide("whatsapp_next.numbers");
 	 */
 	function watch_sync(listview, device) {
 		const run = (listview._wa_sync_run = { device, shown: false });
-		const live = () => !run.shown && listview._wa_sync_run === run;
-		const ask = () => {
-			if (!live()) return Promise.resolve(null);
+		const is_current_sync_watch = () => !run.shown && listview._wa_sync_run === run;
+		const fetch_sync_state = () => {
+			if (!is_current_sync_watch()) return Promise.resolve(null);
 			return whatsapp.ui
 				.call("numbers.get_sync_state", { device }, { silent: true })
 				.then((state) => {
-					if (!live()) return null;
+					if (!is_current_sync_watch()) return null;
 					if (state.status === "done") show_sync_result(listview, Object.assign({ device }, state.stats));
 					else if (state.status === "failed") show_sync_result(listview, { device, error: state.error });
 					return state;
 				})
 				.catch(() => null);
 		};
-		const on_visible = () => document.visibilityState === "visible" && ask();
+		const on_visible = () => document.visibilityState === "visible" && fetch_sync_state();
 		const socket = frappe.realtime && frappe.realtime.socket;
-		const stop = () => {
+		const stop_sync_listeners = () => {
 			document.removeEventListener("visibilitychange", on_visible);
-			socket && socket.off && socket.off("connect", ask);
+			socket && socket.off && socket.off("connect", fetch_sync_state);
 		};
 		document.addEventListener("visibilitychange", on_visible);
-		socket && socket.on && socket.on("connect", ask);
-		run.stop = stop;
+		socket && socket.on && socket.on("connect", fetch_sync_state);
+		run.stop = stop_sync_listeners;
 		window.setTimeout(() => {
-			ask().then((state) => {
-				if (live() && state && state.status !== "done" && state.status !== "failed")
+			fetch_sync_state().then((state) => {
+				if (is_current_sync_watch() && state && state.status !== "done" && state.status !== "failed")
 					whatsapp.ui.Toast.warning(__("The fetch is taking long. Refresh the list later to see the numbers."));
-				stop();
+				stop_sync_listeners();
 			});
 		}, 10 * 60 * 1000);
 	}
 
 	function show_sync_result(listview, data) {
-		const run = listview._wa_sync_run;
-		if (run) {
-			if (run.shown) return;
-			run.shown = true;
-			run.stop && run.stop();
+		const sync_run = listview._wa_sync_run;
+		if (sync_run) {
+			if (sync_run.shown) return;
+			sync_run.shown = true;
+			sync_run.stop && sync_run.stop();
 		}
 		if (data.error) {
 			whatsapp.ui.Toast.error(__("Fetching the contacts failed: {0}", [data.error]));
 			return;
 		}
-		const n = (v) => whatsapp.ui.format_integer(v || 0);
+		const format_count = (v) => whatsapp.ui.format_integer(v || 0);
 		// one sentence with its own context: Frappe's own "{0} added" / "{0} updated" would win otherwise
 		whatsapp.ui.Toast.success(
-			__("{0} contacts and {4} groups fetched: {1} added, {2} updated, {3} linked to a contact.", [n(data.fetched), n(data.added), n(data.updated), n(data.linked), n(data.groups)], "Numbers sync")
+			__("{0} contacts and {4} groups fetched: {1} added, {2} updated, {3} linked to a contact.", [format_count(data.fetched), format_count(data.added), format_count(data.updated), format_count(data.linked), format_count(data.groups)], "Numbers sync")
 		);
 		if (data.link_skipped) whatsapp.ui.Toast.warning(__("{0} matching contacts were not linked: you may not edit contacts.", [whatsapp.ui.format_integer(data.link_skipped)]));
 		listview._whatsapp_header && listview._whatsapp_header.refresh(true);

@@ -103,7 +103,7 @@ export class GroupsSource extends BaseSource {
 					</div>
 				</div>`);
 			const $row = $li.find(".whatsapp-kit-picker__row");
-			const toggle = () => {
+			const toggle_group_checked = () => {
 				if (this.checked.has(g.name)) this.checked.delete(g.name);
 				else this.checked.add(g.name);
 				$row.attr("aria-checked", this.checked.has(g.name));
@@ -111,12 +111,12 @@ export class GroupsSource extends BaseSource {
 			};
 			$row.on("click", (e) => {
 				if ($(e.target).closest(".whatsapp-kit-picker__peek").length) return;
-				toggle();
+				toggle_group_checked();
 			});
 			$row.on("keydown", (e) => {
 				if ((e.key === " " || e.key === "Enter") && e.target === $row[0]) {
 					e.preventDefault();
-					toggle();
+					toggle_group_checked();
 				}
 			});
 			$li.find(".whatsapp-kit-picker__peek").on("click", () => this.open_members(g));
@@ -183,12 +183,12 @@ export class GroupsSource extends BaseSource {
 		};
 		const visible = () => rows.filter((r) => (!only_chosen || chosen.has(key_of(r))) && matches(r));
 		const reflect = () => {
-			const n = chosen.size;
-			$primary.text(n ? __("Add {0}", [ui.format_integer(n)]) : __("Add")).prop("disabled", !n);
-			$show.prop("hidden", !n && !only_chosen).attr("aria-pressed", only_chosen).find("[data-n]").text(n ? ui.format_integer(n) : "");
-			$body.find('[data-act="none"]').prop("hidden", !n);
+			const chosen_count = chosen.size;
+			$primary.text(chosen_count ? __("Add {0}", [ui.format_integer(chosen_count)]) : __("Add")).prop("disabled", !chosen_count);
+			$show.prop("hidden", !chosen_count && !only_chosen).attr("aria-pressed", only_chosen).find("[data-n]").text(chosen_count ? ui.format_integer(chosen_count) : "");
+			$body.find('[data-act="none"]').prop("hidden", !chosen_count);
 			$body.find('[data-act="matches"]').prop("hidden", !query);
-			$count.text(n ? __("{0} selected", [ui.format_integer(n)]) : "");
+			$count.text(chosen_count ? __("{0} selected", [ui.format_integer(chosen_count)]) : "");
 		};
 		const render = () => {
 			if (!loaded) return;
@@ -229,7 +229,7 @@ export class GroupsSource extends BaseSource {
 			}
 			reflect();
 		};
-		const toggle = (el) => {
+		const toggle_member_chosen = (el) => {
 			const key = el.dataset.key;
 			const row = rows.find((r) => key_of(r) === key);
 			if (!row) return;
@@ -238,11 +238,11 @@ export class GroupsSource extends BaseSource {
 			el.setAttribute("aria-checked", chosen.has(key) ? "true" : "false");
 			reflect();
 		};
-		$list.on("click", ".whatsapp-kit-picker__row", (e) => toggle(e.currentTarget));
+		$list.on("click", ".whatsapp-kit-picker__row", (e) => toggle_member_chosen(e.currentTarget));
 		$list.on("keydown", ".whatsapp-kit-picker__row", (e) => {
 			if (e.key === " " || e.key === "Enter") {
 				e.preventDefault();
-				toggle(e.currentTarget);
+				toggle_member_chosen(e.currentTarget);
 			}
 		});
 		$search.on("input", ui.debounce(() => {
@@ -251,11 +251,11 @@ export class GroupsSource extends BaseSource {
 			render();
 		}, 200));
 		$body.on("click", "[data-act]", (e) => {
-			const act = e.currentTarget.dataset.act;
-			if (act === "all") rows.forEach((r) => chosen.set(key_of(r), r));
-			else if (act === "matches") visible().forEach((r) => chosen.set(key_of(r), r));
-			else if (act === "none") chosen.clear();
-			else if (act === "show") only_chosen = !only_chosen;
+			const action = e.currentTarget.dataset.act;
+			if (action === "all") rows.forEach((r) => chosen.set(key_of(r), r));
+			else if (action === "matches") visible().forEach((r) => chosen.set(key_of(r), r));
+			else if (action === "none") chosen.clear();
+			else if (action === "show") only_chosen = !only_chosen;
 			render();
 		});
 		dialog.show();
@@ -285,8 +285,8 @@ export class GroupsSource extends BaseSource {
 	}
 
 	update_add() {
-		const n = this.checked.size;
-		this.$add.prop("disabled", !n).text(ui.plural(n, { one: __("Add members of {0} group"), two: __("Add members of {0} groups"), few: __("Add members of {0} groups"), many: __("Add members of {0} groups"), other: __("Add members of {0} groups") }));
+		const checked_group_count = this.checked.size;
+		this.$add.prop("disabled", !checked_group_count).text(ui.plural(checked_group_count, { one: __("Add members of {0} group"), two: __("Add members of {0} groups"), few: __("Add members of {0} groups"), many: __("Add members of {0} groups"), other: __("Add members of {0} groups") }));
 	}
 
 	async add_members() {

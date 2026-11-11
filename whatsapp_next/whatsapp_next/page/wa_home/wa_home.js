@@ -234,8 +234,8 @@ frappe.provide("whatsapp_next.home");
 			}
 			return out;
 		}
-		for (let i = p.days; i >= 0; i--) {
-			const day = frappe.datetime.add_days(today, -i);
+		for (let days = p.days; days >= 0; days--) {
+			const day = frappe.datetime.add_days(today, -days);
 			out.push({
 				key: day,
 				// `between` on a Datetime runs to the END of its second date, so a day is [day, day]
@@ -243,7 +243,7 @@ frappe.provide("whatsapp_next.home");
 				from: day,
 				to: day,
 				// 7 days name every column; a month names one in five, or the axis turns to mush
-				tick: p.days <= 6 ? date_text(day, "weekday") : i % 5 === 0 ? date_text(day, "day_month") : "",
+				tick: p.days <= 6 ? date_text(day, "weekday") : days % 5 === 0 ? date_text(day, "day_month") : "",
 				name: __("{0}, {1}", [date_text(day, "weekday"), date_text(day, "day_month")]),
 				counts: {},
 			});
@@ -474,7 +474,7 @@ frappe.provide("whatsapp_next.home");
 		// ---- band 2: the operating state — six cards, each one a door --------------------------
 
 		stat_cards() {
-			const d = () => this.dashboard();
+			const load_dashboard = () => this.dashboard();
 			return [
 				{
 					key: "devices",
@@ -482,14 +482,14 @@ frappe.provide("whatsapp_next.home");
 					icon: "es-line-laptop",
 					tone: "blue",
 					value: () =>
-						d().then((data) => {
+						load_dashboard().then((data) => {
 							const rows = data.devices || [];
 							const connected = rows.filter((r) => r.status === "Connected").length;
-							const off = offline_of(rows).length;
+							const offline_count = offline_of(rows).length;
 							// "every device is connected" only when it is true: a device still waiting
 							// for its QR is neither connected nor offline
-							const unpaired = rows.length - connected - off;
-							return { value: connected, tone: off || !connected ? "amber" : "green", total: rows.length, off, unpaired };
+							const unpaired = rows.length - connected - offline_count;
+							return { value: connected, tone: offline_count || !connected ? "amber" : "green", total: rows.length, off: offline_count, unpaired };
 						}),
 					format: (v, raw) => (raw.total ? __("{0} of {1}", [format_integer(v), format_integer(raw.total)]) : __("None")),
 					sub: (v, raw) =>
@@ -508,7 +508,7 @@ frappe.provide("whatsapp_next.home");
 					icon: "es-line-progress",
 					tone: "gray",
 					value: () =>
-						d().then((data) => {
+						load_dashboard().then((data) => {
 							const q = data.queue || {};
 							const waiting = queue_open(q);
 							return {
@@ -533,7 +533,7 @@ frappe.provide("whatsapp_next.home");
 					icon: ui.icons.quick_send,
 					tone: "green",
 					value: () =>
-						Promise.all([this.last_sent(), d()]).then(([at, data]) => ({
+						Promise.all([this.last_sent(), load_dashboard()]).then(([at, data]) => ({
 							value: at ? 1 : 0,
 							at,
 							today: cint((data.today || {}).sent),
@@ -553,7 +553,7 @@ frappe.provide("whatsapp_next.home");
 					icon: "es-line-web",
 					tone: "blue",
 					value: () =>
-						d().then((data) => ({
+						load_dashboard().then((data) => ({
 							value: data.webhook_status === "Active" ? 1 : 0,
 							tone: data.webhook_status === "Active" ? "green" : "red",
 							status: data.webhook_status,
@@ -569,7 +569,7 @@ frappe.provide("whatsapp_next.home");
 					icon: "es-line-web-link",
 					tone: "blue",
 					value: () =>
-						d().then((data) => {
+						load_dashboard().then((data) => {
 							const steps = (data.setup || {}).steps || [];
 							const linked = (steps.find((s) => s.key === "credentials") || {}).done;
 							const step = steps.find((s) => s.key === "connection") || {};
@@ -580,7 +580,7 @@ frappe.provide("whatsapp_next.home");
 					sub: (v, raw) =>
 						v === 2 ? __("Credentials accepted") : v === 1 ? raw.detail || __("Check the credentials in settings") : __("Create an account or sign in"),
 					onclick: () =>
-						d().then((data) => {
+						load_dashboard().then((data) => {
 							const linked = (((data.setup || {}).steps || []).find((s) => s.key === "credentials") || {}).done;
 							return linked ? whatsapp_next.settings.open("provider") : frappe.set_route("wa-onboarding");
 						}),
@@ -591,7 +591,7 @@ frappe.provide("whatsapp_next.home");
 					icon: "es-line-payments",
 					tone: "gray",
 					value: () =>
-						d().then((data) => {
+						load_dashboard().then((data) => {
 							const plan = data.plan || {};
 							const limit = cint(plan.message_limit);
 							const used = cint(plan.messages_used);
@@ -679,7 +679,7 @@ frappe.provide("whatsapp_next.home");
 					) {
 						// no screen sets `setup_completed` yet, so the steps themselves decide (D-140)
 						const steps = setup.steps || [];
-						const done = steps.filter((s) => s.done).length;
+						const done_step_count = steps.filter((s) => s.done).length;
 						const linked = (steps.find((s) => s.key === "credentials") || {}).done;
 						// Not linked to any account: that is not "setup", it is "you have no account
 						// here yet" — say so, and lead straight to creating one or signing in.
@@ -695,7 +695,7 @@ frappe.provide("whatsapp_next.home");
 							key: "setup",
 							tone: "blue",
 							icon: "es-line-alert-circle",
-							title: __("Setup is not finished — {0} of {1} steps done", [format_integer(done), format_integer(steps.length)]),
+							title: __("Setup is not finished — {0} of {1} steps done", [format_integer(done_step_count), format_integer(steps.length)]),
 							note: (steps.find((s) => !s.done) || {}).detail || __("Finish the remaining steps to send reliably."),
 							action: { label: __("Open setup"), handler: () => frappe.set_route("wa-onboarding") },
 						});
@@ -1140,7 +1140,7 @@ frappe.provide("whatsapp_next.home");
 				}
 				return $p;
 			};
-			const head = ($p, title, note, cta) => {
+			const fill_card_header = ($p, title, note, cta) => {
 				$p.find(".whatsapp-home__card-title").text(title);
 				$p.find(".whatsapp-home__card-note").text(note || "");
 				const $cta = $p.find(".whatsapp-home__card-aside").empty();
@@ -1151,9 +1151,9 @@ frappe.provide("whatsapp_next.home");
 			};
 
 			return Promise.all([
-				this.render_feed(panel("feed"), head),
-				this.render_campaigns(panel("campaigns"), head),
-				this.render_devices(panel("devices"), head),
+				this.render_feed(panel("feed"), fill_card_header),
+				this.render_campaigns(panel("campaigns"), fill_card_header),
+				this.render_devices(panel("devices"), fill_card_header),
 			]);
 		}
 

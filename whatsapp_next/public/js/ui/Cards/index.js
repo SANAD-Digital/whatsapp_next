@@ -89,8 +89,8 @@ whatsapp.ui.Cards = class Cards {
 
 	card_html(card) {
 		const kind = card.kind || "stat";
-		const fn = this[`${kind}_html`];
-		const body = typeof fn === "function" ? fn.call(this, card) : "";
+		const kind_renderer = this[`${kind}_html`];
+		const body = typeof kind_renderer === "function" ? kind_renderer.call(this, card) : "";
 		return body;
 	}
 
@@ -199,13 +199,13 @@ whatsapp.ui.Cards = class Cards {
 
 	/** A card or a row names its handler; the component never holds a closure per card. */
 	bind_card_actions() {
-		const run = (e) => {
+		const run_card_handler = (e) => {
 			const $t = $(e.currentTarget);
 			const name = $t.attr("data-action");
 			const fn = name && (this.opts.handlers || {})[name];
 			if (typeof fn === "function") fn($t.attr("data-key") || null, e);
 		};
-		this.$el.on("click", "[data-action]", run);
+		this.$el.on("click", "[data-action]", run_card_handler);
 	}
 
 	destroy() {

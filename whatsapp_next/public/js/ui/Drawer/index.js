@@ -173,27 +173,27 @@ whatsapp.ui.Drawer = class Drawer {
 	}
 
 	destroy() {
-		const remove = () => {
+		const remove_drawer_elements = () => {
 			this.$root.remove();
 			this.$backdrop.remove();
 		};
 		// a drawer that is already closed leaves at once, so its content never shadows a new one's
-		if (this.$root.prop("hidden")) return remove();
+		if (this.$root.prop("hidden")) return remove_drawer_elements();
 		this.hide({ silent: true });
-		window.setTimeout(remove, 200);
+		window.setTimeout(remove_drawer_elements, 200);
 	}
 
 	// ---- data ------------------------------------------------------------------------------
 
 	fetch() {
-		const o = this.opts;
+		const options = this.opts;
 		return ui.meta.with_doctype(this.doctype).then((meta) => {
 			this.meta = meta;
-			if (o.method) {
-				const args = typeof o.args === "function" ? o.args() : o.args || { name: o.name };
-				return ui.call(o.method, args);
+			if (options.method) {
+				const args = typeof options.args === "function" ? options.args() : options.args || { name: options.name };
+				return ui.call(options.method, args);
 			}
-			if (!o.name) return {};
+			if (!options.name) return {};
 			const fields = this.field_list().map((df) => df.fieldname);
 			if (meta.title_field && !fields.includes(meta.title_field)) fields.push(meta.title_field);
 			const extra = ["name", "modified"];
@@ -203,7 +203,7 @@ whatsapp.ui.Drawer = class Drawer {
 			// line and its timestamp even when the caller listed only the fields it cares about
 			if (this.opts.mode === "record" && this.opts.layout !== "fields") extra.push(...Render.identity_fields(this.doctype));
 			extra.forEach((f) => !fields.includes(f) && fields.push(f));
-			return frappe.db.get_value(this.doctype, o.name, fields).then((r) => r.message || {});
+			return frappe.db.get_value(this.doctype, options.name, fields).then((r) => r.message || {});
 		});
 	}
 
@@ -292,24 +292,24 @@ whatsapp.ui.Drawer = class Drawer {
 
 	/** Decide which block each field belongs to. Explicit options always win over the defaults. */
 	plan_document(doc) {
-		const o = this.opts;
+		const options = this.opts;
 		const fields = this.field_list();
-		const vm = Render.vm(doc, { doctype: this.doctype, density: "hero", profile: Object.assign({ facts: [] }, o.profile || {}) });
+		const vm = Render.vm(doc, { doctype: this.doctype, density: "hero", profile: Object.assign({ facts: [] }, options.profile || {}) });
 		const used = new Set(vm.used || []);
-		const find = (spec) => {
+		const resolve_field_spec = (spec) => {
 			const name = typeof spec === "string" ? spec : spec.field || spec.fieldname;
 			const df = fields.find((d) => d.fieldname === name) || (this.meta && (this.meta.fields || []).find((d) => d.fieldname === name)) || { fieldname: name, fieldtype: "Data", label: frappe.unscrub(cstr(name)) };
 			return Object.assign({ df, field: name, label: __(df.label || name) }, typeof spec === "string" ? {} : spec);
 		};
 
 		// the timestamp beside the status: the caller's field, else when it was sent / created
-		const time_field = o.time_field || ["sent_at", "received_at", "creation"].find((f) => doc[f]) || "modified";
+		const time_field = options.time_field || ["sent_at", "received_at", "creation"].find((f) => doc[f]) || "modified";
 		used.add(time_field);
 
 		// primary content: the caller's, else the first long text field that has something in it
 		let highlight = null;
-		if (typeof o.highlight === "function") highlight = { render: o.highlight, label: o.highlight_label || __("Content") };
-		else if (o.highlight) highlight = find(o.highlight);
+		if (typeof options.highlight === "function") highlight = { render: options.highlight, label: options.highlight_label || __("Content") };
+		else if (options.highlight) highlight = resolve_field_spec(options.highlight);
 		else {
 			const df = fields.find((d) => LONG_TYPES.includes(d.fieldtype) && !used.has(d.fieldname) && doc[d.fieldname]);
 			if (df) highlight = { df, field: df.fieldname, label: __(df.label || df.fieldname) };
@@ -317,22 +317,22 @@ whatsapp.ui.Drawer = class Drawer {
 		if (highlight && highlight.field) used.add(highlight.field);
 
 		// related entities: the caller's, else the link fields that point at a person
-		const relations = (o.relations || fields.filter((d) => d.fieldtype === "Link" && doc[d.fieldname] && !used.has(d.fieldname) && Render.doctype_kinds[d.options] === "person").map((d) => d.fieldname)).map(find).filter((r) => doc[r.field]);
+		const relations = (options.relations || fields.filter((d) => d.fieldtype === "Link" && doc[d.fieldname] && !used.has(d.fieldname) && Render.doctype_kinds[d.options] === "person").map((d) => d.fieldname)).map(resolve_field_spec).filter((r) => doc[r.field]);
 		relations.forEach((r) => used.add(r.field));
 
 		// quick facts, then everything that is left
 		const rest = fields.filter((d) => !used.has(d.fieldname) && doc[d.fieldname] != null && doc[d.fieldname] !== "");
 		let facts;
 		let details;
-		if (o.facts) {
-			facts = o.facts.map(find);
+		if (options.facts) {
+			facts = options.facts.map(resolve_field_spec);
 			facts.forEach((f) => used.add(f.field));
-			details = (o.details || rest.filter((d) => !used.has(d.fieldname)).map((d) => d.fieldname)).map(find);
+			details = (options.details || rest.filter((d) => !used.has(d.fieldname)).map((d) => d.fieldname)).map(resolve_field_spec);
 		} else {
 			const short = rest.filter((d) => FACT_TYPES.includes(d.fieldtype));
-			facts = short.slice(0, o.facts_max).map((d) => find(d.fieldname));
+			facts = short.slice(0, options.facts_max).map((d) => resolve_field_spec(d.fieldname));
 			facts.forEach((f) => used.add(f.field));
-			details = (o.details || rest.filter((d) => !used.has(d.fieldname)).map((d) => d.fieldname)).map(find);
+			details = (options.details || rest.filter((d) => !used.has(d.fieldname)).map((d) => d.fieldname)).map(resolve_field_spec);
 		}
 		return { vm, facts, details, relations, highlight, time: time_field };
 	}
@@ -520,8 +520,8 @@ whatsapp.ui.Drawer = class Drawer {
 			$summary.prop("hidden", false).html(`${ui.escape(__("Fill in the required fields:"))} ${missing.map((df) => `<a href="#" data-field="${ui.escape(df.fieldname)}">${ui.escape(__(df.label))}</a>`).join(", ")}`);
 			$summary.find("a").on("click", (e) => {
 				e.preventDefault();
-				const c = this.controls[$(e.currentTarget).data("field")];
-				c && c.set_focus && c.set_focus();
+				const control = this.controls[$(e.currentTarget).data("field")];
+				control && control.set_focus && control.set_focus();
 			});
 			$summary.trigger("focus");
 			return Promise.reject(new Error("cancelled"));
@@ -578,7 +578,7 @@ whatsapp.ui.Drawer = class Drawer {
 			this.$footer.prop("hidden", true);
 			return;
 		}
-		const run = (a, $btn) => {
+		const run_drawer_action = (a, $btn) => {
 			$btn && $btn.prop("disabled", true);
 			Promise.resolve(a.handler(this.doc, this))
 				.catch((err) => {
@@ -590,7 +590,7 @@ whatsapp.ui.Drawer = class Drawer {
 		const more = actions.filter((a) => a.menu);
 		if (more.length) {
 			const $more = $(`<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--icon whatsapp-kit-drawer__action whatsapp-kit-drawer__more" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("More actions"))}" title="${ui.escape(__("More actions"))}">${ui.icon(ui.icons.more, "sm")}</button>`);
-			$more.on("click", () => (this.$menu ? this.close_menu(true) : this.open_menu($more, more, run)));
+			$more.on("click", () => (this.$menu ? this.close_menu(true) : this.open_menu($more, more, run_drawer_action)));
 			this.$footer.append($more);
 		}
 		inline.forEach((a) => {
@@ -598,7 +598,7 @@ whatsapp.ui.Drawer = class Drawer {
 			// cannot be undone, secondary for the rest
 			const cls = a.primary ? "whatsapp-button--primary" : a.danger ? "whatsapp-button--danger" : "whatsapp-button--secondary";
 			const $btn = $(`<button type="button" class="whatsapp-button ${cls} whatsapp-kit-drawer__action" title="${ui.escape(a.label)}">${a.icon ? ui.icon(a.icon, "xs") : ""}<span class="whatsapp-kit-drawer__action-label">${ui.escape(a.label)}</span></button>`);
-			$btn.on("click", () => run(a, $btn));
+			$btn.on("click", () => run_drawer_action(a, $btn));
 			this.$footer.append($btn);
 		});
 		this.$footer.prop("hidden", false);

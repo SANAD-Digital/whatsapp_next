@@ -335,13 +335,13 @@ whatsapp.ui.PhoneField = class PhoneField {
 
 	/** The prototype's field: label (with its optional bubble), the box, and the message line. */
 	make_widget() {
-		const o = this.opts;
+		const options = this.opts;
 		const input_id = `${this.id}-input`;
 		const hint_id = `${this.id}-hint`;
 		this.$root = $(`
 			<div class="whatsapp-kit whatsapp-kit-phone" id="${this.id}">
 				<div class="whatsapp-kit-phone__labelrow" data-slot="labelrow">
-					<label class="whatsapp-kit-phone__label" for="${input_id}">${ui.escape(o.label)}${o.required ? ' <span class="whatsapp-kit-phone__req" aria-hidden="true">*</span>' : ""}</label>
+					<label class="whatsapp-kit-phone__label" for="${input_id}">${ui.escape(options.label)}${options.required ? ' <span class="whatsapp-kit-phone__req" aria-hidden="true">*</span>' : ""}</label>
 				</div>
 				<div class="whatsapp-kit-phone__box" data-slot="box" dir="ltr">
 					<button type="button" class="whatsapp-kit-phone__country" data-slot="trigger" aria-haspopup="listbox" aria-expanded="false">
@@ -350,21 +350,21 @@ whatsapp.ui.PhoneField = class PhoneField {
 						<span class="whatsapp-kit-phone__caret" data-slot="caret">${SVG.caret}</span>
 					</button>
 					<input class="whatsapp-kit-phone__input" id="${input_id}" type="tel" dir="ltr" inputmode="numeric"
-						autocomplete="tel-national" aria-describedby="${hint_id}"${o.required ? ' required aria-required="true"' : ""}>
+						autocomplete="tel-national" aria-describedby="${hint_id}"${options.required ? ' required aria-required="true"' : ""}>
 					<span class="whatsapp-kit-phone__tick" data-slot="tick" aria-hidden="true">${SVG.tick}</span>
 				</div>
 				<div class="whatsapp-kit-phone__hint" id="${hint_id}" data-slot="msg" aria-live="polite"></div>
 			</div>`);
-		$(o.wrapper).append(this.$root);
+		$(options.wrapper).append(this.$root);
 		this.$box = this.$root.find('[data-slot="box"]');
 		this.$trigger = this.$root.find('[data-slot="trigger"]');
 		this.$input = this.$root.find(".whatsapp-kit-phone__input");
 		this.$tick = this.$root.find('[data-slot="tick"]');
 		this.$hint = this.$root.find('[data-slot="msg"]');
 
-		if (!o.label) this.$root.find(".whatsapp-kit-phone__label").remove();
-		if (!o.show_country) this.$trigger.remove();
-		if (o.tip) this.make_tip();
+		if (!options.label) this.$root.find(".whatsapp-kit-phone__label").remove();
+		if (!options.show_country) this.$trigger.remove();
+		if (options.tip) this.make_tip();
 
 		this.$trigger.on("click", () => this.toggle_popup());
 		this.$trigger.on("keydown", (e) => {
@@ -416,7 +416,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 		this.$tip_pop = $(`<span class="whatsapp-kit-phone__tip-pop" role="tooltip" hidden>${ui.escape(this.opts.tip)}</span>`).appendTo(
 			this.$root.find('[data-slot="labelrow"]')
 		);
-		const open = () => {
+		const show_tip_popup = () => {
 			this.state.tip = true;
 			this.state.tip_seen = true;
 			this.render_tip();
@@ -425,9 +425,9 @@ whatsapp.ui.PhoneField = class PhoneField {
 			this.state.tip = false;
 			this.render_tip();
 		};
-		this.$tip_btn.on("click", () => (this.state.tip ? close() : open()));
-		this.$tip_btn.on("mouseenter", open).on("mouseleave", close);
-		this.$tip_btn.on("focus", open).on("blur", close);
+		this.$tip_btn.on("click", () => (this.state.tip ? close() : show_tip_popup()));
+		this.$tip_btn.on("mouseenter", show_tip_popup).on("mouseleave", close);
+		this.$tip_btn.on("focus", show_tip_popup).on("blur", close);
 		this.render_tip();
 	}
 
@@ -606,55 +606,55 @@ whatsapp.ui.PhoneField = class PhoneField {
 
 	/** `{full, start_ok, valid}` for the digits currently held. */
 	validity() {
-		const c = this.country;
-		const d = this.digits;
-		const full = c.len ? d.length === c.len : d.length >= 6;
+		const country = this.country;
+		const digits = this.digits;
+		const full = country.len ? digits.length === country.len : digits.length >= 6;
 		// the region's own mobile rule, as libphonenumber publishes it and the server sends it: a
 		// landline or a typo in the first digits is refused here, not only when the server
 		// normalises the number. A region without a separate mobile rule is judged by length.
-		const start_ok = !full || !c.mobile || whatsapp.ui.PhoneField.mobile_ok(d, c.mobile);
+		const start_ok = !full || !country.mobile || whatsapp.ui.PhoneField.mobile_ok(digits, country.mobile);
 		return { full, start_ok, valid: full && start_ok };
 	}
 
 	message() {
-		const c = this.country;
+		const country = this.country;
 		const { valid, start_ok } = this.validity();
 		const show_error = (this.state.touched && !this.state.focus && this.digits.length > 0 && !valid) || !!this.opts.invalid;
 		if (show_error) {
 			return {
 				error: true,
 				text: !start_ok
-					? __("Not a mobile number in {0} — check the first digits", [__(c.name)])
-					: c.len
-						? __("The number must be {0} digits after the country code {1}", [c.len, c.dial])
-						: __("The number must be at least 6 digits after the country code {0}", [c.dial]),
+					? __("Not a mobile number in {0} — check the first digits", [__(country.name)])
+					: country.len
+						? __("The number must be {0} digits after the country code {1}", [country.len, country.dial])
+						: __("The number must be at least 6 digits after the country code {0}", [country.dial]),
 			};
 		}
 		if (this.opts.hint) return { error: false, text: this.opts.hint };
 		return {
 			error: false,
-			text: c.len
-				? __("A number WhatsApp works on — {0} digits after the country code {1}", [c.len, c.dial])
-				: __("A number WhatsApp works on in {0} — without the leading zero", [__(c.name)]),
+			text: country.len
+				? __("A number WhatsApp works on — {0} digits after the country code {1}", [country.len, country.dial])
+				: __("A number WhatsApp works on in {0} — without the leading zero", [__(country.name)]),
 		};
 	}
 
 	render() {
 		if (this.control) return this.render_control_hint();
 		if (!this.$root) return this;
-		const c = this.country;
+		const country = this.country;
 		const { valid } = this.validity();
 		const msg = this.message();
-		this.$root.find('[data-slot="iso"]').text(c.iso);
-		this.$root.find('[data-slot="dial"]').text(c.dial);
+		this.$root.find('[data-slot="iso"]').text(country.iso);
+		this.$root.find('[data-slot="dial"]').text(country.dial);
 		this.$root.find('[data-slot="caret"]').toggleClass("whatsapp-kit-phone__caret--open", !!this.state.open);
 		// the placeholder is the region's own sample in national form, masked into its own groups —
 		// `501 234 5678` for Saudi Arabia, which is what the reader is about to type
-		const sample = String(c.example || "").replace(/\D/g, "").slice((c.trunk || "").length);
-		const placeholder = this.opts.placeholder || whatsapp.ui.PhoneField.group_national_digits(sample || "X".repeat(c.len || 9), c);
+		const sample = String(country.example || "").replace(/\D/g, "").slice((country.trunk || "").length);
+		const placeholder = this.opts.placeholder || whatsapp.ui.PhoneField.group_national_digits(sample || "X".repeat(country.len || 9), country);
 		this.$input.attr("placeholder", placeholder);
-		if (this.$input.val() !== whatsapp.ui.PhoneField.group_national_digits(this.digits, c)) {
-			this.$input.val(whatsapp.ui.PhoneField.group_national_digits(this.digits, c));
+		if (this.$input.val() !== whatsapp.ui.PhoneField.group_national_digits(this.digits, country)) {
+			this.$input.val(whatsapp.ui.PhoneField.group_national_digits(this.digits, country));
 		}
 		this.$box
 			.toggleClass("whatsapp-kit-phone__box--focus", !!this.state.focus)
@@ -669,19 +669,19 @@ whatsapp.ui.PhoneField = class PhoneField {
 	/** The hint under a wrapped Frappe control — the shape this component had before the port. */
 	render_control_hint() {
 		const result = this.get_value();
-		const $i = this.$input;
+		const $input = this.$input;
 		this.$hint.removeClass("whatsapp-kit-phone__hint--ok whatsapp-kit-phone__hint--error");
 		if (result.empty) {
-			$i.removeAttr("aria-invalid");
+			$input.removeAttr("aria-invalid");
 			this.$hint.text(__("Numbers without a country code are sent with {0} ({1})", [this.country.dial, __(this.country.name)]));
 			return result;
 		}
 		if (result.valid) {
-			$i.removeAttr("aria-invalid");
+			$input.removeAttr("aria-invalid");
 			this.$hint.addClass("whatsapp-kit-phone__hint--ok").text(__("Will be sent to {0}", [`\u2066${whatsapp.ui.PhoneField.format_display(result.phone_e164, this.country)}\u2069`]));
 			return result;
 		}
-		if (this.touched) $i.attr("aria-invalid", "true");
+		if (this.touched) $input.attr("aria-invalid", "true");
 		this.$hint
 			.addClass(this.touched ? "whatsapp-kit-phone__hint--error" : "")
 			.text(__("Enter a number with its country code, e.g. {0}", [whatsapp.ui.PhoneField.example(this.country)]));
@@ -702,17 +702,17 @@ whatsapp.ui.PhoneField = class PhoneField {
 	 */
 	get_value() {
 		if (this.control) return whatsapp.ui.PhoneField.normalize_phone_number(this.$input.val(), this.country);
-		const c = this.country;
+		const country = this.country;
 		const { valid } = this.validity();
-		const e164 = this.digits ? `+${c.dial}${this.digits}` : "";
+		const e164 = this.digits ? `+${country.dial}${this.digits}` : "";
 		return {
-			phone: whatsapp.ui.PhoneField.group_national_digits(this.digits, c),
+			phone: whatsapp.ui.PhoneField.group_national_digits(this.digits, country),
 			phone_e164: valid ? e164 : null,
 			valid,
 			empty: !this.digits,
-			country: c,
-			iso: c.iso,
-			dial: `+${c.dial}`,
+			country: country,
+			iso: country.iso,
+			dial: `+${country.dial}`,
 			national: this.digits,
 			e164,
 		};

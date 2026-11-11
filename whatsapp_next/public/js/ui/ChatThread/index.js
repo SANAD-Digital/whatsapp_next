@@ -99,11 +99,11 @@ whatsapp.ui.ChatThread = class ChatThread {
 		this.$list.on("click", ".whatsapp-kit-chat__fetch", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			const btn = e.currentTarget;
-			const row = this.rows.find((r) => r.name === btn.dataset.name);
-			if (!row || btn.disabled) return;
-			btn.disabled = true;
-			btn.querySelector(".whatsapp-kit-chat__media-type").textContent = __("Downloading…");
+			const fetch_button = e.currentTarget;
+			const row = this.rows.find((r) => r.name === fetch_button.dataset.name);
+			if (!row || fetch_button.disabled) return;
+			fetch_button.disabled = true;
+			fetch_button.querySelector(".whatsapp-kit-chat__media-type").textContent = __("Downloading…");
 			whatsapp.ui
 				.call("messages.fetch_media", { name: row.name })
 				.then((r) => {
@@ -112,8 +112,8 @@ whatsapp.ui.ChatThread = class ChatThread {
 					this.render();
 				})
 				.catch((err) => {
-					btn.disabled = false;
-					btn.querySelector(".whatsapp-kit-chat__media-type").textContent = __("Download");
+					fetch_button.disabled = false;
+					fetch_button.querySelector(".whatsapp-kit-chat__media-type").textContent = __("Download");
 					whatsapp.ui.Toast.error(err);
 				});
 		});
@@ -138,8 +138,8 @@ whatsapp.ui.ChatThread = class ChatThread {
 	load_more() {
 		if (!this.opts.on_load_more || this._loading) return Promise.resolve();
 		this._loading = true;
-		const $btn = this.$more;
-		$btn.prop("disabled", true).attr("aria-busy", "true").text(__("Loading…"));
+		const $load_more_button = this.$more;
+		$load_more_button.prop("disabled", true).attr("aria-busy", "true").text(__("Loading…"));
 		return Promise.resolve(this.opts.on_load_more())
 			.catch((err) => whatsapp.ui.Toast.error(err))
 			.then(() => {
@@ -477,9 +477,9 @@ whatsapp.ui.ChatThread = class ChatThread {
 				{ label: __("Not answered yet"), icon: "es-line-time", condition: (d) => d.summary && d.summary.not_responded_count, render: ($el, d) => whatsapp.ui.ChatThread.render_poll_waiting($el, d) },
 			],
 			details: [],
-			actions: [{ label: __("Refresh"), icon: "es-line-reload", primary: true, handler: (d, dr) => load(dr) }],
+			actions: [{ label: __("Refresh"), icon: "es-line-reload", primary: true, handler: (d, dr) => load_poll_summary(dr) }],
 		});
-		const load = (dr) =>
+		const load_poll_summary = (dr) =>
 			whatsapp.ui
 				.call("messages.get_poll_summary", { name: row.name }, { silent: true })
 				.then((sm) => {
@@ -501,15 +501,15 @@ whatsapp.ui.ChatThread = class ChatThread {
 				})
 				.catch(() => dr.set_doc(Object.assign({}, base, { summary: { error: true } })));
 		drawer.show();
-		load(drawer);
+		load_poll_summary(drawer);
 	}
 
 	static render_poll_results($el, d) {
-		const sm = d.summary;
-		if (!sm) return $el.html(`<div class="whatsapp-kit-chat__poll-total">${ui.escape(__("Loading…"))}</div>`);
-		if (sm.error) return $el.html(`<div class="whatsapp-kit-chat__poll-total">${ui.escape(__("Results unavailable"))}</div>`);
-		const total = Math.max(1, cint(sm.total_votes));
-		const rows = (sm.counts || [])
+		const summary = d.summary;
+		if (!summary) return $el.html(`<div class="whatsapp-kit-chat__poll-total">${ui.escape(__("Loading…"))}</div>`);
+		if (summary.error) return $el.html(`<div class="whatsapp-kit-chat__poll-total">${ui.escape(__("Results unavailable"))}</div>`);
+		const total = Math.max(1, cint(summary.total_votes));
+		const rows = (summary.counts || [])
 			.map((o) => {
 				const pct = Math.round((cint(o.votes) / total) * 100);
 				return `<li class="whatsapp-kit-chat__poll-option" aria-label="${ui.escape(__("{0}: {1} votes", [o.option, ui.format_integer(o.votes)]))}">
@@ -520,9 +520,9 @@ whatsapp.ui.ChatThread = class ChatThread {
 			})
 			.join("");
 		const notes = [];
-		if (sm.voters_hidden) notes.push(__("The platform subscription does not share who voted, so some votes have no name."));
-		if (sm.errors) notes.push(__("{0} sent polls could not be read; they count as not answered.", [ui.format_integer(sm.errors)]));
-		if (sm.truncated) notes.push(__("Only the first {0} recipients are counted.", [ui.format_integer(sm.recipients)]));
+		if (summary.voters_hidden) notes.push(__("The platform subscription does not share who voted, so some votes have no name."));
+		if (summary.errors) notes.push(__("{0} sent polls could not be read; they count as not answered.", [ui.format_integer(summary.errors)]));
+		if (summary.truncated) notes.push(__("Only the first {0} recipients are counted.", [ui.format_integer(summary.recipients)]));
 		$el.html(
 			`<ul class="whatsapp-kit-chat__poll-options whatsapp-kit-chat__poll-options--drawer">${rows}</ul>` +
 				notes.map((n) => `<p class="whatsapp-kit-chat__poll-note">${ui.escape(n)}</p>`).join("")
@@ -530,17 +530,17 @@ whatsapp.ui.ChatThread = class ChatThread {
 	}
 
 	static render_poll_answers($el, d) {
-		const sm = d.summary;
-		if (!sm || sm.error) return $el.empty();
-		if (!(sm.responses || []).length) {
+		const summary = d.summary;
+		if (!summary || summary.error) return $el.empty();
+		if (!(summary.responses || []).length) {
 			new whatsapp.ui.EmptyState({ wrapper: $el, state: "empty", size: "sm", title: __("No answers yet"), description: __("Answers appear here as recipients vote.") });
 			return;
 		}
-		const when = (ts) => (ts ? frappe.datetime.prettyDate(moment.unix(cint(ts)).format("YYYY-MM-DD HH:mm:ss")) : "");
-		const items = sm.responses
+		const format_vote_time = (ts) => (ts ? frappe.datetime.prettyDate(moment.unix(cint(ts)).format("YYYY-MM-DD HH:mm:ss")) : "");
+		const items = summary.responses
 			.map((r) => {
 				const who = r.recipient || r.voter || ui.phone(r.phone || (r.voter_number ? "+" + r.voter_number : ""));
-				const sub = [r.voter && r.voter !== r.recipient ? r.voter : "", ui.phone(r.phone || (r.voter_number ? "+" + r.voter_number : "")), when(r.voted_at)].filter(Boolean).join(" · ");
+				const sub = [r.voter && r.voter !== r.recipient ? r.voter : "", ui.phone(r.phone || (r.voter_number ? "+" + r.voter_number : "")), format_vote_time(r.voted_at)].filter(Boolean).join(" · ");
 				const chips = (r.options || []).map((o) => `<span class="whatsapp-kit-chat__poll-chip">${ui.escape(o)}</span>`).join("");
 				return `<li class="whatsapp-kit-chat__poll-answer"><div><div class="whatsapp-kit-chat__poll-voter">${ui.escape(who)}</div><div class="whatsapp-kit-chat__poll-voter-meta">${ui.escape(sub)}</div></div><div class="whatsapp-kit-chat__poll-chips">${chips}</div></li>`;
 			})
@@ -549,11 +549,11 @@ whatsapp.ui.ChatThread = class ChatThread {
 	}
 
 	static render_poll_waiting($el, d) {
-		const sm = d.summary;
-		const items = (sm.not_responded || [])
+		const summary = d.summary;
+		const items = (summary.not_responded || [])
 			.map((r) => `<li><span class="whatsapp-kit-chat__poll-voter">${ui.escape(r.recipient || "")}</span><span class="whatsapp-kit-chat__poll-voter-meta">${ui.escape(ui.phone(r.phone || ""))}</span></li>`)
 			.join("");
-		const more = cint(sm.not_responded_count) - (sm.not_responded || []).length;
+		const more = cint(summary.not_responded_count) - (summary.not_responded || []).length;
 		$el.html(`<ul class="whatsapp-kit-chat__poll-voters">${items}</ul>${more > 0 ? `<p class="whatsapp-kit-chat__poll-note">${ui.escape(__("And {0} more", [ui.format_integer(more)]))}</p>` : ""}`);
 	}
 
