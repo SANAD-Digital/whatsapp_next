@@ -73,7 +73,7 @@ body.whatsapp-kit-settings-window-open { overflow: hidden; }
 			padding: 0;
 		}
 
-		&:focus-within { border-color: var(--whatsapp-pri); box-shadow: 0 0 0 3px var(--whatsapp-pri-s); }
+		&:focus-within { border-color: var(--whatsapp-primary); box-shadow: 0 0 0 3px var(--whatsapp-primary-soft); }
 	}
 
 	&__search-icon { display: inline-flex; flex: none; }
@@ -104,13 +104,13 @@ body.whatsapp-kit-settings-window-open { overflow: hidden; }
 		text-align: start;
 		cursor: pointer;
 
-		&:hover { background: var(--whatsapp-bg); color: var(--whatsapp-ink); }
+		&:hover { background: var(--whatsapp-background); color: var(--whatsapp-ink); }
 		&.is-on { background: var(--whatsapp-sunken); color: var(--whatsapp-ink); font-weight: 600; }
-		&:focus-visible { outline: 2px solid var(--whatsapp-pri); outline-offset: -2px; }
+		&:focus-visible { outline: 2px solid var(--whatsapp-primary); outline-offset: -2px; }
 	}
 
 	&__item-icon { display: inline-flex; flex: none; color: var(--whatsapp-ink-3); }
-	&__item.is-on &__item-icon { color: var(--whatsapp-pri-d); }
+	&__item.is-on &__item-icon { color: var(--whatsapp-primary-deep); }
 	&__item-label { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 	&__none { margin: 8px 12px; font-size: 13px; color: var(--whatsapp-ink-4); }
@@ -147,7 +147,7 @@ body.whatsapp-kit-settings-window-open { overflow: hidden; }
 		cursor: pointer;
 
 		&:hover { background: var(--whatsapp-sunken); color: var(--whatsapp-ink); }
-		&:focus-visible { outline: 2px solid var(--whatsapp-pri); outline-offset: 1px; }
+		&:focus-visible { outline: 2px solid var(--whatsapp-primary); outline-offset: 1px; }
 	}
 
 	&__back {
@@ -178,9 +178,9 @@ body.whatsapp-kit-settings-window-open { overflow: hidden; }
 
 	&__head { margin-block-end: 12px; padding-inline-end: 36px; }
 	&__title { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.3; color: var(--whatsapp-ink); }
-	&__desc { margin: 4px 0 0; font-size: 13px; line-height: 1.55; color: var(--whatsapp-ink-3); }
+	&__description { margin: 4px 0 0; font-size: 13px; line-height: 1.55; color: var(--whatsapp-ink-3); }
 
-	&__h {
+	&__heading {
 		margin-block: 12px 2px;
 
 		h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--whatsapp-ink); }
@@ -200,7 +200,7 @@ body.whatsapp-kit-settings-window-open { overflow: hidden; }
 
 	&__row-text { display: flex; flex-direction: column; gap: 2px; min-inline-size: 0; }
 	&__row-title { font-size: 13px; font-weight: 500; color: var(--whatsapp-ink); }
-	&__row-desc { font-size: 12px; line-height: 1.5; color: var(--whatsapp-ink-3); }
+	&__row-description { font-size: 12px; line-height: 1.5; color: var(--whatsapp-ink-3); }
 	&__row-control { flex: none; display: flex; align-items: center; gap: 8px; max-inline-size: 55%; }
 
 	// ---- a phone: the whole screen, the list or one section ------------------------------------------

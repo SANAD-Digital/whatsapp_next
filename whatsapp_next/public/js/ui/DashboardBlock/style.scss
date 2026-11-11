@@ -26,7 +26,7 @@
 		border-radius: var(--radius-full, 999px);
 		background: var(--surface-gray-1);
 	}
-	&__period-btn {
+	&__period-button {
 		border-color: transparent;
 		background: transparent;
 	}
@@ -40,7 +40,7 @@
 	&__card {
 		min-width: 0;
 	}
-	&__card-btn {
+	&__card-button {
 		width: 100%;
 		min-height: 104px; // reserved: label + value + stat slot, no jump between skeleton and value
 		display: flex;
@@ -157,7 +157,7 @@
 		&__period {
 			display: flex;
 		}
-		&__period-btn {
+		&__period-button {
 			flex: 1;
 		}
 		&__refresh {

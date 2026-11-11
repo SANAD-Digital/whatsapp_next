@@ -74,14 +74,14 @@ cards.set_sections(next_sections); // on refresh
 ## CSS hooks
 
 - Wrapper `whatsapp-kit wa` (+ `whatsapp--compact`); inner `whatsapp-cards whatsapp-cards--<density>`.
-- `whatsapp-cards__section`, `__head`, `__title`, `__sub`, `__grid` (`--whatsapp-cards-min`).
+- `whatsapp-cards__section`, `__head`, `__title`, `__subtitle`, `__grid` (`--whatsapp-cards-min`).
 - `whatsapp-card` with `--stat`, `--kpi`, `--panel`, `--alert`, `--html`, tone modifiers
-  `--ok/--warn/--danger/--info/--pri/--muted`, `--click`; custom property `--whatsapp-card-span`.
+  `--ok/--warn/--danger/--info/--primary/--muted`, `--click`; custom property `--whatsapp-card-span`.
 - Elements: `__body`, `__line`, `__dot(--tone)`, `__label`, `__value`, `__note`, `__tile(--tone)`,
-  `__top`, `__figure`, `__foot`, `__spark`, `__phead`, `__ptitle`, `__rows`, `__row(--click)`,
-  `__row-main`, `__av`, `__row-text`, `__row-label`, `__row-sub`, `__row-value`, `__bar`,
-  `__bar-fill(--tone)`, `__pfoot`, `__alert-label`, `__cta`; badges use `whatsapp-badge whatsapp-badge--<tone>`.
-- Tone colours come from `--whatsapp-ok/-s/-i/-sb`-style palette tokens.
+  `__top`, `__figure`, `__foot`, `__spark`, `__panel-head`, `__panel-title`, `__rows`, `__row(--click)`,
+  `__row-main`, `__avatar`, `__row-text`, `__row-label`, `__row-subtitle`, `__row-value`, `__bar`,
+  `__bar-fill(--tone)`, `__panel-foot`, `__alert-label`, `__cta`; badges use `whatsapp-badge whatsapp-badge--<tone>`.
+- Tone colours come from `--whatsapp-success/-s/-i/-sb`-style palette tokens.
 
 ## Notes
 

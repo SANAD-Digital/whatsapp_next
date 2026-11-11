@@ -15,16 +15,16 @@
 	// The five bands of the volume chart. The message's journey is one family in the brand's
 	// Petrol (`brand/BRAND.md`), deepening as it goes: sent, then delivered, then read — the read
 	// band, the one that matters, is Petrol itself. Mixed toward the card's own surface, so dark
-	// mode (where `--whatsapp-pri` is the brand's #5FB8A9) moves them with everything else. Delivered
+	// mode (where `--whatsapp-primary` is the brand's #5FB8A9) moves them with everything else. Delivered
 	// stays above the 3:1 WCAG 1.4.11 asks of a graphic that carries meaning; waiting and failed
 	// keep their status tones.
-	--whatsapp-band-read: var(--whatsapp-pri);
-	--whatsapp-band-delivered: color-mix(in srgb, var(--whatsapp-pri) 62%, var(--whatsapp-surface));
-	--whatsapp-band-sent: color-mix(in srgb, var(--whatsapp-pri) 26%, var(--whatsapp-surface));
+	--whatsapp-band-read: var(--whatsapp-primary);
+	--whatsapp-band-delivered: color-mix(in srgb, var(--whatsapp-primary) 62%, var(--whatsapp-surface));
+	--whatsapp-band-sent: color-mix(in srgb, var(--whatsapp-primary) 26%, var(--whatsapp-surface));
 	--whatsapp-band-waiting: var(--ink-amber-6);
 	--whatsapp-band-failed: var(--ink-red-6);
 
-	--whatsapp-plot-h: 168px;
+	--whatsapp-plot-height: 168px;
 	--whatsapp-gutter: 38px;
 
 	// PageHeader stacks its own parts; the bands need more air between them than a list needs
@@ -75,7 +75,7 @@
 	gap: var(--whatsapp-kit-gap-xs);
 
 	.whatsapp-kit-chip {
-		min-block-size: var(--whatsapp-kit-ctl-h);
+		min-block-size: var(--whatsapp-kit-control-height);
 		padding-inline: var(--whatsapp-kit-gap-md);
 	}
 }
@@ -102,7 +102,7 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
-	.whatsapp-kit-stats__sub {
+	.whatsapp-kit-stats__subtitle {
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
@@ -462,7 +462,7 @@
 	position: absolute;
 	inset-inline: 0;
 	inset-block-start: 0;
-	block-size: var(--whatsapp-plot-h);
+	block-size: var(--whatsapp-plot-height);
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
@@ -495,7 +495,7 @@
 	}
 }
 
-.whatsapp-home__cols {
+.whatsapp-home__columns {
 	list-style: none;
 	margin: 0;
 	padding: 0;
@@ -509,18 +509,18 @@
 	min-inline-size: 0;
 }
 
-.whatsapp-home__col {
+.whatsapp-home__column {
 	flex: 1 1 0;
 	min-inline-size: 0;
 	display: flex;
 	flex-direction: column;
 	gap: var(--whatsapp-kit-gap-xs);
 
-	&-btn {
+	&-button {
 		display: flex;
 		align-items: flex-end;
 		inline-size: 100%;
-		block-size: var(--whatsapp-plot-h);
+		block-size: var(--whatsapp-plot-height);
 		padding: 0 2px;
 		border: 0;
 		border-radius: var(--radius, 6px);
@@ -554,7 +554,7 @@
 	overflow: hidden;
 }
 
-.whatsapp-home__seg {
+.whatsapp-home__segment {
 	display: block;
 	inline-size: 100%;
 	min-block-size: 2px;

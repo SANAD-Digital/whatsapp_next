@@ -20,7 +20,7 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		min-block-size: var(--whatsapp-kit-ctl-h);
+		min-block-size: var(--whatsapp-kit-control-height);
 	}
 
 	// ---- the toolbar: filters at the inline-start, the selection at the inline-end -------------
@@ -47,7 +47,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--whatsapp-kit-gap-sm);
-		min-block-size: var(--whatsapp-kit-ctl-h);
+		min-block-size: var(--whatsapp-kit-control-height);
 		padding-inline: var(--whatsapp-kit-gap-md);
 		border-radius: var(--whatsapp-kit-radius);
 		background: var(--whatsapp-kit-accent-soft);
@@ -117,7 +117,7 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	&__sub {
+	&__subtitle {
 		min-inline-size: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;

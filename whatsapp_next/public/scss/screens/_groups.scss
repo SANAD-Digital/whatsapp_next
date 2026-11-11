@@ -12,7 +12,7 @@
 		gap: 0;
 		padding: 0;
 		overflow: hidden;
-		background: var(--whatsapp-bg);
+		background: var(--whatsapp-background);
 	}
 	.whatsapp-kit-overlay-panel__summary {
 		grid-column: 1 / -1;
@@ -41,28 +41,28 @@
 	}
 }
 
-.whatsapp-group-editor__sum {
+.whatsapp-group-editor__summary {
 	display: flex;
 	flex-direction: column;
 	gap: 7px;
 	padding: 12px;
 	border-radius: 8px;
-	background: var(--whatsapp-bg);
+	background: var(--whatsapp-background);
 	border: 1px solid var(--whatsapp-border);
 	dl { display: flex; flex-direction: column; gap: 7px; margin: 0; }
 }
-.whatsapp-group-editor__sum-title { font-size: 11px; font-weight: 600; color: var(--whatsapp-ink-2); }
-.whatsapp-group-editor__sum-row {
+.whatsapp-group-editor__summary-title { font-size: 11px; font-weight: 600; color: var(--whatsapp-ink-2); }
+.whatsapp-group-editor__summary-row {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	gap: 8px;
 	dt { font-size: 11px; font-weight: 400; color: var(--whatsapp-ink-3); }
 	dd { margin: 0; font-size: 12px; font-weight: 600; color: var(--whatsapp-ink); }
-	&--ok dd { color: var(--whatsapp-ok-i); }
-	&--dg dd { color: var(--whatsapp-dg-i); }
+	&--ok dd { color: var(--whatsapp-success-ink); }
+	&--danger dd { color: var(--whatsapp-danger-ink); }
 	&--total { padding-block-start: 7px; border-block-start: 1px solid var(--whatsapp-border); }
-	&--total dd { color: var(--whatsapp-pri-d); }
+	&--total dd { color: var(--whatsapp-primary-deep); }
 }
 
 .whatsapp-group-editor__members { flex: 1; min-block-size: 0; }
@@ -102,7 +102,7 @@
 	background: var(--whatsapp-surface);
 	border: 1px solid var(--whatsapp-border);
 	.whatsapp-avatar { inline-size: 28px; block-size: 28px; border-radius: 6px; font-size: 11px; }
-	&--new { border-color: var(--whatsapp-ok-sb); background: var(--whatsapp-ok-s); }
+	&--new { border-color: var(--whatsapp-success-soft-border); background: var(--whatsapp-success-soft); }
 	&--removed {
 		background: var(--whatsapp-sunken);
 		.whatsapp-group-editor__row-name, .whatsapp-group-editor__row-phone { text-decoration: line-through; color: var(--whatsapp-ink-4); }
@@ -133,10 +133,10 @@
 	border-block-start: 1px solid var(--whatsapp-border);
 }
 .whatsapp-group-editor__foot-label { font-size: 11px; font-weight: 700; color: var(--whatsapp-ink-2); }
-.whatsapp-group-editor__foot-count { color: var(--whatsapp-pri-d); }
+.whatsapp-group-editor__foot-count { color: var(--whatsapp-primary-deep); }
 .whatsapp-group-editor__foot-note { font-size: 11px; color: var(--whatsapp-ink-4); }
 .whatsapp-group-editor__foot-actions { margin-inline-start: auto; display: flex; gap: 8px; }
-.whatsapp-group-editor__clear { color: var(--whatsapp-dg-i); }
+.whatsapp-group-editor__clear { color: var(--whatsapp-danger-ink); }
 
 @media (max-width: 859px) {
 	// one scrolling column: the fields, then the members; nothing scrolls on its own

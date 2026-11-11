@@ -18,7 +18,7 @@ frappe.provide("whatsapp_next.console");
 		<div class="whatsapp-operations-console__metric${opts.wide ? " whatsapp-operations-console__metric--wide" : ""}${opts.modifier ? ` whatsapp-operations-console__metric--${opts.modifier}` : ""}">
 			<span class="whatsapp-operations-console__label">${ui.escape(label)}</span>
 			<span class="whatsapp-operations-console__value${opts.tone ? ` whatsapp-kit-tone--${opts.tone}` : ""} whatsapp-kit-tabular">${value}</span>
-			<span class="whatsapp-operations-console__sub">${sub || "&nbsp;"}</span>
+			<span class="whatsapp-operations-console__subtitle">${sub || "&nbsp;"}</span>
 		</div>`;
 
 	/**
@@ -34,6 +34,6 @@ frappe.provide("whatsapp_next.console");
 				</span>
 				${verbs}
 			</div>
-			<span class="whatsapp-operations-console__sub">${sub || "&nbsp;"}</span>
+			<span class="whatsapp-operations-console__subtitle">${sub || "&nbsp;"}</span>
 		</div>`;
 })();

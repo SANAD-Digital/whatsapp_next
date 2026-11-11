@@ -47,7 +47,7 @@ Options: `doctype`, `name`, `mode`, `fields[]` (fieldnames or docfield-like obje
 (`label`, `render($el, doc, drawer)`, `condition`), `on_save(values, doc)`, `save_label`,
 `choices[]`, `on_choose(value, choice)`, `on_close`, `width`, `open_link`.
 Methods: `show()`, `hide()`, `refresh()`, `set_doc(doc)`, `get_values()` (form), `destroy()`;
-static `open(opts)`, `current`. Helper classes for sections: `whatsapp-kit-drawer__dl` / `__field`,
+static `open(opts)`, `current`. Helper classes for sections: `whatsapp-kit-drawer__definition-list` / `__field`,
 `whatsapp-kit-drawer__timeline` / `__event`.
 
 ## Live use

@@ -34,7 +34,7 @@ This page covers what all components share. Each component then has its own page
   Run it with `bench --site whatsapp.dev.sanad.digital run-tests --module whatsapp_next.tests.test_kit_portability`.
 
 **One known dependency outside the folder:** the kit's SCSS draws with the product palette
-(`--whatsapp-bg`, `--whatsapp-surface`, `--whatsapp-ink-*`, `--whatsapp-pri*`, `--whatsapp-ok|wn|dg|nf-*`, `--whatsapp-shadow-*`, and
+(`--whatsapp-background`, `--whatsapp-surface`, `--whatsapp-ink-*`, `--whatsapp-primary*`, `--whatsapp-success|wn|dg|nf-*`, `--whatsapp-shadow-*`, and
 others). There are about 1,000 `var(--whatsapp-…)` references and almost none have a fallback. The palette
 is defined in `whatsapp_next/public/scss/_tokens.scss`, not in the kit, so copy that file too (see
 [Copying the kit](#copy-the-kit-into-another-app)).
@@ -167,10 +167,10 @@ Component-level helpers that other components reuse: [Toast](Toast.md) (the only
 
 - **Tokens.** Components use Espresso variables (`--surface-*`, `--ink-*`, `--outline-*`) and
   the kit's own tokens:
-  - `_core/style.scss`: `--whatsapp-kit-gap-*`, `--whatsapp-kit-radius*`, `--whatsapp-kit-target`, `--whatsapp-kit-row-h`,
-    `--whatsapp-kit-ctl-h*`, `--whatsapp-kit-accent*`, `--whatsapp-kit-motion`, and tone classes `.whatsapp-kit-tone--*`;
-  - `_kit/style.scss`: density on `.whatsapp` / `.whatsapp--compact`, which set `--whatsapp-h`, `--whatsapp-fs`,
-    `--whatsapp-px`, `--whatsapp-radius` and `--whatsapp-motion`.
+  - `_core/style.scss`: `--whatsapp-kit-gap-*`, `--whatsapp-kit-radius*`, `--whatsapp-kit-target`, `--whatsapp-kit-row-height`,
+    `--whatsapp-kit-control-height*`, `--whatsapp-kit-accent*`, `--whatsapp-kit-motion`, and tone classes `.whatsapp-kit-tone--*`;
+  - `_kit/style.scss`: density on `.whatsapp` / `.whatsapp--compact`, which set `--whatsapp-control-height`, `--whatsapp-font-size`,
+    `--whatsapp-control-padding-inline`, `--whatsapp-radius` and `--whatsapp-motion`.
 
   Colours come from the `--whatsapp-*` palette.
 - **The bridge.** `public/scss/_tokens.scss` redefines the Espresso variables to palette values,

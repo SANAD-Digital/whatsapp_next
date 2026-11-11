@@ -89,7 +89,7 @@ export function definition_list_html(rows = [], { columns = 2 } = {}) {
 		})
 		.filter(Boolean)
 		.join("");
-	return body ? `<dl class="whatsapp-kit-definition-list whatsapp-kit-definition-list--cols-${columns}">${body}</dl>` : "";
+	return body ? `<dl class="whatsapp-kit-definition-list whatsapp-kit-definition-list--columns-${columns}">${body}</dl>` : "";
 }
 
 /**

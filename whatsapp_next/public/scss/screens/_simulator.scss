@@ -18,7 +18,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 	grid-template-columns: minmax(0, 330px) minmax(0, 1fr);
 	block-size: calc(100dvh - var(--whatsapp-viewport-offset, 8px));
 	min-block-size: 460px;
-	background: var(--whatsapp-bg);
+	background: var(--whatsapp-background);
 	color: var(--whatsapp-ink);
 	overflow: hidden;
 
@@ -55,16 +55,16 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		min-block-size: 28px;
 		padding: 0 12px;
 		border-radius: 999px;
-		border: 1px solid var(--whatsapp-pri);
-		background: var(--whatsapp-pri);
-		color: var(--whatsapp-on-pri);
+		border: 1px solid var(--whatsapp-primary);
+		background: var(--whatsapp-primary);
+		color: var(--whatsapp-on-primary);
 		font-size: 11px;
 		font-weight: 700;
 		cursor: pointer;
 		flex: none;
 		white-space: nowrap;
 
-		&:hover { background: var(--whatsapp-pri-d); border-color: var(--whatsapp-pri-d); }
+		&:hover { background: var(--whatsapp-primary-deep); border-color: var(--whatsapp-primary-deep); }
 	}
 
 	&__search {
@@ -75,7 +75,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		padding: 0 11px;
 		margin: 0;
 		border-radius: 999px;
-		background: var(--whatsapp-bg);
+		background: var(--whatsapp-background);
 		border: 1px solid var(--whatsapp-border);
 		color: var(--whatsapp-ink-4);
 		font-weight: 400;
@@ -94,7 +94,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 			box-shadow: none;
 		}
 
-		&:focus-within { border-color: var(--whatsapp-pri); }
+		&:focus-within { border-color: var(--whatsapp-primary); }
 	}
 
 	&__list {
@@ -116,7 +116,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		border-inline-start: 3px solid transparent;
 
 		&:hover { background: var(--whatsapp-sunken); }
-		&.is-on { background: var(--whatsapp-pri-s); border-inline-start-color: var(--whatsapp-pri); }
+		&.is-on { background: var(--whatsapp-primary-soft); border-inline-start-color: var(--whatsapp-primary); }
 	}
 
 	&__row-main {
@@ -146,8 +146,8 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		font-weight: 700;
 		flex: none;
 
-		&--nf { background: var(--whatsapp-nf-s); color: var(--whatsapp-nf-i); }
-		.is-on & { background: var(--whatsapp-pri); color: var(--whatsapp-on-pri); }
+		&--info { background: var(--whatsapp-info-soft); color: var(--whatsapp-info-ink); }
+		.is-on & { background: var(--whatsapp-primary); color: var(--whatsapp-on-primary); }
 	}
 
 	&__row-text { display: flex; flex-direction: column; gap: 2px; min-inline-size: 0; flex: 1; }
@@ -165,7 +165,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 
 	&__row-at { font-family: $sim-mono; font-size: 11px; color: var(--whatsapp-ink-4); flex: none; }
 
-	&__row-sub {
+	&__row-subtitle {
 		font-size: 11px;
 		color: var(--whatsapp-ink-4);
 		overflow: hidden;
@@ -186,16 +186,16 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 
 		&:hover { border-color: var(--whatsapp-border-2); }
 		&--muted { background: var(--whatsapp-sunken); color: var(--whatsapp-ink-3); }
-		&--nf { background: var(--whatsapp-nf-s); color: var(--whatsapp-nf-i); }
-		&--wn { background: var(--whatsapp-wn-s); color: var(--whatsapp-wn-i); }
-		&--grp { background: var(--whatsapp-pri-s); color: var(--whatsapp-pri-d); }
+		&--info { background: var(--whatsapp-info-soft); color: var(--whatsapp-info-ink); }
+		&--warning { background: var(--whatsapp-warning-soft); color: var(--whatsapp-warning-ink); }
+		&--grp { background: var(--whatsapp-primary-soft); color: var(--whatsapp-primary-deep); }
 	}
 
 	&__none {
 		margin: 14px;
 		padding: 14px;
 		border-radius: 10px;
-		background: var(--whatsapp-bg);
+		background: var(--whatsapp-background);
 		border: 1px dashed var(--whatsapp-border-2);
 		font-size: 12px;
 		color: var(--whatsapp-ink-4);
@@ -213,8 +213,8 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		align-items: center;
 		gap: 10px;
 		padding: 9px 14px;
-		background: var(--whatsapp-pri);
-		color: var(--whatsapp-on-pri);
+		background: var(--whatsapp-primary);
+		color: var(--whatsapp-on-primary);
 		flex-wrap: wrap;
 	}
 
@@ -223,7 +223,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		inline-size: 28px;
 		block-size: 28px;
 		border-radius: 50%;
-		background: color-mix(in srgb, var(--whatsapp-on-pri) 18%, transparent);
+		background: color-mix(in srgb, var(--whatsapp-on-primary) 18%, transparent);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -258,7 +258,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 	}
 
 	&__head-title { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	&__head-sub { font-size: 11px; opacity: 0.88; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__head-subtitle { font-size: 11px; opacity: 0.88; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 	&__device {
 		display: inline-flex;
@@ -268,7 +268,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		padding-inline: 10px 6px;
 		border-radius: 999px;
 		border: 0;
-		background: color-mix(in srgb, var(--whatsapp-on-pri) 16%, transparent);
+		background: color-mix(in srgb, var(--whatsapp-on-primary) 16%, transparent);
 		color: inherit;
 		font-size: 11px;
 		font-weight: 700;
@@ -281,10 +281,10 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		inline-size: 7px;
 		block-size: 7px;
 		border-radius: 50%;
-		background: var(--whatsapp-wn-sb);
+		background: var(--whatsapp-warning-soft-border);
 		flex: none;
 
-		&.is-on { background: var(--whatsapp-ok-sb); }
+		&.is-on { background: var(--whatsapp-success-soft-border); }
 	}
 
 	&__device-select {
@@ -322,7 +322,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		overflow: auto;
 		display: flex;
 		flex-direction: column;
-		background: var(--whatsapp-bg);
+		background: var(--whatsapp-background);
 
 		> .whatsapp-kit-chat { flex: 1; }
 	}
@@ -348,7 +348,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		flex-direction: column;
 		gap: 8px;
 		padding: 10px 12px 12px;
-		background: var(--whatsapp-bg);
+		background: var(--whatsapp-background);
 		border-block-start: 1px solid var(--whatsapp-border);
 	}
 
@@ -374,10 +374,10 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		&:disabled { opacity: 0.55; cursor: not-allowed; }
 		// sending: the button stays at full strength, it is busy rather than unavailable
 		&[aria-busy="true"]:disabled { opacity: 1; cursor: progress; }
-		&.is-sent { background: var(--whatsapp-ok); border-color: var(--whatsapp-ok); color: var(--whatsapp-surface); }
-		&--info { inline-size: 28px; block-size: 28px; margin-inline: 3px; font-size: 16px; background: var(--whatsapp-nf-s); border: 1px solid var(--whatsapp-nf-sb); color: var(--whatsapp-nf-i); }
+		&.is-sent { background: var(--whatsapp-success); border-color: var(--whatsapp-success); color: var(--whatsapp-surface); }
+		&--info { inline-size: 28px; block-size: 28px; margin-inline: 3px; font-size: 16px; background: var(--whatsapp-info-soft); border: 1px solid var(--whatsapp-info-soft-border); color: var(--whatsapp-info-ink); }
 		&--plain { background: var(--whatsapp-surface); border: 1px solid var(--whatsapp-border-2); color: var(--whatsapp-ink-3); }
-		&--pri { background: var(--whatsapp-pri); border: 0; color: var(--whatsapp-on-pri); }
+		&--primary { background: var(--whatsapp-primary); border: 0; color: var(--whatsapp-on-primary); }
 	}
 
 	&__field {
@@ -401,7 +401,7 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		resize: none;
 		outline: none;
 
-		&:focus { border-color: var(--whatsapp-pri); }
+		&:focus { border-color: var(--whatsapp-primary); }
 		&:disabled { background: var(--whatsapp-surface); cursor: not-allowed; }
 	}
 
@@ -416,8 +416,8 @@ $sim-mono: "IBM Plex Mono", ui-monospace, monospace;
 		cursor: pointer;
 	}
 
-	button:focus-visible, select:focus-visible { outline: 2px solid var(--whatsapp-pri); outline-offset: 2px; }
-	.whatsapp-simulator__head button:focus-visible, .whatsapp-simulator__head select:focus-visible { outline-color: var(--whatsapp-on-pri); }
+	button:focus-visible, select:focus-visible { outline: 2px solid var(--whatsapp-primary); outline-offset: 2px; }
+	.whatsapp-simulator__head button:focus-visible, .whatsapp-simulator__head select:focus-visible { outline-color: var(--whatsapp-on-primary); }
 
 	// ---- one pane at a time under 900 px -------------------------------------------------------
 

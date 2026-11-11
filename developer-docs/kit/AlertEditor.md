@@ -104,11 +104,11 @@ new whatsapp.ui.AlertEditor({
 
 - Layer: `.whatsapp-kit.whatsapp-kit-alert-editor-layer` > `.whatsapp-kit-alert-editor-backdrop` + `.whatsapp-kit-alert-editor` (the dialog). `body.whatsapp-kit-alert-editor-open` locks page scroll.
 - Frame: `__head` (`__mark`, `__name`, `__sentence`, `__dirty`, `__enabled`), `__main` > `__build` + `__side`, `__foot` (`__foot-hint.is-warn`), `__loading`.
-- Steps: `__step[data-step=when|what|who|from]`, `__step-head`, `__num.is-done`, `__step-body`.
-- Controls: `__chip.is-on`, `__seg` (on `.whatsapp-segmented`), `__pick`, `__results`, `__opt`, `__picked`, `__vars` / `__var`, `__msg`, `__filter`, `__rf.is-moving`, `__token`, `__n`, `__more`.
-- Recipients: `__whos` > `__who--user|--role|--phone|--report_column` (`frappe.scrub` of the type), `__colpick`.
-- Side: `__phone`, `__bubble` (`.is-ghost`), `__file`, `__facts`, `__note--warn|--danger`, `__status.is-busy`, `__test`, `__hist`, `__recent`, `__next` / `__runs` (`li.is-first`).
-- Buttons: `__btn`, `__btn--pri`, `__btn--danger`, `__icon`, `__icon--sm`, `__link`, `__add`.
+- Steps: `__step[data-step=when|what|who|from]`, `__step-head`, `__number.is-done`, `__step-body`.
+- Controls: `__chip.is-on`, `__segment` (on `.whatsapp-segmented`), `__pick`, `__results`, `__option`, `__picked`, `__variables` / `__variable`, `__message`, `__filter`, `__report-filter.is-moving`, `__token`, `__count`, `__more`.
+- Recipients: `__recipient-chips` > `__who--user|--role|--phone|--report_column` (`frappe.scrub` of the type), `__column-picker`.
+- Side: `__phone`, `__bubble` (`.is-ghost`), `__file`, `__facts`, `__note--warn|--danger`, `__status.is-busy`, `__test`, `__history`, `__recent`, `__next` / `__runs` (`li.is-first`).
+- Buttons: `__button`, `__button--primary`, `__button--danger`, `__icon`, `__icon--sm`, `__link`, `__add`.
 - Breakpoints in `style.scss`: under 960 px the side drops below the steps; under 720 px the window is full screen; honours `prefers-reduced-motion`.
 
 ## Notes

@@ -253,13 +253,13 @@ new whatsapp.ui.ContactPicker({
 - Root `.whatsapp-kit-picker`, `--zone-selected`; `__tabs` / `__tab` (`data-key`, `aria-selected`),
   `__tab-count` (`--on`); `__zones` / `__zone` (`data-zone="pick|selected"`); `__work`,
   `__paste`, `__panes` / `__pane`; tray `__tray`, `__tray-head`, `__badge` (`--empty`),
-  `__tray-sources` / `__srcchip`, `__tray-body`, `__counts`, `__alert`, `__clear`.
+  `__tray-sources` / `__source-chip`, `__tray-body`, `__counts`, `__alert`, `__clear`.
 - Footer: `__footer-info`, `__counter`, `__progress`.
-- Panes: `__head`, `__search` (`--sm`), `__dd` / `__dd-btn` (`--active`) / `__dd-pop` /
-  `__dd-opt`, `__field`, `__filters`, `__results`, `__foot`, `__pager`, `__note`, `__uploader`,
+- Panes: `__head`, `__search` (`--sm`), `__dropdown` / `__dropdown-button` (`--active`) / `__dropdown-popover` /
+  `__dropdown-option`, `__field`, `__filters`, `__results`, `__foot`, `__pager`, `__note`, `__uploader`,
   `__mapping-grid`, `__invalid`, `__manual`, `__fixes` / `__fix` (`--busy`, `--still`).
 - Rows: `__list`, `__all`, `__rows`, `__row` (`--disabled`, `--chosen`, `--danger`, `--ok`,
-  `--warn`, `--flagged`), `__av` (`--on`, `--manual`), `__row-name`, `__row-sub`, `__row-error`,
+  `--warn`, `--flagged`), `__avatar` (`--on`, `--manual`), `__row-name`, `__row-subtitle`, `__row-error`,
   `__row-badge` (`--warn`, `--danger`, `--ok`, `--muted`), `__mark` (`--x`), `__peek`, `__group`,
   `__members*`, `__more`, `__remove`.
 

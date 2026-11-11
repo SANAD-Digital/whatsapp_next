@@ -57,12 +57,12 @@ new whatsapp.ui.RowActions({
 ## CSS hooks
 
 - `.whatsapp-kit-rowactions` is the cell, appended to the row's `.level-right` (or `.list-row` when there is no `.level-right`). It keeps a 28 px slot even when the row has no actions.
-- `.whatsapp-kit-rowactions__btn` carries `aria-expanded` and `data-name`.
+- `.whatsapp-kit-rowactions__button` carries `aria-expanded` and `data-name`.
 - `.whatsapp-kit-rowactions__clickable` is added to rows when `on_row_click` is set.
 - The menu is `.whatsapp-kit-rowactions__menu`. It uses `position: fixed` with the CSS variables `--whatsapp-kit-menu-x` / `--whatsapp-kit-menu-y` and `z-index: 1035`.
 - Menu entries are `.whatsapp-kit-rowactions__item`, with `--danger` for red entries, and `.whatsapp-kit-rowactions__icon`.
 - The stylesheet also widens `.level-right` to 216 px on decorated rows.
-- The stylesheet also carries shared two-line cell helpers: `.whatsapp-kit-cell`, `.whatsapp-kit-cell__sub`, `.whatsapp-kit-cell__muted`, `.whatsapp-kit-cell__error` and `.whatsapp-kit-list--two-line`.
+- The stylesheet also carries shared two-line cell helpers: `.whatsapp-kit-cell`, `.whatsapp-kit-cell__subtitle`, `.whatsapp-kit-cell__muted`, `.whatsapp-kit-cell__error` and `.whatsapp-kit-list--two-line`.
 
 ## Notes
 

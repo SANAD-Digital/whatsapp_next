@@ -4,7 +4,7 @@
 // of its own.
 
 :root {
-	--whatsapp-kit-ent-radius: var(--whatsapp-kit-card-radius);
+	--whatsapp-kit-entity-radius: var(--whatsapp-kit-card-radius);
 	--whatsapp-kit-media-xs: 20px;
 	--whatsapp-kit-media-sm: 24px;
 	--whatsapp-kit-media-md: 28px;
@@ -45,7 +45,7 @@
 	&--xs { inline-size: var(--whatsapp-kit-media-xs); block-size: var(--whatsapp-kit-media-xs); font-size: 9px; border-radius: var(--radius, 4px); }
 	&--sm { inline-size: var(--whatsapp-kit-media-sm); block-size: var(--whatsapp-kit-media-sm); font-size: 11px; }
 	&--lg { inline-size: var(--whatsapp-kit-media-lg); block-size: var(--whatsapp-kit-media-lg); font-size: 14px; }
-	&--xl { inline-size: var(--whatsapp-kit-media-xl); block-size: var(--whatsapp-kit-media-xl); font-size: 24px; border-radius: var(--whatsapp-kit-ent-radius); }
+	&--xl { inline-size: var(--whatsapp-kit-media-xl); block-size: var(--whatsapp-kit-media-xl); font-size: 24px; border-radius: var(--whatsapp-kit-entity-radius); }
 
 	&--image { background: var(--surface-gray-2); }
 	// The filled variant is for dense tables, where the initials are a marker, not a portrait.
@@ -74,7 +74,7 @@
 	&--sm { inline-size: var(--whatsapp-kit-media-md); block-size: var(--whatsapp-kit-media-md); }
 	&--md { inline-size: var(--whatsapp-kit-media-lg); block-size: var(--whatsapp-kit-media-lg); }
 	&--lg { inline-size: var(--whatsapp-kit-media-xl); block-size: var(--whatsapp-kit-media-xl); }
-	&--cover { inline-size: 100%; block-size: auto; aspect-ratio: 4 / 3; border: 0; border-radius: var(--whatsapp-kit-ent-radius); }
+	&--cover { inline-size: 100%; block-size: auto; aspect-ratio: 4 / 3; border: 0; border-radius: var(--whatsapp-kit-entity-radius); }
 }
 
 // File type tile: the extension is the icon (reference image 05).
@@ -90,8 +90,8 @@
 	font-size: 9px;
 	font-weight: 700;
 	letter-spacing: 0.02em;
-	&--lg { inline-size: var(--whatsapp-kit-media-xl); block-size: var(--whatsapp-kit-media-xl); font-size: 14px; border-radius: var(--whatsapp-kit-ent-radius); }
-	&__ext { direction: ltr; }
+	&--lg { inline-size: var(--whatsapp-kit-media-xl); block-size: var(--whatsapp-kit-media-xl); font-size: 14px; border-radius: var(--whatsapp-kit-entity-radius); }
+	&__extension { direction: ltr; }
 }
 
 // ---- small pieces --------------------------------------------------------------------------
@@ -201,7 +201,7 @@
 	gap: 2px;
 	padding: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-md);
 	border: var(--whatsapp-kit-border);
-	border-radius: var(--whatsapp-kit-ent-radius);
+	border-radius: var(--whatsapp-kit-entity-radius);
 	background: var(--surface-base);
 	min-inline-size: 0;
 
@@ -223,7 +223,7 @@
 	margin: 0;
 	padding-inline: var(--whatsapp-kit-gap-md);
 	border: var(--whatsapp-kit-border);
-	border-radius: var(--whatsapp-kit-ent-radius);
+	border-radius: var(--whatsapp-kit-entity-radius);
 	background: var(--surface-base);
 
 	&__row {
@@ -281,8 +281,8 @@
 	display: grid;
 	gap: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-lg);
 	margin: 0;
-	&--cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-	&--cols-1 { grid-template-columns: minmax(0, 1fr); }
+	&--columns-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	&--columns-1 { grid-template-columns: minmax(0, 1fr); }
 
 	&__row {
 		display: flex;
@@ -306,7 +306,7 @@
 		text-align: match-parent;
 	}
 	@media (max-width: 520px) {
-		&--cols-2 { grid-template-columns: minmax(0, 1fr); }
+		&--columns-2 { grid-template-columns: minmax(0, 1fr); }
 	}
 }
 
@@ -321,7 +321,7 @@
 		margin: 0;
 		padding: var(--whatsapp-kit-gap-md);
 		border: var(--whatsapp-kit-border);
-		border-radius: var(--whatsapp-kit-ent-radius);
+		border-radius: var(--whatsapp-kit-entity-radius);
 		background: var(--surface-gray-1);
 		color: var(--ink-gray-7);
 		font-family: var(--font-stack-mono, monospace);
@@ -380,16 +380,16 @@
 
 	&__text { display: flex; flex-direction: column; gap: 1px; min-inline-size: 0; flex: 1; }
 	&__title { font-size: var(--text-sm, 13px); font-weight: 600; color: var(--ink-gray-9); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	&__sub { font-size: var(--text-xs, 11px); color: var(--ink-gray-6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__subtitle { font-size: var(--text-xs, 11px); color: var(--ink-gray-6); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	// A title or a line keeps its own direction for its own text (an English name, a number in an
 	// Arabic card) but lines up with the card, not with that direction: with `start` an English
 	// title sat at the far side of an Arabic card from the Arabic line under it.
-	&__title, &__sub {
+	&__title, &__subtitle {
 		unicode-bidi: isolate;
 		text-align: -webkit-match-parent;
 		text-align: match-parent;
 	}
-	&__desc { font-size: var(--text-sm, 13px); color: var(--ink-gray-6); line-height: 1.7; }
+	&__description { font-size: var(--text-sm, 13px); color: var(--ink-gray-6); line-height: 1.7; }
 	&__trail { display: inline-flex; align-items: center; gap: var(--whatsapp-kit-gap-sm); flex: none; margin-inline-start: auto; }
 	&__value { font-size: var(--text-sm, 13px); font-weight: 700; color: var(--ink-gray-9); white-space: nowrap; }
 	&__value--hero { font-size: var(--text-xl, 20px); }
@@ -406,7 +406,7 @@
 	&--inline {
 		display: inline-flex;
 		gap: var(--whatsapp-kit-gap-xs);
-		.whatsapp-kit-entity__sub { color: var(--ink-gray-5); }
+		.whatsapp-kit-entity__subtitle { color: var(--ink-gray-5); }
 		.whatsapp-kit-entity__title { font-weight: 500; }
 	}
 
@@ -424,7 +424,7 @@
 		inline-size: 100%;
 		padding: var(--whatsapp-kit-gap-sm) var(--whatsapp-kit-gap-md);
 		border: var(--whatsapp-kit-border);
-		border-radius: var(--whatsapp-kit-ent-radius);
+		border-radius: var(--whatsapp-kit-entity-radius);
 		background: var(--surface-base);
 		min-block-size: 44px;
 		&:hover { background: var(--surface-gray-1); }

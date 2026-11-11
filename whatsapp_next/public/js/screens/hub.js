@@ -144,22 +144,22 @@ frappe.provide("whatsapp_next.hub");
 						<h3>${escape_html(e.hub_name)}</h3>
 						<p>${badge(e.state)}${e.local ? ` <span class="whatsapp-hub__muted">${escape_html(__("Here as {0}", [e.local]))}</span>` : ""}</p>
 					</div>
-					<span class="whatsapp-settings__btns">
+					<span class="whatsapp-settings__buttons">
 						${e.local ? `<button type="button" class="btn btn-sm btn-default" data-act="open">${escape_html(__("Open form"))}</button>` : ""}
 						<button type="button" class="btn btn-sm btn-primary" data-act="install">${escape_html(verb)}</button>
 					</span>
 				</header>
-				${e.description ? `<p class="whatsapp-hub__desc">${escape_html(describe(e.description))}</p>` : ""}
+				${e.description ? `<p class="whatsapp-hub__description">${escape_html(describe(e.description))}</p>` : ""}
 				<dl class="whatsapp-hub__facts">
 					<div><dt>${escape_html(__("Type"))}</dt><dd>${escape_html(__(e.hub_type))}</dd></div>
 					<div><dt>${escape_html(__("Last changed"))}</dt><dd>${escape_html(frappe.datetime.str_to_user(e.modified))}</dd></div>
 					<div><dt>${escape_html(__("Checksum", null, "Hub"))}</dt><dd dir="ltr" class="whatsapp-kit-tabular">${escape_html(e.checksum)}</dd></div>
 				</dl>
-				${["Template", "Notification", "Alert"].includes(e.hub_type) ? `<h4 class="whatsapp-hub__sub">${escape_html(__("How it is sent"))}</h4><div class="whatsapp-hub__preview" data-slot="preview"></div>` : ""}
-				${fields ? `<h4 class="whatsapp-hub__sub">${escape_html(__("What it sets up"))}</h4><dl class="whatsapp-hub__fields">${fields}</dl>` : ""}
+				${["Template", "Notification", "Alert"].includes(e.hub_type) ? `<h4 class="whatsapp-hub__subtitle">${escape_html(__("How it is sent"))}</h4><div class="whatsapp-hub__preview" data-slot="preview"></div>` : ""}
+				${fields ? `<h4 class="whatsapp-hub__subtitle">${escape_html(__("What it sets up"))}</h4><dl class="whatsapp-hub__fields">${fields}</dl>` : ""}
 				${
 					e.payload && e.payload.script
-						? `<h4 class="whatsapp-hub__sub">${escape_html(__("The code it runs on this site"))}</h4><pre class="whatsapp-hub__code" dir="ltr">${escape_html(e.payload.script)}</pre>`
+						? `<h4 class="whatsapp-hub__subtitle">${escape_html(__("The code it runs on this site"))}</h4><pre class="whatsapp-hub__code" dir="ltr">${escape_html(e.payload.script)}</pre>`
 						: ""
 				}
 				${

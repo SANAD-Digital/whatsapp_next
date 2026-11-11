@@ -16,7 +16,7 @@ use the Drawer document layout.
 | Option | Type | Default | Meaning |
 |---|---|---|---|
 | `type` | `"modal"` \| `"drawer"` | `"modal"` | Geometry. |
-| `width` | string | — | CSS width (sets `--whatsapp-kit-op-width`). |
+| `width` | string | — | CSS width (sets `--whatsapp-kit-overlay-panel-width`). |
 | `side` | `"start"` \| `"end"` | `"end"` | Drawer edge. |
 | `title` | string | — | Header title (labels the dialog). |
 | `subtitle` | string | — | Secondary line. |
@@ -111,22 +111,22 @@ whatsapp.ui.OverlayPanel.open({
 
 - `<section class="whatsapp-kit whatsapp-kit-overlay-panel wa">` with `--modal` / `--drawer`, `--start` / `--end`,
   `--in` (visible), `whatsapp--compact`; `role="dialog"`, `aria-modal`. Backdrop `.whatsapp-kit-overlay-panel-backdrop`;
-  body class `whatsapp-kit-overlay-panel-open`. Custom properties `--whatsapp-kit-op-width`, `--whatsapp-kit-op-cols`,
-  `--whatsapp-kit-op-rowcols`.
+  body class `whatsapp-kit-overlay-panel-open`. Custom properties `--whatsapp-kit-overlay-panel-width`, `--whatsapp-kit-overlay-panel-columns`,
+  `--whatsapp-kit-overlay-panel-row-columns`.
 - Shell: `__head`, `__heading`, `__title`, `__meta`, `__subtitle(--mono)`, `__badge`, `__dirty`,
   `__close`, `__body`, `__summary`, `__foot`, `__foot-start`, `__foot-end`.
 - Form: `__section(--rows)`, `__rows-title`, `__note--<tone>`, `__grid`, `__field` +
   `__field--<type>` (`data-key`, also `whatsapp-field`, `whatsapp-field--invalid`, `whatsapp-field__label/__hint/__error`),
   `__readonly`, `__html`, `__mono`.
-- List field: `__listfield`, `__table`, `__thead`, `__trow(--empty)`, `__trow-text/-sub/-meta/-tag/-remove`,
-  `__tadd`, `__tadd-input`, `__tadd-type`, `__tadd-btn`, `__tadd-list`, `__tadd-opt`, `__tadd-empty`.
-- Link: `__link(--set)`, `__link-input`, `__link-clear`, `__pop`, `__pop-item`, `__pop-label`,
-  `__pop-note`, `__pop-empty`. Rows field: `__rows`, `__rows-head`, `__rows-body`, `__row`,
+- List field: `__list-field`, `__table`, `__table-head`, `__table-row(--empty)`, `__table-row-text/-sub/-meta/-tag/-remove`,
+  `__table-add`, `__table-add-input`, `__table-add-type`, `__table-add-button`, `__table-add-list`, `__table-add-option`, `__table-add-empty`.
+- Link: `__link(--set)`, `__link-input`, `__link-clear`, `__popover`, `__popover-item`, `__popover-label`,
+  `__popover-note`, `__popover-empty`. Rows field: `__rows`, `__rows-head`, `__rows-body`, `__row`,
   `__cell`, `__row-remove`, `__rows-empty`, `__rows-foot`. Choice: `__choice`, `__search`,
-  `__choices`, `__opt`, `__opt-label`, `__opt-note`, `__empty(--dashed)`.
+  `__choices`, `__option`, `__option-label`, `__option-note`, `__empty(--dashed)`.
 - Detail: `__alert--<tone>`, `__alert-title`, `__alert-line`, `__facts`, `__fact(--<tone>)`,
   `__block`, `__block-head`, `__block-label`, `__block-more`, `__block-body`, `__list`, `__item`,
-  `__item-main`, `__item-text`, `__item-sub`, `__text--<tone>`.
+  `__item-main`, `__item-text`, `__item-subtitle`, `__text--<tone>`.
 
 ## Notes
 

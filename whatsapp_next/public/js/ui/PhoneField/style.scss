@@ -22,7 +22,7 @@
 
 	// ---- the label, and the bubble that explains the field ------------------------------------
 
-	&__labelrow {
+	&__label-row {
 		position: relative;
 		display: flex;
 		align-items: center;
@@ -34,13 +34,13 @@
 		font-weight: 600;
 		color: var(--ink-gray-7);
 	}
-	&__req {
+	&__required {
 		color: var(--ink-red-8);
 	}
 
 	// Unseen it is bigger and wears a ring, because a field whose number is not the obvious one has
 	// to ask to be read once. After the first open it shrinks and goes quiet for good.
-	&__tip-btn {
+	&__tip-button {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -72,7 +72,7 @@
 			outline-offset: 2px;
 		}
 	}
-	&__tip-pop {
+	&__tip-popover {
 		position: absolute;
 		inset-block-start: 22px;
 		inset-inline-start: 0;
@@ -98,7 +98,7 @@
 		display: flex;
 		align-items: stretch;
 		// a field's height, beside the fields around it
-		min-block-size: var(--whatsapp-h, var(--whatsapp-kit-ctl-h, 28px));
+		min-block-size: var(--whatsapp-control-height, var(--whatsapp-kit-control-height, 28px));
 		border: 1px solid var(--outline-gray-2);
 		border-radius: 8px;
 		background: var(--surface-gray-1);
@@ -195,7 +195,7 @@
 
 	// ---- the country list ------------------------------------------------------------------------
 
-	&__pop {
+	&__popover {
 		position: absolute;
 		inset-block-start: 44px;
 		inset-inline-start: 0;
@@ -241,7 +241,7 @@
 		padding: 0;
 		list-style: none;
 	}
-	&__opt {
+	&__option {
 		display: flex;
 		align-items: center;
 		gap: 9px;
@@ -259,21 +259,21 @@
 			background: var(--whatsapp-kit-accent-soft);
 		}
 	}
-	&__opt-iso {
+	&__option-iso {
 		inline-size: 24px;
 		flex: none;
 		font-size: 11px;
 		font-weight: 700;
 		color: var(--ink-gray-6);
 	}
-	&__opt-name {
+	&__option-name {
 		flex: 1;
 		min-inline-size: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	&__opt-dial {
+	&__option-dial {
 		flex: none;
 		font-size: var(--text-sm, 12px);
 		font-family: var(--font-stack-mono, ui-monospace, monospace);
@@ -327,7 +327,7 @@
 }
 
 @media (max-width: 767px) {
-	.whatsapp-kit-phone__pop {
+	.whatsapp-kit-phone__popover {
 		inline-size: 100%;
 	}
 }

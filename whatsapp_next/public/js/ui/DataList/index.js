@@ -445,16 +445,16 @@ whatsapp.ui.DataList = class DataList {
 		const sort_order = this.page_mode ? this.sort_state.order : listview.sort_selector && listview.sort_selector.sort_order;
 		let html = "<thead><tr>";
 		if (this.opts.selectable) {
-			html += `<th scope="col" class="whatsapp-kit-datalist__th whatsapp-kit-datalist__th--check"><input type="checkbox" class="whatsapp-kit-datalist__check-all" aria-label="${ui.escape(__("Select all rows on this page"))}"></th>`;
+			html += `<th scope="col" class="whatsapp-kit-datalist__table-header-cell whatsapp-kit-datalist__table-header-cell--check"><input type="checkbox" class="whatsapp-kit-datalist__check-all" aria-label="${ui.escape(__("Select all rows on this page"))}"></th>`;
 		}
-		if (this.opts.expand) html += `<th scope="col" class="whatsapp-kit-datalist__th whatsapp-kit-datalist__th--expand"><span class="whatsapp-kit-visually-hidden">${ui.escape(__("Details"))}</span></th>`;
+		if (this.opts.expand) html += `<th scope="col" class="whatsapp-kit-datalist__table-header-cell whatsapp-kit-datalist__table-header-cell--expand"><span class="whatsapp-kit-visually-hidden">${ui.escape(__("Details"))}</span></th>`;
 		this.columns.forEach((c) => {
 			const active = c.sortable && sort_by === c.fieldname;
 			const aria = active ? ` aria-sort="${sort_order === "asc" ? "ascending" : "descending"}"` : "";
 			const style = c.width ? ` style="width:${ui.escape(typeof c.width === "number" ? `${c.width}px` : c.width)}"` : "";
 			const icon = active ? ui.icon(sort_order === "asc" ? "sort-ascending" : "sort-descending", "xs") : ui.icon("es-line-sort", "xs");
-			const pinned = this.pinned.includes(c.fieldname) ? " whatsapp-kit-datalist__th--pinned" : "";
-			html += `<th scope="col" class="whatsapp-kit-datalist__th whatsapp-kit-datalist__th--${c.align}${c.hidden_xs ? " whatsapp-kit-datalist__th--hidden-xs" : ""}${active ? " whatsapp-kit-datalist__th--sorted" : ""}${pinned}" data-fieldname="${ui.escape(c.fieldname)}"${aria}${style}>`;
+			const pinned = this.pinned.includes(c.fieldname) ? " whatsapp-kit-datalist__table-header-cell--pinned" : "";
+			html += `<th scope="col" class="whatsapp-kit-datalist__table-header-cell whatsapp-kit-datalist__table-header-cell--${c.align}${c.hidden_xs ? " whatsapp-kit-datalist__table-header-cell--hidden-xs" : ""}${active ? " whatsapp-kit-datalist__table-header-cell--sorted" : ""}${pinned}" data-fieldname="${ui.escape(c.fieldname)}"${aria}${style}>`;
 			if (c.sortable) {
 				const dir = active && sort_order === "asc" ? __("descending") : __("ascending");
 				html += `<button type="button" class="whatsapp-kit-datalist__sort" aria-label="${ui.escape(__("Sort by {0}, {1}", [c.label, dir]))}"><span>${ui.escape(c.label)}</span><span class="whatsapp-kit-datalist__sort-icon" aria-hidden="true">${icon}</span></button>`;
@@ -465,7 +465,7 @@ whatsapp.ui.DataList = class DataList {
 			}
 			html += "</th>";
 		});
-		if (this.opts.row_action) html += `<th scope="col" class="whatsapp-kit-datalist__th whatsapp-kit-datalist__th--action"><span class="whatsapp-kit-datalist__label">${ui.escape(this.opts.row_action.label || __("View"))}</span></th>`;
+		if (this.opts.row_action) html += `<th scope="col" class="whatsapp-kit-datalist__table-header-cell whatsapp-kit-datalist__table-header-cell--action"><span class="whatsapp-kit-datalist__label">${ui.escape(this.opts.row_action.label || __("View"))}</span></th>`;
 		return html + "</tr></thead>";
 	}
 
@@ -580,7 +580,7 @@ whatsapp.ui.DataList = class DataList {
 							<span class="whatsapp-kit-datalist__group-field">${ui.escape(label_col ? label_col.label : __(node.fieldname))}</span>
 							<span class="whatsapp-kit-datalist__group-label">${ui.escape(node.label)}</span>
 							<span class="whatsapp-kit-datalist__group-count whatsapp-kit-tabular">${ui.escape(ui.format_integer(node.count))}</span>
-							${sum_col && node.sum ? `<span class="whatsapp-kit-datalist__group-sum"><span class="whatsapp-kit-datalist__group-sum-label">${ui.escape(__("Total {0}", [sum_col.label]))}</span> <span class="whatsapp-kit-tabular" dir="ltr">${frappe.format(node.sum, sum_col.df, { inline: true })}</span></span>` : ""}
+							${sum_col && node.sum ? `<span class="whatsapp-kit-datalist__group-summary"><span class="whatsapp-kit-datalist__group-summary-label">${ui.escape(__("Total {0}", [sum_col.label]))}</span> <span class="whatsapp-kit-tabular" dir="ltr">${frappe.format(node.sum, sum_col.df, { inline: true })}</span></span>` : ""}
 						</div>
 					</td>
 				</tr>`;
@@ -752,14 +752,14 @@ whatsapp.ui.DataList = class DataList {
 	 */
 	apply_pins() {
 		const $table = this.$table.find("table.whatsapp-kit-datalist");
-		$table.find(".whatsapp-kit-datalist__td--pinned, .whatsapp-kit-datalist__th--pinned").removeClass("whatsapp-kit-datalist__cell--pin-edge").css({ "inset-inline-start": "" });
+		$table.find(".whatsapp-kit-datalist__table-cell--pinned, .whatsapp-kit-datalist__table-header-cell--pinned").removeClass("whatsapp-kit-datalist__cell--pin-edge").css({ "inset-inline-start": "" });
 		if (!this.pinned.length) return;
 		let offset = 0;
-		const $lead = $table.find("thead th.whatsapp-kit-datalist__th--check, thead th.whatsapp-kit-datalist__th--expand");
+		const $lead = $table.find("thead th.whatsapp-kit-datalist__table-header-cell--check, thead th.whatsapp-kit-datalist__table-header-cell--expand");
 		$lead.each((i, el) => (offset += $(el).outerWidth() || 0));
 		const order = this.columns.map((c) => c.fieldname).filter((f) => this.pinned.includes(f));
 		order.forEach((fieldname, i) => {
-			const $cells = $table.find(`[data-fieldname="${CSS.escape(fieldname)}"]`).filter(".whatsapp-kit-datalist__th, .whatsapp-kit-datalist__td");
+			const $cells = $table.find(`[data-fieldname="${CSS.escape(fieldname)}"]`).filter(".whatsapp-kit-datalist__table-header-cell, .whatsapp-kit-datalist__table-cell");
 			$cells.css("inset-inline-start", `${offset}px`);
 			if (i === order.length - 1) $cells.addClass("whatsapp-kit-datalist__cell--pin-edge");
 			offset += ($cells.first().outerWidth() || 0);
@@ -771,23 +771,23 @@ whatsapp.ui.DataList = class DataList {
 		const clickable = !!this.opts.on_row_click;
 		let html = `<tr class="whatsapp-kit-datalist__row${clickable ? " whatsapp-kit-datalist__row--clickable" : ""}" data-name="${name}"${clickable ? ' tabindex="0"' : ""}>`;
 		if (this.opts.selectable) {
-			html += `<td class="whatsapp-kit-datalist__td whatsapp-kit-datalist__td--check"><input type="checkbox" class="list-row-checkbox" data-name="${name}" aria-label="${ui.escape(__("Select {0}", [this.title_of(doc)]))}"></td>`;
+			html += `<td class="whatsapp-kit-datalist__table-cell whatsapp-kit-datalist__table-cell--check"><input type="checkbox" class="list-row-checkbox" data-name="${name}" aria-label="${ui.escape(__("Select {0}", [this.title_of(doc)]))}"></td>`;
 		}
 		if (this.opts.expand) {
 			const open = this.expanded.has(doc.name);
-			html += `<td class="whatsapp-kit-datalist__td whatsapp-kit-datalist__td--expand"><button type="button" class="whatsapp-kit-datalist__toggle" aria-expanded="${open}" aria-label="${ui.escape(__("Details of {0}", [this.title_of(doc)]))}">${ui.icon("es-line-down", "xs")}</button></td>`;
+			html += `<td class="whatsapp-kit-datalist__table-cell whatsapp-kit-datalist__table-cell--expand"><button type="button" class="whatsapp-kit-datalist__toggle" aria-expanded="${open}" aria-label="${ui.escape(__("Details of {0}", [this.title_of(doc)]))}">${ui.icon("es-line-down", "xs")}</button></td>`;
 		}
 		let first = true;
 		this.columns.forEach((c) => {
 			const rails = first && depth ? this.rails(depth) : "";
 			first = false;
-			const pinned = this.pinned.includes(c.fieldname) ? " whatsapp-kit-datalist__td--pinned" : "";
-			const card = this.in_card_layout(c) ? (c === this.card_title_column() || c.type === "status" ? "" : " whatsapp-kit-datalist__td--card-extra") : " whatsapp-kit-datalist__td--off-card";
-			const kind = c.type === "status" ? " whatsapp-kit-datalist__td--status" : "";
-			html += `<td class="whatsapp-kit-datalist__td whatsapp-kit-datalist__td--${c.align}${c.hidden_xs ? " whatsapp-kit-datalist__td--hidden-xs" : ""}${pinned}${card}${kind}" data-fieldname="${ui.escape(c.fieldname)}" data-label="${ui.escape(c.label)}">${rails ? `<div class="whatsapp-kit-datalist__indent">${rails}<div class="whatsapp-kit-datalist__indent-body">${this.cell_html(c, doc)}</div></div>` : this.cell_html(c, doc)}</td>`;
+			const pinned = this.pinned.includes(c.fieldname) ? " whatsapp-kit-datalist__table-cell--pinned" : "";
+			const card = this.in_card_layout(c) ? (c === this.card_title_column() || c.type === "status" ? "" : " whatsapp-kit-datalist__table-cell--card-extra") : " whatsapp-kit-datalist__table-cell--off-card";
+			const kind = c.type === "status" ? " whatsapp-kit-datalist__table-cell--status" : "";
+			html += `<td class="whatsapp-kit-datalist__table-cell whatsapp-kit-datalist__table-cell--${c.align}${c.hidden_xs ? " whatsapp-kit-datalist__table-cell--hidden-xs" : ""}${pinned}${card}${kind}" data-fieldname="${ui.escape(c.fieldname)}" data-label="${ui.escape(c.label)}">${rails ? `<div class="whatsapp-kit-datalist__indent">${rails}<div class="whatsapp-kit-datalist__indent-body">${this.cell_html(c, doc)}</div></div>` : this.cell_html(c, doc)}</td>`;
 		});
 		if (this.opts.row_action) {
-			html += `<td class="whatsapp-kit-datalist__td whatsapp-kit-datalist__td--action"><button type="button" class="whatsapp-kit-datalist__view whatsapp-kit-datalist__action">${ui.escape(this.opts.row_action.label || __("View"))}</button></td>`;
+			html += `<td class="whatsapp-kit-datalist__table-cell whatsapp-kit-datalist__table-cell--action"><button type="button" class="whatsapp-kit-datalist__view whatsapp-kit-datalist__action">${ui.escape(this.opts.row_action.label || __("View"))}</button></td>`;
 		}
 		return html + "</tr>";
 	}
@@ -828,7 +828,7 @@ whatsapp.ui.DataList = class DataList {
 			main = whatsapp.ui.DataList.format_cell_value(c.type, value, c.df, doc, this.display_of(c, doc), this.doctype);
 		}
 		const sub = typeof c.sub === "function" ? c.sub(doc) : "";
-		return `<div class="whatsapp-kit-datalist__cell">${main === "" ? `<span class="whatsapp-kit-datalist__muted" aria-hidden="true">—</span>` : `<div class="whatsapp-kit-datalist__main">${main}</div>`}${sub ? `<div class="whatsapp-kit-datalist__sub" dir="auto">${sub}</div>` : ""}</div>`;
+		return `<div class="whatsapp-kit-datalist__cell">${main === "" ? `<span class="whatsapp-kit-datalist__muted" aria-hidden="true">—</span>` : `<div class="whatsapp-kit-datalist__main">${main}</div>`}${sub ? `<div class="whatsapp-kit-datalist__subtitle" dir="auto">${sub}</div>` : ""}</div>`;
 	}
 
 	/** Typed cell renderers (also usable by callers: `whatsapp.ui.DataList.format("avatar", value, df, doc)`). */
@@ -976,7 +976,7 @@ whatsapp.ui.DataList = class DataList {
 			// the total first and plain, what is on screen after it in the quieter tone
 			$count.html(
 				`<span class="whatsapp-kit-datalist__total">${ui.escape(text)}</span>` +
-					(rows.length ? `<span class="whatsapp-kit-datalist__sep" aria-hidden="true">·</span><span class="whatsapp-kit-datalist__shown">${ui.escape(__("showing {0}", [ui.format_integer(rows.length)]))}</span>` : "")
+					(rows.length ? `<span class="whatsapp-kit-datalist__separator" aria-hidden="true">·</span><span class="whatsapp-kit-datalist__shown">${ui.escape(__("showing {0}", [ui.format_integer(rows.length)]))}</span>` : "")
 			);
 			this.render_group_tools();
 			this.render_page_state();

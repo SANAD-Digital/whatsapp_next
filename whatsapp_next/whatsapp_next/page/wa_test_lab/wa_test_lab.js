@@ -219,7 +219,7 @@
 			const devices = this.devices();
 			this.$setup.html(`
 				<div class="whatsapp-test-lab__setup-grid">
-					<div class="whatsapp-field whatsapp-test-lab__f-device">
+					<div class="whatsapp-field whatsapp-test-lab__field-device">
 						<label class="whatsapp-field__label" for="whatsapp-lab-device">${escape_html(__("Sending device"))}</label>
 						${
 							devices.length
@@ -230,7 +230,7 @@
 						}
 						<span class="whatsapp-field__hint whatsapp-test-lab__device-state"></span>
 					</div>
-					<div class="whatsapp-field whatsapp-test-lab__f-targets">
+					<div class="whatsapp-field whatsapp-test-lab__field-targets">
 						<span class="whatsapp-field__label" id="whatsapp-lab-targets-l">${escape_html(__("Target numbers"))}</span>
 						<div class="whatsapp-test-lab__targets" role="list" aria-labelledby="whatsapp-lab-targets-l"></div>
 						<div class="whatsapp-test-lab__target-add">
@@ -239,12 +239,12 @@
 						</div>
 						<span class="whatsapp-field__hint">${escape_html(__("Your own numbers. Up to {0}; nothing is ever sent to anyone else.", [format_integer(limits.max_targets)]))}</span>
 					</div>
-					<div class="whatsapp-field whatsapp-test-lab__f-cap">
+					<div class="whatsapp-field whatsapp-test-lab__field-cap">
 						<label class="whatsapp-field__label" for="whatsapp-lab-cap">${escape_html(__("Message cap"))}</label>
 						<input id="whatsapp-lab-cap" class="whatsapp-input whatsapp-input--mono" type="number" inputmode="numeric" min="1" max="${limits.cap_max}" value="${this.cap}" />
 						<span class="whatsapp-field__hint">${escape_html(__("The most one run may send (at most {0}).", [format_integer(limits.cap_max)]))}</span>
 					</div>
-					<div class="whatsapp-field whatsapp-test-lab__f-pacing">
+					<div class="whatsapp-field whatsapp-test-lab__field-pacing">
 						<label class="whatsapp-field__label" for="whatsapp-lab-pacing">${escape_html(__("Seconds between messages"))}</label>
 						<input id="whatsapp-lab-pacing" class="whatsapp-input whatsapp-input--mono" type="number" inputmode="numeric" min="${limits.pacing_min}" max="${limits.pacing_max}" value="${this.pacing}" />
 						<span class="whatsapp-field__hint">${escape_html(__("A pause that keeps the number safe (at least {0}).", [format_integer(limits.pacing_min)]))}</span>
@@ -433,7 +433,7 @@
 		health_row(c) {
 			const s = HEALTH[c.status] || HEALTH.warn;
 			return `<li class="whatsapp-test-lab__health-row whatsapp-test-lab__health-row--${c.status}">
-				<span class="whatsapp-test-lab__health-ico whatsapp-test-lab__tone--${s.tone}" aria-hidden="true">${kit.inline_icon_html(s.icon, "sm")}</span>
+				<span class="whatsapp-test-lab__health-icon whatsapp-test-lab__tone--${s.tone}" aria-hidden="true">${kit.inline_icon_html(s.icon, "sm")}</span>
 				<span class="whatsapp-test-lab__health-text">
 					<span class="whatsapp-test-lab__health-title">${escape_html(c.title)}<span class="whatsapp-kit-visually-hidden"> — ${escape_html(s.label())}</span></span>
 					<span class="whatsapp-test-lab__health-detail">${escape_html(c.detail)}</span>
@@ -549,13 +549,13 @@
 			const commands = context.commands || [];
 			const command_rows = commands
 				.map(
-					(cmd, i) => `<li class="whatsapp-test-lab__cmd" data-cmd="${escape_html(cmd.code)}">
+					(cmd, i) => `<li class="whatsapp-test-lab__command" data-cmd="${escape_html(cmd.code)}">
 						<label class="whatsapp-check"><input type="checkbox" data-cmd-pick="${escape_html(cmd.code)}"${i < 8 ? " checked" : ""} /><span class="whatsapp-kit-visually-hidden">${escape_html(__("Try {0}", [cmd.code]))}</span></label>
-						<span class="whatsapp-test-lab__cmd-text">
-							<input class="whatsapp-input whatsapp-test-lab__cmd-input" type="text" dir="auto" data-cmd-text="${escape_html(cmd.code)}" value="${escape_html(cmd.code)}" aria-label="${escape_html(__("The message to try for {0}", [cmd.code]))}" />
-							<span class="whatsapp-test-lab__cmd-note">${escape_html([cmd.title && cmd.title !== cmd.code ? cmd.title : "", cint(cmd.requires_linked_contact) ? __("needs a linked account") : ""].filter(Boolean).join(" · "))}</span>
+						<span class="whatsapp-test-lab__command-text">
+							<input class="whatsapp-input whatsapp-test-lab__command-input" type="text" dir="auto" data-cmd-text="${escape_html(cmd.code)}" value="${escape_html(cmd.code)}" aria-label="${escape_html(__("The message to try for {0}", [cmd.code]))}" />
+							<span class="whatsapp-test-lab__command-note">${escape_html([cmd.title && cmd.title !== cmd.code ? cmd.title : "", cint(cmd.requires_linked_contact) ? __("needs a linked account") : ""].filter(Boolean).join(" · "))}</span>
 						</span>
-						<span class="whatsapp-test-lab__cmd-result" data-cmd-result="${escape_html(cmd.code)}"></span>
+						<span class="whatsapp-test-lab__command-result" data-cmd-result="${escape_html(cmd.code)}"></span>
 					</li>`
 				)
 				.join("");
@@ -566,12 +566,12 @@
 				checked: !!commands.length && !!context.commands_enabled,
 				wide: true,
 				body: commands.length
-					? `<div class="whatsapp-test-lab__cmd-setup">
+					? `<div class="whatsapp-test-lab__command-setup">
 							${this.labelled_field_html(__("Written by"), `<select class="whatsapp-select" data-pick="sender"></select>`, __("A command answers a number with its own account's records."))}
 							<label class="whatsapp-toggle whatsapp-test-lab__real"><input type="checkbox" data-real="command" /><span class="whatsapp-toggle__track"></span><span class="whatsapp-toggle__label">${escape_html(__("Also send the reply to that number for real"))}</span></label>
 						</div>
 						${context.commands_enabled ? "" : `<p class="whatsapp-test-lab__warn">${escape_html(__("Commands are switched off in the settings: a real message would get no reply."))}</p>`}
-						<ul class="whatsapp-test-lab__cmds">${command_rows}</ul>`
+						<ul class="whatsapp-test-lab__commands">${command_rows}</ul>`
 					: render_empty_note(__("No active command yet."), __("Open commands"), ["List", "WhatsApp Command"]),
 			});
 			const phone_card = `<article class="whatsapp-card whatsapp-test-lab__check whatsapp-test-lab__check--wide" data-card="listen">
@@ -1141,10 +1141,10 @@
 			(s.messages || []).forEach((m) => {
 				const times = [m.send_seconds != null ? __("sent in {0}", [seconds(m.send_seconds)]) : null, m.deliver_seconds != null ? __("delivered in {0}", [seconds(m.deliver_seconds)]) : null].filter(Boolean).join(" · ");
 				const reason = m.error_message || m.error_code;
-				lines.push(`<span class="whatsapp-test-lab__msg">
+				lines.push(`<span class="whatsapp-test-lab__message">
 					<button type="button" class="whatsapp-test-lab__link" data-log="${escape_html(m.name)}">${escape_html(__("Message"))} ${phone(m.phone_e164)}</button>
-					<span class="whatsapp-test-lab__msg-status">${escape_html(status_word(m.status))}</span>
-					${times ? `<span class="whatsapp-test-lab__msg-times">${escape_html(times)}</span>` : ""}
+					<span class="whatsapp-test-lab__message-status">${escape_html(status_word(m.status))}</span>
+					${times ? `<span class="whatsapp-test-lab__message-times">${escape_html(times)}</span>` : ""}
 					${reason && ["Failed", "Held", "Cancelled"].includes(m.status) ? `<span class="whatsapp-test-lab__row-error">${escape_html(reason)}</span>` : ""}
 				</span>`);
 			});
@@ -1180,7 +1180,7 @@
 							.map((row) => {
 								const s = row.step || {};
 								return `<li class="whatsapp-test-lab__row whatsapp-test-lab__row--${row.state}">
-									<span class="whatsapp-test-lab__row-n" aria-hidden="true">${format_integer(row.n)}</span>
+									<span class="whatsapp-test-lab__row-count" aria-hidden="true">${format_integer(row.n)}</span>
 									<span class="whatsapp-test-lab__row-main">
 										<span class="whatsapp-test-lab__row-title"><strong dir="auto">${escape_html(row.label)}</strong>${row.target ? ` ${phone(row.target)}` : ""}</span>
 										<span class="whatsapp-test-lab__row-detail">${this.row_detail(row)}</span>
@@ -1216,7 +1216,7 @@
 				.forEach((r) => {
 					const res = (r.step || {}).result || {};
 					const why = res.block_reason ? __(res.block_reason) : res.function_ms ? __("{0} ms", [format_integer(res.function_ms)]) : "";
-					this.$body.find(`[data-cmd-result="${r.code}"]`).html(`${state_badge(r.state)}${why ? `<span class="whatsapp-test-lab__cmd-why">${escape_html(why)}</span>` : ""}`);
+					this.$body.find(`[data-cmd-result="${r.code}"]`).html(`${state_badge(r.state)}${why ? `<span class="whatsapp-test-lab__command-why">${escape_html(why)}</span>` : ""}`);
 				});
 		}
 

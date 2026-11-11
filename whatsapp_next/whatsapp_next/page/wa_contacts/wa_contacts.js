@@ -341,7 +341,7 @@ class ContactsPage {
 							<span class="whatsapp-contacts__names" title="${escape_html(
 								doc.company_name ? __("{0} ({1})", [name, doc.company_name]) : name
 							)}"><span class="whatsapp-contacts__name">${escape_html(name)}</span>${
-						doc.company_name ? `<span class="whatsapp-contacts__sub">${escape_html(doc.company_name)}</span>` : ""
+						doc.company_name ? `<span class="whatsapp-contacts__subtitle">${escape_html(doc.company_name)}</span>` : ""
 					}</span>
 						</span>`;
 				},

@@ -58,7 +58,7 @@ whatsapp.ui.call("home.get_dashboard")
 ## CSS hooks
 
 - `.whatsapp-kit-empty` is the root. Size modifiers are `--sm` and `--md`. State modifiers are `--loading`, `--empty`, `--error` and `--offline`.
-- Inner elements are `.whatsapp-kit-empty__icon`, `__title`, `__desc` and `__actions`. `__actions` is removed when it has no buttons.
+- Inner elements are `.whatsapp-kit-empty__icon`, `__title`, `__description` and `__actions`. `__actions` is removed when it has no buttons.
 - The icon is red in `--error` and amber in `--offline`. The root has a reserved `min-height` (120 px, or 80 px for `sm`) so the panel does not jump.
 
 ## Notes

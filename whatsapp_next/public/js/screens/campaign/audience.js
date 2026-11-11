@@ -69,24 +69,24 @@ frappe.provide("whatsapp_next.campaign");
 			this.$wrapper.html(`
 				<div class="whatsapp-campaign-builder__stack">
 					<div data-block="gate"></div>
-					<section class="whatsapp-campaign-builder__aud">
-						<div class="whatsapp-campaign-builder__aud-head">
+					<section class="whatsapp-campaign-builder__audience">
+						<div class="whatsapp-campaign-builder__audience-head">
 							<span class="whatsapp-campaign-builder__card-icon" aria-hidden="true">${ui.inline_icon_html("users", "sm")}</span>
 							<span class="whatsapp-campaign-builder__card-title">${escape_html(__("Where the recipients come from"))}</span>
-							<span class="whatsapp-campaign-builder__aud-add" data-sources></span>
-							<span class="whatsapp-campaign-builder__aud-tags" aria-live="polite">
-								<span class="whatsapp-badge whatsapp-badge--pri whatsapp-badge--nodot whatsapp-campaign-builder__aud-total">
+							<span class="whatsapp-campaign-builder__audience-add" data-sources></span>
+							<span class="whatsapp-campaign-builder__audience-tags" aria-live="polite">
+								<span class="whatsapp-badge whatsapp-badge--primary whatsapp-badge--no-dot whatsapp-campaign-builder__audience-total">
 									<b class="whatsapp-kit-tabular" data-total>${escape_html(format_integer(cint(this.ctx.doc.total_recipients)))}</b>
 									<span data-total-label>${escape_html(campaign_builder.recipients_text(cint(this.ctx.doc.total_recipients)).replace(/^[\d\u0660-\u0669,.\s\u00a0]+/, ""))}</span>
 								</span>
-								<span class="whatsapp-campaign-builder__aud-parts" data-parts></span>
+								<span class="whatsapp-campaign-builder__audience-parts" data-parts></span>
 							</span>
 						</div>
-						<div class="whatsapp-campaign-builder__aud-bar">
-							<div class="whatsapp-campaign-builder__aud-filters" data-bar></div>
-							<span class="whatsapp-campaign-builder__aud-verbs" data-verbs></span>
+						<div class="whatsapp-campaign-builder__audience-bar">
+							<div class="whatsapp-campaign-builder__audience-filters" data-bar></div>
+							<span class="whatsapp-campaign-builder__audience-verbs" data-verbs></span>
 						</div>
-						<div class="whatsapp-campaign-builder__aud-table" data-table></div>
+						<div class="whatsapp-campaign-builder__audience-table" data-table></div>
 					</section>
 				</div>`);
 			this.$parts = this.$wrapper.find("[data-parts]");
@@ -134,7 +134,7 @@ frappe.provide("whatsapp_next.campaign");
 					usable
 						.map(
 							(e) =>
-								`<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--sm whatsapp-campaign-builder__aud-source" data-source="${escape_html(e.key)}" title="${escape_html(SOURCE[e.key].hint())}"${open ? "" : " disabled"}>${ui.inline_icon_html(SOURCE[e.key].icon, "sm")}<span>${escape_html(e.label || LABEL[e.key]())}</span></button>`
+								`<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--sm whatsapp-campaign-builder__audience-source" data-source="${escape_html(e.key)}" title="${escape_html(SOURCE[e.key].hint())}"${open ? "" : " disabled"}>${ui.inline_icon_html(SOURCE[e.key].icon, "sm")}<span>${escape_html(e.label || LABEL[e.key]())}</span></button>`
 						)
 						.join("")
 				);

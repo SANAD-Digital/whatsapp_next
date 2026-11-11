@@ -59,7 +59,7 @@ export function button_html(o = {}) {
  * @param {{dot?: boolean, icon?: string}} [o]
  */
 export function badge(label, tone = "muted", o = {}) {
-	const cls = `whatsapp-badge whatsapp-badge--${tone}${o.dot === false ? " whatsapp-badge--nodot" : ""}`;
+	const cls = `whatsapp-badge whatsapp-badge--${tone}${o.dot === false ? " whatsapp-badge--no-dot" : ""}`;
 	return `<span class="${cls}">${o.icon ? inline_icon_html(o.icon, "xs") : ""}${escape_html(label)}</span>`;
 }
 
@@ -74,7 +74,7 @@ export function segmented(options, value, o = {}) {
 	const opts = (options || [])
 		.map(
 			(opt) =>
-				`<button type="button" class="whatsapp-segmented__opt" role="radio" aria-checked="${opt.value === value}" tabindex="${opt.value === value ? 0 : -1}" data-value="${escape_html(opt.value)}"${opt.disabled ? " disabled" : ""}>${opt.icon ? inline_icon_html(opt.icon, "xs") : ""}<span>${escape_html(opt.label)}</span></button>`
+				`<button type="button" class="whatsapp-segmented__option" role="radio" aria-checked="${opt.value === value}" tabindex="${opt.value === value ? 0 : -1}" data-value="${escape_html(opt.value)}"${opt.disabled ? " disabled" : ""}>${opt.icon ? inline_icon_html(opt.icon, "xs") : ""}<span>${escape_html(opt.label)}</span></button>`
 		)
 		.join("");
 	return `<div class="whatsapp-segmented" role="radiogroup"${o.label ? ` aria-label="${escape_html(o.label)}"` : ""}>${opts}</div>`;
@@ -109,13 +109,13 @@ export function bind_segmented(el, on_pick) {
 	const $el = $(el);
 	const select_segment_option = ($opt) => {
 		const value = $opt.attr("data-value");
-		$el.find(".whatsapp-segmented__opt").attr("aria-checked", "false").attr("tabindex", "-1");
+		$el.find(".whatsapp-segmented__option").attr("aria-checked", "false").attr("tabindex", "-1");
 		$opt.attr("aria-checked", "true").attr("tabindex", "0");
 		on_pick && on_pick(value);
 	};
-	$el.on("click", ".whatsapp-segmented__opt", (e) => select_segment_option($(e.currentTarget)));
-	$el.on("keydown", ".whatsapp-segmented__opt", (e) => {
-		const items = $el.find(".whatsapp-segmented__opt:not([disabled])").toArray();
+	$el.on("click", ".whatsapp-segmented__option", (e) => select_segment_option($(e.currentTarget)));
+	$el.on("keydown", ".whatsapp-segmented__option", (e) => {
+		const items = $el.find(".whatsapp-segmented__option:not([disabled])").toArray();
 		const i = ui.roving_index(e, items, items.indexOf(e.currentTarget));
 		if (i < 0) return;
 		e.preventDefault();

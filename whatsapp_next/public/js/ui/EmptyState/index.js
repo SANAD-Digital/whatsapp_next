@@ -62,7 +62,7 @@ whatsapp.ui.EmptyState = class EmptyState {
 			<div class="whatsapp-kit-empty whatsapp-kit-empty--${state} whatsapp-kit-empty--${this.opts.size}" ${is_error ? 'role="alert"' : ""}>
 				${base.icon ? `<div class="whatsapp-kit-empty__icon" aria-hidden="true">${ui.icon(base.icon, "lg")}</div>` : ""}
 				<div class="whatsapp-kit-empty__title">${ui.escape(title)}</div>
-				${this.opts.description ? `<div class="whatsapp-kit-empty__desc">${ui.escape(this.opts.description)}</div>` : ""}
+				${this.opts.description ? `<div class="whatsapp-kit-empty__description">${ui.escape(this.opts.description)}</div>` : ""}
 				<div class="whatsapp-kit-empty__actions"></div>
 			</div>`);
 		const $actions = $el.find(".whatsapp-kit-empty__actions");

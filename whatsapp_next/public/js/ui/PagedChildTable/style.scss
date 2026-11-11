@@ -75,7 +75,7 @@
 		td { white-space: nowrap; }
 		tbody tr:last-child td { border-block-end: 0; }
 	}
-	&__th-actions { width: 1%; }
+	&__table-header-cell-actions { width: 1%; }
 	&__row-actions {
 		text-align: end;
 		.btn { min-height: 28px; margin-inline-start: var(--whatsapp-kit-gap-xs); }
@@ -88,17 +88,17 @@
 		color: var(--ink-gray-6);
 		font-size: var(--text-sm, 13px);
 	}
-	&__pager-btns {
+	&__pager-buttons {
 		display: flex;
 		gap: var(--whatsapp-kit-gap-sm);
 		.btn { min-height: var(--whatsapp-kit-target); display: inline-flex; align-items: center; gap: var(--whatsapp-kit-gap-xs); }
 	}
-	[dir="rtl"] &__pager-btns .icon { transform: scaleX(-1); }
+	[dir="rtl"] &__pager-buttons .icon { transform: scaleX(-1); }
 }
 
 @media (max-width: 767px) {
 	.whatsapp-kit-paged-child-table__search, .whatsapp-kit-paged-child-table__select { max-width: 100%; width: 100%; }
-	.whatsapp-kit-paged-child-table__pager-btns .btn span { display: none; }
+	.whatsapp-kit-paged-child-table__pager-buttons .btn span { display: none; }
 }
 
 // A chip carries the number behind it, so the reader chooses knowing how many rows are there.

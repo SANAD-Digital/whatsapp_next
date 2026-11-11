@@ -663,8 +663,8 @@ frappe.provide("whatsapp_next.devices");
 			});
 			$(`
 				<div class="whatsapp-device__bar whatsapp-device__bar--idle" data-slot="bar" role="img" aria-label="${ui.escape(__("Delivery over the last {0} days", [STATS_DAYS]))}">
-					<span class="whatsapp-device__bar-seg whatsapp-device__bar-seg--ok" data-slot="ok"></span>
-					<span class="whatsapp-device__bar-seg whatsapp-device__bar-seg--bad" data-slot="bad"></span>
+					<span class="whatsapp-device__bar-segment whatsapp-device__bar-segment--ok" data-slot="ok"></span>
+					<span class="whatsapp-device__bar-segment whatsapp-device__bar-segment--bad" data-slot="bad"></span>
 				</div>`).appendTo($panel);
 		}
 
@@ -705,7 +705,7 @@ frappe.provide("whatsapp_next.devices");
 				.find('[data-verb="inbound"] [data-slot="count"]')
 				.text(inbound ? ui.format_integer(inbound) : "")
 				.attr("title", inbound ? __("{0} received over the last {1} days", [ui.format_integer(inbound), STATS_DAYS]) : null)
-				.toggleClass("whatsapp-device__btn-count--empty", !inbound);
+				.toggleClass("whatsapp-device__button-count--empty", !inbound);
 		}
 
 		set_stats_error() {
@@ -786,7 +786,7 @@ frappe.provide("whatsapp_next.devices");
 			);
 			const $actions = this.$el.find('[data-slot="actions"]');
 			verbs.forEach((verb) => {
-				$(`<button type="button" class="whatsapp-device__btn${verb.primary ? " whatsapp-device__btn--primary" : ""}" data-verb="${verb.key}" title="${ui.escape(verb.label)}" aria-label="${ui.escape(verb.label)}"><span class="whatsapp-device__btn-icon" aria-hidden="true">${ui.icon(verb.icon, "sm")}</span><span class="whatsapp-device__btn-label">${ui.escape(verb.label)}</span>${verb.count ? '<span class="whatsapp-device__btn-count whatsapp-device__btn-count--empty whatsapp-kit-tabular" data-slot="count"></span>' : ""}</button>`)
+				$(`<button type="button" class="whatsapp-device__button${verb.primary ? " whatsapp-device__button--primary" : ""}" data-verb="${verb.key}" title="${ui.escape(verb.label)}" aria-label="${ui.escape(verb.label)}"><span class="whatsapp-device__button-icon" aria-hidden="true">${ui.icon(verb.icon, "sm")}</span><span class="whatsapp-device__button-label">${ui.escape(verb.label)}</span>${verb.count ? '<span class="whatsapp-device__button-count whatsapp-device__button-count--empty whatsapp-kit-tabular" data-slot="count"></span>' : ""}</button>`)
 					.on("click", verb.handler)
 					.appendTo($actions);
 			});

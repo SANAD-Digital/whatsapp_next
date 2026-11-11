@@ -174,7 +174,7 @@ frappe.provide("whatsapp.ui");
 			if (state.src === "manual") {
 				body = `<div class="whatsapp-kit-bulk-send__manual">
 					<textarea class="whatsapp-kit-bulk-send__numbers" dir="ltr" rows="6" data-f="numbers" data-in="numbers" placeholder="${escape_html(__("One number per line, or separated by commas."))}">${escape_html(state.numbers_text)}</textarea>
-					<button type="button" class="whatsapp-kit-command-editor__btn" data-act="add-numbers">${escape_html(__("Add the numbers"))}</button>
+					<button type="button" class="whatsapp-kit-command-editor__button" data-act="add-numbers">${escape_html(__("Add the numbers"))}</button>
 					<span class="whatsapp-kit-command-editor__note">${escape_html(__("Invalid and repeated numbers are skipped. The added ones show under «Selected»."))}</span>
 				</div>`;
 			} else {
@@ -187,10 +187,10 @@ frappe.provide("whatsapp.ui");
 			return `<section class="whatsapp-kit-bulk-send__list-pane" aria-label="${escape_html(__("Recipients", null, "Bulk Send"))}">
 				<div class="whatsapp-kit-bulk-send__list-head">
 					<span class="whatsapp-kit-bulk-send__list-title">${escape_html(__("Recipients", null, "Bulk Send"))}</span>
-					<span class="whatsapp-kit-bulk-send__segs" role="tablist">${tabs
+					<span class="whatsapp-kit-bulk-send__segments" role="tablist">${tabs
 						.map(
-							(t) => `<button type="button" role="tab" class="whatsapp-kit-bulk-send__seg${state.src === t.key ? " is-sel" : ""}" aria-selected="${state.src === t.key}" data-act="src" data-key="${t.key}">${escape_html(t.label)}${
-								t.count ? `<span class="whatsapp-kit-bulk-send__seg-n" dir="ltr">${whatsapp.ui.format_integer(t.count)}</span>` : ""
+							(t) => `<button type="button" role="tab" class="whatsapp-kit-bulk-send__segment${state.src === t.key ? " is-sel" : ""}" aria-selected="${state.src === t.key}" data-act="src" data-key="${t.key}">${escape_html(t.label)}${
+								t.count ? `<span class="whatsapp-kit-bulk-send__segment-count" dir="ltr">${whatsapp.ui.format_integer(t.count)}</span>` : ""
 							}</button>`
 						)
 						.join("")}</span>
@@ -202,7 +202,7 @@ frappe.provide("whatsapp.ui");
 				</div>
 				<div class="whatsapp-kit-bulk-send__list" data-scroll="list" role="list">${body}</div>
 				<div class="whatsapp-kit-bulk-send__list-foot">
-					<span class="whatsapp-kit-bulk-send__picked">${escape_html(__("Selected", null, "Bulk Send"))} <span dir="ltr" class="whatsapp-kit-bulk-send__picked-n">${whatsapp.ui.format_integer(this.total())}</span></span>
+					<span class="whatsapp-kit-bulk-send__picked">${escape_html(__("Selected", null, "Bulk Send"))} <span dir="ltr" class="whatsapp-kit-bulk-send__picked-count">${whatsapp.ui.format_integer(this.total())}</span></span>
 					${
 						n
 							? `<button type="button" class="whatsapp-kit-bulk-send__show${selected ? " is-on" : ""}" data-act="show-selected">${escape_html(selected ? __("Back to picking") : __("Show the selected"))}</button>
@@ -267,7 +267,7 @@ frappe.provide("whatsapp.ui");
 				<span class="whatsapp-kit-bulk-send__avatar${r.avatar_tone ? ` whatsapp-kit-bulk-send__avatar--${r.avatar_tone}` : ""}${r.on || r.remove ? " is-on" : ""}" aria-hidden="true">${escape_html(r.initials)}</span>
 				<span class="whatsapp-kit-bulk-send__row-text">
 					<span class="whatsapp-kit-bulk-send__row-name">${escape_html(r.name)}</span>
-					<span class="whatsapp-kit-bulk-send__row-sub${r.sub_ltr ? " whatsapp-kit-command-editor__mono" : ""}"${r.sub_ltr ? ' dir="ltr"' : ""}>${escape_html(r.sub || "")}</span>
+					<span class="whatsapp-kit-bulk-send__row-subtitle${r.sub_ltr ? " whatsapp-kit-command-editor__mono" : ""}"${r.sub_ltr ? ' dir="ltr"' : ""}>${escape_html(r.sub || "")}</span>
 				</span>
 				${r.badge ? `<span class="whatsapp-kit-bulk-send__badge whatsapp-kit-bulk-send__badge--${r.badge_tone}">${escape_html(r.badge)}</span>` : ""}
 				<span class="whatsapp-kit-bulk-send__mark${r.remove ? " is-rm" : r.on ? " is-on" : ""}" aria-hidden="true">${r.remove ? "×" : r.on ? "✓" : ""}</span>
@@ -299,14 +299,14 @@ frappe.provide("whatsapp.ui");
 					<span class="whatsapp-kit-bulk-send__head-icon" aria-hidden="true">${SEND_ICON.replace('width="14" height="14"', 'width="18" height="18"')}</span>
 					<span class="whatsapp-kit-bulk-send__head-text">
 						<span class="whatsapp-kit-bulk-send__head-title">${escape_html(head_title)}</span>
-						<span class="whatsapp-kit-bulk-send__head-sub">${escape_html(head_sub)}</span>
+						<span class="whatsapp-kit-bulk-send__head-subtitle">${escape_html(head_sub)}</span>
 					</span>
-					<button type="button" class="whatsapp-kit-bulk-send__settings-btn" data-act="settings" aria-expanded="${state.settings}">${GEAR_ICON}<span>${escape_html(state.settings ? __("Hide the settings") : tpl ? tpl.template_name || tpl.name : __("Send settings"))}</span></button>
+					<button type="button" class="whatsapp-kit-bulk-send__settings-button" data-act="settings" aria-expanded="${state.settings}">${GEAR_ICON}<span>${escape_html(state.settings ? __("Hide the settings") : tpl ? tpl.template_name || tpl.name : __("Send settings"))}</span></button>
 				</div>
 				${state.settings ? this.render_settings() : ""}
 				<div class="whatsapp-kit-bulk-send__who">
 					<span class="whatsapp-kit-command-editor__avatar${first ? "" : " whatsapp-kit-bulk-send__avatar--q"}" aria-hidden="true">${escape_html(first ? whatsapp.ui.initials(first.label || "#") : "?")}</span>
-					<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__card-name">${escape_html(first ? first.label || __("First recipient") : __("No recipient yet", null, "Bulk Send"))}</span><span class="whatsapp-kit-command-editor__opt-sub"${first ? ' dir="auto"' : ""}>${escape_html(first ? first.phone || "" : __("The preview shows once a recipient is picked"))}</span></span>
+					<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__card-name">${escape_html(first ? first.label || __("First recipient") : __("No recipient yet", null, "Bulk Send"))}</span><span class="whatsapp-kit-command-editor__option-subtitle"${first ? ' dir="auto"' : ""}>${escape_html(first ? first.phone || "" : __("The preview shows once a recipient is picked"))}</span></span>
 					<span class="whatsapp-kit-command-editor__tag ${first ? "" : "whatsapp-kit-command-editor__tag--warn"}">${escape_html(first ? __("Preview of the first recipient") : __("No recipients"))}</span>
 				</div>
 				<div class="whatsapp-kit-bulk-send__note"><span class="whatsapp-kit-bulk-send__note-dot" aria-hidden="true"></span><span>${escape_html(__("The send is real — the text is sent as it is to every recipient."))}</span></div>
@@ -328,13 +328,13 @@ frappe.provide("whatsapp.ui");
 						<textarea class="whatsapp-kit-bulk-send__input" rows="2" data-f="body" data-in="body" placeholder="${escape_html(state.attach ? __("Caption (optional)…") : __("Write your message…"))}" aria-label="${escape_html(__("Message"))}">${escape_html(state.body)}</textarea>
 						<button type="button" class="whatsapp-kit-bulk-send__clear-x" data-act="clear-body" aria-label="${escape_html(__("Clear the text"))}" title="${escape_html(__("Clear the text"))}">×</button>
 					</span>
-					<button type="button" class="whatsapp-kit-bulk-send__round whatsapp-kit-bulk-send__round--pri" data-act="send" title="${escape_html(__("Send", null, "Bulk Send"))}" aria-label="${escape_html(__("Send", null, "Bulk Send"))}">${SEND_ICON}</button>
+					<button type="button" class="whatsapp-kit-bulk-send__round whatsapp-kit-bulk-send__round--primary" data-act="send" title="${escape_html(__("Send", null, "Bulk Send"))}" aria-label="${escape_html(__("Send", null, "Bulk Send"))}">${SEND_ICON}</button>
 				</div>
 				<div class="whatsapp-kit-bulk-send__bar">
 					<span class="whatsapp-kit-bulk-send__estimates">
-						<span class="whatsapp-kit-bulk-send__est"><span class="whatsapp-kit-bulk-send__est-k">${escape_html(__("Recipients", null, "Bulk Send"))}</span><span class="whatsapp-kit-bulk-send__est-v whatsapp-kit-command-editor__mono" dir="ltr">${whatsapp.ui.format_integer(total)}</span></span>
-						<span class="whatsapp-kit-bulk-send__est"><span class="whatsapp-kit-bulk-send__est-k">${escape_html(__("Expected time"))}</span><span class="whatsapp-kit-bulk-send__est-v">${escape_html(eta)}</span></span>
-						<span class="whatsapp-kit-bulk-send__est"><span class="whatsapp-kit-bulk-send__est-k">${escape_html(__("From the plan"))}</span><span class="whatsapp-kit-bulk-send__est-v whatsapp-kit-command-editor__mono" dir="ltr">${remaining == null ? "—" : whatsapp.ui.format_integer(Math.min(total, cint(remaining)))}</span></span>
+						<span class="whatsapp-kit-bulk-send__estimate"><span class="whatsapp-kit-bulk-send__estimate-key">${escape_html(__("Recipients", null, "Bulk Send"))}</span><span class="whatsapp-kit-bulk-send__estimate-value whatsapp-kit-command-editor__mono" dir="ltr">${whatsapp.ui.format_integer(total)}</span></span>
+						<span class="whatsapp-kit-bulk-send__estimate"><span class="whatsapp-kit-bulk-send__estimate-key">${escape_html(__("Expected time"))}</span><span class="whatsapp-kit-bulk-send__estimate-value">${escape_html(eta)}</span></span>
+						<span class="whatsapp-kit-bulk-send__estimate"><span class="whatsapp-kit-bulk-send__estimate-key">${escape_html(__("From the plan"))}</span><span class="whatsapp-kit-bulk-send__estimate-value whatsapp-kit-command-editor__mono" dir="ltr">${remaining == null ? "—" : whatsapp.ui.format_integer(Math.min(total, cint(remaining)))}</span></span>
 					</span>
 					<button type="button" class="whatsapp-kit-bulk-send__send${ready ? " is-ready" : ""}" data-act="send">${escape_html(send_label)}</button>
 				</div>
@@ -347,29 +347,29 @@ frappe.provide("whatsapp.ui");
 			const dev = this.device();
 			return `<div class="whatsapp-kit-bulk-send__settings">
 				<div class="whatsapp-kit-bulk-send__form">
-					<label class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Message template"))}</span>
-						<select class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__select whatsapp-kit-bulk-send__ctl" data-ch="template">
+					<label class="whatsapp-kit-bulk-send__labelled-field"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Message template"))}</span>
+						<select class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__select whatsapp-kit-bulk-send__control" data-ch="template">
 							<option value="">${escape_html(__("No template — free text"))}</option>
 							${(context.templates || []).map((t) => `<option value="${escape_html(t.name)}" ${t.name === state.template ? "selected" : ""}>${escape_html((t.template_name || t.name) + (t.category ? ` · ${t.category}` : ""))}</option>`).join("")}
 						</select></label>
-					<label class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Sending device"))}</span>
-						<select class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__select whatsapp-kit-bulk-send__ctl" data-ch="device">
+					<label class="whatsapp-kit-bulk-send__labelled-field"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Sending device"))}</span>
+						<select class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__select whatsapp-kit-bulk-send__control" data-ch="device">
 							${(context.devices || []).map((d) => `<option value="${escape_html(d.name)}" ${d.name === state.device ? "selected" : ""}>${escape_html((d.device_name || d.name) + (d.status === "Connected" ? "" : ` — ${__("not connected")}`))}</option>`).join("")}
 						</select>
 						${dev && dev.status !== "Connected" ? `<span class="whatsapp-kit-command-editor__note whatsapp-kit-command-editor__note--warn">${escape_html(__("The device is not connected."))}</span>` : ""}</label>
-					<label class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Rate (messages/minute)"))}</span>
-						<input type="number" min="1"${context.max_rate ? ` max="${cint(context.max_rate)}"` : ""} class="whatsapp-kit-command-editor__input whatsapp-kit-bulk-send__ctl whatsapp-kit-command-editor__mono" data-f="rate" data-in="rate" value="${escape_html(state.rate || "")}" />
+					<label class="whatsapp-kit-bulk-send__labelled-field"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Rate (messages/minute)"))}</span>
+						<input type="number" min="1"${context.max_rate ? ` max="${cint(context.max_rate)}"` : ""} class="whatsapp-kit-command-editor__input whatsapp-kit-bulk-send__control whatsapp-kit-command-editor__mono" data-f="rate" data-in="rate" value="${escape_html(state.rate || "")}" />
 						<span class="whatsapp-kit-command-editor__note${this.rate_problem() || cint(state.rate) > 30 ? " whatsapp-kit-command-editor__note--warn" : ""}">${escape_html(
 							this.rate_problem() || (cint(state.rate) > 30 ? __("A high rate — raises the risk of a ban.") : __("Recommended 20–30."))
 						)}</span></label>
-					<div class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Timing"))}</span>
-						<span class="whatsapp-kit-bulk-send__segs whatsapp-kit-bulk-send__segs--sm">
-							<button type="button" class="whatsapp-kit-bulk-send__seg${state.when === "now" ? " is-sel" : ""}" data-act="when" data-key="now">${escape_html(__("Now", null, "Bulk Send"))}</button>
-							<button type="button" class="whatsapp-kit-bulk-send__seg${state.when === "later" ? " is-sel" : ""}" data-act="when" data-key="later">${escape_html(__("At a time"))}</button>
+					<div class="whatsapp-kit-bulk-send__labelled-field"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Timing"))}</span>
+						<span class="whatsapp-kit-bulk-send__segments whatsapp-kit-bulk-send__segments--sm">
+							<button type="button" class="whatsapp-kit-bulk-send__segment${state.when === "now" ? " is-sel" : ""}" data-act="when" data-key="now">${escape_html(__("Now", null, "Bulk Send"))}</button>
+							<button type="button" class="whatsapp-kit-bulk-send__segment${state.when === "later" ? " is-sel" : ""}" data-act="when" data-key="later">${escape_html(__("At a time"))}</button>
 						</span></div>
 					${
 						state.when === "later"
-							? `<label class="whatsapp-kit-bulk-send__fld"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Start time"))}</span><input type="datetime-local" class="whatsapp-kit-command-editor__input whatsapp-kit-bulk-send__ctl" data-ch="at" value="${escape_html(state.at)}" /></label>`
+							? `<label class="whatsapp-kit-bulk-send__labelled-field"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Start time"))}</span><input type="datetime-local" class="whatsapp-kit-command-editor__input whatsapp-kit-bulk-send__control" data-ch="at" value="${escape_html(state.at)}" /></label>`
 							: ""
 					}
 				</div>

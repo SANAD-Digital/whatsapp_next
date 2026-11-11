@@ -14,8 +14,8 @@
 //
 // Two notes on why this is not "hard-coded colour". The values live in exactly one place and are
 // referenced everywhere as tokens, which is what that rule was protecting. And the prototype's
-// palette carries something Espresso does not: a readable ink for every tone (`--whatsapp-ok-i`,
-// `--whatsapp-wn-i`, `--whatsapp-dg-i`, `--whatsapp-nf-i`), made to sit on that tone's own soft surface — so a
+// palette carries something Espresso does not: a readable ink for every tone (`--whatsapp-success-ink`,
+// `--whatsapp-warning-ink`, `--whatsapp-danger-ink`, `--whatsapp-info-ink`), made to sit on that tone's own soft surface — so a
 // coloured word on a coloured card passes AA here, which it could not with Espresso's three-step
 // tone inks.
 //
@@ -26,7 +26,7 @@
 // If the palette changes, this file changes, and nothing else does.
 
 :root {
-	--whatsapp-bg: #f5f7f6;
+	--whatsapp-background: #f5f7f6;
 	--whatsapp-surface: #ffffff;
 	--whatsapp-sunken: #eef2f0;
 	--whatsapp-border: #e3e8e6;
@@ -39,11 +39,11 @@
 
 	// primary — the brand's Petrol (9.6:1 on white), Petrol Deep for hover and pressed, Mist for
 	// tinted surfaces, Paper on Petrol
-	--whatsapp-pri: #0b4f4a;
-	--whatsapp-pri-d: #0e3e3a;
-	--whatsapp-pri-s: #dce7e4;
-	--whatsapp-pri-sb: #b9d0ca;
-	--whatsapp-on-pri: #f7f7f4;
+	--whatsapp-primary: #0b4f4a;
+	--whatsapp-primary-deep: #0e3e3a;
+	--whatsapp-primary-soft: #dce7e4;
+	--whatsapp-primary-soft-border: #b9d0ca;
+	--whatsapp-on-primary: #f7f7f4;
 	// WhatsApp's own read-tick blue (ChatThread's ✓✓ once read)
 	--whatsapp-read: #53bdeb;
 	// the one accent: Apricot — one prominent element per screen, never small text
@@ -70,25 +70,25 @@
 	--whatsapp-status-scrim: rgb(0 0 0 / 45%);
 
 	// ok · warn · danger · info — each with a strong, a soft surface, a readable ink and a border
-	--whatsapp-ok: #1a8b50;
-	--whatsapp-ok-s: #e1f3e8;
-	--whatsapp-ok-i: #16713f;
-	--whatsapp-ok-sb: #b9e2ca;
+	--whatsapp-success: #1a8b50;
+	--whatsapp-success-soft: #e1f3e8;
+	--whatsapp-success-ink: #16713f;
+	--whatsapp-success-soft-border: #b9e2ca;
 
-	--whatsapp-wn: #9a6c14;
-	--whatsapp-wn-s: #fbf1dc;
-	--whatsapp-wn-i: #8a6116;
-	--whatsapp-wn-sb: #efdcb4;
+	--whatsapp-warning: #9a6c14;
+	--whatsapp-warning-soft: #fbf1dc;
+	--whatsapp-warning-ink: #8a6116;
+	--whatsapp-warning-soft-border: #efdcb4;
 
-	--whatsapp-dg: #c9524b;
-	--whatsapp-dg-s: #fbeae8;
-	--whatsapp-dg-i: #a93a34;
-	--whatsapp-dg-sb: #f2cbc7;
+	--whatsapp-danger: #c9524b;
+	--whatsapp-danger-soft: #fbeae8;
+	--whatsapp-danger-ink: #a93a34;
+	--whatsapp-danger-soft-border: #f2cbc7;
 
-	--whatsapp-nf: #2568af;
-	--whatsapp-nf-s: #e4effa;
-	--whatsapp-nf-i: #1f5a97;
-	--whatsapp-nf-sb: #c2dcf2;
+	--whatsapp-info: #2568af;
+	--whatsapp-info-soft: #e4effa;
+	--whatsapp-info-ink: #1f5a97;
+	--whatsapp-info-soft-border: #c2dcf2;
 
 	--whatsapp-shadow-sm: 0 1px 2px rgb(23 33 31 / 6%);
 	--whatsapp-shadow-md: 0 8px 20px -14px rgb(23 33 31 / 40%);
@@ -96,7 +96,7 @@
 }
 
 [data-theme="dark"] {
-	--whatsapp-bg: #0e1513;
+	--whatsapp-background: #0e1513;
 	--whatsapp-surface: #14201d;
 	--whatsapp-sunken: #1b2926;
 	--whatsapp-border: #243531;
@@ -108,34 +108,34 @@
 	--whatsapp-ink-4: #7e8f8b;
 
 	// the brand's Petrol for dark grounds, Ink on it
-	--whatsapp-pri: #5fb8a9;
-	--whatsapp-pri-d: #7fcbbe;
-	--whatsapp-pri-s: #13302d;
-	--whatsapp-pri-sb: #1f4a45;
-	--whatsapp-on-pri: #0e1a1a;
+	--whatsapp-primary: #5fb8a9;
+	--whatsapp-primary-deep: #7fcbbe;
+	--whatsapp-primary-soft: #13302d;
+	--whatsapp-primary-soft-border: #1f4a45;
+	--whatsapp-on-primary: #0e1a1a;
 	--whatsapp-chart-palette: #5fb8a9, #2f7d73, #ff8a4c, #9aaaa6, #d9736c, #4a8ed0;
 	--whatsapp-read: #53bdeb;
 	--whatsapp-canvas: #0e1513;
 
-	--whatsapp-ok: #35a96a;
-	--whatsapp-ok-s: #132a1e;
-	--whatsapp-ok-i: #7fd3a3;
-	--whatsapp-ok-sb: #1e4531;
+	--whatsapp-success: #35a96a;
+	--whatsapp-success-soft: #132a1e;
+	--whatsapp-success-ink: #7fd3a3;
+	--whatsapp-success-soft-border: #1e4531;
 
-	--whatsapp-wn: #c79436;
-	--whatsapp-wn-s: #2c2314;
-	--whatsapp-wn-i: #e0bc78;
-	--whatsapp-wn-sb: #4a3a1b;
+	--whatsapp-warning: #c79436;
+	--whatsapp-warning-soft: #2c2314;
+	--whatsapp-warning-ink: #e0bc78;
+	--whatsapp-warning-soft-border: #4a3a1b;
 
-	--whatsapp-dg: #d9736c;
-	--whatsapp-dg-s: #2e1a19;
-	--whatsapp-dg-i: #f0a8a2;
-	--whatsapp-dg-sb: #4c2a28;
+	--whatsapp-danger: #d9736c;
+	--whatsapp-danger-soft: #2e1a19;
+	--whatsapp-danger-ink: #f0a8a2;
+	--whatsapp-danger-soft-border: #4c2a28;
 
-	--whatsapp-nf: #4a8ed0;
-	--whatsapp-nf-s: #141f2c;
-	--whatsapp-nf-i: #9cc5ec;
-	--whatsapp-nf-sb: #25405c;
+	--whatsapp-info: #4a8ed0;
+	--whatsapp-info-soft: #141f2c;
+	--whatsapp-info-ink: #9cc5ec;
+	--whatsapp-info-soft-border: #25405c;
 
 	--whatsapp-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
 	--whatsapp-shadow-md: 0 8px 20px -14px rgb(0 0 0 / 60%);
@@ -180,7 +180,7 @@ $wa-bridge: ();
 	--surface-base: var(--whatsapp-surface);
 	--surface-elevation-1: var(--whatsapp-surface);
 	--surface-elevation-2: var(--whatsapp-surface);
-	--surface-gray-1: var(--whatsapp-bg);
+	--surface-gray-1: var(--whatsapp-background);
 	--surface-gray-2: var(--whatsapp-sunken);
 	--surface-gray-3: var(--whatsapp-border);
 	--surface-gray-4: var(--whatsapp-border-2);
@@ -201,54 +201,54 @@ $wa-bridge: ();
 	--ink-gray-6: var(--whatsapp-ink-3);
 	--ink-gray-5: var(--whatsapp-ink-4);
 	--ink-gray-4: var(--whatsapp-ink-4);
-	--ink-white: var(--whatsapp-on-pri);
+	--ink-white: var(--whatsapp-on-primary);
 	--text-color: var(--whatsapp-ink);
 
 	// tones — strong / soft / readable ink / border, the four the prototype gives each of them
-	--surface-green-7: var(--whatsapp-ok);
-	--surface-green-2: var(--whatsapp-ok-sb);
-	--surface-green-1: var(--whatsapp-ok-s);
-	--outline-green-3: var(--whatsapp-ok-sb);
-	--ink-green-7: var(--whatsapp-ok-i);
-	--ink-green-8: var(--whatsapp-ok-i); // Espresso's text on a soft fill
+	--surface-green-7: var(--whatsapp-success);
+	--surface-green-2: var(--whatsapp-success-soft-border);
+	--surface-green-1: var(--whatsapp-success-soft);
+	--outline-green-3: var(--whatsapp-success-soft-border);
+	--ink-green-7: var(--whatsapp-success-ink);
+	--ink-green-8: var(--whatsapp-success-ink); // Espresso's text on a soft fill
 	--ink-green-1: var(--whatsapp-on-tone); // and on a solid one
-	--ink-green-6: var(--whatsapp-ok);
+	--ink-green-6: var(--whatsapp-success);
 
-	--surface-blue-8: var(--whatsapp-nf);
-	--surface-blue-7: var(--whatsapp-nf); // Espresso's solid fill
-	--surface-blue-2: var(--whatsapp-nf-sb);
-	--surface-blue-1: var(--whatsapp-nf-s);
-	--outline-blue-3: var(--whatsapp-nf-sb);
-	--ink-blue-7: var(--whatsapp-nf-i);
-	--ink-blue-8: var(--whatsapp-nf-i); // Espresso's text on a soft fill
+	--surface-blue-8: var(--whatsapp-info);
+	--surface-blue-7: var(--whatsapp-info); // Espresso's solid fill
+	--surface-blue-2: var(--whatsapp-info-soft-border);
+	--surface-blue-1: var(--whatsapp-info-soft);
+	--outline-blue-3: var(--whatsapp-info-soft-border);
+	--ink-blue-7: var(--whatsapp-info-ink);
+	--ink-blue-8: var(--whatsapp-info-ink); // Espresso's text on a soft fill
 	--ink-blue-1: var(--whatsapp-on-tone); // and on a solid one
-	--ink-blue-6: var(--whatsapp-nf);
+	--ink-blue-6: var(--whatsapp-info);
 
-	--surface-amber-7: var(--whatsapp-wn);
-	--surface-amber-2: var(--whatsapp-wn-sb);
-	--surface-amber-1: var(--whatsapp-wn-s);
-	--outline-amber-3: var(--whatsapp-wn-sb);
-	--ink-amber-7: var(--whatsapp-wn-i);
-	--ink-amber-8: var(--whatsapp-wn-i); // Espresso's text on a soft fill
+	--surface-amber-7: var(--whatsapp-warning);
+	--surface-amber-2: var(--whatsapp-warning-soft-border);
+	--surface-amber-1: var(--whatsapp-warning-soft);
+	--outline-amber-3: var(--whatsapp-warning-soft-border);
+	--ink-amber-7: var(--whatsapp-warning-ink);
+	--ink-amber-8: var(--whatsapp-warning-ink); // Espresso's text on a soft fill
 	--ink-amber-1: var(--whatsapp-on-tone); // and on a solid one
-	--ink-amber-6: var(--whatsapp-wn);
+	--ink-amber-6: var(--whatsapp-warning);
 
-	--surface-red-7: var(--whatsapp-dg);
-	--surface-red-2: var(--whatsapp-dg-sb);
-	--surface-red-1: var(--whatsapp-dg-s);
-	--outline-red-3: var(--whatsapp-dg-sb);
-	--outline-red-4: var(--whatsapp-dg);
-	--ink-red-8: var(--whatsapp-dg-i);
-	--ink-red-7: var(--whatsapp-dg-i);
+	--surface-red-7: var(--whatsapp-danger);
+	--surface-red-2: var(--whatsapp-danger-soft-border);
+	--surface-red-1: var(--whatsapp-danger-soft);
+	--outline-red-3: var(--whatsapp-danger-soft-border);
+	--outline-red-4: var(--whatsapp-danger);
+	--ink-red-8: var(--whatsapp-danger-ink);
+	--ink-red-7: var(--whatsapp-danger-ink);
 	--ink-red-1: var(--whatsapp-on-tone);
-	--ink-red-6: var(--whatsapp-dg);
+	--ink-red-6: var(--whatsapp-danger);
 
 	// the kit's accent — the five properties every active, selected and primary state reads
-	--whatsapp-kit-accent: var(--whatsapp-pri);
-	--whatsapp-kit-accent-ink: var(--whatsapp-pri-d);
-	--whatsapp-kit-accent-soft: var(--whatsapp-pri-s);
-	--whatsapp-kit-accent-outline: var(--whatsapp-pri-sb);
-	--whatsapp-kit-accent-on: var(--whatsapp-on-pri);
+	--whatsapp-kit-accent: var(--whatsapp-primary);
+	--whatsapp-kit-accent-ink: var(--whatsapp-primary-deep);
+	--whatsapp-kit-accent-soft: var(--whatsapp-primary-soft);
+	--whatsapp-kit-accent-outline: var(--whatsapp-primary-soft-border);
+	--whatsapp-kit-accent-on: var(--whatsapp-on-primary);
 
 	// shadows
 	--shadow-sm: var(--whatsapp-shadow-sm);
@@ -259,9 +259,9 @@ $wa-bridge: ();
 
 	// the page itself, and the controls Desk draws inside our screens
 	--control-bg: var(--whatsapp-sunken);
-	--awesomplete-hover-bg: var(--whatsapp-pri-s);
+	--awesomplete-hover-bg: var(--whatsapp-primary-soft);
 	// Desk's primary button (a form's Save, a dialog's verb) — Desk reads `--btn-primary`
-	--btn-primary: var(--whatsapp-pri);
+	--btn-primary: var(--whatsapp-primary);
 	--fg-color: var(--whatsapp-surface);
 	// the page background stays Frappe's own (owner, 2026-09-27): no --bg-color here
 	--card-bg: var(--whatsapp-surface);

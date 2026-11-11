@@ -5,7 +5,7 @@
 // section with a back button — the way a phone's settings do.
 //
 // The window draws nothing inside a section. The host renders each one through `render(key,
-// $pane)`; the content classes below (`whatsapp-kit-settings-window__h`, `whatsapp-kit-settings-window__row`, …) give it the same rows
+// $pane)`; the content classes below (`whatsapp-kit-settings-window__heading`, `whatsapp-kit-settings-window__row`, …) give it the same rows
 // and headings Claude's settings use, so a host that wants that look only writes markup.
 //
 // Nothing here knows the host app: every colour is a token, every label goes through `__()`.
@@ -211,20 +211,20 @@ whatsapp.ui.SettingsWindow = class SettingsWindow {
 	/** The pane's title and the line under it. */
 	static head_html(title, description) {
 		return `<header class="whatsapp-kit-settings-window__head"><h2 class="whatsapp-kit-settings-window__title">${escape_html(title)}</h2>${
-			description ? `<p class="whatsapp-kit-settings-window__desc">${escape_html(description)}</p>` : ""
+			description ? `<p class="whatsapp-kit-settings-window__description">${escape_html(description)}</p>` : ""
 		}</header>`;
 	}
 
 	/** A section heading inside the pane (Claude's "General", "Code appearance"). */
 	static section_html(title, note) {
-		return `<div class="whatsapp-kit-settings-window__h"><h3>${escape_html(title)}</h3>${note ? `<p>${escape_html(note)}</p>` : ""}</div>`;
+		return `<div class="whatsapp-kit-settings-window__heading"><h3>${escape_html(title)}</h3>${note ? `<p>${escape_html(note)}</p>` : ""}</div>`;
 	}
 
 	/** One setting row: title and description on the start side, `control_html` on the end side. */
 	static row_html(title, description, control_html = "") {
 		return `<div class="whatsapp-kit-settings-window__row"><div class="whatsapp-kit-settings-window__row-text"><span class="whatsapp-kit-settings-window__row-title">${escape_html(
 			title
-		)}</span>${description ? `<span class="whatsapp-kit-settings-window__row-desc">${escape_html(description)}</span>` : ""}</div><div class="whatsapp-kit-settings-window__row-control">${control_html}</div></div>`;
+		)}</span>${description ? `<span class="whatsapp-kit-settings-window__row-description">${escape_html(description)}</span>` : ""}</div><div class="whatsapp-kit-settings-window__row-control">${control_html}</div></div>`;
 	}
 };
 

@@ -53,7 +53,7 @@ whatsapp.ui.PageHeader = class PageHeader {
 				<div class="whatsapp-kit-page-header__row">
 					<div class="whatsapp-kit-page-header__text">
 						${options.title && !this.desk_page ? `<h2 class="whatsapp-kit-page-header__title">${ui.escape(options.title)}</h2>` : ""}
-						${options.description && !this.desk_page ? `<p class="whatsapp-kit-page-header__desc">${ui.escape(options.description)}</p>` : ""}
+						${options.description && !this.desk_page ? `<p class="whatsapp-kit-page-header__description">${ui.escape(options.description)}</p>` : ""}
 					</div>
 					<div class="whatsapp-kit-page-header__actions"></div>
 				</div>

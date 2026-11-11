@@ -53,7 +53,7 @@ $wa-tones: "blue" "cyan" "amber" "red" "green";
 		color: var(--ink-gray-9);
 		background: none; // a tone class must colour the ink here, never the surface
 	}
-	&__sub {
+	&__subtitle {
 		font-size: var(--text-xs, 11px);
 		color: var(--ink-gray-6);
 		line-height: 1.5;

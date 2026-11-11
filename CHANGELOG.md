@@ -40,6 +40,15 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
   500 (`d` → `draft`, `lv` → `listview`, `n` → `selected_count` …). The test helpers too
   (`_clean` → `_delete_test_campaigns`, `_t` → `_minutes_after_start` …). Parameters other code
   passes by name (`at=`, the API's `idx`) keep their names.
+- **Class elements and CSS variables spelled out** (same rule). Inside the class names:
+  `__dd-btn` → `__dropdown-button`, `__td` / `__th` → `__table-cell` / `__table-header-cell`,
+  `__pv` → `__preview`, `__frow` → `__failure-row`, `--pri` → `--primary` …; the palette
+  `--whatsapp-pri` / `-dg` / `-wn` / `-nf` / `-ok` → `--whatsapp-primary` / `-danger` / `-warning` /
+  `-info` / `-success`, with `-s` / `-d` / `-sb` / `-i` → `-soft` / `-deep` / `-soft-border` /
+  `-ink`; `--whatsapp-h` / `fs` / `px` → `--whatsapp-control-height` / `font-size` /
+  `control-padding-inline`; `--whatsapp-kit-ctl-h` → `--whatsapp-kit-control-height` … The compiled
+  stylesheet and script are the same character for character once the names are mapped back. The
+  size scale (`xs` / `sm` / `md` / `lg` / `xl`) and terms such as `kpi`, `qr`, `ltr` keep their names.
 - **Removed** the unused kit components `MetaDialog` and `TreeGroupBy`, and dead code across the
   app; duplicated code folded into shared helpers (see TECH_DEBT.md, 2026-11-11).
 

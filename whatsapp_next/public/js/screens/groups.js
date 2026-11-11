@@ -268,14 +268,14 @@ frappe.provide("whatsapp_next.groups");
 					.appendTo(this.$foot_actions);
 			}
 			if (!this.$summary) return;
-			const render_summary_row = (k, v, cls = "") => `<div class="whatsapp-group-editor__sum-row ${cls}"><dt>${escape_html(k)}</dt><dd class="whatsapp-kit-tabular" dir="ltr">${escape_html(v)}</dd></div>`;
-			this.$summary.html(`<section class="whatsapp-group-editor__sum" aria-label="${escape_html(__("Members summary"))}">
-				<span class="whatsapp-group-editor__sum-title">${escape_html(__("Members summary"))}</span>
+			const render_summary_row = (k, v, cls = "") => `<div class="whatsapp-group-editor__summary-row ${cls}"><dt>${escape_html(k)}</dt><dd class="whatsapp-kit-tabular" dir="ltr">${escape_html(v)}</dd></div>`;
+			this.$summary.html(`<section class="whatsapp-group-editor__summary" aria-label="${escape_html(__("Members summary"))}">
+				<span class="whatsapp-group-editor__summary-title">${escape_html(__("Members summary"))}</span>
 				<dl>
 					${this.editing ? render_summary_row(__("Members now"), format_integer(this.total)) : ""}
-					${render_summary_row(__("To add"), adding ? `+${format_integer(adding)}` : "0", adding ? "whatsapp-group-editor__sum-row--ok" : "")}
-					${this.editing ? render_summary_row(__("To remove"), removing ? `−${format_integer(removing)}` : "0", removing ? "whatsapp-group-editor__sum-row--dg" : "") : ""}
-					${render_summary_row(__("After saving"), format_integer(after), "whatsapp-group-editor__sum-row--total")}
+					${render_summary_row(__("To add"), adding ? `+${format_integer(adding)}` : "0", adding ? "whatsapp-group-editor__summary-row--ok" : "")}
+					${this.editing ? render_summary_row(__("To remove"), removing ? `−${format_integer(removing)}` : "0", removing ? "whatsapp-group-editor__summary-row--danger" : "") : ""}
+					${render_summary_row(__("After saving"), format_integer(after), "whatsapp-group-editor__summary-row--total")}
 				</dl>
 			</section>`);
 		}

@@ -79,14 +79,14 @@ new whatsapp.ui.BulkSend({
 - Layer/modal: `.whatsapp-kit.whatsapp-kit-command-editor-layer.whatsapp-kit-bulk-send-layer` > `.whatsapp-kit-command-editor-backdrop` +
   `.whatsapp-kit-command-editor.whatsapp-kit-bulk-send[role=dialog]`; `body.whatsapp-kit-command-editor-open` while any layer is open.
 - Header: `.whatsapp-kit-bulk-send__top`, `__title`, `__subtitle`; body `__body`, `__grid`.
-- Recipients: `__list-pane`, `__list-head`, `__segs` (`--sm`), `__seg` (`.is-sel`), `__seg-n`,
-  `__search`, `__list`, `__row` (`.is-on`), `__avatar` (`--nf`, `--q`, `.is-on`), `__row-name`,
-  `__row-sub`, `__badge--{wn|muted|pri|nf}`, `__mark` (`.is-on`, `.is-rm`), `__none`, `__manual`,
+- Recipients: `__list-pane`, `__list-head`, `__segments` (`--sm`), `__segment` (`.is-sel`), `__segment-count`,
+  `__search`, `__list`, `__row` (`.is-on`), `__avatar` (`--info`, `--q`, `.is-on`), `__row-name`,
+  `__row-subtitle`, `__badge--{warning|muted|primary|info}`, `__mark` (`.is-on`, `.is-rm`), `__none`, `__manual`,
   `__numbers`, `__list-foot`, `__picked`, `__show` (`.is-on`), `__clear`.
-- Message: `__main`, `__head`, `__head-title`, `__head-sub`, `__settings-btn`, `__settings`,
-  `__form`, `__fld`, `__ctl`, `__who`, `__note`, `__thread`, `__day`, `__bubble`, `__bubble-file`,
-  `__bubble-at`, `__empty`, `__attach`, `__composer`, `__round` (`--plain`, `--pri`), `__input`,
-  `__clear-x`, `__bar`, `__est`, `__send` (`.is-ready`).
+- Message: `__main`, `__head`, `__head-title`, `__head-subtitle`, `__settings-button`, `__settings`,
+  `__form`, `__labelled-field`, `__control`, `__who`, `__note`, `__thread`, `__day`, `__bubble`, `__bubble-file`,
+  `__bubble-at`, `__empty`, `__attach`, `__composer`, `__round` (`--plain`, `--primary`), `__input`,
+  `__clear-x`, `__bar`, `__estimate`, `__send` (`.is-ready`).
 
 ## Notes
 

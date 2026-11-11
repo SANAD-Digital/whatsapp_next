@@ -50,7 +50,7 @@
 		max-width: 260px;
 		min-width: 0;
 		.frappe-control { margin: 0; }
-		.form-control { min-height: var(--whatsapp-kit-ctl-h); font-size: var(--text-sm, 13px); }
+		.form-control { min-height: var(--whatsapp-kit-control-height); font-size: var(--text-sm, 13px); }
 	}
 	&__field--range { flex-basis: 200px; }
 	&__field--search {
@@ -61,9 +61,9 @@
 		min-width: 120px;
 		max-width: 320px;
 		.whatsapp-kit-filterbar__search {
-			min-height: var(--whatsapp-kit-ctl-h);
+			min-height: var(--whatsapp-kit-control-height);
 			padding-inline-start: 34px;
-			padding-inline-end: var(--whatsapp-kit-cell-px);
+			padding-inline-end: var(--whatsapp-kit-cell-padding-inline);
 			border-radius: var(--whatsapp-kit-radius);
 			border: 1px solid var(--outline-gray-2);
 			font-size: var(--text-sm, 13px);
@@ -87,15 +87,15 @@
 	}
 
 	// dropdown filter button — accent-tinted, 600 weight, when the filter is set
-	&__dd { position: relative; flex: none; }
-	&__btn {
+	&__dropdown { position: relative; flex: none; }
+	&__button {
 		appearance: none;
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		min-height: var(--whatsapp-kit-ctl-h);
+		min-height: var(--whatsapp-kit-control-height);
 		max-width: 220px;
-		padding-inline-start: var(--whatsapp-kit-cell-px);
+		padding-inline-start: var(--whatsapp-kit-cell-padding-inline);
 		padding-inline-end: 10px;
 		border: 1px solid var(--outline-gray-2);
 		border-radius: var(--whatsapp-kit-radius);
@@ -112,11 +112,11 @@
 			border-color: var(--whatsapp-kit-accent-outline);
 			color: var(--whatsapp-kit-accent-ink);
 			font-weight: 600;
-			.whatsapp-kit-filterbar__btn-label { color: var(--whatsapp-kit-accent-ink); }
+			.whatsapp-kit-filterbar__button-label { color: var(--whatsapp-kit-accent-ink); }
 		}
 	}
-	&__btn-label { color: var(--ink-gray-6); }
-	&__btn-value {
+	&__button-label { color: var(--ink-gray-6); }
+	&__button-value {
 		font-weight: 600;
 		max-width: 150px;
 		overflow: hidden;
@@ -130,10 +130,10 @@
 		transition: transform var(--whatsapp-kit-motion);
 		.icon { width: 11px; height: 11px; }
 	}
-	&__btn[aria-expanded="true"] &__chevron { transform: rotate(180deg); }
+	&__button[aria-expanded="true"] &__chevron { transform: rotate(180deg); }
 
 	// anchored popover
-	&__pop {
+	&__popover {
 		position: absolute;
 		inset-block-start: calc(100% + 5px);
 		inset-inline-start: 0;
@@ -151,7 +151,7 @@
 		box-shadow: var(--shadow-lg);
 		animation: whatsapp-kit-pop var(--whatsapp-kit-motion) ease-out;
 	}
-	&__pop-head {
+	&__popover-head {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -159,16 +159,16 @@
 		padding-inline: var(--whatsapp-kit-gap-sm);
 		padding-block: var(--whatsapp-kit-gap-xs);
 	}
-	&__pop-title { font-size: var(--text-tiny, 11px); font-weight: 600; color: var(--ink-gray-6); text-transform: uppercase; letter-spacing: 0.02em; }
-	&__pop-close { min-width: 22px; min-height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
-	&__pop-search { margin-block-end: 2px; min-height: var(--whatsapp-kit-ctl-h-sm); border-radius: var(--whatsapp-kit-radius); }
-	&__pop-list { flex: 1 1 auto; min-height: 32px; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
-	&__pop-empty { padding: var(--whatsapp-kit-gap-sm); color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
-	&__opt {
+	&__popover-title { font-size: var(--text-tiny, 11px); font-weight: 600; color: var(--ink-gray-6); text-transform: uppercase; letter-spacing: 0.02em; }
+	&__popover-close { min-width: 22px; min-height: 22px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+	&__popover-search { margin-block-end: 2px; min-height: var(--whatsapp-kit-control-height-sm); border-radius: var(--whatsapp-kit-radius); }
+	&__popover-list { flex: 1 1 auto; min-height: 32px; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
+	&__popover-empty { padding: var(--whatsapp-kit-gap-sm); color: var(--ink-gray-6); font-size: var(--text-sm, 13px); }
+	&__option {
 		display: flex;
 		align-items: center;
 		gap: 9px;
-		min-height: var(--whatsapp-kit-ctl-h);
+		min-height: var(--whatsapp-kit-control-height);
 		margin: 0;
 		padding-inline: 9px;
 		border-radius: var(--whatsapp-kit-radius);
@@ -180,9 +180,9 @@
 		&:has(input:checked) { color: var(--ink-gray-9); font-weight: 600; }
 		input { width: 15px; height: 15px; margin: 0; flex: none; accent-color: var(--whatsapp-kit-accent); }
 	}
-	&__opt-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	&__pop-foot { display: flex; justify-content: flex-end; padding-block-start: 3px; border-block-start: var(--whatsapp-kit-border); }
-	&__pop-clear { padding-inline: var(--whatsapp-kit-gap-sm); }
+	&__option-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__popover-foot { display: flex; justify-content: flex-end; padding-block-start: 3px; border-block-start: var(--whatsapp-kit-border); }
+	&__popover-clear { padding-inline: var(--whatsapp-kit-gap-sm); }
 
 	// the inline-end cluster: period · Group by · Export · Desk's Filter popover
 	&__end {
@@ -215,10 +215,10 @@
 		overflow: hidden;
 		background: var(--surface-base);
 	}
-	&__period-btn {
+	&__period-button {
 		appearance: none;
-		min-height: var(--whatsapp-kit-ctl-h);
-		padding-inline: var(--whatsapp-kit-cell-px);
+		min-height: var(--whatsapp-kit-control-height);
+		padding-inline: var(--whatsapp-kit-cell-padding-inline);
 		border: 0;
 		border-radius: 0;
 		border-inline-start: 1px solid var(--outline-gray-2);
@@ -245,7 +245,7 @@
 	&__more-icon { display: inline-flex; color: var(--ink-gray-6); }
 	// on a tight row the word goes and the icon carries it, so "More" itself never causes the wrap
 	@media (max-width: 900px) {
-		&__more &__btn-label { display: none; }
+		&__more &__button-label { display: none; }
 	}
 	&__more-count {
 		display: inline-flex;
@@ -261,11 +261,11 @@
 		font-weight: 700;
 		&:empty { display: none; }
 	}
-	&__pop--more { width: 280px; padding: 0; }
-	&__pop--more &__pop-head { padding: 8px 10px; border-block-end: var(--whatsapp-kit-border); }
+	&__popover--more { width: 280px; padding: 0; }
+	&__popover--more &__popover-head { padding: 8px 10px; border-block-end: var(--whatsapp-kit-border); }
 	&__more-list { padding: 2px 10px 8px; max-height: 60vh; overflow: auto; }
 	// the menu is a menu, not a column of bare icons: every row names what it does
-	&__pop--amore {
+	&__popover--actions-overflow {
 		width: max-content;
 		min-width: 180px;
 		padding: 5px;
@@ -273,7 +273,7 @@
 		flex-direction: column;
 		gap: 2px;
 	}
-	&__amore-item {
+	&__actions-overflow-item {
 		display: flex;
 		align-items: center;
 		gap: var(--whatsapp-kit-gap-sm);
@@ -282,7 +282,7 @@
 		cursor: pointer;
 		&:hover { background: var(--surface-gray-2); }
 	}
-	&__amore-label {
+	&__actions-overflow-label {
 		flex: 1;
 		min-width: 0;
 		overflow: hidden;
@@ -291,25 +291,25 @@
 		font-size: var(--text-xs, 12px);
 		color: var(--ink-gray-7);
 	}
-	&__pop--amore &__dd { flex: none; }
-	&__pop--amore &__action--group &__levels { display: none; }
+	&__popover--actions-overflow &__dropdown { flex: none; }
+	&__popover--actions-overflow &__action--group &__levels { display: none; }
 
 	// a filter the bar has no button for (one arriving in the URL): visible and removable
 	&__extra { display: contents; }
-	&__chipfilter {
+	&__chip-filter {
 		display: inline-flex;
 		align-items: center;
 		gap: 5px;
-		min-height: var(--whatsapp-kit-ctl-h);
+		min-height: var(--whatsapp-kit-control-height);
 		max-width: 240px;
-		padding-inline: var(--whatsapp-kit-cell-px) 6px;
+		padding-inline: var(--whatsapp-kit-cell-padding-inline) 6px;
 		border: 1px solid var(--whatsapp-kit-accent-outline);
 		border-radius: var(--whatsapp-kit-radius);
 		font-size: var(--text-sm, 13px);
 	}
-	&__chipfilter-label { color: var(--ink-gray-6); flex: none; }
-	&__chipfilter-value { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	&__chipfilter-x {
+	&__chip-filter-label { color: var(--ink-gray-6); flex: none; }
+	&__chip-filter-value { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	&__chip-filter-x {
 		appearance: none;
 		border: 0;
 		background: transparent;
@@ -333,7 +333,7 @@
 		background: transparent;
 		cursor: pointer;
 		padding-inline: 10px;
-		min-height: var(--whatsapp-kit-ctl-h-sm);
+		min-height: var(--whatsapp-kit-control-height-sm);
 		border-radius: var(--whatsapp-kit-radius);
 		color: var(--ink-red-8);
 		font-size: var(--text-xs, 12px);
@@ -346,18 +346,18 @@
 	&__actions { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--whatsapp-kit-gap-sm); flex: none; }
 	&__action--icon,
 	&__action--group {
-		width: var(--whatsapp-kit-ctl-h);
+		width: var(--whatsapp-kit-control-height);
 		padding-inline: 0;
 		justify-content: center;
 		.icon { width: 15px; height: 15px; }
 	}
-	&__action--group .whatsapp-kit-filterbar__btn-value { display: none; }
+	&__action--group .whatsapp-kit-filterbar__button-value { display: none; }
 	&__action,
 	&__native .btn {
 		display: inline-flex;
 		align-items: center;
 		gap: 7px;
-		min-height: var(--whatsapp-kit-ctl-h);
+		min-height: var(--whatsapp-kit-control-height);
 		padding-inline: 10px;
 		border: 1px solid var(--outline-gray-2);
 		border-radius: var(--whatsapp-kit-radius);
@@ -377,14 +377,14 @@
 		.btn-group { gap: 0; }
 		.btn-group > .btn:first-child { border-start-end-radius: 0; border-end-end-radius: 0; }
 		.btn-group > .btn:last-child { border-start-start-radius: 0; border-end-start-radius: 0; border-inline-start-width: 0; }
-		.filter-button { width: var(--whatsapp-kit-ctl-h); padding-inline: 0; justify-content: center; }
+		.filter-button { width: var(--whatsapp-kit-control-height); padding-inline: 0; justify-content: center; }
 		.filter-button .button-icon { margin: 0; }
 		// "Clear filters" in this same row already does this
 		.filter-x-button { display: none; }
 		.btn-group > .btn:first-child { border-radius: var(--whatsapp-kit-radius); }
 		.sort-selector { display: none; }
 	}
-	&__groupby:empty { display: none; }
+	&__group-by:empty { display: none; }
 
 	// grouping levels popover
 	&__action--active {
@@ -401,19 +401,19 @@
 		font-weight: 600;
 		&:empty { display: none; }
 	}
-	&__dd--group .whatsapp-kit-filterbar__action--group:has(.whatsapp-kit-filterbar__levels:not(:empty)) {
+	&__dropdown--group .whatsapp-kit-filterbar__action--group:has(.whatsapp-kit-filterbar__levels:not(:empty)) {
 		width: auto;
 		padding-inline: 10px;
 		gap: 7px;
 	}
-	&__pop--levels { min-width: 250px; overflow: auto; }
-	&__pop--columns { min-width: 280px; }
+	&__popover--levels { min-width: 250px; overflow: auto; }
+	&__popover--columns { min-width: 280px; }
 	&__columns-list { max-height: 260px; }
 	&__column {
 		display: flex;
 		align-items: center;
 		gap: var(--whatsapp-kit-gap-xs);
-		.whatsapp-kit-filterbar__opt { flex: 1; min-width: 0; }
+		.whatsapp-kit-filterbar__option { flex: 1; min-width: 0; }
 		.whatsapp-kit-filterbar__level-move { color: var(--ink-gray-6); &:hover { background: var(--surface-gray-2); } }
 	}
 	&__levels-clear {
@@ -433,7 +433,7 @@
 		align-items: center;
 		gap: var(--whatsapp-kit-gap-sm);
 		width: 100%;
-		min-height: var(--whatsapp-kit-ctl-h);
+		min-height: var(--whatsapp-kit-control-height);
 		padding-inline: 9px;
 		border: 0;
 		border-radius: var(--whatsapp-kit-radius);
@@ -502,7 +502,7 @@
 	}
 
 	// inline × on a filter that is set (prototype)
-	&__btn-clear {
+	&__button-clear {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -523,7 +523,7 @@
 	to { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-	.whatsapp-kit-filterbar__pop { animation: none; }
+	.whatsapp-kit-filterbar__popover { animation: none; }
 }
 
 // Under 768 px the prototype collapses the dropdowns behind one "Filters" button; until that
@@ -545,19 +545,19 @@
 		&__main { flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; }
 		&__field, &__field--range { flex: 1 0 100%; max-width: none; }
 		&__field--search { flex: 1 1 auto; min-width: 80px; max-width: none; }
-		&__dd:not(&__dd--group) { display: none; }
+		&__dropdown:not(&__dropdown--group) { display: none; }
 		&__clear { display: none; }
 		// the Filters button takes only what it needs so the period never clips a label
 		&__mobile-toggle { display: inline-flex; flex: 0 0 auto; gap: 6px; }
 		&__end { margin-inline-start: 0; flex: none; flex-wrap: nowrap; gap: var(--whatsapp-kit-gap-sm); }
 		&__period { flex: 1 1 auto; min-width: 0; }
-		&__period-btn { flex: 1 1 0; min-width: 0; padding-inline: 6px; font-size: var(--text-xs, 12px); }
+		&__period-button { flex: 1 1 0; min-width: 0; padding-inline: 6px; font-size: var(--text-xs, 12px); }
 		&__period-long { display: none; }
 		&__period-short { display: inline; }
 		&__actions { flex: none; }
-		&__action--icon, &__native, &__dd--columns { display: none; }
+		&__action--icon, &__native, &__dropdown--columns { display: none; }
 		&__levels { display: none; }
-		&__pop { max-width: calc(100vw - 2 * var(--whatsapp-kit-gap-md)); }
+		&__popover { max-width: calc(100vw - 2 * var(--whatsapp-kit-gap-md)); }
 	}
 }
 
@@ -684,7 +684,7 @@
 		-webkit-overflow-scrolling: touch;
 		padding: 0 8px 8px;
 		// a row a thumb can hit, not a desktop checkbox line
-		.whatsapp-kit-filterbar__opt {
+		.whatsapp-kit-filterbar__option {
 			min-height: 44px;
 			padding-inline: 8px;
 			border-radius: var(--whatsapp-kit-radius);

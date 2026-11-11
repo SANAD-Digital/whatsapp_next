@@ -82,8 +82,8 @@ win.show_window("usage");
 - Rail: `__rail`, `__search`, `__search-icon`, `__nav`, `__group`, `__group-label`,
   `__item[data-key]` (`.is-on`, `aria-current="page"`), `__item-icon`, `__item-label`, `__none`.
 - Main: `__main`, `__bar`, `__back`, `__back-label`, `__close`, `__pane[role=region]`.
-- Content helpers: `__head`, `__title`, `__desc`, `__h`, `__row`, `__row-text`, `__row-title`,
-  `__row-desc`, `__row-control`.
+- Content helpers: `__head`, `__title`, `__description`, `__heading`, `__row`, `__row-text`, `__row-title`,
+  `__row-description`, `__row-control`.
 - Phone layout at `max-width: 719px`.
 
 ## Notes

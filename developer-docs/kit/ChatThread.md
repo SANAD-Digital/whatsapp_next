@@ -68,7 +68,7 @@ frappe.realtime.on("wa:message:status", (p) => thread.update_status(p.outbound, 
 ## CSS hooks
 
 - Root `.whatsapp-kit.whatsapp-kit-chat` (`id` = uid), `__top`, `__more`, `__scroll` (`role="log"`), `__state`, `__list`, `__day`.
-- Rows: `.whatsapp-kit-chat__row--in|--out`, `--clickable`, `--highlight`, `data-key`, `data-name`; `__bubble`, `__text` (`--muted`), `__caption`, `__meta`, `__open`, `__ref`.
+- Rows: `.whatsapp-kit-chat__row--in|--out`, `--clickable`, `--highlight`, `data-key`, `data-name`; `__bubble`, `__text` (`--muted`), `__caption`, `__meta`, `__open`, `__reference`.
 - Media: `__media` (`--plain`), `__media-icon`, `__media-name`, `__media-type`.
 - Status: `__status--gray|blue|red|amber`, `__status-text` (visible word for Failed / Cancelled / Held).
 

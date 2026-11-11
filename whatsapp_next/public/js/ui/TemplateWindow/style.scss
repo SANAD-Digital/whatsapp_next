@@ -31,7 +31,7 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 	block-size: min(780px, 100%);
 	border: 1px solid var(--whatsapp-border);
 	border-radius: 8px;
-	background: var(--whatsapp-bg);
+	background: var(--whatsapp-background);
 	color: var(--whatsapp-ink);
 	box-shadow: var(--whatsapp-shadow-lg);
 	overflow: hidden;
@@ -73,9 +73,9 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		block-size: 28px;
 		flex: none;
 		border-radius: 8px;
-		background: var(--whatsapp-pri-s);
-		color: var(--whatsapp-pri-d);
-		box-shadow: inset 0 0 0 1px var(--whatsapp-pri-sb);
+		background: var(--whatsapp-primary-soft);
+		color: var(--whatsapp-primary-deep);
+		box-shadow: inset 0 0 0 1px var(--whatsapp-primary-soft-border);
 	}
 	// the name is the title: a field that reads as a heading until it is hovered or focused
 	// the badges follow the name, as in the prototype, so the name takes its own width only
@@ -95,8 +95,8 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		transition: border-color var(--whatsapp-motion, 160ms), background var(--whatsapp-motion, 160ms);
 
 		&::placeholder { color: var(--whatsapp-ink-4); font-weight: 600; }
-		&:hover:not([readonly]) { border-color: var(--whatsapp-border-2); background: var(--whatsapp-bg); }
-		&:focus:not([readonly]) { border-color: var(--whatsapp-pri); background: var(--whatsapp-bg); box-shadow: 0 0 0 3px var(--whatsapp-pri-s); }
+		&:hover:not([readonly]) { border-color: var(--whatsapp-border-2); background: var(--whatsapp-background); }
+		&:focus:not([readonly]) { border-color: var(--whatsapp-primary); background: var(--whatsapp-background); box-shadow: 0 0 0 3px var(--whatsapp-primary-soft); }
 	}
 	&__status {
 		display: flex;
@@ -131,7 +131,7 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		font-weight: 600;
 		cursor: pointer;
 
-		&[aria-selected="true"] { background: var(--whatsapp-pri-s); color: var(--whatsapp-pri-d); }
+		&[aria-selected="true"] { background: var(--whatsapp-primary-soft); color: var(--whatsapp-primary-deep); }
 	}
 
 	// ---- the three columns ----------------------------------------------------------------------
@@ -158,18 +158,18 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		&:last-child { border-inline-end: 0; }
 	}
 	&__editor { background: var(--whatsapp-surface); }
-	&__preview { background: var(--whatsapp-bg); gap: 10px; }
-	&__vars { background: var(--whatsapp-surface); gap: 8px; }
+	&__preview { background: var(--whatsapp-background); gap: 10px; }
+	&__variables { background: var(--whatsapp-surface); gap: 8px; }
 	&__pane-title { font-size: 12px; font-weight: 600; color: var(--whatsapp-ink-2); }
-	&__preview &__pane-title { color: var(--whatsapp-pri-d); }
+	&__preview &__pane-title { color: var(--whatsapp-primary-deep); }
 
 	@media (max-width: 959px) and (min-width: 720px) {
 		&__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-		&__vars { display: none; }
+		&__variables { display: none; }
 		&__tabs { display: flex; }
 		&__tab[data-tab="preview"] { display: none; }
-		&--tab-vars &__vars { display: flex; }
-		&--tab-vars &__preview { display: none; }
+		&--tab-variables &__variables { display: flex; }
+		&--tab-variables &__preview { display: none; }
 	}
 	@media (max-width: 719px) {
 		&__tabs { display: flex; }
@@ -177,7 +177,7 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		&__pane { display: none; border-inline-end: 0; }
 		&--tab-editor &__editor,
 		&--tab-preview &__preview,
-		&--tab-vars &__vars { display: flex; }
+		&--tab-variables &__variables { display: flex; }
 	}
 
 	// ---- editor ---------------------------------------------------------------------------------
@@ -199,16 +199,16 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		.link-btn { inset-block-start: 6px; }
 		// Desk paints `.form-control` grey and borderless; here it is the kit's field like the rest
 		input.form-control.whatsapp-input {
-			block-size: var(--whatsapp-h, 28px); // Desk's control height, not its padding's
+			block-size: var(--whatsapp-control-height, 28px); // Desk's control height, not its padding's
 			padding-block: 0;
 			border: 1px solid var(--whatsapp-border-2);
 			border-radius: var(--whatsapp-radius, 8px);
 			background: var(--whatsapp-surface);
 			color: var(--whatsapp-ink);
-			font-size: var(--whatsapp-fs, 14px);
+			font-size: var(--whatsapp-font-size, 14px);
 			box-shadow: none;
 			&:hover:not(:focus):not([disabled]) { border-color: var(--whatsapp-ink-4); }
-			&:focus { border-color: var(--whatsapp-pri); box-shadow: 0 0 0 3px var(--whatsapp-pri-s); }
+			&:focus { border-color: var(--whatsapp-primary); box-shadow: 0 0 0 3px var(--whatsapp-primary-soft); }
 			&[disabled], &[readonly] { background: var(--whatsapp-sunken); }
 		}
 	}
@@ -220,16 +220,16 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		gap: 10px;
 		flex-wrap: wrap;
 	}
-	&__fmt {
+	&__format {
 		display: inline-flex;
 		align-items: center;
 		gap: 2px;
 		padding: 2px;
 		border: 1px solid var(--whatsapp-border);
 		border-radius: 8px;
-		background: var(--whatsapp-bg);
+		background: var(--whatsapp-background);
 	}
-	&__fmt-btn {
+	&__format-button {
 		min-inline-size: 28px;
 		block-size: 26px;
 		padding-inline: 6px;
@@ -242,14 +242,14 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		font-weight: 600;
 		cursor: pointer;
 		&:hover { background: var(--whatsapp-surface); color: var(--whatsapp-ink); box-shadow: var(--whatsapp-shadow-sm); }
-		&:focus-visible { outline: 2px solid var(--whatsapp-pri); outline-offset: 1px; }
+		&:focus-visible { outline: 2px solid var(--whatsapp-primary); outline-offset: 1px; }
 		&--bold { font-weight: 800; }
 		&--italic { font-style: italic; font-family: Georgia, serif; }
 		&--strike { text-decoration: line-through; }
 		&--mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; }
 		&--wide { padding-inline: 10px; }
 	}
-	&__fmt-sep { inline-size: 1px; block-size: 16px; margin-inline: 3px; background: var(--whatsapp-border-2); }
+	&__format-separator { inline-size: 1px; block-size: 16px; margin-inline: 3px; background: var(--whatsapp-border-2); }
 	&__body {
 		min-block-size: 200px;
 		line-height: 1.9;
@@ -275,12 +275,12 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		padding: 12px;
 		border: 1.5px dashed var(--whatsapp-border-2);
 		border-radius: 10px;
-		background: var(--whatsapp-bg);
+		background: var(--whatsapp-background);
 		color: var(--whatsapp-ink-3);
 		font: inherit;
 		font-weight: 600;
 		cursor: pointer;
-		&:hover { border-color: var(--whatsapp-pri); color: var(--whatsapp-pri-d); background: var(--whatsapp-pri-s); }
+		&:hover { border-color: var(--whatsapp-primary); color: var(--whatsapp-primary-deep); background: var(--whatsapp-primary-soft); }
 	}
 	&__file {
 		display: flex;
@@ -289,7 +289,7 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		padding: 8px;
 		border: 1px solid var(--whatsapp-border);
 		border-radius: 10px;
-		background: var(--whatsapp-bg);
+		background: var(--whatsapp-background);
 	}
 	&__file-thumb { inline-size: 36px; block-size: 36px; flex: none; border-radius: 6px; object-fit: cover; background: var(--whatsapp-sunken); }
 	&__file-name { flex: 1; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--whatsapp-ink-2); }
@@ -300,7 +300,7 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		padding: 12px;
 		border: 1px solid var(--whatsapp-border);
 		border-radius: 10px;
-		background: var(--whatsapp-bg);
+		background: var(--whatsapp-background);
 		@media (max-width: 560px) { grid-template-columns: minmax(0, 1fr); }
 	}
 	&__doc-wide { grid-column: 1 / -1; }
@@ -350,9 +350,9 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		display: flex;
 		flex-direction: column;
 		padding: 10px 12px;
-		border: 1px solid var(--whatsapp-pri-sb);
+		border: 1px solid var(--whatsapp-primary-soft-border);
 		border-radius: 12px;
-		background: var(--whatsapp-pri-s);
+		background: var(--whatsapp-primary-soft);
 		min-block-size: 140px;
 	}
 	// the outgoing bubble sits at the end, with its tail on the end side
@@ -364,7 +364,7 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		max-inline-size: 96%;
 		min-inline-size: 120px;
 		padding: 8px 12px 6px;
-		border: 1px solid var(--whatsapp-pri-sb);
+		border: 1px solid var(--whatsapp-primary-soft-border);
 		border-radius: 12px;
 		border-end-end-radius: 4px;
 		background: var(--whatsapp-surface);
@@ -375,7 +375,7 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		&[hidden] { display: none; }
 		img { display: block; inline-size: 100%; max-block-size: 220px; object-fit: cover; border-radius: 8px; }
 	}
-	&__bubble-ph {
+	&__bubble-placeholder {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -424,10 +424,10 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 			align-items: flex-start;
 			gap: 6px;
 			padding: 8px 10px;
-			border: 1px solid var(--whatsapp-dg-sb);
+			border: 1px solid var(--whatsapp-danger-soft-border);
 			border-radius: 8px;
-			background: var(--whatsapp-dg-s);
-			color: var(--whatsapp-dg-i);
+			background: var(--whatsapp-danger-soft);
+			color: var(--whatsapp-danger-ink);
 			font-size: 12px;
 			line-height: 1.6;
 			overflow-wrap: anywhere;
@@ -436,15 +436,15 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 
 	// ---- variables ------------------------------------------------------------------------------
 
-	&__vars-list { display: flex; flex-direction: column; gap: 4px; }
-	&__vars-group {
+	&__variables-list { display: flex; flex-direction: column; gap: 4px; }
+	&__variables-group {
 		margin-block-start: 6px;
 		font-size: 11px;
 		font-weight: 600;
 		color: var(--whatsapp-ink-4);
 		&:first-child { margin-block-start: 0; }
 	}
-	&__var {
+	&__variable {
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
@@ -453,29 +453,29 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		padding: 5px 10px;
 		border: 1px solid var(--whatsapp-border);
 		border-radius: 8px;
-		background: var(--whatsapp-bg);
+		background: var(--whatsapp-background);
 		color: inherit;
 		font: inherit;
 		text-align: start;
 		cursor: pointer;
 		transition: background var(--whatsapp-motion, 160ms), border-color var(--whatsapp-motion, 160ms);
-		&:hover:not([disabled]) { border-color: var(--whatsapp-pri-sb); background: var(--whatsapp-pri-s); }
-		&:focus-visible { outline: 2px solid var(--whatsapp-pri); outline-offset: 1px; }
+		&:hover:not([disabled]) { border-color: var(--whatsapp-primary-soft-border); background: var(--whatsapp-primary-soft); }
+		&:focus-visible { outline: 2px solid var(--whatsapp-primary); outline-offset: 1px; }
 		&[disabled] { cursor: default; }
 	}
 	// a token is code, so it reads left to right even in an Arabic label — and keeps the side
 	// the label keeps
-	&__var-token {
+	&__variable-token {
 		font-family: "IBM Plex Mono", ui-monospace, monospace;
 		font-size: 11px;
 		font-weight: 600;
-		color: var(--whatsapp-pri-d);
+		color: var(--whatsapp-primary-deep);
 		text-align: -webkit-match-parent;
 		text-align: match-parent;
 		overflow-wrap: anywhere;
 	}
-	&__var-label { font-size: 11px; color: var(--whatsapp-ink-4); }
-	&__vars-empty { font-size: 12px; color: var(--whatsapp-ink-4); line-height: 1.7; }
+	&__variable-label { font-size: 11px; color: var(--whatsapp-ink-4); }
+	&__variables-empty { font-size: 12px; color: var(--whatsapp-ink-4); line-height: 1.7; }
 
 	// ---- footer ---------------------------------------------------------------------------------
 
@@ -488,16 +488,16 @@ body.whatsapp-kit-template-window-open { overflow: hidden; }
 		border-block-start: 1px solid var(--whatsapp-border);
 		flex: none;
 	}
-	&__foot-msg {
+	&__foot-message {
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		color: var(--whatsapp-dg-i);
+		color: var(--whatsapp-danger-ink);
 		font-size: 12px;
 		font-weight: 600;
 		&:empty { display: none; }
 	}
-	&__foot-btns {
+	&__foot-buttons {
 		display: flex;
 		align-items: center;
 		gap: 8px;

@@ -501,12 +501,12 @@ whatsapp.ui.DateFilter = class DateFilter {
 			<div class="whatsapp-kit whatsapp-kit-datefilter" id="${this.id}">
 				${this.opts.label ? `<span class="whatsapp-kit-datefilter__label">${ui.escape(this.opts.label)}</span>` : ""}
 				<div class="whatsapp-kit-datefilter__trigger">
-					<button type="button" class="whatsapp-kit-datefilter__op" aria-haspopup="listbox" aria-expanded="false">
-						<span class="whatsapp-kit-datefilter__op-label"></span>
+					<button type="button" class="whatsapp-kit-datefilter__operator" aria-haspopup="listbox" aria-expanded="false">
+						<span class="whatsapp-kit-datefilter__operator-label"></span>
 						<span class="whatsapp-kit-datefilter__caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 					</button>
-					${this.fields.length ? `<button type="button" class="whatsapp-kit-datefilter__fieldpick" aria-haspopup="listbox" aria-expanded="false" aria-label="${ui.escape(__("Date field"))}">
-						<span class="whatsapp-kit-datefilter__fieldpick-label"></span>
+					${this.fields.length ? `<button type="button" class="whatsapp-kit-datefilter__field-picker" aria-haspopup="listbox" aria-expanded="false" aria-label="${ui.escape(__("Date field"))}">
+						<span class="whatsapp-kit-datefilter__field-picker-label"></span>
 						<span class="whatsapp-kit-datefilter__caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 					</button>` : ""}
 					<button type="button" class="whatsapp-kit-datefilter__value" aria-haspopup="dialog" aria-expanded="false">
@@ -517,8 +517,8 @@ whatsapp.ui.DateFilter = class DateFilter {
 				</div>
 			</div>`).appendTo($(this.opts.wrapper));
 
-		this.$el.on("click", ".whatsapp-kit-datefilter__op", () => (this.$menu ? this.close_menu() : this.open_menu()));
-		this.$el.on("click", ".whatsapp-kit-datefilter__fieldpick", () => (this.$fields ? this.close_fields() : this.open_fields()));
+		this.$el.on("click", ".whatsapp-kit-datefilter__operator", () => (this.$menu ? this.close_menu() : this.open_menu()));
+		this.$el.on("click", ".whatsapp-kit-datefilter__field-picker", () => (this.$fields ? this.close_fields() : this.open_fields()));
 		this.$el.on("click", ".whatsapp-kit-datefilter__value", (e) => {
 			if ($(e.target).closest(".whatsapp-kit-datefilter__clear").length) return;
 			if (this.$panel) this.close();
@@ -530,12 +530,12 @@ whatsapp.ui.DateFilter = class DateFilter {
 			e.stopPropagation();
 			this.clear();
 		});
-		this.$el.on("keydown", ".whatsapp-kit-datefilter__op, .whatsapp-kit-datefilter__fieldpick, .whatsapp-kit-datefilter__value", (e) => {
+		this.$el.on("keydown", ".whatsapp-kit-datefilter__operator, .whatsapp-kit-datefilter__field-picker, .whatsapp-kit-datefilter__value", (e) => {
 			if (!["Enter", " ", "ArrowDown"].includes(e.key)) return;
 			e.preventDefault();
 			const $t = $(e.currentTarget);
-			if ($t.hasClass("whatsapp-kit-datefilter__op")) this.open_menu();
-			else if ($t.hasClass("whatsapp-kit-datefilter__fieldpick")) this.open_fields();
+			if ($t.hasClass("whatsapp-kit-datefilter__operator")) this.open_menu();
+			else if ($t.hasClass("whatsapp-kit-datefilter__field-picker")) this.open_fields();
 			else this.open();
 		});
 
@@ -564,13 +564,13 @@ whatsapp.ui.DateFilter = class DateFilter {
 	reflect_trigger() {
 		const op = OPERATORS().find((o) => o.key === this.state.op) || OPERATORS()[0];
 		const value = this.applied && this.applied.value;
-		this.$el.find(".whatsapp-kit-datefilter__op-label").text(op.label);
+		this.$el.find(".whatsapp-kit-datefilter__operator-label").text(op.label);
 		if (this.fields.length) {
 			const cap = this.field_caption();
 			this.$el
-				.find(".whatsapp-kit-datefilter__fieldpick-label")
+				.find(".whatsapp-kit-datefilter__field-picker-label")
 				.text(cap.text)
-				.toggleClass("whatsapp-kit-datefilter__fieldpick-label--tag", cap.count > 1);
+				.toggleClass("whatsapp-kit-datefilter__field-picker-label--tag", cap.count > 1);
 		}
 		const placeholder = this.opts.placeholder == null ? __("Pick a date") : this.opts.placeholder;
 		this.$el
@@ -591,7 +591,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 		const ops = OPERATORS();
 		this.$menu = $(`<div class="whatsapp-kit-datefilter__menu" role="listbox" aria-label="${ui.escape(__("Comparison"))}"></div>`).appendTo(this.$el);
 		ops.forEach((o) => {
-			if (o.group) $('<div class="whatsapp-kit-datefilter__menu-sep" aria-hidden="true"></div>').appendTo(this.$menu);
+			if (o.group) $('<div class="whatsapp-kit-datefilter__menu-separator" aria-hidden="true"></div>').appendTo(this.$menu);
 			const on = o.key === this.state.op;
 			$(`<button type="button" class="whatsapp-kit-datefilter__menu-item${on ? " whatsapp-kit-datefilter__menu-item--on" : ""}" role="option" aria-selected="${on}">
 					<span>${ui.escape(o.label)}</span>${on ? `<span class="whatsapp-kit-datefilter__menu-check" aria-hidden="true">${ui.icon("es-line-check", "xs")}</span>` : ""}
@@ -599,7 +599,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 				.on("click", () => this.set_op(o.key))
 				.appendTo(this.$menu);
 		});
-		this.$el.find(".whatsapp-kit-datefilter__op").attr("aria-expanded", "true");
+		this.$el.find(".whatsapp-kit-datefilter__operator").attr("aria-expanded", "true");
 		this.place(this.$menu);
 		this.$menu.find(".whatsapp-kit-datefilter__menu-item--on, .whatsapp-kit-datefilter__menu-item").first().trigger("focus");
 	}
@@ -608,8 +608,8 @@ whatsapp.ui.DateFilter = class DateFilter {
 		if (!this.$menu) return;
 		this.$menu.remove();
 		this.$menu = null;
-		this.$el.find(".whatsapp-kit-datefilter__op").attr("aria-expanded", "false");
-		if (restore_focus) this.$el.find(".whatsapp-kit-datefilter__op").trigger("focus");
+		this.$el.find(".whatsapp-kit-datefilter__operator").attr("aria-expanded", "false");
+		if (restore_focus) this.$el.find(".whatsapp-kit-datefilter__operator").trigger("focus");
 	}
 
 	// ---- field picker ----------------------------------------------------------------------------
@@ -646,7 +646,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 				.on("click", () => this.toggle_field(f.value))
 				.appendTo(this.$fields);
 		});
-		this.$el.find(".whatsapp-kit-datefilter__fieldpick").attr("aria-expanded", "true");
+		this.$el.find(".whatsapp-kit-datefilter__field-picker").attr("aria-expanded", "true");
 		this.place(this.$fields);
 		this.$fields.find(".whatsapp-kit-datefilter__menu-item--mine, .whatsapp-kit-datefilter__menu-item").first().trigger("focus");
 	}
@@ -655,8 +655,8 @@ whatsapp.ui.DateFilter = class DateFilter {
 		if (!this.$fields) return;
 		this.$fields.remove();
 		this.$fields = null;
-		this.$el.find(".whatsapp-kit-datefilter__fieldpick").attr("aria-expanded", "false");
-		if (restore_focus) this.$el.find(".whatsapp-kit-datefilter__fieldpick").trigger("focus");
+		this.$el.find(".whatsapp-kit-datefilter__field-picker").attr("aria-expanded", "false");
+		if (restore_focus) this.$el.find(".whatsapp-kit-datefilter__field-picker").trigger("focus");
 	}
 
 	toggle_field(fieldname) {
@@ -885,7 +885,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 	// ---- calendar ---------------------------------------------------------------------------------
 
 	render_calendar($main) {
-		const $body = $('<div class="whatsapp-kit-datefilter__cal"></div>').appendTo($main);
+		const $body = $('<div class="whatsapp-kit-datefilter__calendar"></div>').appendTo($main);
 		// the grid takes the width of the calendar it stands in, so the panel never jumps
 		const wide = !this.compact() && this.is_between();
 		if (this.state.pick === "month") return this.render_month_picker($body, { wide });
@@ -945,7 +945,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 		const ws = this.week_start();
 		const $grid = $('<div class="whatsapp-kit-datefilter__grid"></div>').appendTo($col);
 		const names = weekday_list();
-		for (let i = 0; i < 7; i++) $(`<span class="whatsapp-kit-datefilter__wd">${ui.escape(names[(i + ws) % 7])}</span>`).appendTo($grid);
+		for (let i = 0; i < 7; i++) $(`<span class="whatsapp-kit-datefilter__weekday">${ui.escape(names[(i + ws) % 7])}</span>`).appendTo($grid);
 
 		const first_day = new Date(y, m, 1).getDay();
 		const blanks = (first_day - ws + 7) % 7;
@@ -1162,9 +1162,9 @@ whatsapp.ui.DateFilter = class DateFilter {
 	// ---- timespan / fiscal ------------------------------------------------------------------------
 
 	segmented($parent, items, current, on_pick) {
-		const $seg = $('<div class="whatsapp-kit-datefilter__seg" role="group"></div>').appendTo($parent);
+		const $seg = $('<div class="whatsapp-kit-datefilter__segment" role="group"></div>').appendTo($parent);
 		items.forEach((it) => {
-			$(`<button type="button" class="whatsapp-kit-datefilter__seg-item${it.key === current ? " whatsapp-kit-datefilter__seg-item--on" : ""}" aria-pressed="${it.key === current}">${ui.escape(it.label)}</button>`)
+			$(`<button type="button" class="whatsapp-kit-datefilter__segment-item${it.key === current ? " whatsapp-kit-datefilter__segment-item--on" : ""}" aria-pressed="${it.key === current}">${ui.escape(it.label)}</button>`)
 				.on("click", () => on_pick(it.key))
 				.appendTo($seg);
 		});
@@ -1280,18 +1280,18 @@ whatsapp.ui.DateFilter = class DateFilter {
 	 * nowhere to go, and neither control may simply disappear because the screen is small.
 	 */
 	render_compact_head() {
-		const $head = $('<div class="whatsapp-kit-datefilter__chead"></div>').appendTo(this.$panel);
+		const $head = $('<div class="whatsapp-kit-datefilter__compact-head"></div>').appendTo(this.$panel);
 		const append_compact_head_row = (key, label, value) => {
 			const on = this.state.head === key;
-			const $row = $('<div class="whatsapp-kit-datefilter__chead-row"></div>').appendTo($head);
-			$(`<button type="button" class="whatsapp-kit-datefilter__chead-trigger" aria-expanded="${on}">
-					<span class="whatsapp-kit-datefilter__chead-label">${ui.escape(label)}</span>
-					<span class="whatsapp-kit-datefilter__chead-value">${ui.escape(value)}</span>
+			const $row = $('<div class="whatsapp-kit-datefilter__compact-head-row"></div>').appendTo($head);
+			$(`<button type="button" class="whatsapp-kit-datefilter__compact-head-trigger" aria-expanded="${on}">
+					<span class="whatsapp-kit-datefilter__compact-head-label">${ui.escape(label)}</span>
+					<span class="whatsapp-kit-datefilter__compact-head-value">${ui.escape(value)}</span>
 					<span class="whatsapp-kit-datefilter__caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 				</button>`)
 				.on("click", () => this.update_draft_state({ head: on ? null : key }))
 				.appendTo($row);
-			return on ? $('<div class="whatsapp-kit-datefilter__chead-list"></div>').appendTo($row) : null;
+			return on ? $('<div class="whatsapp-kit-datefilter__compact-head-list"></div>').appendTo($row) : null;
 		};
 
 		const op = OPERATORS().find((o) => o.key === this.state.op) || OPERATORS()[0];

@@ -144,7 +144,7 @@ frappe.provide("whatsapp_next.campaign");
 	 */
 	campaign_builder.field_html = ({ id, label, required, control, hint, counter, wide }) => `
 		<div class="whatsapp-field${wide ? " whatsapp-field--wide" : ""}">
-			<label class="whatsapp-field__label" for="${escape_html(id)}">${escape_html(label)}${required ? ` <b class="whatsapp-field__req" aria-hidden="true">*</b>` : ""}</label>
+			<label class="whatsapp-field__label" for="${escape_html(id)}">${escape_html(label)}${required ? ` <b class="whatsapp-field__required" aria-hidden="true">*</b>` : ""}</label>
 			${control}
 			${counter !== undefined ? `<span class="whatsapp-field__hint whatsapp-campaign-builder__counter whatsapp-kit-tabular" dir="ltr" data-counter="${escape_html(id)}">${escape_html(counter)}</span>` : ""}
 			${hint ? `<span class="whatsapp-field__hint">${escape_html(hint)}</span>` : ""}
@@ -158,7 +158,7 @@ frappe.provide("whatsapp_next.campaign");
 				<span class="whatsapp-campaign-builder__reading-label">${escape_html(label)}</span>
 				<span class="whatsapp-campaign-builder__reading-value whatsapp-kit-tabular">${escape_html(value)}</span>
 			</span>
-			${sub ? `<span class="whatsapp-campaign-builder__reading-sub">${escape_html(sub)}</span>` : ""}
+			${sub ? `<span class="whatsapp-campaign-builder__reading-subtitle">${escape_html(sub)}</span>` : ""}
 		</div>`;
 
 	/**

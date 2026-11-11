@@ -172,7 +172,7 @@ export class SelectedTab {
 				<td class="whatsapp-kit-tabular" dir="ltr">${ui.escape(ui.phone(row.phone_e164 || row.phone || ""))}</td>
 				<td>${row.source_type ? whatsapp.ui.StatusBadge.html({ label: __(row.source_type), colour: "gray", icon: false }) : ""}</td>
 				<td>${this.chip_for(key, row)}</td>
-				<td class="whatsapp-kit-picker__td-remove"><button type="button" class="btn btn-xs btn-default whatsapp-kit-picker__remove" data-key="${ui.escape(key)}" aria-label="${ui.escape(__("Remove {0} from the selection", [name || row.phone || ""]))}" title="${ui.escape(__("Remove"))}">${ui.icon("es-line-close", "xs")}</button></td>
+				<td class="whatsapp-kit-picker__table-cell-remove"><button type="button" class="btn btn-xs btn-default whatsapp-kit-picker__remove" data-key="${ui.escape(key)}" aria-label="${ui.escape(__("Remove {0} from the selection", [name || row.phone || ""]))}" title="${ui.escape(__("Remove"))}">${ui.icon("es-line-close", "xs")}</button></td>
 			</tr>`;
 		});
 		html += "</tbody></table></div>";
@@ -201,7 +201,7 @@ export class SelectedTab {
 			duplicates_in_selection: __("Duplicate in the selection"),
 			available: remove ? __("Not in the list") : "",
 		};
-		let html = '<div class="whatsapp-kit-picker__rows whatsapp-kit-picker__trayrows">';
+		let html = '<div class="whatsapp-kit-picker__rows whatsapp-kit-picker__tray-rows">';
 		visible.slice(0, this.limit).forEach(([key, row]) => {
 			const b = this.buckets.get(key);
 			const bucket = b ? b.bucket : "available";
@@ -212,10 +212,10 @@ export class SelectedTab {
 			const source = row.source_type ? __(row.source_type) : "";
 			const tone = tone_of(bucket);
 			html += `<div class="whatsapp-kit-picker__row whatsapp-kit-picker__row--chosen${tone ? ` whatsapp-kit-picker__row--${tone}` : ""}" data-key="${ui.escape(key)}" role="listitem">
-				<span class="whatsapp-kit-picker__av${manual ? " whatsapp-kit-picker__av--manual" : " whatsapp-kit-picker__av--on"}" aria-hidden="true">${manual && !name ? "#" : ui.escape(ui.initials(name || phone) || "#")}</span>
+				<span class="whatsapp-kit-picker__avatar${manual ? " whatsapp-kit-picker__avatar--manual" : " whatsapp-kit-picker__avatar--on"}" aria-hidden="true">${manual && !name ? "#" : ui.escape(ui.initials(name || phone) || "#")}</span>
 				<span class="whatsapp-kit-picker__row-text">
 					<span class="whatsapp-kit-picker__row-name" dir="auto">${ui.escape(name || phone)}${ui.group_tag(row.phone_e164 || row.phone)}</span>
-					${name && phone ? `<span class="whatsapp-kit-picker__row-sub whatsapp-kit-tabular" dir="ltr">${ui.escape(phone)}</span>` : ""}
+					${name && phone ? `<span class="whatsapp-kit-picker__row-subtitle whatsapp-kit-tabular" dir="ltr">${ui.escape(phone)}</span>` : ""}
 				</span>
 				${word ? `<span class="whatsapp-kit-picker__row-badge whatsapp-kit-picker__row-badge--${tone || "muted"}">${ui.escape(word)}</span>` : source ? `<span class="whatsapp-kit-picker__row-badge">${ui.escape(source)}</span>` : ""}
 				<button type="button" class="whatsapp-kit-picker__mark whatsapp-kit-picker__mark--x whatsapp-kit-picker__remove" data-key="${ui.escape(key)}" aria-label="${ui.escape(__("Remove {0} from the selection", [name || phone]))}">${ui.icon("es-line-close", "xs")}</button>

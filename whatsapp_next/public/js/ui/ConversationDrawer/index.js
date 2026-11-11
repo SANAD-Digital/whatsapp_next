@@ -87,7 +87,7 @@ whatsapp.ui.ConversationDrawer = class ConversationDrawer {
 					<div class="whatsapp-kit-conversation__avatar" aria-hidden="true"></div>
 					<div class="whatsapp-kit-panel__title">
 						<h2 class="whatsapp-kit-conversation__title" id="${title_id}"></h2>
-						<div class="whatsapp-kit-panel__subtitle whatsapp-kit-conversation__sub whatsapp-kit-tabular"></div>
+						<div class="whatsapp-kit-panel__subtitle whatsapp-kit-conversation__subtitle whatsapp-kit-tabular"></div>
 					</div>
 					<div class="whatsapp-kit-conversation__badge"></div>
 					<button type="button" class="btn btn-sm btn-default whatsapp-kit-conversation__close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "sm")}</button>
@@ -99,7 +99,7 @@ whatsapp.ui.ConversationDrawer = class ConversationDrawer {
 				</div>
 			</aside>`);
 		this.$title = this.$root.find(".whatsapp-kit-conversation__title");
-		this.$sub = this.$root.find(".whatsapp-kit-conversation__sub");
+		this.$sub = this.$root.find(".whatsapp-kit-conversation__subtitle");
 		this.$avatar = this.$root.find(".whatsapp-kit-conversation__avatar");
 		this.$badge = this.$root.find(".whatsapp-kit-conversation__badge");
 		this.$actions = this.$root.find(".whatsapp-kit-conversation__actions");

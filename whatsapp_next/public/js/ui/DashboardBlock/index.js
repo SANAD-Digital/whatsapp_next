@@ -101,7 +101,7 @@ whatsapp.ui.DashboardBlock = class DashboardBlock {
 		this.$period = $(`<div class="whatsapp-kit-dashboard__period" role="radiogroup" aria-label="${ui.escape(__("Period"))}"></div>`);
 		PERIODS.forEach((p) => {
 			$(
-				`<button type="button" class="whatsapp-kit-chip whatsapp-kit-dashboard__period-btn" role="radio" aria-checked="${p.key === this.period}" tabindex="${
+				`<button type="button" class="whatsapp-kit-chip whatsapp-kit-dashboard__period-button" role="radio" aria-checked="${p.key === this.period}" tabindex="${
 					p.key === this.period ? 0 : -1
 				}" data-key="${p.key}">${ui.escape(p.label())}</button>`
 			)
@@ -155,7 +155,7 @@ whatsapp.ui.DashboardBlock = class DashboardBlock {
 	make_card(name) {
 		const $el = $(`
 			<div class="whatsapp-kit-dashboard__card" role="listitem">
-				<div class="whatsapp-kit-dashboard__card-btn whatsapp-kit-dashboard__card-btn--static" aria-busy="true">
+				<div class="whatsapp-kit-dashboard__card-button whatsapp-kit-dashboard__card-button--static" aria-busy="true">
 					<span class="whatsapp-kit-dashboard__card-label"></span>
 					<span class="whatsapp-kit-dashboard__card-value whatsapp-kit-tabular"></span>
 					<span class="whatsapp-kit-dashboard__card-stat"></span>
@@ -165,7 +165,7 @@ whatsapp.ui.DashboardBlock = class DashboardBlock {
 		const card = {
 			name,
 			$el,
-			$btn: $el.find(".whatsapp-kit-dashboard__card-btn"),
+			$btn: $el.find(".whatsapp-kit-dashboard__card-button"),
 			$label: $el.find(".whatsapp-kit-dashboard__card-label"),
 			$value: $el.find(".whatsapp-kit-dashboard__card-value"),
 			$stat: $el.find(".whatsapp-kit-dashboard__card-stat"),
@@ -287,8 +287,8 @@ whatsapp.ui.DashboardBlock = class DashboardBlock {
 		const is_button = card.$btn.is("button");
 		if (openable === is_button) return;
 		const $next = $(openable ? '<button type="button"></button>' : "<div></div>")
-			.addClass("whatsapp-kit-dashboard__card-btn")
-			.toggleClass("whatsapp-kit-dashboard__card-btn--static", !openable)
+			.addClass("whatsapp-kit-dashboard__card-button")
+			.toggleClass("whatsapp-kit-dashboard__card-button--static", !openable)
 			.attr("aria-busy", card.$btn.attr("aria-busy") || "false")
 			.append(card.$btn.children());
 		card.$btn.replaceWith($next);

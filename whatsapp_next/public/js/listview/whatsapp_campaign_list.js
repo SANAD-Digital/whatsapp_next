@@ -152,7 +152,7 @@ function scheduled_strip(row, header) {
 			.on("click", () => campaign_helpers.stop_to_edit(row, { after: () => refresh_all(header) }))
 			.appendTo($actions);
 	}
-	$(`<button type="button" class="btn btn-default btn-sm whatsapp-strip__btn-blue">${escape_html(__("Scheduled messages"))}</button>`)
+	$(`<button type="button" class="btn btn-default btn-sm whatsapp-strip__button-blue">${escape_html(__("Scheduled messages"))}</button>`)
 		.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: row.name }))
 		.appendTo($actions);
 	return $strip;

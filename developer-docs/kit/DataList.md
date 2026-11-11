@@ -109,17 +109,17 @@ frappe.listview_settings["ToDo"] = {
 - List host: `whatsapp-kit-datalist-host` (on `$result`), `whatsapp-kit-list-card` (on `$frappe_list`),
   `whatsapp-kit-list-card-host` (its parent). Page host: `whatsapp-kit whatsapp-kit-datalist-page`.
 - `whatsapp-kit-datalist__wrap` (+ `--cards`) → `table.whatsapp-kit-datalist` (`--loading`, `aria-busy`).
-- Header: `__th` (`--check`, `--expand`, `--action`, `--start|end|center`, `--sorted`, `--pinned`,
+- Header: `__table-header-cell` (`--check`, `--expand`, `--action`, `--start|end|center`, `--sorted`, `--pinned`,
   `--hidden-xs`, `data-fieldname`), `__sort`, `__sort-icon`, `__label`, `__pin` (`--on`).
-- Rows: `__row` (`--clickable`, `--skeleton`, `--empty`, `data-name`), `__td` (same modifiers plus
-  `--status`, `--card-extra`, `--off-card`, `data-label`), `__cell`, `__main`, `__sub`, `__muted`,
+- Rows: `__row` (`--clickable`, `--skeleton`, `--empty`, `data-name`), `__table-cell` (same modifiers plus
+  `--status`, `--card-extra`, `--off-card`, `data-label`), `__cell`, `__main`, `__subtitle`, `__muted`,
   `__date`, `__avatar-text`, `__view`/`__action`, `__toggle`, `__detail[data-for]`, `__detail-body`,
   `__cell--pin-edge`, `__empty`.
 - Groups: `__group` (`--l0..`, `data-gid`), `__group-cell`, `__group-inner`, `__group-check`,
   `__group-checkbox`, `__rail`, `__indent`, `__group-toggle`, `__group-field`, `__group-label`,
-  `__group-count`, `__group-sum`.
+  `__group-count`, `__group-summary`.
 - Footer: `whatsapp-kit-datalist__footer`, `__count` (live region), `__extra`, `__group-tools`,
-  `__group-tool[data-fold]`, `__pager`, `__paging`, `__page-btn[data-go]`, `__page-state`.
+  `__group-tool[data-fold]`, `__pager`, `__paging`, `__page-button[data-go]`, `__page-state`.
 - Stacking order is fixed in `style.scss` (see `.claude/rules/ui.md`, D-076).
 
 ## Notes

@@ -72,9 +72,9 @@ new whatsapp.ui.DashboardBlock({
 ## CSS hooks
 
 - Root `.whatsapp-kit.whatsapp-kit-dashboard` with `--whatsapp-kit-dashboard-columns`.
-- Toolbar: `__toolbar`, `__period[role=radiogroup]`, `__period-btn.whatsapp-kit-chip[role=radio][data-key]`,
+- Toolbar: `__toolbar`, `__period[role=radiogroup]`, `__period-button.whatsapp-kit-chip[role=radio][data-key]`,
   `__refresh`.
-- Cards: `__cards[role=list]`, `__card[role=listitem]`, `__card-btn` (a `<button>` when openable,
+- Cards: `__cards[role=list]`, `__card[role=listitem]`, `__card-button` (a `<button>` when openable,
   else a `<div>` with `--static`; `aria-busy`), `__card-label`, `__card-value`, `__number`,
   `__card-stat`, `__stat.whatsapp-kit-tone--{green|red|gray}`, `__card-state`.
 - Charts: `__charts`, `__chart` (`aria-busy`), `__chart-title`, `__chart-body`, `__chart-state`,

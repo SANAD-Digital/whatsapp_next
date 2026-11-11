@@ -26,7 +26,7 @@ export class GroupsSource extends BaseSource {
 		this.checked = new Set();
 		const $head = $('<div class="whatsapp-kit-picker__head"></div>');
 		$head.append(this.search_box(__("Search groups"), (txt) => this.reload({ txt })));
-		this.$kinds = $('<div class="whatsapp-kit-picker__head-dd"></div>').appendTo($head);
+		this.$kinds = $('<div class="whatsapp-kit-picker__head-dropdown"></div>').appendTo($head);
 		this.$results = $('<div class="whatsapp-kit-picker__results"></div>');
 		this.names = {}; // docname → group_name for progress text
 		this.$pager = this.pager((p) => this.reload({ page: p }));
@@ -92,10 +92,10 @@ export class GroupsSource extends BaseSource {
 			const $li = $(`
 				<div class="whatsapp-kit-picker__group" data-name="${ui.escape(g.name)}">
 					<div class="whatsapp-kit-picker__row" role="checkbox" aria-checked="${on}" tabindex="0">
-						<span class="whatsapp-kit-picker__av" aria-hidden="true">${ui.escape(ui.initials(name) || "#")}</span>
+						<span class="whatsapp-kit-picker__avatar" aria-hidden="true">${ui.escape(ui.initials(name) || "#")}</span>
 						<span class="whatsapp-kit-picker__row-text">
 							<span class="whatsapp-kit-picker__row-name" dir="auto">${ui.escape(name)}</span>
-							<span class="whatsapp-kit-picker__row-sub">${ui.escape(ui.plural(cint(g.member_count), { one: __("{0} member"), two: __("{0} members"), few: __("{0} members"), many: __("{0} members"), other: __("{0} members") }))}</span>
+							<span class="whatsapp-kit-picker__row-subtitle">${ui.escape(ui.plural(cint(g.member_count), { one: __("{0} member"), two: __("{0} members"), few: __("{0} members"), many: __("{0} members"), other: __("{0} members") }))}</span>
 						</span>
 						${g.kind ? `<span class="whatsapp-kit-picker__row-badge${blacklist ? " whatsapp-kit-picker__row-badge--warn" : ""}">${ui.escape(__(g.kind))}</span>` : ""}
 						<button type="button" class="whatsapp-kit-picker__peek">${ui.escape(__("Show members"))}</button>
@@ -209,10 +209,10 @@ export class GroupsSource extends BaseSource {
 				const phone = ui.phone(r.phone_e164 || r.phone || "");
 				const on = chosen.has(key);
 				html += `<div class="whatsapp-kit-picker__row" role="checkbox" aria-checked="${on}" tabindex="0" data-key="${ui.escape(key)}">
-					<span class="whatsapp-kit-picker__av" aria-hidden="true">${ui.escape(ui.initials(person || phone) || "#")}</span>
+					<span class="whatsapp-kit-picker__avatar" aria-hidden="true">${ui.escape(ui.initials(person || phone) || "#")}</span>
 					<span class="whatsapp-kit-picker__row-text">
 						<span class="whatsapp-kit-picker__row-name" dir="auto">${ui.escape(person || phone)}${ui.group_tag(r.phone_e164 || r.phone)}</span>
-						${person && phone ? `<span class="whatsapp-kit-picker__row-sub whatsapp-kit-tabular" dir="ltr">${ui.escape(phone)}</span>` : ""}
+						${person && phone ? `<span class="whatsapp-kit-picker__row-subtitle whatsapp-kit-tabular" dir="ltr">${ui.escape(phone)}</span>` : ""}
 					</span>
 					<span class="whatsapp-kit-picker__mark" aria-hidden="true">${ui.icon("es-line-check", "xs")}</span>
 				</div>`;

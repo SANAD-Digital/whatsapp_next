@@ -80,7 +80,7 @@ whatsapp.ui.Cards = class Cards {
 			$sec.append(`
 				<header class="whatsapp-cards__head">
 					${section.title ? `<h3 class="whatsapp-cards__title">${escape_html(section.title)}</h3>` : ""}
-					${section.sub ? `<p class="whatsapp-cards__sub">${escape_html(section.sub)}</p>` : ""}
+					${section.sub ? `<p class="whatsapp-cards__subtitle">${escape_html(section.sub)}</p>` : ""}
 				</header>`);
 		}
 		const $grid = $(`<div class="whatsapp-cards__grid" style="--whatsapp-cards-min:${min}px"></div>`).appendTo($sec);
@@ -149,10 +149,10 @@ whatsapp.ui.Cards = class Cards {
 				return `<${tag} type="button" class="whatsapp-card__row${r.action || r.onClick ? " whatsapp-card__row--click" : ""}"${click}>
 					<span class="whatsapp-card__row-main">
 						${r.dot === false || !r.tone ? "" : `<span class="whatsapp-card__dot whatsapp-card__dot--${tone_of(r.tone)}" aria-hidden="true"></span>`}
-						${r.avatar ? `<span class="whatsapp-card__av" aria-hidden="true">${escape_html(r.avatar)}</span>` : ""}
+						${r.avatar ? `<span class="whatsapp-card__avatar" aria-hidden="true">${escape_html(r.avatar)}</span>` : ""}
 						<span class="whatsapp-card__row-text">
 							<span class="whatsapp-card__row-label">${escape_html(r.label)}</span>
-							${r.sub ? `<span class="whatsapp-card__row-sub">${escape_html(r.sub)}</span>` : ""}
+							${r.sub ? `<span class="whatsapp-card__row-subtitle">${escape_html(r.sub)}</span>` : ""}
 						</span>
 					</span>
 					${r.bar != null ? `<span class="whatsapp-card__bar"><span class="whatsapp-card__bar-fill whatsapp-card__bar-fill--${tone_of(r.tone)}" style="inline-size:${Math.max(0, Math.min(100, Number(r.bar) || 0)).toFixed(2)}%"></span></span>` : ""}
@@ -163,9 +163,9 @@ whatsapp.ui.Cards = class Cards {
 			.join("");
 		const span = cint(card.span) > 1 ? ` style="--whatsapp-card-span:${cint(card.span)}"` : "";
 		return `<div class="whatsapp-card whatsapp-card--panel"${span}>
-			${card.label || card.note ? `<div class="whatsapp-card__phead"><span class="whatsapp-card__ptitle">${escape_html(card.label)}</span>${card.note ? `<span class="whatsapp-card__note">${escape_html(card.note)}</span>` : ""}</div>` : ""}
+			${card.label || card.note ? `<div class="whatsapp-card__panel-head"><span class="whatsapp-card__panel-title">${escape_html(card.label)}</span>${card.note ? `<span class="whatsapp-card__note">${escape_html(card.note)}</span>` : ""}</div>` : ""}
 			<div class="whatsapp-card__rows">${rows}</div>
-			${card.foot ? `<div class="whatsapp-card__pfoot">${escape_html(card.foot)}</div>` : ""}
+			${card.foot ? `<div class="whatsapp-card__panel-foot">${escape_html(card.foot)}</div>` : ""}
 		</div>`;
 	}
 

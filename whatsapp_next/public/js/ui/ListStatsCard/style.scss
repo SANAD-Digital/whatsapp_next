@@ -40,7 +40,7 @@
 		.icon { width: 15px; height: 15px; }
 	}
 	&__text { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
-	&__sub { font-size: var(--text-tiny, 11px); color: var(--ink-gray-6); min-height: 1.2em; }
+	&__subtitle { font-size: var(--text-tiny, 11px); color: var(--ink-gray-6); min-height: 1.2em; }
 	&__label { font-size: var(--text-xs, 12px); font-weight: 600; color: var(--ink-gray-6); }
 	&__value {
 		min-height: 24px; // reserved so the skeleton → number swap never shifts the row

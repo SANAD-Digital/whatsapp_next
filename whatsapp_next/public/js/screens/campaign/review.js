@@ -80,12 +80,12 @@ frappe.provide("whatsapp_next.campaign");
 					<div data-block="verdict"></div>
 					<div class="whatsapp-campaign-builder__tiles">${tiles.map(render_summary_tile).join("")}</div>
 					<div class="whatsapp-campaign-builder__review-grid">
-						<section class="whatsapp-campaign-builder__rcard" data-block="checks-card">
+						<section class="whatsapp-campaign-builder__review-card" data-block="checks-card">
 							<div data-block="checks"></div>
-							<div class="whatsapp-campaign-builder__rcard-foot" data-block="verbs"></div>
+							<div class="whatsapp-campaign-builder__review-card-foot" data-block="verbs"></div>
 						</section>
-						${campaign_builder.card_html({ key: "sequence", icon: "chat", title: __("As the recipient will receive it"), note: campaign_builder.messages_text(per), body: this.thread(), cls: "whatsapp-campaign-builder__rcard" })}
-						<section class="whatsapp-campaign-builder__rcard">
+						${campaign_builder.card_html({ key: "sequence", icon: "chat", title: __("As the recipient will receive it"), note: campaign_builder.messages_text(per), body: this.thread(), cls: "whatsapp-campaign-builder__review-card" })}
+						<section class="whatsapp-campaign-builder__review-card">
 							${campaign_builder.card_html({ key: "details", icon: "doc", title: __("Campaign details"), body: `<div class="whatsapp-campaign-builder__pairs whatsapp-campaign-builder__pairs--one">${details.map(campaign_builder.key_value_line_html).join("")}</div>` })}
 							${campaign_builder.card_html({
 								key: "plan",
@@ -255,7 +255,7 @@ frappe.provide("whatsapp_next.campaign");
 					return `
 					${delay ? `<div class="whatsapp-campaign-builder__thread-wait"><span>${escape_html(__("wait {0}", [delay < 60 ? __("{0}s", [campaign_builder.format_integer(delay)]) : campaign_builder.duration_text(Math.round(delay / 60))]))}</span></div>` : ""}
 					<div class="whatsapp-campaign-builder__bubble">
-						<span class="whatsapp-campaign-builder__bubble-type">${ui.inline_icon_html(TYPE_ICON[m.message_type] || "chat", "xs")}<span>${escape_html(__(m.message_type))}</span><span class="whatsapp-campaign-builder__bubble-num whatsapp-kit-tabular" dir="ltr">${escape_html(campaign_builder.format_integer(m.idx))}</span></span>
+						<span class="whatsapp-campaign-builder__bubble-type">${ui.inline_icon_html(TYPE_ICON[m.message_type] || "chat", "xs")}<span>${escape_html(__(m.message_type))}</span><span class="whatsapp-campaign-builder__bubble-number whatsapp-kit-tabular" dir="ltr">${escape_html(campaign_builder.format_integer(m.idx))}</span></span>
 						${m.attachment ? `<span class="whatsapp-campaign-builder__bubble-file">${ui.inline_icon_html("attach", "xs")}<span dir="ltr">${escape_html(String(m.attachment).split("/").pop())}</span></span>` : ""}
 						<span class="whatsapp-campaign-builder__bubble-body" dir="auto">${escape_html(body || (m.attachment ? "" : __("(empty)")))}</span>
 						${options.length ? `<span class="whatsapp-campaign-builder__bubble-options">${options.map((o) => `<span>${escape_html(o)}</span>`).join("")}</span>` : ""}

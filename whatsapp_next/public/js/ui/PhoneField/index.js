@@ -340,8 +340,8 @@ whatsapp.ui.PhoneField = class PhoneField {
 		const hint_id = `${this.id}-hint`;
 		this.$root = $(`
 			<div class="whatsapp-kit whatsapp-kit-phone" id="${this.id}">
-				<div class="whatsapp-kit-phone__labelrow" data-slot="labelrow">
-					<label class="whatsapp-kit-phone__label" for="${input_id}">${ui.escape(options.label)}${options.required ? ' <span class="whatsapp-kit-phone__req" aria-hidden="true">*</span>' : ""}</label>
+				<div class="whatsapp-kit-phone__label-row" data-slot="labelrow">
+					<label class="whatsapp-kit-phone__label" for="${input_id}">${ui.escape(options.label)}${options.required ? ' <span class="whatsapp-kit-phone__required" aria-hidden="true">*</span>' : ""}</label>
 				</div>
 				<div class="whatsapp-kit-phone__box" data-slot="box" dir="ltr">
 					<button type="button" class="whatsapp-kit-phone__country" data-slot="trigger" aria-haspopup="listbox" aria-expanded="false">
@@ -410,10 +410,10 @@ whatsapp.ui.PhoneField = class PhoneField {
 	/** The `!` bubble: enlarged with a ring until it has been opened once, then quiet. */
 	make_tip() {
 		this.$tip_btn = $(`
-			<button type="button" class="whatsapp-kit-phone__tip-btn" aria-expanded="false" aria-label="${ui.escape(__("What this number is used for"))}">!</button>`).appendTo(
+			<button type="button" class="whatsapp-kit-phone__tip-button" aria-expanded="false" aria-label="${ui.escape(__("What this number is used for"))}">!</button>`).appendTo(
 			this.$root.find('[data-slot="labelrow"]')
 		);
-		this.$tip_pop = $(`<span class="whatsapp-kit-phone__tip-pop" role="tooltip" hidden>${ui.escape(this.opts.tip)}</span>`).appendTo(
+		this.$tip_pop = $(`<span class="whatsapp-kit-phone__tip-popover" role="tooltip" hidden>${ui.escape(this.opts.tip)}</span>`).appendTo(
 			this.$root.find('[data-slot="labelrow"]')
 		);
 		const show_tip_popup = () => {
@@ -433,7 +433,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 
 	render_tip() {
 		if (!this.$tip_btn) return;
-		this.$tip_btn.toggleClass("whatsapp-kit-phone__tip-btn--seen", !!this.state.tip_seen).attr("aria-expanded", String(!!this.state.tip));
+		this.$tip_btn.toggleClass("whatsapp-kit-phone__tip-button--seen", !!this.state.tip_seen).attr("aria-expanded", String(!!this.state.tip));
 		this.$tip_pop.attr("hidden", this.state.tip ? null : true);
 	}
 
@@ -449,7 +449,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 		this.state.q = "";
 		this.$trigger.attr("aria-expanded", "true");
 		this.$pop = $(`
-			<div class="whatsapp-kit-phone__pop">
+			<div class="whatsapp-kit-phone__popover">
 				<span class="whatsapp-kit-phone__search">
 					${ui.inline_icon_html ? ui.inline_icon_html("search", "xs") : ""}
 					<input type="text" class="whatsapp-kit-phone__q" role="combobox" aria-expanded="true" aria-autocomplete="list"
@@ -504,10 +504,10 @@ whatsapp.ui.PhoneField = class PhoneField {
 		}
 		rows.forEach((c) => {
 			$(`
-				<li class="whatsapp-kit-phone__opt${c.iso === current.iso ? " whatsapp-kit-phone__opt--on" : ""}" role="option" tabindex="-1" aria-selected="${c.iso === current.iso}">
-					<span class="whatsapp-kit-phone__opt-iso">${ui.escape(c.iso)}</span>
-					<span class="whatsapp-kit-phone__opt-name">${ui.escape(__(c.name))}</span>
-					<span class="whatsapp-kit-phone__opt-dial" dir="ltr">${ui.escape(c.dial)}</span>
+				<li class="whatsapp-kit-phone__option${c.iso === current.iso ? " whatsapp-kit-phone__option--on" : ""}" role="option" tabindex="-1" aria-selected="${c.iso === current.iso}">
+					<span class="whatsapp-kit-phone__option-iso">${ui.escape(c.iso)}</span>
+					<span class="whatsapp-kit-phone__option-name">${ui.escape(__(c.name))}</span>
+					<span class="whatsapp-kit-phone__option-dial" dir="ltr">${ui.escape(c.dial)}</span>
 				</li>`)
 				.on("click", () => this.select_country_option(c))
 				.appendTo(this.$list);
@@ -515,14 +515,14 @@ whatsapp.ui.PhoneField = class PhoneField {
 	}
 
 	list_key(e) {
-		const items = this.$list.children(".whatsapp-kit-phone__opt").toArray();
+		const items = this.$list.children(".whatsapp-kit-phone__option").toArray();
 		if (!items.length) return;
-		const at = items.findIndex((el) => el.classList.contains("whatsapp-kit-phone__opt--cursor"));
+		const at = items.findIndex((el) => el.classList.contains("whatsapp-kit-phone__option--cursor"));
 		if (e.key === "ArrowDown" || e.key === "ArrowUp") {
 			e.preventDefault();
 			const next = e.key === "ArrowDown" ? (at + 1) % items.length : (at - 1 + items.length) % items.length;
-			items.forEach((el) => el.classList.remove("whatsapp-kit-phone__opt--cursor"));
-			items[next].classList.add("whatsapp-kit-phone__opt--cursor");
+			items.forEach((el) => el.classList.remove("whatsapp-kit-phone__option--cursor"));
+			items[next].classList.add("whatsapp-kit-phone__option--cursor");
 			items[next].scrollIntoView({ block: "nearest" });
 		} else if (e.key === "Enter") {
 			e.preventDefault();

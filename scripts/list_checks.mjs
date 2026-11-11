@@ -67,8 +67,8 @@ for (const width of [1700, 1400, 1200, 1000, 900]) {
 	await page.waitForTimeout(700);
 	const state = await page.evaluate(() => {
 		const main = document.querySelector(".whatsapp-kit-filterbar__main");
-		const dd = [...main.querySelectorAll(":scope > .whatsapp-kit-filterbar__dd")].filter((e) => !e.classList.contains("whatsapp-kit-filterbar__dd--more"));
-		const more = document.querySelector(".whatsapp-kit-filterbar__dd--more");
+		const dd = [...main.querySelectorAll(":scope > .whatsapp-kit-filterbar__dropdown")].filter((e) => !e.classList.contains("whatsapp-kit-filterbar__dropdown--more"));
+		const more = document.querySelector(".whatsapp-kit-filterbar__dropdown--more");
 		const count = document.querySelector(".whatsapp-kit-filterbar__more-count");
 		return {
 			total: dd.length,
@@ -116,7 +116,7 @@ if (hidden_now) {
 	check('"More" lists every filter it hides', rows === hidden_now, `${rows} row(s) for ${hidden_now} hidden`);
 	await page.click(".whatsapp-kit-filterbar__more-list .whatsapp-kit-filter-sheet__trigger >> nth=0");
 	await page.waitForTimeout(800);
-	const opts = await page.$$eval(".whatsapp-kit-filterbar__more-list .whatsapp-kit-filterbar__opt", (n) => n.length);
+	const opts = await page.$$eval(".whatsapp-kit-filterbar__more-list .whatsapp-kit-filterbar__option", (n) => n.length);
 	check("a filter opens its options inside More", opts > 0, `${opts} option(s)`);
 	await page.keyboard.press("Escape");
 	await page.waitForTimeout(300);
@@ -225,14 +225,14 @@ const anchored = async (opener, popup, tag) => {
 	await page.keyboard.press("Escape");
 	await page.waitForTimeout(250);
 };
-await anchored(".whatsapp-kit-datefilter:not(.whatsapp-kit-datefilter--hidden) .whatsapp-kit-datefilter__op", ".whatsapp-kit-datefilter__menu", "the operator menu");
-await anchored(".whatsapp-kit-datefilter:not(.whatsapp-kit-datefilter--hidden) .whatsapp-kit-datefilter__fieldpick", ".whatsapp-kit-datefilter__menu--fields", "the field picker");
+await anchored(".whatsapp-kit-datefilter:not(.whatsapp-kit-datefilter--hidden) .whatsapp-kit-datefilter__operator", ".whatsapp-kit-datefilter__menu", "the operator menu");
+await anchored(".whatsapp-kit-datefilter:not(.whatsapp-kit-datefilter--hidden) .whatsapp-kit-datefilter__field-picker", ".whatsapp-kit-datefilter__menu--fields", "the field picker");
 
 const live = ".whatsapp-kit-datefilter:not(.whatsapp-kit-datefilter--hidden)";
 const visible = () => page.$$eval(live, (n) => n.length);
-const caption = () => page.$eval(`${live} .whatsapp-kit-datefilter__fieldpick-label`, (e) => e.textContent.trim());
+const caption = () => page.$eval(`${live} .whatsapp-kit-datefilter__field-picker-label`, (e) => e.textContent.trim());
 
-await page.click(`${live} .whatsapp-kit-datefilter__fieldpick`);
+await page.click(`${live} .whatsapp-kit-datefilter__field-picker`);
 await page.waitForTimeout(400);
 const offered = await page.$$eval(".whatsapp-kit-datefilter__menu--fields .whatsapp-kit-datefilter__menu-item", (n) => n.length);
 check("the field picker lists the DocType's date fields", offered >= 3, `${offered} offered`);
@@ -246,12 +246,12 @@ await page.click(".whatsapp-kit-datefilter__preset >> nth=2");
 await page.waitForTimeout(250);
 await page.click(".whatsapp-kit-datefilter__apply");
 await page.waitForTimeout(1400);
-await page.click(`${live} .whatsapp-kit-datefilter__fieldpick`);
+await page.click(`${live} .whatsapp-kit-datefilter__field-picker`);
 await page.waitForTimeout(400);
 await page.click(".whatsapp-kit-datefilter__menu--fields .whatsapp-kit-datefilter__menu-item >> nth=3");
 await page.waitForTimeout(900);
 check("a second field keeps one trigger", (await visible()) === 1, `${await visible()} visible`);
-check("the field segment turns into a count tag", /2/.test(await caption()) && (await page.$$eval(".whatsapp-kit-datefilter__fieldpick-label--tag", (n) => n.length)) === 1, await caption());
+check("the field segment turns into a count tag", /2/.test(await caption()) && (await page.$$eval(".whatsapp-kit-datefilter__field-picker-label--tag", (n) => n.length)) === 1, await caption());
 const rail = await page.$$eval(".whatsapp-kit-datefilter__rail-item", (n) => n.length);
 check("the panel lists both fields on its rail", rail === 2, `${rail} item(s)`);
 
@@ -263,7 +263,7 @@ const ranges = await page.evaluate(() => cur_list.filter_area.get().filter((f) =
 check("one Apply commits every field", ranges === 2, `${ranges} range filter(s)`);
 
 // the fiscal panel's year and month open a grid instead of stepping
-await page.click(`${live} .whatsapp-kit-datefilter__op`);
+await page.click(`${live} .whatsapp-kit-datefilter__operator`);
 await page.waitForTimeout(400);
 await page.click(".whatsapp-kit-datefilter__menu-item >> nth=7");
 await page.waitForTimeout(700);
@@ -288,15 +288,15 @@ let has_amore = false;
 for (const w of [900, 860, 820, 790, 768]) {
 	await page.setViewportSize({ width: w, height: 950 });
 	await page.waitForTimeout(700);
-	has_amore = await page.$eval(".whatsapp-kit-filterbar__dd--amore", (e) => !e.hasAttribute("hidden")).catch(() => false);
+	has_amore = await page.$eval(".whatsapp-kit-filterbar__dropdown--actions-overflow", (e) => !e.hasAttribute("hidden")).catch(() => false);
 	if (has_amore) break;
 }
 if (has_amore) {
-	await page.click(".whatsapp-kit-filterbar__dd--amore .whatsapp-kit-filterbar__action");
+	await page.click(".whatsapp-kit-filterbar__dropdown--actions-overflow .whatsapp-kit-filterbar__action");
 	await page.waitForTimeout(600);
-	const named = await page.$$eval(".whatsapp-kit-filterbar__amore-item", (n) =>
+	const named = await page.$$eval(".whatsapp-kit-filterbar__actions-overflow-item", (n) =>
 		n.map((e) => {
-			const label = e.querySelector(".whatsapp-kit-filterbar__amore-label");
+			const label = e.querySelector(".whatsapp-kit-filterbar__actions-overflow-label");
 			return label ? label.textContent.trim() : "";
 		})
 	);
@@ -316,7 +316,7 @@ if (has_amore) {
 // ---- the column picker holds its place while you tick ----
 await page.setViewportSize({ width: 1500, height: 950 });
 await page.waitForTimeout(700);
-await page.click(".whatsapp-kit-filterbar__dd--columns .whatsapp-kit-filterbar__action");
+await page.click(".whatsapp-kit-filterbar__dropdown--columns .whatsapp-kit-filterbar__action");
 await page.waitForTimeout(700);
 await page.$eval(".whatsapp-kit-filterbar__columns-list", (e) => {
 	e.scrollTop = 180;
@@ -382,11 +382,11 @@ check(
 	!!drawer && Math.abs(drawer.bottom - 760) < 2 && drawer.h >= 760 * 0.4 && drawer.h <= 760 * 0.9,
 	drawer ? JSON.stringify(drawer) : "no drawer"
 );
-const row_h = await page.$eval(".whatsapp-kit-options-sheet__list .whatsapp-kit-filterbar__opt", (e) => Math.round(e.getBoundingClientRect().height)).catch(() => 0);
+const row_h = await page.$eval(".whatsapp-kit-options-sheet__list .whatsapp-kit-filterbar__option", (e) => Math.round(e.getBoundingClientRect().height)).catch(() => 0);
 check("its rows are a thumb's size", row_h >= 44, `${row_h}px`);
 const scrolls = await page.$eval(".whatsapp-kit-options-sheet__list", (e) => getComputedStyle(e).overflowY === "auto").catch(() => false);
 check("the list scrolls inside the drawer", scrolls);
-await page.click(".whatsapp-kit-options-sheet__list .whatsapp-kit-filterbar__opt >> nth=0");
+await page.click(".whatsapp-kit-options-sheet__list .whatsapp-kit-filterbar__option >> nth=0");
 await page.waitForTimeout(1000);
 const picked = await page.$eval(".whatsapp-kit-filter-sheet__row:first-child .whatsapp-kit-filter-sheet__chosen", (e) => e.textContent.trim()).catch(() => "");
 check("choosing in the drawer sets the filter", !!picked && picked !== "All", picked);
@@ -419,11 +419,11 @@ if (!(await page.$$(".whatsapp-kit-datefilter__panel")).length) {
 	await page.click(live_date);
 	await page.waitForTimeout(800);
 }
-const head = await page.$$eval(".whatsapp-kit-datefilter__chead-row", (n) => n.length);
+const head = await page.$$eval(".whatsapp-kit-datefilter__compact-head-row", (n) => n.length);
 check("its operator and field move into the panel", head === 2, `${head} row(s)`);
-await page.click(".whatsapp-kit-datefilter__chead-trigger >> nth=0");
+await page.click(".whatsapp-kit-datefilter__compact-head-trigger >> nth=0");
 await page.waitForTimeout(500);
-const ops = await page.$$eval(".whatsapp-kit-datefilter__chead-list .whatsapp-kit-datefilter__menu-item", (n) => n.length);
+const ops = await page.$$eval(".whatsapp-kit-datefilter__compact-head-list .whatsapp-kit-datefilter__menu-item", (n) => n.length);
 check("the operator list opens in place", ops === 8, `${ops} operator(s)`);
 await page.keyboard.press("Escape");
 await page.waitForTimeout(300);

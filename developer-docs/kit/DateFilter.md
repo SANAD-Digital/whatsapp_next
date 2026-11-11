@@ -123,17 +123,17 @@ In a Desk list, use the FilterBar preset `{ type: "date" }` instead, which does 
 ## CSS hooks
 
 - **Root:** `.whatsapp-kit-datefilter`, with the modifiers `--set` (a value is applied) and `--hidden` (the set's inactive rows).
-- **Trigger:** `.whatsapp-kit-datefilter__trigger` contains `__op`, `__fieldpick` (`__fieldpick-label--tag`), `__value`, `__text` (`--empty`), `__clear` and `__caret`.
+- **Trigger:** `.whatsapp-kit-datefilter__trigger` contains `__operator`, `__field-picker` (`__field-picker-label--tag`), `__value`, `__text` (`--empty`), `__clear` and `__caret`.
 - **Menus:** `.whatsapp-kit-datefilter__menu` (`--fields`) holds `__menu-item`, with the modifiers `--on` and `--mine`, plus `__menu-box` and `__menu-check`.
 - **Panel:** `.whatsapp-kit-datefilter__panel` (`--compact`) contains:
-  - `__chead` (the compact head)
+  - `__compact-head` (the compact head)
   - `__rail` / `__rail-item--on`
   - `__presets` / `__preset--on`
   - `__inputs` / `__field--bad`
-  - `__cal` / `__month` / `__grid`
+  - `__calendar` / `__month` / `__grid`
   - `__day`, with the modifiers `--on`, `--ring`, `--today`, `--band`, `--band-start/-mid/-end` and `--blank`, containing `__pill[data-key]`
   - `__picker` / `__picker-cell--on` / `--now`
-  - `__form`, `__seg`, `__stepper` and `__bars` / `__bar--on`
+  - `__form`, `__segment`, `__stepper` and `__bars` / `__bar--on`
   - `__footer`, holding `__summary`, `__count-chip`, `__cancel` and `__apply`
 - **Custom property:** `--whatsapp-kit-band-radius` is set on range cells.
 - **Set root:** `.whatsapp-kit-datefilter-set`.
@@ -151,4 +151,4 @@ In a Desk list, use the FilterBar preset `{ type: "date" }` instead, which does 
   - `public/js/listview/`: `whatsapp_campaign_list.js`, `whatsapp_contact_group_list.js`, `whatsapp_notification_alert_list.js`, `whatsapp_notification_list.js`, `whatsapp_number_list.js`, `whatsapp_template_list.js`
   - `public/js/screens/messages.js`, for the Outbound, Inbound and Queue lists
   - `whatsapp_next/page/wa_contacts/wa_contacts.js`
-- **Phones (under 768 px):** the stylesheet reduces the trigger to one calendar icon. The label, operator and field segments are hidden, and the compact panel head (`__chead`) carries the operator and field instead. The panel becomes `position: fixed` and scrolls, so Apply stays reachable. When a value is set, the trigger is tinted and keeps its ×.
+- **Phones (under 768 px):** the stylesheet reduces the trigger to one calendar icon. The label, operator and field segments are hidden, and the compact panel head (`__compact-head`) carries the operator and field instead. The panel becomes `position: fixed` and scrolls, so Apply stays reachable. When a value is set, the trigger is tinted and keeps its ×.

@@ -14,7 +14,7 @@
 	&--loading { align-items: stretch; text-align: start; }
 	&__icon .icon { width: 28px; height: 28px; color: var(--ink-gray-5); }
 	&__title { color: var(--ink-gray-7); font-weight: 600; font-size: var(--text-base, 14px); }
-	&__desc { max-width: 42ch; font-size: var(--text-sm, 13px); }
+	&__description { max-width: 42ch; font-size: var(--text-sm, 13px); }
 	&__actions { display: flex; flex-wrap: wrap; gap: var(--whatsapp-kit-gap-sm); margin-block-start: var(--whatsapp-kit-gap-xs); }
 	&--error &__icon .icon { color: var(--ink-red-8); }
 	&--offline &__icon .icon { color: var(--ink-amber-7); }

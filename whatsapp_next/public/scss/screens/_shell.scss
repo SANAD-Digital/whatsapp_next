@@ -46,14 +46,14 @@ $wa-list-pages: "#page-wa-contacts, #page-wa-functions-center";
 	--whatsapp-kit-radius: 8px;
 	--whatsapp-kit-radius-lg: 10px;
 	--whatsapp-kit-card-radius: 10px;
-	--whatsapp-kit-row-h: 36px;
+	--whatsapp-kit-row-height: 36px;
 	// never above Frappe's own sizes (owner, 2026-10-26): Desk's controls are 28 px
-	--whatsapp-kit-head-h: 28px;
-	--whatsapp-kit-ctl-h: 28px;
-	--whatsapp-kit-ctl-h-sm: 24px;
+	--whatsapp-kit-head-height: 28px;
+	--whatsapp-kit-control-height: 28px;
+	--whatsapp-kit-control-height-sm: 24px;
 	// the kit's buttons (`.whatsapp-button`): a control's height, the large one a step above
-	--whatsapp-btn-h: 28px;
-	--whatsapp-btn-h-lg: 32px;
+	--whatsapp-button-height: 28px;
+	--whatsapp-button-height-lg: 32px;
 }
 
 // the card vocabulary (`Cards`) at the same geometry as the stat cards (`ListStatsCard`), whichever
@@ -61,10 +61,10 @@ $wa-list-pages: "#page-wa-contacts, #page-wa-functions-center";
 .whatsapp-cards,
 .whatsapp-cards--compact {
 	--whatsapp-cards-gap: 12px;
-	--whatsapp-cards-secgap: 16px;
-	--whatsapp-cards-headgap: 10px;
-	--whatsapp-cards-pad: 12px 16px;
-	--whatsapp-cards-panelpad: 16px;
+	--whatsapp-cards-section-gap: 16px;
+	--whatsapp-cards-header-gap: 10px;
+	--whatsapp-cards-padding: 12px 16px;
+	--whatsapp-cards-panel-padding: 16px;
 	--whatsapp-cards-tile: 32px;
 	--whatsapp-cards-stat: 20px;
 	--whatsapp-cards-kpi: 24px;
@@ -72,13 +72,13 @@ $wa-list-pages: "#page-wa-contacts, #page-wa-functions-center";
 }
 
 .whatsapp {
-	--whatsapp-h: 28px;
-	--whatsapp-h-sm: 24px;
-	--whatsapp-fs: 13px;
-	--whatsapp-fs-sm: 12px;
-	--whatsapp-px: 10px;
+	--whatsapp-control-height: 28px;
+	--whatsapp-control-height-sm: 24px;
+	--whatsapp-font-size: 13px;
+	--whatsapp-font-size-sm: 12px;
+	--whatsapp-control-padding-inline: 10px;
 	--whatsapp-row-gap: 8px 12px;
-	--whatsapp-row-pad: 8px 0;
+	--whatsapp-row-padding: 8px 0;
 	--whatsapp-radius: 8px;
 	--whatsapp-radius-lg: 10px;
 }
@@ -159,12 +159,12 @@ body[data-route="Workspaces/WhatsApp"] #page-Workspaces {
 // strip under the panel (owner, 2026-10-26). Below 992 px Desk's strip is still above it, so the
 // offset there stays.
 @media (min-width: 992px) {
-	// exactly the height of what scrolls it — measured by the page (`--whatsapp-onb-h`), never the window,
+	// exactly the height of what scrolls it — measured by the page (`--whatsapp-onboarding-height`), never the window,
 	// which a scrollbar or a banner makes taller than the scroller
 	#page-wa-onboarding {
 		--whatsapp-viewport-offset: 0px;
-		min-block-size: var(--whatsapp-onb-h, 100dvh);
-		.whatsapp-onboarding { min-block-size: var(--whatsapp-onb-h, 100dvh); }
+		min-block-size: var(--whatsapp-onboarding-height, 100dvh);
+		.whatsapp-onboarding { min-block-size: var(--whatsapp-onboarding-height, 100dvh); }
 	}
 	// Desk keeps a scrollbar's width free beside the page (`scrollbar-gutter: stable`, Frappe 16.53);
 	// on this screen that strip sits against the brand panel in either direction, so it takes the
@@ -282,10 +282,10 @@ body[data-route^="Form/WhatsApp "] {
 	align-items: center;
 	margin-inline-start: 6px;
 	padding-inline: 7px;
-	border: 1px solid var(--whatsapp-pri-sb);
+	border: 1px solid var(--whatsapp-primary-soft-border);
 	border-radius: 999px;
-	background: var(--whatsapp-pri-s);
-	color: var(--whatsapp-pri-d);
+	background: var(--whatsapp-primary-soft);
+	color: var(--whatsapp-primary-deep);
 	font-size: 11px;
 	font-weight: 600;
 	line-height: 15px;

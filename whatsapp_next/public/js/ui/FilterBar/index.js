@@ -110,7 +110,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		this.$main = $('<div class="whatsapp-kit-filterbar__main"></div>').appendTo(this.$toolbar);
 		this.$tabs = $('<div class="whatsapp-kit-filterbar__row whatsapp-kit-filterbar__row--tabs"></div>').appendTo(this.$wrapper);
 		this.$extra = $('<div class="whatsapp-kit-filterbar__extra"></div>').appendTo(this.$main);
-		this.$groupby = $('<div class="whatsapp-kit-filterbar__groupby"></div>').appendTo(this.$wrapper);
+		this.$groupby = $('<div class="whatsapp-kit-filterbar__group-by"></div>').appendTo(this.$wrapper);
 		const of_type = (types) => this.opts.presets.filter((p) => types.includes(p.type || "select"));
 		of_type(["search"]).forEach((p) => this.render_search(p));
 		of_type(["select", "daterange"])
@@ -139,7 +139,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		this.read_list_filters_into_bar();
 		this.apply_defaults();
 		$(document).on(`mousedown.${this.id} touchstart.${this.id}`, (e) => {
-			if ($(e.target).closest(".whatsapp-kit-filterbar__dd").length) return;
+			if ($(e.target).closest(".whatsapp-kit-filterbar__dropdown").length) return;
 			this.close_popover();
 			this.close_levels();
 			this.close_columns();
@@ -345,7 +345,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		const label = this.label_of(p);
 		const $group = $(`<div class="whatsapp-kit-filterbar__period" role="group" aria-label="${ui.escape(label)}"></div>`);
 		options.forEach((o) => {
-			$(`<button type="button" class="whatsapp-kit-filterbar__period-btn" data-key="${ui.escape(key_of(o.value))}" aria-pressed="false" aria-label="${ui.escape(o.label)}"><span class="whatsapp-kit-filterbar__period-long">${ui.escape(o.label)}</span><span class="whatsapp-kit-filterbar__period-short" aria-hidden="true">${ui.escape(short_period(o.value, o.label))}</span></button>`)
+			$(`<button type="button" class="whatsapp-kit-filterbar__period-button" data-key="${ui.escape(key_of(o.value))}" aria-pressed="false" aria-label="${ui.escape(o.label)}"><span class="whatsapp-kit-filterbar__period-long">${ui.escape(o.label)}</span><span class="whatsapp-kit-filterbar__period-short" aria-hidden="true">${ui.escape(short_period(o.value, o.label))}</span></button>`)
 				.on("click", () => this.set_filter_value(p.fieldname, o.value))
 				.appendTo($group);
 		});
@@ -467,11 +467,11 @@ whatsapp.ui.FilterBar = class FilterBar {
 	 * this twice before (D-072, D-075b) — a flex line that has actually wrapped cannot be wrong.
 	 */
 	render_more() {
-		this.$more_dd = $('<div class="whatsapp-kit-filterbar__dd whatsapp-kit-filterbar__dd--more" hidden></div>').appendTo(this.$main);
+		this.$more_dd = $('<div class="whatsapp-kit-filterbar__dropdown whatsapp-kit-filterbar__dropdown--more" hidden></div>').appendTo(this.$main);
 		this.more_pop_id = `${this.id}-more-pop`;
-		this.$more_btn = $(`<button type="button" class="whatsapp-kit-filterbar__btn whatsapp-kit-filterbar__more" aria-haspopup="dialog" aria-expanded="false" aria-controls="${this.more_pop_id}">
+		this.$more_btn = $(`<button type="button" class="whatsapp-kit-filterbar__button whatsapp-kit-filterbar__more" aria-haspopup="dialog" aria-expanded="false" aria-controls="${this.more_pop_id}">
 				<span class="whatsapp-kit-filterbar__more-icon" aria-hidden="true">${ui.icon("es-line-filter", "xs")}</span>
-				<span class="whatsapp-kit-filterbar__btn-label">${ui.escape(__("More"))}</span>
+				<span class="whatsapp-kit-filterbar__button-label">${ui.escape(__("More"))}</span>
 				<span class="whatsapp-kit-filterbar__more-count whatsapp-kit-tabular"></span>
 				<span class="whatsapp-kit-filterbar__chevron" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 			</button>`)
@@ -482,7 +482,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 	/** The same treatment for the action cluster: the icons that do not fit go under a "…". */
 	render_actions_more() {
 		if (!this.$actions || !this.$actions.children().length) return;
-		this.$amore_dd = $('<div class="whatsapp-kit-filterbar__dd whatsapp-kit-filterbar__dd--amore" hidden></div>').appendTo(this.$actions);
+		this.$amore_dd = $('<div class="whatsapp-kit-filterbar__dropdown whatsapp-kit-filterbar__dropdown--actions-overflow" hidden></div>').appendTo(this.$actions);
 		this.amore_pop_id = `${this.id}-amore-pop`;
 		this.$amore_btn = $(`<button type="button" class="whatsapp-kit-filterbar__action whatsapp-kit-filterbar__action--icon" title="${ui.escape(__("More actions"))}" aria-label="${ui.escape(__("More actions"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${this.amore_pop_id}">${ui.icon("es-line-dot-horizontal", "sm")}</button>`)
 			.on("click", () => (this.$amore ? this.close_amore() : this.open_amore()))
@@ -551,9 +551,9 @@ whatsapp.ui.FilterBar = class FilterBar {
 			if (this.$actions) this.$actions.find(".whatsapp-kit-filterbar__hidden").removeClass("whatsapp-kit-filterbar__hidden");
 			return this;
 		}
-		const filters = this.$main.children(".whatsapp-kit-filterbar__dd, .whatsapp-kit-filterbar__chipfilter").not(this.$more_dd).toArray();
+		const filters = this.$main.children(".whatsapp-kit-filterbar__dropdown, .whatsapp-kit-filterbar__chip-filter").not(this.$more_dd).toArray();
 		// Desk's own filter section rides in the cluster too, so it overflows with the rest
-		const actions = this.$actions ? this.$actions.children(".whatsapp-kit-filterbar__dd, .whatsapp-kit-filterbar__action, .whatsapp-kit-filterbar__native").not(this.$amore_dd).toArray() : [];
+		const actions = this.$actions ? this.$actions.children(".whatsapp-kit-filterbar__dropdown, .whatsapp-kit-filterbar__action, .whatsapp-kit-filterbar__native").not(this.$amore_dd).toArray() : [];
 		// the cluster settles first: an icon row that has wrapped is as wrong as a filter row that has
 		this.hidden_actions = this.$amore_dd ? this.hide_overflowing_items(this.$actions, actions, this.$amore_dd) : [];
 		this.hidden_filters = this.hide_overflowing_items(this.$main, filters, this.$more_dd);
@@ -602,7 +602,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 	 * full-height sheet with the same option lists.
 	 */
 	render_mobile_toggle() {
-		this.$mobile_btn = $(`<button type="button" class="whatsapp-kit-filterbar__btn whatsapp-kit-filterbar__mobile-toggle">${ui.icon("es-line-filter", "xs")}<span>${ui.escape(__("Filters"))}</span><span class="whatsapp-kit-filterbar__mobile-count whatsapp-kit-tabular" hidden></span></button>`)
+		this.$mobile_btn = $(`<button type="button" class="whatsapp-kit-filterbar__button whatsapp-kit-filterbar__mobile-toggle">${ui.icon("es-line-filter", "xs")}<span>${ui.escape(__("Filters"))}</span><span class="whatsapp-kit-filterbar__mobile-count whatsapp-kit-tabular" hidden></span></button>`)
 			.on("click", () => this.open_filter_sheet())
 			.appendTo(this.$main);
 	}
@@ -611,7 +611,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		if (!this.$mobile_btn) return;
 		const active_filter_count = Object.keys(this.values).filter((k) => !k.startsWith("__") && this.controls[k] && this.controls[k].type === "select").length;
 		this.$mobile_btn.find(".whatsapp-kit-filterbar__mobile-count").prop("hidden", !active_filter_count).text(ui.format_integer(active_filter_count));
-		this.$mobile_btn.toggleClass("whatsapp-kit-filterbar__btn--active", !!active_filter_count);
+		this.$mobile_btn.toggleClass("whatsapp-kit-filterbar__button--active", !!active_filter_count);
 	}
 
 	/**
@@ -644,7 +644,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		this.close_popover();
 		this.close_levels();
 		this.close_columns();
-		this.$more = $(`<div class="whatsapp-kit-filterbar__pop whatsapp-kit-filterbar__pop--more" id="${this.more_pop_id}" role="dialog" aria-label="${ui.escape(__("More filters"))}"></div>`).appendTo(this.$more_dd);
+		this.$more = $(`<div class="whatsapp-kit-filterbar__popover whatsapp-kit-filterbar__popover--more" id="${this.more_pop_id}" role="dialog" aria-label="${ui.escape(__("More filters"))}"></div>`).appendTo(this.$more_dd);
 		this.$more_btn.attr("aria-expanded", "true");
 		this.fill_more();
 		this.keep_in_view(this.$more);
@@ -653,17 +653,17 @@ whatsapp.ui.FilterBar = class FilterBar {
 	fill_more() {
 		if (!this.$more) return;
 		const $pop = this.$more.empty();
-		$(`<div class="whatsapp-kit-filterbar__pop-head"><span class="whatsapp-kit-filterbar__pop-title">${ui.escape(__("More filters"))}</span>
-				<button type="button" class="btn btn-xs btn-default whatsapp-kit-filterbar__pop-close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "xs")}</button></div>`)
+		$(`<div class="whatsapp-kit-filterbar__popover-head"><span class="whatsapp-kit-filterbar__popover-title">${ui.escape(__("More filters"))}</span>
+				<button type="button" class="btn btn-xs btn-default whatsapp-kit-filterbar__popover-close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "xs")}</button></div>`)
 			.appendTo($pop)
-			.find(".whatsapp-kit-filterbar__pop-close")
+			.find(".whatsapp-kit-filterbar__popover-close")
 			.on("click", () => this.close_more(true));
 		const $body = $('<div class="whatsapp-kit-filter-sheet whatsapp-kit-filterbar__more-list"></div>').appendTo($pop);
 		(this.hidden_filters || []).forEach((el) => {
 			const c = Object.values(this.controls).find((x) => x.$dd && x.$dd[0] === el);
 			if (c) this.option_field($body, c.preset, { inline: true });
 		});
-		if (!$body.children().length) $body.append(`<div class="whatsapp-kit-filterbar__pop-empty">${ui.escape(__("No options"))}</div>`);
+		if (!$body.children().length) $body.append(`<div class="whatsapp-kit-filterbar__popover-empty">${ui.escape(__("No options"))}</div>`);
 	}
 
 	close_more(restore_focus = false) {
@@ -681,16 +681,16 @@ whatsapp.ui.FilterBar = class FilterBar {
 	open_amore() {
 		this.close_popover();
 		this.close_more();
-		this.$amore = $(`<div class="whatsapp-kit-filterbar__pop whatsapp-kit-filterbar__pop--amore" id="${this.amore_pop_id}" role="dialog" aria-label="${ui.escape(__("More actions"))}"></div>`).appendTo(this.$amore_dd);
+		this.$amore = $(`<div class="whatsapp-kit-filterbar__popover whatsapp-kit-filterbar__popover--actions-overflow" id="${this.amore_pop_id}" role="dialog" aria-label="${ui.escape(__("More actions"))}"></div>`).appendTo(this.$amore_dd);
 		this.$amore_btn.attr("aria-expanded", "true");
 		(this.hidden_actions || []).forEach((el) => {
-			const $item = $('<div class="whatsapp-kit-filterbar__amore-item"></div>').appendTo(this.$amore);
+			const $item = $('<div class="whatsapp-kit-filterbar__actions-overflow-item"></div>').appendTo(this.$amore);
 			$(el).removeClass("whatsapp-kit-filterbar__hidden").appendTo($item);
 			const text = FilterBar.action_label(el);
 			if (!text) return;
 			// the icon alone says nothing in a stack of four; the row names it, and clicking the
 			// name is the same as clicking the icon
-			$(`<span class="whatsapp-kit-filterbar__amore-label">${ui.escape(text)}</span>`)
+			$(`<span class="whatsapp-kit-filterbar__actions-overflow-label">${ui.escape(text)}</span>`)
 				.on("click", () => {
 					const $btn = $(el).is("button") ? $(el) : $(el).find("button").first();
 					$btn.trigger("click");
@@ -703,8 +703,8 @@ whatsapp.ui.FilterBar = class FilterBar {
 	/** What to call an action in the "…" menu: its own name, stable whatever it is showing. */
 	static action_label(el) {
 		const $el = $(el);
-		if ($el.hasClass("whatsapp-kit-filterbar__dd--group")) return __("Group by");
-		if ($el.hasClass("whatsapp-kit-filterbar__dd--columns")) return __("Columns");
+		if ($el.hasClass("whatsapp-kit-filterbar__dropdown--group")) return __("Group by");
+		if ($el.hasClass("whatsapp-kit-filterbar__dropdown--columns")) return __("Columns");
 		if ($el.hasClass("whatsapp-kit-filterbar__native")) return __("More filters");
 		const $btn = $el.is("button") ? $el : $el.find("button").first();
 		return ($btn.attr("aria-label") || $btn.attr("title") || $el.attr("title") || "").trim();
@@ -745,7 +745,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 			return $row;
 		}
 
-		const $search = $(`<input type="search" class="form-control input-xs whatsapp-kit-filterbar__pop-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [label]))}" hidden>`).insertBefore($list);
+		const $search = $(`<input type="search" class="form-control input-xs whatsapp-kit-filterbar__popover-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [label]))}" hidden>`).insertBefore($list);
 		const fill_option_list = (txt) => this.fill_options($list, preset, txt, paint_chosen);
 		$search.on("input", ui.debounce(() => fill_option_list($search.val()), 250));
 
@@ -754,7 +754,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 			// one field open at a time, like a set of dropdowns
 			$body.find(".whatsapp-kit-filter-sheet__trigger").attr("aria-expanded", "false");
 			$body.find(".whatsapp-kit-filter-sheet__list").prop("hidden", true);
-			$body.find(".whatsapp-kit-filterbar__pop-search").prop("hidden", true);
+			$body.find(".whatsapp-kit-filterbar__popover-search").prop("hidden", true);
 			if (open) return;
 			$trigger.attr("aria-expanded", "true");
 			$list.prop("hidden", false);
@@ -844,13 +844,13 @@ whatsapp.ui.FilterBar = class FilterBar {
 				chosen.filter((v) => !listed.has(key_of(v))).forEach((v) => options.unshift({ value: v, label: this.label_for_value(preset.fieldname, v) }));
 				$list.empty();
 				if (!options.length) {
-					$list.append(`<div class="whatsapp-kit-filterbar__pop-empty">${ui.escape(txt ? __("No match for {0}", [txt]) : __("No options"))}</div>`);
+					$list.append(`<div class="whatsapp-kit-filterbar__popover-empty">${ui.escape(txt ? __("No match for {0}", [txt]) : __("No options"))}</div>`);
 					return;
 				}
 				const type = preset.multiple === false ? "radio" : "checkbox";
 				options.forEach((o) => {
 					const on = chosen.some((v) => key_of(v) === key_of(o.value));
-					const $opt = $(`<label class="whatsapp-kit-filterbar__opt"><input type="${type}" name="${this.id}-opt-${ui.escape(preset.fieldname)}" value="${ui.escape(key_of(o.value))}"${on ? " checked" : ""}><span class="whatsapp-kit-filterbar__opt-label">${ui.escape(o.label)}</span></label>`);
+					const $opt = $(`<label class="whatsapp-kit-filterbar__option"><input type="${type}" name="${this.id}-opt-${ui.escape(preset.fieldname)}" value="${ui.escape(key_of(o.value))}"${on ? " checked" : ""}><span class="whatsapp-kit-filterbar__option-label">${ui.escape(o.label)}</span></label>`);
 					$opt.find("input").on("change", (e) => {
 						this.toggle(preset.fieldname, o.value, e.target.checked);
 						if (typeof after === "function") after();
@@ -875,16 +875,16 @@ whatsapp.ui.FilterBar = class FilterBar {
 	render_select(preset) {
 		const p = Object.assign({ multiple: true }, preset);
 		const label = this.label_of(p);
-		const $dd = $(`<div class="whatsapp-kit-filterbar__dd"></div>`).appendTo(this.$main);
+		const $dd = $(`<div class="whatsapp-kit-filterbar__dropdown"></div>`).appendTo(this.$main);
 		const pop_id = `${this.id}-${p.fieldname}-pop`;
-		const $btn = $(`<button type="button" class="whatsapp-kit-filterbar__btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">
-			<span class="whatsapp-kit-filterbar__btn-label">${ui.escape(label)}</span><span class="whatsapp-kit-filterbar__btn-value"></span>
-			<span class="whatsapp-kit-filterbar__btn-clear" title="${ui.escape(__("Clear {0}", [label]))}" hidden>${ui.icon("es-line-close", "xs")}</span>
+		const $btn = $(`<button type="button" class="whatsapp-kit-filterbar__button" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">
+			<span class="whatsapp-kit-filterbar__button-label">${ui.escape(label)}</span><span class="whatsapp-kit-filterbar__button-value"></span>
+			<span class="whatsapp-kit-filterbar__button-clear" title="${ui.escape(__("Clear {0}", [label]))}" hidden>${ui.icon("es-line-close", "xs")}</span>
 			<span class="whatsapp-kit-filterbar__chevron" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 		</button>`)
 			.on("click", (e) => {
 				// the inline × clears this one filter instead of opening the list
-				if ($(e.target).closest(".whatsapp-kit-filterbar__btn-clear").length) {
+				if ($(e.target).closest(".whatsapp-kit-filterbar__button-clear").length) {
 					this.close_popover();
 					return this.set_filter_value(p.fieldname, null);
 				}
@@ -925,21 +925,21 @@ whatsapp.ui.FilterBar = class FilterBar {
 		const preset = control.preset;
 		const stat = this.static_options(preset);
 		const searchable = !stat || stat.length > SEARCH_THRESHOLD;
-		const $pop = $(`<div class="whatsapp-kit-filterbar__pop" id="${control.pop_id}" role="dialog" aria-label="${ui.escape(control.label)}" data-field="${ui.escape(fieldname)}">
-			<div class="whatsapp-kit-filterbar__pop-head"><span class="whatsapp-kit-filterbar__pop-title">${ui.escape(control.label)}</span>
-				<button type="button" class="btn btn-xs btn-default whatsapp-kit-filterbar__pop-close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "xs")}</button></div>
-			${searchable ? `<input type="search" class="form-control input-xs whatsapp-kit-filterbar__pop-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [control.label]))}">` : ""}
-			<div class="whatsapp-kit-filterbar__pop-list" role="group" aria-labelledby="${control.pop_id}-legend"><span class="whatsapp-kit-visually-hidden" id="${control.pop_id}-legend">${ui.escape(control.label)}</span></div>
-			<div class="whatsapp-kit-filterbar__pop-foot"><button type="button" class="btn btn-xs btn-link whatsapp-kit-filterbar__pop-clear">${ui.escape(__("Clear"))}</button></div>
+		const $pop = $(`<div class="whatsapp-kit-filterbar__popover" id="${control.pop_id}" role="dialog" aria-label="${ui.escape(control.label)}" data-field="${ui.escape(fieldname)}">
+			<div class="whatsapp-kit-filterbar__popover-head"><span class="whatsapp-kit-filterbar__popover-title">${ui.escape(control.label)}</span>
+				<button type="button" class="btn btn-xs btn-default whatsapp-kit-filterbar__popover-close" aria-label="${ui.escape(__("Close"))}">${ui.icon("es-line-close", "xs")}</button></div>
+			${searchable ? `<input type="search" class="form-control input-xs whatsapp-kit-filterbar__popover-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [control.label]))}">` : ""}
+			<div class="whatsapp-kit-filterbar__popover-list" role="group" aria-labelledby="${control.pop_id}-legend"><span class="whatsapp-kit-visually-hidden" id="${control.pop_id}-legend">${ui.escape(control.label)}</span></div>
+			<div class="whatsapp-kit-filterbar__popover-foot"><button type="button" class="btn btn-xs btn-link whatsapp-kit-filterbar__popover-clear">${ui.escape(__("Clear"))}</button></div>
 		</div>`).appendTo(control.$dd);
 		control.$el.attr("aria-expanded", "true");
 		this.$open = $pop;
-		$pop.find(".whatsapp-kit-filterbar__pop-close").on("click", () => this.close_popover(true));
-		$pop.find(".whatsapp-kit-filterbar__pop-clear").on("click", () => {
+		$pop.find(".whatsapp-kit-filterbar__popover-close").on("click", () => this.close_popover(true));
+		$pop.find(".whatsapp-kit-filterbar__popover-clear").on("click", () => {
 			this.set_filter_value(fieldname, null);
-			this.fill_popover(fieldname, $pop.find(".whatsapp-kit-filterbar__pop-search").val() || "");
+			this.fill_popover(fieldname, $pop.find(".whatsapp-kit-filterbar__popover-search").val() || "");
 		});
-		const $search = $pop.find(".whatsapp-kit-filterbar__pop-search");
+		const $search = $pop.find(".whatsapp-kit-filterbar__popover-search");
 		$search.on("input", ui.debounce(() => this.fill_popover(fieldname, $search.val()), 250));
 		$pop.on("keydown", (e) => {
 			if (e.key === "Escape") {
@@ -948,7 +948,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 				return this.close_popover(true);
 			}
 			if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key) || $(e.target).is("input[type=search]")) return;
-			const items = $pop.find(".whatsapp-kit-filterbar__opt input").toArray();
+			const items = $pop.find(".whatsapp-kit-filterbar__option input").toArray();
 			const idx = ui.roving_index(e, items, items.indexOf(document.activeElement));
 			if (idx < 0) return;
 			e.preventDefault();
@@ -956,7 +956,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		});
 		this.keep_in_view($pop);
 		this.fill_popover(fieldname, "").then(() => {
-			const $first = $search.length ? $search : $pop.find(".whatsapp-kit-filterbar__opt input").first();
+			const $first = $search.length ? $search : $pop.find(".whatsapp-kit-filterbar__option input").first();
 			$first.trigger("focus");
 			this.keep_in_view($pop);
 		});
@@ -967,7 +967,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		const $popover = this.$open;
 		if (!$popover || $popover.data("field") !== fieldname) return Promise.resolve();
 		const control = this.controls[fieldname];
-		const $list = $popover.find(".whatsapp-kit-filterbar__pop-list");
+		const $list = $popover.find(".whatsapp-kit-filterbar__popover-list");
 		const $legend = $list.children(".whatsapp-kit-visually-hidden").detach();
 		$list.html(ui.skeleton(3, { lines: 1 })).prepend($legend);
 		return this.resolve_options(control.preset, txt)
@@ -979,13 +979,13 @@ whatsapp.ui.FilterBar = class FilterBar {
 				chosen.filter((v) => !listed.has(key_of(v))).forEach((v) => options.unshift({ value: v, label: this.label_for_value(fieldname, v) }));
 				$list.empty().append($legend);
 				if (!options.length) {
-					$list.append(`<div class="whatsapp-kit-filterbar__pop-empty">${ui.escape(txt ? __("No match for {0}", [txt]) : __("No options"))}</div>`);
+					$list.append(`<div class="whatsapp-kit-filterbar__popover-empty">${ui.escape(txt ? __("No match for {0}", [txt]) : __("No options"))}</div>`);
 					return;
 				}
 				const type = control.preset.multiple === false ? "radio" : "checkbox";
 				options.forEach((o) => {
 					const on = chosen.some((v) => key_of(v) === key_of(o.value));
-					const $opt = $(`<label class="whatsapp-kit-filterbar__opt"><input type="${type}" name="${control.pop_id}" value="${ui.escape(key_of(o.value))}"${on ? " checked" : ""}><span class="whatsapp-kit-filterbar__opt-label">${ui.escape(o.label)}</span></label>`);
+					const $opt = $(`<label class="whatsapp-kit-filterbar__option"><input type="${type}" name="${control.pop_id}" value="${ui.escape(key_of(o.value))}"${on ? " checked" : ""}><span class="whatsapp-kit-filterbar__option-label">${ui.escape(o.label)}</span></label>`);
 					$opt.find("input").on("change", (e) => this.toggle(fieldname, o.value, e.target.checked));
 					$list.append($opt);
 				});
@@ -1042,7 +1042,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 	 * added, and "Remove all". It drives the DataList's multi-level group rows.
 	 */
 	render_group_by() {
-		const $dd = $(`<div class="whatsapp-kit-filterbar__dd whatsapp-kit-filterbar__dd--group"></div>`).appendTo(this.$actions);
+		const $dd = $(`<div class="whatsapp-kit-filterbar__dropdown whatsapp-kit-filterbar__dropdown--group"></div>`).appendTo(this.$actions);
 		const pop_id = `${this.id}-levels-pop`;
 		this.$group_btn = $(`<button type="button" class="whatsapp-kit-filterbar__action whatsapp-kit-filterbar__action--group" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("es-line-group", "sm")}<span class="whatsapp-kit-filterbar__levels"></span></button>`).appendTo($dd);
 		this.$group_dd = $dd;
@@ -1061,7 +1061,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 	 * `List View Settings`, so it behaves like the rest of Desk.
 	 */
 	render_columns() {
-		const $dd = $(`<div class="whatsapp-kit-filterbar__dd whatsapp-kit-filterbar__dd--columns"></div>`).appendTo(this.$actions);
+		const $dd = $(`<div class="whatsapp-kit-filterbar__dropdown whatsapp-kit-filterbar__dropdown--columns"></div>`).appendTo(this.$actions);
 		const pop_id = `${this.id}-columns-pop`;
 		this.$columns_btn = $(`<button type="button" class="whatsapp-kit-filterbar__action whatsapp-kit-filterbar__action--icon" title="${ui.escape(__("Columns"))}" aria-label="${ui.escape(__("Columns"))}" aria-haspopup="dialog" aria-expanded="false" aria-controls="${pop_id}">${ui.icon("columns-3", "sm")}</button>`).appendTo($dd);
 		this.$columns_dd = $dd;
@@ -1073,7 +1073,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		this.close_popover();
 		this.close_levels();
 		this.columns_order = null;
-		const $pop = $(`<div class="whatsapp-kit-filterbar__pop whatsapp-kit-filterbar__pop--columns" id="${this.columns_pop_id}" role="dialog" aria-label="${ui.escape(__("Columns"))}"></div>`).appendTo(this.$columns_dd);
+		const $pop = $(`<div class="whatsapp-kit-filterbar__popover whatsapp-kit-filterbar__popover--columns" id="${this.columns_pop_id}" role="dialog" aria-label="${ui.escape(__("Columns"))}"></div>`).appendTo(this.$columns_dd);
 		this.$columns = $pop;
 		this.$columns_btn.attr("aria-expanded", "true");
 		this.fill_columns();
@@ -1090,7 +1090,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 	keeping_place($pop, render) {
 		if (!$pop || !$pop.length) return render();
 		// `__pop-list` is the only list that scrolls inside itself; the levels lists grow the popover
-		const lists = () => $pop.find(".whatsapp-kit-filterbar__pop-list").toArray();
+		const lists = () => $pop.find(".whatsapp-kit-filterbar__popover-list").toArray();
 		const tops = lists().map((el) => el.scrollTop);
 		const popover_scroll_top = $pop[0].scrollTop;
 		const active = document.activeElement;
@@ -1129,12 +1129,12 @@ whatsapp.ui.FilterBar = class FilterBar {
 		if (!$columns_popover || !dl) return;
 		const available = dl.available_columns();
 		const shown = dl.visible_columns();
-		const typed = $columns_popover.find(".whatsapp-kit-filterbar__pop-search").val() || "";
+		const typed = $columns_popover.find(".whatsapp-kit-filterbar__popover-search").val() || "";
 		$columns_popover.empty().append(
-			`<div class="whatsapp-kit-filterbar__pop-head"><span class="whatsapp-kit-filterbar__pop-title">${ui.escape(__("Columns"))}</span><button type="button" class="whatsapp-kit-filterbar__levels-clear">${ui.escape(__("Reset"))}</button></div>
-			<input type="search" class="form-control input-xs whatsapp-kit-filterbar__pop-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search columns"))}">`
+			`<div class="whatsapp-kit-filterbar__popover-head"><span class="whatsapp-kit-filterbar__popover-title">${ui.escape(__("Columns"))}</span><button type="button" class="whatsapp-kit-filterbar__levels-clear">${ui.escape(__("Reset"))}</button></div>
+			<input type="search" class="form-control input-xs whatsapp-kit-filterbar__popover-search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search columns"))}">`
 		);
-		const $list = $(`<div class="whatsapp-kit-filterbar__pop-list whatsapp-kit-filterbar__columns-list"></div>`).appendTo($columns_popover);
+		const $list = $(`<div class="whatsapp-kit-filterbar__popover-list whatsapp-kit-filterbar__columns-list"></div>`).appendTo($columns_popover);
 		// The order is frozen while the picker is open. Rebuilding it on every tick moved the row
 		// under the pointer — unticking a column sent it from the shown group to the bottom of the
 		// list — so ticking a few in a row meant hunting for each one again. Only the arrows, which
@@ -1152,9 +1152,9 @@ whatsapp.ui.FilterBar = class FilterBar {
 				const on = shown.includes(fieldname);
 				const at = shown.indexOf(fieldname);
 				$(`<div class="whatsapp-kit-filterbar__column" data-field="${ui.escape(fieldname)}">
-					<label class="whatsapp-kit-filterbar__opt">
+					<label class="whatsapp-kit-filterbar__option">
 						<input type="checkbox"${on ? " checked" : ""} aria-label="${ui.escape(__("Show {0}", [col.label]))}">
-						<span class="whatsapp-kit-filterbar__opt-label">${ui.escape(col.label)}</span>
+						<span class="whatsapp-kit-filterbar__option-label">${ui.escape(col.label)}</span>
 					</label>
 					<button type="button" class="whatsapp-kit-filterbar__level-move" data-dir="-1"${!on || at <= 0 ? " disabled" : ""} aria-label="${ui.escape(__("Move {0} up", [col.label]))}">${ui.icon("es-line-up", "xs")}</button>
 					<button type="button" class="whatsapp-kit-filterbar__level-move" data-dir="1"${!on || at < 0 || at >= shown.length - 1 ? " disabled" : ""} aria-label="${ui.escape(__("Move {0} down", [col.label]))}">${ui.icon("es-line-down", "xs")}</button>
@@ -1162,7 +1162,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 			});
 		};
 		render_column_rows(typed);
-		$columns_popover.find(".whatsapp-kit-filterbar__pop-search")
+		$columns_popover.find(".whatsapp-kit-filterbar__popover-search")
 			.val(typed)
 			.on("input", ui.debounce((e) => render_column_rows($(e.target).val()), 200));
 		$columns_popover.find(".whatsapp-kit-filterbar__levels-clear").on("click", () => {
@@ -1254,7 +1254,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 
 	open_levels() {
 		this.close_popover();
-		const $pop = $(`<div class="whatsapp-kit-filterbar__pop whatsapp-kit-filterbar__pop--levels" id="${this.group_pop_id}" role="dialog" aria-label="${ui.escape(__("Grouping levels"))}"></div>`).appendTo(this.$group_dd);
+		const $pop = $(`<div class="whatsapp-kit-filterbar__popover whatsapp-kit-filterbar__popover--levels" id="${this.group_pop_id}" role="dialog" aria-label="${ui.escape(__("Grouping levels"))}"></div>`).appendTo(this.$group_dd);
 		this.keep_in_view($pop);
 		this.$levels = $pop;
 		this.$group_btn.attr("aria-expanded", "true");
@@ -1280,7 +1280,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		const levels = this.group_levels();
 		const label_of = (f) => (options.find((o) => o.value === f) || { label: __(f) }).label;
 		$levels_popover.empty();
-		$levels_popover.append(`<div class="whatsapp-kit-filterbar__pop-head"><span class="whatsapp-kit-filterbar__pop-title">${ui.escape(__("Grouping levels"))}</span>${levels.length ? `<button type="button" class="whatsapp-kit-filterbar__levels-clear">${ui.escape(__("Remove all"))}</button>` : ""}</div>`);
+		$levels_popover.append(`<div class="whatsapp-kit-filterbar__popover-head"><span class="whatsapp-kit-filterbar__popover-title">${ui.escape(__("Grouping levels"))}</span>${levels.length ? `<button type="button" class="whatsapp-kit-filterbar__levels-clear">${ui.escape(__("Remove all"))}</button>` : ""}</div>`);
 		const $list = $(`<div class="whatsapp-kit-filterbar__levels-list"></div>`).appendTo($levels_popover);
 		levels.forEach((f, i) => {
 			$(`<div class="whatsapp-kit-filterbar__level">
@@ -1295,7 +1295,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		});
 		const rest = options.filter((o) => !levels.includes(o.value));
 		if (rest.length) {
-			$levels_popover.append(`<div class="whatsapp-kit-filterbar__pop-title whatsapp-kit-filterbar__levels-add">${ui.escape(__("Add a level"))}</div>`);
+			$levels_popover.append(`<div class="whatsapp-kit-filterbar__popover-title whatsapp-kit-filterbar__levels-add">${ui.escape(__("Add a level"))}</div>`);
 			const $add = $(`<div class="whatsapp-kit-filterbar__levels-list"></div>`).appendTo($levels_popover);
 			rest.forEach((o) => {
 				$(`<button type="button" class="whatsapp-kit-filterbar__level whatsapp-kit-filterbar__level--add"><span class="whatsapp-kit-filterbar__level-label">${ui.escape(o.label)}</span><span class="whatsapp-kit-filterbar__level-plus" aria-hidden="true">+</span></button>`)
@@ -1471,15 +1471,15 @@ whatsapp.ui.FilterBar = class FilterBar {
 		const value = this.values[fieldname];
 		if (control.type === "select") {
 			const chosen = this.chosen(fieldname);
-			const $value = control.$el.find(".whatsapp-kit-filterbar__btn-value");
+			const $value = control.$el.find(".whatsapp-kit-filterbar__button-value");
 			if (!chosen.length) $value.text("").attr("hidden", true);
 			else if (chosen.length === 1) $value.text(this.label_for_value(fieldname, chosen[0])).removeAttr("hidden");
 			else $value.text(ui.format_integer(chosen.length)).removeAttr("hidden");
-			control.$el.toggleClass("whatsapp-kit-filterbar__btn--active", chosen.length > 0);
-			control.$el.find(".whatsapp-kit-filterbar__btn-clear").prop("hidden", !chosen.length);
+			control.$el.toggleClass("whatsapp-kit-filterbar__button--active", chosen.length > 0);
+			control.$el.find(".whatsapp-kit-filterbar__button-clear").prop("hidden", !chosen.length);
 		} else if (control.type === "period") {
 			const current = key_of(value == null ? null : value);
-			control.$el.find(".whatsapp-kit-filterbar__period-btn").each((i, el) => {
+			control.$el.find(".whatsapp-kit-filterbar__period-button").each((i, el) => {
 				$(el).attr("aria-pressed", String($(el).attr("data-key")) === current);
 			});
 		} else if (control.type === "tabs") {
@@ -1522,12 +1522,12 @@ whatsapp.ui.FilterBar = class FilterBar {
 			const [, fieldname, operator, value] = f;
 			const label = __(this.get_field_definition(fieldname).label || fieldname);
 			const shown = Array.isArray(value) ? value.join(", ") : String(value == null ? "" : value);
-			$(`<span class="whatsapp-kit-filterbar__chipfilter whatsapp-kit-accent-soft">
-					<span class="whatsapp-kit-filterbar__chipfilter-label">${ui.escape(label)}</span>
-					<span class="whatsapp-kit-filterbar__chipfilter-value" title="${ui.escape(`${label} ${operator} ${shown}`)}">${ui.escape(shown)}</span>
-					<button type="button" class="whatsapp-kit-filterbar__chipfilter-x" aria-label="${ui.escape(__("Clear {0}", [label]))}">${ui.icon("es-line-close", "xs")}</button>
+			$(`<span class="whatsapp-kit-filterbar__chip-filter whatsapp-kit-accent-soft">
+					<span class="whatsapp-kit-filterbar__chip-filter-label">${ui.escape(label)}</span>
+					<span class="whatsapp-kit-filterbar__chip-filter-value" title="${ui.escape(`${label} ${operator} ${shown}`)}">${ui.escape(shown)}</span>
+					<button type="button" class="whatsapp-kit-filterbar__chip-filter-x" aria-label="${ui.escape(__("Clear {0}", [label]))}">${ui.icon("es-line-close", "xs")}</button>
 				</span>`)
-				.find(".whatsapp-kit-filterbar__chipfilter-x")
+				.find(".whatsapp-kit-filterbar__chip-filter-x")
 				.on("click", () => this.remove_filter(fieldname))
 				.end()
 				.appendTo(this.$extra);

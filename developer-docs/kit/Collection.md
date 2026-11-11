@@ -76,13 +76,13 @@ new whatsapp.ui.Collection({
 ## CSS hooks
 
 - Root `<section class="whatsapp-kit whatsapp-kit-collection">` (labelled by the title id).
-- `__head`, `__heading`, `__icon`, `__title`, `__desc`, `__views`, `__body[data-view]`, `__list`,
+- `__head`, `__heading`, `__icon`, `__title`, `__description`, `__views`, `__body[data-view]`, `__list`,
   `__item`, `__grid`, `__cell`, `__gallery`, `__tile`, `__caption`, `__more`, `__clickable`,
-  `__foot`, `__total`, `__total-label`, `__total-value`, `__total-note`, `__more-btn`, `__table`.
+  `__foot`, `__total`, `__total-label`, `__total-value`, `__total-note`, `__more-button`, `__table`.
 - Table: `whatsapp-kit-table-wrap`, `whatsapp-kit-table`, `whatsapp-kit-table__start|end`, cells carry `data-label`.
-- View switch: `whatsapp-kit-segmented` / `whatsapp-kit-segmented__btn[data-view]` (`role="tab"`, `aria-selected`).
+- View switch: `whatsapp-kit-segmented` / `whatsapp-kit-segmented__button[data-view]` (`role="tab"`, `aria-selected`).
 - Timeline: `whatsapp-kit-timeline`, `__item`, `__rail`, `__dot` (+ `whatsapp-kit-tone--*`), `__body`, `__head`,
-  `__title`, `__time`, `__desc`, `__user`.
+  `__title`, `__time`, `__description`, `__user`.
 
 ## Notes
 

@@ -4,7 +4,7 @@
 	margin-inline-start: var(--whatsapp-kit-gap-sm);
 	min-width: 28px; // stable slot even when a row has no actions
 
-	&__btn {
+	&__button {
 		min-width: 28px;
 		min-height: 28px;
 		padding: 0;
@@ -68,7 +68,7 @@
 // Two-line list cells decorated after render (name + muted phone / id line).
 .whatsapp-kit-cell { display: inline-flex !important; flex-direction: column; min-width: 0; line-height: 1.3; vertical-align: middle; }
 .whatsapp-kit-cell > a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.whatsapp-kit-cell__sub {
+.whatsapp-kit-cell__subtitle {
 	display: block;
 	color: var(--ink-gray-6);
 	font-size: var(--text-xs, 12px);

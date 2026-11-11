@@ -14,23 +14,23 @@
 	&__trigger {
 		display: flex;
 		align-items: stretch;
-		height: var(--whatsapp-kit-ctl-h);
+		height: var(--whatsapp-kit-control-height);
 		min-width: 0;
 		border: 1px solid var(--outline-gray-2);
 		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-base);
 		transition: border-color var(--whatsapp-kit-motion), box-shadow var(--whatsapp-kit-motion);
 	}
-	&:has(&__op[aria-expanded="true"]) &__trigger,
-	&:has(&__fieldpick[aria-expanded="true"]) &__trigger,
+	&:has(&__operator[aria-expanded="true"]) &__trigger,
+	&:has(&__field-picker[aria-expanded="true"]) &__trigger,
 	&:has(&__value[aria-expanded="true"]) &__trigger {
 		border-color: var(--whatsapp-kit-accent);
 		box-shadow: 0 0 0 3px var(--whatsapp-kit-accent-soft);
 	}
 	&--set &__trigger { border-color: var(--whatsapp-kit-accent-outline); }
 
-	&__op,
-	&__fieldpick,
+	&__operator,
+	&__field-picker,
 	&__value {
 		appearance: none;
 		display: flex;
@@ -41,7 +41,7 @@
 		color: var(--ink-gray-7);
 		cursor: pointer;
 	}
-	&__op {
+	&__operator {
 		flex: none;
 		gap: 6px;
 		padding-inline: 10px;
@@ -56,7 +56,7 @@
 		&[aria-expanded="true"] { background: var(--surface-gray-2); }
 	}
 	// the date field the filter runs on — one segment, so operator · field · value read as one control
-	&__fieldpick {
+	&__field-picker {
 		flex: none;
 		gap: 6px;
 		min-width: 0;
@@ -67,7 +67,7 @@
 		&:hover,
 		&[aria-expanded="true"] { background: var(--surface-gray-1); }
 	}
-	&__fieldpick-label {
+	&__field-picker-label {
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -82,12 +82,12 @@
 		}
 	}
 	&--hidden { display: none; }
-	&__fieldpick[aria-expanded="true"] &__caret { transform: rotate(180deg); }
+	&__field-picker[aria-expanded="true"] &__caret { transform: rotate(180deg); }
 	&__value { flex: 1; min-width: 0; gap: 8px; padding-inline: 10px; }
 	&__text[hidden] { display: none; }
 	&__icon, &__caret { display: inline-flex; flex: none; color: var(--ink-gray-5); }
 	&__caret { transition: transform var(--whatsapp-kit-motion); }
-	&__op[aria-expanded="true"] &__caret { transform: rotate(180deg); }
+	&__operator[aria-expanded="true"] &__caret { transform: rotate(180deg); }
 	&__text {
 		flex: 1;
 		min-width: 0;
@@ -129,7 +129,7 @@
 		background: var(--surface-base);
 		box-shadow: var(--shadow-lg);
 	}
-	&__menu-sep { height: 1px; margin: 4px 6px; background: var(--outline-gray-1); }
+	&__menu-separator { height: 1px; margin: 4px 6px; background: var(--outline-gray-1); }
 	&__menu-item {
 		appearance: none;
 		display: flex;
@@ -171,14 +171,14 @@
 	&__menu-item--mine { font-weight: 600; }
 
 	// ---- phone: the operator and the field, inside the panel ----
-	&__chead {
+	&__compact-head {
 		display: flex;
 		flex-direction: column;
 		border-block-end: var(--whatsapp-kit-border);
 		background: var(--surface-gray-1);
 	}
-	&__chead-row + &__chead-row { border-block-start: 1px solid var(--outline-gray-1); }
-	&__chead-trigger {
+	&__compact-head-row + &__compact-head-row { border-block-start: 1px solid var(--outline-gray-1); }
+	&__compact-head-trigger {
 		appearance: none;
 		display: flex;
 		align-items: center;
@@ -190,8 +190,8 @@
 		background: transparent;
 		cursor: pointer;
 	}
-	&__chead-label { flex: none; font-size: var(--text-xs, 12px); color: var(--ink-gray-6); }
-	&__chead-value {
+	&__compact-head-label { flex: none; font-size: var(--text-xs, 12px); color: var(--ink-gray-6); }
+	&__compact-head-value {
 		flex: 1;
 		min-width: 0;
 		overflow: hidden;
@@ -202,8 +202,8 @@
 		font-weight: 600;
 		color: var(--ink-gray-9);
 	}
-	&__chead-trigger[aria-expanded="true"] &__caret { transform: rotate(180deg); }
-	&__chead-list {
+	&__compact-head-trigger[aria-expanded="true"] &__caret { transform: rotate(180deg); }
+	&__compact-head-list {
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
@@ -381,7 +381,7 @@
 	&__arrow { display: inline-flex; flex: none; color: var(--ink-gray-5); }
 
 	// calendar
-	&__cal { display: flex; gap: 12px; justify-content: center; padding: 10px 12px 8px; }
+	&__calendar { display: flex; gap: 12px; justify-content: center; padding: 10px 12px 8px; }
 	&__month { width: 252px; max-width: 100%; }
 	&__month-head {
 		display: flex;
@@ -421,7 +421,7 @@
 		&:hover { background: var(--surface-gray-2); }
 	}
 	&__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 2px; }
-	&__wd {
+	&__weekday {
 		height: 24px;
 		display: inline-flex;
 		align-items: center;
@@ -587,14 +587,14 @@
 	&__panel--compact &__form-row { flex-direction: column; align-items: stretch; gap: 6px; }
 	&__panel--compact &__form-label { width: auto; }
 	&__form-field { flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: var(--whatsapp-kit-gap-sm); }
-	&__seg {
+	&__segment {
 		display: inline-flex;
 		gap: 1px;
 		padding: 2px;
 		border-radius: var(--whatsapp-kit-radius);
 		background: var(--surface-gray-2);
 	}
-	&__seg-item {
+	&__segment-item {
 		appearance: none;
 		height: 26px;
 		padding-inline: 11px;
@@ -754,10 +754,10 @@
 @media (max-width: 767px) {
 	.whatsapp-kit-datefilter {
 		&__label,
-		&__op,
-		&__fieldpick { display: none; }
-		&__trigger { height: var(--whatsapp-kit-ctl-h); }
-		&__value { width: var(--whatsapp-kit-ctl-h); justify-content: center; gap: 0; padding-inline: 0; }
+		&__operator,
+		&__field-picker { display: none; }
+		&__trigger { height: var(--whatsapp-kit-control-height); }
+		&__value { width: var(--whatsapp-kit-control-height); justify-content: center; gap: 0; padding-inline: 0; }
 		&__text { display: none; }
 		// set: a dot on the icon, and the × beside it so it can be cleared without opening the panel
 		&--set &__value { width: auto; gap: 4px; padding-inline: 6px; }

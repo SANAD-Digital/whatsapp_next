@@ -337,7 +337,7 @@ whatsapp.ui.ChatThread = class ChatThread {
 		inner += whatsapp.ui.ChatThread.quote_html(row, this.rows);
 		if (!NO_CHIP.has(type) && (type !== "Text" || row.attachment)) inner += whatsapp.ui.ChatThread.media_html(row, { link: !clickable });
 		const ia = INTERACTIVE.has(type) ? whatsapp.ui.ChatThread.interactive_of(row) : null;
-		if (ia && ia.title) inner += `<div class="whatsapp-kit-chat__ia-title">${ui.escape(ia.title)}</div>`;
+		if (ia && ia.title) inner += `<div class="whatsapp-kit-chat__interactive-title">${ui.escape(ia.title)}</div>`;
 		if (type === "Poll" && row.poll_question) inner += whatsapp.ui.ChatThread.poll_html(row);
 		if (row.deleted_at) {
 			// deleted for everyone: say so and by whom, and keep what it said one click away
@@ -356,10 +356,10 @@ whatsapp.ui.ChatThread = class ChatThread {
 		if (row.reference_doctype && row.reference_name) {
 			const label = `${ui.escape(__(row.reference_doctype))}: ${ui.escape(row.reference_name)}`;
 			if (clickable) {
-				inner += `<span class="whatsapp-kit-chat__ref">${ui.icon(ui.icons.link, "xs")}<span>${label}</span></span>`;
+				inner += `<span class="whatsapp-kit-chat__reference">${ui.icon(ui.icons.link, "xs")}<span>${label}</span></span>`;
 			} else {
 				const href = frappe.utils.get_form_link(row.reference_doctype, row.reference_name);
-				inner += `<a class="whatsapp-kit-chat__ref" href="${ui.escape(href)}" title="${ui.escape(__("Open {0}", [__(row.reference_doctype)]))}">${ui.icon(ui.icons.link, "xs")}<span>${label}</span></a>`;
+				inner += `<a class="whatsapp-kit-chat__reference" href="${ui.escape(href)}" title="${ui.escape(__("Open {0}", [__(row.reference_doctype)]))}">${ui.icon(ui.icons.link, "xs")}<span>${label}</span></a>`;
 			}
 		}
 		const time = whatsapp.ui.ChatThread.time_of(row.ts || row.creation);
@@ -600,23 +600,23 @@ whatsapp.ui.ChatThread = class ChatThread {
 	 * options one click away). */
 	static interactive_html(type, ia) {
 		let html = "";
-		if (ia.footer) html += `<div class="whatsapp-kit-chat__ia-footer">${ui.escape(ia.footer)}</div>`;
+		if (ia.footer) html += `<div class="whatsapp-kit-chat__interactive-footer">${ui.escape(ia.footer)}</div>`;
 		if (type === "Buttons") {
-			html += `<div class="whatsapp-kit-chat__ia-buttons">${(ia.buttons || [])
+			html += `<div class="whatsapp-kit-chat__interactive-buttons">${(ia.buttons || [])
 				.map((b) => {
 					const hint = b.url || b.phone || b.code || "";
-					return `<span class="whatsapp-kit-chat__ia-button" title="${ui.escape(hint)}">${ui.icon(IA_ICON[b.type] || IA_ICON.reply, "xs")}<span>${ui.escape(b.text)}</span></span>`;
+					return `<span class="whatsapp-kit-chat__interactive-button" title="${ui.escape(hint)}">${ui.icon(IA_ICON[b.type] || IA_ICON.reply, "xs")}<span>${ui.escape(b.text)}</span></span>`;
 				})
 				.join("")}</div>`;
 		} else {
 			const rows = (ia.sections || [])
 				.map(
 					(s) =>
-						(s.title ? `<li class="whatsapp-kit-chat__ia-section">${ui.escape(s.title)}</li>` : "") +
-						(s.rows || []).map((r) => `<li class="whatsapp-kit-chat__ia-row"><span>${ui.escape(r.title)}</span>${r.description ? `<small>${ui.escape(r.description)}</small>` : ""}</li>`).join("")
+						(s.title ? `<li class="whatsapp-kit-chat__interactive-section">${ui.escape(s.title)}</li>` : "") +
+						(s.rows || []).map((r) => `<li class="whatsapp-kit-chat__interactive-row"><span>${ui.escape(r.title)}</span>${r.description ? `<small>${ui.escape(r.description)}</small>` : ""}</li>`).join("")
 				)
 				.join("");
-			html += `<details class="whatsapp-kit-chat__ia-list"><summary class="whatsapp-kit-chat__ia-button">${ui.icon("es-line-bullet-list", "xs")}<span>${ui.escape(ia.button_text || __("Options"))}</span></summary><ul>${rows}</ul></details>`;
+			html += `<details class="whatsapp-kit-chat__interactive-list"><summary class="whatsapp-kit-chat__interactive-button">${ui.icon("es-line-bullet-list", "xs")}<span>${ui.escape(ia.button_text || __("Options"))}</span></summary><ul>${rows}</ul></details>`;
 		}
 		return html;
 	}

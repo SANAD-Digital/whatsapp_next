@@ -36,11 +36,11 @@ frappe.provide("whatsapp_next.campaign");
 				if (!composer) return;
 				// opening a menu focuses its first item, and the browser may scroll to show it:
 				// that scroll is the menu's own, not the reader leaving
-				const $menu = this.$wrapper.find(".whatsapp-kit-message-composer__typemenu, .whatsapp-kit-message-composer__varmenu");
+				const $menu = this.$wrapper.find(".whatsapp-kit-message-composer__type-menu, .whatsapp-kit-message-composer__variable-menu");
 				if ($menu.length && Date.now() - ($menu[0].__opened_at || 0) < 250) return;
 				if (composer.close_type_menu) composer.close_type_menu();
-				this.$wrapper.find(".whatsapp-kit-message-composer__varmenu").remove();
-				this.$wrapper.find(".whatsapp-kit-message-composer__varbtn").attr("aria-expanded", "false");
+				this.$wrapper.find(".whatsapp-kit-message-composer__variable-menu").remove();
+				this.$wrapper.find(".whatsapp-kit-message-composer__variable-button").attr("aria-expanded", "false");
 			};
 			document.addEventListener("scroll", this._on_scroll, true);
 		}
@@ -71,7 +71,7 @@ frappe.provide("whatsapp_next.campaign");
 			this._menus = new MutationObserver((records) => {
 				records.forEach((rec) =>
 					rec.addedNodes.forEach((n) => {
-						if (n.nodeType === 1 && (n.classList.contains("whatsapp-kit-message-composer__typemenu") || n.classList.contains("whatsapp-kit-message-composer__varmenu"))) fit_menu_on_screen(n);
+						if (n.nodeType === 1 && (n.classList.contains("whatsapp-kit-message-composer__type-menu") || n.classList.contains("whatsapp-kit-message-composer__variable-menu"))) fit_menu_on_screen(n);
 					})
 				);
 			});
@@ -98,8 +98,8 @@ frappe.provide("whatsapp_next.campaign");
 			const blocked = this.test_blocked();
 			this.$wrapper.html(`
 				<div class="whatsapp-campaign-builder__stack whatsapp-campaign-builder__messages">
-					<p class="whatsapp-campaign-builder__mstep-note">${escape_html(__("Every recipient receives all of these, in this order. The gap between two cards is the wait between them."))}</p>
-					<div class="whatsapp-campaign-builder__mstep-host"></div>
+					<p class="whatsapp-campaign-builder__messages-step-note">${escape_html(__("Every recipient receives all of these, in this order. The gap between two cards is the wait between them."))}</p>
+					<div class="whatsapp-campaign-builder__messages-step-host"></div>
 				</div>`);
 			this.mount_composer();
 			this.watch_scroll();
@@ -172,7 +172,7 @@ frappe.provide("whatsapp_next.campaign");
 				],
 				empty_text: __("No message yet"),
 			});
-			this.composer.$el.appendTo(this.$wrapper.find(".whatsapp-campaign-builder__mstep-host"));
+			this.composer.$el.appendTo(this.$wrapper.find(".whatsapp-campaign-builder__messages-step-host"));
 		}
 
 		// ---- the test send -----------------------------------------------------------------------

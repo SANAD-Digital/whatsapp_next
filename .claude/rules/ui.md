@@ -17,7 +17,7 @@ mean rebuilding Desk's meta-driven machinery and forfeiting future framework imp
   with the same `:root` block — thirty-one values, light and dark. That block lives in
   `public/scss/_tokens.scss` as `--whatsapp-*`, and the same file re-points Desk's Espresso variables at
   it on this product's surfaces, so a screen written against either name comes out in the product's
-  colours. Write `--whatsapp-pri`, `--whatsapp-ok-s`, `--whatsapp-wn-i`, `--whatsapp-surface`, `--whatsapp-ink-3`. Never write a
+  colours. Write `--whatsapp-primary`, `--whatsapp-success-soft`, `--whatsapp-warning-ink`, `--whatsapp-surface`, `--whatsapp-ink-3`. Never write a
   colour anywhere else; `_tokens.scss` is the one place a colour is spelled out, and it is spelled
   out there because the prototype spelled it out first.
 - Frappe is used for what is genuinely ready-made — routing, permissions, meta, dialogs, the file

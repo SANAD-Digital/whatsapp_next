@@ -74,7 +74,7 @@ whatsapp.ui.Collection = class Collection {
 						${this.opts.icon ? `<span class="whatsapp-kit-collection__icon" aria-hidden="true">${ui.icon(this.opts.icon, "md")}</span>` : ""}
 						<div>
 							<h3 class="whatsapp-kit-collection__title" id="${this.id}-title">${ui.escape(this.opts.title || "")}</h3>
-							${this.opts.description ? `<p class="whatsapp-kit-collection__desc">${ui.escape(this.opts.description)}</p>` : ""}
+							${this.opts.description ? `<p class="whatsapp-kit-collection__description">${ui.escape(this.opts.description)}</p>` : ""}
 						</div>
 					</div>
 					<div class="whatsapp-kit-collection__views"></div>
@@ -96,12 +96,12 @@ whatsapp.ui.Collection = class Collection {
 			const meta = VIEW_META[view];
 			if (!meta) return;
 			const active = view === this.view;
-			$(`<button type="button" class="whatsapp-kit-segmented__btn" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" data-view="${view}">${ui.icon(meta.icon, "xs")}<span>${ui.escape(meta.label())}</span></button>`)
+			$(`<button type="button" class="whatsapp-kit-segmented__button" role="tab" aria-selected="${active}" tabindex="${active ? 0 : -1}" data-view="${view}">${ui.icon(meta.icon, "xs")}<span>${ui.escape(meta.label())}</span></button>`)
 				.on("click", () => this.set_view(view))
 				.appendTo($group);
 		});
 		$group.on("keydown", (e) => {
-			const items = $group.find(".whatsapp-kit-segmented__btn").toArray();
+			const items = $group.find(".whatsapp-kit-segmented__button").toArray();
 			const idx = ui.roving_index(e, items, items.indexOf(document.activeElement));
 			if (idx < 0) return;
 			e.preventDefault();
@@ -300,7 +300,7 @@ whatsapp.ui.Collection = class Collection {
 						<span class="whatsapp-kit-timeline__title" dir="auto">${ui.escape(r.title || "")}</span>
 						${r.time ? `<span class="whatsapp-kit-timeline__time">${Render.value(r.time, { fieldtype: "Datetime", fieldname: "time" }, doc, { density: "inline" })}</span>` : ""}
 					</div>
-					${r.description ? `<div class="whatsapp-kit-timeline__desc" dir="auto">${r.html ? r.description : ui.escape(r.description)}</div>` : ""}
+					${r.description ? `<div class="whatsapp-kit-timeline__description" dir="auto">${r.html ? r.description : ui.escape(r.description)}</div>` : ""}
 					${r.user ? `<div class="whatsapp-kit-timeline__user">${icon_text_chip_html({ icon: "es-line-customer", text: r.user })}</div>` : ""}
 				</div>
 			</li>`).appendTo($list);
@@ -324,7 +324,7 @@ whatsapp.ui.Collection = class Collection {
 		}
 		if (hidden) {
 			const rest = this.rows.length - this.opts.limit;
-			$(`<button type="button" class="btn btn-sm btn-default whatsapp-kit-collection__more-btn">${ui.escape(__("Show all {0}", [ui.format_integer(this.rows.length)]))}</button>`)
+			$(`<button type="button" class="btn btn-sm btn-default whatsapp-kit-collection__more-button">${ui.escape(__("Show all {0}", [ui.format_integer(this.rows.length)]))}</button>`)
 				.on("click", () => {
 					this.expanded = true;
 					this.render();

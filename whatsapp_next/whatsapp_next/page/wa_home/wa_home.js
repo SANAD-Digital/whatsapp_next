@@ -1027,16 +1027,16 @@ frappe.provide("whatsapp_next.home");
 					const stack = BANDS.filter((band) => cint(b.counts[band.key]))
 						.map(
 							(band) =>
-								`<span class="whatsapp-home__seg whatsapp-home__seg--${band.seg}" style="block-size:${((cint(b.counts[band.key]) / max) * 100).toFixed(
+								`<span class="whatsapp-home__segment whatsapp-home__segment--${band.seg}" style="block-size:${((cint(b.counts[band.key]) / max) * 100).toFixed(
 									2
 								)}%"></span>`
 						)
 						.join("");
-					return `<li class="whatsapp-home__col">
-						<button type="button" class="whatsapp-home__col-btn" data-from="${escape_html(b.from)}" data-to="${escape_html(b.to)}" title="${escape_html(title)}" aria-label="${escape_html(title)}">
-							<span class="whatsapp-home__stack">${stack || '<span class="whatsapp-home__seg whatsapp-home__seg--none"></span>'}</span>
+					return `<li class="whatsapp-home__column">
+						<button type="button" class="whatsapp-home__column-button" data-from="${escape_html(b.from)}" data-to="${escape_html(b.to)}" title="${escape_html(title)}" aria-label="${escape_html(title)}">
+							<span class="whatsapp-home__stack">${stack || '<span class="whatsapp-home__segment whatsapp-home__segment--none"></span>'}</span>
 						</button>
-						<span class="whatsapp-home__col-tick" aria-hidden="true">${escape_html(b.tick)}</span>
+						<span class="whatsapp-home__column-tick" aria-hidden="true">${escape_html(b.tick)}</span>
 					</li>`;
 				})
 				.join("");
@@ -1048,14 +1048,14 @@ frappe.provide("whatsapp_next.home");
 						<div class="whatsapp-home__rules" aria-hidden="true">
 							${ticks.map((v) => `<span class="whatsapp-home__rule"><i class="whatsapp-kit-tabular">${escape_html(format_integer(v))}</i></span>`).join("")}
 						</div>
-						<ol class="whatsapp-home__cols">${columns}</ol>
+						<ol class="whatsapp-home__columns">${columns}</ol>
 					</div>
 					<figcaption class="whatsapp-kit-visually-hidden">${escape_html(
 						__("{0} messages over {1} columns; the busiest column holds {2}.", [format_integer(total), format_integer(buckets.length), format_integer(peak)])
 					)}</figcaption>
 				</figure>`).appendTo($el);
 
-			$fig.find(".whatsapp-home__col-btn").on("click", function () {
+			$fig.find(".whatsapp-home__column-button").on("click", function () {
 				// one bucket: its own window replaces the period's
 				const $b = $(this);
 				open_outbound({ creation: ["between", [$b.data("from"), $b.data("to")]] });

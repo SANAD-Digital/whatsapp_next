@@ -88,8 +88,8 @@ frm.whatsapp_members = new whatsapp.ui.PagedChildTable({
 - Root `.whatsapp-kit.whatsapp-kit-paged-child-table[data-fieldname]`; `__head`, `__title`, `__count`, `__actions`,
   `__toolbar`, `__filters`, `__chips[data-field]`, `__chip[data-value][aria-pressed]`,
   `__chip-label`, `__chip-count`, `__select`, `__search`, `__note`, `__state`, `__scroll`
-  (`.whatsapp-kit-table-wrap`), `__table` (`.whatsapp-kit-table`), `__th-actions`, `__row-actions`, `__pager`,
-  `__range`, `__pager-btns`, `__prev`, `__next`.
+  (`.whatsapp-kit-table-wrap`), `__table` (`.whatsapp-kit-table`), `__table-header-cell-actions`, `__row-actions`, `__pager`,
+  `__range`, `__pager-buttons`, `__previous`, `__next`.
 
 ## Notes
 

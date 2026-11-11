@@ -60,7 +60,7 @@ whatsapp.ui.ListStatsCard = class ListStatsCard {
 				<div class="whatsapp-kit-stats__text">
 					<div class="whatsapp-kit-stats__label">${ui.escape(card.label)}</div>
 					<div class="whatsapp-kit-stats__value whatsapp-kit-tabular">${ui.skeleton(1, { lines: 1 })}</div>
-					${card.sub != null ? `<div class="whatsapp-kit-stats__sub">${typeof card.sub === "string" ? ui.escape(card.sub) : ""}</div>` : ""}
+					${card.sub != null ? `<div class="whatsapp-kit-stats__subtitle">${typeof card.sub === "string" ? ui.escape(card.sub) : ""}</div>` : ""}
 				</div>
 				${interactive ? `<span class="whatsapp-kit-stats__chevron" aria-hidden="true">${ui.icon("es-line-right-chevron", "xs")}</span>` : ""}
 			</div>`;
@@ -112,7 +112,7 @@ whatsapp.ui.ListStatsCard = class ListStatsCard {
 					this.values[card.key] = { raw, value };
 					const text = card.format ? card.format(value, raw) : ui.format_integer(value || 0);
 					$value.html(`<span class="${tone ? `whatsapp-kit-tone--${ui.tone_for_colour(tone)}` : ""}">${ui.escape(text)}</span>`);
-					if (typeof card.sub === "function") this.$card(card.key).find(".whatsapp-kit-stats__sub").text(card.sub(value, raw) || "");
+					if (typeof card.sub === "function") this.$card(card.key).find(".whatsapp-kit-stats__subtitle").text(card.sub(value, raw) || "");
 					this.$card(card.key).removeClass("whatsapp-kit-stats__card--error");
 				})
 				.catch((err) => {

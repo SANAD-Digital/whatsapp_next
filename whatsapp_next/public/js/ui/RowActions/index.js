@@ -26,12 +26,12 @@ whatsapp.ui.RowActions = class RowActions {
 	mount() {
 		const listview = this.listview;
 		this.unbind_render = ui.on_list_render(listview, () => this.decorate());
-		listview.$result.on("click.whatsapprow", ".whatsapp-kit-rowactions__btn", (e) => {
+		listview.$result.on("click.whatsapprow", ".whatsapp-kit-rowactions__button", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			this.open_menu($(e.currentTarget));
 		});
-		listview.$result.on("keydown.whatsapprow", ".whatsapp-kit-rowactions__btn", (e) => {
+		listview.$result.on("keydown.whatsapprow", ".whatsapp-kit-rowactions__button", (e) => {
 			if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
 				e.preventDefault();
 				e.stopPropagation();
@@ -65,7 +65,7 @@ whatsapp.ui.RowActions = class RowActions {
 			const $cell = $(`<div class="whatsapp-kit-rowactions"></div>`);
 			if (has_actions) {
 				$cell.append(
-					`<button type="button" class="btn btn-xs btn-default whatsapp-kit-rowactions__btn" data-name="${ui.escape(name)}" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("{0} for {1}", [label, title]))}">${ui.icon(ui.icons.more, "sm")}</button>`
+					`<button type="button" class="btn btn-xs btn-default whatsapp-kit-rowactions__button" data-name="${ui.escape(name)}" aria-haspopup="menu" aria-expanded="false" aria-label="${ui.escape(__("{0} for {1}", [label, title]))}">${ui.icon(ui.icons.more, "sm")}</button>`
 				);
 			}
 			if ($target.length) $target.append($cell);

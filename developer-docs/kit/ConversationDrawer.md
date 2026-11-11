@@ -77,7 +77,7 @@ whatsapp.ui.ConversationDrawer.open({
 ## CSS hooks
 
 - Root `aside.whatsapp-kit.whatsapp-kit-panel.whatsapp-kit-conversation` (`.whatsapp-kit-panel--open`), `.whatsapp-kit-conversation__backdrop`.
-- `__avatar` (two initials), `__title`, `__sub` (key, LTR), `__badge`, `__badge-skeleton`, `__close`, `__actions` (`role="group"`), `__action`, `__body`, `__state`, `__thread` (contains `.whatsapp-kit-chat`).
+- `__avatar` (two initials), `__title`, `__subtitle` (key, LTR), `__badge`, `__badge-skeleton`, `__close`, `__actions` (`role="group"`), `__action`, `__body`, `__state`, `__thread` (contains `.whatsapp-kit-chat`).
 
 ## Notes
 

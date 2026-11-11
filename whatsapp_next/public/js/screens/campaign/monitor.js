@@ -292,10 +292,10 @@ frappe.provide("whatsapp_next.campaign");
 				{ label: __("Cancelled", null, "campaign"), value: t.cancelled, tone: "warn" },
 			].filter((b) => b.value > 0);
 			const bar = buckets
-				.map((b) => `<span class="whatsapp-campaign-builder__dist-seg whatsapp-campaign-builder__dist-seg--${b.tone}" style="flex-basis:${((b.value / Math.max(t.produced, 1)) * 100).toFixed(2)}%" title="${escape_html(`${b.label} · ${format_integer(b.value)}`)}"></span>`)
+				.map((b) => `<span class="whatsapp-campaign-builder__distribution-segment whatsapp-campaign-builder__distribution-segment--${b.tone}" style="flex-basis:${((b.value / Math.max(t.produced, 1)) * 100).toFixed(2)}%" title="${escape_html(`${b.label} · ${format_integer(b.value)}`)}"></span>`)
 				.join("");
 			const legend = buckets
-				.map((b) => `<span class="whatsapp-campaign-builder__dist-key"><span class="whatsapp-campaign-builder__dist-dot whatsapp-campaign-builder__dist-seg--${b.tone}"></span>${escape_html(b.label)}<b class="whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(b.value))}</b></span>`)
+				.map((b) => `<span class="whatsapp-campaign-builder__distribution-key"><span class="whatsapp-campaign-builder__distribution-dot whatsapp-campaign-builder__distribution-segment--${b.tone}"></span>${escape_html(b.label)}<b class="whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(b.value))}</b></span>`)
 				.join("");
 
 			$pane.html(`
@@ -315,7 +315,7 @@ frappe.provide("whatsapp_next.campaign");
 							title: __("Where they stand now"),
 							note: __("these do not overlap"),
 							body: buckets.length
-								? `<div class="whatsapp-campaign-builder__dist"><span class="whatsapp-campaign-builder__dist-bar">${bar}</span><div class="whatsapp-campaign-builder__dist-legend">${legend}</div></div>`
+								? `<div class="whatsapp-campaign-builder__distribution"><span class="whatsapp-campaign-builder__distribution-bar">${bar}</span><div class="whatsapp-campaign-builder__distribution-legend">${legend}</div></div>`
 								: `<p class="whatsapp-campaign-builder__readings-foot">${escape_html(__("Nothing has been produced yet."))}</p>`,
 						})}
 					</div>
@@ -349,16 +349,16 @@ frappe.provide("whatsapp_next.campaign");
 							const failed = cint(counts.Failed);
 							const total = cint(row.total);
 							return `
-							<div class="whatsapp-campaign-builder__mrow">
-								<span class="whatsapp-campaign-builder__mrow-num whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(row.idx))}</span>
-								<span class="whatsapp-campaign-builder__mrow-text">
-									<span class="whatsapp-campaign-builder__mrow-type">${escape_html(__(row.message_type))}${row.delay_seconds ? ` · ${escape_html(__("after {0}s", [format_integer(row.delay_seconds)]))}` : ""}</span>
-									<span class="whatsapp-campaign-builder__mrow-body" dir="auto">${escape_html(row.preview || (row.attachment ? __("a file") : "—"))}</span>
+							<div class="whatsapp-campaign-builder__message-row">
+								<span class="whatsapp-campaign-builder__message-row-number whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(row.idx))}</span>
+								<span class="whatsapp-campaign-builder__message-row-text">
+									<span class="whatsapp-campaign-builder__message-row-type">${escape_html(__(row.message_type))}${row.delay_seconds ? ` · ${escape_html(__("after {0}s", [format_integer(row.delay_seconds)]))}` : ""}</span>
+									<span class="whatsapp-campaign-builder__message-row-body" dir="auto">${escape_html(row.preview || (row.attachment ? __("a file") : "—"))}</span>
 								</span>
-								<span class="whatsapp-campaign-builder__mrow-counts">
-									<span class="whatsapp-campaign-builder__mrow-count"><b class="whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(done))}</b>${escape_html(__("left"))}</span>
-									<span class="whatsapp-campaign-builder__mrow-count${failed ? " whatsapp-kit-tone--red" : ""}"><b class="whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(failed))}</b>${escape_html(__("failed"))}</span>
-									<span class="whatsapp-campaign-builder__mrow-count"><b class="whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(total))}</b>${escape_html(__("in total"))}</span>
+								<span class="whatsapp-campaign-builder__message-row-counts">
+									<span class="whatsapp-campaign-builder__message-row-count"><b class="whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(done))}</b>${escape_html(__("left"))}</span>
+									<span class="whatsapp-campaign-builder__message-row-count${failed ? " whatsapp-kit-tone--red" : ""}"><b class="whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(failed))}</b>${escape_html(__("failed"))}</span>
+									<span class="whatsapp-campaign-builder__message-row-count"><b class="whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(total))}</b>${escape_html(__("in total"))}</span>
 								</span>
 							</div>`;
 						})
@@ -396,14 +396,14 @@ frappe.provide("whatsapp_next.campaign");
 					const rows = (r.rows || [])
 						.map(
 							(row) => `
-							<div class="whatsapp-campaign-builder__frow">
-								<span class="whatsapp-campaign-builder__frow-count whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(row.count))}</span>
-								<span class="whatsapp-campaign-builder__frow-text">
-									<span class="whatsapp-campaign-builder__frow-label">${escape_html(error_text(row.error_code))}</span>
-									<span class="whatsapp-campaign-builder__frow-code whatsapp-kit-tabular" dir="ltr">${escape_html(row.error_code)}${row.retryable ? ` · ${escape_html(__("can be retried"))}` : ""}</span>
+							<div class="whatsapp-campaign-builder__failure-row">
+								<span class="whatsapp-campaign-builder__failure-row-count whatsapp-kit-tabular" dir="ltr">${escape_html(format_integer(row.count))}</span>
+								<span class="whatsapp-campaign-builder__failure-row-text">
+									<span class="whatsapp-campaign-builder__failure-row-label">${escape_html(error_text(row.error_code))}</span>
+									<span class="whatsapp-campaign-builder__failure-row-code whatsapp-kit-tabular" dir="ltr">${escape_html(row.error_code)}${row.retryable ? ` · ${escape_html(__("can be retried"))}` : ""}</span>
 								</span>
-								<span class="whatsapp-campaign-builder__frow-share whatsapp-kit-tabular" dir="ltr">${escape_html(row.share)}%</span>
-								<button type="button" class="whatsapp-campaign-builder__frow-go" data-code="${escape_html(row.error_code)}">${escape_html(__("See the messages"))}</button>
+								<span class="whatsapp-campaign-builder__failure-row-share whatsapp-kit-tabular" dir="ltr">${escape_html(row.share)}%</span>
+								<button type="button" class="whatsapp-campaign-builder__failure-row-go" data-code="${escape_html(row.error_code)}">${escape_html(__("See the messages"))}</button>
 							</div>`
 						)
 						.join("");

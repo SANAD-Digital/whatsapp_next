@@ -8,10 +8,10 @@
 .whatsapp-cards {
 	// DENSITY.comfortable
 	--whatsapp-cards-gap: 16px;
-	--whatsapp-cards-secgap: 18px;
-	--whatsapp-cards-headgap: 12px;
-	--whatsapp-cards-pad: 12px 16px;
-	--whatsapp-cards-panelpad: 16px;
+	--whatsapp-cards-section-gap: 18px;
+	--whatsapp-cards-header-gap: 12px;
+	--whatsapp-cards-padding: 12px 16px;
+	--whatsapp-cards-panel-padding: 16px;
 	--whatsapp-cards-tile: 34px;
 	--whatsapp-cards-stat: 19px;
 	--whatsapp-cards-kpi: 26px;
@@ -20,15 +20,15 @@
 
 	display: flex;
 	flex-direction: column;
-	gap: var(--whatsapp-cards-secgap);
+	gap: var(--whatsapp-cards-section-gap);
 
 	&--compact {
 		// DENSITY.compact
 		--whatsapp-cards-gap: 10px;
-		--whatsapp-cards-secgap: 14px;
-		--whatsapp-cards-headgap: 8px;
-		--whatsapp-cards-pad: 10px 12px;
-		--whatsapp-cards-panelpad: 12px;
+		--whatsapp-cards-section-gap: 14px;
+		--whatsapp-cards-header-gap: 8px;
+		--whatsapp-cards-padding: 10px 12px;
+		--whatsapp-cards-panel-padding: 12px;
 		--whatsapp-cards-tile: 30px;
 		--whatsapp-cards-stat: 17px;
 		--whatsapp-cards-kpi: 22px;
@@ -38,7 +38,7 @@
 	&__section {
 		display: flex;
 		flex-direction: column;
-		gap: var(--whatsapp-cards-headgap);
+		gap: var(--whatsapp-cards-header-gap);
 		min-inline-size: 0;
 	}
 	&__head {
@@ -53,7 +53,7 @@
 		line-height: 1.4;
 		color: var(--whatsapp-ink);
 	}
-	&__sub {
+	&__subtitle {
 		margin: 0;
 		font-size: 12px;
 		color: var(--whatsapp-ink-3);
@@ -73,7 +73,7 @@
 .whatsapp-card {
 	grid-column: span var(--whatsapp-card-span, 1);
 	min-inline-size: 0;
-	padding: var(--whatsapp-cards-pad);
+	padding: var(--whatsapp-cards-padding);
 	border: 1px solid var(--whatsapp-border);
 	border-radius: var(--whatsapp-kit-card-radius, 10px);
 	background: var(--whatsapp-surface);
@@ -87,17 +87,17 @@
 	--whatsapp-card-ink: var(--whatsapp-ink-2);
 	--whatsapp-card-line: var(--whatsapp-border);
 
-	&--ok { --whatsapp-card-strong: var(--whatsapp-ok); --whatsapp-card-soft: var(--whatsapp-ok-s); --whatsapp-card-ink: var(--whatsapp-ok-i); --whatsapp-card-line: var(--whatsapp-ok-sb); }
-	&--warn { --whatsapp-card-strong: var(--whatsapp-wn); --whatsapp-card-soft: var(--whatsapp-wn-s); --whatsapp-card-ink: var(--whatsapp-wn-i); --whatsapp-card-line: var(--whatsapp-wn-sb); }
-	&--danger { --whatsapp-card-strong: var(--whatsapp-dg); --whatsapp-card-soft: var(--whatsapp-dg-s); --whatsapp-card-ink: var(--whatsapp-dg-i); --whatsapp-card-line: var(--whatsapp-dg-sb); }
-	&--info { --whatsapp-card-strong: var(--whatsapp-nf); --whatsapp-card-soft: var(--whatsapp-nf-s); --whatsapp-card-ink: var(--whatsapp-nf-i); --whatsapp-card-line: var(--whatsapp-nf-sb); }
-	&--pri { --whatsapp-card-strong: var(--whatsapp-pri); --whatsapp-card-soft: var(--whatsapp-pri-s); --whatsapp-card-ink: var(--whatsapp-pri-d); --whatsapp-card-line: var(--whatsapp-pri-sb); }
+	&--ok { --whatsapp-card-strong: var(--whatsapp-success); --whatsapp-card-soft: var(--whatsapp-success-soft); --whatsapp-card-ink: var(--whatsapp-success-ink); --whatsapp-card-line: var(--whatsapp-success-soft-border); }
+	&--warn { --whatsapp-card-strong: var(--whatsapp-warning); --whatsapp-card-soft: var(--whatsapp-warning-soft); --whatsapp-card-ink: var(--whatsapp-warning-ink); --whatsapp-card-line: var(--whatsapp-warning-soft-border); }
+	&--danger { --whatsapp-card-strong: var(--whatsapp-danger); --whatsapp-card-soft: var(--whatsapp-danger-soft); --whatsapp-card-ink: var(--whatsapp-danger-ink); --whatsapp-card-line: var(--whatsapp-danger-soft-border); }
+	&--info { --whatsapp-card-strong: var(--whatsapp-info); --whatsapp-card-soft: var(--whatsapp-info-soft); --whatsapp-card-ink: var(--whatsapp-info-ink); --whatsapp-card-line: var(--whatsapp-info-soft-border); }
+	&--primary { --whatsapp-card-strong: var(--whatsapp-primary); --whatsapp-card-soft: var(--whatsapp-primary-soft); --whatsapp-card-ink: var(--whatsapp-primary-deep); --whatsapp-card-line: var(--whatsapp-primary-soft-border); }
 
 	&--click {
 		cursor: pointer;
 		transition: border-color var(--whatsapp-motion, 160ms), background var(--whatsapp-motion, 160ms);
 		&:hover { border-color: var(--whatsapp-border-2); }
-		&:focus-visible { outline: 2px solid var(--whatsapp-pri); outline-offset: 2px; }
+		&:focus-visible { outline: 2px solid var(--whatsapp-primary); outline-offset: 2px; }
 	}
 
 	// `stat` — a reading on one line
@@ -126,11 +126,11 @@
 		border-radius: 50%;
 		background: var(--whatsapp-card-strong);
 
-		&--ok { background: var(--whatsapp-ok); }
-		&--warn { background: var(--whatsapp-wn); }
-		&--danger { background: var(--whatsapp-dg); }
-		&--info { background: var(--whatsapp-nf); }
-		&--pri { background: var(--whatsapp-pri); }
+		&--ok { background: var(--whatsapp-success); }
+		&--warn { background: var(--whatsapp-warning); }
+		&--danger { background: var(--whatsapp-danger); }
+		&--info { background: var(--whatsapp-info); }
+		&--primary { background: var(--whatsapp-primary); }
 		&--muted { background: var(--whatsapp-ink-4); }
 	}
 	&__label {
@@ -206,17 +206,17 @@
 		display: flex;
 		flex-direction: column;
 		gap: 10px;
-		padding: var(--whatsapp-cards-panelpad);
+		padding: var(--whatsapp-cards-panel-padding);
 		border-radius: var(--whatsapp-kit-card-radius, 10px);
 	}
-	&__phead {
+	&__panel-head {
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
 		gap: 8px;
 		min-inline-size: 0;
 	}
-	&__ptitle {
+	&__panel-title {
 		font-size: 14px;
 		font-weight: 700;
 		line-height: 1.4;
@@ -243,8 +243,8 @@
 		&:last-child { border-block-end: 0; }
 		&--click {
 			cursor: pointer;
-			&:hover { background: var(--whatsapp-bg); }
-			&:focus-visible { outline: 2px solid var(--whatsapp-pri); outline-offset: -2px; }
+			&:hover { background: var(--whatsapp-background); }
+			&:focus-visible { outline: 2px solid var(--whatsapp-primary); outline-offset: -2px; }
 		}
 	}
 	&__row-main {
@@ -254,7 +254,7 @@
 		min-inline-size: 0;
 		flex: 1;
 	}
-	&__av {
+	&__avatar {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -280,7 +280,7 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
-	&__row-sub {
+	&__row-subtitle {
 		font-size: 11px;
 		color: var(--whatsapp-ink-4);
 		white-space: nowrap;
@@ -310,13 +310,13 @@
 		background: var(--whatsapp-ink-4);
 		transition: inline-size var(--whatsapp-motion, 160ms) ease-out;
 
-		&--ok { background: var(--whatsapp-ok); }
-		&--warn { background: var(--whatsapp-wn); }
-		&--danger { background: var(--whatsapp-dg); }
-		&--info { background: var(--whatsapp-nf); }
-		&--pri { background: var(--whatsapp-pri); }
+		&--ok { background: var(--whatsapp-success); }
+		&--warn { background: var(--whatsapp-warning); }
+		&--danger { background: var(--whatsapp-danger); }
+		&--info { background: var(--whatsapp-info); }
+		&--primary { background: var(--whatsapp-primary); }
 	}
-	&__pfoot {
+	&__panel-foot {
 		font-size: 11px;
 		color: var(--whatsapp-ink-3);
 		line-height: 1.6;
@@ -324,7 +324,7 @@
 
 	// `html` — a composition the vocabulary does not have, in the vocabulary's own surface
 	&--html {
-		padding: var(--whatsapp-cards-panelpad);
+		padding: var(--whatsapp-cards-panel-padding);
 		border-radius: 12px;
 	}
 

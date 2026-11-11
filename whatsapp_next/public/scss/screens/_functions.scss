@@ -17,7 +17,7 @@
 	// Nine columns of state have to stand next to Desk's sidebar. The prototype draws this screen
 	// at its compact density, so the screen turns the kit's own cell knob down instead of starving
 	// a column of the width its words need.
-	--whatsapp-kit-cell-px: 10px;
+	--whatsapp-kit-cell-padding-inline: 10px;
 
 	&__body {
 		min-block-size: 200px;
@@ -47,7 +47,7 @@
 			}
 			// the long selector is deliberate: the kit places every cell with a three-`:not()`
 			// chain that outranks its own `--card-extra` rule, so this has to outrank the chain
-			.whatsapp-kit-datalist__row .whatsapp-kit-datalist__td.whatsapp-kit-datalist__td--card-extra.whatsapp-kit-datalist__td--card-extra {
+			.whatsapp-kit-datalist__row .whatsapp-kit-datalist__table-cell.whatsapp-kit-datalist__table-cell--card-extra.whatsapp-kit-datalist__table-cell--card-extra {
 				grid-column: 2 / -1;
 				grid-row: auto;
 				display: flex;
@@ -84,8 +84,8 @@
 		min-block-size: var(--whatsapp-kit-target);
 		padding-inline: var(--whatsapp-kit-gap-md);
 		border-radius: var(--whatsapp-kit-radius);
-		background: var(--whatsapp-pri-s);
-		color: var(--whatsapp-pri-d);
+		background: var(--whatsapp-primary-soft);
+		color: var(--whatsapp-primary-deep);
 		font-size: var(--text-sm, 13px);
 		font-weight: 600;
 	}
@@ -106,7 +106,7 @@
 		padding: 0;
 		cursor: pointer;
 		&:hover {
-			background: var(--whatsapp-pri-sb);
+			background: var(--whatsapp-primary-soft-border);
 		}
 	}
 	&__bulk-note {
@@ -146,7 +146,7 @@
 
 // "Try": each message the function would send, under the @reply key it answers with
 .whatsapp-function-try {
-	&__msg {
+	&__message {
 		display: flex;
 		flex-direction: column;
 		gap: 4px;

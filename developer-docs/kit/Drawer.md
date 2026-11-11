@@ -108,7 +108,7 @@ new whatsapp.ui.Drawer({
 - Root `aside.whatsapp-kit.whatsapp-kit-panel.whatsapp-kit-drawer.whatsapp-kit-drawer--{record|form|choice}`, `.whatsapp-kit-panel--open` when visible; `.whatsapp-kit-drawer__backdrop`.
 - Header: `__heading`, `__title`, `__meta` (badge + `.whatsapp-kit-panel__subtitle`), `__tools`, `__open`, `__close`.
 - Body / footer: `__body`, `__footer`, `__action`, `__more`, `__menu` (reuses `.whatsapp-kit-rowactions__menu` / `__item`).
-- `fields` layout: `__dl`, `__field`, `__field--wide`. Form: `__form`, `__summary`. Choice: `__choices`, `__choice`, `__choice-icon|-text|-label|-desc`.
+- `fields` layout: `__definition-list`, `__field`, `__field--wide`. Form: `__form`, `__summary`. Choice: `__choices`, `__choice`, `__choice-icon|-text|-label|-desc`.
 - Document layout: `.whatsapp-kit-doc__identity` (`-main`, `-text`, `-title`, `-sub`, `-ref`, `-side`, `-time`, `-value`), `.whatsapp-kit-doc__block` (`--highlight`), `__block-title`, `__block-icon`, `__block-body`, `.whatsapp-kit-doc__highlight`, `.whatsapp-kit-doc__details`, `__details-body`; facts use `.whatsapp-kit-fact-grid` / `.whatsapp-kit-fact`, details `.whatsapp-kit-definition-list`.
 - Menu position via `--whatsapp-kit-menu-x` / `--whatsapp-kit-menu-y`.
 

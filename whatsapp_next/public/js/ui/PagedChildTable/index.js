@@ -75,8 +75,8 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 				<div class="whatsapp-kit-paged-child-table__scroll whatsapp-kit-table-wrap" tabindex="0"><table class="whatsapp-kit-table whatsapp-kit-paged-child-table__table" aria-label="${ui.escape(this.label)}"></table></div>
 				<div class="whatsapp-kit-paged-child-table__pager">
 					<span class="whatsapp-kit-paged-child-table__range whatsapp-kit-tabular" aria-live="polite" aria-atomic="true"></span>
-					<div class="whatsapp-kit-paged-child-table__pager-btns">
-						<button type="button" class="btn btn-default btn-sm whatsapp-kit-paged-child-table__prev" aria-label="${ui.escape(__("Previous page"))}">${ui.icon("es-line-left-chevron", "xs")}<span>${ui.escape(__("Previous"))}</span></button>
+					<div class="whatsapp-kit-paged-child-table__pager-buttons">
+						<button type="button" class="btn btn-default btn-sm whatsapp-kit-paged-child-table__previous" aria-label="${ui.escape(__("Previous page"))}">${ui.icon("es-line-left-chevron", "xs")}<span>${ui.escape(__("Previous"))}</span></button>
 						<button type="button" class="btn btn-default btn-sm whatsapp-kit-paged-child-table__next" aria-label="${ui.escape(__("Next page"))}"><span>${ui.escape(__("Next"))}</span>${ui.icon("es-line-right-chevron", "xs")}</button>
 					</div>
 				</div>
@@ -100,7 +100,7 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 		this.$table = this.$el.find(".whatsapp-kit-paged-child-table__table");
 		this.$range = this.$el.find(".whatsapp-kit-paged-child-table__range");
 		this.state_view = new whatsapp.ui.EmptyState({ wrapper: this.$state, state: "loading", size: "sm" });
-		this.$el.find(".whatsapp-kit-paged-child-table__prev").on("click", () => this.go_to_page(this.state.page - 1));
+		this.$el.find(".whatsapp-kit-paged-child-table__previous").on("click", () => this.go_to_page(this.state.page - 1));
 		this.$el.find(".whatsapp-kit-paged-child-table__next").on("click", () => this.go_to_page(this.state.page + 1));
 		this.render_filters();
 		this.render_toolbar();
@@ -273,7 +273,7 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 		const actions = (this.opts.row_actions || []).filter((a) => a.handler);
 		let html = "<thead><tr>";
 		this.columns.forEach((c) => (html += `<th scope="col"${c.width ? ` style="width:${ui.escape(c.width)}"` : ""}>${ui.escape(c.label)}</th>`));
-		if (actions.length) html += `<th scope="col" class="whatsapp-kit-paged-child-table__th-actions"><span class="whatsapp-kit-visually-hidden">${ui.escape(__("Actions"))}</span></th>`;
+		if (actions.length) html += `<th scope="col" class="whatsapp-kit-paged-child-table__table-header-cell-actions"><span class="whatsapp-kit-visually-hidden">${ui.escape(__("Actions"))}</span></th>`;
 		html += "</tr></thead><tbody>";
 		rows.forEach((row, i) => {
 			html += `<tr data-idx="${i}">`;
@@ -305,7 +305,7 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 		const start = total ? (page - 1) * page_length + 1 : 0;
 		const end = Math.min(page * page_length, total);
 		this.$range.text(total ? __("{0}–{1} of {2}", [ui.format_integer(start), ui.format_integer(end), ui.format_integer(total)]) : __("No rows"));
-		this.$el.find(".whatsapp-kit-paged-child-table__prev").prop("disabled", page <= 1);
+		this.$el.find(".whatsapp-kit-paged-child-table__previous").prop("disabled", page <= 1);
 		this.$el.find(".whatsapp-kit-paged-child-table__next").prop("disabled", end >= total);
 		this.$el.find(".whatsapp-kit-paged-child-table__pager").toggle(total > page_length);
 	}

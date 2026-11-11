@@ -12,7 +12,7 @@
 	text-decoration: none;
 	vertical-align: middle;
 
-	&:hover .whatsapp-device-link__name { color: var(--whatsapp-pri-d); text-decoration: underline; text-underline-offset: 2px; }
+	&:hover .whatsapp-device-link__name { color: var(--whatsapp-primary-deep); text-decoration: underline; text-underline-offset: 2px; }
 
 	&__dot {
 		inline-size: 8px;
@@ -29,8 +29,8 @@
 		white-space: nowrap;
 	}
 
-	&[data-tone="green"] &__dot { background: var(--whatsapp-ok); box-shadow: 0 0 0 3px var(--whatsapp-ok-s); }
-	&[data-tone="blue"] &__dot { background: var(--whatsapp-nf); box-shadow: 0 0 0 3px var(--whatsapp-nf-s); }
-	&[data-tone="amber"] &__dot { background: var(--whatsapp-wn); box-shadow: 0 0 0 3px var(--whatsapp-wn-s); }
-	&[data-tone="red"] &__dot { background: var(--whatsapp-dg); box-shadow: 0 0 0 3px var(--whatsapp-dg-s); }
+	&[data-tone="green"] &__dot { background: var(--whatsapp-success); box-shadow: 0 0 0 3px var(--whatsapp-success-soft); }
+	&[data-tone="blue"] &__dot { background: var(--whatsapp-info); box-shadow: 0 0 0 3px var(--whatsapp-info-soft); }
+	&[data-tone="amber"] &__dot { background: var(--whatsapp-warning); box-shadow: 0 0 0 3px var(--whatsapp-warning-soft); }
+	&[data-tone="red"] &__dot { background: var(--whatsapp-danger); box-shadow: 0 0 0 3px var(--whatsapp-danger-soft); }
 }

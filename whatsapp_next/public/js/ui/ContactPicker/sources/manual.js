@@ -116,7 +116,7 @@ export class ManualSource extends BaseSource {
 				<button type="button" class="btn btn-default btn-xs" data-act="fix-all">${ui.escape(__("Fix all"))}</button>
 				<button type="button" class="btn btn-default btn-xs" data-act="drop-all">${ui.escape(__("Ignore all"))}</button>
 			</div>`);
-		const $rows = $('<div class="whatsapp-kit-picker__fixrows" role="list"></div>');
+		const $rows = $('<div class="whatsapp-kit-picker__fix-rows" role="list"></div>');
 		this.pending.forEach((p, i) => {
 			const $row = $(`
 				<div class="whatsapp-kit-picker__fix" role="listitem" data-idx="${i}">

@@ -80,7 +80,7 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 					<div class="whatsapp-kit-overlay-panel__foot-end"></div>
 				</footer>
 			</section>`).appendTo(document.body);
-		if (options.width) this.$root.css("--whatsapp-kit-op-width", options.width);
+		if (options.width) this.$root.css("--whatsapp-kit-overlay-panel-width", options.width);
 		this.$body = this.$root.find(".whatsapp-kit-overlay-panel__body");
 		this.set_badge(options.badge);
 		this.render_body();
@@ -165,7 +165,7 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 					${it.avatar != null ? kit.avatar({ text: it.avatar, size: "sm", square: true }) : ""}
 					<span class="whatsapp-kit-overlay-panel__item-main">
 						<span class="whatsapp-kit-overlay-panel__item-text">${escape_html(it.text)}</span>
-						${it.sub ? `<span class="whatsapp-kit-overlay-panel__item-sub${it.sub_mono ? " whatsapp-kit-overlay-panel__mono" : ""}"${it.sub_mono ? ' dir="ltr"' : ""}>${escape_html(it.sub)}</span>` : ""}
+						${it.sub ? `<span class="whatsapp-kit-overlay-panel__item-subtitle${it.sub_mono ? " whatsapp-kit-overlay-panel__mono" : ""}"${it.sub_mono ? ' dir="ltr"' : ""}>${escape_html(it.sub)}</span>` : ""}
 					</span>
 					${it.badge ? kit.badge(it.badge, tone_of(it.badge_tone), { dot: false }) : ""}
 				</li>`);
@@ -187,7 +187,7 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 		if (s.note) $s.append(`<div class="whatsapp-kit-overlay-panel__note whatsapp-kit-overlay-panel__note--${tone_of(s.note_tone || "info")}">${escape_html(s.note)}</div>`);
 		const $grid = rows
 			? $(`<div class="whatsapp-kit-overlay-panel__rows"></div>`).appendTo($s)
-			: $(`<div class="whatsapp-kit-overlay-panel__grid" style="--whatsapp-kit-op-cols:${cint(s.cols) || 2}"></div>`).appendTo($s);
+			: $(`<div class="whatsapp-kit-overlay-panel__grid" style="--whatsapp-kit-overlay-panel-columns:${cint(s.cols) || 2}"></div>`).appendTo($s);
 		(s.fields || []).forEach((df) => this.render_field(df, $grid));
 	}
 
@@ -199,7 +199,7 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 		const label_id = `${this.id}-${key}-label`;
 		const ctl_id = `${this.id}-${key}`;
 		if (df.label && type !== "phone" && type !== "toggle") {
-			$f.append(`<label class="whatsapp-field__label" id="${label_id}" for="${ctl_id}">${escape_html(df.label)}${df.required ? ' <span class="whatsapp-field__req" aria-hidden="true">*</span>' : ""}</label>`);
+			$f.append(`<label class="whatsapp-field__label" id="${label_id}" for="${ctl_id}">${escape_html(df.label)}${df.required ? ' <span class="whatsapp-field__required" aria-hidden="true">*</span>' : ""}</label>`);
 		}
 		const entry = { df, $el: $f };
 		this.fields.set(key, entry);
@@ -332,8 +332,8 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 	 * are offered in a listbox, because a ledger account has to be a real record.
 	 */
 	render_list(df, $f, entry, set) {
-		const $wrap = $(`<div class="whatsapp-kit-overlay-panel__listfield"></div>`).appendTo($f);
-		const $table = $(`<div class="whatsapp-kit-overlay-panel__table" style="--whatsapp-kit-op-rowcols:${escape_html(df.row_cols || "minmax(0,1fr) auto 24px")}"${
+		const $wrap = $(`<div class="whatsapp-kit-overlay-panel__list-field"></div>`).appendTo($f);
+		const $table = $(`<div class="whatsapp-kit-overlay-panel__table" style="--whatsapp-kit-overlay-panel-row-columns:${escape_html(df.row_cols || "minmax(0,1fr) auto 24px")}"${
 			df.max_height ? ` data-maxh="1"` : ""
 		}></div>`).appendTo($wrap);
 		if (df.max_height) $table.css("max-block-size", df.max_height);
@@ -343,32 +343,32 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 		const render_table_rows = () => {
 			$table.empty();
 			if (Array.isArray(df.head) && df.head.length) {
-				$table.append(`<div class="whatsapp-kit-overlay-panel__thead">${df.head.map((h) => `<span>${escape_html(h)}</span>`).join("")}</div>`);
+				$table.append(`<div class="whatsapp-kit-overlay-panel__table-head">${df.head.map((h) => `<span>${escape_html(h)}</span>`).join("")}</div>`);
 			}
 			if (!get_entry_rows().length) {
-				$table.append(`<div class="whatsapp-kit-overlay-panel__trow whatsapp-kit-overlay-panel__trow--empty">${escape_html(df.empty || __("No rows."))}</div>`);
+				$table.append(`<div class="whatsapp-kit-overlay-panel__table-row whatsapp-kit-overlay-panel__table-row--empty">${escape_html(df.empty || __("No rows."))}</div>`);
 			}
 			get_entry_rows().forEach((r, i) => {
-				const $r = $(`<div class="whatsapp-kit-overlay-panel__trow"></div>`).appendTo($table);
+				const $r = $(`<div class="whatsapp-kit-overlay-panel__table-row"></div>`).appendTo($table);
 				(df.columns || ["text", "sub", "tag", "remove"]).forEach((col) => {
 					if (col === "remove") {
 						$r.append(
-							`<button type="button" class="whatsapp-kit-overlay-panel__trow-remove" data-index="${i}" aria-label="${escape_html(
+							`<button type="button" class="whatsapp-kit-overlay-panel__table-row-remove" data-index="${i}" aria-label="${escape_html(
 								__("Remove {0}", [r.text || r.sub || ""])
 							)}" title="${escape_html(__("Remove"))}">${kit.inline_icon_html("x", "xs")}</button>`
 						);
 					} else if (col === "tag") {
-						$r.append(`<span class="whatsapp-kit-overlay-panel__trow-tag">${r.tag ? kit.badge(r.tag, tone_of(r.tag_tone || "info"), { dot: false }) : ""}</span>`);
+						$r.append(`<span class="whatsapp-kit-overlay-panel__table-row-tag">${r.tag ? kit.badge(r.tag, tone_of(r.tag_tone || "info"), { dot: false }) : ""}</span>`);
 					} else if (col === "text") {
-						$r.append(`<span class="whatsapp-kit-overlay-panel__trow-text${r.text_mono === false ? "" : " whatsapp-kit-overlay-panel__mono"}"${r.text_mono === false ? "" : ' dir="ltr"'}>${escape_html(r.text || "")}</span>`);
+						$r.append(`<span class="whatsapp-kit-overlay-panel__table-row-text${r.text_mono === false ? "" : " whatsapp-kit-overlay-panel__mono"}"${r.text_mono === false ? "" : ' dir="ltr"'}>${escape_html(r.text || "")}</span>`);
 					} else {
-						$r.append(`<span class="whatsapp-kit-overlay-panel__trow-${escape_html(col)}">${escape_html(r[col] || "")}</span>`);
+						$r.append(`<span class="whatsapp-kit-overlay-panel__table-row-${escape_html(col)}">${escape_html(r[col] || "")}</span>`);
 					}
 				});
 			});
 			if (typeof df.on_rows === "function") df.on_rows(get_entry_rows(), this);
 		};
-		$table.on("click", ".whatsapp-kit-overlay-panel__trow-remove", (e) => {
+		$table.on("click", ".whatsapp-kit-overlay-panel__table-row-remove", (e) => {
 			const i = cint($(e.currentTarget).data("index"));
 			entry.rows = get_entry_rows().filter((_, ix) => ix !== i);
 			render_table_rows();
@@ -378,15 +378,15 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 
 		if (df.add) {
 			const add = df.add;
-			const $add = $(`<div class="whatsapp-kit-overlay-panel__tadd" role="group" aria-label="${escape_html(add.label || __("Add"))}"></div>`).appendTo($wrap);
-			const $q = $(`<input type="text" class="whatsapp-kit-overlay-panel__tadd-input" placeholder="${escape_html(add.placeholder || "")}" aria-label="${escape_html(add.placeholder || add.label || __("Add"))}" autocomplete="off">`).appendTo($add);
+			const $add = $(`<div class="whatsapp-kit-overlay-panel__table-add" role="group" aria-label="${escape_html(add.label || __("Add"))}"></div>`).appendTo($wrap);
+			const $q = $(`<input type="text" class="whatsapp-kit-overlay-panel__table-add-input" placeholder="${escape_html(add.placeholder || "")}" aria-label="${escape_html(add.placeholder || add.label || __("Add"))}" autocomplete="off">`).appendTo($add);
 			let $type = null;
 			if (Array.isArray(add.options) && add.options.length) {
-				$type = $(`<select class="whatsapp-kit-overlay-panel__tadd-type" aria-label="${escape_html(add.type_label || __("Type"))}"></select>`).appendTo($add);
+				$type = $(`<select class="whatsapp-kit-overlay-panel__table-add-type" aria-label="${escape_html(add.type_label || __("Type"))}"></select>`).appendTo($add);
 				add.options.forEach((o) => $type.append(`<option value="${escape_html(o.value)}">${escape_html(o.label)}</option>`));
 			}
-			const $btn = $(`<button type="button" class="whatsapp-kit-overlay-panel__tadd-btn">${escape_html(add.label || __("Add"))}</button>`).appendTo($add);
-			const $list = $(`<ul class="whatsapp-kit-overlay-panel__tadd-list" role="listbox" hidden></ul>`).appendTo($add);
+			const $btn = $(`<button type="button" class="whatsapp-kit-overlay-panel__table-add-button">${escape_html(add.label || __("Add"))}</button>`).appendTo($add);
+			const $list = $(`<ul class="whatsapp-kit-overlay-panel__table-add-list" role="listbox" hidden></ul>`).appendTo($add);
 			let suggestions = [];
 			let active = -1;
 			const chosen = { current: null };
@@ -418,11 +418,11 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 			const show_list = () => {
 				$list.empty();
 				if (!suggestions.length) {
-					$list.append(`<li class="whatsapp-kit-overlay-panel__tadd-empty">${escape_html(add.empty || __("No match."))}</li>`);
+					$list.append(`<li class="whatsapp-kit-overlay-panel__table-add-empty">${escape_html(add.empty || __("No match."))}</li>`);
 				}
 				suggestions.forEach((s, i) => {
-					$list.append(`<li class="whatsapp-kit-overlay-panel__tadd-opt" role="option" id="${this.id}-opt-${i}" data-index="${i}" aria-selected="${i === active}">
-						<span class="whatsapp-kit-overlay-panel__tadd-opt-label">${escape_html(s.label)}</span>${s.note ? `<span class="whatsapp-kit-overlay-panel__tadd-opt-note whatsapp-kit-overlay-panel__mono" dir="ltr">${escape_html(s.note)}</span>` : ""}
+					$list.append(`<li class="whatsapp-kit-overlay-panel__table-add-option" role="option" id="${this.id}-opt-${i}" data-index="${i}" aria-selected="${i === active}">
+						<span class="whatsapp-kit-overlay-panel__table-add-option-label">${escape_html(s.label)}</span>${s.note ? `<span class="whatsapp-kit-overlay-panel__table-add-option-note whatsapp-kit-overlay-panel__mono" dir="ltr">${escape_html(s.note)}</span>` : ""}
 					</li>`);
 				});
 				$list.prop("hidden", false);
@@ -468,7 +468,7 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 					hide_list();
 				}
 			});
-			$list.on("mousedown", ".whatsapp-kit-overlay-panel__tadd-opt", (e) => {
+			$list.on("mousedown", ".whatsapp-kit-overlay-panel__table-add-option", (e) => {
 				e.preventDefault();
 				commit(suggestions[cint($(e.currentTarget).data("index"))]);
 			});
@@ -504,7 +504,7 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 			o.placeholder || __("Search…")
 		)}"${o.required ? ' aria-required="true"' : ""}>`).appendTo($wrap);
 		const $clear = $(`<button type="button" class="whatsapp-kit-overlay-panel__link-clear" aria-label="${escape_html(__("Clear"))}" tabindex="-1" hidden>${kit.inline_icon_html("x", "xs")}</button>`).appendTo($wrap);
-		const $pop = $(`<ul class="whatsapp-kit-overlay-panel__pop" role="listbox" hidden></ul>`).appendTo($wrap);
+		const $pop = $(`<ul class="whatsapp-kit-overlay-panel__popover" role="listbox" hidden></ul>`).appendTo($wrap);
 		const state = { value: o.value || "", display: o.display || o.value || "", items: [], active: -1, open: false };
 		const render_link_value = () => {
 			$input.val(state.display);
@@ -518,12 +518,12 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 		};
 		const render_suggestion_list = () => {
 			$pop.empty();
-			if (!state.items.length) $pop.append(`<li class="whatsapp-kit-overlay-panel__pop-empty">${escape_html(__("No match."))}</li>`);
+			if (!state.items.length) $pop.append(`<li class="whatsapp-kit-overlay-panel__popover-empty">${escape_html(__("No match."))}</li>`);
 			state.items.forEach((it, i) => {
 				const id = `${$input.attr("id")}-opt-${i}`;
-				$pop.append(`<li class="whatsapp-kit-overlay-panel__pop-item" role="option" id="${id}" data-index="${i}" aria-selected="${i === state.active}">
-					<span class="whatsapp-kit-overlay-panel__pop-label">${escape_html(it.label)}</span>
-					${it.note && it.note !== it.label ? `<span class="whatsapp-kit-overlay-panel__pop-note whatsapp-kit-overlay-panel__mono" dir="ltr">${escape_html(it.note)}</span>` : ""}
+				$pop.append(`<li class="whatsapp-kit-overlay-panel__popover-item" role="option" id="${id}" data-index="${i}" aria-selected="${i === state.active}">
+					<span class="whatsapp-kit-overlay-panel__popover-label">${escape_html(it.label)}</span>
+					${it.note && it.note !== it.label ? `<span class="whatsapp-kit-overlay-panel__popover-note whatsapp-kit-overlay-panel__mono" dir="ltr">${escape_html(it.note)}</span>` : ""}
 				</li>`);
 				if (i === state.active) $input.attr("aria-activedescendant", id);
 			});
@@ -580,7 +580,7 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 				render_link_value();
 			}
 		});
-		$pop.on("mousedown", ".whatsapp-kit-overlay-panel__pop-item", (e) => {
+		$pop.on("mousedown", ".whatsapp-kit-overlay-panel__popover-item", (e) => {
 			e.preventDefault();
 			choose_link_item(state.items[cint($(e.currentTarget).data("index"))]);
 		});
@@ -613,7 +613,7 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 	 */
 	render_rows(df, $f, entry, set) {
 		const cols = df.columns || [];
-		const $wrap = $(`<div class="whatsapp-kit-overlay-panel__rows" style="--whatsapp-kit-op-rowcols:${escape_html(cols.map((c) => c.width || "minmax(0,1fr)").join(" ") + " 32px")}"></div>`).appendTo($f);
+		const $wrap = $(`<div class="whatsapp-kit-overlay-panel__rows" style="--whatsapp-kit-overlay-panel-row-columns:${escape_html(cols.map((c) => c.width || "minmax(0,1fr)").join(" ") + " 32px")}"></div>`).appendTo($f);
 		const $head = $(`<div class="whatsapp-kit-overlay-panel__rows-head">${cols.map((c) => `<span>${escape_html(c.label || "")}</span>`).join("")}<span></span></div>`).appendTo($wrap);
 		const $body = $(`<div class="whatsapp-kit-overlay-panel__rows-body"></div>`).appendTo($wrap);
 		const $foot = $(`<div class="whatsapp-kit-overlay-panel__rows-foot"></div>`).appendTo($wrap);
@@ -708,7 +708,7 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 		const $q = df.searchable !== false
 			? $(`<label class="whatsapp-kit-overlay-panel__search">${kit.inline_icon_html("search", "xs")}<input type="text" data-whatsapp-bare placeholder="${escape_html(df.placeholder || __("Search…"))}" aria-label="${escape_html(df.label || __("Search"))}" autocomplete="off"></label>`).appendTo($wrap)
 			: null;
-		const $grid = $(`<div class="whatsapp-kit-overlay-panel__choices" role="listbox" aria-label="${escape_html(df.label || "")}" style="--whatsapp-kit-op-cols:${cint(df.cols) || 2}"></div>`).appendTo($wrap);
+		const $grid = $(`<div class="whatsapp-kit-overlay-panel__choices" role="listbox" aria-label="${escape_html(df.label || "")}" style="--whatsapp-kit-overlay-panel-columns:${cint(df.cols) || 2}"></div>`).appendTo($wrap);
 		let items = df.options || [];
 		let current = df.value == null ? "" : df.value;
 		const render_choice_buttons = () => {
@@ -719,9 +719,9 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 			}
 			items.forEach((o) => {
 				const on = String(o.value) === String(current);
-				$grid.append(`<button type="button" class="whatsapp-kit-overlay-panel__opt" role="option" aria-selected="${on}" data-value="${escape_html(o.value)}">
-					<span class="whatsapp-kit-overlay-panel__opt-label${o.mono ? " whatsapp-kit-overlay-panel__mono" : ""}"${o.mono ? ' dir="ltr"' : ""}>${escape_html(o.label)}</span>
-					${o.note ? `<span class="whatsapp-kit-overlay-panel__opt-note${o.note_mono ? " whatsapp-kit-overlay-panel__mono" : ""}"${o.note_mono ? ' dir="ltr"' : ""}>${escape_html(o.note)}</span>` : ""}
+				$grid.append(`<button type="button" class="whatsapp-kit-overlay-panel__option" role="option" aria-selected="${on}" data-value="${escape_html(o.value)}">
+					<span class="whatsapp-kit-overlay-panel__option-label${o.mono ? " whatsapp-kit-overlay-panel__mono" : ""}"${o.mono ? ' dir="ltr"' : ""}>${escape_html(o.label)}</span>
+					${o.note ? `<span class="whatsapp-kit-overlay-panel__option-note${o.note_mono ? " whatsapp-kit-overlay-panel__mono" : ""}"${o.note_mono ? ' dir="ltr"' : ""}>${escape_html(o.note)}</span>` : ""}
 				</button>`);
 			});
 		};
@@ -744,7 +744,7 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 				})
 				.then(() => $grid.removeAttr("aria-busy"));
 		}, 220);
-		$grid.on("click", ".whatsapp-kit-overlay-panel__opt", (e) => {
+		$grid.on("click", ".whatsapp-kit-overlay-panel__option", (e) => {
 			const v = $(e.currentTarget).data("value");
 			current = String(v) === String(current) && df.toggle !== false ? "" : v;
 			set(current);
@@ -775,7 +775,7 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 			if ((type === "list" || type === "rows") && entry.set_rows) entry.set_rows(value);
 			else if (type === "link" && entry.link) entry.link.set(value, display);
 			else if (type === "segment") {
-				entry.$input.find(".whatsapp-segmented__opt").each((_, el) => {
+				entry.$input.find(".whatsapp-segmented__option").each((_, el) => {
 					const on = $(el).data("value") === value;
 					$(el).attr("aria-checked", String(on)).attr("tabindex", on ? 0 : -1);
 				});

@@ -80,10 +80,10 @@ whatsapp.ui.PhoneField.format_display("+966501234567");
 
 - Root `.whatsapp-kit.whatsapp-kit-phone` (`id` = uid); `data-slot` attributes: `labelrow`, `box`,
   `trigger`, `iso`, `dial`, `caret`, `tick`, `msg`.
-- `__label`, `__req`, `__tip-btn` (`--seen`), `__tip-pop`; `__box` (`--focus`, `--error`,
+- `__label`, `__required`, `__tip-button` (`--seen`), `__tip-popover`; `__box` (`--focus`, `--error`,
   `--ok`); `__country`, `__iso`, `__dial`, `__caret` (`--open`); `__input`; `__tick`.
-- Popup: `__pop`, `__search`, `__q`, `__list`, `__opt` (`--on`, `--cursor`), `__opt-iso`,
-  `__opt-name`, `__opt-dial`, `__empty`; `__svg` for the inline SVGs.
+- Popup: `__popover`, `__search`, `__q`, `__list`, `__option` (`--on`, `--cursor`), `__option-iso`,
+  `__option-name`, `__option-dial`, `__empty`; `__svg` for the inline SVGs.
 - Hint: `.whatsapp-kit-phone__hint` (`--ok`, `--error`) — also used in control mode, appended to the
   control's `.control-input-wrapper`.
 

@@ -81,8 +81,8 @@ whatsapp.ui.Stepper = class Stepper {
 
 		this.steps.forEach((step, i) => {
 			const $li = $(`<li class="whatsapp-kit-stepper__step" data-index="${i}"></li>`);
-			const $btn = $(`<button type="button" class="whatsapp-kit-stepper__step-btn" aria-describedby="${id}-progress"></button>`);
-			$btn.append(`<span class="whatsapp-kit-stepper__num" aria-hidden="true">${i + 1}</span><span class="whatsapp-kit-stepper__check" aria-hidden="true">${ui.icon("es-line-check", "xs")}</span>`);
+			const $btn = $(`<button type="button" class="whatsapp-kit-stepper__step-button" aria-describedby="${id}-progress"></button>`);
+			$btn.append(`<span class="whatsapp-kit-stepper__number" aria-hidden="true">${i + 1}</span><span class="whatsapp-kit-stepper__check" aria-hidden="true">${ui.icon("es-line-check", "xs")}</span>`);
 			$btn.append(`<span class="whatsapp-kit-stepper__label">${ui.escape(step.label)}</span>`);
 			if (step.can_skip) $btn.append(`<span class="whatsapp-kit-stepper__optional">${ui.escape(__("Optional"))}</span>`);
 			$btn.on("click", () => {
@@ -125,7 +125,7 @@ whatsapp.ui.Stepper = class Stepper {
 		const last = this.index === this.steps.length - 1;
 		this.$list.find(".whatsapp-kit-stepper__step").each((i, li) => {
 			const $li = $(li);
-			const $btn = $li.find(".whatsapp-kit-stepper__step-btn");
+			const $btn = $li.find(".whatsapp-kit-stepper__step-button");
 			$li.toggleClass("whatsapp-kit-stepper__step--current", i === this.index)
 				.toggleClass("whatsapp-kit-stepper__step--done", i < this.index)
 				.toggleClass("whatsapp-kit-stepper__step--todo", i > this.index);

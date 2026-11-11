@@ -99,11 +99,11 @@ new whatsapp.ui.CommandEditor({
 ## CSS hooks
 
 - Layer: `.whatsapp-kit.whatsapp-kit-command-editor-layer` > `.whatsapp-kit-command-editor-backdrop` + `.whatsapp-kit-command-editor` (dialog; `.whatsapp-kit-command-editor--readonly`). `body.whatsapp-kit-command-editor-open` locks scroll.
-- Header: `__head`, `__head-row(--tabs)`, `__code`, `__dirty`, `__status.is-on` (`__track`, `__knob`), `__x`, `__tabs` / `__tab.is-sel`, `__count`, `__runs`, `__fnchip`.
-- Layout: `__grid--setup`, `__grid--preview`, `__col--surface|--bg|--span|--last`, `__col-head`, `__col-body`, `__pane`, `__foot`, `__foot-hint`, `__loading`.
-- Controls: `__combo`, `__pop`, `__opt.is-sel`, `__chip--pri|--ghost|--dg`, `__chip-x`, `__pill.is-on`, `__seg.is-sel`, `__card.is-off|.is-missing`, `__tag--warn|--ok`, `__token`, `__callout--warn|--danger|--muted`, `__note--warn|--danger`.
-- Preview: `__phone`, `__phone-head`, `__thread.is-running`, `__bubble--in|--out` (fallback without ChatThread), `__sim`.
-- Buttons: `__btn`, `__btn--pri`, `__btn--danger`, `__link`.
+- Header: `__head`, `__head-row(--tabs)`, `__code`, `__dirty`, `__status.is-on` (`__track`, `__knob`), `__x`, `__tabs` / `__tab.is-sel`, `__count`, `__runs`, `__function-chip`.
+- Layout: `__grid--setup`, `__grid--preview`, `__column--surface|--background|--span|--last`, `__column-head`, `__column-body`, `__pane`, `__foot`, `__foot-hint`, `__loading`.
+- Controls: `__combo`, `__popover`, `__option.is-sel`, `__chip--primary|--ghost|--danger`, `__chip-x`, `__pill.is-on`, `__segment.is-sel`, `__card.is-off|.is-missing`, `__tag--warn|--ok`, `__token`, `__callout--warn|--danger|--muted`, `__note--warn|--danger`.
+- Preview: `__phone`, `__phone-head`, `__thread.is-running`, `__bubble--in|--out` (fallback without ChatThread), `__simulator`.
+- Buttons: `__button`, `__button--primary`, `__button--danger`, `__link`.
 - Breakpoints (`$ce-narrow` / `$ce-mobile` in `style.scss`): narrower grid, then stacked and full-screen; entry animation off under `prefers-reduced-motion`.
 
 ## Notes

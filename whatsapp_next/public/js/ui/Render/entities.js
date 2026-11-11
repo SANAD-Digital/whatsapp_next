@@ -48,7 +48,7 @@ function titles(vm, { density, lines = 1 } = {}) {
 	const subs = (vm.lines || []).filter(Boolean).slice(0, lines);
 	return `<span class="whatsapp-kit-entity__text">
 		<span class="whatsapp-kit-entity__title"${vm.title_ltr ? ' dir="ltr"' : ' dir="auto"'}>${ui.escape(vm.title || vm.name || "")}</span>
-		${subs.map((s) => `<span class="whatsapp-kit-entity__sub"${s.ltr ? ' dir="ltr"' : ' dir="auto"'}>${s.html || ui.escape(s.text || "")}</span>`).join("")}
+		${subs.map((s) => `<span class="whatsapp-kit-entity__subtitle"${s.ltr ? ' dir="ltr"' : ' dir="auto"'}>${s.html || ui.escape(s.text || "")}</span>`).join("")}
 		${density === "compact" && vm.status && vm.status.label ? `<span class="whatsapp-kit-entity__dot whatsapp-kit-tone--${ui.tone_for_colour(vm.status.colour)}" title="${ui.escape(vm.status.label)}" aria-hidden="true"></span>` : ""}
 	</span>`;
 }
@@ -57,7 +57,7 @@ function titles(vm, { density, lines = 1 } = {}) {
 export const BASE = {
 	inline(vm) {
 		const first = (vm.lines || [])[0];
-		return shell(vm, "inline", `${media(vm, "xs")}<span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title || vm.name || "")}</span>${first ? `<span class="whatsapp-kit-entity__sub" ${first.ltr ? 'dir="ltr"' : 'dir="auto"'}>${first.html || ui.escape(first.text || "")}</span>` : ""}`);
+		return shell(vm, "inline", `${media(vm, "xs")}<span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title || vm.name || "")}</span>${first ? `<span class="whatsapp-kit-entity__subtitle" ${first.ltr ? 'dir="ltr"' : 'dir="auto"'}>${first.html || ui.escape(first.text || "")}</span>` : ""}`);
 	},
 
 	compact(vm) {
@@ -75,7 +75,7 @@ export const BASE = {
 			vm,
 			"card",
 			`<span class="whatsapp-kit-entity__head">${media(vm, "lg")}${titles(vm, { density: "card", lines: 2 })}${badge(vm)}</span>
-			${vm.description ? `<span class="whatsapp-kit-entity__desc" dir="auto">${ui.escape(vm.description)}</span>` : ""}
+			${vm.description ? `<span class="whatsapp-kit-entity__description" dir="auto">${ui.escape(vm.description)}</span>` : ""}
 			${facts ? `<span class="whatsapp-kit-entity__facts">${facts}</span>` : ""}
 			<span class="whatsapp-kit-entity__foot">${value_html(vm, { density: "card" })}${action_buttons(vm.actions)}</span>`,
 			{ tag: "div" }
@@ -91,8 +91,8 @@ export const BASE = {
 					<h3 class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title || vm.name || "")}</h3>
 					${badge(vm, { size: "md" })}
 				</div>
-				${(vm.lines || []).filter(Boolean).map((s) => `<div class="whatsapp-kit-entity__sub"${s.ltr ? ' dir="ltr"' : ' dir="auto"'}>${s.html || ui.escape(s.text || "")}</div>`).join("")}
-				${vm.description ? `<p class="whatsapp-kit-entity__desc" dir="auto">${ui.escape(vm.description)}</p>` : ""}
+				${(vm.lines || []).filter(Boolean).map((s) => `<div class="whatsapp-kit-entity__subtitle"${s.ltr ? ' dir="ltr"' : ' dir="auto"'}>${s.html || ui.escape(s.text || "")}</div>`).join("")}
+				${vm.description ? `<p class="whatsapp-kit-entity__description" dir="auto">${ui.escape(vm.description)}</p>` : ""}
 				${value_html(vm, { density: "hero" })}
 				${facts ? `<div class="whatsapp-kit-fact-grid">${facts}</div>` : ""}
 				${action_buttons(vm.actions, { size: "md" })}
@@ -122,7 +122,7 @@ const item = {
 			`<span class="whatsapp-kit-entity__cover">${thumb({ src: vm.image, alt: vm.title, size: "cover", icon: vm.icon })}${vm.flag ? `<span class="whatsapp-kit-entity__flag">${whatsapp.ui.StatusBadge.html({ label: vm.flag.label, colour: vm.flag.colour, icon: false })}</span>` : ""}</span>
 			<span class="whatsapp-kit-entity__body">
 				<span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title || vm.name || "")}</span>
-				${(vm.lines || []).slice(0, 1).map((s) => `<span class="whatsapp-kit-entity__sub" dir="ltr">${s.html || ui.escape(s.text || "")}</span>`).join("")}
+				${(vm.lines || []).slice(0, 1).map((s) => `<span class="whatsapp-kit-entity__subtitle" dir="ltr">${s.html || ui.escape(s.text || "")}</span>`).join("")}
 				${value_html(vm, { density: "card" })}
 				${facts ? `<span class="whatsapp-kit-entity__facts">${facts}</span>` : ""}
 				${badge(vm)}
@@ -138,7 +138,7 @@ const document_kind = {
 		return shell(
 			vm,
 			"compact",
-			`${media(vm, "sm")}<span class="whatsapp-kit-entity__text"><span class="whatsapp-kit-entity__title" dir="ltr">${ui.escape(vm.title || vm.name || "")}</span><span class="whatsapp-kit-entity__sub" dir="auto">${ui.escape((vm.lines[0] || {}).text || "")}</span></span><span class="whatsapp-kit-entity__trail">${value_html(vm, { density: "compact" })}${badge(vm)}</span>`
+			`${media(vm, "sm")}<span class="whatsapp-kit-entity__text"><span class="whatsapp-kit-entity__title" dir="ltr">${ui.escape(vm.title || vm.name || "")}</span><span class="whatsapp-kit-entity__subtitle" dir="auto">${ui.escape((vm.lines[0] || {}).text || "")}</span></span><span class="whatsapp-kit-entity__trail">${value_html(vm, { density: "compact" })}${badge(vm)}</span>`
 		);
 	},
 	card(vm) {
@@ -146,10 +146,10 @@ const document_kind = {
 		return shell(
 			vm,
 			"card",
-			`<span class="whatsapp-kit-entity__head">${media(vm, "md")}<span class="whatsapp-kit-entity__text"><span class="whatsapp-kit-entity__sub" dir="auto">${ui.escape(vm.doctype_label || "")}</span><span class="whatsapp-kit-entity__title" dir="ltr">${ui.escape(vm.title || vm.name || "")}</span></span>${action_buttons(vm.actions)}</span>
+			`<span class="whatsapp-kit-entity__head">${media(vm, "md")}<span class="whatsapp-kit-entity__text"><span class="whatsapp-kit-entity__subtitle" dir="auto">${ui.escape(vm.doctype_label || "")}</span><span class="whatsapp-kit-entity__title" dir="ltr">${ui.escape(vm.title || vm.name || "")}</span></span>${action_buttons(vm.actions)}</span>
 			${badge(vm)}
 			${vm.emphasis === "progress" && vm.progress != null ? progress(vm.progress) : value_html(vm, { density: "card" })}
-			${(vm.lines || []).slice(1, 2).map((s) => `<span class="whatsapp-kit-entity__sub" dir="auto">${s.html || ui.escape(s.text || "")}</span>`).join("")}
+			${(vm.lines || []).slice(1, 2).map((s) => `<span class="whatsapp-kit-entity__subtitle" dir="auto">${s.html || ui.escape(s.text || "")}</span>`).join("")}
 			${facts ? `<span class="whatsapp-kit-entity__facts">${facts}</span>` : ""}`,
 			{ tag: "div" }
 		);
@@ -162,19 +162,19 @@ const file = {
 		return shell(vm, "inline", `${media(vm, "xs")}<span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title)}</span>`);
 	},
 	compact(vm) {
-		return shell(vm, "compact", `${media(vm, "sm")}<span class="whatsapp-kit-entity__text"><span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title)}</span><span class="whatsapp-kit-entity__sub" dir="ltr">${ui.escape(vm.meta_text || "")}</span></span>`);
+		return shell(vm, "compact", `${media(vm, "sm")}<span class="whatsapp-kit-entity__text"><span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title)}</span><span class="whatsapp-kit-entity__subtitle" dir="ltr">${ui.escape(vm.meta_text || "")}</span></span>`);
 	},
 	row(vm) {
-		return shell(vm, "row", `${media(vm, "md")}<span class="whatsapp-kit-entity__text"><span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title)}</span><span class="whatsapp-kit-entity__sub" dir="ltr">${ui.escape(vm.meta_text || "")}</span></span><span class="whatsapp-kit-entity__trail">${action_buttons(vm.actions)}</span>`);
+		return shell(vm, "row", `${media(vm, "md")}<span class="whatsapp-kit-entity__text"><span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title)}</span><span class="whatsapp-kit-entity__subtitle" dir="ltr">${ui.escape(vm.meta_text || "")}</span></span><span class="whatsapp-kit-entity__trail">${action_buttons(vm.actions)}</span>`);
 	},
 	card(vm) {
 		return shell(
 			vm,
 			"card",
-			`<span class="whatsapp-kit-entity__cover">${vm.is_image ? thumb({ src: vm.image, alt: vm.title, size: "cover" }) : `<span class="whatsapp-kit-filetype whatsapp-kit-filetype--lg whatsapp-kit-tone--${ui.tone_for_colour(vm.tone)}"><span class="whatsapp-kit-filetype__ext">${ui.escape(vm.ext || "")}</span></span>`}</span>
+			`<span class="whatsapp-kit-entity__cover">${vm.is_image ? thumb({ src: vm.image, alt: vm.title, size: "cover" }) : `<span class="whatsapp-kit-filetype whatsapp-kit-filetype--lg whatsapp-kit-tone--${ui.tone_for_colour(vm.tone)}"><span class="whatsapp-kit-filetype__extension">${ui.escape(vm.ext || "")}</span></span>`}</span>
 			<span class="whatsapp-kit-entity__body">
 				<span class="whatsapp-kit-entity__title" dir="auto">${ui.escape(vm.title)}</span>
-				<span class="whatsapp-kit-entity__sub" dir="ltr">${ui.escape(vm.meta_text || "")}</span>
+				<span class="whatsapp-kit-entity__subtitle" dir="ltr">${ui.escape(vm.meta_text || "")}</span>
 				${action_buttons(vm.actions, { size: "sm" })}
 			</span>`,
 			{ tag: "div" }

@@ -116,10 +116,10 @@ frappe.provide("whatsapp_next.campaigns");
 				aria-label="${escape_html(__("{0} sent, {1} delivered, {2} read, {3} failed, of {4} messages", [
 					format_integer(campaign_helpers.handed_of_doc(doc)), format_integer(doc.delivered_count), format_integer(doc.read_count), format_integer(doc.failed_count), format_integer(campaign_helpers.messages_of_doc(doc)),
 				]))}">
-			<span class="whatsapp-strip__seg whatsapp-strip__seg--read" style="inline-size:${format_segment_width(doc.read_count)}"></span>
-			<span class="whatsapp-strip__seg whatsapp-strip__seg--delivered" style="inline-size:${format_segment_width(doc.delivered_count)}"></span>
-			<span class="whatsapp-strip__seg whatsapp-strip__seg--sent" style="inline-size:${format_segment_width(doc.sent_count)}"></span>
-			<span class="whatsapp-strip__seg whatsapp-strip__seg--failed" style="inline-size:${format_segment_width(doc.failed_count)}"></span>
+			<span class="whatsapp-strip__segment whatsapp-strip__segment--read" style="inline-size:${format_segment_width(doc.read_count)}"></span>
+			<span class="whatsapp-strip__segment whatsapp-strip__segment--delivered" style="inline-size:${format_segment_width(doc.delivered_count)}"></span>
+			<span class="whatsapp-strip__segment whatsapp-strip__segment--sent" style="inline-size:${format_segment_width(doc.sent_count)}"></span>
+			<span class="whatsapp-strip__segment whatsapp-strip__segment--failed" style="inline-size:${format_segment_width(doc.failed_count)}"></span>
 		</span>`;
 	};
 

@@ -22,7 +22,7 @@
 		padding: 0;
 	}
 	&__step { display: flex; }
-	&__step-btn {
+	&__step-button {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--whatsapp-kit-gap-sm);
@@ -37,7 +37,7 @@
 		cursor: pointer;
 		&:disabled { cursor: default; }
 	}
-	&__num {
+	&__number {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -50,15 +50,15 @@
 		color: var(--ink-gray-6);
 	}
 	&__optional { font-size: var(--text-xs, 12px); color: var(--ink-gray-6); }
-	&__step--current &__step-btn {
+	&__step--current &__step-button {
 		border-color: var(--whatsapp-kit-accent-outline);
 		background: var(--whatsapp-kit-accent-soft);
 		color: var(--whatsapp-kit-accent-ink);
 		font-weight: 600;
 	}
-	&__step--current &__num { background: var(--whatsapp-kit-accent-ink); color: var(--ink-white); }
-	&__step--done &__num { background: var(--surface-green-1); color: var(--ink-green-7); }
-	&__step--todo &__step-btn { color: var(--ink-gray-6); }
+	&__step--current &__number { background: var(--whatsapp-kit-accent-ink); color: var(--ink-white); }
+	&__step--done &__number { background: var(--surface-green-1); color: var(--ink-green-7); }
+	&__step--todo &__step-button { color: var(--ink-gray-6); }
 
 	&__body { min-height: 160px; }
 	&__pane[hidden] { display: none; }
@@ -96,7 +96,7 @@
 // a step that is behind the reader is done, and says so with a check instead of its number
 .whatsapp-kit-stepper__check { display: none; }
 .whatsapp-kit-stepper__step--done {
-	.whatsapp-kit-stepper__num { display: none; }
+	.whatsapp-kit-stepper__number { display: none; }
 	.whatsapp-kit-stepper__check {
 		display: inline-flex;
 		align-items: center;

@@ -150,7 +150,7 @@ frappe.provide("whatsapp.ui");
 				this.$dlg.html(`
 					<div class="whatsapp-kit-alert-editor__loading" role="alert">
 						<span>${escape_html(err && err.message ? err.message : __("Something went wrong. Please try again."))}</span>
-						<button type="button" class="whatsapp-kit-alert-editor__btn" data-act="close">${escape_html(__("Close"))}</button>
+						<button type="button" class="whatsapp-kit-alert-editor__button" data-act="close">${escape_html(__("Close"))}</button>
 					</div>`);
 			}
 		}
@@ -343,7 +343,7 @@ frappe.provide("whatsapp.ui");
 		step_head(n, title, done, note) {
 			return `
 				<header class="whatsapp-kit-alert-editor__step-head">
-					<span class="whatsapp-kit-alert-editor__num${done ? " is-done" : ""}" aria-hidden="true">${done ? whatsapp.ui.inline_icon_html("tick", "sm") : n}</span>
+					<span class="whatsapp-kit-alert-editor__number${done ? " is-done" : ""}" aria-hidden="true">${done ? whatsapp.ui.inline_icon_html("tick", "sm") : n}</span>
 					<span class="whatsapp-kit-alert-editor__step-title"><strong>${escape_html(title)}</strong>${note ? `<span>${escape_html(note)}</span>` : ""}</span>
 					<span class="sr-only">${escape_html(done ? __("Complete") : __("Not complete yet"))}</span>
 				</header>`;
@@ -354,10 +354,10 @@ frappe.provide("whatsapp.ui");
 		}
 
 		segmented_control_html(act, options, value, label) {
-			return `<div class="whatsapp-segmented whatsapp-kit-alert-editor__seg" role="radiogroup" aria-label="${escape_html(label)}">${options
+			return `<div class="whatsapp-segmented whatsapp-kit-alert-editor__segment" role="radiogroup" aria-label="${escape_html(label)}">${options
 				.map(
 					(o) =>
-						`<button type="button" class="whatsapp-segmented__opt" role="radio" aria-checked="${o.value === value}" data-act="${escape_html(act)}" data-value="${escape_html(o.value)}"${o.disabled ? " disabled" : ""}${o.title ? ` title="${escape_html(o.title)}"` : ""}>${o.icon ? whatsapp.ui.inline_icon_html(o.icon, "xs") : ""}<span>${escape_html(o.label)}</span></button>`
+						`<button type="button" class="whatsapp-segmented__option" role="radio" aria-checked="${o.value === value}" data-act="${escape_html(act)}" data-value="${escape_html(o.value)}"${o.disabled ? " disabled" : ""}${o.title ? ` title="${escape_html(o.title)}"` : ""}>${o.icon ? whatsapp.ui.inline_icon_html(o.icon, "xs") : ""}<span>${escape_html(o.label)}</span></button>`
 				)
 				.join("")}</div>`;
 		}
@@ -372,7 +372,7 @@ frappe.provide("whatsapp.ui");
 			}
 			const open = this.ui.pick_open === kind;
 			return `<div class="whatsapp-kit-alert-editor__pick">
-				<span class="whatsapp-kit-alert-editor__pick-ico" aria-hidden="true">${whatsapp.ui.inline_icon_html("search", "sm")}</span>
+				<span class="whatsapp-kit-alert-editor__pick-icon" aria-hidden="true">${whatsapp.ui.inline_icon_html("search", "sm")}</span>
 				<input type="search" class="whatsapp-input" data-in="pick_q" data-kind="${escape_html(kind)}" autocomplete="off" placeholder="${escape_html(placeholder)}" aria-label="${escape_html(placeholder)}" aria-expanded="${open}" value="${open ? escape_html(this.ui.add_q) : ""}">
 				${open ? this.results_html(kind) : ""}
 			</div>`;
@@ -385,7 +385,7 @@ frappe.provide("whatsapp.ui");
 					? rows
 							.map(
 								(r, i) =>
-									`<button type="button" role="option" class="whatsapp-kit-alert-editor__opt" data-act="pick" data-kind="${escape_html(kind)}" data-i="${i}"><strong>${escape_html(r.label)}</strong>${r.description ? `<span>${escape_html(r.description)}</span>` : ""}</button>`
+									`<button type="button" role="option" class="whatsapp-kit-alert-editor__option" data-act="pick" data-kind="${escape_html(kind)}" data-i="${i}"><strong>${escape_html(r.label)}</strong>${r.description ? `<span>${escape_html(r.description)}</span>` : ""}</button>`
 							)
 							.join("")
 					: `<p class="whatsapp-kit-alert-editor__none">${escape_html(this.ui.searching ? __("Searching…") : __("Nothing matches"))}</p>`
@@ -413,13 +413,13 @@ frappe.provide("whatsapp.ui");
 			let detail = "";
 			if (draft.document_type && DAY_EVENTS.includes(draft.event)) {
 				detail = `<div class="whatsapp-kit-notification-editor__line">
-					<input type="number" min="0" class="whatsapp-input whatsapp-input--mono whatsapp-kit-notification-editor__num" data-in="days_in_advance" value="${escape_html(draft.days_in_advance)}" aria-label="${escape_html(__("Days"))}">
+					<input type="number" min="0" class="whatsapp-input whatsapp-input--mono whatsapp-kit-notification-editor__number" data-in="days_in_advance" value="${escape_html(draft.days_in_advance)}" aria-label="${escape_html(__("Days"))}">
 					<span>${escape_html(draft.event === "Days Before" ? __("days before") : __("days after"))}</span>
 					${this.select("date_changed", this.document_fields_of_kind("date_fields"), draft.date_changed, __("Choose a date field…"), __("Date field"))}
 				</div>`;
 			} else if (draft.document_type && MINUTE_EVENTS.includes(draft.event)) {
 				detail = `<div class="whatsapp-kit-notification-editor__line">
-					<input type="number" min="0" class="whatsapp-input whatsapp-input--mono whatsapp-kit-notification-editor__num" data-in="minutes_offset" value="${escape_html(draft.minutes_offset)}" aria-label="${escape_html(__("Minutes"))}">
+					<input type="number" min="0" class="whatsapp-input whatsapp-input--mono whatsapp-kit-notification-editor__number" data-in="minutes_offset" value="${escape_html(draft.minutes_offset)}" aria-label="${escape_html(__("Minutes"))}">
 					<span>${escape_html(draft.event === "Minutes Before" ? __("minutes before") : __("minutes after"))}</span>
 					${this.select("datetime_changed", this.document_fields_of_kind("datetime_fields"), draft.datetime_changed, __("Choose a date and time field…"), __("Date and time field"))}
 				</div>`;
@@ -471,7 +471,7 @@ frappe.provide("whatsapp.ui");
 						</div>
 						${
 							condition_mode === "filters"
-								? `<div class="whatsapp-kit-notification-editor__fg"></div><p class="whatsapp-kit-alert-editor__hint">${escape_html(__("Only records that match every filter get the message, as in a list's filters."))}</p>`
+								? `<div class="whatsapp-kit-notification-editor__field-group"></div><p class="whatsapp-kit-alert-editor__hint">${escape_html(__("Only records that match every filter get the message, as in a list's filters."))}</p>`
 								: condition_mode === "python"
 									? `<textarea class="whatsapp-textarea whatsapp-input--mono whatsapp-kit-notification-editor__code" data-in="condition" rows="2" dir="ltr" spellcheck="false" placeholder="doc.grand_total > 1000" aria-label="${escape_html(__("Condition"))}">${escape_html(draft.condition)}</textarea>
 										<p class="whatsapp-kit-alert-editor__hint">${escape_html(__("A Python expression over doc; the message goes out only when it is true."))}</p>`
@@ -485,7 +485,7 @@ frappe.provide("whatsapp.ui");
 		/** Frappe's own filter component on the document type, as its Notification's "Filters" condition. */
 		draw_filters() {
 			const draft = this.draft;
-			const $fg = this.$root.find("[data-step=when] .whatsapp-kit-notification-editor__fg");
+			const $fg = this.$root.find("[data-step=when] .whatsapp-kit-notification-editor__field-group");
 			const document_type = draft.document_type;
 			frappe.model.with_doctype(document_type, () => {
 				if (this.draft.document_type !== document_type || !$fg.closest("body").length) return;
@@ -544,7 +544,7 @@ frappe.provide("whatsapp.ui");
 						)}
 						${
 							draft.attach === "print"
-								? `<div class="whatsapp-kit-alert-editor__cols">
+								? `<div class="whatsapp-kit-alert-editor__columns">
 									<div class="whatsapp-kit-alert-editor__field"><span class="whatsapp-kit-alert-editor__label">${escape_html(__("Print format"))}</span>${this.picker("print_format", draft.print_format, __("Default"), draft.print_format)}</div>
 									<div class="whatsapp-kit-alert-editor__field"><span class="whatsapp-kit-alert-editor__label">${escape_html(__("Letter head"))}</span>${this.picker("letter_head", draft.letter_head, __("None"), draft.letter_head)}</div>
 								</div>
@@ -591,18 +591,18 @@ frappe.provide("whatsapp.ui");
 			const fields = this.document_fields_of_kind("all_fields").filter((f) => !q || `${__(f.label)} ${f.fieldname}`.toLowerCase().includes(q));
 			const shown = fields.slice(0, VAR_LIMIT);
 			const vars = draft.document_type
-				? `<div class="whatsapp-kit-notification-editor__vars-bar">
-						<span class="whatsapp-kit-alert-editor__sub">${escape_html(__("Insert a field of the document"))}</span>
+				? `<div class="whatsapp-kit-notification-editor__variables-bar">
+						<span class="whatsapp-kit-alert-editor__subtitle">${escape_html(__("Insert a field of the document"))}</span>
 						<input type="search" class="whatsapp-input whatsapp-kit-notification-editor__filter" data-in="var_q" value="${escape_html(this.ui.var_q)}" placeholder="${escape_html(__("Filter fields…"))}" aria-label="${escape_html(__("Filter fields"))}">
 					</div>
-					<div class="whatsapp-kit-alert-editor__vars" role="group" aria-label="${escape_html(__("Insert a variable"))}">
-						${shown.map((f) => `<button type="button" class="whatsapp-kit-alert-editor__var" data-act="var" data-value="${escape_html(f.fieldname)}" title="{{ doc.${escape_html(f.fieldname)} }}">${whatsapp.ui.inline_icon_html("plus", "xs")}${escape_html(__(f.label))}</button>`).join("")}
+					<div class="whatsapp-kit-alert-editor__variables" role="group" aria-label="${escape_html(__("Insert a variable"))}">
+						${shown.map((f) => `<button type="button" class="whatsapp-kit-alert-editor__variable" data-act="var" data-value="${escape_html(f.fieldname)}" title="{{ doc.${escape_html(f.fieldname)} }}">${whatsapp.ui.inline_icon_html("plus", "xs")}${escape_html(__(f.label))}</button>`).join("")}
 						${fields.length > shown.length ? `<span class="whatsapp-kit-alert-editor__hint">${escape_html(__("{0} more — filter to find them", [fields.length - shown.length]))}</span>` : ""}
 					</div>`
 				: "";
 			return `${vars}
-				<textarea class="whatsapp-textarea whatsapp-kit-alert-editor__msg" data-in="message" rows="5" dir="auto" placeholder="${escape_html(__("What the message says… e.g. Invoice {{ doc.name }} is ready"))}" aria-label="${escape_html(__("Message"))}">${escape_html(draft.message)}</textarea>
-				${this.opts.open_template ? `<div class="whatsapp-kit-notification-editor__tpl-actions"><button type="button" class="whatsapp-kit-alert-editor__link" data-act="tpl_from_text"${(draft.message || "").trim() ? "" : " disabled"}>${whatsapp.ui.inline_icon_html("cards", "xs")} ${escape_html(__("Save this text as a template"))}</button></div>` : ""}`;
+				<textarea class="whatsapp-textarea whatsapp-kit-alert-editor__message" data-in="message" rows="5" dir="auto" placeholder="${escape_html(__("What the message says… e.g. Invoice {{ doc.name }} is ready"))}" aria-label="${escape_html(__("Message"))}">${escape_html(draft.message)}</textarea>
+				${this.opts.open_template ? `<div class="whatsapp-kit-notification-editor__template-actions"><button type="button" class="whatsapp-kit-alert-editor__link" data-act="tpl_from_text"${(draft.message || "").trim() ? "" : " disabled"}>${whatsapp.ui.inline_icon_html("cards", "xs")} ${escape_html(__("Save this text as a template"))}</button></div>` : ""}`;
 		}
 
 		// 3 — who --------------------------------------------------------------------------------------
@@ -649,7 +649,7 @@ frappe.provide("whatsapp.ui");
 					const open = this.ui.who_open === i;
 					return `<li class="whatsapp-kit-alert-editor__who${open ? " is-open" : ""}">
 						<button type="button" class="whatsapp-kit-alert-editor__who-open" data-act="r_open" data-i="${i}" aria-expanded="${open}" aria-controls="whatsapp-kit-notification-editor-who-detail" title="${escape_html(__("Show the details"))}">
-							<span class="whatsapp-kit-alert-editor__who-ico" aria-hidden="true">${whatsapp.ui.inline_icon_html(m.icon, "sm")}</span>
+							<span class="whatsapp-kit-alert-editor__who-icon" aria-hidden="true">${whatsapp.ui.inline_icon_html(m.icon, "sm")}</span>
 							<span class="whatsapp-kit-alert-editor__who-text"><strong dir="auto">${escape_html(label)}${r.recipient_type === "Fixed Number" ? whatsapp.ui.group_tag(r.phone) : ""}</strong><span dir="auto">${escape_html(sub)}${r.condition ? ` · ${escape_html(__("with a condition"))}` : ""}</span></span>
 						</button>
 						<button type="button" class="whatsapp-kit-alert-editor__icon whatsapp-kit-alert-editor__icon--sm" data-act="r_remove" data-i="${i}" aria-label="${escape_html(__("Remove {0}", [label]))}">${whatsapp.ui.inline_icon_html("x", "sm")}</button>
@@ -668,19 +668,19 @@ frappe.provide("whatsapp.ui");
 					? `<div class="whatsapp-kit-notification-editor__line">
 						${this.select("add_link_field", this.document_fields_of_kind("link_fields"), this.ui.link_field || "", __("Linked record field…"), __("Linked record field"))}
 						<input type="text" class="whatsapp-input whatsapp-input--mono" data-in="link_mobile" dir="ltr" value="${escape_html(this.ui.link_mobile || "mobile_no")}" placeholder="mobile_no" aria-label="${escape_html(__("Number field on the linked record"))}">
-						<button type="button" class="whatsapp-kit-alert-editor__btn" data-act="add_linked">${escape_html(__("Add"))}</button>
+						<button type="button" class="whatsapp-kit-alert-editor__button" data-act="add_linked">${escape_html(__("Add"))}</button>
 					</div>`
 					: `<p class="whatsapp-kit-alert-editor__hint">${escape_html(__("Choose the document type first."))}</p>`;
 			else
-				adder = `<div class="whatsapp-kit-alert-editor__addline">
+				adder = `<div class="whatsapp-kit-alert-editor__add-line">
 					<input type="tel" class="whatsapp-input whatsapp-input--mono" data-in="add_phone" dir="ltr" placeholder="${escape_html(whatsapp.ui.PhoneField.example(null, { format: false }).replace("+", ""))}" aria-label="${escape_html(__("Number"))}">
-					<button type="button" class="whatsapp-kit-alert-editor__btn" data-act="add_phone">${escape_html(__("Add"))}</button>
-					${this.opts.pick_recipients ? `<button type="button" class="whatsapp-kit-alert-editor__btn whatsapp-kit-alert-editor__btn--pri" data-act="pick_contacts">${whatsapp.ui.inline_icon_html("users", "sm")}${escape_html(__("Choose from contacts"))}</button>` : ""}
+					<button type="button" class="whatsapp-kit-alert-editor__button" data-act="add_phone">${escape_html(__("Add"))}</button>
+					${this.opts.pick_recipients ? `<button type="button" class="whatsapp-kit-alert-editor__button whatsapp-kit-alert-editor__button--primary" data-act="pick_contacts">${whatsapp.ui.inline_icon_html("users", "sm")}${escape_html(__("Choose from contacts"))}</button>` : ""}
 				</div>`;
 			this.$root.find("[data-step=who]").html(`
 				${this.step_head(3, __("Who gets it?"), draft.recipients.length > 0)}
 				<div class="whatsapp-kit-alert-editor__step-body">
-					${draft.recipients.length ? `<ul class="whatsapp-kit-alert-editor__whos">${chips}</ul>${this.who_detail_html()}` : `<p class="whatsapp-kit-alert-editor__empty">${escape_html(__("Nobody yet."))}</p>`}
+					${draft.recipients.length ? `<ul class="whatsapp-kit-alert-editor__recipient-chips">${chips}</ul>${this.who_detail_html()}` : `<p class="whatsapp-kit-alert-editor__empty">${escape_html(__("Nobody yet."))}</p>`}
 					<div class="whatsapp-kit-alert-editor__field">
 						${this.segmented_control_html(
 							"adder",
@@ -783,8 +783,8 @@ frappe.provide("whatsapp.ui");
 			// "Create PDF" sits with the record it prints (owner, 2026-11-10), whatever the message attaches
 			$s.html(`<div class="whatsapp-kit-notification-editor__record">
 				<div class="whatsapp-kit-notification-editor__record-head">
-					<span class="whatsapp-kit-alert-editor__sub">${escape_html(__("Tried on"))}</span>
-					${this.opts.make_file ? `<button type="button" class="whatsapp-kit-alert-editor__btn whatsapp-kit-notification-editor__record-pdf" data-act="make_file">${whatsapp.ui.inline_icon_html("doc", "sm")}<span class="whatsapp-kit-notification-editor__record-pdf-label">${escape_html(__("Create PDF"))}</span></button>` : ""}
+					<span class="whatsapp-kit-alert-editor__subtitle">${escape_html(__("Tried on"))}</span>
+					${this.opts.make_file ? `<button type="button" class="whatsapp-kit-alert-editor__button whatsapp-kit-notification-editor__record-pdf" data-act="make_file">${whatsapp.ui.inline_icon_html("doc", "sm")}<span class="whatsapp-kit-notification-editor__record-pdf-label">${escape_html(__("Create PDF"))}</span></button>` : ""}
 				</div>
 				<div class="whatsapp-kit-notification-editor__record-link"></div>
 			</div>`);
@@ -825,14 +825,14 @@ frappe.provide("whatsapp.ui");
 			const first = preview && preview.recipients && preview.recipients[0];
 			let bubble;
 			if (!preview) bubble = `<div class="whatsapp-kit-alert-editor__bubble is-ghost">${whatsapp.ui.skeleton(2)}</div>`;
-			else if (!draft.document_type) bubble = `<p class="whatsapp-kit-alert-editor__pv-empty">${escape_html(__("Choose the document type to see the message."))}</p>`;
-			else if (preview.no_access) bubble = `<p class="whatsapp-kit-alert-editor__pv-empty">${escape_html(__("You cannot read {0} records, so there is nothing to try the message on. It still works when saved.", [__(draft.document_type)]))}</p>`;
-			else if (!preview.reference_name) bubble = `<p class="whatsapp-kit-alert-editor__pv-empty">${escape_html(__("There is no {0} to try it on yet.", [__(draft.document_type)]))}</p>`;
-			else if (!preview.message && !preview.attachment) bubble = `<p class="whatsapp-kit-alert-editor__pv-empty">${escape_html(draft.body_mode === "template" ? __("Choose a template to see the message.") : __("Write the message to see it here."))}</p>`;
+			else if (!draft.document_type) bubble = `<p class="whatsapp-kit-alert-editor__preview-empty">${escape_html(__("Choose the document type to see the message."))}</p>`;
+			else if (preview.no_access) bubble = `<p class="whatsapp-kit-alert-editor__preview-empty">${escape_html(__("You cannot read {0} records, so there is nothing to try the message on. It still works when saved.", [__(draft.document_type)]))}</p>`;
+			else if (!preview.reference_name) bubble = `<p class="whatsapp-kit-alert-editor__preview-empty">${escape_html(__("There is no {0} to try it on yet.", [__(draft.document_type)]))}</p>`;
+			else if (!preview.message && !preview.attachment) bubble = `<p class="whatsapp-kit-alert-editor__preview-empty">${escape_html(draft.body_mode === "template" ? __("Choose a template to see the message.") : __("Write the message to see it here."))}</p>`;
 			else {
 				const attachment = preview.attachment;
 				const file = attachment
-					? `<div class="whatsapp-kit-alert-editor__file"><span class="whatsapp-kit-alert-editor__file-ico" aria-hidden="true">${whatsapp.ui.inline_icon_html(attachment.message_type === "Image" ? "image" : "doc", "md")}</span><span><strong dir="ltr">${escape_html(attachment.file_name || __("No file in this record"))}</strong><span>${escape_html(attachment.message_type === "Image" ? __("Image") : __("Document"))}${attachment.image_if_one_page ? ` · ${escape_html(__("sent as an image when it is one page"))}` : ""}${attachment.missing ? ` · ${escape_html(__("empty in this record"))}` : ""}</span></span></div>`
+					? `<div class="whatsapp-kit-alert-editor__file"><span class="whatsapp-kit-alert-editor__file-icon" aria-hidden="true">${whatsapp.ui.inline_icon_html(attachment.message_type === "Image" ? "image" : "doc", "md")}</span><span><strong dir="ltr">${escape_html(attachment.file_name || __("No file in this record"))}</strong><span>${escape_html(attachment.message_type === "Image" ? __("Image") : __("Document"))}${attachment.image_if_one_page ? ` · ${escape_html(__("sent as an image when it is one page"))}` : ""}${attachment.missing ? ` · ${escape_html(__("empty in this record"))}` : ""}</span></span></div>`
 					: "";
 				bubble = `<div class="whatsapp-kit-alert-editor__bubble">${file}${preview.message ? `<div class="whatsapp-kit-alert-editor__bubble-text" dir="auto">${escape_html(preview.message)}</div>` : ""}<span class="whatsapp-kit-alert-editor__bubble-time">${whatsapp.ui.inline_icon_html("read", "xs")}</span></div>`;
 			}
@@ -852,7 +852,7 @@ frappe.provide("whatsapp.ui");
 				<div class="whatsapp-kit-alert-editor__side-head"><strong>${escape_html(__("Preview"))}</strong><span class="whatsapp-kit-alert-editor__status" data-slot="pv-status" aria-live="polite"></span></div>
 				<div class="whatsapp-kit-alert-editor__phone">
 					<div class="whatsapp-kit-alert-editor__phone-bar">
-						<span class="whatsapp-kit-alert-editor__phone-av" aria-hidden="true">${whatsapp.ui.inline_icon_html("whatsapp", "sm")}</span>
+						<span class="whatsapp-kit-alert-editor__phone-avatar" aria-hidden="true">${whatsapp.ui.inline_icon_html("whatsapp", "sm")}</span>
 						<span><strong>${escape_html(dev.device_name || __("Device"))}</strong><span dir="ltr">${escape_html(first ? first.phone_e164 : __("to the first recipient"))}</span></span>
 					</div>
 					<div class="whatsapp-kit-alert-editor__chat">${bubble}</div>
@@ -868,9 +868,9 @@ frappe.provide("whatsapp.ui");
 				<div class="whatsapp-kit-alert-editor__test">
 					<strong>${escape_html(__("Try it"))}</strong>
 					<p>${escape_html(__("Sends this draft once to one number, for the record above — nothing is saved and the condition is not checked."))}</p>
-					<div class="whatsapp-kit-alert-editor__addline">
+					<div class="whatsapp-kit-alert-editor__add-line">
 						<div class="whatsapp-kit-alert-editor__test-phone" data-slot="test-phone"></div>
-						<button type="button" class="whatsapp-kit-alert-editor__btn whatsapp-kit-alert-editor__btn--pri" data-act="test"${this.ui.testing ? " disabled" : ""}>${whatsapp.ui.inline_icon_html("send", "sm")}${escape_html(this.ui.testing ? __("Sending…") : __("Send a test"))}</button>
+						<button type="button" class="whatsapp-kit-alert-editor__button whatsapp-kit-alert-editor__button--primary" data-act="test"${this.ui.testing ? " disabled" : ""}>${whatsapp.ui.inline_icon_html("send", "sm")}${escape_html(this.ui.testing ? __("Sending…") : __("Send a test"))}</button>
 					</div>
 				</div>`);
 			// The kit's phone field: its country opens on the site's own (Global Defaults → Country),
@@ -919,10 +919,10 @@ frappe.provide("whatsapp.ui");
 			const preview = this.ui.preview;
 			const hint = preview && preview.problem ? preview.problem : this.is_dirty() ? __("Changes are not saved yet") : draft.name ? __("Saved") : "";
 			this.$root.find("[data-slot=foot]").html(`
-				${draft.name && this.data.can_delete && this.opts.remove ? `<button type="button" class="whatsapp-kit-alert-editor__btn whatsapp-kit-alert-editor__btn--danger" data-act="delete">${whatsapp.ui.inline_icon_html("trash", "sm")}${escape_html(__("Delete"))}</button>` : ""}
+				${draft.name && this.data.can_delete && this.opts.remove ? `<button type="button" class="whatsapp-kit-alert-editor__button whatsapp-kit-alert-editor__button--danger" data-act="delete">${whatsapp.ui.inline_icon_html("trash", "sm")}${escape_html(__("Delete"))}</button>` : ""}
 				<span class="whatsapp-kit-alert-editor__foot-hint${preview && preview.problem ? " is-warn" : ""}">${escape_html(hint)}</span>
-				<button type="button" class="whatsapp-kit-alert-editor__btn" data-act="close">${escape_html(__("Cancel"))}</button>
-				<button type="button" class="whatsapp-kit-alert-editor__btn whatsapp-kit-alert-editor__btn--pri" data-act="save"${(!this.is_dirty() && draft.name) || this.ui.saving || !this.data.can_write ? " disabled" : ""}>${escape_html(this.ui.saving ? __("Saving…") : draft.name ? __("Save") : __("Create notification"))}</button>`);
+				<button type="button" class="whatsapp-kit-alert-editor__button" data-act="close">${escape_html(__("Cancel"))}</button>
+				<button type="button" class="whatsapp-kit-alert-editor__button whatsapp-kit-alert-editor__button--primary" data-act="save"${(!this.is_dirty() && draft.name) || this.ui.saving || !this.data.can_write ? " disabled" : ""}>${escape_html(this.ui.saving ? __("Saving…") : draft.name ? __("Save") : __("Create notification"))}</button>`);
 		}
 
 		// ---- events --------------------------------------------------------------------------------
@@ -1135,7 +1135,7 @@ frappe.provide("whatsapp.ui");
 			}
 			if (e.key === "ArrowDown" && $(e.target).is("[data-in=pick_q]")) {
 				e.preventDefault();
-				this.$root.find(".whatsapp-kit-alert-editor__opt").first().trigger("focus");
+				this.$root.find(".whatsapp-kit-alert-editor__option").first().trigger("focus");
 			}
 		}
 

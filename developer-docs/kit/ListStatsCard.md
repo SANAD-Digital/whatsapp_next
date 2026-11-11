@@ -99,7 +99,7 @@ new whatsapp.ui.ListStatsCard({
 
 - Root `.whatsapp-kit.whatsapp-kit-stats.whatsapp-kit-stats--{row|kpi}[role=group]`.
 - Card `.whatsapp-kit-stats__card[data-key]` (`--interactive`, `--error`), `__icon`, `__text`, `__label`,
-  `__value`, `__sub`, `__error`, `__chevron`; tones via `.whatsapp-kit-tone--*`.
+  `__value`, `__subtitle`, `__error`, `__chevron`; tones via `.whatsapp-kit-tone--*`.
 - Modal: `.whatsapp-kit.whatsapp-kit-stats-modal.whatsapp-kit-sheet` on the dialog wrapper, `__table`
   (`.whatsapp-kit-table`), `__actions`.
 

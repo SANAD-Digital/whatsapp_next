@@ -296,12 +296,12 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 		this.$tray_sources.empty();
 		if (groups.length < 2) return; // one source needs no breakdown; the count above says it
 		groups.forEach((g) => {
-			const $chip = $(`<span class="whatsapp-kit-picker__srcchip">
+			const $chip = $(`<span class="whatsapp-kit-picker__source-chip">
 					<span>${ui.escape(g.label)}</span>
 					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_integer(g.rows.length))}</span>
-					<button type="button" class="whatsapp-kit-picker__srcchip-x" aria-label="${ui.escape(__("Remove everything from {0}", [g.label]))}">${ui.icon("es-line-close", "xs")}</button>
+					<button type="button" class="whatsapp-kit-picker__source-chip-x" aria-label="${ui.escape(__("Remove everything from {0}", [g.label]))}">${ui.icon("es-line-close", "xs")}</button>
 				</span>`);
-			$chip.find(".whatsapp-kit-picker__srcchip-x").on("click", () => this.remove_rows(g.rows.map(([key]) => key)));
+			$chip.find(".whatsapp-kit-picker__source-chip-x").on("click", () => this.remove_rows(g.rows.map(([key]) => key)));
 			this.$tray_sources.append($chip);
 		});
 	}

@@ -349,7 +349,7 @@ whatsapp.ui.Drawer = class Drawer {
 	/** Who this record is: picture, title, the one or two lines that identify it, status, time. */
 	render_identity(doc, vm, time_field) {
 		const time = doc[time_field];
-		const lines = (vm.lines || []).map((l) => `<div class="whatsapp-kit-doc__identity-sub"${l.ltr ? ' dir="ltr"' : ' dir="auto"'}>${l.html || ui.escape(l.text || "")}</div>`).join("");
+		const lines = (vm.lines || []).map((l) => `<div class="whatsapp-kit-doc__identity-subtitle"${l.ltr ? ' dir="ltr"' : ' dir="auto"'}>${l.html || ui.escape(l.text || "")}</div>`).join("");
 		const name = doc.name || this.opts.name || "";
 		const $id = $(`<section class="whatsapp-kit-doc__identity">
 			<div class="whatsapp-kit-doc__identity-main">
@@ -357,7 +357,7 @@ whatsapp.ui.Drawer = class Drawer {
 				<div class="whatsapp-kit-doc__identity-text">
 					<h3 class="whatsapp-kit-doc__identity-title" dir="auto">${ui.escape(vm.title || name)}</h3>
 					${lines}
-					${name ? `<div class="whatsapp-kit-doc__identity-ref"><span>${ui.escape(__(this.doctype))}</span><span aria-hidden="true">·</span><code dir="ltr">${ui.escape(this.doctype === "WhatsApp Number" && ui.phone ? ui.phone(name) : name)}</code></div>` : ""}
+					${name ? `<div class="whatsapp-kit-doc__identity-reference"><span>${ui.escape(__(this.doctype))}</span><span aria-hidden="true">·</span><code dir="ltr">${ui.escape(this.doctype === "WhatsApp Number" && ui.phone ? ui.phone(name) : name)}</code></div>` : ""}
 				</div>
 			</div>
 			<div class="whatsapp-kit-doc__identity-side">
@@ -479,7 +479,7 @@ whatsapp.ui.Drawer = class Drawer {
 				return `<div class="whatsapp-kit-drawer__field${long ? " whatsapp-kit-drawer__field--wide" : ""}"><dt>${ui.escape(__(df.label || df.fieldname))}</dt><dd>${html}</dd></div>`;
 			})
 			.filter(Boolean);
-		if (rows.length) this.$body.append(`<dl class="whatsapp-kit-drawer__dl">${rows.join("")}</dl>`);
+		if (rows.length) this.$body.append(`<dl class="whatsapp-kit-drawer__definition-list">${rows.join("")}</dl>`);
 		const sections = (this.opts.sections || []).filter((s) => !s.condition || s.condition(doc));
 		this.render_sections(doc);
 		if (!rows.length && !sections.length) {
@@ -545,7 +545,7 @@ whatsapp.ui.Drawer = class Drawer {
 		choices.forEach((c, i) => {
 			$(`<button type="button" class="whatsapp-kit-drawer__choice" role="listitem" tabindex="${i === 0 ? 0 : -1}">
 				${c.icon ? `<span class="whatsapp-kit-drawer__choice-icon" aria-hidden="true">${ui.icon(c.icon, "md")}</span>` : ""}
-				<span class="whatsapp-kit-drawer__choice-text"><span class="whatsapp-kit-drawer__choice-label">${ui.escape(c.label)}</span>${c.description ? `<span class="whatsapp-kit-drawer__choice-desc">${ui.escape(c.description)}</span>` : ""}</span>
+				<span class="whatsapp-kit-drawer__choice-text"><span class="whatsapp-kit-drawer__choice-label">${ui.escape(c.label)}</span>${c.description ? `<span class="whatsapp-kit-drawer__choice-description">${ui.escape(c.description)}</span>` : ""}</span>
 			</button>`)
 				.on("click", () => {
 					this.hide();

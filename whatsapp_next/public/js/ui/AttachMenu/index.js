@@ -152,15 +152,15 @@ frappe.provide("whatsapp.ui");
 				$popover.html(`<form class="whatsapp-kit-attach-menu__form" novalidate>
 					<span class="whatsapp-kit-attach-menu__title">${ICONS.location}${escape_html(__("Location"))}</span>
 					<span class="whatsapp-kit-attach-menu__row">
-						<label class="whatsapp-kit-attach-menu__fld"><span>${escape_html(__("Latitude"))}</span><input type="number" step="any" name="latitude" dir="ltr" required /></label>
-						<label class="whatsapp-kit-attach-menu__fld"><span>${escape_html(__("Longitude"))}</span><input type="number" step="any" name="longitude" dir="ltr" required /></label>
+						<label class="whatsapp-kit-attach-menu__labelled-field"><span>${escape_html(__("Latitude"))}</span><input type="number" step="any" name="latitude" dir="ltr" required /></label>
+						<label class="whatsapp-kit-attach-menu__labelled-field"><span>${escape_html(__("Longitude"))}</span><input type="number" step="any" name="longitude" dir="ltr" required /></label>
 					</span>
-					<label class="whatsapp-kit-attach-menu__fld"><span>${escape_html(__("Place name"))}</span><input type="text" name="name" /></label>
+					<label class="whatsapp-kit-attach-menu__labelled-field"><span>${escape_html(__("Place name"))}</span><input type="text" name="name" /></label>
 					${navigator.geolocation ? `<button type="button" class="whatsapp-kit-attach-menu__link" data-here>${escape_html(__("Use my current location"))}</button>` : ""}
 					<span class="whatsapp-kit-attach-menu__error" role="alert"></span>
 					<span class="whatsapp-kit-attach-menu__actions">
-						<button type="button" class="whatsapp-kit-attach-menu__btn" data-back>${escape_html(__("Back"))}</button>
-						<button type="submit" class="whatsapp-kit-attach-menu__btn whatsapp-kit-attach-menu__btn--pri">${escape_html(__("Add the location"))}</button>
+						<button type="button" class="whatsapp-kit-attach-menu__button" data-back>${escape_html(__("Back"))}</button>
+						<button type="submit" class="whatsapp-kit-attach-menu__button whatsapp-kit-attach-menu__button--primary">${escape_html(__("Add the location"))}</button>
 					</span>
 				</form>`);
 				const $f = $popover.find("form");
@@ -192,7 +192,7 @@ frappe.provide("whatsapp.ui");
 					<span class="whatsapp-kit-attach-menu__title">${ICONS.contact}${escape_html(__("Contact card"))}</span>
 					<input type="text" class="whatsapp-kit-attach-menu__search" data-whatsapp-bare placeholder="${escape_html(__("Search by name or number…"))}" aria-label="${escape_html(__("Search by name or number"))}" autocomplete="off" />
 					<span class="whatsapp-kit-attach-menu__results" role="listbox"><span class="whatsapp-kit-attach-menu__none">${escape_html(__("Loading…"))}</span></span>
-					<span class="whatsapp-kit-attach-menu__actions"><button type="button" class="whatsapp-kit-attach-menu__btn" data-back>${escape_html(__("Back"))}</button></span>
+					<span class="whatsapp-kit-attach-menu__actions"><button type="button" class="whatsapp-kit-attach-menu__button" data-back>${escape_html(__("Back"))}</button></span>
 				</div>`);
 				$popover.find("[data-back]").on("click", () => this.show_menu_step("menu"));
 				const $q = $popover.find(".whatsapp-kit-attach-menu__search");
@@ -211,7 +211,7 @@ frappe.provide("whatsapp.ui");
 						rows.length
 							? rows
 									.slice(0, 20)
-									.map((c) => `<button type="button" role="option" class="whatsapp-kit-attach-menu__opt" data-name="${escape_html(c.name)}">${escape_html(c.label || c.name)}<span dir="ltr">${escape_html(whatsapp.ui.phone(c.phone || ""))}</span></button>`)
+									.map((c) => `<button type="button" role="option" class="whatsapp-kit-attach-menu__option" data-name="${escape_html(c.name)}">${escape_html(c.label || c.name)}<span dir="ltr">${escape_html(whatsapp.ui.phone(c.phone || ""))}</span></button>`)
 									.join("")
 							: `<span class="whatsapp-kit-attach-menu__none">${escape_html(__("No matching contacts."))}</span>`
 					);

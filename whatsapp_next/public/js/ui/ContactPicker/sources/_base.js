@@ -90,29 +90,29 @@ export class BaseSource {
 		const list = (all ? [{ value: "", label: __("All") }] : []).concat(options.map((o) => (typeof o === "string" ? { value: o, label: __(o) } : o)));
 		const id = ui.unique_dom_id("pdd");
 		const with_search = searchable === null ? list.length > 7 : !!searchable;
-		const $dd = $(`<div class="whatsapp-kit-picker__dd"></div>`);
-		const $btn = $(`<button type="button" class="whatsapp-kit-picker__dd-btn" aria-haspopup="listbox" aria-expanded="false" aria-controls="${id}">
-			<span class="whatsapp-kit-picker__dd-label">${ui.escape(label)}</span>
-			<span class="whatsapp-kit-picker__dd-value"></span>
-			<span class="whatsapp-kit-picker__dd-chevron" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
+		const $dd = $(`<div class="whatsapp-kit-picker__dropdown"></div>`);
+		const $btn = $(`<button type="button" class="whatsapp-kit-picker__dropdown-button" aria-haspopup="listbox" aria-expanded="false" aria-controls="${id}">
+			<span class="whatsapp-kit-picker__dropdown-label">${ui.escape(label)}</span>
+			<span class="whatsapp-kit-picker__dropdown-value"></span>
+			<span class="whatsapp-kit-picker__dropdown-chevron" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 		</button>`).appendTo($dd);
-		const $pop = $(`<div class="whatsapp-kit-picker__dd-pop" id="${id}" role="listbox" aria-label="${ui.escape(label)}" hidden></div>`).appendTo($dd);
-		const $search = with_search ? $(`<input type="search" class="form-control whatsapp-kit-picker__dd-search" placeholder="${ui.escape(__("Search…"))}" aria-label="${ui.escape(__("Search {0}", [label]))}">`).appendTo($pop) : null;
-		const $list = $(`<div class="whatsapp-kit-picker__dd-list"></div>`).appendTo($pop);
+		const $pop = $(`<div class="whatsapp-kit-picker__dropdown-popover" id="${id}" role="listbox" aria-label="${ui.escape(label)}" hidden></div>`).appendTo($dd);
+		const $search = with_search ? $(`<input type="search" class="form-control whatsapp-kit-picker__dropdown-search" placeholder="${ui.escape(__("Search…"))}" aria-label="${ui.escape(__("Search {0}", [label]))}">`).appendTo($pop) : null;
+		const $list = $(`<div class="whatsapp-kit-picker__dropdown-list"></div>`).appendTo($pop);
 		let value = "";
 		const reflect = () => {
 			const chosen = list.find((o) => o.value === value) || list[0];
-			$btn.find(".whatsapp-kit-picker__dd-value").text(chosen ? chosen.label : "").toggleClass("whatsapp-kit-picker__dd-value--set", !!value);
-			$btn.toggleClass("whatsapp-kit-picker__dd-btn--active", !!value);
+			$btn.find(".whatsapp-kit-picker__dropdown-value").text(chosen ? chosen.label : "").toggleClass("whatsapp-kit-picker__dropdown-value--set", !!value);
+			$btn.toggleClass("whatsapp-kit-picker__dropdown-button--active", !!value);
 			$list.find("[role=option]").each((i, el) => el.setAttribute("aria-selected", el.dataset.value === value ? "true" : "false"));
 		};
 		const fill_option_list = (q = "") => {
 			const needle = q.trim().toLowerCase();
 			$list.empty();
 			const shown = list.filter((o) => !needle || o.label.toLowerCase().includes(needle));
-			if (!shown.length) $list.append(`<div class="whatsapp-kit-picker__dd-empty">${ui.escape(__("No match for {0}", [q]))}</div>`);
+			if (!shown.length) $list.append(`<div class="whatsapp-kit-picker__dropdown-empty">${ui.escape(__("No match for {0}", [q]))}</div>`);
 			shown.forEach((o) => {
-				$(`<button type="button" class="whatsapp-kit-picker__dd-opt" role="option" data-value="${ui.escape(o.value)}" aria-selected="${o.value === value}">${ui.escape(o.label)}</button>`)
+				$(`<button type="button" class="whatsapp-kit-picker__dropdown-option" role="option" data-value="${ui.escape(o.value)}" aria-selected="${o.value === value}">${ui.escape(o.label)}</button>`)
 					.on("click", () => {
 						value = o.value;
 						reflect();
@@ -207,10 +207,10 @@ export class BaseSource {
 			});
 			const $row = $(`
 				<div class="whatsapp-kit-picker__row${disabled ? " whatsapp-kit-picker__row--disabled" : ""}" data-idx="${i}"${selectable ? ` role="checkbox" aria-checked="false" tabindex="${disabled ? -1 : 0}"${disabled ? ' aria-disabled="true"' : ""}` : ' role="listitem"'}>
-					<span class="whatsapp-kit-picker__av" aria-hidden="true">${ui.escape(ui.initials(name || phone) || "#")}</span>
+					<span class="whatsapp-kit-picker__avatar" aria-hidden="true">${ui.escape(ui.initials(name || phone) || "#")}</span>
 					<span class="whatsapp-kit-picker__row-text">
 						<span class="whatsapp-kit-picker__row-name" dir="auto">${ui.escape(name || phone)}${ui.group_tag(row.phone_e164 || row.phone)}</span>
-						${name && phone ? `<span class="whatsapp-kit-picker__row-sub whatsapp-kit-tabular" dir="ltr">${ui.escape(phone)}</span>` : ""}
+						${name && phone ? `<span class="whatsapp-kit-picker__row-subtitle whatsapp-kit-tabular" dir="ltr">${ui.escape(phone)}</span>` : ""}
 						${row.error ? `<span class="whatsapp-kit-picker__row-error" dir="auto">${ui.escape(row.error)}</span>` : ""}
 					</span>
 					${badges.map((b) => `<span class="whatsapp-kit-picker__row-badge">${b}</span>`).join("")}
@@ -254,7 +254,7 @@ export class BaseSource {
 
 	/** "Add N" button that tracks a candidate table's selection. */
 	add_selected_button($table, { source_type, source_ref = null, label = null } = {}) {
-		const $btn = $(`<button type="button" class="btn btn-primary btn-sm whatsapp-kit-picker__add-btn"></button>`);
+		const $btn = $(`<button type="button" class="btn btn-primary btn-sm whatsapp-kit-picker__add-button"></button>`);
 		const update_add_button_label = () => {
 			const n = $table.selected_rows ? $table.selected_rows().length : 0;
 			$btn.text(label ? label(n) : __("Add {0}", [ui.format_integer(n)])).prop("disabled", !n);
@@ -275,17 +275,17 @@ export class BaseSource {
 			<div class="whatsapp-kit-picker__pager">
 				<span class="whatsapp-kit-picker__page-text whatsapp-kit-tabular" aria-live="polite"></span>
 				<div>
-					<button type="button" class="btn btn-default btn-sm whatsapp-kit-picker__prev">${ui.escape(__("Previous"))}</button>
+					<button type="button" class="btn btn-default btn-sm whatsapp-kit-picker__previous">${ui.escape(__("Previous"))}</button>
 					<button type="button" class="btn btn-default btn-sm whatsapp-kit-picker__next">${ui.escape(__("Next"))}</button>
 				</div>
 			</div>`);
-		$pager.find(".whatsapp-kit-picker__prev").on("click", () => on_page(this.page - 1));
+		$pager.find(".whatsapp-kit-picker__previous").on("click", () => on_page(this.page - 1));
 		$pager.find(".whatsapp-kit-picker__next").on("click", () => on_page(this.page + 1));
 		$pager.update = (rows_on_page, total) => {
 			const start = rows_on_page ? (this.page - 1) * this.page_length + 1 : 0;
 			const end = (this.page - 1) * this.page_length + rows_on_page;
 			$pager.find(".whatsapp-kit-picker__page-text").text(total != null ? __("{0}–{1} of {2}", [ui.format_integer(start), ui.format_integer(end), ui.format_integer(total)]) : __("{0}–{1}", [ui.format_integer(start), ui.format_integer(end)]));
-			$pager.find(".whatsapp-kit-picker__prev").prop("disabled", this.page <= 1);
+			$pager.find(".whatsapp-kit-picker__previous").prop("disabled", this.page <= 1);
 			$pager.find(".whatsapp-kit-picker__next").prop("disabled", total != null ? end >= total : rows_on_page < this.page_length);
 			$pager.toggle(this.page > 1 || (total != null ? total > this.page_length : rows_on_page >= this.page_length));
 		};

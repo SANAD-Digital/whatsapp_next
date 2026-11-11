@@ -28,7 +28,7 @@
 		flex: none;
 	}
 	&__title { margin: 0; font-size: var(--text-base, 14px); font-weight: 600; color: var(--ink-gray-9); }
-	&__desc { margin: 0; font-size: var(--text-xs, 11px); color: var(--ink-gray-6); }
+	&__description { margin: 0; font-size: var(--text-xs, 11px); color: var(--ink-gray-6); }
 
 	&__body { min-inline-size: 0; }
 
@@ -64,7 +64,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		border-radius: var(--whatsapp-kit-ent-radius);
+		border-radius: var(--whatsapp-kit-entity-radius);
 		background: var(--surface-gray-10);
 		opacity: 0.75;
 		color: var(--ink-white);
@@ -129,7 +129,7 @@
 	max-inline-size: 100%;
 	overflow-x: auto;
 
-	&__btn {
+	&__button {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--whatsapp-kit-gap-xs);
@@ -152,8 +152,8 @@
 	}
 	// On phones the labels go, the icons stay.
 	@media (max-width: 520px) {
-		&__btn span { display: none; }
-		&__btn { padding-inline: var(--whatsapp-kit-gap-sm); }
+		&__button span { display: none; }
+		&__button { padding-inline: var(--whatsapp-kit-gap-sm); }
 	}
 }
 
@@ -201,6 +201,6 @@
 	&__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--whatsapp-kit-gap-md); flex-wrap: wrap; }
 	&__title { font-size: var(--text-sm, 13px); font-weight: 500; color: var(--ink-gray-9); }
 	&__time { font-size: var(--text-xs, 11px); color: var(--ink-gray-5); white-space: nowrap; }
-	&__desc { font-size: var(--text-sm, 13px); color: var(--ink-gray-6); line-height: 1.7; }
+	&__description { font-size: var(--text-sm, 13px); color: var(--ink-gray-6); line-height: 1.7; }
 	&__user { margin-block-start: var(--whatsapp-kit-gap-xs); }
 }

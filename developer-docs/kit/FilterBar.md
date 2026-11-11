@@ -112,10 +112,10 @@ new whatsapp.ui.FilterBar({
 
 - **Root:** `.whatsapp-kit-filterbar`, plus `--list` in list mode. It has `role="group"`.
 - **Layout:** `__intro` and `__row--toolbar`, containing `__main` (the search and filters) and `__end` (holding `__period`, `__datefilter` (`--set`) and `__actions`). The pills go in `__row--tabs` / `__pills`.
-- **Filter buttons:** `__dd`, containing `__btn`, which holds `__btn-label`, `__btn-value`, `__btn-clear` and `__chevron`. `__btn--active` marks a button with a value set.
-- **Popovers:** `__pop` (with `--more`, `--amore`, `--levels` and `--columns`), containing `__pop-head`, `__pop-search`, `__pop-list`, `__opt`, `__pop-foot` and `__pop-empty`.
-- **Overflow:** `__more` / `__more-count`, `__hidden`, `__amore-item` / `__amore-label`, and `__native` (Desk's adopted Filter section).
-- **Extra filters and clear:** `__chipfilter` (with its `-label`, `-value` and `-x` parts) and `__clear`.
+- **Filter buttons:** `__dropdown`, containing `__button`, which holds `__button-label`, `__button-value`, `__button-clear` and `__chevron`. `__button--active` marks a button with a value set.
+- **Popovers:** `__popover` (with `--more`, `--actions-overflow`, `--levels` and `--columns`), containing `__popover-head`, `__popover-search`, `__popover-list`, `__option`, `__popover-foot` and `__popover-empty`.
+- **Overflow:** `__more` / `__more-count`, `__hidden`, `__actions-overflow-item` / `__actions-overflow-label`, and `__native` (Desk's adopted Filter section).
+- **Extra filters and clear:** `__chip-filter` (with its `-label`, `-value` and `-x` parts) and `__clear`.
 - **Actions:** `__action`, `--icon`, `--group` and `--active`, plus `__levels`, `__level*` and `__column`.
 - **Phone:** `__mobile-toggle`, `__mobile-count` and `.whatsapp-kit-filter-sheet*` (the sheet rows). The bottom drawer is `.whatsapp-kit-options-sheet` (`--in`, `__scrim`, `__panel`, `__list`, `__done`).
 - **Page:** `.whatsapp-kit-hide-page-form` on the page wrapper keeps Desk's `page_form` row hidden.

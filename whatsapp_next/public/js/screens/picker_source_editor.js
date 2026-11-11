@@ -231,7 +231,7 @@ frappe.provide("whatsapp_next");
 		/** Frappe's own filter builder on the chosen screen; it keeps `[[field, op, value]]`. */
 		draw_filters(doctype, saved) {
 			const $filters_wrapper = this.dialog.get_field("filters").$wrapper;
-			$filters_wrapper.html(`<p class="whatsapp-picker-source-editor__hint">${escape_html(__("Always applied on top of what the user chooses in the picker. Leave empty to offer every record."))}</p><div class="whatsapp-picker-source-editor__fg"></div>`);
+			$filters_wrapper.html(`<p class="whatsapp-picker-source-editor__hint">${escape_html(__("Always applied on top of what the user chooses in the picker. Leave empty to offer every record."))}</p><div class="whatsapp-picker-source-editor__field-group"></div>`);
 			let rows = [];
 			try {
 				rows = saved ? (typeof saved === "string" ? JSON.parse(saved) : saved) : [];
@@ -241,7 +241,7 @@ frappe.provide("whatsapp_next");
 			}
 			try {
 				this.fg = new frappe.ui.FilterGroup({
-					parent: $filters_wrapper.find(".whatsapp-picker-source-editor__fg"),
+					parent: $filters_wrapper.find(".whatsapp-picker-source-editor__field-group"),
 					doctype,
 					on_change: () => this.changed(),
 				});
@@ -249,7 +249,7 @@ frappe.provide("whatsapp_next");
 				this.fg.add_filters_to_filter_group(rows.map((r) => [doctype, ...r.slice(-3)]));
 			} catch (e) {
 				this.fg = null;
-				$filters_wrapper.find(".whatsapp-picker-source-editor__fg").html(`<p class="whatsapp-picker-source-editor__hint">${escape_html(__("The filters of this screen could not be shown."))}</p>`);
+				$filters_wrapper.find(".whatsapp-picker-source-editor__field-group").html(`<p class="whatsapp-picker-source-editor__hint">${escape_html(__("The filters of this screen could not be shown."))}</p>`);
 			}
 		}
 

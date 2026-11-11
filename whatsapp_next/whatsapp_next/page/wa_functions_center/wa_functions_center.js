@@ -353,8 +353,8 @@
 									? r.messages
 											.map((m) =>
 												m.type === "text"
-													? `<div class="whatsapp-function-try__msg"><span class="whatsapp-function-try__key">${escape_html(m.reply)}</span><pre class="whatsapp-function-try__text">${escape_html(m.text)}</pre></div>`
-													: `<div class="whatsapp-function-try__msg"><span class="whatsapp-function-try__key">${escape_html(m.reply)}</span><span>${escape_html(__("File {0} from report {1}", [m.file_name || "", m.report_name]))}</span></div>`
+													? `<div class="whatsapp-function-try__message"><span class="whatsapp-function-try__key">${escape_html(m.reply)}</span><pre class="whatsapp-function-try__text">${escape_html(m.text)}</pre></div>`
+													: `<div class="whatsapp-function-try__message"><span class="whatsapp-function-try__key">${escape_html(m.reply)}</span><span>${escape_html(__("File {0} from report {1}", [m.file_name || "", m.report_name]))}</span></div>`
 											)
 											.join("")
 									: `<span class="text-muted">${escape_html(r.error || __("No message."))}</span>`

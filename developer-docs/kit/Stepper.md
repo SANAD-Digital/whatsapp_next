@@ -77,7 +77,7 @@ const stepper = new whatsapp.ui.Stepper({
 
 - Root `whatsapp-kit whatsapp-kit-stepper` (with a generated `id`).
 - `__header`, `__progress` (`aria-live="polite"`), `__list` (`<ol role="list">`), `__step`
-  (`data-index`) with modifiers `--current`, `--done`, `--todo`; `__step-btn`, `__num`,
+  (`data-index`) with modifiers `--current`, `--done`, `--todo`; `__step-button`, `__number`,
   `__check`, `__label`, `__optional`.
 - `__body`, `__pane` (`data-index`, `hidden`), `__error`, `__content`, `__footer`,
   `__footer-start`, `__footer-end`.

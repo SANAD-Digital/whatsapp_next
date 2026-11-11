@@ -30,11 +30,11 @@
 // only the colour, never their layout (owner, 2026-10-07).
 // ---------------------------------------------------------------------------------------------
 :root {
-	--whatsapp-kit-accent: var(--whatsapp-pri);
-	--whatsapp-kit-accent-ink: var(--whatsapp-pri-d);
-	--whatsapp-kit-accent-soft: var(--whatsapp-pri-s);
-	--whatsapp-kit-accent-outline: var(--whatsapp-pri-sb);
-	--whatsapp-kit-accent-on: var(--whatsapp-on-pri);
+	--whatsapp-kit-accent: var(--whatsapp-primary);
+	--whatsapp-kit-accent-ink: var(--whatsapp-primary-deep);
+	--whatsapp-kit-accent-soft: var(--whatsapp-primary-soft);
+	--whatsapp-kit-accent-outline: var(--whatsapp-primary-soft-border);
+	--whatsapp-kit-accent-on: var(--whatsapp-on-primary);
 	// the kit's charts (DashboardBlock); light and dark tones live in `_tokens.scss`
 	--whatsapp-kit-chart-palette: var(--whatsapp-chart-palette);
 }

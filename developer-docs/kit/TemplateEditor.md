@@ -74,8 +74,8 @@ frappe.ui.form.on("WhatsApp Template", {
 
 - Root `.whatsapp-kit.whatsapp-kit-template-editor`.
 - Toolbar: `__toolbar`, `__sample`, `__sample-control`, `__latest`, `__sample-note`.
-- Preview: `__grid`, `__preview`, `__h`, `__state`, `__bubble`, `__muted`, `__errors`.
-- Variables: `__vars`, `__search`, `__vars-state`, `__list`, `__var[data-name]`, `__var-label`.
+- Preview: `__grid`, `__preview`, `__heading`, `__state`, `__bubble`, `__muted`, `__errors`.
+- Variables: `__variables`, `__search`, `__variables-state`, `__list`, `__variable[data-name]`, `__variable-label`.
 - Single column under 768 px (preview first).
 
 ## Notes

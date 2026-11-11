@@ -16,11 +16,11 @@
 	// Geometry of the design prototype (docs/component/List View.dc.html, "compact" density).
 	// These are sizes, not colours, so they are safe to pin in px.
 	--whatsapp-kit-card-radius: 10px; // a card, a panel
-	--whatsapp-kit-row-h: 36px; // table row (Desk's is 41)
-	--whatsapp-kit-head-h: 28px; // table header row (Desk's is 30)
-	--whatsapp-kit-ctl-h: 28px; // toolbar control — Desk's own control height
-	--whatsapp-kit-ctl-h-sm: 24px; // in-row button
-	--whatsapp-kit-cell-px: 12px; // cell padding-inline
+	--whatsapp-kit-row-height: 36px; // table row (Desk's is 41)
+	--whatsapp-kit-head-height: 28px; // table header row (Desk's is 30)
+	--whatsapp-kit-control-height: 28px; // toolbar control — Desk's own control height
+	--whatsapp-kit-control-height-sm: 24px; // in-row button
+	--whatsapp-kit-cell-padding-inline: 12px; // cell padding-inline
 
 	// Accent = the kit's "active / selected / primary" colour. It defaults to Desk's own Espresso
 	// blue, so a plain copy of `ui/` is theme-safe and native; a host app repoints these five
@@ -168,7 +168,7 @@
 	th { color: var(--ink-gray-6); font-weight: 500; background: var(--surface-gray-1); white-space: nowrap; }
 	tbody tr:hover { background: var(--surface-gray-1); }
 	tbody tr[aria-selected="true"] { background: var(--whatsapp-kit-accent-soft); }
-	.whatsapp-kit-table__num { text-align: end; font-variant-numeric: tabular-nums; }
+	.whatsapp-kit-table__number { text-align: end; font-variant-numeric: tabular-nums; }
 	.whatsapp-kit-table__ltr { direction: ltr; unicode-bidi: isolate; }
 }
 
@@ -234,7 +234,7 @@
 .whatsapp-kit-pin {
 	position: sticky;
 	z-index: 20;
-	background: var(--whatsapp-kit-pin-bg, var(--surface-base));
+	background: var(--whatsapp-kit-pin-background, var(--surface-base));
 }
 // the last pinned element closes the band with a hairline once there is something under it
 .whatsapp-kit-pinned-page .whatsapp-kit-pin:has(+ :not(.whatsapp-kit-pin)) { box-shadow: 0 1px 0 var(--outline-gray-1); }

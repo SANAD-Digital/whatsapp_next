@@ -244,7 +244,7 @@
 			<div class="whatsapp-operations-console__metric${opts.wide ? " whatsapp-operations-console__metric--wide" : ""}">
 				<span class="whatsapp-operations-console__label">${ui.escape(label)}</span>
 				<span class="whatsapp-operations-console__value${opts.tone ? ` whatsapp-kit-tone--${opts.tone}` : ""} whatsapp-kit-tabular">${value}</span>
-				<span class="whatsapp-operations-console__sub">${sub || "&nbsp;"}</span>
+				<span class="whatsapp-operations-console__subtitle">${sub || "&nbsp;"}</span>
 			</div>`;
 
 		/** The depth's own breakdown: four counts that are also the list's filters. */
@@ -257,7 +257,7 @@
 					<span class="whatsapp-kit-tabular">${ui.escape(ui.format_integer(count_by(s, f.status)))}</span>
 				</button>`
 			);
-			return parts.length ? parts.join("") : `<span class="whatsapp-operations-console__sub">${ui.escape(__("Nothing is waiting."))}</span>`;
+			return parts.length ? parts.join("") : `<span class="whatsapp-operations-console__subtitle">${ui.escape(__("Nothing is waiting."))}</span>`;
 		};
 
 		// ---- the evidence: what actually left the queue, minute by minute -------------------------
@@ -360,7 +360,7 @@
 						</span>
 						${verb_html(paused)}
 					</div>
-					<span class="whatsapp-operations-console__sub">${ui.escape(paused ? __("Nothing is going out.") : __("Messages go out automatically."))}</span>
+					<span class="whatsapp-operations-console__subtitle">${ui.escape(paused ? __("Nothing is going out.") : __("Messages go out automatically."))}</span>
 				</div>`;
 
 			$el.html(`

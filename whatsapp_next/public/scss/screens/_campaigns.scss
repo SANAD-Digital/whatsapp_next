@@ -90,7 +90,7 @@
 		overflow: hidden;
 		&--paused { opacity: 0.55; }
 	}
-	&__seg {
+	&__segment {
 		transition: inline-size var(--whatsapp-kit-motion) ease-out;
 		&--read { background: var(--ink-blue-7); }
 		&--delivered { background: var(--whatsapp-kit-accent); }
@@ -164,7 +164,7 @@
 		.whatsapp-strip__name { font-size: var(--text-base, 15px); }
 		.whatsapp-strip__badge { background: var(--surface-blue-1); color: var(--ink-blue-7); }
 	}
-	&__btn-blue {
+	&__button-blue {
 		border-color: var(--outline-blue-3);
 		background: var(--surface-blue-1);
 		color: var(--ink-blue-7);

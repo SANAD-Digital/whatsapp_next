@@ -4,7 +4,7 @@
 
 .whatsapp-kit-notification-editor {
 	// the template cards: the document type's templates first, "New template" as the first card
-	&__tpls {
+	&__templates {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 		gap: 8px;
@@ -12,7 +12,7 @@
 		overflow: auto;
 		padding: 2px;
 	}
-	&__tpl {
+	&__template {
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
@@ -26,12 +26,12 @@
 		text-align: start;
 		cursor: pointer;
 		transition: border-color 0.15s, background 0.15s;
-		&:hover { border-color: var(--whatsapp-pri-sb); }
-		&:focus-visible { outline: 2px solid var(--whatsapp-pri); outline-offset: 2px; }
+		&:hover { border-color: var(--whatsapp-primary-soft-border); }
+		&:focus-visible { outline: 2px solid var(--whatsapp-primary); outline-offset: 2px; }
 		&.is-on {
-			border-color: var(--whatsapp-pri);
-			background: var(--whatsapp-pri-s);
-			box-shadow: inset 0 0 0 1px var(--whatsapp-pri);
+			border-color: var(--whatsapp-primary);
+			background: var(--whatsapp-primary-soft);
+			box-shadow: inset 0 0 0 1px var(--whatsapp-primary);
 		}
 		&--new {
 			align-items: center;
@@ -39,30 +39,30 @@
 			text-align: center;
 			border-style: dashed;
 			border-color: var(--whatsapp-border-2);
-			background: var(--whatsapp-bg);
-			color: var(--whatsapp-pri-d);
+			background: var(--whatsapp-background);
+			color: var(--whatsapp-primary-deep);
 			span { font-size: 11px; color: var(--whatsapp-ink-4); }
 		}
 	}
-	&__tpl-head {
+	&__template-head {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 6px;
 		strong { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	}
-	&__tpl-tick {
+	&__template-tick {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		inline-size: 18px;
 		block-size: 18px;
 		border-radius: 50%;
-		background: var(--whatsapp-pri);
-		color: var(--whatsapp-on-pri);
+		background: var(--whatsapp-primary);
+		color: var(--whatsapp-on-primary);
 		flex: none;
 	}
-	&__tpl-meta {
+	&__template-meta {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
@@ -70,7 +70,7 @@
 		font-size: 11px;
 		color: var(--whatsapp-ink-4);
 	}
-	&__tpl-body {
+	&__template-body {
 		display: -webkit-box;
 		-webkit-line-clamp: 3;
 		-webkit-box-orient: vertical;
@@ -80,10 +80,10 @@
 		color: var(--whatsapp-ink-3);
 		white-space: pre-line;
 	}
-	&__tpl-actions { display: flex; gap: 12px; margin-block-start: 6px; }
+	&__template-actions { display: flex; gap: 12px; margin-block-start: 6px; }
 
 	&__filter { max-inline-size: 260px; margin-block-end: 8px; }
-	&__vars-bar {
+	&__variables-bar {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -103,7 +103,7 @@
 		color: var(--whatsapp-ink-2);
 		.whatsapp-select, .whatsapp-input { inline-size: auto; min-inline-size: 180px; flex: 1 1 180px; }
 	}
-	&__num.whatsapp-input { flex: 0 0 84px; min-inline-size: 0; inline-size: 84px; }
+	&__number.whatsapp-input { flex: 0 0 84px; min-inline-size: 0; inline-size: 84px; }
 	&__code { font-size: 12px; }
 
 	&__record {
@@ -154,11 +154,11 @@
 	}
 	&__other { align-self: flex-start; font-size: 12px; }
 	// Frappe's FilterGroup inside the card: its rows on the card's rhythm, no stray margins
-	&__fg {
+	&__field-group {
 		padding: 10px 12px;
 		border: 1px solid var(--whatsapp-border);
 		border-radius: 10px;
-		background: var(--whatsapp-bg);
+		background: var(--whatsapp-background);
 		.filter-area, .filter-edit-area { margin: 0; }
 		.filter-box { margin-block-end: 8px; }
 		.filter-action-buttons { display: flex; gap: 8px; margin-block-start: 4px; }

@@ -76,7 +76,7 @@ function draw_preview(frm) {
 	let body;
 	if (doc.kind === "Text") {
 		const font = (FONT_CSS[doc.font] || FONT_CSS.Standard).split(";");
-		body = `<div class="whatsapp-status__card" style="background:${escape_html(/^#[0-9a-f]{3,8}$/i.test(doc.background_color || "") ? doc.background_color : "var(--whatsapp-pri)")};font-family:${font[0]};${font[1] || ""}">
+		body = `<div class="whatsapp-status__card" style="background:${escape_html(/^#[0-9a-f]{3,8}$/i.test(doc.background_color || "") ? doc.background_color : "var(--whatsapp-primary)")};font-family:${font[0]};${font[1] || ""}">
 			<span>${escape_html(doc.text || __("Your text appears here"))}</span></div>`;
 	} else if (doc.media) {
 		const url = escape_html(doc.media);

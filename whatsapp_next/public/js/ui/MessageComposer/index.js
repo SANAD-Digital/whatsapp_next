@@ -191,7 +191,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 	 */
 	add_button($host, cls) {
 		const full = this.opts.max && this.sorted_message_rows().length >= cint(this.opts.max);
-		const $wrap = $('<span class="whatsapp-kit-message-composer__addwrap"></span>').appendTo($host);
+		const $wrap = $('<span class="whatsapp-kit-message-composer__add-wrap"></span>').appendTo($host);
 		const $btn = $(`<button type="button" class="${cls}" aria-haspopup="menu" aria-expanded="false">${ui.icon("es-line-add", "xs")}<span>${ui.escape(__("Add message"))}</span>${ui.icon("es-line-down", "xs")}</button>`)
 			.prop("disabled", !!full)
 			.attr("title", full ? __("This record may carry {0} messages.", [ui.format_integer(this.opts.max)]) : __("Choose what the next message is"))
@@ -215,7 +215,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 			});
 			return;
 		}
-		const $list = $('<ol class="whatsapp-kit-message-composer__raillist"></ol>').appendTo(this.$rail);
+		const $list = $('<ol class="whatsapp-kit-message-composer__rail-list"></ol>').appendTo(this.$rail);
 		rows.forEach((row, index) => {
 			const type = row[this.opts.type_field] || this.types[0];
 			const on = row.name === this.active;
@@ -224,22 +224,22 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 			// it whole, because a message is told apart by what it says and an Arabic sentence
 			// squeezed into what four icon buttons leave says nothing at all
 			const $item = $(`
-				<li class="whatsapp-kit-message-composer__railitem${on ? " whatsapp-kit-message-composer__railitem--on" : ""}${problem ? " whatsapp-kit-message-composer__railitem--problem" : ""}">
-					<span class="whatsapp-kit-message-composer__railtop">
+				<li class="whatsapp-kit-message-composer__rail-item${on ? " whatsapp-kit-message-composer__rail-item--on" : ""}${problem ? " whatsapp-kit-message-composer__rail-item--problem" : ""}">
+					<span class="whatsapp-kit-message-composer__rail-top">
 						<span class="whatsapp-kit-message-composer__order whatsapp-kit-tabular">${ui.escape(ui.format_integer(index + 1))}</span>
-						<span class="whatsapp-kit-message-composer__railtype">${ui.icon(icon_of(type), "xs")} ${ui.escape(__(type || ""))}</span>
-						${problem ? `<span class="whatsapp-kit-message-composer__raildot" title="${ui.escape(problem)}" aria-label="${ui.escape(problem)}"></span>` : ""}
-						<span class="whatsapp-kit-message-composer__railactions"></span>
+						<span class="whatsapp-kit-message-composer__rail-type">${ui.icon(icon_of(type), "xs")} ${ui.escape(__(type || ""))}</span>
+						${problem ? `<span class="whatsapp-kit-message-composer__rail-dot" title="${ui.escape(problem)}" aria-label="${ui.escape(problem)}"></span>` : ""}
+						<span class="whatsapp-kit-message-composer__rail-actions"></span>
 					</span>
-					<button type="button" class="whatsapp-kit-message-composer__railbtn" aria-current="${on}" data-name="${ui.escape(row.name)}">
-						<span class="whatsapp-kit-message-composer__railline" dir="auto">${ui.escape(this.summary_of(row))}</span>
+					<button type="button" class="whatsapp-kit-message-composer__rail-button" aria-current="${on}" data-name="${ui.escape(row.name)}">
+						<span class="whatsapp-kit-message-composer__rail-line" dir="auto">${ui.escape(this.summary_of(row))}</span>
 					</button>
 				</li>`);
-			$item.find(".whatsapp-kit-message-composer__railbtn").on("click", () => this.select(row.name));
-			const $acts = $item.find(".whatsapp-kit-message-composer__railactions");
+			$item.find(".whatsapp-kit-message-composer__rail-button").on("click", () => this.select(row.name));
+			const $acts = $item.find(".whatsapp-kit-message-composer__rail-actions");
 			if (this.can_edit()) {
 				const append_rail_button = (icon, label, disabled, handler) =>
-					$(`<button type="button" class="whatsapp-kit-message-composer__icon-btn" title="${ui.escape(label)}" aria-label="${ui.escape(label)}">${ui.icon(icon, "xs")}</button>`)
+					$(`<button type="button" class="whatsapp-kit-message-composer__icon-button" title="${ui.escape(label)}" aria-label="${ui.escape(label)}">${ui.icon(icon, "xs")}</button>`)
 						.prop("disabled", !!disabled)
 						.on("click", (e) => {
 							e.stopPropagation();
@@ -255,14 +255,14 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 			if (this.opts.delay_field && index < rows.length - 1) $list.append(this.rail_delay(rows[index + 1]));
 		});
 		// the verb again at the foot of the list, where the eye already is once it has read it
-		if (this.can_edit()) this.add_button($('<div class="whatsapp-kit-message-composer__railadd"></div>').appendTo(this.$rail), "whatsapp-kit-message-composer__railaddbtn");
+		if (this.can_edit()) this.add_button($('<div class="whatsapp-kit-message-composer__rail-add"></div>').appendTo(this.$rail), "whatsapp-kit-message-composer__rail-add-button");
 	}
 
 	/** Between two rail items: how long the campaign waits before the next message. */
 	rail_delay(next_row) {
 		const seconds = cint(next_row[this.opts.delay_field]);
 		const label = seconds ? __("wait {0}", [this.duration(seconds)]) : __("no wait");
-		const $li = $(`<li class="whatsapp-kit-message-composer__railwait">
+		const $li = $(`<li class="whatsapp-kit-message-composer__rail-wait">
 			<button type="button" class="whatsapp-kit-message-composer__delay">${ui.icon("es-line-time", "xs")} <span>${ui.escape(label)}</span></button>
 		</li>`);
 		$li.find("button").on("click", () => this.ask_delay(next_row));
@@ -283,7 +283,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 		const row = this.row_of(this.active);
 		if (!row) return;
 		const type = row[this.opts.type_field] || this.types[0];
-		const $head = $(`<div class="whatsapp-kit-message-composer__etop"></div>`).appendTo(this.$editor);
+		const $head = $(`<div class="whatsapp-kit-message-composer__editor-top"></div>`).appendTo(this.$editor);
 		this.render_type_control($head, row);
 		$(`<button type="button" class="whatsapp-kit-message-composer__toggle-preview" aria-pressed="${this.show_preview}">${ui.icon("es-line-chat-alt", "xs")} <span>${ui.escape(this.show_preview ? __("Hide preview") : __("Show preview"))}</span></button>`)
 			.on("click", () => {
@@ -292,10 +292,10 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 			})
 			.appendTo($head);
 
-		const $grid = $(`<div class="whatsapp-kit-message-composer__egrid${this.show_preview ? "" : " whatsapp-kit-message-composer__egrid--nopreview"}"></div>`).appendTo(this.$editor);
-		const $form = $('<div class="whatsapp-kit-message-composer__eform"></div>').appendTo($grid);
+		const $grid = $(`<div class="whatsapp-kit-message-composer__editor-grid${this.show_preview ? "" : " whatsapp-kit-message-composer__editor-grid--no-preview"}"></div>`).appendTo(this.$editor);
+		const $form = $('<div class="whatsapp-kit-message-composer__editor-form"></div>').appendTo($grid);
 		if (this.show_preview) {
-			$(`<aside class="whatsapp-kit-message-composer__epreview">
+			$(`<aside class="whatsapp-kit-message-composer__editor-preview">
 					<span class="whatsapp-kit-message-composer__pane-label">${ui.escape(__("As the recipient will see it"))}</span>
 					<div class="whatsapp-kit-message-composer__chat"></div>
 					<div class="whatsapp-kit-message-composer__errors" role="alert"></div>
@@ -315,18 +315,18 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 	render_type_control($host, row) {
 		const current = row[this.opts.type_field] || this.types[0];
 		const type_label = __((this.field_map[this.opts.type_field] || {}).label || "Type");
-		const $wrap = $('<div class="whatsapp-kit-message-composer__typewrap"></div>').appendTo($host);
+		const $wrap = $('<div class="whatsapp-kit-message-composer__type-wrap"></div>').appendTo($host);
 		const $btn = $(`
-			<button type="button" class="whatsapp-kit-message-composer__typepick" aria-haspopup="menu" aria-expanded="false">
-				<span class="whatsapp-kit-message-composer__typepick-icon" aria-hidden="true">${ui.icon(icon_of(current), "sm")}</span>
-				<span class="whatsapp-kit-message-composer__typepick-text">
-					<span class="whatsapp-kit-message-composer__typepick-caption">${ui.escape(type_label)}</span>
-					<span class="whatsapp-kit-message-composer__typepick-name">${ui.escape(__(current || ""))}</span>
+			<button type="button" class="whatsapp-kit-message-composer__type-picker" aria-haspopup="menu" aria-expanded="false">
+				<span class="whatsapp-kit-message-composer__type-picker-icon" aria-hidden="true">${ui.icon(icon_of(current), "sm")}</span>
+				<span class="whatsapp-kit-message-composer__type-picker-text">
+					<span class="whatsapp-kit-message-composer__type-picker-caption">${ui.escape(type_label)}</span>
+					<span class="whatsapp-kit-message-composer__type-picker-name">${ui.escape(__(current || ""))}</span>
 				</span>
-				<span class="whatsapp-kit-message-composer__typepick-caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
+				<span class="whatsapp-kit-message-composer__type-picker-caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 			</button>`).appendTo($wrap);
 		if (!this.can_edit()) {
-			$btn.prop("disabled", true).find(".whatsapp-kit-message-composer__typepick-caret").remove();
+			$btn.prop("disabled", true).find(".whatsapp-kit-message-composer__type-picker-caret").remove();
 			return;
 		}
 		$btn.attr("aria-label", __("{0}: {1}. Change it.", [type_label, __(current || "")])).on("click", (e) => {
@@ -344,22 +344,22 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 	 */
 	open_type_menu($host, $btn, current, on_pick) {
 		if (this.close_type_menu(true)) return; // a second click on the same button closes it
-		const $menu = $(`<div class="whatsapp-kit-message-composer__typemenu" role="menu" aria-label="${ui.escape(__("Message type"))}"></div>`).appendTo($host);
+		const $menu = $(`<div class="whatsapp-kit-message-composer__type-menu" role="menu" aria-label="${ui.escape(__("Message type"))}"></div>`).appendTo($host);
 		const shelves = GROUPS.map((g) => [g, this.types.filter((t) => ((TYPES[t] || {}).group || GROUPS[GROUPS.length - 1].key) === g.key)]);
 		shelves.forEach(([group, types]) => {
 			if (!types.length) return;
-			$(`<p class="whatsapp-kit-message-composer__typegroup">${ui.escape(group.label())}</p>`).appendTo($menu);
+			$(`<p class="whatsapp-kit-message-composer__type-group">${ui.escape(group.label())}</p>`).appendTo($menu);
 			types.forEach((type) => {
 				const meta = TYPES[type] || {};
 				const on = type === current;
 				$(`
-					<button type="button" class="whatsapp-kit-message-composer__typeopt${on ? " whatsapp-kit-message-composer__typeopt--on" : ""}" role="menuitemradio" aria-checked="${on}" tabindex="-1">
-						<span class="whatsapp-kit-message-composer__typeopt-icon" aria-hidden="true">${ui.icon(icon_of(type), "sm")}</span>
-						<span class="whatsapp-kit-message-composer__typeopt-text">
-							<span class="whatsapp-kit-message-composer__typeopt-name">${ui.escape(__(type))}</span>
-							${meta.hint ? `<span class="whatsapp-kit-message-composer__typeopt-hint">${ui.escape(meta.hint())}</span>` : ""}
+					<button type="button" class="whatsapp-kit-message-composer__type-option${on ? " whatsapp-kit-message-composer__type-option--on" : ""}" role="menuitemradio" aria-checked="${on}" tabindex="-1">
+						<span class="whatsapp-kit-message-composer__type-option-icon" aria-hidden="true">${ui.icon(icon_of(type), "sm")}</span>
+						<span class="whatsapp-kit-message-composer__type-option-text">
+							<span class="whatsapp-kit-message-composer__type-option-name">${ui.escape(__(type))}</span>
+							${meta.hint ? `<span class="whatsapp-kit-message-composer__type-option-hint">${ui.escape(meta.hint())}</span>` : ""}
 						</span>
-						<span class="whatsapp-kit-message-composer__typeopt-tick" aria-hidden="true">${on ? ui.icon("es-line-check", "xs") : ""}</span>
+						<span class="whatsapp-kit-message-composer__type-option-tick" aria-hidden="true">${on ? ui.icon("es-line-check", "xs") : ""}</span>
 					</button>`)
 					.on("click", (e) => {
 						e.stopPropagation();
@@ -493,8 +493,8 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 				.on("click", () => this.wrap_selection(row, fieldname, control, m.mark))
 				.appendTo($bar);
 		});
-		const $vars = $(`<div class="whatsapp-kit-message-composer__varpick"></div>`).appendTo($bar);
-		$(`<button type="button" class="whatsapp-kit-message-composer__varbtn" aria-haspopup="listbox" aria-expanded="false">${ui.icon("es-line-add", "xs")} ${ui.escape(__("Variable"))}</button>`)
+		const $vars = $(`<div class="whatsapp-kit-message-composer__variable-picker"></div>`).appendTo($bar);
+		$(`<button type="button" class="whatsapp-kit-message-composer__variable-button" aria-haspopup="listbox" aria-expanded="false">${ui.icon("es-line-add", "xs")} ${ui.escape(__("Variable"))}</button>`)
 			.on("click", (e) => {
 				e.stopPropagation();
 				this.toggle_vars($vars, row, fieldname, control);
@@ -503,18 +503,18 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 	}
 
 	toggle_vars($host, row, fieldname, control) {
-		const menu_was_open = $host.find(".whatsapp-kit-message-composer__varmenu").length;
+		const menu_was_open = $host.find(".whatsapp-kit-message-composer__variable-menu").length;
 		$(document).off(`click.${this.id}-vars`);
-		$host.find(".whatsapp-kit-message-composer__varmenu").remove();
-		$host.find(".whatsapp-kit-message-composer__varbtn").attr("aria-expanded", menu_was_open ? "false" : "true");
+		$host.find(".whatsapp-kit-message-composer__variable-menu").remove();
+		$host.find(".whatsapp-kit-message-composer__variable-button").attr("aria-expanded", menu_was_open ? "false" : "true");
 		if (menu_was_open) return;
 		const list = this.variables || [];
-		const $menu = $('<div class="whatsapp-kit-message-composer__varmenu" role="listbox"></div>').appendTo($host);
+		const $menu = $('<div class="whatsapp-kit-message-composer__variable-menu" role="listbox"></div>').appendTo($host);
 		if (!list.length) $menu.append(`<p class="whatsapp-kit-message-composer__hint">${ui.escape(__("No variable is offered for this record."))}</p>`);
 		list.forEach((v) => {
-			$(`<button type="button" class="whatsapp-kit-message-composer__varopt" role="option">
-					<span class="whatsapp-kit-message-composer__var-label">${ui.escape(__(v.label || v.name))}</span>
-					<span class="whatsapp-kit-message-composer__var-name">${ui.escape(v.name)}</span>
+			$(`<button type="button" class="whatsapp-kit-message-composer__variable-option" role="option">
+					<span class="whatsapp-kit-message-composer__variable-label">${ui.escape(__(v.label || v.name))}</span>
+					<span class="whatsapp-kit-message-composer__variable-name">${ui.escape(v.name)}</span>
 				</button>`)
 				.on("click", () => {
 					this.insert_at_caret(row, fieldname, control, `{{ ${v.name} }}`);
@@ -570,7 +570,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 		const rows = this.sorted_message_rows();
 		if (rows.findIndex((r) => r.name === row.name) === 0) return; // the first message waits for nothing
 		const seconds = cint(row[this.opts.delay_field]);
-		const $line = $(`<div class="whatsapp-kit-message-composer__delayline">
+		const $line = $(`<div class="whatsapp-kit-message-composer__delay-line">
 				<span>${ui.escape(__("Send it"))}</span>
 				<button type="button" class="whatsapp-kit-message-composer__delay">${ui.icon("es-line-time", "xs")} <span>${ui.escape(seconds ? this.duration(seconds) : __("immediately"))}</span></button>
 				<span>${ui.escape(__("after the message before it."))}</span>
@@ -723,7 +723,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 		html = html.replace(/_([^_\n]+)_/g, "<i>$1</i>");
 		html = html.replace(/~([^~\n]+)~/g, "<s>$1</s>");
 		html = html.replace(/```([^`]+)```/g, "<code>$1</code>");
-		html = html.replace(/\u0000(\d+)\u0000/g, (m, i) => `<span class="whatsapp-kit-message-composer__var">${vars[cint(i)]}</span>`);
+		html = html.replace(/\u0000(\d+)\u0000/g, (m, i) => `<span class="whatsapp-kit-message-composer__variable">${vars[cint(i)]}</span>`);
 		return html.replace(/\n/g, "<br>");
 	}
 

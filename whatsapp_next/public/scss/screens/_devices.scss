@@ -139,7 +139,7 @@
 		align-items: center;
 		gap: 6px;
 		flex: none;
-		min-block-size: var(--whatsapp-kit-ctl-h);
+		min-block-size: var(--whatsapp-kit-control-height);
 		padding-inline: 12px;
 		border: 1px solid currentColor;
 		border-radius: var(--whatsapp-kit-radius);
@@ -211,7 +211,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--whatsapp-kit-gap-sm);
-		min-block-size: var(--whatsapp-kit-ctl-h);
+		min-block-size: var(--whatsapp-kit-control-height);
 		padding-inline: var(--whatsapp-kit-gap-md);
 		border: 1px solid transparent;
 		border-radius: var(--whatsapp-kit-radius);
@@ -549,7 +549,7 @@
 		background: var(--surface-gray-3);
 		overflow: hidden;
 	}
-	&__bar-seg {
+	&__bar-segment {
 		display: block;
 		flex-grow: 0;
 		flex-shrink: 0;
@@ -559,7 +559,7 @@
 		&--ok { background: var(--surface-green-7); }
 		&--bad { background: var(--surface-red-7); }
 	}
-	&__bar--idle &__bar-seg {
+	&__bar--idle &__bar-segment {
 		flex-basis: 0 !important;
 	}
 
@@ -679,7 +679,7 @@
 		border-block-start: var(--whatsapp-kit-border);
 	}
 
-	&__btn {
+	&__button {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -710,7 +710,7 @@
 			outline-offset: 2px;
 		}
 	}
-	&__btn-icon {
+	&__button-icon {
 		display: inline-flex;
 		flex: none;
 		.icon {
@@ -718,12 +718,12 @@
 			block-size: 14px;
 		}
 	}
-	&__btn-label {
+	&__button-label {
 		min-inline-size: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
-	&__btn-count {
+	&__button-count {
 		padding-inline: 6px;
 		border-radius: var(--radius-full, 999px);
 		background: var(--surface-gray-2);
@@ -737,7 +737,7 @@
 		}
 	}
 
-	&__btn--primary {
+	&__button--primary {
 		background: var(--whatsapp-kit-accent);
 		border-color: var(--whatsapp-kit-accent);
 		color: var(--whatsapp-kit-accent-on);
@@ -780,7 +780,7 @@
 
 @media (prefers-reduced-motion: reduce) {
 	.whatsapp-device,
-	.whatsapp-device__bar-seg {
+	.whatsapp-device__bar-segment {
 		transition: none;
 	}
 	.whatsapp-device:hover {
@@ -796,16 +796,16 @@
 .whatsapp-pairing-dialog {
 	// the kit's step list defaults to Desk's blue; the pairing flow wears the product's accent,
 	// the same one the wizard on the setup screen wears
-	.whatsapp-kit-stepper__step--current .whatsapp-kit-stepper__step-btn {
+	.whatsapp-kit-stepper__step--current .whatsapp-kit-stepper__step-button {
 		border-color: var(--whatsapp-kit-accent-outline);
 		background: var(--whatsapp-kit-accent-soft);
 		color: var(--whatsapp-kit-accent-ink);
 	}
-	.whatsapp-kit-stepper__step--current .whatsapp-kit-stepper__num {
+	.whatsapp-kit-stepper__step--current .whatsapp-kit-stepper__number {
 		background: var(--whatsapp-kit-accent);
 		color: var(--whatsapp-kit-accent-on);
 	}
-	.whatsapp-kit-stepper__step--done .whatsapp-kit-stepper__num {
+	.whatsapp-kit-stepper__step--done .whatsapp-kit-stepper__number {
 		background: var(--surface-green-1);
 		color: var(--ink-green-7);
 	}
@@ -958,11 +958,11 @@
 	align-items: flex-start;
 	padding: 14px 16px;
 	margin-block-end: 12px;
-	border: 1px solid var(--whatsapp-dg-sb);
+	border: 1px solid var(--whatsapp-danger-soft-border);
 	border-radius: 12px;
-	background: var(--whatsapp-dg-s);
+	background: var(--whatsapp-danger-soft);
 	color: var(--whatsapp-ink);
-	strong { display: block; margin-block-end: 4px; color: var(--whatsapp-dg); }
+	strong { display: block; margin-block-end: 4px; color: var(--whatsapp-danger); }
 	p { margin: 0; font-size: 13px; line-height: 1.7; }
-	.whatsapp-pairing__wrong-icon { flex: none; color: var(--whatsapp-dg); }
+	.whatsapp-pairing__wrong-icon { flex: none; color: var(--whatsapp-danger); }
 }
