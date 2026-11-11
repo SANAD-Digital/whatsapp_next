@@ -45,7 +45,7 @@ frappe.provide("whatsapp_next.numbers");
 	}
 
 	function unlink_number(doc, listview) {
-		return whatsapp.ui.ConfirmDialog.ask({
+		return whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 			title: __("Unlink {0}?", [whatsapp.ui.phone(doc.phone_e164)]),
 			message: __("The number stays in the list as not linked, and it is removed from the contact's numbers. The contact itself is kept."),
 			impact: [
@@ -321,7 +321,7 @@ frappe.provide("whatsapp_next.numbers");
 		// hide every address-book number, since none has exchanged a message yet
 		const bar = listview._whatsapp_filterbar;
 		if (bar && data.device && (data.added || data.updated || data.unchanged)) {
-			bar.clear().then(() => bar.set("synced_device", data.device));
+			bar.clear().then(() => bar.set_filter_value("synced_device", data.device));
 		} else {
 			listview.refresh();
 		}

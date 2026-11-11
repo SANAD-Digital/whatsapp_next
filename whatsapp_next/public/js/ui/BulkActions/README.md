@@ -34,7 +34,7 @@ Options: `listview`, `cap` (default 200), `actions[]` (`label` string or `(count
 `(names, docs) => spec | null`, `condition(docs)`, `handler(names, docs, payload)` (replaces the
 API call), `success` string or `(result, names) => string`, `on_done(result, names)`, `cap`,
 `roles`, `perm`). Result shapes understood: `{count}` and `{count, done[], failed[], skipped[]}`.
-Methods: `update()`, `run(action)`, `destroy()`.
+Methods: `update()`, `run_bulk_action(action)`, `destroy()`.
 
 ## Live use
 Outbound list — `public/js/listview/whatsapp_log_list.js` (Resend failed → `messages.resend_many`,

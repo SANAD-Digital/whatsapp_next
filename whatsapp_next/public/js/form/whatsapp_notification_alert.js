@@ -11,7 +11,7 @@ frappe.ui.form.on("WhatsApp Notification Alert", {
 		frm.add_custom_button(__("Open in the editor"), () =>
 			whatsapp_next.alerts.open(frm.doc.name, { on_saved: (r) => (r && r.deleted ? frappe.set_route("List", frm.doctype) : frm.reload_doc()) })
 		);
-		frm.add_custom_button(__("Preview"), () => preview(frm));
+		frm.add_custom_button(__("Preview"), () => show_alert_preview_dialog(frm));
 		frm.add_custom_button(__("Run now"), () => run_now(frm));
 	},
 	report(frm) {
@@ -71,7 +71,7 @@ function load_token_reference(frm) {
 		.catch(() => {});
 }
 
-function preview(frm) {
+function show_alert_preview_dialog(frm) {
 	whatsapp.ui
 		.call("alerts.preview", { name: frm.doc.name }, { freeze: true, freeze_message: __("Running the report…") })
 		.then((r) => {
@@ -105,7 +105,7 @@ function preview(frm) {
 }
 
 function run_now(frm) {
-	whatsapp.ui.ConfirmDialog.ask({
+	whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 		title: __("Run {0} now?", [frm.doc.alert_name || frm.doc.name]),
 		message: __("The report runs in the background and the messages are queued; the schedule is not changed."),
 		confirm_label: __("Run now"),

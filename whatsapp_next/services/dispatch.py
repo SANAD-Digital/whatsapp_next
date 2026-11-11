@@ -1079,13 +1079,13 @@ def comment_on_reference(outbound: str, outcome: str, *, reason: str | None = No
 			return
 		if not frappe.db.exists(log.reference_doctype, log.reference_name):
 			return
-		esc = frappe.utils.escape_html
-		who = f"<b>{esc(_timeline_name(log))}</b>"
-		said = esc(_timeline_text(log)).replace("\n", "<br>")
+		escape_html = frappe.utils.escape_html
+		who = f"<b>{escape_html(_timeline_name(log))}</b>"
+		said = escape_html(_timeline_text(log)).replace("\n", "<br>")
 		link = frappe.utils.get_link_to_form("WhatsApp Log", outbound, _("view the message"))
 		text = f"{who}: {said}" if said else who
 		if outcome == "Failed":
-			text += "<br>" + _("Not sent: {0}").format(esc(reason or _("unknown reason")))
+			text += "<br>" + _("Not sent: {0}").format(escape_html(reason or _("unknown reason")))
 		text += f" · {link}"
 		# the line is the service user's, whoever (or whatever job) noticed the status
 		with service_user.run_as_service_user():

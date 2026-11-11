@@ -37,10 +37,10 @@ no device is enabled).
 
 ## Methods
 
-- `send()` — validate inline, then call `send`; disables the primary button meanwhile.
-- `preview()` — refresh the preview bubble (only with a template, or a reference + body).
+- `send_message()` — validate inline, then call `send`; disables the primary button meanwhile.
+- `render_message_preview()` — refresh the preview bubble (only with a template, or a reference + body).
 - `hide()`.
-- `load()`, `resolve_phone()`, `set_recipient(recipient)`, `set_error(fieldname, message, {focus})`, `clear_error(fieldname)`, `validate(values)`.
+- `load_send_context()`, `resolve_phone()`, `set_recipient(recipient)`, `set_error(fieldname, message, {focus})`, `clear_error(fieldname)`, `validate(values)`.
 - Static: `QuickSend.open(opts)`.
 - Properties: `dialog` (the `frappe.ui.Dialog`), `context`, `recipient`.
 

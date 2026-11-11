@@ -41,19 +41,19 @@ frappe.provide("whatsapp_next.account_switch");
 	 * Ask when a switch is waiting for a decision. `force` asks even if the dialog was already
 	 * closed in this session (right after a sign-in). Resolves once the person decided or closed it.
 	 */
-	function check({ force = false } = {}) {
+	function check_pending_account_switch({ force = false } = {}) {
 		if (!frappe.user.has_role("System Manager")) return Promise.resolve(null);
 		if (!force && asked_this_session()) return Promise.resolve(null);
 		return whatsapp.ui
 			.call("onboarding.get_account_switch", {}, { silent: true })
-			.then((info) => (info && info.pending ? ask(info) : null))
+			.then((info) => (info && info.pending ? confirm_previous_account_cleanup(info) : null))
 			.catch(() => null);
 	}
 
-	function ask(info) {
+	function confirm_previous_account_cleanup(info) {
 		mark_asked();
 		const counts = info.counts || {};
-		return whatsapp.ui.ConfirmDialog.ask({
+		return whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 			title: __("This site is now linked to another account"),
 			message: __(
 				"Nothing was deleted. The previous account's devices are switched off; its messages, queue and numbers are still here. Delete them, or keep them for reference. Download a backup first if you want its setup (Settings ▸ Backup) — messages are not in a backup."
@@ -76,5 +76,5 @@ frappe.provide("whatsapp_next.account_switch");
 			.catch(() => null);
 	}
 
-	Object.assign(whatsapp_next.account_switch, { check });
+	Object.assign(whatsapp_next.account_switch, { check: check_pending_account_switch });
 })();

@@ -289,7 +289,7 @@ const Render = {
 		const action_specs = opts.actions || (typeof profile.actions === "function" ? profile.actions(doc) : profile.actions) || [];
 		vm.actions = ui.visible_actions(action_specs, doc, doctype).map((a) => Object.assign({}, a, { href: typeof a.href === "function" ? a.href(doc) : a.href }));
 
-		if (kind === "file") Object.assign(vm, file_vm(doc, vm));
+		if (kind === "file") Object.assign(vm, build_file_view_model(doc, vm));
 		// The fields this view model already shows — a caller laying out the rest (the document
 		// drawer) uses it so nothing appears twice.
 		vm.used = Array.from(used);
@@ -519,7 +519,7 @@ function auto_facts(doc, meta, used, density) {
 }
 
 /** Files carry their own facts: type, size and the actions of reference image 05. */
-function file_vm(doc, vm) {
+function build_file_view_model(doc, vm) {
 	const url = doc.file_url || doc.url || vm.image || "";
 	const name = doc.file_name || doc.name || cstr(url).split("/").pop();
 	const ext = file_ext(name || url);

@@ -33,7 +33,7 @@ AE, KW, QA, BH, OM, YE, EG, JO, US, GB). The hint copy mentions WhatsApp. Region
 
 ## Methods
 
-- `get_value()` → wrapper: `{phone (masked), phone_e164 (null unless valid), valid, empty, country, iso, dial ("+966"), national, e164}`; control: `normalize(input, country)` = `{phone, phone_e164, valid, country, empty}`.
+- `get_value()` → wrapper: `{phone (masked), phone_e164 (null unless valid), valid, empty, country, iso, dial ("+966"), national, e164}`; control: `normalize_phone_number(input, country)` = `{phone, phone_e164, valid, country, empty}`.
 - `set_value(value)` — `+…` / `00…` picks the country by longest dial code (main region first on ties); otherwise digits as national. Truncates to the country's `len` (or 14).
 - `set_country(iso_or_name)`, `focus()`, `example()` (formatted example for the current country), `render()`, `destroy()` (removes document listeners and the DOM / hint).
 
@@ -41,9 +41,9 @@ Static:
 - `PhoneField.countries` — the current catalogue (decorated with `name`, string `dial`, `groups`).
 - `PhoneField.site_region` — server default region once loaded.
 - `PhoneField.resolve_country(hint)` — catalogue row (see resolution order above).
-- `PhoneField.normalize(raw, country)` — maps Arabic-Indic digits, strips spaces / `-()`. `00` → `+`; national numbers get the country dial code (leading zeros dropped). Valid when `^\+[1-9]\d{7,14}$`.
+- `PhoneField.normalize_phone_number(raw, country)` — maps Arabic-Indic digits, strips spaces / `-()`. `00` → `+`; national numbers get the country dial code (leading zeros dropped). Valid when `^\+[1-9]\d{7,14}$`.
 - `PhoneField.format_display(e164, country?)` — `+966 50 123 4567` style, country grouping when the length matches, else groups of 3.
-- `PhoneField.mask(digits, country)` — groups by `country.groups`.
+- `PhoneField.group_national_digits(digits, country)` — groups by `country.groups`.
 - `PhoneField.example(country?, {format=true})` — from the region's own sample; `format:false` gives bare E.164.
 - `PhoneField.mobile_ok(digits, pattern)` — tests the region's `mobile` regex (unparsable = pass).
 
@@ -103,8 +103,8 @@ whatsapp.ui.PhoneField.format_display("+966501234567");
   checks `this.$el`, which is never assigned (the widget uses `$root`), so the field keeps the
   seed-resolved country and never re-resolves to the server `default` or a non-seed
   `country_default`. `countries` itself is updated.
-- **Bug — `mask` fallback:** `mask()` calls an undefined `groups_for(0)` when the country has no
-  `groups` (e.g. `mask(d, null)`); catalogue rows always have `groups`, so it only bites direct callers.
+- **Bug — `group_national_digits` fallback:** `group_national_digits()` calls an undefined `groups_for(0)` when the country has no
+  `groups` (e.g. `group_national_digits(d, null)`); catalogue rows always have `groups`, so it only bites direct callers.
 - **Live use:** `public/js/ui/QuickSend/index.js` (control mode), `public/js/ui/OverlayPanel/index.js`
   (`phone` field type), `public/js/screens/campaign/messages.js`,
   `whatsapp_next/page/wa_onboarding/wa_onboarding.js`, `whatsapp_next/page/wa_devices/wa_devices.js`

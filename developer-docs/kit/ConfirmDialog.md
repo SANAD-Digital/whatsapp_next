@@ -47,7 +47,7 @@ None. Callers do their own calls inside `load_impact` / `on_confirm`.
 ## Usage
 
 ```js
-whatsapp.ui.ConfirmDialog.ask({
+whatsapp.ui.ConfirmDialog.ask_for_confirmation({
   title: __("Cancel {0} messages?", [names.length]),
   impact: [{ label: __("Will be cancelled"), value: names.length, tone: "red" }],
   reason_field: true,

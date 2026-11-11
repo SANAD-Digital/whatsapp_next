@@ -7,13 +7,13 @@
 frappe.provide("whatsapp_next.backup");
 
 (function () {
-	const esc = (s) => frappe.utils.escape_html(s == null ? "" : String(s));
+	const escape_html = (s) => frappe.utils.escape_html(s == null ? "" : String(s));
 
 	/**
 	 * The button tells what is happening: a spinner and "Preparing the backup…" while it runs,
 	 * then a tick and `done_label` for a moment, then its own label again.
 	 */
-	function busy($btn, promise, { busy_label, done_label } = {}) {
+	function show_button_progress($btn, promise, { busy_label, done_label } = {}) {
 		if (!$btn || !$btn.length) return promise;
 		const $label = $btn.find("span").last().length ? $btn.find("span").last() : $btn;
 		const before = $label.text();
@@ -47,7 +47,7 @@ frappe.provide("whatsapp_next.backup");
 
 	/** Fetch the backup and save it; resolves once the browser was handed the file. */
 	function download($btn) {
-		return busy(
+		return show_button_progress(
 			$btn,
 			whatsapp.ui.call("settings.export_backup", {}).then((data) => {
 				const blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
@@ -70,7 +70,7 @@ frappe.provide("whatsapp_next.backup");
 	function confirm_import(text, preview) {
 		const replaced = preview.replace || [];
 		const from = [preview.site, preview.exported_at && frappe.datetime.str_to_user(preview.exported_at)].filter(Boolean).join(" · ");
-		return whatsapp.ui.ConfirmDialog.ask({
+		return whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 			title: __("Import this backup?"),
 			message: [
 				from ? __("Backup of {0}.", [from]) : "",
@@ -101,7 +101,7 @@ frappe.provide("whatsapp_next.backup");
 			const file = input.files && input.files[0];
 			if (!file) return;
 			file.text().then((text) =>
-				busy(
+				show_button_progress(
 					$btn,
 					whatsapp.ui
 						.call("settings.preview_backup", { data: text })
@@ -113,11 +113,11 @@ frappe.provide("whatsapp_next.backup");
 							else whatsapp.ui.Toast.success(__("The backup was imported.") + " " + line);
 							if ($result) {
 								$result.html(`
-									<p>${esc(line)}</p>
+									<p>${escape_html(line)}</p>
 									${
 										failed.length
 											? `<ul class="whatsapp-settings__backup-failed">${failed
-													.map((f) => `<li><b>${esc(__(f.doctype))} · ${esc(f.name)}</b> — ${esc(f.error)}</li>`)
+													.map((f) => `<li><b>${escape_html(__(f.doctype))} · ${escape_html(f.name)}</b> — ${escape_html(f.error)}</li>`)
 													.join("")}</ul>`
 											: ""
 									}`);

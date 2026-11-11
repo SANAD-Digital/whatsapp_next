@@ -10,7 +10,7 @@ export class PhonebookSource extends UploadSource {
 		return "vCard";
 	}
 
-	static label() {
+	static default_tab_label() {
 		return __("Phone export");
 	}
 
@@ -18,7 +18,7 @@ export class PhonebookSource extends UploadSource {
 		return this.entry.kinds && this.entry.kinds.length ? this.entry.kinds : ["vcf", "csv"];
 	}
 
-	note() {
+	upload_hint_text() {
 		return __("Import a contacts file exported from a phone (vCard .vcf, or CSV). This reads the file you upload, not the phone's address book.");
 	}
 }

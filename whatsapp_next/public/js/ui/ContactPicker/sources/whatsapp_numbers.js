@@ -9,7 +9,7 @@ export class WhatsAppNumbersSource extends BaseSource {
 		return "WhatsApp Number";
 	}
 
-	static label() {
+	static default_tab_label() {
 		return __("WhatsApp contacts not in the system");
 	}
 
@@ -23,7 +23,7 @@ export class WhatsAppNumbersSource extends BaseSource {
 		this.page = page || (txt !== undefined ? 1 : this.page);
 		this.state.loading();
 		this.$foot.empty();
-		return this.call("picker.search_whatsapp_numbers", { txt: this.txt || null, page: this.page, page_length: this.page_length }, { silent: true })
+		return this.call_picker_api("picker.search_whatsapp_numbers", { txt: this.txt || null, page: this.page, page_length: this.page_length }, { silent: true })
 			.then((r) => {
 				this.rows = (r && r.rows) || [];
 				this.total = r && r.total != null ? cint(r.total) : null;

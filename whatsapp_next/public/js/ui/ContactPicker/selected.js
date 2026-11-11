@@ -74,7 +74,7 @@ export class SelectedTab {
 			this.picker.set_progress(__("Checking {0} numbers against the list…", [ui.format_int(rows.length)]));
 		}, SLOW);
 		return this.picker
-			.call(
+			.call_picker_api(
 				this.picker.is_local() ? "picker.classify" : "picker.preview",
 				this.picker.is_local()
 					? { rows, existing: this.picker.opts.existing || [] }

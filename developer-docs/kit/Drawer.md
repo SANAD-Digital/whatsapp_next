@@ -62,7 +62,7 @@ footer's start. The button is disabled while the handler's promise runs; a rejec
 - `set_doc(doc)` — replace the payload; re-renders when open.
 - `set_title(title, subtitle?)`
 - `get_values()` — `form` mode: `{fieldname: value}` of the controls.
-- `save()` — `form` mode: required-field check (focusable summary with links) then `on_save`.
+- `validate_and_save_values()` — `form` mode: required-field check (focusable summary with links) then `on_save`.
 - `destroy()` — remove DOM (hides silently first if open).
 - `field_list()` — resolved docfields.
 - Static: `Drawer.open(opts)` (= `new Drawer(opts).show()`), getter `Drawer.current`.

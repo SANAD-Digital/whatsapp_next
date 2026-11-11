@@ -44,13 +44,13 @@ whatsapp.ui.StatusBadge = class StatusBadge {
 		return out;
 	}
 
-	html() {
+	resolved_badge_html() {
 		return whatsapp.ui.StatusBadge.html(Object.assign({}, this.opts, this.resolve()));
 	}
 
 	refresh(doc) {
 		if (doc) this.opts.doc = doc;
-		if (this.$wrapper) this.$wrapper.html(this.html());
+		if (this.$wrapper) this.$wrapper.html(this.resolved_badge_html());
 		return this;
 	}
 

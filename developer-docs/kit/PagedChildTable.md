@@ -46,7 +46,7 @@ return shape `{rows, total, counts?}` and the default args `{name, page, page_le
 ## Methods
 
 - `refresh()` → Promise — reload the current page (unsaved doc → "Save the document first").
-- `go(page)` — clamp to `1…pages` and refresh.
+- `go_to_page(page)` — clamp to `1…pages` and refresh.
 - `set_filter(fieldname, value)` — set / clear a filter and go to page 1.
 - `update(opts)` — merge options, re-render the toolbar, refresh (filters are not re-rendered).
 - `destroy()` — remove the panel and the host class.

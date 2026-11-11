@@ -9,7 +9,7 @@ trapping are Desk's own.
 ## Usage
 
 ```js
-whatsapp.ui.ConfirmDialog.ask({
+whatsapp.ui.ConfirmDialog.ask_for_confirmation({
   title: __("Pause the queue?"),
   message: __("Sending stops immediately. Messages stay queued."),
   load_impact: () => whatsapp.ui.call("queue.get_summary").then((s) => [
@@ -22,7 +22,7 @@ whatsapp.ui.ConfirmDialog.ask({
 }).then(() => whatsapp.ui.Toast.success(__("Queue paused")))
   .catch(() => {});   // cancelled
 
-whatsapp.ui.ConfirmDialog.ask({
+whatsapp.ui.ConfirmDialog.ask_for_confirmation({
   title: __("Cancel {0} messages?", [n]),
   impact: [{ label: __("Will be cancelled"), value: n, tone: "red" }],
   ack_checkbox: __("I understand these messages will not be sent."),

@@ -57,10 +57,10 @@ Fetched lists are cached per search text. A popover gets a search box when its o
 
 ## Methods
 
-- `set(fieldname, value)` sets or clears one preset (`null`, `""` or `[]` clears it), writes it to the list, and emits.
+- `set_filter_value(fieldname, value)` sets or clears one preset (`null`, `""` or `[]` clears it), writes it to the list, and emits.
 - `set_search(text, fields)` applies the search.
 - `clear()` clears every own value, every extra list filter and the search, then refreshes once and announces "Filters cleared.".
-- `sync()` re-reads `filter_area` into the buttons and pills, mapping `=` / `in` back to checked options and `>=` back to a period. It also redraws the extra chips.
+- `read_list_filters_into_bar()` re-reads `filter_area` into the buttons and pills, mapping `=` / `in` back to checked options and `>=` back to a period. It also redraws the extra chips.
 - `get_filters()` returns the Frappe filter tuples. `get_or_filters()` returns the search `or_filters`. `filter_of(fieldname, value)` returns the tuple for one preset.
 - `remove_filter(fieldname)` drops a filter the bar does not own (list mode).
 - `export()` opens Desk's `DataExporter` over the checked rows or the current filters.
@@ -70,7 +70,7 @@ Fetched lists are cached per search text. A popover gets a search box when its o
 ## Events and callbacks
 
 - `on_change` is described under Options.
-- In list mode the bar wraps `listview.on_filter_change` (then calls `sync()`) and `listview.get_args` (adds `or_filters`). It sets `listview._whatsapp_filterbar` and adds `whatsapp-kit-hide-page-form` to the page wrapper.
+- In list mode the bar wraps `listview.on_filter_change` (then calls `read_list_filters_into_bar()`) and `listview.get_args` (adds `or_filters`). It sets `listview._whatsapp_filterbar` and adds `whatsapp-kit-hide-page-form` to the page wrapper.
 - It uses `ui.on_list_render` to re-label the Group by button.
 - Handlers `mousedown`/`touchstart`/`keydown.<id>` on `document` close the popovers on an outside click or Escape.
 - A `ResizeObserver` on the toolbar, plus `resize.<id>` on `window`, re-run the fit.

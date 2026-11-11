@@ -31,7 +31,7 @@ Options: `wrapper`, `steps[{key, label, render($body, ctx, stepper), validate?(c
 true|false|string|Promise, can_skip?, on_show?($body, ctx, stepper)}]`, `on_finish(ctx)`,
 `on_cancel?`, `ctx?`, `finish_label`, `next_label`, `back_label`, `cancel_label`, `start_index`,
 `linear` (default `true`: only visited steps are clickable in the header).
-Methods: `go(index)`, `next()`, `back()`, `skip()`, `set_step_valid(bool)`, `show_error(text)`,
+Methods: `go_to_step(index)`, `go_to_next_step()`, `go_to_previous_step()`, `skip_current_step()`, `set_step_valid(bool)`, `show_error(text)`,
 `clear_error()`, `destroy()`. `validate` returning `false` shows a generic message; returning a
 string shows that string; a rejected promise shows its `message`.
 

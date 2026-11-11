@@ -70,7 +70,7 @@ class SettingsView {
 			title: __("Settings"),
 			cls: "whatsapp-settings-window",
 			groups: this.groups(),
-			render: (key, $pane) => this.draw(key, $pane),
+			render: (key, $pane) => this.draw_section_pane(key, $pane),
 			on_show: (key) => write_hash(key),
 			on_close: () => {
 				write_hash(null);
@@ -134,7 +134,7 @@ class SettingsView {
 		return this.win.current;
 	}
 
-	draw(key, $pane) {
+	draw_section_pane(key, $pane) {
 		const section = this.sections.find((s) => s.key === key) || this.sections[0];
 		this.$root = $('<div class="whatsapp-settings"></div>').appendTo($pane);
 		this.$root.append(whatsapp.ui.SettingsWindow.head_html(section.label, this.blurb(section.key)));
@@ -490,7 +490,7 @@ class SettingsView {
 	 * on its own line, `badge` draws a StatusBadge instead of text. Values are plain strings —
 	 * nothing here renders HTML a Frappe helper produced.
 	 */
-	rows($el, rows) {
+	render_label_value_rows($el, rows) {
 		const esc = frappe.utils.escape_html;
 		$el.html(
 			`<ul class="whatsapp-settings__rows">${rows
@@ -566,7 +566,7 @@ class SettingsView {
 				Failed: __("Not reachable"),
 				Untested: __("Not tested yet"),
 			};
-			this.rows($connection, [
+			this.render_label_value_rows($connection, [
 				{
 					label: __("Status"),
 					badge: CONNECTION[values.connection_status] || CONNECTION.Untested,
@@ -597,7 +597,7 @@ class SettingsView {
 				device: __("A connected device"),
 				webhook: __("An active webhook"),
 			};
-			this.rows(
+			this.render_label_value_rows(
 				$steps,
 				(status.steps || []).map((s) => ({
 					label: STEP_LABEL[s.key] || s.key,
@@ -642,7 +642,7 @@ class SettingsView {
 					? { label: __("Rotate credentials"), handler: () => this.rotate_credentials(devices, webhook.webhook) }
 					: null,
 			});
-			this.rows($body, [
+			this.render_label_value_rows($body, [
 				{
 					label: __("Customer API key"),
 					badge: values.has_customer_api_key ? __("Stored") : __("Not set"),
@@ -675,7 +675,7 @@ class SettingsView {
 	}
 
 	rotate_credentials(devices, webhook) {
-		whatsapp.ui.ConfirmDialog.ask({
+		whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 			title: __("Rotate the platform credentials?"),
 			message: __(
 				"New keys are shown once. Every integration still using the old keys stops immediately — tell the developer before you rotate."
@@ -749,7 +749,7 @@ class SettingsView {
 					: __("Without it no inbound message arrives and no status ever changes past “Sent”."),
 				action: IS_SM()
 					? active
-						? { label: __("Copy the receiver URL"), handler: () => this.copy(url) }
+						? { label: __("Copy the receiver URL"), handler: () => this.copy_receiver_url(url) }
 						: { label: __("Turn it on now"), primary: true, handler: () => this.enable_webhook() }
 					: null,
 			});
@@ -758,9 +758,9 @@ class SettingsView {
 			const $endpoint = this.panel($cols, {
 				title: __("Receiver"),
 				note: __("POST · JSON"),
-				action: url ? { label: __("Copy"), handler: () => this.copy(url) } : null,
+				action: url ? { label: __("Copy"), handler: () => this.copy_receiver_url(url) } : null,
 			});
-			this.rows($endpoint, [
+			this.render_label_value_rows($endpoint, [
 				{ label: __("URL"), value: url || __("Not registered"), ltr: true, stacked: true },
 				{ label: __("Signature"), value: "HMAC-SHA256", ltr: true },
 				{
@@ -922,7 +922,7 @@ class SettingsView {
 	}
 
 	rotate_secret() {
-		whatsapp.ui.ConfirmDialog.ask({
+		whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 			title: __("Rotate the webhook signing secret?"),
 			message: __("Events signed with the old secret are refused as soon as the new one is in place."),
 			ack_checkbox: __("I understand deliveries fail until the platform uses the new secret."),
@@ -937,7 +937,7 @@ class SettingsView {
 			.catch(() => {});
 	}
 
-	copy(text) {
+	copy_receiver_url(text) {
 		if (!text) return whatsapp.ui.Toast.warning(__("There is no receiver URL yet"));
 		frappe.utils.copy_to_clipboard(text);
 		whatsapp.ui.Toast.success(__("Receiver URL copied"));
@@ -1299,7 +1299,7 @@ class SettingsView {
 
 			$el.append(SW.section_html(__("Plan details"), values.plan_name ? __(values.plan_name) : values.plan_code || __("Not synced yet")));
 			const $plan = $('<div class="whatsapp-settings__plan"></div>').appendTo($el);
-			this.rows($plan, [
+			this.render_label_value_rows($plan, [
 				// the allowance is per billing cycle, which is not always a month (a trial runs 14 days)
 				{ label: __("Allowance per cycle"), value: whatsapp.ui.format_int(values.message_limit), ltr: true },
 				{ label: __("Used this cycle"), value: whatsapp.ui.format_int(values.messages_used), ltr: true },
@@ -1359,7 +1359,7 @@ class SettingsView {
 	}
 
 	renew_now() {
-		whatsapp.ui.ConfirmDialog.ask({
+		whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 			title: __("Renew the plan now?"),
 			message: __("A new cycle starts today and its price is paid from your wallet."),
 			confirm_label: __("Renew now"),
@@ -1512,7 +1512,7 @@ class SettingsView {
 
 	change_plan(plan, wallet) {
 		const name = __(plan.plan_name || plan.plan_code);
-		whatsapp.ui.ConfirmDialog.ask({
+		whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 			title: __("Move to {0}?", [name]),
 			message: __("The new plan starts today and its price is paid from your wallet."),
 			impact: [

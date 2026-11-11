@@ -26,7 +26,7 @@ The default icons are `es-line-inbox` for `empty`, `es-line-alert-circle` for `e
 
 ## Methods
 
-- `set(state, opts = {})` merges `opts`, sets the state, re-renders, and returns `this`.
+- `set_state(state, opts = {})` merges `opts`, sets the state, re-renders, and returns `this`.
 - `loading(opts)`, `empty(opts)` and `offline(opts)` are shortcuts for `set`.
 - `error(err, opts = {})` shows the error state. The description is `err.message` when `err` has one, otherwise `opts.description`.
 - `hide()` empties the wrapper.

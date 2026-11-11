@@ -59,12 +59,12 @@ whatsapp.ui.Drawer = class Drawer {
 		this.doc = this.opts.doc || null;
 		this.id = ui.uid("drawer");
 		this.controls = {};
-		this.make();
+		this.build_drawer_shell();
 	}
 
 	// ---- shell -----------------------------------------------------------------------------
 
-	make() {
+	build_drawer_shell() {
 		const width = this.opts.width ? (typeof this.opts.width === "number" ? `${this.opts.width}px` : this.opts.width) : "";
 		this.$backdrop = $(`<div class="whatsapp-kit-backdrop whatsapp-kit-drawer__backdrop" hidden></div>`).appendTo(document.body);
 		this.$root = $(`
@@ -501,7 +501,7 @@ whatsapp.ui.Drawer = class Drawer {
 		});
 		if (typeof this.opts.on_save === "function") {
 			this.opts.actions = (this.opts.actions || []).filter((a) => !a._save).concat([
-				{ _save: true, label: this.opts.save_label || __("Save"), primary: true, handler: () => this.save() },
+				{ _save: true, label: this.opts.save_label || __("Save"), primary: true, handler: () => this.validate_and_save_values() },
 			]);
 		}
 	}
@@ -512,7 +512,7 @@ whatsapp.ui.Drawer = class Drawer {
 		return values;
 	}
 
-	save() {
+	validate_and_save_values() {
 		const values = this.get_values();
 		const missing = this.field_list().filter((df) => df.reqd && (values[df.fieldname] == null || values[df.fieldname] === ""));
 		const $summary = this.$body.find(".whatsapp-kit-drawer__summary");

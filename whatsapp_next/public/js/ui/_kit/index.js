@@ -12,7 +12,7 @@
 import ui from "../_core/index.js";
 import ICONS, { ico, ICON_NAMES } from "./icons.js";
 
-const esc = (v) => ui.escape(v == null ? "" : v);
+const escape_html = (v) => ui.escape(v == null ? "" : v);
 
 /** The five tones the prototype gives a badge, a dot or a tinted surface. */
 export const TONES = ["ok", "warn", "danger", "info", "muted"];
@@ -33,7 +33,7 @@ export const VARIANTS = ["primary", "secondary", "danger", "ghost", "tonal"];
  * @param {object} [o.attrs] — extra attributes, e.g. `{"data-key": "save"}`
  */
 export function btn(o = {}) {
-	const label = o.label ? `<span>${esc(o.label)}</span>` : "";
+	const label = o.label ? `<span>${escape_html(o.label)}</span>` : "";
 	const only = !o.label && o.icon;
 	const cls = [
 		"whatsapp-button",
@@ -47,9 +47,9 @@ export function btn(o = {}) {
 		.join(" ");
 	const name = o.title || o.label || "";
 	const attrs = Object.entries(o.attrs || {})
-		.map(([k, v]) => ` ${k}="${esc(v)}"`)
+		.map(([k, v]) => ` ${k}="${escape_html(v)}"`)
 		.join("");
-	return `<button type="button" class="${cls}"${o.disabled ? " disabled" : ""}${name ? ` title="${esc(name)}"` : ""}${only && name ? ` aria-label="${esc(name)}"` : ""}${attrs}>${o.icon ? ico(o.icon, o.size === "lg" ? "md" : "sm") : ""}${label}</button>`;
+	return `<button type="button" class="${cls}"${o.disabled ? " disabled" : ""}${name ? ` title="${escape_html(name)}"` : ""}${only && name ? ` aria-label="${escape_html(name)}"` : ""}${attrs}>${o.icon ? ico(o.icon, o.size === "lg" ? "md" : "sm") : ""}${label}</button>`;
 }
 
 /**
@@ -60,7 +60,7 @@ export function btn(o = {}) {
  */
 export function badge(label, tone = "muted", o = {}) {
 	const cls = `whatsapp-badge whatsapp-badge--${tone}${o.dot === false ? " whatsapp-badge--nodot" : ""}`;
-	return `<span class="${cls}">${o.icon ? ico(o.icon, "xs") : ""}${esc(label)}</span>`;
+	return `<span class="${cls}">${o.icon ? ico(o.icon, "xs") : ""}${escape_html(label)}</span>`;
 }
 
 /**
@@ -74,15 +74,15 @@ export function segmented(options, value, o = {}) {
 	const opts = (options || [])
 		.map(
 			(opt) =>
-				`<button type="button" class="whatsapp-segmented__opt" role="radio" aria-checked="${opt.value === value}" tabindex="${opt.value === value ? 0 : -1}" data-value="${esc(opt.value)}"${opt.disabled ? " disabled" : ""}>${opt.icon ? ico(opt.icon, "xs") : ""}<span>${esc(opt.label)}</span></button>`
+				`<button type="button" class="whatsapp-segmented__opt" role="radio" aria-checked="${opt.value === value}" tabindex="${opt.value === value ? 0 : -1}" data-value="${escape_html(opt.value)}"${opt.disabled ? " disabled" : ""}>${opt.icon ? ico(opt.icon, "xs") : ""}<span>${escape_html(opt.label)}</span></button>`
 		)
 		.join("");
-	return `<div class="whatsapp-segmented" role="radiogroup"${o.label ? ` aria-label="${esc(o.label)}"` : ""}>${opts}</div>`;
+	return `<div class="whatsapp-segmented" role="radiogroup"${o.label ? ` aria-label="${escape_html(o.label)}"` : ""}>${opts}</div>`;
 }
 
 /** The rule that titles a form section: its name at the start, what it costs at the end. */
 export function rule(label, note) {
-	return `<div class="whatsapp-rule"><span class="whatsapp-rule__label">${esc(label)}</span><span class="whatsapp-rule__line"></span>${note ? `<span class="whatsapp-rule__note">${esc(note)}</span>` : ""}</div>`;
+	return `<div class="whatsapp-rule"><span class="whatsapp-rule__label">${escape_html(label)}</span><span class="whatsapp-rule__line"></span>${note ? `<span class="whatsapp-rule__note">${escape_html(note)}</span>` : ""}</div>`;
 }
 
 /** Two letters for an avatar: one per word, or the first two of a single word. */
@@ -96,7 +96,7 @@ export function initials(name) {
 /** @param {{name?: string, text?: string, src?: string, size?: "sm"|"md"|"lg", square?: boolean}} o */
 export function avatar(o = {}) {
 	const cls = `whatsapp-avatar${o.size ? ` whatsapp-avatar--${o.size}` : ""}${o.square ? " whatsapp-avatar--sq" : ""}`;
-	const body = o.src ? `<img src="${esc(o.src)}" alt="" loading="lazy">` : esc(o.text || initials(o.name));
+	const body = o.src ? `<img src="${escape_html(o.src)}" alt="" loading="lazy">` : escape_html(o.text || initials(o.name));
 	return `<span class="${cls}" aria-hidden="true">${body}</span>`;
 }
 

@@ -25,7 +25,7 @@ listview.page.add_inner_button(__("Quick send"), () => new whatsapp.ui.QuickSend
 Options: `phone` | `contact` | `number` | `jid`, `reference_doctype`, `reference_name`,
 `device`, `template`, `body`, `on_sent(result)` with `{outbound, queue_item, warnings[]}`,
 `on_close`, `api {get_context, preview, send}`, `simulator_route` (default
-`whatsapp.ui.config.defaults.simulator_route`), `title`. Methods: `send()`, `preview()`, `hide()`;
+`whatsapp.ui.config.defaults.simulator_route`), `title`. Methods: `send_message()`, `render_message_preview()`, `hide()`;
 static `open(opts)`. Warnings `device_offline` / `queue_paused` become toasts through
 `whatsapp.ui.Toast.warnings` (the message is queued anyway); `WAInvalidPhoneError`,
 `WABlacklistedError`, `WAUnknownNumberPolicyError` land next to the recipient, `WAFileError` next

@@ -24,7 +24,7 @@ whatsapp.ui.call("home.get_dashboard")
 
 Options: `wrapper`, `state`, `title`, `description`, `action {label, onclick, icon, primary}`,
 `secondary {label, onclick}`, `rows` (skeleton rows), `size` (`sm` | `md`).
-Methods: `loading()`, `empty()`, `error(err)`, `offline()`, `set(state, opts)`, `hide()`.
+Methods: `loading()`, `empty()`, `error(err)`, `offline()`, `set_state(state, opts)`, `hide()`.
 
 ## Live use
 Drawer body (loading / error), ContactPicker source panes and Selected tab, PagedChildTable,

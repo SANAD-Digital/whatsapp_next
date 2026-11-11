@@ -78,7 +78,7 @@ fields add `columns[{key, label, type, options, resets, search(txt, row), width}
 `incomplete_text`; choice fields add `cols`, `search(txt, panel)`, `searchable`, `empty`.
 
 Methods: `show()`, `hide()`, `destroy()`, `get_values()`, `get_value(key)`, `set_value(key, v)`,
-`field(key)` (`.reload()` on a choice, `.set_rows()` on a list), `validate()`, `set_error(key,
+`get_field_entry(key)` (`.reload()` on a choice, `.set_rows()` on a list), `validate()`, `set_error(key,
 text)`, `clear_error(key)`, `show_error(err)`, `is_dirty()`, `mark_clean()`, `set_badge(badge)`,
 `set_title(title, subtitle)`, `set_action_disabled(key, bool)`; static `open(opts)`.
 

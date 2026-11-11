@@ -19,7 +19,7 @@
 frappe.provide("whatsapp.ui");
 
 (function () {
-	const esc = (v) => whatsapp.ui.escape(v);
+	const escape_html = (v) => whatsapp.ui.escape(v);
 	const clone = (v) => JSON.parse(JSON.stringify(v == null ? null : v));
 	const NARROW = 1080;
 
@@ -59,20 +59,20 @@ frappe.provide("whatsapp.ui");
 			this.spec = null;
 			this.draft = null;
 			this.clean = null;
-			this.build();
-			this.load(opts.name || null);
+			this.build_editor_layer();
+			this.load_command(opts.name || null);
 		}
 
 		// ---- shell ---------------------------------------------------------------------------------
 
-		build() {
+		build_editor_layer() {
 			this.id = whatsapp.ui.uid("whatsapp-kit-command-editor");
 			this.previous_focus = document.activeElement;
 			this.$root = $(`
 				<div class="whatsapp-kit whatsapp-kit-command-editor-layer" role="presentation">
 					<div class="whatsapp-kit-command-editor-backdrop" data-act="close"></div>
 					<div class="whatsapp-kit-command-editor" role="dialog" aria-modal="true" aria-labelledby="${this.id}-title">
-						<h2 id="${this.id}-title" class="sr-only">${esc(__("Command editor"))}</h2>
+						<h2 id="${this.id}-title" class="sr-only">${escape_html(__("Command editor"))}</h2>
 						<div class="whatsapp-kit-command-editor__body" data-slot="body"></div>
 					</div>
 				</div>`).appendTo(document.body);
@@ -86,7 +86,7 @@ frappe.provide("whatsapp.ui");
 			this.$root.on("mousedown", (e) => this.on_outside(e));
 			this._resize = whatsapp.ui.debounce(() => this.render(), 150);
 			$(window).on(`resize.${this.id}`, this._resize);
-			this.$body.html(`<div class="whatsapp-kit-command-editor__loading">${esc(__("Loading…"))}</div>`);
+			this.$body.html(`<div class="whatsapp-kit-command-editor__loading">${escape_html(__("Loading…"))}</div>`);
 		}
 
 		close(force = false) {
@@ -102,11 +102,11 @@ frappe.provide("whatsapp.ui");
 			this.opts.on_close && this.opts.on_close();
 		}
 
-		async load(name) {
+		async load_command(name) {
 			try {
 				this.data = await this.opts.load(name);
 				this.spec = this.data.function || null;
-				this.draft = this.seed(this.data.command);
+				this.draft = this.build_draft_from_command(this.data.command);
 				this.clean = JSON.stringify(this.draft);
 				this.render();
 				// a new command opened from a function (`opts.function`, the Functions Center's "Link a
@@ -117,13 +117,13 @@ frappe.provide("whatsapp.ui");
 			} catch (err) {
 				this.$body.html(`
 					<div class="whatsapp-kit-command-editor__loading" role="alert">
-						<span>${esc(err && err.message ? err.message : __("Something went wrong. Please try again."))}</span>
-						<button type="button" class="whatsapp-kit-command-editor__btn" data-act="close">${esc(__("Close"))}</button>
+						<span>${escape_html(err && err.message ? err.message : __("Something went wrong. Please try again."))}</span>
+						<button type="button" class="whatsapp-kit-command-editor__btn" data-act="close">${escape_html(__("Close"))}</button>
 					</div>`);
 			}
 		}
 
-		seed(c) {
+		build_draft_from_command(c) {
 			return {
 				name: c.name || null,
 				code: c.code || "",
@@ -169,7 +169,7 @@ frappe.provide("whatsapp.ui");
 			this.draft.access[key] = Object.assign(this.access_of(key), patch);
 		}
 
-		fn_row() {
+		selected_function_row() {
 			return ((this.data && this.data.functions) || []).find((f) => f.name === this.draft.function) || null;
 		}
 
@@ -224,7 +224,7 @@ frappe.provide("whatsapp.ui");
 			const d = this.draft;
 			const on = d.status === "Active";
 			const runs = whatsapp.ui.format_int(cint(this.data.command.runs_30d));
-			const fn = this.fn_row();
+			const fn = this.selected_function_row();
 			const tabs = [
 				{ key: "setup", label: __("Setup", null, "Command Editor") },
 				{ key: "perms", label: __("Permissions", null, "Command Editor"), count: d.allowed_party_types.length },
@@ -234,16 +234,16 @@ frappe.provide("whatsapp.ui");
 				<div class="whatsapp-kit-command-editor__head">
 					<div class="whatsapp-kit-command-editor__head-row">
 						<span class="whatsapp-kit-command-editor__word">
-							<label class="whatsapp-kit-command-editor__word-label" for="${this.id}-code">${esc(__("Command"))}</label>
-							<input id="${this.id}-code" type="text" dir="ltr" class="whatsapp-kit-command-editor__code" data-f="code" data-in="code" value="${esc(d.code)}" placeholder="${esc(__("Command word"))}" autocomplete="off" />
-							${this.is_dirty() ? `<span class="whatsapp-kit-command-editor__dirty" data-slot="dirty"><span class="whatsapp-kit-command-editor__dot"></span>${esc(__("Not saved yet"))}</span>` : `<span data-slot="dirty"></span>`}
+							<label class="whatsapp-kit-command-editor__word-label" for="${this.id}-code">${escape_html(__("Command"))}</label>
+							<input id="${this.id}-code" type="text" dir="ltr" class="whatsapp-kit-command-editor__code" data-f="code" data-in="code" value="${escape_html(d.code)}" placeholder="${escape_html(__("Command word"))}" autocomplete="off" />
+							${this.is_dirty() ? `<span class="whatsapp-kit-command-editor__dirty" data-slot="dirty"><span class="whatsapp-kit-command-editor__dot"></span>${escape_html(__("Not saved yet"))}</span>` : `<span data-slot="dirty"></span>`}
 						</span>
 						<span class="whatsapp-kit-command-editor__head-end">
-							<button type="button" class="whatsapp-kit-command-editor__status${on ? " is-on" : ""}" data-act="toggle-status" role="switch" aria-checked="${on}" title="${esc(__("Turn the command on or off"))}">
-								${esc(on ? __("Enabled", null, "Command Editor") : __("Stopped"))}<span class="whatsapp-kit-command-editor__track"><span class="whatsapp-kit-command-editor__knob"></span></span>
+							<button type="button" class="whatsapp-kit-command-editor__status${on ? " is-on" : ""}" data-act="toggle-status" role="switch" aria-checked="${on}" title="${escape_html(__("Turn the command on or off"))}">
+								${escape_html(on ? __("Enabled", null, "Command Editor") : __("Stopped"))}<span class="whatsapp-kit-command-editor__track"><span class="whatsapp-kit-command-editor__knob"></span></span>
 							</button>
 							${this.opts.form_doctype && d.name ? whatsapp.ui.form_button_html() : ""}
-							<button type="button" class="whatsapp-kit-command-editor__x" data-act="close" data-keep title="${esc(__("Close (Esc)"))}" aria-label="${esc(__("Close"))}">×</button>
+							<button type="button" class="whatsapp-kit-command-editor__x" data-act="close" data-keep title="${escape_html(__("Close (Esc)"))}" aria-label="${escape_html(__("Close"))}">×</button>
 						</span>
 					</div>
 					<div class="whatsapp-kit-command-editor__head-row whatsapp-kit-command-editor__head-row--tabs">
@@ -251,14 +251,14 @@ frappe.provide("whatsapp.ui");
 							${tabs
 								.map(
 									(t) => `<button type="button" role="tab" class="whatsapp-kit-command-editor__tab${this.ui.tab === t.key ? " is-sel" : ""}" aria-selected="${this.ui.tab === t.key}" data-act="tab" data-key="${t.key}" data-keep>
-										${esc(t.label)}${t.count != null ? `<span class="whatsapp-kit-command-editor__count" dir="ltr">${whatsapp.ui.format_int(t.count)}</span>` : ""}
+										${escape_html(t.label)}${t.count != null ? `<span class="whatsapp-kit-command-editor__count" dir="ltr">${whatsapp.ui.format_int(t.count)}</span>` : ""}
 									</button>`
 								)
 								.join("")}
 						</span>
 						<span class="whatsapp-kit-command-editor__meta">
 							<span class="whatsapp-kit-command-editor__runs">${this.runs_html(runs)}</span>
-							<button type="button" class="whatsapp-kit-command-editor__fnchip" data-act="open-fn" title="${esc(__("Change the function"))}">${esc(fn ? __(fn.function_name || fn.name) : __("No function"))}</button>
+							<button type="button" class="whatsapp-kit-command-editor__fnchip" data-act="open-fn" title="${escape_html(__("Change the function"))}">${escape_html(fn ? __(fn.function_name || fn.name) : __("No function"))}</button>
 						</span>
 					</div>
 				</div>`;
@@ -267,15 +267,15 @@ frappe.provide("whatsapp.ui");
 		runs_html(runs) {
 			const text = __("{0} runs in 30 days", ["\u0000"], "Command Editor");
 			const [before, after] = text.split("\u0000");
-			return `${esc(before || "")}<span class="whatsapp-kit-command-editor__runs-n" dir="ltr">${esc(runs)}</span>${esc(after || "")}`;
+			return `${escape_html(before || "")}<span class="whatsapp-kit-command-editor__runs-n" dir="ltr">${escape_html(runs)}</span>${escape_html(after || "")}`;
 		}
 
-		col(title, body, { link = null, tone = "surface", key = "", span = false } = {}) {
+		column_section_html(title, body, { link = null, tone = "surface", key = "", span = false } = {}) {
 			return `
-				<section class="whatsapp-kit-command-editor__col whatsapp-kit-command-editor__col--${tone}${span ? " whatsapp-kit-command-editor__col--span" : ""}" data-scroll="${key}" aria-label="${esc(title)}">
+				<section class="whatsapp-kit-command-editor__col whatsapp-kit-command-editor__col--${tone}${span ? " whatsapp-kit-command-editor__col--span" : ""}" data-scroll="${key}" aria-label="${escape_html(title)}">
 					<header class="whatsapp-kit-command-editor__col-head">
-						<span class="whatsapp-kit-command-editor__col-title">${esc(title)}</span>
-						${link ? `<button type="button" class="whatsapp-kit-command-editor__link" data-act="${link.act}">${esc(link.label)}</button>` : ""}
+						<span class="whatsapp-kit-command-editor__col-title">${escape_html(title)}</span>
+						${link ? `<button type="button" class="whatsapp-kit-command-editor__link" data-act="${link.act}">${escape_html(link.label)}</button>` : ""}
 					</header>
 					<div class="whatsapp-kit-command-editor__col-body">${body}</div>
 				</section>`;
@@ -285,16 +285,16 @@ frappe.provide("whatsapp.ui");
 
 		render_setup() {
 			return `<div class="whatsapp-kit-command-editor__grid whatsapp-kit-command-editor__grid--setup">
-				${this.col(__("Definition"), this.render_definition(), { key: "def", span: true })}
-				${this.col(__("Variables and options"), this.render_vars(), { key: "vars", link: { act: "reset-fn", label: __("Restore function defaults") } })}
-				${this.col(__("Outputs of this command"), this.render_outputs(), { key: "outs", tone: "bg", link: { act: "reset-outs", label: __("Restore default texts") } })}
+				${this.column_section_html(__("Definition"), this.render_definition(), { key: "def", span: true })}
+				${this.column_section_html(__("Variables and options"), this.render_vars(), { key: "vars", link: { act: "reset-fn", label: __("Restore function defaults") } })}
+				${this.column_section_html(__("Outputs of this command"), this.render_outputs(), { key: "outs", tone: "bg", link: { act: "reset-outs", label: __("Restore default texts") } })}
 			</div>`;
 		}
 
 		render_definition() {
 			const d = this.draft;
 			const spec = this.spec;
-			const fn = this.fn_row();
+			const fn = this.selected_function_row();
 			const q = (this.ui.fn_q == null ? "" : this.ui.fn_q).trim().toLowerCase();
 			const matches = ((this.data && this.data.functions) || [])
 				.filter((f) => !q || `${f.function_name || ""} ${__(f.function_name || "")} ${f.name} ${f.category || ""}`.toLowerCase().includes(q))
@@ -303,73 +303,73 @@ frappe.provide("whatsapp.ui");
 			const suggested = (spec && spec.suggested_commands) || [];
 			return `
 				<div class="whatsapp-kit-command-editor__field">
-					<label class="whatsapp-kit-command-editor__label" for="${this.id}-fn">${esc(__("Function to run"))}</label>
+					<label class="whatsapp-kit-command-editor__label" for="${this.id}-fn">${escape_html(__("Function to run"))}</label>
 					<span class="whatsapp-kit-command-editor__combo" data-pop="fn">
-						<input id="${this.id}-fn" type="text" class="whatsapp-kit-command-editor__input" data-f="fn" data-in="fn-q" data-focus-open="fn" value="${esc(fn_value)}" placeholder="${esc(__("Search by function name or group…"))}" autocomplete="off" role="combobox" aria-expanded="${this.ui.fn_open}" aria-controls="${this.id}-fnlist" />
+						<input id="${this.id}-fn" type="text" class="whatsapp-kit-command-editor__input" data-f="fn" data-in="fn-q" data-focus-open="fn" value="${escape_html(fn_value)}" placeholder="${escape_html(__("Search by function name or group…"))}" autocomplete="off" role="combobox" aria-expanded="${this.ui.fn_open}" aria-controls="${this.id}-fnlist" />
 						${
 							this.ui.fn_open
 								? `<span class="whatsapp-kit-command-editor__pop" id="${this.id}-fnlist" role="listbox">
 									${matches
 										.map(
-											(f) => `<button type="button" role="option" class="whatsapp-kit-command-editor__opt${f.name === d.function ? " is-sel" : ""}" aria-selected="${f.name === d.function}" data-act="pick-fn" data-key="${esc(f.name)}">
-												${esc(__(f.function_name || f.name))}<span class="whatsapp-kit-command-editor__opt-sub">${esc(f.category ? __(f.category) : "")}${f.status === "Active" ? "" : ` · ${esc(__("paused"))}`}</span>
+											(f) => `<button type="button" role="option" class="whatsapp-kit-command-editor__opt${f.name === d.function ? " is-sel" : ""}" aria-selected="${f.name === d.function}" data-act="pick-fn" data-key="${escape_html(f.name)}">
+												${escape_html(__(f.function_name || f.name))}<span class="whatsapp-kit-command-editor__opt-sub">${escape_html(f.category ? __(f.category) : "")}${f.status === "Active" ? "" : ` · ${escape_html(__("paused"))}`}</span>
 											</button>`
 										)
 										.join("")}
-									${matches.length ? "" : `<span class="whatsapp-kit-command-editor__none">${esc(__("No matching functions."))}</span>`}
+									${matches.length ? "" : `<span class="whatsapp-kit-command-editor__none">${escape_html(__("No matching functions."))}</span>`}
 								</span>`
 								: ""
 						}
 					</span>
-					${spec && spec.when_to_use ? `<span class="whatsapp-kit-command-editor__note">${esc(__(spec.when_to_use))}</span>` : ""}
+					${spec && spec.when_to_use ? `<span class="whatsapp-kit-command-editor__note">${escape_html(__(spec.when_to_use))}</span>` : ""}
 				</div>
 				${
 					fn && fn.status !== "Active"
-						? `<div class="whatsapp-kit-command-editor__callout whatsapp-kit-command-editor__callout--warn"><strong>${esc(__("The function is stopped in the Functions Center"))}</strong><span>${esc(
+						? `<div class="whatsapp-kit-command-editor__callout whatsapp-kit-command-editor__callout--warn"><strong>${escape_html(__("The function is stopped in the Functions Center"))}</strong><span>${escape_html(
 								__("The command will match the text but will not run until the function is started.")
 						  )}</span></div>`
 						: ""
 				}
 				<div class="whatsapp-kit-command-editor__field">
-					<span class="whatsapp-kit-command-editor__label">${esc(__("Synonyms"))}</span>
+					<span class="whatsapp-kit-command-editor__label">${escape_html(__("Synonyms"))}</span>
 					<div class="whatsapp-kit-command-editor__chips">
 						${d.synonyms
 							.map(
-								(s, i) => `<span class="whatsapp-kit-command-editor__chip whatsapp-kit-command-editor__chip--pri">${esc(s)}<button type="button" class="whatsapp-kit-command-editor__chip-x" data-act="rm-syn" data-key="${i}" title="${esc(__("Remove"))}" aria-label="${esc(
+								(s, i) => `<span class="whatsapp-kit-command-editor__chip whatsapp-kit-command-editor__chip--pri">${escape_html(s)}<button type="button" class="whatsapp-kit-command-editor__chip-x" data-act="rm-syn" data-key="${i}" title="${escape_html(__("Remove"))}" aria-label="${escape_html(
 									__("Remove {0}", [s])
 								)}">×</button></span>`
 							)
 							.join("")}
-						<input type="text" class="whatsapp-kit-command-editor__syn" data-f="syn" data-in="syn" value="${esc(this.ui.syn)}" placeholder="${esc(__("Add a synonym, then Enter"))}" aria-label="${esc(__("Add a synonym"))}" />
+						<input type="text" class="whatsapp-kit-command-editor__syn" data-f="syn" data-in="syn" value="${escape_html(this.ui.syn)}" placeholder="${escape_html(__("Add a synonym, then Enter"))}" aria-label="${escape_html(__("Add a synonym"))}" />
 					</div>
-					<span class="whatsapp-kit-command-editor__hint">${esc(__("Any inbound text that matches the command or one of its synonyms runs the function directly."))}</span>
+					<span class="whatsapp-kit-command-editor__hint">${escape_html(__("Any inbound text that matches the command or one of its synonyms runs the function directly."))}</span>
 				</div>
 				${
 					suggested.length
 						? `<div class="whatsapp-kit-command-editor__field whatsapp-kit-command-editor__field--tight">
-							<span class="whatsapp-kit-command-editor__note">${esc(__("Commands suggested by the function — click to use:"))}</span>
+							<span class="whatsapp-kit-command-editor__note">${escape_html(__("Commands suggested by the function — click to use:"))}</span>
 							<span class="whatsapp-kit-command-editor__chips">${suggested
-								.map((s) => `<button type="button" class="whatsapp-kit-command-editor__chip whatsapp-kit-command-editor__chip--ghost" data-act="use-word" data-key="${esc(s)}">${esc(s)}</button>`)
+								.map((s) => `<button type="button" class="whatsapp-kit-command-editor__chip whatsapp-kit-command-editor__chip--ghost" data-act="use-word" data-key="${escape_html(s)}">${escape_html(s)}</button>`)
 								.join("")}</span>
 						</div>`
 						: ""
 				}
 				<div class="whatsapp-kit-command-editor__field">
-					<span class="whatsapp-kit-command-editor__label">${esc(__("Party types allowed"))}</span>
+					<span class="whatsapp-kit-command-editor__label">${escape_html(__("Party types allowed"))}</span>
 					<div class="whatsapp-kit-command-editor__chips">
 						${this.party_types()
 							.map(
-								(p) => `<button type="button" class="whatsapp-kit-command-editor__pill${this.allowed(p.key) ? " is-on" : ""}" aria-pressed="${this.allowed(p.key)}" data-act="toggle-type" data-key="${esc(p.key)}">${esc(p.label)}<span class="whatsapp-kit-command-editor__mark" aria-hidden="true">${
+								(p) => `<button type="button" class="whatsapp-kit-command-editor__pill${this.allowed(p.key) ? " is-on" : ""}" aria-pressed="${this.allowed(p.key)}" data-act="toggle-type" data-key="${escape_html(p.key)}">${escape_html(p.label)}<span class="whatsapp-kit-command-editor__mark" aria-hidden="true">${
 									this.allowed(p.key) ? "✓" : ""
 								}</span></button>`
 							)
 							.join("")}
 					</div>
-					${d.allowed_party_types.length ? "" : `<span class="whatsapp-kit-command-editor__note whatsapp-kit-command-editor__note--danger">${esc(__("Pick at least one party type — the command cannot be saved without one."))}</span>`}
-					<span class="whatsapp-kit-command-editor__note">${esc(__("Each type's white and black lists are in the Permissions tab."))}</span>
+					${d.allowed_party_types.length ? "" : `<span class="whatsapp-kit-command-editor__note whatsapp-kit-command-editor__note--danger">${escape_html(__("Pick at least one party type — the command cannot be saved without one."))}</span>`}
+					<span class="whatsapp-kit-command-editor__note">${escape_html(__("Each type's white and black lists are in the Permissions tab."))}</span>
 				</div>
 				<label class="whatsapp-kit-command-editor__switch-card">
-					<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__switch-title">${esc(__("Requires the party to be linked to an account"))}</span><span class="whatsapp-kit-command-editor__note">${esc(
+					<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__switch-title">${escape_html(__("Requires the party to be linked to an account"))}</span><span class="whatsapp-kit-command-editor__note">${escape_html(
 						__("Messages from numbers that are not linked are refused with an explanatory reply.")
 					)}</span></span>
 					<input type="checkbox" class="whatsapp-kit-command-editor__check" data-ch="link" ${d.requires_linked_contact ? "checked" : ""} />
@@ -378,7 +378,7 @@ frappe.provide("whatsapp.ui");
 
 		render_vars() {
 			const spec = this.spec;
-			if (!spec) return `<span class="whatsapp-kit-command-editor__empty">${esc(__("Pick a function in the Definition column to see its variables, options and outputs."))}</span>`;
+			if (!spec) return `<span class="whatsapp-kit-command-editor__empty">${escape_html(__("Pick a function in the Definition column to see its variables, options and outputs."))}</span>`;
 			const off = this.draft.disabled_inputs;
 			const vars = (spec.inputs || [])
 				.map((v) => {
@@ -386,17 +386,17 @@ frappe.provide("whatsapp.ui");
 					return `<div class="whatsapp-kit-command-editor__card${on ? "" : " is-off"}">
 						<div class="whatsapp-kit-command-editor__card-row">
 							<span class="whatsapp-kit-command-editor__card-title">
-								<span class="whatsapp-kit-command-editor__mono" dir="ltr">#${esc(v.key)}</span>
-								<span class="whatsapp-kit-command-editor__sub">${esc(v.label ? __(v.label) : "")}</span>
-								<span class="whatsapp-kit-command-editor__tag whatsapp-kit-command-editor__mono" dir="ltr">${esc(v.type || "str")}</span>
-								${v.required ? `<span class="whatsapp-kit-command-editor__tag whatsapp-kit-command-editor__tag--warn">${esc(__("Required"))}</span>` : ""}
+								<span class="whatsapp-kit-command-editor__mono" dir="ltr">#${escape_html(v.key)}</span>
+								<span class="whatsapp-kit-command-editor__sub">${escape_html(v.label ? __(v.label) : "")}</span>
+								<span class="whatsapp-kit-command-editor__tag whatsapp-kit-command-editor__mono" dir="ltr">${escape_html(v.type || "str")}</span>
+								${v.required ? `<span class="whatsapp-kit-command-editor__tag whatsapp-kit-command-editor__tag--warn">${escape_html(__("Required"))}</span>` : ""}
 							</span>
-							<input type="checkbox" class="whatsapp-kit-command-editor__check" data-ch="var" data-key="${esc(v.key)}" ${on ? "checked" : ""} title="${esc(__("Enable the variable in this command"))}" aria-label="${esc(
+							<input type="checkbox" class="whatsapp-kit-command-editor__check" data-ch="var" data-key="${escape_html(v.key)}" ${on ? "checked" : ""} title="${escape_html(__("Enable the variable in this command"))}" aria-label="${escape_html(
 								__("Enable {0} in this command", [v.label ? __(v.label) : v.key])
 							)}" />
 						</div>
-						${v.details ? `<span class="whatsapp-kit-command-editor__note">${esc(__(v.details))}</span>` : ""}
-						${v.example ? `<span class="whatsapp-kit-command-editor__example whatsapp-kit-command-editor__mono" dir="ltr">${esc(v.example)}</span>` : ""}
+						${v.details ? `<span class="whatsapp-kit-command-editor__note">${escape_html(__(v.details))}</span>` : ""}
+						${v.example ? `<span class="whatsapp-kit-command-editor__example whatsapp-kit-command-editor__mono" dir="ltr">${escape_html(v.example)}</span>` : ""}
 						${on ? this.render_ask(v) : ""}
 					</div>`;
 				})
@@ -404,17 +404,17 @@ frappe.provide("whatsapp.ui");
 			return `
 				${
 					(spec.inputs || []).length
-						? `<div class="whatsapp-kit-command-editor__field whatsapp-kit-command-editor__field--tight"><span class="whatsapp-kit-command-editor__label">${esc(__("Variables the command text can pass"))}</span><div class="whatsapp-kit-command-editor__stack">${vars}</div></div>`
+						? `<div class="whatsapp-kit-command-editor__field whatsapp-kit-command-editor__field--tight"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Variables the command text can pass"))}</span><div class="whatsapp-kit-command-editor__stack">${vars}</div></div>`
 						: ""
 				}
 				${
 					(spec.settings || []).length
-						? `<div class="whatsapp-kit-command-editor__field whatsapp-kit-command-editor__field--tight"><span class="whatsapp-kit-command-editor__label">${esc(__("Function options in this command"))}</span><div class="whatsapp-kit-command-editor__stack">${(spec.settings || [])
+						? `<div class="whatsapp-kit-command-editor__field whatsapp-kit-command-editor__field--tight"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Function options in this command"))}</span><div class="whatsapp-kit-command-editor__stack">${(spec.settings || [])
 								.map((s) => this.render_setting(s, "stack"))
 								.join("")}</div></div>`
 						: ""
 				}
-				${(spec.inputs || []).length || (spec.settings || []).length ? "" : `<span class="whatsapp-kit-command-editor__empty">${esc(__("This function takes no variables and has no options."))}</span>`}`;
+				${(spec.inputs || []).length || (spec.settings || []).length ? "" : `<span class="whatsapp-kit-command-editor__empty">${escape_html(__("This function takes no variables and has no options."))}</span>`}`;
 		}
 
 		setting_note(s) {
@@ -428,32 +428,32 @@ frappe.provide("whatsapp.ui");
 			const f = `set-${s.key}-${layout}`;
 			const type_label = { check: __("Yes / No"), number: __("Number"), select: __("List"), text: __("Text") }[kind];
 			let control;
-			if (kind === "check") control = `<input type="checkbox" class="whatsapp-kit-command-editor__check" data-ch="setting" data-key="${esc(s.key)}" ${cint(value) ? "checked" : ""} aria-label="${esc(__(s.label))}" />`;
-			else if (kind === "number") control = `<input type="number" class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__input--num whatsapp-kit-command-editor__mono" data-f="${esc(f)}" data-in="setting" data-key="${esc(s.key)}" value="${esc(value == null ? "" : value)}" aria-label="${esc(__(s.label))}" />`;
+			if (kind === "check") control = `<input type="checkbox" class="whatsapp-kit-command-editor__check" data-ch="setting" data-key="${escape_html(s.key)}" ${cint(value) ? "checked" : ""} aria-label="${escape_html(__(s.label))}" />`;
+			else if (kind === "number") control = `<input type="number" class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__input--num whatsapp-kit-command-editor__mono" data-f="${escape_html(f)}" data-in="setting" data-key="${escape_html(s.key)}" value="${escape_html(value == null ? "" : value)}" aria-label="${escape_html(__(s.label))}" />`;
 			else if (kind === "select")
-				control = `<select class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__select" data-ch="setting" data-key="${esc(s.key)}" aria-label="${esc(__(s.label))}">${(s.choices || [])
-					.map((c) => `<option value="${esc(c)}" ${String(value) === String(c) ? "selected" : ""}>${esc(c)}</option>`)
+				control = `<select class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__select" data-ch="setting" data-key="${escape_html(s.key)}" aria-label="${escape_html(__(s.label))}">${(s.choices || [])
+					.map((c) => `<option value="${escape_html(c)}" ${String(value) === String(c) ? "selected" : ""}>${escape_html(c)}</option>`)
 					.join("")}</select>`;
-			else control = `<input type="text" class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__input--text" data-f="${esc(f)}" data-in="setting" data-key="${esc(s.key)}" value="${esc(value == null ? "" : value)}" aria-label="${esc(__(s.label))}" />`;
+			else control = `<input type="text" class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__input--text" data-f="${escape_html(f)}" data-in="setting" data-key="${escape_html(s.key)}" value="${escape_html(value == null ? "" : value)}" aria-label="${escape_html(__(s.label))}" />`;
 			if (layout === "row") {
 				return `<div class="whatsapp-kit-command-editor__card whatsapp-kit-command-editor__card--row whatsapp-kit-command-editor__card--surface">
-					<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__card-name">${esc(__(s.label))}</span><span class="whatsapp-kit-command-editor__note">${esc(this.setting_note(s))}</span></span>
+					<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__card-name">${escape_html(__(s.label))}</span><span class="whatsapp-kit-command-editor__note">${escape_html(this.setting_note(s))}</span></span>
 					<span class="whatsapp-kit-command-editor__control">${control}</span>
 				</div>`;
 			}
 			return `<div class="whatsapp-kit-command-editor__card">
 				<div class="whatsapp-kit-command-editor__card-row">
-					<span class="whatsapp-kit-command-editor__card-title"><span class="whatsapp-kit-command-editor__card-name">${esc(__(s.label))}</span><span class="whatsapp-kit-command-editor__tag">${esc(type_label)}</span></span>
+					<span class="whatsapp-kit-command-editor__card-title"><span class="whatsapp-kit-command-editor__card-name">${escape_html(__(s.label))}</span><span class="whatsapp-kit-command-editor__tag">${escape_html(type_label)}</span></span>
 					<span class="whatsapp-kit-command-editor__control">${control}</span>
 				</div>
-				<span class="whatsapp-kit-command-editor__note">${esc(this.setting_note(s))}</span>
+				<span class="whatsapp-kit-command-editor__note">${escape_html(this.setting_note(s))}</span>
 			</div>`;
 		}
 
 		render_outputs(compact = false) {
 			const outs = this.draft.outputs || [];
-			if (!this.spec) return `<span class="whatsapp-kit-command-editor__empty">${esc(__("Pick a function in the Definition column to see its variables, options and outputs."))}</span>`;
-			if (!outs.length) return `<span class="whatsapp-kit-command-editor__empty whatsapp-kit-command-editor__empty--surface">${esc(__("This function defines no outputs."))}</span>`;
+			if (!this.spec) return `<span class="whatsapp-kit-command-editor__empty">${escape_html(__("Pick a function in the Definition column to see its variables, options and outputs."))}</span>`;
+			if (!outs.length) return `<span class="whatsapp-kit-command-editor__empty whatsapp-kit-command-editor__empty--surface">${escape_html(__("This function defines no outputs."))}</span>`;
 			return outs
 				.map((o, i) => {
 					const is_doc = o.output_type === "Document";
@@ -466,20 +466,20 @@ frappe.provide("whatsapp.ui");
 					const k = compact ? "pv" : "st";
 					return `<div class="whatsapp-kit-command-editor__out">
 						<span class="whatsapp-kit-command-editor__card-row whatsapp-kit-command-editor__card-row--wrap">
-							<span class="whatsapp-kit-command-editor__out-name">${esc(o.label ? __(o.label) : o.output_key)}</span>
-							<span class="whatsapp-kit-command-editor__tag">${esc(is_doc ? __("Document", null, "Command Editor") : __("Text"))}</span>
+							<span class="whatsapp-kit-command-editor__out-name">${escape_html(o.label ? __(o.label) : o.output_key)}</span>
+							<span class="whatsapp-kit-command-editor__tag">${escape_html(is_doc ? __("Document", null, "Command Editor") : __("Text"))}</span>
 						</span>
-						${o.notes && !compact ? `<span class="whatsapp-kit-command-editor__note">${esc(__(o.notes))}</span>` : ""}
+						${o.notes && !compact ? `<span class="whatsapp-kit-command-editor__note">${escape_html(__(o.notes))}</span>` : ""}
 						${
 							is_doc
-								? `${compact ? "" : `<label class="whatsapp-kit-command-editor__sub" for="${this.id}-pf-${i}">${esc(__("Print format"))}</label><input id="${this.id}-pf-${i}" type="text" dir="ltr" class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__mono whatsapp-kit-command-editor__input--sm" data-f="out-pf-${i}-${k}" data-in="out-pf" data-key="${i}" value="${esc(o.print_format || "")}" placeholder="${esc(__("Standard"))}" />`}
-								   ${compact ? "" : `<label class="whatsapp-kit-command-editor__sub" for="${this.id}-fn-${i}">${esc(__("Attached file name"))}</label>`}<input ${compact ? "" : `id="${this.id}-fn-${i}"`} type="text" class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__input--sm" data-f="out-file-${i}-${k}" data-in="out-file" data-key="${i}" value="${esc(o.file_name_template || "")}" aria-label="${esc(__("Attached file name"))}" />`
-								: `<textarea class="whatsapp-kit-command-editor__textarea" rows="${rows}" data-f="out-${i}-${k}" data-in="out-text" data-key="${i}" aria-label="${esc(o.label || o.output_key)}">${esc(text)}</textarea>`
+								? `${compact ? "" : `<label class="whatsapp-kit-command-editor__sub" for="${this.id}-pf-${i}">${escape_html(__("Print format"))}</label><input id="${this.id}-pf-${i}" type="text" dir="ltr" class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__mono whatsapp-kit-command-editor__input--sm" data-f="out-pf-${i}-${k}" data-in="out-pf" data-key="${i}" value="${escape_html(o.print_format || "")}" placeholder="${escape_html(__("Standard"))}" />`}
+								   ${compact ? "" : `<label class="whatsapp-kit-command-editor__sub" for="${this.id}-fn-${i}">${escape_html(__("Attached file name"))}</label>`}<input ${compact ? "" : `id="${this.id}-fn-${i}"`} type="text" class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__input--sm" data-f="out-file-${i}-${k}" data-in="out-file" data-key="${i}" value="${escape_html(o.file_name_template || "")}" aria-label="${escape_html(__("Attached file name"))}" />`
+								: `<textarea class="whatsapp-kit-command-editor__textarea" rows="${rows}" data-f="out-${i}-${k}" data-in="out-text" data-key="${i}" aria-label="${escape_html(o.label || o.output_key)}">${escape_html(text)}</textarea>`
 						}
 						${
 							!is_doc && vars.length && !compact
 								? `<span class="whatsapp-kit-command-editor__chips whatsapp-kit-command-editor__chips--tight">${vars
-										.map((v) => `<button type="button" class="whatsapp-kit-command-editor__token whatsapp-kit-command-editor__mono" dir="ltr" data-act="insert-var" data-key="${i}" data-var="${esc(v)}" title="${esc(__("Add to the text"))}">{{ ${esc(v)} }}</button>`)
+										.map((v) => `<button type="button" class="whatsapp-kit-command-editor__token whatsapp-kit-command-editor__mono" dir="ltr" data-act="insert-var" data-key="${i}" data-var="${escape_html(v)}" title="${escape_html(__("Add to the text"))}">{{ ${escape_html(v)} }}</button>`)
 										.join("")}</span>`
 								: ""
 						}
@@ -498,7 +498,7 @@ frappe.provide("whatsapp.ui");
 			const d = this.draft;
 			const one = (field, items) => (d[field] ? [{ name: d[field], label: d[field] }] : items);
 			return `<div class="whatsapp-kit-command-editor__perm">
-				<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__perm-title">${esc(__("The whole command"))}</span><span class="whatsapp-kit-command-editor__note">${esc(
+				<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__perm-title">${escape_html(__("The whole command"))}</span><span class="whatsapp-kit-command-editor__note">${escape_html(
 					d.allowed_group
 						? __("Only the members of «{0}» may use it, whatever their party type; the lists below apply to them.", [d.allowed_group])
 						: __("Not limited to a group: the party types and their lists below decide who may use it.")
@@ -513,7 +513,7 @@ frappe.provide("whatsapp.ui");
 		render_perms() {
 			const keys = this.draft.allowed_party_types;
 			if (!keys.length) {
-				return `<div class="whatsapp-kit-command-editor__pane" data-scroll="perms">${this.render_gate()}<span class="whatsapp-kit-command-editor__empty whatsapp-kit-command-editor__empty--surface">${esc(
+				return `<div class="whatsapp-kit-command-editor__pane" data-scroll="perms">${this.render_gate()}<span class="whatsapp-kit-command-editor__empty whatsapp-kit-command-editor__empty--surface">${escape_html(
 					__("No party is allowed yet. Pick party types in the Setup tab to manage their lists here.")
 				)}</span></div>`;
 			}
@@ -525,7 +525,7 @@ frappe.provide("whatsapp.ui");
 			const tabs = keys
 				.map((k) => {
 					const x = this.access_of(k);
-					return `<button type="button" role="tab" class="whatsapp-kit-command-editor__seg${k === key ? " is-sel" : ""}" aria-selected="${k === key}" data-act="perm-tab" data-key="${esc(k)}" data-keep>${esc(this.type_label(k))}<span class="whatsapp-kit-command-editor__seg-n" dir="ltr">${whatsapp.ui.format_int(
+					return `<button type="button" role="tab" class="whatsapp-kit-command-editor__seg${k === key ? " is-sel" : ""}" aria-selected="${k === key}" data-act="perm-tab" data-key="${escape_html(k)}" data-keep>${escape_html(this.type_label(k))}<span class="whatsapp-kit-command-editor__seg-n" dir="ltr">${whatsapp.ui.format_int(
 						x.groups.length + x.contacts.length
 					)}</span></button>`;
 				})
@@ -534,17 +534,17 @@ frappe.provide("whatsapp.ui");
 				{ key: "Allow All", label: __("Everyone allowed — set the blacklist") },
 				{ key: "Deny All", label: __("Everyone denied — set the whitelist") },
 			]
-				.map((m) => `<button type="button" class="whatsapp-kit-command-editor__pill${a.mode === m.key ? " is-on" : ""}" aria-pressed="${a.mode === m.key}" data-act="perm-mode" data-key="${esc(m.key)}">${esc(m.label)}</button>`)
+				.map((m) => `<button type="button" class="whatsapp-kit-command-editor__pill${a.mode === m.key ? " is-on" : ""}" aria-pressed="${a.mode === m.key}" data-act="perm-mode" data-key="${escape_html(m.key)}">${escape_html(m.label)}</button>`)
 				.join("");
 			return `<div class="whatsapp-kit-command-editor__pane" data-scroll="perms">
 				${this.render_gate()}
 				<span class="whatsapp-kit-command-editor__segs" role="tablist">${tabs}</span>
 				<div class="whatsapp-kit-command-editor__perm">
 					<span class="whatsapp-kit-command-editor__card-row whatsapp-kit-command-editor__card-row--wrap">
-						<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__perm-title">${esc(`${this.type_label(key)} — ${deny ? __("Whitelist") : __("Blacklist")}`)}</span><span class="whatsapp-kit-command-editor__note">${esc(
+						<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__perm-title">${escape_html(`${this.type_label(key)} — ${deny ? __("Whitelist") : __("Blacklist")}`)}</span><span class="whatsapp-kit-command-editor__note">${escape_html(
 							deny ? __("Everyone is denied; only those on the whitelist below are allowed.") : __("Everyone is allowed; only those on the blacklist below are denied.")
 						)}</span></span>
-						<label class="whatsapp-kit-command-editor__inline-check">${esc(__("Requires linking"))}<input type="checkbox" class="whatsapp-kit-command-editor__check" data-ch="link" ${this.draft.requires_linked_contact ? "checked" : ""} /></label>
+						<label class="whatsapp-kit-command-editor__inline-check">${escape_html(__("Requires linking"))}<input type="checkbox" class="whatsapp-kit-command-editor__check" data-ch="link" ${this.draft.requires_linked_contact ? "checked" : ""} /></label>
 					</span>
 					<span class="whatsapp-kit-command-editor__chips">${modes}</span>
 					<div class="whatsapp-kit-command-editor__pickers">
@@ -560,21 +560,21 @@ frappe.provide("whatsapp.ui");
 			const p = this.ui.pick[k] || { q: "", open: false, results: [] };
 			const taken = new Set(items.map((x) => x.name));
 			const results = (p.results || []).filter((r) => !taken.has(r.name));
-			return `<div class="whatsapp-kit-command-editor__picker" data-pop="${esc(k)}">
-				<span class="whatsapp-kit-command-editor__label">${esc(label)}</span>
+			return `<div class="whatsapp-kit-command-editor__picker" data-pop="${escape_html(k)}">
+				<span class="whatsapp-kit-command-editor__label">${escape_html(label)}</span>
 				<span class="whatsapp-kit-command-editor__combo">
-					<input type="text" class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__input--surface" data-f="pick-${esc(k)}" data-in="pick" data-key="${esc(k)}" data-focus-open="${esc(k)}" value="${esc(p.q)}" placeholder="${esc(placeholder)}" autocomplete="off" aria-label="${esc(label)}" />
+					<input type="text" class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__input--surface" data-f="pick-${escape_html(k)}" data-in="pick" data-key="${escape_html(k)}" data-focus-open="${escape_html(k)}" value="${escape_html(p.q)}" placeholder="${escape_html(placeholder)}" autocomplete="off" aria-label="${escape_html(label)}" />
 					${
 						p.open
 							? `<span class="whatsapp-kit-command-editor__pop whatsapp-kit-command-editor__pop--sm" role="listbox">
 								${results
 									.map(
-										(r) => `<button type="button" role="option" class="whatsapp-kit-command-editor__opt" data-act="pick-add" data-key="${esc(k)}" data-name="${esc(r.name)}">${esc(r.label || r.name)}${
-											r.phone ? `<span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${esc(whatsapp.ui.phone(r.phone))}</span>` : ""
+										(r) => `<button type="button" role="option" class="whatsapp-kit-command-editor__opt" data-act="pick-add" data-key="${escape_html(k)}" data-name="${escape_html(r.name)}">${escape_html(r.label || r.name)}${
+											r.phone ? `<span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${escape_html(whatsapp.ui.phone(r.phone))}</span>` : ""
 										}</button>`
 									)
 									.join("")}
-								${p.loading ? `<span class="whatsapp-kit-command-editor__none">${esc(__("Loading…"))}</span>` : results.length ? "" : `<span class="whatsapp-kit-command-editor__none">${esc(p.error || none)}</span>`}
+								${p.loading ? `<span class="whatsapp-kit-command-editor__none">${escape_html(__("Loading…"))}</span>` : results.length ? "" : `<span class="whatsapp-kit-command-editor__none">${escape_html(p.error || none)}</span>`}
 							</span>`
 							: ""
 					}
@@ -582,83 +582,83 @@ frappe.provide("whatsapp.ui");
 				<span class="whatsapp-kit-command-editor__chips">
 					${items
 						.map(
-							(x) => `<span class="whatsapp-kit-command-editor__chip whatsapp-kit-command-editor__chip--${tone}">${esc(x.label || x.name)}<button type="button" class="whatsapp-kit-command-editor__chip-x" data-act="pick-rm" data-key="${esc(k)}" data-name="${esc(x.name)}" aria-label="${esc(
+							(x) => `<span class="whatsapp-kit-command-editor__chip whatsapp-kit-command-editor__chip--${tone}">${escape_html(x.label || x.name)}<button type="button" class="whatsapp-kit-command-editor__chip-x" data-act="pick-rm" data-key="${escape_html(k)}" data-name="${escape_html(x.name)}" aria-label="${escape_html(
 								__("Remove {0}", [x.label || x.name])
 							)}">×</button></span>`
 						)
 						.join("")}
-					${items.length ? "" : `<span class="whatsapp-kit-command-editor__note">${esc(empty)}</span>`}
+					${items.length ? "" : `<span class="whatsapp-kit-command-editor__note">${escape_html(empty)}</span>`}
 				</span>
 			</div>`;
 		}
 
 		// ---- preview ------------------------------------------------------------------------------
 
-		pv_type() {
+		preview_party_type() {
 			const pv = this.ui.pv;
 			return pv.party_type || this.draft.allowed_party_types[0] || (this.party_types()[0] || {}).key || null;
 		}
 
-		pv_links() {
+		preview_contact_links() {
 			const c = this.ui.pv.contact;
 			if (!c) return [];
-			return (c.links || []).filter((l) => l.link_doctype === this.pv_type());
+			return (c.links || []).filter((l) => l.link_doctype === this.preview_party_type());
 		}
 
-		pv_inputs() {
+		preview_enabled_inputs() {
 			const off = this.draft.disabled_inputs;
 			return ((this.spec && this.spec.inputs) || []).filter((v) => !off.includes(v.key));
 		}
 
 		render_preview() {
 			const pv = this.ui.pv;
-			const type = this.pv_type();
+			const type = this.preview_party_type();
 			const blocked = type && !this.allowed(type);
 			const c = pv.contact;
-			const links = this.pv_links();
+			const links = this.preview_contact_links();
 			const unlinked = !c || !links.length;
 			const account = links.find((l) => l.link_name === pv.account) || links[0] || null;
-			const inputs = this.pv_inputs();
+			const inputs = this.preview_enabled_inputs();
 			const types = this.party_types()
 				.map(
-					(p) => `<button type="button" class="whatsapp-kit-command-editor__pill${p.key === type ? " is-on" : ""}" aria-pressed="${p.key === type}" data-act="pv-type" data-key="${esc(p.key)}" data-keep>${esc(p.label)}${
-						this.allowed(p.key) ? "" : ` ${esc(__("(not allowed)"))}`
+					(p) => `<button type="button" class="whatsapp-kit-command-editor__pill${p.key === type ? " is-on" : ""}" aria-pressed="${p.key === type}" data-act="pv-type" data-key="${escape_html(p.key)}" data-keep>${escape_html(p.label)}${
+						this.allowed(p.key) ? "" : ` ${escape_html(__("(not allowed)"))}`
 					}</button>`
 				)
 				.join("");
 			const search_value = pv.q == null ? (c ? c.label || c.phone || "" : "") : pv.q;
 			const assumptions = `
 				<div class="whatsapp-kit-command-editor__field whatsapp-kit-command-editor__field--tight">
-					<span class="whatsapp-kit-command-editor__label">${esc(__("Sender party type"))}</span>
+					<span class="whatsapp-kit-command-editor__label">${escape_html(__("Sender party type"))}</span>
 					<span class="whatsapp-kit-command-editor__chips">${types}</span>
-					${blocked ? `<span class="whatsapp-kit-command-editor__note whatsapp-kit-command-editor__note--warn">${esc(__("This type is not allowed to use the command — the preview shows the refusal."))}</span>` : ""}
+					${blocked ? `<span class="whatsapp-kit-command-editor__note whatsapp-kit-command-editor__note--warn">${escape_html(__("This type is not allowed to use the command — the preview shows the refusal."))}</span>` : ""}
 				</div>
 				<div class="whatsapp-kit-command-editor__field">
-					<label class="whatsapp-kit-command-editor__label" for="${this.id}-pv">${esc(__("Sender", null, "Command Editor"))}</label>
+					<label class="whatsapp-kit-command-editor__label" for="${this.id}-pv">${escape_html(__("Sender", null, "Command Editor"))}</label>
 					<span class="whatsapp-kit-command-editor__combo" data-pop="pv">
-						<input id="${this.id}-pv" type="text" class="whatsapp-kit-command-editor__input" data-f="pv-q" data-in="pv-q" data-focus-open="pv" data-keep value="${esc(search_value)}" placeholder="${esc(__("Search by name or number…"))}" autocomplete="off" />
+						<input id="${this.id}-pv" type="text" class="whatsapp-kit-command-editor__input" data-f="pv-q" data-in="pv-q" data-focus-open="pv" data-keep value="${escape_html(search_value)}" placeholder="${escape_html(__("Search by name or number…"))}" autocomplete="off" />
 						${
 							pv.open
 								? `<span class="whatsapp-kit-command-editor__pop" role="listbox">
 									${(pv.results || [])
 										.map(
-											(r) => `<button type="button" role="option" class="whatsapp-kit-command-editor__opt${c && r.name === c.name ? " is-sel" : ""}" data-act="pv-pick" data-name="${esc(r.name)}" data-keep>${esc(r.label || __("Unnamed"))}<span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${esc(whatsapp.ui.phone(r.phone || ""))}</span></button>`
+											(r) => `<button type="button" role="option" class="whatsapp-kit-command-editor__opt${c && r.name === c.name ? " is-sel" : ""}" data-act="pv-pick" data-name="${escape_html(r.name)}" data-keep>${escape_html(r.label || __("Unnamed"))}<span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${escape_html(whatsapp.ui.phone(r.phone || ""))}</span></button>`
 										)
 										.join("")}
-									${pv.loading ? `<span class="whatsapp-kit-command-editor__none">${esc(__("Loading…"))}</span>` : (pv.results || []).length ? "" : `<span class="whatsapp-kit-command-editor__none">${esc(pv.error || __("No matching contacts."))}</span>`}
+									${pv.loading ? `<span class="whatsapp-kit-command-editor__none">${escape_html(__("Loading…"))}</span>` : (pv.results || []).length ? "" : `<span class="whatsapp-kit-command-editor__none">${escape_html(pv.error || __("No matching contacts."))}</span>`}
 								</span>`
 								: ""
 						}
 					</span>
-					${!c ? `<span class="whatsapp-kit-command-editor__note">${esc(__("No sender picked — the preview assumes a number that is not linked."))}</span>` : ""}
-					${unlinked && this.draft.requires_linked_contact ? `<span class="whatsapp-kit-command-editor__note whatsapp-kit-command-editor__note--warn">${esc(__("This contact is not linked to an account and the command requires it — the preview shows the refusal."))}</span>` : ""}
+					${!c ? `<span class="whatsapp-kit-command-editor__note">${escape_html(__("No sender picked — the preview assumes a number that is not linked."))}</span>` : ""}
+					${unlinked && this.draft.requires_linked_contact ? `<span class="whatsapp-kit-command-editor__note whatsapp-kit-command-editor__note--warn">${escape_html(__("This contact is not linked to an account and the command requires it — the preview shows the refusal."))}</span>` : ""}
 				</div>
 				${
 					links.length
 						? `<div class="whatsapp-kit-command-editor__box">
-							<span class="whatsapp-kit-command-editor__note">${esc(__("Accounts linked to the contact"))}</span>
+							<span class="whatsapp-kit-command-editor__note">${escape_html(__("Accounts linked to the contact"))}</span>
 							<span class="whatsapp-kit-command-editor__chips">${links
-								.map((l) => `<button type="button" class="whatsapp-kit-command-editor__pill${account && l.link_name === account.link_name ? " is-on" : ""}" data-act="pv-acc" data-key="${esc(l.link_name)}" data-keep>${esc(l.link_title || l.link_name)}</button>`)
+								.map((l) => `<button type="button" class="whatsapp-kit-command-editor__pill${account && l.link_name === account.link_name ? " is-on" : ""}" data-act="pv-acc" data-key="${escape_html(l.link_name)}" data-keep>${escape_html(l.link_title || l.link_name)}</button>`)
 								.join("")}</span>
 						</div>`
 						: ""
@@ -666,15 +666,15 @@ frappe.provide("whatsapp.ui");
 				${
 					inputs.length
 						? `<div class="whatsapp-kit-command-editor__field whatsapp-kit-command-editor__field--tight">
-							<span class="whatsapp-kit-command-editor__card-row"><span class="whatsapp-kit-command-editor__label">${esc(__("Variables passed in the command text"))}</span><button type="button" class="whatsapp-kit-command-editor__link" data-act="pv-fill" data-keep>${esc(__("Fill with examples"))}</button></span>
+							<span class="whatsapp-kit-command-editor__card-row"><span class="whatsapp-kit-command-editor__label">${escape_html(__("Variables passed in the command text"))}</span><button type="button" class="whatsapp-kit-command-editor__link" data-act="pv-fill" data-keep>${escape_html(__("Fill with examples"))}</button></span>
 							<div class="whatsapp-kit-command-editor__stack">${inputs
 								.map((v) => {
 									const val = pv.values[v.key] || "";
 									const missing = v.required && !String(val).trim();
 									return `<span class="whatsapp-kit-command-editor__card${missing ? " is-missing" : ""}">
-										<span class="whatsapp-kit-command-editor__card-row"><span class="whatsapp-kit-command-editor__mono" dir="ltr">#${esc(v.key)}</span>${v.required ? `<span class="whatsapp-kit-command-editor__tag whatsapp-kit-command-editor__tag--warn">${esc(__("Required"))}</span>` : ""}</span>
-										<input type="text" dir="ltr" class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__input--surface whatsapp-kit-command-editor__mono" data-f="pv-${esc(v.key)}" data-in="pv-val" data-key="${esc(v.key)}" data-keep value="${esc(val)}" placeholder="${esc(v.example || v.key)}" aria-label="${esc(v.label || v.key)}" />
-										<span class="whatsapp-kit-command-editor__note">${esc(v.label || "")}</span>
+										<span class="whatsapp-kit-command-editor__card-row"><span class="whatsapp-kit-command-editor__mono" dir="ltr">#${escape_html(v.key)}</span>${v.required ? `<span class="whatsapp-kit-command-editor__tag whatsapp-kit-command-editor__tag--warn">${escape_html(__("Required"))}</span>` : ""}</span>
+										<input type="text" dir="ltr" class="whatsapp-kit-command-editor__input whatsapp-kit-command-editor__input--surface whatsapp-kit-command-editor__mono" data-f="pv-${escape_html(v.key)}" data-in="pv-val" data-key="${escape_html(v.key)}" data-keep value="${escape_html(val)}" placeholder="${escape_html(v.example || v.key)}" aria-label="${escape_html(v.label || v.key)}" />
+										<span class="whatsapp-kit-command-editor__note">${escape_html(v.label || "")}</span>
 									</span>`;
 								})
 								.join("")}</div>
@@ -682,7 +682,7 @@ frappe.provide("whatsapp.ui");
 						: ""
 				}`;
 			const options = `
-				<span class="whatsapp-kit-command-editor__note">${esc(__("Changes here edit the command's own settings — save for them to apply to inbound messages."))}</span>
+				<span class="whatsapp-kit-command-editor__note">${escape_html(__("Changes here edit the command's own settings — save for them to apply to inbound messages."))}</span>
 				${((this.spec && this.spec.settings) || []).map((s) => this.render_setting(s, "row")).join("")}
 				${this.render_outputs(true)}`;
 			const r = this.ui.result;
@@ -690,33 +690,33 @@ frappe.provide("whatsapp.ui");
 			const result = `
 				<div class="whatsapp-kit-command-editor__phone">
 					<div class="whatsapp-kit-command-editor__phone-head">
-						<span class="whatsapp-kit-command-editor__avatar" aria-hidden="true">${esc(String((c && c.label) || "?").trim().slice(0, 2))}</span>
-						<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__card-name">${esc(c ? c.label || __("Unnamed") : __("Unknown number"))}</span><span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${esc(whatsapp.ui.phone((c && c.phone) || ""))}</span></span>
-						<span class="whatsapp-kit-command-editor__tag ${unlinked ? "whatsapp-kit-command-editor__tag--warn" : "whatsapp-kit-command-editor__tag--ok"}">${esc(unlinked ? __("Not linked") : __("Linked to an account", null, "Command Editor"))}</span>
+						<span class="whatsapp-kit-command-editor__avatar" aria-hidden="true">${escape_html(String((c && c.label) || "?").trim().slice(0, 2))}</span>
+						<span class="whatsapp-kit-command-editor__switch-text"><span class="whatsapp-kit-command-editor__card-name">${escape_html(c ? c.label || __("Unnamed") : __("Unknown number"))}</span><span class="whatsapp-kit-command-editor__opt-sub whatsapp-kit-command-editor__mono" dir="ltr">${escape_html(whatsapp.ui.phone((c && c.phone) || ""))}</span></span>
+						<span class="whatsapp-kit-command-editor__tag ${unlinked ? "whatsapp-kit-command-editor__tag--warn" : "whatsapp-kit-command-editor__tag--ok"}">${escape_html(unlinked ? __("Not linked") : __("Linked to an account", null, "Command Editor"))}</span>
 					</div>
-					<span class="whatsapp-kit-command-editor__phone-note">${esc(__("The reply is built from the output texts and the function's options, run for real without sending."))}</span>
+					<span class="whatsapp-kit-command-editor__phone-note">${escape_html(__("The reply is built from the output texts and the function's options, run for real without sending."))}</span>
 					<div class="whatsapp-kit-command-editor__thread" data-slot="thread" aria-live="polite"></div>
 				</div>
 				${
 					r && r.status === "Blocked" && !r.reply_sent
-						? `<div class="whatsapp-kit-command-editor__callout whatsapp-kit-command-editor__callout--muted"><span>${esc(__("No reply is sent for a refusal: the receipt reply is off in Settings."))}</span></div>`
+						? `<div class="whatsapp-kit-command-editor__callout whatsapp-kit-command-editor__callout--muted"><span>${escape_html(__("No reply is sent for a refusal: the receipt reply is off in Settings."))}</span></div>`
 						: ""
 				}
 				${
 					missing
-						? `<div class="whatsapp-kit-command-editor__callout whatsapp-kit-command-editor__callout--warn"><strong>${esc(__("Not enough data to run the function"))}</strong><span>${esc(
+						? `<div class="whatsapp-kit-command-editor__callout whatsapp-kit-command-editor__callout--warn"><strong>${escape_html(__("Not enough data to run the function"))}</strong><span>${escape_html(
 								__("The message text must contain: {0}", [r.missing.map((m) => `#${m.key}${m.label ? ` (${m.label})` : ""}`).join(__(", "))])
 						  )}</span></div>`
 						: ""
 				}
-				${this.ui.error ? `<div class="whatsapp-kit-command-editor__callout whatsapp-kit-command-editor__callout--danger" role="alert"><span>${esc(this.ui.error)}</span></div>` : ""}`;
+				${this.ui.error ? `<div class="whatsapp-kit-command-editor__callout whatsapp-kit-command-editor__callout--danger" role="alert"><span>${escape_html(this.ui.error)}</span></div>` : ""}`;
 			return `<div class="whatsapp-kit-command-editor__grid whatsapp-kit-command-editor__grid--preview">
-				${this.col(__("Preview assumptions"), assumptions, { key: "pv-a" })}
-				${this.col(__("Function options and outputs"), options, { key: "pv-o", tone: "bg", link: { act: "reset-all", label: __("Restore defaults", null, "Command Editor") } })}
-				<section class="whatsapp-kit-command-editor__col whatsapp-kit-command-editor__col--bg whatsapp-kit-command-editor__col--last" data-scroll="pv-r" aria-label="${esc(__("Result as the customer receives it"))}">
+				${this.column_section_html(__("Preview assumptions"), assumptions, { key: "pv-a" })}
+				${this.column_section_html(__("Function options and outputs"), options, { key: "pv-o", tone: "bg", link: { act: "reset-all", label: __("Restore defaults", null, "Command Editor") } })}
+				<section class="whatsapp-kit-command-editor__col whatsapp-kit-command-editor__col--bg whatsapp-kit-command-editor__col--last" data-scroll="pv-r" aria-label="${escape_html(__("Result as the customer receives it"))}">
 					<header class="whatsapp-kit-command-editor__col-head">
-						<span class="whatsapp-kit-command-editor__col-title">${esc(__("Result as the customer receives it"))}</span>
-						<span class="whatsapp-kit-command-editor__sim"><span class="whatsapp-kit-command-editor__dot whatsapp-kit-command-editor__dot--wn"></span>${esc(__("Simulation — nothing sent"))}</span>
+						<span class="whatsapp-kit-command-editor__col-title">${escape_html(__("Result as the customer receives it"))}</span>
+						<span class="whatsapp-kit-command-editor__sim"><span class="whatsapp-kit-command-editor__dot whatsapp-kit-command-editor__dot--wn"></span>${escape_html(__("Simulation — nothing sent"))}</span>
 					</header>
 					<div class="whatsapp-kit-command-editor__col-body whatsapp-kit-command-editor__col-body--result">${result}</div>
 				</section>
@@ -731,7 +731,7 @@ frappe.provide("whatsapp.ui");
 			const text = (r && r.text) || this.draft.code;
 			const rows = [{ direction: "Inbound", name: "pv-in", ts: now, message_type: "Text", body: text }];
 			if (this.ui.running && !r) {
-				$slot.html(`<span class="whatsapp-kit-command-editor__none">${esc(__("Running the preview…"))}</span>`);
+				$slot.html(`<span class="whatsapp-kit-command-editor__none">${escape_html(__("Running the preview…"))}</span>`);
 				return;
 			}
 			((r && r.replies) || []).forEach((rep, i) => {
@@ -750,7 +750,7 @@ frappe.provide("whatsapp.ui");
 				this.thread = new whatsapp.ui.ChatThread({ wrapper: $slot, rows, empty_text: __("No reply") });
 				this.$root.find("[data-slot=thread]").toggleClass("is-running", !!this.ui.running);
 			} else {
-				$slot.html(rows.map((x) => `<p class="whatsapp-kit-command-editor__bubble whatsapp-kit-command-editor__bubble--${x.direction === "Inbound" ? "in" : "out"}">${esc(x.body)}</p>`).join(""));
+				$slot.html(rows.map((x) => `<p class="whatsapp-kit-command-editor__bubble whatsapp-kit-command-editor__bubble--${x.direction === "Inbound" ? "in" : "out"}">${escape_html(x.body)}</p>`).join(""));
 			}
 		}
 
@@ -764,7 +764,7 @@ frappe.provide("whatsapp.ui");
 			if (!this.draft.function) return;
 			const pv = this.ui.pv;
 			const c = pv.contact;
-			const links = this.pv_links();
+			const links = this.preview_contact_links();
 			const account = links.find((l) => l.link_name === pv.account) || links[0] || null;
 			const token = (this._pv_token = (this._pv_token || 0) + 1);
 			this.ui.running = true;
@@ -791,9 +791,9 @@ frappe.provide("whatsapp.ui");
 			}
 		}
 
-		async load_pv_contacts(q) {
+		async search_preview_contacts(q) {
 			const pv = this.ui.pv;
-			const type = this.pv_type();
+			const type = this.preview_party_type();
 			pv.loading = true;
 			pv.error = null;
 			try {
@@ -810,10 +810,10 @@ frappe.provide("whatsapp.ui");
 
 		async enter_preview() {
 			const pv = this.ui.pv;
-			const type = this.pv_type();
+			const type = this.preview_party_type();
 			if (pv.loaded_for !== type) {
 				pv.loaded_for = type;
-				const rows = await this.load_pv_contacts("");
+				const rows = await this.search_preview_contacts("");
 				if (!pv.contact && rows && rows.length) pv.contact = rows[0];
 				this.render();
 			}
@@ -834,10 +834,10 @@ frappe.provide("whatsapp.ui");
 		render_footer() {
 			const can_delete = !this.read_only && this.draft.name && this.opts.remove;
 			return `<div class="whatsapp-kit-command-editor__foot">
-				${this.read_only ? "" : `<button type="button" class="whatsapp-kit-command-editor__btn whatsapp-kit-command-editor__btn--pri" data-act="save">${esc(__("Save command"))}</button>`}
-				<button type="button" class="whatsapp-kit-command-editor__btn" data-act="close" data-keep>${esc(this.read_only ? __("Close") : __("Cancel"))}</button>
-				<span class="whatsapp-kit-command-editor__foot-hint" data-slot="hint">${esc(this.foot_hint())}</span>
-				${can_delete ? `<button type="button" class="whatsapp-kit-command-editor__btn whatsapp-kit-command-editor__btn--danger" data-act="delete">${esc(__("Delete command"))}</button>` : ""}
+				${this.read_only ? "" : `<button type="button" class="whatsapp-kit-command-editor__btn whatsapp-kit-command-editor__btn--pri" data-act="save">${escape_html(__("Save command"))}</button>`}
+				<button type="button" class="whatsapp-kit-command-editor__btn" data-act="close" data-keep>${escape_html(this.read_only ? __("Close") : __("Cancel"))}</button>
+				<span class="whatsapp-kit-command-editor__foot-hint" data-slot="hint">${escape_html(this.foot_hint())}</span>
+				${can_delete ? `<button type="button" class="whatsapp-kit-command-editor__btn whatsapp-kit-command-editor__btn--danger" data-act="delete">${escape_html(__("Delete command"))}</button>` : ""}
 			</div>`;
 		}
 
@@ -845,7 +845,7 @@ frappe.provide("whatsapp.ui");
 		touch() {
 			const dirty = this.is_dirty();
 			const $dirty = this.$root.find("[data-slot=dirty]");
-			if (dirty && !$dirty.hasClass("whatsapp-kit-command-editor__dirty")) $dirty.replaceWith(`<span class="whatsapp-kit-command-editor__dirty" data-slot="dirty"><span class="whatsapp-kit-command-editor__dot"></span>${esc(__("Not saved yet"))}</span>`);
+			if (dirty && !$dirty.hasClass("whatsapp-kit-command-editor__dirty")) $dirty.replaceWith(`<span class="whatsapp-kit-command-editor__dirty" data-slot="dirty"><span class="whatsapp-kit-command-editor__dot"></span>${escape_html(__("Not saved yet"))}</span>`);
 			if (!dirty && $dirty.hasClass("whatsapp-kit-command-editor__dirty")) $dirty.replaceWith(`<span data-slot="dirty"></span>`);
 			this.$root.find("[data-slot=hint]").text(this.foot_hint());
 			this.schedule_preview();
@@ -973,7 +973,7 @@ frappe.provide("whatsapp.ui");
 				this.ui.pv.q = v;
 				this.ui.pv.open = true;
 				clearTimeout(this._pvq);
-				this._pvq = setTimeout(() => this.load_pv_contacts(v).then(() => this.ui.pv.open && this.render()), 200);
+				this._pvq = setTimeout(() => this.search_preview_contacts(v).then(() => this.ui.pv.open && this.render()), 200);
 				return this.render();
 			} else if (kind === "pv-val") {
 				this.ui.pv.values[key] = v;
@@ -1016,17 +1016,17 @@ frappe.provide("whatsapp.ui");
 		/** Ask the sender for this variable over WhatsApp when the command arrives without it. */
 		render_ask(v) {
 			if (v.required)
-				return `<span class="whatsapp-kit-command-editor__note">${esc(__("Asked for over WhatsApp when the command arrives without it."))}</span>`;
+				return `<span class="whatsapp-kit-command-editor__note">${escape_html(__("Asked for over WhatsApp when the command arrives without it."))}</span>`;
 			const map = this.ask_map();
 			const asked = Object.prototype.hasOwnProperty.call(map, v.key);
 			const hint = v.type === "date" ? __("Empty: a list of dates (today, start of the month …)") : __("e.g. 1, 3=Three months, 6");
 			return `<label class="whatsapp-kit-command-editor__ask">
-					<input type="checkbox" class="whatsapp-kit-command-editor__check" data-ch="ask" data-key="${esc(v.key)}" ${asked ? "checked" : ""}${this.read_only ? " disabled" : ""} />
-					<span>${esc(__("Ask the sender when it is missing"))}</span>
+					<input type="checkbox" class="whatsapp-kit-command-editor__check" data-ch="ask" data-key="${escape_html(v.key)}" ${asked ? "checked" : ""}${this.read_only ? " disabled" : ""} />
+					<span>${escape_html(__("Ask the sender when it is missing"))}</span>
 				</label>
 				${
 					asked
-						? `<input type="text" class="form-control whatsapp-kit-command-editor__ask-choices" data-ch="ask-choices" data-key="${esc(v.key)}" value="${esc(map[v.key] || "")}" placeholder="${esc(hint)}" aria-label="${esc(__("Ready answers for {0}", [v.label ? __(v.label) : v.key]))}"${this.read_only ? " disabled" : ""} />`
+						? `<input type="text" class="form-control whatsapp-kit-command-editor__ask-choices" data-ch="ask-choices" data-key="${escape_html(v.key)}" value="${escape_html(map[v.key] || "")}" placeholder="${escape_html(hint)}" aria-label="${escape_html(__("Ready answers for {0}", [v.label ? __(v.label) : v.key]))}"${this.read_only ? " disabled" : ""} />`
 						: ""
 				}`;
 		}
@@ -1166,9 +1166,9 @@ frappe.provide("whatsapp.ui");
 					this.render();
 					return this.run_preview();
 				case "save":
-					return this.save();
+					return this.save_command();
 				case "delete":
-					return this.remove();
+					return this.delete_command();
 				default:
 					return;
 			}
@@ -1183,7 +1183,7 @@ frappe.provide("whatsapp.ui");
 		}
 
 		fill_examples() {
-			const inputs = this.pv_inputs();
+			const inputs = this.preview_enabled_inputs();
 			const example = String((this.spec && this.spec.example) || "").trim();
 			const words = example ? example.split(/\s+/).slice(1) : [];
 			const all = (this.spec && this.spec.inputs) || [];
@@ -1221,7 +1221,7 @@ frappe.provide("whatsapp.ui");
 			this.touch();
 		}
 
-		async save() {
+		async save_command() {
 			const d = this.draft;
 			const problem = !String(d.code || "").trim()
 				? __("Enter the command word.")
@@ -1252,13 +1252,13 @@ frappe.provide("whatsapp.ui");
 			}
 		}
 
-		async remove() {
+		async delete_command() {
 			const d = this.draft;
 			try {
-				await whatsapp.ui.ConfirmDialog.ask({
+				await whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 					title: __("Delete command {0}?", [d.code || d.name]),
 					message: __("The command is removed. A command with run history cannot be deleted; stop it instead."),
-					impact: [{ label: __("Function"), value: (this.fn_row() || {}).function_name || d.function || "—" }],
+					impact: [{ label: __("Function"), value: (this.selected_function_row() || {}).function_name || d.function || "—" }],
 					confirm_label: __("Delete command"),
 					danger: true,
 					on_confirm: () => this.opts.remove(d.name),

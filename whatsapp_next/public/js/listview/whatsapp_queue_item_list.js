@@ -21,9 +21,9 @@
 
 	const is_manager = () => frappe.user.has_role(MANAGER_ROLES);
 	const count_of = (docs, statuses) => docs.filter((d) => statuses.includes(d.status)).length;
-	const fmt_dt = whatsapp_next.fmt.dt;
+	const format_datetime = whatsapp_next.fmt.dt;
 
-	const run = (method, args, message, after) =>
+	const run_queue_action = (method, args, message, after) =>
 		ui.call(method, args)
 			.then((r) => {
 				// the row moved on between the drawer opening and the click (sent, paused elsewhere…)
@@ -40,9 +40,9 @@
 	 * the message's own "Cancel" there; the queue does not add a second one that marks the row
 	 * Deleted (owner, 2026-09-30). Bulk cancel stays on the list. */
 	const queue_actions = (doc, refresh) => [
-		{ label: __("Pause"), icon: "es-line-time", condition: () => is_manager() && doc.status === "Queued", handler: () => run("queue.pause_items", { names: [doc.name] }, __("Message paused"), refresh) },
-		{ label: __("Resume"), icon: "es-line-zap", condition: () => is_manager() && doc.status === "Paused", handler: () => run("queue.resume_items", { names: [doc.name] }, __("Message resumed"), refresh) },
-		{ label: __("Retry"), icon: ui.icons.resend, condition: () => is_manager() && doc.status === "Dead Letter", handler: () => run("queue.retry_dead_letter", { names: [doc.name] }, __("Message re-queued"), refresh) },
+		{ label: __("Pause"), icon: "es-line-time", condition: () => is_manager() && doc.status === "Queued", handler: () => run_queue_action("queue.pause_items", { names: [doc.name] }, __("Message paused"), refresh) },
+		{ label: __("Resume"), icon: "es-line-zap", condition: () => is_manager() && doc.status === "Paused", handler: () => run_queue_action("queue.resume_items", { names: [doc.name] }, __("Message resumed"), refresh) },
+		{ label: __("Retry"), icon: ui.icons.resend, condition: () => is_manager() && doc.status === "Dead Letter", handler: () => run_queue_action("queue.retry_dead_letter", { names: [doc.name] }, __("Message re-queued"), refresh) },
 	];
 
 	const open_drawer = (doc, refresh, listview) => {
@@ -57,7 +57,7 @@
 
 	const state = { summary: null, promise: null, listview: null, at: 0 };
 	const SUMMARY_TTL = 2000; // the banner, the KPI cards and the rate block all ask on mount
-	const summary = (fresh = false) => {
+	const fetch_queue_summary = (fresh = false) => {
 		if (fresh || (state.promise && Date.now() - state.at > SUMMARY_TTL)) state.promise = null;
 		if (!state.promise) {
 			state.at = Date.now();
@@ -100,8 +100,8 @@
 	// ---- pause / resume (ConfirmDialog impact from the summary) ---------------------------------
 
 	const ask_pause = (after) =>
-		summary(true).then((s) =>
-			ui.ConfirmDialog.ask({
+		fetch_queue_summary(true).then((s) =>
+			ui.ConfirmDialog.ask_for_confirmation({
 				title: __("Pause sending?"),
 				message: __("Pausing deletes nothing. Messages keep their order and resume from the same point."),
 				impact: [
@@ -121,7 +121,7 @@
 		);
 
 	const ask_resume = (after) =>
-		summary(true).then((s) => {
+		fetch_queue_summary(true).then((s) => {
 			const remaining = s.platform_queue && s.platform_queue.messages_remaining;
 			const impact = [
 				{ label: __("Messages sent immediately"), value: ui.format_int(queued_of(s)) },
@@ -129,7 +129,7 @@
 				{ label: __("Charged from the plan"), value: ui.format_int(queued_of(s)), tone: "amber" },
 			];
 			if (remaining != null) impact.push({ label: __("Balance after sending"), value: ui.format_int(Math.max(0, cint(remaining) - queued_of(s))) });
-			return ui.ConfirmDialog.ask({
+			return ui.ConfirmDialog.ask_for_confirmation({
 				title: __("Resume sending?"),
 				message: __("Resuming starts from the oldest pending message. You can pause again at any time."),
 				impact,
@@ -217,12 +217,12 @@
 			listview,
 			// no title and no description: the console's first cell states what the queue is doing,
 			// which is the only thing a title could have said (owner, 2026-09-23)
-			banner: () => summary().then((s) => (s && s.paused ? { tone: "amber", text: paused_title(s) } : null)),
+			banner: () => fetch_queue_summary().then((s) => (s && s.paused ? { tone: "amber", text: paused_title(s) } : null)),
 			blocks: [
 				{
 					key: "queue-console",
 					events: ["wa:queue:progress"],
-					render: ($el) => Promise.all([summary(), throughput()]).then(([s, t]) => paint($el, s, t)),
+					render: ($el) => Promise.all([fetch_queue_summary(), throughput()]).then(([s, t]) => paint($el, s, t)),
 				},
 			],
 		});
@@ -443,7 +443,7 @@
 		const con = {
 			header,
 			refresh(fresh = false) {
-				return Promise.all([summary(fresh), throughput(fresh)]).then(() => header.refresh(true));
+				return Promise.all([fetch_queue_summary(fresh), throughput(fresh)]).then(() => header.refresh(true));
 			},
 		};
 
@@ -522,7 +522,7 @@
 					width: 130,
 					sortable: true,
 					// a paused queue has no expected time: say so instead of showing a stale one
-					format: (v, doc) => (doc.status === "Paused" || (state.summary && state.summary.paused) ? ui.escape(__("Paused")) : ui.escape(fmt_dt(v))),
+					format: (v, doc) => (doc.status === "Paused" || (state.summary && state.summary.paused) ? ui.escape(__("Paused")) : ui.escape(format_datetime(v))),
 				},
 			],
 			mobile_columns: ["display_name", "status"],

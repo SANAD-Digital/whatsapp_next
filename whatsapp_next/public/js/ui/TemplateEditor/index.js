@@ -35,8 +35,8 @@ whatsapp.ui.TemplateEditor = class TemplateEditor {
 		this.id = ui.uid("tpl");
 		this.reference_name = null;
 		this.variables = [];
-		this.schedule_preview = ui.debounce(() => this.preview(), this.opts.debounce);
-		this.make();
+		this.schedule_preview = ui.debounce(() => this.render_template_preview(), this.opts.debounce);
+		this.build_editor_layout();
 		whatsapp.ui.TemplateEditor.bind_form_events(this.frm.doctype, this.opts);
 		this.refresh();
 	}
@@ -73,7 +73,7 @@ whatsapp.ui.TemplateEditor = class TemplateEditor {
 		return fieldname && this.frm.fields_dict ? this.frm.fields_dict[fieldname] : null;
 	}
 
-	make() {
+	build_editor_layout() {
 		const preview_id = `${this.id}-preview`;
 		const vars_id = `${this.id}-vars`;
 		this.$root = $(`
@@ -272,7 +272,7 @@ whatsapp.ui.TemplateEditor = class TemplateEditor {
 
 	// ---- preview --------------------------------------------------------------------------
 
-	preview() {
+	render_template_preview() {
 		const body = this.get_body();
 		const sample = this.get_sample_context();
 		if (!body.trim()) {
@@ -293,7 +293,7 @@ whatsapp.ui.TemplateEditor = class TemplateEditor {
 				if (seq !== this._seq) return;
 				this.state.hide();
 				const rendered = cstr((r && r.body) || "");
-				const format = whatsapp.ui.ChatThread && whatsapp.ui.ChatThread.format ? whatsapp.ui.ChatThread.format : (t) => ui.escape(t).replace(/\r?\n/g, "<br>");
+				const format = whatsapp.ui.ChatThread && whatsapp.ui.ChatThread.format_whatsapp_text ? whatsapp.ui.ChatThread.format_whatsapp_text : (t) => ui.escape(t).replace(/\r?\n/g, "<br>");
 				this.$bubble.html(rendered ? format(rendered) : `<span class="whatsapp-kit-template-editor__muted">${ui.escape(__("The template renders to an empty message."))}</span>`).show();
 				this.render_errors([].concat(sample.error ? [sample.error] : [], (r && r.errors) || []));
 			})
@@ -301,7 +301,7 @@ whatsapp.ui.TemplateEditor = class TemplateEditor {
 				if (seq !== this._seq) return;
 				this.$bubble.hide();
 				this.render_errors([]);
-				this.state.error(err, { action: { label: __("Retry"), onclick: () => this.preview() } });
+				this.state.error(err, { action: { label: __("Retry"), onclick: () => this.render_template_preview() } });
 			})
 			.then(() => this.$bubble.removeAttr("aria-busy"));
 	}

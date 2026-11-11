@@ -16,7 +16,7 @@ export class GroupsSource extends BaseSource {
 		return "Contact Group";
 	}
 
-	static label() {
+	static default_tab_label() {
 		return __("Contact groups");
 	}
 
@@ -59,7 +59,7 @@ export class GroupsSource extends BaseSource {
 		this.page = page || (txt !== undefined || kind !== undefined ? 1 : this.page);
 		this.state.loading();
 		const exclude = this.picker.target_is_group() ? this.picker.target_name : null;
-		return this.call("picker.search_groups", { txt: this.txt || null, kind: this.kind || null, exclude, page: this.page, page_length: this.page_length }, { silent: true })
+		return this.call_picker_api("picker.search_groups", { txt: this.txt || null, kind: this.kind || null, exclude, page: this.page, page_length: this.page_length }, { silent: true })
 			.then((r) => {
 				this.rows = (r && r.rows) || [];
 				this.total = cint(r && r.total);
@@ -268,7 +268,7 @@ export class GroupsSource extends BaseSource {
 			try {
 				for (;;) {
 					$count.text(__("Loading members of {0}: {1} of {2}", [name, ui.format_int(rows.length), total != null ? ui.format_int(total) : "…"]));
-					const r = await this.call("picker.get_group_members", { group: group.name, page, page_length: MEMBER_PAGE }, { silent: true });
+					const r = await this.call_picker_api("picker.get_group_members", { group: group.name, page, page_length: MEMBER_PAGE }, { silent: true });
 					const got = (r && r.rows) || [];
 					total = cint(r && r.total);
 					rows.push(...got);
@@ -300,7 +300,7 @@ export class GroupsSource extends BaseSource {
 				let total = null;
 				for (;;) {
 					this.$progress.text(__("Loading members of {0}: {1} of {2}", [this.names[group] || group, ui.format_int(total != null ? Math.min((page - 1) * MEMBER_PAGE, total) : 0), total != null ? ui.format_int(total) : "…"]));
-					const r = await this.call("picker.get_group_members", { group, page, page_length: MEMBER_PAGE }, { silent: true });
+					const r = await this.call_picker_api("picker.get_group_members", { group, page, page_length: MEMBER_PAGE }, { silent: true });
 					const rows = (r && r.rows) || [];
 					total = cint(r && r.total);
 					added += this.picker.add_rows(rows, { source_type: this.key, source_ref: groups.length === 1 ? group : null, quiet: true });

@@ -27,7 +27,7 @@ new whatsapp.ui.AttachMenu({
 });
 
 $slot.html(whatsapp.ui.AttachMenu.chip_html(draft.attach));   // the chip; its × is [data-attach-clear]
-whatsapp.ui.AttachMenu.icon("image");  whatsapp.ui.AttachMenu.label("image");
+whatsapp.ui.AttachMenu.kind_icon_svg("image");  whatsapp.ui.AttachMenu.kind_label("image");
 ```
 
 ## Live use

@@ -81,18 +81,18 @@ whatsapp.ui.FilterBar = class FilterBar {
 		const cached = frappe.get_meta(this.doctype);
 		if (cached && (cached.fields || []).length) {
 			this.meta = cached;
-			this.make();
+			this.mount_filter_bar();
 		} else {
 			ui.meta.with_doctype(this.doctype).then((meta) => {
 				this.meta = meta;
-				this.make();
+				this.mount_filter_bar();
 			});
 		}
 	}
 
 	// ---- mount -----------------------------------------------------------------------------
 
-	make() {
+	mount_filter_bar() {
 		this.$wrapper = $(
 			`<div class="whatsapp-kit whatsapp-kit-filterbar${this.listview || this.opts.list_style ? " whatsapp-kit-filterbar--list" : ""}" role="group" aria-label="${ui.escape(__("Filters"))}"></div>`
 		);
@@ -136,7 +136,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		if (!this.$actions.children().length) this.$actions.remove();
 		if (!this.$end.children().length) this.$end.remove();
 		this.$extra.appendTo(this.$main); // always last among the filters
-		this.sync();
+		this.read_list_filters_into_bar();
 		this.apply_defaults();
 		$(document).on(`mousedown.${this.id} touchstart.${this.id}`, (e) => {
 			if ($(e.target).closest(".whatsapp-kit-filterbar__dd").length) return;
@@ -184,7 +184,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		const orig = lv.on_filter_change.bind(lv);
 		lv.on_filter_change = (...a) => {
 			const r = orig(...a);
-			this.sync();
+			this.read_list_filters_into_bar();
 			return r;
 		};
 	}
@@ -222,13 +222,13 @@ whatsapp.ui.FilterBar = class FilterBar {
 			if (this.values[c.preset.fieldname] !== undefined) return;
 			if (this.listview && frappe.route_options && Object.keys(frappe.route_options).length) return;
 			const days = parse_period(c.preset.default);
-			if (days != null) this.set(c.preset.fieldname, days);
+			if (days != null) this.set_filter_value(c.preset.fieldname, days);
 		});
 	}
 
 	// ---- meta / options --------------------------------------------------------------------
 
-	df(fieldname) {
+	get_field_definition(fieldname) {
 		const standard = { creation: __("Created On"), modified: __("Last Updated On") };
 		return (
 			(this.meta.fields || []).find((f) => f.fieldname === fieldname) ||
@@ -238,7 +238,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 	}
 
 	label_of(preset) {
-		return preset.label || __(this.df(preset.fieldname).label || preset.fieldname);
+		return preset.label || __(this.get_field_definition(preset.fieldname).label || preset.fieldname);
 	}
 
 	normalise_options(list) {
@@ -247,7 +247,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 
 	/** Static option list (Select / Check / explicit array) or `null` when options are fetched. */
 	static_options(preset) {
-		const df = this.df(preset.fieldname);
+		const df = this.get_field_definition(preset.fieldname);
 		if (Array.isArray(preset.options)) return this.normalise_options(preset.options);
 		if (typeof preset.options === "function") return null;
 		if (df.fieldtype === "Check") return [{ value: "1", label: __("Yes") }, { value: "0", label: __("No") }];
@@ -277,7 +277,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		if (typeof preset.options === "function") {
 			return Promise.resolve(preset.options(txt)).then((list) => this.normalise_options(list));
 		}
-		const df = this.df(preset.fieldname);
+		const df = this.get_field_definition(preset.fieldname);
 		return ui.meta.with_doctype(df.options).then((meta) => {
 			const title = meta && meta.show_title_field_in_link && meta.title_field ? meta.title_field : null;
 			const fields = title ? ["name", title] : ["name"];
@@ -329,7 +329,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		const label = this.label_of(preset);
 		const $field = $(`<div class="whatsapp-kit-filterbar__field whatsapp-kit-filterbar__field--range"></div>`).appendTo(this.$main);
 		const control = frappe.ui.form.make_control({
-			df: { fieldtype: "DateRange", fieldname: preset.fieldname, label, placeholder: label, onchange: () => this.set(preset.fieldname, control.get_value()) },
+			df: { fieldtype: "DateRange", fieldname: preset.fieldname, label, placeholder: label, onchange: () => this.set_filter_value(preset.fieldname, control.get_value()) },
 			parent: $field,
 			render_input: true,
 			only_input: true,
@@ -346,7 +346,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		const $group = $(`<div class="whatsapp-kit-filterbar__period" role="group" aria-label="${ui.escape(label)}"></div>`);
 		options.forEach((o) => {
 			$(`<button type="button" class="whatsapp-kit-filterbar__period-btn" data-key="${ui.escape(key_of(o.value))}" aria-pressed="false" aria-label="${ui.escape(o.label)}"><span class="whatsapp-kit-filterbar__period-long">${ui.escape(o.label)}</span><span class="whatsapp-kit-filterbar__period-short" aria-hidden="true">${ui.escape(short_period(o.value, o.label))}</span></button>`)
-				.on("click", () => this.set(p.fieldname, o.value))
+				.on("click", () => this.set_filter_value(p.fieldname, o.value))
 				.appendTo($group);
 		});
 		if (this.$actions && this.$actions.parent().length) $group.insertBefore(this.$actions);
@@ -369,7 +369,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 				wrapper: $slot,
 				placeholder: this.label_of(p),
 				default_op: p.default_op || "between",
-				on_change: (value) => this.set(p.fieldname, value ? { __date: value } : null),
+				on_change: (value) => this.set_filter_value(p.fieldname, value ? { __date: value } : null),
 			});
 			this.controls[p.fieldname] = { preset: p, $el: $slot, type: "date", control };
 			return control;
@@ -384,7 +384,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 			on_change: (rows, { removed } = {}) => this.set_date_rows(p, $slot, rows, removed || []),
 		});
 		this.date_control = { preset: p, $el: $slot, control };
-		this.register_date_rows(p, $slot, control.values().map((r) => r.fieldname));
+		this.register_date_rows(p, $slot, control.applied_field_values().map((r) => r.fieldname));
 		return control;
 	}
 
@@ -394,7 +394,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 	 */
 	date_fields(preset) {
 		if (Array.isArray(preset.date_fields)) {
-			return preset.date_fields.map((f) => (typeof f === "string" ? { value: f, label: __(this.df(f).label || f) } : f));
+			return preset.date_fields.map((f) => (typeof f === "string" ? { value: f, label: __(this.get_field_definition(f).label || f) } : f));
 		}
 		const own = (this.meta.fields || [])
 			.filter((f) => ["Date", "Datetime"].includes(f.fieldtype) && !f.hidden)
@@ -428,11 +428,11 @@ whatsapp.ui.FilterBar = class FilterBar {
 	set_date_rows(p, $slot, rows, removed) {
 		removed.forEach((fieldname) => {
 			if (!this.controls[fieldname]) return;
-			this.set(fieldname, null);
+			this.set_filter_value(fieldname, null);
 			delete this.controls[fieldname];
 		});
 		this.register_date_rows(p, $slot, rows.map((r) => r.fieldname));
-		rows.forEach((r) => this.set(r.fieldname, r.value ? { __date: r.value } : null));
+		rows.forEach((r) => this.set_filter_value(r.fieldname, r.value ? { __date: r.value } : null));
 	}
 
 	render_tabs(preset) {
@@ -441,7 +441,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		const $list = $(`<div class="whatsapp-kit-chip-row whatsapp-kit-filterbar__pills" role="radiogroup" aria-label="${ui.escape(label)}"></div>`);
 		options.forEach((o, i) => {
 			$(`<button type="button" class="whatsapp-kit-chip whatsapp-kit-filterbar__pill" role="radio" data-key="${ui.escape(key_of(o.value))}" aria-checked="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${ui.escape(o.label)}</button>`)
-				.on("click", () => this.set(preset.fieldname, o.value))
+				.on("click", () => this.set_filter_value(preset.fieldname, o.value))
 				.appendTo($list);
 		});
 		$list.on("keydown", (e) => {
@@ -525,7 +525,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 	 * Hide items from the end of `$box` until it fits on one line, showing `$more` while any are
 	 * hidden. Returns the fieldnames (or elements) left out.
 	 */
-	fit($box, items, $more_dd) {
+	hide_overflowing_items($box, items, $more_dd) {
 		items.forEach((el) => $(el).removeClass("whatsapp-kit-filterbar__hidden"));
 		$more_dd.prop("hidden", true);
 		let left = items.slice();
@@ -555,8 +555,8 @@ whatsapp.ui.FilterBar = class FilterBar {
 		// Desk's own filter section rides in the cluster too, so it overflows with the rest
 		const actions = this.$actions ? this.$actions.children(".whatsapp-kit-filterbar__dd, .whatsapp-kit-filterbar__action, .whatsapp-kit-filterbar__native").not(this.$amore_dd).toArray() : [];
 		// the cluster settles first: an icon row that has wrapped is as wrong as a filter row that has
-		this.hidden_actions = this.$amore_dd ? this.fit(this.$actions, actions, this.$amore_dd) : [];
-		this.hidden_filters = this.fit(this.$main, filters, this.$more_dd);
+		this.hidden_actions = this.$amore_dd ? this.hide_overflowing_items(this.$actions, actions, this.$amore_dd) : [];
+		this.hidden_filters = this.hide_overflowing_items(this.$main, filters, this.$more_dd);
 		// The date filter elides its text but never its buttons. Once only the buttons are left the
 		// cluster is out of room, though the filter row beside it still fits on one line, so a filter
 		// gives way too, or the date filter's last button runs past the card's edge (Outbound at 1366).
@@ -584,7 +584,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 			$(el).addClass("whatsapp-kit-filterbar__hidden");
 			this.hidden_actions.push(el);
 			this.$amore_dd.prop("hidden", false);
-			this.hidden_filters = this.fit(this.$main, filters, this.$more_dd);
+			this.hidden_filters = this.hide_overflowing_items(this.$main, filters, this.$more_dd);
 		}
 		this.$more_btn.find(".whatsapp-kit-filterbar__more-count").text(this.hidden_filters.length ? ui.format_int(this.hidden_filters.length) : "");
 		if (this.$more && this.hidden_filters.length) this.fill_more();
@@ -803,7 +803,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		};
 		$sheet.find(".whatsapp-kit-options-sheet__scrim, .whatsapp-kit-options-sheet__done").on("click", close);
 		$sheet.find(".whatsapp-kit-options-sheet__clear").on("click", () => {
-			this.set(preset.fieldname, null);
+			this.set_filter_value(preset.fieldname, null);
 			changed();
 			fill($sheet.find(".whatsapp-kit-options-sheet__search input").val() || "");
 		});
@@ -886,7 +886,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 				// the inline × clears this one filter instead of opening the list
 				if ($(e.target).closest(".whatsapp-kit-filterbar__btn-clear").length) {
 					this.close_popover();
-					return this.set(p.fieldname, null);
+					return this.set_filter_value(p.fieldname, null);
 				}
 				return this.$open && this.$open.data("field") === p.fieldname ? this.close_popover() : this.open_popover(p.fieldname);
 			})
@@ -936,7 +936,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		this.$open = $pop;
 		$pop.find(".whatsapp-kit-filterbar__pop-close").on("click", () => this.close_popover(true));
 		$pop.find(".whatsapp-kit-filterbar__pop-clear").on("click", () => {
-			this.set(fieldname, null);
+			this.set_filter_value(fieldname, null);
 			this.fill_popover(fieldname, $pop.find(".whatsapp-kit-filterbar__pop-search").val() || "");
 		});
 		const $search = $pop.find(".whatsapp-kit-filterbar__pop-search");
@@ -1017,10 +1017,10 @@ whatsapp.ui.FilterBar = class FilterBar {
 
 	toggle(fieldname, value, checked) {
 		const c = this.controls[fieldname];
-		if (c.preset.multiple === false) return this.set(fieldname, checked ? value : null);
+		if (c.preset.multiple === false) return this.set_filter_value(fieldname, checked ? value : null);
 		const next = this.chosen(fieldname).filter((v) => key_of(v) !== key_of(value));
 		if (checked) next.push(value);
-		this.set(fieldname, next.length ? next : null);
+		this.set_filter_value(fieldname, next.length ? next : null);
 	}
 
 	// ---- actions row (group by / export) ---------------------------------------------------
@@ -1354,7 +1354,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 	}
 
 	/** Set one preset's value (`""` / `null` / `[]` clears it). */
-	set(fieldname, value) {
+	set_filter_value(fieldname, value) {
 		const empty = this.is_empty(fieldname, value);
 		const unchanged = key_of(this.values[fieldname]) === key_of(empty ? "" : value);
 		if (empty) delete this.values[fieldname];
@@ -1362,7 +1362,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		this.reflect(fieldname);
 		if (unchanged) return this; // e.g. a control echoing the value sync() just set
 		if (this.listview) this.apply_listview(fieldname, empty ? null : value);
-		this.emit();
+		this.notify_filters_changed();
 		return this;
 	}
 
@@ -1376,7 +1376,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 			lv.refresh();
 		}
 		this.reflect_clear();
-		this.emit();
+		this.notify_filters_changed();
 	}
 
 	/** Frappe filter tuple for one preset value. */
@@ -1384,7 +1384,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		const c = this.controls[fieldname] || {};
 		if (c.type === "date" && value && value.__date) {
 			const v = value.__date;
-			const df = this.df(fieldname);
+			const df = this.get_field_definition(fieldname);
 			const datetime = df.fieldtype === "Datetime";
 			// a minute bound covers its whole minute: `<= 23:59:59` lost the last second's
 			// fractions, and "before 10:00" (exclusive) must stop at 10:00:00, not 10:00:59
@@ -1434,7 +1434,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 
 	/** Whether `fieldname` is a Select field of the list's DocType. */
 	is_select(fieldname) {
-		const df = this.df(fieldname);
+		const df = this.get_field_definition(fieldname);
 		return !!df && df.fieldtype === "Select";
 	}
 
@@ -1460,7 +1460,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		const lv = this.listview;
 		lv.start = 0;
 		const out = lv.refresh();
-		this.sync();
+		this.read_list_filters_into_bar();
 		return out;
 	}
 
@@ -1520,7 +1520,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		this.$extra.empty();
 		extra.forEach((f) => {
 			const [, fieldname, operator, value] = f;
-			const label = __(this.df(fieldname).label || fieldname);
+			const label = __(this.get_field_definition(fieldname).label || fieldname);
 			const shown = Array.isArray(value) ? value.join(", ") : String(value == null ? "" : value);
 			$(`<span class="whatsapp-kit-filterbar__chipfilter whatsapp-kit-accent-soft">
 					<span class="whatsapp-kit-filterbar__chipfilter-label">${ui.escape(label)}</span>
@@ -1542,7 +1542,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 	}
 
 	/** Read the list's current filters into the bar (list mode). */
-	sync() {
+	read_list_filters_into_bar() {
 		if (!this.listview || !this.listview.filter_area) return;
 		const filters = this.listview.filter_area.get().concat(Object.values(this.listview._whatsapp_select_in || {}));
 		this.render_extra_filters(this.listview.filter_area.get());
@@ -1581,7 +1581,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		return (this.search_fields_used || this.search_fields()).map((f) => [this.doctype, f, "like", `%${this.search_text}%`]);
 	}
 
-	emit() {
+	notify_filters_changed() {
 		if (typeof this.opts.on_change === "function") {
 			this.opts.on_change(this.get_filters(), { or_filters: this.get_or_filters(), values: Object.assign({}, this.values), search: this.search_text });
 		}
@@ -1600,7 +1600,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 		});
 		if (this.date_control) {
 			// the set keeps one row; the rows it dropped must not leave stale entries behind
-			const kept = this.date_control.control.values().map((r) => r.fieldname);
+			const kept = this.date_control.control.applied_field_values().map((r) => r.fieldname);
 			Object.keys(this.controls).forEach((f) => {
 				if (this.controls[f].control === this.date_control.control && !kept.includes(f)) delete this.controls[f];
 			});
@@ -1616,7 +1616,7 @@ whatsapp.ui.FilterBar = class FilterBar {
 			? this.quietly(() => fields.reduce((chain, f) => chain.then(() => this.listview.filter_area.remove(f)), Promise.resolve())).then(() => this.refresh_list())
 			: Promise.resolve();
 		this.reflect_clear();
-		this.emit();
+		this.notify_filters_changed();
 		ui.announce(__("Filters cleared."));
 		return done;
 	}

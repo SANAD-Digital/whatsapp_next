@@ -232,13 +232,13 @@ whatsapp.ui.DataList = class DataList {
 		$r.on(`click.${this.id}`, ".whatsapp-kit-datalist__sort", (e) => {
 			e.preventDefault();
 			if ($(e.target).closest(".whatsapp-kit-datalist__pin").length) return;
-			this.sort($(e.currentTarget).closest("th").data("fieldname"));
+			this.sort_by_column($(e.currentTarget).closest("th").data("fieldname"));
 		});
 		$r.on(`click.${this.id}`, ".whatsapp-kit-datalist__view", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
 			const doc = this.doc_of($(e.currentTarget).closest("tr").data("name"));
-			if (doc && this.opts.row_action && this.opts.row_action.handler) this.run(this.opts.row_action.handler, doc, $(e.currentTarget));
+			if (doc && this.opts.row_action && this.opts.row_action.handler) this.run_row_handler(this.opts.row_action.handler, doc, $(e.currentTarget));
 		});
 		$r.on(`click.${this.id}`, ".whatsapp-kit-datalist__pin", (e) => {
 			e.preventDefault();
@@ -264,12 +264,12 @@ whatsapp.ui.DataList = class DataList {
 			if (!this.opts.on_row_click) return;
 			if (e.ctrlKey || e.metaKey || $(e.target).closest(CONTROL_SELECTOR).length) return;
 			const doc = this.doc_of($(e.currentTarget).data("name"));
-			if (doc) this.run(this.opts.on_row_click, doc, $(e.currentTarget));
+			if (doc) this.run_row_handler(this.opts.on_row_click, doc, $(e.currentTarget));
 		});
 		$r.on(`keydown.${this.id}`, ".whatsapp-kit-datalist__row", (e) => {
 			if (e.key !== "Enter" || !this.opts.on_row_click || e.target !== e.currentTarget) return;
 			const doc = this.doc_of($(e.currentTarget).data("name"));
-			if (doc) this.run(this.opts.on_row_click, doc, $(e.currentTarget));
+			if (doc) this.run_row_handler(this.opts.on_row_click, doc, $(e.currentTarget));
 		});
 		$r.on(`change.${this.id}`, ".whatsapp-kit-datalist__group-checkbox", (e) => {
 			e.stopPropagation();
@@ -295,7 +295,7 @@ whatsapp.ui.DataList = class DataList {
 		});
 	}
 
-	run(fn, doc, $el) {
+	run_row_handler(fn, doc, $el) {
 		Promise.resolve(fn(doc, $el)).catch((err) => {
 			if (err && err.message && err.message !== "cancelled") whatsapp.ui.Toast.error(err);
 		});
@@ -825,14 +825,14 @@ whatsapp.ui.DataList = class DataList {
 			main = c.format(value, doc);
 			if (main == null) main = "";
 		} else {
-			main = whatsapp.ui.DataList.format(c.type, value, c.df, doc, this.display_of(c, doc), this.doctype);
+			main = whatsapp.ui.DataList.format_cell_value(c.type, value, c.df, doc, this.display_of(c, doc), this.doctype);
 		}
 		const sub = typeof c.sub === "function" ? c.sub(doc) : "";
 		return `<div class="whatsapp-kit-datalist__cell">${main === "" ? `<span class="whatsapp-kit-datalist__muted" aria-hidden="true">—</span>` : `<div class="whatsapp-kit-datalist__main">${main}</div>`}${sub ? `<div class="whatsapp-kit-datalist__sub" dir="auto">${sub}</div>` : ""}</div>`;
 	}
 
 	/** Typed cell renderers (also usable by callers: `whatsapp.ui.DataList.format("avatar", value, df, doc)`). */
-	static format(type, value, df, doc, display, doctype) {
+	static format_cell_value(type, value, df, doc, display, doctype) {
 		if (value == null || value === "") return "";
 		display = display == null ? value : display;
 		// a link to a DocType the host gave its own look (`ui.link_renderers`) takes that look,
@@ -907,7 +907,7 @@ whatsapp.ui.DataList = class DataList {
 
 	// ---- sorting / paging / footer ---------------------------------------------------------
 
-	sort(fieldname) {
+	sort_by_column(fieldname) {
 		const col = this.columns.find((c) => c.fieldname === fieldname);
 		if (!col || !col.sortable) return;
 		if (this.page_mode) {

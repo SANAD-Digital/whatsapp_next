@@ -57,7 +57,7 @@ whatsapp.ui.DashboardBlock = class DashboardBlock {
 		this._handlers = [];
 		this.adopt_host_styles();
 		this.render();
-		this.bind();
+		this.bind_auto_refresh_events();
 		this.refresh({ initial: true });
 	}
 
@@ -508,7 +508,7 @@ whatsapp.ui.DashboardBlock = class DashboardBlock {
 		return Promise.all(Object.values(this.charts).map((chart) => this.load_chart(chart, { initial: true })));
 	}
 
-	bind() {
+	bind_auto_refresh_events() {
 		const o = this.opts;
 		const seconds = cint(o.refresh_seconds);
 		if (seconds > 0) this._timer = window.setInterval(() => this.refresh(), seconds * 1000);

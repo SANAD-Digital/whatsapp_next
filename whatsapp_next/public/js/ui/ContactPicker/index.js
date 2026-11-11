@@ -126,7 +126,7 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 
 	// ---- API plumbing ---------------------------------------------------------------------
 
-	call(key, args = {}, opts = {}) {
+	call_picker_api(key, args = {}, opts = {}) {
 		return whatsapp.ui.call((this.opts.api || {})[key] || key, args, opts);
 	}
 
@@ -369,7 +369,7 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 	add_pasted(text) {
 		this.$paste.attr("hidden", true);
 		this.set_progress(__("Reading the numbers…"));
-		return this.call("picker.parse_manual", { text }, { silent: true })
+		return this.call_picker_api("picker.parse_manual", { text }, { silent: true })
 			.then((r) => {
 				this.set_progress(null);
 				const rows = (r.rows || []).map((row) => Object.assign({}, row, { source_type: "Manual", __source: "manual" }));
@@ -477,7 +477,7 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 		}
 		entries.forEach((entry) => {
 			const Source = whatsapp.ui.ContactPicker.sources[entry.key];
-			this.add_tab(entry.key, entry.label || Source.label(), (pane) => {
+			this.add_tab(entry.key, entry.label || Source.default_tab_label(), (pane) => {
 				const inst = new Source(this, entry);
 				this.instances[entry.key] = inst;
 				inst.mount(pane);
@@ -607,7 +607,7 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 							{ label: __("With a conversation"), value: ui.format_int(c.known) },
 					  ];
 				if (c.duplicates) impact.push({ label: __("Duplicates in selection (merged)"), value: ui.format_int(c.duplicates) });
-				return whatsapp.ui.ConfirmDialog.ask({
+				return whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 					title: remove ? __("Remove {0} numbers?", [ui.format_int(c.action)]) : __("Add {0} numbers?", [ui.format_int(c.action)]),
 					message: __("Changes apply to {0} {1}.", [__(this.target_doctype), this.opts.target_label || this.target_name]),
 					impact,
@@ -631,11 +631,11 @@ whatsapp.ui.ContactPicker = class ContactPicker {
 		// with the first group's name.
 		let done = { added: 0, skipped_duplicates: 0, skipped_invalid: 0 };
 		const run = remove
-			? this.call("picker.commit_remove", { target_doctype: this.target_doctype, target_name: this.target_name, phone_e164s: counts.keys }, { silent: true })
+			? this.call_picker_api("picker.commit_remove", { target_doctype: this.target_doctype, target_name: this.target_name, phone_e164s: counts.keys }, { silent: true })
 			: this.commit_batches().reduce(
 					(chain, batch) =>
 						chain.then((sum) =>
-							this.call(
+							this.call_picker_api(
 								"picker.commit_add",
 								{
 									target_doctype: this.target_doctype,

@@ -10,7 +10,7 @@ export class ContactsSource extends BaseSource {
 		return "Contact";
 	}
 
-	static label() {
+	static default_tab_label() {
 		return __("Contacts");
 	}
 
@@ -31,7 +31,7 @@ export class ContactsSource extends BaseSource {
 		this.page = page || (txt !== undefined || link_doctype !== undefined ? 1 : this.page);
 		this.state.loading();
 		this.$foot.empty();
-		return this.call("picker.search_contacts", { txt: this.txt || null, link_doctype: this.link_doctype || null, page: this.page, page_length: this.page_length }, { silent: true })
+		return this.call_picker_api("picker.search_contacts", { txt: this.txt || null, link_doctype: this.link_doctype || null, page: this.page, page_length: this.page_length }, { silent: true })
 			.then((r) => {
 				this.rows = (r && r.rows) || [];
 				this.total = r && r.total != null ? cint(r.total) : null;

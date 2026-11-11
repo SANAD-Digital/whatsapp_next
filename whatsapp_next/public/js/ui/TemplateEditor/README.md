@@ -28,7 +28,7 @@ frappe.ui.form.on("Message Template", {
 Options: `frm`, `body_field` ("body"), `reference_doctype_field` ("reference_doctype"),
 `sample_field` ("sample_context"), `preview_field`, `debounce` (400), `api`
 (`{preview, variables, sample}` key overrides).
-Methods: `refresh()`, `preview()`, `insert_variable(name)`, `use_latest()`, `load_variables()`,
+Methods: `refresh()`, `render_template_preview()`, `insert_variable(name)`, `use_latest()`, `load_variables()`,
 `destroy()`. Static: `mount(opts)` (idempotent per form; call it from `refresh`).
 
 The editor binds `frappe.ui.form.on(doctype, {body, reference_doctype, sample_context})` once per

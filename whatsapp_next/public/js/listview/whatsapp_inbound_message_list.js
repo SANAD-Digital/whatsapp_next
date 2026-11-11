@@ -6,13 +6,13 @@
 (function () {
 	const ui = whatsapp.ui;
 	const DT = "WhatsApp Inbound Message";
-	const M = whatsapp_next.messages;
-	const fmt = whatsapp_next.fmt;
-	const dl = ui.Render.parts.dl;
-	const is_agent = M.is_agent;
+	const message_helpers = whatsapp_next.messages;
+	const message_formatters = whatsapp_next.fmt;
+	const definition_list_html = ui.Render.parts.dl;
+	const is_agent = message_helpers.is_agent;
 	const DRAWER_FIELDS = ["device", "phone_e164", "display_name", "contact", "is_group", "message_type", "body", "caption", "attachment", "received_at", "is_simulated", "creation"];
 
-	const reply = (doc, after) => M.quick_send(doc, after);
+	const reply = (doc, after) => message_helpers.quick_send(doc, after);
 
 	/** The text, else what the message carried instead (a caption, a photo…), else a muted "empty
 	 * message": the gateway sends some events (an edit, a deletion) as a blank received message,
@@ -68,7 +68,7 @@
 	const render_trace = ($el, doc) => {
 		const t = doc.command_trace || {};
 		const status = t.command_status || "None";
-		const status_badge = fmt.badge(DT, { command_status: status }, status);
+		const status_badge = message_formatters.badge(DT, { command_status: status }, status);
 		if (!t.command && (status === "None" || status === "Not Matched")) {
 			$el.html(`<p class="text-muted">${status_badge} ${ui.escape(__("No command matches this text."))}</p>`);
 			return;
@@ -76,7 +76,7 @@
 		let args = t.command_args;
 		if (args && typeof args === "object") args = JSON.stringify(args);
 		$el.html(
-			dl([
+			definition_list_html([
 				{ label: __("Result"), value: status_badge },
 				{ label: __("Command"), value: t.command ? frappe.utils.get_form_link("WhatsApp Command", t.command, true) : "" },
 				{ label: __("Matched text"), value: t.command_text, text: true },
@@ -100,10 +100,10 @@
 		}
 		// colour from the Outbound DocType's own indicator rule (gray when its list script is not loaded)
 		$el.html(
-			dl([
+			definition_list_html([
 				{ label: __("Reply"), value: frappe.utils.get_form_link("WhatsApp Log", r.name, true) },
-				{ label: __("Status"), value: fmt.badge("WhatsApp Log", r, r.status) },
-				{ label: __("Sent at"), value: fmt.dt(r.sent_at) },
+				{ label: __("Status"), value: message_formatters.badge("WhatsApp Log", r, r.status) },
+				{ label: __("Sent at"), value: message_formatters.dt(r.sent_at) },
 				{ label: __("Response time"), value: gap },
 				{ label: __("Error"), value: r.error_code, text: true },
 				{ label: __("Text"), value: r.body, wide: true, text: true },
@@ -142,9 +142,9 @@
 			],
 			actions: [
 				{ label: __("Reply"), icon: "es-line-reply", condition: is_agent, handler: (d) => reply(d, refresh) },
-				{ label: __("Open command"), icon: "es-line-zap", condition: (d) => !!(d.command_trace && d.command_trace.command), handler: (d) => M.open_command(d.command_trace.command) },
-				{ label: __("Add as synonym"), icon: "es-line-add", condition: (d) => M.is_manager() && !(d.command_trace && d.command_trace.command) && !!d.body, handler: (d) => M.add_synonym(d, refresh) },
-				{ label: __("Contact"), icon: "es-line-customer", handler: (d) => M.open_contact(d, refresh) },
+				{ label: __("Open command"), icon: "es-line-zap", condition: (d) => !!(d.command_trace && d.command_trace.command), handler: (d) => message_helpers.open_command(d.command_trace.command) },
+				{ label: __("Add as synonym"), icon: "es-line-add", condition: (d) => message_helpers.is_manager() && !(d.command_trace && d.command_trace.command) && !!d.body, handler: (d) => message_helpers.add_synonym(d, refresh) },
+				{ label: __("Contact"), icon: "es-line-customer", handler: (d) => message_helpers.open_contact(d, refresh) },
 			],
 		}).show();
 

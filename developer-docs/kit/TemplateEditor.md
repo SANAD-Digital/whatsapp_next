@@ -31,7 +31,7 @@ relies on their shapes (below). Styles use Espresso/kit tokens only.
   for the body, reference and sample fields once per DocType (called by the constructor).
 - `refresh()` — rebuild picker and variables if the reference DocType changed, else re-preview.
 - `on_reference_change()` — reset the sample record, rebuild the picker, reload variables, preview.
-- `preview()` — render now (returns a Promise); `schedule_preview()` is the debounced form.
+- `render_template_preview()` — render now (returns a Promise); `schedule_preview()` is the debounced form.
 - `use_latest()` — pick the newest record of the reference DocType as the sample.
 - `load_variables()` / `render_variables()` — fetch / redraw (respecting the filter box).
 - `insert_variable(name)` — insert `{{ name }}` at the body caret (appends when the body is not
@@ -84,7 +84,7 @@ frappe.ui.form.on("WhatsApp Template", {
   preview" for a blank body; "The template renders to an empty message." for an empty render;
   errors with a Retry action; "No variables" / "No variables match".
 - Invalid JSON in `sample_field` is reported in the error list and the preview continues without it.
-- The preview uses `whatsapp.ui.ChatThread.format` when loaded (WhatsApp marks), else escaped text with
+- The preview uses `whatsapp.ui.ChatThread.format_whatsapp_text` when loaded (WhatsApp marks), else escaped text with
   line breaks. Stale responses are discarded (sequence counter); the bubble is `aria-busy` during
   a render; the error list is `role="alert"` and re-rendered only when its content changes.
 - "Use latest" is hidden without a reference DocType, disabled/`aria-busy` while calling, and a

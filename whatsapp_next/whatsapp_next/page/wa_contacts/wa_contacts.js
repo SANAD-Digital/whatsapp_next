@@ -55,9 +55,9 @@ class ContactsPage {
 		this.order_by = "modified desc";
 		this.current_page = 1;
 		this.rows = [];
-		this.make();
+		this.build_page_layout();
 		this.bind_realtime();
-		this.load();
+		this.load_contact_rows();
 		this.open_from_route();
 	}
 
@@ -78,7 +78,7 @@ class ContactsPage {
 
 	// ---- layout ---------------------------------------------------------------------------
 
-	make() {
+	build_page_layout() {
 		this.$el = $(`
 			<div class="whatsapp-contacts whatsapp-kit">
 				<div class="whatsapp-contacts__head"></div>
@@ -110,7 +110,7 @@ class ContactsPage {
 	}
 
 	/** One card's number, read from the shared stats call. */
-	stat(key) {
+	create_stat_value_reader(key) {
 		return () => this.stats().then((s) => cint(s && s[key]));
 	}
 
@@ -134,26 +134,26 @@ class ContactsPage {
 					label: __("Linked"),
 					icon: "es-line-success",
 					tone: "green",
-					value: this.stat("linked"),
+					value: this.create_stat_value_reader("linked"),
 					sub: __("Linked to an account and notified automatically"),
-					onclick: () => this.apply({ linked: 1 }),
+					onclick: () => this.apply_filters_and_reload({ linked: 1 }),
 				},
 				{
 					key: "unlinked",
 					label: __("Not linked"),
 					icon: "es-line-alert-triangle",
 					tone: "amber",
-					value: this.stat("unlinked"),
+					value: this.create_stat_value_reader("unlinked"),
 					sub: __("No account in the ledger"),
-					onclick: () => this.apply({ linked: 0 }),
+					onclick: () => this.apply_filters_and_reload({ linked: 0 }),
 				},
 				{
 					key: "multi_linked",
 					label: __("Linked to more than one account"),
 					icon: "es-line-people",
-					value: this.stat("multi_linked"),
+					value: this.create_stat_value_reader("multi_linked"),
 					sub: __("One number serving two accounts or more"),
-					onclick: () => this.apply({}, ""),
+					onclick: () => this.apply_filters_and_reload({}, ""),
 				},
 				{
 					key: "coverage",
@@ -166,7 +166,7 @@ class ContactsPage {
 						),
 					format: (v) => (v > 0 && v < 1 ? `\u2066${__("<1%")}\u2069` : `${whatsapp.ui.format_int(Math.round(v))}%`),
 					sub: __("Share of contacts ready for notifications"),
-					onclick: () => this.apply({}, ""),
+					onclick: () => this.apply_filters_and_reload({}, ""),
 				},
 			],
 		});
@@ -236,13 +236,13 @@ class ContactsPage {
 				this.search = search || "";
 				this.filters = {
 					link_doctype: values.link_doctype || null,
-					linked: this.tri(values.linked),
-					status: this.one(values.status),
-					has_whatsapp: this.tri(values.has_whatsapp),
-					blacklisted: this.tri(values.blacklisted),
+					linked: this.to_three_state_flag(values.linked),
+					status: this.to_single_choice(values.status),
+					has_whatsapp: this.to_three_state_flag(values.has_whatsapp),
+					blacklisted: this.to_three_state_flag(values.blacklisted),
 				};
 				this.current_page = 1;
-				this.load();
+				this.load_contact_rows();
 			},
 		});
 		// A KPI card sets «حالة الربط» without the dropdown ever being opened, and FilterBar only
@@ -254,19 +254,19 @@ class ContactsPage {
 	}
 
 	/** A three-state select ("1" / "0" / unset) as the API wants it (true / false / null). */
-	tri(value) {
+	to_three_state_flag(value) {
 		const v = Array.isArray(value) ? value[0] : value;
 		if (v === undefined || v === null || v === "") return null;
 		return cint(v) ? 1 : 0;
 	}
 
 	/** A single-choice select: the first value, or null when nothing is chosen. */
-	one(value) {
+	to_single_choice(value) {
 		const v = Array.isArray(value) ? value[0] : value;
 		return v === undefined || v === null || v === "" ? null : v;
 	}
 
-	apply(filters, search) {
+	apply_filters_and_reload(filters, search) {
 		this.filters = Object.assign(
 			{ link_doctype: null, linked: null, status: null, has_whatsapp: null, blacklisted: null },
 			filters
@@ -276,10 +276,10 @@ class ContactsPage {
 		if (this.filterbar) {
 			this.suspend_filters = true;
 			this.filterbar.clear && this.filterbar.clear();
-			Object.entries(filters || {}).forEach(([k, v]) => this.filterbar.set(k, v == null ? null : String(v)));
+			Object.entries(filters || {}).forEach(([k, v]) => this.filterbar.set_filter_value(k, v == null ? null : String(v)));
 			this.suspend_filters = false;
 		}
-		this.load();
+		this.load_contact_rows();
 	}
 
 	// ---- the table ---------------------------------------------------------------------------
@@ -300,12 +300,12 @@ class ContactsPage {
 			on_row_click: (doc) => this.open_detail(doc),
 			on_page: (page) => {
 				this.current_page = page + 1;
-				this.load();
+				this.load_contact_rows();
 			},
 			on_sort: (fieldname, order) => {
 				this.order_by = `${fieldname} ${order}`;
 				this.current_page = 1;
-				this.load();
+				this.load_contact_rows();
 			},
 			on_select: () => this.render_selection(),
 			footer: {
@@ -473,7 +473,7 @@ class ContactsPage {
 	 * `null` reaches the server as an empty string, which `has_whatsapp is not None` accepts and
 	 * then reads as `False`.
 	 */
-	args() {
+	build_list_query_args() {
 		// the table's own length: the footer's page size and "Load more" change it
 		const page_length = (this.table && this.table.page_length) || PAGE_LENGTH;
 		const args = { page: this.current_page, page_length, order_by: this.order_by };
@@ -491,10 +491,10 @@ class ContactsPage {
 		return args;
 	}
 
-	load() {
+	load_contact_rows() {
 		this.table.set_loading(true);
 		return whatsapp.ui
-			.call("contacts.list_contacts", this.args())
+			.call("contacts.list_contacts", this.build_list_query_args())
 			.then((r) => {
 				this.rows = (r && r.rows) || [];
 				this.table.set_rows(this.rows, cint(r && r.total));
@@ -507,7 +507,7 @@ class ContactsPage {
 					wrapper: this.$el.find(".whatsapp-kit-datalist__empty, .whatsapp-contacts__list").first(),
 					state: "error",
 					title: err.message,
-					action: { label: __("Retry"), onclick: () => this.load() },
+					action: { label: __("Retry"), onclick: () => this.load_contact_rows() },
 				});
 			});
 	}
@@ -515,7 +515,7 @@ class ContactsPage {
 	reload() {
 		this._stats = null;
 		this.header && this.header.refresh(true);
-		return this.load();
+		return this.load_contact_rows();
 	}
 
 	/**
@@ -1048,7 +1048,7 @@ class ContactsPage {
 					});
 		pick
 			.then((l) =>
-				whatsapp.ui.ConfirmDialog.ask({
+				whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 					title: __("Unlink «{0}» from {1}?", [ContactsPage.title_of(row), l.link_title || l.link_name]),
 					message: __("The contact and its numbers stay. Notifications for this account no longer reach it, and commands that need the link are refused."),
 					impact: [
@@ -1428,7 +1428,7 @@ class ContactsPage {
 	}
 
 	bind_realtime() {
-		this.on_inbound = whatsapp.ui.throttle(() => this.load(), 4000);
+		this.on_inbound = whatsapp.ui.throttle(() => this.load_contact_rows(), 4000);
 		const subscribe = () => frappe.realtime.on("wa:inbound:received", this.on_inbound);
 		const unsubscribe = () => frappe.realtime.off("wa:inbound:received", this.on_inbound);
 		subscribe();

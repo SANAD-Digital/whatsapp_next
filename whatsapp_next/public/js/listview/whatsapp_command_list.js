@@ -64,7 +64,7 @@ frappe.provide("whatsapp_next");
 
 	async function restore_defaults(listview, doc) {
 		try {
-			await ui.ConfirmDialog.ask({
+			await ui.ConfirmDialog.ask_for_confirmation({
 				title: __("Restore defaults for {0}?", [doc.code || doc.name]),
 				message: __("Outputs are re-copied from the function and the settings overrides are cleared."),
 				impact: [{ label: __("Function"), value: doc.function || "—" }],

@@ -10,14 +10,14 @@
 
 // The campaign's own vocabulary — the funnel bar, the counters, the ETA sentence and the verbs —
 // is shared with the campaign form: `public/js/screens/campaigns.js`.
-const K = whatsapp_next.campaigns;
+const campaign_helpers = whatsapp_next.campaigns;
 const { metric, state_metric } = whatsapp_next.console;
-const { TERMINAL, STOPPABLE, EDITABLE, INDICATOR, is_manager, bar_html, progress_html, progress_text, messages_of_doc, stats_html, eta_text, pct_text, handed_of_doc, device_title, counters_as_doc } = K;
-const fmt_int = (v) => whatsapp.ui.format_int(v);
-const esc = (v) => whatsapp.ui.escape(v);
+const { TERMINAL, STOPPABLE, EDITABLE, INDICATOR, is_manager, bar_html, progress_html, progress_text, messages_of_doc, stats_html, eta_text, pct_text, handed_of_doc, device_title, counters_as_doc } = campaign_helpers;
+const format_integer = (v) => whatsapp.ui.format_int(v);
+const escape_html = (v) => whatsapp.ui.escape(v);
 
 /** A share as plain text, one decimal, never Frappe's wrapped HTML (it would be escaped). */
-const pct = (part, whole) => {
+const format_share_percent = (part, whole) => {
 	if (!cint(whole)) return "—";
 	const value = (cint(part) * 100) / cint(whole);
 	return `${frappe.format(value, { fieldtype: "Float", precision: value % 1 ? 1 : 0 }, { inline: true })}%`;
@@ -25,8 +25,8 @@ const pct = (part, whole) => {
 
 /** "Stop to edit" (running / scheduled), "Edit" (draft / paused) or "—" (ended). */
 function edit_chip(doc) {
-	if (STOPPABLE.includes(doc.status) && is_manager()) return `<button type="button" class="whatsapp-kit-chip whatsapp-kit-chip--sm" data-edit="stop" data-name="${esc(doc.name)}">${esc(__("Stop to edit"))}</button>`;
-	if (EDITABLE.includes(doc.status)) return `<button type="button" class="whatsapp-kit-chip whatsapp-kit-chip--sm whatsapp-kit-chip--active" data-edit="open" data-name="${esc(doc.name)}">${esc(__("Edit"))}</button>`;
+	if (STOPPABLE.includes(doc.status) && is_manager()) return `<button type="button" class="whatsapp-kit-chip whatsapp-kit-chip--sm" data-edit="stop" data-name="${escape_html(doc.name)}">${escape_html(__("Stop to edit"))}</button>`;
+	if (EDITABLE.includes(doc.status)) return `<button type="button" class="whatsapp-kit-chip whatsapp-kit-chip--sm whatsapp-kit-chip--active" data-edit="open" data-name="${escape_html(doc.name)}">${escape_html(__("Edit"))}</button>`;
 	return `<span class="text-muted">—</span>`;
 }
 
@@ -38,7 +38,7 @@ function bind_edit_chips($root, listview) {
 		const name = $b.data("name");
 		const doc = (listview.data || []).find((d) => d.name === name) || { name };
 		if ($b.data("edit") === "open") frappe.set_route("Form", "WhatsApp Campaign", name);
-		else K.stop_to_edit(doc, { after: () => listview.refresh() });
+		else campaign_helpers.stop_to_edit(doc, { after: () => listview.refresh() });
 	});
 }
 
@@ -74,12 +74,12 @@ function live_strip(row, header) {
 			<div class="whatsapp-strip__line">
 				<span class="whatsapp-strip__title">
 					<span class="whatsapp-strip__dot" aria-hidden="true"></span>
-					<a class="whatsapp-strip__name" href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${esc(row.campaign_name || row.name)}</a>
-					<span class="whatsapp-strip__badge">${esc(paused ? __("Paused") : __("Running now"))}</span>
+					<a class="whatsapp-strip__name" href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${escape_html(row.campaign_name || row.name)}</a>
+					<span class="whatsapp-strip__badge">${escape_html(paused ? __("Paused") : __("Running now"))}</span>
 				</span>
 				<span class="whatsapp-strip__progress">
 					${bar_html(doc, { paused })}
-					<span class="whatsapp-strip__progress-text whatsapp-kit-tabular">${esc(progress_text(doc))} · ${esc(pct_text(handed_of_doc(doc), messages_of_doc(doc)))}</span>
+					<span class="whatsapp-strip__progress-text whatsapp-kit-tabular">${escape_html(progress_text(doc))} · ${escape_html(pct_text(handed_of_doc(doc), messages_of_doc(doc)))}</span>
 				</span>
 				<span class="whatsapp-strip__stats">${stats_html(doc)}</span>
 				<span class="whatsapp-strip__actions"></span>
@@ -90,11 +90,11 @@ function live_strip(row, header) {
 	const $actions = $strip.find(".whatsapp-strip__actions");
 	if (is_manager()) {
 		const label = paused ? __("Resume") : __("Pause");
-		$(`<button type="button" class="btn btn-default btn-sm">${esc(label)}</button>`)
-			.on("click", () => (paused ? K.resume(Object.assign({}, row, doc), { after: () => refresh_all(header) }) : K.pause(Object.assign({}, row, doc), { after: () => refresh_all(header) })))
+		$(`<button type="button" class="btn btn-default btn-sm">${escape_html(label)}</button>`)
+			.on("click", () => (paused ? campaign_helpers.resume(Object.assign({}, row, doc), { after: () => refresh_all(header) }) : campaign_helpers.pause(Object.assign({}, row, doc), { after: () => refresh_all(header) })))
 			.appendTo($actions);
 	}
-	$(`<button type="button" class="btn btn-primary btn-sm">${esc(__("Outbound log"))}</button>`)
+	$(`<button type="button" class="btn btn-primary btn-sm">${escape_html(__("Outbound log"))}</button>`)
 		.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: row.name }))
 		.appendTo($actions);
 
@@ -122,12 +122,12 @@ function scheduled_strip(row, header) {
 					? __("today")
 					: days === 1
 						? __("tomorrow")
-						: __("in {0} days", [fmt_int(days)]);
+						: __("in {0} days", [format_integer(days)]);
 	const meta = [
 		relative,
 		whatsapp.ui.plural(cint(row.total_recipients), { one: __("{0} recipient"), other: __("{0} recipients") }),
 		device_title(row.device),
-		cint(row.pause_count) ? __("edited {0} times", [fmt_int(row.pause_count)]) : "",
+		cint(row.pause_count) ? __("edited {0} times", [format_integer(row.pause_count)]) : "",
 	]
 		.filter(Boolean)
 		.join(" · ");
@@ -137,22 +137,22 @@ function scheduled_strip(row, header) {
 			<div class="whatsapp-strip__line">
 				<span class="whatsapp-strip__title">
 					<span class="whatsapp-strip__dot" aria-hidden="true"></span>
-					<a class="whatsapp-strip__name" href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${esc(row.campaign_name || row.name)}</a>
-					<span class="whatsapp-strip__badge">${esc(__("Scheduled"))}</span>
+					<a class="whatsapp-strip__name" href="/app/whatsapp-campaign/${encodeURIComponent(row.name)}">${escape_html(row.campaign_name || row.name)}</a>
+					<span class="whatsapp-strip__badge">${escape_html(__("Scheduled"))}</span>
 				</span>
-				<span class="whatsapp-strip__when whatsapp-kit-tabular">${esc(when)}</span>
-				<span class="whatsapp-strip__meta">${esc(meta)}</span>
+				<span class="whatsapp-strip__when whatsapp-kit-tabular">${escape_html(when)}</span>
+				<span class="whatsapp-strip__meta">${escape_html(meta)}</span>
 				<span class="whatsapp-strip__actions"></span>
 			</div>
 		</div>`);
 
 	const $actions = $strip.find(".whatsapp-strip__actions");
 	if (is_manager()) {
-		$(`<button type="button" class="btn btn-default btn-sm">${esc(__("Stop to edit"))}</button>`)
-			.on("click", () => K.stop_to_edit(row, { after: () => refresh_all(header) }))
+		$(`<button type="button" class="btn btn-default btn-sm">${escape_html(__("Stop to edit"))}</button>`)
+			.on("click", () => campaign_helpers.stop_to_edit(row, { after: () => refresh_all(header) }))
 			.appendTo($actions);
 	}
-	$(`<button type="button" class="btn btn-default btn-sm whatsapp-strip__btn-blue">${esc(__("Scheduled messages"))}</button>`)
+	$(`<button type="button" class="btn btn-default btn-sm whatsapp-strip__btn-blue">${escape_html(__("Scheduled messages"))}</button>`)
 		.on("click", () => frappe.set_route("List", "WhatsApp Log", { campaign: row.name }))
 		.appendTo($actions);
 	return $strip;
@@ -177,7 +177,7 @@ function metrics_html(o) {
 				state: running ? whatsapp.ui.plural(running, { one: __("{0} campaign"), other: __("{0} campaigns") }) : __("Nothing"),
 				tone: running ? "green" : "gray",
 				pulse: !!running,
-				sub: esc(
+				sub: escape_html(
 					paused
 						? whatsapp.ui.plural(paused, { one: __("{0} paused"), other: __("{0} paused") })
 						: running
@@ -187,30 +187,30 @@ function metrics_html(o) {
 			})}
 			${metric(
 				__("In flight"),
-				esc(fmt_int(o.in_flight)),
-				esc(__("recipients not yet sent")),
+				escape_html(format_integer(o.in_flight)),
+				escape_html(__("recipients not yet sent")),
 			)}
 			${metric(
 				__("Throughput"),
-				per_minute == null ? "—" : esc(__("{0}/min", [fmt_int(per_minute)])),
-				esc(__("last hour, actual")),
+				per_minute == null ? "—" : escape_html(__("{0}/min", [format_integer(per_minute)])),
+				escape_html(__("last hour, actual")),
 			)}
 			${metric(
 				__("Delivery rate"),
-				esc(pct_text(totals.delivered, totals.sent)),
-				esc(__("of {0} sent", [fmt_int(totals.sent)])),
+				escape_html(pct_text(totals.delivered, totals.sent)),
+				escape_html(__("of {0} sent", [format_integer(totals.sent)])),
 			)}
 			${metric(
 				__("Read rate"),
-				esc(pct_text(totals.read, totals.sent)),
-				esc(__("last {0} days", [fmt_int(o.days || OVERVIEW_DAYS)])),
+				escape_html(pct_text(totals.read, totals.sent)),
+				escape_html(__("last {0} days", [format_integer(o.days || OVERVIEW_DAYS)])),
 			)}
 			${metric(
 				__("Failed"),
-				esc(fmt_int(totals.failed)),
+				escape_html(format_integer(totals.failed)),
 				cint(totals.failed)
-					? `<button type="button" class="whatsapp-operations-console__link" data-go="failed">${esc(__("See the messages"))}</button>`
-					: esc(__("no failures")),
+					? `<button type="button" class="whatsapp-operations-console__link" data-go="failed">${escape_html(__("See the messages"))}</button>`
+					: escape_html(__("no failures")),
 				{ tone: cint(totals.failed) ? "red" : "" },
 			)}
 		</div>`;
@@ -242,7 +242,7 @@ function render_console($el, header) {
 			shown.forEach((row) => $strips.append(live_strip(row, header)));
 			if (live.length > shown.length) {
 				$strips.append(
-					`<p class="whatsapp-strips__more">${esc(
+					`<p class="whatsapp-strips__more">${escape_html(
 						whatsapp.ui.plural(live.length - shown.length, {
 							one: __("{0} more campaign is sending — it is in the list below."),
 							other: __("{0} more campaigns are sending — they are in the list below."),
@@ -280,7 +280,7 @@ function render_next($strips, live_count) {
 			const rest = cint(total) - (rows || []).length;
 			if (rest > 0) {
 				$strips.append(
-					`<p class="whatsapp-strips__more">${esc(
+					`<p class="whatsapp-strips__more">${escape_html(
 						whatsapp.ui.plural(rest, {
 							one: __("{0} more scheduled campaign in the list below."),
 							other: __("{0} more scheduled campaigns in the list below."),
@@ -316,7 +316,7 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 	// Fallback (native rows) until DataList is present.
 	formatters: {
 		sent_count(value, df, doc) {
-			return messages_of_doc(doc) ? `<span class="whatsapp-kit-tabular">${esc(progress_text(doc))}</span>` : fmt_int(value);
+			return messages_of_doc(doc) ? `<span class="whatsapp-kit-tabular">${escape_html(progress_text(doc))}</span>` : format_integer(value);
 		},
 	},
 
@@ -362,11 +362,11 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 
 		// ---- the table: every column the prototype draws (09 §1C row 6) ------------------------
 
-		const dt = (v) => (v ? esc(whatsapp_next.fmt.dt(v)) : dash());
+		const dt = (v) => (v ? escape_html(whatsapp_next.fmt.dt(v)) : dash());
 		const dash = () => `<span class="text-muted">—</span>`;
-		const num = (v) => `<span class="whatsapp-kit-tabular">${esc(fmt_int(v))}</span>`;
+		const num = (v) => `<span class="whatsapp-kit-tabular">${escape_html(format_integer(v))}</span>`;
 		const rate_cell = (part, whole, tone) =>
-			cint(whole) ? `<span class="whatsapp-kit-tabular${tone ? ` whatsapp-kit-tone--${tone}` : ""}">${esc(pct(part, whole))}</span>` : dash();
+			cint(whole) ? `<span class="whatsapp-kit-tabular${tone ? ` whatsapp-kit-tone--${tone}` : ""}">${escape_html(format_share_percent(part, whole))}</span>` : dash();
 
 		/** How long a campaign needs at its own rate, and how long it actually took. */
 		// the queue sends messages, not recipients: once the campaign has its messages (recipients ×
@@ -385,7 +385,7 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 		// rounded to whole minutes first, so 119.6 min reads "2 h 0 min", never "1 h 60 min"
 		const dur_text = (minutes) => {
 			const m = Math.round(minutes);
-			return m < 60 ? __("{0} min", [fmt_int(m)]) : __("{0} h {1} min", [fmt_int(Math.floor(m / 60)), fmt_int(m % 60)]);
+			return m < 60 ? __("{0} min", [format_integer(m)]) : __("{0} h {1} min", [format_integer(Math.floor(m / 60)), format_integer(m % 60)]);
 		};
 		// A start pressed by hand used to stamp `scheduled_at` with the start itself: such a row is
 		// an immediate start, whatever the field holds (campaign_runner.start no longer writes it)
@@ -394,7 +394,7 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 			!(doc.started_at && Math.abs(frappe.datetime.str_to_obj(doc.scheduled_at) - frappe.datetime.str_to_obj(doc.started_at)) < 1000);
 
 		const columns = [
-			{ fieldname: "campaign_name", label: __("Campaign"), width: 240, sortable: true, format: (v, doc) => esc(v || doc.name), sub: (doc) => esc(frappe.user.full_name(doc.owner) || doc.owner || "") },
+			{ fieldname: "campaign_name", label: __("Campaign"), width: 240, sortable: true, format: (v, doc) => escape_html(v || doc.name), sub: (doc) => escape_html(frappe.user.full_name(doc.owner) || doc.owner || "") },
 			{ fieldname: "status", label: __("Status"), type: "status", width: 120, sortable: true },
 			{ fieldname: "_edit", label: __("Edit"), width: 104, sortable: false, format: (v, doc) => edit_chip(doc) },
 			{ fieldname: "sent_count", label: __("Messages sent"), width: 170, fieldtype: "Percent", sortable: false, format: (v, doc) => progress_html(doc, { tone: doc.status === "Paused" ? "amber" : "" }) },
@@ -403,11 +403,11 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 			{ fieldname: "_ok_rate", label: __("Success %"), width: 110, fieldtype: "Percent", sortable: false, format: (v, doc) => rate_cell(handed_of_doc(doc), handed_of_doc(doc) + cint(doc.failed_count), "green") },
 			{ fieldname: "read_count", label: __("Read"), type: "number", width: 100, sortable: true },
 			{ fieldname: "_read_rate", label: __("Read %"), width: 115, fieldtype: "Percent", sortable: false, format: (v, doc) => rate_cell(doc.read_count, cint(doc.delivered_count) + cint(doc.read_count), "blue") },
-			{ fieldname: "failed_count", label: __("Failures"), type: "number", width: 90, sortable: true, format: (v) => (cint(v) ? `<span class="whatsapp-kit-tone--red whatsapp-kit-tabular">${fmt_int(v)}</span>` : num(0)) },
+			{ fieldname: "failed_count", label: __("Failures"), type: "number", width: 90, sortable: true, format: (v) => (cint(v) ? `<span class="whatsapp-kit-tone--red whatsapp-kit-tabular">${format_integer(v)}</span>` : num(0)) },
 			{ fieldname: "_fail_rate", label: __("Failure %"), width: 110, fieldtype: "Percent", sortable: false, format: (v, doc) => rate_cell(doc.failed_count, handed_of_doc(doc) + cint(doc.failed_count), cint(doc.failed_count) ? "red" : "") },
 			{ fieldname: "device", label: __("Device"), type: "avatar", width: 150, sortable: true },
 			{ fieldname: "_start_kind", label: __("Start type"), width: 110, sortable: false, format: (v, doc) => whatsapp.ui.StatusBadge.html({ label: was_scheduled(doc) ? __("Scheduled") : __("Immediate"), colour: was_scheduled(doc) ? "blue" : "gray" }) },
-			{ fieldname: "scheduled_at", label: __("Scheduled for"), width: 150, align: "end", sortable: true, format: (v, doc) => (was_scheduled(doc) ? dt(v) : `<span class="text-muted">${esc(__("Immediate"))}</span>`) },
+			{ fieldname: "scheduled_at", label: __("Scheduled for"), width: 150, align: "end", sortable: true, format: (v, doc) => (was_scheduled(doc) ? dt(v) : `<span class="text-muted">${escape_html(__("Immediate"))}</span>`) },
 			{ fieldname: "creation", label: __("Created"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
 			{ fieldname: "started_at", label: __("Started"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
 			{ fieldname: "_edited", label: __("Edited after approval"), width: 145, sortable: false, format: (v, doc) => (cint(doc.pause_count) ? whatsapp.ui.StatusBadge.html({ label: whatsapp.ui.plural(cint(doc.pause_count), { one: __("Yes — once"), other: __("Yes — {0} times") }), colour: "orange" }) : whatsapp.ui.StatusBadge.html({ label: __("No"), colour: "gray" })) },
@@ -416,21 +416,21 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 				const start = cint(doc.initial_recipients);
 				if (!start || start === cint(doc.total_recipients)) return dash();
 				const change = ((cint(doc.total_recipients) - start) * 100) / start;
-				return `<span class="whatsapp-kit-tabular whatsapp-kit-tone--${change < 0 ? "red" : "green"}">${change < 0 ? "−" : "+"}${esc(pct(Math.abs(change), 100))}</span>`;
+				return `<span class="whatsapp-kit-tabular whatsapp-kit-tone--${change < 0 ? "red" : "green"}">${change < 0 ? "−" : "+"}${escape_html(format_share_percent(Math.abs(change), 100))}</span>`;
 			} },
 			{ fieldname: "first_message_at", label: __("First message"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
 			{ fieldname: "last_message_at", label: __("Last message"), width: 150, align: "end", sortable: true, format: (v) => dt(v) },
-			{ fieldname: "_est_dur", label: __("Estimated time"), width: 120, align: "end", sortable: false, format: (v, doc) => (cint(doc.total_recipients) ? `<span class="whatsapp-kit-tabular">${esc(dur_text(est_minutes(doc)))}</span>` : dash()) },
+			{ fieldname: "_est_dur", label: __("Estimated time"), width: 120, align: "end", sortable: false, format: (v, doc) => (cint(doc.total_recipients) ? `<span class="whatsapp-kit-tabular">${escape_html(dur_text(est_minutes(doc)))}</span>` : dash()) },
 			{ fieldname: "_act_dur", label: __("Actual time"), width: 120, align: "end", sortable: false, format: (v, doc) => {
 				const minutes = act_minutes(doc);
-				return minutes == null ? dash() : `<span class="whatsapp-kit-tabular">${esc(dur_text(minutes))}</span>`;
+				return minutes == null ? dash() : `<span class="whatsapp-kit-tabular">${escape_html(dur_text(minutes))}</span>`;
 			} },
 			{ fieldname: "_dur_diff", label: __("Time difference"), width: 115, align: "end", sortable: false, format: (v, doc) => {
 				const actual = act_minutes(doc);
 				if (actual == null || !doc.ended_at || !cint(doc.total_recipients)) return dash();
 				const diff = actual - est_minutes(doc);
 				const tone = diff > 1 ? "red" : diff < -1 ? "green" : "";
-				return `<span class="whatsapp-kit-tabular${tone ? ` whatsapp-kit-tone--${tone}` : ""}">${diff >= 0 ? "+" : "−"}${esc(dur_text(Math.abs(diff)))}</span>`;
+				return `<span class="whatsapp-kit-tabular${tone ? ` whatsapp-kit-tone--${tone}` : ""}">${diff >= 0 ? "+" : "−"}${escape_html(dur_text(Math.abs(diff)))}</span>`;
 			} },
 		];
 
@@ -450,7 +450,7 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 					extra: ($el, rows) =>
 						$el.text(
 							__("{0} recipients on this page", [
-								fmt_int((rows || []).reduce((n, d) => n + cint(d.total_recipients), 0)),
+								format_integer((rows || []).reduce((n, d) => n + cint(d.total_recipients), 0)),
 							])
 						),
 				},
@@ -463,7 +463,7 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 				listview,
 				actions: [
 					{ label: __("View"), icon: ui.icons.open, handler: (doc) => frappe.set_route("Form", "WhatsApp Campaign", doc.name) },
-					{ label: __("Stop to edit"), icon: ui.icons.cancel, condition: (doc) => STOPPABLE.includes(doc.status) && is_manager(), handler: (doc) => K.stop_to_edit(doc, { after: () => listview.refresh() }) },
+					{ label: __("Stop to edit"), icon: ui.icons.cancel, condition: (doc) => STOPPABLE.includes(doc.status) && is_manager(), handler: (doc) => campaign_helpers.stop_to_edit(doc, { after: () => listview.refresh() }) },
 					{ label: __("Sent messages"), icon: ui.icons.link, handler: (doc) => frappe.set_route("List", "WhatsApp Log", { campaign: doc.name }) },
 				],
 			});
@@ -474,7 +474,7 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 		if (typeof ui.BulkActions !== "function") return;
 		// One full string per verb, count always present (no verb + noun concatenation).
 		const bulk = (spec) => ({
-			label: (n) => spec.label(fmt_int(n)),
+			label: (n) => spec.label(format_integer(n)),
 			method: spec.method,
 			roles: ["WhatsApp Manager", "System Manager"],
 			condition: (docs) => docs.some((d) => spec.applies(d.status)),
@@ -483,19 +483,19 @@ frappe.listview_settings["WhatsApp Campaign"] = {
 				const items = docs.filter((d) => spec.applies(d.status));
 				const skipped = docs.length - items.length;
 				return {
-					title: spec.title(fmt_int(items.length)),
+					title: spec.title(format_integer(items.length)),
 					impact: [
-						{ label: __("Campaigns"), value: fmt_int(items.length) },
-						{ label: __("Recipients in total"), value: fmt_int(items.reduce((n, d) => n + cint(d.total_recipients), 0)) },
-						...(skipped ? [{ label: __("Skipped (status does not apply)"), value: fmt_int(skipped), tone: "amber" }] : []),
+						{ label: __("Campaigns"), value: format_integer(items.length) },
+						{ label: __("Recipients in total"), value: format_integer(items.reduce((n, d) => n + cint(d.total_recipients), 0)) },
+						...(skipped ? [{ label: __("Skipped (status does not apply)"), value: format_integer(skipped), tone: "amber" }] : []),
 					],
 					reason_field: spec.reason ? { label: __("Reason"), required: true } : false,
 					ack_checkbox: spec.ack || undefined,
 					danger: !!spec.danger,
-					confirm_label: spec.label(fmt_int(items.length)),
+					confirm_label: spec.label(format_integer(items.length)),
 				};
 			},
-			success: (result) => spec.done(fmt_int(result && result.count != null ? result.count : 0)),
+			success: (result) => spec.done(format_integer(result && result.count != null ? result.count : 0)),
 		});
 		new ui.BulkActions({
 			listview,

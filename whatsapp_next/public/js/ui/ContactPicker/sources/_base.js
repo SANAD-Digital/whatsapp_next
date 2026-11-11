@@ -16,7 +16,7 @@ export class BaseSource {
 		this.picker = picker;
 		this.entry = entry || {};
 		this.key = this.entry.key || this.constructor.key;
-		this.label = this.entry.label || this.constructor.label();
+		this.label = this.entry.label || this.constructor.default_tab_label();
 		this.page = 1;
 		this.page_length = 20;
 		this.rows = [];
@@ -26,7 +26,7 @@ export class BaseSource {
 		return "";
 	}
 
-	static label() {
+	static default_tab_label() {
 		return "";
 	}
 
@@ -45,8 +45,8 @@ export class BaseSource {
 
 	destroy() {}
 
-	call(key, args, opts) {
-		return this.picker.call(key, args, opts);
+	call_picker_api(key, args, opts) {
+		return this.picker.call_picker_api(key, args, opts);
 	}
 
 	/** The prototype's search: a rounded field with the glass inside it, debouncing into `on_search(text)`. */

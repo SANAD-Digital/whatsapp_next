@@ -16,17 +16,17 @@ frappe.provide("whatsapp_next.device_link");
 	};
 	const state = { rows: null, loading: null };
 
-	const esc = (v) => frappe.utils.escape_html(v == null ? "" : String(v));
-	const look = (status) => STATES[status] || { tone: "gray", label: () => __(status || "Unknown") };
+	const escape_html = (v) => frappe.utils.escape_html(v == null ? "" : String(v));
+	const get_state_appearance = (status) => STATES[status] || { tone: "gray", label: () => __(status || "Unknown") };
 
-	function load() {
+	function load_device_rows() {
 		if (state.rows || state.loading) return state.loading;
 		state.loading = frappe.db
 			.get_list(DOCTYPE, { fields: ["name", "device_name", "status", "disabled"], limit: 500 })
 			.then((rows) => {
 				state.rows = {};
 				(rows || []).forEach((r) => (state.rows[r.name] = r));
-				paint();
+				recolour_device_links();
 			})
 			.catch(() => {
 				state.rows = {};
@@ -36,11 +36,11 @@ frappe.provide("whatsapp_next.device_link");
 	}
 
 	/** Recolour every device dot on the page from what is known now. */
-	function paint(only) {
+	function recolour_device_links(only) {
 		document.querySelectorAll(only ? `.whatsapp-device-link[data-device="${CSS.escape(only)}"]` : ".whatsapp-device-link[data-device]").forEach((el) => {
 			const row = state.rows && state.rows[el.dataset.device];
 			if (!row) return;
-			const l = look(row.status);
+			const l = get_state_appearance(row.status);
 			el.dataset.tone = l.tone;
 			const dot = el.querySelector(".whatsapp-device-link__dot");
 			if (dot) dot.title = l.label();
@@ -50,25 +50,25 @@ frappe.provide("whatsapp_next.device_link");
 	}
 
 	/** The link itself: the dot, the name, and the state in words for a screen reader. */
-	function html(name, display) {
-		if (!state.rows) load();
+	function render_device_link_html(name, display) {
+		if (!state.rows) load_device_rows();
 		const row = state.rows && state.rows[name];
-		const l = look(row && row.status);
+		const l = get_state_appearance(row && row.status);
 		// Desk hands the device's title when it fetched it; otherwise the known name, else the ID
 		const label = display && display !== name ? display : (row && row.device_name) || name;
-		return `<a class="whatsapp-device-link" href="${esc(frappe.utils.get_form_link(DOCTYPE, name))}" data-device="${esc(name)}" data-tone="${row ? l.tone : "gray"}" title="${esc(label)}"><span class="whatsapp-device-link__dot" aria-hidden="true" title="${esc(row ? l.label() : "")}"></span><span class="whatsapp-device-link__name" dir="auto">${esc(label)}</span><span class="sr-only whatsapp-device-link__state">${esc(row ? l.label() : "")}</span></a>`;
+		return `<a class="whatsapp-device-link" href="${escape_html(frappe.utils.get_form_link(DOCTYPE, name))}" data-device="${escape_html(name)}" data-tone="${row ? l.tone : "gray"}" title="${escape_html(label)}"><span class="whatsapp-device-link__dot" aria-hidden="true" title="${escape_html(row ? l.label() : "")}"></span><span class="whatsapp-device-link__name" dir="auto">${escape_html(label)}</span><span class="sr-only whatsapp-device-link__state">${escape_html(row ? l.label() : "")}</span></a>`;
 	}
 
-	whatsapp_next.device_link.html = html;
+	whatsapp_next.device_link.html = render_device_link_html;
 	whatsapp_next.device_link.reload = () => {
 		state.rows = null;
-		return load();
+		return load_device_rows();
 	};
 
 	const register = () => {
 		if (!window.whatsapp || !whatsapp.ui) return;
 		whatsapp.ui.link_renderers = whatsapp.ui.link_renderers || {};
-		whatsapp.ui.link_renderers[DOCTYPE] = html;
+		whatsapp.ui.link_renderers[DOCTYPE] = render_device_link_html;
 	};
 	register();
 	$(document).on("app_ready", register);
@@ -79,7 +79,7 @@ frappe.provide("whatsapp_next.device_link");
 			if (!data || !data.device || !state.rows) return;
 			if (state.rows[data.device]) state.rows[data.device].status = data.status;
 			else return whatsapp_next.device_link.reload();
-			paint(data.device);
+			recolour_device_links(data.device);
 		});
 	});
 })();

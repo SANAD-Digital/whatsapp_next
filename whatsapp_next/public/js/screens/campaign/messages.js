@@ -15,10 +15,10 @@ frappe.provide("whatsapp_next.campaign");
 
 (function () {
 	const ui = whatsapp.ui;
-	const C = whatsapp_next.campaign;
-	const esc = C.esc;
+	const campaign_builder = whatsapp_next.campaign;
+	const escape_html = campaign_builder.esc;
 
-	C.Messages = class MessageStep {
+	campaign_builder.Messages = class MessageStep {
 		constructor({ wrapper, ctx }) {
 			this.$wrapper = $(wrapper);
 			this.ctx = ctx;
@@ -98,7 +98,7 @@ frappe.provide("whatsapp_next.campaign");
 			const blocked = this.test_blocked();
 			this.$wrapper.html(`
 				<div class="whatsapp-campaign-builder__stack whatsapp-campaign-builder__messages">
-					<p class="whatsapp-campaign-builder__mstep-note">${esc(__("Every recipient receives all of these, in this order. The gap between two cards is the wait between them."))}</p>
+					<p class="whatsapp-campaign-builder__mstep-note">${escape_html(__("Every recipient receives all of these, in this order. The gap between two cards is the wait between them."))}</p>
 					<div class="whatsapp-campaign-builder__mstep-host"></div>
 				</div>`);
 			this.mount_composer();
@@ -106,7 +106,7 @@ frappe.provide("whatsapp_next.campaign");
 			this.watch_menus();
 			// the composer draws the head of this step (its title, its count, "add message"), so the
 			// one verb it has no opinion about joins that head rather than opening a second one
-			const $test = $(`<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--sm" data-test${blocked ? " disabled" : ""}${blocked ? ` title="${esc(blocked)}"` : ""}>${ui.ico("send", "sm")}<span>${esc(__("Send a test message"))}</span></button>`);
+			const $test = $(`<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--sm" data-test${blocked ? " disabled" : ""}${blocked ? ` title="${escape_html(blocked)}"` : ""}>${ui.ico("send", "sm")}<span>${escape_html(__("Send a test message"))}</span></button>`);
 			$test.on("click", () => this.test_send()).prependTo(this.$wrapper.find(".whatsapp-kit-message-composer__head-actions"));
 			return this;
 		}
@@ -182,7 +182,7 @@ frappe.provide("whatsapp_next.campaign");
 			const rows = this.messages_with_body();
 			const options = rows.map((m) => ({
 				value: String(m.idx),
-				label: __("Message {0} · {1}", [C.fmt_int(m.idx), __(m.message_type)]),
+				label: __("Message {0} · {1}", [campaign_builder.fmt_int(m.idx), __(m.message_type)]),
 			}));
 			const skipped = (this.ctx.doc.messages || []).length - rows.length;
 
@@ -207,7 +207,7 @@ frappe.provide("whatsapp_next.campaign");
 				hint: __("Only this number receives it. Nothing is written to the campaign."),
 			});
 			const $preview = dialog.get_field("preview").$wrapper;
-			$preview.html(`<div class="whatsapp-campaign-builder__test-preview" data-preview></div>${skipped ? `<p class="whatsapp-field__hint">${esc(__("{0} of the messages carry a file or a poll. The test send carries text, so they are not offered here.", [C.fmt_int(skipped)]))}</p>` : ""}`);
+			$preview.html(`<div class="whatsapp-campaign-builder__test-preview" data-preview></div>${skipped ? `<p class="whatsapp-field__hint">${escape_html(__("{0} of the messages carry a file or a poll. The test send carries text, so they are not offered here.", [campaign_builder.fmt_int(skipped)]))}</p>` : ""}`);
 			const load = () => this.load_preview(dialog, $preview.find("[data-preview]"));
 			dialog.get_field("idx").$input.on("change", load);
 			load();
@@ -221,14 +221,14 @@ frappe.provide("whatsapp_next.campaign");
 				.then((p) => {
 					if (!$box.closest("body").length) return;
 					this.test_body = p.body || "";
-					const errors = (p.errors || []).map((e) => `<li>${esc(e)}</li>`).join("");
+					const errors = (p.errors || []).map((e) => `<li>${escape_html(e)}</li>`).join("");
 					$box.html(`
-						<span class="whatsapp-campaign-builder__test-label">${esc(__("What arrives"))}</span>
-						<div class="whatsapp-campaign-builder__bubble" dir="auto">${esc(p.body || __("(empty)"))}</div>
-						${p.attachment_name ? `<p class="whatsapp-field__hint">${esc(__("The campaign also sends {0}; the test sends the text only.", [p.attachment_name]))}</p>` : ""}
+						<span class="whatsapp-campaign-builder__test-label">${escape_html(__("What arrives"))}</span>
+						<div class="whatsapp-campaign-builder__bubble" dir="auto">${escape_html(p.body || __("(empty)"))}</div>
+						${p.attachment_name ? `<p class="whatsapp-field__hint">${escape_html(__("The campaign also sends {0}; the test sends the text only.", [p.attachment_name]))}</p>` : ""}
 						${errors ? `<ul class="whatsapp-campaign-builder__test-errors" role="alert">${errors}</ul>` : ""}`);
 				})
-				.catch((err) => $box.html(`<p class="whatsapp-campaign-builder__test-errors" role="alert">${esc(err.message)}</p>`));
+				.catch((err) => $box.html(`<p class="whatsapp-campaign-builder__test-errors" role="alert">${escape_html(err.message)}</p>`));
 		}
 
 		do_test(dialog) {

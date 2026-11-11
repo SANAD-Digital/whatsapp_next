@@ -21,9 +21,9 @@ frappe.provide("whatsapp_next.campaign");
 
 (function () {
 	const ui = whatsapp.ui;
-	const C = whatsapp_next.campaign;
-	const esc = C.esc;
-	const fmt_int = C.fmt_int;
+	const campaign_builder = whatsapp_next.campaign;
+	const escape_html = campaign_builder.esc;
+	const format_integer = campaign_builder.fmt_int;
 
 	const SOURCE_TYPES = ["Contact Group", "Contact", "DocType", "Excel", "vCard", "Manual"];
 
@@ -37,7 +37,7 @@ frappe.provide("whatsapp_next.campaign");
 		Manual: { icon: "plus", hint: () => __("Numbers you paste or type, one per line.") },
 	};
 
-	C.Audience = class AudienceBuilder {
+	campaign_builder.Audience = class AudienceBuilder {
 		constructor({ wrapper, ctx }) {
 			this.$wrapper = $(wrapper);
 			this.ctx = ctx;
@@ -72,12 +72,12 @@ frappe.provide("whatsapp_next.campaign");
 					<section class="whatsapp-campaign-builder__aud">
 						<div class="whatsapp-campaign-builder__aud-head">
 							<span class="whatsapp-campaign-builder__card-icon" aria-hidden="true">${ui.ico("users", "sm")}</span>
-							<span class="whatsapp-campaign-builder__card-title">${esc(__("Where the recipients come from"))}</span>
+							<span class="whatsapp-campaign-builder__card-title">${escape_html(__("Where the recipients come from"))}</span>
 							<span class="whatsapp-campaign-builder__aud-add" data-sources></span>
 							<span class="whatsapp-campaign-builder__aud-tags" aria-live="polite">
 								<span class="whatsapp-badge whatsapp-badge--pri whatsapp-badge--nodot whatsapp-campaign-builder__aud-total">
-									<b class="whatsapp-kit-tabular" data-total>${esc(fmt_int(cint(this.ctx.doc.total_recipients)))}</b>
-									<span data-total-label>${esc(C.recipients_text(cint(this.ctx.doc.total_recipients)).replace(/^[\d\u0660-\u0669,.\s\u00a0]+/, ""))}</span>
+									<b class="whatsapp-kit-tabular" data-total>${escape_html(format_integer(cint(this.ctx.doc.total_recipients)))}</b>
+									<span data-total-label>${escape_html(campaign_builder.recipients_text(cint(this.ctx.doc.total_recipients)).replace(/^[\d\u0660-\u0669,.\s\u00a0]+/, ""))}</span>
 								</span>
 								<span class="whatsapp-campaign-builder__aud-parts" data-parts></span>
 							</span>
@@ -114,8 +114,8 @@ frappe.provide("whatsapp_next.campaign");
 						? __("The campaign has ended, so its recipients can no longer change.")
 						: __("You do not have permission to change this campaign.");
 			const savable = (this.frm.is_new() || this.frm.is_dirty()) && this.ctx.can_edit();
-			$gate.html(C.note({ tone: savable ? "warn" : "info", icon: savable ? "warn" : "info", text: reason, cta: savable ? { key: "save", label: __("Save as draft") } : null }));
-			$gate.find("[data-note-cta]").on("click", () => this.ctx.save());
+			$gate.html(campaign_builder.note({ tone: savable ? "warn" : "info", icon: savable ? "warn" : "info", text: reason, cta: savable ? { key: "save", label: __("Save as draft") } : null }));
+			$gate.find("[data-note-cta]").on("click", () => this.ctx.save_campaign());
 		}
 
 		// ---- where the numbers come from: the sources are the verbs -----------------------------------
@@ -134,7 +134,7 @@ frappe.provide("whatsapp_next.campaign");
 					usable
 						.map(
 							(e) =>
-								`<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--sm whatsapp-campaign-builder__aud-source" data-source="${esc(e.key)}" title="${esc(SOURCE[e.key].hint())}"${open ? "" : " disabled"}>${ui.ico(SOURCE[e.key].icon, "sm")}<span>${esc(e.label || LABEL[e.key]())}</span></button>`
+								`<button type="button" class="whatsapp-button whatsapp-button--secondary whatsapp-button--sm whatsapp-campaign-builder__aud-source" data-source="${escape_html(e.key)}" title="${escape_html(SOURCE[e.key].hint())}"${open ? "" : " disabled"}>${ui.ico(SOURCE[e.key].icon, "sm")}<span>${escape_html(e.label || LABEL[e.key]())}</span></button>`
 						)
 						.join("")
 				);
@@ -171,16 +171,16 @@ frappe.provide("whatsapp_next.campaign");
 			// removed rows stay in the table (with status "Removed") but are not in the audience: the
 			// head says what `total_recipients` says, never the rows including the removed ones
 			const total = status_counts.All !== undefined && !filtered ? cint(status_counts.All) - cint(status_counts.Removed) : cint(this.ctx.doc.total_recipients);
-			this.$wrapper.find("[data-total]").text(fmt_int(total));
-			this.$wrapper.find("[data-total-label]").text(C.recipients_text(total).replace(/^[\d٠-٩,.\s ]+/, ""));
+			this.$wrapper.find("[data-total]").text(format_integer(total));
+			this.$wrapper.find("[data-total-label]").text(campaign_builder.recipients_text(total).replace(/^[\d٠-٩,.\s ]+/, ""));
 			const by_source = (this.counts && this.counts.source_type) || {};
 			const parts = SOURCE_TYPES.filter((k) => cint(by_source[k])).map(
-				(k) => `<span class="whatsapp-campaign-builder__chip"><b class="whatsapp-kit-tabular">${esc(fmt_int(by_source[k]))}</b>${esc(__(k))}</span>`
+				(k) => `<span class="whatsapp-campaign-builder__chip"><b class="whatsapp-kit-tabular">${escape_html(format_integer(by_source[k]))}</b>${escape_html(__(k))}</span>`
 			);
 			const excluded = this.ctx.excluded_unknown();
 			if (excluded) {
 				parts.push(
-					`<span class="whatsapp-campaign-builder__chip whatsapp-campaign-builder__chip--warn" title="${esc(__("They have never had a conversation on WhatsApp and this campaign excludes unknown numbers."))}">${ui.ico("warn", "xs")}<b class="whatsapp-kit-tabular">${esc(fmt_int(excluded))}</b>${esc(__("will not be sent to"))}</span>`
+					`<span class="whatsapp-campaign-builder__chip whatsapp-campaign-builder__chip--warn" title="${escape_html(__("They have never had a conversation on WhatsApp and this campaign excludes unknown numbers."))}">${ui.ico("warn", "xs")}<b class="whatsapp-kit-tabular">${escape_html(format_integer(excluded))}</b>${escape_html(__("will not be sent to"))}</span>`
 				);
 			}
 			// one source and nothing excluded says nothing the total does not
@@ -210,7 +210,7 @@ frappe.provide("whatsapp_next.campaign");
 					this.state.filters.status = values.status || null;
 					this.state.filters.source_type = values.source_type || null;
 					this.state.page = 0;
-					if (this.table && !this.frm.is_new()) this.load(this.table);
+					if (this.table && !this.frm.is_new()) this.load_recipients_page(this.table);
 				},
 			});
 		}
@@ -225,16 +225,16 @@ frappe.provide("whatsapp_next.campaign");
 					label: __("Name"),
 					sortable: true,
 					format: (v, row) => {
-						const name = esc(v || __("Unknown"));
+						const name = escape_html(v || __("Unknown"));
 						return row.contact ? frappe.utils.get_form_link("Contact", row.contact, true, name) : name;
 					},
 				},
-				{ fieldname: "phone_e164", label: __("Phone"), sortable: true, width: 160, format: (v, row) => `<span class="whatsapp-kit-tabular" dir="ltr">${esc(ui.phone(v || row.phone || ""))}</span>${ui.group_tag(v || row.phone)}` },
-				{ fieldname: "source_type", label: __("Source"), sortable: true, groupable: true, width: 140, format: (v) => esc(v ? __(v) : "—") },
+				{ fieldname: "phone_e164", label: __("Phone"), sortable: true, width: 160, format: (v, row) => `<span class="whatsapp-kit-tabular" dir="ltr">${escape_html(ui.phone(v || row.phone || ""))}</span>${ui.group_tag(v || row.phone)}` },
+				{ fieldname: "source_type", label: __("Source"), sortable: true, groupable: true, width: 140, format: (v) => escape_html(v ? __(v) : "—") },
 				{ fieldname: "status", label: __("Status"), type: "status", sortable: true, groupable: true, width: 120 },
 			];
 			if (monitoring) {
-				columns.push({ fieldname: "error_code", label: __("Error"), width: 150, format: (v) => (v ? `<span class="whatsapp-kit-tone--red">${esc(v)}</span>` : "—") });
+				columns.push({ fieldname: "error_code", label: __("Error"), width: 150, format: (v) => (v ? `<span class="whatsapp-kit-tone--red">${escape_html(v)}</span>` : "—") });
 			}
 			this.table = new ui.DataList({
 				wrapper: this.$wrapper.find("[data-table]"),
@@ -245,12 +245,12 @@ frappe.provide("whatsapp_next.campaign");
 				columns,
 				on_page: (page, t) => {
 					this.state.page = page;
-					this.load(t);
+					this.load_recipients_page(t);
 				},
 				on_sort: (fieldname, order, t) => {
 					this.state.order_by = `${fieldname} ${order}`;
 					this.state.page = 0;
-					this.load(t);
+					this.load_recipients_page(t);
 				},
 				// in the wizard a row is a person to keep or remove; once messages exist it opens its message
 				on_row_click: monitoring ? (row) => row.outbound_message && frappe.set_route("Form", "WhatsApp Log", row.outbound_message) : null,
@@ -261,11 +261,11 @@ frappe.provide("whatsapp_next.campaign");
 				},
 			});
 			this.render_verbs();
-			if (!this.frm.is_new()) this.load(this.table);
+			if (!this.frm.is_new()) this.load_recipients_page(this.table);
 			else this.render_head();
 		}
 
-		load(table) {
+		load_recipients_page(table) {
 			return ui
 				.call(
 					"campaigns.get_recipients_page",
@@ -299,7 +299,7 @@ frappe.provide("whatsapp_next.campaign");
 			const open = this.can_change();
 			const selected = this.table ? this.table.get_selected() : [];
 			if (selected.length && open) {
-				$(ui.btn({ label: __("Remove {0}", [fmt_int(selected.length)]), icon: "trash", variant: "danger", size: "sm" }))
+				$(ui.btn({ label: __("Remove {0}", [format_integer(selected.length)]), icon: "trash", variant: "danger", size: "sm" }))
 					.on("click", () => this.remove_selected(selected))
 					.appendTo(this.$verbs);
 				return;
@@ -313,16 +313,16 @@ frappe.provide("whatsapp_next.campaign");
 			// a row already removed is not removed twice, and the count says what will actually go
 			const keys = [...new Set(rows.filter((r) => r.status !== "Removed").map((r) => r.phone_e164).filter(Boolean))];
 			if (!keys.length) return ui.Toast.info(__("Nothing to remove: the selected recipients are already removed."));
-			ui.ConfirmDialog.ask({
-				title: __("Remove {0} recipients?", [fmt_int(keys.length)]),
+			ui.ConfirmDialog.ask_for_confirmation({
+				title: __("Remove {0} recipients?", [format_integer(keys.length)]),
 				message: __("They stop receiving this campaign. Nothing else changes."),
-				impact: [{ label: __("Recipients to remove"), value: fmt_int(keys.length), tone: "red" }],
+				impact: [{ label: __("Recipients to remove"), value: format_integer(keys.length), tone: "red" }],
 				danger: true,
-				confirm_label: __("Remove {0}", [fmt_int(keys.length)]),
+				confirm_label: __("Remove {0}", [format_integer(keys.length)]),
 				on_confirm: () => ui.call("picker.commit_remove", { target_doctype: this.frm.doctype, target_name: this.ctx.doc.name, phone_e164s: keys }),
 			})
 				.then(() => {
-					ui.Toast.success(__("Removed {0}", [fmt_int(keys.length)]));
+					ui.Toast.success(__("Removed {0}", [format_integer(keys.length)]));
 					this.frm.reload_doc();
 				})
 				.catch(() => {});
@@ -338,7 +338,7 @@ frappe.provide("whatsapp_next.campaign");
 			this.render_gate();
 			this.render_sources();
 			this.render_verbs();
-			if (!this.frm.is_new()) this.load(this.table);
+			if (!this.frm.is_new()) this.load_recipients_page(this.table);
 			else this.render_head();
 		}
 	};

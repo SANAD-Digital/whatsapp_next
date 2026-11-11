@@ -35,7 +35,7 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 		this.fieldname = this.opts.fieldname;
 		this.state = { page: 1, page_length: cint(this.opts.page_length) || 50, search: "", filters: {}, total: 0, rows: [] };
 		this.resolve_meta();
-		this.make();
+		this.build_table_markup();
 		this.refresh();
 	}
 
@@ -57,7 +57,7 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 		this.columns = columns.map((c) => Object.assign({}, c, { df: this.field_map[c.fieldname], label: c.label || (this.field_map[c.fieldname] ? __(this.field_map[c.fieldname].label) : c.fieldname) }));
 	}
 
-	make() {
+	build_table_markup() {
 		const field = this.frm.get_field(this.fieldname);
 		const id = ui.uid("pct");
 		this.$el = $(`
@@ -100,8 +100,8 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 		this.$table = this.$el.find(".whatsapp-kit-paged-child-table__table");
 		this.$range = this.$el.find(".whatsapp-kit-paged-child-table__range");
 		this.state_view = new whatsapp.ui.EmptyState({ wrapper: this.$state, state: "loading", size: "sm" });
-		this.$el.find(".whatsapp-kit-paged-child-table__prev").on("click", () => this.go(this.state.page - 1));
-		this.$el.find(".whatsapp-kit-paged-child-table__next").on("click", () => this.go(this.state.page + 1));
+		this.$el.find(".whatsapp-kit-paged-child-table__prev").on("click", () => this.go_to_page(this.state.page - 1));
+		this.$el.find(".whatsapp-kit-paged-child-table__next").on("click", () => this.go_to_page(this.state.page + 1));
 		this.render_filters();
 		this.render_toolbar();
 	}
@@ -139,7 +139,7 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 			const $search = $(`<input type="search" class="form-control input-xs whatsapp-kit-paged-child-table__search" placeholder="${ui.escape(__("Search"))}" aria-label="${ui.escape(__("Search {0}", [this.label]))}">`);
 			$search.on("input", ui.debounce(() => {
 				this.state.search = $search.val().trim();
-				this.go(1);
+				this.go_to_page(1);
 			}, 300));
 			this.$filters.append($search);
 		}
@@ -168,7 +168,7 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 	set_filter(fieldname, value) {
 		if (value) this.state.filters[fieldname] = value;
 		else delete this.state.filters[fieldname];
-		this.go(1);
+		this.go_to_page(1);
 	}
 
 	/** Re-read options (e.g. after a status change) and re-render toolbar + rows. */
@@ -184,7 +184,7 @@ whatsapp.ui.PagedChildTable = class PagedChildTable {
 		return Object.assign({ name: this.frm.doc.name, page: s.page, page_length: s.page_length, search: s.search || undefined }, s.filters);
 	}
 
-	go(page) {
+	go_to_page(page) {
 		const pages = Math.max(1, Math.ceil(this.state.total / this.state.page_length));
 		this.state.page = Math.min(Math.max(1, page), pages);
 		return this.refresh();

@@ -29,7 +29,7 @@ frappe.provide("whatsapp_next.devices");
 		"Logged Out": { tone: "red", label: () => __("Signed out") },
 	};
 	const status_of = (row) => STATUS[row.status] || { tone: "gray", label: () => __("Unknown") };
-	const ago = (value) => whatsapp.ui.ago(value, null);
+	const format_time_ago = (value) => whatsapp.ui.ago(value, null);
 	// when an offline device went offline: a sign-out is stamped `logged_out_at`, a dropped
 	// connection `disconnected_at` — an older stamp of the other kind must not win
 	const offline_since = (row) =>
@@ -609,7 +609,7 @@ frappe.provide("whatsapp_next.devices");
 			const screen = this.screen;
 			const items = [];
 			if (is_agent()) {
-				items.push({ label: __("Check status now"), icon: "es-line-reload", handler: () => screen.poll(row) });
+				items.push({ label: __("Check status now"), icon: "es-line-reload", handler: () => screen.check_device_status(row) });
 			}
 			if (!is_manager()) return items;
 			if (!row.is_default) {
@@ -623,7 +623,7 @@ frappe.provide("whatsapp_next.devices");
 			if (screen.history_allowed) {
 				items.push({ label: __("Import past conversations"), icon: "es-line-download", handler: () => screen.import_history(row) });
 			}
-			items.push({ label: __("Delete device"), icon: "es-line-delete", danger: true, handler: () => screen.remove(row) });
+			items.push({ label: __("Delete device"), icon: "es-line-delete", danger: true, handler: () => screen.delete_device(row) });
 			return items;
 		}
 
@@ -699,7 +699,7 @@ frappe.provide("whatsapp_next.devices");
 			);
 			this.$el
 				.find('[data-meta="message"] [data-slot="value"]')
-				.text(stats.last_message_at ? ago(stats.last_message_at) : __("No messages"));
+				.text(stats.last_message_at ? format_time_ago(stats.last_message_at) : __("No messages"));
 			const inbound = Number(stats.inbound || 0);
 			this.$el
 				.find('[data-verb="inbound"] [data-slot="count"]')
@@ -726,7 +726,7 @@ frappe.provide("whatsapp_next.devices");
 					key: "seen",
 					icon: offline ? "es-line-wifi-off" : "es-line-time",
 					label: offline ? __("Offline since") : __("Last seen"),
-					value: ago(since) || __("Never"),
+					value: format_time_ago(since) || __("Never"),
 					alert: offline,
 				},
 				{ key: "message", icon: "es-line-chat", label: __("Last message"), value: ui.skeleton(1, { lines: 1 }), html: true },
@@ -776,8 +776,8 @@ frappe.provide("whatsapp_next.devices");
 					connected
 						? { key: "disconnect", label: __("Disconnect"), icon: "es-line-wifi-off", handler: () => screen.disconnect(row) }
 						: pending
-						? { key: "code", label: __("Show code"), icon: "es-line-security", primary: true, handler: () => screen.pair(row) }
-						: { key: "pair", label: __("Pair again"), icon: "es-line-link", primary: true, handler: () => screen.pair(row) }
+						? { key: "code", label: __("Show code"), icon: "es-line-security", primary: true, handler: () => screen.open_pairing_dialog(row) }
+						: { key: "pair", label: __("Pair again"), icon: "es-line-link", primary: true, handler: () => screen.open_pairing_dialog(row) }
 				);
 			}
 			verbs.push(
@@ -814,7 +814,7 @@ frappe.provide("whatsapp_next.devices");
 				title: __("Devices"),
 				description: __("Every device is its own WhatsApp number. Messages are routed to one of them by the template or the campaign."),
 				primary: is_manager()
-					? { label: __("Add device"), icon: "es-line-add", handler: () => this.pair(null) }
+					? { label: __("Add device"), icon: "es-line-add", handler: () => this.open_pairing_dialog(null) }
 					: null,
 				secondary: [
 					{ label: __("Refresh"), icon: "es-line-reload", handler: () => this.refresh({ remote: true }) },
@@ -840,7 +840,7 @@ frappe.provide("whatsapp_next.devices");
 
 		// ---- data -------------------------------------------------------------------------------
 
-		load() {
+		load_device_rows() {
 			if (!this._rows) {
 				const remote = this._remote;
 				this._remote = false;
@@ -898,14 +898,14 @@ frappe.provide("whatsapp_next.devices");
 		 * and the icon as well as the fill, so it survives a greyscale screen.
 		 */
 		render_alert($el) {
-			return this.load().then((rows) => {
+			return this.load_device_rows().then((rows) => {
 				const offline = rows.filter((row) => OFFLINE.includes(row.status));
 				$el.empty();
 				if (!offline.length) return;
 				const signed_out = offline.some((row) => row.status === "Logged Out");
 				const tone = signed_out ? "red" : "amber";
 				const one = offline.length === 1 ? offline[0] : null;
-				const since = one && ago(offline_since(one));
+				const since = one && format_time_ago(offline_since(one));
 				const title = one
 					? since
 						? __("Device {0} has been offline since {1}.", [one.device_name || one.name, since])
@@ -916,7 +916,7 @@ frappe.provide("whatsapp_next.devices");
 					: __("Messages addressed to them stay in the queue and are not sent until they are paired again.");
 				const action =
 					one && is_manager()
-						? { label: __("Pair again"), icon: "es-line-link", handler: () => this.pair(one), strong: true }
+						? { label: __("Pair again"), icon: "es-line-link", handler: () => this.open_pairing_dialog(one), strong: true }
 						: { label: __("Show them"), icon: "es-line-filter", handler: () => this.set_filter("offline") };
 				const $alert = $(`
 					<div class="whatsapp-devices__alert whatsapp-devices__alert--${tone}" role="${tone === "red" ? "alert" : "status"}">
@@ -944,7 +944,7 @@ frappe.provide("whatsapp_next.devices");
 			// the cards are replaced, not emptied and refilled: holding the grid's height across a
 			// refresh is what keeps the page from jumping under the pointer (CLS)
 			if (first) this.render_skeleton($grid);
-			return this.load()
+			return this.load_device_rows()
 				.then((rows) => {
 					this.render_rail($rail, rows);
 					this.render_grid($grid, rows);
@@ -1030,7 +1030,7 @@ frappe.provide("whatsapp_next.devices");
 					state: "empty",
 					title: __("No devices yet"),
 					description: __("Pair a phone to start sending. Pairing takes less than a minute."),
-					action: is_manager() ? { label: __("Add device"), primary: true, on_click: () => this.pair(null) } : null,
+					action: is_manager() ? { label: __("Add device"), primary: true, on_click: () => this.open_pairing_dialog(null) } : null,
 				});
 				return;
 			}
@@ -1058,7 +1058,7 @@ frappe.provide("whatsapp_next.devices");
 
 		// ---- actions ----------------------------------------------------------------------------
 
-		pair(row) {
+		open_pairing_dialog(row) {
 			new PairingDialog({
 				device: row ? row.name : null,
 				device_name: row ? row.device_name : "",
@@ -1067,7 +1067,7 @@ frappe.provide("whatsapp_next.devices");
 			}).show();
 		}
 
-		poll(row) {
+		check_device_status(row) {
 			return ui.call("devices.poll_status", { device: row.name }).then((r) => {
 				const label = (STATUS[r.status] || { label: () => r.status }).label();
 				ui.Toast.success(__("{0} is {1}", [row.device_name || row.name, label]));
@@ -1112,7 +1112,7 @@ frappe.provide("whatsapp_next.devices");
 
 		disconnect(row) {
 			const title = row.device_name || row.name;
-			return ui.ConfirmDialog.ask({
+			return ui.ConfirmDialog.ask_for_confirmation({
 				title: __("Disconnect {0}?", [title]),
 				message: __("Sending from this number stops at once. Queued messages stay in the queue until the device is paired again; nothing is deleted."),
 				load_impact: () =>
@@ -1125,16 +1125,16 @@ frappe.provide("whatsapp_next.devices");
 				on_confirm: () =>
 					ui.call("devices.disconnect_device", { device: row.name }).then(() => {
 						ui.Toast.warning(__("{0} was disconnected", [title]), {
-							action: { label: __("Pair again"), on_click: () => this.pair(row) },
+							action: { label: __("Pair again"), on_click: () => this.open_pairing_dialog(row) },
 						});
 						this.refresh();
 					}),
 			}).catch(() => {});
 		}
 
-		remove(row) {
+		delete_device(row) {
 			const title = row.device_name || row.name;
-			return ui.ConfirmDialog.ask({
+			return ui.ConfirmDialog.ask_for_confirmation({
 				title: __("Delete {0}?", [title]),
 				message: __("Deleting cannot be undone. The message log stays for auditing, but templates and campaigns bound to this device need another one before they work again."),
 				danger: true,
@@ -1179,8 +1179,8 @@ frappe.provide("whatsapp_next.devices");
 		if (pair) {
 			frappe.route_options = null;
 			wrapper.wa_devices
-				.load()
-				.then((rows) => wrapper.wa_devices.pair((rows || []).find((row) => row.name === pair) || { name: pair, device_name: pair }))
+				.load_device_rows()
+				.then((rows) => wrapper.wa_devices.open_pairing_dialog((rows || []).find((row) => row.name === pair) || { name: pair, device_name: pair }))
 				.catch(() => {});
 		}
 	};

@@ -34,22 +34,22 @@ frappe.provide("whatsapp_next.fmt");
 
 	// ---- formatters -------------------------------------------------------------------------
 
-	const fmt = whatsapp_next.fmt;
+	const message_formatters = whatsapp_next.fmt;
 
 	/** Full date and time in the user's format. */
-	fmt.dt = (v) => (v ? frappe.datetime.str_to_user(v) : "");
+	message_formatters.dt = (v) => (v ? frappe.datetime.str_to_user(v) : "");
 
 	/** Table cell: user date + HH:mm, no seconds, as the prototype's time column shows it. */
-	fmt.short = (v) => (v ? moment(frappe.datetime.convert_to_user_tz ? frappe.datetime.convert_to_user_tz(v, false) : v).format(`${frappe.datetime.get_user_date_fmt().toUpperCase()} HH:mm`) : "");
+	message_formatters.short = (v) => (v ? moment(frappe.datetime.convert_to_user_tz ? frappe.datetime.convert_to_user_tz(v, false) : v).format(`${frappe.datetime.get_user_date_fmt().toUpperCase()} HH:mm`) : "");
 
 	/** A badge coloured by a DocType's own indicator rule. */
-	fmt.badge = (doctype, doc, label) => {
+	message_formatters.badge = (doctype, doc, label) => {
 		const ind = ui.indicator_for(doctype, Object.assign({ doctype }, doc));
 		return ui.StatusBadge.html({ label: __(label || ind.label || ""), colour: ind.colour });
 	};
 
 	/** A time cell: left-to-right and tabular, falling back to when the row was created. */
-	fmt.time_cell = (v, doc) => (v || (doc && doc.creation) ? `<span class="whatsapp-kit-tabular whatsapp-kit-datalist__date" dir="ltr">${ui.escape(fmt.short(v || doc.creation))}</span>` : "");
+	message_formatters.time_cell = (v, doc) => (v || (doc && doc.creation) ? `<span class="whatsapp-kit-tabular whatsapp-kit-datalist__date" dir="ltr">${ui.escape(message_formatters.short(v || doc.creation))}</span>` : "");
 
 	/** What a failure code means to the person reading it, not to the dispatcher. */
 	const ERROR_TEXT = {
@@ -68,7 +68,7 @@ frappe.provide("whatsapp_next.fmt");
 		unknown: () => __("An unknown error"),
 	};
 	/** `raw` is the provider's own text: shown when the code says nothing more than "unknown". */
-	fmt.error_text = (code, raw) => (code === "unknown" && raw ? raw : ERROR_TEXT[code] ? ERROR_TEXT[code]() : code ? __(code) : raw || "");
+	message_formatters.error_text = (code, raw) => (code === "unknown" && raw ? raw : ERROR_TEXT[code] ? ERROR_TEXT[code]() : code ? __(code) : raw || "");
 
 	// ---- columns every message screen shares --------------------------------------------------
 
@@ -88,7 +88,7 @@ frappe.provide("whatsapp_next.fmt");
 	columns.device = ({ label, fieldname = "device" } = {}) => ({ fieldname, type: "avatar", label: label || __("Device"), sortable: true });
 
 	/** When it happened. */
-	columns.time = ({ fieldname, label, sortable = true } = {}) => ({ fieldname, type: "date", label: label || __("Time"), sortable, format: fmt.time_cell });
+	columns.time = ({ fieldname, label, sortable = true } = {}) => ({ fieldname, type: "date", label: label || __("Time"), sortable, format: message_formatters.time_cell });
 
 	/** A flag that only matters when it is on ("On behalf", "Test"). */
 	columns.flag = ({ fieldname, label, colour = "gray" } = {}) => ({
@@ -118,7 +118,7 @@ frappe.provide("whatsapp_next.fmt");
 
 	/** Cancel one outbound message (`doc` needs `name`; `display_name` / `phone_e164` / `status` for the impact rows). */
 	whatsapp_next.messages.cancel = function (doc, after) {
-		return ui.ConfirmDialog.ask({
+		return ui.ConfirmDialog.ask_for_confirmation({
 			title: __("Cancel this message?"),
 			message: __("The message leaves the queue and its status becomes Cancelled."),
 			impact: [
@@ -220,7 +220,7 @@ frappe.provide("whatsapp_next.fmt");
 		const push = (at, text, tone) => at && rows.push({ at, text, tone });
 		push(doc.creation, __("Created ({0})", [__(doc.source_type || "API")]), "gray");
 		push(doc.queued_at, __("Queued"), "blue");
-		push(doc.scheduled_at, __("Scheduled for {0}", [fmt.dt(doc.scheduled_at)]), "blue");
+		push(doc.scheduled_at, __("Scheduled for {0}", [message_formatters.dt(doc.scheduled_at)]), "blue");
 		const q = doc.timeline && doc.timeline.queue_item;
 		if (q) {
 			push(q.claimed_at, __("Picked up for sending (attempt {0} of {1})", [ui.format_int(q.attempts || 1), ui.format_int(q.max_attempts || 0)]), "blue");
@@ -237,7 +237,7 @@ frappe.provide("whatsapp_next.fmt");
 		push(doc.delivered_at, __("Delivered"), "green");
 		push(doc.read_at, __("Read"), "green");
 		push(doc.held_at, __("Held: {0}", [doc.held_reason || ""]), "amber");
-		push(doc.failed_at, __("Failed: {0}", [fmt.error_text(doc.error_code, doc.error_message)]), "red");
+		push(doc.failed_at, __("Failed: {0}", [message_formatters.error_text(doc.error_code, doc.error_message)]), "red");
 		push(doc.cancelled_at, __("Cancelled"), "red");
 		((doc.timeline && doc.timeline.webhook_events) || []).forEach((e) => {
 			const ok = e.status === "Processed";

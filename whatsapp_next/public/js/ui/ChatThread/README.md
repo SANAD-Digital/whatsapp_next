@@ -38,9 +38,9 @@ display_name, key, attachment, reference_doctype, reference_name, cursor}`), `on
 Methods: `set_rows(rows)`, `prepend(rows)`, `append(rows)` (both return the number of new rows),
 `update_status(name, status)`, `set_has_more(bool)`, `scroll_to_bottom()`, `scroll_to(name)`,
 `load_more()`, `destroy()`.
-Static helpers: `ChatThread.format(text)` (escape + WhatsApp `*bold*` / `_italic_` / `~strike~` /
+Static helpers: `ChatThread.format_whatsapp_text(text)` (escape + WhatsApp `*bold*` / `_italic_` / `~strike~` /
 `` `code` `` + line breaks), `ChatThread.status_html(status)`, `ChatThread.day_of(ts)`,
-`ChatThread.time_of(ts)`, `ChatThread.sort(rows)`.
+`ChatThread.time_of(ts)`, `ChatThread.sort_rows_oldest_first(rows)`.
 
 ## Live use
 ConversationDrawer body (WhatsApp Numbers list and form, Contacts); the Simulator page thread.

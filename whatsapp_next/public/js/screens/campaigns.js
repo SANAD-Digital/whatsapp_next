@@ -11,20 +11,20 @@ frappe.provide("whatsapp_next.campaigns");
 
 (function () {
 	const ui = whatsapp.ui;
-	const C = whatsapp_next.campaigns;
-	const esc = (v) => ui.escape(v);
-	const fmt_int = (v) => ui.format_int(v);
+	const campaign_helpers = whatsapp_next.campaigns;
+	const escape_html = (v) => ui.escape(v);
+	const format_integer = (v) => ui.format_int(v);
 
-	C.DOCTYPE = "WhatsApp Campaign";
+	campaign_helpers.DOCTYPE = "WhatsApp Campaign";
 	/** Ended: nothing can change any more. */
-	C.TERMINAL = ["Completed", "Partially Failed", "Cancelled"];
+	campaign_helpers.TERMINAL = ["Completed", "Partially Failed", "Cancelled"];
 	/** In flight: editing means stopping first. */
-	C.STOPPABLE = ["Scheduled", "Queued", "Running"];
+	campaign_helpers.STOPPABLE = ["Scheduled", "Queued", "Running"];
 	/** Open for editing. */
-	C.EDITABLE = ["Draft", "Paused"];
+	campaign_helpers.EDITABLE = ["Draft", "Paused"];
 	/** What `campaign_runner.start` accepts (a paused campaign resumes, it does not start). */
-	C.STARTABLE = ["Draft", "Scheduled"];
-	C.INDICATOR = {
+	campaign_helpers.STARTABLE = ["Draft", "Scheduled"];
+	campaign_helpers.INDICATOR = {
 		Draft: "gray",
 		Scheduled: "blue",
 		Queued: "blue",
@@ -35,53 +35,53 @@ frappe.provide("whatsapp_next.campaigns");
 		Cancelled: "red",
 	};
 
-	C.is_manager = () => frappe.user.has_role("WhatsApp Manager") || frappe.user.has_role("System Manager");
+	campaign_helpers.is_manager = () => frappe.user.has_role("WhatsApp Manager") || frappe.user.has_role("System Manager");
 
 	// ---- reading a campaign -----------------------------------------------------------------
 
-	C.share = (part, whole) => (cint(whole) ? Math.round((cint(part) * 100) / cint(whole)) : null);
+	campaign_helpers.share = (part, whole) => (cint(whole) ? Math.round((cint(part) * 100) / cint(whole)) : null);
 
-	C.pct_text = (part, whole) => {
-		const value = C.share(part, whole);
-		return value == null ? "—" : `${fmt_int(value)}%`;
+	campaign_helpers.pct_text = (part, whole) => {
+		const value = campaign_helpers.share(part, whole);
+		return value == null ? "—" : `${format_integer(value)}%`;
 	};
 
 	/**
 	 * What has left the campaign. `Sent`, `Delivered` and `Read` are three stages of the same fact,
 	 * so progress that counts only `Sent` shows 3 % for a campaign that has handed over a third.
 	 */
-	C.handed_of = (row) => cint(row.sent) + cint(row.delivered) + cint(row.read);
+	campaign_helpers.handed_of = (row) => cint(row.sent) + cint(row.delivered) + cint(row.read);
 
 	/** The same rule over a campaign document, whose counters are the four disjoint fields. */
-	C.handed_of_doc = (doc) => cint(doc.sent_count) + cint(doc.delivered_count) + cint(doc.read_count);
+	campaign_helpers.handed_of_doc = (doc) => cint(doc.sent_count) + cint(doc.delivered_count) + cint(doc.read_count);
 
 	/**
 	 * Every message the campaign has, in any state: one per recipient × message, all created when it
 	 * starts. The counters count messages, so their denominator is this, never the recipients — a
 	 * campaign of three messages to three people is "9 / 9" when done, not "9 / 3". 0 before start.
 	 */
-	C.messages_of_doc = (doc) =>
-		cint(doc.queued_count) + C.handed_of_doc(doc) + cint(doc.failed_count) + cint(doc.cancelled_count);
+	campaign_helpers.messages_of_doc = (doc) =>
+		cint(doc.queued_count) + campaign_helpers.handed_of_doc(doc) + cint(doc.failed_count) + cint(doc.cancelled_count);
 
 	/** What is still to go out: the messages that have neither left, failed nor been cancelled
 	 * (before the messages exist, the recipients not reached yet). */
-	C.remaining_of_doc = (doc) =>
-		C.messages_of_doc(doc)
+	campaign_helpers.remaining_of_doc = (doc) =>
+		campaign_helpers.messages_of_doc(doc)
 			? cint(doc.queued_count)
-			: Math.max(0, cint(doc.total_recipients) - C.handed_of_doc(doc) - cint(doc.failed_count) - cint(doc.cancelled_count));
+			: Math.max(0, cint(doc.total_recipients) - campaign_helpers.handed_of_doc(doc) - cint(doc.failed_count) - cint(doc.cancelled_count));
 
 	/** "sent / messages", kept left to right inside an Arabic line ("9 / 3" must not read "3 / 9"). */
-	C.progress_text = (doc) => `\u2066${fmt_int(C.handed_of_doc(doc))} / ${fmt_int(C.messages_of_doc(doc))}\u2069`;
+	campaign_helpers.progress_text = (doc) => `\u2066${format_integer(campaign_helpers.handed_of_doc(doc))} / ${format_integer(campaign_helpers.messages_of_doc(doc))}\u2069`;
 
 	/** A device shows by its own name; Frappe caches the link title after a list has fetched it. */
-	C.device_title = (name) => {
+	campaign_helpers.device_title = (name) => {
 		if (!name) return "";
 		const title = frappe.utils.get_link_title && frappe.utils.get_link_title("WhatsApp Device", name);
 		return title || name;
 	};
 
 	/** `get_sending_now` returns live counters beside the campaign's own fields. */
-	C.counters_as_doc = (row) => {
+	campaign_helpers.counters_as_doc = (row) => {
 		const c = row.counters || {};
 		return {
 			total_recipients: cint(row.total_recipients) || cint(c.total),
@@ -96,10 +96,10 @@ frappe.provide("whatsapp_next.campaigns");
 		};
 	};
 
-	C.badge = (doc) =>
+	campaign_helpers.badge = (doc) =>
 		ui.StatusBadge.html({
 			label: __(doc.status),
-			colour: ui.indicator_for(C.DOCTYPE, Object.assign({ doctype: C.DOCTYPE }, doc)).colour,
+			colour: ui.indicator_for(campaign_helpers.DOCTYPE, Object.assign({ doctype: campaign_helpers.DOCTYPE }, doc)).colour,
 		});
 
 	// ---- drawing a campaign -----------------------------------------------------------------
@@ -109,12 +109,12 @@ frappe.provide("whatsapp_next.campaigns");
 	 * delivered, then sent-but-not-yet-delivered, then failed — each as a share of the messages,
 	 * so the bar is the campaign's funnel and the empty tail is what has not gone out yet.
 	 */
-	C.bar_html = (doc, { paused } = {}) => {
-		const total = Math.max(C.messages_of_doc(doc), 1);
+	campaign_helpers.bar_html = (doc, { paused } = {}) => {
+		const total = Math.max(campaign_helpers.messages_of_doc(doc), 1);
 		const w = (n) => `${Math.max(0, (cint(n) * 100) / total).toFixed(2)}%`;
 		return `<span class="whatsapp-strip__bar${paused ? " whatsapp-strip__bar--paused" : ""}" role="img"
-				aria-label="${esc(__("{0} sent, {1} delivered, {2} read, {3} failed, of {4} messages", [
-					fmt_int(C.handed_of_doc(doc)), fmt_int(doc.delivered_count), fmt_int(doc.read_count), fmt_int(doc.failed_count), fmt_int(C.messages_of_doc(doc)),
+				aria-label="${escape_html(__("{0} sent, {1} delivered, {2} read, {3} failed, of {4} messages", [
+					format_integer(campaign_helpers.handed_of_doc(doc)), format_integer(doc.delivered_count), format_integer(doc.read_count), format_integer(doc.failed_count), format_integer(campaign_helpers.messages_of_doc(doc)),
 				]))}">
 			<span class="whatsapp-strip__seg whatsapp-strip__seg--read" style="inline-size:${w(doc.read_count)}"></span>
 			<span class="whatsapp-strip__seg whatsapp-strip__seg--delivered" style="inline-size:${w(doc.delivered_count)}"></span>
@@ -124,38 +124,38 @@ frappe.provide("whatsapp_next.campaigns");
 	};
 
 	/** The same bar inside a table cell, with a "sent / messages" label above it. */
-	C.progress_html = (doc, { tone } = {}) => {
-		if (!C.messages_of_doc(doc)) return `<span class="text-muted">—</span>`;
-		return `<span class="whatsapp-strip__cell" title="${esc(__("Messages sent out of all the campaign's messages"))}">
-			<span class="whatsapp-strip__cell-label whatsapp-kit-tabular">${esc(C.progress_text(doc))}</span>
-			${C.bar_html(doc, { paused: tone === "amber" })}
+	campaign_helpers.progress_html = (doc, { tone } = {}) => {
+		if (!campaign_helpers.messages_of_doc(doc)) return `<span class="text-muted">—</span>`;
+		return `<span class="whatsapp-strip__cell" title="${escape_html(__("Messages sent out of all the campaign's messages"))}">
+			<span class="whatsapp-strip__cell-label whatsapp-kit-tabular">${escape_html(campaign_helpers.progress_text(doc))}</span>
+			${campaign_helpers.bar_html(doc, { paused: tone === "amber" })}
 		</span>`;
 	};
 
 	/** The counters the prototype prints beside the bar: label above the number, four of them. */
-	C.stats_html = (doc) =>
+	campaign_helpers.stats_html = (doc) =>
 		[
-			{ label: __("Sent"), value: C.handed_of_doc(doc) },
+			{ label: __("Sent"), value: campaign_helpers.handed_of_doc(doc) },
 			{ label: __("Delivered"), value: cint(doc.delivered_count) + cint(doc.read_count) },
 			{ label: __("Read"), value: cint(doc.read_count), tone: "green" },
 			{ label: __("Failed"), value: cint(doc.failed_count), tone: cint(doc.failed_count) ? "red" : "" },
 		]
 			.map(
 				(s) => `<span class="whatsapp-strip__stat">
-					<span class="whatsapp-strip__stat-label">${esc(s.label)}</span>
-					<span class="whatsapp-strip__stat-value whatsapp-kit-tabular${s.tone ? ` whatsapp-kit-tone--${s.tone}` : ""}">${esc(fmt_int(s.value))}</span>
+					<span class="whatsapp-strip__stat-label">${escape_html(s.label)}</span>
+					<span class="whatsapp-strip__stat-value whatsapp-kit-tabular${s.tone ? ` whatsapp-kit-tone--${s.tone}` : ""}">${escape_html(format_integer(s.value))}</span>
 				</span>`
 			)
 			.join("");
 
 	/** "N messages left — about 12 min at 20/min from device X." */
-	C.eta_text = (doc, progress) => {
+	campaign_helpers.eta_text = (doc, progress) => {
 		const rates = (progress && progress.rates) || {};
 		const counters = (progress && progress.counters) || {};
 		// `open` counts the outbound rows already created and still moving; the recipients that have
 		// not been enqueued yet are not among them, so the campaign's own arithmetic decides when it
 		// says more is left than the queue currently holds
-		const remaining = Math.max(cint(counters.open), C.remaining_of_doc(doc));
+		const remaining = Math.max(cint(counters.open), campaign_helpers.remaining_of_doc(doc));
 		const rate = cint(rates.messages_per_minute) || cint(doc.messages_per_minute) || 20;
 		if (!remaining) return __("Everything has been handed to the queue.");
 		// whole minutes, rounded up: 3 messages at 20/min are "about 1 min", never "about 0 min",
@@ -165,12 +165,12 @@ frappe.provide("whatsapp_next.campaigns");
 		return __("{0} left — about {1} at {2}/min from device {3}.", [
 			ui.plural(remaining, { one: __("{0} message"), other: __("{0} messages") }),
 			minutes < 60
-				? __("{0} min", [fmt_int(minutes)])
+				? __("{0} min", [format_integer(minutes)])
 				: minutes % 60
-					? __("{0} h {1} min", [fmt_int(hours), fmt_int(minutes % 60)])
-					: __("{0} h", [fmt_int(hours)]),
-			fmt_int(rate),
-			C.device_title(doc.device) || "—",
+					? __("{0} h {1} min", [format_integer(hours), format_integer(minutes % 60)])
+					: __("{0} h", [format_integer(hours)]),
+			format_integer(rate),
+			campaign_helpers.device_title(doc.device) || "—",
 		]);
 	};
 
@@ -178,7 +178,7 @@ frappe.provide("whatsapp_next.campaigns");
 	// One wording per verb, wherever it is pressed. Each returns a promise that resolves when the
 	// campaign has changed (and never rejects on a cancelled dialog — the reader said no).
 
-	function run(method, args, { success, after }) {
+	function call_campaign_method(method, args, { success, after }) {
 		return ui
 			.call(method, args)
 			.then((r) => {
@@ -192,9 +192,9 @@ frappe.provide("whatsapp_next.campaigns");
 			});
 	}
 
-	function ask(opts, method, doc, { after, args } = {}) {
+	function confirm_then_call_campaign_method(opts, method, doc, { after, args } = {}) {
 		return ui.ConfirmDialog
-			.ask(
+			.ask_for_confirmation(
 				Object.assign({}, opts, {
 					on_confirm: ({ reason }) =>
 						ui.call(method, Object.assign({ name: doc.name }, args || {}, opts.reason_field ? { reason: reason || null } : {})),
@@ -211,15 +211,15 @@ frappe.provide("whatsapp_next.campaigns");
 	const title_of = (doc) => doc.campaign_name || doc.name;
 
 	/** Start now. The impact is what it will cost: recipients × messages. */
-	C.start = (doc, { after, messages = 1 } = {}) =>
-		ask(
+	campaign_helpers.start = (doc, { after, messages = 1 } = {}) =>
+		confirm_then_call_campaign_method(
 			{
 				title: __("Start {0} now?", [title_of(doc)]),
 				message: __("Messages are handed to the queue and go out at the campaign's rate."),
 				impact: [
-					{ label: __("Recipients"), value: fmt_int(doc.total_recipients) },
-					{ label: __("Messages per recipient"), value: fmt_int(messages) },
-					{ label: __("Messages in total"), value: fmt_int(cint(doc.total_recipients) * cint(messages)) },
+					{ label: __("Recipients"), value: format_integer(doc.total_recipients) },
+					{ label: __("Messages per recipient"), value: format_integer(messages) },
+					{ label: __("Messages in total"), value: format_integer(cint(doc.total_recipients) * cint(messages)) },
 				],
 				confirm_label: __("Start"),
 				success: __("Campaign started"),
@@ -230,7 +230,7 @@ frappe.provide("whatsapp_next.campaigns");
 		);
 
 	/** Give it an hour. */
-	C.schedule = (doc, { after } = {}) =>
+	campaign_helpers.schedule = (doc, { after } = {}) =>
 		new Promise((resolve) => {
 			const d = new frappe.ui.Dialog({
 				title: __("Schedule {0}", [title_of(doc)]),
@@ -249,7 +249,7 @@ frappe.provide("whatsapp_next.campaigns");
 				],
 				primary_action_label: __("Schedule"),
 				primary_action: ({ scheduled_at }) =>
-					run("campaigns.schedule", { name: doc.name, scheduled_at }, { success: __("Campaign scheduled"), after })
+					call_campaign_method("campaigns.schedule", { name: doc.name, scheduled_at }, { success: __("Campaign scheduled"), after })
 						.then((r) => {
 							d.hide();
 							resolve(r);
@@ -259,15 +259,15 @@ frappe.provide("whatsapp_next.campaigns");
 			d.show();
 		});
 
-	C.unschedule = (doc, { after } = {}) => run("campaigns.unschedule", { name: doc.name }, { success: __("Schedule removed"), after });
+	campaign_helpers.unschedule = (doc, { after } = {}) => call_campaign_method("campaigns.unschedule", { name: doc.name }, { success: __("Schedule removed"), after });
 
 	/** Pause. Nothing is lost — that is the first thing the dialog says. */
-	C.pause = (doc, { after } = {}) =>
-		ask(
+	campaign_helpers.pause = (doc, { after } = {}) =>
+		confirm_then_call_campaign_method(
 			{
 				title: __("Pause {0}?", [title_of(doc)]),
 				message: __("Nothing is deleted. Unsent messages stay saved and sending resumes from the same point."),
-				impact: [{ label: __("Messages that will stop"), value: fmt_int(C.remaining_of_doc(doc)) }],
+				impact: [{ label: __("Messages that will stop"), value: format_integer(campaign_helpers.remaining_of_doc(doc)) }],
 				reason_field: { label: __("Reason"), required: false },
 				confirm_label: __("Pause"),
 				success: __("Campaign paused"),
@@ -277,11 +277,11 @@ frappe.provide("whatsapp_next.campaigns");
 			{ after }
 		);
 
-	C.resume = (doc, { after } = {}) =>
-		ask(
+	campaign_helpers.resume = (doc, { after } = {}) =>
+		confirm_then_call_campaign_method(
 			{
 				title: __("Resume {0}?", [title_of(doc)]),
-				impact: [{ label: __("Messages that will be sent"), value: fmt_int(C.remaining_of_doc(doc)) }],
+				impact: [{ label: __("Messages that will be sent"), value: format_integer(campaign_helpers.remaining_of_doc(doc)) }],
 				confirm_label: __("Resume"),
 				success: __("Campaign resumed"),
 			},
@@ -292,9 +292,9 @@ frappe.provide("whatsapp_next.campaigns");
 
 	/** Stop it in order to change it, then open the campaign. A scheduled campaign is stopped by
 	 * dropping its schedule (it goes back to Draft) — `pause` refuses anything that is not sending. */
-	C.stop_to_edit = (doc, { after } = {}) =>
+	campaign_helpers.stop_to_edit = (doc, { after } = {}) =>
 		doc.status === "Scheduled"
-			? ask(
+			? confirm_then_call_campaign_method(
 				{
 					title: __("Stop {0} to edit it?", [title_of(doc)]),
 					message: __("The schedule is removed and the campaign goes back to draft. Schedule or start it again when you are done."),
@@ -306,15 +306,15 @@ frappe.provide("whatsapp_next.campaigns");
 				{
 					after: () => {
 						after && after();
-						frappe.set_route("Form", C.DOCTYPE, doc.name);
+						frappe.set_route("Form", campaign_helpers.DOCTYPE, doc.name);
 					},
 				}
 			)
-			: ask(
+			: confirm_then_call_campaign_method(
 				{
 					title: __("Stop {0} to edit it?", [title_of(doc)]),
 					message: __("Nothing is deleted. Unsent messages stay saved and sending resumes from the same point."),
-					impact: [{ label: __("Messages that will stop"), value: fmt_int(C.remaining_of_doc(doc)) }],
+					impact: [{ label: __("Messages that will stop"), value: format_integer(campaign_helpers.remaining_of_doc(doc)) }],
 					reason_field: { label: __("Reason"), required: false },
 					confirm_label: __("Stop and edit"),
 					success: __("Campaign paused"),
@@ -324,17 +324,17 @@ frappe.provide("whatsapp_next.campaigns");
 				{
 					after: () => {
 						after && after();
-						frappe.set_route("Form", C.DOCTYPE, doc.name);
+						frappe.set_route("Form", campaign_helpers.DOCTYPE, doc.name);
 					},
 				}
 			);
 
 	/** Cancel: the one verb that cannot be undone, so it asks for a reason and an acknowledgement. */
-	C.cancel = (doc, { after } = {}) =>
-		ask(
+	campaign_helpers.cancel = (doc, { after } = {}) =>
+		confirm_then_call_campaign_method(
 			{
 				title: __("Cancel {0}?", [title_of(doc)]),
-				impact: [{ label: __("Messages that will not be sent"), value: fmt_int(C.remaining_of_doc(doc)), tone: "red" }],
+				impact: [{ label: __("Messages that will not be sent"), value: format_integer(campaign_helpers.remaining_of_doc(doc)), tone: "red" }],
 				reason_field: { label: __("Reason"), required: true },
 				ack_checkbox: __("I understand the remaining messages will not be sent."),
 				danger: true,
@@ -351,16 +351,16 @@ frappe.provide("whatsapp_next.campaigns");
 	 * (`{key, label, tone, run}`) — the list strip and the form console render the same set, so a
 	 * campaign never offers a verb on one screen and hides it on the other.
 	 */
-	C.verbs = (doc, { after, messages = 1 } = {}) => {
-		if (!C.is_manager()) return [];
+	campaign_helpers.verbs = (doc, { after, messages = 1 } = {}) => {
+		if (!campaign_helpers.is_manager()) return [];
 		const s = doc.status;
 		const out = [];
-		if (C.STARTABLE.includes(s)) out.push({ key: "start", label: __("Start"), tone: "primary", run: () => C.start(doc, { after, messages }) });
-		if (s === "Draft") out.push({ key: "schedule", label: __("Schedule"), run: () => C.schedule(doc, { after }) });
-		if (s === "Scheduled") out.push({ key: "unschedule", label: __("Unschedule"), run: () => C.unschedule(doc, { after }) });
-		if (["Running", "Queued"].includes(s)) out.push({ key: "pause", label: __("Pause"), run: () => C.pause(doc, { after }) });
-		if (s === "Paused") out.push({ key: "resume", label: __("Resume"), tone: "primary", run: () => C.resume(doc, { after }) });
-		if (!C.TERMINAL.includes(s)) out.push({ key: "cancel", label: __("Cancel campaign"), tone: "danger", run: () => C.cancel(doc, { after }) });
+		if (campaign_helpers.STARTABLE.includes(s)) out.push({ key: "start", label: __("Start"), tone: "primary", run: () => campaign_helpers.start(doc, { after, messages }) });
+		if (s === "Draft") out.push({ key: "schedule", label: __("Schedule"), run: () => campaign_helpers.schedule(doc, { after }) });
+		if (s === "Scheduled") out.push({ key: "unschedule", label: __("Unschedule"), run: () => campaign_helpers.unschedule(doc, { after }) });
+		if (["Running", "Queued"].includes(s)) out.push({ key: "pause", label: __("Pause"), run: () => campaign_helpers.pause(doc, { after }) });
+		if (s === "Paused") out.push({ key: "resume", label: __("Resume"), tone: "primary", run: () => campaign_helpers.resume(doc, { after }) });
+		if (!campaign_helpers.TERMINAL.includes(s)) out.push({ key: "cancel", label: __("Cancel campaign"), tone: "danger", run: () => campaign_helpers.cancel(doc, { after }) });
 		return out;
 	};
 })();

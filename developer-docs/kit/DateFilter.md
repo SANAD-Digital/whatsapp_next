@@ -71,21 +71,21 @@ The last seven options are the set's wiring. `DateFilterSet` supplies them, and 
 
 - `get_value()` returns the value object, or `null` while the draft is incomplete.
 - `set_value(value, {silent})` restores a value. `null` clears.
-- `apply({cascade = true, silent = false})` applies the draft.
+- `apply_selected_dates({cascade = true, silent = false})` applies the draft.
 - `clear({silent = false, cascade = true})` clears the filter.
 - `open({keep_state})` / `close(restore_focus)` open and close the panel. `open_menu()` / `close_menu()` do the same for the operator list, and `open_fields()` / `close_fields()` for the field list.
 - `set_op(key)` changes the operator. The picked dates are kept.
 - `set_field(fieldname, {silent})` points the row at another field.
-- `set(patch)` merges `patch` into the draft and re-renders.
+- `update_draft_state(patch)` merges `patch` into the draft and re-renders.
 - `render_panel()` redraws the open panel.
 - `reflect_trigger()` repaints the trigger.
 - `destroy()` removes the control and its document handlers.
 
 `DateFilterSet`:
 
-- `values()` returns `[{fieldname, value}]`.
+- `applied_field_values()` returns `[{fieldname, value}]`.
 - `selected()` returns the fieldnames currently held.
-- `add(fieldname, {silent, activate})` and `remove(fieldname, {silent, open})` add and drop rows. The last row cannot be removed.
+- `add_date_field_row(fieldname, {silent, activate})` and `remove_date_field_row(fieldname, {silent, open})` add and drop rows. The last row cannot be removed.
 - `activate(fieldname, {open})` switches the visible row.
 - `toggle(fieldname, from)` ticks or unticks a field in the list. Ticking a field while the current row is still blank moves that row to the new field instead of adding one.
 - `apply_all()` applies every row that has a usable draft, then emits once.

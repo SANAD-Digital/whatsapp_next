@@ -13,7 +13,7 @@ export class ManualSource extends BaseSource {
 		return "Manual";
 	}
 
-	static label() {
+	static default_tab_label() {
 		return __("Manual entry");
 	}
 
@@ -38,7 +38,7 @@ export class ManualSource extends BaseSource {
 		this.$text = $field.find("textarea");
 		this.$error = $('<div class="whatsapp-kit-picker__alert" role="alert" hidden></div>');
 		this.$foot = $('<div class="whatsapp-kit-picker__foot"></div>');
-		this.$add = $(`<button type="button" class="btn btn-primary btn-sm">${ui.escape(__("Add numbers"))}</button>`).on("click", () => this.parse());
+		this.$add = $(`<button type="button" class="btn btn-primary btn-sm">${ui.escape(__("Add numbers"))}</button>`).on("click", () => this.parse_entered_numbers());
 		this.$count = $('<span class="whatsapp-kit-picker__note whatsapp-kit-tabular"></span>');
 		this.$foot.append(this.$add, this.$count);
 		this.$fixes = $('<div class="whatsapp-kit-picker__fixes" hidden></div>');
@@ -62,19 +62,19 @@ export class ManualSource extends BaseSource {
 		this.$text.on("keydown", (e) => {
 			if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
 				e.preventDefault();
-				this.parse();
+				this.parse_entered_numbers();
 			}
 		});
 		this.$add.prop("disabled", true);
 		this.$pane.append($field, this.$foot, this.$error, this.$fixes);
 	}
 
-	parse() {
+	parse_entered_numbers() {
 		const text = this.$text.val();
 		if (!text.trim()) return Promise.resolve();
 		this.$add.prop("disabled", true);
 		this.$error.attr("hidden", true).empty();
-		return this.call("picker.parse_manual", { text }, { silent: true })
+		return this.call_picker_api("picker.parse_manual", { text }, { silent: true })
 			.then((r) => {
 				const rows = r.rows || [];
 				const invalid = r.invalid || [];
@@ -136,7 +136,7 @@ export class ManualSource extends BaseSource {
 				}
 			});
 			$row.find('[data-act="fix"]').on("click", () => this.fix_one(i, $row));
-			$row.find('[data-act="drop"]').on("click", () => this.drop(i));
+			$row.find('[data-act="drop"]').on("click", () => this.remove_pending_fix(i));
 			$rows.append($row);
 		});
 		$head.find('[data-act="fix-all"]').on("click", () => this.fix_all());
@@ -148,7 +148,7 @@ export class ManualSource extends BaseSource {
 		this.$fixes.removeAttr("hidden").empty().append($head, $rows);
 	}
 
-	drop(i) {
+	remove_pending_fix(i) {
 		this.pending.splice(i, 1);
 		this.render_fixes();
 	}
@@ -156,9 +156,9 @@ export class ManualSource extends BaseSource {
 	/** One corrected line back to the server: it leaves the list when it reads, else says why not. */
 	fix_one(i, $row) {
 		const raw = String($row.find("input").val() || "").trim();
-		if (!raw) return this.drop(i);
+		if (!raw) return this.remove_pending_fix(i);
 		$row.addClass("whatsapp-kit-picker__fix--busy").find("button").prop("disabled", true);
-		return this.call("picker.parse_manual", { text: raw }, { silent: true })
+		return this.call_picker_api("picker.parse_manual", { text: raw }, { silent: true })
 			.then((r) => {
 				const rows = r.rows || [];
 				if (rows.length) {
@@ -196,7 +196,7 @@ export class ManualSource extends BaseSource {
 			return this.render_fixes();
 		}
 		this.$fixes.find("button").prop("disabled", true);
-		return this.call("picker.parse_manual", { text: lines.join("\n") }, { silent: true })
+		return this.call_picker_api("picker.parse_manual", { text: lines.join("\n") }, { silent: true })
 			.then((r) => {
 				const rows = r.rows || [];
 				if (rows.length) this.picker.add_rows(rows, { source_type: this.key });

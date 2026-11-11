@@ -11,7 +11,7 @@ export class CurrentSource extends BaseSource {
 		return "__current";
 	}
 
-	static label() {
+	static default_tab_label() {
 		return __("Current members");
 	}
 
@@ -32,7 +32,7 @@ export class CurrentSource extends BaseSource {
 		this.state.loading();
 		this.$foot.empty();
 		const args = this.cfg.args({ page: this.page, page_length: this.page_length, search: this.txt || null, source_type: this.source_type || null });
-		return this.call(this.cfg.method, args, { silent: true })
+		return this.call_picker_api(this.cfg.method, args, { silent: true })
 			.then((r) => {
 				let rows = (r && r.rows) || [];
 				// Client-side narrowing for methods without search / source filters.

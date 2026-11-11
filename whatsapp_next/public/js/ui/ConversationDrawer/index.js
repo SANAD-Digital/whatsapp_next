@@ -69,7 +69,7 @@ whatsapp.ui.ConversationDrawer = class ConversationDrawer {
 		this.opener = document.activeElement;
 		ui.overlay.open(this); // closes any open Drawer / ConversationDrawer first
 		whatsapp.ui.ConversationDrawer.current = this;
-		this.make();
+		this.build_drawer_shell();
 		this.open();
 	}
 
@@ -77,7 +77,7 @@ whatsapp.ui.ConversationDrawer = class ConversationDrawer {
 		return new whatsapp.ui.ConversationDrawer(opts);
 	}
 
-	make() {
+	build_drawer_shell() {
 		const title_id = `${this.id}-title`;
 		const width = this.opts.width ? (typeof this.opts.width === "number" ? `${this.opts.width}px` : this.opts.width) : "";
 		this.$backdrop = $(`<div class="whatsapp-kit whatsapp-kit-backdrop whatsapp-kit-conversation__backdrop"></div>`);
@@ -275,7 +275,7 @@ whatsapp.ui.ConversationDrawer = class ConversationDrawer {
 		const key = n.phone_e164 || n.name;
 		const confirmed = !cint(n.conversation_confirmed);
 		const who = n.display_name || ui.phone(key);
-		return whatsapp.ui.ConfirmDialog.ask({
+		return whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 			title: confirmed ? __("Confirm this conversation?") : __("Remove the confirmation?"),
 			message: confirmed
 				? __("Marks {0} as a real, ongoing conversation. Agents rely on this flag.", [who])
@@ -340,7 +340,7 @@ whatsapp.ui.ConversationDrawer = class ConversationDrawer {
 				this.$thread.hide();
 				const forbidden = err && (err.http_status === 403 || /PermissionError/.test(err.exc_type || ""));
 				if (forbidden) {
-					this.state.set("error", {
+					this.state.set_state("error", {
 						title: __("No access to conversations"),
 						description: __("You do not have permission to read conversations. Ask an administrator for access."),
 						action: null,

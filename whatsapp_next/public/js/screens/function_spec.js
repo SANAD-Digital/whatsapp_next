@@ -8,7 +8,7 @@
 frappe.provide("whatsapp_next.functions");
 
 (() => {
-	const LANG = () => frappe.boot.lang || "en";
+	const get_user_language = () => frappe.boot.lang || "en";
 	const SETTING_TYPE = { Check: "Check", Int: "Int", Select: "Select", Date: "Data", Link: "Data", Dynamic: "Data", Data: "Data" };
 
 	/** A template's text in a language: `{lang: text}` (with `""` for every language) or one text. */
@@ -22,7 +22,7 @@ frappe.provide("whatsapp_next.functions");
 
 	/** One message template as an editor output row: its text here, else the site's, else the header's. */
 	function output_of(t, own) {
-		const lang = LANG();
+		const lang = get_user_language();
 		const fallback = text_in(t.site, lang) || default_text(t, lang);
 		return {
 			output_key: t.key,
@@ -41,7 +41,7 @@ frappe.provide("whatsapp_next.functions");
 		// the command's own text: the row in the reader's language, else the one for every language
 		const own = {};
 		(command_templates || []).filter((r) => !r.language).forEach((r) => (own[r.param] = r.text));
-		(command_templates || []).filter((r) => r.language === LANG()).forEach((r) => (own[r.param] = r.text));
+		(command_templates || []).filter((r) => r.language === get_user_language()).forEach((r) => (own[r.param] = r.text));
 		return Object.assign({}, spec, {
 			settings: (spec.settings || []).map((s) =>
 				Object.assign({}, s, {
@@ -63,7 +63,7 @@ frappe.provide("whatsapp_next.functions");
 	 * equal to the function's is not kept, and the rows of other languages stay as they were.
 	 */
 	function templates_of(outputs, spec_outputs, original) {
-		const lang = LANG();
+		const lang = get_user_language();
 		const base = {};
 		(spec_outputs || []).forEach((o) => (base[o.output_key] = o.default_template || ""));
 		const rows = (original || []).filter((r) => r.language && r.language !== lang).map((r) => ({ param: r.param, language: r.language, text: r.text }));

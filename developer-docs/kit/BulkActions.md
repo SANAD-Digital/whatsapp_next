@@ -25,7 +25,7 @@ Action spec:
 | `args` | `(names, {docs, reason}) => Object` | Extra arguments merged over `{names}` (native) or `{name}` (per name). |
 | `per_name` | boolean | Loop over the names one at a time, with a progress dialog. |
 | `handler` | `(names, docs, payload) => any` | Replaces the API call. `payload` is the ConfirmDialog result, or `{reason: null}`. |
-| `confirm` | Object \| `(names, docs) => Object \| null` | A `whatsapp.ui.ConfirmDialog.ask` spec. Cancelling it aborts the run. |
+| `confirm` | Object \| `(names, docs) => Object \| null` | A `whatsapp.ui.ConfirmDialog.ask_for_confirmation` spec. Cancelling it aborts the run. |
 | `condition` | `(docs) => boolean` | Evaluated on every selection change to show or hide the menu item. An exception hides it. |
 | `roles` | string[] | Any-of role check, decided once at mount. |
 | `perm` | string | A ptype on the list's DocType, decided once at mount. |
@@ -38,7 +38,7 @@ Action spec:
 ## Methods
 
 - `update()` refreshes the count in each label, re-evaluates `condition(docs)` and announces "{n} selected". It runs automatically on selection change.
-- `run(action)` performs one action over the current selection.
+- `run_bulk_action(action)` performs one action over the current selection.
 - `run_native(action, names, docs, payload)` makes one `ui.call` with `{freeze: true}` and returns its result.
 - `run_per_name(action, names, docs, payload)` loops and resolves to `{count, done[], failed[{name, error}], skipped[], cancelled}`.
 - `report(action, result, names)` shows the result toast.

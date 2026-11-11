@@ -36,13 +36,13 @@ Fully portable: the component never looks at step content — `render`, `validat
 
 ## Methods
 
-- `go(index)` — show a step without validation (Back and header clicks use it).
-- `next()` — validate the current step, then advance or finish; returns `Promise<boolean>`.
-- `back()`, `skip()` — previous step; next step when `can_skip`.
+- `go_to_step(index)` — show a step without validation (Back and header clicks use it).
+- `go_to_next_step()` — validate the current step, then advance or finish; returns `Promise<boolean>`.
+- `go_to_previous_step()`, `skip_current_step()` — previous step; next step when `can_skip`.
 - `set_step_valid(bool)` — enable/disable Next for the current step.
 - `set_finish_label(text)` — change the Finish text and re-render the footer.
 - `show_error(message)`, `clear_error()` — inline error in the current pane.
-- `busy(on)` — disable Next/Back while work runs (used by `next()`).
+- `set_footer_busy(on)` — disable Next/Back while work runs (used by `go_to_next_step()`).
 - `destroy()` — remove the markup.
 - Getters: `current` (current step spec), `steps`; properties `index`, `ctx`.
 

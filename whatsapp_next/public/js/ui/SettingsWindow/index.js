@@ -13,7 +13,7 @@
 import ui from "../_core/index.js";
 import { ico } from "../_kit/icons.js";
 
-const esc = (v) => ui.escape(v);
+const escape_html = (v) => ui.escape(v);
 
 whatsapp.ui.SettingsWindow = class SettingsWindow {
 	/**
@@ -35,29 +35,29 @@ whatsapp.ui.SettingsWindow = class SettingsWindow {
 		(this.opts.groups || []).forEach((g) => (g.items || []).forEach((it) => this.items.push(it)));
 		this.current = null;
 		this.open = false;
-		this.make();
+		this.build_window_shell();
 	}
 
 	// ---- shell -----------------------------------------------------------------------------------
 
-	make() {
+	build_window_shell() {
 		const o = this.opts;
 		this.$backdrop = $(`<div class="whatsapp-kit-settings-window-backdrop" hidden></div>`);
 		this.$root = $(`
-			<section class="whatsapp-kit whatsapp-kit-settings-window ${esc(o.cls || "")}" role="dialog" aria-modal="true" aria-label="${esc(o.title || __("Settings"))}" hidden>
+			<section class="whatsapp-kit whatsapp-kit-settings-window ${escape_html(o.cls || "")}" role="dialog" aria-modal="true" aria-label="${escape_html(o.title || __("Settings"))}" hidden>
 				<aside class="whatsapp-kit-settings-window__rail">
 					<label class="whatsapp-kit-settings-window__search">
 						<span class="whatsapp-kit-settings-window__search-icon" aria-hidden="true">${ico("search", "sm")}</span>
-						<input type="search" data-whatsapp-bare autocomplete="off" placeholder="${esc(__("Search"))}" aria-label="${esc(__("Search settings"))}">
+						<input type="search" data-whatsapp-bare autocomplete="off" placeholder="${escape_html(__("Search"))}" aria-label="${escape_html(__("Search settings"))}">
 					</label>
-					<nav class="whatsapp-kit-settings-window__nav" aria-label="${esc(o.title || __("Settings"))}"></nav>
-					<p class="whatsapp-kit-settings-window__none" hidden>${esc(__("No setting matches"))}</p>
+					<nav class="whatsapp-kit-settings-window__nav" aria-label="${escape_html(o.title || __("Settings"))}"></nav>
+					<p class="whatsapp-kit-settings-window__none" hidden>${escape_html(__("No setting matches"))}</p>
 					<div class="whatsapp-kit-settings-window__foot" hidden></div>
 				</aside>
 				<div class="whatsapp-kit-settings-window__main">
 					<div class="whatsapp-kit-settings-window__bar">
-						<button type="button" class="whatsapp-kit-settings-window__back" aria-label="${esc(__("Back"))}">${ico("caret", "sm")}<span class="whatsapp-kit-settings-window__back-label">${esc(o.title || __("Settings"))}</span></button>
-						<button type="button" class="whatsapp-kit-settings-window__close" aria-label="${esc(__("Close"))}" title="${esc(__("Close (Esc)"))}">${ico("x", "md")}</button>
+						<button type="button" class="whatsapp-kit-settings-window__back" aria-label="${escape_html(__("Back"))}">${ico("caret", "sm")}<span class="whatsapp-kit-settings-window__back-label">${escape_html(o.title || __("Settings"))}</span></button>
+						<button type="button" class="whatsapp-kit-settings-window__close" aria-label="${escape_html(__("Close"))}" title="${escape_html(__("Close (Esc)"))}">${ico("x", "md")}</button>
 					</div>
 					<div class="whatsapp-kit-settings-window__pane" role="region" tabindex="-1"></div>
 				</div>
@@ -103,12 +103,12 @@ whatsapp.ui.SettingsWindow = class SettingsWindow {
 			const $group = $(`<div class="whatsapp-kit-settings-window__group" role="group"></div>`).appendTo(this.$nav);
 			if (g.label) {
 				const gid = ui.uid("whatsapp-kit-settings-window-g");
-				$group.attr("aria-labelledby", gid).append(`<p class="whatsapp-kit-settings-window__group-label" id="${gid}">${esc(g.label)}</p>`);
+				$group.attr("aria-labelledby", gid).append(`<p class="whatsapp-kit-settings-window__group-label" id="${gid}">${escape_html(g.label)}</p>`);
 			}
 			(g.items || []).forEach((it) => {
-				$(`<button type="button" class="whatsapp-kit-settings-window__item" data-key="${esc(it.key)}">
+				$(`<button type="button" class="whatsapp-kit-settings-window__item" data-key="${escape_html(it.key)}">
 					<span class="whatsapp-kit-settings-window__item-icon" aria-hidden="true">${it.icon ? ico(it.icon, "sm") : ""}</span>
-					<span class="whatsapp-kit-settings-window__item-label">${esc(it.label)}</span>
+					<span class="whatsapp-kit-settings-window__item-label">${escape_html(it.label)}</span>
 				</button>`)
 					.on("click", () => this.show(it.key))
 					.appendTo($group);
@@ -210,21 +210,21 @@ whatsapp.ui.SettingsWindow = class SettingsWindow {
 
 	/** The pane's title and the line under it. */
 	static head_html(title, description) {
-		return `<header class="whatsapp-kit-settings-window__head"><h2 class="whatsapp-kit-settings-window__title">${esc(title)}</h2>${
-			description ? `<p class="whatsapp-kit-settings-window__desc">${esc(description)}</p>` : ""
+		return `<header class="whatsapp-kit-settings-window__head"><h2 class="whatsapp-kit-settings-window__title">${escape_html(title)}</h2>${
+			description ? `<p class="whatsapp-kit-settings-window__desc">${escape_html(description)}</p>` : ""
 		}</header>`;
 	}
 
 	/** A section heading inside the pane (Claude's "General", "Code appearance"). */
 	static section_html(title, note) {
-		return `<div class="whatsapp-kit-settings-window__h"><h3>${esc(title)}</h3>${note ? `<p>${esc(note)}</p>` : ""}</div>`;
+		return `<div class="whatsapp-kit-settings-window__h"><h3>${escape_html(title)}</h3>${note ? `<p>${escape_html(note)}</p>` : ""}</div>`;
 	}
 
 	/** One setting row: title and description on the start side, `control_html` on the end side. */
 	static row_html(title, description, control_html = "") {
-		return `<div class="whatsapp-kit-settings-window__row"><div class="whatsapp-kit-settings-window__row-text"><span class="whatsapp-kit-settings-window__row-title">${esc(
+		return `<div class="whatsapp-kit-settings-window__row"><div class="whatsapp-kit-settings-window__row-text"><span class="whatsapp-kit-settings-window__row-title">${escape_html(
 			title
-		)}</span>${description ? `<span class="whatsapp-kit-settings-window__row-desc">${esc(description)}</span>` : ""}</div><div class="whatsapp-kit-settings-window__row-control">${control_html}</div></div>`;
+		)}</span>${description ? `<span class="whatsapp-kit-settings-window__row-desc">${escape_html(description)}</span>` : ""}</div><div class="whatsapp-kit-settings-window__row-control">${control_html}</div></div>`;
 	}
 };
 

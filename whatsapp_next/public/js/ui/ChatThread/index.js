@@ -65,11 +65,11 @@ whatsapp.ui.ChatThread = class ChatThread {
 		this.$wrapper = $(this.opts.wrapper);
 		this.rows = [];
 		this.id = ui.uid("chat");
-		this.make();
+		this.build_thread_shell();
 		this.set_rows(this.opts.rows || []);
 	}
 
-	make() {
+	build_thread_shell() {
 		this.$root = $(`
 			<div class="whatsapp-kit whatsapp-kit-chat" id="${this.id}">
 				<div class="whatsapp-kit-chat__top"></div>
@@ -161,7 +161,7 @@ whatsapp.ui.ChatThread = class ChatThread {
 
 	/** Replace all rows (any order; sorted oldest → newest) and scroll to the bottom. */
 	set_rows(rows = []) {
-		this.rows = whatsapp.ui.ChatThread.sort([...(rows || [])]);
+		this.rows = whatsapp.ui.ChatThread.sort_rows_oldest_first([...(rows || [])]);
 		this.render();
 		this.scroll_to_bottom();
 		if (this.opts.highlight) this.scroll_to(this.opts.highlight);
@@ -175,7 +175,7 @@ whatsapp.ui.ChatThread = class ChatThread {
 		const el = this.$scroll.get(0);
 		const before_height = el.scrollHeight;
 		const before_top = el.scrollTop;
-		this.rows = whatsapp.ui.ChatThread.sort(fresh.concat(this.rows));
+		this.rows = whatsapp.ui.ChatThread.sort_rows_oldest_first(fresh.concat(this.rows));
 		this.render();
 		el.scrollTop = before_top + (el.scrollHeight - before_height);
 		ui.announce(ui.plural(fresh.length, { one: __("{0} older message loaded."), other: __("{0} older messages loaded.") }));
@@ -187,7 +187,7 @@ whatsapp.ui.ChatThread = class ChatThread {
 		const fresh = this.dedupe(rows);
 		if (!fresh.length) return 0;
 		const at_bottom = this.is_at_bottom();
-		this.rows = whatsapp.ui.ChatThread.sort(this.rows.concat(fresh));
+		this.rows = whatsapp.ui.ChatThread.sort_rows_oldest_first(this.rows.concat(fresh));
 		this.render();
 		if (at_bottom) this.scroll_to_bottom();
 		return fresh.length;
@@ -216,7 +216,7 @@ whatsapp.ui.ChatThread = class ChatThread {
 		const el = this.$scroll.get(0);
 		const at_bottom = this.is_at_bottom();
 		const from_bottom = el.scrollHeight - el.scrollTop;
-		this.rows = whatsapp.ui.ChatThread.sort(this.rows.concat(added));
+		this.rows = whatsapp.ui.ChatThread.sort_rows_oldest_first(this.rows.concat(added));
 		this.render();
 		if (at_bottom) this.scroll_to_bottom();
 		else el.scrollTop = el.scrollHeight - from_bottom;
@@ -343,13 +343,13 @@ whatsapp.ui.ChatThread = class ChatThread {
 			// deleted for everyone: say so and by whom, and keep what it said one click away
 			const by = row.deleted_by ? ui.phone(`+${cstr(row.deleted_by).replace(/\D/g, "")}`) : "";
 			inner += `<div class="whatsapp-kit-chat__deleted">${ui.icon("es-line-delete", "xs")}<span>${ui.escape(by ? __("This message was deleted by {0}", [by]) : __("This message was deleted"))}</span></div>`;
-			if (row.body) inner += `<details class="whatsapp-kit-chat__history"><summary>${ui.escape(__("Show the deleted message"))}</summary><div class="whatsapp-kit-chat__text">${whatsapp.ui.ChatThread.format(row.body)}</div></details>`;
+			if (row.body) inner += `<details class="whatsapp-kit-chat__history"><summary>${ui.escape(__("Show the deleted message"))}</summary><div class="whatsapp-kit-chat__text">${whatsapp.ui.ChatThread.format_whatsapp_text(row.body)}</div></details>`;
 		} else if (row.body) {
-			inner += `<div class="whatsapp-kit-chat__text">${whatsapp.ui.ChatThread.format(row.body)}</div>`;
+			inner += `<div class="whatsapp-kit-chat__text">${whatsapp.ui.ChatThread.format_whatsapp_text(row.body)}</div>`;
 			if (row.edited_at && row.original_body && row.original_body !== row.body)
-				inner += `<details class="whatsapp-kit-chat__history"><summary>${ui.escape(__("Original text"))}</summary><div class="whatsapp-kit-chat__text whatsapp-kit-chat__text--muted">${whatsapp.ui.ChatThread.format(row.original_body)}</div></details>`;
+				inner += `<details class="whatsapp-kit-chat__history"><summary>${ui.escape(__("Original text"))}</summary><div class="whatsapp-kit-chat__text whatsapp-kit-chat__text--muted">${whatsapp.ui.ChatThread.format_whatsapp_text(row.original_body)}</div></details>`;
 		}
-		if (row.caption) inner += `<div class="whatsapp-kit-chat__caption">${whatsapp.ui.ChatThread.format(row.caption)}</div>`;
+		if (row.caption) inner += `<div class="whatsapp-kit-chat__caption">${whatsapp.ui.ChatThread.format_whatsapp_text(row.caption)}</div>`;
 		// as WhatsApp lays it out: title, text, footer, then the buttons / the list button
 		if (ia) inner += whatsapp.ui.ChatThread.interactive_html(type, ia);
 		if (!inner) inner = `<div class="whatsapp-kit-chat__text whatsapp-kit-chat__text--muted">${ui.escape(__(type))}</div>`;
@@ -632,7 +632,7 @@ whatsapp.ui.ChatThread = class ChatThread {
 	}
 
 	/** Sort oldest → newest (`ts`, then `name`) — stable for equal timestamps. */
-	static sort(rows) {
+	static sort_rows_oldest_first(rows) {
 		return rows.sort((a, b) => {
 			const ta = cstr(a.ts || a.creation);
 			const tb = cstr(b.ts || b.creation);
@@ -684,7 +684,7 @@ whatsapp.ui.ChatThread = class ChatThread {
 	}
 
 	/** Escape, keep line breaks, render WhatsApp `*bold*`, `_italic_`, `~strike~`, `` `code` ``. */
-	static format(text) {
+	static format_whatsapp_text(text) {
 		let html = ui.escape(text);
 		html = html
 			.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,!?:;]|$)/g, "$1<strong>$2</strong>")

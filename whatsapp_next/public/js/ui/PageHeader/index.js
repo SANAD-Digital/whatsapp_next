@@ -37,7 +37,7 @@ whatsapp.ui.PageHeader = class PageHeader {
 		this.page_buttons = [];
 		this.handlers = {};
 		this.block_handlers = [];
-		this.make();
+		this.build_header_shell();
 		this.bind_events();
 		this.last_refresh = Date.now();
 		this.refresh_banner();
@@ -46,7 +46,7 @@ whatsapp.ui.PageHeader = class PageHeader {
 
 	// ---- mount ---------------------------------------------------------------------------
 
-	make() {
+	build_header_shell() {
 		const o = this.opts;
 		this.$el = $(`
 			<header class="whatsapp-kit whatsapp-kit-page-header">

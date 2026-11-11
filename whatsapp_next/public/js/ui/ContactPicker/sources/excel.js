@@ -18,7 +18,7 @@ export class UploadSource extends BaseSource {
 		return "Excel";
 	}
 
-	static label() {
+	static default_tab_label() {
 		return __("Excel file");
 	}
 
@@ -31,7 +31,7 @@ export class UploadSource extends BaseSource {
 		return { excel: [".xlsx", ".xls", ".csv"], csv: [".csv"], vcf: [".vcf"] }[kind] || [];
 	}
 
-	note() {
+	upload_hint_text() {
 		return __("The first row must hold the column headers. The phone column is detected from its header; if that fails, choose it in the next step.");
 	}
 
@@ -60,7 +60,7 @@ export class UploadSource extends BaseSource {
 			const labels = { vcf: __("vCard (.vcf)"), csv: __("CSV"), excel: __("Excel") };
 			$body.append(this.chips(__("File type"), this.kinds().map((k) => ({ value: k, label: labels[k] || k })), (k) => this.set_kind(k), { all: false }));
 		}
-		$body.append(`<p class="whatsapp-kit-picker__note">${ui.escape(this.note())}</p>`);
+		$body.append(`<p class="whatsapp-kit-picker__note">${ui.escape(this.upload_hint_text())}</p>`);
 		this.$uploader = $('<div class="whatsapp-kit-picker__uploader"></div>').appendTo($body);
 		this.$file = $('<div class="whatsapp-kit-picker__note" aria-live="polite"></div>').appendTo($body);
 		this.make_uploader();
@@ -74,7 +74,7 @@ export class UploadSource extends BaseSource {
 		this.mapping_needed = false;
 		this.file_url = null;
 		this.$file.empty();
-		this.stepper.go(UPLOAD);
+		this.stepper.go_to_step(UPLOAD);
 		this.make_uploader();
 	}
 
@@ -98,7 +98,7 @@ export class UploadSource extends BaseSource {
 					this.file_name = file_doc.file_name || file_doc.file_url;
 					this.mapping = null;
 					this.$file.text(__("Uploaded {0}", [this.file_name]));
-					this.parse().catch(() => {});
+					this.parse_uploaded_file().catch(() => {});
 				},
 			});
 		} catch (err) {
@@ -143,10 +143,10 @@ export class UploadSource extends BaseSource {
 	 * Preview, missing phone column → Map columns, any other failure → back to Upload with the
 	 * message inline. Rejects with the error either way.
 	 */
-	parse({ navigate = true } = {}) {
+	parse_uploaded_file({ navigate = true } = {}) {
 		if (!this.file_url) return Promise.reject(new Error(__("Upload a file to continue")));
 		this.picker.set_progress(__("Parsing {0}…", [this.file_name]));
-		return this.call("picker.parse_upload", { file_url: this.file_url, kind: this.kind, mapping: this.mapping }, { silent: true })
+		return this.call_picker_api("picker.parse_upload", { file_url: this.file_url, kind: this.kind, mapping: this.mapping }, { silent: true })
 			.then((r) => {
 				this.picker.set_progress(null);
 				this.columns = r.columns || [];
@@ -156,7 +156,7 @@ export class UploadSource extends BaseSource {
 					this.mapping_needed = true;
 					this.steps[MAP].can_skip = false;
 					if (navigate) {
-						this.stepper.go(MAP);
+						this.stepper.go_to_step(MAP);
 						this.stepper.show_error(r.error || __("Choose the column that holds the phone number"));
 					}
 					const err = new Error(r.error || __("Choose the column that holds the phone number"));
@@ -166,7 +166,7 @@ export class UploadSource extends BaseSource {
 				this.result = r;
 				this.mapping_needed = false;
 				this.steps[MAP].can_skip = true;
-				if (navigate) this.stepper.go(PREVIEW);
+				if (navigate) this.stepper.go_to_step(PREVIEW);
 				return r;
 			})
 			.catch((err) => {
@@ -177,7 +177,7 @@ export class UploadSource extends BaseSource {
 				this.mapping_needed = needs_mapping;
 				this.steps[MAP].can_skip = false;
 				if (navigate) {
-					this.stepper.go(needs_mapping ? MAP : UPLOAD);
+					this.stepper.go_to_step(needs_mapping ? MAP : UPLOAD);
 					this.stepper.show_error(err.message || this.read_error());
 				}
 				throw err;
@@ -224,7 +224,7 @@ export class UploadSource extends BaseSource {
 		const name = this.$name_col ? this.$name_col.val() : "";
 		if (!phone && this.mapping_needed) return __("Choose the column that holds the phone number");
 		this.mapping = phone || name ? { phone: phone || null, name: name || null } : null;
-		return this.parse({ navigate: false }).then(
+		return this.parse_uploaded_file({ navigate: false }).then(
 			() => true,
 			(err) => err.message || this.read_error()
 		);
@@ -240,7 +240,7 @@ export class UploadSource extends BaseSource {
 		const state = this.state_for($body);
 		stepper.set_finish_label(rows.length ? __("Add {0} rows", [ui.format_int(rows.length)]) : __("Add rows"));
 		if (!r) {
-			state.empty({ title: __("Nothing to preview yet"), description: __("Upload a file first."), action: { label: __("Back to upload"), onclick: () => stepper.go(UPLOAD) } });
+			state.empty({ title: __("Nothing to preview yet"), description: __("Upload a file first."), action: { label: __("Back to upload"), onclick: () => stepper.go_to_step(UPLOAD) } });
 			stepper.set_step_valid(false);
 			return;
 		}

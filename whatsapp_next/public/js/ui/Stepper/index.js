@@ -30,8 +30,8 @@ whatsapp.ui.Stepper = class Stepper {
 		this.rendered = new Set();
 		this.valid = true;
 		this.$wrapper = $(this.opts.wrapper);
-		this.make();
-		this.go(this.opts.start_index);
+		this.build_stepper_markup();
+		this.go_to_step(this.opts.start_index);
 	}
 
 	get steps() {
@@ -42,7 +42,7 @@ whatsapp.ui.Stepper = class Stepper {
 		return this.steps[this.index];
 	}
 
-	make() {
+	build_stepper_markup() {
 		const id = ui.uid("stepper");
 		this.id = id;
 		this.$el = $(`
@@ -70,13 +70,13 @@ whatsapp.ui.Stepper = class Stepper {
 				.appendTo($start);
 		}
 		this.$back = $(`<button type="button" class="btn btn-default btn-sm">${ui.escape(this.opts.back_label || __("Back"))}</button>`)
-			.on("click", () => this.back())
+			.on("click", () => this.go_to_previous_step())
 			.appendTo($start);
 		this.$skip = $(`<button type="button" class="btn btn-default btn-sm">${ui.escape(__("Skip"))}</button>`)
-			.on("click", () => this.skip())
+			.on("click", () => this.skip_current_step())
 			.appendTo($end);
 		this.$next = $(`<button type="button" class="btn btn-primary btn-sm"></button>`)
-			.on("click", () => this.next())
+			.on("click", () => this.go_to_next_step())
 			.appendTo($end);
 
 		this.steps.forEach((step, i) => {
@@ -86,7 +86,7 @@ whatsapp.ui.Stepper = class Stepper {
 			$btn.append(`<span class="whatsapp-kit-stepper__label">${ui.escape(step.label)}</span>`);
 			if (step.can_skip) $btn.append(`<span class="whatsapp-kit-stepper__optional">${ui.escape(__("Optional"))}</span>`);
 			$btn.on("click", () => {
-				if (!$btn.prop("disabled")) this.go(i);
+				if (!$btn.prop("disabled")) this.go_to_step(i);
 			});
 			$li.append($btn);
 			this.$list.append($li);
@@ -95,19 +95,19 @@ whatsapp.ui.Stepper = class Stepper {
 		this.$progress.attr("id", `${id}-progress`);
 	}
 
-	pane(i) {
+	find_step_pane(i) {
 		return this.$body.find(`.whatsapp-kit-stepper__pane[data-index="${i}"]`);
 	}
 
 	/** Jump to a step (no validation — used by Back and by header clicks on visited steps). */
-	go(index) {
+	go_to_step(index) {
 		if (index < 0 || index >= this.steps.length) return this;
 		const step = this.steps[index];
 		this.clear_error();
-		if (this.index >= 0) this.pane(this.index).attr("hidden", true);
+		if (this.index >= 0) this.find_step_pane(this.index).attr("hidden", true);
 		this.index = index;
 		this.max_visited = Math.max(this.max_visited || 0, index);
-		const $pane = this.pane(index);
+		const $pane = this.find_step_pane(index);
 		if (!this.rendered.has(index)) {
 			this.rendered.add(index);
 			$pane.html(`<div class="whatsapp-kit-stepper__error" role="alert" tabindex="-1" hidden></div><div class="whatsapp-kit-stepper__content"></div>`);
@@ -155,7 +155,7 @@ whatsapp.ui.Stepper = class Stepper {
 	}
 
 	show_error(message) {
-		const $err = this.pane(this.index).find(".whatsapp-kit-stepper__error");
+		const $err = this.find_step_pane(this.index).find(".whatsapp-kit-stepper__error");
 		$err.html(`${ui.icon("es-line-alert-circle", "xs")} <span>${ui.escape(message)}</span>`).removeAttr("hidden");
 		$err[0] && $err[0].focus();
 		ui.announce(message, { assertive: true });
@@ -163,7 +163,7 @@ whatsapp.ui.Stepper = class Stepper {
 
 	clear_error() {
 		if (this.index < 0) return;
-		this.pane(this.index).find(".whatsapp-kit-stepper__error").attr("hidden", true).empty();
+		this.find_step_pane(this.index).find(".whatsapp-kit-stepper__error").attr("hidden", true).empty();
 	}
 
 	validate_current() {
@@ -176,40 +176,40 @@ whatsapp.ui.Stepper = class Stepper {
 		});
 	}
 
-	next() {
+	go_to_next_step() {
 		if (!this.valid) return Promise.resolve(false);
 		this.clear_error();
-		this.busy(true);
+		this.set_footer_busy(true);
 		return this.validate_current()
 			.then((ok) => {
 				if (!ok) return false;
-				if (this.index === this.steps.length - 1) return this.finish();
-				this.go(this.index + 1);
+				if (this.index === this.steps.length - 1) return this.run_finish_callback();
+				this.go_to_step(this.index + 1);
 				return true;
 			})
 			.catch((err) => {
 				this.show_error((err && err.message) || __("Something went wrong. Try again."));
 				return false;
 			})
-			.finally(() => this.busy(false));
+			.finally(() => this.set_footer_busy(false));
 	}
 
-	skip() {
+	skip_current_step() {
 		if (!this.current || !this.current.can_skip) return;
 		this.clear_error();
-		if (this.index < this.steps.length - 1) this.go(this.index + 1);
+		if (this.index < this.steps.length - 1) this.go_to_step(this.index + 1);
 	}
 
-	back() {
-		if (this.index > 0) this.go(this.index - 1);
+	go_to_previous_step() {
+		if (this.index > 0) this.go_to_step(this.index - 1);
 		return this;
 	}
 
-	finish() {
+	run_finish_callback() {
 		return Promise.resolve(this.opts.on_finish && this.opts.on_finish(this.ctx, this)).then(() => true);
 	}
 
-	busy(on) {
+	set_footer_busy(on) {
 		this.$next.prop("disabled", on || !this.valid).toggleClass("disabled", !!on);
 		this.$back.prop("disabled", !!on);
 	}

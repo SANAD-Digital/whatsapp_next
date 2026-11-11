@@ -52,7 +52,7 @@ wins), `current?: {method, args(state), server_filters?, source_types?, status_f
 mode paging of the target's rows — defaults per target), `api?` (key overrides).
 Methods on the instance (used by sources): `add_rows(rows, {source_type, source_ref, quiet})`,
 `source_groups()` (the selection split by the source it came from), `accept_file(file)`,
-`remove_rows(keys)`, `clear_selection()`, `activate(key)`, `set_progress(text)`, `call(key, args)`.
+`remove_rows(keys)`, `clear_selection()`, `activate(key)`, `set_progress(text)`, `call_picker_api(key, args)`.
 `whatsapp.ui.ContactPicker.sources` is the registry (`{apiKey: SourceClass}`) — a host may replace or
 add a source class before opening.
 
@@ -124,7 +124,7 @@ strip "Will be added N · Already added M · Invalid K · With a conversation C"
 within the selection, per-row remove, "Clear all", incremental rendering (200 rows a step).
 
 ### Confirm — built
-"Continue" refreshes the preview, then `ConfirmDialog.ask({impact: exact counts, confirm_label:
+"Continue" refreshes the preview, then `ConfirmDialog.ask_for_confirmation({impact: exact counts, confirm_label:
 "Add N" / "Remove N" (danger)})` → `picker.commit_add {rows, source_type, source_ref}` /
 `picker.commit_remove {phone_e164s}` → toast with `added / skipped` or `removed`, `on_commit`,
 close. A 409 `WAStateConflictError` (or any commit error) is shown inline in the Selected tab.

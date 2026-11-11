@@ -29,18 +29,18 @@ whatsapp.ui.EmptyState = class EmptyState {
 		this.render();
 	}
 
-	set(state, opts = {}) {
+	set_state(state, opts = {}) {
 		Object.assign(this.opts, opts, { state });
 		return this.render();
 	}
 
-	loading(opts) { return this.set("loading", opts); }
-	empty(opts) { return this.set("empty", opts); }
+	loading(opts) { return this.set_state("loading", opts); }
+	empty(opts) { return this.set_state("empty", opts); }
 	error(err, opts = {}) {
 		const description = err && err.message ? err.message : opts.description;
-		return this.set("error", Object.assign({}, opts, { description }));
+		return this.set_state("error", Object.assign({}, opts, { description }));
 	}
-	offline(opts) { return this.set("offline", opts); }
+	offline(opts) { return this.set_state("offline", opts); }
 
 	hide() {
 		this.$wrapper.empty();

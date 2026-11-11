@@ -203,7 +203,7 @@ whatsapp_next.enabled_toggle = {
 	 * `words`: `{title, enable_message, disable_message, impact[], enabled_toast, disabled_toast}`. */
 	ask(listview, doctype, doc, words) {
 		const enable = !cint(doc.enabled);
-		return whatsapp.ui.ConfirmDialog.ask({
+		return whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 			title: enable ? __("Enable {0}?", [words.title]) : __("Disable {0}?", [words.title]),
 			message: enable ? words.enable_message : words.disable_message,
 			impact: words.impact,

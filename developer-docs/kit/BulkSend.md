@@ -29,7 +29,7 @@ classes (`whatsapp-kit-command-editor-*`), so that stylesheet must load too (the
 | `on_templates` | `() => void` | — | If given, the settings show "Manage message templates"; clicking closes the window and calls it. |
 | `on_close` | `() => void` | — | After every close. |
 
-**`load()` context:** `groups[{name, group_name, kind, description, source, member_count}]`
+**`load_send_context()` context:** `groups[{name, group_name, kind, description, source, member_count}]`
 (`kind === "Blacklist"` gets a warning badge), `templates[{name, template_name, category, body}]`,
 `devices[{name, device_name, status}]`, `default_device`, `rate` (default 20), `max_rate`
 (optional cap; a higher rate is refused with a message), `messages_remaining` (optional).
@@ -40,7 +40,7 @@ scheduled_at ("YYYY-MM-DD HH:mm" or null)}`.
 
 ## Methods
 
-- `show()` — build and open the window (called by the constructor), then `load()`.
+- `show()` — build and open the window (called by the constructor), then `load_send_context()`.
 - `close()` — remove the window, restore focus to the opener, call `on_close`.
 - `hide()` — remove the window without restoring focus or calling `on_close`.
 - `render()` — redraw both panes, keeping focus, caret and list scroll.
@@ -90,7 +90,7 @@ new whatsapp.ui.BulkSend({
 
 ## Notes
 
-- **Loading/error:** "Loading…" until `load()` resolves; a rejected `load()` shows its message
+- **Loading/error:** "Loading…" until `load_send_context()` resolves; a rejected `load_send_context()` shows its message
   with `role="alert"`. The Contacts list shows "Loading…" while searching and a "no results" line
   when empty.
 - **Numbers:** split on newlines, commas, `،` and `;`; spaces, dashes and parentheses stripped;

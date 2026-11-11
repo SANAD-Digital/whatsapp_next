@@ -15,7 +15,7 @@ export class DoctypeSource extends BaseSource {
 		return "DocType";
 	}
 
-	static label() {
+	static default_tab_label() {
 		return __("System screen");
 	}
 
@@ -77,7 +77,7 @@ export class DoctypeSource extends BaseSource {
 		this.state.loading();
 		this.$foot.empty();
 		const seq = (this._seq = (this._seq || 0) + 1);
-		return this.call("picker.list_doctype_rows", { document_type: this.document_type, filters: this.get_filters(), page: this.page, page_length: this.page_length }, { silent: true })
+		return this.call_picker_api("picker.list_doctype_rows", { document_type: this.document_type, filters: this.get_filters(), page: this.page, page_length: this.page_length }, { silent: true })
 			.then((r) => {
 				if (seq !== this._seq) return;
 				this.rows = (r && r.rows) || [];
@@ -112,7 +112,7 @@ export class DoctypeSource extends BaseSource {
 		try {
 			for (;;) {
 				this.$progress.text(this.total != null ? __("Loading matching records… {0} of {1}", [ui.format_int(seen), ui.format_int(this.total)]) : __("Loading matching records… {0}", [ui.format_int(seen)]));
-				const r = await this.call("picker.list_doctype_rows", { document_type: this.document_type, filters, page, page_length: BULK_PAGE }, { silent: true });
+				const r = await this.call_picker_api("picker.list_doctype_rows", { document_type: this.document_type, filters, page, page_length: BULK_PAGE }, { silent: true });
 				const rows = (r && r.rows) || [];
 				if (r && r.total != null) this.total = cint(r.total);
 				seen += rows.length;

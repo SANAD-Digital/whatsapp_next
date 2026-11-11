@@ -38,10 +38,10 @@ this app's `campaigns.preview_message` returns.
 - `refresh()` — re-read the child meta and redraw; returns `this`.
 - `render()` — redraw count, header action, rail and editor; returns `this`.
 - `select(name)` — make a row (by child `name`) the one being edited, and focus its first input.
-- `add(type?)` — append a row of `type` (default: first Select option, else `"Text"`) and select it.
+- `add_message(type?)` — append a row of `type` (default: first Select option, else `"Text"`) and select it.
 - `duplicate(row)` — copy a row (system keys stripped) and select the copy.
-- `remove(row)` — remove a row; asks via `whatsapp.ui.ConfirmDialog.ask` unless it is empty.
-- `move(row, delta)` — move a row up (`-1`) or down (`1`) and renumber `idx`.
+- `remove_message(row)` — remove a row; asks via `whatsapp.ui.ConfirmDialog.ask_for_confirmation` unless it is empty.
+- `move_message(row, delta)` — move a row up (`-1`) or down (`1`) and renumber `idx`.
 - `ask_delay(row)` — open the "Wait before this message" dialog for `delay_field`.
 - `load_variables()` — (re)load variables; returns a Promise of the list.
 - `destroy()` — close menus, unbind document handlers, remove the element and the host class.

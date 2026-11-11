@@ -142,7 +142,7 @@ Instance (mostly for sources):
 - `source_groups()` → `[{source, label, rows: [[key, row]]}]` — the selection split by source.
 - `activate(key, {force})` → `Promise<boolean>` — switch tab (mounts the pane lazily).
 - `accept_file(file)` — route a dropped file to a source (see Notes: currently broken).
-- `set_progress(text)`, `call(key, args, opts)`, `target_is_group()`, `is_local()`,
+- `set_progress(text)`, `call_picker_api(key, args, opts)`, `target_is_group()`, `is_local()`,
   `current_config()`, `child_doctype()`, `source_type_options()`, `row_key(row)`.
 
 Static:
@@ -180,7 +180,7 @@ Static:
 4. **Local add**: no `available` rows → inline alert; else `on_pick(available, picker)`, mark
    committed, hide. No ConfirmDialog.
 5. `action === 0` → inline alert ("nothing to add" / "nothing to remove"), stop.
-6. `whatsapp.ui.ConfirmDialog.ask({title: "Add N numbers?" | "Remove N numbers?", message: "Changes
+6. `whatsapp.ui.ConfirmDialog.ask_for_confirmation({title: "Add N numbers?" | "Remove N numbers?", message: "Changes
    apply to {doctype} {label}.", impact, danger: remove, confirm_label: "Add N" | "Remove N"})`.
    Impact rows — add: Will be added (green), Already added (skipped), Invalid (skipped), With a
    conversation; remove: Will be removed (red), Not in the list (ignored); both add "Duplicates

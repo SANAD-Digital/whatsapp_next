@@ -99,17 +99,17 @@ def _render_report_xlsx(title: str, columns: list[dict[str, Any]], rows: list[An
 def render_report_file(msg: dict[str, Any]) -> tuple[str, bytes, str]:
 	"""`(file name, bytes, mime)` for a validated `report` message
 	(`report_name`, `filters`, `format`, `file_name`). E: `frappe.ValidationError`."""
-	fmt = msg.get("format") or "PDF"
-	if fmt not in FORMATS:
-		frappe.throw(_("Unknown report format {0}").format(fmt))
+	file_format = msg.get("format") or "PDF"
+	if file_format not in FORMATS:
+		frappe.throw(_("Unknown report format {0}").format(file_format))
 	report_name = msg["report_name"]
 	columns, rows = run_report(report_name, msg.get("filters") or {})
 	content = (
 		_render_report_pdf(report_name, columns, rows)
-		if fmt == "PDF"
+		if file_format == "PDF"
 		else _render_report_xlsx(report_name, columns, rows)
 	)
 	name = cstr(msg.get("file_name") or report_name).strip() or report_name
-	if not name.lower().endswith("." + EXT[fmt]):
-		name = f"{name}.{EXT[fmt]}"
-	return name, content, MIME[fmt]
+	if not name.lower().endswith("." + EXT[file_format]):
+		name = f"{name}.{EXT[file_format]}"
+	return name, content, MIME[file_format]

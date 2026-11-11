@@ -50,7 +50,7 @@ of the row (unless it is the one in force), and a chip group left with a single 
 itself. Each field's counts should ignore that field's own filter and honour the others, so a chip
 always says how many rows pressing it would show. A method that returns no `counts` keeps plain
 chips and the head counts the page's `total`.
-Methods: `refresh()`, `go(page)`, `update(opts)` (re-renders the toolbar with new options —
+Methods: `refresh()`, `go_to_page(page)`, `update(opts)` (re-renders the toolbar with new options —
 call it from `refresh` when the document status changes), `set_filter(fieldname, value)`,
 `destroy()` (restores the grid). `state` exposes `{page, page_length, total, rows, search, filters}`.
 

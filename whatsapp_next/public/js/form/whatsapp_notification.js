@@ -16,7 +16,7 @@ frappe.ui.form.on("WhatsApp Notification", {
 		if (whatsapp_next.notifications && whatsapp_next.notifications.open) {
 			frm.add_custom_button(__("Open in the editor"), () => whatsapp_next.notifications.open(frm.doc.name, { on_saved: (r) => (r && r.deleted ? frappe.set_route("List", frm.doctype) : frm.reload_doc()) }));
 		}
-		frm.add_custom_button(__("Preview"), () => pick_document(frm, __("Preview for a document"), __("Preview")).then((ref) => ref && preview(frm, ref)));
+		frm.add_custom_button(__("Preview"), () => pick_document(frm, __("Preview for a document"), __("Preview")).then((ref) => ref && show_notification_preview(frm, ref)));
 		frm.add_custom_button(__("Send now"), () => pick_document(frm, __("Send for a document"), __("Continue")).then((ref) => ref && send_now(frm, ref)));
 	},
 
@@ -115,7 +115,7 @@ function pick_document(frm, title, label) {
 	});
 }
 
-function preview(frm, reference_name) {
+function show_notification_preview(frm, reference_name) {
 	whatsapp.ui
 		.call("notifications.preview", { name: frm.doc.name, reference_name }, { freeze: true })
 		.then((r) => {
@@ -146,7 +146,7 @@ function preview(frm, reference_name) {
 }
 
 function send_now(frm, reference_name) {
-	whatsapp.ui.ConfirmDialog.ask({
+	whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 		title: __("Send {0} now?", [frm.doc.notification_name || frm.doc.name]),
 		message: __("The condition is checked again; one message per recipient is queued."),
 		impact: [{ label: __(frm.doc.document_type), value: reference_name }],

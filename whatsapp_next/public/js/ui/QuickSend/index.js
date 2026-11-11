@@ -34,14 +34,14 @@ whatsapp.ui.QuickSend = class QuickSend {
 		this.api = Object.assign({ get_context: "quick_send.get_context", preview: "quick_send.preview", send: "quick_send.send" }, opts.api || {});
 		this.context = null;
 		this.recipient = null;
-		this.make();
+		this.build_send_dialog();
 		this.dialog.show();
-		this.load();
+		this.load_send_context();
 	}
 
 	// ---- dialog ----------------------------------------------------------------------------
 
-	make() {
+	build_send_dialog() {
 		const o = this.opts;
 		const has_recipient = !!(o.phone || o.contact || o.number || o.jid);
 		const fields = [
@@ -64,7 +64,7 @@ whatsapp.ui.QuickSend = class QuickSend {
 			fields,
 			size: "large",
 			primary_action_label: __("Send"),
-			primary_action: () => this.send(),
+			primary_action: () => this.send_message(),
 			on_hide: () => this.opts.on_close && this.opts.on_close(),
 		});
 		this.dialog.$wrapper.addClass("whatsapp-kit whatsapp-kit-sheet whatsapp-kit-quicksend");
@@ -83,7 +83,7 @@ whatsapp.ui.QuickSend = class QuickSend {
 			}, "btn-default whatsapp-kit-quicksend__simulator");
 		}
 		// live preview when a template or a reference is involved
-		const preview = ui.debounce(() => this.preview(), 400);
+		const preview = ui.debounce(() => this.render_message_preview(), 400);
 		this.dialog.fields_dict.template.$input.on("change", () => {
 			this.on_template_change();
 			preview();
@@ -116,7 +116,7 @@ whatsapp.ui.QuickSend = class QuickSend {
 
 	// ---- context ---------------------------------------------------------------------------
 
-	load() {
+	load_send_context() {
 		const o = this.opts;
 		const args = {};
 		["phone", "contact", "number", "reference_doctype", "reference_name"].forEach((k) => o[k] && (args[k] = o[k]));
@@ -131,9 +131,9 @@ whatsapp.ui.QuickSend = class QuickSend {
 				if (o.template) {
 					this.dialog.set_value("template", o.template);
 					this.on_template_change();
-					this.preview();
+					this.render_message_preview();
 				} else if (o.reference_doctype && o.reference_name) {
-					this.preview();
+					this.render_message_preview();
 				}
 			})
 			.catch((err) => {
@@ -141,7 +141,7 @@ whatsapp.ui.QuickSend = class QuickSend {
 					this.set_error("phone", err.message);
 				} else {
 					this.$recipient.empty();
-					new whatsapp.ui.EmptyState({ wrapper: this.$recipient, state: "error", description: err.message, size: "sm", action: { label: __("Retry"), onclick: () => this.load() } });
+					new whatsapp.ui.EmptyState({ wrapper: this.$recipient, state: "error", description: err.message, size: "sm", action: { label: __("Retry"), onclick: () => this.load_send_context() } });
 				}
 			});
 	}
@@ -260,7 +260,7 @@ whatsapp.ui.QuickSend = class QuickSend {
 		body.refresh();
 	}
 
-	preview() {
+	render_message_preview() {
 		const template = this.dialog.get_value("template");
 		const body = this.dialog.get_value("body");
 		const { reference_doctype, reference_name } = this.opts;
@@ -331,7 +331,7 @@ whatsapp.ui.QuickSend = class QuickSend {
 
 	// ---- send ------------------------------------------------------------------------------
 
-	send() {
+	send_message() {
 		const values = this.dialog.get_values(true) || {};
 		if (!this.validate(values)) return;
 		const o = this.opts;

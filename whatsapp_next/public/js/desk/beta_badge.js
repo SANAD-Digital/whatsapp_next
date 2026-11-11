@@ -7,7 +7,7 @@
 (function () {
 	const APP_TITLE = "WhatsappNext";
 
-	function mark() {
+	function add_beta_tag_to_sidebar() {
 		document.querySelectorAll(".body-sidebar .sidebar-header .header-subtitle").forEach((sub) => {
 			// the subtitle is long enough to be cut with an ellipsis; the title line has room
 			const el = sub.parentElement && sub.parentElement.querySelector(".header-title");
@@ -30,7 +30,7 @@
 	let pending = null;
 	const schedule = () => {
 		window.clearTimeout(pending);
-		pending = window.setTimeout(mark, 50);
+		pending = window.setTimeout(add_beta_tag_to_sidebar, 50);
 	};
 
 	$(document).on("page-change", schedule);

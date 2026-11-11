@@ -174,7 +174,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 		});
 		this.state = { open: false, touched: false, focus: false, q: "", tip: false, tip_seen: false };
 		this.digits = "";
-		this.make();
+		this.mount_phone_field();
 		if (this.opts.value != null) this.set_value(this.opts.value);
 		else this.render();
 	}
@@ -209,7 +209,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 	}
 
 	/** Group a national number into its country's own groups: `559021177` → `559 021 177`. */
-	static mask(digits, country) {
+	static group_national_digits(digits, country) {
 		const d = cstr(digits);
 		const groups = (country && country.groups) || [3, 3, 3, 3, 3];
 		const out = [];
@@ -228,7 +228,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 	 * Loose E.164 normalisation → `{phone, phone_e164, valid, country}`.
 	 * `phone_e164` is null when the result is not `+` followed by 7–15 digits.
 	 */
-	static normalize(raw, country) {
+	static normalize_phone_number(raw, country) {
 		const phone = cstr(raw);
 		let s = ui.latin_digits(phone);
 		// a number copied from any screen carries the invisible left-to-right isolate `ui.phone`
@@ -272,7 +272,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 		const rest = e164.slice(1 + dial.length);
 		// the country's own grouping when the number is the length that country uses
 		const hit = country || CATALOG.find((c) => c.dial === dial && c.len && c.len === rest.length);
-		if (hit && hit.len && hit.len === rest.length) return `${dial} ${whatsapp.ui.PhoneField.mask(rest, hit)}`.trim();
+		if (hit && hit.len && hit.len === rest.length) return `${dial} ${whatsapp.ui.PhoneField.group_national_digits(rest, hit)}`.trim();
 		const groups = rest.match(/.{1,3}/g) || [];
 		if (groups.length > 1 && groups[groups.length - 1].length < 2) {
 			const last = groups.pop();
@@ -308,7 +308,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 
 	// ---- mount -------------------------------------------------------------------------------
 
-	make() {
+	mount_phone_field() {
 		return this.opts.control ? this.make_control() : this.make_widget();
 	}
 
@@ -509,7 +509,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 					<span class="whatsapp-kit-phone__opt-name">${ui.escape(__(c.name))}</span>
 					<span class="whatsapp-kit-phone__opt-dial" dir="ltr">${ui.escape(c.dial)}</span>
 				</li>`)
-				.on("click", () => this.pick(c))
+				.on("click", () => this.select_country_option(c))
 				.appendTo(this.$list);
 		});
 	}
@@ -530,12 +530,12 @@ whatsapp.ui.PhoneField = class PhoneField {
 		}
 	}
 
-	pick(country) {
+	select_country_option(country) {
 		this.chosen = true;
 		this.country = country;
 		this.digits = this.digits.slice(0, country.len || 14);
 		this.close_popup();
-		this.emit();
+		this.render_and_notify_change();
 		this.$input.trigger("focus");
 	}
 
@@ -563,7 +563,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 		}
 		this.digits = all.slice(0, this.country.len || 14);
 		this.state.touched = true;
-		const masked = whatsapp.ui.PhoneField.mask(this.digits, this.country);
+		const masked = whatsapp.ui.PhoneField.group_national_digits(this.digits, this.country);
 		el.value = masked;
 		let seen = 0;
 		let caret = masked.length;
@@ -580,7 +580,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 		} catch (err) {
 			// a detached or hidden input has no selection to set
 		}
-		this.emit();
+		this.render_and_notify_change();
 	}
 
 	on_control_input(blurred = false) {
@@ -651,10 +651,10 @@ whatsapp.ui.PhoneField = class PhoneField {
 		// the placeholder is the region's own sample in national form, masked into its own groups —
 		// `501 234 5678` for Saudi Arabia, which is what the reader is about to type
 		const sample = String(c.example || "").replace(/\D/g, "").slice((c.trunk || "").length);
-		const placeholder = this.opts.placeholder || whatsapp.ui.PhoneField.mask(sample || "X".repeat(c.len || 9), c);
+		const placeholder = this.opts.placeholder || whatsapp.ui.PhoneField.group_national_digits(sample || "X".repeat(c.len || 9), c);
 		this.$input.attr("placeholder", placeholder);
-		if (this.$input.val() !== whatsapp.ui.PhoneField.mask(this.digits, c)) {
-			this.$input.val(whatsapp.ui.PhoneField.mask(this.digits, c));
+		if (this.$input.val() !== whatsapp.ui.PhoneField.group_national_digits(this.digits, c)) {
+			this.$input.val(whatsapp.ui.PhoneField.group_national_digits(this.digits, c));
 		}
 		this.$box
 			.toggleClass("whatsapp-kit-phone__box--focus", !!this.state.focus)
@@ -688,7 +688,7 @@ whatsapp.ui.PhoneField = class PhoneField {
 		return result;
 	}
 
-	emit() {
+	render_and_notify_change() {
 		this.render();
 		if (this.opts.on_change) this.opts.on_change(this.get_value());
 		return this;
@@ -701,12 +701,12 @@ whatsapp.ui.PhoneField = class PhoneField {
 	 * prototype's own `{iso, dial, national, e164}`.
 	 */
 	get_value() {
-		if (this.control) return whatsapp.ui.PhoneField.normalize(this.$input.val(), this.country);
+		if (this.control) return whatsapp.ui.PhoneField.normalize_phone_number(this.$input.val(), this.country);
 		const c = this.country;
 		const { valid } = this.validity();
 		const e164 = this.digits ? `+${c.dial}${this.digits}` : "";
 		return {
-			phone: whatsapp.ui.PhoneField.mask(this.digits, c),
+			phone: whatsapp.ui.PhoneField.group_national_digits(this.digits, c),
 			phone_e164: valid ? e164 : null,
 			valid,
 			empty: !this.digits,

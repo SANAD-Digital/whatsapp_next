@@ -7,8 +7,8 @@
 (function () {
 	const ui = whatsapp.ui;
 	const DT = "WhatsApp Log";
-	const M = whatsapp_next.messages;
-	const is_agent = M.is_agent;
+	const message_helpers = whatsapp_next.messages;
+	const is_agent = message_helpers.is_agent;
 
 	/** Options of a Link filter: the records the log points at, labelled by their title field. */
 	const link_options = (doctype, title_field) => (txt) =>
@@ -36,7 +36,7 @@
 		onload(listview) {
 			whatsapp_next.drop_unreadable_link_titles(listview);
 			const refresh = () => listview.refresh();
-			const open = (doc) => M.open_outbound_drawer(doc.name, { after_change: refresh, listview });
+			const open = (doc) => message_helpers.open_outbound_drawer(doc.name, { after_change: refresh, listview });
 
 			whatsapp_next.screens.message_list(listview, {
 				open,

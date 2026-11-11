@@ -58,14 +58,14 @@ whatsapp.ui.Collection = class Collection {
 		this.views = this.opts.views || VIEWS_BY_KIND[this.kind] || VIEWS_BY_KIND.generic;
 		this.view = this.opts.view || this.saved_view() || this.views[0];
 		this.expanded = false;
-		this.make();
+		this.build_collection_shell();
 		if (typeof this.opts.fetch === "function") this.refresh();
 		else this.render();
 	}
 
 	// ---- shell -----------------------------------------------------------------------------
 
-	make() {
+	build_collection_shell() {
 		this.id = ui.uid("coll");
 		this.$root = $(`
 			<section class="whatsapp-kit whatsapp-kit-collection" aria-labelledby="${this.id}-title">
@@ -235,7 +235,7 @@ whatsapp.ui.Collection = class Collection {
 		rows.forEach((doc) => {
 			const cells = cols
 				.map((c) => {
-					const html = typeof c.format === "function" ? c.format(doc[c.fieldname], doc) : this.cell(c, doc);
+					const html = typeof c.format === "function" ? c.format(doc[c.fieldname], doc) : this.render_table_cell(c, doc);
 					return `<td class="whatsapp-kit-table__${c.align}${c.align !== "start" && ui.num_align(c.df && c.df.fieldtype) ? " whatsapp-kit-tabular" : ""}" data-label="${ui.escape(c.label)}">${html == null || html === "" ? '<span class="whatsapp-kit-muted">—</span>' : html}</td>`;
 				})
 				.join("");
@@ -245,7 +245,7 @@ whatsapp.ui.Collection = class Collection {
 	}
 
 	/** One table cell: the first column carries the record's identity, the rest are values. */
-	cell(c, doc) {
+	render_table_cell(c, doc) {
 		if (c.entity || (c === this.columns()[0] && this.opts.identity !== false && this.doctype)) {
 			return Render.entity(doc, { doctype: this.doctype, kind: this.kind, density: "inline", profile: this.opts.profile, href: this.opts.on_click ? null : undefined });
 		}

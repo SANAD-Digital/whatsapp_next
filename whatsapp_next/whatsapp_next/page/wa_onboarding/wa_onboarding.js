@@ -29,8 +29,8 @@ frappe.provide("whatsapp_next.onboarding");
 
 (() => {
 	const ui = whatsapp.ui;
-	const esc = (v) => ui.escape(v);
-	const ico = (name, size) => ui.ico(name, size);
+	const escape_html = (v) => ui.escape(v);
+	const render_icon = (name, size) => ui.ico(name, size);
 	const SETUP_ROLES = ["System Manager"];
 	const POLL_MS = 4000;
 	// how long a half-finished sign-up is kept in this browser for a reload to return to
@@ -121,7 +121,7 @@ frappe.provide("whatsapp_next.onboarding");
 	// The copy is the platform's own sign-up, sign-in and recovery (`snd_whatsapp_platform`
 	// `views/Signup.vue`, `Login.vue`, `Reset.vue`), word for word (owner, 2026-10-08); only the
 	// terms step, which the platform does not have, keeps this screen's words.
-	const FLOW = () => [
+	const SIGNUP_STEPS = () => [
 		{ key: "account", label: __("Your details"), sub: __("Name and WhatsApp number") },
 		{ key: "terms", label: __("Terms and conditions"), sub: __("Read and accept") },
 		{ key: "activate", label: __("Confirm your number"), sub: __("Send one code from your WhatsApp") },
@@ -132,7 +132,7 @@ frappe.provide("whatsapp_next.onboarding");
 		{ key: "password", label: __("New password"), sub: __("And you are signed in") },
 	];
 	// the brand panel's words, per stage, as the platform's AuthLayout carries them
-	const RAIL = () => ({
+	const BRAND_PANEL_COPY = () => ({
 		signup: {
 			eyebrow: __("A professional presence in every message"),
 			headline: __("Your invoices reach your customers on WhatsApp."),
@@ -162,11 +162,11 @@ frappe.provide("whatsapp_next.onboarding");
 	function field_html({ id, label, type = "text", dir, placeholder = "", value = "", mono, autocomplete, required, hint = "", extra = "" }) {
 		return `
 			<div class="whatsapp-field" data-field="${id}">
-				<label class="whatsapp-field__label" for="${id}">${esc(label)}${required ? ' <span class="whatsapp-field__req" aria-hidden="true">*</span>' : ""}</label>
+				<label class="whatsapp-field__label" for="${id}">${escape_html(label)}${required ? ' <span class="whatsapp-field__req" aria-hidden="true">*</span>' : ""}</label>
 				<input class="whatsapp-input${mono ? " whatsapp-input--mono" : ""}" id="${id}" type="${type}"
 					${dir ? `dir="${dir}"` : ""} ${autocomplete ? `autocomplete="${autocomplete}"` : ""}
-					placeholder="${esc(placeholder)}" value="${esc(value)}" ${extra}>
-				<span class="whatsapp-field__hint" data-slot="hint">${esc(hint)}</span>
+					placeholder="${escape_html(placeholder)}" value="${escape_html(value)}" ${extra}>
+				<span class="whatsapp-field__hint" data-slot="hint">${escape_html(hint)}</span>
 			</div>`;
 	}
 
@@ -174,12 +174,12 @@ frappe.provide("whatsapp_next.onboarding");
 	function strip_html(tone, text, { icon, role = "status", link } = {}) {
 		const glyph = icon || { ok: "tick", warn: "warn", danger: "error", info: "info", muted: "info" }[tone];
 		const action = link
-			? ` <a class="whatsapp-onboarding__strip-link" href="${esc(link)}" target="_blank" rel="noopener">${ico("whatsapp", "xs")}${esc(__("Send it on WhatsApp"))}</a>`
+			? ` <a class="whatsapp-onboarding__strip-link" href="${escape_html(link)}" target="_blank" rel="noopener">${render_icon("whatsapp", "xs")}${escape_html(__("Send it on WhatsApp"))}</a>`
 			: "";
 		return `
 			<p class="whatsapp-onboarding__strip whatsapp-onboarding__strip--${tone}" role="${role}">
-				<span class="whatsapp-onboarding__strip-icon">${ico(glyph, "sm")}</span>
-				<span class="whatsapp-onboarding__strip-text">${esc(text)}${action}</span>
+				<span class="whatsapp-onboarding__strip-icon">${render_icon(glyph, "sm")}</span>
+				<span class="whatsapp-onboarding__strip-text">${escape_html(text)}${action}</span>
 			</p>`;
 	}
 
@@ -201,12 +201,12 @@ frappe.provide("whatsapp_next.onboarding");
 	function platform_contact(username, phone) {
 		const send_to = username || ui.PhoneField.format_display(phone) || phone || "";
 		return `<span class="whatsapp-onboarding__route-col">
-			<span class="whatsapp-onboarding__route-k">${esc(__("To", null, "Where the code is sent"))}</span>
+			<span class="whatsapp-onboarding__route-k">${escape_html(__("To", null, "Where the code is sent"))}</span>
 			<span class="whatsapp-onboarding__route-contact">
 				<span class="whatsapp-onboarding__route-avatar" aria-hidden="true">${whatsapp_next.brand.mark(22)}</span>
 				<span class="whatsapp-onboarding__route-col">
-					<span class="whatsapp-onboarding__route-v">${esc(__("WhatsappNext"))}</span>
-					<span class="whatsapp-onboarding__route-on" dir="ltr">${esc(send_to)}</span>
+					<span class="whatsapp-onboarding__route-v">${escape_html(__("WhatsappNext"))}</span>
+					<span class="whatsapp-onboarding__route-on" dir="ltr">${escape_html(send_to)}</span>
 				</span>
 			</span>
 		</span>`;
@@ -250,10 +250,10 @@ frappe.provide("whatsapp_next.onboarding");
 	/** A sentence translated with `SUPPORT_SLOT` for the address: escaped, then the address as a mail link. */
 	const SUPPORT_SLOT = "@@support@@";
 	const with_support = (translated) =>
-		esc(translated).replace(SUPPORT_SLOT, `<a href="mailto:${SUPPORT_EMAIL}" dir="ltr">${SUPPORT_EMAIL}</a>`);
+		escape_html(translated).replace(SUPPORT_SLOT, `<a href="mailto:${SUPPORT_EMAIL}" dir="ltr">${SUPPORT_EMAIL}</a>`);
 
 	/** A number inside an Arabic sentence, kept left to right (a left-to-right isolate). */
-	const ltr = (text) => `\u2066${text}\u2069`;
+	const isolate_left_to_right = (text) => `\u2066${text}\u2069`;
 
 	function copy_to_clipboard(text) {
 		try {
@@ -270,13 +270,13 @@ frappe.provide("whatsapp_next.onboarding");
 	 */
 	function code_html(code) {
 		const digits = cstr(code).split("");
-		return `<button type="button" class="whatsapp-onboarding__code" data-copy="${esc(`${CODE_PREFIX} ${code}`)}" dir="ltr"
-				aria-label="${esc(__("Copy the message {0}", [`${CODE_PREFIX} ${code}`]))}">
+		return `<button type="button" class="whatsapp-onboarding__code" data-copy="${escape_html(`${CODE_PREFIX} ${code}`)}" dir="ltr"
+				aria-label="${escape_html(__("Copy the message {0}", [`${CODE_PREFIX} ${code}`]))}">
 				<span class="whatsapp-onboarding__code-tiles" dir="ltr">
 					<span class="whatsapp-onboarding__code-tag">${CODE_PREFIX}</span>
-					${digits.map((d) => `<span class="whatsapp-onboarding__code-digit">${esc(d)}</span>`).join("")}
+					${digits.map((d) => `<span class="whatsapp-onboarding__code-digit">${escape_html(d)}</span>`).join("")}
 				</span>
-				<span class="whatsapp-onboarding__code-hint" aria-live="polite">${ico("copy", "xs")}<span class="whatsapp-onboarding__code-hint-text">${esc(__("Click the code to copy it"))}</span></span>
+				<span class="whatsapp-onboarding__code-hint" aria-live="polite">${render_icon("copy", "xs")}<span class="whatsapp-onboarding__code-hint-text">${escape_html(__("Click the code to copy it"))}</span></span>
 			</button>`;
 	}
 
@@ -322,7 +322,7 @@ frappe.provide("whatsapp_next.onboarding");
 			// `.wa` switches the ported controls to the comfortable density
 			this.$screen = $('<div class="whatsapp whatsapp-onboarding"></div>').appendTo(page.main);
 			this.make_shell();
-			this.load();
+			this.load_onboarding_status();
 			$(wrapper).on("hide", () => this.unbind());
 		}
 
@@ -343,11 +343,11 @@ frappe.provide("whatsapp_next.onboarding");
 
 					<div class="whatsapp-onboarding__brand-foot">
 						<div class="whatsapp-onboarding__chips">
-							<a class="whatsapp-onboarding__chip" href="https://sanad.digital/whatsapp-erpnext" target="_blank" rel="noopener">${ico("link", "xs")}${esc(__("Website and documentation"))}</a>
-							<a class="whatsapp-onboarding__chip" href="https://github.com/sanad-digital" target="_blank" rel="noopener">${ico("code", "xs")}${esc(__("Open source"))}</a>
+							<a class="whatsapp-onboarding__chip" href="https://sanad.digital/whatsapp-erpnext" target="_blank" rel="noopener">${render_icon("link", "xs")}${escape_html(__("Website and documentation"))}</a>
+							<a class="whatsapp-onboarding__chip" href="https://github.com/sanad-digital" target="_blank" rel="noopener">${render_icon("code", "xs")}${escape_html(__("Open source"))}</a>
 						</div>
 						<p class="whatsapp-onboarding__support">${with_support(__("Need help? Write to support at {0}", [SUPPORT_SLOT]))}</p>
-						<p class="whatsapp-onboarding__rights">${esc(__("WhatsappNext · all rights reserved"))}</p>
+						<p class="whatsapp-onboarding__rights">${escape_html(__("WhatsappNext · all rights reserved"))}</p>
 					</div>
 				</aside>
 
@@ -356,14 +356,14 @@ frappe.provide("whatsapp_next.onboarding");
 						<span class="whatsapp-onboarding__topmark">
 							<span class="whatsapp-onboarding__topmark-logo">${whatsapp_next.brand.mark(28)}</span>
 							<b>${whatsapp_next.brand.wordmark()}</b>
-							<span class="whatsapp-onboarding__topmark-tag">${esc(__("A professional presence in every message"))}</span>
+							<span class="whatsapp-onboarding__topmark-tag">${escape_html(__("A professional presence in every message"))}</span>
 						</span>
 						<span class="whatsapp-onboarding__topbar-spacer"></span>
 						<span class="whatsapp-onboarding__counter" data-slot="counter" aria-live="polite"></span>
 					</div>
 					<div class="whatsapp-onboarding__mbar" data-slot="mbar"></div>
 					<div class="whatsapp-onboarding__stage" data-slot="stage"></div>
-					<p class="whatsapp-onboarding__trust">${ico("lock", "xs")}${esc(__("We never ask for your WhatsApp password."))}</p>
+					<p class="whatsapp-onboarding__trust">${render_icon("lock", "xs")}${escape_html(__("We never ask for your WhatsApp password."))}</p>
 				</div>`);
 			this.$flow = this.$screen.find('[data-slot="flow"]');
 			this.$pitch = this.$screen.find('[data-slot="pitch"]');
@@ -375,7 +375,7 @@ frappe.provide("whatsapp_next.onboarding");
 
 		// ---- status -------------------------------------------------------------------------------
 
-		load() {
+		load_onboarding_status() {
 			this.$flow.empty();
 			this.$mbar.empty();
 			this.$counter.text("");
@@ -397,7 +397,7 @@ frappe.provide("whatsapp_next.onboarding");
 						})
 						.catch(() => {});
 				})
-				.catch((err) => this.render_error(err, () => this.load()));
+				.catch((err) => this.render_error(err, () => this.load_onboarding_status()));
 		}
 
 		/**
@@ -431,9 +431,9 @@ frappe.provide("whatsapp_next.onboarding");
 		render_error(err, retry) {
 			this.$stage.html(`
 				<section class="whatsapp-card whatsapp-onboarding__card whatsapp-onboarding__card--sm whatsapp-onboarding__fail" role="alert">
-					<span class="whatsapp-onboarding__fail-mark">${ico("error", "lg")}</span>
-					<h2 class="whatsapp-onboarding__card-title">${esc(__("The setup could not be read"))}</h2>
-					<p class="whatsapp-onboarding__card-sub">${esc((err && err.message) || __("Something went wrong. Please try again."))}</p>
+					<span class="whatsapp-onboarding__fail-mark">${render_icon("error", "lg")}</span>
+					<h2 class="whatsapp-onboarding__card-title">${escape_html(__("The setup could not be read"))}</h2>
+					<p class="whatsapp-onboarding__card-sub">${escape_html((err && err.message) || __("Something went wrong. Please try again."))}</p>
 					<div class="whatsapp-button-bar">${ui.btn({ label: __("Try again"), variant: "primary", attrs: { "data-act": "retry" } })}</div>
 				</section>`);
 			this.$stage.find('[data-act="retry"]').on("click", () => retry());
@@ -525,13 +525,13 @@ frappe.provide("whatsapp_next.onboarding");
 		}
 
 		/** The plan the free trial renews to: the platform's first (cheapest) plan. */
-		plan() {
+		get_trial_renewal_plan() {
 			const plans = (this.boot && this.boot.plans) || [];
 			return plans[0] || null;
 		}
 
 		plan_code() {
-			const p = this.plan();
+			const p = this.get_trial_renewal_plan();
 			return (p && (p.plan_code || p.code)) || undefined;
 		}
 
@@ -562,12 +562,12 @@ frappe.provide("whatsapp_next.onboarding");
 		/** The panel's words for the stage: sign-in, recovery, or the sign-up for everything else. */
 		render_rail() {
 			const stage = this.s.stage;
-			const copy = RAIL()[stage === "login" || stage === "reset" ? stage : "signup"];
+			const copy = BRAND_PANEL_COPY()[stage === "login" || stage === "reset" ? stage : "signup"];
 			this.$pitch.html(`
-				<span class="whatsapp-onboarding__badge"><span class="whatsapp-onboarding__badge-dot" aria-hidden="true"></span>${esc(copy.eyebrow)}</span>
-				<h2 class="whatsapp-onboarding__pitch-title">${esc(copy.headline)}</h2>
-				<p class="whatsapp-onboarding__pitch-body">${esc(copy.lead)}</p>`);
-			this.$ticks.html(copy.points.map((p) => `<li class="whatsapp-onboarding__tick">${ico("tick", "xs")}${esc(p)}</li>`).join(""));
+				<span class="whatsapp-onboarding__badge"><span class="whatsapp-onboarding__badge-dot" aria-hidden="true"></span>${escape_html(copy.eyebrow)}</span>
+				<h2 class="whatsapp-onboarding__pitch-title">${escape_html(copy.headline)}</h2>
+				<p class="whatsapp-onboarding__pitch-body">${escape_html(copy.lead)}</p>`);
+			this.$ticks.html(copy.points.map((p) => `<li class="whatsapp-onboarding__tick">${render_icon("tick", "xs")}${escape_html(p)}</li>`).join(""));
 		}
 
 		render_flow() {
@@ -575,7 +575,7 @@ frappe.provide("whatsapp_next.onboarding");
 			// Signing in has no steps on the platform; recovery has its own three.
 			const login = this.s.stage === "login";
 			const reset = this.s.stage === "reset" ? this.ctx.reset : undefined;
-			const steps = this.s.stage === "reset" ? RESET_FLOW() : FLOW();
+			const steps = this.s.stage === "reset" ? RESET_FLOW() : SIGNUP_STEPS();
 			const done_all = this.account_done();
 			const at = done_all ? steps.length : this.s.stage === "reset" ? (!reset ? 0 : reset.verified ? 2 : 1) : STAGE_STEP[this.s.stage] || 0;
 			this.$flow.prop("hidden", login);
@@ -587,12 +587,12 @@ frappe.provide("whatsapp_next.onboarding");
 				const current = !done_all && i === at;
 				$(`
 					<li class="whatsapp-onboarding__flow-item${current ? " whatsapp-onboarding__flow-item--current" : done ? " whatsapp-onboarding__flow-item--done" : ""}"${current ? ' aria-current="step"' : ""}>
-						<span class="whatsapp-onboarding__flow-num">${done ? ico("tick", "xs") : i + 1}</span>
+						<span class="whatsapp-onboarding__flow-num">${done ? render_icon("tick", "xs") : i + 1}</span>
 						<span class="whatsapp-onboarding__flow-text">
-							<span class="whatsapp-onboarding__flow-label">${esc(step.label)}</span>
-							<span class="whatsapp-onboarding__flow-sub">${esc(step.sub)}</span>
+							<span class="whatsapp-onboarding__flow-label">${escape_html(step.label)}</span>
+							<span class="whatsapp-onboarding__flow-sub">${escape_html(step.sub)}</span>
 						</span>
-						<span class="whatsapp-onboarding__sr">${esc(done ? __("Done") : current ? __("Current step") : __("Not done yet"))}</span>
+						<span class="whatsapp-onboarding__sr">${escape_html(done ? __("Done") : current ? __("Current step") : __("Not done yet"))}</span>
 					</li>`).appendTo(this.$flow);
 			});
 
@@ -602,8 +602,8 @@ frappe.provide("whatsapp_next.onboarding");
 					${steps.map((s, i) => `<span class="whatsapp-onboarding__mbar-seg${done_all || i <= at ? " whatsapp-onboarding__mbar-seg--on" : ""}"></span>`).join("")}
 				</div>
 				<p class="whatsapp-onboarding__mbar-line">
-					<b>${esc(done_all ? __("Registration complete") : steps[at].label)}</b>
-					<span>${esc(done_all ? __("The account is ready to use") : steps[at].sub)}</span>
+					<b>${escape_html(done_all ? __("Registration complete") : steps[at].label)}</b>
+					<span>${escape_html(done_all ? __("The account is ready to use") : steps[at].sub)}</span>
 				</p>`);
 		}
 
@@ -626,17 +626,17 @@ frappe.provide("whatsapp_next.onboarding");
 		}
 
 		/** A card shell: the prototype's surface, its head, and a slot for the error banner. */
-		card(size, { title, sub, badge } = {}) {
+		append_card_shell(size, { title, sub, badge } = {}) {
 			const $card = $(`<section class="whatsapp-card whatsapp-onboarding__card whatsapp-onboarding__card--${size}"></section>`).appendTo(this.$stage);
 			if (title) {
 				$card.append(`
 					<div class="whatsapp-onboarding__card-head">
 						<div class="whatsapp-onboarding__card-heading">
 							<div class="whatsapp-onboarding__card-titles">
-								<h2 class="whatsapp-onboarding__card-title">${esc(title)}</h2>
+								<h2 class="whatsapp-onboarding__card-title">${escape_html(title)}</h2>
 								${badge || ""}
 							</div>
-							${sub ? `<p class="whatsapp-onboarding__card-sub">${esc(sub)}</p>` : ""}
+							${sub ? `<p class="whatsapp-onboarding__card-sub">${escape_html(sub)}</p>` : ""}
 						</div>
 					</div>`);
 			}
@@ -669,7 +669,7 @@ frappe.provide("whatsapp_next.onboarding");
 		// ---- a manager who may watch but not write ---------------------------------------------------
 
 		card_readonly() {
-			this.card("md", {
+			this.append_card_shell("md", {
 				title: __("Setup status"),
 				sub: __("Only a System Manager can register an account for this site."),
 			});
@@ -680,7 +680,7 @@ frappe.provide("whatsapp_next.onboarding");
 		// =============================================================================================
 
 		card_signup() {
-			const $card = this.card("lg", {
+			const $card = this.append_card_shell("lg", {
 				title: __("Create your account"),
 				sub: __("Start with a free trial. It takes about two minutes."),
 				badge: ui.badge(__("A professional presence in every message"), "ok"),
@@ -729,7 +729,7 @@ frappe.provide("whatsapp_next.onboarding");
 			// behind "I have a coupon" until asked for, or while one is already typed.
 			const open = !!this.f.coupon || this.s.coupon_open;
 			const $cp = $(`<div class="whatsapp-onboarding__field-wide whatsapp-onboarding__coupon"></div>`).appendTo($grid);
-			$cp.append(`<button type="button" class="whatsapp-onboarding__coupon-toggle" data-act="coupon-toggle" aria-expanded="${open}" aria-controls="whatsapp-onboarding-coupon-slot">${ico("plus", "xs")}<span>${esc(__("I have a coupon"))}</span></button>`);
+			$cp.append(`<button type="button" class="whatsapp-onboarding__coupon-toggle" data-act="coupon-toggle" aria-expanded="${open}" aria-controls="whatsapp-onboarding-coupon-slot">${render_icon("plus", "xs")}<span>${escape_html(__("I have a coupon"))}</span></button>`);
 			const $slot = $(`<div id="whatsapp-onboarding-coupon-slot"${open ? "" : " hidden"}></div>`).appendTo($cp);
 			$slot.append(field_html({ id: "whatsapp-onboarding-coupon", label: __("Coupon code"), dir: "ltr", placeholder: "BSHQ-FREE2", value: this.f.coupon, mono: true, extra: 'data-f="coupon"' }));
 			$cp.on("click", '[data-act="coupon-toggle"]', (e) => {
@@ -755,18 +755,18 @@ frappe.provide("whatsapp_next.onboarding");
 			const other = this.f.sector === SECTOR_OTHER();
 			return `
 				<div class="whatsapp-field whatsapp-onboarding__sector-field" data-sec-root="1">
-					<span class="whatsapp-field__label" id="whatsapp-onboarding-sector-label">${esc(__("Activity"))}</span>
+					<span class="whatsapp-field__label" id="whatsapp-onboarding-sector-label">${escape_html(__("Activity"))}</span>
 					<div class="whatsapp-onboarding__sector" data-slot="sector">
 						${
 							other
 								? `<span class="whatsapp-affix whatsapp-affix--on-end">
-										<input class="whatsapp-input" data-f="sector_other" type="text" placeholder="${esc(__("Write the company's activity"))}" value="${esc(this.f.sector_other)}" aria-labelledby="whatsapp-onboarding-sector-label">
-										<button type="button" class="whatsapp-affix__on whatsapp-affix__on--end" data-act="sector-list">${esc(__("List"))}</button>
+										<input class="whatsapp-input" data-f="sector_other" type="text" placeholder="${escape_html(__("Write the company's activity"))}" value="${escape_html(this.f.sector_other)}" aria-labelledby="whatsapp-onboarding-sector-label">
+										<button type="button" class="whatsapp-affix__on whatsapp-affix__on--end" data-act="sector-list">${escape_html(__("List"))}</button>
 									</span>`
 								: `<button type="button" class="whatsapp-onboarding__sector-btn" data-act="sector-toggle" aria-expanded="false"
 										aria-haspopup="listbox" aria-labelledby="whatsapp-onboarding-sector-label whatsapp-onboarding-sector-value">
-										<span class="whatsapp-onboarding__sector-value" id="whatsapp-onboarding-sector-value">${esc(this.f.sector || __("Choose the company's activity"))}</span>
-										<span class="whatsapp-onboarding__sector-caret">${ico("caret", "xs")}</span>
+										<span class="whatsapp-onboarding__sector-value" id="whatsapp-onboarding-sector-value">${escape_html(this.f.sector || __("Choose the company's activity"))}</span>
+										<span class="whatsapp-onboarding__sector-caret">${render_icon("caret", "xs")}</span>
 									</button>`
 						}
 					</div>
@@ -791,12 +791,12 @@ frappe.provide("whatsapp_next.onboarding");
 			$pwgrid.append(`
 				<div class="whatsapp-field" data-field="whatsapp-onboarding-pw">
 					<span class="whatsapp-onboarding__label-row">
-						<label class="whatsapp-field__label" for="whatsapp-onboarding-pw">${esc(__("Password"))} <span class="whatsapp-field__req" aria-hidden="true">*</span></label>
+						<label class="whatsapp-field__label" for="whatsapp-onboarding-pw">${escape_html(__("Password"))} <span class="whatsapp-field__req" aria-hidden="true">*</span></label>
 						${ui.btn({ label: __("Generate"), icon: "plus", variant: "tonal", size: "sm", title: __("Generate a strong password"), attrs: { "data-act": "genpw" } })}
 						${ui.btn({ label: this.s.show_pw ? __("Hide") : __("Show"), variant: "ghost", size: "sm", title: __("Show the password"), attrs: { "data-act": "showpw", "aria-pressed": String(this.s.show_pw) } })}
 					</span>
 					<input class="whatsapp-input whatsapp-input--mono" id="whatsapp-onboarding-pw" data-f="password" type="${this.s.show_pw ? "text" : "password"}"
-						autocomplete="new-password" placeholder="••••••••" value="${esc(this.f.password)}" aria-describedby="whatsapp-onboarding-pw-hint">
+						autocomplete="new-password" placeholder="••••••••" value="${escape_html(this.f.password)}" aria-describedby="whatsapp-onboarding-pw-hint">
 					<span class="whatsapp-onboarding__pwbars" data-slot="pwbars" aria-hidden="true">
 						<span class="whatsapp-onboarding__pwbar"></span><span class="whatsapp-onboarding__pwbar"></span><span class="whatsapp-onboarding__pwbar"></span><span class="whatsapp-onboarding__pwbar"></span>
 					</span>
@@ -874,7 +874,7 @@ frappe.provide("whatsapp_next.onboarding");
 				if (tone) $field.addClass(tone === "ok" ? "whatsapp-onboarding__ok" : "whatsapp-onboarding__bad");
 				$input.attr("aria-invalid", tone === "bad" ? "true" : null);
 				$hint.attr("class", `whatsapp-field__hint${tone ? ` whatsapp-onboarding__hint--${tone}` : ""}`).html(
-					text ? `${tone ? `<span class="whatsapp-onboarding__hint-icon">${ico(tone === "ok" ? "tick" : "warn", "xs")}</span>` : ""}<span>${esc(text)}</span>` : ""
+					text ? `${tone ? `<span class="whatsapp-onboarding__hint-icon">${render_icon(tone === "ok" ? "tick" : "warn", "xs")}</span>` : ""}<span>${escape_html(text)}</span>` : ""
 				);
 			};
 
@@ -963,7 +963,7 @@ frappe.provide("whatsapp_next.onboarding");
 			$field
 				.find('[data-slot="hint"]')
 				.attr("class", `whatsapp-field__hint whatsapp-onboarding__hint--${tone}`)
-				.html(`<span class="whatsapp-onboarding__hint-icon">${ico(tone === "ok" ? "tick" : "warn", "xs")}</span><span>${esc(text)}</span>`);
+				.html(`<span class="whatsapp-onboarding__hint-icon">${render_icon(tone === "ok" ? "tick" : "warn", "xs")}</span><span>${escape_html(text)}</span>`);
 		}
 
 		/** The sector combobox: open, search, pick, or turn the search text into a custom activity. */
@@ -980,10 +980,10 @@ frappe.provide("whatsapp_next.onboarding");
 				const $pop = $(`
 					<div class="whatsapp-onboarding__sector-pop">
 						<div class="whatsapp-onboarding__sector-search">
-							${ico("search", "xs")}
-							<input type="text" class="whatsapp-onboarding__sector-q" placeholder="${esc(__("Search for an activity"))}" aria-label="${esc(__("Search for an activity"))}" role="combobox" aria-expanded="true" aria-controls="whatsapp-onboarding-sector-list" aria-autocomplete="list">
+							${render_icon("search", "xs")}
+							<input type="text" class="whatsapp-onboarding__sector-q" placeholder="${escape_html(__("Search for an activity"))}" aria-label="${escape_html(__("Search for an activity"))}" role="combobox" aria-expanded="true" aria-controls="whatsapp-onboarding-sector-list" aria-autocomplete="list">
 						</div>
-						<ul class="whatsapp-onboarding__sector-list" id="whatsapp-onboarding-sector-list" role="listbox" aria-label="${esc(__("Activity"))}"></ul>
+						<ul class="whatsapp-onboarding__sector-list" id="whatsapp-onboarding-sector-list" role="listbox" aria-label="${escape_html(__("Activity"))}"></ul>
 					</div>`).appendTo($card.find('[data-slot="sector"]'));
 				$card.find('[data-act="sector-toggle"]').attr("aria-expanded", "true");
 				const $list = $pop.find(".whatsapp-onboarding__sector-list");
@@ -995,7 +995,7 @@ frappe.provide("whatsapp_next.onboarding");
 					const rows = q ? all.filter((l) => l.toLowerCase().indexOf(q.toLowerCase()) >= 0) : all;
 					$list.empty();
 					rows.forEach((label) => {
-						$(`<li class="whatsapp-onboarding__sector-opt${label === self.f.sector ? " whatsapp-onboarding__sector-opt--on" : ""}" role="option" tabindex="-1" aria-selected="${label === self.f.sector}">${esc(label)}</li>`)
+						$(`<li class="whatsapp-onboarding__sector-opt${label === self.f.sector ? " whatsapp-onboarding__sector-opt--on" : ""}" role="option" tabindex="-1" aria-selected="${label === self.f.sector}">${escape_html(label)}</li>`)
 							.on("click", () => {
 								self.f.sector = label;
 								if (label !== SECTOR_OTHER()) self.f.sector_other = "";
@@ -1005,7 +1005,7 @@ frappe.provide("whatsapp_next.onboarding");
 							.appendTo($list);
 					});
 					if (!rows.length && q) {
-						$(`<li class="whatsapp-onboarding__sector-none" role="option" tabindex="-1" aria-selected="false">${esc(__("No match — use «{0}» as a custom activity", [q]))}</li>`)
+						$(`<li class="whatsapp-onboarding__sector-none" role="option" tabindex="-1" aria-selected="false">${escape_html(__("No match — use «{0}» as a custom activity", [q]))}</li>`)
 							.on("click", () => {
 								self.f.sector = SECTOR_OTHER();
 								self.f.sector_other = q;
@@ -1102,18 +1102,18 @@ frappe.provide("whatsapp_next.onboarding");
 		// =============================================================================================
 
 		card_terms() {
-			const $card = this.card("lg", { title: __("Terms of use and the WhatsApp Business policy") });
+			const $card = this.append_card_shell("lg", { title: __("Terms of use and the WhatsApp Business policy") });
 			$card.find(".whatsapp-onboarding__card-titles").append('<span data-slot="readmark"></span>');
 
-			const $box = $(`<div class="whatsapp-sunken whatsapp-onboarding__terms" tabindex="0" role="region" aria-label="${esc(__("Terms of use and the WhatsApp Business policy"))}"></div>`).appendTo($card);
+			const $box = $(`<div class="whatsapp-sunken whatsapp-onboarding__terms" tabindex="0" role="region" aria-label="${escape_html(__("Terms of use and the WhatsApp Business policy"))}"></div>`).appendTo($card);
 			TERMS().forEach((section) => {
 				const $sec = $('<div class="whatsapp-onboarding__terms-sec"></div>').appendTo($box);
-				$sec.append(`<h3 class="whatsapp-onboarding__terms-h">${esc(section.h)}</h3>`);
-				section.p.forEach((line) => $sec.append(`<p class="whatsapp-onboarding__terms-p">${esc(line)}</p>`));
+				$sec.append(`<h3 class="whatsapp-onboarding__terms-h">${escape_html(section.h)}</h3>`);
+				section.p.forEach((line) => $sec.append(`<p class="whatsapp-onboarding__terms-p">${escape_html(line)}</p>`));
 			});
-			$box.append(`<p class="whatsapp-onboarding__terms-foot">${esc(__("Last updated: 1 September 2026. The full text of the terms is on the «Terms and policies» page inside the system."))}</p>`);
+			$box.append(`<p class="whatsapp-onboarding__terms-foot">${escape_html(__("Last updated: 1 September 2026. The full text of the terms is on the «Terms and policies» page inside the system."))}</p>`);
 
-			$card.append(`<p class="whatsapp-onboarding__consent">${esc(__("By pressing «Create the account» you confirm that you have read and accepted the terms, the privacy policy and the WhatsApp Business policy, that the numbers used belong to the company, and that you agree to receive subscription and support notices on the registered WhatsApp number."))}</p>`);
+			$card.append(`<p class="whatsapp-onboarding__consent">${escape_html(__("By pressing «Create the account» you confirm that you have read and accepted the terms, the privacy policy and the WhatsApp Business policy, that the numbers used belong to the company, and that you agree to receive subscription and support notices on the registered WhatsApp number."))}</p>`);
 
 			const $bar = $('<div class="whatsapp-button-bar"></div>').appendTo($card);
 			$bar.append(ui.btn({ label: __("Back to the account details"), variant: "secondary", attrs: { "data-act": "back" } }));
@@ -1225,7 +1225,7 @@ frappe.provide("whatsapp_next.onboarding");
 			// this page finishes by itself once it is opened, on any device (owner, 2026-10-08)
 			const by_link = !by_whatsapp && route.link_sent;
 			const own = ui.PhoneField.format_display(this.f.phone) || this.f.phone;
-			const $card = this.card("md", {
+			const $card = this.append_card_shell("md", {
 				title: __("Confirm the mobile number"),
 				sub: by_whatsapp
 					? __("Send the code below from your WhatsApp on the number you registered. The account is activated as soon as it arrives.")
@@ -1236,48 +1236,48 @@ frappe.provide("whatsapp_next.onboarding");
 
 			const col = (k, v, mono) =>
 				`<span class="whatsapp-onboarding__route-col">
-					<span class="whatsapp-onboarding__route-k">${esc(k)}</span>
-					<span class="whatsapp-onboarding__route-v${mono ? " whatsapp-onboarding__route-v--mono" : ""}" dir="ltr">${esc(v)}</span>
+					<span class="whatsapp-onboarding__route-k">${escape_html(k)}</span>
+					<span class="whatsapp-onboarding__route-v${mono ? " whatsapp-onboarding__route-v--mono" : ""}" dir="ltr">${escape_html(v)}</span>
 				</span>`;
 			const route_box = by_whatsapp
 				? col(__("From your registered number"), own, true) +
-				  `<span class="whatsapp-onboarding__route-arrow">${ico("chevronEnd", "sm")}</span>` +
+				  `<span class="whatsapp-onboarding__route-arrow">${render_icon("chevronEnd", "sm")}</span>` +
 				  platform_contact(route.platform_username, route.platform_phone)
 				: col(__("From the platform"), __("WhatsappNext")) +
-				  `<span class="whatsapp-onboarding__route-arrow">${ico("chevronEnd", "sm")}</span>` +
+				  `<span class="whatsapp-onboarding__route-arrow">${render_icon("chevronEnd", "sm")}</span>` +
 				  col(__("To your email"), route.email || this.f.email, true);
 
 			const text = by_whatsapp ? `${CODE_PREFIX} ${route.code}` : "";
 			const wa_link = by_whatsapp ? wa_send_link(route.platform_phone, route.code) : "";
 			const codebox = by_whatsapp
 				? `<div class="whatsapp-sunken whatsapp-onboarding__codebox">
-					<span class="whatsapp-field__label">${esc(__("The message to send"))}</span>
+					<span class="whatsapp-field__label">${escape_html(__("The message to send"))}</span>
 					${code_html(route.code)}
-					<p class="whatsapp-onboarding__code-help">${esc(__("Send it from {0} exactly as written. Nothing is sent to you: the message you send is the confirmation.", [ltr(own)]))}</p>
+					<p class="whatsapp-onboarding__code-help">${escape_html(__("Send it from {0} exactly as written. Nothing is sent to you: the message you send is the confirmation.", [isolate_left_to_right(own)]))}</p>
 					<div class="whatsapp-button-bar">
-						<a class="btn btn-primary whatsapp-onboarding__grow" href="${esc(wa_link)}" target="_blank" rel="noopener">${ico("whatsapp", "sm")} <span>${esc(__("Open WhatsApp and send the code"))}</span></a>
+						<a class="btn btn-primary whatsapp-onboarding__grow" href="${escape_html(wa_link)}" target="_blank" rel="noopener">${render_icon("whatsapp", "sm")} <span>${escape_html(__("Open WhatsApp and send the code"))}</span></a>
 						${ui.btn({ label: __("Copy the message"), variant: "secondary", attrs: { "data-act": "copy-code" } })}
 					</div>
 				</div>`
 				: by_link
 				? `<div class="whatsapp-sunken whatsapp-onboarding__codebox">
-					<span class="whatsapp-field__label">${esc(__("Check your email"))}</span>
-					<p class="whatsapp-onboarding__code-help">${esc(__("Open the link in the email from WhatsappNext. Not there? Check the spam folder, or send the link again."))}</p>
+					<span class="whatsapp-field__label">${escape_html(__("Check your email"))}</span>
+					<p class="whatsapp-onboarding__code-help">${escape_html(__("Open the link in the email from WhatsappNext. Not there? Check the spam folder, or send the link again."))}</p>
 				</div>`
 				: `<div class="whatsapp-sunken whatsapp-onboarding__codebox">
-					<label class="whatsapp-field__label" for="whatsapp-onboarding-code">${esc(__("Verification code"))}</label>
+					<label class="whatsapp-field__label" for="whatsapp-onboarding-code">${escape_html(__("Verification code"))}</label>
 					<input class="whatsapp-onboarding__code-input" id="whatsapp-onboarding-code" type="text" dir="ltr" inputmode="numeric"
 						autocomplete="one-time-code" placeholder="••••••" aria-describedby="whatsapp-onboarding-code-state">
-					<p class="whatsapp-onboarding__code-help">${esc(__("Check your inbox, and the spam folder, for a message from the platform. If it has not arrived, wait for the timer to run down and ask for it again."))}</p>
+					<p class="whatsapp-onboarding__code-help">${escape_html(__("Check your inbox, and the spam folder, for a message from the platform. If it has not arrived, wait for the timer to run down and ask for it again."))}</p>
 				</div>`;
 
 			// the password is never stored: after a reload it is asked for here, once, to finish
 			const password_box = this.f.password
 				? ""
 				: `<div class="whatsapp-sunken whatsapp-onboarding__codebox">
-					<label class="whatsapp-field__label" for="whatsapp-onboarding-repw">${esc(__("Your password"))}</label>
+					<label class="whatsapp-field__label" for="whatsapp-onboarding-repw">${escape_html(__("Your password"))}</label>
 					<input class="whatsapp-input whatsapp-input--mono" id="whatsapp-onboarding-repw" type="password" autocomplete="new-password" placeholder="••••••••">
-					<p class="whatsapp-onboarding__code-help">${esc(__("The page was reloaded, so enter the password you chose once more. It is needed to finish creating the account."))}</p>
+					<p class="whatsapp-onboarding__code-help">${escape_html(__("The page was reloaded, so enter the password you chose once more. It is needed to finish creating the account."))}</p>
 					${by_whatsapp || by_link ? `<div class="whatsapp-button-bar">${ui.btn({ label: __("Finish"), variant: "primary", cls: "whatsapp-onboarding__grow", attrs: { "data-act": "finish" } })}</div>` : ""}
 				</div>`;
 
@@ -1649,7 +1649,7 @@ frappe.provide("whatsapp_next.onboarding");
 			// this card is not sent behind an empty-looking field
 			this.f.login_password = "";
 			this.f.login_account = null; // chosen again after each sign-in that lists the accounts
-			const $card = this.card("sm", {
+			const $card = this.append_card_shell("sm", {
 				title: __("Welcome back"),
 				sub: __("Sign in to see your messages, your balance and your numbers."),
 			});
@@ -1658,7 +1658,7 @@ frappe.provide("whatsapp_next.onboarding");
 			);
 			$card.append(`
 				<div class="whatsapp-field">
-					<label class="whatsapp-field__label" for="whatsapp-onboarding-login-pw">${esc(__("Password"))}</label>
+					<label class="whatsapp-field__label" for="whatsapp-onboarding-login-pw">${escape_html(__("Password"))}</label>
 					<!-- the password is written left to right, so the field and its "Show" are too: the
 					     button takes the end the input reserves room at, not the page's end -->
 					<span class="whatsapp-affix whatsapp-onboarding__pwaffix" dir="ltr">
@@ -1666,16 +1666,16 @@ frappe.provide("whatsapp_next.onboarding");
 							autocomplete="current-password" placeholder="••••••••">
 						<span class="whatsapp-affix__in whatsapp-affix__in--end whatsapp-onboarding__reveal-slot">
 							<button type="button" class="whatsapp-onboarding__reveal" data-act="reveal" aria-pressed="false"
-								aria-controls="whatsapp-onboarding-login-pw" dir="auto">${esc(__("Show"))}</button>
+								aria-controls="whatsapp-onboarding-login-pw" dir="auto">${escape_html(__("Show"))}</button>
 						</span>
 					</span>
 				</div>
 				<div class="whatsapp-onboarding__loginfoot">
-					<span class="whatsapp-onboarding__lock">${ico("shield", "xs")}${esc(__("Sign-in details are kept in the app's settings"))}</span>
+					<span class="whatsapp-onboarding__lock">${render_icon("shield", "xs")}${escape_html(__("Sign-in details are kept in the app's settings"))}</span>
 					${ui.btn({ label: __("Forgot password?"), variant: "ghost", size: "sm", attrs: { "data-act": "reset" } })}
 				</div>
 				${ui.btn({ label: __("Sign in"), variant: "primary", block: true, attrs: { "data-act": "login" } })}
-				<div class="whatsapp-onboarding__divider"><span>${esc(__("New to WhatsappNext?"))}</span></div>
+				<div class="whatsapp-onboarding__divider"><span>${escape_html(__("New to WhatsappNext?"))}</span></div>
 				${ui.btn({ label: __("Create a free account"), variant: "secondary", block: true, attrs: { "data-act": "new" } })}
 				${this.s.switching ? ui.btn({ label: __("Back to the current account"), variant: "ghost", block: true, attrs: { "data-act": "stay" } }) : ""}`);
 
@@ -1765,14 +1765,14 @@ frappe.provide("whatsapp_next.onboarding");
 			const accounts = r.accounts || [];
 			if (!accounts.some((a) => a.name === this.f.login_account)) this.f.login_account = null;
 			$btn.closest(".whatsapp-onboarding__card").find(".whatsapp-onboarding__accounts").remove();
-			const $list = $(`<div class="whatsapp-onboarding__accounts" role="group" aria-label="${esc(__("Your accounts"))}">
-				<p class="whatsapp-onboarding__accounts-lead">${esc(r.message || __("Choose the account this site sends through."))}</p>
+			const $list = $(`<div class="whatsapp-onboarding__accounts" role="group" aria-label="${escape_html(__("Your accounts"))}">
+				<p class="whatsapp-onboarding__accounts-lead">${escape_html(r.message || __("Choose the account this site sends through."))}</p>
 				${accounts
 					.map(
-						(a) => `<button type="button" class="whatsapp-onboarding__account" data-account="${esc(a.name)}" aria-pressed="${a.name === this.f.login_account}">
-							<b dir="auto">${esc(a.site_name || a.site_url || a.name)}</b>
-							<span dir="auto">${esc([a.name, a.plan].filter(Boolean).join(" · "))}</span>
-							${a.site ? `<span class="whatsapp-onboarding__account-site" dir="auto">${esc(__("Linked to {0}", ["\u2066" + a.site + "\u2069"], "Account site"))}</span>` : `<span class="whatsapp-onboarding__account-site">${esc(__("Not linked to a site yet"))}</span>`}
+						(a) => `<button type="button" class="whatsapp-onboarding__account" data-account="${escape_html(a.name)}" aria-pressed="${a.name === this.f.login_account}">
+							<b dir="auto">${escape_html(a.site_name || a.site_url || a.name)}</b>
+							<span dir="auto">${escape_html([a.name, a.plan].filter(Boolean).join(" · "))}</span>
+							${a.site ? `<span class="whatsapp-onboarding__account-site" dir="auto">${escape_html(__("Linked to {0}", ["\u2066" + a.site + "\u2069"], "Account site"))}</span>` : `<span class="whatsapp-onboarding__account-site">${escape_html(__("Not linked to a site yet"))}</span>`}
 						</button>`
 					)
 					.join("")}
@@ -1798,7 +1798,7 @@ frappe.provide("whatsapp_next.onboarding");
 			// the site's address reads left to right inside the Arabic sentence
 			const message = r.site ? cstr(r.message).replace(r.site, "\u2066" + r.site + "\u2069") : r.message;
 			const $box = $(`<div class="whatsapp-onboarding__inuse" role="alert">
-				<p>${esc(message)}</p>
+				<p>${escape_html(message)}</p>
 			</div>`).insertBefore($btn);
 			this.show_error("");
 		}
@@ -1836,7 +1836,7 @@ frappe.provide("whatsapp_next.onboarding");
 		card_reset() {
 			const reset = this.ctx.reset;
 			// the password step takes sign-up's width: its pair of fields needs the room
-			const $card = this.card(reset && reset.verified ? "md" : "sm", {
+			const $card = this.append_card_shell(reset && reset.verified ? "md" : "sm", {
 				title: reset && reset.verified ? __("It's you. Choose a new password") : __("Reset your password"),
 				sub: !reset
 					? __("Tell us which account, and we'll confirm it is you through WhatsApp.")
@@ -1851,8 +1851,8 @@ frappe.provide("whatsapp_next.onboarding");
 			if (by_email) {
 				$card.append(`
 					<div class="whatsapp-sunken whatsapp-onboarding__codebox">
-						<p class="whatsapp-onboarding__code-help">${esc(__("A recovery code was sent to {0}. Check the inbox and the spam folder.", [reset.email || __("the account's email")]))}</p>
-						<label class="whatsapp-field__label" for="whatsapp-onboarding-reset-code">${esc(__("Recovery code"))}</label>
+						<p class="whatsapp-onboarding__code-help">${escape_html(__("A recovery code was sent to {0}. Check the inbox and the spam folder.", [reset.email || __("the account's email")]))}</p>
+						<label class="whatsapp-field__label" for="whatsapp-onboarding-reset-code">${escape_html(__("Recovery code"))}</label>
 						<input class="whatsapp-onboarding__code-input" id="whatsapp-onboarding-reset-code" type="text" dir="ltr" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••">
 					</div>
 					<div class="whatsapp-button-bar">
@@ -1886,18 +1886,18 @@ frappe.provide("whatsapp_next.onboarding");
 				$card.append(`
 					<div class="whatsapp-sunken whatsapp-onboarding__route">
 						<span class="whatsapp-onboarding__route-col">
-							<span class="whatsapp-onboarding__route-k">${esc(__("From the account's number"))}</span>
-							<span class="whatsapp-onboarding__route-v whatsapp-onboarding__route-v--mono" dir="ltr">${esc(reset.mobile_hint || reset.identifier || "")}</span>
+							<span class="whatsapp-onboarding__route-k">${escape_html(__("From the account's number"))}</span>
+							<span class="whatsapp-onboarding__route-v whatsapp-onboarding__route-v--mono" dir="ltr">${escape_html(reset.mobile_hint || reset.identifier || "")}</span>
 						</span>
-						<span class="whatsapp-onboarding__route-arrow">${ico("chevronEnd", "sm")}</span>
+						<span class="whatsapp-onboarding__route-arrow">${render_icon("chevronEnd", "sm")}</span>
 						${platform_contact(reset.platform_username, reset.platform_phone)}
 					</div>
 					<div class="whatsapp-sunken whatsapp-onboarding__codebox">
-						<span class="whatsapp-field__label">${esc(__("The message to send"))}</span>
+						<span class="whatsapp-field__label">${escape_html(__("The message to send"))}</span>
 						${code_html(reset.code)}
-						<p class="whatsapp-onboarding__code-help">${esc(__("Send it from the account's WhatsApp number exactly as written. Nothing is sent to you: the message you send is the confirmation."))}</p>
+						<p class="whatsapp-onboarding__code-help">${escape_html(__("Send it from the account's WhatsApp number exactly as written. Nothing is sent to you: the message you send is the confirmation."))}</p>
 						<div class="whatsapp-button-bar">
-							<a class="btn btn-primary whatsapp-onboarding__grow" href="${esc(link)}" target="_blank" rel="noopener">${ico("whatsapp", "sm")} <span>${esc(__("Open WhatsApp and send the code"))}</span></a>
+							<a class="btn btn-primary whatsapp-onboarding__grow" href="${escape_html(link)}" target="_blank" rel="noopener">${render_icon("whatsapp", "sm")} <span>${escape_html(__("Open WhatsApp and send the code"))}</span></a>
 							${ui.btn({ label: __("Copy the message"), variant: "secondary", attrs: { "data-act": "copy-reset" } })}
 						</div>
 					</div>
@@ -1981,7 +1981,7 @@ frappe.provide("whatsapp_next.onboarding");
 							this.ctx.reset = null;
 							if (r && r.customer_name) this.f.org = r.customer_name;
 							ui.Toast.success(__("The password was changed and you are signed in."));
-							return this.load();
+							return this.load_onboarding_status();
 						})
 						.catch((err) => this.show_error(err.message))
 				);
@@ -2095,28 +2095,28 @@ frappe.provide("whatsapp_next.onboarding");
 			whatsapp_next.account_switch.check({ force: true });
 			const plan = this.plan_label();
 			const org = this.f.org;
-			const $card = this.card("ready");
+			const $card = this.append_card_shell("ready");
 			$card.append(`
-				<span class="whatsapp-onboarding__ready-mark">${ico("tick", "lg")}</span>
-				<h2 class="whatsapp-onboarding__ready-title">${esc(__("Your account is ready"))}</h2>
-				<p class="whatsapp-onboarding__ready-sub">${esc(org ? __("The account «{0}» is active on the {1} plan. You can link devices and send your first message.", [org, plan]) : __("This site's account is active on the {0} plan.", [plan]))}</p>
+				<span class="whatsapp-onboarding__ready-mark">${render_icon("tick", "lg")}</span>
+				<h2 class="whatsapp-onboarding__ready-title">${escape_html(__("Your account is ready"))}</h2>
+				<p class="whatsapp-onboarding__ready-sub">${escape_html(org ? __("The account «{0}» is active on the {1} plan. You can link devices and send your first message.", [org, plan]) : __("This site's account is active on the {0} plan.", [plan]))}</p>
 
 				<div class="whatsapp-onboarding__ready-note">
-					<span class="whatsapp-onboarding__ready-note-mark">${ico("card", "sm")}</span>
+					<span class="whatsapp-onboarding__ready-note-mark">${render_icon("card", "sm")}</span>
 					<span class="whatsapp-onboarding__ready-note-text">
-						<b>${esc(__("Your first month is free"))}</b>
-						<span>${esc(__("You can upgrade or stop at any time from the subscription page."))}</span>
+						<b>${escape_html(__("Your first month is free"))}</b>
+						<span>${escape_html(__("You can upgrade or stop at any time from the subscription page."))}</span>
 					</span>
 				</div>
 
 				<div class="whatsapp-onboarding__invite">
 					<span class="whatsapp-onboarding__invite-head">
-						<span class="whatsapp-onboarding__invite-mark">${ico("send", "sm")}</span>
-						<b>${esc(__("Share and get an extra free month"))}</b>
+						<span class="whatsapp-onboarding__invite-mark">${render_icon("send", "sm")}</span>
+						<b>${escape_html(__("Share and get an extra free month"))}</b>
 					</span>
-					<p class="whatsapp-onboarding__invite-body">${esc(__("Send your coupon to any company you know: they start their subscription with a free month, and a free month is added to yours for every company that activates with your coupon — with no limit on invitations."))}</p>
+					<p class="whatsapp-onboarding__invite-body">${escape_html(__("Send your coupon to any company you know: they start their subscription with a free month, and a free month is added to yours for every company that activates with your coupon — with no limit on invitations."))}</p>
 					<div data-slot="referral">${ui.skeleton(1, { lines: 1 })}</div>
-					<p class="whatsapp-onboarding__invite-note">${esc(__("The free month is added to your balance as soon as the invited account is activated, and shows on the subscription page."))}</p>
+					<p class="whatsapp-onboarding__invite-note">${escape_html(__("The free month is added to your balance as soon as the invited account is activated, and shows on the subscription page."))}</p>
 				</div>
 
 				${ui.btn({ label: __("Go to the dashboard"), variant: "primary", block: true, attrs: { "data-act": "home" } })}
@@ -2137,7 +2137,7 @@ frappe.provide("whatsapp_next.onboarding");
 		 * back to this page until it is linked again.
 		 */
 		sign_out() {
-			return ui.ConfirmDialog.ask({
+			return ui.ConfirmDialog.ask_for_confirmation({
 				title: __("Sign out of the WhatsApp account?"),
 				message: __("This site stops sending and receiving WhatsApp messages until it signs in again. Devices, messages and what you set up stay on the site."),
 				confirm_label: __("Sign out"),
@@ -2180,10 +2180,10 @@ frappe.provide("whatsapp_next.onboarding");
 			const $body = dialog.fields_dict.body.$wrapper;
 			$body.html(`
 				<div class="whatsapp-onboarding__switch">
-					<p>${esc(__("This site will work with the account you sign in with. Nothing is deleted when you sign in: the current account's devices are switched off, and its messages, queue and WhatsApp numbers stay on this site."))}</p>
-					<p>${esc(__("Afterwards this site asks whether to delete what the previous account left or keep it. Templates, document notifications, alerts, commands and contact groups always stay."))}</p>
+					<p>${escape_html(__("This site will work with the account you sign in with. Nothing is deleted when you sign in: the current account's devices are switched off, and its messages, queue and WhatsApp numbers stay on this site."))}</p>
+					<p>${escape_html(__("Afterwards this site asks whether to delete what the previous account left or keep it. Templates, document notifications, alerts, commands and contact groups always stay."))}</p>
 					<div class="whatsapp-onboarding__switch-backup">
-						<span>${esc(__("Keep a copy of what this site set up before you continue."))}</span>
+						<span>${escape_html(__("Keep a copy of what this site set up before you continue."))}</span>
 						${ui.btn({ label: __("Download a backup"), variant: "secondary", size: "sm", attrs: { "data-act": "backup" } })}
 					</div>
 				</div>`);
@@ -2236,11 +2236,11 @@ frappe.provide("whatsapp_next.onboarding");
 					$slot.html(`
 						<div class="whatsapp-onboarding__invite-row">
 							<span class="whatsapp-onboarding__invite-slot">
-								<span class="whatsapp-onboarding__invite-k">${esc(__("Invite coupon"))}</span>
-								<span class="whatsapp-onboarding__invite-code" dir="ltr">${esc(code)}</span>
+								<span class="whatsapp-onboarding__invite-k">${escape_html(__("Invite coupon"))}</span>
+								<span class="whatsapp-onboarding__invite-code" dir="ltr">${escape_html(code)}</span>
 								${ui.btn({ label: __("Copy"), icon: "copy", variant: "primary", size: "sm", attrs: { "data-act": "copy-code" } })}
 							</span>
-							<a class="whatsapp-button whatsapp-button--primary whatsapp-button--sm" href="${esc(`https://wa.me/?text=${encodeURIComponent(message)}`)}" target="_blank" rel="noopener">${ico("whatsapp", "sm")}<span>${esc(__("Share on WhatsApp"))}</span></a>
+							<a class="whatsapp-button whatsapp-button--primary whatsapp-button--sm" href="${escape_html(`https://wa.me/?text=${encodeURIComponent(message)}`)}" target="_blank" rel="noopener">${render_icon("whatsapp", "sm")}<span>${escape_html(__("Share on WhatsApp"))}</span></a>
 						</div>`);
 					const flash = ($b, text) => {
 						const $l = $b.find("span").last();
@@ -2328,6 +2328,6 @@ frappe.provide("whatsapp_next.onboarding");
 			screen._shown = true; // the first show follows `on_page_load`, which already loaded
 			return;
 		}
-		screen.load();
+		screen.load_onboarding_status();
 	};
 })();

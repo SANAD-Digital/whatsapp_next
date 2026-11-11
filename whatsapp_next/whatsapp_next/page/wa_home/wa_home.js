@@ -27,7 +27,7 @@ frappe.provide("whatsapp_next.home");
 
 (() => {
 	const ui = whatsapp.ui;
-	const C = whatsapp_next.campaigns;
+	const campaign_helpers = whatsapp_next.campaigns;
 
 	const OUT = "WhatsApp Log";
 	const IN = "WhatsApp Inbound Message";
@@ -99,13 +99,13 @@ frappe.provide("whatsapp_next.home");
 		unknown: () => __("Unclassified"),
 	};
 
-	const esc = ui.escape;
-	const int = ui.format_int;
+	const escape_html = ui.escape;
+	const format_integer = ui.format_int;
 	const is_manager = () => frappe.user.has_role(MANAGER);
 	const is_agent = () => frappe.user.has_role(AGENT_UP);
 	const period_of = (key) => PERIODS.find((p) => p.key === key) || PERIODS[1];
 	const sum_of = (counts, keys) => keys.reduce((n, k) => n + cint(counts[k]), 0);
-	const ago = (value) => whatsapp.ui.ago(value);
+	const format_time_ago = (value) => whatsapp.ui.ago(value);
 
 	/**
 	 * The site's own calendar day. Every period is cut by the server in the site's time zone
@@ -306,12 +306,12 @@ frappe.provide("whatsapp_next.home");
 			this.$board = $(`
 				<div class="whatsapp-home__board">
 					<p class="whatsapp-home__lede">
-						<span class="whatsapp-home__lede-text">${esc(
+						<span class="whatsapp-home__lede-text">${escape_html(
 							__("What is running right now — devices, the queue, campaigns and everything that went out.")
 						)}</span>
 						<span class="whatsapp-home__range whatsapp-kit-tabular"></span>
 					</p>
-					<div class="whatsapp-home__period whatsapp-kit-chip-row" role="radiogroup" aria-label="${esc(__("Period"))}"></div>
+					<div class="whatsapp-home__period whatsapp-kit-chip-row" role="radiogroup" aria-label="${escape_html(__("Period"))}"></div>
 				</div>`).prependTo(this.$screen);
 			this.render_period();
 		}
@@ -344,7 +344,7 @@ frappe.provide("whatsapp_next.home");
 				$(
 					`<button type="button" class="whatsapp-kit-chip" role="radio" aria-checked="${on}" tabindex="${
 						on ? 0 : -1
-					}" data-key="${p.key}">${esc(p.label())}</button>`
+					}" data-key="${p.key}">${escape_html(p.label())}</button>`
 				)
 					.on("click", () => this.set_period(p.key))
 					.appendTo($row);
@@ -451,7 +451,7 @@ frappe.provide("whatsapp_next.home");
 		}
 
 		/** The last five movements in both directions — the prototype's live flow. */
-		feed() {
+		get_recent_activity_feed() {
 			if (!this._feed) {
 				this._feed = this.activity().then((a) =>
 					(a.feed || []).map((r) => Object.assign({ _direction: r.direction, _at: r.at }, r))
@@ -491,7 +491,7 @@ frappe.provide("whatsapp_next.home");
 							const unpaired = rows.length - connected - off;
 							return { value: connected, tone: off || !connected ? "amber" : "green", total: rows.length, off, unpaired };
 						}),
-					format: (v, raw) => (raw.total ? __("{0} of {1}", [int(v), int(raw.total)]) : __("None")),
+					format: (v, raw) => (raw.total ? __("{0} of {1}", [format_integer(v), format_integer(raw.total)]) : __("None")),
 					sub: (v, raw) =>
 						!raw.total
 							? __("Pair a phone to start sending")
@@ -523,7 +523,7 @@ frappe.provide("whatsapp_next.home");
 						raw.paused
 							? ui.plural(v, { one: __("{0} message is waiting"), other: __("{0} messages are waiting") })
 							: v
-								? __("{0} waiting · {1} / minute", [int(v), int(raw.rate)])
+								? __("{0} waiting · {1} / minute", [format_integer(v), format_integer(raw.rate)])
 								: __("Nothing is waiting"),
 					onclick: open_queue,
 				},
@@ -538,7 +538,7 @@ frappe.provide("whatsapp_next.home");
 							at,
 							today: cint((data.today || {}).sent),
 						})),
-					format: (v, raw) => (raw.at ? ago(raw.at) : __("Never")),
+					format: (v, raw) => (raw.at ? format_time_ago(raw.at) : __("Never")),
 					sub: (v, raw) =>
 						raw.at
 							? ui.plural(raw.today, { one: __("{0} message sent today"), other: __("{0} messages sent today") })
@@ -559,7 +559,7 @@ frappe.provide("whatsapp_next.home");
 							status: data.webhook_status,
 							at: data.last_webhook_event_at,
 						})),
-					format: (v, raw) => (!v ? (raw.status ? __(raw.status) : __("Not set up")) : raw.at ? ago(raw.at) : __("Never")),
+					format: (v, raw) => (!v ? (raw.status ? __(raw.status) : __("Not set up")) : raw.at ? format_time_ago(raw.at) : __("Never")),
 					sub: (v, raw) => (v ? (raw.at ? __("The webhook is active") : __("No event received yet")) : __("Delivery updates do not arrive")),
 					onclick: () => whatsapp_next.settings.open("webhook"),
 				},
@@ -598,9 +598,9 @@ frappe.provide("whatsapp_next.home");
 							const share = limit ? Math.round((used * 100) / limit) : null;
 							return { value: share, tone: share == null ? "gray" : share > 80 ? "amber" : "blue", limit, used };
 						}),
-					format: (v) => (v == null ? __("Not read") : __("{0}%", [int(v)])),
+					format: (v) => (v == null ? __("Not read") : __("{0}%", [format_integer(v)])),
 					sub: (v, raw) =>
-						raw.limit ? __("{0} of {1} messages", [int(raw.used), int(raw.limit)]) : __("Sync the subscription to see it"),
+						raw.limit ? __("{0} of {1} messages", [format_integer(raw.used), format_integer(raw.limit)]) : __("Sync the subscription to see it"),
 					onclick: () => whatsapp_next.settings.open("subscription"),
 				},
 			];
@@ -634,8 +634,8 @@ frappe.provide("whatsapp_next.home");
 								other: __("Sending is paused — {0} messages are waiting"),
 							}),
 							note: queue.reason
-								? __("Paused {0} by {1}. Reason: “{2}”.", [ago(queue.paused_at), by, queue.reason])
-								: __("Paused {0} by {1}.", [ago(queue.paused_at), by]),
+								? __("Paused {0} by {1}. Reason: “{2}”.", [format_time_ago(queue.paused_at), by, queue.reason])
+								: __("Paused {0} by {1}.", [format_time_ago(queue.paused_at), by]),
 							action: is_manager() ? { label: __("Resume sending"), primary: true, handler: () => this.resume_queue() } : null,
 						});
 					}
@@ -650,9 +650,9 @@ frappe.provide("whatsapp_next.home");
 							title:
 								offline.length === 1
 									? __("{0} is offline", [first.device_name || first.name])
-									: __("{0} devices are offline", [int(offline.length)]),
+									: __("{0} devices are offline", [format_integer(offline.length)]),
 							note: [
-								offline.length === 1 && first.last_seen ? __("Last seen {0}.", [ago(first.last_seen)]) : "",
+								offline.length === 1 && first.last_seen ? __("Last seen {0}.", [format_time_ago(first.last_seen)]) : "",
 								offline.length === 1
 									? __("Messages routed to it fail until it is paired again.")
 									: __("Messages routed to them fail until they are paired again."),
@@ -695,7 +695,7 @@ frappe.provide("whatsapp_next.home");
 							key: "setup",
 							tone: "blue",
 							icon: "es-line-alert-circle",
-							title: __("Setup is not finished — {0} of {1} steps done", [int(done), int(steps.length)]),
+							title: __("Setup is not finished — {0} of {1} steps done", [format_integer(done), format_integer(steps.length)]),
 							note: (steps.find((s) => !s.done) || {}).detail || __("Finish the remaining steps to send reliably."),
 							action: { label: __("Open setup"), handler: () => frappe.set_route("wa-onboarding") },
 						});
@@ -714,15 +714,15 @@ frappe.provide("whatsapp_next.home");
 							<div class="whatsapp-home__alert whatsapp-kit-tone--${a.tone}" role="${a.tone === "red" ? "alert" : "status"}">
 								<span class="whatsapp-home__alert-icon" aria-hidden="true">${ui.icon(a.icon, "sm")}</span>
 								<div class="whatsapp-home__alert-text">
-									<strong class="whatsapp-home__alert-title">${esc(a.title)}</strong>
-									<span class="whatsapp-home__alert-note">${esc(a.note)}</span>
+									<strong class="whatsapp-home__alert-title">${escape_html(a.title)}</strong>
+									<span class="whatsapp-home__alert-note">${escape_html(a.note)}</span>
 								</div>
 							</div>`).appendTo($list);
 						if (a.action) {
 							$(
 								`<button type="button" class="btn btn-sm ${
 									a.action.primary ? "btn-primary" : "btn-default"
-								} whatsapp-home__alert-action">${esc(a.action.label)}</button>`
+								} whatsapp-home__alert-action">${escape_html(a.action.label)}</button>`
 							)
 								.on("click", a.action.handler)
 								.appendTo($alert);
@@ -743,7 +743,7 @@ frappe.provide("whatsapp_next.home");
 
 		/** The resume confirmation states its cost before it runs (matrix §1B row 2). */
 		resume_queue() {
-			return ui.ConfirmDialog.ask({
+			return ui.ConfirmDialog.ask_for_confirmation({
 				title: __("Resume sending?"),
 				message: __("Resuming starts from the oldest pending message. You can pause again at any time from the queue."),
 				load_impact: () =>
@@ -751,11 +751,11 @@ frappe.provide("whatsapp_next.home");
 						const waiting = cint((s.counts_by_status || {}).Queued) || cint(s.queued);
 						const remaining = s.platform_queue && s.platform_queue.messages_remaining;
 						const rows = [
-							{ label: __("Messages sent immediately"), value: int(waiting) },
-							{ label: __("Send rate"), value: __("{0} / minute", [int(s.rate)]) },
-							{ label: __("Charged from the plan"), value: int(waiting), tone: "amber" },
+							{ label: __("Messages sent immediately"), value: format_integer(waiting) },
+							{ label: __("Send rate"), value: __("{0} / minute", [format_integer(s.rate)]) },
+							{ label: __("Charged from the plan"), value: format_integer(waiting), tone: "amber" },
 						];
-						if (remaining != null) rows.push({ label: __("Balance after sending"), value: int(Math.max(0, cint(remaining) - waiting)) });
+						if (remaining != null) rows.push({ label: __("Balance after sending"), value: format_integer(Math.max(0, cint(remaining) - waiting)) });
 						return rows;
 					}),
 				confirm_label: __("Resume sending"),
@@ -772,7 +772,7 @@ frappe.provide("whatsapp_next.home");
 
 		render_kpis($el) {
 			if (!$el.find(".whatsapp-home__kpis").length) {
-				$el.html(`<div class="whatsapp-home__kpis" role="group" aria-label="${esc(__("Message traffic"))}"></div>`);
+				$el.html(`<div class="whatsapp-home__kpis" role="group" aria-label="${escape_html(__("Message traffic"))}"></div>`);
 			}
 			const $row = $el.find(".whatsapp-home__kpis");
 			if (!$row.children().length) $row.html(ui.skeleton(5, { lines: 3 }));
@@ -817,7 +817,7 @@ frappe.provide("whatsapp_next.home");
 					label: __("Messages sent"),
 					tone: "blue",
 					icon: ui.icons.quick_send,
-					value: int(handed),
+					value: format_integer(handed),
 					note:
 						delta == null
 							? __("no traffic in the period before")
@@ -836,7 +836,7 @@ frappe.provide("whatsapp_next.home");
 					tone: "green",
 					icon: "es-line-success",
 					value: rate_text(arrived, handed),
-					note: __("{0} of {1} arrived", [int(arrived), int(handed)]),
+					note: __("{0} of {1} arrived", [format_integer(arrived), format_integer(handed)]),
 					series: series(ARRIVED),
 					goes: __("Opens the messages that arrived"),
 					onclick: () => open_outbound({ ...period_filter, status: ["in", ARRIVED] }),
@@ -859,7 +859,7 @@ frappe.provide("whatsapp_next.home");
 					icon: "es-line-close-circle",
 					value: rate_text(failed, attempted),
 					value_tone: failed ? "red" : "",
-					note: failed ? __("{0} of {1} attempts", [int(failed), int(attempted)]) : __("nothing failed"),
+					note: failed ? __("{0} of {1} attempts", [format_integer(failed), format_integer(attempted)]) : __("nothing failed"),
 					series: series(["Failed"]),
 					goes: __("Opens the failed messages"),
 					onclick: () => open_outbound({ ...period_filter, status: "Failed" }),
@@ -869,7 +869,7 @@ frappe.provide("whatsapp_next.home");
 					label: __("In processing"),
 					tone: "amber",
 					icon: "es-line-progress",
-					value: int(in_flight),
+					value: format_integer(in_flight),
 					note: queue.paused_globally ? __("Sending is paused") : in_flight ? __("waiting to go out") : __("the queue is empty"),
 					note_tone: queue.paused_globally ? "amber" : "",
 					series: series(["Waiting"]),
@@ -881,22 +881,22 @@ frappe.provide("whatsapp_next.home");
 			$row.empty();
 			cards.forEach((card) => {
 				const $card = $(`
-					<button type="button" class="whatsapp-home__kpi" data-key="${esc(card.key)}">
+					<button type="button" class="whatsapp-home__kpi" data-key="${escape_html(card.key)}">
 						<span class="whatsapp-home__kpi-head">
-							<span class="whatsapp-home__kpi-dot whatsapp-kit-tone--${esc(card.tone)}" aria-hidden="true"></span>
-							<span class="whatsapp-home__kpi-label">${esc(card.label)}</span>
-							<span class="whatsapp-home__kpi-icon whatsapp-kit-tone--${esc(card.tone)}" aria-hidden="true">${ui.icon(card.icon, "sm")}</span>
+							<span class="whatsapp-home__kpi-dot whatsapp-kit-tone--${escape_html(card.tone)}" aria-hidden="true"></span>
+							<span class="whatsapp-home__kpi-label">${escape_html(card.label)}</span>
+							<span class="whatsapp-home__kpi-icon whatsapp-kit-tone--${escape_html(card.tone)}" aria-hidden="true">${ui.icon(card.icon, "sm")}</span>
 						</span>
-						<span class="whatsapp-home__kpi-value whatsapp-kit-tabular${card.value_tone ? ` whatsapp-kit-tone--${esc(card.value_tone)}` : ""}">${esc(
+						<span class="whatsapp-home__kpi-value whatsapp-kit-tabular${card.value_tone ? ` whatsapp-kit-tone--${escape_html(card.value_tone)}` : ""}">${escape_html(
 							card.value
 						)}</span>
 						<span class="whatsapp-home__kpi-foot">
-							<span class="whatsapp-home__kpi-note${card.note_tone ? ` whatsapp-kit-tone--${esc(card.note_tone)}` : ""}">${
+							<span class="whatsapp-home__kpi-note${card.note_tone ? ` whatsapp-kit-tone--${escape_html(card.note_tone)}` : ""}">${
 								card.note_icon ? ui.icon(card.note_icon, "xs") : ""
-							}${esc(card.note)}</span>
+							}${escape_html(card.note)}</span>
 							${this.spark_html(card.series, card.tone)}
 						</span>
-						<span class="whatsapp-kit-visually-hidden">${esc(card.goes)}</span>
+						<span class="whatsapp-kit-visually-hidden">${escape_html(card.goes)}</span>
 					</button>`).appendTo($row);
 				$card.on("click", card.onclick);
 			});
@@ -914,7 +914,7 @@ frappe.provide("whatsapp_next.home");
 			const max = Math.max.apply(null, points.concat([1]));
 			const step = 100 / (points.length - 1);
 			const path = points.map((n, i) => `${(i * step).toFixed(2)},${(100 - (n / max) * 92 - 4).toFixed(2)}`).join(" ");
-			return `<span class="whatsapp-home__kpi-spark whatsapp-kit-tone--${esc(tone)}" aria-hidden="true">
+			return `<span class="whatsapp-home__kpi-spark whatsapp-kit-tone--${escape_html(tone)}" aria-hidden="true">
 				<svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">
 					<polyline points="${path}"></polyline>
 				</svg>
@@ -936,7 +936,7 @@ frappe.provide("whatsapp_next.home");
 								</div>
 								<div class="whatsapp-home__card-aside">
 									<span class="whatsapp-home__card-total whatsapp-kit-tabular"></span>
-									<button type="button" class="whatsapp-operations-console__link whatsapp-home__volume-all">${esc(__("See all"))}</button>
+									<button type="button" class="whatsapp-operations-console__link whatsapp-home__volume-all">${escape_html(__("See all"))}</button>
 								</div>
 							</header>
 							<div class="whatsapp-home__card-body"></div>
@@ -944,11 +944,11 @@ frappe.provide("whatsapp_next.home");
 						<section class="whatsapp-home__card whatsapp-home__failures" aria-labelledby="whatsapp-home-fail-title">
 							<header class="whatsapp-home__card-head">
 								<div class="whatsapp-home__card-text">
-									<h3 class="whatsapp-home__card-title" id="whatsapp-home-fail-title">${esc(__("Failures by error"))}</h3>
-									<p class="whatsapp-home__card-note">${esc(__("Largest first — open a row for just those messages."))}</p>
+									<h3 class="whatsapp-home__card-title" id="whatsapp-home-fail-title">${escape_html(__("Failures by error"))}</h3>
+									<p class="whatsapp-home__card-note">${escape_html(__("Largest first — open a row for just those messages."))}</p>
 								</div>
 								<div class="whatsapp-home__card-aside">
-									<button type="button" class="whatsapp-operations-console__link whatsapp-home__failures-all">${esc(__("See all"))}</button>
+									<button type="button" class="whatsapp-operations-console__link whatsapp-home__failures-all">${escape_html(__("See all"))}</button>
 								</div>
 							</header>
 							<div class="whatsapp-home__card-body"></div>
@@ -975,7 +975,7 @@ frappe.provide("whatsapp_next.home");
 					this._shown_traffic = t;
 					// the total is the sum of the columns under it, so it counts every band drawn —
 					// the waiting one too
-					$el.find(".whatsapp-home__card-total").text(__("{0} messages", [int(sum_of(t.now, [...HANDED, ...WAITING, "Failed"]))]));
+					$el.find(".whatsapp-home__card-total").text(__("{0} messages", [format_integer(sum_of(t.now, [...HANDED, ...WAITING, "Failed"]))]));
 					this.paint_volume($vol, vol_state, s);
 					this.paint_failures($fails, fail_state, t);
 				})
@@ -995,7 +995,7 @@ frappe.provide("whatsapp_next.home");
 			const buckets = s.buckets || [];
 			const total = buckets.reduce((n, b) => n + cint(b.total), 0);
 			if (!total) {
-				state.set("empty", {
+				state.set_state("empty", {
 					title: __("No messages in this period"),
 					description: __("Nothing was sent or received in this period. Try a wider one."),
 					size: "sm",
@@ -1011,7 +1011,7 @@ frappe.provide("whatsapp_next.home");
 			const ticks = [max, step * 2, step, 0];
 			const legend = BANDS.map(
 				(band) =>
-					`<li class="whatsapp-home__legend-item"><span class="whatsapp-home__swatch whatsapp-home__swatch--${band.seg}" aria-hidden="true"></span>${esc(
+					`<li class="whatsapp-home__legend-item"><span class="whatsapp-home__swatch whatsapp-home__swatch--${band.seg}" aria-hidden="true"></span>${escape_html(
 						band.label()
 					)}</li>`
 			).join("");
@@ -1019,10 +1019,10 @@ frappe.provide("whatsapp_next.home");
 			const columns = buckets
 				.map((b) => {
 					const parts = BANDS.filter((band) => cint(b.counts[band.key])).map((band) =>
-						__("{0} {1}", [band.label(), int(b.counts[band.key])])
+						__("{0} {1}", [band.label(), format_integer(b.counts[band.key])])
 					);
 					const title = cint(b.total)
-						? __("{0}: {1} messages — {2}", [b.name, int(b.total), parts.join(__(", "))])
+						? __("{0}: {1} messages — {2}", [b.name, format_integer(b.total), parts.join(__(", "))])
 						: __("{0}: no messages", [b.name]);
 					const stack = BANDS.filter((band) => cint(b.counts[band.key]))
 						.map(
@@ -1033,10 +1033,10 @@ frappe.provide("whatsapp_next.home");
 						)
 						.join("");
 					return `<li class="whatsapp-home__col">
-						<button type="button" class="whatsapp-home__col-btn" data-from="${esc(b.from)}" data-to="${esc(b.to)}" title="${esc(title)}" aria-label="${esc(title)}">
+						<button type="button" class="whatsapp-home__col-btn" data-from="${escape_html(b.from)}" data-to="${escape_html(b.to)}" title="${escape_html(title)}" aria-label="${escape_html(title)}">
 							<span class="whatsapp-home__stack">${stack || '<span class="whatsapp-home__seg whatsapp-home__seg--none"></span>'}</span>
 						</button>
-						<span class="whatsapp-home__col-tick" aria-hidden="true">${esc(b.tick)}</span>
+						<span class="whatsapp-home__col-tick" aria-hidden="true">${escape_html(b.tick)}</span>
 					</li>`;
 				})
 				.join("");
@@ -1046,12 +1046,12 @@ frappe.provide("whatsapp_next.home");
 					<ul class="whatsapp-home__legend">${legend}</ul>
 					<div class="whatsapp-home__grid">
 						<div class="whatsapp-home__rules" aria-hidden="true">
-							${ticks.map((v) => `<span class="whatsapp-home__rule"><i class="whatsapp-kit-tabular">${esc(int(v))}</i></span>`).join("")}
+							${ticks.map((v) => `<span class="whatsapp-home__rule"><i class="whatsapp-kit-tabular">${escape_html(format_integer(v))}</i></span>`).join("")}
 						</div>
 						<ol class="whatsapp-home__cols">${columns}</ol>
 					</div>
-					<figcaption class="whatsapp-kit-visually-hidden">${esc(
-						__("{0} messages over {1} columns; the busiest column holds {2}.", [int(total), int(buckets.length), int(peak)])
+					<figcaption class="whatsapp-kit-visually-hidden">${escape_html(
+						__("{0} messages over {1} columns; the busiest column holds {2}.", [format_integer(total), format_integer(buckets.length), format_integer(peak)])
 					)}</figcaption>
 				</figure>`).appendTo($el);
 
@@ -1077,7 +1077,7 @@ frappe.provide("whatsapp_next.home");
 			const attempted = sum_of(t.now, HANDED) + cint(t.now.Failed);
 
 			if (!rows.length) {
-				state.set("empty", {
+				state.set_state("empty", {
 					title: __("Nothing failed"),
 					description: __("Everything that was sent in this period was accepted. Try a wider period to chase an older error."),
 					size: "sm",
@@ -1091,21 +1091,21 @@ frappe.provide("whatsapp_next.home");
 				<div class="whatsapp-home__fails">
 					<ul class="whatsapp-home__fail-list"></ul>
 					<div class="whatsapp-home__fails-foot">
-						<span>${esc(__("Total failures"))}</span>
-						<span class="whatsapp-kit-tabular whatsapp-kit-tone--red">${esc(int(total))}</span>
-						<span>${esc(__("Failure rate"))}</span>
-						<span class="whatsapp-kit-tabular whatsapp-kit-tone--red">${esc(rate_text(total, attempted))}</span>
+						<span>${escape_html(__("Total failures"))}</span>
+						<span class="whatsapp-kit-tabular whatsapp-kit-tone--red">${escape_html(format_integer(total))}</span>
+						<span>${escape_html(__("Failure rate"))}</span>
+						<span class="whatsapp-kit-tabular whatsapp-kit-tone--red">${escape_html(rate_text(total, attempted))}</span>
 					</div>
 				</div>`).appendTo($el);
 			const $list = $fig.find(".whatsapp-home__fail-list");
 			rows.slice(0, FAIL_LIMIT).forEach((r) => {
 				$(`
 					<li>
-						<button type="button" class="whatsapp-home__fail" data-code="${esc(r.code)}">
-							<span class="whatsapp-home__fail-label">${esc(r.label)}</span>
+						<button type="button" class="whatsapp-home__fail" data-code="${escape_html(r.code)}">
+							<span class="whatsapp-home__fail-label">${escape_html(r.label)}</span>
 							<span class="whatsapp-home__fail-bar" aria-hidden="true"><span style="inline-size:${((r.count / max) * 100).toFixed(1)}%"></span></span>
-							<span class="whatsapp-home__fail-share whatsapp-kit-tabular">${esc(rate_text(r.count, total))}</span>
-							<span class="whatsapp-home__fail-count whatsapp-kit-tabular">${esc(int(r.count))}</span>
+							<span class="whatsapp-home__fail-share whatsapp-kit-tabular">${escape_html(rate_text(r.count, total))}</span>
+							<span class="whatsapp-home__fail-count whatsapp-kit-tabular">${escape_html(format_integer(r.count))}</span>
 						</button>
 					</li>`).appendTo($list);
 			});
@@ -1145,7 +1145,7 @@ frappe.provide("whatsapp_next.home");
 				$p.find(".whatsapp-home__card-note").text(note || "");
 				const $cta = $p.find(".whatsapp-home__card-aside").empty();
 				if (!cta) return;
-				$(`<button type="button" class="whatsapp-operations-console__link whatsapp-home__card-link">${esc(cta.label)}</button>`)
+				$(`<button type="button" class="whatsapp-operations-console__link whatsapp-home__card-link">${escape_html(cta.label)}</button>`)
 					.on("click", cta.handler)
 					.appendTo($cta);
 			};
@@ -1166,10 +1166,10 @@ frappe.provide("whatsapp_next.home");
 			);
 			const $body = $p.find(".whatsapp-home__card-body");
 			const state = body_state($body, 5);
-			return Promise.all([ui.meta.with_doctype(OUT), ui.meta.with_doctype(IN), this.feed()])
+			return Promise.all([ui.meta.with_doctype(OUT), ui.meta.with_doctype(IN), this.get_recent_activity_feed()])
 				.then(([, , rows]) => {
 					if (!rows.length) {
-						return state.set("empty", {
+						return state.set_state("empty", {
 							title: __("No messages yet"),
 							description: __("Everything sent or received shows up here as it happens."),
 							size: "sm",
@@ -1204,7 +1204,7 @@ frappe.provide("whatsapp_next.home");
 			const state = body_state($body, 4);
 			return Promise.all([ui.meta.with_doctype(CAMP), this.dashboard(), this.scheduled()])
 				.then(([, data, scheduled]) => {
-					const live = (data.campaigns_sending || []).map((r) => Object.assign({ doctype: CAMP }, r, C.counters_as_doc(r)));
+					const live = (data.campaigns_sending || []).map((r) => Object.assign({ doctype: CAMP }, r, campaign_helpers.counters_as_doc(r)));
 					const order = { Running: 0, Queued: 1, Paused: 2, Scheduled: 3 };
 					const rows = live
 						.concat((scheduled || []).map((r) => Object.assign({ doctype: CAMP }, r)))
@@ -1215,11 +1215,11 @@ frappe.provide("whatsapp_next.home");
 						handler: () => frappe.set_route("List", CAMP),
 					});
 					if (!rows.length) {
-						return state.set("empty", {
+						return state.set_state("empty", {
 							title: __("No campaign is active"),
 							description: __("A campaign sends one message to many numbers at a controlled rate."),
 							size: "sm",
-							action: C.is_manager() ? { label: __("New campaign"), onclick: () => frappe.new_doc(CAMP) } : undefined,
+							action: campaign_helpers.is_manager() ? { label: __("New campaign"), onclick: () => frappe.new_doc(CAMP) } : undefined,
 						});
 					}
 					state.hide();
@@ -1229,12 +1229,12 @@ frappe.provide("whatsapp_next.home");
 							progress: false,
 							value: false,
 							facts: false,
-							status: (doc) => ({ label: __(doc.status), colour: C.INDICATOR[doc.status] || "gray" }),
+							status: (doc) => ({ label: __(doc.status), colour: campaign_helpers.INDICATOR[doc.status] || "gray" }),
 							lines: [
 								(doc) =>
 									doc.status === "Scheduled"
-										? __("{0} recipients · starts {1}", [int(doc.total_recipients), clock(doc.scheduled_at)])
-										: __("{0} of {1} recipients", [int(C.handed_of_doc(doc)), int(doc.total_recipients)]),
+										? __("{0} recipients · starts {1}", [format_integer(doc.total_recipients), clock(doc.scheduled_at)])
+										: __("{0} of {1} recipients", [format_integer(campaign_helpers.handed_of_doc(doc)), format_integer(doc.total_recipients)]),
 							],
 						},
 						on_click: (doc) => frappe.set_route("Form", CAMP, doc.name),
@@ -1250,12 +1250,12 @@ frappe.provide("whatsapp_next.home");
 				.then(([, data]) => {
 					const rows = (data.devices || []).map((r) => Object.assign({ doctype: DEV }, r));
 					const connected = rows.filter((r) => r.status === "Connected").length;
-					head($p, __("Device status"), rows.length ? __("{0} of {1} connected", [int(connected), int(rows.length)]) : __("None paired"), {
+					head($p, __("Device status"), rows.length ? __("{0} of {1} connected", [format_integer(connected), format_integer(rows.length)]) : __("None paired"), {
 						label: __("See all"),
 						handler: () => frappe.set_route("wa-devices"),
 					});
 					if (!rows.length) {
-						return state.set("empty", {
+						return state.set_state("empty", {
 							title: __("No device is paired"),
 							description: __("Every message goes out through a device."),
 							size: "sm",
@@ -1276,7 +1276,7 @@ frappe.provide("whatsapp_next.home");
 								(doc) =>
 									doc.status === "Connected"
 										? doc.last_seen
-											? __("Seen {0}", [ago(doc.last_seen)])
+											? __("Seen {0}", [format_time_ago(doc.last_seen)])
 											: __("Connected")
 										: doc.last_error || __("Not sending"),
 							],

@@ -21,11 +21,11 @@ frappe.provide("whatsapp_next.campaign");
 
 (function () {
 	const ui = whatsapp.ui;
-	const C = whatsapp_next.campaign;
-	const esc = C.esc;
+	const campaign_builder = whatsapp_next.campaign;
+	const escape_html = campaign_builder.esc;
 	const NAME_MAX = 140;
 
-	C.Setup = class CampaignSetup {
+	campaign_builder.Setup = class CampaignSetup {
 		constructor({ wrapper, ctx }) {
 			this.$wrapper = $(wrapper);
 			this.ctx = ctx;
@@ -43,9 +43,9 @@ frappe.provide("whatsapp_next.campaign");
 		render() {
 			// full width, every field in sight: the three identity fields share a row, the rate and
 			// the send time stand side by side, and the switches make one row under them
-			this.$wrapper.html(`<div class="whatsapp-campaign-builder__stack">${this.basic()}<div class="whatsapp-campaign-builder__two">${this.rate()}${this.when()}</div>${this.advanced()}</div>`);
+			this.$wrapper.html(`<div class="whatsapp-campaign-builder__stack">${this.basic()}<div class="whatsapp-campaign-builder__two">${this.sending_rate_card_html()}${this.send_time_card_html()}</div>${this.advanced()}</div>`);
 			this.mount_controls();
-			this.bind();
+			this.bind_setup_controls();
 			return this;
 		}
 
@@ -94,18 +94,18 @@ frappe.provide("whatsapp_next.campaign");
 		fill_devices() {
 			const $sel = this.$device;
 			const current = this.doc.device || "";
-			$sel.empty().append(`<option value="">${esc(__("Choose a device"))}</option>`);
+			$sel.empty().append(`<option value="">${escape_html(__("Choose a device"))}</option>`);
 			$sel.attr("data-empty", current ? "false" : "true");
-			if (current) $sel.append(`<option value="${esc(current)}" selected>${esc(current)}</option>`);
+			if (current) $sel.append(`<option value="${escape_html(current)}" selected>${escape_html(current)}</option>`);
 			this.ctx.devices().then((rows) => {
 				if (!$sel.closest("body").length) return;
 				$sel.find("option[value!='']").remove();
 				rows.filter((d) => !cint(d.disabled) || d.name === current).forEach((d) => {
 					const label = `${d.device_name || d.name}${d.status && d.status !== "Connected" ? ` — ${__(d.status)}` : ""}`;
-					$sel.append(`<option value="${esc(d.name)}"${d.name === current ? " selected" : ""}>${esc(label)}</option>`);
+					$sel.append(`<option value="${escape_html(d.name)}"${d.name === current ? " selected" : ""}>${escape_html(label)}</option>`);
 				});
 				if (current && !$sel.find(`option[value="${current.replace(/"/g, '\\"')}"]`).length) {
-					$sel.append(`<option value="${esc(current)}" selected>${esc(current)}</option>`);
+					$sel.append(`<option value="${escape_html(current)}" selected>${escape_html(current)}</option>`);
 				}
 				$sel.val(current);
 			});
@@ -121,20 +121,20 @@ frappe.provide("whatsapp_next.campaign");
 		basic() {
 			const doc = this.doc;
 			const name = doc.campaign_name || "";
-			return C.card({
+			return campaign_builder.card({
 				key: "basic",
 				icon: "doc",
 				title: __("Basic information"),
 				body: `
 					<div class="whatsapp-campaign-builder__grid">
-						${C.field({
+						${campaign_builder.field({
 							id: "whatsapp-campaign-builder-name",
 							label: __("Campaign name"),
 							required: true,
 							counter: `${name.length}/${NAME_MAX}`,
-							control: `<input id="whatsapp-campaign-builder-name" type="text" class="whatsapp-input" maxlength="${NAME_MAX}" value="${esc(name)}" data-field="campaign_name" placeholder="${esc(__("What is this campaign called?"))}">`,
+							control: `<input id="whatsapp-campaign-builder-name" type="text" class="whatsapp-input" maxlength="${NAME_MAX}" value="${escape_html(name)}" data-field="campaign_name" placeholder="${escape_html(__("What is this campaign called?"))}">`,
 						})}
-						${C.field({
+						${campaign_builder.field({
 							id: "whatsapp-campaign-builder-device",
 							label: __("Sending device"),
 							required: true,
@@ -144,36 +144,36 @@ frappe.provide("whatsapp_next.campaign");
 									<select id="whatsapp-campaign-builder-device" class="whatsapp-input whatsapp-select" data-field="device" required></select>
 								</span>`,
 						})}
-						${C.field({
+						${campaign_builder.field({
 							id: "whatsapp-campaign-builder-description",
 							label: __("Description"),
-							control: `<textarea id="whatsapp-campaign-builder-description" class="whatsapp-textarea" rows="1" data-field="description" placeholder="${esc(__("For whoever opens the campaign later. It is never sent."))}">${esc(doc.description || "")}</textarea>`,
+							control: `<textarea id="whatsapp-campaign-builder-description" class="whatsapp-textarea" rows="1" data-field="description" placeholder="${escape_html(__("For whoever opens the campaign later. It is never sent."))}">${escape_html(doc.description || "")}</textarea>`,
 						})}
 					</div>`,
 			});
 		}
 
-		rate() {
-			const rate = C.rate_of(this.doc, this.ctx.cap);
-			return C.card({
+		sending_rate_card_html() {
+			const rate = campaign_builder.rate_of(this.doc, this.ctx.cap);
+			return campaign_builder.card({
 				key: "rate",
 				icon: "bolt",
 				title: __("Sending rate"),
 				body: `
 					<div class="whatsapp-campaign-builder__rate">
 						<div class="whatsapp-campaign-builder__rate-input">
-							<input type="number" class="whatsapp-input whatsapp-input--mono" id="whatsapp-campaign-builder-rate-n" min="1" max="${cint(this.ctx.cap) || 60}" value="${cint(rate)}" data-rate="number" aria-label="${esc(__("Messages per minute"))}">
-							<span class="whatsapp-campaign-builder__rate-unit">${esc(__("messages/minute"))}</span>
+							<input type="number" class="whatsapp-input whatsapp-input--mono" id="whatsapp-campaign-builder-rate-n" min="1" max="${cint(this.ctx.cap) || 60}" value="${cint(rate)}" data-rate="number" aria-label="${escape_html(__("Messages per minute"))}">
+							<span class="whatsapp-campaign-builder__rate-unit">${escape_html(__("messages/minute"))}</span>
 						</div>
-						<input type="range" class="whatsapp-campaign-builder__slider" min="1" max="${cint(this.ctx.cap) || 60}" value="${cint(rate)}" data-rate="slider" aria-label="${esc(__("Messages per minute"))}">
+						<input type="range" class="whatsapp-campaign-builder__slider" min="1" max="${cint(this.ctx.cap) || 60}" value="${cint(rate)}" data-rate="slider" aria-label="${escape_html(__("Messages per minute"))}">
 						<div class="whatsapp-campaign-builder__estimate" data-estimate>
 							<span class="whatsapp-campaign-builder__estimate-icon" aria-hidden="true">${ui.ico("clock", "sm")}</span>
 							<span class="whatsapp-campaign-builder__estimate-text">
-								<span class="whatsapp-campaign-builder__estimate-label">${esc(__("Estimated duration"))}</span>
-								<span class="whatsapp-campaign-builder__estimate-value whatsapp-kit-tabular">${esc(C.dur_text(this.ctx.estimate().minutes))}</span>
+								<span class="whatsapp-campaign-builder__estimate-label">${escape_html(__("Estimated duration"))}</span>
+								<span class="whatsapp-campaign-builder__estimate-value whatsapp-kit-tabular">${escape_html(campaign_builder.dur_text(this.ctx.estimate().minutes))}</span>
 							</span>
 						</div>
-						<p class="whatsapp-campaign-builder__rate-hint" data-rate-hint>${esc(this.rate_hint(rate))}</p>
+						<p class="whatsapp-campaign-builder__rate-hint" data-rate-hint>${escape_html(this.rate_hint(rate))}</p>
 					</div>`,
 			});
 		}
@@ -181,33 +181,33 @@ frappe.provide("whatsapp_next.campaign");
 		rate_hint(rate) {
 			const cap = cint(this.ctx.cap);
 			return cap
-				? __("The slower the rate, the steadier the sending. The queue allows {0}/min at most.", [C.fmt_int(cap)])
+				? __("The slower the rate, the steadier the sending. The queue allows {0}/min at most.", [campaign_builder.fmt_int(cap)])
 				: __("The slower the rate, the steadier the sending.");
 		}
 
-		when() {
+		send_time_card_html() {
 			const scheduled = !!this.doc.scheduled_at;
 			const choice = (value, label, note) => `
 				<label class="whatsapp-campaign-builder__choice">
 					<input type="radio" name="whatsapp-campaign-builder-when" value="${value}"${(value === "scheduled") === scheduled ? " checked" : ""}>
 					<span class="whatsapp-campaign-builder__choice-text">
-						<span class="whatsapp-campaign-builder__choice-label">${esc(label)}</span>
-						<span class="whatsapp-campaign-builder__choice-note">${esc(note)}</span>
+						<span class="whatsapp-campaign-builder__choice-label">${escape_html(label)}</span>
+						<span class="whatsapp-campaign-builder__choice-note">${escape_html(note)}</span>
 					</span>
 				</label>`;
 			// the date and the time are Frappe's own pickers, in the kit's field with its icon
 			const when_input = (kind, icon, label) => `
-				<span class="whatsapp-affix whatsapp-affix--has-start whatsapp-campaign-builder__when-field" aria-label="${esc(label)}">
+				<span class="whatsapp-affix whatsapp-affix--has-start whatsapp-campaign-builder__when-field" aria-label="${escape_html(label)}">
 					<span class="whatsapp-affix__in whatsapp-affix__in--start" aria-hidden="true">${ui.ico(icon, "sm")}</span>
 					<span data-control="${kind}"></span>
 				</span>`;
-			return C.card({
+			return campaign_builder.card({
 				key: "when",
 				icon: "clock",
 				title: __("Send time"),
 				body: `
 					<div class="whatsapp-campaign-builder__when">
-						<div class="whatsapp-campaign-builder__when-choices" role="radiogroup" aria-label="${esc(__("Send time"))}">
+						<div class="whatsapp-campaign-builder__when-choices" role="radiogroup" aria-label="${escape_html(__("Send time"))}">
 							${choice("now", __("Now"), __("Sending starts as soon as you save and start the campaign."))}
 							${choice("scheduled", __("Schedule", null, "campaign"), __("Set the date and time the sending begins."))}
 						</div>
@@ -224,16 +224,16 @@ frappe.provide("whatsapp_next.campaign");
 			const option = ({ field, design_only, on, label, note }) => `
 				<div class="whatsapp-campaign-builder__option">
 					<span class="whatsapp-campaign-builder__option-text">
-						<span class="whatsapp-campaign-builder__option-label">${esc(label)}</span>
-						<span class="whatsapp-campaign-builder__option-note">${esc(note)}</span>
+						<span class="whatsapp-campaign-builder__option-label">${escape_html(label)}</span>
+						<span class="whatsapp-campaign-builder__option-note">${escape_html(note)}</span>
 					</span>
 					<label class="whatsapp-toggle">
-						<input type="checkbox"${field ? ` data-field="${esc(field)}"` : ' data-design-only="1"'}${on ? " checked" : ""}>
+						<input type="checkbox"${field ? ` data-field="${escape_html(field)}"` : ' data-design-only="1"'}${on ? " checked" : ""}>
 						<span class="whatsapp-toggle__track"></span>
-						<span class="whatsapp-kit-visually-hidden">${esc(label)}</span>
+						<span class="whatsapp-kit-visually-hidden">${escape_html(label)}</span>
 					</label>
 				</div>`;
-			return C.card({
+			return campaign_builder.card({
 				key: "advanced",
 				icon: "gear",
 				title: __("Advanced options"),
@@ -271,7 +271,7 @@ frappe.provide("whatsapp_next.campaign");
 
 		// ---- what the controls do ---------------------------------------------------------------
 
-		bind() {
+		bind_setup_controls() {
 			const frm = this.frm;
 			const $el = this.$wrapper;
 			const editable = this.ctx.can_edit();
@@ -321,9 +321,9 @@ frappe.provide("whatsapp_next.campaign");
 		/** The estimate the slider buys, without waiting for the document to come back. */
 		show_estimate(rate) {
 			const doc = Object.assign({}, this.doc, { messages_per_minute: rate });
-			const minutes = C.estimate(doc, this.ctx.cap).minutes;
-			this.$wrapper.find(".whatsapp-campaign-builder__estimate-value").text(C.dur_text(minutes));
-			this.ctx.sync();
+			const minutes = campaign_builder.estimate(doc, this.ctx.cap).minutes;
+			this.$wrapper.find(".whatsapp-campaign-builder__estimate-value").text(campaign_builder.dur_text(minutes));
+			this.ctx.refresh_header_and_stepper();
 		}
 
 		/**

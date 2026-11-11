@@ -52,8 +52,8 @@ Picking a function resets inputs, overrides and outputs, fills `allowed_party_ty
 The constructor opens the modal and calls `load`.
 
 - `close(force = false)` — asks "Discard unsaved changes?" when dirty (and not read-only) unless `force`; destroys the thread.
-- `save()` — validates (word, function, ≥1 party type), calls `opts.save`, lowercases the word, toasts.
-- `remove()` — `whatsapp.ui.ConfirmDialog.ask` (danger) whose `on_confirm` calls `opts.remove`; then closes.
+- `save_command()` — validates (word, function, ≥1 party type), calls `opts.save`, lowercases the word, toasts.
+- `delete_command()` — `whatsapp.ui.ConfirmDialog.ask_for_confirmation` (danger) whose `on_confirm` calls `opts.remove`; then closes.
 - `payload()` — the draft as the payload above. `is_dirty()` — draft differs from last load/save.
 - `render()` — full re-render; keeps focused field, caret and per-column scroll.
 

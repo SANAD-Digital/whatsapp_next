@@ -5,7 +5,7 @@
 // do. Only the page's copy of the sprite is touched, once it is in the document.
 
 (function () {
-	function fit() {
+	function remove_fixed_sprite_icon_sizes() {
 		const sized = document.querySelectorAll('symbol[id^="es-"][width], symbol[id^="es-"][height]');
 		sized.forEach((symbol) => {
 			symbol.removeAttribute("width");
@@ -16,6 +16,6 @@
 
 	$(() => {
 		// the sprite is injected with the page; if it is not there yet, try again a little later
-		if (!fit()) window.setTimeout(fit, 1500);
+		if (!remove_fixed_sprite_icon_sizes()) window.setTimeout(remove_fixed_sprite_icon_sizes, 1500);
 	});
 })();

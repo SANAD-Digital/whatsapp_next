@@ -26,12 +26,12 @@ whatsapp.ui.ListStatsCard = class ListStatsCard {
 		this.opts = Object.assign({ cards: [], events: {} }, opts);
 		this.values = {};
 		this.handlers = {};
-		this.make();
+		this.build_card_row();
 		this.bind_events();
 		this.refresh();
 	}
 
-	make() {
+	build_card_row() {
 		this.$el = $(`<div class="whatsapp-kit whatsapp-kit-stats whatsapp-kit-stats--${this.opts.layout === "kpi" ? "kpi" : "row"}" role="group"></div>`).attr("aria-label", __("Summary"));
 		this.opts.cards.forEach((card) => this.$el.append(this.card_html(card)));
 		const lv = this.opts.listview;
@@ -246,7 +246,7 @@ whatsapp.ui.ListStatsCard = class ListStatsCard {
 		const confirm = typeof action.confirm === "object" ? Object.assign({}, action.confirm) : {};
 		if (confirm.impact_of) confirm.impact = confirm.impact_of(row);
 		delete confirm.impact_of;
-		return whatsapp.ui.ConfirmDialog.ask(
+		return whatsapp.ui.ConfirmDialog.ask_for_confirmation(
 			Object.assign({ title: __("{0} this row?", [action.label]), confirm_label: action.label }, confirm)
 		)
 			.then(({ reason }) => call({ reason }))

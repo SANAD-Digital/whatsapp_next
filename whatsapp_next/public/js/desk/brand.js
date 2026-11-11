@@ -15,15 +15,15 @@
 		paper: { bubble: "--whatsapp-on-brand", dot: "--whatsapp-brand", last: "--whatsapp-accent" },
 		ghost: { bubble: "--whatsapp-brand-deep", dot: "--whatsapp-brand", last: "--whatsapp-brand-deep" },
 	};
-	const fill = (token) => `style="fill: var(${token})"`;
+	const fill_style_attribute = (token) => `style="fill: var(${token})"`;
 
 	// The arrow points right to left in every language (owner, 2026-10-27): the bubble is drawn
 	// pointing right and mirrored in place, as the brand's files are.
 	const MIRROR = ' transform="translate(100 0) scale(-1 1)"';
 
-	function mark(size = 24, tone = "petrol") {
+	function brand_mark_svg(size = 24, tone = "petrol") {
 		const c = TONES[tone] || TONES.petrol;
-		return `<svg class="wn-mark" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true" focusable="false"><g${MIRROR}><path d="${BUBBLE}" ${fill(c.bubble)}/><circle cx="27" cy="50" r="4.5" ${fill(c.dot)}/><circle cx="42.5" cy="50" r="5.5" ${fill(c.dot)}/><circle cx="59.5" cy="50" r="6.8" ${fill(c.last)}/></g></svg>`;
+		return `<svg class="wn-mark" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true" focusable="false"><g${MIRROR}><path d="${BUBBLE}" ${fill_style_attribute(c.bubble)}/><circle cx="27" cy="50" r="4.5" ${fill_style_attribute(c.dot)}/><circle cx="42.5" cy="50" r="5.5" ${fill_style_attribute(c.dot)}/><circle cx="59.5" cy="50" r="6.8" ${fill_style_attribute(c.last)}/></g></svg>`;
 	}
 
 	// «Whatsapp» light and «Next» bold; in Arabic «واتساب» light and «نكست» bold.
@@ -64,5 +64,5 @@
 	});
 
 	frappe.provide("whatsapp_next.brand");
-	Object.assign(whatsapp_next.brand, { mark, wordmark });
+	Object.assign(whatsapp_next.brand, { mark: brand_mark_svg, wordmark });
 })();

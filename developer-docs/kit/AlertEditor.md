@@ -58,7 +58,7 @@ global `frappe.query_report` (restored on close) and evals report scripts.
 The constructor builds and opens the window; there is no separate `open`.
 
 - `close(force = false)` — closes; asks "Discard unsaved changes?" when dirty unless `force`.
-- `save()` / `remove()` / `send_test()` / `run_now()` — the footer / side actions, callable directly.
+- `save_alert()` / `delete_alert()` / `send_test()` / `run_now()` — the footer / side actions, callable directly.
 - `is_dirty()` — draft differs from the last loaded/saved state.
 - `payload()` — the current draft as the payload above.
 

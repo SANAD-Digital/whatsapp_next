@@ -32,7 +32,7 @@ export function file_ext(url) {
 	return part && part.length <= 5 && part !== clean ? part.toUpperCase() : "";
 }
 
-const wrap = (html, cls = "") => (html === "" || html == null ? "" : `<span class="whatsapp-kit-value${cls ? ` ${cls}` : ""}">${html}</span>`);
+const wrap_value_html = (html, cls = "") => (html === "" || html == null ? "" : `<span class="whatsapp-kit-value${cls ? ` ${cls}` : ""}">${html}</span>`);
 
 /** Amount with the doc's currency, tabular and always left-to-right inside Arabic text. */
 function amount(value, df, doc, { density, variant } = {}) {
@@ -58,7 +58,7 @@ function percent(value, df, doc, { density, variant } = {}) {
 }
 
 /** Date: short by default, readable in cards, relative when asked (never a raw timestamp). */
-function date(value, df, doc, { density, variant } = {}) {
+function render_date_value(value, df, doc, { density, variant } = {}) {
 	if (!value) return "";
 	if (variant === "relative") return `<span class="whatsapp-kit-when" title="${ui.escape(frappe.datetime.str_to_user(value))}">${ui.escape(frappe.datetime.prettyDate(value))}</span>`;
 	const text = variant === "readable" || BIG.includes(density) ? frappe.datetime.global_date_format(value) : frappe.datetime.str_to_user(value);
@@ -84,7 +84,7 @@ function datetime(value, df, doc, { variant } = {}) {
 }
 
 /** Read-only booleans are Yes / No, never a checkbox that looks editable. */
-function check(value, df, doc, { variant } = {}) {
+function render_check_value(value, df, doc, { variant } = {}) {
 	const on = !!cint(value);
 	if (variant === "text") return ui.escape(on ? __("Yes") : __("No"));
 	return whatsapp.ui.StatusBadge.html({ label: on ? __("Yes") : __("No"), colour: on ? "green" : "gray", icon: on });
@@ -101,7 +101,7 @@ function select(value, df, doc, { variant, doctype } = {}) {
 }
 
 /** Link: the target rendered by its own kind at `inline` density, so a person reads as a person. */
-function link(value, df, doc, opts = {}) {
+function render_link_value(value, df, doc, opts = {}) {
 	if (!value) return "";
 	const target = (df && df.options) || opts.target;
 	const display = (doc && df && doc[`${df.fieldname}_title`]) || value;
@@ -117,7 +117,7 @@ function link(value, df, doc, opts = {}) {
 
 function dynamic_link(value, df, doc, opts = {}) {
 	const target = doc && df && doc[df.options];
-	return link(value, Object.assign({}, df, { options: target }), doc, opts);
+	return render_link_value(value, Object.assign({}, df, { options: target }), doc, opts);
 }
 
 /** A number as a person reads it (no "+"; the value itself stays E.164). */
@@ -139,7 +139,7 @@ function email(value) {
 	return chip({ icon: "es-line-email", text: cstr(value), ltr: true, href: `mailto:${encodeURIComponent(value)}` });
 }
 
-function url(value, df, doc, { density } = {}) {
+function render_url_value(value, df, doc, { density } = {}) {
 	if (!value) return "";
 	const text = cstr(value).replace(/^https?:\/\//, "");
 	return chip({ icon: "es-line-link", text: density === "inline" ? text.slice(0, 40) : text, ltr: true, href: value, title: value });
@@ -156,7 +156,7 @@ function attach(value, df, doc, opts = {}) {
 }
 
 /** Tags / Table MultiSelect: small chips that never dominate the row. */
-function tags(value, df, doc, { density } = {}) {
+function render_tags_value(value, df, doc, { density } = {}) {
 	let list = value;
 	if (typeof value === "string") list = value.split(",").map((t) => t.trim()).filter(Boolean);
 	if (!Array.isArray(list) || !list.length) return "";
@@ -230,19 +230,19 @@ export const VALUE_RENDERERS = {
 	Float: number,
 	Int: number,
 	Percent: percent,
-	Date: date,
+	Date: render_date_value,
 	Datetime: datetime,
 	Time: (value) => `<span class="whatsapp-kit-tabular" dir="ltr">${ui.escape(frappe.datetime.str_to_user(value, true))}</span>`,
 	Duration: duration,
-	Check: check,
+	Check: render_check_value,
 	Select: select,
 	Rating: (value) => stars(value),
-	Link: link,
+	Link: render_link_value,
 	"Dynamic Link": dynamic_link,
 	Phone: phone,
 	Attach: attach,
 	"Attach Image": attach,
-	"Table MultiSelect": tags,
+	"Table MultiSelect": render_tags_value,
 	Geolocation: location,
 	Code: (value, df, doc, opts) => code(value, { density: (opts && opts.density) || "card", language: (df && df.options) || "" }),
 	JSON: (value, df, doc, opts) => code(value, { density: (opts && opts.density) || "card", language: "json" }),
@@ -257,11 +257,11 @@ export const VALUE_RENDERERS = {
 		const options = cstr(df && df.options);
 		if (options === "Phone") return phone(value, df, doc, opts);
 		if (options === "Email") return email(value, df, doc, opts);
-		if (options === "URL") return url(value, df, doc, opts);
+		if (options === "URL") return render_url_value(value, df, doc, opts);
 		return fallback(value, df, doc);
 	},
 };
 
-export const VALUE_HELPERS = { amount, number, percent, date, datetime, check, select, link, phone, email, url, attach, tags, location, long_text, rich_text, fallback, wrap };
+export const VALUE_HELPERS = { amount, number, percent, date: render_date_value, datetime, check: render_check_value, select, link: render_link_value, phone, email, url: render_url_value, attach, tags: render_tags_value, location, long_text, rich_text, fallback, wrap: wrap_value_html };
 
 export default VALUE_RENDERERS;

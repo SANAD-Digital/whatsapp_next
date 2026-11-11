@@ -12,14 +12,14 @@
 
 import ui from "../_core/index.js";
 
-const pad = (n) => String(n).padStart(2, "0");
+const pad_two_digits = (n) => String(n).padStart(2, "0");
 /** Day key: `YYYY-MM-DD`, comparable as a string. */
-const mk = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+const build_day_key = (y, m, d) => `${y}-${pad_two_digits(m + 1)}-${pad_two_digits(d)}`;
 const to_date = (k) => {
 	const p = String(k).split("-").map(Number);
 	return new Date(p[0], p[1] - 1, p[2]);
 };
-const to_key = (d) => mk(d.getFullYear(), d.getMonth(), d.getDate());
+const to_key = (d) => build_day_key(d.getFullYear(), d.getMonth(), d.getDate());
 const add_days = (k, n) => {
 	const d = to_date(k);
 	d.setDate(d.getDate() + n);
@@ -176,7 +176,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 		this.fieldname = this.opts.fieldname || (this.fields[0] ? this.fields[0].value : null);
 		this.applied = null;
 		this.state = this.defaults();
-		this.make();
+		this.build_trigger();
 		if (this.opts.value) this.set_value(this.opts.value, { silent: true });
 	}
 
@@ -253,11 +253,11 @@ whatsapp.ui.DateFilter = class DateFilter {
 			{ label: __("Last 7 days"), from: add_days(t, -6), to: t },
 			{ label: __("Last 30 days"), from: add_days(t, -29), to: t },
 			{ label: __("This week"), from: add_days(t, -(((d.getDay() - ws + 7) % 7))), to: t },
-			{ label: __("This month"), from: mk(y, m, 1), to: t },
-			{ label: __("Last month"), from: add_months(mk(y, m, 1), -1), to: add_days(mk(y, m, 1), -1) },
-			{ label: __("This quarter"), from: mk(y, q, 1), to: t },
-			{ label: __("This year"), from: mk(y, 0, 1), to: t },
-			{ label: __("Last year"), from: mk(y - 1, 0, 1), to: mk(y - 1, 11, 31) },
+			{ label: __("This month"), from: build_day_key(y, m, 1), to: t },
+			{ label: __("Last month"), from: add_months(build_day_key(y, m, 1), -1), to: add_days(build_day_key(y, m, 1), -1) },
+			{ label: __("This quarter"), from: build_day_key(y, q, 1), to: t },
+			{ label: __("This year"), from: build_day_key(y, 0, 1), to: t },
+			{ label: __("Last year"), from: build_day_key(y - 1, 0, 1), to: build_day_key(y - 1, 11, 31) },
 		];
 	}
 
@@ -267,8 +267,8 @@ whatsapp.ui.DateFilter = class DateFilter {
 		return [
 			{ label: __("Today"), date: t },
 			{ label: __("Yesterday"), date: add_days(t, -1) },
-			{ label: __("Start of month"), date: mk(d.getFullYear(), d.getMonth(), 1) },
-			{ label: __("Start of year"), date: mk(d.getFullYear(), 0, 1) },
+			{ label: __("Start of month"), date: build_day_key(d.getFullYear(), d.getMonth(), 1) },
+			{ label: __("Start of year"), date: build_day_key(d.getFullYear(), 0, 1) },
 		];
 	}
 
@@ -295,7 +295,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 			const other = new Date(now.getTime() + (past ? -1 : 1) * n * 36e5);
 			const a = past ? other : now;
 			const b = past ? now : other;
-			const hm = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+			const hm = (d) => `${pad_two_digits(d.getHours())}:${pad_two_digits(d.getMinutes())}`;
 			return { from: to_key(a), to: to_key(b), from_time: hm(a), to_time: hm(b) };
 		}
 		if (s.span_unit === "month" || s.span_unit === "year") {
@@ -312,12 +312,12 @@ whatsapp.ui.DateFilter = class DateFilter {
 		const s = this.state;
 		const p = PERIODS().find((x) => x.key === s.fiscal_period) || PERIODS()[0];
 		const start_year = s.fiscal_start === 0 ? s.fiscal_year : s.fiscal_year - 1;
-		const base = mk(start_year, s.fiscal_start, 1);
+		const base = build_day_key(start_year, s.fiscal_start, 1);
 		return { from: add_months(base, p.a), to: add_days(add_months(base, p.b), -1) };
 	}
 
 	/** Resolve the draft into `{from, to, from_time, to_time, exclusive, ready}`. */
-	calc() {
+	resolve_draft_range() {
 		const s = this.state;
 		const wt = !!s.with_time;
 		const out = { from: null, to: null, from_time: null, to_time: null, exclusive: false, ready: false };
@@ -401,7 +401,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 	/** Short text for the trigger; a range that matches a preset shows the preset's name. */
 	label_text() {
 		const s = this.state;
-		const r = this.calc();
+		const r = this.resolve_draft_range();
 		if (!r.ready) return "";
 		const time = (t) => (t ? ` ${t}` : "");
 		if (s.op === "is") return this.format_day(s.date);
@@ -428,7 +428,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 	/** The sentence under the calendar; also says what is still missing. */
 	summary_text() {
 		const s = this.state;
-		const r = this.calc();
+		const r = this.resolve_draft_range();
 		if (!r.ready) {
 			if (this.is_between()) return s.start ? __("Pick the end date") : __("Pick the start date, then the end date");
 			return __("Pick a date");
@@ -444,7 +444,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 	// ---- value in / out ------------------------------------------------------------------------
 
 	get_value() {
-		const r = this.calc();
+		const r = this.resolve_draft_range();
 		if (!r.ready) return null;
 		return {
 			op: this.state.op,
@@ -473,7 +473,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 	 * @param {{cascade?: boolean, silent?: boolean}} [o] — `cascade` lets a set apply every one of
 	 *   its fields from this one Apply; `silent` is how the set then applies each of them.
 	 */
-	apply({ cascade = true, silent = false } = {}) {
+	apply_selected_dates({ cascade = true, silent = false } = {}) {
 		const value = this.get_value();
 		if (!value) return this;
 		this.applied = { snapshot: Object.assign({}, this.state), value };
@@ -496,7 +496,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 
 	// ---- trigger -------------------------------------------------------------------------------
 
-	make() {
+	build_trigger() {
 		this.$el = $(`
 			<div class="whatsapp-kit whatsapp-kit-datefilter" id="${this.id}">
 				${this.opts.label ? `<span class="whatsapp-kit-datefilter__label">${ui.escape(this.opts.label)}</span>` : ""}
@@ -770,7 +770,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 		return this;
 	}
 
-	set(patch) {
+	update_draft_state(patch) {
 		Object.assign(this.state, patch);
 		this.render_panel();
 		return this;
@@ -807,7 +807,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 					const d = to_date(p.from);
 					this.view_year = d.getFullYear();
 					this.view_month = d.getMonth();
-					this.set({ start: p.from, end: p.to, hover: null, typed: {} });
+					this.update_draft_state({ start: p.from, end: p.to, hover: null, typed: {} });
 				})
 				.appendTo($rail);
 		});
@@ -851,14 +851,14 @@ whatsapp.ui.DateFilter = class DateFilter {
 
 	time_input($head, key, label) {
 		$(`<input type="time" class="whatsapp-kit-datefilter__time" value="${ui.escape(this.state[key] || "")}" aria-label="${ui.escape(label)}">`)
-			.on("change", (e) => this.set({ [key]: e.target.value }))
+			.on("change", (e) => this.update_draft_state({ [key]: e.target.value }))
 			.appendTo($head);
 	}
 
 	to_input(key) {
 		if (!key) return "";
 		const d = to_date(key);
-		return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+		return `${pad_two_digits(d.getDate())}/${pad_two_digits(d.getMonth() + 1)}/${d.getFullYear()}`;
 	}
 
 	commit_input(key, text) {
@@ -866,7 +866,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 		const s = this.state;
 		const typed = Object.assign({}, s.typed);
 		delete typed[key];
-		if (!parsed) return this.set({ typed: text ? Object.assign(typed, { [key]: text }) : typed });
+		if (!parsed) return this.update_draft_state({ typed: text ? Object.assign(typed, { [key]: text }) : typed });
 		const patch = { [key]: parsed, typed };
 		if (key !== "date" && s.start && s.end) {
 			const start = key === "start" ? parsed : s.start;
@@ -879,7 +879,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 		const d = to_date(parsed);
 		this.view_year = d.getFullYear();
 		this.view_month = d.getMonth();
-		return this.set(patch);
+		return this.update_draft_state(patch);
 	}
 
 	// ---- calendar ---------------------------------------------------------------------------------
@@ -895,9 +895,9 @@ whatsapp.ui.DateFilter = class DateFilter {
 				this.view_year,
 				(y) => {
 					this.view_year = y;
-					this.set({ pick: "month", picker_year: y });
+					this.update_draft_state({ pick: "month", picker_year: y });
 				},
-				{ wide, on_back: () => this.set({ pick: "month" }) }
+				{ wide, on_back: () => this.update_draft_state({ pick: "month" }) }
 			);
 		}
 		const months = this.compact() || this.is_single() ? 1 : 2;
@@ -929,7 +929,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 			})
 			.appendTo($head);
 		$(`<button type="button" class="whatsapp-kit-datefilter__month-title">${ui.escape(`${this.month_names()[m]} ${y}`)}${ui.icon("es-line-down", "xs")}</button>`)
-			.on("click", () => this.set({ pick: "month", picker_year: y }))
+			.on("click", () => this.update_draft_state({ pick: "month", picker_year: y }))
 			.appendTo($head);
 		$(`<button type="button" class="whatsapp-kit-datefilter__nav" aria-label="${ui.escape(__("Next month"))}"${last ? "" : " hidden"}>${ui.icon("es-line-right-chevron", "xs")}</button>`)
 			.on("click", () => {
@@ -951,7 +951,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 		const blanks = (first_day - ws + 7) % 7;
 		const last_date = new Date(y, m + 1, 0).getDate();
 		for (let i = 0; i < blanks; i++) $('<span class="whatsapp-kit-datefilter__day whatsapp-kit-datefilter__day--blank" aria-hidden="true"></span>').appendTo($grid);
-		for (let d = 1; d <= last_date; d++) this.render_day($grid, mk(y, m, d), d, last_date, (blanks + d - 1) % 7);
+		for (let d = 1; d <= last_date; d++) this.render_day($grid, build_day_key(y, m, d), d, last_date, (blanks + d - 1) % 7);
 	}
 
 	/** Which endpoint a day is, if any: `fill` (a picked bound) or `ring` (an excluded pivot). */
@@ -1026,8 +1026,8 @@ whatsapp.ui.DateFilter = class DateFilter {
 
 	pick_day(key) {
 		const s = this.state;
-		if (this.is_single()) return this.set({ date: key, typed: {} });
-		if (!s.start || s.end) return this.set({ start: key, end: null, hover: null, typed: {} });
+		if (this.is_single()) return this.update_draft_state({ date: key, typed: {} });
+		if (!s.start || s.end) return this.update_draft_state({ start: key, end: null, hover: null, typed: {} });
 		let a = s.start;
 		let b = key;
 		if (b < a) {
@@ -1035,7 +1035,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 			a = b;
 			b = x;
 		}
-		return this.set({ start: a, end: b, hover: null, typed: {} });
+		return this.update_draft_state({ start: a, end: b, hover: null, typed: {} });
 	}
 
 	/**
@@ -1106,8 +1106,8 @@ whatsapp.ui.DateFilter = class DateFilter {
 			head: { text: `${page} – ${page + 11}` },
 			prev_label: __("Previous years"),
 			next_label: __("Next years"),
-			on_prev: () => this.set({ picker_page: page - 12 }),
-			on_next: () => this.set({ picker_page: page + 12 }),
+			on_prev: () => this.update_draft_state({ picker_page: page - 12 }),
+			on_next: () => this.update_draft_state({ picker_page: page + 12 }),
 			items: years.map((y) => ({ label: String(y), value: y, on: y === current, now: y === this_year })),
 			on_pick: (it) => {
 				this.state.picker_page = null;
@@ -1120,11 +1120,11 @@ whatsapp.ui.DateFilter = class DateFilter {
 		const y = this.state.picker_year || this.view_year;
 		return this.grid_picker($body, {
 			wide: o.wide,
-			head: { text: String(y), aria: __("Pick a year"), on_click: () => this.set({ pick: "year", picker_page: null }) },
+			head: { text: String(y), aria: __("Pick a year"), on_click: () => this.update_draft_state({ pick: "year", picker_page: null }) },
 			prev_label: __("Previous year"),
 			next_label: __("Next year"),
-			on_prev: () => this.set({ picker_year: y - 1 }),
-			on_next: () => this.set({ picker_year: y + 1 }),
+			on_prev: () => this.update_draft_state({ picker_year: y - 1 }),
+			on_next: () => this.update_draft_state({ picker_year: y + 1 }),
 			items: this.month_names().map((name, i) => ({
 				label: name,
 				value: i,
@@ -1134,7 +1134,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 			on_pick: (it) => {
 				this.view_year = y;
 				this.view_month = it.value;
-				this.set({ pick: null });
+				this.update_draft_state({ pick: null });
 			},
 		});
 	}
@@ -1143,7 +1143,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 		const s = this.state;
 		const $row = $('<div class="whatsapp-kit-datefilter__options"></div>').appendTo($main);
 		const $check = $(`<label class="whatsapp-kit-datefilter__check"><input type="checkbox"${s.with_time ? " checked" : ""}><span>${ui.escape(__("Set a time"))}</span></label>`).appendTo($row);
-		$check.find("input").on("change", (e) => this.set({ with_time: e.target.checked }));
+		$check.find("input").on("change", (e) => this.update_draft_state({ with_time: e.target.checked }));
 		if (!this.is_single()) return;
 		const $quick = $('<div class="whatsapp-kit-datefilter__quick"></div>').appendTo($row);
 		this.single_presets().forEach((p) => {
@@ -1152,7 +1152,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 					const d = to_date(p.date);
 					this.view_year = d.getFullYear();
 					this.view_month = d.getMonth();
-					this.set({ date: p.date, typed: {} });
+					this.update_draft_state({ date: p.date, typed: {} });
 				})
 				.appendTo($quick);
 		});
@@ -1179,23 +1179,23 @@ whatsapp.ui.DateFilter = class DateFilter {
 			$(`<span class="whatsapp-kit-datefilter__form-label">${ui.escape(label)}</span>`).appendTo($r);
 			return $('<div class="whatsapp-kit-datefilter__form-field"></div>').appendTo($r);
 		};
-		this.segmented(row(__("Direction")), [{ key: "past", label: __("Last") }, { key: "next", label: __("Next") }], s.span_dir, (k) => this.set({ span_dir: k }));
+		this.segmented(row(__("Direction")), [{ key: "past", label: __("Last") }, { key: "next", label: __("Next") }], s.span_dir, (k) => this.update_draft_state({ span_dir: k }));
 		const $count = row(__("Count"));
 		$(`<input type="text" inputmode="numeric" class="whatsapp-kit-datefilter__count whatsapp-kit-tabular" value="${ui.escape(String(s.span_n))}" maxlength="4" aria-label="${ui.escape(__("Count"))}">`)
-			.on("change blur", (e) => this.set({ span_n: Math.max(1, cint(latin_digits(e.target.value)) || 1) }))
+			.on("change blur", (e) => this.update_draft_state({ span_n: Math.max(1, cint(latin_digits(e.target.value)) || 1) }))
 			.appendTo($count);
-		this.segmented($count, UNITS().map((u) => ({ key: u.key, label: u.label })), s.span_unit, (k) => this.set({ span_unit: k }));
+		this.segmented($count, UNITS().map((u) => ({ key: u.key, label: u.label })), s.span_unit, (k) => this.update_draft_state({ span_unit: k }));
 		if (s.span_unit !== "hour") {
 			const $inc = row(__("Today"));
 			const $c = $(`<label class="whatsapp-kit-datefilter__check"><input type="checkbox"${s.span_inc ? " checked" : ""}><span>${ui.escape(__("Include today"))}</span></label>`).appendTo($inc);
-			$c.find("input").on("change", (e) => this.set({ span_inc: e.target.checked }));
+			$c.find("input").on("change", (e) => this.update_draft_state({ span_inc: e.target.checked }));
 		}
 		const $common = row(__("Common"));
 		const $grid = $('<div class="whatsapp-kit-datefilter__common"></div>').appendTo($common);
 		this.span_presets().forEach((p) => {
 			const on = s.span_dir === p.dir && cint(s.span_n) === p.n && s.span_unit === p.unit && s.span_inc;
 			$(`<button type="button" class="whatsapp-kit-datefilter__preset${on ? " whatsapp-kit-datefilter__preset--on" : ""}">${ui.escape(p.label)}</button>`)
-				.on("click", () => this.set({ span_dir: p.dir, span_n: p.n, span_unit: p.unit, span_inc: true }))
+				.on("click", () => this.update_draft_state({ span_dir: p.dir, span_n: p.n, span_unit: p.unit, span_inc: true }))
 				.appendTo($grid);
 		});
 	}
@@ -1213,9 +1213,9 @@ whatsapp.ui.DateFilter = class DateFilter {
 	render_fiscal($body) {
 		const s = this.state;
 		// both of the fiscal panel's steppers open a grid instead of walking one click at a time
-		const back = () => this.set({ pick: null });
+		const back = () => this.update_draft_state({ pick: null });
 		if (s.pick === "fiscal_year") {
-			return this.render_year_picker($body, s.fiscal_year, (y) => this.set({ fiscal_year: y, pick: null }), { wide: true, on_back: back });
+			return this.render_year_picker($body, s.fiscal_year, (y) => this.update_draft_state({ fiscal_year: y, pick: null }), { wide: true, on_back: back });
 		}
 		if (s.pick === "fiscal_start") {
 			return this.grid_picker($body, {
@@ -1223,7 +1223,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 				on_back: back,
 				head: { text: __("Starts in") },
 				items: this.month_names().map((name, i) => ({ label: name, value: i, on: i === s.fiscal_start, now: i === now_wall().getMonth() })),
-				on_pick: (it) => this.set({ fiscal_start: it.value, pick: null }),
+				on_pick: (it) => this.update_draft_state({ fiscal_start: it.value, pick: null }),
 			});
 		}
 		const $form = $('<div class="whatsapp-kit-datefilter__form"></div>').appendTo($body);
@@ -1248,18 +1248,18 @@ whatsapp.ui.DateFilter = class DateFilter {
 		stepper(
 			row(__("Fiscal year")),
 			String(s.fiscal_year),
-			(n) => this.set({ fiscal_year: s.fiscal_year + n }),
-			() => this.set({ pick: "fiscal_year", picker_page: null }),
+			(n) => this.update_draft_state({ fiscal_year: s.fiscal_year + n }),
+			() => this.update_draft_state({ pick: "fiscal_year", picker_page: null }),
 			__("year")
 		);
 		stepper(
 			row(__("Starts in")),
 			this.month_names()[s.fiscal_start],
-			(n) => this.set({ fiscal_start: (s.fiscal_start + n + 12) % 12 }),
-			() => this.set({ pick: "fiscal_start" }),
+			(n) => this.update_draft_state({ fiscal_start: (s.fiscal_start + n + 12) % 12 }),
+			() => this.update_draft_state({ pick: "fiscal_start" }),
 			__("month")
 		);
-		this.segmented(row(__("Period")), PERIODS().map((p) => ({ key: p.key, label: p.short })), s.fiscal_period, (k) => this.set({ fiscal_period: k }));
+		this.segmented(row(__("Period")), PERIODS().map((p) => ({ key: p.key, label: p.short })), s.fiscal_period, (k) => this.update_draft_state({ fiscal_period: k }));
 		const p = PERIODS().find((x) => x.key === s.fiscal_period) || PERIODS()[0];
 		const $bars = $('<div class="whatsapp-kit-datefilter__bars"></div>').appendTo(row(__("Months")));
 		for (let i = 0; i < 12; i++) {
@@ -1268,7 +1268,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 			$(`<button type="button" class="whatsapp-kit-datefilter__bar${inside ? " whatsapp-kit-datefilter__bar--on" : ""}" aria-label="${ui.escape(this.month_names()[month])}"><span class="whatsapp-kit-datefilter__bar-fill"></span><span class="whatsapp-kit-datefilter__bar-label">${ui.escape(this.bar_label(month))}</span></button>`)
 				.on("click", () => {
 					const q = ["Q1", "Q2", "Q3", "Q4"][Math.floor(i / 3)];
-					this.set({ fiscal_period: q });
+					this.update_draft_state({ fiscal_period: q });
 				})
 				.appendTo($bars);
 		}
@@ -1289,7 +1289,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 					<span class="whatsapp-kit-datefilter__chead-value">${ui.escape(value)}</span>
 					<span class="whatsapp-kit-datefilter__caret" aria-hidden="true">${ui.icon("es-line-down", "xs")}</span>
 				</button>`)
-				.on("click", () => this.set({ head: on ? null : key }))
+				.on("click", () => this.update_draft_state({ head: on ? null : key }))
 				.appendTo($row);
 			return on ? $('<div class="whatsapp-kit-datefilter__chead-list"></div>').appendTo($row) : null;
 		};
@@ -1361,7 +1361,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 	// ---- footer -----------------------------------------------------------------------------------
 
 	render_footer() {
-		const r = this.calc();
+		const r = this.resolve_draft_range();
 		const $foot = $('<div class="whatsapp-kit-datefilter__footer"></div>').appendTo(this.$panel);
 		$(`<span class="whatsapp-kit-datefilter__summary${r.ready ? "" : " whatsapp-kit-datefilter__summary--muted"}">${ui.escape(this.summary_text())}</span>`).appendTo($foot);
 		const show_count = r.ready && r.from && r.to && this.state.op !== "is" && !(this.state.op === "timespan" && this.state.span_unit === "hour");
@@ -1370,7 +1370,7 @@ whatsapp.ui.DateFilter = class DateFilter {
 			.on("click", () => this.close(true))
 			.appendTo($foot);
 		const $apply = $(`<button type="button" class="whatsapp-kit-datefilter__apply"${r.ready ? "" : ' disabled aria-disabled="true"'}>${ui.escape(__("Apply"))}</button>`).appendTo($foot);
-		if (r.ready) $apply.on("click", () => this.apply());
+		if (r.ready) $apply.on("click", () => this.apply_selected_dates());
 	}
 
 	destroy() {
@@ -1408,7 +1408,7 @@ whatsapp.ui.DateFilterSet = class DateFilterSet {
 		this.fields = normalise_fields(opts.fields);
 		this.rows = [];
 		this.$el = $('<div class="whatsapp-kit whatsapp-kit-datefilter-set"></div>').appendTo($(opts.wrapper));
-		this.add(opts.fieldname || (this.fields[0] || {}).value, { silent: true });
+		this.add_date_field_row(opts.fieldname || (this.fields[0] || {}).value, { silent: true });
 	}
 
 	selected() {
@@ -1420,7 +1420,7 @@ whatsapp.ui.DateFilterSet = class DateFilterSet {
 	}
 
 	/** `[{fieldname, value}]` — `value` is `null` while that field has nothing applied. */
-	values() {
+	applied_field_values() {
 		return this.rows.map((r) => ({ fieldname: r.fieldname, value: (r.applied && r.applied.value) || null }));
 	}
 
@@ -1437,7 +1437,7 @@ whatsapp.ui.DateFilterSet = class DateFilterSet {
 		return this;
 	}
 
-	add(fieldname, { silent = false, activate = true } = {}) {
+	add_date_field_row(fieldname, { silent = false, activate = true } = {}) {
 		if (!fieldname || this.row_of(fieldname)) return null;
 		const row = new whatsapp.ui.DateFilter(
 			Object.assign({}, this.opts, {
@@ -1450,7 +1450,7 @@ whatsapp.ui.DateFilterSet = class DateFilterSet {
 				selected_fields: () => this.selected(),
 				on_toggle_field: (picked, from) => this.toggle(picked, from),
 				on_pick_row: (fn) => this.activate(fn, { open: true }),
-				on_drop_row: (fn) => this.remove(fn, { open: true }),
+				on_drop_row: (fn) => this.remove_date_field_row(fn, { open: true }),
 				on_apply_all: () => this.apply_all(),
 				on_clear_all: () => this.clear(),
 				on_change: null, // the set emits once for every field, from apply_all / clear
@@ -1459,11 +1459,11 @@ whatsapp.ui.DateFilterSet = class DateFilterSet {
 		this.rows.push(row);
 		if (activate) this.active = row;
 		this.render();
-		if (!silent) this.emit();
+		if (!silent) this.notify_rows_changed();
 		return row;
 	}
 
-	remove(fieldname, { silent = false, open = false } = {}) {
+	remove_date_field_row(fieldname, { silent = false, open = false } = {}) {
 		const row = this.row_of(fieldname);
 		if (!row || this.rows.length < 2) return this;
 		const was_active = row === this.active;
@@ -1473,7 +1473,7 @@ whatsapp.ui.DateFilterSet = class DateFilterSet {
 		if (was_active) this.active = this.rows[0];
 		this.render();
 		if (open) this.reopen();
-		if (!silent) this.emit(had ? [fieldname] : []);
+		if (!silent) this.notify_rows_changed(had ? [fieldname] : []);
 		return this;
 	}
 
@@ -1498,16 +1498,16 @@ whatsapp.ui.DateFilterSet = class DateFilterSet {
 
 	/** One tick in the field list: an unheld field is added and opened, a held one is dropped. */
 	toggle(fieldname, from) {
-		if (this.row_of(fieldname)) return this.remove(fieldname, { open: true });
+		if (this.row_of(fieldname)) return this.remove_date_field_row(fieldname, { open: true });
 		const blank = from && !from.applied;
 		if (blank) {
 			// an untouched field moves rather than leaving an empty one behind
 			const was = from.fieldname;
 			from.set_field(fieldname, { silent: true });
 			this.activate(fieldname, { open: true });
-			return this.emit(was === fieldname ? [] : [was]);
+			return this.notify_rows_changed(was === fieldname ? [] : [was]);
 		}
-		this.add(fieldname);
+		this.add_date_field_row(fieldname);
 		return this.reopen();
 	}
 
@@ -1528,11 +1528,11 @@ whatsapp.ui.DateFilterSet = class DateFilterSet {
 	/** One Apply commits every field that has a usable draft, so the list is refetched once. */
 	apply_all() {
 		this.rows.forEach((r) => {
-			if (r !== this.active && r.get_value()) r.apply({ cascade: false, silent: true });
+			if (r !== this.active && r.get_value()) r.apply_selected_dates({ cascade: false, silent: true });
 		});
 		this.rows.forEach((r) => r.close());
 		this.render();
-		return this.emit();
+		return this.notify_rows_changed();
 	}
 
 	clear({ silent = false } = {}) {
@@ -1542,12 +1542,12 @@ whatsapp.ui.DateFilterSet = class DateFilterSet {
 		this.rows.forEach((r) => r.clear({ silent: true, cascade: false }));
 		this.active = this.rows[0];
 		this.render();
-		if (!silent) this.emit(removed);
+		if (!silent) this.notify_rows_changed(removed);
 		return this;
 	}
 
-	emit(removed = []) {
-		if (typeof this.opts.on_change === "function") this.opts.on_change(this.values(), { removed });
+	notify_rows_changed(removed = []) {
+		if (typeof this.opts.on_change === "function") this.opts.on_change(this.applied_field_values(), { removed });
 		return this;
 	}
 

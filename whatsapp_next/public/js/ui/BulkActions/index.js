@@ -30,7 +30,7 @@ whatsapp.ui.BulkActions = class BulkActions {
 		// roles / perm are decided once at mount; `condition(docs)` is re-evaluated per selection
 		const allowed = ui.visible_actions(this.opts.actions.map((a) => Object.assign({}, a, { condition: undefined })), null, this.doctype);
 		this.opts.actions.filter((a) => allowed.some((x) => x.label === a.label && x.method === a.method)).forEach((action) => {
-			const $item = lv.page.add_actions_menu_item(this.label_for(action, 0), () => this.run(action), false);
+			const $item = lv.page.add_actions_menu_item(this.label_for(action, 0), () => this.run_bulk_action(action), false);
 			$item.addClass("whatsapp-kit-bulk__item");
 			this.items.push({ action, $item });
 		});
@@ -66,7 +66,7 @@ whatsapp.ui.BulkActions = class BulkActions {
 
 	// ---- run -------------------------------------------------------------------------------
 
-	async run(action) {
+	async run_bulk_action(action) {
 		const lv = this.listview;
 		const docs = lv.get_checked_items();
 		const names = docs.map((d) => d.name);
@@ -84,7 +84,7 @@ whatsapp.ui.BulkActions = class BulkActions {
 			const spec = typeof action.confirm === "function" ? action.confirm(names, docs) : action.confirm;
 			if (spec) {
 				try {
-					payload = await whatsapp.ui.ConfirmDialog.ask(spec);
+					payload = await whatsapp.ui.ConfirmDialog.ask_for_confirmation(spec);
 				} catch (e) {
 					return; // cancelled
 				}

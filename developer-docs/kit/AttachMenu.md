@@ -31,11 +31,11 @@ live outside the kit.
 ## Methods
 
 - `close(refocus = false)` — remove the popover and listeners; refocus the anchor when `true`.
-- `go(step)` — switch to `"menu"`, `"location"` or `"contact"` and re-place.
-- `pick(kind)` — act as if the kind was clicked.
+- `show_menu_step(step)` — switch to `"menu"`, `"location"` or `"contact"` and re-place.
+- `choose_attachment_kind(kind)` — act as if the kind was clicked.
 - `place($anchor)` — reposition against the anchor, clamped to the viewport (RTL-aware).
-- Static `AttachMenu.icon(kind)` — the kind's inline SVG (document icon as fallback).
-- Static `AttachMenu.label(kind)` — the kind's translated label.
+- Static `AttachMenu.kind_icon_svg(kind)` — the kind's inline SVG (document icon as fallback).
+- Static `AttachMenu.kind_label(kind)` — the kind's translated label.
 - Static `AttachMenu.chip_html(value)` — the chip HTML for a picked value ("Image · receipt.jpg ×");
   empty string for no value. The host binds the clear button, `[data-attach-clear]`.
 

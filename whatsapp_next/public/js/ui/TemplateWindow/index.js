@@ -19,9 +19,9 @@
 import ui from "../_core/index.js";
 import kit from "../_kit/index.js";
 
-const esc = (v) => ui.escape(v == null ? "" : v);
+const escape_html = (v) => ui.escape(v == null ? "" : v);
 const format_html = (text) =>
-	whatsapp.ui.ChatThread && whatsapp.ui.ChatThread.format ? whatsapp.ui.ChatThread.format(text) : esc(text).replace(/\n/g, "<br>");
+	whatsapp.ui.ChatThread && whatsapp.ui.ChatThread.format_whatsapp_text ? whatsapp.ui.ChatThread.format_whatsapp_text(text) : escape_html(text).replace(/\n/g, "<br>");
 
 const TYPES = () => [
 	{ value: "Text", label: __("Text"), icon: "chat" },
@@ -55,21 +55,21 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		this.opts = opts;
 		this.state = { tab: "editor", vars: [], vars_q: "", sample: null, seq: 0, saving: false };
 		this.controls = {};
-		this.build();
-		this.load(opts.name || null);
+		this.build_window_shell();
+		this.load_template(opts.name || null);
 	}
 
 	// ---- shell ---------------------------------------------------------------------------------
 
-	build() {
+	build_window_shell() {
 		this.id = ui.uid("whatsapp-kit-template-window");
 		this.previous_focus = document.activeElement;
 		this.$root = $(`
 			<div class="whatsapp-kit whatsapp whatsapp-kit-template-window-layer" role="presentation">
 				<div class="whatsapp-kit-template-window-backdrop"></div>
 				<div class="whatsapp-kit-template-window whatsapp-kit-template-window--tab-editor" role="dialog" aria-modal="true" aria-labelledby="${this.id}-label">
-					<span class="sr-only" id="${this.id}-label">${esc(__("Message template"))}</span>
-					<div class="whatsapp-kit-template-window__loading">${esc(__("Loading…"))}</div>
+					<span class="sr-only" id="${this.id}-label">${escape_html(__("Message template"))}</span>
+					<div class="whatsapp-kit-template-window__loading">${escape_html(__("Loading…"))}</div>
 				</div>
 			</div>`).appendTo(document.body);
 		this.$dlg = this.$root.find(".whatsapp-kit-template-window");
@@ -87,7 +87,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 	on_key(e) {
 		if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
 			e.preventDefault();
-			if (this.data && this.data.can_write) this.save();
+			if (this.data && this.data.can_write) this.save_template();
 			return;
 		}
 		if (e.key !== "Escape") return;
@@ -113,7 +113,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		this.opts.on_close && this.opts.on_close();
 	}
 
-	async load(name) {
+	async load_template(name) {
 		try {
 			this.data = await this.opts.load(name);
 			const t = this.data.template || {};
@@ -143,7 +143,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		} catch (err) {
 			this.$dlg.html(`
 				<div class="whatsapp-kit-template-window__loading" role="alert">
-					<span>${esc((err && err.message) || __("Something went wrong. Please try again."))}</span>
+					<span>${escape_html((err && err.message) || __("Something went wrong. Please try again."))}</span>
 					${kit.btn({ label: __("Close"), attrs: { "data-act": "close" } })}
 				</div>`);
 			this.$dlg.find("[data-act=close]").on("click", () => this.close(true));
@@ -180,7 +180,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 	}
 
 	/** Set one field of the draft and redraw only what depends on it. */
-	set(field, value) {
+	set_draft_field(field, value) {
 		if (this.draft[field] === value) return;
 		this.draft[field] = value;
 		if (field === "message_type") this.render_attachment();
@@ -202,91 +202,91 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		this.$dlg.html(`
 			<header class="whatsapp-kit-template-window__head">
 				<span class="whatsapp-kit-template-window__mark" aria-hidden="true">${kit.ico("doc", "sm")}</span>
-				<input type="text" class="whatsapp-kit-template-window__name" value="${esc(d.template_name)}" placeholder="${esc(__("Template name"))}" aria-label="${esc(__("Template name"))}" maxlength="140"${ro ? " readonly" : ""}>
+				<input type="text" class="whatsapp-kit-template-window__name" value="${escape_html(d.template_name)}" placeholder="${escape_html(__("Template name"))}" aria-label="${escape_html(__("Template name"))}" maxlength="140"${ro ? " readonly" : ""}>
 				<span class="whatsapp-kit-template-window__status" aria-live="polite"></span>
 				${this.opts.form_doctype && this.draft && this.draft.name ? whatsapp.ui.form_button_html() : ""}
 				${kit.btn({ icon: "x", variant: "secondary", title: __("Close (Esc)"), cls: "whatsapp-kit-template-window__close", attrs: { "data-act": "close" } })}
 			</header>
-			<div class="whatsapp-kit-template-window__tabs" role="tablist" aria-label="${esc(__("Sections"))}">
+			<div class="whatsapp-kit-template-window__tabs" role="tablist" aria-label="${escape_html(__("Sections"))}">
 				${[["editor", __("Editor")], ["preview", __("Preview", null, "Template preview tab")], ["vars", __("Variables")]]
-					.map(([k, l]) => `<button type="button" class="whatsapp-kit-template-window__tab" role="tab" data-tab="${k}" aria-selected="${k === this.state.tab}">${esc(l)}</button>`)
+					.map(([k, l]) => `<button type="button" class="whatsapp-kit-template-window__tab" role="tab" data-tab="${k}" aria-selected="${k === this.state.tab}">${escape_html(l)}</button>`)
 					.join("")}
 			</div>
 			<div class="whatsapp-kit-template-window__grid">
-				<section class="whatsapp-kit-template-window__pane whatsapp-kit-template-window__editor" data-pane="editor" aria-label="${esc(__("Editor"))}">
+				<section class="whatsapp-kit-template-window__pane whatsapp-kit-template-window__editor" data-pane="editor" aria-label="${escape_html(__("Editor"))}">
 					<div class="whatsapp-kit-template-window__row">
 						<div class="whatsapp-field">
-							<span class="whatsapp-field__label">${esc(__("Message type"))}</span>
+							<span class="whatsapp-field__label">${escape_html(__("Message type"))}</span>
 							${kit.segmented(TYPES(), d.message_type, { label: __("Message type") })}
 						</div>
 						<label class="whatsapp-field">
-							<span class="whatsapp-field__label">${esc(__("Category"))}</span>
-							<input type="text" class="whatsapp-input" data-field="category" list="${this.id}-cats" value="${esc(d.category)}" placeholder="${esc(__("e.g. Sales"))}"${ro ? " disabled" : ""}>
-							<datalist id="${this.id}-cats">${(this.data.categories || []).map((c) => `<option value="${esc(c)}">`).join("")}</datalist>
+							<span class="whatsapp-field__label">${escape_html(__("Category"))}</span>
+							<input type="text" class="whatsapp-input" data-field="category" list="${this.id}-cats" value="${escape_html(d.category)}" placeholder="${escape_html(__("e.g. Sales"))}"${ro ? " disabled" : ""}>
+							<datalist id="${this.id}-cats">${(this.data.categories || []).map((c) => `<option value="${escape_html(c)}">`).join("")}</datalist>
 						</label>
 					</div>
 					<div class="whatsapp-field">
-						<span class="whatsapp-field__label">${esc(__("Document it is about"))}</span>
+						<span class="whatsapp-field__label">${escape_html(__("Document it is about"))}</span>
 						<div class="whatsapp-kit-template-window__link" data-link="reference_doctype"></div>
-						<span class="whatsapp-field__hint">${esc(__("Optional. Pick the document the message is sent about, such as Sales Invoice, to insert its fields."))}</span>
+						<span class="whatsapp-field__hint">${escape_html(__("Optional. Pick the document the message is sent about, such as Sales Invoice, to insert its fields."))}</span>
 					</div>
 					<div class="whatsapp-field whatsapp-kit-template-window__body-field">
 						<div class="whatsapp-kit-template-window__body-head">
-							<label class="whatsapp-field__label" for="${this.id}-body">${esc(__("Message text"))} <span class="whatsapp-field__req" aria-hidden="true">*</span></label>
-							${ro ? "" : `<div class="whatsapp-kit-template-window__fmt" role="toolbar" aria-label="${esc(__("Formatting"))}">
-								${FORMATS().map((f) => `<button type="button" class="whatsapp-kit-template-window__fmt-btn whatsapp-kit-template-window__fmt-btn--${f.key}" data-fmt="${f.key}" title="${esc(f.label)}" aria-label="${esc(f.label)}">${esc(f.glyph)}</button>`).join("")}
+							<label class="whatsapp-field__label" for="${this.id}-body">${escape_html(__("Message text"))} <span class="whatsapp-field__req" aria-hidden="true">*</span></label>
+							${ro ? "" : `<div class="whatsapp-kit-template-window__fmt" role="toolbar" aria-label="${escape_html(__("Formatting"))}">
+								${FORMATS().map((f) => `<button type="button" class="whatsapp-kit-template-window__fmt-btn whatsapp-kit-template-window__fmt-btn--${f.key}" data-fmt="${f.key}" title="${escape_html(f.label)}" aria-label="${escape_html(f.label)}">${escape_html(f.glyph)}</button>`).join("")}
 								<span class="whatsapp-kit-template-window__fmt-sep" aria-hidden="true"></span>
-								<button type="button" class="whatsapp-kit-template-window__fmt-btn whatsapp-kit-template-window__fmt-btn--wide" data-fmt="if" title="${esc(__("Show a part only when a condition holds"))}">${esc(__("Condition"))}</button>
+								<button type="button" class="whatsapp-kit-template-window__fmt-btn whatsapp-kit-template-window__fmt-btn--wide" data-fmt="if" title="${escape_html(__("Show a part only when a condition holds"))}">${escape_html(__("Condition"))}</button>
 							</div>`}
 						</div>
-						<textarea id="${this.id}-body" class="whatsapp-textarea whatsapp-kit-template-window__body" dir="auto" rows="10" placeholder="${esc(__("Hello {{ doc.customer_name }}, …"))}"${ro ? " readonly" : ""}>${esc(d.body)}</textarea>
+						<textarea id="${this.id}-body" class="whatsapp-textarea whatsapp-kit-template-window__body" dir="auto" rows="10" placeholder="${escape_html(__("Hello {{ doc.customer_name }}, …"))}"${ro ? " readonly" : ""}>${escape_html(d.body)}</textarea>
 						<div class="whatsapp-kit-template-window__body-foot">
-							<span class="whatsapp-field__hint">${esc(__("Variables go in {{ … }} and conditions in {% if … %} … {% endif %}."))}</span>
+							<span class="whatsapp-field__hint">${escape_html(__("Variables go in {{ … }} and conditions in {% if … %} … {% endif %}."))}</span>
 							<span class="whatsapp-kit-template-window__count whatsapp-kit-tabular"></span>
 						</div>
 					</div>
 					<div class="whatsapp-kit-template-window__attach"></div>
 					<details class="whatsapp-kit-template-window__more">
-						<summary>${esc(__("More options"))}</summary>
+						<summary>${escape_html(__("More options"))}</summary>
 						<div class="whatsapp-kit-template-window__more-body">
 							<label class="whatsapp-toggle">
 								<input type="checkbox" data-field="enabled"${d.disabled ? "" : " checked"}${ro ? " disabled" : ""}>
 								<span class="whatsapp-toggle__track" aria-hidden="true"></span>
-								<span class="whatsapp-toggle__label">${esc(__("Offered when sending"))}</span>
+								<span class="whatsapp-toggle__label">${escape_html(__("Offered when sending"))}</span>
 							</label>
 							<label class="whatsapp-field">
-								<span class="whatsapp-field__label">${esc(__("Description"))}</span>
-								<textarea class="whatsapp-textarea" data-field="description" rows="2" placeholder="${esc(__("When to use it — shown to whoever picks it"))}"${ro ? " readonly" : ""}>${esc(d.description)}</textarea>
+								<span class="whatsapp-field__label">${escape_html(__("Description"))}</span>
+								<textarea class="whatsapp-textarea" data-field="description" rows="2" placeholder="${escape_html(__("When to use it — shown to whoever picks it"))}"${ro ? " readonly" : ""}>${escape_html(d.description)}</textarea>
 							</label>
 							<div class="whatsapp-field">
-								<span class="whatsapp-field__label">${esc(__("Language"))}</span>
+								<span class="whatsapp-field__label">${escape_html(__("Language"))}</span>
 								<div class="whatsapp-kit-template-window__link" data-link="language"></div>
 							</div>
 							<label class="whatsapp-field">
-								<span class="whatsapp-field__label">${esc(__("Extra sample values (JSON)"))}</span>
-								<textarea class="whatsapp-textarea whatsapp-textarea--mono" data-field="sample_context" dir="ltr" rows="3" placeholder='{"discount": 10}'${ro ? " readonly" : ""}>${esc(d.sample_context)}</textarea>
-								<span class="whatsapp-field__hint">${esc(__("Only for the preview: values the text uses that no document has."))}</span>
+								<span class="whatsapp-field__label">${escape_html(__("Extra sample values (JSON)"))}</span>
+								<textarea class="whatsapp-textarea whatsapp-textarea--mono" data-field="sample_context" dir="ltr" rows="3" placeholder='{"discount": 10}'${ro ? " readonly" : ""}>${escape_html(d.sample_context)}</textarea>
+								<span class="whatsapp-field__hint">${escape_html(__("Only for the preview: values the text uses that no document has."))}</span>
 							</label>
 						</div>
 					</details>
 				</section>
 
-				<section class="whatsapp-kit-template-window__pane whatsapp-kit-template-window__preview" data-pane="preview" aria-label="${esc(__("Preview", null, "Template preview tab"))}">
-					<span class="whatsapp-kit-template-window__pane-title">${esc(__("Preview — as the recipient sees it"))}</span>
+				<section class="whatsapp-kit-template-window__pane whatsapp-kit-template-window__preview" data-pane="preview" aria-label="${escape_html(__("Preview", null, "Template preview tab"))}">
+					<span class="whatsapp-kit-template-window__pane-title">${escape_html(__("Preview — as the recipient sees it"))}</span>
 					<div class="whatsapp-kit-template-window__sample"></div>
 					<div class="whatsapp-kit-template-window__chat">
 						<div class="whatsapp-kit-template-window__bubble" aria-busy="false">
 							<div class="whatsapp-kit-template-window__bubble-file"></div>
 							<div class="whatsapp-kit-template-window__bubble-text" dir="auto"></div>
-							<span class="whatsapp-kit-template-window__bubble-time" dir="ltr">${esc(frappe.datetime.now_time().slice(0, 5))} ✓✓</span>
+							<span class="whatsapp-kit-template-window__bubble-time" dir="ltr">${escape_html(frappe.datetime.now_time().slice(0, 5))} ✓✓</span>
 						</div>
 					</div>
 					<ul class="whatsapp-kit-template-window__errors" role="alert"></ul>
 				</section>
 
-				<section class="whatsapp-kit-template-window__pane whatsapp-kit-template-window__vars" data-pane="vars" aria-label="${esc(__("Variables"))}">
-					<span class="whatsapp-kit-template-window__pane-title">${esc(__("Variables — click to insert"))}</span>
-					<input type="search" class="whatsapp-input whatsapp-kit-template-window__vars-q" placeholder="${esc(__("Filter variables…"))}" aria-label="${esc(__("Filter variables"))}">
+				<section class="whatsapp-kit-template-window__pane whatsapp-kit-template-window__vars" data-pane="vars" aria-label="${escape_html(__("Variables"))}">
+					<span class="whatsapp-kit-template-window__pane-title">${escape_html(__("Variables — click to insert"))}</span>
+					<input type="search" class="whatsapp-input whatsapp-kit-template-window__vars-q" placeholder="${escape_html(__("Filter variables…"))}" aria-label="${escape_html(__("Filter variables"))}">
 					<div class="whatsapp-kit-template-window__vars-list" role="list"></div>
 				</section>
 			</div>
@@ -298,7 +298,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		this.$body_input = this.$dlg.find(".whatsapp-kit-template-window__body");
 		this.make_link("reference_doctype", "DocType", { get_query: () => ({ filters: { istable: 0, issingle: 0 } }), placeholder: __("Any document") });
 		this.make_link("language", "Language", { placeholder: __("The user's language") });
-		this.bind();
+		this.bind_editor_events();
 		this.render_attachment();
 		this.render_sample();
 		this.render_vars();
@@ -324,7 +324,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 					if (this.controls[field] !== control) return;
 					const value = control.get_value() || null;
 					if (field === "sample") this.pick_sample(value);
-					else this.set(field, value);
+					else this.set_draft_field(field, value);
 				},
 			},
 			parent: $parent,
@@ -338,22 +338,22 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		return control;
 	}
 
-	bind() {
+	bind_editor_events() {
 		const $d = this.$dlg;
 		$d.on("click", "[data-act=close]", () => this.close());
 		$d.on("click", "[data-act=open_form]", () => whatsapp.ui.open_form(this, this.opts.form_doctype, this.draft && this.draft.name));
 		$d.on("click", "[data-tab]", (e) => this.show_tab($(e.currentTarget).data("tab")));
-		kit.bind_segmented($d.find(".whatsapp-segmented"), (value) => this.set("message_type", value));
+		kit.bind_segmented($d.find(".whatsapp-segmented"), (value) => this.set_draft_field("message_type", value));
 		if (!this.data.can_write) $d.find(".whatsapp-segmented__opt").prop("disabled", true);
-		this.$name_input.on("input", (e) => this.set("template_name", e.target.value));
+		this.$name_input.on("input", (e) => this.set_draft_field("template_name", e.target.value));
 		this.$body_input.on("input", (e) => {
-			this.set("body", e.target.value);
+			this.set_draft_field("body", e.target.value);
 			this.render_count();
 		});
 		$d.on("input", "[data-field=category], [data-field=description], [data-field=sample_context], [data-field=file_name_template]", (e) =>
-			this.set($(e.currentTarget).data("field"), e.target.value)
+			this.set_draft_field($(e.currentTarget).data("field"), e.target.value)
 		);
-		$d.on("change", "[data-field=enabled]", (e) => this.set("disabled", e.target.checked ? 0 : 1));
+		$d.on("change", "[data-field=enabled]", (e) => this.set_draft_field("disabled", e.target.checked ? 0 : 1));
 		$d.on("click", "[data-fmt]", (e) => this.apply_format($(e.currentTarget).data("fmt")));
 		$d.on("input", ".whatsapp-kit-template-window__vars-q", (e) => {
 			this.state.vars_q = e.target.value;
@@ -363,7 +363,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		$d.on("click", "[data-act=latest]", () => this.use_latest());
 		$d.on("click", "[data-act=upload]", () => this.upload());
 		$d.on("click", "[data-act=unattach]", () => {
-			this.set("attachment", null);
+			this.set_draft_field("attachment", null);
 			this.render_attachment();
 		});
 		this.render_count();
@@ -388,7 +388,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		else if (!d.name) parts.push(kit.badge(__("New"), "info"));
 		if (d.disabled) parts.push(kit.badge(__("Not offered"), "muted"));
 		if (d.name && !this.is_dirty() && this.stats && cint(this.stats.use_count))
-			parts.push(`<span class="whatsapp-kit-template-window__uses">${esc(__("Used {0} times", [format_number(this.stats.use_count, null, 0)]))}</span>`);
+			parts.push(`<span class="whatsapp-kit-template-window__uses">${escape_html(__("Used {0} times", [format_number(this.stats.use_count, null, 0)]))}</span>`);
 		if (!this.data.can_write) parts.push(kit.badge(__("Read only"), "muted", { dot: false }));
 		this.$dlg.find(".whatsapp-kit-template-window__status").html(parts.join(""));
 		this.render_foot_state();
@@ -403,34 +403,34 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 			const file = d.attachment;
 			$a.html(`
 				<div class="whatsapp-field">
-					<span class="whatsapp-field__label">${esc(__("Image"))}</span>
+					<span class="whatsapp-field__label">${escape_html(__("Image"))}</span>
 					${
 						file
 							? `<div class="whatsapp-kit-template-window__file">
-								<img class="whatsapp-kit-template-window__file-thumb" src="${esc(file)}" alt="">
-								<span class="whatsapp-kit-template-window__file-name" dir="ltr">${esc(file.split("/").pop())}</span>
+								<img class="whatsapp-kit-template-window__file-thumb" src="${escape_html(file)}" alt="">
+								<span class="whatsapp-kit-template-window__file-name" dir="ltr">${escape_html(file.split("/").pop())}</span>
 								${ro ? "" : `${kit.btn({ label: __("Replace"), size: "sm", attrs: { "data-act": "upload" } })}${kit.btn({ icon: "x", size: "sm", variant: "ghost", title: __("Remove the image"), attrs: { "data-act": "unattach" } })}`}
 							</div>`
 							: ro
-								? `<span class="whatsapp-field__hint">${esc(__("No image"))}</span>`
-								: `<button type="button" class="whatsapp-kit-template-window__drop" data-act="upload">${kit.ico("attach", "md")}<span>${esc(__("Upload the image the message is sent with"))}</span></button>`
+								? `<span class="whatsapp-field__hint">${escape_html(__("No image"))}</span>`
+								: `<button type="button" class="whatsapp-kit-template-window__drop" data-act="upload">${kit.ico("attach", "md")}<span>${escape_html(__("Upload the image the message is sent with"))}</span></button>`
 					}
 				</div>`);
 		} else if (d.message_type === "Document") {
 			$a.html(`
 				<div class="whatsapp-kit-template-window__doc">
 					<div class="whatsapp-field">
-						<span class="whatsapp-field__label">${esc(__("Print format"))} <span class="whatsapp-field__req" aria-hidden="true">*</span></span>
+						<span class="whatsapp-field__label">${escape_html(__("Print format"))} <span class="whatsapp-field__req" aria-hidden="true">*</span></span>
 						<div class="whatsapp-kit-template-window__link" data-link="print_format"></div>
-						<span class="whatsapp-field__hint">${esc(d.reference_doctype ? __("The PDF is printed from the document with this format.") : __("Pick the document it is about first, to see its print formats."))}</span>
+						<span class="whatsapp-field__hint">${escape_html(d.reference_doctype ? __("The PDF is printed from the document with this format.") : __("Pick the document it is about first, to see its print formats."))}</span>
 					</div>
 					<div class="whatsapp-field">
-						<span class="whatsapp-field__label">${esc(__("Letter head"))}</span>
+						<span class="whatsapp-field__label">${escape_html(__("Letter head"))}</span>
 						<div class="whatsapp-kit-template-window__link" data-link="letter_head"></div>
 					</div>
 					<label class="whatsapp-field whatsapp-kit-template-window__doc-wide">
-						<span class="whatsapp-field__label">${esc(__("File name"))}</span>
-						<input type="text" class="whatsapp-input whatsapp-input--mono" dir="ltr" data-field="file_name_template" value="${esc(d.file_name_template)}" placeholder="{{ doc.name }}.pdf"${ro ? " disabled" : ""}>
+						<span class="whatsapp-field__label">${escape_html(__("File name"))}</span>
+						<input type="text" class="whatsapp-input whatsapp-input--mono" dir="ltr" data-field="file_name_template" value="${escape_html(d.file_name_template)}" placeholder="{{ doc.name }}.pdf"${ro ? " disabled" : ""}>
 					</label>
 				</div>`);
 			this.make_link("print_format", "Print Format", {
@@ -446,7 +446,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 			allow_multiple: false,
 			restrictions: { allowed_file_types: ["image/*"] },
 			on_success: (file) => {
-				this.set("attachment", file.file_url);
+				this.set_draft_field("attachment", file.file_url);
 				this.render_attachment();
 			},
 		});
@@ -457,11 +457,11 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		const dt = this.draft.reference_doctype;
 		const $s = this.$dlg.find(".whatsapp-kit-template-window__sample").empty();
 		if (!dt) {
-			$s.html(`<span class="whatsapp-kit-template-window__sample-note">${esc(__("Rendered with general sample values. Pick the document it is about to preview with a real record."))}</span>`);
+			$s.html(`<span class="whatsapp-kit-template-window__sample-note">${escape_html(__("Rendered with general sample values. Pick the document it is about to preview with a real record."))}</span>`);
 			return;
 		}
 		$s.html(`
-			<span class="whatsapp-kit-template-window__sample-label">${esc(__("With {0}", [__(dt)]))}</span>
+			<span class="whatsapp-kit-template-window__sample-label">${escape_html(__("With {0}", [__(dt)]))}</span>
 			<div class="whatsapp-kit-template-window__sample-pick"></div>
 			${this.opts.pick_sample ? kit.btn({ label: __("Latest"), size: "sm", variant: "ghost", title: __("Use the latest {0}", [__(dt)]), attrs: { "data-act": "latest" } }) : ""}`);
 		const control = this.make_link("sample", dt, { parent: $s.find(".whatsapp-kit-template-window__sample-pick"), placeholder: __("Pick a record…") });
@@ -520,13 +520,13 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 			.find(".whatsapp-kit-template-window__bubble-text")
 			.toggleClass("whatsapp-kit-template-window__bubble-text--empty", !text)
 			.toggleClass("whatsapp-kit-template-window__bubble-text--raw", !!(failed && text))
-			.html(text ? format_html(text) : esc(this.draft.body ? __("(the text renders empty)") : __("Start writing and the message appears here.")));
+			.html(text ? format_html(text) : escape_html(this.draft.body ? __("(the text renders empty)") : __("Start writing and the message appears here.")));
 		const errors = (r.errors || []).concat(this.sample_error ? [this.sample_error] : []);
 		const key = JSON.stringify(errors);
 		// re-render only when they change, so a screen reader hears them once
 		if (key !== this.state.errors_key) {
 			this.state.errors_key = key;
-			this.$dlg.find(".whatsapp-kit-template-window__errors").html(errors.map((e) => `<li>${kit.ico("warn", "xs")}<span>${esc(e)}</span></li>`).join(""));
+			this.$dlg.find(".whatsapp-kit-template-window__errors").html(errors.map((e) => `<li>${kit.ico("warn", "xs")}<span>${escape_html(e)}</span></li>`).join(""));
 		}
 	}
 
@@ -549,9 +549,9 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		const d = this.draft;
 		const $f = this.$dlg.find(".whatsapp-kit-template-window__bubble-file").empty();
 		if (d.message_type === "Image") {
-			$f.html(d.attachment ? `<img src="${esc(d.attachment)}" alt="">` : `<span class="whatsapp-kit-template-window__bubble-ph">${kit.ico("attach", "md")}<span>${esc(__("Image"))}</span></span>`);
+			$f.html(d.attachment ? `<img src="${escape_html(d.attachment)}" alt="">` : `<span class="whatsapp-kit-template-window__bubble-ph">${kit.ico("attach", "md")}<span>${escape_html(__("Image"))}</span></span>`);
 		} else if (d.message_type === "Document") {
-			$f.html(`<span class="whatsapp-kit-template-window__bubble-doc">${kit.ico("doc", "md")}<span dir="ltr">${esc(d.file_name_template || (d.reference_doctype ? `${__(d.reference_doctype)}.pdf` : "document.pdf"))}</span><small>PDF</small></span>`);
+			$f.html(`<span class="whatsapp-kit-template-window__bubble-doc">${kit.ico("doc", "md")}<span dir="ltr">${escape_html(d.file_name_template || (d.reference_doctype ? `${__(d.reference_doctype)}.pdf` : "document.pdf"))}</span><small>PDF</small></span>`);
 		}
 		$f.prop("hidden", d.message_type === "Text");
 	}
@@ -577,16 +577,16 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		const of_doc = rows.filter((v) => v.name.startsWith("doc."));
 		const general = rows.filter((v) => !v.name.startsWith("doc."));
 		const item = (v) =>
-			`<button type="button" class="whatsapp-kit-template-window__var" role="listitem" data-token="{{ ${esc(v.name)} }}" title="${esc(__("Insert {0}", [`{{ ${v.name} }}`]))}"${this.data.can_write ? "" : " disabled"}>
-				<span class="whatsapp-kit-template-window__var-token" dir="ltr">{{ ${esc(v.name)} }}</span>
-				${v.label && v.label !== v.name ? `<span class="whatsapp-kit-template-window__var-label">${esc(__(v.label))}</span>` : ""}
+			`<button type="button" class="whatsapp-kit-template-window__var" role="listitem" data-token="{{ ${escape_html(v.name)} }}" title="${escape_html(__("Insert {0}", [`{{ ${v.name} }}`]))}"${this.data.can_write ? "" : " disabled"}>
+				<span class="whatsapp-kit-template-window__var-token" dir="ltr">{{ ${escape_html(v.name)} }}</span>
+				${v.label && v.label !== v.name ? `<span class="whatsapp-kit-template-window__var-label">${escape_html(__(v.label))}</span>` : ""}
 			</button>`;
-		const group = (title, list) => (list.length ? `<span class="whatsapp-kit-template-window__vars-group">${esc(title)}</span>${list.map(item).join("")}` : "");
+		const group = (title, list) => (list.length ? `<span class="whatsapp-kit-template-window__vars-group">${escape_html(title)}</span>${list.map(item).join("")}` : "");
 		const html =
 			group(this.draft.reference_doctype ? __("Fields of {0}", [__(this.draft.reference_doctype)]) : __("Document fields"), of_doc) + group(__("General"), general);
 		this.$dlg.find(".whatsapp-kit-template-window__vars-list").html(
 			html ||
-				`<span class="whatsapp-kit-template-window__vars-empty">${esc(
+				`<span class="whatsapp-kit-template-window__vars-empty">${escape_html(
 					q ? __("No variable matches “{0}”.", [this.state.vars_q]) : __("Pick the document it is about to see its fields here.")
 				)}</span>`
 		);
@@ -604,7 +604,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		const caret = before.length + pad.length + (select_inner ? select_inner[0] : text.length);
 		el.focus();
 		el.setSelectionRange(caret, select_inner ? caret + select_inner[1] : caret);
-		this.set("body", el.value);
+		this.set_draft_field("body", el.value);
 		this.render_count();
 		if (this.state.tab === "vars") this.show_tab("editor");
 	}
@@ -636,7 +636,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		if (d.name && this.opts.use_in_message && !d.disabled) btns.push(kit.btn({ label: __("Use in a message"), icon: "send", variant: "ghost", attrs: { "data-act": "use" } }));
 		if (d.name && this.data.can_delete && this.opts.remove) btns.push(kit.btn({ label: __("Delete"), icon: "trash", variant: "danger", cls: "whatsapp-kit-template-window__delete", attrs: { "data-act": "delete" } }));
 		const $b = this.$dlg.find(".whatsapp-kit-template-window__foot-btns").html(btns.join(""));
-		$b.find("[data-act=save]").on("click", () => this.save());
+		$b.find("[data-act=save]").on("click", () => this.save_template());
 		// the send takes over from here: this window steps aside first (asking about unsaved edits),
 		// so it is not left open on top of the send window or the screen the send leads to
 		$b.find("[data-act=use]").on("click", () => {
@@ -647,7 +647,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 			if (this.is_dirty()) frappe.confirm(__("Discard unsaved changes?"), go);
 			else go();
 		});
-		$b.find("[data-act=delete]").on("click", () => this.remove());
+		$b.find("[data-act=delete]").on("click", () => this.delete_template());
 		this.render_foot_state();
 	}
 
@@ -658,11 +658,11 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 	}
 
 	show_error(message) {
-		this.$dlg.find(".whatsapp-kit-template-window__foot-msg").html(message ? `${kit.ico("warn", "xs")}<span>${esc(message)}</span>` : "");
+		this.$dlg.find(".whatsapp-kit-template-window__foot-msg").html(message ? `${kit.ico("warn", "xs")}<span>${escape_html(message)}</span>` : "");
 	}
 
 	/** What is missing before a save can work, said before the server has to. */
-	problem() {
+	find_save_problem() {
 		const d = this.draft;
 		if (!(d.template_name || "").trim()) return { msg: __("Give the template a name."), $focus: this.$name_input };
 		if (!(d.body || "").trim()) return { msg: __("Write the message text."), $focus: this.$body_input };
@@ -671,10 +671,10 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		return null;
 	}
 
-	async save() {
+	async save_template() {
 		if (this.state.saving || !this.data.can_write) return;
 		if (this.draft.name && !this.is_dirty()) return;
-		const p = this.problem();
+		const p = this.find_save_problem();
 		if (p) {
 			this.show_error(p.msg);
 			this.show_tab("editor");
@@ -703,9 +703,9 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		}
 	}
 
-	remove() {
+	delete_template() {
 		const name = this.draft.name;
-		frappe.confirm(__("Delete the template {0}? This cannot be undone.", [`<b>${esc(name)}</b>`]), async () => {
+		frappe.confirm(__("Delete the template {0}? This cannot be undone.", [`<b>${escape_html(name)}</b>`]), async () => {
 			try {
 				await this.opts.remove(name);
 				whatsapp.ui.Toast.success(__("Template deleted"));

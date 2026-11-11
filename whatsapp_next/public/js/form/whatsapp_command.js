@@ -52,7 +52,7 @@ whatsapp_next.render_command_tester = function ($el, { note, initial = {} } = {}
 	$run.on("click", async () => {
 		const args = { text: text.get_value(), sender_phone: phone.get_value(), device: device.get_value() || null };
 		if (!args.text || !args.sender_phone) {
-			state.set("empty", { title: __("Enter the text and the sender phone"), description: "" });
+			state.set_state("empty", { title: __("Enter the text and the sender phone"), description: "" });
 			return;
 		}
 		$run.prop("disabled", true);
@@ -174,7 +174,7 @@ frappe.ui.form.on("WhatsApp Command", {
 		frm.add_custom_button(__("Test"), () => whatsapp_next.command_test_dialog(frm.doc));
 		if (!active) {
 			frm.add_custom_button(__("Restore defaults"), () =>
-				whatsapp.ui.ConfirmDialog.ask({
+				whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 					title: __("Restore defaults for {0}?", [frm.doc.code || frm.doc.name]),
 					message: __("The command's own message texts and option values are cleared: it uses the function's again."),
 					impact: [{ label: __("Function"), value: frm.doc.function || "—" }],

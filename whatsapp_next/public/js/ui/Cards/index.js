@@ -24,7 +24,7 @@
 import ui from "../_core/index.js";
 import { ico } from "../_kit/icons.js";
 
-const esc = (v) => ui.escape(v == null ? "" : v);
+const escape_html = (v) => ui.escape(v == null ? "" : v);
 const TONES = ["ok", "warn", "danger", "info", "muted", "pri"];
 const tone_of = (t) => (TONES.includes(t) ? t : "muted");
 
@@ -69,7 +69,7 @@ whatsapp.ui.Cards = class Cards {
 		this.$wrapper.toggleClass("whatsapp--compact", this.opts.density === "compact");
 		this.$el = $(`<div class="whatsapp-cards whatsapp-cards--${this.opts.density}"></div>`).appendTo(this.$wrapper);
 		(this.opts.sections || []).forEach((section) => this.render_section(section));
-		this.bind();
+		this.bind_card_actions();
 		return this;
 	}
 
@@ -79,8 +79,8 @@ whatsapp.ui.Cards = class Cards {
 		if (section.title || section.sub) {
 			$sec.append(`
 				<header class="whatsapp-cards__head">
-					${section.title ? `<h3 class="whatsapp-cards__title">${esc(section.title)}</h3>` : ""}
-					${section.sub ? `<p class="whatsapp-cards__sub">${esc(section.sub)}</p>` : ""}
+					${section.title ? `<h3 class="whatsapp-cards__title">${escape_html(section.title)}</h3>` : ""}
+					${section.sub ? `<p class="whatsapp-cards__sub">${escape_html(section.sub)}</p>` : ""}
 				</header>`);
 		}
 		const $grid = $(`<div class="whatsapp-cards__grid" style="--whatsapp-cards-min:${min}px"></div>`).appendTo($sec);
@@ -100,13 +100,13 @@ whatsapp.ui.Cards = class Cards {
 		const span = cint(card.span) > 1 ? ` style="--whatsapp-card-span:${cint(card.span)}"` : "";
 		const tag = clickable ? "button" : "div";
 		const attrs = clickable
-			? ` type="button" data-action="${esc(card.action || "")}" data-key="${esc(card.key || "")}"`
+			? ` type="button" data-action="${escape_html(card.action || "")}" data-key="${escape_html(card.key || "")}"`
 			: "";
 		return { tag, open: `<${tag} class="${cls}${clickable ? " whatsapp-card--click" : ""}"${span}${attrs}>`, close: `</${tag}>` };
 	}
 
 	/** The icon tile a `stat` and a `kpi` wear at the end of their label. */
-	tile(card) {
+	render_icon_tile(card) {
 		if (!card.icon) return "";
 		return `<span class="whatsapp-card__tile whatsapp-card__tile--${tone_of(card.tone)}" aria-hidden="true">${ico(card.icon, "sm")}</span>`;
 	}
@@ -117,12 +117,12 @@ whatsapp.ui.Cards = class Cards {
 			<span class="whatsapp-card__body">
 				<span class="whatsapp-card__line">
 					${card.dot === false ? "" : `<span class="whatsapp-card__dot" aria-hidden="true"></span>`}
-					<span class="whatsapp-card__label">${esc(card.label)}</span>
+					<span class="whatsapp-card__label">${escape_html(card.label)}</span>
 				</span>
-				<span class="whatsapp-card__value whatsapp-kit-tabular" dir="${card.rtl ? "auto" : "ltr"}">${esc(card.value)}</span>
-				${card.note ? `<span class="whatsapp-card__note">${esc(card.note)}</span>` : ""}
+				<span class="whatsapp-card__value whatsapp-kit-tabular" dir="${card.rtl ? "auto" : "ltr"}">${escape_html(card.value)}</span>
+				${card.note ? `<span class="whatsapp-card__note">${escape_html(card.note)}</span>` : ""}
 			</span>
-			${this.tile(card)}
+			${this.render_icon_tile(card)}
 		${s.close}`;
 	}
 
@@ -130,12 +130,12 @@ whatsapp.ui.Cards = class Cards {
 		const s = this.shell(card, `whatsapp-card whatsapp-card--kpi whatsapp-card--${tone_of(card.tone)}`);
 		return `${s.open}
 			<span class="whatsapp-card__top">
-				<span class="whatsapp-card__label">${esc(card.label)}</span>
-				${this.tile(card)}
+				<span class="whatsapp-card__label">${escape_html(card.label)}</span>
+				${this.render_icon_tile(card)}
 			</span>
-			<span class="whatsapp-card__figure whatsapp-kit-tabular" dir="ltr">${esc(card.value)}</span>
+			<span class="whatsapp-card__figure whatsapp-kit-tabular" dir="ltr">${escape_html(card.value)}</span>
 			<span class="whatsapp-card__foot">
-				<span class="whatsapp-card__note">${esc(card.note || "")}</span>
+				<span class="whatsapp-card__note">${escape_html(card.note || "")}</span>
 				${card.series ? spark(card.series) : ""}
 			</span>
 		${s.close}`;
@@ -144,28 +144,28 @@ whatsapp.ui.Cards = class Cards {
 	panel_html(card) {
 		const rows = (card.rows || [])
 			.map((r) => {
-				const click = r.action || r.onClick ? ` data-action="${esc(r.action || "")}" data-key="${esc(r.key || "")}"` : "";
+				const click = r.action || r.onClick ? ` data-action="${escape_html(r.action || "")}" data-key="${escape_html(r.key || "")}"` : "";
 				const tag = r.action || r.onClick ? "button" : "div";
 				return `<${tag} type="button" class="whatsapp-card__row${r.action || r.onClick ? " whatsapp-card__row--click" : ""}"${click}>
 					<span class="whatsapp-card__row-main">
 						${r.dot === false || !r.tone ? "" : `<span class="whatsapp-card__dot whatsapp-card__dot--${tone_of(r.tone)}" aria-hidden="true"></span>`}
-						${r.avatar ? `<span class="whatsapp-card__av" aria-hidden="true">${esc(r.avatar)}</span>` : ""}
+						${r.avatar ? `<span class="whatsapp-card__av" aria-hidden="true">${escape_html(r.avatar)}</span>` : ""}
 						<span class="whatsapp-card__row-text">
-							<span class="whatsapp-card__row-label">${esc(r.label)}</span>
-							${r.sub ? `<span class="whatsapp-card__row-sub">${esc(r.sub)}</span>` : ""}
+							<span class="whatsapp-card__row-label">${escape_html(r.label)}</span>
+							${r.sub ? `<span class="whatsapp-card__row-sub">${escape_html(r.sub)}</span>` : ""}
 						</span>
 					</span>
 					${r.bar != null ? `<span class="whatsapp-card__bar"><span class="whatsapp-card__bar-fill whatsapp-card__bar-fill--${tone_of(r.tone)}" style="inline-size:${Math.max(0, Math.min(100, Number(r.bar) || 0)).toFixed(2)}%"></span></span>` : ""}
-					${r.value != null ? `<span class="whatsapp-card__row-value whatsapp-kit-tabular" dir="ltr">${esc(r.value)}</span>` : ""}
-					${r.badge ? `<span class="whatsapp-badge whatsapp-badge--${tone_of(r.badgeTone || r.tone)}">${esc(r.badge)}</span>` : ""}
+					${r.value != null ? `<span class="whatsapp-card__row-value whatsapp-kit-tabular" dir="ltr">${escape_html(r.value)}</span>` : ""}
+					${r.badge ? `<span class="whatsapp-badge whatsapp-badge--${tone_of(r.badgeTone || r.tone)}">${escape_html(r.badge)}</span>` : ""}
 				</${tag}>`;
 			})
 			.join("");
 		const span = cint(card.span) > 1 ? ` style="--whatsapp-card-span:${cint(card.span)}"` : "";
 		return `<div class="whatsapp-card whatsapp-card--panel"${span}>
-			${card.label || card.note ? `<div class="whatsapp-card__phead"><span class="whatsapp-card__ptitle">${esc(card.label)}</span>${card.note ? `<span class="whatsapp-card__note">${esc(card.note)}</span>` : ""}</div>` : ""}
+			${card.label || card.note ? `<div class="whatsapp-card__phead"><span class="whatsapp-card__ptitle">${escape_html(card.label)}</span>${card.note ? `<span class="whatsapp-card__note">${escape_html(card.note)}</span>` : ""}</div>` : ""}
 			<div class="whatsapp-card__rows">${rows}</div>
-			${card.foot ? `<div class="whatsapp-card__pfoot">${esc(card.foot)}</div>` : ""}
+			${card.foot ? `<div class="whatsapp-card__pfoot">${escape_html(card.foot)}</div>` : ""}
 		</div>`;
 	}
 
@@ -184,21 +184,21 @@ whatsapp.ui.Cards = class Cards {
 		const tone = tone_of(card.tone || "warn");
 		const cta =
 			card.cta && (card.action || card.onClick)
-				? `<button type="button" class="whatsapp-button whatsapp-button--${card.ctaStyle === "solid" ? "primary" : "secondary"} whatsapp-button--sm whatsapp-card__cta" data-action="${esc(card.action || "")}" data-key="${esc(card.key || "")}">${esc(card.cta)}</button>`
+				? `<button type="button" class="whatsapp-button whatsapp-button--${card.ctaStyle === "solid" ? "primary" : "secondary"} whatsapp-button--sm whatsapp-card__cta" data-action="${escape_html(card.action || "")}" data-key="${escape_html(card.key || "")}">${escape_html(card.cta)}</button>`
 				: "";
 		const span = cint(card.span) > 1 ? ` style="--whatsapp-card-span:${cint(card.span)}"` : "";
 		return `<div class="whatsapp-card whatsapp-card--alert whatsapp-card--${tone}" role="${tone === "danger" ? "alert" : "status"}"${span}>
 			<span class="whatsapp-card__tile whatsapp-card__tile--${tone}" aria-hidden="true">${ico(card.icon || (tone === "danger" ? "error" : tone === "ok" ? "check" : "warn"), "sm")}</span>
 			<span class="whatsapp-card__body">
-				<b class="whatsapp-card__alert-label">${esc(card.label)}</b>
-				${card.note ? `<span class="whatsapp-card__note">${esc(card.note)}</span>` : ""}
+				<b class="whatsapp-card__alert-label">${escape_html(card.label)}</b>
+				${card.note ? `<span class="whatsapp-card__note">${escape_html(card.note)}</span>` : ""}
 			</span>
 			${cta}
 		</div>`;
 	}
 
 	/** A card or a row names its handler; the component never holds a closure per card. */
-	bind() {
+	bind_card_actions() {
 		const run = (e) => {
 			const $t = $(e.currentTarget);
 			const name = $t.attr("data-action");

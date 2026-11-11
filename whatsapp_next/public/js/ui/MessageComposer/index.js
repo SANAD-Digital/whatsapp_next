@@ -120,12 +120,12 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 		this.types = ((this.field_map[this.opts.type_field] || {}).options || "").split("\n").filter(Boolean);
 	}
 
-	rows() {
+	sorted_message_rows() {
 		return (this.frm.doc[this.fieldname] || []).slice().sort((a, b) => cint(a.idx) - cint(b.idx));
 	}
 
 	row_of(name) {
-		return this.rows().find((r) => r.name === name) || null;
+		return this.sorted_message_rows().find((r) => r.name === name) || null;
 	}
 
 	can_edit() {
@@ -161,7 +161,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 		this.$rail = this.$el.find(".whatsapp-kit-message-composer__rail");
 		this.$editor = this.$el.find(".whatsapp-kit-message-composer__editor");
 		this.$actions = this.$el.find(".whatsapp-kit-message-composer__head-actions");
-		const first = this.rows()[0];
+		const first = this.sorted_message_rows()[0];
 		this.active = first ? first.name : null;
 		this.render();
 	}
@@ -169,7 +169,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 	// ---- the rail: which message is being written ---------------------------------------------
 
 	render() {
-		const rows = this.rows();
+		const rows = this.sorted_message_rows();
 		if (!rows.some((r) => r.name === this.active)) this.active = rows.length ? rows[0].name : null;
 		this.$el.find(".whatsapp-kit-message-composer__count").text(ui.plural(rows.length, { one: __("{0} message"), other: __("{0} messages") }));
 		this.render_head_actions();
@@ -190,14 +190,14 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 	 * only moment the writer is thinking about it — and the same list answers "change this one".
 	 */
 	add_button($host, cls) {
-		const full = this.opts.max && this.rows().length >= cint(this.opts.max);
+		const full = this.opts.max && this.sorted_message_rows().length >= cint(this.opts.max);
 		const $wrap = $('<span class="whatsapp-kit-message-composer__addwrap"></span>').appendTo($host);
 		const $btn = $(`<button type="button" class="${cls}" aria-haspopup="menu" aria-expanded="false">${ui.icon("es-line-add", "xs")}<span>${ui.escape(__("Add message"))}</span>${ui.icon("es-line-down", "xs")}</button>`)
 			.prop("disabled", !!full)
 			.attr("title", full ? __("This record may carry {0} messages.", [ui.format_int(this.opts.max)]) : __("Choose what the next message is"))
 			.on("click", (e) => {
 				e.stopPropagation();
-				this.open_type_menu($wrap, $btn, null, (type) => this.add(type));
+				this.open_type_menu($wrap, $btn, null, (type) => this.add_message(type));
 			})
 			.appendTo($wrap);
 		return $btn;
@@ -211,7 +211,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 				state: "empty",
 				size: "sm",
 				title: this.opts.empty_text || __("No message yet"),
-				action: this.can_edit() ? { label: __("Add the first message"), onclick: () => this.add() } : undefined,
+				action: this.can_edit() ? { label: __("Add the first message"), onclick: () => this.add_message() } : undefined,
 			});
 			return;
 		}
@@ -246,10 +246,10 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 							handler();
 						})
 						.appendTo($acts);
-				btn("es-line-up", __("Move up"), index === 0, () => this.move(row, -1));
-				btn("es-line-down", __("Move down"), index === rows.length - 1, () => this.move(row, 1));
+				btn("es-line-up", __("Move up"), index === 0, () => this.move_message(row, -1));
+				btn("es-line-down", __("Move down"), index === rows.length - 1, () => this.move_message(row, 1));
 				btn("es-line-duplicate", __("Duplicate"), false, () => this.duplicate(row));
-				btn("es-line-delete", __("Delete"), false, () => this.remove(row));
+				btn("es-line-delete", __("Delete"), false, () => this.remove_message(row));
 			}
 			$list.append($item);
 			if (this.opts.delay_field && index < rows.length - 1) $list.append(this.rail_delay(rows[index + 1]));
@@ -271,7 +271,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 
 	select(name) {
 		this.active = name;
-		this.render_rail(this.rows());
+		this.render_rail(this.sorted_message_rows());
 		this.render_editor();
 		window.setTimeout(() => this.$editor.find("textarea, input, select").first().trigger("focus"), 30);
 	}
@@ -303,7 +303,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 		}
 		this.render_fields($form, row, type);
 		this.render_delay($form, row);
-		this.preview(row);
+		this.render_message_preview(row);
 	}
 
 	/**
@@ -411,13 +411,13 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 		const controls = {};
 		this.controls.set(row.name, controls);
 
-		primary.forEach((fieldname) => this.field(  $form, row, fieldname, controls));
+		primary.forEach((fieldname) => this.render_field_control(  $form, row, fieldname, controls));
 		if (!rest.length) return;
 		const $more = $(`<details class="whatsapp-kit-message-composer__more"><summary>${ui.escape(__("More options"))}</summary></details>`).appendTo($form);
-		rest.forEach((fieldname) => this.field($more, row, fieldname, controls));
+		rest.forEach((fieldname) => this.render_field_control($more, row, fieldname, controls));
 	}
 
-	field($host, row, fieldname, controls) {
+	render_field_control($host, row, fieldname, controls) {
 		if (LIST_FIELDS[fieldname] && this.field_map[fieldname].fieldtype === "JSON") return this.list_field($host, row, fieldname, controls);
 		const df = this.field_map[fieldname];
 		const is_body = fieldname === this.opts.body_field || (df.fieldtype === "Small Text" && fieldname === "caption");
@@ -567,7 +567,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 	/** The wait before this message, written as a sentence under the editor. */
 	render_delay($form, row) {
 		if (!this.opts.delay_field) return;
-		const rows = this.rows();
+		const rows = this.sorted_message_rows();
 		if (rows.findIndex((r) => r.name === row.name) === 0) return; // the first message waits for nothing
 		const seconds = cint(row[this.opts.delay_field]);
 		const $line = $(`<div class="whatsapp-kit-message-composer__delayline">
@@ -636,14 +636,14 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 	}
 
 	touch(row) {
-		this.render_rail(this.rows());
-		this.debounced_preview = this.debounced_preview || ui.debounce((r) => this.preview(r), this.opts.debounce);
+		this.render_rail(this.sorted_message_rows());
+		this.debounced_preview = this.debounced_preview || ui.debounce((r) => this.render_message_preview(r), this.opts.debounce);
 		this.debounced_preview(row);
 	}
 
 	// ---- the preview --------------------------------------------------------------------------
 
-	preview(row) {
+	render_message_preview(row) {
 		const $chat = this.$editor.find(".whatsapp-kit-message-composer__chat");
 		if (!$chat.length) return;
 		this.draw_bubble($chat, this.local_preview(row));
@@ -739,7 +739,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 			.call(this.opts.variables.method, this.opts.variables.args ? this.opts.variables.args(this.frm) : {}, { silent: true })
 			.then((list) => {
 				this.variables = list || [];
-				this.render_rail(this.rows()); // the labels the rail prints arrive with them
+				this.render_rail(this.sorted_message_rows()); // the labels the rail prints arrive with them
 				return this.variables;
 			})
 			.catch(() => []);
@@ -762,9 +762,9 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 		d.show();
 	}
 
-	add(type) {
+	add_message(type) {
 		if (!this.can_edit()) return;
-		if (this.opts.max && this.rows().length >= cint(this.opts.max)) return;
+		if (this.opts.max && this.sorted_message_rows().length >= cint(this.opts.max)) return;
 		const row = this.frm.add_child(this.fieldname, { [this.opts.type_field]: type || this.types[0] || "Text" });
 		this.frm.refresh_field(this.fieldname);
 		this.active = row.name;
@@ -783,9 +783,9 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 		ui.announce(__("Message duplicated"));
 	}
 
-	remove(row) {
+	remove_message(row) {
 		if (!this.can_edit()) return;
-		const rows = this.rows();
+		const rows = this.sorted_message_rows();
 		const doit = () => {
 			this.frm.doc[this.fieldname] = rows.filter((r) => r.name !== row.name);
 			this.frm.doc[this.fieldname].forEach((r, i) => (r.idx = i + 1));
@@ -796,7 +796,7 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 			ui.announce(__("Message removed"));
 		};
 		if (this.problem_of(row) === __("The text is empty") || this.summary_of(row) === __("Nothing to send yet")) return doit();
-		whatsapp.ui.ConfirmDialog.ask({
+		whatsapp.ui.ConfirmDialog.ask_for_confirmation({
 			title: __("Remove message {0}?", [ui.format_int(rows.findIndex((r) => r.name === row.name) + 1)]),
 			message: this.summary_of(row),
 			danger: true,
@@ -807,9 +807,9 @@ whatsapp.ui.MessageComposer = class MessageComposer {
 			.catch(() => {});
 	}
 
-	move(row, delta) {
+	move_message(row, delta) {
 		if (!this.can_edit()) return;
-		const rows = this.rows();
+		const rows = this.sorted_message_rows();
 		const from = rows.findIndex((r) => r.name === row.name);
 		const to = from + delta;
 		if (to < 0 || to >= rows.length) return;

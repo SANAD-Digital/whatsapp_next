@@ -49,7 +49,7 @@ Number columns are placed by their fieldtype, over any `align` the caller passes
 reads the same (`ui.num_align`): **Int in the middle; Float, Currency and Percent at the end** —
 the left in Arabic, the right in English. A computed column says what it shows with `fieldtype`.
 Methods: `refresh()`, `set_columns(cols)`, `get_selected()`, `expand_row(name)`, `destroy()`;
-static `DataList.format(type, value, df, doc, display, doctype)`. Helper: `whatsapp.ui.initials(text)`.
+static `DataList.format_cell_value(type, value, df, doc, display, doctype)`. Helper: `whatsapp.ui.initials(text)`.
 Keep every rendered field in `listview_settings.add_fields`.
 
 Page mode (a custom page with no list view): pass `wrapper` (and `doctype` for labels) instead of

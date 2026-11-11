@@ -19,7 +19,7 @@
 	const DOCTYPE_VIEWS = ["List", "Form", "Tree", "Report", "dashboard-view", "Kanban", "Calendar", "Gantt", "Image", "Inbox"];
 	let checking = false;
 
-	const boot = () => frappe.boot.whatsapp_next || {};
+	const get_app_boot_info = () => frappe.boot.whatsapp_next || {};
 
 	/** Whether `route` is one of this product's screens: its Pages, its workspaces, its DocTypes. */
 	function is_ours(route) {
@@ -33,7 +33,7 @@
 	/** What stays open during the setup: the Settings form, for whoever may set the product up. */
 	function allowed_during_setup(route) {
 		const [head, name] = route || [];
-		return !!boot().can_setup && head === "Form" && name === "WhatsApp Settings";
+		return !!get_app_boot_info().can_setup && head === "Form" && name === "WhatsApp Settings";
 	}
 
 	/** The state now, not at login: `{needs_setup, can_setup}`; the login's answer when the call fails. */
@@ -41,18 +41,18 @@
 		return frappe
 			.xcall("whatsapp_next.api.v1.onboarding.get_status")
 			.then((r) => ({ needs_setup: !!(r && r.needs_setup), can_setup: !!(r && r.can_setup) }))
-			.catch(() => ({ needs_setup: !!boot().setup_redirect, can_setup: !!boot().can_setup }));
+			.catch(() => ({ needs_setup: !!get_app_boot_info().setup_redirect, can_setup: !!get_app_boot_info().can_setup }));
 	}
 
 	/** Send the person to the setup when the product needs it; resolves `true` when it did. */
 	function redirect_to_wizard(route = frappe.get_route()) {
-		if (!boot().setup_redirect || checking || !is_ours(route) || allowed_during_setup(route)) return Promise.resolve(false);
+		if (!get_app_boot_info().setup_redirect || checking || !is_ours(route) || allowed_during_setup(route)) return Promise.resolve(false);
 		checking = true;
 		return current_state()
 			.then(({ needs_setup, can_setup }) => {
 				if (!needs_setup) {
 					// finished since the login: stop asking for the rest of this session
-					frappe.boot.whatsapp_next = Object.assign({}, boot(), { setup_redirect: false });
+					frappe.boot.whatsapp_next = Object.assign({}, get_app_boot_info(), { setup_redirect: false });
 					return false;
 				}
 				// the person may have moved on while the state was read

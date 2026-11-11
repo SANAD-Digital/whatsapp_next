@@ -62,7 +62,7 @@ from the docfield: `link`, `number` (Int/Float/Currency/Percent), `date` (Date/D
 - `set_columns(columns)`, `set_visible_columns(fieldnames, {save = true})`, `reset_columns()`,
   `available_columns()`, `visible_columns()` — column management (used by FilterBar).
 - `set_group_by(fields)`, `group_options()`, `set_all_folded(bool)` — grouping.
-- `toggle_pin(fieldname)`, `expand_row(name)`, `sort(fieldname)`.
+- `toggle_pin(fieldname)`, `expand_row(name)`, `sort_by_column(fieldname)`.
 - `get_selected()`, `clear_selection()`, `set_loading(bool)`, `render()`, `destroy()`.
 - `static format(type, value, df, doc, display?, doctype?)` — typed cell HTML for callers.
 

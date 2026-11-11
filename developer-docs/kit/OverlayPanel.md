@@ -66,7 +66,7 @@ resolving `false` (or returning `false`) keeps the panel open; a rejection shows
 
 - `show()` / `hide()` / `destroy()`; `static open(opts)` = `new OverlayPanel(opts).show()`.
 - `get_values()`, `get_value(key)`, `set_value(key, value, display?)`.
-- `field(key)` — entry `{df, $el, $input?, control?, link?, get?, set_rows?, reload?, incomplete?}`.
+- `get_field_entry(key)` — entry `{df, $el, $input?, control?, link?, get?, set_rows?, reload?, incomplete?}`.
 - `validate()` → `[{key, label}]` missing; `set_error(key, text)`, `clear_error(key)`,
   `show_error(err)`, `focus_field(key)`.
 - `is_dirty()`, `mark_clean()`, `set_badge(badge)`, `set_title(title, subtitle?)`,

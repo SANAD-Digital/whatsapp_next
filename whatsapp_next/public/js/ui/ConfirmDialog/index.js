@@ -22,10 +22,10 @@ whatsapp.ui.ConfirmDialog = class ConfirmDialog {
 	 */
 	constructor(opts = {}) {
 		this.opts = Object.assign({ danger: false, impact: [] }, opts);
-		this.make();
+		this.build_dialog();
 	}
 
-	make() {
+	build_dialog() {
 		const o = this.opts;
 		const fields = [{ fieldtype: "HTML", fieldname: "impact" }];
 		if (o.reason_field) {
@@ -119,7 +119,7 @@ whatsapp.ui.ConfirmDialog = class ConfirmDialog {
 	}
 
 	/** Promise-style shortcut: `await whatsapp.ui.ConfirmDialog.ask({...})` → `{reason}`; rejects on cancel. */
-	static ask(opts) {
+	static ask_for_confirmation(opts) {
 		return new ConfirmDialog(opts).show();
 	}
 };

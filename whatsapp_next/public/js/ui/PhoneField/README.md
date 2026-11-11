@@ -44,9 +44,9 @@ phone.example();     // → "+971 501 234 567"
 new whatsapp.ui.PhoneField({ control: frm.get_field("mobile_no"), on_change: ({ valid }) => … });
 
 // Helpers
-whatsapp.ui.PhoneField.normalize("00966 50 123 4567");   // → { phone_e164: "+966501234567", valid: true }
+whatsapp.ui.PhoneField.normalize_phone_number("00966 50 123 4567");   // → { phone_e164: "+966501234567", valid: true }
 whatsapp.ui.PhoneField.format_display("+966559021177");  // → "+966 559 021 177"
-whatsapp.ui.PhoneField.mask("559021177", country);       // → "559 021 177"
+whatsapp.ui.PhoneField.group_national_digits("559021177", country);       // → "559 021 177"
 whatsapp.ui.PhoneField.example("AE");                    // → "+971 501 234 567"
 whatsapp.ui.PhoneField.example(null, { format: false }); // → "+966501234567"
 whatsapp.ui.PhoneField.countries;                        // [{iso, name, dial, len, starts, groups}, …]
