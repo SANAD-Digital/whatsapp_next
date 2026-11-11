@@ -114,13 +114,7 @@ def sync_device_contacts(device: str, user: str | None = None) -> dict[str, int]
 			# a linked number keeps its contact's name; an unlinked one takes the saved name
 			if saved and not row.contact and saved != row.display_name:
 				values["display_name"] = saved
-			# decided before the write: `set_value` adds `modified` to the dict it is given
-			changed = bool(set(values) - {"synced_device", "synced_at"}) or row.synced_device != device
-			frappe.db.set_value("WhatsApp Number", key, values, update_modified=changed)
-			if changed:
-				stats.updated += 1
-			else:
-				stats.unchanged += 1
+			_write(key, row, values, device, stats)
 		if system.get(key) and not (row and row.contact):
 			to_link.append((key, system[key]))
 	_sync_groups(device, stats, now)
@@ -183,12 +177,18 @@ def _sync_groups(device: str, stats: SyncStats, now) -> None:
 			values["saved_name"] = name
 		if name and name != row.display_name:
 			values["display_name"] = name
-		changed = bool(set(values) - {"synced_device", "synced_at"}) or row.synced_device != device
-		frappe.db.set_value("WhatsApp Number", key, values, update_modified=changed)
-		if changed:
-			stats.updated += 1
-		else:
-			stats.unchanged += 1
+		_write(key, row, values, device, stats)
+
+
+def _write(key: str, row, values: dict, device: str, stats) -> None:
+	"""Write a synced number's `values`; it counts as updated only when more than the sync stamp
+	changed (decided before the write: `set_value` adds `modified` to the dict it is given)."""
+	changed = bool(set(values) - {"synced_device", "synced_at"}) or row.synced_device != device
+	frappe.db.set_value("WhatsApp Number", key, values, update_modified=changed)
+	if changed:
+		stats.updated += 1
+	else:
+		stats.unchanged += 1
 
 
 def run_sync_job(device: str, user: str) -> dict[str, int]:

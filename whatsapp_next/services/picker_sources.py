@@ -193,30 +193,21 @@ def preview(source: dict[str, Any] | str) -> dict[str, Any]:
 	name_field = source.get("name_fieldname") or meta.get_title_field() or "name"
 	if name_field != "name" and not meta.has_field(name_field):
 		name_field = "name"
-	if source.get("phone_source") == "Linked Contact":
-		field = source.get("contact_fieldname")
-		if not (field and meta.has_field(field)):
-			return {"total": total, "with_number": 0, "sample": []}
-		rows = frappe.get_all(
-			document_type,
-			filters=[*filters, [document_type, field, "is", "set"]],
-			fields=[f"`{name_field}` as label", f"`{field}` as contact"],
-			limit_page_length=500,
-		)
+	linked = source.get("phone_source") == "Linked Contact"
+	field = source.get("contact_fieldname" if linked else "phone_fieldname")
+	if not (field and meta.has_field(field)):
+		return {"total": total, "with_number": 0, "sample": []}
+	rows = frappe.get_all(
+		document_type,
+		filters=[*filters, [document_type, field, "is", "set"]],
+		fields=[f"`{name_field}` as label", f"`{field}` as {'contact' if linked else 'phone'}"],
+		limit_page_length=500,
+	)
+	if linked:
 		phones = _phones_for(sorted({r.contact for r in rows}))
 		for r in rows:
 			first = next(iter(phones.get(r.contact) or []), None)
 			r.phone = first["phone"] if first else None
-	else:
-		field = source.get("phone_fieldname")
-		if not (field and meta.has_field(field)):
-			return {"total": total, "with_number": 0, "sample": []}
-		rows = frappe.get_all(
-			document_type,
-			filters=[*filters, [document_type, field, "is", "set"]],
-			fields=[f"`{name_field}` as label", f"`{field}` as phone"],
-			limit_page_length=500,
-		)
 	usable = [r for r in rows if r.get("phone") and normalize(r.phone)]
 	# counted on at most 500 records: enough to say whether the choice works, cheap on a big table
 	with_number = (

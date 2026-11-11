@@ -53,12 +53,11 @@ const SEED = [
 let CATALOG = SEED.slice();
 let catalog_promise = null;
 
-/** Names a region in the reader's language; falls back to the ISO code where the browser cannot. */
-const region_name = (() => {
+/** A namer of regions in `locales`; it answers with the ISO code where the browser cannot. */
+function region_namer(locales) {
 	let dn = null;
 	try {
-		const lang = (frappe.boot && frappe.boot.lang) || document.documentElement.lang || "en";
-		dn = new Intl.DisplayNames([lang, "en"], { type: "region" });
+		dn = new Intl.DisplayNames(locales, { type: "region" });
 	} catch (e) {
 		dn = null;
 	}
@@ -69,7 +68,10 @@ const region_name = (() => {
 			return iso;
 		}
 	};
-})();
+}
+
+/** Names a region in the reader's language. */
+const region_name = region_namer([(frappe.boot && frappe.boot.lang) || document.documentElement.lang || "en", "en"]);
 
 /**
  * The grouping a region writes its numbers in when they stand beside a dial code, read straight
@@ -85,21 +87,7 @@ function groups_from_example(international) {
 }
 
 /** A region's English name, which is how a Country record is named on the site. */
-const english_name = (() => {
-	let dn = null;
-	try {
-		dn = new Intl.DisplayNames(["en"], { type: "region" });
-	} catch (e) {
-		dn = null;
-	}
-	return (iso) => {
-		try {
-			return (dn && dn.of(iso)) || iso;
-		} catch (e) {
-			return iso;
-		}
-	};
-})();
+const english_name = region_namer(["en"]);
 
 /** Decorate a server row with what the browser can work out for itself. */
 const decorate = (row) =>
