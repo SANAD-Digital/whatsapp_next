@@ -226,9 +226,9 @@ def ensure_function(key: str, *, status: str = "Active") -> str:
 	name, script = FUNCTIONS[key]
 	ensure_script(name, script)
 	if not frappe.db.exists("WhatsApp Function", key):
-		functions_catalog.install(name)
+		functions_catalog.install_function_from_script(name)
 	elif frappe.db.get_value("WhatsApp Function", key, "manifest_checksum") != _checksum(script):
-		functions_catalog.update(key)
+		functions_catalog.update_function_from_script(key)
 	if frappe.db.get_value("WhatsApp Function", key, "status") != status:
 		frappe.db.set_value("WhatsApp Function", key, "status", status)
 	return key

@@ -70,13 +70,13 @@ class WhatsAppCommand(Document):
 		"""The normalized synonyms as a list."""
 		return [s for s in (self.synonyms or "").splitlines() if s]
 
-	def words(self) -> set[str]:
+	def get_command_words(self) -> set[str]:
 		"""`code` plus synonyms."""
 		return {self.code, *self.synonym_list()}
 
 	def check_uniqueness(self) -> None:
 		"""No word of this command may equal the `code` or a synonym of any other command."""
-		mine = self.words()
+		mine = self.get_command_words()
 		from whatsapp_next.services.command_router import help_tokens
 
 		taken = mine & help_tokens()
@@ -143,7 +143,7 @@ class WhatsAppCommand(Document):
 					keys.append(line.strip())
 			self.set(fieldname, "\n".join(keys) or None)
 
-	def spec(self) -> dict[str, Any]:
+	def get_function_header_spec(self) -> dict[str, Any]:
 		"""The header spec of the linked function (empty when it is not installed)."""
 		from whatsapp_next.services.function_runner import spec_of
 
@@ -155,7 +155,7 @@ class WhatsAppCommand(Document):
 		party types stay within `@party_types`."""
 		from whatsapp_next.services import function_header as fh
 
-		spec = self.spec()
+		spec = self.get_function_header_spec()
 		if not spec:
 			return
 		typed = {p["name"] for p in fh.typed_params(spec)}
@@ -222,7 +222,7 @@ class WhatsAppCommand(Document):
 		from whatsapp_next.services import function_header as fh
 
 		overrides = self.overrides_dict()
-		spec = self.spec()
+		spec = self.get_function_header_spec()
 		if not overrides or not spec:
 			return
 		keys = {p["name"] for p in fh.command_params(spec)} | {"language"}
@@ -256,14 +256,16 @@ class WhatsAppCommand(Document):
 			if df.fieldname in UNLOCKED_FIELDS or df.fieldtype in frappe.model.display_fieldtypes:
 				continue
 			if df.fieldtype in frappe.model.table_fields:
-				if _rows(before, df.fieldname) != _rows(self, df.fieldname):
+				if _get_table_rows_as_tuples(before, df.fieldname) != _get_table_rows_as_tuples(
+					self, df.fieldname
+				):
 					changed.add(df.fieldname)
 			elif field_changed(before, self, df.fieldname):
 				changed.add(df.fieldname)
 		return changed
 
 
-def _rows(doc: Document, fieldname: str) -> list[tuple]:
+def _get_table_rows_as_tuples(doc: Document, fieldname: str) -> list[tuple]:
 	out = []
 	for row in doc.get(fieldname) or []:
 		fields = [

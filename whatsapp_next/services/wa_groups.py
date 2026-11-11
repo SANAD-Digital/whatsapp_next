@@ -72,7 +72,7 @@ def members_from(
 	return [{"phone_e164": k, "display_name": v} for k, v in out.items()]
 
 
-def create(
+def create_whatsapp_group(
 	device: str,
 	name: str,
 	members: list[str],
@@ -129,12 +129,12 @@ def create(
 		from whatsapp_next.services import permissions
 
 		saved = permissions.add_group_to_contact(contact, jid, user=user)
-	audit.log(
+	audit.record_audit_entry(
 		"WhatsApp Group Created",
 		reference=("WhatsApp Number", jid),
 		target=("Contact", contact) if contact else None,
 		count=len(keys),
-		details={"device": device, "statuses": _tally(created.members)},
+		details={"device": device, "statuses": _count_members_by_status(created.members)},
 		user=user,
 	)
 	return {
@@ -172,7 +172,7 @@ def _save_number(jid: str, name: str, device: str) -> None:
 		).insert(ignore_permissions=True)
 
 
-def _tally(members) -> dict[str, int]:
+def _count_members_by_status(members) -> dict[str, int]:
 	out: dict[str, int] = {}
 	for m in members:
 		out[m.status] = out.get(m.status, 0) + 1

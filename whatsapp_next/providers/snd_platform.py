@@ -136,7 +136,7 @@ def _language() -> str:
 	return lang if lang in ("ar", "en") else "en"
 
 
-def _digits(value: str | None) -> str | None:
+def _phone_to_platform_digits(value: str | None) -> str | None:
 	"""Provider boundary form of a number: digits without `+`; JIDs unchanged (platform PB-05)."""
 	if not value:
 		return None
@@ -172,7 +172,7 @@ def _platform_zone():
 		return None
 
 
-def _dt(value: Any) -> datetime | None:
+def _platform_time_to_site_datetime(value: Any) -> datetime | None:
 	"""A time from the platform as the site's wall clock. Unix times and ISO strings that carry a
 	zone are exact; a zoneless ISO string (the platform's `occurred_at`, its Datetime fields) is
 	the platform's wall clock (`_platform_zone`)."""
@@ -188,24 +188,26 @@ def _dt(value: Any) -> datetime | None:
 	text = str(value).strip()
 	try:
 		parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
-		return _site_time(parsed) if parsed.tzinfo is not None else _placed(parsed)
+		return (
+			_site_time(parsed) if parsed.tzinfo is not None else _naive_platform_time_to_site_datetime(parsed)
+		)
 	except ValueError:
 		pass
 	for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S"):
 		try:
-			return _placed(datetime.strptime(text.replace("Z", ""), fmt))
+			return _naive_platform_time_to_site_datetime(datetime.strptime(text.replace("Z", ""), fmt))
 		except ValueError:
 			continue
 	return None
 
 
-def _placed(naive: datetime) -> datetime:
+def _naive_platform_time_to_site_datetime(naive: datetime) -> datetime:
 	"""A zoneless platform time on the site's clock, when the platform's zone is known."""
 	zone = _platform_zone()
 	return _site_time(naive.replace(tzinfo=zone)) if zone else naive
 
 
-def _d(value: Any) -> date | None:
+def _platform_value_to_date(value: Any) -> date | None:
 	"""A calendar date. A bare `YYYY-MM-DD` is a day, not an instant: it is read as written (it
 	used to come back empty, which is why the subscription's start and end never showed)."""
 	if isinstance(value, date) and not isinstance(value, datetime):
@@ -215,7 +217,7 @@ def _d(value: Any) -> date | None:
 			return date.fromisoformat(value.strip())
 		except ValueError:
 			pass
-	dt = _dt(value)
+	dt = _platform_time_to_site_datetime(value)
 	return dt.date() if dt else None
 
 
@@ -262,7 +264,7 @@ class SndPlatformProvider(BaseProvider):
 			headers["X-SND-API-Secret"] = creds["customer_api_secret"]
 		return headers
 
-	def _url(self, endpoint: str, *, v1: bool = False) -> str:
+	def _build_endpoint_url(self, endpoint: str, *, v1: bool = False) -> str:
 		if not self.settings.base_url:
 			raise pex.AuthError("Platform base URL is not configured", code="NOT_CONFIGURED")
 		return self.settings.base_url.rstrip("/") + (V1_PREFIX if v1 else API_PREFIX) + endpoint
@@ -283,7 +285,7 @@ class SndPlatformProvider(BaseProvider):
 		still pending), returned as it is instead of raised."""
 		if not guest and not self.settings.credentials.get("customer_api_key"):
 			raise pex.AuthError("Customer API Key is not configured", code="AUTH_KEY_MISSING")
-		url = self._url(endpoint, v1=v1)
+		url = self._build_endpoint_url(endpoint, v1=v1)
 		headers = (
 			{"Accept": "application/json", "Content-Type": "application/json"} if guest else self._headers()
 		)
@@ -310,9 +312,9 @@ class SndPlatformProvider(BaseProvider):
 				f"Platform request error: {exc.__class__.__name__}", code="REQUEST"
 			) from exc
 		self._latency_ms = int((time.monotonic() - started) * 1000)
-		return self._unwrap(response, answer_not_ok=answer_not_ok)
+		return self._unwrap_platform_response(response, answer_not_ok=answer_not_ok)
 
-	def _unwrap(self, response: requests.Response, *, answer_not_ok: bool = False) -> dict:
+	def _unwrap_platform_response(self, response: requests.Response, *, answer_not_ok: bool = False) -> dict:
 		status = response.status_code
 		try:
 			payload = response.json() if response.content else {}
@@ -465,8 +467,8 @@ class SndPlatformProvider(BaseProvider):
 				messages_per_minute=int(sub.get("messages_per_minute") or 0),
 				device_limit=int(sub.get("device_limit") or 0),
 				devices_used=int(sub.get("devices_used") or 0),
-				start_date=_d(sub.get("start_date")),
-				end_date=_d(sub.get("end_date")),
+				start_date=_platform_value_to_date(sub.get("start_date")),
+				end_date=_platform_value_to_date(sub.get("end_date")),
 				features=dict(data.get("features") or {}),
 				webhook_events=dict(data.get("webhook_events") or {}),
 				wallet_balance=(data.get("wallet") or {}).get("balance"),
@@ -491,8 +493,8 @@ class SndPlatformProvider(BaseProvider):
 			messages_per_minute=int(sub.get("messages_per_minute") or 0),
 			device_limit=int(sub.get("device_limit") or 0),
 			devices_used=int(sub.get("devices_used") or 0),
-			start_date=_d(sub.get("start_date")),
-			end_date=_d(sub.get("end_date")),
+			start_date=_platform_value_to_date(sub.get("start_date")),
+			end_date=_platform_value_to_date(sub.get("end_date")),
 			features=dict(sub.get("features") or {}),
 			wallet_balance=wallet.get("balance"),
 			wallet_currency=wallet.get("currency"),
@@ -543,7 +545,7 @@ class SndPlatformProvider(BaseProvider):
 		body: dict[str, Any] = {
 			"full_name": full_name,
 			"email": email or "",
-			"mobile_no": _digits(mobile_e164),
+			"mobile_no": _phone_to_platform_digits(mobile_e164),
 			"plan_code": plan_code,
 		}
 		# Older platforms reject an unknown argument, so it is sent only when used.
@@ -655,7 +657,7 @@ class SndPlatformProvider(BaseProvider):
 		if email:
 			body["email"] = email
 		if mobile_e164:
-			body["mobile_no"] = _digits(mobile_e164)
+			body["mobile_no"] = _phone_to_platform_digits(mobile_e164)
 		return self._request("POST", "validate_coupon", v1=True, guest=True, body=body)
 
 	def get_referral_coupon(self) -> dict:
@@ -740,11 +742,11 @@ class SndPlatformProvider(BaseProvider):
 			phone_e164=("+" + phone) if phone and str(phone).isdigit() else phone,
 			status=status,
 			wa_device_id=row.get("wa_device_id"),
-			last_seen=_dt(row.get("last_seen")),
+			last_seen=_platform_time_to_site_datetime(row.get("last_seen")),
 			webhook_registered=bool(row.get("wa_webhook_id") or row.get("wa_webhook_registered_at")),
 			raw_status=raw or None,
 			pairing_mode=row.get("pairing_mode"),
-			last_status_change_at=_dt(row.get("last_status_change_at")),
+			last_status_change_at=_platform_time_to_site_datetime(row.get("last_status_change_at")),
 			last_status_reason=row.get("last_status_reason"),
 		)
 
@@ -758,7 +760,7 @@ class SndPlatformProvider(BaseProvider):
 			"create_device_api",
 			body={
 				"device_name": device_name,
-				"phone_number": _digits(phone_e164) or "",
+				"phone_number": _phone_to_platform_digits(phone_e164) or "",
 				"pairing_mode": pairing_mode,
 			},
 		)
@@ -767,7 +769,7 @@ class SndPlatformProvider(BaseProvider):
 				**data,
 				"device": data.get("device"),
 				"device_name": device_name,
-				"phone_number": _digits(phone_e164),
+				"phone_number": _phone_to_platform_digits(phone_e164),
 			}
 		)
 
@@ -790,7 +792,7 @@ class SndPlatformProvider(BaseProvider):
 		if device_name is not None:
 			body["device_name"] = device_name
 		if phone_e164 is not None:
-			body["phone_number"] = _digits(phone_e164)
+			body["phone_number"] = _phone_to_platform_digits(phone_e164)
 		try:
 			data = self._request("POST", "update_device_api", v1=True, body=body)
 		except pex.NotFoundError as exc:
@@ -799,8 +801,10 @@ class SndPlatformProvider(BaseProvider):
 
 	def _pairing(self, data: dict, mode: str) -> PairingPayload:
 		expires_in = int(data.get("qr_expires_in") or 60)
-		generated_at = _dt(data.get("qr_generated_at")) or datetime.now()
-		expires_at = _dt(data.get("qr_expires_at")) or (generated_at + timedelta(seconds=expires_in))
+		generated_at = _platform_time_to_site_datetime(data.get("qr_generated_at")) or datetime.now()
+		expires_at = _platform_time_to_site_datetime(data.get("qr_expires_at")) or (
+			generated_at + timedelta(seconds=expires_in)
+		)
 		phone = data.get("phone_number")
 		return PairingPayload(
 			mode=mode,
@@ -883,7 +887,7 @@ class SndPlatformProvider(BaseProvider):
 		if message.recipient_type == "Group":
 			payload["group_id"] = message.jid
 		else:
-			payload["recipient_no"] = _digits(message.phone_e164)
+			payload["recipient_no"] = _phone_to_platform_digits(message.phone_e164)
 		if message.message_type in ("Buttons", "List"):
 			payload["message_body"] = message.body or ""
 			payload["interactive"] = message.interactive or {}
@@ -998,9 +1002,9 @@ class SndPlatformProvider(BaseProvider):
 				attempt_count=int(s.get("attempt_count") or 0),
 				provider_message_id=s.get("provider_message_id"),
 				device=s.get("device"),
-				sent_at=_dt(s.get("sent_at")),
-				delivered_at=_dt(s.get("delivered_at")),
-				read_at=_dt(s.get("read_at")),
+				sent_at=_platform_time_to_site_datetime(s.get("sent_at")),
+				delivered_at=_platform_time_to_site_datetime(s.get("delivered_at")),
+				read_at=_platform_time_to_site_datetime(s.get("read_at")),
 				message_status=s.get("message_status"),
 			)
 			for s in data.get("statuses") or []
@@ -1102,7 +1106,7 @@ class SndPlatformProvider(BaseProvider):
 	def get_contact_profiles(
 		self, platform_device: str, numbers: list[str], known_pictures: dict[str, str] | None = None
 	) -> list[ContactProfile]:
-		def digits(n):
+		def strip_non_digits(n):
 			return "".join(ch for ch in str(n or "") if ch.isdigit())
 
 		data = self._request(
@@ -1110,18 +1114,18 @@ class SndPlatformProvider(BaseProvider):
 			"get_contact_profiles_api",
 			body={
 				"device": platform_device,
-				"numbers": [digits(n) for n in numbers],
-				"known_pictures": {digits(k): v for k, v in (known_pictures or {}).items() if v},
+				"numbers": [strip_non_digits(n) for n in numbers],
+				"known_pictures": {strip_non_digits(k): v for k, v in (known_pictures or {}).items() if v},
 			},
 		)
 		out = []
 		for row in data.get("profiles") or []:
-			if not isinstance(row, dict) or not digits(row.get("phone")):
+			if not isinstance(row, dict) or not strip_non_digits(row.get("phone")):
 				continue
 			picture = row.get("picture") if isinstance(row.get("picture"), dict) else {}
 			out.append(
 				ContactProfile(
-					phone_e164="+" + digits(row.get("phone")),
+					phone_e164="+" + strip_non_digits(row.get("phone")),
 					on_whatsapp=bool(row.get("on_whatsapp")),
 					jid=row.get("jid"),
 					about=row.get("about") or None,
@@ -1188,8 +1192,8 @@ class SndPlatformProvider(BaseProvider):
 					kind=kind,
 					from_me=bool(row.get("is_from_me")),
 					inbound=_parse_inbound(row, None),
-					counterpart_phone=_first(row.get("chat_number")),
-					original_id=_first(row.get("original_message_id")),
+					counterpart_phone=_first_non_empty_value(row.get("chat_number")),
+					original_id=_first_non_empty_value(row.get("original_message_id")),
 					raw=row,
 				)
 			)
@@ -1222,7 +1226,7 @@ class SndPlatformProvider(BaseProvider):
 			) from exc
 		with response:
 			if response.status_code != 200:
-				self._unwrap(response)  # raises the typed error
+				self._unwrap_platform_response(response)  # raises the typed error
 				raise pex.ProviderError(
 					f"Media download answered {response.status_code}", code="MEDIA_DOWNLOAD"
 				)
@@ -1254,7 +1258,7 @@ class SndPlatformProvider(BaseProvider):
 					phone_e164=("+" + str(phone)) if phone and str(phone).isdigit() else phone,
 					# the name saved in the phone's address book first, then what the person calls
 					# themselves; the platform sends each under its own key
-					name=_first(
+					name=_first_non_empty_value(
 						row.get("full_name"),
 						row.get("name"),
 						row.get("business_name"),
@@ -1270,11 +1274,11 @@ class SndPlatformProvider(BaseProvider):
 		out = []
 		for row in data.get("groups") or []:
 			# the platform passes the gateway's own keys through (`JID`, `Name`, `Participants`)
-			members = _first(row.get("participants"), row.get("Participants")) or []
+			members = _first_non_empty_value(row.get("participants"), row.get("Participants")) or []
 			out.append(
 				ProviderGroup(
-					jid=str(_first(row.get("jid"), row.get("JID"), row.get("id")) or ""),
-					name=_first(row.get("name"), row.get("Name"), row.get("subject")),
+					jid=str(_first_non_empty_value(row.get("jid"), row.get("JID"), row.get("id")) or ""),
+					name=_first_non_empty_value(row.get("name"), row.get("Name"), row.get("subject")),
 					participants_count=int(
 						row.get("participants_count") or (len(members) if isinstance(members, list) else 0)
 					),
@@ -1284,7 +1288,7 @@ class SndPlatformProvider(BaseProvider):
 
 	# ------------------------------------------------------------------ webhooks
 	@staticmethod
-	def sign(secret: str, timestamp: str, raw_body: bytes | str) -> str:
+	def sign_webhook_body(secret: str, timestamp: str, raw_body: bytes | str) -> str:
 		"""hex(HMAC-SHA256(secret, f"{timestamp}.{raw_body}")) — the platform's signing rule."""
 		body = raw_body if isinstance(raw_body, bytes) else raw_body.encode("utf-8")
 		return hmac.new(secret.encode("utf-8"), f"{timestamp}.".encode() + body, hashlib.sha256).hexdigest()
@@ -1313,7 +1317,7 @@ class SndPlatformProvider(BaseProvider):
 		# bytes, instead of failing the compare and reaching the Error Log as a server fault
 		if not SIGNATURE_RE.fullmatch(given):
 			return SignatureCheck(valid=False, fresh=fresh, event_timestamp=event_ts, reason="signature")
-		expected = self.sign(secret, timestamp, raw_body)
+		expected = self.sign_webhook_body(secret, timestamp, raw_body)
 		valid = hmac.compare_digest(expected.encode(), given.encode())
 		reason = None if valid and fresh else ("stale" if valid else "signature")
 		return SignatureCheck(valid=valid, fresh=fresh, event_timestamp=event_ts, reason=reason)
@@ -1340,10 +1344,10 @@ class SndPlatformProvider(BaseProvider):
 		# the most exact first: the gateway's own event time and the platform's Unix time are
 		# absolute; the signing time is when it was delivered; `occurred_at` has no zone at all
 		timestamp = (
-			_dt(body.get("timestamp"))
-			or _dt(body.get("occurred_at_ts"))
-			or _dt(ts_header)
-			or _dt(body.get("occurred_at"))
+			_platform_time_to_site_datetime(body.get("timestamp"))
+			or _platform_time_to_site_datetime(body.get("occurred_at_ts"))
+			or _platform_time_to_site_datetime(ts_header)
+			or _platform_time_to_site_datetime(body.get("occurred_at"))
 		)
 		platform_device = body.get("device") if isinstance(body.get("device"), str) else None
 		status = body.get("status")
@@ -1451,11 +1455,11 @@ class SndPlatformProvider(BaseProvider):
 			events=names,
 			max_retries=int(row.get("max_retries") or 3),
 			consecutive_failures=int(row.get("consecutive_failures") or 0),
-			locked_at=_dt(row.get("locked_at")),
+			locked_at=_platform_time_to_site_datetime(row.get("locked_at")),
 			lock_reason=row.get("lock_reason"),
 			last_http_status=row.get("last_http_status"),
 			lock_after_failures=row.get("lock_after_failures"),
-			unlocked_at=_dt(row.get("unlocked_at")),
+			unlocked_at=_platform_time_to_site_datetime(row.get("unlocked_at")),
 		)
 
 	def list_webhook_endpoints(self) -> list[WebhookEndpointState]:
@@ -1570,7 +1574,7 @@ _INBOUND_TYPE_MAP = {
 }
 
 
-def _first(*values):
+def _first_non_empty_value(*values):
 	for v in values:
 		if v not in (None, "", [], {}):
 			return v
@@ -1585,7 +1589,7 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 	# a reaction names two messages: its own (`reaction_message_id`) and the one reacted to
 	# (`message_id`); its sender is `reacted_by`
 	is_reaction = body.get("event") == "message.reaction" or bool(body.get("reaction_message_id"))
-	sender_jid = _first(
+	sender_jid = _first_non_empty_value(
 		body.get("reacted_by") if is_reaction else None,
 		body.get("sender_jid"),
 		body.get("from"),
@@ -1593,7 +1597,7 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 		nested.get("from"),
 		nested.get("sender"),
 	)
-	chat_jid = _first(
+	chat_jid = _first_non_empty_value(
 		body.get("chat_jid"),
 		body.get("chat"),
 		body.get("chat_id"),
@@ -1601,10 +1605,10 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 		nested.get("chat_id"),
 		body.get("from"),
 	)
-	from_jid = _first(body.get("from"), body.get("from_jid"), sender_jid)
+	from_jid = _first_non_empty_value(body.get("from"), body.get("from_jid"), sender_jid)
 	# a sender WhatsApp names by a privacy id (`…@lid`) carries no number in its jid; the platform
 	# sends the resolved number beside it as `sender_number`
-	sender_mobile = _first(
+	sender_mobile = _first_non_empty_value(
 		body.get("reacted_by_number") if is_reaction else None,
 		body.get("sender_number"),
 		body.get("sender_mobile_no"),
@@ -1614,7 +1618,7 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 	# the gateway's file of an image / video / audio / document / sticker: the platform keeps it and
 	# sends `media.download_url` (its `get_inbound_media_api`, same credentials as every call)
 	media = body.get("media") if isinstance(body.get("media"), dict) else {}
-	text = _first(
+	text = _first_non_empty_value(
 		body.get("text"),
 		body.get("body"),
 		msg.get("text") if isinstance(msg, dict) else None,
@@ -1623,13 +1627,16 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 		body.get("message") if isinstance(body.get("message"), str) else None,
 		body.get("caption"),
 	)
-	raw_type = str(_first(body.get("message_type"), body.get("type"), nested.get("type"), "text") or "text")
+	raw_type = str(
+		_first_non_empty_value(body.get("message_type"), body.get("type"), nested.get("type"), "text")
+		or "text"
+	)
 	message_type = _INBOUND_TYPE_MAP.get(
 		raw_type.lower().replace("_", ""), "Other" if raw_type.lower() not in ("text",) else "Text"
 	)
 	if body.get("event") == "message.reaction" or body.get("reaction"):
 		message_type = "Reaction"
-	provider_message_id = _first(
+	provider_message_id = _first_non_empty_value(
 		body.get("reaction_message_id") if is_reaction else None,
 		body.get("provider_message_id"),
 		body.get("message_id"),
@@ -1639,19 +1646,21 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 		nested.get("message_id"),
 	)
 	location = None
-	lat = _first(body.get("latitude"), body.get("location_latitude"), nested.get("latitude"))
-	lng = _first(body.get("longitude"), body.get("location_longitude"), nested.get("longitude"))
+	lat = _first_non_empty_value(body.get("latitude"), body.get("location_latitude"), nested.get("latitude"))
+	lng = _first_non_empty_value(
+		body.get("longitude"), body.get("location_longitude"), nested.get("longitude")
+	)
 	if lat is not None and lng is not None:
 		try:
 			location = Location(
 				latitude=float(lat),
 				longitude=float(lng),
-				name=_first(body.get("location_name"), nested.get("name")),
-				address=_first(body.get("location_address"), nested.get("address")),
+				name=_first_non_empty_value(body.get("location_name"), nested.get("name")),
+				address=_first_non_empty_value(body.get("location_address"), nested.get("address")),
 			)
 		except (TypeError, ValueError):
 			location = None
-	reaction = _first(body.get("reaction"), nested.get("reaction"), nested.get("emoji"))
+	reaction = _first_non_empty_value(body.get("reaction"), nested.get("reaction"), nested.get("emoji"))
 	if isinstance(reaction, dict):
 		reaction = reaction.get("text") or reaction.get("emoji")
 	is_group = bool(body.get("is_group")) or str(chat_jid or "").endswith("@g.us")
@@ -1662,7 +1671,7 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 		chat_jid=str(chat_jid) if chat_jid else None,
 		from_jid=str(from_jid) if from_jid else None,
 		is_group=is_group,
-		push_name=_first(
+		push_name=_first_non_empty_value(
 			body.get("reacted_by_name") if is_reaction else None,
 			body.get("push_name"),
 			body.get("pushName"),
@@ -1670,45 +1679,47 @@ def _parse_inbound(body: dict, timestamp: datetime | None) -> InboundPayload:
 			nested.get("pushName"),
 			nested.get("push_name"),
 		),
-		group_name=_first(body.get("group_name"), body.get("chat_name"), nested.get("group_name"))
+		group_name=_first_non_empty_value(
+			body.get("group_name"), body.get("chat_name"), nested.get("group_name")
+		)
 		if is_group
 		else None,
 		message_type=message_type,
 		body=str(text) if text is not None else None,
-		caption=_first(body.get("caption"), media.get("caption"), nested.get("caption")),
-		media_url=_first(
+		caption=_first_non_empty_value(body.get("caption"), media.get("caption"), nested.get("caption")),
+		media_url=_first_non_empty_value(
 			media.get("download_url"),
 			body.get("media_url"),
 			body.get("url"),
 			nested.get("url"),
 			nested.get("media_url"),
 		),
-		media_mime_type=_first(
+		media_mime_type=_first_non_empty_value(
 			media.get("mime_type"),
 			body.get("media_mime_type"),
 			body.get("mime_type"),
 			nested.get("mimetype"),
 			nested.get("mime_type"),
 		),
-		media_file_name=_first(media.get("file_name")),
+		media_file_name=_first_non_empty_value(media.get("file_name")),
 		location=location,
 		reaction=str(reaction) if reaction else None,
-		reaction_to=_first(
+		reaction_to=_first_non_empty_value(
 			body.get("message_id") if is_reaction else None,
 			body.get("reaction_to"),
 			body.get("reacted_message_id"),
 			nested.get("reacted_message_id"),
 			body.get("quoted_message_id") if message_type == "Reaction" else None,
 		),
-		quoted_id=_first(
+		quoted_id=_first_non_empty_value(
 			body.get("quoted_message_id"),
 			body.get("quoted_provider_message_id"),
 			body.get("reply_to_message_id"),
 			nested.get("quoted_id"),
 		),
-		selected_id=_first(body.get("selected_id")),
-		received_at=_dt(body.get("received_at"))
-		or _dt(body.get("timestamp"))
-		or _dt(nested.get("timestamp"))
+		selected_id=_first_non_empty_value(body.get("selected_id")),
+		received_at=_platform_time_to_site_datetime(body.get("received_at"))
+		or _platform_time_to_site_datetime(body.get("timestamp"))
+		or _platform_time_to_site_datetime(nested.get("timestamp"))
 		or timestamp,
 	)

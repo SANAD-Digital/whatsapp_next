@@ -309,7 +309,7 @@ schedule change.
 | Argument | Type | Required | Meaning |
 |---|---|---|---|
 | `payload` | dict | yes | Alert draft (as `preview_draft`). |
-| `phone` | str | yes | Test number (any format `phone.normalize` accepts). |
+| `phone` | str | yes | Test number (any format `phone.normalize_phone_to_e164` accepts). |
 
 A draft with no recipients is given the test number as a `Phone` recipient before validation.
 Audited `Alert Test Sent`.

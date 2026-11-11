@@ -29,7 +29,7 @@ def get_health(device: str | None = None, live: bool = False) -> dict[str, Any]:
 	"""The setup's health checks → `{ok, checks[{key, title, status, detail, fix, route,
 	route_label}], checked_at, live}`. `live` tests the platform connection now (audited
 	`Connection Tested`); otherwise nothing leaves the site. P: Manager."""
-	return testlab.health(device or None, live=bool(live))
+	return testlab.check_setup_health(device or None, live=bool(live))
 
 
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))
@@ -50,7 +50,7 @@ def search_documents(doctype: str, txt: str | None = None) -> dict[str, Any]:
 def preview(kind: str, params: dict | None = None, target: str | None = None) -> dict[str, Any]:
 	"""What a check would send, without sending (`testlab.preview`). P: Manager + read on the
 	template / notification / alert and on the record it renders."""
-	return testlab.preview(kind, params, target)
+	return testlab.preview_check_message(kind, params, target)
 
 
 @api_endpoint(
@@ -80,10 +80,10 @@ def run_check(run: str, kind: str, target: str | None = None, params: dict | Non
 def get_status(run: str) -> dict[str, Any]:
 	"""Where a run stands: its steps with their messages' statuses and timings, the summary, the
 	receipts and the real inbound messages of its targets. P: Manager."""
-	return testlab.status(run)
+	return testlab.get_test_run_status(run)
 
 
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))
 def list_runs() -> list[dict[str, Any]]:
 	"""The newest test runs, newest first. P: Manager."""
-	return testlab.runs()
+	return testlab.list_recent_test_runs()

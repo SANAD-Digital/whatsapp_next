@@ -185,11 +185,11 @@ def decode_cursor(cursor: str | dt.datetime | None) -> tuple[dt.datetime, str | 
 # --------------------------------------------------------------------------------------------
 
 
-def _null(alias: str):
+def _null_column(alias: str):
 	return NullValue().as_(alias)
 
 
-def _const(value: str, alias: str):
+def _constant_column(value: str, alias: str):
 	return ValueWrapper(value).as_(alias)
 
 
@@ -205,7 +205,7 @@ def _inbound_key(I):
 
 def _outbound_branch(L):
 	return frappe.qb.from_(L).select(
-		_const(OUTBOUND, "direction"),
+		_constant_column(OUTBOUND, "direction"),
 		L.name.as_("name"),
 		_outbound_key(L).as_("key"),
 		L.device.as_("device"),
@@ -221,24 +221,24 @@ def _outbound_branch(L):
 		L.attachment.as_("attachment"),
 		L.reference_doctype.as_("reference_doctype"),
 		L.reference_name.as_("reference_name"),
-		_null("reaction_to"),
-		_null("sender"),
+		_null_column("reaction_to"),
+		_null_column("sender"),
 		L.poll_question.as_("poll_question"),
 		L.poll_options.as_("poll_options"),
-		_null("edited_at"),
-		_null("original_body"),
-		_null("deleted_at"),
-		_null("deleted_by"),
+		_null_column("edited_at"),
+		_null_column("original_body"),
+		_null_column("deleted_at"),
+		_null_column("deleted_by"),
 		L.interactive.as_("interactive"),
-		_null("selected_id"),
+		_null_column("selected_id"),
 		L.reply_to_provider_message_id.as_("quoted_id"),
-		_null("media_pending"),
+		_null_column("media_pending"),
 	)
 
 
 def _inbound_branch(I):
 	return frappe.qb.from_(I).select(
-		_const(INBOUND, "direction"),
+		_constant_column(INBOUND, "direction"),
 		I.name.as_("name"),
 		_inbound_key(I).as_("key"),
 		I.device.as_("device"),
@@ -253,17 +253,17 @@ def _inbound_branch(I):
 		I.provider_message_id.as_("provider_message_id"),
 		# the platform's link needs this site's credentials, so a browser is never given it
 		I.attachment.as_("attachment"),
-		_null("reference_doctype"),
-		_null("reference_name"),
+		_null_column("reference_doctype"),
+		_null_column("reference_name"),
 		I.reaction_to_provider_message_id.as_("reaction_to"),
 		I.sender_jid.as_("sender"),
-		_null("poll_question"),
-		_null("poll_options"),
+		_null_column("poll_question"),
+		_null_column("poll_options"),
 		I.edited_at.as_("edited_at"),
 		I.original_body.as_("original_body"),
 		I.deleted_at.as_("deleted_at"),
 		I.deleted_by.as_("deleted_by"),
-		_null("interactive"),
+		_null_column("interactive"),
 		I.selected_option_id.as_("selected_id"),
 		I.quoted_provider_message_id.as_("quoted_id"),
 		Case()
@@ -331,7 +331,7 @@ def _apply_filters(q, table, ts_col, key_cond, filters: dict[str, Any]):
 	return q
 
 
-def _union(
+def _build_messages_union_query(
 	filters: dict[str, Any],
 	*,
 	keys: list[str] | None = None,
@@ -371,13 +371,13 @@ def _union(
 	return query
 
 
-def _run(query) -> list[dict[str, Any]]:
+def _run_query_as_dicts(query) -> list[dict[str, Any]]:
 	if query is None:
 		return []
 	return query.run(as_dict=True)
 
 
-def _row(d: dict[str, Any]) -> MessageRow:
+def _to_message_row(d: dict[str, Any]) -> MessageRow:
 	return MessageRow(**{c: d.get(c) for c in COLUMNS})
 
 
@@ -402,7 +402,10 @@ def conversation(
 	filters: dict[str, Any] = {"before": before}
 	if device:
 		filters["device"] = device
-	rows = [_row(d) for d in _run(_union(filters, keys=[key], limit=limit + 1))]
+	rows = [
+		_to_message_row(d)
+		for d in _run_query_as_dicts(_build_messages_union_query(filters, keys=[key], limit=limit + 1))
+	]
 	return ConversationPage(rows[:limit], len(rows) > limit)
 
 
@@ -420,7 +423,10 @@ def cross_direction_rows(
 	limit = max(1, min(int(page.get("limit") or 50), 1000))
 	order = Order.asc if str(page.get("order", "desc")).lower() == "asc" else Order.desc
 	return [
-		_row(d) for d in _run(_union(filters, keys=list(keys) if keys else None, limit=limit, order=order))
+		_to_message_row(d)
+		for d in _run_query_as_dicts(
+			_build_messages_union_query(filters, keys=list(keys) if keys else None, limit=limit, order=order)
+		)
 	]
 
 
@@ -469,7 +475,7 @@ def iter_keys_since(
 			return
 
 
-def _chunks(values: Iterable[str]) -> Iterator[list[str]]:
+def _split_keys_into_chunks(values: Iterable[str]) -> Iterator[list[str]]:
 	items = sorted({v for v in values if v})
 	for i in range(0, len(items), IN_CHUNK):
 		yield items[i : i + IN_CHUNK]
@@ -480,7 +486,7 @@ def known_keys(keys: Iterable[str]) -> set[str]:
 	found: set[str] = set()
 	L = frappe.qb.DocType("WhatsApp Log")
 	I = frappe.qb.DocType("WhatsApp Inbound Message")
-	for chunk in _chunks(keys):
+	for chunk in _split_keys_into_chunks(keys):
 		cond = _key_condition_outbound(L, chunk)
 		if cond is not None:
 			found |= {r[0] for r in frappe.qb.from_(L).select(_outbound_key(L)).distinct().where(cond).run()}
@@ -496,7 +502,7 @@ def stats_by_key(keys: Iterable[str]) -> dict[str, KeyStats]:
 	out: dict[str, KeyStats] = {}
 	L = frappe.qb.DocType("WhatsApp Log")
 	I = frappe.qb.DocType("WhatsApp Inbound Message")
-	for chunk in _chunks(keys):
+	for chunk in _split_keys_into_chunks(keys):
 		latest: dict[str, tuple[dt.datetime, str]] = {}  # key -> (max_ts, direction)
 		for T, direction, ts_col, cond in (
 			(L, OUTBOUND, L.creation, _key_condition_outbound(L, chunk)),

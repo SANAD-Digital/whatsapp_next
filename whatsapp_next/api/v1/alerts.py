@@ -82,13 +82,13 @@ def get_dynamic_filter_reference() -> list[dict[str, str | None]]:
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))
 def get_editor(name: str | None = None) -> dict[str, Any]:
 	"""What the editor opens with (`alerts_editor.editor`). P: Manager + read / create."""
-	return alerts_editor.editor(name or None)
+	return alerts_editor.get_alert_editor_data(name or None)
 
 
 @api_endpoint(roles=MANAGER)
 def preview_draft(payload: dict) -> dict[str, Any]:
 	"""Run the editor's draft without sending (`alerts_editor.preview`). P: Manager."""
-	return alerts_editor.preview(payload)
+	return alerts_editor.preview_alert_draft(payload)
 
 
 @api_endpoint(roles=MANAGER)
@@ -107,7 +107,7 @@ def send_test(payload: dict, phone: str) -> dict[str, Any]:
 @api_endpoint(roles=MANAGER)
 def save_editor(payload: dict) -> dict[str, Any]:
 	"""Create or update the alert (`alerts_editor.save`). P: Manager + write / create."""
-	return alerts_editor.save(payload)
+	return alerts_editor.save_alert_from_editor(payload)
 
 
 @api_endpoint(roles=MANAGER)
@@ -119,7 +119,7 @@ def set_enabled(name: str, enabled: int) -> dict[str, Any]:
 @api_endpoint(roles=MANAGER)
 def delete_alert(name: str) -> dict[str, bool]:
 	"""Delete the alert. P: Manager + delete."""
-	alerts_editor.delete(name)
+	alerts_editor.delete_alert(name)
 	return {"deleted": True}
 
 
@@ -130,7 +130,7 @@ def delete_alert(name: str) -> dict[str, bool]:
 )
 def search(kind: str, txt: str | None = None) -> list[dict[str, Any]]:
 	"""The editor's pickers (`alerts_editor.search`). P: Manager; the caller's own permissions."""
-	return alerts_editor.search(kind, txt)
+	return alerts_editor.search_editor_picker_options(kind, txt)
 
 
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))

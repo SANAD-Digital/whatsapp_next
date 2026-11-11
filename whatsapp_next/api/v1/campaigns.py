@@ -55,7 +55,7 @@ def _require(name: str, ptype: str) -> None:
 		frappe.throw(_("Not permitted to {0} campaign {1}").format(_(ptype), name), WAPermissionError)
 
 
-def _status(name: str) -> str:
+def _get_campaign_status(name: str) -> str:
 	return frappe.db.get_value("WhatsApp Campaign", name, "status")
 
 
@@ -67,7 +67,7 @@ def start(name: str) -> dict[str, Any]:
 	"""`Draft | Scheduled → Queued` now; materialization runs in a `long` job → `{status}`.
 	`WAStateConflictError` in any other status, `WAValidationError` when not startable."""
 	_require(name, "write")
-	return {"status": runner.start(name, user=frappe.session.user)}
+	return {"status": runner.start_campaign(name, user=frappe.session.user)}
 
 
 @api_endpoint(roles=MANAGER)
@@ -89,32 +89,34 @@ def unschedule(name: str) -> dict[str, Any]:
 def pause(name: str, reason: str | None = None) -> dict[str, Any]:
 	"""`Running → Paused`; open queue rows paused → `{status, count}`; audited."""
 	_require(name, "write")
-	count = runner.pause(name, user=frappe.session.user, reason=reason)
-	return {"status": _status(name), "count": count}
+	count = runner.pause_campaign(name, user=frappe.session.user, reason=reason)
+	return {"status": _get_campaign_status(name), "count": count}
 
 
 @api_endpoint(roles=MANAGER)
 def resume(name: str) -> dict[str, Any]:
 	"""`Paused → Running`; paused queue rows resumed → `{status, count}`; audited."""
 	_require(name, "write")
-	count = runner.resume(name, user=frappe.session.user)
-	return {"status": _status(name), "count": count}
+	count = runner.resume_campaign(name, user=frappe.session.user)
+	return {"status": _get_campaign_status(name), "count": count}
 
 
 @api_endpoint(roles=MANAGER)
 def cancel(name: str, reason: str | None = None) -> dict[str, Any]:
 	"""Any non-terminal status → `Cancelled`; open queue rows deleted-as-state → `{status, count}`."""
 	_require(name, "write")
-	count = runner.cancel(name, user=frappe.session.user, reason=reason)
-	return {"status": _status(name), "count": count}
+	count = runner.cancel_campaign(name, user=frappe.session.user, reason=reason)
+	return {"status": _get_campaign_status(name), "count": count}
 
 
-def _many(names: list[str], applies: Callable[[str], bool], action: Callable[[str], int]) -> dict[str, Any]:
+def _run_bulk_campaign_action(
+	names: list[str], applies: Callable[[str], bool], action: Callable[[str], int]
+) -> dict[str, Any]:
 	"""Bulk helper (09 G-01) over `_bulk.run_bulk`: campaigns whose status does not apply are
 	reported in `skipped`; each action runs in its own savepoint."""
 
-	def one(name: str) -> None:
-		status = _status(name)
+	def apply_action_to_campaign(name: str) -> None:
+		status = _get_campaign_status(name)
 		if status is None:
 			frappe.throw(_("WhatsApp Campaign {0} not found").format(name), WANotFoundError)
 		if not applies(status):
@@ -122,32 +124,34 @@ def _many(names: list[str], applies: Callable[[str], bool], action: Callable[[st
 		_require(name, "write")
 		action(name)
 
-	return _bulk.run_bulk(names, one)
+	return _bulk.run_bulk(names, apply_action_to_campaign)
 
 
 @api_endpoint(roles=MANAGER)
 def pause_many(names: list[str], reason: str | None = None) -> dict[str, Any]:
 	"""Pause every `Running` / `Queued` campaign in `names` (others skipped)."""
-	return _many(
+	return _run_bulk_campaign_action(
 		names,
 		lambda s: s in ("Running", "Queued"),
-		lambda n: runner.pause(n, user=frappe.session.user, reason=reason),
+		lambda n: runner.pause_campaign(n, user=frappe.session.user, reason=reason),
 	)
 
 
 @api_endpoint(roles=MANAGER)
 def resume_many(names: list[str]) -> dict[str, Any]:
 	"""Resume every `Paused` campaign in `names` (others skipped)."""
-	return _many(names, lambda s: s == "Paused", lambda n: runner.resume(n, user=frappe.session.user))
+	return _run_bulk_campaign_action(
+		names, lambda s: s == "Paused", lambda n: runner.resume_campaign(n, user=frappe.session.user)
+	)
 
 
 @api_endpoint(roles=MANAGER)
 def cancel_many(names: list[str], reason: str | None = None) -> dict[str, Any]:
 	"""Cancel every non-terminal campaign in `names` (terminal ones skipped)."""
-	return _many(
+	return _run_bulk_campaign_action(
 		names,
 		lambda s: s not in runner.TERMINAL,
-		lambda n: runner.cancel(n, user=frappe.session.user, reason=reason),
+		lambda n: runner.cancel_campaign(n, user=frappe.session.user, reason=reason),
 	)
 
 

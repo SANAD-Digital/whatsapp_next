@@ -18,7 +18,7 @@ from whatsapp_next.services import onboarding
 @api_endpoint(roles=VIEWER_UP + CONTACT_USER, methods=("GET", "POST"))
 def get_status() -> dict[str, Any]:
 	"""`{setup_completed, steps[{key, done, detail}], redirect_enabled}` for any WhatsApp role."""
-	return onboarding.status()
+	return onboarding.get_onboarding_status()
 
 
 @api_endpoint(roles=SYSTEM_MANAGER, methods=("GET", "POST"))

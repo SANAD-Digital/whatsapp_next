@@ -21,7 +21,7 @@ from frappe.utils import cint, now_datetime
 
 from whatsapp_next.exceptions import WAFileError, WAPermissionError, WAStateConflictError, WAValidationError
 from whatsapp_next.services import attachments, audit, permissions, read_layer
-from whatsapp_next.services.phone import classify, normalize
+from whatsapp_next.services.phone import classify, normalize_phone_to_e164
 
 SOURCES = (
 	("Contact Group", "Contact Groups"),
@@ -111,7 +111,7 @@ def make_row(
 	return row
 
 
-def _page(page, page_length) -> tuple[int, int]:
+def _page_to_offset_and_length(page, page_length) -> tuple[int, int]:
 	length = min(max(cint(page_length) or 20, 1), MAX_PAGE)
 	return (max(cint(page) or 1, 1) - 1) * length, length
 
@@ -162,7 +162,7 @@ def search_groups(
 		filters["name"] = ("!=", exclude)
 	if txt:
 		filters["group_name"] = ("like", f"%{txt.strip()}%")
-	start, length = _page(page, page_length)
+	start, length = _page_to_offset_and_length(page, page_length)
 	rows = frappe.get_all(
 		"WhatsApp Contact Group",
 		filters=filters,
@@ -178,7 +178,7 @@ def get_group_members(group: str, page: int = 1, page_length: int = 50) -> dict[
 	"""Source 1: members of one group as picker rows."""
 	if not frappe.has_permission("WhatsApp Contact Group", "read", doc=group):
 		frappe.throw(_("Not permitted"), WAPermissionError)
-	start, length = _page(page, page_length)
+	start, length = _page_to_offset_and_length(page, page_length)
 	filters = {"parent": group, "parenttype": "WhatsApp Contact Group"}
 	members = frappe.get_all(
 		"WhatsApp Contact Group Member",
@@ -215,7 +215,7 @@ def search_whatsapp_numbers(txt: str | None = None, page: int = 1, page_length: 
 			"saved_name": ("like", like),
 			"phone_e164": ("like", like),
 		}
-	start, length = _page(page, page_length)
+	start, length = _page_to_offset_and_length(page, page_length)
 	N = frappe.qb.DocType("WhatsApp Number")
 	query = (
 		frappe.qb.from_(N)
@@ -332,14 +332,14 @@ def parse_manual(text: str | None) -> ParseResult:
 		for sep in (";", ",", "\t"):
 			if sep in line:
 				a, b = (p.strip() for p in line.split(sep, 1))
-				name, phone = (a, b) if normalize(b) else (b, a)
+				name, phone = (a, b) if normalize_phone_to_e164(b) else (b, a)
 				break
 		else:
 			parts = line.split()
 			if len(parts) > 1:
-				if normalize(parts[0]):
+				if normalize_phone_to_e164(parts[0]):
 					phone, name = parts[0], " ".join(parts[1:])
-				elif normalize(parts[-1]):
+				elif normalize_phone_to_e164(parts[-1]):
 					phone, name = parts[-1], " ".join(parts[:-1])
 		row = make_row(phone, name, source_type="Manual")
 		(result.rows if row["valid"] else result.invalid).append(row)
@@ -496,7 +496,7 @@ def _publish_import_progress(kind: str, stage: str, total: int, **extra: Any) ->
 # ---- targets -----------------------------------------------------------------------------
 
 
-def _target(target_doctype: str, target_name: str, ptype: str = "write"):
+def _get_permitted_target_doc(target_doctype: str, target_name: str, ptype: str = "write"):
 	if target_doctype not in TARGETS:
 		frappe.throw(_("Unsupported picker target {0}").format(target_doctype), WAValidationError)
 	if not frappe.db.exists(target_doctype, target_name):
@@ -516,10 +516,10 @@ def _existing_keys(doc, child_field: str) -> dict[str, Any]:
 	return out
 
 
-def preview(target_doctype: str, target_name: str, rows: list[dict[str, Any]]) -> Preview:
+def preview_rows_for_target(target_doctype: str, target_name: str, rows: list[dict[str, Any]]) -> Preview:
 	"""Classify candidate rows against the target: available / already added / invalid /
 	duplicates within the selection; `known_count` from the read layer."""
-	doc = _target(target_doctype, target_name, "read")
+	doc = _get_permitted_target_doc(target_doctype, target_name, "read")
 	child_field, _child_dt = TARGETS[target_doctype]
 	return classify_rows(rows, _existing_keys(doc, child_field))
 
@@ -576,10 +576,10 @@ def commit_add(
 	On a Running/Paused campaign the new recipients are materialized by a job."""
 	if source_type not in SOURCE_TYPES:
 		frappe.throw(_("Unknown source type {0}").format(source_type), WAValidationError)
-	doc = _target(target_doctype, target_name, "write")
+	doc = _get_permitted_target_doc(target_doctype, target_name, "write")
 	_campaign_guard(doc)
 	child_field, _child_dt = TARGETS[target_doctype]
-	p = preview(target_doctype, target_name, rows)
+	p = preview_rows_for_target(target_doctype, target_name, rows)
 	now = now_datetime()
 	for row in p.available:
 		values: dict[str, Any] = {
@@ -631,7 +631,7 @@ def commit_add(
 				)
 		else:
 			doc.save(ignore_permissions=True)
-	audit.log(
+	audit.record_audit_entry(
 		"Campaign Recipients Changed"
 		if target_doctype == "WhatsApp Campaign"
 		else "Contact Group Members Changed",
@@ -662,10 +662,10 @@ def commit_remove(
 ) -> dict[str, int]:
 	"""Remove rows by key or by `{source_type, source_ref}`: Group rows are deleted; Campaign
 	rows in Running/Paused become `Removed` (their open queue rows are deleted-as-state)."""
-	doc = _target(target_doctype, target_name, "write")
+	doc = _get_permitted_target_doc(target_doctype, target_name, "write")
 	_campaign_guard(doc)
 	child_field, _child_dt = TARGETS[target_doctype]
-	keys = {normalize(k) or k for k in (phone_e164s or []) if k}
+	keys = {normalize_phone_to_e164(k) or k for k in (phone_e164s or []) if k}
 	f = filters or {}
 	victims = []
 	for r in doc.get(child_field) or []:
@@ -717,7 +717,7 @@ def commit_remove(
 		with status_writer():
 			doc.flags.ignore_permissions = True
 			doc.save(ignore_permissions=True)
-	audit.log(
+	audit.record_audit_entry(
 		"Campaign Recipients Changed"
 		if target_doctype == "WhatsApp Campaign"
 		else "Contact Group Members Changed",

@@ -280,7 +280,7 @@ def resend_many(names: list[str]) -> dict[str, Any]:
 		for r in frappe.get_all("WhatsApp Log", filters={"name": ("in", names)}, fields=["name", "status"])
 	}
 
-	def one(name: str) -> None:
+	def resend_one_message(name: str) -> None:
 		status = statuses.get(name)
 		if status is None:
 			frappe.throw(_("WhatsApp Log {0} not found").format(name), WANotFoundError)
@@ -289,7 +289,7 @@ def resend_many(names: list[str]) -> dict[str, Any]:
 		_require_read("WhatsApp Log", name)
 		dispatch.resend_outbound(name, user=frappe.session.user)
 
-	return _bulk.run_bulk(names, one)
+	return _bulk.run_bulk(names, resend_one_message)
 
 
 @api_endpoint(roles=MANAGER)
@@ -305,7 +305,7 @@ def cancel(name: str, reason: str | None = None) -> dict[str, Any]:
 def get_inbound_summary(days: int | None = 30) -> dict[str, Any]:
 	"""The Inbound screen's figures (09 G-07): total, match rate, unmatched, average reply time
 	over the last `days` (0 = all time). P: Viewer+."""
-	return inbound.summary(days)
+	return inbound.get_inbound_summary(days)
 
 
 @api_endpoint(roles=VIEWER_UP, methods=("GET", "POST"))

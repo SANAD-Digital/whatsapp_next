@@ -17,7 +17,7 @@ from frappe import _
 from frappe.utils import cint
 
 from whatsapp_next.exceptions import WAValidationError
-from whatsapp_next.services.phone import normalize
+from whatsapp_next.services.phone import normalize_phone_to_e164
 
 # a field whose name says it holds a number, when its type does not
 PHONE_NAME = re.compile(r"(^|_)(mobile|phone|whatsapp|cell|tel|contact_no|mobile_no|phone_no)(_|$)", re.I)
@@ -41,7 +41,7 @@ def _is_phone_field(df) -> bool:
 	)
 
 
-def _filled(doctype: str, fieldname: str) -> int:
+def _count_records_with_field_set(doctype: str, fieldname: str) -> int:
 	"""How many records fill `fieldname` (a count, never the values)."""
 	return frappe.db.count(doctype, filters=[[fieldname, "is", "set"]])
 
@@ -103,7 +103,7 @@ def analyze(document_type: str) -> dict[str, Any]:
 	`{document_type, label, total, title_field, phone_fields[], name_fields[], contact_fields[],
 	suggestion{label, phone_source, phone_fieldname, contact_fieldname, name_fieldname}}`. Each
 	phone field carries how many records fill it, so the busiest one is the guess."""
-	meta = _meta(document_type)
+	meta = _get_regular_doctype_meta(document_type)
 	total = frappe.db.count(document_type)
 	title_field = meta.get_title_field()
 	phones, names, contacts = [], [], []
@@ -119,7 +119,7 @@ def analyze(document_type: str) -> dict[str, Any]:
 					"fieldname": df.fieldname,
 					"label": label,
 					"fieldtype": "Phone" if df.options == "Phone" else df.fieldtype,
-					"filled": _filled(document_type, df.fieldname) if total else 0,
+					"filled": _count_records_with_field_set(document_type, df.fieldname) if total else 0,
 				}
 			)
 			continue
@@ -128,7 +128,7 @@ def analyze(document_type: str) -> dict[str, Any]:
 				{
 					"fieldname": df.fieldname,
 					"label": label,
-					"filled": _filled(document_type, df.fieldname) if total else 0,
+					"filled": _count_records_with_field_set(document_type, df.fieldname) if total else 0,
 				}
 			)
 		if (
@@ -142,11 +142,11 @@ def analyze(document_type: str) -> dict[str, Any]:
 		names.append({"fieldname": "name", "label": _("ID"), "title": title_field in (None, "name")})
 
 	# the busiest field; on a tie the one named for WhatsApp, then a mobile, then a Phone-typed one
-	def rank(f):
+	def rank_phone_field(f):
 		name = f["fieldname"].lower()
 		return (f["filled"], "whatsapp" in name, "mobile" in name, f["fieldtype"] == "Phone")
 
-	phones.sort(key=rank, reverse=True)
+	phones.sort(key=rank_phone_field, reverse=True)
 	best_phone = phones[0] if phones else None
 	best_contact = max(contacts, key=lambda f: f["filled"], default=None)
 	by_contact = bool(best_contact) and (not best_phone or best_contact["filled"] > best_phone["filled"])
@@ -168,7 +168,7 @@ def analyze(document_type: str) -> dict[str, Any]:
 	}
 
 
-def preview(source: dict[str, Any] | str) -> dict[str, Any]:
+def preview_picker_source_reach(source: dict[str, Any] | str) -> dict[str, Any]:
 	"""How a source as it is being edited reaches people: `{total, with_number, sample[{label,
 	phone}]}` — the records its server filters keep, how many of those have a number WhatsApp can
 	use, and the first few of them."""
@@ -182,7 +182,7 @@ def preview(source: dict[str, Any] | str) -> dict[str, Any]:
 	if not isinstance(source, dict):
 		frappe.throw(_("The source is not valid JSON"), WAValidationError)
 	document_type = source.get("document_type")
-	meta = _meta(document_type)
+	meta = _get_regular_doctype_meta(document_type)
 	try:
 		filters = validate_filters(meta, source.get("filters_json") or [])
 	except (ValueError, TypeError) as exc:
@@ -208,7 +208,7 @@ def preview(source: dict[str, Any] | str) -> dict[str, Any]:
 		for r in rows:
 			first = next(iter(phones.get(r.contact) or []), None)
 			r.phone = first["phone"] if first else None
-	usable = [r for r in rows if r.get("phone") and normalize(r.phone)]
+	usable = [r for r in rows if r.get("phone") and normalize_phone_to_e164(r.phone)]
 	# counted on at most 500 records: enough to say whether the choice works, cheap on a big table
 	with_number = (
 		len(usable)
@@ -222,11 +222,13 @@ def preview(source: dict[str, Any] | str) -> dict[str, Any]:
 	return {
 		"total": total,
 		"with_number": with_number,
-		"sample": [{"label": str(r.label or ""), "phone": normalize(r.phone)} for r in usable[:SAMPLE]],
+		"sample": [
+			{"label": str(r.label or ""), "phone": normalize_phone_to_e164(r.phone)} for r in usable[:SAMPLE]
+		],
 	}
 
 
-def _meta(document_type: str | None):
+def _get_regular_doctype_meta(document_type: str | None):
 	if not document_type or not frappe.db.exists("DocType", document_type):
 		frappe.throw(_("DocType {0} not found").format(document_type or ""), WAValidationError)
 	meta = frappe.get_meta(document_type)

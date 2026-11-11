@@ -82,7 +82,7 @@ class TestFunctionRunner(IntegrationTestCase):
 		# and with nothing set the header's default is used when the run is built
 		fc.save_values("_test_span", {"msg_result": ""})
 		sender = Sender(None, None, None, None, party_type="Customer", party_name="C-1")
-		params, _missing = fr.prepare(_command("_test_span", {"language": "ar"}), sender)
+		params, _missing = fr.prepare_command_params(_command("_test_span", {"language": "ar"}), sender)
 		self.assertEqual((params["language"], params["msg_result"]), ("ar", "رصيد {{ party }} {{ span }}"))
 		self.assertEqual(fr.run_language(_command("_test_span", {"language": "ar"})), "ar")
 		self.assertEqual(fr.run_language(_command("_test_span")), "en")  # the reply language
@@ -168,7 +168,7 @@ class TestFunctionRunner(IntegrationTestCase):
 		self.assertEqual((failed[1]["message_type"], failed[1]["body"]), ("Text", fr.GENERIC_ERROR))
 
 	def test_trial_steps(self):
-		ok = fr.trial("_test_echo", values={"text": "hi"})
+		ok = fr.run_function_trial("_test_echo", values={"text": "hi"})
 		self.assertEqual(
 			[s["name"] for s in ok["steps"]],
 			[
@@ -184,27 +184,27 @@ class TestFunctionRunner(IntegrationTestCase):
 		self.assertEqual(ok["params"]["text"], "hi")
 		self.assertEqual(frappe.session.user, "Administrator")
 		# missing values stop before the run
-		out = fr.trial(
+		out = fr.run_function_trial(
 			"_test_span", party_type="Customer", party=None, values={"timespan": "select date range"}
 		)
 		self.assertEqual(out["steps"][-1]["name"], "Parameters")
 		self.assertFalse(out["steps"][-1]["ok"])
 		self.assertEqual({m["name"] for m in out["missing"]}, {"party", "from_date", "to_date"})
 		# a party that does not exist
-		out = fr.trial("_test_span", party_type="Customer", party="_No Such WA Customer")
+		out = fr.run_function_trial("_test_span", party_type="Customer", party="_No Such WA Customer")
 		self.assertEqual((out["steps"][-1]["name"], out["steps"][-1]["ok"]), ("Party", False))
 		# the script's error and an undeclared reply
-		out = fr.trial("_test_misbehave", values={"mode": "error"})
+		out = fr.run_function_trial("_test_misbehave", values={"mode": "error"})
 		self.assertEqual((out["steps"][-1]["name"], out["error"]), ("Run", "Nothing for you"))
-		out = fr.trial("_test_misbehave", values={"mode": "raise"})
+		out = fr.run_function_trial("_test_misbehave", values={"mode": "raise"})
 		self.assertFalse(out["steps"][-1]["ok"])
 		self.assertIn("boom", out["steps"][-1]["detail"])
-		out = fr.trial("_test_misbehave", values={"mode": "bad_reply"})
+		out = fr.run_function_trial("_test_misbehave", values={"mode": "bad_reply"})
 		self.assertEqual((out["steps"][-1]["name"], out["steps"][-1]["ok"]), ("Replies (@reply)", False))
 		# a header changed on the script but not updated: the installed one is used, and said so
 		name, script = ff.FUNCTIONS["_test_echo"]
 		ff.ensure_script(name, script.replace("@version      1.0.0", "@version      1.0.1"))
-		out = fr.trial("_test_echo")
+		out = fr.run_function_trial("_test_echo")
 		self.assertIn("Installed header", [s["name"] for s in out["steps"]])
 		self.assertTrue(out["steps"][-1]["ok"])
 		ff.ensure_script(name, script)
@@ -224,9 +224,9 @@ class TestReportFile(IntegrationTestCase):
 			[(c["fieldname"], c["fieldtype"], c["index"]) for c in cols],
 			[("party", "Data", 0), ("balance", "Currency", 2)],
 		)
-		self.assertEqual(report_file._cell(["B", "y", 7], cols[1]), 7)
-		self.assertEqual(report_file._cell({"balance": 5}, cols[1]), 5)
-		self.assertIsNone(report_file._cell(["B"], cols[1]))
+		self.assertEqual(report_file._get_row_cell_value(["B", "y", 7], cols[1]), 7)
+		self.assertEqual(report_file._get_row_cell_value({"balance": 5}, cols[1]), 5)
+		self.assertIsNone(report_file._get_row_cell_value(["B"], cols[1]))
 
 	def test_render(self):
 		raw = {"columns": self.COLUMNS, "result": self.ROWS}

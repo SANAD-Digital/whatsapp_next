@@ -107,19 +107,19 @@ class TestHub(IntegrationTestCase):
 		provider = HubProvider()
 		provider.function = ff.ensure_function(next(iter(ff.FUNCTIONS)))
 		with fake_provider(provider), as_user("WhatsApp Manager"):
-			(row,) = hub.entries("Command")
+			(row,) = hub.list_hub_entries("Command")
 			self.assertEqual((row["state"], row["local"]), ("not_installed", None))
 			# the details view names each field by its label, not its fieldname
 			self.assertEqual(
-				hub.entry("HUB-CMD-1")["labels"]["code"],
+				hub.get_hub_entry("HUB-CMD-1")["labels"]["code"],
 				frappe.get_meta("WhatsApp Command").get_label("code"),
 			)
-			out = hub.install("HUB-CMD-1")
+			out = hub.install_hub_entry("HUB-CMD-1")
 			self.assertTrue(out["created"])
-			self.assertEqual(hub.entries("Command")[0]["state"], "installed")
+			self.assertEqual(hub.list_hub_entries("Command")[0]["state"], "installed")
 			provider.checksum, provider.text = "c2", "second"
-			self.assertEqual(hub.entries("Command")[0]["state"], "update_available")
-			again = hub.install("HUB-CMD-1")
+			self.assertEqual(hub.list_hub_entries("Command")[0]["state"], "update_available")
+			again = hub.install_hub_entry("HUB-CMD-1")
 		self.assertFalse(again["created"])
 		self.assertEqual(again["name"], out["name"])
 		row = frappe.db.get_value("WhatsApp Command", out["name"], ["title", "hub_checksum"], as_dict=True)
@@ -129,7 +129,7 @@ class TestHub(IntegrationTestCase):
 	def test_a_function_is_for_a_system_manager(self):
 		with fake_provider(HubProvider()), as_user("WhatsApp Manager"):
 			with self.assertRaises(WAPermissionError):
-				hub.install("HUB-FN-1")
+				hub.install_hub_entry("HUB-FN-1")
 		self.assertFalse(frappe.db.exists("Server Script", "wa_fn_hubtest"))
 
 	def test_an_alert_arrives_off_and_runs_for_this_sites_company(self):
@@ -144,7 +144,7 @@ class TestHub(IntegrationTestCase):
 			as_user("WhatsApp Manager"),
 			patch.object(alerts, "default_company", return_value="Hub Test Co"),
 		):
-			hub.install("HUB-ALERT-1")
+			hub.install_hub_entry("HUB-ALERT-1")
 		row = frappe.db.get_value(
 			"WhatsApp Notification Alert", ALERT, ["enabled", "filters_json", "hub_entry"], as_dict=True
 		)
@@ -158,9 +158,9 @@ class TestHub(IntegrationTestCase):
 			{"doctype": "WhatsApp Template", "template_name": TEMPLATE, "body": "made here"}
 		).insert(ignore_permissions=True)
 		with fake_provider(HubProvider()), as_user("WhatsApp Manager"):
-			(row,) = hub.entries("Template")
+			(row,) = hub.list_hub_entries("Template")
 			self.assertEqual((row["state"], row["local"]), ("update_available", TEMPLATE))
-			out = hub.install("HUB-TPL-1")
+			out = hub.install_hub_entry("HUB-TPL-1")
 		self.assertEqual((out["name"], out["created"]), (TEMPLATE, False))
 		row = frappe.db.get_value("WhatsApp Template", TEMPLATE, ["body", "hub_entry"], as_dict=True)
 		self.assertEqual((row.body, row.hub_entry), ("from the hub", "HUB-TPL-1"))
@@ -177,7 +177,7 @@ class TestHub(IntegrationTestCase):
 			},
 		}
 		with fake_provider(provider), as_user("WhatsApp Manager"):
-			hub.install("HUB-CMD-1")
+			hub.install_hub_entry("HUB-CMD-1")
 		self.assertEqual(frappe.db.get_value("WhatsApp Template", TEMPLATE, "hub_entry"), "HUB-TPL-1")
 		# a command arrives stopped: who may use it is this site's to say
 		self.assertEqual(

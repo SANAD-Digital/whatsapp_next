@@ -17,9 +17,9 @@ class TestServiceUser(IntegrationTestCase):
 
 	def test_not_set_leaves_the_user_as_it_is(self):
 		ensure_settings(enable_commands=0, command_service_user=None)
-		self.assertIsNone(service_user.get())
+		self.assertIsNone(service_user.get_active_service_user())
 		frappe.set_user("Guest")
-		with service_user.acting() as user:
+		with service_user.run_as_service_user() as user:
 			self.assertIsNone(user)
 			self.assertEqual(frappe.session.user, "Guest")
 		self.assertEqual(frappe.session.user, "Guest")
@@ -29,7 +29,7 @@ class TestServiceUser(IntegrationTestCase):
 		ensure_settings(command_service_user=user)
 		frappe.set_user("Guest")
 		form = frappe.local.form_dict
-		with service_user.acting() as acting:
+		with service_user.run_as_service_user() as acting:
 			self.assertEqual((acting, frappe.session.user), (user, user))
 		self.assertEqual(frappe.session.user, "Guest")
 		self.assertIs(frappe.local.form_dict, form)
@@ -39,7 +39,7 @@ class TestServiceUser(IntegrationTestCase):
 		ensure_settings(command_service_user=user)
 		frappe.get_doc("User", user).add_roles("System Manager")
 		try:
-			self.assertIsNone(service_user.get())
+			self.assertIsNone(service_user.get_active_service_user())
 		finally:
 			frappe.get_doc("User", user).remove_roles("System Manager")
 
@@ -48,6 +48,6 @@ class TestServiceUser(IntegrationTestCase):
 		ensure_settings(command_service_user=user)
 		frappe.db.set_value("User", user, "enabled", 0)
 		try:
-			self.assertIsNone(service_user.get())
+			self.assertIsNone(service_user.get_active_service_user())
 		finally:
 			frappe.db.set_value("User", user, "enabled", 1)

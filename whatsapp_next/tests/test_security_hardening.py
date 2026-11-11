@@ -24,7 +24,7 @@ PREFIX = "WA SecTest"
 class TestTemplateSandbox(IntegrationTestCase):
 	def _render(self, source: str) -> templates.RenderResult:
 		ctx = {"doc": frappe.get_doc("User", "Administrator"), "recipient": frappe._dict(display_name="R")}
-		return templates.render(source, ctx)
+		return templates.render_message_template(source, ctx)
 
 	def test_no_data_access_from_a_message_body(self):
 		for source in (
@@ -115,7 +115,7 @@ class TestUserComposedMessages(IntegrationTestCase):
 
 	def test_quick_send_preview_needs_read_on_the_record(self):
 		with as_user("WhatsApp Agent"), self.assertRaises(frappe.PermissionError):
-			quick_send.preview(
+			quick_send.preview_message_body(
 				body="{{ doc.name }}", reference_doctype="User", reference_name="Administrator"
 			)
 

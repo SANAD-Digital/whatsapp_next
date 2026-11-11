@@ -53,7 +53,7 @@ class TestReceipts(IntegrationTestCase):
 			doc = self._inbound(**values)
 			with patch("whatsapp_next.providers.registry.get_provider", return_value=self.provider):
 				self.assertFalse(receipts.mark_read(doc.name))
-				self.assertFalse(receipts.typing(doc.name))
+				self.assertFalse(receipts.send_typing_indicator(doc.name))
 		self.provider.mark_read.assert_not_called()
 
 	def test_modes(self):
@@ -67,11 +67,11 @@ class TestReceipts(IntegrationTestCase):
 			enqueue.assert_not_called()
 			receipts.on_command_replied(doc.name)
 			self.assertEqual(self.provider.mark_read.call_count, 1)
-			self.assertFalse(receipts.typing(doc.name))
+			self.assertFalse(receipts.send_typing_indicator(doc.name))
 			self._settings(mark_read_mode="Every received message", typing_indicator=1)
 			receipts.on_received(doc.name)
 			enqueue.assert_called_once()
-			self.assertTrue(receipts.typing(doc.name))
+			self.assertTrue(receipts.send_typing_indicator(doc.name))
 			self._settings(mark_read_mode="Never")
 			receipts.on_command_replied(doc.name)
 		self.assertEqual(self.provider.mark_read.call_count, 1)

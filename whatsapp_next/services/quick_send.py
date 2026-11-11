@@ -14,7 +14,7 @@ from whatsapp_next.exceptions import WAInvalidPhoneError, WAPermissionError, WAV
 from whatsapp_next.services import dispatch, templates
 from whatsapp_next.services.devices import default_device
 from whatsapp_next.services.dispatch import OutboundSpec
-from whatsapp_next.services.phone import classify, is_group_or_lid, normalize
+from whatsapp_next.services.phone import classify, is_group_or_lid, normalize_phone_to_e164
 
 QUICK_SOURCES = frozenset({"Quick Send", "Form", "API", "Simulator"})
 
@@ -64,7 +64,7 @@ def resolve_recipient(
 		phones = permissions.contact_phones(contact)
 		if not phones and not phone:
 			frappe.throw(_("Contact {0} has no WhatsApp number").format(contact), WAInvalidPhoneError)
-		key = normalize(phone) if phone else phones[0]
+		key = normalize_phone_to_e164(phone) if phone else phones[0]
 		display_name = frappe.db.get_value("Contact", contact, "full_name")
 	elif phone:
 		kind, key = classify(phone)
@@ -91,7 +91,7 @@ def resolve_recipient(
 	}
 
 
-def preview(
+def preview_message_body(
 	template: str | None = None,
 	body: str | None = None,
 	reference_doctype: str | None = None,
@@ -133,7 +133,7 @@ def preview(
 		templates.readable_only(ctx.get("doc"))
 	if recipient and not context and not (reference_doctype and reference_name):
 		ctx["recipient"] = templates.context_for(recipient=recipient)["recipient"]
-	result = templates.render(source, ctx)
+	result = templates.render_message_template(source, ctx)
 	return {"body": result.text, "errors": [result.error] if result.error else []}
 
 

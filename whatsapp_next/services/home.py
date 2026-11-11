@@ -23,14 +23,16 @@ FEED_LIMIT = 5
 PANEL_LIMIT = 5
 
 
-def _window(period: str) -> tuple[datetime, datetime, int, str]:
+def _get_period_window(period: str) -> tuple[datetime, datetime, int, str]:
 	days, grain = PERIODS[period]
 	start = get_datetime(add_days(nowdate(), -days))
 	previous_start = get_datetime(add_days(start, -(days + 1)))
 	return start, previous_start, days, grain
 
 
-def _group(field: str, start: datetime, end: datetime | None = None, **equals: Any) -> dict[str, int]:
+def _count_outbound_by_field(
+	field: str, start: datetime, end: datetime | None = None, **equals: Any
+) -> dict[str, int]:
 	log = frappe.qb.DocType(OUT)
 	column = log[field]
 	query = frappe.qb.from_(log).select(column, Count("*")).where(log.creation >= start).groupby(column)
@@ -52,19 +54,19 @@ def traffic(period: str) -> dict[str, Any]:
 	same elapsed span one period earlier (today so far ↔ yesterday up to this time; the last N
 	days ↔ the N days ending at this time N days ago) — a full previous day against a partial
 	today would always read as a drop."""
-	start, previous_start, days, _grain = _window(period)
+	start, previous_start, days, _grain = _get_period_window(period)
 	previous_end = add_to_date(now_datetime(), days=-(days + 1))
 	return {
 		"from": str(start.date()),
-		"now": _group("status", start),
-		"previous": _group("status", previous_start, previous_end),
-		"errors": _group("error_code", start, status="Failed"),
+		"now": _count_outbound_by_field("status", start),
+		"previous": _count_outbound_by_field("status", previous_start, previous_end),
+		"errors": _count_outbound_by_field("error_code", start, status="Failed"),
 	}
 
 
-def series(period: str) -> list[dict[str, Any]]:
+def get_traffic_series(period: str) -> list[dict[str, Any]]:
 	"""`[{key, status, count}]` per hour ("00".."23", today) or per day ("YYYY-MM-DD")."""
-	start, _previous, _days, grain = _window(period)
+	start, _previous, _days, grain = _get_period_window(period)
 	log = frappe.qb.DocType(OUT)
 	bucket = Extract(DatePart.hour, log.creation) if grain == "hour" else Date(log.creation)
 	rows = (
@@ -100,7 +102,7 @@ def last_sent():
 	return rows[0].sent_at if rows else None
 
 
-def feed() -> list[dict[str, Any]]:
+def get_recent_message_feed() -> list[dict[str, Any]]:
 	"""The last movements in both directions, newest first."""
 	out = frappe.get_all(
 		OUT,
@@ -126,8 +128,8 @@ def activity(period: str) -> dict[str, Any]:
 	return {
 		"period": period,
 		"traffic": traffic(period),
-		"series": series(period),
+		"series": get_traffic_series(period),
 		"scheduled": scheduled_campaigns(),
 		"last_sent": last_sent(),
-		"feed": feed(),
+		"feed": get_recent_message_feed(),
 	}

@@ -104,7 +104,7 @@ def preview(target_doctype: str, target_name: str, rows: list[dict] | None = Non
 	"""Classify `rows` against the target child table → `{available[], already_added[],
 	invalid[], duplicates_in_selection[], known_count}`. Requires write on the target."""
 	_require_write(target_doctype, target_name)
-	return picker.preview(target_doctype, target_name, rows or []).as_dict()
+	return picker.preview_rows_for_target(target_doctype, target_name, rows or []).as_dict()
 
 
 @api_endpoint(roles=PICKER_ROLES)

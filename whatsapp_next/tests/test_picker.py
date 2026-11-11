@@ -198,7 +198,7 @@ class TestPicker(IntegrationTestCase):
 			{"phone": P2},
 			{"phone": "zzz"},
 		]
-		p = picker.preview("WhatsApp Contact Group", GROUP, rows)
+		p = picker.preview_rows_for_target("WhatsApp Contact Group", GROUP, rows)
 		self.assertEqual(
 			(
 				[r["phone_e164"] for r in p.available],
@@ -232,7 +232,7 @@ class TestPicker(IntegrationTestCase):
 		with self.assertRaises(WAValidationError):
 			picker.commit_add("WhatsApp Contact Group", GROUP, rows, source_type="Nope")
 		with self.assertRaises(WAValidationError):
-			picker.preview("User", "Administrator", rows)
+			picker.preview_rows_for_target("User", "Administrator", rows)
 
 	def test_commit_campaign_states(self):
 		draft = self._campaign()

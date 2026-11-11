@@ -21,7 +21,7 @@ from whatsapp_next.providers import registry
 from whatsapp_next.providers.schemas import SignupState
 from whatsapp_next.services import audit, backup, usage_sync, webhook_setup
 from whatsapp_next.services import settings as settings_service
-from whatsapp_next.services.phone import normalize
+from whatsapp_next.services.phone import normalize_phone_to_e164
 
 # What sign-in / sign-up hand back and Settings stores; the first three are required to call the
 # platform at all, `customer_api_secret` whenever the link requires the secret header (D-129).
@@ -43,7 +43,7 @@ SIGNUP_CALLBACK_KEY = "wa:signup_callback"
 SIGNUP_CALLBACK_TTL_S = 2 * 60 * 60
 
 
-def _settings():
+def _get_settings_doc():
 	return frappe.get_doc("WhatsApp Settings")
 
 
@@ -52,14 +52,14 @@ def has_secret(settings, fieldname: str) -> bool:
 	the value is never returned). `settings` is accepted for the callers that pass it."""
 	from whatsapp_next.services import secrets
 
-	return bool(secrets.read(fieldname))
+	return bool(secrets.read_password_field(fieldname))
 
 
 def has_credentials(settings=None) -> bool:
 	"""All three platform credentials are present and the site knows its platform address — the
 	effective one (the site's mode decides it, `registry.platform_base_url`): the
 	address is a default, never copied into Settings (D-117)."""
-	s = settings or _settings()
+	s = settings or _get_settings_doc()
 	return bool(registry.platform_base_url(s)) and all(has_secret(s, f) for f in REQUIRED_CREDENTIALS)
 
 
@@ -88,7 +88,9 @@ def test_connection(user: str | None = None) -> dict[str, Any]:
 		update_modified=False,
 	)
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
-	audit.log("Connection Tested", user=user, details={"what": "provider", "ok": ok, "latency_ms": latency})
+	audit.record_audit_entry(
+		"Connection Tested", user=user, details={"what": "provider", "ok": ok, "latency_ms": latency}
+	)
 	if ok:
 		usage_sync.sync_subscription()
 	return {"ok": ok, "latency_ms": cint(latency), "plan_code": plan_code, "error": error}
@@ -106,7 +108,7 @@ def save_credentials(
 	"""Store the platform credentials with `set_password` (values never logged or returned).
 	Returns the fieldnames written. `platform_base_url` is accepted from older callers and ignored:
 	the site's mode decides the address (`registry.platform_base_url`)."""
-	doc = _settings()
+	doc = _get_settings_doc()
 	written: list[str] = []
 	for fieldname, value in (
 		("customer_api_key", customer_api_key),
@@ -124,7 +126,9 @@ def save_credentials(
 	doc.save(ignore_permissions=True)
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 	registry.clear_cache()
-	audit.log("Credentials Changed", user=user, fields_written=written, details={"what": "platform"})
+	audit.record_audit_entry(
+		"Credentials Changed", user=user, fields_written=written, details={"what": "platform"}
+	)
 	return written
 
 
@@ -169,7 +173,7 @@ def sign_out(user: str | None = None) -> dict[str, Any]:
 	`{ok, webhook_removed}`."""
 	webhook_removed = _release_webhook()
 	_forget_link()
-	audit.log(
+	audit.record_audit_entry(
 		"Credentials Changed",
 		user=user,
 		fields_written=list(SIGN_OUT_SECRETS),
@@ -183,7 +187,7 @@ def _release_webhook() -> bool:
 	keys, before they are forgotten (best effort: a platform that cannot be reached never keeps the
 	site linked). Left behind, the account kept posting its messages here, signed with a secret the
 	site no longer holds. True when it was removed."""
-	s = _settings()
+	s = _get_settings_doc()
 	if not (s.webhook_endpoint and has_credentials(s)):
 		return False
 	try:
@@ -242,7 +246,9 @@ def store_signup_credentials(state: SignupState, user: str | None = None) -> boo
 	)
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
 	registry.clear_cache()
-	audit.log("Credentials Changed", user=user, fields_written=list(values), details={"what": "signup"})
+	audit.record_audit_entry(
+		"Credentials Changed", user=user, fields_written=list(values), details={"what": "signup"}
+	)
 	return True
 
 
@@ -334,7 +340,7 @@ def company_contact_mobile(company: str, region: str | None = None) -> str | Non
 			order_by="is_primary_mobile_no desc, is_primary_phone desc, idx asc",
 		)
 		for raw in [contact.mobile_no] + [r.phone for r in rows] + [contact.phone]:
-			e164 = normalize(raw, region) if raw else None
+			e164 = normalize_phone_to_e164(raw, region) if raw else None
 			if e164:
 				return e164
 	return None
@@ -355,7 +361,7 @@ def start_signup(
 
 	A `coupon_code` is validated by the platform at this moment, so a bad code
 	is refused while the user is still on the form."""
-	e164 = normalize(mobile)
+	e164 = normalize_phone_to_e164(mobile)
 	if not e164:
 		frappe.throw(_("Invalid phone number: {0}").format(mobile), WAInvalidPhoneError)
 	callback = _new_callback()
@@ -642,7 +648,7 @@ def _step_error(exc: Exception) -> str:
 
 def validate_coupon(code: str, email: str | None = None, mobile: str | None = None) -> dict[str, Any]:
 	"""Ask the platform whether a coupon is usable; an unusable one is an answer, not an error."""
-	e164 = normalize(mobile) if mobile else None
+	e164 = normalize_phone_to_e164(mobile) if mobile else None
 	return registry.get_provider().validate_coupon(code, email=email, mobile_e164=e164)
 
 
@@ -651,9 +657,9 @@ def referral_coupon() -> dict[str, Any]:
 	return registry.get_provider().get_referral_coupon()
 
 
-def steps(settings=None) -> list[Step]:
+def get_onboarding_steps(settings=None) -> list[Step]:
 	"""The four onboarding steps with their current state (no provider call)."""
-	s = settings or _settings()
+	s = settings or _get_settings_doc()
 	connected = frappe.db.count("WhatsApp Device", {"status": "Connected"})
 	linked = has_credentials(s)
 	return [
@@ -689,13 +695,13 @@ def _connection_detail(s) -> str:
 	return _("The connection has not been tested yet.")
 
 
-def status() -> dict[str, Any]:
+def get_onboarding_status() -> dict[str, Any]:
 	"""`{setup_completed, setup_completed_at, steps[{key, done, detail}], redirect_enabled}`."""
-	s = _settings()
+	s = _get_settings_doc()
 	return {
 		"setup_completed": bool(cint(s.setup_completed)),
 		"setup_completed_at": s.setup_completed_at,
-		"steps": [step.__dict__ for step in steps(s)],
+		"steps": [step.__dict__ for step in get_onboarding_steps(s)],
 		"redirect_enabled": bool(cint(s.redirect_unregistered_to_wizard)),
 		"needs_setup": needs_setup(s),
 		"can_setup": can_setup(),
@@ -712,7 +718,7 @@ def needs_setup(settings=None) -> bool:
 	"""The product is not usable yet (owner, 2026-10-19): the redirect is on and the site is not
 	signed in to its platform (no credentials — never registered, or signed out since), or the
 	wizard was never finished (`setup_completed`)."""
-	s = settings or _settings()
+	s = settings or _get_settings_doc()
 	return bool(cint(s.redirect_unregistered_to_wizard)) and (
 		not has_credentials(s) or not cint(s.setup_completed)
 	)
@@ -737,8 +743,8 @@ def should_redirect_to_wizard(user: str | None = None) -> bool:
 def complete_setup(user: str | None = None) -> bool:
 	"""Flag `setup_completed` once every step is done; otherwise `WAStateConflictError` naming
 	the first missing step."""
-	s = _settings()
-	missing = [step for step in steps(s) if not step.done]
+	s = _get_settings_doc()
+	missing = [step for step in get_onboarding_steps(s) if not step.done]
 	if missing:
 		frappe.throw(
 			_("Setup step {0} is not complete: {1}").format(missing[0].key, missing[0].detail or ""),
@@ -751,5 +757,5 @@ def complete_setup(user: str | None = None) -> bool:
 			update_modified=False,
 		)
 		frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
-		audit.log("Settings Changed", user=user, fields_written=["setup_completed"])
+		audit.record_audit_entry("Settings Changed", user=user, fields_written=["setup_completed"])
 	return True

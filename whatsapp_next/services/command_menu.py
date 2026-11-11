@@ -25,7 +25,7 @@ MAX_ROWS = 10  # WhatsApp shows at most ten rows in a list
 MAX_BODY = 1024  # longest text a buttons message carries
 
 
-def mode() -> str:
+def get_main_menu_mode() -> str:
 	"""The menu mode in force: Settings' choice, or `Off` when commands are off or the plan has no interactive messages."""
 	settings = frappe.get_cached_doc("WhatsApp Settings")
 	if not cint(settings.enable_commands):
@@ -37,7 +37,7 @@ def mode() -> str:
 	return settings.get("main_menu_mode") or "Off"
 
 
-def items(allowed: Callable[[str], bool] | None = None) -> list[frappe._dict]:
+def list_menu_commands(allowed: Callable[[str], bool] | None = None) -> list[frappe._dict]:
 	"""Active commands shown in the menu, in `menu_order` then title — only those `allowed`
 	(the sender's access, `command_router.allowed_for`) when given."""
 	rows = frappe.get_all(
@@ -52,7 +52,7 @@ def items(allowed: Callable[[str], bool] | None = None) -> list[frappe._dict]:
 
 def is_menu_request(inbound) -> bool:
 	"""The «Main menu» button, or a message that is one of `main_menu_words`."""
-	if mode() == "Off":
+	if get_main_menu_mode() == "Off":
 		return False
 	get = inbound.get if hasattr(inbound, "get") else lambda k: getattr(inbound, k, None)
 	if cstr(get("selected_option_id")).strip() == MENU_ID:
@@ -62,15 +62,15 @@ def is_menu_request(inbound) -> bool:
 	return bool(text) and text in {w.strip().casefold() for w in words.splitlines() if w.strip()}
 
 
-def _text() -> str:
+def _get_menu_body_text() -> str:
 	return frappe.get_cached_doc("WhatsApp Settings").get("main_menu_text") or _("How can we help?")
 
 
-def _button() -> str:
+def _get_menu_button_label() -> str:
 	return (frappe.get_cached_doc("WhatsApp Settings").get("main_menu_button") or _("Main menu"))[:20]
 
 
-def _title(row) -> str:
+def _get_command_menu_title(row) -> str:
 	return _(row.title or row.code)[:24]
 
 
@@ -79,10 +79,10 @@ def menu_list(
 ) -> dict[str, Any] | None:
 	"""The menu as a list message, or `None` when no command is in it. `output_key` decides how it
 	is sent (a reply of its own goes at once, like help; one that follows replies goes with them)."""
-	rows = items(allowed)
+	rows = list_menu_commands(allowed)
 	if not rows:
 		return None
-	text = _text()
+	text = _get_menu_body_text()
 	return {
 		"output_key": output_key,
 		"is_menu": True,
@@ -90,14 +90,14 @@ def menu_list(
 		"body": text,
 		"interactive": {
 			"text": text,
-			"button_text": _button(),
+			"button_text": _get_menu_button_label(),
 			"sections": [
 				{
-					"title": _button(),
+					"title": _get_menu_button_label(),
 					"rows": [
 						{
 							"id": r.code.strip(),
-							"title": _title(r),
+							"title": _get_command_menu_title(r),
 							"description": cstr(r.menu_description)[:72],
 						}
 						for r in rows
@@ -111,8 +111,10 @@ def menu_list(
 
 def _buttons(rows) -> list[dict[str, str]]:
 	if len(rows) <= MAX_BUTTONS:
-		return [{"type": "reply", "id": r.code.strip(), "text": _title(r)[:20]} for r in rows]
-	return [{"type": "reply", "id": MENU_ID, "text": _button()}]
+		return [
+			{"type": "reply", "id": r.code.strip(), "text": _get_command_menu_title(r)[:20]} for r in rows
+		]
+	return [{"type": "reply", "id": MENU_ID, "text": _get_menu_button_label()}]
 
 
 def decorate(
@@ -120,12 +122,12 @@ def decorate(
 ) -> list[dict[str, Any]]:
 	"""The replies with the menu added per `main_menu_mode`. Unchanged when the mode is Off, no
 	command is in the menu, a question awaits an answer, or the replies already are the menu."""
-	current = mode()
+	current = get_main_menu_mode()
 	if current == "Off" or not replies or status == "Awaiting Input":
 		return replies
 	if any(r.get("is_menu") for r in replies):
 		return replies
-	rows = items(allowed)
+	rows = list_menu_commands(allowed)
 	if not rows:
 		return replies
 	after = replies[-1].get("output_key") or "menu"
@@ -148,8 +150,8 @@ def decorate(
 			"output_key": after,
 			"is_menu": True,
 			"message_type": "Buttons",
-			"body": _text(),
-			"interactive": {"text": _text(), "buttons": buttons},
+			"body": _get_menu_body_text(),
+			"interactive": {"text": _get_menu_body_text(), "buttons": buttons},
 			"attachment": None,
 		},
 	]
@@ -220,7 +222,7 @@ def save_items(entries: list[dict[str, Any]], *, user: str | None = None) -> lis
 			frappe.clear_document_cache("WhatsApp Command", row.name)
 			changed.append(row.name)
 	if changed:
-		audit.log(
+		audit.record_audit_entry(
 			"Settings Changed",
 			fields_written=["show_in_menu", "menu_order", "menu_description"],
 			details={"section": "main_menu", "commands": changed},

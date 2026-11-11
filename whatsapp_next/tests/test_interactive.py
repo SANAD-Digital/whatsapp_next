@@ -28,7 +28,7 @@ class TestInteractive(IntegrationTestCase):
 		plan(True)
 
 	def test_buttons_are_validated_and_given_ids(self):
-		d = interactive.normalize(
+		d = interactive.normalize_interactive_definition(
 			"Buttons",
 			{
 				"text": "Continue?",
@@ -47,10 +47,10 @@ class TestInteractive(IntegrationTestCase):
 			{"text": "t", "buttons": [{"type": "nope", "text": "x"}]},
 		):
 			with self.assertRaises(WAValidationError):
-				interactive.normalize("Buttons", bad)
+				interactive.normalize_interactive_definition("Buttons", bad)
 
 	def test_list_needs_rows(self):
-		d = interactive.normalize(
+		d = interactive.normalize_interactive_definition(
 			"List",
 			{
 				"text": "Pick",
@@ -61,7 +61,7 @@ class TestInteractive(IntegrationTestCase):
 			(d["button_text"], [r["id"] for r in d["sections"][0]["rows"]]), ("Options", ["a", "b"])
 		)
 		with self.assertRaises(WAValidationError):
-			interactive.normalize("List", {"text": "Pick", "sections": []})
+			interactive.normalize_interactive_definition("List", {"text": "Pick", "sections": []})
 
 	def test_outbound_stores_and_sends_the_definition(self):
 		device = frappe.db.get_value("WhatsApp Device", {}, "name") or ensure_device()

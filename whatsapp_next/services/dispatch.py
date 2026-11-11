@@ -34,7 +34,7 @@ from whatsapp_next.providers.base import MAX_BATCH
 from whatsapp_next.providers.schemas import BatchResult, Location, NormalizedMessage, SendResult, Source
 from whatsapp_next.services import attachments, audit, errors, polls, templates
 from whatsapp_next.services.guards import status_writer
-from whatsapp_next.services.phone import classify, is_group_or_lid, key_for, normalize
+from whatsapp_next.services.phone import classify, is_group_or_lid, key_for, normalize_phone_to_e164
 from whatsapp_next.services.wa_format import tidy_markers
 
 # ---- vocabulary ---------------------------------------------------------------------------
@@ -128,14 +128,14 @@ class OutboundSpec:
 MAX_AUTOMATIC_ATTEMPTS = 3
 
 
-def _settings():
+def _get_cached_whatsapp_settings():
 	return frappe.get_cached_doc("WhatsApp Settings")
 
 
 def _blacklisted(key: str | None) -> bool:
 	if not key:
 		return False
-	group = _settings().global_blacklist_group
+	group = _get_cached_whatsapp_settings().global_blacklist_group
 	if not group:
 		return False
 	return bool(
@@ -146,7 +146,7 @@ def _blacklisted(key: str | None) -> bool:
 	)
 
 
-def _known(key: str | None) -> bool:
+def _is_known_number(key: str | None) -> bool:
 	from whatsapp_next.services import read_layer
 
 	return bool(key) and key in read_layer.known_keys([key])
@@ -195,7 +195,7 @@ def _recipient_fields(spec: OutboundSpec) -> dict[str, Any]:
 			"phone_e164": None if kind == "Group" else spec.phone,
 		}
 	raw = spec.phone or jid
-	e164 = normalize(raw)
+	e164 = normalize_phone_to_e164(raw)
 	if not e164:
 		frappe.throw(_("Invalid WhatsApp number: {0}").format(raw or ""), WAInvalidPhoneError)
 	return {"recipient_type": "Individual", "phone": raw, "phone_e164": e164, "jid": None}
@@ -244,7 +244,7 @@ def _render_body(
 	ctx = spec.template_context or templates.context_for(
 		spec.reference_doctype, spec.reference_name, recipient=recipient
 	)
-	result = templates.render(tpl.body, ctx)
+	result = templates.render_message_template(tpl.body, ctx)
 	return (result.text if result.ok else None), result.error
 
 
@@ -262,8 +262,8 @@ def create_outbound(spec: OutboundSpec, *, user: str | None = None) -> str:
 		not spec.skip_policy
 		and spec.source_type not in CAMPAIGN_EXEMPT_FROM_POLICY
 		and rec["recipient_type"] == "Individual"
-		and cint(_settings().send_only_to_known_numbers)
-		and not _known(key)
+		and cint(_get_cached_whatsapp_settings().send_only_to_known_numbers)
+		and not _is_known_number(key)
 	):
 		frappe.throw(_("Sending is restricted to known WhatsApp numbers"), WAUnknownNumberPolicyError)
 
@@ -311,7 +311,7 @@ def create_outbound(spec: OutboundSpec, *, user: str | None = None) -> str:
 		"trigger_inbound": spec.trigger_inbound,
 		"is_test": 1 if spec.is_test else 0,
 		"is_simulated": 1 if spec.is_simulated else 0,
-		"provider": _settings().provider,
+		"provider": _get_cached_whatsapp_settings().provider,
 		"attempts": 0,
 		**(spec.extra or {}),
 	}
@@ -353,7 +353,9 @@ def create_outbound(spec: OutboundSpec, *, user: str | None = None) -> str:
 		from whatsapp_next.services import interactive, plan_features
 
 		plan_features.require_interactive()
-		definition = interactive.normalize(spec.message_type, spec.interactive, values.get("body"))
+		definition = interactive.normalize_interactive_definition(
+			spec.message_type, spec.interactive, values.get("body")
+		)
 		values.update({"interactive": json.dumps(definition, ensure_ascii=False), "body": definition["text"]})
 	elif spec.message_type == "Poll":
 		poll = polls.validate(spec.poll_question, spec.poll_options, spec.poll_allow_multiple)
@@ -410,7 +412,7 @@ def enqueue(
 		],
 	)
 	by_name = {r.name: r for r in rows}
-	max_attempts = min(cint(_settings().max_attempts) or 1, MAX_AUTOMATIC_ATTEMPTS)
+	max_attempts = min(cint(_get_cached_whatsapp_settings().max_attempts) or 1, MAX_AUTOMATIC_ATTEMPTS)
 	created: list[str] = []
 	due_devices: set[str] = set()
 	now = now_datetime()
@@ -497,7 +499,7 @@ def dispatch_tick() -> list[str]:
 	Skipped entirely while `Settings.queue_paused`, and while the site is signed out of its
 	platform account: with no keys every batch would fail, so the messages wait in the queue
 	until the site signs in again. Returns the devices enqueued."""
-	if cint(_settings().queue_paused):
+	if cint(_get_cached_whatsapp_settings().queue_paused):
 		return []
 	from whatsapp_next.services.onboarding import has_credentials
 
@@ -663,30 +665,18 @@ def build_messages(
 
 
 def _backoff_delay(attempts: int) -> int:
-	base = cint(_settings().retry_backoff_seconds) or 300
+	base = cint(_get_cached_whatsapp_settings().retry_backoff_seconds) or 300
 	delay = base * (2 ** max(0, attempts - 1))
 	jitter = delay * BACKOFF_JITTER
 	return int(delay + random.uniform(-jitter, jitter))
 
 
-def _item(name: str) -> frappe._dict:
-	row = frappe.db.get_value(
-		"WhatsApp Queue Item",
-		name,
-		["name", "outbound_message", "campaign", "attempts", "max_attempts", "status", "device"],
-		as_dict=True,
-	)
-	if not row:
-		frappe.throw(_("Queue Item {0} not found").format(name), WANotFoundError)
-	return row
-
-
-def _set(doctype: str, name: str, values: dict[str, Any]) -> None:
+def _set_row_values(doctype: str, name: str, values: dict[str, Any]) -> None:
 	frappe.db.set_value(doctype, name, values, update_modified=True)
 
 
 def _dead_letter(item: frappe._dict, reason: str, code: str, *, at) -> None:
-	_set(
+	_set_row_values(
 		"WhatsApp Queue Item",
 		item.name,
 		{
@@ -697,7 +687,7 @@ def _dead_letter(item: frappe._dict, reason: str, code: str, *, at) -> None:
 			"completed_at": at,
 		},
 	)
-	_set(
+	_set_row_values(
 		"WhatsApp Log",
 		item.outbound_message,
 		{
@@ -719,13 +709,14 @@ def _retry_later(
 ) -> str:
 	attempts = cint(item.attempts) + (1 if count_attempt else 0)
 	max_attempts = min(
-		cint(item.get("max_attempts")) or cint(_settings().max_attempts) or 1, MAX_AUTOMATIC_ATTEMPTS
+		cint(item.get("max_attempts")) or cint(_get_cached_whatsapp_settings().max_attempts) or 1,
+		MAX_AUTOMATIC_ATTEMPTS,
 	)
 	if count_attempt and attempts >= max_attempts:
 		_dead_letter(item, reason, code, at=at)
 		return "Dead Letter"
 	next_at = add_to_date(at, seconds=delay if delay is not None else _backoff_delay(max(attempts, 1)))
-	_set(
+	_set_row_values(
 		"WhatsApp Queue Item",
 		item.name,
 		{
@@ -738,7 +729,7 @@ def _retry_later(
 			"claimed_at": None,
 		},
 	)
-	_set(
+	_set_row_values(
 		"WhatsApp Log",
 		item.outbound_message,
 		{"status": "Queued", "attempts": attempts, "error_code": code, "error_message": reason[:500]},
@@ -758,7 +749,7 @@ def apply_batch_result(items: list[frappe._dict], result: BatchResult) -> dict[s
 			item = by_ref.pop(acc.client_ref, None)
 			if not item:
 				continue
-			_set(
+			_set_row_values(
 				"WhatsApp Queue Item",
 				item.name,
 				{
@@ -775,7 +766,7 @@ def apply_batch_result(items: list[frappe._dict], result: BatchResult) -> dict[s
 				counts["held"] += 1
 			else:
 				counts["accepted"] += 1
-			_set("WhatsApp Log", item.outbound_message, values)
+			_set_row_values("WhatsApp Log", item.outbound_message, values)
 		for err in result.errors:
 			item = by_ref.pop(err.client_ref, None) if err.client_ref else None
 			if not item:
@@ -821,7 +812,7 @@ def apply_call_failure(items: list[frappe._dict], exc: Exception, *, device: str
 
 def dispatch_device_batch(device: str) -> dict[str, int]:
 	"""Job (`short`, `wa-dispatch-{device}`): claim → build → `send_batch` → apply. Returns counters."""
-	settings = _settings()
+	settings = _get_cached_whatsapp_settings()
 	if cint(settings.queue_paused):
 		return {"skipped": 1}
 	dev = frappe.db.get_value(
@@ -1003,7 +994,7 @@ def apply_status(
 	if status == "Sent" and current == "Held":
 		values["held_reason"] = None
 	with status_writer():
-		_set("WhatsApp Log", outbound, values)
+		_set_row_values("WhatsApp Log", outbound, values)
 		if status == "Failed":
 			_close_queue_item(outbound, values["error_code"], values["error_message"])
 	_publish_message_status(outbound, status, at, error_code, campaign=row.campaign, device=row.device)
@@ -1097,7 +1088,7 @@ def comment_on_reference(outbound: str, outcome: str, *, reason: str | None = No
 			text += "<br>" + _("Not sent: {0}").format(esc(reason or _("unknown reason")))
 		text += f" · {link}"
 		# the line is the service user's, whoever (or whatever job) noticed the status
-		with service_user.acting():
+		with service_user.run_as_service_user():
 			frappe.get_doc(
 				{
 					"doctype": "Comment",
@@ -1117,7 +1108,7 @@ def _close_queue_item(outbound: str, code: str, reason: str | None) -> None:
 	(`_dead_letter`), so the queue and the message never tell two different stories."""
 	item = frappe.db.get_value("WhatsApp Queue Item", {"outbound_message": outbound, "status": "Completed"})
 	if item:
-		_set(
+		_set_row_values(
 			"WhatsApp Queue Item",
 			item,
 			{
@@ -1168,7 +1159,7 @@ def send_now(outbound: str, *, source: str = "direct") -> SendResult:
 			_("Device {0} is not registered on the platform").format(doc.device), WADeviceOfflineError
 		)
 	with status_writer():
-		_set("WhatsApp Log", outbound, {"status": "Sending", "attempts": cint(doc.attempts) + 1})
+		_set_row_values("WhatsApp Log", outbound, {"status": "Sending", "attempts": cint(doc.attempts) + 1})
 	try:
 		result = registry.get_provider().send_message(build_message(doc, platform_device, priority=1))
 	except pex.ProviderError as exc:
@@ -1240,7 +1231,7 @@ def pause_items(
 	now = now_datetime()
 	with status_writer():
 		for r in rows:
-			_set(
+			_set_row_values(
 				"WhatsApp Queue Item",
 				r.name,
 				{
@@ -1250,7 +1241,9 @@ def pause_items(
 					"pause_reason": reason,
 				},
 			)
-	audit.log("Queue Paused", count=len(rows), reason=reason, user=user, details={"scope": "items"})
+	audit.record_audit_entry(
+		"Queue Paused", count=len(rows), reason=reason, user=user, details={"scope": "items"}
+	)
 	publish_progress(None, force=True)
 	return len(rows)
 
@@ -1262,7 +1255,7 @@ def resume_items(filters: dict[str, Any] | list[str], user: str | None = None) -
 		return 0
 	with status_writer():
 		for r in rows:
-			_set(
+			_set_row_values(
 				"WhatsApp Queue Item",
 				r.name,
 				{
@@ -1273,7 +1266,7 @@ def resume_items(filters: dict[str, Any] | list[str], user: str | None = None) -
 					"next_attempt_at": None,
 				},
 			)
-	audit.log("Queue Resumed", count=len(rows), user=user, details={"scope": "items"})
+	audit.record_audit_entry("Queue Resumed", count=len(rows), user=user, details={"scope": "items"})
 	publish_progress(None, force=True)
 	return len(rows)
 
@@ -1296,7 +1289,7 @@ def delete_items(
 	now = now_datetime()
 	with status_writer():
 		for r in rows:
-			_set(
+			_set_row_values(
 				"WhatsApp Queue Item",
 				r.name,
 				{
@@ -1306,7 +1299,7 @@ def delete_items(
 					"delete_reason": reason,
 				},
 			)
-			_set("WhatsApp Log", r.outbound_message, {"status": "Cancelled", "cancelled_at": now})
+			_set_row_values("WhatsApp Log", r.outbound_message, {"status": "Cancelled", "cancelled_at": now})
 			_publish_message_status(
 				r.outbound_message, "Cancelled", now, campaign=r.campaign, device=r.device
 			)
@@ -1325,7 +1318,7 @@ def delete_items(
 					"Cancelled",
 					update_modified=False,
 				)
-	audit.log("Queue Items Deleted", count=len(rows), reason=reason, user=user)
+	audit.record_audit_entry("Queue Items Deleted", count=len(rows), reason=reason, user=user)
 	publish_progress(None, force=True)
 	return len(rows)
 
@@ -1337,7 +1330,7 @@ def retry_dead_letter(names: Iterable[str], user: str | None = None) -> int:
 		return 0
 	with status_writer():
 		for r in rows:
-			_set(
+			_set_row_values(
 				"WhatsApp Queue Item",
 				r.name,
 				{
@@ -1354,7 +1347,7 @@ def retry_dead_letter(names: Iterable[str], user: str | None = None) -> int:
 					"completed_at": None,
 				},
 			)
-			_set(
+			_set_row_values(
 				"WhatsApp Log",
 				r.outbound_message,
 				{"status": "Queued", "error_code": None, "error_message": None, "failed_at": None},
@@ -1362,7 +1355,7 @@ def retry_dead_letter(names: Iterable[str], user: str | None = None) -> int:
 			_publish_message_status(
 				r.outbound_message, "Queued", now_datetime(), campaign=r.campaign, device=r.device
 			)
-	audit.log("Queue Items Retried", count=len(rows), user=user)
+	audit.record_audit_entry("Queue Items Retried", count=len(rows), user=user)
 	publish_progress(None, force=True)
 	return len(rows)
 
@@ -1383,7 +1376,7 @@ def pause_queue(user: str | None = None, reason: str | None = None) -> None:
 		},
 	)
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
-	audit.log("Queue Paused", reason=reason, user=user, details={"scope": "global"})
+	audit.record_audit_entry("Queue Paused", reason=reason, user=user, details={"scope": "global"})
 	publish_progress(None, force=True)
 
 
@@ -1394,14 +1387,14 @@ def resume_queue(user: str | None = None) -> None:
 		{"queue_paused": 0, "queue_paused_by": None, "queue_paused_at": None, "queue_pause_reason": None},
 	)
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
-	audit.log("Queue Resumed", user=user, details={"scope": "global"})
+	audit.record_audit_entry("Queue Resumed", user=user, details={"scope": "global"})
 	publish_progress(None, force=True)
 
 
 def set_rate(messages_per_minute: int, user: str | None = None) -> int:
 	"""Bound the global rate to 5–60 and to the plan's rate when known; audited."""
 	rate = cint(messages_per_minute)
-	plan_rate = cint(_settings().plan_messages_per_minute)
+	plan_rate = cint(_get_cached_whatsapp_settings().plan_messages_per_minute)
 	upper = min(RATE_MAX, plan_rate) if plan_rate else RATE_MAX
 	if rate < RATE_MIN or rate > upper:
 		frappe.throw(
@@ -1410,7 +1403,7 @@ def set_rate(messages_per_minute: int, user: str | None = None) -> int:
 		)
 	frappe.db.set_single_value("WhatsApp Settings", "messages_per_minute", rate)
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
-	audit.log("Queue Rate Changed", user=user, details={"messages_per_minute": rate})
+	audit.record_audit_entry("Queue Rate Changed", user=user, details={"messages_per_minute": rate})
 	return rate
 
 
@@ -1426,7 +1419,7 @@ def queue_summary(device: str | None = None) -> dict[str, Any]:
 	for r in q.run(as_dict=True):
 		counts[r.status] = cint(r.n)
 	held = frappe.db.count("WhatsApp Log", {"status": "Held", **({"device": device} if device else {})})
-	s = _settings()
+	s = _get_cached_whatsapp_settings()
 	return {
 		"device": device,
 		"queued": counts["Queued"],

@@ -42,7 +42,7 @@ def _columns(raw: list[Any]) -> list[dict[str, Any]]:
 	return out
 
 
-def _cell(row: Any, col: dict[str, Any]) -> Any:
+def _get_row_cell_value(row: Any, col: dict[str, Any]) -> Any:
 	if isinstance(row, dict):
 		return row.get(col["fieldname"])
 	if isinstance(row, list | tuple) and col["index"] < len(row):
@@ -59,7 +59,7 @@ def run_report(report_name: str, filters: dict[str, Any]) -> tuple[list[dict[str
 	return _columns(result.get("columns")), rows
 
 
-def _pdf(title: str, columns: list[dict[str, Any]], rows: list[Any]) -> bytes:
+def _render_report_pdf(title: str, columns: list[dict[str, Any]], rows: list[Any]) -> bytes:
 	from frappe.utils.pdf import get_pdf
 
 	rtl = frappe.local.lang in ("ar", "fa", "he", "ur")
@@ -68,7 +68,7 @@ def _pdf(title: str, columns: list[dict[str, Any]], rows: list[Any]) -> bytes:
 	for row in rows:
 		cells = []
 		for c in columns:
-			value = _cell(row, c)
+			value = _get_row_cell_value(row, c)
 			shown = (
 				format_value(value, {"fieldtype": c["fieldtype"], "options": c["options"]})
 				if value not in (None, "")
@@ -88,11 +88,11 @@ th{{background:#f2f2f2}}
 	return get_pdf(html, {"orientation": "Landscape" if len(columns) > 6 else "Portrait"})
 
 
-def _xlsx(title: str, columns: list[dict[str, Any]], rows: list[Any]) -> bytes:
+def _render_report_xlsx(title: str, columns: list[dict[str, Any]], rows: list[Any]) -> bytes:
 	from frappe.utils.xlsxutils import make_xlsx
 
 	data = [[_(c["label"]) for c in columns]]
-	data += [[_cell(row, c) for c in columns] for row in rows]
+	data += [[_get_row_cell_value(row, c) for c in columns] for row in rows]
 	return make_xlsx(data, (_(title) or "Report")[:31]).getvalue()
 
 
@@ -104,7 +104,11 @@ def render_report_file(msg: dict[str, Any]) -> tuple[str, bytes, str]:
 		frappe.throw(_("Unknown report format {0}").format(fmt))
 	report_name = msg["report_name"]
 	columns, rows = run_report(report_name, msg.get("filters") or {})
-	content = _pdf(report_name, columns, rows) if fmt == "PDF" else _xlsx(report_name, columns, rows)
+	content = (
+		_render_report_pdf(report_name, columns, rows)
+		if fmt == "PDF"
+		else _render_report_xlsx(report_name, columns, rows)
+	)
 	name = cstr(msg.get("file_name") or report_name).strip() or report_name
 	if not name.lower().endswith("." + EXT[fmt]):
 		name = f"{name}.{EXT[fmt]}"

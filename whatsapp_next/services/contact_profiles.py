@@ -54,16 +54,16 @@ def refresh(numbers: list[str], *, device: str | None = None, force: bool = Fals
 	stats = {"asked": len(keys), "updated": 0, "photos": 0}
 	if not keys:
 		return stats
-	device, platform_device = number_check._device(device)
+	device, platform_device = number_check._get_connected_device_for_check(device)
 	provider = registry.get_provider()
 	# the stored texts (opening hours) are read by people: the site's language, not the job's
 	from frappe.translate import print_language
 
 	with print_language(frappe.db.get_single_value("System Settings", "language") or "en"):
-		return _refresh(keys, stats, device, platform_device, provider)
+		return _fetch_and_store_profiles(keys, stats, device, platform_device, provider)
 
 
-def _refresh(keys, stats, device, platform_device, provider) -> dict[str, int]:
+def _fetch_and_store_profiles(keys, stats, device, platform_device, provider) -> dict[str, int]:
 	known = dict(
 		frappe.get_all(
 			NUMBER,
@@ -82,14 +82,14 @@ def _refresh(keys, stats, device, platform_device, provider) -> dict[str, int]:
 				profile.phone_e164, profile.on_whatsapp, profile.jid, profile.verified_name, now, device
 			)
 			if frappe.db.exists(NUMBER, profile.phone_e164):
-				stats["photos"] += _store(profile, now)
+				stats["photos"] += _store_contact_profile(profile, now)
 				stats["updated"] += 1
 		if not getattr(frappe.local, "request", None):
 			frappe.db.commit()  # a long daily run keeps what it has read
 	return stats
 
 
-def _store(profile: ContactProfile, at) -> int:
+def _store_contact_profile(profile: ContactProfile, at) -> int:
 	"""Write one profile onto its WhatsApp Number row; returns 1 when a new photo was saved."""
 	key = profile.phone_e164
 	business = profile.business or {}
@@ -100,7 +100,7 @@ def _store(profile: ContactProfile, at) -> int:
 		"business_categories": ", ".join(business.get("categories") or []) or None,
 		"business_email": business.get("email") or None,
 		"business_address": business.get("address") or None,
-		"business_hours": _hours(business),
+		"business_hours": _format_business_hours(business),
 		"profile_synced_at": at,
 	}
 	saved = 0
@@ -144,7 +144,7 @@ def _minutes(value) -> str:
 	return f"{m // 60:02d}:{m % 60:02d}"
 
 
-def _hours(business: dict) -> str | None:
+def _format_business_hours(business: dict) -> str | None:
 	"""Opening hours as lines a person reads: `Sunday: 09:00–17:00`, `Friday: Closed`."""
 	lines = []
 	for h in business.get("hours") or []:
@@ -217,7 +217,7 @@ def _give_contact_the_photo(key: str, url: str) -> None:
 	if not contact or frappe.db.get_value("Contact", contact, "image"):
 		return
 	frappe.db.set_value("Contact", contact, "image", url, update_modified=False)
-	audit.log(
+	audit.record_audit_entry(
 		"Elevated Contact Write",
 		reference=("Contact", contact),
 		fields_written=["image"],

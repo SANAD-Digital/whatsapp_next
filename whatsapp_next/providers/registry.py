@@ -50,7 +50,7 @@ def credentials(settings=None) -> dict[str, str]:
 
 	out: dict[str, str] = {}
 	for fieldname in CREDENTIAL_FIELDS:
-		value = secrets.read(fieldname)
+		value = secrets.read_password_field(fieldname)
 		if value:
 			out[fieldname] = value
 	return out

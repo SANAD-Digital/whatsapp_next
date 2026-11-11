@@ -47,7 +47,7 @@ EDITOR_KEYS: frozenset[str] = frozenset({*ALLOWED_KEYS, "status"})
 LIST_MODES: tuple[str, ...] = ("Allow All", "Deny All")
 
 
-def get(name: str):
+def get_command_doc(name: str):
 	"""The WhatsApp Command `name`; `WANotFoundError` when it does not exist."""
 	if not frappe.db.exists("WhatsApp Command", name):
 		frappe.throw(_("Command {0} not found").format(name), WANotFoundError)
@@ -62,7 +62,7 @@ def require_inactive(doc) -> None:
 		)
 
 
-def save(payload: dict, user: str | None = None) -> str:
+def save_command_from_payload(payload: dict, user: str | None = None) -> str:
 	"""Create (`name` absent) or update a command from the allow-listed payload
 	`{name?, code, title, function, synonyms, requires_linked_contact, allowed_party_types[],
 	allowed_group, blocked_group, settings_overrides{}, templates[{param, language, text}],
@@ -73,17 +73,17 @@ def save(payload: dict, user: str | None = None) -> str:
 	editor_payload.reject_unknown(payload, ALLOWED_KEYS)
 	name = payload.get("name")
 	if name:
-		doc = get(name)
+		doc = get_command_doc(name)
 		require_inactive(doc)
 	else:
 		doc = frappe.new_doc("WhatsApp Command")
 		doc.status = "Inactive"
-	written = _apply(doc, payload)
+	written = _apply_editor_payload_to_command(doc, payload)
 	if doc.is_new():
 		doc.insert()
 	else:
 		doc.save()
-	audit.log(
+	audit.record_audit_entry(
 		"Command Changed",
 		reference=("WhatsApp Command", doc.name),
 		fields_written=written,
@@ -93,7 +93,7 @@ def save(payload: dict, user: str | None = None) -> str:
 	return doc.name
 
 
-def _apply(doc, payload: dict) -> list[str]:
+def _apply_editor_payload_to_command(doc, payload: dict) -> list[str]:
 	"""Map the allow-listed payload onto `doc` (not saved). Returns the keys written."""
 	written: list[str] = []
 	for key in SCALAR_KEYS:
@@ -175,7 +175,7 @@ def _apply_access(doc, access: Any) -> None:
 
 def set_status(name: str, status: str) -> str:
 	"""Start / stop a command. E: `WANotFoundError`. Returns the status it now has."""
-	doc = get(name)
+	doc = get_command_doc(name)
 	if doc.status != status:
 		doc.status = status
 		doc.save()
@@ -185,13 +185,13 @@ def set_status(name: str, status: str) -> str:
 def restore_defaults(name: str, user: str | None = None) -> dict[str, Any]:
 	"""Drop the command's own message texts and parameter values, so it uses the function's again.
 	E: `WANotFoundError`, `WAStateConflictError` (Active); audited `Command Defaults Restored`."""
-	doc = get(name)
+	doc = get_command_doc(name)
 	require_inactive(doc)
 	doc.set("templates", [])
 	doc.settings_overrides = None
 	doc.defaults_restored_at = now_datetime()
 	doc.save()
-	audit.log(
+	audit.record_audit_entry(
 		"Command Defaults Restored",
 		reference=("WhatsApp Command", doc.name),
 		fields_written=("templates", "settings_overrides", "defaults_restored_at"),
@@ -214,25 +214,25 @@ def save_editor(payload: dict, user: str | None = None) -> dict[str, str]:
 	if status not in (None, "Active", "Inactive"):
 		frappe.throw(_("Unknown status {0}").format(status), WAValidationError)
 	name = fields.get("name")
-	if name and get(name).status == "Active":
+	if name and get_command_doc(name).status == "Active":
 		set_status(name, "Inactive")
 		status = status or "Active"
-	name = save(fields, user=user)
+	name = save_command_from_payload(fields, user=user)
 	if status:
 		set_status(name, status)
 	return {"name": name, "status": frappe.db.get_value("WhatsApp Command", name, "status")}
 
 
-def delete(name: str, user: str | None = None) -> None:
+def delete_command(name: str, user: str | None = None) -> None:
 	"""Delete a command. A command inbound messages already point at keeps its history: it cannot be
 	deleted, only stopped. E: `WANotFoundError`, `WAStateConflictError`; audited `Command Deleted`."""
-	doc = get(name)
+	doc = get_command_doc(name)
 	if frappe.db.exists("WhatsApp Inbound Message", {"command": name}):
 		frappe.throw(
 			_("Command {0} has run history; stop it instead of deleting it").format(name),
 			WAStateConflictError,
 		)
-	audit.log(
+	audit.record_audit_entry(
 		"Command Deleted",
 		reference=("WhatsApp Command", doc.name),
 		details={"code": doc.code, "function": doc.function},
@@ -320,7 +320,7 @@ def _group_labels(names: list[str]) -> dict[str, str]:
 	return {r.name: r.group_name or r.name for r in rows}
 
 
-def _access(doc) -> dict[str, Any]:
+def _describe_command_access(doc) -> dict[str, Any]:
 	"""`{party_type: {mode, groups[{name,label}], contacts[{name,label,phone}]}}` for the editor."""
 	entries = doc.get("access_entries") or []
 	groups = _group_labels([r.contact_group for r in entries if r.contact_group])
@@ -354,7 +354,7 @@ def _overrides(doc) -> dict[str, Any]:
 		return {}
 
 
-def editor(name: str | None = None) -> dict[str, Any]:
+def get_command_editor_data(name: str | None = None) -> dict[str, Any]:
 	"""Everything the editor opens with: `{command, functions[], party_types[], function}` — the
 	command (empty for a new one), the installed functions to pick from, the allowed party types and
 	the picked function's spec. E: `WANotFoundError`."""
@@ -382,7 +382,7 @@ def editor(name: str | None = None) -> dict[str, Any]:
 		"has_history": False,
 	}
 	if name:
-		doc = get(name)
+		doc = get_command_doc(name)
 		command.update(
 			{
 				"name": doc.name,
@@ -400,7 +400,7 @@ def editor(name: str | None = None) -> dict[str, Any]:
 				"settings_overrides": _overrides(doc),
 				"templates": [{f: row.get(f) for f in TEMPLATE_FIELDS} for row in doc.get("templates") or []],
 				"disabled_replies": [k for k in (doc.disabled_replies or "").splitlines() if k.strip()],
-				"access": _access(doc),
+				"access": _describe_command_access(doc),
 				"runs_30d": recent_run_counts([doc.name], days=30).get(doc.name, 0),
 				"has_history": bool(frappe.db.exists("WhatsApp Inbound Message", {"command": doc.name})),
 			}
@@ -418,24 +418,26 @@ def editor(name: str | None = None) -> dict[str, Any]:
 	}
 
 
-def _draft(payload: dict):
+def _build_draft_command(payload: dict):
 	"""An unsaved command built from the editor payload (never inserted)."""
 	editor_payload.reject_unknown(payload, EDITOR_KEYS)
 	doc = frappe.new_doc("WhatsApp Command")
 	fields = {k: v for k, v in payload.items() if k not in ("name", "status")}
-	_apply(doc, fields)
+	_apply_editor_payload_to_command(doc, fields)
 	doc.name = payload.get("name") or _("(unsaved command)")
 	doc.code = (doc.code or "").strip().casefold()
 	return doc
 
 
-def preview(payload: dict, sender: dict | None = None, values: dict | None = None) -> dict[str, Any]:
+def preview_command_draft(
+	payload: dict, sender: dict | None = None, values: dict | None = None
+) -> dict[str, Any]:
 	"""Run the editor's draft — saved or not — for one assumed sender, the way the router would, with
 	`dry_run`: nothing is saved, nothing is sent. `sender{contact, party_type, party_name, phone}`,
 	`values{input key → text}`. Returns `{text, status, block_reason, reply_sent, args, missing[],
 	replies[], error}`; `reply_sent` says whether a live route would actually send the block reply."""
 	editor_payload.require_object(payload)
-	doc = _draft(payload)
+	doc = _build_draft_command(payload)
 	if not doc.function:
 		frappe.throw(_("Pick a function first"), WAValidationError)
 	# the preview reports refusals and errors in its result; a message a failed step queued
@@ -446,7 +448,7 @@ def preview(payload: dict, sender: dict | None = None, values: dict | None = Non
 	try:
 		# written as the sender will get it, in the reply language, not the editor's
 		with in_reply_language():
-			return _preview(doc, sender, values)
+			return _run_dry_command_preview(doc, sender, values)
 	finally:
 		if frappe.local.message_log:
 			del frappe.local.message_log[queued:]
@@ -479,7 +481,7 @@ def _preview_party(
 	return who.party_type, who.party_name
 
 
-def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
+def _run_dry_command_preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
 	"""`preview` after the payload checks: access, arguments, handler, outputs — all dry."""
 	from whatsapp_next.services import command_router, function_runner
 	from whatsapp_next.services.function_runner import Sender
@@ -547,7 +549,7 @@ def _preview(doc, sender: dict | None, values: dict | None) -> dict[str, Any]:
 		return out
 	try:
 		given = command_router.parse_args(doc, text[len(doc.code) :])
-		args, absent = function_runner.prepare(doc, who, given)
+		args, absent = function_runner.prepare_command_params(doc, who, given)
 	except (WAValidationError, ValueError) as exc:
 		out.update(status="Failed", error=str(exc), replies=[{"message_type": "Text", "body": str(exc)}])
 		return out

@@ -47,7 +47,7 @@ def preview(
 	"""`{body, errors[]}` — the template (or ad-hoc body) rendered over the reference document
 	or a sample context, for the recipient `phone` when given; render errors are returned,
 	never raised."""
-	return quick_send.preview(
+	return quick_send.preview_message_body(
 		template=template,
 		body=body,
 		reference_doctype=reference_doctype,

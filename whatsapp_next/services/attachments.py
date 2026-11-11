@@ -193,7 +193,7 @@ def render_print_pdf(
 	if language:
 		frappe.local.lang = language
 
-	def render(engine: str | None):
+	def render_print_with_engine(engine: str | None):
 		# wkhtmltopdf reads the page size only from Print Settings: the format's own size is
 		# handed to it here. Chrome reads the format's size itself.
 		wkhtmltopdf = (engine or pdf_engine(print_format)) == "wkhtmltopdf"
@@ -212,7 +212,7 @@ def render_print_pdf(
 	try:
 		with _css_imports_completed():
 			try:
-				pdf = render(None)
+				pdf = render_print_with_engine(None)
 			except Exception as first:
 				if pdf_engine(print_format) == "wkhtmltopdf":
 					raise
@@ -220,7 +220,7 @@ def render_print_pdf(
 					f"PDF engine of {print_format!r} failed ({_render_error(first)}); retried with wkhtmltopdf"
 				)
 				try:
-					pdf = render("wkhtmltopdf")
+					pdf = render_print_with_engine("wkhtmltopdf")
 				except Exception as second:
 					raise frappe.ValidationError(
 						f"{_render_error(first)} — wkhtmltopdf: {_render_error(second)}"
@@ -323,7 +323,7 @@ def complete_css_imports(html: str) -> str:
 	the site's own address. A full or `data:` link is left as it is."""
 	site = frappe.utils.get_url().rstrip("/")
 
-	def full(match: re.Match) -> str:
+	def complete_css_import_link(match: re.Match) -> str:
 		link = match.group(2)
 		if re.match(r"^[a-z][a-z0-9+.-]*:", link, re.IGNORECASE):
 			return match.group(0)
@@ -333,7 +333,7 @@ def complete_css_imports(html: str) -> str:
 			link = f"{site}/{link.lstrip('/')}"
 		return match.group(1) + link
 
-	return _CSS_IMPORT.sub(full, html or "")
+	return _CSS_IMPORT.sub(complete_css_import_link, html or "")
 
 
 class _css_imports_completed:

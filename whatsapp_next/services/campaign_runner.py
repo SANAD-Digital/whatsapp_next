@@ -84,7 +84,7 @@ class Counters:
 # ---- status writer ---------------------------------------------------------------------
 
 
-def _doc(campaign: str):
+def _get_campaign_doc(campaign: str):
 	if not frappe.db.exists("WhatsApp Campaign", campaign):
 		frappe.throw(_("WhatsApp Campaign {0} not found").format(campaign), WAValidationError)
 	return frappe.get_doc("WhatsApp Campaign", campaign)
@@ -129,14 +129,14 @@ def _check_startable(doc) -> None:
 		frappe.throw(_("Choose a device for the campaign"), WAValidationError)
 
 
-def start(campaign: str, user: str | None = None, *, scheduled: bool = False) -> str:
+def start_campaign(campaign: str, user: str | None = None, *, scheduled: bool = False) -> str:
 	"""`Draft|Scheduled → Queued` now; materialization runs in a `long` job.
 
 	`scheduled` is the scheduler keeping its appointment (`promote_scheduled`): the campaign keeps
 	its `scheduled_at`. Anyone else starts it **now** — a scheduled time left on the document would
 	hold every message until that hour (`_materialize_recipients` staggers from a future
 	`scheduled_at`), and the list would call an immediate start "Scheduled"."""
-	doc = _doc(campaign)
+	doc = _get_campaign_doc(campaign)
 	if doc.status not in EDITABLE:
 		frappe.throw(_("Campaign {0} is {1}").format(campaign, _(doc.status)), WAStateConflictError)
 	_check_startable(doc)
@@ -147,7 +147,7 @@ def start(campaign: str, user: str | None = None, *, scheduled: bool = False) ->
 		started_by=user or frappe.session.user,
 		scheduled_at=(doc.scheduled_at or now_datetime()) if scheduled else None,
 	)
-	audit.log(
+	audit.record_audit_entry(
 		"Campaign Started",
 		reference=("WhatsApp Campaign", campaign),
 		user=user,
@@ -167,7 +167,7 @@ def start(campaign: str, user: str | None = None, *, scheduled: bool = False) ->
 
 def schedule(campaign: str, at, user: str | None = None) -> str:
 	"""`Draft → Scheduled` at a future time; `promote_scheduled` starts it."""
-	doc = _doc(campaign)
+	doc = _get_campaign_doc(campaign)
 	if doc.status != "Draft":
 		frappe.throw(_("Only Draft campaigns can be scheduled"), WAStateConflictError)
 	when = get_datetime(at)
@@ -194,13 +194,13 @@ def promote_scheduled() -> list[str]:
 	)
 	for name in due:
 		try:
-			start(name, user="Administrator", scheduled=True)
+			start_campaign(name, user="Administrator", scheduled=True)
 		except Exception:
 			frappe.log_error(title="WhatsApp campaign: promote failed", message=name)
 	return due
 
 
-def pause(campaign: str, user: str | None = None, reason: str | None = None) -> int:
+def pause_campaign(campaign: str, user: str | None = None, reason: str | None = None) -> int:
 	"""`Running → Paused`: the campaign's open queue rows become `Paused`."""
 	if frappe.db.get_value("WhatsApp Campaign", campaign, "status") not in ("Running", "Queued"):
 		frappe.throw(_("Only a running campaign can be paused"), WAStateConflictError)
@@ -223,21 +223,25 @@ def pause(campaign: str, user: str | None = None, reason: str | None = None) -> 
 		cint(frappe.db.get_value("WhatsApp Campaign", campaign, "pause_count")) + 1,
 		update_modified=False,
 	)
-	audit.log("Campaign Paused", reference=("WhatsApp Campaign", campaign), user=user, reason=reason, count=n)
+	audit.record_audit_entry(
+		"Campaign Paused", reference=("WhatsApp Campaign", campaign), user=user, reason=reason, count=n
+	)
 	return n
 
 
-def resume(campaign: str, user: str | None = None) -> int:
+def resume_campaign(campaign: str, user: str | None = None) -> int:
 	"""Resume a `Paused` campaign: its queue rows go back to `Queued`; audited. Returns the rows resumed."""
 	if frappe.db.get_value("WhatsApp Campaign", campaign, "status") != "Paused":
 		frappe.throw(_("Campaign is not paused"), WAStateConflictError)
 	n = dispatch.resume_items({"campaign": campaign}, user=user)
 	set_status(campaign, "Running", paused_at=None, paused_by=None, pause_reason=None)
-	audit.log("Campaign Resumed", reference=("WhatsApp Campaign", campaign), user=user, count=n)
+	audit.record_audit_entry(
+		"Campaign Resumed", reference=("WhatsApp Campaign", campaign), user=user, count=n
+	)
 	return n
 
 
-def cancel(campaign: str, user: str | None = None, reason: str | None = None) -> int:
+def cancel_campaign(campaign: str, user: str | None = None, reason: str | None = None) -> int:
 	"""Any non-terminal status → `Cancelled`; open queue rows → `Deleted` (outbound `Cancelled`)."""
 	status = frappe.db.get_value("WhatsApp Campaign", campaign, "status")
 	if status in TERMINAL:
@@ -261,7 +265,7 @@ def cancel(campaign: str, user: str | None = None, reason: str | None = None) ->
 			"Cancelled",
 			update_modified=False,
 		)
-	audit.log(
+	audit.record_audit_entry(
 		"Campaign Cancelled", reference=("WhatsApp Campaign", campaign), user=user, reason=reason, count=n
 	)
 	refresh_counters(campaign)
@@ -348,7 +352,7 @@ def _recipient_attachment(msg, recipient, campaign_doc) -> dict[str, Any]:
 def materialize(campaign: str) -> dict[str, int]:
 	"""Job (`long`): one outbound + queue row per (recipient × message), inserted in batches
 	with commits; scheduled_at staggered by cumulative `delay_seconds`; `Queued → Running`."""
-	doc = _doc(campaign)
+	doc = _get_campaign_doc(campaign)
 	# A campaign paused before this job ran (`pause` moves `Queued` through `Running` to `Paused`)
 	# still needs its rows: skipping it left the campaign `Running` after resume with nothing to
 	# send, forever. Its rows are created held — the dispatcher claims nothing of a paused campaign.
@@ -373,7 +377,7 @@ def materialize(campaign: str) -> dict[str, int]:
 
 def materialize_pending(campaign: str) -> dict[str, int]:
 	"""Job (`long`): recipients added while `Running`/`Paused` (still `Pending`) get their rows."""
-	doc = _doc(campaign)
+	doc = _get_campaign_doc(campaign)
 	if doc.status not in ("Running", "Paused"):
 		return {"skipped": 1}
 	counts = _materialize_recipients(
@@ -415,7 +419,7 @@ def _materialize_recipients(doc, recipients) -> dict[str, int]:
 
 		individual = [r.phone_e164 for r in recipients if r.recipient_type != "Group" and r.phone_e164]
 		try:
-			answers = number_check.check(individual, device=device)
+			answers = number_check.check_numbers_on_whatsapp(individual, device=device)
 			not_on_whatsapp = {k for k, on in answers.items() if not on}
 		except Exception:
 			frappe.log_error(
@@ -769,7 +773,7 @@ def preview_message(campaign: str, idx: int, recipient_row: str | None = None) -
 	"""Render message `idx` (1-based) of the campaign as one recipient would receive it —
 	`recipient_row` is a recipient child-row name, else a sample recipient — with the attachment
 	(or rendered document) file name and compile errors of the source."""
-	doc = _doc(campaign)
+	doc = _get_campaign_doc(campaign)
 	messages = doc.get("messages") or []
 	idx = cint(idx)
 	if idx < 1 or idx > len(messages):
@@ -820,7 +824,7 @@ def poll_results(campaign: str, *, refresh: bool = False) -> dict[str, Any]:
 		cached = frappe.cache.get_value(key)
 		if cached:
 			return cached
-	doc = _doc(campaign)
+	doc = _get_campaign_doc(campaign)
 	poll_messages = {
 		i: m for i, m in enumerate(doc.get("messages") or [], start=1) if m.message_type == "Poll"
 	}
@@ -910,7 +914,7 @@ def readiness(campaign: str) -> dict[str, Any]:
 	**variable** compiles; the **audience** is not empty. `ok` is true only when all five pass,
 	which is exactly what `start()` would accept — the reader learns it before pressing, not after.
 	"""
-	doc = _doc(campaign)
+	doc = _get_campaign_doc(campaign)
 	messages = doc.get("messages") or []
 	active = [r for r in doc.get("recipients") or [] if r.status != "Removed"]
 
@@ -1053,7 +1057,7 @@ def message_stats(campaign: str) -> dict[str, Any]:
 	for r in grouped:
 		by_idx.setdefault(cint(r["campaign_message_idx"]) or 1, {})[r["status"]] = cint(r["n"])
 
-	doc = _doc(campaign)
+	doc = _get_campaign_doc(campaign)
 	rows = []
 	for i, m in enumerate(doc.get("messages") or [], start=1):
 		counts = by_idx.get(i, {})
@@ -1171,7 +1175,7 @@ def retry_failed(
 			{"campaign": campaign, "status": "Queued"}, user=user, reason=f"campaign {campaign} paused"
 		)
 	if retried:
-		audit.log(
+		audit.record_audit_entry(
 			"Queue Items Retried",
 			reference=("WhatsApp Campaign", campaign),
 			user=user,

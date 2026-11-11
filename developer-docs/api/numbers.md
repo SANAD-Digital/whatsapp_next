@@ -16,7 +16,7 @@ URL form, authentication, the error envelope, the role groups (`VIEWER_UP`, `AGE
 Returns are shown as the value of the response's `message` key.
 
 **The key.** Every `phone_e164` argument is passed through `services.phone.classify`: an E.164
-number (any format `phone.normalize` accepts), a group JID (`…@g.us`) or a LID JID. The row key is
+number (any format `phone.normalize_phone_to_e164` accepts), a group JID (`…@g.us`) or a LID JID. The row key is
 the normalized value.
 
 **"Contact User | Contact <ptype>"** means: the caller holds `WhatsApp Contact User`, **or** has

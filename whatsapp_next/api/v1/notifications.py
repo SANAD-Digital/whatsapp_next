@@ -54,7 +54,7 @@ def send_now(name: str, reference_name: str) -> dict[str, Any]:
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))
 def get_editor(name: str | None = None) -> dict[str, Any]:
 	"""What the editor opens with: the notification, its stats, choices, fields and templates. P: Manager."""
-	return notifications_editor.editor(name)
+	return notifications_editor.get_notification_editor_data(name)
 
 
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))
@@ -66,7 +66,7 @@ def get_document_setup(document_type: str) -> dict[str, Any]:
 @api_endpoint(roles=MANAGER)
 def preview_draft(payload: dict, reference_name: str | None = None) -> dict[str, Any]:
 	"""Try the unsaved draft on one record (the latest when none is given); nothing is sent. P: Manager."""
-	return notifications_editor.preview(payload, reference_name)
+	return notifications_editor.preview_notification_draft(payload, reference_name)
 
 
 @api_endpoint(roles=MANAGER)
@@ -85,13 +85,13 @@ def send_test(payload: dict, phone: str, reference_name: str | None = None) -> d
 @api_endpoint(roles=MANAGER)
 def save_editor(payload: dict) -> dict[str, Any]:
 	"""Create or update the notification → `{name}`. P: Manager + create / write."""
-	return notifications_editor.save(payload)
+	return notifications_editor.save_notification_from_editor(payload)
 
 
 @api_endpoint(roles=MANAGER)
 def delete_notification(name: str) -> dict[str, bool]:
 	"""Delete the notification. P: Manager + delete."""
-	notifications_editor.delete(name)
+	notifications_editor.delete_notification(name)
 	return {"deleted": True}
 
 
@@ -102,4 +102,4 @@ def delete_notification(name: str) -> dict[str, bool]:
 )
 def search(kind: str, txt: str | None = None, document_type: str | None = None) -> list[dict[str, Any]]:
 	"""The editor's pickers → `[{value, label, description}]`. P: Manager."""
-	return notifications_editor.search(kind, txt, document_type)
+	return notifications_editor.search_editor_picker_options(kind, txt, document_type)

@@ -101,7 +101,7 @@ function_runner.run_function(server_script, params, spec)
 
 ### 2.4 قيم التشغيل — من أين تأتي
 
-`function_runner.prepare(command, sender, given)` ← `merged_values` ← `function_header.build_params`.
+`function_runner.prepare_command_params(command, sender, given)` ← `merged_values` ← `function_header.build_params`.
 الأولوية لكل مدخل من نوع `command`:
 
 1. ما كتبه المرسل (`parse_args`، أو أجوبة الأسئلة).
@@ -138,7 +138,7 @@ function_runner.run_function(server_script, params, spec)
   (مع خطأ الترويسة) أو `update` أو `missing`.
 - كل عملية تُسجَّل في الـ audit: `Function Installed / Updated / Removed`.
 
-**التجربة** (`function_runner.trial`، زر «جرّب» في المركز): نفس خطوات الأمر، خطوة خطوة: الترويسة ←
+**التجربة** (`function_runner.run_function_trial`، زر «جرّب» في المركز): نفس خطوات الأمر، خطوة خطوة: الترويسة ←
 `@requires` ← `@party_types` ← الطرف ← المدخلات ← التشغيل باسم مستخدم الخدمة ← `@reply`. التشغيل داخل
 savepoint يُلغى في النهاية، فلا يُحفظ شيء ولا يُرسل شيء، ولا يُحسب في عدادات الدالة.
 
@@ -309,8 +309,8 @@ frappe.flags.wa_result = {
 
 ```
 Webhook → services/inbound.py (_after_insert)
-   └─ should_route()? → frappe.enqueue("command_router.route", queue="short", job_id="wa-cmd-<inbound>")
-        └─ services/command_router.route()   (يعمل في الـ worker فقط، ويُرفض داخل طلب ويب)
+   └─ should_route()? → frappe.enqueue("command_router.route_inbound_message", queue="short", job_id="wa-cmd-<inbound>")
+        └─ services/command_router.route_inbound_message()   (يعمل في الـ worker فقط، ويُرفض داخل طلب ويب)
 ```
 
 **`should_route`**: الأوامر مفعّلة، والرسالة من نوع `Text` أو `Interactive Reply`، وليست فارغة. في
@@ -345,7 +345,7 @@ Webhook → services/inbound.py (_after_insert)
    مدخل نصي يأخذ بقية النص. التحويل حسب النوع في الترويسة:
    - `Int` رقم صحيح، `Check` نعم/لا، `Select` من `@options`، `Link` يتحقق من وجود السجل.
    - `Date` تاريخ أو كلمة نسبية: `today`، `اليوم`، `أمس`، `month_start`، `-3m`، `-7d`.
-   بعدها `function_runner.prepare` يدمج القيم ويملأ الافتراضيات (القسم 2.4).
+   بعدها `function_runner.prepare_command_params` يدمج القيم ويملأ الافتراضيات (القسم 2.4).
    - إذا نقص مدخل `sender` (الرقم غير مرتبط بطرف) تصبح الحالة `Blocked` بسبب `Not Linked`.
 6. **مدخل ناقص**: إذا نقص مدخل إلزامي أو مدخل مذكور في `ask_inputs`، وكانت المحادثة فردية، **لا يُنفَّذ
    الأمر**. تُحفظ جلسة في الكاش لمدة 600 ثانية (`services/command_sessions.py`)، ويُرسل سؤال:

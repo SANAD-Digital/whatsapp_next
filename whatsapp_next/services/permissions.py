@@ -28,7 +28,7 @@ from whatsapp_next.exceptions import (
 	WAValidationError,
 )
 from whatsapp_next.services import audit, editor_payload
-from whatsapp_next.services.phone import classify, normalize
+from whatsapp_next.services.phone import classify, normalize_phone_to_e164
 
 ELEVATED_ROLE = "WhatsApp Contact User"
 
@@ -161,11 +161,13 @@ def require(ptype: str = "read") -> None:
 def _audit_read(*, count: int | None = None, **details: Any) -> None:
 	"""Audit an elevated read — only for users acting through the contextual role (D-029 OQ-3)."""
 	if is_contact_user():
-		audit.log("Elevated Contact Read", count=count, details=details or None, severity="Info")
+		audit.record_audit_entry(
+			"Elevated Contact Read", count=count, details=details or None, severity="Info"
+		)
 
 
 def _audit_write(contact: str, fields_written: Iterable[str], *, reason: str | None = None) -> None:
-	audit.log(
+	audit.record_audit_entry(
 		"Elevated Contact Write",
 		reference=("Contact", contact),
 		fields_written=fields_written,
@@ -173,7 +175,7 @@ def _audit_write(contact: str, fields_written: Iterable[str], *, reason: str | N
 	)
 
 
-def _page(page: int | None, page_length: int | None) -> tuple[int, int]:
+def _get_page_start_and_length(page: int | None, page_length: int | None) -> tuple[int, int]:
 	length = min(max(cint(page_length) or 20, 1), MAX_PAGE_LENGTH)
 	start = (max(cint(page) or 1, 1) - 1) * length
 	return start, length
@@ -311,7 +313,7 @@ def _contact_query(
 	q = frappe.qb.from_(C)
 	if search:
 		txt = f"%{search.strip()}%"
-		digits = normalize(search) or search.strip()
+		digits = normalize_phone_to_e164(search) or search.strip()
 		phone_match = (
 			frappe.qb.from_(P)
 			.select(P.name)
@@ -390,7 +392,7 @@ def list_contacts(
 	field, _sep, direction = (order_by or "modified desc").strip().partition(" ")
 	if field not in ORDERABLE_FIELDS or direction.lower() not in ("", "asc", "desc"):
 		frappe.throw(_("Cannot order by {0}").format(order_by), WAValidationError)
-	start, length = _page(page, page_length)
+	start, length = _get_page_start_and_length(page, page_length)
 	q, C = _contact_query(search, link_doctype, link_name, has_whatsapp, blacklisted, linked, status)
 	total = q.select(Count("*")).run()[0][0]
 	order_col = getattr(C, field)
@@ -481,7 +483,7 @@ def count_contacts(txt: str | None = None) -> int:
 def search_contacts(txt: str | None = None, page: int = 1, page_length: int = 20) -> list[dict[str, Any]]:
 	"""ContactPicker source 2: `name, full_name, image` + phones for contacts matching `txt`."""
 	require("read")
-	start, length = _page(page, page_length)
+	start, length = _get_page_start_and_length(page, page_length)
 	q, C = _contact_query(search=txt)
 	rows = (
 		q.select(*[getattr(C, f) for f in CONTACT_SEARCH_FIELDS])
@@ -507,7 +509,7 @@ def search_party(
 		frappe.throw(_("Unsupported party type {0}").format(party_type), WAValidationError)
 	meta = frappe.get_meta(party_type)
 	title_field = meta.get_title_field() if meta.get_title_field() != "name" else None
-	start, length = _page(page, page_length)
+	start, length = _get_page_start_and_length(page, page_length)
 	filters: list[list[Any]] = []
 	or_filters: list[list[Any]] = []
 	if meta.has_field("disabled"):
@@ -689,7 +691,7 @@ def list_doctype_rows(
 			fields.append(f"`{contact_field}` as contact")
 		else:
 			contact_field = None
-	start, length = _page(page, page_length)
+	start, length = _get_page_start_and_length(page, page_length)
 	rows = frappe.get_all(
 		document_type,
 		filters=merged,
@@ -706,7 +708,7 @@ def list_doctype_rows(
 	for r in rows:
 		r.setdefault("label", r["name"])
 		r.setdefault("contact", None)
-		r["phone_e164"] = normalize(r.get("phone")) if r.get("phone") else None
+		r["phone_e164"] = normalize_phone_to_e164(r.get("phone")) if r.get("phone") else None
 	_audit_read(count=len(rows), document_type=document_type)
 	total = frappe.db.count(document_type, filters=merged)
 	return {"rows": rows, "total": total, "page": max(cint(page) or 1, 1), "page_length": length}
@@ -734,7 +736,7 @@ def contact_phones(contact: str) -> list[str]:
 
 def resolve_contact_by_phone(phone_e164: str | None) -> str | None:
 	"""Contact whose `Contact Phone.wa_phone_e164` equals the key (system use: inbound, numbers)."""
-	key = normalize(phone_e164) if phone_e164 else None
+	key = normalize_phone_to_e164(phone_e164) if phone_e164 else None
 	if not key:
 		return None
 	rows = frappe.get_all(
@@ -773,7 +775,7 @@ def _validated_payload(
 			if not isinstance(row, dict):
 				frappe.throw(_("phone_nos[{0}] must be an object").format(i), WAValidationError)
 			_check_keys(row, CONTACT_PHONE_WRITE_FIELDS, f"phone_nos[{i}]")
-			if not normalize(row.get("phone")):
+			if not normalize_phone_to_e164(row.get("phone")):
 				frappe.throw(_("phone_nos[{0}]: invalid phone number").format(i), WAValidationError)
 			phones.append(
 				{"phone": row["phone"], "is_primary_mobile_no": cint(row.get("is_primary_mobile_no"))}
@@ -917,7 +919,7 @@ def link_number(phone_e164: str, contact: str, user: str | None = None) -> str:
 	}
 	frappe.db.set_value("WhatsApp Number", key, values, update_modified=True)
 	_add_number_to_contact(contact, key, kind)
-	audit.log(
+	audit.record_audit_entry(
 		"Number Linked",
 		reference=("WhatsApp Number", key),
 		target=("Contact", contact),
@@ -997,7 +999,9 @@ def convert_number(
 		payload["links"] = [{"link_doctype": party_type, "link_name": party_name}]
 	contact = create_contact({k: v for k, v in payload.items() if v is not None})
 	link_number(key, contact, user=user)
-	audit.log("Number Converted", reference=("WhatsApp Number", key), target=("Contact", contact), user=user)
+	audit.record_audit_entry(
+		"Number Converted", reference=("WhatsApp Number", key), target=("Contact", contact), user=user
+	)
 	return contact
 
 
@@ -1046,7 +1050,7 @@ def unlink_number(phone_e164: str, user: str | None = None) -> str:
 	frappe.db.set_value("WhatsApp Number", key, values, update_modified=True)
 	if previous:
 		_remove_number_from_contact(previous, key)
-	audit.log(
+	audit.record_audit_entry(
 		"Number Linked",
 		reference=("WhatsApp Number", key),
 		target=("Contact", previous) if previous else None,
@@ -1073,7 +1077,7 @@ def confirm_conversation(
 		"conversation_note": (note or "")[:500] or None,
 	}
 	frappe.db.set_value("WhatsApp Number", key, values, update_modified=True)
-	audit.log(
+	audit.record_audit_entry(
 		"Conversation Confirmed",
 		reference=("WhatsApp Number", key),
 		fields_written=values.keys(),
@@ -1153,7 +1157,7 @@ def toggle_blacklist(key: str, blocked: bool, note: str | None = None, user: str
 			group.remove(r)
 	group.flags.ignore_permissions = True
 	group.save(ignore_permissions=True)
-	audit.log(
+	audit.record_audit_entry(
 		"Contact Group Members Changed",
 		reference=("WhatsApp Contact Group", group_name),
 		# the number as the row's target: a contact's activity finds it by column (the masked

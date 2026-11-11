@@ -382,7 +382,7 @@ class TestCommandEditor(IntegrationTestCase):
 
 			ensure_settings(command_reply_language="ar")
 			try:
-				params, _missing = function_runner.prepare(
+				params, _missing = function_runner.prepare_command_params(
 					frappe.get_doc("WhatsApp Command", name), self._sender()
 				)
 			finally:

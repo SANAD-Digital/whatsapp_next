@@ -81,7 +81,7 @@ message body.
 
 | Event | Room | Payload | Publisher |
 |---|---|---|---|
-| `wa:device:status` | site, and doc room `WhatsApp Device/<name>` | `device, status, previous, at, source` (`status` is `Deleted` on delete) | `services/devices.apply_state`, `devices.delete` |
+| `wa:device:status` | site, and doc room `WhatsApp Device/<name>` | `device, status, previous, at, source` (`status` is `Deleted` on delete) | `services/devices.apply_state`, `devices.delete_device` |
 | `wa:pairing:status` | the user who started pairing | `device, mode, expires_at` | `services/devices.start_pairing` |
 | `wa:message:status` | site, and doc room `WhatsApp Log/<name>` | `outbound, status, at, error_code, campaign, device` | `services/dispatch._publish_message_status` |
 | `wa:queue:progress` | site | `device, queued, sending, paused, dead_letter, completed, held, sent_last_minute, paused_globally, paused_by, paused_at, pause_reason, rate, plan_rate` | `services/dispatch.publish_progress` (at most one per second per device; `force` on global pause and resume) |

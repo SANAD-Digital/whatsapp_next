@@ -35,7 +35,7 @@ def _scripts() -> list[frappe._dict]:
 	)
 
 
-def _read(script: frappe._dict) -> dict[str, Any]:
+def _read_function_script_entry(script: frappe._dict) -> dict[str, Any]:
 	"""One script as the Functions Center sees it: its spec, or the header error (with its line)."""
 	entry: dict[str, Any] = {
 		"server_script": script.name,
@@ -62,7 +62,7 @@ def discover(*, use_cache: bool = True) -> list[dict[str, Any]]:
 	out = []
 	for script in _scripts():
 		key = f"{script.name}|{script.modified}"
-		entry = cache.get(key) or _read(script)
+		entry = cache.get(key) or _read_function_script_entry(script)
 		fresh[key] = entry
 		out.append(dict(entry))
 	by_key: dict[str, list[dict[str, Any]]] = {}
@@ -162,7 +162,7 @@ def _rows_diff(current: list[dict], target: list[dict], key: str, fields: tuple[
 	}
 
 
-def diff(server_script: str) -> dict[str, Any]:
+def diff_script_against_installed_function(server_script: str) -> dict[str, Any]:
 	"""What installing / updating from `server_script` would change: params, replies, the commands
 	bound to the function, and whether the site can run it."""
 	spec, checksum = script_spec(server_script)
@@ -220,7 +220,9 @@ def _check_installable(server_script: str, spec: dict[str, Any]) -> None:
 		)
 
 
-def _apply(doc, server_script: str, spec: dict[str, Any], checksum: str, *, keep_values: bool) -> None:
+def _apply_script_header_to_function(
+	doc, server_script: str, spec: dict[str, Any], checksum: str, *, keep_values: bool
+) -> None:
 	"""Write the header onto the function: its names, spec, checksum; values kept for parameters
 	that still exist (when `keep_values`), dropped for the ones that do not."""
 	doc.server_script = server_script
@@ -236,7 +238,7 @@ def _apply(doc, server_script: str, spec: dict[str, Any], checksum: str, *, keep
 	doc.values = json.dumps(kept, ensure_ascii=False) if kept else None
 
 
-def install(server_script: str, user: str | None = None) -> str:
+def install_function_from_script(server_script: str, user: str | None = None) -> str:
 	"""Install the function a Server Script declares. E: `WANotFoundError`, `WAValidationError`
 	(not a function, header, availability, guard, duplicate key), `WAStateConflictError` (installed)."""
 	spec, checksum = script_spec(server_script)
@@ -253,9 +255,9 @@ def install(server_script: str, user: str | None = None) -> str:
 			"installed_by": user or frappe.session.user,
 		}
 	)
-	_apply(doc, server_script, spec, checksum, keep_values=False)
+	_apply_script_header_to_function(doc, server_script, spec, checksum, keep_values=False)
 	doc.insert(ignore_permissions=True)
-	audit.log(
+	audit.record_audit_entry(
 		"Function Installed",
 		reference=(DT, doc.name),
 		user=user,
@@ -264,7 +266,7 @@ def install(server_script: str, user: str | None = None) -> str:
 	return doc.name
 
 
-def update(function_key: str, user: str | None = None) -> str:
+def update_function_from_script(function_key: str, user: str | None = None) -> str:
 	"""Re-read the function's Server Script: the new header replaces the old, the site's values stay
 	for parameters that kept their name. E: `WANotFoundError`, `WAValidationError`."""
 	doc = installed(function_key)
@@ -278,9 +280,9 @@ def update(function_key: str, user: str | None = None) -> str:
 		)
 	_check_installable(doc.server_script, spec)
 	previous = doc.installed_version
-	_apply(doc, doc.server_script, spec, checksum, keep_values=True)
+	_apply_script_header_to_function(doc, doc.server_script, spec, checksum, keep_values=True)
 	doc.save(ignore_permissions=True)
-	audit.log(
+	audit.record_audit_entry(
 		"Function Updated",
 		reference=(DT, doc.name),
 		user=user,
@@ -289,7 +291,7 @@ def update(function_key: str, user: str | None = None) -> str:
 	return doc.name
 
 
-def remove(function_key: str, user: str | None = None) -> None:
+def remove_installed_function(function_key: str, user: str | None = None) -> None:
 	"""Delete the Function row; refused while any command (Active or not) is bound to it — the
 	command would point at nothing. E: `WANotFoundError`, `WAStateConflictError`."""
 	installed(function_key)
@@ -299,7 +301,7 @@ def remove(function_key: str, user: str | None = None) -> None:
 			_("Move or delete commands {0} before removing the function").format(", ".join(bound)),
 			WAStateConflictError,
 		)
-	audit.log("Function Removed", reference=(DT, function_key), user=user)
+	audit.record_audit_entry("Function Removed", reference=(DT, function_key), user=user)
 	frappe.delete_doc(DT, function_key, ignore_permissions=True)
 
 
@@ -343,7 +345,7 @@ def save_values(function_key: str, values: dict | None) -> dict[str, Any]:
 			value = value or None
 		elif not fh.is_empty(value) and not (p["fieldtype"] == "Date" and isinstance(value, str)):
 			try:
-				value = fh.coerce(p, value)
+				value = fh.coerce_param_value(p, value)
 			except ValueError as exc:
 				frappe.throw(str(exc), WAValidationError)
 		if fh.is_empty(value) if not isinstance(value, dict) else not value:

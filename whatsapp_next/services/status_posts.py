@@ -90,7 +90,7 @@ def post_now(name: str, *, user: str | None = None) -> str:
 			"view_count": 0,
 		}
 	)
-	audit.log(
+	audit.record_audit_entry(
 		"Status Posted", reference=(POST, name), details={"kind": doc.kind, "device": doc.device}, user=user
 	)
 	_schedule_repeat(doc, at)
@@ -152,7 +152,9 @@ def delete_post(name: str, *, user: str | None = None) -> None:
 	refresh_views([name])
 	registry.get_provider().delete_status(devices.platform_device(doc.device, connected=True), doc.status_id)
 	doc.db_set({"state": "Deleted", "expires_at": now_datetime()})
-	audit.log("Status Deleted", reference=(POST, name), details={"device": doc.device}, user=user)
+	audit.record_audit_entry(
+		"Status Deleted", reference=(POST, name), details={"device": doc.device}, user=user
+	)
 
 
 def post_due() -> None:

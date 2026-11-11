@@ -28,9 +28,9 @@ list (`last_error`, attempts), `WhatsApp Log.error_code`, `WhatsApp Audit Log`, 
 | Webhook Event **Failed** | The handler raised an error | `reprocess_failed` retries it 3 times (every 10 minutes). After that, read `error` and the Error Log |
 | Inbound commands get no reply | `enable_commands` is off; `command_status` shows `Blocked` or `Not Matched`; or the service user is misconfigured ("Command Service User is not configured / is disabled / must not be a System Manager", `WAStateConflictError`) | Check the Inbound row's `command_status`. Enable `wa-commands@<site>` (D-123) and grant it only the roles your functions need |
 | Function reported **inactive** | The `WhatsApp Function` is not `Active`, or no handler is registered for its `function_key` | Install or activate it in the Functions Center. For a hooked handler, reload the workers |
-| "Commands are routed by the worker, not in a web request" | Something called `command_router.route` in a request without `dry_run` | Enqueue it, as `services.inbound` does |
+| "Commands are routed by the worker, not in a web request" | Something called `command_router.route_inbound_message` in a request without `dry_run` | Enqueue it, as `services.inbound` does |
 | "… can only be changed by the system" (`WAStateConflictError`) | A status field was edited outside `status_writer()` (D-038) | Change state through the service or API (`dispatch`, `campaign_runner`, …), never by writing to the document |
-| Send refused with `blacklisted` / `unknown_number_policy` / `invalid_phone` | Global blacklist group, `send_only_to_known_numbers`, or `phone.normalize` returned `None` | Check the number and the Policy settings. National numbers use Global Defaults → Country (else System Settings) |
+| Send refused with `blacklisted` / `unknown_number_policy` / `invalid_phone` | Global blacklist group, `send_only_to_known_numbers`, or `phone.normalize_phone_to_e164` returned `None` | Check the number and the Policy settings. National numbers use Global Defaults → Country (else System Settings) |
 | PDF attachments or alert reports fail: `OSError: No wkhtmltopdf executable found` or "PDF rendering failed" (`WAFileError`) | `wkhtmltopdf` is not installed. Print Format PDFs (`attachments.render_print_pdf`) and alert reports (`report_render`) need it. 5 tests fail for the same reason (plan/12-test-report.md) | Install the `wkhtmltopdf` build Frappe recommends on the bench host. An alert test can also be sent with "No file" |
 | A sent PDF is A4 though the print format is A5 or a receipt | wkhtmltopdf takes its page size from Print Settings; the app hands it the format's own size (`attachments.page_options`): its "Paper size" (Frappe 16) or a CSS `@page { size: … }` in its CSS / HTML | Set the size on the print format in one of those two ways. A size written only as `.print-format { page-size: … }` also works (Frappe's own) |
 | A one-page PDF still goes out as a PDF | (1) PyMuPDF is not installed: a server updated with `git pull` alone lacks it, and the log says `PyMuPDF is not installed`; (2) Settings → Policy → "Send a one-page PDF as an image" is off | (1) `bench setup requirements` (or `env/bin/pip install pymupdf`), then `bench restart`; (2) switch it on. A server that never saved Settings since the update has it on (fixed 2026-11-10: it read as off there) |
@@ -49,7 +49,7 @@ JSON error carries `exc_type` and the class `code`.
 |---|---|---|---|
 | `WAPermissionError` | 403 | `permission` | Role or document permission missing |
 | `WAValidationError` | 417 | `validation` | Bad or unknown argument, schema violation |
-| `WAInvalidPhoneError` | 417 | `invalid_phone` | `phone.normalize` returned `None` |
+| `WAInvalidPhoneError` | 417 | `invalid_phone` | `phone.normalize_phone_to_e164` returned `None` |
 | `WABlacklistedError` | 417 | `blacklisted` | Recipient in the global or command blacklist |
 | `WAUnknownNumberPolicyError` | 417 | `unknown_number_policy` | `send_only_to_known_numbers` blocks the recipient |
 | `WAFileError` | 417 | `file` | Upload not private, not owned, too large, unparsable; PDF render failure |

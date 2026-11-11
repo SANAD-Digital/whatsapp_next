@@ -68,7 +68,7 @@ class TestFunctionsCatalog(IntegrationTestCase):
 	def test_install_diff_update_remove(self):
 		name, script = ff.FUNCTIONS["_test_typed"]
 		ff.ensure_script(name, script)
-		d = fc.diff(name)
+		d = fc.diff_script_against_installed_function(name)
 		self.assertEqual(
 			(d["function_key"], d["installed_version"], d["target_version"], d["changed"], d["available"]),
 			("_test_typed", None, "1.0.0", True, True),
@@ -77,7 +77,7 @@ class TestFunctionsCatalog(IntegrationTestCase):
 		self.assertEqual(d["replies"]["added"], ["result_text"])
 		self.assertEqual(d["commands_impacted"], [])
 
-		key = fc.install(name)
+		key = fc.install_function_from_script(name)
 		doc = frappe.get_doc("WhatsApp Function", key)
 		self.assertEqual(
 			(doc.name, doc.server_script, doc.status, doc.installed_version, doc.function_name),
@@ -90,39 +90,39 @@ class TestFunctionsCatalog(IntegrationTestCase):
 		self.assertEqual(doc.installed_by, frappe.session.user)
 		self.assertEqual(self._audit("Function Installed", key), 1)
 		with self.assertRaises(WAStateConflictError):
-			fc.install(name)
+			fc.install_function_from_script(name)
 
 		# same header: nothing changes, the update is still allowed and audited
-		self.assertFalse(fc.diff(name)["changed"])
-		fc.update(key)
+		self.assertFalse(fc.diff_script_against_installed_function(name)["changed"])
+		fc.update_function_from_script(key)
 		self.assertEqual(self._audit("Function Updated", key), 1)
 
 		# a script that now declares another function cannot update this one
 		ff.ensure_script(name, script.replace("@function     _test_typed", "@function     _test_renamed"))
 		with self.assertRaises(WAValidationError):
-			fc.update(key)
+			fc.update_function_from_script(key)
 		ff.ensure_script(name, script)
 
 		# an Active command blocks removal
 		cmd = ff.make_command("tfcdoc", key)
-		self.assertEqual(fc.diff(name)["commands_impacted"], [cmd])
+		self.assertEqual(fc.diff_script_against_installed_function(name)["commands_impacted"], [cmd])
 		with self.assertRaises(WAStateConflictError):
-			fc.remove(key)
+			fc.remove_installed_function(key)
 		frappe.delete_doc("WhatsApp Command", cmd, ignore_permissions=True)
-		fc.remove(key)
+		fc.remove_installed_function(key)
 		self.assertFalse(frappe.db.exists("WhatsApp Function", key))
 		self.assertEqual(self._audit("Function Removed", key), 1)
 		with self.assertRaises(WANotFoundError):
-			fc.remove(key)
+			fc.remove_installed_function(key)
 		with self.assertRaises(WANotFoundError):
-			fc.update(key)
+			fc.update_function_from_script(key)
 
 	def test_disabled_script_is_neither_listed_nor_installable(self):
 		name, script = ff.FUNCTIONS["_test_echo"]
 		ff.ensure_script(name, script, disabled=1)
 		self.assertNotIn(name, [e["server_script"] for e in fc.discover(use_cache=False)])
 		with self.assertRaises(WAValidationError):
-			fc.install(name)
+			fc.install_function_from_script(name)
 
 	def test_status_and_values(self):
 		key = ff.ensure_function("_test_typed")
@@ -177,7 +177,7 @@ class TestFunctionsCatalog(IntegrationTestCase):
 			(entry["state"], entry["update_available"], entry["version"]), ("update", True, "1.1.0")
 		)
 		self.assertEqual(entry["installed_version"], "1.0.0")
-		fc.update(key)
+		fc.update_function_from_script(key)
 		self.assertEqual(mine()[name]["state"], "available")
 
 		# the script goes away: the installed function is listed as missing

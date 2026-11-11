@@ -39,7 +39,7 @@ What it does:
 3. **The layers are fixed.** DocType controllers stay thin. Business logic lives in `services/`.
    Only `providers/` does outbound I/O. `api/v1/` holds thin, role-checked endpoints and
    `webhooks/v1/` holds the receiver.
-4. **Phone numbers are E.164 everywhere.** `services/phone.normalize` is the only function that
+4. **Phone numbers are E.164 everywhere.** `services/phone.normalize_phone_to_e164` is the only function that
    normalises numbers. Group and LID JIDs pass through unchanged.
 5. **Only one module reads outbound and inbound together**: `services/read_layer.py`, which holds
    the codebase's only `UNION` (D-043).

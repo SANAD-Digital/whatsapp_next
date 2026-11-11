@@ -19,7 +19,9 @@ SIGFAIL_THRESHOLD = 5
 SIGFAIL_REFETCH_FLAG = "wa:webhook:sigfail:refetch"
 
 
-def check(headers: Mapping[str, str], raw_body: bytes, secret: str | None) -> SignatureCheck:
+def check_webhook_signature(
+	headers: Mapping[str, str], raw_body: bytes, secret: str | None
+) -> SignatureCheck:
 	"""`SignatureCheck(valid, fresh, event_timestamp, reason)` for the active provider."""
 	if not secret:
 		return SignatureCheck(valid=False, fresh=False, reason="no secret")

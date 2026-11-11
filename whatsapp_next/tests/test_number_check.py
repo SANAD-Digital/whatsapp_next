@@ -40,8 +40,8 @@ class TestNumberCheck(IntegrationTestCase):
 	def test_asks_once_then_remembers(self):
 		provider = Provider({self.a})
 		with patch("whatsapp_next.providers.registry.get_provider", return_value=provider):
-			first = number_check.check([self.a, self.b, "+967711999999", "not a number"])
-			again = number_check.check([self.a, self.b])
+			first = number_check.check_numbers_on_whatsapp([self.a, self.b, "+967711999999", "not a number"])
+			again = number_check.check_numbers_on_whatsapp([self.a, self.b])
 		self.assertEqual(first, {self.a: True, self.b: False, "+967711999999": False})
 		self.assertEqual(again, {self.a: True, self.b: False})
 		self.assertEqual(len(provider.calls), 1)
@@ -57,5 +57,5 @@ class TestNumberCheck(IntegrationTestCase):
 			}
 		).insert(ignore_permissions=True)
 		with patch("whatsapp_next.providers.registry.get_provider", return_value=Provider(set())):
-			number_check.check([self.b], force=True)
+			number_check.check_numbers_on_whatsapp([self.b], force=True)
 		self.assertEqual(frappe.db.get_value("WhatsApp Number", self.b, "on_whatsapp"), "No")

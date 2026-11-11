@@ -46,13 +46,13 @@ class TestPickerSources(IntegrationTestCase):
 			"name_fieldname": "full_name",
 			"filters_json": '[["name", "=", "%s"]]' % user,
 		}
-		out = svc.preview(source)
+		out = svc.preview_picker_source_reach(source)
 		self.assertEqual((out["total"], out["with_number"]), (1, 1))
 		self.assertEqual(out["sample"][0]["phone"], "+967777667663")
 		frappe.db.set_value("User", user, "mobile_no", "12")
-		self.assertEqual(svc.preview(source)["with_number"], 0)
+		self.assertEqual(svc.preview_picker_source_reach(source)["with_number"], 0)
 		with self.assertRaises(frappe.ValidationError):
-			svc.preview(dict(source, filters_json='[["no_such_field", "=", 1]]'))
+			svc.preview_picker_source_reach(dict(source, filters_json='[["no_such_field", "=", 1]]'))
 
 	def test_the_endpoints_are_for_managers(self):
 		with as_user("WhatsApp Agent"), self.assertRaises(frappe.PermissionError):

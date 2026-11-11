@@ -37,7 +37,7 @@ class TestPhone(IntegrationTestCase):
 		]
 		for raw, region, expected in cases:
 			with self.subTest(raw=raw, region=region):
-				self.assertEqual(phone.normalize(raw, region=region), expected)
+				self.assertEqual(phone.normalize_phone_to_e164(raw, region=region), expected)
 
 	def test_the_sites_country_and_yemens_example(self):
 		"""Every phone field opens on Global Defaults → Country, else System Settings (owner,
@@ -72,14 +72,14 @@ class TestPhone(IntegrationTestCase):
 		self.assertEqual(phone.to_provider("1@g.us"), "1@g.us")
 
 	def test_mask_hides_digits(self):
-		masked = phone.mask("+966501234567")
+		masked = phone.mask_phone_for_logs("+966501234567")
 		# the country code shows, the "+" does not (numbers are never shown with one)
 		self.assertTrue(masked.startswith("966"))
 		self.assertNotIn("+", masked)
 		self.assertTrue(masked.endswith("67"))
 		self.assertNotIn("50123", masked)
-		self.assertIn("***", phone.mask("966501234567@s.whatsapp.net"))
-		self.assertEqual(phone.mask(""), "")
+		self.assertIn("***", phone.mask_phone_for_logs("966501234567@s.whatsapp.net"))
+		self.assertEqual(phone.mask_phone_for_logs(""), "")
 
 	def test_set_phone_pair(self):
 		import frappe
@@ -90,7 +90,9 @@ class TestPhone(IntegrationTestCase):
 		doc.set = lambda k, v: doc.__setitem__(k, v)
 		self.assertEqual(
 			phone.set_phone_pair(doc, required=True),
-			phone.normalize("0501234567", "SA") if phone.default_region() == "SA" else doc.phone_e164,
+			phone.normalize_phone_to_e164("0501234567", "SA")
+			if phone.default_region() == "SA"
+			else doc.phone_e164,
 		)
 		bad = frappe._dict(phone="abc", phone_e164=None)
 		bad.set = lambda k, v: bad.__setitem__(k, v)

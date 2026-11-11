@@ -41,7 +41,7 @@ def _today_counts() -> dict[str, int]:
 def get_dashboard() -> dict[str, Any]:
 	"""Everything the Home page renders in one call (see backend-plan §4.2 for the shape)."""
 	summary = dispatch.queue_summary()
-	webhook = webhook_setup.summary()
+	webhook = webhook_setup.get_webhook_endpoint_summary()
 	return {
 		"devices": frappe.get_all(
 			"WhatsApp Device", fields=list(DEVICE_FIELDS), order_by="is_default desc, name"
@@ -63,7 +63,7 @@ def get_dashboard() -> dict[str, Any]:
 		"plan": usage_sync.snapshot(),
 		"webhook_status": webhook.status,
 		"last_webhook_event_at": webhook.last_event_at,
-		"setup": onboarding.status(),
+		"setup": onboarding.get_onboarding_status(),
 	}
 
 

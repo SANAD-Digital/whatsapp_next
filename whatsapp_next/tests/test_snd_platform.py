@@ -569,24 +569,28 @@ class TestPlatformTimes(IntegrationTestCase):
 	def test_absolute_times_become_the_sites_clock(self):
 		from frappe.utils import convert_utc_to_system_timezone
 
-		from whatsapp_next.providers.snd_platform import _dt
+		from whatsapp_next.providers.snd_platform import _platform_time_to_site_datetime
 
 		utc = datetime(2026, 9, 30, 1, 24, 6, tzinfo=timezone.utc)
 		site = convert_utc_to_system_timezone(utc).replace(tzinfo=None)
-		self.assertEqual(_dt(1790731446), site)  # Unix seconds
-		self.assertEqual(_dt("1790731446000"), site)  # Unix milliseconds, as text
-		self.assertEqual(_dt("2026-09-30T04:24:06+03:00"), site)  # a zoned ISO string
-		self.assertEqual(_dt("2026-09-30T01:24:06Z"), site)
+		self.assertEqual(_platform_time_to_site_datetime(1790731446), site)  # Unix seconds
+		self.assertEqual(_platform_time_to_site_datetime("1790731446000"), site)  # Unix milliseconds, as text
+		self.assertEqual(
+			_platform_time_to_site_datetime("2026-09-30T04:24:06+03:00"), site
+		)  # a zoned ISO string
+		self.assertEqual(_platform_time_to_site_datetime("2026-09-30T01:24:06Z"), site)
 		# a zoneless string is the platform's wall clock (Asia/Aden, +03:00)
-		self.assertEqual(_dt("2026-09-30T04:24:06"), site)
-		self.assertEqual(_dt("2026-09-30 04:24:06"), site)
+		self.assertEqual(_platform_time_to_site_datetime("2026-09-30T04:24:06"), site)
+		self.assertEqual(_platform_time_to_site_datetime("2026-09-30 04:24:06"), site)
 
 	def test_a_bare_date_is_a_day(self):
 		from datetime import date
 
-		from whatsapp_next.providers.snd_platform import _d
+		from whatsapp_next.providers.snd_platform import _platform_value_to_date
 
-		self.assertEqual(_d("2026-10-12"), date(2026, 10, 12))  # the subscription's end date
+		self.assertEqual(
+			_platform_value_to_date("2026-10-12"), date(2026, 10, 12)
+		)  # the subscription's end date
 
 	def test_a_group_message_carries_the_senders_name_and_the_groups(self):
 		"""The gateway now sends the sender's WhatsApp name and, in a group, the group's name

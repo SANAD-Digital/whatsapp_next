@@ -20,7 +20,7 @@ BATCH = 1000  # the platform's limit per call
 MAX_PER_REQUEST = 5000  # what one screen action may ask
 
 
-def _device(device: str | None) -> tuple[str, str]:
+def _get_connected_device_for_check(device: str | None) -> tuple[str, str]:
 	"""(device, platform_device) of the given or default connected device."""
 	name = device or frappe.db.get_single_value("WhatsApp Settings", "default_device")
 	row = (
@@ -40,7 +40,7 @@ def _device(device: str | None) -> tuple[str, str]:
 	return row.name, row.platform_device
 
 
-def cached(keys: list[str], max_age_days: int = MAX_AGE_DAYS) -> dict[str, bool]:
+def get_cached_whatsapp_answers(keys: list[str], max_age_days: int = MAX_AGE_DAYS) -> dict[str, bool]:
 	"""Fresh answers already here, `{e164: on_whatsapp}`."""
 	if not keys:
 		return {}
@@ -51,7 +51,7 @@ def cached(keys: list[str], max_age_days: int = MAX_AGE_DAYS) -> dict[str, bool]
 	return {r.name: r.on_whatsapp == "Yes" for r in rows}
 
 
-def check(
+def check_numbers_on_whatsapp(
 	numbers: list[str], *, device: str | None = None, force: bool = False, max_age_days: int = MAX_AGE_DAYS
 ) -> dict[str, bool]:
 	"""`{e164: on_whatsapp}` for every individual number given (others are left out). Fresh answers
@@ -63,13 +63,13 @@ def check(
 			keys.append(key)
 	if not keys:
 		return {}
-	out = {} if force else cached(keys, max_age_days)
+	out = {} if force else get_cached_whatsapp_answers(keys, max_age_days)
 	missing = [k for k in keys if k not in out]
 	if not missing:
 		return out
 	from whatsapp_next.providers import registry
 
-	device, platform_device = _device(device)
+	device, platform_device = _get_connected_device_for_check(device)
 	provider = registry.get_provider()
 	now = now_datetime()
 	for start in range(0, len(missing), BATCH):
@@ -113,7 +113,7 @@ def check_for(source_doctype: str, names: list[str], *, force: bool = True) -> d
 	members = wa_groups.members_from(source_doctype, names, max_records=MAX_PER_REQUEST)
 	if len(members) > MAX_PER_REQUEST:
 		frappe.throw(_("Check at most {0} numbers at a time").format(MAX_PER_REQUEST), WAValidationError)
-	answers = check([m["phone_e164"] for m in members], force=force)
+	answers = check_numbers_on_whatsapp([m["phone_e164"] for m in members], force=force)
 	results = [{**m, "on_whatsapp": answers.get(m["phone_e164"])} for m in members]
 	return {
 		"checked": len(results),

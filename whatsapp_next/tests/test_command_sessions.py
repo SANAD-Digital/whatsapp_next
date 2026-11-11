@@ -45,12 +45,14 @@ class TestCommandSessions(IntegrationTestCase):
 		self.assertIsNone(command_sessions.relative_date("2026-10-31"))
 		cmd = frappe._dict(function="_test_ason")
 		self.assertEqual(
-			command_router._coerce("last_month_start", "as_on", cmd),
+			command_router._coerce_input_to_parameter_type("last_month_start", "as_on", cmd),
 			str(get_first_day(add_months(today, -1))),
 		)
-		self.assertEqual(command_router._coerce("2026-02-03", "as_on", cmd), "2026-02-03")
+		self.assertEqual(
+			command_router._coerce_input_to_parameter_type("2026-02-03", "as_on", cmd), "2026-02-03"
+		)
 		with self.assertRaises(ValueError):
-			command_router._coerce("someday", "as_on", cmd)
+			command_router._coerce_input_to_parameter_type("someday", "as_on", cmd)
 
 	def test_ask_specs(self):
 		cmd = frappe._dict(ask_inputs="months: 1, 3=Three months, 6\nas_on")
@@ -65,7 +67,7 @@ class TestCommandSessions(IntegrationTestCase):
 		self.phone = "+9677700" + frappe.generate_hash(length=5)[:5].translate(
 			str.maketrans("abcdef", "123456")
 		)
-		self.addCleanup(command_sessions.clear, self.device, self.phone)
+		self.addCleanup(command_sessions.clear_question_session, self.device, self.phone)
 
 	def _inbound(self, body, selected=None):
 		doc = frappe.get_doc(
@@ -101,7 +103,7 @@ class TestCommandSessions(IntegrationTestCase):
 			patch.object(command_router, "check_access", return_value=None),
 		):
 			frappe.db.set_single_value("WhatsApp Settings", "enable_commands", 1)
-			res = command_router.route(name)
+			res = command_router.route_inbound_message(name)
 		return res, sent, runs
 
 	def test_missing_date_is_asked_then_the_command_runs(self):
@@ -116,7 +118,7 @@ class TestCommandSessions(IntegrationTestCase):
 		)
 		self.assertEqual(res.status, "Executed")
 		self.assertEqual(runs, [{"as_on": str(get_first_day(getdate(nowdate())))}])
-		self.assertIsNone(command_sessions.load(self.device, self.phone))
+		self.assertIsNone(command_sessions.load_question_session(self.device, self.phone))
 
 	def test_typed_command_with_the_value_is_not_asked(self):
 		self._setup()
@@ -131,14 +133,14 @@ class TestCommandSessions(IntegrationTestCase):
 		self.assertEqual(sent[-1]["message_type"], "List")  # asked again
 		res, sent, runs = self._route(self._inbound("إلغاء"))
 		self.assertEqual((res.status, runs), ("Executed", []))
-		self.assertIsNone(command_sessions.load(self.device, self.phone))
+		self.assertIsNone(command_sessions.load_question_session(self.device, self.phone))
 
 	def test_menu_tap_title_words_are_not_arguments(self):
 		self._setup()
 		# a menu row titled "tsess العميل": "العميل" is a label, so the date is asked, not refused
 		res, _sent, runs = self._route(self._inbound(f"{CODE} العميل", selected="svc_balance"))
 		self.assertEqual((res.status, runs), ("Awaiting Input", []))
-		command_sessions.clear(self.device, self.phone)
+		command_sessions.clear_question_session(self.device, self.phone)
 		# a row whose id is a command line runs it with the id's arguments
 		res, _sent, runs = self._route(self._inbound(f"{CODE} أول الشهر", selected=f"{CODE} month_start"))
 		self.assertEqual(

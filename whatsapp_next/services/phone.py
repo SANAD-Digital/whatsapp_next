@@ -160,7 +160,7 @@ def is_group_or_lid(value: str | None) -> bool:
 	return v.endswith(GROUP_SUFFIX) or v.endswith(LID_SUFFIX)
 
 
-def _clean(raw: str) -> str:
+def _strip_phone_formatting(raw: str) -> str:
 	value = str(raw).strip().translate(_ARABIC_DIGITS)
 	if "@" in value:
 		# JID: clean only the local part; the domain keeps its dots (`@g.us`, `@s.whatsapp.net`).
@@ -169,7 +169,7 @@ def _clean(raw: str) -> str:
 	return _STRIP_CHARS.sub("", value)
 
 
-def normalize(raw: str | None, region: str | None = None) -> str | None:
+def normalize_phone_to_e164(raw: str | None, region: str | None = None) -> str | None:
 	"""Normalize a phone or individual JID to E.164 (`+9665…`); return None when invalid.
 
 	Rules: strip spaces/`-`/`()`/`.`; Arabic-Indic digits → ASCII; `00` → `+`; `@c.us` /
@@ -178,7 +178,7 @@ def normalize(raw: str | None, region: str | None = None) -> str | None:
 	"""
 	if raw is None:
 		return None
-	value = _clean(raw)
+	value = _strip_phone_formatting(raw)
 	if not value:
 		return None
 	lower = value.lower()
@@ -191,19 +191,19 @@ def normalize(raw: str | None, region: str | None = None) -> str | None:
 	if value.startswith("00"):
 		value = "+" + value[2:]
 	if value.startswith("+"):
-		return _parse(value, None)
+		return _parse_phone_to_e164(value, None)
 	if not value.isdigit():
 		return None
 	if value.startswith("0"):
-		return _parse(value, region or default_region())
+		return _parse_phone_to_e164(value, region or default_region())
 	# Digits without prefix: try as international first, then as national.
-	international = _parse("+" + value, None)
+	international = _parse_phone_to_e164("+" + value, None)
 	if international:
 		return international
-	return _parse(value, region or default_region())
+	return _parse_phone_to_e164(value, region or default_region())
 
 
-def _parse(value: str, region: str | None) -> str | None:
+def _parse_phone_to_e164(value: str, region: str | None) -> str | None:
 	try:
 		number = phonenumbers.parse(value, region)
 	except phonenumbers.NumberParseException:
@@ -217,20 +217,20 @@ def classify(value: str | None) -> tuple[str | None, str | None]:
 	"""Return `(kind, key)`: `("Individual", e164)`, `("Group", jid)`, `("LID", jid)` or `(None, None)`."""
 	if not value:
 		return None, None
-	v = _clean(value)
+	v = _strip_phone_formatting(value)
 	lower = v.lower()
 	if lower.endswith(GROUP_SUFFIX):
 		return "Group", v
 	if lower.endswith(LID_SUFFIX):
 		return "LID", v
-	e164 = normalize(v)
+	e164 = normalize_phone_to_e164(v)
 	return ("Individual", e164) if e164 else (None, None)
 
 
 def key_for(phone_e164: str | None, jid: str | None = None) -> str | None:
 	"""The WhatsApp Number key: the JID for groups/LIDs, otherwise the E.164 value."""
 	if jid and is_group_or_lid(jid):
-		return _clean(jid)
+		return _strip_phone_formatting(jid)
 	return phone_e164 or None
 
 
@@ -243,7 +243,7 @@ def to_provider(key: str | None) -> str | None:
 	return re.sub(r"\D", "", key)
 
 
-def mask(value: str | None) -> str:
+def mask_phone_for_logs(value: str | None) -> str:
 	"""Mask a number for logs and audit details: keep the country code and the last two digits."""
 	if not value:
 		return ""
@@ -271,18 +271,18 @@ def set_phone_pair(
 	"""
 	raw = doc.get(phone_field)
 	current = doc.get(e164_field)
-	e164 = normalize(raw) if raw else None
+	e164 = normalize_phone_to_e164(raw) if raw else None
 	if not e164 and current:
-		e164 = normalize(current)
+		e164 = normalize_phone_to_e164(current)
 	if not e164 and jid_field and doc.get(jid_field):
-		e164 = normalize(doc.get(jid_field))
+		e164 = normalize_phone_to_e164(doc.get(jid_field))
 	if e164:
 		doc.set(e164_field, e164)
 	elif current or raw:
 		doc.set(e164_field, None)
 	if required and not e164:
 		frappe.throw(
-			frappe._("Invalid phone number: {0}").format(mask(raw or current)),
+			frappe._("Invalid phone number: {0}").format(mask_phone_for_logs(raw or current)),
 			WAInvalidPhoneError,
 		)
 	return e164
@@ -303,4 +303,4 @@ def sync_contact_phones(doc, method: str | None = None) -> None:
 			and cstr(row.wa_phone_e164).split("@")[0] == re.sub(r"\D", "", cstr(row.phone))
 		):
 			continue
-		row.wa_phone_e164 = normalize(row.phone) if row.phone else None
+		row.wa_phone_e164 = normalize_phone_to_e164(row.phone) if row.phone else None

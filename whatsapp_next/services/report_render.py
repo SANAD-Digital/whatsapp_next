@@ -30,7 +30,7 @@ def _inline_images(html_text: str) -> str:
 	`<img>` (site URLs are unreachable from workers on many deployments and make wkhtmltopdf fail
 	with "broken image links")."""
 
-	def repl(m: re.Match) -> str:
+	def inline_image_as_data_uri(m: re.Match) -> str:
 		url = m.group(1)
 		try:
 			from whatsapp_next.services import attachments
@@ -41,7 +41,7 @@ def _inline_images(html_text: str) -> str:
 		except Exception:
 			return 'src=""'
 
-	html_text = _IMG_SRC.sub(repl, html_text)
+	html_text = _IMG_SRC.sub(inline_image_as_data_uri, html_text)
 	return _IMG_TAG.sub(lambda m: m.group(0) if 'src="data:' in m.group(0) else "", html_text)
 
 
@@ -61,7 +61,7 @@ def _letter_head_html(letter_head: str | None) -> str:
 	return _inline_images(content)
 
 
-def _cell(value: Any, column: dict[str, Any]) -> str:
+def _format_cell_html(value: Any, column: dict[str, Any]) -> str:
 	if value is None:
 		return ""
 	fieldtype = column.get("fieldtype")
@@ -123,9 +123,9 @@ def report_html(
 	body_rows = []
 	for row in (rows or [])[:MAX_ROWS]:
 		if isinstance(row, dict):
-			cells = [_cell(row.get(c["fieldname"]), c) for c in cols]
+			cells = [_format_cell_html(row.get(c["fieldname"]), c) for c in cols]
 		else:
-			cells = [_cell(row[i] if i < len(row) else None, c) for i, c in enumerate(cols)]
+			cells = [_format_cell_html(row[i] if i < len(row) else None, c) for i, c in enumerate(cols)]
 		body_rows.append(
 			"<tr>"
 			+ "".join(

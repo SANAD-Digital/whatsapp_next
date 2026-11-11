@@ -165,7 +165,7 @@ class TestBackup(IntegrationTestCase):
 			patch.object(backup.frappe.db, "set_single_value"),
 			patch.object(backup.frappe.db, "delete", side_effect=lambda *a, **k: deleted.append(a)),
 			patch.object(backup, "account_key", return_value=current_key),
-			patch.object(backup.audit, "log"),
+			patch.object(backup.audit, "record_audit_entry"),
 		):
 			frappe.flags.wa_allow_account_switch = True
 			try:
@@ -227,11 +227,11 @@ class TestBackup(IntegrationTestCase):
 			patch.object(backup.frappe.db, "set_value"),
 			patch.object(backup.frappe.db, "set_default"),
 			patch.object(backup.frappe.db, "commit"),
-			patch.object(backup.audit, "log"),
+			patch.object(backup.audit, "record_audit_entry"),
 		):
 			counts = backup.purge_previous_account(pending)
 		self.assertEqual(set(counts), {dt for dt in backup.ACCOUNT_DOCTYPES if frappe.db.table_exists(dt)})
 		self.assertFalse(set(backup.DOCTYPES) & set(deleted))  # what a backup carries stays
-		scope = backup._scope(pending)
+		scope = backup._build_previous_account_filters(pending)
 		self.assertEqual(scope["WhatsApp Log"], {"creation": ("<=", pending["at"])})
 		self.assertEqual(scope["WhatsApp Device"]["name"], ("in", ["DEV-OLD"]))

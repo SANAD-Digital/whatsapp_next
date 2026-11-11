@@ -171,15 +171,15 @@ def _install_functions(company: str | None) -> None:
 			for cmd in frappe.get_all(DT, filters={"function": key}, pluck="name"):
 				frappe.db.set_value(DT, cmd, "status", "Inactive", update_modified=False)
 			frappe.db.set_value("WhatsApp Function", key, {"server_script": script}, update_modified=False)
-			functions_catalog.update(key, user="Administrator")
+			functions_catalog.update_function_from_script(key, user="Administrator")
 			print(f"converted {key} → {script}")
 		elif row:
 			_spec, checksum = functions_catalog.script_spec(script)
 			if checksum != row.manifest_checksum:
-				functions_catalog.update(key, user="Administrator")
+				functions_catalog.update_function_from_script(key, user="Administrator")
 				print(f"updated {key}")
 		else:
-			functions_catalog.install(script, user="Administrator")
+			functions_catalog.install_function_from_script(script, user="Administrator")
 			print(f"installed {key} ← {script}")
 		if company and key in ACCOUNTING:
 			functions_catalog.save_values(key, {"company": company})

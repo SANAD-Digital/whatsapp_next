@@ -23,7 +23,7 @@ class Claim:
 	duplicate: bool
 
 
-def claim(
+def claim_webhook_event(
 	event_id: str,
 	event_name: str,
 	*,
@@ -40,7 +40,7 @@ def claim(
 ) -> Claim:
 	"""Insert the event row, or count a duplicate. Safe under concurrent deliveries: an insert
 	race surfaces as `DuplicateEntryError` or `UniqueValidationError` and is a duplicate."""
-	existing = _find(event_name, event_id)
+	existing = _find_webhook_event_name(event_name, event_id)
 	if existing:
 		if signature_valid and timestamp_fresh and _was_rejected(existing):
 			# A rejected delivery (bad signature, stale timestamp) holds the id but was never
@@ -89,14 +89,14 @@ def claim(
 	# the same event delivered twice at once: Frappe names the clash either way (a unique column
 	# is `UniqueValidationError`), and either one answered the platform 417, so it kept retrying
 	except (frappe.DuplicateEntryError, frappe.UniqueValidationError):
-		existing = _find(event_name, event_id)
+		existing = _find_webhook_event_name(event_name, event_id)
 		if existing:
 			_bump_duplicate(existing)
 		return Claim(name=existing or "", duplicate=True)
 	return Claim(name=doc.name, duplicate=False)
 
 
-def _find(event_name: str, event_id: str) -> str | None:
+def _find_webhook_event_name(event_name: str, event_id: str) -> str | None:
 	return frappe.db.get_value(
 		"WhatsApp Webhook Event", {"event_name": event_name, "event_id": event_id}, "name"
 	)

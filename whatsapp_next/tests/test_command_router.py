@@ -108,19 +108,19 @@ class TestCommandRouter(IntegrationTestCase):
 	def test_map_and_match(self):
 		m = cr.command_map(refresh=True)
 		self.assertEqual((m["tping"], m["tبنق"], m["tdoc"]), ("tping", "tping", "tdoc"))
-		self.assertEqual(cr.match("#TPING hello there").rest, "hello there")
-		self.assertEqual(cr.match("/tdoc SINV-1").command, "tdoc")
-		self.assertTrue(cr.match("?").is_help)
-		self.assertIsNone(cr.match("nothing here"))
-		self.assertIsNone(cr.match(""))
+		self.assertEqual(cr.match_command_text("#TPING hello there").rest, "hello there")
+		self.assertEqual(cr.match_command_text("/tdoc SINV-1").command, "tdoc")
+		self.assertTrue(cr.match_command_text("?").is_help)
+		self.assertIsNone(cr.match_command_text("nothing here"))
+		self.assertIsNone(cr.match_command_text(""))
 		# saving a command invalidates the map
 		cmd = frappe.get_doc("WhatsApp Command", "tping")
 		cmd.status = "Inactive"
 		cmd.save(ignore_permissions=True)
-		self.assertIsNone(cr.match("#tping"))
+		self.assertIsNone(cr.match_command_text("#tping"))
 		cmd.status = "Active"
 		cmd.save(ignore_permissions=True)
-		self.assertIsNotNone(cr.match("#tping"))
+		self.assertIsNotNone(cr.match_command_text("#tping"))
 		self.assertIn("tping —", cr.help_text())
 
 	# -- route via simulator -------------------------------------------------------------
@@ -181,10 +181,10 @@ class TestCommandRouter(IntegrationTestCase):
 		"""`؟` alone lists the commands; beside a command word it explains that command's variables,
 		read from the function's header."""
 		for text in ("#tdoc ?", "tdoc ؟", "؟ tdoc", "tdoc؟", "help tdoc"):
-			m = cr.match(text)
+			m = cr.match_command_text(text)
 			self.assertEqual((m.command, m.is_help, m.rest), ("tdoc", True, ""), text)
-		self.assertEqual((cr.match("؟").command, cr.match("؟").is_help), ("", True))
-		self.assertFalse(cr.match("#tdoc SINV-1").is_help)
+		self.assertEqual((cr.match_command_text("؟").command, cr.match_command_text("؟").is_help), ("", True))
+		self.assertFalse(cr.match_command_text("#tdoc SINV-1").is_help)
 		usage = cr.usage_text(frappe.get_doc("WhatsApp Command", "tdoc"))
 		# the required document first, then the optional values, in the header's order
 		self.assertIn("Send: tdoc <Document> [Days] [Since]", usage)
@@ -206,7 +206,7 @@ class TestCommandRouter(IntegrationTestCase):
 		# the token set in Settings, and the words it may not take
 		ensure_settings(command_help_token="تعريف")
 		try:
-			self.assertTrue(cr.match("tping تعريف").is_help)
+			self.assertTrue(cr.match_command_text("tping تعريف").is_help)
 			with self.assertRaises(WAValidationError):
 				ensure_settings(command_help_token="tping")
 			with self.assertRaises(WAValidationError):
@@ -326,7 +326,7 @@ class TestCommandRouter(IntegrationTestCase):
 		frappe.local.request = object()
 		try:
 			with self.assertRaises(WAStateConflictError):
-				cr.route(res.inbound)
+				cr.route_inbound_message(res.inbound)
 		finally:
 			frappe.flags.in_test = True
 			del frappe.local.request  # a `None` request breaks frappe.get_url() in later tests
@@ -334,7 +334,7 @@ class TestCommandRouter(IntegrationTestCase):
 		res2 = simulator.simulate_inbound(self.device, P_UNLINKED, "#tping live", persist=True)
 		frappe.db.set_value("WhatsApp Inbound Message", res2.inbound, "is_simulated", 0)
 		with patch.object(frappe, "enqueue"):
-			live = cr.route(res2.inbound)
+			live = cr.route_inbound_message(res2.inbound)
 		self.assertEqual(live.status, "Executed")
 		self.assertEqual(frappe.db.get_value("WhatsApp Log", live.outbound[0], "status"), "Queued")
 		self.assertEqual(frappe.db.count("WhatsApp Queue Item", {"outbound_message": live.outbound[0]}), 1)
@@ -352,7 +352,7 @@ class TestCommandRouter(IntegrationTestCase):
 		ensure_settings(send_receipt_reply=1, receipt_reply="got it")
 		inbound = live("#tping now")
 		with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now") as now:
-			result = cr.route(inbound)
+			result = cr.route_inbound_message(inbound)
 		self.assertEqual(result.status, "Executed")
 		receipt = frappe.get_all(
 			"WhatsApp Log", filters={"trigger_inbound": inbound, "body": "got it"}, pluck="name"
@@ -364,13 +364,13 @@ class TestCommandRouter(IntegrationTestCase):
 		ensure_settings(send_receipt_reply=0)
 		inbound = live("#xyz")
 		with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now") as now:
-			result = cr.route(inbound)
+			result = cr.route_inbound_message(inbound)
 		self.assertEqual(result.status, "Not Matched")
 		now.assert_called_once_with(result.outbound[0], source="direct")
 		self.assertEqual(queued(result.outbound[0]), 0)
 		inbound = live("#xyz again")
 		with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now", side_effect=RuntimeError):
-			result = cr.route(inbound)
+			result = cr.route_inbound_message(inbound)
 		self.assertEqual(queued(result.outbound[0]), 1)
 
 	def test_a_reply_quotes_the_message_that_asked(self):
@@ -380,7 +380,7 @@ class TestCommandRouter(IntegrationTestCase):
 			"WhatsApp Inbound Message", res.inbound, {"is_simulated": 0, "provider_message_id": "ASKED-1"}
 		)
 		with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now"):
-			result = cr.route(res.inbound)
+			result = cr.route_inbound_message(res.inbound)
 		self.assertTrue(result.outbound)
 		for name in result.outbound:
 			self.assertEqual(
@@ -400,7 +400,7 @@ class TestCommandRouter(IntegrationTestCase):
 				"WhatsApp Inbound Message", res.inbound, {"is_simulated": 0, "provider_message_id": "ASKED-2"}
 			)
 			with patch.object(frappe, "enqueue"), patch.object(cr.dispatch, "send_now"):
-				result = cr.route(res.inbound)
+				result = cr.route_inbound_message(res.inbound)
 			rows = [
 				frappe.db.get_value(
 					"WhatsApp Log", n, ["phone_e164", "reply_to_provider_message_id"], as_dict=True

@@ -17,34 +17,34 @@ class TestTemplates(IntegrationTestCase):
 		"""A preview with no record to read failed on a correct template: `doc.items` was the dict
 		method and `doc.get_formatted` did not exist (2026-10-27)."""
 		body = '{% for i in doc.items[:8] %}{{ i.item_name }}{% endfor %}{{ doc.items | length }} · {{ doc.get_formatted("grand_total") }}'
-		empty = templates.render(body, templates.context_for("Quotation"))
+		empty = templates.render_message_template(body, templates.context_for("Quotation"))
 		self.assertTrue(empty.ok, empty.error)
 		self.assertEqual(empty.text, "0 ·")
-		sample = templates.render(
+		sample = templates.render_message_template(
 			body, {"doc": templates.SampleDoc(items=[{"item_name": "A"}], grand_total=120)}
 		)
 		self.assertEqual(sample.text, "A1 · 120")
 
 	def test_render_ok_and_errors_not_raised(self):
-		r = templates.render(
+		r = templates.render_message_template(
 			"Hello {{ doc.first_name }} / {{ recipient.display_name }}",
 			{"doc": {"first_name": "A"}, "recipient": {"display_name": "B"}},
 		)
 		self.assertTrue(r.ok)
 		self.assertEqual(r.text, "Hello A / B")
-		bad = templates.render("{{ doc.x ", {})
+		bad = templates.render_message_template("{{ doc.x ", {})
 		self.assertFalse(bad.ok)
 		self.assertIn("TemplateSyntaxError", bad.error)
 		self.assertEqual(bad.text, "")
 		self.assertEqual(templates.render_text("{{ doc.x ", {}, fallback="fb"), "fb")
-		self.assertEqual(templates.render("", {}).text, "")
+		self.assertEqual(templates.render_message_template("", {}).text, "")
 		with self.assertRaises(WAValidationError):
-			templates.render("{{ doc.x ", {}, strict=True)
+			templates.render_message_template("{{ doc.x ", {}, strict=True)
 
 	def test_sandbox_blocks_dunder(self):
-		r = templates.render("{{ ''.__class__ }}", {})
+		r = templates.render_message_template("{{ ''.__class__ }}", {})
 		self.assertFalse(r.ok)
-		r = templates.render("{{ doc.__class__.__mro__ }}", {"doc": frappe._dict()})
+		r = templates.render_message_template("{{ doc.__class__.__mro__ }}", {"doc": frappe._dict()})
 		self.assertFalse(r.ok)
 
 	def test_compile_check(self):
@@ -60,7 +60,8 @@ class TestTemplates(IntegrationTestCase):
 		self.assertEqual(ctx["extra"], 1)
 		self.assertTrue(ctx["doc_url"].endswith("/role/System%20Manager"))
 		self.assertEqual(
-			templates.render("{{ _('Role') }}|{{ frappe.utils.nowdate()[:2] }}", ctx).text, "Role|20"
+			templates.render_message_template("{{ _('Role') }}|{{ frappe.utils.nowdate()[:2] }}", ctx).text,
+			"Role|20",
 		)
 		missing = templates.context_for("Role", "no-such-role")
 		self.assertEqual(missing["doc"], {})

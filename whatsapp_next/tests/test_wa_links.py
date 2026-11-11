@@ -18,9 +18,9 @@ class TestWaLinks(IntegrationTestCase):
 		self.digits = self.device.phone_e164.lstrip("+")
 
 	def test_link_carries_the_typed_message(self):
-		self.assertEqual(wa_links.link(None, self.device.name), f"https://wa.me/{self.digits}")
+		self.assertEqual(wa_links.build_chat_url(None, self.device.name), f"https://wa.me/{self.digits}")
 		self.assertEqual(
-			wa_links.link("كشف 3", self.device.name),
+			wa_links.build_chat_url("كشف 3", self.device.name),
 			f"https://wa.me/{self.digits}?text=%D9%83%D8%B4%D9%81%203",
 		)
 

@@ -149,7 +149,7 @@ class TestApiContacts(IntegrationTestCase):
 		from whatsapp_next.services import audit
 
 		name = self._seed()
-		audit.log("Number Linked", reference=("WhatsApp Number", P1), target=("Contact", name))
+		audit.record_audit_entry("Number Linked", reference=("WhatsApp Number", P1), target=("Contact", name))
 		stranger = frappe.get_doc(
 			{
 				"doctype": "WhatsApp Audit Log",

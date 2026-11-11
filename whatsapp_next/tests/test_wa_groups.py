@@ -47,7 +47,7 @@ class TestWaGroups(IntegrationTestCase):
 
 	def _create(self, **kw):
 		with patch("whatsapp_next.providers.registry.get_provider", return_value=self.provider):
-			return wa_groups.create(
+			return wa_groups.create_whatsapp_group(
 				self.device,
 				kw.pop("name", "Project team"),
 				kw.pop("members", ["+967711000001", "967711000002"]),

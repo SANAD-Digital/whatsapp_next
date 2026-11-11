@@ -47,13 +47,13 @@ def preview(
 		doc = frappe.get_doc(doctype, reference_name)
 		templates.readable_only(doc)
 		# a real record is the `doc`; the template's sample values fill only the other names
-		extra = {k: v for k, v in (_parsed(sample_context) or {}).items() if k != "doc"}
+		extra = {k: v for k, v in (_parse_json_dict(sample_context) or {}).items() if k != "doc"}
 		ctx = templates.context_for(
 			doctype, reference_name, extra=extra or None, doc=doc, recipient=_sample_recipient()
 		)
 	else:
 		ctx = _sample_context(doctype, sample_context)
-	result = templates.render(source, ctx)
+	result = templates.render_message_template(source, ctx)
 	errors = [result.error] if result.error else []
 	if doctype and not reference_name and not frappe.has_permission(doctype, "read"):
 		errors.append(
@@ -67,7 +67,7 @@ def _sample_recipient() -> dict[str, str]:
 	return frappe._dict(phone_e164="+966500000000", display_name=_("Recipient"))
 
 
-def _parsed(value) -> dict[str, Any] | None:
+def _parse_json_dict(value) -> dict[str, Any] | None:
 	if isinstance(value, dict) or not value:
 		return value or None
 	try:
@@ -80,7 +80,7 @@ def _parsed(value) -> dict[str, Any] | None:
 def _sample_context(doctype: str | None, sample: str | dict | None) -> dict[str, Any]:
 	"""`templates.sample_context` with the sample record read at the caller's field levels: the
 	record is loaded without the template's `doc` overlay, filtered, then overlaid here."""
-	parsed = dict(_parsed(sample) or {})
+	parsed = dict(_parse_json_dict(sample) or {})
 	overlay = parsed.pop("doc", None)
 	ctx = templates.sample_context(doctype, parsed or None)
 	templates.readable_only(ctx.get("doc"))
@@ -146,17 +146,17 @@ def pick_sample(reference_doctype: str) -> dict[str, str | None]:
 def get_editor(name: str | None = None) -> dict[str, Any]:
 	"""What the editor window opens with (`templates_editor.editor`); read-only for an Agent.
 	P: Agent (read), Manager (read / create)."""
-	return templates_editor.editor(name or None)
+	return templates_editor.get_template_editor_data(name or None)
 
 
 @api_endpoint(roles=MANAGER)
 def save_editor(payload: dict) -> dict[str, Any]:
 	"""Create or update the template (`templates_editor.save`). P: Manager + write / create."""
-	return templates_editor.save(payload)
+	return templates_editor.save_template_from_editor(payload)
 
 
 @api_endpoint(roles=MANAGER)
 def delete_template(name: str) -> dict[str, bool]:
 	"""Delete the template. P: Manager + delete."""
-	templates_editor.delete(name)
+	templates_editor.delete_template(name)
 	return {"deleted": True}

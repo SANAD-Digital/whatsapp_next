@@ -67,7 +67,7 @@ def signed(
 		"X-SND-Event": body.get("event", ""),
 		"X-SND-Event-ID": event_id or body.get("event_id", ""),
 		"X-SND-Timestamp": str(ts),
-		"X-SND-Signature": SndPlatformProvider.sign(secret, str(ts), raw),
+		"X-SND-Signature": SndPlatformProvider.sign_webhook_body(secret, str(ts), raw),
 	}
 	return headers, raw
 
@@ -165,37 +165,41 @@ class TestWebhooks(IntegrationTestCase):
 	def test_receiver_rejects_bad_deliveries(self):
 		body = fixture("message.received")
 		with fake_provider():
-			self.assertEqual(receiver.handle({}, b"{}").http_status, 401)
+			self.assertEqual(receiver.handle_webhook_request({}, b"{}").http_status, 401)
 			self.assertEqual(
 				frappe.db.count("WhatsApp Webhook Event", {"event_id": ("in", TEST_EVENT_IDS)}), 0
 			)
 			headers, raw = signed(body, secret="wrong")
-			out = receiver.handle(headers, raw)
+			out = receiver.handle_webhook_request(headers, raw)
 			self.assertEqual((out.http_status, out.body["error"]), (401, "invalid signature"))
 			# an unsigned request is not stored: a guest could otherwise grow the table at will
 			self.assertFalse(frappe.db.exists("WhatsApp Webhook Event", {"event_id": body["event_id"]}))
 			headers, raw = signed(body, ts=int(time.time()) - 3600, event_id="stale-1")
-			out = receiver.handle(headers, raw)
+			out = receiver.handle_webhook_request(headers, raw)
 			self.assertEqual((out.http_status, out.body["error"]), (401, "stale timestamp"))
 			# not stored: the event id is not signed, so a stored replay could grow the table
 			self.assertFalse(frappe.db.exists("WhatsApp Webhook Event", {"event_id": "stale-1"}))
 			# a signature that is not 64 hex digits, or a body that is not UTF-8: refused, no fault
 			headers, raw = signed(body, event_id="odd-sig")
 			headers["X-SND-Signature"] = "\u00e9"
-			self.assertEqual(receiver.handle(headers, raw).http_status, 401)
+			self.assertEqual(receiver.handle_webhook_request(headers, raw).http_status, 401)
 			headers, raw = signed(body, event_id="odd-body")
 			raw = b"\xff\xfe not utf-8"
-			headers["X-SND-Signature"] = SndPlatformProvider.sign(SECRET, headers["X-SND-Timestamp"], raw)
-			self.assertNotEqual(receiver.handle(headers, raw).http_status, 500)
+			headers["X-SND-Signature"] = SndPlatformProvider.sign_webhook_body(
+				SECRET, headers["X-SND-Timestamp"], raw
+			)
+			self.assertNotEqual(receiver.handle_webhook_request(headers, raw).http_status, 500)
 			headers, raw = signed(body, event_id="bad-json")
 			raw = b"not json"
-			headers["X-SND-Signature"] = SndPlatformProvider.sign(SECRET, headers["X-SND-Timestamp"], raw)
-			self.assertEqual(receiver.handle(headers, raw).http_status, 400)
+			headers["X-SND-Signature"] = SndPlatformProvider.sign_webhook_body(
+				SECRET, headers["X-SND-Timestamp"], raw
+			)
+			self.assertEqual(receiver.handle_webhook_request(headers, raw).http_status, 400)
 		# missing secret → 503 and one Error Log per 10 minutes
-		with patch.object(receiver, "_secret", return_value=None), fake_provider():
+		with patch.object(receiver, "_read_webhook_secret", return_value=None), fake_provider():
 			headers, raw = signed(body)
-			self.assertEqual(receiver.handle(headers, raw).http_status, 503)
-			self.assertEqual(receiver.handle(headers, raw).http_status, 503)
+			self.assertEqual(receiver.handle_webhook_request(headers, raw).http_status, 503)
+			self.assertEqual(receiver.handle_webhook_request(headers, raw).http_status, 503)
 		# neither the invalid signature nor the 503 path stored anything for this id
 		self.assertFalse(frappe.db.exists("WhatsApp Webhook Event", {"event_id": body["event_id"]}))
 
@@ -205,11 +209,13 @@ class TestWebhooks(IntegrationTestCase):
 			for ts in ("inf", "-inf", "1e30", "99999999999999", "nan", "abc"):
 				headers, raw = signed(body)
 				headers["X-SND-Timestamp"] = ts
-				out = receiver.handle(headers, raw)
+				out = receiver.handle_webhook_request(headers, raw)
 				self.assertEqual((out.http_status, out.body["error"]), (401, "invalid signature"), ts)
 			for event_id in ("x" * 141, "evt\x00nul", "evt\nline"):
 				headers, raw = signed(body, event_id=event_id)
-				self.assertEqual(receiver.handle(headers, raw).http_status, 400, repr(event_id))
+				self.assertEqual(
+					receiver.handle_webhook_request(headers, raw).http_status, 400, repr(event_id)
+				)
 		self.assertFalse(frappe.db.exists("WhatsApp Webhook Event", {"event_id": ("like", "xxxx%")}))
 
 	def test_a_signature_is_bound_to_one_event(self):
@@ -218,16 +224,18 @@ class TestWebhooks(IntegrationTestCase):
 		body = fixture("message.received")
 		with fake_provider(), patch.object(frappe, "enqueue"):
 			headers, raw = signed(body)
-			self.assertEqual(receiver.handle(headers, raw).http_status, 200)
-			self.assertEqual(receiver.handle(headers, raw).body, {"ok": True, "duplicate": True})
+			self.assertEqual(receiver.handle_webhook_request(headers, raw).http_status, 200)
+			self.assertEqual(
+				receiver.handle_webhook_request(headers, raw).body, {"ok": True, "duplicate": True}
+			)
 			swapped = {**headers, "X-SND-Event-ID": "evt-nope"}
-			out = receiver.handle(swapped, raw)
+			out = receiver.handle_webhook_request(swapped, raw)
 			self.assertEqual((out.http_status, out.body["error"]), (401, "replayed signature"))
 			renamed = {**headers, "X-SND-Event": "message.failed"}
-			self.assertEqual(receiver.handle(renamed, raw).http_status, 401)
+			self.assertEqual(receiver.handle_webhook_request(renamed, raw).http_status, 401)
 			# a decoy "...-Signature" header put before the real one does not hide the reuse
 			decoy = {"A-Signature": "0" * 64, **headers, "X-SND-Event-ID": "evt-decoy"}
-			self.assertEqual(receiver.handle(decoy, raw).http_status, 401)
+			self.assertEqual(receiver.handle_webhook_request(decoy, raw).http_status, 401)
 		self.assertFalse(
 			frappe.db.exists("WhatsApp Webhook Event", {"event_id": ("in", ["evt-nope", "evt-decoy"])})
 		)
@@ -238,9 +246,9 @@ class TestWebhooks(IntegrationTestCase):
 		body = fixture("message.received")
 		with fake_provider(), patch.object(frappe, "enqueue") as enq:
 			headers, raw = signed(body, secret="wrong")
-			self.assertEqual(receiver.handle(headers, raw).http_status, 401)
+			self.assertEqual(receiver.handle_webhook_request(headers, raw).http_status, 401)
 			headers, raw = signed(body)
-			out = receiver.handle(headers, raw)
+			out = receiver.handle_webhook_request(headers, raw)
 			self.assertEqual(out.http_status, 200)
 			self.assertNotIn("duplicate", out.body)
 			row = self._event(out.event)
@@ -251,9 +259,11 @@ class TestWebhooks(IntegrationTestCase):
 			self.assertIsNotNone(row.payload)
 			self.assertEqual(enq.call_count, 1)
 			# a verified repeat is a duplicate as before, and a later bad one never downgrades it
-			self.assertEqual(receiver.handle(headers, raw).body, {"ok": True, "duplicate": True})
+			self.assertEqual(
+				receiver.handle_webhook_request(headers, raw).body, {"ok": True, "duplicate": True}
+			)
 			headers, raw = signed(body, secret="wrong")
-			self.assertEqual(receiver.handle(headers, raw).http_status, 401)
+			self.assertEqual(receiver.handle_webhook_request(headers, raw).http_status, 401)
 			self.assertEqual(self._event(out.event).status, "Received")
 		self.assertEqual(frappe.db.count("WhatsApp Webhook Event", {"event_id": body["event_id"]}), 1)
 
@@ -268,7 +278,10 @@ class TestWebhooks(IntegrationTestCase):
 		with patch.object(receiver, "RATE_LIMIT_PER_MINUTE", 2), fake_provider():
 			frappe.cache.delete(frappe.cache.make_key(receiver.RATE_KEY.format(ip="10.0.0.9")))
 			headers, raw = signed(fixture("message.received"))
-			codes = [receiver.handle(headers, raw, remote_ip="10.0.0.9").http_status for _ in range(4)]
+			codes = [
+				receiver.handle_webhook_request(headers, raw, remote_ip="10.0.0.9").http_status
+				for _ in range(4)
+			]
 		self.assertEqual(codes, [200, 200, 429, 429])
 		frappe.cache.delete(frappe.cache.make_key(receiver.RATE_KEY.format(ip="10.0.0.9")))
 
@@ -276,7 +289,7 @@ class TestWebhooks(IntegrationTestCase):
 		body = fixture("message.received")
 		with fake_provider(), patch.object(frappe, "enqueue") as enq:
 			headers, raw = signed(body)
-			out = receiver.handle(headers, raw)
+			out = receiver.handle_webhook_request(headers, raw)
 			self.assertEqual((out.http_status, out.body), (200, {"ok": True}))
 			row = self._event(out.event)
 			self.assertEqual((row.status, row.device, row.duplicate_count), ("Received", self.device, 0))
@@ -290,7 +303,7 @@ class TestWebhooks(IntegrationTestCase):
 			self.assertEqual(job_kwargs(jobs[0]), {"webhook_event": out.event})
 			self.assertIsNotNone(frappe.db.get_single_value("WhatsApp Settings", "webhook_last_event_at"))
 			# duplicate delivery
-			out2 = receiver.handle(headers, raw)
+			out2 = receiver.handle_webhook_request(headers, raw)
 			self.assertEqual(out2.body, {"ok": True, "duplicate": True})
 			self.assertEqual(self._event(out.event).duplicate_count, 1)
 			# processing
@@ -323,7 +336,7 @@ class TestWebhooks(IntegrationTestCase):
 		first one's unique id and answered 417, so the platform retried it (2026-11-04)."""
 		from whatsapp_next.webhooks import idempotency
 
-		first = idempotency.claim(
+		first = idempotency.claim_webhook_event(
 			"race-1",
 			"connection.connected",
 			payload={},
@@ -332,8 +345,10 @@ class TestWebhooks(IntegrationTestCase):
 			client_ref=None,
 			provider_message_id=None,
 		)
-		with patch.object(idempotency, "_find", side_effect=[None, first.name, first.name]):
-			again = idempotency.claim(
+		with patch.object(
+			idempotency, "_find_webhook_event_name", side_effect=[None, first.name, first.name]
+		):
+			again = idempotency.claim_webhook_event(
 				"race-1",
 				"connection.connected",
 				payload={},
@@ -356,7 +371,7 @@ class TestWebhooks(IntegrationTestCase):
 		)
 		with fake_provider(), patch.object(frappe, "enqueue"):
 			headers, raw = signed(body)
-			out = receiver.handle(headers, raw)
+			out = receiver.handle_webhook_request(headers, raw)
 			self.assertEqual(handlers.process_event(out.event), "Ignored")
 			self.assertFalse(self._event(out.event).inbound_message)
 		self.assertFalse(
@@ -395,7 +410,7 @@ class TestWebhooks(IntegrationTestCase):
 			):
 				body = fixture(event_name, client_ref=out_name)
 				headers, raw = signed(body)
-				out = receiver.handle(headers, raw)
+				out = receiver.handle_webhook_request(headers, raw)
 				self.assertEqual(handlers.process_event(out.event), "Processed")
 				row = self._event(out.event)
 				self.assertEqual(
@@ -409,7 +424,9 @@ class TestWebhooks(IntegrationTestCase):
 			# failed after read is still recorded (final), held on a fresh row
 			body = fixture("message.failed", client_ref=out_name)
 			headers, raw = signed(body)
-			self.assertEqual(handlers.process_event(receiver.handle(headers, raw).event), "Processed")
+			self.assertEqual(
+				handlers.process_event(receiver.handle_webhook_request(headers, raw).event), "Processed"
+			)
 			self.assertEqual(frappe.db.get_value("WhatsApp Log", out_name, "status"), "Failed")
 			held = dispatch.create_outbound(
 				OutboundSpec(
@@ -418,7 +435,9 @@ class TestWebhooks(IntegrationTestCase):
 			)
 			body = fixture("message.held", client_ref=held)
 			headers, raw = signed(body)
-			self.assertEqual(handlers.process_event(receiver.handle(headers, raw).event), "Processed")
+			self.assertEqual(
+				handlers.process_event(receiver.handle_webhook_request(headers, raw).event), "Processed"
+			)
 			self.assertEqual(frappe.db.get_value("WhatsApp Log", held, "status"), "Held")
 			# unknown client_ref → Ignored
 			body = fixture(
@@ -428,23 +447,25 @@ class TestWebhooks(IntegrationTestCase):
 				event_id="evt_unknown_ref",
 			)
 			headers, raw = signed(body)
-			self.assertEqual(handlers.process_event(receiver.handle(headers, raw).event), "Ignored")
+			self.assertEqual(
+				handlers.process_event(receiver.handle_webhook_request(headers, raw).event), "Ignored"
+			)
 
 	def test_connection_and_unknown_device(self):
 		with fake_provider(), patch.object(frappe, "enqueue"):
 			body = fixture("connection.disconnected")
 			headers, raw = signed(body)
-			out = receiver.handle(headers, raw)
+			out = receiver.handle_webhook_request(headers, raw)
 			self.assertEqual(handlers.process_event(out.event), "Processed")
 			self.assertEqual(frappe.db.get_value("WhatsApp Device", self.device, "status"), "Disconnected")
 			body = fixture("connection.connected")
 			headers, raw = signed(body)
-			handlers.process_event(receiver.handle(headers, raw).event)
+			handlers.process_event(receiver.handle_webhook_request(headers, raw).event)
 			self.assertEqual(frappe.db.get_value("WhatsApp Device", self.device, "status"), "Connected")
 			# unknown device: stored as Ignored, never created, not enqueued
 			body = fixture("message.received", device="WAD-NOPE", event_id="evt-nope")
 			headers, raw = signed(body)
-			out = receiver.handle(headers, raw)
+			out = receiver.handle_webhook_request(headers, raw)
 			self.assertEqual(out.body, {"ok": True, "ignored": True})
 			self.assertEqual(
 				(self._event(out.event).status, self._event(out.event).error), ("Ignored", "unknown device")
@@ -453,7 +474,7 @@ class TestWebhooks(IntegrationTestCase):
 			# unknown event name → Ignored, payload kept
 			body = fixture("unknown.event")
 			headers, raw = signed(body)
-			out = receiver.handle(headers, raw)
+			out = receiver.handle_webhook_request(headers, raw)
 			self.assertEqual(handlers.process_event(out.event), "Ignored")
 			self.assertIsNotNone(self._event(out.event).payload)
 
@@ -461,8 +482,8 @@ class TestWebhooks(IntegrationTestCase):
 		"""The platform sends a message's id as the event id, so `delivered` and `read` share it:
 		the job is named after the stored row, or the `read` was dropped as a duplicate job."""
 		with fake_provider(), patch.object(frappe, "enqueue") as enq:
-			a = receiver.handle(*signed(fixture("message.delivered")))
-			b = receiver.handle(*signed(fixture("message.read", event_id="3EB0SENT0001")))
+			a = receiver.handle_webhook_request(*signed(fixture("message.delivered")))
+			b = receiver.handle_webhook_request(*signed(fixture("message.read", event_id="3EB0SENT0001")))
 		self.assertNotEqual(a.event, b.event)
 		jobs = [
 			c.kwargs["job_id"]
@@ -473,7 +494,7 @@ class TestWebhooks(IntegrationTestCase):
 
 	def test_a_received_event_whose_job_never_ran_is_swept(self):
 		with fake_provider(), patch.object(frappe, "enqueue"):
-			out = receiver.handle(*signed(fixture("message.received")))
+			out = receiver.handle_webhook_request(*signed(fixture("message.received")))
 			self.assertEqual(self._reprocess(out.event), 0)  # fresh: its job may still run
 			frappe.db.set_value(
 				"WhatsApp Webhook Event", out.event, "received_at", add_to_date(now_datetime(), minutes=-30)
@@ -484,7 +505,7 @@ class TestWebhooks(IntegrationTestCase):
 	def test_handler_failure_retries_three_times(self):
 		with fake_provider(), patch.object(frappe, "enqueue"):
 			headers, raw = signed(fixture("message.received"))
-			out = receiver.handle(headers, raw)
+			out = receiver.handle_webhook_request(headers, raw)
 			with patch.object(handlers, "handle_event", side_effect=RuntimeError("boom")):
 				self.assertEqual(handlers.process_event(out.event), "Failed")
 				self.assertTrue(self._event(out.event).error.startswith("[try 1] RuntimeError"))
@@ -511,7 +532,7 @@ class TestWebhooks(IntegrationTestCase):
 
 		with fake_provider():
 			headers, raw = signed(fixture("message.received"))
-			out = receiver.handle(headers, raw)
+			out = receiver.handle_webhook_request(headers, raw)
 			with patch.object(handlers, "handle_event", side_effect=half):
 				self.assertEqual(handlers.process_event(out.event), "Failed")
 			pmid = fixture("message.received")["provider_message_id"]

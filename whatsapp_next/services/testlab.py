@@ -43,7 +43,7 @@ from whatsapp_next.services import attachments, audit, dispatch, quick_send, sim
 from whatsapp_next.services.devices import default_device
 from whatsapp_next.services.dispatch import OutboundSpec
 from whatsapp_next.services.guards import rollback_to
-from whatsapp_next.services.phone import classify, mask
+from whatsapp_next.services.phone import classify, mask_phone_for_logs
 
 KINDS: tuple[str, ...] = (
 	"quick_text",
@@ -156,7 +156,7 @@ def context() -> dict[str, Any]:
 		"commands": base["commands"],
 		"commands_enabled": base["commands_enabled"],
 		"samples": {kind: {"file_name": name} for kind, name in SAMPLES.items()},
-		"history": runs(),
+		"history": list_recent_test_runs(),
 	}
 
 
@@ -221,7 +221,7 @@ def documents(doctype: str, txt: str | None = None, limit: int = 10) -> dict[str
 	return {"rows": [{"name": r.name, "title": r.get("title") or None} for r in rows], "no_access": False}
 
 
-def _latest(doctype: str) -> str | None:
+def _get_latest_docname(doctype: str) -> str | None:
 	rows = documents(doctype, limit=1)["rows"]
 	return rows[0]["name"] if rows else None
 
@@ -229,7 +229,7 @@ def _latest(doctype: str) -> str | None:
 # ---- health: is the setup able to send and to hear back -----------------------------------
 
 
-def _check(
+def _build_health_check_result(
 	key: str,
 	title: str,
 	status: str,
@@ -249,7 +249,7 @@ def _check(
 	}
 
 
-def health(device: str | None = None, live: bool = False) -> dict[str, Any]:
+def check_setup_health(device: str | None = None, live: bool = False) -> dict[str, Any]:
 	"""The read-only checks a test starts with → `{ok, checks[{key, title, status (ok | warn |
 	fail), detail, fix, route, route_label}], checked_at}`. `live` asks the provider now
 	(`onboarding.test_connection`, audited); otherwise the last known state is reported and
@@ -283,9 +283,9 @@ def _credentials_check(settings) -> dict[str, Any]:
 	route, label = "wa-settings", _("Open settings")
 	from whatsapp_next.services import secrets
 
-	has_keys = any(secrets.read(f) for f in ("customer_api_key", "api_key"))
+	has_keys = any(secrets.read_password_field(f) for f in ("customer_api_key", "api_key"))
 	if not has_keys:
-		return _check(
+		return _build_health_check_result(
 			"credentials",
 			title,
 			"fail",
@@ -296,7 +296,7 @@ def _credentials_check(settings) -> dict[str, Any]:
 		)
 	if settings.connection_status == "OK":
 		latency = cint(settings.last_connection_latency_ms)
-		return _check(
+		return _build_health_check_result(
 			"credentials",
 			title,
 			"ok",
@@ -305,7 +305,7 @@ def _credentials_check(settings) -> dict[str, Any]:
 			else _("The platform accepted the keys."),
 		)
 	if settings.connection_status == "Failed":
-		return _check(
+		return _build_health_check_result(
 			"credentials",
 			title,
 			"fail",
@@ -318,7 +318,7 @@ def _credentials_check(settings) -> dict[str, Any]:
 			route,
 			label,
 		)
-	return _check(
+	return _build_health_check_result(
 		"credentials",
 		title,
 		"warn",
@@ -342,7 +342,7 @@ def _subscription_check(settings) -> dict[str, Any]:
 		facts.append(_("ends {0}").format(frappe.format(settings.subscription_end, {"fieldtype": "Date"})))
 	detail = " · ".join(facts)
 	if not status and not settings.subscription_synced_at:
-		return _check(
+		return _build_health_check_result(
 			"subscription",
 			title,
 			"warn",
@@ -352,7 +352,7 @@ def _subscription_check(settings) -> dict[str, Any]:
 			label,
 		)
 	if status.lower() in ("expired", "inactive", "cancelled", "suspended") or (days is not None and days < 0):
-		return _check(
+		return _build_health_check_result(
 			"subscription",
 			title,
 			"fail",
@@ -364,7 +364,7 @@ def _subscription_check(settings) -> dict[str, Any]:
 			label,
 		)
 	if limit and cint(remaining) <= 0:
-		return _check(
+		return _build_health_check_result(
 			"subscription",
 			title,
 			"fail",
@@ -376,7 +376,7 @@ def _subscription_check(settings) -> dict[str, Any]:
 			label,
 		)
 	if (limit and cint(remaining) < CAP_DEFAULT) or (days is not None and days <= 3):
-		return _check(
+		return _build_health_check_result(
 			"subscription",
 			title,
 			"warn",
@@ -385,14 +385,14 @@ def _subscription_check(settings) -> dict[str, Any]:
 			route,
 			label,
 		)
-	return _check("subscription", title, "ok", detail)
+	return _build_health_check_result("subscription", title, "ok", detail)
 
 
 def _webhook_check(settings) -> dict[str, Any]:
 	title = _("Webhook endpoint")
 	route, label = "wa-settings", _("Open webhook settings")
 	if not settings.webhook_endpoint:
-		return _check(
+		return _build_health_check_result(
 			"webhook",
 			title,
 			"fail",
@@ -404,7 +404,7 @@ def _webhook_check(settings) -> dict[str, Any]:
 			label,
 		)
 	if settings.webhook_status != "Active":
-		return _check(
+		return _build_health_check_result(
 			"webhook",
 			title,
 			"fail",
@@ -415,14 +415,14 @@ def _webhook_check(settings) -> dict[str, Any]:
 			route,
 			label,
 		)
-	return _check("webhook", title, "ok", _("Registered and active."))
+	return _build_health_check_result("webhook", title, "ok", _("Registered and active."))
 
 
 def _webhook_traffic_check(settings) -> dict[str, Any]:
 	title = _("Last event received")
 	at = settings.webhook_last_event_at
 	if not at:
-		return _check(
+		return _build_health_check_result(
 			"webhook_traffic",
 			title,
 			"warn",
@@ -433,7 +433,7 @@ def _webhook_traffic_check(settings) -> dict[str, Any]:
 	hours = time_diff_in_seconds(now_datetime(), at) / 3600
 	when = frappe.utils.pretty_date(at)
 	if hours > STALE_WEBHOOK_HOURS:
-		return _check(
+		return _build_health_check_result(
 			"webhook_traffic",
 			title,
 			"warn",
@@ -442,7 +442,9 @@ def _webhook_traffic_check(settings) -> dict[str, Any]:
 				"Nothing was heard for more than a day. Send one test message below and watch for its delivery receipt."
 			),
 		)
-	return _check("webhook_traffic", title, "ok", _("The last event arrived {0}.").format(when))
+	return _build_health_check_result(
+		"webhook_traffic", title, "ok", _("The last event arrived {0}.").format(when)
+	)
 
 
 def _events_arrive() -> bool:
@@ -468,7 +470,7 @@ def _device_check(device: str | None) -> dict[str, Any]:
 		else None
 	)
 	if not row:
-		return _check(
+		return _build_health_check_result(
 			"device",
 			title,
 			"fail",
@@ -479,7 +481,7 @@ def _device_check(device: str | None) -> dict[str, Any]:
 		)
 	name = row.device_name or row.name
 	if cint(row.disabled):
-		return _check(
+		return _build_health_check_result(
 			"device",
 			title,
 			"fail",
@@ -489,7 +491,7 @@ def _device_check(device: str | None) -> dict[str, Any]:
 			label,
 		)
 	if row.status != "Connected":
-		return _check(
+		return _build_health_check_result(
 			"device",
 			title,
 			"fail",
@@ -501,7 +503,7 @@ def _device_check(device: str | None) -> dict[str, Any]:
 			label,
 		)
 	if not cint(row.webhook_registered) and not _events_arrive():
-		return _check(
+		return _build_health_check_result(
 			"device",
 			title,
 			"warn",
@@ -510,7 +512,7 @@ def _device_check(device: str | None) -> dict[str, Any]:
 			"wa-settings",
 			_("Open webhook settings"),
 		)
-	return _check("device", title, "ok", _("{0} is connected.").format(name))
+	return _build_health_check_result("device", title, "ok", _("{0} is connected.").format(name))
 
 
 def _scheduler_check() -> dict[str, Any]:
@@ -521,7 +523,7 @@ def _scheduler_check() -> dict[str, Any]:
 	title = _("Scheduler")
 	fix_cmd = f"bench --site {frappe.local.site} enable-scheduler"
 	if is_scheduler_inactive():
-		return _check(
+		return _build_health_check_result(
 			"scheduler",
 			title,
 			"fail",
@@ -537,7 +539,7 @@ def _scheduler_check() -> dict[str, Any]:
 		as_dict=True,
 	)
 	if last and cint(last.stopped):
-		return _check(
+		return _build_health_check_result(
 			"scheduler",
 			title,
 			"fail",
@@ -547,7 +549,7 @@ def _scheduler_check() -> dict[str, Any]:
 			_("Open scheduled jobs"),
 		)
 	if not last or not last.last_execution:
-		return _check(
+		return _build_health_check_result(
 			"scheduler",
 			title,
 			"warn",
@@ -558,7 +560,7 @@ def _scheduler_check() -> dict[str, Any]:
 		)
 	minutes = time_diff_in_seconds(now_datetime(), get_datetime(last.last_execution)) / 60
 	if minutes > STALE_SCHEDULER_MINUTES:
-		return _check(
+		return _build_health_check_result(
 			"scheduler",
 			title,
 			"fail",
@@ -569,7 +571,7 @@ def _scheduler_check() -> dict[str, Any]:
 				"The scheduler process is not running, so alerts and scheduled campaigns are late. Ask the system administrator to restart the bench and check `bench doctor`."
 			),
 		)
-	return _check(
+	return _build_health_check_result(
 		"scheduler",
 		title,
 		"ok",
@@ -591,24 +593,30 @@ def _workers_check() -> dict[str, Any]:
 		served = {name.rsplit(":", 1)[-1] for w in workers for name in w.queue_names()}
 		waiting = {q: get_queue(q).count for q in ("short", "long")}
 	except Exception:
-		return _check("workers", title, "fail", _("The job queue (Redis) cannot be reached."), fix)
+		return _build_health_check_result(
+			"workers", title, "fail", _("The job queue (Redis) cannot be reached."), fix
+		)
 	if not workers:
-		return _check("workers", title, "fail", _("No background worker is running."), fix)
+		return _build_health_check_result(
+			"workers", title, "fail", _("No background worker is running."), fix
+		)
 	missing = [q for q in ("short", "long", "default") if q not in served]
 	if missing:
-		return _check(
+		return _build_health_check_result(
 			"workers", title, "fail", _("No worker serves the queue: {0}.").format(", ".join(missing)), fix
 		)
 	backlog = sum(waiting.values())
 	if backlog > 50:
-		return _check(
+		return _build_health_check_result(
 			"workers",
 			title,
 			"warn",
 			_("{0} workers are running, {1} jobs are waiting.").format(len(workers), backlog),
 			_("The workers are busy: messages may leave late."),
 		)
-	return _check("workers", title, "ok", _("{0} workers are running.").format(len(workers)))
+	return _build_health_check_result(
+		"workers", title, "ok", _("{0} workers are running.").format(len(workers))
+	)
 
 
 def _queue_check(settings) -> dict[str, Any]:
@@ -616,7 +624,7 @@ def _queue_check(settings) -> dict[str, Any]:
 	route, label = ["List", "WhatsApp Queue Item"], _("Open the queue")
 	if cint(settings.queue_paused):
 		who = frappe.utils.get_fullname(settings.queue_paused_by) if settings.queue_paused_by else None
-		return _check(
+		return _build_health_check_result(
 			"queue",
 			title,
 			"fail",
@@ -634,7 +642,7 @@ def _queue_check(settings) -> dict[str, Any]:
 	)
 	dead = frappe.db.count("WhatsApp Queue Item", {"status": "Dead Letter"})
 	if stale:
-		return _check(
+		return _build_health_check_result(
 			"queue",
 			title,
 			"warn",
@@ -646,7 +654,7 @@ def _queue_check(settings) -> dict[str, Any]:
 			label,
 		)
 	if dead:
-		return _check(
+		return _build_health_check_result(
 			"queue",
 			title,
 			"warn",
@@ -655,7 +663,7 @@ def _queue_check(settings) -> dict[str, Any]:
 			route,
 			label,
 		)
-	return _check(
+	return _build_health_check_result(
 		"queue",
 		title,
 		"ok",
@@ -668,7 +676,7 @@ def _commands_check(settings) -> dict[str, Any]:
 	route, label = "wa-settings", _("Open settings")
 	active = frappe.db.count("WhatsApp Command", {"status": "Active"})
 	if not cint(settings.enable_commands):
-		return _check(
+		return _build_health_check_result(
 			"commands",
 			title,
 			"warn",
@@ -678,7 +686,7 @@ def _commands_check(settings) -> dict[str, Any]:
 			label,
 		)
 	if not settings.command_service_user:
-		return _check(
+		return _build_health_check_result(
 			"commands",
 			title,
 			"warn",
@@ -688,7 +696,7 @@ def _commands_check(settings) -> dict[str, Any]:
 			label,
 		)
 	if not active:
-		return _check(
+		return _build_health_check_result(
 			"commands",
 			title,
 			"warn",
@@ -697,17 +705,17 @@ def _commands_check(settings) -> dict[str, Any]:
 			["List", "WhatsApp Command"],
 			_("Open commands"),
 		)
-	return _check("commands", title, "ok", _("On — {0} active commands.").format(active))
+	return _build_health_check_result("commands", title, "ok", _("On — {0} active commands.").format(active))
 
 
 # ---- the run: cap, pacing and recipients are enforced here --------------------------------
 
 
-def _save(run: dict[str, Any]) -> None:
+def _save_test_run_to_cache(run: dict[str, Any]) -> None:
 	frappe.cache.set_value(RUN_KEY.format(run["id"]), run, expires_in_sec=RUN_TTL)
 
 
-def _load(run: str, *, own: bool = False) -> dict[str, Any]:
+def _load_test_run(run: str, *, own: bool = False) -> dict[str, Any]:
 	"""The run: the live copy from the cache, else its archive from the audit log. `own` is the
 	gate of `run_check`: only a live run, and only the user who started it."""
 	data = frappe.cache.get_value(RUN_KEY.format(run or "")) or (None if own else _archived(run))
@@ -805,7 +813,7 @@ def _audit_step(data: dict[str, Any], step: dict[str, Any], user: str) -> None:
 		reference = ("WhatsApp Campaign", step["campaign"])
 	elif step.get("outbounds") or step.get("real"):
 		reference = ("WhatsApp Log", (step.get("outbounds") or step.get("real"))[0])
-	audit.log(
+	audit.record_audit_entry(
 		"Test Send",
 		reference=reference,
 		summary=AUDIT_CHECK,
@@ -832,7 +840,7 @@ def _audit_step(data: dict[str, Any], step: dict[str, Any], user: str) -> None:
 	)
 
 
-def _clamp(value: Any, default: int, low: int, high: int) -> int:
+def _clamp_integer_to_range(value: Any, default: int, low: int, high: int) -> int:
 	return max(low, min(cint(value) or default, high))
 
 
@@ -879,15 +887,15 @@ def start_run(
 		"user": user or frappe.session.user,
 		"device": row.name,
 		"targets": normalize_targets(targets),
-		"cap": _clamp(cap, CAP_DEFAULT, 1, CAP_MAX),
-		"pacing": _clamp(pacing, PACING_DEFAULT, PACING_MIN, PACING_MAX),
+		"cap": _clamp_integer_to_range(cap, CAP_DEFAULT, 1, CAP_MAX),
+		"pacing": _clamp_integer_to_range(pacing, PACING_DEFAULT, PACING_MIN, PACING_MAX),
 		"started_at": str(now_datetime()),
 		"last_send": 0.0,
 		"used": 0,
 		"steps": [],
 	}
-	_save(run)
-	audit.log(
+	_save_test_run_to_cache(run)
+	audit.record_audit_entry(
 		"Test Send",
 		reference=("WhatsApp Device", row.name),
 		summary=AUDIT_START,
@@ -901,10 +909,10 @@ def start_run(
 			"pacing": run["pacing"],
 		},
 	)
-	return _public(run)
+	return _get_public_run_fields(run)
 
 
-def _public(run: dict[str, Any]) -> dict[str, Any]:
+def _get_public_run_fields(run: dict[str, Any]) -> dict[str, Any]:
 	return {
 		**{k: run[k] for k in ("id", "user", "device", "targets", "cap", "pacing", "started_at", "used")},
 		"archived": bool(run.get("archived")),
@@ -922,7 +930,7 @@ def run_check(
 	check that the product itself refuses (a blacklisted number, an empty template, a report that
 	cannot run) is not raised: it is recorded as a failed step with its reason, which is what a
 	test is for."""
-	data = _load(run, own=True)
+	data = _load_test_run(run, own=True)
 	if kind not in KINDS:
 		frappe.throw(_("Unknown check: {0}").format(kind), WAValidationError)
 	params = dict(params or {})
@@ -967,7 +975,7 @@ def run_check(
 		step.update(_HANDLERS[kind](data, target, params, user or frappe.session.user))
 	except Exception as exc:
 		rollback_to("wa_testlab_step")
-		step.update(ok=False, error=_reason(exc))
+		step.update(ok=False, error=_get_exception_reason_text(exc))
 		if not isinstance(exc, frappe.ValidationError | frappe.PermissionError):
 			frappe.log_error(
 				title="WhatsApp Test Lab: check failed",
@@ -986,12 +994,12 @@ def run_check(
 		# a step of several messages (a campaign) holds the next check back until its own pacing is spent
 		data["last_send"] = time.time() + max(0, count - 1) * data["pacing"]
 	data["steps"].append(step)
-	_save(data)
+	_save_test_run_to_cache(data)
 	_audit_step(data, step, user or frappe.session.user)
 	return step
 
 
-def _reason(exc: Exception) -> str:
+def _get_exception_reason_text(exc: Exception) -> str:
 	text = frappe.utils.strip_html(str(exc) or "").strip()
 	return (text or type(exc).__name__)[:400]
 
@@ -1040,7 +1048,7 @@ def sample_file(kind: str) -> str:
 		return attachments.save_private_file(fh.read(), file_name, SAMPLE_OWNER)
 
 
-def _quick(data: dict, target: str, params: dict, user: str, *, kind: str) -> dict[str, Any]:
+def _run_quick_send_check(data: dict, target: str, params: dict, user: str, *, kind: str) -> dict[str, Any]:
 	"""A quick send (`quick_send.compose`, priority 1): text, or the sample / a picked file."""
 	body = (params.get("body") or "").strip() or _("Test Lab · test message")
 	attachment = None
@@ -1083,7 +1091,7 @@ def _reference(doctype: str | None, name: str | None) -> str | None:
 	"""The record a check renders: the one asked for, else the newest the caller may read."""
 	if not doctype:
 		return None
-	name = name or _latest(doctype)
+	name = name or _get_latest_docname(doctype)
 	if not name:
 		return None
 	if not frappe.db.exists(doctype, name):
@@ -1136,7 +1144,7 @@ def _template(data: dict, target: str, params: dict, user: str) -> dict[str, Any
 	if attach["message_type"] != "Text":
 		# a file's text is its caption: rendered the way the send renders a body
 		caption = (
-			quick_send.preview(
+			quick_send.preview_message_body(
 				template=tpl.name,
 				reference_doctype=tpl.reference_doctype if reference else None,
 				reference_name=reference,
@@ -1207,7 +1215,7 @@ def _notification(data: dict, target: str, params: dict, user: str) -> dict[str,
 	}
 
 
-def _alert(data: dict, target: str, params: dict, user: str) -> dict[str, Any]:
+def _run_alert_check(data: dict, target: str, params: dict, user: str) -> dict[str, Any]:
 	"""A scheduled alert, run now and sent to the run's target only (`alerts_editor.send_test`)."""
 	from whatsapp_next.services import alerts_editor
 
@@ -1336,9 +1344,11 @@ def _campaign(data: dict, target: None, params: dict, user: str) -> dict[str, An
 		payload["body"] = body or _("Test Lab · test campaign")
 	minutes = None
 	if params.get("scheduled"):
-		minutes = _clamp(params.get("schedule_minutes"), SCHEDULE_DEFAULT, SCHEDULE_MIN, SCHEDULE_MAX)
+		minutes = _clamp_integer_to_range(
+			params.get("schedule_minutes"), SCHEDULE_DEFAULT, SCHEDULE_MIN, SCHEDULE_MAX
+		)
 		payload["scheduled_at"] = str(add_to_date(now_datetime(), minutes=minutes))
-	r = bulk_send.send(payload, user=user)
+	r = bulk_send.create_and_start_bulk_campaign(payload, user=user)
 	frappe.db.set_value(
 		"WhatsApp Campaign",
 		r["campaign"],
@@ -1370,12 +1380,12 @@ def _campaign(data: dict, target: None, params: dict, user: str) -> dict[str, An
 
 
 _HANDLERS = {
-	"quick_text": lambda d, t, p, u: _quick(d, t, p, u, kind="text"),
-	"quick_image": lambda d, t, p, u: _quick(d, t, p, u, kind="image"),
-	"quick_document": lambda d, t, p, u: _quick(d, t, p, u, kind="document"),
+	"quick_text": lambda d, t, p, u: _run_quick_send_check(d, t, p, u, kind="text"),
+	"quick_image": lambda d, t, p, u: _run_quick_send_check(d, t, p, u, kind="image"),
+	"quick_document": lambda d, t, p, u: _run_quick_send_check(d, t, p, u, kind="document"),
 	"template": _template,
 	"notification": _notification,
-	"alert": _alert,
+	"alert": _run_alert_check,
 	"command": _command,
 	"campaign": _campaign,
 }
@@ -1384,7 +1394,7 @@ _HANDLERS = {
 # ---- previews: what a check would send, without sending -----------------------------------
 
 
-def preview(kind: str, params: dict | None = None, target: str | None = None) -> dict[str, Any]:
+def preview_check_message(kind: str, params: dict | None = None, target: str | None = None) -> dict[str, Any]:
 	"""What a check would send, nothing sent → per kind:
 	`template` `{message, errors[], reference_name, attachment}` · `notification`
 	(`notifications_editor.preview`: condition, message, masked recipients) · `alert`
@@ -1394,7 +1404,7 @@ def preview(kind: str, params: dict | None = None, target: str | None = None) ->
 	if kind == "template":
 		tpl = _template_row(params.get("template"))
 		reference = _reference(tpl.reference_doctype, params.get("reference_name"))
-		r = quick_send.preview(
+		r = quick_send.preview_message_body(
 			template=tpl.name,
 			reference_doctype=tpl.reference_doctype if reference else None,
 			reference_name=reference,
@@ -1420,7 +1430,7 @@ def preview(kind: str, params: dict | None = None, target: str | None = None) ->
 		if not params.get("notification"):
 			frappe.throw(_("Pick a notification"), WAValidationError)
 		frappe.has_permission("WhatsApp Notification", "read", params["notification"], throw=True)
-		return notifications_editor.preview(
+		return notifications_editor.preview_notification_draft(
 			{"name": params["notification"]}, params.get("reference_name") or None
 		)
 	if kind == "alert":
@@ -1429,10 +1439,10 @@ def preview(kind: str, params: dict | None = None, target: str | None = None) ->
 		if not params.get("alert"):
 			frappe.throw(_("Pick an alert"), WAValidationError)
 		frappe.has_permission("WhatsApp Notification Alert", "read", params["alert"], throw=True)
-		r = alerts_editor.preview({"name": params["alert"]})
+		r = alerts_editor.preview_alert_draft({"name": params["alert"]})
 		# who the alert really reaches stays a count here: the test goes to the run's target only
 		r["recipients"] = [
-			{"phone_e164": mask(x.get("phone_e164")), "source": x.get("source")}
+			{"phone_e164": mask_phone_for_logs(x.get("phone_e164")), "source": x.get("source")}
 			for x in (r.get("recipients") or [])[:20]
 		]
 		return r
@@ -1481,12 +1491,12 @@ def _step_state(step: dict[str, Any], logs: list[dict[str, Any]], campaign: dict
 	return "running"
 
 
-def status(run: str) -> dict[str, Any]:
+def get_test_run_status(run: str) -> dict[str, Any]:
 	"""Where the run stands now → `{run{}, steps[{…step, state, messages[{name, status, phone_e164,
 	…times, error_code, error_message, send_seconds, deliver_seconds, queue_item}], campaign{}}],
 	summary{}, receipts{}, inbound[], webhook_last_event_at, finished}`. Read by any manager; the
 	messages a test campaign has produced since the last read are marked `is_test` here."""
-	data = _load(run)
+	data = _load_test_run(run)
 	campaigns = [s["campaign"] for s in data["steps"] if s.get("campaign")]
 	if campaigns:
 		_mark_test(
@@ -1551,9 +1561,9 @@ def status(run: str) -> dict[str, Any]:
 	inbound = [] if data.get("archived") else _inbound(data)
 	all_logs = list(logs.values())
 	return {
-		"run": _public(data),
+		"run": _get_public_run_fields(data),
 		"steps": steps,
-		"summary": _summary(steps, all_logs),
+		"summary": _summarize_run_steps(steps, all_logs),
 		"receipts": _receipts(all_logs),
 		"inbound": inbound,
 		"webhook_last_event_at": frappe.db.get_single_value("WhatsApp Settings", "webhook_last_event_at"),
@@ -1562,8 +1572,8 @@ def status(run: str) -> dict[str, Any]:
 	}
 
 
-def _summary(steps: list[dict[str, Any]], logs: list[dict[str, Any]]) -> dict[str, Any]:
-	def avg(key: str) -> float | None:
+def _summarize_run_steps(steps: list[dict[str, Any]], logs: list[dict[str, Any]]) -> dict[str, Any]:
+	def average_log_seconds(key: str) -> float | None:
 		values = [r[key] for r in logs if r.get(key) is not None]
 		return round(sum(values) / len(values), 1) if values else None
 
@@ -1574,8 +1584,8 @@ def _summary(steps: list[dict[str, Any]], logs: list[dict[str, Any]]) -> dict[st
 		"blocked": sum(1 for s in steps if s["state"] == "blocked"),
 		"pending": sum(1 for s in steps if s["state"] in ("running", "sent", "scheduled")),
 		"messages": len(logs),
-		"avg_send_seconds": avg("send_seconds"),
-		"avg_deliver_seconds": avg("deliver_seconds"),
+		"avg_send_seconds": average_log_seconds("send_seconds"),
+		"avg_deliver_seconds": average_log_seconds("deliver_seconds"),
 	}
 
 
@@ -1646,7 +1656,7 @@ def _inbound(data: dict[str, Any]) -> list[dict[str, Any]]:
 	return rows
 
 
-def runs() -> list[dict[str, Any]]:
+def list_recent_test_runs() -> list[dict[str, Any]]:
 	"""The newest runs, newest first, from the audit log (so they outlive the cache): `[{id, user,
 	user_name, device, started_at, targets, checks, messages, delivered, failed}]`."""
 	out: list[dict[str, Any]] = []

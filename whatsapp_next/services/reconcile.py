@@ -52,7 +52,7 @@ def reconcile_statuses() -> dict[str, Any]:
 	return out
 
 
-def _lookup(refs: list[str]) -> tuple[dict, list[str]] | None:
+def _lookup_platform_message_statuses(refs: list[str]) -> tuple[dict, list[str]] | None:
 	try:
 		statuses, unknown = registry.get_provider().get_message_status(refs)
 	except pex.ProviderError as exc:
@@ -120,7 +120,7 @@ def reconcile_handed_over(limit: int = MAX_REFS) -> dict[str, int]:
 	counts = {"checked": len(rows), "resolved": 0, "requeued": 0, "failed_unknown": 0, "wait": 0}
 	if not rows:
 		return counts
-	looked = _lookup([r.name for r in rows])
+	looked = _lookup_platform_message_statuses([r.name for r in rows])
 	if looked is None:
 		return counts
 	by_ref, unknown = looked
@@ -257,7 +257,7 @@ def resolve_expired_holds(days: int = HELD_EXPIRY_DAYS) -> int:
 	)
 	if not rows:
 		return 0
-	looked = _lookup(rows)
+	looked = _lookup_platform_message_statuses(rows)
 	if looked is None:
 		return 0
 	by_ref, unknown = looked

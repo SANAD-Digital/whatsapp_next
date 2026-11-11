@@ -21,7 +21,7 @@ from frappe.utils.password import get_encryption_key
 SETTINGS = "WhatsApp Settings"
 
 
-def read(fieldname: str, doctype: str = SETTINGS, name: str | None = None) -> str | None:
+def read_password_field(fieldname: str, doctype: str = SETTINGS, name: str | None = None) -> str | None:
 	"""The plain value of a Password field, or None when it is empty or cannot be opened on this
 	site. Never raises and never leaves a message for the browser. Never log what it returns."""
 	auth = Table("__Auth")

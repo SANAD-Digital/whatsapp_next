@@ -43,7 +43,7 @@ DEVICE_FIELDS = (
 )
 
 
-def _row(device: str) -> dict[str, Any]:
+def _get_device_row(device: str) -> dict[str, Any]:
 	return frappe.db.get_value("WhatsApp Device", device, list(DEVICE_FIELDS), as_dict=True) or {}
 
 
@@ -63,8 +63,10 @@ def list_devices(refresh: bool = False) -> dict[str, Any]:
 @api_endpoint(roles=MANAGER, schema={"pairing_mode": {"enum": ["QR", "Code"]}})
 def create_device(device_name: str, phone: str | None = None, pairing_mode: str = "QR") -> dict[str, Any]:
 	"""Create the device on the provider and locally (`Pending QR`); audited `Device Created`."""
-	name = devices.create(device_name, phone=phone, pairing_mode=pairing_mode, user=frappe.session.user)
-	row = _row(name)
+	name = devices.create_device(
+		device_name, phone=phone, pairing_mode=pairing_mode, user=frappe.session.user
+	)
+	row = _get_device_row(name)
 	return {"name": name, "platform_device": row.get("platform_device"), "status": row.get("status")}
 
 
@@ -79,7 +81,7 @@ def start_pairing(device: str, mode: str = "QR", phone: str | None = None) -> di
 def poll_status(device: str) -> dict[str, Any]:
 	"""Ask the provider for the live state and apply it → `{status, changed, previous, wrong_number}`;
 	`wrong_number` ({expected, connected}) when the platform unlinked another WhatsApp number."""
-	change = devices.poll(device)
+	change = devices.poll_device_state(device)
 	return {
 		"status": change.status,
 		"changed": change.changed,
@@ -97,15 +99,17 @@ def disconnect_device(device: str) -> dict[str, Any]:
 @api_endpoint(roles=MANAGER)
 def delete_device(device: str, delete_remote: bool = True) -> dict[str, Any]:
 	"""Delete the device (provider + local); the default device cannot go while others exist."""
-	devices.delete(device, delete_remote=delete_remote, user=frappe.session.user)
+	devices.delete_device(device, delete_remote=delete_remote, user=frappe.session.user)
 	return {"deleted": device}
 
 
 @api_endpoint(roles=MANAGER)
 def update_device(device: str, device_name: str | None = None, phone: str | None = None) -> dict[str, Any]:
 	"""Rename / re-phone through the provider (`WANotSupportedError` until platform A-05)."""
-	devices.update(device, device_name=device_name, phone=phone, user=frappe.session.user)
-	return _row(device)
+	devices.update_device_name_and_phone(
+		device, device_name=device_name, phone=phone, user=frappe.session.user
+	)
+	return _get_device_row(device)
 
 
 @api_endpoint(roles=MANAGER)
@@ -153,8 +157,8 @@ def import_history(device: str, restart: bool = False) -> dict[str, Any]:
 
 	if not frappe.db.exists("WhatsApp Device", device):
 		frappe.throw(_("WhatsApp Device {0} not found").format(device), WANotFoundError)
-	history_import.start(device, restart=bool(restart))
-	audit.log(
+	history_import.queue_history_import(device, restart=bool(restart))
+	audit.record_audit_entry(
 		"Settings Changed",
 		reference=("WhatsApp Device", device),
 		details={"action": "import_history", "restart": bool(restart)},

@@ -30,31 +30,31 @@ TOKENS = (
 )
 
 
-def _today(today: date | str | None = None) -> date:
+def _resolve_today(today: date | str | None = None) -> date:
 	return getdate(today) if today else getdate(nowdate())
 
 
 def relative_date(days: int, today: date | str | None = None) -> date:
 	"""`today + days` (negative = past)."""
-	return add_days(_today(today), days)
+	return add_days(_resolve_today(today), days)
 
 
 def week_range(today: date | str | None = None, first_weekday: int = 0) -> tuple[date, date]:
 	"""Monday–Sunday by default; `first_weekday` 0 = Monday … 6 = Sunday."""
-	t = _today(today)
+	t = _resolve_today(today)
 	start = t - timedelta(days=(t.weekday() - first_weekday) % 7)
 	return start, start + timedelta(days=6)
 
 
 def month_range(today: date | str | None = None) -> tuple[date, date]:
 	"""First and last day of the calendar month of `today`."""
-	t = _today(today)
+	t = _resolve_today(today)
 	return t.replace(day=1), t.replace(day=calendar.monthrange(t.year, t.month)[1])
 
 
 def quarter_range(today: date | str | None = None) -> tuple[date, date]:
 	"""First and last day of the calendar quarter of `today`."""
-	t = _today(today)
+	t = _resolve_today(today)
 	q_start_month = ((t.month - 1) // 3) * 3 + 1
 	start = t.replace(month=q_start_month, day=1)
 	end_month = q_start_month + 2
@@ -63,13 +63,13 @@ def quarter_range(today: date | str | None = None) -> tuple[date, date]:
 
 def year_range(today: date | str | None = None) -> tuple[date, date]:
 	"""1 January and 31 December of the year of `today`."""
-	t = _today(today)
+	t = _resolve_today(today)
 	return t.replace(month=1, day=1), t.replace(month=12, day=31)
 
 
 def fiscal_year_range(today: date | str | None = None, company: str | None = None) -> tuple[date, date]:
 	"""ERPNext Fiscal Year containing `today`; falls back to the calendar year."""
-	t = _today(today)
+	t = _resolve_today(today)
 	if frappe.db.exists("DocType", "Fiscal Year"):
 		rows = frappe.get_all(
 			"Fiscal Year",
@@ -84,7 +84,7 @@ def fiscal_year_range(today: date | str | None = None, company: str | None = Non
 
 def last_days_range(days: int, today: date | str | None = None) -> tuple[date, date]:
 	"""`(today - days + 1, today)` — the last N days including today."""
-	t = _today(today)
+	t = _resolve_today(today)
 	return t - timedelta(days=max(int(days), 1) - 1), t
 
 
@@ -97,7 +97,7 @@ def resolve(token: str | None, today: date | str | None = None) -> str | None:
 	key = key.lower()
 	n = int(arg) if arg.strip().lstrip("-").isdigit() else 0
 	if key == "today":
-		return str(_today(today))
+		return str(_resolve_today(today))
 	if key == "yesterday":
 		return str(relative_date(-1, today))
 	if key == "tomorrow":

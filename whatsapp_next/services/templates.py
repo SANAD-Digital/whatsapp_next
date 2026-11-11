@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -144,7 +143,7 @@ def compile_check(source: str | None) -> list[str]:
 	return []
 
 
-def render(
+def render_message_template(
 	source: str | None, context: dict[str, Any] | None = None, *, strict: bool = False
 ) -> RenderResult:
 	"""Render `source` with Frappe's sandboxed Jinja.
@@ -171,7 +170,7 @@ def render(
 
 def render_text(source: str | None, context: dict[str, Any] | None = None, *, fallback: str = "") -> str:
 	"""Convenience: rendered text, or `fallback` on error (never raises)."""
-	result = render(source, context)
+	result = render_message_template(source, context)
 	return result.text if result.ok else fallback
 
 

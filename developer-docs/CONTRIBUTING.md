@@ -30,7 +30,7 @@ ui, platform, layout). Where the two disagree, the rules win. Record every desig
 | No raw `requests` exception leaves `providers/`. Wrap every error in a `providers.exceptions.*` type | `tests/test_snd_platform.py` (error mapping), `tests/test_providers_base.py` (the contract every provider must pass) |
 | **No `frappe.db.sql`** unless `frappe.qb` or `get_all` cannot express the query, and then with a `plan/decisions.md` entry. The codebase currently has none | review |
 | Only `services/read_layer.py` reads outbound and inbound together (the only `UNION`) | review |
-| Every phone goes through `services/phone.normalize`. Phone fields are named `phone` (raw) and `phone_e164` (normalised) | review |
+| Every phone goes through `services/phone.normalize_phone_to_e164`. Phone fields are named `phone` (raw) and `phone_e164` (normalised) | review |
 | Status fields change only inside `services.guards.status_writer()` | controller `validate` guards (D-038) |
 | No HTTP call, PDF render or `frappe.db.commit()` inside a web request or document hook. Background work uses `frappe.enqueue` with an explicit `queue` (`short` / `long`) and `job_id` (D-010) | review |
 | Secrets live in `Password` fields, are read with `get_password()`, and are never logged or returned. Message bodies and phones stay out of error logs | review, `services/errors._strip_pii` |

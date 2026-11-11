@@ -20,7 +20,7 @@ Two modes:
   Arabic-Indic digits mapped, a leading `00` turned into `+`, a local number given the hinted
   country's dial code. Unchanged from before the port, so `QuickSend`'s dialog keeps working.
 
-Validation is guidance. The server's `phone.normalize` stays authoritative and nothing here blocks
+Validation is guidance. The server's `phone.normalize_phone_to_e164` stays authoritative and nothing here blocks
 a save. No external libraries, and no flag images — a picture per country for a dial code is a
 payload and a politics.
 

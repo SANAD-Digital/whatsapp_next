@@ -101,13 +101,13 @@ Notes:
 sequenceDiagram
   autonumber
   participant PL as Platform
-  participant R as receiver.handle
+  participant R as receiver.handle_webhook_request
   participant V as webhooks.verify
   participant I as webhooks.idempotency
   participant H as handlers.process_event (short)
   participant IN as services.inbound
   participant N as numbers_materializer (short)
-  participant CR as command_router.route (short)
+  participant CR as command_router.route_inbound_message (short)
   participant D as services.dispatch
 
   PL->>R: POST message.received (X-SND-Event, -Event-ID, -Timestamp, -Signature)

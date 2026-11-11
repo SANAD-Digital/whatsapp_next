@@ -81,7 +81,7 @@ class TestApiTestLab(IntegrationTestCase):
 	def tearDownClass(cls):
 		cls._clean_rows()
 		cls._clean_config()
-		for run in testlab.runs():
+		for run in testlab.list_recent_test_runs():
 			frappe.cache.delete_value(testlab.RUN_KEY.format(run["id"]))
 		for p in cls.patches:
 			p.stop()

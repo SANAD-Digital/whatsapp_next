@@ -15,11 +15,11 @@ EDITOR_ROLES = AGENT_UP + CONTACT_USER
 @api_endpoint(roles=VIEWER_UP + CONTACT_USER, methods=("GET", "POST"))
 def get_editor(name: str | None = None) -> dict[str, Any]:
 	"""The group (or a new one's defaults), the kinds and whether the user may change it."""
-	return groups_editor.editor(name)
+	return groups_editor.get_group_editor_data(name)
 
 
 @api_endpoint(roles=EDITOR_ROLES)
 def save_editor(payload: dict) -> dict[str, Any]:
 	"""Create or update the group and apply the member changes in one request
 	→ `{name, modified, added, removed, skipped}`."""
-	return groups_editor.save(payload)
+	return groups_editor.save_group_and_members_from_editor(payload)

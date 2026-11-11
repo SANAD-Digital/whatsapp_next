@@ -20,7 +20,7 @@ from whatsapp_next.exceptions import WAProviderUnavailableError
 from whatsapp_next.providers import exceptions as pex
 from whatsapp_next.providers.schemas import WebhookEvent
 from whatsapp_next.services.guards import status_writer
-from whatsapp_next.services.phone import is_group_or_lid, key_for, normalize
+from whatsapp_next.services.phone import is_group_or_lid, key_for, normalize_phone_to_e164
 
 COMMAND_TOKENS = ("#", "/", "!")
 
@@ -35,10 +35,10 @@ def resolve_contact(phone_e164: str | None) -> str | None:
 def _sender_fields(event: WebhookEvent) -> dict[str, Any]:
 	p = event.inbound
 	raw_phone = p.sender_phone or None
-	e164 = normalize(raw_phone) if raw_phone else None
+	e164 = normalize_phone_to_e164(raw_phone) if raw_phone else None
 	sender_jid = p.sender_jid or p.from_jid
 	if not e164 and sender_jid and not is_group_or_lid(sender_jid):
-		e164 = normalize(sender_jid)
+		e164 = normalize_phone_to_e164(sender_jid)
 	chat_jid = p.chat_jid or sender_jid
 	is_group = bool(p.is_group) or bool(chat_jid and chat_jid.lower().endswith("@g.us"))
 	return {
@@ -373,7 +373,7 @@ def _after_insert(
 	_publish(name, device, _conversation_key(fields))
 	if should_route(message_type, body, bool(fields["is_group"])):
 		frappe.enqueue(
-			"whatsapp_next.services.command_router.route",
+			"whatsapp_next.services.command_router.route_inbound_message",
 			inbound_name=name,
 			queue="short",
 			job_id=f"wa-cmd-{name}",
@@ -439,7 +439,7 @@ MATCHED_STATUSES = ("Matched", "Executed", "Failed", "Blocked")
 REPLY_SAMPLE = 5000
 
 
-def summary(days: int | None = 30) -> dict[str, Any]:
+def get_inbound_summary(days: int | None = 30) -> dict[str, Any]:
 	"""The Inbound screen's figures (09 G-07) over the last `days` (all time when falsy):
 	`{total, by_status{}, matched, executed, unmatched, match_rate, avg_reply_seconds,
 	replies_measured}`. `matched` = a command recognised the message (whatever happened next);

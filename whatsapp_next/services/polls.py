@@ -110,10 +110,10 @@ def _record_value(record: dict, keys: tuple[str, ...]) -> Any:
 	return None
 
 
-def _label(record: dict) -> str:
+def _get_option_label(record: dict) -> str:
 	value = _record_value(record, _LABEL_KEYS)
 	if isinstance(value, dict):
-		return _label(value)
+		return _get_option_label(value)
 	return cstr(value).strip()
 
 
@@ -148,7 +148,7 @@ def extract_selected(payload: Any, options: list[str] | tuple[str, ...] | None =
 
 	def add_explicit(value: Any) -> None:
 		if isinstance(value, dict):
-			token = _label(value) or _option_id(value)
+			token = _get_option_label(value) or _option_id(value)
 			if token:
 				tokens.append(token)
 			else:
@@ -160,9 +160,9 @@ def extract_selected(payload: Any, options: list[str] | tuple[str, ...] | None =
 		elif value not in (None, ""):
 			tokens.append(cstr(value).strip())
 
-	def walk(value: Any, parent_key: str = "") -> None:
+	def collect_voted_options(value: Any, parent_key: str = "") -> None:
 		if isinstance(value, dict):
-			label, oid = _label(value), _option_id(value)
+			label, oid = _get_option_label(value), _option_id(value)
 			if label and oid:
 				label_by_id[oid] = label
 			explicit_ref = bool(_record_value(value, ("option", "option_name", "option_id", "optionId")))
@@ -172,12 +172,12 @@ def extract_selected(payload: Any, options: list[str] | tuple[str, ...] | None =
 				n = _norm_key(key)
 				if n in _EXPLICIT_KEYS:
 					add_explicit(nested)
-				walk(nested, n)
+				collect_voted_options(nested, n)
 		elif isinstance(value, list | tuple):
 			for nested in value:
-				walk(nested, parent_key)
+				collect_voted_options(nested, parent_key)
 
-	walk(payload)
+	collect_voted_options(payload)
 	selected: list[str] = []
 	seen: set[str] = set()
 	for token in tokens:
@@ -261,9 +261,9 @@ SUMMARY_MAX_ROWS = 2000
 
 def _same_number(a: Any, b: Any) -> bool:
 	"""Two numbers compared the app's one way (`services.phone.normalize`, E.164)."""
-	from whatsapp_next.services.phone import normalize
+	from whatsapp_next.services.phone import normalize_phone_to_e164
 
-	na, nb = normalize(cstr(a)), normalize(cstr(b))
+	na, nb = normalize_phone_to_e164(cstr(a)), normalize_phone_to_e164(cstr(b))
 	return bool(na) and na == nb
 
 

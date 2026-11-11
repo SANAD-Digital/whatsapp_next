@@ -862,6 +862,8 @@ class TestDispatch(IntegrationTestCase):
 		self.assertEqual((rec["phone_e164"], rec["known"], rec["blacklisted"]), (P1, True, False))
 		with self.assertRaises(WAInvalidPhoneError):
 			quick_send.resolve_recipient(phone="abc")
-		pv = quick_send.preview(body="dispatch-test {{ recipient.display_name }}")
+		pv = quick_send.preview_message_body(body="dispatch-test {{ recipient.display_name }}")
 		self.assertTrue(pv["body"].startswith("dispatch-test"))
-		self.assertEqual(quick_send.preview(body="{{ x ")["errors"][0][:19], "TemplateSyntaxError")
+		self.assertEqual(
+			quick_send.preview_message_body(body="{{ x ")["errors"][0][:19], "TemplateSyntaxError"
+		)

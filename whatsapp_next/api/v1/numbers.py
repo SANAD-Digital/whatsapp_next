@@ -56,7 +56,7 @@ SEARCH_FIELDS: tuple[str, ...] = (
 )
 
 
-def _key(phone_e164: str) -> str:
+def _get_existing_number_key(phone_e164: str) -> str:
 	kind, key = classify(phone_e164)
 	if not kind or not frappe.db.exists("WhatsApp Number", key):
 		frappe.throw(_("WhatsApp Number {0} not found").format(phone_e164), WANotFoundError)
@@ -67,7 +67,7 @@ def _key(phone_e164: str) -> str:
 def get_number(phone_e164: str) -> dict[str, Any]:
 	"""Number row + `contact_summary` (CONTACT_READ fields through the contextual layer, only when
 	the caller may read contacts). P: Viewer+, Contact User. E: `WANotFoundError`."""
-	key = _key(phone_e164)
+	key = _get_existing_number_key(phone_e164)
 	row = frappe.db.get_value("WhatsApp Number", key, list(NUMBER_FIELDS), as_dict=True)
 	row["contact_summary"] = (
 		permissions.get_contact(row.contact) if row.contact and permissions.can_elevate("read") else None
@@ -164,8 +164,8 @@ def convert_many(phone_e164s: list[str]) -> dict[str, Any]:
 	P: Contact User | Contact create."""
 	permissions.require("create")
 
-	def one(phone_e164: str) -> None:
-		key = _key(phone_e164)
+	def convert_one_number(phone_e164: str) -> None:
+		key = _get_existing_number_key(phone_e164)
 		row = frappe.db.get_value(
 			"WhatsApp Number", key, ["contact", "display_name", "number_type"], as_dict=True
 		)
@@ -175,7 +175,7 @@ def convert_many(phone_e164s: list[str]) -> dict[str, Any]:
 			raise _bulk.Skip("not an individual number")
 		permissions.convert_number(key, first_name=(row.display_name or "").strip() or key)
 
-	return _bulk.run_bulk(phone_e164s, one)
+	return _bulk.run_bulk(phone_e164s, convert_one_number)
 
 
 @api_endpoint(roles=None, methods=("GET", "POST"))

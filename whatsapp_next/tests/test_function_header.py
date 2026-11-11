@@ -37,17 +37,18 @@ class TestFunctionHeader(IntegrationTestCase):
 			(spec["function"], spec["title"], spec["version"]), ("_test_span", "Test Span", "1.0.0")
 		)
 		self.assertEqual(spec["party_types"], {"mode": "only", "types": ["Customer"]})
-		timespan = fh.param(spec, "timespan")
+		timespan = fh.find_header_param(spec, "timespan")
 		self.assertEqual(
 			(timespan["fieldtype"], timespan["default"], timespan["select_options"], timespan["source"]),
 			("Select", "this month", ["today", "this month", "select date range"], "command"),
 		)
 		self.assertEqual(
-			fh.param(spec, "from_date")["depends_on"], {"param": "timespan", "value": "select date range"}
+			fh.find_header_param(spec, "from_date")["depends_on"],
+			{"param": "timespan", "value": "select date range"},
 		)
-		self.assertEqual(fh.param(spec, "party")["fieldtype"], "Dynamic")
-		self.assertEqual(fh.param(spec, "party")["options"], "party_type")
-		msg = fh.param(spec, "msg_result")
+		self.assertEqual(fh.find_header_param(spec, "party")["fieldtype"], "Dynamic")
+		self.assertEqual(fh.find_header_param(spec, "party")["options"], "party_type")
+		msg = fh.find_header_param(spec, "msg_result")
 		self.assertEqual(msg["default"], "رصيد {{ party }} {{ span }}")
 		self.assertEqual(msg["defaults_by_lang"], {"en": "Balance of {{ party }} {{ span }}"})
 		self.assertEqual(
@@ -55,7 +56,7 @@ class TestFunctionHeader(IntegrationTestCase):
 			[("result_text", "text", None, None), ("statement", "report", ff.SPAN_REPORT, "PDF")],
 		)
 		self.assertEqual([v["name"] for v in spec["vars"]], ["party", "span"])
-		self.assertIsNone(fh.param(spec, "nope"))
+		self.assertIsNone(fh.find_header_param(spec, "nope"))
 		# a multi-line default keeps its lines; `@var` with two columns is for every message
 		spec = fh.parse_function_header(
 			ff.header(
@@ -63,7 +64,7 @@ class TestFunctionHeader(IntegrationTestCase):
 				["@param m | Template | optional | | M", "@default m", "> one", ">   two", "@var v | Value"],
 			)
 		)
-		self.assertEqual(fh.param(spec, "m")["default"], "one\n  two")
+		self.assertEqual(fh.find_header_param(spec, "m")["default"], "one\n  two")
 		self.assertEqual(spec["vars"], [{"name": "v", "label": "Value", "messages": ["all"]}])
 
 	def test_party_types_rules(self):
@@ -201,13 +202,15 @@ class TestFunctionHeader(IntegrationTestCase):
 
 	def test_coerce(self):
 		check = {"fieldtype": "Check", "label": "C"}
-		self.assertEqual([fh.coerce(check, v) for v in ("1", "yes", "نعم", "0", "no")], [1, 1, 1, 0, 0])
+		self.assertEqual(
+			[fh.coerce_param_value(check, v) for v in ("1", "yes", "نعم", "0", "no")], [1, 1, 1, 0, 0]
+		)
 		link = {"fieldtype": "Link", "options": "Language", "label": "L"}
-		self.assertEqual(fh.coerce(link, " en "), "en")
+		self.assertEqual(fh.coerce_param_value(link, " en "), "en")
 		with self.assertRaises(ValueError):
-			fh.coerce(link, "_no_such_language")
+			fh.coerce_param_value(link, "_no_such_language")
 		template = {"fieldtype": "Template", "label": "T"}
-		self.assertEqual(fh.coerce(template, {"en": "x"}), {"en": "x"})
+		self.assertEqual(fh.coerce_param_value(template, {"en": "x"}), {"en": "x"})
 
 	def test_dates_and_defaults(self):
 		today = getdate(nowdate())

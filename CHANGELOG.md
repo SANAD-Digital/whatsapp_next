@@ -16,6 +16,12 @@ versions follow [Semantic Versioning](https://semver.org/). Decision numbers (`D
   job ids and the `wa-commands` service user keep their names. The compiled stylesheet is the same
   rule for rule once the names are mapped back. The "WA Dashboard Block" fixture follows (migrate
   re-imports it). Another app that called `sanad.ui` of this app now calls `whatsapp.ui`.
+- **Python functions say what they do** (owner, 2026-11-11: a short or generic name cannot be
+  understood, guessed or searched). 230 internal functions renamed from one generic word or an
+  abbreviation to verb + object: `command_router._route` → `_route_inbound_message_to_command`,
+  `audit.log` → `record_audit_entry`, `phone.normalize` → `normalize_phone_to_e164`,
+  `secrets.read` → `read_password_field`, `campaign_runner.start` → `start_campaign` … The
+  published API endpoints (`api/v1/*`), the provider contract and Frappe's hooks keep their names.
 - **Removed** the unused kit components `MetaDialog` and `TreeGroupBy`, and dead code across the
   app; duplicated code folded into shared helpers (see TECH_DEBT.md, 2026-11-11).
 

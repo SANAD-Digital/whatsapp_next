@@ -59,7 +59,7 @@ class TestReview20261029(IntegrationTestCase):
 
 		for bad in ("{not json", "[1, 2]"):
 			with self.assertRaises(WAValidationError):
-				picker_sources.preview(bad)
+				picker_sources.preview_picker_source_reach(bad)
 
 	def test_a_contacts_numbers_only_to_who_may_read_it(self):
 		with as_user("WhatsApp Agent"):

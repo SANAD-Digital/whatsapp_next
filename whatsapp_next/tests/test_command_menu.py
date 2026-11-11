@@ -47,7 +47,7 @@ class TestCommandMenu(IntegrationTestCase):
 		self.phone = "+9677701" + frappe.generate_hash(length=5)[:4].translate(
 			str.maketrans("abcdef", "123456")
 		)
-		self.addCleanup(command_sessions.clear, self.device, self.phone)
+		self.addCleanup(command_sessions.clear_question_session, self.device, self.phone)
 
 	def _mode(self, mode):
 		frappe.db.set_single_value("WhatsApp Settings", "main_menu_mode", mode)
@@ -59,11 +59,11 @@ class TestCommandMenu(IntegrationTestCase):
 
 	def test_the_menu_lists_only_what_the_sender_may_use(self):
 		"""`allowed` (the sender's access) drops the commands that are not theirs (owner, 2026-10-29)."""
-		every = [r.name for r in command_menu.items()]
+		every = [r.name for r in command_menu.list_menu_commands()]
 		if not every:
 			return
 		hidden = every[0]
-		mine = [r.name for r in command_menu.items(lambda name: name != hidden)]
+		mine = [r.name for r in command_menu.list_menu_commands(lambda name: name != hidden)]
 		self.assertNotIn(hidden, mine)
 		self.assertEqual(len(mine), len(every) - 1)
 
@@ -129,7 +129,7 @@ class TestCommandMenu(IntegrationTestCase):
 			),
 			patch.object(command_router, "execute", side_effect=lambda *a, **k: _FnResult()),
 		):
-			res = command_router.route(doc.name)
+			res = command_router.route_inbound_message(doc.name)
 		return res, sent
 
 	def test_menu_button_and_words_send_the_list(self):
@@ -164,7 +164,7 @@ class TestCommandMenu(IntegrationTestCase):
 	def test_no_menu_without_the_plan(self):
 		plan(False)
 		replies = [_text("done")]
-		self.assertEqual(command_menu.mode(), "Off")
+		self.assertEqual(command_menu.get_main_menu_mode(), "Off")
 		self.assertEqual(command_menu.decorate(replies, "Executed"), replies)
 		_res, sent = self._route("menu")
 		self.assertNotIn("List", [r["message_type"] for r in sent])

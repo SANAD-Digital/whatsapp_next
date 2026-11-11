@@ -98,7 +98,7 @@ def resolve(
 	rows: list[dict[str, Any]] = []
 	excluded = invalid = 0
 
-	def take(row: dict[str, Any], source_ref: str | None) -> None:
+	def add_recipient_row_if_allowed(row: dict[str, Any], source_ref: str | None) -> None:
 		nonlocal excluded, invalid
 		if not row["valid"] or row.get("recipient_type") == "Group":
 			invalid += 1
@@ -119,7 +119,7 @@ def resolve(
 			fields=["phone", "phone_e164", "display_name", "contact"],
 			order_by="idx asc",
 		):
-			take(
+			add_recipient_row_if_allowed(
 				picker.make_row(
 					m.phone_e164 or m.phone, m.display_name, contact=m.contact, source_type="Contact Group"
 				),
@@ -137,9 +137,11 @@ def resolve(
 			if not phones:
 				invalid += 1
 				continue
-			take(picker.make_row(phones[0], names.get(contact), contact=contact, source_type="Contact"), None)
+			add_recipient_row_if_allowed(
+				picker.make_row(phones[0], names.get(contact), contact=contact, source_type="Contact"), None
+			)
 	for number in numbers:
-		take(picker.make_row(number, None, source_type="Manual"), None)
+		add_recipient_row_if_allowed(picker.make_row(number, None, source_type="Manual"), None)
 	if len(rows) > MAX_RECIPIENTS:
 		frappe.throw(
 			_("A bulk message reaches at most {0} recipients").format(MAX_RECIPIENTS), WAValidationError
@@ -155,7 +157,7 @@ def estimate(
 	return {"total": len(r["rows"]), "excluded": r["excluded"], "invalid": r["invalid"]}
 
 
-def send(payload: dict, user: str | None = None) -> dict[str, Any]:
+def create_and_start_bulk_campaign(payload: dict, user: str | None = None) -> dict[str, Any]:
 	"""Create the campaign for `{groups[], contacts[], numbers[], body, template, device, rate,
 	scheduled_at, kind, attachment, contact}` (`kind` as the composer's "+" picks it, D-137; a file's
 	text is its caption) and start it now (or schedule it). Returns `{campaign, status, recipients,
@@ -229,7 +231,7 @@ def send(payload: dict, user: str | None = None) -> dict[str, Any]:
 		picker.commit_add(
 			"WhatsApp Campaign", doc.name, rows, source_type=source_type, source_ref=source_ref, user=user
 		)
-	audit.log(
+	audit.record_audit_entry(
 		"Bulk Send",
 		reference=("WhatsApp Campaign", doc.name),
 		count=len(r["rows"]),
@@ -239,7 +241,7 @@ def send(payload: dict, user: str | None = None) -> dict[str, Any]:
 	if scheduled_at:
 		status = campaign_runner.schedule(doc.name, get_datetime(scheduled_at), user=user)
 	else:
-		status = campaign_runner.start(doc.name, user=user)
+		status = campaign_runner.start_campaign(doc.name, user=user)
 	return {
 		"campaign": doc.name,
 		"status": status,

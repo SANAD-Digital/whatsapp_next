@@ -12,7 +12,7 @@ the product for real against them. They are thin wrappers over `services/testlab
 | `notification` | `notifications_editor.send_test` to the target; `notifications.send_for_document` only with `real_recipients` + `confirm_real` |
 | `alert` | `alerts_editor.send_test` to the target |
 | `command` | `simulator.dry_run_command` (nothing stored or sent); with `send_reply` the replies are produced by `simulator.simulate_inbound` and really sent to the target |
-| `campaign` | `bulk_send.send` → `campaign_runner.start` / `.schedule`, plus `campaign_runner.readiness` |
+| `campaign` | `bulk_send.send` → `campaign_runner.start_campaign` / `.schedule`, plus `campaign_runner.readiness` |
 
 Every function is **Manager-only** (`MANAGER`): the page sends real messages.
 Conventions are in [README.md](README.md).
@@ -101,9 +101,9 @@ route, route_label}` with `status` `ok` / `warn` / `fail`. `ok` is false when an
   Nothing is sent.
   - `template` `{template, reference_name?}` → `{message, errors[], reference_doctype,
     reference_name, attachment}`.
-  - `notification` `{notification, reference_name?}` → `notifications_editor.preview` (condition,
+  - `notification` `{notification, reference_name?}` → `notifications_editor.preview_notification_draft` (condition,
     message, masked recipients, attachment).
-  - `alert` `{alert}` → `alerts_editor.preview` with the recipients masked.
+  - `alert` `{alert}` → `alerts_editor.preview_alert_draft` with the recipients masked.
   - `campaign` `{numbers[]}` → `{total, excluded, invalid}`.
 - Needs read on the template / notification / alert and on the record it renders
   (`frappe.PermissionError` otherwise).

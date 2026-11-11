@@ -93,7 +93,7 @@ def chat_key(inbound) -> str | None:
 	return get("phone_e164") or get("sender_jid") or get("jid")
 
 
-def load(device: str | None, chat: str | None) -> dict[str, Any] | None:
+def load_question_session(device: str | None, chat: str | None) -> dict[str, Any] | None:
 	"""The open question session of this device and chat, or None."""
 	raw = frappe.cache.get_value(_cache_key(device, chat))
 	if not raw:
@@ -104,14 +104,14 @@ def load(device: str | None, chat: str | None) -> dict[str, Any] | None:
 		return None
 
 
-def save(device: str | None, chat: str | None, session: dict[str, Any]) -> None:
+def save_question_session(device: str | None, chat: str | None, session: dict[str, Any]) -> None:
 	"""Keep a question session for `SESSION_TTL` seconds."""
 	frappe.cache.set_value(
 		_cache_key(device, chat), json.dumps(session, default=str), expires_in_sec=SESSION_TTL
 	)
 
 
-def clear(device: str | None, chat: str | None) -> None:
+def clear_question_session(device: str | None, chat: str | None) -> None:
 	"""End the question session of this device and chat."""
 	frappe.cache.delete_value(_cache_key(device, chat))
 
@@ -128,11 +128,11 @@ DATE_PRESETS = (
 )
 
 
-def _label(spec: dict[str, Any]) -> str:
+def _get_input_label(spec: dict[str, Any]) -> str:
 	return _(spec.get("label") or spec["key"])
 
 
-def options(command, spec: dict[str, Any]) -> list[tuple[str, str]]:
+def get_input_answer_options(command, spec: dict[str, Any]) -> list[tuple[str, str]]:
 	"""The ready answers offered for an input, `[(value, label)]`: the command's own choices, or
 	the date presets for a date input without them."""
 	choices = ask_specs(command).get(spec["key"]) or _own_choices(spec)
@@ -153,12 +153,16 @@ def _own_choices(spec: dict[str, Any]) -> list[tuple[str, str]]:
 def text_question(command, spec: dict[str, Any]) -> dict[str, Any]:
 	"""The same question as plain text, for a plan without buttons and lists: the ready answers
 	numbered, answered by their number (`numbered_answer`) or by typing the value."""
-	label = _label(spec)
+	label = _get_input_label(spec)
 	kind = (spec.get("type") or "str").lower()
-	lines = [_("Choose {0}").format(label) if options(command, spec) else _("Type {0}").format(label)]
-	lines += [f"{i}. {t}" for i, (_v, t) in enumerate(options(command, spec), start=1)]
+	lines = [
+		_("Choose {0}").format(label)
+		if get_input_answer_options(command, spec)
+		else _("Type {0}").format(label)
+	]
+	lines += [f"{i}. {t}" for i, (_v, t) in enumerate(get_input_answer_options(command, spec), start=1)]
 	hint = _("e.g. 2026-10-31") if kind == "date" else _("a number") if kind == "int" else ""
-	if options(command, spec):
+	if get_input_answer_options(command, spec):
 		lines.append(
 			_("Reply with the option number, or type another value") + (f" ({hint})" if hint else "")
 		)
@@ -172,7 +176,7 @@ def numbered_answer(command, spec: dict[str, Any], raw: str) -> str:
 	"""A typed answer to `text_question`: an option's number or label becomes its value; anything
 	else is kept as typed."""
 	answer = cstr(raw).strip()
-	offered = options(command, spec)
+	offered = get_input_answer_options(command, spec)
 	for value, label in offered:
 		if answer.casefold() == cstr(label).strip().casefold():
 			return value
@@ -205,7 +209,7 @@ def question(command, spec: dict[str, Any]) -> dict[str, Any]:
 
 	if not plan_features.interactive():
 		return text_question(command, spec)
-	label = _label(spec)
+	label = _get_input_label(spec)
 	kind = (spec.get("type") or "str").lower()
 	choices = ask_specs(command).get(spec["key"]) or _own_choices(spec)
 	title = _(command.get("title") or command.get("code") or "")
@@ -248,7 +252,7 @@ def type_it(spec: dict[str, Any]) -> dict[str, Any]:
 	"""After "another date / value": ask for it as text."""
 	kind = (spec.get("type") or "str").lower()
 	hint = _("e.g. 2026-10-31") if kind == "date" else _("a number") if kind == "int" else ""
-	text = _("Type {0}").format(_label(spec)) + (f" ({hint})" if hint else "")
+	text = _("Type {0}").format(_get_input_label(spec)) + (f" ({hint})" if hint else "")
 	return {"output_key": "prompt", "message_type": "Text", "body": text, "attachment": None}
 
 

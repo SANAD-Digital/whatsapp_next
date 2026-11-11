@@ -17,13 +17,13 @@ TYPES = list(hub.DOCTYPES)
 )
 def list_entries(hub_type: str, txt: str | None = None) -> list[dict[str, Any]]:
 	"""The hub's entries of one type, with `state` (not_installed / update_available / installed)."""
-	return hub.entries(hub_type, txt)
+	return hub.list_hub_entries(hub_type, txt)
 
 
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"), schema={"name": {"max_length": 140}})
 def get_entry(name: str) -> dict[str, Any]:
 	"""One entry with all its data and its `state` here."""
-	return hub.entry(name)
+	return hub.get_hub_entry(name)
 
 
 @api_endpoint(roles=MANAGER, schema={"name": {"max_length": 140}})
@@ -31,4 +31,4 @@ def install(name: str) -> dict[str, Any]:
 	"""Install the entry, or update the copy installed before."""
 	import frappe
 
-	return hub.install(name, user=frappe.session.user)
+	return hub.install_hub_entry(name, user=frappe.session.user)

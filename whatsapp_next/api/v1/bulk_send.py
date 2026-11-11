@@ -56,4 +56,4 @@ def search_contacts(txt: str | None = None) -> list[dict[str, Any]]:
 def send(payload: dict) -> dict[str, Any]:
 	"""Send one message to the selection: a campaign started now or scheduled
 	(`services.bulk_send.send`); audited `Bulk Send`. P: Manager."""
-	return bulk_send.send(payload, user=frappe.session.user)
+	return bulk_send.create_and_start_bulk_campaign(payload, user=frappe.session.user)

@@ -80,7 +80,9 @@ def save_fields(values: dict[str, Any], *, section: str, user: str | None = None
 	if changed:
 		doc.flags.ignore_permissions = True
 		doc.save(ignore_permissions=True)
-		audit.log("Settings Changed", fields_written=changed, details={"section": section}, user=user)
+		audit.record_audit_entry(
+			"Settings Changed", fields_written=changed, details={"section": section}, user=user
+		)
 		if set(changed) & set(PLATFORM_KEYS):
 			# new keys may be another account's: the webhook secret kept from the old one would fail
 			# every signature, so the account's own secret is fetched again (as the onboarding does)

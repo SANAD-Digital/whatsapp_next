@@ -183,7 +183,7 @@ class TestPlatformOps(IntegrationTestCase):
 			self.assertEqual(webhook_setup.set_status("Disabled").status, "Disabled")
 			with self.assertRaises(WAValidationError):
 				webhook_setup.set_status("Locked")
-			self.assertTrue(webhook_setup.test()["ok"])
+			self.assertTrue(webhook_setup.send_test_webhook()["ok"])
 			provider.store[summary.endpoint_id] = WebhookEndpointState(
 				endpoint_id=summary.endpoint_id,
 				url=summary.url,
@@ -220,11 +220,11 @@ class TestPlatformOps(IntegrationTestCase):
 
 			remove_encrypted_password("WhatsApp Settings", "WhatsApp Settings", "webhook_secret")
 			ensure_settings(webhook_endpoint=None, webhook_endpoint_url=None)
-			stored = secrets.read
+			stored = secrets.read_password_field
 			linked = lambda field: "a-key" if field == "customer_api_key" else stored(field)  # noqa: E731
 			with (
 				patch.object(webhook_setup, "receiver_url", return_value="http://wn.example.test:8000/x"),
-				patch.object(secrets, "read", side_effect=linked),
+				patch.object(secrets, "read_password_field", side_effect=linked),
 			):
 				self.assertEqual(webhook_setup.sync_status().endpoint_id, summary.endpoint_id)
 			self.assertEqual(

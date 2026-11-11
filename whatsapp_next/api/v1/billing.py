@@ -19,7 +19,7 @@ def get_billing() -> dict[str, Any]:
 @api_endpoint(roles=MANAGER)
 def renew() -> dict[str, Any]:
 	"""Renew the plan from the wallet now."""
-	return billing.renew()
+	return billing.renew_subscription_from_wallet()
 
 
 @api_endpoint(roles=MANAGER, schema={"plan_code": {"max_length": 140}})

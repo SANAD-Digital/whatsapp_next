@@ -17,7 +17,7 @@ from frappe.utils import cint
 from whatsapp_next.exceptions import WANotFoundError, WAValidationError
 from whatsapp_next.services import attachments, audit, dispatch, editor_payload, notifications, templates
 from whatsapp_next.services.dispatch import OutboundSpec
-from whatsapp_next.services.phone import mask, normalize
+from whatsapp_next.services.phone import mask_phone_for_logs, normalize_phone_to_e164
 from whatsapp_next.whatsapp_next.doctype.whatsapp_notification.whatsapp_notification import ALLOWED_METHODS
 
 DOCTYPE = "WhatsApp Notification"
@@ -73,13 +73,13 @@ RECENT_SENDS = 5
 # ---- reads ---------------------------------------------------------------------------------
 
 
-def _get(name: str):
+def _get_notification_doc_or_throw(name: str):
 	if not frappe.db.exists(DOCTYPE, name):
 		frappe.throw(_("Notification {0} not found").format(name), WANotFoundError)
 	return frappe.get_doc(DOCTYPE, name)
 
 
-def _values(doc) -> dict[str, Any]:
+def _build_editor_values_from_notification(doc) -> dict[str, Any]:
 	out = {f: doc.get(f) for f in FIELDS}
 	out["recipients"] = [
 		{f: row.get(f) for f in (*RECIPIENT_FIELDS, "phone_e164")} for row in doc.get("recipients") or []
@@ -110,15 +110,15 @@ def templates_for(document_type: str | None = None) -> list[dict[str, Any]]:
 	return rows
 
 
-def editor(name: str | None = None) -> dict[str, Any]:
+def get_notification_editor_data(name: str | None = None) -> dict[str, Any]:
 	"""Everything the window opens with: `{notification, stats, recent[], options, devices[],
 	templates[], fields, me{phone}, can_write, can_delete}` — the notification (defaults for a new
 	one), what it has done, the choices every control offers, the document type's fields and the
 	templates it can use. E: `WANotFoundError`."""
 	if name:
-		doc = _get(name)
+		doc = _get_notification_doc_or_throw(name)
 		doc.check_permission("read")
-		notification = {"name": doc.name, **_values(doc)}
+		notification = {"name": doc.name, **_build_editor_values_from_notification(doc)}
 		stats = {f: doc.get(f) for f in STAT_FIELDS}
 		recent = frappe.get_all(
 			"WhatsApp Log",
@@ -168,7 +168,9 @@ def editor(name: str | None = None) -> dict[str, Any]:
 		"devices": devices,
 		"templates": templates_for(dt),
 		"fields": notifications.document_fields(dt) if dt and frappe.db.exists("DocType", dt) else None,
-		"me": {"phone": normalize(me.get("mobile_no")) or normalize(me.get("phone"))},
+		"me": {
+			"phone": normalize_phone_to_e164(me.get("mobile_no")) or normalize_phone_to_e164(me.get("phone"))
+		},
 		"can_write": bool(frappe.has_permission(DOCTYPE, "write")),
 		"can_delete": bool(name and frappe.has_permission(DOCTYPE, "delete", name)),
 	}
@@ -184,7 +186,7 @@ def document_setup(document_type: str) -> dict[str, Any]:
 # ---- the draft -----------------------------------------------------------------------------
 
 
-def _apply(doc, payload: dict) -> None:
+def _apply_editor_payload_to_notification(doc, payload: dict) -> None:
 	editor_payload.reject_unknown(payload, PAYLOAD_KEYS)
 	for f in FIELDS:
 		if f not in payload:
@@ -210,17 +212,17 @@ def _apply(doc, payload: dict) -> None:
 		editor_payload.replace_recipients(doc, payload.get("recipients"), RECIPIENT_FIELDS)
 
 
-def _draft(payload: dict):
+def _build_draft_notification_from_payload(payload: dict):
 	"""The editor's notification as an unsaved document: the saved one with the payload over it, or new."""
 	editor_payload.require_object(payload)
 	name = payload.get("name")
 	# a saved notification is loaded and changed in memory only — nothing here calls save
-	doc = _get(name) if name else frappe.new_doc(DOCTYPE)
-	_apply(doc, payload)
+	doc = _get_notification_doc_or_throw(name) if name else frappe.new_doc(DOCTYPE)
+	_apply_editor_payload_to_notification(doc, payload)
 	return doc
 
 
-def _problem(doc) -> str | None:
+def _find_first_validation_problem(doc) -> str | None:
 	"""The first rule the draft breaks, in words, or None — the controller's own validation."""
 	queued = len(frappe.local.message_log or [])
 	try:
@@ -249,7 +251,7 @@ def _document(doc, reference_name: str | None):
 	return frappe.get_doc(dt, reference_name)
 
 
-def _render(notif, doc) -> dict[str, Any]:
+def _render_draft_notification_for_record(notif, doc) -> dict[str, Any]:
 	"""Condition, recipients and body of the draft for one record — as the job would send it."""
 	queued = len(frappe.local.message_log or [])
 	problems: list[str] = []  # collected, never written on the notification
@@ -264,7 +266,7 @@ def _render(notif, doc) -> dict[str, Any]:
 			ctx["recipient"] = notifications.recipient_context(
 				first.phone_e164, first.display_name, first.contact
 			)
-		body, error = notifications._body(notif, ctx)
+		body, error = notifications._render_notification_body(notif, ctx)
 	finally:
 		if frappe.local.message_log:
 			del frappe.local.message_log[queued:]
@@ -303,13 +305,13 @@ def _attachment_hint(notif, doc) -> dict[str, Any] | None:
 	return None
 
 
-def preview(payload: dict, reference_name: str | None = None) -> dict[str, Any]:
+def preview_notification_draft(payload: dict, reference_name: str | None = None) -> dict[str, Any]:
 	"""Try the draft — saved or not — on one record without sending: `{problem, reference_name,
 	meets_condition, message, attachment, recipients[{phone_e164 (masked), source}],
 	recipients_count, error}`. Nothing is saved, nothing is sent; the notification's own error
 	fields are left alone."""
-	notif = _draft(payload)
-	problem = _problem(notif)
+	notif = _build_draft_notification_from_payload(payload)
+	problem = _find_first_validation_problem(notif)
 	out: dict[str, Any] = {
 		"problem": problem,
 		"reference_name": None,
@@ -328,7 +330,7 @@ def preview(payload: dict, reference_name: str | None = None) -> dict[str, Any]:
 	# evaluate under a name no row has: `_record_error` writes on the notification by name, and a
 	# preview must leave the saved one's error fields (and a new one's missing name) alone
 	notif.name = f"__draft__{notif.name or 'new'}"
-	r = _render(notif, doc)
+	r = _render_draft_notification_for_record(notif, doc)
 	out.update(
 		{
 			"reference_name": doc.name,
@@ -336,7 +338,8 @@ def preview(payload: dict, reference_name: str | None = None) -> dict[str, Any]:
 			"message": r["body"],
 			"attachment": _attachment_hint(notif, doc),
 			"recipients": [
-				{"phone_e164": mask(x.phone_e164), "source": x.source} for x in r["recipients"][:20]
+				{"phone_e164": mask_phone_for_logs(x.phone_e164), "source": x.source}
+				for x in r["recipients"][:20]
 			],
 			"recipients_count": len(r["recipients"]),
 			"error": r["error"],
@@ -354,7 +357,7 @@ def make_file(payload: dict, reference_name: str | None = None) -> dict[str, Any
 	when there is no record to print."""
 	import base64
 
-	notif = _draft(payload)
+	notif = _build_draft_notification_from_payload(payload)
 	if not notif.document_type:
 		frappe.throw(_("Choose the document type first"), WAValidationError)
 	doc = _document(notif, reference_name)
@@ -383,14 +386,14 @@ def send_test(payload: dict, phone: str, reference_name: str | None = None) -> d
 	"""Send the draft once to `phone`, rendered for one record — what its first recipient would
 	receive — and nothing else: no counters, no property set, the condition not required.
 	Audited `Test Send`. Returns `{outbound, phone_e164}`."""
-	phone_e164 = normalize(phone)
+	phone_e164 = normalize_phone_to_e164(phone)
 	if not phone_e164:
 		frappe.throw(_("Enter a valid phone number"), WAValidationError)
-	notif = _draft(payload)
+	notif = _build_draft_notification_from_payload(payload)
 	if not notif.get("recipients"):
 		# a test needs no recipients of its own: the number is the recipient
 		notif.append("recipients", {"recipient_type": "Fixed Number", "phone": phone_e164})
-	problem = _problem(notif)
+	problem = _find_first_validation_problem(notif)
 	if problem:
 		frappe.throw(problem, WAValidationError)
 	doc = _document(notif, reference_name)
@@ -404,7 +407,7 @@ def send_test(payload: dict, phone: str, reference_name: str | None = None) -> d
 	ctx = templates.context_for(doc.doctype, doc.name, {"event": "Test", "notification": saved_name}, doc=doc)
 	# the tester's own number: named when the system knows it, never "None"
 	ctx["recipient"] = notifications.recipient_context(phone_e164, *dispatch.recipient_identity(phone_e164))
-	body, error = notifications._body(notif, ctx)
+	body, error = notifications._render_notification_body(notif, ctx)
 	if error or not (body or "").strip():
 		frappe.throw(
 			_("The message could not be rendered: {0}").format(error or _("it is empty")), WAValidationError
@@ -423,7 +426,7 @@ def send_test(payload: dict, phone: str, reference_name: str | None = None) -> d
 	)
 	outbound = dispatch.create_outbound(spec)
 	dispatch.enqueue([outbound], priority=3)
-	audit.log(
+	audit.record_audit_entry(
 		"Test Send",
 		reference=(DOCTYPE, saved_name) if saved_name else None,
 		details={"notification": notif.notification_name, "document": f"{doc.doctype} {doc.name}"},
@@ -435,7 +438,7 @@ def send_test(payload: dict, phone: str, reference_name: str | None = None) -> d
 # ---- writes --------------------------------------------------------------------------------
 
 
-def save(payload: dict) -> dict[str, Any]:
+def save_notification_from_editor(payload: dict) -> dict[str, Any]:
 	"""Create or update the notification from the payload; a changed name renames it. Returns
 	`{name}`. The controller validates everything."""
 	editor_payload.require_object(payload)
@@ -444,9 +447,9 @@ def save(payload: dict) -> dict[str, Any]:
 	if not new_name:
 		frappe.throw(_("Name the notification first"), WAValidationError)
 	if name:
-		doc = _get(name)
+		doc = _get_notification_doc_or_throw(name)
 		doc.check_permission("write")
-		_apply(doc, payload)
+		_apply_editor_payload_to_notification(doc, payload)
 		doc.save()
 		if new_name != doc.name:
 			if frappe.db.exists(DOCTYPE, new_name):
@@ -459,14 +462,14 @@ def save(payload: dict) -> dict[str, Any]:
 		if frappe.db.exists(DOCTYPE, new_name):
 			frappe.throw(_("A notification named {0} already exists").format(new_name), WAValidationError)
 		doc = frappe.new_doc(DOCTYPE)
-		_apply(doc, payload)
+		_apply_editor_payload_to_notification(doc, payload)
 		doc.insert()
 	return {"name": doc.name}
 
 
-def delete(name: str) -> None:
+def delete_notification(name: str) -> None:
 	"""Delete the notification (its sent messages stay in the log)."""
-	doc = _get(name)
+	doc = _get_notification_doc_or_throw(name)
 	doc.check_permission("delete")
 	frappe.delete_doc(DOCTYPE, doc.name)
 
@@ -474,7 +477,9 @@ def delete(name: str) -> None:
 # ---- pickers -------------------------------------------------------------------------------
 
 
-def search(kind: str, txt: str | None = None, document_type: str | None = None) -> list[dict[str, Any]]:
+def search_editor_picker_options(
+	kind: str, txt: str | None = None, document_type: str | None = None
+) -> list[dict[str, Any]]:
 	"""The editor's pickers: `document_type`, `print_format`, `letter_head` — `[{value, label,
 	description}]`, through `frappe.get_list` so the caller's permissions apply."""
 	txt = (txt or "").strip()
@@ -491,7 +496,7 @@ def search(kind: str, txt: str | None = None, document_type: str | None = None) 
 		)
 		q = txt.casefold()
 
-		def rank(r) -> int | None:
+		def rank_doctype_by_search_text(r) -> int | None:
 			names = (r.name.casefold(), _(r.name).casefold())
 			if not q:
 				return 2
@@ -502,7 +507,12 @@ def search(kind: str, txt: str | None = None, document_type: str | None = None) 
 			return None
 
 		ranked = sorted(
-			((rank(r), _(r.name), r) for r in rows if rank(r) is not None), key=lambda x: (x[0], x[1])
+			(
+				(rank_doctype_by_search_text(r), _(r.name), r)
+				for r in rows
+				if rank_doctype_by_search_text(r) is not None
+			),
+			key=lambda x: (x[0], x[1]),
 		)
 		return [
 			{

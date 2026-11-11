@@ -440,7 +440,7 @@ override them per command (`settings_overrides`, `templates`); see the
 | Argument | Type | Required | Meaning |
 |---|---|---|---|
 | `function_key` | str | yes | Installed key. |
-| `values` | dict | yes | `{param: value}` for `source=command` parameters only (never the sender's party). A value is checked and typed by the header (`function_header.coerce`; a Date may stay a date word such as `today`). A Template takes one text, or `{language: text}` with `""` meaning every language. An empty value removes the key, so the parameter returns to the header's default. |
+| `values` | dict | yes | `{param: value}` for `source=command` parameters only (never the sender's party). A value is checked and typed by the header (`function_header.coerce_param_value`; a Date may stay a date word such as `today`). A Template takes one text, or `{language: text}` with `""` meaning every language. An empty value removes the key, so the parameter returns to the header's default. |
 
 **Returns** — every stored value after the save:
 

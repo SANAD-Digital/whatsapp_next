@@ -71,7 +71,9 @@ def api_endpoint(
 			try:
 				return fn(*args, **kwargs)
 			except pex.ProviderError as exc:
-				_log(fn, exc, f"code={exc.code or '-'} http={getattr(exc, 'http_status', None) or '-'}")
+				_log_endpoint_error(
+					fn, exc, f"code={exc.code or '-'} http={getattr(exc, 'http_status', None) or '-'}"
+				)
 				_raise_with_message(map_provider_error(exc))
 			except (WANextError, frappe.PermissionError) as exc:
 				if getattr(exc, "__frappe_exc_id", None) is None and str(exc):
@@ -79,7 +81,7 @@ def api_endpoint(
 				raise
 			except (frappe.QueryTimeoutError, frappe.QueryDeadlockError) as exc:
 				# a row another operation holds (a webhook, a job): say so, and keep the trace
-				_log(fn, exc)
+				_log_endpoint_error(fn, exc)
 				frappe.clear_messages()  # Frappe's own English line would show beside ours
 				_raise_with_message(
 					WABusyError(
@@ -92,7 +94,7 @@ def api_endpoint(
 				raise  # the app's or Frappe's own message to the user, already worded
 			except Exception as exc:
 				# a fault, not a message: recorded with its traceback, and the screen names the entry
-				log = _log(fn, exc)
+				log = _log_endpoint_error(fn, exc)
 				frappe.clear_messages()
 				_raise_with_message(
 					WAUnexpectedError(
@@ -109,7 +111,7 @@ def api_endpoint(
 	return decorator
 
 
-def _log(fn: Callable, exc: Exception, detail: str = "") -> str | None:
+def _log_endpoint_error(fn: Callable, exc: Exception, detail: str = "") -> str | None:
 	"""Record a failure in the Error Log — the endpoint, the kind and the provider's code, never
 	the request body (message texts and numbers are PII). Returns the entry's name."""
 	try:
@@ -207,16 +209,16 @@ def coerce_value(name: str, value, hint):
 				return int(value)
 			if isinstance(value, str) and value.strip() == "":
 				return None
-			number = cint(value) if str(value).strip().lstrip("-").isdigit() else _raise()
+			number = cint(value) if str(value).strip().lstrip("-").isdigit() else _raise_invalid_value()
 			# a 20-digit page or offset overflows the database's BIGINT (a 500, not a 417)
-			return number if abs(number) <= MAX_INT else _raise()
+			return number if abs(number) <= MAX_INT else _raise_invalid_value()
 		if hint is float:
 			# `flt` reads any text it cannot parse as 0 and passes "inf"/"nan" through: a typo in
 			# a threshold became a silent zero instead of a 417
 			number = (
 				float(str(value).replace(",", "").strip()) if not isinstance(value, int | float) else value
 			)
-			return flt(number) if math.isfinite(number) else _raise()
+			return flt(number) if math.isfinite(number) else _raise_invalid_value()
 		if hint is str:
 			return value if isinstance(value, str) else str(value)
 		if origin in (list, tuple, set, dict):
@@ -238,7 +240,7 @@ def coerce_value(name: str, value, hint):
 	return value
 
 
-def _raise():
+def _raise_invalid_value():
 	raise ValueError
 
 

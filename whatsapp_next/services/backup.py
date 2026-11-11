@@ -162,7 +162,7 @@ def _settings_values() -> dict[str, Any]:
 	return out
 
 
-def _clean(doctype: str, row: dict[str, Any]) -> dict[str, Any]:
+def _keep_doctype_setup_fields(doctype: str, row: dict[str, Any]) -> dict[str, Any]:
 	"""`row` reduced to the DocType's own set-up fields: no unknown names, no device, no run state;
 	child tables cleaned the same way against their own DocType."""
 	from frappe.model import no_value_fields
@@ -177,14 +177,18 @@ def _clean(doctype: str, row: dict[str, Any]) -> dict[str, Any]:
 			continue
 		value = row[df.fieldname]
 		if df.fieldtype in ("Table", "Table MultiSelect"):
-			value = [_clean(df.options, child) for child in (value or []) if isinstance(child, dict)]
+			value = [
+				_keep_doctype_setup_fields(df.options, child)
+				for child in (value or [])
+				if isinstance(child, dict)
+			]
 		out[df.fieldname] = value
 	return out
 
 
-def _record(doctype: str, name: str) -> dict[str, Any]:
+def _export_record(doctype: str, name: str) -> dict[str, Any]:
 	doc = frappe.get_doc(doctype, name)
-	data = _clean(
+	data = _keep_doctype_setup_fields(
 		doctype, doc.as_dict(no_default_fields=True, no_child_table_fields=True, convert_dates_to_str=True)
 	)
 	data["name"] = doc.name
@@ -205,11 +209,11 @@ def export_backup() -> dict[str, Any]:
 	}
 	for doctype in DOCTYPES:
 		names = frappe.get_all(doctype, pluck="name", order_by="creation asc")
-		data["records"][doctype] = [_record(doctype, n) for n in names]
+		data["records"][doctype] = [_export_record(doctype, n) for n in names]
 	return data
 
 
-def _parse(payload: str | dict) -> dict[str, Any]:
+def _parse_backup_payload(payload: str | dict) -> dict[str, Any]:
 	data = payload
 	if isinstance(payload, str):
 		try:
@@ -223,7 +227,7 @@ def _parse(payload: str | dict) -> dict[str, Any]:
 	return data
 
 
-def _rows(data: dict[str, Any], doctype: str) -> list[dict[str, Any]]:
+def _get_backup_rows_for_doctype(data: dict[str, Any], doctype: str) -> list[dict[str, Any]]:
 	return [
 		row
 		for row in (data.get("records") or {}).get(doctype) or []
@@ -236,7 +240,7 @@ def preview_backup(payload: str | dict) -> dict[str, Any]:
 	settings, add[{doctype, name}], replace[{doctype, name}], keep[{doctype, name}],
 	switched_off}` — `keep` are campaigns already here, `switched_off` the notifications and
 	alerts that come in disabled."""
-	data = _parse(payload)
+	data = _parse_backup_payload(payload)
 	out: dict[str, Any] = {
 		"site": data.get("site"),
 		"exported_at": data.get("exported_at"),
@@ -247,7 +251,7 @@ def preview_backup(payload: str | dict) -> dict[str, Any]:
 		"switched_off": 0,
 	}
 	for doctype in DOCTYPES:
-		for row in _rows(data, doctype):
+		for row in _get_backup_rows_for_doctype(data, doctype):
 			item = {"doctype": doctype, "name": row["name"]}
 			if not frappe.db.exists(doctype, row["name"]):
 				out["add"].append(item)
@@ -266,7 +270,7 @@ def import_backup(payload: str | dict, user: str | None = None) -> dict[str, Any
 	DocType's own set-up fields are taken; notifications and alerts arrive switched off. A record
 	that fails is reported and the rest go on. Returns `{settings, created, updated, kept,
 	switched_off, failed[{doctype, name, error}]}`."""
-	data = _parse(payload)
+	data = _parse_backup_payload(payload)
 	out: dict[str, Any] = {
 		"settings": [],
 		"created": 0,
@@ -297,9 +301,9 @@ def import_backup(payload: str | dict, user: str | None = None) -> dict[str, Any
 					)
 
 	for doctype in DOCTYPES:
-		for row in _rows(data, doctype):
+		for row in _get_backup_rows_for_doctype(data, doctype):
 			name = row["name"]
-			clean = _clean(doctype, row)
+			clean = _keep_doctype_setup_fields(doctype, row)
 			if doctype in SWITCHED_OFF_ON_IMPORT:
 				clean["enabled"] = 0
 			try:
@@ -329,7 +333,7 @@ def import_backup(payload: str | dict, user: str | None = None) -> dict[str, Any
 				frappe.db.rollback(save_point="wa_backup_row")
 				frappe.clear_last_message()
 				out["failed"].append({"doctype": doctype, "name": name, "error": _message(exc)})
-	audit.log(
+	audit.record_audit_entry(
 		"Backup Imported",
 		user=user,
 		details={
@@ -371,7 +375,7 @@ def account_key() -> str | None:
 	account itself was remembered)."""
 	from whatsapp_next.services import secrets
 
-	return secrets.read("customer_api_key")
+	return secrets.read_password_field("customer_api_key")
 
 
 def current_account() -> str | None:
@@ -422,7 +426,7 @@ def note_account(
 	for fieldname in ("default_device", "reply_device"):
 		frappe.db.set_single_value("WhatsApp Settings", fieldname, None, update_modified=False)
 	frappe.clear_document_cache("WhatsApp Settings", "WhatsApp Settings")
-	audit.log(
+	audit.record_audit_entry(
 		"Credentials Changed",
 		user=user,
 		details={
@@ -447,7 +451,7 @@ def pending_switch_raw() -> dict[str, Any] | None:
 	return data if isinstance(data, dict) and data.get("at") else None
 
 
-def _scope(pending: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def _build_previous_account_filters(pending: dict[str, Any]) -> dict[str, dict[str, Any]]:
 	"""Filters of what the previous account left, per DocType: what existed before the switch."""
 	at = pending["at"]
 	out = {doctype: {"creation": ("<=", at)} for doctype in ACCOUNT_DOCTYPES}
@@ -464,7 +468,7 @@ def pending_switch() -> dict[str, Any]:
 		return {"pending": False}
 	counts = {
 		doctype: frappe.db.count(doctype, filters)
-		for doctype, filters in _scope(pending).items()
+		for doctype, filters in _build_previous_account_filters(pending).items()
 		if frappe.db.table_exists(doctype)
 	}
 	return {
@@ -482,7 +486,7 @@ def keep_previous_account(user: str | None = None) -> None:
 	if not pending:
 		return
 	frappe.db.set_default(SWITCH_DEFAULT, "")
-	audit.log(
+	audit.record_audit_entry(
 		"Settings Changed",
 		user=user,
 		details={"action": "previous_account_kept", "from": pending.get("from")},
@@ -495,7 +499,7 @@ def delete_previous_account(user: str | None = None) -> dict[str, Any]:
 	info = pending_switch()
 	if not info.get("pending"):
 		return {"queued": False, "counts": {}}
-	audit.log(
+	audit.record_audit_entry(
 		"Account Data Deleted",
 		user=user,
 		details={"from": info.get("from"), "counts": info["counts"], "stage": "queued"},
@@ -526,7 +530,7 @@ def purge_previous_account(pending: dict[str, Any], user: str | None = None) -> 
 					doctype, {fieldname: ("in", old_devices)}, fieldname, None, update_modified=False
 				)
 	counts: dict[str, int] = {}
-	for doctype, filters in _scope(pending).items():
+	for doctype, filters in _build_previous_account_filters(pending).items():
 		if not frappe.db.table_exists(doctype):
 			continue
 		meta = frappe.get_meta(doctype)
@@ -565,7 +569,7 @@ def purge_previous_account(pending: dict[str, Any], user: str | None = None) -> 
 			frappe.db.commit()  # nosemgrep - one batch at a time: a long purge never holds one huge transaction
 	frappe.db.set_default(SWITCH_DEFAULT, "")
 	frappe.cache.delete_keys("wa:")
-	audit.log(
+	audit.record_audit_entry(
 		"Account Data Deleted",
 		user=user,
 		details={"from": pending.get("from"), "deleted": counts, "stage": "done"},

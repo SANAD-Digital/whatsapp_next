@@ -21,7 +21,7 @@ _PAIR = re.compile(
 )
 
 
-def _tidy(match: re.Match) -> str:
+def _tidy_marker_match(match: re.Match) -> str:
 	lead, trail = match["lead"], match["trail"]
 	if bool(lead) == bool(trail):
 		return match.group(0)  # already touching, or spaced on both sides (not formatting)
@@ -34,4 +34,4 @@ def tidy_markers(text: str | None) -> str | None:
 	if not text or not any(m in text for m in "*_~"):
 		return text
 	parts = re.split(r"(```.*?```)", text, flags=re.DOTALL)
-	return "".join(p if p.startswith("```") else _PAIR.sub(_tidy, p) for p in parts)
+	return "".join(p if p.startswith("```") else _PAIR.sub(_tidy_marker_match, p) for p in parts)

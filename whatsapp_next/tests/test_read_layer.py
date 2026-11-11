@@ -251,7 +251,7 @@ class TestReadLayer(IntegrationTestCase):
 
 	def test_single_statement_union(self):
 		"""The conversation read is one UNION ALL statement with both branches key-filtered."""
-		q = read_layer._union({}, keys=[KEY_A], limit=5)
+		q = read_layer._build_messages_union_query({}, keys=[KEY_A], limit=5)
 		sql = str(q)
 		self.assertEqual(sql.count("UNION ALL"), 1)
 		# per branch: the indexed column and the key expression

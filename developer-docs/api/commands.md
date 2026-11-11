@@ -16,9 +16,9 @@ A `WhatsApp Command` maps a **word** (`code`, stored casefolded; the document na
 `synonyms` to an installed **function** — a Server Script with a `WA-FUNCTION` header (see
 [functions.md](functions.md#how-functions-work) and
 [commands-and-functions.md](../commands-and-functions.md)). When an inbound text message arrives, a
-background job (`command_router.route`, never inside a web request) matches the first token against
+background job (`command_router.route_inbound_message`, never inside a web request) matches the first token against
 the cached word map of `Active` commands, checks access, reads typed values from the text by the
-function's header parameters, merges and fills them (`function_runner.prepare`), asks for what is
+function's header parameters, merges and fills them (`function_runner.prepare_command_params`), asks for what is
 still missing, runs the script, checks its messages against `@reply` and queues the replies at
 priority 1.
 

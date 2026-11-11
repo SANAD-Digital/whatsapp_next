@@ -90,7 +90,7 @@ class TestApiCampaigns(IntegrationTestCase):
 	def _running(self, **values):
 		name = self._campaign(**values)
 		with patch.object(frappe, "enqueue"):
-			runner.start(name)
+			runner.start_campaign(name)
 		runner.materialize(name)
 		return name
 

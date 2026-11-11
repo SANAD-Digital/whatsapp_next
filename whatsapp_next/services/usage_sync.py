@@ -33,7 +33,7 @@ FIELDS = (
 )
 
 
-def _values(info: AccountInfo) -> dict[str, Any]:
+def _account_info_to_settings_values(info: AccountInfo) -> dict[str, Any]:
 	return {
 		"plan_code": info.plan_code,
 		"plan_name": info.plan_name,
@@ -66,7 +66,7 @@ def sync_subscription(*, raise_errors: bool = False) -> dict[str, Any] | None:
 			raise
 		frappe.log_error(title="WhatsApp usage sync failed", message=f"code={exc.code}")
 		return None
-	values = _values(info)
+	values = _account_info_to_settings_values(info)
 	# a site linked before it remembered its account learns it here, so a later switch is exact
 	if info.account_id and not frappe.db.get_default("whatsapp_next_platform_account"):
 		frappe.db.set_default("whatsapp_next_platform_account", info.account_id)

@@ -226,6 +226,6 @@ including `message.received.group.json`, `message.received.lid.json`, `message.r
 
 ## Testing locally
 
-`whatsapp_next.webhooks.v1.receiver.handle(headers, raw_body, remote_ip=None)` is the pure core the
+`whatsapp_next.webhooks.v1.receiver.handle_webhook_request(headers, raw_body, remote_ip=None)` is the pure core the
 endpoint wraps; it returns `Outcome(http_status, body, event)` and can be called directly from a
 test or `bench console` with a signed fixture.

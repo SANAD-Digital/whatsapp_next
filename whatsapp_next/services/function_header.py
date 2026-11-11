@@ -30,18 +30,18 @@ class HeaderError(ValueError):
 	"""A header the parser cannot read; the message names the line."""
 
 
-def _at(line_no: int | None) -> str:
+def _format_line_number_suffix(line_no: int | None) -> str:
 	return _(" (line {0})").format(line_no) if line_no else ""
 
 
-def _kv(options: str, line_no: int) -> dict[str, str]:
+def _parse_header_options(options: str, line_no: int) -> dict[str, str]:
 	out: dict[str, str] = {}
 	for item in options.split(","):
 		item = item.strip()
 		if not item:
 			continue
 		if "=" not in item:
-			raise HeaderError(_("Invalid option «{0}»").format(item) + _at(line_no))
+			raise HeaderError(_("Invalid option «{0}»").format(item) + _format_line_number_suffix(line_no))
 		key, _sep, value = item.partition("=")
 		out[key.strip()] = value.strip()
 	return out
@@ -56,12 +56,14 @@ def header_block(script: str | None) -> list[tuple[int, str]]:
 		st = raw.strip()
 		if not st.startswith("#"):
 			if inside:
-				raise HeaderError(_("A line inside the header is not a comment") + _at(line_no))
+				raise HeaderError(
+					_("A line inside the header is not a comment") + _format_line_number_suffix(line_no)
+				)
 			continue
 		text = st.lstrip("#").strip()
 		if END in text:
 			if not inside:
-				raise HeaderError(_("Header end without a beginning") + _at(line_no))
+				raise HeaderError(_("Header end without a beginning") + _format_line_number_suffix(line_no))
 			ended = True
 			break
 		if BEGIN in text:
@@ -110,7 +112,9 @@ def parse_function_header(script: str | None) -> dict[str, Any]:
 			continue
 		if text.startswith(">"):
 			if current is None:
-				raise HeaderError(_("A > line without an @default before it") + _at(line_no))
+				raise HeaderError(
+					_("A > line without an @default before it") + _format_line_number_suffix(line_no)
+				)
 			chunk = text[1:]
 			if chunk.startswith(" "):
 				chunk = chunk[1:]
@@ -124,7 +128,7 @@ def parse_function_header(script: str | None) -> dict[str, Any]:
 			continue
 		current = None
 		if not text.startswith("@"):
-			raise HeaderError(_("Unreadable header line") + _at(line_no) + ": " + text)
+			raise HeaderError(_("Unreadable header line") + _format_line_number_suffix(line_no) + ": " + text)
 		tag, _sep, value = text[1:].partition(" ")
 		tag, value = tag.strip(), value.strip()
 
@@ -146,31 +150,46 @@ def parse_function_header(script: str | None) -> dict[str, Any]:
 			kind, bar, name = value.partition("|")
 			kind, name = kind.strip().lower(), name.strip()
 			if not bar or kind not in REQUIRE_KINDS or not name:
-				raise HeaderError(_("@requires takes report|doctype|app | <name>") + _at(line_no))
+				raise HeaderError(
+					_("@requires takes report|doctype|app | <name>") + _format_line_number_suffix(line_no)
+				)
 			spec["requires"].append({"kind": kind, "name": name})
 		elif tag == "param":
 			cols = [c.strip() for c in value.split("|")]
 			if len(cols) != 5:
-				raise HeaderError(_("@param takes 5 columns separated by |") + _at(line_no))
+				raise HeaderError(
+					_("@param takes 5 columns separated by |") + _format_line_number_suffix(line_no)
+				)
 			name, fieldtype, required, options, label = cols
 			if required not in ("required", "optional"):
-				raise HeaderError(_("The third column is required or optional") + _at(line_no))
+				raise HeaderError(
+					_("The third column is required or optional") + _format_line_number_suffix(line_no)
+				)
 			if name in by_name:
-				raise HeaderError(_("Parameter «{0}» is declared twice").format(name) + _at(line_no))
-			opts = _kv(options, line_no)
+				raise HeaderError(
+					_("Parameter «{0}» is declared twice").format(name) + _format_line_number_suffix(line_no)
+				)
+			opts = _parse_header_options(options, line_no)
 			ftype, _sep, ftarget = fieldtype.partition(":")
 			if ftype not in FIELDTYPES:
-				raise HeaderError(_("Unknown field type «{0}»").format(ftype) + _at(line_no))
+				raise HeaderError(
+					_("Unknown field type «{0}»").format(ftype) + _format_line_number_suffix(line_no)
+				)
 			source = opts.get("source", "command")
 			if source not in SOURCES:
-				raise HeaderError(_("source is sender or command") + _at(line_no))
+				raise HeaderError(_("source is sender or command") + _format_line_number_suffix(line_no))
 			dep = None
 			if opts.get("depends_on"):
 				dp, colon, dv = opts["depends_on"].partition(":")
 				if not colon:
-					raise HeaderError(_("depends_on takes <parameter>:<value>") + _at(line_no))
+					raise HeaderError(
+						_("depends_on takes <parameter>:<value>") + _format_line_number_suffix(line_no)
+					)
 				if dp.strip() not in by_name:
-					raise HeaderError(_("depends_on names a parameter not declared before it") + _at(line_no))
+					raise HeaderError(
+						_("depends_on names a parameter not declared before it")
+						+ _format_line_number_suffix(line_no)
+					)
 				dep = {"param": dp.strip(), "value": dv.strip().lower()}
 			p = {
 				"name": name,
@@ -189,19 +208,23 @@ def parse_function_header(script: str | None) -> dict[str, Any]:
 		elif tag == "options":
 			param, _bar, values = value.partition("|")
 			if param.strip() not in by_name:
-				raise HeaderError(_("@options for a parameter not declared") + _at(line_no))
+				raise HeaderError(
+					_("@options for a parameter not declared") + _format_line_number_suffix(line_no)
+				)
 			by_name[param.strip()]["select_options"] = [o.strip() for o in values.split(",") if o.strip()]
 		elif tag == "default":
 			param, _sp, lang = value.partition(" ")
 			if param not in by_name:
-				raise HeaderError(_("@default for a parameter not declared") + _at(line_no))
+				raise HeaderError(
+					_("@default for a parameter not declared") + _format_line_number_suffix(line_no)
+				)
 			current = (param, lang.strip() or None)
 		elif tag == "var":
 			cols = [c.strip() for c in value.split("|")]
 			if len(cols) == 2:
 				cols = [cols[0], "all", cols[1]]
 			if len(cols) != 3:
-				raise HeaderError(_("@var takes 3 columns") + _at(line_no))
+				raise HeaderError(_("@var takes 3 columns") + _format_line_number_suffix(line_no))
 			spec["vars"].append(
 				{
 					"name": cols[0],
@@ -212,10 +235,15 @@ def parse_function_header(script: str | None) -> dict[str, Any]:
 		elif tag == "reply":
 			cols = [c.strip() for c in value.split("|")]
 			if len(cols) != 4 or cols[1] not in REPLY_TYPES:
-				raise HeaderError(_("@reply takes key | text/report | options | title") + _at(line_no))
-			opts = _kv(cols[2], line_no)
+				raise HeaderError(
+					_("@reply takes key | text/report | options | title")
+					+ _format_line_number_suffix(line_no)
+				)
+			opts = _parse_header_options(cols[2], line_no)
 			if cols[1] == "report" and not opts.get("report"):
-				raise HeaderError(_("A report reply needs report=<report name>") + _at(line_no))
+				raise HeaderError(
+					_("A report reply needs report=<report name>") + _format_line_number_suffix(line_no)
+				)
 			spec["replies"].append(
 				{
 					"key": cols[0],
@@ -226,7 +254,7 @@ def parse_function_header(script: str | None) -> dict[str, Any]:
 				}
 			)
 		else:
-			raise HeaderError(_("Unknown tag @{0}").format(tag) + _at(line_no))
+			raise HeaderError(_("Unknown tag @{0}").format(tag) + _format_line_number_suffix(line_no))
 
 	if not spec["function"]:
 		raise HeaderError(_("The header has no @function"))
@@ -287,7 +315,7 @@ def typed_params(spec: dict[str, Any]) -> list[dict[str, Any]]:
 	return [p for p in command_params(spec) if p["fieldtype"] != "Template"]
 
 
-def param(spec: dict[str, Any], name: str) -> dict[str, Any] | None:
+def find_header_param(spec: dict[str, Any], name: str) -> dict[str, Any] | None:
 	"""The parameter `name` of a function's header spec, or None."""
 	return next((p for p in spec.get("params") or [] if p["name"] == name), None)
 
@@ -367,7 +395,7 @@ def is_empty(value: Any) -> bool:
 	return value is None or (isinstance(value, str) and not value.strip())
 
 
-def coerce(p: dict[str, Any], value: Any) -> Any:
+def coerce_param_value(p: dict[str, Any], value: Any) -> Any:
 	"""A value in the parameter's type. E: `ValueError` with a message for the sender."""
 	ftype = p["fieldtype"]
 	if ftype == "Date":
@@ -424,7 +452,7 @@ def build_params(
 			elif p["default"]:
 				value = resolve_default(p["default"], params, language)
 		if not is_empty(value):
-			value = coerce(p, value)
+			value = coerce_param_value(p, value)
 		if is_empty(value):
 			if p["required"]:
 				missing.append({"name": name, "label": p["label"], "source": p["source"]})

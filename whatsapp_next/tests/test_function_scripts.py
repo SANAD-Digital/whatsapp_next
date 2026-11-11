@@ -84,7 +84,7 @@ class TestFunctionScripts(IntegrationTestCase):
 			enable_commands=1, send_receipt_reply=0, command_reply_language="en", main_menu_mode="Off"
 		)
 		ff.drop_commands()
-		self.addCleanup(command_sessions.clear, self.device, P_LINKED)
+		self.addCleanup(command_sessions.clear_question_session, self.device, P_LINKED)
 
 	def tearDown(self):
 		frappe.local.lang = self._lang
@@ -122,7 +122,7 @@ class TestFunctionScripts(IntegrationTestCase):
 				cr, "_send_replies", side_effect=lambda c, i, replies, **k: sent.extend(replies) or []
 			),
 		):
-			res = cr.route(doc.name)
+			res = cr.route_inbound_message(doc.name)
 		return res, sent, doc.name
 
 	# 1 ---------------------------------------------------------------------------------------------
@@ -141,9 +141,9 @@ class TestFunctionScripts(IntegrationTestCase):
 		self.assertNotIn("_test_wrongmethod", keys)
 		self.assertNotIn("_test_off", keys)
 		with self.assertRaises(WAValidationError):
-			fc.install("wa_fn__test_wrongmethod")
+			fc.install_function_from_script("wa_fn__test_wrongmethod")
 		with self.assertRaises(WAValidationError):
-			fc.install("wa_fn__test_off")
+			fc.install_function_from_script("wa_fn__test_off")
 		self.assertFalse(frappe.db.exists("WhatsApp Function", "_test_wrongmethod"))
 
 	# 2 ---------------------------------------------------------------------------------------------
@@ -165,7 +165,7 @@ class TestFunctionScripts(IntegrationTestCase):
 		self.assertEqual((listed["state"], listed["available"]), ("invalid", False))
 		self.assertIn("(line 6)", listed["error"])
 		with self.assertRaises(WAValidationError):
-			fc.install("wa_fn__test_invalid")
+			fc.install_function_from_script("wa_fn__test_invalid")
 
 	# 3 ---------------------------------------------------------------------------------------------
 
@@ -176,7 +176,7 @@ class TestFunctionScripts(IntegrationTestCase):
 		self.assertEqual((listed["state"], listed["available"]), ("unavailable", False))
 		self.assertIn(ff.NEEDED_REPORT, " ".join(listed["reasons"]))
 		with self.assertRaises(WAValidationError):
-			fc.install(name)
+			fc.install_function_from_script(name)
 		self.assertFalse(frappe.db.exists("WhatsApp Function", "_test_needs"))
 
 		# the report arrives: the function installs and its command runs ...
@@ -219,7 +219,7 @@ class TestFunctionScripts(IntegrationTestCase):
 		self.assertIsNone(cr.function_block(cmd, customer))
 		self.assertEqual(cr.check_access(cmd, frappe._dict(message_type="Text"), supplier), "Party Type")
 		# the Functions Center's "Try" stops at the same step
-		trial = function_runner.trial("_test_span", party_type="Supplier", party=self.supplier)
+		trial = function_runner.run_function_trial("_test_span", party_type="Supplier", party=self.supplier)
 		self.assertFalse(trial["steps"][-1]["ok"])
 		self.assertIn("@party_types", trial["steps"][-1]["name"])
 		# a command may not allow a type the header does not serve
@@ -242,19 +242,19 @@ class TestFunctionScripts(IntegrationTestCase):
 		)
 		res, sent, _name = self._live("tfnrange")
 		self.assertEqual(res.status, "Awaiting Input")
-		session = command_sessions.load(self.device, P_LINKED)
+		session = command_sessions.load_question_session(self.device, P_LINKED)
 		self.assertEqual(session["pending"], ["from_date", "to_date"])
 		self.assertIn("From date", sent[0]["body"])
 
 		res, sent, _name = self._live("2026-01-01")
 		self.assertEqual(res.status, "Awaiting Input")
-		session = command_sessions.load(self.device, P_LINKED)
+		session = command_sessions.load_question_session(self.device, P_LINKED)
 		self.assertEqual((session["pending"], session["args"]), (["to_date"], {"from_date": "2026-01-01"}))
 		self.assertIn("To date", sent[0]["body"])
 
 		res, sent, name = self._live("2026-01-31")
 		self.assertEqual(res.status, "Executed", res.error)
-		self.assertIsNone(command_sessions.load(self.device, P_LINKED))
+		self.assertIsNone(command_sessions.load_question_session(self.device, P_LINKED))
 		self.assertEqual(
 			{k: res.data[k] for k in ("timespan", "from_date", "to_date", "party_type", "party")},
 			{
@@ -314,7 +314,9 @@ class TestFunctionScripts(IntegrationTestCase):
 			function="_test_span", settings_overrides={"party": "X", "timespan": "today"}, templates=[]
 		)
 		sender = Sender(P_LINKED, None, None, self.contact, party_type="Customer", party_name=self.customer)
-		params, missing = function_runner.prepare(draft, sender, {"party": "Y", "party_type": "Supplier"})
+		params, missing = function_runner.prepare_command_params(
+			draft, sender, {"party": "Y", "party_type": "Supplier"}
+		)
 		self.assertEqual((params["party_type"], params["party"], missing), ("Customer", self.customer, []))
 		# a sender with no party is not linked, whatever the text says
 		res = self._sim(P_UNLINKED, "tfnspan3 party=SOMEONE-ELSE")
@@ -432,13 +434,13 @@ class TestFunctionScripts(IntegrationTestCase):
 
 		ff.ensure_function("_test_echo")
 		ff.make_command("tfnecho", "_test_echo")
-		trial = function_runner.trial("_test_echo", values={"text": "hello world"})
+		trial = function_runner.run_function_trial("_test_echo", values={"text": "hello world"})
 		self.assertTrue(all(s["ok"] for s in trial["steps"]), trial["steps"])
 		dry = cr.dry_run("tfnecho hello world", P_UNLINKED, self.device)
 		as_trial = [(m["reply"], m["text"]) for m in trial["messages"]]
 		self.assertEqual(as_trial, [("result_text", "pong: hello world")])
 		self.assertEqual(as_trial, [(r["output_key"], r["body"]) for r in dry.replies])
-		preview = commands_svc.preview(
+		preview = commands_svc.preview_command_draft(
 			{"code": "tfnecho2", "function": "_test_echo", "requires_linked_contact": 0},
 			sender={"phone": P_UNLINKED},
 			values={"text": "hello world"},
@@ -454,7 +456,7 @@ class TestFunctionScripts(IntegrationTestCase):
 		# with a party, a report and the values typed by the sender
 		ff.ensure_function("_test_span")
 		ff.make_command("tfnspan5", "_test_span")
-		trial = function_runner.trial(
+		trial = function_runner.run_function_trial(
 			"_test_span", party_type="Customer", party=self.customer, values={"timespan": "today"}
 		)
 		self.assertTrue(all(s["ok"] for s in trial["steps"]), trial["steps"])
@@ -492,7 +494,7 @@ class TestFunctionScripts(IntegrationTestCase):
 		listed = {e["server_script"]: e for e in fc.storefront()}["wa_fn__test_noguard"]
 		self.assertFalse(listed["guarded"])
 		with self.assertRaises(WAValidationError) as caught:
-			fc.install("wa_fn__test_noguard")
+			fc.install_function_from_script("wa_fn__test_noguard")
 		self.assertIn("direct URL", str(caught.exception))
 		self.assertFalse(frappe.db.exists("WhatsApp Function", "_test_noguard"))
 
@@ -505,7 +507,7 @@ class TestFunctionScripts(IntegrationTestCase):
 			self.assertIn("more than one script", entries[name]["error"])
 			self.assertEqual({e["server_script"]: e for e in fc.storefront()}[name]["state"], "invalid")
 		with self.assertRaises(WAValidationError):
-			fc.install("wa_fn__test_dup_a")
+			fc.install_function_from_script("wa_fn__test_dup_a")
 		self.assertFalse(frappe.db.exists("WhatsApp Function", "_test_dup"))
 
 	def test_update_keeps_values_of_surviving_params(self):
@@ -526,7 +528,7 @@ class TestFunctionScripts(IntegrationTestCase):
 			"@reply  result_text | text |  | Result",
 		]
 		ff.ensure_script("wa_fn__test_upd", ff.source("_test_upd", v1, ff.OK_BODY))
-		fc.install("wa_fn__test_upd")
+		fc.install_function_from_script("wa_fn__test_upd")
 		fc.save_values("_test_upd", {"keep": "x", "gone": "3", "msg": {"en": "custom"}})
 		self.assertEqual(fc.values_of("_test_upd"), {"keep": "x", "gone": 3, "msg": {"en": "custom"}})
 		# the script's header changes: an update, seen by the daily check and the storefront
@@ -536,16 +538,16 @@ class TestFunctionScripts(IntegrationTestCase):
 		self.assertEqual(
 			{e["server_script"]: e for e in fc.storefront()}["wa_fn__test_upd"]["state"], "update"
 		)
-		d = fc.diff("wa_fn__test_upd")
+		d = fc.diff_script_against_installed_function("wa_fn__test_upd")
 		self.assertEqual((d["params"]["added"], d["params"]["removed"]), (["added"], ["gone"]))
 		self.assertEqual([c["name"] for c in d["params"]["changed"]], ["msg"])
 		self.assertTrue(d["changed"])
-		fc.update("_test_upd")
+		fc.update_function_from_script("_test_upd")
 		doc = frappe.get_doc("WhatsApp Function", "_test_upd")
 		self.assertEqual((doc.installed_version, doc.update_available), ("1.1.0", 0))
 		self.assertEqual(fc.values_of(doc), {"keep": "x", "msg": {"en": "custom"}})
 		self.assertEqual([p["name"] for p in fc.manifest_of(doc)["params"]], ["keep", "added", "msg"])
-		self.assertFalse(fc.diff("wa_fn__test_upd")["changed"])
+		self.assertFalse(fc.diff_script_against_installed_function("wa_fn__test_upd")["changed"])
 
 	def test_validate_messages_drops_disabled_replies(self):
 		spec = fh.parse_function_header(ff.FUNCTIONS["_test_span"][1])

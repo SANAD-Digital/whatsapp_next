@@ -91,7 +91,7 @@ def simulate_inbound(
 	doc = _inbound_stub(device, sender, text, persist=persist)
 	if not run_commands:
 		return SimResult(doc.name if persist else None, "None", None, None, {}, {}, [], [], None, 0, True)
-	routed = command_router.route(
+	routed = command_router.route_inbound_message(
 		doc.name if persist else None, inbound=doc, dry_run=True, create_simulated_rows=persist
 	)
 	return SimResult(
@@ -148,7 +148,7 @@ def send_test(
 	)
 	from whatsapp_next.services import audit
 
-	audit.log(
+	audit.record_audit_entry(
 		"Test Send",
 		reference=("WhatsApp Log", outbound),
 		user=user,

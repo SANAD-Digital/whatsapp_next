@@ -13,7 +13,7 @@ import frappe
 from frappe.utils import cint
 
 
-def get() -> str | None:
+def get_active_service_user() -> str | None:
 	"""The configured service user when it can act: set, not Administrator, enabled, and not a
 	System Manager (a role granted after the setting was saved included): work done on content
 	from the platform must never run with every right."""
@@ -26,10 +26,10 @@ def get() -> str | None:
 
 
 @contextmanager
-def acting() -> Iterator[str | None]:
+def run_as_service_user() -> Iterator[str | None]:
 	"""Run the block as the service user (a no-op when none is set); the previous session user,
 	session and form_dict are always restored, as `command_router.execute` restores them."""
-	user = get()
+	user = get_active_service_user()
 	if not user or frappe.session.user == user:
 		yield user
 		return

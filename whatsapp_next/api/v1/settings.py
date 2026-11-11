@@ -200,7 +200,7 @@ def get_whatsapp_link(text: str | None = None, device: str | None = None) -> dic
 	the print-format functions `whatsapp_link` / `whatsapp_qr`."""
 	from whatsapp_next.services import wa_links
 
-	return {"url": wa_links.link(text, device), "qr": wa_links.qr_data_uri(text, device)}
+	return {"url": wa_links.build_chat_url(text, device), "qr": wa_links.qr_data_uri(text, device)}
 
 
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))
@@ -308,7 +308,7 @@ def rotate_webhook_secret() -> dict[str, Any]:
 @api_endpoint(roles=MANAGER)
 def test_webhook() -> dict[str, Any]:
 	"""Ask the provider to deliver a `test.webhook` event → `{status, http_status_code}`."""
-	result = webhook_setup.test(user=frappe.session.user)
+	result = webhook_setup.send_test_webhook(user=frappe.session.user)
 	detail = result.get("detail") or {}
 	return {
 		"status": "ok" if result.get("ok") else "failed",
@@ -409,7 +409,7 @@ def preview_picker_source(source: str | dict) -> dict[str, Any]:
 	"""How a source being edited reaches people → `{total, with_number, sample[]}`."""
 	from whatsapp_next.services import picker_sources
 
-	return picker_sources.preview(source)
+	return picker_sources.preview_picker_source_reach(source)
 
 
 @api_endpoint(roles=MANAGER, methods=("GET", "POST"))
@@ -420,7 +420,7 @@ def export_backup() -> dict[str, Any]:
 
 	data = backup.export_backup()
 	counts = {doctype: len(rows) for doctype, rows in data["records"].items()}
-	audit.log("Backup Exported", user=frappe.session.user, details={"records": counts})
+	audit.record_audit_entry("Backup Exported", user=frappe.session.user, details={"records": counts})
 	return data
 
 

@@ -27,7 +27,7 @@ from whatsapp_next.providers import registry
 from whatsapp_next.providers.schemas import DeviceState, PairingPayload, WebhookEvent
 from whatsapp_next.services import audit
 from whatsapp_next.services.guards import status_writer
-from whatsapp_next.services.phone import normalize
+from whatsapp_next.services.phone import normalize_phone_to_e164
 
 STATUSES = ("Pending QR", "Connected", "Disconnected", "Logged Out")
 PAIRING_MODES = ("QR", "Code")
@@ -98,7 +98,7 @@ def wrong_number_text(info: dict) -> str:
 # ---- helpers ------------------------------------------------------------------------------
 
 
-def _doc(device: str):
+def _get_device_doc(device: str):
 	if not frappe.db.exists("WhatsApp Device", device):
 		frappe.throw(_("WhatsApp Device {0} not found").format(device), WANotFoundError)
 	return frappe.get_doc("WhatsApp Device", device)
@@ -169,7 +169,7 @@ def apply_state(
 			and not frappe.db.get_value("WhatsApp Device", device, "phone_e164")
 		):
 			values["phone"] = state.phone_e164
-			values["phone_e164"] = normalize(state.phone_e164)
+			values["phone_e164"] = normalize_phone_to_e164(state.phone_e164)
 		if state.last_seen:
 			values["last_seen"] = state.last_seen
 		values["webhook_registered"] = 1 if state.webhook_registered else 0
@@ -194,7 +194,7 @@ def apply_state(
 
 		history_import.on_connected(device)
 	if wrong:
-		audit.log(
+		audit.record_audit_entry(
 			"Device Disconnected",
 			reference=("WhatsApp Device", device),
 			reason=reason,
@@ -217,7 +217,7 @@ def apply_state(
 	if changed:
 		action = _AUDIT_BY_STATUS.get(status)
 		if action:
-			audit.log(
+			audit.record_audit_entry(
 				action,
 				reference=("WhatsApp Device", device),
 				reason=reason,
@@ -253,7 +253,7 @@ def apply_connection_event(event: WebhookEvent) -> StateChange | None:
 # ---- lifecycle ----------------------------------------------------------------------------
 
 
-def create(
+def create_device(
 	device_name: str, phone: str | None = None, pairing_mode: str = "QR", user: str | None = None
 ) -> str:
 	"""Create the device on the provider, then the local row (`Pending QR`); audited."""
@@ -262,7 +262,7 @@ def create(
 		frappe.throw(_("Device name is required"), WAValidationError)
 	if pairing_mode not in PAIRING_MODES:
 		frappe.throw(_("Pairing mode must be QR or Code"), WAValidationError)
-	e164 = normalize(phone) if phone else None
+	e164 = normalize_phone_to_e164(phone) if phone else None
 	if phone and not e164:
 		frappe.throw(_("Invalid phone number: {0}").format(phone), WAInvalidPhoneError)
 	# a device links only with its own number (the platform unlinks any other), so it is created
@@ -287,7 +287,7 @@ def create(
 		)
 		doc.flags.ignore_permissions = True
 		doc.insert(ignore_permissions=True)
-	audit.log(
+	audit.record_audit_entry(
 		"Device Created",
 		reference=("WhatsApp Device", doc.name),
 		user=user,
@@ -307,7 +307,7 @@ def start_pairing(device: str, mode: str = "QR", phone: str | None = None) -> Pa
 	if mode not in PAIRING_MODES:
 		frappe.throw(_("Pairing mode must be QR or Code"), WAValidationError)
 	if mode == "Code" and phone:
-		update(device, phone=phone)
+		update_device_name_and_phone(device, phone=phone)
 		clear_pairing(device)
 	row = frappe.db.get_value(
 		"WhatsApp Device",
@@ -377,7 +377,7 @@ def clear_pairing(device: str) -> None:
 		frappe.cache.delete_value(PAIR_CACHE_KEY.format(platform_device=pd))
 
 
-def poll(device: str) -> StateChange:
+def poll_device_state(device: str) -> StateChange:
 	"""Ask the provider for the live state and apply it (pairing page polling, `{status, changed}`)."""
 	pd = platform_device(device)
 	state = registry.get_provider().verify_device(pd)
@@ -403,7 +403,7 @@ def disconnect(device: str, user: str | None = None) -> StateChange:
 	)
 
 
-def delete(device: str, delete_remote: bool = True, user: str | None = None) -> None:
+def delete_device(device: str, delete_remote: bool = True, user: str | None = None) -> None:
 	"""Delete the device on the provider (optional) and locally. The default device cannot be
 	deleted while other devices exist; message history keeps its (now dangling) Link.
 
@@ -411,7 +411,7 @@ def delete(device: str, delete_remote: bool = True, user: str | None = None) -> 
 	once, and that webhook writing the same row first left the delete refused as "being modified
 	by another user". Locked here, the webhook waits for the delete and then finds no device."""
 	frappe.db.get_value("WhatsApp Device", device, "name", for_update=True)
-	doc = _doc(device)
+	doc = _get_device_doc(device)
 	if doc.is_default and frappe.db.count("WhatsApp Device", {"name": ("!=", device)}):
 		frappe.throw(
 			_("Set another device as default before deleting {0}").format(device), WAStateConflictError
@@ -423,7 +423,7 @@ def delete(device: str, delete_remote: bool = True, user: str | None = None) -> 
 			pass  # already gone on the platform
 	clear_pairing(device)
 	_release_device_links(device)
-	audit.log(
+	audit.record_audit_entry(
 		"Device Deleted",
 		reference=("WhatsApp Device", device),
 		user=user,
@@ -482,7 +482,7 @@ def default_device() -> str | None:
 
 def set_default(device: str, user: str | None = None) -> None:
 	"""Flag `device` as the default (the controller clears the others)."""
-	doc = _doc(device)
+	doc = _get_device_doc(device)
 	if cint(doc.disabled):
 		frappe.throw(_("A disabled device cannot be the default"), WAStateConflictError)
 	if not doc.is_default:
@@ -495,7 +495,7 @@ def set_default(device: str, user: str | None = None) -> None:
 
 def set_disabled(device: str, flag: bool, user: str | None = None) -> None:
 	"""Disable / enable a device for dispatch (rows stay `Queued` while disabled)."""
-	doc = _doc(device)
+	doc = _get_device_doc(device)
 	flag = bool(cint(flag))
 	if (
 		flag
@@ -514,12 +514,12 @@ def set_disabled(device: str, flag: bool, user: str | None = None) -> None:
 		clear_pairing(device)
 
 
-def update(
+def update_device_name_and_phone(
 	device: str, device_name: str | None = None, phone: str | None = None, user: str | None = None
 ) -> dict[str, Any]:
 	"""Rename / re-phone through the provider when it supports it (platform A-05)."""
-	doc = _doc(device)
-	e164 = normalize(phone) if phone else None
+	doc = _get_device_doc(device)
+	e164 = normalize_phone_to_e164(phone) if phone else None
 	if phone and not e164:
 		frappe.throw(_("Invalid phone number: {0}").format(phone), WAInvalidPhoneError)
 	if doc.platform_device:
@@ -585,7 +585,7 @@ def adopt_from_provider(user: str | None = None) -> dict[str, int]:
 			)
 			doc.flags.ignore_permissions = True
 			doc.insert(ignore_permissions=True)
-		audit.log(
+		audit.record_audit_entry(
 			"Device Created",
 			reference=("WhatsApp Device", doc.name),
 			user=user,

@@ -248,7 +248,7 @@ class TestApiSettings(IntegrationTestCase):
 			ranged = api.list_audit_log(filters={"from": "2000-01-01", "to": "2000-01-02"})
 			self.assertEqual(ranged["rows"], [])
 			# `to` is a day: everything logged on it is inside the period
-			audit.log(
+			audit.record_audit_entry(
 				"Settings Changed", fields_written=["audit_retention_days"], details={"section": "test"}
 			)
 			today = api.list_audit_log(filters={"from": nowdate(), "to": nowdate()})

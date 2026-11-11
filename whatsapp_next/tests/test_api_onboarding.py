@@ -155,7 +155,8 @@ class TestApiOnboarding(IntegrationTestCase):
 
 		foreign = Fernet(Fernet.generate_key()).encrypt(b"other-site-key").decode()
 		saved = {
-			f: secrets.read(f) for f in ("customer_api_key", "api_key", "api_secret", "customer_api_secret")
+			f: secrets.read_password_field(f)
+			for f in ("customer_api_key", "api_key", "api_secret", "customer_api_secret")
 		}
 		try:
 			# written through the query builder (not MariaDB's ON DUPLICATE KEY), so it runs on both
@@ -168,7 +169,7 @@ class TestApiOnboarding(IntegrationTestCase):
 					SETTINGS, SETTINGS, f, foreign, 1
 				).run()
 			frappe.local.message_log = []
-			self.assertIsNone(secrets.read("customer_api_key"))
+			self.assertIsNone(secrets.read_password_field("customer_api_key"))
 			self.assertFalse(set(saved) & set(registry.credentials()))  # every foreign key reads as missing
 			self.assertFalse(svc.has_credentials())
 			with as_user("System Manager"):

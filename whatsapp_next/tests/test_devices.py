@@ -90,21 +90,21 @@ class TestDevices(IntegrationTestCase):
 		one, whichever way it pairs, and a code then goes to that number without asking again."""
 		with fake_provider() as fp:
 			with self.assertRaises(WAInvalidPhoneError):
-				devices.create(NAME, pairing_mode="QR")  # no number
+				devices.create_device(NAME, pairing_mode="QR")  # no number
 			self.assertFalse([c for c in fp.calls if c[0] == "create_device"])
-			name = devices.create(NAME, phone="0500000402", pairing_mode="QR")
+			name = devices.create_device(NAME, phone="0500000402", pairing_mode="QR")
 			self.assertEqual(frappe.db.get_value("WhatsApp Device", name, "phone_e164"), "+966500000402")
 			self.assertEqual(devices.start_pairing(name, "Code").pair_code, "ABCD-1234")
 
 	def test_create_and_pair_qr(self):
 		with fake_provider() as fp:
 			with self.assertRaises(WAInvalidPhoneError):
-				devices.create(NAME, phone="abc")
+				devices.create_device(NAME, phone="abc")
 			with self.assertRaises(WAInvalidPhoneError):
-				devices.create(NAME, pairing_mode="Code")  # code needs a phone
+				devices.create_device(NAME, pairing_mode="Code")  # code needs a phone
 			with self.assertRaises(WAValidationError):
-				devices.create(NAME, pairing_mode="Bluetooth")
-			name = devices.create(NAME, phone="0500000401", pairing_mode="QR")
+				devices.create_device(NAME, pairing_mode="Bluetooth")
+			name = devices.create_device(NAME, phone="0500000401", pairing_mode="QR")
 			row = frappe.db.get_value(
 				"WhatsApp Device",
 				name,
@@ -143,7 +143,7 @@ class TestDevices(IntegrationTestCase):
 
 			# poll → provider says Connected → cache cleared, audit + timestamps
 			fp.set_device_status(row.platform_device, "Connected")
-			change = devices.poll(name)
+			change = devices.poll_device_state(name)
 			self.assertEqual(
 				(change.previous, change.status, change.changed), ("Pending QR", "Connected", True)
 			)
@@ -159,11 +159,11 @@ class TestDevices(IntegrationTestCase):
 			with self.assertRaises(WAStateConflictError):
 				devices.start_pairing(name, "QR")
 			# same-status poll is a no-op
-			self.assertFalse(devices.poll(name).changed)
+			self.assertFalse(devices.poll_device_state(name).changed)
 
 	def test_connection_events_and_machine(self):
 		with fake_provider():
-			name = devices.create(NAME, phone="+966500000402")
+			name = devices.create_device(NAME, phone="+966500000402")
 			pd = frappe.db.get_value("WhatsApp Device", name, "platform_device")
 
 		def ev(ename, **kw):
@@ -210,7 +210,7 @@ class TestDevices(IntegrationTestCase):
 	def test_a_link_by_another_number_reads_as_unlinked(self):
 		# the platform unlinked a WhatsApp account that is not the device's number (owner, 2026-10-20)
 		with fake_provider():
-			name = devices.create(NAME, phone="+967777667663")
+			name = devices.create_device(NAME, phone="+967777667663")
 			pd = frappe.db.get_value("WhatsApp Device", name, "platform_device")
 		self.assertEqual(
 			devices.wrong_number_info(
@@ -247,8 +247,8 @@ class TestDevices(IntegrationTestCase):
 		from whatsapp_next.services import quick_send
 
 		with fake_provider():
-			a = devices.create(NAME + " A", phone="+966500000405")
-			b = devices.create(NAME + " B", phone="+966500000406")
+			a = devices.create_device(NAME + " A", phone="+966500000405")
+			b = devices.create_device(NAME + " B", phone="+966500000406")
 		# the drifted state: the flag without Settings
 		frappe.db.set_value("WhatsApp Device", {"name": ("!=", a)}, "is_default", 0)
 		frappe.db.set_value("WhatsApp Device", a, "is_default", 1)
@@ -272,11 +272,11 @@ class TestDevices(IntegrationTestCase):
 
 	def test_disconnect_delete_default_disabled(self):
 		with fake_provider() as fp:
-			a = devices.create(NAME + " A", phone="+966500000403")
-			b = devices.create(NAME + " B", phone="+966500000404")
+			a = devices.create_device(NAME + " A", phone="+966500000403")
+			b = devices.create_device(NAME + " B", phone="+966500000404")
 			pd_a = frappe.db.get_value("WhatsApp Device", a, "platform_device")
 			fp.set_device_status(pd_a, "Connected")
-			devices.poll(a)
+			devices.poll_device_state(a)
 			change = devices.disconnect(a)
 			self.assertEqual((change.status, change.changed), ("Logged Out", True))
 			self.assertEqual(
@@ -291,7 +291,7 @@ class TestDevices(IntegrationTestCase):
 			devices.set_default(a)
 			self.assertEqual(frappe.db.get_value("WhatsApp Device", a, "is_default"), 1)
 			with self.assertRaises(WAStateConflictError):
-				devices.delete(a)
+				devices.delete_device(a)
 			with self.assertRaises(WAStateConflictError):
 				devices.set_disabled(a, True)
 			devices.set_default(b)
@@ -325,7 +325,7 @@ class TestDevices(IntegrationTestCase):
 					"recipients": [{"recipient_type": "Fixed Number", "phone": "+966500000498"}],
 				}
 			).insert(ignore_permissions=True)
-			devices.delete(a, delete_remote=True)
+			devices.delete_device(a, delete_remote=True)
 			self.assertFalse(frappe.db.exists("WhatsApp Device", a))
 			self.assertEqual(frappe.db.get_value("WhatsApp Number", number.name, "last_device"), a)
 			self.assertIsNone(frappe.db.get_value("WhatsApp Notification", notification.name, "device"))
@@ -336,12 +336,12 @@ class TestDevices(IntegrationTestCase):
 				frappe.db.count("WhatsApp Audit Log", {"action": "Device Deleted", "reference_name": a}), 1
 			)
 			with self.assertRaises(WANotFoundError):
-				devices.delete(a)
+				devices.delete_device(a)
 			ensure_settings(default_device=None)
 
 	def test_sync_from_provider_and_unregistered(self):
 		with fake_provider() as fp:
-			a = devices.create(NAME + " S", phone="+966500000405")
+			a = devices.create_device(NAME + " S", phone="+966500000405")
 			pd = frappe.db.get_value("WhatsApp Device", a, "platform_device")
 			fp.set_device_status(pd, "Connected")
 			fp.create_device("DevTest foreign", None, "QR")  # exists only on the platform

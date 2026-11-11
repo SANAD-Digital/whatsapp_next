@@ -29,6 +29,6 @@ def create_group(
 	"""Create a WhatsApp group on `device` with `members` (numbers); with `contact`, the group is
 	saved among that contact's numbers. → `{jid, name, members[{phone, status, jid}], invite_link,
 	saved_to_contact}`."""
-	return wa_groups.create(
+	return wa_groups.create_whatsapp_group(
 		device, name, [str(m) for m in members or []], description, contact, user=frappe.session.user
 	)

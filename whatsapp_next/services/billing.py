@@ -36,11 +36,11 @@ def overview() -> dict[str, Any]:
 	}
 
 
-def _record(action: str, summary: str, details: dict[str, Any]) -> None:
+def _audit_billing_action(action: str, summary: str, details: dict[str, Any]) -> None:
 	# the platform keeps its own record of the same operation; one missing here must not hide
 	# that the money already moved
 	try:
-		audit.log(action, summary=summary, details=details)
+		audit.record_audit_entry(action, summary=summary, details=details)
 	except Exception:
 		frappe.log_error(title=f"WhatsApp audit not recorded: {action}")
 
@@ -50,11 +50,11 @@ def _after_money_moved(result: dict[str, Any]) -> dict[str, Any]:
 	return result
 
 
-def renew() -> dict[str, Any]:
+def renew_subscription_from_wallet() -> dict[str, Any]:
 	"""Renew the plan from the wallet now → `{done, subscription, payment_required?, amount?, …}`."""
 	result = registry.get_provider().renew_subscription()
 	if result.get("done"):
-		_record(
+		_audit_billing_action(
 			"Subscription Renewed",
 			"Renewed the plan from the wallet",
 			{"amount": result.get("amount"), "currency": result.get("currency")},
@@ -68,7 +68,9 @@ def change_plan(plan_code: str) -> dict[str, Any]:
 		raise WAValidationError(_("Choose a plan."))
 	result = registry.get_provider().change_plan(plan_code)
 	if result.get("done"):
-		_record("Plan Changed", "Changed the plan", {"plan_code": plan_code, "amount": result.get("amount")})
+		_audit_billing_action(
+			"Plan Changed", "Changed the plan", {"plan_code": plan_code, "amount": result.get("amount")}
+		)
 	return _after_money_moved(result)
 
 
@@ -116,7 +118,7 @@ def request_topup(
 		receipt=_receipt(receipt_file),
 		plan_code=plan_code,
 	)
-	_record(
+	_audit_billing_action(
 		"Wallet Top-up Requested",
 		"Sent a top-up for review",
 		{"amount": flt(amount, 2), "transaction": result.get("transaction")},
@@ -140,7 +142,7 @@ def confirm_paypal(order_id: str) -> dict[str, Any]:
 	result = registry.get_provider().confirm_paypal_topup(order_id)
 	if result.get("state") == "completed":
 		txn = result.get("transaction") or {}
-		_record(
+		_audit_billing_action(
 			"Wallet Top-up Paid",
 			"Topped up the wallet by PayPal",
 			{"order_id": order_id, "transaction": txn.get("name"), "amount": txn.get("amount")},

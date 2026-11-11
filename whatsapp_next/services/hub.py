@@ -40,7 +40,7 @@ def _doctype(hub_type: str) -> str:
 	return DOCTYPES[hub_type]
 
 
-def _local(doctype: str, entry: str, target: str | None = None) -> frappe._dict | None:
+def _find_local_record_for_entry(doctype: str, entry: str, target: str | None = None) -> frappe._dict | None:
 	"""The record here for the entry: the one installed from it, else one already here under the
 	name the entry installs as (`target` — a function by its Server Script). That one is offered
 	as an update: installing it brings the hub's version and links it (its on/off stays)."""
@@ -52,59 +52,63 @@ def _local(doctype: str, entry: str, target: str | None = None) -> frappe._dict 
 	return frappe._dict(name=name, hub_checksum=None) if name else None
 
 
-def _state(local: frappe._dict | None, checksum: str | None) -> str:
+def _get_entry_install_state(local: frappe._dict | None, checksum: str | None) -> str:
 	if not local:
 		return "not_installed"
 	return "installed" if local.hub_checksum == checksum else "update_available"
 
 
-def _target(payload: dict[str, Any] | None) -> str | None:
+def _get_entry_target_name(payload: dict[str, Any] | None) -> str | None:
 	return (payload or {}).get("name") or (payload or {}).get("server_script")
 
 
-def entries(hub_type: str, txt: str | None = None) -> list[dict[str, Any]]:
+def list_hub_entries(hub_type: str, txt: str | None = None) -> list[dict[str, Any]]:
 	"""The hub's entries of one type, each with `state` — `not_installed`, `update_available` or
 	`installed` — and `local`, the record here when there is one."""
 	doctype = _doctype(hub_type)
 	out = []
 	for row in registry.get_provider().list_hub(hub_type, txt):
-		local = _local(doctype, row.get("name"), row.get("target"))
+		local = _find_local_record_for_entry(doctype, row.get("name"), row.get("target"))
 		out.append(
-			{**row, "state": _state(local, row.get("checksum")), "local": local.name if local else None}
+			{
+				**row,
+				"state": _get_entry_install_state(local, row.get("checksum")),
+				"local": local.name if local else None,
+			}
 		)
 	return out
 
 
-def entry(name: str) -> dict[str, Any]:
+def get_hub_entry(name: str) -> dict[str, Any]:
 	"""One entry with its data and `state`, for the details view."""
 	row = registry.get_provider().get_hub_entry(name)
 	if not row:
 		frappe.throw(_("This hub entry is not available."), WAValidationError)
 	doctype = _doctype(row.get("hub_type"))
-	local = _local(doctype, name, _target(row.get("payload")))
+	local = _find_local_record_for_entry(doctype, name, _get_entry_target_name(row.get("payload")))
 	# what the details view calls each field: the DocType's own label, in the user's language
 	meta = frappe.get_meta(doctype)
 	row["labels"] = {k: _(meta.get_label(k)) for k in (row.get("payload") or {}) if meta.has_field(k)}
-	row["state"] = _state(local, row.get("checksum"))
+	row["state"] = _get_entry_install_state(local, row.get("checksum"))
 	row["local"] = local.name if local else None
 	return row
 
 
-def install(name: str, user: str | None = None, _seen: set[str] | None = None) -> dict[str, Any]:
+def install_hub_entry(name: str, user: str | None = None, _seen: set[str] | None = None) -> dict[str, Any]:
 	"""Install the entry, or update the copy installed before → `{doctype, name, created}`.
 	What it needs (`payload.requires`, entry names — a command's function, a notification's
 	template) is installed first when this site has neither it nor a record of the same name."""
 	seen = _seen if _seen is not None else set()
 	seen.add(name)
-	row = entry(name)
+	row = get_hub_entry(name)
 	payload = row.get("payload") or {}
 	if not isinstance(payload, dict) or not payload:
 		frappe.throw(_("This hub entry has no data."), WAValidationError)
 	for dep in payload.get("requires") or []:
 		if dep in seen:
 			continue
-		if not entry(dep).get("local"):
-			install(dep, user=user, _seen=seen)
+		if not get_hub_entry(dep).get("local"):
+			install_hub_entry(dep, user=user, _seen=seen)
 	doctype = _doctype(row["hub_type"])
 	if doctype == "WhatsApp Function":
 		local, created = _install_function(payload)
@@ -113,7 +117,7 @@ def install(name: str, user: str | None = None, _seen: set[str] | None = None) -
 	frappe.db.set_value(
 		doctype, local, {"hub_entry": name, "hub_checksum": row.get("checksum")}, update_modified=False
 	)
-	audit.log(
+	audit.record_audit_entry(
 		"Hub Entry Installed",
 		reference=(doctype, local),
 		user=user,
@@ -126,7 +130,7 @@ def install(name: str, user: str | None = None, _seen: set[str] | None = None) -
 def _install_record(doctype: str, payload: dict[str, Any], local: str | None) -> tuple[str, bool]:
 	"""Create the record from the entry's fields, or update the one installed before; only the
 	DocType's own set-up fields are taken (`backup._clean`)."""
-	clean = backup._clean(doctype, payload)
+	clean = backup._keep_doctype_setup_fields(doctype, payload)
 	if doctype == "WhatsApp Notification Alert" and clean.get("filters_json"):
 		from whatsapp_next.services import alerts
 
@@ -195,5 +199,5 @@ def _install_function(payload: dict[str, Any]) -> tuple[str, bool]:
 	spec, _checksum = functions_catalog.script_spec(script_name)
 	key = spec["function"]
 	if frappe.db.exists(functions_catalog.DT, key):
-		return functions_catalog.update(key), False
-	return functions_catalog.install(script_name), True
+		return functions_catalog.update_function_from_script(key), False
+	return functions_catalog.install_function_from_script(script_name), True

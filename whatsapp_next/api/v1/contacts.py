@@ -213,11 +213,11 @@ def link_many(names: list[str], link_doctype: str, link_name: str) -> dict[str, 
 	already carry the link are reported in `skipped`. P: Contact User | Contact write."""
 	permissions.require("write")
 
-	def one(name: str) -> None:
+	def link_one_contact(name: str) -> None:
 		if not permissions.add_contact_link(name, link_doctype, link_name):
 			raise _bulk.Skip("already linked")
 
-	return _bulk.run_bulk(names, one)
+	return _bulk.run_bulk(names, link_one_contact)
 
 
 @api_endpoint(roles=None)

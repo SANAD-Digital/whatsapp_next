@@ -12,7 +12,7 @@ from typing import Any
 import frappe
 from frappe.utils import now_datetime
 
-from whatsapp_next.services.phone import mask
+from whatsapp_next.services.phone import mask_phone_for_logs
 
 SECRET_KEY_RE = re.compile(r"(key|secret|token|password|passwd|credential)", re.IGNORECASE)
 PHONE_KEY_RE = re.compile(r"(phone|mobile|number|recipient|sender|jid)", re.IGNORECASE)
@@ -50,14 +50,14 @@ def _sanitize_value(key: str, value: Any) -> Any:
 		return [_sanitize_value(key, v) for v in value]
 	if isinstance(value, str):
 		if PHONE_KEY_RE.search(key) or _PHONE_VALUE_RE.match(value.strip()):
-			return mask(value)
+			return mask_phone_for_logs(value)
 		return value[:500]
 	if isinstance(value, int | float | bool) or value is None:
 		return value
 	return str(value)[:200]
 
 
-def log(
+def record_audit_entry(
 	action: str,
 	*,
 	reference: tuple[str, str] | None = None,

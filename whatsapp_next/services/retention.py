@@ -125,7 +125,7 @@ def purge(*, commit: bool = True) -> PurgeReport:
 		n = purge_table(doctype, days, date_field, filters=filters, commit=commit)
 		report.deleted[doctype] = n
 		if n:
-			audit.log(
+			audit.record_audit_entry(
 				"Retention Purge",
 				severity="Info",
 				count=n,

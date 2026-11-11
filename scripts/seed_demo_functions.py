@@ -73,7 +73,7 @@ def _device():
 def _install(key: str) -> None:
 	# a function is installed from its Server Script (`scripts/setup_functions.py` puts it on the site)
 	if not frappe.db.exists("WhatsApp Function", key):
-		functions_catalog.install(f"wa_fn_{key}", user="Administrator")
+		functions_catalog.install_function_from_script(f"wa_fn_{key}", user="Administrator")
 	frappe.db.set_value("WhatsApp Function", key, "status", "Active", update_modified=False)
 
 

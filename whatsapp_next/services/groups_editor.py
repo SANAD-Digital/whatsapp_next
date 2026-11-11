@@ -12,7 +12,7 @@ from typing import Any
 
 import frappe
 from frappe import _
-from frappe.utils import cint, get_datetime
+from frappe.utils import cint
 
 from whatsapp_next.exceptions import WANotFoundError, WAValidationError
 from whatsapp_next.services import editor_payload, picker
@@ -24,13 +24,13 @@ FIELDS: tuple[str, ...] = ("group_name", "kind", "description", "disabled")
 MAX_ROWS = 20000
 
 
-def _get(name: str):
+def _get_contact_group_doc_or_throw(name: str):
 	if not frappe.db.exists(DOCTYPE, name):
 		frappe.throw(_("Contact group {0} not found").format(name), WANotFoundError)
 	return frappe.get_doc(DOCTYPE, name)
 
 
-def editor(name: str | None = None) -> dict[str, Any]:
+def get_group_editor_data(name: str | None = None) -> dict[str, Any]:
 	"""What the window opens with: `{group, kinds[], can_write}` — the group (defaults for a new
 	one; members are paged separately through `picker.get_group_members`). E: `WANotFoundError`."""
 	kinds = editor_payload.select_options(DOCTYPE, "kind")
@@ -45,7 +45,7 @@ def editor(name: str | None = None) -> dict[str, Any]:
 		}
 		group.update({"member_count": 0, "modified": None, "source": "Picker"})
 		return {"group": group, "kinds": kinds, "can_write": True}
-	doc = _get(name)
+	doc = _get_contact_group_doc_or_throw(name)
 	doc.check_permission("read")
 	group = {f: doc.get(f) for f in FIELDS}
 	group.update(
@@ -63,13 +63,13 @@ def editor(name: str | None = None) -> dict[str, Any]:
 	}
 
 
-def _apply(doc, payload: dict) -> None:
+def _apply_editor_payload_to_group(doc, payload: dict) -> None:
 	for f in FIELDS:
 		if f in payload:
 			doc.set(f, cint(payload[f]) if f == "disabled" else payload[f])
 
 
-def save(payload: dict) -> dict[str, Any]:
+def save_group_and_members_from_editor(payload: dict) -> dict[str, Any]:
 	"""Create or update the group, then remove and add members. `payload`: the group fields,
 	`name` + `modified` when editing, `add` (picker rows) and `remove` (E.164 keys). A changed
 	name renames the group. Refuses to overwrite an edit saved elsewhere since the window opened.
@@ -86,7 +86,7 @@ def save(payload: dict) -> dict[str, Any]:
 
 	name = payload.get("name")
 	if name:
-		doc = _get(name)
+		doc = _get_contact_group_doc_or_throw(name)
 		doc.check_permission("write")
 		editor_payload.refuse_stale(
 			doc,
@@ -95,7 +95,7 @@ def save(payload: dict) -> dict[str, Any]:
 				"Someone else saved this group after you opened it. Close it and open it again to see their changes."
 			),
 		)
-		_apply(doc, payload)
+		_apply_editor_payload_to_group(doc, payload)
 		doc.save()
 		if new_name != doc.name:
 			if frappe.db.exists(DOCTYPE, new_name):
@@ -106,7 +106,7 @@ def save(payload: dict) -> dict[str, Any]:
 		if frappe.db.exists(DOCTYPE, new_name):
 			frappe.throw(_("A group named {0} already exists").format(new_name), WAValidationError)
 		doc = frappe.new_doc(DOCTYPE)
-		_apply(doc, payload)
+		_apply_editor_payload_to_group(doc, payload)
 		doc.source = "Picker" if add else "Manual"
 		doc.insert()
 
