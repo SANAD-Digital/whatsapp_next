@@ -55,7 +55,7 @@ export function button_html(o = {}) {
 /**
  * A status badge: a dot and a word, in one of the five tones.
  * @param {string} label
- * @param {"ok"|"warn"|"danger"|"info"|"muted"|"pri"} [tone="muted"]
+ * @param {"ok"|"warn"|"danger"|"info"|"muted"|"primary"} [tone="muted"]
  * @param {{dot?: boolean, icon?: string}} [o]
  */
 export function badge(label, tone = "muted", o = {}) {

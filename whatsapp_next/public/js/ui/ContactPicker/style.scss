@@ -657,7 +657,6 @@
 	// Frappe's drop zone asks for 16rem of its own; inside the picker it takes the room it has
 	.whatsapp-kit-picker-dialog & .file-uploader { display: flex; flex-direction: column; flex: 1 1 auto; min-block-size: 96px; }
 	.whatsapp-kit-picker-dialog & .file-upload-area { flex: 1 1 auto; min-height: 96px; min-block-size: 96px; }
-	&__mapping { &[hidden] { display: none; } details { border: var(--whatsapp-kit-border); border-radius: var(--whatsapp-kit-radius); padding-block: var(--whatsapp-kit-gap-sm); padding-inline: var(--whatsapp-kit-gap-md); } summary { cursor: pointer; font-weight: 500; } }
 	&__mapping-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--whatsapp-kit-gap-sm); margin-block: var(--whatsapp-kit-gap-sm); }
 	&__invalid {
 		border: 1px solid var(--outline-amber-3);

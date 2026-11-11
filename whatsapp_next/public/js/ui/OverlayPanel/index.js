@@ -21,8 +21,10 @@ import ui from "../_core/index.js";
 import kit from "../_kit/index.js";
 
 const escape_html = (v) => ui.escape(v);
-const TONES = ["ok", "warn", "danger", "info", "muted", "pri"];
+const TONES = ["ok", "warn", "danger", "info", "muted", "primary"];
 const tone_of = (t) => (TONES.includes(t) ? t : "muted");
+// a list field's column key is also the row's field name (`r.sub`); its class spells the word out
+const COLUMN_CLASS_NAMES = { sub: "subtitle" };
 
 whatsapp.ui.OverlayPanel = class OverlayPanel {
 	/**
@@ -362,7 +364,7 @@ whatsapp.ui.OverlayPanel = class OverlayPanel {
 					} else if (col === "text") {
 						$r.append(`<span class="whatsapp-kit-overlay-panel__table-row-text${r.text_mono === false ? "" : " whatsapp-kit-overlay-panel__mono"}"${r.text_mono === false ? "" : ' dir="ltr"'}>${escape_html(r.text || "")}</span>`);
 					} else {
-						$r.append(`<span class="whatsapp-kit-overlay-panel__table-row-${escape_html(col)}">${escape_html(r[col] || "")}</span>`);
+						$r.append(`<span class="whatsapp-kit-overlay-panel__table-row-${escape_html(COLUMN_CLASS_NAMES[col] || col)}">${escape_html(r[col] || "")}</span>`);
 					}
 				});
 			});

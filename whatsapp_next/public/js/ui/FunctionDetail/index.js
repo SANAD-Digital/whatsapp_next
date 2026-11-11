@@ -506,7 +506,7 @@ frappe.provide("whatsapp.ui");
 					__("Options and texts for this preview"),
 					`<span class="whatsapp-kit-command-editor__note">${escape_html(__("Changes here are for the preview only; they change neither the function nor the commands."))}</span>${settings}${outs}`,
 					"pv-o",
-					"bg",
+					"background",
 					{ act: "pv-reset", label: __("Back to the function's defaults") }
 				)}
 				<section class="whatsapp-kit-command-editor__column whatsapp-kit-command-editor__column--background whatsapp-kit-command-editor__column--last" data-scroll="pv-r" aria-label="${escape_html(__("The result after rendering"))}">

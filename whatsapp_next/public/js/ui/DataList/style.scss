@@ -396,7 +396,6 @@
 		.level-left, .level-right { margin: 0; }
 		.btn { min-height: var(--whatsapp-kit-control-height); border-radius: var(--whatsapp-kit-radius); font-size: var(--text-xs, 12px); font-weight: 600; }
 	}
-	.whatsapp-kit-datalist__page { color: var(--ink-gray-6); margin-inline-end: var(--whatsapp-kit-gap-xs); }
 	.btn {
 		min-height: var(--whatsapp-kit-control-height);
 		padding-inline: var(--whatsapp-kit-cell-padding-inline);
@@ -560,7 +559,6 @@
 		flex-direction: column;
 		align-items: stretch;
 		.whatsapp-kit-datalist__pager { justify-content: space-between; }
-		.whatsapp-kit-datalist__page { margin-inline-end: 0; }
 	}
 }
 
@@ -585,14 +583,6 @@
 		display: flex;
 		gap: var(--whatsapp-kit-gap-sm);
 	}
-	.whatsapp-kit-datalist__page-button[disabled] { opacity: 0.5; }
-}
-
-// page mode's footer: the page you are on, then the two ways out of it
-.whatsapp-kit-datalist__page-state {
-	margin-inline-end: var(--whatsapp-kit-gap-sm);
-	color: var(--ink-gray-6);
-	font-size: var(--text-sm, 12px);
 }
 
 // The list column Desk pads at the bottom; the card already reaches the bottom of the screen.

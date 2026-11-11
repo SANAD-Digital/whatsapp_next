@@ -2,7 +2,6 @@
 // (`picker.search_contacts`, read through the host's contextual permission layer), checkbox rows,
 // "Select all on page" and "Add N". Contacts without a phone are listed but not selectable.
 
-import ui from "../../_core/index.js";
 import BaseSource from "./_base.js";
 
 export class ContactsSource extends BaseSource {

@@ -21,7 +21,6 @@ frappe.provide("whatsapp.ui");
 (function () {
 	const escape_html = (v) => whatsapp.ui.escape(v);
 	const clone = (v) => JSON.parse(JSON.stringify(v == null ? null : v));
-	const NARROW = 1080;
 
 	const SETTING_TYPE = { Check: "check", Int: "number", Select: "select", Data: "text" };
 
@@ -287,7 +286,7 @@ frappe.provide("whatsapp.ui");
 			return `<div class="whatsapp-kit-command-editor__grid whatsapp-kit-command-editor__grid--setup">
 				${this.column_section_html(__("Definition"), this.render_definition(), { key: "def", span: true })}
 				${this.column_section_html(__("Variables and options"), this.render_vars(), { key: "vars", link: { act: "reset-fn", label: __("Restore function defaults") } })}
-				${this.column_section_html(__("Outputs of this command"), this.render_outputs(), { key: "outs", tone: "bg", link: { act: "reset-outs", label: __("Restore default texts") } })}
+				${this.column_section_html(__("Outputs of this command"), this.render_outputs(), { key: "outs", tone: "background", link: { act: "reset-outs", label: __("Restore default texts") } })}
 			</div>`;
 		}
 
@@ -504,8 +503,8 @@ frappe.provide("whatsapp.ui");
 						: __("Not limited to a group: the party types and their lists below decide who may use it.")
 				)}</span></span>
 				<div class="whatsapp-kit-command-editor__pickers">
-					${this.render_picker("allow", "g", __("Only the members of"), __("Search contact groups…"), list_chosen_group("allowed_group", []), "pri", __("No matching groups."), __("Any number (no group)."))}
-					${this.render_picker("block", "g", __("Never the members of"), __("Search contact groups…"), list_chosen_group("blocked_group", []), "dg", __("No matching groups."), __("No group kept out."))}
+					${this.render_picker("allow", "g", __("Only the members of"), __("Search contact groups…"), list_chosen_group("allowed_group", []), "primary", __("No matching groups."), __("Any number (no group)."))}
+					${this.render_picker("block", "g", __("Never the members of"), __("Search contact groups…"), list_chosen_group("blocked_group", []), "danger", __("No matching groups."), __("No group kept out."))}
 				</div>
 			</div>`;
 		}
@@ -521,7 +520,7 @@ frappe.provide("whatsapp.ui");
 			const a = this.access_of(key);
 			const deny = a.mode === "Deny All";
 			const list = deny ? __("the whitelist") : __("the blacklist");
-			const tone = deny ? "pri" : "dg";
+			const tone = deny ? "primary" : "danger";
 			const tabs = allowed_party_types
 				.map((k) => {
 					const x = this.access_of(k);
@@ -712,7 +711,7 @@ frappe.provide("whatsapp.ui");
 				${this.ui.error ? `<div class="whatsapp-kit-command-editor__callout whatsapp-kit-command-editor__callout--danger" role="alert"><span>${escape_html(this.ui.error)}</span></div>` : ""}`;
 			return `<div class="whatsapp-kit-command-editor__grid whatsapp-kit-command-editor__grid--preview">
 				${this.column_section_html(__("Preview assumptions"), assumptions, { key: "pv-a" })}
-				${this.column_section_html(__("Function options and outputs"), options, { key: "pv-o", tone: "bg", link: { act: "reset-all", label: __("Restore defaults", null, "Command Editor") } })}
+				${this.column_section_html(__("Function options and outputs"), options, { key: "pv-o", tone: "background", link: { act: "reset-all", label: __("Restore defaults", null, "Command Editor") } })}
 				<section class="whatsapp-kit-command-editor__column whatsapp-kit-command-editor__column--background whatsapp-kit-command-editor__column--last" data-scroll="pv-r" aria-label="${escape_html(__("Result as the customer receives it"))}">
 					<header class="whatsapp-kit-command-editor__column-head">
 						<span class="whatsapp-kit-command-editor__column-title">${escape_html(__("Result as the customer receives it"))}</span>

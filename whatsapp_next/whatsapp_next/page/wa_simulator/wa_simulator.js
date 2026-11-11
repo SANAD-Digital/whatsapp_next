@@ -53,8 +53,8 @@
 	const badge_of = (row) => {
 		// a group is carried like a number, but it is never an "unknown number"
 		if (row.number_type === "Group" || whatsapp.ui.is_group(row.phone_e164)) return { text: __("Group"), tone: "grp" };
-		if (!row.contact) return { text: __("Unknown number", null, "Simulator"), tone: "nf" };
-		if (!row.party_type) return { text: __("No classification"), tone: "wn" };
+		if (!row.contact) return { text: __("Unknown number", null, "Simulator"), tone: "info" };
+		if (!row.party_type) return { text: __("No classification"), tone: "warning" };
 		return { text: __(row.party_type), tone: "muted" };
 	};
 

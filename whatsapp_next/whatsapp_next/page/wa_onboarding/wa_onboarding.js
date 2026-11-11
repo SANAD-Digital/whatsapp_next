@@ -32,7 +32,6 @@ frappe.provide("whatsapp_next.onboarding");
 	const escape_html = (v) => ui.escape(v);
 	const render_icon = (name, size) => ui.inline_icon_html(name, size);
 	const SETUP_ROLES = ["System Manager"];
-	const POLL_MS = 4000;
 	// how long a half-finished sign-up is kept in this browser for a reload to return to
 	const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
 	// The prototype signs every new tenant up on the free plan and says so on the ready panel. On
@@ -1797,7 +1796,7 @@ frappe.provide("whatsapp_next.onboarding");
 			$card.find(".whatsapp-onboarding__in-use").remove();
 			// the site's address reads left to right inside the Arabic sentence
 			const message = r.site ? cstr(r.message).replace(r.site, "\u2066" + r.site + "\u2069") : r.message;
-			const $box = $(`<div class="whatsapp-onboarding__in-use" role="alert">
+			$(`<div class="whatsapp-onboarding__in-use" role="alert">
 				<p>${escape_html(message)}</p>
 			</div>`).insertBefore($btn);
 			this.show_error("");

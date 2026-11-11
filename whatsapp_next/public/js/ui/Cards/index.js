@@ -25,7 +25,7 @@ import ui from "../_core/index.js";
 import { inline_icon_html } from "../_kit/icons.js";
 
 const escape_html = (v) => ui.escape(v == null ? "" : v);
-const TONES = ["ok", "warn", "danger", "info", "muted", "pri"];
+const TONES = ["ok", "warn", "danger", "info", "muted", "primary"];
 const tone_of = (t) => (TONES.includes(t) ? t : "muted");
 
 /** A sparkline over a small series, on the prototype's own 60×18 box. */

@@ -9,7 +9,7 @@
 
 import ui from "../_core/index.js";
 import Render from "../Render/index.js";
-import { avatar, thumb, icon_text_chip_html, bind_actions, actions as action_buttons } from "../Render/parts.js";
+import { thumb, icon_text_chip_html, bind_actions, actions as action_buttons } from "../Render/parts.js";
 
 const VIEW_META = {
 	table: { label: () => __("Table"), icon: "es-line-table-view", density: null },

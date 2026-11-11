@@ -783,11 +783,6 @@
 		/** Client-side, because the catalog is a file the API returns whole (a few dozen rows). */
 		visible() {
 			const f = this.filters || {};
-			const matches_filter_value = (value, picked) => {
-				if (picked == null || picked === "") return true;
-				const list = Array.isArray(picked) ? picked : [picked];
-				return !list.length || list.map(cstr).includes(cstr(value));
-			};
 			const rows = this.entries.filter((e) => {
 				if (f.state && !(f.state === "available" ? ["available", "update"].includes(e.state) : e.state === f.state)) return false;
 				if (f.update_state === "available" && !e.update_available) return false;

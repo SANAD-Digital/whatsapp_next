@@ -969,7 +969,6 @@ whatsapp.ui.DataList = class DataList {
 		const listview = this.listview;
 		const rows = this.page_mode ? this.rows : listview.data || [];
 		const $count = this.$footer.find(".whatsapp-kit-datalist__count");
-		const $pager = this.$footer.find(".whatsapp-kit-datalist__pager");
 		const render_footer_count = () => {
 			const total = this.total == null ? rows.length : this.total;
 			const text = typeof this.opts.footer.count === "function" ? this.opts.footer.count(total, rows) : ui.plural(total, { one: __("{0} record"), other: __("{0} records") });

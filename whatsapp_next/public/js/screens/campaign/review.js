@@ -46,7 +46,7 @@ frappe.provide("whatsapp_next.campaign");
 			const scheduled = !!doc.scheduled_at;
 			const cap = cint(this.ctx.cap);
 			const tiles = [
-				{ tone: "pri", icon: "users", label: __("Recipients"), value: campaign_builder.format_integer(doc.total_recipients), of: __("chosen for sending"), badge: cint(doc.total_recipients) ? __("ready") : __("none") },
+				{ tone: "primary", icon: "users", label: __("Recipients"), value: campaign_builder.format_integer(doc.total_recipients), of: __("chosen for sending"), badge: cint(doc.total_recipients) ? __("ready") : __("none") },
 				{ tone: "info", icon: "chat", label: __("Messages", null, "campaign"), value: campaign_builder.format_integer(per), of: __("{0} in total", [campaign_builder.format_integer(e.total)]), badge: __("per recipient") },
 				{ tone: "warn", icon: "bolt", label: __("Sending rate"), value: __("{0}/min", [campaign_builder.format_integer(e.rate)]), of: cap ? __("the queue allows {0}", [campaign_builder.format_integer(cap)]) : "", badge: cap && e.rate >= cap ? __("at the cap") : __("steady") },
 				{ tone: "ok", icon: "clock", label: __("Estimated duration"), value: campaign_builder.duration_text(e.minutes), of: scheduled ? __("from {0}", [this.when_text()]) : __("from the moment it starts"), badge: scheduled ? __("scheduled") : __("on start") },

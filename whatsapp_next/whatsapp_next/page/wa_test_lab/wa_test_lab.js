@@ -54,7 +54,6 @@
 		failed: { tone: "danger", label: () => __("Failed", null, "Test Lab") },
 		skipped: { tone: "muted", label: () => __("Skipped", null, "Test Lab") },
 	};
-	const DONE = ["delivered", "read", "passed", "blocked", "failed", "skipped"];
 	const state_badge = (state) => {
 		const s = STATES[state] || STATES.waiting;
 		return kit.badge(s.label(), s.tone);

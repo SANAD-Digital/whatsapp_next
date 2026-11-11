@@ -241,7 +241,7 @@ frappe.provide("whatsapp_next.campaign");
 				{ key: "processed", label: __("Processed"), value: t.processed, of: t.produced, of_label: __("of everything produced"), tone: "muted" },
 				{ key: "left", label: __("Left the device"), value: t.left, of: t.produced, of_label: __("of everything produced"), tone: "info" },
 				{ key: "arrived", label: __("Arrived"), value: t.arrived, of: t.left, of_label: __("of what left the device"), tone: "ok" },
-				{ key: "read", label: __("Read", null, "campaign"), value: t.read, of: t.arrived, of_label: __("of what arrived"), tone: "pri" },
+				{ key: "read", label: __("Read", null, "campaign"), value: t.read, of: t.arrived, of_label: __("of what arrived"), tone: "primary" },
 				{ key: "failed", label: __("Failed", null, "campaign"), value: t.failed, of: t.produced, of_label: __("of everything produced"), tone: "danger" },
 			];
 		}
@@ -284,7 +284,7 @@ frappe.provide("whatsapp_next.campaign");
 
 			// the distribution: now, in buckets that do not overlap
 			const buckets = [
-				{ label: __("Read", null, "campaign"), value: t.read, tone: "pri" },
+				{ label: __("Read", null, "campaign"), value: t.read, tone: "primary" },
 				{ label: __("Delivered", null, "campaign"), value: t.delivered_only, tone: "ok" },
 				{ label: __("Sent", null, "campaign"), value: t.sent_only, tone: "info" },
 				{ label: __("In the queue"), value: t.queued, tone: "muted" },

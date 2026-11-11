@@ -78,20 +78,12 @@
 	&__block:empty { display: none; }
 }
 
-// Progress bar (sent = green, failed = red) with a tabular "sent / total" label.
+// The progress element's frame and bar (`Render.parts.progress` draws the track and the value).
 .whatsapp-kit-progress {
 	display: flex;
 	flex-direction: column;
 	gap: 3px;
 	min-width: 120px;
-	&__label {
-		display: flex;
-		justify-content: space-between;
-		gap: var(--whatsapp-kit-gap-sm);
-		font-size: var(--text-xs, 12px);
-		color: var(--ink-gray-6);
-		font-variant-numeric: tabular-nums;
-	}
 	&__bar {
 		display: flex;
 		height: 6px;
@@ -99,13 +91,9 @@
 		background: var(--surface-gray-3);
 		overflow: hidden;
 	}
-	&__fill { background: var(--ink-green-7); height: 100%; }
-	&__fail { background: var(--ink-red-8); height: 100%; }
-	&--amber &__fill { background: var(--ink-amber-7); }
 }
 
 @media (max-width: 767px) {
 	.whatsapp-kit-page-header__row { flex-direction: column; }
 	.whatsapp-kit-page-header__actions { width: 100%; .btn { flex: 1; } }
-	.whatsapp-kit-strip__actions { margin-inline-start: 0; width: 100%; .btn { flex: 1; } }
 }

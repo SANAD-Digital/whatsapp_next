@@ -471,12 +471,11 @@ def _coerce_input_to_parameter_type(value: str, key: str, command) -> Any:
 	return fh.coerce_param_value(header_param, cstr(value))
 
 
-def parse_args(command, text: str, *, partial: bool = False) -> dict[str, Any]:
+def parse_args(command, text: str) -> dict[str, Any]:
 	"""The values the sender wrote after the command word: `key=value` tokens for any parameter the
 	sender may give, then the rest by position (`command_inputs`). Typed by the header; a value of
 	the wrong type or not allowed raises `WAValidationError`. Defaults are not applied here (the
-	header fills them in `function_runner.prepare`); `partial` is kept for callers and changes
-	nothing."""
+	header fills them in `function_runner.prepare`)."""
 	inputs = command_inputs(command)
 	open_names = {i["key"].casefold(): i["key"] for i in inputs}
 	try:

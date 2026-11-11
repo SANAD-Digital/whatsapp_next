@@ -231,7 +231,7 @@ frappe.provide("whatsapp.ui");
 							sub: g.description || __(g.source || ""),
 							initials: whatsapp.ui.initials(g.group_name || g.name),
 							badge: black ? __("Blacklist") : __("{0} contacts", [whatsapp.ui.format_integer(g.member_count)]),
-							badge_tone: black ? "wn" : "muted",
+							badge_tone: black ? "warning" : "muted",
 							on,
 						};
 					});
@@ -254,10 +254,10 @@ frappe.provide("whatsapp.ui");
 				.concat(
 					state.groups.map((name) => {
 						const g = this.group(name);
-						return { key: name, act: "rm-group", name: g.group_name || name, sub: __("{0} contacts", [whatsapp.ui.format_integer(g.member_count)]), initials: whatsapp.ui.initials(g.group_name || name), badge: __("Group", null, "Bulk Send"), badge_tone: "pri", remove: true };
+						return { key: name, act: "rm-group", name: g.group_name || name, sub: __("{0} contacts", [whatsapp.ui.format_integer(g.member_count)]), initials: whatsapp.ui.initials(g.group_name || name), badge: __("Group", null, "Bulk Send"), badge_tone: "primary", remove: true };
 					}),
-					state.contacts.map((c) => ({ key: c.name, act: "rm-contact", name: c.label || c.name, sub: whatsapp.ui.phone(c.phone || ""), sub_ltr: true, initials: whatsapp.ui.initials(c.label || "?"), badge: __("Picked contact"), badge_tone: "pri", remove: true })),
-					state.numbers.map((p) => ({ key: p, act: "rm-number", name: __("Number added by hand"), sub: whatsapp.ui.phone(p), sub_ltr: true, initials: "#", avatar_tone: "nf", badge: __("Manual number"), badge_tone: "nf", remove: true }))
+					state.contacts.map((c) => ({ key: c.name, act: "rm-contact", name: c.label || c.name, sub: whatsapp.ui.phone(c.phone || ""), sub_ltr: true, initials: whatsapp.ui.initials(c.label || "?"), badge: __("Picked contact"), badge_tone: "primary", remove: true })),
+					state.numbers.map((p) => ({ key: p, act: "rm-number", name: __("Number added by hand"), sub: whatsapp.ui.phone(p), sub_ltr: true, initials: "#", avatar_tone: "info", badge: __("Manual number"), badge_tone: "info", remove: true }))
 				)
 				.filter((r) => match(r.name, r.sub));
 		}

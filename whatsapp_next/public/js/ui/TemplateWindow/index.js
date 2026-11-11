@@ -208,7 +208,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 				${kit.button_html({ icon: "x", variant: "secondary", title: __("Close (Esc)"), cls: "whatsapp-kit-template-window__close", attrs: { "data-act": "close" } })}
 			</header>
 			<div class="whatsapp-kit-template-window__tabs" role="tablist" aria-label="${escape_html(__("Sections"))}">
-				${[["editor", __("Editor")], ["preview", __("Preview", null, "Template preview tab")], ["vars", __("Variables")]]
+				${[["editor", __("Editor")], ["preview", __("Preview", null, "Template preview tab")], ["variables", __("Variables")]]
 					.map(([k, l]) => `<button type="button" class="whatsapp-kit-template-window__tab" role="tab" data-tab="${k}" aria-selected="${k === this.state.tab}">${escape_html(l)}</button>`)
 					.join("")}
 			</div>
@@ -284,7 +284,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 					<ul class="whatsapp-kit-template-window__errors" role="alert"></ul>
 				</section>
 
-				<section class="whatsapp-kit-template-window__pane whatsapp-kit-template-window__variables" data-pane="vars" aria-label="${escape_html(__("Variables"))}">
+				<section class="whatsapp-kit-template-window__pane whatsapp-kit-template-window__variables" data-pane="variables" aria-label="${escape_html(__("Variables"))}">
 					<span class="whatsapp-kit-template-window__pane-title">${escape_html(__("Variables — click to insert"))}</span>
 					<input type="search" class="whatsapp-input whatsapp-kit-template-window__variables-q" placeholder="${escape_html(__("Filter variables…"))}" aria-label="${escape_html(__("Filter variables"))}">
 					<div class="whatsapp-kit-template-window__variables-list" role="list"></div>
@@ -606,7 +606,7 @@ whatsapp.ui.TemplateWindow = class TemplateWindow {
 		body_input.setSelectionRange(caret, select_inner ? caret + select_inner[1] : caret);
 		this.set_draft_field("body", body_input.value);
 		this.render_count();
-		if (this.state.tab === "vars") this.show_tab("editor");
+		if (this.state.tab === "variables") this.show_tab("editor");
 	}
 
 	/** Wrap the selection in a WhatsApp mark, or drop in a condition. */

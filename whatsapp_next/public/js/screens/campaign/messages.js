@@ -178,7 +178,6 @@ frappe.provide("whatsapp_next.campaign");
 		// ---- the test send -----------------------------------------------------------------------
 
 		test_send() {
-			const frm = this.frm;
 			const rows = this.messages_with_body();
 			const options = rows.map((m) => ({
 				value: String(m.idx),

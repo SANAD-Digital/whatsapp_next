@@ -14,7 +14,6 @@ frappe.provide("whatsapp_next.campaign");
 (function () {
 	const campaign_builder = whatsapp_next.campaign;
 	const campaign_helpers = whatsapp_next.campaigns;
-	const escape_html = campaign_builder.escape_html;
 
 	/** What is wrong with a message row, in the words of the person who wrote it. */
 	const PROBLEM = {

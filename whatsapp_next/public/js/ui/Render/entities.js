@@ -11,7 +11,7 @@
 // A host app adds a kind with `whatsapp.ui.Render.register("my-kind", { row(vm) {…} })`.
 
 import ui from "../_core/index.js";
-import { avatar, thumb, icon_text_chip_html, chips, fact_tile_html, progress, actions as action_buttons } from "./parts.js";
+import { avatar, thumb, icon_text_chip_html, fact_tile_html, progress, actions as action_buttons } from "./parts.js";
 
 const chevron = () => `<span class="whatsapp-kit-entity__go" aria-hidden="true">${ui.icon("es-line-right-chevron", "sm")}</span>`;
 

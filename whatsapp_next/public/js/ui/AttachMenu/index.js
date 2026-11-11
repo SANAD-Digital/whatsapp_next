@@ -28,15 +28,15 @@ frappe.provide("whatsapp.ui");
 	};
 	// the prototype's order and tones
 	const KINDS = [
-		{ key: "image", tone: "pri", accept: ["image/*"] },
-		{ key: "video", tone: "nf", accept: ["video/*"] },
-		{ key: "document", tone: "wn", accept: null },
+		{ key: "image", tone: "primary", accept: ["image/*"] },
+		{ key: "video", tone: "info", accept: ["video/*"] },
+		{ key: "document", tone: "warning", accept: null },
 		{ key: "audio", tone: "ok", accept: ["audio/*"] },
-		{ key: "location", tone: "dg" },
+		{ key: "location", tone: "danger" },
 		{ key: "contact", tone: "muted" },
 		// opt-in: shown only to a host that lists them in `kinds` (it must be able to send them)
-		{ key: "buttons", tone: "pri", opt_in: true },
-		{ key: "list", tone: "nf", opt_in: true },
+		{ key: "buttons", tone: "primary", opt_in: true },
+		{ key: "list", tone: "info", opt_in: true },
 	];
 	const label_of = (key) =>
 		({

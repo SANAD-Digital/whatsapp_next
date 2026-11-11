@@ -45,7 +45,6 @@ frappe.provide("whatsapp_next.home");
 	const OFFLINE = ["Disconnected", "Logged Out"];
 	/** Devices that are down against the owner's wish — a disabled device is off on purpose. */
 	const offline_of = (rows) => rows.filter((r) => OFFLINE.includes(r.status) && !cint(r.disabled));
-	const FEED_LIMIT = 5;
 	const PANEL_LIMIT = 5;
 	const FAIL_LIMIT = 6;
 
